@@ -137,7 +137,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.5';
+var BUILD='v1.6';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -167,7 +167,7 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== table geometry ===== */
-var BALLR=11, GRAV=1500, DRAINY=902;
+var BALLR=11, GRAV=1150, DRAINY=902;   // 1150 ~= a 6.5-degree real incline at our 1px/mm scale
 // The bead waits upper-right and a CHARGED plunge fires it up-and-left into the
 // field — power scales launch strength. (A literal vertical shooter lane fights our
 // radial collision model — a ball rising dead-on bounces straight back; a true
@@ -176,17 +176,18 @@ var LANE_X=405, LANE_Y0=700;   // 405: clear of the right divider post (422,700 
 var PLUNGE_VX=150, PLUNGE_VX_R=170;   // launch vx = -(VX + power*VX_R)  (up-and-LEFT)
 var PLUNGE_VY=1010, PLUNGE_VY_R=430;  // launch vy = -(VY + power*VY_R)
 var WALLS=[
-  // drain geography (STEP 5): each lower side splits into an OUTLANE (outer channel,
-  // drains) and an INLANE (inboard of the divider, feeds the flipper via a return gate).
-  // old single-chain inlanes were [60,700,180,842] / [470,700,350,842].
+  // drain geography (STEP 5, retuned v1.6): each lower side splits into an OUTLANE
+  // (outer channel, drains) and an INLANE (feeds the flipper via a return gate).
+  // Outlane MOUTH narrowed 48px -> 32px (~1.45 ball-widths, real-table proportion) —
+  // device feedback called the old pockets "massive".
   [60,150,60,700],[60,700,110,852],            // left wall + left outlane outer guide
   [470,150,470,700],[470,700,420,852],         // right wall + right outlane outer guide
-  [108,706,168,836],                            // left lane divider (outlane | inlane)
-  [422,706,362,836],                            // right lane divider
+  [92,712,168,836],                             // left lane divider (outlane | inlane)
+  [438,712,362,836],                            // right lane divider
   [60,150,140,108],[140,108,400,108],[400,108,470,150]  // top arc
 ];
 // divider-top posts — the ball can bounce to either side of the split
-var POSTS=[ {x:108,y:700,r:5}, {x:422,y:700,r:5} ];
+var POSTS=[ {x:92,y:706,r:5}, {x:438,y:706,r:5} ];
 var BUMPERS=[
   {x:150,y:340,r:24,kick:150,sc:120,lit:0},
   {x:390,y:340,r:24,kick:150,sc:120,lit:0},
@@ -195,8 +196,8 @@ var BUMPERS=[
 // slingshots sit inboard above the flippers (classic position) — the old spots
 // (120/410,800) now live INSIDE the outlane channels and would block them.
 var SLINGS=[ {x:208,y:782,r:13,kick:120,sc:60,lit:0}, {x:322,y:782,r:13,kick:120,sc:60,lit:0} ];
-var LFLIP={ px:175,py:842, L:74, r:9, restA:0.50, actA:-0.30, a:0.50, pa:0.50, w:0, up:false };
-var RFLIP={ px:355,py:842, L:74, r:9, restA:Math.PI-0.50, actA:Math.PI+0.30, a:Math.PI-0.50, pa:Math.PI-0.50, w:0, up:false };
+var LFLIP={ px:175,py:842, L:82, r:9, restA:0.50, actA:-0.30, a:0.50, pa:0.50, w:0, up:false };
+var RFLIP={ px:355,py:842, L:82, r:9, restA:Math.PI-0.50, actA:Math.PI+0.30, a:Math.PI-0.50, pa:Math.PI-0.50, w:0, up:false };
 var GROWTH_MAX=22;
 
 /* ===== SHOTS — the lit-insert shot vocabulary (P1 depth) =====
@@ -223,17 +224,17 @@ function buildShots(){ SHOTS=[
   // = min throat speed to "make" it (generous — no FX phantom rejects); else it passes.
   // Fern ramp — combo diverter: make it twice inside the rail-combo window and the
   // second pass CROSSES OVER to the left inlane at bonus value (Canopy Crossover).
-  {id:'fern',    type:'ramp',  x:110,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5, fork:[300,145],
-    path:[[110,410],[92,300],[130,160],[300,145],[400,320],[360,760]], exit:{x:360,y:760,vx:-40,vy:280},
-    alt:{path:[[110,410],[92,300],[130,160],[300,145],[330,300],[260,560],[160,775]], exit:{x:160,y:775,vx:26,vy:300}}},
-  {id:'trellis', type:'ramp',  x:440,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
+  {id:'fern',    type:'ramp',  x:165,y:410, er:26, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5, fork:[300,145],
+    path:[[165,410],[108,300],[130,160],[300,145],[400,320],[360,760]], exit:{x:360,y:760,vx:-40,vy:280},
+    alt:{path:[[165,410],[108,300],[130,160],[300,145],[330,300],[260,560],[160,775]], exit:{x:160,y:775,vx:26,vy:300}}},
+  {id:'trellis', type:'ramp',  x:435,y:410, er:26, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
     path:[[440,410],[448,300],[410,160],[240,145],[140,320],[180,760]], exit:{x:180,y:760,vx:40,vy:280}},
-  {id:'lorbit',  type:'orbit', x:75, y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
+  {id:'lorbit',  type:'orbit', x:75, y:635, er:23, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
     path:[[75,635],[68,320],[120,140],[300,125],[430,240],[452,560],[380,755]], exit:{x:380,y:755,vx:-30,vy:300}},
-  {id:'rorbit',  type:'orbit', x:455,y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
+  {id:'rorbit',  type:'orbit', x:455,y:635, er:23, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
     path:[[455,635],[462,320],[410,140],[230,125],[100,240],[78,560],[152,755]], exit:{x:152,y:755,vx:30,vy:300}},
   // Dandelion spinner — pass-through: crossing it spawns a decaying score rip
-  {id:'spinner', type:'spinner', x:265,y:250, r:16, value:800, cd:0},
+  {id:'spinner', type:'spinner', x:265,y:250, r:20, value:800, cd:0},
   // S-U-N top rollover lanes — light all three to advance the bonus multiplier
   {id:'sun0', type:'rollover', x:150,y:128, r:15, sunIdx:0, lamp:0, cd:0},
   {id:'sun1', type:'rollover', x:265,y:128, r:15, sunIdx:1, lamp:0, cd:0},
@@ -241,11 +242,11 @@ function buildShots(){ SHOTS=[
   // Center Greenhouse ramp — a fast straight-up shot loops the glasshouse crown and
   // returns down the right inlane (a big, repeatable flow shot). DIVERTS to the
   // Pollen Lock nest while the lock is lit (see routeFor).
-  {id:'green', type:'ramp', x:300,y:405, er:19, tx:0,ty:-1, thr:560, value:4000, cd:0, dur:0.62,
-    path:[[300,405],[290,235],[318,158],[406,182],[436,430],[410,600],[372,778]], exit:{x:372,y:778,vx:-24,vy:300}},
+  {id:'green', type:'ramp', x:365,y:405, er:26, tx:0,ty:-1, thr:520, value:4000, cd:0, dur:0.62,
+    path:[[365,405],[320,230],[318,158],[406,182],[436,430],[410,600],[372,778]], exit:{x:372,y:778,vx:-24,vy:300}},
   // Heartvine ramp — the CHANGING ramp: its exit diverter flips after every pass,
   // alternating left and right inlane returns (watch the flag at the fork).
-  {id:'heart', type:'ramp', x:210,y:470, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.55, flip:false, fork:[300,205],
+  {id:'heart', type:'ramp', x:210,y:470, er:22, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.55, flip:false, fork:[300,205],
     path:[[210,470],[195,340],[210,215],[255,160],[300,205],[330,330],[360,560],[370,778]], exit:{x:370,y:778,vx:-24,vy:300},
     alt:{path:[[210,470],[195,340],[210,215],[255,160],[300,205],[300,330],[230,560],[160,775]], exit:{x:160,y:775,vx:26,vy:300}}},
   // Inlane RETURN gates — light + reward the bead as it feeds back to a flipper.
@@ -313,36 +314,51 @@ function circHit(b, c, rest, kick, onHit){
     if(kick){ b.vx+=nx*kick; b.vy+=ny*kick; } if(onHit)onHit(); return true; }
   return false;
 }
+// HONEST FLIPPERS (the STEP 4 rewrite — the old scripted lv-launch fired every base
+// flip at one fixed angle, which made every ramp mathematically unhittable; a 98-point
+// timing sweep confirmed ZERO ramp entries before this rewrite).
+// Exit vector now comes ONLY from physics: blade surface velocity at the contact arm
+// (w x r) + restitution. WHERE the ball sits on the blade and WHEN you flip decides
+// the shot — that is what aiming IS on a real machine.
 function flipHit(b, F){
   var tx=F.px+Math.cos(F.a)*F.L, ty=F.py+Math.sin(F.a)*F.L;
   var ex=tx-F.px, ey=ty-F.py, L2=ex*ex+ey*ey||1;
   var t=((b.x-F.px)*ex+(b.y-F.py)*ey)/L2; if(t<0)t=0; else if(t>1)t=1;
   var cx=F.px+ex*t, cy=F.py+ey*t, dx=b.x-cx, dy=b.y-cy, d=Math.sqrt(dx*dx+dy*dy), mn=b.r+F.r;
   if(d<mn && d>1e-6){ var nx=dx/d,ny=dy/d, ov=mn-d; b.x+=nx*ov; b.y+=ny*ov;
-    // surface tangential velocity at contact from angular velocity F.w
     var arm=t*F.L, sv=F.w*arm, tanx=-Math.sin(F.a), tany=Math.cos(F.a), svx=tanx*sv, svy=tany*sv;
-    // a RESTING flipper deadens (low restitution) so a dribbling ball rolls to the
-    // drain; a FLIPPING flipper snaps it back hard. This is what stops the
-    // infinite-trampoline and makes the flip feel intentional.
-    var coeff=F.up?1.4:1.02;
-    var vn=(b.vx-svx)*nx+(b.vy-svy)*ny; if(vn<0){ b.vx-=coeff*vn*nx; b.vy-=coeff*vn*ny; }
-    if(!F.up){ b.vx*=0.86; b.vy*=0.86; return; }   // resting blade absorbs
-    // an ACTIVELY-SWINGING blade near the base rockets the ball up the table toward
-    // the bumpers (a satisfying flip). A held flipper (w~0) just cradles it.
-    if(Math.abs(F.w)>3 && b.y>780){ var lv=1180+Math.min(300,Math.abs(sv)*0.2), cxx=(F.px<270)?0.26:-0.26;
-      b.vx=cxx*lv + b.vx*0.12; b.vy=-lv; }
-    else if(Math.abs(sv)>40){ var pop=Math.min(900,Math.abs(sv))*0.55; b.vx+=nx*pop; b.vy+=ny*pop; }
+    var e=F.up?0.50:0.24;                                   // live rubber vs resting blade
+    var vn=(b.vx-svx)*nx+(b.vy-svy)*ny;
+    if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny;
+      // tangential grab: a sweeping blade drags the ball along its arc a little
+      var vt=(b.vx-svx)*tanx+(b.vy-svy)*tany;
+      b.vx-=0.22*vt*tanx; b.vy-=0.22*vt*tany; }
+    if(!F.up && Math.abs(F.w)<0.5){
+      // resting blade: kill residual BOUNCE but let the ball ROLL along the blade —
+      // the roll toward the tip is what sets up an aimed shot
+      var bn=b.vx*nx+b.vy*ny; if(bn>0){ b.vx-=bn*nx*0.55; b.vy-=bn*ny*0.55; }
+    }
   }
 }
-function stepFlipper(F,dt){ F.pa=F.a; var tgt=F.up?F.actA:F.restA; F.a+=(tgt-F.a)*Math.min(1,dt*34); F.w=(F.a-F.pa)/Math.max(dt,1e-4); }
+// Constant angular velocity (real coil, ~35ms full swing) -> timing maps LINEARLY to
+// exit angle, which is what makes shots learnable. Stepped per-SUBSTEP so the blade
+// never teleports past the ball mid-swing.
+var FLIP_W_UP=24, FLIP_W_DOWN=13;   // rad/s
+function stepFlipper(F,h){
+  var tgt=F.up?F.actA:F.restA, d=tgt-F.a, w=F.up?FLIP_W_UP:FLIP_W_DOWN;
+  if(Math.abs(d)<=w*h){ F.a=tgt; F.w=0; }
+  else { var sgn=d>0?1:-1; F.a+=sgn*w*h; F.w=sgn*w; }
+}
 function physics(dt){
   var SUB=8, h=(dt*G.slow)/SUB, i, s, b;
-  stepFlipper(LFLIP,dt*G.slow); stepFlipper(RFLIP,dt*G.slow);
   for(s=0;s<SUB;s++){
+    stepFlipper(LFLIP,h); stepFlipper(RFLIP,h);
     for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail){ continue; } // held: pre-launch, scooped, or on a ramp
-      b.vy+=GRAV*h; b.vx*=0.9992; b.vy*=0.9992; b.x+=b.vx*h; b.y+=b.vy*h;   // mild drag bleeds energy so the ball works down to the flippers
-      var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>1600){ b.vx*=1600/sp; b.vy*=1600/sp; }
-      if(sp<300){ b.vx*=0.988; b.vy*=0.988; }   // rolling friction — slow steel dies in dead zones, distinct from air drag
+      // time-scaled losses (per-substep constants were framerate-dependent and ~960x/s
+      // strong — they froze slow balls dead and bled every shot mid-flight)
+      b.vy+=GRAV*h; var drg=Math.pow(0.90,h); b.vx*=drg; b.vy*=drg; b.x+=b.vx*h; b.y+=b.vy*h;
+      var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>2400){ b.vx*=2400/sp; b.vy*=2400/sp; }
+      if(sp<300){ var rf=Math.pow(0.60,h); b.vx*=rf; b.vy*=rf; }   // gentle rolling friction
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
       for(var po=0;po<POSTS.length;po++) circHit(b,POSTS[po],0.5,0);
       for(var m=0;m<BUMPERS.length;m++) circHit(b,BUMPERS[m],0.28,BUMPERS[m].kick,(function(mm){return function(){ onBump(mm,'bump'); };})(m));
@@ -383,11 +399,12 @@ function physics(dt){
   // drain check
   for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
     if(b.y>DRAINY){ // wizard save > Pollen MB save > moss net save > drain. TILT disables all saves.
-      // an outlane drain crosses DRAINY inside the channel where a bounce-back is trapped
-      // below the guides — every save re-centres the bead between the flippers first
-      if(G.wizard && G.wizSave>0 && G.tiltOut<=0){ b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
-      else if(G.pollenMB && G.mbSave>0 && G.tiltOut<=0){ b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
-      else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
+      // a save must give the ball BACK to the player: eject in an arc that lands on the
+      // far-side flipper/inlane. (The old straight-up pop fell back through the flipper
+      // gap untouched — device feedback caught it.)
+      if(G.wizard && G.wizSave>0 && G.tiltOut<=0){ var w1=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w1; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.pollenMB && G.mbSave>0 && G.tiltOut<=0){ var w2=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w2; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; var w3=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w3; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
       else { drainBall(i); }
     }
   }
@@ -487,7 +504,7 @@ function onScoop(b,sh){ b.captured=true; b.vx=0; b.vy=0; b.x=sh.x; b.y=sh.y;
 // Pollen Lock nest — the glasshouse crown. When B-L-O-O-M lights the lock, the
 // center Greenhouse ramp DIVERTS here and swallows the bead (3 locks = multiball).
 var LOCK_NEST={x:340,y:152};
-var LOCK_PATH=[[300,405],[290,235],[318,158],[340,152]];
+var LOCK_PATH=[[365,405],[320,230],[318,158],[340,152]];
 function pathLen(path){ var t=0,i; for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1]; t+=Math.sqrt(dx*dx+dy*dy); } return t; }
 function pathPoint(path,t){ var total=pathLen(path), d=t*total, acc=0,i;
   for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1],L=Math.sqrt(dx*dx+dy*dy);
