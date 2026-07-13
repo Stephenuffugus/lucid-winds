@@ -9,7 +9,12 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
     var errors = [];
     browser.newPage().then(function(page){
       page.on('pageerror', function(e){ errors.push(String(e)); });
-      page.on('console', function(m){ if(m.type()==='error') errors.push('console: '+m.text()); });
+      page.on('console', function(m){
+        if(m.type()!=='error') return;
+        // file:// runs can't load /sunbeam-sdk.js or the optional ground-art override — expected
+        if(/ERR_FILE_NOT_FOUND|Failed to load resource/.test(m.text())) return;
+        errors.push('console: '+m.text());
+      });
 
       page.goto(url, { waitUntil:'networkidle0' })
       .then(function(){ return page.waitForFunction('window.DB_DEV && typeof window.DB_DEV.start==="function"', {timeout:5000}); })
@@ -24,7 +29,7 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
           var lastX = null, lastY = null, movedFrames = 0;
           // drive the ball on a wandering path so it eats scattered objects
           for (var f=0; f<frames; f++){
-            var ang = f*0.06;
+            var ang = f*0.02;   // slow heading drift -> wide (~32cm radius) sweep through the spawn litter
             D.roll(Math.cos(ang), Math.sin(ang*0.7));
             D.step(0.016);
             var s = D.size();
