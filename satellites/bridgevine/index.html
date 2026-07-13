@@ -665,6 +665,24 @@ function drawSpriteFit(im,cx,cy,size){ var nw=im.naturalWidth, nh=im.naturalHeig
 /* stretched + rotated draw along a segment (w=length, h=thickness) */
 function drawSpriteWH(im,cx,cy,w,h,ang){ if(!im.naturalWidth)return;
   ctx.save(); ctx.translate(cx,cy); if(ang)ctx.rotate(ang); ctx.drawImage(im,-w/2,-h/2,w,h); ctx.restore(); }
+/* 3-slice draw along a segment: end caps keep their native aspect, the middle TILES.
+   Struts span anything from 40px to 300px — stretching one 3:1 sprite across that
+   smears the braid. Caps + tiled middle keeps the rope reading at its drawn thickness. */
+function drawStrutSeg(im,ax,ay,bx,by,th){
+  var nw=im.naturalWidth, nh=im.naturalHeight; if(!nw||!nh)return;
+  var dx=bx-ax, dy=by-ay, len=Math.sqrt(dx*dx+dy*dy); if(len<1)return;
+  var sc=th/nh, full=nw*sc;
+  ctx.save(); ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx));
+  if(len<=full*1.08){ ctx.drawImage(im,0,-th/2,len,th); ctx.restore(); return; }
+  var capS=nw*0.24, capW=capS*sc, midS=nw-capS*2, midW=midS*sc;
+  ctx.drawImage(im, 0,0,capS,nh,           0,-th/2,      capW,th);
+  ctx.drawImage(im, nw-capS,0,capS,nh,     len-capW,-th/2, capW,th);
+  if(midW>0.5){
+    var x=capW, endX=len-capW;
+    ctx.save(); ctx.beginPath(); ctx.rect(capW,-th/2,Math.max(0,endX-capW),th); ctx.clip();
+    while(x<endX){ ctx.drawImage(im, capS,0,midS,nh, x,-th/2, midW,th); x+=midW; }
+    ctx.restore(); }
+  ctx.restore(); }
 var POD_IMG={ sprout:"pod_sprout", acorn:"pod_acorn", lantern:"pod_lantern", berry:"pod_berry" };
 /* ---- FX sprites (canvas, additive, ready-gated; procedural bloom kept) ---- */
 function spawnFX(name,x,y,o){ if(!G||PROG.fx===false)return; o=o||{};
@@ -697,21 +715,37 @@ function ambientFX(){ if(!G||PROG.fx===false)return;
       { vx:(fromLeft?1:-1)*(0.8+Math.random()*0.6), vy:0.2+Math.random()*0.3, vr:(Math.random()-0.5)*0.14,
         rot:Math.random()*6.283, ttl:210, s0:16, s1:16, add:false }); } }
 /* ---- terrain sprite draw (ground ledges + floating shelves; procedural fallback) ---- */
+/* Terrain rects are 44px-tall ground banks 72-540px wide, plus mid-air shelves.
+   The art is a ~1.4:1 island and a ~1.36:1 ledge block, so scaling either to fit an
+   arbitrary rect smears it. Nothing here scales non-uniformly: the island keeps its
+   aspect and its underside hangs BELOW the collision rect, and the ground bank TILES
+   at native aspect, clipped to the rect, with its body running off the bottom. */
 function drawTerrain(r){
   var floating=(r.y+r.h)<(H-3);
-  var body=floating?artImg("world","terrain_shelf_floating"):artImg("world","terrain_ledge_body");
-  if(imgReady(body)){
-    ctx.drawImage(body,r.x,r.y,r.w,r.h);
-    if(!floating){
-      var top=artImg("world","terrain_ledge_top");
-      if(imgReady(top))ctx.drawImage(top,r.x,r.y-6,r.w,16);
-      var edge=artImg("world","terrain_ledge_edge");
-      if(imgReady(edge)){ var ew=Math.min(18,r.w*0.5);
-        if(r.x+r.w<W-1)ctx.drawImage(edge,r.x+r.w-ew,r.y-4,ew,r.h+8);
-        if(r.x>1){ ctx.save(); ctx.translate(r.x+ew,r.y-4); ctx.scale(-1,1);
-          ctx.drawImage(edge,0,0,ew,r.h+8); ctx.restore(); } }
-    }
-    return;
+  if(floating){
+    var isl=artImg("world","terrain_shelf_floating");
+    if(imgReady(isl)){
+      var iar=isl.naturalWidth/isl.naturalHeight;
+      var dw=r.w*1.10, dh=dw/iar;               // overhang a touch past the landing rect
+      ctx.drawImage(isl, r.x-(dw-r.w)/2, r.y-dh*0.10, dw, dh);
+      return; }
+  } else {
+    var tile=artImg("world","terrain_ledge_top");
+    if(imgReady(tile)){
+      var th=Math.max(r.h*2,96);                 // taller than the rect; the excess runs offscreen
+      var tw=th*(tile.naturalWidth/tile.naturalHeight);
+      var ty=r.y-th*0.12;                        // grass tufts poke above the walkable line
+      ctx.save(); ctx.beginPath(); ctx.rect(r.x,ty,r.w,H-ty+8); ctx.clip();
+      var x; for(x=r.x;x<r.x+r.w;x+=tw) ctx.drawImage(tile,x,ty,tw,th);
+      var cap=artImg("world","terrain_ledge_edge");
+      if(imgReady(cap)){
+        var cw=th*(cap.naturalWidth/cap.naturalHeight);
+        if(r.w>=cw){                             // only cap ledges wide enough to hold one
+          if(r.x+r.w<W-1) ctx.drawImage(cap,r.x+r.w-cw,ty,cw,th);
+          if(r.x>1){ ctx.save(); ctx.translate(r.x+cw,ty); ctx.scale(-1,1);
+            ctx.drawImage(cap,0,0,cw,th); ctx.restore(); } } }
+      ctx.restore();
+      return; }
   }
   ctx.fillStyle="#1a2415"; ctx.fillRect(r.x,r.y,r.w,r.h);
   ctx.fillStyle="#2c3e20"; ctx.fillRect(r.x,r.y,r.w,6);
@@ -777,7 +811,7 @@ function render(){
     if(imgReady(sImg)){
       var sdx=b.x-a.x, sdy=b.y-a.y, slen=Math.sqrt(sdx*sdx+sdy*sdy)||1;
       var sth=Math.max(s.crystal?14:12, Math.min(s.crystal?24:22, slen*(s.crystal?0.34:0.30)));
-      drawSpriteWH(sImg,(a.x+b.x)/2,(a.y+b.y)/2,slen,sth,Math.atan2(sdy,sdx));
+      drawStrutSeg(sImg,a.x,a.y,b.x,b.y,sth);
     } else {
       ctx.strokeStyle=col; ctx.lineWidth=s.crystal?5:3.5;
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
