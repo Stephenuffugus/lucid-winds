@@ -102,6 +102,8 @@
     overflow-y:auto;
   }
   .overlay.hidden { display:none; }
+  /* tall scrolling overlays must top-align — centered flex + overflow clips the title off-screen */
+  #collect { justify-content:flex-start; padding-top:calc(30px + env(safe-area-inset-top,0px)); }
   h1 { font-size:2.4rem; letter-spacing:.06em; color:#e8dcc8; font-weight:800;
        text-shadow:0 2px 18px rgba(200,168,75,.35); }
   h1 .sub { display:block; font-size:.74rem; letter-spacing:.42em; color:#7ab356;
@@ -209,7 +211,7 @@
 <div id="skins" class="overlay hidden">
   <div class="close" id="skinsClose">&times;</div>
   <h2>Dew Skins</h2>
-  <p class="tag">Cosmetic only. Earned by rolling — never bought.</p>
+  <p class="tag">Cosmetic only. Earned by rolling, never bought.</p>
   <div class="card"><h3>Collection</h3><div class="skinrow" id="skinList"></div></div>
   <button class="btn ghost" id="skinsBack">Back</button>
 </div>
