@@ -172,7 +172,7 @@ var BALLR=11, GRAV=1500, DRAINY=902;
 // field — power scales launch strength. (A literal vertical shooter lane fights our
 // radial collision model — a ball rising dead-on bounces straight back; a true
 // habitrail lane is deferred to the P1 ramp system's detach-and-tween.)
-var LANE_X=412, LANE_Y0=700;
+var LANE_X=405, LANE_Y0=700;   // 405: clear of the right divider post (422,700 r5) — 412 interpenetrated it
 var PLUNGE_VX=150, PLUNGE_VX_R=170;   // launch vx = -(VX + power*VX_R)  (up-and-LEFT)
 var PLUNGE_VY=1010, PLUNGE_VY_R=430;  // launch vy = -(VY + power*VY_R)
 var WALLS=[
@@ -266,10 +266,12 @@ var QUESTS=[
 
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0;
-function serveBall(){ // rest the bead at the bottom of the shooter lane, ready to plunge
+function serveBall(keepBallState){ // rest the bead at the bottom of the shooter lane, ready to plunge
   G.balls.push({x:LANE_X,y:LANE_Y0,vx:0,vy:0,r:BALLR,inLane:true,trail:[]});
   G.awaitLaunch=true; G.plunge=0; G.plungeHold=false;
-  G.skillLit=-1; G.skillWin=0; G.skillDone=false;
+  G.skillLit=-1; G.skillWin=0;
+  if(keepBallState){ G.skillDone=true; return; }          // lock replacement: same ball — keep tilt/net/kick/skill spent
+  G.skillDone=false;
   G.tilt=0; G.tiltWarned=false; G.tiltOut=0;              // tilt meter resets each new ball
   G.netTime=(G.ball>=G.maxBall||G.mode==='zen')?999:8;    // net armed
   G.kickLit=true; G.kickRetL=false; G.kickRetR=false;     // Taproot kickback armed each ball
@@ -287,7 +289,7 @@ function newGame(mode){
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
       kickLit:false, kickRetL:false, kickRetR:false,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
-      locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
+      locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, superCount:0, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
       lastRail:null, lastRailT:0, rush:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
@@ -374,15 +376,18 @@ function physics(dt){
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
     if(G.kickLit && G.tiltOut<=0 && b.y>850 && b.x<160 && b.vy>0){
       G.kickLit=false; G.kickFires=(G.kickFires||0)+1; b.vy=-1150; b.vx=100;
+      if(b.y>DRAINY-30)b.y=DRAINY-30;   // a >=50ms jank frame can land the bead past the drain line in the same step
       burst(b.x,b.y,10,'#7ab356'); float(118,790,'TAPROOT!'); sfx('launch'); haptic(16);
       G.flash=Math.max(G.flash,0.25); G.shake=Math.max(G.shake,5); }
   }
   // drain check
   for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
-    if(b.y>DRAINY){ // wizard save > Pollen MB save > moss net save > drain
-      if(G.wizard && G.wizSave>0){ b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
-      else if(G.pollenMB && G.mbSave>0){ b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
-      else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
+    if(b.y>DRAINY){ // wizard save > Pollen MB save > moss net save > drain. TILT disables all saves.
+      // an outlane drain crosses DRAINY inside the channel where a bounce-back is trapped
+      // below the guides — every save re-centres the bead between the flippers first
+      if(G.wizard && G.wizSave>0 && G.tiltOut<=0){ b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.pollenMB && G.mbSave>0 && G.tiltOut<=0){ b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.x=Math.max(200,Math.min(340,b.x)); b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
       else { drainBall(i); }
     }
   }
@@ -419,6 +424,10 @@ function rushHit(){ if(G.rush>0){ G.score+=2000; } }
 function drainBall(i){ var b=G.balls[i]; burst(b.x,DRAINY,8,'#5a4632'); G.balls.splice(i,1); sfx('drain');
   if(G.pollenMB && G.balls.length+G.mbRelease<=1){ endPollenMB(); }   // back to one bead = multiball over
   if(G.balls.length===0){ G.multiball=false; G.mult=1; G.combo=0; G.rush=0;
+    // a failed FULL BLOOM dies with the last ball — no completion bonus, no 1M mode on the
+    // next serve; the quest checklist resets so the wizard can be re-earned
+    if(G.wizard){ G.wizard=false; G.wizSave=0; G.wizJackpots=0; G.wizardReady=false;
+      for(var wq=0;wq<QUESTS.length;wq++)G.questsDone[wq]=false; float(VW/2,300,'FULL BLOOM OVER'); }
     var eob=Math.round((G.bonusBase||0)*(G.bonusMult||1)); if(eob>0){ G.score+=eob; float(VW/2,520,'BONUS +'+eob); }  // end-of-ball tally
     G.bonusBase=0; G.bonusMult=1; G.pf2x=false; G.pf2xT=0;
     if(G.mode==='zen'){ G.ball++; serveBall(); }
@@ -429,8 +438,9 @@ function launch(){ if(!G||!G.awaitLaunch)return; var b=G.balls[0]; if(!b||!b.inL
   var power=Math.max(0.06,Math.min(1,G.plunge||0));
   b.inLane=false; b.vx=-(PLUNGE_VX+power*PLUNGE_VX_R); b.vy=-(PLUNGE_VY+power*PLUNGE_VY_R);
   G.awaitLaunch=false; G.plungeHold=false;
-  // arm the skill shot: one flower bumper lights — strike it FIRST within the window to score
-  G.skillLit=Math.floor(G.rng()*BUMPERS.length); G.skillWin=2.2; G.skillDone=false;
+  // arm the skill shot: one flower bumper lights — strike it FIRST within the window to
+  // score. A lock-replacement serve keeps skillDone=true so it stays once per ball.
+  if(!G.skillDone){ G.skillLit=Math.floor(G.rng()*BUMPERS.length); G.skillWin=2.2; }
   sfx('launch'); haptic(10); }
 // Nudge is the honest top-down stand-in for FX body-english: a one-shot impulse on
 // every live bead. Overuse spikes the tilt meter; 100 = TILT (dead flippers, no save).
@@ -510,8 +520,9 @@ function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
   if(G.pollenMB && (sh.type==='ramp'||sh.type==='orbit')){
     var pj=jackpotValue(); G.score+=pj; G.jpCount++;
     float(sh.x,sh.y-20,'JACKPOT +'+pj); sfx('bloom'); G.flash=Math.max(G.flash,0.45); G.shake=Math.max(G.shake,6); haptic(18);
-    if(G.jpCount>=4 && !G.superLit){ G.superLit=true; G.scoopLit=true; float(330,566,'SUPER AT THE SCOOP'); sfx('save'); }
+    if(G.jpCount>=4 && !G.superLit && (G.superCount||0)<2){ G.superLit=true; G.scoopLit=true; float(330,566,'SUPER AT THE SCOOP'); sfx('save'); }
     return; }
+  rushHit();   // flow shots are switches too — the rush banner promises "every switch"
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=1000; comboHit(sh.x,sh.y); float(sh.x,sh.y-20,'+'+pts); sfx('bump',G.combo); questShot(sh.id); }
 function onRollover(sh){ if(sh.cd>0||sh.lamp)return; sh.cd=0.5; sh.lamp=1; rushHit();
   G.score+=Math.round(250*scoreMul()); G.bonusBase+=1000; sfx('bump',2); float(sh.x,sh.y+22,'✦');
@@ -551,8 +562,8 @@ function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=t
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
 function startPollenMB(){
   G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++;
-  G.mbLevel=1+(G.mbCount-1)*0.5;                    // scales across the game
-  G.jpLadder=1; G.jpCount=0; G.superLit=false; G.mbAdded=false;
+  G.mbLevel=Math.min(2,1+(G.mbCount-1)*0.5);        // scales across the game, capped so the wizard stays king
+  G.jpLadder=1; G.jpCount=0; G.superLit=false; G.superCount=0; G.mbAdded=false;
   G.mbSave=Math.max(5,10-3*(G.mbCount-1));          // 10s -> 7s -> 5s
   G.locked=0; G.mbRelease=3; G.mbRelT=0.1;
   G.awaitLaunch=false; G.plungeHold=false;   // a stale plunger wait would freeze the flippers
@@ -560,7 +571,7 @@ function startPollenMB(){
   float(265,300,'POLLEN MULTIBALL'); float(265,334,'jackpots on every ramp and orbit');
   sfx('bloom'); haptic(35);
 }
-function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
+function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.scoopLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
   float(265,300,'MULTIBALL OVER'); sfx('drain'); }
 function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
 function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12);
@@ -591,8 +602,9 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false; sb.vx=-260; sb.vy=-900; sfx('launch'); haptic(12); G.scoopBall=null;
     if(G.scoopMode==='wizard'){ startWizard(); }
     else if(G.scoopMode==='super'){ var sj=Math.round(1000000*G.mbLevel); G.score+=sj; G.superLit=false; G.scoopLit=false;
-      G.jpLadder=Math.min(4,G.jpLadder*2); G.jpCount=0;
-      float(265,300,'SUPER JACKPOT +'+sj); float(265,334,'jackpots doubled'); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,12); haptic(40); }
+      G.superCount=(G.superCount||0)+1; G.jpCount=0;
+      var jpGrew=G.jpLadder<2; G.jpLadder=Math.min(2,G.jpLadder*2);   // one doubling, two supers max — the wizard stays king
+      float(265,300,'SUPER JACKPOT +'+sj); if(jpGrew)float(265,334,'jackpots doubled'); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,12); haptic(40); }
     else if(G.scoopMode==='quest'){ var qi=-1,qq; for(qq=0;qq<QUESTS.length;qq++){ if(!G.questsDone[qq]){ qi=qq; break; } } if(qi>=0)startQuest(qi); else { G.score+=15000; float(sb.x,sb.y-24,'+15000'); } }
     else { G.score+=G.scoopAward; float(sb.x,sb.y-24,'+'+G.scoopAward); } } }
   // rail (ramp/orbit) advance — tween the detached bead along its path, then inject at
@@ -604,7 +616,7 @@ function step(dt){ if(!G)return; G.t+=dt;
       if(rb.railLock){ G.balls.splice(ri,1); G.locked++; G.lockLit=false; G.score+=25000;
         burst(LOCK_NEST.x,LOCK_NEST.y,10,'#f2d98a'); float(LOCK_NEST.x,LOCK_NEST.y+28,'POLLEN '+G.locked+' LOCKED'); sfx('bloom'); haptic(20);
         if(G.locked>=3){ startPollenMB(); }
-        else if(G.balls.length===0){ serveBall(); float(VW/2,400,'new bead served'); }
+        else if(G.balls.length===0){ serveBall(true); float(VW/2,400,'new bead served'); }
         continue; }
       var doneSh=shotById(rb.onRail); if(doneSh && doneSh.id==='heart'){ doneSh.flip=!doneSh.flip; }   // the diverter flips
       rb.x=rb.railExit.x; rb.y=rb.railExit.y; rb.vx=rb.railExit.vx; rb.vy=rb.railExit.vy; rb.onRail=null; rb.railPath=null; sfx('save'); }
@@ -620,8 +632,9 @@ function step(dt){ if(!G)return; G.t+=dt;
         G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+14,vx:-80,vy:140,r:BALLR,inLane:false,trail:[]});
         float(265,300,'ADD A BALL!'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(25); }
       if(G.spin.done>=G.spin.n){ float(G.spin.x,G.spin.y-22,'SPIN +'+(G.spin.n*G.spin.val)); G.spin=null; } } }
-  // quest timer, mode-intro dim, wizard ball-save countdown
-  if(G.quest){ G.quest.timer-=dt; if(G.quest.timer<=0){ float(265,300,G.quest.name+' timed out'); sfx('drain'); G.quest=null; } }
+  // quest timer, mode-intro dim, wizard ball-save countdown. A quest PAUSES during
+  // Pollen MB (jackpots replace quest scoring, so the clock must not burn invisibly).
+  if(G.quest && !G.pollenMB){ G.quest.timer-=dt; if(G.quest.timer<=0){ float(265,300,G.quest.name+' timed out'); sfx('drain'); G.quest=null; } }
   if(G.introT>0){ G.introT-=dt; if(G.introT<0)G.introT=0; }
   if(G.wizard && G.wizSave>0){ G.wizSave-=dt; if(G.wizSave<0)G.wizSave=0; }
   if(G.pf2xT>0){ G.pf2xT-=dt; if(G.pf2xT<=0){ G.pf2xT=0; G.pf2x=false; } }
