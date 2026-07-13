@@ -13,6 +13,9 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
         if(m.type()!=='error') return;
         // file:// runs can't load /sunbeam-sdk.js or the optional ground-art override — expected
         if(/ERR_FILE_NOT_FOUND|Failed to load resource/.test(m.text())) return;
+        // ...and a web app manifest is only fetchable over http(s), so file:// CORS-blocks it.
+        // Narrow on purpose: any OTHER cross-origin failure must still fail the run.
+        if(/Access to manifest at .*manifest\.webmanifest/.test(m.text())) return;
         errors.push('console: '+m.text());
       });
 

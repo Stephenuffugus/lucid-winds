@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d100c">
 <title>Dewball · Lucid Winds</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dewball">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body {
@@ -126,6 +131,9 @@
   .btn.ghost { background:transparent; color:#c8a84b; border:2px solid rgba(200,168,75,.4);
                box-shadow:none; min-width:0; min-height:48px; padding:10px 20px; font-size:.88rem; }
   .row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .btn.hidden, #rotateTip.hidden { display:none; }
+  #rotateTip { color:#7ab356; font-size:.78rem; max-width:320px; line-height:1.5;
+               border:1px dashed rgba(122,179,86,.35); border-radius:12px; padding:9px 14px; }
   .card {
     background:rgba(20,26,20,.7); border:1px solid rgba(122,179,86,.18);
     border-radius:16px; padding:14px 16px; max-width:400px; width:100%;
@@ -208,6 +216,12 @@
     <button class="btn ghost" id="mCollect">Collection</button>
     <button class="btn ghost" id="mMute">Sound: On</button>
   </div>
+  <div class="row">
+    <button class="btn ghost" id="mInvY">Invert Y: Off</button>
+    <button class="btn ghost" id="mFull">Horizon mode</button>
+    <button class="btn ghost" id="mInstall">Add to Home Screen</button>
+  </div>
+  <div id="rotateTip" class="hidden">Turn your phone sideways for horizon mode. Bigger world, no browser bar.</div>
   <button class="btn ghost" id="mExit">◄ Back to garden</button>
   <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double-tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
 </div>
@@ -342,7 +356,7 @@
     return { v:2, lifetimeAbsorbs:0, unlockedSkins:["dew"], selectedSkin:"dew",
              grove:[], bestZen:0, sbDate:"", sbToday:0,
              worlds:{}, // id -> {stars,bestD,keeps:[names]}
-             muted:false, camAssist:true };
+             muted:false, camAssist:true, invertY:false };
   }
   function loadSave(){
     try{
@@ -1152,11 +1166,14 @@
         if(Math.abs(gp.axes[3])>0.18) ry+=gp.axes[3];
         if(gp.buttons[0]&&gp.buttons[0].pressed) tryDash(); } }catch(e){}
     var m=Math.sqrt(ix*ix+iy*iy); if(m>1){ ix/=m; iy/=m; m=1; }
-    // camera orbit — push UP tilts the camera up (standard), and any camera input
-    // holds the auto-assist off for a beat so the two never fight
+    // camera orbit. camPitch is the camera's ELEVATION above the ball: high = top-down,
+    // low = horizon. So "look up" means pitch DOWN toward the horizon, and stick-up
+    // (ry<0) must therefore decrease it. Default is non-inverted; save.invertY flips it.
+    // Any camera input holds the auto-assist off for a beat so the two never fight.
     var rm=Math.sqrt(rx*rx+ry*ry); if(rm>1){ rx/=rm; ry/=rm; }
     if(rm>0.02) rStickCool=0.9; else if(rStickCool>0) rStickCool-=dt;
-    camYawT-=rx*3.1*dt; camPitch=clamp(camPitch-ry*1.8*dt,0.22,1.12);
+    camYawT-=rx*3.1*dt;
+    camPitch=clamp(camPitch+(save.invertY?-1:1)*ry*1.8*dt,0.22,1.12);
     if(TEST&&(testIn.x||testIn.y)){ input.x=testIn.x; input.z=testIn.y;
       var tm=Math.sqrt(input.x*input.x+input.z*input.z); if(tm>1){ input.x/=tm; input.z/=tm; } return; }
     // camera-relative move (stick up = away from camera, stick right = screen right).
@@ -1606,8 +1623,91 @@
       else R._slow=0; }
   }
 
+  // ---------- horizon mode (fullscreen + landscape) ----------
+  // iOS Safari has no Element.requestFullscreen, so the ONLY way to lose the URL bar
+  // there is to install to the home screen and launch standalone. That is why the
+  // install button and this share a menu row: on iPhone, install IS horizon mode.
+  function isFs(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
+  function fsSupported(){ var e=document.documentElement;
+    return !!(e.requestFullscreen||e.webkitRequestFullscreen); }
+  function goFullscreen(){
+    var e=document.documentElement;
+    var p=null;
+    try{ p=e.requestFullscreen?e.requestFullscreen():(e.webkitRequestFullscreen?e.webkitRequestFullscreen():null); }catch(err){}
+    // orientation lock only resolves once we are actually fullscreen, and only on
+    // Android Chrome. Failure is expected and must stay silent.
+    function lock(){ try{ if(screen.orientation&&screen.orientation.lock)
+      screen.orientation.lock("landscape")["catch"](function(){}); }catch(err){} }
+    if(p&&p.then) p.then(lock)["catch"](function(){}); else lock();
+  }
+  function exitFullscreen(){
+    try{ if(document.exitFullscreen) document.exitFullscreen();
+         else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); }catch(err){}
+    try{ if(screen.orientation&&screen.orientation.unlock) screen.orientation.unlock(); }catch(err){}
+  }
+  function standalone(){
+    return !!(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)
+        || !!window.navigator.standalone;   // iOS
+  }
+  function isPortrait(){ return window.innerHeight>window.innerWidth; }
+  function syncModeUI(){
+    var fb=$("mFull"), ib=$("mInstall"), inst=standalone();
+    // Horizon-mode button only where fullscreen can actually happen. On an iPhone in
+    // Safari it cannot, and once installed we are already fullscreen, so hide it in
+    // both cases rather than offer a button that lies.
+    var showFull=fsSupported() && !inst;
+    fb.classList[showFull?"remove":"add"]("hidden");
+    if(showFull) fb.textContent=isFs()?"Exit horizon mode":"Horizon mode";
+    // Install button stays visible even when beforeinstallprompt never fires, because
+    // iOS Safari NEVER fires it and iPhone is exactly where installing matters most
+    // (it is the only way to lose the URL bar there). doInstall() falls back to the
+    // Share-sheet instructions. Hidden only when pointless: already installed, or
+    // running inside the portal iframe where the parent owns the install.
+    ib.classList[(inst||SWS_EMBED)?"add":"remove"]("hidden");
+    // only nudge people who would actually gain something: portrait, touch, not installed
+    var nudge=isPortrait() && ("ontouchstart" in window) && !isFs() && !inst;
+    $("rotateTip").classList[nudge?"remove":"add"]("hidden");
+  }
+
+  // ---------- add to home screen ----------
+  // The service worker is what makes the install offer possible at all. Skip it inside
+  // the portal iframe (the parent owns that scope) and on file:// (probe runs).
+  if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js")["catch"](function(){});
+    });
+  }
+  var deferredPrompt=null;
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault(); deferredPrompt=e;
+    if(!SWS_EMBED) $("mInstall").classList.remove("hidden");
+  });
+  window.addEventListener("appinstalled", function(){
+    deferredPrompt=null; $("mInstall").classList.add("hidden");
+  });
+  function iOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent)
+    || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
+  function doInstall(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(){ deferredPrompt=null;
+        $("mInstall").classList.add("hidden"); })["catch"](function(){});
+      return;
+    }
+    alert(iOS()
+      ? "To add Dewball to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen in landscape, with no browser bar."
+      : "To add Dewball to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.");
+  }
+
   // ---------- boot ----------
   function wireMenus(){
+    $("mInvY").onclick=function(){ save.invertY=!save.invertY; persist();
+      $("mInvY").textContent="Invert Y: "+(save.invertY?"On":"Off"); };
+    $("mFull").onclick=function(){
+      if(!fsSupported()&&!standalone()){ doInstall(); return; }   // iPhone: install is the only path
+      if(isFs()) exitFullscreen(); else goFullscreen();
+    };
+    $("mInstall").onclick=doInstall;
     $("mSkins").onclick=function(){ buildSkins(); $("skins").classList.remove("hidden"); };
     $("skinsClose").onclick=$("skinsBack").onclick=function(){ $("skins").classList.add("hidden"); };
     $("mCollect").onclick=function(){ buildCollection(); $("collect").classList.remove("hidden"); };
@@ -1623,6 +1723,12 @@
   muted=!!save.muted;
   wireMenus(); wireInput(); buildWorldRow();
   $("mMute").textContent="Sound: "+(muted?"Off":"On");
+  $("mInvY").textContent="Invert Y: "+(save.invertY?"On":"Off");
+  syncModeUI();
+  window.addEventListener("resize", syncModeUI);
+  window.addEventListener("orientationchange", function(){ setTimeout(syncModeUI,120); });
+  document.addEventListener("fullscreenchange", syncModeUI);
+  document.addEventListener("webkitfullscreenchange", syncModeUI);
   if(!TEST) requestAnimationFrame(frame);
 
   // ---------- headless test hook ----------
@@ -1630,6 +1736,9 @@
     window.DB_DEV={
       start:function(mode,n){ startWorld(mode==="zen"?5:Math.max(0,Math.min(WORLDS.length-1,(n||1)-1))); return W.id; },
       roll:function(x,y){ testIn.x=x||0; testIn.y=y||0; },
+      pitch:function(){ return camPitch; },
+      camY:function(){ return camera?camera.position.y:0; },
+      setInvertY:function(v){ save.invertY=!!v; },
       step:function(dt){ tick(dt||0.016); },
       size:function(){ return R?R.D:0; },
       setD:function(d){ R.vol=ballVolFromD(d); R.D=d; },
