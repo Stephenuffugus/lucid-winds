@@ -1159,12 +1159,14 @@
     camYawT-=rx*3.1*dt; camPitch=clamp(camPitch-ry*1.8*dt,0.22,1.12);
     if(TEST&&(testIn.x||testIn.y)){ input.x=testIn.x; input.z=testIn.y;
       var tm=Math.sqrt(input.x*input.x+input.z*input.z); if(tm>1){ input.x/=tm; input.z/=tm; } return; }
-    // camera-relative move (stick up = away from camera). Mapped against the yaw
-    // TARGET, not the smoothed camera — a lagging/assisted camera must never
-    // re-aim a held stick direction under the player's thumb.
+    // camera-relative move (stick up = away from camera, stick right = screen right).
+    // Mapped against the yaw TARGET, not the smoothed camera — a lagging/assisted
+    // camera must never re-aim a held stick direction under the player's thumb.
+    // Screen-right for forward (sin,cos) is (-cos, sin) — sign it wrong and X inverts.
     var fw=[Math.sin(camYawT),Math.cos(camYawT)];
-    input.x=fw[0]*(-iy)+fw[1]*ix;
-    input.z=fw[1]*(-iy)-fw[0]*ix;
+    var rt=[-fw[1],fw[0]];
+    input.x=fw[0]*(-iy)+rt[0]*ix;
+    input.z=fw[1]*(-iy)+rt[1]*ix;
     // gentle cam assist: small corrections only, only while rolling roughly away
     // from camera, never during (or just after) manual camera input
     if(save.camAssist&&rStickCool<=0&&!touchR&&m>0.25){
