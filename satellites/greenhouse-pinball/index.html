@@ -277,6 +277,7 @@ function newGame(mode){
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
       kickLit:false, kickRetL:false, kickRetR:false,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
+      locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
       netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
@@ -367,8 +368,9 @@ function physics(dt){
   }
   // drain check
   for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
-    if(b.y>DRAINY){ // wizard ball-save > moss net save > drain
+    if(b.y>DRAINY){ // wizard save > Pollen MB save > moss net save > drain
       if(G.wizard && G.wizSave>0){ b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.pollenMB && G.mbSave>0){ b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
       else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
       else { drainBall(i); }
     }
@@ -396,6 +398,7 @@ function triggerBloom(){ G.growth=0; G.blooms++; G.multiball=true; G.mbTime=8;
   if(G.mode==='zen'){ if(G.score>(PROG.best.zen||0))PROG.best.zen=G.score; PROG.blooms=(PROG.blooms||0)+1; saveProg(); try{ if(window._sbCapEarn)_sbCapEarn(2,'greenhousepinball:zen'); }catch(e){} }
 }
 function drainBall(i){ var b=G.balls[i]; burst(b.x,DRAINY,8,'#5a4632'); G.balls.splice(i,1); sfx('drain');
+  if(G.pollenMB && G.balls.length+G.mbRelease<=1){ endPollenMB(); }   // back to one bead = multiball over
   if(G.balls.length===0){ G.multiball=false; G.mult=1; G.combo=0;
     var eob=Math.round((G.bonusBase||0)*(G.bonusMult||1)); if(eob>0){ G.score+=eob; float(VW/2,520,'BONUS +'+eob); }  // end-of-ball tally
     G.bonusBase=0; G.bonusMult=1; G.pf2x=false; G.pf2xT=0;
@@ -444,21 +447,38 @@ function onDrop(sh){ if(sh.down||sh.cd>0)return; sh.cd=0.2; sh.down=true; sh.lam
 function onScoop(b,sh){ b.captured=true; b.vx=0; b.vy=0; b.x=sh.x; b.y=sh.y;
   G.scoopBall=b; G.scoopHold=1.0; G.scoopWasLit=!!G.scoopLit; G.scoopLit=false; sh.lamp=0;
   var allDone=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])allDone=false;
-  if(G.wizardReady) G.scoopMode='wizard';
-  else if(G.scoopWasLit && !allDone && !G.quest) G.scoopMode='quest';
-  else { G.scoopMode='mystery'; G.scoopAward=G.scoopWasLit?25000:15000; }
+  if(G.pollenMB) G.scoopMode=G.superLit?'super':'mystery';     // no quest/wizard start mid-multiball
+  else if(G.wizardReady && !G.multiball) G.scoopMode='wizard';
+  else if(G.scoopWasLit && !allDone && !G.quest && !G.multiball) G.scoopMode='quest';
+  else G.scoopMode='mystery';
+  if(G.scoopMode==='mystery') G.scoopAward=G.scoopWasLit?25000:15000;
   sfx('save'); haptic(18); }
 
 /* ===== ramps/orbits — detach-and-tween rail (P1 flow) ===== */
+// Pollen Lock nest — the glasshouse crown. When B-L-O-O-M lights the lock, the
+// center Greenhouse ramp DIVERTS here and swallows the bead (3 locks = multiball).
+var LOCK_NEST={x:340,y:152};
+var LOCK_PATH=[[300,405],[290,235],[318,158],[340,152]];
 function pathLen(path){ var t=0,i; for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1]; t+=Math.sqrt(dx*dx+dy*dy); } return t; }
 function pathPoint(path,t){ var total=pathLen(path), d=t*total, acc=0,i;
   for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1],L=Math.sqrt(dx*dx+dy*dy);
     if(acc+L>=d || i===path.length-2){ var f=L>0?(d-acc)/L:0; if(f<0)f=0; if(f>1)f=1; return [path[i][0]+dx*f, path[i][1]+dy*f]; } acc+=L; }
   return [path[path.length-1][0], path[path.length-1][1]]; }
-function enterRail(b,sh){ b.onRail=sh.id; b.railPath=sh.path; b.railT=0; b.railDur=sh.dur; b.railExit=sh.exit; scoreShot(sh); sfx('launch'); }
+function enterRail(b,sh){
+  // lock divert: lit lock + normal play + Greenhouse ramp -> the bead rides into the nest
+  if(sh.id==='green' && G.lockLit && !G.multiball && !G.wizard && G.locked<3){
+    b.onRail=sh.id; b.railPath=LOCK_PATH; b.railT=0; b.railDur=0.5; b.railExit=null; b.railLock=true;
+    sfx('launch'); return; }
+  b.onRail=sh.id; b.railPath=sh.path; b.railT=0; b.railDur=sh.dur; b.railExit=sh.exit; scoreShot(sh); sfx('launch'); }
 function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
   if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
     if(G.wizJackpots>=12)endWizard(); return; }
+  // Pollen MB: every ramp/orbit is a JACKPOT; 4 jackpots light the SUPER at the scoop
+  if(G.pollenMB && (sh.type==='ramp'||sh.type==='orbit')){
+    var pj=jackpotValue(); G.score+=pj; G.jpCount++;
+    float(sh.x,sh.y-20,'JACKPOT +'+pj); sfx('bloom'); G.flash=Math.max(G.flash,0.45); G.shake=Math.max(G.shake,6); haptic(18);
+    if(G.jpCount>=4 && !G.superLit){ G.superLit=true; G.scoopLit=true; float(330,566,'SUPER AT THE SCOOP'); sfx('save'); }
+    return; }
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=1000; comboHit(sh.x,sh.y); float(sh.x,sh.y-20,'+'+pts); sfx('bump',G.combo); questShot(sh.id); }
 function onRollover(sh){ if(sh.cd>0||sh.lamp)return; sh.cd=0.5; sh.lamp=1;
   G.score+=Math.round(250*scoreMul()); G.bonusBase+=1000; sfx('bump',2); float(sh.x,sh.y+22,'✦');
@@ -494,6 +514,21 @@ function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=t
   float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30);
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
+/* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
+function startPollenMB(){
+  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++;
+  G.mbLevel=1+(G.mbCount-1)*0.5;                    // scales across the game
+  G.jpLadder=1; G.jpCount=0; G.superLit=false; G.mbAdded=false;
+  G.mbSave=Math.max(5,10-3*(G.mbCount-1));          // 10s -> 7s -> 5s
+  G.locked=0; G.mbRelease=3; G.mbRelT=0.1;
+  G.awaitLaunch=false; G.plungeHold=false;   // a stale plunger wait would freeze the flippers
+  G.slow=0.35; G.flash=Math.max(G.flash,0.8); G.shake=Math.max(G.shake,10);
+  float(265,300,'POLLEN MULTIBALL'); float(265,334,'jackpots on every ramp and orbit');
+  sfx('bloom'); haptic(35);
+}
+function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
+  float(265,300,'MULTIBALL OVER'); sfx('drain'); }
+function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
 function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12);
   G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
   G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
@@ -520,15 +555,34 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.dropResetT>0){ G.dropResetT-=dt; if(G.dropResetT<=0){ G.dropResetT=0; for(si=0;si<SHOTS.length;si++){ if(SHOTS[si].type==='drop'){ SHOTS[si].down=false; SHOTS[si].lamp=1; } } } }
   if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false; sb.vx=-260; sb.vy=-900; sfx('launch'); haptic(12); G.scoopBall=null;
     if(G.scoopMode==='wizard'){ startWizard(); }
+    else if(G.scoopMode==='super'){ var sj=Math.round(1000000*G.mbLevel); G.score+=sj; G.superLit=false; G.scoopLit=false;
+      G.jpLadder=Math.min(4,G.jpLadder*2); G.jpCount=0;
+      float(265,300,'SUPER JACKPOT +'+sj); float(265,334,'jackpots doubled'); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,12); haptic(40); }
     else if(G.scoopMode==='quest'){ var qi=-1,qq; for(qq=0;qq<QUESTS.length;qq++){ if(!G.questsDone[qq]){ qi=qq; break; } } if(qi>=0)startQuest(qi); else { G.score+=15000; float(sb.x,sb.y-24,'+15000'); } }
     else { G.score+=G.scoopAward; float(sb.x,sb.y-24,'+'+G.scoopAward); } } }
-  // rail (ramp/orbit) advance — tween the detached bead along its path, then inject at the exit
-  for(var ri=0;ri<G.balls.length;ri++){ var rb=G.balls[ri]; if(!rb.onRail)continue;
-    rb.railT+=dt/rb.railDur; if(rb.railT>=1){ rb.x=rb.railExit.x; rb.y=rb.railExit.y; rb.vx=rb.railExit.vx; rb.vy=rb.railExit.vy; rb.onRail=null; rb.railPath=null; sfx('save'); }
+  // rail (ramp/orbit) advance — tween the detached bead along its path, then inject at
+  // the exit. A lock-diverted bead is swallowed by the nest instead (backwards loop:
+  // locking splices).
+  for(var ri=G.balls.length-1;ri>=0;ri--){ var rb=G.balls[ri]; if(!rb.onRail)continue;
+    rb.railT+=dt/rb.railDur;
+    if(rb.railT>=1){
+      if(rb.railLock){ G.balls.splice(ri,1); G.locked++; G.lockLit=false; G.score+=25000;
+        burst(LOCK_NEST.x,LOCK_NEST.y,10,'#f2d98a'); float(LOCK_NEST.x,LOCK_NEST.y+28,'POLLEN '+G.locked+' LOCKED'); sfx('bloom'); haptic(20);
+        if(G.locked>=3){ startPollenMB(); }
+        else if(G.balls.length===0){ serveBall(); float(VW/2,400,'new bead served'); }
+        continue; }
+      rb.x=rb.railExit.x; rb.y=rb.railExit.y; rb.vx=rb.railExit.vx; rb.vy=rb.railExit.vy; rb.onRail=null; rb.railPath=null; sfx('save'); }
     else { var pp=pathPoint(rb.railPath,rb.railT); rb.x=pp[0]; rb.y=pp[1]; } }
-  // spinner rip — decaying score ticks
+  // Pollen MB: staggered nest release + ball-save countdown
+  if(G.mbRelease>0){ G.mbRelT-=dt; if(G.mbRelT<=0){ G.mbRelT=0.25; G.mbRelease--;
+    G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+14,vx:-60-G.mbRelease*70,vy:140,r:BALLR,inLane:false,trail:[]}); sfx('launch'); } }
+  if(G.pollenMB && G.mbSave>0){ G.mbSave-=dt; if(G.mbSave<0)G.mbSave=0; }
+  // spinner rip — decaying score ticks; a big rip during Pollen MB adds a ball (once)
   if(G.spin){ G.spin.ang+=G.spin.w*dt*6; G.spin.w*=Math.pow(0.5,dt); G.spin.tickT-=dt;
     if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*scoreMul()); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
+      if(G.pollenMB && !G.mbAdded && G.spin.done>=8 && G.balls.length<5){ G.mbAdded=true;
+        G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+14,vx:-80,vy:140,r:BALLR,inLane:false,trail:[]});
+        float(265,300,'ADD A BALL!'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(25); }
       if(G.spin.done>=G.spin.n){ float(G.spin.x,G.spin.y-22,'SPIN +'+(G.spin.n*G.spin.val)); G.spin=null; } } }
   // quest timer, mode-intro dim, wizard ball-save countdown
   if(G.quest){ G.quest.timer-=dt; if(G.quest.timer<=0){ float(265,300,G.quest.name+' timed out'); sfx('drain'); G.quest=null; } }
@@ -589,6 +643,19 @@ function render(){ if(!ctx||!G)return;
     ctx.save(); ctx.fillStyle='rgba(20,28,18,0.5)'; ctx.fillRect(452,640,8,80);
     var cg=ctx.createLinearGradient(0,720,0,640); cg.addColorStop(0,'#7ab356'); cg.addColorStop(0.6,'#c8a84b'); cg.addColorStop(1,'#e5604d');
     ctx.fillStyle=cg; ctx.fillRect(452,720-80*pw,8,80*pw); ctx.restore(); }
+  // Pollen Lock nest — glasshouse crown; shows locked beads, pulses when lock is lit
+  (function(){ var lit=G.lockLit && !G.multiball && !G.wizard, nf=0.5+0.5*Math.sin(G.t*5);
+    ctx.save(); ctx.translate(LOCK_NEST.x,LOCK_NEST.y);
+    if(lit){ // the diverted lock route glows gold so the changed ramp is readable
+      ctx.strokeStyle='rgba(242,217,138,'+(0.25+0.3*nf)+')'; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(LOCK_PATH[0][0]-LOCK_NEST.x,LOCK_PATH[0][1]-LOCK_NEST.y);
+      for(var pi=1;pi<LOCK_PATH.length;pi++)ctx.lineTo(LOCK_PATH[pi][0]-LOCK_NEST.x,LOCK_PATH[pi][1]-LOCK_NEST.y); ctx.stroke(); }
+    ctx.strokeStyle=lit?('rgba(242,217,138,'+(0.55+0.4*nf)+')'):'rgba(122,179,86,0.5)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(0,0,15,Math.PI,0); ctx.lineTo(15,8); ctx.lineTo(-15,8); ctx.closePath(); ctx.stroke();
+    for(var li=0;li<3;li++){ ctx.fillStyle=li<G.locked?'#f2d98a':'rgba(122,145,110,0.3)';
+      ctx.beginPath(); ctx.arc(-8+li*8,2,3.4,0,7); ctx.fill(); }
+    if(lit){ ctx.fillStyle='rgba(242,217,138,'+(0.6+0.4*nf)+')'; ctx.font='800 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LOCK',0,-20); }
+    ctx.restore(); })();
   // moss net
   drawNet();
   // Taproot kickback lamp — glowing up-arrow in the left outlane while charged
@@ -620,15 +687,22 @@ function render(){ if(!ctx||!G)return;
   if(G.mult>1){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 22px system-ui'; ctx.fillText('×'+G.mult,VW-16,40); }
   if(G.bonusMult>1){ ctx.textAlign='left'; ctx.fillStyle='#7ab356'; ctx.font='800 12px system-ui'; ctx.fillText('BONUS ×'+G.bonusMult, 16, VH-48); }
   if(G.pf2x){ ctx.save(); ctx.textAlign='center'; ctx.globalAlpha=0.65+0.35*Math.sin(G.t*6); ctx.fillStyle='#f2d98a'; ctx.font='800 19px system-ui'; ctx.fillText('PLAYFIELD 2X', VW/2, 112); ctx.restore(); }
-  // quest / wizard banner
+  // quest / wizard / multiball banner
   if(G.wizard){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 17px system-ui'; ctx.fillText('🌸 FULL BLOOM · '+G.wizJackpots+'/12', VW/2, 80); }
+  else if(G.pollenMB){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 16px system-ui';
+    ctx.fillText('POLLEN MULTIBALL'+(G.mbLevel>1?(' ×'+G.mbLevel):''), VW/2, 74);
+    ctx.fillStyle='#c8a84b'; ctx.font='700 12px system-ui';
+    ctx.fillText(G.superLit?('SUPER AT THE SCOOP · '+Math.round(1000000*G.mbLevel)):('JACKPOT '+jackpotValue()+' · '+G.jpCount+'/4'), VW/2, 92);
+    if(G.mbSave>0){ ctx.fillStyle='#7ab356'; ctx.font='700 11px system-ui'; ctx.fillText('BALL SAVE '+Math.ceil(G.mbSave), VW/2, 108); } }
   else if(G.quest){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 14px system-ui'; ctx.fillText(G.quest.name.toUpperCase(), VW/2, 72);
     ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText(G.quest.blurb, VW/2, 88);
     var qtw=200, qtf=Math.max(0,G.quest.timer/G.quest.tmax); ctx.fillStyle='rgba(20,28,18,0.6)'; ctx.fillRect(VW/2-qtw/2,94,qtw,6);
     ctx.fillStyle=qtf<0.25?'#e5604d':'#7ab356'; ctx.fillRect(VW/2-qtw/2,94,qtw*qtf,6); }
   else if(G.wizardReady){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 13px system-ui'; ctx.fillText('GREENHOUSE READY — SHOOT THE SCOOP', VW/2, 78); }
-  // growth ribbon (left rail)
+  // growth ribbon (left rail) + pollen lock lamps beneath it
   drawGrowth();
+  for(var lk=0;lk<3;lk++){ ctx.fillStyle=lk<G.locked?'#f2d98a':'rgba(122,145,110,0.35)';
+    ctx.beginPath(); ctx.arc(30,545+lk*16,4.5,0,7); ctx.fill(); }
   // launch prompt
   if(G.awaitLaunch){ ctx.textAlign='center'; ctx.globalAlpha=0.55+0.35*Math.sin(G.t*4); ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui';
     ctx.fillText(G.plungeHold?'RELEASE TO LAUNCH':'HOLD TO CHARGE', VW/2, 640); ctx.globalAlpha=1; }
@@ -848,6 +922,17 @@ if(/[?&]gptest=1/.test(location.search)){
       if(!zone && b && b.y>800 && b.x>LFLIP.px-15 && b.x<RFLIP.px+15) zone='inlane';
       out = zone || 'live';
       return {out:out, drained:drained, x:Math.round(b?b.x:0), y:Math.round(b?b.y:0), path:path}; },
+    // ---- Pollen Multiball probes ----
+    lockState:function(){ return G?{locked:G.locked,lockLit:!!G.lockLit,word:G.word}:null; },
+    mbState:function(){ return G?{pollen:!!G.pollenMB,level:G.mbLevel,count:G.mbCount,jpCount:G.jpCount,jpLadder:G.jpLadder,jpValue:jackpotValue(),superLit:!!G.superLit,save:Math.round(G.mbSave*10)/10,added:!!G.mbAdded,balls:G.balls.length,release:G.mbRelease}:null; },
+    forceLock:function(n){ if(!G)return null; G.locked=Math.min(3,n==null?3:n); if(G.locked>=3)startPollenMB();
+      for(var i=0;i<40 && G.mbRelease>0;i++)step(0.05); return this.mbState(); },
+    // drive one real lock: light the lock, ride the green ramp, watch the nest swallow it
+    lockViaRamp:function(){ if(!G)return null; G.lockLit=true; var before=G.locked, bb=G.balls.length;
+      var r=this.railShot('green'); var i; for(i=0;i<90;i++){ step(0.016); if(G.locked>before)break; }
+      return {entered:r?r.entered:false, locked:G.locked, lockedDelta:G.locked-before, balls:G.balls.length, await:!!G.awaitLaunch, mb:!!G.pollenMB}; },
+    ripSpinner:function(spd){ if(!G)return null; var sh=null,i; for(i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='spinner')sh=SHOTS[i];
+      sh.cd=0; onSpinner(sh,spd||1200); for(i=0;i<400 && G.spin;i++)step(0.02); return this.mbState(); },
     // ---- kickback probes ----
     kickState:function(){ return G?{lit:!!G.kickLit,retL:!!G.kickRetL,retR:!!G.kickRetR,fires:G.kickFires||0}:null; },
     forceKick:function(v){ if(G)G.kickLit=!!v; return G?!!G.kickLit:null; },
