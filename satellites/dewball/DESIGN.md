@@ -17,9 +17,9 @@ environments, we can."
   a 900cm sailboat would need a 16m ball). Attaches AT the contact point in ball-local space
   and rolls with the ball, then gets buried as you grow (pruned once fully inside the core —
   that's the authentic look AND the perf win).
-- Growth by volume, not radius — chunky early, hard-won late. VOL_EFF 0.85 × SHAPE_K 0.55
-  (≈24.5% of bounding-sphere volume per prop; tuned so each world's total scatter volume
-  covers its 3-star target with ~15% slack — checked per world, don't eyeball it).
+- Growth by volume, not radius — chunky early, hard-won late. VOL_EFF 1.0 × SHAPE_K 0.75
+  (75% of bounding-sphere volume per prop — generous is correct; see THE TUNING LAW below,
+  and never trust static volume sums).
 - Slightly-bigger objects get SHOVED (they slide), much-bigger objects are walls; a hard hit
   knocks your 3 most recent pickups back off onto the ground (re-collectible) with a red
   flinch. Movers (ants, RC cars, dogs, crabs...) bump you around until you outgrow them —
@@ -38,19 +38,30 @@ environments, we can."
 - Desktop: WASD/arrows move, Q/E (or mouse-drag) camera, SPACE dash. Gamepad: twin sticks.
 
 ## Worlds (multi-world, non-botanical mix per Stephen's Jul 10 note)
-| # | World | Theme | Start → Goal | Time |
-|---|-------|-------|--------------|------|
-| 1 | Crumb Country | giant picnic blanket | 4 cm → 35 cm | 100s |
-| 2 | Toybox Peaks | playroom floor | 8 cm → 60 cm | 110s |
-| 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.2 m | 120s |
-| 4 | Bazaar Lane | tiny town market street | 30 cm → 3 m | 130s |
-| 5 | Starfall Bay | dusk beach + harbor | 60 cm → 6.5 m | 140s |
-| 6 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — |
+Bot-calibrated 2026-07-13 (satellites/dewball/balance.js — READ the tuning law below):
+| # | World | Theme | Start → Goal | Time | Bound |
+|---|-------|-------|--------------|------|-------|
+| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:50 | 780 |
+| 2 | Toybox Peaks | playroom floor | 8 cm → 55 cm | 3:10 | 1150 |
+| 3 | Night Garden | the Lucid Winds garden | 15 cm → 85 cm | 3:40 | 1750 |
+| 4 | Bazaar Lane | tiny town market street | 30 cm → 2.4 m | 4:00 | 3300 |
+| 5 | Starfall Bay | dusk beach + harbor | 60 cm → 4.6 m | 5:00 | 5200 |
+| 6 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 |
 
-Each world: ~16-20 prop kinds (85+ total), 1-2 SIZE GATES (fences that sink once you're big
-enough, opening a richer sub-zone), 2 mover/hazard types, 5 named KEEPSAKES (collection log,
-"pressed into the Grove"). Worlds unlock in order (1 star to advance). Fixed seed per world =
-levels feel hand-placed and speedrunnable.
+Each world: ~16-25 prop kinds (94 total), 600-900 scattered instances (DENSE — travel time
+between props, not total volume, is what starves growth), 1-2 SIZE GATES (fences that sink
+once you're big enough, opening a richer sub-zone), 2 mover/hazard types, 5 named KEEPSAKES
+(collection log, "pressed into the Grove"). Worlds unlock in order (1 star to advance).
+Fixed seed per world = levels feel hand-placed and speedrunnable.
+
+## ⚖️ THE TUNING LAW (learned the hard way, 2026-07-13)
+Static volume budgeting shipped three mathematically unwinnable worlds. Two binding
+constraints that MUST be verified empirically after ANY scatter/size/goal/time edit:
+1. LADDER: absorbAll() ceiling ≥ 1.9×goal×1.15 per world — a prop only counts if the
+   pickup-ratio chain can actually reach it (smoke.js asserts this).
+2. PACING: the greedy dash-bot in balance.js must finish ≥1.0×goal on every world
+   (`NODE_PATH=<repo>/node_modules node satellites/dewball/balance.js 1` → BALANCE_PASS).
+Current bot marks: w1 1.48× · w2 3.14× · w3 1.41× · w4 1.31× · w5 1.23× (run variance ±25%).
 
 ## Rendering / perf budget (Pixel-class phones)
 - One merged vertex-colored BufferGeometry per prop kind → InstancedMesh (≈16 draw calls/world).

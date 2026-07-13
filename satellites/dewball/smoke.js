@@ -49,7 +49,16 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
           var beforeAll = D.size();
           D.absorbAll();
           var afterAll = D.size();
+          // ladder rule: every non-zen world's ceiling must clear 3 stars with 15% slack
+          // (total-volume budgeting is NOT enough — the pickup-ratio ladder binds; see DESIGN.md)
+          var GOALS = [24, 55, 85, 240, 460], ladder = [];
+          for (var wn = 1; wn <= 5; wn++){
+            D.start('level', wn);
+            var ceil = D.absorbAll();
+            ladder.push({ w: wn, ceil: Math.round(ceil), need: Math.round(GOALS[wn-1]*1.9*1.15), ok: ceil >= GOALS[wn-1]*1.9*1.15 });
+          }
           return {
+            ladder: ladder,
             startSize: startSize, endSize: endSize, minSize: minSize, maxSize: maxSize,
             nan: nan, movedFrames: movedFrames, frames: frames,
             absorbCount: stAfter.absorbCount, clingCount: stAfter.cling.length,
@@ -60,8 +69,10 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
       })
       .then(function(res){
         res.errors = errors;
+        var ladderOK = true;
+        for (var li = 0; li < res.ladder.length; li++){ if (!res.ladder[li].ok) ladderOK = false; }
         var pass = (!res.nan) && (errors.length===0) && (res.endSize > res.startSize) &&
-                   (res.movedFrames > 100) && (res.afterAll >= res.beforeAll);
+                   (res.movedFrames > 100) && (res.afterAll >= res.beforeAll) && ladderOK;
         console.log(JSON.stringify(res, null, 2));
         console.log(pass ? 'SMOKE_PASS' : 'SMOKE_FAIL');
         browser.close();
