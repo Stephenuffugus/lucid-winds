@@ -137,7 +137,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.4';
+var BUILD='v1.5';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -986,7 +986,10 @@ if(/[?&]gptest=1/.test(location.search)){
     // ---- Pollen Multiball probes ----
     lockState:function(){ return G?{locked:G.locked,lockLit:!!G.lockLit,word:G.word}:null; },
     mbState:function(){ return G?{pollen:!!G.pollenMB,level:G.mbLevel,count:G.mbCount,jpCount:G.jpCount,jpLadder:G.jpLadder,jpValue:jackpotValue(),superLit:!!G.superLit,save:Math.round(G.mbSave*10)/10,added:!!G.mbAdded,balls:G.balls.length,release:G.mbRelease}:null; },
-    forceLock:function(n){ if(!G)return null; G.locked=Math.min(3,n==null?3:n); if(G.locked>=3)startPollenMB();
+    forceLock:function(n){ if(!G)return null; G.locked=Math.min(3,n==null?3:n);
+      if(G.locked>=3){ // faithful to real flow: the 3rd lock consumed the live bead
+        if(G.balls.length===1 && G.balls[0].inLane){ G.balls=[]; G.awaitLaunch=false; }
+        startPollenMB(); }
       for(var i=0;i<40 && G.mbRelease>0;i++)step(0.05); return this.mbState(); },
     // drive one real lock: light the lock, ride the green ramp, watch the nest swallow it
     lockViaRamp:function(){ if(!G)return null; G.lockLit=true; var before=G.locked, bb=G.balls.length;
