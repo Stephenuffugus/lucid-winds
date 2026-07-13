@@ -30,12 +30,19 @@ environments, we can."
   math showed 2.2× unreachable on several worlds).
 - Camera: follow cam whose distance/height scale with ball size.
 
-## Controls (dual analog, Stephen's spec)
-- LEFT floating stick (left half of screen) = move the ball, camera-relative.
-- RIGHT floating stick (right half) = orbit camera yaw + limited pitch.
-- Double-tap right half = instant 180° turn (katamari flip).
+## Controls (dual analog, Stephen's spec — v2.2 feel pass after device feedback "wonky")
+- LEFT floating stick (left half of screen) = move the ball, camera-relative — mapped to the
+  yaw TARGET (camYawT), never the smoothed camera; a lagging/assisted camera must not re-aim
+  a held stick. Deadzone 0.10, response curve ^1.35, 48px throw, base re-anchors on overshoot.
+- RIGHT floating stick (right half) = orbit yaw + pitch (push up = camera up). Any camera
+  input holds the auto-assist off 0.9s; assist only makes small corrections (<1.2 rad) while
+  rolling roughly forward.
+- Double-tap right half = instant 180° turn — armed only by a completed clean tap (<250ms,
+  <12px), so orbit drags never false-fire.
+- Feel: hard brake when pushing against the roll; wall hits glance into a slide (30% of the
+  killed normal speed) instead of pogo-ing; camera looks ahead of travel.
 - DEW DASH: combo pickups fill a meter → button burst (×2.2 speed, 1.2s), FOV kick.
-- Desktop: WASD/arrows move, Q/E (or mouse-drag) camera, SPACE dash. Gamepad: twin sticks.
+- Desktop: WASD/arrows move, Q/E turn, R/F tilt, SPACE dash. Gamepad: twin sticks.
 
 ## Worlds (multi-world, non-botanical mix per Stephen's Jul 10 note)
 Bot-calibrated 2026-07-13 (satellites/dewball/balance.js — READ the tuning law below):
@@ -48,7 +55,10 @@ Bot-calibrated 2026-07-13 (satellites/dewball/balance.js — READ the tuning law
 | 5 | Starfall Bay | dusk beach + harbor | 60 cm → 4.6 m | 5:00 | 5200 |
 | 6 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 |
 
-Each world: ~16-25 prop kinds (94 total), 600-900 scattered instances (DENSE — travel time
+Each world: ~20-30 prop kinds (120 total), 700-1000 scattered instances + 2-3 hand-placed
+SET PIECES (picnic spread, domino run, block castle, fairy ring, lantern path, market row,
+fountain plaza, pottery yard, the long dock, umbrella row, shipwreck cove — `sets:` arrays,
+helpers _ring/_row/_curve) (DENSE — travel time
 between props, not total volume, is what starves growth), 1-2 SIZE GATES (fences that sink
 once you're big enough, opening a richer sub-zone), 2 mover/hazard types, 5 named KEEPSAKES
 (collection log, "pressed into the Grove"). Worlds unlock in order (1 star to advance).
@@ -61,7 +71,7 @@ constraints that MUST be verified empirically after ANY scatter/size/goal/time e
    pickup-ratio chain can actually reach it (smoke.js asserts this).
 2. PACING: the greedy dash-bot in balance.js must finish ≥1.0×goal on every world
    (`NODE_PATH=<repo>/node_modules node satellites/dewball/balance.js 1` → BALANCE_PASS).
-Current bot marks: w1 1.48× · w2 3.14× · w3 1.41× · w4 1.31× · w5 1.23× (run variance ±25%).
+Current bot marks (v2.2): w1 2.31× · w2 1.19-3.9× · w3 5.12× · w4 3.99× · w5 4.96× (variance is real — rerun before trusting a single number).
 
 ## Rendering / perf budget (Pixel-class phones)
 - One merged vertex-colored BufferGeometry per prop kind → InstancedMesh (≈16 draw calls/world).
