@@ -175,19 +175,25 @@ var LANE_X=412, LANE_Y0=700;
 var PLUNGE_VX=150, PLUNGE_VX_R=170;   // launch vx = -(VX + power*VX_R)  (up-and-LEFT)
 var PLUNGE_VY=1010, PLUNGE_VY_R=430;  // launch vy = -(VY + power*VY_R)
 var WALLS=[
-  // clean field boundary — inlanes funnel straight onto the flipper pivots
-  [60,150,60,700],[60,700,180,842],            // left wall + left inlane -> left pivot
-  [470,150,470,700],[470,700,350,842],         // right wall + right inlane -> right pivot
+  // drain geography (STEP 5): each lower side splits into an OUTLANE (outer channel,
+  // drains) and an INLANE (inboard of the divider, feeds the flipper via a return gate).
+  // old single-chain inlanes were [60,700,180,842] / [470,700,350,842].
+  [60,150,60,700],[60,700,110,852],            // left wall + left outlane outer guide
+  [470,150,470,700],[470,700,420,852],         // right wall + right outlane outer guide
+  [108,706,168,836],                            // left lane divider (outlane | inlane)
+  [422,706,362,836],                            // right lane divider
   [60,150,140,108],[140,108,400,108],[400,108,470,150]  // top arc
 ];
+// divider-top posts — the ball can bounce to either side of the split
+var POSTS=[ {x:108,y:700,r:5}, {x:422,y:700,r:5} ];
 var BUMPERS=[
   {x:150,y:340,r:24,kick:150,sc:120,lit:0},
   {x:390,y:340,r:24,kick:150,sc:120,lit:0},
   {x:265,y:490,r:26,kick:150,sc:150,lit:0}
 ];
-// slingshots sit low at the flipper base and only nudge (not launch), so they
-// help feed the flippers rather than trap the ball in the upper field.
-var SLINGS=[ {x:120,y:800,r:13,kick:120,sc:60,lit:0}, {x:410,y:800,r:13,kick:120,sc:60,lit:0} ];
+// slingshots sit inboard above the flippers (classic position) — the old spots
+// (120/410,800) now live INSIDE the outlane channels and would block them.
+var SLINGS=[ {x:208,y:782,r:13,kick:120,sc:60,lit:0}, {x:322,y:782,r:13,kick:120,sc:60,lit:0} ];
 var LFLIP={ px:175,py:842, L:74, r:9, restA:0.50, actA:-0.30, a:0.50, pa:0.50, w:0, up:false };
 var RFLIP={ px:355,py:842, L:74, r:9, restA:Math.PI-0.50, actA:Math.PI+0.30, a:Math.PI-0.50, pa:Math.PI-0.50, w:0, up:false };
 var GROWTH_MAX=22;
@@ -219,9 +225,9 @@ function buildShots(){ SHOTS=[
   {id:'trellis', type:'ramp',  x:440,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
     path:[[440,410],[448,300],[410,160],[240,145],[140,320],[180,760]], exit:{x:180,y:760,vx:40,vy:280}},
   {id:'lorbit',  type:'orbit', x:75, y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
-    path:[[75,635],[68,320],[120,140],[300,125],[430,240],[452,560],[400,760]], exit:{x:400,y:760,vx:-30,vy:300}},
+    path:[[75,635],[68,320],[120,140],[300,125],[430,240],[452,560],[380,755]], exit:{x:380,y:755,vx:-30,vy:300}},
   {id:'rorbit',  type:'orbit', x:455,y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
-    path:[[455,635],[462,320],[410,140],[230,125],[100,240],[78,560],[140,760]], exit:{x:140,y:760,vx:30,vy:300}},
+    path:[[455,635],[462,320],[410,140],[230,125],[100,240],[78,560],[152,755]], exit:{x:152,y:755,vx:30,vy:300}},
   // Dandelion spinner — pass-through: crossing it spawns a decaying score rip
   {id:'spinner', type:'spinner', x:265,y:250, r:16, value:800, cd:0},
   // S-U-N top rollover lanes — light all three to advance the bonus multiplier
@@ -231,10 +237,11 @@ function buildShots(){ SHOTS=[
   // Center Greenhouse ramp — a fast straight-up shot loops the glasshouse crown and
   // returns down the right inlane (a big, repeatable flow shot).
   {id:'green', type:'ramp', x:300,y:405, er:19, tx:0,ty:-1, thr:560, value:4000, cd:0, dur:0.62,
-    path:[[300,405],[290,235],[318,158],[406,182],[436,430],[410,600],[392,782]], exit:{x:392,y:782,vx:-24,vy:300}},
+    path:[[300,405],[290,235],[318,158],[406,182],[436,430],[410,600],[372,778]], exit:{x:372,y:778,vx:-24,vy:300}},
   // Inlane RETURN gates — light + reward the bead as it feeds back to a flipper.
-  {id:'retL', type:'return', x:150,y:792, r:14, lamp:0, value:900, cd:0},
-  {id:'retR', type:'return', x:392,y:792, r:14, lamp:0, value:900, cd:0}
+  // Repositioned into the new inlane channels (inboard of the lane dividers).
+  {id:'retL', type:'return', x:160,y:788, r:14, lamp:0, value:900, cd:0},
+  {id:'retR', type:'return', x:370,y:788, r:14, lamp:0, value:900, cd:0}
 ]; }
 // Six Garden Quests — started at the Compost scoop; complete a set of lit shots
 // before the timer. Completing ALL SIX in one game lights FULL BLOOM (the wizard).
@@ -319,7 +326,9 @@ function physics(dt){
     for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail){ continue; } // held: pre-launch, scooped, or on a ramp
       b.vy+=GRAV*h; b.vx*=0.9992; b.vy*=0.9992; b.x+=b.vx*h; b.y+=b.vy*h;   // mild drag bleeds energy so the ball works down to the flippers
       var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>1600){ b.vx*=1600/sp; b.vy*=1600/sp; }
+      if(sp<300){ b.vx*=0.988; b.vy*=0.988; }   // rolling friction — slow steel dies in dead zones, distinct from air drag
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
+      for(var po=0;po<POSTS.length;po++) circHit(b,POSTS[po],0.5,0);
       for(var m=0;m<BUMPERS.length;m++) circHit(b,BUMPERS[m],0.28,BUMPERS[m].kick,(function(mm){return function(){ onBump(mm,'bump'); };})(m));
       for(var g=0;g<SLINGS.length;g++) circHit(b,SLINGS[g],0.3,SLINGS[g].kick,(function(gg){return function(){ onBump(gg,'sling'); };})(g));
       for(var q=0;q<SHOTS.length;q++){ var sh=SHOTS[q];
@@ -551,6 +560,10 @@ function render(){ if(!ctx||!G)return;
   for(var w=0;w<WALLS.length;w++){ var s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
   ctx.strokeStyle='rgba(200,168,75,0.35)'; ctx.lineWidth=1.5;
   for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+  // divider-top posts
+  for(w=0;w<POSTS.length;w++){ var po=POSTS[w];
+    ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(po.x,po.y,po.r,0,7); ctx.fill();
+    ctx.fillStyle='rgba(255,246,210,0.5)'; ctx.beginPath(); ctx.arc(po.x-1.5,po.y-1.5,po.r*0.4,0,7); ctx.fill(); }
   // bumpers (flower heads)
   drawShots();
   for(var m=0;m<BUMPERS.length;m++) drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e');
@@ -796,6 +809,22 @@ if(/[?&]gptest=1/.test(location.search)){
       times.sort(function(a,b){return a-b;}); var md=times.length?times[Math.floor(times.length/2)]:0;
       return {balls:times.length, median:md, min:times[0]||0, max:times[times.length-1]||0}; },
     ballPos:function(){ return G.balls.map(function(b){ return {x:Math.round(b.x),y:Math.round(b.y),lane:b.inLane}; }); },
+    // drain-geography probe: inject a bead above a lane and record WHICH channel it
+    // exits through — the side of the lane divider it is on when it crosses y=828.
+    // 'outlane' = outside the divider (drains past the flipper), 'inlane' = inboard
+    // (delivered to the flipper), 'live' = never reached the bottom (timed out).
+    dropBall:function(x,y){ if(!G)return null; G.balls=[]; G.netTime=0; G.tiltOut=0;
+      var b={x:x,y:y||660,vx:0,vy:60,r:BALLR,inLane:false,trail:[]}; G.balls.push(b);
+      var out='live', zone=null, drained=false, path=[];
+      for(var i=0;i<900;i++){ step(0.008);
+        if(G.balls.length===0 || G.balls[0].inLane){ drained=true; break; }   // drainBall re-serves instantly
+        b=G.balls[0]; if((i%25)===0)path.push([Math.round(b.x),Math.round(b.y)]);
+        if(zone===null && b.y>828){ zone = (b.x<168||b.x>362) ? 'outlane' : 'inlane'; } }
+      // a bead that parks in the flipper cradle (rolling friction pins it at the
+      // pivot) is a successful inlane delivery even though it never crosses y=828
+      if(!zone && b && b.y>800 && b.x>LFLIP.px-15 && b.x<RFLIP.px+15) zone='inlane';
+      out = zone || 'live';
+      return {out:out, drained:drained, x:Math.round(b?b.x:0), y:Math.round(b?b.y:0), path:path}; },
     forceBloom:function(){ triggerBloom(); return G.blooms; }, render:render, mode:function(){return G?G.mode:null;} };
 }
 boot();
