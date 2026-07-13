@@ -167,7 +167,7 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== table geometry ===== */
-var BALLR=11, GRAV=1150, DRAINY=902;   // 1150 ~= a 6.5-degree real incline at our 1px/mm scale
+var BALLR=11, GRAV=960, DRAINY=902;   // g*sin(6.5deg) at ~1.2mm/px (research-verified real-table incline)
 // The bead waits upper-right and a CHARGED plunge fires it up-and-left into the
 // field — power scales launch strength. (A literal vertical shooter lane fights our
 // radial collision model — a ball rising dead-on bounces straight back; a true
@@ -306,7 +306,10 @@ function segHit(b, s, rest){
   var t=((b.x-ax)*ex+(b.y-ay)*ey)/L2; if(t<0)t=0; else if(t>1)t=1;
   var cx=ax+ex*t, cy=ay+ey*t, dx=b.x-cx, dy=b.y-cy, d=Math.sqrt(dx*dx+dy*dy);
   if(d<b.r && d>1e-6){ var nx=dx/d,ny=dy/d, ov=b.r-d; b.x+=nx*ov; b.y+=ny*ov;
-    var vn=b.vx*nx+b.vy*ny; if(vn<0){ b.vx-=(1+rest)*vn*nx; b.vy-=(1+rest)*vn*ny; } }
+    var vn=b.vx*nx+b.vy*ny; if(vn<0){ b.vx-=(1+rest)*vn*nx; b.vy-=(1+rest)*vn*ny;
+      // ~0.5deg collision scatter (VPX default): organic, never laser-identical
+      var sc=(Math.random()-0.5)*0.017, cs=Math.cos(sc), sn=Math.sin(sc);
+      var nvx=b.vx*cs-b.vy*sn; b.vy=b.vx*sn+b.vy*cs; b.vx=nvx; } }
 }
 function circHit(b, c, rest, kick, onHit){
   var dx=b.x-c.x, dy=b.y-c.y, d=Math.sqrt(dx*dx+dy*dy), mn=b.r+c.r;
@@ -344,7 +347,7 @@ function flipHit(b, F){
 // Constant angular velocity (real coil, ~35ms full swing) -> timing maps LINEARLY to
 // exit angle, which is what makes shots learnable. Stepped per-SUBSTEP so the blade
 // never teleports past the ball mid-swing.
-var FLIP_W_UP=24, FLIP_W_DOWN=13;   // rad/s
+var FLIP_W_UP=29, FLIP_W_DOWN=11;   // rad/s — ~30ms power stroke, ~3x slower spring return (real coil)
 function stepFlipper(F,h){
   var tgt=F.up?F.actA:F.restA, d=tgt-F.a, w=F.up?FLIP_W_UP:FLIP_W_DOWN;
   if(Math.abs(d)<=w*h){ F.a=tgt; F.w=0; }
@@ -358,7 +361,7 @@ function physics(dt){
       // time-scaled losses (per-substep constants were framerate-dependent and ~960x/s
       // strong — they froze slow balls dead and bled every shot mid-flight)
       b.vy+=GRAV*h; var drg=Math.pow(0.90,h); b.vx*=drg; b.vy*=drg; b.x+=b.vx*h; b.y+=b.vy*h;
-      var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>2400){ b.vx*=2400/sp; b.vy*=2400/sp; }
+      var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>3200){ b.vx*=3200/sp; b.vy*=3200/sp; }
       if(sp<300){ var rf=Math.pow(0.60,h); b.vx*=rf; b.vy*=rf; }   // gentle rolling friction
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
       for(var po=0;po<POSTS.length;po++) circHit(b,POSTS[po],0.5,0);
