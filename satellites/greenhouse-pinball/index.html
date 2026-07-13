@@ -262,6 +262,7 @@ function serveBall(){ // rest the bead at the bottom of the shooter lane, ready 
   G.skillLit=-1; G.skillWin=0; G.skillDone=false;
   G.tilt=0; G.tiltWarned=false; G.tiltOut=0;              // tilt meter resets each new ball
   G.netTime=(G.ball>=G.maxBall||G.mode==='zen')?999:8;    // net armed
+  G.kickLit=true; G.kickRetL=false; G.kickRetR=false;     // Taproot kickback armed each ball
 }
 function newGame(mode){
   var rng;
@@ -274,6 +275,7 @@ function newGame(mode){
   G={ mode:mode, rng:rng, balls:[], score:0, growth:0, blooms:0, combo:0, bestCombo:0, mult:1, ball:1, maxBall:mode==='classic'||mode==='daily'?3:99,
       awaitLaunch:false, plunge:0, plungeHold:false, skillLit:-1, skillWin:0, skillDone:false,
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
+      kickLit:false, kickRetL:false, kickRetR:false,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
@@ -354,6 +356,14 @@ function physics(dt){
       if(b.still>0.6){ var ndir=(b.x<VW/2)?1:-1; b.vx=ndir*240+(Math.random()-0.5)*80; b.vy=300; b.still=0;
         burst(b.x,b.y,5,'#7ab356'); float(b.x,b.y-16,'nudge'); sfx('bump',1); }
     } else b.still=0;
+  }
+  // Taproot kickback — a charged punch waiting in the LEFT outlane channel. Fires
+  // once, re-lit by rolling through BOTH inlane return gates. Tilt disarms it.
+  for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
+    if(G.kickLit && G.tiltOut<=0 && b.y>850 && b.x<160 && b.vy>0){
+      G.kickLit=false; G.kickFires=(G.kickFires||0)+1; b.vy=-1150; b.vx=100;
+      burst(b.x,b.y,10,'#7ab356'); float(118,790,'TAPROOT!'); sfx('launch'); haptic(16);
+      G.flash=Math.max(G.flash,0.25); G.shake=Math.max(G.shake,5); }
   }
   // drain check
   for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
@@ -461,7 +471,11 @@ function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)
   G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
 function onReturn(sh){ sh.cd=0.7; sh.lamp=1;
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=400; comboHit(sh.x,sh.y);
-  float(sh.x,sh.y-18,'+'+pts); sfx('bump',G.combo); haptic(5); }
+  float(sh.x,sh.y-18,'+'+pts); sfx('bump',G.combo); haptic(5);
+  // both return gates since the last kickback fire -> Taproot re-lights
+  if(!G.kickLit){ if(sh.id==='retL')G.kickRetL=true; else if(sh.id==='retR')G.kickRetR=true;
+    if(G.kickRetL && G.kickRetR){ G.kickLit=true; G.kickRetL=false; G.kickRetR=false;
+      float(118,770,'TAPROOT SET'); sfx('save'); haptic(10); } } }
 
 /* ===== Garden Quests + FULL BLOOM wizard (P1 depth) ===== */
 function startQuest(i){ var q=QUESTS[i]; G.quest={ idx:i, name:q.name, blurb:q.blurb, need:q.need, got:{}, timer:q.timer, tmax:q.timer, award:q.award };
@@ -577,6 +591,13 @@ function render(){ if(!ctx||!G)return;
     ctx.fillStyle=cg; ctx.fillRect(452,720-80*pw,8,80*pw); ctx.restore(); }
   // moss net
   drawNet();
+  // Taproot kickback lamp — glowing up-arrow in the left outlane while charged
+  if(G.kickLit){ var kf=0.55+0.4*Math.sin(G.t*5);
+    ctx.save(); ctx.globalAlpha=kf; ctx.strokeStyle='#7ab356'; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(118,828); ctx.lineTo(118,788); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(108,800); ctx.lineTo(118,786); ctx.lineTo(128,800); ctx.stroke();
+    ctx.globalAlpha=kf*0.25; ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(92,730); ctx.lineTo(122,848); ctx.stroke();
+    ctx.restore(); }
   // flippers
   drawFlipper(LFLIP); drawFlipper(RFLIP);
   // balls + trails
@@ -767,6 +788,8 @@ if(/[?&]gptest=1/.test(location.search)){
     hitShot:function(id){ if(!G)return null; for(var i=0;i<SHOTS.length;i++){ if(SHOTS[i].id===id){ var sh=SHOTS[i]; sh.cd=0;
       if(sh.type==='standup')onStandup(sh); else if(sh.type==='drop')onDrop(sh);
       else if(sh.type==='ramp'||sh.type==='orbit')scoreShot(sh);
+      else if(sh.type==='return')onReturn(sh);
+      else if(sh.type==='rollover')onRollover(sh);
       else if(sh.type==='spinner'){ var s0=G.score; onSpinner(sh,1200); for(var z=0;z<300 && G.spin;z++)step(0.02); return {score:G.score,ripped:G.score-s0,wizard:!!G.wizard,jackpots:G.wizJackpots}; }
       return {score:G.score,word:G.word,lockLit:!!G.lockLit,lamp:sh.lamp,down:!!sh.down,scoopLit:!!G.scoopLit,wizard:!!G.wizard,jackpots:G.wizJackpots}; } } return null; },
     // ---- ramp entry via a live launched ball ----
@@ -825,6 +848,9 @@ if(/[?&]gptest=1/.test(location.search)){
       if(!zone && b && b.y>800 && b.x>LFLIP.px-15 && b.x<RFLIP.px+15) zone='inlane';
       out = zone || 'live';
       return {out:out, drained:drained, x:Math.round(b?b.x:0), y:Math.round(b?b.y:0), path:path}; },
+    // ---- kickback probes ----
+    kickState:function(){ return G?{lit:!!G.kickLit,retL:!!G.kickRetL,retR:!!G.kickRetR,fires:G.kickFires||0}:null; },
+    forceKick:function(v){ if(G)G.kickLit=!!v; return G?!!G.kickLit:null; },
     forceBloom:function(){ triggerBloom(); return G.blooms; }, render:render, mode:function(){return G?G.mode:null;} };
 }
 boot();
