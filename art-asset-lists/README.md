@@ -35,6 +35,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Tempo Grove](tempo-grove/00-art-direction.md)** (Lumines, plays Stephen's music) — *Moonlit Metronome* · 5 sheets
 - **[Root Weave](root-weave/00-art-direction.md)** (Untangle/Planarity) — *Inkwood Atlas* · 6 sheets
 - **[Sled Vine](sled-vine/00-art-direction.md)** (Line Rider) — *Moonlit Inkwash* · 5 sheets
+- **[Dewball](dewball/00-art-direction.md)** (Katamari Damacy, full 3D) — *Paper Lantern Parade* · 21 sheets (grounds/skins wire today via existing hooks; prop cards need a billboard wire pass)
 - **[Spore Drift](spore-drift/00-art-direction.md)** (Osmos) — *Inkwater Bioluminance* · 6 sheets
 - **[Bridgevine](bridgevine/00-art-direction.md)** (World of Goo) — *Copperwood Atelier* · 6 sheets
 - **[Bramble Court](bramble-court/00-art-direction.md)** (Triple Triad/Queens Blood) — *Gilded Bestiary* · 6 sheets
