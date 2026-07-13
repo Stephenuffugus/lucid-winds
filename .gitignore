@@ -69,8 +69,13 @@ feedback-config.php
 .claude/worktrees/
 .tmp_sim/
 
-# Nectar Drop raw sprite sheets (source; cut assets ship instead)
-satellites/*/art-drop/
+# Raw sprite sheets. These USED to be ignored ("source; cut assets ship instead"), but
+# that silently ate anything dropped in art-drop/ — sheets pushed from a phone never
+# arrived, and Nectar Drop's 64MB of source sheets survive only on one codespace disk.
+# Director's call (2026-07-13): keep the sources in the repo so they are not lost.
+# Still ignore the throwaway working copies.
+satellites/*/art-drop/**/*.tmp.png
+satellites/*/art-drop/**/cut/
 
 # ── Session hygiene (2026-07-11) ──
 # Art-drop + handoff archives land in many dirs (root, satellites/*, satellites/*/assets).
