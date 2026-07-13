@@ -1,0 +1,8 @@
+<!-- Dewball · Sheet 2: Ground Tile — Toybox Peaks (playroom floor) — WIRES TODAY via assets/ground-w2.jpg -->
+<!-- Copy everything below into your image generator to make this ONE image. -->
+
+STYLE — "Paper Lantern Parade" (Dewball / Lucid Winds papercraft night-fair). Handcrafted cut-paper diorama art: subjects built from layered flat card shapes with crisp die-cut silhouettes, deckled edges on organic forms, subtle visible paper grain, one darker fold-shade per layer, warm lantern light from above. Flat color fields, tiny gold-thread accents; NO airbrush gradients, NO photoreal texture, NO 3D render gloss, NO hard vector outlines. Shared Lucid Winds accents: night void #0d100c, sage #7ab356, gold #c8a84b, cream #e8dcc8, moss #8a9178. Absolutely NO text, letters, numbers, logos, or watermarks. PNG must compress under 150KB. Follow this sheet's tiling rule exactly.
+
+Create one SEAMLESS TILEABLE texture. File: ground-w2.png (shipped as ground-w2.jpg). Single full-bleed square, 1024x1024, NO magenta, NO grid, NO border — all four edges MUST wrap perfectly (left matches right, top matches bottom).
+
+Subject: a warm pine playroom floor seen flat from directly above, rendered as cut paper. Six horizontal plank strips alternating honey pine #a8763e and deeper pine #8a5e30 (plank seams run fully across so they continue tile to tile), each plank a paper strip with torn-edge wood grain streaks in a darker shade, occasional paper knot circles, and a couple of faint sage #7ab356 crayon scuffs and one tiny gold #c8a84b glitter fleck. Even warm-lamp lighting, no vignette. The floor reads as wood built from layered kraft paper.

@@ -1,0 +1,8 @@
+<!-- Dewball · Sheet 3: Ground Tile — Night Garden (moonlit grass) — WIRES TODAY via assets/ground-w3.jpg -->
+<!-- Copy everything below into your image generator to make this ONE image. -->
+
+STYLE — "Paper Lantern Parade" (Dewball / Lucid Winds papercraft night-fair). Handcrafted cut-paper diorama art: subjects built from layered flat card shapes with crisp die-cut silhouettes, deckled edges on organic forms, subtle visible paper grain, one darker fold-shade per layer, warm lantern light from above. Flat color fields, tiny gold-thread accents; NO airbrush gradients, NO photoreal texture, NO 3D render gloss, NO hard vector outlines. Shared Lucid Winds accents: night void #0d100c, sage #7ab356, gold #c8a84b, cream #e8dcc8, moss #8a9178. Absolutely NO text, letters, numbers, logos, or watermarks. PNG must compress under 150KB. Follow this sheet's tiling rule exactly.
+
+Create one SEAMLESS TILEABLE texture. File: ground-w3.png (shipped as ground-w3.jpg). Single full-bleed square, 1024x1024, NO magenta, NO grid, NO border — all four edges MUST wrap perfectly (left matches right, top matches bottom).
+
+Subject: moonlit garden lawn seen flat from directly above, rendered as cut paper. A bed of overlapping torn-paper grass tufts in night greens #2c4a2e and #3e6844 with a few deeper #16281e shadow patches between tufts, scattered tiny deckled clover shapes, two or three pale dew glints in cream #e8dcc8 with the softest inner halo, and one faint winding earth path hint in dark moss. Cool moonlight with the faint warmth of a distant paper lantern at one corner kept subtle so the tile stays even. Dark, calm, readable.

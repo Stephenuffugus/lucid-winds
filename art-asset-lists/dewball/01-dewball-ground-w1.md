@@ -1,0 +1,8 @@
+<!-- Dewball · Sheet 1: Ground Tile — Crumb Country (picnic blanket) — WIRES TODAY via assets/ground-w1.jpg -->
+<!-- Copy everything below into your image generator to make this ONE image. -->
+
+STYLE — "Paper Lantern Parade" (Dewball / Lucid Winds papercraft night-fair). Handcrafted cut-paper diorama art: subjects built from layered flat card shapes with crisp die-cut silhouettes, deckled edges on organic forms, subtle visible paper grain, one darker fold-shade per layer, warm lantern light from above. Flat color fields, tiny gold-thread accents; NO airbrush gradients, NO photoreal texture, NO 3D render gloss, NO hard vector outlines. Shared Lucid Winds accents: night void #0d100c, sage #7ab356, gold #c8a84b, cream #e8dcc8, moss #8a9178. Absolutely NO text, letters, numbers, logos, or watermarks. PNG must compress under 150KB. Follow this sheet's tiling rule exactly.
+
+Create one SEAMLESS TILEABLE texture. File: ground-w1.png (shipped as ground-w1.jpg). Single full-bleed square, 1024x1024, NO magenta, NO grid, NO border — the game tiles it edge to edge, so all four edges MUST wrap perfectly (left matches right, top matches bottom).
+
+Subject: a giant picnic blanket seen flat from directly above, rendered as cut paper. A 2x2 gingham check of blanket red #b8483e and warm cream #e2d6c0 (each check exactly half the tile so the pattern continues across copies), with paper-grain texture inside each check, slightly darker woven cross-hatch strips where the checks meet, a few tiny scattered thread flecks and one or two faint crumb specks in moss #8a9178 (subtle — real crumbs are 3D props on top). Lit by warm afternoon lantern light, gentle vignette-free even exposure. The weave reads as fabric made of paper strips.

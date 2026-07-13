@@ -1,0 +1,8 @@
+<!-- Dewball · Sheet 4: Ground Tile — Bazaar Lane (market cobbles) — WIRES TODAY via assets/ground-w4.jpg -->
+<!-- Copy everything below into your image generator to make this ONE image. -->
+
+STYLE — "Paper Lantern Parade" (Dewball / Lucid Winds papercraft night-fair). Handcrafted cut-paper diorama art: subjects built from layered flat card shapes with crisp die-cut silhouettes, deckled edges on organic forms, subtle visible paper grain, one darker fold-shade per layer, warm lantern light from above. Flat color fields, tiny gold-thread accents; NO airbrush gradients, NO photoreal texture, NO 3D render gloss, NO hard vector outlines. Shared Lucid Winds accents: night void #0d100c, sage #7ab356, gold #c8a84b, cream #e8dcc8, moss #8a9178. Absolutely NO text, letters, numbers, logos, or watermarks. PNG must compress under 150KB. Follow this sheet's tiling rule exactly.
+
+Create one SEAMLESS TILEABLE texture. File: ground-w4.png (shipped as ground-w4.jpg). Single full-bleed square, 1024x1024, NO magenta, NO grid, NO border — all four edges MUST wrap perfectly (left matches right, top matches bottom).
+
+Subject: a sun-warmed market street seen flat from directly above, rendered as cut paper. Rounded cobblestones as individual paper discs in sandy tan #b09a78 and warm shadow #8e7a5c laid in offset rows (rows continue cleanly across the tile edges), darker #6a5a42 paper gaps between stones, occasional chipped stone with a torn corner, a few golden #c8a84b spice-dust specks swept into the seams and one tiny sage leaf pressed flat between stones. Warm apricot afternoon light, even exposure, no vignette.
