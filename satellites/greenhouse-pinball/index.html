@@ -220,8 +220,11 @@ function buildShots(){ SHOTS=[
   // Ramps + orbits — RAISED lanes: the bead detaches from physics and tweens along a
   // path (a top-down engine can't sim a Z incline), then re-injects at an inlane. thr
   // = min throat speed to "make" it (generous — no FX phantom rejects); else it passes.
-  {id:'fern',    type:'ramp',  x:110,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
-    path:[[110,410],[92,300],[130,160],[300,145],[400,320],[360,760]], exit:{x:360,y:760,vx:-40,vy:280}},
+  // Fern ramp — combo diverter: make it twice inside the rail-combo window and the
+  // second pass CROSSES OVER to the left inlane at bonus value (Canopy Crossover).
+  {id:'fern',    type:'ramp',  x:110,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5, fork:[300,145],
+    path:[[110,410],[92,300],[130,160],[300,145],[400,320],[360,760]], exit:{x:360,y:760,vx:-40,vy:280},
+    alt:{path:[[110,410],[92,300],[130,160],[300,145],[330,300],[260,560],[160,775]], exit:{x:160,y:775,vx:26,vy:300}}},
   {id:'trellis', type:'ramp',  x:440,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
     path:[[440,410],[448,300],[410,160],[240,145],[140,320],[180,760]], exit:{x:180,y:760,vx:40,vy:280}},
   {id:'lorbit',  type:'orbit', x:75, y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
@@ -235,9 +238,15 @@ function buildShots(){ SHOTS=[
   {id:'sun1', type:'rollover', x:265,y:128, r:15, sunIdx:1, lamp:0, cd:0},
   {id:'sun2', type:'rollover', x:380,y:128, r:15, sunIdx:2, lamp:0, cd:0},
   // Center Greenhouse ramp — a fast straight-up shot loops the glasshouse crown and
-  // returns down the right inlane (a big, repeatable flow shot).
+  // returns down the right inlane (a big, repeatable flow shot). DIVERTS to the
+  // Pollen Lock nest while the lock is lit (see routeFor).
   {id:'green', type:'ramp', x:300,y:405, er:19, tx:0,ty:-1, thr:560, value:4000, cd:0, dur:0.62,
     path:[[300,405],[290,235],[318,158],[406,182],[436,430],[410,600],[372,778]], exit:{x:372,y:778,vx:-24,vy:300}},
+  // Heartvine ramp — the CHANGING ramp: its exit diverter flips after every pass,
+  // alternating left and right inlane returns (watch the flag at the fork).
+  {id:'heart', type:'ramp', x:210,y:470, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.55, flip:false, fork:[300,205],
+    path:[[210,470],[195,340],[210,215],[255,160],[300,205],[330,330],[360,560],[370,778]], exit:{x:370,y:778,vx:-24,vy:300},
+    alt:{path:[[210,470],[195,340],[210,215],[255,160],[300,205],[300,330],[230,560],[160,775]], exit:{x:160,y:775,vx:26,vy:300}}},
   // Inlane RETURN gates — light + reward the bead as it feeds back to a flipper.
   // Repositioned into the new inlane channels (inboard of the lane dividers).
   {id:'retL', type:'return', x:160,y:788, r:14, lamp:0, value:900, cd:0},
@@ -278,6 +287,7 @@ function newGame(mode){
       kickLit:false, kickRetL:false, kickRetR:false,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
       locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
+      lastRail:null, lastRailT:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
       netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
@@ -464,12 +474,26 @@ function pathPoint(path,t){ var total=pathLen(path), d=t*total, acc=0,i;
   for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1],L=Math.sqrt(dx*dx+dy*dy);
     if(acc+L>=d || i===path.length-2){ var f=L>0?(d-acc)/L:0; if(f<0)f=0; if(f>1)f=1; return [path[i][0]+dx*f, path[i][1]+dy*f]; } acc+=L; }
   return [path[path.length-1][0], path[path.length-1][1]]; }
+function shotById(id){ for(var i=0;i<SHOTS.length;i++)if(SHOTS[i].id===id)return SHOTS[i]; return null; }
+// DIVERTER brain — which route is live on a multi-route rail right now:
+//   green: lock lit (single-ball play) -> the Pollen Lock nest
+//   heart: exit flag alternates after every completed pass
+//   fern:  second make inside the rail-combo window -> Canopy Crossover (left)
+function routeFor(sh){
+  if(sh.id==='green' && G.lockLit && !G.multiball && !G.wizard && G.locked<3)
+    return {path:LOCK_PATH, exit:null, dur:0.5, lock:true};
+  if(sh.id==='heart' && sh.flip && sh.alt) return {path:sh.alt.path, exit:sh.alt.exit, dur:sh.dur, alt:true};
+  if(sh.id==='fern' && sh.alt && G.lastRail==='fern' && G.lastRailT>0)
+    return {path:sh.alt.path, exit:sh.alt.exit, dur:sh.dur, alt:true, cross:true};
+  return {path:sh.path, exit:sh.exit, dur:sh.dur};
+}
 function enterRail(b,sh){
-  // lock divert: lit lock + normal play + Greenhouse ramp -> the bead rides into the nest
-  if(sh.id==='green' && G.lockLit && !G.multiball && !G.wizard && G.locked<3){
-    b.onRail=sh.id; b.railPath=LOCK_PATH; b.railT=0; b.railDur=0.5; b.railExit=null; b.railLock=true;
-    sfx('launch'); return; }
-  b.onRail=sh.id; b.railPath=sh.path; b.railT=0; b.railDur=sh.dur; b.railExit=sh.exit; scoreShot(sh); sfx('launch'); }
+  var rt=routeFor(sh);
+  b.onRail=sh.id; b.railPath=rt.path; b.railT=0; b.railDur=rt.dur; b.railExit=rt.exit; b.railLock=!!rt.lock;
+  if(rt.lock){ sfx('launch'); return; }              // nest pays on arrival, not here
+  if(rt.cross){ G.score+=2500; float(sh.x,sh.y-38,'CANOPY CROSSOVER +2500'); G.flash=Math.max(G.flash,0.3); }
+  G.lastRail=sh.id; G.lastRailT=2.5;
+  scoreShot(sh); sfx('launch'); }
 function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
   if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
     if(G.wizJackpots>=12)endWizard(); return; }
@@ -507,6 +531,7 @@ function questShot(id){ if(!G.quest)return; var q=G.quest, prog=false, k;
   if(!prog)return; var done=true; for(k in q.need){ if((q.got[k]||0)<q.need[k])done=false; }
   if(done)completeQuest(); }
 function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit'||id==='rorbit'||id==='spinner'||id==='scoop'))return true;
+  if(G.pollenMB){ var jsh=shotById(id); if(jsh && (jsh.type==='ramp'||jsh.type==='orbit'))return true; }   // jackpots glow
   if(!G.quest)return false; var q=G.quest;
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
@@ -550,6 +575,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.tilt>0 && G.tiltOut<=0){ G.tilt-=22*dt; if(G.tilt<0)G.tilt=0; }
   if(G.tiltOut>0){ G.tiltOut-=dt; if(G.tiltOut<0)G.tiltOut=0; }
   if(G.skillWin>0){ G.skillWin-=dt; if(G.skillWin<=0){ G.skillWin=0; G.skillLit=-1; } }
+  if(G.lastRailT>0){ G.lastRailT-=dt; if(G.lastRailT<=0){ G.lastRailT=0; G.lastRail=null; } }
   // shot cooldowns + drop-bank reset + scoop capture/eject
   for(var si=0;si<SHOTS.length;si++){ if(SHOTS[si].cd>0){ SHOTS[si].cd-=dt; if(SHOTS[si].cd<0)SHOTS[si].cd=0; } }
   if(G.dropResetT>0){ G.dropResetT-=dt; if(G.dropResetT<=0){ G.dropResetT=0; for(si=0;si<SHOTS.length;si++){ if(SHOTS[si].type==='drop'){ SHOTS[si].down=false; SHOTS[si].lamp=1; } } } }
@@ -571,6 +597,7 @@ function step(dt){ if(!G)return; G.t+=dt;
         if(G.locked>=3){ startPollenMB(); }
         else if(G.balls.length===0){ serveBall(); float(VW/2,400,'new bead served'); }
         continue; }
+      var doneSh=shotById(rb.onRail); if(doneSh && doneSh.id==='heart'){ doneSh.flip=!doneSh.flip; }   // the diverter flips
       rb.x=rb.railExit.x; rb.y=rb.railExit.y; rb.vx=rb.railExit.vx; rb.vy=rb.railExit.vy; rb.onRail=null; rb.railPath=null; sfx('save'); }
     else { var pp=pathPoint(rb.railPath,rb.railT); rb.x=pp[0]; rb.y=pp[1]; } }
   // Pollen MB: staggered nest release + ball-save countdown
@@ -729,9 +756,20 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
       if(slit){ ctx.shadowColor='rgba(200,168,75,0.7)'; ctx.shadowBlur=12*fl; ctx.fillStyle='rgba(200,168,75,'+(0.3+0.3*fl)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.55,0,7); ctx.fill(); ctx.shadowBlur=0; }
     } else if(sh.type==='ramp'||sh.type==='orbit'){ var qlit=questLit(sh.id), isR=sh.type==='ramp';
       ctx.lineJoin='round'; ctx.lineCap='round';
-      ctx.strokeStyle=isR?'rgba(122,179,86,0.20)':'rgba(143,208,224,0.18)'; ctx.lineWidth=13;
-      ctx.beginPath(); ctx.moveTo(sh.path[0][0],sh.path[0][1]); for(var pi=1;pi<sh.path.length;pi++)ctx.lineTo(sh.path[pi][0],sh.path[pi][1]); ctx.stroke();
-      if(qlit){ ctx.strokeStyle=isR?('rgba(200,168,75,'+(0.35+0.4*fl)+')'):('rgba(143,208,224,'+(0.4+0.45*fl)+')'); ctx.lineWidth=4; ctx.stroke(); }
+      var rt=routeFor(sh), actP=rt.lock?null:rt.path, inactP=null;
+      if(sh.alt) inactP = (actP===sh.path)?sh.alt.path:sh.path;
+      else if(rt.lock) inactP = sh.path;                       // lock route itself is drawn gold by the nest
+      if(inactP){ ctx.strokeStyle=isR?'rgba(122,179,86,0.06)':'rgba(143,208,224,0.06)'; ctx.lineWidth=9;
+        ctx.beginPath(); ctx.moveTo(inactP[0][0],inactP[0][1]); for(var qi2=1;qi2<inactP.length;qi2++)ctx.lineTo(inactP[qi2][0],inactP[qi2][1]); ctx.stroke(); }
+      if(actP){ ctx.strokeStyle=isR?'rgba(122,179,86,0.20)':'rgba(143,208,224,0.18)'; ctx.lineWidth=13;
+        ctx.beginPath(); ctx.moveTo(actP[0][0],actP[0][1]); for(var pi=1;pi<actP.length;pi++)ctx.lineTo(actP[pi][0],actP[pi][1]); ctx.stroke();
+        if(qlit){ ctx.strokeStyle=isR?('rgba(200,168,75,'+(0.35+0.4*fl)+')'):('rgba(143,208,224,'+(0.4+0.45*fl)+')'); ctx.lineWidth=4; ctx.stroke(); } }
+      // diverter flag at the fork — points at the live exit side, flips with the route
+      if(sh.fork && sh.alt && actP){ var exR=(rt.exit&&rt.exit.x>270);
+        ctx.save(); ctx.translate(sh.fork[0],sh.fork[1]); ctx.fillStyle='rgba(242,217,138,'+(0.55+0.4*fl)+')';
+        ctx.beginPath();
+        if(exR){ ctx.moveTo(-6,-6); ctx.lineTo(8,0); ctx.lineTo(-6,6); } else { ctx.moveTo(6,-6); ctx.lineTo(-8,0); ctx.lineTo(6,6); }
+        ctx.closePath(); ctx.fill(); ctx.restore(); }
       ctx.save(); ctx.translate(sh.x,sh.y); ctx.fillStyle=qlit?('rgba(255,246,210,'+(0.6+0.4*fl)+')'):(isR?'rgba(122,179,86,0.75)':'rgba(143,208,224,0.75)');
       ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(0,-8); ctx.lineTo(8,7); ctx.lineTo(0,2); ctx.closePath(); ctx.fill(); ctx.restore();
     } else if(sh.type==='spinner'){ var qs=questLit('spinner'), ang=G.spin?G.spin.ang:G.t*0.7;
@@ -922,6 +960,9 @@ if(/[?&]gptest=1/.test(location.search)){
       if(!zone && b && b.y>800 && b.x>LFLIP.px-15 && b.x<RFLIP.px+15) zone='inlane';
       out = zone || 'live';
       return {out:out, drained:drained, x:Math.round(b?b.x:0), y:Math.round(b?b.y:0), path:path}; },
+    // ---- diverter probes ----
+    divertState:function(id){ var sh=shotById(id); if(!sh||!G)return null; var rt=routeFor(sh);
+      return {lock:!!rt.lock, alt:!!rt.alt, exitX:rt.exit?rt.exit.x:null, flip:!!sh.flip, lastRail:G.lastRail, lastRailT:Math.round((G.lastRailT||0)*10)/10}; },
     // ---- Pollen Multiball probes ----
     lockState:function(){ return G?{locked:G.locked,lockLit:!!G.lockLit,word:G.word}:null; },
     mbState:function(){ return G?{pollen:!!G.pollenMB,level:G.mbLevel,count:G.mbCount,jpCount:G.jpCount,jpLadder:G.jpLadder,jpValue:jackpotValue(),superLit:!!G.superLit,save:Math.round(G.mbSave*10)/10,added:!!G.mbAdded,balls:G.balls.length,release:G.mbRelease}:null; },
