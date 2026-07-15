@@ -305,6 +305,20 @@ margins = 910+size per side, so a z3 finale's usable radial window can be ~1000c
 compute the window BEFORE picking the origin; w1's mid ring is saturated (~700
 spacing) — new w1 scenes go far band or inside point-gate zones.
 
+⚖️ TOWNS (v5.0, Stephen: "we almost want each world to have buildings, paths, and
+other things that players have to navigate. not just a flat open plain"): street
+grids of BUILDINGS at cluster anchors — the navigation centerpiece. One town = one
+sid (buildings pack close; other structures keep the separation corridor). Street
+width derives from building size (pitch = 2.5x max building: the lane stays exactly
+passable until the buildings themselves become food at ~1.6x). Towns build FIRST in
+the structures pass (walls yield territory — build order = priority order). 2x2
+grids inner zones, 3x2 with a plaza lot in late zones; plaza signpost; a road leads
+into every town; paved plaza circles on the overlay. New building kinds (fixed,
+volF 0.3 — hollow): cerealbox/cookietin (w1) · booktower/shoebox (w2) · dovecote
+(w3, + shed/greenhouse) · riad (w4, + teahouse/doorarch) · boathouse (w5, + huts/
+hulls) · w7 towns reuse cottage/chapel/windmill/watertower. Zen stays open — its
+identity is the empty meadow.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.

@@ -795,6 +795,16 @@
   K("signpost","Signpost",30,[ pp("cyl",[1.6,2.2,28,6],0x6a4e38,0,14,0), pp("box",[16,4.5,1.6],0xb98a5a,3,24,0,0,0.3,0), pp("box",[13,4,1.5],0xa87a4a,-2.5,18.5,0,0,-0.4,0), pp("sph",[1.4,5,4],0x8a6238,0,28.7,0) ]);
   // scene decor (v4.2)
   K("bannerpole","Banner Pole",42,[ pp("cyl",[1.4,2,40,6],0x6a4e38,0,20,0), pp("card",[14,9],0xc23a4a,8,34,0,0,0,0), pp("card",[10,6],0xe0913a,7,25,0,0,0,0), pp("sph",[1.6,5,4],0xc8a84b,0,40.8,0) ]);
+  // BUILDINGS (v5.0) — town-block units: solid, tall, unshovable masses the
+  // ball must NAVIGATE at zone scale (edible only far up the ladder). Hollow
+  // things: volF keeps the economy honest when they finally go down.
+  K("cerealbox","Cereal Box",95,[ pp("box",[58,92,26],0xd8a03a,0,46,0), pp("box",[58,20,26.6],0xc23a4a,0,78,0), pp("card",[40,34],0xf0ead0,0,48,13.4), pp("sph",[8,6,5],0xc23a4a,-12,30,13.6), pp("box",[58,4,26],0xb8862c,0,92,0) ],{fixed:1,volF:0.3});
+  K("cookietin","Cookie Tin",70,[ pp("cyl",[33,33,54,12],0x4a7ab3,0,27,0), pp("cyl",[34,34,8,12],0xd8dce0,0,58,0), pp("card",[30,22],0xf0ead0,0,30,33.2), pp("tor",[33,2,4,14],0xd8dce0,0,10,0,Math.PI/2,0,0) ],{fixed:1,volF:0.3});
+  K("booktower","Book Tower",160,[ pp("box",[110,34,80],0x8a3a3a,0,17,0,0,0.06,0), pp("box",[102,32,74],0x3a5a8e,0,50,0,0,-0.1,0), pp("box",[106,33,77],0x4a7a3a,0,82,0,0,0.14,0), pp("box",[96,30,70],0x6a4a8e,0,113,0,0,-0.05,0), pp("box",[90,29,66],0xb98a4a,0,142,0,0,0.09,0), pp("box",[84,4,60],0xe8dcc8,0,158,0,0,0.09,0) ],{fixed:1,volF:0.3});
+  K("shoebox","Shoebox House",190,[ pp("box",[170,110,120],0xd8ccb8,0,55,0), pp("box",[176,26,126],0xb3688e,0,122,0), pp("card",[46,60],0x3a332e,0,32,61), pp("card",[36,36],0xf0d080,-55,80,61), pp("card",[36,36],0xf0d080,55,80,61) ],{fixed:1,volF:0.3});
+  K("dovecote","Garden Dovecote",260,[ pp("cyl",[52,68,190,8],0xe8e0d0,0,95,0), pp("cone",[72,60,8],0x8a6a44,0,220,0), pp("card",[24,30],0x3a332e,0,150,55), pp("card",[20,24],0x3a332e,40,110,38,0,0.8,0), pp("box",[80,8,80],0x9a8278,0,4,0) ],{fixed:1,volF:0.3});
+  K("riad","Riad House",520,[ pp("box",[420,300,300],0xc8a878,0,150,0), pp("box",[430,40,310],0xb08a58,0,320,0), pp("box",[160,220,180],0xd0b088,140,410,0), pp("box",[70,120,12],0x6a4a2e,0,60,152), pp("card",[60,80],0x3f6e8a,-120,180,151), pp("card",[60,80],0x3f6e8a,120,180,151), pp("box",[90,10,90],0xb08a58,140,525,0) ],{fixed:1,volF:0.3});
+  K("boathouse","Boathouse",700,[ pp("box",[560,320,420],0x8a6a48,0,160,0), pp("cone",[420,240,4],0x5a7a8e,0,440,0,0,0.785,0), pp("box",[240,260,14],0x4a3a2e,0,130,213), pp("card",[120,90],0xbfe6e0,-180,240,212), pp("cyl",[14,18,180,5],0x6a5030,-300,90,240,0,0,0.3), pp("box",[180,20,60],0xd85a3a,250,330,120,0,0.4,0) ],{fixed:1,volF:0.3});
   // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
   K("butterfly","Meadow Butterfly",4.5,[ pp("card",[2.6,2.2],0xe8a0bf,-1.2,4,0,0,0.6,0), pp("card",[2.6,2.2],0xd4a843,1.2,4,0,0,-0.6,0), pp("sph",[0.5,4,3],0x3a2a28,0,4,0) ],{mover:{kind:"dart",sp:2.6}});
   K("dragonflyS","Blue Dragonfly",5,[ pp("cyl",[0.35,0.2,3.6,4],0x4a7ab3,0,4.4,0,0,0,1.57), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,-0.8,0,0.5,0), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,0.8,0,-0.5,0) ],{mover:{kind:"dart",sp:3.4}});
@@ -894,7 +904,14 @@
     busW:["Village Bus","Late Bus"],
     butterfly:["Flutterby","Wobbly Flyer"],
     dragonflyS:["Blue Darner","Pond Skimmer"],
-    mothZ:["Dust Wing","Sleep Moth"]
+    mothZ:["Dust Wing","Sleep Moth"],
+    cerealbox:["Bran Barracks","Oat Tower","Breakfast Block"],
+    cookietin:["Biscuit Rotunda","The Blue Tin"],
+    booktower:["Encyclopedia Tower","The Unread Pile"],
+    shoebox:["Left Shoe Manor","Size Nine Villa"],
+    dovecote:["Pigeon Palace","The Coo House"],
+    riad:["Merchant's Riad","The Blue Door House"],
+    boathouse:["The Dry Dock","Old Slipway House"]
   };
   (function(){ for(var ak in ALT) if(ALT.hasOwnProperty(ak)&&PROPS[ak]) PROPS[ak].alt=ALT[ak]; })();
   var ADJ={
@@ -951,6 +968,9 @@
     // lanes (the tutorial near-field stays open — cold-start law)
     walls:[{zone:"mid",k:"crumbwall",sc:0.8,yards:7,runs:6,frags:6},
            {zone:"far",k:"crumbwall",sc:1.05,yards:6,runs:7,frags:6}],
+    // pantry towns: cereal box blocks with cracker box lanes
+    towns:[{zone:"mid",b:["cerealbox","cookietin"],n:2},
+           {zone:"far",b:["cerealbox","cookietin"],n:2,rows:3,cols:2}],
     scatter:[
       {k:"crumb",n:216,zone:"spawn"},
       {k:"crumb",n:704,zone:"near"},{k:"sugarcube",n:374,zone:"near"},{k:"raisin",n:321,zone:"near"},
@@ -1068,6 +1088,9 @@
            {zone:"r:z2",k:"bookwall",sc:2.1,yards:9,runs:8,frags:7},
            {zone:"r:z3",k:"blockwall",sc:2.9,yards:7,runs:8,frags:7,shape:"rect"},
            {zone:"r:z3",k:"bookwall",sc:2.6,yards:3,runs:3}],
+    // shelf city: book towers and shoebox houses
+    towns:[{zone:"r:z2",b:["booktower","shoebox"],n:2},
+           {zone:"r:z3",b:["booktower","shoebox"],n:2,rows:3,cols:2}],
     scatter:[
       {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
@@ -1180,6 +1203,9 @@
            {zone:"r:z2",k:"hedgewall",sc:2.6,yards:8,runs:6,frags:7},
            {zone:"r:z2",k:"stonewall",sc:2.9,yards:4,runs:4},
            {zone:"r:z3",k:"stonewall",sc:4.9,yards:7,runs:8,frags:7}],
+    // the potting quarter: sheds, dovecotes and glasshouses in garden rows
+    towns:[{zone:"r:z2",b:["gardenshed","dovecote"],n:2},
+           {zone:"r:z3",b:["greenhouse","gardenshed","dovecote"],n:2,rows:3,cols:2}],
     scatter:[
       {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
@@ -1302,6 +1328,9 @@
            {zone:"r:z2",k:"brickwall",sc:5.2,yards:9,runs:7,frags:7,shape:"rect"},
            {zone:"r:z3",k:"brickwall",sc:9.6,yards:7,runs:7,frags:6,shape:"rect"},
            {zone:"r:z3",k:"cratewall",sc:8.5,yards:3,runs:2,shape:"rect"}],
+    // the old quarter: riads and tea houses street by street
+    towns:[{zone:"r:z2",b:["riad","teahouse"],n:2},
+           {zone:"r:z3",b:["riad","teahouse","doorarch"],n:3,rows:3,cols:2}],
     scatter:[
       {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
       {k:"lemon",n:64,zone:"r:stand"},{k:"apple",n:46,zone:"r:stand"},{k:"pome",n:64,zone:"r:stand"},
@@ -1419,6 +1448,9 @@
            {zone:"r:z2",k:"seawall",sc:14,yards:8,runs:8,frags:6},
            {zone:"r:z2",k:"cratewall",sc:15,yards:3,runs:2,shape:"rect"},
            {zone:"r:z3",k:"seawall",sc:27,yards:6,runs:6,frags:5}],
+    // the waterfront: shacks, hulls and the dry docks
+    towns:[{zone:"r:z2",b:["fishshack","houseboat"],n:2},
+           {zone:"r:z3",b:["boathouse","beachhut","fishshack"],n:2,rows:3,cols:2}],
     scatter:[
       {k:"shell",n:106,zone:"spawn"},
       {k:"shell",n:116,zone:"r:tide"},{k:"starfish",n:74,zone:"r:tide"},{k:"bucket",n:59,zone:"r:tide"},
@@ -1541,6 +1573,9 @@
            {zone:"r:z2",k:"stonewall",sc:13,yards:3,runs:3},
            {zone:"r:z3",k:"hedgewall",sc:26,yards:8,runs:8,frags:6},
            {zone:"r:z4",k:"stonewall",sc:50,yards:5,runs:6,frags:5}],
+    // hamlets of the little planet: cottages, mills and towers
+    towns:[{zone:"r:z2",b:["cottage","chapel"],n:3},
+           {zone:"r:z3",b:["cottage","windmill","watertower"],n:3,rows:3,cols:2}],
     scatter:[
       {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
       {k:"pebble",n:198,zone:"r:meadow"},{k:"dewdrop",n:158,zone:"r:meadow"},{k:"mushroom",n:127,zone:"r:meadow"},
@@ -2004,7 +2039,7 @@
     // bands tint the zones. A world reads as a PLACE when the ground itself
     // says "something is over there". (The globe keeps its patchwork fields —
     // its ground texture isn't chart-aligned, so painted roads can't be.)
-    var ROADS=[];
+    var ROADS=[], TOWNS=[];
     if(!W.globe){
       var targets=[], ri, rj;
       for(ri=0;ri<W.gates.length;ri++){ var gd9=W.gates[ri];
@@ -2039,107 +2074,11 @@
                 cbx+=cqx/cql*cjj; cbz+=cqz/cql*cjj; }
               cpts.push([cbx,cbz]); }
             ROADS.push(cpts); } } }
-      // paint the overlay
-      var oc=document.createElement("canvas"); oc.width=oc.height=1024;
-      var og=oc.getContext("2d");
-      var opx=function(v){ return (v+W.bound)/(2*W.bound)*1024; };
-      var osz=function(v){ return v/(2*W.bound)*1024; };
-      // (tuning law of the LOOK: the overlay must read at GROUND level and
-      // disappear into the world from above — the first cut's bands + fat
-      // roads turned every overview into a dartboard)
-      // (district tint bands were tried and CUT — even at 0.045 alpha a band the
-      // size of a whole zone reads as a giant smudge from altitude. The ring
-      // roads + the walls themselves delineate districts; roads + worn patches
-      // carry the sense of place.)
-      // worn ground under every hand-placed scene — landmarks look PLACED
-      for(ri=0;ri<setExt.length;ri++){ var sp9=setExt[ri];
-        var pr9=osz(sp9.r*0.55);
-        var grd=og.createRadialGradient(opx(sp9.x),opx(sp9.z),pr9*0.2,opx(sp9.x),opx(sp9.z),pr9);
-        grd.addColorStop(0,W.night?"rgba(255,255,255,0.055)":"rgba(0,0,0,0.06)");
-        grd.addColorStop(1,"rgba(0,0,0,0)");
-        og.fillStyle=grd;
-        og.beginPath(); og.arc(opx(sp9.x),opx(sp9.z),pr9,0,6.283); og.fill(); }
-      og.lineCap="round"; og.lineJoin="round";
-      var rc9=({w1:"rgba(244,234,214,0.34)",w2:"rgba(255,246,224,0.3)",w3:"rgba(196,188,164,0.22)",
-                w4:"rgba(236,222,196,0.3)",w5:"rgba(186,152,112,0.38)",w6:"rgba(202,202,240,0.24)"})[W.id]||"rgba(230,230,230,0.3)";
-      var rw9=clamp(osz(W.goalD*1.5),2.5,7);
-      for(var pass9=0;pass9<2;pass9++){
-        og.strokeStyle=pass9?rc9:"rgba(0,0,0,0.05)";
-        og.lineWidth=pass9?rw9:rw9*1.25;
-        for(ri=0;ri<W.gates.length;ri++){ var gg9=W.gates[ri];
-          if(gg9.x!==0||gg9.z!==0) continue;
-          og.lineWidth=(pass9?rw9:rw9*1.25)*0.8;
-          og.beginPath(); og.arc(512,512,osz(gg9.r-gg9.need*1.35),0,6.283); og.stroke(); }
-        og.lineWidth=pass9?rw9:rw9*1.25;
-        for(ri=0;ri<ROADS.length;ri++){ var rp9=ROADS[ri];
-          og.beginPath(); og.moveTo(opx(rp9[0][0]),opx(rp9[0][1]));
-          for(rj=1;rj<rp9.length;rj++) og.lineTo(opx(rp9[rj][0]),opx(rp9[rj][1]));
-          og.stroke(); } }
-      var otex=new THREE.CanvasTexture(oc);
-      // no mipmaps: minified mips average the light strokes with transparent
-      // BLACK texels (straight alpha), turning subtle paths into huge dark
-      // smears from any altitude. Linear-filter the full-res canvas instead.
-      otex.generateMipmaps=false; otex.minFilter=THREE.LinearFilter;
-      var ogeo=new THREE.CircleGeometry(W.bound,64); ogeo.rotateX(-Math.PI/2);
-      var omesh=new THREE.Mesh(ogeo,new THREE.MeshLambertMaterial({map:otex,transparent:true,depthWrite:false}));
-      omesh.position.y=clamp(W.goalD*0.02,0.4,1.5);
-      scene.add(omesh);
-      if(TEST){ window._dbgOverlayCanvas=oc; window._dbgOverlayMesh=omesh; }
     }
     // ---- roadside details: lamps + a signpost where each road begins ----
     var LAMPS=({w1:{k:"candle",sc:1},w2:{k:"crayon",sc:1.7},w3:{k:"lantern",sc:1},
                 w4:{k:"brasslamp",sc:1.4},w5:{k:"mooringpost",sc:1.6},w6:{k:"dreamgrass",sc:1}})[W.id];
     var SIGNSC=({w1:0.8,w2:1.2,w3:1.8,w4:4,w5:8,w6:2})[W.id]||1;
-    if(LAMPS&&ROADS.length){
-      var lk9=PROPS[LAMPS.k], placedL=0, roadHalf=W.goalD*1.3, li9, lj9;
-      var lampClear=function(x,z){
-        if(x*x+z*z<W.startD*15*W.startD*15) return false;
-        if(nearFence(x,z)) return false;
-        for(var lq=0;lq<setExt.length;lq++){ var qdx=x-setExt[lq].x, qdz=z-setExt[lq].z;
-          if(qdx*qdx+qdz*qdz<setExt[lq].r*setExt[lq].r) return false; }
-        return true;
-      };
-      for(li9=0;li9<ROADS.length&&placedL<48;li9++){ var rp2=ROADS[li9];
-        var tl2=0;
-        for(lj9=1;lj9<rp2.length;lj9++){ var tdx=rp2[lj9][0]-rp2[lj9-1][0], tdz=rp2[lj9][1]-rp2[lj9-1][1];
-          tl2+=Math.sqrt(tdx*tdx+tdz*tdz); }
-        var spc=Math.max(tl2/7,lk9.s*LAMPS.sc*7), acc=spc*0.55, side=li9%2?1:-1;
-        for(lj9=1;lj9<rp2.length;lj9++){
-          var sx0=rp2[lj9-1][0], sz0=rp2[lj9-1][1];
-          var sdx2=rp2[lj9][0]-sx0, sdz2=rp2[lj9][1]-sz0;
-          var sl2=Math.sqrt(sdx2*sdx2+sdz2*sdz2)||1, ux2=sdx2/sl2, uz2=sdz2/sl2;
-          while(acc<sl2&&placedL<48){
-            var off9=roadHalf+lk9.s*LAMPS.sc*0.7;
-            var lpx=sx0+ux2*acc-uz2*off9*side, lpz=sz0+uz2*acc+ux2*off9*side;
-            side=-side;
-            if(lampClear(lpx,lpz)){
-              if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
-              byKind[LAMPS.k].push({x:lpx,z:lpz,rot:Math.atan2(ux2,uz2),sc:LAMPS.sc,keep:null});
-              placedL++; }
-            acc+=spc; }
-          acc-=sl2; } }
-      for(li9=0;li9<ROADS.length&&li9<6;li9++){ var rp3=ROADS[li9];
-        var pdx=rp3[1][0]-rp3[0][0], pdz=rp3[1][1]-rp3[0][1], pl3=Math.sqrt(pdx*pdx+pdz*pdz)||1;
-        var spx=rp3[0][0]+pdx/pl3*W.startD*4-pdz/pl3*W.goalD*1.6;
-        var spz=rp3[0][1]+pdz/pl3*W.startD*4+pdx/pl3*W.goalD*1.6;
-        if(!lampClear(spx,spz)) continue;
-        if(!byKind.signpost) byKind.signpost=[];
-        byKind.signpost.push({x:spx,z:spz,rot:Math.atan2(pdx,pdz),sc:SIGNSC,keep:null});
-      }
-      // gate lamps: lamp pairs mark "entrances" along each ring road — pure
-      // wayfinding decor (gates open everywhere, but eyes want anchors)
-      for(li9=0;li9<W.gates.length;li9++){ var gg8=W.gates[li9];
-        if(gg8.x!==0||gg8.z!==0) continue;
-        var rr8=gg8.r-gg8.need*1.35;
-        for(var gp9=0;gp9<3;gp9++){ var gb9=rng()*6.283;
-          for(var gs9=-1;gs9<=1;gs9+=2){
-            var ga9=gb9+gs9*(roadHalf*1.5+lk9.s*LAMPS.sc)/rr8;
-            var glx=Math.cos(ga9)*rr8, glz=Math.sin(ga9)*rr8;
-            if(!lampClear(glx,glz)) continue;
-            if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
-            byKind[LAMPS.k].push({x:glx,z:glz,rot:ga9,sc:LAMPS.sc,keep:null});
-          } } }
-    }
     var wallTiers={};
     (function(){
       if(!W.walls) return;
@@ -2249,6 +2188,47 @@
             put(kid,px,pz,Math.atan2(-Math.cos(a),-Math.sin(a)),sc*(0.94+rng()*0.14),sid,ws);
           } }
       }
+      // TOWNS (v5.0): street grids of BUILDINGS — the navigation centerpiece.
+      // One town = one structure (one sid): buildings pack close; the street
+      // width is derived from the building size so the lanes stay passable
+      // exactly until the buildings themselves become food (street ~1.6x
+      // building size ~= the largest ball that still cannot eat the town).
+      if(W.towns) for(wi=0;wi<W.towns.length;wi++){ var tn=W.towns[wi];
+        var tband=zoneBand(tn.zone), tA=zoneAnchors(tn.zone), tused={};
+        for(var ti=0;ti<(tn.n||1);ti++){
+          var tai=Math.floor(rng()*tA.length), tg8=0;
+          while(tused[tai]&&tg8++<tA.length) tai=(tai+1)%tA.length;
+          tused[tai]=1;
+          var tcx=tA[tai][0], tcz=tA[tai][1], tsid=++SID;
+          var rows=tn.rows||2, cols=tn.cols||2, smax=0, bi9;
+          for(bi9=0;bi9<tn.b.length;bi9++){ var bs9=PROPS[tn.b[bi9]].s*(tn.sc||1); if(bs9>smax)smax=bs9; }
+          var pitch=smax*2.5, rot0=rng()*1.5708;
+          var ca9=Math.cos(rot0), sa9=Math.sin(rot0), built=0;
+          for(var rr9=0;rr9<rows;rr9++) for(var cc9=0;cc9<cols;cc9++){
+            if(rows>2&&rr9===1&&cc9===((cols/2)|0)) continue;   // plaza lot
+            var lx9=(cc9-(cols-1)/2)*pitch, lz9=(rr9-(rows-1)/2)*pitch;
+            var bx0=tcx+lx9*ca9-lz9*sa9, bz0=tcz+lx9*sa9+lz9*ca9;
+            var bk9=tn.b[Math.floor(rng()*tn.b.length)];
+            var bws=PROPS[bk9].s*(tn.sc||1);
+            if(!wclear(bx0,bz0,bws,tband)||crossBlocked(bx0,bz0,bws,tsid)) continue;
+            put(bk9,bx0,bz0,Math.atan2(tcx-bx0,tcz-bz0),(tn.sc||1)*(0.95+rng()*0.1),tsid,bws);
+            if(wallTiers[PROPS[bk9].nm]===undefined||bws<wallTiers[PROPS[bk9].nm]) wallTiers[PROPS[bk9].nm]=bws;
+            built++;
+          }
+          if(built<2) continue;                                 // a town of one is a shack
+          if(PROPS.signpost) put("signpost",tcx,tcz,rng()*6.283,SIGNSC||1,tsid,30);
+          TOWNS.push({x:tcx,z:tcz,r:pitch*Math.max(rows,cols)*0.62,n:built});
+          // a road into town (planar worlds; the globe paints no roads)
+          if(!W.globe){ var tl0=Math.sqrt(tcx*tcx+tcz*tcz)||1;
+            var tpts=[[tcx/tl0*W.startD*13,tcz/tl0*W.startD*13]], tsg=6;
+            for(var tq=1;tq<=tsg;tq++){ var tt9=tq/tsg;
+              var tbx=tpts[0][0]+(tcx-tpts[0][0])*tt9, tbz=tpts[0][1]+(tcz-tpts[0][1])*tt9;
+              if(tq<tsg){ var tqx=-(tcz-tpts[0][1]), tqz=(tcx-tpts[0][0]), tql=Math.sqrt(tqx*tqx+tqz*tqz)||1;
+                var tjj=(rng()*2-1)*W.bound*0.012;
+                tbx+=tqx/tql*tjj; tbz+=tqz/tql*tjj; }
+              tpts.push([tbx,tbz]); }
+            ROADS.push(tpts); }
+        } }
       for(var wi=0;wi<W.walls.length;wi++){ var sp2=W.walls[wi];
         var band=zoneBand(sp2.zone), A2=zoneAnchors(sp2.zone), used={};
         var kk=PROPS[sp2.k], ws2=kk.s*sp2.sc;
@@ -2281,7 +2261,110 @@
           }
         }
       }
+    if(TEST) window._dbgTowns=TOWNS;
     })();
+    if(!W.globe){
+      // paint the overlay
+      var oc=document.createElement("canvas"); oc.width=oc.height=1024;
+      var og=oc.getContext("2d");
+      var opx=function(v){ return (v+W.bound)/(2*W.bound)*1024; };
+      var osz=function(v){ return v/(2*W.bound)*1024; };
+      // (tuning law of the LOOK: the overlay must read at GROUND level and
+      // disappear into the world from above — the first cut's bands + fat
+      // roads turned every overview into a dartboard)
+      // (district tint bands were tried and CUT — even at 0.045 alpha a band the
+      // size of a whole zone reads as a giant smudge from altitude. The ring
+      // roads + the walls themselves delineate districts; roads + worn patches
+      // carry the sense of place.)
+      // paved ground under every TOWN — districts read from any height
+      for(ri=0;ri<TOWNS.length;ri++){ var tp9=TOWNS[ri];
+        og.fillStyle=W.night?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.055)";
+        og.beginPath(); og.arc(opx(tp9.x),opx(tp9.z),osz(tp9.r),0,6.283); og.fill(); }
+      // worn ground under every hand-placed scene — landmarks look PLACED
+      for(ri=0;ri<setExt.length;ri++){ var sp9=setExt[ri];
+        var pr9=osz(sp9.r*0.55);
+        var grd=og.createRadialGradient(opx(sp9.x),opx(sp9.z),pr9*0.2,opx(sp9.x),opx(sp9.z),pr9);
+        grd.addColorStop(0,W.night?"rgba(255,255,255,0.055)":"rgba(0,0,0,0.06)");
+        grd.addColorStop(1,"rgba(0,0,0,0)");
+        og.fillStyle=grd;
+        og.beginPath(); og.arc(opx(sp9.x),opx(sp9.z),pr9,0,6.283); og.fill(); }
+      og.lineCap="round"; og.lineJoin="round";
+      var rc9=({w1:"rgba(244,234,214,0.34)",w2:"rgba(255,246,224,0.3)",w3:"rgba(196,188,164,0.22)",
+                w4:"rgba(236,222,196,0.3)",w5:"rgba(186,152,112,0.38)",w6:"rgba(202,202,240,0.24)"})[W.id]||"rgba(230,230,230,0.3)";
+      var rw9=clamp(osz(W.goalD*1.5),2.5,7);
+      for(var pass9=0;pass9<2;pass9++){
+        og.strokeStyle=pass9?rc9:"rgba(0,0,0,0.05)";
+        og.lineWidth=pass9?rw9:rw9*1.25;
+        for(ri=0;ri<W.gates.length;ri++){ var gg9=W.gates[ri];
+          if(gg9.x!==0||gg9.z!==0) continue;
+          og.lineWidth=(pass9?rw9:rw9*1.25)*0.8;
+          og.beginPath(); og.arc(512,512,osz(gg9.r-gg9.need*1.35),0,6.283); og.stroke(); }
+        og.lineWidth=pass9?rw9:rw9*1.25;
+        for(ri=0;ri<ROADS.length;ri++){ var rp9=ROADS[ri];
+          og.beginPath(); og.moveTo(opx(rp9[0][0]),opx(rp9[0][1]));
+          for(rj=1;rj<rp9.length;rj++) og.lineTo(opx(rp9[rj][0]),opx(rp9[rj][1]));
+          og.stroke(); } }
+      var otex=new THREE.CanvasTexture(oc);
+      // no mipmaps: minified mips average the light strokes with transparent
+      // BLACK texels (straight alpha), turning subtle paths into huge dark
+      // smears from any altitude. Linear-filter the full-res canvas instead.
+      otex.generateMipmaps=false; otex.minFilter=THREE.LinearFilter;
+      var ogeo=new THREE.CircleGeometry(W.bound,64); ogeo.rotateX(-Math.PI/2);
+      var omesh=new THREE.Mesh(ogeo,new THREE.MeshLambertMaterial({map:otex,transparent:true,depthWrite:false}));
+      omesh.position.y=clamp(W.goalD*0.02,0.4,1.5);
+      scene.add(omesh);
+      if(TEST){ window._dbgOverlayCanvas=oc; window._dbgOverlayMesh=omesh; }
+    }
+    if(LAMPS&&ROADS.length){
+      var lk9=PROPS[LAMPS.k], placedL=0, roadHalf=W.goalD*1.3, li9, lj9;
+      var lampClear=function(x,z){
+        if(x*x+z*z<W.startD*15*W.startD*15) return false;
+        if(nearFence(x,z)) return false;
+        for(var lq=0;lq<setExt.length;lq++){ var qdx=x-setExt[lq].x, qdz=z-setExt[lq].z;
+          if(qdx*qdx+qdz*qdz<setExt[lq].r*setExt[lq].r) return false; }
+        return true;
+      };
+      for(li9=0;li9<ROADS.length&&placedL<48;li9++){ var rp2=ROADS[li9];
+        var tl2=0;
+        for(lj9=1;lj9<rp2.length;lj9++){ var tdx=rp2[lj9][0]-rp2[lj9-1][0], tdz=rp2[lj9][1]-rp2[lj9-1][1];
+          tl2+=Math.sqrt(tdx*tdx+tdz*tdz); }
+        var spc=Math.max(tl2/7,lk9.s*LAMPS.sc*7), acc=spc*0.55, side=li9%2?1:-1;
+        for(lj9=1;lj9<rp2.length;lj9++){
+          var sx0=rp2[lj9-1][0], sz0=rp2[lj9-1][1];
+          var sdx2=rp2[lj9][0]-sx0, sdz2=rp2[lj9][1]-sz0;
+          var sl2=Math.sqrt(sdx2*sdx2+sdz2*sdz2)||1, ux2=sdx2/sl2, uz2=sdz2/sl2;
+          while(acc<sl2&&placedL<48){
+            var off9=roadHalf+lk9.s*LAMPS.sc*0.7;
+            var lpx=sx0+ux2*acc-uz2*off9*side, lpz=sz0+uz2*acc+ux2*off9*side;
+            side=-side;
+            if(lampClear(lpx,lpz)){
+              if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
+              byKind[LAMPS.k].push({x:lpx,z:lpz,rot:Math.atan2(ux2,uz2),sc:LAMPS.sc,keep:null});
+              placedL++; }
+            acc+=spc; }
+          acc-=sl2; } }
+      for(li9=0;li9<ROADS.length&&li9<6;li9++){ var rp3=ROADS[li9];
+        var pdx=rp3[1][0]-rp3[0][0], pdz=rp3[1][1]-rp3[0][1], pl3=Math.sqrt(pdx*pdx+pdz*pdz)||1;
+        var spx=rp3[0][0]+pdx/pl3*W.startD*4-pdz/pl3*W.goalD*1.6;
+        var spz=rp3[0][1]+pdz/pl3*W.startD*4+pdx/pl3*W.goalD*1.6;
+        if(!lampClear(spx,spz)) continue;
+        if(!byKind.signpost) byKind.signpost=[];
+        byKind.signpost.push({x:spx,z:spz,rot:Math.atan2(pdx,pdz),sc:SIGNSC,keep:null});
+      }
+      // gate lamps: lamp pairs mark "entrances" along each ring road — pure
+      // wayfinding decor (gates open everywhere, but eyes want anchors)
+      for(li9=0;li9<W.gates.length;li9++){ var gg8=W.gates[li9];
+        if(gg8.x!==0||gg8.z!==0) continue;
+        var rr8=gg8.r-gg8.need*1.35;
+        for(var gp9=0;gp9<3;gp9++){ var gb9=rng()*6.283;
+          for(var gs9=-1;gs9<=1;gs9+=2){
+            var ga9=gb9+gs9*(roadHalf*1.5+lk9.s*LAMPS.sc)/rr8;
+            var glx=Math.cos(ga9)*rr8, glz=Math.sin(ga9)*rr8;
+            if(!lampClear(glx,glz)) continue;
+            if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
+            byKind[LAMPS.k].push({x:glx,z:glz,rot:ga9,sc:LAMPS.sc,keep:null});
+          } } }
+    }
     // ---- set pieces: hand-placed scenes join the same instance stores ----
     // mover-kind items become LIVE movers homed at the scene (a statue ant is a
     // dead ant; a homed ant marches on the jam). No rng here — deterministic.
