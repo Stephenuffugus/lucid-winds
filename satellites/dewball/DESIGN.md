@@ -53,16 +53,19 @@ KEY CALIBRATION FACT: Stephen plays ~1.5x FASTER than the balance bot (his w5 t-
 vs bot 127-169s) — never assume humans are slower than the bot.
 | # | World | Theme | Start → Goal | Time | Bound | Gates |
 |---|-------|-------|--------------|------|-------|-------|
-| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 1596 | 16 · 30 · 40 |
-| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 4008 | rings 22 · 55 · 95 |
-| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 2:45 | 5610 | rings 32 · 80 · 145 |
-| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:00 | 8960 | rings 60 · 160 · 380 |
-| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 12000 | rings 160 · 550 · 1250 |
-| 6 | THE WHOLE WORLD | 🌍 57m-planet globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 18000 | rings 120 · 420 · 1300 · 2600 |
-| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 3640 | — |
-(v3.4, Stephen: "I want all the levels much bigger" — every bound scaled 1.4-1.7x linear
-with counts only +20%, so density fell another ~40% on top of the v3.3 density law.
-Gate needs/goals/clocks unchanged; ring radii, gate positions, set origins scaled.)
+| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:45 | 2474 | 14 · 26 · 36 |
+| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 6212 | rings 22 · 55 · 95 |
+| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 3:00 | 8696 | rings 32 · 80 · 145 |
+| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:15 | 13888 | rings 60 · 160 · 380 |
+| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 18600 | rings 160 · 550 · 1250 |
+| 6 | THE WHOLE WORLD | 🌍 89m-planet globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 27900 | rings 120 · 420 · 1300 · 2600 |
+| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 5278 | — |
+(v3.4-v3.5, Stephen twice: "much bigger" — bounds scaled 1.4-1.7x then 1.55x again
+(x2.2-2.6 total) with counts only +20% each pass; density is now ~1/3 of v3.3. w1 eased
+(tutorial: gates 14/26/36, denser near field, 2:45 — the density law applies least to
+level 1). Clocks re-verified against the bot after each scale. SIZE FUN FACTS (v3.5):
+a 25-entry ladder of real-world comparisons ("💡 you're as long as a blue whale") fires
+once each as the ball crosses them — smiles + scale insight, Stephen's ask.)
 
 Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
 (v2.4 additions: chess corner, sandwich tower, grown-ups' picnic table, train loop,
