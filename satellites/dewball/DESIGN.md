@@ -121,6 +121,24 @@ moonshard (the final meals), + sheep/cow/car/bus movers, + 5 keepsakes (Old Glob
 Weathervane, Postbox, Telescope, The Little Crown). Endgame: a 30m+ dewball visibly
 dwarfing its own 13m planet. NEVER give w7 a bound-wall — the globe has no edge.
 
+### READABILITY LAWS (v3.1, Stephen device note at ~1.7m on the globe: "things are hard
+### to see, camera keeps skipping, things hit me and I can't tell from where, gates are
+### impossible to understand")
+- BRIGHT beats moody: the globe is a sunny day planet (Katamari is readable because it
+  is bright and saturated). Never ship a dark-on-dark world.
+- The camera looks DOWN more on the globe (pitch 0.76, dist r*7.0+40) — at mid-size the
+  props are taller than a low camera and wall off the view.
+- Look-ahead is SMOOTHED — impacts reverse velocity instantly and a raw look-ahead makes
+  the camera whip.
+- ⚠ THREAT INDICATOR: any unpickable mover within ~8 ball-diameters gets a pulsing
+  edge-clamped warning marker + tick. You should never be hit by something you never saw.
+- GATE SIGNS: every gate carries a floating billboard ("🔒 2.6 m" -> "OPEN!") readable
+  from a distance; the bump hint shows current size vs needed. A rule the player can
+  only learn by bumping a fence is not a rule.
+- Cars slowed (sp 1.8) and thinned — fast unseeable hits from beyond the curved horizon
+  were the "what just hit me" complaint.
+- Far-field props reproject on alternate frames (phone perf on the 5x planet).
+
 ## ⚖️ THE TUNING LAW (learned the hard way, 2026-07-13; instruments upgraded 07-14)
 Static volume budgeting shipped three mathematically unwinnable worlds. Binding
 constraints that MUST be verified empirically after ANY scatter/size/goal/time edit:

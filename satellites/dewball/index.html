@@ -93,6 +93,11 @@
     background:radial-gradient(circle, rgba(224,106,90,0) 40%, rgba(224,106,90,.5) 100%); transition:opacity .1s; }
   #goldflash { position:fixed; inset:0; pointer-events:none; z-index:7; opacity:0;
     background:radial-gradient(circle, rgba(200,168,75,0) 30%, rgba(200,168,75,.4) 100%); transition:opacity .3s; }
+  #threat { position:fixed; z-index:8; pointer-events:none; font-size:1.5rem; opacity:0;
+    transition:opacity .25s; transform:translate(-50%,-50%);
+    text-shadow:0 0 12px rgba(224,106,90,.95), 0 2px 6px rgba(0,0,0,.9);
+    animation:thpulse .55s infinite alternate; }
+  @keyframes thpulse { from{ filter:brightness(1);} to{ filter:brightness(1.6);} }
   .pip { position:fixed; z-index:8; pointer-events:none; font-weight:800; font-size:.85rem;
     color:#8ec96a; text-shadow:0 1px 6px rgba(0,0,0,.9); transition:transform 1s linear, opacity 1s linear; white-space:nowrap; }
   .pip.gold { color:#c8a84b; font-size:1rem; }
@@ -221,6 +226,7 @@
 <div id="stickR" class="stick"><div class="nub"></div></div>
 <div id="flash"></div>
 <div id="goldflash"></div>
+<div id="threat">⚠️</div>
 
 <!-- MENU -->
 <div id="menu" class="overlay">
@@ -702,7 +708,7 @@
   K("hayrick","Hayrick",300,[ pp("cyl",[100,128,185,9],0xd8b25a,0,92,0), pp("sph",[118,9,7],0xe0c068,0,205,0) ]);
   K("sheepW","Meadow Sheep",90,[ pp("sph",[36,8,6],0xf0ece0,0,44,0), pp("sph",[16,7,5],0x3a332e,34,52,0), pp("cyl",[5,5,26,4],0x3a332e,-18,13,-14), pp("cyl",[5,5,26,4],0x3a332e,18,13,-14), pp("cyl",[5,5,26,4],0x3a332e,-18,13,14), pp("cyl",[5,5,26,4],0x3a332e,18,13,14) ],{mover:{kind:"wander",sp:0.8}});
   K("cowW","Brindle Cow",170,[ pp("box",[110,62,52],0x8a6a4e,0,80,0), pp("box",[34,30,30],0xf0ece0,66,96,0), pp("cyl",[7,7,50,4],0x6a4e38,-40,25,-18), pp("cyl",[7,7,50,4],0x6a4e38,40,25,-18), pp("cyl",[7,7,50,4],0x6a4e38,-40,25,18), pp("cyl",[7,7,50,4],0x6a4e38,40,25,18), pp("sph",[10,5,4],0xf0ece0,20,105,0) ],{mover:{kind:"patrol",sp:0.7}});
-  K("carW","Runabout Car",260,[ pp("box",[210,55,95],0xc25a4a,0,55,0), pp("box",[115,48,88],0xd8dce0,-8,105,0), pp("cyl",[24,24,16,8],0x2a2a30,-70,24,-52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,70,24,-52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,-70,24,52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,70,24,52,1.57,0,0), pp("card",[40,20],0xf0d080,105,55,0,0,1.57,0) ],{mover:{kind:"dart",sp:2.4}});
+  K("carW","Runabout Car",260,[ pp("box",[210,55,95],0xc25a4a,0,55,0), pp("box",[115,48,88],0xd8dce0,-8,105,0), pp("cyl",[24,24,16,8],0x2a2a30,-70,24,-52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,70,24,-52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,-70,24,52,1.57,0,0), pp("cyl",[24,24,16,8],0x2a2a30,70,24,52,1.57,0,0), pp("card",[40,20],0xf0d080,105,55,0,0,1.57,0) ],{mover:{kind:"dart",sp:1.8}});
   K("busW","Country Bus",520,[ pp("box",[430,150,140],0xd8a03a,0,115,0), pp("box",[430,60,130],0xe8e4da,0,220,0), pp("cyl",[42,42,24,8],0x2a2a30,-140,42,-74,1.57,0,0), pp("cyl",[42,42,24,8],0x2a2a30,140,42,-74,1.57,0,0), pp("cyl",[42,42,24,8],0x2a2a30,-140,42,74,1.57,0,0), pp("cyl",[42,42,24,8],0x2a2a30,140,42,74,1.57,0,0) ],{mover:{kind:"patrol",sp:0.9}});
   K("cottage","Stone Cottage",620,[ pp("box",[470,300,380],0xb8b0a0,0,150,0), pp("cone",[330,230,4],0xa04838,0,415,0,0,0.785,0), pp("box",[70,110,12],0x6a4e38,0,55,192), pp("card",[70,70],0xf0d080,-130,180,191), pp("card",[70,70],0xf0d080,130,180,191), pp("box",[60,140,60],0x8a8278,150,470,80) ]);
   K("oakW","Old Oak",750,[ pp("cyl",[52,78,320,7],0x6a4e38,0,160,0), pp("sph",[235,9,7],0x4a7a3e,0,430,0), pp("sph",[165,8,6],0x568a46,155,375,85), pp("sph",[150,8,6],0x3f6e34,-150,395,-70) ]);
@@ -999,16 +1005,16 @@
     movers:[{k:"crabS",n:8},{k:"gull",n:5}] },
 
   { id:"w7", nm:"The Whole World", emoji:"🌍", sub:"a little planet, rolled entire",
-    startD:45, goalD:2200, s2:3200, s3:4400, time:360, bound:9500, seed:707, globe:1, wrap:1, night:1,
-    sky:["#05070f","#182446","#02030a"], fog:{c:0x0e1428,d:0.00003},
-    ground:{style:"fields",c1:"#3e6844",c2:"#7a9a4e"}, rim:0x1e3020,
+    startD:45, goalD:2200, s2:3200, s3:4400, time:360, bound:9500, seed:707, globe:1, wrap:1,
+    sky:["#5a9ed4","#cfe3ee","#3f6e9a"], fog:{c:0xc8dce8,d:0.00002},
+    ground:{style:"fields",c1:"#4a7c46",c2:"#79a852"}, rim:0x1e3020,
     regions:{ meadow:{x:0,z:0,r:1700}, meadowOut:{x:0,z:0,r:1700,r0:700},
               farm:{x:2900,z:1000,r:1600}, pond:{x:-2700,z:2400,r:1500} },
-    gates:[{x:900,z:-3600,r:1500,need:260,label:"The Village Gate"},
-           {x:-4400,z:-2000,r:1700,need:750,label:"The Harbor Gate"},
-           {x:4900,z:3600,r:1800,need:1400,label:"The High Valley"},
-           {x:-1600,z:5800,r:1900,need:2300,label:"The Royal City"},
-           {x:5400,z:-5000,r:1700,need:3000,label:"The Crown of the World"}],
+    gates:[{x:1000,z:-4000,r:2200,need:260,label:"The Village Gate"},
+           {x:-4400,z:-2000,r:2400,need:750,label:"The Harbor Gate"},
+           {x:4900,z:3600,r:2600,need:1400,label:"The High Valley"},
+           {x:-1600,z:5800,r:2600,need:2300,label:"The Royal City"},
+           {x:5400,z:-5000,r:2400,need:3000,label:"The Crown of the World"}],
     scatter:[
       {k:"pebble",n:26,zone:"spawn"},{k:"dewdrop",n:18,zone:"spawn"},{k:"mushroom",n:10,zone:"spawn"},
       {k:"pebble",n:110,zone:"r:meadow"},{k:"dewdrop",n:80,zone:"r:meadow"},{k:"mushroom",n:70,zone:"r:meadow"},
@@ -1025,23 +1031,25 @@
       {k:"netbale",n:18,zone:"r:pond"},{k:"driftwood",n:20,zone:"r:pond"},{k:"kelptangle",n:18,zone:"r:pond"},
       {k:"seagrass",n:32,zone:"r:pond"},{k:"tidepool",n:8,zone:"r:pond"},{k:"lobsterpot",n:16,zone:"r:pond"},
       {k:"buoy",n:12,zone:"r:pond"},
-      {k:"barrel",n:12,zone:"gate0"},{k:"netbale",n:8,zone:"gate0"},{k:"benchG",n:8,zone:"gate0"},
-      {k:"cartB",n:8,zone:"gate0"},{k:"hayrick",n:6,zone:"gate0"},{k:"carpetstack",n:6,zone:"gate0"},
-      {k:"stall",n:8,zone:"gate0"},{k:"fountain",n:6,zone:"gate0"},{k:"streetlamp",n:10,zone:"gate0"},
-      {k:"fishcart",n:6,zone:"gate0"},{k:"boardwalkstand",n:4,zone:"gate0"},{k:"cottage",n:4,zone:"gate0"},
-      {k:"umbrella",n:6,zone:"gate0"},{k:"doorarch",n:3,zone:"gate0"},{k:"waterwell",n:2,zone:"gate0"},
-      {k:"mooringpost",n:10,zone:"gate1"},{k:"cargobox",n:10,zone:"gate1"},{k:"fishshack",n:6,zone:"gate1"},
-      {k:"houseboat",n:6,zone:"gate1"},{k:"boardwalkstand",n:4,zone:"gate1"},{k:"sailboat",n:5,zone:"gate1"},
-      {k:"beachhut",n:5,zone:"gate1"},{k:"dockpost",n:12,zone:"gate1"},{k:"lifeguardpost",n:3,zone:"gate1"},
-      {k:"ferry",n:1,zone:"gate1"},{k:"harborcrane",n:1,zone:"gate1"},{k:"whalebone",n:2,zone:"gate1"},
-      {k:"cottage",n:14,zone:"gate2"},{k:"oakW",n:14,zone:"gate2"},{k:"pineW",n:12,zone:"gate2"},
-      {k:"windmill",n:6,zone:"gate2"},{k:"watertower",n:5,zone:"gate2"},{k:"hayrick",n:8,zone:"gate2"},
-      {k:"chapel",n:2,zone:"gate2"},
-      {k:"keeptower",n:1,zone:"gate3"},{k:"citywall",n:8,zone:"gate3"},{k:"clocktower",n:4,zone:"gate3"},
-      {k:"chapel",n:3,zone:"gate3"},{k:"cottage",n:6,zone:"gate3"},{k:"streetlamp",n:8,zone:"gate3"},
-      {k:"doorarch",n:4,zone:"gate3"},
-      {k:"moonshard",n:3,zone:"gate4"},{k:"hillock",n:3,zone:"gate4"},{k:"graypeak",n:2,zone:"gate4"},
-      {k:"standingstone",n:6,zone:"gate4"},{k:"lighthouse",n:1,zone:"gate4"},
+      {k:"barrel",n:16,zone:"gate0"},{k:"netbale",n:10,zone:"gate0"},{k:"benchG",n:12,zone:"gate0"},
+      {k:"cartB",n:14,zone:"gate0"},{k:"hayrick",n:12,zone:"gate0"},{k:"carpetstack",n:8,zone:"gate0"},
+      {k:"stall",n:14,zone:"gate0"},{k:"fountain",n:10,zone:"gate0"},{k:"streetlamp",n:16,zone:"gate0"},
+      {k:"fishcart",n:10,zone:"gate0"},{k:"boardwalkstand",n:8,zone:"gate0"},{k:"cottage",n:10,zone:"gate0"},
+      {k:"umbrella",n:10,zone:"gate0"},{k:"doorarch",n:6,zone:"gate0"},{k:"waterwell",n:4,zone:"gate0"},
+      {k:"wheelbarrow",n:10,zone:"gate0"},{k:"grainsack",n:10,zone:"gate0"},
+      {k:"mooringpost",n:12,zone:"gate1"},{k:"cargobox",n:16,zone:"gate1"},{k:"fishshack",n:10,zone:"gate1"},
+      {k:"houseboat",n:10,zone:"gate1"},{k:"boardwalkstand",n:8,zone:"gate1"},{k:"sailboat",n:9,zone:"gate1"},
+      {k:"beachhut",n:9,zone:"gate1"},{k:"dockpost",n:16,zone:"gate1"},{k:"lifeguardpost",n:6,zone:"gate1"},
+      {k:"ferry",n:2,zone:"gate1"},{k:"harborcrane",n:2,zone:"gate1"},{k:"whalebone",n:5,zone:"gate1"},
+      {k:"rowboat",n:10,zone:"gate1"},{k:"dinghy",n:8,zone:"gate1"},
+      {k:"cottage",n:20,zone:"gate2"},{k:"oakW",n:20,zone:"gate2"},{k:"pineW",n:16,zone:"gate2"},
+      {k:"windmill",n:10,zone:"gate2"},{k:"watertower",n:8,zone:"gate2"},{k:"hayrick",n:12,zone:"gate2"},
+      {k:"chapel",n:5,zone:"gate2"},{k:"clocktower",n:3,zone:"gate2"},
+      {k:"keeptower",n:2,zone:"gate3"},{k:"citywall",n:12,zone:"gate3"},{k:"clocktower",n:7,zone:"gate3"},
+      {k:"chapel",n:6,zone:"gate3"},{k:"cottage",n:10,zone:"gate3"},{k:"streetlamp",n:12,zone:"gate3"},
+      {k:"doorarch",n:8,zone:"gate3"},{k:"minaret",n:2,zone:"gate3"},
+      {k:"moonshard",n:4,zone:"gate4"},{k:"hillock",n:4,zone:"gate4"},{k:"graypeak",n:3,zone:"gate4"},
+      {k:"standingstone",n:10,zone:"gate4"},{k:"lighthouse",n:2,zone:"gate4"},
       {k:"barrel",n:36,zone:"sq"},{k:"hayrick",n:28,zone:"sq"},{k:"pineW",n:30,zone:"sq"},
       {k:"fishcart",n:8,zone:"sq"},{k:"netbale",n:12,zone:"sq"},
       {k:"oakW",n:14,zone:"sq"},{k:"standingstone",n:10,zone:"sq"},{k:"benchG",n:18,zone:"sq"},
@@ -1055,7 +1063,7 @@
       {k:"kPostbox",n:1,zone:"gate0",keep:1},{k:"kTelescope",n:1,zone:"gate1",keep:1},
       {k:"kCrown",n:1,zone:"gate4",keep:1} ],
     sets:[
-      { x:900,z:-3600, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
+      { x:1000,z:-4000, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
       { x:2900,z:1000, items:_cat(_row("hayrick",3,0,0,420,50,0),_row("hayrick",3,200,380,420,40,0),
           [["cartB",-350,150,0.8,1],["cartB",-390,-160,2.2,1],["barrel",520,240,0,1],["barrel",560,180,0,1]]) },
       { x:-2700,z:2400, items:[["tidepool",0,0,0,1],["tidepool",300,180,0.9,1],["rowboat",-260,120,0.4,1],
@@ -1073,7 +1081,7 @@
       { x:5400,z:-5000, items:_cat([["moonshard",0,0,0.5,1]],_ring("standingstone",7,520)) }
     ],
     movers:[{k:"sheepW",n:7,zone:"r:meadowOut"},{k:"sheepW",n:8,zone:"r:farm"},{k:"cowW",n:8,zone:"r:farm"},
-            {k:"carW",n:6,zone:"sq"},{k:"busW",n:3,zone:"sq"},{k:"dogB",n:3,zone:"r:farm"}] },
+            {k:"carW",n:4,zone:"sq"},{k:"busW",n:3,zone:"sq"},{k:"dogB",n:3,zone:"r:farm"}] },
 
   { id:"w6", nm:"Dream Meadow", emoji:"💤", sub:"endless zen, everything at once",
     startD:20, goalD:0, time:0, bound:2600, seed:606, zen:1,
@@ -1124,7 +1132,7 @@
     renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
     renderer.setSize(window.innerWidth,window.innerHeight);
     $("gl").appendChild(renderer.domElement);
-    camera=new THREE.PerspectiveCamera(62,window.innerWidth/window.innerHeight,2,50000);
+    camera=new THREE.PerspectiveCamera(62,window.innerWidth/window.innerHeight,2,140000);
     sharedMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
     keepMat=new THREE.MeshBasicMaterial({color:0xf2d98a});
     KEEPGEO=mergeParts([ pp("cone",[1,1.6,4],0xf2d98a,0,0.8,0), pp("cone",[1,1.6,4],0xf2d98a,0,-0.8,0,Math.PI,0,0) ]);
@@ -1158,16 +1166,16 @@
       g.strokeStyle="#a89068"; for(i=0;i<10;i++){ g.beginPath(); g.moveTo(0,i*54+20);
         for(x=0;x<=512;x+=32){ g.lineTo(x,i*54+20+Math.sin(x*0.05+i)*8); } g.stroke(); } g.globalAlpha=1; }
     else if(st==="fields"){ // patchwork farmland quilt — reads as "the world from above"
-      var shades=["#3e6844","#567a3e","#7a9a4e","#8aa858","#4e7a52","#6e8a46","#b0a060","#3a5e40"];
+      var shades=["#4a7c46","#5e9048","#79a852","#8fb85c","#569055","#6f9c50","#b0a468","#7fae54"];
       for(i=0;i<44;i++){ var fw=60+Math.random()*130, fh=50+Math.random()*110;
         g.fillStyle=shades[(Math.random()*shades.length)|0];
         g.fillRect(Math.random()*512-fw/2,Math.random()*512-fh/2,fw,fh); }
-      g.strokeStyle="rgba(30,42,26,0.22)"; g.lineWidth=2;   // soft field seams — harsh lines read as debris at ball scale
+      g.strokeStyle="rgba(30,42,26,0.14)"; g.lineWidth=2;   // soft field seams — harsh lines read as debris at ball scale
       for(i=0;i<14;i++){ g.beginPath();
         if(i%2){ g.moveTo(0,Math.random()*512); g.lineTo(512,Math.random()*512); }
         else { g.moveTo(Math.random()*512,0); g.lineTo(Math.random()*512,512); }
         g.stroke(); }
-      g.globalAlpha=0.35; g.fillStyle="#88b0d8";   // little ponds
+      g.globalAlpha=0.5; g.fillStyle="#7ab8e0";   // little ponds
       for(i=0;i<7;i++){ g.beginPath(); g.arc(Math.random()*512,Math.random()*512,8+Math.random()*16,0,7); g.fill(); }
       g.globalAlpha=1; }
     else { // dream
@@ -1184,9 +1192,12 @@
     return tex;
   }
   function buildSky(w){
-    var geo=new THREE.SphereGeometry(w.bound*3.4,16,10);
+    // globe skies are far bigger: the endgame camera pulls back ~4.5x bound and must
+    // never exit the sky sphere (outside = black void — "things are hard to see")
+    var skyR=w.bound*(w.globe?6:3.4);
+    var geo=new THREE.SphereGeometry(skyR,16,10);
     var pos=geo.attributes.position, col=[], top=new THREE.Color(w.sky[0]), mid=new THREE.Color(w.sky[1]), bot=new THREE.Color(w.sky[2]);
-    for(var i=0;i<pos.count;i++){ var t=pos.getY(i)/(w.bound*3.4), c;
+    for(var i=0;i<pos.count;i++){ var t=pos.getY(i)/skyR, c;
       if(t>0){ c=mid.clone().lerp(top,Math.min(1,t*1.4)); } else { c=mid.clone().lerp(bot,Math.min(1,-t*2.2)); }
       col.push(c.r,c.g,c.b); }
     geo.setAttribute("color",new THREE.Float32BufferAttribute(col,3));
@@ -1215,7 +1226,7 @@
   // ---------- world build / teardown ----------
   function teardown(){
     if(scene){ scene.traverse(function(o){
-        if(o.isMesh||o.isPoints){ if(o.geometry&&!o.geometry._shared) o.geometry.dispose();
+        if(o.isMesh||o.isPoints||o.isSprite){ if(o.geometry&&!o.geometry._shared) o.geometry.dispose();
           if(o.material&&o.material.map&&o.material!==sharedMat&&o.material!==keepMat) o.material.map.dispose(); } }); }
     scene=null; INST=[]; MOVERS=[]; GATES=[]; KEEPMARKS=[]; GRID=null; GLOBE=null; _gid=0; _qStamp=[];
   }
@@ -1323,7 +1334,29 @@
           vx:0,vz:0,ai:mk2.mover.kind,sp:mk2.mover.sp,t:rng()*2,hx:mp[0],hz:mp[1],ph:rng()*6.283}); } }
     // ---- gates ----
     // posts sit ~0.9 needs apart (was 1.7 — sparse pickets read as scenery, not a wall)
-    // with gold caps, so a locked fence reads as "treasure behind this, come back bigger"
+    // with gold caps, so a locked fence reads as "treasure behind this, come back bigger".
+    // Every gate carries a floating billboard SIGN with its size requirement — bumping a
+    // fence to learn the rule was "impossible for people to understand" (Stephen).
+    function makeGateSign(gd2){
+      var c2=document.createElement("canvas"); c2.width=320; c2.height=112;
+      var g2=c2.getContext("2d");
+      var tex2=new THREE.CanvasTexture(c2);
+      function draw(txt,open){
+        g2.clearRect(0,0,320,112);
+        g2.fillStyle=open?"rgba(74,110,50,0.88)":"rgba(12,14,12,0.82)";
+        g2.fillRect(6,24,308,64);
+        g2.strokeStyle=open?"#a8e086":"#c8a84b"; g2.lineWidth=5; g2.strokeRect(6,24,308,64);
+        g2.fillStyle=open?"#eaffd8":"#e8dcc8"; g2.font="bold 44px sans-serif";
+        g2.textAlign="center"; g2.textBaseline="middle";
+        g2.fillText(txt,160,58);
+        tex2.needsUpdate=true;
+      }
+      draw("🔒 "+fmtSize(gd2.need),false);
+      var sp2=new THREE.Sprite(new THREE.SpriteMaterial({map:tex2,transparent:true}));
+      var sw=gd2.need*3.6;
+      sp2.scale.set(sw,sw*0.35,1);
+      return {sprite:sp2,draw:draw};
+    }
     for(i=0;i<W.gates.length;i++){ var gd=W.gates[i];
       var np=Math.max(24,Math.min(110,Math.round(6.283*gd.r/(gd.need*0.9))));
       if(W.globe){
@@ -1350,7 +1383,11 @@
         var fm=new THREE.Mesh(fg,sharedMat); fm.frustumCulled=false;
         fm.position.set(gd.x,0,gd.z); scene.add(fm);
         GATES.push({def:gd,open:false,sinkY:0,mesh:fm,hintT:0});
-      } }
+      }
+      var gNew=GATES[GATES.length-1];
+      gNew.sign=makeGateSign(gd);
+      if(!W.globe) gNew.sign.sprite.position.set(gd.x,gd.need*2.1,gd.z);
+      scene.add(gNew.sign.sprite); }
     // ---- spatial grid ----
     var cs=Math.max(80,Math.min(620,W.bound/14)), dim;
     if(W.wrap){ dim=Math.max(4,Math.ceil(2*W.bound/cs)); cs=2*W.bound/dim;   // exact tiling so cells wrap mod dim
@@ -1366,9 +1403,19 @@
     R={D:W.startD, vol:ballVolFromD(W.startD), x:0,z:0,vx:0,vz:0,
        absorbs:0, cling:[], combo:0, comboT:0, comboBest:0,
        dashM:0, dashT:0, stun:0, timer:W.time, goalHit:false, s2Hit:false, s3Hit:false, over:false,
-       nextMile:W.startD*2, keepsNew:0, keepsRun:[], firstKind:{}, flash:0, gold:0, t:0,
+       nextMile:W.startD*2, keepsNew:0, keepsRun:[], firstKind:{}, flash:0, gold:0, t:0, _lax:0, _laz:0,
        lowPerf:false, _ms:16, _slow:0};
-    camYaw=0; camYawT=0; camPitch=0.62;
+    // "you can now roll up X" ladder — derived from this world's own scatter (Katamari's
+    // best readability trick: the game TELLS you when a new tier of stuff becomes food)
+    var tiers=[], seenK={};
+    for(i=0;i<W.scatter.length;i++){ e=W.scatter[i];
+      if(e.keep||e.n<6||seenK[e.k]) continue; seenK[e.k]=1;
+      tiers.push({s:PROPS[e.k].s,nm:PROPS[e.k].nm}); }
+    tiers.sort(function(a,b){ return a.s-b.s; });
+    R.tiers=tiers; R.tierIdx=0; R.tierT=0;
+    var lim0=W.startD*prRatio(W.startD);
+    while(R.tierIdx<tiers.length && tiers[R.tierIdx].s<=lim0) R.tierIdx++;
+    camYaw=0; camYawT=0; camPitch=W.globe?0.76:0.62;   // globe: look DOWN onto the field — mid-game props otherwise wall off the view
     // snap the camera straight to its follow position — lerping in from the previous
     // world's camera (or the origin, inside the globe) makes an ugly first second
     if(camera){ var r0=R.D/2, dist0=r0*6.1+30;
@@ -1585,7 +1632,12 @@
         if(!silent){ winFanfare(); R.gold=1; toast("★★★ A LEGENDARY ROLL!"); } } }
     for(var i=0;i<GATES.length;i++){ var g=GATES[i];
       if(!g.open&&R.D>=g.def.need){ g.open=true;
+        if(g.sign){ g.sign.draw("OPEN!",true); g.signT=4; }
         if(!silent){ gateSound(); R.gold=Math.max(R.gold,0.7); toast("The fence sinks. "+g.def.label+" opens!"); } } }
+    // announce newly-edible prop tiers ("what can I even eat?" is THE readability question)
+    if(R.tiers){ var lim9=R.D*prRatio(R.D), newest=null;
+      while(R.tierIdx<R.tiers.length && R.tiers[R.tierIdx].s<=lim9){ newest=R.tiers[R.tierIdx]; R.tierIdx++; }
+      if(newest&&!silent&&R.t-R.tierT>5){ R.tierT=R.t; toast("You can roll up: "+newest.nm+"!"); } }
   }
   function attachVisual(st,i,size){
     var k=PROPS[st.kid], r=R.D/2;
@@ -1640,6 +1692,7 @@
   // ---------- movers ----------
   function stepMovers(dt){
     var i, base=maxSpeed(false);
+    R._thX=null; var _thD2=1e18;
     for(i=MOVERS.length-1;i>=0;i--){ var m=MOVERS[i];
       m.t-=dt;
       var msp=m.sp*Math.pow(m.size,0.62)*7;
@@ -1664,6 +1717,9 @@
       m.mesh.position.set(m.x,0,m.z); m.mesh.rotation.y=m.rot;
       // vs ball
       var dx=wrapD(R.x-m.x), dz=wrapD(R.z-m.z), d=Math.sqrt(dx*dx+dz*dz), rr=R.D/2*0.95+m.size*0.45;
+      // threat tracking: an unpickable mover close enough to matter
+      if(m.size>R.D*1.15 && d<R.D*8+m.size && d*d<_thD2){ _thD2=d*d;
+        R._thX=m.x; R._thZ=m.z; R._thS=m.size; }
       if(d<rr){
         if(m.size<=R.D*prRatio(R.D)){
           // eaten! revenge is sweet
@@ -1734,7 +1790,7 @@
           var want=g.def.r+out*(r+g.def.need*0.08);
           R.x=wrapC(g.def.x+gnx*want); R.z=wrapC(g.def.z+gnz*want);
           var gvn=(R.vx*gnx+R.vz*gnz)*out; if(gvn<0){ R.vx-=1.6*gvn*gnx*out; R.vz-=1.6*gvn*gnz*out; bumpSound(); }
-          if(g.hintT<=0){ g.hintT=5; toast(g.def.label+": grow to "+fmtSize(g.def.need)); } } }
+          if(g.hintT<=0){ g.hintT=5; toast("🔒 "+g.def.label+" — you're "+fmtSize(R.D)+", need "+fmtSize(g.def.need)); } } }
       // props
       collideProps(h);
     }
@@ -1760,6 +1816,8 @@
     for(gi=0;gi<GATES.length;gi++){ var gg=GATES[gi];
       if(gg.hintT>0)gg.hintT-=dt;
       if(gg.open){
+        if(gg.sign&&gg.signT!==undefined){ gg.signT-=dt;
+          if(gg.signT<=0){ scene.remove(gg.sign.sprite); gg.sign=null; } }
         if(gg.mesh){ if(gg.mesh.visible){ gg.sinkY-=dt*gg.def.need;
           gg.mesh.position.y=gg.sinkY; if(gg.sinkY<-gg.def.need*1.4) gg.mesh.visible=false; } }
         else if(gg.postIM){ gg.sinkY-=dt*gg.def.need;
@@ -1767,6 +1825,23 @@
     // keepsake marker bob (globe markers are placed radially in globeSync)
     if(!GLOBE) for(var ki=0;ki<KEEPMARKS.length;ki++){ var mk=KEEPMARKS[ki];
       if(mk.parent) mk.position.y=mk._baseY+Math.sin(R.t*3+ki)*mk._baseY*0.10; }
+    // threat indicator — you should never be hit by something you never saw
+    var th=$("threat");
+    if(R._thX!==null&&R._thX!==undefined){
+      if(!_thV) _thV=new THREE.Vector3();
+      if(GLOBE){ var tdx=wrapD(R._thX-R.x), tdz=wrapD(R._thZ-R.z), tdd=Math.sqrt(tdx*tdx+tdz*tdz), tph=tdd/GLOBE.R;
+        if(tph>3.138)tph=3.138;
+        var tux=tdd>1e-4?tdx/tdd:0, tuz=tdd>1e-4?tdz/tdd:1, tsf=Math.sin(tph), tcf=Math.cos(tph), trr=GLOBE.R+R._thS*0.6;
+        _thV.set(tsf*tux*trr, tcf*trr-GLOBE.R, tsf*tuz*trr); }
+      else _thV.set(R._thX,R._thS*0.6,R._thZ);
+      _thV.project(camera);
+      var tsx=(_thV.x*0.5+0.5)*window.innerWidth, tsy=(-_thV.y*0.5+0.5)*window.innerHeight;
+      if(_thV.z>1){ tsx=window.innerWidth-tsx; tsy=window.innerHeight-100; }
+      tsx=Math.max(26,Math.min(window.innerWidth-26,tsx));
+      tsy=Math.max(90,Math.min(window.innerHeight-130,tsy));
+      th.style.left=tsx+"px"; th.style.top=tsy+"px"; th.style.opacity=1;
+      if(!R._warned||R.t-R._warned>2.5){ R._warned=R.t; beep(240,0.07,"square",0.05); }
+    } else th.style.opacity=0;
     // meters
     if(R.dashT>0){ R.dashT-=dt; }
     if(R.comboT>0){ R.comboT-=dt; if(R.comboT<=0){ R.combo=0; } }
@@ -1866,9 +1941,15 @@
       _gsQ2=new THREE.Quaternion(); _gsM=new THREE.Matrix4(); _gsS=new THREE.Vector3();
       _gsUP=new THREE.Vector3(0,1,0); }
     var i, j;
+    GLOBE.f=GLOBE.f?0:1;
+    var farR2=GLOBE.R*GLOBE.R*0.81, fpar=GLOBE.f;
     for(i=0;i<INST.length;i++){ var st=INST[i]; var any=false;
       if(!st._hid) st._hid=[];
       for(j=0;j<st.n;j++){ if(!st.alive[j]) continue;
+        // far props (beyond ~0.9 rad of curve) refresh on alternate frames — half the
+        // projection work per frame on the 5x planet, imperceptible at that distance
+        var pdx=wrapD(st.x[j]-R.x), pdz=wrapD(st.z[j]-R.z);
+        if(pdx*pdx+pdz*pdz>farR2 && (j&1)===fpar) continue;
         if(_gsMat(st.x[j],st.z[j],st.rot[j],st.sc[j],0)){
           st._hid[j]=0; st.mesh.setMatrixAt(j,_gsM); any=true;
           if(st.mark[j]&&st.mark[j].parent){
@@ -1878,7 +1959,9 @@
           _gsM.makeScale(0,0,0); st.mesh.setMatrixAt(j,_gsM); any=true; } }
       if(any) st.mesh.instanceMatrix.needsUpdate=true; }
     for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; _gsPlaceMesh(m.x,m.z,m.rot,m.mesh,0); }
-    for(i=0;i<GATES.length;i++){ var g=GATES[i]; if(!g.postIM) continue;
+    for(i=0;i<GATES.length;i++){ var g=GATES[i];
+      if(g.sign) _gsPlaceMesh(g.def.x,g.def.z,0,g.sign.sprite,g.def.need*2.1);
+      if(!g.postIM) continue;
       for(j=0;j<g.posts.length;j++){ var p=g.posts[j];
         if(_gsMat(p.cx,p.cz,0,1,g.sinkY)) g.postIM.setMatrixAt(j,_gsM);
         else { _gsM.makeScale(0,0,0); g.postIM.setMatrixAt(j,_gsM); } }
@@ -1887,7 +1970,7 @@
   function updateCamera(dt){
     var r=R.D/2;
     var bx=GLOBE?0:R.x, bz=GLOBE?0:R.z;
-    var dist=r*6.1+30, cp=camPitch;
+    var dist=(GLOBE?r*7.0+40:r*6.1+30), cp=camPitch;
     var cx=bx-Math.sin(camYaw)*Math.cos(cp)*dist;
     var cz=bz-Math.cos(camYaw)*Math.cos(cp)*dist;
     var cy=r+Math.sin(cp)*dist;
@@ -1895,14 +1978,17 @@
     camera.position.x+=(cx-camera.position.x)*k;
     camera.position.y+=(cy-camera.position.y)*k;
     camera.position.z+=(cz-camera.position.z)*k;
-    // look-ahead: bias the view toward where the ball is going
-    var la=Math.min(r*2,Math.max(-r*2,R.vx*0.22)), lz=Math.min(r*2,Math.max(-r*2,R.vz*0.22));
-    camera.lookAt(bx+la,r*0.9,bz+lz);
+    // look-ahead: bias the view toward where the ball is going — SMOOTHED, because a
+    // wall/mover hit reverses velocity instantly and a raw look-ahead makes the camera
+    // whip ("camera keeps skipping around" — Stephen device note)
+    var laT=Math.min(r*2,Math.max(-r*2,R.vx*0.22)), lzT=Math.min(r*2,Math.max(-r*2,R.vz*0.22));
+    R._lax+=(laT-R._lax)*Math.min(1,dt*3.5); R._laz+=(lzT-R._laz)*Math.min(1,dt*3.5);
+    camera.lookAt(bx+R._lax,r*0.9,bz+R._laz);
     var fovT=R.dashT>0?72:62;
     camera.fov+=(fovT-camera.fov)*Math.min(1,dt*6);
     camera.updateProjectionMatrix();
   }
-  var _lastSize="", _lastTime="", _lastGoalLbl="";
+  var _lastSize="", _lastTime="", _lastGoalLbl="", _thV=null;
   function updateHUD(force){
     var s=fmtSize(R.D);
     if(force||s!==_lastSize){ _lastSize=s; $("hudSize").textContent=s; }
