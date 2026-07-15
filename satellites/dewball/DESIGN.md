@@ -267,6 +267,17 @@ perfect-knowledge greed limit-cycled between far feasts across walls (w4 x0.96 F
 while the NEAR bot romped at 7.7x; the near bot is the human model, the std bot
 now grazes out of traps like a human would).
 
+v4.4 (third "more structure and details" round): RUIN FRAGMENTS (2-4 piece stubs and
+L-corners scattered per mid/late zone — open shapes, pure wilderness texture);
+ambient critters (butterfly w1/w3, blue dragonfly w5 tide, dream moth zen);
+SCENE MOVERS — mover-kind items in `sets:` now spawn as LIVE movers homed at the
+scene (statue ants are dead ants; homed ants march on the jam). 21 scenes authored
+by a 7-agent designer workflow (one per world, structured JSON out), validated by
+scripts/…/validate_scenes.js-style checks (kind exists, band containment with
+extent, per-item fence clearance, min set spacing, ladder size cap) — 58 scenes
+total. Designer laws that worked: open compositions only, one-line story per scene
+("left mid-moment"), expanded item lists (no helper calls) for machine validation.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.

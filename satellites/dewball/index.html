@@ -795,6 +795,10 @@
   K("signpost","Signpost",30,[ pp("cyl",[1.6,2.2,28,6],0x6a4e38,0,14,0), pp("box",[16,4.5,1.6],0xb98a5a,3,24,0,0,0.3,0), pp("box",[13,4,1.5],0xa87a4a,-2.5,18.5,0,0,-0.4,0), pp("sph",[1.4,5,4],0x8a6238,0,28.7,0) ]);
   // scene decor (v4.2)
   K("bannerpole","Banner Pole",42,[ pp("cyl",[1.4,2,40,6],0x6a4e38,0,20,0), pp("card",[14,9],0xc23a4a,8,34,0,0,0,0), pp("card",[10,6],0xe0913a,7,25,0,0,0,0), pp("sph",[1.6,5,4],0xc8a84b,0,40.8,0) ]);
+  // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
+  K("butterfly","Meadow Butterfly",4.5,[ pp("card",[2.6,2.2],0xe8a0bf,-1.2,4,0,0,0.6,0), pp("card",[2.6,2.2],0xd4a843,1.2,4,0,0,-0.6,0), pp("sph",[0.5,4,3],0x3a2a28,0,4,0) ],{mover:{kind:"dart",sp:2.6}});
+  K("dragonflyS","Blue Dragonfly",5,[ pp("cyl",[0.35,0.2,3.6,4],0x4a7ab3,0,4.4,0,0,0,1.57), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,-0.8,0,0.5,0), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,0.8,0,-0.5,0) ],{mover:{kind:"dart",sp:3.4}});
+  K("mothZ","Dream Moth",5,[ pp("card",[3,2.6],0xd8d8f0,-1.4,4,0,0,0.7,0), pp("card",[3,2.6],0xc8c8ea,1.4,4,0,0,-0.7,0), pp("sph",[0.6,4,3],0x6a6a8e,0,4,0) ],{glow:1,mover:{kind:"dart",sp:2.2}});
   K("flowerbed","Flower Bed",30,[ pp("box",[28,5,18],0x4a3424,0,2.5,0,0,0.06,0), pp("sph",[3.4,6,5],0xe8a0bf,-9,7,3), pp("sph",[3.4,6,5],0xd4a843,-2,7.5,-4), pp("sph",[3.4,6,5],0xc86a8e,5,7,4), pp("sph",[3.4,6,5],0xe8a0bf,10,7.5,-2), pp("sph",[2.6,6,5],0x7ab356,-6,6,-1), pp("sph",[2.6,6,5],0x7ab356,2,6,2) ]);
 
   // ---- NAME VARIETY (v4.2) — same geometry, many names ("tons of fun variety
@@ -887,7 +891,10 @@
     sheepW:["Wooly Wanderer","Cloud on Legs"],
     cowW:["Bell Cow","Patient Cow"],
     carW:["Sunday Driver","Country Car"],
-    busW:["Village Bus","Late Bus"]
+    busW:["Village Bus","Late Bus"],
+    butterfly:["Flutterby","Wobbly Flyer"],
+    dragonflyS:["Blue Darner","Pond Skimmer"],
+    mothZ:["Dust Wing","Sleep Moth"]
   };
   (function(){ for(var ak in ALT) if(ALT.hasOwnProperty(ak)&&PROPS[ak]) PROPS[ak].alt=ALT[ak]; })();
   var ADJ={
@@ -942,8 +949,8 @@
            {x:-2153,z:812,r:793,need:36,label:"The Grown-ups' Table"}],
     // navigation layer: shortbread walls fence the mid/far picnic into rooms and
     // lanes (the tutorial near-field stays open — cold-start law)
-    walls:[{zone:"mid",k:"crumbwall",sc:0.8,yards:7,runs:6},
-           {zone:"far",k:"crumbwall",sc:1.05,yards:6,runs:7}],
+    walls:[{zone:"mid",k:"crumbwall",sc:0.8,yards:7,runs:6,frags:6},
+           {zone:"far",k:"crumbwall",sc:1.05,yards:6,runs:7,frags:6}],
     scatter:[
       {k:"crumb",n:216,zone:"spawn"},
       {k:"crumb",n:704,zone:"near"},{k:"sugarcube",n:374,zone:"near"},{k:"raisin",n:321,zone:"near"},
@@ -1010,8 +1017,14 @@
       // THE TOPPLED TOWER — somebody's sugar-cube keep, lost to gravity
       { x:1200,z:3100, items:_cat(_curve("sugarcube",9,0,0,10,0.35),
           [["sugarcube",0,0,0.4,1.4],["sugarcube",14,8,0.9,1.2],["cookie",60,30,0,1],["napkin",-30,25,0.6,1],["candystick",90,-15,1.1,1]]) },
+      // Checkmate at Teatime — Somebody left mid move and their tea went cold waiting.
+      { x:1000,z:-250, items:[["chessrook",-12,0,0,1],["chesspawn",-4,8,0.3,1],["chesspawn",6,-6,1.9,1],["napkin",0,22,0.8,1.2],["teacup",24,14,2.1,1],["teacup",-26,16,4,1],["sugarcube",28,8,0.5,1],["kWatch",12,28,1.2,1]] },
+      // The Jam Jar Heist — The ants found the tipped jam first and they are not sharing.
+      { x:-600,z:1200, items:[["jamjar",0,0,1.9,1.4],["plateK",-30,-18,0.3,1],["cracker",-55,-34,1.1,1],["cracker",-78,-54,2.5,1],["fork",28,-22,2.8,1],["napkin",48,8,0.5,1.1],["ant",130,60,3.6,1],["ant",104,46,3.6,1],["ant",80,34,3.7,1],["ant",58,22,3.8,1],["ant",34,12,3.9,1],["ladybird",-20,42,1.5,1],["crumb",92,42,0,1],["crumb",68,28,0.9,1],["crumb",46,18,1.7,1]] },
+      // Candles for the Queen — A birthday spread abandoned at golden hour, one sugar rose fallen from the cake.
+      { x:-1200,z:-2800, items:[["cakestand",0,0,0,0.5],["kSugarRose",2,-36,0.6,1],["candle",75,27,0,1],["candle",40,69,0,1],["candle",-14,79,0,1],["candle",-69,40,0,1],["candle",-75,-27,0,1],["cupcake",130,-40,1,1],["cupcake",168,-70,2.2,1],["cupcake",210,-98,4.1,1],["teapot",-180,-120,0.7,1],["teacup",-150,-142,2,1],["teacup",-206,-95,3.5,1],["sugarbowl",-162,-100,0.2,1],["thermchair",250,120,3.9,0.5],["lemonadejug",-60,220,1.4,0.9],["winebottle",-102,200,0.2,1]] },
     ],
-    movers:[{k:"ant",n:31},{k:"ladybird",n:29}] },
+    movers:[{k:"ant",n:31},{k:"ladybird",n:29},{k:"butterfly",n:10}] },
 
   { id:"w2", nm:"Toybox Peaks", emoji:"🧸", sub:"the playroom floor",
     startD:8, goalD:70, time:200, bound:9007, seed:202,
@@ -1032,8 +1045,8 @@
     walls:[{zone:"r:mat",k:"blockwall",sc:0.6,yards:2,runs:2,shape:"rect"},
            {zone:"r:z1",k:"blockwall",sc:1.35,yards:5,runs:4,shape:"rect"},
            {zone:"r:z1",k:"bookwall",sc:1.1,yards:3,runs:2},
-           {zone:"r:z2",k:"bookwall",sc:2.1,yards:9,runs:8},
-           {zone:"r:z3",k:"blockwall",sc:2.9,yards:7,runs:8,shape:"rect"}],
+           {zone:"r:z2",k:"bookwall",sc:2.1,yards:9,runs:8,frags:7},
+           {zone:"r:z3",k:"blockwall",sc:2.9,yards:7,runs:8,frags:7,shape:"rect"}],
     scatter:[
       {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
@@ -1098,6 +1111,12 @@
       // THE TRAIN CROSSING — tracks run to the horizon; mind the 4:15
       { x:6800,z:-3600, items:_cat(_row("traintrack",9,0,0,29,4,0.14),
           [["signpost",-40,40,0.8,1.2],["toycar",60,-50,0.5,1],["block",120,70,0.3,1],["drum",200,-60,0,1],["lego",260,50,0.9,1]]) },
+      // The Marble Standoff — Somebody called dibs on the shooter marble and never came back to take the shot.
+      { x:-500,z:-2000, items:[["kMarbleKing",0,0,3.6,1.2],["marble",-60,40,0,1],["marble",-30,65,1.1,1.1],["marble",10,70,2.4,0.9],["marble",50,55,4,1],["marble",80,20,5.2,1.1],["marble",-90,-70,0.7,1.6],["die",-20,-40,0.9,1],["toysoldier",60,-80,5.6,1]] },
+      // The Runaway Express — The bedtime express jumped the rails and spilled its alphabet cargo everywhere.
+      { x:1200,z:4300, items:[["traintrack",-350,-100,1.35,1],["traintrack",-260,-10,1.05,1],["traintrack",-150,60,0.75,1],["traintrack",-20,100,0.35,1],["traintrack",110,110,0.05,1],["train",210,90,2.3,1.5],["block",260,140,0.6,1.2],["block",300,80,2.9,1.4],["block",280,30,4.4,1],["lego",240,-20,1.8,1.3],["lego",330,120,5.1,1.2],["toysoldier",160,180,3.9,1.1],["signpost",110,230,0.2,1]] },
+      // Teddy's Bandstand Camp — The band took five right before the big domino finale and nobody counted them back in.
+      { x:-4700,z:-5600, items:[["teddy",0,0,0.4,1.2],["xylo",90,40,5.9,1.2],["drum",60,-90,0,1.3],["dollchair",150,120,3.8,1.5],["kBear",185,160,3.6,1],["robot",-180,60,1.6,1.2],["dominoK",-260,120,1.5,2],["dominoK",-330,180,1.4,2],["dominoK",-400,230,1.2,2],["dominoK",-440,300,1.1,2],["stackrings",-300,-150,2.2,1],["pinwheel",-100,-300,4.7,1],["kite",250,-200,2.6,1.5],["crayon",320,60,0.9,1.5],["crayon",355,105,2.1,1.5],["boardgame",350,-350,5.5,1]] },
     ],
     movers:[{k:"toycar",n:9,zone:"r:z1"},{k:"train",n:4,zone:"r:z2"}] },
 
@@ -1116,9 +1135,9 @@
     // navigation layer: a real garden is hedged and walled into rooms
     walls:[{zone:"r:moss",k:"stonewall",sc:0.6,yards:3,runs:2},
            {zone:"r:z1",k:"hedgewall",sc:1.3,yards:7,runs:6},
-           {zone:"r:z2",k:"hedgewall",sc:2.6,yards:8,runs:6},
+           {zone:"r:z2",k:"hedgewall",sc:2.6,yards:8,runs:6,frags:7},
            {zone:"r:z2",k:"stonewall",sc:2.9,yards:4,runs:4},
-           {zone:"r:z3",k:"stonewall",sc:4.9,yards:7,runs:8}],
+           {zone:"r:z3",k:"stonewall",sc:4.9,yards:7,runs:8,frags:7}],
     scatter:[
       {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
@@ -1192,8 +1211,14 @@
       // THE POTTING BENCH — where the garden gets made
       { x:-4500,z:-9500, items:_cat(_row("flowerpot",5,0,0,45,0,0),_row("flowerpot",4,20,50,45,0,0),
           [["benchG",-140,-60,0.3,1],["wateringcan",-60,60,1.2,1],["flowerbed",130,-50,0,2],["flowerbed",200,60,0.9,2],["compostheap",260,-30,0,1],["rake",-120,40,2.1,1]]) },
+      // The Toad's Dew Counter — The Garden Toad pours moonlit dew for a snail who is, as always, fashionably late.
+      { x:-500,z:-2900, items:[["slab",0,0,0,1.5],["toadG",25,-8,1.6,1],["dewdrop",-18,10,0,1],["dewdrop",-2,14,0,0.9],["dewdrop",14,12,0,1.1],["mushroom",-45,40,0.4,1],["mushroom",40,48,2.2,0.8],["snailG",-70,70,0.9,1],["firefly",10,-40,0,1],["firefly",-30,-25,0,1],["pebble",70,20,1.1,1.4]] },
+      // Gnome Bowling Night — Frame seven, ball still rolling, and the hedgehog insists he goes next.
+      { x:0,z:6500, items:[["stonelantern",-120,-60,0.3,1],["topiaryball",-60,-260,0,0.55],["hedgehog",-20,-300,1.2,1.3],["flowerpot",-40,300,0.2,1.1],["flowerpot",30,320,5.9,1.1],["flowerpot",-5,250,0,1.1],["flowerpot",90,350,1,1.1],["gnome",-220,40,1.3,1],["gnome",-280,140,1,0.95],["gnome",-250,-110,1.7,1.05],["lantern",160,100,0,1],["lantern",150,-140,0,1],["signpost",-180,-320,0.5,1],["wateringcan",-320,-40,2.4,1]] },
+      // The Half Hauled Harvest — Somebody tipped the barrow, the pumpkins made a break for it, and the scarecrow saw everything.
+      { x:-2000,z:10200, items:[["wheelbarrow",-80,-40,0.8,1],["pumpkin",-30,20,0,1],["pumpkin",80,90,2.1,0.85],["pumpkin",210,180,4,0.7],["pumpkin",360,290,1.5,0.6],["pumpkin",-140,-120,0.6,1.1],["rake",40,-150,2.6,1],["scarecrow",-420,260,0.4,1.1],["compostheap",480,420,0,1],["lantern",-260,-320,0,1],["lantern",150,-420,0,1],["gnome",300,240,3.5,1],["signpost",-480,-430,0.9,1],["moonflower",-350,480,0,1.2],["firefly",120,60,0,1]] },
     ],
-    movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
+    movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"butterfly",n:12,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
 
   { id:"w4", nm:"Bazaar Lane", emoji:"🏮", sub:"a tiny town market street",
     startD:30, goalD:340, time:210, bound:20138, seed:404,
@@ -1212,8 +1237,8 @@
     walls:[{zone:"r:stand",k:"cratewall",sc:0.75,yards:3,runs:3,shape:"rect"},
            {zone:"r:z1",k:"brickwall",sc:2.2,yards:7,runs:6,shape:"rect"},
            {zone:"r:z1",k:"cratewall",sc:2.0,yards:4,runs:3,shape:"rect"},
-           {zone:"r:z2",k:"brickwall",sc:5.2,yards:9,runs:7,shape:"rect"},
-           {zone:"r:z3",k:"brickwall",sc:9.6,yards:7,runs:7,shape:"rect"}],
+           {zone:"r:z2",k:"brickwall",sc:5.2,yards:9,runs:7,frags:7,shape:"rect"},
+           {zone:"r:z3",k:"brickwall",sc:9.6,yards:7,runs:7,frags:6,shape:"rect"}],
     scatter:[
       {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
       {k:"lemon",n:64,zone:"r:stand"},{k:"apple",n:46,zone:"r:stand"},{k:"pome",n:64,zone:"r:stand"},
@@ -1282,6 +1307,12 @@
       // THE MELON AUCTION — going once, going twice
       { x:-11800,z:-1800, items:_cat(_ring("melonstack",5,240),_ring("stool",5,120),
           [["signpost",0,0,0.6,4],["basketB",180,120,0,1],["bread",-160,140,0,1],["grainsack",150,-170,0.4,1]]) },
+      // Two Stools, One Argument — The haggling got so good they forgot the hookah was still warm.
+      { x:0,z:-4500, items:[["stool",-60,0,1.6,1],["stool",65,10,-1.5,1],["hookah",0,35,0.2,0.9],["brasslamp",28,-48,0.7,1],["bread",-35,-52,1.1,0.8],["kFigJar",12,72,0,1],["catB",115,-70,2.4,0.9]] },
+      // Carpet Corner, Back After Prayer — Rugs fanned out mid pitch, slippers left pointing the way the seller went.
+      { x:0,z:9800, items:[["stall",0,-130,0,0.9],["carpetstack",-145,60,0.3,1.2],["rugroll",120,100,0.4,1],["rugroll",205,165,0.9,1.1],["rugroll",270,245,1.4,0.9],["kSlipper",-40,185,0.3,1],["catB",-90,135,0,1],["brasslamp",60,40,1.9,1.1],["basketB",150,-65,0.6,1],["signpost",325,-60,-0.4,1.3],["bannerpole",-320,-185,0,1.5]] },
+      // The Camel Train Takes Five — Three camels, one well, and a grain sack trail nobody has confessed to yet.
+      { x:16200,z:0, items:[["waterwell",0,0,0,1],["camel",-450,200,0.8,1.2],["camel",-250,420,1.1,1.15],["camel",-600,-110,0.5,1.25],["grainsack",-350,80,0.4,1.2],["grainsack",-200,150,1.2,1],["grainsack",-80,225,2.1,1.3],["jug",-60,-90,0,1.1],["chicken",80,-120,0.9,1],["chicken",145,-60,2,1],["crate",250,-185,0,1.1],["crate",330,-120,0.7,0.9],["barrel",300,105,0,1],["spicepyramid",460,-300,0.2,1.1],["dogB",150,355,-0.9,1],["streetlamp",610,-510,0,0.9],["signpost",700,300,-0.5,1.4]] },
     ],
     movers:[{k:"chicken",n:21,zone:"r:z1"},{k:"catB",n:2,zone:"r:z1"},{k:"dogB",n:14,zone:"r:z2"},{k:"camel",n:14,zone:"r:z2"}] },
 
@@ -1302,8 +1333,8 @@
     walls:[{zone:"r:tide",k:"groyne",sc:3.0,yards:4,runs:5},
            {zone:"r:z1",k:"seawall",sc:5.4,yards:7,runs:6},
            {zone:"r:z1",k:"groyne",sc:6.5,yards:0,runs:5},
-           {zone:"r:z2",k:"seawall",sc:14,yards:8,runs:8},
-           {zone:"r:z3",k:"seawall",sc:27,yards:6,runs:6}],
+           {zone:"r:z2",k:"seawall",sc:14,yards:8,runs:8,frags:6},
+           {zone:"r:z3",k:"seawall",sc:27,yards:6,runs:6,frags:5}],
     scatter:[
       {k:"shell",n:106,zone:"spawn"},
       {k:"shell",n:116,zone:"r:tide"},{k:"starfish",n:74,zone:"r:tide"},{k:"bucket",n:59,zone:"r:tide"},
@@ -1373,8 +1404,14 @@
       // THE UMBRELLA GROVE — shade forest at the tideline
       { x:-2600,z:2600, items:_cat(_ring("umbrella",6,220),
           [["beachchair",0,0,0.5,1],["beachchair",70,50,1.6,1],["bucket",-60,40,0,1],["bucket",50,-70,0,1],["sandcastle",-120,-80,0.8,1],["shell",130,90,0,1],["starfish",-40,130,0.4,1]]) },
+      // The Letter the Tide Left — A bottle nudged ashore against old driftwood, and one curious crab got there first.
+      { x:0,z:-8200, items:[["driftwood",0,0,0.4,1],["kBottle",60,45,1.2,1],["shell",-90,70,0,0.9],["shell",-140,20,2.1,1.1],["shell",130,-60,4,0.8],["starfish",40,-110,0.8,1],["crabS",190,60,3.5,1],["gull",-260,-180,1,1]] },
+      // Bonfire for the First Star — Three chairs face warm embers, everyone jumped up when the star fell over the bay.
+      { x:-4000,z:15300, items:[["bonfire",0,0,0,1],["beachchair",-220,160,2.4,1],["beachchair",-300,-40,1.9,1],["beachchair",-180,-230,1.3,1],["driftwood",260,120,0.7,1.2],["driftwood",340,220,2.2,0.9],["surfboard",150,-320,0.3,1],["bucket",-120,300,0,1],["lifering",420,-80,1.5,1],["gull",520,240,4.2,1],["shell",-60,420,2.8,1.2],["starfish",80,480,0.5,1]] },
+      // The Net Menders Stepped Away — Nets spilled mid mend, the lunch cart stands unguarded, and every gull in the harbor knows it.
+      { x:-20500,z:11000, items:[["dinghy",0,0,0.9,1],["oar",120,-180,1.2,1],["oar",180,-120,1.35,1],["netbale",-350,150,0.4,1],["netbale",-520,320,1.8,1.1],["netbale",-720,420,0.9,0.9],["lobsterpot",-900,560,2.3,1],["lobsterpot",-1020,480,0.6,1],["crabbuoy",-650,200,0,1],["buoy",-1200,700,0,1],["fishcart",450,350,2,1],["gull",560,480,3.4,1],["gull",620,260,2.8,1],["gull",380,560,5,1],["dockpost",900,-500,0,1],["dockpost",1100,-700,0.1,1],["dockpost",1300,-900,0.2,1],["anchor",1050,-450,1.7,1]] },
     ],
-    movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"gull",n:16,zone:"r:z2"}] },
+    movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"dragonflyS",n:10,zone:"r:tide"},{k:"gull",n:16,zone:"r:z2"}] },
 
   { id:"w7", nm:"The Whole World", emoji:"🌍", sub:"a little planet, rolled entire",
     startD:45, goalD:2200, s2:3200, s3:4400, time:300, bound:40455, seed:707, globe:1, wrap:1,
@@ -1398,9 +1435,9 @@
     walls:[{zone:"r:meadow",k:"stonewall",sc:1.9,yards:4,runs:4},
            {zone:"r:z1",k:"stonewall",sc:5.4,yards:6,runs:10},
            {zone:"r:z1",k:"hedgewall",sc:4.6,yards:4,runs:6},
-           {zone:"r:z2",k:"brickwall",sc:13,yards:8,runs:9,shape:"rect"},
-           {zone:"r:z3",k:"hedgewall",sc:26,yards:8,runs:8},
-           {zone:"r:z4",k:"stonewall",sc:50,yards:5,runs:6}],
+           {zone:"r:z2",k:"brickwall",sc:13,yards:8,runs:9,frags:7,shape:"rect"},
+           {zone:"r:z3",k:"hedgewall",sc:26,yards:8,runs:8,frags:6},
+           {zone:"r:z4",k:"stonewall",sc:50,yards:5,runs:6,frags:5}],
     scatter:[
       {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
       {k:"pebble",n:198,zone:"r:meadow"},{k:"dewdrop",n:158,zone:"r:meadow"},{k:"mushroom",n:127,zone:"r:meadow"},
@@ -1487,6 +1524,12 @@
       // THE HENGE CLOCK — the shires tell time by shadows
       { x:-28000,z:-8000, items:_cat(_ring("standingstone",12,700),
           [["standingstone",0,0,0.5,1.4],["hayrick",950,500,0,1],["oakW",-900,650,0.4,1]]) },
+      // The Gnome's Stolen Nap — Lunch was going so well until the bench got comfortable and the apples made a run for it.
+      { x:3800,z:3600, items:[["benchG",0,0,0,0.8],["gnome",60,40,2.4,1],["basket",-80,70,0.8,1],["apple",-120,110,0,1.5],["apple",-150,140,1.2,1.2],["lemon",-100,150,0.5,1.4],["mushroom",130,-60,0,1],["flowerbed",-30,-120,0.3,1.2]] },
+      // Sheep Jailbreak at Butterchurn Stile — Somebody left the gate open and now the whole flock is halfway to the pub.
+      { x:-13000,z:5500, items:[["cartB",-600,-200,0.5,1],["hayrick",-750,100,0,0.8],["sheepW",-300,-50,0.7,1],["sheepW",-80,80,2.1,1.1],["sheepW",150,180,4,0.95],["sheepW",380,120,1,1.05],["sheepW",600,-60,5.2,1],["dogB",250,-250,0.9,1],["grainsack",-500,-350,0,1],["grainsack",-430,-420,1.8,0.9],["crate",-680,-320,0.7,1],["signpost",700,300,0.4,1.5]] },
+      // The Giants Left Their Skittles Out — One good roll knocked half the stones over and then the giants got called home for supper.
+      { x:-5000,z:26500, items:[["hillock",1600,-900,0,0.9],["standingstone",-200,100,0,1.1],["standingstone",-700,500,0.8,1],["standingstone",200,700,1.57,0.9],["standingstone",-1400,-300,2.4,1.05],["standingstone",-900,-1100,0.3,0.95],["standingstone",400,-300,5.5,1],["whalebone",900,200,1.2,0.8],["sheepW",-400,1400,0.6,1],["sheepW",-250,1550,3.4,0.9],["sheepW",-550,1600,1.9,1.1],["bonfire",1900,900,0,1],["signpost",-1900,1200,0.9,2]] },
     ],
     movers:[{k:"sheepW",n:32,zone:"r:z1"},{k:"cowW",n:26,zone:"r:z1"},{k:"dogB",n:11,zone:"r:z1"},
             {k:"carW",n:12,zone:"r:z2"},{k:"busW",n:10,zone:"r:z3"}] },
@@ -1525,9 +1568,15 @@
       { x:-1400,z:-2300, items:_cat(_ring("dreamgrass",8,160),
           [["cloudpuff",0,0,0,0.6],["cloudpuff",90,60,0.5,0.45],["moonstone",-60,50,0,1],["moonstone",50,-55,0.8,1]]) },
       // THE MOON STAIR — stones that grow as you climb
-      { x:2600,z:-500, items:[["moonstone",0,0,0,0.6],["moonstone",70,20,0.4,0.8],["moonstone",140,50,0.8,1],["moonstone",210,90,1.2,1.25],["moonstone",290,140,1.6,1.55],["dreamgrass",-50,40,0,1],["dreamgrass",340,200,0.7,1]] }
+      { x:2600,z:-500, items:[["moonstone",0,0,0,0.6],["moonstone",70,20,0.4,0.8],["moonstone",140,50,0.8,1],["moonstone",210,90,1.2,1.25],["moonstone",290,140,1.6,1.55],["dreamgrass",-50,40,0,1],["dreamgrass",340,200,0.7,1]] },
+      // Teddy's Little Nap — Somebody tucked their teddy in for a nap and floated off before the tea got cold.
+      { x:0,z:-3200, items:[["teddy",0,0,0.4,1.2],["teacup",45,20,0,1],["sandwich",62,-28,1.1,0.9],["paperplane",-72,58,2.1,1],["moonflower",-92,-22,0.6,1],["firefly",-30,-52,0,1],["mothZ",26,82,0,1]] },
+      // The Ferryman Fell Asleep — A rowboat moored itself in the grass sea, anchor down, lantern still warm.
+      { x:-4200,z:-2600, items:[["rowboat",0,0,0.7,1],["anchor",180,-120,2.4,0.9],["lantern",90,62,0,1.3],["driftwood",-220,140,1.9,1],["driftwood",-320,42,0.6,0.8],["dreamgrass",240,180,0,1.2],["dreamgrass",302,92,0.8,1],["dreamgrass",322,232,1.7,0.9],["moonstone",-150,-220,0.3,1],["duck",60,-180,3,1.5],["crabS",142,-242,5.2,0.8],["firefly",-60,200,0,1]] },
+      // The Lamp at the End of the Stones — Moonstones hop in a wide arc toward one patient lamp, and the walker never came back.
+      { x:3800,z:3400, items:[["streetlamp",0,0,0,1],["benchG",90,70,-0.8,1],["teddy",122,96,-0.5,0.9],["moonstone",-320,-60,0.2,1],["moonstone",-222,-162,1.1,0.9],["moonstone",-100,-230,2.3,1.1],["moonstone",60,-280,0.7,0.85],["moonstone",230,-240,1.8,1],["cloudpuff",-260,260,0.4,0.9],["cloudpuff",320,180,1.6,1.1],["tulip",180,-82,0,1.4],["tulip",222,-32,0.9,1.2],["moonflower",-140,120,0.5,1.3],["kite",350,-122,1.5,1.6],["signpost",-180,40,0.3,1.5],["hedgehog",40,-120,2.6,1.4]] },
     ],
-    movers:[{k:"firefly",n:15},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
+    movers:[{k:"firefly",n:15},{k:"mothZ",n:8},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
   ];
 
   // =====================================================================
@@ -2060,11 +2109,36 @@
           if(ml<ws2*4){ var ra9=rng()*6.283; mdx=Math.cos(ra9)*ws2*14; mdz=Math.sin(ra9)*ws2*14; }
           wallRun(sp2.k,sp2.sc,a1[0]+mdx*0.18,a1[1]+mdz*0.18,a1[0]+mdx*0.82,a1[1]+mdz*0.82,band);
         }
+        // RUINS: 2-4 piece stubs and L-corners scattered in the wilderness —
+        // open shapes (nothing to seal), pure texture between the yards
+        for(yi=0;yi<(sp2.frags||0);yi++){
+          var fp9=placeInZone(W,sp2.zone,rng);
+          var fsid=++SID, fn=2+Math.floor(rng()*3), fa=rng()*6.283;
+          var fx=fp9[0], fz=fp9[1], fdx=Math.cos(fa), fdz=Math.sin(fa);
+          var fturn=1+Math.floor(rng()*Math.max(1,fn-1)), fstep=ws2*0.82;
+          for(var fq=0;fq<fn;fq++){
+            if(fq===fturn){ var ft9=fdx; fdx=-fdz; fdz=ft9; }
+            if(wclear(fx,fz,ws2,band)&&!crossBlocked(fx,fz,ws2,fsid))
+              put(sp2.k,fx,fz,Math.atan2(-fdz,fdx),sp2.sc*(0.94+rng()*0.14),fsid,ws2);
+            fx+=fdx*fstep; fz+=fdz*fstep;
+          }
+        }
       }
     })();
     // ---- set pieces: hand-placed scenes join the same instance stores ----
+    // mover-kind items become LIVE movers homed at the scene (a statue ant is a
+    // dead ant; a homed ant marches on the jam). No rng here — deterministic.
     if(W.sets){ for(i=0;i<W.sets.length;i++){ var sp=W.sets[i];
       for(j=0;j<sp.items.length;j++){ var si=sp.items[j];
+        var kSet=PROPS[si[0]];
+        if(kSet.mover){
+          var mgS=kindGeo(si[0]); mgS._shared=true;
+          var mmS=new THREE.Mesh(mgS,sharedMat); var msS=si[4]||1; mmS.scale.setScalar(msS);
+          mmS.position.set(sp.x+si[1],0,sp.z+si[2]); scene.add(mmS);
+          MOVERS.push({kid:si[0],nm:kSet.nm,mesh:mmS,x:sp.x+si[1],z:sp.z+si[2],rot:si[3]||0,
+            size:kSet.s*msS,vx:0,vz:0,ai:kSet.mover.kind,sp:kSet.mover.sp,t:1+((i+j)%3),
+            hx:sp.x+si[1],hz:sp.z+si[2],ph:(i*7+j)%6});
+          continue; }
         if(!byKind[si[0]]) byKind[si[0]]=[];
         byKind[si[0]].push({x:sp.x+si[1],z:sp.z+si[2],rot:si[3]||0,sc:si[4]||1,keep:null}); } } }
     var m4=new THREE.Matrix4(), q=new THREE.Quaternion(), eu=new THREE.Euler(), v3=new THREE.Vector3(), s3=new THREE.Vector3();
