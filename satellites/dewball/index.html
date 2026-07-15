@@ -793,6 +793,70 @@
   K("seawall","Breakwater Block",56,[ pp("box",[46,26,34],0x8a929a,0,13,0,0,0.07,0), pp("box",[34,20,26],0x9aa2aa,4,34,-2,0,-0.14,0), pp("box",[18,10,16],0x7a828a,-14,49,4,0,0.3,0), pp("sph",[6,6,4],0x5a7a6a,18,26,14), pp("sph",[4.5,6,4],0x5a7a6a,-20,10,12) ],{fixed:1,volF:0.12});
   // roadside detail (v4.1): placed along the painted roads, scaled per world
   K("signpost","Signpost",30,[ pp("cyl",[1.6,2.2,28,6],0x6a4e38,0,14,0), pp("box",[16,4.5,1.6],0xb98a5a,3,24,0,0,0.3,0), pp("box",[13,4,1.5],0xa87a4a,-2.5,18.5,0,0,-0.4,0), pp("sph",[1.4,5,4],0x8a6238,0,28.7,0) ]);
+  // scene decor (v4.2)
+  K("bannerpole","Banner Pole",42,[ pp("cyl",[1.4,2,40,6],0x6a4e38,0,20,0), pp("card",[14,9],0xc23a4a,8,34,0,0,0,0), pp("card",[10,6],0xe0913a,7,25,0,0,0,0), pp("sph",[1.6,5,4],0xc8a84b,0,40.8,0) ]);
+  K("flowerbed","Flower Bed",30,[ pp("box",[28,5,18],0x4a3424,0,2.5,0,0,0.06,0), pp("sph",[3.4,6,5],0xe8a0bf,-9,7,3), pp("sph",[3.4,6,5],0xd4a843,-2,7.5,-4), pp("sph",[3.4,6,5],0xc86a8e,5,7,4), pp("sph",[3.4,6,5],0xe8a0bf,10,7.5,-2), pp("sph",[2.6,6,5],0x7ab356,-6,6,-1), pp("sph",[2.6,6,5],0x7ab356,2,6,2) ]);
+
+  // ---- NAME VARIETY (v4.2) — same geometry, many names ("tons of fun variety
+  // without lagging or overloading the game" — Stephen). Each INSTANCE resolves
+  // a deterministic name from [base + alternates] x a per-world adjective pool
+  // at PIP TIME: no extra geometry, no instance memory, a string concat only
+  // when a label actually shows. The same crumb keeps the same name all run.
+  var ALT={
+    crumb:["Croissant Flake","Toast Corner","Biscuit Bit","Muffin Morsel"],
+    sugarcube:["Sugar Lump","Tea Sugar"],
+    raisin:["Escaped Raisin","Sultana"],
+    pea:["Garden Pea","Runaway Pea","Spring Pea"],
+    cheerio:["Breakfast O","Cereal Hoop"],
+    grape:["Table Grape","Lone Grape"],
+    berry:["Bramble Berry","June Berry"],
+    cracker:["Water Cracker","Saltine","Picnic Cracker"],
+    cookie:["Grandma's Cookie","The Last Cookie"],
+    apple:["Orchard Apple","Lunchbox Apple"],
+    marble:["Cat's Eye","Shooter","Aggie","Glassie"],
+    jack:["Scattered Jack","Bounced Jack"],
+    die:["Lucky Die","Loaded Die"],
+    block:["Letter Block","Tower Block"],
+    lego:["Snap Brick","Sharp Brick"],
+    crayon:["Wax Crayon","Chewed Crayon","School Crayon"],
+    duck:["Bath Duck","Duke of Ducks"],
+    pebble:["Skipping Stone","Lucky Pebble","Smooth Pebble"],
+    dewdrop:["Night Dew","Star Dew","Caught Dew"],
+    mushroom:["Toadstool","Fairy Cap"],
+    tulip:["Dream Tulip","Dusk Tulip"],
+    slab:["Garden Slab","Old Flagstone"],
+    lemon:["Market Lemon","Prize Lemon"],
+    bread:["Morning Loaf","Baker's Loaf"],
+    jug:["Water Jug","Cracked Jug"],
+    basketB:["Market Basket","Fig Basket"],
+    spicesack:["Saffron Sack","Cumin Sack"],
+    shell:["Cockle Shell","Whorl Shell","Periwinkle"],
+    starfish:["Sea Star","Five Fingers"],
+    driftwood:["Ship's Rib","Gray Log"],
+    buoy:["Bobbing Buoy","Lost Buoy"],
+    netbale:["Fisher's Net","Tangle of Net"],
+    hayrick:["Haystack","Winter Fodder"],
+    barrel:["Cider Barrel","Rain Barrel"],
+    cottage:["Miller's House","Granny's Cottage"]
+  };
+  (function(){ for(var ak in ALT) if(ALT.hasOwnProperty(ak)&&PROPS[ak]) PROPS[ak].alt=ALT[ak]; })();
+  var ADJ={
+    w1:["Buttery","Toasty","Honeyed","Sugared","Stale","Crumbly","Forgotten","Golden","Warm","Flaky","Frosted","Jammy","Prize","Sunday"],
+    w2:["Wobbly","Beloved","Chewed","Lost","Painted","Squeaky","Lucky","Homemade","Glittery","Sticky","Noisy","Favorite","Brand New"],
+    w3:["Mossy","Dewy","Moonlit","Sleepy","Ancient","Whispering","Shy","Midnight","Silvered","Hidden","Crooked","Wild","Humming"],
+    w4:["Dusty","Spiced","Haggled","Sunbaked","Woven","Gilded","Secondhand","Fragrant","Bargain","Faded","Traveled","Copper"],
+    w5:["Salty","Barnacled","Weathered","Sandy","Sunfaded","Tarry","Beached","Rusty","Seaworn","Brined","Foggy","Drifting"],
+    w6:["Dreamt","Drifting","Hushed","Floating","Pale","Soft","Wandering","Moonwashed","Gentle","Sleepy"],
+    w7:["Windswept","Royal","Humble","Sturdy","Famous","Quiet","Country","Highland","Beloved","Weatherworn","Proud","Little"]
+  };
+  function varName(kid,seed){
+    var k=PROPS[kid], h=((seed|0)*2654435761)>>>0, base=k.nm;
+    if(k.alt){ var bi=h%(k.alt.length+1); if(bi>0) base=k.alt[bi-1]; }
+    if(base.lastIndexOf("The ",0)===0) return base;   // "Buttery The Last Cookie" is not a name
+    var pool=W&&ADJ[W.id];
+    if(pool&&((h>>>13)&7)<3) return pool[(h>>>16)%pool.length]+" "+base;
+    return base;
+  }
 
   // =====================================================================
   //  SET PIECES — hand-placed prop arrangements ("the picnic spread", "the
@@ -877,6 +941,19 @@
       // THE CANDLE PROMENADE — a lit avenue of plates and pies
       { x:3050,z:-150, items:_cat(_row("candle",5,0,0,95,0,0),_row("candle",5,0,130,95,0,0),
           [["plateK",50,65,0,1],["pie",145,60,0.4,1],["plateK",240,70,0.9,1],["pie",335,62,1.3,1],["napkin",190,30,0.3,1],["winebottle",380,90,0,1]]) },
+      // THE CHESS GARDEN — somebody set the board out on a cracker plaza
+      { x:-1300,z:1900, items:_cat(
+          _row("cracker",4,-36,-36,24,0,0,1.5),_row("cracker",4,-36,-12,24,0,0,1.5),
+          _row("cracker",4,-36,12,24,0,0,1.5),_row("cracker",4,-36,36,24,0,0,1.5),
+          _row("chesspawn",6,-30,-52,12,0,0),_row("chesspawn",6,-30,52,12,0,3.14),
+          [["chessrook",-46,-52,0,1],["chessrook",46,-52,0,1],["chessrook",-46,52,0,1],["chessrook",46,52,0,1],["napkin",70,0,0.4,1]]) },
+      // THE JAM CELLAR — a shortbread pantry stacked with preserves
+      { x:-3000,z:-1200, court:46, items:_cat(
+          _row("crumbwall",5,-44,-44,22,0,0,1.05),
+          _row("crumbwall",3,-44,-22,0,22,1.5708,1.05),
+          _row("crumbwall",3,44,-22,0,22,1.5708,1.05),
+          [["crumbwall",-44,44,0,1.05],["crumbwall",44,44,0,1.05],
+           ["jamjar",-15,-10,0,1],["jamjar",5,-18,0.5,1],["jamjar",18,-5,1.1,1],["winebottle",-20,15,0,1],["sugarbowl",15,18,0,1]]) },
     ],
     movers:[{k:"ant",n:31},{k:"ladybird",n:29}] },
 
@@ -950,6 +1027,15 @@
       // THE MARBLE SPEEDWAY — a toy raceway ring with a pit-lane spill
       { x:1780,z:1400, items:_cat(_ring("traintrack",14,300),
           [["toycar",0,0,0.6,1],["toycar",60,-40,2.2,1],["marble",30,50,0,1],["marble",-45,20,0,1],["marble",10,-60,0,1],["bouncy",-70,-50,0,1],["dominoK",90,30,0.4,1]]) },
+      // THE DOMINO AMPHITHEATER — tiered dominoes around a drum stage
+      { x:-3800,z:-2600, items:_cat(
+          _arc("dominoK",16,180,0.4,3.5,3),
+          _arc("dominoK",20,260,0.3,3.6,3.4),
+          _arc("dominoK",24,340,0.2,3.7,3.8),
+          [["drum",0,0,0,1.6],["xylo",60,50,0.8,1],["toysoldier",-50,40,3.14,1],["toysoldier",-70,10,2.8,1]]) },
+      // THE CRAYON STOCKADE — a log fence of giant crayons round the art supplies
+      { x:2300,z:-800, court:55, items:_cat(_arc("crayon",26,190,0.5,5.9,4),
+          [["puzzlepiece",0,0,0.4,1],["puzzlepiece",30,25,1.2,1],["crayon",-20,15,0.7,2.5],["toyphone",25,-38,0.2,1],["yoyo",-30,-20,0,1]]) },
     ],
     movers:[{k:"toycar",n:9,zone:"r:z1"},{k:"train",n:4,zone:"r:z2"}] },
 
@@ -1029,6 +1115,15 @@
       { x:2100,z:-2800, items:_cat(_row("lantern",4,0,0,150,0,0),_row("lantern",4,0,130,150,0,0),
           _row("slab",5,20,65,110,0,0.3),
           [["fernG",-70,60,0.8,1],["fernG",510,70,2.1,1],["moonflower",250,-40,0,1]]) },
+      // THE BEEHIVE TERRACES — stone shelves where the skeps hum
+      { x:-3400,z:-1500, items:_cat(
+          _row("stonewall",5,-100,-60,50,0,0,1.4),
+          _row("stonewall",4,-75,10,50,0,0,1.4),
+          _row("stonewall",3,-50,80,50,0,0,1.4),
+          [["beehive",-60,-25,0,1],["beehive",10,-20,0.7,1],["beehive",-20,45,1.9,1],["pumpkin",60,40,0,1],["flowerbed",-90,40,0.3,2],["flowerbed",50,-50,1.1,2]]) },
+      // THE GNOME PARLIAMENT — they meet at the sundial, at midnight, in silence
+      { x:-1500,z:7300, items:_cat(_ring("gnome",9,140),
+          [["sundial",0,0,0,1],["moonstone",60,40,0,0.9],["moonstone",-55,45,0.6,0.9],["lantern",90,-60,0,1],["flowerbed",-90,-50,0.8,2]]) },
     ],
     movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
 
@@ -1106,11 +1201,18 @@
       // LAMP SQUARE — a fountain plaza ringed with stools and brass light
       { x:4400,z:-1800, items:_cat([["fountain",0,0,0,1]],_ring("stool",5,260),
           [["brasslamp",320,120,0,1],["brasslamp",-300,160,0,1],["brasslamp",100,-330,0,1],["brasslamp",-140,310,0,1],["bread",200,220,0,1],["jug",-220,-180,0.6,1]]) },
+      // THE POTTER'S YARD — kilnfuls of ware behind a freight wall
+      { x:11500,z:2500, items:_cat(_row("cratewall",4,0,0,205,0,0,4.1),
+          _row("cratewall",3,0,205,0,205,1.5708,4.1),
+          [["potterystack",300,300,0,1],["potterystack",420,260,0.8,1],["jug",300,420,0,1],["jug",360,380,0.6,1],["copperpot",480,350,0,1],["tajine",250,480,0,1],["barrel",500,470,0.3,1]]) },
+      // BANNER SQUARE — pennants over the carpet sellers
+      { x:-4700,z:-2200, items:_cat(_ring("bannerpole",7,220),
+          [["carpetstack",0,0,0.4,1],["carpetstack",60,40,1.2,1],["spicepyramid",-50,45,0,1],["rugroll",40,-60,0.9,1],["basketB",-60,-40,0,1],["bread",90,-20,0,1]]) },
     ],
     movers:[{k:"chicken",n:21,zone:"r:z1"},{k:"catB",n:2,zone:"r:z1"},{k:"dogB",n:14,zone:"r:z2"},{k:"camel",n:14,zone:"r:z2"}] },
 
   { id:"w5", nm:"Starfall Bay", emoji:"🌊", sub:"dusk beach and harbor",
-    startD:60, goalD:1600, time:180, bound:26970, seed:505,
+    startD:60, goalD:1600, time:195, bound:26970, seed:505,
     sky:["#2a3a6e","#c86a8e","#e8b06a"], fog:{c:0x5a4a7e,d:0.000031},
     ground:{style:"sand",c1:"#d8c098",c2:"#c0a880"}, rim:0x1e3a5e,
     // concentric ascending zones: tideline -> the dunes -> the boardwalk -> the harbor
@@ -1185,6 +1287,12 @@
       // THE TIDEPOOL GARDEN — a driftwood circle around still water
       { x:2500,z:3400, items:_cat(_ring("driftwood",8,520),
           [["tidepool",0,0,0,1],["tidepool",240,130,0.9,1],["starfish",-140,80,0,1],["starfish",90,-160,0.6,1],["shell",-60,-120,0,1],["shell",170,40,0,1],["seagrass",-220,-40,0,1]]) },
+      // THE WRECK OF THE GULL — ribs in the sand, cargo strewn
+      { x:-16000,z:-2500, items:_cat(_curve("whalebone",5,0,0,320,0.35),
+          [["driftwood",-300,200,0.8,1],["driftwood",250,-260,1.9,1],["cargobox",400,150,0.3,1],["cargobox",-350,-150,1.1,1],["anchor",100,300,0.5,1],["netbale",-150,-300,0,1],["barrel",300,350,0,1]]) },
+      // CRAB POT CORNER — the potman's stacks by a groyne line
+      { x:7500,z:-3800, items:_cat(_row("groyne",5,0,0,210,0,0,6.5),
+          [["lobsterpot",120,180,0,1],["lobsterpot",180,150,0.7,1],["lobsterpot",150,240,1.4,1],["crabbuoy",280,200,0,1],["netbale",60,260,0,1],["buoy",340,120,0,1],["oar",240,300,1.1,1]]) },
     ],
     movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"gull",n:16,zone:"r:z2"}] },
 
@@ -1286,6 +1394,13 @@
       // THE HIGH SHEEPFOLD — a hedge crescent sheltering the hill farm
       { x:-19000,z:20000, court:1900, items:_cat(_arc("hedgewall",8,2400,0.6,4.2,26),
           [["cottage",0,0,0.4,1],["cottage",800,500,2.6,1],["oakW",-700,600,0,1],["hayrick",500,-400,0,1],["hayrick",-500,-500,0.9,1],["hayrick",-100,900,1.8,1]]) },
+      // THE MILL YARD — grain walls around the old windmill
+      { x:26000,z:-14000, items:_cat(_row("stonewall",4,-500,-400,210,0,0,5.4),
+          _row("stonewall",3,-500,-190,0,210,1.5708,5.4),
+          [["windmill",100,150,0.4,1],["hayrick",-250,100,0,1],["hayrick",-150,220,0.9,1],["grainsack",-300,-150,0,1],["grainsack",-250,-200,0.6,1],["cartB",250,-200,1.2,1],["barrel",350,50,0,1]]) },
+      // THE BEACON RING — standing stones around the last lighthouse
+      { x:0,z:-35500, items:_cat(_ring("standingstone",9,900),
+          [["lighthouse",0,0,0,1],["pineW",600,500,0,1],["pineW",-550,550,0.7,1],["hillock",-900,-700,0,0.4]]) },
     ],
     movers:[{k:"sheepW",n:32,zone:"r:z1"},{k:"cowW",n:26,zone:"r:z1"},{k:"dogB",n:11,zone:"r:z1"},
             {k:"carW",n:12,zone:"r:z2"},{k:"busW",n:10,zone:"r:z3"}] },
@@ -1319,7 +1434,10 @@
       { x:-2192,z:1918, items:_cat(_ring("moonstone",5,180),[["cloudpuff",0,0,0,0.6],["dreamgrass",90,0,0,1],["dreamgrass",-80,40,0,1]]) },
       // THE DREAM GATE — a hedge crescent around sleeping moonstones
       { x:900,z:2600, items:_cat(_arc("hedgewall",17,240,0.8,5.5,1.6),
-          [["moonstone",0,0,0,1],["moonstone",60,-40,0.8,1],["cloudpuff",-40,50,0,0.5],["dreamgrass",90,30,0,1],["dreamgrass",-80,-60,0,1]]) }
+          [["moonstone",0,0,0,1],["moonstone",60,-40,0.8,1],["cloudpuff",-40,50,0,0.5],["dreamgrass",90,30,0,1],["dreamgrass",-80,-60,0,1]]) },
+      // THE CLOUD GARDEN — where the low clouds graze
+      { x:-1400,z:-2300, items:_cat(_ring("dreamgrass",8,160),
+          [["cloudpuff",0,0,0,0.6],["cloudpuff",90,60,0.5,0.45],["moonstone",-60,50,0,1],["moonstone",50,-55,0.8,1]]) }
     ],
     movers:[{k:"firefly",n:15},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
   ];
@@ -2161,8 +2279,11 @@
         var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
         if(wrec.keeps.indexOf(st.keep[i])<0){ wrec.keeps.push(st.keep[i]); R.keepsNew++; persist(); }
         keepsakeChime(); R.gold=0.8; pip(st.x[i],size,st.z[i],"✦ "+st.keep[i],"keep"); }
-      else if(!R.firstKind[st.kid]){ R.firstKind[st.kid]=1; pip(st.x[i],size,st.z[i],k.nm,""); }
+      else if(!R.firstKind[st.kid]){ R.firstKind[st.kid]=1; pip(st.x[i],size,st.z[i],varName(st.kid,st.gid[i]),""); }
       else if(R.combo>=5&&R.combo%5===0){ pip(st.x[i],size,st.z[i],"×"+R.combo,"gold"); }
+      // name variety: ~1 in 7 instances announces itself (deterministic per
+      // instance, so THIS crumb is always "Toasty Croissant Flake")
+      else if(((st.gid[i]*40503)>>>0)%7===0){ pip(st.x[i],size,st.z[i],varName(st.kid,st.gid[i]),""); }
     }
     growthEvents(oldD,silent);
   }
@@ -2277,7 +2398,7 @@
           R.vol+=v; var oldD=R.D; R.D=dFromVol(R.vol); R.absorbs++; save.lifetimeAbsorbs++;
           R.combo++; R.comboT=2.0; if(R.combo>R.comboBest)R.comboBest=R.combo;
           R.dashM=Math.min(1,R.dashM+0.12);
-          attachMover(m); pip(m.x,m.size,m.z,"ate the "+m.nm+"!","gold");
+          attachMover(m); pip(m.x,m.size,m.z,"ate the "+varName(m.kid,(m.hx*7+m.hz)|0)+"!","gold");
           sizeUpChime(); growthEvents(oldD,false);
           MOVERS.splice(i,1); continue;
         }

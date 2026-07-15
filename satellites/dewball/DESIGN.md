@@ -238,6 +238,23 @@ get a tight no-dash radius or the bot freezes into a creep.
   (w5), Walled Farmstead + High Sheepfold (w7), Dream Gate (zen).
   ⛔ goods only inside corridor scenes — a 420cm stall mid-lane plugged its own souk.
 
+⚖️ NAME VARIETY (v4.2, Stephen: "a lot of items look the same to just have different
+names it can randomly cycle through so it adds tons of fun variety without lagging"):
+`varName(kid, gid)` resolves each INSTANCE's display name deterministically at pip
+time — [base name + ALT alternates (~35 kinds)] x per-world ADJ adjective pools
+(~37% adjective chance). "Beloved Aggie", "Haggled Pomegranate", "Midnight Compost
+Heap", "ate the Sunfaded Bay Crab!". Zero geometry, zero instance memory, a string
+concat only when a label shows; the same crumb keeps its name all run. Surfaces:
+first-of-kind pip, ~1-in-7 instance pips (deterministic by gid), mover-eat toasts.
+Names beginning "The " never take an adjective. Tier toasts keep BASE names (rules
+stay readable). ⛔ probe gotcha: inside a synchronous evaluate loop pip timeouts
+never fire and the 8-pip DOM cap blocks everything after — drain pips when probing.
++13 scenes (v4.2): Chess Garden, Jam Cellar (w1) · Domino Amphitheater, Crayon
+Stockade (w2) · Beehive Terraces, Gnome Parliament (w3) · Potter's Yard, Banner
+Square (w4) · Wreck of the Gull, Crab Pot Corner (w5) · Mill Yard, Beacon Ring (w7)
+· Cloud Garden (zen). New decor props: bannerpole, flowerbed. w5 clock 180->195
+(scene exclusions thinned its field; navigation time is honest time).
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
