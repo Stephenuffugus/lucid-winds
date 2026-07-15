@@ -837,7 +837,57 @@
     netbale:["Fisher's Net","Tangle of Net"],
     hayrick:["Haystack","Winter Fodder"],
     barrel:["Cider Barrel","Rain Barrel"],
-    cottage:["Miller's House","Granny's Cottage"]
+    cottage:["Miller's House","Granny's Cottage"],
+    napkin:["Picnic Napkin","Pressed Napkin"],
+    candle:["Birthday Candle","Beeswax Candle"],
+    teacup:["China Cup","Grandma's Teacup"],
+    teapot:["Brown Betty","Party Teapot"],
+    sandwich:["Cucumber Sandwich","Somebody's Lunch"],
+    banana:["Ripe Banana","Spotty Banana"],
+    melon:["County Fair Melon","Picnic Melon"],
+    basket:["Wicker Hamper","Sunday Hamper"],
+    toysoldier:["Brave Soldier","Old Guard"],
+    boardgame:["Family Game Night","Missing Pieces Box"],
+    kite:["Runaway Kite","Fair Weather Kite"],
+    robot:["Marching Robot","Sparky"],
+    teddy:["Loved Bear","Button Eye Bear"],
+    lantern:["Festival Lantern","Glowworm Lantern"],
+    gnome:["Retired Gnome","Watchful Gnome"],
+    flowerpot:["Cracked Pot","Geranium Pot"],
+    fernG:["Fiddlehead","Shade Fern"],
+    beehive:["Humming Skep","Honey House"],
+    wheelbarrow:["One Wheel Barrow","Gardener's Barrow"],
+    cartB:["Peddler's Cart","Tipsy Cart"],
+    streetlamp:["Old Streetlamp","Corner Lamp"],
+    stall:["Spice Stall","Cobbler's Stall"],
+    copperpot:["Dented Pot","Tinker's Pot"],
+    hookah:["Grandfather's Hookah","Rose Water Pipe"],
+    umbrella:["Striped Umbrella","Tilted Umbrella"],
+    beachchair:["Deck Chair","Naptime Chair"],
+    sandcastle:["Proud Sandcastle","Doomed Sandcastle"],
+    bucket:["Tin Pail","Leaky Pail"],
+    oar:["Spare Oar","Split Oar"],
+    anchor:["Rusted Anchor","Kedge Anchor"],
+    rowboat:["Leaky Rowboat","Sunday Rowboat"],
+    dinghy:["Tender Dinghy","Bobbing Dinghy"],
+    ant:["Worker 481","Crumb Thief"],
+    ladybird:["Lucky Ladybird","Dot Beetle"],
+    toycar:["Wind-up Racer","Zoomer"],
+    train:["The 4:15","Night Freight"],
+    snailG:["Slowpoke","House Carrier"],
+    firefly:["Blinky","Lantern Fly"],
+    toadG:["Pond Baron","Warty Sage"],
+    hedgehog:["Pincushion","Hedge Wanderer"],
+    chicken:["Runaway Hen","Prize Hen"],
+    catB:["Rooftop Cat","Spice Thief"],
+    dogB:["Good Boy","Bazaar Hound"],
+    camel:["Caravan Camel","Grumpy Camel"],
+    crabS:["Sideways Sam","Pinchy"],
+    gull:["Chip Thief","Harbor Gull"],
+    sheepW:["Wooly Wanderer","Cloud on Legs"],
+    cowW:["Bell Cow","Patient Cow"],
+    carW:["Sunday Driver","Country Car"],
+    busW:["Village Bus","Late Bus"]
   };
   (function(){ for(var ak in ALT) if(ALT.hasOwnProperty(ak)&&PROPS[ak]) PROPS[ak].alt=ALT[ak]; })();
   var ADJ={
@@ -893,7 +943,7 @@
     // navigation layer: shortbread walls fence the mid/far picnic into rooms and
     // lanes (the tutorial near-field stays open — cold-start law)
     walls:[{zone:"mid",k:"crumbwall",sc:0.8,yards:7,runs:6},
-           {zone:"far",k:"crumbwall",sc:1.05,yards:6,runs:5}],
+           {zone:"far",k:"crumbwall",sc:1.05,yards:6,runs:7}],
     scatter:[
       {k:"crumb",n:216,zone:"spawn"},
       {k:"crumb",n:704,zone:"near"},{k:"sugarcube",n:374,zone:"near"},{k:"raisin",n:321,zone:"near"},
@@ -954,6 +1004,12 @@
           _row("crumbwall",3,44,-22,0,22,1.5708,1.05),
           [["crumbwall",-44,44,0,1.05],["crumbwall",44,44,0,1.05],
            ["jamjar",-15,-10,0,1],["jamjar",5,-18,0.5,1],["jamjar",18,-5,1.1,1],["winebottle",-20,15,0,1],["sugarbowl",15,18,0,1]]) },
+      // THE ANT TRAIL — a crumb line the workers never finished carrying home
+      { x:350,z:-1500, items:_cat(_curve("crumb",14,0,0,14,0.22),
+          [["berry",60,40,0,1],["berry",90,20,0.7,1],["raisin",130,55,0,1],["grape",170,30,0,1],["sugarcube",30,-25,0,1]]) },
+      // THE TOPPLED TOWER — somebody's sugar-cube keep, lost to gravity
+      { x:1200,z:3100, items:_cat(_curve("sugarcube",9,0,0,10,0.35),
+          [["sugarcube",0,0,0.4,1.4],["sugarcube",14,8,0.9,1.2],["cookie",60,30,0,1],["napkin",-30,25,0.6,1],["candystick",90,-15,1.1,1]]) },
     ],
     movers:[{k:"ant",n:31},{k:"ladybird",n:29}] },
 
@@ -976,8 +1032,8 @@
     walls:[{zone:"r:mat",k:"blockwall",sc:0.6,yards:2,runs:2,shape:"rect"},
            {zone:"r:z1",k:"blockwall",sc:1.35,yards:5,runs:4,shape:"rect"},
            {zone:"r:z1",k:"bookwall",sc:1.1,yards:3,runs:2},
-           {zone:"r:z2",k:"bookwall",sc:2.1,yards:8,runs:7},
-           {zone:"r:z3",k:"blockwall",sc:2.9,yards:7,runs:7,shape:"rect"}],
+           {zone:"r:z2",k:"bookwall",sc:2.1,yards:9,runs:8},
+           {zone:"r:z3",k:"blockwall",sc:2.9,yards:7,runs:8,shape:"rect"}],
     scatter:[
       {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
@@ -1036,6 +1092,12 @@
       // THE CRAYON STOCKADE — a log fence of giant crayons round the art supplies
       { x:2300,z:-800, court:55, items:_cat(_arc("crayon",26,190,0.5,5.9,4),
           [["puzzlepiece",0,0,0.4,1],["puzzlepiece",30,25,1.2,1],["crayon",-20,15,0.7,2.5],["toyphone",25,-38,0.2,1],["yoyo",-30,-20,0,1]]) },
+      // THE PUZZLE SPIRAL — pieces laid in a curl nobody finished
+      { x:-5200,z:-1300, items:_cat(_curve("puzzlepiece",16,0,0,26,0.28),
+          [["boardgame",-60,-60,0.5,1],["yoyo",40,60,0,1],["dominoK",90,-30,0.8,1],["crayon",-70,40,1.4,1]]) },
+      // THE TRAIN CROSSING — tracks run to the horizon; mind the 4:15
+      { x:6800,z:-3600, items:_cat(_row("traintrack",9,0,0,29,4,0.14),
+          [["signpost",-40,40,0.8,1.2],["toycar",60,-50,0.5,1],["block",120,70,0.3,1],["drum",200,-60,0,1],["lego",260,50,0.9,1]]) },
     ],
     movers:[{k:"toycar",n:9,zone:"r:z1"},{k:"train",n:4,zone:"r:z2"}] },
 
@@ -1054,9 +1116,9 @@
     // navigation layer: a real garden is hedged and walled into rooms
     walls:[{zone:"r:moss",k:"stonewall",sc:0.6,yards:3,runs:2},
            {zone:"r:z1",k:"hedgewall",sc:1.3,yards:7,runs:6},
-           {zone:"r:z2",k:"hedgewall",sc:2.6,yards:7,runs:6},
+           {zone:"r:z2",k:"hedgewall",sc:2.6,yards:8,runs:6},
            {zone:"r:z2",k:"stonewall",sc:2.9,yards:4,runs:4},
-           {zone:"r:z3",k:"stonewall",sc:4.9,yards:7,runs:7}],
+           {zone:"r:z3",k:"stonewall",sc:4.9,yards:7,runs:8}],
     scatter:[
       {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
@@ -1124,6 +1186,12 @@
       // THE GNOME PARLIAMENT — they meet at the sundial, at midnight, in silence
       { x:-1500,z:7300, items:_cat(_ring("gnome",9,140),
           [["sundial",0,0,0,1],["moonstone",60,40,0,0.9],["moonstone",-55,45,0.6,0.9],["lantern",90,-60,0,1],["flowerbed",-90,-50,0.8,2]]) },
+      // THE DEW POOL — stepping stones around the night's catch
+      { x:1900,z:900, items:_cat(_ring("slab",7,90),
+          [["dewdrop",0,0,0,1],["dewdrop",25,15,0,1],["dewdrop",-20,20,0,1],["dewdrop",10,-25,0,1],["fernG",110,60,0.7,1],["moonflower",-100,50,0,1]]) },
+      // THE POTTING BENCH — where the garden gets made
+      { x:-4500,z:-9500, items:_cat(_row("flowerpot",5,0,0,45,0,0),_row("flowerpot",4,20,50,45,0,0),
+          [["benchG",-140,-60,0.3,1],["wateringcan",-60,60,1.2,1],["flowerbed",130,-50,0,2],["flowerbed",200,60,0.9,2],["compostheap",260,-30,0,1],["rake",-120,40,2.1,1]]) },
     ],
     movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
 
@@ -1144,8 +1212,8 @@
     walls:[{zone:"r:stand",k:"cratewall",sc:0.75,yards:3,runs:3,shape:"rect"},
            {zone:"r:z1",k:"brickwall",sc:2.2,yards:7,runs:6,shape:"rect"},
            {zone:"r:z1",k:"cratewall",sc:2.0,yards:4,runs:3,shape:"rect"},
-           {zone:"r:z2",k:"brickwall",sc:5.2,yards:8,runs:7,shape:"rect"},
-           {zone:"r:z3",k:"brickwall",sc:9.6,yards:7,runs:6,shape:"rect"}],
+           {zone:"r:z2",k:"brickwall",sc:5.2,yards:9,runs:7,shape:"rect"},
+           {zone:"r:z3",k:"brickwall",sc:9.6,yards:7,runs:7,shape:"rect"}],
     scatter:[
       {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
       {k:"lemon",n:64,zone:"r:stand"},{k:"apple",n:46,zone:"r:stand"},{k:"pome",n:64,zone:"r:stand"},
@@ -1208,6 +1276,12 @@
       // BANNER SQUARE — pennants over the carpet sellers
       { x:-4700,z:-2200, items:_cat(_ring("bannerpole",7,220),
           [["carpetstack",0,0,0.4,1],["carpetstack",60,40,1.2,1],["spicepyramid",-50,45,0,1],["rugroll",40,-60,0.9,1],["basketB",-60,-40,0,1],["bread",90,-20,0,1]]) },
+      // COPPERSMITH ROW — the street that rings when you knock
+      { x:2500,z:4700, items:_cat(_row("copperpot",5,0,0,55,8,0.2),_row("copperpot",4,25,60,55,6,0.5),
+          [["brasslamp",-50,30,0,1],["brasslamp",290,50,0,1],["barrel",120,-60,0,1],["jug",200,90,0.7,1],["tajine",-30,-50,0,1]]) },
+      // THE MELON AUCTION — going once, going twice
+      { x:-11800,z:-1800, items:_cat(_ring("melonstack",5,240),_ring("stool",5,120),
+          [["signpost",0,0,0.6,4],["basketB",180,120,0,1],["bread",-160,140,0,1],["grainsack",150,-170,0.4,1]]) },
     ],
     movers:[{k:"chicken",n:21,zone:"r:z1"},{k:"catB",n:2,zone:"r:z1"},{k:"dogB",n:14,zone:"r:z2"},{k:"camel",n:14,zone:"r:z2"}] },
 
@@ -1228,7 +1302,7 @@
     walls:[{zone:"r:tide",k:"groyne",sc:3.0,yards:4,runs:5},
            {zone:"r:z1",k:"seawall",sc:5.4,yards:7,runs:6},
            {zone:"r:z1",k:"groyne",sc:6.5,yards:0,runs:5},
-           {zone:"r:z2",k:"seawall",sc:14,yards:8,runs:7},
+           {zone:"r:z2",k:"seawall",sc:14,yards:8,runs:8},
            {zone:"r:z3",k:"seawall",sc:27,yards:6,runs:6}],
     scatter:[
       {k:"shell",n:106,zone:"spawn"},
@@ -1293,6 +1367,12 @@
       // CRAB POT CORNER — the potman's stacks by a groyne line
       { x:7500,z:-3800, items:_cat(_row("groyne",5,0,0,210,0,0,6.5),
           [["lobsterpot",120,180,0,1],["lobsterpot",180,150,0.7,1],["lobsterpot",150,240,1.4,1],["crabbuoy",280,200,0,1],["netbale",60,260,0,1],["buoy",340,120,0,1],["oar",240,300,1.1,1]]) },
+      // THE BUOY CHANNEL — twin marker lines point the way to deep water
+      { x:15500,z:-8000, items:_cat(_row("buoy",5,0,0,229,444,0),_row("buoy",5,799,-412,229,444,0),
+          [["dinghy",420,-100,0.6,1],["lifering",600,300,0,1],["crabbuoy",250,700,0,1],["oar",900,150,1.9,1]]) },
+      // THE UMBRELLA GROVE — shade forest at the tideline
+      { x:-2600,z:2600, items:_cat(_ring("umbrella",6,220),
+          [["beachchair",0,0,0.5,1],["beachchair",70,50,1.6,1],["bucket",-60,40,0,1],["bucket",50,-70,0,1],["sandcastle",-120,-80,0.8,1],["shell",130,90,0,1],["starfish",-40,130,0.4,1]]) },
     ],
     movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"gull",n:16,zone:"r:z2"}] },
 
@@ -1318,8 +1398,8 @@
     walls:[{zone:"r:meadow",k:"stonewall",sc:1.9,yards:4,runs:4},
            {zone:"r:z1",k:"stonewall",sc:5.4,yards:6,runs:10},
            {zone:"r:z1",k:"hedgewall",sc:4.6,yards:4,runs:6},
-           {zone:"r:z2",k:"brickwall",sc:13,yards:8,runs:8,shape:"rect"},
-           {zone:"r:z3",k:"hedgewall",sc:26,yards:7,runs:8},
+           {zone:"r:z2",k:"brickwall",sc:13,yards:8,runs:9,shape:"rect"},
+           {zone:"r:z3",k:"hedgewall",sc:26,yards:8,runs:8},
            {zone:"r:z4",k:"stonewall",sc:50,yards:5,runs:6}],
     scatter:[
       {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
@@ -1401,6 +1481,12 @@
       // THE BEACON RING — standing stones around the last lighthouse
       { x:0,z:-35500, items:_cat(_ring("standingstone",9,900),
           [["lighthouse",0,0,0,1],["pineW",600,500,0,1],["pineW",-550,550,0.7,1],["hillock",-900,-700,0,0.4]]) },
+      // THE TOLL GATE — two walls, one gap, and a cart that never paid
+      { x:14000,z:8000, items:_cat(_row("brickwall",3,-1200,0,196,0,0,5.2),_row("brickwall",3,620,0,196,0,0,5.2),
+          [["cartB",40,120,0.4,1],["barrel",-250,150,0,1],["barrel",-300,100,0.7,1],["grainsack",300,140,0,1],["signpost",-80,-200,0,10]]) },
+      // THE HENGE CLOCK — the shires tell time by shadows
+      { x:-28000,z:-8000, items:_cat(_ring("standingstone",12,700),
+          [["standingstone",0,0,0.5,1.4],["hayrick",950,500,0,1],["oakW",-900,650,0.4,1]]) },
     ],
     movers:[{k:"sheepW",n:32,zone:"r:z1"},{k:"cowW",n:26,zone:"r:z1"},{k:"dogB",n:11,zone:"r:z1"},
             {k:"carW",n:12,zone:"r:z2"},{k:"busW",n:10,zone:"r:z3"}] },
@@ -1437,7 +1523,9 @@
           [["moonstone",0,0,0,1],["moonstone",60,-40,0.8,1],["cloudpuff",-40,50,0,0.5],["dreamgrass",90,30,0,1],["dreamgrass",-80,-60,0,1]]) },
       // THE CLOUD GARDEN — where the low clouds graze
       { x:-1400,z:-2300, items:_cat(_ring("dreamgrass",8,160),
-          [["cloudpuff",0,0,0,0.6],["cloudpuff",90,60,0.5,0.45],["moonstone",-60,50,0,1],["moonstone",50,-55,0.8,1]]) }
+          [["cloudpuff",0,0,0,0.6],["cloudpuff",90,60,0.5,0.45],["moonstone",-60,50,0,1],["moonstone",50,-55,0.8,1]]) },
+      // THE MOON STAIR — stones that grow as you climb
+      { x:2600,z:-500, items:[["moonstone",0,0,0,0.6],["moonstone",70,20,0.4,0.8],["moonstone",140,50,0.8,1],["moonstone",210,90,1.2,1.25],["moonstone",290,140,1.6,1.55],["dreamgrass",-50,40,0,1],["dreamgrass",340,200,0.7,1]] }
     ],
     movers:[{k:"firefly",n:15},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
   ];
@@ -1832,6 +1920,19 @@
         if(!byKind.signpost) byKind.signpost=[];
         byKind.signpost.push({x:spx,z:spz,rot:Math.atan2(pdx,pdz),sc:SIGNSC,keep:null});
       }
+      // gate lamps: lamp pairs mark "entrances" along each ring road — pure
+      // wayfinding decor (gates open everywhere, but eyes want anchors)
+      for(li9=0;li9<W.gates.length;li9++){ var gg8=W.gates[li9];
+        if(gg8.x!==0||gg8.z!==0) continue;
+        var rr8=gg8.r-gg8.need*1.35;
+        for(var gp9=0;gp9<3;gp9++){ var gb9=rng()*6.283;
+          for(var gs9=-1;gs9<=1;gs9+=2){
+            var ga9=gb9+gs9*(roadHalf*1.5+lk9.s*LAMPS.sc)/rr8;
+            var glx=Math.cos(ga9)*rr8, glz=Math.sin(ga9)*rr8;
+            if(!lampClear(glx,glz)) continue;
+            if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
+            byKind[LAMPS.k].push({x:glx,z:glz,rot:ga9,sc:LAMPS.sc,keep:null});
+          } } }
     }
     var wallTiers={};
     (function(){

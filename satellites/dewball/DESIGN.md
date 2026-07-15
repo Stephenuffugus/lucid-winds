@@ -255,6 +255,18 @@ Square (w4) · Wreck of the Gull, Crab Pot Corner (w5) · Mill Yard, Beacon Ring
 · Cloud Garden (zen). New decor props: bannerpole, flowerbed. w5 clock 180->195
 (scene exclusions thinned its field; navigation time is honest time).
 
+v4.3 (Stephen: "keep going, more structure and details in every level"): composer
+walls +1-2 yards/runs in every MID/LATE zone (early zones stay light — the w2
+lesson); GATE LAMPS (3 lamp pairs per ring road = visual "entrances" on gates that
+open everywhere); +13 scenes (Ant Trail, Toppled Tower, Puzzle Spiral, Train
+Crossing, Dew Pool, Potting Bench, Coppersmith Row, Melon Auction, Buoy Channel,
+Umbrella Grove, Toll Gate, Henge Clock, Moon Stair — 37 total); ALT names extended
+to ~85 kinds incl. every mover ("ate the Grumpy Caravan Camel!").
+⚖️ BOT GRAZE MODE: two stuck-escapes flip the value bot to nearest-first for ~15s —
+perfect-knowledge greed limit-cycled between far feasts across walls (w4 x0.96 FAIL
+while the NEAR bot romped at 7.7x; the near bot is the human model, the std bot
+now grazes out of traps like a human would).
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.

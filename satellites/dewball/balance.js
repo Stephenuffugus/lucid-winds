@@ -83,6 +83,9 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
             var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0, srchT = 0, srchA = 0;
             var blks = [];   // unpickable wall props near the ball (refreshed with dashOK)
+            var grazeT = 0;  // repeated sticking -> stop trekking, eat what's CLOSE
+                             // (v4.3: value-greed limit-cycled between far feasts
+                             // across walls on w4 while the near bot romped at 7.7x)
             while (st2.timer > 0.15 && !st2.over && it++ < 16000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
@@ -142,9 +145,11 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                 // feast instead of diving into wall pockets after streetlamps.
                 // A closed gate ring across the route makes a target near-worthless
                 // (grinding the arc was a permanent limit cycle on w5 Lighthouse Point).
-                var sc9 = o.s*o.s*o.s/(Math.sqrt(d2)+dd*4);
+                var sc9 = grazeT > 0 ? 1e6/(Math.sqrt(d2)+dd)
+                                     : o.s*o.s*o.s/(Math.sqrt(d2)+dd*4);
                 if (sc9 > bestScore*0.05 && pathBlocked(bx,bz,o.x,o.z,gg)) sc9 *= 0.02;
                 if (sc9 > bestScore){ bestScore = sc9; best = o; } }
+              if (grazeT > 0) grazeT--;
               // stuck detection: barely moved over ~3s -> blacklist the POCKET around the
               // target we were grinding toward and RETREAT (away from it), long enough to
               // actually leave; repeated sticking escalates to a long wander
@@ -152,6 +157,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                 if (Math.abs(bx-lastCX)+Math.abs(bz-lastCZ) < Math.min(dd*1.2,420) && lastBest){
                   blkX.push(lastBest.x); blkZ.push(lastBest.z); blkT.push(it+700);
                   stuckRun++;
+                  if (stuckRun >= 2) grazeT = 500;
                   escT = stuckRun >= 3 ? 260 : 90;
                   escA = Math.atan2(bx-lastBest.x, bz-lastBest.z) + (stuckRun-1)*0.9; }
                 else stuckRun = 0;
