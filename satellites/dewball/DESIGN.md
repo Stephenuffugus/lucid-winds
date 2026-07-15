@@ -45,27 +45,37 @@ environments, we can."
 - Desktop: WASD/arrows move, Q/E turn, R/F tilt, SPACE dash. Gamepad: twin sticks.
 
 ## Worlds (multi-world, non-botanical mix per Stephen's Jul 10 note)
-Recalibrated 2026-07-14 (v2.3 difficulty pass — Stephen: "the earlier the level, the
-harder it is; later levels have too much time"). Goals raised on late worlds (+12%
-diameter = +42% volume — the real lever), clocks cut so a skilled run ENDS while the
-world still has food in it, early worlds softened (denser spawn litter, fewer bullies):
+v2.4 EXPANSION (2026-07-15, Stephen device verdict on v2.3: "goal done with 2:10 left,
+entire level rolled up with 1:45 left... I want a lot more detail and structure"): every
+world got bigger bounds, ~39 new prop kinds (179 total), 4 gates on the big worlds,
+6-9 set pieces each, and clocks cut to match a skilled player's eat-the-world time.
+KEY CALIBRATION FACT: Stephen plays ~1.5x FASTER than the balance bot (his w5 t-goal 95s
+vs bot 127-169s) — never assume humans are slower than the bot.
 | # | World | Theme | Start → Goal | Time | Bound | Gates |
 |---|-------|-------|--------------|------|-------|-------|
-| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:50 | 780 | 16 · 30 |
-| 2 | Toybox Peaks | playroom floor | 8 cm → 50 cm | 3:30 | 1150 | 26 · 68 |
-| 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.4 m | 3:10 | 1750 | 45 · 70 · 150 |
-| 4 | Bazaar Lane | tiny town market street | 30 cm → 2.7 m | 4:05 | 3300 | 70 · 120 · 320 |
-| 5 | Starfall Bay | dusk beach + harbor | 60 cm → 7.5 m | 3:45 | 5200 | 170 · 380 · 900 |
+| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 950 | 16 · 30 · 40 |
+| 2 | Toybox Peaks | playroom floor | 8 cm → 70 cm | 2:50 | 1400 | 26 · 68 · 88 |
+| 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.6 m | 3:10 | 2100 | 45 · 70 · 150 · 230 |
+| 4 | Bazaar Lane | tiny town market street | 30 cm → 3.1 m | 3:20 | 4000 | 70 · 120 · 340 · 430 |
+| 5 | Starfall Bay | dusk beach + harbor | 60 cm → 16 m | 3:30 | 6500 | 170 · 380 · 900 · 1450 |
 | 6 | THE WHOLE WORLD | 🌍 a little planet (GLOBE) | 2 m → 16 m | 4:00 | 4200 | 550 · 1000 · 1900 |
 | 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 | — |
 
-Each world: ~20-30 prop kinds (140 total), 700-1000 scattered instances + 2-3 hand-placed
-SET PIECES (picnic spread, domino run, block castle, fairy ring, lantern path, market row,
-fountain plaza, pottery yard, the long dock, umbrella row, shipwreck cove, village square,
-orchard rows — `sets:` arrays, helpers _ring/_row/_curve) (DENSE — travel time
-between props, not total volume, is what starves growth), 2-3 SIZE GATES, 2-4 mover/hazard
-types, 5 named KEEPSAKES (collection log, "pressed into the Grove"). Worlds unlock in
-order (1 star to advance). Fixed seed per world = levels feel hand-placed and speedrunnable.
+Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
+(v2.4 additions: chess corner, sandwich tower, grown-ups' picnic table, train loop,
+puzzle spill, dollhouse yard, pumpkin patch, koi pond, beehives, sundial circle,
+glasshouse court, well plaza, tea terrace, carpet street, arch row, minaret court,
+container yard + crane, whale skeleton, bonfire circle, tide pools, lifeguard post,
+ferry landing, second village, standing stones, lamp roads) (DENSE — travel time
+between props, not total volume, is what starves growth), 3-4 SIZE GATES, 2-4 mover
+types (+ camels), 5 named KEEPSAKES. Worlds unlock in order (1 star to advance). Fixed
+seed per world = levels feel hand-placed and speedrunnable.
+⛔ COLD-START LAW: spawn/near zones may only hold props ≤ ~1.4x startD — anything bigger
+is a WALL at spawn scale and pinballs the early game to death (w1/w4 bot collapsed to
+0.1-0.2x when 7-12cm chess pieces / 36-48cm sacks landed in the near ring).
+⛔ GATE-PRIZE LAW: a gate's marquee loot must be within the world's reachable ladder
+(size*maxScale ≤ ceiling*pr) — the v2.4 dollhouse at 260 was un-eatable scenery until
+resized to 200.
 
 ### Size gates (v2.3 — the structural pacing device, Stephen's Jul 14 note)
 Every world now has a LATE gate whose `need` sits at ~1.2-1.4x goal: the 2★/3★ climb is
