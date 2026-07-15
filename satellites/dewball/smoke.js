@@ -52,14 +52,14 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
           var beforeAll = D.size();
           D.absorbAll();
           var afterAll = D.size();
-          // ladder rule: every non-zen world's ceiling must clear 3 stars with 15% slack
-          // (total-volume budgeting is NOT enough — the pickup-ratio ladder binds; see DESIGN.md)
-          // Worlds/goals derive from DB_DEV.worlds() — never hand-mirror them here.
+          // ladder rule: every non-zen world's ceiling must clear the 3-star bar with 15%
+          // slack (total-volume budgeting is NOT enough — the pickup-ratio ladder binds).
+          // Worlds/bars derive from DB_DEV.worlds() — never hand-mirror them here.
           var WL = D.worlds().filter(function(w){ return !w.zen; }), ladder = [];
           for (var wi = 0; wi < WL.length; wi++){
             D.start('level', WL[wi].n);
             var ceil = D.absorbAll();
-            ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].goal*1.9*1.15), ok: ceil >= WL[wi].goal*1.9*1.15 });
+            ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].s3*1.15), ok: ceil >= WL[wi].s3*1.15 });
           }
           return {
             ladder: ladder,

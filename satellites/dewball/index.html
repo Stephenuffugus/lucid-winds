@@ -184,6 +184,14 @@
   #resStars { font-size:2rem; letter-spacing:.3em; color:#c8a84b; text-shadow:0 0 18px rgba(200,168,75,.5); min-height:1.2em; }
   .close { position:absolute; top:calc(10px + env(safe-area-inset-top,0px)); right:14px; font-size:1.6rem; color:#8a9178;
            cursor:pointer; width:48px; height:48px; display:flex; align-items:center; justify-content:center; z-index:2; }
+  /* world title card — fades in over the first beat of a run */
+  #introCard { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; pointer-events:none; z-index:12; opacity:0; transition:opacity .9s; }
+  #introCard.show { opacity:1; }
+  #introName { font-size:2.1rem; font-weight:800; letter-spacing:.14em; color:#e8dcc8;
+    text-transform:uppercase; text-shadow:0 2px 24px rgba(0,0,0,.9), 0 0 40px rgba(200,168,75,.35); }
+  #introSub { font-size:.8rem; letter-spacing:.34em; color:#c8a84b; text-transform:uppercase;
+    margin-top:10px; text-shadow:0 1px 8px rgba(0,0,0,.9); }
   #toast { position:fixed; top:calc(64px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%);
            background:rgba(13,16,12,.92); border:1px solid rgba(200,168,75,.35);
            color:#e8dcc8; padding:8px 16px; border-radius:20px; font-size:.82rem;
@@ -208,6 +216,7 @@
   <div id="combo"></div>
   <div id="dashBtn">&#128167;</div>
 </div>
+<div id="introCard"><div id="introName"></div><div id="introSub"></div></div>
 <div id="stickL" class="stick"><div class="nub"></div></div>
 <div id="stickR" class="stick"><div class="nub"></div></div>
 <div id="flash"></div>
@@ -328,6 +337,9 @@
     return (m<10 ? (Math.round(m*100)/100).toFixed(2) : (Math.round(m*10)/10).toFixed(1)) + " m";
   }
   function fmtTime(s){ s=Math.max(0,Math.ceil(s)); var m=Math.floor(s/60); var ss=s%60; return m+":"+(ss<10?"0":"")+ss; }
+  // star bars: [1★,2★,3★] diameters. Worlds may pin ABSOLUTE s2/s3 (deep worlds need
+  // bars placed by design, not multipliers); default is the classic 1.4x / 1.9x.
+  function starBars(w){ return [w.goalD, w.s2||Math.round(w.goalD*1.4), w.s3||Math.round(w.goalD*1.9)]; }
 
   // ---------- tiny WebAudio synth ----------
   var AC=null, muted=false;
@@ -706,6 +718,8 @@
   K("kPostbox","Village Postbox",58,[ pp("box",[20,8,16],0x8a2a2a,0,4,0), pp("cyl",[15,15,32,9],0xc23a3a,0,24,0), pp("sph",[15,9,7],0xc23a3a,0,40,0), pp("box",[18,3,2],0x2a2a30,0,44,12) ]);
   K("kTelescope","Brass Telescope",88,[ pp("cyl",[7,10,60,7],0xc8a84b,0,58,18,0.9,0,0), pp("cyl",[2.5,3,45,4],0x6a5030,-14,22,-8,0,0,0.5), pp("cyl",[2.5,3,45,4],0x6a5030,14,22,-8,0,0,-0.5), pp("cyl",[2.5,3,45,4],0x6a5030,0,22,14,-0.5,0,0) ]);
   K("kCrown","The Little Crown",54,[ pp("cyl",[20,22,14,9],0xc8a84b,0,7,0), pp("cone",[5,16,4],0xc8a84b,-14,22,0), pp("cone",[5,16,4],0xc8a84b,14,22,0), pp("cone",[5,16,4],0xc8a84b,0,22,-14), pp("cone",[5,16,4],0xc8a84b,0,22,14), pp("sph",[4,5,4],0xc23a4a,0,16,0) ]);
+  K("citywall","City Wall",1600,[ pp("box",[1450,600,250],0x8a8278,0,300,0), pp("box",[190,150,290],0x9a9288,-560,675,0), pp("box",[190,150,290],0x9a9288,-190,675,0), pp("box",[190,150,290],0x9a9288,190,675,0), pp("box",[190,150,290],0x9a9288,560,675,0), pp("box",[1450,60,140],0x7a7268,0,630,-60) ]);
+  K("graypeak","Gray Peak",3400,[ pp("cone",[1520,2600,9],0x6a7278,0,1300,0), pp("cone",[880,1400,7],0x5a626a,720,700,-380,0,0,0.1), pp("cone",[640,1180,7],0xe8ecf0,0,2160,0), pp("sph",[340,8,6],0x7a828a,-820,260,520) ]);
   K("standingstone","Standing Stone",540,[ pp("box",[155,460,95],0x8a8278,0,225,0,0,0.2,0.06), pp("box",[110,120,80],0x9a9288,10,470,0,0,0.4,0), pp("sph",[42,7,5],0x6a7a5a,-50,60,40) ]);
   K("keeptower","The King's Keep",2400,[ pp("cyl",[430,495,1520,12],0x8a8278,0,760,0), pp("cyl",[530,530,145,12],0x9a9288,0,1590,0), pp("box",[130,140,130],0x9a9288,470,1730,0), pp("box",[130,140,130],0x9a9288,-470,1730,0), pp("box",[130,140,130],0x9a9288,0,1730,470), pp("box",[130,140,130],0x9a9288,0,1730,-470), pp("card",[210,340],0xf0d080,0,180,496), pp("cone",[42,260,5],0x6a4e38,0,1830,0), pp("card",[170,110],0xc23a4a,95,1890,0) ],{glow:1});
   // ---- W6 · DREAM MEADOW extras (zen — mixes every bank) ----
@@ -985,50 +999,81 @@
     movers:[{k:"crabS",n:8},{k:"gull",n:5}] },
 
   { id:"w7", nm:"The Whole World", emoji:"🌍", sub:"a little planet, rolled entire",
-    startD:200, goalD:1600, time:240, bound:4200, seed:707, globe:1, wrap:1, night:1,
+    startD:45, goalD:2200, s2:3200, s3:4400, time:360, bound:9500, seed:707, globe:1, wrap:1, night:1,
     sky:["#05070f","#182446","#02030a"], fog:{c:0x0e1428,d:0.00003},
     ground:{style:"fields",c1:"#3e6844",c2:"#7a9a4e"}, rim:0x1e3020,
-    gates:[{x:1500,z:-1500,r:800,need:550,label:"The Town Gate"},
-           {x:-1800,z:1400,r:900,need:1000,label:"The High Valley"},
-           {x:0,z:2600,r:1000,need:1900,label:"The King's Keep"}],
+    regions:{ meadow:{x:0,z:0,r:1700}, meadowOut:{x:0,z:0,r:1700,r0:700},
+              farm:{x:2900,z:1000,r:1600}, pond:{x:-2700,z:2400,r:1500} },
+    gates:[{x:900,z:-3600,r:1500,need:260,label:"The Village Gate"},
+           {x:-4400,z:-2000,r:1700,need:750,label:"The Harbor Gate"},
+           {x:4900,z:3600,r:1800,need:1400,label:"The High Valley"},
+           {x:-1600,z:5800,r:1900,need:2300,label:"The Royal City"},
+           {x:5400,z:-5000,r:1700,need:3000,label:"The Crown of the World"}],
     scatter:[
-      {k:"barrel",n:12,zone:"spawn"},{k:"netbale",n:8,zone:"spawn"},
-      {k:"barrel",n:26,zone:"near"},{k:"netbale",n:16,zone:"near"},{k:"wheelbarrow",n:24,zone:"near"},
-      {k:"driftwood",n:16,zone:"near"},{k:"oar",n:12,zone:"near"},{k:"benchG",n:18,zone:"near"},
-      {k:"bicycle",n:14,zone:"near"},{k:"rugroll",n:16,zone:"near"},{k:"bucket",n:22,zone:"near"},
-      {k:"shell",n:26,zone:"near"},{k:"crate",n:18,zone:"near"},
-      {k:"cartB",n:22,zone:"mid"},{k:"umbrella",n:18,zone:"mid"},{k:"dinghy",n:6,zone:"mid"},
-      {k:"benchG",n:10,zone:"mid"},{k:"wheelbarrow",n:12,zone:"mid"},{k:"barrel",n:16,zone:"mid"},
-      {k:"fountain",n:14,zone:"mid"},{k:"streetlamp",n:8,zone:"mid"},{k:"hayrick",n:22,zone:"mid"},
-      {k:"rowboat",n:3,zone:"mid"},{k:"stall",n:2,zone:"mid"},
-      {k:"pineW",n:10,zone:"sq"},{k:"hayrick",n:8,zone:"sq"},{k:"dinghy",n:4,zone:"sq"},
-      {k:"stall",n:3,zone:"sq"},{k:"rowboat",n:2,zone:"sq"},{k:"watertower",n:2,zone:"sq"},
-      {k:"windmill",n:2,zone:"sq"},
-      {k:"lighthouse",n:2,zone:"far"},{k:"chapel",n:4,zone:"far"},
-      {k:"clocktower",n:3,zone:"far"},{k:"hillock",n:3,zone:"far"},{k:"moonshard",n:2,zone:"far"},
-      {k:"stall",n:8,zone:"gate0"},{k:"rowboat",n:12,zone:"gate0"},{k:"dinghy",n:8,zone:"gate0"},
-      {k:"hayrick",n:8,zone:"gate0"},{k:"streetlamp",n:4,zone:"gate0"},{k:"fountain",n:4,zone:"gate0"},
-      {k:"cottage",n:2,zone:"gate0"},{k:"fishshack",n:2,zone:"gate0"},
-      {k:"cottage",n:15,zone:"gate1"},{k:"oakW",n:16,zone:"gate1"},{k:"pineW",n:8,zone:"gate1"},
-      {k:"windmill",n:7,zone:"gate1"},{k:"watertower",n:6,zone:"gate1"},{k:"hayrick",n:4,zone:"gate1"},
-      {k:"fishshack",n:4,zone:"gate1"},{k:"houseboat",n:6,zone:"gate1"},{k:"beachhut",n:6,zone:"gate1"},
-      {k:"sailboat",n:5,zone:"gate1"},
-      {k:"chapel",n:3,zone:"gate2"},{k:"clocktower",n:3,zone:"gate2"},{k:"hillock",n:2,zone:"gate2"},
-      {k:"moonshard",n:1,zone:"gate2"},{k:"lighthouse",n:1,zone:"gate2"},{k:"keeptower",n:1,zone:"gate2"},
-      {k:"standingstone",n:6,zone:"sq"},
-      {k:"kGlobe",n:1,zone:"near",keep:1},{k:"kWeathervane",n:1,zone:"mid",keep:1},
+      {k:"pebble",n:26,zone:"spawn"},{k:"dewdrop",n:18,zone:"spawn"},{k:"mushroom",n:10,zone:"spawn"},
+      {k:"pebble",n:110,zone:"r:meadow"},{k:"dewdrop",n:80,zone:"r:meadow"},{k:"mushroom",n:70,zone:"r:meadow"},
+      {k:"tulip",n:56,zone:"r:meadow"},{k:"apple",n:44,zone:"r:meadow"},{k:"lemon",n:44,zone:"r:meadow"},
+      {k:"shell",n:44,zone:"r:meadow"},{k:"melon",n:32,zone:"r:meadow"},{k:"gnome",n:26,zone:"r:meadow"},
+      {k:"bucket",n:32,zone:"r:meadow"},{k:"basket",n:26,zone:"r:meadow"},{k:"flowerpot",n:32,zone:"r:meadow"},
+      {k:"wateringcan",n:20,zone:"r:meadow"},{k:"pumpkin",n:22,zone:"r:meadow"},{k:"beehive",n:8,zone:"r:meadow"},
+      {k:"fernG",n:26,zone:"r:meadow"},
+      {k:"barrel",n:42,zone:"r:farm"},{k:"wheelbarrow",n:30,zone:"r:farm"},{k:"hayrick",n:32,zone:"r:farm"},
+      {k:"benchG",n:18,zone:"r:farm"},{k:"cartB",n:24,zone:"r:farm"},{k:"crate",n:32,zone:"r:farm"},
+      {k:"grainsack",n:28,zone:"r:farm"},{k:"stool",n:20,zone:"r:farm"},{k:"rugroll",n:14,zone:"r:farm"},
+      {k:"compostheap",n:10,zone:"r:farm"},{k:"scarecrow",n:8,zone:"r:farm"},{k:"oar",n:10,zone:"r:farm"},
+      {k:"dinghy",n:14,zone:"r:pond"},{k:"rowboat",n:12,zone:"r:pond"},{k:"oar",n:12,zone:"r:pond"},
+      {k:"netbale",n:18,zone:"r:pond"},{k:"driftwood",n:20,zone:"r:pond"},{k:"kelptangle",n:18,zone:"r:pond"},
+      {k:"seagrass",n:32,zone:"r:pond"},{k:"tidepool",n:8,zone:"r:pond"},{k:"lobsterpot",n:16,zone:"r:pond"},
+      {k:"buoy",n:12,zone:"r:pond"},
+      {k:"barrel",n:12,zone:"gate0"},{k:"netbale",n:8,zone:"gate0"},{k:"benchG",n:8,zone:"gate0"},
+      {k:"cartB",n:8,zone:"gate0"},{k:"hayrick",n:6,zone:"gate0"},{k:"carpetstack",n:6,zone:"gate0"},
+      {k:"stall",n:8,zone:"gate0"},{k:"fountain",n:6,zone:"gate0"},{k:"streetlamp",n:10,zone:"gate0"},
+      {k:"fishcart",n:6,zone:"gate0"},{k:"boardwalkstand",n:4,zone:"gate0"},{k:"cottage",n:4,zone:"gate0"},
+      {k:"umbrella",n:6,zone:"gate0"},{k:"doorarch",n:3,zone:"gate0"},{k:"waterwell",n:2,zone:"gate0"},
+      {k:"mooringpost",n:10,zone:"gate1"},{k:"cargobox",n:10,zone:"gate1"},{k:"fishshack",n:6,zone:"gate1"},
+      {k:"houseboat",n:6,zone:"gate1"},{k:"boardwalkstand",n:4,zone:"gate1"},{k:"sailboat",n:5,zone:"gate1"},
+      {k:"beachhut",n:5,zone:"gate1"},{k:"dockpost",n:12,zone:"gate1"},{k:"lifeguardpost",n:3,zone:"gate1"},
+      {k:"ferry",n:1,zone:"gate1"},{k:"harborcrane",n:1,zone:"gate1"},{k:"whalebone",n:2,zone:"gate1"},
+      {k:"cottage",n:14,zone:"gate2"},{k:"oakW",n:14,zone:"gate2"},{k:"pineW",n:12,zone:"gate2"},
+      {k:"windmill",n:6,zone:"gate2"},{k:"watertower",n:5,zone:"gate2"},{k:"hayrick",n:8,zone:"gate2"},
+      {k:"chapel",n:2,zone:"gate2"},
+      {k:"keeptower",n:1,zone:"gate3"},{k:"citywall",n:8,zone:"gate3"},{k:"clocktower",n:4,zone:"gate3"},
+      {k:"chapel",n:3,zone:"gate3"},{k:"cottage",n:6,zone:"gate3"},{k:"streetlamp",n:8,zone:"gate3"},
+      {k:"doorarch",n:4,zone:"gate3"},
+      {k:"moonshard",n:3,zone:"gate4"},{k:"hillock",n:3,zone:"gate4"},{k:"graypeak",n:2,zone:"gate4"},
+      {k:"standingstone",n:6,zone:"gate4"},{k:"lighthouse",n:1,zone:"gate4"},
+      {k:"barrel",n:36,zone:"sq"},{k:"hayrick",n:28,zone:"sq"},{k:"pineW",n:30,zone:"sq"},
+      {k:"fishcart",n:8,zone:"sq"},{k:"netbale",n:12,zone:"sq"},
+      {k:"oakW",n:14,zone:"sq"},{k:"standingstone",n:10,zone:"sq"},{k:"benchG",n:18,zone:"sq"},
+      {k:"crate",n:24,zone:"sq"},{k:"wheelbarrow",n:20,zone:"sq"},{k:"driftwood",n:14,zone:"sq"},
+      {k:"streetlamp",n:14,zone:"sq"},{k:"cartB",n:14,zone:"sq"},{k:"umbrella",n:10,zone:"sq"},
+      {k:"fountain",n:8,zone:"sq"},{k:"gnome",n:16,zone:"sq"},{k:"stall",n:5,zone:"sq"},
+      {k:"lighthouse",n:2,zone:"far"},{k:"chapel",n:2,zone:"far"},{k:"clocktower",n:2,zone:"far"},
+      {k:"hillock",n:2,zone:"far"},{k:"graypeak",n:1,zone:"far"},{k:"windmill",n:3,zone:"far"},
+      {k:"watertower",n:3,zone:"far"},{k:"cottage",n:6,zone:"far"},{k:"whalebone",n:2,zone:"far"},
+      {k:"kGlobe",n:1,zone:"r:meadow",keep:1},{k:"kWeathervane",n:1,zone:"r:farm",keep:1},
       {k:"kPostbox",n:1,zone:"gate0",keep:1},{k:"kTelescope",n:1,zone:"gate1",keep:1},
-      {k:"kCrown",n:1,zone:"gate2",keep:1} ],
+      {k:"kCrown",n:1,zone:"gate4",keep:1} ],
     sets:[
-      { x:900,z:-500, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
-      { x:-1600,z:-1900, items:_cat(_row("oakW",4,0,0,520,60,0),_row("oakW",4,120,470,520,60,0),_row("hayrick",3,260,220,540,40,0)) },
-      { x:2600,z:300, items:_curve("streetlamp",6,0,0,460,0.15) },
-      { x:-2600,z:-700, items:_cat([["fountain",0,0,0,1]],_ring("cottage",4,760),_ring("streetlamp",4,420),
-          [["hayrick",560,340,0,1],["wheelbarrow",-380,260,0.8,1]]) },
-      { x:2600,z:-2600, items:_cat(_ring("standingstone",7,420),[["standingstone",0,0,0.8,1.2]]) },
-      { x:-3300,z:300, items:_curve("streetlamp",7,0,0,430,-0.18) }
+      { x:900,z:-3600, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
+      { x:2900,z:1000, items:_cat(_row("hayrick",3,0,0,420,50,0),_row("hayrick",3,200,380,420,40,0),
+          [["cartB",-350,150,0.8,1],["cartB",-390,-160,2.2,1],["barrel",520,240,0,1],["barrel",560,180,0,1]]) },
+      { x:-2700,z:2400, items:[["tidepool",0,0,0,1],["tidepool",300,180,0.9,1],["rowboat",-260,120,0.4,1],
+          ["rowboat",180,-260,2.8,1],["kelptangle",-140,-190,0,1],["driftwood",340,-120,1.2,1]] },
+      { x:3400,z:-1400, items:_cat(_row("oakW",4,0,0,520,60,0),_row("oakW",4,120,470,520,60,0),_row("hayrick",3,260,220,540,40,0)) },
+      { x:-500,z:-1900, items:_curve("streetlamp",8,0,0,420,0.12) },
+      { x:1500,z:400, items:_curve("streetlamp",6,0,0,430,-0.14) },
+      { x:5900,z:400, items:_cat(_ring("standingstone",8,460),[["standingstone",0,0,0.8,1.2]]) },
+      { x:-4400,z:-2000, items:_cat(_row("dockpost",5,0,0,200,0,0),_row("dockpost",5,0,280,200,0,0),
+          [["boardwalkstand",700,140,0.2,1],["fishcart",760,-180,0.9,1],["mooringpost",-300,140,0,1]]) },
+      { x:4900,z:3600, items:_cat([["windmill",0,0,0.4,1]],_ring("cottage",4,720),
+          [["hayrick",520,380,0,1],["wheelbarrow",-400,300,0.7,1]]) },
+      { x:-1600,z:5800, items:_cat(_ring("citywall",8,1050),
+          [["clocktower",380,300,0.5,1],["chapel",-420,260,2.7,1],["streetlamp",200,-300,0,1],["streetlamp",-240,-260,0,1]]) },
+      { x:5400,z:-5000, items:_cat([["moonshard",0,0,0.5,1]],_ring("standingstone",7,520)) }
     ],
-    movers:[{k:"sheepW",n:12},{k:"cowW",n:7},{k:"carW",n:4},{k:"busW",n:2}] },
+    movers:[{k:"sheepW",n:7,zone:"r:meadowOut"},{k:"sheepW",n:8,zone:"r:farm"},{k:"cowW",n:8,zone:"r:farm"},
+            {k:"carW",n:6,zone:"sq"},{k:"busW",n:3,zone:"sq"},{k:"dogB",n:3,zone:"r:farm"}] },
 
   { id:"w6", nm:"Dream Meadow", emoji:"💤", sub:"endless zen, everything at once",
     startD:20, goalD:0, time:0, bound:2600, seed:606, zen:1,
@@ -1181,7 +1226,14 @@
       if(zone&&zone.indexOf("gate")===0){ g=w.gates[+zone.charAt(4)]; }
       if(g){ var a=r0()*6.283, rr=g.r*(0.12+0.78*Math.sqrt(r0()));
         x=g.x+Math.cos(a)*rr; z=g.z+Math.sin(a)*rr; return [x,z]; }
-      if(zone==="sq"){
+      if(zone&&zone.indexOf("r:")===0){
+        // named district (regions:{name:{x,z,r[,r0]}}) — the big globe is built from
+        // these. r0 = inner hole (uniform in the annulus), e.g. to keep movers off spawn.
+        var rg=w.regions[zone.slice(2)];
+        var ri=rg.r0||0;
+        var ra=r0()*6.283, rr2=Math.sqrt(ri*ri+(rg.r*rg.r-ri*ri)*r0());
+        x=wrapC(rg.x+Math.cos(ra)*rr2); z=wrapC(rg.z+Math.sin(ra)*rr2);
+      } else if(zone==="sq"){
         // wrap worlds are a square chart — a radial "far" ring would leave the four
         // corners empty and the globe would have bald patches. Keep the spawn plaza
         // clear: sq holds the giant landmarks, and a clocktower on the spawn is a wall.
@@ -1216,10 +1268,12 @@
       // everything ball-centric onto a real sphere (azimuthal equidistant). Radius is
       // chosen so one full chart wrap = exactly one circumnavigation: 2piR = 2*bound.
       GLOBE={R:W.bound/Math.PI};
-      gtex.repeat.set(12,6);
+      gtex.repeat.set(16,8);
       var pgeo=new THREE.SphereGeometry(GLOBE.R,48,32);
       gmesh=new THREE.Mesh(pgeo,new THREE.MeshLambertMaterial({map:gtex}));
-      gmesh.position.set(0,-GLOBE.R,0); scene.add(gmesh); GLOBE.mesh=gmesh;
+      gmesh.position.set(0,-GLOBE.R,0);
+      gmesh.rotation.z=Math.PI/2;   // UV poles to the horizon — a pole pinch under spawn reads as a glitch
+      scene.add(gmesh); GLOBE.mesh=gmesh;
     } else {
       var ggeo=new THREE.CircleGeometry(W.bound*1.05,48); ggeo.rotateX(-Math.PI/2);
       gmesh=new THREE.Mesh(ggeo,new THREE.MeshLambertMaterial({map:gtex}));
@@ -1262,7 +1316,7 @@
       scene.add(mesh); INST.push(st); }
     // ---- movers ----
     for(i=0;i<W.movers.length;i++){ e=W.movers[i]; var mk2=PROPS[e.k]; var mg=kindGeo(e.k); mg._shared=true;
-      for(j=0;j<e.n;j++){ var mp=placeInZone(W,"mid",rng);
+      for(j=0;j<e.n;j++){ var mp=placeInZone(W,e.zone||"mid",rng);
         var mm=new THREE.Mesh(mg,sharedMat); var msc=0.9+rng()*0.3; mm.scale.setScalar(msc);
         mm.position.set(mp[0],0,mp[1]); scene.add(mm);
         MOVERS.push({kid:e.k,nm:mk2.nm,mesh:mm,x:mp[0],z:mp[1],rot:rng()*6.283,size:mk2.s*msc,
@@ -1273,15 +1327,16 @@
     for(i=0;i<W.gates.length;i++){ var gd=W.gates[i];
       var np=Math.max(24,Math.min(110,Math.round(6.283*gd.r/(gd.need*0.9))));
       if(W.globe){
-        // globe gates: individual posts so each can hug the sphere (globeSync places them)
+        // globe gates: one InstancedMesh of posts per gate, so each post hugs the
+        // sphere (globeSync places them) at ONE draw call per gate
         var pg=mergeParts([ pp("cyl",[gd.need*0.055,gd.need*0.075,gd.need*1.15,5],0x4a3a5a,0,gd.need*0.575,0),
                             pp("sph",[gd.need*0.085,6,5],0xc8a84b,0,gd.need*1.16,0) ]);
-        var posts=[];   // shared geo across this gate's posts; teardown's dispose is idempotent
+        var posts=[];
+        var pim=new THREE.InstancedMesh(pg,sharedMat,np); pim.frustumCulled=false;
         for(j=0;j<np;j++){ var ga=6.283*j/np;
-          var pm=new THREE.Mesh(pg,sharedMat); pm.frustumCulled=false;
-          posts.push({mesh:pm,cx:wrapC(gd.x+Math.cos(ga)*gd.r),cz:wrapC(gd.z+Math.sin(ga)*gd.r)});
-          scene.add(pm); }
-        GATES.push({def:gd,open:false,sinkY:0,mesh:null,posts:posts,hintT:0});
+          posts.push({cx:wrapC(gd.x+Math.cos(ga)*gd.r),cz:wrapC(gd.z+Math.sin(ga)*gd.r)}); }
+        scene.add(pim);
+        GATES.push({def:gd,open:false,sinkY:0,mesh:null,posts:posts,postIM:pim,hintT:0});
       } else {
         var parts=[];
         for(j=0;j<np;j++){ var ga2=6.283*j/np;
@@ -1310,10 +1365,18 @@
     // ---- run state ----
     R={D:W.startD, vol:ballVolFromD(W.startD), x:0,z:0,vx:0,vz:0,
        absorbs:0, cling:[], combo:0, comboT:0, comboBest:0,
-       dashM:0, dashT:0, stun:0, timer:W.time, goalHit:false, over:false,
+       dashM:0, dashT:0, stun:0, timer:W.time, goalHit:false, s2Hit:false, s3Hit:false, over:false,
        nextMile:W.startD*2, keepsNew:0, keepsRun:[], firstKind:{}, flash:0, gold:0, t:0,
        lowPerf:false, _ms:16, _slow:0};
     camYaw=0; camYawT=0; camPitch=0.62;
+    // snap the camera straight to its follow position — lerping in from the previous
+    // world's camera (or the origin, inside the globe) makes an ugly first second
+    if(camera){ var r0=R.D/2, dist0=r0*6.1+30;
+      var bx0=W.globe?0:R.x, bz0=W.globe?0:R.z;
+      camera.position.set(bx0-Math.sin(camYaw)*Math.cos(camPitch)*dist0,
+                          r0+Math.sin(camPitch)*dist0,
+                          bz0-Math.cos(camYaw)*Math.cos(camPitch)*dist0);
+      camera.lookAt(bx0,r0*0.9,bz0); }
     updateHUD(true);
     $("hudWorld").textContent=W.nm.toUpperCase();
     $("hudTimer").style.display=W.zen?"none":"block";
@@ -1513,9 +1576,13 @@
   function growthEvents(oldD,silent){
     if(R.D>=R.nextMile){ R.nextMile*=2; if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.6);
       var hs=$("hudSize"); hs.classList.remove("pop"); void hs.offsetWidth; hs.classList.add("pop"); } }
-    if(!W.zen&&!R.goalHit&&R.D>=W.goalD){ R.goalHit=true;
-      if(!silent){ winFanfare(); R.gold=1; $("hudGoal").className="done"; $("hudGoal").textContent="GOAL! KEEP ROLLING";
-        toast("★ GOAL! Everything still sticks. Keep rolling!"); } }
+    if(!W.zen){ var sb=starBars(W);
+      if(!R.goalHit&&R.D>=sb[0]){ R.goalHit=true;
+        if(!silent){ winFanfare(); R.gold=1; toast("★ GOAL! Keep rolling — "+fmtSize(sb[1])+" for ★★"); } }
+      if(!R.s2Hit&&R.D>=sb[1]){ R.s2Hit=true;
+        if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.8); toast("★★! Next bar: "+fmtSize(sb[2])); } }
+      if(!R.s3Hit&&R.D>=sb[2]){ R.s3Hit=true;
+        if(!silent){ winFanfare(); R.gold=1; toast("★★★ A LEGENDARY ROLL!"); } } }
     for(var i=0;i<GATES.length;i++){ var g=GATES[i];
       if(!g.open&&R.D>=g.def.need){ g.open=true;
         if(!silent){ gateSound(); R.gold=Math.max(R.gold,0.7); toast("The fence sinks. "+g.def.label+" opens!"); } } }
@@ -1695,9 +1762,8 @@
       if(gg.open){
         if(gg.mesh){ if(gg.mesh.visible){ gg.sinkY-=dt*gg.def.need;
           gg.mesh.position.y=gg.sinkY; if(gg.sinkY<-gg.def.need*1.4) gg.mesh.visible=false; } }
-        else if(gg.posts&&gg.posts.length){ gg.sinkY-=dt*gg.def.need;
-          if(gg.sinkY<-gg.def.need*1.4){ for(var pi=0;pi<gg.posts.length;pi++) scene.remove(gg.posts[pi].mesh);
-            gg.posts=[]; } } } }
+        else if(gg.postIM){ gg.sinkY-=dt*gg.def.need;
+          if(gg.sinkY<-gg.def.need*1.4){ scene.remove(gg.postIM); gg.postIM=null; gg.posts=[]; } } } }
     // keepsake marker bob (globe markers are placed radially in globeSync)
     if(!GLOBE) for(var ki=0;ki<KEEPMARKS.length;ki++){ var mk=KEEPMARKS[ki];
       if(mk.parent) mk.position.y=mk._baseY+Math.sin(R.t*3+ki)*mk._baseY*0.10; }
@@ -1756,19 +1822,43 @@
   // ball. Near the ball the mapping is isometric (<1% distortion at contact range),
   // so the planar physics look exactly right; far things sink under the horizon.
   var _gsV=null,_gsN=null,_gsQ=null,_gsQ2=null,_gsM=null,_gsS=null,_gsUP=null;
-  function _gsPlace(cx,cz,yaw,sc,mesh,st,idx,yOff){
+  // fill _gsM with the full transform for a chart point on the sphere — direct basis
+  // construction, no quaternions (this runs ~3000x per frame on the big globe).
+  // Returns false when the point is beyond any visible horizon (phi > 2.35 rad).
+  function _gsMat(cx,cz,yaw,sc,yOff){
     var Rs=GLOBE.R;
     var dx=wrapD(cx-R.x), dz=wrapD(cz-R.z);
     var d=Math.sqrt(dx*dx+dz*dz), phi=d/Rs;
-    if(phi>3.138)phi=3.138;   // chart corners overshoot the antipode; pin them there (hidden)
+    if(phi>2.35) return false;
+    var ux, uz; if(d>1e-4){ ux=dx/d; uz=dz/d; } else { ux=0; uz=1; }
+    var sf=Math.sin(phi), cf=Math.cos(phi);
+    var nx=sf*ux, ny=cf, nz=sf*uz;                       // up = radial normal
+    var rr=Rs+yOff;
+    var px=nx*rr, py=ny*rr-Rs, pz=nz*rr;
+    var tbx=uz, tbz=-ux;                                 // bearing tangent (right-handed)
+    var tpx=cf*ux, tpy=-sf, tpz=cf*uz;                   // polar tangent
+    var cy=Math.cos(yaw), sy=Math.sin(yaw);
+    var Xx=cy*tbx-sy*tpx, Xy=-sy*tpy, Xz=cy*tbz-sy*tpz;
+    var Zx=sy*tbx+cy*tpx, Zy=cy*tpy, Zz=sy*tbz+cy*tpz;
+    _gsM.set(Xx*sc, nx*sc, Zx*sc, px,
+             Xy*sc, ny*sc, Zy*sc, py,
+             Xz*sc, nz*sc, Zz*sc, pz,
+             0,0,0,1);
+    return true;
+  }
+  // mesh variant (movers, keepsake markers) — few per frame, quaternions are fine
+  function _gsPlaceMesh(cx,cz,yaw,mesh,yOff){
+    var Rs=GLOBE.R;
+    var dx=wrapD(cx-R.x), dz=wrapD(cz-R.z);
+    var d=Math.sqrt(dx*dx+dz*dz), phi=d/Rs;
+    if(phi>3.138)phi=3.138;
     var ux, uz; if(d>1e-4){ ux=dx/d; uz=dz/d; } else { ux=0; uz=1; }
     var sf=Math.sin(phi), cf=Math.cos(phi);
     _gsN.set(sf*ux,cf,sf*uz);
     _gsV.set(_gsN.x*(Rs+yOff),_gsN.y*(Rs+yOff)-Rs,_gsN.z*(Rs+yOff));
     _gsQ.setFromUnitVectors(_gsUP,_gsN);
     if(yaw){ _gsQ2.setFromAxisAngle(_gsUP,yaw); _gsQ.multiply(_gsQ2); }
-    if(st){ _gsM.compose(_gsV,_gsQ,_gsS.set(sc,sc,sc)); st.mesh.setMatrixAt(idx,_gsM); }
-    else { mesh.position.copy(_gsV); mesh.quaternion.copy(_gsQ); }
+    mesh.position.copy(_gsV); mesh.quaternion.copy(_gsQ);
   }
   function globeSync(){
     if(!GLOBE||!R) return;
@@ -1777,15 +1867,22 @@
       _gsUP=new THREE.Vector3(0,1,0); }
     var i, j;
     for(i=0;i<INST.length;i++){ var st=INST[i]; var any=false;
+      if(!st._hid) st._hid=[];
       for(j=0;j<st.n;j++){ if(!st.alive[j]) continue;
-        _gsPlace(st.x[j],st.z[j],st.rot[j],st.sc[j],null,st,j,0); any=true;
-        if(st.mark[j]&&st.mark[j].parent){
-          _gsPlace(st.x[j],st.z[j],0,0,st.mark[j],null,0,
-            st.mark[j]._baseY+Math.sin(R.t*3+j)*st.mark[j]._baseY*0.10); } }
+        if(_gsMat(st.x[j],st.z[j],st.rot[j],st.sc[j],0)){
+          st._hid[j]=0; st.mesh.setMatrixAt(j,_gsM); any=true;
+          if(st.mark[j]&&st.mark[j].parent){
+            _gsPlaceMesh(st.x[j],st.z[j],0,st.mark[j],
+              st.mark[j]._baseY+Math.sin(R.t*3+j)*st.mark[j]._baseY*0.10); }
+        } else if(!st._hid[j]){ st._hid[j]=1;                 // left the visible cap: zero once
+          _gsM.makeScale(0,0,0); st.mesh.setMatrixAt(j,_gsM); any=true; } }
       if(any) st.mesh.instanceMatrix.needsUpdate=true; }
-    for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; _gsPlace(m.x,m.z,m.rot,0,m.mesh,null,0,0); }
-    for(i=0;i<GATES.length;i++){ var g=GATES[i]; if(!g.posts) continue;
-      for(j=0;j<g.posts.length;j++){ var p=g.posts[j]; _gsPlace(p.cx,p.cz,0,0,p.mesh,null,0,g.sinkY); } }
+    for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; _gsPlaceMesh(m.x,m.z,m.rot,m.mesh,0); }
+    for(i=0;i<GATES.length;i++){ var g=GATES[i]; if(!g.postIM) continue;
+      for(j=0;j<g.posts.length;j++){ var p=g.posts[j];
+        if(_gsMat(p.cx,p.cz,0,1,g.sinkY)) g.postIM.setMatrixAt(j,_gsM);
+        else { _gsM.makeScale(0,0,0); g.postIM.setMatrixAt(j,_gsM); } }
+      g.postIM.instanceMatrix.needsUpdate=true; }
   }
   function updateCamera(dt){
     var r=R.D/2;
@@ -1805,7 +1902,7 @@
     camera.fov+=(fovT-camera.fov)*Math.min(1,dt*6);
     camera.updateProjectionMatrix();
   }
-  var _lastSize="", _lastTime="";
+  var _lastSize="", _lastTime="", _lastGoalLbl="";
   function updateHUD(force){
     var s=fmtSize(R.D);
     if(force||s!==_lastSize){ _lastSize=s; $("hudSize").textContent=s; }
@@ -1813,7 +1910,15 @@
       var t=fmtTime(R.timer);
       if(force||t!==_lastTime){ _lastTime=t; $("hudTimer").textContent=t;
         $("hudTimer").className=R.timer<=10?"low":""; }
-      $("hudBarFill").style.width=Math.min(100,R.D/W.goalD*100)+"%";
+      // the goal line always shows the NEXT live target — a run is never "done early"
+      var sb=starBars(W), tgt, lbl;
+      if(R.D<sb[0]){ tgt=sb[0]; lbl="GOAL "+fmtSize(sb[0]); }
+      else if(R.D<sb[1]){ tgt=sb[1]; lbl="★★ AT "+fmtSize(sb[1]); }
+      else if(R.D<sb[2]){ tgt=sb[2]; lbl="★★★ AT "+fmtSize(sb[2]); }
+      else { tgt=0; lbl="★★★ LEGENDARY"; }
+      if(force||lbl!==_lastGoalLbl){ _lastGoalLbl=lbl; $("hudGoal").textContent=lbl;
+        $("hudGoal").className=R.goalHit?"done":""; }
+      $("hudBarFill").style.width=(tgt?Math.min(100,R.D/tgt*100):100)+"%";
     } else {
       $("hudBarFill").style.width=Math.min(100,(R.D-W.startD)/(R.nextMile-W.startD)*100)+"%";
     }
@@ -1847,6 +1952,10 @@
   function startWorld(idx){
     buildWorld(idx);
     if(!save.seen[W.id]){ save.seen[W.id]=1; persist(); }
+    $("introName").textContent=W.nm; $("introSub").textContent=W.sub;
+    $("introCard").classList.add("show");
+    clearTimeout(startWorld._ict);
+    startWorld._ict=setTimeout(function(){ $("introCard").classList.remove("show"); },2600);
     playing=true; paused=false;
     $("menu").classList.add("hidden"); $("result").classList.add("hidden");
     $("pauseOv").classList.add("hidden"); $("skins").classList.add("hidden"); $("collect").classList.add("hidden");
@@ -1861,8 +1970,8 @@
     if(!R||R.over) return; R.over=true; playing=false;
     $("hud").classList.remove("on");
     var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
-    var stars=0, f=W.zen?0:R.D/W.goalD;
-    if(!W.zen){ if(f>=1.9)stars=3; else if(f>=1.4)stars=2; else if(f>=1)stars=1; }
+    var stars=0, sb=starBars(W);
+    if(!W.zen){ if(R.D>=sb[2])stars=3; else if(R.D>=sb[1])stars=2; else if(R.D>=sb[0])stars=1; }
     var earned=0;
     if(W.zen){ if(R.D>save.bestZen){ save.bestZen=R.D; }
       earned=earnSunbeams(3,"dewball:zen"); }
@@ -2105,8 +2214,9 @@
         else idx=Math.max(0,Math.min(WORLDS.length-1,(n||1)-1));
         startWorld(idx); return W.id; },
       worlds:function(){ var a=[]; for(var wi=0;wi<WORLDS.length;wi++){ var w=WORLDS[wi];
-        a.push({n:wi+1,id:w.id,nm:w.nm,goal:w.goalD,time:w.time,bound:w.bound,startD:w.startD,
-                zen:!!w.zen,globe:!!w.globe,gates:w.gates.length}); } return a; },
+        var sb=starBars(w);
+        a.push({n:wi+1,id:w.id,nm:w.nm,goal:w.goalD,s2:sb[1],s3:sb[2],time:w.time,bound:w.bound,
+                startD:w.startD,zen:!!w.zen,globe:!!w.globe,gates:w.gates.length}); } return a; },
       roll:function(x,y){ testIn.x=x||0; testIn.y=y||0; },
       pitch:function(){ return camPitch; },
       camY:function(){ return camera?camera.position.y:0; },

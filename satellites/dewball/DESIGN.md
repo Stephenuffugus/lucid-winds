@@ -58,7 +58,7 @@ vs bot 127-169s) — never assume humans are slower than the bot.
 | 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.6 m | 3:10 | 2100 | 45 · 70 · 150 · 230 |
 | 4 | Bazaar Lane | tiny town market street | 30 cm → 3.1 m | 3:20 | 4000 | 70 · 120 · 340 · 430 |
 | 5 | Starfall Bay | dusk beach + harbor | 60 cm → 16 m | 3:30 | 6500 | 170 · 380 · 900 · 1450 |
-| 6 | THE WHOLE WORLD | 🌍 a little planet (GLOBE) | 2 m → 16 m | 4:00 | 4200 | 550 · 1000 · 1900 |
+| 6 | THE WHOLE WORLD | 🌍 the flagship GLOBE finale | 45 cm → 22 m (★★★ 44 m) | 6:00 | 9500 | 260 · 750 · 1400 · 2300 · 3000 |
 | 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 | — |
 
 Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
@@ -91,7 +91,22 @@ growth an optimal player detonates each feast into the next threshold within sec
 bot time-to-goal on w7 (~25s) measures SOLVABILITY, not human difficulty. The 4:00 clock
 is a human estimate — device-test and retune.
 
-### THE GLOBE (w7 "The Whole World" — finale, v2.3)
+### THE GLOBE v3 (2026-07-15 — SkyWolf Studios flagship rebuild)
+Stephen: "the last world level is so great but we start waaay too big and the level itself
+needs to be so much bigger... flagship game of SkyWolf Studios." v3: start 45 cm (a bead in
+the grass — the planet's curve only reveals itself as you grow), bound 9500 (R=30 m, 5x the
+area), REGION-STRUCTURED: named districts via `regions:{}` + `zone:"r:name"` scatter —
+the Meadow (spawn), the Farmstead, the Pond, then five gated districts: Village Gate 260 →
+Harbor Gate 750 (ferry+crane) → High Valley 1400 (cottages/windmills) → Royal City 2300
+(WALLED city: citywall ring set + keep + clocktowers) → Crown of the World 3000 (moonshards,
+graypeak mountains, hillocks). Star bars are ABSOLUTE (`s2`/`s3`): 22 m ★ / 32 m ★★ / 44 m
+★★★; the HUD always shows the next un-crossed bar, so a run is never "done early".
+Perf for the 5x planet: `_gsMat` direct-basis matrix fill (no quaternions) + horizon cull
+(phi>2.35 zero-scaled once), gate posts are one InstancedMesh per gate. Movers accept
+`zone:` (sheep in the meadow, dogs at the FARM — ⛔ chase movers at spawn scale walked the
+bot for 3 straight minutes; and bots/humans should SIDESTEP chasers, never run straight).
+
+### THE GLOBE (w7 — original v2.3 implementation notes)
 Stephen: "scale out to the whole world and have the ball on a globe." Implementation:
 physics run UNCHANGED on a square chart that wraps at ±bound (torus, `wrap:1`); the
 renderer (`globeSync`) projects everything ball-centric onto a real sphere of radius

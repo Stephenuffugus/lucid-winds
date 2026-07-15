@@ -36,14 +36,14 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
           return false;
         }
         for (var wi=0; wi<WL.length; wi++){
-          var n = WL[wi].n, GOAL = WL[wi].goal;
+          var n = WL[wi].n, GOAL = WL[wi].goal, S2 = WL[wi].s2, S3 = WL[wi].s3;
           // ceiling
           D.start('level', n);
           var ceil = D.absorbAll();
           var leftBig = 0, st0 = D.state();
           for (var q=0; q<st0.objects.length; q++){ if (st0.objects[q].s > ceil*pr(ceil)) leftBig++; }
-          var rec = { w: WL[wi].id, goal: GOAL, time: WL[wi].time, ceiling: Math.round(ceil*10)/10,
-                      ceilingX: Math.round(ceil/GOAL*100)/100, leftovers: leftBig };
+          var rec = { w: WL[wi].id, goal: GOAL, s3: S3, time: WL[wi].time, ceiling: Math.round(ceil*10)/10,
+                      ceilingX: Math.round(ceil/GOAL*100)/100, s3ok: ceil >= S3*1.15, leftovers: leftBig };
           // greedy bot — with dash discipline + stuck escape, so runs measure PACING,
           // not random knockoff catastrophes (the old perma-dash bot swung 1.1x-5x
           // on identical code depending on mover luck; useless as a yardstick)
@@ -52,7 +52,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             var objs = D.state().objects, it = 0, refresh = 0, st2 = D.state();
             var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
             var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0;
-            while (st2.timer > 0.15 && it++ < 12000){
+            while (st2.timer > 0.15 && it++ < 16000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
               var bx = st2.ballX, bz = st2.ballY;
@@ -115,12 +115,15 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
               // creep near walls: full-speed slams trigger knockOff (impact > 0.84x max);
               // a player brakes in tight quarters — so does the bot
               var thr = dashOK ? 1 : 0.55;
+              // flee SIDESTEPS (perpendicular) — running straight away from a chaser
+              // is a permanent pursuit; a dog once walked the bot for 3 minutes
+              var flpX = -fleeZ, flpZ = fleeX;
               if (escT-- > 0){ D.roll(Math.cos(escA)*thr, Math.sin(escA)*thr); }
               else if (best){ var vx = best.x-bx, vz = best.z-bz, vl = Math.sqrt(vx*vx+vz*vz)||1;
-                var rx = vx/vl + fleeX*1.4, rz = vz/vl + fleeZ*1.4;
+                var rx = vx/vl + flpX*0.9 + fleeX*0.3, rz = vz/vl + flpZ*0.9 + fleeZ*0.3;
                 var rl = Math.sqrt(rx*rx+rz*rz)||1;
                 D.roll(rx/rl*thr, rz/rl*thr); }
-              else if (fleeX||fleeZ) D.roll(fleeX*thr, fleeZ*thr);
+              else if (fleeX||fleeZ) D.roll((flpX+fleeX*0.5)*thr, (flpZ+fleeZ*0.5)*thr);
               else D.roll(Math.cos(it*0.01)*thr, Math.sin(it*0.01)*thr);
               if (dashOK) D.dash();
               D.step(0.033);
@@ -130,8 +133,8 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
               // star-pace telemetry: elapsed seconds when the bot crossed each star bar
               var dNow = D.size(), tEl = Math.round((WL[wi].time - st2.timer)*10)/10;
               if (!rec.t100 && dNow >= GOAL) rec.t100 = tEl;
-              if (!rec.t140 && dNow >= GOAL*1.4) rec.t140 = tEl;
-              if (!rec.t190 && dNow >= GOAL*1.9) rec.t190 = tEl;
+              if (!rec.t140 && dNow >= S2) rec.t140 = tEl;
+              if (!rec.t190 && dNow >= S3) rec.t190 = tEl;
             }
             rec.bot = Math.round(D.size()*10)/10;
             rec.botX = Math.round(rec.bot/GOAL*100)/100;
@@ -182,7 +185,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
       console.log(JSON.stringify(out, null, 1));
       var pass = errors.length === 0 && !out.knock.crash;
       for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
-        if (w.ceilingX < 1.9*1.15) { pass = false; console.log('CEILING FAIL ' + w.w + ' x' + w.ceilingX); }
+        if (w.s3ok === false) { pass = false; console.log('CEILING FAIL ' + w.w + ' (3-star bar unreachable)'); }
         if (botOn && w.botX < 1.0) { pass = false; console.log('BOT FAIL ' + w.w + ' x' + w.botX); } }
       console.log(pass ? 'BALANCE_PASS' : 'BALANCE_FAIL');
       return browser.close().then(function(){ process.exit(pass?0:1); });
