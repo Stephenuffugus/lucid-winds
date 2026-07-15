@@ -53,13 +53,16 @@ KEY CALIBRATION FACT: Stephen plays ~1.5x FASTER than the balance bot (his w5 t-
 vs bot 127-169s) — never assume humans are slower than the bot.
 | # | World | Theme | Start → Goal | Time | Bound | Gates |
 |---|-------|-------|--------------|------|-------|-------|
-| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 950 | 16 · 30 · 40 |
-| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 2400 | rings 22 · 55 · 95 |
-| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 2:45 | 3400 | rings 32 · 80 · 145 |
-| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:00 | 5600 | rings 60 · 160 · 380 |
-| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 7500 | rings 160 · 550 · 1250 |
-| 6 | THE WHOLE WORLD | 🌍 CONCENTRIC globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 12000 | rings 120 · 420 · 1300 · 2600 |
-| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 | — |
+| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 1596 | 16 · 30 · 40 |
+| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 4008 | rings 22 · 55 · 95 |
+| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 2:45 | 5610 | rings 32 · 80 · 145 |
+| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:00 | 8960 | rings 60 · 160 · 380 |
+| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 12000 | rings 160 · 550 · 1250 |
+| 6 | THE WHOLE WORLD | 🌍 57m-planet globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 18000 | rings 120 · 420 · 1300 · 2600 |
+| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 3640 | — |
+(v3.4, Stephen: "I want all the levels much bigger" — every bound scaled 1.4-1.7x linear
+with counts only +20%, so density fell another ~40% on top of the v3.3 density law.
+Gate needs/goals/clocks unchanged; ring radii, gate positions, set origins scaled.)
 
 Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
 (v2.4 additions: chess corner, sandwich tower, grown-ups' picnic table, train loop,
