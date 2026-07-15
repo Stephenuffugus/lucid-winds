@@ -29,6 +29,29 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         // Rings are walls from BOTH sides (concentric worlds: the ball lives INSIDE
         // closed rings and breaks outward) — blocked when exactly one endpoint is
         // inside, or when an outside-outside segment dips through the circle.
+        // steer around wall props (v4.0 structures): if the straight line to the
+        // target clips an unpickable prop, deflect the heading around it. This is
+        // wall-following: each piece of a wall line pushes the heading sideways
+        // until a doorway lets the ray through — how a human drives a hedgerow.
+        function steer(bx,bz,tx,tz,dd,blks){
+          var dx=tx-bx, dz=tz-bz, L=Math.sqrt(dx*dx+dz*dz)||1, ux=dx/L, uz=dz/L;
+          var look=Math.min(L,dd*16), hit=null, hitT=1e18, hpx=0, hpz=0, hrad=1;
+          for (var bi=0; bi<blks.length; bi++){ var o=blks[bi];
+            var rx=o.x-bx, rz=o.z-bz;
+            var t=rx*ux+rz*uz;
+            if (t<-o.s||t>look) continue;
+            if (t>L*0.92) continue;             // blocker sits AT the target: just go
+            var px=rx-ux*t, pz=rz-uz*t, p2=px*px+pz*pz;
+            var rad=o.s*0.45+dd*0.62;
+            if (p2<rad*rad&&t<hitT){ hitT=t; hit=o; hpx=px; hpz=pz; hrad=rad; } }
+          if (!hit) return [ux,uz];
+          var pl=Math.sqrt(hpx*hpx+hpz*hpz), awx, awz;
+          if (pl>1e-4){ awx=-hpx/pl; awz=-hpz/pl; }
+          else { awx=-uz; awz=ux; }             // dead-on: pick a deterministic side
+          var wgt=1.15*(1-pl/hrad)+0.35;
+          var ox=ux+awx*wgt, oz=uz+awz*wgt, ol=Math.sqrt(ox*ox+oz*oz)||1;
+          return [ox/ol,oz/ol];
+        }
         function pathBlocked(bx,bz,tx,tz,gg){
           for (var gi=0; gi<gg.length; gi++){ var g=gg[gi];
             if (g.open || g.x===undefined) continue;
@@ -59,6 +82,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             var objs = D.state().objects, it = 0, refresh = 0, st2 = D.state();
             var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
             var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0, srchT = 0, srchA = 0;
+            var blks = [];   // unpickable wall props near the ball (refreshed with dashOK)
             while (st2.timer > 0.15 && !st2.over && it++ < 16000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
@@ -68,7 +92,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
               if (refresh === 14){
                 // dash safety: never dash with a hard wall (or too-big mover) nearby —
                 // dash-speed impacts trigger knockOff and shed 3 pickups
-                dashOK = true; fleeX = 0; fleeZ = 0;
+                dashOK = true; fleeX = 0; fleeZ = 0; blks.length = 0;
                 var fd2 = 1e14;
                 for (i=0; i<objs.length; i++){ var ow = objs[i];
                   // flee unpickable CHASERS only (wander/patrol/dart movers just bump;
@@ -77,9 +101,20 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                     var fx = bx-ow.x, fz = bz-ow.z, f2 = fx*fx+fz*fz, fr = dd*6+ow.s;
                     if (f2 < fr*fr && f2 < fd2){ fd2 = f2; var fl = Math.sqrt(f2)||1;
                       fleeX = fx/fl; fleeZ = fz/fl; } }
-                  if (ow.s <= dd*1.15) continue;
-                  var wx = ow.x-bx, wz = ow.z-bz, wr = dd*3+ow.s*0.5;
-                  if (wx*wx+wz*wz < wr*wr) dashOK = false; }
+                  // fixed wall pieces are HARD even at <= 1.15x ball (the engine
+                  // skips the shove for them) — treat them as walls from the moment
+                  // they're merely unpickable, or the bot dashes into hedges it
+                  // "knows" are shovable right before they turn edible
+                  if (ow.s <= (ow.f ? lim : dd*1.15)) continue;
+                  // small fixed walls (below the shove line) get a TIGHT no-dash
+                  // radius: a dash slip there sheds 3 pickups, not a run — the wide
+                  // dd*3 bubble around every hedge piece froze the bot to a creep
+                  // (w2 t-goal doubled; humans dash through wall gaps all day)
+                  var wx = ow.x-bx, wz = ow.z-bz, w2d = wx*wx+wz*wz;
+                  var wr = (ow.f && ow.s <= dd*1.15 ? dd*1.6 : dd*3) + ow.s*0.5;
+                  if (!ow.m){ var br9 = dd*20+ow.s;      // static walls: steering set
+                    if (w2d < br9*br9) blks.push(ow); }
+                  if (w2d < wr*wr) dashOK = false; }
               }
               for (i=0; i<objs.length; i++){ var o = objs[i];
                 o._d2 = undefined;
@@ -130,13 +165,14 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
               // is a permanent pursuit; a dog once walked the bot for 3 minutes
               var flpX = -fleeZ, flpZ = fleeX;
               if (escT-- > 0){ D.roll(Math.cos(escA)*thr, Math.sin(escA)*thr); }
-              else if (best){ var vx = best.x-bx, vz = best.z-bz, vl = Math.sqrt(vx*vx+vz*vz)||1;
-                var rx = vx/vl + flpX*0.9 + fleeX*0.3, rz = vz/vl + flpZ*0.9 + fleeZ*0.3;
+              else if (best){ var sv = steer(bx,bz,best.x,best.z,dd,blks);
+                var rx = sv[0] + flpX*0.9 + fleeX*0.3, rz = sv[1] + flpZ*0.9 + fleeZ*0.3;
                 var rl = Math.sqrt(rx*rx+rz*rz)||1;
                 D.roll(rx/rl*thr, rz/rl*thr); }
               else if (fleeX||fleeZ) D.roll((flpX+fleeX*0.5)*thr, (flpZ+fleeZ*0.5)*thr);
               else { if (it - (srchT||0) > 90){ srchT = it; srchA = Math.random()*6.283; }
-                D.roll(Math.cos(srchA)*thr, Math.sin(srchA)*thr); }
+                var sw = steer(bx,bz,bx+Math.cos(srchA)*dd*30,bz+Math.sin(srchA)*dd*30,dd,blks);
+                D.roll(sw[0]*thr, sw[1]*thr); }
               if (dashOK) D.dash();
               D.step(0.033);
               if (doTrace && it % 300 === 0){ if (!rec.trace) rec.trace = [];
@@ -157,16 +193,26 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         // knockOff regression: eat a mover then slam a wall prop — must not throw, mover returns
         if (onlyN){ out.knock = { skipped: true, crash: false }; return out; }
         D.start('level', 1);
-        D.setD(6);
-        var st = D.state(), mv = null, i2;
-        for (i2=0; i2<st.objects.length; i2++){ if (st.objects[i2].m){ mv = st.objects[i2]; break; } }
+        D.setD(8);                       // big enough that any w1 critter is edible
+        var st = D.state(), mv = null, i2, kindN0 = 0;
+        for (i2=0; i2<st.objects.length; i2++){ var om = st.objects[i2];
+          if (om.m && om.s <= 8*0.55 && !mv) mv = om; }
         var ok = { moverEaten:false, crash:false, moverBack:false, clingAfter:-1 };
         if (mv){
-          // teleport-drive to the mover by rolling toward it (movers wander; chase a while)
-          for (var f=0; f<2200 && !ok.moverEaten; f++){
-            var s2 = D.state(); var m2 = null;
-            for (var j=0; j<s2.objects.length; j++){ if (s2.objects[j].m && s2.objects[j].k===mv.k){ m2=s2.objects[j]; break; } }
-            if (!m2){ ok.moverEaten = true; break; }
+          for (i2=0; i2<st.objects.length; i2++){ if (st.objects[i2].m && st.objects[i2].k===mv.k) kindN0++; }
+          // start NEXT to the mover and chase the NEAREST of its kind; "eaten" =
+          // the kind's count dropped. (The old version chased the first-listed
+          // instance cross-map and only passed if ALL of them died — with v4.0
+          // walls in the way it silently never tested knockOff at all.)
+          D.setPos(mv.x + 30, mv.z);
+          for (var f=0; f<900 && !ok.moverEaten; f++){
+            var s2 = D.state(); var m2 = null, bd2 = 1e18, kn = 0;
+            for (var j=0; j<s2.objects.length; j++){ var o2 = s2.objects[j];
+              if (!o2.m || o2.k!==mv.k) continue; kn++;
+              var dxx = o2.x-s2.ballX, dzz = o2.z-s2.ballY, dq = dxx*dxx+dzz*dzz;
+              if (dq < bd2){ bd2 = dq; m2 = o2; } }
+            if (kn < kindN0){ ok.moverEaten = true; break; }
+            if (!m2) break;
             var dx2 = m2.x-s2.ballX, dz2 = m2.z-s2.ballY, dl2 = Math.sqrt(dx2*dx2+dz2*dz2)||1;
             D.roll(dx2/dl2, dz2/dl2); D.step(0.033);
           }
@@ -176,14 +222,20 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             for (var w2=0; w2<s3.objects.length; w2++){ var o3=s3.objects[w2];
               if (o3.s > D.size()*1.2 && !o3.m){ if(!wall || (o3.x-s3.ballX)*(o3.x-s3.ballX)+(o3.z-s3.ballY)*(o3.z-s3.ballY) < (wall.x-s3.ballX)*(wall.x-s3.ballX)+(wall.z-s3.ballY)*(wall.z-s3.ballY)) wall=o3; } }
             if (wall){
+              // count same-kind movers BEFORE the slam: knockOff restoring the eaten
+              // one must INCREASE the count (any surviving sibling used to satisfy
+              // the old any-of-kind check, which made moverBack vacuous)
+              var s3b = D.state(), knPre = 0, m3;
+              for (m3=0; m3<s3b.objects.length; m3++){ if (s3b.objects[m3].m && s3b.objects[m3].k===mv.k) knPre++; }
               try {
                 for (var f2=0; f2<900; f2++){ var s4=D.state();
                   var dx3=wall.x-s4.ballX, dz3=wall.z-s4.ballY, dl3=Math.sqrt(dx3*dx3+dz3*dz3)||1;
                   D.roll(dx3/dl3, dz3/dl3); D.step(0.05); }   // big dt = high speed per step
               } catch(e){ ok.crash = true; ok.err = String(e); }
-              var s5 = D.state();
+              var s5 = D.state(), knPost = 0;
               ok.clingAfter = s5.cling.length;
-              for (var m3=0; m3<s5.objects.length; m3++){ if (s5.objects[m3].m && s5.objects[m3].k===mv.k){ ok.moverBack = true; break; } }
+              for (m3=0; m3<s5.objects.length; m3++){ if (s5.objects[m3].m && s5.objects[m3].k===mv.k) knPost++; }
+              ok.moverBack = knPost > knPre;
             }
           }
         }
@@ -195,7 +247,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
       out.pageErrors = errors;
       out.seed = seed;
       console.log(JSON.stringify(out, null, 1));
-      var pass = errors.length === 0 && !out.knock.crash;
+      var pass = errors.length === 0 && !out.knock.crash && (out.knock.skipped || out.knock.moverEaten);
       for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
         if (w.s3ok === false) { pass = false; console.log('CEILING FAIL ' + w.w + ' (3-star bar unreachable)'); }
         if (botOn && w.botX < 1.0) { pass = false; console.log('BOT FAIL ' + w.w + ' x' + w.botX); } }

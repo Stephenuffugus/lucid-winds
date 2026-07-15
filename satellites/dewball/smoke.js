@@ -59,7 +59,13 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
           for (var wi = 0; wi < WL.length; wi++){
             D.start('level', WL[wi].n);
             var ceil = D.absorbAll();
-            ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].s3*1.15), ok: ceil >= WL[wi].s3*1.15 });
+            // WALL SIZING LAW: every fixed wall piece must sit within the world's
+            // reachable ladder — an oversized wall is permanent inedible scenery
+            // that silently kills clean sweep. (state() flags fixed props with f:1.)
+            var wallsLeft = 0, sl = D.state();
+            for (var qi = 0; qi < sl.objects.length; qi++){ if (sl.objects[qi].f) wallsLeft++; }
+            ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].s3*1.15),
+                          wallsLeft: wallsLeft, ok: ceil >= WL[wi].s3*1.15 && wallsLeft === 0 });
           }
           return {
             ladder: ladder,

@@ -177,6 +177,33 @@ r2400 now while outer rings stay vast). VALIDATION: balance.js `near` mode runs 
 NEARSIGHTED bot (vision = 22 ball-diameters, wanders to search) — it models a first-time
 human; the standard bot has perfect map knowledge and never feels sparse worlds.
 
+⚖️ THE STRUCTURES LAYER (v4.0, Stephen: "we need obstacles around all the areas.
+it needs to be like an environment you have to navigate"): every zone now gets WALLS —
+fixed props (`fixed:1`, never shoved by the ball; they hold their line until the ball is
+big enough to simply eat them). Two generators run in buildWorld off the same cluster
+anchors as the loot composer:
+- YARDS: ring or rect enclosures around cluster anchors — loot rooms entered through
+  doorways (2 doors on rings, 1 guaranteed 3-piece door on rects; a sealed room is a
+  bug, not a puzzle).
+- RUNS: field walls laid between anchor pairs (hedgerows / freight lines / groynes),
+  gapped every 6-9 pieces, capped at 24 pieces.
+Wall kinds are THEMED and chunky (prop collision is a circle of r=0.45*size — thin
+fences would collide fatter than they look): crumbwall/blockwall/bookwall/hedgewall/
+stonewall/brickwall/cratewall/groyne/seawall.
+⚖️ WALL SIZING LAW: piece size ≈ 1.0-1.3x the zone's EXIT need. The wall is an obstacle
+for the whole zone it stands in and a FEAST one zone later — eating the maze that caged
+you is the payoff. Never size a wall past the world's reachable ladder (smoke.js checks).
+Placement respects: cold-start law (nothing within startD*16 of spawn), gate fence
+lines, hand-placed sets (auto-computed extents), and the zone's own radial band (a
+z2-scale wall inside z1 is a cold-start violation one zone late).
+Wall kinds join the "You can roll up:" ladder at their smallest PLACED size.
+MARQUEE STRUCTURES (hand-placed, via the `_arc` set helper — a partial ring whose
+missing sweep IS the doorway): the Block Fort (w2), the Hedge Maze (w3, three offset
+spiral rings), the Walled Souk (w4), the Breakwater (w5), the Walled Orchard (w7).
+BOT: balance.js steers around unpickable static props (ray-vs-circle deflection =
+wall-following until a doorway lets the ray through); without it the greedy bot
+grinds into hedgerows and every pacing number lies.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
