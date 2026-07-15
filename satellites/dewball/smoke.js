@@ -54,11 +54,12 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
           var afterAll = D.size();
           // ladder rule: every non-zen world's ceiling must clear 3 stars with 15% slack
           // (total-volume budgeting is NOT enough — the pickup-ratio ladder binds; see DESIGN.md)
-          var GOALS = [24, 55, 85, 240, 460], ladder = [];
-          for (var wn = 1; wn <= 5; wn++){
-            D.start('level', wn);
+          // Worlds/goals derive from DB_DEV.worlds() — never hand-mirror them here.
+          var WL = D.worlds().filter(function(w){ return !w.zen; }), ladder = [];
+          for (var wi = 0; wi < WL.length; wi++){
+            D.start('level', WL[wi].n);
             var ceil = D.absorbAll();
-            ladder.push({ w: wn, ceil: Math.round(ceil), need: Math.round(GOALS[wn-1]*1.9*1.15), ok: ceil >= GOALS[wn-1]*1.9*1.15 });
+            ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].goal*1.9*1.15), ok: ceil >= WL[wi].goal*1.9*1.15 });
           }
           return {
             ladder: ladder,

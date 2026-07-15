@@ -1,9 +1,15 @@
 // Dewball balance probe: per-world absorbAll ceiling + greedy-bot run + knockOff regression.
-// NODE_PATH=/workspaces/lucid-winds/node_modules node dewball_balance.js [botOn]
+// NODE_PATH=/workspaces/lucid-winds/node_modules node balance.js [botOn] [seed] [onlyWorldN]
+// Worlds/goals derive from DB_DEV.worlds() — never hand-mirror them here (tuning law).
+// Math.random is seeded in-page under ?dbtest=1, so a given seed is fully deterministic.
+// onlyWorldN (1-based, non-zen) runs a single world and skips the knock test — fast iteration.
 var puppeteer = require('puppeteer');
 var path = require('path');
-var url = 'file://' + path.resolve('/workspaces/lucid-winds/satellites/dewball/index.html') + '?dbtest=1';
 var botOn = process.argv[2] !== '0';
+var seed = +(process.argv[3] || 12345) || 12345;
+var onlyN = +(process.argv[4] || 0) || 0;
+var doTrace = process.argv[5] === 'trace';
+var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1&dbseed=' + seed;
 
 puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader'] })
 .then(function(browser){
@@ -13,28 +19,61 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
     return page.goto(url, { waitUntil:'domcontentloaded' })
     .then(function(){ return page.waitForFunction('window.DB_DEV', {timeout:8000}); })
     .then(function(){
-      return page.evaluate(function(botOn){
+      return page.evaluate(function(botOn, onlyN, doTrace){
         var D = window.DB_DEV, out = { worlds: [], knock: null };
-        var GOALS = {1:24, 2:55, 3:85, 4:240, 5:460};
+        var WL = D.worlds().filter(function(w){ return !w.zen && (!onlyN || w.n === onlyN); });
         function pr(dd){ var t = Math.log(dd/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1; return 0.55+0.17*t; }
-        for (var n=1; n<=5; n++){
+        // does the straight run from (bx,bz) to (tx,tz) cross a CLOSED gate ring?
+        function pathBlocked(bx,bz,tx,tz,gg){
+          for (var gi=0; gi<gg.length; gi++){ var g=gg[gi];
+            if (g.open || g.x===undefined) continue;
+            var ex=bx-g.x, ez=bz-g.z, fx2=tx-g.x, fz2=tz-g.z;
+            if (ex*ex+ez*ez < g.r*g.r || fx2*fx2+fz2*fz2 < g.r*g.r) continue;
+            var dx=tx-bx, dz=tz-bz, L2=dx*dx+dz*dz||1;
+            var t=((g.x-bx)*dx+(g.z-bz)*dz)/L2; if(t<0)t=0; if(t>1)t=1;
+            var px=bx+dx*t-g.x, pz=bz+dz*t-g.z;
+            if (px*px+pz*pz < g.r*g.r) return true; }
+          return false;
+        }
+        for (var wi=0; wi<WL.length; wi++){
+          var n = WL[wi].n, GOAL = WL[wi].goal;
           // ceiling
           D.start('level', n);
           var ceil = D.absorbAll();
           var leftBig = 0, st0 = D.state();
           for (var q=0; q<st0.objects.length; q++){ if (st0.objects[q].s > ceil*pr(ceil)) leftBig++; }
-          var rec = { w:'w'+n, goal: GOALS[n], ceiling: Math.round(ceil*10)/10,
-                      ceilingX: Math.round(ceil/GOALS[n]*100)/100, leftovers: leftBig };
-          // greedy bot
+          var rec = { w: WL[wi].id, goal: GOAL, time: WL[wi].time, ceiling: Math.round(ceil*10)/10,
+                      ceilingX: Math.round(ceil/GOAL*100)/100, leftovers: leftBig };
+          // greedy bot — with dash discipline + stuck escape, so runs measure PACING,
+          // not random knockoff catastrophes (the old perma-dash bot swung 1.1x-5x
+          // on identical code depending on mover luck; useless as a yardstick)
           if (botOn){
             D.start('level', n);
             var objs = D.state().objects, it = 0, refresh = 0, st2 = D.state();
+            var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
+            var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0;
             while (st2.timer > 0.15 && it++ < 12000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
               var bx = st2.ballX, bz = st2.ballY;
               if (refresh < 14){ st2 = D.state(); bx = st2.ballX; bz = st2.ballY; }
-              var lim = dd*pr(dd), near = null, nd = 1e14, i, gg = st2.gates || [];
+              var lim = dd*pr(dd), best = null, bestScore = -1, i, gg = st2.gates || [];
+              if (refresh === 14){
+                // dash safety: never dash with a hard wall (or too-big mover) nearby —
+                // dash-speed impacts trigger knockOff and shed 3 pickups
+                dashOK = true; fleeX = 0; fleeZ = 0;
+                var fd2 = 1e14;
+                for (i=0; i<objs.length; i++){ var ow = objs[i];
+                  // flee unpickable CHASERS only (wander/patrol/dart movers just bump;
+                  // fleeing every sheep on w7 starved the bot to 0.1x)
+                  if (ow.m && ow.ai === 'chase' && ow.s > lim){
+                    var fx = bx-ow.x, fz = bz-ow.z, f2 = fx*fx+fz*fz, fr = dd*6+ow.s;
+                    if (f2 < fr*fr && f2 < fd2){ fd2 = f2; var fl = Math.sqrt(f2)||1;
+                      fleeX = fx/fl; fleeZ = fz/fl; } }
+                  if (ow.s <= dd*1.15) continue;
+                  var wx = ow.x-bx, wz = ow.z-bz, wr = dd*3+ow.s*0.5;
+                  if (wx*wx+wz*wz < wr*wr) dashOK = false; }
+              }
               for (i=0; i<objs.length; i++){ var o = objs[i];
                 o._d2 = undefined;
                 if (o.s > lim) continue;
@@ -43,26 +82,65 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                   if (!g.open && g.x !== undefined){ var gx = o.x-g.x, gz = o.z-g.z;
                     if (gx*gx+gz*gz < g.r*g.r){ fenced = true; break; } } }
                 if (fenced) continue;
+                var blk = false;                          // skip the pocket we got stuck in
+                // radius capped: at big D an uncapped dd*3 pocket blacklists whole map
+                // regions and the bot limit-cycles between the few survivors
+                var pkR = Math.min(dd*3, 700);
+                for (var bi=0; bi<blkX.length; bi++){ if (blkT[bi]>it){
+                  var bdx = o.x-blkX[bi], bdz = o.z-blkZ[bi];
+                  if (bdx*bdx+bdz*bdz < pkR*pkR){ blk = true; break; } } }
+                if (blk) continue;
                 var dx = o.x-bx, dz = o.z-bz, d2 = dx*dx+dz*dz;
-                o._d2 = d2; if (d2 < nd){ nd = d2; near = o; } }
-              var best = near;
-              if (near){ var lim2 = nd*2.56, bestV = near.s;   // biggest meal within 1.6x of the nearest
-                for (i=0; i<objs.length; i++){ var o2 = objs[i];
-                  if (o2.s > lim || o2._d2 === undefined || o2._d2 > lim2) continue;
-                  if (o2.s > bestV){ bestV = o2.s; best = o2; } } }
-              if (best){ var vx = best.x-bx, vz = best.z-bz, vl = Math.sqrt(vx*vx+vz*vz)||1;
-                D.roll(vx/vl, vz/vl); }
-              else D.roll(Math.cos(it*0.01), Math.sin(it*0.01));
-              D.dash();
+                o._d2 = d2;
+                // value = meal volume per travel: a player at 8m treks to the cottage
+                // feast instead of diving into wall pockets after streetlamps.
+                // A closed gate ring across the route makes a target near-worthless
+                // (grinding the arc was a permanent limit cycle on w5 Lighthouse Point).
+                var sc9 = o.s*o.s*o.s/(Math.sqrt(d2)+dd*4);
+                if (sc9 > bestScore*0.05 && pathBlocked(bx,bz,o.x,o.z,gg)) sc9 *= 0.02;
+                if (sc9 > bestScore){ bestScore = sc9; best = o; } }
+              // stuck detection: barely moved over ~3s -> blacklist the POCKET around the
+              // target we were grinding toward and RETREAT (away from it), long enough to
+              // actually leave; repeated sticking escalates to a long wander
+              if (it % 90 === 0){
+                if (Math.abs(bx-lastCX)+Math.abs(bz-lastCZ) < Math.min(dd*1.2,420) && lastBest){
+                  blkX.push(lastBest.x); blkZ.push(lastBest.z); blkT.push(it+700);
+                  stuckRun++;
+                  escT = stuckRun >= 3 ? 260 : 90;
+                  escA = Math.atan2(bx-lastBest.x, bz-lastBest.z) + (stuckRun-1)*0.9; }
+                else stuckRun = 0;
+                lastCX = bx; lastCZ = bz;
+              }
+              lastBest = best;
+              // creep near walls: full-speed slams trigger knockOff (impact > 0.84x max);
+              // a player brakes in tight quarters — so does the bot
+              var thr = dashOK ? 1 : 0.55;
+              if (escT-- > 0){ D.roll(Math.cos(escA)*thr, Math.sin(escA)*thr); }
+              else if (best){ var vx = best.x-bx, vz = best.z-bz, vl = Math.sqrt(vx*vx+vz*vz)||1;
+                var rx = vx/vl + fleeX*1.4, rz = vz/vl + fleeZ*1.4;
+                var rl = Math.sqrt(rx*rx+rz*rz)||1;
+                D.roll(rx/rl*thr, rz/rl*thr); }
+              else if (fleeX||fleeZ) D.roll(fleeX*thr, fleeZ*thr);
+              else D.roll(Math.cos(it*0.01)*thr, Math.sin(it*0.01)*thr);
+              if (dashOK) D.dash();
               D.step(0.033);
+              if (doTrace && it % 300 === 0){ if (!rec.trace) rec.trace = [];
+                rec.trace.push([Math.round(WL[wi].time-st2.timer), Math.round(dd), Math.round(bx), Math.round(bz),
+                                st2.absorbCount, best?Math.round(Math.sqrt(best._d2||0)):-1, blkX.length]); }
+              // star-pace telemetry: elapsed seconds when the bot crossed each star bar
+              var dNow = D.size(), tEl = Math.round((WL[wi].time - st2.timer)*10)/10;
+              if (!rec.t100 && dNow >= GOAL) rec.t100 = tEl;
+              if (!rec.t140 && dNow >= GOAL*1.4) rec.t140 = tEl;
+              if (!rec.t190 && dNow >= GOAL*1.9) rec.t190 = tEl;
             }
             rec.bot = Math.round(D.size()*10)/10;
-            rec.botX = Math.round(rec.bot/GOALS[n]*100)/100;
+            rec.botX = Math.round(rec.bot/GOAL*100)/100;
             rec.absorbs = D.state().absorbCount;
           }
           out.worlds.push(rec);
         }
         // knockOff regression: eat a mover then slam a wall prop — must not throw, mover returns
+        if (onlyN){ out.knock = { skipped: true, crash: false }; return out; }
         D.start('level', 1);
         D.setD(6);
         var st = D.state(), mv = null, i2;
@@ -96,10 +174,11 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         }
         out.knock = ok;
         return out;
-      }, botOn);
+      }, botOn, onlyN, doTrace);
     })
     .then(function(out){
       out.pageErrors = errors;
+      out.seed = seed;
       console.log(JSON.stringify(out, null, 1));
       var pass = errors.length === 0 && !out.knock.crash;
       for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
