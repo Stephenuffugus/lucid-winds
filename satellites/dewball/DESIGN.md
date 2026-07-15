@@ -53,13 +53,19 @@ KEY CALIBRATION FACT: Stephen plays ~1.5x FASTER than the balance bot (his w5 t-
 vs bot 127-169s) — never assume humans are slower than the bot.
 | # | World | Theme | Start → Goal | Time | Bound | Gates |
 |---|-------|-------|--------------|------|-------|-------|
-| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:45 | 2474 | 14 · 26 · 36 |
-| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 6212 | rings 22 · 55 · 95 |
-| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 3:00 | 8696 | rings 32 · 80 · 145 |
-| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:15 | 13888 | rings 60 · 160 · 380 |
-| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 18600 | rings 160 · 550 · 1250 |
-| 6 | THE WHOLE WORLD | 🌍 89m-planet globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 27900 | rings 120 · 420 · 1300 · 2600 |
-| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 5278 | — |
+| 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:45 | 3587 | 14 · 26 · 36 |
+| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 3:05 | 9007 | rings 22 · 55 · 95 |
+| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 3:25 | 12609 | rings 32 · 80 · 145 |
+| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:30 | 20138 | rings 60 · 160 · 380 |
+| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 26970 | rings 160 · 550 · 1250 |
+| 6 | THE WHOLE WORLD | 🌍 129m-planet globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 40455 | rings 120 · 420 · 1300 · 2600 |
+| 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 7125 | — |
+(v3.6: third size jump x1.45 ("I want every level increased more... my daughter already
+thinks it is the best one" — bounds now x3.2-3.8 of v3.3), +13 new set pieces (teacup
+spiral, jam picnic, marble boulevard, block skyline, moon shrine, fern hollow, caravan
+road, lamp alley, the regatta, driftwood maze, twin hamlet, henge road, orchard valley),
++12 size facts (37 total), SPAWN LITTER IS BALL-RELATIVE now (startD*1.5-12 — fraction
+rings broke at huge bounds), camera near 3 / far 200000. Clocks re-fit from bot ratios.)
 (v3.4-v3.5, Stephen twice: "much bigger" — bounds scaled 1.4-1.7x then 1.55x again
 (x2.2-2.6 total) with counts only +20% each pass; density is now ~1/3 of v3.3. w1 eased
 (tutorial: gates 14/26/36, denser near field, 2:45 — the density law applies least to
