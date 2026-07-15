@@ -292,6 +292,19 @@ belongs in Dessert Corner); z4 on the globe is too thin for sprawling scenes (it
 band minus fence margins leaves no room at 2m prop sizes — finales go in z3).
 90 scenes total.
 
+v4.6 (Stephen: "more themed scenes and structure in every level"): SECOND THREAD per
+world — THE GREAT CHESS WAR (w1) · THE GREAT ESCAPE FROM THE TOY CHEST (w2) · THE
+GNOME EXPEDITION (w3) · THE MOONLIT CARAVAN (w4) · THE LIGHTHOUSE KEEPER'S ROUNDS
+(w5) · THE SHEPHERD'S LONG WALK (w7) · THE LULLABY (zen) — 28 chapters (118 scenes
+total). STORY ROADS: theme chapters carry `th:` order tags (thread A = 1..9, thread
+B = 11..19); buildWorld chains same-decade chapters into painted roads with lamps
+and signposts — follow the road, meet the story. Second wall flavor added to
+single-kind zones (bookwall in w2 z3, stonewall in w3 z1 + w7 z2, cratewall in
+w4 z3 + w5 z2). Placement wisdom: giant-scaled props (finale scale ~3m) need fence
+margins = 910+size per side, so a z3 finale's usable radial window can be ~1000cm —
+compute the window BEFORE picking the origin; w1's mid ring is saturated (~700
+spacing) — new w1 scenes go far band or inside point-gate zones.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
