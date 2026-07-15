@@ -197,7 +197,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         var st = D.state(), mv = null, i2, kindN0 = 0;
         for (i2=0; i2<st.objects.length; i2++){ var om = st.objects[i2];
           if (om.m && om.s <= 8*0.55 && !mv) mv = om; }
-        var ok = { moverEaten:false, crash:false, moverBack:false, clingAfter:-1 };
+        var ok = { moverEaten:false, crash:false, moverBack:false, clingAfter:-1, wallFound:false };
         if (mv){
           for (i2=0; i2<st.objects.length; i2++){ if (st.objects[i2].m && st.objects[i2].k===mv.k) kindN0++; }
           // start NEXT to the mover and chase the NEAREST of its kind; "eaten" =
@@ -222,6 +222,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             for (var w2=0; w2<s3.objects.length; w2++){ var o3=s3.objects[w2];
               if (o3.s > D.size()*1.2 && !o3.m){ if(!wall || (o3.x-s3.ballX)*(o3.x-s3.ballX)+(o3.z-s3.ballY)*(o3.z-s3.ballY) < (wall.x-s3.ballX)*(wall.x-s3.ballX)+(wall.z-s3.ballY)*(wall.z-s3.ballY)) wall=o3; } }
             if (wall){
+              ok.wallFound = true;
               // count same-kind movers BEFORE the slam: knockOff restoring the eaten
               // one must INCREASE the count (any surviving sibling used to satisfy
               // the old any-of-kind check, which made moverBack vacuous)
@@ -247,7 +248,10 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
       out.pageErrors = errors;
       out.seed = seed;
       console.log(JSON.stringify(out, null, 1));
-      var pass = errors.length === 0 && !out.knock.crash && (out.knock.skipped || out.knock.moverEaten);
+      // the slam half must actually RUN (wallFound) — crash:false is vacuous when
+      // no wall target was ever driven at
+      var pass = errors.length === 0 && !out.knock.crash &&
+                 (out.knock.skipped || (out.knock.moverEaten && out.knock.wallFound));
       for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
         if (w.s3ok === false) { pass = false; console.log('CEILING FAIL ' + w.w + ' (3-star bar unreachable)'); }
         if (botOn && w.botX < 1.0) { pass = false; console.log('BOT FAIL ' + w.w + ' x' + w.botX); } }

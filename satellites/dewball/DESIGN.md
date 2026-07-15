@@ -197,12 +197,27 @@ Placement respects: cold-start law (nothing within startD*16 of spawn), gate fen
 lines, hand-placed sets (auto-computed extents), and the zone's own radial band (a
 z2-scale wall inside z1 is a cold-start violation one zone late).
 Wall kinds join the "You can roll up:" ladder at their smallest PLACED size.
+⚖️ SEPARATION RULE (adversarial review found sealed loot rooms on shipped seeds):
+pieces of DIFFERENT structures may never fuse — each structure guarantees its own
+doors, but two touching structures compound into sealed topology. The generator
+keeps a ball-wide corridor (max(ws)*1.15 + 0.45*(ws1+ws2)) between structures.
+Yards whose radius can't fit the zone band (finale rings) fall back to broken runs.
+⚖️ CORRIDOR MATH for hand-built structures: a ball D fits a gap only if
+gap_clear = spacing - 2*0.45*ws >= 0.95*D. Ring-to-ring corridors must admit the
+ZONE'S MAX audience (the Hedge Maze shipped sealed at 160 gaps: D<=43 fit, audience
+was 80-145). Solid walls need piece spacing 0.82*ws (the fort shipped porous at
+1.83*ws: its whole 55-70cm audience walked through the "wall").
 MARQUEE STRUCTURES (hand-placed, via the `_arc` set helper — a partial ring whose
 missing sweep IS the doorway): the Block Fort (w2), the Hedge Maze (w3, three offset
 spiral rings), the Walled Souk (w4), the Breakwater (w5), the Walled Orchard (w7).
+Each declares `court:<maxAudienceBall>` (+ optional cx/cz interior point) and
+smoke.js FLOOD-FILLS reachability from spawn at that probe — a sealed court fails
+the suite forever after.
 BOT: balance.js steers around unpickable static props (ray-vs-circle deflection =
 wall-following until a doorway lets the ray through); without it the greedy bot
-grinds into hedgerows and every pacing number lies.
+grinds into hedgerows and every pacing number lies. Fixed props are walls from the
+moment they're unpickable (not from 1.15x — they never shove), but small band-walls
+get a tight no-dash radius or the bot freezes into a creep.
 
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
