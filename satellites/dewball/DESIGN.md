@@ -278,6 +278,20 @@ extent, per-item fence clearance, min set spacing, ladder size cap) — 58 scene
 total. Designer laws that worked: open compositions only, one-line story per scene
 ("left mid-moment"), expanded item lists (no helper calls) for machine validation.
 
+⚖️ THEME THREADS (v4.5, Stephen: "i want themed scenes throughout each world"): every
+world carries ONE story told in 4-5 chapter scenes placed center to rim — the player
+meets chapter one small and early, the finale big and far. Threads: THE QUEEN'S TEA
+PARTY (w1) · THE MIDNIGHT TOY PARADE (w2) · THE FIREFLY FESTIVAL (w3) · THE WEDDING
+OF THE SPICE MERCHANT'S DAUGHTER (w4) · THE NIGHT OF FALLING STARS (w5) · THE KING'S
+BIRTHDAY PROGRESS (w7) · THE PARADE OF SLEEP (zen). Authored by the designer-fleet
+workflow (one agent per world, chapters ordered inner to outer, per-band prop
+scaling from the gate ladder), machine validated. Validator lessons: size cap is
+goalD*2.9 (worlds' own late zones scatter s3*1.5 props); point-gate interiors are
+LEGAL scene ground (only the fence annulus is off limits — the Dessert Course
+belongs in Dessert Corner); z4 on the globe is too thin for sprawling scenes (its
+band minus fence margins leaves no room at 2m prop sizes — finales go in z3).
+90 scenes total.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
