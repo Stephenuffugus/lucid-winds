@@ -791,6 +791,8 @@
   K("cratewall","Freight Stack",50,[ pp("box",[26,24,24],0x9a7040,-11,12,0,0,0.06,0), pp("box",[26,24,24],0x8a6238,13,12,-1,0,-0.08,0), pp("box",[26,24,24],0xa87a48,1,36,0,0,0.12,0), pp("box",[26.8,3,24.8],0x6a4a28,-11,12,0,0,0.06,0), pp("box",[26.8,3,24.8],0x6a4a28,13,12,-1,0,-0.08,0), pp("box",[26.8,3,24.8],0x6a4a28,1,36,0,0,0.12,0) ],{fixed:1,volF:0.12});
   K("groyne","Driftwood Groyne",40,[ pp("box",[6.5,34,10],0x9a8a70,-14,17,0,0,0,0.06), pp("box",[6.5,38,10],0x8a7a60,-2,19,1,0,0,-0.04), pp("box",[6.5,30,10],0xa89a80,10,15,-1,0,0,0.09), pp("box",[34,5,7],0x7a6a50,-2,26,0,0,0.05,0), pp("sph",[3.5,5,4],0x5a7a6a,-14,4,4) ],{fixed:1,volF:0.12});
   K("seawall","Breakwater Block",56,[ pp("box",[46,26,34],0x8a929a,0,13,0,0,0.07,0), pp("box",[34,20,26],0x9aa2aa,4,34,-2,0,-0.14,0), pp("box",[18,10,16],0x7a828a,-14,49,4,0,0.3,0), pp("sph",[6,6,4],0x5a7a6a,18,26,14), pp("sph",[4.5,6,4],0x5a7a6a,-20,10,12) ],{fixed:1,volF:0.12});
+  // roadside detail (v4.1): placed along the painted roads, scaled per world
+  K("signpost","Signpost",30,[ pp("cyl",[1.6,2.2,28,6],0x6a4e38,0,14,0), pp("box",[16,4.5,1.6],0xb98a5a,3,24,0,0,0.3,0), pp("box",[13,4,1.5],0xa87a4a,-2.5,18.5,0,0,-0.4,0), pp("sph",[1.4,5,4],0x8a6238,0,28.7,0) ]);
 
   // =====================================================================
   //  SET PIECES — hand-placed prop arrangements ("the picnic spread", "the
@@ -869,6 +871,12 @@
           ["plateK",60,-70,0,1],["napkin",-50,-60,0,1],["candle",100,-40,0,1]] },
       { x:2200,z:1300, items:_cat(_curve("teacup",7,0,0,26,0.5),[["teapot",-40,-40,0.8,1],["napkin",50,10,0,1]]) },
       { x:-2000,z:-1600, items:_cat(_ring("jamjar",6,60),[["sugarbowl",0,0,0,1],["napkin",80,30,0.4,1],["napkin",-70,40,1.1,1],["candystick",40,-70,0,1]]) },
+      // THE COOKIE TIN CASTLE — a shortbread keep with the sweetest loot inside
+      { x:-800,z:-1900, court:46, items:_cat(_arc("crumbwall",42,170,0.7,6.0,1.0),
+          [["cupcake",0,0,0,1],["cupcake",30,25,0.8,1],["cookie",-30,20,0,1],["cookie",15,-35,0.5,1],["candystick",-20,-30,1.2,1],["sugarbowl",45,-10,0,1]]) },
+      // THE CANDLE PROMENADE — a lit avenue of plates and pies
+      { x:3050,z:-150, items:_cat(_row("candle",5,0,0,95,0,0),_row("candle",5,0,130,95,0,0),
+          [["plateK",50,65,0,1],["pie",145,60,0.4,1],["plateK",240,70,0.9,1],["pie",335,62,1.3,1],["napkin",190,30,0.3,1],["winebottle",380,90,0,1]]) },
     ],
     movers:[{k:"ant",n:31},{k:"ladybird",n:29}] },
 
@@ -935,6 +943,13 @@
       // turn edible ~119cm — storm the gate now, eat the castle near your ★★.
       { x:-4200,z:800, court:95, items:_cat(_arc("blockwall",26,300,0.5,5.78,2.4),
           [["teddy",0,0,3.14,1],["robot",90,60,0.5,1],["kite",-80,70,0.9,1],["drum",-60,-80,0,1],["toysoldier",60,-90,3.14,1],["toysoldier",110,-40,2.8,1]]) },
+      // BOOK CANYON — a reading gorge; storybook cliffs with toys wedged between
+      { x:0,z:-4400, court:95, cx:220, cz:130, items:_cat(_row("bookwall",8,0,0,62,0,0,2.1),
+          _row("bookwall",8,0,260,62,0,0,2.1),
+          [["robot",90,130,0.4,1],["teddy",220,120,3.0,1],["drum",320,140,0,1],["yoyo",160,110,0,1],["yoyo",390,150,0,1],["crayon",40,150,0.9,1]]) },
+      // THE MARBLE SPEEDWAY — a toy raceway ring with a pit-lane spill
+      { x:1780,z:1400, items:_cat(_ring("traintrack",14,300),
+          [["toycar",0,0,0.6,1],["toycar",60,-40,2.2,1],["marble",30,50,0,1],["marble",-45,20,0,1],["marble",10,-60,0,1],["bouncy",-70,-50,0,1],["dominoK",90,30,0.4,1]]) },
     ],
     movers:[{k:"toycar",n:9,zone:"r:z1"},{k:"train",n:4,zone:"r:z2"}] },
 
@@ -1003,6 +1018,17 @@
           _arc("hedgewall",31,610,3.6,9.0,2.6),
           _arc("hedgewall",13,300,0.75,5.53,2.6),
           [["stonelantern",0,0,0,1],["moonstone",70,40,0,1],["moonstone",-60,50,0.7,1],["birdbath",0,-80,0,1],["gnome",90,-50,2.4,1],["dewdrop",30,70,0,1],["dewdrop",-40,-30,0,1]]) },
+      // THE KITCHEN GARDEN — a walled vegetable plot, door to the south
+      { x:7000,z:2500, court:145, items:_cat(
+          _row("stonewall",5,-210,-210,105,0,0,2.9),
+          _row("stonewall",3,-210,-105,0,105,1.5708,2.9),
+          _row("stonewall",3,210,-105,0,105,1.5708,2.9),
+          [["stonewall",-210,210,0,2.9],["stonewall",210,210,0,2.9],
+           ["pumpkin",-80,-60,0,1],["pumpkin",60,-90,0.7,1],["pumpkin",-20,60,1.4,1],["flowerpot",120,20,0,1],["flowerpot",-130,90,0.5,1],["compostheap",90,110,0,1],["wateringcan",-60,-140,1.1,1]]) },
+      // THE MOONLIT ALLEE — twin lantern rows over stepping stones
+      { x:2100,z:-2800, items:_cat(_row("lantern",4,0,0,150,0,0),_row("lantern",4,0,130,150,0,0),
+          _row("slab",5,20,65,110,0,0.3),
+          [["fernG",-70,60,0.8,1],["fernG",510,70,2.1,1],["moonflower",250,-40,0,1]]) },
     ],
     movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
 
@@ -1070,6 +1096,16 @@
       { x:7800,z:-7800, court:360, cx:700, cz:380, items:_cat(_row("brickwall",8,0,0,196,0,0,5),
           _row("brickwall",8,0,760,196,0,0,5),
           [["grainsack",240,380,0,1],["grainsack",300,330,0.7,1],["carpetstack",480,300,0.5,1],["spicepyramid",1000,420,0,1],["copperpot",340,480,0,1],["hookah",620,460,0.8,1],["basketB",140,330,0,1],["basketB",760,370,0.9,1],["jug",900,320,0.4,1],["tajine",520,430,0,1]]) },
+      // THE CARAVANSERAI — a walled courtyard inn; gate to the south
+      { x:-9500,z:3500, court:360, items:_cat(
+          _row("brickwall",5,-392,-392,196,0,0,5.2),
+          _row("brickwall",3,-392,-196,0,196,1.5708,5.2),
+          _row("brickwall",3,392,-196,0,196,1.5708,5.2),
+          [["brickwall",-392,392,0,5.2],["brickwall",392,392,0,5.2],
+           ["cartB",-120,-150,0.5,1],["rugroll",100,-200,1.2,1],["rugroll",160,-140,0.4,1],["grainsack",-200,80,0,1],["grainsack",-150,140,0.8,1],["grainsack",-230,150,1.7,1],["copperpot",180,120,0,1],["tajine",60,200,0,1],["carpetstack",220,-40,0.9,1]]) },
+      // LAMP SQUARE — a fountain plaza ringed with stools and brass light
+      { x:4400,z:-1800, items:_cat([["fountain",0,0,0,1]],_ring("stool",5,260),
+          [["brasslamp",320,120,0,1],["brasslamp",-300,160,0,1],["brasslamp",100,-330,0,1],["brasslamp",-140,310,0,1],["bread",200,220,0,1],["jug",-220,-180,0.6,1]]) },
     ],
     movers:[{k:"chicken",n:21,zone:"r:z1"},{k:"catB",n:2,zone:"r:z1"},{k:"dogB",n:14,zone:"r:z2"},{k:"camel",n:14,zone:"r:z2"}] },
 
@@ -1142,6 +1178,13 @@
       // (seawall 672 turns edible ~960) — bigger balls just eat their way in
       { x:-13500,z:9500, court:950, items:_cat(_arc("seawall",10,1500,0.8,4.6,12),
           [["rowboat",0,0,0.4,1],["rowboat",380,220,2.9,1],["dinghy",-300,180,1.2,1],["cargobox",200,-350,0.2,1],["cargobox",-260,-280,0.8,1],["netbale",420,-160,0,1],["anchor",-90,390,0.6,1],["fishcart",90,300,1.9,1]]) },
+      // THE SHIPYARD — freight rows and hulls up on the hard
+      { x:12500,z:6500, items:_cat(_row("cratewall",5,0,0,246,0,0,6),
+          _row("cratewall",4,0,246,0,246,1.5708,6),
+          [["sailboat",600,700,0.6,1],["rowboat",300,-400,2.2,1],["rowboat",-350,500,0.8,1],["anchor",150,420,0,1],["cargobox",700,150,0.3,1],["cargobox",780,-100,1.1,1],["netbale",-200,-250,0,1]]) },
+      // THE TIDEPOOL GARDEN — a driftwood circle around still water
+      { x:2500,z:3400, items:_cat(_ring("driftwood",8,520),
+          [["tidepool",0,0,0,1],["tidepool",240,130,0.9,1],["starfish",-140,80,0,1],["starfish",90,-160,0.6,1],["shell",-60,-120,0,1],["shell",170,40,0,1],["seagrass",-220,-40,0,1]]) },
     ],
     movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"gull",n:16,zone:"r:z2"}] },
 
@@ -1233,6 +1276,16 @@
       // with hayricks and carts; one gap in the wall, due south.
       { x:12500,z:-14500, court:800, items:_cat(_arc("stonewall",15,1650,2.1,7.3,13),
           [["hayrick",0,0,0,1],["hayrick",520,300,0.7,1],["hayrick",-480,340,1.9,1],["cartB",300,-400,0.9,1],["cartB",-350,-300,2.2,1],["wheelbarrow",600,-200,0.5,1],["barrel",-150,520,0,1],["barrel",-260,480,0.4,1],["grainsack",150,480,0,1]]) },
+      // THE WALLED FARMSTEAD — drystone yard in the farmlands, gate south
+      { x:5200,z:-3300, court:360, items:_cat(
+          _row("stonewall",5,-390,-390,195,0,0,5.4),
+          _row("stonewall",3,-390,-195,0,195,1.5708,5.4),
+          _row("stonewall",3,390,-195,0,195,1.5708,5.4),
+          [["stonewall",-390,390,0,5.4],["stonewall",390,390,0,5.4],
+           ["hayrick",-120,-140,0,1],["hayrick",120,-180,0.7,1],["hayrick",0,80,1.5,1],["cartB",200,140,0.4,1],["cartB",-220,120,2.1,1],["scarecrow",40,-60,0,1],["barrel",260,-90,0,1],["barrel",300,-40,0.8,1]]) },
+      // THE HIGH SHEEPFOLD — a hedge crescent sheltering the hill farm
+      { x:-19000,z:20000, court:1900, items:_cat(_arc("hedgewall",8,2400,0.6,4.2,26),
+          [["cottage",0,0,0.4,1],["cottage",800,500,2.6,1],["oakW",-700,600,0,1],["hayrick",500,-400,0,1],["hayrick",-500,-500,0.9,1],["hayrick",-100,900,1.8,1]]) },
     ],
     movers:[{k:"sheepW",n:32,zone:"r:z1"},{k:"cowW",n:26,zone:"r:z1"},{k:"dogB",n:11,zone:"r:z1"},
             {k:"carW",n:12,zone:"r:z2"},{k:"busW",n:10,zone:"r:z3"}] },
@@ -1263,7 +1316,10 @@
     sets:[
       { x:1370,z:-1644, items:_cat([["teddy",0,0,2.8,1],["lantern",70,40,0,1],["lantern",-60,50,0,1]],
           _ring("teacup",5,60),[["pie",30,-60,0,1],["moonflower",-40,-60,0,1]]) },
-      { x:-2192,z:1918, items:_cat(_ring("moonstone",5,180),[["cloudpuff",0,0,0,0.6],["dreamgrass",90,0,0,1],["dreamgrass",-80,40,0,1]]) }
+      { x:-2192,z:1918, items:_cat(_ring("moonstone",5,180),[["cloudpuff",0,0,0,0.6],["dreamgrass",90,0,0,1],["dreamgrass",-80,40,0,1]]) },
+      // THE DREAM GATE — a hedge crescent around sleeping moonstones
+      { x:900,z:2600, items:_cat(_arc("hedgewall",17,240,0.8,5.5,1.6),
+          [["moonstone",0,0,0,1],["moonstone",60,-40,0.8,1],["cloudpuff",-40,50,0,0.5],["dreamgrass",90,30,0,1],["dreamgrass",-80,-60,0,1]]) }
     ],
     movers:[{k:"firefly",n:15},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
   ];
@@ -1541,15 +1597,127 @@
     // back and eat the maze that caged you. Doorways are guaranteed (a sealed
     // room is a bug, not a puzzle): runs gap every 6-9 pieces, yards carve
     // explicit doors ~3 pieces wide.
+    // set extents, shared by roads / lamps / structures placement
+    var setExt=[], si9, sj9;
+    if(W.sets) for(si9=0;si9<W.sets.length;si9++){ var se9=W.sets[si9], ex9=0;
+      for(sj9=0;sj9<se9.items.length;sj9++){ var sit9=se9.items[sj9];
+        var er9=Math.sqrt(sit9[1]*sit9[1]+sit9[2]*sit9[2])+PROPS[sit9[0]].s*(sit9[4]||1);
+        if(er9>ex9)ex9=er9; }
+      setExt.push({x:se9.x,z:se9.z,r:ex9+80}); }
+    // ---- ROADS + district shading (v4.1, planar worlds) ----
+    // Painted, not physical: soft paths lead from the spawn out to every
+    // landmark, a ring road runs just inside each gate fence, and district
+    // bands tint the zones. A world reads as a PLACE when the ground itself
+    // says "something is over there". (The globe keeps its patchwork fields —
+    // its ground texture isn't chart-aligned, so painted roads can't be.)
+    var ROADS=[];
+    if(!W.globe){
+      var targets=[], ri, rj;
+      for(ri=0;ri<W.gates.length;ri++){ var gd9=W.gates[ri];
+        if(gd9.x!==0||gd9.z!==0) targets.push([gd9.x,gd9.z]); }   // point gates only
+      if(W.sets) for(ri=0;ri<W.sets.length&&targets.length<8;ri++) targets.push([W.sets[ri].x,W.sets[ri].z]);
+      for(ri=0;ri<targets.length;ri++){ var tg=targets[ri];
+        var tl9=Math.sqrt(tg[0]*tg[0]+tg[1]*tg[1])||1;
+        var p0x=tg[0]/tl9*W.startD*13, p0z=tg[1]/tl9*W.startD*13;  // start just past the spawn litter
+        var pts=[[p0x,p0z]], segs=6;
+        for(rj=1;rj<=segs;rj++){ var tt=rj/segs;
+          var bx9=p0x+(tg[0]-p0x)*tt, bz9=p0z+(tg[1]-p0z)*tt;
+          if(rj<segs){ var qx9=-(tg[1]-p0z), qz9=(tg[0]-p0x), ql9=Math.sqrt(qx9*qx9+qz9*qz9)||1;
+            var jj9=(rng()*2-1)*W.bound*0.012;
+            bx9+=qx9/ql9*jj9; bz9+=qz9/ql9*jj9; }
+          pts.push([bx9,bz9]); }
+        ROADS.push(pts); }
+      // paint the overlay
+      var oc=document.createElement("canvas"); oc.width=oc.height=1024;
+      var og=oc.getContext("2d");
+      var opx=function(v){ return (v+W.bound)/(2*W.bound)*1024; };
+      var osz=function(v){ return v/(2*W.bound)*1024; };
+      // (tuning law of the LOOK: the overlay must read at GROUND level and
+      // disappear into the world from above — the first cut's bands + fat
+      // roads turned every overview into a dartboard)
+      // (district tint bands were tried and CUT — even at 0.045 alpha a band the
+      // size of a whole zone reads as a giant smudge from altitude. The ring
+      // roads + the walls themselves delineate districts; roads + worn patches
+      // carry the sense of place.)
+      // worn ground under every hand-placed scene — landmarks look PLACED
+      for(ri=0;ri<setExt.length;ri++){ var sp9=setExt[ri];
+        var pr9=osz(sp9.r*0.55);
+        var grd=og.createRadialGradient(opx(sp9.x),opx(sp9.z),pr9*0.2,opx(sp9.x),opx(sp9.z),pr9);
+        grd.addColorStop(0,W.night?"rgba(255,255,255,0.055)":"rgba(0,0,0,0.06)");
+        grd.addColorStop(1,"rgba(0,0,0,0)");
+        og.fillStyle=grd;
+        og.beginPath(); og.arc(opx(sp9.x),opx(sp9.z),pr9,0,6.283); og.fill(); }
+      og.lineCap="round"; og.lineJoin="round";
+      var rc9=({w1:"rgba(244,234,214,0.34)",w2:"rgba(255,246,224,0.3)",w3:"rgba(196,188,164,0.22)",
+                w4:"rgba(236,222,196,0.3)",w5:"rgba(186,152,112,0.38)",w6:"rgba(202,202,240,0.24)"})[W.id]||"rgba(230,230,230,0.3)";
+      var rw9=clamp(osz(W.goalD*1.5),2.5,7);
+      for(var pass9=0;pass9<2;pass9++){
+        og.strokeStyle=pass9?rc9:"rgba(0,0,0,0.05)";
+        og.lineWidth=pass9?rw9:rw9*1.25;
+        for(ri=0;ri<W.gates.length;ri++){ var gg9=W.gates[ri];
+          if(gg9.x!==0||gg9.z!==0) continue;
+          og.lineWidth=(pass9?rw9:rw9*1.25)*0.8;
+          og.beginPath(); og.arc(512,512,osz(gg9.r-gg9.need*1.35),0,6.283); og.stroke(); }
+        og.lineWidth=pass9?rw9:rw9*1.25;
+        for(ri=0;ri<ROADS.length;ri++){ var rp9=ROADS[ri];
+          og.beginPath(); og.moveTo(opx(rp9[0][0]),opx(rp9[0][1]));
+          for(rj=1;rj<rp9.length;rj++) og.lineTo(opx(rp9[rj][0]),opx(rp9[rj][1]));
+          og.stroke(); } }
+      var otex=new THREE.CanvasTexture(oc);
+      // no mipmaps: minified mips average the light strokes with transparent
+      // BLACK texels (straight alpha), turning subtle paths into huge dark
+      // smears from any altitude. Linear-filter the full-res canvas instead.
+      otex.generateMipmaps=false; otex.minFilter=THREE.LinearFilter;
+      var ogeo=new THREE.CircleGeometry(W.bound,64); ogeo.rotateX(-Math.PI/2);
+      var omesh=new THREE.Mesh(ogeo,new THREE.MeshLambertMaterial({map:otex,transparent:true,depthWrite:false}));
+      omesh.position.y=clamp(W.goalD*0.02,0.4,1.5);
+      scene.add(omesh);
+      if(TEST){ window._dbgOverlayCanvas=oc; window._dbgOverlayMesh=omesh; }
+    }
+    // ---- roadside details: lamps + a signpost where each road begins ----
+    var LAMPS=({w1:{k:"candle",sc:1},w2:{k:"crayon",sc:1.7},w3:{k:"lantern",sc:1},
+                w4:{k:"brasslamp",sc:1.4},w5:{k:"mooringpost",sc:1.6},w6:{k:"dreamgrass",sc:1}})[W.id];
+    var SIGNSC=({w1:0.8,w2:1.2,w3:1.8,w4:4,w5:8,w6:2})[W.id]||1;
+    if(LAMPS&&ROADS.length){
+      var lk9=PROPS[LAMPS.k], placedL=0, roadHalf=W.goalD*1.3, li9, lj9;
+      var lampClear=function(x,z){
+        if(x*x+z*z<W.startD*15*W.startD*15) return false;
+        if(nearFence(x,z)) return false;
+        for(var lq=0;lq<setExt.length;lq++){ var qdx=x-setExt[lq].x, qdz=z-setExt[lq].z;
+          if(qdx*qdx+qdz*qdz<setExt[lq].r*setExt[lq].r) return false; }
+        return true;
+      };
+      for(li9=0;li9<ROADS.length&&placedL<34;li9++){ var rp2=ROADS[li9];
+        var tl2=0;
+        for(lj9=1;lj9<rp2.length;lj9++){ var tdx=rp2[lj9][0]-rp2[lj9-1][0], tdz=rp2[lj9][1]-rp2[lj9-1][1];
+          tl2+=Math.sqrt(tdx*tdx+tdz*tdz); }
+        var spc=Math.max(tl2/7,lk9.s*LAMPS.sc*7), acc=spc*0.55, side=li9%2?1:-1;
+        for(lj9=1;lj9<rp2.length;lj9++){
+          var sx0=rp2[lj9-1][0], sz0=rp2[lj9-1][1];
+          var sdx2=rp2[lj9][0]-sx0, sdz2=rp2[lj9][1]-sz0;
+          var sl2=Math.sqrt(sdx2*sdx2+sdz2*sdz2)||1, ux2=sdx2/sl2, uz2=sdz2/sl2;
+          while(acc<sl2&&placedL<34){
+            var off9=roadHalf+lk9.s*LAMPS.sc*0.7;
+            var lpx=sx0+ux2*acc-uz2*off9*side, lpz=sz0+uz2*acc+ux2*off9*side;
+            side=-side;
+            if(lampClear(lpx,lpz)){
+              if(!byKind[LAMPS.k]) byKind[LAMPS.k]=[];
+              byKind[LAMPS.k].push({x:lpx,z:lpz,rot:Math.atan2(ux2,uz2),sc:LAMPS.sc,keep:null});
+              placedL++; }
+            acc+=spc; }
+          acc-=sl2; } }
+      for(li9=0;li9<ROADS.length&&li9<6;li9++){ var rp3=ROADS[li9];
+        var pdx=rp3[1][0]-rp3[0][0], pdz=rp3[1][1]-rp3[0][1], pl3=Math.sqrt(pdx*pdx+pdz*pdz)||1;
+        var spx=rp3[0][0]+pdx/pl3*W.startD*4-pdz/pl3*W.goalD*1.6;
+        var spz=rp3[0][1]+pdz/pl3*W.startD*4+pdx/pl3*W.goalD*1.6;
+        if(!lampClear(spx,spz)) continue;
+        if(!byKind.signpost) byKind.signpost=[];
+        byKind.signpost.push({x:spx,z:spz,rot:Math.atan2(pdx,pdz),sc:SIGNSC,keep:null});
+      }
+    }
     var wallTiers={};
     (function(){
       if(!W.walls) return;
-      var setExt=[], si, sj;
-      if(W.sets) for(si=0;si<W.sets.length;si++){ var se=W.sets[si], ex=0;
-        for(sj=0;sj<se.items.length;sj++){ var sit=se.items[sj];
-          var er=Math.sqrt(sit[1]*sit[1]+sit[2]*sit[2])+PROPS[sit[0]].s*(sit[4]||1);
-          if(er>ex)ex=er; }
-        setExt.push({x:se.x,z:se.z,r:ex+80}); }
       function zoneBand(zone){
         if(zone&&zone.indexOf("r:")===0){ var rg=W.regions[zone.slice(2)];
           return {x:rg.x,z:rg.z,r0:rg.r0||0,r1:rg.r}; }

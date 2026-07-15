@@ -219,6 +219,25 @@ grinds into hedgerows and every pacing number lies. Fixed props are walls from t
 moment they're unpickable (not from 1.15x — they never shove), but small band-walls
 get a tight no-dash radius or the bot freezes into a creep.
 
+⚖️ THE DETAIL LAYER (v4.1, Stephen: "keep building details and structure in each level"):
+- PAINTED ROADS (planar worlds): a transparent CanvasTexture disc over the ground —
+  soft paths from spawn to up to 8 landmarks (wavy spokes), a ring road inside each
+  gate fence, worn radial patches under every hand-placed set. The globe is skipped
+  (its ground texture isn't chart-aligned). Painter lessons, learned the hard way:
+  mipmaps average light strokes with transparent BLACK texels → giant dark smears
+  from altitude (generateMipmaps=false); two full-circle arcs + fill() silently
+  make stacked DISCS, not an annulus (use fat strokes); whole-zone tint bands read
+  as smudges at any alpha (CUT — roads + walls delineate districts). Road width
+  clamped 2.5-7px on the 1024 canvas; alpha 0.22-0.38 per world.
+- ROADSIDE DETAIL: lamp props along the roads (candles/crayons/lanterns/brass
+  lamps/bollards/dream reeds per world, ≤34) + a SIGNPOST prop where each road
+  leaves the spawn meadow, scaled per world (sc 0.8-8).
+- 11 new hand-built scenes (all court-guarded where enclosing): Cookie Tin Castle +
+  Candle Promenade (w1), Book Canyon + Marble Speedway (w2), Kitchen Garden +
+  Moonlit Allee (w3), Caravanserai + Lamp Square (w4), Shipyard + Tidepool Garden
+  (w5), Walled Farmstead + High Sheepfold (w7), Dream Gate (zen).
+  ⛔ goods only inside corridor scenes — a 420cm stall mid-lane plugged its own souk.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
