@@ -162,6 +162,21 @@ the next zone's AREA exceeds everything before it combined (w7: 3.1M -> 18M -> 5
 small scale). This also kills dead-zone travel ("stuck going in circles") — the next
 band surrounds you in every direction. placeInZone gate exclusion is FENCE-LINE-ONLY
 now; the bot's fenced/pathBlocked logic is ring-aware (inside XOR outside = blocked).
+⚖️ THE COMPOSER (v4.0, Stephen: "I'm not getting close to the goal because it's not
+properly populated or organized... same quality as Katamari Damacy"): uniform-random
+scatter reads as DUST. Worlds are now COMPOSED in buildWorld: each zone samples cluster
+ANCHORS (count scales with the zone's population, ~26 props per neighborhood, pitch
+adaptive to zone extent); each prop kind clumps onto 1-6 anchors (same kinds together =
+thematic pockets: a spill of marbles, a patch of tulips); ~16% of props form TRAILS
+between anchors (they literally lead you onward); ~22% sprinkle keeps wilderness alive.
+Cluster radius scales with the prop (s*5). Fence lines stay clear. Keepsakes stay
+uniform. THE SIGHT RULE: from any clump you must SEE the next one — anchor pitch must
+stay under ~12-20 ball-diameters of the zone's intended size, and INNER rings must be
+sized to their tiny ball (w7's 50m meadow for a 45cm ball was void-walking; meadow is
+r2400 now while outer rings stay vast). VALIDATION: balance.js `near` mode runs a
+NEARSIGHTED bot (vision = 22 ball-diameters, wanders to search) — it models a first-time
+human; the standard bot has perfect map knowledge and never feels sparse worlds.
+
 ⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
 everything... they need serious space to drive around looking for stuff and really have
 to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.

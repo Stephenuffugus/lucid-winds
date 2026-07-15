@@ -8,7 +8,9 @@ var path = require('path');
 var botOn = process.argv[2] !== '0';
 var seed = +(process.argv[3] || 12345) || 12345;
 var onlyN = +(process.argv[4] || 0) || 0;
-var doTrace = process.argv[5] === 'trace';
+var doTrace = process.argv.indexOf('trace') > 1;
+var nearSight = process.argv.indexOf('near') > 1;   // vision-limited bot: models a human
+                                                    // who can only chase what they can SEE
 var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1&dbseed=' + seed;
 
 puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader'] })
@@ -19,7 +21,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
     return page.goto(url, { waitUntil:'domcontentloaded' })
     .then(function(){ return page.waitForFunction('window.DB_DEV', {timeout:8000}); })
     .then(function(){
-      return page.evaluate(function(botOn, onlyN, doTrace){
+      return page.evaluate(function(botOn, onlyN, doTrace, nearSight){
         var D = window.DB_DEV, out = { worlds: [], knock: null };
         var WL = D.worlds().filter(function(w){ return !w.zen && (!onlyN || w.n === onlyN); });
         function pr(dd){ var t = Math.log(dd/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1; return 0.55+0.17*t; }
@@ -56,7 +58,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             D.start('level', n);
             var objs = D.state().objects, it = 0, refresh = 0, st2 = D.state();
             var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
-            var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0;
+            var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0, srchT = 0, srchA = 0;
             while (st2.timer > 0.15 && !st2.over && it++ < 16000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
@@ -99,6 +101,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                   if (bdx*bdx+bdz*bdz < pkR*pkR){ blk = true; break; } } }
                 if (blk) continue;
                 var dx = o.x-bx, dz = o.z-bz, d2 = dx*dx+dz*dz;
+                if (nearSight){ var vis = dd*22+400; if (d2 > vis*vis) continue; }
                 o._d2 = d2;
                 // value = meal volume per travel: a player at 8m treks to the cottage
                 // feast instead of diving into wall pockets after streetlamps.
@@ -132,7 +135,8 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                 var rl = Math.sqrt(rx*rx+rz*rz)||1;
                 D.roll(rx/rl*thr, rz/rl*thr); }
               else if (fleeX||fleeZ) D.roll((flpX+fleeX*0.5)*thr, (flpZ+fleeZ*0.5)*thr);
-              else D.roll(Math.cos(it*0.01)*thr, Math.sin(it*0.01)*thr);
+              else { if (it - (srchT||0) > 90){ srchT = it; srchA = Math.random()*6.283; }
+                D.roll(Math.cos(srchA)*thr, Math.sin(srchA)*thr); }
               if (dashOK) D.dash();
               D.step(0.033);
               if (doTrace && it % 300 === 0){ if (!rec.trace) rec.trace = [];
@@ -185,7 +189,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         }
         out.knock = ok;
         return out;
-      }, botOn, onlyN, doTrace);
+      }, botOn, onlyN, doTrace, nearSight);
     })
     .then(function(out){
       out.pageErrors = errors;
