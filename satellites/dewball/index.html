@@ -1381,8 +1381,11 @@
       for(q=1;q<samp.length;q++){ var sdx=wrapD(samp[q][0]-samp[0][0]), sdz=wrapD(samp[q][1]-samp[0][1]);
         tot+=Math.sqrt(sdx*sdx+sdz*sdz); np2++; }
       mind=(tot/Math.max(1,np2))*0.22;   // adaptive anchor pitch from the zone's own extent
+      var clearR=W.startD*30;   // no cluster anchors near spawn — jackpot draws next
+                                // to the start made opening pace pure luck
       while(A.length<want && tries++<want*30){
         var p2=placeInZone(W,zone,rng), ok=true;
+        if(key!=="spawn" && p2[0]*p2[0]+p2[1]*p2[1]<clearR*clearR) continue;
         for(q=0;q<A.length;q++){ var adx=wrapD(p2[0]-A[q][0]), adz=wrapD(p2[1]-A[q][1]);
           if(adx*adx+adz*adz<mind*mind){ ok=false; break; } }
         if(ok) A.push(p2);
