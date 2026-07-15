@@ -24,11 +24,16 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         var WL = D.worlds().filter(function(w){ return !w.zen && (!onlyN || w.n === onlyN); });
         function pr(dd){ var t = Math.log(dd/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1; return 0.55+0.17*t; }
         // does the straight run from (bx,bz) to (tx,tz) cross a CLOSED gate ring?
+        // Rings are walls from BOTH sides (concentric worlds: the ball lives INSIDE
+        // closed rings and breaks outward) — blocked when exactly one endpoint is
+        // inside, or when an outside-outside segment dips through the circle.
         function pathBlocked(bx,bz,tx,tz,gg){
           for (var gi=0; gi<gg.length; gi++){ var g=gg[gi];
             if (g.open || g.x===undefined) continue;
-            var ex=bx-g.x, ez=bz-g.z, fx2=tx-g.x, fz2=tz-g.z;
-            if (ex*ex+ez*ez < g.r*g.r || fx2*fx2+fz2*fz2 < g.r*g.r) continue;
+            var aIn=(bx-g.x)*(bx-g.x)+(bz-g.z)*(bz-g.z) < g.r*g.r;
+            var tIn=(tx-g.x)*(tx-g.x)+(tz-g.z)*(tz-g.z) < g.r*g.r;
+            if (aIn!==tIn) return true;
+            if (aIn) continue;                       // both inside: chord stays inside
             var dx=tx-bx, dz=tz-bz, L2=dx*dx+dz*dz||1;
             var t=((g.x-bx)*dx+(g.z-bz)*dz)/L2; if(t<0)t=0; if(t>1)t=1;
             var px=bx+dx*t-g.x, pz=bz+dz*t-g.z;
@@ -52,7 +57,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
             var objs = D.state().objects, it = 0, refresh = 0, st2 = D.state();
             var dashOK = true, lastBest = null, lastCX = 0, lastCZ = 0, escT = 0, escA = 0;
             var blkX = [], blkZ = [], blkT = [], fleeX = 0, fleeZ = 0, stuckRun = 0;
-            while (st2.timer > 0.15 && it++ < 16000){
+            while (st2.timer > 0.15 && !st2.over && it++ < 16000){
               var dd = D.size();
               if (refresh-- <= 0){ st2 = D.state(); objs = st2.objects; refresh = 15; }
               var bx = st2.ballX, bz = st2.ballY;
@@ -77,10 +82,13 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
               for (i=0; i<objs.length; i++){ var o = objs[i];
                 o._d2 = undefined;
                 if (o.s > lim) continue;
-                var fenced = false;                       // skip targets locked behind a closed gate
+                var fenced = false;                       // skip targets across a closed ring
+                // (one side in, one side out — with concentric rings "inside" is home)
                 for (var gi=0; gi<gg.length; gi++){ var g = gg[gi];
-                  if (!g.open && g.x !== undefined){ var gx = o.x-g.x, gz = o.z-g.z;
-                    if (gx*gx+gz*gz < g.r*g.r){ fenced = true; break; } } }
+                  if (!g.open && g.x !== undefined){
+                    var tIn = (o.x-g.x)*(o.x-g.x)+(o.z-g.z)*(o.z-g.z) < g.r*g.r;
+                    var mIn = (bx-g.x)*(bx-g.x)+(bz-g.z)*(bz-g.z) < g.r*g.r;
+                    if (tIn !== mIn){ fenced = true; break; } } }
                 if (fenced) continue;
                 var blk = false;                          // skip the pocket we got stuck in
                 // radius capped: at big D an uncapped dd*3 pocket blacklists whole map

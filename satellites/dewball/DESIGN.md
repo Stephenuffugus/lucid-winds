@@ -54,11 +54,11 @@ vs bot 127-169s) — never assume humans are slower than the bot.
 | # | World | Theme | Start → Goal | Time | Bound | Gates |
 |---|-------|-------|--------------|------|-------|-------|
 | 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 950 | 16 · 30 · 40 |
-| 2 | Toybox Peaks | playroom floor | 8 cm → 70 cm | 2:50 | 1400 | 26 · 68 · 88 |
+| 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 2400 | rings 22 · 55 · 95 |
 | 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.6 m | 3:10 | 2100 | 45 · 70 · 150 · 230 |
 | 4 | Bazaar Lane | tiny town market street | 30 cm → 3.1 m | 3:20 | 4000 | 70 · 120 · 340 · 430 |
-| 5 | Starfall Bay | dusk beach + harbor | 60 cm → 16 m | 3:30 | 6500 | 170 · 380 · 900 · 1450 |
-| 6 | THE WHOLE WORLD | 🌍 the flagship GLOBE finale | 45 cm → 22 m (★★★ 44 m) | 6:00 | 9500 | 260 · 750 · 1400 · 2300 · 3000 |
+| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:20 | 7500 | rings 160 · 550 · 1250 |
+| 6 | THE WHOLE WORLD | 🌍 CONCENTRIC globe finale | 45 cm → 22 m (★★★ 44 m) | 6:00 | 9500 | rings 120 · 420 · 1300 · 2600 |
 | 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 | — |
 
 Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
@@ -138,6 +138,22 @@ dwarfing its own 13m planet. NEVER give w7 a bound-wall — the globe has no edg
 - Cars slowed (sp 1.8) and thinned — fast unseeable hits from beyond the curved horizon
   were the "what just hit me" complaint.
 - Far-field props reproject on alternate frames (phone perf on the 5x planet).
+
+### CONCENTRIC ASCENDING WORLDS (v3.2 — Stephen: "gated areas feel like a quick buff;
+### they need to be bigger than the last area, ascending. massive build. do it")
+The deep truth: district size only matters RELATIVE to the ball entering it, and the ball
+grows geometrically — so zones must ascend geometrically. w2/w5/w7 are now concentric
+rings (regions with r0 inner holes + ring gates at the boundaries): you start in the
+innermost circle and every gate is a wall around your entire known world; break out and
+the next zone's AREA exceeds everything before it combined (w7: 3.1M -> 18M -> 51M ->
+90M -> 198M cm^2). Side-pocket gates are DEAD on these worlds (w1/w3/w4 keep them at
+small scale). This also kills dead-zone travel ("stuck going in circles") — the next
+band surrounds you in every direction. placeInZone gate exclusion is FENCE-LINE-ONLY
+now; the bot's fenced/pathBlocked logic is ring-aware (inside XOR outside = blocked).
+REPLAY META (v3.2): CLEAN SWEEP — consuming everything ends the run instantly
+("👑 THE WORLD IS YOURS", +2 sunbeams, crown on the world card, crowns unlock the Royal
+skin); ⚡ best time-to-goal recorded per world and shown on the card (fixed seeds =
+honest speedrun targets). Running dry is now the elite goal, not a failure state.
 
 ## ⚖️ THE TUNING LAW (learned the hard way, 2026-07-13; instruments upgraded 07-14)
 Static volume budgeting shipped three mathematically unwinnable worlds. Binding

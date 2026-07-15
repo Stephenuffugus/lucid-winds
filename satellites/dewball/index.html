@@ -412,10 +412,13 @@
     { id:"rose",    name:"Rose",     need:600,  type:"absorbs", c1:0xf0a8c8, c2:0xb04c78, rim:0xffd0e6 },
     { id:"ember",   name:"Ember",    need:3,    type:"worlds",  c1:0xf0965a, c2:0xa83820, rim:0xffc890 },
     { id:"midnight",name:"Midnight", need:5,    type:"worlds",  c1:0x6a78c8, c2:0x20264f, rim:0xa8b8ff },
-    { id:"amethyst",name:"Amethyst", need:1600, type:"absorbs", c1:0xc89be6, c2:0x5e3a86, rim:0xe6d0ff }
+    { id:"amethyst",name:"Amethyst", need:1600, type:"absorbs", c1:0xc89be6, c2:0x5e3a86, rim:0xe6d0ff },
+    { id:"royal",   name:"Royal",    need:2,    type:"cleans",  c1:0xe8ce7a, c2:0x6a3a86, rim:0xffe9a0 }
   ];
   function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i]; return SKINS[0]; }
-  function skinUnlocked(s){ return s.type==="absorbs" ? save.lifetimeAbsorbs>=s.need : worldsCleared()>=s.need; }
+  function cleanSweeps(){ var n=0; for(var i=0;i<WORLDS.length;i++){ var w=save.worlds[WORLDS[i].id]; if(w&&w.clean) n++; } return n; }
+  function skinUnlocked(s){ return s.type==="absorbs" ? save.lifetimeAbsorbs>=s.need :
+    (s.type==="cleans" ? cleanSweeps()>=s.need : worldsCleared()>=s.need); }
   function refreshSkinUnlocks(){
     for(var i=0;i<SKINS.length;i++){
       if(skinUnlocked(SKINS[i]) && save.unlockedSkins.indexOf(SKINS[i].id)<0){
@@ -801,49 +804,53 @@
     movers:[{k:"ant",n:8},{k:"ladybird",n:7}] },
 
   { id:"w2", nm:"Toybox Peaks", emoji:"🧸", sub:"the playroom floor",
-    startD:8, goalD:70, time:170, bound:1400, seed:202,
-    sky:["#a8d0e8","#e8b8d0","#5a5a8e"], fog:{c:0xb8a8c8,d:0.00060},
+    startD:8, goalD:70, time:170, bound:2400, seed:202,
+    sky:["#a8d0e8","#e8b8d0","#5a5a8e"], fog:{c:0xb8a8c8,d:0.00042},
     ground:{style:"wood",c1:"#a8763e",c2:"#8a5e30"}, rim:0x6a4828,
-    gates:[{x:-635,z:440,r:340,need:26,label:"Block Castle"},
-           {x:855,z:-100,r:320,need:68,label:"The Top Shelf"},
-           {x:0,z:870,r:300,need:88,label:"The Dollhouse"}],
+    // concentric ascending zones: play mat -> blocks -> the shelf -> the toy chest
+    regions:{ mat:{x:0,z:0,r:260},
+              z1:{x:0,z:0,r:750,r0:260},
+              z2:{x:0,z:0,r:1500,r0:750},
+              z3:{x:0,z:0,r:2330,r0:1500} },
+    gates:[{x:0,z:0,r:260,need:22,label:"The Play Mat's Edge"},
+           {x:0,z:0,r:750,need:55,label:"The Shelf"},
+           {x:0,z:0,r:1500,need:95,label:"The Toy Chest"}],
     scatter:[
       {k:"marble",n:18,zone:"spawn"},
-      {k:"marble",n:150,zone:"near"},{k:"jack",n:76,zone:"near"},{k:"die",n:95,zone:"near"},
-      {k:"dominoK",n:74,zone:"near"},{k:"yoyo",n:20,zone:"near"},{k:"paperplane",n:18,zone:"near"},
-      {k:"puzzlepiece",n:42,zone:"near"},
-      {k:"block",n:74,zone:"mid"},{k:"lego",n:80,zone:"mid"},{k:"crayon",n:60,zone:"mid"},
-      {k:"duck",n:40,zone:"mid"},{k:"bouncy",n:38,zone:"mid"},{k:"toysoldier",n:18,zone:"mid"},
-      {k:"traintrack",n:22,zone:"mid"},{k:"toyphone",n:14,zone:"mid"},{k:"stackrings",n:13,zone:"mid"},
-      {k:"pinwheel",n:12,zone:"mid"},
-      {k:"dollchair",n:28,zone:"far"},{k:"robot",n:13,zone:"far"},{k:"xylo",n:15,zone:"far"},
-      {k:"jenga",n:18,zone:"far"},{k:"teddy",n:15,zone:"far"},{k:"rockhorse",n:15,zone:"far"},
-      {k:"tricycle",n:6,zone:"far"},{k:"drum",n:10,zone:"far"},{k:"kite",n:9,zone:"far"},
-      {k:"boardgame",n:8,zone:"far"},
-      {k:"block",n:18,zone:"gate0"},{k:"jenga",n:6,zone:"gate0"},{k:"robot",n:3,zone:"gate0"},
-      {k:"stackrings",n:5,zone:"gate0"},
-      {k:"rockhorse",n:6,zone:"gate1"},{k:"jenga",n:7,zone:"gate1"},{k:"teddy",n:5,zone:"gate1"},
-      {k:"drum",n:4,zone:"gate1"},{k:"xylo",n:4,zone:"gate1"},{k:"robot",n:4,zone:"gate1"},
-      {k:"boardgame",n:4,zone:"gate1"},
-      {k:"dollhouse",n:1,zone:"gate2"},{k:"boardgame",n:4,zone:"gate2"},{k:"teddy",n:4,zone:"gate2"},
-      {k:"rockhorse",n:3,zone:"gate2"},{k:"dollchair",n:6,zone:"gate2"},{k:"tricycle",n:2,zone:"gate2"},
-      {k:"kMarbleKing",n:1,zone:"near",keep:1},{k:"kTop",n:1,zone:"mid",keep:1},
-      {k:"kMusicBox",n:1,zone:"gate0",keep:1},{k:"kBear",n:1,zone:"gate2",keep:1},
-      {k:"kTinRocket",n:1,zone:"gate1",keep:1} ],
+      {k:"marble",n:60,zone:"r:mat"},{k:"jack",n:30,zone:"r:mat"},{k:"die",n:34,zone:"r:mat"},
+      {k:"dominoK",n:28,zone:"r:mat"},{k:"puzzlepiece",n:22,zone:"r:mat"},{k:"yoyo",n:12,zone:"r:mat"},
+      {k:"paperplane",n:10,zone:"r:mat"},
+      {k:"block",n:60,zone:"r:z1"},{k:"lego",n:60,zone:"r:z1"},{k:"crayon",n:46,zone:"r:z1"},
+      {k:"duck",n:30,zone:"r:z1"},{k:"bouncy",n:28,zone:"r:z1"},{k:"toysoldier",n:20,zone:"r:z1"},
+      {k:"traintrack",n:20,zone:"r:z1"},{k:"toyphone",n:12,zone:"r:z1"},{k:"stackrings",n:12,zone:"r:z1"},
+      {k:"pinwheel",n:12,zone:"r:z1"},{k:"dominoK",n:20,zone:"r:z1"},{k:"marble",n:30,zone:"r:z1"},
+      {k:"jenga",n:20,zone:"r:z2"},{k:"xylo",n:14,zone:"r:z2"},{k:"robot",n:14,zone:"r:z2"},
+      {k:"teddy",n:14,zone:"r:z2"},{k:"drum",n:12,zone:"r:z2"},{k:"kite",n:10,zone:"r:z2"},
+      {k:"boardgame",n:10,zone:"r:z2"},{k:"dollchair",n:22,zone:"r:z2"},{k:"rockhorse",n:10,zone:"r:z2"},
+      {k:"block",n:20,zone:"r:z2"},{k:"stackrings",n:8,zone:"r:z2"},{k:"pinwheel",n:8,zone:"r:z2"},
+      {k:"dollhouse",n:3,zone:"r:z3"},{k:"boardgame",n:12,zone:"r:z3"},{k:"rockhorse",n:12,zone:"r:z3"},
+      {k:"tricycle",n:8,zone:"r:z3"},{k:"teddy",n:10,zone:"r:z3"},{k:"jenga",n:12,zone:"r:z3"},
+      {k:"drum",n:8,zone:"r:z3"},{k:"kite",n:8,zone:"r:z3"},{k:"xylo",n:8,zone:"r:z3"},
+      {k:"robot",n:8,zone:"r:z3"},{k:"dollchair",n:10,zone:"r:z3"},
+      {k:"kMarbleKing",n:1,zone:"r:mat",keep:1},{k:"kTop",n:1,zone:"r:z1",keep:1},
+      {k:"kMusicBox",n:1,zone:"r:z2",keep:1},{k:"kBear",n:1,zone:"r:z3",keep:1},
+      {k:"kTinRocket",n:1,zone:"r:z2",keep:1} ],
     sets:[
-      { x:270,z:-345, items:_curve("dominoK",18,0,0,13,0.16) },
-      { x:-635,z:440, items:_cat(_ring("block",10,120),
+      { x:420,z:-320, items:_curve("dominoK",18,0,0,13,0.16) },
+      { x:-420,z:300, items:_cat(_ring("block",10,120),
           [["jenga",85,85,0.78,1],["jenga",-85,85,-0.78,1],["jenga",85,-85,2.36,1],["jenga",-85,-85,-2.36,1],
            ["teddy",0,0,3.14,1],["toysoldier",40,60,3.14,1],["toysoldier",-40,60,3.14,1]]) },
-      { x:465,z:405, items:_cat(_row("toysoldier",5,0,0,14,0,3.14),
+      { x:900,z:700, items:_cat(_row("toysoldier",5,0,0,14,0,3.14),
           [["drum",34,-30,0,1],["kite",-30,-34,0.5,1],["yoyo",-16,18,0,1],["yoyo",-28,6,0,1]]) },
-      { x:320,z:-950, items:_cat(_ring("traintrack",14,235),[["drum",0,0,0,1],["block",60,40,0.4,1],["block",-55,50,0.9,1]]) },
-      { x:-1000,z:-560, items:_cat(_curve("puzzlepiece",12,0,0,17,0.3),[["boardgame",-40,-40,0.5,1]]) },
-      { x:1090,z:640, items:[["stackrings",0,0,0,1],["toyphone",50,30,0.8,1],["pinwheel",-40,40,0,1],
+      { x:-700,z:-1000, items:_cat(_ring("traintrack",14,235),[["drum",0,0,0,1],["block",60,40,0.4,1],["block",-55,50,0.9,1]]) },
+      { x:340,z:-190, items:_cat(_curve("puzzlepiece",12,0,0,17,0.3),[["boardgame",-40,-40,0.5,1]]) },
+      { x:1100,z:-500, items:[["stackrings",0,0,0,1],["toyphone",50,30,0.8,1],["pinwheel",-40,40,0,1],
           ["pinwheel",-60,-20,0.6,1],["crayon",30,-40,1.2,1],["crayon",44,-28,0.4,1]] },
-      { x:0,z:870, items:_cat([["dollhouse",0,0,3.14,1]],_ring("dollchair",5,150),[["teddy",120,120,2.6,1]]) }
+      { x:0,z:1900, items:_cat([["dollhouse",0,0,3.14,1]],_ring("dollchair",5,150),[["teddy",120,120,2.6,1]]) },
+      { x:-1600,z:900, items:_cat(_row("boardgame",3,0,0,130,20,0.1),
+          [["rockhorse",180,-90,0.6,1],["tricycle",-120,110,1.9,1],["teddy",60,150,2.4,1]]) }
     ],
-    movers:[{k:"toycar",n:6},{k:"train",n:2}] },
+    movers:[{k:"toycar",n:5,zone:"r:z1"},{k:"train",n:2,zone:"r:z2"}] },
 
   { id:"w3", nm:"Night Garden", emoji:"🌙", sub:"the Lucid Winds garden",
     startD:15, goalD:160, time:190, bound:2100, seed:303,
@@ -947,141 +954,137 @@
     movers:[{k:"chicken",n:11},{k:"dogB",n:5},{k:"catB",n:2},{k:"camel",n:4}] },
 
   { id:"w5", nm:"Starfall Bay", emoji:"🌊", sub:"dusk beach and harbor",
-    startD:60, goalD:1600, time:210, bound:6500, seed:505,
-    sky:["#2a3a6e","#c86a8e","#e8b06a"], fog:{c:0x5a4a7e,d:0.000130},
+    startD:60, goalD:1600, time:200, bound:7500, seed:505,
+    sky:["#2a3a6e","#c86a8e","#e8b06a"], fog:{c:0x5a4a7e,d:0.000110},
     ground:{style:"sand",c1:"#d8c098",c2:"#c0a880"}, rim:0x1e3a5e,
-    gates:[{x:3500,z:2750,r:1375,need:380,label:"Harbor Row"},{x:-2750,z:-1875,r:1125,need:170,label:"Shipwreck Cove"},
-           {x:0,z:-4500,r:1250,need:900,label:"Lighthouse Point"},
-           {x:4300,z:-1000,r:1200,need:1450,label:"The Ferry Terminal"}],
+    // concentric ascending zones: tideline -> the dunes -> the boardwalk -> the harbor
+    regions:{ tide:{x:0,z:0,r:800},
+              z1:{x:0,z:0,r:2400,r0:800},
+              z2:{x:0,z:0,r:4600,r0:2400},
+              z3:{x:0,z:0,r:7275,r0:4600} },
+    gates:[{x:0,z:0,r:800,need:160,label:"The Dune Fence"},
+           {x:0,z:0,r:2400,need:550,label:"The Boardwalk Rail"},
+           {x:0,z:0,r:4600,need:1250,label:"The Harbor Wall"}],
     scatter:[
       {k:"shell",n:16,zone:"spawn"},
-      {k:"shell",n:155,zone:"near"},{k:"starfish",n:110,zone:"near"},{k:"bucket",n:90,zone:"near"},
-      {k:"sandcastle",n:16,zone:"near"},{k:"seagrass",n:44,zone:"near"},
-      {k:"lobsterpot",n:60,zone:"mid"},{k:"buoy",n:48,zone:"mid"},{k:"netbale",n:40,zone:"mid"},
-      {k:"driftwood",n:48,zone:"mid"},{k:"oar",n:34,zone:"mid"},{k:"lifering",n:14,zone:"mid"},
-      {k:"crabbuoy",n:13,zone:"mid"},{k:"surfboard",n:14,zone:"mid"},{k:"kelptangle",n:26,zone:"mid"},
-      {k:"mooringpost",n:18,zone:"mid"},{k:"tidepool",n:10,zone:"mid"},
-      {k:"anchor",n:16,zone:"far"},{k:"dockpost",n:21,zone:"far"},{k:"umbrella",n:26,zone:"far"},
-      {k:"dinghy",n:18,zone:"far"},{k:"rowboat",n:16,zone:"far"},{k:"fishshack",n:7,zone:"far"},
-      {k:"houseboat",n:5,zone:"far"},{k:"sailboat",n:3,zone:"far"},{k:"beachhut",n:10,zone:"far"},
-      {k:"beachchair",n:13,zone:"far"},{k:"bonfire",n:8,zone:"far"},{k:"fishcart",n:12,zone:"far"},
-      {k:"cargobox",n:12,zone:"far"},{k:"lifeguardpost",n:6,zone:"far"},{k:"boardwalkstand",n:7,zone:"far"},
-      {k:"whalebone",n:5,zone:"far"},{k:"ferry",n:1,zone:"far"},{k:"harborcrane",n:1,zone:"far"},
-      {k:"dockpost",n:10,zone:"gate0"},{k:"dinghy",n:7,zone:"gate0"},{k:"rowboat",n:7,zone:"gate0"},
-      {k:"fishshack",n:4,zone:"gate0"},{k:"houseboat",n:4,zone:"gate0"},{k:"sailboat",n:3,zone:"gate0"},
-      {k:"fishcart",n:5,zone:"gate0"},{k:"mooringpost",n:6,zone:"gate0"},
-      {k:"driftwood",n:6,zone:"gate1"},{k:"netbale",n:5,zone:"gate1"},{k:"rowboat",n:2,zone:"gate1"},
-      {k:"kelptangle",n:6,zone:"gate1"},{k:"whalebone",n:1,zone:"gate1"},
-      {k:"lighthouse",n:1,zone:"gate2"},{k:"beachhut",n:5,zone:"gate2"},{k:"houseboat",n:4,zone:"gate2"},
-      {k:"sailboat",n:3,zone:"gate2"},{k:"fishshack",n:4,zone:"gate2"},{k:"rowboat",n:5,zone:"gate2"},
-      {k:"dockpost",n:8,zone:"gate2"},{k:"boardwalkstand",n:3,zone:"gate2"},
-      {k:"ferry",n:1,zone:"gate3"},{k:"harborcrane",n:2,zone:"gate3"},{k:"cargobox",n:8,zone:"gate3"},
-      {k:"houseboat",n:3,zone:"gate3"},{k:"mooringpost",n:6,zone:"gate3"},{k:"sailboat",n:2,zone:"gate3"},
-      {k:"kComb",n:1,zone:"near",keep:1},{k:"kBottle",n:1,zone:"mid",keep:1},
-      {k:"kStarFrag",n:1,zone:"gate1",keep:1},{k:"kBell",n:1,zone:"gate0",keep:1},
-      {k:"kPearl",n:1,zone:"gate3",keep:1} ],
+      {k:"shell",n:70,zone:"r:tide"},{k:"starfish",n:45,zone:"r:tide"},{k:"bucket",n:38,zone:"r:tide"},
+      {k:"seagrass",n:40,zone:"r:tide"},{k:"sandcastle",n:14,zone:"r:tide"},
+      {k:"lobsterpot",n:40,zone:"r:z1"},{k:"buoy",n:30,zone:"r:z1"},{k:"netbale",n:26,zone:"r:z1"},
+      {k:"driftwood",n:30,zone:"r:z1"},{k:"kelptangle",n:22,zone:"r:z1"},{k:"oar",n:22,zone:"r:z1"},
+      {k:"tidepool",n:10,zone:"r:z1"},{k:"umbrella",n:18,zone:"r:z1"},{k:"beachchair",n:16,zone:"r:z1"},
+      {k:"bonfire",n:8,zone:"r:z1"},{k:"lifering",n:12,zone:"r:z1"},{k:"crabbuoy",n:10,zone:"r:z1"},
+      {k:"surfboard",n:12,zone:"r:z1"},{k:"shell",n:40,zone:"r:z1"},{k:"starfish",n:30,zone:"r:z1"},
+      {k:"dockpost",n:20,zone:"r:z2"},{k:"mooringpost",n:14,zone:"r:z2"},{k:"fishcart",n:14,zone:"r:z2"},
+      {k:"dinghy",n:16,zone:"r:z2"},{k:"rowboat",n:16,zone:"r:z2"},{k:"boardwalkstand",n:10,zone:"r:z2"},
+      {k:"lifeguardpost",n:6,zone:"r:z2"},{k:"anchor",n:14,zone:"r:z2"},{k:"beachhut",n:10,zone:"r:z2"},
+      {k:"whalebone",n:5,zone:"r:z2"},{k:"cargobox",n:10,zone:"r:z2"},{k:"umbrella",n:12,zone:"r:z2"},
+      {k:"netbale",n:14,zone:"r:z2"},{k:"driftwood",n:14,zone:"r:z2"},
+      {k:"fishshack",n:10,zone:"r:z3"},{k:"houseboat",n:10,zone:"r:z3"},{k:"sailboat",n:10,zone:"r:z3"},
+      {k:"cargobox",n:14,zone:"r:z3"},{k:"ferry",n:2,zone:"r:z3"},{k:"harborcrane",n:2,zone:"r:z3"},
+      {k:"lighthouse",n:2,zone:"r:z3"},{k:"mooringpost",n:10,zone:"r:z3"},{k:"dockpost",n:12,zone:"r:z3"},
+      {k:"rowboat",n:10,zone:"r:z3"},{k:"beachhut",n:8,zone:"r:z3"},{k:"boardwalkstand",n:6,zone:"r:z3"},
+      {k:"kComb",n:1,zone:"r:tide",keep:1},{k:"kBottle",n:1,zone:"r:z1",keep:1},
+      {k:"kStarFrag",n:1,zone:"r:z2",keep:1},{k:"kBell",n:1,zone:"r:z2",keep:1},
+      {k:"kPearl",n:1,zone:"r:z3",keep:1} ],
     sets:[
-      { x:1625,z:-1125, items:_cat(_row("dockpost",5,0,0,190,0,0),_row("dockpost",5,0,260,190,0,0),
+      { x:-1000,z:900, items:_cat(_row("umbrella",4,0,0,300,40,0.15),_row("beachchair",4,80,180,300,40,-0.2),
+          [["bucket",40,-130,0,1],["bucket",340,-110,0,1],["lifering",190,90,0,1],["sandcastle",520,-160,0.4,1]]) },
+      { x:-1300,z:1500, items:_cat([["bonfire",0,0,0,1]],_ring("beachchair",5,260),
+          [["bucket",340,120,0,1],["surfboard",-330,160,0.8,1],["lifering",180,-300,0,1]]) },
+      { x:900,z:-1800, items:[["tidepool",0,0,0,1],["tidepool",280,160,0.7,1],["tidepool",-220,220,1.9,1],
+          ["starfish",120,-140,0,1],["starfish",-160,-90,0.5,1],["kelptangle",300,-180,0,1],["seagrass",-70,320,0,1]] },
+      { x:-900,z:-1900, items:_cat([["lifeguardpost",0,0,0.2,1]],_row("surfboard",3,150,120,90,20,0.3),
+          [["lifering",-160,90,0,1],["lifering",-190,-60,0,1],["bucket",120,-160,0,1]]) },
+      { x:2900,z:-1400, items:_cat(_row("dockpost",5,0,0,190,0,0),_row("dockpost",5,0,260,190,0,0),
           [["rowboat",380,130,0.05,1],["rowboat",-330,140,3.1,1],["netbale",80,-120,0,1],["netbale",520,-100,0,1],
            ["lobsterpot",200,-140,0,1],["lobsterpot",640,320,0.6,1],["crabbuoy",-140,60,0,1],
            ["boardwalkstand",900,140,0.1,1],["fishcart",950,-160,0.8,1]]) },
-      { x:-875,z:750, items:_cat(_row("umbrella",4,0,0,300,40,0.15),_row("beachchair",4,80,180,300,40,-0.2),
-          [["bucket",40,-130,0,1],["bucket",340,-110,0,1],["lifering",190,90,0,1],["sandcastle",520,-160,0.4,1]]) },
-      { x:-2750,z:-1875, items:_cat([["sailboat",0,0,2.5,1],["anchor",320,180,0.8,1]],
-          _ring("driftwood",6,420),[["netbale",-260,120,0,1],["netbale",180,-260,0,1],["crabbuoy",-120,-300,0,1],["lifering",240,320,0,1]]) },
-      { x:2400,z:4600, items:_cat(_row("cargobox",4,0,0,300,30,0),_row("cargobox",3,150,200,300,20,0),
-          [["harborcrane",700,-500,1.2,1],["mooringpost",-300,150,0,1],["mooringpost",-300,-100,0,1],["fishcart",1200,180,0.5,1]]) },
-      { x:-4900,z:1300, items:[["whalebone",0,0,0.4,1],["whalebone",520,260,0.9,1],["whalebone",380,-350,2.6,1],
+      { x:-3700,z:900, items:[["whalebone",0,0,0.4,1],["whalebone",520,260,0.9,1],["whalebone",380,-350,2.6,1],
           ["driftwood",-350,200,1.1,1],["driftwood",250,520,0.3,1],["kelptangle",-200,-300,0,1]] },
-      { x:-1600,z:3400, items:_cat([["bonfire",0,0,0,1]],_ring("beachchair",5,260),
-          [["bucket",340,120,0,1],["surfboard",-330,160,0.8,1],["lifering",180,-300,0,1]]) },
-      { x:1150,z:-2850, items:[["tidepool",0,0,0,1],["tidepool",280,160,0.7,1],["tidepool",-220,220,1.9,1],
-          ["starfish",120,-140,0,1],["starfish",-160,-90,0.5,1],["kelptangle",300,-180,0,1],["seagrass",-70,320,0,1]] },
-      { x:-900,z:-2100, items:_cat([["lifeguardpost",0,0,0.2,1]],_row("surfboard",3,150,120,90,20,0.3),
-          [["lifering",-160,90,0,1],["lifering",-190,-60,0,1],["bucket",120,-160,0,1]]) },
-      { x:4300,z:-1000, items:_cat([["ferry",0,0,0.35,1]],_row("mooringpost",4,-500,420,260,-40,0),
+      { x:-2750,z:-2400, items:_cat([["sailboat",0,0,2.5,1],["anchor",320,180,0.8,1]],
+          _ring("driftwood",6,420),[["netbale",-260,120,0,1],["netbale",180,-260,0,1],["crabbuoy",-120,-300,0,1],["lifering",240,320,0,1]]) },
+      { x:2600,z:5300, items:_cat(_row("cargobox",4,0,0,300,30,0),_row("cargobox",3,150,200,300,20,0),
+          [["harborcrane",700,-500,1.2,1],["mooringpost",-300,150,0,1],["mooringpost",-300,-100,0,1],["fishcart",1200,180,0.5,1]]) },
+      { x:5400,z:-1200, items:_cat([["ferry",0,0,0.35,1]],_row("mooringpost",4,-500,420,260,-40,0),
           [["cargobox",620,380,0.6,1],["cargobox",680,-320,0.1,1],["fishcart",-550,-350,1.3,1]]) }
     ],
-    movers:[{k:"crabS",n:8},{k:"gull",n:5}] },
+    movers:[{k:"crabS",n:8,zone:"r:z1"},{k:"gull",n:5,zone:"r:z2"}] },
 
   { id:"w7", nm:"The Whole World", emoji:"🌍", sub:"a little planet, rolled entire",
     startD:45, goalD:2200, s2:3200, s3:4400, time:360, bound:9500, seed:707, globe:1, wrap:1,
     sky:["#5a9ed4","#cfe3ee","#3f6e9a"], fog:{c:0xc8dce8,d:0.00002},
     ground:{style:"fields",c1:"#4a7c46",c2:"#79a852"}, rim:0x1e3020,
-    regions:{ meadow:{x:0,z:0,r:1700}, meadowOut:{x:0,z:0,r:1700,r0:700},
-              farm:{x:2900,z:1000,r:1600}, pond:{x:-2700,z:2400,r:1500} },
-    gates:[{x:1000,z:-4000,r:2200,need:260,label:"The Village Gate"},
-           {x:-4400,z:-2000,r:2400,need:750,label:"The Harbor Gate"},
-           {x:4900,z:3600,r:2600,need:1400,label:"The High Valley"},
-           {x:-1600,z:5800,r:2600,need:2300,label:"The Royal City"},
-           {x:5400,z:-5000,r:2400,need:3000,label:"The Crown of the World"}],
+    // CONCENTRIC ASCENDING ZONES: each ring gate is a wall around your whole known
+    // world; break out and the next zone is bigger than everything before it combined
+    // (areas 3.1M -> 18M -> 51M -> 90M -> 198M cm^2). No side-pockets, no dead seas.
+    regions:{ meadow:{x:0,z:0,r:1000},
+              z1:{x:0,z:0,r:2600,r0:1000},   // the Farmlands
+              z2:{x:0,z:0,r:4800,r0:2600},   // the Town
+              z3:{x:0,z:0,r:7200,r0:4800},   // the Shires
+              z4:{x:0,z:0,r:9200,r0:7200} }, // the Wilds
+    gates:[{x:0,z:0,r:1000,need:120,label:"The Garden Wall"},
+           {x:0,z:0,r:2600,need:420,label:"The Town Wall"},
+           {x:0,z:0,r:4800,need:1300,label:"The Old Ramparts"},
+           {x:0,z:0,r:7200,need:2600,label:"The Edge of the World"}],
     scatter:[
       {k:"pebble",n:26,zone:"spawn"},{k:"dewdrop",n:18,zone:"spawn"},{k:"mushroom",n:10,zone:"spawn"},
-      {k:"pebble",n:110,zone:"r:meadow"},{k:"dewdrop",n:80,zone:"r:meadow"},{k:"mushroom",n:70,zone:"r:meadow"},
-      {k:"tulip",n:56,zone:"r:meadow"},{k:"apple",n:44,zone:"r:meadow"},{k:"lemon",n:44,zone:"r:meadow"},
-      {k:"shell",n:44,zone:"r:meadow"},{k:"melon",n:32,zone:"r:meadow"},{k:"gnome",n:26,zone:"r:meadow"},
-      {k:"bucket",n:32,zone:"r:meadow"},{k:"basket",n:26,zone:"r:meadow"},{k:"flowerpot",n:32,zone:"r:meadow"},
-      {k:"wateringcan",n:20,zone:"r:meadow"},{k:"pumpkin",n:22,zone:"r:meadow"},{k:"beehive",n:8,zone:"r:meadow"},
-      {k:"fernG",n:26,zone:"r:meadow"},
-      {k:"barrel",n:42,zone:"r:farm"},{k:"wheelbarrow",n:30,zone:"r:farm"},{k:"hayrick",n:32,zone:"r:farm"},
-      {k:"benchG",n:18,zone:"r:farm"},{k:"cartB",n:24,zone:"r:farm"},{k:"crate",n:32,zone:"r:farm"},
-      {k:"grainsack",n:28,zone:"r:farm"},{k:"stool",n:20,zone:"r:farm"},{k:"rugroll",n:14,zone:"r:farm"},
-      {k:"compostheap",n:10,zone:"r:farm"},{k:"scarecrow",n:8,zone:"r:farm"},{k:"oar",n:10,zone:"r:farm"},
-      {k:"dinghy",n:14,zone:"r:pond"},{k:"rowboat",n:12,zone:"r:pond"},{k:"oar",n:12,zone:"r:pond"},
-      {k:"netbale",n:18,zone:"r:pond"},{k:"driftwood",n:20,zone:"r:pond"},{k:"kelptangle",n:18,zone:"r:pond"},
-      {k:"seagrass",n:32,zone:"r:pond"},{k:"tidepool",n:8,zone:"r:pond"},{k:"lobsterpot",n:16,zone:"r:pond"},
-      {k:"buoy",n:12,zone:"r:pond"},
-      {k:"barrel",n:16,zone:"gate0"},{k:"netbale",n:10,zone:"gate0"},{k:"benchG",n:12,zone:"gate0"},
-      {k:"cartB",n:14,zone:"gate0"},{k:"hayrick",n:12,zone:"gate0"},{k:"carpetstack",n:8,zone:"gate0"},
-      {k:"stall",n:14,zone:"gate0"},{k:"fountain",n:10,zone:"gate0"},{k:"streetlamp",n:16,zone:"gate0"},
-      {k:"fishcart",n:10,zone:"gate0"},{k:"boardwalkstand",n:8,zone:"gate0"},{k:"cottage",n:10,zone:"gate0"},
-      {k:"umbrella",n:10,zone:"gate0"},{k:"doorarch",n:6,zone:"gate0"},{k:"waterwell",n:4,zone:"gate0"},
-      {k:"wheelbarrow",n:10,zone:"gate0"},{k:"grainsack",n:10,zone:"gate0"},
-      {k:"mooringpost",n:12,zone:"gate1"},{k:"cargobox",n:16,zone:"gate1"},{k:"fishshack",n:10,zone:"gate1"},
-      {k:"houseboat",n:10,zone:"gate1"},{k:"boardwalkstand",n:8,zone:"gate1"},{k:"sailboat",n:9,zone:"gate1"},
-      {k:"beachhut",n:9,zone:"gate1"},{k:"dockpost",n:16,zone:"gate1"},{k:"lifeguardpost",n:6,zone:"gate1"},
-      {k:"ferry",n:2,zone:"gate1"},{k:"harborcrane",n:2,zone:"gate1"},{k:"whalebone",n:5,zone:"gate1"},
-      {k:"rowboat",n:10,zone:"gate1"},{k:"dinghy",n:8,zone:"gate1"},
-      {k:"cottage",n:20,zone:"gate2"},{k:"oakW",n:20,zone:"gate2"},{k:"pineW",n:16,zone:"gate2"},
-      {k:"windmill",n:10,zone:"gate2"},{k:"watertower",n:8,zone:"gate2"},{k:"hayrick",n:12,zone:"gate2"},
-      {k:"chapel",n:5,zone:"gate2"},{k:"clocktower",n:3,zone:"gate2"},
-      {k:"keeptower",n:2,zone:"gate3"},{k:"citywall",n:12,zone:"gate3"},{k:"clocktower",n:7,zone:"gate3"},
-      {k:"chapel",n:6,zone:"gate3"},{k:"cottage",n:10,zone:"gate3"},{k:"streetlamp",n:12,zone:"gate3"},
-      {k:"doorarch",n:8,zone:"gate3"},{k:"minaret",n:2,zone:"gate3"},
-      {k:"moonshard",n:4,zone:"gate4"},{k:"hillock",n:4,zone:"gate4"},{k:"graypeak",n:3,zone:"gate4"},
-      {k:"standingstone",n:10,zone:"gate4"},{k:"lighthouse",n:2,zone:"gate4"},
-      {k:"barrel",n:36,zone:"sq"},{k:"hayrick",n:28,zone:"sq"},{k:"pineW",n:30,zone:"sq"},
-      {k:"fishcart",n:8,zone:"sq"},{k:"netbale",n:12,zone:"sq"},
-      {k:"oakW",n:14,zone:"sq"},{k:"standingstone",n:10,zone:"sq"},{k:"benchG",n:18,zone:"sq"},
-      {k:"crate",n:24,zone:"sq"},{k:"wheelbarrow",n:20,zone:"sq"},{k:"driftwood",n:14,zone:"sq"},
-      {k:"streetlamp",n:14,zone:"sq"},{k:"cartB",n:14,zone:"sq"},{k:"umbrella",n:10,zone:"sq"},
-      {k:"fountain",n:8,zone:"sq"},{k:"gnome",n:16,zone:"sq"},{k:"stall",n:5,zone:"sq"},
-      {k:"lighthouse",n:2,zone:"far"},{k:"chapel",n:2,zone:"far"},{k:"clocktower",n:2,zone:"far"},
-      {k:"hillock",n:2,zone:"far"},{k:"graypeak",n:1,zone:"far"},{k:"windmill",n:3,zone:"far"},
-      {k:"watertower",n:3,zone:"far"},{k:"cottage",n:6,zone:"far"},{k:"whalebone",n:2,zone:"far"},
-      {k:"kGlobe",n:1,zone:"r:meadow",keep:1},{k:"kWeathervane",n:1,zone:"r:farm",keep:1},
-      {k:"kPostbox",n:1,zone:"gate0",keep:1},{k:"kTelescope",n:1,zone:"gate1",keep:1},
-      {k:"kCrown",n:1,zone:"gate4",keep:1} ],
+      {k:"pebble",n:70,zone:"r:meadow"},{k:"dewdrop",n:55,zone:"r:meadow"},{k:"mushroom",n:45,zone:"r:meadow"},
+      {k:"tulip",n:36,zone:"r:meadow"},{k:"apple",n:30,zone:"r:meadow"},{k:"lemon",n:30,zone:"r:meadow"},
+      {k:"shell",n:30,zone:"r:meadow"},{k:"melon",n:20,zone:"r:meadow"},{k:"gnome",n:14,zone:"r:meadow"},
+      {k:"bucket",n:18,zone:"r:meadow"},{k:"basket",n:14,zone:"r:meadow"},{k:"flowerpot",n:18,zone:"r:meadow"},
+      {k:"wateringcan",n:10,zone:"r:meadow"},{k:"fernG",n:16,zone:"r:meadow"},
+      {k:"barrel",n:45,zone:"r:z1"},{k:"wheelbarrow",n:32,zone:"r:z1"},{k:"hayrick",n:30,zone:"r:z1"},
+      {k:"benchG",n:20,zone:"r:z1"},{k:"cartB",n:26,zone:"r:z1"},{k:"crate",n:32,zone:"r:z1"},
+      {k:"grainsack",n:28,zone:"r:z1"},{k:"stool",n:22,zone:"r:z1"},{k:"rugroll",n:16,zone:"r:z1"},
+      {k:"compostheap",n:12,zone:"r:z1"},{k:"scarecrow",n:10,zone:"r:z1"},{k:"oar",n:14,zone:"r:z1"},
+      {k:"pumpkin",n:22,zone:"r:z1"},{k:"beehive",n:12,zone:"r:z1"},{k:"dinghy",n:12,zone:"r:z1"},
+      {k:"rowboat",n:10,zone:"r:z1"},{k:"netbale",n:18,zone:"r:z1"},{k:"driftwood",n:18,zone:"r:z1"},
+      {k:"kelptangle",n:14,zone:"r:z1"},{k:"seagrass",n:24,zone:"r:z1"},{k:"tidepool",n:8,zone:"r:z1"},
+      {k:"lobsterpot",n:14,zone:"r:z1"},{k:"buoy",n:10,zone:"r:z1"},
+      {k:"stall",n:22,zone:"r:z2"},{k:"fountain",n:16,zone:"r:z2"},{k:"streetlamp",n:26,zone:"r:z2"},
+      {k:"fishcart",n:16,zone:"r:z2"},{k:"boardwalkstand",n:10,zone:"r:z2"},{k:"cottage",n:18,zone:"r:z2"},
+      {k:"umbrella",n:14,zone:"r:z2"},{k:"doorarch",n:8,zone:"r:z2"},{k:"waterwell",n:6,zone:"r:z2"},
+      {k:"carpetstack",n:10,zone:"r:z2"},{k:"mooringpost",n:12,zone:"r:z2"},{k:"cargobox",n:14,zone:"r:z2"},
+      {k:"dockpost",n:16,zone:"r:z2"},{k:"lifeguardpost",n:6,zone:"r:z2"},{k:"bonfire",n:8,zone:"r:z2"},
+      {k:"whalebone",n:4,zone:"r:z2"},{k:"hayrick",n:14,zone:"r:z2"},{k:"cartB",n:12,zone:"r:z2"},
+      {k:"barrel",n:16,zone:"r:z2"},
+      {k:"cottage",n:22,zone:"r:z3"},{k:"oakW",n:22,zone:"r:z3"},{k:"pineW",n:24,zone:"r:z3"},
+      {k:"windmill",n:10,zone:"r:z3"},{k:"watertower",n:8,zone:"r:z3"},{k:"chapel",n:5,zone:"r:z3"},
+      {k:"hayrick",n:16,zone:"r:z3"},{k:"fishshack",n:10,zone:"r:z3"},{k:"houseboat",n:10,zone:"r:z3"},
+      {k:"beachhut",n:9,zone:"r:z3"},{k:"sailboat",n:9,zone:"r:z3"},{k:"ferry",n:2,zone:"r:z3"},
+      {k:"harborcrane",n:2,zone:"r:z3"},{k:"rowboat",n:10,zone:"r:z3"},{k:"clocktower",n:3,zone:"r:z3"},
+      {k:"stall",n:8,zone:"r:z3"},{k:"boardwalkstand",n:6,zone:"r:z3"},
+      {k:"citywall",n:14,zone:"r:z4"},{k:"keeptower",n:2,zone:"r:z4"},{k:"clocktower",n:8,zone:"r:z4"},
+      {k:"minaret",n:3,zone:"r:z4"},{k:"chapel",n:6,zone:"r:z4"},{k:"standingstone",n:16,zone:"r:z4"},
+      {k:"lighthouse",n:4,zone:"r:z4"},{k:"hillock",n:5,zone:"r:z4"},{k:"moonshard",n:5,zone:"r:z4"},
+      {k:"graypeak",n:4,zone:"r:z4"},{k:"windmill",n:4,zone:"r:z4"},{k:"watertower",n:4,zone:"r:z4"},
+      {k:"cottage",n:8,zone:"r:z4"},{k:"oakW",n:8,zone:"r:z4"},
+      {k:"barrel",n:20,zone:"sq"},{k:"hayrick",n:12,zone:"sq"},{k:"pineW",n:16,zone:"sq"},
+      {k:"standingstone",n:6,zone:"sq"},{k:"benchG",n:10,zone:"sq"},
+      {k:"kGlobe",n:1,zone:"r:meadow",keep:1},{k:"kWeathervane",n:1,zone:"r:z1",keep:1},
+      {k:"kPostbox",n:1,zone:"r:z2",keep:1},{k:"kTelescope",n:1,zone:"r:z3",keep:1},
+      {k:"kCrown",n:1,zone:"r:z4",keep:1} ],
     sets:[
-      { x:1000,z:-4000, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
-      { x:2900,z:1000, items:_cat(_row("hayrick",3,0,0,420,50,0),_row("hayrick",3,200,380,420,40,0),
+      { x:1700,z:600, items:_cat(_row("hayrick",3,0,0,420,50,0),_row("hayrick",3,200,380,420,40,0),
           [["cartB",-350,150,0.8,1],["cartB",-390,-160,2.2,1],["barrel",520,240,0,1],["barrel",560,180,0,1]]) },
-      { x:-2700,z:2400, items:[["tidepool",0,0,0,1],["tidepool",300,180,0.9,1],["rowboat",-260,120,0.4,1],
+      { x:-1500,z:1400, items:[["tidepool",0,0,0,1],["tidepool",300,180,0.9,1],["rowboat",-260,120,0.4,1],
           ["rowboat",180,-260,2.8,1],["kelptangle",-140,-190,0,1],["driftwood",340,-120,1.2,1]] },
-      { x:3400,z:-1400, items:_cat(_row("oakW",4,0,0,520,60,0),_row("oakW",4,120,470,520,60,0),_row("hayrick",3,260,220,540,40,0)) },
-      { x:-500,z:-1900, items:_curve("streetlamp",8,0,0,420,0.12) },
-      { x:1500,z:400, items:_curve("streetlamp",6,0,0,430,-0.14) },
-      { x:5900,z:400, items:_cat(_ring("standingstone",8,460),[["standingstone",0,0,0.8,1.2]]) },
-      { x:-4400,z:-2000, items:_cat(_row("dockpost",5,0,0,200,0,0),_row("dockpost",5,0,280,200,0,0),
+      { x:3600,z:-800, items:_cat([["fountain",0,0,0,1]],_ring("cottage",5,860),_ring("streetlamp",6,480)) },
+      { x:-3400,z:-2100, items:_cat(_row("dockpost",5,0,0,200,0,0),_row("dockpost",5,0,280,200,0,0),
           [["boardwalkstand",700,140,0.2,1],["fishcart",760,-180,0.9,1],["mooringpost",-300,140,0,1]]) },
-      { x:4900,z:3600, items:_cat([["windmill",0,0,0.4,1]],_ring("cottage",4,720),
+      { x:0,z:-3600, items:_curve("streetlamp",8,0,0,420,0.12) },
+      { x:5600,z:-1200, items:_cat(_row("oakW",4,0,0,520,60,0),_row("oakW",4,120,470,520,60,0),_row("hayrick",3,260,220,540,40,0)) },
+      { x:5900,z:2400, items:_cat([["windmill",0,0,0.4,1]],_ring("cottage",4,720),
           [["hayrick",520,380,0,1],["wheelbarrow",-400,300,0.7,1]]) },
-      { x:-1600,z:5800, items:_cat(_ring("citywall",8,1050),
-          [["clocktower",380,300,0.5,1],["chapel",-420,260,2.7,1],["streetlamp",200,-300,0,1],["streetlamp",-240,-260,0,1]]) },
-      { x:5400,z:-5000, items:_cat([["moonshard",0,0,0.5,1]],_ring("standingstone",7,520)) }
+      { x:-6000,z:-2400, items:_cat([["ferry",0,0,0.35,1]],_row("mooringpost",4,-500,420,260,-40,0),
+          [["cargobox",620,380,0.6,1],["cargobox",680,-320,0.1,1],["fishcart",-550,-350,1.3,1]]) },
+      { x:8100,z:700, items:_cat(_ring("standingstone",8,460),[["standingstone",0,0,0.8,1.2]]) },
+      { x:-3500,z:-7600, items:_cat(_ring("citywall",8,1050),
+          [["clocktower",380,300,0.5,1],["chapel",-420,260,2.7,1],["keeptower",0,0,0,1],["streetlamp",200,-300,0,1]]) },
+      { x:7900,z:-3800, items:_cat([["moonshard",0,0,0.5,1]],_ring("standingstone",7,520)) }
     ],
-    movers:[{k:"sheepW",n:7,zone:"r:meadowOut"},{k:"sheepW",n:8,zone:"r:farm"},{k:"cowW",n:8,zone:"r:farm"},
-            {k:"carW",n:4,zone:"sq"},{k:"busW",n:3,zone:"sq"},{k:"dogB",n:3,zone:"r:farm"}] },
+    movers:[{k:"sheepW",n:10,zone:"r:z1"},{k:"cowW",n:8,zone:"r:z1"},{k:"dogB",n:3,zone:"r:z1"},
+            {k:"carW",n:4,zone:"r:z2"},{k:"busW",n:3,zone:"r:z3"}] },
 
   { id:"w6", nm:"Dream Meadow", emoji:"💤", sub:"endless zen, everything at once",
     startD:20, goalD:0, time:0, bound:2600, seed:606, zen:1,
@@ -1256,8 +1259,11 @@
         x=Math.cos(ang)*rad; z=Math.sin(ang)*rad;
       }
       var bad=false;
+      // keep scatter off the FENCE LINE only (not whole gate interiors — with
+      // concentric ring gates the interior IS the playfield)
       for(var gi=0;gi<w.gates.length;gi++){ var gg=w.gates[gi], dx=wrapD(x-gg.x), dz=wrapD(z-gg.z);
-        if(dx*dx+dz*dz < gg.r*gg.r*1.1){ bad=true; break; } }
+        var gdd=Math.sqrt(dx*dx+dz*dz);
+        if(Math.abs(gdd-gg.r) < gg.need*0.7){ bad=true; break; } }
       if(!bad) return [x,z];
     }
     return [x,z];
@@ -1624,7 +1630,7 @@
     if(R.D>=R.nextMile){ R.nextMile*=2; if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.6);
       var hs=$("hudSize"); hs.classList.remove("pop"); void hs.offsetWidth; hs.classList.add("pop"); } }
     if(!W.zen){ var sb=starBars(W);
-      if(!R.goalHit&&R.D>=sb[0]){ R.goalHit=true;
+      if(!R.goalHit&&R.D>=sb[0]){ R.goalHit=true; R.goalAtT=Math.round((W.time-R.timer)*10)/10;
         if(!silent){ winFanfare(); R.gold=1; toast("★ GOAL! Keep rolling — "+fmtSize(sb[1])+" for ★★"); } }
       if(!R.s2Hit&&R.D>=sb[1]){ R.s2Hit=true;
         if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.8); toast("★★! Next bar: "+fmtSize(sb[2])); } }
@@ -1847,6 +1853,13 @@
     if(R.comboT>0){ R.comboT-=dt; if(R.comboT<=0){ R.combo=0; } }
     if(R.flash>0){ R.flash-=dt*2.4; $("flash").style.opacity=Math.max(0,Math.min(0.85,R.flash)); }
     if(R.gold>0){ R.gold-=dt*1.4; $("goldflash").style.opacity=Math.max(0,Math.min(0.7,R.gold)); }
+    // clean sweep: nothing absorbable left -> the run ends NOW, triumphant.
+    // "the game doesn't even stop, you just have to wait for the clock" — Stephen
+    if(!W.zen&&!R.over){ R._cleanCk=(R._cleanCk||0)+1;
+      if(R._cleanCk%60===0){ var left=0;
+        for(var ci=0;ci<INST.length&&!left;ci++){ var cst=INST[ci];
+          for(var cj=0;cj<cst.n;cj++){ if(cst.alive[cj]){ left=1; break; } } }
+        if(!left&&!MOVERS.length){ R.clean=true; endRun(false); return; } } }
     // timer
     if(!W.zen){ R.timer-=dt;
       if(R.timer<=0){ R.timer=0; endRun(false); return; } }
@@ -2058,22 +2071,26 @@
     var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
     var stars=0, sb=starBars(W);
     if(!W.zen){ if(R.D>=sb[2])stars=3; else if(R.D>=sb[1])stars=2; else if(R.D>=sb[0])stars=1; }
-    var earned=0;
+    var earned=0, newRec=false;
     if(W.zen){ if(R.D>save.bestZen){ save.bestZen=R.D; }
       earned=earnSunbeams(3,"dewball:zen"); }
     else { if(stars>wrec.stars)wrec.stars=stars;
-      earned=earnSunbeams(Math.min(12,[0,3,6,10][stars]+R.keepsNew),"dewball:world"); }
+      if(R.clean) wrec.clean=1;
+      if(R.goalAtT&&(!wrec.bestGoalT||R.goalAtT<wrec.bestGoalT)){ wrec.bestGoalT=R.goalAtT; newRec=true; }
+      earned=earnSunbeams(Math.min(12,[0,3,6,10][stars]+R.keepsNew+(R.clean?2:0)),"dewball:world"); }
     if(R.D>wrec.bestD)wrec.bestD=R.D;
     save.grove.push({w:W.nm,d:Math.round(R.D*10)/10,s:stars,t:Date.now()});
     save.grove.sort(function(a,b){ return b.d-a.d; }); save.grove=save.grove.slice(0,10);
     refreshSkinUnlocks(); persist();
     // results
     var titles=W.zen?["A gentle drift"]:["The clock beat you.","A fine roll.","A mighty roll!","A LEGENDARY ROLL!"];
-    $("resTitle").textContent=W.zen?titles[0]:titles[stars];
+    $("resTitle").textContent=R.clean?"👑 THE WORLD IS YOURS":(W.zen?titles[0]:titles[stars]);
     $("resStars").textContent=W.zen?"☁":(stars>0?"★★★".slice(0,stars):"—");
     var body="You rolled up to <b style='color:#c8a84b'>"+fmtSize(R.D)+"</b>";
     if(!W.zen) body+=" of a "+fmtSize(W.goalD)+" goal";
     body+=".<br>"+R.absorbs+" things absorbed · best combo ×"+R.comboBest;
+    if(R.clean) body+="<br>👑 CLEAN SWEEP — nothing left to roll, with "+fmtTime(R.timer)+" to spare";
+    if(R.goalAtT) body+="<br>⚡ Goal in "+fmtTime(R.goalAtT)+(newRec?" — NEW RECORD":"");
     if(R.keepsRun.length) body+="<br>✦ Keepsakes: "+R.keepsRun.join(", ");
     if(earned>0) body+="<br>☀ +"+earned+" Sunbeams";
     $("resBody").innerHTML=body;
@@ -2117,8 +2134,8 @@
       var isNew=un&&!w.zen&&!save.seen[w.id]&&i>0;
       d.innerHTML="<div class='wemoji'>"+w.emoji+"</div><div class='wname'>"+w.nm+"</div>"+
         "<div class='wsub'>"+w.sub+"</div>"+
-        "<div class='wstars'>"+(w.zen?"∞":(stars>0?"★★★".slice(0,stars):"☆"))+"</div>"+
-        (rec&&rec.bestD?"<div class='wbest'>best "+fmtSize(rec.bestD)+"</div>":"")+
+        "<div class='wstars'>"+(w.zen?"∞":((rec&&rec.clean?"👑 ":"")+(stars>0?"★★★".slice(0,stars):"☆")))+"</div>"+
+        (rec&&rec.bestD?"<div class='wbest'>"+(rec.bestGoalT?"⚡ "+fmtTime(rec.bestGoalT)+" · ":"")+"best "+fmtSize(rec.bestD)+"</div>":"")+
         "<div class='wgoal'>"+(w.zen?"no clock, no goal":fmtSize(w.startD)+" → "+fmtSize(w.goalD)+" · "+fmtTime(w.time))+"</div>"+
         (isNew?"<div class='wnew'>NEW</div>":"")+
         (un?"":"<div class='wlock'>🔒</div>");
@@ -2143,7 +2160,8 @@
       d.style.background="radial-gradient(circle at 35% 30%, #"+("000000"+sk.c1.toString(16)).slice(-6)+", #"+("000000"+sk.c2.toString(16)).slice(-6)+")";
       d.innerHTML=(un?"":"<div class='lk'>🔒</div>")+"<div class='nm'>"+sk.name+"</div>";
       d.onclick=function(){
-        if(!un){ toast(sk.type==="absorbs"?("Absorb "+sk.need+" things ("+save.lifetimeAbsorbs+" so far)"):("Clear "+sk.need+" worlds")); return; }
+        if(!un){ toast(sk.type==="absorbs"?("Absorb "+sk.need+" things ("+save.lifetimeAbsorbs+" so far)"):
+          (sk.type==="cleans"?("👑 Clean-sweep "+sk.need+" worlds — roll up EVERYTHING"):("Clear "+sk.need+" worlds"))); return; }
         save.selectedSkin=sk.id; persist(); buildSkins(); toast(sk.name+" equipped"); };
       list.appendChild(d);
     })(SKINS[i]); }
@@ -2317,7 +2335,7 @@
         for(i=0;i<INST.length;i++){ var st=INST[i];
           for(j=0;j<st.n;j++) if(st.alive[j]) objs.push({k:st.kid,s:st.size[j],x:st.x[j],z:st.z[j]}); }
         for(i=0;i<MOVERS.length;i++) objs.push({k:MOVERS[i].kid,s:MOVERS[i].size,x:MOVERS[i].x,z:MOVERS[i].z,m:1,ai:MOVERS[i].ai});
-        return { ballX:R.x, ballY:R.z, absorbCount:R.absorbs,
+        return { ballX:R.x, ballY:R.z, absorbCount:R.absorbs, over:!!R.over,
                  cling:R.cling.map(function(c){ return c.size; }),
                  objects:objs, timer:R.timer, D:R.D, combo:R.combo,
                  gates:GATES.map(function(g){ return {open:g.open,need:g.def.need,x:g.def.x,z:g.def.z,r:g.def.r}; }),
