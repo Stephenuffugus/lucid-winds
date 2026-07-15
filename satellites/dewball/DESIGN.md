@@ -55,10 +55,10 @@ vs bot 127-169s) — never assume humans are slower than the bot.
 |---|-------|-------|--------------|------|-------|-------|
 | 1 | Crumb Country | giant picnic blanket | 4 cm → 24 cm | 2:30 | 950 | 16 · 30 · 40 |
 | 2 | Toybox Peaks | CONCENTRIC playroom | 8 cm → 70 cm | 2:50 | 2400 | rings 22 · 55 · 95 |
-| 3 | Night Garden | the Lucid Winds garden | 15 cm → 1.6 m | 3:10 | 2100 | 45 · 70 · 150 · 230 |
-| 4 | Bazaar Lane | tiny town market street | 30 cm → 3.1 m | 3:20 | 4000 | 70 · 120 · 340 · 430 |
-| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:20 | 7500 | rings 160 · 550 · 1250 |
-| 6 | THE WHOLE WORLD | 🌍 CONCENTRIC globe finale | 45 cm → 22 m (★★★ 44 m) | 6:00 | 9500 | rings 120 · 420 · 1300 · 2600 |
+| 3 | Night Garden | CONCENTRIC garden | 15 cm → 1.7 m | 2:45 | 3400 | rings 32 · 80 · 145 |
+| 4 | Bazaar Lane | CONCENTRIC market town | 30 cm → 3.4 m | 3:00 | 5600 | rings 60 · 160 · 380 |
+| 5 | Starfall Bay | CONCENTRIC beach + harbor | 60 cm → 16 m | 3:00 | 7500 | rings 160 · 550 · 1250 |
+| 6 | THE WHOLE WORLD | 🌍 CONCENTRIC globe finale | 45 cm → 22 m (★★★ 44 m) | 5:00 | 12000 | rings 120 · 420 · 1300 · 2600 |
 | 7 | Dream Meadow | endless zen, everything, no timer | 20 cm → ∞ | — | 2600 | — |
 
 Each world: 25-45 prop kinds, 1000-1500 scattered instances + 6-9 hand-placed SET PIECES
@@ -150,6 +150,12 @@ the next zone's AREA exceeds everything before it combined (w7: 3.1M -> 18M -> 5
 small scale). This also kills dead-zone travel ("stuck going in circles") — the next
 band surrounds you in every direction. placeInZone gate exclusion is FENCE-LINE-ONLY
 now; the bot's fenced/pathBlocked logic is ring-aware (inside XOR outside = blocked).
+⚖️ THE DENSITY LAW (v3.3, Stephen: "first area so small and crammed it accelerated
+everything... they need serious space to drive around looking for stuff and really have
+to build up slowly" — he consumed the entire globe in 1:47): DENSITY IS THE ACCELERATOR.
+Crammed zones remove the hunt and let the cube-law snowball run at max speed. Zones must
+be BIG and SPARSE — searching is the pacing, not eating. (This refines the old "travel
+time starves growth" note: dense enough to never strand, sparse enough to hunt.)
 REPLAY META (v3.2): CLEAN SWEEP — consuming everything ends the run instantly
 ("👑 THE WORLD IS YOURS", +2 sunbeams, crown on the world card, crowns unlock the Royal
 skin); ⚡ best time-to-goal recorded per world and shown on the card (fixed seeds =
