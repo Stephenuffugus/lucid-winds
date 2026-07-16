@@ -34,6 +34,12 @@
  *   - Streak/par/record overlays — sm() prints simple status messages
  *   - The mint-progress celebration modal — game_win + simple message
  *   - FG_Audio.playChime chord — uses _G.play()/playWin() sound effects
+ *
+ * What the shell ADDS vs LW (2026-07-16, Stephen greenlight):
+ *   - DAILY TRIO — date-seeded deck (same order for every player), race to
+ *     10 trios, one counted lock-in per day (replays are practice), share
+ *     text result. Exists ONLY here (the /play + portal surface — it is
+ *     what game directories list); LW's in-app SET stays classic.
  * ════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
@@ -120,8 +126,9 @@
     return null;
   }
 
-  // ── createDeck (verbatim from index.html:13813-13826) ──
-  function createDeck() {
+  // ── createDeck (from index.html:13813-13826; + optional seeded rng for Daily) ──
+  function createDeck(rng) {
+    var rand = rng || Math.random;
     var d = [];
     var shapes = SHAPE_SETS[activeShapeSet];
     for (var c = 0; c < 3; c++)
@@ -130,11 +137,31 @@
           for (var sh = 0; sh < 3; sh++)
             d.push({ color: c, shape: shapes[s], number: NUMBERS[n], shading: SHADINGS[sh] });
     for (var i = d.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
+      var j = Math.floor(rand() * (i + 1));
       var tmp = d[i]; d[i] = d[j]; d[j] = tmp;
     }
     return d;
   }
+
+  // ── Daily Trio helpers ──
+  function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0;
+    var t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296; }; }
+  // Local-date day number (players' "today" is their own today, same as Hues).
+  function dayNum(){ var now=new Date();
+    return Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - new Date(2026,0,1))/864e5); }
+  function todayKey(){ var d=new Date();
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+  function dailyLoad(){ try{ var r=JSON.parse(localStorage.getItem('lw_set_daily')||'null');
+    return (r && r.day===todayKey()) ? r : null; }catch(e){ return null; } }
+  function dailySave(rec){ try{ localStorage.setItem('lw_set_daily',JSON.stringify(rec)); }catch(e){} }
+  function fmtSecs(s){ var m=Math.floor(s/60),r=Math.floor(s%60); return m+':'+(r<10?'0':'')+r; }
+  function shareResult(text,url){
+    try{ if(navigator.share){ navigator.share({text:text,url:url})['catch'](function(){}); return; } }catch(e){}
+    try{ navigator.clipboard.writeText(text+'\n'+url).then(function(){ sm('Copied to clipboard.'); },function(){}); return; }catch(e){}
+    sm('Long-press to copy: '+text);
+  }
+  var DAILY_TARGET = 10;   // trios to finish the Daily
 
   // ── Mount function (registered as window._gameFns.set) ──
   window._gameFns = window._gameFns || {};
@@ -150,12 +177,22 @@
     // subtle). Nothing in the shell ever added the class; do it here.
     container.classList.add('cb-on');
 
+    // Mode row — CLASSIC (the full-deck original) vs DAILY TRIO (seeded sprint)
+    var modeRow = document.createElement('div');
+    modeRow.style.cssText = 'display:flex;justify-content:center;gap:8px;max-width:540px;margin:8px auto 0;padding:0 10px;';
+    var mbStyle = 'flex:1;max-width:210px;min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;letter-spacing:0.06em;border-radius:8px;cursor:pointer;color:#f5ebd0;';
+    modeRow.innerHTML =
+      '<button id="s-mode-classic" style="'+mbStyle+'background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1.5px solid rgba(122,179,86,0.55);">CLASSIC</button>' +
+      '<button id="s-mode-daily" style="'+mbStyle+'background:rgba(200,168,75,0.12);border:1.5px solid rgba(200,168,75,0.4);">DAILY TRIO #'+dayNum()+'</button>';
+    container.appendChild(modeRow);
+
     // Visible score row (replaces the hidden gu-bar counters)
     var scoreRow = document.createElement('div');
     scoreRow.style.cssText = 'display:flex;justify-content:center;gap:22px;max-width:540px;margin:10px auto 0;padding:4px 10px;font-family:Georgia,serif;font-size:0.8rem;color:#e8dcc8;';
     scoreRow.innerHTML =
       '<span>Trios: <strong id="s-found" style="color:#c8a84b;">0</strong></span>' +
-      '<span>Deck: <strong id="s-remain" style="color:#7ab356;">81</strong></span>';
+      '<span>Deck: <strong id="s-remain" style="color:#7ab356;">81</strong></span>' +
+      '<span id="s-timerwrap" style="display:none;">⏱ <strong id="s-timer" style="color:#e8dcc8;">0:00</strong></span>';
     container.appendChild(scoreRow);
 
     // Card grid host
@@ -167,18 +204,67 @@
     gridWrap.appendChild(grid);
     container.appendChild(gridWrap);
 
-    // Controls (new game + add 3). NOT class gb-new — shared.css defines
-    // .gb-new as an image-button wrapper (padding:0;min-height:0) which
-    // collapsed these text buttons to 15px tall (2026-07-04 audit).
-    mc(container).innerHTML =
-      '<button onclick="window._setNew()" style="min-height:48px;padding:12px 20px;margin-right:8px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1.5px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">↻ NEW GAME</button>' +
-      '<button onclick="window._setHint()" style="min-height:48px;padding:12px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,55,0.38));border:1.5px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">+3 CARDS</button>';
+    // Controls render via classicControls() below (NOT class gb-new —
+    // shared.css defines .gb-new as an image-button wrapper that collapsed
+    // text buttons to 15px tall, 2026-07-04 audit). mc() APPENDS a new
+    // node per call, so grab the container exactly once and reuse it.
+    var controls = mc(container);
 
     // Game state lives inside the mount closure (not on window) so a
     // page-level reload starts fresh.
     var deck = [], board = [], selected = [], phenosFound = 0;
     var locked = false;  // brief lock during animations
     var won = false;     // latched on board-clear; makes leftover cards inert
+    var mode = 'classic';            // 'classic' | 'daily'
+    var startAt = 0, timerIv = 0;    // Daily Trio clock
+
+    function stopTimer(){ if(timerIv){ clearInterval(timerIv); timerIv=0; } }
+    function startTimer(){
+      stopTimer(); startAt = Date.now();
+      var tw = document.getElementById('s-timerwrap'), tt = document.getElementById('s-timer');
+      if (tw) tw.style.display = '';
+      timerIv = setInterval(function(){
+        if (tt) tt.textContent = fmtSecs((Date.now()-startAt)/1000);
+      }, 500);
+    }
+    function paintModeButtons(){
+      var bc = document.getElementById('s-mode-classic'), bd = document.getElementById('s-mode-daily');
+      var onBg = 'linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4))', onBd = '1.5px solid rgba(122,179,86,0.55)';
+      var offBg = 'rgba(200,168,75,0.12)', offBd = '1.5px solid rgba(200,168,75,0.4)';
+      if (bc){ bc.style.background = (mode==='classic')?onBg:offBg; bc.style.border=(mode==='classic')?onBd:offBd; }
+      if (bd){ bd.style.background = (mode==='daily')?onBg:offBg; bd.style.border=(mode==='daily')?onBd:offBd;
+        var rec = dailyLoad();
+        bd.textContent = 'DAILY TRIO #'+dayNum()+(rec&&rec.done?' ✓':'');
+      }
+    }
+    function classicControls(){
+      controls.innerHTML =
+        '<button onclick="window._setRestart()" style="min-height:48px;padding:12px 20px;margin-right:8px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1.5px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">↻ NEW GAME</button>' +
+        '<button onclick="window._setHint()" style="min-height:48px;padding:12px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,55,0.38));border:1.5px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">+3 CARDS</button>';
+    }
+    function finishDaily(){
+      stopTimer(); won = true;
+      var secs = Math.max(1, Math.round((Date.now()-startAt)/1000));
+      var rec = dailyLoad(), first = !(rec && rec.done);
+      if (first) dailySave({ day: todayKey(), num: dayNum(), secs: secs, trios: phenosFound, done: true });
+      var shareText = 'Three Sisters Daily #'+dayNum()+'\n'+phenosFound+' trios · '+fmtSecs(secs)+' ⏱🌱\nCan you beat my time?';
+      window._setShareDaily = function(){ shareResult(shareText, 'https://lucidwinds.com/play/set.html'); };
+      controls.innerHTML =
+        '<button onclick="window._setShareDaily()" style="min-height:48px;padding:12px 20px;margin-right:8px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,55,0.38));border:1.5px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">📤 SHARE RESULT</button>' +
+        '<button onclick="window._setNew()" style="min-height:48px;padding:12px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1.5px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">PLAY CLASSIC</button>';
+      _e('game_win');
+      _playWin();
+      _sr('set', { w: true, s: phenosFound });
+      paintModeButtons();
+      if (window._lwGameEnd) window._lwGameEnd({
+        won: true,
+        title: 'DAILY TRIO #'+dayNum(),
+        line: phenosFound+' trios in '+fmtSecs(secs),
+        sub: first ? 'locked in — come back tomorrow' : 'practice run — today already counted',
+        retry: window._setDaily
+      });
+      sm('🌿 Daily done: '+phenosFound+' trios in '+fmtSecs(secs)+(first?' — locked in.':' (practice).'));
+    }
 
     function renderBoard() {
       var colors = getColors();
@@ -220,6 +306,7 @@
       // the flag makes that explicit and keeps leftover cards inert.
       if (!findPheno(board) && deck.length === 0) {
         if (won) return;
+        if (mode === 'daily') { finishDaily(); return; }  // deck ran dry pre-target (near-impossible) — count what was found
         won = true;
         _e('game_win');
         _playWin();
@@ -263,7 +350,9 @@
           _e('pheno');
           _play('match');
           selected.forEach(function(i) { if (cards[i]) cards[i].classList.add('correct'); });
-          sm('🌱 Pheno found. Well seen.');
+          sm(mode === 'daily'
+             ? '🌱 ' + phenosFound + ' of ' + DAILY_TARGET + '.'
+             : '🌱 Pheno found. Well seen.');
           locked = true;
           setTimeout(function() {
             // Remove found cards from the board; refill from deck unless
@@ -279,6 +368,7 @@
             }
             selected = [];
             locked = false;
+            if (mode === 'daily' && phenosFound >= DAILY_TARGET) { finishDaily(); return; }
             renderBoard();
           }, 600);
         } else {
@@ -300,8 +390,11 @@
       }
     }
 
-    window._setNew = function() {
-      deck = createDeck();
+    function startRound(m) {
+      mode = m;
+      // Daily deck: seeded by the day number — the SAME shuffle for every
+      // player on Earth today. Classic keeps true random.
+      deck = (m === 'daily') ? createDeck(mulberry32(dayNum() + 77001)) : createDeck();
       board = [];
       selected = [];
       phenosFound = 0;
@@ -311,8 +404,30 @@
       var sf = document.getElementById('s-found');
       if (sf) sf.textContent = '0';
       for (var i = 0; i < 12; i++) board.push(deck.pop());
+      if (m === 'daily') { startTimer(); }
+      else {
+        stopTimer();
+        var tw = document.getElementById('s-timerwrap');
+        if (tw) tw.style.display = 'none';
+      }
+      classicControls();
+      paintModeButtons();
       renderBoard();
+    }
+
+    window._setNew = function() {
+      startRound('classic');
       sm('Find 3 cards where each trait is all-same or all-different.');
+    };
+    window._setDaily = function() {
+      startRound('daily');
+      var rec = dailyLoad();
+      sm(rec && rec.done
+         ? 'Practice run — today already locked in at ' + fmtSecs(rec.secs) + '.'
+         : 'Same deck for everyone today. Find ' + DAILY_TARGET + ' trios, fast.');
+    };
+    window._setRestart = function() {
+      if (mode === 'daily') window._setDaily(); else window._setNew();
     };
 
     window._setHint = function() {
@@ -322,6 +437,12 @@
       renderBoard();
       sm('+3 cards added. ' + deck.length + ' remaining.');
     };
+
+    // Mode buttons
+    var mbc = document.getElementById('s-mode-classic');
+    var mbd = document.getElementById('s-mode-daily');
+    if (mbc) mbc.onclick = function(){ window._setNew(); };
+    if (mbd) mbd.onclick = function(){ window._setDaily(); };
 
     // Boot
     window._setNew();
