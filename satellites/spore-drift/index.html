@@ -41,6 +41,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0c121c 0%, #070b10 100%)}
 .screen.on{display:flex}
+#s-title,#s-chambers,#s-how,#s-ward,#s-grove,#s-set,#s-over{background:linear-gradient(180deg,rgba(12,18,28,.72),rgba(7,11,16,.90)), url("assets/backgrounds/abyss.jpg?v=sdart1") center/cover no-repeat #070b10}
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:50px; line-height:1; color:var(--dew); font-weight:800; text-shadow:0 3px 0 #14283a, 0 0 26px #5b9bd544; letter-spacing:3px}
@@ -538,6 +539,27 @@ function drawKeepsake(cv,ks){
 var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
 var FLOWP=[], fpRng=mkRng(777);
 (function(){ var i; for(i=0;i<46;i++)FLOWP.push({x:fpRng()*W, y:fpRng()*H}); })();
+
+/* ---------- Inkwater Bioluminance art (gated; procedural fallbacks kept) ---------- */
+var _AV="sdart1";
+function _sdImg(src){ var im=new Image(); try{ im.src=src+"?v="+_AV; }catch(e){} return im; }
+function _sdReady(im){ return !!(im&&im.complete&&im.naturalWidth>0); }
+var _SPR={};
+function _sdSpr(path){ if(!_SPR[path])_SPR[path]=_sdImg("assets/"+path+".png"); return _SPR[path]; }
+var _BGI={};
+function _sdBg(name){ if(!_BGI[name])_BGI[name]=_sdImg("assets/backgrounds/"+name+".jpg"); return _BGI[name]; }
+["spore/r1c1","spore/r1c4","spore/r2c4","spore/r3c1","motes/r1c1","motes/r1c2","motes/r1c4",
+ "motes/r2c3","motes/r2c4","fx/r3c3"].forEach(_sdSpr);
+["abyss","kelp","moonpool","starfield"].forEach(_sdBg);
+var MEMBRANE={plain:"spore/r1c1",comet:"spore/r2c4",lichen:"spore/r1c4",prism:"spore/r3c1"};
+/* blit centered, aspect-preserved, to a target diameter (NEVER a fixed w,h) */
+function _blitC(im,cx,cy,d){ if(!_sdReady(im))return false;
+  var s=d/Math.max(im.naturalWidth,im.naturalHeight), w=im.naturalWidth*s, h=im.naturalHeight*s;
+  try{ ctx.drawImage(im,cx-w/2,cy-h/2,w,h); }catch(e){} return true; }
+/* cover-fit an image into (x,y,w,h), aspect-preserved, cropping overflow */
+function _cover(im,x,y,w,h){ if(!_sdReady(im))return; var iw=im.naturalWidth,ih=im.naturalHeight,s=Math.max(w/iw,h/ih),dw=iw*s,dh=ih*s;
+  try{ ctx.drawImage(im,x+(w-dw)/2,y+(h-dh)/2,dw,dh); }catch(e){} }
+function _moteSpr(m){ return m.f?_sdSpr("motes/r2c4"):m.e?_sdSpr("motes/r2c3"):_sdSpr(m.r<12?"motes/r1c1":(m.r>26?"motes/r1c4":"motes/r1c2")); }
 var BACKDROPS={
  abyss:  {a:"#0c121c", b:"#070b10"},
  kelp:   {a:"#0c1712", b:"#060b08"},
@@ -547,13 +569,19 @@ var BACKDROPS={
 function render(){
   if(!G){ return; }
   var P=G.P, sb=seasonBlend(G.tick), i;
-  var bd=BACKDROPS[PROG.backdrop]||BACKDROPS.abyss;
-  var grd=ctx.createRadialGradient(W/2,H*0.3,60,W/2,H*0.65,H*0.75);
-  grd.addColorStop(0, rgb(mixc(hex(bd.a),sb.bgA,0.5)));
-  grd.addColorStop(1, rgb(mixc(hex(bd.b),sb.bgB,0.5)));
-  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
-  if(PROG.backdrop==="starfield"){ ctx.fillStyle="rgba(232,220,200,0.5)";
-    var sr=mkRng(42); for(i=0;i<40;i++){ ctx.fillRect(sr()*W,(sr()*H)|0,1.5,1.5); } }
+  var bgim=_sdBg(PROG.backdrop||"abyss");
+  if(_sdReady(bgim)){
+    _cover(bgim,0,0,W,H);                         /* painted water scene, aspect-preserved cover */
+    ctx.save(); ctx.globalAlpha=0.13; ctx.fillStyle=rgb(sb.tint); ctx.fillRect(0,0,W,H); ctx.restore(); /* season recolor wash */
+  } else {
+    var bd=BACKDROPS[PROG.backdrop]||BACKDROPS.abyss;
+    var grd=ctx.createRadialGradient(W/2,H*0.3,60,W/2,H*0.65,H*0.75);
+    grd.addColorStop(0, rgb(mixc(hex(bd.a),sb.bgA,0.5)));
+    grd.addColorStop(1, rgb(mixc(hex(bd.b),sb.bgB,0.5)));
+    ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+    if(PROG.backdrop==="starfield"){ ctx.fillStyle="rgba(232,220,200,0.5)";
+      var sr=mkRng(42); for(i=0;i<40;i++){ ctx.fillRect(sr()*W,(sr()*H)|0,1.5,1.5); } }
+  }
   /* flow lines */
   if(PROG.fx){
     ctx.strokeStyle=rgb(sb.tint,0.13); ctx.lineWidth=1.4;
@@ -572,20 +600,21 @@ function render(){
   /* motes */
   for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
     var col=m.f?[229,143,160]:(m.e?[200,168,75]:sb.mote);
-    ctx.fillStyle=rgb(col, m.f?0.85:0.62);
-    ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,6.283); ctx.fill();
-    ctx.fillStyle=rgb([234,246,255],0.10);
-    ctx.beginPath(); ctx.arc(m.x-m.r*0.3,m.y-m.r*0.32,m.r*0.55,0,6.283); ctx.fill();
-    if(m.f){ /* flower petal ring — shape marker */
-      var pk; ctx.fillStyle="rgba(229,143,160,0.9)";
-      for(pk=0;pk<6;pk++){ var fa=pk/6*6.283+G.tick*0.01;
-        ctx.beginPath(); ctx.ellipse(m.x+Math.cos(fa)*(m.r+5), m.y+Math.sin(fa)*(m.r+5), 4.5,2.6, fa, 0,6.283); ctx.fill(); } }
-    if(m.e){ /* elder crown notches */
-      var ek; ctx.strokeStyle="rgba(232,220,200,0.85)"; ctx.lineWidth=2;
-      for(ek=0;ek<3;ek++){ var ea=-Math.PI/2+(ek-1)*0.5;
-        ctx.beginPath(); ctx.moveTo(m.x+Math.cos(ea)*(m.r-3), m.y+Math.sin(ea)*(m.r-3));
-        ctx.lineTo(m.x+Math.cos(ea)*(m.r+7), m.y+Math.sin(ea)*(m.r+7)); ctx.stroke(); } }
-    if(m.threat){ /* THREAT: pulsing dashed ring + notch triangle (never color-only) */
+    var msp2=_moteSpr(m), hasSpr=_blitC(msp2, m.x, m.y, m.r*2.7);   /* painted orb, aspect-preserved */
+    if(!hasSpr){ /* procedural body + highlight */
+      ctx.fillStyle=rgb(col, m.f?0.85:0.62);
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,6.283); ctx.fill();
+      ctx.fillStyle=rgb([234,246,255],0.10);
+      ctx.beginPath(); ctx.arc(m.x-m.r*0.3,m.y-m.r*0.32,m.r*0.55,0,6.283); ctx.fill();
+      if(m.f){ var pk; ctx.fillStyle="rgba(229,143,160,0.9)";
+        for(pk=0;pk<6;pk++){ var fa=pk/6*6.283+G.tick*0.01;
+          ctx.beginPath(); ctx.ellipse(m.x+Math.cos(fa)*(m.r+5), m.y+Math.sin(fa)*(m.r+5), 4.5,2.6, fa, 0,6.283); ctx.fill(); } }
+      if(m.e){ var ek; ctx.strokeStyle="rgba(232,220,200,0.85)"; ctx.lineWidth=2;
+        for(ek=0;ek<3;ek++){ var ea=-Math.PI/2+(ek-1)*0.5;
+          ctx.beginPath(); ctx.moveTo(m.x+Math.cos(ea)*(m.r-3), m.y+Math.sin(ea)*(m.r-3));
+          ctx.lineTo(m.x+Math.cos(ea)*(m.r+7), m.y+Math.sin(ea)*(m.r+7)); ctx.stroke(); } }
+    }
+    if(m.threat){ /* THREAT: pulsing dashed ring + notch triangle — ALWAYS on top (dynamic ground truth) */
       var pu=1+0.08*Math.sin(G.tick*0.12);
       ctx.strokeStyle="rgba(232,220,200,0.9)"; ctx.lineWidth=2;
       ctx.setLineDash([6,5]);
@@ -593,26 +622,29 @@ function render(){
       ctx.setLineDash([]);
       ctx.fillStyle="rgba(232,220,200,0.9)";
       ctx.beginPath(); ctx.moveTo(m.x,m.y-m.r-14); ctx.lineTo(m.x-5,m.y-m.r-5); ctx.lineTo(m.x+5,m.y-m.r-5); ctx.fill();
-    } else if(!m.f&&!m.e){ ctx.strokeStyle=rgb(col,0.25); ctx.lineWidth=1;
+    } else if(!m.f&&!m.e&&!hasSpr){ ctx.strokeStyle=rgb(col,0.25); ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(m.x,m.y,m.r+2.5,0,6.283); ctx.stroke(); }
   }
   /* player */
   var mem=PROG.membrane;
-  ctx.fillStyle="rgba(191,224,242,0.9)";
-  ctx.beginPath(); ctx.arc(P.x,P.y,P.r,0,6.283); ctx.fill();
-  ctx.fillStyle="rgba(91,155,213,0.75)";
-  ctx.beginPath(); ctx.arc(P.x,P.y,P.r*0.72,0,6.283); ctx.fill();
-  ctx.fillStyle="rgba(234,246,255,0.85)";
-  ctx.beginPath(); ctx.arc(P.x-P.r*0.3,P.y-P.r*0.34,P.r*0.2,0,6.283); ctx.fill();
-  if(mem==="comet"){ ctx.strokeStyle="rgba(234,246,255,0.9)"; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.arc(P.x,P.y,P.r+2,0,6.283); ctx.stroke(); }
-  else if(mem==="lichen"){ var lk; ctx.fillStyle="rgba(122,179,86,0.55)";
-    var lr0=mkRng(99); for(lk=0;lk<7;lk++){ var la=lr0()*6.283, ld=lr0()*P.r*0.7;
-      ctx.beginPath(); ctx.arc(P.x+Math.cos(la)*ld,P.y+Math.sin(la)*ld,2.4+lr0()*2,0,6.283); ctx.fill(); } }
-  else if(mem==="prism"){ var pk2; ctx.lineWidth=2;
-    var pcols=["#e58fa0","#c8a84b","#7ab356","#a0c4e8"];
-    for(pk2=0;pk2<4;pk2++){ ctx.strokeStyle=pcols[pk2];
-      ctx.beginPath(); ctx.arc(P.x,P.y,P.r+1+pk2*2,(pk2*1.57)+G.tick*0.02,(pk2*1.57)+G.tick*0.02+1.2); ctx.stroke(); } }
+  var pmsp=_sdSpr(MEMBRANE[mem]||MEMBRANE.plain);
+  if(!_blitC(pmsp, P.x, P.y, P.r*2.7)){ /* painted membrane orb, else procedural */
+    ctx.fillStyle="rgba(191,224,242,0.9)";
+    ctx.beginPath(); ctx.arc(P.x,P.y,P.r,0,6.283); ctx.fill();
+    ctx.fillStyle="rgba(91,155,213,0.75)";
+    ctx.beginPath(); ctx.arc(P.x,P.y,P.r*0.72,0,6.283); ctx.fill();
+    ctx.fillStyle="rgba(234,246,255,0.85)";
+    ctx.beginPath(); ctx.arc(P.x-P.r*0.3,P.y-P.r*0.34,P.r*0.2,0,6.283); ctx.fill();
+    if(mem==="comet"){ ctx.strokeStyle="rgba(234,246,255,0.9)"; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(P.x,P.y,P.r+2,0,6.283); ctx.stroke(); }
+    else if(mem==="lichen"){ var lk; ctx.fillStyle="rgba(122,179,86,0.55)";
+      var lr0=mkRng(99); for(lk=0;lk<7;lk++){ var la=lr0()*6.283, ld=lr0()*P.r*0.7;
+        ctx.beginPath(); ctx.arc(P.x+Math.cos(la)*ld,P.y+Math.sin(la)*ld,2.4+lr0()*2,0,6.283); ctx.fill(); } }
+    else if(mem==="prism"){ var pk2; ctx.lineWidth=2;
+      var pcols=["#e58fa0","#c8a84b","#7ab356","#a0c4e8"];
+      for(pk2=0;pk2<4;pk2++){ ctx.strokeStyle=pcols[pk2];
+        ctx.beginPath(); ctx.arc(P.x,P.y,P.r+1+pk2*2,(pk2*1.57)+G.tick*0.02,(pk2*1.57)+G.tick*0.02+1.2); ctx.stroke(); } }
+  }
   /* season vignette chip */
   ctx.fillStyle=rgb(sb.tint,0.75);
   ctx.font="11px sans-serif"; ctx.textAlign="right";
@@ -663,8 +695,10 @@ function renderWard(){
   var w=$("wardlist"); w.innerHTML="";
   var i; for(i=0;i<WARD.length;i++)(function(it){
     var owned=it.need(), eq=PROG[it.key]===it.id;
+    var wsp=(it.cat==="Membrane"&&MEMBRANE[it.id])?MEMBRANE[it.id]:null;   /* show the actual orb for membranes */
+    var wic=wsp?('<img src="assets/'+wsp+'.png?v='+_AV+'" alt="" style="width:38px;height:38px;object-fit:contain" onerror="this.replaceWith(document.createTextNode(\''+it.icon+'\'))">'):it.icon;
     var c=document.createElement("div"); c.className="wardcard"+(owned?"":" locked");
-    c.innerHTML='<div class="wi">'+it.icon+'</div><div class="wt"><div class="wn">'+it.name+' <span style="color:var(--muted);font-size:.7rem">· '+it.cat+'</span></div>'+
+    c.innerHTML='<div class="wi">'+wic+'</div><div class="wt"><div class="wn">'+it.name+' <span style="color:var(--muted);font-size:.7rem">· '+it.cat+'</span></div>'+
       '<div class="wd">'+(owned?"Unlocked.":it.needTxt)+'</div></div>'+
       '<div class="we'+(eq?" eq":"")+'">'+(eq?"EQUIPPED":(owned?"EQUIP":"🔒"))+'</div>';
     if(owned&&!eq)c.querySelector(".we").onclick=function(){ PROG[it.key]=it.id; save(); renderWard(); };
