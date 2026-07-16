@@ -154,10 +154,6 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <div class="row">
           <button class="btn sm" id="b-scenes">🎬 Scenes</button>
           <button class="btn sm" id="b-rush">⏱ Bloom Rush</button>
-        </div>
-        <div class="row">
-          <button class="btn sm" id="b-trials">🎯 Trials</button>
-          <button class="btn sm" id="b-daily">📅 Daily</button>
           <button class="btn sm" id="b-zen">🌙 Zen</button>
         </div>
         <div class="row">
@@ -199,9 +195,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="helprow"><div class="hi">🌱</div><div><b>Grow a garden:</b> water soaks SOIL dark. A SEED dropped on damp soil sprouts a vine, and a happy vine tips into a <b class="hl">bloom</b>.</div></div>
       <div class="helprow"><div class="hi">💓</div><div>The <b>Garden pulse</b> measures the living garden right now. Keep blooms alive and fires out. Holding a strong pulse is what earns sunbeams.</div></div>
       <div class="helprow"><div class="hi">🔥</div><div>FIRE eats vines and oil. WATER quenches it into rising MIST, and mist cools on stone ceilings and rains back down.</div></div>
-      <div class="helprow"><div class="hi">🎯</div><div><b>Trials</b> give you a fixed satchel and a goal. The satchel counts down as you paint.</div></div>
       <div class="helprow"><div class="hi">🌸</div><div>Raise <b>5 blooms at once</b> and the garden is counted. Every third garden presses a keepsake into your Grove.</div></div>
-      <div class="helprow"><div class="hi">🔷</div><div>New matter: heat <b>sand</b> beside fire and it fuses to <b class="hl">glass</b>; <b class="hl">ice</b> melts to water; a bloom breathes <b class="hl">pollen</b> that re-seeds damp soil; <b class="hl">moss</b> creeps over wet stone.</div></div>
+      <div class="helprow"><div class="hi">🔷</div><div>New matter to play with: heat <b>sand</b> into <b class="hl">glass</b>; <b class="hl">lava</b> flows, burns and cools to stone (water quenches it); <b class="hl">ice</b> &amp; <b class="hl">snow</b> melt to water; a bloom breathes <b class="hl">pollen</b> that re-sows soil; fire leaves <b class="hl">ash</b> that damp soil drinks to grow again; <b class="hl">moss</b> and glow-<b class="hl">spore</b> creep over wet stone.</div></div>
+      <div class="helprow"><div class="hi">🌱</div><div>Your <b>garden is saved</b> — leave and come back and it's right where you left it. Scenes start a fresh little world; the dock's <b>Clear</b> begins a new garden.</div></div>
       <div class="helprow"><div class="hi">🎬</div><div><b>Scenes</b> start you in a ready-made little world. <b>Bloom Rush</b> is 90 seconds to grow as many blooms as you can.</div></div>
       <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
     </div>
@@ -269,12 +265,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    SILT — falling-sand garden (Sky Wolf Studios)
    Campaign #18 (prototype-first). CA core: 135x196 cells @4px.
    ============================================================ */
-var BUILD="v2.0";
+var BUILD="v2.1";
 var CW=135, CH=196, N=CW*CH;
-var E={EMPTY:0, STONE:1, SILT:2, SOIL:3, WATER:4, SEED:5, VINE:6, BLOOM:7, FIRE:8, MIST:9, OIL:10, SPRING:11, SILTFALL:12, GLASS:13, ICE:14, POLLEN:15, MOSS:16};
-var NAMES=["","Stone","Silt","Soil","Water","Seed","Vine","Bloom","Fire","Mist","Oil","Spring","Siltfall","Glass","Ice","Pollen","Moss"];
-var NEL=16; /* highest element id (for budget/count loops) */
-var FLAM={}; FLAM[E.VINE]=0.30; FLAM[E.BLOOM]=0.34; FLAM[E.OIL]=0.62; FLAM[E.SEED]=0.25; FLAM[E.MOSS]=0.20;
+var E={EMPTY:0, STONE:1, SILT:2, SOIL:3, WATER:4, SEED:5, VINE:6, BLOOM:7, FIRE:8, MIST:9, OIL:10, SPRING:11, SILTFALL:12, GLASS:13, ICE:14, POLLEN:15, MOSS:16, LAVA:17, ASH:18, SNOW:19, SPORE:20};
+var NAMES=["","Stone","Silt","Soil","Water","Seed","Vine","Bloom","Fire","Mist","Oil","Spring","Siltfall","Glass","Ice","Pollen","Moss","Lava","Ash","Snow","Spore"];
+var NEL=20; /* highest element id (for budget/count loops) */
+var FLAM={}; FLAM[E.VINE]=0.30; FLAM[E.BLOOM]=0.34; FLAM[E.OIL]=0.62; FLAM[E.SEED]=0.25; FLAM[E.MOSS]=0.20; FLAM[E.SPORE]=0.30;
 
 /* ---------- seeded rng ---------- */
 function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
@@ -301,10 +297,10 @@ function sndWin(){ blip(523,0.25,0.08); setTimeout(function(){blip(659,0.25,0.08
 
 /* ---------- palettes (cosmetic themes; elements stay mutually distinguishable) ---------- */
 var PALS={
-  earthen:{ name:"Earthen", stone:[74,76,82], silt:[200,168,75], soil:[94,66,40], soilwet:[58,40,26], water:[91,155,213], seed:[229,143,160], vine:[122,179,86], bloom:[232,143,160], fire:[240,140,50], mist:[190,205,215], oil:[52,44,60], glass:[168,196,190], ice:[200,224,236], pollen:[236,214,120], moss:[104,150,74], bg:[11,15,11] },
-  nocturne:{ name:"Nocturne", stone:[64,70,88], silt:[168,150,110], soil:[80,62,52], soilwet:[48,38,34], water:[80,130,200], seed:[210,150,190], vine:[96,160,110], bloom:[220,150,200], fire:[235,120,60], mist:[170,190,215], oil:[40,36,58], glass:[150,180,196], ice:[186,214,236], pollen:[214,206,150], moss:[92,140,96], bg:[8,10,14] },
-  ember:{ name:"Ember Glass", stone:[88,72,66], silt:[214,160,90], soil:[104,60,38], soilwet:[64,38,26], water:[110,160,200], seed:[240,150,120], vine:[150,170,80], bloom:[244,160,120], fire:[255,150,40], mist:[210,200,190], oil:[58,40,44], glass:[196,200,182], ice:[210,222,224], pollen:[246,208,120], moss:[142,158,80], bg:[14,10,9] },
-  prisma:{ name:"Prisma", stone:[90,90,110], silt:[230,200,90], soil:[110,80,60], soilwet:[70,50,40], water:[70,180,230], seed:[250,130,190], vine:[110,220,120], bloom:[250,140,200], fire:[255,110,90], mist:[200,220,240], oil:[70,50,90], glass:[178,208,216], ice:[196,230,244], pollen:[248,214,130], moss:[110,214,120], bg:[10,12,16] }
+  earthen:{ name:"Earthen", stone:[74,76,82], silt:[200,168,75], soil:[94,66,40], soilwet:[58,40,26], water:[91,155,213], seed:[229,143,160], vine:[122,179,86], bloom:[232,143,160], fire:[240,140,50], mist:[190,205,215], oil:[52,44,60], glass:[168,196,190], ice:[200,224,236], pollen:[236,214,120], moss:[104,150,74], lava:[236,96,36], ash:[78,72,68], snow:[228,236,244], spore:[128,206,170], bg:[11,15,11] },
+  nocturne:{ name:"Nocturne", stone:[64,70,88], silt:[168,150,110], soil:[80,62,52], soilwet:[48,38,34], water:[80,130,200], seed:[210,150,190], vine:[96,160,110], bloom:[220,150,200], fire:[235,120,60], mist:[170,190,215], oil:[40,36,58], glass:[150,180,196], ice:[186,214,236], pollen:[214,206,150], moss:[92,140,96], lava:[228,92,54], ash:[64,64,74], snow:[214,224,240], spore:[118,196,186], bg:[8,10,14] },
+  ember:{ name:"Ember Glass", stone:[88,72,66], silt:[214,160,90], soil:[104,60,38], soilwet:[64,38,26], water:[110,160,200], seed:[240,150,120], vine:[150,170,80], bloom:[244,160,120], fire:[255,150,40], mist:[210,200,190], oil:[58,40,44], glass:[196,200,182], ice:[210,222,224], pollen:[246,208,120], moss:[142,158,80], lava:[255,104,32], ash:[86,74,66], snow:[230,226,220], spore:[150,204,140], bg:[14,10,9] },
+  prisma:{ name:"Prisma", stone:[90,90,110], silt:[230,200,90], soil:[110,80,60], soilwet:[70,50,40], water:[70,180,230], seed:[250,130,190], vine:[110,220,120], bloom:[250,140,200], fire:[255,110,90], mist:[200,220,240], oil:[70,50,90], glass:[178,208,216], ice:[196,230,244], pollen:[248,214,130], moss:[110,214,120], lava:[255,96,80], ash:[92,86,102], snow:[224,236,250], spore:[130,236,190], bg:[10,12,16] }
 };
 function pal(){ return PALS[PROG.pal]||PALS.earthen; }
 
@@ -339,7 +335,7 @@ function newWorld(mode,seed){
     trial:-1, budget:null, goalStable:0, won:false, gardenCounted:false, earned:0,
     springN:new Int16Array(N),
     emergent:(mode==="sandbox"||mode==="zen"||mode==="rush"), /* new conversions (glass/pollen/moss/ice) — OFF for classic trials so proofs are byte-identical */
-    rushT:0, rushBest:0, bloomsMade:0 };
+    rushT:0, rushBest:0, bloomsMade:0, persist:(mode==="sandbox") };
 }
 function idx(x,y){ return y*CW+x; }
 function inB(x,y){ return x>=0&&x<CW&&y>=0&&y<CH; }
@@ -424,7 +420,7 @@ function tickSim(){
         // sand holds heat: fire beside sand lingers and keeps fusing it to glass, then goes out (emergent)
         var hot=G.emergent&&((x>0&&g[i-1]===E.SILT)||(x<CW-1&&g[i+1]===E.SILT)||(y>0&&g[i-CW]===E.SILT)||(y<CH-1&&g[i+CW]===E.SILT));
         if(hot&&r()<0.72){ /* hold life */ }
-        else if(life<=1){ g[i]=(r()<0.2)?E.MIST:E.EMPTY; if(g[i]===E.MIST)a[i]=70; }
+        else if(life<=1){ g[i]=(r()<0.2)?E.MIST:(G.emergent&&r()<0.3?E.ASH:E.EMPTY); if(g[i]===E.MIST)a[i]=70; }
         else a[i]=life-1;
       } else if(el===E.MIST){
         var ml=a[i];
@@ -467,6 +463,44 @@ function tickSim(){
           if(mnx>=0&&mnx<CW&&mny>=0&&mny<CH){ var mni=mny*CW+mnx;
             if(g[mni]===E.EMPTY){ var mb=mni+CW;
               if(mb<N&&(g[mb]===E.STONE||g[mb]===E.GLASS||g[mb]===E.MOSS||(g[mb]===E.SOIL&&a[mb]>=60))){ g[mni]=E.MOSS; a[mni]=0; m[mni]=1; } } } }
+      } else if(el===E.LAVA){
+        var lnb=[i-1,i+1,i-CW,i+CW], ld;
+        // quenched by water/ice/snow/mist -> cools to stone, coolant flashes to mist
+        for(ld=0;ld<4;ld++){ var lq=lnb[ld]; if(lq<0||lq>=N)continue; var lqe=g[lq];
+          if(lqe===E.WATER||lqe===E.ICE||lqe===E.SNOW||lqe===E.MIST){ g[lq]=E.MIST; a[lq]=90; g[i]=E.STONE; a[i]=0; break; } }
+        if(g[i]!==E.LAVA)continue;
+        // set fire to fuel, melt ice/snow
+        for(ld=0;ld<4;ld++){ var ln2=lnb[ld]; if(ln2<0||ln2>=N)continue; var lne=g[ln2];
+          if(FLAM[lne]&&r()<0.6){ g[ln2]=E.FIRE; a[ln2]=lne===E.OIL?46:34; m[ln2]=1; }
+          else if((lne===E.ICE||lne===E.SNOW)&&r()<0.7){ g[ln2]=E.WATER; a[ln2]=0; m[ln2]=1; } }
+        if(r()<0.006){ g[i]=E.STONE; a[i]=0; continue; }  // slowly cools to obsidian
+        if((G.tick&1)===0){                                // viscous flow (half-speed)
+          if(y<CH-1){ var lb=i+CW;
+            if(g[lb]===E.EMPTY){ swap(i,lb); continue; }
+            var lsd=r()<0.5?1:-1;
+            if(x+lsd>=0&&x+lsd<CW&&g[lb+lsd]===E.EMPTY){ swap(i,lb+lsd); continue; } }
+          var lds=r()<0.5?1:-1;
+          if(x+lds>=0&&x+lds<CW&&g[y*CW+x+lds]===E.EMPTY&&r()<0.4){ swap(i,y*CW+x+lds); continue; } }
+      } else if(el===E.ASH){
+        // damp ash becomes rich soil (fire -> renewal loop)
+        if(((x>0&&g[i-1]===E.WATER)||(x<CW-1&&g[i+1]===E.WATER)||(y>0&&g[i-CW]===E.WATER)||(y<CH-1&&g[i+CW]===E.WATER))&&r()<0.4){ g[i]=E.SOIL; a[i]=200; continue; }
+        if(y<CH-1){ var ab=i+CW;
+          if(g[ab]===E.EMPTY||g[ab]===E.WATER){ swap(i,ab); continue; }
+          var asd=r()<0.5?1:-1;
+          if(x+asd>=0&&x+asd<CW&&g[ab+asd]===E.EMPTY){ swap(i,ab+asd); continue; } }
+      } else if(el===E.SNOW){
+        if((x>0&&(g[i-1]===E.FIRE||g[i-1]===E.LAVA))||(x<CW-1&&(g[i+1]===E.FIRE||g[i+1]===E.LAVA))||(y>0&&(g[i-CW]===E.FIRE||g[i-CW]===E.LAVA))||(y<CH-1&&(g[i+CW]===E.FIRE||g[i+CW]===E.LAVA))){ if(r()<0.6){ g[i]=E.WATER; a[i]=0; continue; } }
+        else if(r()<0.002){ g[i]=E.WATER; a[i]=0; continue; }
+        if(y<CH-1){ var wb=i+CW;
+          if(g[wb]===E.EMPTY){ if(r()<0.85)swap(i,wb); continue; }
+          var wsd=r()<0.5?1:-1;
+          if(x+wsd>=0&&x+wsd<CW&&g[wb+wsd]===E.EMPTY&&r()<0.6){ swap(i,wb+wsd); continue; } }
+      } else if(el===E.SPORE){
+        // decomposer glow-fungus creeps over ash / damp soil / moss / glass (emergent)
+        if(G.emergent&&r()<0.05){ var sd2=(r()*4)|0, snx=x+[1,-1,0,0][sd2], sny=y+[0,0,-1,1][sd2];
+          if(snx>=0&&snx<CW&&sny>=0&&sny<CH){ var sni=sny*CW+snx;
+            if(g[sni]===E.EMPTY){ var spb=sni+CW;
+              if(spb<N&&(g[spb]===E.ASH||g[spb]===E.MOSS||g[spb]===E.SPORE||g[spb]===E.GLASS||(g[spb]===E.SOIL&&a[spb]>=60))){ g[sni]=E.SPORE; a[sni]=0; m[sni]=1; } } } }
       }
       // soil wicking
       else if(el===E.SOIL){ var w0=a[i];
@@ -683,7 +717,20 @@ TRIALS.push(
 );
 
 var RUSH_TICKS=90*60;      /* ~90s at 60fps (tick-based so it is deterministic + testable) */
-var PENDING_SCENE=0;
+var PENDING_SCENE=0, PENDING_FRESH=false;
+
+/* ---------- persistent garden (sandbox auto-saves; resume where you left off) ---------- */
+function _rle(arr){ var out=[],i=0,n=arr.length; while(i<n){ var v=arr[i],j=i+1; while(j<n&&arr[j]===v&&(j-i)<60000)j++; out.push(v,j-i); i=j; } return out; }
+function encodeGarden(){ if(!G)return null; var spr={},i; for(i=0;i<N;i++)if(G.springN[i])spr[i]=G.springN[i];
+  return { v:1, pal:PROG.pal, g:_rle(G.grid), a:_rle(G.aux), s:spr }; }
+function saveGarden(){ try{ if(G&&G.persist)localStorage.setItem("silt_garden",JSON.stringify(encodeGarden())); }catch(e){} }
+function hasGarden(){ try{ return !!localStorage.getItem("silt_garden"); }catch(e){ return false; } }
+function clearGarden(){ try{ localStorage.removeItem("silt_garden"); }catch(e){} }
+function resumeGarden(){ try{ var d=JSON.parse(localStorage.getItem("silt_garden")); if(!d||d.v!==1)return false;
+    var k,i,c,ri; k=0; for(i=0;i<d.g.length;i+=2){ c=d.g[i+1]; for(ri=0;ri<c;ri++)G.grid[k++]=d.g[i]; }
+    k=0; for(i=0;i<d.a.length;i+=2){ c=d.a[i+1]; for(ri=0;ri<c;ri++)G.aux[k++]=d.a[i]; }
+    if(d.s)for(var key in d.s)G.springN[key|0]=d.s[key];
+    return true; }catch(e){ return false; } }
 var SCENES=[
  { name:"Blank", hint:"An empty vessel", build:function(){} },
  { name:"Terrace", hint:"Three soil shelves", build:function(){
@@ -768,7 +815,11 @@ function startMode(mode,trialIdx){
     $("goalchip").classList.add("on");
   } else {
     floorStone();
-    if(mode==="sandbox"&&PENDING_SCENE>0&&SCENES[PENDING_SCENE])SCENES[PENDING_SCENE].build();
+    if(mode==="sandbox"){
+      if(PENDING_FRESH){ clearGarden(); PENDING_FRESH=false; }               // "New garden" / Clear
+      else if(PENDING_SCENE>0&&SCENES[PENDING_SCENE]){ SCENES[PENDING_SCENE].build(); }  // template
+      else if(hasGarden()){ resumeGarden(); }                                // resume the saved garden
+    }
     PENDING_SCENE=0;
     $("goalchip").classList.remove("on");
   }
@@ -778,7 +829,7 @@ function startMode(mode,trialIdx){
   renderDock(); renderBudget();
   running=true;
 }
-function stopToMenu(){ running=false; G=null;
+function stopToMenu(){ running=false; saveGarden(); G=null;
   $("hud").classList.remove("on"); $("dock").classList.remove("on"); $("goalchip").classList.remove("on");
   $("simframe").classList.remove("on");
   show("s-title"); stamp(); }
@@ -808,12 +859,18 @@ function render(){
     else if(el===E.ICE)c=P.ice;
     else if(el===E.POLLEN)c=P.pollen;
     else if(el===E.MOSS)c=P.moss;
+    else if(el===E.LAVA)c=P.lava;
+    else if(el===E.ASH)c=P.ash;
+    else if(el===E.SNOW)c=P.snow;
+    else if(el===E.SPORE)c=P.spore;
     else if(el===E.SPRING)c=P.water;
     else c=P.silt;
     var sh=(v-50)*0.16; // stable per-cell texture
     var fl=0;
     if(fx&&el===E.FIRE)fl=((G.tick*7+v)%30)-15;
+    if(fx&&el===E.LAVA)fl=((G.tick*5+v)%36)-14;
     if(fx&&el===E.WATER)fl=(((G.tick>>2)+v)%14)-7;
+    if(fx&&el===E.SPORE)fl=(((G.tick>>1)+v)%18)-6;
     var o=i*4;
     d[o]=Math.max(0,Math.min(255,c[0]+sh+fl));
     d[o+1]=Math.max(0,Math.min(255,c[1]+sh+fl*0.6));
@@ -829,8 +886,8 @@ function render(){
 }
 
 /* ---------- dock ui ---------- */
-var DOCK1=[E.SILT,E.WATER,E.SOIL,E.SEED,E.STONE,E.OIL,E.FIRE,E.GLASS,E.ICE,E.POLLEN,E.MOSS];
-var ICONS={2:"⏳",4:"💧",3:"🟫",5:"🌰",1:"🪨",10:"🛢",8:"🔥",13:"🔷",14:"❄",15:"✵",16:"🌿"};
+var DOCK1=[E.SILT,E.WATER,E.SOIL,E.SEED,E.STONE,E.OIL,E.FIRE,E.LAVA,E.ICE,E.SNOW,E.GLASS,E.MOSS,E.SPORE,E.POLLEN,E.ASH];
+var ICONS={2:"⏳",4:"💧",3:"🟫",5:"🌰",1:"🪨",10:"🛢",8:"🔥",13:"🔷",14:"❄",15:"✵",16:"🌿",17:"🌋",18:"⚫",19:"❆",20:"🍄"};
 /* sprite icons exist for the 7 base elements only; new 4 use the emoji above */
 var UISPR={2:"ui/icon_silt",4:"ui/icon_water",3:"ui/icon_soil",5:"ui/icon_seed",1:"ui/icon_stone",10:"ui/icon_oil",8:"ui/icon_fire"};
 function $(id){ return document.getElementById(id); }
@@ -880,7 +937,8 @@ function show(id){ hideScreens(); $(id).classList.add("on"); }
 var toastT=null;
 function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
   if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
-function stamp(){ $("buildstamp").textContent="Silt "+BUILD+" · "+trialsDone()+"/"+TRIALS.length+" trials · "+PROG.blooms+" blooms grown"; }
+function stamp(){ $("buildstamp").textContent="Silt "+BUILD+" · "+(PROG.blooms||0)+" blooms grown · "+(PROG.gardens||0)+" gardens";
+  var sb=$("b-sandbox"); if(sb)sb.innerHTML=hasGarden()?"🌱 Resume Garden":"🏖 New Sandbox"; }
 
 function renderTrials(){
   var g=$("trialgrid"); g.innerHTML="";
@@ -906,12 +964,12 @@ function renderScenes(){
 /* ---------- wardrobe ---------- */
 var WARD=[
  {cat:"Palette",key:"pal",id:"earthen",name:"Earthen",icon:"🎨",need:function(){return true;},needTxt:"Free"},
- {cat:"Palette",key:"pal",id:"nocturne",name:"Nocturne",icon:"🌒",need:function(){return trialsDone()>=3;},needTxt:"Clear 3 trials"},
- {cat:"Palette",key:"pal",id:"ember",name:"Ember Glass",icon:"🧡",need:function(){return trialsDone()>=8;},needTxt:"Clear 8 trials"},
- {cat:"Palette",key:"pal",id:"prisma",name:"Prisma",icon:"🌈",need:function(){return trialsDone()>=12;},needTxt:"Clear all 12 trials"},
+ {cat:"Palette",key:"pal",id:"nocturne",name:"Nocturne",icon:"🌒",need:function(){return (PROG.gardens||0)>=2;},needTxt:"Count 2 living gardens"},
+ {cat:"Palette",key:"pal",id:"ember",name:"Ember Glass",icon:"🧡",need:function(){return (PROG.gardens||0)>=6;},needTxt:"Count 6 living gardens"},
+ {cat:"Palette",key:"pal",id:"prisma",name:"Prisma",icon:"🌈",need:function(){return (PROG.gardens||0)>=12;},needTxt:"Count 12 living gardens"},
  {cat:"Brush",key:"brushSkin",id:"ring",name:"Ring",icon:"⭕",need:function(){return true;},needTxt:"Free"},
  {cat:"Brush",key:"brushSkin",id:"trowel",name:"Trowel",icon:"🛠",need:function(){return PROG.blooms>=30;},needTxt:"Grow 30 blooms (lifetime)"},
- {cat:"Brush",key:"brushSkin",id:"dragonfly",name:"Dragonfly",icon:"🪰",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
+ {cat:"Brush",key:"brushSkin",id:"dragonfly",name:"Dragonfly",icon:"🪰",need:function(){return (PROG.gardens||0)>=4;},needTxt:"Count 4 living gardens"},
  {cat:"Frame",key:"frame",id:"slate",name:"Slate",icon:"⬛",need:function(){return true;},needTxt:"Free"},
  {cat:"Frame",key:"frame",id:"cedar",name:"Cedar",icon:"🟫",need:function(){return PROG.blooms>=100;},needTxt:"Grow 100 blooms (lifetime)"},
  {cat:"Frame",key:"frame",id:"gilded",name:"Gilded",icon:"🏵",need:function(){return PROG.gardens>=15;},needTxt:"Press 5 keepsakes (15 gardens)"}
@@ -969,6 +1027,7 @@ function loop(){
   if(!running||!G)return;
   if(!G.paused&&G.phase==="play")tickSim();
   render();
+  if(G.persist&&(G.tick%360)===0)saveGarden();   // auto-save the garden ~every 6s
 }
 document.addEventListener("visibilitychange",function(){ if(document.hidden&&G&&G.mode!=="zen"&&!G.paused){ G.paused=true; renderDock(); } });
 
@@ -979,7 +1038,7 @@ function fit(){ var st=document.getElementById("stage");
 window.addEventListener("resize",fit); fit();
 
 /* ---------- wire buttons ---------- */
-function tap(id,fn){ $(id).addEventListener("click",fn); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener("click",fn); }
 tap("b-sandbox",function(){ PENDING_SCENE=0; startMode("sandbox"); });
 tap("b-rush",function(){ startMode("rush"); });
 tap("b-scenes",function(){ renderScenes(); show("s-scenes"); });
@@ -1003,7 +1062,10 @@ tap("over-next",function(){ if(G&&G.trial<TRIALS.length-1)startMode("trial",G.tr
 tap("confirm-no",function(){ $("confirm").classList.remove("on"); });
 tap("confirm-yes",function(){ $("confirm").classList.remove("on");
   if(!G)return;
-  if(G.trial>=0)startMode(G.mode,G.trial); else startMode(G.mode); });
+  if(G.trial>=0)startMode(G.mode,G.trial);
+  else { if(G.mode==="sandbox")PENDING_FRESH=true; startMode(G.mode); } });   // Clear = fresh garden (wipes save)
+window.addEventListener("pagehide",saveGarden);
+window.addEventListener("beforeunload",saveGarden);
 function wireTg(id,getv,setv){ var el=$(id);
   function sync(){ el.classList.toggle("on",getv()); }
   el.addEventListener("click",function(){ setv(!getv()); save(); sync(); }); sync(); }
@@ -1068,6 +1130,21 @@ if(/[?&]sltest=1/.test(location.search)){
     mintTest:function(){ var before=PROG.grove.length; G=newWorld("sandbox",1); PROG.gardens=2; updatePulse;
       floorStone(); var k; for(k=0;k<5;k++)set(20+k*8,100,E.BLOOM); updatePulse(); return { minted:PROG.grove.length>before, gardens:PROG.gardens }; },
     earnTest:function(){ return window._sbCapEarn(2,"sltest"); },
+    saveLoadTest:function(){ startMode("sandbox");
+      paint(50,150,12,E.SOIL); paint(90,150,8,E.WATER); paint(30,170,6,E.VINE); paint(66,6,2,E.SPRING); G.springN[idx(66,6)]=500;
+      var k; for(k=0;k<80;k++)tickSim();
+      var before=window.SL_DEV.gridHash();
+      saveGarden();                              // persist
+      startMode("sandbox");                      // fresh floorStone
+      var afterFresh=window.SL_DEV.gridHash();    // should differ
+      resumeGarden();                            // restore
+      var after=window.SL_DEV.gridHash();
+      clearGarden();
+      return { roundtrip: before===after, changedByFresh: before!==afterFresh, has:hasGarden() }; },
+    saveLoadPersistTest:function(){ startMode("sandbox"); paint(60,150,10,E.SOIL); var k; for(k=0;k<40;k++)tickSim();
+      var h=window.SL_DEV.gridHash(); saveGarden(); var stored=hasGarden();
+      startMode("sandbox"); var resumed=window.SL_DEV.gridHash(); clearGarden();
+      return { stored:stored, resumedMatches: h===resumed }; },
     prog:function(){ return PROG; },
     trials:TRIALS
   };
