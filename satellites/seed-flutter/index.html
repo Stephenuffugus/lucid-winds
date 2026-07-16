@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Seed Flutter">
-<title>Seed Flutter — Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Cosmic Cadets">
+<title>Cosmic Cadets — Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"seedflutter"}).catch(function(){});</script>
 <style>
@@ -27,7 +27,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
-/* Comet Cadets sky backdrops behind each DOM panel (ID beats .screen gradient) */
+/* Cosmic Cadets sky backdrops behind each DOM panel (ID beats .screen gradient) */
 #s-title{ background:linear-gradient(180deg,rgba(8,11,14,0.28),rgba(8,11,14,0.72)), url('assets/backgrounds/bg_title.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
 #s-go{ background:linear-gradient(180deg,rgba(8,11,14,0.34),rgba(8,11,14,0.80)), url('assets/backgrounds/bg_results.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
 #s-how,#s-set,#s-ward,#s-grove{ background:linear-gradient(180deg,rgba(8,11,14,0.58),rgba(8,11,14,0.88)), url('assets/backgrounds/bg_play.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
@@ -81,7 +81,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Seed Flutter</div>
+    <div class="title-word">Cosmic Cadets</div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Tap to lift a <b class="hl">Comet Cadet</b> on the night wind. Thread the star-spires, and thread the <b class="hl">center Star</b> for a Perfect that ignites a keepsake. Build a <b class="hl">Bloomstreak</b> and fill your Sky Map as you drift through four changing skies.</div>
     <div style="flex:1"></div>
@@ -178,7 +178,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.1 · Comet Cadets';
+var BUILD='v1.1';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -187,7 +187,7 @@ var GRAV=1500, FLAP=-432;
 var GROUND=VH-64;
 var STEM_W=66, INNER=44;
 
-/* ---------- Comet Cadets art assets (gated behind load; procedural fallbacks kept) ---------- */
+/* ---------- Cosmic Cadets art assets (gated behind load; procedural fallbacks kept) ---------- */
 var ART_V='cc1';
 function _sfImg(src){ var im=new Image(); try{ im.src=src+'?v='+ART_V; }catch(e){} return im; }
 function _sfReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
@@ -727,8 +727,8 @@ function renderWard(){ renderWardList('ward-seeds','seed',SEEDS,PROG.seed,functi
   renderWardList('ward-comps','comp',COMPS,PROG.comp,function(v){PROG.comp=v;}); }
 
 /* ---------- share ---------- */
-function shareIt(){ var url='https://lucidwinds.com/satellites/seed-flutter/'; var txt='I drifted '+(PROG.bestDist||0)+' gaps in Seed Flutter ☄️ and grew '+(PROG.grewTotal||0)+' keepsake stars. Play at '+url;
-  if(navigator.share){ navigator.share({title:'Seed Flutter',text:txt,url:url}).catch(function(){}); }
+function shareIt(){ var url='https://lucidwinds.com/satellites/seed-flutter/'; var txt='I drifted '+(PROG.bestDist||0)+' gaps in Cosmic Cadets ☄️ and grew '+(PROG.grewTotal||0)+' keepsake stars. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Cosmic Cadets',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
 
 /* ---------- wire ---------- */
@@ -751,7 +751,7 @@ tap('go-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-haze','haze');
-$('buildstamp').textContent='Seed Flutter '+BUILD;
+$('buildstamp').textContent='Cosmic Cadets '+BUILD;
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
 
 /* ---------- test hook ---------- */
