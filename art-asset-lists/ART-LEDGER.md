@@ -1,0 +1,57 @@
+# ART LEDGER — every art drop, catalogued. THE source of truth for art status.
+<!-- Claude: this file exists so Stephen is NEVER asked "is this new?" or "was this cut?".
+     If you are about to ask him about a piece of art, STOP and read/update this file instead. -->
+
+## Intake protocol (Claude follows this every time, no exceptions)
+
+1. **The moment art lands** — Drive folder, zip in `art-asset-lists/`, a `satellites/<game>/art-drop/` folder, a loose PNG anywhere, a pasted image — add a row here BEFORE any other work. Unlabeled file? Open it with the Read tool, identify it visually, log it. Never ask Stephen what a drop is or whether it was handled.
+2. **Statuses:** `LISTED` (prompt pack written, awaiting Stephen's generation) → `DROPPED` (files received; log date + exact location) → `CUT` (assets extracted) → `WIRED` (code hooked) → `DEPLOYED` (pushed to main; log the commit hash).
+3. **Raw drops are source material.** Never delete or overwrite them without Stephen's explicit OK (see feedback_never_overwrite_assets). Leftover raw folders after a shipped cut are normal — the ledger row says so.
+4. **Docs inside drops** (docx/notes): extract the text, record the instructions in the row's notes.
+5. Prompt packs live in this folder (see `README.md`). This ledger tracks the *lifecycle*; the README tracks the *prompts and generate order*.
+
+## Deployed packs (art live on main)
+
+| Game | Pack / style | Sheets→assets | Drop source | Deploy commit(s) | Date | Notes |
+|---|---|---|---|---|---|---|
+| Nectar Drop | (v2.0 hero pack) | 25 sheets → 371 assets | `satellites/nectar-drop/art-drop/Nectar Drop/` (raw retained, incl. style docx) | ab6aeb74; fixes 0799ca8c, f502695c | Jul 09 | 14 heroes, 120 levels. Style docx = paper-craft midnight-garden manifest, processed. |
+| Burr Blast (materials) | 9 painted material tiles | 1 sheet → 9 tiles | `assets/structures1.png` (root assets, raw retained) | ca615fff | ~Jul 07 | wood/stone/brick/thatch/banner/steel/glass/ice/crystal. Spec: `satellites/burr-blast/design/MATERIAL_ART_LIST.md`. |
+| Garden Guard TD | full skin | 1 master sheet | `assets/file_000000006ca471f69e0a0e0cbcaf06b1.png` (raw retained) | (pre-Jul-08, "skinned up front") | ~Jul 05 | Towers/pests/bosses/FX/tiles/maps/keeper/UI on magenta. |
+| Sproing | bg biomes, platforms, critters, powerups | — | Drive drop | 30353d49 | Jul 11 | |
+| Berry Vine · Bridgevine · Dew Snip · Nova Bloom | drop-in backgrounds | — | zips in `art-asset-lists/*.zip` (retained) | b23844b6; Bridgevine unstretch 51e64995 | Jul 11-13 | |
+| Petal Slice · Petalvex | full packs | — | zips in `art-asset-lists/*.zip` | c589726b | Jul 11 | |
+| Root Weave | Inkwood Atlas | — | zip in `art-asset-lists/` | f081d6e6 | Jul 12 | |
+| Sled Vine | Moonlit Inkwash | — | zip in `art-asset-lists/` | b2a58ceb; v2.0 art fix 1d54c6bc (9-slice, un-stretched) | Jul 12 + Jul 16 | ⛔ lesson: plates need border-image 9-slice, not background stretch. |
+| Seed Flutter → **Cosmic Cadets** | Comet Cadets cosmic reskin | — | Drive drop | 865a2beb | Jul 16 | Renamed Cosmic Cadets (slug/saves kept). |
+| Frost Watch | Midnight Vigil | 47 assets | Drive drop | 36f40aab | Jul 16 | |
+| Seed Pot | Midnight Greenhouse | 80 assets | Drive drop | 427e91f0 | Jul 16 | |
+| Silt | Terrarium Nocturne | 5 sheets | Drive drop | 7cf3cde2 | Jul 16 | Transparent-air glass vessel; sand stays procedural. |
+| Spore Drift | Inkwater Bioluminance | 6 sheets | Drive drop | a230721b | Jul 16 | |
+| Jul 12 recovery batch | 8 packs, full-object wiring | — | Drive | see memory `project_full_object_wiring_jul12` | Jul 12 | Bgs alone read as "nothing" — full-object wiring is the standard. |
+| LW items | 19 item PNGs | — | `/assets/items/` | (Apr 24) | Apr 24 | 17 catalog + lantern-path + pollen-storm. |
+| Pre-Jul-08 "skinned up front" | nectar-drop, garden-td, bramblewick, burr-blast, mahjong/Jade Garden, sprout-dice, petal-plunge, pitbike-rally | — | various | see per-game memory files | Jun-Jul | Listed in README skip section. |
+
+## In flight / awaiting drop
+
+| What | Status | Notes |
+|---|---|---|
+| ~2 packs Stephen has generated, not yet delivered | AWAITING DROP | Per Jul 13 session. Identity unknown until they land — when they do, log here FIRST, then cut+wire. |
+| Dewball — Paper Lantern Parade | LISTED (21 prompt sheets ready, c155f924) | **No sheets generated yet.** `satellites/dewball/art-drop/` contains only the README landing-spot. Biggest open art target in the studio. |
+| Generate-order queue (13 games) | LISTED | See README "Generate order" table: Glyph Forge, Picnic Panic, Sproing(v2), Budburst, Pollen Panic, Tarot Run, Tomato Man, Grubtrap, Hedgerow, Hunch, Petalvex(v2), Rootbound, BarBrawl. |
+| Jul 11 bench packs (Fence Off, Loop Warden, Mosaic Draft, Tinker Loft, Lamplighter, Tonic Drop, Mini Crossword) | LISTED | Prompt packs complete; awaiting generation. |
+
+## Loose-file registry (identified, no action needed)
+
+| File | Date | Identified as | Status |
+|---|---|---|---|
+| `file_000000004eec722f976330dda83c25cf.png` (repo root) | Jul 04 | Pit Bike Rally asset-plan sheet (waves 1-6: bike/rider, terrain, props, currency, bgs, skins) | Reference mockup for the pit-bike-rally repo (own repo + vendored satellite). Labels baked in — not a cuttable sheet. |
+| `assets/file_000000006ca471f69e0a0e0cbcaf06b1.png` | Jul 05 | Garden Guard TD master sheet | Source of deployed garden-td skin. Retained as raw. |
+| `assets/structures1.png` | Jul 07 | Burr Blast 9 material tiles | Cut + wired in ca615fff. Retained as raw. |
+| `satellites/nectar-drop/art-drop/Nectar Drop/` (25 png + docx) | Jul 09 | Nectar Drop v2.0 source | Cut + wired in ab6aeb74. Retained as raw. |
+| `pit-bike-rally.html` (repo root) | Jul 04 | Early Pit Bike Rally single-file build | Superseded by its own repo; kept as reference. |
+
+## Scrapped
+
+| What | Date | Ruling |
+|---|---|---|
+| `satellites/sprout-march/` (852-line prototype) | Jul 16 | Stephen: "wasn't good and not worth the effort to make it good." Deleted, never committed. Do not rebuild. |

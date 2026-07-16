@@ -1,5 +1,7 @@
 # Lucid Winds / Sky Wolf — Game Art Packs
 
+> **Status of any drop lives in [ART-LEDGER.md](ART-LEDGER.md)** — every delivered pack, its cut/wire/deploy state, and the loose-file registry. Log new drops there FIRST.
+
 One folder per game. Inside: **`00-art-direction.md`** (concept + 2-3 style options + my pick) then **one file per sprite sheet** — each a complete standalone prompt you paste into an image generator and make on its own.
 
 Art direction is now **per game** (no forced cozy-botanical): each ranges cozy → more polished/mature, always kid-friendly. Pick a look, generate its sheets one at a time, bring me the PNGs, I cut (magenta-key knockout) + wire.
