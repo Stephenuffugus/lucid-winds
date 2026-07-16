@@ -760,6 +760,51 @@
     else musLoadScript('/music-tracks.js?v=2026.06.24.17', withPlayer);
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // ADD TO HOME SCREEN — only for games whose page ships a
+  // <link rel="manifest"> (Three Sisters first; give a game a manifest and
+  // it gets the button for free). Dewball pattern: the button stays visible
+  // even when beforeinstallprompt never fires — tapping it then shows
+  // instructions instead of doing nothing. Skipped when embedded in the
+  // portal or already running standalone.
+  // ════════════════════════════════════════════════════════════════════
+  function initInstall(){
+    if (musEmbedded()) return;
+    if (!document.querySelector('link[rel="manifest"]')) return;
+    var isStandalone =
+      !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || !!window.navigator.standalone;
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js'); } catch (e) {} }
+    if (isStandalone) return;
+    // Labeled button above the footer — the header is already full (back,
+    // how-to, feedback, title, music, wallet) and an extra icon there
+    // squeezes the game title out entirely on phones.
+    var foot = document.querySelector('.shell-footer') || document.body;
+    if (!foot) return;
+    if (!document.getElementById('shell-install-btn-style')) {
+      var s = document.createElement('style'); s.id = 'shell-install-btn-style';
+      s.textContent =
+        '#shell-install-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;margin:6px auto 12px;padding:10px 22px;border-radius:12px;border:1px solid var(--shell-line);background:var(--shell-panel);color:var(--shell-leaf);cursor:pointer;font-size:15px;font-weight:700}'
+      + '#shell-install-btn:hover{border-color:var(--shell-leaf)}';
+      document.head.appendChild(s);
+    }
+    var b = document.createElement('button');
+    b.id = 'shell-install-btn'; b.type = 'button';
+    b.title = 'Add to Home Screen'; b.setAttribute('aria-label', 'Add to Home Screen');
+    b.innerHTML = '<span aria-hidden="true">⤓</span> Add to Home Screen';
+    foot.parentNode.insertBefore(b, foot);
+    var deferred = null;
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+    b.addEventListener('click', function () {
+      if (deferred) { deferred.prompt(); deferred = null; return; }
+      var nm = (global.LW_PLAY && LW_PLAY.name) || 'this game';
+      var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      alert(ios
+        ? 'To add ' + nm + ' to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen like an app.'
+        : 'To add ' + nm + ' to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+    });
+  }
+
   function init() {
     // Body-class signal that 11 games guard their render loops on. Must
     // wait until body exists (shell.js loads in <head>, so it doesn't at
@@ -773,6 +818,7 @@
     injectHowToButton();
     if (!musEmbedded()) { try { injectFeedbackButton(); } catch (e) {} }
     try { initMusic(); } catch (e) {}
+    try { initInstall(); } catch (e) {}
     try { wireEmbedBack(); } catch (e) {}
 
     // Initialize Sunbeam SDK (auto-loads Firebase compat from gstatic).
