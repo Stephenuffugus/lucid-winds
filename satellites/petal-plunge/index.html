@@ -123,6 +123,15 @@
   #gnomebar{position:absolute; top:calc(env(safe-area-inset-top,0) + 40px); left:50%; transform:translateX(-50%);
     width:min(320px,70vw); height:0; opacity:0; transition:opacity .3s;}
   #gnomebar.show{height:auto; opacity:1;}
+  #ctlrow{position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom,0) + 10px);
+    display:flex; gap:8px; padding:0 10px; pointer-events:none;}
+  .ctl{flex:1; min-height:48px; display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(122,179,86,0.35); border-radius:12px; background:rgba(8,10,7,0.32);
+    color:rgba(236,227,209,0.55); font-weight:800; font-size:13px; letter-spacing:2px;
+    transition:background .1s, color .1s, border-color .1s;}
+  .ctl.mid{flex:0.7; border-color:rgba(200,168,75,0.3); color:rgba(224,194,104,0.5);}
+  .ctl.on{background:rgba(122,179,86,0.3); color:#eafbd6; border-color:rgba(147,201,106,0.8);}
+  .ctl.mid.on{background:rgba(200,168,75,0.28); color:#f2e2ae; border-color:rgba(224,194,104,0.8);}
   #gnomebar .track{height:9px; background:rgba(0,0,0,.5); border:1px solid rgba(224,122,106,.4); border-radius:6px; overflow:hidden;}
   #gnomebar .fill{height:100%; background:linear-gradient(90deg,#e0c268,#e07a6a); width:100%; transition:width .12s linear;}
   #gnomebar .lb{font-size:9px; text-align:center; color:var(--bad); letter-spacing:1px; margin-bottom:2px;}
@@ -132,7 +141,7 @@
     font-size:34px; color:var(--gold); opacity:0; text-shadow:0 2px 8px #000; text-align:center; white-space:nowrap;}
 
   /* control hint */
-  #hint{position:absolute; bottom:calc(env(safe-area-inset-bottom,0) + 20px); left:0; right:0; text-align:center;
+  #hint{position:absolute; bottom:calc(env(safe-area-inset-bottom,0) + 68px); left:0; right:0; text-align:center;
     color:var(--ink-dim); font-size:12px; z-index:6; pointer-events:none; opacity:.9;}
   .fade{transition:opacity .5s;}
 
@@ -164,6 +173,14 @@
       <div style="text-align:right"><div class="hstat" style="display:inline-block"><div class="lb">PETALS</div><div class="vl gold" id="hCoins">0</div></div></div>
     </div>
     <div id="gnomebar"><div class="lb" id="gnomeLb">THE GNOME</div><div class="track"><div class="fill" id="gnomeFill"></div></div></div>
+    <!-- Visible steering affordances (Stephen 2026-07-16: "took me forever to
+         figure out the screen halves"). Purely visual — the canvas zones do
+         the input; these light up with the active zone. -->
+    <div id="ctlrow">
+      <div class="ctl" id="ctlL">◀ LEFT</div>
+      <div class="ctl mid" id="ctlM">TUCK</div>
+      <div class="ctl" id="ctlR">RIGHT ▶</div>
+    </div>
     <button class="btn sm ghost" id="pauseBtn">❚❚</button>
     <div id="comboWrap"><span id="combo"></span></div>
     <div class="toast" id="toast"></div>
@@ -203,7 +220,7 @@ var TAU=Math.PI*2;
 var CFG={
   baseSpeed: 168,        // world units/sec at heading straight-down, biome 0
   speedRamp: 0.020,      // +fraction of baseSpeed per 1000 depth
-  speedMax: 2.35,        // cap as a multiple of baseSpeed
+  speedMax: 2.6,         // cap as a multiple of baseSpeed (raised 2026-07-16 — the hill keeps getting faster)
   maxAng: 64*Math.PI/180,// full-sideways heading angle (was 78° — too steep, stalled descent + felt mushy)
   turnRate: 5.2,         // heading units eased per sec while holding a side
   tuckBoost: 1.28,       // downhill speed mult while tucking
@@ -213,7 +230,7 @@ var CFG={
   playerR: 16,           // collision radius (world units)
   jumpBase: 0.62,        // base airtime seconds off a ramp
   jumpSpeedK: 0.0016,    // extra airtime per unit speed
-  gnomeStart: 2000,      // depth the Gnome wakes in Free/Daily
+  gnomeStart: 3200,      // depth the Gnome wakes in Free/Daily (Jessie 2026-07-16: he came out way too early)
   gnomeBaseK: 0.94,      // gnome speed as fraction of clean straight speed (margin so a followed lane still outruns it)
   gnomeGapStart: 640,    // gap (world units) when the Gnome wakes
   gnomeGapMax: 940,      // rubber-band ceiling
@@ -496,13 +513,13 @@ function worldToScreenY(wy){ return (wy - cam.y); }
    MODES
    ════════════════════════════════════════════════════════════════════════ */
 var MODES={
-  free:      {name:"Free Plunge", icon:"⛷️", metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.030, gate:0.010, seeded:false,
-              desc:"Endless. Go as deep as you dare — the Gnome wakes at 2000."},
-  slalom:    {name:"Slalom",      icon:"🚩", metric:"time",  len:1600,     gnome:false, density:0.55,ramp:0.010, gate:0.070, seeded:false,
-              desc:"Thread every dewdrop gate down a set course. Best time wins."},
+  free:      {name:"Free Plunge", icon:"⛷️", metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.010, seeded:false,
+              desc:"Endless. Go as deep as you dare — the Gnome wakes at 3200."},
+  slalom:    {name:"Slalom",      icon:"🚩", metric:"time",  len:1600,     gnome:false, density:0.55,ramp:0.010, gate:0.055, seeded:false,
+              desc:"Thread every bamboo gate down a set course. Best time wins."},
   freestyle: {name:"Freestyle",   icon:"✨", metric:"style", len:1400,     gnome:false, density:0.45,ramp:0.075, gate:0.006, seeded:false,
               desc:"A ramp park. Chain tricks for the biggest style score."},
-  daily:     {name:"Daily Descent",icon:"📅",metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.030, gate:0.014, seeded:true,
+  daily:     {name:"Daily Descent",icon:"📅",metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.014, seeded:true,
               desc:"One seeded slope for everyone, every day. Chase the record."}
 };
 
@@ -526,7 +543,7 @@ function startRun(mode){
     coins:0, style:0, gates:0, gateStreak:0, tricks:0, crashes:0,
     combo:0, comboT:0, bestCombo:0,
     obs:[], pk:[], gt:[], part:[], floats:[], laneHist:[],
-    genY:0, laneC:0, laneTarget:0, laneW:0,
+    genY:0, laneC:0, laneTarget:0, laneW:0, pinchLeft:0,
     rng:mulberry32(seed), seed:seed,
     gnomeActive:false, gnomeGap:CFG.gnomeGapMax, gnomeEscapes:0, gnomeWarned:false, gnomeSpeedK:CFG.gnomeBaseK,
     scoreMult:1, biomeIdx:0, tHud:0,
@@ -555,17 +572,27 @@ function generateUntil(targetY){
     var y0=S.genY, y1=S.genY+SEG;
     // stop generating obstacles past a finite course finish line (leave a clean run-out)
     var pastFinish = (mc.len!==Infinity && y0 > mc.len);
-    // drift the safe lane
-    var laneRange=hw*0.62;
+    // drift the safe lane — cadence quickens with depth so straight-lining
+    // stops working (Stephen 2026-07-16: "I can just go straight down the
+    // middle and go forever"). The slope bound stays 0.22 so the lane is
+    // always followable — the WEAVE is mandatory, the crash is not.
+    var laneRange=hw*0.68;
     if(S.laneTarget===0 && S.genY===0){ S.laneC=0; S.laneTarget=0; }
-    // re-pick a target every ~4 segments
-    if(((S.genY/SEG)|0)%4===0){ S.laneTarget = (S.rng()*2-1)*laneRange; }
+    var midY=(y0+y1)/2;
+    var retargetEvery = midY>2600?2 : midY>1000?3 : 4;
+    if(((S.genY/SEG)|0)%retargetEvery===0){ S.laneTarget = (S.rng()*2-1)*laneRange; }
     var laneStep = clamp((S.laneTarget - S.laneC), -SEG*0.22, SEG*0.22); // bounded slope: following it stays above gnome speed (cos(atan .22)=.976 > gnomeBaseK)
     S.laneC = clamp(S.laneC + laneStep, -laneRange, laneRange);
-    var midY=(y0+y1)/2;
     var b=biomeAt(midY);
-    var laneHalf=S.laneW/2;
-    S.laneHist.push({y0:y0,y1:y1,c:S.laneC,w:S.laneW});
+    // lane width: gradual depth taper + occasional PINCH stretches ("little
+    // skinny spots" — Stephen). Pinches squeeze width, never the slope, so
+    // passability holds; obstacles crowd in against the narrowed corridor.
+    var wMul = 1 - Math.min(0.22, midY/18000);
+    if(S.pinchLeft>0){ S.pinchLeft-=SEG; wMul*=0.62; }
+    else if(midY>700 && S.rng()<0.045){ S.pinchLeft=140+S.rng()*180; wMul*=0.62; }
+    var laneWNow = Math.max(CFG.playerR*3.1, S.laneW*wMul);
+    var laneHalf=laneWNow/2;
+    S.laneHist.push({y0:y0,y1:y1,c:S.laneC,w:laneWNow});
 
     if(!pastFinish){
       // obstacles
@@ -586,19 +613,26 @@ function generateUntil(targetY){
       // ramps (launch pads) — SPACED + OFF the corridor so they're an optional trick line, not clutter.
       // (was rng()<mc.ramp*SEG ≈ 1.3 for Free → a ramp every segment, often IN the lane → forced launches.)
       if(mc.ramp>0){
-        var rampGap = Math.max(260, Math.min(1400, 12/mc.ramp));   // ~400 Free, ~260 Freestyle, ~1200 Slalom
+        var rampGap = Math.max(260, Math.min(1400, 12/mc.ramp));   // ~670 Free, ~260 Freestyle, ~1200 Slalom
         if(y0 - (S.lastRampY==null?-99999:S.lastRampY) > rampGap*(0.8+S.rng()*0.5)){
           var side=(S.rng()<0.5?-1:1);
-          var rx=clamp(S.laneC + side*(laneHalf+34+S.rng()*40), -hw+30, hw-30);  // just outside the lane — swing out to catch air
+          // INSIDE the corridor near its edge (Jessie 2026-07-16: ramps sat
+          // outside the poles, so going for one meant leaving the line).
+          // Edge placement keeps them optional — center-liners glide past.
+          var rx=clamp(S.laneC + side*Math.max(20, laneHalf-30-S.rng()*16), -hw+30, hw-30);
           S.obs.push({x:rx,y:y0+SEG*0.5,r:26,kind:"ramp",type:"ramp",spin:0});
           S.lastRampY=y0;
         }
       }
-      // gates
+      // gates — wander off the lane centre and NARROW with depth (Jessie:
+      // "pretty much in the center… should be out more"; Stephen: "flags
+      // narrow from time to time… skinny spots").
       if(S.rng() < mc.gate*SEG){
-        var gh=Math.max(30, laneHalf*0.9);
+        var goff=(S.rng()*2-1)*laneHalf*0.55;
+        var gh=Math.max(26, laneHalf*(0.9 - Math.min(0.3, midY/10000)));
+        if(S.rng()<0.22) gh=Math.max(24, gh*0.68);   // occasional squeeze gate
         S.gatesTotal++;
-        S.gt.push({x:S.laneC,y:y0+SEG*0.5,half:gh,got:false,missed:false});
+        S.gt.push({x:clamp(S.laneC+goff,-hw+40,hw-40),y:y0+SEG*0.5,half:gh,got:false,missed:false});
       }
       // coins — a little string along the lane
       if(S.rng() < 0.5){
@@ -639,7 +673,7 @@ function tooClose(x,y,d){
 /* ══════════════════════════════════════════════════════════════════════════
    UPDATE
    ════════════════════════════════════════════════════════════════════════ */
-function speedScale(){ return Math.min(CFG.speedMax, 1 + S.depth/4500); }
+function speedScale(){ return Math.min(CFG.speedMax, 1 + S.depth/3800); }
 function cleanSpeed(){ var b=biomeAt(S.depth); return CFG.baseSpeed*b.speed*speedScale(); }
 
 function update(dt){
@@ -717,7 +751,11 @@ function landing(){
     S.style+=pts; S.tricks+=S.trickCount; P.stats.tricks+=S.trickCount;
     addCombo(1);
     var word=S.trickCount>=4?"HUGE!":S.trickCount>=2?"SWEET!":"NICE!";
-    floater(word+" +"+pts, "#c8a84b", true);
+    // ramps are rarer now, so landing one PAYS (Stephen: fewer ramps, but
+    // make people want to go for them)
+    var trickCoins=2*S.trickCount;
+    S.coins+=trickCoins;
+    floater(word+" +"+pts+"  🪙+"+trickCoins, "#c8a84b", true);
     if(S.style>=5000) achieve("style5k");
     if(S.style>P.stats.bestStyleRun){P.stats.bestStyleRun=S.style;}
   }
@@ -866,6 +904,10 @@ function drawBackground(depth){
   if(bgIm){
     var s2=Math.max(VW/bgIm.width, VH/bgIm.height), dw=bgIm.width*s2, dh=bgIm.height*s2;
     g.drawImage(bgIm,(VW-dw)/2,(VH-dh)/2,dw,dh);   // cover-fit static backdrop; motion comes from the scrolling grooves/flora/obstacles over it
+    // Calm the painted art so the FOREGROUND reads as the moving layer
+    // (Jessie 2026-07-16: backgrounds too busy — the original's slope is
+    // plain white so the skier reads as moving, not the world).
+    g.fillStyle="rgba(10,14,8,0.34)"; g.fillRect(0,0,VW,VH);
   } else {
     if(skyId&&skyId!=="auto"){ sky=ART.sky(skyId)||b.sky; } else { sky=b.sky; }
     var gr=g.createLinearGradient(0,0,0,VH);
@@ -875,7 +917,7 @@ function drawBackground(depth){
   }
   // corduroy grooves scrolling with camera (lighter over a painted ground)
   var scroll=(S?cam.y:menuScroll);
-  g.strokeStyle="rgba(0,0,0,"+(bgIm?0.04:0.05)+")"; g.lineWidth=2;
+  g.strokeStyle="rgba(0,0,0,"+(bgIm?0.09:0.05)+")"; g.lineWidth=2;
   var spacing=46, off=((scroll*0.9)%spacing+spacing)%spacing;
   for(var yy=VH*0.16-off; yy<VH; yy+=spacing){ g.beginPath(); g.moveTo(0,yy); g.lineTo(VW,yy+10); g.stroke(); }
   // subtle biome lighter band overlay
@@ -938,8 +980,18 @@ function drawGate(gt){
   drawFlag(lx,sy,col); drawFlag(rx,sy,col);
   if(!gt.got&&!gt.missed){ g.strokeStyle="rgba(230,201,95,0.25)"; g.lineWidth=2; g.setLineDash([5,7]); g.beginPath(); g.moveTo(lx,sy); g.lineTo(rx,sy); g.stroke(); g.setLineDash([]); }
 }
-function drawFlag(x,y,col){ shadow(x,y+4,7); g.strokeStyle="#6b5a3a"; g.lineWidth=3; g.beginPath(); g.moveTo(x,y+6); g.lineTo(x,y-22); g.stroke();
-  g.fillStyle=col; g.beginPath(); g.moveTo(x,y-22); g.lineTo(x+14,y-16); g.lineTo(x,y-10); g.fill(); }
+/* Bamboo stalk gate markers (Jessie 2026-07-16: "he's not skiing" — slalom
+   poles read wrong; tall plants keep the thread-between-them read). The
+   status color lives in the leaf so got/missed still telegraphs. */
+function drawFlag(x,y,col){ shadow(x,y+4,7);
+  var h=34, segH=h/3;
+  g.strokeStyle="#4c7a3a"; g.lineWidth=4; g.lineCap="round";
+  g.beginPath(); g.moveTo(x,y+6); g.lineTo(x,y+6-h); g.stroke();
+  g.strokeStyle="#69a04e"; g.lineWidth=1.5;
+  for(var s=1;s<3;s++){ var ny=y+6-segH*s; g.beginPath(); g.moveTo(x-2.5,ny); g.lineTo(x+2.5,ny); g.stroke(); }
+  g.fillStyle=col;
+  g.beginPath(); g.moveTo(x,y+6-h); g.quadraticCurveTo(x+11,y+2-h,x+15,y+8-h); g.quadraticCurveTo(x+7,y+9-h,x,y+6-h+3); g.fill();
+  g.beginPath(); g.moveTo(x,y+6-h+9); g.quadraticCurveTo(x-9,y+6-h+5,x-12,y+6-h+11); g.quadraticCurveTo(x-5,y+6-h+12,x,y+6-h+11); g.fill(); }
 function drawPickup(p){
   if(p.got) return; var sx=VW/2+p.x, sy=p.y-cam.y; if(sy<-20||sy>VH+20) return;
   var bob=Math.sin((S.tHud*4)+(p.x*0.1))*2;
@@ -1083,12 +1135,20 @@ document.addEventListener("visibilitychange",function(){ if(document.hidden&&S&&
    ════════════════════════════════════════════════════════════════════════ */
 var pointers={};
 function zoneOf(x){ if(x<VW*0.34)return "L"; if(x>VW*0.66)return "R"; return "M"; }
+function paintCtls(){
+  var L=$("ctlL"),M=$("ctlM"),R=$("ctlR");
+  if(!L)return;
+  var st=S?S.steer:0, tk=S?S.tuck:false;
+  L.className="ctl"+(st===-1?" on":""); R.className="ctl"+(st===1?" on":"");
+  M.className="ctl mid"+(tk?" on":"");
+}
 function recompute(){
   if(!S){ return; }
   var l=false,r=false,m=false;
   for(var id in pointers){ var z=pointers[id]; if(z==="L")l=true; else if(z==="R")r=true; else m=true; }
   S.steer = (l&&!r)?-1:(r&&!l)?1:0;
   S.tuck = m && !l && !r;
+  paintCtls();
 }
 function onDown(e){
   if(!S||S.paused||S.over) return;
@@ -1127,6 +1187,7 @@ window.addEventListener("keydown",function(e){
   else if(k==="arrowright"||k==="d"){ S.steer=1; }
   else if(k==="arrowdown"||k==="s"){ S.tuck=true; }
   else if(k===" "||k==="arrowup"||k==="w"){ if(S.airborne)doTrick(); e.preventDefault(); }
+  paintCtls();
 });
 window.addEventListener("keyup",function(e){ var k=e.key.toLowerCase(); keys[k]=0;
   if(!S)return;
@@ -1136,6 +1197,7 @@ window.addEventListener("keyup",function(e){ var k=e.key.toLowerCase(); keys[k]=
   // keyboard steer combined
   if((keys["arrowleft"]||keys["a"])&&!(keys["arrowright"]||keys["d"]))S.steer=-1;
   else if((keys["arrowright"]||keys["d"])&&!(keys["arrowleft"]||keys["a"]))S.steer=1;
+  paintCtls();
 });
 
 /* ══════════════════════════════════════════════════════════════════════════
