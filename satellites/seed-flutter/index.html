@@ -27,6 +27,13 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
+/* Comet Cadets sky backdrops behind each DOM panel (ID beats .screen gradient) */
+#s-title{ background:linear-gradient(180deg,rgba(8,11,14,0.28),rgba(8,11,14,0.72)), url('assets/backgrounds/bg_title.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
+#s-go{ background:linear-gradient(180deg,rgba(8,11,14,0.34),rgba(8,11,14,0.80)), url('assets/backgrounds/bg_results.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
+#s-how,#s-set,#s-ward,#s-grove{ background:linear-gradient(180deg,rgba(8,11,14,0.58),rgba(8,11,14,0.88)), url('assets/backgrounds/bg_play.jpg?v=cc1') center/cover no-repeat #0b0f0b; }
+.btn .micon{ width:26px; height:26px; object-fit:contain; margin-right:3px; vertical-align:middle; filter:drop-shadow(0 1px 2px #0008); }
+.btn.sm .micon{ width:22px; height:22px; }
+.rstar{ width:40px; height:40px; object-fit:contain; vertical-align:middle; margin:0 3px; }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:52px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #3a2c10, 0 0 26px #c8a84b44; letter-spacing:1px}
@@ -76,22 +83,22 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Seed Flutter</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Tap to lift a dandelion seed on the night wind. Thread the reed gaps, and thread the <b class="hl">center</b> for a Perfect that blooms a flower on the stem. Build a <b class="hl">Bloomstreak</b> and grow a garden as you drift through the seasons.</div>
+    <div class="ribbon">Tap to lift a <b class="hl">Comet Cadet</b> on the night wind. Thread the star-spires, and thread the <b class="hl">center Star</b> for a Perfect that ignites a keepsake. Build a <b class="hl">Bloomstreak</b> and fill your Sky Map as you drift through four changing skies.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-drift">🪶&nbsp; Endless Drift</button>
+      <button class="btn primary" id="b-drift"><img class="micon" src="assets/ui/icon_drift.png?v=cc1" onerror="this.style.display='none'" alt=""> Endless Drift</button>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily Gust</button>
-        <button class="btn sm" id="b-gaunt">🏵 Gauntlet</button>
+        <button class="btn sm" id="b-daily"><img class="micon" src="assets/ui/icon_daily.png?v=cc1" onerror="this.style.display='none'" alt=""> Daily Gust</button>
+        <button class="btn sm" id="b-gaunt"><img class="micon" src="assets/ui/icon_gauntlet.png?v=cc1" onerror="this.style.display='none'" alt=""> Gauntlet</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-zen">🍃 Zen Meadow</button>
-        <button class="btn sm" id="b-grove">🌼 Grove</button>
+        <button class="btn sm" id="b-zen"><img class="micon" src="assets/ui/icon_zen.png?v=cc1" onerror="this.style.display='none'" alt=""> Zen Drift</button>
+        <button class="btn sm" id="b-grove"><img class="micon" src="assets/ui/icon_skymap.png?v=cc1" onerror="this.style.display='none'" alt=""> Sky Map</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
+        <button class="btn sm" id="b-ward"><img class="micon" src="assets/ui/icon_wardrobe.png?v=cc1" onerror="this.style.display='none'" alt=""> Wardrobe</button>
         <button class="btn sm" id="b-how">How</button>
-        <button class="btn sm" id="b-set">⚙</button>
+        <button class="btn sm" id="b-set"><img class="micon" src="assets/ui/icon_gear.png?v=cc1" onerror="this.style.display='none'" alt=""></button>
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -100,11 +107,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">👆</div><div><b>Tap anywhere</b> (or press Space) to flap. Each tap lifts the seed a little; let go and it drifts down.</div></div>
-    <div class="helprow"><div class="hi">🌿</div><div><b>Fly through the gap</b> between the reeds. The seed's soft body is smaller than it looks, so near-misses live.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>Thread the <b class="hl">center</b> of a gap for a <b>Perfect</b>: the bud blooms, time slows, and your <b class="hl">Bloomstreak</b> climbs.</div></div>
-    <div class="helprow"><div class="hi">🍂</div><div>The meadow drifts through the <b>four seasons</b> as you go, and the wind picks up. Reading the gap stays a live skill.</div></div>
-    <div class="helprow"><div class="hi">🌼</div><div>Your best streak grows keepsake flowers into your <b class="hl">Grove</b>, and pays sunbeams. A soft landing, never a hard crash.</div></div>
+    <div class="helprow"><div class="hi">👆</div><div><b>Tap anywhere</b> (or press Space) to flap. Each tap lifts the cadet a little; let go and it drifts down.</div></div>
+    <div class="helprow"><div class="hi">✦</div><div><b>Fly through the gap</b> between the star-spires. The cadet's glowing core is smaller than it looks, so near-misses live.</div></div>
+    <div class="helprow"><div class="hi">★</div><div>Thread the <b class="hl">center Star</b> of a gap for a <b>Perfect</b>: it ignites, time slows, and your <b class="hl">Bloomstreak</b> climbs.</div></div>
+    <div class="helprow"><div class="hi">🌌</div><div>The sky drifts through <b>four phases</b> as you go, and the wind picks up. Reading the gap stays a live skill.</div></div>
+    <div class="helprow"><div class="hi">🌟</div><div>Your best streak grows keepsake stars onto your <b class="hl">Sky Map</b>, and pays sunbeams. A soft landing, never a hard crash.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -124,7 +131,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-ward"><div class="pad">
     <h2 class="sc-h">Wardrobe</h2>
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by playing. Tap to equip.</div>
-    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Seeds</div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Comets</div>
     <div class="wardwrap" id="ward-seeds"></div>
     <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Trails</div>
     <div class="wardwrap" id="ward-trails"></div>
@@ -136,8 +143,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <!-- GROVE -->
   <div class="screen" id="s-grove"><div class="pad">
-    <h2 class="sc-h">Your Grove</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="grove-sub">Perfect streaks grow keepsake flowers here.</div>
+    <h2 class="sc-h">Your Sky Map</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="grove-sub">Perfect streaks grow keepsake stars here.</div>
     <div class="grovewrap" id="grove-wrap"></div>
     <div style="height:18px"></div>
     <button class="btn ghost sm" id="grove-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
@@ -147,17 +154,17 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
     <div class="go-big" id="go-title">Drifted down</div>
-    <div class="go-stars" id="go-stars">✿✿✿</div>
+    <div class="go-stars" id="go-stars"></div>
     <div class="go-lab" id="go-lab">gaps threaded</div>
     <div style="font-size:34px;font-weight:800;color:var(--cream)" id="go-score">0</div>
     <div class="pill" id="go-best">best 0</div>
-    <div style="margin-top:8px;font-size:14px;color:var(--sage)" id="go-bloom">Best Bloomstreak 0 · grew 0 flowers</div>
+    <div style="margin-top:8px;font-size:14px;color:var(--sage)" id="go-bloom">Best Bloomstreak 0 · grew 0 stars</div>
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="go-retry">↻ Again</button>
       <div class="row">
-        <button class="btn sm" id="go-grove">🌼 Grove</button>
+        <button class="btn sm" id="go-grove">🌟 Sky Map</button>
         <button class="btn sm" id="go-home">◄ Menu</button>
         <button class="btn sm" id="go-share">↗ Share</button>
       </div>
@@ -171,7 +178,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.0';
+var BUILD='v1.1 · Comet Cadets';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -179,6 +186,70 @@ var SEED_X=178, HIT_R=11, VIS_R=16;
 var GRAV=1500, FLAP=-432;
 var GROUND=VH-64;
 var STEM_W=66, INNER=44;
+
+/* ---------- Comet Cadets art assets (gated behind load; procedural fallbacks kept) ---------- */
+var ART_V='cc1';
+function _sfImg(src){ var im=new Image(); try{ im.src=src+'?v='+ART_V; }catch(e){} return im; }
+function _sfReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+var _SPR={};
+function _spr(path){ if(!_SPR[path])_SPR[path]=_sfImg('assets/'+path+'.png'); return _SPR[path]; }
+var _BG={};
+function _bg(name){ if(!_BG[name])_BG[name]=_sfImg('assets/backgrounds/'+name+'.jpg'); return _BG[name]; }
+['sprites/comet_cadet','sprites/comet_cadet_flap','sprites/comet_cadet_settle','sprites/spire_segment',
+ 'sprites/spire_cap_gap','sprites/spire_base','sprites/boss_spire_segment','sprites/boss_spire_cap',
+ 'sprites/thread_star','sprites/thread_star_boss','sprites/star_bloom','sprites/moon','sprites/ridge_far','sprites/ridge_near',
+ 'sprites/horizon_floor','sprites/twinkle_star','fx/vignette_edge','fx/aurora_ribbon','fx/glow_soft',
+ 'fx/star_burst_perfect','fx/flap_puff','fx/soft_land_puff','fx/recovery_puff','fx/bloom_flash',
+ 'fx/slowmo_glow','fx/meteor_dust','fx/snow_glint','fx/star_shower','fx/comet_wisp','fx/streak_star_pop'].forEach(_spr);
+['cosmetics/comet_sparkler','cosmetics/comet_amber','cosmetics/comet_rosenova','cosmetics/comet_frost',
+ 'cosmetics/tail_stardust','cosmetics/tail_rosefall','cosmetics/tail_emberspark','cosmetics/tail_prism',
+ 'cosmetics/buddy_moonmoth','cosmetics/buddy_sparklet','cosmetics/buddy_starpup',
+ 'cosmetics/star_dawnling','cosmetics/star_goldeye','cosmetics/star_moonbell','cosmetics/star_ember',
+ 'cosmetics/star_violetnova','cosmetics/star_frostcrystal','cosmetics/star_twinsprite','cosmetics/star_cometwisp',
+ 'cosmetics/star_prismnova'].forEach(_spr);
+['bg_play','bg_title','bg_results','bg_phase_rosedawn','bg_phase_goldveil','bg_phase_meteor','bg_phase_frostnight'].forEach(_bg);
+/* blit an image centered at (cx,cy) scaled to target height h, aspect-preserved, optional rotation */
+function _blit(im, cx, cy, h, rot){ if(!_sfReady(im))return false; var s=h/im.naturalHeight, w=im.naturalWidth*s;
+  ctx.save(); ctx.translate(cx,cy); if(rot)ctx.rotate(rot); try{ ctx.drawImage(im,-w/2,-h/2,w,h); }catch(e){} ctx.restore(); return true; }
+
+/* keepsake-star roster (drawFlower reskin) + light rarity weighting keyed off the bloom seed */
+var _STARS=['star_dawnling','star_goldeye','star_moonbell','star_ember','star_violetnova',
+  'star_frostcrystal','star_twinsprite','star_cometwisp','star_prismnova'];
+function _starIdx(seed){ var r=((seed>>>0)%1000)/1000;
+  if(r<0.006)return 8;   /* prismnova capstone */  if(r<0.10)return 7;  /* cometwisp */
+  if(r<0.20)return 6;    /* twinsprite */          if(r<0.34)return 5;  /* frostcrystal */
+  if(r<0.48)return 4;    /* violetnova */          if(r<0.62)return 3;  /* ember */
+  if(r<0.74)return 2;    /* moonbell */            if(r<0.87)return 1;  /* goldeye */
+  return 0; }            /* dawnling */
+
+/* one-shot sprite FX bursts (Perfect pop, soft-land, recovery, star-shower) */
+function spawnBurst(type,x,y,dur,h){ if(!G)return; if(!G.bursts)G.bursts=[]; G.bursts.push({sp:type,x:x,y:y,t:0,dur:dur||0.7,h:h||64,vx:(G.stems&&G.phase==='play'?-scrollSpeed():0)}); if(G.bursts.length>30)G.bursts.shift(); }
+function stepBursts(dt){ if(!G||!G.bursts)return; for(var i=G.bursts.length-1;i>=0;i--){ var b=G.bursts[i]; b.t+=dt; b.x+=(b.vx||0)*dt; if(b.t>=b.dur)G.bursts.splice(i,1); } }
+function drawBursts(){ if(!G||!G.bursts)return; for(var i=0;i<G.bursts.length;i++){ var b=G.bursts[i]; var im=_spr(b.sp);
+  var f=b.t/b.dur, a=(f<0.25?f/0.25:1-(f-0.25)/0.75); if(a<0)a=0; var sc=0.6+f*0.8;
+  if(_sfReady(im)){ ctx.save(); ctx.globalAlpha=Math.max(0,a); ctx.globalCompositeOperation='lighter'; _blit(im,b.x,b.y,b.h*sc); ctx.restore(); } } }
+
+/* parallax star-spire ridges (art) — returns false to let procedural hills run */
+function drawRidges(){ var rf=_spr('sprites/ridge_far'), rn=_spr('sprites/ridge_near');
+  if(!_sfReady(rf)&&!_sfReady(rn))return false;
+  function band(im,h,y,off,al){ if(!_sfReady(im))return; var w=im.naturalWidth*(h/im.naturalHeight); if(w<120)w=VW*0.8;
+    var x=-(((off%w)+w)%w); ctx.save(); ctx.globalAlpha=al; for(var px=x-w; px<VW+w; px+=w){ try{ ctx.drawImage(im,px,y,w,h); }catch(e){} } ctx.restore(); }
+  band(rf, 64, GROUND-52, G.t*8, 0.85);
+  band(rn, 80, GROUND-40, G.t*16, 0.95);
+  return true; }
+
+/* twinkle-star starfield (art) else firefly dots */
+function drawStarfield(){ var tw=_spr('sprites/twinkle_star');
+  if(_sfReady(tw)){ for(var a=0;a<14;a++){ var fx=(a*137+40 - G.t*6)%VW; if(fx<0)fx+=VW; var fy=(a*97+70)%560;
+    var al=0.20+0.35*Math.sin(G.t*1.3+a); if(al<0.04)al=0.04; var sz=7+3*Math.sin(a*1.7);
+    ctx.save(); ctx.globalAlpha=al; try{ ctx.drawImage(tw,fx-sz/2,fy-sz/2,sz,sz); }catch(e){} ctx.restore(); } return; }
+  for(var b=0;b<9;b++){ var gx=(b*97+40 - G.t*10)%VW; if(gx<0)gx+=VW; var gy=(b*133+120)%600;
+    ctx.globalAlpha=0.10+0.10*Math.sin(G.t*1.4+b); ctx.fillStyle='#d9e6b0'; ctx.beginPath(); ctx.arc(gx,gy,1.7,0,6.2832); ctx.fill(); } ctx.globalAlpha=1; }
+
+/* vertical star-spire body (stretched) + gap-facing crystal cap */
+function _tileSpire(im,x,y,h,w){ if(h<=0||!_sfReady(im))return false; try{ ctx.drawImage(im, x-w/2, y, w, h); }catch(e){} return true; }
+function _capSpire(im,x,gapY,w,flipUp){ if(!_sfReady(im))return; var cw=w*1.06, ch=im.naturalHeight*(cw/im.naturalWidth);
+  ctx.save(); ctx.translate(x, gapY); if(flipUp)ctx.scale(1,-1); try{ ctx.drawImage(im, -cw/2, -ch, cw, ch); }catch(e){} ctx.restore(); }
 
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
@@ -201,22 +272,22 @@ function save(){ try{ LS.set('seedflutter_save', JSON.stringify(PROG)); }catch(e
 
 /* cosmetics (no lootbox, KNOWN thresholds) */
 var SEEDS=[
-  {id:0, nm:'Dandelion', need:0, col:'#e8dcc8', puff:'#c8a84b', desc:'Starter'},
-  {id:1, nm:'Amber Down', need:40, kind:'dist', col:'#f0d79a', puff:'#e0a83a', desc:'Reach 40'},
-  {id:2, nm:'Rose Thistle', need:80, kind:'dist', col:'#f2c6d2', puff:'#e58fa0', desc:'Reach 80'},
-  {id:3, nm:'Frost Pappus', need:20, kind:'grew', col:'#cfe6f2', puff:'#8fc3ea', desc:'Grow 20 flowers'}
+  {id:0, nm:'Sparkler', need:0, col:'#e8dcc8', puff:'#c8a84b', sp:'cosmetics/comet_sparkler', desc:'Starter'},
+  {id:1, nm:'Amber Comet', need:40, kind:'dist', col:'#f0d79a', puff:'#e0a83a', sp:'cosmetics/comet_amber', desc:'Reach 40'},
+  {id:2, nm:'Rose Nova', need:80, kind:'dist', col:'#f2c6d2', puff:'#e58fa0', sp:'cosmetics/comet_rosenova', desc:'Reach 80'},
+  {id:3, nm:'Frost Comet', need:20, kind:'grew', col:'#cfe6f2', puff:'#8fc3ea', sp:'cosmetics/comet_frost', desc:'Grow 20 keepsakes'}
 ];
 var TRAILS=[
-  {id:0, nm:'Fluff', need:0, col:'#e8dcc8', desc:'Starter'},
-  {id:1, nm:'Petalfall', need:12, kind:'dist', col:'#e58fa0', desc:'Reach 12'},
-  {id:2, nm:'Fireflies', need:5, kind:'grew', col:'#d9c25a', desc:'Grow 5 flowers'},
-  {id:3, nm:'Prism Dew', need:3, kind:'streak', col:'#bfe0f2', desc:'3-day streak'}
+  {id:0, nm:'Stardust', need:0, col:'#e8dcc8', sp:'cosmetics/tail_stardust', desc:'Starter'},
+  {id:1, nm:'Rosefall', need:12, kind:'dist', col:'#e58fa0', sp:'cosmetics/tail_rosefall', desc:'Reach 12'},
+  {id:2, nm:'Emberspark', need:5, kind:'grew', col:'#d9c25a', sp:'cosmetics/tail_emberspark', desc:'Grow 5 keepsakes'},
+  {id:3, nm:'Prism Tail', need:3, kind:'streak', col:'#bfe0f2', sp:'cosmetics/tail_prism', desc:'3-day streak'}
 ];
 var COMPS=[
   {id:0, nm:'None', need:0, glyph:'', pas:'', desc:'No companion'},
-  {id:1, nm:'Moth', need:25, kind:'dist', glyph:'🦋', pas:'wider Perfect band', desc:'Reach 25'},
-  {id:2, nm:'Firefly', need:10, kind:'grew', glyph:'✨', pas:'lights the haze', desc:'Grow 10 flowers'},
-  {id:3, nm:'Koi', need:60, kind:'dist', glyph:'🐟', pas:'one soft recovery', desc:'Reach 60'}
+  {id:1, nm:'Moon-Moth', need:25, kind:'dist', glyph:'🦋', sp:'cosmetics/buddy_moonmoth', pas:'wider Perfect band', desc:'Reach 25'},
+  {id:2, nm:'Sparklet', need:10, kind:'grew', glyph:'✨', sp:'cosmetics/buddy_sparklet', pas:'lights the haze', desc:'Grow 10 keepsakes'},
+  {id:3, nm:'Star-Pup', need:60, kind:'dist', glyph:'🐺', sp:'cosmetics/buddy_starpup', pas:'one soft recovery', desc:'Reach 60'}
 ];
 function metric(kind){ return kind==='grew'?(PROG.grewTotal||0):(kind==='streak'?(PROG.streak||0):(PROG.bestDist||0)); }
 function ownedC(arr,it){ if(it.need===0)return true; if(PROG.owned[arr+it.id])return true; return metric(it.kind)>=it.need; }
@@ -253,10 +324,10 @@ window.addEventListener('resize',fit); fit();
 
 /* ---------- seasons ---------- */
 var SEASONS=[
-  {nm:'Spring', tint:'#E8A0BF', bg:['#141826','#0d1018'], grass:'#6f9a52', haze:0},
-  {nm:'Summer', tint:'#D4A843', bg:['#16220f','#0c130a'], grass:'#7ab356', haze:0},
-  {nm:'Autumn', tint:'#D4842A', bg:['#1a140c','#0d0a06'], grass:'#8a6a3a', haze:0.10},
-  {nm:'Winter', tint:'#A0C4E8', bg:['#0f1622','#080b12'], grass:'#7f93a8', haze:0.22}
+  {nm:'Rosedawn',   tint:'#E8A0BF', bg:['#141826','#0d1018'], grass:'#6f9a52', haze:0,    phase:'bg_phase_rosedawn'},
+  {nm:'Goldveil',   tint:'#D4A843', bg:['#16220f','#0c130a'], grass:'#7ab356', haze:0,    phase:'bg_phase_goldveil'},
+  {nm:'Meteor',     tint:'#D4842A', bg:['#1a140c','#0d0a06'], grass:'#8a6a3a', haze:0.10, phase:'bg_phase_meteor'},
+  {nm:'Frostnight', tint:'#A0C4E8', bg:['#0f1622','#080b12'], grass:'#7f93a8', haze:0.22, phase:'bg_phase_frostnight'}
 ];
 function lerpC(a,b,t){ var an=parseInt(a.slice(1),16), bn=parseInt(b.slice(1),16);
   var ar=(an>>16)&255,ag=(an>>8)&255,ab=an&255, br=(bn>>16)&255,bg=(bn>>8)&255,bb=bn&255;
@@ -275,9 +346,9 @@ function startGame(mode){
     y:VH*0.42, vy:0, ang:0, started:false,
     stems:[], gaps:0, score:0, combo:0, bestCombo:0, perfects:0,
     t:0, real:0, slow:0, phase:'play', dead:false, clipT:0, deathT:0, sproutX:0,
-    parts:[], trail:[], flowers:[], hazeFx:0, windPh:Math.random()*6.28,
+    parts:[], trail:[], flowers:[], bursts:[], hazeFx:0, windPh:Math.random()*6.28,
     leg:0, legGap:0, boss:false, bossPassed:0, recover:(curComp().id===3?1:0),
-    grew:0, sunAmt:0 };
+    grew:0, sunAmt:0, winT:0 };
   // prime a few stems (screen-space x; they scroll left)
   for(var i=0;i<4;i++)spawnStem(VW+120+i*gapSpacing());
   toPlay();
@@ -312,6 +383,9 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
   if(G.slow>0){ G.slow-=dt; if(G.slow<0)G.slow=0; }
   var ts = G.slow>0?0.42:1; var sdt=dt*ts; G.t+=sdt;
   if(G.phase==='dying'){ stepDeath(sdt); stepFx(sdt); return; }
+  if(G.phase==='win'){ G.winT+=sdt; G.y+=Math.sin(G.winT*3)*0.4;
+    if(G.winT<1.0 && Math.floor(G.winT/0.12)!==Math.floor((G.winT-sdt)/0.12)) spawnBurst('fx/streak_star_pop', 60+Math.random()*420, 120+Math.random()*320, 0.6, 42);
+    stepFx(sdt); if(G.winT>1.3){ G.phase='dead'; showResults(true, G.sunAmt||0); } return; }
   if(G.phase!=='play'){ stepFx(sdt); return; }
 
   // pre-start hover
@@ -350,7 +424,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
       if(dy<band && !st.boss){ // Perfect
         G.combo++; G.perfects++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
         st.bloom=0.001; G.slow=0.13; G.score += 1+G.combo;
-        spawnFlowerAt(st); sfx('perfect',G.combo); haptic(18);
+        spawnFlowerAt(st); spawnBurst('fx/star_burst_perfect', SEED_X, st.cy, 0.55, 84); spawnBurst('fx/bloom_flash', SEED_X, st.cy, 0.45, 120); sfx('perfect',G.combo); haptic(18);
       } else { if(!st.boss)G.combo=0; G.score+=1; sfx('pass'); }
       if(st.boss){ G.bossPassed++; G.leg++; G.combo=Math.max(G.combo,1);
         if(G.mode==='gauntlet' && G.leg>=4){ winGauntlet(); return; } }
@@ -362,7 +436,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
   }
   if(clipping){ G.clipT+=dt;
     if(G.clipT>0.08){ // grace expired
-      if(G.recover>0){ G.recover--; G.y=nearestGapCenter(); G.vy=-200; G.clipT=0; petalPuff(SEED_X,G.y,'#8fc3ea'); }
+      if(G.recover>0){ G.recover--; G.y=nearestGapCenter(); G.vy=-200; G.clipT=0; petalPuff(SEED_X,G.y,'#8fc3ea'); spawnBurst('fx/recovery_puff', SEED_X, G.y, 0.7, 74); }
       else if(G.mode==='zen'){ G.y=nearestGapCenter(); G.vy=-200; G.clipT=0; }
       else { hitFail(); return; }
     }
@@ -374,13 +448,14 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
   stepFx(sdt);
 }
 function nearestGapCenter(){ var best=G.y, bd=1e9; for(var i=0;i<G.stems.length;i++){ var s=G.stems[i]; if(s.x>SEED_X-60&&s.x<SEED_X+120){ var d=Math.abs(s.x-SEED_X); if(d<bd){bd=d;best=s.cy;} } } return best; }
-function hitFail(){ G.phase='dying'; G.dead=true; G.deathT=0; G.sproutX=SEED_X; sfx('settle'); haptic([12,40,12]); }
+function hitFail(){ G.phase='dying'; G.dead=true; G.deathT=0; G.sproutX=SEED_X; spawnBurst('fx/soft_land_puff', SEED_X, G.y, 0.85, 92); sfx('settle'); haptic([12,40,12]); }
 function stepDeath(dt){ G.deathT+=dt; G.vy+=GRAV*0.7*dt; G.y+=G.vy*dt; G.ang+=dt*4;
   if(G.y>GROUND-6){ G.y=GROUND-6; G.vy=0; }
   if(G.deathT>0.9){ endRun(); } }
 function stepFx(dt){
   for(var i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=180*dt; p.life-=dt*1.1; if(p.life<=0)G.parts.splice(i,1); }
   for(var t=G.trail.length-1;t>=0;t--){ G.trail[t].life-=dt; if(G.trail[t].life<=0)G.trail.splice(t,1); }
+  stepBursts(dt);
   if(G.hazeFx>0)G.hazeFx-=dt;
 }
 function spawnFlowerAt(st){ // remember a bloom to draw riding the stem + a floating petal burst
@@ -391,7 +466,7 @@ function spawnFlowerAt(st){ // remember a bloom to draw riding the stem + a floa
 function petalPuff(x,y,col){ var n=6; for(var i=0;i<n;i++){ var a=Math.random()*6.28, sp=30+Math.random()*80; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,life:1,col:col,r:2+Math.random()*2.5}); } if(G.parts.length>120)G.parts.splice(0,G.parts.length-120); }
 
 function flap(){ if(!G)return; if(G.phase!=='play')return; if(!G.started)G.started=true;
-  G.vy=FLAP; G.ang=-0.42; sfx('flap'); haptic(9);
+  G.vy=FLAP; G.ang=-0.42; sfx('flap'); haptic(9); spawnBurst('fx/flap_puff', SEED_X-8, G.y+10, 0.4, 46);
   for(var i=0;i<3;i++){ G.parts.push({x:SEED_X-8,y:G.y+4,vx:-40-Math.random()*40,vy:20+Math.random()*30,life:0.7,col:curSeed().puff,r:1.6+Math.random()*1.6}); }
 }
 
@@ -418,26 +493,31 @@ function endRun(){ G.phase='dead';
   G.sunAmt=granted; save();
   showResults(false, granted);
 }
-function winGauntlet(){ G.phase='dead'; sfx('win');
+function winGauntlet(){ sfx('win');
   if(G.leg>(PROG.bestGauntlet||0))PROG.bestGauntlet=G.leg;
-  // guaranteed rarer flower bundle
+  // guaranteed rarer keepsake bundle
   var grow=3+G.bestCombo; G.grew=grow;
   for(var i=0;i<grow;i++)PROG.blooms.push(((99991+i*271+G.bestCombo*13)*2654435761)>>>0);
   if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
   PROG.grewTotal=(PROG.grewTotal||0)+grow;
   var amt=12; var granted=0; try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seedflutter:gauntlet')||0; }catch(e){}
   G.sunAmt=granted; save();
-  showResults(true, granted);
+  // brief on-canvas star-shower celebration, then results (see 'win' handler in step)
+  G.phase='win'; G.winT=0; G.vy=-40; spawnBurst('fx/star_shower', VW/2, VH*0.42, 1.3, 380);
 }
 function showResults(win, granted){
-  $('go-title').textContent = win?'All four seasons!':(G.mode==='zen'?'Landed softly':(G.gaps>0?'Drifted down':'Drifted down'));
+  $('go-title').textContent = win?'All four skies!':(G.mode==='zen'?'Landed softly':'Drifted down');
   var starN = win?3:(G.mode==='zen'?0:Math.min(3, (G.bestCombo>=8?3:G.bestCombo>=4?2:G.bestCombo>=1?1:0)));
-  var s=''; for(var i=0;i<3;i++)s+=(i<starN?'✿':'·'); $('go-stars').textContent=(G.mode==='zen')?'':s;
+  if(G.mode==='zen'){ $('go-stars').innerHTML=''; }
+  else { var s=''; for(var i=0;i<3;i++){ s += (i<starN
+      ? "<img class='rstar' src='assets/ui/star_full.png?v=cc1' onerror=\"this.replaceWith(document.createTextNode('★'))\" alt='star'>"
+      : "<img class='rstar' src='assets/ui/star_empty.png?v=cc1' onerror=\"this.replaceWith(document.createTextNode('☆'))\" alt='.'>"); }
+    $('go-stars').innerHTML=s; }
   $('go-score').textContent=G.gaps;
   $('go-lab').textContent = G.mode==='gauntlet'?'legs '+G.leg+' · gaps':'gaps threaded';
   var best = G.mode==='gauntlet'?('best legs '+(PROG.bestGauntlet||0)):('best '+(PROG.bestDist||0));
   $('go-best').textContent=best;
-  $('go-bloom').textContent='Best Bloomstreak '+G.bestCombo+' · grew '+G.grew+' flower'+(G.grew===1?'':'s');
+  $('go-bloom').textContent='Best Bloomstreak '+G.bestCombo+' · grew '+G.grew+' star'+(G.grew===1?'':'s');
   $('go-sun').textContent = granted>0?('☀ +'+granted+' sunbeams'):(G.mode==='zen'?'a cozy drift':(G.mode==='daily'&&granted===0?'daily already claimed':'☀ no sunbeams this run'));
   running=false; show('s-go');
 }
@@ -447,22 +527,30 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/
   step(dt); render(); if(running)requestAnimationFrame(loop); }
 function render(){ if(!ctx||!G)return;
   var si=seasonIdx(), sea=SEASONS[si];
-  // bg cross-fade within season block
-  var frac = G.mode==='gauntlet'?0.5 : ((G.gaps%10)/10);
+  // sky-phase cross-fade within a phase block
+  var frac = G.mode==='gauntlet'?0 : ((G.gaps%10)/10);
   var nsea = SEASONS[(si+1)%4];
   ctx.clearRect(0,0,VW,VH);
-  var bg=ctx.createLinearGradient(0,0,0,VH);
-  bg.addColorStop(0, lerpC(sea.bg[0], nsea.bg[0], frac*0.5));
-  bg.addColorStop(1, lerpC(sea.bg[1], nsea.bg[1], frac*0.5));
-  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  // moon
-  ctx.globalAlpha=0.9; ctx.fillStyle='rgba(240,240,220,0.14)'; ctx.beginPath(); ctx.arc(430,150,70,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
-  // parallax hills (2 layers)
-  drawHills(0.35, '#0e150e', G.t*8);
-  drawHills(0.6, '#0b1109', G.t*16);
-  // fireflies
-  for(var a=0;a<9;a++){ var fx=(a*97+40 - G.t*10)%VW; if(fx<0)fx+=VW; var fy=(a*133+120)%600;
-    ctx.globalAlpha=0.10+0.10*Math.sin(G.t*1.4+a); ctx.fillStyle='#d9e6b0'; ctx.beginPath(); ctx.arc(fx,fy,1.7,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
+  // phase-background cross-fade (art) with gradient+moon fallback
+  var pbg=_bg(sea.phase), npbg=_bg(nsea.phase);
+  if(_sfReady(pbg)){
+    try{ ctx.drawImage(pbg,0,0,VW,VH); }catch(e){}
+    if(_sfReady(npbg) && frac>0.001){ ctx.save(); ctx.globalAlpha=Math.min(1,frac); try{ ctx.drawImage(npbg,0,0,VW,VH); }catch(e){} ctx.restore(); }
+  } else {
+    var bg=ctx.createLinearGradient(0,0,0,VH);
+    bg.addColorStop(0, lerpC(sea.bg[0], nsea.bg[0], frac*0.5));
+    bg.addColorStop(1, lerpC(sea.bg[1], nsea.bg[1], frac*0.5));
+    ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+    ctx.globalAlpha=0.9; ctx.fillStyle='rgba(240,240,220,0.14)'; ctx.beginPath(); ctx.arc(430,150,70,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
+  }
+  // ambient aurora drift (art only)
+  var aur=_spr('fx/aurora_ribbon');
+  if(_sfReady(aur)){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.12+0.05*Math.sin(G.t*0.5);
+    var ax=((G.t*7)%(VW+280))-140; try{ ctx.drawImage(aur, ax-140, 64, 300, 96); }catch(e){} ctx.restore(); }
+  // parallax star-spire ridges (art) else procedural hills
+  if(!drawRidges()){ drawHills(0.35,'#0e150e',G.t*8); drawHills(0.6,'#0b1109',G.t*16); }
+  // starfield twinkles (art) else firefly dots
+  drawStarfield();
 
   // stems
   for(var i=0;i<G.stems.length;i++){ drawStem(G.stems[i], sea); }
@@ -471,30 +559,49 @@ function render(){ if(!ctx||!G)return;
     fl.x -= scrollSpeed()* (1/60); fl.life-=1/60; if(fl.life<=0){ G.flowers.splice(f,1); continue; }
     drawFlower(ctx, fl.x, fl.y, 0.5+0.4*Math.min(1,(1.6-fl.life)/0.4), fl.seed); }
 
-  // ground
+  // ground / horizon-floor
   ctx.fillStyle=lerpC('#101a10', sea.grass, 0.25); ctx.fillRect(0,GROUND,VW,VH-GROUND);
-  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,GROUND,VW,3);
+  var hf=_spr('sprites/horizon_floor');
+  if(_sfReady(hf)){ var hh=Math.max(30, VH-GROUND+8); try{ ctx.drawImage(hf,0,GROUND-8,VW,hh); }catch(e){} }
+  else { ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,GROUND,VW,3); }
 
   // trail
   var tr=curTrail();
   for(var t=0;t<G.trail.length;t++){ var c=G.trail[t]; ctx.globalAlpha=Math.max(0,c.life)*0.5; ctx.fillStyle=tr.col; ctx.beginPath(); ctx.arc(c.x,c.y,2.6*c.life+0.6,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
 
-  // seed
+  // seed (comet cadet)
   drawSeed();
-  // companion
-  var cp=curComp(); if(cp.glyph){ ctx.globalAlpha=0.9; ctx.font='22px system-ui'; ctx.textAlign='center'; ctx.fillText(cp.glyph, SEED_X-40+Math.sin(G.t*3)*4, G.y-24+Math.cos(G.t*2)*4); ctx.globalAlpha=1; }
+  // companion sky-buddy (art) else emoji glyph
+  var cp=curComp(); if(cp.id){ var bx=SEED_X-40+Math.sin(G.t*3)*4, by=G.y-24+Math.cos(G.t*2)*4;
+    var bim=cp.sp?_spr(cp.sp):null;
+    if(_sfReady(bim)){ _blit(bim,bx,by,32); }
+    else if(cp.glyph){ ctx.globalAlpha=0.9; ctx.font='22px system-ui'; ctx.textAlign='center'; ctx.fillText(cp.glyph, bx, by); ctx.globalAlpha=1; } }
 
   // particles
   for(var p=0;p<G.parts.length;p++){ var pp=G.parts[p]; ctx.globalAlpha=Math.max(0,pp.life); ctx.fillStyle=pp.col; ctx.beginPath(); ctx.arc(pp.x,pp.y,pp.r,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
 
-  // seasonal haze overlay (winter/autumn) unless reduced
-  var haze = sea.haze * (SET.haze?0.4:1) * (curComp().id===2?0.4:1);
-  if(haze>0.02){ ctx.save(); ctx.globalAlpha=haze; ctx.fillStyle= si===3?'#cfe0ea':'#3a2a18'; ctx.fillRect(0,0,VW,VH);
-    if(si===3){ for(var k=0;k<24;k++){ var sx=(k*57+G.t*30)%VW, sy=(k*89+G.t*60)%VH; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(sx,sy,1.4,0,6.2832); ctx.fill(); } }
-    ctx.restore(); }
+  // one-shot FX bursts (Perfect pop / soft-land / recovery / win shower)
+  drawBursts();
 
-  // slow-mo tint
-  if(G.slow>0){ ctx.save(); ctx.globalAlpha=Math.min(0.16,G.slow); ctx.fillStyle='#ffe9a8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // sky-phase weather (Frostnight snow / Meteor dust) + tint wash
+  var haze = sea.haze * (SET.haze?0.4:1) * (curComp().id===2?0.4:1);
+  if(haze>0.02){ ctx.save(); ctx.globalAlpha=haze; ctx.fillStyle= si===3?'#cfe0ea':'#3a2a18'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  if(si===3){ var sg=_spr('fx/snow_glint');
+    if(_sfReady(sg)){ for(var k=0;k<20;k++){ var sx=(k*57+G.t*30)%VW, sy=(k*89+G.t*60)%VH; var ss=6+3*Math.sin(k); ctx.save(); ctx.globalAlpha=0.5*(SET.haze?0.6:1); try{ ctx.drawImage(sg,sx-ss/2,sy-ss/2,ss,ss); }catch(e){} ctx.restore(); } }
+    else if(haze>0.02){ for(var k2=0;k2<24;k2++){ var q2x=(k2*57+G.t*30)%VW, q2y=(k2*89+G.t*60)%VH; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(q2x,q2y,1.4,0,6.2832); ctx.fill(); } } }
+  else if(si===2){ var md=_spr('fx/meteor_dust');
+    if(_sfReady(md)){ for(var m=0;m<3;m++){ var mx=((m*220+G.t*90)%(VW+160))-80, my=(m*170+40)%360; ctx.save(); ctx.globalAlpha=0.45; ctx.globalCompositeOperation='lighter'; _blit(md,mx,my,58); ctx.restore(); } } }
+
+  // slow-mo glow ring (art) + soft tint
+  if(G.slow>0){ var sm=_spr('fx/slowmo_glow');
+    if(_sfReady(sm)){ ctx.save(); ctx.globalAlpha=Math.min(0.5,G.slow*3); ctx.globalCompositeOperation='lighter'; try{ ctx.drawImage(sm,-40,VH*0.42-VW*0.6,VW+80,VW*1.2); }catch(e){} ctx.restore(); }
+    ctx.save(); ctx.globalAlpha=Math.min(0.12,G.slow); ctx.fillStyle='#ffe9a8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+
+  // win celebration star-shower overlay
+  if(G.phase==='win'){ var shw=_spr('fx/star_shower'); if(_sfReady(shw)){ ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(0.85,1-Math.abs(G.winT-0.6))); ctx.globalCompositeOperation='lighter'; try{ ctx.drawImage(shw,0,0,VW,VH*0.72); }catch(e){} ctx.restore(); } }
+
+  // edge vignette (art) to seat the play scene
+  var vg=_spr('fx/vignette_edge'); if(_sfReady(vg)){ ctx.save(); ctx.globalAlpha=0.55; try{ ctx.drawImage(vg,0,0,VW,VH); }catch(e){} ctx.restore(); }
 
   // onboarding
   if(!G.started){ ctx.save(); ctx.globalAlpha=0.6+0.3*Math.sin(G.t*4); ctx.fillStyle='#ffe9a8'; ctx.font='800 30px system-ui'; ctx.textAlign='center'; ctx.fillText('TAP', VW/2, VH*0.30); ctx.globalAlpha=0.4; ctx.font='600 15px system-ui'; ctx.fillText('to flap', VW/2, VH*0.30+24); ctx.restore();
@@ -506,15 +613,30 @@ function render(){ if(!ctx||!G)return;
 }
 function drawHills(k, col, off){ ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,VH);
   var baseY=GROUND-40*k; for(var x=0;x<=VW;x+=30){ var y=baseY - Math.sin((x+off)*0.01)*30*k; ctx.lineTo(x,y); } ctx.lineTo(VW,VH); ctx.closePath(); ctx.fill(); }
-function drawStem(s, sea){ var topH=s.cy-s.gh, botY=s.cy+s.gh;
-  var col=lerpC('#3f6b34', sea.grass, 0.3), edge=s.boss?'#c8a84b':shadeHex(col,0.7);
-  // top reed
-  reed(s.x, 0, topH, col, edge);
-  // bottom reed
-  reed(s.x, botY, GROUND-botY, col, edge);
-  // gap bud (unbloomed) or bloom
-  if(!s.scored){ ctx.fillStyle=s.boss?'#e56b6b':'#bfe0f2'; ctx.globalAlpha=0.5+0.3*Math.sin((s.x+G.t*40)*0.05); ctx.beginPath(); ctx.arc(s.x, s.cy, s.boss?9:7, 0,6.2832); ctx.fill(); ctx.globalAlpha=1; }
-  if(s.bloom>0){ drawFlower(ctx, s.x, s.cy - s.gh, 0.6*s.bloom, (s.x*131)>>>0); }
+function drawStem(s, sea){ var topH=s.cy-s.gh, botY=s.cy+s.gh; var w=STEM_W;
+  var seg=_spr(s.boss?'sprites/boss_spire_segment':'sprites/spire_segment');
+  var cap=_spr(s.boss?'sprites/boss_spire_cap':'sprites/spire_cap_gap');
+  if(_sfReady(seg)){
+    _tileSpire(seg, s.x, 0, topH, w);            // top spire body
+    _tileSpire(seg, s.x, botY, GROUND-botY, w);  // bottom spire body
+    var bse=_spr('sprites/spire_base');          // decorative crystal root at the floor
+    if(_sfReady(bse)){ var bw=w*1.5, bh=bse.naturalHeight*(bw/bse.naturalWidth); try{ ctx.drawImage(bse, s.x-bw/2, GROUND-bh+8, bw, bh); }catch(e){} }
+    _capSpire(cap, s.x, topH, w, false);         // top tip (points down toward gap)
+    _capSpire(cap, s.x, botY, w, true);          // bottom tip (points up toward gap)
+  } else {
+    var col=lerpC('#3f6b34', sea.grass, 0.3), edge=s.boss?'#c8a84b':shadeHex(col,0.7);
+    reed(s.x, 0, topH, col, edge);
+    reed(s.x, botY, GROUND-botY, col, edge);
+  }
+  // gap thread-star (unscored) — art else pulsing dot
+  if(!s.scored){ var thr=_spr(s.boss?'sprites/thread_star_boss':'sprites/thread_star');
+    var pulse=0.88+0.12*Math.sin((s.x+G.t*40)*0.05);
+    if(_sfReady(thr)){ _blit(thr, s.x, s.cy, (s.boss?26:22)*pulse); }
+    else { ctx.fillStyle=s.boss?'#e56b6b':'#bfe0f2'; ctx.globalAlpha=0.5+0.3*Math.sin((s.x+G.t*40)*0.05); ctx.beginPath(); ctx.arc(s.x, s.cy, s.boss?9:7, 0,6.2832); ctx.fill(); ctx.globalAlpha=1; } }
+  // Perfect star-bloom igniting on the spire tip
+  if(s.bloom>0){ var sbl=_spr('sprites/star_bloom');
+    if(_sfReady(sbl)){ ctx.save(); ctx.globalAlpha=Math.min(1,s.bloom); _blit(sbl, s.x, s.cy - s.gh, 40*(0.6+0.4*s.bloom)); ctx.restore(); }
+    else drawFlower(ctx, s.x, s.cy - s.gh, 0.6*s.bloom, (s.x*131)>>>0); }
 }
 function reed(x, y, h, col, edge){ if(h<=0)return; var w=STEM_W;
   ctx.fillStyle=col; roundRectFill(x-w/2, y, w, h, 10);
@@ -523,18 +645,28 @@ function reed(x, y, h, col, edge){ if(h<=0)return; var w=STEM_W;
 }
 function roundRectFill(x,y,w,h,r){ if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
 function shadeHex(hex,amt){ var n=parseInt(hex.slice(1),16); var r=(n>>16)&255,g=(n>>8)&255,b=n&255; return 'rgb('+Math.round(r*amt)+','+Math.round(g*amt)+','+Math.round(b*amt)+')'; }
-function drawSeed(){ var sd=curSeed(); ctx.save(); ctx.translate(SEED_X,G.y); ctx.rotate(G.ang);
-  // pappus tuft
+function drawSeed(){ var sd=curSeed(); var rot=G.ang;
+  // default cadet uses the 3 motion-state sprites; equipped comet skins are one pose
+  var use;
+  if(sd.id!==0 && sd.sp){ use=_spr(sd.sp); }
+  else { use = (G.phase==='dying'||G.phase==='win') ? _spr('sprites/comet_cadet_settle')
+             : (G.vy<-140 ? _spr('sprites/comet_cadet_flap') : _spr('sprites/comet_cadet')); }
+  if(_blit(use, SEED_X, G.y, 42, rot)) return;
+  // procedural fallback (pappus tuft + glowing body)
+  ctx.save(); ctx.translate(SEED_X,G.y); ctx.rotate(G.ang);
   ctx.strokeStyle=sd.puff; ctx.lineWidth=1.4; ctx.globalAlpha=0.9;
   for(var i=0;i<9;i++){ var a=(-2.4 + i/8*4.8); ctx.beginPath(); ctx.moveTo(2,0); ctx.lineTo(2+Math.cos(a)*VIS_R, Math.sin(a)*VIS_R); ctx.stroke();
     ctx.fillStyle=sd.puff; ctx.beginPath(); ctx.arc(2+Math.cos(a)*VIS_R, Math.sin(a)*VIS_R, 1.5,0,6.2832); ctx.fill(); }
   ctx.globalAlpha=1;
-  // body
   ctx.fillStyle=sd.col; ctx.beginPath(); ctx.ellipse(-2,0,7,4.5,0,0,6.2832); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(-4,-1,1.8,0,6.2832); ctx.fill();
   ctx.restore();
 }
-function drawFlower(g, cx, cy, sc, seed){ var r=mulberry32(seed); var petals=5+Math.floor(r()*4);
+function drawFlower(g, cx, cy, sc, seed){ // keepsake STAR (works on main + offscreen ctx)
+  var im=_spr('cosmetics/'+_STARS[_starIdx(seed)]);
+  if(_sfReady(im)){ var h=46*sc, s=h/im.naturalHeight, w=im.naturalWidth*s; g.save(); g.translate(cx,cy); try{ g.drawImage(im,-w/2,-h/2,w,h); }catch(e){} g.restore(); return; }
+  // procedural fallback (petal flower)
+  var r=mulberry32(seed); var petals=5+Math.floor(r()*4);
   var hue=['#e58fa0','#c8a84b','#b57de0','#8fc3ea','#e56b6b','#f0c96b'][Math.floor(r()*6)];
   g.save(); g.translate(cx,cy); g.scale(sc,sc);
   g.fillStyle=hue;
@@ -548,9 +680,11 @@ function drawHUD(sea){
   ctx.fillText('◆ '+G.gaps, 64, 30);
   ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='700 13px system-ui'; ctx.fillText(sea.nm+(G.mode==='gauntlet'?(' · leg '+(G.leg+1)):''), VW-64, 24);
   if(G.combo>0){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 20px system-ui'; ctx.fillText('Bloomstreak '+G.combo, VW/2, 30); }
-  hudBtn(HB_MENU,'‹'); hudBtn(HB_RETRY,'↻');
+  hudBtn(HB_MENU,'‹','ui/icon_menu'); hudBtn(HB_RETRY,'↻','ui/icon_retry');
 }
-function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+function hudBtn(b,glyph,sp){ var im=sp?_spr(sp):null;
+  if(_sfReady(im)){ _blit(im, b.x+b.w/2, b.y+b.h/2, b.h); return; }
+  ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 /* ---------- input ---------- */
@@ -566,12 +700,16 @@ window.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; i
 
 /* ---------- grove + wardrobe ---------- */
 function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.blooms.length;
-  $('grove-sub').textContent = n? ('You have grown '+n+' keepsake flower'+(n===1?'':'s')+'. Thread more Perfects to fill the Grove.') : 'Thread the center of a gap for a Perfect. Your best streak grows keepsake flowers here.';
+  $('grove-sub').textContent = n? ('You have grown '+n+' keepsake star'+(n===1?'':'s')+'. Thread more Perfects to fill your Sky Map.') : 'Thread the center of a gap for a Perfect. Your best streak grows keepsake stars here.';
   var start=Math.max(0,n-60);
   for(var i=start;i<n;i++){ var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); g.clearRect(0,0,70,70); drawFlower(g,35,36,1.3,PROG.blooms[i]>>>0); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no flowers yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no stars yet —'; host.appendChild(e); }
 }
+function _wardSpr(g, it, cw, chh){ var im=it.sp?_spr(it.sp):null; if(!_sfReady(im))return false;
+  var h=Math.min(chh-8, im.naturalHeight), s=h/im.naturalHeight, w=im.naturalWidth*s; if(w>cw-8){ s=(cw-8)/im.naturalWidth; w=cw-8; h=im.naturalHeight*s; }
+  try{ g.drawImage(im,(cw-w)/2,(chh-h)/2,w,h); }catch(e){} return true; }
 function wardCanvas(kind, it){ var c=document.createElement('canvas'); c.width=96; c.height=64; var g=c.getContext('2d');
+  if(_wardSpr(g,it,96,64))return c;
   if(kind==='seed'){ g.strokeStyle=it.puff; g.lineWidth=1.4; for(var i=0;i<9;i++){ var a=(-2.4+i/8*4.8); g.beginPath(); g.moveTo(48,32); g.lineTo(48+Math.cos(a)*15,32+Math.sin(a)*15); g.stroke(); } g.fillStyle=it.col; g.beginPath(); g.ellipse(46,32,7,4.5,0,0,6.2832); g.fill(); }
   else if(kind==='trail'){ for(var t=0;t<6;t++){ g.globalAlpha=0.3+t*0.1; g.fillStyle=it.col; g.beginPath(); g.arc(20+t*10,32,3,0,6.2832); g.fill(); } g.globalAlpha=1; }
   else { g.font='30px system-ui'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(it.glyph||'∅',48,34); }
@@ -589,7 +727,7 @@ function renderWard(){ renderWardList('ward-seeds','seed',SEEDS,PROG.seed,functi
   renderWardList('ward-comps','comp',COMPS,PROG.comp,function(v){PROG.comp=v;}); }
 
 /* ---------- share ---------- */
-function shareIt(){ var url='https://lucidwinds.com/satellites/seed-flutter/'; var txt='I drifted '+(PROG.bestDist||0)+' gaps in Seed Flutter 🪶 and grew '+(PROG.grewTotal||0)+' flowers. Play at '+url;
+function shareIt(){ var url='https://lucidwinds.com/satellites/seed-flutter/'; var txt='I drifted '+(PROG.bestDist||0)+' gaps in Seed Flutter ☄️ and grew '+(PROG.grewTotal||0)+' keepsake stars. Play at '+url;
   if(navigator.share){ navigator.share({title:'Seed Flutter',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
 
