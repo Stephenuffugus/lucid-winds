@@ -39,6 +39,7 @@
 | ~2 packs Stephen has generated, not yet delivered | AWAITING DROP | Per Jul 13 session. Identity unknown until they land — when they do, log here FIRST, then cut+wire. |
 | Dewball — Paper Lantern Parade | LISTED (21 prompt sheets ready, c155f924) | **No sheets generated yet.** `satellites/dewball/art-drop/` contains only the README landing-spot. Biggest open art target in the studio. |
 | Generate-order queue (13 games) | LISTED | See README "Generate order" table: Glyph Forge, Picnic Panic, Sproing(v2), Budburst, Pollen Panic, Tarot Run, Tomato Man, Grubtrap, Hedgerow, Hunch, Petalvex(v2), Rootbound, BarBrawl. |
+| Cosmic Cadets — SKINS EXPANSION (4 sheets, 80 unlockables) | LISTED Jul 16 (Stephen's request, same day) | Prompts: `seed-flutter/06..09-*.md` — 20 comet skins + 20 tails + 20 sky-buddies (pure cosmetic) + 20 keepsake stars. Stephen generates → drops in 012Assets Drive folder → wire pass extends SEEDS/TRAILS/COMPS + star mapping. |
 | Jul 11 bench packs (Fence Off, Loop Warden, Mosaic Draft, Tinker Loft, Lamplighter, Tonic Drop, Mini Crossword) | LISTED | Prompt packs complete; awaiting generation. |
 
 ## Loose-file registry (identified, no action needed)

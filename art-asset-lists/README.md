@@ -16,7 +16,7 @@ These are **built and live** and render procedurally; this art is an optional up
 
 ### Jul 10 classics wave (all built + verified on `add-sproing-jumper`, render procedurally; every pack has a 💰 cosmetics/economy sheet)
 - **[Berry Vine](berry-vine/00-art-direction.md)** (Zuma) — *Starberry Cosmos* · 6 sheets
-- **[Seed Flutter](seed-flutter/00-art-direction.md)** (Flappy) — *Comet Cadets* · 5 sheets
+- **[Seed Flutter → Cosmic Cadets](seed-flutter/00-art-direction.md)** (Flappy) — *Comet Cadets* · 5 sheets SHIPPED + **4 skins-expansion sheets** (80 new unlockables, Jul 16) awaiting generation
 - **[Leaf Fit](leaf-fit/00-art-direction.md)** (Woodoku) — *Leadlight Conservatory* · 5 sheets
 - **[Seed Reel](seed-reel/00-art-direction.md)** (Luck be a Landlord) — *Brass Nightreel* · 6 sheets
 - **[Season Sway](season-sway/00-art-direction.md)** (Reigns) — *Gilded Almanac* · 6 sheets
