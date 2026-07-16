@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Hue Match">
+<meta name="apple-mobile-web-app-title" content="Hues">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>HUE MATCH</title>
+<title>HUES</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
@@ -231,7 +231,7 @@
   <section class="screen on" id="menu">
     <button class="soundtog" id="menuSound">🔊</button>
     <div class="coins-pill" id="menuCoins">🪙 0</div>
-    <div class="wordmark"><span class="l1">HUE</span><span class="l2">match</span></div>
+    <div class="wordmark"><span class="l1">HUES</span></div>
     <div class="tag">match the color · beat the clock</div>
     <div class="swatch-row" id="menuSwatches"></div>
     <div class="modes">
@@ -613,6 +613,58 @@ function endlessResult(){const best=parseInt(Store.g(K.hi)||"0",10),isNew=G.scor
   $("resCoins").textContent="+ "+G.coinsRun+" 🪙";$("resSquares").textContent="";$("resVs").innerHTML="";$("resStreak").textContent="";renderRoundChips();
   setActions([{label:"Play again",cls:"btn-fill",fn:()=>startGame("endless")},{label:"Shop",cls:"btn-ghost",fn:openShop},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
+/* Share card: the five target-vs-you color pairs as an IMAGE, so people can
+   SEE how close you were — the color equivalent of the Wordle grid. Falls
+   back to the text share wherever file-sharing isn't supported. */
+function buildShareCard(streak){
+  const W=1080,H=1350,cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const x=cv.getContext("2d");
+  function rr(px,py,pw,ph,r){x.beginPath();
+    x.moveTo(px+r,py);x.arcTo(px+pw,py,px+pw,py+ph,r);x.arcTo(px+pw,py+ph,px,py+ph,r);
+    x.arcTo(px,py+ph,px,py,r);x.arcTo(px,py,px+pw,py,r);x.closePath();}
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#14141c");g.addColorStop(1,"#0c0c12");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.textAlign="center";x.fillStyle="#efe8da";
+  x.font="italic 900 96px Georgia,serif";x.fillText("HUES",W/2,150);
+  x.font="700 44px Georgia,serif";x.fillStyle="#b9b2a4";x.fillText("DAILY #"+dailyNumber(),W/2,215);
+  x.font="900 88px Georgia,serif";x.fillStyle="#efe8da";x.fillText(G.score.toLocaleString(),W/2,330);
+  const rows=G.history.slice(0,CONFIG.roundsPerSet),n=rows.length;
+  const rowH=120,gap=26,top=410,pw=560,px0=(W-pw)/2-110;
+  x.font="700 34px Georgia,serif";x.fillStyle="#8f887c";
+  x.textAlign="left";x.fillText("TARGET",px0,top-18);
+  x.textAlign="right";x.fillText("YOU",px0+pw,top-18);
+  rows.forEach((h,i)=>{
+    const py=top+i*(rowH+gap);
+    const tc=rgbStr(hsv2rgb(h.t.h,h.t.s,h.t.v)),yc=rgbStr(hsv2rgb(h.y.h,h.y.s,h.y.v));
+    rr(px0,py,pw/2-6,rowH,22);x.fillStyle=tc;x.fill();
+    rr(px0+pw/2+6,py,pw/2-6,rowH,22);x.fillStyle=yc;x.fill();
+    x.strokeStyle="rgba(255,255,255,.14)";x.lineWidth=3;rr(px0,py,pw/2-6,rowH,22);x.stroke();rr(px0+pw/2+6,py,pw/2-6,rowH,22);x.stroke();
+    const cl=closeness(h.dE);
+    x.textAlign="left";x.font="900 56px Georgia,serif";x.fillStyle="#efe8da";
+    x.fillText(cl.pct+"%",px0+pw+46,py+rowH/2+8);
+    const tier=tierFor(h.dE);   // drawn dot, not emoji — emoji fonts aren't guaranteed in canvas
+    x.fillStyle=tier===2?"#57c065":tier===1?"#e0c14e":"#3a3a42";
+    x.beginPath();x.arc(px0+pw+262,py+rowH/2-6,20,0,7);x.fill();
+  });
+  const by=top+n*(rowH+gap)+40;
+  x.textAlign="center";
+  if(streak>1){x.font="700 44px Georgia,serif";x.fillStyle="#d8a748";x.fillText("🔥 "+streak+" day streak",W/2,by+10);}
+  x.font="700 40px Georgia,serif";x.fillStyle="#8f887c";
+  x.fillText("Can you beat my score?",W/2,H-120);
+  x.fillStyle="#b9b2a4";x.fillText("lucidwinds.com/satellites/hues",W/2,H-60);
+  return cv;
+}
+async function shareDailyCard(text,url,streak){
+  try{
+    const cv=buildShareCard(streak);
+    const blob=await new Promise(res=>cv.toBlob(res,"image/png"));
+    if(blob&&navigator.canShare){
+      const f=new File([blob],"hues-"+dailyNumber()+".png",{type:"image/png"});
+      if(navigator.canShare({files:[f]})){await navigator.share({files:[f],text:text+"\n"+url});return;}
+    }
+  }catch(e){}
+  share(text,url);
+}
 function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==today;let streak=parseInt(Store.g(K.dStreak)||"0",10),bonus=0;
   if(firstToday){const last=Store.g(K.dLast),y=new Date();y.setDate(y.getDate()-1);
     streak=last===ymdStr(y)?streak+1:1;Store.s(K.dStreak,streak);Store.s(K.dLast,today);Store.s(K.dDone,today);Store.s(K.dDoneScore,G.score);
@@ -626,8 +678,8 @@ function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==toda
   $("resSub").textContent=firstToday?"come back tomorrow for #"+(dailyNumber()+1):"already counted today";
   $("resCoins").textContent=firstToday?("+ "+(G.coinsRun+bonus)+" 🪙  (incl. "+bonus+" daily bonus)"):"practice — coins from rounds only";
   $("resSquares").textContent=sq;$("resVs").innerHTML="";$("resStreak").textContent=streak>0?("🔥 "+streak+" day streak"):"";renderRoundChips();
-  const shareText="HUE MATCH #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"")+"\n\nCan you beat my score?";
-  setActions([{label:"Share result",cls:"btn-fill",fn:()=>share(shareText,"https://lucidwinds.com/satellites/hues/")},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
+  const shareText="HUES #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"")+"\n\nCan you beat my score?";
+  setActions([{label:"Share result",cls:"btn-fill",fn:()=>shareDailyCard(shareText,"https://lucidwinds.com/satellites/hues/",streak)},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
 function versusHandoff(){G.versus.p1=G.score;
   $("resKicker").textContent="VERSUS";$("resTitle").className="";$("resTitle").textContent="Pass the phone";
