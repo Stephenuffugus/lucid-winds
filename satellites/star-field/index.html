@@ -27,7 +27,11 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
-#s-play{background:transparent}
+/* s-play is a transparent overlay ABOVE the canvas — it was eating every
+   board tap (Jessie 2026-07-15: "It's not working & won't let us place
+   stars"). Taps pass through; only its buttons stay interactive. */
+#s-play{background:transparent; pointer-events:none}
+#s-play .tbtn, #s-play button{pointer-events:auto}
 .pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:52px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #1a1405, 0 0 26px #c8a84b44; letter-spacing:1px}
@@ -169,7 +173,9 @@ function save(){ try{ localStorage.setItem('starfield_save',JSON.stringify(SAVE)
 load();
 
 /* star glyph skins unlocked by solves; night-sky themes unlocked by clean solves */
-var GLYPHS=[ {id:0,name:'Marigold',need:0,fn:'flower'}, {id:1,name:'Classic Star',need:5,fn:'star'},
+/* Jessie 2026-07-15: "They should be stars, not flowers" — Classic Star is
+   the default now; Marigold became the first unlock. */
+var GLYPHS=[ {id:0,name:'Classic Star',need:0,fn:'star'}, {id:1,name:'Marigold',need:5,fn:'flower'},
              {id:2,name:'Firefly',need:15,fn:'firefly'}, {id:3,name:'Rose',need:40,fn:'rose'} ];
 var THEMES=[ {id:0,name:'Midnight',need:0,bg:'#0b0f0b'}, {id:1,name:'Dusk',need:6,bg:'#141018'},
              {id:2,name:'Frost',need:20,bg:'#0a1016'}, {id:3,name:'Ember',need:45,bg:'#150e0a'} ];
@@ -346,7 +352,12 @@ function draw(){
   ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   var placed=0; for(var q=0;q<N*N;q++)if(G.marks[q]===2)placed++;
   ctx.fillText(placed+' / '+N+' stars planted', VW/2, BY+CELL*N+34);
-  if(anyConflict(conf)) { ctx.fillStyle='#e58fa0'; ctx.fillText('two stars are touching', VW/2, BY+CELL*N+56); }
+  // always-on directions (Jessie 2026-07-15: "No directions"); the conflict
+  // warning takes the first line's slot when it fires
+  if(anyConflict(conf)){ ctx.fillStyle='#e58fa0'; ctx.fillText('two stars are touching', VW/2, BY+CELL*N+58); }
+  else { ctx.fillStyle='#8a9178'; ctx.font='13px system-ui'; ctx.fillText('Tap to plant a star · tap again to clear', VW/2, BY+CELL*N+58); }
+  ctx.fillStyle='#8a9178'; ctx.font='13px system-ui';
+  ctx.fillText('One per row, column, and colored bed — none may touch', VW/2, BY+CELL*N+76);
 }
 function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
 function dot(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
