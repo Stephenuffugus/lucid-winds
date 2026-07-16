@@ -619,7 +619,10 @@ function card(g, isFeat){
   // Satellites that ship their OWN music get flagged so the jukebox knows to
   // step aside (pause studio audio) when they open — otherwise both play at
   // once. The click handler reads this data attr. (2026-07-02)
-  if (isFeat && g.ownMusic) attr += ' data-ownmusic="1"';
+  // 2026-07-16: flag EVERY card, not just featured — when featured games were
+  // mixed into the garden grid, the isFeat gate silently dropped the flag on
+  // grid/Favorites launches and the double-play came back (Stephen repro'd it).
+  if (g.ownMusic) attr += ' data-ownmusic="1"';
   return '<a class="card'+(hub?' hubcard':'')+'"'+attr+'>'+inner+'</a>';
 }
 // Coming-soon tap response — a small auto-dismissing toast instead of a
@@ -1164,6 +1167,11 @@ document.addEventListener('click', function(e){
       if(curOwnMusic) sendHostMusic(hostMusicOn);
     }
     if(e.data.sws === 'close'){ requestClose(); }
+    // A cooperating self-music game reports the player turned ITS music on —
+    // the player's most recent intent wins, so hand the audio to the game.
+    if(e.data.sws === 'game-music' && e.data.on && curOwnMusic && isOpen){
+      setMusPref('game'); applyMusPref(false); renderPill();
+    }
     // Studio satellites (e.g. Skitterlings) speak their own protocol.
     if(e.data.source === 'skitterlings'){
       if(e.data.type === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; } }
