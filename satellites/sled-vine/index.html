@@ -105,18 +105,18 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #s-trials{ background:linear-gradient(180deg,#0b0f0bcc,#0b0f0b9a 45%,#0b0f0bd8), url("assets/backgrounds/bg_trials.jpg?v=svart2") center/cover no-repeat; }
 #s-ward,#s-grove,#s-how,#s-set,#s-over{ background:linear-gradient(180deg,#0b0f0be0,#0b0f0bb0 40%,#0b0f0be6), url("assets/backgrounds/bg_grove.jpg?v=svart2") center/cover no-repeat; }
 
-/* ---- UI plates (?v=svart2) — border-image frames, CSS bg stays as absent-asset fallback ---- */
-.btn{ background-image:url("assets/ui/btn_plate.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
-.btn.primary{ background-image:url("assets/ui/btn_plate_primary.png?v=svart2"); }
-.chip{ background-image:url("assets/ui/chip_frame_selected.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
-.chip.sel{ background-image:url("assets/ui/chip_frame.png?v=svart2"); }
-.chip.go{ background-image:url("assets/ui/btn_plate_primary.png?v=svart2"); }
-.hbtn{ background-image:url("assets/ui/btn_plate.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
-#goalchip{ background-image:url("assets/ui/goalchip_pill.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; }
-.lvlcard{ background-image:url("assets/ui/lvlcard_frame.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; }
-.lvlcard.done{ background-image:url("assets/ui/lvlcard_done.png?v=svart2"); }
-#inkbar{ background-image:url("assets/ui/inkmeter_frame.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; }
-#inkfill{ background-image:url("assets/ui/inkmeter_fill.png?v=svart2"), linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); background-size:cover,100% 100%; background-repeat:no-repeat; background-position:left center; }
+/* ---- UI plates (?v=svart3) — 9-slice border-image (crisp corners, only the middle stretches) ---- */
+.btn{ background:transparent; border:15px solid transparent; border-image:url("assets/ui/btn_plate.png?v=svart3") 44 fill stretch; }
+.btn.primary{ border-image:url("assets/ui/btn_plate_primary.png?v=svart3") 44 fill stretch; }
+.chip{ background:transparent; border:13px solid transparent; border-image:url("assets/ui/chip_frame_selected.png?v=svart3") 46 fill stretch; }
+.chip.sel{ border-image:url("assets/ui/chip_frame.png?v=svart3") 46 fill stretch; }
+.chip.go{ border-image:url("assets/ui/btn_plate_primary.png?v=svart3") 44 fill stretch; }
+.hbtn{ background:transparent; border:12px solid transparent; border-image:url("assets/ui/btn_plate.png?v=svart3") 44 fill stretch; }
+#goalchip{ background:transparent; border:14px solid transparent; border-image:url("assets/ui/goalchip_pill.png?v=svart3") 38 fill stretch; }
+.lvlcard{ background:transparent; border:16px solid transparent; border-image:url("assets/ui/lvlcard_frame.png?v=svart3") 46 fill stretch; }
+/* done cards keep the readable frame; the gold ✿ in .ls marks completion */
+#inkbar{ background:transparent; border:9px solid transparent; border-image:url("assets/ui/inkmeter_frame.png?v=svart3") 28 fill stretch; overflow:hidden; }
+#inkfill{ background:url("assets/ui/inkmeter_fill.png?v=svart3") left center/auto 100% repeat-x, linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); background-repeat:no-repeat; }
 /* glyph sprites replace fontless-emoji tool icons */
 .cg{ width:auto; max-width:34px; display:inline-block; vertical-align:middle; filter:drop-shadow(0 1px 1px #0008); }
 .chip .cg{ height:22px; }
@@ -152,7 +152,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="ribbon">Ink a trail with your finger and let the seed-sled ride it. Every line you draw comes alive beneath the runners.</div>
       <div style="height:22px"></div>
       <div class="stack">
-        <button class="btn primary" id="b-trials">🛷 Trail Trials</button>
+        <button class="btn primary" id="b-trials">🛷 Trail Worlds</button>
         <div class="row">
           <button class="btn sm" id="b-daily">📅 Daily Ride</button>
           <button class="btn sm" id="b-free">🌙 Free Ride</button>
@@ -171,8 +171,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <div class="screen" id="s-trials">
     <div class="pad">
-      <h2 class="sc-h" style="text-align:center">Trail Trials</h2>
-      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">A fixed pot of ink, a few bloom gates, one clean ride.</div>
+      <h2 class="sc-h" style="text-align:center" id="trials-h">Trail Worlds</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px" id="trials-sub">Pick a world of trails.</div>
       <div class="grid" id="trialgrid"></div>
       <div style="height:16px"></div>
       <div class="stack"><button class="btn sm ghost" id="trials-back">Back</button></div>
@@ -245,13 +245,13 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    Campaign #19 (prototype-first). Verlet-lite point sled on
    player-inked polylines, 540x784 world, fixed-step sim.
    ============================================================ */
-var BUILD="v1.0";
+var BUILD="v2.0";
 var W=540, H=784;
 var GRAV=0.14, FRICT=0.996, RADIUS=7, MAXSP=9;
 var GATE_R=26, GOAL_R=34, KILL_Y=H+50;
 
 /* ---------- art assets (Moonlit Inkwash pack, magenta-cut) ---------- */
-var _AV="svart2";
+var _AV="svart3";
 function _img(s){ var i=new Image(); i.src="assets/"+s+"?v="+_AV; return i; }
 function _rdy(i){ return !!(i&&i.complete&&i.naturalWidth>0); }
 /* fontless-emoji safety: on glyph <img> load failure, reveal the emoji fallback span */
@@ -356,7 +356,35 @@ var TRIALS=[
    proof:[[510,110,320,207,240,255],[60,285,200,337,250,390],[280,430,330,477,450,567,500,647,536,662]] },
  { name:"The Descent", ink:1700, spawn:[60,70], gates:[[240,220,0],[430,320,1],[240,463,2],[200,567,0]], goal:[370,670],
    terrain:[[80,400,160,430]], thorns:[[300,400,320,360,340,400],[120,660,145,620,170,660]],
-   proof:[[26,110,240,227,300,262],[340,300,430,327],[536,330,500,390,240,470,150,500],[30,480,300,630]] }
+   proof:[[26,110,240,227,300,262],[340,300,430,327],[536,330,500,390,240,470,150,500],[30,480,300,630]] },
+ /* ===== EXPANSION (12-29) — descending trails; proofs auto-solved + verified ===== */
+ { name:"Gentle Slope", ink:1000, spawn:[60,90], gates:[[220,280,0],[380,420,1]], goal:[490,540], terrain:[], thorns:[], proof:[[30,118,125,203,220,287,300,357,380,427,435,487,490,547,535,559]] },
+ { name:"Three Beads", ink:1100, spawn:[60,80], gates:[[180,220,0],[300,340,2],[430,460,1]], goal:[500,560], terrain:[], thorns:[], proof:[[30,108,105,168,180,227,240,287,300,347,365,407,430,467,465,517,500,567,545,579]] },
+ { name:"The Leap", ink:1200, spawn:[60,90], gates:[[190,250,0],[350,370,2],[480,480,1]], goal:[510,580], terrain:[[280,430,340,412]], thorns:[], proof:[[30,118,102,184,174,258,254,314,334,378,399,429,464,488,479,538,494,588,555,600]] },
+ { name:"Rolling", ink:1300, spawn:[60,80], gates:[[170,250,0],[300,360,1],[440,470,2]], goal:[500,570], terrain:[], thorns:[], proof:[[30,108,100,179,170,257,235,308,300,367,370,418,440,477,470,527,500,577,545,589]] },
+ { name:"Double Hop", ink:1300, spawn:[60,90], gates:[[200,280,0],[340,380,2],[470,470,1]], goal:[510,580], terrain:[], thorns:[[300,236,318,204,336,236]], proof:[[30,118,115,155,200,287,270,289,340,387,405,384,470,477,490,532,510,587,555,599]] },
+ { name:"The Ramp", ink:1300, spawn:[60,100], gates:[[220,300,0],[380,410,2]], goal:[490,530], terrain:[[120,360,196,388]], thorns:[], proof:[[30,128,125,218,220,307,300,362,380,417,435,477,490,537,535,549]] },
+ { name:"Needle's Eye", ink:1200, spawn:[60,80], gates:[[280,340,1]], goal:[490,530], terrain:[], thorns:[[400,610,430,570,460,610,490,570,520,610]], proof:[[30,108,155,228,280,347,385,442,490,537,535,549]] },
+ { name:"Bramble Gate", ink:1300, spawn:[60,90], gates:[[250,300,0],[420,440,2]], goal:[500,560], terrain:[], thorns:[[302,268,320,234,338,268]], proof:[[30,118,140,213,250,307,335,377,420,447,460,507,500,567,545,579]] },
+ { name:"Thorn Bridge", ink:1200, spawn:[60,90], gates:[[300,320,0]], goal:[500,360], terrain:[], thorns:[[180,540,215,500,250,540,285,500,320,540,355,500,390,540]], proof:[[30,118,165,223,300,327,400,347,500,367,545,379]] },
+ { name:"The Gauntlet", ink:1600, spawn:[60,80], gates:[[200,260,0],[340,370,1],[460,470,2]], goal:[510,560], terrain:[], thorns:[[150,660,180,620,210,660,240,620,270,660]], proof:[[30,108,115,188,200,267,270,322,340,377,400,427,460,477,485,522,510,567,555,579]] },
+ { name:"Thistle Weave", ink:1500, spawn:[60,90], gates:[[220,250,0],[360,380,2],[470,520,1]], goal:[510,620], terrain:[], thorns:[[292,228,310,194,328,228]], proof:[[30,118,125,188,220,257,290,322,360,387,415,457,470,527,490,577,510,627,555,639]] },
+ { name:"The Long Trail", ink:1700, spawn:[60,80], gates:[[200,230,0],[320,350,1],[430,470,2],[490,580,0]], goal:[515,660], terrain:[], thorns:[], proof:[[30,108,111,169,192,237,252,293,312,357,367,413,422,477,452,528,482,587,495,627,507,667,560,679]] },
+ { name:"The Winder", ink:1700, spawn:[60,90], gates:[[180,240,0],[300,360,1],[400,470,2],[490,570,0]], goal:[515,650], terrain:[], thorns:[], proof:[[30,118,105,179,180,247,240,303,300,367,350,418,400,477,445,523,490,577,503,617,515,657,560,669]] },
+ { name:"The Cascade", ink:2100, spawn:[60,70], gates:[[160,200,0],[280,300,2],[380,400,1],[450,500,0],[500,590,2]], goal:[520,662], terrain:[], thorns:[], proof:[[30,98,95,149,160,207,220,253,280,307,330,353,380,407,415,453,450,507,475,548,500,597,510,633,520,669,565,681]] },
+ { name:"Summit", ink:1800, spawn:[60,80], gates:[[200,260,0],[330,360,2],[430,460,1],[500,560,0]], goal:[520,642], terrain:[], thorns:[], proof:[[30,108,115,188,200,267,265,317,330,367,380,417,430,467,465,517,500,567,510,608,520,649,565,661]] },
+ { name:"The Long Weave", ink:2100, spawn:[60,70], gates:[[180,200,0],[290,300,1],[380,400,2],[450,500,0],[500,590,1]], goal:[520,662], terrain:[[96,440,150,462]], thorns:[], proof:[[30,98,105,153,180,207,235,257,290,307,335,357,380,407,415,457,450,507,475,552,500,597,510,633,520,669,565,681]] },
+ { name:"Bramble Peak", ink:1700, spawn:[60,80], gates:[[240,250,0],[380,370,2],[470,500,1]], goal:[510,610], terrain:[], thorns:[[150,660,180,620,210,660,240,620,270,660]], proof:[[30,108,135,175,240,257,310,309,380,377,425,434,470,507,490,562,510,617,555,629]] },
+ { name:"The Grand Trail", ink:2400, spawn:[60,70], gates:[[160,180,0],[260,270,1],[350,360,2],[420,450,0],[470,550,1],[510,640,2]], goal:[525,712], terrain:[], thorns:[], proof:[[30,98,87,143,144,187,194,232,244,277,289,322,334,367,369,412,404,457,429,507,454,557,474,602,494,647,502,683,509,719,570,731]] }
+];
+/* worlds group levels for the world-select flow (explicit index lists keep the
+   original 0-11 proofs + save keys stable) */
+var WORLDS=[
+ { name:"First Trails",  hint:"Learn the ride",        lv:[0,1,2,3,12,13] },
+ { name:"Rolling Hills", hint:"Momentum & hops",       lv:[6,9,14,15,16,17] },
+ { name:"The Bramble",   hint:"Thread the thorns",     lv:[4,18,19,20,21,22] },
+ { name:"The Weave",     hint:"Precision & switchbacks",lv:[5,7,8,10,23,24] },
+ { name:"High Country",  hint:"Long trails, mastery",  lv:[11,25,26,27,28,29] }
 ];
 
 /* ---------- world state ---------- */
@@ -499,7 +527,9 @@ function winRun(){
   $("over-sub").textContent=G.mode==="daily"
     ? "Streak "+PROG.streak+". Come back tomorrow for a fresh trail."
     : "\""+TRIALS[G.trial].name+"\" cleared."+(first?" First ride, well earned.":"");
-  $("over-next").style.display=(G.mode==="trial"&&G.trial<TRIALS.length-1)?"":"none";
+  if(G.mode==="trial"){ var _wp=worldOf(G.trial), _last=(_wp[0]>=0&&_wp[1]===WORLDS[_wp[0]].lv.length-1);
+    $("over-next").textContent=_last?"World trails":"Next trail"; $("over-next").style.display=""; }
+  else $("over-next").style.display="none";
   setTimeout(function(){ show("s-over"); },900);
 }
 function payRun(n,tag){ if(!G||G.mode==="free")return 0;
@@ -760,15 +790,38 @@ function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
   if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
 function stamp(){ $("buildstamp").textContent="Sled Vine "+BUILD+" · "+trialsDone()+"/"+TRIALS.length+" trails · "+PROG.gates+" gates threaded"; }
 
+/* ---------- worlds + level select ---------- */
+var SV_TVIEW=-1;   /* -1 = world list; else the world index whose levels are shown */
+function worldDone(w){ var lv=WORLDS[w].lv,i; for(i=0;i<lv.length;i++)if(!PROG.trials[lv[i]])return false; return true; }
+function worldCount(w){ var lv=WORLDS[w].lv,i,n=0; for(i=0;i<lv.length;i++)if(PROG.trials[lv[i]])n++; return n; }
+function worldUnlocked(w){ return w===0||worldDone(w-1); }
+function worldOf(idx){ var w,j; for(w=0;w<WORLDS.length;w++)for(j=0;j<WORLDS[w].lv.length;j++)if(WORLDS[w].lv[j]===idx)return [w,j]; return [-1,-1]; }
 function renderTrials(){
   var g=$("trialgrid"); g.innerHTML="";
-  var i; for(i=0;i<TRIALS.length;i++)(function(i){
-    var unlocked=i===0||PROG.trials[i-1]||PROG.trials[i];
-    var c=document.createElement("div"); c.className="lvlcard"+(unlocked?"":" locked")+(PROG.trials[i]?" done":"");
-    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+TRIALS[i].name+'</div><div class="ls">'+(PROG.trials[i]?"✿":"")+'</div>';
-    if(unlocked)c.onclick=function(){ startMode("trial",i); };
+  if(SV_TVIEW<0){                                   // WORLD LIST
+    $("trials-h").textContent="Trail Worlds";
+    $("trials-sub").textContent="Pick a world of trails. Clear a world to open the next.";
+    var w; for(w=0;w<WORLDS.length;w++)(function(w){
+      var ok=worldUnlocked(w), done=worldDone(w);
+      var c=document.createElement("div"); c.className="lvlcard"+(ok?"":" locked")+(done?" done":"");
+      c.innerHTML='<div class="ln" style="font-size:15px;line-height:1.05">'+WORLDS[w].name+'</div><div class="lt">'+WORLDS[w].hint+'</div><div class="ls">'+worldCount(w)+'/'+WORLDS[w].lv.length+'</div>';
+      if(ok)c.onclick=function(){ SV_TVIEW=w; renderTrials(); };
+      g.appendChild(c);
+    })(w);
+    return;
+  }
+  var W=WORLDS[SV_TVIEW];                            // LEVELS OF A WORLD
+  $("trials-h").textContent=W.name;
+  $("trials-sub").textContent=W.hint+" — one clean ride each.";
+  var back=document.createElement("div"); back.className="lvlcard"; back.innerHTML='<div class="ln">◄</div><div class="lt">Worlds</div>';
+  back.onclick=function(){ SV_TVIEW=-1; renderTrials(); }; g.appendChild(back);
+  var j; for(j=0;j<W.lv.length;j++)(function(j){
+    var idx=W.lv[j], unlocked=j===0||PROG.trials[W.lv[j-1]];
+    var c=document.createElement("div"); c.className="lvlcard"+(unlocked?"":" locked")+(PROG.trials[idx]?" done":"");
+    c.innerHTML='<div class="ln">'+(j+1)+'</div><div class="lt">'+TRIALS[idx].name+'</div><div class="ls">'+(PROG.trials[idx]?"✿":"")+'</div>';
+    if(unlocked)c.onclick=function(){ startMode("trial",idx); };
     g.appendChild(c);
-  })(i);
+  })(j);
 }
 
 /* ---------- wardrobe ---------- */
@@ -837,7 +890,7 @@ cvs.addEventListener("pointermove",inputMove);
 window.addEventListener("pointerup",inputUp);
 cvs.addEventListener("touchstart",function(e){ e.preventDefault(); },{passive:false});
 
-tap("b-trials",function(){ renderTrials(); show("s-trials"); });
+tap("b-trials",function(){ SV_TVIEW=-1; renderTrials(); show("s-trials"); });
 tap("b-daily",function(){ startMode("daily"); });
 tap("b-free",function(){ startMode("free"); });
 tap("b-how",function(){ show("s-how"); });
@@ -851,7 +904,9 @@ tap("grove-back",function(){ show("s-title"); });
 tap("set-back",function(){ show("s-title"); });
 tap("hud-back",function(){ stopToMenu(); });
 tap("hud-retry",function(){ if(!G)return; if(G.phase==="riding")stopRide(); else if(G.phase==="draw")spawnSled(); });
-tap("over-next",function(){ if(G&&G.mode==="trial"&&G.trial<TRIALS.length-1)startMode("trial",G.trial+1); else stopToMenu(); });
+tap("over-next",function(){ if(G&&G.mode==="trial"){ var wp=worldOf(G.trial);
+    if(wp[0]>=0&&wp[1]<WORLDS[wp[0]].lv.length-1){ startMode("trial",WORLDS[wp[0]].lv[wp[1]+1]); return; } }
+  SV_TVIEW=(G&&G.mode==="trial")?worldOf(G.trial)[0]:-1; renderTrials(); show("s-trials"); });
 tap("over-home",function(){ stopToMenu(); });
 function syncToggles(){
   $("tg-sound").classList.toggle("on",PROG.sound);
