@@ -9,6 +9,7 @@
 3. **Raw drops are source material.** Never delete or overwrite them without Stephen's explicit OK (see feedback_never_overwrite_assets). Leftover raw folders after a shipped cut are normal — the ledger row says so.
 4. **Docs inside drops** (docx/notes): extract the text, record the instructions in the row's notes.
 5. Prompt packs live in this folder (see `README.md`). This ledger tracks the *lifecycle*; the README tracks the *prompts and generate order*.
+6. **Copy every raw drop into a committed location (`satellites/<game>/art-drop/` or an `art-asset-lists/` zip) BEFORE cutting.** Scratchpad/tmp dies with the codespace — Spore Drift's raw sheets were lost this way Jul 16 (cut assets survived in-repo; a re-cut now needs a re-drop). The Dewball landing-spot rule (489ae258) is the standard.
 
 ## Deployed packs (art live on main)
 
@@ -26,7 +27,7 @@
 | Frost Watch | Midnight Vigil | 47 assets | Drive drop | 36f40aab | Jul 16 | |
 | Seed Pot | Midnight Greenhouse | 80 assets | Drive drop | 427e91f0 | Jul 16 | |
 | Silt | Terrarium Nocturne | 5 sheets | Drive drop | 7cf3cde2 | Jul 16 | Transparent-air glass vessel; sand stays procedural. |
-| Spore Drift | Inkwater Bioluminance | 6 sheets | Drive drop | a230721b | Jul 16 | |
+| Spore Drift | Inkwater Bioluminance | 7 of 10 sheets → 44 assets (membranes 12, motes 12, fx 16, bgs 4) | Dropped by Stephen night of Jul 15→16; raw landed in session scratchpad and was LOST when the codespace closed (cut assets all committed) | a230721b (03:51) | Jul 16 | **Missing from drop: UI-plate + trails sheets** (buttons stay CSS — fine). fx cells cut+staged, NOT wired (game has no burst system yet). Re-verified Jul 16 PM: probe clean load 0 errors + gameplay screenshot — orbs/threat-ring/backdrop all correct. Minor: title-screen button emoji may tofu on old devices (□ in headless). |
 | Jul 12 recovery batch | 8 packs, full-object wiring | — | Drive | see memory `project_full_object_wiring_jul12` | Jul 12 | Bgs alone read as "nothing" — full-object wiring is the standard. |
 | LW items | 19 item PNGs | — | `/assets/items/` | (Apr 24) | Apr 24 | 17 catalog + lantern-path + pollen-storm. |
 | Pre-Jul-08 "skinned up front" | nectar-drop, garden-td, bramblewick, burr-blast, mahjong/Jade Garden, sprout-dice, petal-plunge, pitbike-rally | — | various | see per-game memory files | Jun-Jul | Listed in README skip section. |
