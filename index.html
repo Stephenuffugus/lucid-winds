@@ -104281,6 +104281,205 @@ window.LW_Comp = (function(){
 
 <!-- Engagement system: lifetime achievements + daily/weekly challenges. Data + tracking only. UI is separate. -->
 <script src="engagement.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   LW NAME PLANT — every gardener grows ONE plant from their own name.
+   (Stephen 2026-07-16: "featured in a way that all players get to do it
+   once at least… if someone went to plant it, it would warn them that
+   they can't get another.")
+
+   Derivation matches the public /name page EXACTLY (key = trimmed,
+   space-collapsed, lowercased; hash = sha256('lw-name::'+key)) so the
+   plant a player claims here is the same plant the share page shows.
+   Claim writes straight into the greenhouse using the onboarding-gift
+   pattern (client hash must survive — the server mint would replace it).
+   Claim state = localStorage flag + origin:'name' plant in the greenhouse
+   (cloud restore re-detects via origin). v1 note: compost + full local
+   wipe could re-open the claim; server-side flag rides the planned
+   Cloud-Function migration.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var LS_KEY = 'lw_name_plant';
+  function claimedRec(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'null'); }catch(e){ return null; } }
+  function ghNamePlant(){
+    try{
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      for(var i=0;i<gh.length;i++) if(gh[i] && gh[i].origin==='name') return gh[i];
+    }catch(e){}
+    return null;
+  }
+  function isClaimed(){ return !!(claimedRec()||ghNamePlant()); }
+  function normKey(n){ return n.trim().replace(/\s+/g,' ').toLowerCase(); }
+  function possessive(n){ return /s$/i.test(n) ? (n+"'") : (n+"'s"); }
+  function sha256hex(str){
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(buf){
+      var a=new Uint8Array(buf),h='',i;
+      for(i=0;i<a.length;i++) h+=('0'+a[i].toString(16)).slice(-2);
+      return h;
+    });
+  }
+  function toast(t){ if(window._toast) window._toast(t); }
+
+  /* ── Featured banner above the greenhouse grid (until claimed) ── */
+  function ensureBanner(){
+    var grid = document.getElementById('greenhouse-grid');
+    if(!grid) return;
+    var b = document.getElementById('lw-nameplant-banner');
+    if(isClaimed()){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
+    if(b) return;
+    b = document.createElement('button');
+    b.id='lw-nameplant-banner'; b.type='button';
+    b.style.cssText='display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;min-height:56px;margin:0 0 10px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.16),rgba(120,100,40,0.22));color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;';
+    b.innerHTML='<span style="font-size:1.4rem;">🌱</span><span style="flex:1;min-width:0;"><b style="color:var(--gold);letter-spacing:0.04em;font-size:0.85rem;">GROW YOUR NAME</b><br><span style="font-size:0.7rem;color:var(--muted);">Every gardener grows one plant from their own name. Once, forever.</span></span><span style="color:var(--sage);font-weight:700;font-size:0.78rem;white-space:nowrap;">GROW →</span>';
+    b.onclick=function(){ window.LW_NAME_PLANT.open(); };
+    grid.parentNode.insertBefore(b, grid);
+  }
+
+  /* ── Modal ── */
+  var wrap=null, previewT=0, cur=null;
+  function close(){ if(wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap); wrap=null; cur=null; }
+  function open(){
+    close();
+    var already = claimedRec()||ghNamePlant();
+    wrap=document.createElement('div');
+    wrap.id='lw-nameplant-modal';
+    wrap.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(5,8,4,0.86);display:flex;align-items:center;justify-content:center;padding:18px;';
+    var inner=document.createElement('div');
+    inner.style.cssText='width:100%;max-width:420px;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,#141a10,#0d100c);border:1.5px solid rgba(200,168,75,0.5);border-radius:16px;padding:18px 16px;color:#e8dcc8;font-family:Georgia,serif;box-shadow:0 18px 50px rgba(0,0,0,0.55);';
+    if(already){
+      var aName = already.nameOf || already.name || 'you';
+      var aHash = already.hash;
+      var svg=''; try{ svg=window._generatePlantSVG(aHash,170,1,null); }catch(e){}
+      var pn=''; try{ pn=window.getPlantName(aHash); }catch(e){}
+      inner.innerHTML =
+        '<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;color:var(--gold);">YOUR NAME PLANT</div>'+
+        '<div style="text-align:center;margin:10px 0;">'+svg+'</div>'+
+        '<div style="text-align:center;font-style:italic;color:var(--sage);">'+pn+'</div>'+
+        '<p style="font-size:0.8rem;color:var(--muted);text-align:center;line-height:1.6;margin:12px 0;">You have already grown '+possessive(aName)+' plant. One name plant per gardener — once, forever.</p>'+
+        '<button id="lwnp-close" style="display:block;width:100%;min-height:48px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.5);background:rgba(122,179,86,0.15);color:#e8dcc8;font-family:Georgia,serif;font-weight:700;cursor:pointer;">CLOSE</button>';
+      wrap.appendChild(inner); document.body.appendChild(wrap);
+      document.getElementById('lwnp-close').onclick=close;
+      wrap.onclick=function(e){ if(e.target===wrap) close(); };
+      return;
+    }
+    inner.innerHTML =
+      '<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;color:var(--gold);">GROW YOUR NAME</div>'+
+      '<p style="font-size:0.78rem;color:var(--muted);text-align:center;line-height:1.6;margin:8px 0 12px;">Type your name and see the one plant that grows from it. Every gardener may plant theirs <b style="color:#e8dcc8;">once, forever</b>.</p>'+
+      '<input id="lwnp-input" type="text" maxlength="40" placeholder="your name" autocomplete="off" style="display:block;width:100%;box-sizing:border-box;min-height:48px;padding:10px 14px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.45);background:rgba(0,0,0,0.35);color:#f0ebd8;font-family:Georgia,serif;font-size:1rem;text-align:center;">'+
+      '<div id="lwnp-preview" style="text-align:center;min-height:40px;margin:12px 0;"></div>'+
+      '<div id="lwnp-foot" style="display:flex;gap:8px;">'+
+        '<button id="lwnp-claim" disabled style="flex:1;min-height:48px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:#f5ebd0;font-family:Georgia,serif;font-weight:700;cursor:pointer;opacity:0.45;">PLANT IT</button>'+
+        '<button id="lwnp-cancel" style="flex:1;min-height:48px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(122,179,86,0.1);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;">NOT NOW</button>'+
+      '</div>';
+    wrap.appendChild(inner); document.body.appendChild(wrap);
+    wrap.onclick=function(e){ if(e.target===wrap) close(); };
+    document.getElementById('lwnp-cancel').onclick=close;
+    var input=document.getElementById('lwnp-input');
+    var claimBtn=document.getElementById('lwnp-claim');
+    input.oninput=function(){
+      clearTimeout(previewT); cur=null;
+      claimBtn.disabled=true; claimBtn.style.opacity='0.45';
+      previewT=setTimeout(function(){ preview(input.value); },260);
+    };
+    claimBtn.onclick=confirmClaim;
+    setTimeout(function(){ try{ input.focus(); }catch(e){} },60);
+  }
+  function preview(raw){
+    var display=(raw||'').trim().replace(/\s+/g,' ');
+    var box=document.getElementById('lwnp-preview');
+    var claimBtn=document.getElementById('lwnp-claim');
+    if(!display||!box) return;
+    sha256hex('lw-name::'+normKey(display)).then(function(hash){
+      if(!box.isConnected) return;
+      var svg='',pn='',hk=null;
+      try{ svg=window._generatePlantSVG(hash,170,1,null); }catch(e){}
+      try{ pn=window.getPlantName(hash); }catch(e){}
+      try{ hk=window.getHaiku(hash); }catch(e){}
+      box.innerHTML = '<div>'+svg+'</div>'+
+        '<div style="font-style:italic;color:var(--sage);margin-top:4px;">'+pn+'</div>'+
+        (hk?'<div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-top:6px;font-style:italic;">'+hk.line1+'<br>'+hk.line2+'<br>'+hk.line3+'</div>':'');
+      cur={ display:display, hash:hash, name:pn };
+      if(claimBtn){ claimBtn.disabled=false; claimBtn.style.opacity='1'; }
+    });
+  }
+  function confirmClaim(){
+    if(!cur) return;
+    var foot=document.getElementById('lwnp-foot');
+    if(!foot) return;
+    foot.innerHTML =
+      '<div style="width:100%;">'+
+        '<p style="font-size:0.78rem;color:#e0c14e;text-align:center;line-height:1.6;margin:0 0 10px;">⚠️ This is a <b>once-ever</b> planting. One name plant per gardener — you will not be able to grow another, even with a different name. Plant '+possessive(cur.display)+' bloom?</p>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<button id="lwnp-yes" style="flex:1;min-height:48px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.65);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4));color:#f5ebd0;font-family:Georgia,serif;font-weight:700;cursor:pointer;">PLANT IT, FOREVER</button>'+
+          '<button id="lwnp-no" style="flex:1;min-height:48px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(122,179,86,0.1);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;">NOT YET</button>'+
+        '</div>'+
+      '</div>';
+    document.getElementById('lwnp-yes').onclick=doClaim;
+    document.getElementById('lwnp-no').onclick=function(){ close(); open(); if(cur){} };
+  }
+  function doClaim(){
+    if(!cur||isClaimed()) { close(); ensureBanner(); return; }
+    var gh=[];
+    try{ gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); }catch(e){ gh=[]; }
+    var cap=10;
+    try{
+      var stored=parseInt(localStorage.getItem('sws_greenhouse_slots'),10);
+      cap=(stored>=10&&stored<=60)?stored:10;
+    }catch(e){}
+    if(gh.length>=cap){ toast('Greenhouse full — compost or expand slots, then plant your name.'); return; }
+    for(var i=0;i<gh.length;i++) if(gh[i].hash===cur.hash){ toast('That plant already grows in your greenhouse.'); close(); return; }
+    gh.push({
+      hash:cur.hash,
+      date:new Date().toISOString().split('T')[0],
+      born:Date.now(),
+      origin:'name',
+      nameOf:cur.display,
+      rare:false,
+      traits:null,
+      breedCount:0,
+      generation:1
+    });
+    if(window.saveGreenhouse){ saveGreenhouse(gh); } else { localStorage.setItem('sws_greenhouse',JSON.stringify(gh)); }
+    try{ localStorage.setItem(LS_KEY,JSON.stringify({claimed:true,name:cur.display,hash:cur.hash,date:new Date().toISOString()})); }catch(e){}
+    var rarity='Common';
+    try{
+      if(window.hashToTraits&&window.getTerraGrade){
+        var g=window.getTerraGrade(window.hashToTraits(cur.hash));
+        rarity=(g&&(g.name||g.label))||'Common';
+      }
+    }catch(e){}
+    if(window.PW_grantXP){
+      var xp=rarity==='Rare'?12:rarity==='Epic'?25:rarity==='Legendary'?40:10;
+      window.PW_grantXP(xp,'bloom_'+rarity);
+    }
+    if(window.LW_Log){
+      window.LW_Log.write('plant_mint',{hash:cur.hash,name:cur.name,rarity:rarity,grade:rarity,isRare:false,origin:'name'});
+    }
+    try{ if(window.gtag) gtag('event','name_plant_claimed'); }catch(e){}
+    if(window.syncVaultToCloud) setTimeout(syncVaultToCloud,500);
+    toast('🌱 '+possessive(cur.display)+' plant joins the greenhouse — one of one, forever.');
+    close();
+    if(window.renderGreenhouse){ try{ renderGreenhouse(); }catch(e){} }
+    if(window.updateDashboard){ try{ updateDashboard(); }catch(e){} }
+    ensureBanner();
+  }
+
+  /* Banner tracks greenhouse re-renders without touching switchTab. */
+  function hookRender(){
+    var o=window.renderGreenhouse;
+    if(typeof o!=='function'||o.__nameplant) return;
+    var w=function(){ var r=o.apply(this,arguments); try{ ensureBanner(); }catch(e){} return r; };
+    w.__nameplant=true;
+    window.renderGreenhouse=w;
+  }
+  function boot(){ hookRender(); try{ ensureBanner(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
+  else boot();
+
+  window.LW_NAME_PLANT={ open:open, close:close, isClaimed:isClaimed };
+})();
+</script>
 
 <!-- ─────────────────────────────────────────────────────────────────────
      STUDIO DEEP-LINK ROUTER — boot directly into ?game=<id> or #<id>.
