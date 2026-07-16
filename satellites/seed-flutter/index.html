@@ -45,6 +45,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#d9b85a,#b2913a); color:#241c08; border-color:#eed48a; box-shadow:0 4px 0 #6f5a23, 0 8px 20px #0006}
 .btn.sm{min-height:52px; font-size:16px}
+#b-music{flex:0 0 64px; font-size:22px}
+#b-music.playing{border-color:#ffd97a; box-shadow:0 0 0 2px rgba(255,217,122,.3),0 0 16px rgba(255,217,122,.4)}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -98,6 +100,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="b-ward"><img class="micon" src="assets/ui/icon_wardrobe.png?v=cc1" onerror="this.style.display='none'" alt=""> Wardrobe</button>
         <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
         <button class="btn sm" id="b-set"><img class="micon" src="assets/ui/icon_gear.png?v=cc1" onerror="this.style.display='none'" alt=""></button>
       </div>
     </div>
@@ -752,6 +755,23 @@ function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.clas
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-haze','haze');
 $('buildstamp').textContent='Cosmic Cadets '+BUILD;
+
+/* ---------- studio soundtrack (shared jukebox, same pattern as /play shell) ----------
+   Standalone visits get the ♫ button → SWSPlayer drawer (cross-page continuity).
+   When the portal frames us (?embed=1 or iframed) the portal jukebox owns the
+   audio, so the button hides and no second player ever loads. */
+(function(){
+  var btn=$('b-music'); if(!btn)return;
+  var embedded;
+  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }
+  catch(e){ embedded=true; }
+  if(embedded){ btn.style.display='none'; return; }
+  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
+  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
+
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
 
 /* ---------- test hook ---------- */
