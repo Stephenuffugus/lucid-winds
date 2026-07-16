@@ -160,7 +160,7 @@
 
     // Card grid host
     var gridWrap = document.createElement('div');
-    gridWrap.style.cssText = 'max-width:540px;margin:8px auto;padding:0 8px;';
+    gridWrap.style.cssText = 'max-width:540px;margin:8px auto;padding:10px 8px;background:#b6bcb2;border-radius:14px;box-shadow:inset 0 1px 8px rgba(0,0,0,0.22);';
     var grid = document.createElement('div');
     grid.id = 'card-grid';
     grid.style.cssText = 'display:grid;gap:8px;grid-template-columns:repeat(3,1fr);';

@@ -593,7 +593,7 @@ function card(g, isFeat){
   var shot;
   // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
   // bump this when the image files change (2026-06-28: thumbs optimized ~95%).
-  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026070502'; });
+  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026071601'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
@@ -1011,7 +1011,7 @@ document.addEventListener('click', function(e){
     else deps=['/games/'+id+'.js'];
     // version-stamp so a pushed game update reaches returning portal players instead
     // of a cached copy (bump alongside _tv). Keep in sync with _tv's date.
-    return deps.map(function(u){ return u+(u.indexOf('?')>=0?'&':'?')+'v=2026071101'; });
+    return deps.map(function(u){ return u+(u.indexOf('?')>=0?'&':'?')+'v=2026071601'; });
   }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function buildShellDoc(id,name){
@@ -1020,7 +1020,7 @@ document.addEventListener('click', function(e){
       +'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
       +'<base href="/">'
       +'<title>'+esc(name)+' — Sky Wolf Studios</title>'
-      +'<link rel="stylesheet" href="/shared.css?v=20260701">'
+      +'<link rel="stylesheet" href="/shared.css?v=20260716">'
       +'<link rel="stylesheet" href="/play/shell.css?v=6">'
       +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
       +'<script defer src="/sunbeam-sdk.js?v=2"><\/script>'
