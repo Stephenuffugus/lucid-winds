@@ -135,8 +135,27 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.0';
+var BUILD='v1.1';
 var curScreen='s-title';
+
+/* ---------- Midnight Greenhouse art (gated behind load; procedural fallbacks kept) ---------- */
+var ART_V='sp1';
+function _spImg(src){ var im=new Image(); try{ im.src=src+'?v='+ART_V; }catch(e){} return im; }
+function _spReady(im){ return !!(im&&im.complete&&im.naturalWidth>0); }
+var _SPR={};
+function _spr(p){ if(!_SPR[p])_SPR[p]=_spImg('assets/'+p+'.png'); return _SPR[p]; }
+var _BG={};
+function _spBg(n){ if(!_BG[n])_BG[n]=_spImg('assets/bg/'+n+'.jpg'); return _BG[n]; }
+var _SEASONS=['spring','summer','autumn','winter'];
+function seasonIdx(){ var m=new Date().getMonth(); return (m>=2&&m<=4)?0:(m>=5&&m<=7)?1:(m>=8&&m<=10)?2:3; }
+function seasonNm(){ return _SEASONS[seasonIdx()]; }
+(function(){ var i; for(i=0;i<8;i++){ _spr('tiers/tier'+i+'_idle'); }
+  ['pot/pot_'+seasonNm(),'vine/vine_calm','vine/vine_stirring','vine/vine_warning','vine/vine_overflow',
+   'fx/ring_thick','fx/glow','fx/beam','fx/sparkle','fx/comp_burst','fx/comp_petalring','fx/comp_halo',
+   'ui/next_wells'].forEach(_spr);
+  _spBg('bg_'+seasonNm()); })();
+/* one-shot celebratory FX sprites (companion bloom money shot) */
+function spawnFx(sp,x,y,dur,h){ if(!G)return; if(!G.fxb)G.fxb=[]; G.fxb.push({sp:sp,x:x,y:y,t:0,dur:dur||0.7,h:h||120}); if(G.fxb.length>24)G.fxb.shift(); }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
@@ -188,7 +207,7 @@ function newGame(mode){
   var rng;
   if(mode==='daily'){ var d=new Date(); rng=mkRng((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0); }
   else rng=mkRng((Date.now()>>>0)^(Math.floor(Math.random()*1e9)));
-  G={ mode:mode, rng:rng, fruits:[], parts:[], floats:[], rings:[], score:0, comps:0, bestTier:0,
+  G={ mode:mode, rng:rng, fruits:[], parts:[], floats:[], rings:[], fxb:[], score:0, comps:0, bestTier:0,
       dropX:VW/2, cur:nextTier(rng), queue:[nextTier(rng),nextTier(rng)], dropCD:0, canDrop:true,
       overTime:0, warn:0, slow:1, flash:0, shake:0, t:0, phase:'play', firstMerge:false, seq:0 };
   show('s-play');
@@ -259,6 +278,7 @@ function companionBloom(x,y){ G.comps++; PROG.comps=(PROG.comps||0)+1;
   for(var i=G.fruits.length-1;i>=0;i--){ var f=G.fruits[i]; var dx=f.x-x,dy=f.y-y; if(dx*dx+dy*dy<150*150){ burst(f.x,f.y,6,TIERS[f.tier].body); G.score+=TIERS[f.tier].sc; G.fruits.splice(i,1); } }
   for(var k=0;k<30;k++){ var a=Math.PI*2*k/30; G.parts.push({x:x,y:y,vx:Math.cos(a)*(120+Math.random()*180),vy:Math.sin(a)*(120+Math.random()*180),life:1.3,col:k%2?'#f2d98a':'#e58fa0'}); }
   ring(x,y,160); float(x,y-30,comp+' COMPANION!'); float(x,y-56,'HATCHED +500');
+  spawnFx('fx/comp_halo',x,y,1.1,320); spawnFx('fx/comp_petalring',x,y,0.9,300); spawnFx('fx/comp_burst',x,y,0.7,240);
   sfx('comp'); haptic(30);
   if(G.mode==='zen'){ if(G.score>(PROG.best.zen||0))PROG.best.zen=G.score; saveProg(); try{ if(window._sbCapEarn)_sbCapEarn(2,'seedpot:zen'); }catch(e){} }
 }
@@ -292,6 +312,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   for(var i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=900*dt; p.life-=dt*1.5; if(p.life<=0)G.parts.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ G.floats[i].y-=30*dt; G.floats[i].life-=dt*1.0; if(G.floats[i].life<=0)G.floats.splice(i,1); }
   for(i=G.rings.length-1;i>=0;i--){ var r=G.rings[i]; r.r+=(r.max-r.r)*Math.min(1,dt*10); r.life-=dt*2; if(r.life<=0)G.rings.splice(i,1); }
+  if(G.fxb){ for(i=G.fxb.length-1;i>=0;i--){ var b=G.fxb[i]; b.t+=dt; if(b.t>=b.dur)G.fxb.splice(i,1); } }
 }
 function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false;
   var best=PROG.best[G.mode]||0, isBest=G.score>best; if(isBest)PROG.best[G.mode]=G.score; saveProg();
@@ -310,15 +331,24 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   ctx.save(); if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
-  // bench + lamp glow
-  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0c120b'); bg.addColorStop(1,'#0a0d08'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  var lamp=ctx.createRadialGradient(VW/2,240,20,VW/2,240,420); lamp.addColorStop(0,'rgba(200,168,75,0.14)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH);
+  // bench + lamp glow — season bench backdrop (art) else gradient+lamp
+  var sbg=_spBg('bg_'+seasonNm());
+  if(_spReady(sbg)){ try{ ctx.drawImage(sbg,0,0,VW,VH); }catch(e){} }
+  else { var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0c120b'); bg.addColorStop(1,'#0a0d08'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+    var lamp=ctx.createRadialGradient(VW/2,240,20,VW/2,240,420); lamp.addColorStop(0,'rgba(200,168,75,0.14)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH); }
   // pot (terracotta) behind fruits
   drawPot();
   // fruits
   for(var i=0;i<G.fruits.length;i++) drawFruit(G.fruits[i]);
-  // rings
-  for(i=0;i<G.rings.length;i++){ var r=G.rings[i]; ctx.globalAlpha=Math.max(0,r.life)*0.5; ctx.strokeStyle='#f5d38a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,7); ctx.stroke(); } ctx.globalAlpha=1;
+  // rings (art) else stroke
+  var rim=_spr('fx/ring_thick'), rimOk=_spReady(rim);
+  for(i=0;i<G.rings.length;i++){ var r=G.rings[i];
+    if(rimOk){ ctx.save(); ctx.globalAlpha=Math.max(0,r.life)*0.85; ctx.globalCompositeOperation='lighter'; var rd=r.r*2.2; try{ ctx.drawImage(rim,r.x-rd/2,r.y-rd/2,rd,rd); }catch(e){} ctx.restore(); }
+    else { ctx.globalAlpha=Math.max(0,r.life)*0.5; ctx.strokeStyle='#f5d38a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,7); ctx.stroke(); } } ctx.globalAlpha=1;
+  // celebratory FX sprites (companion bloom)
+  if(G.fxb){ for(i=0;i<G.fxb.length;i++){ var b=G.fxb[i]; var bim=_spr(b.sp); if(!_spReady(bim))continue;
+    var bf=b.t/b.dur, ba=(bf<0.2?bf/0.2:1-(bf-0.2)/0.8), bsc=0.55+bf*0.75; ctx.save(); ctx.globalAlpha=Math.max(0,ba); ctx.globalCompositeOperation='lighter';
+    var bh=b.h*bsc, bs=bh/bim.naturalHeight, bw=bim.naturalWidth*bs; try{ ctx.drawImage(bim,b.x-bw/2,b.y-bh/2,bw,bh); }catch(e){} ctx.restore(); } }
   // particles
   for(i=0;i<G.parts.length;i++){ var p=G.parts[i]; ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7); ctx.fill(); } ctx.globalAlpha=1;
   // overgrowth vine danger line
@@ -335,9 +365,14 @@ function render(){ if(!ctx||!G)return;
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY POT':G.mode==='zen'?'ZEN POT':'CLASSIC', 20, 58);
   // next queue (top-right)
   ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('NEXT', VW-16, 30);
+  var nw=_spr('ui/next_wells'); if(_spReady(nw)){ var nwh=46, nws=nwh/nw.naturalHeight, nww=nw.naturalWidth*nws; ctx.save(); ctx.globalAlpha=0.9; try{ ctx.drawImage(nw, VW-62-nww/2, 44-nwh/2, nww, nwh); }catch(e){} ctx.restore(); }
   drawMini(VW-40, 44, G.queue[0], 0.5); drawMini(VW-84, 44, G.queue[1], 0.4);
 }
-function drawPot(){ ctx.save();
+function drawPot(){
+  var im=_spr('pot/pot_'+seasonNm());
+  if(_spReady(im)){ var x0=WX0-40, x1=WX1+40, y0=DANGER-12, y1=FLOOR+30;
+    try{ ctx.drawImage(im, x0, y0, x1-x0, y1-y0); }catch(e){} return; }
+  ctx.save();
   // pot body
   ctx.fillStyle='#7a4a26'; ctx.beginPath(); ctx.moveTo(WX0-10,DANGER+8); ctx.lineTo(WX1+10,DANGER+8); ctx.lineTo(WX1-4,FLOOR+18); ctx.lineTo(WX0+4,FLOOR+18); ctx.closePath(); ctx.fill();
   ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.moveTo(WX0-6,DANGER+10); ctx.lineTo(WX1+6,DANGER+10); ctx.lineTo(WX1-6,FLOOR+12); ctx.lineTo(WX0+6,FLOOR+12); ctx.closePath(); ctx.fill();
@@ -349,7 +384,15 @@ function drawPot(){ ctx.save();
   ctx.fillStyle='#3a2a18'; ctx.fillRect(WX0,FLOOR-10,WX1-WX0,14);
   ctx.restore();
 }
+var _VINE=['vine/vine_calm','vine/vine_stirring','vine/vine_warning','vine/vine_overflow'];
 function drawDanger(){ var y=DANGER, pulse=0.5+0.5*Math.sin(G.t*(3+G.warn*8));
+  // overgrowth vine cross-fade (art) else procedural line
+  var t=Math.min(3, G.warn*1.6 + Math.min(1.6,G.overTime)*1.0);
+  var i0=Math.floor(t), i1=Math.min(3,i0+1), fr=t-i0;
+  var im0=_spr(_VINE[i0]), im1=_spr(_VINE[i1]);
+  if(_spReady(im0)){ var vw=WX1-WX0+64;
+    function _vine(im,al){ if(!_spReady(im)||al<=0.01)return; var s=vw/im.naturalWidth, vh=im.naturalHeight*s; ctx.save(); ctx.globalAlpha=al; try{ ctx.drawImage(im, WX0-32, DANGER-vh*0.62, vw, vh); }catch(e){} ctx.restore(); }
+    _vine(im0, 1); _vine(im1, fr); return; }
   ctx.save(); ctx.globalAlpha=0.35+G.warn*0.5;
   ctx.strokeStyle=G.warn>0.15?('rgba('+Math.round(150+G.warn*105)+','+Math.round(120-G.warn*60)+',60,1)'):'rgba(120,160,80,0.8)';
   ctx.lineWidth=3; ctx.beginPath();
@@ -360,14 +403,23 @@ function drawDanger(){ var y=DANGER, pulse=0.5+0.5*Math.sin(G.t*(3+G.warn*8));
 }
 function drawDropper(){ var T=TIERS[G.cur], x=Math.max(WX0+T.r,Math.min(WX1-T.r,G.dropX));
   if(SET.guide){ ctx.save(); ctx.globalAlpha=G.canDrop?0.28:0.12; ctx.strokeStyle='#e8dcc8'; ctx.setLineDash([4,8]); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,DROPY+T.r); ctx.lineTo(x,FLOOR); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
-  // hovering seed on a beam of light
+  // hovering seed on a beam of light (art beam else gradient)
   ctx.save(); ctx.globalAlpha=G.canDrop?1:0.4;
-  var beam=ctx.createLinearGradient(0,0,0,DROPY); beam.addColorStop(0,'rgba(200,168,75,0)'); beam.addColorStop(1,'rgba(200,168,75,0.12)'); ctx.fillStyle=beam; ctx.fillRect(x-T.r,0,T.r*2,DROPY);
+  var bm=_spr('fx/beam');
+  if(_spReady(bm)){ ctx.save(); ctx.globalAlpha=(G.canDrop?0.55:0.22); var bw=T.r*2.6; try{ ctx.drawImage(bm, x-bw/2, -6, bw, DROPY+T.r); }catch(e){} ctx.restore(); }
+  else { var beam=ctx.createLinearGradient(0,0,0,DROPY); beam.addColorStop(0,'rgba(200,168,75,0)'); beam.addColorStop(1,'rgba(200,168,75,0.12)'); ctx.fillStyle=beam; ctx.fillRect(x-T.r,0,T.r*2,DROPY); }
   var bob=Math.sin(G.t*3)*3; drawFruitAt(x,DROPY+bob,G.cur,1); ctx.restore();
 }
 function shapePath(o,scale){ var r=o.r*scale, sh=TIERS[o.tier].shape; return {r:r,sh:sh}; }
 function drawFruit(f){ drawFruitAt(f.x,f.y,f.tier,f.sq); }
-function drawFruitAt(x,y,tier,sq){ var T=TIERS[tier], r=T.r; ctx.save(); ctx.translate(x,y); ctx.scale(sq, 2-sq);
+function drawFruitAt(x,y,tier,sq){ var T=TIERS[tier], r=T.r;
+  // painted tier sprite (art) — squash transform preserved; procedural shapes are the fallback
+  var _im=_spr('tiers/tier'+tier+'_idle');
+  if(_spReady(_im)){ ctx.save(); ctx.translate(x,y); ctx.scale(sq,2-sq);
+    var _tw=2*r*1.16, _s=_tw/_im.naturalWidth, _th=_im.naturalHeight*_s, _mh=2*r*1.72;
+    if(_th>_mh){ _s=_mh/_im.naturalHeight; _th=_mh; _tw=_im.naturalWidth*_s; }
+    try{ ctx.drawImage(_im,-_tw/2,-_th/2,_tw,_th); }catch(e){} ctx.restore(); return; }
+  ctx.save(); ctx.translate(x,y); ctx.scale(sq, 2-sq);
   ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=8; ctx.shadowOffsetY=4;
   if(T.shape==='blossom'){ ctx.fillStyle=T.body; for(var k=0;k<6;k++){ var a=Math.PI*2*k/6; ctx.beginPath(); ctx.ellipse(Math.cos(a)*r*0.5,Math.sin(a)*r*0.5,r*0.55,r*0.34,a,0,7); ctx.fill(); } ctx.shadowBlur=0; ctx.fillStyle=T.core; ctx.beginPath(); ctx.arc(0,0,r*0.4,0,7); ctx.fill(); }
   else if(T.shape==='heirloom'){ ctx.fillStyle=T.body; for(var k2=0;k2<8;k2++){ var a2=Math.PI*2*k2/8; ctx.beginPath(); ctx.ellipse(Math.cos(a2)*r*0.42,Math.sin(a2)*r*0.42,r*0.5,r*0.3,a2,0,7); ctx.fill(); } for(var k3=0;k3<6;k3++){ var a3=Math.PI*2*k3/6+0.4; ctx.fillStyle='#e0c268'; ctx.beginPath(); ctx.ellipse(Math.cos(a3)*r*0.28,Math.sin(a3)*r*0.28,r*0.32,r*0.2,a3,0,7); ctx.fill(); } ctx.shadowBlur=0; ctx.fillStyle=T.core; ctx.beginPath(); ctx.arc(0,0,r*0.3,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(0,0,r*0.14,0,7); ctx.fill(); }
@@ -383,8 +435,10 @@ function drawFruitAt(x,y,tier,sq){ var T=TIERS[tier], r=T.r; ctx.save(); ctx.tra
   ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.arc(-r*0.34,-r*0.4,r*0.2,0,7); ctx.fill();
   ctx.restore();
 }
-function drawMini(x,y,tier,scale){ var T=TIERS[tier]; ctx.save(); ctx.translate(x,y); var r=Math.min(16,T.r*scale);
-  ctx.fillStyle=T.body; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.fillStyle=T.core; ctx.beginPath(); ctx.arc(0,0,r*0.4,0,7); ctx.fill(); ctx.restore(); }
+function drawMini(x,y,tier,scale){ var T=TIERS[tier]; var r=Math.min(16,T.r*scale);
+  var im=_spr('tiers/tier'+tier+'_idle');
+  if(_spReady(im)){ var d=r*2.3, s=d/Math.max(im.naturalWidth,im.naturalHeight), w=im.naturalWidth*s, h=im.naturalHeight*s; try{ ctx.drawImage(im,x-w/2,y-h/2,w,h); }catch(e){} return; }
+  ctx.save(); ctx.translate(x,y); ctx.fillStyle=T.body; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.fillStyle=T.core; ctx.beginPath(); ctx.arc(0,0,r*0.4,0,7); ctx.fill(); ctx.restore(); }
 
 /* ===== ladder preview (title) ===== */
 function drawLadder(){ var host=$('ladder'); host.innerHTML='';
@@ -414,6 +468,8 @@ function boot(){
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
   drawLadder();
+  // re-render the title ladder once the painted tier sprites finish loading
+  setTimeout(drawLadder,300); setTimeout(drawLadder,900); setTimeout(drawLadder,2000);
   tap('b-classic', function(){ newGame('classic'); });
   tap('b-daily', function(){ newGame('daily'); });
   tap('b-zen', function(){ newGame('zen'); });
