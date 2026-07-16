@@ -129,6 +129,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div></div>
 </div></div>
 
+<!-- In-run home button (Stephen 3AM notes: no way back to menu mid-game) -->
+<button id="b-home" aria-label="Back to menu" style="display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;z-index:60;width:48px;height:48px;padding:0;border:0;background:transparent;cursor:pointer;align-items:center;justify-content:center;">
+  <img src="assets/ui/icon_back.png?v=sp2" alt="" style="width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));" onerror="this.outerHTML='◄';">
+</button>
+
 <script>
 (function(){
 "use strict";
@@ -139,7 +144,7 @@ var BUILD='v1.1';
 var curScreen='s-title';
 
 /* ---------- Midnight Greenhouse art (gated behind load; procedural fallbacks kept) ---------- */
-var ART_V='sp1';
+var ART_V='sp2';
 function _spImg(src){ var im=new Image(); try{ im.src=src+'?v='+ART_V; }catch(e){} return im; }
 function _spReady(im){ return !!(im&&im.complete&&im.naturalWidth>0); }
 var _SPR={};
@@ -156,7 +161,8 @@ function seasonNm(){ return _SEASONS[seasonIdx()]; }
   _spBg('bg_'+seasonNm()); })();
 /* one-shot celebratory FX sprites (companion bloom money shot) */
 function spawnFx(sp,x,y,dur,h){ if(!G)return; if(!G.fxb)G.fxb=[]; G.fxb.push({sp:sp,x:x,y:y,t:0,dur:dur||0.7,h:h||120}); if(G.fxb.length>24)G.fxb.shift(); }
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
+  var hb=$('b-home'); if(hb)hb.style.display=(id==='s-play')?'flex':'none'; }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, shake:true, guide:true };
@@ -476,6 +482,9 @@ function boot(){
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
+  /* Stephen 2026-07-16 3AM notes: players were STUCK in a run with no way
+     back to the menu. Fixed home button, visible only during s-play. */
+  tap('b-home', function(){ running=false; show('s-title'); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('go-retry', function(){ newGame(G?G.mode:'classic'); });
