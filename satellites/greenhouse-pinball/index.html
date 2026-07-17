@@ -370,7 +370,9 @@ function physics(dt){
       for(var q=0;q<SHOTS.length;q++){ var sh=SHOTS[q];
         if(sh.type==='standup'){ if(circHit(b,sh,0.7,0)) onStandup(sh); }
         else if(sh.type==='drop'){ if(!sh.down && circHit(b,sh,0.5,0)) onDrop(sh); }
-        else if(sh.type==='scoop'){ var sdx=b.x-sh.x,sdy=b.y-sh.y; if(sdx*sdx+sdy*sdy<sh.r*sh.r && !G.scoopBall) onScoop(b,sh); }
+        else if(sh.type==='scoop'){ var sdx=b.x-sh.x,sdy=b.y-sh.y;
+          // cooldown guards the unlit dribble-farm only — a LIT scoop always accepts the shot
+          if(sdx*sdx+sdy*sdy<sh.r*sh.r && !G.scoopBall && (sh.cd<=0 || G.scoopLit || (G.wizardReady&&!G.multiball))) onScoop(b,sh); }
         else if(sh.type==='ramp'||sh.type==='orbit'){ if(!b.onRail){ var rdx=b.x-sh.x,rdy=b.y-sh.y; if(rdx*rdx+rdy*rdy<sh.er*sh.er){ var vd=b.vx*sh.tx+b.vy*sh.ty; if(vd>=sh.thr) enterRail(b,sh); } } }
         else if(sh.type==='spinner'){ var pdx=b.x-sh.x,pdy=b.y-sh.y; if(pdx*pdx+pdy*pdy<sh.r*sh.r && sh.cd<=0) onSpinner(sh,Math.sqrt(b.vx*b.vx+b.vy*b.vy)); }
         else if(sh.type==='rollover'){ var odx=b.x-sh.x,ody=b.y-sh.y; if(odx*odx+ody*ody<sh.r*sh.r && sh.cd<=0) onRollover(sh); }
@@ -495,6 +497,10 @@ function onDrop(sh){ if(sh.down||sh.cd>0)return; sh.cd=0.2; sh.down=true; sh.lam
   if(allDown){ G.score+=10000; G.scoopLit=true; G.dropResetT=0.5;
     float(165,548,'THISTLE BANK!'); float(165,574,'+10000 · SCOOP LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20); } }
 function onScoop(b,sh){ b.captured=true; b.vx=0; b.vy=0; b.x=sh.x; b.y=sh.y;
+  // Dribble-back guard (Stephen 7/17: the hole held the ball and paid points
+  // forever). A ball that falls straight back in after an eject gets a quick,
+  // zero-award kick instead of another full hold + award cycle.
+  if((G.scoopDribT||0)>0 && !G.scoopLit && !(G.wizardReady&&!G.multiball)){ G.scoopBall=b; G.scoopHold=0.35; G.scoopMode='dribble'; G.scoopAward=0; sfx('bump',1); return; }
   G.scoopBall=b; G.scoopHold=1.0; G.scoopWasLit=!!G.scoopLit; G.scoopLit=false; sh.lamp=0;
   var allDone=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])allDone=false;
   if(G.pollenMB) G.scoopMode=G.superLit?'super':'mystery';     // no quest/wizard start mid-multiball
@@ -620,8 +626,14 @@ function step(dt){ if(!G)return; G.t+=dt;
   // shot cooldowns + drop-bank reset + scoop capture/eject
   for(var si=0;si<SHOTS.length;si++){ if(SHOTS[si].cd>0){ SHOTS[si].cd-=dt; if(SHOTS[si].cd<0)SHOTS[si].cd=0; } }
   if(G.dropResetT>0){ G.dropResetT-=dt; if(G.dropResetT<=0){ G.dropResetT=0; for(si=0;si<SHOTS.length;si++){ if(SHOTS[si].type==='drop'){ SHOTS[si].down=false; SHOTS[si].lamp=1; } } } }
-  if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false; sb.vx=-260; sb.vy=-900; sfx('launch'); haptic(12); G.scoopBall=null;
-    if(G.scoopMode==='wizard'){ startWizard(); }
+  if((G.scoopDribT||0)>0){ G.scoopDribT-=dt; if(G.scoopDribT<0)G.scoopDribT=0; }
+  if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false;
+    // varied eject so no bounce pattern can resonate straight back into the mouth
+    sb.vx=-(230+Math.random()*130); sb.vy=-(850+Math.random()*130); sfx('launch'); haptic(12); G.scoopBall=null;
+    G.scoopDribT=5;                                            // 5s dribble window: re-entry pays nothing
+    var _scsh=shotById('scoop'); if(_scsh)_scsh.cd=1.2;        // and the mouth won't even grab for 1.2s
+    if(G.scoopMode==='dribble'){ /* quick silent kick — no award, no mode */ }
+    else if(G.scoopMode==='wizard'){ startWizard(); }
     else if(G.scoopMode==='super'){ var sj=Math.round(1000000*G.mbLevel); G.score+=sj; G.superLit=false; G.scoopLit=false;
       G.superCount=(G.superCount||0)+1; G.jpCount=0;
       var jpGrew=G.jpLadder<2; G.jpLadder=Math.min(2,G.jpLadder*2);   // one doubling, two supers max — the wizard stays king
