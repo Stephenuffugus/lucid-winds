@@ -183,7 +183,7 @@ function todayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+
 /* ---------- grid engine ---------- */
 var COLS=5, ROWS=7;
 var CELL=96, GAP=8, BX=(540-(COLS*CELL+(COLS-1)*GAP))/2, BY=170;
-var COLORS=['#5b9bd5','#7ec98a','#e0a843','#d8607a','#9a6fc4','#4aa8a0','#c9793a','#5f74d8','#c94b6a','#8a9a3a'];
+var COLORS=['#5b9bd5','#7ec98a','#e0a843','#d8607a','#9a6fc4','#4aa8a0','#c9793a','#5f74d8','#e4e6ef','#8a9a3a'];   // idx8 (512) was near-identical to idx3 (16) red — Jessie 7/16
 function colOf(e){ return COLORS[(e-1)%COLORS.length]; }
 function labelOf(e){ var v=Math.pow(2,e); if(v>=1024) return (v/1024)+'K'; return String(v); }
 
@@ -363,7 +363,10 @@ function render(){
   ctx.font='800 34px system-ui,sans-serif';
   ctx.fillText(G.score.toLocaleString(), 270, 76);
   ctx.font='600 13px system-ui,sans-serif'; ctx.fillStyle='#8d90a8';
-  var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+(G.goal?(' · '+G.goal.txt+(G.goal.t==='clear'?(' ('+(G.goal.got||0)+'/'+G.goal.n+')'):'')) : ''))
+  var goalProg = !G.goal?'' : G.goal.t==='clear' ? (' ('+(G.goal.got||0)+'/'+G.goal.n+')')
+              : G.goal.t==='score' ? (' ('+Math.min(G.score-G.goal.base,G.goal.s).toLocaleString()+'/'+G.goal.s.toLocaleString()+')')
+              : (' (best '+labelOf(G.bigE)+')');   // 'make' goals show your biggest tile so far — Jessie 7/16: every level should show progress
+  var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+(G.goal?(' · '+G.goal.txt+goalProg) : ''))
           : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+(G.tapLimit-G.taps)+' taps left')
           : 'ZEN · biggest '+labelOf(G.bigE);
   ctx.fillText(sub, 270, 102);
