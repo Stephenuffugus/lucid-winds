@@ -30,10 +30,16 @@ var POT_TIERS = [
 // milestone, SMALL later. We store the highest level the player has
 // ever reached in lw_st_best_lvl so they don't lose access if a run
 // ends at L1.
+/* v2 (Stephen 7/17): the player CHOOSES a decorative pot for the whole round.
+   Each pot has its own mouth width — the smaller the mouth, the more every
+   seed pays. The pot stays put between throws. */
 var POT_SIZES=[
-  { key:'large',  name:'LARGE',  unlockAt:1, mult:1.0, minW:60, maxW:90, hint:'Easy target, standard reward' },
-  { key:'medium', name:'MEDIUM', unlockAt:4, mult:1.5, minW:40, maxW:60, hint:'1.5× score for every seed' },
-  { key:'small',  name:'SMALL',  unlockAt:8, mult:2.5, minW:26, maxW:40, hint:'2.5× score · precision mode' }
+  { key:'clay',   name:'Clay Pot',      unlockAt:1,  mult:1.0, mouth:86, base:'#6b4a2a', rim:'#8a6a3a', deco:'plain',  hint:'Wide and friendly' },
+  { key:'terra',  name:'Terracotta',    unlockAt:4,  mult:1.2, mouth:74, base:'#b06040', rim:'#d08a5a', deco:'bands',  hint:'A touch narrower' },
+  { key:'urn',    name:'Glazed Urn',    unlockAt:6,  mult:1.5, mouth:62, base:'#406080', rim:'#6a9ac0', deco:'glaze',  hint:'Half again the score' },
+  { key:'jade',   name:'Jade Vessel',   unlockAt:9,  mult:1.9, mouth:52, base:'#3a7050', rim:'#7ac89a', deco:'rings',  hint:'For steady hands' },
+  { key:'gold',   name:'Golden Pot',    unlockAt:12, mult:2.4, mouth:42, base:'#a07a20', rim:'#ffd76a', deco:'stripe', hint:'Riches for the precise' },
+  { key:'cosmic', name:'Cosmic Cradle', unlockAt:18, mult:3.0, mouth:32, base:'#3a1a52', rim:'#b57de0', deco:'stars',  hint:'The eye of a needle' }
 ];
 function _STbestLevel(){try{return parseInt(localStorage.getItem('lw_st_best_lvl')||'1',10)||1;}catch(e){return 1;}}
 function _STsaveBestLevel(n){try{var b=_STbestLevel();if(n>b)localStorage.setItem('lw_st_best_lvl',String(n));}catch(e){}}
@@ -83,7 +89,7 @@ window._gameFns.seedtoss2=function ST(a){
   var pan=document.createElement('div');pan.id='STpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_STN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_STN()" style="min-height:48px;padding:10px 22px;font-weight:700;">↻ New Game</button>';
 
   function setup(){
     pan.innerHTML='<canvas id="STc" width="'+W+'" height="'+H+'" style="background:#0d100c;border:1px solid rgba(122,179,86,0.2);border-radius:10px;touch-action:none;max-width:100%;"></canvas><div id="STmsg" style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--cream);min-height:20px;margin-top:6px;"></div>';
@@ -112,20 +118,20 @@ window._gameFns.seedtoss2=function ST(a){
   }
 
   function genPot(){
+    // Called ONCE per round (Stephen: the pot cannot change every throw).
+    // The chosen pot's mouth is exact; only the wind varies between throws.
     GROUND_Y=H*0.88;
-    // Pot width range comes from the player-chosen size, not from level.
-    // Keeps the size contract honest: if they picked SMALL, every pot
-    // is small. Level still controls art tier, wind, and position spread.
-    var minW=currentSize.minW,maxW=currentSize.maxW;
-    var pw=minW+Math.random()*(maxW-minW);
-    var ph=pw*0.7;
-    var baseX=W*0.5,spread=W*0.15+level*W*0.02;
-    var px=Math.max(pw/2+10,Math.min(W-pw/2-10,baseX+(Math.random()-0.5)*spread));
+    var pw=currentSize.mouth;
+    var ph=pw*0.72;
+    var baseX=W*0.5,spread=W*0.18;
+    var px=Math.max(pw/2+12,Math.min(W-pw/2-12,baseX+(Math.random()-0.5)*spread));
     var py=GROUND_Y;
-    if(level>=4&&Math.random()<0.3)py=GROUND_Y-40-Math.random()*50;
     pot={x:px,y:py,width:pw,height:ph};
-    wind=level>=3?(Math.random()-0.5)*60*Math.min(level*0.4,3):0;
+    rollWind();
     pickWeather();
+  }
+  function rollWind(){
+    wind=level>=3?(Math.random()-0.5)*60*Math.min(level*0.4,3):0;
   }
 
   function resetSeed(){
@@ -174,6 +180,14 @@ window._gameFns.seedtoss2=function ST(a){
 
   function updateSeed(dt){
     if(!seed||!seed.active)return;
+    // Substep so a fast seed can never tunnel past the rim or the mouth in
+    // one janky frame (dt clamps at 40ms; at flick speed that was a 48px
+    // jump — the "impact with the vessel is completely off" bug).
+    var steps=Math.max(1,Math.ceil((Math.abs(seed.vx)+Math.abs(seed.vy))*dt/6));
+    if(steps>1){ var h=dt/steps; for(var s2=0;s2<steps;s2++){ if(!seed.active)return; updateSeedStep(h); } return; }
+    updateSeedStep(dt);
+  }
+  function updateSeedStep(dt){
     seed.vy+=GRAVITY*dt;seed.vx+=wind*dt;
     seed.x+=seed.vx*dt;seed.y+=seed.vy*dt;
     // Track peak arc height (min y) for bonus scoring
@@ -186,6 +200,9 @@ window._gameFns.seedtoss2=function ST(a){
     if(seed.y>ptTop&&seed.y<pot.y){
       if((seed.x>pl-8&&seed.x<pl+8)||(seed.x>pr-8&&seed.x<pr+8)){
         seed.vx=-seed.vx*0.3;seed.vy=-seed.vy*0.2;
+        for(var tk=0;tk<5;tk++){ var ta=Math.random()*Math.PI*2;
+          particles.push({x:seed.x,y:seed.y,vx:Math.cos(ta)*60,vy:Math.sin(ta)*60-40,life:0.4,maxLife:0.4,size:1.6+Math.random()*1.6,color:'#e8dcc8'}); }
+        try{if(_play)_play('tap');}catch(e){}
       }
     }
     // Let the seed fly arbitrarily high — peakHeight tracks it even above
@@ -246,14 +263,12 @@ window._gameFns.seedtoss2=function ST(a){
       // Check for seed/pot art unlocks at this new level
       var unlockMsg='LEVEL '+level+'!';
       for(var u=0;u<SEED_TIERS.length;u++){if(SEED_TIERS[u].lvl===level){unlockMsg='🌱 '+SEED_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
-      for(u=0;u<POT_TIERS.length;u++){if(POT_TIERS[u].lvl===level){unlockMsg='🏺 '+POT_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
-      // Announce pot-SIZE unlocks too (separate from art tiers)
-      for(u=0;u<POT_SIZES.length;u++){if(POT_SIZES[u].unlockAt===level){unlockMsg='🎯 '+POT_SIZES[u].name+' POT UNLOCKED · '+POT_SIZES[u].mult+'× score';break;}}
+      for(u=0;u<POT_SIZES.length;u++){if(POT_SIZES[u].unlockAt===level){unlockMsg='🏺 '+POT_SIZES[u].name.toUpperCase()+' UNLOCKED · '+POT_SIZES[u].mult+'× score';break;}}
       setMsg(unlockMsg);
     }
     updateHUD();
     var myGen=runGen;
-    setTimeout(function(){if(myGen!==runGen)return;if(seedsLeft>0){genPot();resetSeed();}else endGame();},500);
+    setTimeout(function(){if(myGen!==runGen)return;if(seedsLeft>0){rollWind();resetSeed();}else endGame();},500);
   }
 
   function missed(){
@@ -406,19 +421,36 @@ window._gameFns.seedtoss2=function ST(a){
     bodyGrd.addColorStop(0.75,tier.base);
     bodyGrd.addColorStop(1,tier.rim);
     ctx.fillStyle=bodyGrd;
+    // Honest flowerpot: the MOUTH is the wide top edge (matching the scoring
+    // window), tapering to a narrower base. The old shape was inverted, so
+    // seeds that visually smacked the rim were scoring.
     ctx.beginPath();
-    ctx.moveTo(px-pw/2,py);
-    ctx.lineTo(px-pw*0.38,py-ph);
-    ctx.lineTo(px+pw*0.38,py-ph);
-    ctx.lineTo(px+pw/2,py);
+    ctx.moveTo(px-pw*0.38,py);
+    ctx.lineTo(px-pw/2,py-ph);
+    ctx.lineTo(px+pw/2,py-ph);
+    ctx.lineTo(px+pw*0.38,py);
     ctx.closePath();
     ctx.fill();
+    // Decoration by pot style
+    var deco=tier.deco;
+    if(deco==='bands'){ ctx.strokeStyle='rgba(255,255,255,0.16)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(px-pw*0.46,py-ph*0.68); ctx.lineTo(px+pw*0.46,py-ph*0.68); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px-pw*0.42,py-ph*0.34); ctx.lineTo(px+pw*0.42,py-ph*0.34); ctx.stroke(); }
+    else if(deco==='glaze'){ ctx.fillStyle='rgba(255,255,255,0.10)';
+      ctx.beginPath(); ctx.moveTo(px-pw*0.30,py-ph); ctx.lineTo(px-pw*0.10,py-ph); ctx.lineTo(px-pw*0.20,py); ctx.lineTo(px-pw*0.34,py); ctx.closePath(); ctx.fill(); }
+    else if(deco==='rings'){ ctx.strokeStyle='rgba(255,255,255,0.14)'; ctx.lineWidth=1.6;
+      for(var rg=1;rg<=3;rg++){ ctx.beginPath(); ctx.ellipse(px,py-ph*rg/4,pw*(0.5-rg*0.03),3.4,0,0,Math.PI*2); ctx.stroke(); } }
+    else if(deco==='stripe'){ ctx.strokeStyle='rgba(255,240,180,0.35)'; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.moveTo(px-pw*0.44,py-ph*0.5); ctx.lineTo(px+pw*0.44,py-ph*0.5); ctx.stroke(); }
+    else if(deco==='stars'){ ctx.fillStyle='rgba(255,255,255,0.55)';
+      for(var st2=0;st2<5;st2++){ var sx2=px+((st2*53)%Math.max(1,(pw*0.7)|0))-pw*0.35, sy2=py-ph*0.25-((st2*37)%Math.max(1,(ph*0.55)|0));
+        ctx.fillRect(sx2,sy2,2,2); } }
     // Highlight stroke on body's left edge for form
     ctx.strokeStyle='rgba(255,255,255,0.09)';
     ctx.lineWidth=1.2;
     ctx.beginPath();
-    ctx.moveTo(px-pw/2+2,py-2);
-    ctx.lineTo(px-pw*0.38+1,py-ph+2);
+    ctx.moveTo(px-pw*0.38+2,py-2);
+    ctx.lineTo(px-pw/2+1,py-ph+2);
     ctx.stroke();
     // Rim — thicker band
     var rimGrd=ctx.createLinearGradient(px,py-ph-8,px,py-ph+4);
@@ -539,8 +571,7 @@ window._gameFns.seedtoss2=function ST(a){
     ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(W,GROUND_Y);ctx.stroke();
     // Pot — uses current level's pot tier
     if(pot){
-      var potTier=_STcurrentPotTier(level);
-      drawPotSkinned(pot.x,pot.y,pot.width,pot.height,potTier);
+      drawPotSkinned(pot.x,pot.y,pot.width,pot.height,currentSize);
     }
     // Wind indicator
     if(Math.abs(wind)>5){
@@ -637,9 +668,20 @@ window._gameFns.seedtoss2=function ST(a){
                           :(unlocked?'0 3px 10px rgba(0,0,0,0.35)':'none');
         btn.style.cssText='flex:1;min-width:105px;max-width:130px;padding:12px 8px;border-radius:12px;border:'+(isHi?'2':'1.5')+'px solid '+borderColor+';background:'+bgColor+';color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-family:inherit;cursor:'+(unlocked?'pointer':'not-allowed')+';box-shadow:'+boxShadow+';min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;';
         btn.innerHTML=
-          '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:'+(unlocked?'var(--gold)':'var(--muted)')+';">'+sz.name+'</div>'+
-          '<div style="font-family:DM Mono,monospace;font-size:1.2rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-weight:700;">'+sz.mult.toFixed(1).replace(/\.0$/,'')+'×</div>'+
-          '<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);line-height:1.35;padding:0 2px;">'+(unlocked?sz.hint:'Reach Lv '+sz.unlockAt+' to unlock')+'</div>';
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;color:'+(unlocked?'var(--gold)':'var(--muted)')+';">'+sz.name+'</div>'+
+          '<canvas width="96" height="60" style="width:96px;height:60px;'+(unlocked?'':'opacity:0.35;filter:grayscale(0.8);')+'"></canvas>'+
+          '<div style="font-family:DM Mono,monospace;font-size:1.05rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-weight:700;">'+sz.mult.toFixed(1).replace(/\.0$/,'')+'×</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:0.66rem;font-weight:500;color:var(--muted);line-height:1.35;padding:0 2px;">'+(unlocked?sz.hint:'Reach Lv '+sz.unlockAt+' to unlock')+'</div>';
+        // mini pot preview, mouth width to scale so the choice is visual
+        (function(){ var pc=btn.querySelector('canvas'); if(!pc)return; var g2=pc.getContext('2d');
+          var mw=sz.mouth*0.9, mh=mw*0.6, cx2=48, cy2=54;
+          var grd2=g2.createLinearGradient(cx2-mw/2,cy2-mh,cx2+mw/2,cy2);
+          grd2.addColorStop(0,sz.rim); grd2.addColorStop(0.5,sz.base); grd2.addColorStop(1,sz.rim);
+          g2.fillStyle=grd2;
+          g2.beginPath(); g2.moveTo(cx2-mw*0.38,cy2); g2.lineTo(cx2-mw/2,cy2-mh); g2.lineTo(cx2+mw/2,cy2-mh); g2.lineTo(cx2+mw*0.38,cy2); g2.closePath(); g2.fill();
+          g2.fillStyle=sz.rim; g2.fillRect(cx2-mw/2-3,cy2-mh-6,mw+6,7);
+          g2.fillStyle='rgba(0,0,0,0.5)'; g2.beginPath(); g2.ellipse(cx2,cy2-mh-2,mw/2-2,3,0,0,Math.PI*2); g2.fill();
+        })();
         if(unlocked){btn.onclick=function(){beginRun(sz);};}
         grid.appendChild(btn);
       })(POT_SIZES[i]);
