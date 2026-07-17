@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#141210">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flipbook">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%23efe6d0'/%3E%3Ccircle cx='7' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='13' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='19' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='25' cy='5' r='2' fill='%238d94a8'/%3E%3Cpath d='M9 22 Q14 12 22 18' stroke='%232a2438' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<title>Flipbook — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"flipbook"}).catch(function(){});</script>
+<style>
+:root{ --bg:#141210; --panel:#1e1a16; --line:#3a332a; --ink:#efe8da; --muted:#948b7c;
+  --paper:#efe6d0; --paper2:#e6dabf; --gold:#c8a84b; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #201a14 0%, #0e0b08 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
+.topbar{position:absolute; top:0; left:0; right:0; height:64px; display:flex; align-items:center; gap:8px; padding:8px 10px; z-index:30}
+.tbtn{min-width:48px; height:48px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
+  color:var(--ink); font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 12px; font-weight:700}
+.tbtn.gold{background:linear-gradient(180deg,#e8c467,#c39a3b); color:#2a1e06; border-color:#f4dfa0}
+.tbtn.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3)}
+#pageno{margin-left:auto; font-weight:800; font-size:15px; color:var(--muted); letter-spacing:1px}
+/* the notebook */
+#book{position:absolute; left:14px; right:14px; top:74px; bottom:170px; border-radius:10px 10px 14px 14px;
+  background:linear-gradient(180deg,var(--paper) 0%, var(--paper2) 100%);
+  box-shadow:0 14px 30px rgba(0,0,0,0.55), inset 0 -3px 0 rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)}
+#book::before{ /* spiral binding */
+  content:''; position:absolute; top:-11px; left:0; right:0; height:22px;
+  background:radial-gradient(circle at 10px 11px, #8d94a8 0 5px, #565c6c 5px 7px, transparent 7px);
+  background-size:36px 22px; background-repeat:repeat-x; background-position:12px 0}
+#book::after{ /* stacked page edges */
+  content:''; position:absolute; left:4px; right:4px; bottom:-6px; height:6px; border-radius:0 0 12px 12px;
+  background:repeating-linear-gradient(180deg,#d8cbaa 0 1.5px,#efe6d0 1.5px 3px); opacity:0.9}
+#margin{position:absolute; left:44px; top:0; bottom:0; width:1.5px; background:rgba(212,110,110,0.35); pointer-events:none}
+canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
+#onion{opacity:0.28; pointer-events:none}
+#playglass{position:absolute; inset:0; display:none; align-items:flex-end; justify-content:center; padding:10px; pointer-events:none}
+#playglass.on{display:flex}
+#playchip{background:rgba(20,18,16,0.85); border:1px solid var(--gold); color:var(--gold); font-weight:800;
+  padding:8px 18px; border-radius:20px; font-size:13px; letter-spacing:1px}
+/* tools */
+#tools{position:absolute; left:10px; right:10px; bottom:10px; display:flex; flex-direction:column; gap:8px; z-index:30}
+.trow{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap}
+.swatch{width:44px; height:44px; border-radius:50%; border:2.5px solid rgba(255,255,255,0.18); cursor:pointer}
+.swatch.on{border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
+.wdot{width:48px; height:44px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
+  display:flex; align-items:center; justify-content:center; cursor:pointer}
+.wdot.on{border-color:var(--gold)}
+.wdot i{display:block; border-radius:50%; background:var(--ink)}
+#hint{text-align:center; color:var(--muted); font-size:11.5px; padding-top:2px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div class="topbar">
+    <button class="tbtn" id="b-home" aria-label="Back to the garden">⌂</button>
+    <button class="tbtn" id="b-prev" aria-label="Previous page">‹</button>
+    <button class="tbtn" id="b-next" aria-label="Next page">›</button>
+    <button class="tbtn" id="b-onion" aria-label="Onion skin">👻</button>
+    <button class="tbtn" id="b-fps" aria-label="Frames per second">8fps</button>
+    <button class="tbtn gold" id="b-play" aria-label="Play the flipbook">▶</button>
+    <div id="pageno">1 / 1</div>
+  </div>
+
+  <div id="book">
+    <canvas class="page" id="onion" width="512" height="716"></canvas>
+    <canvas class="page" id="page" width="512" height="716"></canvas>
+    <div id="margin"></div>
+    <div id="playglass"><div id="playchip">PLAYING · tap to stop</div></div>
+  </div>
+
+  <div id="tools">
+    <div class="trow" id="colors"></div>
+    <div class="trow">
+      <div class="wdot" data-w="3" title="Fine pen"><i style="width:4px;height:4px"></i></div>
+      <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
+      <div class="wdot" data-w="12" title="Marker"><i style="width:14px;height:14px"></i></div>
+      <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
+      <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
+      <button class="tbtn" id="b-newbook" aria-label="Start a new flipbook">📓 New</button>
+    </div>
+    <div id="hint">Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.</div>
+  </div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var BUILD="v1.0", MAXPAGES=100;
+function $(id){ return document.getElementById(id); }
+
+/* ---------- stage fit ---------- */
+var VW=540, VH=960;
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+fit();
+
+/* ---------- state ---------- */
+var CW=512, CH=716;
+var pages=[null];            // dataURL per page (null = blank)
+var cur=0;
+var fpsOptions=[4,8,12,24], fpsIdx=1;
+var onionOn=true;
+var color='#2a2438', width=6, erasing=false;
+var playing=false, playTimer=null, playFrame=0;
+var drawnThisSession=false, drawTicks=0, sunTimer=null;
+
+var pageC=$('page'), pageX=pageC.getContext('2d');
+var onionC=$('onion'), onionX=onionC.getContext('2d');
+
+var INKS=['#2a2438','#7a4a26','#3f6b34','#2f5fa8','#a83a5a','#c8a84b'];
+
+/* ---------- persistence (graceful when the notebook gets heavy) ---------- */
+function save(){
+  try{
+    localStorage.setItem('fb_book', JSON.stringify({ cur:cur, fpsIdx:fpsIdx, onion:onionOn, pages:pages }));
+  }catch(e){
+    toastHint('The notebook is getting heavy, older pages may not save.');
+  }
+}
+function load(){
+  try{
+    var b=JSON.parse(localStorage.getItem('fb_book')||'null');
+    if(b&&b.pages&&b.pages.length){ pages=b.pages.slice(0,MAXPAGES); cur=Math.min(b.cur||0,pages.length-1);
+      if(typeof b.fpsIdx==='number')fpsIdx=Math.max(0,Math.min(fpsOptions.length-1,b.fpsIdx));
+      if(typeof b.onion==='boolean')onionOn=b.onion; }
+  }catch(e){}
+}
+
+/* ---------- page rendering ---------- */
+function blankPage(g){
+  g.clearRect(0,0,CW,CH);
+}
+function drawDataURL(g, url, cb){
+  if(!url){ blankPage(g); if(cb)cb(); return; }
+  var im=new Image();
+  im.onload=function(){ blankPage(g); g.drawImage(im,0,0,CW,CH); if(cb)cb(); };
+  im.onerror=function(){ blankPage(g); if(cb)cb(); };
+  im.src=url;
+}
+function showPage(){
+  drawDataURL(pageX, pages[cur]);
+  if(onionOn&&cur>0)drawDataURL(onionX, pages[cur-1]);
+  else blankPage(onionX);
+  onionC.style.display=(onionOn&&cur>0&&!playing)?'':'none';
+  $('pageno').textContent=(cur+1)+' / '+pages.length;
+  $('b-onion').classList.toggle('on', onionOn);
+  $('b-fps').textContent=fpsOptions[fpsIdx]+'fps';
+}
+function commitPage(){
+  pages[cur]=pageC.toDataURL('image/png');
+  save();
+}
+
+/* ---------- drawing ---------- */
+var drawing=false, lx=0, ly=0;
+function evPos(e){
+  var r=pageC.getBoundingClientRect();
+  var t=(e.touches&&e.touches[0])||e;
+  return { x:(t.clientX-r.left)*CW/r.width, y:(t.clientY-r.top)*CH/r.height };
+}
+function strokeTo(x,y){
+  pageX.lineCap='round'; pageX.lineJoin='round';
+  if(erasing){ pageX.globalCompositeOperation='destination-out'; pageX.lineWidth=width*3.2; }
+  else { pageX.globalCompositeOperation='source-over'; pageX.strokeStyle=color; pageX.lineWidth=width; }
+  pageX.beginPath(); pageX.moveTo(lx,ly); pageX.lineTo(x,y); pageX.stroke();
+  pageX.globalCompositeOperation='source-over';
+  lx=x; ly=y;
+}
+function onDown(e){ if(playing)return; e.preventDefault(); var p=evPos(e); drawing=true; lx=p.x; ly=p.y; strokeTo(p.x+0.01,p.y+0.01); drawnThisSession=true; }
+function onMove(e){ if(!drawing)return; e.preventDefault(); var p=evPos(e); strokeTo(p.x,p.y); }
+function onUp(){ if(!drawing)return; drawing=false; commitPage(); }
+pageC.addEventListener('pointerdown',onDown);
+window.addEventListener('pointermove',onMove);
+window.addEventListener('pointerup',onUp);
+
+/* ---------- navigation ---------- */
+function go(n){
+  if(playing)stopPlay();
+  if(n<0)return;
+  if(n>=MAXPAGES){ toastHint('This flipbook is full at '+MAXPAGES+' pages.'); return; }
+  if(n>=pages.length)pages.push(null);   // flipping past the end adds a fresh page
+  cur=n; showPage(); save();
+}
+$('b-prev').addEventListener('click',function(){ go(cur-1); });
+$('b-next').addEventListener('click',function(){ go(cur+1); });
+$('b-onion').addEventListener('click',function(){ onionOn=!onionOn; showPage(); save(); });
+$('b-fps').addEventListener('click',function(){ fpsIdx=(fpsIdx+1)%fpsOptions.length; showPage(); save(); });
+$('b-clear').addEventListener('click',function(){ blankPage(pageX); commitPage(); });
+$('b-newbook').addEventListener('click',function(){
+  if(!confirm('Start a fresh flipbook? This one will be erased.'))return;
+  pages=[null]; cur=0; showPage(); save();
+});
+$('b-home').addEventListener('click',function(){ SWS_EXIT(); });
+
+/* ---------- play ---------- */
+function startPlay(){
+  if(pages.length<2){ toastHint('Draw at least two pages, then play.'); return; }
+  playing=true; playFrame=0;
+  $('playglass').classList.add('on');
+  onionC.style.display='none';
+  var step=function(){
+    drawDataURL(pageX, pages[playFrame%pages.length]);
+    $('pageno').textContent=((playFrame%pages.length)+1)+' / '+pages.length;
+    playFrame++;
+    playTimer=setTimeout(step, 1000/fpsOptions[fpsIdx]);
+  };
+  step();
+}
+function stopPlay(){
+  playing=false;
+  if(playTimer){ clearTimeout(playTimer); playTimer=null; }
+  $('playglass').classList.remove('on');
+  showPage();
+}
+$('b-play').addEventListener('click',function(){ if(playing)stopPlay(); else startPlay(); });
+$('book').addEventListener('click',function(){ if(playing)stopPlay(); });
+
+/* ---------- hints ---------- */
+var hintT=null;
+function toastHint(m){ var h=$('hint'); h.textContent=m;
+  if(hintT)clearTimeout(hintT);
+  hintT=setTimeout(function(){ h.textContent='Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.'; },3200); }
+
+/* ---------- tools ui ---------- */
+(function buildColors(){
+  var row=$('colors');
+  INKS.forEach(function(c,i){
+    var d=document.createElement('div');
+    d.className='swatch'+(i===0?' on':''); d.style.background=c;
+    d.addEventListener('click',function(){
+      color=c; erasing=false; $('b-erase').classList.remove('on');
+      var all=row.querySelectorAll('.swatch'),k; for(k=0;k<all.length;k++)all[k].classList.remove('on');
+      d.classList.add('on');
+    });
+    row.appendChild(d);
+  });
+})();
+(function buildWidths(){
+  var dots=document.querySelectorAll('.wdot'),k;
+  for(k=0;k<dots.length;k++)(function(d){
+    d.addEventListener('click',function(){
+      width=parseInt(d.getAttribute('data-w'),10)||6;
+      var all=document.querySelectorAll('.wdot'),q; for(q=0;q<all.length;q++)all[q].classList.remove('on');
+      d.classList.add('on');
+    });
+  })(dots[k]);
+})();
+$('b-erase').addEventListener('click',function(){
+  erasing=!erasing; $('b-erase').classList.toggle('on',erasing);
+});
+
+/* ---------- sunbeams for sustained animating (creative-tool standard) ---------- */
+sunTimer=setInterval(function(){
+  if(!drawnThisSession)return;
+  drawTicks++; drawnThisSession=false;
+  if(drawTicks%4===0){ /* about every 2 minutes of actual drawing */
+    try{ if(window._sbCapEarn)window._sbCapEarn(1,'flipbook:draw'); }catch(e){}
+  }
+},30000);
+
+/* ---------- portal exit (smart back) + embed handshake ---------- */
+window.SWS_EXIT=function(){ if(/[?&]embed=1(&|$)/.test(location.search)&&window.parent!==window){ try{ window.parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+  if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+(function(){
+  if(/[?&]embed=1(&|$)/.test(location.search)&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+})();
+
+/* ---------- boot ---------- */
+load();
+showPage();
+
+/* ---------- dev hook ---------- */
+if(/[?&]fbtest=1/.test(location.search)){
+  window.FB_DEV={
+    state:function(){ return { cur:cur, pages:pages.length, fps:fpsOptions[fpsIdx], onion:onionOn, playing:playing }; },
+    stroke:function(x0,y0,x1,y1){ lx=x0; ly=y0; strokeTo(x1,y1); commitPage(); return true; },
+    go:go, play:startPlay, stop:stopPlay,
+    pageData:function(i){ return (pages[i]||'').slice(0,40); }
+  };
+}
+})();
+</script>
+</body>
+</html>
