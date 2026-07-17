@@ -189,7 +189,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.4';
+var BUILD='v1.5';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -283,7 +283,7 @@ var PROG={ bestDist:0, bestGauntlet:0, streak:0, lastDaily:'', dailyDone:'', blo
   seed:0, trail:0, comp:0, owned:{}, coins:0 };
 // Stardust coins — the local cosmetic currency (uncapped; earned every run).
 function addCoins(n){ if(n<=0)return; PROG.coins=(PROG.coins||0)+Math.round(n); }
-function runCoins(){ return Math.max(1, Math.round(G.gaps*1.5) + (G.perfects||0)*2); }
+function runCoins(){ return Math.max(1, Math.round(G.gaps*0.35) + Math.round((G.perfects||0)*0.5)); }   // 7/17 Stephen: was ~4x too generous (a skin per run) — now a cheap skin ≈ 4-5 good runs, premium ≈ 12-15
 (function(){ try{ var s=JSON.parse(LS.get('seedflutter_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.blooms)PROG.blooms=[]; if(!PROG.owned)PROG.owned={}; })();
 function save(){ try{ LS.set('seedflutter_save', JSON.stringify(PROG)); }catch(e){} }
 
@@ -628,14 +628,14 @@ function winDaily(){ sfx('win');
   if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
   PROG.grewTotal=(PROG.grewTotal||0)+grow;
   if(G.gaps>(PROG.bestDist||0))PROG.bestDist=G.gaps;
-  G.coinAmt=runCoins()+10; addCoins(G.coinAmt);
+  G.coinAmt=runCoins()+6; addCoins(G.coinAmt);
   var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seedflutter:daily')||0; }catch(e){} }
   G.sunAmt=granted; save();
   G.phase='win'; G.winT=0; G.vy=-40; spawnBurst('fx/star_shower', VW/2, VH*0.42, 1.3, 380);
 }
 function winGauntlet(){ sfx('win');
   if(G.leg>(PROG.bestGauntlet||0))PROG.bestGauntlet=G.leg;
-  G.coinAmt=runCoins()+15; addCoins(G.coinAmt);
+  G.coinAmt=runCoins()+8; addCoins(G.coinAmt);
   // guaranteed rarer keepsake bundle
   var grow=3+G.bestCombo; G.grew=grow;
   for(var i=0;i<grow;i++)PROG.blooms.push(((99991+i*271+G.bestCombo*13)*2654435761)>>>0);
