@@ -317,7 +317,7 @@ window._gameFns.pollen = function PN(a){
       var raw=localStorage.getItem('lw_pn_setup');
       if(raw){var s=JSON.parse(raw);if(s&&s.seats&&s.seats.length>=1&&s.seats.length<=4)return s;}
     }catch(e){}
-    return{seats:[{name:'You',isAI:false},{name:'AI',isAI:true}]};
+    return{seats:[{name:'You',isAI:false},{name:'Computer',isAI:true}]};
   }
   function persistSetup(s){try{localStorage.setItem('lw_pn_setup',JSON.stringify(s));}catch(e){}}
   function showSetup(){
@@ -346,7 +346,7 @@ window._gameFns.pollen = function PN(a){
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
       h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:8px 10px;min-height:48px;">';
       h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">CPU</button>';
       if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:48px;min-width:48px;padding:8px;font-size:0.7rem;color:var(--muted);">✕</button>';
       h+='</div>';
     }
@@ -946,7 +946,7 @@ window._gameFns.pollen = function PN(a){
       var p=standings[i];
       var isWin=(p.id===winner.id);
       rows+='<div class="pn-standing" style="display:flex;justify-content:space-between;padding:8px 10px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:8px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.7rem;">'
-        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.7rem;">AI</span>':'')+'</span>'
+        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.7rem;">CPU</span>':'')+'</span>'
         +'<span style="color:'+(isWin?'var(--gold)':'var(--sage)')+';font-weight:700;">'+p.gp+' GP</span>'
         +'</div>';
     }

@@ -1243,7 +1243,7 @@ function GCH(a){
     sm('🌳 Engine thinking...');
     _loadStockfish(function(err){
       if(err==='error'||!_sfReady){
-        sm('Engine unavailable, using local AI.');
+        sm('Engine unavailable, using local computer player.');
         _aiMoveLocal();return;
       }
       // Re-check turn in case player exited / undid during async load
@@ -1390,7 +1390,7 @@ function GCH(a){
       // cooldown which is the right behavior for "you played a
       // valid game, here's a small consolation."
       if(inCheck(board,turn)){
-        if(turn===W){sm('Checkmate \u2014 AI wins!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('loss','Checkmate \u2014 AI wins');}
+        if(turn===W){sm('Checkmate \u2014 Computer wins!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('loss','Checkmate \u2014 Computer wins');}
         else{sm('Checkmate \u2014 You win!');_e('game_win');_playWin();_sr('chess',{w:true,s:moveCount});_chEnd('win','Checkmate \u2014 You win!');}
       }else{
         sm('Stalemate \u2014 Draw!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('draw','Stalemate \u2014 Draw');
@@ -1410,13 +1410,13 @@ function GCH(a){
           // alongside the check warning so they see what the engine did.
           sm(_lastAIComment? _lastAIComment+' · Check!' : 'Check!');
         } else {
-          sm('AI is in check');
+          sm('Computer is in check');
         }
       }else{
         if(turn===W){
           sm(_lastAIComment? _lastAIComment+' · Your move' : 'Your move');
         } else {
-          sm('AI thinking...');
+          sm('Computer thinking...');
         }
       }
     }
@@ -1498,7 +1498,7 @@ function GCH(a){
     if(isCheck)setTimeout(function(){_play('lose')},200);
     render();
     var g=_chGen;
-    if(!gameOver&&turn===B)setTimeout(function(){if(g!==_chGen)return;sm('AI thinking...');render();setTimeout(function(){
+    if(!gameOver&&turn===B)setTimeout(function(){if(g!==_chGen)return;sm('Computer thinking...');render();setTimeout(function(){
       if(g!==_chGen)return;
       aiMove();
       var aiCheck=inCheck(board,W);

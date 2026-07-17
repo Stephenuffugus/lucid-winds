@@ -568,7 +568,7 @@ window._gameFns.livingstones = function LS(a){
     var s=aiScore();
     var result='Black '+s.black+' · White '+s.white;
     var won=s.black>s.white;
-    aiStatus=(msg?msg+' · ':'')+result+' — '+(won?'You win!':'AI wins');
+    aiStatus=(msg?msg+' · ':'')+result+' — '+(won?'You win!':'Computer wins');
     if(won){_playWin();_e('game_win');}
     else{_play('lose');}
     _sr('livingstones',{w:won,s:s.black,lv:'ai'+aiSize,tp:Math.round(s.white)});
@@ -577,9 +577,9 @@ window._gameFns.livingstones = function LS(a){
       var _rSize=aiSize,_rPlayouts=aiPlayouts,_rHandicap=aiHandicap;
       // Scoring has no dead-stone removal — a double-pass with unresolved
       // groups counts them as alive. Be upfront about it rather than let a
-      // wrong "AI wins" read as a bug.
+      // wrong "Computer wins" read as a bug.
       var _note=(msg==='Both pass')?'Stones left on the board count as alive — capture dead stones before passing.':undefined;
-      window._lwGameEnd({won:won,title:won?'You win!':'AI wins',
+      window._lwGameEnd({won:won,title:won?'You win!':'Computer wins',
         line:result+' (komi '+s.komi+')'+(msg?' · '+msg:''),
         sub:_note,
         retry:function(){_pendingAI={size:_rSize,playouts:_rPlayouts};window._LSaiStart(_rHandicap);},
@@ -588,7 +588,7 @@ window._gameFns.livingstones = function LS(a){
   }
   function aiRequestMove(){
     if(!aiWorker||aiGameOver)return;
-    aiThinking=true;aiStatus='AI thinking...';aiRender();
+    aiThinking=true;aiStatus='Computer thinking...';aiRender();
     aiWorker.postMessage({cmd:'genmove',color:'W',playouts:aiPlayouts});
   }
   // Pre-AI: offer a handicap picker, then start. Handicap stones let a
@@ -656,15 +656,15 @@ window._gameFns.livingstones = function LS(a){
           }
         }
       }else if(m.type==='thinking'){
-        aiStatus='AI thinking... '+Math.round(m.progress*100)+'%';
+        aiStatus='Computer thinking... '+Math.round(m.progress*100)+'%';
         // lightweight update: only update status text
         var el=pan.querySelector('div[style*="italic"]');
         if(el)el.textContent=aiStatus;
       }else if(m.type==='move'){
         aiThinking=false;
-        if(m.move==='resign'){aiEndGame('AI resigns');return;}
+        if(m.move==='resign'){aiEndGame('Computer resigns');return;}
         if(m.move==='pass'){
-          aiConsecPass++;aiStatus='AI passes.';
+          aiConsecPass++;aiStatus='Computer passes.';
           if(aiConsecPass>=2){aiEndGame('Both pass');return;}
           aiRender();return;
         }
@@ -680,7 +680,7 @@ window._gameFns.livingstones = function LS(a){
     // Listener is now attached — kick off the handshake. Worker
     // responds with 'ready' which triggers boardsize → clear → start.
     aiWorker.postMessage({cmd:'ping'});
-    sm('Play AI, you are Black');
+    sm('Play the computer, you are Black');
   };
   window._LSaiTap=function(r,c){
     if(aiThinking||aiGameOver)return;
@@ -732,13 +732,13 @@ window._gameFns.livingstones = function LS(a){
   };
   window._LSaiResign=function(){
     if(aiThinking||aiGameOver)return;
-    aiGameOver=true;aiStatus='You resigned, AI wins';
+    aiGameOver=true;aiStatus='You resigned, Computer wins';
     _play('lose');
     _sr('livingstones',{w:false,s:0,lv:'ai'+aiSize,tp:0});
     aiRender();
     if(window._lwGameEnd){
       var _rSize=aiSize,_rPlayouts=aiPlayouts,_rHandicap=aiHandicap;
-      window._lwGameEnd({won:false,title:'You resigned',line:'AI wins',
+      window._lwGameEnd({won:false,title:'You resigned',line:'Computer wins',
         retry:function(){_pendingAI={size:_rSize,playouts:_rPlayouts};window._LSaiStart(_rHandicap);},
         retryLabel:'↻ REMATCH',viewLabel:'view the board'});
     }

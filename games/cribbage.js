@@ -16,7 +16,7 @@ window._gameFns.cribbage = function CRIB(a){
   // earns into whatever game came next (2026-07-03 fleet audit)
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){gen++;});
 
-  ms(a,'<span id="CBheader" style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="CBp" style="font-size:1.2em;color:#e8dcc8;">0</strong> vs AI <strong id="CBa" style="font-size:1.2em;color:#c47a7a;">0</strong></span>');
+  ms(a,'<span id="CBheader" style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="CBp" style="font-size:1.2em;color:#e8dcc8;">0</strong> vs computer <strong id="CBa" style="font-size:1.2em;color:#c47a7a;">0</strong></span>');
   mm(a);
   var pan=document.createElement('div');
   pan.id='CBpan';
@@ -120,7 +120,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.starter=G.deck.pop();
     if(G.starter.rank===10){
       if(G.dealer==='player'){addP(2);sm('Nibs! +2');}
-      else{addA(2);sm('AI nibs +2');}
+      else{addA(2);sm('Computer nibs +2');}
       if(checkWin())return;
     }
     G.phase='peg';G.playArea=[];G.playCount=0;
@@ -194,7 +194,7 @@ window._gameFns.cribbage = function CRIB(a){
     // Both sides stuck under 31 — whoever played the LAST card pegs 1 for the Go.
     var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
     if(lastWho==='ai')addA(1);else addP(1);
-    sm((lastWho==='ai'?'AI':'You')+' +1 (Go)');
+    sm((lastWho==='ai'?'Computer':'You')+' +1 (Go)');
     G.seqLead=lastWho==='ai'?'player':'ai';
     G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
     if(checkWin())return;
@@ -234,7 +234,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.playArea.push({card:card,who:'ai'});
     G.playCount+=card.val;
     var r=scorePeg(G.playArea,G.playCount);
-    if(r.pts>0){addA(r.pts);sm('AI +'+r.pts);_showBanner(r.callouts,r.pts,'#dc8a8a');}
+    if(r.pts>0){addA(r.pts);sm('Computer +'+r.pts);_showBanner(r.callouts,r.pts,'#dc8a8a');}
     if(checkWin())return;
     G.aPass=false;
     if(G.playCount===31){
@@ -251,7 +251,7 @@ window._gameFns.cribbage = function CRIB(a){
       if(G.playArea.length>0){
         var lastWho=G.playArea[G.playArea.length-1].who;
         if(lastWho==='player')addP(1);else addA(1);
-        sm((lastWho==='player'?'You':'AI')+' +1 (last card)');
+        sm((lastWho==='player'?'You':'Computer')+' +1 (last card)');
         if(checkWin())return;
       }
       var gs=gen;setTimeout(function(){if(gs===gen)showPhase();},900);return;
@@ -329,8 +329,8 @@ window._gameFns.cribbage = function CRIB(a){
       var who=order[whoIdx];
       var hand,label,tag;
       if(who==='player'){hand=G.pHand;label='Your hand';tag='player';}
-      else if(who==='ai'){hand=G.aHand;label='AI hand';tag='ai';}
-      else{hand=G.crib;label=(G.dealer==='player'?'Your':'AI')+' crib';tag='crib';}
+      else if(who==='ai'){hand=G.aHand;label='Computer hand';tag='ai';}
+      else{hand=G.crib;label=(G.dealer==='player'?'Your':'Computer')+' crib';tag='crib';}
       var result=scoreHand(hand,G.starter,who==='crib');
       var scorer = (who==='player'||(who==='crib'&&G.dealer==='player')) ? 'player' : 'ai';
       // Start narration for this hand.
@@ -449,7 +449,7 @@ window._gameFns.cribbage = function CRIB(a){
       if(window._lwGameEnd)window._lwGameEnd({won:true,
         title:skunk?'🃏 SKUNK WIN!':'You pegged out!',
         line:G.pScore+' to '+G.aScore+' · '+G.roundNum+' rounds',
-        sub:skunk?'the AI never crossed 91':null,
+        sub:skunk?'the computer never crossed 91':null,
         retry:function(){if(window._CBN)window._CBN();},retryLabel:'↻ NEW MATCH',viewLabel:'view the table',delay:900});
       return true;
     }
@@ -458,7 +458,7 @@ window._gameFns.cribbage = function CRIB(a){
       sm('Garden resting...');
       var pskunk=G.pScore<91;
       if(window._lwGameEnd)window._lwGameEnd({won:false,
-        title:pskunk?'Skunked...':'AI pegged out',
+        title:pskunk?'Skunked...':'Computer pegged out',
         line:G.pScore+' to '+G.aScore+' · '+G.roundNum+' rounds',
         sub:pskunk?'you never crossed 91':(121-G.pScore)+' short of the finish',
         retry:function(){if(window._CBN)window._CBN();},retryLabel:'↻ NEW MATCH',viewLabel:'view the table',delay:900});
@@ -493,7 +493,7 @@ window._gameFns.cribbage = function CRIB(a){
         +'0 4px 14px rgba(0,0,0,0.5);">';
     h+=_pegBar('YOU',G.pScore,G.pPrev,'#7ab356');
     h+='<div style="height:5px;"></div>';
-    h+=_pegBar('AI',G.aScore,G.aPrev,'#dc8a8a');
+    h+=_pegBar('Computer',G.aScore,G.aPrev,'#dc8a8a');
     h+='</div>';
     // ── STATUS ROW — phase + round + dealer chip ──
     var st='';
@@ -727,7 +727,7 @@ window._gameFns.cribbage = function CRIB(a){
     // the only signal for who played what (2026-07-04 fleet standard).
     var whoTag='';
     if(who==='player')whoTag='<span title="You" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#4a7c35;border-radius:3px;padding:1px 3px;">Y</span>';
-    else if(who==='ai')whoTag='<span title="AI" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#a04848;border-radius:3px;padding:1px 3px;">A</span>';
+    else if(who==='ai')whoTag='<span title="Computer" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#a04848;border-radius:3px;padding:1px 3px;">A</span>';
     // Rank at top-left, big pip centered, rotated rank at bottom-right.
     return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'>'
       +'<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[c.rank]+'</span>'

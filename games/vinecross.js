@@ -203,7 +203,7 @@ window._gameFns.vinecross=function VC(a){
     updateButtons();
     if(gameOver)return;
     turn=2;thinking=true;
-    var st=document.getElementById('VCst');if(st)st.textContent='AI thinking...';
+    var st=document.getElementById('VCst');if(st)st.textContent='Computer thinking...';
     drawBoard();
     try{if(window._play)_play('tap');}catch(e2){}
     aiTimer=setTimeout(function(){aiTimer=null;aiMove();},220+Math.random()*200);
@@ -230,8 +230,8 @@ window._gameFns.vinecross=function VC(a){
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
       saveStats();renderStats();
     } else if(w===2){
-      sm('🌸 The garden overgrew. Try again.');if(st)st.textContent='AI wins';
-      if(window._lwGameEnd)_lwGameEnd({won:false,title:'THE GARDEN OVERGREW',line:'the AI lined up five first',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
+      sm('🌸 The garden overgrew. Try again.');if(st)st.textContent='Computer wins';
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'THE GARDEN OVERGREW',line:'the computer lined up five first',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
       _e('game_loss');try{_play('lose');}catch(e){}_sr('vinecross',{w:false,s:moves,lo:1});
       stats.l++;stats.streak=0;saveStats();renderStats();
     } else {

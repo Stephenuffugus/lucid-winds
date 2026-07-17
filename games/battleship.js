@@ -536,7 +536,7 @@ function GBS(a){
       h+='<button class="th-diff-btn'+(diff===d.k?' on':'')+'" onclick="_BSDiff(\''+d.k+'\')">'+d.n+'</button>';
     }
     h+='</div>';
-    h+='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:2px">AI: '+(curDiff().d)+' • <button class="th-diff-btn'+(salvoMode?' on':'')+'" onclick="_BSToggleSalvo()" style="padding:2px 7px;font-size:0.58rem">SALVO '+(salvoMode?'ON':'OFF')+'</button> <button class="th-diff-btn'+(specialsEnabled?' on':'')+'" onclick="_BSToggleSpecials()" style="padding:2px 7px;font-size:0.58rem">SPECIALS '+(specialsEnabled?'ON':'OFF')+'</button></div>';
+    h+='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:2px">Computer: '+(curDiff().d)+' • <button class="th-diff-btn'+(salvoMode?' on':'')+'" onclick="_BSToggleSalvo()" style="padding:2px 7px;font-size:0.58rem">SALVO '+(salvoMode?'ON':'OFF')+'</button> <button class="th-diff-btn'+(specialsEnabled?' on':'')+'" onclick="_BSToggleSpecials()" style="padding:2px 7px;font-size:0.58rem">SPECIALS '+(specialsEnabled?'ON':'OFF')+'</button></div>';
     return h;
   }
 

@@ -382,7 +382,7 @@ function GC4(a){
             rn();_sr('c4',{w:false});_recordResult('draw');
             return;
           }
-          turn=2;sm('AI thinking...');rn();
+          turn=2;sm('Computer thinking...');rn();
           (function(g){_aiT=setTimeout(function(){_aiT=null;if(g!==_gen)return;aiMove();},280);})(_gen);
         };
         gd.appendChild(d);

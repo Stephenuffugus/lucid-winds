@@ -182,13 +182,13 @@ window._gameFns.seedsow=function SS(a){
       var pp=board[6],ap=board[13];
       var won=pp>ap;
       if(won){_e('game_win');_playWin();sm('✓ You win! '+pp+' vs '+ap);stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;}
-      else if(pp<ap){_e('game_loss');_play('lose');sm('AI wins. '+pp+' vs '+ap);stats.l++;stats.streak=0;}
+      else if(pp<ap){_e('game_loss');_play('lose');sm('Computer wins. '+pp+' vs '+ap);stats.l++;stats.streak=0;}
       else{sm('Tie. '+pp+' each');stats.d++;stats.streak=0;}
       saveStats();renderStats();
       _sr('seedsow',{w:won,s:pp});
       busy=true;gameOver=true;
       if(window._lwGameEnd)window._lwGameEnd({won:won,
-        title:won?'You win!':(pp<ap?'AI wins':'A tie'),
+        title:won?'You win!':(pp<ap?'Computer wins':'A tie'),
         line:pp+' \u2014 '+ap+' \u00b7 lifetime '+stats.w+'W-'+stats.l+'L-'+stats.d+'D'+(stats.streak>1?' \u00b7 \ud83d\udd25 '+stats.streak+' streak':''),
         retry:function(){if(window._SSN)window._SSN();},
         retryLabel:'\u21bb NEW GAME',viewLabel:'view the board'});
@@ -315,7 +315,7 @@ window._gameFns.seedsow=function SS(a){
     sow(pit,0,function(extra,cap,ended){
       if(ended)return; // game just ended — no turn flip, no AI, undo stays locked
       if(cap>0)showBanner('+'+cap+' capture!');
-      if(!extra){turn=1;sm('AI thinking...');ssT(aiMove,550);}
+      if(!extra){turn=1;sm('Computer thinking...');ssT(aiMove,550);}
       else{showBanner('Free turn');sm('Free turn');busy=false;render();}
     });
   }
@@ -325,9 +325,9 @@ window._gameFns.seedsow=function SS(a){
     if(pit<0){if(!gameOver){turn=0;busy=false;sm('Your turn');}return;}
     sow(pit,1,function(extra,cap,ended){
       if(ended)return;
-      if(cap>0)showBanner('AI captures '+cap);
+      if(cap>0)showBanner('Computer captures '+cap);
       if(!extra){turn=0;busy=false;sm('Your turn');render();}
-      else{showBanner('AI free turn');sm('AI gets another turn');ssT(aiMove,700);}
+      else{showBanner('Computer free turn');sm('Computer gets another turn');ssT(aiMove,700);}
     });
   }
   function showBanner(text){
@@ -426,15 +426,15 @@ window._gameFns.seedsow=function SS(a){
     h+='<h2>🌱 Mancala — How to Play</h2>';
     h+='<p>A classic Kalah-style Mancala. You control the <strong style="color:#8fc57a">bottom row</strong> and the <strong>green store</strong> on the right. The AI owns the top row and the coral store on the left.</p>';
     h+='<h2>Your turn</h2>';
-    h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the AI\'s row, past the AI\'s store (skipped!), back to yours.</p>';
+    h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the computer\'s row, past the computer\'s store (skipped!), back to yours.</p>';
     h+='<h2>Free turn</h2>';
     h+='<p>If your last seed lands in <strong style="color:var(--gold)">your store</strong>, you play again.</p>';
     h+='<h2>Capture</h2>';
-    h+='<p>If your last seed lands in an <strong>empty pit on your side</strong>, and the pit directly opposite (the AI\'s) has seeds, you capture BOTH that seed AND all opposite seeds into your store.</p>';
+    h+='<p>If your last seed lands in an <strong>empty pit on your side</strong>, and the pit directly opposite (the computer\'s) has seeds, you capture BOTH that seed AND all opposite seeds into your store.</p>';
     h+='<h2>Game end</h2>';
     h+='<p>When one side\'s row is completely empty, the other side sweeps all remaining seeds on its own side into its store. Most seeds in store wins.</p>';
     h+='<h2>Strategy</h2>';
-    h+='<p>• Plan for the free-turn landing in your store — double and triple turns dominate.<br>• Empty pits on your side are capture opportunities; leaving a pit empty with seeds across the way is a gift for the AI.<br>• Your last pit (pit 6, nearest the store) with exactly 1 seed and you sow it → bonus turn.</p>';
+    h+='<p>• Plan for the free-turn landing in your store — double and triple turns dominate.<br>• Empty pits on your side are capture opportunities; leaving a pit empty with seeds across the way is a gift for the computer.<br>• Your last pit (pit 6, nearest the store) with exactly 1 seed and you sow it → bonus turn.</p>';
     h+='<div style="text-align:center;margin-top:14px;"><button class="gb" onclick="document.getElementById(\'SSrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
     h+='</div>';
     ov.innerHTML=h;
