@@ -72,18 +72,18 @@ function _buildLevels(){
   }
   function randInt(n){return Math.floor(rand()*n);}
 
-  function isSolved(t){
+  function isSolved(t,cap){
     return t.every(function(col){
-      return col.length===0||(col.length===CAP&&col.every(function(c){return c===col[0];}));
+      return col.length===0||(col.length===cap&&col.every(function(c){return c===col[0];}));
     });
   }
   // How many tubes are "already home" — monochrome-full. Used to reject
   // shuffles that accidentally sorted a color. Player didn't earn those.
-  function freebies(t){
+  function freebies(t,cap){
     var n=0;
     for(var i=0;i<t.length;i++){
       var col=t[i];
-      if(col.length===CAP&&col.every(function(c){return c===col[0];}))n++;
+      if(col.length===cap&&col.every(function(c){return c===col[0];}))n++;
     }
     return n;
   }
@@ -92,23 +92,24 @@ function _buildLevels(){
   // nudged colors by 1 cell per step and left the board mostly sorted).
   // Reject shuffles that land on a solved state or have too many
   // already-finished color groups for the target difficulty.
-  function shuffledState(numColors,maxFreebies){
+  function shuffledState(numColors,maxFreebies,cap,empties){
+    var t;
     for(var attempt=0;attempt<80;attempt++){
       var pool=[];
-      for(var c=0;c<numColors;c++)for(var k=0;k<CAP;k++)pool.push(c);
+      for(var c=0;c<numColors;c++)for(var k=0;k<cap;k++)pool.push(c);
       for(var i=pool.length-1;i>0;i--){
         var j=randInt(i+1);
         var tmp=pool[i];pool[i]=pool[j];pool[j]=tmp;
       }
-      var t=[];
+      t=[];
       for(var tc=0;tc<numColors;tc++){
         var tube=[];
-        for(var kk=0;kk<CAP;kk++)tube.push(pool[tc*CAP+kk]);
+        for(var kk=0;kk<cap;kk++)tube.push(pool[tc*cap+kk]);
         t.push(tube);
       }
-      t.push([]);t.push([]);
-      if(isSolved(t))continue;
-      if(freebies(t)>maxFreebies)continue;
+      for(var e=0;e<empties;e++)t.push([]);
+      if(isSolved(t,cap))continue;
+      if(freebies(t,cap)>maxFreebies)continue;
       return t;
     }
     // Fallback — shouldn't happen but don't hang on it.
@@ -145,14 +146,29 @@ function _buildLevels(){
     [8,0,'expert'],[8,0,'expert'],[8,0,'expert'],[8,0,'expert'],
     [8,0,'expert'],[8,0,'expert'],[8,0,'expert'],[8,0,'expert']
   ];
+  // ── 2026-07-17 build-out (Stephen: much larger sorting, many more levels) ──
+  // Levels 61-160: deeper palettes, then TALL vials (cap 5, then cap 6).
+  var li2;
+  for(li2=0;li2<10;li2++)SPEC.push([9,0,'expert',4,2]);
+  for(li2=0;li2<10;li2++)SPEC.push([10,0,'expert',4,2]);
+  for(li2=0;li2<6;li2++) SPEC.push([7,0,'hard',5,2]);
+  for(li2=0;li2<8;li2++) SPEC.push([8,0,'expert',5,2]);
+  for(li2=0;li2<8;li2++) SPEC.push([9,0,'expert',5,2]);
+  for(li2=0;li2<8;li2++) SPEC.push([10,0,'expert',5,2]);
+  for(li2=0;li2<6;li2++) SPEC.push([8,0,'master',6,3]);
+  for(li2=0;li2<8;li2++) SPEC.push([9,0,'master',6,3]);
+  for(li2=0;li2<16;li2++)SPEC.push([10,0,'master',6,3]);
+  for(li2=0;li2<10;li2++)SPEC.push([9,0,'master',6,2]);
+  for(li2=0;li2<10;li2++)SPEC.push([10,0,'master',6,2]);
   for(var li=0;li<SPEC.length;li++){
     var spec=SPEC[li];
-    var numColors=spec[0],maxF=spec[1],diff=spec[2];
-    var t=shuffledState(numColors,maxF);
+    var numColors=spec[0],maxF=spec[1],diff=spec[2],cap=spec[3]||4,empties=spec[4]||2;
+    var t=shuffledState(numColors,maxF,cap,empties);
     levels.push({
       n:li+1,
       numColors:numColors,
-      extraEmpty:2,
+      cap:cap,
+      extraEmpty:empties,
       difficulty:diff,
       tubes:t
     });
@@ -188,7 +204,16 @@ function _buildLevels(){
     '.PSb.pulse{animation:psPop 1.1s ease-in-out infinite}',
     '.PSb[disabled]{opacity:.35;pointer-events:none}',
     '.PSlvl{font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.75);letter-spacing:0.04em}',
-    '.PSlvl strong{color:#c8a84b;font-style:normal}'
+    '.PSlvl strong{color:#c8a84b;font-style:normal}',
+    /* vial skins — earned by campaign progress */
+    '.PStube.skin-honey{border-radius:0 0 24px 24px;border-color:rgba(230,180,80,0.65);background:linear-gradient(180deg,rgba(70,50,15,0.2) 0%,rgba(120,85,25,0.5) 100%)}',
+    '.PStube.skin-tube{border-radius:0 0 26px 26px;border-color:rgba(190,220,235,0.5);background:linear-gradient(180deg,rgba(30,40,45,0.2) 0%,rgba(40,60,70,0.5) 100%)}',
+    '.PStube.skin-bulb{border-radius:6px 6px 30px 30px;border-bottom-width:5px;border-color:rgba(160,196,232,0.55)}',
+    '.PStube.skin-amphora{border-radius:10px 10px 18px 18px;border-color:#c8a84b;border-top:3px solid #c8a84b;box-shadow:inset 0 -8px 12px rgba(0,0,0,0.28),0 0 10px rgba(200,168,75,0.22)}',
+    /* pollen styles */
+    '.PSpol.pol-blossom{border-radius:12px}',
+    '.PSpol.pol-hex{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);border-radius:0}',
+    '.PSpol.pol-gem{clip-path:polygon(50% 0,100% 30%,82% 100%,18% 100%,0 30%);border-radius:0}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -196,6 +221,54 @@ function _buildLevels(){
 // ── Persistence ──────────────────────────────────────────────────────────
 function loadProgress(){try{return parseInt(localStorage.getItem('lw_pollensort_max')||'0',10)||0;}catch(e){return 0;}}
 function saveProgress(n){try{localStorage.setItem('lw_pollensort_max',String(n));}catch(e){}}
+
+// ── Stars (best per level), cosmetics, daily (2026-07-17 build-out) ──
+function _psStars(){try{return JSON.parse(localStorage.getItem('lw_pollensort_stars')||'{}');}catch(e){return {};}}
+function _psSaveStar(n,st){try{var m=_psStars();if((m[n]|0)<st){m[n]=st;localStorage.setItem('lw_pollensort_stars',JSON.stringify(m));}}catch(e){}}
+function _psStarTotal(){var m=_psStars(),t=0,k;for(k in m)t+=m[k]|0;return t;}
+var VIALS=[
+  {id:'glass',  name:'Glass',     at:0},
+  {id:'honey',  name:'Honey Jar', at:15},
+  {id:'tube',   name:'Test Tube', at:35},
+  {id:'bulb',   name:'Bulb Flask',at:60},
+  {id:'amphora',name:'Amphora',   at:100}
+];
+var POLSTYLES=[
+  {id:'classic',name:'Classic', at:0},
+  {id:'blossom',name:'Blossom', at:25},
+  {id:'hex',    name:'Hex Cell',at:45},
+  {id:'gem',    name:'Gem Cut', at:75}
+];
+function _psSkin(){try{return localStorage.getItem('lw_pollensort_vial')||'glass';}catch(e){return 'glass';}}
+function _psPolStyle(){try{return localStorage.getItem('lw_pollensort_pol')||'classic';}catch(e){return 'classic';}}
+function _psCycle(list,key,cur){
+  var prog=loadProgress(),i,idx=0;
+  for(i=0;i<list.length;i++)if(list[i].id===cur)idx=i;
+  for(i=1;i<=list.length;i++){
+    var nx=list[(idx+i)%list.length];
+    if(prog>=nx.at){try{localStorage.setItem(key,nx.id);}catch(e){}return {ok:true,item:nx};}
+  }
+  return {ok:false,item:list[idx]};
+}
+function _psNextLocked(list){var prog=loadProgress(),i;for(i=0;i<list.length;i++)if(prog<list[i].at)return list[i];return null;}
+function _psToast(m){if(window._toast)window._toast(m);}
+// daily: one seeded board a day, the same for every keeper
+function _psDayNum(){var d=new Date();return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(2026,0,1))/86400000)+1;}
+function _psDailyDone(){try{var r=JSON.parse(localStorage.getItem('lw_pollensort_daily')||'null');return !!(r&&r.day===_psDayNum());}catch(e){return false;}}
+function _psMarkDaily(){try{localStorage.setItem('lw_pollensort_daily',JSON.stringify({day:_psDayNum()}));}catch(e){}}
+function _psBuildDaily(){
+  var day=_psDayNum(), seed=(day*2654435761)>>>0;
+  function rand(){seed|=0;seed=(seed+0x6D2B79F5)|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+  var cap=4+(day%2), numColors=6+(day%5), empties=cap>=5?3:2;
+  var pool=[],c,k,i,j;
+  for(c=0;c<numColors;c++)for(k=0;k<cap;k++)pool.push(c);
+  for(i=pool.length-1;i>0;i--){j=Math.floor(rand()*(i+1));var tp=pool[i];pool[i]=pool[j];pool[j]=tp;}
+  var t=[];
+  for(c=0;c<numColors;c++){var tube=[];for(k=0;k<cap;k++)tube.push(pool[c*cap+k]);t.push(tube);}
+  for(i=0;i<empties;i++)t.push([]);
+  return {n:0,daily:true,numColors:numColors,cap:cap,extraEmpty:empties,difficulty:'daily',tubes:t};
+}
+var dailyMode=false;
 
 // ── Core rules ──────────────────────────────────────────────────────────
 function isSolved(){
@@ -245,12 +318,13 @@ function renderTubes(animatePour){
     (function(ti){
       var col=tubes[ti];
       var tEl=document.createElement('div');
-      tEl.className='PStube'+(ti===sel?' sel':'')+(isTubeDone(col)?' done':'');
+      tEl.className='PStube skin-'+_psSkin()+(ti===sel?' sel':'')+(isTubeDone(col)?' done':'');
+      tEl.style.minHeight='calc('+CAP+' * clamp(22px,6vw,26px) + 16px)';
       tEl.setAttribute('data-t',ti);
       tEl.onclick=function(){onTubeTap(ti);};
       for(var k=0;k<col.length;k++){
         var pol=document.createElement('div');
-        pol.className='PSpol';
+        pol.className='PSpol pol-'+_psPolStyle();
         // Animate only the newly-added unit(s) from the most recent pour
         if(animatePour&&animatePour.to===ti&&k>=col.length-animatePour.count)pol.className+=' dropped';
         var entry=POLLEN[col[k]];
@@ -275,8 +349,12 @@ function updateStatus(){
   var m=document.getElementById('PSm');if(m)m.textContent=moves;
   var ub=document.getElementById('PSu');if(ub)ub.disabled=!history.length||won;
   var lvlEl=document.getElementById('PSlvl');if(lvlEl){
-    var L=LEVELS[levelIdx];
-    lvlEl.innerHTML='<strong>Level '+(levelIdx+1)+'/'+LEVELS.length+'</strong> · '+L.numColors+' colors · '+L.difficulty;
+    if(dailyMode){
+      lvlEl.innerHTML='<strong>Daily #'+_psDayNum()+'</strong> · '+_curDaily.numColors+' colors · '+_curDaily.cap+' tall'+(_psDailyDone()?' · ✓ done':'');
+    }else{
+      var L=LEVELS[levelIdx];
+      lvlEl.innerHTML='<strong>Level '+(levelIdx+1)+'/'+LEVELS.length+'</strong> · '+L.numColors+' colors'+((L.cap||4)>4?(' · '+L.cap+' tall'):'')+' · '+L.difficulty+' · ★'+_psStarTotal();
+    }
   }
   var pb=document.getElementById('PSprev');if(pb)pb.disabled=(levelIdx<=0);
   var nb=document.getElementById('PSnext');if(nb){
@@ -335,9 +413,15 @@ function resetLevel(){
 function handleWin(){
   won=true;solvedTs=Date.now();
   if(timerId){clearInterval(timerId);timerId=null;}
-  _e('game_win');if(_playWin)_playWin();_sr('colorsort',{w:true,s:moves,lo:1,lvl:levelIdx+1});
-  var prog=loadProgress();
-  if(levelIdx+1>prog)saveProgress(levelIdx+1);
+  _e('game_win');if(_playWin)_playWin();_sr('colorsort',{w:true,s:moves,lo:1,lvl:dailyMode?0:(levelIdx+1)});
+  if(dailyMode){_psMarkDaily();}
+  else{
+    var L2=LEVELS[levelIdx];
+    var par2=Math.max(6,Math.round(L2.numColors*(L2.cap||4)*0.9));
+    _psSaveStar(levelIdx+1, moves<=par2?3:(moves<=Math.round(par2*1.5)?2:1));
+    var prog=loadProgress();
+    if(levelIdx+1>prog)saveProgress(levelIdx+1);
+  }
   updateStatus();
   setTimeout(victoryOverlay,450);
 }
@@ -360,25 +444,25 @@ function _cleanupVictory(){
 function victoryOverlay(){
   var secs=Math.max(1,Math.round((solvedTs-startTs)/1000));
   var timeStr=fmtTime(secs);
-  var L=LEVELS[levelIdx];
-  // Rating — 3★ = under 1.35x expected-ish, 2★ = under 1.8x, 1★ = solved.
-  var par=Math.max(6,Math.round(L.numColors*3));
-  var stars=moves<=par?3:(moves<=Math.round(par*1.4)?2:1);
+  var L=dailyMode?_curDaily:LEVELS[levelIdx];
+  // Rating — par scales with the board (colors x vial height).
+  var par=Math.max(6,Math.round(L.numColors*(L.cap||4)*0.9));
+  var stars=moves<=par?3:(moves<=Math.round(par*1.5)?2:1);
   var starRow='<div style="display:flex;gap:10px;margin:12px 0;">';
   for(var si=0;si<3;si++){
     var lit=si<stars;
     starRow+='<div style="font-size:2.4rem;line-height:1;filter:drop-shadow(0 0 '+(lit?'16px rgba(255,220,112,0.8)':'4px rgba(0,0,0,0.5)')+');color:'+(lit?'#ffdc70':'rgba(110,100,80,0.5)')+';animation:psPop 0.6s cubic-bezier(.18,1.4,.3,1) '+(si*140)+'ms both;">★</div>';
   }
   starRow+='</div>';
-  var next=levelIdx<LEVELS.length-1?'<button onclick="this.parentElement.parentElement.remove();_PSnext()" style="min-height:46px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(200,168,75,0.35),rgba(160,120,50,0.45));border:2px solid #c8a84b;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;margin-right:8px;">Next Level →</button>':'<div style="font-family:Georgia,serif;font-style:italic;color:#c8a84b;font-size:0.9rem;margin-right:8px;">Last level complete</div>';
+  var next=(!dailyMode&&levelIdx<LEVELS.length-1)?'<button onclick="this.parentElement.parentElement.remove();_PSnext()" style="min-height:46px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(200,168,75,0.35),rgba(160,120,50,0.45));border:2px solid #c8a84b;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;margin-right:8px;">Next Level →</button>':'<div style="font-family:Georgia,serif;font-style:italic;color:#c8a84b;font-size:0.9rem;margin-right:8px;">Last level complete</div>';
   var ov=document.createElement('div');
   ov.id='PSwin';
   ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(200,168,75,0.32) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:psFade .3s ease;font-family:Georgia,serif;';
   ov.innerHTML=
     '<div style="font-size:4.2rem;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 20px rgba(200,168,75,0.85));animation:psPop .7s cubic-bezier(.18,1.4,.3,1);">🐝</div>'+
     starRow+
-    '<div style="font-size:2rem;font-weight:700;color:#c8a84b;letter-spacing:0.08em;text-shadow:0 0 18px rgba(200,168,75,0.7);animation:psPop .7s cubic-bezier(.18,1.4,.3,1);">POLLEN SORTED</div>'+
-    '<div style="font-family:Georgia,serif;font-style:italic;font-size:0.82rem;color:#e8dcc8;margin-top:8px;">Level '+(levelIdx+1)+' · '+L.numColors+' colors</div>'+
+    '<div style="font-size:2rem;font-weight:700;color:#c8a84b;letter-spacing:0.08em;text-shadow:0 0 18px rgba(200,168,75,0.7);animation:psPop .7s cubic-bezier(.18,1.4,.3,1);">'+(dailyMode?'DAILY SORTED':'POLLEN SORTED')+'</div>'+
+    '<div style="font-family:Georgia,serif;font-style:italic;font-size:0.82rem;color:#e8dcc8;margin-top:8px;">'+(dailyMode?('Daily #'+_psDayNum()):('Level '+(levelIdx+1)))+' · '+L.numColors+' colors · '+(L.cap||4)+' tall</div>'+
     '<div style="display:flex;gap:14px;margin-top:14px;font-family:DM Mono,monospace;font-size:0.7rem;color:#e8dcc8;">'+
       '<div><span style="color:rgba(232,220,200,0.55);">Moves</span> <strong style="color:#c8a84b;">'+moves+'</strong></div>'+
       '<div><span style="color:rgba(232,220,200,0.55);">Time</span> <strong style="color:#7ab356;">'+timeStr+'</strong></div>'+
@@ -392,10 +476,27 @@ function victoryOverlay(){
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────
+var _curDaily=null;
+function loadDaily(){
+  _cleanupVictory();
+  dailyMode=true;
+  _curDaily=_psBuildDaily();
+  CAP=_curDaily.cap;
+  tubes=_curDaily.tubes.map(function(c){return c.slice();});
+  moves=0;history=[];won=false;sel=-1;
+  startTs=Date.now();solvedTs=0;
+  if(timerId)clearInterval(timerId);
+  timerId=setInterval(tickTimer,500);
+  if(_st)_st();
+  _setDiff('hard');
+  renderBoard();
+}
 function loadLevel(idx,keepTimer){
   _cleanupVictory();
+  dailyMode=false;
   levelIdx=idx;
   var L=LEVELS[idx];
+  CAP=L.cap||4;
   tubes=L.tubes.map(function(c){return c.slice();});
   moves=0;history=[];won=false;sel=-1;
   startTs=Date.now();solvedTs=0;
@@ -433,6 +534,15 @@ function renderBoard(){
       '<button class="PSb gold" id="PSnext" onclick="_PSnext()">Next ›</button>'+
     '</div>';
   pan.appendChild(lvlRow);
+  var extraRow=document.createElement('div');
+  extraRow.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 4px 0;gap:8px;flex-wrap:wrap;';
+  extraRow.innerHTML=
+    '<button class="PSb'+(dailyMode?' gold':'')+'" onclick="_PSdaily()">📅 Daily #'+_psDayNum()+(_psDailyDone()?' ✓':'')+'</button>'+
+    '<div class="PSbtn-row">'+
+      '<button class="PSb" onclick="_PSvial()">🏺 '+_vialName()+'</button>'+
+      '<button class="PSb" onclick="_PSpol()">✨ '+_polName()+'</button>'+
+    '</div>';
+  pan.appendChild(extraRow);
   renderTubes();
   updateStatus();
 }
@@ -450,6 +560,19 @@ function GPS(a){
   loadLevel(start,false);
 }
 
+function _vialName(){var id=_psSkin(),i;for(i=0;i<VIALS.length;i++)if(VIALS[i].id===id)return VIALS[i].name;return 'Glass';}
+function _polName(){var id=_psPolStyle(),i;for(i=0;i<POLSTYLES.length;i++)if(POLSTYLES[i].id===id)return POLSTYLES[i].name;return 'Classic';}
+window._PSdaily=function(){if(dailyMode){loadLevel(Math.min(loadProgress(),LEVELS.length-1),false);}else{loadDaily();}};
+window._PSvial=function(){
+  var r=_psCycle(VIALS,'lw_pollensort_vial',_psSkin());
+  if(!r.ok){var nx=_psNextLocked(VIALS);if(nx)_psToast(nx.name+' unlocks at level '+nx.at);}
+  renderBoard();
+};
+window._PSpol=function(){
+  var r=_psCycle(POLSTYLES,'lw_pollensort_pol',_psPolStyle());
+  if(!r.ok){var nx=_psNextLocked(POLSTYLES);if(nx)_psToast(nx.name+' unlocks at level '+nx.at);}
+  renderBoard();
+};
 window._PSundo=function(){undoMove();};
 window._PSreset=function(){won=false;resetLevel();}; // explicit Replay overrides the mid-game won-guard (dead button fix 2026-07-03)
 window._PSprev=function(){if(levelIdx>0){if(timerId)clearInterval(timerId);loadLevel(levelIdx-1,false);}};
@@ -457,4 +580,57 @@ window._PSnext=function(){if(levelIdx<LEVELS.length-1){if(timerId)clearInterval(
 
 window._gameFns=window._gameFns||{};
 window._gameFns.colorsort=GPS;
+
+/* headless verify (?pstest=1): DFS solver runs against the REAL generated
+   LEVELS, so there is no generator drift (the old offline verifier had to
+   mirror this file by hand and drifted twice). */
+if(/[?&]pstest=1/.test(location.search)){
+  window.PS_DEV={
+    levels:function(){return LEVELS.map(function(l){return {n:l.n,colors:l.numColors,cap:l.cap||4,empties:l.extraEmpty,diff:l.difficulty};});},
+    load:function(i){loadLevel(i,false);return true;},
+    daily:function(){loadDaily();return {colors:_curDaily.numColors,cap:_curDaily.cap};},
+    tap:function(i){onTubeTap(i);return tubes.map(function(t){return t.join('');});},
+    state:function(){return {tubes:tubes.map(function(t){return t.slice();}),moves:moves,won:won,cap:CAP};},
+    solve:function(li){
+      var L=(li==='daily')?_psBuildDaily():LEVELS[li];
+      var cap=L.cap||4;
+      var seen={},nodes=0,LIMIT=400000;
+      function key(t){return t.map(function(c){return c.join(',');}).slice().sort().join('|');}
+      function solvedQ(t){var i;for(i=0;i<t.length;i++){var c=t[i];if(c.length===0)continue;if(c.length!==cap)return false;for(var k=1;k<c.length;k++)if(c[k]!==c[0])return false;}return true;}
+      function dfs(t,depth){
+        if(solvedQ(t))return depth;
+        if(++nodes>LIMIT)return -2;
+        var k2=key(t);if(seen[k2])return -1;seen[k2]=1;
+        var moves2=[],i,j;
+        for(i=0;i<t.length;i++){
+          var src=t[i];if(!src.length)continue;
+          var top=src[src.length-1],run=0,q=src.length-1;
+          while(q>=0&&src[q]===top){run++;q--;}
+          if(run===src.length&&src.length===cap)continue;   // finished tube
+          for(j=0;j<t.length;j++){
+            if(i===j)continue;
+            var dst=t[j];
+            if(dst.length>=cap)continue;
+            if(dst.length&&dst[dst.length-1]!==top)continue;
+            if(!dst.length&&run===src.length)continue;       // pointless whole-tube shift
+            var n2=Math.min(run,cap-dst.length);
+            moves2.push({i:i,j:j,n:n2,score:(dst.length?2:0)+(n2===run?1:0)});
+          }
+        }
+        moves2.sort(function(a,b){return b.score-a.score;});
+        for(var m=0;m<moves2.length;m++){
+          var mv=moves2[m];
+          var t2=t.map(function(c){return c.slice();});
+          for(var x=0;x<mv.n;x++)t2[mv.j].push(t2[mv.i].pop());
+          var r=dfs(t2,depth+1);
+          if(r>=0)return r;
+          if(r===-2)return -2;
+        }
+        return -1;
+      }
+      var res=dfs(L.tubes.map(function(c){return c.slice();}),0);
+      return {li:li,solvable:res>=0,depth:res,nodes:nodes,capped:res===-2};
+    }
+  };
+}
 })();
