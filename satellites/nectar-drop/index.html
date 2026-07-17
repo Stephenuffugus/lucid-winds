@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nectar Drop">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Nectar Drop — Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"nectardrop"}).catch(function(){});</script>
@@ -154,6 +156,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="b-ach">🏅 Awards</button>
         <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack" style="flex:0 0 56px">&#9835;</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
@@ -236,6 +239,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Aim guide</span><div class="toggle on" id="tg-guide"><b></b></div></div>
     <div style="height:8px"></div>
+    <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -300,7 +304,7 @@ function pad2(n){ return n<10?('0'+n):(''+n); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
-var BUILD='v2.2';
+var BUILD='v3.0';
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, guide:true };
@@ -349,11 +353,20 @@ var GARDENERS=[
  {id:'starling_gardener',name:'Starling Gardener',comp:'🐦', unlock:108,desc:'Green lights a lantern that doubles this shot’s nectar.',
    fire:function(pg,b){ G.lantern=2; floater(pg.x,pg.y,'×2 NECTAR'); sfx('free'); } },
  {id:'sky_wolf_pup',    name:'Sky Wolf Pup',     comp:'🐺', unlock:118,desc:'Green unleashes a huge blast — great against bosses.',
-   fire:function(pg,b){ bloomBurst(pg.x,pg.y,210,true); floater(pg.x,pg.y,'BOSS BREAKER'); sfx('burst'); } }
+   fire:function(pg,b){ bloomBurst(pg.x,pg.y,185,true); floater(pg.x,pg.y,'BOSS BREAKER'); sfx('burst'); } }
 ];
 var GBY={}; GARDENERS.forEach(function(g){ GBY[g.id]=g; });
 var EQUIPPED = LS.get('nd_char'); if(!EQUIPPED||!GBY[EQUIPPED])EQUIPPED='nectar_kid';
-function firePower(pg,b){ var g=GBY[G.character]||GBY.nectar_kid; try{ g.fire(pg,b); }catch(e){ bloomBurst(pg.x,pg.y); } }
+/* power VFX sprites (assets/powers/vfx_*.png, cut Jul 09, wired v3.0) */
+var VFXMAP={nectar_kid:'bloom_burst',clover_scout:'seed_split',marigold_mage:'gold_rush',
+  dewdrop_drifter:'time_petal',pollen_puff:'multi_pollen',button_beetle:'shield_dome',
+  ribbon_moth:'wind_bend',acorn_archer:'piercing_thorn',sprout_bunny:'free_ball_magnet',
+  lantern_snail:'sticky_silk',firefly_pilot:'rainbow_chain',thistle_hedgehog:'peg_swap',
+  starling_gardener:'score_lantern',sky_wolf_pup:'boss_breaker'};
+function loadVfxArt(hero){ var k=VFXMAP[hero]; if(k) loadArt('vfx_'+k,'assets/powers/vfx_'+k+'.png'); }
+function firePower(pg,b){ var g=GBY[G.character]||GBY.nectar_kid;
+  var vk=VFXMAP[g.id]; if(vk && G.vfx){ loadVfxArt(g.id); G.vfx.push({x:pg.x,y:pg.y,key:'vfx_'+vk,life:1,rot:(Math.random()-0.5)*1.6}); }
+  try{ g.fire(pg,b); }catch(e){ bloomBurst(pg.x,pg.y); } }
 
 /* ---- power helpers ---- */
 function splitBall(x,y,parent){
@@ -377,7 +390,7 @@ function rainbowChain(pg){ // arc a spark chain to nearest unhit pegs, depth 2, 
   var seen={}, frontier=[pg], depth=0;
   while(frontier.length && depth<3){
     var next=[]; for(var f=0;f<frontier.length;f++){ var src=frontier[f];
-      var cand=[]; for(var i=0;i<G.pegs.length;i++){ var q=G.pegs[i]; if(q.hit||seen[i])continue; var dx=q.x-src.x,dy=q.y-src.y,d=dx*dx+dy*dy; if(d<150*150)cand.push({i:i,d:d}); }
+      var cand=[]; for(var i=0;i<G.pegs.length;i++){ var q=G.pegs[i]; if(q.hit||seen[i])continue; var dx=q.x-src.x,dy=q.y-src.y,d=dx*dx+dy*dy; if(d<135*135)cand.push({i:i,d:d}); }
       cand.sort(function(a,b){return a.d-b.d;});
       for(var c=0;c<3&&c<cand.length;c++){ var idx=cand[c].i; seen[idx]=1; var t=G.pegs[idx]; G.rings.push({x:src.x,y:src.y,rad:6,max:Math.sqrt(cand[c].d),life:.8}); popOne(idx); next.push(t); } }
     frontier=next; depth++;
@@ -435,6 +448,7 @@ function loadCore(){
 }
 function loadWorldArt(w){ var W=WORLDS[w]; if(!W)return;
   loadArt('bg_'+w,'assets/bg/world'+pad2(w+1)+'.jpg');
+  loadArt('fg_'+w,'assets/fg/world'+pad2(w+1)+'.png');
   ['red','green','purple','blue'].forEach(function(c){ loadArt('biome_'+w+'_'+c,'assets/biome/'+W.biome+'_'+c+'.png'); });
   loadArt('bossH_'+w,'assets/bosses/'+W.boss+'_hero.png');
   loadArt('bossD_'+w,'assets/bosses/'+W.boss+'_defeated.png');
@@ -465,39 +479,251 @@ function sfx(k){ switch(k){
 var PLAY_TOP=150, PLAY_BOT=858;
 var LAUNCH_X=VW/2, LAUNCH_Y=88, MUZZLE=52;   // MUZZLE = distance from pivot to the barrel mouth
 function muzzlePos(a){ return { x:LAUNCH_X+MUZZLE*Math.sin(a), y:LAUNCH_Y+MUZZLE*Math.cos(a) }; }
-var PEG_R=12, BALL_R=8, GRAV=0.30, REST=0.72, SPEED=8.4;
+/* v3.0: pegs 12→9.5, ball 8→7 — Stephen 2026-07-16: "zoom out further and make
+   the pegs smaller". Same board, smaller+denser blooms = the zoomed-out feel. */
+var PEG_R=9.5, BALL_R=7, GRAV=0.30, REST=0.72, SPEED=8.4;
 var ND_SOLID=145, ND_FADE=26;   // lit pegs stay solid ~2.4s, then fade out over ~0.4s
 var BUCKET_W=96, BUCKET_H=24, BUCKET_Y=VH-46;
 var BIN_Y=VH-14;
 
-/* ===== level pattern builders ===== */
-function pGrid(cols,rows){ var a=[],w=VW-80,h=PLAY_BOT-PLAY_TOP-40; for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){ var off=(r%2)*(w/cols/2); a.push({x:40+off+ (c+0.5)*(w-off)/cols, y:PLAY_TOP+30+ r*(h/(rows-1||1))}); } return a; }
-function pDiamond(n){ var a=[],cx=VW/2,cy=(PLAY_TOP+PLAY_BOT)/2, R=Math.min(VW*0.42,(PLAY_BOT-PLAY_TOP)*0.42); for(var ring=1;ring<=n;ring++){ var cnt=ring*4, rad=R*ring/n; for(var i=0;i<cnt;i++){ var ang=Math.PI*2*i/cnt+ring*0.2; a.push({x:cx+Math.cos(ang)*rad, y:cy+Math.sin(ang)*rad*0.9}); } } a.push({x:cx,y:cy}); return a; }
-function pWave(cols,rows){ var a=[],w=VW-80,h=PLAY_BOT-PLAY_TOP-40; for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){ a.push({x:40+(c+0.5)*w/cols, y:PLAY_TOP+30+ r*(h/(rows-1||1)) + Math.sin(c*0.9)*22}); } return a; }
-function pRings(n){ var a=[],cx=VW/2,cy=(PLAY_TOP+PLAY_BOT)/2; for(var ring=1;ring<=n;ring++){ var cnt=6+ring*4, rad=(PLAY_BOT-PLAY_TOP)*0.42*ring/n; for(var i=0;i<cnt;i++){ var ang=Math.PI*2*i/cnt; a.push({x:cx+Math.cos(ang)*rad*0.95, y:cy+Math.sin(ang)*rad}); } } return a; }
-function pColumns(cols,rows){ var a=[],w=VW-90,h=PLAY_BOT-PLAY_TOP-30; for(var c=0;c<cols;c++)for(var r=0;r<rows;r++){ a.push({x:45+(c+0.5)*w/cols, y:PLAY_TOP+20+ r*(h/(rows-1||1))}); } return a; }
-function pChevron(rows,per){ var a=[]; for(var r=0;r<rows;r++){ var y=PLAY_TOP+30+r*((PLAY_BOT-PLAY_TOP-40)/(rows-1||1)); var span=60+r*18; for(var i=0;i<per;i++){ var t=per>1?i/(per-1):0.5; a.push({x:VW/2 - span + t*span*2, y:y}); } } return a; }
-var PATTERNS=[
-  function(d){ return pGrid(6+ (d%2), 5+Math.min(2,d)); },
-  function(d){ return pWave(7, 6+Math.min(2,d)); },
-  function(d){ return pRings(3+Math.min(2,Math.floor(d/2))); },
-  function(d){ return pColumns(6, 6+Math.min(2,d)); },
-  function(d){ return pChevron(6, 7); },
-  function(d){ return pDiamond(4+Math.min(1,Math.floor(d/3))); }
+/* ===== level pattern builders (v3.0 diversity pass) =====
+   Every builder takes (r,d): r = seeded rng (deterministic per level, so a
+   level's layout is ITS layout on every replay), d = world index 0-11 for
+   density ramping. Builders return raw {x,y}; cleanPegs clamps + dedups. */
+function m32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+var FX0=36, FX1=VW-36, FCX=VW/2;
+var FTOP=PLAY_TOP+26, FBOT=PLAY_BOT-14, FCY=(FTOP+FBOT)/2, FH=FBOT-FTOP, FWD=FX1-FX0;
+function ln(a,x0,y0,x1,y1,n){ for(var i=0;i<n;i++){ var t=n>1?i/(n-1):0.5; a.push({x:x0+(x1-x0)*t, y:y0+(y1-y0)*t}); } }
+function ring(a,cx,cy,rx,ry,n,ph){ for(var i=0;i<n;i++){ var t=Math.PI*2*i/n+(ph||0); a.push({x:cx+Math.cos(t)*rx, y:cy+Math.sin(t)*ry}); } }
+function arc(a,cx,cy,rx,ry,a0,a1,n){ for(var i=0;i<n;i++){ var t=a0+(a1-a0)*(n>1?i/(n-1):0.5); a.push({x:cx+Math.cos(t)*rx, y:cy+Math.sin(t)*ry}); } }
+
+function pGrid(r,d){ var a=[], cols=8+(d>5?1:0)+Math.floor(r()*2), rows=7+Math.floor(d/4)+Math.floor(r()*2);
+  for(var rr=0;rr<rows;rr++)for(var c=0;c<cols;c++){ var off=(rr%2)*(FWD/cols/2);
+    a.push({x:FX0+off+(c+0.5)*(FWD-off)/cols+(r()*6-3), y:FTOP+rr*(FH/(rows-1))+(r()*6-3)}); }
+  return a; }
+function pWave(r,d){ var a=[], rows=6+Math.floor(d/3), cols=9+Math.floor(r()*3), amp=16+r()*18, fr=0.55+r()*0.6, ph=r()*6.28;
+  for(var rr=0;rr<rows;rr++)for(var c=0;c<cols;c++) a.push({x:FX0+(c+0.5)*FWD/cols, y:FTOP+14+rr*((FH-28)/(rows-1))+Math.sin(c*fr+ph+rr*0.7)*amp});
+  return a; }
+function pRings(r,d){ var a=[], n=3+Math.floor(d/4), R=FH*0.42;
+  ring(a,FCX,FCY,26,22,6,r()*6);
+  for(var k=1;k<=n;k++) ring(a,FCX,FCY,(FWD*0.46)*k/n,R*k/n,8+k*6,r()*6);
+  return a; }
+function pWaterfall(r,d){ var a=[], cols=8+Math.floor(d/4);
+  for(var c=0;c<cols;c++){ var h=0.45+r()*0.55, top=FTOP+r()*FH*0.30, x=FX0+(c+0.5)*FWD/cols;
+    ln(a,x,top,x,Math.min(FBOT,top+FH*h),Math.max(3,Math.round((FH*h)/26))); }
+  return a; }
+function pChevron(r,d){ var a=[], bands=4+Math.floor(d/5), per=5+Math.floor(r()*2), flip=r()<0.5?1:-1;
+  for(var b2=0;b2<bands;b2++){ var y=FTOP+16+b2*((FH-40)/(bands-1||1)), drop=flip*(26+r()*20);
+    ln(a,FX0+10,y,FCX,y+drop,per); ln(a,FCX,y+drop,FX1-10,y,per); }
+  return a; }
+function pDiamondLat(r,d){ var a=[], step=54+r()*16;   // continuous step: no two levels share a lattice
+  for(var rr=0;rr<=Math.ceil(FH/(step*0.9));rr++)for(var c=0;c<=Math.ceil(FWD/step);c++)
+    a.push({x:FX0+c*step+((rr%2)*step/2), y:FTOP+rr*step*0.9});
+  return a; }
+function pSpiral(r,d){ var a=[], arms=2+(d>4?1:0), n=16+d, tw=1.7+r()*0.9;
+  for(var k=0;k<arms;k++){ var ph=Math.PI*2*k/arms+r();
+    for(var i=0;i<n;i++){ var t=i/(n-1), R2=20+t*(FH*0.46), ang=ph+t*Math.PI*tw;
+      a.push({x:FCX+Math.cos(ang)*R2*0.92, y:FCY+Math.sin(ang)*R2}); } }
+  return a; }
+function pSunflower(r,d){ var a=[], n=70+d*3, c=24+r()*4, ga=2.39996, j=r()*6;
+  /* c>=24 keeps seed spacing threadable — at c~11 the head collapsed into an
+     impenetrable disc with the reds buried inside (bot-proven unwinnable-ish) */
+  for(var i=0;i<n;i++){ var R2=c*Math.sqrt(i), ang=i*ga+j;
+    var x=FCX+Math.cos(ang)*R2, y=FCY+Math.sin(ang)*R2*1.12;
+    if(y>FTOP-2&&y<FBOT+2&&x>FX0-2&&x<FX1+2) a.push({x:x,y:y}); }
+  return a; }
+function pHeart(r,d){ var a=[], n=30+d, sc=(FH*0.30)/16;
+  for(var i=0;i<n;i++){ var t=Math.PI*2*i/n;
+    var hx=16*Math.pow(Math.sin(t),3), hy=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    a.push({x:FCX+hx*sc, y:FCY-20+hy*sc}); }
+  ring(a,FCX,FCY-20,30,26,7,r()*6);
+  arc(a,FCX,FBOT-28,FWD*0.42,22,Math.PI,Math.PI*2,9);
+  return a; }
+function pStarburst(r,d){ var a=[], pts=5+Math.floor(r()*3), R2=FH*0.40, r2=R2*0.44, ph=-Math.PI/2+r()*0.6, v=[];
+  for(var i=0;i<pts*2;i++){ var ang=ph+Math.PI*i/pts, rad=(i%2===0)?R2:r2; v.push({x:FCX+Math.cos(ang)*rad*0.9, y:FCY+Math.sin(ang)*rad}); }
+  for(i=0;i<v.length;i++){ var w2=v[(i+1)%v.length]; ln(a,v[i].x,v[i].y,w2.x,w2.y,4); }
+  ring(a,FCX,FCY,30,26,8,ph); if(d>5) a.push({x:FCX,y:FCY});
+  return a; }
+function pHoney(r,d){ var a=[], s=38+r()*8, R2=FWD*0.40;
+  for(var q=-8;q<=8;q++)for(var w2=-8;w2<=8;w2++){
+    var x=FCX+(q+w2/2)*s, y=FCY+w2*s*0.87, dx=x-FCX, dy=(y-FCY)/1.25;
+    if(dx*dx+dy*dy<R2*R2) a.push({x:x,y:y}); }
+  return a; }
+function pHourglass(r,d){ var a=[], rows=8+Math.floor(d/3)+Math.floor(r()*2), pinch=0.35+r()*0.3;
+  for(var rr=0;rr<rows;rr++){ var t=rr/(rows-1), y=FTOP+10+t*(FH-20);
+    var half=(Math.abs(t-pinch)/Math.max(pinch,1-pinch))*(FWD*0.46)+16;
+    ln(a,FCX-half,y,FCX+half,y,Math.max(2,Math.round(half/26))); }
+  return a; }
+function pPinwheel(r,d){ var a=[], n=10+Math.floor(d/2), ph=r()*6.28;
+  ring(a,FCX,FCY,24,20,6,ph);
+  for(var k=0;k<4;k++){ var base=ph+Math.PI*2*k/4;
+    for(var i=0;i<n;i++){ var t=i/(n-1), R2=30+t*(FH*0.42), ang=base+t*1.25;
+      a.push({x:FCX+Math.cos(ang)*R2*0.92, y:FCY+Math.sin(ang)*R2}); } }
+  return a; }
+function pOrbits(r,d){ var a=[];
+  ring(a,FCX-FWD*0.18,FCY-FH*0.18,FWD*0.30,FH*0.22,14+Math.floor(d/2),r()*6);
+  ring(a,FCX+FWD*0.18,FCY+FH*0.14,FWD*0.30,FH*0.22,14+Math.floor(d/2),r()*6);
+  if(d>2) ring(a,FCX,FCY,FWD*0.44,FH*0.36,16,r()*6);
+  a.push({x:FCX-FWD*0.18,y:FCY-FH*0.18}); a.push({x:FCX+FWD*0.18,y:FCY+FH*0.14});
+  return a; }
+function pSerpent(r,d){ var a=[], strands=2+(d>6?1:0), n=26+d, amp=FWD*0.33, ph=r()*6.28;
+  for(var k=0;k<strands;k++)for(var i=0;i<n;i++){ var t=i/(n-1);
+    a.push({x:FCX+Math.sin(t*Math.PI*2.2+ph)*amp+(k-(strands-1)/2)*34, y:FTOP+8+t*(FH-16)}); }
+  return a; }
+function pFunnel(r,d){ var a=[], gap=40+r()*26;
+  ln(a,FX0+6,FTOP+10,FCX-gap,FCY+FH*0.16,9); ln(a,FX1-6,FTOP+10,FCX+gap,FCY+FH*0.16,9);
+  ln(a,FX0+20,FBOT-40,FCX-gap-6,FBOT-40,5); ln(a,FCX+gap+6,FBOT-40,FX1-20,FBOT-40,5);
+  arc(a,FCX,FBOT-96,gap+30,26,Math.PI*1.15,Math.PI*1.85,7);
+  if(d>4) ln(a,FCX-gap+6,FCY+FH*0.30,FCX+gap-6,FCY+FH*0.30,4);
+  return a; }
+function pPyramid(r,d){ var a=[], rows=7+Math.floor(d/4)+Math.floor(r()*2), inv=r()<0.4, ax=FCX+(r()-0.5)*FWD*0.18;
+  for(var rr=0;rr<rows;rr++){ var t=inv?1-rr/(rows-1):rr/(rows-1), y=FTOP+14+(rr/(rows-1))*(FH-30);
+    var half=16+t*(FWD*0.45), cx=ax+(FCX-ax)*t;
+    ln(a,cx-half,y,cx+half,y,Math.max(2,Math.round(half/24))); }
+  return a; }
+function pCrescent(r,d){ var a=[], side=r()<0.5?1:-1;
+  arc(a,FCX,FCY,FWD*0.44,FH*0.40,Math.PI*0.5-side*0.4,Math.PI*1.5+side*0.4,18+d);
+  arc(a,FCX+side*FWD*0.12,FCY,FWD*0.27,FH*0.25,Math.PI*0.6,Math.PI*1.4,9);
+  for(var i=0;i<8+Math.floor(d/2);i++) a.push({x:FCX+side*(FWD*0.16+r()*FWD*0.3), y:FTOP+r()*FH});
+  return a; }
+function pButterfly(r,d){ var a=[];
+  ln(a,FCX,FTOP+16,FCX,FBOT-30,8);
+  for(var s=-1;s<=1;s+=2){
+    ring(a,FCX+s*FWD*0.24,FCY-FH*0.17,FWD*0.20,FH*0.16,12,r());
+    ring(a,FCX+s*FWD*0.20,FCY+FH*0.16,FWD*0.15,FH*0.12,9,r());
+    a.push({x:FCX+s*FWD*0.24,y:FCY-FH*0.17}); }
+  return a; }
+function pArches(r,d){ var a=[], bands=3+Math.floor(d/5)+Math.floor(r()*2), j=r()*0.05;
+  for(var b2=0;b2<bands;b2++) arc(a,FCX,FBOT-6,FWD*(0.22+0.11*b2+j),FH*(0.18+0.12*b2+j),Math.PI,Math.PI*2,9+b2*4);
+  arc(a,FCX,FTOP+6,FWD*(0.30+r()*0.08),FH*0.16,0,Math.PI,8);
+  return a; }
+function pClusters(r,d){ var a=[], k=5+Math.floor(d/3);
+  for(var c=0;c<k;c++){ var cx=FX0+30+r()*(FWD-60), cy=FTOP+24+r()*(FH-48), n=6+Math.floor(r()*7);
+    ring(a,cx,cy,22,19,6,r()*6);
+    if(n>9) ring(a,cx,cy,44,38,n-6,r()*6); else if(n>6) arc(a,cx,cy,44,38,r()*6,r()*6+3,n-6);
+    a.push({x:cx,y:cy}); }
+  return a; }
+function pTree(r,d){ var a=[];
+  ln(a,FCX,FBOT-10,FCX,FCY+20,6);
+  for(var s=-1;s<=1;s+=2){ ln(a,FCX,FCY+30,FCX+s*FWD*0.30,FCY-FH*0.05,6); ln(a,FCX,FCY-10,FCX+s*FWD*0.22,FCY-FH*0.24,5); }
+  ring(a,FCX,FTOP+FH*0.16,FWD*0.30,FH*0.15,13,r()*6);
+  ring(a,FCX,FTOP+FH*0.16,FWD*0.17,FH*0.085,7,r()*6);
+  for(var i=0;i<6+d;i++) a.push({x:FCX+(r()*2-1)*FWD*0.34, y:FTOP+FH*0.16+(r()*2-1)*FH*0.13});
+  return a; }
+function pVortex(r,d){ var a=[], n=44+d*3, tw=3.4+r()*1.1, ph=r()*6.28;
+  for(var i=0;i<n;i++){ var t=i/(n-1), R2=14+t*(FH*0.47), ang=ph+t*Math.PI*tw;
+    a.push({x:FCX+Math.cos(ang)*R2*0.9, y:FCY+Math.sin(ang)*R2}); }
+  return a; }
+function pTwinWheels(r,d){ var a=[];
+  for(var s=-1;s<=1;s+=2){ var cx=FCX+s*FWD*0.24, cy=FCY+s*FH*0.10;
+    ring(a,cx,cy,FWD*0.21,FH*0.15,12+Math.floor(d/3),r()*6);
+    for(var k=0;k<4;k++){ var ang=r()*0.5+Math.PI*2*k/4; ln(a,cx,cy,cx+Math.cos(ang)*FWD*0.19,cy+Math.sin(ang)*FH*0.135,3); } }
+  return a; }
+function pLanterns(r,d){ var a=[], cols=3+Math.floor(d/5);
+  for(var c=0;c<cols;c++){ var cx=FX0+(c+0.5)*FWD/cols, top=FTOP+10+r()*30;
+    ln(a,cx,top,cx,top+FH*0.22,4); ring(a,cx,top+FH*0.34,26,30,7,r());
+    ln(a,cx,top+FH*0.5,cx,Math.min(FBOT,top+FH*0.72),4); }
+  arc(a,FCX,FBOT-20,FWD*0.42,26,Math.PI,Math.PI*2,9);
+  return a; }
+var PATTERNS=[pGrid,pWave,pRings,pWaterfall,pChevron,pDiamondLat,pSpiral,pSunflower,pHeart,pStarburst,pHoney,pHourglass,pPinwheel,pOrbits,pSerpent,pFunnel,pPyramid,pCrescent,pButterfly,pArches,pClusters,pTree,pVortex,pTwinWheels,pLanterns];
+
+/* accent motifs layered on ~40% of levels for extra variety */
+var ACCENTS=[
+  function(a,r){ arc(a,FCX,FTOP+4,FWD*0.30,30,0.35,Math.PI-0.35,6); },
+  function(a,r){ for(var s=-1;s<=1;s+=2) ln(a,FCX+s*(FWD*0.47),FCY-FH*0.16,FCX+s*(FWD*0.47),FCY+FH*0.16,5); },
+  function(a,r){ ring(a,FCX,FBOT-40,FWD*0.16,26,8,r()*6); },
+  function(a,r){ for(var s=-1;s<=1;s+=2) ring(a,FCX+s*FWD*0.36,FTOP+FH*0.2,40,34,6,r()*6); }
+];
+function buildComposed(li,w,l){
+  var r=m32(li*2654435761+9);
+  /* stride 7 on l is invertible mod 25 → 9 DIFFERENT patterns per world */
+  var a=PATTERNS[(w*11+l*7)%PATTERNS.length](r,w).slice();
+  if(r()<0.42) ACCENTS[Math.floor(r()*ACCENTS.length)](a,r);
+  while(a.length>150) a.splice(Math.floor(r()*a.length),1);   // density cap (phone perf)
+  var tmin=48+Math.min(24,w*2);
+  if(a.length<tmin){ var need=(tmin-a.length)*2;               // scattered filler blooms
+    for(var f=0;f<need;f++) a.push({x:FX0+r()*FWD, y:FTOP+r()*FH}); }
+  return a;
+}
+
+/* ===== 12 boss arenas — every world's boss defends a DIFFERENT keep ===== */
+var BOSS_ARENAS=[
+ /* Bramble Bun — burrow fortress */
+ function(r){ var a=[]; ring(a,FCX,FCY,30,26,7,r()); ring(a,FCX,FCY,FWD*0.26,FH*0.20,14,r());
+   ln(a,FX0+8,FTOP+20,FCX-70,FTOP+20,5); ln(a,FCX+70,FTOP+20,FX1-8,FTOP+20,5);
+   ln(a,FX0+8,FBOT-46,FCX-90,FBOT-46,5); ln(a,FCX+90,FBOT-46,FX1-8,FBOT-46,5);
+   ring(a,FCX,FCY,FWD*0.44,FH*0.37,18,0.22); a.push({x:FCX,y:FCY}); return a; },
+ /* Gilded Snail Baron — glass shelves + hanging drops */
+ function(r){ var a=[]; for(var s=0;s<4;s++){ var y=FTOP+24+s*(FH-60)/3, off=(s%2)*40;
+     ln(a,FX0+10+off,y,FX1-10-off*0.5,y,9); }
+   for(var c=0;c<5;c++){ var x=FX0+(c+0.5)*FWD/5; ln(a,x,FTOP+40,x,FTOP+76+((c%2)*24),3); }
+   ring(a,FCX,FBOT-64,44,34,9,r()); a.push({x:FCX,y:FBOT-64}); return a; },
+ /* Moth Mask Maestro — lantern gauntlet */
+ function(r){ var a=[]; for(var s=-1;s<=1;s+=2){ var x=FCX+s*FWD*0.33;
+     ln(a,x,FTOP+12,x,FBOT-24,9); ring(a,x,FCY,34,40,7,r()); }
+   ring(a,FCX,FCY,44,52,9,r()); ln(a,FCX-40,FTOP+30,FCX+40,FTOP+30,4); ln(a,FCX-40,FBOT-44,FCX+40,FBOT-44,4);
+   a.push({x:FCX,y:FCY}); return a; },
+ /* Rainboot Frog King — lily pond arcs */
+ function(r){ var a=[]; for(var b2=0;b2<3;b2++) arc(a,FCX,FBOT+40,FWD*(0.22+0.13*b2),FH*(0.28+0.14*b2),Math.PI*1.08,Math.PI*1.92,9+b2*4);
+   ring(a,FCX,FTOP+FH*0.22,FWD*0.24,FH*0.14,11,r()); ring(a,FCX,FTOP+FH*0.22,FWD*0.11,FH*0.06,5,r());
+   for(var i=0;i<7;i++) a.push({x:FX0+20+r()*(FWD-40), y:FCY+r()*FH*0.28});
+   a.push({x:FCX,y:FTOP+FH*0.22}); return a; },
+ /* Velvet Mole Miner — offset tunnel rows */
+ function(r){ var a=[]; for(var s=0;s<5;s++){ var y=FTOP+16+s*(FH-40)/4, hole=FX0+40+((s*97)%Math.round(FWD-90));
+     for(var x=FX0+8;x<=FX1-8;x+=26){ if(Math.abs(x-hole)>44) a.push({x:x,y:y}); } }
+   ring(a,FCX,FCY+8,34,28,7,r()); a.push({x:FCX,y:FCY+8}); return a; },
+ /* Citrus Crown Beetle — big wheel + spokes */
+ function(r){ var a=[]; ring(a,FCX,FCY,FWD*0.42,FH*0.36,20,r()); ring(a,FCX,FCY,FWD*0.22,FH*0.18,10,r());
+   for(var k=0;k<6;k++){ var ang=Math.PI*2*k/6+0.26; ln(a,FCX+Math.cos(ang)*FWD*0.10,FCY+Math.sin(ang)*FH*0.08,FCX+Math.cos(ang)*FWD*0.40,FCY+Math.sin(ang)*FH*0.335,4); }
+   a.push({x:FCX,y:FCY}); return a; },
+ /* Fern Foxfire — double spiral grotto */
+ function(r){ var a=[]; for(var k=0;k<2;k++){ var ph=Math.PI*k;
+     for(var i=0;i<24;i++){ var t=i/23, R2=20+t*FH*0.45, ang=ph+t*Math.PI*2.6;
+       a.push({x:FCX+Math.cos(ang)*R2*0.88, y:FCY+Math.sin(ang)*R2}); } }
+   ring(a,FCX,FCY,26,22,6,r()); a.push({x:FCX,y:FCY}); return a; },
+ /* Lilyloop Heron — braided ribbons */
+ function(r){ var a=[]; for(var k=0;k<3;k++)for(var i=0;i<20;i++){ var t=i/19;
+     a.push({x:FCX+Math.sin(t*Math.PI*2.4+k*2.09)*FWD*0.36, y:FTOP+10+t*(FH-24)}); }
+   ring(a,FCX,FCY,40,34,8,r()); return a; },
+ /* Thistle Tumblehog — carnival big top */
+ function(r){ var a=[]; for(var rr=0;rr<5;rr++){ var t=rr/4, y=FTOP+12+t*FH*0.5, half=20+t*FWD*0.46;
+     ln(a,FCX-half,y,FCX+half,y,Math.max(2,Math.round(half/26))); }
+   arc(a,FCX,FBOT+30,FWD*0.40,FH*0.34,Math.PI*1.1,Math.PI*1.9,11);
+   for(var s=-1;s<=1;s+=2) ring(a,FCX+s*FWD*0.28,FBOT-70,30,26,6,r());
+   a.push({x:FCX,y:FBOT-96}); return a; },
+ /* Starfruit Sphinxcat — star keep + orbit */
+ function(r){ var a=[], R2=FH*0.34, ph=-Math.PI/2, v=[];
+   for(var i=0;i<10;i++){ var ang=ph+Math.PI*i/5, rad=(i%2===0)?R2:R2*0.44; v.push({x:FCX+Math.cos(ang)*rad*0.95,y:FCY+Math.sin(ang)*rad}); }
+   for(i=0;i<v.length;i++){ var n2=v[(i+1)%v.length]; ln(a,v[i].x,v[i].y,n2.x,n2.y,4); }
+   ring(a,FCX,FCY,FWD*0.46,FH*0.40,16,r()); a.push({x:FCX,y:FCY}); return a; },
+ /* Clover Yeti Mouse — frost diamond + icicles */
+ function(r){ var a=[], half=FWD*0.40;
+   ln(a,FCX,FTOP+10,FCX-half,FCY,8); ln(a,FCX-half,FCY,FCX,FBOT-24,8); ln(a,FCX,FBOT-24,FCX+half,FCY,8); ln(a,FCX+half,FCY,FCX,FTOP+10,8);
+   for(var c=0;c<4;c++){ var x=FCX-half*0.55+c*half*0.37; ln(a,x,FTOP+30,x,FTOP+70+((c%2)*30),3); }
+   ring(a,FCX,FCY,34,30,7,r()); a.push({x:FCX,y:FCY}); return a; },
+ /* Marigold Sun Bear — grand sun mandala */
+ function(r){ var a=[], ga=2.39996;
+   for(var i=0;i<40;i++){ var R2=11*Math.sqrt(i), ang=i*ga; a.push({x:FCX+Math.cos(ang)*R2, y:FCY+Math.sin(ang)*R2*1.1}); }
+   ring(a,FCX,FCY,FWD*0.33,FH*0.26,14,r());
+   for(var k=0;k<8;k++){ var ang2=Math.PI*2*k/8+0.2; ln(a,FCX+Math.cos(ang2)*FWD*0.36,FCY+Math.sin(ang2)*FH*0.29,FCX+Math.cos(ang2)*FWD*0.47,FCY+Math.sin(ang2)*FH*0.385,3); }
+   return a; }
 ];
 
 /* ===== 120-level table generated from WORLDS ===== */
 var LEVELS=[];
 function buildLevelTable(){ LEVELS=[];
   for(var w=0;w<WORLDS.length;w++){ for(var l=0;l<LPW;l++){
-    var boss=(l===LPW-1), diff=Math.floor((w*LPW+l)/8);
-    (function(w,l,boss,diff){
-      var reds = boss ? (13+w) : (8 + Math.round(w*0.8) + (l%3));
-      var balls = Math.max(9, 13 - Math.floor(w/2)) + (boss?2:0);
-      var pi=(w+l)%PATTERNS.length;
+    var boss=(l===LPW-1);
+    (function(w,l,boss){
+      var li=w*LPW+l;
+      var reds = boss ? (15+Math.floor(w/2)) : (9 + Math.round(w*0.7) + (l%3));
+      /* v3.0: smaller pegs = fewer lucky red hits per shot (bot-measured), so
+         the pollen pouch grows +2 early / +1 late / +1 extra on bosses */
+      var balls = Math.max(10, 15 - Math.floor(w/2)) + (boss?3:0);
       LEVELS.push({ w:w, l:l, boss:boss, name:(boss?WORLDS[w].bossName:LNAMES[w][l]),
-        balls:balls, reds:reds, build:function(){ return boss?pDiamond(5):PATTERNS[pi](diff); } });
-    })(w,l,boss,diff);
+        balls:balls, reds:reds,
+        build:function(){ return boss ? BOSS_ARENAS[w](m32(li*2654435761+9)) : buildComposed(li,w,l); } });
+    })(w,l,boss);
   }}
 }
 buildLevelTable();
@@ -516,9 +742,9 @@ function assignColours(pegs, nReds){
   for(i=idx.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
   var nPurple=Math.max(2,Math.round(pegs.length*0.06));
   for(i=0;i<pegs.length;i++){ pegs[i].type='blue'; pegs[i].hit=false; pegs[i].r=PEG_R; pegs[i].pop=0; }
-  var k=0;
+  var k=0, nGreen=(pegs.length>70)?3:2;   // big boards earn a third power bloom
   for(i=0;i<nReds && k<idx.length;i++,k++) pegs[idx[k]].type='red';
-  for(i=0;i<2 && k<idx.length;i++,k++) pegs[idx[k]].type='green';
+  for(i=0;i<nGreen && k<idx.length;i++,k++) pegs[idx[k]].type='green';
   for(i=0;i<nPurple && k<idx.length;i++,k++) pegs[idx[k]].type='purple';
   return pegs;
 }
@@ -529,12 +755,18 @@ var aim={dragging:false, angle:0};
 function mkBall(x,y,vx,vy){ return {x:x,y:y,vx:vx,vy:vy,r:BALL_R,alive:true,free:false,pierce:false,buoyant:false,windbend:false,age:0,dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false,trail:[]}; }
 function newGame(li){
   var L=LEVELS[li], w=L.w;
-  loadWorldArt(w); loadBuddyArt(EQUIPPED);
+  loadWorldArt(w); loadBuddyArt(EQUIPPED); loadVfxArt(EQUIPPED);
   var pegs=cleanPegs(L.build());
+  // safety: a sparse composition still has to hold every red + power bloom
+  if(pegs.length < L.reds+14){ var rf=m32(li*911+7), fill=[];
+    for(var f2=0;f2<(L.reds+14-pegs.length)*3;f2++) fill.push({x:36+rf()*(VW-72), y:PLAY_TOP+30+rf()*(PLAY_BOT-PLAY_TOP-60)});
+    pegs=cleanPegs(pegs.concat(fill)); }
   assignColours(pegs, Math.min(L.reds, Math.max(4,pegs.length-4)));
   var gim=WORLDS[w].gim, isMoving=(gim.indexOf('moving')>=0), i;
-  // moving pegs oscillate horizontally
-  if(isMoving){ for(i=0;i<pegs.length;i++){ if(pegs[i].type!=='red' && Math.random()<0.4){ pegs[i].mv=true; pegs[i].bx=pegs[i].x; pegs[i].amp=16+Math.random()*22; pegs[i].ph=Math.random()*6.28; } } }
+  // seeded gimmick variance: WHICH pegs move (and how far) is part of the
+  // level's identity, deterministic on every replay
+  var rngG=m32(li*7349+13);
+  if(isMoving){ for(i=0;i<pegs.length;i++){ if(pegs[i].type!=='red' && rngG()<0.38){ pegs[i].mv=true; pegs[i].bx=pegs[i].x; pegs[i].amp=14+rngG()*26; pegs[i].ph=rngG()*6.28; } } }
   // armored guards: boss levels always, plus the all-gimmick world
   var wantArm = L.boss || gim.indexOf('armored')>=0;
   if(wantArm){ var blues=[]; for(i=0;i<pegs.length;i++) if(pegs[i].type==='blue') blues.push(i);
@@ -545,9 +777,10 @@ function newGame(li){
       cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
       shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins(), styleBonus:0,
       character:(GBY[EQUIPPED]?EQUIPPED:'nectar_kid'),
-      wind:(gim.indexOf('wind')>=0)?((L.l%2?1:-1)*0.032):0, fog:(gim.indexOf('fog')>=0), icy:(gim.indexOf('icy')>=0),
-      magnet:false, lantern:1, silk:false, dome:null };
+      wind:(gim.indexOf('wind')>=0)?((L.l%2?1:-1)*(0.024+rngG()*0.016)):0, fog:(gim.indexOf('fog')>=0), icy:(gim.indexOf('icy')>=0),
+      magnet:false, lantern:1, silk:false, dome:null, vfx:[] };
   for(i=0;i<pegs.length;i++) if(pegs[i].type==='red') G.redsLeft++;
+  G._reds0=G.redsLeft; G._rallied=false; G._rallyGlow=0;
   aim.angle=0;
   show('s-play');
 }
@@ -626,7 +859,7 @@ function popOne(p){ // used by chain: pop a single peg with scoring, no combo so
   var pg=G.pegs[p]; if(pg.hit)return;
   if(pg.type==='armored'){ pg.hp=(pg.hp||2)-1; spark(pg.x,pg.y,'gold'); if(pg.hp>0){ G.score+=25; return; } pg.hit=true; pg.hitT=G.t; G.score+=300; floater(pg.x,pg.y-12,'CRACKED!'); return; }
   pg.hit=true; pg.hitT=G.t; pg.pop=1; spark(pg.x,pg.y,pg.type);
-  if(pg.type==='red'){ G.score+=100; G.redsLeft--; if(G.redsLeft===0) triggerFinalePayoff(pg); }
+  if(pg.type==='red'){ G.score+=100; G.redsLeft--; if(G.redsLeft===0) triggerFinalePayoff(pg); else bossRallyCheck(); }
   else if(pg.type==='purple'){ G.score+=500; }
   else if(pg.type==='green'){ G.score+=50; }
   else G.score+=10;
@@ -645,7 +878,7 @@ function hitPeg(p, b){
   if(b) b.pegs=(b.pegs||0)+1;
   spark(pg.x,pg.y, pg.type);
   var mult=(1+G.combo*0.1)*(G.lantern||1), pts=0;
-  if(pg.type==='red'){ pts=100*mult; G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); }
+  if(pg.type==='red'){ pts=100*mult; G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); else bossRallyCheck(); }
   else if(pg.type==='purple'){ pts=500*mult; floater(pg.x,pg.y,'+'+Math.round(500*mult)); }
   else if(pg.type==='green'){ pts=50*mult; G.greenPopped=true; sfx('burst'); firePower(pg,b); }
   else { pts=10*mult; }
@@ -666,9 +899,9 @@ function styleShots(pg,b){
   if(!b.bankDone && pg.type==='red' && (b.wall||0)>=1){ b.bankDone=true; addStyle(pg.x,pg.y,'BANK SHOT',2500); ach('bank_master'); }
 }
 function addStyle(x,y,label,amt){ G.styleBonus=(G.styleBonus||0)+amt; floater(x,y-30,'✦ '+label+' +'+amt); sfx('free'); }
-function bloomBurst(x,y,R,shatter){ R=R||118; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){
+function bloomBurst(x,y,R,shatter){ R=R||100; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){
     if(pg.type==='armored'){ pg.hp=shatter?0:((pg.hp||2)-1); spark(pg.x,pg.y,'gold'); if(pg.hp<=0){ pg.hit=true; pg.hitT=G.t; pg.pop=1; G.score+=250; } continue; }
-    pg.hit=true; pg.hitT=G.t; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg);} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
+    pg.hit=true; pg.hitT=G.t; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg); else bossRallyCheck();} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
   floater(x,y,'BLOOM BURST');
 }
 function resolveShot(){
@@ -689,6 +922,8 @@ function stepFx(){ if(!G) return;
   if(G.finale.active) G.finale.ts += (0.30 - G.finale.ts)*0.18;
   if(G.shake.t>0){ G.shake.t--; G.shake.mag*=0.85; }
   if(G.flash>0){ G.flash-=0.045; if(G.flash<0)G.flash=0; }
+  if(G._rallyGlow>0) G._rallyGlow-=0.006;
+  if(G.vfx){ for(var v=G.vfx.length-1;v>=0;v--){ G.vfx[v].life-=0.035; if(G.vfx[v].life<=0)G.vfx.splice(v,1); } }
   for(var i=G.rings.length-1;i>=0;i--){ var r=G.rings[i]; r.rad+=(r.max-r.rad)*0.18; r.life-=0.04; if(r.life<=0)G.rings.splice(i,1); }
 }
 function checkFinale(){ if(!G||G.finale.active||G.redsLeft!==1) return;
@@ -698,6 +933,21 @@ function checkFinale(){ if(!G||G.finale.active||G.redsLeft!==1) return;
     var dx=last.x-b.x, dy=last.y-b.y, d=Math.sqrt(dx*dx+dy*dy);
     if(d<170 && (b.vx*dx+b.vy*dy)>0){ G.finale.active=true; G._lastRed=last; G.cam.tx=last.x; G.cam.ty=last.y; G.cam.tz=1.9; return; }
   }
+}
+/* ===== boss multi-phase (v3.0): at half reds the boss RALLIES — armors the
+   blooms nearest its heart, whips the movers, flips the wind ===== */
+function bossRallyCheck(){ if(!G||!G.boss||G._rallied||G.redsLeft<=0) return;
+  if(G.redsLeft>Math.ceil((G._reds0||0)/2)) return;
+  G._rallied=true; G._rallyGlow=1;
+  G.shake.t=Math.max(G.shake.t,12); G.shake.mag=Math.max(G.shake.mag,10);
+  floater(FCX,FCY-40,'⚡ '+WORLDS[G.w].bossName.toUpperCase()+' RALLIES!');
+  var blues=[],i; for(i=0;i<G.pegs.length;i++){ if(!G.pegs[i].hit&&G.pegs[i].type==='blue') blues.push(i); }
+  blues.sort(function(p,q){ var A=G.pegs[p],B=G.pegs[q];
+    return ((A.x-FCX)*(A.x-FCX)+(A.y-FCY)*(A.y-FCY))-((B.x-FCX)*(B.x-FCX)+(B.y-FCY)*(B.y-FCY)); });
+  for(i=0;i<3&&i<blues.length;i++){ var t=G.pegs[blues[i]]; t.type='armored'; t.hp=2; spark(t.x,t.y,'gold'); }
+  for(i=0;i<G.pegs.length;i++){ if(G.pegs[i].mv) G.pegs[i].amp=Math.min(46,(G.pegs[i].amp||16)*1.4); }
+  if(G.wind) G.wind*=-1.25;
+  sfx('unlock');
 }
 function triggerFinalePayoff(pg){ if(!G) return;
   G.freeze=3; G.flash=0.85; G.shake.t=16; G.shake.mag=18;
@@ -884,15 +1134,24 @@ function render(){ if(!ctx||!G)return;
     ctx.fillStyle=sg; ctx.fillRect(0,0,VW,VH);
   }
   else { var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.7,'#0a0e08'); g.addColorStop(1,'#05070a'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
+  // parallax garden frame (assets/fg/, cut Jul 09, wired v3.0) — drifts gently
+  // against the camera; sits UNDER the play layer so it never hides a bloom
+  var fgw=ART['fg_'+G.w];
+  if(fgw){ var pox=(G.cam.x-VW/2)*-0.06, poy=(G.cam.y-VH/2)*-0.05;
+    ctx.globalAlpha=0.92; ctx.drawImage(fgw,pox-10,poy-8,VW+20,VH+16); ctx.globalAlpha=1; }
 
   ctx.save();
   if(G.shake && G.shake.t>0){ ctx.translate((Math.random()*2-1)*G.shake.mag,(Math.random()*2-1)*G.shake.mag); }
   var cam=G.cam; ctx.translate(VW/2,VH/2); ctx.scale(cam.z,cam.z); ctx.translate(-cam.x,-cam.y);
   // boss backdrop
-  if(G.boss){ var bh=ART['bossH_'+G.w]; if(bh){ ctx.globalAlpha=0.5; var bs=180; ctx.drawImage(bh,VW/2-bs/2,PLAY_TOP-30,bs,bs); ctx.globalAlpha=1; } }
+  if(G.boss){ var bh=ART['bossH_'+G.w]; if(bh){ var ba=0.5+(G._rallied?0.3*Math.max(0,G._rallyGlow||0):0); ctx.globalAlpha=ba; var bs=180; ctx.drawImage(bh,VW/2-bs/2,PLAY_TOP-30,bs,bs); ctx.globalAlpha=1; } }
   if(G.phase==='aim' && SET.guide) drawGuide();
   var i,pg,b,s,f;
   for(i=0;i<G.pegs.length;i++){ pg=G.pegs[i]; drawPeg(pg); }
+  // power VFX bursts — expand, spin a touch, fade
+  if(G.vfx){ for(i=0;i<G.vfx.length;i++){ var vf=G.vfx[i], vim=ART[vf.key]; if(!vim)continue;
+    var vs=34+(1-vf.life)*150; ctx.save(); ctx.translate(vf.x,vf.y); ctx.rotate(vf.rot*(1-vf.life)*2);
+    ctx.globalAlpha=Math.max(0,vf.life)*0.9; ctx.drawImage(vim,-vs/2,-vs/2,vs,vs); ctx.restore(); } ctx.globalAlpha=1; }
   drawBins();
   drawBucket();
   // dome
@@ -949,40 +1208,58 @@ function drawLauncher(){
   ctx.restore();
 }
 function pegColour(t){ return t==='red'?'#e5604d':t==='green'?'#7ab356':t==='purple'?'#b57de0':t==='armored'?'#4c6b34':'#5b9bd5'; }
+/* v3.0 perf: boards run up to ~150 blooms now, so the per-peg glow work
+   (2 radial gradients + shadowBlur, every peg, every frame) is pre-rendered
+   ONCE per type into sprite canvases. Same pixels, ~1 drawImage per peg. */
+var _HALO={}, _LIT=null;
+function haloSprite(type){ if(_HALO[type])return _HALO[type];
+  var hc,hr,ha;
+  switch(type){
+    case 'red':    hc='255,150,120'; hr=PEG_R*2.7; ha=0.72; break;
+    case 'green':  hc='172,224,134'; hr=PEG_R*2.1; ha=0.46; break;
+    case 'purple': hc='210,162,240'; hr=PEG_R*2.1; ha=0.46; break;
+    case 'blue':   hc='162,206,236'; hr=PEG_R*2.0; ha=0.44; break;
+    case 'gold':   hc='246,220,150'; hr=PEG_R*2.15; ha=0.52; break;
+    case 'armored':hc='232,200,110'; hr=PEG_R*2.0; ha=0.46; break;
+    default:       hc='236,226,202'; hr=PEG_R*2.0; ha=0.42; break;
+  }
+  var dr=PEG_R*1.75, S=Math.ceil(Math.max(hr,dr)*2+4);
+  var c=document.createElement('canvas'); c.width=c.height=S;
+  var g=c.getContext('2d'); g.translate(S/2,S/2);
+  var dg2=g.createRadialGradient(0,0,PEG_R*0.55,0,0,dr);
+  dg2.addColorStop(0,'rgba(8,12,8,0)'); dg2.addColorStop(0.72,'rgba(8,12,8,0.30)'); dg2.addColorStop(1,'rgba(8,12,8,0)');
+  g.fillStyle=dg2; g.beginPath(); g.arc(0,0,dr,0,7); g.fill();
+  var hg2=g.createRadialGradient(0,0,PEG_R*0.4,0,0,hr);
+  hg2.addColorStop(0,'rgba('+hc+','+ha+')'); hg2.addColorStop(0.5,'rgba('+hc+','+(ha*0.55)+')'); hg2.addColorStop(1,'rgba('+hc+',0)');
+  g.fillStyle=hg2; g.beginPath(); g.arc(0,0,hr,0,7); g.fill();
+  _HALO[type]={c:c,S:S}; return _HALO[type];
+}
+function litSprite(){ if(_LIT)return _LIT;
+  var S=Math.ceil(PEG_R*2.8+52);   // room for the 22px shadow blur
+  var c=document.createElement('canvas'); c.width=c.height=S;
+  var g=c.getContext('2d'); g.translate(S/2,S/2);
+  g.shadowColor='rgba(255,246,210,.95)'; g.shadowBlur=22; g.fillStyle='#fff4c8';
+  for(var h=0;h<6;h++){ var ah=Math.PI*2*h/6; g.beginPath(); g.ellipse(Math.cos(ah)*PEG_R*0.5,Math.sin(ah)*PEG_R*0.5,PEG_R*0.6,PEG_R*0.38,ah,0,7); g.fill(); }
+  g.shadowBlur=0; g.fillStyle='#fffdf4'; g.beginPath(); g.arc(0,0,PEG_R*0.5,0,7); g.fill();
+  _LIT={c:c,S:S}; return _LIT;
+}
 function drawPeg(pg){
   ctx.save(); ctx.translate(pg.x,pg.y);
   if(pg.hit){
     var _age=G.t-(pg.hitT||0);
     if(_age>ND_SOLID+ND_FADE){ ctx.restore(); return; }             // fully dissolved
     if(_age>ND_SOLID) ctx.globalAlpha=Math.max(0,1-(_age-ND_SOLID)/ND_FADE);   // dissolving
-    var s=1+0.24*(pg.pop||0)+0.06*Math.sin(G.t*0.25);               // lit pulse while solid
-    ctx.shadowColor='rgba(255,246,210,.95)'; ctx.shadowBlur=22; ctx.fillStyle='#fff4c8';
-    for(var h=0;h<6;h++){ ctx.beginPath(); var ah=Math.PI*2*h/6; ctx.ellipse(Math.cos(ah)*pg.r*0.5*s,Math.sin(ah)*pg.r*0.5*s,pg.r*0.6*s,pg.r*0.38*s,ah,0,7); ctx.fill(); }
-    ctx.shadowBlur=0; ctx.fillStyle='#fffdf4'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.5*s,0,7); ctx.fill();
+    var s=(1+0.24*(pg.pop||0)+0.06*Math.sin(G.t*0.25))*(pg.r/PEG_R);   // lit pulse while solid
+    var lt=litSprite(), lS=lt.S*s;
+    ctx.drawImage(lt.c,-lS/2,-lS/2,lS,lS);
     ctx.restore(); return;
   }
   var art=bloomArt(pg.type);
   if(art){
-    // ===== highlight around every bloom so it pops off the busy background =====
-    // Layer 1: a soft dark grounding ring (separates the flower on LIGHT bg areas).
-    var _dr=pg.r*1.75, _dg=ctx.createRadialGradient(0,0,pg.r*0.55,0,0,_dr);
-    _dg.addColorStop(0,'rgba(8,12,8,0)'); _dg.addColorStop(0.72,'rgba(8,12,8,0.30)'); _dg.addColorStop(1,'rgba(8,12,8,0)');
-    ctx.fillStyle=_dg; ctx.beginPath(); ctx.arc(0,0,_dr,0,7); ctx.fill();
-    // Layer 2: a bright colored glow (separates on DARK bg). Reds get the brightest,
-    // warmest, largest halo so the target blooms read clearly.
-    var hc,hr,ha;
-    switch(pg.type){
-      case 'red':    hc='255,150,120'; hr=pg.r*2.7; ha=0.72; break;
-      case 'green':  hc='172,224,134'; hr=pg.r*2.1; ha=0.46; break;
-      case 'purple': hc='210,162,240'; hr=pg.r*2.1; ha=0.46; break;
-      case 'blue':   hc='162,206,236'; hr=pg.r*2.0; ha=0.44; break;
-      case 'gold':   hc='246,220,150'; hr=pg.r*2.15; ha=0.52; break;
-      case 'armored':hc='232,200,110'; hr=pg.r*2.0; ha=0.46; break;
-      default:       hc='236,226,202'; hr=pg.r*2.0; ha=0.42; break;
-    }
-    var _hg=ctx.createRadialGradient(0,0,pg.r*0.4,0,0,hr);
-    _hg.addColorStop(0,'rgba('+hc+','+ha+')'); _hg.addColorStop(0.5,'rgba('+hc+','+(ha*0.55)+')'); _hg.addColorStop(1,'rgba('+hc+',0)');
-    ctx.fillStyle=_hg; ctx.beginPath(); ctx.arc(0,0,hr,0,7); ctx.fill();
+    // dark grounding ring + bright colored glow (reds warmest/largest), served
+    // from the per-type sprite cache — see haloSprite()
+    var hs=haloSprite(pg.type), hS=hs.S*(pg.r/PEG_R);
+    ctx.drawImage(hs.c,-hS/2,-hS/2,hS,hS);
     var _sz=pg.r*(pg.type==='armored'?2.7:2.9); ctx.drawImage(art,-_sz/2,-_sz/2,_sz,_sz);
     if(pg.type==='armored'){ drawHp(pg); }
     ctx.restore(); return; }
@@ -1147,6 +1424,36 @@ function boot(){
 }
 
 /* ===== Sky Wolf embed ===== */
+/* ---------- studio soundtrack (standalone only) ---------- */
+(function(){
+  var btn=$('b-music'); if(!btn)return;
+  var embedded;
+  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }
+  catch(e){ embedded=true; }
+  if(embedded){ btn.style.display='none'; return; }
+  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
+  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
+
+/* ---------- add to home screen ---------- */
+(function(){
+  var btn=$('b-install'); if(!btn)return;
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
+  if(standalone()){ btn.style.display='none'; return; }
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+  btn.addEventListener('click',function(){
+    sfx('ui');
+    if(deferred){ deferred.prompt(); deferred=null; return; }
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(ios ? 'To add Nectar Drop to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
+              : 'To add Nectar Drop to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+  });
+})();
+
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
 window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
