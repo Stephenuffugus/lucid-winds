@@ -369,10 +369,22 @@ function render(){ if(!ctx||!G)return;
   // HUD
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 42);
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY POT':G.mode==='zen'?'ZEN POT':'CLASSIC', 20, 58);
-  // next queue (top-right)
-  ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('NEXT', VW-16, 30);
-  var nw=_spr('ui/next_wells'); if(_spReady(nw)){ var nwh=46, nws=nwh/nw.naturalHeight, nww=nw.naturalWidth*nws; ctx.save(); ctx.globalAlpha=0.9; try{ ctx.drawImage(nw, VW-62-nww/2, 44-nwh/2, nww, nwh); }catch(e){} ctx.restore(); }
-  drawMini(VW-40, 44, G.queue[0], 0.5); drawMini(VW-84, 44, G.queue[1], 0.4);
+  // next queue (top-right). The wells plate is anchored to the corner and the
+  // minis are pinned to the MEASURED well centers in the art (0.376,0.573)
+  // and (0.737,0.59 of the plate rect) — Stephen 7/17: the pieces were not
+  // lining up with their slots (plate hung off-screen, minis at fixed spots).
+  var nw=_spr('ui/next_wells');
+  if(_spReady(nw)){
+    var nwh=56, nws=nwh/nw.naturalHeight, nww=nw.naturalWidth*nws;
+    var nx=VW-14-nww, ny=14;
+    ctx.save(); ctx.globalAlpha=0.95; try{ ctx.drawImage(nw, nx, ny, nww, nwh); }catch(e){} ctx.restore();
+    drawMini(nx+nww*0.737, ny+nwh*0.59,  G.queue[0], 0.5);
+    drawMini(nx+nww*0.376, ny+nwh*0.573, G.queue[1], 0.4);
+    ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('NEXT', nx-8, 30);
+  } else {
+    ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('NEXT', VW-16, 30);
+    drawMini(VW-40, 44, G.queue[0], 0.5); drawMini(VW-84, 44, G.queue[1], 0.4);
+  }
 }
 function drawPot(){
   var im=_spr('pot/pot_'+seasonNm());
