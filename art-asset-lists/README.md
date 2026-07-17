@@ -59,6 +59,7 @@ These are **built and live** and render procedurally; this art is an optional up
 | Do | Game | Src | Recommended look | Sheets | Ready |
 |----|------|-----|------------------|--------|-------|
 | 1 | [Glyph Forge](glyph-forge/00-art-direction.md) | ext | Illuminated Arcana | 3 | drop-in |
+| 1b | [2048 Merge themes](merge/00-art-direction.md) | play | Cut-paper growth ladders (Ember Forge / Tidepool / Tiny Cosmos / Sugar Rush) | 4 | drop-in (theme system + unlock ladder LIVE, activates on drop) |
 
 | 2 | [Picnic Panic](picnic-panic/00-art-direction.md) | sat | Bioluminescent Nocturne | 5 | drop-in |
 | 3 | [Sproing](sproing/00-art-direction.md) | sat | Sunlit Vector Garden | 4 | drop-in |

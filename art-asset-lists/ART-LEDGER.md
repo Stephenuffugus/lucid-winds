@@ -42,6 +42,7 @@
 | Generate-order queue (13 games) | LISTED | See README "Generate order" table: Glyph Forge, Picnic Panic, Sproing(v2), Budburst, Pollen Panic, Tarot Run, Tomato Man, Grubtrap, Hedgerow, Hunch, Petalvex(v2), Rootbound, BarBrawl. |
 | Cosmic Cadets — SKINS EXPANSION (4 sheets, 80 unlockables) | LISTED Jul 16 (Stephen's request, same day) | Prompts: `seed-flutter/06..09-*.md` — 20 comet skins + 20 tails + 20 sky-buddies (pure cosmetic) + 20 keepsake stars. Stephen generates → drops in 012Assets Drive folder → wire pass extends SEEDS/TRAILS/COMPS + star mapping. |
 | Jul 11 bench packs (Fence Off, Loop Warden, Mosaic Draft, Tinker Loft, Lamplighter, Tonic Drop, Mini Crossword) | LISTED | Prompt packs complete; awaiting generation. |
+| 2048 Merge Garden — 4 THEME SHEETS (Ember Forge / Tidepool / Tiny Cosmos / Sugar Rush) | LISTED Jul 17 (+ uploaded to 012Assets Drive) | Prompts: `merge/00..04-*.md` — one 4x4 sheet per theme: 11-tile growth ladder + empty mark + board bg + emblem + burst + wilt. Theme system, unlock ladder (256/512/1024/2048 best tile), and picker are LIVE in games/merge.js — themes activate on drop. Default "Midnight Grove" theme = real LW plant renders baked to `assets/games/merge/plant-*.svg` Jul 17 (the portal shell used to show a stub sprout). |
 
 ## Loose-file registry (identified, no action needed)
 

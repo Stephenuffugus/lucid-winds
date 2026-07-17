@@ -5,34 +5,37 @@ var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 function GR(a){
-  // Plant tile hashes — progression from bare seed to cosmic specimen
-  var _TH={
-    2:'0000000111000000000000000000000000000000000000000000000000000000',
-    4:'0112011151000000000000000000000000000000000000000000000000000000',
-    8:'0224022015000000000000000000000000000000000000000000000000000000',
-    16:'0336033010000000000000000000000000000000000000000000000000000000',
-    32:'0548044051000000000000000000000000000000000000000000000000000000',
-    64:'06d5033105805100000000000000000000000000000000000000000000000000',
-    128:'07d8043015801300000000000000000000000000000000000000000000000000',
-    256:'0bd9044015804400000008000000000000000000000000000000000000000000',
-    512:'08da04401a80a400500009000000000000000000000000000000000000000000',
-    1024:'09dc044fb081240090f80f000000000000000000000000000000000000000000',
-    2048:'0fdf044fbff16400f0ff0f000000000000000000000000000000000000000000'
-  };
-  var ST={};
-  (function(){
-    var gen=window._generatePlantSVG;
-    if(!gen)return;
-    var vals=[2,4,8,16,32,64,128,256,512,1024,2048];
-    for(var i=0;i<vals.length;i++){
-      try{ST[vals[i]]=gen(_TH[vals[i]],56);}catch(e){ST[vals[i]]='🌱';}
-    }
+  // ── Tile art: pre-rendered REAL LW plant SVGs (assets/games/merge/plant-*.svg,
+  // baked from _generatePlantSVG Jul 17 via scripts — the live renderer only
+  // exists inside the LW app, so the portal shell used to downgrade to a stub
+  // sprout; the baked files give every surface the true art).
+  // Sheet themes activate when their art drops (prompt packs: art-asset-lists/merge/).
+  var THEMES=[
+    {key:'grove', name:'Midnight Grove', kind:'svg',   wired:true,  unlock:0},
+    {key:'ember', name:'Ember Forge',    kind:'sheet', wired:false, unlock:256},
+    {key:'tide',  name:'Tidepool',       kind:'sheet', wired:false, unlock:512},
+    {key:'cosmos',name:'Tiny Cosmos',    kind:'sheet', wired:false, unlock:1024},
+    {key:'sugar', name:'Sugar Rush',     kind:'sheet', wired:false, unlock:2048}
+  ];
+  var MK='lw_merge_maxtile';
+  function gMax(){try{return parseInt(localStorage.getItem(MK),10)||0;}catch(e){return 0;}}
+  function sMax(v){try{if(v>gMax())localStorage.setItem(MK,String(v));}catch(e){}}
+  var _thCur=(function(){
+    var k='grove';
+    try{k=localStorage.getItem('lw_merge_theme')||'grove';}catch(e){}
+    for(var i=0;i<THEMES.length;i++)if(THEMES[i].key===k&&THEMES[i].wired&&THEMES[i].unlock<=gMax())return THEMES[i];
+    return THEMES[0];
   })();
+  function tileArt(val){
+    var v=Math.min(val,2048);
+    if(_thCur.kind==='svg')return '<img src="assets/games/merge/plant-'+v+'.svg" style="width:100%;height:100%;object-fit:contain;pointer-events:none" alt="">';
+    return '<img src="assets/games/merge/themes/'+_thCur.key+'/t'+v+'.png" style="width:100%;height:100%;object-fit:contain;pointer-events:none" alt="">';
+  }
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
   // Best = best SCORE, persisted (2026-07-03: was best-tile-this-session,
   // reset to 2 on every new game — meaningless as a record).
   var BK='lw_merge_best',_recordThisGame=false;
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('R-over');if(o)o.remove();});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('R-over');if(o)o.remove();var th=document.getElementById('RThemeOv');if(th)th.remove();});
   function gBest(){try{return parseInt(localStorage.getItem(BK),10)||0;}catch(e){return 0;}}
   function sBest(v){try{localStorage.setItem(BK,String(v));}catch(e){}}
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">'+gBest()+'</strong>');mm(a);
@@ -54,7 +57,53 @@ function GR(a){
   db.style.cssText='display:flex;justify-content:center;gap:clamp(8px,3vw,14px);padding:clamp(10px,3vw,16px)';
   db.innerHTML='<button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'left\')">⬅</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'up\')">⬆</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'down\')">⬇</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'right\')">➡</button>';
   a.appendChild(db);
-  mc(a).innerHTML='<button class="gb-new" onclick="_RN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_RN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_RThemeOv(1)">✿ Themes</button>';
+
+  // ── Theme picker overlay ──
+  function _thBuildOv(){
+    var old=document.getElementById('RThemeOv');
+    if(old&&old.parentNode)old.parentNode.removeChild(old);
+    var ov=document.createElement('div');ov.id='RThemeOv';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(8,10,6,.96);z-index:99997;overflow-y:auto;padding:16px;backdrop-filter:blur(10px)';
+    var mx=gMax();
+    var h='<div style="max-width:440px;margin:0 auto">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+    h+='<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--gold)">GARDEN THEMES</div>';
+    h+='<button class="gb" onclick="_RThemeOv(0)">✕ Close</button></div>';
+    for(var i=0;i<THEMES.length;i++){
+      var t=THEMES[i];
+      var open=t.unlock<=mx;
+      var pick=open&&t.wired;
+      var thumb=t.kind==='svg'?'<img src="assets/games/merge/plant-2048.svg" style="width:52px;height:52px;object-fit:contain">':(t.wired?'<img src="assets/games/merge/themes/'+t.key+'/t2048.png" style="width:52px;height:52px;object-fit:contain">':'<span style="font-family:\'Bebas Neue\',sans-serif;font-size:'+(open?'0.7rem':'1.05rem')+';color:var(--muted);letter-spacing:.05em">'+(open?'SOON':t.unlock)+'</span>');
+      var sub=pick?(t.key===_thCur.key?'in bloom now':'tap to plant this look')
+        :(open?'unlocked · art arriving soon':'grow a '+t.unlock+' bloom to unlock');
+      h+='<div onclick="'+(pick?'_RTheme(\''+t.key+'\')':'')+'" style="display:flex;align-items:center;gap:12px;background:rgba(18,24,16,.85);border:1px solid '+(t.key===_thCur.key?'var(--gold)':'rgba(74,124,53,.25)')+';border-radius:12px;padding:10px 14px;margin-bottom:10px;min-height:64px;'+(pick?'cursor:pointer':'opacity:.62')+'">';
+      h+='<div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+thumb+'</div>';
+      h+='<div><div style="color:var(--cream);font-family:Georgia,serif;font-weight:700;font-size:.92rem">'+t.name+'</div>';
+      h+='<div style="color:var(--muted);font-family:\'DM Mono\',monospace;font-size:.62rem;margin-top:3px">'+sub+'</div></div></div>';
+    }
+    h+='<div style="color:var(--muted);font-size:.6rem;font-family:\'DM Mono\',monospace;text-align:center;padding:6px 0 14px">grow bigger blooms to unlock new gardens</div></div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    return ov;
+  }
+  window._RThemeOv=function(open){
+    var ov=document.getElementById('RThemeOv')||_thBuildOv();
+    if(open){ov=_thBuildOv();ov.style.display='block';}
+    else ov.style.display='none';
+  };
+  window._RTheme=function(key){
+    for(var i=0;i<THEMES.length;i++){
+      if(THEMES[i].key===key&&THEMES[i].wired&&THEMES[i].unlock<=gMax()){
+        _thCur=THEMES[i];
+        try{localStorage.setItem('lw_merge_theme',key);}catch(e){}
+        _play('click');
+        window._RThemeOv(0);
+        fullRedraw();
+        return;
+      }
+    }
+  };
 
   // Tile tracking — each active tile is an object {el, val, idx}
   var tiles=[];
@@ -80,7 +129,7 @@ function GR(a){
       +'transition:transform 120ms ease-out,opacity 100ms ease;'
       +'z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;';
     el._tx=p.x;el._ty=p.y;
-    el.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px">'+'<div class="ti" style="flex:1;width:100%;display:flex;align-items:center;justify-content:center">'+(ST[Math.min(val,2048)]||'🔥')+'</div>'+'<div style="font-size:clamp(.9rem,3vw,1.3rem);color:rgba(232,220,200,0.95);font-weight:800;font-family:DM Mono,monospace;text-shadow:0 1px 3px rgba(0,0,0,0.4);line-height:1;padding-bottom:4px">'+val+'</div></div>';
+    el.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px">'+'<div class="ti" style="flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0">'+tileArt(val)+'</div>'+'<div style="font-size:clamp(.9rem,3vw,1.3rem);color:rgba(232,220,200,0.95);font-weight:800;font-family:DM Mono,monospace;text-shadow:0 1px 3px rgba(0,0,0,0.4);line-height:1;padding-bottom:4px">'+val+'</div></div>';
     if(animate){
       el.style.transform='translate('+p.x+'px,'+p.y+'px) scale(0)';
       setTimeout(function(){el.style.transform='translate('+p.x+'px,'+p.y+'px) scale(1)';
@@ -147,6 +196,15 @@ function GR(a){
         moves.push({from:xi[i+1],to:indices[ri],val:x[i+1],merge:true,remove:true});
         sc+=nv;
         if(nv>bt){bt=nv;
+          // theme unlocks ride the best-tile-ever ladder
+          var _wasMax=gMax();sMax(nv);
+          if(nv>_wasMax){
+            for(var _u=0;_u<THEMES.length;_u++){
+              if(THEMES[_u].unlock>_wasMax&&THEMES[_u].unlock<=nv&&THEMES[_u].unlock>0){
+                sm(THEMES[_u].wired?('🎨 Theme unlocked: '+THEMES[_u].name+'!'):('🎨 '+THEMES[_u].name+' theme unlocked — art arriving soon!'));
+              }
+            }
+          }
           if([64,128,256,512,1024,2048].indexOf(nv)>-1)_e('reached_'+nv);
           // Reaching 2048 is the canonical win condition. Fire it
           // exactly once per game so the player gets the standard
@@ -243,9 +301,13 @@ function GR(a){
         if(nv&&nv!==ti.val){
           ti.val=nv;
           ti.el.className='tc t'+Math.min(nv,2048);
-          ti.el.querySelector('.ti').innerHTML=ST[Math.min(nv,2048)]||'🔥';
+          ti.el.querySelector('.ti').innerHTML=tileArt(nv);
           ti.el.querySelector('.ti').parentNode.lastElementChild.textContent=nv;
-          ti.el.classList.add('pop');setTimeout((function(e){return function(){e.classList.remove('pop')}})(ti.el),200);
+          // pop the inner wrapper, NOT the positioned tile — a transform
+          // animation on the tile itself erases its translate(x,y) and it
+          // flashes at the board corner (Stephen bug report Jul 17)
+          var _pw=ti.el.firstElementChild;
+          if(_pw){_pw.classList.add('tin-pop');setTimeout((function(e){return function(){e.classList.remove('tin-pop')}})(_pw),220);}
         }
       }
       var _rsEl=document.getElementById('Rs');if(_rsEl)_rsEl.textContent=sc;
@@ -287,6 +349,7 @@ function GR(a){
     var old=document.getElementById('R-over');if(old)old.remove();
     var isRecord=_recordThisGame&&sc>0;   // strictly beat the old record this game (a tie is not NEW BEST)
     for(var gi=0;gi<16;gi++)if(g[gi]>bt)bt=g[gi];   // count spawned tiles too, not just merges
+    sMax(bt);
     var ovl=document.createElement('div');ovl.id='R-over';
     ovl.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(199,106,48,0.22) 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;';
     ovl.innerHTML='<div style="font-size:3rem;line-height:1;">🍂</div>'
