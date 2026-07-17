@@ -6,27 +6,75 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,_setDiff=G.setDiff,ms=G.ms,mm=G.mm,mc
 
 function GCH(a){
   var _chArt='assets/games/chess/';
+  // ── Courts (Jul 17 art drop: 13 themed sets cut from art-asset-lists/Chess zip) ──
+  var CH_COURTS=[
+    ['classic','Grove Classic'],
+    ['deepsea','Deep Sea'],
+    ['cosmic','Cosmic Cadets'],
+    ['dino','Dino Dig'],
+    ['candy','Candy Kingdom'],
+    ['manor','Friendly Manor'],
+    ['forest','Forest Court'],
+    ['foodtruck','Food Truck'],
+    ['stainedglass','Stained Glass'],
+    ['pottery','Painted Pottery'],
+    ['poolparty','Pool Party'],
+    ['origami','Origami Zoo'],
+    ['paper','Royal Papercut'],
+    ['cardboard','Cardboard Bots']
+  ];
+  var _chCourt=(function(){
+    var c='classic';
+    try{c=localStorage.getItem('lw_chess_court')||'classic';}catch(e){}
+    for(var i=0;i<CH_COURTS.length;i++)if(CH_COURTS[i][0]===c)return c;
+    return 'classic';
+  })();
+  var _CH_NAMES={K:'king',Q:'queen',R:'rook',B:'bishop',N:'knight',P:'pawn'};
+  // court pieces are bbox-trimmed on cut, so the sheet's height ladder is
+  // re-imposed here (king tallest ... pawn smallest)
+  var _CH_LADDER={K:92,Q:86,R:78,B:78,N:78,P:64};
+  function _chPieceSrc(color,t){
+    if(_chCourt==='classic')return _chArt+'p-'+_CH_NAMES[t]+'-'+(color==='w'?'green':'gold')+'.png';
+    return _chArt+'courts/'+_chCourt+'/'+color+t+'.png';
+  }
   var _skinChess={
     lightSq:'rgba(42,48,37,.5)',darkSq:'rgba(74,124,53,.25)',
     selectGlow:'rgba(200,168,75,.4)',moveIndicator:'rgba(122,179,86,.5)',
     lastMoveHighlight:'rgba(200,168,75,.12)',checkHighlight:'rgba(180,60,60,.35)',
-    playerPieces:{
-      K:'<img src="'+_chArt+'p-king-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      Q:'<img src="'+_chArt+'p-queen-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      R:'<img src="'+_chArt+'p-rook-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      B:'<img src="'+_chArt+'p-bishop-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      N:'<img src="'+_chArt+'p-knight-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      P:'<img src="'+_chArt+'p-pawn-green.png" style="width:85%;height:85%;object-fit:contain;pointer-events:none">'
-    },
-    aiPieces:{
-      K:'<img src="'+_chArt+'p-king-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      Q:'<img src="'+_chArt+'p-queen-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      R:'<img src="'+_chArt+'p-rook-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      B:'<img src="'+_chArt+'p-bishop-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      N:'<img src="'+_chArt+'p-knight-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
-      P:'<img src="'+_chArt+'p-pawn-gold.png" style="width:85%;height:85%;object-fit:contain;pointer-events:none">'
-    }
+    themed:false,playerPieces:{},aiPieces:{}
   };
+  function _chBuildSkin(){
+    var types=['K','Q','R','B','N','P'],i,t,ps={},as={};
+    if(_chCourt==='classic'){
+      for(i=0;i<types.length;i++){t=types[i];
+        var pc=t==='P'?85:90;
+        ps[t]='<img src="'+_chPieceSrc('w',t)+'" style="width:'+pc+'%;height:'+pc+'%;object-fit:contain;pointer-events:none">';
+        as[t]='<img src="'+_chPieceSrc('b',t)+'" style="width:'+pc+'%;height:'+pc+'%;object-fit:contain;pointer-events:none">';
+      }
+      _skinChess.themed=false;_skinChess.tileL=null;_skinChess.tileD=null;
+      _skinChess.capW=null;_skinChess.capB=null;
+    }else{
+      var dir=_chArt+'courts/'+_chCourt+'/';
+      for(i=0;i<types.length;i++){t=types[i];
+        var h=_CH_LADDER[t];
+        ps[t]='<img src="'+dir+'w'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
+        as[t]='<img src="'+dir+'b'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
+      }
+      _skinChess.themed=true;
+      _skinChess.tileL=dir+'tileL.jpg';_skinChess.tileD=dir+'tileD.jpg';
+      _skinChess.capW=dir+'capW.png';_skinChess.capB=dir+'capB.png';
+    }
+    _skinChess.playerPieces=ps;_skinChess.aiPieces=as;
+  }
+  function _chPreloadCourt(){
+    if(_chCourt==='classic')return;
+    var dir=_chArt+'courts/'+_chCourt+'/';
+    var files=['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP','capW','capB'];
+    for(var i=0;i<files.length;i++){var im=new Image();im.src=dir+files[i]+'.png';}
+    var t1=new Image();t1.src=dir+'tileL.jpg';
+    var t2=new Image();t2.src=dir+'tileD.jpg';
+  }
+  _chBuildSkin();_chPreloadCourt();
   // ── Constants ──
   var W='w',B='b',EMPTY=null;
   var PAWN='P',ROOK='R',KNIGHT='N',BISHOP='B',QUEEN='Q',KING='K';
@@ -1390,18 +1438,24 @@ function GCH(a){
         if(allLegal[i].fr===selSq[0]&&allLegal[i].fc===selSq[1])legal.push(allLegal[i]);
       }
     }
-    // Build captured rows
+    // Build captured rows (themed courts get their capture-chip marker up front)
     var capBHtml='<div class="ch-cap-row">';
+    if(sk.themed&&capturedW.length)capBHtml+='<img class="ch-chip" src="'+sk.capB+'">';
     for(var ci=0;ci<capturedW.length;ci++)capBHtml+=_skinChess.aiPieces[capturedW[ci]]||'';
     capBHtml+='</div>';
     var capWHtml='<div class="ch-cap-row">';
+    if(sk.themed&&capturedB.length)capWHtml+='<img class="ch-chip" src="'+sk.capW+'">';
     for(var cj=0;cj<capturedB.length;cj++)capWHtml+=_skinChess.playerPieces[capturedB[cj]]||'';
     capWHtml+='</div>';
     // Board
-    var bHtml='<div class="ch-wrap"><img class="ch-bg" src="'+_chArt+'chess-board.png"><div class="chb">';
+    var bHtml=sk.themed
+      ?'<div class="ch-wrap ch-themed"><div class="chb">'
+      :'<div class="ch-wrap"><img class="ch-bg" src="'+_chArt+'chess-board.png"><div class="chb">';
     for(var r=0;r<8;r++)for(var c=0;c<8;c++){
       var isDark=(r+c)%2===1;
-      var bg=isDark?'rgba(0,0,0,.12)':'rgba(255,255,255,.08)';
+      var bg=sk.themed
+        ?'background-image:url('+(isDark?sk.tileD:sk.tileL)+')'
+        :'background:'+(isDark?'rgba(0,0,0,.12)':'rgba(255,255,255,.08)');
       var cls='chs';
       if(selSq&&selSq[0]===r&&selSq[1]===c)cls+=' ch-sel';
       if(lastMove&&((lastMove.fr===r&&lastMove.fc===c)||(lastMove.tr===r&&lastMove.tc===c)))cls+=' ch-last';
@@ -1417,7 +1471,7 @@ function GCH(a){
       else if(isLegalTarget)cls+=' ch-move';
       var piece=board[r][c];
       var content=piece?getPieceSVG(piece):'';
-      bHtml+='<div class="'+cls+'" style="background:'+bg+'" onclick="_CHClick('+r+','+c+')">'+content+'</div>';
+      bHtml+='<div class="'+cls+'" style="'+bg+'" onclick="_CHClick('+r+','+c+')">'+content+'</div>';
     }
     bHtml+='</div></div>';
     var statusText='';
@@ -1469,7 +1523,7 @@ function GCH(a){
             _chPendingPromo=m;_play('tap');
             var promoHtml='<div class="ch-promo">';
             var pts=[QUEEN,ROOK,BISHOP,KNIGHT];
-            for(var pi=0;pi<pts.length;pi++)promoHtml+='<img src="'+_chArt+'p-'+{Q:'queen',R:'rook',B:'bishop',N:'knight'}[pts[pi]]+'-green.png" onclick="_CHPromo(\''+pts[pi]+'\')">';
+            for(var pi=0;pi<pts.length;pi++)promoHtml+='<img src="'+_chPieceSrc('w',pts[pi])+'" onclick="_CHPromo(\''+pts[pi]+'\')">';
             promoHtml+='</div>';
             var wrap=document.querySelector('.ch-wrap');
             if(wrap){var pd=document.createElement('div');pd.innerHTML=promoHtml;wrap.appendChild(pd.firstChild)}
@@ -1493,6 +1547,41 @@ function GCH(a){
     render();
   };
 
+  // ── Court picker ──
+  function _chBuildCourtOv(){
+    var old=document.getElementById('chCourtOv');
+    if(old&&old.parentNode)old.parentNode.removeChild(old);
+    var ov=document.createElement('div');ov.id='chCourtOv';
+    var h='<div style="max-width:520px;margin:0 auto">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+    h+='<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--gold)">CHOOSE YOUR COURT</div>';
+    h+='<button class="gb" style="min-height:48px" onclick="_CHCourtOv(0)">✕ Close</button></div>';
+    h+='<div class="chc-grid">';
+    for(var i=0;i<CH_COURTS.length;i++){
+      var k=CH_COURTS[i][0],nm=CH_COURTS[i][1];
+      var thumb=k==='classic'?_chArt+'p-king-green.png':_chArt+'courts/'+k+'/wK.png';
+      h+='<div class="chc-card'+(k===_chCourt?' sel':'')+'" onclick="_CHCourt(\''+k+'\')">';
+      h+='<img src="'+thumb+'" loading="lazy" alt="">';
+      h+='<div class="chc-name">'+nm+'</div></div>';
+    }
+    h+='</div></div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    return ov;
+  }
+  window._CHCourtOv=function(open){
+    var ov=document.getElementById('chCourtOv')||_chBuildCourtOv();
+    if(open){ov.className='open';}else{ov.className='';}
+  };
+  window._CHCourt=function(key){
+    _chCourt=key;
+    try{localStorage.setItem('lw_chess_court',key);}catch(e){}
+    _chBuildSkin();_chPreloadCourt();
+    _chBuildCourtOv();
+    _play('click');
+    render();
+  };
+
   window._CHUndo=function(){
     // During the promotion picker, Undo just cancels the picker.
     if(_chPendingPromo){_chPendingPromo=null;selSq=null;render();return;}
@@ -1512,13 +1601,15 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button><button class="gb" onclick="_CHCourtOv(1)">♜ Court</button>';
   _setDiff('medium');
   // Terminate the Stockfish worker when the player leaves the game —
   // otherwise it keeps burning CPU until page reload.
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     _chGen++;
     if(_sfWorker){try{_sfWorker.terminate();}catch(e){}_sfWorker=null;_sfReady=false;_sfLoading=false;_sfCallback=null;}
+    var ov=document.getElementById('chCourtOv');
+    if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);
   });
   initBoard();render();
 }

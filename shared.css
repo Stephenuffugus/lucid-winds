@@ -2613,12 +2613,30 @@
     .chb{display:grid;grid-template-columns:repeat(8,1fr);position:absolute;top:4.5%;left:4.5%;right:4.5%;bottom:4.5%;overflow:hidden}
     .chs{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;min-height:0;-webkit-tap-highlight-color:transparent;transition:background .15s}
     .chs img{width:90%;height:90%;object-fit:contain;pointer-events:none}
-    .chs.ch-sel{box-shadow:inset 0 0 0 2.5px rgba(200,168,75,.7);background:rgba(200,168,75,.15)!important}
+    .chs.ch-sel{box-shadow:inset 0 0 0 2.5px rgba(200,168,75,.7);background-color:rgba(200,168,75,.15)!important}
     .chs.ch-move::after{content:'';position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(122,179,86,.5);z-index:1;box-shadow:0 0 6px rgba(122,179,86,.3)}
     .chs.ch-cap::after{content:'';position:absolute;width:80%;height:80%;border-radius:50%;border:3px solid rgba(200,60,60,.5);background:rgba(200,60,60,.08);z-index:1}
-    .chs.ch-last{background:rgba(200,168,75,.18)!important;box-shadow:inset 0 0 8px rgba(200,168,75,.2)}
+    .chs.ch-last{background-color:rgba(200,168,75,.18)!important;box-shadow:inset 0 0 8px rgba(200,168,75,.2)}
     .chs.ch-check{animation:checkFlash 0.8s ease infinite;box-shadow:inset 0 0 12px rgba(200,50,50,.4)!important}
-    @keyframes checkFlash{0%,100%{background:inherit}50%{background:rgba(180,60,60,.25)}}
+    @keyframes checkFlash{0%,100%{background-color:transparent}50%{background-color:rgba(180,60,60,.25)}}
+    /* Themed courts (Jul 17 drop): full-bleed tile images per square — sel/last/check
+       indicators must live in box-shadow so they never erase the tile background */
+    .ch-wrap.ch-themed{padding:8px;border-radius:12px;background:rgba(13,16,12,.85);border:1px solid rgba(200,168,75,.3);box-shadow:0 4px 18px rgba(0,0,0,.45)}
+    .ch-wrap.ch-themed .chb{position:relative;top:auto;left:auto;right:auto;bottom:auto;border-radius:8px;overflow:hidden}
+    .ch-themed .chs{background-size:cover;background-position:center}
+    .ch-themed .chs.ch-sel{box-shadow:inset 0 0 0 3px rgba(200,168,75,.95),inset 0 0 18px rgba(200,168,75,.5)}
+    .ch-themed .chs.ch-last{box-shadow:inset 0 0 0 2px rgba(200,168,75,.55),inset 0 0 12px rgba(200,168,75,.35)}
+    .ch-themed .chs.ch-check{animation:none;box-shadow:inset 0 0 0 3px rgba(220,70,70,.9),inset 0 0 16px rgba(220,70,70,.5)!important}
+    .ch-cap-row .ch-chip{opacity:1;width:26px;height:26px;margin-right:4px}
+    /* Court picker overlay */
+    #chCourtOv{display:none;position:fixed;inset:0;background:rgba(8,10,6,.96);z-index:99997;overflow-y:auto;padding:16px;padding-bottom:calc(16px + var(--sb));backdrop-filter:blur(10px)}
+    #chCourtOv.open{display:block;animation:panelFadeIn .25s ease}
+    .chc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+    .chc-card{background:rgba(18,24,16,.85);border:1px solid rgba(74,124,53,.25);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;min-height:96px;-webkit-tap-highlight-color:transparent;transition:border-color .15s}
+    .chc-card:active{transform:scale(.96)}
+    .chc-card img{width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 6px}
+    .chc-card.sel{border-color:var(--gold);box-shadow:0 0 10px rgba(200,168,75,.35)}
+    .chc-name{font-size:.62rem;color:var(--cream);font-family:'DM Mono',monospace;letter-spacing:.02em}
     .chs.ch-placed{animation:chPlace .2s ease}
     @keyframes chPlace{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
     .ch-cap-row{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;padding:2px 8px;height:32px;overflow:hidden}
