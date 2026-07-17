@@ -86,9 +86,13 @@
   # Iframe policy — CSP frame-ancestors supersedes X-Frame-Options
   # on modern browsers and allows whitelisting minepi.com so the Pi
   # sandbox can embed lucidwinds.com for testing + production review.
+  # 2026-07-17: listdle.com added — Conor embeds our submitted games in
+  # game cards on his directory (our games are ad-free, so no revenue
+  # concern; his page credits + links back). Without this the embeds
+  # render BLANK cross-origin.
   # X-Frame-Options stays unset because it has no allow-list syntax.
   Header unset X-Frame-Options
-  Header set Content-Security-Policy "frame-ancestors 'self' https://*.minepi.com https://minepi.com"
+  Header set Content-Security-Policy "frame-ancestors 'self' https://*.minepi.com https://minepi.com https://listdle.com https://*.listdle.com"
 
   # Control referrer leakage
   Header set Referrer-Policy "strict-origin-when-cross-origin"
