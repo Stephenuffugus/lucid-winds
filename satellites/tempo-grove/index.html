@@ -175,6 +175,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <div class="screen" id="s-tracks">
     <div class="pad">
+      <!-- Jessie 2026-07-15: the Back at the very bottom of the track list is
+           easy to miss — a second one lives up top -->
+      <button class="btn sm ghost" id="tracks-back-top" style="align-self:flex-start;min-width:110px;margin-bottom:6px">‹ Back</button>
       <h2 class="sc-h" style="text-align:center">Soundtrack</h2>
       <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Pick the music the grove grows to. The beat drives the sweepline.</div>
       <div id="tracklist"></div>
@@ -745,6 +748,7 @@ tap("b-sprint",function(){ startMode("sprint"); });
 tap("b-zen",function(){ startMode("zen"); });
 tap("b-tracks",function(){ renderTracks(); show("s-tracks"); });
 tap("tracks-back",function(){ if(G){ hideScreens(); } else show("s-title"); });
+tap("tracks-back-top",function(){ if(G){ hideScreens(); } else show("s-title"); });
 tap("b-how",function(){ show("s-how"); });
 tap("how-back",function(){ show("s-title"); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
