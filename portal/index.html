@@ -1132,8 +1132,10 @@ document.addEventListener('click', function(e){
     return deps.map(function(u){ return u+(u.indexOf('?')>=0?'&':'?')+'v=2026071602'; });
   }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function buildShellDoc(id,name){
-    var scripts=shellDeps(id).map(function(d){return '<script defer src="'+d+'?v=1"><\/script>';}).join('');
+  function buildShellDoc(id,name,bust){
+    var bq=bust?('&r='+bust):'';
+    // deps may already carry a ?v= stamp — join with & so the URL stays sane
+    var scripts=shellDeps(id).map(function(d){return '<script defer src="'+d+(d.indexOf('?')>=0?'&':'?')+'v=1'+bq+'"><\/script>';}).join('');
     return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
       +'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
       +'<base href="/">'
@@ -1141,8 +1143,8 @@ document.addEventListener('click', function(e){
       +'<link rel="stylesheet" href="/shared.css?v=20260716">'
       +'<link rel="stylesheet" href="/play/shell.css?v=6">'
       +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
-      +'<script defer src="/sunbeam-sdk.js?v=2"><\/script>'
-      +'<script defer src="/play/shell.js?v=16"><\/script>'
+      +'<script defer src="/sunbeam-sdk.js?v=2'+bq+'"><\/script>'
+      +'<script defer src="/play/shell.js?v=16'+bq+'"><\/script>'
       +scripts
       +'</head><body>'
       // Inline onclick fallback: if shell.js is stale/dead in this iframe
@@ -1162,9 +1164,42 @@ document.addEventListener('click', function(e){
 
   // opts: { srcdoc, src, title }. srcdoc = internal game (in-memory shell);
   // src = cross-origin satellite (real URL, framed with ?embed=1).
+  // srcdoc first-load watchdog (Stephen 7/17: "i click on a game and it doesnt
+  // load properly so i have to go back and click on it again"). shell.js
+  // announces {sws:'ready'} once alive; if a script request dies (the host's
+  // bot-check has 403'd iframe subresources before, and flaky mobile fetches
+  // do the rest) the spinner used to sit there forever. Now: no ready in 8s →
+  // rebuild the shell once with cache-busted scripts; still silent → a clean
+  // in-frame retry button. No more back-out-and-tap-again.
+  var srcdocReady = false, srcdocTries = 0, srcdocWatch = null, srcdocOpts = null;
+  function clearSrcdocWatch(){ if(srcdocWatch){ clearTimeout(srcdocWatch); srcdocWatch = null; } }
+  // Liveness = the game actually MOUNTED (the shell removes #shell-loading).
+  // shell.js's {sws:'ready'} is not enough — the shell can be alive while the
+  // game module's request died, which is exactly the stuck-spinner case.
+  function srcdocAlive(){ try{ var d=fr.contentDocument; return !!(d && d.body && d.body.childNodes.length && !d.getElementById('shell-loading')); }catch(e){ return true; } }
+  function armSrcdocWatch(){
+    clearSrcdocWatch();
+    srcdocWatch = setTimeout(function(){
+      if(!isOpen || !srcdocOpts) return;
+      if(srcdocAlive()) return;
+      srcdocTries++;
+      if(srcdocTries <= 1){
+        fr.srcdoc = buildShellDoc(srcdocOpts.shellId, srcdocOpts.shellName, srcdocTries);
+        armSrcdocWatch();
+      } else {
+        fr.srcdoc = '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">'
+          +'<style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#101609;color:#e8dcc8;font-family:system-ui;gap:14px;text-align:center;padding:20px}button{min-height:48px;padding:12px 26px;border-radius:12px;border:1px solid #3d5230;background:#1a2415;color:#cfe0c2;font-size:16px;font-weight:700}</style></head>'
+          +'<body><div>That one did not load. It happens on a slow signal.</div>'
+          +'<button onclick="parent.postMessage({sws:\'retryGame\'},\'*\')">Try again</button>'
+          +'<button onclick="parent.postMessage({sws:\'close\'},\'*\')">Back to the garden</button></body></html>';
+      }
+    }, 8000);
+  }
   function openGame(opts){
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
     clearRecover(); satLoads = 0;
+    srcdocReady = false; srcdocTries = 0; clearSrcdocWatch();
+    srcdocOpts = (opts.srcdoc != null && opts.shellId) ? opts : null;
     var satMode = opts.src != null;
     // Music-source setup for self-music satellites. Capture the jukebox state
     // BEFORE we touch it, then apply the remembered preference (default: hand
@@ -1189,6 +1224,7 @@ document.addEventListener('click', function(e){
     if(opts.srcdoc != null){
       fr.removeAttribute('src');
       fr.srcdoc = opts.srcdoc;
+      if(srcdocOpts) armSrcdocWatch();
     } else {
       fr.removeAttribute('srcdoc');
       fr.src = opts.src + (opts.src.indexOf('?')>=0?'&':'?') + 'embed=1&v=20260703';   // v-stamp so satellite updates reach returning players
@@ -1264,7 +1300,7 @@ document.addEventListener('click', function(e){
     var nmEl = a.querySelector('.nm');
     var nm = nmEl ? nmEl.textContent : '';
     if(playM){
-      openGame({ srcdoc: buildShellDoc(playM[1], nm || playM[1]), title: nm });
+      openGame({ srcdoc: buildShellDoc(playM[1], nm || playM[1]), shellId: playM[1], shellName: nm || playM[1], title: nm });
     } else {
       openGame({ src: href, title: nm, ownMusic: a.getAttribute('data-ownmusic') === '1' });
     }
@@ -1275,7 +1311,8 @@ document.addEventListener('click', function(e){
   // popstate handler does the actual close.
   window.addEventListener('message', function(e){
     if(!e.data) return;
-    if(e.data.sws === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
+    if(e.data.sws === 'retryGame'){ if(srcdocOpts){ var ro=srcdocOpts; openGame({ srcdoc: buildShellDoc(ro.shellId, ro.shellName, 'x'+Date.now()%1000), shellId: ro.shellId, shellName: ro.shellName, title: ro.title }); } return; }
+    if(e.data.sws === 'ready'){ srcdocReady = true; clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked; srcdoc watchdog keeps running — the shell can be alive while the game module died
       // Hand the game our current music state so a cooperating game mutes its
       // own soundtrack when the player is on studio music (and unmutes when
       // they hand audio back to the game).
