@@ -209,7 +209,7 @@ h2.sc-h{font-size:24px; color:var(--dew); font-weight:800; margin-bottom:4px}
    SPORE DRIFT — ambient absorption (Sky Wolf Studios)
    Campaign #23 (prototype-first). Osmos lineage.
    ============================================================ */
-var BUILD="v1.0";
+var BUILD="v1.1";
 var W=540, H=960, DT=1/60;
 var MIN_ALIVE=6, START_M=240;
 
@@ -255,11 +255,28 @@ function seasonBlend(tick){ var ph=(tick%(SEASON_TICKS*4))/SEASON_TICKS; var i=M
     bgA:mixc(SEASONS[i].bgA,SEASONS[j].bgA,u), bgB:mixc(SEASONS[i].bgB,SEASONS[j].bgB,u),
     mote:mixc(SEASONS[i].mote,SEASONS[j].mote,u), name:SEASONS[u<0.5?i:j].name }; }
 
-/* ---------- current field (the twist) ---------- */
+/* ---------- current field (the twist) ----------
+   True water: a stream function Psi whose envelope vanishes at the tank
+   walls, differentiated to get the velocity (u = dPsi/dy, v = -dPsi/dx).
+   Divergence-free AND zero normal flow at the boundary, so the current
+   CANNOT press matter into a wall. It reads as one slow seasonal gyre
+   that breathes through the year, with smaller wandering eddies inside.
+   The old field was a near-uniform push (angle wiggle of only 0.7 rad)
+   that swept every mote into the right wall, then the bottom-right
+   corner, inside 30 seconds of every run. */
+var FLOW_K=0.010, FLOW_YTOP=54;
 function flowAt(x,y,tick,strength){
-  var base=(tick/(SEASON_TICKS*4))*Math.PI*2; /* one full rotation per year */
-  var a=base + 0.7*Math.sin(x*0.012 + tick*0.0011) + 0.7*Math.cos(y*0.010 - tick*0.0009);
-  return { x:Math.cos(a)*strength, y:Math.sin(a)*strength };
+  var Hp=H-FLOW_YTOP, sx=Math.PI/W, sy=Math.PI/Hp;
+  var ex=Math.sin(x*sx),            dex=sx*Math.cos(x*sx);
+  var ey=Math.sin((y-FLOW_YTOP)*sy), dey=sy*Math.cos((y-FLOW_YTOP)*sy);
+  var p1=x*FLOW_K + tick*0.0011, p2=y*FLOW_K - tick*0.0009;
+  var base=(tick/(SEASON_TICKS*4))*Math.PI*2; /* one turn of the year */
+  var A=130, B=115*Math.cos(base); /* inner eddies + seasonal gyre */
+  var f  = A*Math.sin(p1)*Math.cos(p2) + B;
+  var dfx= A*FLOW_K*Math.cos(p1)*Math.cos(p2);
+  var dfy=-A*FLOW_K*Math.sin(p1)*Math.sin(p2);
+  return { x:( ex*(dey*f + ey*dfy))*strength,
+           y:(-(ey*(dex*f + ex*dfx)))*strength };
 }
 
 /* ---------- world ---------- */
@@ -315,20 +332,20 @@ var CHAMBERS=[
   spec:[[11,0.18,0.36],[4,0.45,0.7],[2,1.4,1.8]]},
  {name:"The Elder's Rest", goalTxt:"Absorb the Elder Spore", flowS:10, goal:{type:"elder"},
   spec:[[9,0.2,0.42],[3,0.5,0.75]], elder:1.9},
- {name:"Crosswinds", goalTxt:"Grow to 38% of all life", flowS:14, goal:{type:"frac",n:0.38},
-  spec:[[13,0.16,0.34],[4,0.45,0.68],[1,1.4,1.6]]},
- {name:"Giants' Drift", goalTxt:"Grow to 35% of all life", flowS:12, goal:{type:"frac",n:0.35},
+ {name:"Crosswinds", goalTxt:"Grow to 48% of all life", flowS:14, goal:{type:"frac",n:0.48},
+  spec:[[13,0.16,0.34],[4,0.45,0.68],[2,1.5,1.9]]},
+ {name:"Giants' Drift", goalTxt:"Grow to 42% of all life", flowS:12, goal:{type:"frac",n:0.42},
   spec:[[13,0.14,0.3],[4,0.4,0.6],[2,2.0,2.5]]},
  {name:"Bloom Reef", goalTxt:"Become the largest", flowS:13, goal:{type:"largest"},
-  spec:[[10,0.2,0.4],[4,0.55,0.85],[1,1.6,1.9]]},
- {name:"Undertow", goalTxt:"Grow to 40% of all life", flowS:18, goal:{type:"frac",n:0.40},
-  spec:[[12,0.15,0.32],[4,0.45,0.75],[1,2.0,2.4]]},
+  spec:[[10,0.2,0.4],[4,0.6,0.9],[2,2.6,3.1]]},
+ {name:"Undertow", goalTxt:"Grow to 48% of all life", flowS:18, goal:{type:"frac",n:0.48},
+  spec:[[12,0.15,0.32],[5,0.45,0.75],[1,2.2,2.6]]},
  {name:"The Deep Elder", goalTxt:"Absorb the Elder Spore", flowS:15, goal:{type:"elder"},
-  spec:[[10,0.18,0.36],[3,0.45,0.7]], elder:2.5},
+  spec:[[10,0.18,0.36],[3,0.45,0.7]], elder:2.3},
  {name:"Sparse Sky", goalTxt:"Become the largest", flowS:14, goal:{type:"largest"},
-  spec:[[6,0.25,0.5],[3,0.65,1.0],[2,1.7,2.2]]},
- {name:"The Still Point", goalTxt:"Grow to 45% of all life", flowS:19, goal:{type:"frac",n:0.45},
-  spec:[[12,0.14,0.3],[5,0.45,0.8],[2,1.9,2.4]]}
+  spec:[[6,0.25,0.45],[3,0.55,0.9],[2,2.6,3.0]]},
+ {name:"The Still Point", goalTxt:"Grow to 55% of all life", flowS:19, goal:{type:"frac",n:0.55},
+  spec:[[12,0.14,0.3],[5,0.45,0.8],[3,2.0,2.6]]}
 ];
 function startMode(mode,idx){
   var seed, flowS=12, goal=null, ch=CHAMBERS[idx||0], gopts=null;
@@ -792,6 +809,13 @@ if(/[?&]sptest=1/.test(location.search)){
         motes:G.motes.length, biggest:+biggest.toFixed(2), flowersLeft:G.flowersLeft,
         goalProgress:+goalProgress().toFixed(3), totalMass:+G.totalMass.toFixed(1), nan:nan }; },
     tap:function(x,y){ return eject(x,y); },
+    dump:function(){ if(!G)return null; var out=[], i;
+      for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
+        out.push({x:+m.x.toFixed(1), y:+m.y.toFixed(1), m:+m.m.toFixed(2),
+          vx:+m.vx.toFixed(2), vy:+m.vy.toFixed(2), e:m.e, f:m.f, p:m.birth>0?1:0}); }
+      return { px:+G.P.x.toFixed(1), py:+G.P.y.toFixed(1), pm:+G.P.m.toFixed(2),
+        pvx:+G.P.vx.toFixed(2), pvy:+G.P.vy.toFixed(2),
+        tick:G.tick, phase:G.phase, motes:out }; },
     step:function(n){ var k; for(k=0;k<(n||1);k++){ if(!G||G.phase!=="play")break; tickSim(); } render(); return window.SP_DEV.state(); },
     setPlayerMass:function(m){ if(G){ G.P.m=m; G.P.r=Math.sqrt(m); } },
     stateHash:function(){ if(!G)return 0; var h=2166136261, i;

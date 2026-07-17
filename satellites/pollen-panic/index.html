@@ -138,7 +138,7 @@ const GEN_MAZES=[
 {"rows":["###################","#o.......#.......o#","#.###.##.#.##.###.#","#.................#","#.###.#.###.#.###.#","#.....#..#..#.....#","####.###.#.###.####","####.#.......#.####","####.#.##=##.#.####","     . #GGG# .     ","####.#.#####.#.####","####.#.......#.####","####.#.#####.#.####","#..#.....#.....#..#","#..#...#...#...#..#","#.................#","##...#...#...#...##","##......###......##","#..#...........#..#","#o.....#...#.....o#","###################"],"start":{"x":9.5,"y":15.5}},
 {"rows":["###################","#o.......#.......o#","#.###.##.#.##.###.#","#.................#","#.###.#.###.#.###.#","#.....#..#..#.....#","####.###.#.###.####","####.#.......#.####","####.#.##=##.#.####","     . #GGG# .     ","####.#.#####.#.####","####.#.......#.####","####.#.#####.#.####","##...#..###..#...##","#.....#..#..#.....#","#.#.#.........#.#.#","#.#...#..#..#...#.#","#...#...###...#...#","##...............##","###o..#.....#..o###","###################"],"start":{"x":9.5,"y":15.5}}
 ];const MAZES=[MAZE_A,MAZE_B,...GEN_MAZES];
-const W=19,H=21,TUNNEL_Y=9,DOOR={x:9,y:8},HOUSE={x:9,y:9},FRUIT_POS={x:9.5,y:11.5},CORNER=0.55;/* turn window 0.45->0.55: smoother, more forgiving cornering (tuning only) */
+const W=19,H=21,TUNNEL_Y=9,DOOR={x:9,y:8},HOUSE={x:9,y:9},FRUIT_POS={x:9.5,y:11.5},CORNER=0.65;/* turn window 0.45->0.55->0.65 (Jul 17): with the behind-candidate in tryTurn this is a true +-0.65 tile rubber-band corner */
 
 /* ============ MODES ============ */
 const MODES={
@@ -260,9 +260,13 @@ const PEST_DEFS=[
  {id:"mantis",color:"#52B8C4",scatter:{x:17,y:19},release:5,tgt:p=>{const d=DIRS[player.dir];const ax=player.x+2*d.x,ay=player.y+2*d.y;const b=pests[0];return{x:ax+(ax-b.x),y:ay+(ay-b.y)};}},
  {id:"snail", color:"#C77CB0",scatter:{x:1,y:19}, release:8,tgt:p=>{const dx=p.x-player.x,dy=p.y-player.y;return(dx*dx+dy*dy>64)?{x:player.x,y:player.y}:p.scatter;}}];
 let pests=[];
+/* Jul 17 gentle-start: levels 1-2 stagger the pest releases (L1 doubles the
+   waits, L2 x1.5) and slow the pests (see pestEase). Level 3+ is untouched. */
+function pestEase(){return level===1?0.82:level===2?0.9:1;}
 function mkPests(){
+  const rel=level===1?2:level===2?1.5:1;
   pests=PEST_DEFS.map((d,i)=>({...d,x:(i===0?HOUSE.x:HOUSE.x+(i-2))+0.5,y:HOUSE.y+0.5,
-    dir:"left",state:i===0?"exit":"house",relT:d.release,bobT:Math.random()*3}));
+    dir:"left",state:i===0?"exit":"house",relT:d.release*rel,bobT:Math.random()*3}));
 }
 
 /* ============ GRID ============ */
@@ -277,7 +281,7 @@ function buildGrid(){
   seedsLeft=totalSeeds;seedsEaten=0;
   fruit={active:false,t:0,taken:[],x:FRUIT_POS.x,y:FRUIT_POS.y,dir:"left",moving:gameMode==="meadow"};
   drones=[];crumbs=[];
-  const nD=level>=2?Math.min(4,1+Math.floor(level/2)):0;
+  const nD=level>=3?Math.min(4,1+Math.floor(level/2)):level===2?1:0;/* Jul 17: L2 gets 1 drone (was 2), L3+ unchanged */
   if(nD>0){
     const cands=[];
     for(let y=1;y<=5;y++)for(let x=2;x<=16;x++)
@@ -325,21 +329,24 @@ function stepEntity(e,dist,ghost,onCenter){
   }else{e.lvx=Math.floor(e.x)+0.5;e.lvy=Math.floor(e.y)+0.5;}
 }
 /* Corner assist: a buffered swipe fires the instant a legal turn is within
-   ±0.45 tiles — snapping back to a just-missed corner or forward to the next
-   one — so a swipe up to ~half a second early or late still lands the turn. */
+   ±CORNER tiles — snapping back to a just-missed corner (the behind candidate,
+   added Jul 17: the old code forgot the corner once you crossed the tile
+   boundary) or forward to the next one. Nearest legal candidate wins, so a
+   swipe up to ~a fifth of a second early or late still lands the turn. */
 function tryTurn(){
   const w=player.want;if(!w||w===player.dir)return;
   if(w===OPP[player.dir]){player.dir=w;return;}
   const cx=Math.floor(player.x)+0.5,cy=Math.floor(player.y)+0.5,d=DIRS[player.dir];
-  const cands=[[cx,cy],[cx+d.x,cy+d.y]];
+  const cands=[[cx,cy],[cx+d.x,cy+d.y],[cx-d.x,cy-d.y]];
+  let bX=null,bY=null,bd=1e9;
   for(const[X,Y]of cands){
-    if(Math.abs(player.x-X)+Math.abs(player.y-Y)>CORNER)continue;
+    const dist=Math.abs(player.x-X)+Math.abs(player.y-Y);
+    if(dist>CORNER||dist>=bd)continue;
     const tx=Math.floor(X),ty=Math.floor(Y);
     if(wall(tx,ty,false))continue;
-    if(!wall(tx+DIRS[w].x,ty+DIRS[w].y,false)){
-      player.x=X;player.y=Y;player.dir=w;return;
-    }
+    if(!wall(tx+DIRS[w].x,ty+DIRS[w].y,false)){bX=X;bY=Y;bd=dist;}
   }
+  if(bX!==null){player.x=bX;player.y=bY;player.dir=w;}
 }
 
 /* ============ INPUT ============ */
@@ -355,20 +362,28 @@ function useGust(){
   pests.forEach(p=>{if(p.state==="free"){p.state="eaten";any=true;}});
   if(any){gustN--;SFX.gust();msg("GUST OF WIND!");updateHUD();}
 }
+/* Jul 17 control pass: swipe anywhere on the page (HUD strip and footer were
+   dead zones), and give direction CHANGES a dominant-axis hysteresis so finger
+   drift on a long drag can no longer stomp the turn you already queued. */
 let tAnchor=null;
-const stage=document.getElementById("stage");
-stage.addEventListener("touchstart",e=>{
+document.addEventListener("touchstart",e=>{
   if(e.target.closest(".overlay,button"))return;
   tAnchor=e.touches[0];
 },{passive:true});
-stage.addEventListener("touchmove",e=>{
+document.addEventListener("touchmove",e=>{
   if(!tAnchor)return;const t=e.touches[0];
   const dx=t.clientX-tAnchor.clientX,dy=t.clientY-tAnchor.clientY;
-  if(Math.abs(dx)<14&&Math.abs(dy)<14)return; // low threshold: quick response
-  player.want=Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up");
+  const adx=Math.abs(dx),ady=Math.abs(dy);
+  if(adx<15&&ady<15)return; // low threshold: quick response
+  const nd=adx>ady?(dx>0?"right":"left"):(dy>0?"down":"up");
+  if(nd!==player.want){
+    const major=Math.max(adx,ady),minor=Math.min(adx,ady);
+    if(major<minor*1.3+6)return; // ambiguous diagonal: keep the queued turn, read more
+    player.want=nd;
+  }
   tAnchor=t; // re-arm: keep dragging to chain turns
 },{passive:true});
-stage.addEventListener("touchend",()=>{tAnchor=null;},{passive:true});
+document.addEventListener("touchend",()=>{tAnchor=null;},{passive:true});
 
 /* ============ GAME FLOW ============ */
 function startGame(gm){
@@ -415,7 +430,7 @@ function eatAt(){
     addScore(pts);
     if(c==="o"){
       if(gameMode==="superb"){superT=5;SFX.grow();msg("SUPER BLOOM!");}
-      else{frightT=Math.max(2.5,6-level*0.4);SFX.bloom();}
+      else{frightT=level===1?8:level===2?6.5:Math.max(2.5,6-level*0.4);SFX.bloom();}/* Jul 17: longer power windows on L1-2, L3+ unchanged */
       eatChain=0;
       pests.forEach(p=>{if(p.state==="free")p.dir=OPP[p.dir];});
     }else SFX.chomp();
@@ -539,7 +554,7 @@ function update(dt){
       else{p.x+=dx/d*11*dt;p.y+=dy/d*11*dt;}
       continue;
     }
-    let sp=(frightT>0||superT>0)?4.2:6.2*speedScale();
+    let sp=((frightT>0||superT>0)?4.2:6.2*speedScale())*pestEase();
     if(Math.floor(p.y)===TUNNEL_Y&&(p.x<5||p.x>W-5))sp*=0.6;
     stepEntity(p,sp*dt,true,choosePestDir);
   }
