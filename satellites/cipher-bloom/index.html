@@ -209,6 +209,12 @@ var $=function(id){return document.getElementById(id);};
 var TEST=/[?&]cbtest=1/.test(location.search);
 var VW=540, VH=960;
 
+/* ---------- stage fit: scale the fixed 540x960 stage to the viewport ---------- */
+function fitStage(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fitStage);
+window.addEventListener('orientationchange',function(){ setTimeout(fitStage,200); });
+fitStage();
+
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, haptic:true, freq:true, diff:1 };

@@ -12,7 +12,7 @@ var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
 window.SWS_EXIT=function(){
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-location.href='https://lucidwinds.com/portal/';
+if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
 };
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();

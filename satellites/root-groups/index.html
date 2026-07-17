@@ -31,7 +31,8 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:48px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #14240f, 0 0 26px #7ab35644; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.tagline{margin-top:18px; color:var(--cream); font-size:17px; font-weight:700; line-height:1.45; max-width:430px}
+.ribbon{margin-top:12px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -106,7 +107,8 @@ h2.sc-h{font-size:23px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Root Groups</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Sixteen tiles hide <b class="hl">four secret groups</b> of four. Find the hidden thread, tap four that belong together, and watch each group <b class="hl">bloom</b>. The trickiest group seeds your garden.</div>
+    <div class="tagline">A word puzzle like Connections, sort <b class="hl">sixteen tiles</b> into four hidden groups of four.</div>
+    <div class="ribbon">Tap four tiles that share a secret thread and watch each group <b class="hl">bloom</b>. The trickiest group seeds your garden.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-grove">🌱&nbsp; Grove Groups</button>
@@ -197,6 +199,14 @@ h2.sc-h{font-size:23px; color:var(--sage); font-weight:800; margin-bottom:4px}
 "use strict";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+
+/* ---------- stage fit (canonical SWS 540x960 scale-fit) ---------- */
+var VW=540, VH=960;
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit);
+window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+fit();
+
 var BUILD='v1.0';
 var TESTMODE=/[?&]rgtest=1/.test(location.search);
 
@@ -379,7 +389,7 @@ function submit(){ if(G.phase!=='play'||G.selected.length!==4) return;
   if(maxc===4){ solveGroup(only); }
   else { /* wrong */ G.mistakes++; sfxWrong();
     var cells=$('rg-board').querySelectorAll('.cell.sel'); for(i=0;i<cells.length;i++) cells[i].classList.add('wrong');
-    if(maxc===3){ toast('So close — one away'); sfxNear(); } else { toast('Not a group'); }
+    if(maxc===3){ toast('So close, one away'); sfxNear(); } else { toast('Not a group'); }
     G.selected=[]; setTimeout(renderBoard,220);
     if(G.mode!=='zen' && G.mistakes>=G.budget) setTimeout(function(){ endBoard(false); },320);
   }
@@ -390,7 +400,7 @@ function solveGroup(gi){ var g=G.groups[gi]; g.solved=true; G.solvedCount++;
   SAVE.solvedCats[g.catId]=1; SAVE.dew+=g.tier; save();
   var eg=earn(1,'rootgroups:group');
   var isRoot = (g.tier===G.nGroups); /* hardest tier = root group */
-  if(isRoot){ SAVE.pouch++; save(); toast('Root group! '+g.nm+' — a seed drops to your pouch 🪴'); }
+  if(isRoot){ SAVE.pouch++; save(); toast('Root group! '+g.nm+', a seed drops to your pouch 🪴'); }
   else toast(g.nm+' blooms 🌸');
   renderBoard();
   if(G.solvedCount>=G.nGroups) setTimeout(function(){ endBoard(true); },380);
@@ -443,7 +453,7 @@ function renderComp(){ var host=$('comp-wrap'); host.innerHTML=''; var n=compCou
   $('comp-sub').textContent = n? ('You have untangled '+n+' of '+CATS.length+' categories. Pouch seeds: '+SAVE.pouch+' 🪴') : 'Every group you untangle is logged here.';
   var i; for(i=0;i<CATS.length;i++){ if(!SAVE.solvedCats[CATS[i].id]) continue; var c=document.createElement('div'); c.className='compcat';
     c.innerHTML='<div class="cn">'+CATS[i].nm+'</div><div class="cc">'+CATS[i].m.length+' members</div>'; host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px;text-align:center'; e.textContent='— no categories solved yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px;text-align:center'; e.textContent='No categories solved yet.'; host.appendChild(e); }
 }
 
 /* ---------- wiring ---------- */
