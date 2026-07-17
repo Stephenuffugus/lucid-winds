@@ -4019,6 +4019,15 @@
     .bs-close{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--cream);background:rgba(46,40,32,0.5);border:1px solid rgba(200,188,160,0.12);border-radius:5px;padding:0.3rem 0.7rem;cursor:pointer;min-height:48px;}
     .bs-nav{display:none;}
     .bs-card-nav{display:flex;justify-content:center;align-items:center;gap:0.3rem;margin-top:0.25rem;}
+    #bs-browse{position:fixed;inset:0;z-index:100002;background:rgba(8,11,7,0.97);display:none;flex-direction:column;}
+    #bs-browse.open{display:flex;animation:panelFadeIn 0.2s ease;}
+    .bs-browse-head{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.14em;}
+    .bs-browse-head button{min-width:48px;min-height:48px;background:rgba(46,40,32,0.5);border:1px solid rgba(200,188,160,0.15);border-radius:10px;color:var(--cream);font-size:1rem;cursor:pointer;}
+    .bs-browse-grid{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;align-content:start;padding:0 12px calc(env(safe-area-inset-bottom,0px) + 20px);}
+    .bs-browse-item{background:rgba(26,36,22,0.6);border:1.5px solid rgba(74,124,53,0.3);border-radius:12px;padding:8px 4px 6px;text-align:center;cursor:pointer;}
+    .bs-browse-item.cur{border-color:var(--gold);box-shadow:0 0 12px rgba(200,168,75,0.35);}
+    .bs-browse-nm{font-size:0.5rem;color:var(--cream);font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;padding:0 2px;}
+    .bs-browse-meta{font-size:0.46rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px;}
     .bs-card-nav-btn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;color:var(--sage);background:rgba(26,36,22,0.5);border:1.5px solid rgba(122,179,86,0.2);cursor:pointer;min-height:48px;}
     .bs-card-nav-btn:active{background:rgba(74,124,53,0.15);transform:scale(0.95);}
     .bs-card-nav-count{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);}
@@ -82335,6 +82344,12 @@ function _resume(step){
   </div>
   <div class="bs-forecast" id="bs-forecast"></div>
   <button class="bs-breed-btn" id="bs-breed-btn" onclick="window.bsConfirmBreed()" style="display:flex;align-items:center;justify-content:center;gap:10px;"><img src="assets/icons/dna.png" alt="" style="width:40px;height:40px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML='🧬'"> BREED &amp; SEND TO NURSERY</button>
+  <!-- Browse-all partner grid (Jessie 2026-07-10: clicking one-by-one through
+       50 plants to find the best match — see many at once, scroll down) -->
+  <div id="bs-browse">
+    <div class="bs-browse-head"><span>CHOOSE A PARTNER</span><button onclick="window.bsBrowseClose()" aria-label="Close">✕</button></div>
+    <div class="bs-browse-grid" id="bs-browse-grid"></div>
+  </div>
 </div>
 <div class="bs-confirm" id="bs-confirm">
   <div class="bs-confirm-card">
@@ -82476,7 +82491,7 @@ function _renderCard(el,plant,role,side){
     h+='<div class="bs-card-nav"><button class="bs-card-nav-btn" onclick="window.bsSwipeA(-1)">\u2039</button><span class="bs-card-nav-count">'+(_aIdx+1)+' / '+_allEligible.length+'</span><button class="bs-card-nav-btn" onclick="window.bsSwipeA(1)">\u203a</button></div>';
   }
   if(side==='b'&&_partners.length>1){
-    h+='<div class="bs-card-nav"><button class="bs-card-nav-btn" onclick="window.bsSwipe(-1)">\u2039</button><span class="bs-card-nav-count">'+(_pIdx+1)+' / '+_partners.length+'</span><button class="bs-card-nav-btn" onclick="window.bsSwipe(1)">\u203a</button></div>';
+    h+='<div class="bs-card-nav"><button class="bs-card-nav-btn" onclick="window.bsSwipe(-1)">\u2039</button><span class="bs-card-nav-count">'+(_pIdx+1)+' / '+_partners.length+'</span><button class="bs-card-nav-btn" onclick="window.bsSwipe(1)">\u203a</button><button class="bs-card-nav-btn bs-browse-open" onclick="window.bsBrowse()" title="See every partner at once" aria-label="Browse all partners">\u229e</button></div>';
   }
   el.innerHTML=h;
 }
@@ -82788,6 +82803,7 @@ function _renderBreedCards(){
 
 window.closeBreedScreen=function(){
   document.getElementById('breed-screen').classList.remove('open');
+  if(window.bsBrowseClose)window.bsBrowseClose();
   _plantA=null;_partners=[];
 };
 
@@ -82806,6 +82822,38 @@ window.bsSwipe=function(dir){
     cardB.style.opacity='1';
     cardB.style.transform='translateX(0)';
   },50);
+};
+
+/* Browse-all partner grid (Jessie 2026-07-10) — every eligible partner in one
+   vertical-scroll grid; tap to jump the comparison straight to it. */
+window.bsBrowse=function(){
+  if(!_partners.length)return;
+  var ov=document.getElementById('bs-browse'), grid=document.getElementById('bs-browse-grid');
+  if(!ov||!grid)return;
+  var html='';
+  for(var i=0;i<_partners.length;i++){
+    var p=_partners[i], inf=_info(p);
+    var gname=inf.tg?(inf.tg.name||inf.tg.label||''):'';
+    html+='<div class="bs-browse-item'+(i===_pIdx?' cur':'')+'" onclick="window.bsBrowsePick('+i+')">'+
+      _bsThumb(p.hash,54)+
+      '<div class="bs-browse-nm">'+inf.nm+'</div>'+
+      '<div class="bs-browse-meta">'+gname+' · EA '+inf.ea+'</div>'+
+    '</div>';
+  }
+  grid.innerHTML=html;
+  ov.classList.add('open');
+  try{ var cur=grid.querySelector('.cur'); if(cur)cur.scrollIntoView({block:'center'}); }catch(e){}
+};
+window.bsBrowseClose=function(){
+  var ov=document.getElementById('bs-browse'); if(ov)ov.classList.remove('open');
+};
+window.bsBrowsePick=function(i){
+  if(i<0||i>=_partners.length)return;
+  _pIdx=i;
+  window.bsBrowseClose();
+  var cardB=document.getElementById('bs-card-b');
+  if(cardB){ _renderCard(cardB,_partners[_pIdx],'PLANT B','b'); _renderForecast(); }
+  if(window._haptic){ try{ _haptic(8); }catch(e){} }
 };
 
 window.bsSwipeA=function(dir){
