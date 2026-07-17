@@ -199,6 +199,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">🀄</div><div>Tap two <b>free</b> tiles that show the <b>same botanical</b> to match them away.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div><b class="hl">Seasons</b> (🌸🌻🍁❄️) match <b>any other season</b>, and <b class="hl">Elements</b> (💧☀️⛰️🌬️) match any other element — just like classic Mahjong's flowers and seasons.</div></div>
     <div class="helprow"><div class="hi">✋</div><div>A tile is <b class="hl">free</b> only if nothing rests on top of it <b>and</b> its left or right side is open. Free tiles sit bright; blocked ones dim. Turn on <b>Highlight free tiles</b> to see them glow.</div></div>
     <div class="helprow"><div class="hi">🌸</div><div>The <b class="hl">Season</b> tiles (gold frame) all match each other, and the <b class="hl">Element</b> tiles (silver frame) all match each other — handy wilds.</div></div>
     <div class="helprow"><div class="hi">🌿</div><div>Clear the whole garden to win. Snagged? Take a <b>hint</b> or <b>undo</b> — or <b>reset the garden</b> to try a different order.</div></div>
@@ -566,6 +567,11 @@ function tapTile(id){
     scoreMatch(t.face);
     var e1=tileEls[first], e2=tileEls[id]; if(e1)e1.classList.add('removing'); if(e2)e2.classList.add('removing');
     burst(e1); burst(e2); sfx('match'); try{navigator.vibrate&&navigator.vibrate(12);}catch(ev){}
+    // wildcard-class matches look like a glitch to new players (Jessie
+    // 2026-07-15: two "unmatching" tiles won her the garden) — say the rule
+    if((t.face.kind==='S'||t.face.kind==='E') && t.face.n!==other.face.n){
+      flash(t.face.kind==='S' ? '🌸 Seasons match any season' : '💧 Elements match any element');
+    }
     setTimeout(function(){ S.locked=false; refreshStates(); updateHUD(); if(checkWin())return; checkStuck(); }, 300);
   } else { S.selected=null; S.chain=0; S.chainKind=null; sfx('bad'); refreshStates(); }
 }
