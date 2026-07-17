@@ -2529,10 +2529,15 @@
     .bg-board{position:relative;width:100%;max-width:none;aspect-ratio:11/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
     .bg-inner{position:absolute;inset:4px;display:flex;flex-direction:column}
     /* Landscape: size board by height so it snaps to fill available vertical space */
+    /* Landscape (2026-07-17 rework — Stephen: sideways should look BETTER):
+       true two-column table — the board fills the height on the left, the
+       pip/bear-off/controls sidebar rides along on the right. The old rule
+       stacked the sidebar under a full-height board and overflowed. */
     @media (orientation:landscape) and (max-height:600px){
-      .bg-outer{width:auto;max-width:none;height:calc(100svh - var(--nav-h,58px) - env(safe-area-inset-bottom,0px) - 40px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-      .bg-outer .bg-wrap{width:auto;height:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
-      .bg-outer .bg-board{flex:0 1 auto;height:100%;width:auto;max-width:98vw;max-height:100%}
+      .bg-outer{width:auto;max-width:none;height:calc(100svh - var(--nav-h,58px) - env(safe-area-inset-bottom,0px) - 40px);display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px}
+      .bg-outer .bg-wrap{width:auto;height:100%;display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 1 auto}
+      .bg-outer .bg-board{flex:0 1 auto;height:100%;width:auto;aspect-ratio:11/9;max-width:calc(98vw - 170px);max-height:100%}
+      .bg-outer .bg-sidebar{width:clamp(150px,24vw,220px);max-height:100%;overflow-y:auto;display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
       .bg-outer .bg-bo{padding:2px 8px;gap:4px}
       .bg-outer .bg-bo-pip{width:6px;height:6px}
       .bg-outer .bg-bo-lbl{font-size:0.5rem}
