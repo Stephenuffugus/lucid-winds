@@ -203,7 +203,11 @@
     display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-weight:700;
     font-size:15px;color:#e8dcc8;background:rgba(13,16,12,0.72);border:1px solid rgba(232,220,200,0.35);cursor:pointer}
   .info-btn:active{background:rgba(200,168,75,0.4)}
+  /* invisible hit-area inflation: the visual chip stays 30px but the tap
+     target is ~48px (Stephen 7/17: expanded a description and couldn't close it) */
+  .info-btn::before{content:'';position:absolute;inset:-9px;border-radius:50%}
   .card.desc-open .ds{-webkit-line-clamp:unset;display:block;font-size:12px;line-height:1.5}
+  .card.desc-open .ds::after{content:'✕ tap here to close';display:block;color:#c8a84b;font-size:10px;margin-top:5px;letter-spacing:.5px;font-weight:700}
   .card.desc-open .info-btn{background:rgba(200,168,75,0.5);border-color:#c8a84b}
   .hubcard{background:linear-gradient(145deg,#1e3326,#152019);border:1px solid var(--leaf)}
   .hubcard .shot{background:linear-gradient(135deg,#2c4a35,#1a2a20);color:var(--leaf)}
@@ -611,6 +615,18 @@ window.swsDescToggle = function(ev, el){
   if(card) card.classList.toggle('desc-open');
   return false;
 };
+// An EXPANDED description closes on tap (the card is an anchor, so without
+// this the only way out was re-hitting the tiny i chip — every other tap
+// launched the game). Collapsed descriptions still launch as normal.
+window.swsDescTap = function(ev, el){
+  var card = el.closest ? el.closest('.card') : null;
+  if(card && card.classList.contains('desc-open')){
+    ev.preventDefault(); ev.stopPropagation();
+    card.classList.remove('desc-open');
+    return false;
+  }
+  return true;
+};
 function card(g, isFeat){
   // Garden games with a 6th array slot are EXTERNAL apps (own origin) that
   // open in a new tab, not /play/ shells. 7th slot is their custom thumb.
@@ -649,7 +665,7 @@ function card(g, isFeat){
   var infoBtn = soon ? '' :
     '<span class="info-btn" role="button" tabindex="0" aria-label="About this game" onclick="return swsDescToggle(event,this)">i</span>';
   var inner = '<div class="shot">'+badge+favBtn+infoBtn+shot+'</div>'+
-    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div>'+
+    '<div class="body"><div class="nm">'+nm+'</div><div class="ds" onclick="return swsDescTap(event,this)">'+ds+'</div>'+
     (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
   if (soon) {
     // A real button with a friendly tap response, not a dead grayed tile.
