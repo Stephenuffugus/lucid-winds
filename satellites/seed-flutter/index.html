@@ -185,7 +185,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.2';
+var BUILD='v1.3';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -222,7 +222,10 @@ function _blit(im, cx, cy, h, rot){ if(!_sfReady(im))return false; var s=h/im.na
 /* keepsake-star roster (drawFlower reskin) + light rarity weighting keyed off the bloom seed */
 var _STARS=['star_dawnling','star_goldeye','star_moonbell','star_ember','star_violetnova',
   'star_frostcrystal','star_twinsprite','star_cometwisp','star_prismnova'];
-function _starIdx(seed){ var r=((seed>>>0)%1000)/1000;
+function _starIdx(seed){ var s=(seed>>>0);
+  // ~32% of keepsakes are a style-collection star (Jul 17 drop), spread evenly
+  if((s%100)<32 && _STARS.length>9){ return 9 + ((s>>>5) % (_STARS.length-9)); }
+  var r=((s>>>7)%1000)/1000;   // the original 9-star rarity ladder
   if(r<0.006)return 8;   /* prismnova capstone */  if(r<0.10)return 7;  /* cometwisp */
   if(r<0.20)return 6;    /* twinsprite */          if(r<0.34)return 5;  /* frostcrystal */
   if(r<0.48)return 4;    /* violetnova */          if(r<0.62)return 3;  /* ember */
@@ -291,11 +294,66 @@ var TRAILS=[
   {id:3, nm:'Prism Tail', need:3, kind:'streak', col:'#bfe0f2', sp:'cosmetics/tail_prism', desc:'3-day streak'}
 ];
 var COMPS=[
-  {id:0, nm:'None', need:0, glyph:'', pas:'', desc:'No companion'},
-  {id:1, nm:'Moon-Moth', need:25, kind:'dist', glyph:'🦋', sp:'cosmetics/buddy_moonmoth', pas:'wider Perfect band', desc:'Reach 25'},
-  {id:2, nm:'Sparklet', need:10, kind:'grew', glyph:'✨', sp:'cosmetics/buddy_sparklet', pas:'lights the haze', desc:'Grow 10 keepsakes'},
-  {id:3, nm:'Star-Pup', need:60, kind:'dist', glyph:'🐺', sp:'cosmetics/buddy_starpup', pas:'one soft recovery', desc:'Reach 60'}
+  {id:0, nm:'None', need:0, glyph:'', pas:'', pk:'', desc:'No companion'},
+  {id:1, nm:'Moon-Moth', need:25, kind:'dist', glyph:'🦋', sp:'cosmetics/buddy_moonmoth', pas:'wider Perfect band', pk:'band', desc:'Reach 25'},
+  {id:2, nm:'Sparklet', need:10, kind:'grew', glyph:'✨', sp:'cosmetics/buddy_sparklet', pas:'lights the haze', pk:'haze', desc:'Grow 10 keepsakes'},
+  {id:3, nm:'Star-Pup', need:60, kind:'dist', glyph:'🐺', sp:'cosmetics/buddy_starpup', pas:'one soft recovery', pk:'recovery', desc:'Reach 60'}
 ];
+/* ── STYLE COLLECTIONS (Jul 17 art drop): 6 styles append comet skins, tails,
+   buddies (with archetype passives) and keepsake stars. Animated styles carry
+   flap/settle poses; crayon is single-pose. Thresholds spread across the
+   dist/grew/streak faucets so every faucet keeps paying. ── */
+(function(){
+  var faucets=['dist','grew','streak'];
+  function thr(kind, tier, idx){
+    if(kind==='grew')   return 24 + tier*18 + idx*8;
+    if(kind==='streak') return 4  + tier*3  + idx*1;
+    return 120 + tier*140 + idx*40;   // dist
+  }
+  function desc(kind, need){ return kind==='grew'?('Grow '+need+' keepsakes'):(kind==='streak'?(need+'-day streak'):('Reach '+need)); }
+  // style: [key, label, tier, animated]
+  var STYLES=[
+    ['crayon','Crayon',0,false],['retro','Arcade',0,true],
+    ['clay','Clay',1,true],['glass','Glass',1,true],
+    ['neon','Neon',2,true],['metallic','Chrome',2,true]
+  ];
+  // comet skins per style: [key, label, col, puff]
+  var SK={
+    crayon:[['gold','Gold','#f0d79a','#e0a83a'],['blue','Sky','#bfe0f2','#8fc3ea'],['rose','Rose','#f2c6d2','#e58fa0'],['crown','Crown','#f0d79a','#c8a84b']],
+    retro:[['gold','Gold','#f0d79a','#e0a83a'],['blue','Sky','#bfe0f2','#8fc3ea'],['rose','Rose','#f2c6d2','#e58fa0'],['crown','Crown','#f0d79a','#c8a84b']],
+    clay:[['gold','Gold','#f0d79a','#e0a83a'],['blue','Sky','#bfe0f2','#8fc3ea'],['rose','Coral','#f2c6d2','#e58fa0'],['crown','Crown','#f0d79a','#c8a84b']],
+    glass:[['gold','Amber','#f0d79a','#e0a83a'],['blue','Sapphire','#bfe0f2','#8fc3ea'],['rose','Rose','#f2c6d2','#e58fa0'],['crown','Crown','#f0d79a','#c8a84b']],
+    neon:[['blue','Cyan','#bfe0f2','#5b9bd5'],['rose','Magenta','#f2c6d2','#e58fa0'],['gold','Gold','#f0d79a','#e0a83a'],['rainbow','Prism','#b57de0','#bfe0f2']],
+    metallic:[['silver','Silver','#dfe6ee','#aab4c0'],['gold','Gold','#f0d79a','#e0a83a'],['rose','Holo','#f2c6d2','#e58fa0'],['crown','Crown','#dfe6ee','#c8a84b']]
+  };
+  var TAILN={crayon:4,retro:4,clay:4,glass:4,neon:3,metallic:4};
+  var BUD=[['pup','Pup','🐾','recovery'],['moth','Moth','🦋','band'],['orb','Sparkle','✨','haze'],['cat','Moon-Cat','🌙','']];
+  var TAILCOL={gold:'#e0a83a',rose:'#e58fa0',blue:'#8fc3ea',mixed:'#b57de0'};
+  var fi=0;
+  STYLES.forEach(function(st){
+    var key=st[0], nm=st[1], tier=st[2], anim=st[3];
+    SK[key].forEach(function(sk,ki){
+      var kind=faucets[fi++%3], need=thr(kind,tier,ki);
+      var e={id:SEEDS.length, nm:nm+' '+sk[1], need:need, kind:kind, col:sk[2], puff:sk[3],
+             sp:'cosmetics/comet_'+key+'_'+sk[0], desc:desc(kind,need), style:key};
+      if(anim){ e.flap='cosmetics/comet_'+key+'_'+sk[0]+'_flap'; e.settle='cosmetics/comet_'+key+'_'+sk[0]+'_settle'; }
+      SEEDS.push(e);
+    });
+    var tcols=['gold','rose','blue','mixed'];
+    for(var ti=0;ti<TAILN[key];ti++){
+      var tk=faucets[fi++%3], tn=thr(tk,tier,ti);
+      TRAILS.push({id:TRAILS.length, nm:nm+' Trail '+(ti+1), need:tn, kind:tk,
+        col:TAILCOL[tcols[ti]]||'#e8dcc8', sp:'cosmetics/tail_'+key+'_'+String.fromCharCode(97+ti), desc:desc(tk,tn), style:key});
+    }
+    BUD.forEach(function(bd,bi){
+      var bk=faucets[fi++%3], bn=thr(bk,tier,bi);
+      COMPS.push({id:COMPS.length, nm:nm+' '+bd[1], need:bn, kind:bk, glyph:bd[2],
+        sp:'cosmetics/buddy_'+key+'_'+bd[0], pk:bd[3], pas:bd[3]?('like '+({recovery:'Star-Pup',band:'Moon-Moth',haze:'Sparklet'}[bd[3]])):'just for looks',
+        desc:desc(bk,bn), style:key});
+    });
+    for(var si=0;si<4;si++) _STARS.push('star_'+key+'_'+String.fromCharCode(97+si));
+  });
+})();
 function metric(kind){ return kind==='grew'?(PROG.grewTotal||0):(kind==='streak'?(PROG.streak||0):(PROG.bestDist||0)); }
 function ownedC(arr,it){ if(it.need===0)return true; if(PROG.owned[arr+it.id])return true; return metric(it.kind)>=it.need; }
 function curSeed(){ var s=SEEDS[PROG.seed]||SEEDS[0]; return ownedC('seed',s)?s:SEEDS[0]; }
@@ -381,7 +439,7 @@ function startGame(mode){
     t:0, real:0, slow:0, phase:'play', dead:false, clipT:0, deathT:0, sproutX:0,
     parts:[], trail:[], flowers:[], bursts:[], hazeFx:0, windPh:0,
     leg:0, legGap:0, boss:false, bossPassed:0,
-    recover:((mode!=='daily'&&curComp().id===3)?1:0),   // no rescue teleports in the daily — same fair course for everyone
+    recover:((mode!=='daily'&&curComp().pk==='recovery')?1:0),   // no rescue teleports in the daily — same fair course for everyone
     course:(mode==='daily'?buildDailyCourse(rng,DAILY_GAPS):null), spawnN:0,
     grew:0, sunAmt:0, winT:0 };
   // seeded modes must seed the wind too, or two players fly different physics
@@ -464,7 +522,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
     // scoring when passing center
     if(!st.scored && st.x < SEED_X){ st.scored=true; G.gaps++;
       var dy=Math.abs(G.y-st.cy);
-      var band=INNER + (curComp().id===1?12:0);
+      var band=INNER + (curComp().pk==='band'?12:0);
       if(dy<band && !st.boss){ // Perfect
         G.combo++; G.perfects++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
         st.bloom=0.001; G.slow=0.13; G.score += 1+G.combo;
@@ -646,7 +704,7 @@ function render(){ if(!ctx||!G)return;
   drawBursts();
 
   // sky-phase weather (Frostnight snow / Meteor dust) + tint wash
-  var haze = sea.haze * (SET.haze?0.4:1) * (curComp().id===2?0.4:1);
+  var haze = sea.haze * (SET.haze?0.4:1) * (curComp().pk==='haze'?0.4:1);
   if(haze>0.02){ ctx.save(); ctx.globalAlpha=haze; ctx.fillStyle= si===3?'#cfe0ea':'#3a2a18'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   if(si===3){ var sg=_spr('fx/snow_glint');
     if(_sfReady(sg)){ for(var k=0;k<20;k++){ var sx=(k*57+G.t*30)%VW, sy=(k*89+G.t*60)%VH; var ss=6+3*Math.sin(k); ctx.save(); ctx.globalAlpha=0.5*(SET.haze?0.6:1); try{ ctx.drawImage(sg,sx-ss/2,sy-ss/2,ss,ss); }catch(e){} ctx.restore(); } }
@@ -708,11 +766,17 @@ function reed(x, y, h, col, edge){ if(h<=0)return; var w=STEM_W;
 function roundRectFill(x,y,w,h,r){ if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
 function shadeHex(hex,amt){ var n=parseInt(hex.slice(1),16); var r=(n>>16)&255,g=(n>>8)&255,b=n&255; return 'rgb('+Math.round(r*amt)+','+Math.round(g*amt)+','+Math.round(b*amt)+')'; }
 function drawSeed(){ var sd=curSeed(); var rot=G.ang;
-  // default cadet uses the 3 motion-state sprites; equipped comet skins are one pose
-  var use;
-  if(sd.id!==0 && sd.sp){ use=_spr(sd.sp); }
-  else { use = (G.phase==='dying'||G.phase==='win') ? _spr('sprites/comet_cadet_settle')
-             : (G.vy<-140 ? _spr('sprites/comet_cadet_flap') : _spr('sprites/comet_cadet')); }
+  // 3 motion states: settle (dying/win), flap (rising), normal (drift). The
+  // default cadet and the animated STYLE skins all carry the 3 poses; older
+  // single-pose skins (and crayon) just use their one sprite.
+  var use, settling=(G.phase==='dying'||G.phase==='win'), rising=(G.vy<-140);
+  if(sd.id!==0 && sd.sp){
+    var animsp = settling ? (sd.settle||sd.sp) : (rising ? (sd.flap||sd.sp) : sd.sp);
+    use=_spr(animsp);
+    if(!_sfReady(use)) use=_spr(sd.sp);   // chosen pose not ready → base pose
+  }
+  else { use = settling ? _spr('sprites/comet_cadet_settle')
+             : (rising ? _spr('sprites/comet_cadet_flap') : _spr('sprites/comet_cadet')); }
   if(_blit(use, SEED_X, G.y, 42, rot)) return;
   // procedural fallback (pappus tuft + glowing body)
   ctx.save(); ctx.translate(SEED_X,G.y); ctx.rotate(G.ang);
@@ -776,6 +840,8 @@ function wardCanvas(kind, it){ var c=document.createElement('canvas'); c.width=9
   if(kind==='seed'){ g.strokeStyle=it.puff; g.lineWidth=1.4; for(var i=0;i<9;i++){ var a=(-2.4+i/8*4.8); g.beginPath(); g.moveTo(48,32); g.lineTo(48+Math.cos(a)*15,32+Math.sin(a)*15); g.stroke(); } g.fillStyle=it.col; g.beginPath(); g.ellipse(46,32,7,4.5,0,0,6.2832); g.fill(); }
   else if(kind==='trail'){ for(var t=0;t<6;t++){ g.globalAlpha=0.3+t*0.1; g.fillStyle=it.col; g.beginPath(); g.arc(20+t*10,32,3,0,6.2832); g.fill(); } g.globalAlpha=1; }
   else { g.font='30px system-ui'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(it.glyph||'∅',48,34); }
+  // style-collection sprites lazy-load; repaint this card's art the moment it lands
+  if(it.sp){ var lim=_spr(it.sp); if(lim && !_sfReady(lim)){ lim.addEventListener('load',function(){ try{ g.clearRect(0,0,96,64); _wardSpr(g,it,96,64); }catch(e){} }, {once:true}); } }
   return c; }
 function renderWardList(hostId, kind, arr, cur, setter){ var host=$(hostId); host.innerHTML='';
   for(var i=0;i<arr.length;i++){ (function(it){ var own=ownedC(kind,it);
