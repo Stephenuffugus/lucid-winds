@@ -601,6 +601,13 @@ class Match{
     if(b.stuck){ // caught by magnet paddle
       const c=b.stuck.center(); b.x=c.x+b.stuck.normal.x*(b.r+2); b.y=c.y+b.stuck.normal.y*(b.r+2); return;
     }
+    // ENGLISH (Stephen 2026-07-16): spin picked up from a moving paddle bends
+    // the flight — Magnus force perpendicular to velocity, decaying each tick.
+    if(b.spin){
+      b.vx+=-b.vy*b.spin*dt; b.vy+=b.vx*b.spin*dt;
+      b.spin*=Math.pow(0.45,dt);           // ~half the curve gone per second
+      if(Math.abs(b.spin)<0.02)b.spin=0;
+    }
     b.x+=b.vx*dt; b.y+=b.vy*dt;
     const segs=this.allSegs();
     for(let pass=0;pass<3;pass++){
@@ -643,6 +650,14 @@ class Match{
     let sp=Math.hypot(b.vx,b.vy);
     b.vx+=tx*off*sp*0.55; b.vy+=ty*off*sp*0.55;
     const pv=pad.velVec(); b.vx+=pv.x*0.22; b.vy+=pv.y*0.22;
+    // english: the paddle's sideways motion at contact loads SPIN — flick
+    // the paddle as you strike and the ball curves (Stephen's ask). Signed
+    // by the cross of paddle motion vs outgoing ball direction.
+    {
+      const sp=Math.hypot(b.vx,b.vy)||1;
+      const cross=(pv.x*b.vy-pv.y*b.vx)/sp;      // + = paddle sweeping "left" of flight
+      b.spin=Math.max(-2.4,Math.min(2.4,(b.spin||0)-cross*0.012));
+    }
     // sudden-death: after a long rally, lift the speed cap so the ball
     // outruns any paddle → the rally always resolves (and gets thrilling)
     if(this.rally>8) this.maxSpeed=Math.min(this.cfg.maxSpeed*4.5, this.maxSpeed*1.05);
