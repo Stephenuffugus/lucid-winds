@@ -1383,7 +1383,7 @@ function buildLevels(){
 
   /* ---------- WORLD 1 · Sprout Meadow (wood; learn to aim) ---------- */
   add(1,'First Sprout', ['burr','burr'], merge({blocks:[], pests:[ pestGround(640,20) ]}));
-  add(1,'Two Little Pests', ['burr','burr','burr'], merge({blocks:[], pests:[ pestGround(600,18), pestGround(760,18) ]}));
+  add(1,'Two Little Pests', ['burr','burr','burr'], merge({blocks:[ground('wood',600,44,44),ground('wood',760,44,44)], pests:[ P(600,GT-62,18), P(760,GT-62,18) ]}));
   add(1,'The Lean-To', ['burr','burr','burr'], hut(680));
   add(1,'Rooftop Sitter', ['burr','burr'], tower(700,'wood',2));
   add(1,'Under the Table', ['burr','burr','burr'], table(700,'wood'));
@@ -1391,37 +1391,37 @@ function buildLevels(){
     {blocks:[ground('wood',590,44,44)], pests:[ pestGround(640,18) ]},
     {blocks:[ground('wood',760,44,44)], pests:[ pestGround(812,18) ]}));
   add(1,'Little Wall', ['burr','burr','burr'], merge(wall(720,'wood',3), {blocks:[],pests:[ pestGround(830,18) ]}));
-  add(1,'Meadow Finale', ['burr','acorn','burr'], merge(hut(620), tower(820,'wood',3)));
+  add(1,'Meadow Finale', ['burr','acorn','burr','burr'], merge(hut(600), pyramid(830,'wood',4)));
 
   /* ---------- WORLD 2 · Stoneyard (stone; heavier — learn the Acorn's mid-air slam
      and how to COLLAPSE a fort instead of pecking at it. Every pest is sheltered.) ---------- */
   add(2,'Stone Roost', ['acorn','burr','burr'], keep(720,'stone',2));                          // topple a 2-floor keep
   add(2,'The Vault', ['acorn','acorn','burr'], vault(720,'stone'));                             // crack the sealed vault (slam the roof / break a wall)
-  add(2,'Behind the Wall', ['burr','acorn','burr'], rampart(660,'stone',2));                    // arc over / slam behind the rampart
+  add(2,'Behind the Wall', ['burr','acorn','burr'], merge(rampart(660,'stone',2), plankOnPost(900,'stone')));   // arc over / slam behind the rampart
   add(2,'Twin Keeps', ['acorn','burr','acorn','burr','burr'], merge(keep(600,'stone',2), keep(880,'stone',2)));
   add(2,'Roof and Room', ['acorn','acorn','burr','burr'], merge(vault(640,'stone'), keep(900,'stone',2)));
   add(2,'Rampart Row', ['acorn','burr','acorn','burr','burr'], merge(rampart(600,'stone',2), keep(840,'stone',2), {blocks:[],pests:[pestGround(980,15)]}));
   add(2,'Balancing Act', ['acorn','burr','acorn','burr'], merge(table(640,'stone'), keep(880,'stone',3)));
-  add(2,'Stoneyard Finale', ['acorn','acorn','burr','acorn','burr'], merge(keep(600,'stone',3), vault(820,'stone'), rampart(980,'stone',2)));
+  add(2,'Stoneyard Finale', ['acorn','acorn','burr','acorn','burr','burr'], merge(keep(580,'stone',3), vault(800,'stone'), pillarHall(1010,'stone',2)));
 
   /* ---------- WORLD 3 · Dewglass Hollow (glass shatters; Split + Puffball) ---------- */
-  add(3,'Glass House', ['burr','split'], hutGlass(700));
-  add(3,'Spread the Seed', ['split','split'], merge({blocks:[],pests:[pestGround(600,16),pestGround(700,16),pestGround(800,16)]}));
-  add(3,'Panes and Posts', ['split','burr','puffball'], merge(hutGlass(620), tower(820,'glass',2)));
-  add(3,'Puff the Cluster', ['split','puffball','burr'], merge({blocks:[],pests:[P(700,GT-16,15),P(740,GT-16,15),P(780,GT-16,15),P(720,GT-52,15)]}));
-  add(3,'Greenhouse', ['split','puffball','burr'], merge(wallGlass(620,3), wallGlass(820,3), {blocks:[],pests:[P(720,GT-16,16),P(720,GT-140,16)]}));
-  add(3,'Hanging Garden', ['split','acorn','puffball','burr','burr'], merge(table(640,'glass'), table(860,'glass'), {blocks:[],pests:[pestGround(750,16)]}));
-  add(3,'Shatterworks', ['puffball','split','burr'], merge(hutGlass(600), wallGlass(760,4), tower(900,'glass',3)));
-  add(3,'Hollow Finale', ['split','puffball','burr','split'], merge(hutGlass(600), hutGlass(760), tower(920,'glass',3), {blocks:[],pests:[P(680,GT-140,16)]}));
+  add(3,'Glass House', ['burr','split'], merge(hutGlass(640), tower(840,'glass',2)));
+  add(3,'Spread the Seed', ['split','split','burr'], merge(hutGlass(560), hutGlass(720), hutGlass(880)));
+  add(3,'Panes and Posts', ['split','burr','puffball'], merge(hutGlass(600), tower(800,'glass',2), wallGlass(920,3)));
+  add(3,'Puff the Cluster', ['split','puffball','burr'], merge(pillarHall(720,'glass',3), {blocks:[],pests:[P(720,GT-122,14)]}));
+  add(3,'Greenhouse', ['split','puffball','burr','burr'], merge(wallGlass(600,3), vault(720,'glass'), wallGlass(840,3), {blocks:[],pests:[P(720,GT-114,14)]}));
+  add(3,'Hanging Garden', ['split','acorn','puffball','burr','burr'], merge(table(560,'glass'), bridge(780,'glass'), table(1000,'glass')));
+  add(3,'Shatterworks', ['puffball','split','burr','burr'], merge(hutGlass(580), pyramid(760,'glass',4), tower(920,'glass',3)));
+  add(3,'Hollow Finale', ['split','puffball','acorn','split','burr'], merge(fortress(700,'glass'), tower(940,'glass',3), {blocks:[],pests:[pestGround(1050,15)]}));
 
   /* ---------- WORLD 4 · Blastpod Bog (TNT chains + steel; Thornpod/Boomerang) ---------- */
   add(4,'First Spark', ['thornpod','burr'], merge({blocks:[ground('tnt',700,44,44)],pests:[pestGround(640,16),pestGround(760,16)]}));
   add(4,'Chain Reaction', ['burr','thornpod'], merge({blocks:[ground('tnt',640,44,44),ground('tnt',700,44,44),ground('tnt',760,44,44)],pests:[P(640,GT-60,15),P(700,GT-60,15),P(760,GT-60,15)]}));
-  add(4,'Around the Corner', ['boomerang','burr','burr'], merge(steelWall(720,3), {blocks:[],pests:[pestGround(800,17)]}));
-  add(4,'Bunker', ['thornpod','boomerang','burr'], merge(steelWall(680,4), {blocks:[ground('tnt',800,44,44)],pests:[pestGround(864,16),pestGround(934,16)]}));
+  add(4,'Around the Corner', ['boomerang','burr','burr','burr'], merge(steelWall(720,3), {blocks:[],pests:[pestGround(800,17)]}, table(940,'stone')));
+  add(4,'Bunker', ['thornpod','boomerang','acorn','burr'], merge(steelWall(680,4), {blocks:[ground('tnt',800,44,44)],pests:[pestGround(852,16)]}, keep(980,'stone',2)));
   add(4,'Powder Keg', ['thornpod','acorn','burr'], merge(hut(640), {blocks:[ground('tnt',756,44,44),ground('tnt',806,44,44)],pests:[P(756,GT-60,15),P(806,GT-60,15),pestGround(900,16)]}));
-  add(4,'The Redoubt', ['boomerang','thornpod','acorn','burr'], merge(steelWall(600,5), tower(820,'tnt',2), {blocks:[],pests:[pestGround(700,16),pestGround(920,16)]}));
-  add(4,'Bogworks', ['thornpod','boomerang','acorn','burr','burr'], merge(hut(600), {blocks:[ground('tnt',740,44,44),ground('tnt',784,44,44)],pests:[P(740,GT-60,15),P(784,GT-60,15)]}, steelWall(900,3), {blocks:[],pests:[pestGround(958,17)]}));
+  add(4,'The Redoubt', ['boomerang','thornpod','acorn','burr','burr'], merge(steelWall(600,5), tower(800,'tnt',2), {blocks:[],pests:[pestGround(700,16)]}, bridge(1010,'stone')));
+  add(4,'Bogworks', ['thornpod','boomerang','acorn','burr','burr'], merge(hut(580), {blocks:[ground('tnt',720,44,44),ground('tnt',764,44,44)],pests:[P(720,GT-60,15),P(764,GT-60,15)]}, pillarHall(920,'tnt',2), {blocks:[],pests:[pestGround(1040,17)]}));
 
   /* ---------- BOSS · The Weevil King ---------- */
   n++; L.push({ n:n, world:4, worldName:WORLDS[3].name, name:'The Weevil King', boss:true,
@@ -1441,6 +1441,23 @@ function wallGlass(cx,rows){ var s=wall(cx,'glass',rows); s.pests=s.pests||[]; r
 function steelWall(cx,rows){ return wall(cx,'steel',rows); }
 
 var LEVELS = buildLevels();
+if(/[?&]bbtest=1/.test(location.search)){
+  window.BB_DEV={
+    levels:function(){ return LEVELS.map(function(l){ return {n:l.n,world:l.world,name:l.name,blocks:l.blocks.length,pests:l.pests.length}; }); },
+    start:function(n){ startLevel(levelByN(n)); return true; },
+    /* settle test: no shot fired, 4 simulated seconds — a sound fort keeps every
+       pest alive and every block near its authored spot */
+    settle:function(n){
+      startLevel(levelByN(n));
+      var before=G.blocks.map(function(b){return {x:b.pos.x,y:b.pos.y};});
+      for(var t=0;t<480;t++) G.world.step(1/120);
+      var moved=0,i; for(i=0;i<G.blocks.length;i++){ var dx=G.blocks[i].pos.x-before[i].x, dy=G.blocks[i].pos.y-before[i].y; if(Math.sqrt(dx*dx+dy*dy)>26) moved++; }
+      var alive=0; for(i=0;i<G.pests.length;i++) if(!G.pests[i].dead) alive++;
+      return { n:n, name:G.level.name, blocks:G.blocks.length, moved:moved, pests:G.pestsTotal, alive:alive, ok:(moved===0&&alive===G.pestsTotal) };
+    },
+    state:function(){ return G?{level:G.level.n,pestsAlive:G.pestsAlive,ammo:G.ammo.length}:null; }
+  };
+}
 function levelByN(n){ for(var i=0;i<LEVELS.length;i++) if(LEVELS[i].n===n) return LEVELS[i]; return null; }
 function isWorldUnlocked(w){
   if(w<=1) return true;
