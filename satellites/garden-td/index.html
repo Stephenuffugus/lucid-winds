@@ -201,6 +201,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .mng-choose .cc .cd{ font-size:11px; color:var(--muted); margin:5px 0 7px; line-height:1.35; }
 .mng-choose .cc .ccost{ font-weight:900; font-size:14px; color:var(--gold); }
 .mng-choose .cc.cant{ opacity:.5; }
+.mng-choose .cc.sel{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold); }
 .mng-btns{ display:flex; gap:8px; }
 .mng-btns button{ flex:1 1 0; min-height:52px; border:none; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer; position:relative; overflow:hidden; }
 .mng-up{ background:var(--sage2); color:#0d1409; } .mng-up[disabled]{ background:#3a3f30; color:#6f775f; }
@@ -420,7 +421,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
    ===================================================================== */
 (function(){
 'use strict';
-var BUILD='v2.1 · 2026-07-17';
+var BUILD='v2.2 · 2026-07-17';
 
 /* ---------------- virtual field ---------------- */
 var VW=540, VH=960;
@@ -963,7 +964,7 @@ function buildWaves(level, endless){
     var heavy13=poolFor(12).filter(function(id){ return ['aphid','ant','moth','wasp','seedling','saptick'].indexOf(id)<0; });
     for(var i=0;i<5;i++){
       var g=[{t:pick(['aphid','ant']), n:8+i*2, s:600}];       // 8..16 chaff (income)
-      if(i>=1) g.push({t:pick(heavy13), n:1+Math.floor(i/2), s:900});  // 1..3 tanks, gentle
+      if(i>=1) g.push({t:pick(heavy13), n:Math.min(2,1+Math.floor(i/2)), s:1100});  // 1..2 tanks, spaced (7/17: 3 tanks at 2.2x HP wiped runs pre-Queen)
       if(i>=3) g.push({t:'moth', n:2, s:1000});                // a little late air
       w.push(g);
     }
@@ -983,13 +984,13 @@ function buildWaves(level, endless){
   var waves=[];
   for(var wv=1;wv<=10;wv++){
     var groups=[], surge=(wv===10);
-    var n=4+wv*2+Math.floor(level*0.3);
+    var n=4+wv*2+Math.floor(level*0.8);   // 7/17 balance: late levels were near-free (bot 20/20 at L11)
     if(surge)n=Math.round(n*1.35);
     var s1=clamp(950-wv*45-level*6, 340, 950);
     groups.push({t:pick(mainPool), n:n, s:s1});               // bulk = killable chaff
     if(wv>=3){                                                 // one threat group, small
       var threat=(newest && wv<=6) ? pick(newest) : (heavy.length?pick(heavy):pick(mainPool));
-      groups.push({t:threat, n:Math.min(1+Math.floor(wv/2),5), s:900});   // gentle debut, ramps to 5
+      groups.push({t:threat, n:Math.min(1+Math.floor((wv+Math.floor(level/3))/2),7), s:900});   // debut ramps with level too (7/17)
     }
     if(wv>=6 && hasAir){                                       // ongoing air harass so Beehive matters
       groups.push({t:(pool.indexOf('wasp')>=0 && (wv%2))?'wasp':'moth', n:2+Math.floor(wv/4), s:1000});
@@ -1672,18 +1673,84 @@ function drawBackground(t){
       ctx.fillStyle='rgba(232,220,200,'+a.toFixed(2)+')'; ctx.fillRect(x,y,2,2); } ctx.restore();
   }
 }
-function drawPath(){
+/* Rugged dirt-trail path (Stephen 7/17: paths were bland smooth ribbons).
+   The whole layer renders ONCE per map to an offscreen canvas — worn wheel
+   ruts, jittered nicked edges, pebbles, and grass tufts — then blits each
+   frame for free. Deterministic per map (seeded from the waypoints). */
+var _pathLayer=null, _pathLayerKey='';
+function _pathWalk(pts, step, fn){
+  // call fn(x, y, nx, ny, arc) every `step` px along the polyline (n = unit normal)
+  var carry=0, arc=0;
+  for(var i=0;i<pts.length-1;i++){
+    var ax=pts[i][0], ay=pts[i][1], bx=pts[i+1][0], by=pts[i+1][1];
+    var dx=bx-ax, dy=by-ay, len=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/len, uy=dy/len;
+    var d=carry;
+    while(d<len){ fn(ax+ux*d, ay+uy*d, -uy, ux, arc+d); d+=step; }
+    carry=d-len; arc+=len;
+  }
+}
+function buildPathLayer(){
+  var key=G.map.name+'|'+bgTheme();
+  if(_pathLayer && _pathLayerKey===key) return _pathLayer;
   var pts=G.map.path, pal=curPal();
-  ctx.save();
-  ctx.lineJoin='round'; ctx.lineCap='round';
-  // path bed (per-map material)
-  ctx.strokeStyle=pal.edge||COL.pathEdge; ctx.lineWidth=46;
-  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]); ctx.stroke();
-  ctx.strokeStyle=(bgTheme()==='zen')?'#cabf9a':(pal.path||COL.path); ctx.lineWidth=38;
-  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var j=1;j<pts.length;j++)ctx.lineTo(pts[j][0],pts[j][1]); ctx.stroke();
-  ctx.restore();
+  var off=document.createElement('canvas'); off.width=VW; off.height=VH; var c=off.getContext('2d');
+  var seed=7; for(var i=0;i<pts.length;i++)seed=((seed*31+pts[i][0]*7+pts[i][1])>>>0)||7;
+  var rng=_mb32(seed);
+  var pathCol=(bgTheme()==='zen')?'#cabf9a':(pal.path||COL.path);
+  var edgeCol=pal.edge||COL.pathEdge;
+  c.lineJoin='round'; c.lineCap='round';
+  function stroke(w,col,alpha){ c.save(); c.globalAlpha=(alpha==null?1:alpha); c.strokeStyle=col; c.lineWidth=w;
+    c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(var k=1;k<pts.length;k++)c.lineTo(pts[k][0],pts[k][1]); c.stroke(); c.restore(); }
+  // bed + body
+  stroke(48, edgeCol);
+  stroke(38, pathCol);
+  // sun-baked center wash
+  stroke(20, 'rgba(255,240,200,0.07)');
+  // nicked, irregular edges: blobs straddling both borders so the silhouette wobbles
+  _pathWalk(pts, 11, function(x,y,nx,ny){
+    var side=rng()<0.5?1:-1, r=2.5+rng()*4.5, o=19-2+rng()*6;   // around the 19px half-width
+    var px=x+nx*o*side, py=y+ny*o*side;
+    c.fillStyle=(rng()<0.55)?pathCol:edgeCol;
+    c.globalAlpha=0.75+rng()*0.25;
+    c.beginPath(); c.ellipse(px,py,r,r*(0.6+rng()*0.5),rng()*3.14,0,6.283); c.fill();
+  });
+  c.globalAlpha=1;
+  // worn wheel ruts: two darker tracks that wander slightly
+  [-7,7].forEach(function(o){
+    c.save(); c.strokeStyle='rgba(30,22,12,0.30)'; c.lineWidth=3.5; c.beginPath(); var first=true;
+    _pathWalk(pts, 9, function(x,y,nx,ny,arc){
+      var wob=Math.sin(arc*0.05+o)*1.6;
+      var px=x+nx*(o+wob), py=y+ny*(o+wob);
+      if(first){ c.moveTo(px,py); first=false; } else c.lineTo(px,py);
+    });
+    c.stroke(); c.restore();
+  });
+  // scattered pebbles + cracks
+  _pathWalk(pts, 26, function(x,y,nx,ny){
+    if(rng()<0.55){ var o=(rng()*2-1)*13, px=x+nx*o, py=y+ny*o, r=1.2+rng()*2.2;
+      var g=110+((rng()*50)|0);
+      c.fillStyle='rgba('+g+','+(g-14)+','+(g-30)+',0.8)';
+      c.beginPath(); c.ellipse(px,py,r,r*0.75,rng()*3.14,0,6.283); c.fill();
+      c.fillStyle='rgba(255,255,255,0.18)'; c.beginPath(); c.arc(px-r*0.3,py-r*0.3,r*0.35,0,6.283); c.fill(); }
+    if(rng()<0.18){ var co=(rng()*2-1)*10; c.save(); c.strokeStyle='rgba(30,22,12,0.35)'; c.lineWidth=1;
+      c.beginPath(); c.moveTo(x+nx*co,y+ny*co); c.lineTo(x+nx*(co+3+rng()*5)+(rng()*4-2), y+ny*(co+3+rng()*5)+(rng()*4-2)); c.stroke(); c.restore(); }
+  });
+  // encroaching grass tufts just outside the edges
+  _pathWalk(pts, 34, function(x,y,nx,ny){
+    if(rng()>=0.5)return;
+    var side=rng()<0.5?1:-1, o=24+rng()*4, px=x+nx*o*side, py=y+ny*o*side;
+    c.save(); c.strokeStyle='rgba(122,179,86,0.5)'; c.lineWidth=1.4;
+    for(var b=0;b<3;b++){ var a=-1.9+b*0.6+rng()*0.3;
+      c.beginPath(); c.moveTo(px,py); c.lineTo(px+Math.cos(a)*(4+rng()*4), py+Math.sin(a)*(5+rng()*4)); c.stroke(); }
+    c.restore();
+  });
+  _pathLayer=off; _pathLayerKey=key;
+  return off;
+}
+function drawPath(){
+  ctx.drawImage(buildPathLayer(),0,0);
   // end marker (compost bin at the gate)
-  var last=pts[pts.length-1];
+  var pts=G.map.path, last=pts[pts.length-1];
   ctx.save(); ctx.fillStyle='#5a4a2a'; ctx.strokeStyle='#3a3020'; ctx.lineWidth=2;
   ctx.fillRect(last[0]-22,VH-34,44,30); ctx.strokeRect(last[0]-22,VH-34,44,30);
   ctx.fillStyle=COL.sage; ctx.fillRect(last[0]-14,VH-42,4,10); ctx.fillRect(last[0]+8,VH-42,4,10);
@@ -1989,12 +2056,13 @@ function closeBuy(){ el('buySheet').classList.remove('show'); if(G)G.selPlot=-1;
 /* manage sheet */
 var STAGE_NAME=['Sprout','Growing','Mature','Flowering','Ancient'];
 function openManage(t){
-  G.selTower=t; G.selPlot=-1; el('buySheet').classList.remove('show'); view.buyLiftT=0;
+  G.selTower=t; G.selPlot=-1; el('buySheet').classList.remove('show'); _upArmed=false;
   var def=TOWERS[t.id];
   var name=(t.tier>=4&&t.path)?def.fork[t.path].name:def.name;
   el('mngTitle').textContent=name;
   el('mngName').textContent=name+' · '+STAGE_NAME[t.tier-1];
-  var ic=el('mngIcon').getContext('2d'); ic.setTransform(1,0,0,1,0,0); ic.clearRect(0,0,104,104); ic.setTransform(2,0,0,2,52,58); drawTower(ic,0,0,t.id,t.tier,1.7,-Math.PI/2,0);
+  // icon: fit the WHOLE plant in the 104px canvas (was scale 1.7 → art cropped)
+  var ic=el('mngIcon').getContext('2d'); ic.setTransform(1,0,0,1,0,0); ic.clearRect(0,0,104,104); ic.setTransform(2,0,0,2,52,64); drawTower(ic,0,0,t.id,t.tier,1.05,-Math.PI/2,0,t.path);
   var pips=el('mngPips').children; for(var p=0;p<5;p++)pips[p].classList.toggle('on',p<t.tier);
   var st=tst(t);
   var stats=[]; if(st.dmg>0)stats.push('DMG '+st.dmg); stats.push('RNG '+st.range);
@@ -2013,22 +2081,42 @@ function openManage(t){
   if(def.target){ tgt.style.display='block'; tgt.textContent=({first:'First',last:'Last',closest:'Closest',strong:'Strongest',ripe:'Ripest'})[t.targetMode]||'First'; }
   else tgt.style.display='none';
   el('mngSheet').classList.add('show');
+  // lift the board so the SELECTED TOWER + its range ring sit above the sheet
+  // (Stephen 7/17: "the menu is blocking your view of what you're doing") —
+  // same fix the buy sheet already had.
+  requestAnimationFrame(function(){
+    var sheetH=el('mngSheet').offsetHeight||260;
+    var towerScreenY=view.offY + t.y*view.scale, maxY=view.cssH - sheetH - 130*view.scale;
+    view.buyLiftT = (towerScreenY>maxY) ? (maxY-towerScreenY) : 0;
+  });
 }
 function buildChooser(t, mode){
   var ch=el('mngChoose'); ch.innerHTML=''; ch.classList.add('show'); var def=TOWERS[t.id];
+  // two-tap confirm on the big spends too: first tap selects, second tap buys
+  function armed(cell, cost, fire){
+    cell.onclick=function(){
+      if(!cell._armed){
+        Array.prototype.forEach.call(ch.children,function(c2){ c2._armed=false; c2.classList.remove('sel'); var cc=c2.querySelector('.ccost'); if(cc&&c2._costTxt)cc.textContent=c2._costTxt; });
+        cell._armed=true; cell.classList.add('sel');
+        var cc=cell.querySelector('.ccost'); cell._costTxt=cc.textContent; cc.textContent='tap again ✓';
+        return;
+      }
+      cell._armed=false; fire();
+    };
+  }
   if(mode==='fork'){
     ['a','b'].forEach(function(pk){ var fk=def.fork[pk], cell=document.createElement('div'); cell.className='cc'+(G.seeds<fk.up?' cant':'');
       cell.innerHTML='<div class="cn">🌸 '+fk.name+'</div><div class="cd">'+fk.passive+'</div><div class="ccost">🌱'+fk.up+'</div>';
-      cell.onclick=function(){ forkTower(t,pk); }; ch.appendChild(cell); });
+      armed(cell, fk.up, function(){ forkTower(t,pk); }); ch.appendChild(cell); });
   } else {
     var fk=def.fork[t.path];
     fk.graft.forEach(function(gr,gi){ var cell=document.createElement('div'); cell.className='cc'+(G.seeds<fk.t5up?' cant':'');
       cell.innerHTML='<div class="cn">🌿 '+gr.label+'</div><div class="cd">'+graftDesc(gr)+'</div><div class="ccost">🌱'+fk.t5up+'</div>';
-      cell.onclick=function(){ graftTower(t,gi); }; ch.appendChild(cell); });
+      armed(cell, fk.t5up, function(){ graftTower(t,gi); }); ch.appendChild(cell); });
   }
 }
 function graftDesc(gr){ var m=gr.mods||{}; if(m.range)return '+'+Math.round((m.range-1)*100)+'% range'; if(m.rate)return '+'+Math.round((1-m.rate)*100)+'% fire rate'; if(m.dmg)return '+'+Math.round((m.dmg-1)*100)+'% damage'; if(m.set){ var k=Object.keys(m.set)[0]; return 'Stronger '+({bees:'swarm',slow:'slow',splash:'blast',vuln:'melt',allyRate:'boost',linkDmg:'link',crit:'crits',spd:'aura',seeds:'yield',fearEvery:'fear'}[k]||k); } return 'Upgrade'; }
-function closeManage(){ el('mngSheet').classList.remove('show'); if(G)G.selTower=null; }
+function closeManage(){ el('mngSheet').classList.remove('show'); if(G)G.selTower=null; view.buyLiftT=0; _upArmed=false; }
 
 /* toast + tip */
 var _toastT=null;
@@ -2224,7 +2312,23 @@ function setSpeedBtn(){ if(G)el('btnSpeed').textContent=G.speed+'×'; }
 
 el('buyX').onclick=function(){ closeBuy(); };
 el('mngX').onclick=function(){ closeManage(); };
-el('mngUp').onclick=function(){ if(G&&G.selTower)upgradeTower(G.selTower); };
+/* Upgrade needs a CONFIRM (Stephen 7/17: seeds were spent on a stray tap).
+   First tap arms the button, second tap within 3s buys; anything else disarms. */
+var _upArmed=false,_upTimer=null;
+el('mngUp').onclick=function(){
+  if(!G||!G.selTower)return;
+  var t=G.selTower;
+  if(!_upArmed){
+    _upArmed=true;
+    var cost=(t.tier<3)?t.tiers[t.tier-1].up:0;
+    el('mngUp').textContent='Confirm 🌱'+cost+'?';
+    if(_upTimer)clearTimeout(_upTimer);
+    _upTimer=setTimeout(function(){ _upArmed=false; if(G&&G.selTower&&G.selTower.tier<3)el('mngUp').textContent='Upgrade 🌱'+G.selTower.tiers[G.selTower.tier-1].up; },3000);
+    return;
+  }
+  _upArmed=false; if(_upTimer)clearTimeout(_upTimer);
+  upgradeTower(t);
+};
 el('mngBloom').onclick=function(){ if(G&&G.selTower)fireBloom(G.selTower); };
 el('mngTgt').onclick=function(){ if(!G||!G.selTower)return; var modes=['first','last','closest','strong','ripe']; var t=G.selTower; var i=modes.indexOf(t.targetMode); if(i<0)i=0; t.targetMode=modes[(i+1)%modes.length]; openManage(t); };
 el('kWater').onclick=function(){ audioResume(); keeperAim('water'); };
@@ -2386,6 +2490,7 @@ document.addEventListener('visibilitychange',function(){ if(document.hidden && U
    TEST HOOK (headless verification)
    ===================================================================== */
 window.__GTD={
+  openManage:function(i){ openManage(G.towers[i]); }, closeManage:closeManage,
   get G(){ return G; }, TOWERS:TOWERS, ENEMIES:ENEMIES, MAPS:MAPS, save:function(){return save;},
   start:startLevel, startEndless:startEndless, place:placeTower, upgrade:function(i){ upgradeTower(G.towers[i]); },
   fork:function(i,path){ forkTower(G.towers[i],path); }, graft:function(i,gi){ graftTower(G.towers[i],gi); },
