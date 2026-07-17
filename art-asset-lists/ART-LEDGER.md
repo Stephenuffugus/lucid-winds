@@ -15,7 +15,7 @@
 
 | Game | Pack / style | Sheets→assets | Drop source | Deploy commit(s) | Date | Notes |
 |---|---|---|---|---|---|---|
-| Nectar Drop | (v2.0 hero pack) | 25 sheets → 371 assets | `satellites/nectar-drop/art-drop/Nectar Drop/` (raw retained, incl. style docx) | ab6aeb74; fixes 0799ca8c, f502695c | Jul 09 | 14 heroes, 120 levels. Style docx = paper-craft midnight-garden manifest, processed. |
+| Nectar Drop | (v2.0 hero pack) | 25 sheets → 371 assets | `satellites/nectar-drop/art-drop/Nectar Drop/` (raw COMMITTED f995b026 per rule 6) | ab6aeb74; fixes 0799ca8c, f502695c; fg/+powers/ WIRED in v3.0 01f51101 (Jul 17) | Jul 09 | 14 heroes, 120 levels. Last dormant groups (12 parallax frames, 14 power VFX) now live in-game. Style docx = paper-craft midnight-garden manifest, processed. |
 | Burr Blast (materials) | 9 painted material tiles | 1 sheet → 9 tiles | `assets/structures1.png` (root assets, raw retained) | ca615fff | ~Jul 07 | wood/stone/brick/thatch/banner/steel/glass/ice/crystal. Spec: `satellites/burr-blast/design/MATERIAL_ART_LIST.md`. |
 | Garden Guard TD | full skin | 1 master sheet | `assets/file_000000006ca471f69e0a0e0cbcaf06b1.png` (raw retained) | (pre-Jul-08, "skinned up front") | ~Jul 05 | Towers/pests/bosses/FX/tiles/maps/keeper/UI on magenta. |
 | Sproing | bg biomes, platforms, critters, powerups | — | Drive drop | 30353d49 | Jul 11 | |

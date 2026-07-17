@@ -534,10 +534,24 @@ function baseSlot(shape,row,col,rows,cols){
   if(shape==='columns'){                                 // two blocks with a center gap
     return {x:W/2+(col-midc)*CW+(col<cols/2?-16:16), y:y0};
   }
+  if(shape==='pincer'){                                  // two claws sweeping inward (late stages)
+    const s=col<cols/2?-1:1;
+    return {x:W/2+(col-midc)*CW+s*(26-row*9), y:y0-Math.abs(tc)*14+row*2};
+  }
+  if(shape==='helix'){                                   // rows slide opposite ways (late stages)
+    const off=(row%2?1:-1)*18;
+    return {x:W/2+(col-midc)*CW*0.92+off, y:y0+Math.sin((col+row)*1.1)*10};
+  }
+  if(shape==='hourglass'){                               // pinched waist (late stages)
+    const midr=(rows-1)/2, w=0.45+Math.abs(row-midr)/(midr+1)*0.6;
+    return {x:W/2+(col-midc)*CW*w, y:y0};
+  }
   return {x:W/2+(col-midc)*CW, y:y0};                    // grid (default)
 }
 function slotPos(e,t){
-  const sway=Math.sin(t*.8)*14, breathe=1+Math.sin(t*.5)*.05;
+  // late formations drift wider — stage 9+ adds up to 12px of extra sway
+  const lateSway=(G&&G.stage>8)?Math.min(12,(G.stage-8)*2):0;
+  const sway=Math.sin(t*.8)*(14+lateSway), breathe=1+Math.sin(t*.5)*.05;
   return {x:W/2+(e.bx-W/2)*breathe+sway, y:e.by};
 }
 function bez(p,t){
@@ -567,21 +581,27 @@ function entryPath(side,arch){
 // Formation shapes + mid-tier enemies rotate by stage so no two consecutive
 // stages look or play the same. New enemy behaviours unlock as you climb.
 const SHAPES=['grid','wedge','arc','diamond','columns'];
+const SHAPES_LATE=['grid','wedge','pincer','arc','helix','diamond','hourglass','columns'];  // st7+: 8-shape rotation
 const MIDPOOL=['mosq','wasp','butterfly','cricket'];
 function stagePlan(st,mode){
   const idx=st-1, cols=8;
-  const shape=SHAPES[idx%SHAPES.length];
+  const pool=st>=7?SHAPES_LATE:SHAPES;
+  const shape=pool[idx%pool.length];
   const rows=[];
   rows.push({t:'boss',    count:Math.min(6,2+Math.floor(st/3)), row:0}); // queens grow slowly
   rows.push({t: st>=3?'ladybug':'beetle', count:6, row:1});             // armored shells from st3
   rows.push({t: MIDPOOL[idx%MIDPOOL.length], count:8, row:2});          // rotating mid-tier
   // 4th row rotates in the special behaviours as gimmick stages come round
   let r4='ant', gim=null;
-  if(st>=4 && st%3===0){ r4='cricket'; gim='kamikaze'; }                // fast straight divers
-  else if(st>=6 && st%4===2){ r4='spider'; gim='ambush'; }             // thread-drop ambush
+  if(st>=9 && st%5===4){ gim='armada'; }                                // queens' armada — armored escort stage
+  else if(st>=11 && st%4===1){ r4='puffer'; gim='brood'; }              // splitters break out of Deluxe
+  else if(st>=4 && st%3===0){ r4='cricket'; gim='kamikaze'; }           // fast straight divers
+  else if(st>=6 && st%4===2){ r4='spider'; gim='ambush'; }              // thread-drop ambush
   else if(st>=5 && idx%2===1){ r4='mosq'; }
   rows.push({t:r4, count:8, row:3});
   rows.push({t:'fly', count:8, row:4});                                 // bulk
+  if(st>=10) rows[4].t=(st>=14?'wasp':'mosq');                          // late bulk grows teeth
+  if(gim==='armada'){ rows[0].count=Math.min(8,rows[0].count+2); rows[1].t='ladybug'; rows[4].t='beetle'; }
   if(mode==='deluxe' && idx%2===0) rows[2].t='puffer';                  // Deluxe signature: splitters
   const multi=(mode==='deluxe')||(st>=8 && idx%3===0);                  // enemies also stream from the top
   return {shape,rows,cols,multi,gim};
@@ -610,6 +630,8 @@ function buildStage(){
   }
   const label=plan.gim==='kamikaze'?'STAGE '+st+' — SWARM RUSH'
             :plan.gim==='ambush'?'STAGE '+st+' — AMBUSH'
+            :plan.gim==='armada'?'STAGE '+st+' — QUEENS ARMADA'
+            :plan.gim==='brood'?'STAGE '+st+' — BROOD SWARM'
             :'STAGE '+st;
   showMsg(label,1.5);
 }
@@ -1124,13 +1146,17 @@ function killEnemy(e,ram){
     G.drops.push({x:e.x,y:e.y,k:'blossom',rot:0});
   // Splitter: burst into sporelings that immediately dive. Staged (not pushed to
   // G.enemies here) so they aren't hit by the same frame's collision pass.
-  if(e.split&&!e.chal&&G.mode==='deluxe'){
-    for(let s=0;s<e.split;s++){
-      const T=TYPES.sporeling, tx=Math.max(20,Math.min(W-20,e.x+(s-(e.split-1)/2)*44));
+  // NOTE: split lives on TYPES, not the spawned enemy — reading e.split here
+  // meant splitters NEVER split (dormant since Deluxe shipped). Mode gate also
+  // dropped: brood stages bring puffers to classic from stage 13.
+  const eSplit=TYPES[e.type]&&TYPES[e.type].split;
+  if(eSplit&&!e.chal){
+    for(let s=0;s<eSplit;s++){
+      const T=TYPES.sporeling, tx=Math.max(20,Math.min(W-20,e.x+(s-(eSplit-1)/2)*44));
       const sp={type:'sporeling',hp:T.hp,r:T.r,pts:T.pts,boss:false,armor:false,
         state:'dive',pt:0,ptV:.5,beam:null,returnUp:false,beamed:false,willBeam:false,
         row:0,col:0,chal:false,x:e.x,y:e.y,px:e.x,py:e.y,ang:Math.PI,fireCd:9,carrying:false,bob:0};
-      sp.path=[[e.x,e.y],[e.x+(s-(e.split-1)/2)*30,e.y+130],[tx,H+40]];
+      sp.path=[[e.x,e.y],[e.x+(s-(eSplit-1)/2)*30,e.y+130],[tx,H+40]];
       G.splitlings.push(sp);
     }
   }
