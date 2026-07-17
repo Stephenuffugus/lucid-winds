@@ -32,7 +32,7 @@ Use your email on every one: stephenfurpahs@gmail.com
 - **Category:** LOGIC
 - **Description:** A six stance dueling game about reading your opponent and breaking the bind. The Daily Duel puts everyone against the same foe once a day, and a duel takes under a minute. Free, no account, no ads.
 
-## 4. Tally  ⚠️ verify daily mode first (see status below)
+## 4. Tally  ✅ ready (daily verified in code Jul 17)
 - **URL:** https://stephenuffugus.github.io/Tally/
 - **Title:** Tally
 - **Category:** MATH
@@ -57,9 +57,8 @@ fits land well.
 |---|---|---|---|---|
 | Hues | ✅ Daily Hue | ✅ menu button | ✅ menu button (autoplay on) | first-run rules live |
 | Cosmic Cadets | ✅ Daily Gust (finite course) | ✅ in Settings | ✅ (autoplay on) | |
-| Sixfold | ✅ Daily Duel | 🔧 today (cross-repo) | ✅ own music | |
-| Tally | ❓ verify in repo | 🔧 today (cross-repo) | 🔧 today | JS-rendered, needs repo look |
+| Sixfold | ✅ Daily Duel | ✅ Settings button (pushed) | ✅ own music | |
+| Tally | ✅ daily challenge + streaks | ✅ Settings button (pushed) | ✅ Settings button (streams studio jukebox) | Pages Action rebuilds on push |
 | Nectar Drop | ✅ Daily Bloom (deterministic, verified) | ✅ in Settings | ✅ (autoplay on) | title-screen daily button |
 
-Submit order suggestion: Hues, Sixfold, Cosmic Cadets first (clean fits), then
-Tally and Nectar Drop once their checkboxes above are green.
+ALL FIVE ARE GREEN — submit whenever you like, then send the Gmail draft to Conor.
