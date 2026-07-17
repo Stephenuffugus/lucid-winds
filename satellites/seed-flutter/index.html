@@ -64,7 +64,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .toggle.on b{left:31px; background:#eafbd6}
 .wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
 .wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:10px; cursor:pointer; text-align:center}
-.wardcard.locked{opacity:.5}
+.wardcard.locked{opacity:.78}
+.wardcard.cant{opacity:.44}
 .wardcard.on{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
 .wardcard canvas{width:96px; height:64px; display:block; margin:0 auto 6px}
 .wardcard .wn{font-size:13px; font-weight:700; color:var(--cream)}
@@ -137,7 +138,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- WARDROBE -->
   <div class="screen" id="s-ward"><div class="pad">
     <h2 class="sc-h">Wardrobe</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by playing. Tap to equip.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">
+      <div style="color:var(--muted);font-size:13px">Buy with <b style="color:var(--gold)">Stardust</b> earned from runs, or unlock a few by playing.</div>
+      <div id="ward-coins" style="color:var(--gold);font-weight:800;font-size:15px;white-space:nowrap">🪙 0</div>
+    </div>
     <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Comets</div>
     <div class="wardwrap" id="ward-seeds"></div>
     <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Trails</div>
@@ -185,7 +189,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.3';
+var BUILD='v1.4';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -276,7 +280,10 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 
 /* ---------- save / economy ---------- */
 var PROG={ bestDist:0, bestGauntlet:0, streak:0, lastDaily:'', dailyDone:'', blooms:[], grewTotal:0,
-  seed:0, trail:0, comp:0, owned:{} };
+  seed:0, trail:0, comp:0, owned:{}, coins:0 };
+// Stardust coins — the local cosmetic currency (uncapped; earned every run).
+function addCoins(n){ if(n<=0)return; PROG.coins=(PROG.coins||0)+Math.round(n); }
+function runCoins(){ return Math.max(1, Math.round(G.gaps*1.5) + (G.perfects||0)*2); }
 (function(){ try{ var s=JSON.parse(LS.get('seedflutter_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.blooms)PROG.blooms=[]; if(!PROG.owned)PROG.owned={}; })();
 function save(){ try{ LS.set('seedflutter_save', JSON.stringify(PROG)); }catch(e){} }
 
@@ -304,13 +311,12 @@ var COMPS=[
    flap/settle poses; crayon is single-pose. Thresholds spread across the
    dist/grew/streak faucets so every faucet keeps paying. ── */
 (function(){
-  var faucets=['dist','grew','streak'];
-  function thr(kind, tier, idx){
-    if(kind==='grew')   return 24 + tier*18 + idx*8;
-    if(kind==='streak') return 4  + tier*3  + idx*1;
-    return 120 + tier*140 + idx*40;   // dist
-  }
-  function desc(kind, need){ return kind==='grew'?('Grow '+need+' keepsakes'):(kind==='streak'?(need+'-day streak'):('Reach '+need)); }
+  function mdesc(kind, need){ return kind==='grew'?('Grow '+need+' keepsakes'):(kind==='streak'?(need+'-day streak'):('Reach '+need+' gaps')); }
+  // coin prices by [tier0, tier1, tier2]
+  var COST={comet:[70,130,220], tail:[40,70,110], buddy:[55,95,150]};
+  // the ONLY challenge rewards — a few achievable free-unlock paths (also buyable)
+  var MILE={ 'retro_crown':['dist',45], 'glass_crown':['grew',80],
+             'neon_rainbow':['grew',150], 'metallic_crown':['streak',12] };
   // style: [key, label, tier, animated]
   var STYLES=[
     ['crayon','Crayon',0,false],['retro','Arcade',0,true],
@@ -329,33 +335,49 @@ var COMPS=[
   var TAILN={crayon:4,retro:4,clay:4,glass:4,neon:3,metallic:4};
   var BUD=[['pup','Pup','🐾','recovery'],['moth','Moth','🦋','band'],['orb','Sparkle','✨','haze'],['cat','Moon-Cat','🌙','']];
   var TAILCOL={gold:'#e0a83a',rose:'#e58fa0',blue:'#8fc3ea',mixed:'#b57de0'};
-  var fi=0;
   STYLES.forEach(function(st){
     var key=st[0], nm=st[1], tier=st[2], anim=st[3];
     SK[key].forEach(function(sk,ki){
-      var kind=faucets[fi++%3], need=thr(kind,tier,ki);
-      var e={id:SEEDS.length, nm:nm+' '+sk[1], need:need, kind:kind, col:sk[2], puff:sk[3],
-             sp:'cosmetics/comet_'+key+'_'+sk[0], desc:desc(kind,need), style:key};
+      var e={id:SEEDS.length, nm:nm+' '+sk[1], cost:COST.comet[tier], col:sk[2], puff:sk[3],
+             sp:'cosmetics/comet_'+key+'_'+sk[0], style:key};
+      var m=MILE[key+'_'+sk[0]]; if(m){ e.kind=m[0]; e.need=m[1]; e.milestone=true; e.desc=mdesc(m[0],m[1]); }
       if(anim){ e.flap='cosmetics/comet_'+key+'_'+sk[0]+'_flap'; e.settle='cosmetics/comet_'+key+'_'+sk[0]+'_settle'; }
       SEEDS.push(e);
     });
     var tcols=['gold','rose','blue','mixed'];
     for(var ti=0;ti<TAILN[key];ti++){
-      var tk=faucets[fi++%3], tn=thr(tk,tier,ti);
-      TRAILS.push({id:TRAILS.length, nm:nm+' Trail '+(ti+1), need:tn, kind:tk,
-        col:TAILCOL[tcols[ti]]||'#e8dcc8', sp:'cosmetics/tail_'+key+'_'+String.fromCharCode(97+ti), desc:desc(tk,tn), style:key});
+      TRAILS.push({id:TRAILS.length, nm:nm+' Trail '+(ti+1), cost:COST.tail[tier],
+        col:TAILCOL[tcols[ti]]||'#e8dcc8', sp:'cosmetics/tail_'+key+'_'+String.fromCharCode(97+ti), style:key});
     }
-    BUD.forEach(function(bd,bi){
-      var bk=faucets[fi++%3], bn=thr(bk,tier,bi);
-      COMPS.push({id:COMPS.length, nm:nm+' '+bd[1], need:bn, kind:bk, glyph:bd[2],
+    BUD.forEach(function(bd){
+      COMPS.push({id:COMPS.length, nm:nm+' '+bd[1], cost:COST.buddy[tier], glyph:bd[2],
         sp:'cosmetics/buddy_'+key+'_'+bd[0], pk:bd[3], pas:bd[3]?('like '+({recovery:'Star-Pup',band:'Moon-Moth',haze:'Sparklet'}[bd[3]])):'just for looks',
-        desc:desc(bk,bn), style:key});
+        style:key});
     });
     for(var si=0;si<4;si++) _STARS.push('star_'+key+'_'+String.fromCharCode(97+si));
   });
+  // normalize the ORIGINAL hand-authored cosmetics: starters free; the rest
+  // stay as achievable milestones but also get a coin price fallback.
+  [[SEEDS,80],[TRAILS,45],[COMPS,60]].forEach(function(pair){
+    pair[0].forEach(function(it){
+      if(it.style) return;                            // new style entries already set
+      if(it.id===0 || it.need===0){ it.free=true; return; }
+      it.milestone=true; if(!it.desc)it.desc=mdesc(it.kind,it.need); if(!it.cost)it.cost=pair[1];
+    });
+  });
 })();
 function metric(kind){ return kind==='grew'?(PROG.grewTotal||0):(kind==='streak'?(PROG.streak||0):(PROG.bestDist||0)); }
-function ownedC(arr,it){ if(it.need===0)return true; if(PROG.owned[arr+it.id])return true; return metric(it.kind)>=it.need; }
+function ownedC(arr,it){
+  if(it.free || it.need===0) return true;                 // starter
+  if(PROG.owned[arr+it.id]) return true;                  // bought or already granted
+  if(it.milestone && it.need && metric(it.kind)>=it.need){ PROG.owned[arr+it.id]=1; return true; }  // challenge met (persist)
+  return false;                                            // coin-shop item, not yet bought
+}
+function buyItem(arr,it){
+  if(ownedC(arr,it)) return true;
+  if(!it.cost || (PROG.coins||0) < it.cost) return false;
+  PROG.coins-=it.cost; PROG.owned[arr+it.id]=1; save(); return true;
+}
 function curSeed(){ var s=SEEDS[PROG.seed]||SEEDS[0]; return ownedC('seed',s)?s:SEEDS[0]; }
 function curTrail(){ var t=TRAILS[PROG.trail]||TRAILS[0]; return ownedC('trail',t)?t:TRAILS[0]; }
 function curComp(){ var c=COMPS[PROG.comp]||COMPS[0]; return ownedC('comp',c)?c:COMPS[0]; }
@@ -583,6 +605,7 @@ function endRun(){ G.phase='dead';
   if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
   PROG.grewTotal=(PROG.grewTotal||0)+grow;
   if(G.mode!=='zen' && G.gaps>(PROG.bestDist||0))PROG.bestDist=G.gaps;
+  G.coinAmt=(G.mode==='zen')?0:runCoins(); addCoins(G.coinAmt);   // zen is no-fail — no coin farming
   // sunbeams
   var amt=0;
   if(G.mode==='drift')amt=Math.min(12, Math.floor(G.gaps/6)+G.bestCombo);
@@ -605,12 +628,14 @@ function winDaily(){ sfx('win');
   if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
   PROG.grewTotal=(PROG.grewTotal||0)+grow;
   if(G.gaps>(PROG.bestDist||0))PROG.bestDist=G.gaps;
+  G.coinAmt=runCoins()+10; addCoins(G.coinAmt);
   var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seedflutter:daily')||0; }catch(e){} }
   G.sunAmt=granted; save();
   G.phase='win'; G.winT=0; G.vy=-40; spawnBurst('fx/star_shower', VW/2, VH*0.42, 1.3, 380);
 }
 function winGauntlet(){ sfx('win');
   if(G.leg>(PROG.bestGauntlet||0))PROG.bestGauntlet=G.leg;
+  G.coinAmt=runCoins()+15; addCoins(G.coinAmt);
   // guaranteed rarer keepsake bundle
   var grow=3+G.bestCombo; G.grew=grow;
   for(var i=0;i<grow;i++)PROG.blooms.push(((99991+i*271+G.bestCombo*13)*2654435761)>>>0);
@@ -636,9 +661,11 @@ function showResults(win, granted){
   var best = G.mode==='gauntlet'?('best legs '+(PROG.bestGauntlet||0)):(G.mode==='daily'?('streak '+(PROG.streak||0)):('best '+(PROG.bestDist||0)));
   $('go-best').textContent=best;
   $('go-bloom').textContent='Best Bloomstreak '+G.bestCombo+' · grew '+G.grew+' star'+(G.grew===1?'':'s');
-  $('go-sun').textContent = granted>0?('☀ +'+granted+' sunbeams · streak '+(PROG.streak||1))
+  var sunline = granted>0?('☀ +'+granted+' sunbeams · streak '+(PROG.streak||1))
     :(G.mode==='zen'?'a cozy drift'
     :(G.mode==='daily'?(win?'daily already cleared today':'clear the course to earn sunbeams'):'☀ no sunbeams this run'));
+  if(G.coinAmt>0) sunline += '  ·  🪙 +'+G.coinAmt+' Stardust';
+  $('go-sun').textContent = sunline;
   running=false; show('s-go');
 }
 
@@ -845,13 +872,22 @@ function wardCanvas(kind, it){ var c=document.createElement('canvas'); c.width=9
   return c; }
 function renderWardList(hostId, kind, arr, cur, setter){ var host=$(hostId); host.innerHTML='';
   for(var i=0;i<arr.length;i++){ (function(it){ var own=ownedC(kind,it);
-    var card=document.createElement('div'); card.className='wardcard'+(own?'':' locked')+(cur===it.id?' on':'');
+    var afford=!own && it.cost && (PROG.coins||0)>=it.cost;
+    var card=document.createElement('div'); card.className='wardcard'+(own?'':' locked')+(cur===it.id?' on':'')+((!own&&it.cost&&!afford)?' cant':'');
     card.appendChild(wardCanvas(kind,it));
     var nn=document.createElement('div'); nn.className='wn'; nn.textContent=it.nm; card.appendChild(nn);
-    var tt=document.createElement('div'); tt.className='wt'; tt.textContent=own?(cur===it.id?'Equipped':(it.pas||'Tap to equip')):(it.desc||'locked'); card.appendChild(tt);
-    host.appendChild(card); if(own)card.addEventListener('click',function(){ setter(it.id); save(); sfx('ui'); renderWard(); });
+    var tt=document.createElement('div'); tt.className='wt';
+    if(own){ tt.textContent = cur===it.id?'Equipped':(it.pas||'Tap to equip'); }
+    else if(it.cost){ tt.innerHTML = '🪙 '+it.cost + (it.milestone?(' <span style="opacity:.7">or '+it.desc+'</span>'):''); }
+    else { tt.textContent = it.desc||'locked'; }
+    card.appendChild(tt); host.appendChild(card);
+    card.addEventListener('click',function(){
+      if(ownedC(kind,it)){ setter(it.id); save(); sfx('ui'); renderWard(); return; }
+      if(it.cost){ if(buyItem(kind,it)){ setter(it.id); save(); sfx('win'); renderWard(); } else { sfx('pass'); } }
+    });
   })(arr[i]); } }
-function renderWard(){ renderWardList('ward-seeds','seed',SEEDS,PROG.seed,function(v){PROG.seed=v;});
+function renderWard(){ var cc=$('ward-coins'); if(cc)cc.textContent='🪙 '+(PROG.coins||0);
+  renderWardList('ward-seeds','seed',SEEDS,PROG.seed,function(v){PROG.seed=v;});
   renderWardList('ward-trails','trail',TRAILS,PROG.trail,function(v){PROG.trail=v;});
   renderWardList('ward-comps','comp',COMPS,PROG.comp,function(v){PROG.comp=v;}); }
 
