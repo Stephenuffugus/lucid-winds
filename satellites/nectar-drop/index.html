@@ -466,6 +466,7 @@ var PLAY_TOP=150, PLAY_BOT=858;
 var LAUNCH_X=VW/2, LAUNCH_Y=88, MUZZLE=52;   // MUZZLE = distance from pivot to the barrel mouth
 function muzzlePos(a){ return { x:LAUNCH_X+MUZZLE*Math.sin(a), y:LAUNCH_Y+MUZZLE*Math.cos(a) }; }
 var PEG_R=12, BALL_R=8, GRAV=0.30, REST=0.72, SPEED=8.4;
+var ND_SOLID=145, ND_FADE=26;   // lit pegs stay solid ~2.4s, then fade out over ~0.4s
 var BUCKET_W=96, BUCKET_H=24, BUCKET_Y=VH-46;
 var BIN_Y=VH-14;
 
@@ -556,7 +557,7 @@ function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches
 function onDown(e){ if(!G||G.phase!=='aim')return; e.preventDefault(); aim.dragging=true; setAim(evPos(e)); }
 function onMove(e){ if(!G||!aim.dragging)return; e.preventDefault(); setAim(evPos(e)); }
 function onUp(e){ if(!G||!aim.dragging)return; e.preventDefault(); aim.dragging=false; launch(); }
-function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.45)a=1.45; if(a<-1.45)a=-1.45; aim.angle=a; }
+function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.56)a=1.56; if(a<-1.56)a=-1.56; aim.angle=a; }
 function launch(){ if(!G||G.phase!=='aim'||G.ballsLeft<=0)return;
   G.phase='fire'; G.ballsLeft--; G.combo=0;
   G.magnet=false; G.lantern=1; G.silk=false; G.dome=null;   // per-shot power state resets
@@ -585,14 +586,16 @@ function physics(){
       // shield dome bumper
       if(G.dome && G.dome.life>0){ var ddx=b.x-G.dome.x, ddy=b.y-G.dome.y, dr=b.r+G.dome.r, dd2=ddx*ddx+ddy*ddy;
         if(dd2<dr*dr && ddy<0){ var dd=Math.sqrt(dd2)||0.01, nnx=ddx/dd, nny=ddy/dd, ov=dr-dd; b.x+=nnx*ov; b.y+=nny*ov; var vn2=b.vx*nnx+b.vy*nny; b.vx-=(1+rst)*vn2*nnx; b.vy-=(1+rst)*vn2*nny; sfx('wall'); } }
-      // pegs
-      for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue;
+      // pegs — HIT pegs stay SOLID and keep bouncing the ball for a while
+      // before dissolving (Stephen 2026-07-16: they were instant ghosts).
+      for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p];
+        if(pg.hit && (G.t-(pg.hitT||0))>ND_SOLID) continue;   // dissolved — passthrough
         var dx=b.x-pg.x, dy=b.y-pg.y, rr=b.r+pg.r, d2=dx*dx+dy*dy;
         if(d2 < rr*rr){ var d=Math.sqrt(d2)||0.01, nx=dx/d, ny=dy/d;
           if(!b.pierce){ var overlap=rr-d; b.x+=nx*overlap; b.y+=ny*overlap;
             var vn=b.vx*nx+b.vy*ny; b.vx-=(1+rst)*vn*nx; b.vy-=(1+rst)*vn*ny;
             var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>14){ b.vx*=14/sp; b.vy*=14/sp; } }
-          hitPeg(p, b);
+          if(!pg.hit) hitPeg(p, b);
         }
       }
       if(b.y>VH+20){ if(!b.free && G.silk){ G.silk=false; b.y=VH-170; b.vy=-7; b.vx*=0.4; b.age=0; floater(b.x,b.y-14,'SILK SAVE'); sfx('free'); } else b.alive=false; }
@@ -621,8 +624,8 @@ function physics(){
 }
 function popOne(p){ // used by chain: pop a single peg with scoring, no combo sound spam
   var pg=G.pegs[p]; if(pg.hit)return;
-  if(pg.type==='armored'){ pg.hp=(pg.hp||2)-1; spark(pg.x,pg.y,'gold'); if(pg.hp>0){ G.score+=25; return; } pg.hit=true; G.score+=300; floater(pg.x,pg.y-12,'CRACKED!'); return; }
-  pg.hit=true; pg.pop=1; spark(pg.x,pg.y,pg.type);
+  if(pg.type==='armored'){ pg.hp=(pg.hp||2)-1; spark(pg.x,pg.y,'gold'); if(pg.hp>0){ G.score+=25; return; } pg.hit=true; pg.hitT=G.t; G.score+=300; floater(pg.x,pg.y-12,'CRACKED!'); return; }
+  pg.hit=true; pg.hitT=G.t; pg.pop=1; spark(pg.x,pg.y,pg.type);
   if(pg.type==='red'){ G.score+=100; G.redsLeft--; if(G.redsLeft===0) triggerFinalePayoff(pg); }
   else if(pg.type==='purple'){ G.score+=500; }
   else if(pg.type==='green'){ G.score+=50; }
@@ -634,11 +637,11 @@ function hitPeg(p, b){
     pg.hp=(pg.hp||2)-1; pg.pop=0.6; spark(pg.x,pg.y,'gold'); sfx('wall');
     if(b) b.pegs=(b.pegs||0)+1;
     if(pg.hp>0){ G.score+=25; return; }
-    pg.hit=true; G.combo++; if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+    pg.hit=true; pg.hitT=G.t; G.combo++; if(G.combo>G.maxCombo)G.maxCombo=G.combo;
     G.score+=Math.round(300*(1+G.combo*0.1)*(G.lantern||1));
     floater(pg.x,pg.y-14,'CRACKED!'); sfx('burst'); spark(pg.x,pg.y,'red'); comboPop(pg.x,pg.y); return;
   }
-  pg.hit=true; pg.pop=1; G.combo++; if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+  pg.hit=true; pg.hitT=G.t; pg.pop=1; G.combo++; if(G.combo>G.maxCombo)G.maxCombo=G.combo;
   if(b) b.pegs=(b.pegs||0)+1;
   spark(pg.x,pg.y, pg.type);
   var mult=(1+G.combo*0.1)*(G.lantern||1), pts=0;
@@ -664,8 +667,8 @@ function styleShots(pg,b){
 }
 function addStyle(x,y,label,amt){ G.styleBonus=(G.styleBonus||0)+amt; floater(x,y-30,'✦ '+label+' +'+amt); sfx('free'); }
 function bloomBurst(x,y,R,shatter){ R=R||118; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){
-    if(pg.type==='armored'){ pg.hp=shatter?0:((pg.hp||2)-1); spark(pg.x,pg.y,'gold'); if(pg.hp<=0){ pg.hit=true; pg.pop=1; G.score+=250; } continue; }
-    pg.hit=true; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg);} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
+    if(pg.type==='armored'){ pg.hp=shatter?0:((pg.hp||2)-1); spark(pg.x,pg.y,'gold'); if(pg.hp<=0){ pg.hit=true; pg.hitT=G.t; pg.pop=1; G.score+=250; } continue; }
+    pg.hit=true; pg.hitT=G.t; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg);} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
   floater(x,y,'BLOOM BURST');
 }
 function resolveShot(){
@@ -949,7 +952,10 @@ function pegColour(t){ return t==='red'?'#e5604d':t==='green'?'#7ab356':t==='pur
 function drawPeg(pg){
   ctx.save(); ctx.translate(pg.x,pg.y);
   if(pg.hit){
-    var s=1+0.24*(pg.pop||0);
+    var _age=G.t-(pg.hitT||0);
+    if(_age>ND_SOLID+ND_FADE){ ctx.restore(); return; }             // fully dissolved
+    if(_age>ND_SOLID) ctx.globalAlpha=Math.max(0,1-(_age-ND_SOLID)/ND_FADE);   // dissolving
+    var s=1+0.24*(pg.pop||0)+0.06*Math.sin(G.t*0.25);               // lit pulse while solid
     ctx.shadowColor='rgba(255,246,210,.95)'; ctx.shadowBlur=22; ctx.fillStyle='#fff4c8';
     for(var h=0;h<6;h++){ ctx.beginPath(); var ah=Math.PI*2*h/6; ctx.ellipse(Math.cos(ah)*pg.r*0.5*s,Math.sin(ah)*pg.r*0.5*s,pg.r*0.6*s,pg.r*0.38*s,ah,0,7); ctx.fill(); }
     ctx.shadowBlur=0; ctx.fillStyle='#fffdf4'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.5*s,0,7); ctx.fill();
@@ -1154,7 +1160,7 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 /* headless test hook */
 if(/[?&]ndtest=1/.test(location.search)){
   window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS, worlds:WORLDS, gardeners:GARDENERS, share:shareNectar, prog:function(){return PROG;},
-    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.45,Math.min(1.45,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ physics(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
+    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.56,Math.min(1.56,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ physics(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
     setAimRaw:function(x,y){ setAim({x:x,y:y}); return aim.angle; },
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<400){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
     pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0,armored:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
