@@ -420,7 +420,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
    ===================================================================== */
 (function(){
 'use strict';
-var BUILD='v2.0 · 2026-07-05';
+var BUILD='v2.1 · 2026-07-17';
 
 /* ---------------- virtual field ---------------- */
 var VW=540, VH=960;
@@ -683,19 +683,58 @@ function genMapPath(rng){
   }
   pts.push([x,1000]); return pts;
 }
-function _plotCount(path){   // must match buildMapGeom's plot placement so we only keep buildable maps
-  function d2p(px,py){ var best=1e9; for(var i=0;i<path.length-1;i++){ var a=path[i],b=path[i+1],dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy||1,t=clamp(((px-a[0])*dx+(py-a[1])*dy)/L2,0,1),cx=a[0]+dx*t,cy=a[1]+dy*t,d=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy)); if(d<best)best=d; } return best; }
-  var cand=[]; for(var gy=80;gy<=900;gy+=52){ for(var gx=44;gx<=496;gx+=52){ var d=d2p(gx,gy); if(d>=38&&d<=86)cand.push({x:gx,y:gy,d:d}); } }
-  cand.sort(function(a,b){return a.d-b.d;});
-  var plots=[]; for(var c=0;c<cand.length;c++){ var ok=true; for(var p=0;p<plots.length;p++){ var ddx=cand[c].x-plots[p].x,ddy=cand[c].y-plots[p].y; if(ddx*ddx+ddy*ddy<52*52){ok=false;break;} } if(ok)plots.push(cand[c]); }
-  return plots.length;
+/* ONE plot algorithm shared by the map-pool filter AND buildMapGeom (they used
+   to be near-duplicates; keeping them one function means they can't drift).
+   Position tuning (Stephen 7/17): plots used to allow directly-adjacent lattice
+   cells everywhere along the path — 16-25 spots in contiguous strips, so real
+   estate was worthless and you could stack a full defense on the entry bend.
+   Now: min 76px separation (no adjacent pairs), tighter 40-80 band, NO plots
+   in the first 12% of the path (the wild verge — pests arrive unchallenged),
+   and a hard cap of 13 spots. Closest-to-path candidates win the cap, so
+   switchback spots stay the premium real estate. */
+function pathPlots(path){
+  var seg=[], total=0;
+  for(var i=0;i<path.length-1;i++){
+    var a=path[i],b=path[i+1],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.sqrt(dx*dx+dy*dy);
+    seg.push({a:a,b:b,dx:dx,dy:dy,len:len,start:total}); total+=len;
+  }
+  function proj(px,py){
+    var best=1e9,arc=0;
+    for(var s=0;s<seg.length;s++){
+      var g=seg[s],L2=g.dx*g.dx+g.dy*g.dy||1;
+      var t=clamp(((px-g.a[0])*g.dx+(py-g.a[1])*g.dy)/L2,0,1);
+      var cx=g.a[0]+g.dx*t, cy=g.a[1]+g.dy*t;
+      var d=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy));
+      if(d<best){ best=d; arc=g.start+g.len*t; }
+    }
+    return {d:best,arc:arc};
+  }
+  var cand=[];
+  for(var gy=80;gy<=900;gy+=52){
+    for(var gx=44;gx<=496;gx+=52){
+      var pr=proj(gx,gy);
+      if(pr.d>=40 && pr.d<=80 && pr.arc>=total*0.12) cand.push({x:gx,y:gy,d:pr.d});
+    }
+  }
+  cand.sort(function(a,b){ return a.d-b.d; });
+  var plots=[];
+  for(var c=0;c<cand.length && plots.length<13;c++){
+    var ok=true;
+    for(var p=0;p<plots.length;p++){
+      var ddx=cand[c].x-plots[p].x, ddy=cand[c].y-plots[p].y;
+      if(ddx*ddx+ddy*ddy<76*76){ ok=false; break; }
+    }
+    if(ok) plots.push({x:cand[c].x,y:cand[c].y});
+  }
+  return plots;
 }
+function _plotCount(path){ return pathPlots(path).length; }
 var _WILD=['Wild Verge','Bramble Run','Creeping Way','Tangle Row','Nettle Bend','Thicket Trail','Bindweed Loop','Fern Gully','Clover Cut','Ivy Wind','Sorrel Snake','Dew Furrow','Mallow March','Vetch Vale','Rue Ramble','Sage Switchback'];
 function genMaps(n){
   var out=[], rng=_mb32(0x6ABE5EED), tries=0;
   while(out.length<n && tries++<n*30){
     var p=genMapPath(rng);
-    if(_plotCount(p)>=16){ out.push({ name:_WILD[out.length%_WILD.length], path:p, biome:out.length%BIOMES.length, artkey:null }); }
+    if(_plotCount(p)>=10){ out.push({ name:_WILD[out.length%_WILD.length], path:p, biome:out.length%BIOMES.length, artkey:null }); }
   }
   return out;
 }
@@ -731,21 +770,8 @@ function buildMapGeom(m){
     }
     return best;
   }
-  // generate buildable plots hugging the path
-  var cand=[];
-  for(var gy=80;gy<=900;gy+=52){
-    for(var gx=44;gx<=496;gx+=52){
-      var d=distToPath(gx,gy);
-      if(d>=38 && d<=86) cand.push({x:gx,y:gy,d:d});
-    }
-  }
-  cand.sort(function(a,b){ return a.d-b.d; });
-  var plots=[];
-  for(var c=0;c<cand.length;c++){
-    var ok=true;
-    for(var pI=0;pI<plots.length;pI++){ if(dist2(cand[c].x,cand[c].y,plots[pI].x,plots[pI].y)<52*52){ ok=false; break; } }
-    if(ok) plots.push({x:cand[c].x,y:cand[c].y});
-  }
+  // buildable plots come from the ONE shared algorithm (see pathPlots above)
+  var plots=pathPlots(pts);
   m._geom={ seg:seg, total:total, distToPath:distToPath, plots:plots };
   return m._geom;
 }
