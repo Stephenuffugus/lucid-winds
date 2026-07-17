@@ -337,8 +337,10 @@ function genPool(seed){
 // Scaled by tier so the smallest bed (Sprout) is a GENTLE rival a beginner can
 // beat, not the old fixed 2.8s pace that ran everyone over (Jessie 2026-07-09).
 var DIFFS=[
-  { key:'sprout', ico:'🌱', name:'Sprout',  t:'Sprout',  d:'Grow 5 words · a quick bloom', target:5,  base:4, aiMs:5200, aiSkip:0.45 },
-  { key:'bud',    ico:'🌿', name:'Garden',  t:'Garden',  d:'Grow 7 words · the classic bed', target:7,  base:6, aiMs:3800, aiSkip:0.20 },
+  /* Jessie 2026-07: "the easy computer destroyed me every time" — Sprout's
+     rival now blooms a word every ~17s (was ~9.5s effective), Garden ~5.6s */
+  { key:'sprout', ico:'🌱', name:'Sprout',  t:'Sprout',  d:'Grow 5 words · a quick bloom', target:5,  base:4, aiMs:7000, aiSkip:0.6 },
+  { key:'bud',    ico:'🌿', name:'Garden',  t:'Garden',  d:'Grow 7 words · the classic bed', target:7,  base:6, aiMs:4200, aiSkip:0.25 },
   { key:'bloom',  ico:'🌻', name:'Thicket', t:'Thicket', d:'Grow 10 words · a full thicket', target:10, base:9, aiMs:2500, aiSkip:0.0 }
 ];
 function diffByKey(k){ for(var i=0;i<DIFFS.length;i++) if(DIFFS[i].key===k) return DIFFS[i]; return DIFFS[1]; }
