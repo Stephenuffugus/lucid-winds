@@ -187,6 +187,12 @@
   .feat .card .ds{font-size:11px;-webkit-line-clamp:2}
   .hubcard{background:linear-gradient(145deg,#1e3326,#152019);border:1px solid var(--leaf)}
   .hubcard .shot{background:linear-gradient(135deg,#2c4a35,#1a2a20);color:var(--leaf)}
+  #gsearch{display:block;width:100%;box-sizing:border-box;min-height:48px;margin:2px 0 8px;padding:12px 16px;
+    border-radius:12px;border:1px solid var(--line,#2a3a30);background:rgba(10,16,12,0.6);color:var(--ink,#e8f1e9);
+    font-size:15px;font-family:inherit;outline:none}
+  #gsearch:focus{border-color:var(--leaf,#5fc08a)}
+  #gsearch::placeholder{color:rgba(160,175,160,0.55)}
+  .tabs.searching{opacity:0.35;pointer-events:none}
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 4px}
   .tabs button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
                border-radius:20px;padding:6px 14px;font-size:13px}
@@ -245,6 +251,7 @@
   <div class="grid hub-grid" id="hub-card"></div>
 
   <h2>The Garden — every game in the studio</h2>
+  <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games — try Scrabble, Peggle, Wordle, Mahjong…">
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="garden"></div>
 
@@ -681,6 +688,96 @@ function renderGarden(cat){
   document.getElementById('garden').innerHTML =
     items.map(function(it){return card(it.g,it.feat);}).join('');
 }
+/* ── SEARCH (Jessie 2026-07-14 + Stephen 2026-07-16) ─────────────────────
+   One box over EVERYTHING (satellites + garden games), and it speaks
+   classic: searching a famous game's name surfaces our take on it. */
+var ALIASES={
+  'word trellis':'scrabble crossword builder',
+  'word sprout':'wordle five letter daily guess',
+  'vine words':'boggle word hunt connect letters',
+  'word search':'word find seek',
+  'three sisters':'set card pattern matching',
+  'nectar drop':'peggle pachinko peg shooter',
+  'spore drift':'osmos absorb',
+  'berry vine':'zuma marble shooter chain',
+  'jade garden':'mahjong solitaire tiles',
+  'tonic drop':'dr mario pills match four',
+  'sled vine':'line rider draw track sled',
+  'frost watch':'missile command defend',
+  'dewball':'katamari damacy rolling ball 3d',
+  'seed pot':'suika watermelon merge drop 2048',
+  'cosmic cadets':'flappy bird one tap flier',
+  'stream hop':'frogger crossy road hopper',
+  'grubtrap':'rodents revenge trap cheese',
+  'bloomzap':'bookworm word builder race',
+  'nova bloom':'geometry wars twin stick shooter',
+  'bridgevine':'world of goo poly bridge builder truss',
+  'bramble court':'triple triad queens blood card battler',
+  'pollinator paths':'flight control air traffic drawing',
+  'tempo grove':'lumines music beat blocks',
+  'root weave':'untangle planarity knots',
+  'star field':'star battle two not touch logic',
+  'plot bloom':'islanders city builder placing',
+  'micro meadow':'warioware microgames rapid',
+  'impossible garden':'monument valley perspective',
+  'rule root':'baba is you rules push',
+  'first sprout':'a dark room idle text',
+  'root groups':'connections nyt group four',
+  'cipher bloom':'cryptogram cipher quote',
+  'season sway':'reigns swipe kingdom',
+  'meadow weave':'dorfromantik tile laying',
+  'petal alchemy':'infinite craft little alchemy combine',
+  'leaf fit':'woodoku blockudoku block puzzle',
+  'seed reel':'luck be a landlord slot builder',
+  'petal plunge':'skifree ski slalom downhill',
+  'tinker loft':'amazing alex rube goldberg contraption machine',
+  'picnic panic':'space invaders galaga shooter waves',
+  'greenhouse pinball':'pinball table flippers',
+  'petal slice':'fruit ninja slicing swipe',
+  'burr blast':'angry birds sling destruction',
+  'pong arena':'pong paddle duel',
+  'hues':'color match mixing daily',
+  'silt':'falling sand powder toy sandbox',
+  'fence off':'quoridor walls race',
+  'loop warden':'loop hero idle circuit',
+  'mosaic draft':'azul tile drafting',
+  'lamplighter':'akari light up lamps',
+  'orb orchard':'blue spheres sonic collect',
+  'klondike':'solitaire classic cards',
+  'spider':'spider solitaire',
+  'freecell':'freecell solitaire',
+  'seed sow':'mancala',
+  'living stones':'go baduk weiqi',
+  'five in a row':'gomoku gobang',
+  'sixfold':'rock paper scissors duel stance',
+  'sweet spot':'tennis timing ace',
+  'skitterlings':'snake pikmin swarm',
+  'power scalers':'incremental arena battler'
+};
+function searchGames(qraw){
+  var q=(qraw||'').trim().toLowerCase();
+  var tabs=document.getElementById('tabs');
+  if(!q){ tabs.classList.remove('searching'); renderGarden(window._swsCat||'all'); return; }
+  tabs.classList.add('searching');
+  var items=FEATURED.filter(function(g){return !g.hub;}).map(function(g){return {g:g,feat:true,nm:g.nm||'',ds:g.ds||''};})
+    .concat(GAMES.map(function(g){return {g:g,feat:false,nm:g[1]||'',ds:g[3]||''};}));
+  var words=q.split(/\s+/);
+  var out=items.filter(function(it){
+    var hay=(it.nm+' '+it.ds+' '+(ALIASES[it.nm.toLowerCase()]||'')).toLowerCase();
+    return words.every(function(w){return hay.indexOf(w)>=0;});
+  });
+  out.sort(function(a,b){var x=a.nm.toLowerCase(),y=b.nm.toLowerCase();return x<y?-1:(x>y?1:0);});
+  document.getElementById('garden').innerHTML = out.length
+    ? out.map(function(it){return card(it.g,it.feat);}).join('')
+    : '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
+}
+(function(){
+  var si=document.getElementById('gsearch'), t=0;
+  if(!si)return;
+  si.addEventListener('input',function(){ clearTimeout(t); var v=si.value; t=setTimeout(function(){ searchGames(v); },160); });
+  si.addEventListener('search',function(){ searchGames(si.value); });   // the ✕ clear button
+})();
+
 document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
   return '<button class="'+(i===0?'on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>';
 }).join('');
