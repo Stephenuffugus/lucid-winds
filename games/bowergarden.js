@@ -15,14 +15,14 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G
 if(!document.getElementById('bg-anim-style')){
   var _bgs=document.createElement('style');_bgs.id='bg-anim-style';
   _bgs.textContent=
-    '@keyframes bgSlideS{0%{transform:translate(-50%,80px) scale(0.7);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}'+
-    '@keyframes bgSlideN{0%{transform:translate(-50%,-80px) scale(0.7);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}'+
-    '@keyframes bgSlideW{0%{transform:translate(-80px,-50%) scale(0.7);opacity:0}100%{transform:translate(0,-50%) scale(1);opacity:1}}'+
-    '@keyframes bgSlideE{0%{transform:translate(80px,-50%) scale(0.7);opacity:0}100%{transform:translate(0,-50%) scale(1);opacity:1}}'+
-    '.bg-played-S{animation:bgSlideS .32s cubic-bezier(.4,1.4,.5,1) both}'+
-    '.bg-played-N{animation:bgSlideN .32s cubic-bezier(.4,1.4,.5,1) both}'+
-    '.bg-played-W{animation:bgSlideW .32s cubic-bezier(.4,1.4,.5,1) both}'+
-    '.bg-played-E{animation:bgSlideE .32s cubic-bezier(.4,1.4,.5,1) both}'+
+    '@keyframes bgSlideS{0%{transform:translate(-50%,150px) scale(0.7);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}'+
+    '@keyframes bgSlideN{0%{transform:translate(-50%,-150px) scale(0.7);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}'+
+    '@keyframes bgSlideW{0%{transform:translate(-150px,-50%) scale(0.7);opacity:0}100%{transform:translate(0,-50%) scale(1);opacity:1}}'+
+    '@keyframes bgSlideE{0%{transform:translate(150px,-50%) scale(0.7);opacity:0}100%{transform:translate(0,-50%) scale(1);opacity:1}}'+
+    '.bg-played-S{animation:bgSlideS .5s cubic-bezier(.4,1.4,.5,1) both}'+
+    '.bg-played-N{animation:bgSlideN .5s cubic-bezier(.4,1.4,.5,1) both}'+
+    '.bg-played-W{animation:bgSlideW .5s cubic-bezier(.4,1.4,.5,1) both}'+
+    '.bg-played-E{animation:bgSlideE .5s cubic-bezier(.4,1.4,.5,1) both}'+
     '@keyframes bgPulse{0%{box-shadow:0 0 0 0 rgba(200,168,75,.6)}70%{box-shadow:0 0 0 8px rgba(200,168,75,0)}100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}}'+
     '@keyframes bgTurnRing{0%,100%{box-shadow:0 0 0 3px rgba(255,220,112,0.75),0 0 22px rgba(255,220,112,0.45)}50%{box-shadow:0 0 0 4px rgba(255,220,112,0.9),0 0 30px rgba(255,220,112,0.65)}}'+
     '@keyframes bgBidFlash{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}'+
@@ -36,7 +36,9 @@ if(!document.getElementById('bg-anim-style')){
     '.bg-seat-caller{position:relative}'+
     '.bg-seat-caller::before{content:"";position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2,#d4b86a 50%,#8b6a20);border:1.5px solid #5a4010;box-shadow:0 2px 4px rgba(0,0,0,0.5);z-index:2;}'+
     '.bg-team-us{color:#7ab356}'+
-    '.bg-team-them{color:#dc8a8a}';
+    '.bg-team-them{color:#dc8a8a}'+
+    '.bg-pcard img{width:26px;height:26px;object-fit:contain;vertical-align:middle}'+
+    '.bg-pcard .bg-face{width:56px;box-sizing:border-box}';
   document.head.appendChild(_bgs);
 }
 
@@ -334,7 +336,7 @@ window._gameFns.bowergarden = function BG(a){
     // the lead passes to the next live seat instead.
     if(loner&&currentPlayer===sittingOut)currentPlayer=nextSeat(currentPlayer);
     render();
-    if(currentPlayer!==SOUTH)bwT(aiPlay,700);
+    if(currentPlayer!==SOUTH)bwT(aiPlay,950);
   }
   function aiPlay(){
     if(phase!=='play'||currentPlayer===SOUTH)return;
@@ -366,13 +368,13 @@ window._gameFns.bowergarden = function BG(a){
           trick=[];trickCards=[null,null,null,null];lastPlayed=-1;
           if(teamTricks[0]+teamTricks[1]>=(loner?5:5)){scoreHand();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==SOUTH)bwT(aiPlay,700);
-        },1100);
-      },400);
+          if(currentPlayer!==SOUTH)bwT(aiPlay,950);
+        },1700);
+      },650);
       return;
     }
     currentPlayer=nextSeat(currentPlayer);render();
-    if(currentPlayer!==SOUTH)bwT(aiPlay,550);
+    if(currentPlayer!==SOUTH)bwT(aiPlay,950);
   }
   function scoreHand(){
     phase='handDone';
@@ -577,13 +579,13 @@ window._gameFns.bowergarden = function BG(a){
     for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
+    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
     // West — bumped to 32x46 (was 28x40)
-    h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">WEST'+dealerBadge(WEST)+'<br>'+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
-    h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    h+='<div style="position:relative;min-height:236px;background:rgba(26,31,23,0.3);border-radius:8px;">';
     if(upcard&&phase==='call1'){
       var ucol=upcard.suit==='hearts'||upcard.suit==='diamonds'?'#c47a7a':'#1a1f17';
       h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px;font-weight:700;">';
@@ -591,7 +593,7 @@ window._gameFns.bowergarden = function BG(a){
     }
     // Played cards positioned. Now bigger (was font-size 0.7rem) and
     // animated in via .bg-played-{seat} class on the most recent play.
-    var pos={};pos[SOUTH]='bottom:8px;left:50%;transform:translateX(-50%);';pos[WEST]='left:8px;top:50%;transform:translateY(-50%);';pos[NORTH]='top:8px;left:50%;transform:translateX(-50%);';pos[EAST]='right:8px;top:50%;transform:translateY(-50%);';
+    var pos={};pos[SOUTH]='bottom:6px;left:50%;transform:translateX(-50%);';pos[WEST]='left:2px;top:50%;transform:translateY(-50%);';pos[NORTH]='top:6px;left:50%;transform:translateX(-50%);';pos[EAST]='right:2px;top:50%;transform:translateY(-50%);';
     var SEAT_LETTER={};SEAT_LETTER[SOUTH]='S';SEAT_LETTER[WEST]='W';SEAT_LETTER[NORTH]='N';SEAT_LETTER[EAST]='E';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
@@ -599,12 +601,19 @@ window._gameFns.bowergarden = function BG(a){
       var animCls=(pl===lastPlayed)?(' bg-played-'+SEAT_LETTER[pl]):'';
       var winCls = (pl===trickWinner) ? ' bg-win-glow' : '';
       var dim = (trickWinner>=0 && pl!==trickWinner) ? 'filter:saturate(.6) brightness(.75);' : '';
-      h+='<div class="bg-pcard'+animCls+winCls+'" style="position:absolute;'+pos[pl]+dim+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;font-size:0.85rem;min-width:38px;">';
-      h+='<div>'+c.rank+'</div><div style="font-size:1.1rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
+      // Bigger card + a seat tag under it — Jessie/Stephen 7/17: the trick pile
+      // was unreadable, you could not tell who put what down.
+      var seatNm = pl===SOUTH?'YOU':pl===NORTH?'PARTNER':pl===WEST?'WEST':'EAST';
+      var tagCol = pl%2===0?'#7ab356':'#dc8a8a';
+      h+='<div class="bg-pcard'+animCls+winCls+'" style="position:absolute;'+pos[pl]+dim+'text-align:center;">';
+      h+='<div class="bg-face" style="background:#F5F0E1;color:'+col+';border:2.5px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:8px;padding:6px 4px;font-weight:700;font-size:1rem;box-shadow:0 4px 12px rgba(0,0,0,0.45);">';
+      h+='<div>'+c.rank+'</div><div style="font-size:1.5rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:'+tagCol+';margin-top:3px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">'+seatNm+'</div>';
+      h+='</div>';
     }
     h+='</div>';
     // East — bumped to 32x46
-    h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">EAST'+dealerBadge(EAST)+'<br>'+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
