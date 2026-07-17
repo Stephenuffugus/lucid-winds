@@ -79,6 +79,18 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
+.sk-head{color:var(--muted); font-size:12px; letter-spacing:3px; text-transform:uppercase; width:100%; max-width:400px; margin:0 auto 10px}
+.skincard{display:flex; align-items:center; gap:12px; width:100%; min-height:64px; margin-bottom:12px; padding:12px 16px;
+  border:1px solid var(--line); border-radius:14px; background:#0f150c; color:var(--cream); cursor:pointer; text-align:left;
+  font-family:inherit; transition:transform .06s ease}
+.skincard:active{transform:translateY(1px)}
+.skincard.sel{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold), 0 0 18px #c8a84b33}
+.skincard.locked{opacity:.62; cursor:default}
+.skincard .sk-ico{font-size:26px; width:36px; text-align:center; flex:none}
+.skincard .sk-main{flex:1}
+.skincard .sk-t{font-size:16px; font-weight:800}
+.skincard .sk-d{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.35}
+.skincard .sk-tag{font-size:11.5px; font-weight:800; color:var(--gold); white-space:nowrap}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 </style>
 </head>
@@ -90,7 +102,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word" id="title-word">
-      <img id="title-logo" alt="Petalvex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
+      <img id="title-logo" alt="Petalvex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.setAttribute('data-err','1');this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
       <span id="title-fallback" style="display:none">Petalvex</span>
     </div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -134,6 +146,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Colour tint on tiles</span><div class="toggle on" id="tg-color"><b></b></div></div>
+    <div style="height:14px"></div>
+    <div class="sk-head">Skins</div>
+    <div id="skin-list" style="width:100%;max-width:400px;margin:0 auto"></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
     <div class="foot">Petalvex — a Sky Wolf remake of the classic TetraVex.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
@@ -143,7 +158,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen center" id="s-win"><div class="pad center">
     <div style="flex:1"></div>
     <div style="font-size:56px" id="win-hero">
-      <img id="win-bloom" alt="" style="width:168px;height:168px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 22px #0008)" onerror="this.style.display='none';var f=document.getElementById('win-fallback');if(f)f.style.display='block'">
+      <img id="win-bloom" alt="" style="width:168px;height:168px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 22px #0008)" onerror="this.setAttribute('data-err','1');this.style.display='none';var f=document.getElementById('win-fallback');if(f)f.style.display='block'">
       <span id="win-fallback" style="display:none">🌼</span>
     </div>
     <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Bed in bloom!</h2>
@@ -154,6 +169,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="win-stat" id="win-best-row"><span>Best time</span><b id="win-best">—</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
+    <div id="win-skin" style="display:none;margin-top:10px;font-size:14px;color:var(--sage);font-weight:700"></div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="win-again">↻ New bed</button>
@@ -171,7 +187,7 @@ function $(id){ return document.getElementById(id); }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.0';
+var BUILD='v1.1';
 
 /* storage (private-mode safe) */
 var LS=(function(){ var ok=true, mem={};
@@ -181,7 +197,15 @@ var LS=(function(){ var ok=true, mem={};
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
   };
 })();
-var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly' };
+var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly', skin:'pvx_skin' };
+
+/* ============================ skins ================================= */
+/* Default for EVERYONE is the original procedural coloured triangles ('classic').
+   The Enamel Botanica art pack is an unlockable skin: earned by any nudge-free solve
+   (i.e. the existing pvx_best map has at least one recorded best time). */
+function skinUnlocked(){ var b=loadBest(); for(var kk in b){ if(b.hasOwnProperty(kk)) return true; } return false; }
+var SKIN=(function(){ var s=LS.get(K.skin); return (s==='enamel'&&skinUnlocked())?'enamel':'classic'; })();
+function setSkin(k){ if(k==='enamel'&&!skinUnlocked()) return false; SKIN=(k==='enamel')?'enamel':'classic'; LS.set(K.skin,SKIN); applySkin(); return true; }
 
 /* ============================ audio ================================= */
 var AC=null, SET={ sound:true, color:true };
@@ -331,7 +355,7 @@ function drawTile(g, x, y, s, tile, alpha, seamState){
     [ [x,y+s],[x,y],[cx,cy] ]        // left
   ];
   var np=[ [cx, y+s*0.20], [x+s*0.80, cy], [cx, y+s*0.80], [x+s*0.20, cy] ];
-  var _useSpr=pvTilesReady();
+  var _useSpr=(SKIN==='enamel')&&pvTilesReady();
   for(var q=0;q<4;q++){
     var v=tile.edges[q];
     if(_useSpr){
@@ -421,8 +445,8 @@ function render(){
   // background
   var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09');
   ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  // drop-in enamel puzzle-bed backdrop over the procedural fill (fallback stays if art unloaded/missing)
-  if(_pvReady(PV_BED)){ try{ ctx.drawImage(PV_BED,0,0,VW,VH); }catch(e){} }
+  // enamel puzzle-bed backdrop only when the Enamel Botanica skin is selected (classic keeps the procedural fill)
+  if(SKIN==='enamel'&&_pvReady(PV_BED)){ try{ ctx.drawImage(PV_BED,0,0,VW,VH); }catch(e){} }
   if(!P) return;
   computeLayout();
   // ---- HUD ----
@@ -461,9 +485,9 @@ function render(){
   if(drag){ var s=LAY.cell; drawTile(ctx, drag.x-s/2, drag.y-s/2, s, drag.tile, 0.94, null); }
 
   // ---- particles ----
-  // enamel petal/pollen sprites when ready (additive glow); procedural dots stay as fallback
+  // enamel petal/pollen sprites on the Enamel Botanica skin; classic keeps the procedural dots
   for(i=0;i<parts.length;i++){ var pt=parts[i]; var pa=clamp(pt.life,0,1);
-    var _fx=(pt.si!=null)?_pvSpr(PV_PARTS_SPR[pt.si]):null;
+    var _fx=(SKIN==='enamel'&&pt.si!=null)?_pvSpr(PV_PARTS_SPR[pt.si]):null;
     if(_fx && _pvReady(_fx)){
       ctx.save(); ctx.globalAlpha=pa; ctx.globalCompositeOperation='lighter';
       ctx.translate(pt.x,pt.y); ctx.rotate(pt.ang||0);
@@ -613,6 +637,7 @@ function winPuzzle(){
   var n=P.n;
   for(var i=0;i<n*n;i++){ var R=cellRect(i); (function(R,i){ setTimeout(function(){ if(P&&P.solved) burst(R.x+R.s/2,R.y+R.s/2, VCOL[i%10], 8); },i*22); })(R,i);}
   // best time (only for non-daily; daily tracked separately but we still record)
+  var hadSkin=skinUnlocked();
   var best=loadBest(), bk=bestKey(P.mode), prev=best[bk], isBest=false;
   if(P.hints===0){ if(prev==null || P.t<prev){ best[bk]=P.t; isBest=true; LS.set(K.best, JSON.stringify(best)); } }
   // sunbeam reward
@@ -638,6 +663,8 @@ function winPuzzle(){
   $('win-sun').textContent = granted>0 ? ('☀ +'+granted+' sunbeam'+(granted>1?'s':''))
     : dailyDone ? '☀ already gathered today — back tomorrow'
     : '☀ daily sunbeam cap reached';
+  var wskin=$('win-skin');
+  if(wskin){ if(!hadSkin&&skinUnlocked()){ wskin.textContent='💠 New skin unlocked! Enamel Botanica is waiting in Settings.'; wskin.style.display='block'; } else { wskin.style.display='none'; } }
   setTimeout(function(){ show('s-win'); }, 620);
 }
 
@@ -675,8 +702,8 @@ function buildModeList(){
   for(var i=0;i<MODES.length;i++){ (function(m){
     var b=document.createElement('button'); b.className='btn modecard';
     var bt=best[bestKey(m)]; var bstr=bt!=null?fmtTime(bt):'—';
-    // illustrated mode plate art with emoji fallback (onerror restores the emoji into the ico div)
-    var ico=MODE_UI[m.key]
+    // illustrated mode plate art (Enamel Botanica skin only) with emoji fallback; classic uses the emoji
+    var ico=(SKIN==='enamel'&&MODE_UI[m.key])
       ? '<div class="mc-ico" style="width:56px;height:56px;font-size:30px;line-height:56px"><img src="assets/ui/'+MODE_UI[m.key]+'.png?v='+PV_ASSET_V+'" alt="" style="width:56px;height:56px;object-fit:contain;display:block;border-radius:12px" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+m.ico+'\'"></div>'
       : '<div class="mc-ico">'+m.ico+'</div>';
     b.innerHTML=ico+'<div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+(m.daily?'today':('best '+bstr))+'</div>';
@@ -736,6 +763,43 @@ function updateCtrlVisibility(){ var bar=$('ctrlbar'); if(bar) bar.style.display
 var _show=show;
 show=function(id){ _show(id); updateCtrlVisibility(); };
 
+/* ============================ skin UI ================================= */
+/* apply the selected skin to the DOM surfaces (menu bg, logo, win hero); the canvas reads SKIN live */
+function applySkin(){
+  var art=(SKIN==='enamel');
+  var css=art?("linear-gradient(180deg,rgba(10,13,9,0.34) 0%,rgba(10,13,9,0.62) 100%), url('assets/bg/bg_menu.jpg?v="+PV_ASSET_V+"') center/cover no-repeat"):'';
+  var ids=['s-title','s-modes','s-how','s-set','s-win'];
+  for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el) el.style.background=css; }
+  var tl=$('title-logo'), tf=$('title-fallback');
+  if(tl&&tf){ var ok=art&&tl.getAttribute('data-err')!=='1'; tl.style.display=ok?'block':'none'; tf.style.display=ok?'none':'block'; }
+  var wb=$('win-bloom'), wf=$('win-fallback');
+  if(wb&&wf){ var ok2=art&&wb.getAttribute('data-err')!=='1'; wb.style.display=ok2?'block':'none'; wf.style.display=ok2?'none':'block'; }
+  if(P) render();
+}
+var SKINS=[
+  { key:'classic', ico:'🔺', name:'Classic Triangles', d:'The original look. Bright painted triangles.' },
+  { key:'enamel',  ico:'💠', name:'Enamel Botanica', d:'Glossy enamel tiles laced with gold wire.',
+    lock:'Locked. Solve any bed with no nudges to earn it.' }
+];
+function buildSkinRow(){
+  var host=$('skin-list'); if(!host) return; host.innerHTML='';
+  var unl=skinUnlocked();
+  for(var i=0;i<SKINS.length;i++){ (function(s){
+    var locked=!!s.lock&&!unl;
+    var b=document.createElement('button');
+    b.className='skincard'+(SKIN===s.key?' sel':'')+(locked?' locked':'');
+    var tag=(SKIN===s.key)?'✓ in use':(locked?'🔒':'');
+    b.innerHTML='<div class="sk-ico">'+s.ico+'</div><div class="sk-main"><div class="sk-t">'+s.name+'</div>'+
+      '<div class="sk-d">'+(locked?s.lock:s.d)+'</div></div>'+(tag?'<div class="sk-tag">'+tag+'</div>':'');
+    b.addEventListener('click',function(e){ e.preventDefault();
+      if(locked){ sfx('bad'); return; }
+      if(SKIN!==s.key){ setSkin(s.key); sfx('ui'); }
+      buildSkinRow();
+    });
+    host.appendChild(b);
+  })(SKINS[i]); }
+}
+
 /* ============================ toggles ================================= */
 function wireToggle(id, get, set){
   var el=$(id); function paint(){ if(get()) el.classList.add('on'); else el.classList.remove('on'); }
@@ -753,12 +817,12 @@ function boot(){
   cv=$('game'); ctx=cv.getContext('2d');
   cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   fit();
-  /* dress the menu screens with the enamel bg_menu frame (CSS gradient fallback stays if art missing) */
-  (function(){ try{ var css="linear-gradient(180deg,rgba(10,13,9,0.34) 0%,rgba(10,13,9,0.62) 100%), url('assets/bg/bg_menu.jpg?v="+PV_ASSET_V+"') center/cover no-repeat";
-    ['s-title','s-modes','s-how','s-set','s-win'].forEach(function(id){ var el=$(id); if(el)el.style.background=css; }); }catch(e){} })();
-  /* point the menu logo + win bloom art at the shipped sprites (PV_ASSET_V cache-bust; onerror keeps text/emoji fallback) */
+  /* keep the pack's logo + win bloom preloaded (onerror keeps text/emoji fallback);
+     applySkin() decides which surfaces show — classic (default) stays fully procedural */
   (function(){ var tl=$('title-logo'); if(tl) tl.src='assets/ui/logo_petalvex.png?v='+PV_ASSET_V;
     var wb=$('win-bloom'); if(wb) wb.src='assets/ui/win_bloom.png?v='+PV_ASSET_V; })();
+  applySkin();
+  buildSkinRow();
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false});
@@ -771,7 +835,7 @@ function boot(){
   buildControlBar();
   tap('b-play', function(){ toModes(); });
   tap('b-how', function(){ show('s-how'); });
-  tap('b-set', function(){ show('s-set'); });
+  tap('b-set', function(){ buildSkinRow(); show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   tap('modes-back', function(){ show('s-title'); });
   tap('how-back', function(){ show(P?null:'s-title'); if(P) updateCtrlVisibility(); });
@@ -821,7 +885,8 @@ if(/[?&]pvxtest=1/.test(location.search)){
       render(); return checkWin();
     },
     seamBad:function(){ var n=P.n,bad=0; for(var i=0;i<n*n;i++){ var s=seamFor(i); if(s&&(s.right==='bad'||s.bottom==='bad'||s.left==='bad'||s.top==='bad')) bad++; } return bad; },
-    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_petalvex')||'{}'); }catch(e){ return {}; } }
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_petalvex')||'{}'); }catch(e){ return {}; } },
+    skin:function(){ return SKIN; }, setSkin:setSkin, skinUnlocked:skinUnlocked, buildSkinRow:buildSkinRow
   };
 }
 

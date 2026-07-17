@@ -131,7 +131,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Rule Root</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">The rules of this garden are written on pushable tiles. <b class="hl">STONE IS STOP</b> only while the words hold hands. Push a word away and the wall forgets itself. Some rules are gripped by golden <b class="hl">roots</b>, and those you must dig free.</div>
+    <div class="ribbon">A puzzle garden where every rule is written on word tiles you can push. Rearrange the words to change the rules, then walk to whatever <b class="hl">IS WIN</b>.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-journey">🌱 Journey</button>
@@ -152,6 +152,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- LEVEL SELECT -->
   <div class="screen" id="s-levels"><div class="pad">
     <h2 class="sc-h" id="lvl-title">Journey</h2>
+    <div class="ribbon" id="lvl-sub" style="margin:2px 0 10px; max-width:none"></div>
     <div id="lvl-grid"></div>
     <div style="flex:1"></div>
     <div class="stack"><button class="btn sm ghost" id="lvl-back">Back</button></div>
@@ -160,8 +161,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">👆</div><div>Swipe or tap the arrows. Everything that <b class="hl">IS YOU</b> moves at once.</div></div>
-    <div class="helprow"><div class="hi">🧱</div><div>Three word tiles in a row make a rule: <b class="hl">STONE IS STOP</b>. Push any word out of line and the rule breaks.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div><b class="hl">Goal:</b> touch whatever <b class="hl">IS WIN</b>. In most gardens that is the bloom.</div></div>
+    <div class="helprow"><div class="hi">👆</div><div><b class="hl">Move:</b> swipe or tap the arrows. Everything that <b class="hl">IS YOU</b> walks together, and walking into a word tile pushes it.</div></div>
+    <div class="helprow"><div class="hi">🧱</div><div><b class="hl">Rules:</b> three word tiles in a row make a rule, like <b class="hl">STONE IS STOP</b>. A green line glows under every rule that is working.</div></div>
+    <div class="helprow"><div class="hi">✨</div><div><b class="hl">The trick:</b> push a word out of its row and that rule switches off. Line words up and a new rule switches on. The garden obeys instantly.</div></div>
+    <div class="wsec">Deeper roots</div>
     <div class="helprow"><div class="hi">🖐</div><div>Word tiles always push. Objects only push when a rule says <b class="hl">IS PUSH</b>.</div></div>
     <div class="helprow"><div class="hi">🌊</div><div><b class="hl">IS SINK</b> swallows whatever touches it, and the water goes too. <b class="hl">IS DEFEAT</b> bites anything that is YOU.</div></div>
     <div class="helprow"><div class="hi">🪙</div><div>A golden word is gripped by <b class="hl">roots</b>. Step on the root knot somewhere on the board to loosen its grip.</div></div>
@@ -627,7 +631,7 @@ function updMoves(){
   $('mv').textContent='moves '+G.st.moves+(par?' · par '+par:'');
 }
 function doMove(dir){
-  if(!G||G.won)return;
+  if(!G||G.won||G.st.won)return;
   var before=ser(G.st);
   var ns=stepState(G.st,dir);
   if(ser(ns)===before){ sndNo(); return; }
@@ -654,7 +658,7 @@ function checkSoft(){
   $('soft').className=(youCount(G.st)===0&&!G.st.won)?'on':'';
 }
 function doUndo(){
-  if(!G||!G.undo.length||G.won)return;
+  if(!G||!G.undo.length||G.won||G.st.won)return;
   G.st=G.undo.pop(); G.hintEnt=null;
   sndPush(); updMoves(); checkSoft(); render();
 }
@@ -976,6 +980,7 @@ function buildLevelGrid(zen){
     $('chgrid'+ch).appendChild(card);
   }
   $('lvl-title').textContent=zen?'Zen Garden':'Journey';
+  $('lvl-sub').textContent=zen?'Replay any garden you have already solved in Journey, quiet and free.':'Solve a garden to open the next one.';
 }
 function buildWard(){
   buildWardSec('w-tiles',TILETHEMES,'tile');

@@ -42,7 +42,11 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:44px; line-height:1.08; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:2px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.whatis{margin-top:16px; color:var(--gold); font-size:14px; font-weight:700; letter-spacing:.5px; max-width:420px; line-height:1.45}
+.ribbon{margin-top:10px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.quickstart{border:1px solid #c8a84b66; background:#121a0f; border-radius:14px; padding:12px 16px; margin:6px 0 12px}
+.quickstart .qs{font-size:14px; line-height:1.5; margin:6px 0; color:var(--cream)}
+.finer{font-size:.72rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin:12px 0 2px}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -100,6 +104,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="pad center">
       <div class="title-word">POLLINATOR<br>PATHS</div>
       <div class="title-sub">every wing needs a way home</div>
+      <div class="whatis">A calm game of air traffic control, played in a night meadow.</div>
       <div class="ribbon">Draw flight paths with your finger. Bees, butterflies and hummingbirds each want their own flower, and no two wings may ever meet.</div>
       <div style="height:22px"></div>
       <div class="stack">
@@ -124,6 +129,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How the meadow works</h2>
+      <div class="quickstart">
+        <div class="qs"><b class="hl">The goal.</b> Land every flier on its matching flower pad and keep your three hearts.</div>
+        <div class="qs"><b class="hl">The move.</b> Touch a flier, drag a line, and end it on the pad that shows the same silhouette.</div>
+        <div class="qs"><b class="hl">The signs.</b> A safe landing chimes for 10 points. Two wings touching costs a heart, and at zero hearts the shift ends.</div>
+      </div>
+      <div class="finer">The finer points</div>
       <div class="helprow"><div class="hi">👆</div><div><b>Touch a pollinator and draw.</b> It follows your line. End the line on its matching flower pad and it glides home.</div></div>
       <div class="helprow"><div class="hi">🐝</div><div>Three fliers, three pads. The <b>bee</b> flies a solid line, the <b>butterfly</b> a dashed one, the <b>hummingbird</b> a dotted one. Shapes match shapes, so the pads are silhouettes, never just colors.</div></div>
       <div class="helprow"><div class="hi">💥</div><div>Two fliers touching is a <b>dazed puff</b> and a lost heart. Three hearts and the shift is over. Redraw a path any time, right up to the last second.</div></div>
@@ -523,11 +534,16 @@ function onDown(ev){
     if(q.state!=="flying")continue;
     var dx=q.x-p.x, dy=q.y-p.y, d=dx*dx+dy*dy;
     if(d<bd){ bd=d; best=q; } }
-  if(best){ drawFor=best; best.path=[{x:best.x,y:best.y}]; best.willLand=false; ev.preventDefault(); }
+  if(best){ drawFor=best; best.path=[{x:best.x,y:best.y,a:1}]; best.willLand=false; ev.preventDefault(); }
 }
 function onMove(ev){
   if(!drawFor||!G)return;
-  var p=evPos(ev), path=drawFor.path, last=path[path.length-1];
+  if(drawFor.state!=="flying"){ drawFor=null; return; }
+  var p=evPos(ev), path=drawFor.path;
+  // the flier follows the path live and can drain it mid-draw (movePoll nulls it);
+  // re-seed from its current position so the stroke continues instead of crashing
+  if(!path||!path.length){ path=drawFor.path=[{x:drawFor.x,y:drawFor.y,a:1}]; drawFor.willLand=false; }
+  var last=path[path.length-1];
   var dx=p.x-last.x, dy=p.y-last.y;
   if(dx*dx+dy*dy>=49){ path.push({x:Math.max(3,Math.min(W-3,p.x)), y:Math.max(TOP+3,Math.min(H-3,p.y))}); }
   ev.preventDefault();
@@ -535,14 +551,13 @@ function onMove(ev){
 function onUp(){
   if(!drawFor)return;
   var p=drawFor, path=p.path;
-  if(path&&path.length>1){
-    var end=path[path.length-1], pad=G.pads[p.kind];
-    var dx=end.x-pad.x, dy=end.y-pad.y;
-    if(dx*dx+dy*dy<44*44){ path.push({x:pad.x,y:pad.y}); p.willLand=true; blip(520,0.12,0.05); }
-    path.shift(); // drop the anchor point (current pos)
-    if(!path.length){ p.path=null; }
-  } else { p.path=null; }
   drawFor=null;
+  if(!G||!path)return;
+  if(path.length&&path[0].a){ path.shift(); } // drop the anchor point unless the flier already consumed it
+  if(!path.length){ p.path=null; return; }
+  var end=path[path.length-1], pad=G.pads[p.kind];
+  var dx=end.x-pad.x, dy=end.y-pad.y;
+  if(dx*dx+dy*dy<44*44){ path.push({x:pad.x,y:pad.y}); p.willLand=true; blip(520,0.12,0.05); }
 }
 cvs.addEventListener("mousedown",onDown); cvs.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
 cvs.addEventListener("touchstart",onDown,{passive:false}); cvs.addEventListener("touchmove",onMove,{passive:false});
@@ -786,9 +801,10 @@ if(/[?&]pltest=1/.test(location.search)){
         if(!isFinite(p.x)||!isFinite(p.y))nan=true;
         act.push({id:p.id,kind:p.kind,x:Math.round(p.x),y:Math.round(p.y),state:p.state,routed:!!p.path,willLand:p.willLand}); }
       if(!isFinite(G.score)||!isFinite(G.time))nan=true;
+      var padOut={},pk; for(pk in G.pads)padOut[pk]={x:Math.round(G.pads[pk].x),y:Math.round(G.pads[pk].y)};
       return { mode:G.mode, tick:G.tick, time:+G.time.toFixed(2), hearts:(G.hearts===Infinity?-1:G.hearts),
         score:G.score, landings:G.landings, cross:G.cross, bouquet:G.bouquet,
-        collisions:G.collisions, active:act, phase:G.phase, nan:nan }; },
+        collisions:G.collisions, active:act, pads:padOut, phase:G.phase, nan:nan }; },
     autopilot:function(seconds,seed){
       if(seed!==undefined||!G||G.mode!=="daily"){ startMode("daily",(seed!==undefined)?seed:4242); running=false; }
       var arrivals={bee:-9,butterfly:-9,humm:-9};

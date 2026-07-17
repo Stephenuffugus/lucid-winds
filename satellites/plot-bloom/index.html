@@ -80,6 +80,13 @@ h2.sc-h{font-size:22px; color:var(--sage); font-weight:800; margin-bottom:4px; t
   color:var(--cream); padding:10px 16px; border-radius:12px; font-size:14px; z-index:60; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; text-align:center; max-width:80%}
 .toast.on{opacity:1; transform:translateX(-50%) translateY(-6px)}
 #bloomflash{position:absolute; inset:0; z-index:55; pointer-events:none; opacity:0; background:radial-gradient(circle at 50% 55%, #ffe9a866, transparent 60%)}
+/* first-run coach */
+#pb-coach{position:absolute; inset:0; z-index:70; display:none; align-items:center; justify-content:center; padding:26px; background:rgba(4,7,3,.8)}
+#pb-coach.on{display:flex}
+.coach-card{background:linear-gradient(180deg,#141c0f,#0e140b); border:1px solid #2c3a1c; border-radius:18px; padding:24px 20px; max-width:400px; width:100%; text-align:center; box-shadow:0 12px 40px #000c}
+.coach-h{font-size:19px; font-weight:800; color:var(--sage); margin:8px 0 10px}
+.coach-b{font-size:14.5px; line-height:1.7; color:var(--cream); text-align:left}
+.coach-b b{color:var(--gold)}
 /* grids for gallery/wardrobe */
 .gwrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:6px auto}
 .wcard{width:132px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:12px; text-align:center; cursor:pointer}
@@ -102,7 +109,7 @@ canvas.kc{background:#0c1208; border-radius:10px}
   <div id="s-title" class="screen on"><div class="pad center">
     <div class="title-word">Plot Bloom</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Place garden pieces so good neighbours meet. Bees love flowers, ponds feed the veg patch, trees crowd each other. Read the plot, plant for harmony, and watch a corner burst into bloom.</div>
+    <div class="ribbon"><b style="color:var(--sage)">A cozy garden puzzle.</b> Plant pieces beside neighbours they love and watch your score, and your plot, grow.</div>
     <div class="stack" style="margin-top:22px">
       <button class="btn primary" onclick="PB.begin('garden')">🌱 Garden Plot</button>
       <button class="btn sm" onclick="PB.begin('daily')">📅 Daily Plot</button>
@@ -132,6 +139,18 @@ canvas.kc{background:#0c1208; border-radius:10px}
     <div class="hand" id="pb-hand"></div>
     <div class="toast" id="pb-toast"></div>
     <div id="bloomflash"></div>
+    <div id="pb-coach">
+      <div class="coach-card">
+        <div style="font-size:36px">🌱</div>
+        <div class="coach-h">Grow the happiest garden</div>
+        <div class="coach-b">
+          <b>1.</b> Tap a piece in your hand at the bottom.<br>
+          <b>2.</b> Every square then shows the points that spot would earn. <b style="color:#a8e06a">Green</b> means good neighbours.<br>
+          <b>3.</b> Plant on big numbers. Points grow the plot and unlock new pieces.
+        </div>
+        <button class="btn primary" style="margin-top:16px" onclick="PB.coachDone()">Got it, let's plant</button>
+      </div>
+    </div>
   </div>
 
   <!-- RESULTS -->
@@ -169,12 +188,15 @@ canvas.kc{background:#0c1208; border-radius:10px}
   <div id="s-help" class="screen"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="ribbon" style="max-width:460px;text-align:left;line-height:1.6">
-      <b style="color:var(--sage)">Place for good neighbours.</b> Pick a piece from your hand, then tap a plot square. Each piece scores from the pieces already touching it.<br><br>
+      <b style="color:var(--sage)">Goal.</b> Fill the plot with good neighbours for the highest score.<br>
+      <b style="color:var(--sage)">Plant.</b> Tap a piece in your hand, then tap a square. Once a piece is picked, every empty square shows the points that spot would earn.<br>
+      <b style="color:var(--sage)">Watch.</b> Points fill the bar at the top. The plot grows and new pieces join your hand.<br><br>
+      <b style="color:var(--gold)">Who loves whom</b><br>
       🌷 Flowers love 🐝 bees, 💧 ponds and 🪑 benches.<br>
       🌳 Trees love benches and ponds but crowd other trees.<br>
       💧 Ponds feed 🥕 veg. 🌿 Hedges shelter veg.<br>
-      🐝 Hives hate benches. Read the pluses and minuses shown on every empty square before you plant.<br><br>
-      Reach a score and your <b class="hl">plot grows</b> and a new piece unlocks. Land a big-synergy corner and it bursts into a <b class="hl">Harmony Bloom</b> — a keepsake for your Gallery.
+      🐝 Hives hate benches.<br><br>
+      Score <b class="hl">6 or more</b> on a single placement and it bursts into a <b class="hl">Harmony Bloom</b>, a keepsake flower for your Gallery.
     </div>
     <div class="settingline" style="margin-top:16px">Sound <div class="toggle" id="tg-sound" onclick="PB.tog('sound')"><b></b></div></div>
     <div class="settingline">Colourblind labels <div class="toggle" id="tg-cb" onclick="PB.tog('cb')"><b></b></div></div>
@@ -221,7 +243,7 @@ function hashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCod
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 
 /* ---------- save ---------- */
-var PROG={ best:0, blooms:[], grewTotal:0, streak:0, lastDaily:'', bg:0, theme:0, bgUnlocked:1, themeUnlocked:1 };
+var PROG={ best:0, blooms:[], grewTotal:0, streak:0, lastDaily:'', bg:0, theme:0, bgUnlocked:1, themeUnlocked:1, seenHow:false };
 var SET={ sound:true, cb:false };
 function load(){ try{ var s=JSON.parse(localStorage.getItem('plotbloom_save')||'{}'); for(var k in s)if(PROG.hasOwnProperty(k))PROG[k]=s[k]; }catch(e){}
   try{ var t=JSON.parse(localStorage.getItem('plotbloom_set')||'{}'); for(var k2 in t)if(SET.hasOwnProperty(k2))SET[k2]=t[k2]; }catch(e){} }
@@ -245,15 +267,18 @@ function begin(mode){
   ac();
   var seed = (mode==='daily') ? hashStr('plotbloom|'+todayStr()) : (hashStr(''+Date.now())^ (Math.floor(Math.random()*1e9)));
   if(mode==='daily' && PROG.lastDaily===todayStr()){ /* replay allowed but no streak double-count */ }
-  G={ mode:mode, rng:mulberry32(seed>>>0), grid:new Array(N*N), size:(mode==='zen'?7:3),
-      unlocked:(mode==='zen'?[0,1,2,3,4,5,6]:[0,1,2]), hand:[], sel:-1, score:0, expands:0, blooms:0,
+  var big=(mode==='zen'||mode==='challenge');
+  G={ mode:mode, rng:mulberry32(seed>>>0), grid:new Array(N*N), size:(big?7:3),
+      unlocked:(big?[0,1,2,3,4,5,6]:[0,1,2]), hand:[], sel:-1, score:0, expands:0, blooms:0,
       phase:'play', granted:0, placed:0, chLimit:(mode==='challenge'?22:0), chTarget:(mode==='challenge'?90:0) };
   for(var i=0;i<N*N;i++)G.grid[i]=-1;
   deal();
   $('pb-mode').textContent = MODE_LBL[mode] || 'Garden';
   render();
   show('s-play');
+  if(!PROG.seenHow)$('pb-coach').classList.add('on');
 }
+function coachDone(){ PROG.seenHow=true; save(); $('pb-coach').classList.remove('on'); sfx('ui'); }
 
 function drawGlyphPool(){ return G.unlocked.slice(); }
 function deal(){
@@ -275,6 +300,13 @@ function previewScore(idx,pieceId){ return neighborScore(idx,pieceId); }
 function thresholds(){ return [20,60,130]; } // score points that trigger expand/unlock (garden)
 function nextThreshold(){ var t=thresholds(); for(var i=0;i<t.length;i++){ if(G.expands<=i && G.size<7 && G.score<t[i]) return t[i]; if(G.score<t[i]) return t[i]; } return 0; }
 
+function growPlot(){
+  G.size+=2; G.expands++;
+  // unlock new pieces as the plot grows
+  if(G.size===5 && G.unlocked.indexOf(3)<0)G.unlocked.push(3);        // hive
+  if(G.size===7){ if(G.unlocked.indexOf(4)<0)G.unlocked.push(4); if(G.unlocked.indexOf(5)<0)G.unlocked.push(5); } // bench, veg
+  sfx('expand');
+}
 function checkExpand(){
   if(G.mode==='zen'||G.mode==='challenge')return;
   var t=thresholds();
@@ -282,11 +314,7 @@ function checkExpand(){
   if(G.size<7){
     var idx=(G.size===3)?0:(G.size===5?1:2);
     if(G.score>=t[idx]){
-      G.size+=2; G.expands++;
-      // unlock a new piece
-      if(G.size===5 && G.unlocked.indexOf(3)<0)G.unlocked.push(3);        // hive
-      if(G.size===7){ if(G.unlocked.indexOf(4)<0)G.unlocked.push(4); if(G.unlocked.indexOf(5)<0)G.unlocked.push(5); } // bench, veg
-      sfx('expand'); toast('The plot grows — a new piece joins your hand.');
+      growPlot(); toast('The plot grows. A new piece joins your hand.');
     }
   }
   if(G.size===7 && G.score>=t[2] && G.unlocked.indexOf(6)<0){ G.unlocked.push(6); toast('Hedges unlocked.'); } // hedge
@@ -310,7 +338,11 @@ function place(idx,handPos){
   checkExpand();
   // end conditions
   if(G.mode==='challenge'){ if(G.placed>=G.chLimit)return endRun(),true; }
-  if(allFull())return endRun(),true;
+  if(allFull()){
+    // never dead-end a young plot: a full garden grows even below the threshold
+    if((G.mode==='garden'||G.mode==='daily') && G.size<7){ growPlot(); toast('The plot filled up, so it grew. Fresh ground to plant.'); }
+    else return endRun(),true;
+  }
   return true;
 }
 
@@ -321,7 +353,7 @@ function harmonyBloom(idx,gain){
   PROG.grewTotal++; save();
   sfx('bloom'); flashBloom();
   var g=window._sbCapEarn?_sbCapEarn(1,'plotbloom:harmony'):0; if(g>0)G.granted+=g;
-  toast('Harmony Bloom! +'+gain+' — a keepsake for your Gallery.');
+  toast('Harmony Bloom! +'+gain+'. A keepsake for your Gallery.');
 }
 
 /* ---------- run end ---------- */
@@ -404,13 +436,13 @@ function render(){
   })(i); }
   // threshold bar
   var nt=nextThreshold();
-  if(G.mode==='garden' && G.size<7 && nt>0){ var pct=Math.min(100,Math.round(G.score/nt*100)); $('pb-thfill').style.width=pct+'%'; $('pb-thlbl').textContent='Grow the plot at '+nt+' points'; }
+  if((G.mode==='garden'||G.mode==='daily') && G.size<7 && nt>0){ var pct=Math.min(100,Math.round(G.score/nt*100)); $('pb-thfill').style.width=pct+'%'; $('pb-thlbl').textContent='The plot grows at '+nt+' points'; }
   else if(G.mode==='challenge'){ var pct2=Math.min(100,Math.round(G.score/G.chTarget*100)); $('pb-thfill').style.width=pct2+'%'; $('pb-thlbl').textContent='Reach '+G.chTarget+' in '+(G.chLimit-G.placed)+' more pieces'; }
-  else{ $('pb-thfill').style.width='100%'; $('pb-thlbl').textContent=(G.mode==='zen'?'Zen garden — plant freely':'Fill the plot'); }
+  else{ $('pb-thfill').style.width='100%'; $('pb-thlbl').textContent=(G.mode==='zen'?'Zen garden. Plant freely.':'Fill the plot'); }
   hint('');
 }
 var hintT=null;
-function hint(msg){ var h=$('pb-hint'); if(!h)return; if(msg){ h.textContent=msg; } else { h.textContent=(G && G.sel<0)?'Pick a piece, then tap a plot square.':'Tap a square — numbers show the score.'; } }
+function hint(msg){ var h=$('pb-hint'); if(!h)return; if(msg){ h.textContent=msg; } else { h.textContent=(G && G.sel<0)?'Pick a piece, then tap a plot square.':'Tap a square. The numbers show the points.'; } }
 var toastT=null;
 function toast(msg){ var t=$('pb-toast'); if(!t)return; t.textContent=msg; t.classList.add('on'); if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('on');},1900); }
 function flashBloom(){ var f=$('bloomflash'); if(!f)return; f.style.transition='none'; f.style.opacity='0.9'; setTimeout(function(){ f.style.transition='opacity .6s'; f.style.opacity='0'; },30); }
@@ -441,7 +473,7 @@ function renderGallery(){
   var n=PROG.blooms.length;
   $('ga-sub').innerHTML = n? ('You have grown <span class="hl">'+PROG.grewTotal+'</span> harmony blooms. Newest shown.') : 'Land a big-synergy corner to grow a keepsake here.';
   var host=$('ga-wrap'); host.innerHTML='';
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:13px;padding:14px'; e.textContent='— no blooms yet —'; host.appendChild(e); return; }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:13px;padding:14px'; e.textContent='No blooms yet.'; host.appendChild(e); return; }
   var start=Math.max(0,n-24);
   for(var i=n-1;i>=start;i--){ var cv=document.createElement('canvas'); cv.className='kc'; cv.width=70; cv.height=70; drawKeepsake(cv.getContext('2d'),35,38,1.4,PROG.blooms[i]>>>0); host.appendChild(cv); }
 }
@@ -456,7 +488,7 @@ load(); fit(); paintToggles();
 window.addEventListener('pagehide',function(){ try{ if(AC)AC.close(); }catch(e){} });
 
 /* ---------- public + test ---------- */
-window.PB={ begin:begin, show:show, restart:restart, tog:tog };
+window.PB={ begin:begin, show:show, restart:restart, tog:tog, coachDone:coachDone };
 if(TEST){
   window.PB_DEV={
     start:function(m){ begin(m||'garden'); return snap(); },

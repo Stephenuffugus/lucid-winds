@@ -76,7 +76,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Season Sway</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Swipe each visitor's card left or right. Keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance through the turning seasons. The plant you tend becomes a <b class="hl">keepsake bloom</b> and a little poem when your run ends.</div>
+    <div class="ribbon">A cozy card game about tending one little garden. Swipe to answer each visitor and keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance for as many seasons as you can.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-year">🃏&nbsp; The Keeper's Year</button>
@@ -100,11 +100,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">👉</div><div><b>Swipe the card</b> left or right to answer the visitor. Each choice nudges the four meters.</div></div>
-    <div class="helprow"><div class="hi">⚖️</div><div>Keep <b>Sun · Rain · Soil · Wildlife</b> off the edges. If any one empties or overflows, the garden goes to rest.</div></div>
-    <div class="helprow"><div class="hi">👀</div><div>As you start a swipe, arrows show <b>which</b> meters that choice moves (not how much). You choose a direction, not a gamble.</div></div>
-    <div class="helprow"><div class="hi">🍂</div><div>The <b>season turns</b> as you go and quietly pulls one meter down. Balance ahead of it.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>Your choices <b>grow a keepsake bloom</b> and a haiku — kept in your Grove — every run.</div></div>
+    <div class="helprow"><div class="hi">🎯</div><div><b>Goal:</b> keep the four meters, <b>Sun · Rain · Soil · Wildlife</b>, near the middle. If any bar empties or fills all the way, the run ends.</div></div>
+    <div class="helprow"><div class="hi">👉</div><div><b>How:</b> swipe each visitor's card <b>left or right</b> to answer them. As you drag, arrows over the meters show which ones that choice will move.</div></div>
+    <div class="helprow"><div class="hi">🍂</div><div><b>Watch for:</b> every 6 cards the <b>season turns</b>, and each season pushes one meter toward an edge. Balance ahead of it.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div><b>Keep:</b> every finished run grows a <b>keepsake bloom</b> and a haiku in your Grove, and earns sunbeams.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -271,7 +270,7 @@ function C(sp,gl,q,lt,ld,rt,rd){ return {sp:sp,gl:gl,q:q,l:{t:lt,d:ld},r:{t:rt,d
 var CARDS=[
  C('Koi','🐟','The pond is low, Keeper. Open the rain-channel to me?','Fill the pond',[0,14,0,4],'Save it for the beds',[4,-6,8,0]),
  C('Scorpion','🦂','My stones are cold. Turn the sun up a while?','More sun',[15,-4,0,-3],'Keep it mild',[-4,3,3,4]),
- C('The Worm','🪱','Let me till deeper — the soil wants turning.','Dig deep',[0,-2,15,-4],'Leave the roots',[0,3,-5,7]),
+ C('The Worm','🪱','Let me till deeper, the soil wants turning.','Dig deep',[0,-2,15,-4],'Leave the roots',[0,3,-5,7]),
  C('Heron','🦢','The frogs need cover. Grow the reeds tall?','Grow the reeds',[-3,5,3,12],'Keep it open',[6,0,0,-7]),
  C('Bee','🐝','More flowers means more of us. Plant a wide bed?','Plant flowers',[6,-3,-4,12],'Rest the field',[-2,4,7,-4]),
  C('Mole','🦔','Shall I loosen the earth beneath the far row?','Loosen it',[0,-4,13,-2],'Firm it down',[2,2,-6,3]),
@@ -388,6 +387,7 @@ function applySide(side){
   // clamp + zen auto-nudge
   for(var j=0;j<4;j++){ var kk=ks[j]; var m=G.meters[kk];
     if(G.mode==='zen'){ if(m<8)m=8; if(m>92)m=92; }
+    else { if(m<0)m=0; if(m>100)m=100; }
     G.meters[kk]=m;
   }
   G.cardsPlayed++; G.growth++; G.seasonCard++;
@@ -422,7 +422,7 @@ function endRun(brokeK){
   var win=false, vowKept=false;
   if(G.mode==='vow'){ vowKept = (G.dom===G.vow.k) && brokeK===''; win=vowKept; }
   // record + grow keepsake
-  PROG.blooms.push(G.keepSeed>>>0); if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
+  PROG.blooms.push({s:G.keepSeed>>>0, d:['sun','rain','soil','wild'].indexOf(G.dom), q:G.quality}); if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
   PROG.runs=(PROG.runs||0)+1;
   if(G.seasonsSurvived>(PROG.bestSeasons||0))PROG.bestSeasons=G.seasonsSurvived;
   // sunbeams
@@ -564,7 +564,7 @@ function drawEnding(){ var a=Math.min(1,(G.endT||0)/0.5); ctx.save(); ctx.global
 
 function showResults(){ G.phase='result';
   $('go-title').textContent = G.ended==='win'?'The vow is kept!':(G.brokeK?'The garden rests':'A gentle close');
-  $('go-lab').textContent = 'seasons tended · '+G.cardsPlayed+' cards';
+  $('go-lab').textContent = G.seasonsSurvived+' season'+(G.seasonsSurvived===1?'':'s')+' tended · '+G.cardsPlayed+' cards';
   var c=$('go-plant'), g=c.getContext('2d'); g.clearRect(0,0,150,150); drawFlower(g,75,80,2.0,G.keepSeed,G.dom,G.quality);
   var names={sun:'Sunward Bloom',rain:'Rainkeep Bloom',soil:'Deeproot Bloom',wild:'Wildheart Bloom'};
   var tier=['a common keepsake','an uncommon keepsake','a fine keepsake','a rare keepsake','a radiant keepsake','a legendary keepsake'][Math.min(5,G.quality)];
@@ -606,9 +606,11 @@ window.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!G||G.ph
 function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.blooms.length;
   $('grove-sub').textContent = n? ('You have grown '+n+' keepsake bloom'+(n===1?'':'s')+'. Every run adds one.') : 'Finish a run to grow your first keepsake bloom here.';
   var start=Math.max(0,n-60);
-  for(var i=start;i<n;i++){ var seed=PROG.blooms[i]>>>0; var doms=['sun','rain','soil','wild']; var dom=doms[seed%4];
-    var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); drawFlower(g,35,40,1.3,seed,dom,3); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no blooms yet —'; host.appendChild(e); }
+  for(var i=start;i<n;i++){ var b=PROG.blooms[i]; var doms=['sun','rain','soil','wild'];
+    var isObj=(b&&typeof b==='object'); var seed=isObj?(b.s>>>0):(b>>>0);
+    var dom=isObj?(doms[b.d]||'soil'):doms[seed%4]; var q=isObj?Math.min(5,b.q||0):3;
+    var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); drawFlower(g,35,40,1.3,seed,dom,q); host.appendChild(c); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='No blooms yet.'; host.appendChild(e); }
 }
 function wardCanvas(kind,it){ var c=document.createElement('canvas'); c.width=96; c.height=64; var g=c.getContext('2d');
   if(kind==='back'){ g.fillStyle=it.col; g.beginPath(); g.moveTo(30,6); g.arcTo(66,6,66,58,8); g.arcTo(66,58,30,58,8); g.arcTo(30,58,30,6,8); g.arcTo(30,6,66,6,8); g.closePath(); g.fill(); g.fillStyle=it.ink; g.font='20px system-ui'; g.textAlign='center'; g.fillText('❦',48,40); }

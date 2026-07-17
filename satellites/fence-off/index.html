@@ -92,8 +92,8 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
 
 <div id="hud">
   <button class="hbtn" id="hud-back">⌂</button>
-  <div class="chip"><b id="h-you" style="color:var(--gold)">● 10 ↷1</b><span>you · fences · vault</span></div>
-  <div class="chip"><b id="h-ai" style="color:var(--indigo)">▲ 10 ↷1</b><span>rival · fences · vault</span></div>
+  <div class="chip"><b id="h-you" style="color:var(--gold)">● 🧱10 ↷1</b><span>you · fences · vault</span></div>
+  <div class="chip"><b id="h-ai" style="color:var(--indigo)">▲ 🧱10 ↷1</b><span>rival · fences · vault</span></div>
   <div class="chip grow"><b id="h-status">—</b><span id="h-mode">duel</span></div>
 </div>
 
@@ -108,7 +108,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
 
 <div class="screen on" id="s-title">
   <h1><span class="a">FENCE</span> <span class="b">OFF</span></h1>
-  <div class="tag">wall your rival out · race your pawn home · one vault to break any siege</div>
+  <div class="tag">a yard race against a rival. step your pawn or plant a fence each turn, first pawn home wins</div>
   <button class="btn gold" id="b-duel">⚔ Duel Ladder</button>
   <button class="btn blue" id="b-daily">📅 Daily Puzzle</button>
   <button class="btn" id="b-blitz">⚡ Blitz</button>
@@ -147,12 +147,49 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
 </div>
 
 <div class="screen" id="s-how">
-  <h1 style="font-size:1.4rem">HOW TO FENCE</h1>
-  <p class="howp">A 9×9 yard. Your <b>● gold pawn</b> starts at the bottom and wants any square on the <b>top row</b>. The rival <b>▲ pawn</b> wants the bottom row. First one home wins.</p>
-  <p class="howp">On your turn, <b>tap a glowing square</b> to step one space — or spend one of your <b>10 fences</b>: tap 🧱 FENCE, tap between squares to preview, tap ✓ to plant it. A fence can slow anyone but may <b>never seal off</b> someone's last path — the yard refuses it (shown in red).</p>
-  <p class="howp">Pawns nose to nose? You <b>jump straight over</b>. If a fence sits behind them, you slip <b>diagonally</b> past instead — the classic rules, exact.</p>
-  <p class="howp"><b>↷ The Vault (the twist):</b> once per game each pawn may climb straight over one adjacent fence. The climbed fence becomes a <b>gate</b> — open to BOTH pawns forever after. No wall-in is ever hopeless, but the door you open, your rival may use.</p>
-  <p class="howp"><b>Daily Puzzle</b> deals everyone the same trapped position — win in the stated moves (the vault is usually the key). <b>Blitz</b> gives you ten seconds a turn. <b>Zen Sandbox</b> is a free board for both pawns; it pays no sunbeams.</p>
+  <h1 style="font-size:1.4rem">HOW TO PLAY</h1>
+  <svg viewBox="0 0 330 184" style="width:100%;max-width:330px;margin:6px 0 2px" aria-hidden="true">
+    <!-- 5x4 mini yard -->
+    <g>
+      <rect x="16" y="16" width="34" height="34" rx="5" fill="#171d2a"/><rect x="54" y="16" width="34" height="34" rx="5" fill="#1b2231"/><rect x="92" y="16" width="34" height="34" rx="5" fill="#171d2a"/><rect x="130" y="16" width="34" height="34" rx="5" fill="#1b2231"/><rect x="168" y="16" width="34" height="34" rx="5" fill="#171d2a"/>
+      <rect x="16" y="54" width="34" height="34" rx="5" fill="#1b2231"/><rect x="54" y="54" width="34" height="34" rx="5" fill="#171d2a"/><rect x="92" y="54" width="34" height="34" rx="5" fill="#1b2231"/><rect x="130" y="54" width="34" height="34" rx="5" fill="#171d2a"/><rect x="168" y="54" width="34" height="34" rx="5" fill="#1b2231"/>
+      <rect x="16" y="92" width="34" height="34" rx="5" fill="#171d2a"/><rect x="54" y="92" width="34" height="34" rx="5" fill="#1b2231"/><rect x="92" y="92" width="34" height="34" rx="5" fill="#171d2a"/><rect x="130" y="92" width="34" height="34" rx="5" fill="#1b2231"/><rect x="168" y="92" width="34" height="34" rx="5" fill="#171d2a"/>
+      <rect x="16" y="130" width="34" height="34" rx="5" fill="#1b2231"/><rect x="54" y="130" width="34" height="34" rx="5" fill="#171d2a"/><rect x="92" y="130" width="34" height="34" rx="5" fill="#1b2231"/><rect x="130" y="130" width="34" height="34" rx="5" fill="#171d2a"/><rect x="168" y="130" width="34" height="34" rx="5" fill="#1b2231"/>
+    </g>
+    <!-- goal row tint + dots -->
+    <g>
+      <rect x="16" y="16" width="34" height="34" rx="5" fill="rgba(224,182,79,0.16)"/><rect x="54" y="16" width="34" height="34" rx="5" fill="rgba(224,182,79,0.16)"/><rect x="92" y="16" width="34" height="34" rx="5" fill="rgba(224,182,79,0.16)"/><rect x="130" y="16" width="34" height="34" rx="5" fill="rgba(224,182,79,0.16)"/><rect x="168" y="16" width="34" height="34" rx="5" fill="rgba(224,182,79,0.16)"/>
+      <circle cx="33" cy="22" r="2.5" fill="rgba(224,182,79,0.8)"/><circle cx="71" cy="22" r="2.5" fill="rgba(224,182,79,0.8)"/><circle cx="109" cy="22" r="2.5" fill="rgba(224,182,79,0.8)"/><circle cx="147" cy="22" r="2.5" fill="rgba(224,182,79,0.8)"/><circle cx="185" cy="22" r="2.5" fill="rgba(224,182,79,0.8)"/>
+    </g>
+    <!-- rival pawn -->
+    <g><rect x="58" y="58" width="26" height="26" rx="6" fill="#7f8cff" stroke="#2a2f66" stroke-width="2"/><path d="M71 63 L78 77 L64 77 Z" fill="#ffffff"/></g>
+    <!-- fence between rows 1 and 2, spanning cols 3-4 -->
+    <g><rect x="128" y="85" width="76" height="10" rx="3" fill="#b07b3e" stroke="#5f3d1c" stroke-width="1.6"/>
+      <line x1="147" y1="87" x2="147" y2="93" stroke="#5f3d1c"/><line x1="166" y1="87" x2="166" y2="93" stroke="#5f3d1c"/><line x1="185" y1="87" x2="185" y2="93" stroke="#5f3d1c"/></g>
+    <!-- step hints around your pawn -->
+    <g stroke="#e0b64f" fill="none" stroke-width="2" stroke-dasharray="4 3" opacity="0.9">
+      <circle cx="71" cy="147" r="10"/><circle cx="147" cy="147" r="10"/><circle cx="109" cy="109" r="10"/>
+    </g>
+    <!-- path arrow home -->
+    <g stroke="rgba(224,182,79,0.55)" stroke-width="2" stroke-dasharray="5 4" fill="none">
+      <line x1="109" y1="96" x2="109" y2="44"/>
+    </g>
+    <path d="M109 34 L114 44 L104 44 Z" fill="rgba(224,182,79,0.75)"/>
+    <!-- your pawn -->
+    <g><circle cx="109" cy="147" r="13" fill="#e0b64f" stroke="#4a3308" stroke-width="2"/><circle cx="109" cy="147" r="4.5" fill="#2b2010"/></g>
+    <text x="109" y="180" text-anchor="middle" font-size="13" fill="#e0b64f" font-family="-apple-system,Segoe UI,Roboto,sans-serif">you</text>
+    <!-- side labels -->
+    <g font-size="13" fill="#b9c0cf" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+      <line x1="204" y1="33" x2="210" y2="33" stroke="#8a8f9e"/><text x="214" y="37">goal row</text>
+      <line x1="206" y1="90" x2="212" y2="90" stroke="#8a8f9e"/><text x="216" y="94">a fence</text>
+      <line x1="160" y1="147" x2="212" y2="147" stroke="#8a8f9e" opacity="0.5"/><text x="216" y="151">your steps</text>
+    </g>
+  </svg>
+  <p class="howp"><b>The goal.</b> Your gold pawn ● starts at the bottom. Walk it to any square in the top row before the rival ▲ walks to the bottom row. First pawn home wins.</p>
+  <p class="howp"><b>Your turn is one action.</b> Tap a dotted square to step your pawn one space. Or plant a fence: tap 🧱 FENCE, tap a gap between squares, then tap ✓. You get 10 fences, so does the rival.</p>
+  <p class="howp"><b>Fences slow, they never trap.</b> A fence blocks walking for both pawns. A green preview means it is allowed. Red means refused, no fence may ever seal off a pawn's last path home. Pawns nose to nose jump straight over each other, or diagonally if a fence sits behind.</p>
+  <p class="howp"><b>↷ The vault, once per game.</b> Boxed in? Tap ↷ VAULT, then tap the orange square to climb one fence beside you. That fence becomes an open gate for BOTH pawns forever, so the door you open, your rival may use.</p>
+  <p class="howp"><b>Modes.</b> Duel is the full game against three wardens. Daily deals everyone one trapped puzzle, win it in the stated moves, the vault is usually the key. Blitz allows ten seconds a turn. Zen is a free sandbox that pays no sunbeams.</p>
   <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
 </div>
 
@@ -641,7 +678,7 @@ function startDaily(seedOverride){
   var S=cloneState(p.S);
   newGameUI("daily", S, 1, "Daily · win in "+p.N);
   G.puzzle=p;
-  toast("Puzzle #"+code+" — force the win in "+p.N+" moves");
+  toast("Puzzle #"+code+". Reach the top row in "+p.N+" moves");
 }
 function stopToMenu(){ G=null;
   $("hud").classList.remove("on"); $("dock").classList.remove("on");
@@ -650,8 +687,8 @@ function stopToMenu(){ G=null;
 function updateHud(){
   if(!G)return;
   var S=G.S;
-  $("h-you").textContent="● "+S.fences[0]+" ↷"+S.vaults[0];
-  $("h-ai").textContent="▲ "+S.fences[1]+" ↷"+S.vaults[1];
+  $("h-you").textContent="● 🧱"+S.fences[0]+" ↷"+S.vaults[0];
+  $("h-ai").textContent="▲ 🧱"+S.fences[1]+" ↷"+S.vaults[1];
   var st="";
   if(S.phase!=="play")st=S.winner===0?"● wins":"▲ wins";
   else if(G.mode==="zen")st="free play";
@@ -741,7 +778,7 @@ function applyUI(mv){
     if(mv.t==="vault"){
       G.flash={o:mv.o,r:mv.r,c:mv.c,t:nowMs()};
       sndVault();
-      toast(side===0?"↷ You vault the fence — it is a gate now, open to both":"↷ The rival vaults — that fence is a gate now");
+      toast(side===0?"↷ You vault the fence. It is a gate now, open to both":"↷ The rival vaults. That fence is a gate now");
       if(side===0){ PROG.vaultsUsed++; save(); }
     } else sndMove();
   } else if(mv.t==="wall"){
@@ -788,7 +825,7 @@ cvs.addEventListener("pointerdown",function(e){
     G.preview={o:G.orient,r:slot.r,c:slot.c,ok:lg.ok,reason:lg.reason};
     if(!lg.ok){
       sndBad();
-      toast(lg.reason==="seals"?"✕ Refused — that would seal a pawn in completely":
+      toast(lg.reason==="seals"?"✕ Refused, that would seal a pawn in completely":
         (lg.reason==="crosses"?"✕ Fences cannot cross":
         (lg.reason==="nofence"?"✕ No fences left":"✕ Fences cannot overlap")));
     } else toast("Tap again or press ✓ to plant it");
@@ -828,7 +865,7 @@ tap("d-orient",function(){ if(!G)return; G.orient=G.orient==="H"?"V":"H";
     G.preview={o:G.orient,r:G.preview.r,c:G.preview.c,ok:lg.ok,reason:lg.reason}; }
   updateDock(); });
 tap("d-vault",function(){ if(!G)return; G.vaultMode=!G.vaultMode; G.fenceMode=false; G.preview=null;
-  if(G.vaultMode)toast("↷ Once per game — tap an orange square to climb the fence"); updateDock(); });
+  if(G.vaultMode)toast("↷ Once per game. Tap an orange square to climb the fence"); updateDock(); });
 tap("d-ok",confirmFence);
 tap("d-cancel",function(){ if(!G)return; G.fenceMode=false; G.vaultMode=false; G.preview=null; updateDock(); });
 tap("d-reset",function(){ if(!G||G.mode!=="zen")return; G.S=newState("zen",1); G.anim=null; G.flash=null; G.zenSide=0;
@@ -1122,19 +1159,19 @@ function draw(){
   var by=Y0+9*PITCH-GAP+34;
   ctx.fillStyle=BT.text; ctx.font="bold 22px sans-serif"; ctx.textAlign="center";
   var st="";
-  if(S.phase!=="play")st=S.winner===0?"● HOME — YOU WIN":"▲ HOME — RIVAL WINS";
-  else if(G.mode==="zen")st="ZEN — move either pawn, plant fences, vault freely";
-  else if(G.mode==="daily")st=S.turn===0?("FORCE THE WIN — "+S.budget+" MOVE"+(S.budget>1?"S":"")+" LEFT"):"THE RIVAL REPLIES…";
+  if(S.phase!=="play")st=S.winner===0?"● HOME, YOU WIN":"▲ HOME, RIVAL WINS";
+  else if(G.mode==="zen")st="ZEN, move either pawn, plant fences, vault freely";
+  else if(G.mode==="daily")st=S.turn===0?("REACH THE TOP, "+S.budget+" MOVE"+(S.budget>1?"S":"")+" LEFT"):"THE RIVAL REPLIES…";
   else if(G.mode==="blitz"&&S.turn===0){
     var tl=Math.max(0,Math.ceil((G.deadline-nowMs())/1000));
-    st="YOUR MOVE — "+tl+"s";
+    st="YOUR MOVE, "+tl+"s";
   }
   else st=S.turn===0?"YOUR MOVE":"THE RIVAL THINKS…";
   ctx.fillText(st,270,by);
   ctx.font="13px sans-serif"; ctx.fillStyle="rgba(200,200,210,0.75)";
   ctx.fillText("● you race to the dotted top row · ▲ rival races to the marked bottom row",270,by+26);
   if(G.mode!=="zen")
-    ctx.fillText("↷ vault: once per game, climb one fence — it becomes a gate for both",270,by+46);
+    ctx.fillText("↷ vault: once per game, climb one fence, it becomes a gate for both",270,by+46);
   ctx.textAlign="left";
 }
 function drawTitleHint(){
