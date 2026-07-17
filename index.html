@@ -94797,7 +94797,12 @@ window.LW_debug.cleanGhostDrops = function(){
     if (spec.tickles && spec.tickles.length){
       var prev100 = Math.floor(prev/100);
       var next100 = Math.floor(next/100);
-      if (next100 > prev100){
+      // Jessie 2026-07-10: GPS jitter crossed 100m boundaries every few
+      // seconds and the toasts became spam. Distance still triggers, but at
+      // most one tickle per 15 minutes (the first after app-open is free).
+      window._lwTickleAt = window._lwTickleAt || 0;
+      if (next100 > prev100 && (Date.now() - window._lwTickleAt) > 15*60*1000){
+        window._lwTickleAt = Date.now();
         try {
           var tickle = spec.tickles[Math.floor(Math.random()*spec.tickles.length)];
           if (window._toast) window._toast(tickle, {duration:2400});
