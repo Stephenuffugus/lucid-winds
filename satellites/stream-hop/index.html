@@ -24,6 +24,13 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
   background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+#hoppad{position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom,0) + 10px);
+  display:none; justify-content:center; gap:10px; z-index:15; padding:0 10px}
+#hoppad.on{display:flex}
+.hopbtn{width:64px; height:52px; border-radius:12px; border:1px solid rgba(122,179,86,0.4);
+  background:rgba(8,12,7,0.45); color:#e8dcc8; font-size:20px; cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.hopbtn:active{background:rgba(122,179,86,0.35)}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
@@ -70,6 +77,15 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 <body>
 <div id="wrap"><div id="stage">
   <canvas id="game"></canvas>
+
+  <!-- Directional pad (Jessie 2026-07-15: show HOW to move up or sideways).
+       Swipes and taps on the water still work — these are the discoverable way. -->
+  <div id="hoppad">
+    <button class="hopbtn" id="hp-left" aria-label="hop left">◀</button>
+    <button class="hopbtn" id="hp-up" aria-label="hop up">▲</button>
+    <button class="hopbtn" id="hp-down" aria-label="hop down">▼</button>
+    <button class="hopbtn" id="hp-right" aria-label="hop right">▶</button>
+  </div>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
@@ -159,7 +175,8 @@ var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
 var BUILD='v1.0';
 var curScreen='s-title';
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
+  var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, shake:true, cb:false };
@@ -554,6 +571,10 @@ function boot(){
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
+  // d-pad — pointerdown (not click) so hops feel instant
+  [['hp-up','up'],['hp-down','down'],['hp-left','left'],['hp-right','right']].forEach(function(pr){
+    var el=$(pr[0]); if(el) el.addEventListener('pointerdown',function(e){ e.preventDefault(); e.stopPropagation(); ac(); queueHop(pr[1]); },{passive:false});
+  });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
