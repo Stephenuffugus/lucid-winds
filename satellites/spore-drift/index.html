@@ -209,7 +209,7 @@ h2.sc-h{font-size:24px; color:var(--dew); font-weight:800; margin-bottom:4px}
    SPORE DRIFT — ambient absorption (Sky Wolf Studios)
    Campaign #23 (prototype-first). Osmos lineage.
    ============================================================ */
-var BUILD="v1.1";
+var BUILD="v1.2";
 var W=540, H=960, DT=1/60;
 var MIN_ALIVE=6, START_M=240;
 
@@ -282,7 +282,7 @@ function flowAt(x,y,tick,strength){
 /* ---------- world ---------- */
 var G=null;
 function mote(x,y,m,flags){ return { x:x, y:y, vx:0, vy:0, m:m, r:Math.sqrt(m), e:(flags&&flags.e)?1:0,
-  f:(flags&&flags.f)?1:0, birth:0, threat:false, dead:false }; }
+  f:(flags&&flags.f)?1:0, t:(flags&&flags.t)||0, birth:0, threat:false, dead:false }; }
 function newWorld(mode,seed,flowS){
   return { mode:mode, seed:seed, rng:mkRng(seed), tick:0, phase:"play", paused:false,
     P:{ x:W/2, y:H*0.64, vx:0, vy:0, m:START_M, r:Math.sqrt(START_M) },
@@ -325,6 +325,22 @@ function genMotes(g, spec, opts){
     var fl=mote(fx,fy,fm,{f:1}); fl.vx=(g.rng()-0.5)*14; fl.vy=(g.rng()-0.5)*14; out.push(fl); } }
   g.motes=out;
 }
+/* typed motes (v1.2 — Stephen: other colored things that act differently).
+   zephyr flees you, bramble pricks unless you dwarf it, amber grazes and grows. */
+function applyTypes(g, types){
+  if(!types)return;
+  var pool=[], i;
+  for(i=0;i<g.motes.length;i++){ var m=g.motes[i]; if(!m.e&&!m.f)pool.push(m); }
+  pool.sort(function(a,b){return a.m-b.m;});
+  var k, n;
+  n=types.zephyr||0;             /* small fleers from the little end */
+  for(k=0;k<n&&k<pool.length;k++){ if(!pool[k].t)pool[k].t='zephyr'; }
+  n=types.bramble||0;            /* mid-size thorns */
+  var mid=Math.floor(pool.length*0.45);
+  for(k=0;k<n&&mid+k<pool.length;k++){ if(!pool[mid+k].t)pool[mid+k].t='bramble'; }
+  n=types.amber||0;              /* big-end grazers */
+  for(k=0;k<n&&k<pool.length;k++){ var gi=pool.length-1-k; if(gi>=0&&!pool[gi].t)pool[gi].t='amber'; }
+}
 var CHAMBERS=[
  {name:"First Waters", goalTxt:"Grow to 30% of all life", flowS:8,  goal:{type:"frac",n:0.30},
   spec:[[13,0.16,0.32],[3,0.4,0.6],[1,1.5,1.7]]},
@@ -345,7 +361,20 @@ var CHAMBERS=[
  {name:"Sparse Sky", goalTxt:"Become the largest", flowS:14, goal:{type:"largest"},
   spec:[[6,0.25,0.45],[3,0.55,0.9],[2,2.6,3.0]]},
  {name:"The Still Point", goalTxt:"Grow to 55% of all life", flowS:19, goal:{type:"frac",n:0.55},
-  spec:[[12,0.14,0.3],[5,0.45,0.8],[3,2.0,2.6]]}
+  spec:[[12,0.14,0.3],[5,0.45,0.8],[3,2.0,2.6]]},
+ /* v1.2 — typed-mote chambers */
+ {name:"Skittish Shallows", goalTxt:"Grow to 40% of all life", flowS:12, goal:{type:"frac",n:0.40},
+  spec:[[12,0.16,0.34],[5,0.45,0.7],[1,1.6,1.9]], types:{zephyr:6}},
+ {name:"Bramble Run", goalTxt:"Absorb the Elder Spore", flowS:13, goal:{type:"elder"},
+  spec:[[10,0.18,0.36],[5,0.5,0.85]], elder:2.2, types:{bramble:5}},
+ {name:"The Grazing Lane", goalTxt:"Become the largest", flowS:14, goal:{type:"largest"},
+  spec:[[12,0.16,0.34],[4,0.5,0.8],[1,1.5,1.8]], types:{amber:3}},
+ {name:"Flight and Thorn", goalTxt:"Grow to 50% of all life", flowS:16, goal:{type:"frac",n:0.50},
+  spec:[[12,0.15,0.32],[5,0.45,0.75],[1,1.8,2.2]], types:{zephyr:5,bramble:4}},
+ {name:"Amber Tide", goalTxt:"Grow to 50% of all life", flowS:15, goal:{type:"frac",n:0.50},
+  spec:[[14,0.14,0.3],[4,0.45,0.7],[1,1.6,2.0]], types:{amber:5}},
+ {name:"The Whole Garden", goalTxt:"Absorb the Elder Spore", flowS:18, goal:{type:"elder"},
+  spec:[[12,0.15,0.32],[5,0.45,0.8]], elder:2.6, types:{zephyr:4,bramble:4,amber:2}}
 ];
 function startMode(mode,idx){
   var seed, flowS=12, goal=null, ch=CHAMBERS[idx||0], gopts=null;
@@ -357,7 +386,7 @@ function startMode(mode,idx){
   G=newWorld(mode,seed,flowS);
   G.chamber=(mode==="chamber")?idx:-1;
   G.goal=goal;
-  if(mode==="chamber"){ genMotes(G, ch.spec, gopts); }
+  if(mode==="chamber"){ genMotes(G, ch.spec, gopts); applyTypes(G, ch.types); }
   else if(mode==="daily"){ genMotes(G, [[9,0.16,0.36],[5,0.45,0.8],[2,1.7,2.6]], null); }
   else if(mode==="bloom"){ genMotes(G, [[7,0.2,0.45],[4,0.6,1.0],[2,1.7,2.4]], {flowers:5}); G.flowersLeft=5; }
   else { genMotes(G, [[10,0.18,0.4],[5,0.5,0.9],[3,1.6,2.8]], null); }
@@ -426,6 +455,21 @@ function tickSim(){
     m.vx*=0.998; m.vy*=0.998;
     m.x+=m.vx*DT*3.4; m.y+=m.vy*DT*3.4;
   }
+  /* typed-mote behaviors: zephyr flees the bigger player, amber hunts grass */
+  for(i=0;i<ms.length;i++){ var tb=ms[i]; if(tb.dead||!tb.t)continue;
+    if(tb.t==='zephyr'&&P.m>tb.m){
+      var zd2=sqDist(P.x,P.y,tb.x,tb.y);
+      if(zd2<240*240){ var zd=Math.sqrt(zd2)||1, zf=(1-zd/240)*38;
+        tb.vx+=(tb.x-P.x)/zd*zf*DT*10; tb.vy+=(tb.y-P.y)/zd*zf*DT*10; }
+    } else if(tb.t==='amber'){
+      var bt=null, bd=320*320, q3;
+      for(q3=0;q3<ms.length;q3++){ var cand=ms[q3];
+        if(cand===tb||cand.dead||cand.e||cand.f||cand.t||cand.m>=tb.m)continue;
+        var cd2=sqDist(tb.x,tb.y,cand.x,cand.y); if(cd2<bd){bd=cd2;bt=cand;} }
+      if(bt){ var ad=Math.sqrt(bd)||1;
+        tb.vx+=(bt.x-tb.x)/ad*9*DT*10; tb.vy+=(bt.y-tb.y)/ad*9*DT*10; }
+    }
+  }
   /* soft walls */
   function walls(o){
     if(o.x<o.r)o.vx+=(o.r-o.x)*0.05;
@@ -440,6 +484,13 @@ function tickSim(){
     var d2=sqDist(P.x,P.y,a.x,a.y), rr=(P.r+a.r);
     if(d2<rr*rr){
       if(a.birth&&G.tick-a.birth<30&&a.m<=P.m){ /* fresh puff grace vs player only */ }
+      else if(a.t==='bramble'&&P.m>=a.m&&P.m<a.m*1.6){
+        /* thorned: it pricks and sips YOU until you dwarf it (1.6x) */
+        var dth=Math.sqrt(d2)||1, pushT=(rr-dth)*0.08;
+        P.vx+=(P.x-a.x)/dth*pushT*9; P.vy+=(P.y-a.y)/dth*pushT*9;
+        drainPair(a,P,false,true,0.5);
+        if(!G.thornHint){ G.thornHint=1; toast("Thorned. Grow half again bigger to drink it."); }
+      }
       else if(P.m>=a.m){ drainPair(P,a,true,false); }
       else if(G.mode==="zen"){ /* gentle bump, no drain */
         var dd=Math.sqrt(d2)||1, push=(rr-dd)*0.06;
@@ -457,6 +508,8 @@ function tickSim(){
       var bPuff=b.birth>0, cPuff=c.birth>0;
       if((bPuff||cPuff)&&!(b.e||c.e||b.f||c.f)){
         if(b.m>=c.m)drainPair(b,c,false,false,0.5); else drainPair(c,b,false,false,0.5);
+      } else if(b.t==='amber'&&b.m>=c.m&&!c.e&&!c.f&&!c.t){ drainPair(b,c,false,false,0.35);
+      } else if(c.t==='amber'&&c.m>=b.m&&!b.e&&!b.f&&!b.t){ drainPair(c,b,false,false,0.35);
       } else {
         var dd=Math.sqrt(dd2)||1, push=(rr2-dd)*0.012;
         var px=(b.x-c.x)/dd*push, py=(b.y-c.y)/dd*push;
@@ -473,7 +526,13 @@ function tickSim(){
   /* player death */
   if(P.m<MIN_ALIVE&&G.phase==="play"){ loseRun(); }
   G.tick++;
-  if(G.goal&&G.phase==="play")checkGoal();
+  if(G.linger){
+    G.lingerT--;
+    var gcl=$("goalchip");
+    gcl.innerHTML="✓ <b>Clear</b> · tidy up a moment · tap here to finish ("+Math.ceil(G.lingerT/60)+")";
+    if(G.lingerT<=0&&G.phase==="play"){ winRun(); return; }
+  }
+  if(G.goal&&G.phase==="play"&&!G.linger)checkGoal();
 }
 function goalProgress(){
   var P=G.P, g=G.goal, i, big=0;
@@ -494,7 +553,16 @@ function checkGoal(){
   else if(g.type==="elder")ok=G.elderDown;
   else if(g.type==="bloom")ok=G.flowersLeft<=0;
   if(ok)G.goalStable++; else G.goalStable=0;
-  if(G.goalStable>=40)winRun();
+  if(G.goalStable>=40&&!G.linger)startLinger();
+}
+/* Last Drift (v1.2 — Stephen: levels ended abruptly, "you should be able to
+   clean up a little"): the win is BANKED the moment the goal holds, then you
+   get a relaxed tidy-up window. Tap the goal chip or let it run out. */
+function startLinger(){
+  if(G.linger)return; G.linger=true; G.lingerT=720;
+  toast("Chamber clear. Drift a moment and tidy up.");
+  var gc=$("goalchip");
+  gc.onclick=function(){ if(G&&G.linger)winRun(); };
 }
 function payRun(n,tag){ if(!G||G.mode==="zen")return 0;
   if(G.earned>=12)return 0; n=Math.min(n,12-G.earned);
@@ -502,6 +570,7 @@ function payRun(n,tag){ if(!G||G.mode==="zen")return 0;
   if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":"")); return got; }
 function winRun(){
   if(G.phase!=="play")return; G.phase="won"; G.won=true; running=false;
+  G.linger=false; var gcw=$("goalchip"); if(gcw)gcw.onclick=null;
   var first=false;
   if(G.mode==="chamber"){ first=!PROG.chambers[G.chamber];
     if(first){ PROG.chambers[G.chamber]=true; mintKeepsake(); payRun(2,"chamber"); }
@@ -520,6 +589,7 @@ function winRun(){
   show("s-over"); $("hud").classList.remove("on"); $("goalchip").classList.remove("on");
 }
 function loseRun(){
+  if(G&&G.linger){ winRun(); return; }   /* the win was banked — tidy-up is stress-free */
   if(G.phase!=="play")return; G.phase="lost"; running=false; sndLose();
   $("over-title").textContent="The drift took you";
   $("over-sub").textContent="Your spore thinned into the current. Every drop of it feeds the water somewhere.";
@@ -616,7 +686,8 @@ function render(){
     ctx.beginPath(); ctx.arc(tr.x,tr.y,2+u*3.4,0,6.283); ctx.fill(); }
   /* motes */
   for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
-    var col=m.f?[229,143,160]:(m.e?[200,168,75]:sb.mote);
+    var col=m.f?[229,143,160]:(m.e?[200,168,75]
+      :(m.t==='zephyr'?[191,224,242]:m.t==='bramble'?[229,143,160]:m.t==='amber'?[255,215,106]:sb.mote));
     var msp2=_moteSpr(m), hasSpr=_blitC(msp2, m.x, m.y, m.r*2.7);   /* painted orb, aspect-preserved */
     if(!hasSpr){ /* procedural body + highlight */
       ctx.fillStyle=rgb(col, m.f?0.85:0.62);
@@ -631,6 +702,16 @@ function render(){
           ctx.beginPath(); ctx.moveTo(m.x+Math.cos(ea)*(m.r-3), m.y+Math.sin(ea)*(m.r-3));
           ctx.lineTo(m.x+Math.cos(ea)*(m.r+7), m.y+Math.sin(ea)*(m.r+7)); ctx.stroke(); } }
     }
+    if(m.t==='zephyr'){ var zk; ctx.strokeStyle='rgba(191,224,242,0.85)'; ctx.lineWidth=1.5;
+      for(zk=0;zk<3;zk++){ var za=G.tick*0.05+zk*2.09;
+        ctx.beginPath(); ctx.arc(m.x,m.y,m.r+3+zk*1.6, za, za+0.9); ctx.stroke(); } }
+    else if(m.t==='bramble'){ var bk; ctx.strokeStyle='rgba(229,143,160,0.95)'; ctx.lineWidth=2;
+      for(bk=0;bk<8;bk++){ var ba=bk/8*6.283;
+        ctx.beginPath(); ctx.moveTo(m.x+Math.cos(ba)*(m.r-1), m.y+Math.sin(ba)*(m.r-1));
+        ctx.lineTo(m.x+Math.cos(ba)*(m.r+6), m.y+Math.sin(ba)*(m.r+6)); ctx.stroke(); } }
+    else if(m.t==='amber'){ var ap=0.55+0.25*Math.sin(G.tick*0.08);
+      ctx.strokeStyle='rgba(255,215,106,'+ap+')'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r+4,0,6.283); ctx.stroke(); }
     if(m.threat){ /* THREAT: pulsing dashed ring + notch triangle — ALWAYS on top (dynamic ground truth) */
       var pu=1+0.08*Math.sin(G.tick*0.12);
       ctx.strokeStyle="rgba(232,220,200,0.9)"; ctx.lineWidth=2;
@@ -812,7 +893,7 @@ if(/[?&]sptest=1/.test(location.search)){
     dump:function(){ if(!G)return null; var out=[], i;
       for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
         out.push({x:+m.x.toFixed(1), y:+m.y.toFixed(1), m:+m.m.toFixed(2),
-          vx:+m.vx.toFixed(2), vy:+m.vy.toFixed(2), e:m.e, f:m.f, p:m.birth>0?1:0}); }
+          vx:+m.vx.toFixed(2), vy:+m.vy.toFixed(2), e:m.e, f:m.f, t:m.t||0, p:m.birth>0?1:0}); }
       return { px:+G.P.x.toFixed(1), py:+G.P.y.toFixed(1), pm:+G.P.m.toFixed(2),
         pvx:+G.P.vx.toFixed(2), pvy:+G.P.vy.toFixed(2),
         tick:G.tick, phase:G.phase, motes:out }; },
