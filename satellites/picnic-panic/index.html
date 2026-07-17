@@ -312,7 +312,7 @@ const VERSION='2.0.0';
 
 /* ---------------- CONFIG (balance knobs — safe to tune) ---------------- */
 const CFG={
-  playerSpeed:255, playerAccel:2600, speedPerUpgrade:22, // snappier: was 180/1400 (felt loose+slow)
+  playerSpeed:255, playerAccel:1600, speedPerUpgrade:22, // 2600 hit top speed in 0.1s and read as a fling (Jessie); 1600 keeps it snappy but steerable
   fireCooldown:0.22, rapidCooldown:0.10, firePerUpgrade:0.12, // fraction reduction/level (was 0.30)
   bulletSpeed:620, maxBullets:3, maxBulletsDual:5, // faster shots + one more on screen (was 470/2/4)
   enemyBulletBase:150, enemyBulletPerStage:8, maxEnemyBullets:10,
@@ -745,9 +745,16 @@ addEventListener('keyup',e=>{
   if(e.key===' ')input.fire=false;
 });
 function bindHold(id,on,off){
-  const el=document.getElementById(id);
-  el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId)}catch(_){};on();});
-  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,off));
+  // Track the owning pointer and ALSO release on window-level up/cancel —
+  // a missed release used to leave the button "held", sailing the player
+  // to the wall (Jessie 2026-07-16: left button "flings me to the very edge").
+  const el=document.getElementById(id); let pid=null;
+  el.addEventListener('pointerdown',e=>{e.preventDefault();pid=e.pointerId;try{el.setPointerCapture(pid)}catch(_){};on();});
+  const end=e=>{ if(pid!==null&&(e==null||e.pointerId===pid)){pid=null;off();} };
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,end));
+  window.addEventListener('pointerup',end);
+  window.addEventListener('pointercancel',end);
+  window.addEventListener('blur',()=>end(null));
 }
 bindHold('btnL',()=>input.left=true,()=>input.left=false);
 bindHold('btnR',()=>input.right=true,()=>input.right=false);
