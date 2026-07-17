@@ -306,6 +306,18 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- share-card preview: the squares are ALWAYS shown here first, then shared
+     or saved, so no share sheet can quietly drop the image -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(8,8,12,.86);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;padding:22px">
+  <img id="shareImg" alt="Your HUES result card" style="max-width:min(78vw,340px);max-height:56vh;border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12)">
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-fill" id="shareImgBtn" style="min-height:48px">Share image</button>
+    <button class="btn-ghost" id="shareSaveBtn" style="min-height:48px">Save image</button>
+    <button class="btn-ghost" id="shareTextBtn" style="min-height:48px">Copy text</button>
+  </div>
+  <button class="btn-ghost" id="shareCloseBtn" style="margin-top:10px;min-height:48px">Close</button>
+</div>
+
 <script>
 "use strict";
 
@@ -654,17 +666,39 @@ function buildShareCard(streak){
   x.fillStyle="#b9b2a4";x.fillText("lucidwinds.com/satellites/hues",W/2,H-60);
   return cv;
 }
-async function shareDailyCard(text,url,streak){
+/* Show the card FIRST, then share from it. Stephen 7/17: the old flow silently
+   fell back to text-only on devices where file-sharing was refused, so nobody
+   ever saw the squares. Now the image is on screen no matter what, with Share,
+   Save and Copy as separate honest actions. */
+let _shareBlob=null,_shareText="",_shareUrl="";
+function shareDailyCard(text,url,streak){
+  _shareText=text;_shareUrl=url;
+  const cv=buildShareCard(streak);
+  const m=$("shareModal");
+  $("shareImg").src=cv.toDataURL("image/png");
+  _shareBlob=null;
+  cv.toBlob(b=>{_shareBlob=b;},"image/png");
+  m.style.display="flex";
+}
+$("shareCloseBtn").onclick=()=>{$("shareModal").style.display="none";};
+$("shareImgBtn").onclick=async()=>{
   try{
-    const cv=buildShareCard(streak);
-    const blob=await new Promise(res=>cv.toBlob(res,"image/png"));
-    if(blob&&navigator.canShare){
-      const f=new File([blob],"hues-"+dailyNumber()+".png",{type:"image/png"});
-      if(navigator.canShare({files:[f]})){await navigator.share({files:[f],text:text+"\n"+url});return;}
+    if(_shareBlob&&navigator.canShare){
+      const f=new File([_shareBlob],"hues-"+dailyNumber()+".png",{type:"image/png"});
+      if(navigator.canShare({files:[f]})){await navigator.share({files:[f],text:_shareText+"\n"+_shareUrl});return;}
     }
   }catch(e){}
-  share(text,url);
-}
+  try{await navigator.share({text:_shareText,url:_shareUrl});toast("Shared the text. Use Save image to attach the card.");return;}catch(e){}
+  toast("Sharing is blocked here. Use Save image instead.");
+};
+$("shareSaveBtn").onclick=()=>{
+  try{const a=document.createElement("a");a.href=$("shareImg").src;a.download="hues-"+dailyNumber()+".png";document.body.appendChild(a);a.click();a.remove();toast("Saved. Check your downloads.");}
+  catch(e){toast("Long-press the card to save it.");}
+};
+$("shareTextBtn").onclick=async()=>{
+  try{await navigator.clipboard.writeText(_shareText+"\n"+_shareUrl);toast("Copied to clipboard");}
+  catch(e){toast("Couldn't copy on this browser");}
+};
 function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==today;let streak=parseInt(Store.g(K.dStreak)||"0",10),bonus=0;
   if(firstToday){const last=Store.g(K.dLast),y=new Date();y.setDate(y.getDate()-1);
     streak=last===ymdStr(y)?streak+1:1;Store.s(K.dStreak,streak);Store.s(K.dLast,today);Store.s(K.dDone,today);Store.s(K.dDoneScore,G.score);
