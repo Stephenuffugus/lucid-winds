@@ -96,18 +96,19 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
   <div class="chip grow"><b id="h-stage">—</b><span id="h-note">match four to fizz</span></div>
 </div>
 
+<!-- Jessie 2026-07-15: DOWN and DROP were redundant (DOWN gone), arrows sit
+     at the screen edges, TURN reads ROTATE -->
 <div id="dock">
   <button class="padbtn" id="c-left">◀<small>MOVE</small></button>
-  <button class="padbtn rot" id="c-rot">⟳<small>TURN</small></button>
-  <button class="padbtn" id="c-right">▶<small>MOVE</small></button>
-  <button class="padbtn" id="c-soft">⬇<small>DOWN</small></button>
+  <button class="padbtn rot" id="c-rot">⟳<small>ROTATE</small></button>
   <button class="padbtn hard" id="c-hard">⤓<small>DROP</small></button>
+  <button class="padbtn" id="c-right">▶<small>MOVE</small></button>
 </div>
 
 <div class="screen on" id="s-title">
   <h1><span class="a">TONIC</span> <span class="b">DROP</span></h1>
   <div class="tag">cork the bottle · line up four of a tone to fizz them away · clear every grump</div>
-  <button class="btn teal" id="b-service">🍾 Bottle Service</button>
+  <button class="btn teal" id="b-service">🍾 Bottle Run</button>
   <button class="btn gold" id="b-daily">📅 Daily Bottle</button>
   <button class="btn blue" id="b-sprint">⏱️ Sprint</button>
   <button class="btn" id="b-zen">🌙 Zen Fizz</button>
@@ -118,7 +119,7 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 </div>
 
 <div class="screen" id="s-select">
-  <h1 style="font-size:1.4rem">BOTTLE SERVICE</h1>
+  <h1 style="font-size:1.4rem">BOTTLE RUN</h1>
   <div class="tag">clear the grumps to pour the next · speed rises as you go</div>
   <div id="lvlgrid"></div>
   <button class="btn sm" id="sel-back" style="margin-top:16px">← back</button>
@@ -150,7 +151,7 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
   <p class="howp">Two-tone <b>capsules</b> fall into the bottle. Slide and <b>turn</b> them, then let them settle. Line up <b>four or more of one tone</b> in a row or column and they <b>fizz away</b>.</p>
   <p class="howp">Each tone wears a shape so you never need color: <span class="sym">● disc</span>, <span class="sym">▲ triangle</span>, <span class="sym">◆ diamond</span>. The grumpy <b>grumps</b> at the bottom wear the same shapes — trap four in a line to pop them. Clear <b>every grump</b> to finish the bottle.</p>
   <p class="howp">When a capsule half loses its partner it drops on its own, and a fizz can <b>chain</b> into more fizzes for bonus caps. Every <b>8 fizzes</b> the next capsule pours a <b>✦ wild half</b> that counts as any tone.</p>
-  <p class="howp"><b>Bottle Service</b> ramps 20 bottles, <b>Daily</b> pours one seeded bottle a day, <b>Sprint</b> races the clock, and <b>Zen Fizz</b> never tops out and pays no sunbeams. Caps you earn buy skins in the Shop.</p>
+  <p class="howp"><b>Bottle Run</b> ramps 20 bottles, <b>Daily</b> pours one seeded bottle a day, <b>Sprint</b> races the clock, and <b>Zen Fizz</b> never tops out and pays no sunbeams. Caps you earn buy skins in the Shop.</p>
   <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
 </div>
 
@@ -410,7 +411,7 @@ function canPlace(x,y,o){ if(!inb(x,y))return false; if(K[idx(x,y)]!==0)return f
    ============================================================ */
 var CUR=null, running=false;
 var MODES={
-  service:{ name:"Bottle Service" }, daily:{ name:"Daily Bottle" },
+  service:{ name:"Bottle Run" }, daily:{ name:"Daily Bottle" },
   sprint:{ name:"Sprint" }, zen:{ name:"Zen Fizz" }
 };
 function serviceLevel(l){ /* grump count + fall speed by level 0-based */
@@ -661,6 +662,14 @@ function render(){
     var dP,dQ; if(a.o===0){dP=2;dQ=4;}else if(a.o===1){dP=1;dQ=3;}else if(a.o===2){dP=4;dQ=2;}else{dP=3;dQ=1;}
     drawPiece(ctx,a.a,ox+a.x*cell,oy+a.y*cell,cell,false,dP);
     if(inb(p[0],p[1]))drawPiece(ctx,a.b,ox+p[0]*cell,oy+p[1]*cell,cell,false,dQ);
+    /* glowing ring so the FALLING pair never reads as settled blocks
+       (Jessie 2026-07-15: "they look exactly alike") */
+    ctx.save();
+    ctx.strokeStyle="rgba(255,244,200,0.95)"; ctx.lineWidth=2.5;
+    ctx.shadowColor="rgba(255,235,150,0.85)"; ctx.shadowBlur=9;
+    ctx.strokeRect(ox+a.x*cell+1.5, oy+a.y*cell+1.5, cell-3, cell-3);
+    if(inb(p[0],p[1])) ctx.strokeRect(ox+p[0]*cell+1.5, oy+p[1]*cell+1.5, cell-3, cell-3);
+    ctx.restore();
   }
   /* fizz flash */
   if(CUR.flashT>0){ ctx.fillStyle="rgba(255,235,150,"+(0.10*CUR.flashT/10)+")"; ctx.fillRect(ox-6,oy-6,bw+12,bh+12); }
@@ -774,11 +783,8 @@ $("c-left").addEventListener("click",function(){ if(running)tryMove(-1); });
 $("c-right").addEventListener("click",function(){ if(running)tryMove(1); });
 $("c-rot").addEventListener("click",function(){ if(running)tryRotate(); });
 $("c-hard").addEventListener("click",function(){ if(running)hardDrop(); });
-(function(){ var b=$("c-soft");
-  b.addEventListener("pointerdown",function(){ if(CUR)CUR.softHeld=true; });
-  b.addEventListener("pointerup",function(){ if(CUR){ CUR.softHeld=false; if(running)softDrop(); } });
-  b.addEventListener("pointerleave",function(){ if(CUR)CUR.softHeld=false; });
-})();
+/* c-soft removed 2026-07-17 (Jessie: DOWN duplicated DROP); soft-drop stays
+   on the keyboard down-arrow and swipe-down for players who want it */
 /* swipe / tap on canvas */
 (function(){ var sx=0,sy=0,st=0,moved=false;
   cvs.addEventListener("pointerdown",function(e){ sx=e.clientX; sy=e.clientY; st=Date.now(); moved=false; });
