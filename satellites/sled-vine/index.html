@@ -80,7 +80,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .toggle.on b{left:31px; background:#eafbd6}
 .grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
 .lvlcard{width:100px; height:104px; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px}
-.lvlcard.locked{opacity:.4; cursor:default}
+.lvlcard.locked{opacity:.62; cursor:default; filter:saturate(.6)}
+.lvlcard.locked::after{content:'🔒'; display:block; text-align:center; font-size:12px; opacity:.8; margin-top:2px}
 .lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
 .lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.15}
 .lvlcard .ls{font-size:14px; letter-spacing:1px; color:var(--gold); height:16px}
@@ -105,18 +106,13 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #s-trials{ background:linear-gradient(180deg,#0b0f0bcc,#0b0f0b9a 45%,#0b0f0bd8), url("assets/backgrounds/bg_trials.jpg?v=svart2") center/cover no-repeat; }
 #s-ward,#s-grove,#s-how,#s-set,#s-over{ background:linear-gradient(180deg,#0b0f0be0,#0b0f0bb0 40%,#0b0f0be6), url("assets/backgrounds/bg_grove.jpg?v=svart2") center/cover no-repeat; }
 
-/* ---- UI plates (?v=svart3) — 9-slice border-image (crisp corners, only the middle stretches) ---- */
-.btn{ background:transparent; border:15px solid transparent; border-image:url("assets/ui/btn_plate.png?v=svart3") 44 fill stretch; }
-.btn.primary{ border-image:url("assets/ui/btn_plate_primary.png?v=svart3") 44 fill stretch; }
-.chip{ background:transparent; border:13px solid transparent; border-image:url("assets/ui/chip_frame_selected.png?v=svart3") 46 fill stretch; }
-.chip.sel{ border-image:url("assets/ui/chip_frame.png?v=svart3") 46 fill stretch; }
-.chip.go{ border-image:url("assets/ui/btn_plate_primary.png?v=svart3") 44 fill stretch; }
-.hbtn{ background:transparent; border:12px solid transparent; border-image:url("assets/ui/btn_plate.png?v=svart3") 44 fill stretch; }
-#goalchip{ background:transparent; border:14px solid transparent; border-image:url("assets/ui/goalchip_pill.png?v=svart3") 38 fill stretch; }
-.lvlcard{ background:transparent; border:16px solid transparent; border-image:url("assets/ui/lvlcard_frame.png?v=svart3") 46 fill stretch; }
-/* done cards keep the readable frame; the gold ✿ in .ls marks completion */
-#inkbar{ background:transparent; border:9px solid transparent; border-image:url("assets/ui/inkmeter_frame.png?v=svart3") 28 fill stretch; overflow:hidden; }
-#inkfill{ background:url("assets/ui/inkmeter_fill.png?v=svart3") left center/auto 100% repeat-x, linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); background-repeat:no-repeat; }
+/* ---- UI plates: RETIRED 2026-07-17 (Stephen: "the buttons are atrocious...
+   hard to read or understand what youre clicking on"). The 9-slice art plates
+   read muddy and melted on device, so buttons/chips/cards run on the clean
+   procedural house styles above until the plates are recut. The art pack
+   still owns backgrounds, the sled, and all gameplay sprites. ---- */
+.btn.ghost{ color:#cfd8c0; }
+#inkfill{ background:linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); }
 /* glyph sprites replace fontless-emoji tool icons */
 .cg{ width:auto; max-width:34px; display:inline-block; vertical-align:middle; filter:drop-shadow(0 1px 1px #0008); }
 .chip .cg{ height:22px; }
