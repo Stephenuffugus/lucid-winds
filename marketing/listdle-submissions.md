@@ -38,7 +38,7 @@ Use your email on every one: stephenfurpahs@gmail.com
 - **Category:** MATH
 - **Description:** Combine the numbers to hit the target with a pocketful of pals cheering you on. A fresh daily puzzle every day. Free, no account, no ads.
 
-## 5. Nectar Drop  ⚠️ daily mode being added today
+## 5. Nectar Drop  ✅ ready (Daily Bloom shipped Jul 17)
 - **URL:** https://lucidwinds.com/satellites/nectar-drop/
 - **Title:** Nectar Drop
 - **Category:** OTHER
@@ -55,11 +55,11 @@ fits land well.
 ## Status board (game readiness for submission)
 | Game | Daily mode | A2HS | Music btn | Notes |
 |---|---|---|---|---|
-| Hues | ✅ Daily Hue | 🔧 today | 🔧 today | first-run rules also going in today |
-| Cosmic Cadets | ✅ Daily Gust (finite course) | 🔧 today | ✅ | |
+| Hues | ✅ Daily Hue | ✅ menu button | ✅ menu button (autoplay on) | first-run rules live |
+| Cosmic Cadets | ✅ Daily Gust (finite course) | ✅ in Settings | ✅ (autoplay on) | |
 | Sixfold | ✅ Daily Duel | 🔧 today (cross-repo) | ✅ own music | |
 | Tally | ❓ verify in repo | 🔧 today (cross-repo) | 🔧 today | JS-rendered, needs repo look |
-| Nectar Drop | 🔧 being added | 🔧 today | ✅ | seeded Daily Bloom board |
+| Nectar Drop | ✅ Daily Bloom (deterministic, verified) | ✅ in Settings | ✅ (autoplay on) | title-screen daily button |
 
 Submit order suggestion: Hues, Sixfold, Cosmic Cadets first (clean fits), then
 Tally and Nectar Drop once their checkboxes above are green.

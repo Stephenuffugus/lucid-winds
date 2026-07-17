@@ -84,7 +84,8 @@
     + '.swsp-plbtn{width:40px;border:1px solid '+c.line+';background:'+c.panel2+';color:'+c.muted+';border-radius:9px;cursor:pointer;font-size:15px}.swsp-plbtn.act{color:'+c.leaf+';border-color:'+c.leaf+'}'
     + '.swsp-pledit{font-size:11.5px;color:'+c.leaf+';background:rgba(95,192,138,.08);border:1px dashed rgba(95,192,138,.4);border-radius:8px;padding:7px 10px;margin:0 4px 6px;display:flex;align-items:center;gap:8px}'
     + '.swsp-pledit button{margin-left:auto;background:'+c.leaf+';border:0;color:#08130c;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer}'
-    + '.swsp-foot{padding:9px 16px 14px;font-size:11px;color:'+c.muted+';text-align:center;line-height:1.5;border-top:1px solid '+c.line+'}';
+    + '.swsp-foot{padding:9px 16px 14px;font-size:11px;color:'+c.muted+';text-align:center;line-height:1.5;border-top:1px solid '+c.line+'}'
+    + '@keyframes swspAttract{0%,100%{box-shadow:0 0 0 0 rgba(255,215,106,0)}50%{box-shadow:0 0 0 4px rgba(255,215,106,.4)}}';
     document.head.appendChild(s);
   }
 
@@ -101,6 +102,7 @@
     var KEY = config.key || 'sws_music_state';
     var PL_KEY = config.plKey || 'sws_playlists';
     var Z = config.z || 99990;
+    var AUTOPLAY = !!config.autoplay;   // host opt-in: a song starts on the first tap of a fresh visit
 
     injectStyle(palette(config.theme));
 
@@ -206,13 +208,18 @@
     }
 
     var bg=null;
+    function markSeen(){ try{ localStorage.setItem('sws_music_seen','1'); }catch(e){} btn.style.animation=''; }
     function openDrawer(){
       if(!bg){
         bg=document.createElement('div'); bg.className='swsp-bg'; bg.style.zIndex=Z;
         bg.addEventListener('click', function(e){ if(e.target===bg) closeDrawer(); });
         document.body.appendChild(bg);
       }
+      markSeen();
       st.open=true; bg.classList.add('on'); render();
+      // first-ever open: start the music right away instead of a silent list
+      // (the tap that opened the drawer is the user gesture that allows it)
+      if(st.idx<0 && !st.playing) play(Math.floor(Math.random()*TRACKS.length));
     }
     function closeDrawer(){ st.open=false; if(bg) bg.classList.remove('on'); }
 
@@ -289,6 +296,31 @@
     btn.addEventListener('click', openDrawer);
     window.SWS_MUSIC = { play:play, pause:pause, resume:resume, next:next, prev:prev, vol:setVol, repeat:cycleRepeat, close:closeDrawer, open:openDrawer,
                          trackTap:trackTap, plPlay:playPlaylist, plClear:clearPlaylist, plNew:plNew, plDelete:plDelete, plEdit:plEdit };
+
+    // ── Button glow-up (Stephen 7/17: "the button is really small and nothing
+    // plays") — a bare ♪ glyph becomes a labeled button, and until the player
+    // has ever been opened it pulses gently so new players find the music.
+    (function(){
+      try{
+        if((btn.textContent||'').replace(/\s/g,'').length<=2){
+          btn.innerHTML='&#9835; Music';
+          if(!btn.style.minWidth) btn.style.minWidth='96px';
+          btn.style.whiteSpace='nowrap';
+        }
+        var seen=false; try{ seen=!!localStorage.getItem('sws_music_seen'); }catch(e){}
+        if(!seen && !st.playing) btn.style.animation='swspAttract 2.2s ease-in-out infinite';
+      }catch(e){}
+    })();
+    // Host opt-in autoplay: fresh visitor (never picked a track) → the first
+    // tap anywhere starts a random song at a gentle volume. Players who have
+    // chosen silence before (idx set, playing false) are never overridden.
+    if(AUTOPLAY && st.idx<0){
+      var onFirstTap=function(){
+        document.removeEventListener('pointerdown', onFirstTap, true);
+        if(st.idx<0 && !st.playing){ if(st.volume>0.4) setVol(0.4); play(Math.floor(Math.random()*TRACKS.length)); markSeen(); }
+      };
+      document.addEventListener('pointerdown', onFirstTap, true);
+    }
 
     buildQueue();
     tryResume();

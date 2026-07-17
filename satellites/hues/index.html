@@ -37,6 +37,11 @@
   .coins-pill{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--coin);
     border:1px solid var(--line2);border-radius:30px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px}
   .soundtog{font-size:16px;border:1px solid var(--line2);border-radius:30px;padding:7px 12px;opacity:.8}
+  #rulesOv{position:fixed;inset:0;background:rgba(8,8,12,.9);display:none;align-items:center;justify-content:center;z-index:80;padding:22px}
+  #rulesOv.on{display:flex}
+  .rules-card{background:#16161e;border:1px solid var(--line2);border-radius:18px;max-width:420px;width:100%;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .rrow{display:flex;gap:12px;align-items:flex-start;margin:10px 0;font-size:14px;line-height:1.55;color:var(--ink)}
+  .rrow span{font-size:20px;flex:none;width:28px;text-align:center}
 
   /* danger vignette overlay (game) */
   #vignette{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity .12s;
@@ -230,6 +235,7 @@
   <!-- MENU -->
   <section class="screen on" id="menu">
     <button class="soundtog" id="menuSound">🔊</button>
+    <button class="soundtog" id="menuMusic" style="left:76px">♪</button>
     <div class="coins-pill" id="menuCoins">🪙 0</div>
     <div class="wordmark"><span class="l1">HUES</span></div>
     <div class="tag">match the color · beat the clock</div>
@@ -244,8 +250,22 @@
     <div class="seg-hint" id="diffHint" style="font-size:11px;color:var(--ink-dim);margin-top:6px;text-align:center;line-height:1.4"></div>
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="shop-link" id="shopLink">🎨 Border Shop</button>
+    <button class="shop-link" id="rulesLink">❓ How to play</button>
+    <button class="shop-link" id="installLink">📲 Add to Home Screen</button>
     <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
   </section>
+
+  <!-- FIRST-RUN RULES -->
+  <div id="rulesOv">
+    <div class="rules-card">
+      <div style="font-size:20px;font-weight:800;letter-spacing:.04em;margin-bottom:12px">How Hues works</div>
+      <div class="rrow"><span>🎯</span><div>A <b>target color</b> appears. Slide the pad and the hue strip until <b>yours</b> matches it by eye.</div></div>
+      <div class="rrow"><span>⏳</span><div><b>Lock it in before the clock runs out.</b> A timeout keeps only the base points — every bonus is forfeited.</div></div>
+      <div class="rrow"><span>⚡</span><div>Locking in <b>fast</b> earns a speed bonus, and a dead-on match earns a precision bonus on top.</div></div>
+      <div class="rrow"><span>📅</span><div>The <b>Daily Hue</b> is one puzzle, the same for everyone, once a day — share your color squares.</div></div>
+      <button class="lock" id="rulesGo" style="margin-top:16px">Got it — let's play</button>
+    </div>
+  </div>
 
   <!-- GAME -->
   <section class="screen" id="game">
@@ -746,7 +766,17 @@ function renderShop(){$("shopCoins").textContent="🪙 "+coins().toLocaleString(
 $("shopBack").onclick=()=>{refreshMenu();show("menu");};$("shopLink").onclick=openShop;
 
 function toMenu(){if(G)cancelAnimationFrame(G.raf);refreshMenu();show("menu");}
-document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>startGame(b.dataset.mode)));
+/* first-run quick rules (Stephen 7/17): show once before the very first game,
+   always available from the menu ❓ */
+let rulesCont=null;
+function showRules(cont){rulesCont=cont||null;$("rulesOv").classList.add("on");}
+$("rulesGo").addEventListener("click",()=>{Store.s("hues_rules","1");$("rulesOv").classList.remove("on");
+  if(rulesCont){const f=rulesCont;rulesCont=null;f();}});
+$("rulesLink").addEventListener("click",()=>showRules(null));
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+  if(Store.g("hues_rules")!=="1"){showRules(()=>startGame(b.dataset.mode));return;}
+  startGame(b.dataset.mode);
+}));
 $("diffSeg").querySelectorAll("[data-diff]").forEach(b=>b.onclick=()=>{Store.s(K.diff,b.dataset.diff);renderDiff();});
 function renderDiff(){const d=Store.g(K.diff)||"normal";$("diffSeg").querySelectorAll("[data-diff]").forEach(b=>b.classList.toggle("on",b.dataset.diff===d));
   const hints={easy:"Easy · lots of time and gentle matching, great for kids, older players, or a relaxed round.",casual:"Casual · a comfortable clock.",normal:"Normal · the standard challenge.",hard:"Hard · tight clock, strict matching."};
@@ -797,6 +827,40 @@ window._sbCapEarn=function(n,tag){
   }catch(e){}
   if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
 };
+</script>
+<script>
+/* studio soundtrack (shared jukebox; standalone only) + add-to-home-screen */
+(function(){
+  var btn=document.getElementById('menuMusic');
+  var embedded;
+  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }
+  catch(e){ embedded=true; }
+  if(btn){
+    if(embedded){ btn.style.display='none'; }
+    else{
+      var load=function(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); };
+      var go=function(){ if(window.SWSPlayer)SWSPlayer.init({button:btn, autoplay:true}); };
+      var withPlayer=function(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); };
+      if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+    }
+  }
+  var ib=document.getElementById('installLink');
+  if(ib){
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('/sw.js'); }catch(e){} }
+    var standalone=!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone;
+    if(standalone){ ib.style.display='none'; }
+    else{
+      var deferred=null;
+      window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+      ib.addEventListener('click',function(){
+        if(deferred){ deferred.prompt(); deferred=null; return; }
+        var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+        alert(ios ? 'To add Hues to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
+                  : 'To add Hues to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+      });
+    }
+  }
+})();
 </script>
 </body>
 </html>

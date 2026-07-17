@@ -149,6 +149,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">🌼&nbsp; Play</button>
+      <button class="btn sm" id="b-dailybloom">📅 Daily Bloom</button>
       <div class="row">
         <button class="btn sm" id="b-chars">🌿 Gardeners</button>
         <button class="btn sm" id="b-ward">👗 Wardrobe</button>
@@ -728,6 +729,17 @@ function buildLevelTable(){ LEVELS=[];
 }
 buildLevelTable();
 
+/* ===== Daily Bloom (Jul 17 — one seeded board, same for everyone, once a day) ===== */
+function ndDayNum(){ var n=new Date(); return Math.floor((new Date(n.getFullYear(),n.getMonth(),n.getDate()) - new Date(2026,0,1))/864e5); }
+function ndTodayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dailyLevel(){
+  var dn=ndDayNum();
+  var w=dn%WORLDS.length, l=(dn*7)%(LPW-1);   // rotates gardens; never the boss slot
+  return { w:w, l:l, boss:false, daily:true, dn:dn, name:'Daily Bloom #'+dn,
+    balls:13, reds:10+(dn%4),
+    build:function(){ return buildComposed(100000+dn, w, l); } };
+}
+
 function cleanPegs(raw){
   var out=[];
   for(var i=0;i<raw.length;i++){ var p=raw[i];
@@ -737,9 +749,10 @@ function cleanPegs(raw){
   }
   return out;
 }
-function assignColours(pegs, nReds){
+function assignColours(pegs, nReds, rng){
+  rng=rng||Math.random;   // daily passes a seeded rng so every player gets the SAME board
   var idx=[]; for(var i=0;i<pegs.length;i++) idx.push(i);
-  for(i=idx.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+  for(i=idx.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
   var nPurple=Math.max(2,Math.round(pegs.length*0.06));
   for(i=0;i<pegs.length;i++){ pegs[i].type='blue'; pegs[i].hit=false; pegs[i].r=PEG_R; pegs[i].pop=0; }
   var k=0, nGreen=(pegs.length>70)?3:2;   // big boards earn a third power bloom
@@ -754,24 +767,25 @@ var G=null, cv, ctx, running=false, lastTs=0;
 var aim={dragging:false, angle:0};
 function mkBall(x,y,vx,vy){ return {x:x,y:y,vx:vx,vy:vy,r:BALL_R,alive:true,free:false,pierce:false,buoyant:false,windbend:false,age:0,dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false,trail:[]}; }
 function newGame(li){
-  var L=LEVELS[li], w=L.w;
+  var L=(li&&typeof li==='object')?li:LEVELS[li], w=L.w;
+  var seedBase=L.daily?100000+L.dn:li;
   loadWorldArt(w); loadBuddyArt(EQUIPPED); loadVfxArt(EQUIPPED);
   var pegs=cleanPegs(L.build());
   // safety: a sparse composition still has to hold every red + power bloom
-  if(pegs.length < L.reds+14){ var rf=m32(li*911+7), fill=[];
+  if(pegs.length < L.reds+14){ var rf=m32(seedBase*911+7), fill=[];
     for(var f2=0;f2<(L.reds+14-pegs.length)*3;f2++) fill.push({x:36+rf()*(VW-72), y:PLAY_TOP+30+rf()*(PLAY_BOT-PLAY_TOP-60)});
     pegs=cleanPegs(pegs.concat(fill)); }
-  assignColours(pegs, Math.min(L.reds, Math.max(4,pegs.length-4)));
+  assignColours(pegs, Math.min(L.reds, Math.max(4,pegs.length-4)), L.daily?m32(seedBase*4111+3):null);
   var gim=WORLDS[w].gim, isMoving=(gim.indexOf('moving')>=0), i;
   // seeded gimmick variance: WHICH pegs move (and how far) is part of the
   // level's identity, deterministic on every replay
-  var rngG=m32(li*7349+13);
+  var rngG=m32(seedBase*7349+13);
   if(isMoving){ for(i=0;i<pegs.length;i++){ if(pegs[i].type!=='red' && rngG()<0.38){ pegs[i].mv=true; pegs[i].bx=pegs[i].x; pegs[i].amp=14+rngG()*26; pegs[i].ph=rngG()*6.28; } } }
   // armored guards: boss levels always, plus the all-gimmick world
   var wantArm = L.boss || gim.indexOf('armored')>=0;
   if(wantArm){ var blues=[]; for(i=0;i<pegs.length;i++) if(pegs[i].type==='blue') blues.push(i);
     var na=Math.min(blues.length, L.boss?(3+Math.floor(w/3)):3);
-    for(i=0;i<na;i++){ var bi=blues.splice(Math.floor(Math.random()*blues.length),1)[0]; pegs[bi].type='armored'; pegs[bi].hp=2; } }
+    for(i=0;i<na;i++){ var bi=blues.splice(Math.floor(rngG()*blues.length),1)[0]; pegs[bi].type='armored'; pegs[bi].hp=2; } }
   G={ li:li, L:L, w:w, l:L.l, boss:L.boss, pegs:pegs, balls:[], ballsLeft:L.balls, score:0, redsLeft:0, phase:'aim',
       bucketX:VW/2, bucketDir:1, combo:0, maxCombo:0, greenPopped:false, freeCaught:0, sparks:[], floaters:[], t:0,
       cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
@@ -1047,7 +1061,8 @@ function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
   var base=G.score, overflow=G.ballsLeft*1500, style=G.styleBonus||0, subtotal=base+overflow+style;
   var fever = fullClear ? Math.round(subtotal*0.5) : 0;
   G.score = subtotal + fever;
-  var li=G.li, key='L'+li; var wasCleared=!!PROG.cleared[key]; PROG.cleared[key]=1;
+  G.daily=!!(G.L&&G.L.daily);
+  var li=G.li, key=G.daily?('D'+ndTodayKey()):('L'+li); var wasCleared=!!PROG.cleared[key]; PROG.cleared[key]=1;
   var stars=starCount(fullClear), prevStars=PROG.stars[key]||0; if(stars>prevStars)PROG.stars[key]=stars;
   var prev=PROG.best[key]||0, isBest=false; if(G.score>prev){ PROG.best[key]=G.score; isBest=true; }
   PROG.totalScore=(PROG.totalScore||0)+base;
@@ -1063,7 +1078,7 @@ function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
   var dk=Math.floor(Date.now()/864e5); if(PROG._lastWinDay!==dk){ PROG._lastWinDay=dk; ach('daily_win'); }
   if(worldCleared(0))ach('world_one_clear'); if(worldCleared(5))ach('world_six_clear'); if(worldCleared(11))ach('world_twelve_clear');
   saveProg();
-  var granted=0; var amt=Math.min(12, 4+(wasCleared?0:1)+(fullClear?2:0)+(stars-1)); if(amt<1)amt=1; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'nectardrop:win')||0; }catch(e){}
+  var granted=0; var amt=Math.min(12, 4+(wasCleared?0:1)+(fullClear?2:0)+(stars-1)); if(amt<1)amt=1; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,G.daily?'nectardrop:daily':'nectardrop:win')||0; }catch(e){}
   // populate win card
   $('win-title').textContent=(G.boss?WORLDS[G.w].bossName+' defeated!':(fullClear?'Full bloom!':(G.ballsLeft>0?'Meadow cleared!':'Cleared!')));
   $('win-sub').textContent=G.L.name+' · '+G.ballsLeft+' pollen to spare';
@@ -1078,7 +1093,7 @@ function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
   $('win-best').textContent=(PROG.best[key]||G.score).toLocaleString?(PROG.best[key]||G.score).toLocaleString():(PROG.best[key]||G.score);
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   $('win-emoji').textContent=G.boss?'👑':(fullClear?'🌸':(isBest?'🏅':'🏆'));
-  var wn=$('win-next'); if(wn) wn.textContent=(li+1<LEVELS.length)?'▶ Next meadow':'🏆 All meadows!';
+  var wn=$('win-next'); if(wn) wn.textContent=G.daily?'📅 Back to the garden':((li+1<LEVELS.length)?'▶ Next meadow':'🏆 All meadows!');
   if(fullClear){
     G.flash=0.9; G.shake.t=20; G.shake.mag=16;
     for(var i=0;i<64;i++){ G.sparks.push({x:Math.random()*VW, y:-10-Math.random()*90, vx:(Math.random()-0.5)*2, vy:1+Math.random()*3, life:1.6, col:i%2?'#e58fa0':'#c8a84b'}); }
@@ -1395,6 +1410,9 @@ function boot(){
   loadArt('title','assets/screens/title.jpg'); loadArt('worldmapscreen','assets/screens/worldmap.jpg');
   (function(){ var im=new Image(); im.onload=function(){ $('s-title').style.backgroundImage='url('+im.src+')'; $('s-title').style.backgroundSize='cover'; $('s-title').style.backgroundPosition='center'; }; im.src='assets/screens/title.jpg?v='+ART_VER; })();
   tap('b-play', function(){ if(!LS.get('nd_tut')){ showTut(); return; } buildWorlds(); show('s-worlds'); });
+  tap('b-dailybloom', function(){ newGame(dailyLevel()); });
+  window.paintDailyBtn=function(){ var b=$('b-dailybloom'); if(b)b.innerHTML='📅 Daily Bloom #'+ndDayNum()+(PROG.cleared['D'+ndTodayKey()]?' ✓':''); };
+  paintDailyBtn();
   tap('b-chars', function(){ renderChars(); show('s-chars'); });
   tap('b-ward', function(){ renderWard(); show('s-ward'); });
   tap('b-ach', function(){ renderAch(); show('s-ach'); });
@@ -1409,11 +1427,11 @@ function boot(){
   tap('ach-back', function(){ show('s-title'); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
-  tap('win-next', function(){ var n=(G?G.li:0)+1; if(n>=LEVELS.length){ buildWorlds(); show('s-worlds'); } else newGame(n); });
-  tap('win-retry', function(){ if(G)newGame(G.li); });
+  tap('win-next', function(){ if(G&&G.daily){ paintDailyBtn(); show('s-title'); return; } var n=(G?G.li:0)+1; if(n>=LEVELS.length){ buildWorlds(); show('s-worlds'); } else newGame(n); });
+  tap('win-retry', function(){ if(G)newGame(G.daily?dailyLevel():G.li); });
   tap('win-levels', function(){ curWorld=G?G.w:0; buildLevels(); show('s-levels'); });
   tap('win-share', shareNectar);
-  tap('lose-retry', function(){ if(G)newGame(G.li); });
+  tap('lose-retry', function(){ if(G)newGame(G.daily?dailyLevel():G.li); });
   tap('lose-levels', function(){ curWorld=G?G.w:0; buildLevels(); show('s-levels'); });
   tap('lose-share', shareNectar);
   tap('tut-next', tutNext);
@@ -1432,7 +1450,7 @@ function boot(){
   catch(e){ embedded=true; }
   if(embedded){ btn.style.display='none'; return; }
   function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
-  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn, autoplay:true}); }
   function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
   if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
 })();
