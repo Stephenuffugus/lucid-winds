@@ -207,7 +207,7 @@ TL.ANGLES=[-45,-30,-15,0,15,30,45];
 TL.PLANK_LEN=120; TL.PLANK_PAD=5;
 TL.DOM_H=54; TL.DOM_PAD=5; TL.DOM_G=26; TL.DOM_FLAT=1.5;
 TL.SAW_LEN=160; TL.SAW_PAD=5; TL.SAW_MAX=0.55; TL.SAW_I=26000;
-TL.FAN_RANGE=210; TL.FAN_BAND=34; TL.FAN_F=620;
+TL.FAN_RANGE=240; TL.FAN_BAND=50; TL.FAN_F=620;   /* 2026-07-17 forgiveness pass — Stephen: levels felt impossible; basins measured 8-32% */
 TL.WORLD={L:10,R:530,T:30,F:750};
 TL.BALLP={r:15,m:2.2,rest:0.3,fric:0.05};
 TL.MARBLEP={r:11,m:1.2,rest:0.35,fric:0.05};
@@ -249,7 +249,7 @@ TL.makeSim=function(def,placed,opts){
   var S={t:0,phase:'run',won:false,zen:!!opts.zen,
     nudgeLeft:opts.zen?99999:1,
     circles:[],segs:[],doms:[],saws:[],fans:[],strings:[],sciss:[],spikes:[],
-    bell:def.bell?{x:def.bell.x,y:def.bell.y,r:20,rung:0}:null,
+    bell:def.bell?{x:def.bell.x,y:def.bell.y,r:26,rung:0}:null,
     goal:def.goal||null,ballIdx:-1,events:{bell:0,pops:0,cuts:0},lastHit:null};
   function seg(x1,y1,x2,y2,pad,kind){ S.segs.push({x1:x1,y1:y1,x2:x2,y2:y2,pad:pad||0,kind:kind||'shelf'}); }
   var W=TL.WORLD, i;
@@ -258,7 +258,7 @@ TL.makeSim=function(def,placed,opts){
   if(def.segs)for(i=0;i<def.segs.length;i++){ var g=def.segs[i]; seg(g[0],g[1],g[2],g[3],4,'shelf'); }
   if(def.spikes)for(i=0;i<def.spikes.length;i++)S.spikes.push({x:def.spikes[i][0],y:def.spikes[i][1],r:9});
   if(S.goal&&S.goal.t==='basket'){ var gx=S.goal.x, gy=S.goal.y;
-    seg(gx-38,gy-46,gx-30,gy+8,3,'basket'); seg(gx-30,gy+8,gx+30,gy+8,3,'basket'); seg(gx+30,gy+8,gx+38,gy-46,3,'basket'); }
+    seg(gx-48,gy-52,gx-40,gy+8,3,'basket'); seg(gx-40,gy+8,gx+40,gy+8,3,'basket'); seg(gx+40,gy+8,gx+48,gy-52,3,'basket'); }
   function circ(kind,x,y){ var p=kind==='ball'?TL.BALLP:kind==='marble'?TL.MARBLEP:TL.BALLOONP;
     S.circles.push({kind:kind,x:x,y:y,vx:0,vy:0,r:p.r,m:p.m,rest:p.rest,fric:p.fric,held:-1,popped:false});
     return S.circles.length-1; }
@@ -276,9 +276,9 @@ TL.makeSim=function(def,placed,opts){
   if(placed)for(i=0;i<placed.length;i++){ var p=placed[i];
     if(p.t==='plank'){ var a=(p.a||0)*Math.PI/180, hx=Math.cos(a)*TL.PLANK_LEN/2, hy=Math.sin(a)*TL.PLANK_LEN/2;
       seg(p.x-hx,p.y-hy,p.x+hx,p.y+hy,TL.PLANK_PAD,'plank'); }
-    else if(p.t==='bucket'){ seg(p.x-52,p.y-32,p.x-20,p.y+18,3,'bucket'); seg(p.x+52,p.y-32,p.x+20,p.y+18,3,'bucket'); }
+    else if(p.t==='bucket'){ seg(p.x-62,p.y-38,p.x-22,p.y+18,3,'bucket'); seg(p.x+62,p.y-38,p.x+22,p.y+18,3,'bucket'); }
     else if(p.t==='fan'){ S.fans.push({x:p.x,y:p.y,dir:(p.a===180)?-1:1}); }
-    else if(p.t==='scissors'){ S.sciss.push({x:p.x,y:p.y,r:22,used:false}); }
+    else if(p.t==='scissors'){ S.sciss.push({x:p.x,y:p.y,r:36,used:false}); }
     else if(p.t==='marble'){ circ('marble',p.x,p.y); }
     else if(p.t==='balloon'){ circ('balloon',p.x,p.y); }
     else if(p.t==='domino'){ S.doms.push({x:p.x,y:p.y+27,h:TL.DOM_H,ang:0,av:0,fallen:false,kicked:false}); }
@@ -303,7 +303,7 @@ TL.tick=function(S){
     for(j=0;j<S.doms.length;j++){ if(i===j)continue; var e=S.doms[j];
       if(e.fallen||e.kicked)continue; if(Math.abs(e.ang)>0.6)continue;
       var ex=e.x+e.h*Math.sin(e.ang), ey=e.y-e.h*Math.cos(e.ang);
-      if(TL.ptSegT(tx,ty,e.x,e.y,ex,ey).d<10){ e.kicked=true; e.av+=dir*2.6; } }
+      if(TL.ptSegT(tx,ty,e.x,e.y,ex,ey).d<17){ e.kicked=true; e.av+=dir*2.9; } }
   }
   for(i=0;i<S.saws.length;i++){ var sw=S.saws[i]; sw.av*=0.985; sw.ang+=sw.av*dt;
     if(sw.ang>TL.SAW_MAX){ sw.ang=TL.SAW_MAX; if(sw.av>0)sw.av=0; }
@@ -361,12 +361,12 @@ TL.tick=function(S){
       if(dx3*dx3+dy3*dy3<(c.r+sp.r)*(c.r+sp.r)){ c.popped=true; S.events.pops++; S.lastHit={t:'pop',x:c.x,y:c.y,tk:S.t}; } } }
   if(S.bell&&!S.bell.rung){ for(j=0;j<S.circles.length;j++){ c=S.circles[j]; if(c.popped||c.held>=0)continue;
     var dx4=c.x-S.bell.x, dy4=c.y-S.bell.y;
-    if(c.vx*c.vx+c.vy*c.vy>900&&dx4*dx4+dy4*dy4<(S.bell.r+c.r)*(S.bell.r+c.r)){
+    if(c.vx*c.vx+c.vy*c.vy>560&&dx4*dx4+dy4*dy4<(S.bell.r+c.r)*(S.bell.r+c.r)){
       S.bell.rung=1; S.events.bell++; S.lastHit={t:'bell',x:S.bell.x,y:S.bell.y,tk:S.t}; break; } } }
   var g2=S.goal;
   if(g2){
     if(g2.t==='basket'&&S.ballIdx>=0){ var bb=S.circles[S.ballIdx];
-      if(Math.abs(bb.x-g2.x)<=26&&bb.y>=g2.y-44&&bb.y<=g2.y+8)S.won=true; }
+      if(Math.abs(bb.x-g2.x)<=36&&bb.y>=g2.y-50&&bb.y<=g2.y+8)S.won=true; }
     else if(g2.t==='bell'&&S.bell&&S.bell.rung)S.won=true;
     else if(g2.t==='balloons'){ var alive=0;
       for(j=0;j<S.circles.length;j++)if(S.circles[j].kind==='balloon'&&!S.circles[j].popped)alive++;
@@ -468,7 +468,7 @@ TL.PROOFS=[
  {parts:[{t:'fan',x:260,y:720,a:0}],nudge:null},
  {parts:[{t:'domino',x:294,y:270,a:0},{t:'domino',x:326,y:272,a:0},{t:'bucket',x:470,y:480,a:0}],nudge:null},
  {parts:[{t:'scissors',x:210,y:724,a:0},{t:'scissors',x:340,y:724,a:0},{t:'scissors',x:470,y:724,a:0}],nudge:null},
- {parts:[{t:'plank',x:200,y:200,a:15},{t:'bucket',x:360,y:300,a:0}],nudge:null},
+ {parts:[{t:'plank',x:170,y:200,a:10},{t:'bucket',x:340,y:304,a:0}],nudge:null},   /* re-solved 2026-07-17 for the wider funnel */
  {parts:[{t:'domino',x:316,y:259,a:0},{t:'plank',x:380,y:340,a:0}],nudge:null}
 ];
 
@@ -840,25 +840,25 @@ function drawShelf(x1,y1,x2,y2){
 function drawBasket(gx,gy,gt){
   cx.save();
   cx.strokeStyle="rgba(200,168,75,0.6)"; cx.setLineDash([5,5]); cx.lineWidth=2;
-  cx.strokeRect(gx-26,gy-44,52,52); cx.setLineDash([]);
+  cx.strokeRect(gx-36,gy-50,72,58); cx.setLineDash([]);
   cx.fillStyle="#5a3d22";
-  cx.beginPath(); cx.moveTo(gx-38,gy-46); cx.lineTo(gx-30,gy+8); cx.lineTo(gx+30,gy+8); cx.lineTo(gx+38,gy-46);
-  cx.lineTo(gx+30,gy-46); cx.lineTo(gx+24,gy+0); cx.lineTo(gx-24,gy+0); cx.lineTo(gx-30,gy-46); cx.closePath(); cx.fill();
+  cx.beginPath(); cx.moveTo(gx-48,gy-52); cx.lineTo(gx-40,gy+8); cx.lineTo(gx+40,gy+8); cx.lineTo(gx+48,gy-52);
+  cx.lineTo(gx+40,gy-52); cx.lineTo(gx+34,gy+0); cx.lineTo(gx-34,gy+0); cx.lineTo(gx-40,gy-52); cx.closePath(); cx.fill();
   cx.strokeStyle="#c8a84b"; cx.lineWidth=3;
-  cx.beginPath(); cx.moveTo(gx-36,gy-36); cx.lineTo(gx+36,gy-36); cx.stroke();
-  cx.beginPath(); cx.moveTo(gx-32,gy-10); cx.lineTo(gx+32,gy-10); cx.stroke();
+  cx.beginPath(); cx.moveTo(gx-46,gy-40); cx.lineTo(gx+46,gy-40); cx.stroke();
+  cx.beginPath(); cx.moveTo(gx-42,gy-10); cx.lineTo(gx+42,gy-10); cx.stroke();
   /* star flag */
   cx.strokeStyle="#8a5a2e"; cx.lineWidth=3;
-  cx.beginPath(); cx.moveTo(gx+34,gy-46); cx.lineTo(gx+34,gy-78); cx.stroke();
+  cx.beginPath(); cx.moveTo(gx+44,gy-52); cx.lineTo(gx+44,gy-84); cx.stroke();
   cx.fillStyle="#c8a84b";
-  cx.beginPath(); cx.moveTo(gx+34,gy-78); cx.lineTo(gx+62,gy-70); cx.lineTo(gx+34,gy-62); cx.closePath(); cx.fill();
-  cx.fillStyle="#171009"; cx.font="10px sans-serif"; cx.fillText("★",gx+38,gy-67);
+  cx.beginPath(); cx.moveTo(gx+44,gy-84); cx.lineTo(gx+72,gy-76); cx.lineTo(gx+44,gy-68); cx.closePath(); cx.fill();
+  cx.fillStyle="#171009"; cx.font="10px sans-serif"; cx.fillText("★",gx+48,gy-73);
   cx.restore(); }
 function drawBell(bx,by,rung){
   cx.save(); cx.translate(bx,by);
   if(rung&&FRAME%10<5)cx.rotate(0.12);
   cx.fillStyle="#c8a84b";
-  cx.beginPath(); cx.arc(0,-2,15,Math.PI,0); cx.lineTo(18,10); cx.quadraticCurveTo(0,16,-18,10); cx.closePath(); cx.fill();
+  cx.beginPath(); cx.arc(0,-2,19,Math.PI,0); cx.lineTo(22,12); cx.quadraticCurveTo(0,19,-22,12); cx.closePath(); cx.fill();
   cx.fillStyle="rgba(255,255,255,0.35)"; cx.beginPath(); cx.arc(-5,-6,4,0,7); cx.fill();
   cx.fillStyle="#8a5a2e"; cx.beginPath(); cx.arc(0,14,4,0,7); cx.fill();
   cx.fillStyle="#e8dcc8"; cx.font="12px sans-serif"; cx.fillText("♪",12,-14);
@@ -949,11 +949,11 @@ function drawFan(x,y,dir,ghost,running){
 function drawBucket(x,y,ghost){
   cx.save(); cx.translate(x,y); cx.globalAlpha=ghost?0.55:1;
   cx.fillStyle="#6a7480"; cx.strokeStyle="rgba(0,0,0,0.5)"; cx.lineWidth=1.5;
-  cx.beginPath(); cx.moveTo(-52,-32); cx.lineTo(-20,18); cx.lineTo(-12,18); cx.lineTo(-44,-32); cx.closePath(); cx.fill(); cx.stroke();
-  cx.beginPath(); cx.moveTo(52,-32); cx.lineTo(20,18); cx.lineTo(12,18); cx.lineTo(44,-32); cx.closePath(); cx.fill(); cx.stroke();
+  cx.beginPath(); cx.moveTo(-62,-38); cx.lineTo(-22,18); cx.lineTo(-14,18); cx.lineTo(-54,-38); cx.closePath(); cx.fill(); cx.stroke();
+  cx.beginPath(); cx.moveTo(62,-38); cx.lineTo(22,18); cx.lineTo(14,18); cx.lineTo(54,-38); cx.closePath(); cx.fill(); cx.stroke();
   cx.strokeStyle="rgba(255,255,255,0.3)"; cx.lineWidth=2;
-  cx.beginPath(); cx.moveTo(-52,-32); cx.lineTo(-44,-32); cx.stroke();
-  cx.beginPath(); cx.moveTo(52,-32); cx.lineTo(44,-32); cx.stroke();
+  cx.beginPath(); cx.moveTo(-62,-38); cx.lineTo(-54,-38); cx.stroke();
+  cx.beginPath(); cx.moveTo(62,-38); cx.lineTo(54,-38); cx.stroke();
   cx.restore(); }
 function drawSaw(x,y,ang,ghost){
   cx.save(); cx.translate(x,y); cx.globalAlpha=ghost?0.55:1;
