@@ -309,10 +309,28 @@ function grubStep(){
   if(grubs.length===0) levelClear();
 }
 function checkTraps(){
-  var trapped=[];
-  for(var i=0;i<grubs.length;i++){ var g=grubs[i];
-    if(solidT(g.c-1,g.r)&&solidT(g.c+1,g.r)&&solidT(g.c,g.r-1)&&solidT(g.c,g.r+1)) trapped.push(i);
+  // Group-aware pinning (Jessie 2026-07-15: pushing two grubs together must
+  // smoosh BOTH — under the old 4-solid-neighbours rule, adjacent grubs kept
+  // each other "free" forever and the level became unwinnable).
+  // Fixed point: a grub is FREE if any neighbour is walkable, or holds a grub
+  // that is itself free (it can vacate the square). Whatever never frees is
+  // genuinely penned — every escape route solid — and the whole group traps.
+  var n=grubs.length; if(!n) return;
+  var free=[], i, changed=true;
+  for(i=0;i<n;i++) free.push(false);
+  function grubIdxAt(c,r){ for(var q=0;q<n;q++) if(grubs[q].c===c&&grubs[q].r===r) return q; return -1; }
+  var dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(changed){ changed=false;
+    for(i=0;i<n;i++){ if(free[i]) continue; var g=grubs[i];
+      for(var d=0;d<4;d++){ var c=g.c+dirs[d][0], r=g.r+dirs[d][1];
+        if(!inBounds(c,r)) continue;
+        if(solidT(c,r)) continue;
+        var gi=grubIdxAt(c,r);
+        if(gi<0 || free[gi]){ free[i]=true; changed=true; break; }
+      }
+    }
   }
+  var trapped=[]; for(i=0;i<n;i++) if(!free[i]) trapped.push(i);
   if(!trapped.length) return;
   // trap from highest index so splice is safe
   for(var t=trapped.length-1;t>=0;t--){ var g2=grubs[trapped[t]];
