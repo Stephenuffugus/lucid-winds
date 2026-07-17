@@ -18,3 +18,50 @@ Exact-cover (dancing links or simple DFS over 12 pieces x orientations x anchors
 ## Risks / calls for Stephen
 - Name (Kanoodle is trademarked — ours needs its own, e.g. "Podspheres" / he names it).
 - Phase 2's 3D is honest work (~a full session on its own). Phase 1 first?
+
+---
+
+# BUILD PLAN (added Jul 17 — ready to execute)
+
+## Name (⚖️ Stephen picks; game ships under the pick, slug locks then)
+Non-botanical per the portal default rule. Candidates:
+1. **Marble Nest** (recommended — warm, says exactly what it is: nestling marbles into a snug board)
+2. **Orb Fit**
+3. **Snugglespheres**
+4. **Cluster Craft**
+5. **Podspheres** (from the original brief)
+Slug suggestion either way: `satellites/marble-nest/` (rename-safe: display strings only).
+
+## Phase 1 — FLAT board satellite (one session)
+1. **Data.** The 12 real polysphere shapes as cell lists, distinct colors; 8
+   orientations each precomputed (4 rotations × flip). Board = 5x11 array.
+2. **Solver first.** DFS exact-cover: order cells top-left to bottom-right,
+   always fill the first empty cell, try every (piece, orientation, anchor)
+   covering it. Tiny search space; solves the full board in ms. This is the
+   generator AND the proof harness.
+3. **Challenge ladder.** 120 levels: solver builds a full packing from a seeded
+   rng, remove N pieces (N = 3 easy → 9 expert), the removed set is the tray.
+   Bake {seed, removed} per level; proof = solver confirms solvable with
+   exactly the tray. Daily = same generator keyed to dayNum.
+4. **UI.** Board top, tray bottom (scrollable row of piece chips). Tap piece →
+   it lifts and shows ghost on board under finger; ⟳ rotate + ⇄ flip buttons
+   (48px) + two-finger-tap rotate. Snap on legal, buzz on illegal. Hint button
+   (place one correct piece, costs score). Win = pulse + sunbeams (2/level,
+   4 daily-first, 30/day cap standard).
+5. **House kit** exactly like ring-stacker (music btn, PWA/A2HS, share, DEV
+   hook `?mntest=1` → MN_DEV.proofCheck() runs the solver over every baked level).
+6. **Portal row + alias** ("kanoodle" alias → our name so search finds it).
+
+## Phase 2 — PYRAMID mode (own session)
+- 30-socket lattice: layers 4x4, 3x3, 2x2, 1. Socket (L,i,j) center =
+  ((i+L*0.5)*s, (j+L*0.5)*s, L*h) — canvas painter's algorithm: project,
+  sort by depth, draw radial-gradient circles; one-finger orbit (drag =
+  rotate azimuth/elevation), pinch zoom optional.
+- Same 12 pieces in 3D orientations (24 rotations, precompute legal socket
+  sets per orientation). Tap a highlighted socket cluster to drop the piece.
+- Same generator/solver pattern over the 30-cell lattice.
+- Ships as a MODE inside the Phase-1 game ("Pyramid" tab), not a second game.
+
+## Machine proofs
+- `proofCheck()`: every baked level solvable (solver), every daily seed for
+  the next 30 days solvable, no two levels identical.

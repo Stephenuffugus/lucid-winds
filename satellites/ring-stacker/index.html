@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e1018">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ring Stacker">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230e1018'/%3E%3Crect x='7' y='7' width='18' height='18' rx='3' fill='none' stroke='%234ac8b4' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' rx='2' fill='none' stroke='%23e0a843' stroke-width='2'/%3E%3Crect x='14.5' y='14.5' width='3' height='3' fill='%23ffd76a'/%3E%3C/svg%3E">
+<title>Ring Stacker — Sky Wolf Studios</title>
+<!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0e1018; --panel:#171a26; --line:#2a2e40; --ink:#eef0f6; --muted:#8d90a8;
+  --gold:#ffd76a; --teal:#4ac8b4; --rose:#e07a9a; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #141828 0%, #090a12 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#131624 0%, #0c0e16 100%)}
+.screen.on{display:flex}
+#s-play{background:transparent; pointer-events:none}
+#s-play .tbtn,#s-play .cbtn,#s-play #slambtn{pointer-events:auto}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:46px; line-height:1.05; font-weight:800; letter-spacing:1px;
+  background:linear-gradient(120deg,#7ee0cc,#ffd76a 55%,#e07a9a); -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 4px 26px rgba(120,220,200,0.15)}
+.title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.85; max-width:400px; line-height:1.55}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1d2130,#14161f); color:var(--ink);
+  font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
+.btn.primary{background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; border-color:#ffe49a; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
+.btn.sm{min-height:50px; font-size:15px}
+.btn.ghost{background:#12141c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#12141c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#22263a; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:#3a6f5f}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--ink); transition:left .15s}
+.toggle.on b{left:31px; background:#dffff0}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:48px; height:48px; border-radius:12px;
+  border:1px solid var(--line); background:rgba(14,16,24,0.75); color:var(--ink); font-size:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; z-index:30}
+#b-home{left:10px}
+.cbtn{position:absolute; width:88px; height:76px; border-radius:16px; border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(30,34,48,.92),rgba(18,20,30,.92)); color:var(--ink); font-size:28px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; z-index:30}
+.cbtn:active{filter:brightness(1.3)}
+#slambtn{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(20px + env(safe-area-inset-bottom,0px)); width:200px; height:64px; border-radius:18px;
+  border:1px solid #ffe49a; background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; font-size:19px; font-weight:800; letter-spacing:1px;
+  cursor:pointer; z-index:30; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
+#slambtn:active{transform:translateX(-50%) translateY(3px)}
+.go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#1b1e2c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+#b-music{flex:0 0 64px; font-size:20px}
+#b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">RING STACKER</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Stack falling pieces into <b style="color:var(--teal)">square rings</b> around the golden core. <b style="color:var(--gold)">SLAM</b> a piece and the whole gyre spins a quarter turn. Finish a ring and everything crushes inward.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-journey">🌀 Journey <span id="j-lvl" style="font-weight:600;font-size:14px;opacity:.8"></span></button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Gyre</button>
+        <button class="btn sm" id="b-zen">🌙 Zen</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- PLAY chrome -->
+  <div class="screen" id="s-play">
+    <button class="tbtn" id="b-home" aria-label="Back to menu">⌂</button>
+    <button class="cbtn" id="c-left"  style="left:14px;  bottom:calc(100px + env(safe-area-inset-bottom,0px))">◀</button>
+    <button class="cbtn" id="c-right" style="right:14px; bottom:calc(100px + env(safe-area-inset-bottom,0px))">▶</button>
+    <button class="cbtn" id="c-rot"   style="left:14px;  bottom:calc(20px + env(safe-area-inset-bottom,0px))">⟳</button>
+    <button class="cbtn" id="c-down"  style="right:14px; bottom:calc(20px + env(safe-area-inset-bottom,0px))">▼</button>
+    <button id="slambtn">⤓ SLAM</button>
+  </div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">🧩</div><div><b>Pieces fall from the top.</b> Move with ◀ ▶, spin the piece with ⟳ (or tap the board), nudge down with ▼.</div></div>
+    <div class="helprow"><div class="hi">⭕</div><div>Your goal is to build <b style="color:var(--teal)">square rings</b> around the golden core, not rows. Fill every cell of a ring and it <b>erases</b> — and everything outside crushes inward one ring. Chains score big.</div></div>
+    <div class="helprow"><div class="hi">⤓</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly — and spins the whole gyre a quarter turn as it lands. Set a piece down gently and nothing spins. Slam to swing a gap around to where the next piece can reach it.</div></div>
+    <div class="helprow"><div class="hi">🌀</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends — topping out just clears the sky.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Ghost piece</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- OVER / RESULT -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:44px" id="go-emoji">🌀</div>
+    <div class="go-score" id="go-score">0</div>
+    <div class="go-lab" id="go-lab">points</div>
+    <div class="pill" id="go-best">Best 0</div>
+    <div class="pill" id="go-rings" style="margin-left:8px">Rings 0</div>
+    <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-retry">↻ Again</button>
+      <div class="row">
+        <button class="btn sm" id="go-share">↗ Share</button>
+        <button class="btn sm" id="go-home">◄ Menu</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var BUILD="v1.0";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+
+/* ---------- stage fit ---------- */
+var VW=540, VH=960;
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+
+/* ---------- storage ---------- */
+var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, ghost:true };
+(function(){ try{ var s=JSON.parse(LS.g('rs_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; }catch(e){} })();
+function saveSet(){ LS.s('rs_set', JSON.stringify(SET)); }
+var PROG={ level:0, best:{journey:0,daily:0,zen:0}, ringsEver:0 };
+(function(){ try{ var p=JSON.parse(LS.g('rs_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
+function saveProg(){ LS.s('rs_prog', JSON.stringify(PROG)); }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,t,g,slide){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), v=c.createGain();
+  o.type=t||'triangle'; o.frequency.value=f; if(slide)o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+d);
+  v.gain.value=g||0.08; v.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d);
+  o.connect(v); v.connect(c.destination); o.start(); o.stop(c.currentTime+d); }catch(e){} }
+var SFX={
+  ui:function(){ beep(520,0.05,'triangle',0.05); },
+  move:function(){ beep(340,0.03,'square',0.02); },
+  rot:function(){ beep(450,0.05,'triangle',0.04); },
+  lock:function(){ beep(220,0.07,'triangle',0.06); },
+  slam:function(){ beep(160,0.18,'sawtooth',0.08,60); },
+  spin:function(){ beep(300,0.2,'sine',0.06,600); },
+  ring:function(ch){ var b=440*Math.pow(1.25,ch||0); beep(b,0.14,'triangle',0.1); setTimeout(function(){beep(b*1.25,0.14,'triangle',0.1);},90); setTimeout(function(){beep(b*1.5,0.2,'triangle',0.1);},190); },
+  bad:function(){ beep(150,0.12,'square',0.05); },
+  win:function(){ beep(523,0.1,'triangle',0.1); setTimeout(function(){beep(659,0.1,'triangle',0.1);},100); setTimeout(function(){beep(784,0.16,'triangle',0.1);},200); },
+  over:function(){ beep(300,0.3,'sine',0.08,90); }
+};
+
+/* ---------- seeded rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dayNum(){ var n=new Date(); return Math.floor((new Date(n.getFullYear(),n.getMonth(),n.getDate()) - new Date(2026,0,1))/864e5); }
+function todayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+/* =====================================================================
+   ENGINE — 15x15 board, 1-cell core at (7,7).
+   Rings are Chebyshev shells around the core: ring D = cells where
+   max(|x-7|,|y-7|)===D. Fill a whole ring -> it erases and every cell
+   outside crushes inward one ring (merges allowed). SLAM (hard drop)
+   spins the whole locked structure 90° clockwise as the piece lands.
+   ===================================================================== */
+var N=15, C=7;                      // board size, core index
+var CELL=30, GAP=2, PITCH=CELL+GAP; // 15*32-2 = 478 px board
+var BX=(540-(N*PITCH-GAP))/2, BY=118;
+/* tetromino cell sets, 4 rotations each (x,y offsets from piece origin) */
+var SHAPES={
+  I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
+  O:[[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]]],
+  T:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],
+  S:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],
+  Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]],
+  J:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],
+  L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]]
+};
+var PCOLS={ I:'#4ac8b4', O:'#f5e6c8', T:'#a06fc8', S:'#7ec98a', Z:'#e07a9a', J:'#5f8ad8', L:'#e0a843' };
+var PKEYS=['I','O','T','S','Z','J','L'];
+
+var G=null, running=false, lastTs=0;
+
+function emptyGrid(){ var g=[],y,x; for(y=0;y<N;y++){ g.push([]); for(x=0;x<N;x++) g[y].push(null); } return g; }
+function isCore(x,y){ return x===C&&y===C; }
+function cheb(x,y){ return Math.max(Math.abs(x-C),Math.abs(y-C)); }
+function ringCells(D){ var out=[],x,y; for(y=C-D;y<=C+D;y++)for(x=C-D;x<=C+D;x++){ if(cheb(x,y)===D)out.push([x,y]); } return out; }
+var RINGS=[]; (function(){ for(var d=1;d<=7;d++)RINGS.push(ringCells(d)); })();
+
+function bagFeed(rng){
+  var bag=[];
+  return function(){
+    if(!bag.length){ bag=PKEYS.slice(); for(var i=bag.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=bag[i]; bag[i]=bag[j]; bag[j]=t; } }
+    return bag.pop();
+  };
+}
+function newGame(mode){
+  var seed = mode==='daily' ? ((dayNum()*2654435761)>>>0) : ((Math.random()*2147483647)|0);
+  var rng=mulberry32(seed);
+  G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(),
+      score:0, rings:0, chainBest:0, level:PROG.level, quota:quotaFor(PROG.level), quotaDone:0,
+      cur:null, next:null, dropT:0, over:false, pieces:0,
+      pieceBudget:(mode==='daily'?80:0), sbRun:0,
+      fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0 };
+  G.next=G.feed();
+  spawn();
+  show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
+}
+function quotaFor(lvl){ return 2+Math.min(6,Math.floor(lvl/2)); }
+function dropInterval(){
+  if(!G)return 0.8;
+  if(G.mode==='zen')return 0.9;
+  if(G.mode==='daily')return 0.55;
+  return Math.max(0.18, 0.8*Math.pow(0.93,G.level));
+}
+function spawn(){
+  var k=G.next; G.next=G.feed();
+  G.cur={ k:k, rot:0, x:C-2, y:-2 };
+  G.pieces++;
+  if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun(); return; }
+  if(collides(G.cur.x,G.cur.y,G.cur.rot)){
+    if(G.mode==='zen'){ // no-fail: the wind clears the sky
+      G.grid=emptyGrid(); G.floats.push({x:270,y:BY+200,txt:'🌬 the wind clears the gyre',life:1.6,big:true});
+      SFX.spin();
+    } else { endRun(); }
+  }
+}
+function cellsOf(x,y,rot,k){ var s=SHAPES[k][rot],out=[],i; for(i=0;i<4;i++)out.push([x+s[i][0],y+s[i][1]]); return out; }
+/* The core is the SUN at the heart of the gyre: pieces fall PAST it (it is
+   not an obstacle and gives no support). A cell that comes to rest overlapping
+   the sun is vaporized in a spark. Cells can therefore reach under the core
+   by normal stacking; SLAM-spins swing whole walls (and their gaps) around. */
+function collides(x,y,rot){
+  var cs=cellsOf(x,y,rot,G.cur.k),i;
+  for(i=0;i<4;i++){
+    var cx=cs[i][0], cy=cs[i][1];
+    if(cx<0||cx>=N||cy>=N)return true;
+    if(cy>=0&&G.grid[cy][cx])return true;
+  }
+  return false;
+}
+function tryMove(dx){ if(!G.cur||G.over)return false; if(!collides(G.cur.x+dx,G.cur.y,G.cur.rot)){ G.cur.x+=dx; SFX.move(); return true; } return false; }
+function tryRotate(){
+  if(!G.cur||G.over)return false;
+  var nr=(G.cur.rot+1)%4, kicks=[0,-1,1,-2,2],i;
+  for(i=0;i<kicks.length;i++){ if(!collides(G.cur.x+kicks[i],G.cur.y,nr)){ G.cur.x+=kicks[i]; G.cur.rot=nr; SFX.rot(); return true; } }
+  return false;
+}
+function softStep(){ // one row down; returns false if it locked
+  if(!G.cur||G.over)return false;
+  if(!collides(G.cur.x,G.cur.y+1,G.cur.rot)){ G.cur.y++; return true; }
+  lockPiece(false); return false;
+}
+function hardDropY(){ var y=G.cur.y; while(!collides(G.cur.x,y+1,G.cur.rot))y++; return y; }
+function slam(){
+  if(!G.cur||G.over)return;
+  G.cur.y=hardDropY();
+  SFX.slam(); G.shakeT=0.25;
+  lockPiece(true);
+}
+function lockPiece(slammed){
+  var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
+  for(i=0;i<4;i++){
+    if(cs[i][1]<0){ // locked above the sky
+      if(G.mode==='zen'){ G.grid=emptyGrid(); G.cur=null; G.floats.push({x:270,y:BY+200,txt:'🌬 the wind clears the gyre',life:1.6,big:true}); spawn(); return; }
+      endRun(); return;
+    }
+  }
+  for(i=0;i<4;i++){
+    if(isCore(cs[i][0],cs[i][1])){ G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.5}); continue; }   // vaporized by the sun
+    G.grid[cs[i][1]][cs[i][0]]=PCOLS[G.cur.k];
+  }
+  G.score+=8; SFX.lock();
+  G.cur=null;
+  if(slammed){ spinStructure(); SFX.spin(); G.spinA=1; }
+  resolveRings();
+  if(!G.over)spawn();
+}
+function spinStructure(){ // 90° clockwise around the core
+  var ng=emptyGrid(),x,y;
+  for(y=0;y<N;y++)for(x=0;x<N;x++){
+    if(!G.grid[y][x])continue;
+    var dx=x-C, dy=y-C;
+    ng[C+dx][C-dy]=G.grid[y][x];   // (dx,dy) -> (-dy,dx): new x=C-dy, new y=C+dx
+  }
+  G.grid=ng;
+}
+function ringComplete(D){
+  var rc=RINGS[D-1],i;
+  for(i=0;i<rc.length;i++){ if(!G.grid[rc[i][1]][rc[i][0]])return false; }
+  return true;
+}
+function resolveRings(){
+  var chain=0;
+  while(true){
+    var D=0,d;
+    for(d=1;d<=7;d++){ if(ringComplete(d)){ D=d; break; } }
+    if(!D)break;
+    chain++;
+    var pts=(9-D)*100*chain;
+    G.score+=pts; G.rings++; G.quotaDone++;
+    PROG.ringsEver++; saveProg();
+    var rc=RINGS[D-1],i;
+    for(i=0;i<rc.length;i++){ G.grid[rc[i][1]][rc[i][0]]=null; G.pulse.push({x:rc[i][0],y:rc[i][1],life:0.55}); }
+    // inward crush: every cell outside ring D steps one ring toward the core
+    var ng=emptyGrid(),x,y;
+    for(y=0;y<N;y++)for(x=0;x<N;x++){
+      if(!G.grid[y][x])continue;
+      var E=cheb(x,y);
+      if(E<=D){ ng[y][x]=G.grid[y][x]; continue; }
+      var dx=x-C, dy=y-C;
+      var nx=x, ny=y;
+      if(Math.abs(dx)===E)nx=x-(dx>0?1:-1);
+      if(Math.abs(dy)===E)ny=y-(dy>0?1:-1);
+      if(!isCore(nx,ny))ng[ny][nx]=G.grid[y][x];   // merges just overwrite — the crush
+    }
+    G.grid=ng;
+    SFX.ring(chain-1);
+    G.floats.push({x:270,y:BY+C*PITCH,txt:'RING '+D+(chain>1?' · CHAIN x'+chain:'')+' +'+pts,life:1.4,big:true});
+    if(chain>G.chainBest)G.chainBest=chain;
+  }
+  if(chain&&G.mode==='journey')checkQuota();
+}
+function checkQuota(){
+  if(G.quotaDone<G.quota)return;
+  G.level++; PROG.level=G.level; saveProg();
+  G.quotaDone=0; G.quota=quotaFor(G.level);
+  SFX.win(); G.floats.push({x:270,y:110,txt:'✨ LEVEL '+(G.level+1)+' ✨',life:1.6,big:true});
+  if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'☀ +'+got,life:1.2}); } }catch(e){} }
+}
+function endRun(){
+  if(!G||G.over)return; G.over=true; G.cur=null; running=false; SFX.over();
+  var b=PROG.best[G.mode]||0, nb=G.score>b;
+  if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
+  var sb=0;
+  if(G.mode==='daily'){
+    var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
+    var first=!(rec&&rec.day===todayKey());
+    if(first){ LS.s('rs_daily', JSON.stringify({day:todayKey(),num:dayNum(),score:G.score})); try{ if(window._sbCapEarn) sb=window._sbCapEarn(4,'ringstacker:daily')||0; }catch(e){} }
+  }
+  $('go-emoji').textContent = G.mode==='daily'?'📅':'🌀';
+  $('go-score').textContent = G.score.toLocaleString();
+  $('go-lab').textContent = G.mode==='daily'?('daily #'+dayNum()+' · 80 pieces'):'points';
+  $('go-best').textContent = (nb?'★ New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
+  $('go-rings').textContent = 'Rings '+G.rings+(G.chainBest>1?' · chain x'+G.chainBest:'');
+  $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
+  show('s-go');
+}
+
+/* ---------- render ---------- */
+var cv=$('game'), ctx=cv.getContext('2d');
+var DPR=Math.min(2,window.devicePixelRatio||1);
+cv.width=540*DPR; cv.height=960*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+function loop(ts){
+  if(!running)return;
+  if(!lastTs)lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+  G.t+=dt;
+  if(G.cur&&!G.over){
+    G.dropT+=dt;
+    var iv=dropInterval();
+    while(G.dropT>=iv&&G.cur){ G.dropT-=iv; softStep(); }
+  }
+  var i;
+  for(i=G.pulse.length-1;i>=0;i--){ G.pulse[i].life-=dt; if(G.pulse[i].life<=0)G.pulse.splice(i,1); }
+  for(i=G.floats.length-1;i>=0;i--){ var f=G.floats[i]; f.y-=24*dt; f.life-=dt*0.8; if(f.life<=0)G.floats.splice(i,1); }
+  if(G.spinA>0)G.spinA=Math.max(0,G.spinA-dt*3.2);
+  if(G.shakeT>0)G.shakeT=Math.max(0,G.shakeT-dt);
+  render();
+  requestAnimationFrame(loop);
+}
+function cellPx(x,y){ return { x:BX+x*PITCH, y:BY+y*PITCH }; }
+function render(){
+  ctx.clearRect(0,0,540,960);
+  var sx=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
+  var sy=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
+  ctx.save(); ctx.translate(sx,sy);
+  // header
+  ctx.textAlign='center'; ctx.fillStyle='#eef0f6';
+  ctx.font='800 32px system-ui,sans-serif';
+  ctx.fillText(G.score.toLocaleString(), 236, 58);
+  ctx.font='600 12px system-ui,sans-serif'; ctx.fillStyle='#8d90a8';
+  var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+' · RINGS '+G.quotaDone+'/'+G.quota)
+          : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+Math.max(0,G.pieceBudget-G.pieces)+' pieces left · rings '+G.rings)
+          : 'ZEN · rings '+G.rings;
+  ctx.fillText(sub, 236, 84);
+  // next preview
+  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,26,68,68,12); ctx.fill();
+  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('NEXT',486,22);
+  var ns=SHAPES[G.next][0],i;
+  for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+12+ns[i][0]*12,26+14+ns[i][1]*12,10,10,2); ctx.fill(); }
+  // board panel
+  ctx.fillStyle='rgba(255,255,255,0.028)';
+  rr(BX-8,BY-8,N*PITCH-GAP+16,N*PITCH-GAP+16,14); ctx.fill();
+  // spin flourish: the whole board eases out of a slight rotation after a slam
+  ctx.save();
+  if(G.spinA>0){
+    var cx=BX+(N*PITCH-GAP)/2, cyy=BY+(N*PITCH-GAP)/2;
+    ctx.translate(cx,cyy); ctx.rotate(-G.spinA*G.spinA*Math.PI/2); ctx.translate(-cx,-cyy);
+  }
+  // ring guides 1-4 (playable target rings)
+  var d;
+  for(d=4;d>=1;d--){
+    var p0=cellPx(C-d,C-d);
+    var w=(2*d+1)*PITCH-GAP;
+    var done=0, rc=RINGS[d-1];
+    for(i=0;i<rc.length;i++)if(G.grid[rc[i][1]][rc[i][0]])done++;
+    var frac=done/rc.length;
+    ctx.strokeStyle='rgba(74,200,180,'+(0.10+frac*0.5)+')';
+    ctx.lineWidth=frac>0.7?2:1;
+    rr(p0.x-1,p0.y-1,w+2,w+2,6); ctx.stroke();
+  }
+  // cells
+  var x,y;
+  for(y=0;y<N;y++)for(x=0;x<N;x++){
+    var col=G.grid[y][x]; if(!col)continue;
+    var p=cellPx(x,y);
+    ctx.fillStyle=col; rr(p.x,p.y,CELL,CELL,5); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.14)'; rr(p.x,p.y,CELL,CELL*0.4,5); ctx.fill();
+  }
+  // core
+  var cp=cellPx(C,C);
+  var g=0.55+0.25*Math.sin(G.t*2.2);
+  ctx.fillStyle='rgba(255,215,106,'+g+')'; rr(cp.x-3,cp.y-3,CELL+6,CELL+6,8); ctx.fill();
+  ctx.fillStyle='#ffd76a'; rr(cp.x,cp.y,CELL,CELL,6); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.5)'; rr(cp.x+7,cp.y+7,CELL-14,CELL-14,4); ctx.fill();
+  // ghost (core-overlap cells shown hot — they will vaporize)
+  if(G.cur&&SET.ghost&&!G.over){
+    var gy=hardDropY();
+    var gc=cellsOf(G.cur.x,gy,G.cur.rot,G.cur.k);
+    for(i=0;i<4;i++){ if(gc[i][1]<0)continue; var gp=cellPx(gc[i][0],gc[i][1]);
+      ctx.strokeStyle=isCore(gc[i][0],gc[i][1])?'rgba(255,150,60,0.85)':'rgba(238,240,246,0.3)';
+      ctx.lineWidth=1.5; rr(gp.x+1,gp.y+1,CELL-2,CELL-2,5); ctx.stroke(); }
+  }
+  // falling piece
+  if(G.cur&&!G.over){
+    var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k);
+    for(i=0;i<4;i++){ if(pc[i][1]<0)continue; var pp=cellPx(pc[i][0],pc[i][1]);
+      ctx.fillStyle=PCOLS[G.cur.k]; rr(pp.x,pp.y,CELL,CELL,5); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.22)'; rr(pp.x,pp.y,CELL,CELL*0.4,5); ctx.fill(); }
+  }
+  // ring pulses
+  for(i=0;i<G.pulse.length;i++){ var pu=G.pulse[i]; var ppx=cellPx(pu.x,pu.y);
+    ctx.globalAlpha=Math.max(0,pu.life*1.8); ctx.fillStyle='#ffd76a';
+    rr(ppx.x-2,ppx.y-2,CELL+4,CELL+4,6); ctx.fill(); ctx.globalAlpha=1; }
+  ctx.restore();
+  // floats
+  for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
+    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=(f.big?'800 26px':'700 18px')+' system-ui,sans-serif';
+    ctx.fillText(f.txt, f.x, f.y); }
+  ctx.globalAlpha=1;
+  // footer hint
+  ctx.fillStyle='#8d90a8'; ctx.font='600 11px system-ui,sans-serif';
+  ctx.fillText('build square rings around the core · SLAM spins the gyre', 270, BY+N*PITCH+18);
+  ctx.restore();
+}
+function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
+
+/* ---------- input ---------- */
+function hold(id,fn,first){
+  var el=$(id),t=null,r=null; if(!el)return;
+  function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); fn();
+    t=setTimeout(function(){ r=setInterval(fn, 70); }, first||220); });
+  el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop);
+}
+hold('c-left',function(){ tryMove(-1); });
+hold('c-right',function(){ tryMove(1); });
+hold('c-down',function(){ if(G&&G.cur)softStep(); },160);
+tap('c-rot',function(){ tryRotate(); });
+tap('slambtn',function(){ slam(); });
+cv.addEventListener('pointerdown',function(e){
+  if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
+  tryRotate();
+},{passive:false});
+document.addEventListener('keydown',function(e){
+  if(curScreen!=='s-play'||!G||G.over)return;
+  if(e.key==='ArrowLeft'){ e.preventDefault(); tryMove(-1); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); tryMove(1); }
+  else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(); }
+  else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(); }
+  else if(e.key===' '){ e.preventDefault(); slam(); }
+});
+
+/* ---------- screens ---------- */
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
+  if(id!=='s-play')running=false;
+  paintTitle(); }
+function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.level+1);
+  var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
+  var bd=$('b-daily'); if(bd)bd.innerHTML='📅 Daily Gyre'+((rec&&rec.day===todayKey())?' ✓':''); }
+function shareIt(){
+  var txt = G&&G.mode==='daily'
+    ? 'Ring Stacker Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings 🌀\nSame pieces for everyone — can you beat it?'
+    : 'Ring Stacker — '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core 🌀';
+  var url='https://lucidwinds.com/satellites/ring-stacker/';
+  try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
+  try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}
+}
+
+/* ---------- wiring ---------- */
+tap('b-journey',function(){ SFX.ui(); newGame('journey'); });
+tap('b-daily',function(){ SFX.ui(); newGame('daily'); });
+tap('b-zen',function(){ SFX.ui(); newGame('zen'); });
+tap('b-how',function(){ SFX.ui(); show('s-how'); });
+tap('b-set',function(){ SFX.ui(); show('s-set'); });
+tap('how-back',function(){ SFX.ui(); show('s-title'); });
+tap('set-back',function(){ SFX.ui(); show('s-title'); });
+tap('b-home',function(){ SFX.ui(); running=false; if(G&&!G.over)endRunQuiet(); show('s-title'); });
+tap('go-retry',function(){ SFX.ui(); newGame(G?G.mode:'journey'); });
+tap('go-home',function(){ SFX.ui(); show('s-title'); });
+tap('go-share',function(){ SFX.ui(); shareIt(); });
+function endRunQuiet(){ if(!G)return; G.over=true; var b=PROG.best[G.mode]||0; if(G.score>b){ PROG.best[G.mode]=G.score; saveProg(); } }
+function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
+wireToggle('tg-sound','sound');
+wireToggle('tg-ghost','ghost');
+$('buildstamp').textContent='Ring Stacker '+BUILD+' · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
+
+/* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
+(function(){
+  var btn=$('b-music'); if(!btn)return;
+  var embedded;
+  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }
+  catch(e){ embedded=true; }
+  if(embedded){ btn.style.display='none'; return; }
+  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
+  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
+
+/* ---------- add to home screen (Dewball pattern) ---------- */
+(function(){
+  var btn=$('b-install'); if(!btn)return;
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
+  if(standalone()){ btn.style.display='none'; return; }
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+  btn.addEventListener('click',function(){
+    SFX.ui();
+    if(deferred){ deferred.prompt(); deferred=null; return; }
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(ios ? 'To add Ring Stacker to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
+              : 'To add Ring Stacker to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+  });
+})();
+
+/* embedded-in-portal back handshake */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  if(SWS_EMBED&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+})();
+
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  var grant=0;
+  try{ var k='sw_sb_ringstacker';
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    grant=Math.min(n, Math.max(0, 30-(s.n||0)));
+    if(grant>0){ s.n=(s.n||0)+grant; localStorage.setItem(k,JSON.stringify(s)); }
+  }catch(e){}
+  if(grant>0 && window.Sunbeam&&window.Sunbeam.earn) window.Sunbeam.earn(grant,tag)['catch'](function(){});
+  return grant;
+};
+
+fit(); paintTitle();
+
+/* ---------- headless dev hook + machine-proof bot ---------- */
+if(/[?&]rstest=1/.test(location.search)){
+  /* greedy surface-fitting bot: tries every (rotation, x, slam?) placement,
+     scores ring progress minus holes/height, big bonus for completed rings. */
+  function cloneGrid(g){ var o=[],y; for(y=0;y<N;y++)o.push(g[y].slice()); return o; }
+  function simCollides(grid,k,x,y,rot){
+    var s=SHAPES[k][rot],i;
+    for(i=0;i<4;i++){ var cx=x+s[i][0],cy=y+s[i][1];
+      if(cx<0||cx>=N||cy>=N)return true;
+      if(cy>=0&&grid[cy][cx])return true; }
+    return false;
+  }
+  function simSpin(grid){ var ng=emptyGrid(),x,y; for(y=0;y<N;y++)for(x=0;x<N;x++){ if(!grid[y][x])continue; var dx=x-C,dy=y-C; ng[C+dx][C-dy]=grid[y][x]; } return ng; }
+  function simRings(grid){ // clear complete rings + crush; returns cleared count
+    var cleared=0;
+    while(true){
+      var D=0,d,i;
+      for(d=1;d<=7;d++){ var ok=true,rc=RINGS[d-1]; for(i=0;i<rc.length;i++){ if(!grid[rc[i][1]][rc[i][0]]){ok=false;break;} } if(ok){D=d;break;} }
+      if(!D)break;
+      cleared++;
+      var rcc=RINGS[D-1]; for(i=0;i<rcc.length;i++)grid[rcc[i][1]][rcc[i][0]]=null;
+      var ng=emptyGrid(),x,y;
+      for(y=0;y<N;y++)for(x=0;x<N;x++){ if(!grid[y][x])continue; var E=cheb(x,y);
+        if(E<=D){ ng[y][x]=grid[y][x]; continue; }
+        var dx=x-C,dy=y-C,nx=x,ny=y;
+        if(Math.abs(dx)===E)nx=x-(dx>0?1:-1);
+        if(Math.abs(dy)===E)ny=y-(dy>0?1:-1);
+        if(!isCore(nx,ny))ng[ny][nx]=grid[y][x]; }
+      for(y=0;y<N;y++)grid[y]=ng[y];
+    }
+    return cleared;
+  }
+  function evalGrid(grid){
+    var s=0,d,i,x,y;
+    // target the smallest incomplete ring hard, its neighbor gently
+    var T=1;
+    for(d=1;d<=4;d++){ var full=true,rc0=RINGS[d-1];
+      for(i=0;i<rc0.length;i++){ if(!grid[rc0[i][1]][rc0[i][0]]){full=false;break;} }
+      if(!full){ T=d; break; } }
+    for(d=1;d<=5;d++){ var rc=RINGS[d-1],done=0; for(i=0;i<rc.length;i++)if(grid[rc[i][1]][rc[i][0]])done++;
+      var w = d===T?26 : d===T+1?8 : d<=4?3 : -2;
+      s+=done*w; }
+    for(x=0;x<N;x++){ var top=-1;
+      for(y=0;y<N;y++){ if(grid[y][x]){top=y;break;} }
+      if(top>=0){
+        if(top<6)s-=(6-top)*22;                                   // tower panic
+        for(y=top+1;y<N;y++){ if(!grid[y][x]&&!isCore(x,y))s-=11; }  // holes
+      }
+    }
+    return s;
+  }
+  function botPlace(){
+    if(!G||!G.cur||G.over)return null;
+    var best=null,rot,x,sl;
+    for(rot=0;rot<4;rot++){
+      for(x=-2;x<N;x++){
+        if(simCollides(G.grid,G.cur.k,x,-2,rot))continue;
+        var y=-2; while(!simCollides(G.grid,G.cur.k,x,y+1,rot))y++;
+        var s=SHAPES[G.cur.k][rot],aboveSky=false,i;
+        for(i=0;i<4;i++)if(y+s[i][1]<0)aboveSky=true;
+        if(aboveSky)continue;
+        for(sl=0;sl<2;sl++){
+          var g2=cloneGrid(G.grid);
+          for(i=0;i<4;i++){ var lx=x+s[i][0], ly=y+s[i][1]; if(!isCore(lx,ly))g2[ly][lx]='#fff'; }
+          if(sl)g2=simSpin(g2);
+          var cleared=simRings(g2);
+          var score=evalGrid(g2)+cleared*1200-(sl?18:0);
+          if(!best||score>best.score)best={rot:rot,x:x,slam:!!sl,score:score,cleared:cleared};
+        }
+      }
+    }
+    return best;
+  }
+  function botStep(){
+    var b=botPlace();
+    if(!b){ if(G&&G.cur){ slam(); return !G.over; } return false; }   // jammed: forced slam (zen wipes, others end)
+    G.cur.rot=b.rot; G.cur.x=b.x;
+    if(collides(G.cur.x,G.cur.y,G.cur.rot))return false;
+    if(b.slam){ slam(); } else { G.cur.y=hardDropY(); lockPiece(false); }
+    return true;
+  }
+  window.RS_DEV={
+    start:function(m,seed){ newGame(m||'journey'); running=false;
+      if(seed!=null){ G.seed=seed; G.rng=mulberry32(seed); G.feed=bagFeed(G.rng); G.next=G.feed(); G.cur=null; G.grid=emptyGrid(); G.pieces=0; spawn(); }
+      return true; },
+    state:function(){ if(!G)return null; return { mode:G.mode, score:G.score, rings:G.rings, level:G.level,
+      over:G.over, pieces:G.pieces, chainBest:G.chainBest, quotaDone:G.quotaDone, quota:G.quota, seed:G.seed }; },
+    grid:function(){ return G?G.grid.map(function(r){return r.map(function(c){return c?1:0;});}):null; },
+    move:tryMove, rotate:tryRotate, soft:softStep, slam:slam,
+    bot:function(n){ var placed=0; while(placed<n&&G&&!G.over){ if(!botStep())break; placed++; } return {placed:placed, state:this.state()}; },
+    proofCheck:function(){
+      /* 3 seeded runs, 90 pieces each — the bot must complete rings and score */
+      var seeds=[11,222,3333], out=[],i;
+      for(i=0;i<seeds.length;i++){
+        this.start('zen',seeds[i]);
+        this.bot(90);
+        out.push({seed:seeds[i], rings:G.rings, score:G.score, over:G.over});
+      }
+      var pass=out.every(function(r){ return r.rings>=1; });
+      return { pass:pass, runs:out };
+    },
+    render:function(){ render(); return true; },
+    earnTest:function(){ try{ return window._sbCapEarn(2,'test'); }catch(e){ return -1; } }
+  };
+}
+})();
+</script>
+</body>
+</html>
