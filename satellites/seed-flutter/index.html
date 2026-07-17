@@ -320,6 +320,32 @@ function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(m
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 function dateSeed(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
 function todayStr(){ return ''+dateSeed(); }
+function dayNum(){ return Math.floor((Date.now()-new Date(2026,0,1).getTime())/86400000); }
+
+/* ---------- Daily Course generator (2026-07-17 rework) ----------
+   The old Daily Gust was just the endless run with a seed: same slow ramp,
+   no finish line, nothing daily-feeling about it. Now the daily is a FINITE
+   45-gap course composed from readable motifs (stairs, zigzags, waves,
+   tunnel holds, breathers), fully seeded so every keeper flies the SAME
+   course each day. It starts faster, tightens toward the end, and only a
+   CLEAR pays sunbeams and grows the streak. */
+var DAILY_GAPS=45;
+function buildDailyCourse(rng,n){
+  var out=[], margin=90, cy=VH*0.45;
+  function push(gh){ gh=Math.max(88,gh); var lo=margin+gh, hi=GROUND-margin-gh;
+    if(cy<lo)cy=lo; if(cy>hi)cy=hi; out.push({cy:cy, gh:gh}); }
+  while(out.length<n){
+    var f=out.length/n, gh=140-46*f;
+    var m=Math.floor(rng()*6);
+    if(m===0){ var st=3+Math.floor(rng()*2), d=-(64+rng()*44); for(var i=0;i<st;i++){ cy+=d; push(gh); } }
+    else if(m===1){ var st2=3+Math.floor(rng()*2), d2=(64+rng()*44); for(var j=0;j<st2;j++){ cy+=d2; push(gh); } }
+    else if(m===2){ var dir=rng()<0.5?1:-1; for(var k=0;k<4;k++){ cy+=dir*(88+rng()*50); dir=-dir; push(gh); } }
+    else if(m===3){ var ph=rng()*6.28; for(var w=0;w<5;w++){ cy+=Math.sin(ph+w*1.1)*95; push(gh); } }
+    else if(m===4){ for(var t2=0;t2<3;t2++){ cy+=(rng()*2-1)*18; push(gh-12); } }
+    else { for(var b2=0;b2<2;b2++){ cy+=(rng()*2-1)*46; push(gh+26); } }
+  }
+  return out.slice(0,n);
+}
 
 /* ---------- canvas ---------- */
 var cv=$('game'), ctx=cv.getContext('2d');
@@ -352,16 +378,22 @@ function startGame(mode){
     y:VH*0.42, vy:0, ang:0, started:false,
     stems:[], gaps:0, score:0, combo:0, bestCombo:0, perfects:0,
     t:0, real:0, slow:0, phase:'play', dead:false, clipT:0, deathT:0, sproutX:0,
-    parts:[], trail:[], flowers:[], bursts:[], hazeFx:0, windPh:Math.random()*6.28,
-    leg:0, legGap:0, boss:false, bossPassed:0, recover:(curComp().id===3?1:0),
+    parts:[], trail:[], flowers:[], bursts:[], hazeFx:0, windPh:0,
+    leg:0, legGap:0, boss:false, bossPassed:0,
+    recover:((mode!=='daily'&&curComp().id===3)?1:0),   // no rescue teleports in the daily — same fair course for everyone
+    course:(mode==='daily'?buildDailyCourse(rng,DAILY_GAPS):null), spawnN:0,
     grew:0, sunAmt:0, winT:0 };
+  // seeded modes must seed the wind too, or two players fly different physics
+  G.windPh = seeded ? rng()*6.28 : Math.random()*6.28;
   // prime a few stems (screen-space x; they scroll left)
   for(var i=0;i<4;i++)spawnStem(VW+120+i*gapSpacing());
   toPlay();
 }
 
 function assistFrac(){ if(G.mode==='zen')return 0.35; return Math.min(1, G.gaps/6); }
-function scrollSpeed(){ if(G.mode==='zen')return 116; var base=116+66*assistFrac();
+function scrollSpeed(){ if(G.mode==='zen')return 116;
+  if(G.course){ var f=Math.min(1, G.gaps/(G.course.length||DAILY_GAPS)); return 150+f*88; }  // daily: brisk from gap one
+  var base=116+66*assistFrac();
   if(G.mode==='gauntlet')base=140+G.leg*12;
   return base + Math.min(52, Math.max(0,G.gaps-6)*0.8); }
 function gapHalf(){ if(G.mode==='zen')return 150;
@@ -373,6 +405,11 @@ function gapSpacing(){ return G.mode==='zen'?300:250; }
 function seasonIdx(){ if(G.mode==='gauntlet')return G.leg%4; return Math.floor(G.gaps/10)%4; }
 
 function spawnStem(x){
+  if(G.course){ var c=G.course[G.spawnN];
+    if(!c) return;   // course over — open sky to the finish
+    G.spawnN++;
+    G.stems.push({ x:x, cy:c.cy, gh:c.gh, scored:false, bloom:0, boss:false, oscBase:c.cy, oscA:0, ph:0, last:(G.spawnN===G.course.length) });
+    return; }
   var boss = (G.mode==='gauntlet' && G.legGap>=11);
   var gh = boss? 82 : gapHalf();
   var margin=90;
@@ -434,6 +471,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.real+=dt;
       } else { if(!st.boss)G.combo=0; G.score+=1; sfx('pass'); }
       if(st.boss){ G.bossPassed++; G.leg++; G.combo=Math.max(G.combo,1);
         if(G.mode==='gauntlet' && G.leg>=4){ winGauntlet(); return; } }
+      if(G.course && G.gaps>=G.course.length){ winDaily(); return; }
     }
     // physical overlap?
     if(SEED_X+HIT_R > st.x-STEM_W/2 && SEED_X-HIT_R < st.x+STEM_W/2){
@@ -489,15 +527,28 @@ function endRun(){ G.phase='dead';
   // sunbeams
   var amt=0;
   if(G.mode==='drift')amt=Math.min(12, Math.floor(G.gaps/6)+G.bestCombo);
-  else if(G.mode==='daily'){ var first=(PROG.dailyDone!==todayStr());
-    amt=Math.min(12, 3+Math.floor(G.gaps/8)+Math.floor(G.bestCombo/2));
-    if(first){ var yd=''+(dateSeed()-1); PROG.streak=(PROG.lastDaily===yd)?(PROG.streak||0)+1:1; PROG.lastDaily=todayStr(); PROG.dailyDone=todayStr(); }
-    else amt=0; }
+  else if(G.mode==='daily'){ amt=0; }   // the daily pays on CLEAR only (winDaily) — retries are free practice
   else if(G.mode==='gauntlet')amt=Math.min(12, 2+G.leg*2+G.bestCombo);
   // zen earns nothing
   var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seedflutter:'+G.mode)||0; }catch(e){} }
   G.sunAmt=granted; save();
   showResults(false, granted);
+}
+function winDaily(){ sfx('win');
+  var today=todayStr(), first=(PROG.dailyDone!==today);
+  var amt=0;
+  if(first){ var yd=''+(dateSeed()-1);
+    PROG.streak=(PROG.lastDaily===yd)?(PROG.streak||0)+1:1;
+    PROG.lastDaily=today; PROG.dailyDone=today;
+    amt=10+Math.min(2,Math.floor(G.perfects/8)); }
+  var grow=2+Math.floor(G.bestCombo/2); G.grew=grow;
+  for(var i=0;i<grow;i++)PROG.blooms.push(((dateSeed()*31+i*271+G.bestCombo*13)*2654435761)>>>0);
+  if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
+  PROG.grewTotal=(PROG.grewTotal||0)+grow;
+  if(G.gaps>(PROG.bestDist||0))PROG.bestDist=G.gaps;
+  var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seedflutter:daily')||0; }catch(e){} }
+  G.sunAmt=granted; save();
+  G.phase='win'; G.winT=0; G.vy=-40; spawnBurst('fx/star_shower', VW/2, VH*0.42, 1.3, 380);
 }
 function winGauntlet(){ sfx('win');
   if(G.leg>(PROG.bestGauntlet||0))PROG.bestGauntlet=G.leg;
@@ -512,7 +563,9 @@ function winGauntlet(){ sfx('win');
   G.phase='win'; G.winT=0; G.vy=-40; spawnBurst('fx/star_shower', VW/2, VH*0.42, 1.3, 380);
 }
 function showResults(win, granted){
-  $('go-title').textContent = win?'All four skies!':(G.mode==='zen'?'Landed softly':'Drifted down');
+  $('go-title').textContent = win?(G.mode==='daily'?'Daily Course clear!':'All four skies!')
+    :(G.mode==='zen'?'Landed softly'
+    :(G.mode==='daily'?('Gap '+G.gaps+' of '+(G.course?G.course.length:DAILY_GAPS)):'Drifted down'));
   var starN = win?3:(G.mode==='zen'?0:Math.min(3, (G.bestCombo>=8?3:G.bestCombo>=4?2:G.bestCombo>=1?1:0)));
   if(G.mode==='zen'){ $('go-stars').innerHTML=''; }
   else { var s=''; for(var i=0;i<3;i++){ s += (i<starN
@@ -520,11 +573,13 @@ function showResults(win, granted){
       : "<img class='rstar' src='assets/ui/star_empty.png?v=cc1' onerror=\"this.replaceWith(document.createTextNode('☆'))\" alt='.'>"); }
     $('go-stars').innerHTML=s; }
   $('go-score').textContent=G.gaps;
-  $('go-lab').textContent = G.mode==='gauntlet'?'legs '+G.leg+' · gaps':'gaps threaded';
-  var best = G.mode==='gauntlet'?('best legs '+(PROG.bestGauntlet||0)):('best '+(PROG.bestDist||0));
+  $('go-lab').textContent = G.mode==='gauntlet'?'legs '+G.leg+' · gaps':(G.mode==='daily'?('Daily Course #'+dayNum()+' · gaps'):'gaps threaded');
+  var best = G.mode==='gauntlet'?('best legs '+(PROG.bestGauntlet||0)):(G.mode==='daily'?('streak '+(PROG.streak||0)):('best '+(PROG.bestDist||0)));
   $('go-best').textContent=best;
   $('go-bloom').textContent='Best Bloomstreak '+G.bestCombo+' · grew '+G.grew+' star'+(G.grew===1?'':'s');
-  $('go-sun').textContent = granted>0?('☀ +'+granted+' sunbeams'):(G.mode==='zen'?'a cozy drift':(G.mode==='daily'&&granted===0?'daily already claimed':'☀ no sunbeams this run'));
+  $('go-sun').textContent = granted>0?('☀ +'+granted+' sunbeams · streak '+(PROG.streak||1))
+    :(G.mode==='zen'?'a cozy drift'
+    :(G.mode==='daily'?(win?'daily already cleared today':'clear the course to earn sunbeams'):'☀ no sunbeams this run'));
   running=false; show('s-go');
 }
 
@@ -683,9 +738,10 @@ function drawFlower(g, cx, cy, sc, seed){ // keepsake STAR (works on main + offs
 var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
 function drawHUD(sea){
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 17px system-ui';
-  ctx.fillText('◆ '+G.gaps, 64, 30);
-  ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='700 13px system-ui'; ctx.fillText(sea.nm+(G.mode==='gauntlet'?(' · leg '+(G.leg+1)):''), VW-64, 24);
-  if(G.combo>0){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 20px system-ui'; ctx.fillText('Bloomstreak '+G.combo, VW/2, 30); }
+  ctx.fillText(G.course?('◆ '+G.gaps+' / '+G.course.length):('◆ '+G.gaps), 64, 30);
+  ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='700 13px system-ui';
+  ctx.fillText(G.course?('DAILY #'+dayNum()+' · '+sea.nm):(sea.nm+(G.mode==='gauntlet'?(' · leg '+(G.leg+1)):'')), VW-64, 24);
+  if(G.combo>0){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 20px system-ui'; ctx.fillText('Bloomstreak '+G.combo, VW/2, 56); }
   hudBtn(HB_MENU,'‹','ui/icon_menu'); hudBtn(HB_RETRY,'↻','ui/icon_retry');
 }
 function hudBtn(b,glyph,sp){ var im=sp?_spr(sp):null;
@@ -740,6 +796,10 @@ function shareIt(){ var url='https://lucidwinds.com/satellites/seed-flutter/'; v
 /* ---------- wire ---------- */
 tap('b-drift',function(){ sfx('ui'); startGame('drift'); });
 tap('b-daily',function(){ sfx('ui'); startGame('daily'); });
+if(/[?&]cctest=1/.test(location.search)){
+  window.CC_DEV={ start:startGame, state:function(){ return G; }, flap:flap, prog:function(){ return PROG; }, course:function(){ return G&&G.course; },
+    results:function(){ return { title:$('go-title').textContent, sun:$('go-sun').textContent, lab:$('go-lab').textContent, screen:curScreen }; } };
+}
 tap('b-gaunt',function(){ sfx('ui'); startGame('gauntlet'); });
 tap('b-zen',function(){ sfx('ui'); startGame('zen'); });
 tap('b-grove',function(){ sfx('ui'); renderGrove(); show('s-grove'); });
