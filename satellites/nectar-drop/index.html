@@ -160,6 +160,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack" style="flex:0 0 56px">&#9835;</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
+      <button class="btn sm" id="b-install-title">📲 Add to Home Screen</button>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -305,7 +306,7 @@ function pad2(n){ return n<10?('0'+n):(''+n); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
-var BUILD='v3.0';
+var BUILD='v3.1';
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, guide:true };
@@ -1457,19 +1458,22 @@ function boot(){
 
 /* ---------- add to home screen ---------- */
 (function(){
-  var btn=$('b-install'); if(!btn)return;
+  // wire BOTH the title-screen and settings install buttons to one handler
+  var btns=[]; ['b-install','b-install-title'].forEach(function(id){ var e=$(id); if(e)btns.push(e); });
+  if(!btns.length)return;
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
-  if(standalone()){ btn.style.display='none'; return; }
+  if(standalone()){ btns.forEach(function(b){ b.style.display='none'; }); return; }
   var deferred=null;
   window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
-  btn.addEventListener('click',function(){
+  function onInstall(){
     sfx('ui');
     if(deferred){ deferred.prompt(); deferred=null; return; }
     var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
     alert(ios ? 'To add Nectar Drop to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
               : 'To add Nectar Drop to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
-  });
+  }
+  btns.forEach(function(b){ b.addEventListener('click',onInstall); });
 })();
 
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);

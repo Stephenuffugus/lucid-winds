@@ -88,6 +88,11 @@
   /* ---------- GAME ---------- */
   #game{padding-top:calc(14px + env(safe-area-inset-top));overflow:hidden}
   .hud{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+  .hud-l{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+  .gmenu{font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ink);
+    background:rgba(255,255,255,.07);border:1px solid var(--line2);border-radius:20px;padding:0 15px;
+    min-height:44px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .gmenu:active{transform:scale(.96)}
   .hud .label{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint)}
   .hud .levelv{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:.03em;display:block;margin-top:3px}
   .goalsub{font-size:11px;color:var(--ink-dim);display:block;margin-top:3px}
@@ -235,7 +240,6 @@
   <!-- MENU -->
   <section class="screen on" id="menu">
     <button class="soundtog" id="menuSound">🔊</button>
-    <button class="soundtog" id="menuMusic" style="left:76px">♪</button>
     <div class="coins-pill" id="menuCoins">🪙 0</div>
     <div class="wordmark"><span class="l1">HUES</span></div>
     <div class="tag">match the color · beat the clock</div>
@@ -250,6 +254,7 @@
     <div class="seg-hint" id="diffHint" style="font-size:11px;color:var(--ink-dim);margin-top:6px;text-align:center;line-height:1.4"></div>
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="shop-link" id="shopLink">🎨 Border Shop</button>
+    <button class="shop-link" id="musicLink">♫ Music</button>
     <button class="shop-link" id="rulesLink">❓ How to play</button>
     <button class="shop-link" id="installLink">📲 Add to Home Screen</button>
     <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
@@ -271,7 +276,7 @@
   <section class="screen" id="game">
     <div id="vignette"></div>
     <div class="hud">
-      <div class="hud-l"><span class="label" id="modeLabel">DAILY</span><span class="levelv" id="levelVal">LEVEL 1</span><span class="goalsub" id="goalSub"></span></div>
+      <div class="hud-l"><button class="gmenu" id="gMenu" aria-label="Back to menu">‹ Menu</button><span class="label" id="modeLabel">DAILY</span><span class="levelv" id="levelVal">LEVEL 1</span><span class="goalsub" id="goalSub"></span></div>
       <div class="hud-r"><span class="score" id="scoreVal">0</span><span class="bestline" id="bestLine"></span><span class="lives" id="lives"></span></div>
     </div>
     <div class="timer"><div class="time-num" id="timeNum">5.0</div><div class="time-track"><div class="time-fill" id="timerBar"></div></div></div>
@@ -829,12 +834,22 @@ window._sbCapEarn=function(n,tag){
 };
 </script>
 <script>
-/* studio soundtrack (shared jukebox; standalone only) + add-to-home-screen */
+/* in-game back-to-menu (bail from a too-hard difficulty) */
 (function(){
-  var btn=document.getElementById('menuMusic');
+  var gm=document.getElementById('gMenu');
+  if(gm)gm.addEventListener('click',function(){
+    if(!G || G.over || confirm('Leave this round and go back to the menu?')) toMenu();
+  });
+})();
+
+/* studio soundtrack (shared jukebox) + add-to-home-screen */
+(function(){
   var embedded;
   try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }
   catch(e){ embedded=true; }
+  // MUSIC: labeled menu button. Hidden only when embedded in the portal (the
+  // portal's own jukebox plays there — hiding avoids two tracks at once).
+  var btn=document.getElementById('musicLink');
   if(btn){
     if(embedded){ btn.style.display='none'; }
     else{
@@ -844,6 +859,8 @@ window._sbCapEarn=function(n,tag){
       if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
     }
   }
+  // INSTALL: always visible except when already installed as an app. (Shown even
+  // in the portal so it's easy to find; the tap gives the right instructions.)
   var ib=document.getElementById('installLink');
   if(ib){
     if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('/sw.js'); }catch(e){} }
