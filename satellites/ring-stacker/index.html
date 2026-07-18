@@ -155,7 +155,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.0";
+var BUILD="v1.1";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -220,6 +220,16 @@ var SHAPES={
 };
 var PCOLS={ I:'#4ac8b4', O:'#f5e6c8', T:'#a06fc8', S:'#7ec98a', Z:'#e07a9a', J:'#5f8ad8', L:'#e0a843' };
 var PKEYS=['I','O','T','S','Z','J','L'];
+/* CONCENTRIC RING PALETTE — a locked cell is drawn in the color of the RING
+   it sits on (its Chebyshev distance from the core), NOT the piece it came
+   from. So the board always reads as bright colored rings around the golden
+   sun. Index by distance: [0]=core (unused for cells), 1..7 = rings inward->out.
+   Because color is chosen live at render time, when a ring clears and the
+   outside crushes inward, every surviving cell recolors to its new ring — the
+   whole gyre visibly flows one color-band toward the core. */
+var RING_COL=[ '#ffd76a', '#ff5d6c', '#ff9f45', '#ffd93b', '#4fd67a', '#33c2d6', '#4d9bf7', '#c56bf0' ];
+function ringColOf(x,y){ var d=cheb(x,y); return RING_COL[d]||RING_COL[7]; }
+function hexA(h,a){ var n=parseInt(h.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
 var G=null, running=false, lastTs=0;
 
@@ -439,32 +449,47 @@ function render(){
     var cx=BX+(N*PITCH-GAP)/2, cyy=BY+(N*PITCH-GAP)/2;
     ctx.translate(cx,cyy); ctx.rotate(-G.spinA*G.spinA*Math.PI/2); ctx.translate(-cx,-cyy);
   }
-  // ring guides 1-4 (playable target rings)
+  // ring frames — every ring drawn as a colored square target that brightens
+  // and thickens as it fills, so the concentric colored rings are unmistakable
   var d;
-  for(d=4;d>=1;d--){
+  for(d=6;d>=1;d--){
     var p0=cellPx(C-d,C-d);
     var w=(2*d+1)*PITCH-GAP;
     var done=0, rc=RINGS[d-1];
     for(i=0;i<rc.length;i++)if(G.grid[rc[i][1]][rc[i][0]])done++;
     var frac=done/rc.length;
-    ctx.strokeStyle='rgba(74,200,180,'+(0.10+frac*0.5)+')';
-    ctx.lineWidth=frac>0.7?2:1;
-    rr(p0.x-1,p0.y-1,w+2,w+2,6); ctx.stroke();
+    ctx.strokeStyle=hexA(RING_COL[d], 0.18+frac*0.72);
+    ctx.lineWidth=frac>=1?3:(frac>0.6?2:1.25);
+    rr(p0.x-2,p0.y-2,w+4,w+4,7); ctx.stroke();
   }
-  // cells
+  // cells — colored by their RING (distance from the core) => concentric bands
   var x,y;
   for(y=0;y<N;y++)for(x=0;x<N;x++){
-    var col=G.grid[y][x]; if(!col)continue;
+    if(!G.grid[y][x])continue;
+    var col=ringColOf(x,y);
     var p=cellPx(x,y);
     ctx.fillStyle=col; rr(p.x,p.y,CELL,CELL,5); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.14)'; rr(p.x,p.y,CELL,CELL*0.4,5); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.22)'; rr(p.x,p.y,CELL,CELL*0.42,5); ctx.fill();   // top gloss
+    ctx.fillStyle='rgba(0,0,0,0.18)'; rr(p.x,p.y+CELL*0.72,CELL,CELL*0.28,5); ctx.fill(); // bottom shade
+    ctx.strokeStyle=hexA(col,0.9); ctx.lineWidth=1; rr(p.x+0.5,p.y+0.5,CELL-1,CELL-1,5); ctx.stroke();
   }
-  // core
+  // core — the golden SUN everything rings around
   var cp=cellPx(C,C);
-  var g=0.55+0.25*Math.sin(G.t*2.2);
-  ctx.fillStyle='rgba(255,215,106,'+g+')'; rr(cp.x-3,cp.y-3,CELL+6,CELL+6,8); ctx.fill();
-  ctx.fillStyle='#ffd76a'; rr(cp.x,cp.y,CELL,CELL,6); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.5)'; rr(cp.x+7,cp.y+7,CELL-14,CELL-14,4); ctx.fill();
+  var ccx=cp.x+CELL/2, ccy=cp.y+CELL/2;
+  var pls=0.5+0.5*Math.sin(G.t*2.2);
+  var halo=ctx.createRadialGradient(ccx,ccy,2, ccx,ccy, CELL*2.0);
+  halo.addColorStop(0,'rgba(255,236,160,'+(0.55+0.28*pls)+')');
+  halo.addColorStop(0.5,'rgba(255,199,80,0.26)');
+  halo.addColorStop(1,'rgba(255,199,80,0)');
+  ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(ccx,ccy,CELL*2.0,0,Math.PI*2); ctx.fill();
+  ctx.save(); ctx.translate(ccx,ccy); ctx.rotate(G.t*0.6);          // slow sun rays
+  ctx.strokeStyle='rgba(255,226,135,'+(0.30+0.28*pls)+')'; ctx.lineWidth=2;
+  for(var rk=0;rk<8;rk++){ var ra=rk*Math.PI/4, r1=CELL*0.9, r2=CELL*1.3;
+    ctx.beginPath(); ctx.moveTo(Math.cos(ra)*r1,Math.sin(ra)*r1); ctx.lineTo(Math.cos(ra)*r2,Math.sin(ra)*r2); ctx.stroke(); }
+  ctx.restore();
+  ctx.fillStyle='#ffcf4d'; rr(cp.x-1,cp.y-1,CELL+2,CELL+2,8); ctx.fill();       // sun body
+  ctx.fillStyle='#ffe38a'; rr(cp.x+3,cp.y+3,CELL-6,CELL-6,6); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,'+(0.72+0.28*pls)+')'; rr(cp.x+8,cp.y+8,CELL-16,CELL-16,4); ctx.fill(); // white-hot center
   // ghost (core-overlap cells shown hot — they will vaporize)
   if(G.cur&&SET.ghost&&!G.over){
     var gy=hardDropY();
@@ -480,10 +505,11 @@ function render(){
       ctx.fillStyle=PCOLS[G.cur.k]; rr(pp.x,pp.y,CELL,CELL,5); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.22)'; rr(pp.x,pp.y,CELL,CELL*0.4,5); ctx.fill(); }
   }
-  // ring pulses
+  // ring pulses — an expanding white flash where a completed ring collapsed in
   for(i=0;i<G.pulse.length;i++){ var pu=G.pulse[i]; var ppx=cellPx(pu.x,pu.y);
-    ctx.globalAlpha=Math.max(0,pu.life*1.8); ctx.fillStyle='#ffd76a';
-    rr(ppx.x-2,ppx.y-2,CELL+4,CELL+4,6); ctx.fill(); ctx.globalAlpha=1; }
+    var e=(0.55-pu.life)*14; if(e<0)e=0;
+    ctx.globalAlpha=Math.max(0,Math.min(1,pu.life*2)); ctx.fillStyle='#fffbe6';
+    rr(ppx.x-2-e,ppx.y-2-e,CELL+4+e*2,CELL+4+e*2,6); ctx.fill(); ctx.globalAlpha=1; }
   ctx.restore();
   // floats
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
