@@ -174,12 +174,16 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
    wire-notes (art-asset-lists/pinball-claymation/00-art-direction.md). */
 var PIN_ART=(function(){
   var DIR='art/', VER='1', cache={}, tried={};
-  var api={ enabled:false, DIR:DIR, VER:VER };
+  var api={ enabled:true, DIR:DIR, VER:VER };
   function load(key){ if(tried[key])return; tried[key]=1; var im=new Image();
     im._ok=0; im.onload=function(){ im._ok=(im.naturalWidth>0)?1:0; }; im.onerror=function(){ im._ok=0; };
     im.src=DIR+key+'.png?v='+api.VER; cache[key]=im; }
   // manifest = every swappable key (matches the claymation pack asset keys). Grows at cut time.
-  var MAN=['table_night_shift','table_day_shift','table_toxic_spill','table_power_out','eyeball_core','eyeball_lit'];
+  var MAN=['table_night_shift','table_day_shift','table_toxic_spill','table_power_out',
+    'eyeball_core','eyeball_lit','launch_streak','trail_mote',
+    'flipper_rest','flipper_up','pivot_cap','flipper_glow',
+    'bumper_a_idle','bumper_b_idle','bumper_c_idle','bumper_a_lit','bumper_b_lit','bumper_c_lit',
+    'sling_idle','sling_lit','standup_idle','standup_lit','standup_done'];
   api.load=load;
   api.preload=function(){ if(!api.enabled)return; for(var i=0;i<MAN.length;i++)load(MAN[i]); };
   api.ready=function(key){ if(!api.enabled)return false; var im=cache[key]; return !!(im&&im._ok&&im.complete&&im.naturalWidth>0); };
@@ -190,6 +194,8 @@ var PIN_ART=(function(){
   return api;
 })();
 PIN_ART.preload();
+// aspect-correct centered blit of a loaded sprite (width w; height from image ratio)
+function artFit(im,cx,cy,w){ var h=w*im.height/im.width; ctx.drawImage(im,cx-w/2,cy-h/2,w,h); }
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== table geometry ===== */
@@ -756,19 +762,22 @@ function render(){ if(!ctx||!G)return;
     var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0b100a'); bg.addColorStop(1,'#080b06'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
     var lamp=ctx.createRadialGradient(VW/2,260,20,VW/2,260,460); lamp.addColorStop(0,'rgba(200,168,75,0.13)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH);
   }
-  // walls
-  ctx.strokeStyle='#3f6b34'; ctx.lineWidth=5; ctx.lineCap='round';
-  for(var w=0;w<WALLS.length;w++){ var s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
-  ctx.strokeStyle='rgba(200,168,75,0.35)'; ctx.lineWidth=1.5;
-  for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+  // walls — procedural stroke only when NO art backdrop (the clay bench bakes its own lip/lanes)
+  var w,s;
+  if(!_tImg){
+    ctx.strokeStyle='#3f6b34'; ctx.lineWidth=5; ctx.lineCap='round';
+    for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+    ctx.strokeStyle='rgba(200,168,75,0.35)'; ctx.lineWidth=1.5;
+    for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+  }
   // divider-top posts
   for(w=0;w<POSTS.length;w++){ var po=POSTS[w];
     ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(po.x,po.y,po.r,0,7); ctx.fill();
     ctx.fillStyle='rgba(255,246,210,0.5)'; ctx.beginPath(); ctx.arc(po.x-1.5,po.y-1.5,po.r*0.4,0,7); ctx.fill(); }
   // bumpers (flower heads)
   drawShots();
-  for(var m=0;m<BUMPERS.length;m++) drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e');
-  for(var g=0;g<SLINGS.length;g++) drawBumper(SLINGS[g],'#7ab356','#3f6b34');
+  for(var m=0;m<BUMPERS.length;m++){ var _bk=['bumper_a','bumper_b','bumper_c'][m]||'bumper_a', _bi=PIN_ART.img(BUMPERS[m].lit>0.05?(_bk+'_lit'):(_bk+'_idle')); if(_bi)artFit(_bi,BUMPERS[m].x,BUMPERS[m].y,BUMPERS[m].r*2.6); else drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e'); }
+  for(var g=0;g<SLINGS.length;g++){ var _si=PIN_ART.img(SLINGS[g].lit>0.05?'sling_lit':'sling_idle'); if(_si)artFit(_si,SLINGS[g].x,SLINGS[g].y,SLINGS[g].r*3.6); else drawBumper(SLINGS[g],'#7ab356','#3f6b34'); }
   // skill-shot ring on the lit bumper during the plunge window
   if(G.skillLit>=0 && G.skillWin>0){ var sk=BUMPERS[G.skillLit]; ctx.save(); ctx.globalAlpha=0.45+0.45*Math.sin(G.t*8); ctx.strokeStyle='#f5ebd0'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(sk.x,sk.y,sk.r+9,0,7); ctx.stroke(); ctx.restore(); }
   // charge meter beside the waiting bead
@@ -869,9 +878,13 @@ function render(){ if(!ctx||!G)return;
 function drawShots(){ ctx.save(); ctx.textAlign='center';
   for(var i=0;i<SHOTS.length;i++){ var sh=SHOTS[i], fl=0.5+0.5*Math.sin(G.t*6);
     if(sh.type==='standup'){ var done=sh.lamp===2;
-      if(!done){ ctx.shadowColor='rgba(229,143,160,'+(0.5*fl)+')'; ctx.shadowBlur=10*fl; }
-      ctx.fillStyle=done?'#7a3a4a':('rgba(229,143,160,'+(0.55+0.45*fl)+')'); ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.fill(); ctx.shadowBlur=0;
-      ctx.fillStyle=done?'#d8b8c2':'#3a1520'; ctx.font='800 13px system-ui'; ctx.fillText('BLOOM'.charAt(sh.letter),sh.x,sh.y+4.5);
+      var _stk=PIN_ART.img(done?'standup_done':'standup_lit');
+      if(_stk){ artFit(_stk,sh.x,sh.y,sh.r*2.8); ctx.fillStyle=done?'#d8b8c2':'#3a2405'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.fillText('SLIME'.charAt(sh.letter),sh.x,sh.y+4.5); }
+      else {
+        if(!done){ ctx.shadowColor='rgba(229,143,160,'+(0.5*fl)+')'; ctx.shadowBlur=10*fl; }
+        ctx.fillStyle=done?'#7a3a4a':('rgba(229,143,160,'+(0.55+0.45*fl)+')'); ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.fill(); ctx.shadowBlur=0;
+        ctx.fillStyle=done?'#d8b8c2':'#3a1520'; ctx.font='800 13px system-ui'; ctx.fillText('SLIME'.charAt(sh.letter),sh.x,sh.y+4.5);
+      }
     } else if(sh.type==='drop'){
       if(sh.down){ ctx.fillStyle='rgba(90,60,110,0.28)'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.6,0,7); ctx.fill(); }
       else { ctx.fillStyle='#b57de0'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.fill(); ctx.fillStyle='rgba(230,200,245,0.8)'; ctx.beginPath(); ctx.arc(sh.x-3,sh.y-3,sh.r*0.34,0,7); ctx.fill(); }
@@ -919,7 +932,16 @@ function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
   ctx.fillStyle='rgba(255,255,255,'+(0.3+lit*0.5)+')'; ctx.beginPath(); ctx.arc(-o.r*0.15,-o.r*0.15,o.r*0.18,0,7); ctx.fill();
   ctx.restore();
 }
-function drawFlipper(F){ var tx=F.px+Math.cos(F.a)*F.L, ty=F.py+Math.sin(F.a)*F.L;
+function drawFlipper(F){
+  var _fi=PIN_ART.img(F.up?'flipper_up':'flipper_rest');
+  if(_fi){ ctx.save(); ctx.translate(F.px,F.py); ctx.rotate(F.a);
+    var _fL=F.L*1.22, _fh=_fL*_fi.height/_fi.width;
+    var _gl=PIN_ART.img('flipper_glow'); if(_gl && Math.abs(F.w)>3){ ctx.globalAlpha=0.4+0.35*Math.min(1,Math.abs(F.w)/8); ctx.drawImage(_gl,-8,-_fh*0.75,_fL+16,_fh*1.5); ctx.globalAlpha=1; }
+    ctx.drawImage(_fi, -_fh*0.12, -_fh/2, _fL, _fh); ctx.restore();
+    var _cap=PIN_ART.img('pivot_cap'); if(_cap){ var _cs=F.r*2.8; ctx.drawImage(_cap,F.px-_cs/2,F.py-_cs/2,_cs,_cs); }
+    return;
+  }
+  var tx=F.px+Math.cos(F.a)*F.L, ty=F.py+Math.sin(F.a)*F.L;
   ctx.save(); ctx.lineCap='round';
   ctx.strokeStyle='#3f6b34'; ctx.lineWidth=F.r*2+6; ctx.beginPath(); ctx.moveTo(F.px,F.py); ctx.lineTo(tx,ty); ctx.stroke();
   ctx.strokeStyle=F.up?'#a7d17a':'#7ab356'; ctx.lineWidth=F.r*2; ctx.beginPath(); ctx.moveTo(F.px,F.py); ctx.lineTo(tx,ty); ctx.stroke();
