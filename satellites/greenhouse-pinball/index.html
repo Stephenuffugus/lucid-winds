@@ -8,8 +8,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Greenhouse Pinball">
-<title>Greenhouse Pinball — Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Blobworks">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Blobworks Pinball — Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"greenhousepinball"}).catch(function(){});</script>
 <style>
@@ -105,6 +107,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Screen shake</span><div class="toggle on" id="tg-shake"><b></b></div></div>
     <div style="height:8px"></div>
+    <button class="btn sm" id="b-fs" style="max-width:400px;margin:0 auto 10px">Full screen</button>
+    <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 10px">Add to Home Screen</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -1005,9 +1009,9 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
-  tap('b-classic', function(){ newGame('classic'); });
-  tap('b-daily', function(){ newGame('daily'); });
-  tap('b-zen', function(){ newGame('zen'); });
+  tap('b-classic', function(){ goFS(); newGame('classic'); });
+  tap('b-daily', function(){ goFS(); newGame('daily'); });
+  tap('b-zen', function(){ goFS(); newGame('zen'); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
@@ -1016,6 +1020,22 @@ function boot(){
   tap('go-retry', function(){ newGame(G?G.mode:'classic'); });
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
+  // ---- full screen ----
+  function goFS(){ try{ var el=document.documentElement, rq=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+    var standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
+    if(rq && !document.fullscreenElement && !document.webkitFullscreenElement && !standalone){ var p=rq.call(el); if(p&&p.catch)p.catch(function(){}); } }catch(e){} }
+  window.addEventListener('resize', function(){ setTimeout(fit,60); });
+  tap('b-fs', function(){ sfx('ui'); goFS(); });
+  // ---- add to home screen (Dewball pattern: button stays useful even when the browser never fires beforeinstallprompt) ----
+  (function(){ var b=$('b-install'); if(!b)return;
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){} }
+    function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
+    if(standalone()){ b.style.display='none'; return; }
+    var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+    b.addEventListener('click',function(){ sfx('ui'); if(deferred){ deferred.prompt(); deferred=null; return; }
+      var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+      alert(ios?'To add Blobworks to your Home Screen:\n\nTap the Share button, then Add to Home Screen. It opens full screen like an app.':'To add Blobworks to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
+  })();
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   $('buildstamp').textContent='Greenhouse Pinball '+BUILD+' · best '+(PROG.best.classic||0);

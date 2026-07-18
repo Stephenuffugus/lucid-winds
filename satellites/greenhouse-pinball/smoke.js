@@ -10,8 +10,9 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
   var errors = [];
   browser.newPage().then(function(page){
     page.on('pageerror', function(e){ errors.push(String(e)); });
-    // sunbeam-sdk.js 404s over file:// by design (Sunbeam.init catches it) — not a failure
-    page.on('console', function(m){ if(m.type()==='error' && m.text().indexOf('Failed to load resource')<0) errors.push('console: '+m.text()); });
+    // sunbeam-sdk.js 404s over file:// by design (Sunbeam.init catches it) — not a failure.
+    // manifest.webmanifest is CORS-blocked under file:// only (loads fine over http) — not a failure.
+    page.on('console', function(m){ var t=m.text(); if(m.type()==='error' && t.indexOf('Failed to load resource')<0 && t.indexOf('manifest')<0) errors.push('console: '+t); });
 
     page.goto(url, { waitUntil:'load' })
     .then(function(){ return page.waitForFunction('window.PIN_DEV', {timeout:5000}); })
