@@ -53,10 +53,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:24px; width:32px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
 .win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto;
   font-size:16px; padding:8px 4px; border-bottom:1px solid var(--line)}
 .win-stat b{color:var(--gold)}
@@ -81,10 +81,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Hedgerow</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Grow hedge walls to fence the garden pests into a corner and reclaim the bed. But a pest that bumps a growing hedge wilts it flat. A cozy remake of JezzBall.</div>
+    <div class="ribbon">Grow hedge walls to fence the garden pests into a corner and reclaim the bed. Watch out: a pest that bumps a growing hedge wilts it flat. A remake of the classic JezzBall.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-play">🌳&nbsp; Play</button>
+      <button class="btn primary" id="b-play">Play</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
@@ -98,11 +98,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">🌳</div><div>Tap the bed to grow a <b>hedge wall</b>. It sprouts both ways until it hits an edge or another hedge, splitting the bed in two.</div></div>
-    <div class="helprow"><div class="hi">⇆</div><div>Use the <b>⇆ / ⇅</b> button to choose whether the next hedge grows across or up-and-down.</div></div>
-    <div class="helprow"><div class="hi">🐞</div><div>Any patch of bed with <b>no pests</b> in it once a hedge closes gets reclaimed and planted. Reclaim <b class="hl">75%</b> to clear the ground.</div></div>
-    <div class="helprow"><div class="hi">🥀</div><div>If a pest touches a hedge <b>while it is still growing</b>, the hedge wilts and you lose a leaf. Lose them all and it is over.</div></div>
-    <div class="helprow"><div class="hi">☀️</div><div>Clear grounds to earn Sunbeams. A clean ground (no leaves lost) grows one back.</div></div>
+    <div class="helprow"><div class="hi">1</div><div>Tap the bed to grow a <b>hedge wall</b>. It sprouts both ways until it hits an edge or another hedge, splitting the bed in two.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Use the <b>⇆ / ⇅</b> button to choose whether the next hedge grows across or up-and-down.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>Any patch of bed with <b>no pests</b> in it once a hedge closes gets reclaimed and planted. Reclaim <b class="hl">75%</b> to clear the ground.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>If a pest touches a hedge <b>while it is still growing</b>, the hedge wilts and you lose a leaf. Lose them all and it is over.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>Clear grounds to earn Sunbeams. A clean ground (no leaves lost) grows one back.</div></div>
     <div style="height:20px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -130,8 +130,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="sun-earn" id="over-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="over-again">↻ Plant again</button>
-      <button class="btn sm" id="over-share">📤 Share</button>
+      <button class="btn primary" id="over-retry">↻ Replay this ground</button>
+      <button class="btn sm" id="over-again">Start over from ground 1</button>
+      <button class="btn sm" id="over-share">Share</button>
       <button class="btn sm" id="over-title2">◄ Back</button>
     </div>
   </div></div>
@@ -209,7 +210,7 @@ function fieldH(){ return ROWS*CS; }
 /* ============================ level / start ================================= */
 function newGame(){
   layout();
-  G={ level:1, lives:3, score:0, target:TARGET, pct:0, phase:'play', flash:0, cleanLevel:true };
+  G={ level:1, lives:3, score:0, scoreAtLevelStart:0, target:TARGET, pct:0, phase:'play', flash:0, cleanLevel:true };
   startLevel();
   show(null);
   running=true; lastTs=0; requestAnimationFrame(loop);
@@ -356,14 +357,18 @@ function gameOver(){
   $('over-score').textContent=''+G.score;
   $('over-best').textContent=''+BEST;
   $('over-title').textContent=(G.level>1)?('You reclaimed '+(G.level-1)+' ground'+(G.level-1>1?'s':'')):'The pests held the bed';
-  $('over-emoji').textContent=(G.level>3)?'🌿':'🥀';
+  $('over-emoji').innerHTML=(G.level>3)
+    ?'<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 50 C28 36 28 28 28 18" fill="none" stroke="#5c8f3f" stroke-width="3.5" stroke-linecap="round"/><path d="M28 26 C20 26 15 21 14 14 C22 14 27 19 28 26Z" fill="#7ab356"/><path d="M28 20 C36 20 41 15 42 8 C34 8 29 13 28 20Z" fill="#8fd06a"/></svg>'
+    :'<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 50 C28 34 26 26 20 18" fill="none" stroke="#8a6a3c" stroke-width="3.5" stroke-linecap="round"/><path d="M20 18 C14 20 11 26 13 31 C19 30 22 24 20 18Z" fill="#a8763c"/><path d="M27 34 C33 33 36 29 36 24 C30 25 27 29 27 34Z" fill="#8f8a4a"/></svg>';
+  var rb=$('over-retry'); if(rb){ rb.textContent='↻ Replay ground '+G.level; rb.style.display=(G.level>1)?'':'none'; }
   var amt=0; // no clear reward on death; consolation if reached level 2+
   var granted=0;
   if(G.level>=2){ try{ if(window._sbCapEarn) granted=window._sbCapEarn(1,'hedgerow:consolation')||0; }catch(e){} }
   $('over-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'):'☀ better luck next bed';
   setTimeout(function(){ show('s-over'); },700);
 }
-function advance(){ if(!G||G.phase!=='clear') return; G.level++; startLevel(); running=true; lastTs=0; requestAnimationFrame(loop); }
+function advance(){ if(!G||G.phase!=='clear') return; G.level++; G.scoreAtLevelStart=G.score; startLevel(); running=true; lastTs=0; requestAnimationFrame(loop); }
+function retryLevel(){ if(!G) return; G.lives=3; G.score=G.scoreAtLevelStart||0; startLevel(); show(null); running=true; lastTs=0; requestAnimationFrame(loop); }
 /* fleet-standard share (built from the real run result) */
 function shareHedgerow(){
   var g=G?Math.max(0,G.level-1):0, sc=G?G.score:0;
@@ -498,7 +503,7 @@ function buildCtrl(){
   ori.style.cssText='flex:1.4;min-height:52px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px';
   ori.addEventListener('click',function(e){ e.preventDefault(); curOrient=(curOrient==='h')?'v':'h'; paintOri(); sfx('ui'); });
   bar.appendChild(ori);
-  var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='⏸ Menu';
+  var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='Menu';
   pause.style.cssText='flex:1;min-height:52px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
   pause.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pauseToTitle(); });
   bar.appendChild(pause);
@@ -532,6 +537,7 @@ function boot(){
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
+  tap('over-retry', function(){ retryLevel(); });
   tap('over-again', function(){ newGame(); });
   tap('over-share', function(){ shareHedgerow(); });
   tap('over-title2', function(){ show('s-title'); updateRec(); });

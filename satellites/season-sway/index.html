@@ -42,10 +42,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
 .toggle.on{background:var(--deep)}
@@ -76,7 +76,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Season Sway</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">A cozy card game about tending one little garden. Swipe to answer each visitor and keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance for as many seasons as you can.</div>
+    <div class="ribbon">A card game about tending one little garden. Swipe to answer each visitor and keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance for as many seasons as you can.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-year">🃏&nbsp; The Keeper's Year</button>
@@ -100,10 +100,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">🎯</div><div><b>Goal:</b> keep the four meters, <b>Sun · Rain · Soil · Wildlife</b>, near the middle. If any bar empties or fills all the way, the run ends.</div></div>
-    <div class="helprow"><div class="hi">👉</div><div><b>How:</b> swipe each visitor's card <b>left or right</b> to answer them. As you drag, arrows over the meters show which ones that choice will move.</div></div>
-    <div class="helprow"><div class="hi">🍂</div><div><b>Watch for:</b> every 6 cards the <b>season turns</b>, and each season pushes one meter toward an edge. Balance ahead of it.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div><b>Keep:</b> every finished run grows a <b>keepsake bloom</b> and a haiku in your Grove, and earns sunbeams.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Goal:</b> keep the four meters, <b>Sun · Rain · Soil · Wildlife</b>, near the middle. If any bar empties or fills all the way, the run ends.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>How:</b> swipe each visitor's card <b>left or right</b> to answer them. As you drag, arrows over the meters show which ones that choice will move.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Watch for:</b> every 6 cards the <b>season turns</b>, and each season pushes one meter toward an edge. Balance ahead of it.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b>Keep:</b> every finished run grows a <b>keepsake bloom</b> and a haiku in your Grove, and earns sunbeams.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -268,46 +268,46 @@ var SEASON_LEN=6;
    d = [dSun, dRain, dSoil, dWild] applied to meters (clamped 0..100). */
 function C(sp,gl,q,lt,ld,rt,rd){ return {sp:sp,gl:gl,q:q,l:{t:lt,d:ld},r:{t:rt,d:rd}}; }
 var CARDS=[
- C('Koi','🐟','The pond is low, Keeper. Open the rain-channel to me?','Fill the pond',[0,14,0,4],'Save it for the beds',[4,-6,8,0]),
- C('Scorpion','🦂','My stones are cold. Turn the sun up a while?','More sun',[15,-4,0,-3],'Keep it mild',[-4,3,3,4]),
- C('The Worm','🪱','Let me till deeper, the soil wants turning.','Dig deep',[0,-2,15,-4],'Leave the roots',[0,3,-5,7]),
- C('Heron','🦢','The frogs need cover. Grow the reeds tall?','Grow the reeds',[-3,5,3,12],'Keep it open',[6,0,0,-7]),
- C('Bee','🐝','More flowers means more of us. Plant a wide bed?','Plant flowers',[6,-3,-4,12],'Rest the field',[-2,4,7,-4]),
- C('Mole','🦔','Shall I loosen the earth beneath the far row?','Loosen it',[0,-4,13,-2],'Firm it down',[2,2,-6,3]),
- C('Owl','🦉','The night runs long. Draw the clouds over the moon?','Draw clouds',[-10,9,2,0],'Clear the sky',[11,-6,0,2]),
- C('Fox','🦊','The rabbits are many. Should I thin the warren?','Let me hunt',[2,0,3,-12],'Spare them',[-1,2,-2,10]),
- C('Rain Cloud','🌧','I am heavy today. Shall I let go over the garden?','Let it pour',[-8,16,3,2],'Drift on',[6,-8,-2,0]),
- C('Sun Spirit','☀','I can burn bright or bank low. Your word?','Burn bright',[16,-8,-2,0],'Bank low',[-9,4,3,3]),
- C('Snail','🐌','The dew is thin. Mist the leaves before dawn?','Mist them',[-3,10,1,3],'Let them dry',[5,-6,2,-2]),
- C('Spider','🕷','My web needs still air. Calm the wind tonight?','Calm the air',[3,3,2,6],'Let it blow',[2,-4,-6,-4]),
- C('Hedgehog','🦔','Grubs are scarce. Enrich the leaf-litter for them?','Enrich it',[-2,2,10,6],'Keep it lean',[4,0,-6,-4]),
- C('Firefly','✨','We dance where it is warm and wild. Coax us out?','Coax us',[8,-2,-3,10],'Not tonight',[-3,4,5,-6]),
- C('The Toad','🐸','Standing water suits me. Let a puddle stay?','Let it pool',[-4,12,-2,6],'Drain it',[5,-9,4,-2]),
- C('Beetle','🪲','The bark is dry. Shade the old trunk a while?','Give shade',[-9,5,3,4],'Keep it sunlit',[10,-4,-2,-2]),
- C('Raccoon','🦝','I found seed in the shed. Scatter it about?','Scatter it',[3,0,-3,11],'Store it',[0,2,7,-5]),
- C('Frost','❄','I could crisp the beds clean. Shall I settle in?','Let me settle',[-12,3,-6,-4],'Hold off',[9,2,6,4]),
- C('Cicada','🎶','The heat sings through me. Keep the long noon?','Keep the noon',[13,-7,-2,2],'Cool the day',[-8,6,3,2]),
- C('Great Blue Heron','🕊','Deeper water, deeper fishing. Raise the pond?','Raise it',[-3,13,-3,7],'Lower it',[4,-8,6,-3]),
- C('Mammoth','🦣','My weight packs the earth. Walk the far field?','Walk it',[0,-3,11,-3],'Rest instead',[2,3,-5,4]),
- C('Baby Mammoth','🐘','The wind bites me. Bank the beds against it?','Bank them',[3,4,6,1],'Leave a gap',[1,-3,-4,6]),
- C('Wind','🍃','I can carry seed far or lie still. Which today?','Carry seed',[2,-4,-4,9],'Lie still',[1,3,5,-4]),
- C('Garden Spider','🕸','Prey thins when it is tidy. Let the corners grow wild?','Grow wild',[-2,2,4,11],'Tidy up',[4,0,-3,-8]),
- C('Pangolin','🦎','I curl where it is dry and warm. Ease the damp?','Ease the damp',[9,-9,2,2],'Keep it lush',[-6,9,2,3]),
- C('Spring Spirit','🌸','New growth wants light AND water. Give both?','Give both',[8,8,-3,4],'Pace it',[-4,-3,7,2]),
- C('Summer Spirit','🌞','The long days beg for rain. Send a storm?','Send rain',[-6,14,2,3],'Ride it out',[9,-8,-2,-2]),
- C('Autumn Spirit','🍁','Time to feed the soil for the sleep. Compost the beds?','Compost',[-4,-2,14,3],'Leave standing',[3,3,-6,5]),
- C('Winter Spirit','⛄','Keep a little sun banked for us? Or spend it now?','Bank the sun',[12,-3,2,-3],'Spend it',[-9,5,3,6]),
- C('Ladybug','🐞','Aphids crowd the shoots. Loose me on the row?','Loose you',[2,0,2,-6],'Let them be',[0,2,-2,8]),
- C('Dragonfly','🪰','I patrol the water. Widen the pond for me?','Widen it',[-2,10,-2,8],'Keep it small',[4,-6,4,-3]),
- C('Sparrow','🐦','A dust bath in dry soil, please. Bare a patch?','Bare a patch',[7,-6,-6,3],'Keep it planted',[-3,4,7,4]),
- C('Earthstar','🍄','Damp shade grows my kin. Deepen the mulch?','Deepen it',[-6,7,10,3],'Thin it',[6,-4,-6,-2]),
- C('Marsh Reed','🌾','I drink deep. Flood the low corner for me?','Flood it',[-3,13,-2,5],'Drain it',[5,-9,6,-3]),
- C('Clover','🍀','I fix the soil if you let me spread. Give me room?','Give room',[1,2,9,5],'Mow me back',[3,-2,-6,-4]),
- C('Moth','🌙','Night blooms feed me. Plant a pale evening bed?','Plant it',[-7,4,1,11],'Keep it bright',[9,-2,-2,-5]),
- C('Kestrel','🪶','I hunt open ground. Clear a swathe of meadow?','Clear it',[8,-3,-2,-9],'Leave the cover',[-3,3,4,9]),
- C('The Beholder','👁','I see every choice you have made. Steady the whole garden?','Steady all',[5,5,5,5],'Chase the bloom',[10,-6,-6,10]),
- C('Chorus Frog','🐸','Rain-song or sun-nap? The chorus waits on you.','Rain-song',[-6,12,2,5],'Sun-nap',[10,-6,-2,-2]),
- C('Old Willow','🌳','My roots want depth, my leaves want light. Favor which?','Deep roots',[-3,6,10,2],'High leaves',[10,-2,-5,3])
+ C('Koi','🐟','The pond is low, Keeper. Will you send rain water my way?','Fill the pond',[0,14,0,4],'Save it for the plants',[4,-6,8,0]),
+ C('Scorpion','🦂','My rocks are cold. Can we have more sun for a while?','More sun',[15,-4,0,-3],'Keep it mild',[-4,3,3,4]),
+ C('The Worm','🪱','Can I dig deeper? The soil needs turning.','Dig deep',[0,-2,15,-4],'Leave the roots alone',[0,3,-5,7]),
+ C('Heron','🦢','The frogs need a place to hide. Grow the reeds tall?','Grow the reeds',[-3,5,3,12],'Keep it open',[6,0,0,-7]),
+ C('Bee','🐝','More flowers means more bees. Plant a big flower bed?','Plant flowers',[6,-3,-4,12],'Let the field rest',[-2,4,7,-4]),
+ C('Mole','🦔','Want me to loosen the dirt under the far row?','Loosen it',[0,-4,13,-2],'Pack it down',[2,2,-6,3]),
+ C('Owl','🦉','The night is long. Should clouds cover the moon?','Bring clouds',[-10,9,2,0],'Clear the sky',[11,-6,0,2]),
+ C('Fox','🦊','There are too many rabbits. Should I hunt some?','Go hunt',[2,0,3,-12],'Spare them',[-1,2,-2,10]),
+ C('Rain Cloud','🌧','I am full of rain today. Should I pour it on the garden?','Let it pour',[-8,16,3,2],'Float away',[6,-8,-2,0]),
+ C('Sun Spirit','☀','I can shine hot or stay soft. Which do you want?','Shine hot',[16,-8,-2,0],'Stay soft',[-9,4,3,3]),
+ C('Snail','🐌','The leaves are dry. Spray them with water before morning?','Spray them',[-3,10,1,3],'Leave them dry',[5,-6,2,-2]),
+ C('Spider','🕷','My web needs still air. Can you calm the wind tonight?','Calm the wind',[3,3,2,6],'Let it blow',[2,-4,-6,-4]),
+ C('Hedgehog','🦔','I cannot find many bugs to eat. Add more leaves to the ground?','Add leaves',[-2,2,10,6],'Keep it bare',[4,0,-6,-4]),
+ C('Firefly','✨','We come out where it is warm and wild. Want us to visit?','Come out',[8,-2,-3,10],'Not tonight',[-3,4,5,-6]),
+ C('The Toad','🐸','I love a good puddle. Can this one stay?','Keep the puddle',[-4,12,-2,6],'Drain it',[5,-9,4,-2]),
+ C('Beetle','🪲','The old tree\'s bark is dry. Give it some shade?','Give shade',[-9,5,3,4],'Keep it sunny',[10,-4,-2,-2]),
+ C('Raccoon','🦝','I found seeds in the shed. Should I toss them around?','Toss them',[3,0,-3,11],'Put them back',[0,2,7,-5]),
+ C('Frost','❄','I can cover the beds with frost tonight. Should I?','Let it frost',[-12,3,-6,-4],'Hold off',[9,2,6,4]),
+ C('Cicada','🎶','I love the hot part of the day. Keep it hot longer?','Stay hot',[13,-7,-2,2],'Cool the day',[-8,6,3,2]),
+ C('Great Blue Heron','🕊','Deeper water means better fishing. Make the pond deeper?','Make it deeper',[-3,13,-3,7],'Keep it shallow',[4,-8,6,-3]),
+ C('Mammoth','🦣','My big feet pack the dirt down. Should I walk the far field?','Walk it',[0,-3,11,-3],'Rest instead',[2,3,-5,4]),
+ C('Baby Mammoth','🐘','The wind is cold. Build up the beds to block it?','Block the wind',[3,4,6,1],'Leave a gap',[1,-3,-4,6]),
+ C('Wind','🍃','I can blow seeds far away, or stay still. Which today?','Blow the seeds',[2,-4,-4,9],'Stay still',[1,3,5,-4]),
+ C('Garden Spider','🕸','I catch more bugs in a messy garden. Let the corners grow wild?','Grow wild',[-2,2,4,11],'Tidy up',[4,0,-3,-8]),
+ C('Pangolin','🦎','I like it dry and warm. Can you dry things out a bit?','Dry it out',[9,-9,2,2],'Keep it wet',[-6,9,2,3]),
+ C('Spring Spirit','🌸','New plants want sun AND water. Give them both?','Give both',[8,8,-3,4],'Go slow',[-4,-3,7,2]),
+ C('Summer Spirit','🌞','These long hot days need rain. Send a storm?','Send rain',[-6,14,2,3],'Stay dry',[9,-8,-2,-2]),
+ C('Autumn Spirit','🍁','Winter is coming. Feed the soil with compost?','Feed the soil',[-4,-2,14,3],'Leave it be',[3,3,-6,5]),
+ C('Winter Spirit','⛄','Should we save some sun for winter, or use it now?','Save the sun',[12,-3,2,-3],'Use it now',[-9,5,3,6]),
+ C('Ladybug','🐞','Tiny bugs are eating the new plants. Want me to eat them?','Eat the bugs',[2,0,2,-6],'Let them be',[0,2,-2,8]),
+ C('Dragonfly','🪰','I fly guard over the water. Make the pond bigger for me?','Make it bigger',[-2,10,-2,8],'Keep it small',[4,-6,4,-3]),
+ C('Sparrow','🐦','I want a dust bath in dry dirt. Clear a bare spot for me?','Clear a spot',[7,-6,-6,3],'Keep it planted',[-3,4,7,4]),
+ C('Earthstar','🍄','Mushrooms grow in damp shade. Add a thicker leaf blanket?','Add more leaves',[-6,7,10,3],'Rake some off',[6,-4,-6,-2]),
+ C('Marsh Reed','🌾','I drink a lot of water. Flood the low corner for me?','Flood it',[-3,13,-2,5],'Drain it',[5,-9,6,-3]),
+ C('Clover','🍀','I make the soil better as I spread. Give me room to grow?','Let it spread',[1,2,9,5],'Mow it back',[3,-2,-6,-4]),
+ C('Moth','🌙','I feed on flowers that open at night. Plant some for me?','Plant them',[-7,4,1,11],'Keep it bright',[9,-2,-2,-5]),
+ C('Kestrel','🪶','I hunt in open grass. Mow a wide strip of meadow?','Mow it',[8,-3,-2,-9],'Leave it tall',[-3,3,4,9]),
+ C('The Beholder','👁','I have seen every choice you made. Want me to calm the whole garden?','Calm it all',[5,5,5,5],'Chase big blooms',[10,-6,-6,10]),
+ C('Chorus Frog','🐸','Should we sing for rain, or nap in the sun? You pick.','Sing for rain',[-6,12,2,5],'Nap in the sun',[10,-6,-2,-2]),
+ C('Old Willow','🌳','My roots want deep water. My leaves want bright sun. Pick one.','Deep roots',[-3,6,10,2],'Bright leaves',[10,-2,-5,3])
 ];
 
 /* ---------- haiku banks ---------- */
