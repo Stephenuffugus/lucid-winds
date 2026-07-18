@@ -39,7 +39,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:680px; display
 #dock.on{display:flex}
 #hint{display:flex; align-items:center; gap:8px; min-height:50px; border:1px solid #ffffff1c; border-radius:12px;
   background:#101318; padding:5px 10px}
-#hint-txt{flex:1; font-size:.72rem; line-height:1.3; color:var(--cream)}
+#hint-txt{flex:1; font-size:1rem; line-height:1.35; color:var(--cream); font-weight:500}
 #hint-txt b{color:var(--gold)}
 .hintbtn{min-width:76px; min-height:48px; border-radius:10px; border:1px solid #ffffff30; background:#1a2030;
   color:var(--cream); font-size:.78rem; display:none}
@@ -103,7 +103,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px}
 .wcard .wi{font-size:1.3rem} .wcard .wn{font-size:.72rem} .wcard .wl{font-size:.7rem; color:var(--muted); text-align:center}
 .wcard.locked{opacity:.4} .wcard.sel{border-color:#c8a84b88; background:#1b1a10}
-.howp{max-width:370px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
+.howp{max-width:420px; color:var(--cream); font-size:1.12rem; line-height:1.55; margin:10px 0; font-weight:500}
 .howp b{color:var(--gold)}
 .howp .qd{color:var(--pink)} .howp .qn{color:var(--gold)} .howp .qk{color:var(--ember)} .howp .qt{color:var(--blue)}
 </style>
@@ -115,7 +115,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
 <div id="hud">
   <button class="hbtn" id="hud-back">⌂</button>
   <div class="chip"><b id="h-hp">♥ 60/60</b><span id="h-gear">⚔6 ▣1</span></div>
-  <div class="chip"><b id="h-sup">⛁ 0</b><span>supplies</span></div>
+  <div class="chip"><b id="h-sup">◎ 0</b><span>supplies</span></div>
   <div class="chip grow"><b id="h-day">DAY 1</b><span id="h-quad">DAWN</span></div>
   <button class="hbtn" id="spd-top" style="display:none">▶</button>
 </div>
@@ -133,20 +133,20 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
 <div class="screen on" id="s-title">
   <h1><span class="a">LOOP</span> <span class="b">WARDEN</span></h1>
   <div class="tag">the loop is a clock · place the land, bend the hours, bank the haul</div>
-  <button class="btn gold" id="b-exped">🛡️ Expedition</button>
-  <button class="btn blue" id="b-daily">📅 Daily Loop</button>
+  <button class="btn gold" id="b-exped">Expedition</button>
+  <button class="btn blue" id="b-daily">Daily Loop</button>
   <button class="btn" id="b-deep">◆ Deep Loop</button>
-  <button class="btn" id="b-zen">🌙 Zen Watch</button>
+  <button class="btn" id="b-zen">Zen Watch</button>
   <div class="btnrow">
-    <button class="btn sm" id="b-camp">⛺ Camp</button>
-    <button class="btn sm" id="b-ward">🎽 Wardrobe</button>
-    <button class="btn sm" id="b-how">❓ How</button>
+    <button class="btn sm" id="b-camp">Camp</button>
+    <button class="btn sm" id="b-ward">Wardrobe</button>
+    <button class="btn sm" id="b-how">How to Play</button>
   </div>
 </div>
 
 <div class="screen" id="s-camp">
   <h1 style="font-size:1.4rem">THE CAMP</h1>
-  <div class="tag" id="camp-sup">⛁ 0 supplies banked</div>
+  <div class="tag" id="camp-sup">0 supplies banked</div>
   <div id="campbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <button class="btn sm" id="camp-back" style="margin-top:14px">← back</button>
 </div>
@@ -155,12 +155,12 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
   <h1 style="font-size:1.5rem" id="over-title">SUPPLIES BANKED</h1>
   <div class="tag" id="over-sub">—</div>
   <div id="overstats">
-    <div class="chip"><b id="ov-bank">0</b><span>banked ⛁</span></div>
+    <div class="chip"><b id="ov-bank">0</b><span>supplies banked</span></div>
     <div class="chip"><b id="ov-days">0</b><span>days</span></div>
     <div class="chip"><b id="ov-kills">0</b><span>fells</span></div>
   </div>
   <button class="btn gold" id="over-again">SET OUT AGAIN</button>
-  <button class="btn" id="over-camp">⛺ SPEND AT CAMP</button>
+  <button class="btn" id="over-camp">SPEND AT CAMP</button>
   <button class="btn sm" id="over-menu">menu</button>
 </div>
 
@@ -171,8 +171,17 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
   <button class="btn sm" id="ward-back" style="margin-top:16px">← back</button>
 </div>
 
+<div class="screen" id="s-brief">
+  <h1 style="font-size:1.7rem">BEFORE YOU SET OUT</h1>
+  <p class="howp"><b>1.</b> Your warden walks the clock loop and fights on their own. You never steer them.</p>
+  <p class="howp"><b>2.</b> Your job: tap a <b>card in your hand at the bottom</b>, then tap a <b>glowing spot</b> on the clock to place it. Groves heal, dens spawn allies, towers watch.</p>
+  <p class="howp"><b>3.</b> The loop is a real clock. The same card acts differently at <span class="qd">DAWN</span>, <span class="qn">NOON</span>, <span class="qk">DUSK</span> and <span class="qt">NIGHT</span>. Where you place it is the whole puzzle.</p>
+  <p class="howp"><b>4.</b> Retreat at the campfire to bank everything you carry. Fall in battle and you keep only a third.</p>
+  <button class="btn gold" id="brief-go" style="margin-top:12px">BEGIN THE WATCH</button>
+</div>
+
 <div class="screen" id="s-how">
-  <h1 style="font-size:1.4rem">HOW TO WARD</h1>
+  <h1 style="font-size:1.7rem">HOW TO WARD</h1>
   <p class="howp">Your warden walks the loop on their own and fights whatever stands on it. You do three things: <b>play land cards</b> onto the loop or the meadow beside it, <b>equip the gear</b> that drops, and choose when to <b>retreat</b>.</p>
   <p class="howp"><b>The loop is a clock.</b> Each lap is one day, quartered into <span class="qd">DAWN</span>, <span class="qn">NOON</span>, <span class="qk">DUSK</span> and <span class="qt">NIGHT</span>. Cards act differently by quarter: groves heal double at dawn, graveyards raise two skeletons at night, watchtowers see farther at noon. WHERE on the clock you place a card is the whole puzzle. Moon Wells and Sun Dials bend nearby tiles to their own hour.</p>
   <p class="howp"><b>Retreating at the campfire banks 100%</b> of your supplies, anywhere else 60%, and falling in battle saves only 30%. Banked supplies buy permanent camp upgrades between expeditions.</p>
@@ -267,7 +276,7 @@ var CARDS={
     d:"Heals 7 each time you pass it.", q:"☀ dawn: heals 14", pq:0 },
   grave:{ n:"Graveyard", sym:"☠", col:"#b9a6e8", kind:"loop",
     d:"Raises a skeleton each day. Skeletons carry gear.", q:"☾ night: raises 2", pq:3 },
-  ratden:{ n:"Rat Warren", sym:"〰", col:"#c9a06a", kind:"loop",
+  ratden:{ n:"Rat Warren", sym:"≈", col:"#c9a06a", kind:"loop",
     d:"A rat each day. Rats carry supplies.", q:"◗ dusk: 2 rats", pq:2 },
   den:{ n:"Wolf Den", sym:"♞", col:"#d97b6c", kind:"loop",
     d:"A wolf each day. Rich loot, sharp teeth.", q:"☾ night: dire wolves, 1.5x loot + fangs", pq:3 },
@@ -302,10 +311,10 @@ var MON={
 
 /* ---------- camp upgrades ---------- */
 var CAMP=[
-  { id:"meals", n:"Hearty Meals", sym:"🍲", max:3, cost:[40,100,220], d:"+15 max hp per level" },
-  { id:"whet", n:"Whetstone", sym:"🗡", max:3, cost:[50,120,260], d:"+2 attack per level" },
-  { id:"cart", n:"Cartography", sym:"🗺", max:2, cost:[60,150], d:"+1 starting card per level" },
-  { id:"trap", n:"Trap Kit", sym:"🪤", max:2, cost:[70,170], d:"Monsters spawn with -10% hp per level" },
+  { id:"meals", n:"Hearty Meals", sym:"●", max:3, cost:[40,100,220], d:"+15 max hp per level" },
+  { id:"whet", n:"Whetstone", sym:"▲", max:3, cost:[50,120,260], d:"+2 attack per level" },
+  { id:"cart", n:"Cartography", sym:"◆", max:2, cost:[60,150], d:"+1 starting card per level" },
+  { id:"trap", n:"Trap Kit", sym:"■", max:2, cost:[70,170], d:"Monsters spawn with -10% hp per level" },
   { id:"bed", n:"Bedroll", sym:"🛏", max:2, cost:[45,110], d:"Campfire heals +10% more per level" },
   { id:"luck", n:"Lucky Horseshoe", sym:"🧲", max:2, cost:[80,190], d:"+5% gear drop chance per level" }
 ];
@@ -320,7 +329,7 @@ var WNAMES=["Ash Club","Iron Fang","Warden Blade","Star Halberd"];
 var ANAMES=["Padded Vest","Oak Shield","Warden Plate","Moon Mail"];
 var CNAMES=["Ember Bead","Dew Charm","Owl Feather","Comet Knot"];
 function makeItem(L){ var r=rnd(), tierIx=Math.min(3,Math.floor(L/3)), it;
-  if(r<0.34){ it={slot:"weapon",sym:"🗡",name:WNAMES[tierIx],atk:2+Math.floor(L*0.9),tier:L}; }
+  if(r<0.34){ it={slot:"weapon",sym:"▲",name:WNAMES[tierIx],atk:2+Math.floor(L*0.9),tier:L}; }
   else if(r<0.67){ it={slot:"armor",sym:"🛡",name:ANAMES[tierIx],def:1+Math.floor(L/2),hp:4+2*L,tier:L}; }
   else { var g=rnd()<0.5; it={slot:"charm",sym:"🧿",name:CNAMES[tierIx],regen:1+(L>=4?1:0),gold:g?2:0,tier:L}; }
   return it; }
@@ -330,7 +339,7 @@ function itemScore(it){ if(!it)return -1;
   return (it.regen||0)*4+(it.gold||0)*2; }
 function itemLabel(it){ if(it.slot==="weapon")return it.name+" (+"+it.atk+" atk)";
   if(it.slot==="armor")return it.name+" (+"+it.def+" def, +"+it.hp+" hp)";
-  return it.name+" (+"+(it.regen||0)+" regen"+(it.gold?", +"+it.gold+" ⛁/kill":"")+")"; }
+  return it.name+" (+"+(it.regen||0)+" regen"+(it.gold?", +"+it.gold+" ◎/kill":"")+")"; }
 
 /* ---------- run state ---------- */
 var R=null, SPD=1, FR=0;
@@ -516,15 +525,15 @@ function killMon(t){
     if(md&&md.id==="market")gold+=(effQuad(a)===1)?4:2; }
   if(R.hero.charm&&R.hero.charm.gold)gold+=R.hero.charm.gold;
   R.supplies+=gold;
-  floater(t,"+"+gold+"⛁","#e2b34d"); sndKill(); sndGold();
-  logLine(m.n+" falls. +"+gold+" ⛁");
+  floater(t,"+"+gold+"◎","#e2b34d"); sndKill(); sndGold();
+  logLine(m.n+" falls. +"+gold+" ◎");
   var itemP=0.20+0.05*campLvl("luck")+(m.item||0);
   if(m.elite)itemP+=0.25;
   if(rnd()<itemP){ var it=makeItem(R.lap);
     if(R.loot.length>=3){ var old=R.loot.shift(); R.supplies+=3+old.tier; }
-    R.loot.push(it); if(!R.silent){ renderLoot(); toast("🎒 "+itemLabel(it)); } }
+    R.loot.push(it); if(!R.silent){ renderLoot(); toast("Loot: "+itemLabel(it)); } }
   if(rnd()<0.15){ var cid=LOOT_POOL[Math.floor(rnd()*LOOT_POOL.length)];
-    if(R.hand.length<7){ R.hand.push(cid); if(!R.silent){ renderHand(); toast("🃏 Found a "+CARDS[cid].n+" card"); } }
+    if(R.hand.length<7){ R.hand.push(cid); if(!R.silent){ renderHand(); toast("Found a "+CARDS[cid].n+" card"); } }
     else R.supplies+=3; }
   if(!q.length&&R.combat)endCombat();
 }
@@ -553,7 +562,7 @@ function equipLoot(i){
   R.hero[it.slot]=it;
   if(old)R.supplies+=3+old.tier;
   recalc();
-  if(!R.silent){ renderLoot(); updateHud(); hintDefault(); toast("⚔ "+itemLabel(it)+" equipped"); }
+  if(!R.silent){ renderLoot(); updateHud(); hintDefault(); toast("Equipped: "+itemLabel(it)); }
   return true;
 }
 function scrapLoot(i){
@@ -908,12 +917,12 @@ function show(id){ hideScreens(); $(id).classList.add("on"); }
 var toastT=null;
 function toast(msg){ if(R&&R.silent)return; var t=$("toast"); t.textContent=msg; t.classList.add("on");
   if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2100); }
-function stamp(){ $("buildstamp").textContent="Loop Warden "+BUILD+" · ⛁ "+PROG.lifetimeBanked+" banked lifetime · best day "+PROG.bestLap; }
+function stamp(){ $("buildstamp").textContent="Loop Warden "+BUILD+" · ◎ "+PROG.lifetimeBanked+" banked lifetime · best day "+PROG.bestLap; }
 
 function updateHud(){ if(!R||R.silent)return;
   $("h-hp").textContent="♥ "+R.hero.hp+"/"+R.hero.maxhp;
   $("h-gear").textContent="⚔"+R.hero.atkT+" ▣"+R.hero.defT;
-  $("h-sup").textContent="⛁ "+R.supplies;
+  $("h-sup").textContent="◎ "+R.supplies;
   $("h-day").textContent="DAY "+R.lap+(R.deep?" ◆":"");
   var q=effQuad(R.heroTile);
   $("h-quad").textContent=QSYM[q]+" "+QNAMES[q];
@@ -923,7 +932,7 @@ function updateHud(){ if(!R||R.silent)return;
 var selCard=-1, selLoot=-1, retreatArmed=false, retreatT=null;
 function hintDefault(){ selCard=-1; selLoot=-1;
   $("hint-a").classList.remove("on"); $("hint-b").classList.remove("on");
-  $("hint-txt").innerHTML="Tap a <b>card</b>, then a glowing spot on the loop. The clock quarter changes what every card does.";
+  $("hint-txt").innerHTML="Tap a <b>card in your hand at the bottom</b>, then tap a <b>glowing spot</b> on the clock. The hour changes what each card does.";
   renderHandSel(); renderLoot(); }
 function renderHand(){ if(R&&R.silent)return;
   var box=$("hand"); box.innerHTML="";
@@ -980,7 +989,7 @@ function stopToMenu(){ running=false; R=null;
 
 /* camp screen */
 function renderCamp(){
-  $("camp-sup").textContent="⛁ "+PROG.supplies+" supplies banked";
+  $("camp-sup").textContent="◎ "+PROG.supplies+" supplies banked";
   var box=$("campbox"); box.innerHTML="";
   var i;
   for(i=0;i<CAMP.length;i++)(function(u){
@@ -988,7 +997,7 @@ function renderCamp(){
     var row=document.createElement("div"); row.className="camprow";
     row.innerHTML='<div class="ci">'+u.sym+'</div><div class="cm"><b>'+u.n+' '+lvl+'/'+u.max+'</b><span>'+u.d+'</span></div>';
     var b=document.createElement("button"); b.className="buy";
-    b.textContent=maxed?"MAXED":("⛁ "+cost);
+    b.textContent=maxed?"MAXED":("◎ "+cost);
     b.disabled=maxed||PROG.supplies<cost;
     b.onclick=function(){ if(buyCamp(u.id)){ toast(u.n+" improved"); sndPlace(); renderCamp(); } };
     row.appendChild(b); box.appendChild(row);
@@ -1078,14 +1087,21 @@ tap("hud-back",function(){
     return; }
   retreatArmed=false; doRetreat();
 });
+var briefPend=null;
 function uiStart(mode){
+  var seen=null; try{ seen=localStorage.getItem("lw_loopwarden_briefed"); }catch(e){}
+  if(!seen && mode!=="zen"){ briefPend=mode; show("s-brief"); return; }
+  launchRun(mode);
+}
+function launchRun(mode){
   var seed;
   if(mode==="daily")seed=dayCodeUTC();
   else seed=(Date.now()%2147483647)>>>0;
   startRun(mode,seed,{});
   enterPlay();
-  toast(mode==="daily"?"📅 Today's loop — same for everyone":(mode==="zen"?"🌙 Zen watch — you cannot fall":(mode==="deep"?"◆ Deep loop — 28 tiles, elites prowl":"🛡️ Hold the loop, warden")));
+  toast(mode==="daily"?"Today's loop, same for everyone":(mode==="zen"?"Zen watch, you cannot fall":(mode==="deep"?"Deep loop: 28 tiles, elites prowl":"Hold the loop, warden")));
 }
+tap("brief-go",function(){ try{ localStorage.setItem("lw_loopwarden_briefed","1"); }catch(e){} var m=briefPend||"exped"; briefPend=null; launchRun(m); });
 tap("b-exped",function(){ uiStart("exped"); });
 tap("b-daily",function(){ uiStart("daily"); });
 tap("b-deep",function(){ uiStart("deep"); });

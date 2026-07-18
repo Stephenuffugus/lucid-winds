@@ -43,10 +43,11 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:21px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none;
+  color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
 .toggle.on{background:var(--deep)}
@@ -79,12 +80,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   background:linear-gradient(180deg,#e8dcc8,#dccbb0); color:var(--ink); padding:18px 12px 14px;
   box-shadow:inset 0 0 40px #0002, 0 4px 18px #0007}
 .vline{display:flex; flex-wrap:wrap; justify-content:center; gap:2px 3px; margin-bottom:14px}
-.cell{width:26px; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding-top:2px}
-.cell .pl{font-size:20px; font-weight:800; height:26px; line-height:26px; color:#1b160e; letter-spacing:0}
+.cell{width:34px; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding-top:2px}
+.cell .pl{font-family:Georgia,'Times New Roman',serif; font-size:27px; font-weight:800; height:32px; line-height:32px; color:#1b160e; letter-spacing:0}
 .cell .pl.empty{color:transparent}
-.cell .un{width:22px; height:2px; background:#9a8a6a; border-radius:2px; margin:1px 0 2px}
-.cell .cg{font-size:11px; font-weight:700; color:#8a744e; line-height:1}
-.cell .fq{width:16px; height:3px; background:#c9b892; border-radius:2px; margin-top:2px; overflow:hidden}
+.cell .un{width:28px; height:2px; background:#9a8a6a; border-radius:2px; margin:1px 0 2px}
+.cell .cg{font-family:Georgia,'Times New Roman',serif; font-size:16px; font-weight:700; color:#6b5426; line-height:1.1}
+.cell .fq{width:24px; height:4px; background:#c9b892; border-radius:2px; margin-top:2px; overflow:hidden}
 .cell .fq b{display:block; height:100%; background:#b08a3a}
 .cell.sel .un{background:var(--gold); height:3px}
 .cell.sel .cg{color:#9a6b1a}
@@ -94,22 +95,22 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .cell.locked{cursor:default}
 .cell.good .pl{color:#2f6b1e}
 .sp{width:12px}
-.punct{font-size:20px; font-weight:800; color:#1b160e; height:26px; line-height:26px; align-self:flex-start}
-#pl-bar{flex:none; padding:4px 12px 2px; display:flex; align-items:center; gap:8px; justify-content:center; font-size:12px; color:var(--muted)}
+.punct{font-family:Georgia,'Times New Roman',serif; font-size:27px; font-weight:800; color:#1b160e; height:32px; line-height:32px; align-self:flex-start}
+#pl-bar{flex:none; padding:4px 12px 2px; display:flex; align-items:center; gap:8px; justify-content:center; font-size:14px; font-weight:600; color:var(--muted)}
 #pl-bar .prog{flex:1; height:6px; background:#0f150c; border:1px solid var(--line); border-radius:4px; overflow:hidden; max-width:260px}
 #pl-bar .prog b{display:block; height:100%; background:linear-gradient(90deg,var(--sage),var(--gold)); width:0}
 #kbd{flex:none; padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:5px}
 .krow{display:flex; gap:4px; justify-content:center}
-.kbtn{flex:1; max-width:64px; min-height:44px; border-radius:9px; border:1px solid var(--line); background:linear-gradient(180deg,#1a2415,#121a0f);
-  color:var(--cream); font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.kbtn{flex:1; max-width:70px; min-height:62px; border-radius:9px; border:1px solid var(--line); background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:21px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
 .kbtn:active{filter:brightness(1.2)}
 .kbtn.used{opacity:.32}
-.kbtn.wide{font-size:15px; font-weight:700}
+.kbtn.wide{font-size:18px; font-weight:700}
 .kbtn.hint{background:#241d10; color:var(--gold); border-color:#6f5a23}
 .kbtn.act{background:#12203a; color:var(--dew); border-color:#2b567c}
 .fade-in{animation:fadein .5s ease}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
-.mode-note{font-size:12px; color:var(--muted); margin-top:2px}
+.mode-note{font-size:15px; color:var(--muted); margin-top:2px}
 </style>
 </head>
 <body>
@@ -141,11 +142,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to Play</h2>
-    <div class="helprow"><div class="hi">&#128269;</div><div>Each letter of a short verse was swapped for another. Tap a scrambled letter to select it everywhere.</div></div>
-    <div class="helprow"><div class="hi">&#9000;</div><div>Tap a letter on the keyboard to guess what it really is. Your guess fills every matching spot at once.</div></div>
-    <div class="helprow"><div class="hi">&#128200;</div><div>The little bar under a letter shows how often it appears. Common letters are usually E, T, A, O.</div></div>
-    <div class="helprow"><div class="hi">&#128161;</div><div>Stuck? Spend Dew to reveal one true letter. Tap Check to gently flag wrong guesses. There is no way to lose.</div></div>
-    <div class="helprow"><div class="hi">&#127800;</div><div>Crack the verse and its plant blooms into your Gallery, with a splash of Dew and Sunbeams.</div></div>
+    <div class="helprow"><div class="hi">1</div><div>Each letter of a short verse was swapped for another. Tap a scrambled letter to select it everywhere.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Tap a letter on the keyboard to guess what it really is. Your guess fills every matching spot at once.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>The little bar under a letter shows how often it appears. Common letters are usually E, T, A, O.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Stuck? Spend Dew to reveal one true letter. Tap Check to gently flag wrong guesses. There is no way to lose.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>Crack the verse and its plant blooms into your Gallery, with a splash of Dew and Sunbeams.</div></div>
     <div class="stack" style="margin-top:14px"><button class="btn" onclick="show('s-title')">Back</button></div>
   </div></div>
 
@@ -176,7 +177,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-play">
     <div id="pl-top">
       <div class="iconbtn" onclick="quitPlay()">&#8249;</div>
-      <div style="text-align:center"><div class="pchip" id="pl-dew">&#128167; 0</div><div class="pmode" id="pl-mode"></div></div>
+      <div style="text-align:center"><div class="pchip" id="pl-dew">Dew 0</div><div class="pmode" id="pl-mode"></div></div>
       <div class="iconbtn" onclick="doCheck()">&#10003;</div>
     </div>
     <div id="paper"></div>
@@ -344,7 +345,7 @@ function startGame(mode){
   paintKbd();
   updateBar();
   $('pl-mode').textContent = mode==='daily'?'Daily Cipher':mode==='garden'?'Garden of Verses':mode==='race'?'Sun Race':'Zen Reading';
-  $('pl-dew').innerHTML='&#128167; '+PROG.dew;
+  $('pl-dew').innerHTML='Dew '+PROG.dew;
   if(mode==='race'){ G.t0=Date.now(); tickTimer(); } else { $('pl-timer').textContent=''; }
 }
 
@@ -435,7 +436,7 @@ function buildKbd(){
     for(var i=0;i<rows[r].length;i++){ (function(letter){ var b=document.createElement('div'); b.className='kbtn'; b.setAttribute('data-l',letter); b.textContent=letter; b.onclick=function(){ assign(letter); }; row.appendChild(b); })(rows[r][i]); }
     if(r===3){
       var del=document.createElement('div'); del.className='kbtn wide act'; del.innerHTML='&#9003;'; del.onclick=function(){ clearSel(); }; row.appendChild(del);
-      var hint=document.createElement('div'); hint.className='kbtn wide hint'; hint.innerHTML='&#128161;'; hint.onclick=function(){ buyHint(); }; row.appendChild(hint);
+      var hint=document.createElement('div'); hint.className='kbtn wide hint'; hint.innerHTML='HINT'; hint.onclick=function(){ buyHint(); }; row.appendChild(hint);
     }
     kbd.appendChild(row);
   }
@@ -461,7 +462,7 @@ function buyHint(){
   for(var c2 in G.guess){ if(G.guess.hasOwnProperty(c2)&&G.guess[c2]===G.dec[pick]&&!G.locked[c2])delete G.guess[c2]; }
   G.guess[pick]=G.dec[pick]; G.locked[pick]=1; G.hintsUsed++;
   if(cost>0){ PROG.dew-=cost; save(); }
-  $('pl-dew').innerHTML='&#128167; '+PROG.dew;
+  $('pl-dew').innerHTML='Dew '+PROG.dew;
   beep(660,0.14,0.05); haptic(12);
   G.sel=null; renderPuzzle(); updateBar(); checkSolved();
 }
@@ -477,7 +478,7 @@ function doCheck(){
 
 /* ---------- progress + solve ---------- */
 function uniqueMapped(){ var need={}, got=0, tot=0; for(var c in G.present){ if(G.present.hasOwnProperty(c)){ tot++; if(G.guess[c])got++; } } return {got:got,tot:tot}; }
-function updateBar(){ var u=uniqueMapped(); $('pl-count').textContent=u.got+'/'+u.tot; $('pl-prog').style.width=(u.tot?Math.round(u.got/u.tot*100):0)+'%'; $('pl-dew').innerHTML='&#128167; '+PROG.dew; }
+function updateBar(){ var u=uniqueMapped(); $('pl-count').textContent=u.got+'/'+u.tot; $('pl-prog').style.width=(u.tot?Math.round(u.got/u.tot*100):0)+'%'; $('pl-dew').innerHTML='Dew '+PROG.dew; }
 function isSolved(){ for(var c in G.present){ if(G.present.hasOwnProperty(c)){ if(G.guess[c]!==G.dec[c])return false; } } return true; }
 function checkSolved(){ if(!G.solved && isSolved()){ onSolve(); } }
 
@@ -520,9 +521,9 @@ function showResult(verse, seed, dewGain, granted, first){
   drawKeepsake($('go-plant').getContext('2d'), 75, 78, 1, seed);
   $('go-verse').innerHTML = G.poem.join('<br>');
   $('go-earn').innerHTML = granted>0 ? ('&#9728; +'+granted+' Sunbeams') : 'Zen &middot; no Sunbeams';
-  var pills='<span class="pill">&#128167; +'+dewGain+' Dew</span>';
-  if(G.mode==='daily' && PROG.streak>1)pills+='<span class="pill">&#128293; '+PROG.streak+'-day streak</span>';
-  if(G.hintsUsed===0 && G.diff>0)pills+='<span class="pill">&#10024; Hintless</span>';
+  var pills='<span class="pill">+'+dewGain+' Dew</span>';
+  if(G.mode==='daily' && PROG.streak>1)pills+='<span class="pill">&#9733; '+PROG.streak+'-day streak</span>';
+  if(G.hintsUsed===0 && G.diff>0)pills+='<span class="pill">&#9733; Hintless</span>';
   $('go-pills').innerHTML=pills;
   $('go-again').textContent = (G.mode==='daily') ? 'Play Free Verse' : 'Next Verse';
 }
@@ -555,7 +556,7 @@ function drawKeepsake(ctx,cx,cy,scale,seed){
 /* ---------- gallery + wardrobe ---------- */
 function renderGallery(){
   var host=$('gal-grid'); host.innerHTML=''; var n=PROG.blooms.length;
-  $('gal-sub').innerHTML = n ? ('You have decoded <span class="hl">'+n+'</span> verse'+(n===1?'':'s')+'. &#128167; '+PROG.dew+' Dew.') : 'Decode a verse to press its bloom here.';
+  $('gal-sub').innerHTML = n ? ('You have decoded <span class="hl">'+n+'</span> verse'+(n===1?'':'s')+'. '+PROG.dew+' Dew banked.') : 'Decode a verse to press its bloom here.';
   var start=Math.max(0,n-40);
   for(var i=start;i<n;i++){ (function(b){ var card=document.createElement('div'); card.className='gcard';
     var cv=document.createElement('canvas'); cv.width=74; cv.height=74; card.appendChild(cv); drawKeepsake(cv.getContext('2d'),37,40,0.5,b.s);
@@ -563,7 +564,7 @@ function renderGallery(){
   if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no blooms yet —'; host.appendChild(e); }
 }
 function renderWard(){
-  $('ward-dew').innerHTML='&#128167; '+PROG.dew+' Dew';
+  $('ward-dew').innerHTML='You have '+PROG.dew+' Dew';
   var host=$('ward-grid'); host.innerHTML='';
   function addSection(list, kind){
     for(var i=0;i<list.length;i++){ (function(c){ var un=cosmUnlocked(c); var eq=(kind==='back'?PROG.back:PROG.ink)===c.id;
