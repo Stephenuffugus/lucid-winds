@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='%23c8a84b' stroke-width='2'/%3E%3Crect x='6' y='6' width='8' height='4' fill='%23b98a3e'/%3E%3Crect x='18' y='6' width='8' height='4' fill='%235b9bd5'/%3E%3Crect x='22' y='10' width='4' height='8' fill='%23d16ba5'/%3E%3Crect x='18' y='22' width='8' height='4' fill='%23c0432f'/%3E%3Crect x='6' y='18' width='4' height='8' fill='%237ab356'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%237ab356'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Garden Estates">
+<title>Garden Estates — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"gardenestates"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:440px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:13px 0; font-size:18px; line-height:1.45; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-big{font-size:30px; font-weight:800; color:var(--sage); line-height:1.1}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.standrow{display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border:1px solid var(--line); border-radius:12px; background:#0f150c; margin-bottom:8px; font-size:16px}
+.standrow .sw{width:16px;height:16px;border-radius:4px;display:inline-block;margin-right:10px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Garden Estates</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Roll around the garden, <b class="hl">buy plots</b>, grow greenhouses, and charge rent. Complete a color set to build. Be the <b class="hl">last gardener</b> with coins in the pot. You play against friendly computer rivals.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="ge-p1">Play vs 1 Rival</button>
+      <button class="btn" id="ge-p2">Play vs 2 Rivals</button>
+      <div class="row">
+        <button class="btn sm" id="ge-how">How to Play</button>
+        <button class="btn sm" id="ge-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">1</div><div><b>The goal.</b> Be the last gardener with coins. Buy plots, grow greenhouses, and collect rent until your rivals run dry.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>Your turn.</b> Tap <b class="hl">Roll Dice</b>. Your pawn walks that many spaces. Every time you pass the green <b>Gate</b>, the bank pays you 200 coins.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Empty plot.</b> Tap <b class="hl">Buy</b> to own it, or <b>Pass</b> to leave it. Own both plots of one color and you have a full set.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b>A rival's plot.</b> You pay them rent. A full set and taller greenhouses mean much bigger rent.</div></div>
+    <div class="helprow"><div class="hi">5</div><div><b>Build.</b> Own a full color set, then tap either of those plots on the board to raise a <b class="hl">greenhouse</b>. Build them evenly across the set.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b>Compost corner.</b> Land on Go To Compost and you are sent to rest. Roll doubles or wait it out to get back on the path.</div></div>
+    <div class="helprow"><div class="hi">7</div><div><b>Cards.</b> Step on a Weather or Almanac space and fate deals you a bonus or a bill.</div></div>
+    <div class="helprow"><div class="hi">8</div><div><b>Out of coins.</b> If you cannot pay, your greenhouses are sold and your plots change hands. When one gardener is left, that gardener wins.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Comfort</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- RESULTS / WIN -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="go-big" id="ge-win">Winner</div>
+    <div class="go-lab" id="ge-sub">the last gardener standing</div>
+    <div id="ge-stand" style="margin:18px auto 0;max-width:420px;width:100%"></div>
+    <div class="sun-earn" id="ge-sun"></div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="ge-again">Play Again</button>
+      <div class="row">
+        <button class="btn sm" id="ge-home">Menu</button>
+        <button class="btn sm" id="ge-share">Share</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
+var BUILD='v1.0';
+var TESTMODE=/[?&]getest=1/.test(location.search);
+
+/* ---------- storage + settings ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, haptic:true };
+(function(){ try{ var s=JSON.parse(LS.get('ge_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.haptic==='boolean')SET.haptic=s.haptic; }catch(e){} })();
+function saveSet(){ LS.set('ge_set', JSON.stringify(SET)); }
+var PROG={ wins:0, games:0 };
+(function(){ try{ var s=JSON.parse(LS.get('ge_save')||'{}'); if(s.wins)PROG.wins=s.wins; if(s.games)PROG.games=s.games; }catch(e){} })();
+function saveProg(){ LS.set('ge_save', JSON.stringify(PROG)); }
+
+/* ---------- sunbeam earn (30/day cap; ~12/win) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_gardenestates'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function blip(freq,dur,type,vol){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=(vol||0.12); o.connect(g); g.connect(c.destination); var t=c.currentTime; g.gain.setValueAtTime(vol||0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12)); o.start(t); o.stop(t+(dur||0.12)); }catch(e){} }
+function sfx(kind){ if(!SET.sound)return;
+  if(kind==='roll')blip(320,0.05,'square',0.06);
+  else if(kind==='move')blip(240,0.04,'triangle',0.05);
+  else if(kind==='buy')blip(523,0.12,'triangle',0.13);
+  else if(kind==='build'){ blip(440,0.09,'sine',0.12); setTimeout(function(){blip(660,0.12,'sine',0.11);},90); }
+  else if(kind==='rent')blip(180,0.16,'sawtooth',0.09);
+  else if(kind==='card')blip(587,0.1,'sine',0.1);
+  else if(kind==='bank')blip(200,0.3,'sine',0.1);
+  else if(kind==='win'){ blip(523,0.14,'triangle',0.14); setTimeout(function(){blip(784,0.24,'triangle',0.13);},150); }
+  else if(kind==='ui')blip(440,0.05,'sine',0.07);
+}
+function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
+function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+
+/* ---------- rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dateSeed(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function irand(n){ return Math.floor((G?G.rng():Math.random())*n); }
+
+/* ---------- canvas ---------- */
+var cv=$('game'), ctx=cv.getContext('2d');
+function fitCanvas(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+fitCanvas();
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize',fit); fit();
+
+/* ================= BOARD DATA ================= */
+var N=28, JAIL_IDX=7, START_IDX=0;
+var GROUPS={
+  herb:   {name:'Herb Row',            color:'#b98a3e'},
+  flower: {name:'Flower Beds',         color:'#5b9bd5'},
+  berry:  {name:'Berry Patch',         color:'#d16ba5'},
+  orchard:{name:'Orchard Grove',       color:'#e08a3c'},
+  vine:   {name:'Vineyard',            color:'#c0432f'},
+  estate: {name:'Greenhouse Estates',  color:'#7ab356'}
+};
+var STATION_COL='#9aa38a', UTIL_COL='#c8a84b';
+function P(name,code,group,price,rent,houseCost){ return {t:'prop',name:name,code:code,group:group,price:price,rent:rent,houseCost:houseCost,owner:-1,houses:0}; }
+function ST(name,code){ return {t:'station',name:name,code:code,price:200,owner:-1,houses:0}; }
+function UT(name,code){ return {t:'utility',name:name,code:code,price:150,owner:-1,houses:0}; }
+function TX(name,amt){ return {t:'tax',name:name,amount:amt}; }
+function CD(name,deck){ return {t:'card',name:name,deck:deck}; }
+function CN(sub,name){ return {t:'corner',sub:sub,name:name}; }
+var SPACES=[
+/*0 */ CN('start','Greenhouse Gate'),
+/*1 */ P('Basil Bed','BAS','herb',60,[2,10,30,90,160,250],50),
+/*2 */ CD('Almanac','almanac'),
+/*3 */ P('Mint Patch','MNT','herb',60,[4,20,60,180,320,450],50),
+/*4 */ TX('Water Rates',100),
+/*5 */ ST('North Seed Cart','N'),
+/*6 */ P('Tulip Row','TUL','flower',100,[6,30,90,270,400,550],50),
+/*7 */ CN('compost','Compost (Resting)'),
+/*8 */ P('Daisy Plot','DSY','flower',100,[6,30,90,270,400,550],50),
+/*9 */ UT('Sun Lamp','SUN'),
+/*10*/ P('Bramble Row','BRM','berry',140,[10,50,150,450,625,750],100),
+/*11*/ CD('Weather','weather'),
+/*12*/ P('Currant Corner','CUR','berry',140,[10,50,150,450,625,750],100),
+/*13*/ ST('East Seed Cart','E'),
+/*14*/ CN('rest','Garden Bench'),
+/*15*/ P('Plum Orchard','PLM','orchard',180,[14,70,200,550,750,950],100),
+/*16*/ CD('Almanac','almanac'),
+/*17*/ P('Pear Orchard','PER','orchard',180,[14,70,200,550,750,950],100),
+/*18*/ UT('Rain Barrel','RAIN'),
+/*19*/ ST('South Seed Cart','S'),
+/*20*/ P('Merlot Vines','MER','vine',220,[18,90,250,700,875,1050],150),
+/*21*/ CN('gotocompost','Go To Compost'),
+/*22*/ P('Cabernet Vines','CAB','vine',220,[18,90,250,700,875,1050],150),
+/*23*/ CD('Weather','weather'),
+/*24*/ TX('Fertilizer Fee',75),
+/*25*/ ST('West Seed Cart','W'),
+/*26*/ P('Fern Conservatory','FRN','estate',300,[26,130,390,900,1275,1500],200),
+/*27*/ P('Palm Conservatory','PLM2','estate',320,[28,150,450,1000,1300,1560],200)
+];
+/* group member indices */
+var GMEM={}; (function(){ for(var g in GROUPS){ GMEM[g]=[]; } for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.t==='prop')GMEM[s.group].push(i); } })();
+
+/* ---------- card decks ---------- */
+/* kind: money | toStart | toIndex | back | jail | perHouse | eachPlayer | getout */
+var WEATHER=[
+  {msg:'Sudden bloom carries you to the Greenhouse Gate.', kind:'toStart'},
+  {msg:'A warm spell. Walk on to the Fern Conservatory.', kind:'toIndex', val:26},
+  {msg:'Cold snap. Step back three spaces.', kind:'back', val:3},
+  {msg:'Greenhouse glass cracks. Pay 25 per greenhouse.', kind:'perHouse', val:25},
+  {msg:'A compost order arrives. Go straight to Compost.', kind:'jail'},
+  {msg:'Bumper harvest! Collect 150 from the bank.', kind:'money', val:150},
+  {msg:'Hail damages the beds. Pay 60.', kind:'money', val:-60},
+  {msg:'You find a Compost pass. Keep it for later.', kind:'getout'}
+];
+var ALMANAC=[
+  {msg:'Farmers market day. Collect 100.', kind:'money', val:100},
+  {msg:'Water bill is due. Pay 75.', kind:'money', val:-75},
+  {msg:'You win the flower show. Collect 120.', kind:'money', val:120},
+  {msg:'New tools for the shed. Pay 60.', kind:'money', val:-60},
+  {msg:"Grandma's garden inheritance. Collect 200.", kind:'money', val:200},
+  {msg:'A thorn needs a doctor. Pay 50.', kind:'money', val:-50},
+  {msg:'It is your planting birthday. Each rival gives you 25.', kind:'eachPlayer', val:25},
+  {msg:'You find a Compost pass. Keep it for later.', kind:'getout'}
+];
+function drawCardObj(deck){ var arr=(deck==='weather')?WEATHER:ALMANAC; return arr[irand(arr.length)]; }
+
+/* ================= GAME STATE ================= */
+var G=null, running=false, lastTs=0, curScreen='s-title';
+var PCOLORS=['#7ab356','#e58fa0','#5b9bd5','#c8a84b'];
+var PNAMES_CPU=['Sage','Fern','Moss','Ivy'];
+
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
+function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
+
+function resetBoard(){ for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.owner!==undefined)s.owner=-1; if(s.houses!==undefined)s.houses=0; } }
+function makePlayers(count, humanP0){
+  var pl=[]; for(var i=0;i<count;i++){
+    var isCPU = humanP0 ? (i>0) : true;
+    var nm = (humanP0&&i===0) ? 'You' : PNAMES_CPU[i];
+    pl.push({ name:nm, isCPU:isCPU, cash:1500, pos:0, alive:true, jail:0, consec:0, getOut:0, color:PCOLORS[i] });
+  }
+  return pl;
+}
+function startMatch(count, humanP0, seed){
+  resetBoard();
+  var players=makePlayers(count, humanP0);
+  G={ players:players, cur:0, phase:'idle', turnNo:0, dice:[1,1], msg:'', sub:'', log:[], parts:[],
+      rng:mulberry32(seed||((Math.random()*1e9)|0)), hasHuman:humanP0, winner:-1, gotDouble:false, wasJailed:false,
+      pre:0, rollT:0, moveLeft:0, stepT:0, _dr:-1, buyIdx:-1, pendingCard:null, cardDeck:'', t:0, flashBuild:0 };
+  toPlay();
+  startTurn();
+}
+
+/* ---------- money helpers ---------- */
+function cpu(pi){ return G.players[pi].isCPU; }
+function collect(pi,amt){ G.players[pi].cash += amt; }
+function goIncome(){ var base=200; if(G.turnNo>150){ var d=Math.floor((G.turnNo-150)/8)*10; base=200-d; if(base<0)base=0; } return base; }
+function countOwned(pi,type){ var n=0; for(var i=0;i<N;i++){ if(SPACES[i].t===type && SPACES[i].owner===pi)n++; } return n; }
+function ownsWholeGroup(pi,group){ var m=GMEM[group]; for(var i=0;i<m.length;i++){ if(SPACES[m[i]].owner!==pi)return false; } return true; }
+function minHouses(group){ var m=GMEM[group], lo=99; for(var i=0;i<m.length;i++){ if(SPACES[m[i]].houses<lo)lo=SPACES[m[i]].houses; } return lo; }
+function houseCount(pi){ var n=0; for(var i=0;i<N;i++){ if(SPACES[i].t==='prop'&&SPACES[i].owner===pi)n+=SPACES[i].houses; } return n; }
+function canBuild(pi,i){ var s=SPACES[i]; if(s.t!=='prop'||s.owner!==pi)return false; if(!ownsWholeGroup(pi,s.group))return false;
+  if(s.houses>=5)return false; if(s.houses!==minHouses(s.group))return false; if(G.players[pi].cash<s.houseCost)return false; return true; }
+function buildOne(pi,i){ var s=SPACES[i]; G.players[pi].cash-=s.houseCost; s.houses++; }
+function rentFor(i,dice){ var s=SPACES[i], o=s.owner;
+  if(s.t==='prop'){ if(s.houses>0)return s.rent[s.houses]; var base=s.rent[0]; if(ownsWholeGroup(o,s.group))base*=2; return base; }
+  if(s.t==='station'){ var c=countOwned(o,'station'); return [25,50,100,200][Math.max(0,Math.min(3,c-1))]; }
+  if(s.t==='utility'){ var c2=countOwned(o,'utility'); return (c2>=2?10:4)*dice; }
+  return 0;
+}
+function doBuy(pi,i){ var s=SPACES[i]; if(s.owner!==-1)return; G.players[pi].cash-=s.price; s.owner=pi; }
+
+function raiseCash(pi,need){ var p=G.players[pi], guard=0;
+  while(p.cash<need && guard++<300){ var idx=propWithMostHouses(pi); if(idx<0)break; SPACES[idx].houses--; p.cash+=Math.floor(SPACES[idx].houseCost/2); } }
+function propWithMostHouses(pi){ var best=-1, bh=0; for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.t==='prop'&&s.owner===pi&&s.houses>bh){ bh=s.houses; best=i; } } return best; }
+function sellEveryBuilding(pi){ var p=G.players[pi]; for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.t==='prop'&&s.owner===pi){ while(s.houses>0){ s.houses--; p.cash+=Math.floor(s.houseCost/2); } } } }
+function transferProps(from,to){ for(var i=0;i<N;i++){ if(SPACES[i].owner===from){ SPACES[i].owner=to; SPACES[i].houses=0; } } }
+function releaseProps(pi){ for(var i=0;i<N;i++){ if(SPACES[i].owner===pi){ SPACES[i].owner=-1; SPACES[i].houses=0; } } }
+
+/* pay amount from pi to creditor (index or -1 bank). returns true if paid, false if pi went bankrupt. */
+function payMoney(pi, amount, toIdx){
+  var p=G.players[pi];
+  if(amount<=0){ return true; }
+  if(p.cash<amount){ raiseCash(pi,amount); }
+  if(p.cash<amount){
+    // bankrupt: liquidate everything and hand over
+    sellEveryBuilding(pi);
+    var give=p.cash; p.cash=0;
+    if(toIdx>=0 && G.players[toIdx].alive){ G.players[toIdx].cash+=give; transferProps(pi,toIdx); }
+    else { releaseProps(pi); }
+    p.alive=false;
+    toast(p.name+' runs out of coins and is out!');
+    sfx('bank');
+    return false;
+  }
+  p.cash-=amount; if(toIdx>=0)G.players[toIdx].cash+=amount; return true;
+}
+
+/* ---------- toast / log ---------- */
+function toast(msg,sub){ G.msg=msg; G.sub=sub||''; G.log.push(msg); if(G.log.length>5)G.log.shift(); }
+
+/* ---------- turn engine (animated) ---------- */
+function enterIdle(){ G.phase='idle'; if(cpu(G.cur))G.pre=0.5; }
+function startTurn(){ var p=G.players[G.cur]; if(!p.alive){ endTurn(); return; } p.consec=0; G.turnNo++; G.gotDouble=false;
+  toast(p.name+"'s turn"); enterIdle(); }
+function waitThen(sec,fn){ G.phase='wait'; G.pre=sec; G._after=fn; }
+function endPhaseFor(pi){ if(cpu(pi)){ cpuBuild(pi); waitThen(0.55,endTurn); } else { G.phase='turnend'; } }
+function endTurn(){ if(checkWin())return; var n=G.players.length, i=G.cur, tries=0;
+  do{ i=(i+1)%n; tries++; } while(!G.players[i].alive && tries<=n); G.cur=i; startTurn(); }
+
+function startRoll(){ var p=G.players[G.cur];
+  if(p.jail>0 && p.getOut>0){ p.getOut--; p.jail=0; toast(p.name+' uses a Compost pass.'); }
+  G.wasJailed = p.jail>0; G.phase='rolling'; G.rollT=0.55; G._dr=-1; sfx('roll'); }
+function endRoll(){ var p=G.players[G.cur]; var d0=G.dice[0], d1=G.dice[1], sum=d0+d1;
+  if(G.wasJailed){ G.wasJailed=false;
+    if(d0===d1){ p.jail=0; toast(p.name+' rolls doubles and leaves Compost.'); G.gotDouble=false; startMoving(sum); return; }
+    p.jail--;
+    if(p.jail<=0){ toast(p.name+' pays 50 and leaves Compost.'); var ok=payMoney(G.cur,50,-1); if(checkWin())return; if(p.alive)startMoving(sum); else endTurn(); }
+    else { toast(p.name+' stays in Compost.'); endPhaseFor(G.cur); }
+    return;
+  }
+  if(d0===d1){ G.gotDouble=true; p.consec=(p.consec||0)+1;
+    if(p.consec>=3){ sendToJail(G.cur); toast(p.name+' rolled three doubles and is sent to Compost.'); G.gotDouble=false; endTurn(); return; } }
+  else { G.gotDouble=false; p.consec=0; }
+  startMoving(sum);
+}
+function sendToJail(pi){ var p=G.players[pi]; p.pos=JAIL_IDX; p.jail=3; p.consec=0; }
+function startMoving(steps){ G.moveLeft=steps; G.phase='moving'; G.stepT=0.10; }
+function advanceOneCell(){ var p=G.players[G.cur]; p.pos=(p.pos+1)%N; sfx('move');
+  if(p.pos===START_IDX){ var inc=goIncome(); if(inc>0){ collect(G.cur,inc); toast(p.name+' passes the Gate and collects '+inc+'.'); } }
+  G.moveLeft--; if(G.moveLeft<=0){ waitThen(0.2, onLanded); } else { G.stepT=0.10; } }
+function onLanded(){ resolveSpace(G.cur); }
+
+function resolveSpace(pi){ var p=G.players[pi], i=p.pos, s=SPACES[i];
+  if(s.t==='corner'){
+    if(s.sub==='gotocompost'){ sendToJail(pi); toast(p.name+' is sent to Compost.'); G.gotDouble=false; afterResolve(pi,true); return; }
+    if(s.sub==='start'){ toast(p.name+' rests at the Greenhouse Gate.'); afterResolve(pi,true); return; }
+    if(s.sub==='rest'){ toast(p.name+' relaxes on the Garden Bench.'); afterResolve(pi,true); return; }
+    toast(p.name+' is just visiting the Compost.'); afterResolve(pi,true); return;
+  }
+  if(s.t==='tax'){ toast(p.name+' pays '+s.name+' of '+s.amount+'.'); var ok=payMoney(pi,s.amount,-1); afterResolve(pi,ok); return; }
+  if(s.t==='card'){ var c=drawCardObj(s.deck); G.pendingCard=c; G.cardDeck=s.deck; toast((s.deck==='weather'?'Weather: ':'Almanac: ')+c.msg); sfx('card'); G.phase='cardshow'; G.pre=1.35; return; }
+  // ownable: prop / station / utility
+  if(s.owner===-1){
+    if(cpu(pi)){ if(cpuWantsBuy(pi,i)){ doBuy(pi,i); sfx('buy'); toast(p.name+' buys '+s.name+' for '+s.price+'.'); } else { toast(p.name+' leaves '+s.name+' unsold.'); } afterResolve(pi,true); }
+    else { G.buyIdx=i; G.phase='buyprompt'; }
+    return;
+  }
+  if(s.owner===pi){ toast('You already own '+s.name+'.'); afterResolve(pi,true); return; }
+  var rent=rentFor(i,G.dice[0]+G.dice[1]);
+  toast(p.name+' pays '+rent+' rent to '+G.players[s.owner].name+'.'); sfx('rent'); haptic(12);
+  var ok2=payMoney(pi,rent,s.owner); afterResolve(pi,ok2);
+}
+function applyPendingCard(){ var c=G.pendingCard; G.pendingCard=null; var pi=G.cur;
+  var moved=applyCard(pi,c,false); if(checkWin())return; if(!G.players[pi].alive){ endTurn(); return; }
+  if(moved){ resolveSpace(pi); } else { afterResolve(pi,true); } }
+
+function applyCard(pi,c,sync){ var p=G.players[pi], moved=false, j;
+  switch(c.kind){
+    case 'money': if(c.val>=0)collect(pi,c.val); else payMoney(pi,-c.val,-1); break;
+    case 'toStart': p.pos=START_IDX; collect(pi,goIncome()); moved=true; break;
+    case 'toIndex': cardMoveTo(pi,c.val); moved=true; break;
+    case 'back': p.pos=(p.pos-c.val+N)%N; moved=true; break;
+    case 'jail': sendToJail(pi); G.gotDouble=false; break;
+    case 'perHouse': var h=houseCount(pi); if(h>0)payMoney(pi,c.val*h,-1); break;
+    case 'eachPlayer': for(j=0;j<G.players.length;j++){ if(j!==pi&&G.players[j].alive)payMoney(j,c.val,pi); } break;
+    case 'getout': p.getOut=(p.getOut||0)+1; break;
+  }
+  return moved;
+}
+function cardMoveTo(pi,target){ var p=G.players[pi]; var steps=(target-p.pos+N)%N; var passed=(p.pos+steps)>=N && steps>0; p.pos=target; if(passed)collect(pi,goIncome()); }
+
+function afterResolve(pi, aliveOk){
+  if(checkWin())return; var p=G.players[pi];
+  if(!p.alive){ endTurn(); return; }
+  if(G.gotDouble && p.jail<=0){ if(cpu(pi))cpuBuild(pi); G.gotDouble=false; enterIdle(); return; }
+  endPhaseFor(pi);
+}
+
+/* ---------- computer decisions ---------- */
+function completesGroupIfBought(pi,i){ var s=SPACES[i]; if(s.t!=='prop')return false; var m=GMEM[s.group];
+  for(var k=0;k<m.length;k++){ if(m[k]===i)continue; if(SPACES[m[k]].owner!==pi)return false; } return true; }
+function cpuWantsBuy(pi,i){ var s=SPACES[i], p=G.players[pi];
+  if(s.t==='prop' && completesGroupIfBought(pi,i) && p.cash>=s.price)return true;
+  if(p.cash < s.price+60)return false;
+  return true;
+}
+function cpuBuild(pi){ var p=G.players[pi], guard=0;
+  while(guard++<30){ var best=-1, bc=1e9;
+    for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.t!=='prop'||s.owner!==pi)continue; if(!canBuild(pi,i))continue;
+      if(p.cash - s.houseCost < 120)continue; if(s.houseCost<bc){ bc=s.houseCost; best=i; } }
+    if(best<0)break; buildOne(pi,best); }
+}
+
+/* ---------- win / finish ---------- */
+function aliveCount(){ var n=0; for(var i=0;i<G.players.length;i++)if(G.players[i].alive)n++; return n; }
+function aliveList(){ var a=[]; for(var i=0;i<G.players.length;i++)if(G.players[i].alive)a.push(i); return a; }
+function netWorth(pi){ var w=G.players[pi].cash; for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.owner===pi){ w+=(s.price||0)+ (s.houses||0)*(s.houseCost||0); } } return w; }
+function richest(){ var best=0, bw=-1; for(var i=0;i<G.players.length;i++){ var w=netWorth(i); if(w>bw){ bw=w; best=i; } } return best; }
+function checkWin(){ var a=aliveList(); if(a.length<=1){ finishGame(a.length===1?a[0]:richest()); return true; } return false; }
+function finishGame(idx){ if(G.phase==='over')return; G.phase='over'; G.winner=idx; running=false;
+  PROG.games=(PROG.games||0)+1; if(G.hasHuman && idx===0)PROG.wins=(PROG.wins||0)+1; saveProg();
+  var granted=0;
+  if(G.hasHuman){ var amt=(idx===0)?12:4; try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt, 'gardenestates:'+(idx===0?'win':'play'))||0; }catch(e){} }
+  G.sunAmt=granted; sfx('win'); showResults(idx);
+}
+function showResults(idx){
+  $('ge-win').textContent = (G.hasHuman&&idx===0)?'You win!':(G.players[idx].name+' wins');
+  $('ge-sub').textContent='the last gardener standing · '+G.turnNo+' turns';
+  var host=$('ge-stand'); host.innerHTML='';
+  var order=[]; for(var i=0;i<G.players.length;i++)order.push(i);
+  order.sort(function(a,b){ if(G.players[a].alive!==G.players[b].alive)return G.players[a].alive?-1:1; return netWorth(b)-netWorth(a); });
+  for(var k=0;k<order.length;k++){ var pi=order[k]; var p=G.players[pi];
+    var row=document.createElement('div'); row.className='standrow';
+    var left=document.createElement('div'); left.innerHTML='<span class="sw" style="background:'+p.color+'"></span>'+p.name+(pi===idx?' 🏆':'');
+    var right=document.createElement('div'); right.style.color=p.alive?'#e8dcc8':'#8a9178'; right.textContent=p.alive?('worth '+netWorth(pi)):'out';
+    row.appendChild(left); row.appendChild(right); host.appendChild(row); }
+  $('ge-sun').textContent = G.hasHuman ? (G.sunAmt>0?('☀ +'+G.sunAmt+' sunbeams'):'☀ daily sunbeams already earned') : '';
+  show('s-go');
+}
+
+/* ================= RENDER ================= */
+var CS=64, BX0=14, BY0=96;
+function cellColRow(i){
+  if(i<=7)return {c:i,r:0};
+  if(i<=14)return {c:7,r:i-7};
+  if(i<=21)return {c:7-(i-14),r:7};
+  return {c:0,r:7-(i-21)};
+}
+function cellRect(i){ var p=cellColRow(i); return {x:BX0+p.c*CS, y:BY0+p.r*CS, w:CS, h:CS}; }
+function cellSide(i){ var p=cellColRow(i); if(p.r===0)return 'top'; if(p.c===7)return 'right'; if(p.r===7)return 'bottom'; return 'left'; }
+
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05; step(dt); render(); if(running)requestAnimationFrame(loop); }
+function step(dt){ if(!G)return; G.t+=dt; if(G.flashBuild>0)G.flashBuild-=dt;
+  for(var i=G.parts.length-1;i>=0;i--){ var pt=G.parts[i]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.life-=dt; if(pt.life<=0)G.parts.splice(i,1); }
+  if(G.phase==='rolling'){ G.rollT-=dt; if(Math.floor(G.t*24)!==G._dr){ G._dr=Math.floor(G.t*24); G.dice=[1+irand(6),1+irand(6)]; }
+    if(G.rollT<=0){ G.dice=[1+irand(6),1+irand(6)]; endRoll(); } }
+  else if(G.phase==='moving'){ G.stepT-=dt; if(G.stepT<=0)advanceOneCell(); }
+  else if(G.phase==='cardshow'){ G.pre-=dt; if(G.pre<=0)applyPendingCard(); }
+  else if(G.phase==='wait'){ G.pre-=dt; if(G.pre<=0){ var fn=G._after; G._after=null; if(fn)fn(); } }
+  else if(G.phase==='idle'){ if(cpu(G.cur)){ G.pre-=dt; if(G.pre<=0)startRoll(); } }
+}
+
+function rr(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fillRR(x,y,w,h,r){ rr(x,y,w,h,r); ctx.fill(); }
+function txt(s,x,y,font,col,align){ ctx.font=font; ctx.fillStyle=col; ctx.textAlign=align||'left'; ctx.fillText(s,x,y); }
+
+function render(){ if(!ctx||!G)return;
+  ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#10160f'); bg.addColorStop(1,'#080c07'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  drawTopBar();
+  drawBoard();
+  drawCenter();
+  drawPawns();
+  drawBottom();
+  // particles
+  for(var i=0;i<G.parts.length;i++){ var p=G.parts[i]; ctx.globalAlpha=Math.max(0,Math.min(1,p.life)); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
+}
+function drawTopBar(){
+  txt('GARDEN ESTATES', VW/2, 34, '800 20px system-ui', '#7ab356', 'center');
+  txt('Turn '+G.turnNo, VW/2, 54, '700 12px system-ui', '#8a9178', 'center');
+  hudBtn(MENU_BTN,'‹'); hudBtn(HELP_BTN,'?');
+}
+function drawBoard(){
+  // board backing
+  ctx.fillStyle='#0a0f09'; fillRR(BX0-6,BY0-6,CS*8+12,CS*8+12,12);
+  for(var i=0;i<N;i++)drawCell(i);
+}
+function drawCell(i){ var s=SPACES[i], rc=cellRect(i), x=rc.x, y=rc.y;
+  ctx.fillStyle='#101609'; fillRR(x+1.5,y+1.5,CS-3,CS-3,7);
+  ctx.strokeStyle='#243019'; ctx.lineWidth=1; rr(x+1.5,y+1.5,CS-3,CS-3,7); ctx.stroke();
+  if(s.t==='corner'){ drawCorner(i,x,y,s); return; }
+  // color strip
+  var strip=11, sc=(s.t==='prop')?GROUPS[s.group].color:(s.t==='station'?STATION_COL:(s.t==='utility'?UTIL_COL:'#3a2c1e'));
+  if(s.t==='prop'||s.t==='station'||s.t==='utility'){ ctx.fillStyle=sc; var side=cellSide(i);
+    if(side==='top')fillRR(x+3,y+CS-strip-2,CS-6,strip,3);
+    else if(side==='bottom')fillRR(x+3,y+2,CS-6,strip,3);
+    else if(side==='left')fillRR(x+CS-strip-2,y+3,strip,CS-6,3);
+    else fillRR(x+2,y+3,strip,CS-6,3);
+  }
+  if(s.t==='card'){ ctx.fillStyle=(s.deck==='weather')?'#3a4a2a':'#3a3320'; fillRR(x+3,y+3,CS-6,CS-6,6);
+    txt(s.deck==='weather'?'☁':'✦', x+CS/2, y+CS/2-4, '700 18px system-ui', s.deck==='weather'?'#bcd39a':'#e0c96b','center');
+    txt(s.deck==='weather'?'WEATHER':'ALMANAC', x+CS/2, y+CS-9, '800 8px system-ui', '#a8b294','center'); return; }
+  if(s.t==='tax'){ txt('◆', x+CS/2, y+CS/2-2, '700 16px system-ui', '#d0a24a','center');
+    txt(s.name.split(' ')[0].toUpperCase(), x+CS/2, y+CS-18, '800 8px system-ui', '#c9b98a','center');
+    txt('-'+s.amount, x+CS/2, y+CS-8, '800 10px system-ui', '#e2a0a0','center'); return; }
+  // prop / station / utility: code + price + owner + houses
+  var codeY=y+CS-24, priceY=y+CS-11;
+  txt(s.code, x+CS/2, codeY, '800 10px system-ui', '#dbe6cf','center');
+  var ownerTxt = s.owner>=0 ? '' : (s.price+'');
+  if(s.owner<0)txt(s.price+'', x+CS/2, priceY, '700 10px system-ui', '#a8b294','center');
+  // owner marker
+  if(s.owner>=0){ ctx.fillStyle=G.players[s.owner].color; ctx.beginPath(); ctx.arc(x+CS/2, priceY-2, 5,0,6.2832); ctx.fill();
+    ctx.strokeStyle='#0a0f09'; ctx.lineWidth=1.2; ctx.stroke(); }
+  // houses (little greenhouse dots)
+  if(s.houses>0){ for(var h=0;h<s.houses;h++){ ctx.fillStyle=(s.houses>=5)?'#e0c96b':'#8ec462';
+      ctx.fillRect(x+7+h*9, y+7, 6,6); ctx.strokeStyle='#0a0f09'; ctx.lineWidth=0.8; ctx.strokeRect(x+7+h*9, y+7, 6,6); } }
+}
+function drawCorner(i,x,y,s){
+  ctx.fillStyle=(s.sub==='start')?'#16250d':(s.sub==='gotocompost'?'#2a1a14':'#141c22'); fillRR(x+3,y+3,CS-6,CS-6,7);
+  var lbl, ic, col;
+  if(s.sub==='start'){ lbl='GATE'; ic='⇪'; col='#8ec462'; }
+  else if(s.sub==='compost'){ lbl='COMPOST'; ic='♻'; col='#c9b98a'; }
+  else if(s.sub==='rest'){ lbl='BENCH'; ic='☺'; col='#bfe0f2'; }
+  else { lbl='GO TO'; ic='⇥'; col='#e0a0a0'; }
+  txt(ic, x+CS/2, y+CS/2, '700 20px system-ui', col,'center');
+  txt(lbl, x+CS/2, y+CS-9, '800 9px system-ui', col,'center');
+  if(s.sub==='start')txt('+200', x+CS/2, y+16, '800 9px system-ui', '#8ec462','center');
+  if(s.sub==='gotocompost')txt('COMPOST', x+CS/2, y+16, '800 8px system-ui', '#e0a0a0','center');
+}
+function drawPawns(){ for(var pi=0;pi<G.players.length;pi++){ var p=G.players[pi]; if(!p.alive)continue;
+    var rc=cellRect(p.pos); var ox=(pi%2)*13-6, oy=Math.floor(pi/2)*13-6;
+    var cx=rc.x+CS/2+ox, cy=rc.y+22+oy;
+    ctx.beginPath(); ctx.arc(cx,cy,7.5,0,6.2832); ctx.fillStyle=p.color; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle=(pi===G.cur)?'#ffffff':'#0a0f09'; ctx.stroke();
+    if(pi===G.cur){ ctx.globalAlpha=0.5+0.4*Math.sin(G.t*5); ctx.beginPath(); ctx.arc(cx,cy,10.5,0,6.2832); ctx.strokeStyle='#fff'; ctx.lineWidth=1.4; ctx.stroke(); ctx.globalAlpha=1; }
+  }
+}
+function drawDie(cx,cy,sz,val){
+  ctx.fillStyle='#f0ecd8'; fillRR(cx-sz/2,cy-sz/2,sz,sz,6);
+  ctx.strokeStyle='#b9b090'; ctx.lineWidth=1.4; rr(cx-sz/2,cy-sz/2,sz,sz,6); ctx.stroke();
+  ctx.fillStyle='#20281a'; var o=sz*0.26, pr=sz*0.085;
+  function pip(dx,dy){ ctx.beginPath(); ctx.arc(cx+dx,cy+dy,pr,0,6.2832); ctx.fill(); }
+  if(val%2===1)pip(0,0);
+  if(val>=2){ pip(-o,-o); pip(o,o); }
+  if(val>=4){ pip(o,-o); pip(-o,o); }
+  if(val===6){ pip(-o,0); pip(o,0); }
+}
+function drawCenter(){
+  var x=BX0+CS+2, y=BY0+CS+2, w=CS*6-4, h=CS*6-4;
+  ctx.fillStyle='rgba(10,15,9,0.9)'; fillRR(x,y,w,h,14);
+  ctx.strokeStyle='#243019'; ctx.lineWidth=1.4; rr(x,y,w,h,14); ctx.stroke();
+  var p=G.players[G.cur];
+  // current player banner
+  ctx.fillStyle=p.color; fillRR(x+14,y+16,14,14,3);
+  txt(p.name+(p.jail>0?' (in Compost)':''), x+36, y+28, '800 15px system-ui', '#e8dcc8','left');
+  txt('$'+p.cash, x+w-14, y+28, '800 17px system-ui', '#c8a84b','right');
+  // dice
+  var dy=y+64, dsz=42;
+  drawDie(x+w/2-30, dy, dsz, G.dice[0]);
+  drawDie(x+w/2+30, dy, dsz, G.dice[1]);
+  if(G.phase!=='rolling'){ txt('rolled '+(G.dice[0]+G.dice[1])+(G.gotDouble?' · doubles!':''), x+w/2, dy+38, '700 12px system-ui', '#8a9178','center'); }
+  else txt('rolling...', x+w/2, dy+38, '700 12px system-ui', '#8a9178','center');
+  // message (wrapped)
+  var mLines=wrap(G.msg, 30); var my=y+124;
+  for(var i=0;i<mLines.length && i<3;i++){ txt(mLines[i], x+w/2, my+i*17, '600 13px system-ui', '#cfe0c2','center'); }
+  // current space info
+  var s=SPACES[p.pos]; var iy=y+h-70;
+  txt('Standing on', x+w/2, iy, '700 10px system-ui', '#8a9178','center');
+  var nm = s.name || '';
+  txt(nm, x+w/2, iy+18, '800 14px system-ui', '#e8dcc8','center');
+  if(s.t==='prop'||s.t==='station'||s.t==='utility'){
+    var sub = 'price '+s.price;
+    if(s.owner>=0){ if(s.owner===G.cur)sub='yours'; else sub='rent to '+G.players[s.owner].name; }
+    if(s.t==='prop'&&s.houses>0)sub+=' · '+s.houses+' greenhouse'+(s.houses>1?'s':'');
+    txt(sub, x+w/2, iy+34, '600 11px system-ui', '#a8b294','center');
+  }
+}
+function wrap(str,max){ var words=(str||'').split(' '), lines=[], cur=''; for(var i=0;i<words.length;i++){ var t=cur?cur+' '+words[i]:words[i]; if(t.length>max){ if(cur)lines.push(cur); cur=words[i]; } else cur=t; } if(cur)lines.push(cur); return lines; }
+
+/* bottom panel */
+var MENU_BTN={x:8,y:14,w:44,h:44}, HELP_BTN={x:VW-52,y:14,w:44,h:44};
+var PRIMARY={x:120,y:812,w:300,h:70};
+var BUY_BTN={x:56,y:812,w:210,h:70}, PASS_BTN={x:274,y:812,w:210,h:70};
+function drawBottom(){
+  // player chips
+  var n=G.players.length, gap=10, cw=(VW-20-(n-1)*gap)/n, cy=616, ch=70;
+  for(var i=0;i<n;i++){ var px=10+i*(cw+gap), p=G.players[i];
+    ctx.fillStyle=(i===G.cur)?'#182210':'#0f150c'; fillRR(px,cy,cw,ch,10);
+    ctx.strokeStyle=(i===G.cur)?p.color:'#243019'; ctx.lineWidth=(i===G.cur)?2:1; rr(px,cy,cw,ch,10); ctx.stroke();
+    ctx.globalAlpha=p.alive?1:0.4;
+    ctx.fillStyle=p.color; fillRR(px+10,cy+12,12,12,3);
+    txt(p.name, px+28, cy+22, '800 13px system-ui', '#e8dcc8','left');
+    txt(p.alive?('$'+p.cash):'out', px+10, cy+44, '800 16px system-ui', p.alive?'#c8a84b':'#8a9178','left');
+    var props=0; for(var k=0;k<N;k++)if(SPACES[k].owner===i)props++;
+    txt(props+' plots', px+10, cy+60, '600 10px system-ui', '#8a9178','left');
+    ctx.globalAlpha=1;
+  }
+  // log line
+  var last=G.log.length?G.log[G.log.length-1]:'';
+  var ll=wrap(last,52); txt(ll[0]||'', VW/2, 712, '600 13px system-ui', '#a8b294','center'); if(ll[1])txt(ll[1], VW/2, 730, '600 13px system-ui', '#a8b294','center');
+
+  // action area
+  var human = G.hasHuman && G.cur===0;
+  if(G.phase==='buyprompt' && human){ var s=SPACES[G.buyIdx];
+    txt('Buy '+s.name+' for '+s.price+'?', VW/2, 782, '800 15px system-ui', '#e8dcc8','center');
+    if(s.t==='prop' && completesGroupIfBought(0,G.buyIdx))txt('completes the '+GROUPS[s.group].name+' set!', VW/2, 800, '700 11px system-ui', '#8ec462','center');
+    drawBtn(BUY_BTN, (G.players[0].cash>=s.price)?'Buy '+s.price:'Cannot afford', G.players[0].cash>=s.price, true);
+    drawBtn(PASS_BTN, 'Pass', true, false);
+    return;
+  }
+  if(human && G.phase==='idle'){ var p0=G.players[0];
+    drawBtn(PRIMARY, p0.jail>0?'Roll to Leave Compost':'Roll Dice', true, true);
+    txt('Tap a plot in a full set to build a greenhouse.', VW/2, 908, '600 11px system-ui', '#7d876e','center');
+    return;
+  }
+  if(human && G.phase==='turnend'){
+    drawBtn(PRIMARY, 'End Turn', true, true);
+    txt('Tap a plot in a full set to build before ending.', VW/2, 908, '600 11px system-ui', '#7d876e','center');
+    return;
+  }
+  // computer / animation: status
+  var st = (G.phase==='rolling')?G.players[G.cur].name+' is rolling...' :
+           (G.phase==='moving')?G.players[G.cur].name+' is moving...' :
+           (G.phase==='cardshow')?'Drawing a card...' :
+           (G.players[G.cur].name+' is thinking...');
+  ctx.fillStyle='rgba(15,21,12,0.6)'; fillRR(PRIMARY.x,PRIMARY.y,PRIMARY.w,PRIMARY.h,16);
+  txt(st, VW/2, PRIMARY.y+PRIMARY.h/2+5, '700 15px system-ui', '#8a9178','center');
+}
+function drawBtn(b,label,enabled,primary){
+  if(primary&&enabled){ ctx.fillStyle='#6fae44'; } else if(enabled){ ctx.fillStyle='#1a2415'; } else { ctx.fillStyle='#141a10'; }
+  fillRR(b.x,b.y,b.w,b.h,16);
+  ctx.strokeStyle=primary&&enabled?'#b6e28a':'#2a331f'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,16); ctx.stroke();
+  txt(label, b.x+b.w/2, b.y+b.h/2+6, '800 18px system-ui', enabled?(primary?'#0c1608':'#e8dcc8'):'#5a6350','center');
+}
+function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; fillRR(b.x,b.y,b.w,b.h,12); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke();
+  ctx.textBaseline='middle'; txt(glyph,b.x+b.w/2,b.y+b.h/2+1,'800 24px system-ui','#cfe0c2','center'); ctx.textBaseline='alphabetic'; }
+
+/* ---------- fx ---------- */
+function burst(x,y,col){ for(var i=0;i<10;i++){ var a=Math.random()*6.2832,s=40+Math.random()*80; G.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,life:0.9,col:col,r:2+Math.random()*2}); } if(G.parts.length>120)G.parts.splice(0,G.parts.length-120); }
+
+/* ---------- input ---------- */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+function cellAt(p){ for(var i=0;i<N;i++){ var rc=cellRect(i); if(p.x>=rc.x&&p.x<=rc.x+rc.w&&p.y>=rc.y&&p.y<=rc.y+rc.h)return i; } return -1; }
+function tryHumanBuild(i){ if(!G.hasHuman||G.cur!==0)return false; if(!(G.phase==='idle'||G.phase==='turnend'))return false;
+  if(!canBuild(0,i))return false; buildOne(0,i); var rc=cellRect(i); burst(rc.x+CS/2,rc.y+CS/2,'#8ec462'); sfx('build'); haptic(10);
+  toast('You raise a greenhouse on '+SPACES[i].name+'.'); return true; }
+function onDown(e){ if(curScreen!=='s-play'||!G)return; e.preventDefault(); ac(); var p=evPos(e);
+  if(inBtn(p,MENU_BTN)){ sfx('ui'); show('s-title'); return; }
+  if(inBtn(p,HELP_BTN)){ sfx('ui'); show('s-how'); return; }
+  if(G.phase==='over')return;
+  var human = G.hasHuman && G.cur===0;
+  if(!human)return;
+  if(G.phase==='buyprompt'){
+    if(inBtn(p,BUY_BTN)){ var s=SPACES[G.buyIdx]; if(G.players[0].cash>=s.price){ doBuy(0,G.buyIdx); sfx('buy'); var rc=cellRect(G.buyIdx); burst(rc.x+CS/2,rc.y+CS/2,s.t==='prop'?GROUPS[s.group].color:'#c8a84b'); toast('You buy '+s.name+' for '+s.price+'.'); afterResolve(0,true); } return; }
+    if(inBtn(p,PASS_BTN)){ toast('You pass on '+SPACES[G.buyIdx].name+'.'); afterResolve(0,true); return; }
+    return;
+  }
+  if(G.phase==='idle'){ if(inBtn(p,PRIMARY)){ startRoll(); return; } var ci=cellAt(p); if(ci>=0)tryHumanBuild(ci); return; }
+  if(G.phase==='turnend'){ if(inBtn(p,PRIMARY)){ endTurn(); return; } var c2=cellAt(p); if(c2>=0)tryHumanBuild(c2); return; }
+}
+cv.addEventListener('touchstart',onDown,{passive:false});
+cv.addEventListener('mousedown',onDown);
+window.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!G)return; if(e.key==='Escape'){ show('s-title'); }
+  else if(G.hasHuman&&G.cur===0){ if((e.key===' '||e.key==='Enter')){ if(G.phase==='idle')startRoll(); else if(G.phase==='turnend')endTurn(); } } });
+
+/* ---------- share ---------- */
+function shareIt(){ var url='https://lucidwinds.com/satellites/garden-estates/'; var txt2='I played Garden Estates 🌱 and won '+(PROG.wins||0)+' gardens. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Garden Estates',text:txt2,url:url}).catch(function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt2).catch(function(){}); } }
+
+/* ---------- wire menus ---------- */
+var pendingStart=null;
+function beginOrTeach(n){ if(!LS.get('ge_seen_how')){ pendingStart={n:n}; show('s-how'); } else { startMatch(n,true); } }
+tap('ge-p1',function(){ sfx('ui'); beginOrTeach(2); });
+tap('ge-p2',function(){ sfx('ui'); beginOrTeach(3); });
+tap('ge-how',function(){ sfx('ui'); show('s-how'); });
+tap('ge-set',function(){ sfx('ui'); show('s-set'); });
+tap('how-back',function(){ sfx('ui');
+  if(pendingStart){ LS.set('ge_seen_how','1'); var ps=pendingStart; pendingStart=null; startMatch(ps.n,true); return; }
+  if(G&&G.players&&G.phase!=='over'){ toPlay(); } else { show('s-title'); } });
+tap('set-back',function(){ sfx('ui'); show('s-title'); });
+tap('ge-again',function(){ sfx('ui'); startMatch(G?G.players.length:2, true); });
+tap('ge-home',function(){ sfx('ui'); show('s-title'); });
+tap('ge-share',function(){ sfx('ui'); shareIt(); });
+function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
+wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic');
+$('buildstamp').textContent='Garden Estates '+BUILD;
+window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
+
+/* ================= DEV HOOK (?getest=1 -> window.GE_DEV) ================= */
+/* Synchronous auto-play path so a coordinator can drive a full game to a winner. */
+function moveResolveSync(pi,steps){ var p=G.players[pi]; for(var k=0;k<steps;k++){ p.pos=(p.pos+1)%N; if(p.pos===START_IDX){ var inc=goIncome(); if(inc>0)collect(pi,inc); } } resolveSpaceSync(pi,0); }
+function resolveSpaceSync(pi,depth){ depth=depth||0; var p=G.players[pi], i=p.pos, s=SPACES[i];
+  if(s.t==='corner'){ if(s.sub==='gotocompost')sendToJail(pi); return; }
+  if(s.t==='tax'){ payMoney(pi,s.amount,-1); return; }
+  if(s.t==='card'){ if(depth>=5)return; var c=drawCardObj(s.deck); var moved=applyCard(pi,c,true); if(moved&&G.players[pi].alive)resolveSpaceSync(pi,depth+1); return; }
+  if(s.owner===-1){ if(cpuWantsBuy(pi,i))doBuy(pi,i); return; }
+  if(s.owner===pi)return;
+  payMoney(pi, rentFor(i,G.dice[0]+G.dice[1]), s.owner);
+}
+function advanceTurnPointerSync(){ var n=G.players.length, i=G.cur, tries=0; do{ i=(i+1)%n; tries++; }while(!G.players[i].alive&&tries<=n); G.cur=i; }
+function doTurnSync(pi){ if(!G.players[pi].alive){ advanceTurnPointerSync(); return; }
+  G.cur=pi; var p=G.players[pi]; p.consec=0; G.turnNo++; var guard=0;
+  while(guard++<10){
+    if(!p.alive)break;
+    if(p.jail>0 && p.getOut>0){ p.getOut--; p.jail=0; }
+    if(p.jail>0){ var dj=[1+irand(6),1+irand(6)]; G.dice=dj;
+      if(dj[0]===dj[1]){ p.jail=0; moveResolveSync(pi,dj[0]+dj[1]); }
+      else { p.jail--; if(p.jail<=0){ payMoney(pi,50,-1); if(p.alive)moveResolveSync(pi,dj[0]+dj[1]); } }
+      break;
+    }
+    var d=[1+irand(6),1+irand(6)]; G.dice=d; var dbl=(d[0]===d[1]);
+    if(dbl){ p.consec++; if(p.consec>=3){ sendToJail(pi); break; } } else p.consec=0;
+    moveResolveSync(pi, d[0]+d[1]);
+    if(!p.alive)break;
+    cpuBuild(pi);
+    if(!dbl)break;
+  }
+  advanceTurnPointerSync();
+}
+function devSnap(){ if(!G)return null; var pls=[]; for(var i=0;i<G.players.length;i++){ var p=G.players[i]; pls.push({name:p.name,cash:p.cash,pos:p.pos,alive:p.alive,jail:p.jail,worth:netWorth(i),plots:countPlots(i)}); }
+  return { turnNo:G.turnNo, cur:G.cur, phase:G.phase, alive:aliveCount(), winner:(G.winner>=0?G.players[G.winner].name:''), players:pls }; }
+function countPlots(pi){ var n=0; for(var i=0;i<N;i++)if(SPACES[i].owner===pi)n++; return n; }
+function autoGame(maxT){ maxT=maxT||4000; var t=0;
+  while(aliveCount()>1 && t<maxT){ if(!G.players[G.cur].alive){ advanceTurnPointerSync(); continue; } doTurnSync(G.cur); t++; }
+  var win = aliveCount()===1 ? aliveList()[0] : richest();
+  return { turns:t, winner:G.players[win].name, winnerIdx:win, alive:aliveCount(), finished:aliveCount()===1, capped:(t>=maxT), players:devSnap().players }; }
+function selfCheck(){ var games=6, results=[], solo=0, tot=0, bankTot=0, minMoneyOk=true, seedBase=12345;
+  for(var g=0; g<games; g++){
+    resetBoard(); G={ players:makePlayers(3,false), cur:0, phase:'idle', turnNo:0, dice:[1,1], msg:'', sub:'', log:[], parts:[], rng:mulberry32(seedBase+g*777), hasHuman:false, winner:-1, gotDouble:false };
+    var pre=0; for(var i=0;i<G.players.length;i++)pre+=G.players[i].cash;
+    var r=autoGame(4000);
+    // verify: no alive player holds negative cash
+    for(var j=0;j<G.players.length;j++){ if(G.players[j].alive && G.players[j].cash<0)minMoneyOk=false; }
+    var bank=0; for(var k=0;k<G.players.length;k++)if(!G.players[k].alive)bank++;
+    if(r.finished)solo++; tot+=r.turns; bankTot+=bank; results.push({turns:r.turns,winner:r.winner,finished:r.finished,bankrupts:bank});
+  }
+  return { ok:(solo===games && minMoneyOk), games:games, finishedWithSoloWinner:solo, avgTurns:Math.round(tot/games), totalBankruptcies:bankTot, noNegativeCash:minMoneyOk, sample:results }; }
+
+if(TESTMODE){
+  window.GE_DEV={
+    start:function(n){ startMatch(n||2, false, 424242); return devSnap(); },
+    state:devSnap,
+    step:function(dt){ step(dt||0.05); return devSnap(); },
+    rollTurn:function(){ if(!G)startMatch(2,false,1); doTurnSync(G.cur); return devSnap(); },
+    autoGame:autoGame,
+    selfCheck:selfCheck
+  };
+}
+
+show('s-title');
+})();
+</script>
+</body>
+</html>

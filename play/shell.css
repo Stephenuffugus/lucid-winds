@@ -1,3 +1,10 @@
+/* Jessie readability pass (2026-07-18): one readable UI font — Hanken
+   Grotesk, the same --ui face the Hues game uses (Jessie's stated bar) —
+   applied centrally so every /play shell reads consistently. Games keep
+   their own in-canvas display fonts (Bebas Neue / Georgia / DM Mono set
+   directly on game elements). Imported here so a single shell.css bump
+   swaps the font on all 66 shell games at once. */
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
 /* ════════════════════════════════════════════════════════════════════
  * Sky Wolf Studios — /play/ shell stylesheet
  *
@@ -24,7 +31,7 @@ html, body {
   margin: 0;
   background: radial-gradient(1200px 600px at 70% -10%, #1a2a20 0, var(--shell-bg) 60%);
   color: var(--shell-ink);
-  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
 }
 
@@ -96,7 +103,7 @@ body { display: flex; flex-direction: column; }
   background: linear-gradient(180deg, #101a14 0%, #0b120e 100%);
   display: flex; flex-direction: column;
   animation: dirIn .22s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @keyframes dirIn { from { opacity: 0 } to { opacity: 1 } }
 .shell-dir-inner {
@@ -169,7 +176,7 @@ body { display: flex; flex-direction: column; }
 }
 .shell-wallet #shell-pend {
   color: var(--shell-muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 .shell-wallet button#shell-signin {
   cursor: pointer;
@@ -177,7 +184,7 @@ body { display: flex; flex-direction: column; }
   background: linear-gradient(145deg, var(--shell-sun), var(--shell-sun2));
   color: #3a2600;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13px;
   padding: 6px 11px;
   border-radius: 8px;
   white-space: nowrap;
@@ -216,7 +223,7 @@ body { display: flex; flex-direction: column; }
 /* ── Footer ── */
 .shell-footer {
   color: var(--shell-muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
   text-align: center;
   padding: 14px 12px 20px;
   border-top: 1px solid var(--shell-line);
