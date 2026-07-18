@@ -815,6 +815,9 @@ function render(){ if(!ctx||!G)return;
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(f.txt,f.x,f.y); } ctx.globalAlpha=1;
   ctx.restore();
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // P2 lightshow: a brief colored GI wash in the event's own color while a big callout is up
+  if(G.callout && G.callout.big && G.callout.t>0){ ctx.save(); ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=Math.min(0.13,(G.callout.t/G.callout.t0)*0.13)*(0.6+0.4*Math.sin(G.t*8)); ctx.fillStyle=G.callout.col; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   if(G.wizard){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.035+0.03*Math.sin(G.t*3); ctx.fillStyle='#6b5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // FULL BLOOM golden GI
   else if(G.rush>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.03+0.025*Math.sin(G.t*5); ctx.fillStyle='#2e5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // Bloom Rush green GI
   // HUD
