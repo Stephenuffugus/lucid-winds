@@ -258,8 +258,10 @@ var BUMPERS=[
 // slingshots sit inboard above the flippers (classic position) — the old spots
 // (120/410,800) now live INSIDE the outlane channels and would block them.
 var SLINGS=[ {x:208,y:782,r:13,kick:120,sc:60,lit:0}, {x:322,y:782,r:13,kick:120,sc:60,lit:0} ];
-var LFLIP={ px:175,py:842, L:82, r:9, restA:0.50, actA:-0.30, a:0.50, pa:0.50, w:0, up:false };
-var RFLIP={ px:355,py:842, L:82, r:9, restA:Math.PI-0.50, actA:Math.PI+0.30, a:Math.PI-0.50, pa:Math.PI-0.50, w:0, up:false };
+// pivots widened 175/355 -> 170/360 so the CENTER GAP passes a ball cleanly (was 36px < the 40px a
+// r11 ball needs between two r9 flipper tips — the ball couldn't fit and bounced; now ~46px).
+var LFLIP={ px:170,py:842, L:82, r:9, restA:0.50, actA:-0.30, a:0.50, pa:0.50, w:0, up:false };
+var RFLIP={ px:360,py:842, L:82, r:9, restA:Math.PI-0.50, actA:Math.PI+0.30, a:Math.PI-0.50, pa:Math.PI-0.50, w:0, up:false };
 var GROWTH_MAX=22;
 
 /* ===== SHOTS — the lit-insert shot vocabulary (P1 depth) =====
@@ -457,13 +459,17 @@ function physics(dt){
   }
   // trails
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(!b.trail)b.trail=[]; b.trail.push({x:b.x,y:b.y}); if(b.trail.length>6)b.trail.shift(); }
-  // anti-stuck: no bead may be held forever in a dead pocket (e.g. wedged between a
-  // side standup and the wall). If a LIVE bead barely moves for >0.6s ABOVE the flipper
-  // cradle zone, shake it free toward centre + down. y<790 protects legit flipper cradles.
+  // anti-stuck: no bead may be held forever in a dead pocket (e.g. wedged in the flipper-base/wall
+  // corner, or between a side standup and the wall). Upper field: nudge after 0.6s. Flipper zone
+  // (y>790): only when BOTH flippers are DOWN (so a deliberate held cradle is never disturbed) and
+  // after a longer 1.3s, so a truly-wedged bead by the flipper corner always shakes free.
+  var _flipsDown = !LFLIP.up && !RFLIP.up;
   for(i=0;i<G.balls.length;i++){ b=G.balls[i];
     if(b.inLane||b.captured||b.onRail){ b.still=0; continue; }
-    if(b.vx*b.vx+b.vy*b.vy<300 && b.y<790 && b.y>150){ b.still=(b.still||0)+dt;
-      if(b.still>0.6){ var ndir=(b.x<VW/2)?1:-1; b.vx=ndir*240+(Math.random()-0.5)*80; b.vy=300; b.still=0;
+    var _inZone = (b.y>150 && (b.y<790 || _flipsDown));
+    if(b.vx*b.vx+b.vy*b.vy<300 && _inZone){ b.still=(b.still||0)+dt;
+      var _thr=(b.y>790)?1.3:0.6;
+      if(b.still>_thr){ var ndir=(b.x<VW/2)?1:-1; b.vx=ndir*240+(Math.random()-0.5)*80; b.vy=300; b.still=0;
         burst(b.x,b.y,5,'#7ab356'); float(b.x,b.y-16,'nudge'); sfx('bump',1); }
     } else b.still=0;
   }
@@ -657,7 +663,7 @@ function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
 function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
-  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,256,217,VW-92,VH-150,120,11);
+  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,273,220,VW-92,VH-150,120,11);
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
@@ -1101,7 +1107,7 @@ function boot(){
   (function(){ var cv=$('blip-canvas'); if(!cv||!cv.getContext)return; var bx=cv.getContext('2d');
     var idle=new Image(); idle.src='art/blip_idle.png?v='+PIN_ART.VER;
     var blink=new Image(); blink.src='art/blip_blink.png?v='+PIN_ART.VER;
-    var IW=273,IH=220,IN=6, BW=210,BH=209,BN=3, t0=null, nextBlink=2.5, bStart=-1;
+    var IW=273,IH=220,IN=6, BW=273,BH=220,BN=3, t0=null, nextBlink=2.5, bStart=-1;
     function frame(ts){ requestAnimationFrame(frame); if(!t0)t0=ts; var t=(ts-t0)/1000;
       if(cv.offsetParent===null)return;                          // only while the title is showing
       bx.clearRect(0,0,cv.width,cv.height); var img,cw,ch,fr;
