@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='13' height='13' rx='3' fill='%235b9bd5'/%3E%3Crect x='17' y='2' width='13' height='13' rx='3' fill='%235b9bd5'/%3E%3Crect x='2' y='17' width='13' height='13' rx='3' fill='%23e0a843'/%3E%3Crect x='17' y='17' width='13' height='13' rx='3' fill='%23d8607a'/%3E%3C/svg%3E">
-<title>Merge &amp; Blast — Sky Wolf Studios</title>
+<title>Merge &amp; Blast · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"mergeblast"}).catch(function(){});</script>
@@ -124,8 +124,10 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
     <div style="font-size:44px" id="go-emoji">💥</div>
     <div class="go-score" id="go-score">0</div>
     <div class="go-lab" id="go-lab">points</div>
-    <div class="pill" id="go-best">Best 0</div>
-    <div class="pill" id="go-big" style="margin-left:8px">Biggest 2</div>
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:nowrap">
+      <div class="pill" id="go-best">Best 0</div>
+      <div class="pill" id="go-big">Biggest 2</div>
+    </div>
     <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--hot)"></div>
     <div style="flex:1"></div>
     <div class="stack">
@@ -142,6 +144,9 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
 (function(){
 "use strict";
 var BUILD="v1.0";
+/* ---------- sunbeam earn hook (30/day cap) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0; try{ var k='sw_sb_mergeblast'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){} var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0; s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){} if(granted>0&&window.Sunbeam&&Sunbeam.earn)Sunbeam.earn(granted,tag)['catch'](function(){}); return granted; };
+
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -428,7 +433,7 @@ function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.le
 function shareIt(){
   var txt = G.mode==='daily'
     ? 'Merge & Blast Daily #'+dayNum()+'\n'+G.score.toLocaleString()+' pts · biggest '+labelOf(G.bigE)+' 💥\nCan you beat it?'
-    : 'Merge & Blast — '+G.score.toLocaleString()+' pts, biggest tile '+labelOf(G.bigE)+' 💥';
+    : 'Merge & Blast · '+G.score.toLocaleString()+' pts, biggest tile '+labelOf(G.bigE)+' 💥';
   var url='https://lucidwinds.com/satellites/merge-blast/';
   try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
   try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}

@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Doodle Pad">
-<title>Doodle Pad — Sky Wolf Studios</title>
+<title>Doodle Pad · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"doodlepad"}).catch(function(){});</script>
 <style>
@@ -58,6 +58,13 @@ h2.sc-h{font-size:32px; color:var(--sage); font-weight:800; margin-bottom:6px}
 .canvas-wrap{flex:none; width:540px; height:500px; position:relative; display:flex; align-items:center; justify-content:center; background:#05070a}
 #draw-cv{display:block; width:540px; height:500px; touch-action:none; cursor:crosshair; background:#ffffff}
 .tools{flex:1; display:flex; flex-direction:column; gap:8px; padding:8px 10px 10px; background:#0c1109; border-top:1px solid var(--line); overflow:hidden}
+.strip-wrap{position:relative}
+.strip-wrap::after{content:''; position:absolute; top:0; right:0; bottom:2px; width:30px; pointer-events:none;
+  background:linear-gradient(90deg, rgba(12,17,9,0) 0%, rgba(12,17,9,.85) 70%, #0c1109 100%); border-radius:0 12px 12px 0}
+.strip-wrap.at-end::after{opacity:0}
+.strip-wrap::before{content:'\203A'; position:absolute; top:50%; right:6px; transform:translateY(-50%); z-index:2;
+  color:var(--gold); font-size:22px; font-weight:800; pointer-events:none; text-shadow:0 0 6px #000}
+.strip-wrap.at-end::before{opacity:0}
 .strip{display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; padding-bottom:2px}
 .brush-btn{flex:0 0 auto; width:58px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 3px; border:1px solid var(--line); border-radius:12px; background:#12190f; cursor:pointer}
 .brush-btn.on{border-color:var(--gold); background:#1c2411; box-shadow:0 0 0 1px var(--gold)}
@@ -103,7 +110,7 @@ h2.sc-h{font-size:32px; color:var(--sage); font-weight:800; margin-bottom:6px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to use</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Pick a brush</b> from the row of tools. Pen and marker make smooth lines. Pencil and crayon add grain. Spray mists color. Glitter, Stars, Hearts, Bloom, and Flutter stamp a fun trail as you drag.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Pick a brush</b> from the row of tools. Pen and marker make smooth lines. Pencil and crayon add grain. Spray mists color. Glitter, Stars, Hearts, Bloom, and Flutter stamp a fun trail as you drag. The <b>Eraser</b> rubs your art away. The row scrolls sideways, so swipe it left to reach every tool.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b>Pick a size.</b> The dots go from fine to thick. A bigger dot means a bigger brush.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Pick a color</b> from the palette, or tap the <b class="hl">rainbow</b> swatch to mix your own exact color.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Draw</b> right on the pad with your finger or mouse. Lines smooth out on their own.</div></div>
@@ -126,7 +133,7 @@ h2.sc-h{font-size:32px; color:var(--sage); font-weight:800; margin-bottom:6px}
     </div>
     <div class="canvas-wrap"><canvas id="draw-cv"></canvas></div>
     <div class="tools">
-      <div class="strip" id="brush-strip"></div>
+      <div class="strip-wrap" id="strip-wrap"><div class="strip" id="brush-strip"></div></div>
       <div class="rowline" id="size-row"></div>
       <div class="pal" id="palette"></div>
       <div class="rowline">
@@ -402,15 +409,20 @@ function buildBrushStrip(){ var host=$('brush-strip'); host.innerHTML=''; previe
     btn.addEventListener('click',function(e){ e.preventDefault(); selectBrush(b.key); });
     host.appendChild(btn); previews.push({cnv:cnv,brush:b}); paintPreview(cnv,b);
   })(BRUSHES[i]); } }
+function updateStripFade(){ var st=$('brush-strip'), wp=$('strip-wrap'); if(!st||!wp)return;
+  var atEnd=(st.scrollLeft+st.clientWidth)>=(st.scrollWidth-2);
+  if(atEnd)wp.classList.add('at-end'); else wp.classList.remove('at-end'); }
+(function(){ var st=$('brush-strip'); if(st)st.addEventListener('scroll',updateStripFade); })();
 function selectBrush(k){ state.brush=k; saveSet();
   var els=document.querySelectorAll('.brush-btn'); for(var i=0;i<els.length;i++){ if(els[i].getAttribute('data-k')===k)els[i].classList.add('on'); else els[i].classList.remove('on'); } }
 
+var SIZE_DISP=[4,9,15,22,30];
 function buildSizeRow(){ var host=$('size-row'); host.innerHTML='';
-  for(var i=0;i<SIZES.length;i++){ (function(sz){ var btn=document.createElement('div');
+  for(var i=0;i<SIZES.length;i++){ (function(sz,idx){ var btn=document.createElement('div');
     btn.className='size-btn'+(state.size===sz?' on':''); btn.setAttribute('data-s',sz);
-    var dot=document.createElement('div'); dot.className='size-dot'; var d=Math.max(5,Math.min(30,sz)); dot.style.width=d+'px'; dot.style.height=d+'px';
+    var dot=document.createElement('div'); dot.className='size-dot'; var d=SIZE_DISP[idx]||Math.max(4,Math.min(30,sz)); dot.style.width=d+'px'; dot.style.height=d+'px';
     btn.appendChild(dot); btn.addEventListener('click',function(e){ e.preventDefault(); setSize(sz); });
-    host.appendChild(btn); })(SIZES[i]); } }
+    host.appendChild(btn); })(SIZES[i],i); } }
 function setSize(sz){ state.size=sz; saveSet(); var els=document.querySelectorAll('.size-btn');
   for(var i=0;i<els.length;i++){ if(parseInt(els[i].getAttribute('data-s'),10)===sz)els[i].classList.add('on'); else els[i].classList.remove('on'); } }
 
@@ -452,7 +464,7 @@ window.addEventListener('keydown',function(e){ if(curScreen!=='s-draw')return;
 
 /* ---------- init UI ---------- */
 initDrawCanvas();
-buildBrushStrip(); buildSizeRow(); buildPalette();
+buildBrushStrip(); buildSizeRow(); buildPalette(); updateStripFade();
 $('col-pick').value=/^#[0-9a-fA-F]{6}$/.test(state.color)?state.color:'#2b2b2b';
 $('bg-pick').value=/^#[0-9a-fA-F]{6}$/.test(state.bg)?state.bg:'#ffffff';
 $('bg-chip').style.background=state.bg;

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230e1018'/%3E%3Crect x='7' y='7' width='18' height='18' rx='3' fill='none' stroke='%234ac8b4' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' rx='2' fill='none' stroke='%23e0a843' stroke-width='2'/%3E%3Crect x='14.5' y='14.5' width='3' height='3' fill='%23ffd76a'/%3E%3C/svg%3E">
-<title>Ring Stacker — Sky Wolf Studios</title>
+<title>Ring Stacker · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
@@ -114,9 +114,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top.</b> Move with ◀ ▶, spin the piece with ⟳ (or tap the board), nudge down with ▼.</div></div>
-    <div class="helprow"><div class="hi">2</div><div>Your goal is to build <b style="color:var(--teal)">square rings</b> around the golden core, not rows. Fill every cell of a ring and it <b>erases</b> — and everything outside crushes inward one ring. Chains score big.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly — and spins the whole gyre a quarter turn as it lands. Set a piece down gently and nothing spins. Slam to swing a gap around to where the next piece can reach it.</div></div>
-    <div class="helprow"><div class="hi">4</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends — topping out just clears the sky.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Your goal is to build <b style="color:var(--teal)">square rings</b> around the golden core, not rows. Fill every cell of a ring and it <b>erases</b>, and everything outside crushes inward one ring. Chains score big.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly and spins the whole gyre a quarter turn as it lands. Set a piece down gently and nothing spins. Slam to swing a gap around to where the next piece can reach it.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends. Topping out just clears the sky.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -141,6 +141,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="pill" id="go-best">Best 0</div>
     <div class="pill" id="go-rings" style="margin-left:8px">Rings 0</div>
     <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
+    <div id="go-hint" style="display:none;margin:14px auto 0;max-width:360px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:#0d1220;font-size:15px;line-height:1.5;color:var(--ink)"></div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="go-retry">↻ Again</button>
@@ -396,6 +397,13 @@ function endRun(){
   $('go-best').textContent = (nb?'★ New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
   $('go-rings').textContent = 'Rings '+G.rings+(G.chainBest>1?' · chain x'+G.chainBest:'');
   $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
+  var hint=$('go-hint');
+  if(hint){
+    var showHint=false;
+    if(G.mode==='journey'&&G.rings===0&&LS.g('rs_ziphint')!=='1'){ showHint=true; LS.s('rs_ziphint','1'); }
+    if(showHint){ hint.innerHTML='Tip: fill a whole square ring around the golden core to clear it. Try <b style="color:var(--teal)">Zen</b> from the menu to practice with no game over.'; hint.style.display='block'; }
+    else hint.style.display='none';
+  }
   show('s-go');
 }
 
@@ -560,7 +568,7 @@ function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.le
 function shareIt(){
   var txt = G&&G.mode==='daily'
     ? 'Ring Stacker Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
-    : 'Ring Stacker — '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
+    : 'Ring Stacker · '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
   var url='https://lucidwinds.com/satellites/ring-stacker/';
   try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
   try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}

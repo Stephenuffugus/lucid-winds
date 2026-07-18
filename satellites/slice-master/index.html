@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%2312101a'/%3E%3Cpath d='M6 22 L22 6 L26 10 L10 26 Z' fill='%23cfd6e4'/%3E%3Cpath d='M6 22 L10 26 L8 28 L4 24 Z' fill='%238a5a2e'/%3E%3C/svg%3E">
-<title>Super Slice — Sky Wolf Studios</title>
+<title>Super Slice · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"superslice"}).catch(function(){});</script>
 <style>
@@ -662,7 +662,7 @@ function buildShop(){
 }
 function shareIt(){
   var total=$('go-score').textContent;
-  var txt = 'Super Slice Daily #'+dayNum()+' — $'+total+', stuck the ×'+(G?G.mult:1)+' notch 🔪';
+  var txt = 'Super Slice Daily #'+dayNum()+': $'+total+', stuck the ×'+(G?G.mult:1)+' notch 🔪';
   var url='https://lucidwinds.com/satellites/slice-master/';
   try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
   try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}
@@ -719,6 +719,24 @@ $('buildstamp').textContent='Super Slice '+BUILD+' · level '+PROG.level+' · be
 /* portal exit (smart back) */
 window.SWS_EXIT=function(){ if(/[?&]embed=1(&|$)/.test(location.search)&&window.parent!==window){ try{ window.parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
   if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+
+/* shared-economy earn hook (30/day cap, then Sunbeam.earn) */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{
+    var k='sw_sb_superslice', s={};
+    try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5);
+    if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0)));
+    if(n<=0) return 0;
+    s.n=(s.n||0)+n;
+    localStorage.setItem(k,JSON.stringify(s));
+    granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam && Sunbeam.earn){ try{ Sunbeam.earn(granted,tag)['catch'](function(){}); }catch(e){} }
+  return granted;
+};
 
 /* embedded back handshake */
 (function(){

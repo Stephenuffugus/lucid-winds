@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Garden Climb">
-<title>Garden Climb — Snakes &amp; Ladders</title>
+<title>Garden Climb: Snakes &amp; Ladders</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"snakesladders"}).catch(function(){});</script>
 <style>
@@ -282,7 +282,7 @@ function onWin(){ PROG.games++; var amt=0;
   if(G.mode==='2p'){ $('go-title').textContent=wname+' wins!'; $('go-sub').textContent='The other gardener will get you next time.'; }
   else if(G.winner===0){ $('go-title').textContent='You reached the top!'; $('go-sub').textContent='You climbed the garden and beat the computer.'; }
   else { $('go-title').textContent='The computer wins.'; $('go-sub').textContent='Close race. Tap Rematch to try again.'; }
-  $('go-lab').textContent='winner · '+G.turns+' turns';
+  $('go-lab').textContent='winner · '+G.turns+(G.turns===1?' turn':' turns');
   $('go-best').textContent='games played '+PROG.games;
   $('go-sun').textContent = granted>0?('☀ +'+granted+' sunbeams'):(G.mode==='vs'&&G.winner===1?'no sunbeams this game':'☀ no sunbeams left today');
   running=false; show('s-go');
@@ -360,17 +360,17 @@ function drawSnake(head,tail){ var H=squareCenter(head), T=squareCenter(tail);
   function pt(i){ var t=i/N; var bx=H.x+dx*t, by=H.y+dy*t; var s=Math.sin(t*Math.PI*waves)*amp*(1-t*0.35); return {x:bx+px*s, y:by+py*s}; }
   ctx.lineCap='round'; ctx.lineJoin='round';
   // dark outline body
-  ctx.strokeStyle='rgba(30,60,30,0.85)'; ctx.lineWidth=10;
+  ctx.strokeStyle='rgba(70,48,18,0.85)'; ctx.lineWidth=10;
   ctx.beginPath(); var p0=pt(0); ctx.moveTo(p0.x,p0.y); for(var i=1;i<=N;i++){ var q=pt(i); ctx.lineTo(q.x,q.y); } ctx.stroke();
-  // green body
-  ctx.strokeStyle='#6fae4e'; ctx.lineWidth=6.5;
+  // olive-brown body (distinct from green trellis ladders)
+  ctx.strokeStyle='#a5852f'; ctx.lineWidth=6.5;
   ctx.beginPath(); ctx.moveTo(p0.x,p0.y); for(var j=1;j<=N;j++){ var q2=pt(j); ctx.lineTo(q2.x,q2.y); } ctx.stroke();
   // belly stripe dots
   ctx.fillStyle='rgba(230,240,190,0.55)';
   for(var d=3;d<N;d+=4){ var qd=pt(d); ctx.beginPath(); ctx.arc(qd.x,qd.y,1.6,0,6.2832); ctx.fill(); }
   // head
-  ctx.fillStyle='#5f9a3c'; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.fill();
-  ctx.strokeStyle='rgba(30,60,30,0.9)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.stroke();
+  ctx.fillStyle='#8f7328'; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.fill();
+  ctx.strokeStyle='rgba(70,48,18,0.9)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.stroke();
   // eyes
   var ex=px*3.4, ey=py*3.4;
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(H.x+ex+ux*2,H.y+ey+uy*2,2.2,0,6.2832); ctx.fill(); ctx.beginPath(); ctx.arc(H.x-ex+ux*2,H.y-ey+uy*2,2.2,0,6.2832); ctx.fill();

@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mouse Trap">
-<title>Mouse Trap — Sky Wolf Studios</title>
+<title>Mouse Trap · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"mousetrap"}).catch(function(){});</script>
 <style>
@@ -220,7 +220,7 @@ var G=null, running=false, lastTs=0, curScreen='s-title', pendingMode=null;
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
 function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
 
-var HEDGE_COUNT={ easy:24, medium:14, hard:8, zen:30, daily:13, empty:0 };
+var HEDGE_COUNT={ easy:24, medium:18, hard:8, zen:30, daily:13, empty:0 };
 function startGame(mode, seedOverride){
   var seed = (seedOverride!=null)?seedOverride
            : (mode==='daily'? dateSeed()
@@ -259,7 +259,7 @@ function computeDist(){ var dist=[], q=[], head=0, i, r, c;
       if(G.grid[ni]!==HEDGE && dist[ni]===INF){ dist[ni]=dist[cur]+1; q.push(ni); } } }
   return dist;
 }
-/* recompute the cell the mouse would flee to (for the glow + AI) */
+/* recompute the cell the mouse would flee to (for the glow + mouse move) */
 function telegraph(){ if(!G)return; var dist=computeDist(); G.dist=dist; var mi=idx(G.mr,G.mc); G.mouseDist=dist[mi];
   var nb=neighbors(G.mr,G.mc), best=null, bd=INF, i;
   for(i=0;i<nb.length;i++){ var ni=idx(nb[i].r,nb[i].c); if(G.grid[ni]===HEDGE)continue; if(dist[ni]<bd){ bd=dist[ni]; best=nb[i]; } }
@@ -449,7 +449,7 @@ function drawHUD(){
   var modeLabel = G.mode==='zen'?'Zen':G.mode==='daily'?'Daily Patch':G.mode==='easy'?'Easy':G.mode==='hard'?'Hard':'New Garden';
   ctx.fillStyle='#8a9178'; ctx.font='700 13px system-ui'; ctx.fillText(modeLabel+'  ·  hedges planted: '+G.moves, VW/2, 56);
   if(G.phase==='play'){ ctx.fillStyle='#a8b294'; ctx.font='600 15px system-ui'; ctx.fillText('Tap an empty tile to plant a hedge.', VW/2, 92);
-    ctx.fillStyle='#c8a84b'; ctx.font='600 14px system-ui'; ctx.fillText(G.nextTarget?'The mouse will run toward the glowing tile.':'No escape route — one more hedge!', VW/2, 114);
+    ctx.fillStyle='#c8a84b'; ctx.font='600 14px system-ui'; ctx.fillText(G.nextTarget?'The mouse will run toward the glowing tile.':'No escape route left, one more hedge!', VW/2, 114);
   } else if(G.phase==='win'){ ctx.fillStyle='#8ec462'; ctx.font='800 18px system-ui'; ctx.fillText('Trapped!', VW/2, 104);
   } else if(G.phase==='lose'){ ctx.fillStyle='#e0894a'; ctx.font='800 18px system-ui'; ctx.fillText('It escaped!', VW/2, 104); }
   hudBtn(HB_MENU,'‹'); hudBtn(HB_HELP,'?'); hudBtn(HB_RETRY,'↻');

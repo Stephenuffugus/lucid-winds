@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%23efe6d0'/%3E%3Ccircle cx='7' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='13' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='19' cy='5' r='2' fill='%238d94a8'/%3E%3Ccircle cx='25' cy='5' r='2' fill='%238d94a8'/%3E%3Cpath d='M9 22 Q14 12 22 18' stroke='%232a2438' stroke-width='2' fill='none'/%3E%3C/svg%3E">
-<title>Flipbook — Sky Wolf Studios</title>
+<title>Flipbook · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"flipbook"}).catch(function(){});</script>
 <style>
@@ -55,7 +55,19 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
   display:flex; align-items:center; justify-content:center; cursor:pointer}
 .wdot.on{border-color:var(--gold)}
 .wdot i{display:block; border-radius:50%; background:var(--ink)}
-#hint{text-align:center; color:var(--muted); font-size:11.5px; padding-top:2px}
+#hint{text-align:center; color:var(--muted); font-size:14px; line-height:1.35; padding-top:2px}
+/* directions overlay */
+#helppanel{position:absolute; inset:0; z-index:70; display:none; background:rgba(10,8,6,0.94); padding:18px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch}
+#helppanel.on{display:block}
+.hp-card{max-width:500px; margin:0 auto; background:var(--panel); border:1px solid var(--gold); border-radius:16px; padding:18px 18px 16px}
+.hp-title{font-weight:800; color:var(--gold); font-size:22px; margin-bottom:8px}
+.hp-goal{font-size:16px; color:var(--ink); margin-bottom:12px}
+.hp-steps{margin:0 0 14px 22px; font-size:16px; line-height:1.5}
+.hp-steps li{margin-bottom:8px}
+.hp-sub{font-weight:800; color:var(--gold); font-size:16px; margin:4px 0 8px}
+.hp-keys{list-style:none; margin:0 0 16px 0; font-size:15px; line-height:1.5}
+.hp-keys li{margin-bottom:8px; color:var(--ink)}
+#hp-close{width:100%; height:50px; font-size:17px}
 #onionFirst{opacity:0.30; pointer-events:none}
 /* cinema mode: chrome melts away, the book fills the stage on black */
 #stage.cinema{background:#000}
@@ -94,7 +106,7 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
     <button class="tbtn" id="b-prev" aria-label="Previous page">‹</button>
     <button class="tbtn" id="b-next" aria-label="Next page">›</button>
     <button class="tbtn" id="b-onion" aria-label="Onion skin">👻</button>
-    <button class="tbtn" id="b-first" aria-label="Show page one as a ghost" title="Ghost of page 1 — line up your loop">1</button>
+    <button class="tbtn" id="b-first" aria-label="Show page one as a ghost" title="Ghost of page 1. Line up your loop">1</button>
     <button class="tbtn" id="b-fps" aria-label="Frames per second">8fps</button>
     <button class="tbtn" id="b-cinema" aria-label="Cinema mode">⛶</button>
     <button class="tbtn gold" id="b-play" aria-label="Play the flipbook">▶</button>
@@ -111,8 +123,33 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
   <div id="cinemachip">tap anywhere to leave the cinema</div>
   <div id="busychip">EXPORTING…</div>
 
+  <div id="helppanel">
+    <div class="hp-card">
+      <div class="hp-title">📓 How to make a flipbook</div>
+      <div class="hp-goal">Goal: draw a little cartoon that moves.</div>
+      <ol class="hp-steps">
+        <li>Draw a picture on the page.</li>
+        <li>Tap the › arrow to flip to the next page. Your last drawing shows through faint so you can trace the next pose.</li>
+        <li>Move your drawing a tiny bit on each new page.</li>
+        <li>Press ▶ to play all your pages in a loop.</li>
+      </ol>
+      <div class="hp-sub">What the buttons do</div>
+      <ul class="hp-keys">
+        <li>👻 Onion skin: see the page just before this one, faintly.</li>
+        <li>1: show page one as a blue ghost so you can line up a smooth loop.</li>
+        <li>8fps: how fast it plays. Tap to change the speed.</li>
+        <li>⛶ Cinema: play big on a full black screen.</li>
+        <li>🎙 Voice: record yourself talking over the cartoon.</li>
+        <li>📤 Export saves it as a video. ↗ Share sends it to a friend.</li>
+        <li>☀ Daily: start with today's surprise drawing to trace.</li>
+        <li>◻ Erase, ✕ Page clears the page, 📓 New starts a fresh book.</li>
+      </ul>
+      <button class="tbtn gold" id="hp-close">Got it</button>
+    </div>
+  </div>
+
   <div id="voicepanel">
-    <div style="font-weight:800; color:var(--gold); font-size:15px; margin-bottom:4px">🎙 Voices <span style="color:var(--muted);font-weight:600;font-size:11px">— recording plays your flipbook so you can act along</span></div>
+    <div style="font-weight:800; color:var(--gold); font-size:15px; margin-bottom:4px">🎙 Voices <span style="color:var(--muted);font-weight:600;font-size:12px">Recording plays your flipbook so you can act along</span></div>
     <div class="vslot" id="vslot0">
       <span class="vlab">Voice 1</span>
       <button class="vbtn rec" data-v="0" data-act="rec">● Rec</button>
@@ -142,6 +179,7 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
     </div>
     <div class="trow">
+      <button class="tbtn" id="b-help" aria-label="How to use Flipbook">? Help</button>
       <button class="tbtn" id="b-voice" aria-label="Record voices">🎙 Voice</button>
       <button class="tbtn" id="b-export" aria-label="Export as a video">📤 Export</button>
       <button class="tbtn" id="b-share" aria-label="Share your flipbook">↗ Share</button>
@@ -305,7 +343,7 @@ $('b-prev').addEventListener('click',function(){ go(cur-1); });
 $('b-next').addEventListener('click',function(){ go(cur+1); });
 $('b-onion').addEventListener('click',function(){ onionOn=!onionOn; showPage(); save(); });
 $('b-first').addEventListener('click',function(){ firstOn=!firstOn;
-  if(firstOn&&cur===0)toastHint('Page 1 ghost shows on later pages — flip ahead and line up your loop.');
+  if(firstOn&&cur===0)toastHint('Page 1 ghost shows on later pages. Flip ahead and line up your loop.');
   showPage(); save(); });
 $('b-fps').addEventListener('click',function(){ fpsIdx=(fpsIdx+1)%fpsOptions.length; showPage(); save(); });
 $('b-clear').addEventListener('click',function(){ blankPage(pageX); commitPage(); });
@@ -533,6 +571,10 @@ $('b-daily').addEventListener('click', startDaily);
 
 $('b-home').addEventListener('click',function(){ SWS_EXIT(); });
 
+/* ---------- directions ---------- */
+$('b-help').addEventListener('click',function(){ $('helppanel').classList.add('on'); });
+$('hp-close').addEventListener('click',function(){ $('helppanel').classList.remove('on'); });
+
 /* ---------- voices (up to two mic tracks that play with the animation) ---------- */
 var voices=[null,null];        // {d:dataURL, s:seconds}
 var voiceEls=[null,null];      // <audio> elements during playback
@@ -571,7 +613,7 @@ function startRec(i){
       fr.onload=function(){
         voices[i]={ d:fr.result, s:secs };
         try{ localStorage.setItem('fb_voice'+i, JSON.stringify(voices[i])); }
-        catch(e){ toastHint('That voice take is too big to keep saved — it will last this visit.'); }
+        catch(e){ toastHint('That voice take is too big to keep saved. It will last this visit.'); }
         recState=null; voiceStat(); paintRecBtns();
         if(playing)stopPlay();
       };
@@ -817,6 +859,15 @@ $('b-erase').addEventListener('click',function(){
 });
 
 /* ---------- sunbeams for sustained animating (creative-tool standard) ---------- */
+// Standard capped earn helper (matches doodle-pad / budburst / mouse-trap): 30/day cap.
+window._sbCapEarn=window._sbCapEarn||function(n,tag){
+  var d=Math.floor(Date.now()/864e5), used=0, k='sw_sb_flipbook';
+  try{ var s=JSON.parse(localStorage.getItem(k)||'{}'); if(s.d===d)used=s.n||0; }catch(e){}
+  n=Math.min(n, Math.max(0, 30-used));
+  if(n<=0)return;
+  try{ localStorage.setItem(k, JSON.stringify({d:d,n:used+n})); }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn)Sunbeam.earn(n,tag)['catch'](function(){});
+};
 sunTimer=setInterval(function(){
   if(!drawnThisSession)return;
   drawTicks++; drawnThisSession=false;
@@ -835,6 +886,8 @@ window.SWS_EXIT=function(){ if(/[?&]embed=1(&|$)/.test(location.search)&&window.
 /* ---------- boot ---------- */
 load();
 showPage();
+// show the directions the very first time this device opens Flipbook
+try{ if(!localStorage.getItem('fb_helpseen')){ $('helppanel').classList.add('on'); localStorage.setItem('fb_helpseen','1'); } }catch(e){}
 
 /* ---------- dev hook ---------- */
 if(/[?&]fbtest=1/.test(location.search)){

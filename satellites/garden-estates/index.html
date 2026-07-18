@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Garden Estates">
-<title>Garden Estates — Sky Wolf Studios</title>
+<title>Garden Estates · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"gardenestates"}).catch(function(){});</script>
 <style>
@@ -224,7 +224,7 @@ var SPACES=[
 /*24*/ TX('Fertilizer Fee',75),
 /*25*/ ST('West Seed Cart','W'),
 /*26*/ P('Fern Conservatory','FRN','estate',300,[26,130,390,900,1275,1500],200),
-/*27*/ P('Palm Conservatory','PLM2','estate',320,[28,150,450,1000,1300,1560],200)
+/*27*/ P('Palm Conservatory','PALM','estate',320,[28,150,450,1000,1300,1560],200)
 ];
 /* group member indices */
 var GMEM={}; (function(){ for(var g in GROUPS){ GMEM[g]=[]; } for(var i=0;i<N;i++){ var s=SPACES[i]; if(s.t==='prop')GMEM[s.group].push(i); } })();
@@ -327,11 +327,13 @@ function payMoney(pi, amount, toIdx){
 
 /* ---------- toast / log ---------- */
 function toast(msg,sub){ G.msg=msg; G.sub=sub||''; G.log.push(msg); if(G.log.length>5)G.log.shift(); }
+function verbFor(p,verb){ return (p.name==='You') ? ('You are '+verb) : (p.name+' is '+verb); }
+function turnLabel(p){ return (p.name==='You') ? 'Your turn' : (p.name+"'s turn"); }
 
 /* ---------- turn engine (animated) ---------- */
 function enterIdle(){ G.phase='idle'; if(cpu(G.cur))G.pre=0.5; }
 function startTurn(){ var p=G.players[G.cur]; if(!p.alive){ endTurn(); return; } p.consec=0; G.turnNo++; G.gotDouble=false;
-  toast(p.name+"'s turn"); enterIdle(); }
+  toast(turnLabel(p)); enterIdle(); }
 function waitThen(sec,fn){ G.phase='wait'; G.pre=sec; G._after=fn; }
 function endPhaseFor(pi){ if(cpu(pi)){ cpuBuild(pi); waitThen(0.55,endTurn); } else { G.phase='turnend'; } }
 function endTurn(){ if(checkWin())return; var n=G.players.length, i=G.cur, tries=0;
@@ -629,10 +631,10 @@ function drawBottom(){
     return;
   }
   // computer / animation: status
-  var st = (G.phase==='rolling')?G.players[G.cur].name+' is rolling...' :
-           (G.phase==='moving')?G.players[G.cur].name+' is moving...' :
+  var st = (G.phase==='rolling')?verbFor(G.players[G.cur],'rolling...') :
+           (G.phase==='moving')?verbFor(G.players[G.cur],'moving...') :
            (G.phase==='cardshow')?'Drawing a card...' :
-           (G.players[G.cur].name+' is thinking...');
+           verbFor(G.players[G.cur],'thinking...');
   ctx.fillStyle='rgba(15,21,12,0.6)'; fillRR(PRIMARY.x,PRIMARY.y,PRIMARY.w,PRIMARY.h,16);
   txt(st, VW/2, PRIMARY.y+PRIMARY.h/2+5, '700 15px system-ui', '#8a9178','center');
 }
