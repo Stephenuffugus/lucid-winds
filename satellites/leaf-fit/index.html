@@ -42,10 +42,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:14px 0; font-size:19px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
 .toggle.on{background:var(--deep)}
@@ -76,21 +76,21 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Leaf Fit</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Drag leaf sprigs onto the midnight trellis. Fill a whole <b class="hl">row</b>, <b class="hl">column</b>, or <b class="hl">3×3 patch</b> and it clears in a shower of pollen. Bank enough pollen and a <b class="hl">Bloom</b> saves you when the bed fills up — you only ever lose to your own play.</div>
+    <div class="ribbon">Drag leaf sprigs onto the midnight trellis. Fill a whole <b class="hl">row</b>, <b class="hl">column</b>, or <b class="hl">3×3 patch</b> and it clears in a shower of pollen. Bank enough pollen and a <b class="hl">Bloom</b> saves you when the bed fills up. You only ever lose to your own play. Tap a sprig to turn it.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-run">🌿&nbsp; Bloom Run</button>
+      <button class="btn primary" id="b-run">Bloom Run</button>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily Trellis</button>
-        <button class="btn sm" id="b-gaunt">🏵 Gauntlet</button>
+        <button class="btn sm" id="b-daily">Daily Trellis</button>
+        <button class="btn sm" id="b-gaunt">Gauntlet</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-zen">🍃 Zen Trellis</button>
-        <button class="btn sm" id="b-grove">🌼 Grove</button>
+        <button class="btn sm" id="b-zen">Zen Trellis</button>
+        <button class="btn sm" id="b-grove">Grove</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
-        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-ward">Wardrobe</button>
+        <button class="btn sm" id="b-how">How to Play</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
     </div>
@@ -100,11 +100,12 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">👆</div><div><b>Drag a sprig</b> from the tray onto the trellis. A ghost shows where it lands; green means a line will clear.</div></div>
-    <div class="helprow"><div class="hi">🟩</div><div>Fill any full <b>row</b>, <b>column</b>, or <b class="hl">3×3 patch</b> to clear it. Clear several at once for a bigger <b>combo</b>.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>Cleared leaves drift into <b class="hl">Nectar</b>. When it's full, tap <b>Bloom</b> to deal three fresh sprigs — recovery you earned, never bought.</div></div>
-    <div class="helprow"><div class="hi">🍂</div><div>No timer, no ads. The bed fills up only when nothing fits and your Nectar is empty. Play smart and the run never has to end.</div></div>
-    <div class="helprow"><div class="hi">🌼</div><div>Good runs grow keepsake flowers into your <b class="hl">Grove</b> and pay sunbeams.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Drag a sprig</b> from the tray onto the trellis. A ghost shows where it lands; green means a line will clear.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>Tap a sprig</b>, or the <b class="hl">⟳ Rotate</b> button, to turn it a quarter turn before you plant it.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>Fill any full <b>row</b>, <b>column</b>, or <b class="hl">3×3 patch</b> to clear it. Clear several at once for a bigger <b>combo</b>.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Cleared leaves drift into <b class="hl">Nectar</b>. When it's full, tap <b>Bloom</b> to deal three fresh sprigs. Recovery you earned, never bought.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>No countdown and no ads. A small clock under your score just counts your time. The bed only fills when nothing fits and your Nectar is empty.</div></div>
+    <div class="helprow"><div class="hi">6</div><div>Good runs grow keepsake flowers into your <b class="hl">Grove</b> and pay sunbeams.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -240,6 +241,10 @@ var PIECES=[
 ];
 var PW=0; for(var _i=0;_i<PIECES.length;_i++){ var p=PIECES[_i]; var mr=0,mc=0; for(var _j=0;_j<p.c.length;_j++){ if(p.c[_j][0]>mr)mr=p.c[_j][0]; if(p.c[_j][1]>mc)mc=p.c[_j][1]; } p.rows=mr+1; p.cols=mc+1; p.n=p.c.length; PW+=p.w; }
 function pickPiece(rng){ var r=rng()*PW; for(var i=0;i<PIECES.length;i++){ r-=PIECES[i].w; if(r<=0)return PIECES[i]; } return PIECES[0]; }
+function rotatePieceObj(p){ var cells=[],i,mr=0; for(i=0;i<p.c.length;i++){ if(p.c[i][0]>mr)mr=p.c[i][0]; }
+  for(i=0;i<p.c.length;i++){ cells.push([p.c[i][1], mr-p.c[i][0]]); }
+  var q={w:p.w, c:cells}; var r2=0,c2=0; for(i=0;i<cells.length;i++){ if(cells[i][0]>r2)r2=cells[i][0]; if(cells[i][1]>c2)c2=cells[i][1]; }
+  q.rows=r2+1; q.cols=c2+1; q.n=cells.length; return q; }
 
 /* ---------- audio ---------- */
 var AC=null;
@@ -284,7 +289,7 @@ function idx(r,c){ return r*BN+c; }
 function startGame(mode){
   var rng = mode==='daily'?mulberry32(dateSeed()) : (mode==='gauntlet'?mulberry32(dateSeed()*7+91) : mulberry32(Math.floor(Math.random()*1e9)));
   G={ mode:mode, rng:rng, grid:[], tray:[null,null,null], score:0, combo:0, bestCombo:0, clears:0, placed:0,
-    nectar:0, phase:'play', t:0, parts:[], floats:[], drag:null, ghost:null, season:(mode==='daily'?dateSeed()%4:Math.floor(Math.random()*4)),
+    nectar:0, phase:'play', t:0, sel:0, parts:[], floats:[], drag:null, ghost:null, season:(mode==='daily'?dateSeed()%4:Math.floor(Math.random()*4)),
     grew:0, sunAmt:0, rescueGlow:0, glowT:0 };
   for(var i=0;i<BN*BN;i++)G.grid[i]=0;
   // gauntlet: pre-fill leaf-litter + start with less nectar headroom
@@ -495,6 +500,7 @@ function drawSym(cx,cy,kind){ ctx.fillStyle='rgba(20,25,15,0.85)'; ctx.strokeSty
 function drawTraySlot(t){ var sw=VW/3, sx=t*sw, piece=G.tray[t];
   ctx.fillStyle='rgba(255,255,255,0.02)'; roundRectFill(sx+8,TRAY_Y,sw-16,TRAY_H,12);
   if(!piece){ return; }
+  if(G.sel===t && piece){ ctx.strokeStyle='rgba(232,220,200,0.28)'; ctx.lineWidth=1.5; rr(sx+8,TRAY_Y,sw-16,TRAY_H,12); ctx.stroke(); }
   if(G.drag && G.drag.slot===t)return; // being dragged, drawn at pointer
   var pw=piece.cols*TCELL, ph=piece.rows*TCELL;
   var ox=sx+sw/2-pw/2, oy=TRAY_Y+TRAY_H/2-ph/2;
@@ -515,17 +521,27 @@ function drawNectar(){ var x=VW-20, y0=TRAY_Y, h=TRAY_H;
   if(G.nectar>=NECT_MAX){ ctx.globalAlpha=0.4+0.4*Math.sin(G.glowT*6); ctx.fillStyle='#ffe9a8'; roundRectFill(x-6,y0,12,h,6); ctx.globalAlpha=1; }
 }
 var BLOOM_BTN={x:VW/2-70,y:TRAY_Y+TRAY_H+14,w:140,h:46};
+var ROT_BTN={x:24,y:TRAY_Y+TRAY_H+14,w:150,h:46};
 var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
 function drawHUD(){
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 20px system-ui'; ctx.fillText(''+G.score, 64, 32);
+  var mm=Math.floor(G.t/60), ss=Math.floor(G.t%60);
+  ctx.fillStyle='#8a9178'; ctx.font='700 14px system-ui'; ctx.fillText(mm+':'+(ss<10?'0':'')+ss, 64, 52);
+  ctx.textAlign='center'; ctx.fillStyle='#a8b294'; ctx.font='600 15px system-ui';
+  ctx.fillText('Fill a row, column, or 3\u00d73 patch to clear it.', VW/2, 82);
+  ctx.fillText('Tap a sprig, or the Rotate button, to turn it.', VW/2, 104);
   ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui'; ctx.fillText((G.mode==='zen'?'Zen':G.mode==='daily'?'Daily':G.mode==='gauntlet'?'Gauntlet':'Bloom Run')+' · '+SEASONS[G.season].nm, VW-64, 22);
   if(G.combo>1){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 16px system-ui'; ctx.fillText('combo x'+G.combo, VW/2, 30); }
   hudBtn(HB_MENU,'‹'); hudBtn(HB_RETRY,'↻');
+  ctx.fillStyle='rgba(15,21,12,0.85)'; ctx.beginPath(); rr(ROT_BTN.x,ROT_BTN.y,ROT_BTN.w,ROT_BTN.h,14); ctx.fill();
+  ctx.strokeStyle='rgba(122,179,86,0.5)'; ctx.lineWidth=1.5; rr(ROT_BTN.x,ROT_BTN.y,ROT_BTN.w,ROT_BTN.h,14); ctx.stroke();
+  ctx.fillStyle='#cfe0c2'; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('\u27f3 Rotate', ROT_BTN.x+ROT_BTN.w/2, ROT_BTN.y+ROT_BTN.h/2+1); ctx.textBaseline='alphabetic';
   // bloom button (rescue) — visible when ready or when stuck
   var ready=G.nectar>=NECT_MAX;
   if(ready){ var b=BLOOM_BTN; ctx.fillStyle=ready?'rgba(200,168,75,0.9)':'rgba(30,36,20,0.8)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,14); ctx.fill();
     if(G.rescueGlow){ ctx.globalAlpha=0.4+0.3*Math.sin(G.glowT*6); ctx.strokeStyle='#ffe9a8'; ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,14); ctx.stroke(); ctx.globalAlpha=1; }
-    ctx.fillStyle='#241c08'; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🌸 Bloom', b.x+b.w/2, b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+    ctx.fillStyle='#241c08'; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Bloom', b.x+b.w/2, b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 }
 function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 function roundRectFill(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
@@ -551,10 +567,15 @@ function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); va
   if(inBtn(p,HB_MENU)){ sfx('ui'); running=false; show('s-title'); return; }
   if(inBtn(p,HB_RETRY)){ sfx('ui'); startGame(G.mode); return; }
   if(G.nectar>=NECT_MAX && inBtn(p,BLOOM_BTN)){ bloomSwap(); return; }
-  var s=slotAt(p); if(s>=0 && G.tray[s]){ G.drag={ slot:s, piece:G.tray[s], px:p.x, py:p.y }; computeGhost(); }
+  if(inBtn(p,ROT_BTN)){ var rs=(G.sel!=null&&G.tray[G.sel])?G.sel:-1;
+    if(rs<0){ for(var ri=0;ri<3;ri++){ if(G.tray[ri]){ rs=ri; break; } } }
+    if(rs>=0){ G.tray[rs]=rotatePieceObj(G.tray[rs]); G.sel=rs; sfx('ui'); } return; }
+  var s=slotAt(p); if(s>=0 && G.tray[s]){ G.sel=s; G.drag={ slot:s, piece:G.tray[s], px:p.x, py:p.y, sx:p.x, sy:p.y }; computeGhost(); }
 }
 function onMove(e){ if(curScreen!=='s-play'||!G.drag)return; e.preventDefault(); var p=evPos(e); G.drag.px=p.x; G.drag.py=p.y; computeGhost(); }
 function onUp(e){ if(curScreen!=='s-play'||!G.drag)return; e.preventDefault(); var d=G.drag, gh=G.ghost; G.drag=null; G.ghost=null;
+  var tapped=(Math.abs(d.px-d.sx)<12 && Math.abs(d.py-d.sy)<12);
+  if(tapped){ if(G.tray[d.slot]){ G.tray[d.slot]=rotatePieceObj(G.tray[d.slot]); G.sel=d.slot; sfx('ui'); } return; }
   if(gh && gh.valid){ placePiece(d.slot, gh.r, gh.c); } }
 cv.addEventListener('touchstart',onDown,{passive:false});
 cv.addEventListener('touchmove',onMove,{passive:false});
