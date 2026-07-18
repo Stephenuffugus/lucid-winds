@@ -39,8 +39,13 @@ Raw source: `art-drop/Pinball claymation/` (22 sheets + `PROMPTS.txt`). Re-cut a
   wizard flash/ring is already covered by the MEGA MASH animation.)
 - **UI plates/DMD frame** (rest of sheet 11) — score/callout use procedural rounded plates now.
 - **`tilt_wobble`** cut, not yet triggered.
-- **COSMETICS** — table skins (sheets 18-21) + props (sheet 22: ball/claw skins, monster-buddy cameos).
-  This is a bigger feature: needs a skin-picker + unlock economy (not in pinball yet).
+## COSMETICS — LIVE ✅ (Jul 18 PM)
+Earn-only **Skins** screen (title menu → Skins), 4 tabs: **Table** (Night/Day/Toxic/Old Reel/Chrome),
+**Ball** (Eyeball + donut/brain/moon/meatball/disco/snow-globe), **Flippers** (monster hands + crab/robot/
+oven-mitt/tentacle), **Buddy** (a monster cameo on the bench). Unlock by mastery (MEGA MASH count +
+best score, per-item, shown on locked cards); persist in `gp_skins`; loaded on demand; pure visual.
+**Tune thresholds in the `CAT` table** in index.html (search `var CAT=`). Portal card = **Blobworks**
++ `blobworks.jpg` thumbnail.
 
 ## Known issues / remake candidates 🔧
 1. **Magenta fringe (minor):** a faint pink edge remains on some green/purple sprites (the generator
