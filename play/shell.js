@@ -534,6 +534,7 @@
     try {
       mountEl.innerHTML = '';
       fn(mountEl);
+      maybeShowDirections();   // first visit: full-screen directions cover the game until dismissed
       return true;
     } catch (err) {
       mountEl.innerHTML = '<div style="padding:30px;color:#c75050;text-align:center;font-size:14px">'
@@ -548,77 +549,78 @@
   //  2. Sunbeam SDK reachable (or skip if offline)
   //  3. Game module loaded (_gameFns[id] defined)
   //  4. Mount + wire wallet + start refresh loop
-  // ── Per-game "How to play" text. Sourced from portal/index.html's
-  // GAMES array (the same text shown on the portal cards). Single
-  // source: when LW_PLAY.howto is set in a per-game HTML it wins;
-  // otherwise we look it up here. ──
-  var HOWTO = {
-    set:           "Tap 3 cards where each trait — color, shape, count, shading — is ALL same or ALL different. That's a Pheno.",
-    stopten:       "Tap to start the clock. Tap again to stop it. Goal: stop at exactly 10.00 seconds. Closer = better.",
-    memory:        "Flip two cards a turn. When they match, they stay flipped. Clear the board.",
-    simon:         "Watch the lights flash a pattern, then repeat it by tapping the lights in order. The pattern grows.",
-    dailybloom:    "Daily cognitive workout. 8 different exercises across memory, attention, speed, working memory. About 4 minutes total.",
-    numbergarden:  "60-second arithmetic drill. Add, subtract, multiply. Build a streak for bonus points.",
-    recall:        "Watch symbols flash, then count backward, then tap the symbols you saw. Working-memory recall.",
-    pottingbench:  "Speed card sorting. Each card has multiple attributes; send it to whichever pile shares an attribute. Clear the deck fast.",
-    merge:         "Swipe or tap arrows to merge same-number tiles. Reach 2048.",
-    lights:        "Tap a light to toggle it AND its four neighbors. Turn every light off.",
-    flood:         "Tap a color to flood-fill from the top-left corner. Fill the whole board in the fewest moves.",
-    sudoku:        "Fill every row, every column, and every 3×3 box with the digits 1-9. No repeats.",
-    slider:        "Slide tiles into the empty space. Arrange them in numerical order.",
-    mines:         "Tap to dig. Numbers tell you how many mines are adjacent. Long-press to flag a mine. Dig every safe square.",
-    hanoi:         "Move all the discs onto the far peg. Only one disc at a time; a larger disc can never sit on a smaller one.",
-    picross:       "Numbers above each column and beside each row tell you which squares to fill in. Reveal the picture.",
-    sokoban:       "Push crates onto the targets. You can only push — never pull. Plan ahead.",
-    colorsort:     "Pour pollen between vials. Same colors stack. Each vial sorted to one color wins.",
-    rootrush:      "Slide each root tile along its grain to clear a path. Free the sprouting seed through the gap on the right.",
-    rootflow:      "Connect every pair of matching roots. Paths can't cross. Every cell must be filled.",
-    rootmaze:      "Navigate the shifting maze. Reach the treasure before the AI does.",
-    pipe:          "Rotate vine tiles to connect the flow from source to end.",
-    gardenlines:   "Place tiles to build matching lines — same shape OR same color. Score points for longer lines.",
-    kakuro:        "Like a crossword with numbers. Fill cells 1-9 so each run adds to its clue. No repeats within a run.",
-    mosaic:        "Pull colored tiles to fill mosaic rows. Complete rows for points.",
-    petalfall:     "Falling blocks. Arrange them to clear horizontal lines. Speed ramps up.",
-    petalmatch:    "Swap adjacent gems to make a line of 3 or more. Chain cascades for combos.",
-    jade:          "Mahjong-style. Match pairs of free tiles (no tile blocking it on the side) to clear the turtle.",
-    sprout:        "Find the hidden 5-letter word in 6 guesses. Green = right letter, right spot. Gold = right letter, wrong spot.",
-    vinewords:     "Connect adjacent letters (including diagonal) to spell words. 2-minute timer. Longer words score more.",
-    wordsearch:    "Swipe across letters in any direction — forward, backward, diagonal — to find each themed word.",
-    chess:         "Classic chess against the AI. Tap a piece, tap where to move. Check the king, mate it.",
-    checkers:      "Jump opponent pieces to capture. Reach the far side to crown a King — Kings move backward too.",
-    reversi:       "Place a piece to flank opponent pieces between yours; flanked pieces flip to your color. Most territory wins.",
-    backgammon:    "Roll the dice, move your pieces around the board, bear all 15 off before your opponent.",
-    mastermind:    "Crack the hidden 4-color code. Green peg = right color, right slot. Gold peg = right color, wrong slot.",
-    c4:            "Drop pieces into columns. Connect four in a row — horizontal, vertical, or diagonal — to win.",
-    battleship:    "Hunt your opponent's hidden vessels on a 10×10 grid. Sink them all in the fewest shots.",
-    vinecross:     "Get five of your pieces in a row before the AI does. 9, 11, or 13 board sizes.",
-    seedsow:       "Mancala. Sow seeds counter-clockwise around the board. Capture into your store. First to empty wins.",
-    pollen:        "Engine-builder. Collect pollen, plant gardens that produce more pollen, attract pollinators. Race to 15 Growth.",
-    livingstones:  "Go. Place stones on grid intersections to surround opponent stones and capture territory. 24 puzzles + full play vs MCTS AI.",
-    trellis:       "Word-builder on a 15×15 grid. Premium squares double or triple letter/word scores. AI opponent.",
-    klondike:      "Classic solitaire. Build four foundation piles Ace to King by suit. Alternating colors on the tableau.",
-    spider:        "Build complete King-to-Ace runs by suit. 1 suit (easiest), 2 suits, or 4 suits (hardest).",
-    freecell:      "All cards visible. Use the four free cells as temporary holding spots to rearrange runs.",
-    pyramid:       "Remove pairs of cards that sum to 13. Kings (value 13) remove alone. Clear the pyramid.",
-    tripeaks:      "Build up or down by one rank on the waste pile to clear the three peaks.",
-    golf:          "Move cards one rank up or down to the waste pile. Clear the tableau.",
-    cribbage:      "Pegging + counting card combinations. Reach 121 points first.",
-    bowergarden:   "Euchre. 4-player trick-taking with bowers. You + AI partner vs 2 AI opponents. First to 10 points wins.",
-    bleedinghearts:"Hearts. Avoid taking hearts (1 pt each) and the Queen of Spades (13 pts). Lowest score wins. Shoot the moon for the reverse.",
-    gardenspades:  "Spades is always trump. Bid your tricks at the start of each hand; meet or exceed your bid to score.",
-    juniper:       "Draw + discard. Build sets (three of a kind) and runs (three sequential same-suit). First to go out wins.",
-    farkle:        "Roll 6 dice. Keep scoring dice (1s, 5s, three-of-a-kinds). Bank your score or risk another roll. Roll zero scorers = bust.",
-    yahtzee:       "Five dice, three rolls per turn. Hold the dice you want, re-roll the rest. Fill 13 scoring categories.",
-    doubleshutter: "Roll two dice; shut any open tiles that sum to your roll. Once 7/8/9 are down, roll one die. Shut both rows = perfect game.",
-    song:          "Multi-track music studio. Layer drums, bass, keys, leads. Make beats. Earn sunbeams for sustained creation.",
-    bloomwheel:    "Draw on a spinning canvas synced to a generative beat. Mandala mode mirrors your stroke around the wheel.",
-    breathing:     "Guided breathing exercises across 4 patterns. Inhale as the bloom opens, exhale as it closes.",
-    rhythmvine:    "Falling-note rhythm game. Tap each lane as the notes hit the line. Perfect / Great / Good timing windows.",
-    colorgarden:   "Tap to fill botanical coloring pages. 23 colors. Sustained coloring earns sunbeams.",
-    pixelgarden:   "Pixel-art painter. 24 botanical colors. Draw, erase, fill, pick, mirror. Save as PNG.",
-    storyseeds:    "Daily creative-writing prompts. Save your entries; sunbeams reward sustained writing.",
-    stonegarden:   "Stack stones in zen balance toward a target height. Real two-finger multi-touch physics — finger 1 lifts, finger 2 rotates.",
-    seedtoss2:     "Flick the seed into the pot. Drag from the seed, release to throw — speed + angle determine the toss. Wind kicks in at higher levels."
+  // ── Per-game DIRECTIONS (Jessie 7/16 + 7/18: every game needs a real
+  // directions page — a clear objective, how to play, and what every button
+  // does, written big enough to read and filling the screen). Shown as a
+  // full-screen page before the FIRST play of each game and any time via
+  // the ? button. g = goal, h = how it plays, c = controls list. ──
+  var DIRECTIONS = {
+    song:{g:"Make your own music.",h:"Build a song by layering drums, bass, keys, and leads. Turn notes on and off in each instrument's pattern, then press play to hear them all together.",c:["Tap an instrument to open its pattern","Tap the squares to turn notes on and off","Press PLAY to hear your song","SAVE keeps your song on this device"]},
+    bloomwheel:{g:"Draw a spinning flower mandala.",h:"The canvas spins while you draw, and every stroke repeats around the wheel like a kaleidoscope. There is no timer and no way to lose.",c:["Draw on the wheel with your finger","Pick colors and brush sizes from the toolbar","Change the spin speed with the beat controls"]},
+    breathing:{g:"Relax with guided breathing.",h:"Choose a breathing pattern and follow the glowing bloom. Breathe in as it opens and out as it closes. A few quiet minutes is a win.",c:["Tap a pattern to choose it","Press START to begin","The bell button turns the audio guide on and off"]},
+    colorgarden:{g:"Color a garden picture.",h:"Pick a paint color, then tap any part of the picture to fill it in. No timer, no mistakes, just coloring.",c:["Tap a color to select it","Tap a part of the picture to fill it","PREV and NEXT change pictures","CLEAR starts the picture over"]},
+    pixelgarden:{g:"Paint your own pixel art.",h:"Paint tiny squares one at a time to build a picture. When you love it, save it as a real image.",c:["Tap a color, then tap squares to paint them","Use the eraser to blank a square","SAVE downloads your art as a PNG picture"]},
+    seedtoss2:{g:"Flick every seed into the pot.",h:"Drag a seed back like a slingshot and let go to send it flying. Higher levels add wind, so watch the flag and aim a little ahead of it.",c:["Touch a seed and drag back to aim","Let go to toss","The New Game button restarts"]},
+    storyseeds:{g:"Write a little story every day.",h:"Read today's prompt and write whatever it sparks. A sentence counts. Everything you write is saved on your device.",c:["Tap the page and start typing","SAVE keeps your entry","JOURNAL shows everything you have written"]},
+    stonegarden:{g:"Stack stones to the target height without a tumble.",h:"A stone swings across the top of the screen. Tap to drop it onto your tower. Odd shapes balance in odd ways, so watch how each one lands before you drop the next.",c:["Tap anywhere to drop the stone","ROTATE turns the next stone","UNDO takes back a drop in Zen","Pick ZEN or CHALLENGE to start"]},
+    rhythmvine:{g:"Tap in time with the music.",h:"Notes ride the vine toward the marker. Tap the moment each note reaches it. Perfect beats Great, and Great beats Good.",c:["Tap anywhere on the beat","CALIBRATE fixes the timing if your phone plays sound late"]},
+    klondike:{g:"Move every card to the four top piles, Ace to King by suit.",h:"On the board, stack cards downward and alternate red and black. Turn over face-down cards as they free up, and dig through the deck for what you need.",c:["Tap a card to send it home, or drag it where you want","Tap the deck to draw","UNDO takes back a move"]},
+    spider:{g:"Build runs from King down to Ace in one suit.",h:"Stack cards downward on the board. When a full King-to-Ace run of one suit comes together it clears away. Clear everything to win.",c:["Drag a card or a run onto a card one higher","Tap the deck to deal a new row (no empty columns allowed)","UNDO takes back a move"]},
+    freecell:{g:"Move every card to the four top piles, Ace to King by suit.",h:"Every card is face up from the start. The four free cells each hold one card, and the emptier they are, the more cards you can move at once. Almost every deal can be won.",c:["Tap a card to send it home, or drag it","Park a card in a free cell to dig deeper","UNDO takes back a move"]},
+    pyramid:{g:"Clear the pyramid by pairing cards that add to 13.",h:"Only uncovered cards can be used. Jacks are 11, Queens are 12, and Kings are 13 all by themselves.",c:["Tap two cards that add to 13","Tap a King to remove it alone","Tap the deck to deal a new card"]},
+    tripeaks:{g:"Clear all three peaks.",h:"Play any uncovered card that is one higher or one lower than the card on the waste pile. Long chains score big.",c:["Tap a card one up or one down from the waste card","Tap the deck when nothing can play"]},
+    golf:{g:"Clear the whole board.",h:"Play any open card that is one higher or one lower than the top of the waste pile. Chain as far as you can before drawing.",c:["Tap a card one up or one down","Tap the deck for a new card"]},
+    cribbage:{g:"Be first to 121 points around the board.",h:"Keep two cards and toss two to the crib. Play to 31 counting fifteens, pairs, and runs, then count your hand. The game does the math for you.",c:["Tap two cards to send to the crib","Tap a card to play it","Follow the prompts, the pegging is automatic"]},
+    bowergarden:{g:"Take your team to 10 points.",h:"Euchre. Choose whether the flipped suit becomes trump, then take at least three of the five tricks with your computer partner. The Jack of trump is the top card, and the other Jack of the same color is second.",c:["Tap ORDER UP or PASS when trump is offered","Tap a card to play it","Your partner sits across from you"]},
+    bleedinghearts:{g:"Finish with the LOWEST score.",h:"Hearts. Every heart you take is 1 point and the Queen of Spades is 13, so avoid winning tricks with points in them. Take every single point in a round to Shoot the Moon and give everyone else 26 instead.",c:["Tap three cards to pass at the start of each round","Tap a card to play, following suit when you can"]},
+    gardenspades:{g:"Take your team to 500 points.",h:"Spades. Bid how many tricks you will win, then hit your bid. Spades beat every other suit. Falling short hurts, and winning too many extra tricks adds up against you too.",c:["Tap a number to bid","Tap a card to play, following suit when you can"]},
+    juniper:{g:"Build sets and runs, then go out first.",h:"Rummy. Draw one card, then discard one. Collect three or more of a kind, or runs in one suit. Knock when your leftover cards are low, or go Gin with none.",c:["Tap the deck or the discard pile to draw","Tap a card to discard","Tap KNOCK or GIN when your hand is ready"]},
+    merge:{g:"Grow a 2048 bloom.",h:"Swiping slides every tile at once. When two matching tiles collide they merge into the next plant up the ladder. Keep your biggest tiles in a corner and build toward them.",c:["Swipe up, down, left, or right (arrow keys work too)","Themes changes the garden look","New Game restarts"]},
+    lights:{g:"Turn every light off.",h:"Tapping a light flips it AND its four neighbors. The order of your taps never matters, only which lights you tap, so plan the pattern.",c:["Tap a light to toggle it and its neighbors"]},
+    mines:{g:"Uncover every safe square without hitting a mine.",h:"Each number tells you how many mines touch that square, corners included. Start from the numbers you are sure about and flag the mines as you find them.",c:["Tap a square to dig","Hold a square to plant or remove a flag"]},
+    sudoku:{g:"Fill the grid so 1 through 9 appears once in every row, column, and box.",h:"Look for cells where only one number can fit. Notes help you keep track of what is still possible.",c:["Tap a cell, then tap a number","Use the pencil button to write small notes","Erase clears a cell"]},
+    wordsearch:{g:"Find every word on the list.",h:"Words hide across, down, and diagonally, forward and backward. Found words stay highlighted.",c:["Drag across the letters in a straight line","Found words check themselves off the list"]},
+    rootrush:{g:"Slide the roots out of the way so the seed can escape.",h:"Each root only slides along its own length, like cars in a crowded lot. Clear a straight path to the exit.",c:["Drag a root to slide it","HINT shows a helpful move","NEXT goes to the next level after you solve one"]},
+    hanoi:{g:"Rebuild the whole tower on the far peg.",h:"Move one disc at a time, and never set a bigger disc on a smaller one. It is always solvable, and the fewest moves earns the best score.",c:["Tap a peg to lift its top disc","Tap another peg to place it"]},
+    slider:{g:"Slide the tiles into number order.",h:"Only tiles beside the empty space can move. Work the top row into place first, then the left column, and repeat.",c:["Tap a tile next to the gap to slide it","Pick 3×3, 4×4, or 5×5 board sizes"]},
+    picross:{g:"Reveal the hidden picture.",h:"The numbers on each row and column tell you the runs of filled squares, in order, with at least one gap between runs. Fill what must be filled and X out what cannot be.",c:["Tap a square to fill it","Switch to ✕ mode to mark squares that stay empty","Clues gray out when satisfied"]},
+    colorsort:{g:"Sort every pollen color into its own vial.",h:"You can only pour onto a matching color or into an empty vial, and vials hold four. Think a pour or two ahead so you do not bury what you need.",c:["Tap a vial to lift its top pollen","Tap another vial to pour","NEXT after you solve a level"]},
+    flood:{g:"Make the whole board one color before moves run out.",h:"Your patch starts at the top-left corner. Picking a color floods every connected square of that color into your patch, growing it outward.",c:["Tap a color button to flood"]},
+    pipe:{g:"Connect the root to the bloom.",h:"Rotate the vine tiles so an unbroken line runs from the root to the flower. Every turn of a tile counts, so fewer is better.",c:["Tap a tile to rotate it"]},
+    sokoban:{g:"Push every crate onto a target.",h:"You can only PUSH crates, never pull, and only one at a time. A crate shoved into a corner is stuck forever, so think before you push.",c:["Swipe (or use arrow keys) to move","UNDO takes back a step","RESTART resets the level"]},
+    petalfall:{g:"Clear rows before the blocks pile to the top.",h:"Falling pieces stack where they land. Fill a whole row across and it clears. Keep the stack low and leave room for the long piece.",c:["Swipe left or right to move the piece","Tap to rotate","Swipe down to drop fast"]},
+    gardenlines:{g:"Score points by building matching lines.",h:"Place tiles from your hand into rows and columns where every tile shares a color or a symbol with the line. A line can never repeat the same tile twice.",c:["Tap a tile in your hand, then tap a square on the board","Finish your turn to draw new tiles","UNDO takes back placements before you finish"]},
+    kakuro:{g:"Fill every run so it adds up to its clue.",h:"Like a crossword with numbers. Use digits 1 through 9, and never repeat a digit inside one run. Small clues over short runs are the easiest openings.",c:["Tap a cell, then tap a number","Notes help track the possibilities"]},
+    mosaic:{g:"Score the most points by tiling your mosaic.",h:"Draft same-colored tiles and load them into a row. A row holds only one color, and when it fills, one tile moves onto your wall for points. Extra tiles fall to the floor and cost you. The Mirror plays against you.",c:["Tap tiles to draft them","Tap one of your rows to place them","Watch the floor line, it subtracts points"]},
+    rootflow:{g:"Connect every pair of matching roots.",h:"Draw a path from each root to its twin without crossing any other path, and fill every square of the garden.",c:["Drag from a root to its matching root","Redraw a path any time","HINT reveals one path"]},
+    rootmaze:{g:"Reach the exit before the computer does.",h:"You and the computer race through the same maze, and the walls shift as you go. Keep moving and adapt when a path closes.",c:["Swipe to move through the maze"]},
+    petalmatch:{g:"Hit the target score by matching petals.",h:"Swap two neighbors to line up three or more of a kind. Bigger lines and chain reactions score more.",c:["Drag a petal onto a neighbor to swap","Matches of 4+ and cascades pay extra"]},
+    sprout:{g:"Find the hidden five-letter word in six guesses.",h:"After each guess the letters change color. Green means right letter, right spot. Gold means the letter is in the word but somewhere else. Gray means it is not in the word.",c:["Type a five-letter word","Press ENTER to guess"]},
+    vinewords:{g:"Find as many words as you can in two minutes.",h:"Connect neighboring letters, diagonals included, to spell words of three or more letters. Longer words score much more.",c:["Drag through neighboring letters","Lift your finger to submit the word"]},
+    chess:{g:"Checkmate the computer's king.",h:"Full classic chess, including castling, en passant, and pawn promotion. Tap a piece to see everywhere it can go.",c:["Tap a piece, then tap a highlighted square","♜ Court changes the piece set","Undo takes back your last move","The dropdown changes difficulty"]},
+    c4:{g:"Connect four of your pieces in a row.",h:"Pieces drop to the lowest open spot in a column. Line up four across, down, or diagonally before the computer does, and block their threats.",c:["Tap a column to drop a piece","HINT glows the computer's favorite column"]},
+    battleship:{g:"Sink the enemy fleet before yours goes down.",h:"Place your ships, then trade shots. A hit lets you keep firing in classic mode. Numbers and sunk ships narrow down where the rest hide.",c:["Drag your ships into place, tap to rotate","Tap a square on the enemy grid to fire"]},
+    mastermind:{g:"Crack the hidden four-color code.",h:"After each guess you get pegs. A filled peg means right color in the right spot. An open peg means right color, wrong spot. Use logic to close in.",c:["Tap colors to build your guess","Submit to see your pegs"]},
+    checkers:{g:"Capture every enemy piece or block them all.",h:"Pieces slide diagonally forward. Jump an enemy piece to capture it, and chain jumps when they line up. Reach the far row to crown a King that moves both ways.",c:["Tap a piece, then tap a highlighted square","Chained jumps continue automatically"]},
+    reversi:{g:"Finish with the most discs.",h:"Every move must trap enemy discs between your new disc and one you already own. Trapped discs flip to your color. Corners are gold, grab them when you can.",c:["Tap a highlighted square to play"]},
+    backgammon:{g:"Bear all fifteen checkers off first.",h:"Roll and move by the pips, splitting the dice between checkers if you like. A lone enemy checker can be hit and sent to the bar. Get everything home before bearing off.",c:["Tap to roll the dice","Tap a checker, then tap its landing point"]},
+    seedsow:{g:"Bank the most seeds in your store.",h:"Mancala. Scoop a pit and sow its seeds counterclockwise, one per pit. Land the last seed in your store for a free turn, or in an empty pit on your side to capture everything opposite.",c:["Tap one of your six pits to sow it"]},
+    vinecross:{g:"Get five in a row before the computer.",h:"Take turns placing stones. Five of yours in any straight line wins, so build open runs of three and four that threaten in two directions at once.",c:["Tap a square to place your stone"]},
+    livingstones:{g:"Surround more territory than your opponent.",h:"Go. Stones with no breathing room are captured. Wall off space, keep your groups alive with two eyes, and count territory at the end. Start with the puzzles if you are new.",c:["Tap an intersection to place a stone","PASS when there is nothing left to gain","Choose puzzles or a full game from the menu"]},
+    trellis:{g:"Outscore the computer with words on the board.",h:"Build crossword-style words with your seven tiles. Bonus squares multiply letters and words, and using all seven tiles at once earns a 50-point bloom.",c:["Drag tiles onto the board","SUBMIT plays your word","SWAP trades tiles and skips your turn"]},
+    pollen:{g:"Be first to 15 Growth.",h:"An engine-builder. Collect pollen, spend it on upgrades that make every later turn stronger, and race the other players to full bloom. Playable solo against the computer or pass-and-play.",c:["Tap the actions and cards as the game offers them","Set any seat to CPU on the setup screen"]},
+    set:{g:"Spot the Phenos.",h:"A Pheno is three cards where each trait — color, shape, count, and shading — is either all the same or all different across the three. If two cards share something the third must too, or it is not a Pheno.",c:["Tap three cards to call a Pheno","More cards are dealt when none exist"]},
+    stopten:{g:"Stop the clock at exactly 10.00 seconds.",h:"The clock hides partway through, so you count the rest in your head. Closest to perfect wins the round.",c:["Tap to start the clock","Tap again to stop it"]},
+    memory:{g:"Match every pair.",h:"Flip two cards a turn. Matches stay face up. Remember what you have seen and clear the whole board in as few turns as you can.",c:["Tap a card to flip it"]},
+    simon:{g:"Repeat the pattern as it grows.",h:"Watch the lights flash in order, then tap them back in the same order. Each round adds one more step.",c:["Watch first, then tap the lights in order"]},
+    dailybloom:{g:"Finish today's brain workout.",h:"Eight quick exercises across memory, attention, and speed, about four minutes total. Come back tomorrow to grow your streak.",c:["Follow each exercise's on-screen prompt","Answers are a tap each"]},
+    numbergarden:{g:"Solve as many problems as you can in 60 seconds.",h:"Quick-fire adding, subtracting, and multiplying. Right answers build your streak, and streaks build your score.",c:["Tap the number keys to answer","START begins the round","RULES explains the scoring"]},
+    recall:{g:"Remember exactly which symbols you saw.",h:"A few symbols appear, then vanish, then a distraction tries to shake them loose. Pick only the symbols you actually saw.",c:["Watch the symbols carefully","Tap the ones you saw","NEW ROUND deals again"]},
+    pottingbench:{g:"Sort the cards before time runs out.",h:"Play each card onto a pile that shares ANY attribute with it. Fast, clean sorting stretches your timer, and hesitating drains it.",c:["Tap the pile that matches your card","DRAW +2s trades cards for time"]},
+    yahtzee:{g:"Score the best total across 13 categories.",h:"Roll up to three times, holding the dice you like between rolls. Every category can be scored only once, and 63+ in the upper section earns a bonus.",c:["Tap dice to hold them","Tap ROLL to reroll the rest","Tap a category to bank your score"]},
+    farkle:{g:"Be first to 10,000 points.",h:"Ones and fives always score, and triples score big. After every roll set aside something that scores, then push your luck or bank. Roll nothing that scores and you Farkle, losing the turn's points.",c:["Tap dice to set them aside","ROLL pushes your luck","BANK keeps the turn's points"]},
+    doubleshutter:{g:"Shut every tile — the box has two rows.",h:"Roll two dice and shut tiles that add up to the roll, using the front row before the back. Shut everything for the perfect game.",c:["Tap tiles that sum to your roll","Confirm to lock them down","Roll again until nothing fits"]},
+    dewtrail:{g:"Draw one unbroken trail through every cell.",h:"Start at 1 and pass through every numbered cell IN ORDER, visiting every cell exactly once and never crossing your own trail.",c:["Drag from 1 through neighboring cells","Lift your finger to pause, keep dragging to continue","UNDO backs the trail up"]}
   };
 
   function injectHowToButton() {
@@ -626,7 +628,6 @@
     if (!hdr) return;
     if (document.getElementById('shell-howto')) return;  // idempotent
 
-    var howto = (LW_PLAY && LW_PLAY.howto) || HOWTO[LW_PLAY.id] || '';
     // Insert right after the back link so it's near the top-left chrome
     // — out of the way of the title + wallet.
     var btn = document.createElement('button');
@@ -635,7 +636,7 @@
     btn.setAttribute('aria-label', 'How to play');
     btn.title = 'How to play';
     btn.textContent = '?';
-    btn.addEventListener('click', function(){ showHowToModal(howto); });
+    btn.addEventListener('click', function(){ showDirections(false); });
     var back = hdr.querySelector('.shell-back');
     if (back && back.nextSibling) hdr.insertBefore(btn, back.nextSibling);
     else hdr.appendChild(btn);
@@ -679,20 +680,44 @@
     }
   }
 
-  function showHowToModal(text) {
-    if (document.getElementById('howto-bd')) return;
-    var bd = document.createElement('div');
-    bd.id = 'howto-bd';
-    bd.className = 'shell-modal-backdrop';
-    bd.innerHTML = '<div class="shell-modal">'
-      + '<h3>How to play — ' + (LW_PLAY.name || LW_PLAY.id) + '</h3>'
-      + '<p>' + (text ? text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'No rules description has been written for this game yet.') + '</p>'
-      + '<div class="shell-modal-actions">'
-      + '  <button class="shell-primary" id="howto-close">Got it</button>'
-      + '</div></div>';
-    document.body.appendChild(bd);
-    document.getElementById('howto-close').onclick = function(){ document.body.removeChild(bd); };
-    bd.addEventListener('click', function(e){ if (e.target === bd) document.body.removeChild(bd); });
+  // ── Full-screen directions page (Jessie 7/16 + 7/18: big readable text
+  // that fills the screen, shown BEFORE the game, with the goal, how to
+  // play, and what every button does). Auto-opens before the first play of
+  // each game; the ? button reopens it any time. ──
+  function esc(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function showDirections(auto) {
+    if (document.getElementById('shell-dir')) return;
+    var d = DIRECTIONS[LW_PLAY.id] || null;
+    // legacy per-page override: LW_PLAY.howto becomes the how-to paragraph
+    if (!d && LW_PLAY && LW_PLAY.howto) d = { g:'', h: LW_PLAY.howto, c: [] };
+    if (!d) d = { g:'', h:'Jump in and explore — this one is best learned by playing.', c: [] };
+    var ov = document.createElement('div');
+    ov.id = 'shell-dir';
+    ov.className = 'shell-dir';
+    var h = '<div class="shell-dir-inner">';
+    h += '<div class="shell-dir-kicker">HOW TO PLAY</div>';
+    h += '<h2>' + esc(LW_PLAY.name || LW_PLAY.id) + '</h2>';
+    if (d.g) h += '<div class="shell-dir-sec"><div class="shell-dir-h">The goal</div><p>' + esc(d.g) + '</p></div>';
+    if (d.h) h += '<div class="shell-dir-sec"><div class="shell-dir-h">How it plays</div><p>' + esc(d.h) + '</p></div>';
+    if (d.c && d.c.length) {
+      h += '<div class="shell-dir-sec"><div class="shell-dir-h">The controls</div><ul>';
+      for (var i = 0; i < d.c.length; i++) h += '<li>' + esc(d.c[i]) + '</li>';
+      h += '</ul></div>';
+    }
+    h += '<div class="shell-dir-tip">Tap the <b>?</b> up top to read this again any time.</div>';
+    h += '</div>';
+    h += '<div class="shell-dir-foot"><button class="shell-dir-play" id="shell-dir-play">' + (auto ? "▶  LET'S PLAY" : 'GOT IT') + '</button></div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+    document.getElementById('shell-dir-play').onclick = function () {
+      try { localStorage.setItem('sws_dir_' + LW_PLAY.id, '1'); } catch (e) {}
+      if (ov.parentNode) ov.parentNode.removeChild(ov);
+    };
+  }
+  function maybeShowDirections() {
+    var seen = null;
+    try { seen = localStorage.getItem('sws_dir_' + LW_PLAY.id); } catch (e) {}
+    if (!seen) showDirections(true);
   }
 
   // ════════════════════════════════════════════════════════════════════

@@ -519,7 +519,7 @@ window._gameFns.cribbage = function CRIB(a){
     // ── AI HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">AI Hand</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">Computer Hand</div>';
     if(G.aiThinking){
       h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:#ffdc70;animation:cbThink 1.2s ease-in-out infinite;">Thinking…</div>';
     }
