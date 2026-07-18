@@ -32,24 +32,24 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 #hud .chip b{font-size:.95rem} #hud .chip span{font-size:.66rem; color:var(--muted)}
 #hud .grow{flex:1}
 /* clue bar */
-#cluebar{position:absolute; left:0; top:470px; width:540px; height:64px; display:none; z-index:12;
+#cluebar{position:absolute; left:0; top:496px; width:540px; height:72px; display:none; z-index:12;
   padding:0 6px; align-items:center; gap:6px}
 #cluebar.on{display:flex}
 #cluebar .nav{min-width:44px; min-height:56px; border:1px solid #ffffff26; border-radius:12px; background:#191330d0;
   color:var(--cream); font-size:1.3rem; display:flex; align-items:center; justify-content:center}
 #cluebar .cluetext{flex:1; min-height:56px; background:#1b1636d0; border:1px solid #c8a84b40; border-radius:12px;
-  display:flex; align-items:center; padding:6px 12px; font-size:.92rem; line-height:1.25}
+  display:flex; align-items:center; padding:6px 12px; font-size:1.08rem; line-height:1.3}
 #cluebar .cluetext b{color:var(--gold); margin-right:8px; white-space:nowrap}
 /* keyboard */
-#kb{position:absolute; left:0; bottom:0; width:540px; display:none; z-index:12; flex-direction:column; gap:6px;
-  padding:8px 5px calc(8px + env(safe-area-inset-bottom,0px))}
+#kb{position:absolute; left:0; bottom:0; width:540px; display:none; z-index:12; flex-direction:column; gap:8px;
+  padding:10px 5px calc(12px + env(safe-area-inset-bottom,0px))}
 #kb.on{display:flex}
-.kbrow{display:flex; gap:5px; justify-content:center}
-.key{flex:1; min-height:54px; max-width:52px; border-radius:8px; border:1px solid #ffffff26; background:#211a3a;
-  color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center}
+.kbrow{display:flex; gap:6px; justify-content:center}
+.key{flex:1; min-height:72px; max-width:56px; border-radius:10px; border:1px solid #ffffff26; background:#211a3a;
+  color:var(--cream); font-size:1.45rem; font-weight:600; display:flex; align-items:center; justify-content:center}
 .key:active{background:#2f2550}
-.key.wide{max-width:80px; font-size:.9rem; background:#191330}
-.key.act{max-width:80px; background:#241c10; border-color:#c8a84b55; font-size:.82rem}
+.key.wide{max-width:96px; font-size:1.1rem; background:#191330}
+.key.act{max-width:96px; background:#241c10; border-color:#c8a84b55; font-size:1rem}
 .screen{position:absolute; inset:0; background:linear-gradient(180deg,#150f26f2 0%,#0a0714fa 100%);
   display:none; flex-direction:column; align-items:center; justify-content:flex-start; z-index:30;
   padding:44px 26px calc(24px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
@@ -84,7 +84,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 .scard .sn{font-size:.72rem} .scard .sl{font-size:.66rem; color:var(--muted); text-align:center; line-height:1.2}
 .scard.owned{border-color:#5b9bd544} .scard.sel{border-color:#c8a84b99; background:#1b1a10}
 .scard .buy{font-size:.66rem; color:var(--gold)}
-.howp{max-width:360px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
+.howp{max-width:430px; color:var(--cream); font-size:1.12rem; line-height:1.55; margin:10px 0; font-weight:500}
 .howp b{color:var(--gold)}
 </style>
 </head>
@@ -96,8 +96,8 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
   <button class="hbtn" id="hud-back">⌂</button>
   <div class="chip"><b id="h-mode">—</b><span id="h-note">tap a square</span></div>
   <div class="chip"><b id="h-time">0:00</b><span>time</span></div>
-  <div class="chip"><b id="h-streak">✒ 0</b><span>ink streak</span></div>
-  <div class="chip"><b id="h-ink">💧 0</b><span>ink</span></div>
+  <div class="chip"><b id="h-streak">0</b><span>ink streak</span></div>
+  <div class="chip"><b id="h-ink">0</b><span>ink</span></div>
 </div>
 
 <div id="cluebar">
@@ -111,13 +111,13 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 <div class="screen on" id="s-title">
   <h1><span class="a">MINI</span> <span class="b">CROSSWORD</span></h1>
   <div class="tag">a five by five in a minute · fill every square, across and down · keep an error free Ink Streak</div>
-  <button class="btn gold" id="b-daily">📅 Daily Mini</button>
-  <button class="btn teal" id="b-endless">♾️ Endless</button>
+  <button class="btn gold" id="b-daily">Daily Mini</button>
+  <button class="btn teal" id="b-endless">Endless</button>
   <button class="btn blue" id="b-trial">⏱️ Time Trial</button>
-  <button class="btn" id="b-zen">🌙 Zen (auto check)</button>
+  <button class="btn" id="b-zen">Zen (auto check)</button>
   <div class="btnrow">
-    <button class="btn sm" id="b-shop">🛒 Ink Shop</button>
-    <button class="btn sm" id="b-how">❓ How</button>
+    <button class="btn sm" id="b-shop">Ink Shop</button>
+    <button class="btn sm" id="b-how">How to Play</button>
   </div>
 </div>
 
@@ -136,13 +136,13 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 <div class="screen" id="s-shop">
   <h1 style="font-size:1.4rem">THE INK SHOP</h1>
   <div class="tag">spend ink on pens and papers · streak unlocks marked · no mystery boxes</div>
-  <div class="shopwallet">💧 <b id="shop-ink">0</b> ink · ✒ <b id="shop-streak">0</b> best streak</div>
+  <div class="shopwallet"><b id="shop-ink">0</b> ink · <b id="shop-streak">0</b> best streak</div>
   <div id="shopbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <button class="btn sm" id="shop-back" style="margin-top:16px">← back</button>
 </div>
 
 <div class="screen" id="s-how">
-  <h1 style="font-size:1.4rem">HOW TO SOLVE</h1>
+  <h1 style="font-size:1.7rem">HOW TO SOLVE</h1>
   <p class="howp">Tap a square to select its word, tap it again to switch between <b>Across</b> and <b>Down</b>. Type letters on the keyboard; the clue for your current word shows in the bar. Fill every white square correctly to win.</p>
   <p class="howp">The <b>‹ ›</b> arrows jump to the previous or next word. Every square is checked in two directions, so a crossing letter you are sure of helps the word that crosses it.</p>
   <p class="howp"><b>Ink Streak:</b> solve with no wrong letters and your streak grows, inking new pens and papers. One wrong letter breaks the streak for that puzzle. <b>Zen</b> turns on auto check (wrong letters glow red) and pays no sunbeams, so it never counts against your streak.</p>
@@ -1102,8 +1102,8 @@ function doWin(){
 function updateHud(){ if(!CUR)return;
   $("h-mode").textContent=MODES[CUR.mode].name;
   $("h-time").textContent=fmtTime(CUR.seconds);
-  $("h-streak").textContent="✒ "+PROG.streak;
-  $("h-ink").textContent="💧 "+(PROG.ink+CUR.ink); }
+  $("h-streak").textContent=""+PROG.streak;
+  $("h-ink").textContent=""+(PROG.ink+CUR.ink); }
 function updateClue(){ if(!CUR)return; var s=curSlot(); if(!s)return;
   $("clue-lab").textContent=s.num+(s.dir==='A'?"A":"D");
   $("clue-txt").textContent=s.clue;
@@ -1163,7 +1163,7 @@ function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<
 function show(id){ hideScreens(); $(id).classList.add("on"); }
 var toastT=null;
 function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on"); if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2000); }
-function stamp(){ $("buildstamp").textContent="Mini Crossword "+BUILD+" · ✒ best "+PROG.bestStreak+" · 💧"+PROG.ink+" · "+BANK.length+" words"; }
+function stamp(){ $("buildstamp").textContent="Mini Crossword "+BUILD+" · best "+PROG.bestStreak+" · "+PROG.ink+" ink · "+BANK.length+" words"; }
 function panelOn(on){ $("hud").classList.toggle("on",on); $("cluebar").classList.toggle("on",on); $("kb").classList.toggle("on",on); }
 function beginPlay(mode,opts){
   startGame(mode,null,opts||{});
@@ -1207,7 +1207,7 @@ function renderShop(){ $("shop-ink").textContent=PROG.ink; $("shop-streak").text
       var cv=document.createElement("canvas"); cv.width=72; cv.height=48; card.appendChild(cv);
       var nm=document.createElement("div"); nm.className="sn"; nm.textContent=it.name; card.appendChild(nm);
       var lab=document.createElement("div"); lab.className="sl";
-      if(sel)lab.textContent="equipped"; else if(owned)lab.textContent="tap to use"; else if(gated)lab.textContent=it.needTxt||"locked"; else { lab.className="sl buy"; lab.textContent="💧 "+it.price; }
+      if(sel)lab.textContent="equipped"; else if(owned)lab.textContent="tap to use"; else if(gated)lab.textContent=it.needTxt||"locked"; else { lab.className="sl buy"; lab.textContent=it.price+" ink"; }
       card.appendChild(lab); drawSwatch(cv,it);
       card.onclick=function(){ if(sel)return;
         if(owned){ PROG[it.key]=it.id; save(); renderShop(); return; }

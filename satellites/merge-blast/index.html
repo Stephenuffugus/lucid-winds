@@ -75,7 +75,7 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">MERGE &amp; BLAST</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Tap a group of matching numbers and they <b style="color:var(--pop)">blast</b> into the next number up. Chase the big doubles — <b style="color:var(--hot)">512, 1K, 2K…</b> how high can you grow?</div>
+    <div class="ribbon">Tap a group of matching numbers and they <b style="color:var(--pop)">blast</b> into the next number up. Chase the big doubles: <b style="color:var(--hot)">512, 1K, 2K…</b> how high can you grow?</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-journey">🚀 Journey <span id="j-lvl" style="font-weight:600;font-size:14px;opacity:.8"></span></button>
@@ -195,7 +195,10 @@ function newGame(mode){
       bigE:1, over:false, combo:0, anims:[], sparks:[], floats:[], shakeT:0,
       goal:null, goalDone:0, sbRun:0, level:PROG.level, t:0 };
   var r,c;
-  for(r=0;r<ROWS;r++){ G.grid.push([]); for(c=0;c<COLS;c++) G.grid[r].push(feed()); }
+  /* opening board always seeds from 2s (e=1) — the mid-run rising floor stays,
+     but feed() here let the first random cell set the floor, so half of new
+     games opened with no 2 tile at all (Jessie 7/16) */
+  for(r=0;r<ROWS;r++){ G.grid.push([]); for(c=0;c<COLS;c++){ var x=rng(); G.grid[r].push(x<0.5?1:(x<0.8?2:3)); } }
   ensureGroup();
   if(mode==='journey') setGoal();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
