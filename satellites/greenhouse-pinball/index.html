@@ -43,8 +43,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--sage); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:13px 0; font-size:17px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:16px; font-weight:800; width:34px; height:34px; line-height:32px; text-align:center; flex:none; color:var(--gold); background:#141a26; border:1px solid var(--sage); border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
 .toggle.on{background:var(--deep)}
@@ -53,6 +53,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .go-score{font-size:60px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+#s-go.on .pad{animation:goZoom .5s cubic-bezier(.2,1.25,.35,1) both}
+@keyframes goZoom{0%{transform:scale(.62);opacity:0}60%{opacity:1}100%{transform:scale(1);opacity:1}}
+#s-go.on .go-score{animation:goPop .7s .12s cubic-bezier(.2,1.7,.4,1) both}
+@keyframes goPop{0%{transform:scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
 .go-stat{display:flex; justify-content:space-between; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
@@ -91,13 +95,14 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">🚀</div><div><b>Hold to charge</b> the plunger, release to fire the bead up the lane — more charge, harder shot. (Keyboard: hold <b>Space</b>.)</div></div>
-    <div class="helprow"><div class="hi">⭐</div><div>A flower lights up as you launch — strike that <b class="hl">lit bumper first</b> for a <b>Skill Shot</b> bonus.</div></div>
-    <div class="helprow"><div class="hi">👆</div><div>Tap the <b>left half</b> of the screen for the left flipper, the <b>right half</b> for the right. (Keyboard: ← and → , or Z and /.)</div></div>
-    <div class="helprow"><div class="hi">🤚</div><div><b class="hl">Nudge</b> the table to save a doomed bead — two-finger tap, or keys <b>Q</b> / <b>E</b> / <b>W</b>. But nudge too much and the table <b>TILTS</b>: flippers freeze and the ball is lost.</div></div>
-    <div class="helprow"><div class="hi">🌻</div><div>Hit the <b class="hl">flower bumpers</b> to score and grow the plant. The green <b>growth ribbon</b> on the left rail fills as you go.</div></div>
-    <div class="helprow"><div class="hi">🌷</div><div>Collect the five <b class="hl">B·L·O·O·M</b> standups to light the lock, then shoot the glowing <b class="hl">Greenhouse ramp</b> to lock a bead in the glasshouse. Three locks start <b class="hl">Pollen Multiball</b>: jackpots on every ramp, four of them light a <b>Super Jackpot</b> at the scoop, and a huge spinner rip adds a ball.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>Fill the growth ribbon for a <b class="hl">Bloom Rush</b>: a 20 second frenzy where every switch pays a bonus. Refill the ribbon while it burns to extend it.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Hold to charge</b> the plunger, release to fire the eyeball up the lane. More charge, harder shot. A monster lights up as you launch, hit that <b class="hl">lit monster first</b> for a skill-shot bonus. (Keyboard: hold <b>Space</b>.)</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Tap the <b>left half</b> of the screen for the left claw, the <b>right half</b> for the right. Keep the eyeball alive. (Keyboard: ← and →.)</div></div>
+    <div class="helprow"><div class="hi">3</div><div>Bounce the eyeball off the <b class="hl">monster bumpers</b> to score, and rip the gold <b class="hl">gear</b> to wind things up.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Hit the five pink <b class="hl">S·L·I·M·E</b> letter tiles to light the <b class="hl">specimen jar</b>. Then feed the glowing ramp to lock an eyeball. Three locks start <b class="hl">GOO MULTIBALL</b>.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>Feed the big <b class="hl">monster mouth</b> (the scoop) to start a <b>quest</b>, it tells you which shots to make. Finish all six quests to light <b class="hl">MEGA MASH</b>, the big finale.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b class="hl">CHAIN MULTIBALL:</b> rip the gear until "CHAIN LIT" flashes, then shoot any ramp to start with <b>two balls</b>. Every ramp after that adds another ball, all the way up to <b>seven</b>.</div></div>
+    <div class="helprow"><div class="hi">7</div><div>Roll through the top <b class="hl">Z·A·P</b> lanes to build your bonus, and <b class="hl">nudge</b> the table (two-finger tap) to save a doomed ball. Nudge too much and it <b>TILTS</b>, the claws freeze.</div></div>
+    <div class="helprow"><div class="hi">8</div><div>A stretchy <b class="hl">goo net</b> catches your very first drain, so nothing feels cheap. Have fun, mash the lab.</div></div>
     <div class="helprow"><div class="hi">💫</div><div>The <b class="hl">Heartvine ramp</b> changes its exit after every pass (watch the gold flag), a quick double on the Fern ramp <b class="hl">crosses over</b>, and a charged <b class="hl">Taproot</b> kicks a doomed bead back up the left outlane. Roll both inlane gates to recharge it.</div></div>
     <div class="helprow"><div class="hi">🌿</div><div>The <b class="hl">moss net</b> glows across the drain and bounces a doomed bead back — once per ball, and always on your last ball.</div></div>
     <div class="helprow"><div class="hi">🪴</div><div><b>Classic:</b> 3 balls. <b>Zen:</b> endless, drains just re-launch. <b>Daily:</b> one seeded table a day.</div></div>
@@ -125,8 +130,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="go-lab" id="go-lab">nectar</div>
     <div class="pill" id="go-best">Best 0</div>
     <div style="width:100%;max-width:300px;margin-top:14px">
-      <div class="go-stat"><span>Blooms triggered</span><b id="go-blooms">0</b></div>
+      <div class="go-stat"><span>Balls played</span><b id="go-balls">0</b></div>
       <div class="go-stat"><span>Best combo</span><b id="go-combo">0</b></div>
+      <div class="go-stat"><span>MEGA MASHes</span><b id="go-blooms">0</b></div>
     </div>
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
@@ -355,6 +361,7 @@ function newGame(mode){
       kickLit:false, kickRetL:false, kickRetR:false,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
       locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, superCount:0, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
+      chainLit:false, chainMB:false, chainN:0, spinTotal:0, chainSave:0,
       lastRail:null, lastRailT:0, rush:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
@@ -490,6 +497,7 @@ function physics(dt){
       // gap untouched — device feedback caught it.)
       if(G.wizard && G.wizSave>0 && G.tiltOut<=0){ var w1=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w1; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
       else if(G.pollenMB && G.mbSave>0 && G.tiltOut<=0){ var w2=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w2; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.chainMB && G.chainSave>0 && G.tiltOut<=0){ var w4=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w4; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'chain save!'); }
       else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; var w3=b.x<270?170:-170; b.x=265; b.y=DRAINY-30; b.vx=w3; b.vy=-980; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
       else { drainBall(i); }
     }
@@ -526,6 +534,7 @@ function triggerBloom(){ G.growth=0; G.blooms++; G.rush=20; callout('BLOOM RUSH'
 function rushHit(){ if(G.rush>0){ G.score+=2000; } }
 function drainBall(i){ var b=G.balls[i]; burst(b.x,DRAINY,8,'#5a4632'); G.balls.splice(i,1); sfx('drain');
   if(G.pollenMB && G.balls.length+G.mbRelease<=1){ endPollenMB(); }   // back to one bead = multiball over
+  if(G.chainMB && G.balls.length<=1){ G.chainMB=false; G.chainN=0; if(!G.pollenMB&&!G.wizard)G.multiball=false; float(VW/2,300,'CHAIN OVER'); }
   if(G.balls.length===0){ G.multiball=false; G.mult=1; G.combo=0; G.rush=0;
     // a failed FULL BLOOM dies with the last ball — no completion bonus, no 1M mode on the
     // next serve; the quest checklist resets so the wizard can be re-earned
@@ -621,6 +630,17 @@ function enterRail(b,sh){
   G.lastRail=sh.id; G.lastRailT=2.5;
   scoreShot(sh); sfx('launch'); }
 function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
+  var _isRO=(sh.type==='ramp'||sh.type==='orbit');
+  // --- CHAIN MULTIBALL: lit by the spinner, STARTED + GROWN by ramp shots (2 balls -> 7) ---
+  if(_isRO && !G.wizard && !G.pollenMB){
+    if(G.chainLit && !G.chainMB){ G.chainLit=false; G.chainMB=true; G.multiball=true; G.chainN=2; G.chainSave=9;
+      addChainBall(); callout('CHAIN MULTIBALL','#37e0c0',true); playAnim('goo_boilover',6,358,410,sh.x,sh.y+30,140,12);
+      sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,10); haptic(25);
+      G.score+=5000; G.bonusBase+=2000; float(sh.x,sh.y-20,'CHAIN START +5000'); return; }
+    if(G.chainMB){ if(G.chainN<7){ G.chainN++; addChainBall();
+        callout(G.chainN>=7?('BALL '+G.chainN+' — MAX CHAIN!'):('BALL '+G.chainN+'!'),'#37e0c0',G.chainN>=7);
+        sfx('save'); G.flash=Math.max(G.flash,0.4); G.shake=Math.max(G.shake,5); haptic(15); }
+      var _cp=Math.round(sh.value*scoreMul()*G.chainN); G.score+=_cp; G.bonusBase+=800; float(sh.x,sh.y-20,'+'+_cp); questShot(sh.id); return; } }
   if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
     if(G.wizJackpots>=12)endWizard(); return; }
   // Pollen MB: every ramp/orbit is a JACKPOT; 4 jackpots light the SUPER at the scoop
@@ -638,7 +658,11 @@ function onRollover(sh){ if(sh.cd>0||sh.lamp)return; sh.cd=0.5; sh.lamp=1; rushH
     if(G.bonusMult<5){ G.bonusMult++; float(265,170,'BONUS ×'+G.bonusMult+'!'); }
     else { G.pf2x=true; G.pf2xT=20; float(265,170,'PLAYFIELD 2X!'); }
     G.score+=Math.round(2500*scoreMul()); sfx('bloom'); G.flash=Math.max(G.flash,0.4); haptic(12); } }
+function addChainBall(){ G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+16,vx:(Math.random()*2-1)*90,vy:150,r:BALLR,inLane:false,trail:[]}); }
 function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)rot=1;
+  // ripping the Dandelion gear winds up the CHAIN — light it, then a ramp shot starts a scaling multiball
+  if(!G.chainLit && !G.chainMB && !G.pollenMB && !G.wizard){ G.spinTotal=(G.spinTotal||0)+rot;
+    if(G.spinTotal>=18){ G.chainLit=true; G.spinTotal=0; callout('CHAIN LIT — SHOOT ANY RAMP','#37e0c0',true); sfx('bloom'); G.flash=Math.max(G.flash,0.5); } }
   G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
 function onReturn(sh){ sh.cd=0.7; sh.lamp=1; rushHit();
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=400; comboHit(sh.x,sh.y);
@@ -659,6 +683,7 @@ function questShot(id){ if(!G.quest)return; var q=G.quest, prog=false, k;
   if(done)completeQuest(); }
 function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit'||id==='rorbit'||id==='spinner'||id==='scoop'))return true;
   if(G.pollenMB){ var jsh=shotById(id); if(jsh && (jsh.type==='ramp'||jsh.type==='orbit'))return true; }   // jackpots glow
+  if(G.chainLit||G.chainMB){ var csh=shotById(id); if(csh && (csh.type==='ramp'||csh.type==='orbit'))return true; }   // chain targets glow
   if(!G.quest)return false; var q=G.quest;
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
@@ -744,6 +769,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.mbRelease>0){ G.mbRelT-=dt; if(G.mbRelT<=0){ G.mbRelT=0.25; G.mbRelease--;
     G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+14,vx:-60-G.mbRelease*70,vy:140,r:BALLR,inLane:false,trail:[]}); sfx('launch'); } }
   if(G.pollenMB && G.mbSave>0){ G.mbSave-=dt; if(G.mbSave<0)G.mbSave=0; }
+  if(G.chainSave>0){ G.chainSave-=dt; if(G.chainSave<0)G.chainSave=0; }
   // spinner rip — decaying score ticks; a big rip during Pollen MB adds a ball (once)
   if(G.spin){ G.spin.ang+=G.spin.w*dt*6; G.spin.w*=Math.pow(0.5,dt); G.spin.tickT-=dt;
     if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*scoreMul()); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
@@ -782,7 +808,9 @@ function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false
   $('go-lab').textContent=(G.mode==='daily'?"today's table":'nectar');
   $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
   $('go-blooms').textContent=G.blooms; $('go-combo').textContent=G.bestCombo;
-  $('go-emoji').textContent=isBest?'🏅':'🌻';
+  $('go-balls').textContent=G.ball;
+  $('go-emoji').innerHTML='<img src="art/'+(isBest?'eyeball_lit':'eyeball_core')+'.png?v='+PIN_ART.VER+'" style="width:56px;height:56px;object-fit:contain" onerror="this.parentNode.textContent=\''+(isBest?'★':'◎')+'\'">';
+  $('go-lab').textContent=isBest?'NEW BEST':'final score';
   $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   sfx('over'); setTimeout(function(){ show('s-go'); }, 700);
 }
@@ -808,6 +836,14 @@ function render(){ if(!ctx||!G)return;
     for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
     ctx.strokeStyle='rgba(200,168,75,0.35)'; ctx.lineWidth=1.5;
     for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+  } else {
+    // art backdrop: bench bakes the lip, but add a soft RIM-LIGHT so the guard rails + lanes read as a framework
+    ctx.save(); ctx.lineCap='round'; ctx.shadowColor='rgba(120,205,195,0.55)'; ctx.shadowBlur=6;
+    ctx.strokeStyle='rgba(150,222,208,0.24)'; ctx.lineWidth=2.5;
+    for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,247,222,0.13)'; ctx.lineWidth=1;
+    for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
+    ctx.restore();
   }
   // divider-top posts
   for(w=0;w<POSTS.length;w++){ var po=POSTS[w]; var _poi=PIN_ART.img('post_nub');
@@ -894,6 +930,11 @@ function render(){ if(!ctx||!G)return;
     ctx.fillStyle='#c8a84b'; ctx.font='700 12px system-ui';
     ctx.fillText(G.superLit?('SUPER AT THE SCOOP · '+Math.round(1000000*G.mbLevel)):('JACKPOT '+jackpotValue()+' · '+G.jpCount+'/4'), VW/2, 92);
     if(G.mbSave>0){ ctx.fillStyle='#7ab356'; ctx.font='700 11px system-ui'; ctx.fillText('BALL SAVE '+Math.ceil(G.mbSave), VW/2, 108); } }
+  else if(G.chainMB){ ctx.textAlign='center'; ctx.fillStyle='#37e0c0'; ctx.font='800 16px system-ui';
+    ctx.fillText('CHAIN MULTIBALL · '+G.chainN+(G.chainN>=7?' (MAX)':' BALLS'), VW/2, 74);
+    ctx.fillStyle='#8ec9c0'; ctx.font='700 12px system-ui'; ctx.fillText(G.chainN>=7?'seven going — clear the lab!':'shoot a ramp to add a ball (up to 7)', VW/2, 92);
+    if(G.chainSave>0){ ctx.fillStyle='#7ab356'; ctx.font='700 11px system-ui'; ctx.fillText('BALL SAVE '+Math.ceil(G.chainSave), VW/2, 108); } }
+  else if(G.chainLit){ ctx.save(); ctx.textAlign='center'; ctx.globalAlpha=0.6+0.4*Math.sin(G.t*6); ctx.fillStyle='#37e0c0'; ctx.font='800 15px system-ui'; ctx.fillText('CHAIN LIT — SHOOT ANY RAMP', VW/2, 80); ctx.restore(); }
   else if(G.quest){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 14px system-ui'; ctx.fillText(G.quest.name.toUpperCase(), VW/2, 72);
     ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText(G.quest.blurb, VW/2, 88);
     var qtw=200, qtf=Math.max(0,G.quest.timer/G.quest.tmax); ctx.fillStyle='rgba(20,28,18,0.6)'; ctx.fillRect(VW/2-qtw/2,94,qtw,6);
@@ -965,8 +1006,14 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
         ctx.beginPath();
         if(exR){ ctx.moveTo(-6,-6); ctx.lineTo(8,0); ctx.lineTo(-6,6); } else { ctx.moveTo(6,-6); ctx.lineTo(-8,0); ctx.lineTo(6,6); }
         ctx.closePath(); ctx.fill(); ctx.restore(); }
-      var _thi=PIN_ART.img('throat_'+sh.id);
-      if(_thi){ artFit(_thi,sh.x,sh.y,sh.er*1.7); }
+      var _thi=PIN_ART.img('throat_'+sh.id), _thr=sh.er*1.7;
+      if(qlit){ // HIGHLIGHT a lit/target ramp: pulsing glow ring + a bouncing arrow diving into the throat
+        var _tg=0.5+0.5*Math.sin(G.t*7), _hc=isR?'#f2d98a':'#37e0c0';
+        ctx.save(); ctx.shadowColor=_hc; ctx.shadowBlur=16*_tg+8; ctx.strokeStyle=_hc; ctx.globalAlpha=0.55+0.4*_tg; ctx.lineWidth=3.5;
+        ctx.beginPath(); ctx.arc(sh.x,sh.y,_thr*0.62,0,7); ctx.stroke(); ctx.restore();
+        var _ay=sh.y-_thr*0.72-6-4*_tg; ctx.save(); ctx.fillStyle=_hc; ctx.globalAlpha=0.7+0.3*_tg;
+        ctx.beginPath(); ctx.moveTo(sh.x-9,_ay-9); ctx.lineTo(sh.x+9,_ay-9); ctx.lineTo(sh.x,_ay+3); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      if(_thi){ artFit(_thi,sh.x,sh.y,_thr); }
       else { ctx.save(); ctx.translate(sh.x,sh.y); ctx.fillStyle=qlit?('rgba(255,246,210,'+(0.6+0.4*fl)+')'):(isR?'rgba(122,179,86,0.75)':'rgba(143,208,224,0.75)');
         ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(0,-8); ctx.lineTo(8,7); ctx.lineTo(0,2); ctx.closePath(); ctx.fill(); ctx.restore(); }
     } else if(sh.type==='spinner'){ var qs=questLit('spinner'), ang=G.spin?G.spin.ang:G.t*0.7;
@@ -1212,6 +1259,11 @@ if(/[?&]gptest=1/.test(location.search)){
     questState:function(){ if(!G)return null; return G.quest?{name:G.quest.name,timer:Math.round(G.quest.timer*10)/10,got:G.quest.got,questsDone:G.questsDone.slice()}:{quest:null,questsDone:G.questsDone.slice(),wizardReady:!!G.wizardReady}; },
     forceWizard:function(){ if(!G)return null; var i; for(i=0;i<QUESTS.length;i++)G.questsDone[i]=true; G.wizardReady=true; startWizard(); return this.wizardState(); },
     wizardState:function(){ if(!G)return null; return {ready:!!G.wizardReady,wizard:!!G.wizard,jackpots:G.wizJackpots,balls:G.balls.length,questsDone:G.questsDone.slice()}; },
+    // CHAIN MULTIBALL test: light it, then fire ramp shots and watch the ball count climb 2->7
+    chain:function(){ newGame('classic'); if(!G)return null; G.awaitLaunch=false; G.balls=[{x:265,y:400,vx:0,vy:0,r:BALLR,inLane:false,trail:[]}];
+      G.chainLit=true; var counts=[], gsh=null,i; for(i=0;i<SHOTS.length;i++)if(SHOTS[i].id==='green')gsh=SHOTS[i];
+      for(i=0;i<9;i++){ gsh.cd=0; scoreShot(gsh); counts.push(G.balls.length); }
+      return {started:!!G.chainMB, chainN:G.chainN, ballCounts:counts, capped7:(G.chainN===7)}; },
     hitRollover:function(idx){ if(!G)return null; for(var i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='rollover'&&SHOTS[i].sunIdx===idx){ SHOTS[i].cd=0; onRollover(SHOTS[i]); break; } } return {bonusMult:G.bonusMult,pf2x:!!G.pf2x}; },
     bonusState:function(){ return G?{bonusBase:G.bonusBase,bonusMult:G.bonusMult,pf2x:!!G.pf2x,pf2xT:Math.round((G.pf2xT||0)*10)/10}:null; },
     setScoopLit:function(v){ if(G)G.scoopLit=!!v; return G?G.scoopLit:null; },
