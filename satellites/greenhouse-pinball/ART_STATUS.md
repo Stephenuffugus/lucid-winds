@@ -23,26 +23,24 @@ Raw source: `art-drop/Pinball claymation/` (22 sheets + `PROMPTS.txt`). Re-cut a
 | Scoop | `scoop_idle/lit/open` | 8 | monster mouth + gold lit ring |
 | Drops | `drop_up_0/1/2`, `drop_down_0/1/2` | 8 | 3 clay beakers, up/down |
 
-## Placed (in art/), wiring NEXT ⏳
-- **Lock nest jar** `lock_jar_0/1/2/3` (sheet 8) — swap into the LOCK_NEST draw (shows 0-3 locked eyeballs).
-- **Return gates** `return_gate`, `return_gate_lit` (sheet 8) — the inlane feed elbows.
-- **Drain grate** `drain_grate`, **goo net** `net_armed`/`net_flash` (sheet 8) — bottom drain + ball-save.
-- **Posts** `post_nub`, **diverter flag** `diverter_flag`, **tube segments** `tube_straight/curve` (sheet 9).
+## Also LIVE ✅ (Jul 18 PM)
+- **LOCK JAR** (`lock_jar_0..3`) — the specimen jar shows the 0-3 locked eyeballs, gold glow when lit.
+- **POSTS** (`post_nub`), **RETURN gates** (`return_gate`/`_lit`), **DRAIN grate**, **goo NET** (armed/flash).
+- **REACTION METER** (sheet 10) — the left rail is now a clay lab tube filling with green potion by growth
+  (empty/low/mid/high/erupt); erupts during Bloom Rush.
+- **Blobworks LOGO** (title, de-fringed) + animated **Blip mascot** (idle+blink, canvas).
+- **MEGA MASH erupt** on wizard, **goo boil-over** on multiball, **Blip cheer** (`blip_wave`) on quest complete
+  — via the one-shot `playAnim()` overlay.
 
-## Animations + logo — LIVE ✅ (added Jul 18 PM)
-- **Blobworks LOGO** on the title screen (sheet 11, cropped + de-fringed).
-- **Blip mascot** animated on the title — idle jiggle (6fr loop) + occasional blink (3fr), canvas rAF (sheet 13).
-- **MEGA MASH erupt** (sheet 16, 8fr) plays on wizard start; **goo boil-over** (sheet 15, 6fr) on multiball
-  start — via the new one-shot `playAnim()` overlay + normalized equal-cell strips.
-- `blip_wave` (cheer) + `tilt_wobble` cut/placed, not yet triggered.
-
-## Not yet cut/wired 🔜 (raw sheets ready)
-- **Reaction meter** (sheet 10) — the left growth ribbon → bubbling test-tube fill states.
-- **UI plates/buttons/DMD frame** (rest of sheet 11) — logo done; plates/DMD still procedural.
-- **Juice FX** (sheet 12) — goo splats, sparkles, mega_flash, mega_mash_ring for the burst() colors.
-- **In-play frame anims** (sheet 14) — eyeball blink, bumper chomp, beaker tumble, scoop gulp, spinner spin.
-- **Cosmetics** — table skins (sheets 18-21) + props (sheet 22: ball/claw skins, monster-buddy cameos).
-  Needs the cosmetics/skin-picker system (not in pinball yet).
+## Remaining 🔜 (lower priority / bigger)
+- **In-play frame anims** (sheet 14) — bumper chomp, scoop gulp, beaker tumble, eyeball blink, spinner spin.
+  (Bumpers/scoop/drops already swap idle↔lit/up↔down statically, so these are polish.)
+- **Juice FX** (sheet 12) — fancier burst splats/sparkles. (Current particles are procedural + fine; the big
+  wizard flash/ring is already covered by the MEGA MASH animation.)
+- **UI plates/DMD frame** (rest of sheet 11) — score/callout use procedural rounded plates now.
+- **`tilt_wobble`** cut, not yet triggered.
+- **COSMETICS** — table skins (sheets 18-21) + props (sheet 22: ball/claw skins, monster-buddy cameos).
+  This is a bigger feature: needs a skin-picker + unlock economy (not in pinball yet).
 
 ## Known issues / remake candidates 🔧
 1. **Magenta fringe (minor):** a faint pink edge remains on some green/purple sprites (the generator

@@ -643,7 +643,7 @@ function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
 function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
-  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true);
+  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,256,217,VW-92,VH-150,120,11);
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
