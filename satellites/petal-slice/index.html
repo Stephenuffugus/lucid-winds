@@ -74,7 +74,7 @@ h2.sc-h{font-size:24px; color:var(--pink); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Petal Slice</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Swipe to slice the tossed seed pods and blossoms in one stroke. Trace a glowing <b class="hl">graft line</b> through a cluster to weave a keepsake bloom — just don't slice the thorny burrs.</div>
+    <div class="ribbon">Swipe to slice the tossed seed pods and blossoms in one stroke. Trace a glowing <b class="hl">graft line</b> through a cluster to weave a keepsake bloom. Just don't slice the thorny burrs.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-grove">🌿&nbsp; Grove</button>
@@ -96,9 +96,9 @@ h2.sc-h{font-size:24px; color:var(--pink); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">✂️</div><div><b>Swipe</b> across the tossed pods, berries, and blossoms to slice them. One stroke can cut many for a <b class="hl">combo</b>.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>A glowing <b class="hl">graft line</b> links a cluster. Trace the whole line in one unbroken swipe to <b>graft a keepsake bloom</b> — big bonus.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>A glowing <b class="hl">graft line</b> links a cluster. Trace the whole line in one unbroken swipe to <b>graft a keepsake bloom for a big bonus</b>.</div></div>
     <div class="helprow"><div class="hi">🌵</div><div>Don't slice the <b style="color:var(--red)">thorny burrs</b> (they pulse red). Each one you cut wilts a petal.</div></div>
-    <div class="helprow"><div class="hi">🌼</div><div><b>Grove:</b> you have 3 petals — lose them all and the run ends. <b>Zen:</b> no burrs, no fail, just slice. <b>Daily:</b> one seeded board a day.</div></div>
+    <div class="helprow"><div class="hi">🌼</div><div><b>Grove:</b> you have 3 petals; lose them all and the run ends. <b>Zen:</b> no burrs, no fail, just slice. <b>Daily:</b> one seeded board a day.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -489,7 +489,7 @@ function onUp(e){ if(curScreen!=='s-play'||!G)return; e.preventDefault(); G.down
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/satellites/petal-slice/"; var sc=(G&&G.score)||0; var txt="Petal Slice — I harvested "+sc+" nectar slicing the midnight garden! Beat it?";
+function shareIt(){ var url="https://lucidwinds.com/satellites/petal-slice/"; var sc=(G&&G.score)||0; var txt="Petal Slice: I harvested "+sc+" nectar slicing the midnight garden! Beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 
@@ -536,8 +536,8 @@ if(/[?&]pstest=1/.test(location.search)){
     slash:function(y){ y=y||VH*0.5; G.strokeId++; for(var x=20;x<=VW-20;x+=22){ bladeSeg(x-22,y,x,y); } return G.objs.length; },
     // bot: run N seconds, slashing the screen when objects are in the upper-mid band
     autoPlay:function(secs){ secs=secs||20; var t=0; while(G.phase==='play' && t<secs){ step(0.03); t+=0.03;
-        var hit=false; for(var i=0;i<G.objs.length;i++){ var o=G.objs[i]; if(!o.burr && o.y<VH*0.7 && o.y>VH*0.25){ hit=true; break; } }
-        if(hit){ var yy=VH*0.45; G.strokeId++; for(var x=20;x<=VW-20;x+=20)bladeSeg(x-20,yy,x,yy); }
+        // slash a horizontal line at each in-band non-burr object's actual height
+        for(var i=0;i<G.objs.length;i++){ var o=G.objs[i]; if(o.burr||o.sliced) continue; if(o.y>VH*0.15 && o.y<VH*0.85){ var yy=o.y; G.strokeId++; for(var x=20;x<=VW-20;x+=20)bladeSeg(x-20,yy,x,yy); } }
       } return {phase:G.phase,score:G.score,grafts:G.grafts,bestCombo:G.bestCombo}; },
     spawnGraft:spawnGraft, endNow:function(){ if(G){G.petals=0;endRun();} }, mode:function(){return G?G.mode:null;}, render:render
   };

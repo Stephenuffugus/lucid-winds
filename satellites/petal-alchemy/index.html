@@ -172,7 +172,7 @@ h2.sc-h{font-size:30px; color:var(--pink); font-weight:800; margin-bottom:4px}
     <div id="pa-top">
       <div class="tbtn" id="pa-back">◄</div>
       <div class="grow"><div id="pa-mode">Free Alchemy</div><div id="pa-count">5 discovered</div></div>
-      <div class="tbtn" id="pa-log">Log</div>
+      <div class="tbtn" id="pa-log">Blooms</div>
     </div>
     <div id="pa-goal"></div>
     <input id="pa-search" placeholder="search your shelf…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -334,7 +334,7 @@ function todayStr(){ var d=new Date(Date.now()); return d.getFullYear()+'-'+(d.g
 function dateSeed(){ var d=new Date(Date.now()); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
 
 /* pick a daily target: a non-primitive, non-trivial element (deterministic) */
-function dailyTarget(){ var ids=[],k; for(k in EL){ if(EL[k][3]>=2 && !isTB(k)) ids.push(k); } ids.sort();
+function dailyTarget(){ var ids=[],k; for(k in EL){ if(EL[k][3]===2 && !isTB(k)) ids.push(k); } ids.sort();
   var r=rng(dateSeed()); return ids[Math.floor(r()*ids.length)]; }
 
 var HUNTS=[
@@ -348,14 +348,14 @@ function startMode(m){ G.mode=m; runEarn=0; G.a=G.b=G.r=null; G.steps=0; G.targe
   $('pa-mode').textContent = m==='free'?'Free Alchemy':(m==='daily'?'Daily Recipe':(m==='hunt'?'Bloom Hunt':'Zen Lab'));
   var goal=$('pa-goal');
   if(m==='daily'){ G.target=dailyTarget(); goal.className='on';
-    if(SAVE.dailyDone===todayStr()) goal.innerHTML='Today’s recipe (<b>'+EL[G.target][0]+'</b>) already grown — streak '+SAVE.streak+' ⭐';
+    if(SAVE.dailyDone===todayStr()) goal.innerHTML='Today’s recipe (<b>'+EL[G.target][0]+'</b>) already grown. Streak '+SAVE.streak+' ⭐';
     else goal.innerHTML='Build today’s recipe: <b>'+EL[G.target][0]+'</b> '+EL[G.target][1]+' &nbsp;·&nbsp; steps '+G.steps;
   } else if(m==='hunt'){ goal.className='on'; renderHuntGoal();
   } else { goal.className=''; goal.textContent=''; }
   renderShelf(''); renderTray(); show('s-play'); ac();
 }
 function renderHuntGoal(){ var h=null,i; for(i=0;i<HUNTS.length;i++){ if(!SAVE.hunts[HUNTS[i].id]){ h=HUNTS[i]; break; } }
-  var goal=$('pa-goal'); if(!h){ goal.innerHTML='All quests complete — lovely. Keep alchemizing!'; G.target=null; return; }
+  var goal=$('pa-goal'); if(!h){ goal.innerHTML='All quests complete. Lovely, keep alchemizing!'; G.target=null; return; }
   G.hunt=h; goal.innerHTML='🎯 '+h.nm+': <b>'+h.desc+'</b>'; }
 
 /* ---------- shelf / tray ---------- */
@@ -398,7 +398,7 @@ function doCombine(){ G.steps++;
   refreshCosmeticUnlocks();
 }
 function flashDud(){ var s=$('pa-r'); s.className='slot res'; s.innerHTML='<div class="nm" style="color:var(--muted)">…no take</div>'; }
-function updateDailyGoal(){ var goal=$('pa-goal'); if(SAVE.dailyDone===todayStr()){ goal.innerHTML='Today’s recipe grown — streak '+SAVE.streak+' ⭐'; return; }
+function updateDailyGoal(){ var goal=$('pa-goal'); if(SAVE.dailyDone===todayStr()){ goal.innerHTML='Today’s recipe grown. Streak '+SAVE.streak+' ⭐'; return; }
   goal.innerHTML='Build today’s recipe: <b>'+EL[G.target][0]+'</b> '+EL[G.target][1]+' &nbsp;·&nbsp; steps '+G.steps; }
 function completeDaily(){ if(SAVE.dailyDone===todayStr()) return; var ts=todayStr();
   // streak
@@ -454,7 +454,7 @@ function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=SAVE.
   for(var i=0;i<n;i++){ (function(id){ var c=document.createElement('div'); c.className='gkeep';
     var cv=document.createElement('canvas'); cv.width=110; cv.height=90; drawBloom(cv,id); c.appendChild(cv);
     var nm=document.createElement('div'); nm.className='kn'; nm.textContent=EL[id]?EL[id][0]:id; c.appendChild(nm); host.appendChild(c); })(SAVE.blooms[i]); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no keepsakes yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='no keepsakes yet'; host.appendChild(e); }
 }
 
 /* ---------- wiring ---------- */

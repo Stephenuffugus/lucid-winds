@@ -41,7 +41,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 .padbtn small{font-size:.7rem; color:var(--muted); margin-top:2px}
 .padbtn:active{background:#1c2a1c}
 #jumpbtn{flex:1; min-height:96px; background:#14202bc9; border-color:#5b9bd54d; font-size:1.4rem; letter-spacing:.12em}
-.screen{position:absolute; inset:0; background:linear-gradient(180deg,#0c1410f2 0%,#070b08fa 100%);
+.screen{position:absolute; inset:0; background:linear-gradient(180deg,#0c1410 0%,#070b08 100%);
   display:none; flex-direction:column; align-items:center; justify-content:flex-start; z-index:30;
   padding:44px 26px calc(24px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
 .screen.on{display:flex}
@@ -441,7 +441,7 @@ function win(){
   $("over-sub").textContent = G.mode==="daily"
     ? "Streak "+PROG.streak+". A new sphere tomorrow."
     : (G.mode==="blitz" ? "Blitz best: "+(PROG.bestBlitz[G.stage]||secs)+"s"
-      : "\""+STAGES[G.stage].name+"\""+(perfect?" — every sunbead gathered.":" cleared."));
+      : "\""+STAGES[G.stage].name+"\""+(perfect?". Every sunbead gathered.":" cleared."));
   $("ov-dew").textContent=G.dew0;
   $("ov-ring").textContent=G.rings;
   $("ov-time").textContent=secs;

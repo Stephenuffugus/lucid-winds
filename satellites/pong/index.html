@@ -54,7 +54,7 @@ h1,h2,h3,p{margin:0}
 #countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:7;pointer-events:none}
 #countdown b{font-family:var(--fdisp);font-size:22vmin;color:var(--ink);text-shadow:0 0 40px var(--accent);opacity:.9}
 #serveHint{position:absolute;left:0;right:0;bottom:16%;text-align:center;z-index:7;pointer-events:none;
-  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);animation:pulse 1.6s ease-in-out infinite}
+  padding:0 12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.4}}
 
 /* ── screens / overlays ── */
@@ -150,7 +150,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
       <div class="hud-mid"><div class="rally-tag" id="rallyTag"></div></div>
     </div>
     <div id="countdown" class="hidden"><b>3</b></div>
-    <div id="serveHint" class="hidden">Drag to serve</div>
+    <div id="serveHint" class="hidden">Drag to move your paddle. Drag to serve.</div>
   </div>
 </div>
 
@@ -161,7 +161,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
     <div class="tag" style="opacity:.6;font-size:.85em;margin-top:2px">↻ rotate your phone for the full-length court · flick your paddle as you strike to curve the ball</div></div>
     <div class="wallet" id="walletMenu"></div>
     <div class="menu-grid">
-      <button class="mbtn big" data-go="campaign"><span class="ic">🏆</span><span class="t">Career</span><span class="d" id="campSub">The Gauntlet — cycle every arena vs the machine.</span></button>
+      <button class="mbtn big" data-go="campaign"><span class="ic">🏆</span><span class="t">Career</span><span class="d" id="campSub">The Gauntlet: cycle every arena vs the machine.</span></button>
       <button class="mbtn" data-go="modes"><span class="ic">🎮</span><span class="t">Free Play</span><span class="d">Pick any arena &amp; settings.</span></button>
       <button class="mbtn" data-go="shop"><span class="ic">🎨</span><span class="t">Skins</span><span class="d">Paddles, balls, trails, arenas.</span></button>
       <button class="mbtn" data-go="settings"><span class="ic">⚙️</span><span class="t">Settings</span><span class="d">Sound, difficulty, controls.</span></button>
@@ -175,7 +175,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
 <div id="scrModes" class="screen hidden">
   <button class="back-x" data-go="menu">✕</button>
   <div class="screen-inner">
-    <div class="sec-title" style="margin-top:34px">Free Play — choose your arena</div>
+    <div class="sec-title" style="margin-top:34px">Free Play: choose your arena</div>
     <div class="menu-grid" id="modeGrid"></div>
     <div class="sec-title">Difficulty</div>
     <div class="row" id="diffRow"></div>
@@ -188,7 +188,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
 <div id="scrCamp" class="screen hidden">
   <button class="back-x" data-go="menu">✕</button>
   <div class="screen-inner">
-    <div class="sec-title" style="margin-top:34px">Career — The Gauntlet <span class="chip" id="campProg"></span></div>
+    <div class="sec-title" style="margin-top:34px">Career: The Gauntlet <span class="chip" id="campProg"></span></div>
     <div class="camp-list" id="campList"></div>
   </div>
 </div>
@@ -829,7 +829,7 @@ reg({ id:'gauntlet', name:'Gauntlet', ic:'⚡', desc:'Power-ups, bumpers &amp; a
 });
 
 /* ── SURVIVAL — solo. one paddle, three walls, endless. speed climbs. ── */
-reg({ id:'survival', name:'Survival', ic:'🛡️', desc:'Solo endless. Three walls, one paddle — how long can you last?',
+reg({ id:'survival', name:'Survival', ic:'🛡️', desc:'Solo endless. Three walls, one paddle. How long can you last?',
   solo:true, lives:3, ballK:0.9,
   build(m){ const W=m.W,H=m.H, my=Math.max(24,H*0.05), pl=Math.min(W*0.30,170), th=Math.max(11,W*0.02);
     m.addWall(0,0,W,0); m.addWall(0,0,0,H); m.addWall(W,0,W,H); // top + both sides solid
@@ -1359,13 +1359,14 @@ const UI=(function(){
     if(!m){return;}
     const cd=$('#countdown'); if(m.state==='count'){ cd.classList.remove('hidden'); cd.querySelector('b').textContent=m.count>0?m.count:'GO'; }
     else cd.classList.add('hidden');
+    const sh=$('#serveHint'); if(m.state==='count'||m.state==='serve') sh.classList.remove('hidden'); else sh.classList.add('hidden');
     const rt=$('#rallyTag'); rt.textContent = m.state==='play'&&m.rally>3? ('RALLY '+m.rally) : '';
   }
   function renderWallet(){ const html=walletHTML(); $('#walletMenu').innerHTML=html; $('#campSub').textContent = campSubtitle(); }
   function walletHTML(){ return [['rally','⚡','rally'],['gem','💎','gem'],['spark','✦','spark'],['trophy','🏆','trophy']].map(([k,ic,cls])=>`<div class="cur ${cls}"><span class="ic">${ic}</span><b>${fmt(S.cur[k]||0)}</b></div>`).join(''); }
   function fmt(n){ return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':(''+n); }
   function flashWallet(cur){ /* light touch: refresh if a wallet is visible */ if(!scr.menu.classList.contains('hidden'))$('#walletMenu').innerHTML=walletHTML(); if(!scr.shop.classList.contains('hidden'))$('#walletShop').innerHTML=walletHTML(); }
-  function campSubtitle(){ return 'Level '+(S.camp+1)+' of '+CAMPAIGN.length+' — '+(CAMPAIGN[Math.min(S.camp,CAMPAIGN.length-1)].label); }
+  function campSubtitle(){ return 'Level '+(S.camp+1)+' of '+CAMPAIGN.length+': '+(CAMPAIGN[Math.min(S.camp,CAMPAIGN.length-1)].label); }
   function renderModes(){
     const g=$('#modeGrid'); g.innerHTML='';
     for(const id of FREEPLAY_MODES){ const m=MODES[id]; if(!m)continue;
@@ -1412,7 +1413,7 @@ const UI=(function(){
       saveNow(); return;
     }
     $('#resVerdict').textContent=r.win?'VICTORY':'DEFEAT'; $('#resVerdict').className='verdict '+(r.win?'win':'lose');
-    $('#resScore').textContent=`${r.p} — ${r.ai}   ·   best rally ${r.rally}`;
+    $('#resScore').textContent=`${r.p} : ${r.ai}   ·   best rally ${r.rally}`;
     // rewards
     let rew={rally: r.win? 20:6, gem: r.win?2:0};
     if(r.win&&m.scores.ai===0){ rew.gem+=3; rew.rally+=10; }
@@ -1423,7 +1424,7 @@ const UI=(function(){
       if(r.win){ if(m.campaign>=S.camp){ S.camp=m.campaign+1; if(S.camp>S.campBest)S.campBest=S.camp; Economy.earn('trophy',1,'camp'); const d=document.createElement('div');d.className='reward';d.innerHTML='🏆 +1';rr.appendChild(d); }
         $('#resExtra').textContent=(S.camp>=CAMPAIGN.length)?'You cleared The Gauntlet! Endless mode continues.':'Level cleared.';
         nextBtn.textContent='Next level'; nextBtn.onclick=()=>{ const nx=Math.min(S.camp,CAMPAIGN.length-1); const lv=CAMPAIGN[nx]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:nx,powerups:lv.powerups,obstacles:lv.obstacles}); };
-      } else { $('#resExtra').textContent='Try again — the machine is patient.'; nextBtn.textContent='Retry'; nextBtn.onclick=()=>{ const lv=CAMPAIGN[m.campaign]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:m.campaign,powerups:lv.powerups,obstacles:lv.obstacles}); }; }
+      } else { $('#resExtra').textContent='Try again. The machine is patient.'; nextBtn.textContent='Retry'; nextBtn.onclick=()=>{ const lv=CAMPAIGN[m.campaign]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:m.campaign,powerups:lv.powerups,obstacles:lv.obstacles}); }; }
     } else { $('#resExtra').textContent=''; nextBtn.textContent='Play again'; nextBtn.onclick=()=>{ startMatch(m.modeId,{diff:S._diff,target:S._target}); }; }
     saveNow();
   }

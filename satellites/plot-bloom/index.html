@@ -353,7 +353,8 @@ function harmonyBloom(idx,gain){
   PROG.blooms.push(seed); if(PROG.blooms.length>60)PROG.blooms.shift();
   PROG.grewTotal++; save();
   sfx('bloom'); flashBloom();
-  var g=window._sbCapEarn?_sbCapEarn(1,'plotbloom:harmony'):0; if(g>0)G.granted+=g;
+  var allow=Math.max(0,12-G.granted); // 12/run sunbeam cap
+  if(allow>0){ var g=window._sbCapEarn?_sbCapEarn(1,'plotbloom:harmony'):0; if(g>0)G.granted+=g; }
   toast('Harmony Bloom! +'+gain+'. A keepsake for your Gallery.');
 }
 
@@ -368,9 +369,10 @@ function endRun(){
   // daily streak
   if(G.mode==='daily'){ var ts=todayStr(); if(PROG.lastDaily!==ts){ var y=new Date(Date.now()-864e5); var ys=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate(); PROG.streak=(PROG.lastDaily===ys)?(PROG.streak+1):1; PROG.lastDaily=ts; } }
   save();
-  // sunbeam by score tier (12/run cap enforced in helper too)
+  // sunbeam by score tier (12/run cap: honor blooms already granted this run)
   var amt=Math.min(12, Math.floor(G.score/40) + (G.mode==='daily'?2:0));
-  var g=window._sbCapEarn?_sbCapEarn(amt,'plotbloom:'+G.mode):0; G.granted+=g;
+  amt=Math.min(amt, Math.max(0,12-G.granted));
+  var g=(amt>0 && window._sbCapEarn)?_sbCapEarn(amt,'plotbloom:'+G.mode):0; G.granted+=g;
   showResults();
 }
 function showResults(){
@@ -410,13 +412,14 @@ function render(){
   if(!G)return;
   $('pb-score').textContent=G.score;
   // board
-  var host=$('pb-board'); host.style.gridTemplateColumns='repeat('+N+',1fr)';
-  var maxW=540-28; host.style.width=maxW+'px';
+  var host=$('pb-board'); host.style.gridTemplateColumns='repeat('+G.size+',1fr)';
+  // render only the active plot so small plots fill the space instead of floating in blank bands
+  var cellPx=Math.min(146,Math.floor((540-28)/G.size)); host.style.width=(cellPx*G.size)+'px';
   host.innerHTML='';
   var sel=(G.sel>=0)?G.hand[G.sel]:-1;
   for(var r=0;r<N;r++)for(var c=0;c<N;c++){ (function(r,c){
+    if(!active(r,c,G.size))return; // skip inactive margin cells entirely
     var idx=r*N+c, cell=document.createElement('div'); cell.className='cell';
-    if(!active(r,c,G.size)){ cell.className+=' locked'; host.appendChild(cell); return; }
     var v=G.grid[idx];
     if(v>=0){ cell.className+=' filled'; cell.innerHTML='<span>'+glyph(v)+'</span>'+(SET.cb?'<span class="lbadge">'+PLETTER[v]+'</span>':''); }
     else{ cell.className+=' empty';

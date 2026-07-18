@@ -57,7 +57,7 @@
 
   /* ---- menus ---- */
   .overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:12px;background:rgba(10,26,17,.88);color:var(--hud);text-align:center;
+    justify-content:safe center;gap:12px;background:rgba(10,26,17,.88);color:var(--hud);text-align:center;
     padding:18px;overflow-y:auto}
   .hidden{display:none!important}
   h1.logo{font-family:Georgia,'Times New Roman',serif;font-size:32px;color:var(--petal);
@@ -233,9 +233,10 @@
         <small>Power-up storm · spread · rapid · pierce · homing pollen · time-slow · nullify · bloom bomb</small></button>
       <button class="menu-btn" data-mode="bloom">🌸 BLOOM RUSH
         <small>Roguelite · draft a stacking upgrade after every stage · build your run</small></button>
+      <button class="menu-btn alt" id="bHow">❓ HOW TO PLAY</button>
       <button class="menu-btn alt" id="bShop">🍯 COSMETICS <small><span class="nectar" id="shopBal1">0</span> nectar banked</small></button>
       <button class="menu-btn alt" id="bSettings">⚙ CONTROLS &amp; OPTIONS</button>
-      <div class="stat">Best — C <span class="nectar" id="hiC">0</span> · D <span class="nectar" id="hiD">0</span> · P <span class="nectar" id="hiP">0</span> · R <span class="nectar" id="hiR">0</span></div>
+      <div class="stat">Best · C <span class="nectar" id="hiC">0</span> · D <span class="nectar" id="hiD">0</span> · P <span class="nectar" id="hiP">0</span> · R <span class="nectar" id="hiR">0</span></div>
     </div>
 
     <!-- SHOP (cosmetics only) -->
@@ -274,6 +275,20 @@
       </div>
       <div class="stat">Keyboard: ◀▶ / A D move · SPACE fire · P pause</div>
       <button class="menu-btn alt" id="bSetBack" style="text-align:center">◀ BACK</button>
+    </div>
+
+    <!-- HOW TO PLAY -->
+    <div class="overlay hidden" id="mHow">
+      <h1 class="logo" style="font-size:22px">How To Play<span>DEFEND THE PICNIC</span></h1>
+      <div style="width:min(340px,90vw);text-align:left;font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:10px">
+        <div><b>Goal:</b> your snapdragon guards the picnic. Clear every bug in each swarm to advance to the next stage. Lose all your sprouts and the run ends.</div>
+        <div><b>Move &amp; fire:</b> slide left and right with the on-screen pad (or joystick), and tap FIRE to shoot pollen up at the swarm. Keyboard: arrows or A/D to move, SPACE to fire, P to pause.</div>
+        <div><b>Capture &amp; rescue:</b> some bugs fire a pollen beam that snatches your plant. Shoot the captor before it escapes to rescue the plant. A rescued plant flies alongside you as a second gun.</div>
+        <div><b>Transform trios:</b> when three matching bugs morph and dive together, clear the whole trio for a big bonus.</div>
+        <div><b>Streak multiplier:</b> hit bugs back to back without missing to build a scoring streak. A miss resets it.</div>
+        <div><b>Fighters as armour:</b> extra blooms flying with you soak a hit instead of costing a life, so keep them close.</div>
+      </div>
+      <button class="menu-btn alt" id="bHowBack" style="text-align:center">◀ BACK</button>
     </div>
 
     <!-- GAME OVER -->
@@ -380,8 +395,9 @@ function persist(){
 const listeners={};
 function emit(ev,data){
   (listeners[ev]||[]).forEach(f=>{try{f(data)}catch(e){}});
-  try{ if(window.parent!==window)
-    window.parent.postMessage({source:'picnic-panic',event:ev,data:JSON.parse(JSON.stringify(data||{}))},'*');
+  try{ var _m={source:'picnic-panic',event:ev,data:JSON.parse(JSON.stringify(data||{}))};
+    if(window.parent!==window) window.parent.postMessage(_m,'*');
+    else window.postMessage(_m,'*');
   }catch(e){}
 }
 window.PicnicPanic={
@@ -628,10 +644,10 @@ function buildStage(){
     G.spawnQueue.push({...L,delay:squad*2.0+(i%8)*.14,side:squad%2?1:-1,arch});
     i++;
   }
-  const label=plan.gim==='kamikaze'?'STAGE '+st+' — SWARM RUSH'
-            :plan.gim==='ambush'?'STAGE '+st+' — AMBUSH'
-            :plan.gim==='armada'?'STAGE '+st+' — QUEENS ARMADA'
-            :plan.gim==='brood'?'STAGE '+st+' — BROOD SWARM'
+  const label=plan.gim==='kamikaze'?'STAGE '+st+' · SWARM RUSH'
+            :plan.gim==='ambush'?'STAGE '+st+' · AMBUSH'
+            :plan.gim==='armada'?'STAGE '+st+' · QUEENS ARMADA'
+            :plan.gim==='brood'?'STAGE '+st+' · BROOD SWARM'
             :'STAGE '+st;
   showMsg(label,1.5);
 }
@@ -1391,7 +1407,7 @@ function loop(ts){
 requestAnimationFrame(loop);
 
 /* ---------------- SCREENS / MENUS ---------------- */
-const screens=['mTitle','mShop','mSet','mOver','mPause','mDraft'];
+const screens=['mTitle','mShop','mSet','mHow','mOver','mPause','mDraft'];
 function showScreen(id){for(const s of screens)document.getElementById(s).classList.toggle('hidden',s!==id);}
 function refreshMenus(){
   document.getElementById('shopBal').textContent=SAVE.nectar;
@@ -1438,6 +1454,8 @@ document.getElementById('bShop').onclick=()=>{refreshMenus();showScreen('mShop')
 document.getElementById('bShopBack').onclick=()=>{refreshMenus();showScreen('mTitle');};
 document.getElementById('bSettings').onclick=()=>showScreen('mSet');
 document.getElementById('bSetBack').onclick=()=>showScreen('mTitle');
+document.getElementById('bHow').onclick=()=>showScreen('mHow');
+document.getElementById('bHowBack').onclick=()=>showScreen('mTitle');
 document.getElementById('bRetry').onclick=()=>startRun(G.mode);
 document.getElementById('bMenu').onclick=()=>{refreshMenus();showScreen('mTitle');};
 document.getElementById('cBtns').onclick=()=>{SAVE.settings.controls='buttons';persist();applyControlMode();};

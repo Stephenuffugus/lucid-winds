@@ -167,7 +167,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="win-stat"><span>Bed</span><b id="win-size">4 × 4</b></div>
       <div class="win-stat"><span>Time</span><b id="win-time">0:00</b></div>
       <div class="win-stat"><span>Nudges used</span><b id="win-hints">0</b></div>
-      <div class="win-stat" id="win-best-row"><span>Best time</span><b id="win-best">—</b></div>
+      <div class="win-stat" id="win-best-row"><span>Best time</span><b id="win-best">none yet</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
     <div id="win-skin" style="display:none;margin-top:10px;font-size:14px;color:var(--sage);font-weight:700"></div>
@@ -257,9 +257,9 @@ var clockTimer=0;
 var LAY={ cell:0, gx:0, gy:0, trayY:0, trayCell:0, trayCols:0, trayX:0 };
 
 var MODES=[
-  { key:'s3', ico:'3', t:'Sprout', d:'3 × 3 · numbers 0–5', n:3, maxv:6 },
-  { key:'s4', ico:'4', t:'Bud',    d:'4 × 4 · numbers 0–7', n:4, maxv:8 },
-  { key:'s5', ico:'5', t:'Bloom',  d:'5 × 5 · numbers 0–9', n:5, maxv:10 },
+  { key:'s3', ico:'3', t:'Sprout', d:'3 × 3 · numbers 0 to 5', n:3, maxv:6 },
+  { key:'s4', ico:'4', t:'Bud',    d:'4 × 4 · numbers 0 to 7', n:4, maxv:8 },
+  { key:'s5', ico:'5', t:'Bloom',  d:'5 × 5 · numbers 0 to 9', n:5, maxv:10 },
   { key:'s6', ico:'6', t:'Thicket',d:'6 × 6 · expert',      n:6, maxv:10 },
   { key:'dly',ico:'★', t:'Daily Bed', d:'One shared 4 × 4 a day', n:4, maxv:8, daily:true }
 ];
@@ -679,9 +679,9 @@ function sharePetalvex(){
   if(P && P.solved){
     var nud = P.hints===0 ? "no nudges" : (P.hints+" nudge"+(P.hints>1?"s":""));
     var what = (P.mode && P.mode.daily) ? "today's Daily bed" : ("a "+P.n+"×"+P.n+" bed");
-    txt="Petalvex — solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
+    txt="Petalvex: solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
   } else {
-    txt="Petalvex — a botanical TetraVex. Can you solve the bed?";
+    txt="Petalvex, a botanical TetraVex. Can you solve the bed?";
   }
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){}).catch(function(){}); }

@@ -100,7 +100,7 @@
   .item:active{transform:scale(.97);}
   .item.owned{border-color:#3a5a28;}
   .item.equipped{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset, 0 0 16px rgba(200,168,75,.2);}
-  .item cv, .item canvas{width:64px; height:64px;}
+  .item cv, .item canvas{width:64px; height:64px; position:static;}
   .item .nm{font-size:11px; font-weight:700; text-align:center; line-height:1.1;}
   .item .pr{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--coin); display:flex; align-items:center; gap:3px;}
   .item .pr.own{color:var(--good);}
@@ -514,7 +514,7 @@ function worldToScreenY(wy){ return (wy - cam.y); }
    ════════════════════════════════════════════════════════════════════════ */
 var MODES={
   free:      {name:"Free Plunge", icon:"⛷️", metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.010, seeded:false,
-              desc:"Endless. Go as deep as you dare — the Gnome wakes at 3200."},
+              desc:"Endless. Go as deep as you dare. The Gnome wakes at 3200."},
   slalom:    {name:"Slalom",      icon:"🚩", metric:"time",  len:1600,     gnome:false, density:0.55,ramp:0.010, gate:0.055, seeded:false,
               desc:"Thread every bamboo gate down a set course. Best time wins."},
   freestyle: {name:"Freestyle",   icon:"✨", metric:"style", len:1400,     gnome:false, density:0.45,ramp:0.075, gate:0.006, seeded:false,
@@ -1259,15 +1259,16 @@ function yesterdayKey(){ var d=new Date(Date.now()-864e5); return d.getUTCFullYe
 function quitRun(){ if(S && !S.over) bankRun(); if(S){ S.running=false; S.over=true; } gotoModes(); }   // bank the run before leaving — don't silently forfeit an endless run's earnings
 
 /* ---- pause ---- */
-function pauseGame(on){ if(!S||S.over)return; S.paused=on; if(on){ buildPause(); show("scrPause"); } else { hideAllScreens(); $("hud").classList.remove("hidden"); S.startMs+=0; lastT=0; } }
+function pauseGame(on){ if(!S||S.over)return; S.paused=on; if(on){ buildPause(); show("scrPause"); } else { hideAllScreens(); $("hud").classList.remove("hidden"); var rx=$("exitLink"); if(rx&&rx.parentNode)rx.parentNode.style.display="none"; S.startMs+=0; lastT=0; } }
 
 /* ══════════════════════════════════════════════════════════════════════════
    SCREEN NAV
    ════════════════════════════════════════════════════════════════════════ */
 var SCR=["scrTitle","scrModes","scrShop","scrDaily","scrSettings","scrPause","scrOver","scrTut"];
 function hideAllScreens(){ for(var i=0;i<SCR.length;i++)$(SCR[i]).classList.add("hidden"); }
-function show(id){ hideAllScreens(); $("hud").classList.add("hidden"); $("hint").classList.add("hidden"); $(id).classList.remove("hidden"); }
+function show(id){ hideAllScreens(); $("hud").classList.add("hidden"); $("hint").classList.add("hidden"); $(id).classList.remove("hidden"); var ex=$("exitLink"); if(ex&&ex.parentNode)ex.parentNode.style.display=""; }
 function showGame(){ hideAllScreens(); $("hud").classList.remove("hidden");
+  var _ex=$("exitLink"); if(_ex&&_ex.parentNode)_ex.parentNode.style.display="none";
   if(!P.seenTut){ /* handled by tutorial gate before start */ }
   var h=$("hint");
   h.textContent = (matchMedia&&matchMedia("(pointer:coarse)").matches)? "◀ carve  ·  hold middle to tuck  ·  tap in the air for tricks ▶" : "← → carve  ·  ↓ tuck  ·  space = trick  ·  P = pause";
@@ -1306,11 +1307,11 @@ function buildTut(){
   $("scrTut").innerHTML=
     '<div class="h" style="margin-top:8vh">How to Plunge</div>'+
     '<div class="card" style="margin-top:14px"><div class="tut">'+
-      '<p><b class="em">Carve</b> — tap or hold the <b>left / right</b> of the screen (or ◀ ▶ keys) to steer across the slope. Turning sideways slows you; pointing downhill is fastest.</p>'+
-      '<p style="margin-top:10px"><b class="em">Tuck</b> — hold the <b>middle</b> (or ↓) to bomb straight downhill for speed. You can\'t hard-carve while tucking.</p>'+
-      '<p style="margin-top:10px"><b class="em">Air &amp; tricks</b> — hit a ▲ ramp or bouncy toadstool to launch. <b>Tap in the air</b> (or space) to spin. Land clean for style &amp; Petals.</p>'+
-      '<p style="margin-top:10px"><b class="em">The Gnome</b> — plunge past <b>2000</b> and the feral garden Gnome wakes and gives chase. Tuck to build a lead, grab a 🏮 <b>Firefly Lantern</b> to shake it. Crash and it gains.</p>'+
-      '<p style="margin-top:10px"><b class="em">Petals</b> 🌸 — spend them in the Shop on riders, sleds, trails &amp; skies.</p>'+
+      '<p><b class="em">Carve.</b> Tap or hold the <b>left / right</b> of the screen (or ◀ ▶ keys) to steer across the slope. Turning sideways slows you; pointing downhill is fastest.</p>'+
+      '<p style="margin-top:10px"><b class="em">Tuck.</b> Hold the <b>middle</b> (or ↓) to bomb straight downhill for speed. You can\'t hard-carve while tucking.</p>'+
+      '<p style="margin-top:10px"><b class="em">Air &amp; tricks.</b> Hit a ▲ ramp or bouncy toadstool to launch. <b>Tap in the air</b> (or space) to spin. Land clean for style &amp; Petals.</p>'+
+      '<p style="margin-top:10px"><b class="em">The Gnome.</b> Plunge past <b>3200</b> and the feral garden Gnome wakes and gives chase. Tuck to build a lead, grab a 🏮 <b>Firefly Lantern</b> to shake it. Crash and it gains.</p>'+
+      '<p style="margin-top:10px"><b class="em">Petals</b> 🌸. Spend them in the Shop on riders, sleds, trails &amp; skies.</p>'+
     '</div></div>'+
     '<div class="spacer"></div><button class="btn primary wide" id="tutGo">Let\'s go ▶</button>';
   $("tutGo").onclick=function(){ P.seenTut=1; saveProfile(true); SFX.ui(); gotoModes(); };
@@ -1367,7 +1368,7 @@ function buildDaily(){
 function dailySquares(depth){ var emo=["🌱","🌿","🍄","⛰️","🌙"]; var reached=biomeIndexAt(depth==null?P.daily.best:depth); var s=""; for(var i=0;i<=reached&&i<5;i++)s+=emo[i]; return s||"🌱"; }
 function shareDaily(){
   var url="https://lucidwinds.com/satellites/petal-plunge/";
-  var txt="Petal Plunge — Daily "+dailyKey()+"\n"+dailySquares()+"  "+P.daily.best+" deep\n\nCan you beat my score?";
+  var txt="Petal Plunge · Daily "+dailyKey()+"\n"+dailySquares()+"  "+P.daily.best+" deep\n\nCan you beat my score?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }
   else toastMsg(txt);
@@ -1378,14 +1379,14 @@ function shareRun(){
   var mode=S?S.mode:"free", txt;
   if(mode==="daily"){
     var dep=Math.floor(S.depth);
-    txt="Petal Plunge — Daily "+dailyKey()+": "+dailySquares(dep)+" "+dep+" deep! Can you beat it?";
+    txt="Petal Plunge · Daily "+dailyKey()+": "+dailySquares(dep)+" "+dep+" deep! Can you beat it?";
   } else if(mode==="slalom"){
-    txt="Petal Plunge — Slalom "+(S.finished?("finished in "+fmtTime(S.timeMs)+" "+starStr(slalomStars(S.timeMs))):("crashed at "+S.gatesHit+"/"+S.gatesTotal+" gates"))+"! Can you beat it?";
+    txt="Petal Plunge · Slalom "+(S.finished?("finished in "+fmtTime(S.timeMs)+" "+starStr(slalomStars(S.timeMs))):("crashed at "+S.gatesHit+"/"+S.gatesTotal+" gates"))+"! Can you beat it?";
   } else if(mode==="freestyle"){
-    txt="Petal Plunge — Freestyle "+S.style+" style points"+(S.finished?(" "+starStr(freestyleStars(S.style))):"")+"! Can you beat it?";
+    txt="Petal Plunge · Freestyle "+S.style+" style points"+(S.finished?(" "+starStr(freestyleStars(S.style))):"")+"! Can you beat it?";
   } else {
     var d=Math.floor(S.depth);
-    txt="Petal Plunge — plunged "+d+" deep "+dailySquares(d)+(S.gnomeEscapes>0?(" · "+S.gnomeEscapes+" gnome escape"+(S.gnomeEscapes>1?"s":"")):"")+"! Can you beat it?";
+    txt="Petal Plunge · plunged "+d+" deep "+dailySquares(d)+(S.gnomeEscapes>0?(" · "+S.gnomeEscapes+" gnome escape"+(S.gnomeEscapes>1?"s":"")):"")+"! Can you beat it?";
   }
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }

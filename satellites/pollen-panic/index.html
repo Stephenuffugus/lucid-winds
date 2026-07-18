@@ -74,7 +74,7 @@
       <h1>Pollen<br><em>Panic</em></h1>
       <div class="sub">A LUCID WINDS GAME</div>
       <div class="modes" id="modeList"></div>
-      <div class="secthead">— TODAY'S MISSIONS —</div>
+      <div class="secthead">· TODAY'S MISSIONS ·</div>
       <div id="missionBox" class="tag" style="text-align:left;margin-top:6px"></div>
       <button class="alt" id="btnShop">NURSERY&nbsp;&#127800;</button>
       <div class="tag">Swipe or arrow keys · munch every seed<br>Blooms wilt the pests · grab sunberries</div>
@@ -85,13 +85,13 @@
     <div class="card">
       <div class="big">The Nursery</div>
       <div class="sub">PETALS &#127800; <span id="shopPetals"></span></div>
-      <div class="secthead">— CRITTER SKINS —</div>
+      <div class="secthead">· CRITTER SKINS ·</div>
       <div class="shopgrid" id="skinGrid"></div>
-      <div class="secthead">— GARDEN THEMES —</div>
+      <div class="secthead">· GARDEN THEMES ·</div>
       <div class="shopgrid" id="themeGrid"></div>
-      <div class="secthead">— SEED STYLES —</div>
+      <div class="secthead">· SEED STYLES ·</div>
       <div class="shopgrid" id="seedGrid"></div>
-      <div class="secthead">— TRAILS —</div>
+      <div class="secthead">· TRAILS ·</div>
       <div class="shopgrid" id="trailGrid"></div>
       <button class="alt" id="btnShopBack">BACK</button>
     </div>
@@ -917,7 +917,7 @@ function buildMenu(){
   ensureMissions();
   document.getElementById("missionBox").innerHTML=save.missions.list.map(m=>{
     const def=missionDef(m.id);
-    return (m.claimed?"\u2713 ":"\u2022 ")+def.txt+" — "+
+    return (m.claimed?"\u2713 ":"\u2022 ")+def.txt+" · "+
       (m.claimed?"DONE":Math.min(m.prog,def.goal)+"/"+def.goal)+
       " <span style='color:var(--bloom)'>+"+def.reward+" \u{1F338}</span>";
   }).join("<br>");
@@ -1019,7 +1019,7 @@ document.getElementById("btnGust").onclick=()=>useGust();
     var card=document.querySelector('#menu .card');
     if(!card||document.getElementById('lwExit'))return;
     var b=document.createElement('button');
-    b.id='lwExit';b.className='alt';b.textContent='← ALL SKY WOLF GAMES';
+    b.id='lwExit';b.className='alt';b.textContent='← ALL GAMES';
     b.style.marginTop='4px';
     b.addEventListener('click',function(){window.SWS_EXIT();});
     card.appendChild(b);
