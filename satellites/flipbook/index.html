@@ -139,6 +139,7 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
       <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
       <button class="tbtn" id="b-newbook" aria-label="Start a new flipbook">📓 New</button>
+      <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
     </div>
     <div class="trow">
       <button class="tbtn" id="b-voice" aria-label="Record voices">🎙 Voice</button>
@@ -312,6 +313,224 @@ $('b-newbook').addEventListener('click',function(){
   if(!confirm('Start a fresh flipbook? This one will be erased.'))return;
   pages=[null]; cur=0; showPage(); save();
 });
+
+/* ---------- DAILY starter ------------------------------------------------
+   A fresh flipbook whose FRAME 1 is a procedurally drawn subject keyed to
+   today's date. Same subject for everyone each day, a new one each day.
+   Nothing is hand-authored: a mulberry32 seeded from YYYYMMDD picks one of
+   26 subject "recipes" and draws it with a handful of simple canvas strokes,
+   faintly, so the user can trace / build the animation right on top of it.
+   Otherwise the daily behaves exactly like a New flipbook (same pages array,
+   same draw / playback / export model). ------------------------------------ */
+function mulberry32(a){
+  return function(){
+    a|=0; a=(a+0x6D2B79F5)|0;
+    var t=Math.imul(a^(a>>>15), 1|a);
+    t=(t+Math.imul(t^(t>>>7), 61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+function dateKey(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+// faint "pencil" tones so the starter reads as a guide you build on
+var DK_INK='rgba(40,34,52,0.55)', DK_ACC='rgba(40,34,52,0.72)';
+var DCX=256, DCY=358;   // centre of the 512x716 page
+function dset(g,w,col){ g.lineCap='round'; g.lineJoin='round'; g.lineWidth=w;
+  g.strokeStyle=col||DK_INK; g.fillStyle=col||DK_INK; g.globalCompositeOperation='source-over'; }
+function dline(g,x1,y1,x2,y2){ g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); }
+function dcirc(g,cx,cy,r,fill){ g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2); if(fill)g.fill(); else g.stroke(); }
+function darc(g,cx,cy,r,a0,a1,close,fill){ g.beginPath(); g.arc(cx,cy,r,a0,a1); if(close)g.closePath(); if(fill)g.fill(); else g.stroke(); }
+function dellip(g,cx,cy,rx,ry,rot,fill){ g.beginPath();
+  if(g.ellipse){ g.ellipse(cx,cy,rx,ry,rot||0,0,Math.PI*2); }
+  else { g.save(); g.translate(cx,cy); if(rot)g.rotate(rot); g.scale(rx/Math.max(ry,0.01),1); g.arc(0,0,ry,0,Math.PI*2); g.restore(); }
+  if(fill)g.fill(); else g.stroke(); }
+function dpoly(g,pts,close,fill){ var i; g.beginPath(); g.moveTo(pts[0][0],pts[0][1]);
+  for(i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]); if(close)g.closePath(); if(fill)g.fill(); else g.stroke(); }
+function dspark(g,x,y,s){ dset(g,3,DK_ACC); dline(g,x-s,y,x+s,y); dline(g,x,y-s,x,y+s); }
+function dvary(r,base,amt){ return base+(r()*2-1)*amt; }
+
+function d_ball(g,r){ var R=88*(0.85+r()*0.28), cx=DCX+dvary(r,0,16), cy=DCY+dvary(r,0,16);
+  dset(g,6); dcirc(g,cx,cy,R,false); dellip(g,cx,cy,R*0.42,R,0,false);
+  darc(g,cx,cy,R,Math.PI*0.82,Math.PI*1.18,false,false);
+  dset(g,3,DK_ACC); darc(g,cx-R*0.35,cy-R*0.35,R*0.3,Math.PI*0.9,Math.PI*1.5,false,false); }
+function d_sun(g,r){ var R=62*(0.9+r()*0.2), cx=DCX, cy=DCY, n=10+Math.floor(r()*3), i;
+  dset(g,6); dcirc(g,cx,cy,R,false); dset(g,5);
+  for(i=0;i<n;i++){ var a=(i/n)*Math.PI*2; var r0=R+14, r1=R+14+38*(0.7+r()*0.5);
+    dline(g,cx+Math.cos(a)*r0,cy+Math.sin(a)*r0,cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); }
+  dset(g,5,DK_ACC); dcirc(g,cx-R*0.32,cy-R*0.14,5,true); dcirc(g,cx+R*0.32,cy-R*0.14,5,true);
+  darc(g,cx,cy+R*0.06,R*0.42,Math.PI*0.15,Math.PI*0.85,false,false); }
+function d_star(g,r){ var R=100*(0.85+r()*0.25), cx=DCX, cy=DCY, rot=-Math.PI/2+dvary(r,0,0.2), i, pts=[];
+  for(i=0;i<10;i++){ var rr=(i%2===0)?R:R*0.42, a=rot+i*Math.PI/5; pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]); }
+  dset(g,6); dpoly(g,pts,true,false); }
+function d_smiley(g,r){ var R=100*(0.9+r()*0.2), cx=DCX, cy=DCY;
+  dset(g,6); dcirc(g,cx,cy,R,false); dset(g,5,DK_ACC);
+  dcirc(g,cx-R*0.35,cy-R*0.18,7,true); dcirc(g,cx+R*0.35,cy-R*0.18,7,true);
+  dset(g,6); darc(g,cx,cy+R*0.02,R*0.55,Math.PI*0.15,Math.PI*0.85,false,false); }
+function d_cloud(g,r){ var cx=DCX, cy=DCY, s=(0.9+r()*0.2), y=cy+40*s;
+  dset(g,6); g.beginPath(); g.moveTo(cx-120*s,y);
+  g.bezierCurveTo(cx-162*s,y-10*s, cx-150*s,cy-30*s, cx-100*s,cy-32*s);
+  g.bezierCurveTo(cx-95*s,cy-82*s, cx-20*s,cy-90*s, cx-8*s,cy-44*s);
+  g.bezierCurveTo(cx+32*s,cy-94*s, cx+112*s,cy-80*s, cx+96*s,cy-24*s);
+  g.bezierCurveTo(cx+162*s,cy-28*s, cx+156*s,y-6*s, cx+118*s,y);
+  g.lineTo(cx-120*s,y); g.stroke(); }
+function d_tree(g,r){ var cx=DCX, base=DCY+150, th=150*(0.9+r()*0.2), fy=base-th*0.5, R=96*(0.9+r()*0.2);
+  dset(g,7); dline(g,cx-12,base,cx-12,fy); dline(g,cx+12,base,cx+12,fy); dline(g,cx-12,base,cx+12,base);
+  dset(g,6); dcirc(g,cx-R*0.5,fy,R*0.6,false); dcirc(g,cx+R*0.5,fy,R*0.6,false); dcirc(g,cx,fy-R*0.5,R*0.7,false); }
+function d_house(g,r){ var cx=DCX, cy=DCY, w=150*(0.9+r()*0.2), h=130*(0.9+r()*0.15);
+  var x0=cx-w/2, x1=cx+w/2, y0=cy-h*0.1, y1=cy+h*0.6;
+  dset(g,6); dpoly(g,[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],true,false);
+  dpoly(g,[[x0-10,y0],[cx,y0-h*0.6],[x1+10,y0]],true,false);
+  dpoly(g,[[cx-22,y1],[cx-22,y1-56],[cx+22,y1-56],[cx+22,y1]],false,false);
+  var wx=x0+26, wy=y0+24; dpoly(g,[[wx,wy],[wx+38,wy],[wx+38,wy+38],[wx,wy+38]],true,false);
+  dline(g,wx+19,wy,wx+19,wy+38); dline(g,wx,wy+19,wx+38,wy+19); }
+function d_flower(g,r){ var cx=DCX, cy=DCY-30, n=6+Math.floor(r()*2), i, pr=34*(0.9+r()*0.2), R=52;
+  dset(g,6); for(i=0;i<n;i++){ var a=(i/n)*Math.PI*2; dcirc(g,cx+Math.cos(a)*R,cy+Math.sin(a)*R,pr,false); }
+  dset(g,6,DK_ACC); dcirc(g,cx,cy,30,false);
+  dset(g,6); dline(g,cx,cy+R+pr*0.4,cx,cy+240); darc(g,cx+30,cy+160,36,Math.PI*0.6,Math.PI*1.4,false,false); }
+function d_fish(g,r){ var cx=DCX-10, cy=DCY, L=120*(0.9+r()*0.2), H=70*(0.9+r()*0.2);
+  dset(g,6); dellip(g,cx,cy,L,H,0,false);
+  dpoly(g,[[cx+L*0.92,cy],[cx+L*1.5,cy-H*0.9],[cx+L*1.5,cy+H*0.9]],true,false);
+  dset(g,4,DK_ACC); dcirc(g,cx-L*0.55,cy-H*0.2,6,true);
+  dset(g,5); darc(g,cx-L*0.35,cy,H*0.7,Math.PI*0.6,Math.PI*1.4,false,false);
+  darc(g,cx,cy-H*0.9,H*0.5,Math.PI*0.1,Math.PI*0.9,false,false); }
+function d_cat(g,r){ var cx=DCX, cy=DCY, R=88*(0.9+r()*0.2);
+  dset(g,6); dcirc(g,cx,cy,R,false);
+  dpoly(g,[[cx-R*0.75,cy-R*0.55],[cx-R*0.95,cy-R*1.25],[cx-R*0.2,cy-R*0.8]],true,false);
+  dpoly(g,[[cx+R*0.75,cy-R*0.55],[cx+R*0.95,cy-R*1.25],[cx+R*0.2,cy-R*0.8]],true,false);
+  dset(g,5,DK_ACC); dcirc(g,cx-R*0.35,cy-R*0.05,7,true); dcirc(g,cx+R*0.35,cy-R*0.05,7,true);
+  dpoly(g,[[cx-8,cy+R*0.25],[cx+8,cy+R*0.25],[cx,cy+R*0.38]],true,true);
+  dset(g,4); darc(g,cx-R*0.16,cy+R*0.42,R*0.16,0,Math.PI,false,false); darc(g,cx+R*0.16,cy+R*0.42,R*0.16,0,Math.PI,false,false);
+  dset(g,3); dline(g,cx-R*0.2,cy+R*0.3,cx-R*0.95,cy+R*0.2); dline(g,cx-R*0.2,cy+R*0.4,cx-R*0.95,cy+R*0.44);
+  dline(g,cx+R*0.2,cy+R*0.3,cx+R*0.95,cy+R*0.2); dline(g,cx+R*0.2,cy+R*0.4,cx+R*0.95,cy+R*0.44); }
+function d_dog(g,r){ var cx=DCX, cy=DCY, R=82*(0.9+r()*0.2);
+  dset(g,6); dcirc(g,cx,cy,R,false);
+  dellip(g,cx-R*0.95,cy-R*0.05,R*0.4,R*0.7,-0.3,false); dellip(g,cx+R*0.95,cy-R*0.05,R*0.4,R*0.7,0.3,false);
+  dset(g,5,DK_ACC); dcirc(g,cx-R*0.3,cy-R*0.12,7,true); dcirc(g,cx+R*0.3,cy-R*0.12,7,true);
+  dset(g,5); dellip(g,cx,cy+R*0.38,R*0.42,R*0.3,0,false);
+  dset(g,5,DK_ACC); dcirc(g,cx,cy+R*0.24,8,true);
+  dset(g,4); dline(g,cx,cy+R*0.32,cx,cy+R*0.52); darc(g,cx-R*0.12,cy+R*0.52,R*0.12,0,Math.PI,false,false); darc(g,cx+R*0.12,cy+R*0.52,R*0.12,0,Math.PI,false,false); }
+function d_snowman(g,r){ var cx=DCX, cy=DCY-40, u=45*(0.95+r()*0.1), r1=u, r2=u*1.3, r3=u*1.7;
+  var y1=cy-90, y2=cy-6, y3=cy+120;
+  dset(g,6); dcirc(g,cx,y1,r1,false); dcirc(g,cx,y2,r2,false); dcirc(g,cx,y3,r3,false);
+  dset(g,4,DK_ACC); dcirc(g,cx-14,y1-8,5,true); dcirc(g,cx+14,y1-8,5,true);
+  dset(g,5); dpoly(g,[[cx,y1],[cx+34,y1+6],[cx,y1+10]],true,false);
+  dset(g,4,DK_ACC); dcirc(g,cx,y2-14,5,true); dcirc(g,cx,y2+14,5,true);
+  dset(g,5); dline(g,cx-r2,y2,cx-r2-46,y2-24); dline(g,cx+r2,y2,cx+r2+46,y2-24);
+  dpoly(g,[[cx-r1*0.9,y1-r1*0.72],[cx+r1*0.9,y1-r1*0.72]],false,false);
+  dpoly(g,[[cx-r1*0.6,y1-r1*0.72],[cx-r1*0.6,y1-r1*1.5],[cx+r1*0.6,y1-r1*1.5],[cx+r1*0.6,y1-r1*0.72]],false,false); }
+function d_bird(g,r){ var cx=DCX, cy=DCY, R=70*(0.9+r()*0.2);
+  dset(g,6); dellip(g,cx,cy,R,R*0.78,0.2,false); dcirc(g,cx-R*0.85,cy-R*0.55,R*0.42,false);
+  dpoly(g,[[cx-R*1.2,cy-R*0.62],[cx-R*1.62,cy-R*0.5],[cx-R*1.15,cy-R*0.4]],true,true);
+  dset(g,4,DK_ACC); dcirc(g,cx-R*0.95,cy-R*0.65,5,true);
+  dset(g,5); darc(g,cx+R*0.1,cy-R*0.1,R*0.6,Math.PI*0.9,Math.PI*1.7,false,false);
+  dpoly(g,[[cx+R*0.9,cy],[cx+R*1.5,cy-R*0.3],[cx+R*1.4,cy+R*0.2]],false,false);
+  dline(g,cx-R*0.1,cy+R*0.7,cx-R*0.1,cy+R*1.1); dline(g,cx+R*0.2,cy+R*0.7,cx+R*0.2,cy+R*1.1); }
+function d_boat(g,r){ var cx=DCX, cy=DCY+40, w=140*(0.9+r()*0.2), i;
+  dset(g,6); dpoly(g,[[cx-w,cy],[cx+w,cy],[cx+w*0.6,cy+56],[cx-w*0.6,cy+56]],true,false);
+  dline(g,cx,cy,cx,cy-150);
+  dpoly(g,[[cx+8,cy-146],[cx+8,cy-14],[cx+w*0.7,cy-14]],true,false);
+  dpoly(g,[[cx-8,cy-120],[cx-8,cy-14],[cx-w*0.55,cy-14]],true,false);
+  dset(g,4); for(i=-1;i<=1;i++){ darc(g,cx+i*70,cy+82,26,Math.PI,Math.PI*2,false,false); } }
+function d_rocket(g,r){ var cx=DCX, cy=DCY, w=52*(0.9+r()*0.2), h=150*(0.9+r()*0.15);
+  dset(g,6); g.beginPath(); g.moveTo(cx-w,cy+h*0.4); g.lineTo(cx-w,cy-h*0.2);
+  g.quadraticCurveTo(cx-w,cy-h*0.6,cx,cy-h*0.75); g.quadraticCurveTo(cx+w,cy-h*0.6,cx+w,cy-h*0.2);
+  g.lineTo(cx+w,cy+h*0.4); g.stroke();
+  dset(g,5,DK_ACC); dcirc(g,cx,cy-h*0.15,16,false);
+  dset(g,6); dpoly(g,[[cx-w,cy+h*0.05],[cx-w-34,cy+h*0.5],[cx-w,cy+h*0.4]],true,false);
+  dpoly(g,[[cx+w,cy+h*0.05],[cx+w+34,cy+h*0.5],[cx+w,cy+h*0.4]],true,false);
+  dline(g,cx-w,cy+h*0.4,cx+w,cy+h*0.4);
+  dset(g,5,DK_ACC); dpoly(g,[[cx-w*0.6,cy+h*0.4],[cx,cy+h*0.78],[cx+w*0.6,cy+h*0.4]],false,false); }
+function d_balloon(g,r){ var cx=DCX+dvary(r,0,20), cy=DCY-40, R=78*(0.9+r()*0.2);
+  dset(g,6); dellip(g,cx,cy,R*0.86,R,0,false); dpoly(g,[[cx-8,cy+R],[cx+8,cy+R],[cx,cy+R+14]],true,false);
+  g.beginPath(); g.moveTo(cx,cy+R+14); g.bezierCurveTo(cx+30,cy+R+70,cx-30,cy+R+130,cx+10,cy+R+190); g.stroke(); }
+function d_kite(g,r){ var cx=DCX, cy=DCY-40, w=90*(0.9+r()*0.2), h=120*(0.9+r()*0.2), i;
+  dset(g,6); dpoly(g,[[cx,cy-h*0.6],[cx+w*0.7,cy],[cx,cy+h*0.7],[cx-w*0.7,cy]],true,false);
+  dset(g,4); dline(g,cx,cy-h*0.6,cx,cy+h*0.7); dline(g,cx-w*0.7,cy,cx+w*0.7,cy);
+  dset(g,5); g.beginPath(); g.moveTo(cx,cy+h*0.7); g.bezierCurveTo(cx+40,cy+h*0.7+50,cx-40,cy+h*0.7+110,cx+20,cy+h*0.7+170); g.stroke();
+  for(i=1;i<=3;i++){ var ty=cy+h*0.7+i*46, tx=cx+((i%2)?24:-24); dline(g,tx-14,ty-8,tx+14,ty+8); dline(g,tx-14,ty+8,tx+14,ty-8); } }
+function d_heart(g,r){ var cx=DCX, cy=DCY, s=86*(0.9+r()*0.2);
+  dset(g,6); g.beginPath(); g.moveTo(cx,cy+s*0.95);
+  g.bezierCurveTo(cx-s*1.4,cy-s*0.2, cx-s*0.55,cy-s*1.05, cx,cy-s*0.28);
+  g.bezierCurveTo(cx+s*0.55,cy-s*1.05, cx+s*1.4,cy-s*0.2, cx,cy+s*0.95); g.closePath(); g.stroke(); }
+function d_umbrella(g,r){ var cx=DCX, cy=DCY-20, R=120*(0.9+r()*0.2), i, n=4;
+  dset(g,6); darc(g,cx,cy,R,Math.PI,Math.PI*2,false,false); dline(g,cx-R,cy,cx+R,cy);
+  for(i=0;i<n;i++){ var x0=cx-R+(2*R/n)*i; darc(g,x0+R/n,cy,R/n,0,Math.PI,false,false); }
+  dline(g,cx,cy,cx,cy+150); darc(g,cx-16,cy+150,16,0,Math.PI,false,false);
+  dset(g,3); dline(g,cx,cy-R,cx,cy); dline(g,cx-R*0.5,cy-R*0.72,cx-R*0.5,cy); dline(g,cx+R*0.5,cy-R*0.72,cx+R*0.5,cy); }
+function d_mushroom(g,r){ var cx=DCX, cy=DCY-10, R=95*(0.9+r()*0.2);
+  dset(g,6); darc(g,cx,cy,R,Math.PI,Math.PI*2,false,false); dline(g,cx-R,cy,cx+R,cy);
+  dpoly(g,[[cx-30,cy],[cx-24,cy+120],[cx+24,cy+120],[cx+30,cy]],false,false);
+  darc(g,cx,cy+120,30,0,Math.PI,false,false);
+  dset(g,5,DK_ACC); dcirc(g,cx-R*0.4,cy-R*0.4,12,false); dcirc(g,cx+R*0.35,cy-R*0.3,10,false); dcirc(g,cx,cy-R*0.62,9,false); }
+function d_bug(g,r){ var cx=DCX, cy=DCY, R=78*(0.9+r()*0.2);
+  dset(g,6); dellip(g,cx,cy,R,R*1.1,0,false); dline(g,cx,cy-R*1.05,cx,cy+R*1.05);
+  darc(g,cx,cy-R*1.0,R*0.4,Math.PI,Math.PI*2,false,true);
+  dset(g,5,DK_ACC); dcirc(g,cx-R*0.45,cy-R*0.2,10,true); dcirc(g,cx+R*0.45,cy-R*0.2,10,true);
+  dcirc(g,cx-R*0.4,cy+R*0.35,9,true); dcirc(g,cx+R*0.4,cy+R*0.35,9,true);
+  dset(g,4); dline(g,cx-R*0.7,cy-R*0.3,cx-R*1.3,cy-R*0.5); dline(g,cx-R*0.75,cy+R*0.1,cx-R*1.35,cy+R*0.1); dline(g,cx-R*0.65,cy+R*0.5,cx-R*1.25,cy+R*0.7);
+  dline(g,cx+R*0.7,cy-R*0.3,cx+R*1.3,cy-R*0.5); dline(g,cx+R*0.75,cy+R*0.1,cx+R*1.35,cy+R*0.1); dline(g,cx+R*0.65,cy+R*0.5,cx+R*1.25,cy+R*0.7);
+  dline(g,cx-14,cy-R*1.35,cx-30,cy-R*1.7); dline(g,cx+14,cy-R*1.35,cx+30,cy-R*1.7); }
+function d_cup(g,r){ var cx=DCX, cy=DCY+10, w=80*(0.9+r()*0.2), h=110*(0.9+r()*0.2), i;
+  dset(g,6); dpoly(g,[[cx-w,cy-h/2],[cx+w,cy-h/2],[cx+w*0.85,cy+h/2],[cx-w*0.85,cy+h/2]],true,false);
+  darc(g,cx+w,cy,34,Math.PI*1.6,Math.PI*0.4,false,false);
+  dset(g,4); for(i=-1;i<=1;i++){ var sx=cx+i*34; g.beginPath(); g.moveTo(sx,cy-h/2-14);
+    g.bezierCurveTo(sx+18,cy-h/2-44, sx-18,cy-h/2-74, sx+8,cy-h/2-104); g.stroke(); } }
+function d_moon(g,r){ var cx=DCX+10, cy=DCY, R=100*(0.9+r()*0.2);
+  dset(g,6); g.beginPath(); g.moveTo(cx,cy-R);
+  g.bezierCurveTo(cx+R*1.15,cy-R*0.45, cx+R*1.15,cy+R*0.45, cx,cy+R);
+  g.bezierCurveTo(cx+R*0.5,cy+R*0.45, cx+R*0.5,cy-R*0.45, cx,cy-R); g.closePath(); g.stroke();
+  dspark(g,cx-R*0.9,cy-R*0.7,10); dspark(g,cx-R*1.2,cy+R*0.2,8); dspark(g,cx-R*0.55,cy+R*0.9,7); }
+function d_apple(g,r){ var cx=DCX, cy=DCY+10, R=88*(0.9+r()*0.2);
+  dset(g,6); g.beginPath(); g.moveTo(cx,cy-R*0.5);
+  g.bezierCurveTo(cx-R*0.4,cy-R*1.0, cx-R*1.1,cy-R*0.5, cx-R*1.0,cy+R*0.1);
+  g.bezierCurveTo(cx-R*0.9,cy+R*0.9, cx-R*0.2,cy+R*1.05, cx,cy+R*0.8);
+  g.bezierCurveTo(cx+R*0.2,cy+R*1.05, cx+R*0.9,cy+R*0.9, cx+R*1.0,cy+R*0.1);
+  g.bezierCurveTo(cx+R*1.1,cy-R*0.5, cx+R*0.4,cy-R*1.0, cx,cy-R*0.5); g.stroke();
+  dline(g,cx,cy-R*0.55,cx+6,cy-R*1.05); dellip(g,cx+34,cy-R*0.95,26,12,-0.5,false); }
+function d_stick(g,r){ var cx=DCX, cy=DCY-100, R=42*(0.95+r()*0.15);
+  dset(g,6); dcirc(g,cx,cy,R,false); var neck=cy+R, hip=neck+150, sh=neck+40;
+  dline(g,cx,neck,cx,hip);
+  dline(g,cx,sh,cx-70,sh+dvary(r,40,30)); dline(g,cx,sh,cx+70,sh+dvary(r,40,30));
+  dline(g,cx,hip,cx-56,hip+110); dline(g,cx,hip,cx+56,hip+110);
+  dset(g,4,DK_ACC); dcirc(g,cx-14,cy-6,4,true); dcirc(g,cx+14,cy-6,4,true);
+  dset(g,4); darc(g,cx,cy+6,16,Math.PI*0.15,Math.PI*0.85,false,false); }
+function d_clam(g,r){ var cx=DCX, cy=DCY+70, R=130*(0.9+r()*0.2), i, n=6, a0=Math.PI*1.08, a1=Math.PI*1.92;
+  dset(g,6); darc(g,cx,cy,R,a0,a1,false,false);
+  dline(g,cx+Math.cos(a0)*R,cy+Math.sin(a0)*R,cx,cy); dline(g,cx+Math.cos(a1)*R,cy+Math.sin(a1)*R,cx,cy);
+  dset(g,4); for(i=1;i<n;i++){ var a=a0+(a1-a0)*(i/n); dline(g,cx,cy,cx+Math.cos(a)*R,cy+Math.sin(a)*R); }
+  dset(g,6); darc(g,cx,cy,16,0,Math.PI,false,false);
+  dset(g,5,DK_ACC); dcirc(g,cx,cy-R*0.42,14,false); }
+
+var SUBJECTS=[
+  {name:'ball',draw:d_ball},{name:'sun',draw:d_sun},{name:'star',draw:d_star},
+  {name:'smiley face',draw:d_smiley},{name:'cloud',draw:d_cloud},{name:'tree',draw:d_tree},
+  {name:'house',draw:d_house},{name:'flower',draw:d_flower},{name:'fish',draw:d_fish},
+  {name:'cat',draw:d_cat},{name:'puppy',draw:d_dog},{name:'snowman',draw:d_snowman},
+  {name:'bird',draw:d_bird},{name:'boat',draw:d_boat},{name:'rocket',draw:d_rocket},
+  {name:'balloon',draw:d_balloon},{name:'kite',draw:d_kite},{name:'heart',draw:d_heart},
+  {name:'umbrella',draw:d_umbrella},{name:'mushroom',draw:d_mushroom},{name:'ladybug',draw:d_bug},
+  {name:'mug',draw:d_cup},{name:'moon',draw:d_moon},{name:'apple',draw:d_apple},
+  {name:'stick figure',draw:d_stick},{name:'clam',draw:d_clam}
+];
+function dailyPick(key){ var rnd=mulberry32(((key>>>0)^0x9e3779b9)>>>0); rnd();
+  return { idx:Math.floor(rnd()*SUBJECTS.length)%SUBJECTS.length, rnd:rnd }; }
+function makeDaily(key){
+  var p=dailyPick(key), subj=SUBJECTS[p.idx];
+  pages=[null]; cur=0; firstOn=false;
+  blankPage(pageX);
+  subj.draw(pageX, p.rnd);
+  commitPage();            // encode the starter into pages[0]
+  showPage(); save();
+  return subj.name;
+}
+function bookHasContent(){ return pages.length>1 || !!pages[0]; }
+function startDaily(){
+  if(playing)stopPlay();
+  if(bookHasContent() && !confirm("Start today's daily starter? Your current flipbook will be erased.")) return;
+  var name=makeDaily(dateKey());
+  $('hint').textContent="Today's starter is a "+name+". Flip forward and animate on top of it.";
+}
+$('b-daily').addEventListener('click', startDaily);
+
 $('b-home').addEventListener('click',function(){ SWS_EXIT(); });
 
 /* ---------- voices (up to two mic tracks that play with the animation) ---------- */
@@ -628,7 +847,11 @@ if(/[?&]fbtest=1/.test(location.search)){
     firstGhost:function(v){ firstOn=!!v; showPage(); return firstOn; },
     cinemaOn:enterCinema, cinemaOff:exitCinema,
     exportTest:function(){ return new Promise(function(res){ exportVideo(function(out){ res(out?{size:out.blob.size,type:out.blob.type}:null); }); }); },
-    pageData:function(i){ return (pages[i]||'').slice(0,40); }
+    pageData:function(i){ return (pages[i]||'').slice(0,40); },
+    daily:function(key){ return makeDaily(typeof key==='number'?key:dateKey()); },
+    dailyName:function(key){ return SUBJECTS[dailyPick(typeof key==='number'?key:dateKey()).idx].name; },
+    dateKey:dateKey,
+    subjects:function(){ var i,a=[]; for(i=0;i<SUBJECTS.length;i++)a.push(SUBJECTS[i].name); return a; }
   };
 }
 })();

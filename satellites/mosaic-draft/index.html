@@ -63,6 +63,22 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 .wcard.locked{opacity:.4} .wcard.sel{border-color:#c8a84b88; background:#241d10}
 .howp{max-width:370px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
 .howp b{color:var(--gold)}
+/* ---- numbered big-font directions (leaf-fit .helprow style) ---- */
+.sc-h{font-size:1.7rem; color:var(--gold); font-weight:800; letter-spacing:.06em; margin:6px 0 2px; text-align:center}
+.sc-sub{color:var(--muted); font-size:.92rem; margin-bottom:12px; text-align:center; max-width:440px; line-height:1.45}
+.objbox{width:100%; max-width:440px; border:1px solid #c8a84b55; background:#1a140f; border-radius:14px;
+  padding:13px 16px; margin:2px 0 12px; font-size:1.06rem; line-height:1.5; color:var(--cream); text-align:left}
+.objbox b{color:var(--gold)}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:12px 0; width:100%; max-width:440px;
+  font-size:1.14rem; line-height:1.5; font-weight:500; text-align:left}
+.helprow .hi{font-size:1.05rem; font-weight:800; width:40px; height:40px; line-height:38px; text-align:center;
+  flex:none; color:var(--gold); background:#241d10; border:1px solid #c8a84b66; border-radius:50%}
+.helprow b{color:var(--gold)}
+.helprow .gl{color:#ffd76a}
+.helpctl{width:100%; max-width:440px; border-top:1px solid #ffffff1f; margin-top:14px; padding-top:12px;
+  font-size:1.02rem; line-height:1.55; text-align:left; color:var(--cream)}
+.helpctl b{color:var(--gold)}
+.helpctl .cline{margin:7px 0}
 #toast{position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:#141009e8; z-index:40;
   border:1px solid #c8a84b55; color:var(--cream); padding:10px 18px; border-radius:14px; font-size:.85rem;
   opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap}
@@ -83,7 +99,7 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 
 <div class="screen on" id="s-title">
   <h1><span class="a">MOSAIC</span> <span class="b">DRAFT</span></h1>
-  <div class="tag">draft the shards · tile the wall · dare the glaze</div>
+  <div class="tag">A ceramic tile duel. Draft colored clay shards, line them up in rows, then fire them onto your wall to build the highest-scoring mosaic. Chase the glowing glazed shard for double points.</div>
   <button class="btn gold" id="b-duel"><span class="bl">🏺 Duel Ladder<small id="sub-duel"></small></span></button>
   <button class="btn blue" id="b-daily"><span class="bl">📅 Daily Kiln<small id="sub-daily"></small></span></button>
   <button class="btn red" id="b-rush"><span class="bl">🔥 Kiln Rush<small id="sub-rush">three glazed shards every round</small></span></button>
@@ -124,14 +140,22 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 </div>
 
 <div class="screen" id="s-how">
-  <h1 style="font-size:1.4rem">HOW TO DRAFT</h1>
-  <p class="howp"><b>Draft.</b> Tap shards of one kind on a kiln plate to take them ALL, the rest slide to the table. Or draft one kind from the table. The first table draft each round hands you the <b>starter stone</b> (it costs one floor slot, but you lead the next round).</p>
-  <p class="howp"><b>Rows.</b> Row n holds n shards of a single kind. When a round ends, every FULL row fires one shard onto your wall and empties. A wall row can hold each kind only once, and part filled rows carry over.</p>
-  <p class="howp"><b>Scoring.</b> A fired shard scores 1 alone, or the length of every unbroken line it joins, across and down both. Spare shards fall to the <b>floor</b>: −1 −1 −2 −2 −2 −3 −3.</p>
-  <p class="howp"><b>✦ The Kiln Glaze.</b> One glinting glazed shard hides in every round. Land it in a row that fires THIS round and that placement scores <b>DOUBLE</b>. Leave its row unfinished and it <b>cracks</b> to your floor. Kiln Rush hides three.</p>
-  <p class="howp"><b>Ending.</b> Complete any wall row across and the game ends. Bonuses: +2 a full row, +7 a full column, +10 a kind placed all five times. Every shard kind carries its own symbol, so nothing rides on color alone.</p>
-  <p class="howp"><b>Daily Kiln</b> is a solo score attack, the same seeded plates for every keeper, once a day, streaks kept. <b>Zen Studio</b> never counts against you and pays no sunbeams.</p>
-  <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
+  <h1 class="sc-h">HOW TO PLAY</h1>
+  <div class="sc-sub">A ceramic tile duel against a rival potter</div>
+  <div class="objbox"><b>Your goal:</b> draft colored clay shards, line them up in rows, and fire them onto your wall to build the highest-scoring mosaic. Finish a full row across your wall to end the game. The potter with the most points wins.</div>
+  <div class="helprow"><div class="hi">1</div><div><b>Draft a kind.</b> The five discs are kiln plates. Tap any shard on a plate to grab EVERY shard of that kind at once. The shards you leave behind slide down to the <b>Table</b> in the middle. You can also draft one kind straight from the Table.</div></div>
+  <div class="helprow"><div class="hi">2</div><div><b>Place them in a row.</b> After you draft, your rows glow green. Tap a glowing row to drop the shards in. <b>Row 1</b> holds 1 shard, <b>Row 2</b> holds 2, up to <b>Row 5</b>. A row can only hold one kind at a time.</div></div>
+  <div class="helprow"><div class="hi">3</div><div><b>Watch the floor.</b> Shards that do not fit the row, or that you tap onto the floor on purpose, land on the <b>floor track</b> and cost you points: <b>−1 −1 −2 −2 −2 −3 −3</b>.</div></div>
+  <div class="helprow"><div class="hi">4</div><div><b>The kiln fires.</b> When every plate and the Table are empty, the round ends. Each <b>full</b> row fires one shard onto your wall and clears. Part-filled rows wait for the next round.</div></div>
+  <div class="helprow"><div class="hi">5</div><div><b>Score by connecting.</b> A fired shard scores <b>1</b> on its own, or the <b>length of every unbroken line</b> it joins, counting across and down. Long connected runs score big.</div></div>
+  <div class="helprow"><div class="hi">6</div><div><b class="gl">✦ Chase the glaze.</b> One glinting <b class="gl">glazed shard</b> hides in each round. Land it in a row that <b>fires this round</b> and that placement scores <b class="gl">DOUBLE</b>. Leave its row unfinished and the glaze <b>cracks</b> onto your floor. Kiln Rush hides three.</div></div>
+  <div class="helprow"><div class="hi">7</div><div><b>Win the wall.</b> Complete any wall row all the way across to end the game. End bonuses: <b>+2</b> a full row, <b>+7</b> a full column, <b>+10</b> for placing one kind five times. Highest score wins.</div></div>
+  <div class="helpctl">
+    <div class="cline"><b>Controls:</b> tap shards to draft &nbsp;·&nbsp; tap a glowing row (or the floor) to place &nbsp;·&nbsp; tap the firing card to continue &nbsp;·&nbsp; <b>⌂</b> returns to the menu.</div>
+    <div class="cline"><b>Modes:</b> Duel Ladder beats Tam, then Mirela, then Kover &nbsp;·&nbsp; Daily Kiln is one seeded puzzle a day &nbsp;·&nbsp; Kiln Rush hides three glazes &nbsp;·&nbsp; Zen Studio is relaxed and cannot be lost.</div>
+    <div class="cline">Every kind carries its own <b>symbol</b>, so nothing rides on color alone.</div>
+  </div>
+  <button class="btn gold" id="how-back" style="margin-top:14px">GOT IT</button>
 </div>
 
 <div id="toast"></div>
@@ -178,6 +202,7 @@ function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("mosaicdra
   s.bestRush=s.bestRush||0; s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.dailyPlays=s.dailyPlays||0;
   s.doubles=s.doubles||0; s.cracks=s.cracks||0; s.seen=s.seen||{};
   s.tileset=s.tileset||"terracotta"; s.theme=s.theme||"workshop"; s.glint=s.glint||"sunspark";
+  s.howSeen=!!s.howSeen;
   s.sound=(s.sound!==false); return s; }
 var SAVE=loadSave();
 function saveSave(){ try{ localStorage.setItem("mosaicdraft_save",JSON.stringify(SAVE)); }catch(e){} }
@@ -1019,6 +1044,9 @@ $("over-next").addEventListener("click",function(){ if(!G)return; startGame("due
 
 $("buildstamp").textContent="MOSAIC DRAFT v"+BUILD;
 refreshTitle();
+
+/* first-ever open: show the directions before the first play (reopenable via ❓ How) */
+if(!SAVE.howSeen){ SAVE.howSeen=true; saveSave(); showScreen("s-how"); }
 
 /* ---------- render loop (30fps) ---------- */
 var lastT=0;

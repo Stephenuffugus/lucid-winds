@@ -709,7 +709,12 @@ function render(){ if(!ctx||!G)return;
   // ground / horizon-floor
   ctx.fillStyle=lerpC('#101a10', sea.grass, 0.25); ctx.fillRect(0,GROUND,VW,VH-GROUND);
   var hf=_spr('sprites/horizon_floor');
-  if(_sfReady(hf)){ var hh=Math.max(30, VH-GROUND+8); try{ ctx.drawImage(hf,0,GROUND-8,VW,hh); }catch(e){} }
+  if(_sfReady(hf)){ var hh=Math.max(30, VH-GROUND+8);
+    // horizon_floor.png ships with a stray spire-cap fragment in its top ~16% (a bad
+    // cut). Crop the source to just the lower wavy-floor band so that leftover piece
+    // never renders as a broken banner at the bottom of the screen (Jul 18 fix).
+    var _fnh=hf.naturalHeight||278, _fsy=Math.floor(_fnh*0.71), _fsh=_fnh-_fsy;
+    try{ ctx.drawImage(hf, 0, _fsy, hf.naturalWidth||313, _fsh, 0, GROUND-8, VW, hh); }catch(e){} }
   else { ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,GROUND,VW,3); }
 
   // trail
@@ -870,6 +875,27 @@ function wardCanvas(kind, it){ var c=document.createElement('canvas'); c.width=9
   // style-collection sprites lazy-load; repaint this card's art the moment it lands
   if(it.sp){ var lim=_spr(it.sp); if(lim && !_sfReady(lim)){ lim.addEventListener('load',function(){ try{ g.clearRect(0,0,96,64); _wardSpr(g,it,96,64); }catch(e){} }, {once:true}); } }
   return c; }
+/* purchase confirm — a small dialog styled to match the wardrobe (Jul 18).
+   Shows "Spend 🪙 N Stardust on <item>?" with Cancel / Confirm before any coins
+   are deducted or the skin is equipped. onYes runs only on Confirm. */
+function confirmBuy(it, onYes){
+  var host=$('stage')||document.body;
+  var ov=document.createElement('div');
+  ov.style.cssText='position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(4,6,8,0.74)';
+  var box=document.createElement('div');
+  box.style.cssText='width:300px;max-width:86%;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#131b0e,#0c120a);box-shadow:0 12px 40px #000a;padding:22px 20px;text-align:center';
+  box.innerHTML='<div style="font-size:15px;font-weight:700;color:var(--cream);line-height:1.45">Spend <b style="color:var(--gold)">🪙 '+it.cost+'</b> Stardust on<br><b style="color:var(--gold);font-size:18px">'+it.nm+'</b>?</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-top:7px">You have 🪙 '+(PROG.coins||0)+'</div>';
+  var row=document.createElement('div'); row.className='row'; row.style.marginTop='18px';
+  var no=document.createElement('button'); no.className='btn ghost sm'; no.textContent='Cancel'; no.style.flex='1';
+  var yes=document.createElement('button'); yes.className='btn primary sm'; yes.textContent='Confirm'; yes.style.flex='1';
+  row.appendChild(no); row.appendChild(yes); box.appendChild(row); ov.appendChild(box);
+  function close(){ if(ov.parentNode)ov.parentNode.removeChild(ov); }
+  no.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); close(); });
+  yes.addEventListener('click',function(e){ e.preventDefault(); close(); onYes(); });
+  ov.addEventListener('click',function(e){ if(e.target===ov){ sfx('ui'); close(); } });
+  host.appendChild(ov);
+}
 function renderWardList(hostId, kind, arr, cur, setter){ var host=$(hostId); host.innerHTML='';
   for(var i=0;i<arr.length;i++){ (function(it){ var own=ownedC(kind,it);
     var afford=!own && it.cost && (PROG.coins||0)>=it.cost;
@@ -883,7 +909,13 @@ function renderWardList(hostId, kind, arr, cur, setter){ var host=$(hostId); hos
     card.appendChild(tt); host.appendChild(card);
     card.addEventListener('click',function(){
       if(ownedC(kind,it)){ setter(it.id); save(); sfx('ui'); renderWard(); return; }
-      if(it.cost){ if(buyItem(kind,it)){ setter(it.id); save(); sfx('win'); renderWard(); } else { sfx('pass'); } }
+      if(it.cost){
+        if((PROG.coins||0) < it.cost){ sfx('pass'); return; }   // can't afford — no confirm
+        sfx('ui');
+        confirmBuy(it,function(){                                 // confirm before spending
+          if(buyItem(kind,it)){ setter(it.id); save(); sfx('win'); renderWard(); } else { sfx('pass'); }
+        });
+      }
     });
   })(arr[i]); } }
 function renderWard(){ var cc=$('ward-coins'); if(cc)cc.textContent='🪙 '+(PROG.coins||0);

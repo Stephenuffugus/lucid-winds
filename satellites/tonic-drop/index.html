@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0c">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='7' y='3' width='18' height='26' rx='6' fill='%23140f24' stroke='%235b9bd5' stroke-width='1.5'/%3E%3Crect x='11' y='2' width='10' height='4' rx='1.5' fill='%23c8a84b'/%3E%3Ccircle cx='13' cy='20' r='3.2' fill='%2346b3a6'/%3E%3Cpath d='M19 16.8l3 5.2h-6z' fill='%23e0a13c'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23140f24'/%3E%3Crect x='15' y='4' width='2.2' height='5' rx='1.1' fill='%236b4a2a'/%3E%3Cpath d='M9 12c0-2.2 3-3.4 7-3.4s7 1.2 7 3.4c0 1.5-3 2.5-7 2.5s-7-1-7-2.5z' fill='%237a4a1e'/%3E%3Cpath d='M10 13c1.4 1 3.5 1.6 6 1.6s4.6-.6 6-1.6c.5 3.4-1.2 9.4-6 10.4-4.8-1-6.5-7-6-10.4z' fill='%23c8843c'/%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tonic Drop">
-<title>Tonic Drop — Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Acorn Drop">
+<title>Acorn Drop — Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"tonic-drop"}).catch(function(){});</script>
 <style>
@@ -90,10 +90,10 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 
 <div id="hud">
   <button class="hbtn" id="hud-back">⌂</button>
-  <div class="chip"><b id="h-grumps">▽ 0</b><span>grumps</span></div>
+  <div class="chip"><b id="h-grumps">🐛 0</b><span>pests</span></div>
   <div class="chip"><b id="h-score">0</b><span>score</span></div>
-  <div class="chip"><b id="h-caps">💰 0</b><span>caps</span></div>
-  <div class="chip grow"><b id="h-stage">—</b><span id="h-note">match four to fizz</span></div>
+  <div class="chip"><b id="h-caps">🌰 0</b><span>caps</span></div>
+  <div class="chip grow"><b id="h-stage">—</b><span id="h-note">match four to crack</span></div>
 </div>
 
 <!-- Jessie 2026-07-15: DOWN and DROP were redundant (DOWN gone), arrows sit
@@ -106,12 +106,12 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 </div>
 
 <div class="screen on" id="s-title">
-  <h1><span class="a">TONIC</span> <span class="b">DROP</span></h1>
-  <div class="tag">cork the bottle · line up four of a tone to fizz them away · clear every grump</div>
-  <button class="btn teal" id="b-service">🍾 Bottle Run</button>
-  <button class="btn gold" id="b-daily">📅 Daily Bottle</button>
+  <h1><span class="a">ACORN</span> <span class="b">DROP</span></h1>
+  <div class="tag">angry squirrels stashing acorns · line up four of a kind to crack them away · clear every pest</div>
+  <button class="btn teal" id="b-service">🌰 Stash Run</button>
+  <button class="btn gold" id="b-daily">📅 Daily Stash</button>
   <button class="btn blue" id="b-sprint">⏱️ Sprint</button>
-  <button class="btn" id="b-zen">🌙 Zen Fizz</button>
+  <button class="btn" id="b-zen">🌙 Zen Grove</button>
   <div class="btnrow">
     <button class="btn sm" id="b-shop">🛒 Shop</button>
     <button class="btn sm" id="b-how">❓ How</button>
@@ -119,39 +119,39 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 </div>
 
 <div class="screen" id="s-select">
-  <h1 style="font-size:1.4rem">BOTTLE RUN</h1>
-  <div class="tag">clear the grumps to pour the next · speed rises as you go</div>
+  <h1 style="font-size:1.4rem">STASH RUN</h1>
+  <div class="tag">clear the pests to fill the next · speed rises as you go</div>
   <div id="lvlgrid"></div>
   <button class="btn sm" id="sel-back" style="margin-top:16px">← back</button>
 </div>
 
 <div class="screen" id="s-over">
-  <h1 style="font-size:1.5rem" id="over-title">BOTTLE CLEARED</h1>
+  <h1 style="font-size:1.5rem" id="over-title">STASH CLEARED</h1>
   <div class="tag" id="over-sub">—</div>
   <div id="overstats">
     <div class="chip"><b id="ov-score">0</b><span>score</span></div>
-    <div class="chip"><b id="ov-grumps">0</b><span>grumps</span></div>
+    <div class="chip"><b id="ov-grumps">0</b><span>pests</span></div>
     <div class="chip"><b id="ov-caps">0</b><span>caps won</span></div>
   </div>
-  <button class="btn gold" id="over-next">NEXT BOTTLE →</button>
+  <button class="btn gold" id="over-next">NEXT STASH →</button>
   <button class="btn" id="over-retry">PLAY AGAIN</button>
   <button class="btn sm" id="over-menu">menu</button>
 </div>
 
 <div class="screen" id="s-shop">
-  <h1 style="font-size:1.4rem">THE FIZZ SHOP</h1>
+  <h1 style="font-size:1.4rem">THE ACORN SHOP</h1>
   <div class="tag">spend caps on skins · everything shown up front, no mystery boxes</div>
-  <div class="shopwallet">💰 <b id="shop-caps">0</b> caps</div>
+  <div class="shopwallet">🌰 <b id="shop-caps">0</b> caps</div>
   <div id="shopbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <button class="btn sm" id="shop-back" style="margin-top:16px">← back</button>
 </div>
 
 <div class="screen" id="s-how">
-  <h1 style="font-size:1.4rem">HOW TO POUR</h1>
-  <p class="howp">Two-tone <b>capsules</b> fall into the bottle. Slide and <b>turn</b> them, then let them settle. Line up <b>four or more of one tone</b> in a row or column and they <b>fizz away</b>.</p>
-  <p class="howp">Each tone wears a shape so you never need color: <span class="sym">● disc</span>, <span class="sym">▲ triangle</span>, <span class="sym">◆ diamond</span>. The grumpy <b>grumps</b> at the bottom wear the same shapes — trap four in a line to pop them. Clear <b>every grump</b> to finish the bottle.</p>
-  <p class="howp">When a capsule half loses its partner it drops on its own, and a fizz can <b>chain</b> into more fizzes for bonus caps. Every <b>8 fizzes</b> the next capsule pours a <b>✦ wild half</b> that counts as any tone.</p>
-  <p class="howp"><b>Bottle Run</b> ramps 20 bottles, <b>Daily</b> pours one seeded bottle a day, <b>Sprint</b> races the clock, and <b>Zen Fizz</b> never tops out and pays no sunbeams. Caps you earn buy skins in the Shop.</p>
+  <h1 style="font-size:1.4rem">HOW TO PLAY</h1>
+  <p class="howp"><b>Objective.</b> You are an angry squirrel packing its winter stash. Paired <b>acorns</b> drop into the stash. Line up <b>four or more of one kind</b> in a row or column and they <b>crack away</b>. Clear <b>every pest</b> to fill the stash.</p>
+  <p class="howp"><b>How to play.</b> Each acorn kind also wears a shape so you never need color: <span class="sym">● disc</span>, <span class="sym">▲ triangle</span>, <span class="sym">◆ diamond</span>. The grumpy <b>pests</b> at the bottom wear the same shapes. Box four of a kind in a line and the pests crack out with them.</p>
+  <p class="howp"><b>Controls.</b> <span class="sym">◀ ▶</span> slide the falling pair, <span class="sym">⟳</span> rotates it, <span class="sym">⤓</span> drops it fast. When one acorn loses its partner it falls on its own, and a crack can <b>chain</b> into more cracks for bonus caps. Every <b>8 cracks</b> the next pair brings a <b>✦ wild acorn</b> that counts as any kind.</p>
+  <p class="howp"><b>Modes.</b> <b>Stash Run</b> ramps 20 stashes, <b>Daily Stash</b> serves one seeded stash a day, <b>Sprint</b> races the clock, and <b>Zen Grove</b> never tops out and pays no sunbeams. The <b>caps</b> you earn buy skins in the Shop.</p>
   <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
 </div>
 
@@ -221,49 +221,49 @@ function sndCoin(){ blip(880,0.08,0.05); setTimeout(function(){blip(1180,0.1,0.0
    Everything is bought with caps or gated by mastery. No randomness.
    ============================================================ */
 var CAPSETS={
-  tonic:{ name:"Tonic", cols:["#46b3a6","#e0a13c","#d76a86"] },
+  tonic:{ name:"Oakling", cols:["#46b3a6","#e0a13c","#d76a86"] },
   orchard:{ name:"Orchard", cols:["#8fbf6a","#e8b24a","#c9607a"] },
-  neon:{ name:"Neon", cols:["#3fe0d0","#ffd24a","#ff6ba0"] },
+  neon:{ name:"Bright Nut", cols:["#3fe0d0","#ffd24a","#ff6ba0"] },
   dusk:{ name:"Dusk", cols:["#7f7bd6","#e08a4a","#4aa0d0"] },
   mono:{ name:"Slate", cols:["#8fa0b8","#c8ccd6","#5b6b86"] }
 };
 var SYM=["disc","tri","dia"];  /* tone->shape; wildcard(3)=star */
 var BOTTLES={
-  "amber-glass":{ name:"Amber Glass", glass:"rgba(200,168,75,0.10)", rim:"#c8a84b", wall:"#2c2440" },
-  "sea-glass":{ name:"Sea Glass", glass:"rgba(70,179,166,0.10)", rim:"#46b3a6", wall:"#204038" },
-  "cut-crystal":{ name:"Cut Crystal", glass:"rgba(180,200,255,0.12)", rim:"#a8c0ff", wall:"#2a3050" },
-  "apothecary":{ name:"Apothecary", glass:"rgba(120,90,150,0.12)", rim:"#9a7bc0", wall:"#332448" }
+  "amber-glass":{ name:"Oak Hollow", glass:"rgba(200,168,75,0.10)", rim:"#c8a84b", wall:"#2c2440" },
+  "sea-glass":{ name:"Willow Hollow", glass:"rgba(70,179,166,0.10)", rim:"#46b3a6", wall:"#204038" },
+  "cut-crystal":{ name:"Frost Hollow", glass:"rgba(180,200,255,0.12)", rim:"#a8c0ff", wall:"#2a3050" },
+  "apothecary":{ name:"Pine Hollow", glass:"rgba(120,90,150,0.12)", rim:"#9a7bc0", wall:"#332448" }
 };
 var GRUMPS={
   classic:{ name:"Classic", brow:1 },
   sourpuss:{ name:"Sourpuss", brow:2 },
-  fizzlings:{ name:"Fizzlings", brow:0 }
+  fizzlings:{ name:"Nibblers", brow:0 }
 };
 var BACKS={
-  cellar:{ name:"Cellar", top:[22,16,40], bot:[8,6,16] },
+  cellar:{ name:"Burrow", top:[22,16,40], bot:[8,6,16] },
   sunset:{ name:"Sunset", top:[60,30,44], bot:[16,8,20] },
-  tide:{ name:"Tide", top:[10,34,44], bot:[6,16,22] },
-  amberroom:{ name:"Amber Room", top:[44,32,14], bot:[16,10,6] }
+  tide:{ name:"Creek", top:[10,34,44], bot:[6,16,22] },
+  amberroom:{ name:"Oak Grove", top:[44,32,14], bot:[16,10,6] }
 };
 /* shop catalog: cat,key,id,name,price(caps),need(mastery gate or null) */
 function serviceClears(){ var n=0,k; for(k in PROG.service)if(PROG.service[k])n++; return n; }
 var SHOP=[
- {cat:"Capsule Set",key:"capset",id:"tonic",name:"Tonic",price:0},
- {cat:"Capsule Set",key:"capset",id:"orchard",name:"Orchard",price:120},
- {cat:"Capsule Set",key:"capset",id:"neon",name:"Neon",price:220},
- {cat:"Capsule Set",key:"capset",id:"dusk",name:"Dusk",price:180},
- {cat:"Capsule Set",key:"capset",id:"mono",name:"Slate",price:0,need:function(){return PROG.serviceMax>=20;},needTxt:"Clear bottle 20"},
- {cat:"Bottle",key:"bottle",id:"amber-glass",name:"Amber Glass",price:0},
- {cat:"Bottle",key:"bottle",id:"sea-glass",name:"Sea Glass",price:100},
- {cat:"Bottle",key:"bottle",id:"cut-crystal",name:"Cut Crystal",price:260},
- {cat:"Bottle",key:"bottle",id:"apothecary",name:"Apothecary",price:0,need:function(){return PROG.dailyStreak>=7;},needTxt:"Daily streak 7"},
- {cat:"Grumps",key:"grump",id:"classic",name:"Classic",price:0},
- {cat:"Grumps",key:"grump",id:"sourpuss",name:"Sourpuss",price:90},
- {cat:"Grumps",key:"grump",id:"fizzlings",name:"Fizzlings",price:150},
- {cat:"Backdrop",key:"back",id:"cellar",name:"Cellar",price:0},
+ {cat:"Acorn Set",key:"capset",id:"tonic",name:"Oakling",price:0},
+ {cat:"Acorn Set",key:"capset",id:"orchard",name:"Orchard",price:120},
+ {cat:"Acorn Set",key:"capset",id:"neon",name:"Bright Nut",price:220},
+ {cat:"Acorn Set",key:"capset",id:"dusk",name:"Dusk",price:180},
+ {cat:"Acorn Set",key:"capset",id:"mono",name:"Slate",price:0,need:function(){return PROG.serviceMax>=20;},needTxt:"Clear stash 20"},
+ {cat:"Stash",key:"bottle",id:"amber-glass",name:"Oak Hollow",price:0},
+ {cat:"Stash",key:"bottle",id:"sea-glass",name:"Willow Hollow",price:100},
+ {cat:"Stash",key:"bottle",id:"cut-crystal",name:"Frost Hollow",price:260},
+ {cat:"Stash",key:"bottle",id:"apothecary",name:"Pine Hollow",price:0,need:function(){return PROG.dailyStreak>=7;},needTxt:"Daily streak 7"},
+ {cat:"Pests",key:"grump",id:"classic",name:"Classic",price:0},
+ {cat:"Pests",key:"grump",id:"sourpuss",name:"Sourpuss",price:90},
+ {cat:"Pests",key:"grump",id:"fizzlings",name:"Nibblers",price:150},
+ {cat:"Backdrop",key:"back",id:"cellar",name:"Burrow",price:0},
  {cat:"Backdrop",key:"back",id:"sunset",name:"Sunset",price:80},
- {cat:"Backdrop",key:"back",id:"tide",name:"Tide",price:80},
- {cat:"Backdrop",key:"back",id:"amberroom",name:"Amber Room",price:0,need:function(){return PROG.sprintBest>=1;},needTxt:"Win a Sprint"}
+ {cat:"Backdrop",key:"back",id:"tide",name:"Creek",price:80},
+ {cat:"Backdrop",key:"back",id:"amberroom",name:"Oak Grove",price:0,need:function(){return PROG.sprintBest>=1;},needTxt:"Win a Sprint"}
 ];
 function isOwned(it){
   /* mastery-gated items (have a need) are owned ONLY once earned or explicitly bought;
@@ -411,8 +411,8 @@ function canPlace(x,y,o){ if(!inb(x,y))return false; if(K[idx(x,y)]!==0)return f
    ============================================================ */
 var CUR=null, running=false;
 var MODES={
-  service:{ name:"Bottle Run" }, daily:{ name:"Daily Bottle" },
-  sprint:{ name:"Sprint" }, zen:{ name:"Zen Fizz" }
+  service:{ name:"Stash Run" }, daily:{ name:"Daily Stash" },
+  sprint:{ name:"Sprint" }, zen:{ name:"Zen Grove" }
 };
 function serviceLevel(l){ /* grump count + fall speed by level 0-based */
   var grumps=Math.min(4+l*3, 60);
@@ -539,22 +539,22 @@ function doWin(){
     payRun(Math.max(2,Math.min(12,Math.floor(CUR.grumpsTotal/3))),"sprint");
   }
   grantCaps(); save(); sndWin();
-  $("over-title").textContent = CUR.mode==="sprint"?"BOTTLE RACED":"BOTTLE CLEARED";
-  $("over-sub").textContent = CUR.mode==="service" ? "Bottle "+(CUR.level+1)+" of 20 poured."+(CUR.level<19?" Next is stronger.":" You cleared the whole cellar!")
-    : (CUR.mode==="daily" ? "Daily streak "+PROG.dailyStreak+". New bottle tomorrow."
-    : "Cleared "+CUR.grumpsTotal+" grumps in "+CUR.time+"s"+(PROG.sprintBest===CUR.time?" — new best!":"."));
+  $("over-title").textContent = CUR.mode==="sprint"?"STASH RACED":"STASH CLEARED";
+  $("over-sub").textContent = CUR.mode==="service" ? "Stash "+(CUR.level+1)+" of 20 packed."+(CUR.level<19?" Next is stronger.":" You cleared the whole grove!")
+    : (CUR.mode==="daily" ? "Daily streak "+PROG.dailyStreak+". New stash tomorrow."
+    : "Cleared "+CUR.grumpsTotal+" pests in "+CUR.time+"s"+(PROG.sprintBest===CUR.time?". New best!":"."));
   $("ov-score").textContent=CUR.score;
   $("ov-grumps").textContent=CUR.grumpsTotal;
   $("ov-caps").textContent=CUR.caps;
   $("over-next").style.display=(CUR.mode==="service"&&CUR.level<19)?"":"none";
-  $("over-next").textContent="NEXT BOTTLE →";
+  $("over-next").textContent="NEXT STASH →";
   setTimeout(function(){ if(CUR&&CUR.phase==="won")show("s-over"); }, 900);
 }
 function doOver(){
   if(CUR.phase!=="over")return; running=false;
   grantCaps(); save(); sndOver();
-  $("over-title").textContent="BOTTLE OVERFLOWED";
-  $("over-sub").textContent="The neck jammed. "+(CUR.grumpsTotal-CUR.grumpsLeft)+" of "+CUR.grumpsTotal+" grumps cleared.";
+  $("over-title").textContent="STASH JAMMED";
+  $("over-sub").textContent="The hollow jammed shut. "+(CUR.grumpsTotal-CUR.grumpsLeft)+" of "+CUR.grumpsTotal+" pests cleared.";
   $("ov-score").textContent=CUR.score;
   $("ov-grumps").textContent=(CUR.grumpsTotal-CUR.grumpsLeft);
   $("ov-caps").textContent=CUR.caps;
@@ -564,9 +564,9 @@ function doOver(){
 
 /* ---------- HUD ---------- */
 function updateHud(){ if(!CUR)return;
-  $("h-grumps").textContent="▽ "+CUR.grumpsLeft;
+  $("h-grumps").textContent="🐛 "+CUR.grumpsLeft;
   $("h-score").textContent=CUR.score;
-  $("h-caps").textContent="💰 "+(PROG.caps+CUR.caps); }
+  $("h-caps").textContent="🌰 "+(PROG.caps+CUR.caps); }
 
 /* ---------- tick ---------- */
 function tick(){
@@ -682,12 +682,12 @@ function render(){
   if(CUR.phase==="won"||CUR.phase==="over"){
     ctx.fillStyle=CUR.phase==="won"?"rgba(120,220,150,0.9)":"rgba(230,120,110,0.9)";
     ctx.font="bold 26px sans-serif"; ctx.textAlign="center";
-    ctx.fillText(CUR.phase==="won"?"CLEARED!":"OVERFLOW",270,oy+bh/2);
+    ctx.fillText(CUR.phase==="won"?"STASHED!":"JAMMED",270,oy+bh/2);
   }
   ctx.textAlign="left";
   /* footer helper */
   ctx.fillStyle="rgba(232,220,200,0.45)"; ctx.font="12px sans-serif"; ctx.textAlign="center";
-  ctx.fillText(CUR.mode==="zen"?"zen fizz · never tops out · pays nothing":"four in a line fizz · clear every ▽ grump",270,808);
+  ctx.fillText(CUR.mode==="zen"?"zen grove · never tops out · pays nothing":"four in a line crack · clear every pest",270,808);
   ctx.textAlign="left";
 }
 
@@ -699,13 +699,13 @@ function show(id){ hideScreens(); $(id).classList.add("on"); }
 var toastT=null;
 function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
   if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2000); }
-function stamp(){ $("buildstamp").textContent="Tonic Drop "+BUILD+" · bottle "+PROG.serviceMax+"/20 · 💰"+PROG.caps; }
+function stamp(){ $("buildstamp").textContent="Acorn Drop "+BUILD+" · stash "+PROG.serviceMax+"/20 · 🌰"+PROG.caps; }
 function beginPlay(mode,arg,opts){
   startGame(mode,arg,opts);
   if(mode==="sprint")CUR.timeStart=Date.now();
   hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
-  $("h-stage").textContent = mode==="service" ? "Bottle "+(CUR.level+1) : MODES[mode].name;
-  $("h-note").textContent = mode==="zen" ? "no fail · free fizz" : "match four to fizz";
+  $("h-stage").textContent = mode==="service" ? "Stash "+(CUR.level+1) : MODES[mode].name;
+  $("h-note").textContent = mode==="zen" ? "no fail · free gather" : "match four to crack";
   updateHud(); running=true; CUR.fallAcc=0;
 }
 function stopToMenu(){ running=false; CUR=null; $("hud").classList.remove("on"); $("dock").classList.remove("on"); show("s-title"); stamp(); }
@@ -717,7 +717,7 @@ function renderSelect(){
     var c=document.createElement("div");
     c.className="lvlcard"+(unlocked?"":" locked")+(PROG.service[i]?" done":"");
     var cfg=serviceLevel(i);
-    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+cfg.grumps+' grumps</div><div class="ls">'+(PROG.service[i]?"✓":"")+'</div>';
+    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+cfg.grumps+' pests</div><div class="ls">'+(PROG.service[i]?"✓":"")+'</div>';
     if(unlocked)c.onclick=function(){ beginPlay("service",i,{}); };
     g.appendChild(c);
   })(i);
