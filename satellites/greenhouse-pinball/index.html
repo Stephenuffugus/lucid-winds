@@ -380,6 +380,19 @@ function physics(dt){
       }
       if(G.tiltOut<=0){ flipHit(b,LFLIP); flipHit(b,RFLIP); }   // TILT kills the flippers
     }
+    // ball-to-ball elastic collision (multiball) — equal-mass, positional split +
+    // normal-velocity exchange, run ONCE per substep after integration so beads never
+    // tunnel through each other; skips held beads (inLane/captured/onRail). n<=4 -> trivial.
+    if(G.balls.length>1){ for(i=0;i<G.balls.length;i++){ var ba=G.balls[i]; if(ba.inLane||ba.captured||ba.onRail)continue;
+      for(var jb=i+1;jb<G.balls.length;jb++){ var bbo=G.balls[jb]; if(bbo.inLane||bbo.captured||bbo.onRail)continue;
+        var bdx=bbo.x-ba.x, bdy=bbo.y-ba.y, bd=Math.sqrt(bdx*bdx+bdy*bdy), bmn=ba.r+bbo.r;
+        if(bd<bmn && bd>1e-6){ var bnx=bdx/bd, bny=bdy/bd, bov=(bmn-bd)*0.5;
+          ba.x-=bnx*bov; ba.y-=bny*bov; bbo.x+=bnx*bov; bbo.y+=bny*bov;         // split apart
+          var bvn=(bbo.vx-ba.vx)*bnx+(bbo.vy-ba.vy)*bny;                        // closing speed along normal
+          if(bvn<0){ var bj=-1.90*bvn*0.5;                                     // (1+e), e=0.90, equal mass
+            ba.vx-=bj*bnx; ba.vy-=bj*bny; bbo.vx+=bj*bnx; bbo.vy+=bj*bny; } }
+      } }
+    }
   }
   // trails
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(!b.trail)b.trail=[]; b.trail.push({x:b.x,y:b.y}); if(b.trail.length>6)b.trail.shift(); }
@@ -1009,6 +1022,23 @@ if(/[?&]gptest=1/.test(location.search)){
       times.sort(function(a,b){return a-b;}); var md=times.length?times[Math.floor(times.length/2)]:0;
       return {balls:times.length, median:md, min:times[0]||0, max:times[times.length-1]||0}; },
     ballPos:function(){ return G.balls.map(function(b){ return {x:Math.round(b.x),y:Math.round(b.y),lane:b.inLane}; }); },
+    // P0 ball-ball: two live beads on a head-on course must make contact, bounce apart,
+    // and end un-overlapped (they no longer tunnel through each other).
+    ballBall:function(){ newGame('classic'); if(!G)return null; G.awaitLaunch=false; var R=BALLR, sumR=R*2;
+      G.balls=[ {x:250,y:430,vx:600,vy:0,r:R,inLane:false,trail:[]},
+                {x:250+R*2+34,y:430,vx:-600,vy:0,r:R,inLane:false,trail:[]} ];
+      var i,minGap=9999,contact=false;
+      for(i=0;i<60;i++){ step(0.008); if(G.balls.length<2)break;
+        var g=Math.abs(G.balls[1].x-G.balls[0].x); if(g<minGap)minGap=g; if(g<sumR-0.5)contact=true;
+        if(G.balls[0].vx<0 && G.balls[1].vx>0 && g>=sumR-1)break; }
+      if(G.balls.length<2)return {ok:false,reason:'lost a ball'};
+      var a=G.balls[0], b=G.balls[1], gap=Math.abs(b.x-a.x);
+      // a head-on pair that reversed BOTH velocities (bounced) definitively collided —
+      // sampled minGap can skip the sub-step closest approach, so bounce is the real proof.
+      var separated=gap>=sumR-1, bounced=(a.vx<0 && b.vx>0);
+      return {ok:separated&&bounced, contact:(contact||bounced), separated:separated, bounced:bounced,
+              minGap:Math.round(minGap), sumR:Math.round(sumR), gap:Math.round(gap),
+              a:{vx:Math.round(a.vx)}, b:{vx:Math.round(b.vx)} }; },
     // drain-geography probe: inject a bead above a lane and record WHICH channel it
     // exits through — the side of the lane divider it is on when it crosses y=828.
     // 'outlane' = outside the divider (drains past the flipper), 'inlane' = inboard
