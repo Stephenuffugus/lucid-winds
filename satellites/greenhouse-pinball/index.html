@@ -79,7 +79,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-zen">Zen</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-skins">Skins</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
@@ -211,6 +212,19 @@ var PIN_ART=(function(){
 PIN_ART.preload();
 // aspect-correct centered blit of a loaded sprite (width w; height from image ratio)
 function artFit(im,cx,cy,w){ var h=w*im.height/im.width; ctx.drawImage(im,cx-w/2,cy-h/2,w,h); }
+
+// ---- COSMETICS: earn-only skins (table / ball / claw / buddy). Loaded ON DEMAND (never preloaded,
+//      so the heavy table skins only fetch when equipped). Persist in localStorage gp_skins. ----
+var SKINS={table:'',ball:'',claw:'',buddy:''};
+(function(){ try{ var s=JSON.parse(localStorage.getItem('gp_skins')||'{}'); for(var k in SKINS)if(typeof s[k]==='string')SKINS[k]=s[k]; }catch(e){} })();
+function saveSkins(){ try{ localStorage.setItem('gp_skins', JSON.stringify(SKINS)); }catch(e){} }
+function skinBestAll(){ var m=0,k; for(k in PROG.best)if(PROG.best[k]>m)m=PROG.best[k]; return m; }
+function loadEquippedSkins(){ if(!PIN_ART.enabled)return;
+  if(SKINS.table)PIN_ART.load('skin_table_'+SKINS.table);
+  if(SKINS.ball)PIN_ART.load('skin_ball_'+SKINS.ball);
+  if(SKINS.claw){ PIN_ART.load('skin_claw_'+SKINS.claw+'_rest'); PIN_ART.load('skin_claw_'+SKINS.claw+'_up'); }
+  if(SKINS.buddy)PIN_ART.load('buddy_'+SKINS.buddy); }
+loadEquippedSkins();
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== table geometry ===== */
@@ -775,7 +789,7 @@ function render(){ if(!ctx||!G)return;
   var jx=(G.jolt||0)*(G.joltDir||0), jy=-(G.jolt||0)*0.3;
   if(SET.shake && (G.shake>0.4||G.jolt>0)){ ctx.translate((Math.random()*2-1)*G.shake+jx,(Math.random()*2-1)*G.shake+jy); }
   // playfield backdrop — art swap (claymation lab-shift) then procedural fallback
-  var _tImg=PIN_ART.img(['table_night_shift','table_day_shift','table_toxic_spill','table_power_out'][(G.season||0)%4]);
+  var _tImg=PIN_ART.img(SKINS.table?('skin_table_'+SKINS.table):['table_night_shift','table_day_shift','table_toxic_spill','table_power_out'][(G.season||0)%4]);
   if(_tImg){ ctx.drawImage(_tImg,0,0,VW,VH); }
   else {
     var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0b100a'); bg.addColorStop(1,'#080b06'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
@@ -834,6 +848,8 @@ function render(){ if(!ctx||!G)return;
     ctx.beginPath(); ctx.moveTo(108,800); ctx.lineTo(118,786); ctx.lineTo(128,800); ctx.stroke();
     ctx.globalAlpha=kf*0.25; ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(92,730); ctx.lineTo(122,848); ctx.stroke();
     ctx.restore(); }
+  // equipped monster-buddy cameo (decorative, no physics)
+  if(SKINS.buddy){ var _bd=PIN_ART.img('buddy_'+SKINS.buddy); if(_bd)artFit(_bd,492,632,52); }
   // flippers
   drawFlipper(LFLIP); drawFlipper(RFLIP);
   // balls + trails
@@ -841,7 +857,7 @@ function render(){ if(!ctx||!G)return;
     if(b.trail)for(var tI=0;tI<b.trail.length;tI++){ var tp=b.trail[tI]; ctx.globalAlpha=(tI/b.trail.length)*0.4; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(tp.x,tp.y,b.r*0.7,0,7); ctx.fill(); } ctx.globalAlpha=1;
     var br=b.onRail?b.r*1.2:b.r;
     if(b.onRail){ ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.arc(b.x+5,b.y+9,br,0,7); ctx.fill(); }  // fake height shadow on a ramp
-    var _bImg=PIN_ART.img(G.multiball?'eyeball_lit':'eyeball_core');
+    var _bImg=PIN_ART.img(SKINS.ball?('skin_ball_'+SKINS.ball):(G.multiball?'eyeball_lit':'eyeball_core'));
     if(_bImg){ ctx.drawImage(_bImg, b.x-br, b.y-br, br*2, br*2); }
     else { var bg2=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,br); bg2.addColorStop(0,'#fff6d8'); bg2.addColorStop(0.6,'#e8c65a'); bg2.addColorStop(1,'#a5872f'); ctx.fillStyle=bg2; ctx.beginPath(); ctx.arc(b.x,b.y,br,0,7); ctx.fill(); } }
   // particles
@@ -976,7 +992,7 @@ function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
   ctx.restore();
 }
 function drawFlipper(F){
-  var _fi=PIN_ART.img(F.up?'flipper_up':'flipper_rest');
+  var _fi=PIN_ART.img(SKINS.claw?('skin_claw_'+SKINS.claw+'_'+(F.up?'up':'rest')):(F.up?'flipper_up':'flipper_rest'));
   if(_fi){ ctx.save(); ctx.translate(F.px,F.py); ctx.rotate(F.a);
     var _fL=F.L*1.22, _fh=_fL*_fi.height/_fi.width;
     var _gl=PIN_ART.img('flipper_glow'); if(_gl && Math.abs(F.w)>3){ ctx.globalAlpha=0.4+0.35*Math.min(1,Math.abs(F.w)/8); ctx.drawImage(_gl,-8,-_fh*0.75,_fL+16,_fh*1.5); ctx.globalAlpha=1; }
@@ -1097,6 +1113,46 @@ function boot(){
         bx.drawImage(img, fr*cw,0,cw,ch, (cv.width-dw)/2, cv.height-dh, dw,dh); }
     }
     requestAnimationFrame(frame);
+  })();
+  // ---- SKINS picker (earn-only cosmetics): equip table / ball / flippers / buddy, unlocked by mastery ----
+  (function(){
+    var CAT={
+      table:[['','Night Lab',null],['day','Day Shift',['b',5]],['toxic','Toxic Spill',['s',40000]],['oldreel','Old Reel',['b',30]],['chrome','Chrome Lab',['s',200000]]],
+      ball:[['','Eyeball',null],['donut','Sprinkle Donut',['b',3]],['brain','Brain',['b',10]],['moon','Moon',['s',50000]],['meatball','Meatball',['b',20]],['disco','Disco Geode',['s',120000]],['snowglobe','Snow Globe',['s',250000]]],
+      claw:[['','Monster Hands',null],['crab','Crab Claws',['b',5]],['robot','Robot Pincers',['s',30000]],['ovenmitt','Oven Mitts',['b',15]],['tentacle','Tentacles',['s',150000]]],
+      buddy:[['','None',null],['alien','Alien',['b',2]],['toad','Toad',['b',8]],['koi','Koi',['s',60000]],['cicada','Cicada',['b',14]],['spider','Spider',['s',90000]],['moth','Luna Moth',['b',25]],['raccoon','Raccoon',['s',130000]],['mammoth','Mammoth',['s',180000]]]
+    };
+    var LAB={table:'Table',ball:'Ball',claw:'Flippers',buddy:'Buddy'}, ORDER=['table','ball','claw','buddy'], cur='table';
+    function src(cat,id){ var v='.png?v='+PIN_ART.VER;
+      if(cat==='table')return 'art/'+(id?'skin_table_'+id:'table_night_shift')+v;
+      if(cat==='ball')return 'art/'+(id?'skin_ball_'+id:'eyeball_core')+v;
+      if(cat==='claw')return 'art/'+(id?'skin_claw_'+id+'_rest':'flipper_rest')+v;
+      return id?('art/buddy_'+id+v):''; }
+    function unlk(req){ if(!req)return true; var have=req[0]==='s'?skinBestAll():(PROG.blooms||0); return have>=req[1]; }
+    function reqT(req){ return req[0]==='s'?('Best '+req[1].toLocaleString()):(req[1]+' MEGA MASH'+(req[1]>1?'es':'')); }
+    var css='#s-skins .pad{padding:20px}.sk-tabs{display:flex;gap:6px;margin:6px 0 12px}'
+     +'.sk-tab{flex:1;min-height:44px;border:1px solid var(--line);background:#0f150c;color:var(--muted);border-radius:10px;font-weight:700;font-size:13px;cursor:pointer}'
+     +'.sk-tab.on{background:#1a2415;color:var(--cream);border-color:var(--sage)}'
+     +'.sk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}'
+     +'.sk-opt{position:relative;border:2px solid var(--line);background:#0e140d;border-radius:12px;padding:8px 4px 6px;text-align:center;cursor:pointer;min-height:104px;display:flex;flex-direction:column;align-items:center;gap:3px}'
+     +'.sk-opt.on{border-color:var(--sage);box-shadow:0 0 0 2px #7ab35644}.sk-opt.lk{opacity:.58}'
+     +'.sk-opt img{width:58px;height:58px;object-fit:contain}.sk-opt .nm{font-size:11px;color:var(--cream);font-weight:700;line-height:1.15}'
+     +'.sk-opt .rq{font-size:9.5px;color:var(--gold);line-height:1.1}.sk-opt .eq{position:absolute;top:3px;right:5px;font-size:9px;color:var(--sage);font-weight:800}';
+    var st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
+    var scr=document.createElement('div'); scr.className='screen'; scr.id='s-skins';
+    scr.innerHTML='<div class="pad"><h2 class="sc-h">Skins</h2><div style="color:var(--muted);font-size:12.5px;margin-bottom:6px">Unlock by triggering MEGA MASH and beating your best. All free, pure looks.</div><div class="sk-tabs" id="sk-tabs"></div><div class="sk-grid" id="sk-grid"></div><div style="height:16px"></div><button class="btn ghost sm" id="sk-back" style="max-width:400px;margin:0 auto">Back</button></div>';
+    document.body.appendChild(scr);
+    function tabs(){ var h='',i; for(i=0;i<ORDER.length;i++)h+='<button class="sk-tab'+(cur===ORDER[i]?' on':'')+'" data-c="'+ORDER[i]+'">'+LAB[ORDER[i]]+'</button>'; $('sk-tabs').innerHTML=h; }
+    function grid(){ var list=CAT[cur],h='',i; for(i=0;i<list.length;i++){ var id=list[i][0],nm=list[i][1],req=list[i][2],un=unlk(req),eq=(SKINS[cur]===id),s=src(cur,id);
+      h+='<div class="sk-opt'+(eq?' on':'')+(un?'':' lk')+'" data-id="'+id+'" data-un="'+(un?1:0)+'">'+(eq?'<span class="eq">ON</span>':'')
+        +(s?'<img src="'+s+'" onerror="this.style.visibility=&quot;hidden&quot;">':'<div style="width:58px;height:58px"></div>')
+        +'<div class="nm">'+nm+'</div>'+(un?'':'<div class="rq">'+reqT(req)+'</div>')+'</div>'; }
+      $('sk-grid').innerHTML=h; }
+    $('sk-tabs').addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('.sk-tab'); if(!b)return; cur=b.getAttribute('data-c'); tabs(); grid(); });
+    $('sk-grid').addEventListener('click',function(e){ var o=e.target.closest&&e.target.closest('.sk-opt'); if(!o)return;
+      if(o.getAttribute('data-un')!=='1'){ sfx('drain'); return; } SKINS[cur]=o.getAttribute('data-id'); saveSkins(); loadEquippedSkins(); sfx('ui'); grid(); });
+    tap('sk-back', function(){ sfx('ui'); show('s-title'); });
+    tap('b-skins', function(){ sfx('ui'); cur='table'; tabs(); grid(); show('s-skins'); });
   })();
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
