@@ -84,6 +84,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="ribbon">Grow hedge walls to fence the garden pests into a corner and reclaim the bed. Watch out: a pest that bumps a growing hedge wilts it flat. A remake of the classic JezzBall.</div>
     <div style="flex:1"></div>
     <div class="stack">
+      <button class="btn primary" id="b-resume" style="display:none">Resume run</button>
       <button class="btn primary" id="b-play">Play</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
@@ -114,7 +115,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Hedgerow — a Sky Wolf remake of the classic JezzBall.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+    <div class="foot">Hedgerow: a Sky Wolf remake of the classic JezzBall.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
   </div></div>
 
   <!-- GAME OVER -->
@@ -144,7 +145,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 /* ============================ helpers ================================= */
 function $(id){ return document.getElementById(id); }
 var curScreen='s-title';
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); if(id==='s-title'){ var rb=$('b-resume'); if(rb) rb.style.display=(G&&G.phase==='paused')?'flex':'none'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 var BUILD='v1.0';
@@ -373,7 +374,7 @@ function retryLevel(){ if(!G) return; G.lives=3; G.score=G.scoreAtLevelStart||0;
 function shareHedgerow(){
   var g=G?Math.max(0,G.level-1):0, sc=G?G.score:0;
   var url="https://lucidwinds.com/satellites/hedgerow/";
-  var txt="Hedgerow — I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
+  var txt="Hedgerow: I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); }
 }
@@ -512,7 +513,8 @@ function buildCtrl(){
 }
 function paintOri(){ var o=$('ori-btn'); if(!o) return; o.innerHTML = curOrient==='h' ? '⇆&nbsp; Across' : '⇅&nbsp; Up · Down'; }
 function updateCtrl(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&(G.phase==='play'||G.phase==='clear'))?'flex':'none'; }
-function pauseToTitle(){ running=false; if(G) G.phase='paused'; show('s-title'); updateRec(); }
+function pauseToTitle(){ running=false; if(G){ G._pausedPhase=(G.phase==='paused')?(G._pausedPhase||'play'):G.phase; G.phase='paused'; } show('s-title'); updateRec(); }
+function resumeGame(){ if(!G||G.phase!=='paused') return; G.phase=G._pausedPhase||'play'; show(null); running=true; lastTs=0; requestAnimationFrame(loop); }
 
 /* ============================ toggles / rec ================================= */
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get()) el.classList.add('on'); else el.classList.remove('on'); }
@@ -531,6 +533,7 @@ function boot(){
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden){ running=false; } else if(G&&(G.phase==='play'||G.phase==='clear')&&curScreen===null){ running=true; lastTs=0; requestAnimationFrame(loop); } });
   buildCtrl();
+  tap('b-resume', function(){ resumeGame(); });
   tap('b-play', function(){ newGame(); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });

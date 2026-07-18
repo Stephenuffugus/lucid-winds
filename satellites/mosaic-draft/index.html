@@ -92,9 +92,9 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 
 <div id="hud">
   <button class="hbtn" id="hud-back">⌂</button>
-  <div class="chip"><b id="h-round">—</b><span>round</span></div>
-  <div class="chip"><b id="h-mode">—</b><span>mode</span></div>
-  <div class="chip grow"><b id="h-turn">—</b><span>the kiln</span></div>
+  <div class="chip"><b id="h-round">·</b><span>round</span></div>
+  <div class="chip"><b id="h-mode">·</b><span>mode</span></div>
+  <div class="chip grow"><b id="h-turn">·</b><span>the kiln</span></div>
 </div>
 
 <div class="screen on" id="s-title">
@@ -119,8 +119,8 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 </div>
 
 <div class="screen" id="s-over">
-  <h1 style="font-size:1.5rem" id="over-title">—</h1>
-  <div class="tag" id="over-sub">—</div>
+  <h1 style="font-size:1.5rem" id="over-title">·</h1>
+  <div class="tag" id="over-sub">·</div>
   <div id="overstats">
     <div class="chip"><b id="ov-you">0</b><span>you</span></div>
     <div class="chip"><b id="ov-rival">0</b><span id="ov-rlabel">rival</span></div>
@@ -641,7 +641,7 @@ function render(){
   ctx.textAlign="left"; ctx.textBaseline="alphabetic";
   if(G.solo){
     ctx.fillStyle="#c8a84b"; ctx.font="700 15px -apple-system,sans-serif";
-    ctx.fillText("DAILY KILN — round "+G.round+" of "+G.maxRounds,R.x+14,R.y+26);
+    ctx.fillText("DAILY KILN  ·  round "+G.round+" of "+G.maxRounds,R.x+14,R.y+26);
     ctx.fillStyle="#8a9178"; ctx.font="500 13px -apple-system,sans-serif";
     ctx.fillText("the same seeded plates for every keeper today",R.x+14,R.y+48);
     ctx.fillText("best "+SAVE.bestDaily+"  ·  streak "+SAVE.streak,R.x+14,R.y+70);
@@ -726,7 +726,7 @@ function render(){
   if(FIRE)hint="";
   else if(G.over)hint="the kiln has cooled";
   else if(!G.solo&&G.cur===1)hint=(RIVALS[G.rung]||RIVALS[0]).name+" studies the table…";
-  else if(SEL){ var kk=KIND[SEL.color]; hint="drafting "+kk.name+" — tap a glowing row, or the floor"; }
+  else if(SEL){ var kk=KIND[SEL.color]; hint="drafting "+kk.name+" · tap a glowing row, or the floor"; }
   else hint="tap shards of one kind to draft them";
   ctx.fillStyle="#8a9178"; ctx.font="500 13px -apple-system,sans-serif";
   ctx.textAlign="center"; ctx.fillText(hint,270,LAY.hintY); ctx.textAlign="left";
@@ -833,7 +833,7 @@ var lastHud="";
 function updHud(){
   if(!G)return;
   var modeName={duel:"duel",daily:"daily",zen:"zen",rush:"rush"}[G.mode]||G.mode;
-  var turn=G.over?"—":(G.solo?"you":(G.cur===0?"you":"rival"));
+  var turn=G.over?"done":(G.solo?"you":(G.cur===0?"you":"rival"));
   var key=G.round+"|"+modeName+"|"+turn;
   if(key===lastHud)return;
   lastHud=key;
@@ -1020,7 +1020,7 @@ function buildWard(){
       c.innerHTML='<div class="wi">'+it.icon+'</div><div class="wn">'+it.name+'</div><div class="wl">'+(ok?(cur?"equipped":"tap to equip"):it.need)+'</div>';
       (function(key,id,okk){
         c.addEventListener("click",function(){
-          if(!okk){ toast("locked — "+id); return; }
+          if(!okk){ toast("locked · "+id); return; }
           SAVE[key]=id; saveSave(); buildWard(); });
       })(COSM[s].key,it.id,ok);
       grid.appendChild(c); }

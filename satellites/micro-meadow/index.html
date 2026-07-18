@@ -481,7 +481,7 @@ function render(){ if(!ctx||!G)return; var th=curTheme();
   if(G.phase==='prompt'||G.phase==='play'){ var fr=curFrame(); var scale=(G.phase==='prompt')?(0.6+Math.min(1,G.t/0.2)*0.5):1;
     ctx.save(); ctx.translate(VW/2, PA.y-60); ctx.scale(scale,scale); ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='800 40px system-ui'; ctx.fillStyle=fr.col; ctx.fillText(G.micro.word,0,0); ctx.restore();
-    if(G.micro.how){ ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='600 17px system-ui'; ctx.fillStyle='#b9c2a5'; ctx.fillText(G.micro.how, VW/2, PA.y-28); } }
+    if(G.micro.how){ ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='600 21px system-ui'; ctx.fillStyle='#b9c2a5'; ctx.fillText(G.micro.how, VW/2, PA.y-24); } }
   // result stamp
   if(G.phase==='result'){ ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='800 44px system-ui'; ctx.fillStyle=G.resultWin?'#7ab356':'#e56b6b'; ctx.fillText(G.resultWin?'✓':'✗', VW/2, PA.y-46); }
   // flash
@@ -509,7 +509,7 @@ function renderGallery(){ var host=$('gallery-wrap'); host.innerHTML=''; var n=P
   $('gallery-sub').textContent = n? ('You have grown '+n+' keepsake bloom'+(n===1?'':'s')+'. Fill the Bloom Meter to grow more.') : 'Fill the Bloom Meter to grow a keepsake here.';
   var start=Math.max(0,n-60);
   for(var i=start;i<n;i++){ var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); g.clearRect(0,0,70,70); drawKeepsake(g,35,36,1.4,PROG.blooms[i]>>>0); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no blooms yet —'; host.appendChild(e); } }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='No blooms yet. Fill the Bloom Meter to grow one.'; host.appendChild(e); } }
 function renderWardList(hostId,pref,arr,cur,setter){ var host=$(hostId); host.innerHTML='';
   for(var i=0;i<arr.length;i++){ (function(it){ var own=ownedC(pref,it);
     var card=document.createElement('div'); card.className='wardcard'+(own?'':' locked')+(cur===it.id?' on':'');

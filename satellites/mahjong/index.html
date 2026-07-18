@@ -199,10 +199,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">🀄</div><div>Tap two <b>free</b> tiles that show the <b>same botanical</b> to match them away.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div><b class="hl">Seasons</b> (🌸🌻🍁❄️) match <b>any other season</b>, and <b class="hl">Elements</b> (💧☀️⛰️🌬️) match any other element — just like classic Mahjong's flowers and seasons.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div><b class="hl">Seasons</b> (🌸🌻🍁❄️) match <b>any other season</b>, and <b class="hl">Elements</b> (💧☀️⛰️🌬️) match any other element, just like classic Mahjong's flowers and seasons.</div></div>
     <div class="helprow"><div class="hi">✋</div><div>A tile is <b class="hl">free</b> only if nothing rests on top of it <b>and</b> its left or right side is open. Free tiles sit bright; blocked ones dim. Turn on <b>Highlight free tiles</b> to see them glow.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>The <b class="hl">Season</b> tiles (gold frame) all match each other, and the <b class="hl">Element</b> tiles (silver frame) all match each other — handy wilds.</div></div>
-    <div class="helprow"><div class="hi">🌿</div><div>Clear the whole garden to win. Snagged? Take a <b>hint</b> or <b>undo</b> — or <b>reset the garden</b> to try a different order.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>The <b class="hl">Season</b> tiles (gold frame) all match each other, and the <b class="hl">Element</b> tiles (silver frame) all match each other. Handy wilds.</div></div>
+    <div class="helprow"><div class="hi">🌿</div><div>Clear the whole garden to win. Snagged? Take a <b>hint</b> or <b>undo</b>, or <b>reset the garden</b> to try a different order.</div></div>
     <div class="helprow"><div class="hi">☀️</div><div>Clear gardens to earn Sunbeams. Bigger gardens and faster clears earn a little more.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -256,7 +256,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="font-size:15px;color:var(--muted);margin-top:4px" id="win-sub"></div>
     <div style="width:100%;max-width:320px;margin-top:14px">
       <div class="win-stat"><span id="win-timelbl">Time</span><b id="win-time">0:00</b></div>
-      <div class="win-stat"><span id="win-bestlbl">Best</span><b id="win-best">—</b></div>
+      <div class="win-stat"><span id="win-bestlbl">Best</span><b id="win-best">·</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
@@ -597,28 +597,9 @@ function undo(){ if(!S||!S.undo.length){ flash('Nothing to undo'); return; } if(
   var last=S.undo.pop(); S.tiles[last[0]].removed=false; S.tiles[last[1]].removed=false; S.selected=null; S.undos++;
   if(S.mode==='challenge')S.score=Math.max(0,S.score-5);
   sfx('tap'); refreshStates(); updateHUD(); updateControls(); hideBanner(); }
-// reshuffle the REMAINING tiles into a guaranteed-solvable order (reverse-teardown)
-function shuffleRemaining(){ if(!S)return; if(S.mode==='challenge'&&S.shuffles>=2){ flash('No shuffles left'); return; } hideBanner();
-  var remIds=[],i; for(i=0;i<S.tiles.length;i++) if(!S.tiles[i].removed) remIds.push(i);
-  if(remIds.length<2){ return; }
-  var posList=remIds.map(function(id){ return [S.tiles[id].layer,S.tiles[id].col,S.tiles[id].row]; });
-  var faces=remIds.map(function(id){ return S.tiles[id].face; });
-  // pair up the existing face multiset, then reverse-play onto the remaining positions
-  var pairs=buildPairs(faces);
-  var solved=null;
-  for(var attempt=0;attempt<40 && !solved;attempt++) solved=tryGenerate(posList, pairs.slice());
-  if(!solved){ flash('Could not reshuffle'); return; }
-  for(i=0;i<remIds.length;i++){ S.tiles[remIds[i]].face=solved.tiles[i].face; }
-  S.shuffles++; if(S.mode==='challenge')S.score=Math.max(0,S.score-50); updateControls(); updateHUD();
-  S.selected=null;
-  // rebuild remaining tiles' face nodes
-  remIds.forEach(function(id){ var el=tileEls[id]; if(!el)return; el.innerHTML=''; var t=S.tiles[id];
-    el.className='tile'+(t.face.kind==='S'?' wildS':(t.face.kind==='E'?' wildE':'')); el.appendChild(faceNode(t.face)); });
-  refreshStates(); sfx('ui');
-}
 function checkStuck(){ if(!S)return; if(findAnyMatch()){ hideBanner(); return; }
   if(countRemaining()===0) return;
-  var b=$('banner'); b.innerHTML='<div style="font-weight:800;color:var(--gold);margin-bottom:8px">The garden has tangled</div><div style="font-size:13px;color:var(--cream);margin-bottom:10px">No moves left. This garden is still solvable — reset it and try a different order?</div><button class="btn primary sm" id="banner-restart" style="max-width:220px;margin:0 auto">🔄 Reset garden</button>';
+  var b=$('banner'); b.innerHTML='<div style="font-weight:800;color:var(--gold);margin-bottom:8px">The garden has tangled</div><div style="font-size:13px;color:var(--cream);margin-bottom:10px">No moves left. This garden is still solvable. Reset it and try a different order?</div><button class="btn primary sm" id="banner-restart" style="max-width:220px;margin:0 auto">🔄 Reset garden</button>';
   b.classList.add('on'); var bs=$('banner-restart'); if(bs) bs.addEventListener('click',function(e){ e.preventDefault(); restartBoard(); });
 }
 // Reset the SAME deal (same tiles + positions) so the player can retry the exact
@@ -626,7 +607,7 @@ function checkStuck(){ if(!S)return; if(findAnyMatch()){ hideBanner(); return; }
 // so getting tangled means starting this garden over (Stephen 2026-07-09).
 function restartBoard(){ if(!S)return; hideBanner();
   for(var i=0;i<S.tiles.length;i++) S.tiles[i].removed=false;
-  S.selected=null; S.undo=[]; S.hints=0; S.undos=0; S.shuffles=0;
+  S.selected=null; S.undo=[]; S.hints=0; S.undos=0;
   S.score=0; S.chain=0; S.chainKind=null; S.lastMatchT=0;
   S.startT=Date.now(); S.pausedMs=0; S.phase='play'; S.locked=false;
   refreshStates(); updateHUD(); updateControls(); sfx('ui');
@@ -666,9 +647,9 @@ function startGame(layoutKey, daily){
   if(daily) RNG=mulberry32(ymd());          // date-seeded deterministic deal for everyone
   var g=generate(positions);
   RNG=Math.random;                           // restore
-  if(!g){ flash('Deal failed — retry'); return; }
+  if(!g){ flash('Deal failed. Retry'); return; }
   S={ lay:lay, tiles:g.tiles, solveOrder:g.order, selected:null, undo:[], phase:'play', locked:false,
-      mode:SET.mode, hints:0, undos:0, shuffles:0, score:0, chain:0, chainKind:null, lastMatchT:0, daily:!!daily,
+      mode:SET.mode, hints:0, undos:0, score:0, chain:0, chainKind:null, lastMatchT:0, daily:!!daily,
       startT:Date.now(), pausedMs:0, _hidAt:0 };
   show('s-play'); hideBanner();
   $('p-title').textContent=(daily?'Daily · ':'')+lay.name;
@@ -687,10 +668,9 @@ function winGame(){
   if(isBest){ BEST[bkey]=elapsed; saveBest(); }
   WINS[bkey]=(WINS[bkey]||0)+1; saveWins();
   var allNow=clearedCount('')>=LAYOUTS.length;
-  var assists=S.hints+S.undos+S.shuffles;
+  var assists=S.hints+S.undos;
   if(S.mode==='challenge'){
-    S.score+=1000;                                        // clear bonus
-    if(S.shuffles===0) S.score+=500;                      // no-shuffle bonus
+    S.score+=1500;                                        // clear bonus
     S.score+=Math.max(0, 3000 - Math.floor(elapsed/1000)*8);  // faster = more
     if(!CBEST[bkey] || S.score>CBEST[bkey]){ CBEST[bkey]=S.score; saveCbest(); }
   }
@@ -711,22 +691,22 @@ function winGame(){
     $('win-bestlbl').textContent='Best score'; $('win-best').textContent=(CBEST[bkey]||S.score);
   } else {
     $('win-timelbl').textContent='Time'; $('win-time').textContent=fmtTime(elapsed);
-    $('win-bestlbl').textContent='Best'; $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'—';
+    $('win-bestlbl').textContent='Best'; $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'·';
   }
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   // fleet-standard share: build the line from the REAL run result
   var _gn=S.lay.name+(S.daily?' (Daily)':'');
   LAST_SHARE=(S.mode==='challenge')
-    ? ('Jade Garden — '+S.score+' pts clearing '+_gn+' ('+pairs+' pairs)! Can you beat it?')
-    : ('Jade Garden — cleared '+_gn+' in '+fmtTime(elapsed)+' ('+pairs+' pairs)! Can you beat it?');
+    ? ('Jade Garden · '+S.score+' pts clearing '+_gn+' ('+pairs+' pairs)! Can you beat it?')
+    : ('Jade Garden · cleared '+_gn+' in '+fmtTime(elapsed)+' ('+pairs+' pairs)! Can you beat it?');
   sfx('win'); setTimeout(function(){ show('s-win'); },700);
 }
 var LAST_SHARE='';
 function shareGame(){
   var url='https://lucidwinds.com/satellites/mahjong/';
-  var txt=LAST_SHARE||'Jade Garden — a calm mahjong solitaire in a moonlit garden! Can you beat it?';
+  var txt=LAST_SHARE||'Jade Garden · a calm mahjong solitaire in a moonlit garden! Can you beat it?';
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+'\n'+url).then(function(){ flash('Copied — share your garden!'); }).catch(function(){}); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+'\n'+url).then(function(){ flash('Copied. Share your garden!'); }).catch(function(){}); }
 }
 
 /* ============================ layout picker ============================= */
@@ -750,7 +730,7 @@ function buildPicker(){
   var host=$('lay-list'); host.innerHTML='';
   var BADGE={easy:'Easy',med:'Medium',medhard:'Med-Hard',hard:'Hard',expert:'Expert'};
   var chMode=(SET.mode==='challenge');
-  if(clearedCount('')>=LAYOUTS.length){ var gm=document.createElement('div'); gm.className='gmaster'; gm.textContent='🏆 Garden Master — every garden cleared'; host.appendChild(gm); }
+  if(clearedCount('')>=LAYOUTS.length){ var gm=document.createElement('div'); gm.className='gmaster'; gm.textContent='🏆 Garden Master · every garden cleared'; host.appendChild(gm); }
   for(var i=0;i<LAYOUTS.length;i++){ (function(L){
     var locked=(L.diff==='expert' && !expertUnlocked());
     var b=document.createElement('button'); b.className='btn laycard'+(locked?' locked':'');
@@ -764,7 +744,7 @@ function buildPicker(){
       if(chMode) best=CBEST[L.key]?('🏆 '+CBEST[L.key]+' pts'+(winTxt?(' · '+winTxt):'')):winTxt;
       else best=BEST[L.key]?('🏅 '+fmtTime(BEST[L.key])+(winTxt?(' · '+winTxt):'')):winTxt;
       var n=L.build().length; n=n-(n%2);
-      b.innerHTML='<div class="lc-ico">'+L.ico+'</div><div class="lc-main"><div class="lc-t">'+star+L.name+'</div><div class="lc-d">'+L.sub+' · '+n+' tiles</div>'+(best?'<div class="lc-best">'+best+'</div>':'')+'</div><div class="badge '+L.diff+'">'+(BADGE[L.diff]||'—')+'</div>';
+      b.innerHTML='<div class="lc-ico">'+L.ico+'</div><div class="lc-main"><div class="lc-t">'+star+L.name+'</div><div class="lc-d">'+L.sub+' · '+n+' tiles</div>'+(best?'<div class="lc-best">'+best+'</div>':'')+'</div><div class="badge '+L.diff+'">'+(BADGE[L.diff]||'·')+'</div>';
       b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startGame(L.key); });
     }
     host.appendChild(b);
@@ -847,7 +827,7 @@ if(/[?&]jgtest=1/.test(location.search)){
       return {solved:countRemaining()===0, left:countRemaining()}; },
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_jadegarden')||'{}'); }catch(e){ return {}; } },
     win:function(){ return winGame(); }, share:function(){ return shareGame(); }, lastShare:function(){ return LAST_SHARE; },
-    checkStuck:function(){ return checkStuck(); }, restart:function(){ return restartBoard(); }, controls:function(){ return !!document.getElementById('c-shuffle'); }
+    checkStuck:function(){ return checkStuck(); }, restart:function(){ return restartBoard(); }, controls:function(){ return !!document.getElementById('c-hint') && !!document.getElementById('c-undo'); }
   };
 }
 boot();

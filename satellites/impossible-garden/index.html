@@ -66,6 +66,9 @@ h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
 .gal{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
 .badge{position:absolute; top:12px; left:12px; z-index:8; font-size:12px; color:var(--muted); background:rgba(10,9,16,.55); border:1px solid var(--line); border-radius:10px; padding:6px 10px}
 .hintline{color:var(--muted); font-size:12px; margin-top:6px}
+.playcap{position:absolute; top:58px; left:50%; transform:translateX(-50%); z-index:8; max-width:88%; text-align:center;
+  font-size:15px; font-weight:600; color:var(--cream); background:rgba(10,9,16,.62); border:1px solid var(--line);
+  border-radius:12px; padding:9px 14px; line-height:1.35; opacity:0; transition:opacity .8s ease; pointer-events:none}
 </style>
 </head>
 <body>
@@ -97,7 +100,7 @@ h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
     <div class="btn ghost sm" style="max-width:420px;margin:8px auto 0" onclick="IG.show('s-title')">Back</div>
   </div></div>
 
-  <div id="s-play" class="screen"><div class="badge" id="hud-badge">Garden 1</div></div>
+  <div id="s-play" class="screen"><div class="badge" id="hud-badge">Garden 1</div><div class="playcap" id="hud-cap"></div></div>
 
   <div id="s-win" class="screen"><div class="pad center">
     <h2 class="sc-h" id="win-title">The garden blooms</h2>
@@ -182,7 +185,7 @@ function noHintCount(){ var c=0; for(var k in SAVE.noHint) if(SAVE.noHint[k])c++
 
 /* ---------- ISO ---------- */
 var HW=34, HH=17, ZH=30;
-function iso(x,y,z,cam){ return { sx: cam.ox + (x - y)*HW, sy: cam.oy + (x + y)*HH - z*ZH }; }
+function iso(x,y,z,cam){ var s=cam.s||1; return { sx: cam.ox + (x - y)*HW*s, sy: cam.oy + (x + y)*HH*s - z*ZH*s }; }
 
 /* ---------- LEVELS ----------
 Each level: tiles [x,y,z,kind]  kind: 'p' path, 's' start, 'g' goal
@@ -248,11 +251,21 @@ function buildLevel(def, idx){
   }
   var mechs=[]; for(i=0;i<def.mechs.length;i++){ var m=def.mechs[i];
     mechs.push({ seam:m.seam.slice(), states:m.states, sol:m.sol, cur:0, ang:0 }); }
-  // centering: compute screen bounds at a probe cam, then set ox/oy
-  var cam={ox:0, oy:0};
-  var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
-  for(i=0;i<tiles.length;i++){ var p=iso(tiles[i].x,tiles[i].y,tiles[i].z,cam);
-    if(p.sx<minx)minx=p.sx; if(p.sx>maxx)maxx=p.sx; if(p.sy<miny)miny=p.sy; if(p.sy>maxy)maxy=p.sy; }
+  // centering + per-level fit: probe screen bounds at scale 1, pick a zoom that
+  // fills the stage so small gardens don't sit tiny in dead space, then re-center.
+  var cam={ox:0, oy:0, s:1};
+  var minx,maxx,miny,maxy;
+  function probeBounds(){ minx=1e9;maxx=-1e9;miny=1e9;maxy=-1e9;
+    for(var k=0;k<tiles.length;k++){ var p=iso(tiles[k].x,tiles[k].y,tiles[k].z,cam);
+      if(p.sx<minx)minx=p.sx; if(p.sx>maxx)maxx=p.sx; if(p.sy<miny)miny=p.sy; if(p.sy>maxy)maxy=p.sy; } }
+  probeBounds();
+  // content extent at scale 1 (tiles reach ~HW past centers horizontally, HH+depth vertically,
+  // plus headroom for the handle knobs that float above the seams)
+  var cw=(maxx-minx)+HW*2, ch=(maxy-miny)+HH*2+56;
+  var s=Math.min( (VW*0.80)/cw, (VH*0.56)/ch );
+  if(s<0.85) s=0.85; if(s>2.1) s=2.1;
+  cam.s=s;
+  probeBounds();
   cam.ox = VW/2 - (minx+maxx)/2;
   cam.oy = VH/2 - (miny+maxy)/2 + 30;
   return { def:def, idx:idx, tiles:tiles, stat:stat, mechs:mechs, cam:cam,
@@ -372,15 +385,15 @@ function drawArm(g, m){
   // handle knob
   var hp=mechHandle(g,m);
   var pulse = (g.hintPulse>0 && g.hintMech===m) ? (0.5+0.5*Math.sin(g.time*0.02)) : 0;
-  ctx.beginPath(); ctx.arc(hp.sx, hp.sy, 15, 0, 7);
+  ctx.beginPath(); ctx.arc(hp.sx, hp.sy, 20, 0, 7);
   ctx.fillStyle = pulse>0 ? 'rgba(255,233,168,'+(0.35+pulse*0.5)+')' : 'rgba(30,26,45,0.85)'; ctx.fill();
   ctx.strokeStyle=P.arm; ctx.lineWidth=2.5; ctx.stroke();
   // rotation ticks
   ctx.save(); ctx.translate(hp.sx,hp.sy); ctx.rotate(mc.cur/Math.max(1,mc.states.length)*Math.PI*2);
-  ctx.strokeStyle=P.arm; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-9); ctx.stroke(); ctx.restore();
+  ctx.strokeStyle=P.arm; ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-12); ctx.stroke(); ctx.restore();
 }
 function mechHandle(g,m){ var mc=g.mechs[m]; var a=tileCenter(g,mc.seam[0]), b=tileCenter(g,mc.seam[1]);
-  return { sx:(a.sx+b.sx)/2, sy:(a.sy+b.sy)/2 - 30 }; }
+  return { sx:(a.sx+b.sx)/2, sy:(a.sy+b.sy)/2 - 30*(g.cam.s||1) }; }
 
 function drawWalker(g){
   var w=g.walker; var c=SKINS[SAVE.skin]?SKINS[SAVE.skin].c:'#eafbd6';
@@ -442,7 +455,7 @@ function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches
 function onTap(e){ if(!G || curScreen!=='s-play' || G.solved) return; e.preventDefault(); ac();
   var p=evPos(e);
   // mech handles first
-  for(var m=0;m<G.mechs.length;m++){ var h=mechHandle(G,m); if(dist(p.x,p.y,h.sx,h.sy)<26){ cycleMech(G,m); if(G.mode==='zen') G.usedHint=G.usedHint; return; } }
+  for(var m=0;m<G.mechs.length;m++){ var h=mechHandle(G,m); if(dist(p.x,p.y,h.sx,h.sy)<34){ cycleMech(G,m); if(G.mode==='zen') G.usedHint=G.usedHint; return; } }
   // nearest tile top
   var best=-1, bd=30;
   for(var i=0;i<G.tiles.length;i++){ var c=tileCenter(G,i); var d=dist(p.x,p.y,c.sx,c.sy-4); if(d<bd){ bd=d; best=i; } }
@@ -458,7 +471,7 @@ function giveHint(g){ if(!SAVE.hint) return; // find a mech that is not at sol a
 }
 
 /* ---------- screens ---------- */
-var curScreen='s-title';
+var curScreen='s-title', capTimer=null;
 function show(id){ var s=document.getElementsByClassName('screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
   if(id==='s-wardrobe') renderWardrobe();
   if(id==='s-gallery') renderGallery();
@@ -472,6 +485,13 @@ function startLevel(idx, mode){
   G=buildLevel(LEVELS[idx], idx); G.mode=mode||'journey'; G.usedHint=false; G.time=0;
   if(G.mode==='daily'){ G.dailyIdx=idx; }
   $('hud-badge').textContent = (mode==='daily'?'Daily · ':'Garden ')+(mode==='daily'?LEVELS[idx].name:(idx+1));
+  // first-garden prompt so a first-timer knows the knob is interactive; fades away after a bit
+  var cap=$('hud-cap'); if(cap){ clearTimeout(capTimer);
+    if(idx===0){ cap.textContent='Turn the vine arm, then walk to the bloom.';
+      cap.style.opacity='0'; setTimeout(function(){ cap.style.opacity='1'; }, 60);
+      capTimer=setTimeout(function(){ cap.style.opacity='0'; }, 7000);
+    } else { cap.style.opacity='0'; cap.textContent=''; }
+  }
   show('s-play');
   running=true; lastTs=0; requestAnimationFrame(loop);
   // zen auto-hint after a while

@@ -547,7 +547,7 @@ function renderPouch(){ var h=$('pouch-wrap'); if(!h)return; h.innerHTML=''; var
   $('pouch-sub').textContent = n? ('You have pressed '+n+' feral seed'+(n===1?'':'s')+'. Close bigger regions for rarer ones.') : 'Every region you close presses a feral seed here.';
   var start=Math.max(0,n-60);
   for(var i=start;i<n;i++){ var s=PROG.pouch[i]; var d=document.createElement('div'); d.className='fseed'; d.title=BIOMES[s.b].nm+' x'+s.size; d.textContent=BSEED[s.b]||'🌱'; if(s.rarity>=3)d.style.borderColor='var(--gold)'; h.appendChild(d); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no seeds yet —'; h.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='no seeds yet'; h.appendChild(e); }
 }
 function shareIt(){ var url='https://lucidwinds.com/satellites/meadow-weave/'; var txt='I wove a living meadow in Meadow Weave and pressed '+(PROG.ferals||0)+' feral seeds. '+url;
   if(navigator.share){ navigator.share({title:'Meadow Weave',text:txt,url:url}).catch(function(){}); } else { try{ navigator.clipboard.writeText(txt); }catch(e){} } }

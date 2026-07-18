@@ -568,7 +568,7 @@ function markDaily(){
   PROG.streak=(PROG.lastDaily===ys)?((PROG.streak||0)+1):1;
   PROG.lastDaily=t; saveProg();
 }
-function endRun(won){
+function endRun(won,quit){
   if(!G||G.phase!=="play")return;
   G.phase="over";
   PROG.plays++; PROG.delivered+=G.delivered;
@@ -580,6 +580,7 @@ function endRun(won){
   saveProg(); sndOver();
   var title, sub;
   if(G.mode==="zen"){ title="The loom rests"; sub="A calm day of weaving, exactly as planned."; }
+  else if(quit){ title="The loom rests"; sub="You set down the shuttle on your own terms."; }
   else if(won&&G.mode==="rush"){ title="Rush hour complete"; sub="Every thread held to the final bell."; }
   else if(won){ title="The loom rests"; sub="You set down the shuttle on your own terms."; }
   else { title="The loom unravels"; sub="A platform overflowed and the whole valley heard about it."; }
@@ -687,14 +688,15 @@ function render(){
     ctx.fillStyle=theme().bg; ctx.fill();
     ctx.strokeStyle=st.bloom?"#c8a84b":theme().st; ctx.lineWidth=3.5; ctx.stroke();
     var qn=Math.min(st.q.length,12);
+    var qLeft=st.x>VW-90;
     for(j=0;j<qn;j++){
-      var qx=st.x+20+(j%6)*11, qy=st.y-8+Math.floor(j/6)*12;
+      var qx=qLeft?st.x-20-(j%6)*11:st.x+20+(j%6)*11, qy=st.y-8+Math.floor(j/6)*12;
       drawShapePath(ctx,st.q[j].shape,qx,qy,4);
       ctx.fillStyle=theme().st; ctx.fill();
     }
     if(st.q.length>12){
-      ctx.fillStyle="#e56b6b"; ctx.font="bold 11px sans-serif"; ctx.textAlign="left";
-      ctx.fillText("+"+(st.q.length-12),st.x+20,st.y+18);
+      ctx.fillStyle="#e56b6b"; ctx.font="bold 11px sans-serif"; ctx.textAlign=qLeft?"right":"left";
+      ctx.fillText("+"+(st.q.length-12),qLeft?st.x-20:st.x+20,st.y+18);
     }
   }
   for(i=0;i<G.shuttles.length;i++){
@@ -928,7 +930,7 @@ tap("grove-back",function(){ show("s-title"); });
 tap("pausebtn",function(){ if(!G||G.phase!=="play")return; G.paused=true; show("s-pause"); });
 tap("p-resume",function(){ if(G)G.paused=false; show(""); });
 tap("p-how",function(){ howBack="s-pause"; show("s-how"); });
-tap("p-quit",function(){ if(G){ G.paused=false; endRun(G.mode==="zen"); } });
+tap("p-quit",function(){ if(G){ G.paused=false; endRun(true,true); } });
 tap("ov-again",function(){ startRun(G?G.mode:"loom"); });
 tap("ov-menu",function(){ G=null; $("hud").classList.remove("on"); show("s-title"); refreshMenu(); });
 tap("unweave",function(){ if(!G)return; G.unweave=!G.unweave; $("unweave").classList.toggle("armed",G.unweave);

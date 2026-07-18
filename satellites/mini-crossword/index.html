@@ -94,7 +94,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 
 <div id="hud">
   <button class="hbtn" id="hud-back">⌂</button>
-  <div class="chip"><b id="h-mode">—</b><span id="h-note">tap a square</span></div>
+  <div class="chip"><b id="h-mode">·</b><span id="h-note">tap a square</span></div>
   <div class="chip"><b id="h-time">0:00</b><span>time</span></div>
   <div class="chip"><b id="h-streak">0</b><span>ink streak</span></div>
   <div class="chip"><b id="h-ink">0</b><span>ink</span></div>
@@ -102,7 +102,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 
 <div id="cluebar">
   <button class="nav" id="clue-prev">‹</button>
-  <div class="cluetext"><b id="clue-lab">1A</b><span id="clue-txt">—</span></div>
+  <div class="cluetext"><b id="clue-lab">1A</b><span id="clue-txt">·</span></div>
   <button class="nav" id="clue-next">›</button>
 </div>
 
@@ -123,7 +123,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">SOLVED</h1>
-  <div class="tag" id="over-sub">—</div>
+  <div class="tag" id="over-sub">·</div>
   <div id="overstats">
     <div class="chip"><b id="ov-time">0:00</b><span>time</span></div>
     <div class="chip"><b id="ov-streak">0</b><span>ink streak</span></div>
@@ -1088,7 +1088,7 @@ function doWin(){
   } else if(CUR.mode==="endless"){ payRun(cleanSolve?2:1,"endless"); }
   else if(CUR.mode==="trial"){ if(PROG.trialBest===0||CUR.seconds<PROG.trialBest)PROG.trialBest=CUR.seconds;
     payRun(Math.max(2,Math.min(12,Math.round((90-Math.min(90,CUR.seconds))/8))),"trial"); }
-  save(); sndWin();
+  save(); stamp(); sndWin();
   $("over-title").textContent = cleanSolve?"CLEAN SOLVE!":"SOLVED";
   $("over-sub").textContent = CUR.mode==="zen" ? "A calm little grid. Nothing at stake."
     : (streakGrew ? "Error free! Ink Streak is now "+PROG.streak+"." : (CUR.mode==="trial" ? (PROG.trialBest===CUR.seconds?"New best time!":"Filled in "+fmtTime(CUR.seconds)+".") : "Streak reset. Solve clean to build it back."));

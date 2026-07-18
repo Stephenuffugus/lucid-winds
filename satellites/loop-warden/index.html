@@ -153,7 +153,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
 
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">SUPPLIES BANKED</h1>
-  <div class="tag" id="over-sub">—</div>
+  <div class="tag" id="over-sub">·</div>
   <div id="overstats">
     <div class="chip"><b id="ov-bank">0</b><span>supplies banked</span></div>
     <div class="chip"><b id="ov-days">0</b><span>days</span></div>
@@ -468,7 +468,7 @@ function dmgHero(n,src){
       R.hero.hp=Math.max(1,Math.floor(R.hero.maxhp*0.3));
       if(R.combat){ R.tiles[R.combat.t].monsters.length=0; endCombat(); }
       logLine("The night spirits spare you.");
-      if(!R.silent)toast("🌙 spared — zen watch never ends you");
+      if(!R.silent)toast("🌙 spared. zen watch never ends you");
     } else { R.hero.hp=0; sndDie(); logLine("The warden falls."); endRun(0.3,"fell"); }
   } else if(src!=="recoil")sndHurt();
 }
@@ -552,7 +552,7 @@ function placeCard(handIx,t){
   if(c.kind==="loop")R.tiles[t].card={id:cid}; else R.tiles[t].meadow={id:cid};
   R.hand.splice(handIx,1);
   recalc(); sndPlace();
-  if(!R.silent){ renderHand(); hintDefault(); toast(c.n+" placed — "+QNAMES[effQuad(t)].toLowerCase()+" ground"); }
+  if(!R.silent){ renderHand(); hintDefault(); toast(c.n+" placed on "+QNAMES[effQuad(t)].toLowerCase()+" ground"); }
   return true;
 }
 function equipLoot(i){
@@ -913,7 +913,7 @@ function drawIdle(){
 
 /* ---------- UI ---------- */
 function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
-function show(id){ hideScreens(); $(id).classList.add("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); $("buildstamp").style.display=""; }
 var toastT=null;
 function toast(msg){ if(R&&R.silent)return; var t=$("toast"); t.textContent=msg; t.classList.add("on");
   if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2100); }
@@ -947,13 +947,13 @@ function renderHand(){ if(R&&R.silent)return;
     b.onclick=function(){ if(selCard===i){ hintDefault(); return; }
       selCard=i; selLoot=-1;
       $("hint-a").classList.remove("on"); $("hint-b").classList.remove("on");
-      $("hint-txt").innerHTML="<b>"+c.n+"</b> — "+c.d+" <b>"+c.q+"</b>. Tap a glowing spot ("+(c.kind==="loop"?"loop tile":"meadow ring")+"), or tap the card again to cancel.";
+      $("hint-txt").innerHTML="<b>"+c.n+"</b>: "+c.d+" <b>"+c.q+"</b>. Tap a glowing spot ("+(c.kind==="loop"?"loop tile":"meadow ring")+"), or tap the card again to cancel.";
       renderHandSel(); };
     box.appendChild(b);
   })(i);
   if(!R.hand.length){ var d=document.createElement("div");
     d.style.cssText="color:#8a9178;font-size:.72rem;align-self:center;padding:0 8px";
-    d.textContent="No cards in hand — monsters sometimes carry them, and a new one is drawn each day.";
+    d.textContent="No cards in hand. Monsters sometimes carry them, and a new one is drawn each day.";
     box.appendChild(d); }
 }
 function renderHandSel(){ if(!R||R.silent)return; var b=$("hand").children,i;
@@ -970,7 +970,7 @@ function renderLoot(){ if(R&&R.silent)return;
       if(selLoot===i){ hintDefault(); return; }
       selLoot=i; selCard=-1;
       var cur=R.hero[it.slot];
-      $("hint-txt").innerHTML="<b>"+itemLabel(it)+"</b> — now wearing: "+(cur?itemLabel(cur):"nothing")+". Old gear scraps into supplies.";
+      $("hint-txt").innerHTML="<b>"+itemLabel(it)+"</b>. Now wearing: "+(cur?itemLabel(cur):"nothing")+". Old gear scraps into supplies.";
       $("hint-a").classList.add("on"); $("hint-b").classList.add("on");
       renderHand(); renderLoot(); };
     box.appendChild(b);
@@ -980,7 +980,7 @@ $("hint-a").addEventListener("click",function(){ if(selLoot>=0)equipLoot(selLoot
 $("hint-b").addEventListener("click",function(){ if(selLoot>=0)scrapLoot(selLoot); });
 
 function enterPlay(){
-  hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
+  hideScreens(); $("buildstamp").style.display="none"; $("hud").classList.add("on"); $("dock").classList.add("on");
   hintDefault(); updateHud(); renderHand(); renderLoot(); running=true;
 }
 function stopToMenu(){ running=false; R=null;
@@ -1052,7 +1052,7 @@ cvs.addEventListener("pointerup",function(e){
       if(d<bd){ bd=d; best=i; } }
     if(best>=0&&bd<38*38){
       if(canPlaceAt(cid,best))placeCard(selCard,best);
-      else toast("Can't place there"+(kind==="loop"?" — needs an empty, monster-free tile":" — spot taken")); }
+      else toast("Can't place there"+(kind==="loop"?", needs an empty, monster-free tile":", spot taken")); }
     return;
   }
   /* tile info tap */
@@ -1062,10 +1062,10 @@ cvs.addEventListener("pointerup",function(e){
     var tl=R.tiles[best], q=effQuad(best), bits=[];
     bits.push("<b>"+QSYM[q]+" "+QNAMES[q]+"</b> ground");
     if(q!==baseQuad(best))bits.push("(clock bent!)");
-    if(best===0)bits.push("— the campfire. Retreat here to bank 100%.");
-    if(tl.card)bits.push("— "+CARDS[tl.card.id].n);
+    if(best===0)bits.push("the campfire. Retreat here to bank 100%.");
+    if(tl.card)bits.push("holds "+CARDS[tl.card.id].n);
     if(tl.meadow)bits.push("+ "+CARDS[tl.meadow.id].n+" beside it");
-    if(tl.monsters.length)bits.push("— "+tl.monsters.length+" monster"+(tl.monsters.length>1?"s":"")+" waiting");
+    if(tl.monsters.length)bits.push(tl.monsters.length+" monster"+(tl.monsters.length>1?"s":"")+" waiting");
     $("hint-txt").innerHTML=bits.join(" ");
     $("hint-a").classList.remove("on"); $("hint-b").classList.remove("on");
   }
@@ -1081,7 +1081,7 @@ tap("retreatbtn",function(){
 tap("spdbtn",function(){ SPD=(SPD===1)?2:1; $("spdbtn").textContent=SPD===1?"▶":"▶▶"; });
 tap("hud-back",function(){
   if(!R||R.done){ stopToMenu(); return; }
-  if(!retreatArmed){ retreatArmed=true; updateHud(); toast("Leaving retreats too — tap ⌂ again to bank "+Math.round(retreatPct()*100)+"%");
+  if(!retreatArmed){ retreatArmed=true; updateHud(); toast("Leaving retreats too. Tap ⌂ again to bank "+Math.round(retreatPct()*100)+"%");
     if(retreatT)clearTimeout(retreatT);
     retreatT=setTimeout(function(){ retreatArmed=false; if(R&&!R.done)updateHud(); },2600);
     return; }

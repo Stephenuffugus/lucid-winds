@@ -368,6 +368,7 @@ function bloomSwap(){ if(G.mode!=='zen' && G.nectar<NECT_MAX)return false;
   if(G.mode!=='zen')G.nectar-=NECT_MAX; G.rescueGlow=0;
   for(var i=0;i<3;i++)G.tray[i]=newPiece(); // fresh hand (no recursion — player/bot may bloom again)
   sfx('bloom'); haptic([8,24,8]); floatUp(VW/2, TRAY_Y-6, 'Bloom!'); petalBurst(VW/2, TRAY_Y+40);
+  if(G.mode!=='zen' && !canPlaceAny() && G.nectar<NECT_MAX){ endRun(false); return true; } // dead bloom resolves to results, never freezes
   save(); return true;
 }
 function onStuck(){
@@ -587,10 +588,10 @@ window.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; i
 
 /* ---------- grove + wardrobe ---------- */
 function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.blooms.length;
-  $('grove-sub').textContent = n? ('You have grown '+n+' keepsake flower'+(n===1?'':'s')+'. Bigger combos grow more.') : 'Clear lines and build combos — good runs grow keepsake flowers here.';
+  $('grove-sub').textContent = n? ('You have grown '+n+' keepsake flower'+(n===1?'':'s')+'. Bigger combos grow more.') : 'Clear lines and build combos. Good runs grow keepsake flowers here.';
   var start=Math.max(0,n-60);
   for(var i=start;i<n;i++){ var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); g.clearRect(0,0,70,70); drawFlower(g,35,36,1.3,PROG.blooms[i]>>>0); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no flowers yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='no flowers yet'; host.appendChild(e); }
 }
 function wardCanvas(kind,it){ var c=document.createElement('canvas'); c.width=96; c.height=64; var g=c.getContext('2d');
   if(kind==='leaf'){ for(var i=0;i<4;i++){ g.fillStyle=it.cols[i]; g.beginPath(); var x=16+i*18,y=32; g.moveTo(x,y-10); g.arcTo(x+8,y-10,x+8,y,4); g.arcTo(x+8,y+10,x,y+10,4); g.arcTo(x-8,y+10,x-8,y,4); g.arcTo(x-8,y-10,x,y-10,4); g.closePath(); g.fill(); } }
