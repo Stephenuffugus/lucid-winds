@@ -291,7 +291,7 @@
   <!-- PUZZLES -->
   <section class="screen" id="puzzles">
     <div class="map-top"><button class="back" id="pzBack">← Menu</button><h2>Puzzles</h2><div class="coins-pill" id="pzCoins">🪙 0</div></div>
-    <div class="garden-sub">Forty fixed boards. Clear each in as few shots as you can — three stars for the tight line.</div>
+    <div class="garden-sub">Forty fixed boards. Clear each in as few shots as you can. Three stars for the tight line.</div>
     <div class="levels" id="pzGrid"></div>
     <div class="map-note" id="pzNote"></div>
   </section>
@@ -419,10 +419,10 @@ const GARDENS=[
   {name:"Meadow",   sub:"Morning grass, three simple blooms.",  colors:3, rows:4, fill:.92, specials:[],                        objs:["clear"],              tint:"#1a2410"},
   {name:"Orchard",  sub:"Heavy branches, a fourth ripe hue.",   colors:4, rows:5, fill:.90, specials:["rainbow"],               objs:["clear","drop"],       tint:"#241a10"},
   {name:"Wetland",  sub:"Still water hides trapped seeds.",     colors:4, rows:5, fill:.88, specials:["rainbow","seed"],        objs:["clear","rescue"],     tint:"#101f24"},
-  {name:"Dunes",    sub:"Desert bloom — burst pods help.",      colors:5, rows:6, fill:.86, specials:["rainbow","bomb"],        objs:["clear","drop"],       tint:"#241f10"},
+  {name:"Dunes",    sub:"Desert bloom. Burst pods help.",      colors:5, rows:6, fill:.86, specials:["rainbow","bomb"],        objs:["clear","drop"],       tint:"#241f10"},
   {name:"Alpine",   sub:"Thin cold air, thorns in the way.",    colors:5, rows:6, fill:.85, specials:["rainbow","bomb","thorn"],objs:["clear","rescue","drop"],tint:"#161c24"},
-  {name:"Moonlit",  sub:"Night bloom — every trick at once.",   colors:6, rows:7, fill:.85, specials:["rainbow","bomb","thorn","seed"],objs:["clear","rescue","drop"],tint:"#181424"},
-  {name:"Thornwood",sub:"Bramble everywhere — cut it loose.",   colors:5, rows:7, fill:.87, specials:["rainbow","bomb","thorn"],objs:["drop","clear","rescue"],tint:"#20180f"},
+  {name:"Moonlit",  sub:"Night bloom. Every trick at once.",   colors:6, rows:7, fill:.85, specials:["rainbow","bomb","thorn","seed"],objs:["clear","rescue","drop"],tint:"#181424"},
+  {name:"Thornwood",sub:"Bramble everywhere. Cut it loose.",   colors:5, rows:7, fill:.87, specials:["rainbow","bomb","thorn"],objs:["drop","clear","rescue"],tint:"#20180f"},
   {name:"Tidepool", sub:"Anemone hues and drifting seeds.",     colors:6, rows:7, fill:.86, specials:["rainbow","seed","bomb"], objs:["rescue","clear","drop"],tint:"#0f2224"},
   {name:"Emberfield",sub:"Coals under the blossoms.",           colors:6, rows:8, fill:.86, specials:["rainbow","bomb","thorn"],objs:["clear","drop","rescue"],tint:"#241410"},
   {name:"Frostvale", sub:"Ice locks the petals in place.",      colors:6, rows:8, fill:.87, specials:["rainbow","bomb","thorn","seed"],objs:["rescue","drop","clear"],tint:"#101e26"},
@@ -704,7 +704,7 @@ function buildBlitz(){
 }
 function buildZen(){
   grid=[];topParity=0;const colorCount=5;seedTopRows(5,colorCount,0.9);
-  G=mkG({mode:"zen",colorCount,specials:["rainbow","bomb"],objective:"zen",objText:"No fail — just bloom",
+  G=mkG({mode:"zen",colorCount,specials:["rainbow","bomb"],objective:"zen",objText:"No fail. Just bloom",
      descendEvery:7,noFail:true});
   return G;
 }
@@ -1066,7 +1066,7 @@ function levelLost(){
     $("resScore").textContent=G.score.toLocaleString();
     $("resSub").textContent=G.objective==="boss"?("Core at "+Math.max(0,G.boss?G.boss.hp:0)+" HP"):
       G.objective==="drop"?("Harvested "+G.removed+" / "+G.objTarget):
-      G.objective==="rescue"?("Rescued "+G.rescued+" / "+G.objTarget):"So close — try again";
+      G.objective==="rescue"?("Rescued "+G.rescued+" / "+G.objTarget):"So close. Try again";
   }
   $("resCoins").textContent="+"+coinE+" 🪙";
   $("resSun").textContent=runSb>0?("+"+runSb+" ☀ sunbeams"):"";
@@ -1301,12 +1301,12 @@ function objProgressText(){
   if(!G)return"";const o=G.objective;
   if(o==="boss")return"Destroy the Bloom Core";
   if(o==="clear")return"Clear every bud";
-  if(o==="drop")return"Harvest — "+Math.min(G.removed,G.objTarget)+" / "+G.objTarget;
-  if(o==="rescue")return"Rescue — "+Math.min(G.rescued,G.objTarget)+" / "+G.objTarget;
+  if(o==="drop")return"Harvest · "+Math.min(G.removed,G.objTarget)+" / "+G.objTarget;
+  if(o==="rescue")return"Rescue · "+Math.min(G.rescued,G.objTarget)+" / "+G.objTarget;
   if(o==="survive")return"Depth "+G.depth+" · hold the line";
   if(o==="arcade")return"Wave "+G.wave+" · survive";
   if(o==="blitz")return"Pop for score!";
-  if(o==="zen")return"No fail — just bloom";
+  if(o==="zen")return"No fail. Just bloom";
   return G.objText;
 }
 function syncModeHud(){
@@ -1398,11 +1398,11 @@ function renderLoadout(){
   const grid_=$("loadGrid");grid_.innerHTML="";
   ABILITIES.forEach(a=>{const un=abilUnlocked(a.key),eq=lo.includes(a.key),lv=abilLevel(a.key);
     const el=document.createElement("button");el.className="load-ab"+(eq?" on":"")+(un?"":" locked");
-    el.innerHTML=`<span class="la-ic">${a.ic}</span><span><span class="la-nm">${a.name}${lv>0?" · L"+(lv+1):""}</span><span class="la-ds">${a.desc}</span>${un?"":`<span class="la-lock">🔒 ${a.price} 🪙 — unlock in shop</span>`}</span>`;
+    el.innerHTML=`<span class="la-ic">${a.ic}</span><span><span class="la-nm">${a.name}${lv>0?" · L"+(lv+1):""}</span><span class="la-ds">${a.desc}</span>${un?"":`<span class="la-lock">🔒 ${a.price} 🪙 · unlock in shop</span>`}</span>`;
     el.onclick=()=>{if(!un){toast("Unlock it in the Powers shop");return;}
       let c2=(Store.g(K.loadout)||"").split(",").filter(Boolean);
       if(c2.includes(a.key))c2=c2.filter(x=>x!==a.key);
-      else{if(c2.length>=3){toast("Three powers max — tap one to remove");return;}c2.push(a.key);}
+      else{if(c2.length>=3){toast("Three powers max. Tap one to remove");return;}c2.push(a.key);}
       Store.s(K.loadout,c2.join(","));beep(560,0.06,0.05);renderLoadout();};
     grid_.appendChild(el);});
 }
@@ -1449,7 +1449,7 @@ function shopCur(){$("shopCoins").textContent="🪙 "+coins().toLocaleString();$
 const SHOP_NOTES={blooms:"Bud colours & glyphs for the whole board. Gameplay is identical for every set.",
   launchers:"A new look for your launcher pot.",backgrounds:"Set the scene behind the garden.",
   powers:"Unlock powers with 🪙, upgrade them with 🍯. Equip up to three in Arcade.",
-  boosters:"One-shot helpers for Adventure & Puzzle — tap them in-level to use."};
+  boosters:"One-shot helpers for Adventure & Puzzle. Tap them in-level to use."};
 function canPay(price,cur){return cur==="nectar"?nectar()>=price:coins()>=price;}
 function pay(price,cur){if(cur==="nectar")Store.s(K.nectar,nectar()-price);else addCoins(-price);}
 function priceTag(price,cur){return cur==="nectar"?(price+" 🍯"):("🪙 "+price);}

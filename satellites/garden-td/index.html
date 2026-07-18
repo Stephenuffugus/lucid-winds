@@ -256,7 +256,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <div class="sheet" id="buySheet">
   <div class="sheet-hd"><span class="st">Plant a friend</span><button class="sx" id="buyX">✕</button></div>
   <div class="buy-grid" id="buyGrid"></div>
-  <div class="buy-desc" id="buyDesc">Tap a plant to preview its range — tap again to plant it.</div>
+  <div class="buy-desc" id="buyDesc">Tap a plant to preview its range, tap again to plant it.</div>
 </div>
 <!-- manage sheet -->
 <div class="sheet" id="mngSheet">
@@ -323,7 +323,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
     <span class="ls-meter">🍯 <span id="shopSap">0</span> Sap</span>
   </div>
   <h2 class="sh" style="margin-top:10px">The Potting Shed</h2>
-  <div class="sub">Grow your greenhouse — unlock new plants with Sap, then dress them up.</div>
+  <div class="sub">Grow your greenhouse. Unlock new plants with Sap, then dress them up.</div>
   <div class="tabs">
     <button class="tab on" data-cat="plants">🌱 Plants</button>
     <button class="tab" data-cat="skin">Skins</button>
@@ -587,12 +587,12 @@ var TOWER_IDS=['marigold','cactus','puffball','sundew','beehive','pitcher','scar
    Sap was cosmetic-only; now it also builds your actual arsenal, so there's a real meta-build. --- */
 var TOWER_START=['marigold','cactus','sundew'];   // damage + ground AoE + slow/control; marigold hits air at ★3 so no anti-air softlock
 var TOWER_UNLOCK=[
-  { id:'compost',   price:120, why:'Seed income — scale your economy.' },
+  { id:'compost',   price:120, why:'Seed income. Scale your economy.' },
   { id:'beehive',   price:200, why:'Dedicated anti-air.' },
   { id:'puffball',  price:320, why:'Splash + Spore for reactions.' },
   { id:'pitcher',   price:460, why:'Acid melts armor and elites.' },
   { id:'scarecrow', price:640, why:'Buffs the plants around it.' },
-  { id:'sunflower', price:900, why:'Charged sunbeam — the boss answer.' }
+  { id:'sunflower', price:900, why:'Charged sunbeam. The boss answer.' }
 ];
 function towerPrice(id){ for(var i=0;i<TOWER_UNLOCK.length;i++) if(TOWER_UNLOCK[i].id===id) return TOWER_UNLOCK[i].price; return 0; }
 function towerWhy(id){ for(var i=0;i<TOWER_UNLOCK.length;i++) if(TOWER_UNLOCK[i].id===id) return TOWER_UNLOCK[i].why; return ''; }
@@ -659,15 +659,15 @@ function curPal(){ return (G && G.map && BIOMES[G.map.biome] && BIOMES[G.map.bio
 var BIOME_FX=[
   { hp:1.00, spd:1.00, armor:0, twist:'a gentle plot' },
   { hp:1.00, spd:0.94, armor:1, twist:'pests come armored' },        // Stoneyard → armor-melt (Pitcher)
-  { hp:1.00, spd:1.10, armor:0, twist:'slick — pests move faster' }, // Lily Pond → slow (Sundew)
-  { hp:1.00, spd:1.14, armor:0, twist:'climbers — pests move faster' },// Trellis → slow (Sundew)
-  { hp:1.08, spd:1.00, armor:0, twist:'sun-hardened — sturdier pests' },// Sunny Dunes → damage
-  { hp:1.12, spd:0.92, armor:0, twist:'overgrown — slow but sturdy' }, // Moss Hollow → sustained damage
-  { hp:1.06, spd:1.06, armor:0, twist:'enraged — faster and tougher' },// Ember Ridge → all-round
-  { hp:1.12, spd:0.86, armor:1, twist:'frozen shells — slow, armored' }// Frost Fen → armor-melt + patience
+  { hp:1.00, spd:1.10, armor:0, twist:'slick, pests move faster' }, // Lily Pond → slow (Sundew)
+  { hp:1.00, spd:1.14, armor:0, twist:'climbers, pests move faster' },// Trellis → slow (Sundew)
+  { hp:1.08, spd:1.00, armor:0, twist:'sun-hardened, sturdier pests' },// Sunny Dunes → damage
+  { hp:1.12, spd:0.92, armor:0, twist:'overgrown, slow but sturdy' }, // Moss Hollow → sustained damage
+  { hp:1.06, spd:1.06, armor:0, twist:'enraged, faster and tougher' },// Ember Ridge → all-round
+  { hp:1.12, spd:0.86, armor:1, twist:'frozen shells, slow, armored' }// Frost Fen → armor-melt + patience
 ];
 function biomeFx(){ return BIOME_FX[(G&&G.map&&G.map.biome)||0]||BIOME_FX[0]; }
-function announceBiome(){ if(!G||!G.map)return; var b=G.map.biome||0; if(b===0)return; banner(BIOMES[b].nm+' — '+BIOME_FX[b].twist, false); }
+function announceBiome(){ if(!G||!G.map)return; var b=G.map.biome||0; if(b===0)return; banner(BIOMES[b].nm+' · '+BIOME_FX[b].twist, false); }
 
 /* ===== procedural map generator: many varied, valid, buildable layouts (a snake from top
    gate to the compost bin). Seeded → the pool is stable so a level always draws the same map. ===== */
@@ -1119,7 +1119,7 @@ function loseLeaves(n,e){
   floatText('-'+n+'🍃',e?posAt(G.geom,e.d).x:VW/2, e?posAt(G.geom,e.d).y:VH-60, COL.danger);
   updateHUD();
   if(G.leaves<=0){
-    if(!G.gnomeUsed){ G.gnomeUsed=true; G.gnomeGrace=true; G.leaves=1; updateHUD(); banner('The Guard Gnome saves the garden!',true); toast('🧙 One-time save — hold the line!'); tone('sine',400,700,0.2,0.16); return; }
+    if(!G.gnomeUsed){ G.gnomeUsed=true; G.gnomeGrace=true; G.leaves=1; updateHUD(); banner('The Guard Gnome saves the garden!',true); toast('🧙 One-time save. Hold the line!'); tone('sine',400,700,0.2,0.16); return; }
     loseLevel();
   }
 }
@@ -2015,7 +2015,7 @@ function towerTags(def){
 }
 function updateBuyDesc(id){
   var def=TOWERS[id], can=G&&G.seeds>=def.cost;
-  el('buyDesc').innerHTML='<span class="bt">'+def.name+'</span> — '+def.blurb+
+  el('buyDesc').innerHTML='<span class="bt">'+def.name+'</span> · '+def.blurb+
     '<span class="tag">'+towerTags(def)+'   ·   '+(can?'tap again to plant 🌱'+def.cost:'<span style="color:var(--danger)">need 🌱'+def.cost+'</span>')+'</span>';
 }
 function selectBuy(id, cell){
@@ -2043,7 +2043,7 @@ function openBuy(plotIdx){
   G.selPlot=plotIdx; G.selTower=null; previewTower=null;
   var kids=el('buyGrid').children;
   Array.prototype.forEach.call(kids,function(cell){ cell.classList.toggle('cant', G.seeds<cell._cost); cell.classList.remove('sel'); });
-  el('buyDesc').innerHTML='Tap a plant to preview its range — tap again to plant it.';
+  el('buyDesc').innerHTML='Tap a plant to preview its range, tap again to plant it.';
   for(var i=0;i<kids.length;i++){ if(G.seeds>=kids[i]._cost){ selectBuy(kids[i]._id, kids[i]); break; } }   // auto-preview first affordable → range ring shows at once
   el('mngSheet').classList.remove('show'); el('buySheet').classList.add('show');
   // lift the board so the selected plot + its range ring sit ABOVE the sheet (Stephen: menu was covering the plot)

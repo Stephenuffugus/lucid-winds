@@ -83,7 +83,7 @@ h2.sc-h{font-size:24px; color:var(--rose); font-weight:800; margin-bottom:4px}
 .go-big{font-size:26px; font-weight:800; color:var(--rose); line-height:1.1}
 .go-stars{font-size:44px; letter-spacing:6px; margin:6px 0; height:52px}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
-.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.sun-earn{display:inline-block; margin-top:12px; padding:6px 16px; border-radius:20px; background:rgba(20,10,6,0.82); border:1px solid var(--line); font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241017; border:1px solid var(--line); color:var(--pink); font-weight:800; font-size:13px; margin-top:8px}
 .seg{display:flex; gap:8px; width:100%; max-width:430px; margin:0 auto}
 .seg .btn{flex:1}
@@ -654,7 +654,7 @@ function drawHUD(){
   else { ctx.fillStyle='rgba(0,0,0,0.35)'; roundRect(cx,cy,cw,10,5); ctx.fill(); }
   if(frac>0){ if(_bvReady(_cf)){ ctx.save(); ctx.beginPath(); ctx.rect(cx-4,cy-6,(cw+8)*frac,24); ctx.clip(); ctx.drawImage(_cf,cx-4,cy-5,cw+8,20); ctx.restore(); }
     else { ctx.fillStyle=frac>=1?'#ffe9a8':'#c8a84b'; roundRect(cx,cy,cw*frac,10,5); ctx.fill(); } }
-  ctx.textAlign='center'; ctx.fillStyle=frac>=1?'#ffe9a8':'rgba(232,220,200,0.5)'; ctx.font='700 10px system-ui'; ctx.fillText(frac>=1?'POLLEN BURST READY — tap':'pollen charge', VW/2, cy-4);
+  ctx.textAlign='center'; ctx.fillStyle=frac>=1?'#ffe9a8':'rgba(232,220,200,0.5)'; ctx.font='700 10px system-ui'; ctx.fillText(frac>=1?'POLLEN BURST READY · tap':'pollen charge', VW/2, cy-4);
   // burst button
   if(G.charge>=G.chargeMax){ var _bp=_bvSprite('ui/burst_plate.png');
     if(_bvReady(_bp)){ ctx.save(); ctx.globalAlpha=G.burst?(0.8+0.2*Math.sin(G.t*8)):1; ctx.drawImage(_bp,HB_BURST.x,HB_BURST.y,HB_BURST.w,HB_BURST.h); ctx.restore(); }
@@ -730,7 +730,7 @@ function renderWard(){ var pods=$('ward-pods'); pods.innerHTML='';
 }
 
 /* ---------- share ---------- */
-function shareIt(){ var url='https://lucidwinds.com/satellites/berry-vine/'; var txt='I cleared vines in Berry Vine 🫐 — best rush '+(PROG.bestRush||0)+'. Play at '+url;
+function shareIt(){ var url='https://lucidwinds.com/satellites/berry-vine/'; var txt='I cleared vines in Berry Vine 🫐. Best rush '+(PROG.bestRush||0)+'. Play at '+url;
   if(navigator.share){ navigator.share({title:'Berry Vine',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); }
 }

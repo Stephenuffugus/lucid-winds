@@ -238,7 +238,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <div id="rotate"><div class="rot-card">
   <div class="rot-icon">📱</div>
   <div class="rot-title">Turn your device sideways</div>
-  <div class="rot-sub">Burr Blast is built for landscape — you'll see the whole fort and aim far better.</div>
+  <div class="rot-sub">Burr Blast is built for landscape. You'll see the whole fort and aim far better.</div>
   <button class="rot-dismiss" onclick="dismissRotate()">Play in portrait anyway</button>
 </div></div>
 
@@ -390,12 +390,12 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
     <p><b>Pull back</b> the slingshot on the left and let go. The further you pull, the harder the burr flies. A dotted guide shows the arc.</p>
     <p>The pests have thrown up <b>rickety forts</b> of twig, stone, dewglass and blastpod. Knock the structures down, crush the critters, and clear every pest to win.</p>
     <p>Each burr has a trick. <b>Tap the screen mid-flight</b> to trigger it:</p>
-    <p><span class="amm">🌰 Burr</span> — steady and true, no trick.<br>
-    <span class="amm">🍃 Split Seed</span> — bursts into three.<br>
-    <span class="amm">🌳 Acorn</span> — heavy; tap to slam downward.<br>
-    <span class="amm">🍄 Puffball</span> — tap to blast a spore cloud.<br>
-    <span class="amm">💥 Thornpod</span> — explodes on tap or on impact.<br>
-    <span class="amm">🪃 Boomerang Pod</span> — tap to curve back around.</p>
+    <p><span class="amm">🌰 Burr</span> · steady and true, no trick.<br>
+    <span class="amm">🍃 Split Seed</span> · bursts into three.<br>
+    <span class="amm">🌳 Acorn</span> · heavy; tap to slam downward.<br>
+    <span class="amm">🍄 Puffball</span> · tap to blast a spore cloud.<br>
+    <span class="amm">💥 Thornpod</span> · explodes on tap or on impact.<br>
+    <span class="amm">🪃 Boomerang Pod</span> · tap to curve back around.</p>
     <p><b>Fewer burrs used = more stars.</b> Three stars fills the patch with gold. Blastpod crates chain, so line up your shot and let the fort do the work.</p>
   </div>
 </div>
@@ -1019,7 +1019,7 @@ var SEED_CATALOG = [
   { id:'puffball',  start:true, desc:'A lifting spore gust.',   grafts:[ {n:'Bigger Gust', c:8, e:'+30% radius', m:function(st){st.ab.radius=(st.ab.radius||230)*1.3;}}, {n:'Updraft', c:16, e:'stronger lift', m:function(st){st.ab.lift=(st.ab.lift||0.95)*1.35;}} ] },
   { id:'thornpod',  start:true, desc:'Explodes on impact.',     grafts:[ {n:'Bigger Blast', c:10, e:'+25% blast radius', m:function(st){st.ab.radius=(st.ab.radius||210)*1.25;}}, {n:'Volatile', c:18, e:'+30% blast power', m:function(st){st.ab.power=(st.ab.power||1000)*1.3;}} ] },
   { id:'boomerang', start:true, desc:'Banks back around.',      grafts:[ {n:'Tight Bank', c:8, e:'sharper curve', m:function(st){st.ab.accel=(st.ab.accel||4600)*1.3;}}, {n:'Long Bank', c:16, e:'longer curve window', m:function(st){st.ab.dur=(st.ab.dur||0.55)+0.2;}} ] },
-  { id:'gourd',     unlock:18, desc:'A heavy roller — bowls straight through low forts.', grafts:[ {n:'Boulder Gourd', c:14, e:'+22% mass', m:function(st){st.density*=1.22;}} ] },
+  { id:'gourd',     unlock:18, desc:'A heavy roller. Bowls straight through low forts.', grafts:[ {n:'Boulder Gourd', c:14, e:'+22% mass', m:function(st){st.density*=1.22;}} ] },
   { id:'firethorn', unlock:26, desc:'A premium bomb: bigger blast, still detonates on impact.', grafts:[ {n:'Inferno', c:16, e:'+30% blast', m:function(st){st.ab.power=(st.ab.power||1300)*1.3; st.ab.radius=(st.ab.radius||260)*1.15;}} ] },
   { id:'dandelion', unlock:24, desc:'A four-pellet storm split.', grafts:[ {n:'Storm Seed', c:16, e:'+2 pellets', m:function(st){st.ab.pellets+=2;}} ] }
 ];
@@ -2503,9 +2503,9 @@ function renderLoadout(){
     +'<button class="lt'+(_loadTab==='satchel'?' on':'')+'" data-t="satchel">🎒 Satchel</button>'
     +'<button class="lt'+(_loadTab==='companions'?' on':'')+'" data-t="companions">🐾 Team</button></div>';
   if(_loadTab==='nutrients'){
-    h+=nutRow('n','🔥','Nitrogen','Heavier seeds — hit harder, break tougher blocks, carry through.', nut.n, cap);
-    h+=nutRow('p','✨','Phosphorus','Stronger tricks — bigger splits, blasts, spore gusts, sharper curves.', nut.p, cap);
-    h+=nutRow('k','💧','Potassium','Utility — an extra seed every 3 points, and a steadier aim guide.', nut.k, cap);
+    h+=nutRow('n','🔥','Nitrogen','Heavier seeds. Hit harder, break tougher blocks, carry through.', nut.n, cap);
+    h+=nutRow('p','✨','Phosphorus','Stronger tricks. Bigger splits, blasts, spore gusts, sharper curves.', nut.p, cap);
+    h+=nutRow('k','💧','Potassium','Utility. An extra seed every 3 points, and a steadier aim guide.', nut.k, cap);
     var ammo=(lv.ammo||[]).slice(), kb=Math.floor((nut.k||0)/3); for(var i=0;i<kb;i++)ammo.push('burr');
     var ah=''; ammo.forEach(function(t){ ah+='<div class="la">'+((AMMO[t]||AMMO.burr).icon)+'</div>'; });
     h+='<div class="load-note">This fort’s seeds'+(kb?' (+'+kb+' from Potassium)':'')+':</div><div class="load-ammo">'+ah+'</div>';
@@ -2520,7 +2520,7 @@ function renderLoadout(){
     h+='</div><div class="load-note">Unlock + graft more seeds in the 🌱 Almanac.</div>';
   } else {
     var ceq=equippedComps(), cslots=compSlots();
-    h+='<div class="load-note">Your team (<b style="color:var(--cream)">'+ceq.length+'/'+cslots+'</b>) — manage in the 🌱 Grove.</div>';
+    h+='<div class="load-note">Your team (<b style="color:var(--cream)">'+ceq.length+'/'+cslots+'</b>). Manage in the 🌱 Grove.</div>';
     h+='<div class="load-ammo">';
     if(ceq.length){ ceq.forEach(function(id){ var c=compCat(id); if(c) h+='<div class="la" title="'+c.name+'">'+c.icon+'</div>'; }); }
     else { h+='<div class="load-note" style="width:100%">No companions equipped yet.</div>'; }
@@ -2593,7 +2593,7 @@ function renderAlmanac(){
 /* ---- The Grove (companions) ---- */
 function openGrove(){ renderGrove(); showScreen('scr-grove'); }
 function equipComp(id){ if(!compOwned(id))return; var eq=SAVE.loadout.companions; if(eq.indexOf(id)>=0)return;
-  if(equippedComps().length>=compSlots()){ toast('Team full — swap one out.'); return; } eq.push(id); persist(); SFX.click(); }
+  if(equippedComps().length>=compSlots()){ toast('Team full. Swap one out.'); return; } eq.push(id); persist(); SFX.click(); }
 function unequipComp(id){ var eq=SAVE.loadout.companions, i=eq.indexOf(id); if(i>=0)eq.splice(i,1); persist(); SFX.click(); }
 function renderGrove(){
   $('groveFert').textContent=SAVE.fert; $('groveSlots').textContent=compSlots();
@@ -2681,7 +2681,7 @@ function chooseExpNode(idx){
   else if(node.type==='shop'){ EXP.depth++; openExpShop(); }
   else { var boss=node.type==='boss', elite=node.type==='elite';
     startLevel(generateFort(EXP.depth, elite, boss)); _playing=true; _paused=false; showScreen(null);
-    if(EXP.depth===0) toast('Expedition begins — Vigor '+EXP.vigor); }
+    if(EXP.depth===0) toast('Expedition begins. Vigor '+EXP.vigor); }
 }
 /* pack varied structures left-to-right, themed + scaled by difficulty (used by Expedition + Endless).
    Structures are placed around x=0 then shifted so their left edge meets a running cursor — so
@@ -2768,7 +2768,7 @@ function openExpShop(){
   for(var i=0;i<3 && pool.length;i++) EXP.shopOpts.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   renderExpShop(); showScreen('scr-draft');   // reuse draft screen, shop mode
 }
-var EXP_NODE_META={ fort:{n:'Fort',i:'🏯',d:'A pest fort. Clear it for Sap + a reward.'}, elite:{n:'Elite Fort',i:'⚔️',d:'Tougher, fewer seeds — better loot.'}, cache:{n:'Cache',i:'🎁',d:'A free reward, no fight.'}, shop:{n:'The Shed',i:'🛖',d:'Spend Sap on seeds, companions, relics.'}, boss:{n:'The Deep Warden',i:'👑',d:'The final fort. Win to complete the run.'} };
+var EXP_NODE_META={ fort:{n:'Fort',i:'🏯',d:'A pest fort. Clear it for Sap + a reward.'}, elite:{n:'Elite Fort',i:'⚔️',d:'Tougher, fewer seeds. Better loot.'}, cache:{n:'Cache',i:'🎁',d:'A free reward, no fight.'}, shop:{n:'The Shed',i:'🛖',d:'Spend Sap on seeds, companions, relics.'}, boss:{n:'The Deep Warden',i:'👑',d:'The final fort. Win to complete the run.'} };
 function renderExpMap(){
   $('expVigor').textContent=EXP.vigor; $('expSap').textContent=EXP.sap;
   $('expDepth').textContent='Depth '+(EXP.depth+1)+' of '+EXP.maxDepth+' · choose your path';
@@ -2785,7 +2785,7 @@ function draftCard(opt, cost, onPick){
   var d=document.createElement('button'); d.className='draft-card'; var label,icon,desc;
   if(opt.kind==='seed'){ var s=AMMO[opt.id]||AMMO.burr; icon=s.icon; label=s.name+' seed'; desc='Add this seed to your run satchel.'; }
   else if(opt.kind==='comp'){ var c=compCat(opt.id); icon=c.icon; label=c.name; desc=c.desc; }
-  else if(opt.kind==='nut'){ icon={n:'🔥',p:'✨',k:'💧'}[opt.k]; label={n:'+2 Nitrogen',p:'+2 Phosphorus',k:'+2 Potassium'}[opt.k]; desc={n:'Heavier seeds — hit harder.',p:'Stronger tricks.',k:'Extra seeds + steadier aim.'}[opt.k]; }
+  else if(opt.kind==='nut'){ icon={n:'🔥',p:'✨',k:'💧'}[opt.k]; label={n:'+2 Nitrogen',p:'+2 Phosphorus',k:'+2 Potassium'}[opt.k]; desc={n:'Heavier seeds. Hit harder.',p:'Stronger tricks.',k:'Extra seeds + steadier aim.'}[opt.k]; }
   else { var r=relicCat(opt.id); icon=r.icon; label=r.name+' (relic)'; desc=r.desc; }
   var _dk = opt.kind==='seed'?'seed-'+opt.id : opt.kind==='comp'?'companion-'+opt.id : opt.kind==='nut'?'nutrient-'+opt.k : 'relic-'+opt.id;
   var _di = artImg(_dk,52); if(_di) icon=_di;   // painted icon when the art is loaded
@@ -2806,7 +2806,7 @@ function applyDraftItem(opt){
   SFX.coin();
 }
 function renderExpShop(){
-  $('draftVigor').textContent=EXP.vigor; $('draftTitle').textContent='The Shed'; $('draftSub').textContent='Spend Sap (🍯 '+EXP.sap+') — or move on.';
+  $('draftVigor').textContent=EXP.vigor; $('draftTitle').textContent='The Shed'; $('draftSub').textContent='Spend Sap (🍯 '+EXP.sap+'). Or move on.';
   var grid=$('draftGrid'); grid.innerHTML='';
   EXP.shopOpts.forEach(function(opt){ var bought=opt._bought; var card=draftCard(opt, opt.cost, function(){ if(opt._bought)return; if(EXP.sap<opt.cost){toast('Not enough Sap.');return;} EXP.sap-=opt.cost; opt._bought=1; applyDraftItem(opt); renderExpShop(); }); if(bought){ card.style.opacity='0.4'; } grid.appendChild(card); });
   var skip=document.createElement('button'); skip.className='btn wide gold'; skip.textContent='Move on →'; skip.style.marginTop='8px'; skip.onclick=function(){ SFX.click(); expOffer(); }; grid.appendChild(skip);
@@ -2845,7 +2845,7 @@ function openLevels(){
 }
 function renderLevelMap(){
   var body=$('lsBody'); var h='';
-  h+='<button class="ls-endless" id="lsExped" style="border-color:#c98bff;background:linear-gradient(120deg,rgba(201,139,255,.16),var(--coal2));"><span class="et" style="color:#c98bff;">⚔️ Expedition</span><div class="ed">A roguelite climb — draft seeds, companions &amp; relics; spend your Vigor. Best depth: '+(SAVE.expBest||0)+'</div></button>';
+  h+='<button class="ls-endless" id="lsExped" style="border-color:#c98bff;background:linear-gradient(120deg,rgba(201,139,255,.16),var(--coal2));"><span class="et" style="color:#c98bff;">⚔️ Expedition</span><div class="ed">A roguelite climb. Draft seeds, companions &amp; relics; spend your Vigor. Best depth: '+(SAVE.expBest||0)+'</div></button>';
   h+='<button class="ls-endless" id="lsEndless"><span class="et">♾ Endless Patch</span><div class="ed">Ever-deeper forts. Best depth: '+SAVE.endlessBest+'</div></button>';
   for(var w=0;w<WORLDS.length;w++){
     var World=WORLDS[w], wn=World.n;

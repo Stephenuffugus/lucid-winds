@@ -173,9 +173,9 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <!-- DIFFICULTY -->
 <div class="screen" id="scr-diff">
   <h2 class="sh" style="margin-top:8vh">CHOOSE PACE</h2>
-  <div class="sub">Pace &amp; lives change — the paddle feel never does.</div>
+  <div class="sub">Pace &amp; lives change. The paddle feel never does.</div>
   <div class="diff-card chill" data-diff="chill"><h3>🌿 Chill</h3><p>Gentle ball, 5 lives, a broad paddle. For a calm break.</p></div>
-  <div class="diff-card normal" data-diff="normal"><h3>🍃 Normal</h3><p>The intended tuning — 3 lives, standard paddle.</p></div>
+  <div class="diff-card normal" data-diff="normal"><h3>🍃 Normal</h3><p>The intended tuning. 3 lives, standard paddle.</p></div>
   <div class="diff-card hard" data-diff="hard"><h3>🔥 Hard</h3><p>Fast ball, 2 lives, a narrow paddle. For the bold.</p></div>
   <button class="btn ghost sm" id="btnDiffBack" style="margin-top:14px">← Back</button>
 </div>
@@ -224,10 +224,10 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <div class="howto">
     <p>🎯 <b>Drag anywhere</b> along the bottom to move the paddle. On desktop the paddle follows your mouse; <b>← →</b> or <b>A / D</b> work too.</p>
     <p>🚀 <b>Tap the field</b>, press <b>Space</b>, or hit the big button to <b>launch</b> the ball.</p>
-    <p>🧲 The spot where the ball strikes the paddle sets its angle — hit with the paddle's edge to send it sideways, the centre to send it straight up.</p>
-    <p>💊 Broken bricks sometimes drop <b>capsules</b> — catch the good ones, dodge the black-and-red hazards.</p>
-    <p>🔗 Break bricks without touching the paddle to build a <b>combo</b> — bigger combos pay more coins and climb the sound.</p>
-    <p>🪙 <b>Coins stay in this game</b> — spend them in the Shop on paddle, ball, trail, brick &amp; background skins.</p>
+    <p>🧲 The spot where the ball strikes the paddle sets its angle. Hit with the paddle's edge to send it sideways, the centre to send it straight up.</p>
+    <p>💊 Broken bricks sometimes drop <b>capsules</b>. Catch the good ones, dodge the black-and-red hazards.</p>
+    <p>🔗 Break bricks without touching the paddle to build a <b>combo</b>. Bigger combos pay more coins and climb the sound.</p>
+    <p>🪙 <b>Coins stay in this game</b>. Spend them in the Shop on paddle, ball, trail, brick &amp; background skins.</p>
     <p>🐛 Bricks read by <b>shape</b>, not colour: square = plain, cracked = tough, X = steel, ✳ = bomb, ~ = regrows, ● = slider, ? = mystery, ◆ = gem.</p>
   </div>
   <button class="btn ghost sm" id="btnHowBack">← Back</button>
@@ -1225,7 +1225,7 @@ function bossHeartVulnerable(){ return !!(S.boss && (S.boss.vulnerable || bossBo
 function bossHeartRef(){ return null; }
 var _bossPingMs=0;
 function bossHeartPing(b){ var R=brickRect(b); FX.ring(R.x+R.w/2,R.y+R.h/2,'#e0533a',26); sfxTick();
-  if(nowMs()-_bossPingMs>2500){ _bossPingMs=nowMs(); toast('Sealed — detonate a weak point'); } }
+  if(nowMs()-_bossPingMs>2500){ _bossPingMs=nowMs(); toast('Sealed. Detonate a weak point'); } }
 function bossStun(){ if(!S.boss) return; S.boss.stunT=4000; S.boss.vulnerable=true;
   if(S.boss.phase===1){ S.boss.phase=2; spawnDrones(2); toast('BREACH! Strike the heart'); FX.shake(0.5); }
   else { toast('VULNERABLE! Strike the heart'); FX.shake(0.35); } }   // announce EVERY window, not just the first
@@ -1505,7 +1505,7 @@ function buildShop(){
     if(eq){ act.className+=' on'; act.textContent='EQUIPPED'; }
     else if(owned){ act.className+=' equip'; act.textContent='EQUIP'; act.onclick=function(){ equipSkin(shopCat,sk.id); buildShop(); haptic(8); }; }
     else { var can=store.coins>=sk.price; act.className+=' buy'+(can?'':' cant'); act.textContent='🪙 '+sk.price;
-      act.onclick=function(){ if(store.coins>=sk.price){ store.coins-=sk.price; store.owned[shopCat].push(sk.id); equipSkin(shopCat,sk.id); saveStoreNow(); sfxPowerup(); toast('Unlocked '+sk.nm+'!'); buildShop(); updateHUD(); } else { toast('Not enough coins — keep playing!'); sfxBad(); } }; }
+      act.onclick=function(){ if(store.coins>=sk.price){ store.coins-=sk.price; store.owned[shopCat].push(sk.id); equipSkin(shopCat,sk.id); saveStoreNow(); sfxPowerup(); toast('Unlocked '+sk.nm+'!'); buildShop(); updateHUD(); } else { toast('Not enough coins. Keep playing!'); sfxBad(); } }; }
     card.appendChild(act); grid.appendChild(card);
   });
   el('shopCoins').textContent=store.coins.toLocaleString();
