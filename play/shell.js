@@ -457,11 +457,12 @@
       // LW when they want to grow plants. Anonymous players see the
       // save-your-sunbeams prompt.
       if (state.signedIn) {
-        btn.textContent = '🌿 Lucid Winds →';
+        // Leaf + label; narrow phones collapse to just the leaf (see media query).
+        btn.innerHTML = '🌿<span class="sb-visit-txt"> Lucid Winds</span>';
         btn.title = 'Visit Lucid Winds to grow plants from your sunbeams';
         btn.classList.add('shell-cta-visit');
       } else {
-        btn.textContent = 'Sign in to save';
+        btn.textContent = 'Sign in';
         btn.title = 'Save your sunbeams across every game in the studio';
         btn.classList.remove('shell-cta-visit');
       }
@@ -640,6 +641,16 @@
     var back = hdr.querySelector('.shell-back');
     if (back && back.nextSibling) hdr.insertBefore(btn, back.nextSibling);
     else hdr.appendChild(btn);
+
+    // Wrap the back-link label (e.g. "All games") in a span so the narrow-phone
+    // media query can collapse it to just the ← arrow and free up header width.
+    if (back && !back.querySelector('.sb-back-txt')) {
+      var bt = (back.textContent || '').replace(/[<>&]/g, '');
+      var am = bt.match(/^\s*([^\w\s]*)\s*(.*)$/);
+      var arrow = (am && am[1]) ? am[1] : '←';
+      var label = (am && am[2]) ? am[2] : bt;
+      back.innerHTML = arrow + '<span class="sb-back-txt"> ' + label + '</span>';
+    }
   }
 
   // Feedback button — "found a bug or have an idea?". Lazily loads the shared
