@@ -34,9 +34,10 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
   display:flex; align-items:center; justify-content:center; gap:6px; font-size:15px; font-weight:700}
 .hchip b{color:var(--gold); font-variant-numeric:tabular-nums}
 .hchip.dewy b{color:var(--dew)}
-#goalchip{position:absolute; left:50%; top:64px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
-  background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream); max-width:92%; text-align:center}
-#goalchip.on{display:block}
+#goalchip{position:absolute; left:50%; bottom:calc(6px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
+  width:400px; max-width:94%; min-height:150px; background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:26px 48px;
+  font-size:19px; line-height:1.4; font-weight:600; color:var(--cream); text-align:center; flex-direction:column; align-items:center; justify-content:center; gap:2px}
+#goalchip.on{display:flex}
 #goalchip b{color:var(--gold)}
 #dock{position:absolute; left:0; bottom:0; width:540px; height:176px; z-index:12; background:linear-gradient(180deg,#0e140dee,#0b0f0b);
   border-top:1px solid var(--line); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:none; flex-direction:column; gap:6px}
@@ -68,10 +69,10 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
 .toggle.on{background:var(--deep)}
@@ -124,14 +125,14 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="ribbon">Sprout living pods, weave vine struts, and grow a bridge that holds its own weight all the way to the Sun Bloom.</div>
       <div style="height:22px"></div>
       <div class="stack">
-        <button class="btn primary" id="b-trials">🌉 Trellis Trials</button>
+        <button class="btn primary" id="b-trials">Trellis Trials</button>
         <div class="row">
-          <button class="btn sm" id="b-daily">📅 Daily Build</button>
-          <button class="btn sm" id="b-sky">☁ Sky Reach</button>
+          <button class="btn sm" id="b-daily">Daily Build</button>
+          <button class="btn sm" id="b-sky">Sky Reach</button>
         </div>
         <div class="row">
-          <button class="btn sm" id="b-zen">🌙 Zen Garden</button>
-          <button class="btn sm ghost" id="b-how">How</button>
+          <button class="btn sm" id="b-zen">Zen Garden</button>
+          <button class="btn sm ghost" id="b-how">How to Play</button>
         </div>
         <div class="row">
           <button class="btn sm ghost" id="b-ward">Wardrobe</button>
@@ -157,13 +158,13 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How Bridgevine works</h2>
-      <div class="helprow"><div class="hi">👆</div><div><b>Drag on the world</b> to sprout a pod. It weaves vine struts to its two or three nearest neighbors. Two struts minimum, so build from what already stands.</div></div>
-      <div class="helprow"><div class="hi">🌉</div><div>The vine sags and swings under real weight. Struts show strain by <b>color and notch marks</b>, zero notches easy, one notch worried, two notches about to snap.</div></div>
-      <div class="helprow"><div class="hi">💥</div><div>An overworked strut <b>snaps</b>. Anything cut off from the roots falls away, so triangles are your friends.</div></div>
-      <div class="helprow"><div class="hi">💧</div><div><b>Dew Ballast:</b> touch a hanging dewdrop with your vine to pouch it, then <b>tap a strut</b> to spend one dew and crystallize it. Crystal struts hold far more before breaking.</div></div>
-      <div class="helprow"><div class="hi">🌞</div><div>Reach the <b class="hl">Sun Bloom</b> and hold it for a slow breath. The load path blossoms and a keepsake is pressed into your Grove.</div></div>
-      <div class="helprow"><div class="hi">↺</div><div>Stuck or snapped? The reset leaf replants the trial fresh, no penalty.</div></div>
-      <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+      <div class="helprow"><div class="hi">1</div><div><b>Drag on the world</b> to sprout a pod. It weaves vine struts to its two or three nearest neighbors. Two struts minimum, so build from what already stands.</div></div>
+      <div class="helprow"><div class="hi">2</div><div>The vine sags and swings under real weight. Struts show strain by <b>color and notch marks</b>, zero notches easy, one notch worried, two notches about to snap.</div></div>
+      <div class="helprow"><div class="hi">3</div><div>An overworked strut <b>snaps</b>. Anything cut off from the roots falls away, so triangles are your friends.</div></div>
+      <div class="helprow"><div class="hi">4</div><div><b>Dew Ballast:</b> touch a hanging dewdrop with your vine to pouch it, then <b>tap a strut</b> to spend one dew and crystallize it. Crystal struts hold far more before breaking.</div></div>
+      <div class="helprow"><div class="hi">5</div><div>Reach the <b class="hl">Sun Bloom</b> and hold it for a slow breath. The load path blossoms and a keepsake is pressed into your Grove.</div></div>
+      <div class="helprow"><div class="hi">6</div><div>Stuck or snapped? The reset leaf replants the trial fresh, no penalty.</div></div>
+      <div class="stack"><button class="btn sm ghost" id="how-back" style="max-width:220px;width:100%;margin:0 auto">Back</button></div>
     </div>
   </div>
 
@@ -567,7 +568,7 @@ function loadTrial(i){
   var n=G.nodes.length, a, b;
   for(a=0;a<n;a++)for(b=a+1;b<n;b++){ var dx=G.nodes[b].x-G.nodes[a].x, dy=G.nodes[b].y-G.nodes[a].y;
     if(Math.sqrt(dx*dx+dy*dy)<=REACH)addStrut(a,b); }
-  $("goalchip").innerHTML="🌞 <b>"+t.name+"</b> · "+t.hint;
+  $("goalchip").innerHTML="<b>"+t.name+"</b><br>"+t.hint;
   $("goalchip").classList.add("on");
   enterPlay();
 }
@@ -584,7 +585,7 @@ function loadDaily(){
   G.dew=[]; for(k=0;k<nd;k++)G.dew.push({x:lw+60+Math.floor(r()*(W-rw-lw-120)),y:520+Math.floor(r()*140),taken:false});
   addNode(lw-46,gapY-2,true); addNode(lw-10,gapY-2,true); addNode(lw-28,gapY-34,false);
   addStrut(0,1); addStrut(0,2); addStrut(1,2);
-  $("goalchip").innerHTML="📅 <b>Daily Build</b> · one seeded gap, one try at the streak"+(G.wind?" · breezy":"");
+  $("goalchip").innerHTML="<b>Daily Build</b><br>one seeded gap, one try at the streak"+(G.wind?" · breezy":"");
   $("goalchip").classList.add("on");
   enterPlay();
 }
@@ -593,7 +594,7 @@ function loadSky(){
   G.terrain=[{x:186,y:740,w:168,h:44}];
   addNode(226,738,true); addNode(270,738,true); addNode(314,738,true); addNode(270,702,false);
   addStrut(0,1); addStrut(1,2); addStrut(0,3); addStrut(1,3); addStrut(2,3);
-  $("goalchip").innerHTML="☁ <b>Sky Reach</b> · grow as high as the vine dares · best "+PROG.bestH;
+  $("goalchip").innerHTML="<b>Sky Reach</b><br>grow as high as the vine dares · best "+PROG.bestH;
   $("goalchip").classList.add("on");
   enterPlay();
 }
@@ -604,7 +605,7 @@ function loadZen(){
   addNode(200,738,true); addNode(260,738,true); addNode(320,738,true); addNode(260,700,false);
   addStrut(0,1); addStrut(1,2); addStrut(0,3); addStrut(1,3); addStrut(2,3);
   G.dew=[{x:150,y:560,taken:false},{x:300,y:480,taken:false},{x:440,y:360,taken:false}];
-  $("goalchip").innerHTML="🌙 <b>Zen Garden</b> · endless pods, nothing snaps, nothing counts";
+  $("goalchip").innerHTML="<b>Zen Garden</b><br>endless pods, nothing snaps, nothing counts";
   $("goalchip").classList.add("on");
   enterPlay();
 }
@@ -1226,7 +1227,7 @@ function wireUIArt(){
     +".hchip span{display:none;}"
     // parchment plates need INK, not cream — cream-on-parchment was unreadable
     // (Jessie 2026-07-16: "weird words… the letters are white")
-    +"#goalchip{background-image:"+u("goal_banner")+";background-color:transparent"+fill+"border-color:transparent;color:#3a2a14;text-shadow:none;}"
+    +"#goalchip{background-image:"+u("goal_banner")+";background-color:transparent"+fill+"border-color:transparent;color:#3a2a14;text-shadow:none;height:178px;padding:26px 48px;font-size:17px;}"
     +"#goalchip b{color:#7a4a16;}"
     +".lvlcard{background-image:"+u("lvlcard_frame")+";background-color:transparent"+fill+"border-color:transparent;}"
     +".lvlcard.done{background-image:"+u("lvlcard_done_wreath")+";border-color:transparent;}"
