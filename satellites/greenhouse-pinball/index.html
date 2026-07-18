@@ -66,7 +66,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <img class="logo-img" src="art/logo_blobworks.png?v=1" alt="Blobworks" onerror="this.style.display='none';var t=document.getElementById('logo-fallback');if(t)t.style.display='block'">
+    <img class="logo-img" src="art/logo_blobworks.png?v=2" alt="Blobworks" onerror="this.style.display='none';var t=document.getElementById('logo-fallback');if(t)t.style.display='block'">
     <div class="title-word" id="logo-fallback" style="display:none">Blobworks</div>
     <canvas id="blip-canvas" width="273" height="220"></canvas>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -181,7 +181,7 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
    manifest keys, bump VER to cache-bust, and extend the manifest + blit sites per the pack
    wire-notes (art-asset-lists/pinball-claymation/00-art-direction.md). */
 var PIN_ART=(function(){
-  var DIR='art/', VER='1', cache={}, tried={};
+  var DIR='art/', VER='2', cache={}, tried={};
   var api={ enabled:true, DIR:DIR, VER:VER };
   function load(key){ if(tried[key])return; tried[key]=1; var im=new Image();
     im._ok=0; im.onload=function(){ im._ok=(im.naturalWidth>0)?1:0; }; im.onerror=function(){ im._ok=0; };
@@ -197,7 +197,8 @@ var PIN_ART=(function(){
     'lock_jar_0','lock_jar_1','lock_jar_2','lock_jar_3','return_gate','return_gate_lit','net_armed','net_flash',
     'throat_fern','throat_trellis','throat_green','throat_heart','throat_lorbit','throat_rorbit',
     'spinner_gear','rollover_on','rollover_off','post_nub',
-    'goo_boilover','mega_mash_erupt','blip_wave'];
+    'goo_boilover','mega_mash_erupt','blip_wave',
+    'meter_empty','meter_low','meter_mid','meter_high','meter_erupt'];
   api.load=load;
   api.preload=function(){ if(!api.enabled)return; for(var i=0;i<MAN.length;i++)load(MAN[i]); };
   api.ready=function(key){ if(!api.enabled)return false; var im=cache[key]; return !!(im&&im._ok&&im.complete&&im.naturalWidth>0); };
@@ -789,9 +790,10 @@ function render(){ if(!ctx||!G)return;
     for(w=0;w<WALLS.length;w++){ s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
   }
   // divider-top posts
-  for(w=0;w<POSTS.length;w++){ var po=POSTS[w];
-    ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(po.x,po.y,po.r,0,7); ctx.fill();
-    ctx.fillStyle='rgba(255,246,210,0.5)'; ctx.beginPath(); ctx.arc(po.x-1.5,po.y-1.5,po.r*0.4,0,7); ctx.fill(); }
+  for(w=0;w<POSTS.length;w++){ var po=POSTS[w]; var _poi=PIN_ART.img('post_nub');
+    if(_poi){ artFit(_poi,po.x,po.y,po.r*3.6); }
+    else { ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(po.x,po.y,po.r,0,7); ctx.fill();
+      ctx.fillStyle='rgba(255,246,210,0.5)'; ctx.beginPath(); ctx.arc(po.x-1.5,po.y-1.5,po.r*0.4,0,7); ctx.fill(); } }
   // bumpers (flower heads)
   drawShots();
   for(var m=0;m<BUMPERS.length;m++){ var _bk=['bumper_a','bumper_b','bumper_c'][m]||'bumper_a', _bi=PIN_ART.img(BUMPERS[m].lit>0.05?(_bk+'_lit'):(_bk+'_idle')); if(_bi)artFit(_bi,BUMPERS[m].x,BUMPERS[m].y,BUMPERS[m].r*2.6); else drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e'); }
@@ -810,13 +812,20 @@ function render(){ if(!ctx||!G)return;
       ctx.strokeStyle='rgba(242,217,138,'+(0.25+0.3*nf)+')'; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(LOCK_PATH[0][0]-LOCK_NEST.x,LOCK_PATH[0][1]-LOCK_NEST.y);
       for(var pi=1;pi<LOCK_PATH.length;pi++)ctx.lineTo(LOCK_PATH[pi][0]-LOCK_NEST.x,LOCK_PATH[pi][1]-LOCK_NEST.y); ctx.stroke(); }
-    ctx.strokeStyle=lit?('rgba(242,217,138,'+(0.55+0.4*nf)+')'):'rgba(122,179,86,0.5)'; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.arc(0,0,15,Math.PI,0); ctx.lineTo(15,8); ctx.lineTo(-15,8); ctx.closePath(); ctx.stroke();
-    for(var li=0;li<3;li++){ ctx.fillStyle=li<G.locked?'#f2d98a':'rgba(122,145,110,0.3)';
-      ctx.beginPath(); ctx.arc(-8+li*8,2,3.4,0,7); ctx.fill(); }
-    if(lit){ ctx.fillStyle='rgba(242,217,138,'+(0.6+0.4*nf)+')'; ctx.font='800 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LOCK',0,-20); }
-    ctx.restore(); })();
-  // moss net
+    ctx.restore();
+    var _lj=PIN_ART.img('lock_jar_'+Math.min(3,G.locked||0));
+    if(_lj){ ctx.save(); if(lit){ ctx.globalAlpha=0.55+0.45*nf; ctx.shadowColor='#f2d98a'; ctx.shadowBlur=16; } artFit(_lj,LOCK_NEST.x,LOCK_NEST.y+10,46); ctx.restore();
+      if(lit){ ctx.fillStyle='rgba(242,217,138,'+(0.6+0.4*nf)+')'; ctx.font='800 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LOCK',LOCK_NEST.x,LOCK_NEST.y-24); } }
+    else { ctx.save(); ctx.translate(LOCK_NEST.x,LOCK_NEST.y);
+      ctx.strokeStyle=lit?('rgba(242,217,138,'+(0.55+0.4*nf)+')'):'rgba(122,179,86,0.5)'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(0,0,15,Math.PI,0); ctx.lineTo(15,8); ctx.lineTo(-15,8); ctx.closePath(); ctx.stroke();
+      for(var li=0;li<3;li++){ ctx.fillStyle=li<G.locked?'#f2d98a':'rgba(122,145,110,0.3)';
+        ctx.beginPath(); ctx.arc(-8+li*8,2,3.4,0,7); ctx.fill(); }
+      if(lit){ ctx.fillStyle='rgba(242,217,138,'+(0.6+0.4*nf)+')'; ctx.font='800 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LOCK',0,-20); }
+      ctx.restore(); }
+  })();
+  // drain grate (static, at the bottom-center mouth) + goo net save
+  var _dg=PIN_ART.img('drain_grate'); if(_dg)artFit(_dg,VW/2,DRAINY+4,96);
   drawNet();
   // Taproot kickback lamp — glowing up-arrow in the left outlane while charged
   if(G.kickLit){ var kf=0.55+0.4*Math.sin(G.t*5);
@@ -951,9 +960,11 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
       else { ctx.save(); ctx.strokeStyle=on?('rgba(200,168,75,'+(0.6+0.4*fl)+')'):'rgba(122,145,110,0.45)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.stroke();
         ctx.fillStyle=on?'#f2d98a':'#5a6b4a'; ctx.font='800 12px system-ui'; ctx.textAlign='center'; ctx.fillText('ZAP'.charAt(sh.sunIdx),sh.x,sh.y+4); ctx.restore(); }
     } else if(sh.type==='return'){ var rg=sh.cd>0?(sh.cd/0.7):0;
-      ctx.save(); ctx.strokeStyle='rgba(122,179,86,'+(0.32+0.5*rg+0.14*fl)+')'; ctx.lineWidth=3; ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(sh.x-9,sh.y-12); ctx.lineTo(sh.x-9,sh.y+12); ctx.moveTo(sh.x+9,sh.y-12); ctx.lineTo(sh.x+9,sh.y+12); ctx.stroke();
-      if(rg>0.05){ ctx.fillStyle='rgba(242,217,138,'+(0.5*rg)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.5,0,7); ctx.fill(); } ctx.restore(); }
+      var _rgi=PIN_ART.img(rg>0.05?'return_gate_lit':'return_gate');
+      if(_rgi){ artFit(_rgi,sh.x,sh.y,sh.r*2.6); }
+      else { ctx.save(); ctx.strokeStyle='rgba(122,179,86,'+(0.32+0.5*rg+0.14*fl)+')'; ctx.lineWidth=3; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(sh.x-9,sh.y-12); ctx.lineTo(sh.x-9,sh.y+12); ctx.moveTo(sh.x+9,sh.y-12); ctx.lineTo(sh.x+9,sh.y+12); ctx.stroke();
+        if(rg>0.05){ ctx.fillStyle='rgba(242,217,138,'+(0.5*rg)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.5,0,7); ctx.fill(); } ctx.restore(); } }
   }
   ctx.restore(); }
 function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
@@ -981,6 +992,8 @@ function drawFlipper(F){
   ctx.restore();
 }
 function drawNet(){ if(G.netTime<=0 && G.netFlash<=0)return; var y=DRAINY-6, a=(G.netTime>0?0.4:0)+G.netFlash*0.6;
+  var _ni=PIN_ART.img(G.netFlash>0.1?'net_flash':'net_armed');
+  if(_ni){ ctx.save(); ctx.globalAlpha=Math.min(1,a+0.35+0.2*Math.sin(G.t*4)); artFit(_ni,265,y+2,150); ctx.restore(); return; }
   ctx.save(); ctx.globalAlpha=Math.min(0.9,a+0.2*Math.sin(G.t*4)); ctx.strokeStyle='#7ab356'; ctx.lineWidth=3;
   ctx.beginPath(); for(var x=250;x<=290;x+=1){}
   ctx.beginPath(); ctx.moveTo(240,y); ctx.quadraticCurveTo(265,y+14,290,y); ctx.stroke();
@@ -988,6 +1001,10 @@ function drawNet(){ if(G.netTime<=0 && G.netFlash<=0)return; var y=DRAINY-6, a=(
   ctx.restore();
 }
 function drawGrowth(){ var x=30, y0=120, y1=520, h=y1-y0, fill=Math.min(1,G.growth/GROWTH_MAX);
+  // claymation REACTION meter (art) — fill state by growth; erupts during Bloom Rush
+  var _mk=(G.rush>0)?'meter_erupt':(fill<0.02?'meter_empty':fill<0.34?'meter_low':fill<0.67?'meter_mid':fill<0.99?'meter_high':'meter_erupt');
+  var _mi=PIN_ART.img(_mk);
+  if(_mi){ var _mh=h, _mw=_mh*_mi.width/_mi.height; ctx.drawImage(_mi, 6, y0, _mw, _mh); return; }
   if(G.rush>0){ // frenzy: the ribbon burns gold with the time remaining
     ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(G.t*7); ctx.strokeStyle='#f2d98a'; ctx.lineWidth=3;
     ctx.strokeRect(x-8,y0-3,16,h+6);
