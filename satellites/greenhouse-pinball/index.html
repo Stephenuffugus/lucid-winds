@@ -196,7 +196,8 @@ var PIN_ART=(function(){
     'scoop_idle','scoop_lit','scoop_open','drain_grate',
     'lock_jar_0','lock_jar_1','lock_jar_2','lock_jar_3','return_gate','return_gate_lit','net_armed','net_flash',
     'throat_fern','throat_trellis','throat_green','throat_heart','throat_lorbit','throat_rorbit',
-    'spinner_gear','rollover_on','rollover_off','post_nub'];
+    'spinner_gear','rollover_on','rollover_off','post_nub',
+    'goo_boilover','mega_mash_erupt','blip_wave'];
   api.load=load;
   api.preload=function(){ if(!api.enabled)return; for(var i=0;i<MAN.length;i++)load(MAN[i]); };
   api.ready=function(key){ if(!api.enabled)return false; var im=cache[key]; return !!(im&&im._ok&&im.complete&&im.naturalWidth>0); };
@@ -646,7 +647,7 @@ function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=t
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
 function startPollenMB(){
-  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true);
+  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true); playAnim('goo_boilover',6,358,410,LOCK_NEST.x,LOCK_NEST.y+70,150,12);
   G.mbLevel=Math.min(2,1+(G.mbCount-1)*0.5);        // scales across the game, capped so the wizard stays king
   G.jpLadder=1; G.jpCount=0; G.superLit=false; G.superCount=0; G.mbAdded=false;
   G.mbSave=Math.max(5,10-3*(G.mbCount-1));          // 10s -> 7s -> 5s
@@ -659,7 +660,7 @@ function startPollenMB(){
 function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.scoopLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
   float(265,300,'MULTIBALL OVER'); sfx('drain'); }
 function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
-function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true);
+function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true); playAnim('mega_mash_erupt',8,247,556,VW/2,VH*0.44,240,13);
   G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
   G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
   G.wizSave=12; float(265,300,'🌸 FULL BLOOM! 🌸'); float(265,334,'every shot = 1,000,000'); sfx('bloom'); haptic(40); }
@@ -673,6 +674,9 @@ function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
 // P2: DMD-style callout — a transient punch-in announcement on a major event.
 function callout(txt,col,big){ if(!G)return; var t=big?1.9:1.35; G.callout={txt:txt,col:col||'#f2d98a',big:!!big,t:t,t0:t}; if(big)G.shake=Math.max(G.shake,6); }
 function rrect(x,y,w,h,r){ if(w<2*r)r=w/2; if(h<2*r)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// one-shot claymation animation overlay (sheet-13..17 frame strips): plays once at (x,y), width w
+var ANIM=null;
+function playAnim(key,frames,cw,ch,x,y,w,fps){ ANIM={key:key,frames:frames,cw:cw,ch:ch,x:x,y:y,w:w,fps:fps||16,t:0}; }
 
 /* ===== update ===== */
 function step(dt){ if(!G)return; G.t+=dt;
@@ -740,6 +744,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.scoreShown==null)G.scoreShown=G.score;
   if(G.scoreShown!==G.score){ G.scoreShown+=(G.score-G.scoreShown)*Math.min(1,dt*9); if(Math.abs(G.score-G.scoreShown)<1)G.scoreShown=G.score; }
   if(G.callout){ G.callout.t-=dt; if(G.callout.t<=0)G.callout=null; }
+  if(ANIM){ ANIM.t+=dt; if(ANIM.t*ANIM.fps>=ANIM.frames)ANIM=null; }
   if(G.slow<1){ G.slow+=dt*1.8; if(G.slow>1)G.slow=1; }
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
   if(G.netFlash>0){ G.netFlash-=dt*2; if(G.netFlash<0)G.netFlash=0; }
@@ -840,6 +845,9 @@ function render(){ if(!ctx||!G)return;
   // P2 lightshow: a brief colored GI wash in the event's own color while a big callout is up
   if(G.callout && G.callout.big && G.callout.t>0){ ctx.save(); ctx.globalCompositeOperation='lighter';
     ctx.globalAlpha=Math.min(0.13,(G.callout.t/G.callout.t0)*0.13)*(0.6+0.4*Math.sin(G.t*8)); ctx.fillStyle=G.callout.col; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // one-shot claymation animation overlay (MEGA MASH erupt, goo boil-over, Blip cheer)
+  if(ANIM){ var _ai=PIN_ART.img(ANIM.key); if(_ai){ var _af=Math.min(ANIM.frames-1,Math.floor(ANIM.t*ANIM.fps)); var _ah=ANIM.w*ANIM.ch/ANIM.cw;
+    ctx.drawImage(_ai, _af*ANIM.cw,0,ANIM.cw,ANIM.ch, ANIM.x-ANIM.w/2, ANIM.y-_ah/2, ANIM.w, _ah); } }
   if(G.wizard){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.035+0.03*Math.sin(G.t*3); ctx.fillStyle='#6b5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // FULL BLOOM golden GI
   else if(G.rush>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.03+0.025*Math.sin(G.t*5); ctx.fillStyle='#2e5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // Bloom Rush green GI
   // HUD

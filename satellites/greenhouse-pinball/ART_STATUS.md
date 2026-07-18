@@ -29,15 +29,20 @@ Raw source: `art-drop/Pinball claymation/` (22 sheets + `PROMPTS.txt`). Re-cut a
 - **Drain grate** `drain_grate`, **goo net** `net_armed`/`net_flash` (sheet 8) — bottom drain + ball-save.
 - **Posts** `post_nub`, **diverter flag** `diverter_flag`, **tube segments** `tube_straight/curve` (sheet 9).
 
+## Animations + logo — LIVE ✅ (added Jul 18 PM)
+- **Blobworks LOGO** on the title screen (sheet 11, cropped + de-fringed).
+- **Blip mascot** animated on the title — idle jiggle (6fr loop) + occasional blink (3fr), canvas rAF (sheet 13).
+- **MEGA MASH erupt** (sheet 16, 8fr) plays on wizard start; **goo boil-over** (sheet 15, 6fr) on multiball
+  start — via the new one-shot `playAnim()` overlay + normalized equal-cell strips.
+- `blip_wave` (cheer) + `tilt_wobble` cut/placed, not yet triggered.
+
 ## Not yet cut/wired 🔜 (raw sheets ready)
 - **Reaction meter** (sheet 10) — the left growth ribbon → bubbling test-tube fill states.
-- **UI / HUD / Blobworks LOGO** (sheet 11) — title-screen logo + plates/buttons/DMD frame.
+- **UI plates/buttons/DMD frame** (rest of sheet 11) — logo done; plates/DMD still procedural.
 - **Juice FX** (sheet 12) — goo splats, sparkles, mega_flash, mega_mash_ring for the burst() colors.
-- **Animations** (sheets 13-17) — mascot **Blip** (idle/blink/wave), eyeball blink, bumper chomp,
-  beaker tumble, scoop gulp, spinner spin, goo boil-over, MEGA MASH erupt, TILT wobble. These are
-  frame STRIPS; will cut into normalized equal-cell strips + drive via `PIN_ART.frame(frames,fps,t)`.
-- **Cosmetics** — table skins (sheets 18-21: old-reel/chrome/toxic/day) + props (sheet 22: ball skins,
-  claw skins, monster-buddy cameos). Needs the cosmetics/skin-picker system (not in pinball yet).
+- **In-play frame anims** (sheet 14) — eyeball blink, bumper chomp, beaker tumble, scoop gulp, spinner spin.
+- **Cosmetics** — table skins (sheets 18-21) + props (sheet 22: ball/claw skins, monster-buddy cameos).
+  Needs the cosmetics/skin-picker system (not in pinball yet).
 
 ## Known issues / remake candidates 🔧
 1. **Magenta fringe (minor):** a faint pink edge remains on some green/purple sprites (the generator
