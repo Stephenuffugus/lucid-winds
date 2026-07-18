@@ -28,6 +28,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:44px; line-height:1.05; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #241a0c, 0 0 26px #c8a84b44; letter-spacing:1px}
+.logo-img{display:block; width:min(90%,430px); height:auto; margin:0 auto; filter:drop-shadow(0 5px 10px #000a)}
+#blip-canvas{display:block; margin:2px auto 0; width:118px; height:95px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:410px; line-height:1.5}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
@@ -64,15 +66,17 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Greenhouse<br>Pinball</div>
+    <img class="logo-img" src="art/logo_blobworks.png?v=1" alt="Blobworks" onerror="this.style.display='none';var t=document.getElementById('logo-fallback');if(t)t.style.display='block'">
+    <div class="title-word" id="logo-fallback" style="display:none">Blobworks</div>
+    <canvas id="blip-canvas" width="273" height="220"></canvas>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Keep the pollen bead alive on a living table. Grow the plant to spark a <b class="hl">Bloom Rush</b> frenzy, spell B·L·O·O·M and lock three beads in the glasshouse for <b class="hl">Pollen Multiball</b>, and ride ramps that change their routes mid flight. A bed of moss catches your first drain, so nothing feels cheap.</div>
+    <div class="ribbon">A whole pinball table sculpted in clay. Flip the eyeball down the lab bench, chomp the monster bumpers, knock the beakers flat, and feed the big mouth to light the <b class="hl">MEGA MASH</b>. A goo net catches your first drain, so nothing feels cheap.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-classic">🌻&nbsp; Classic Table</button>
+      <button class="btn primary" id="b-classic">Play</button>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily Bloom</button>
-        <button class="btn sm" id="b-zen">🍃 Zen Greenhouse</button>
+        <button class="btn sm" id="b-daily">Daily Lab</button>
+        <button class="btn sm" id="b-zen">Zen</button>
       </div>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
@@ -1052,9 +1056,26 @@ function boot(){
       var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
       alert(ios?'To add Blobworks to your Home Screen:\n\nTap the Share button, then Add to Home Screen. It opens full screen like an app.':'To add Blobworks to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
   })();
+  // ---- title mascot: Blip idle jiggle + occasional blink (animated sprite strip) ----
+  (function(){ var cv=$('blip-canvas'); if(!cv||!cv.getContext)return; var bx=cv.getContext('2d');
+    var idle=new Image(); idle.src='art/blip_idle.png?v='+PIN_ART.VER;
+    var blink=new Image(); blink.src='art/blip_blink.png?v='+PIN_ART.VER;
+    var IW=273,IH=220,IN=6, BW=210,BH=209,BN=3, t0=null, nextBlink=2.5, bStart=-1;
+    function frame(ts){ requestAnimationFrame(frame); if(!t0)t0=ts; var t=(ts-t0)/1000;
+      if(cv.offsetParent===null)return;                          // only while the title is showing
+      bx.clearRect(0,0,cv.width,cv.height); var img,cw,ch,fr;
+      if(bStart<0 && t>=nextBlink)bStart=t;
+      if(bStart>=0){ fr=Math.floor((t-bStart)*16); if(fr>=BN){ bStart=-1; nextBlink=t+2+Math.random()*3.5; } }
+      if(bStart>=0){ img=blink; cw=BW; ch=BH; if(fr>=BN)fr=BN-1; }
+      else { img=idle; cw=IW; ch=IH; fr=Math.floor((t*5)%IN); }
+      if(img.complete && img.naturalWidth>0){ var s=Math.min(cv.width/cw,cv.height/ch), dw=cw*s, dh=ch*s;
+        bx.drawImage(img, fr*cw,0,cw,ch, (cv.width-dw)/2, cv.height-dh, dw,dh); }
+    }
+    requestAnimationFrame(frame);
+  })();
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
-  $('buildstamp').textContent='Greenhouse Pinball '+BUILD+' · best '+(PROG.best.classic||0);
+  $('buildstamp').textContent='Blobworks '+BUILD+' · best '+(PROG.best.classic||0);
 }
 
 /* ===== embed + sunbeam ===== */
