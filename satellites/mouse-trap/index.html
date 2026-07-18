@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='6' fill='%230e140d'/%3E%3Ccircle cx='11' cy='11' r='4' fill='%233f6b34'/%3E%3Ccircle cx='21' cy='11' r='4' fill='%233f6b34'/%3E%3Ccircle cx='16' cy='20' r='6' fill='%23b9b2a8'/%3E%3Ccircle cx='12' cy='16' r='2.4' fill='%23e3a9b3'/%3E%3Ccircle cx='20' cy='16' r='2.4' fill='%23e3a9b3'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mouse Trap">
+<title>Mouse Trap — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"mousetrap"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; --earth:#241a12; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.92; max-width:430px; line-height:1.55}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
+.btn.sm{min-height:54px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:32px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:19px; font-weight:800; width:40px; height:40px; line-height:38px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:17px}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-big{font-size:30px; font-weight:800; color:var(--sage); line-height:1.1}
+.go-stars{font-size:44px; letter-spacing:6px; margin:6px 0; height:52px}
+.go-lab{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Mouse Trap</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">A little garden <b class="hl">mouse</b> is loose in your veg patch. Plant <b class="hl">hedges</b> one at a time to wall it in. After every hedge the mouse scurries one step toward the nearest open edge. Box it in on all sides before it slips out into the wild garden.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-play">New Garden</button>
+      <div class="row">
+        <button class="btn sm" id="b-easy">Easy</button>
+        <button class="btn sm" id="b-hard">Hard</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-daily">Daily Patch</button>
+        <button class="btn sm" id="b-zen">Zen</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-how">How to Play</button>
+        <button class="btn sm" id="b-set">Comfort</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">1</div><div><b>Goal.</b> Trap the garden <b class="hl">mouse</b> so it has nowhere left to run. You win the moment every escape route is blocked.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>Your move.</b> Tap any empty tile to plant a <b class="hl">hedge</b> there. Hedges are walls the mouse cannot step through.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>The mouse moves.</b> Right after each hedge, the mouse takes one step along its shortest path toward the nearest open edge. A soft glow shows where it will run next.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b>You lose</b> if the mouse reaches a tile on the outer edge and escapes into the wild garden.</div></div>
+    <div class="helprow"><div class="hi">5</div><div><b>You win</b> when the mouse is fully boxed in with no path to any edge. Fewer hedges earns more stars.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b>Difficulty</b> is set by how many hedges start on the board. Easy gives you a big head start, Hard gives you very few.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- COMFORT / SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Comfort</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div class="settingline"><span>Show mouse next step</span><div class="toggle on" id="tg-tele"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">Back</button>
+  </div></div>
+
+  <!-- RESULTS -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="go-big" id="go-title">Trapped!</div>
+    <div class="go-stars" id="go-stars">*</div>
+    <div class="go-lab" id="go-lab">hedges planted</div>
+    <div style="font-size:34px;font-weight:800;color:var(--cream)" id="go-score">0</div>
+    <div class="pill" id="go-best">best 0</div>
+    <div style="margin-top:8px;font-size:14px;color:var(--sage)" id="go-note"></div>
+    <div class="sun-earn" id="go-sun">+0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-retry">Play again</button>
+      <div class="row">
+        <button class="btn sm" id="go-home">Menu</button>
+        <button class="btn sm" id="go-share">Share</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
+var BUILD='v1.0';
+var TESTMODE=/[?&]mttest=1/.test(location.search);
+
+/* ---------- grid geometry (odd-r offset hex, pointy-top) ---------- */
+var N=11;                       /* 11 x 11 tiles */
+var EMPTY=0, HEDGE=1;
+var HEX=24;                     /* hex radius (center to corner) */
+var HW=Math.sqrt(3)*HEX;        /* hex width  ~41.57 */
+var ROWH=1.5*HEX;              /* vertical row spacing = 36 */
+var GRIDW=N*HW + HW/2;         /* board pixel width (incl odd-row overhang) */
+var BOARD_TOP=152;
+var LEFT=(VW-GRIDW)/2;
+var OX=LEFT + HW/2;           /* pixel center-x of cell (row0,col0) */
+var OY=BOARD_TOP + HEX;      /* pixel center-y of row 0 */
+var INF=1e9;
+
+function idx(r,c){ return r*N+c; }
+function isBorder(r,c){ return r===0||r===N-1||c===0||c===N-1; }
+function inBounds(r,c){ return r>=0&&r<N&&c>=0&&c<N; }
+/* odd-r offset neighbours (odd rows shifted right) */
+function neighbors(r,c){ var out=[]; var d,i;
+  if(r%2===0){ d=[[0,-1],[0,1],[-1,-1],[-1,0],[1,-1],[1,0]]; }
+  else       { d=[[0,-1],[0,1],[-1,0],[-1,1],[1,0],[1,1]]; }
+  for(i=0;i<6;i++){ var nr=r+d[i][0], nc=c+d[i][1]; if(inBounds(nr,nc))out.push({r:nr,c:nc}); }
+  return out;
+}
+function offToCube(r,c){ var x=c-(r-(r&1))/2, z=r, y=-x-z; return {x:x,y:y,z:z}; }
+function hexDist(r1,c1,r2,c2){ var a=offToCube(r1,c1), b=offToCube(r2,c2);
+  return (Math.abs(a.x-b.x)+Math.abs(a.y-b.y)+Math.abs(a.z-b.z))/2; }
+function cellCenter(r,c){ return { x:OX + c*HW + (r%2?HW/2:0), y:OY + r*ROWH }; }
+
+/* ---------- storage + settings ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, haptic:true, tele:true };
+(function(){ try{ var s=JSON.parse(LS.get('mt_set')||'{}'); var ks=['sound','haptic','tele'],i; for(i=0;i<ks.length;i++){ if(typeof s[ks[i]]==='boolean')SET[ks[i]]=s[ks[i]]; } }catch(e){} })();
+function saveSet(){ LS.set('mt_set', JSON.stringify(SET)); }
+
+/* ---------- sunbeam earn (30/day cap; ~12/win at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_mousetrap'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- progress / economy ---------- */
+var PROG={ wins:0, plays:0, bestEasy:0, bestMed:0, bestHard:0, streak:0, lastDaily:'', dailyDone:'', dailyWin:false };
+(function(){ try{ var s=JSON.parse(LS.get('mousetrap_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} })();
+function save(){ try{ LS.set('mousetrap_save', JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function blip(freq,dur,type,vol){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=(vol||0.14); o.connect(g); g.connect(c.destination); var t=c.currentTime; g.gain.setValueAtTime(vol||0.14,t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12)); o.start(t); o.stop(t+(dur||0.12)); }catch(e){} }
+function sfx(kind){ if(!SET.sound)return;
+  if(kind==='plant')blip(240,0.06,'triangle',0.09);
+  else if(kind==='hop')blip(360,0.05,'sine',0.06);
+  else if(kind==='win'){ blip(523,0.14,'triangle',0.16); setTimeout(function(){blip(784,0.24,'triangle',0.15);},130); }
+  else if(kind==='lose')blip(150,0.34,'sawtooth',0.11);
+  else if(kind==='ui')blip(440,0.05,'sine',0.08);
+  else if(kind==='no')blip(180,0.08,'sawtooth',0.05);
+}
+function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
+function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+
+/* ---------- rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dateSeed(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function todayStr(){ return ''+dateSeed(); }
+
+/* ---------- canvas ---------- */
+var cv=$('game'), ctx=cv.getContext('2d');
+function fitCanvas(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+fitCanvas();
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize',fit); fit();
+
+/* ---------- game state ---------- */
+var G=null, running=false, lastTs=0, curScreen='s-title', pendingMode=null;
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
+function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
+
+var HEDGE_COUNT={ easy:24, medium:14, hard:8, zen:30, daily:13, empty:0 };
+function startGame(mode, seedOverride){
+  var seed = (seedOverride!=null)?seedOverride
+           : (mode==='daily'? dateSeed()
+           : Math.floor(Math.random()*1e9));
+  var rng=mulberry32(seed);
+  G={ mode:mode, seed:seed, grid:[], mr:5, mc:5, moves:0, phase:'play', settled:false,
+      t:0, hop:0, trapAnim:0, lastPlant:null, dist:null, nextTarget:null, mouseDist:0,
+      parts:[], stars:0, sunAmt:0, frozen:false };
+  var i; for(i=0;i<N*N;i++)G.grid[i]=EMPTY;
+  /* keep mouse + its 6 neighbours clear so it always starts with room */
+  var clear={}; clear[idx(5,5)]=1; var nb=neighbors(5,5); for(i=0;i<nb.length;i++)clear[idx(nb[i].r,nb[i].c)]=1;
+  var want=HEDGE_COUNT[mode]!=null?HEDGE_COUNT[mode]:14;
+  var placed=0, guard=0;
+  while(placed<want && guard<4000){ guard++;
+    var r=Math.floor(rng()*N), c=Math.floor(rng()*N), k=idx(r,c);
+    if(clear[k]||G.grid[k]===HEDGE)continue;
+    G.grid[k]=HEDGE; placed++;
+  }
+  /* safety: never start the mouse pre-trapped — open cells until a path exists */
+  guard=0;
+  while(computeDist()[idx(5,5)]>=INF && guard<200){ guard++;
+    var rr=Math.floor(rng()*N), cc=Math.floor(rng()*N);
+    if(G.grid[idx(rr,cc)]===HEDGE){ G.grid[idx(rr,cc)]=EMPTY; }
+  }
+  telegraph();
+  PROG.plays=(PROG.plays||0)+1; save();
+  toPlay();
+}
+
+/* ---------- pathfinding: distance from every cell to the open edge ---------- */
+function computeDist(){ var dist=[], q=[], head=0, i, r, c;
+  for(i=0;i<N*N;i++)dist[i]=INF;
+  for(r=0;r<N;r++)for(c=0;c<N;c++){ if(isBorder(r,c) && G.grid[idx(r,c)]!==HEDGE){ dist[idx(r,c)]=0; q.push(idx(r,c)); } }
+  while(head<q.length){ var cur=q[head++]; var cr=Math.floor(cur/N), cc2=cur%N; var nb=neighbors(cr,cc2);
+    for(i=0;i<nb.length;i++){ var ni=idx(nb[i].r,nb[i].c);
+      if(G.grid[ni]!==HEDGE && dist[ni]===INF){ dist[ni]=dist[cur]+1; q.push(ni); } } }
+  return dist;
+}
+/* recompute the cell the mouse would flee to (for the glow + AI) */
+function telegraph(){ if(!G)return; var dist=computeDist(); G.dist=dist; var mi=idx(G.mr,G.mc); G.mouseDist=dist[mi];
+  var nb=neighbors(G.mr,G.mc), best=null, bd=INF, i;
+  for(i=0;i<nb.length;i++){ var ni=idx(nb[i].r,nb[i].c); if(G.grid[ni]===HEDGE)continue; if(dist[ni]<bd){ bd=dist[ni]; best=nb[i]; } }
+  G.nextTarget=(best&&bd<INF)?best:null;
+}
+
+/* ---------- turn logic ---------- */
+function plantAt(r,c){ if(!G||G.phase!=='play')return false;
+  if(!inBounds(r,c))return false;
+  if(r===G.mr&&c===G.mc)return false;
+  if(G.grid[idx(r,c)]===HEDGE)return false;
+  G.grid[idx(r,c)]=HEDGE; G.moves++; G.lastPlant={r:r,c:c};
+  spawnLeaves(cellCenter(r,c).x, cellCenter(r,c).y);
+  sfx('plant'); haptic(8);
+  if(G.frozen){ // test mode: no mouse move, only trap check
+    if(computeDist()[idx(G.mr,G.mc)]>=INF) winTrap(); else telegraph();
+    return true;
+  }
+  mouseTurn();
+  return true;
+}
+function mouseTurn(){ if(!G||G.phase!=='play')return;
+  var dist=computeDist(); var md=dist[idx(G.mr,G.mc)];
+  if(md>=INF){ winTrap(); return; }                 /* no escape route left */
+  var nb=neighbors(G.mr,G.mc), best=null, bd=INF, i;
+  for(i=0;i<nb.length;i++){ var ni=idx(nb[i].r,nb[i].c); if(G.grid[ni]===HEDGE)continue; if(dist[ni]<bd){ bd=dist[ni]; best=nb[i]; } }
+  if(!best || bd>=INF){ winTrap(); return; }          /* boxed in */
+  G.mr=best.r; G.mc=best.c; G.hop=1; sfx('hop');
+  if(isBorder(G.mr,G.mc)){ loseEscape(); return; }    /* reached the edge */
+  telegraph();
+}
+function stepMouse(){ mouseTurn(); }                   /* test helper: mouse moves, no planting */
+
+/* reachable region from the mouse over open tiles: how many exits + how big */
+function reachStats(){ var seen={}, q=[], head=0, exits=0, total=0, i;
+  var start=idx(G.mr,G.mc); seen[start]=1; q.push(start);
+  while(head<q.length){ var cur=q[head++]; var cr=Math.floor(cur/N), cc=cur%N; total++;
+    if(isBorder(cr,cc))exits++;
+    var nb=neighbors(cr,cc); for(i=0;i<nb.length;i++){ var ni=idx(nb[i].r,nb[i].c);
+      if(G.grid[ni]!==HEDGE && !seen[ni]){ seen[ni]=1; q.push(ni); } } }
+  return { exits:exits, total:total };
+}
+
+function winTrap(){ if(G.phase!=='play')return; G.phase='win'; G.trapAnim=1; G.nextTarget=null; G.mouseDist=INF; endRun(true); }
+function loseEscape(){ if(G.phase!=='play')return; G.phase='lose'; G.nextTarget=null; endRun(false); }
+
+/* ---------- run end / rewards ---------- */
+function computeStars(moves){ /* fewer hedges = more stars; base tuned per difficulty */
+  var par = G.mode==='hard'?12 : G.mode==='easy'?7 : G.mode==='zen'?6 : 10;
+  if(moves<=par)return 3; if(moves<=par+5)return 2; return 1;
+}
+function endRun(win){ if(G.settled)return; G.settled=true; running=true; /* keep drawing for the animation */
+  sfx(win?'win':'lose'); haptic(win?[8,26,8]:24);
+  var moves=G.moves;
+  G.stars = win?computeStars(moves):0;
+  if(win){ PROG.wins=(PROG.wins||0)+1;
+    if(G.mode==='easy' && (PROG.bestEasy===0||moves<PROG.bestEasy))PROG.bestEasy=moves;
+    else if(G.mode==='hard' && (PROG.bestHard===0||moves<PROG.bestHard))PROG.bestHard=moves;
+    else if(G.mode==='medium' && (PROG.bestMed===0||moves<PROG.bestMed))PROG.bestMed=moves;
+  }
+  /* sunbeams: wins only, ~12 cap, quicker = more, hard worth more */
+  var amt=0;
+  if(win){ var quick=Math.max(0, computeStars(moves)-1)*2;  /* 0,2,4 */
+    if(G.mode==='daily'){ var first=(PROG.dailyDone!==todayStr());
+      if(first){ var yd=''+(dateSeed()-1); PROG.streak=(PROG.lastDaily===yd)?(PROG.streak||0)+1:1;
+        PROG.lastDaily=todayStr(); PROG.dailyDone=todayStr(); PROG.dailyWin=true;
+        amt=Math.min(12, 8+quick); } else amt=0; }
+    else if(G.mode==='zen') amt=Math.min(12, 3+quick);
+    else if(G.mode==='hard') amt=Math.min(12, 8+quick);
+    else if(G.mode==='easy') amt=Math.min(12, 5+quick);
+    else amt=Math.min(12, 6+quick);
+  }
+  var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'mousetrap:'+G.mode)||0; }catch(e){} }
+  G.sunAmt=granted; save();
+  setTimeout(showResults, win?900:800);
+}
+function showResults(){
+  var win=(G.phase==='win');
+  $('go-title').textContent = win?'Trapped!':'It got away';
+  $('go-title').style.color = win?'#8ec462':'#e0894a';
+  var s='',i; for(i=0;i<3;i++)s+=(i<G.stars?'✱':'·'); $('go-stars').textContent = win?s:'···';
+  $('go-score').textContent=G.moves;
+  $('go-lab').textContent='hedges planted';
+  var bestv = G.mode==='hard'?PROG.bestHard : G.mode==='easy'?PROG.bestEasy : G.mode==='medium'?PROG.bestMed : 0;
+  $('go-best').textContent = win&&bestv>0?('fewest hedges '+bestv):(G.mode==='daily'?('daily streak '+(PROG.streak||0)):('wins '+(PROG.wins||0)));
+  $('go-note').textContent = win?('The mouse is snug in your hedges.'):('The mouse reached the edge and slipped away. Wall it in sooner next time.');
+  $('go-sun').textContent = G.sunAmt>0?('☀ +'+G.sunAmt+' sunbeams'):(win?(G.mode==='daily'?'daily already claimed':'☀ no sunbeams this run'):'no sunbeams');
+  running=false; show('s-go');
+}
+
+/* ---------- fx ---------- */
+function spawnLeaves(x,y){ var i; for(i=0;i<5;i++){ var a=Math.random()*6.28, sp=25+Math.random()*55;
+  G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,life:0.9,col:['#5f9a3c','#3f6b34','#7ab356','#c8a84b'][i%4],r:2+Math.random()*2}); }
+  if(G.parts.length>140)G.parts.splice(0,G.parts.length-140); }
+function petalBurst(x,y){ var i; for(i=0;i<16;i++){ var a=Math.random()*6.28, sp=40+Math.random()*120;
+  G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:1.2,col:['#e58fa0','#c8a84b','#bfe0f2','#7ab356'][i%4],r:2+Math.random()*3}); }
+  if(G.parts.length>180)G.parts.splice(0,G.parts.length-180); }
+
+/* ---------- loop ---------- */
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.06)dt=0.06;
+  step(dt); render(); if(running)requestAnimationFrame(loop); }
+function step(dt){ if(!G)return; G.t+=dt; if(G.hop>0){ G.hop-=dt*4.5; if(G.hop<0)G.hop=0; }
+  if(G.phase==='win'&&G.trapAnim>0 && G.trapAnim<0.02){ } if(G.phase==='win')G.trapAnim+=dt;
+  if(G.phase==='win'&&G.trapAnim>0&&G.trapAnim<0.06){ petalBurst(cellCenter(G.mr,G.mc).x, cellCenter(G.mr,G.mc).y); }
+  var i; for(i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.vy+=180*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt*1.1; if(p.life<=0)G.parts.splice(i,1); }
+}
+
+/* ---------- render ---------- */
+function hexPath(x,y,s){ var i; ctx.beginPath(); for(i=0;i<6;i++){ var a=Math.PI/180*(60*i+30); var px=x+s*Math.cos(a), py=y+s*Math.sin(a); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath(); }
+function render(){ if(!ctx||!G)return;
+  ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#0f160e'); bg.addColorStop(1,'#080c07'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  drawHUD();
+  /* board plot backing */
+  ctx.fillStyle='#0c130b'; roundRectFill(LEFT-10, BOARD_TOP-14, GRIDW+20, (N-1)*ROWH+HEX*2+24, 18);
+  var r,c;
+  /* tiles */
+  for(r=0;r<N;r++)for(c=0;c<N;c++){ var ce=cellCenter(r,c); var isH=G.grid[idx(r,c)]===HEDGE;
+    /* soil hex */
+    hexPath(ce.x,ce.y,HEX-1.5);
+    if(isBorder(r,c)&&!isH){ ctx.fillStyle='#2a2114'; } else { ctx.fillStyle=((r+c)%2===0)?'#211913':'#1c1610'; }
+    ctx.fill();
+    ctx.lineWidth=1.4; ctx.strokeStyle='#0c0906'; ctx.stroke();
+    /* border-edge exit hint */
+    if(isBorder(r,c)&&!isH){ ctx.save(); ctx.globalAlpha=0.28+0.14*Math.sin(G.t*2+r+c); hexPath(ce.x,ce.y,HEX-4); ctx.lineWidth=1.6; ctx.strokeStyle='#c8a84b'; ctx.stroke(); ctx.restore(); }
+    if(isH)drawHedge(ce.x,ce.y,HEX);
+  }
+  /* telegraph glow: where the mouse will flee next */
+  if(SET.tele && G.phase==='play' && G.nextTarget){ var t=G.nextTarget; var tc=cellCenter(t.r,t.c);
+    ctx.save(); ctx.globalAlpha=0.30+0.22*Math.sin(G.t*5); hexPath(tc.x,tc.y,HEX-3); ctx.fillStyle='#e0894a'; ctx.fill(); ctx.restore();
+    /* little arrow from mouse toward target */
+    var mc0=cellCenter(G.mr,G.mc);
+    ctx.save(); ctx.globalAlpha=0.55; ctx.strokeStyle='#f0b070'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(mc0.x,mc0.y); ctx.lineTo(tc.x,tc.y); ctx.stroke(); ctx.restore();
+  }
+  /* last-plant flash */
+  if(G.lastPlant){ var lp=cellCenter(G.lastPlant.r,G.lastPlant.c); ctx.save(); ctx.globalAlpha=0.35*Math.max(0,1-G.hop); hexPath(lp.x,lp.y,HEX-2); ctx.lineWidth=2.4; ctx.strokeStyle='#eafbd6'; ctx.stroke(); ctx.restore(); }
+  /* mouse */
+  var mc=cellCenter(G.mr,G.mc); var lift = Math.sin(G.hop*Math.PI)*8;
+  drawMouse(mc.x, mc.y-lift, HEX, G.phase);
+  /* particles */
+  var i; for(i=0;i<G.parts.length;i++){ var p=G.parts[i]; ctx.globalAlpha=Math.max(0,Math.min(1,p.life)); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
+  drawFooter();
+}
+function drawHedge(x,y,s){ /* leafy green blocker */
+  ctx.save(); hexPath(x,y,s-2.5); ctx.clip();
+  var g=ctx.createLinearGradient(x,y-s,x,y+s); g.addColorStop(0,'#4d7f3a'); g.addColorStop(1,'#2c4d24'); ctx.fillStyle=g; ctx.fillRect(x-s,y-s,s*2,s*2);
+  ctx.restore();
+  hexPath(x,y,s-2.5); ctx.lineWidth=1.6; ctx.strokeStyle='#1c3517'; ctx.stroke();
+  /* leaf bumps */
+  var pts=[[-8,-6,6],[7,-7,5],[-6,7,5],[8,6,6],[0,0,6]]; var i;
+  for(i=0;i<pts.length;i++){ ctx.beginPath(); ctx.fillStyle=(i%2)?'#6aa845':'#5f9a3c'; ctx.arc(x+pts[i][0]*s/24,y+pts[i][1]*s/24,pts[i][2]*s/24,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.strokeStyle='rgba(20,45,15,0.5)'; ctx.lineWidth=1; ctx.moveTo(x+pts[i][0]*s/24,y+(pts[i][1]-pts[i][2])*s/24); ctx.lineTo(x+pts[i][0]*s/24,y+(pts[i][1]+pts[i][2])*s/24); ctx.stroke(); }
+}
+function drawMouse(x,y,s,phase){ var k=s/24; var trapped=(phase==='win'), gone=(phase==='lose');
+  ctx.save(); ctx.translate(x,y);
+  /* tail */
+  ctx.strokeStyle='#9a938a'; ctx.lineWidth=2.4*k; ctx.beginPath(); ctx.moveTo(6*k,8*k); ctx.quadraticCurveTo(20*k,10*k,17*k,-2*k); ctx.stroke();
+  /* ears */
+  var er=6.5*k; ctx.fillStyle='#a9a29a'; ctx.beginPath(); ctx.arc(-7*k,-9*k,er,0,6.2832); ctx.arc(7*k,-9*k,er,0,6.2832); ctx.fill();
+  ctx.fillStyle='#e3a9b3'; ctx.beginPath(); ctx.arc(-7*k,-9*k,3.4*k,0,6.2832); ctx.arc(7*k,-9*k,3.4*k,0,6.2832); ctx.fill();
+  /* body/head */
+  ctx.fillStyle='#bfb8ae'; ctx.beginPath(); ctx.ellipse(0,1*k,11*k,10*k,0,0,6.2832); ctx.fill();
+  ctx.fillStyle='#cfc9c0'; ctx.beginPath(); ctx.ellipse(0,4*k,7*k,6*k,0,0,6.2832); ctx.fill();
+  /* eyes */
+  if(trapped){ /* surprised wide eyes + sweat */
+    ctx.fillStyle='#20180f'; ctx.beginPath(); ctx.arc(-4*k,-1*k,2.6*k,0,6.2832); ctx.arc(4*k,-1*k,2.6*k,0,6.2832); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-3.2*k,-1.8*k,0.9*k,0,6.2832); ctx.arc(4.8*k,-1.8*k,0.9*k,0,6.2832); ctx.fill();
+    ctx.fillStyle='#bfe0f2'; ctx.beginPath(); ctx.ellipse(9*k,-3*k,1.6*k,2.6*k,0,0,6.2832); ctx.fill();
+  } else if(gone){ /* happy closed eyes, mid dash */
+    ctx.strokeStyle='#20180f'; ctx.lineWidth=1.6*k; ctx.beginPath(); ctx.arc(-4*k,-1*k,2.4*k,3.4,6.0); ctx.arc(4*k,-1*k,2.4*k,3.4,6.0); ctx.stroke();
+  } else {
+    ctx.fillStyle='#20180f'; ctx.beginPath(); ctx.arc(-4*k,-1*k,1.8*k,0,6.2832); ctx.arc(4*k,-1*k,1.8*k,0,6.2832); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-3.4*k,-1.6*k,0.7*k,0,6.2832); ctx.arc(4.6*k,-1.6*k,0.7*k,0,6.2832); ctx.fill();
+  }
+  /* nose */
+  ctx.fillStyle='#e58fa0'; ctx.beginPath(); ctx.arc(0,4*k,2*k,0,6.2832); ctx.fill();
+  /* whiskers */
+  ctx.strokeStyle='rgba(230,225,215,0.75)'; ctx.lineWidth=1*k; var i;
+  for(i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(-2*k,4*k); ctx.lineTo(-13*k,(3+i*3)*k); ctx.stroke(); ctx.beginPath(); ctx.moveTo(2*k,4*k); ctx.lineTo(13*k,(3+i*3)*k); ctx.stroke(); }
+  ctx.restore();
+}
+
+/* ---------- HUD ---------- */
+var HB_MENU={x:12,y:14,w:48,h:48}, HB_RETRY={x:VW-60,y:14,w:48,h:48}, HB_HELP={x:VW-116,y:14,w:48,h:48};
+function drawHUD(){
+  ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='800 24px system-ui'; ctx.fillText('Mouse Trap', VW/2, 34);
+  var modeLabel = G.mode==='zen'?'Zen':G.mode==='daily'?'Daily Patch':G.mode==='easy'?'Easy':G.mode==='hard'?'Hard':'New Garden';
+  ctx.fillStyle='#8a9178'; ctx.font='700 13px system-ui'; ctx.fillText(modeLabel+'  ·  hedges planted: '+G.moves, VW/2, 56);
+  if(G.phase==='play'){ ctx.fillStyle='#a8b294'; ctx.font='600 15px system-ui'; ctx.fillText('Tap an empty tile to plant a hedge.', VW/2, 92);
+    ctx.fillStyle='#c8a84b'; ctx.font='600 14px system-ui'; ctx.fillText(G.nextTarget?'The mouse will run toward the glowing tile.':'No escape route — one more hedge!', VW/2, 114);
+  } else if(G.phase==='win'){ ctx.fillStyle='#8ec462'; ctx.font='800 18px system-ui'; ctx.fillText('Trapped!', VW/2, 104);
+  } else if(G.phase==='lose'){ ctx.fillStyle='#e0894a'; ctx.font='800 18px system-ui'; ctx.fillText('It escaped!', VW/2, 104); }
+  hudBtn(HB_MENU,'‹'); hudBtn(HB_HELP,'?'); hudBtn(HB_RETRY,'↻');
+}
+function drawFooter(){ var y=BOARD_TOP+(N-1)*ROWH+HEX*2+24+40;
+  ctx.textAlign='center'; ctx.fillStyle='#7a8468'; ctx.font='600 14px system-ui';
+  ctx.fillText('Gold-edged tiles are the open garden edge.', VW/2, y);
+  ctx.fillStyle='#6f7862'; ctx.font='600 13px system-ui';
+  ctx.fillText('Keep the mouse away from them and box it in.', VW/2, y+22);
+}
+function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+function roundRectFill(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---------- input ---------- */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+/* pixel -> nearest hex cell (search candidate rows/cols, pick closest center within radius) */
+function cellAt(p){ var r,c,best=null,bd=1e9;
+  var rr0=Math.round((p.y-OY)/ROWH);
+  for(r=rr0-1;r<=rr0+1;r++){ if(r<0||r>=N)continue;
+    var cc0=Math.round((p.x-OX-(r%2?HW/2:0))/HW);
+    for(c=cc0-1;c<=cc0+1;c++){ if(c<0||c>=N)continue; var ce=cellCenter(r,c); var dx=p.x-ce.x, dy=p.y-ce.y; var d=dx*dx+dy*dy; if(d<bd){ bd=d; best={r:r,c:c}; } }
+  }
+  if(best && bd<=(HEX*HEX))return best; return null;
+}
+function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); var p=evPos(e);
+  if(inBtn(p,HB_MENU)){ sfx('ui'); running=false; show('s-title'); return; }
+  if(inBtn(p,HB_RETRY)){ sfx('ui'); startGame(G.mode); return; }
+  if(inBtn(p,HB_HELP)){ sfx('ui'); running=false; show('s-how'); return; }
+  if(G.phase!=='play')return;
+  var cell=cellAt(p); if(cell)plantAt(cell.r,cell.c);
+}
+cv.addEventListener('touchstart',onDown,{passive:false});
+cv.addEventListener('mousedown',onDown);
+window.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; if(e.key==='Escape'){ running=false; show('s-title'); } else if(e.key==='r'||e.key==='R'){ startGame(G.mode); } });
+
+/* ---------- share ---------- */
+function shareIt(){ var url='https://lucidwinds.com/satellites/mouse-trap/'; var txt='I trapped the garden mouse in '+(G?G.moves:0)+' hedges on Mouse Trap. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Mouse Trap',text:txt,url:url}).catch(function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
+
+/* ---------- wire ---------- */
+function playRequest(mode){ if(!LS.get('mt_seen_how')){ LS.set('mt_seen_how','1'); pendingMode=mode; show('s-how'); } else startGame(mode); }
+tap('b-play',function(){ sfx('ui'); playRequest('medium'); });
+tap('b-easy',function(){ sfx('ui'); playRequest('easy'); });
+tap('b-hard',function(){ sfx('ui'); playRequest('hard'); });
+tap('b-daily',function(){ sfx('ui'); playRequest('daily'); });
+tap('b-zen',function(){ sfx('ui'); playRequest('zen'); });
+tap('b-how',function(){ sfx('ui'); pendingMode=null; show('s-how'); });
+tap('b-set',function(){ sfx('ui'); show('s-set'); });
+tap('how-back',function(){ sfx('ui'); if(pendingMode){ var m=pendingMode; pendingMode=null; startGame(m); } else show('s-title'); });
+tap('set-back',function(){ sfx('ui'); show('s-title'); });
+tap('go-retry',function(){ sfx('ui'); startGame(G?G.mode:'medium'); });
+tap('go-home',function(){ sfx('ui'); show('s-title'); });
+tap('go-share',function(){ sfx('ui'); shareIt(); });
+function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
+wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-tele','tele');
+$('buildstamp').textContent='Mouse Trap '+BUILD+'  ·  wins '+(PROG.wins||0);
+window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
+
+/* ---------- snapshot ---------- */
+function snap(){ if(!G)return null; var filled=0,i; for(i=0;i<N*N;i++)if(G.grid[i]===HEDGE)filled++;
+  return { phase:G.phase, mode:G.mode, moves:G.moves, mouse:{r:G.mr,c:G.mc}, mouseDist:(G.mouseDist>=INF?-1:G.mouseDist),
+    onBorder:isBorder(G.mr,G.mc), hedges:filled, nextTarget:G.nextTarget, stars:G.stars, settled:G.settled }; }
+
+/* ---------- dev / self-test hook ---------- */
+if(TESTMODE){
+  /* silence result auto-switch delay so probes see phase immediately: none needed, phase set synchronously */
+  window.MT_DEV={
+    N:N,
+    start:function(mode,seed){ startGame(mode||'medium', seed); return snap(); },
+    state:function(){ return G; },
+    snap:snap,
+    tap:function(q,r){ /* q = column, r = row */ var ok=plantAt(r,q); return { ok:ok, snap:snap() }; },
+    step:function(){ stepMouse(); return snap(); },
+    freeze:function(b){ if(G)G.frozen=!!b; return !!(G&&G.frozen); },
+    dist:function(){ return G?computeDist():null; },
+    mousePos:function(){ return G?{r:G.mr,c:G.mc}:null; },
+
+    /* greedy solver: block the empty tile that most seals the mouse's reachable region.
+       key (minimised, lexicographic): fewer reachable EXITS, then smaller reachable AREA,
+       then push the mouse further from any edge, then hug the mouse. */
+    botMove:function(){ if(!G||G.phase!=='play')return G?G.phase:'none';
+      var bestCell=null, bK0=1e9,bK1=1e9,bK2=1e9,bK3=1e9, r,c;
+      for(r=0;r<N;r++)for(c=0;c<N;c++){ var i=idx(r,c); if(G.grid[i]===HEDGE)continue; if(r===G.mr&&c===G.mc)continue;
+        G.grid[i]=HEDGE;
+        var rs=reachStats(); var d=computeDist()[idx(G.mr,G.mc)];
+        G.grid[i]=EMPTY;
+        var k0=rs.exits, k1=rs.total, k2=(d>=INF?-999:-d), k3=hexDist(r,c,G.mr,G.mc);
+        if(k0<bK0 || (k0===bK0&&(k1<bK1 || (k1===bK1&&(k2<bK2 || (k2===bK2&&k3<bK3)))))){ bK0=k0;bK1=k1;bK2=k2;bK3=k3; bestCell={r:r,c:c}; } }
+      if(bestCell)plantAt(bestCell.r,bestCell.c);
+      return G.phase; },
+
+    /* play one full solver game on a specific board */
+    autoWinOnce:function(mode,seed,maxTurns){ startGame(mode||'easy', seed); maxTurns=maxTurns||500;
+      var k,last=-1; for(k=0;k<maxTurns && G.phase==='play';k++){ window.MT_DEV.botMove(); if(G.moves===last)break; last=G.moves; }
+      return { win:(G.phase==='win'), phase:G.phase, moves:G.moves, seed:seed, mouse:{r:G.mr,c:G.mc} }; },
+    /* auto-play a full WIN. With a seed = that exact board; without = search boards until the
+       solver genuinely traps the mouse (trap-the-cat is hard, so no single board always wins). */
+    autoWin:function(mode,seed,maxTurns){ mode=mode||'easy';
+      if(seed!=null) return window.MT_DEV.autoWinOnce(mode,seed,maxTurns);
+      var s,last=null; for(s=0;s<40;s++){ last=window.MT_DEV.autoWinOnce(mode,s,maxTurns); if(last.win)return last; }
+      return last; },
+
+    /* auto-play a guaranteed ESCAPE: waste every hedge in the far corner from the mouse */
+    autoEscape:function(mode,seed,maxTurns){ startGame(mode||'hard', seed!=null?seed:777); maxTurns=maxTurns||120;
+      var k; for(k=0;k<maxTurns && G.phase==='play';k++){
+        var bestCell=null, far=-1, r,c;
+        for(r=0;r<N;r++)for(c=0;c<N;c++){ var i=idx(r,c); if(G.grid[i]===HEDGE)continue; if(r===G.mr&&c===G.mc)continue;
+          var d=hexDist(r,c,G.mr,G.mc); if(d>far){ far=d; bestCell={r:r,c:c}; } }
+        if(!bestCell)break; plantAt(bestCell.r,bestCell.c);
+      }
+      return { lose:(G.phase==='lose'), phase:G.phase, moves:G.moves, mouse:{r:G.mr,c:G.mc} }; },
+
+    /* comprehensive self-check the coordinator can probe */
+    selfCheck:function(){ var res={ pass:true, checks:{} };
+      /* 1) pathfinding: on an empty board the mouse walks to the edge and escapes */
+      startGame('empty', 1);
+      var d0=computeDist()[idx(G.mr,G.mc)];
+      var steps=0, decreasing=true, prev=d0, escaped=false;
+      while(G.phase==='play' && steps<25){ var before=computeDist()[idx(G.mr,G.mc)];
+        stepMouse(); steps++;
+        if(G.phase==='lose'){ escaped=true; break; }
+        var after=computeDist()[idx(G.mr,G.mc)]; if(after>before)decreasing=false; }
+      res.checks.startDistToEdge=d0;
+      res.checks.pathSteppedToEdge=escaped;
+      res.checks.pathSteps=steps;
+      res.checks.distNeverIncreased=decreasing;
+      if(!escaped || steps>8 || !decreasing)res.pass=false;
+
+      /* 2) surrounding the mouse traps it -> win fires */
+      startGame('empty', 2); G.frozen=true;
+      var nb=neighbors(G.mr,G.mc), i;
+      for(i=0;i<nb.length;i++){ plantAt(nb[i].r,nb[i].c); }
+      res.checks.surroundNeighbors=nb.length;
+      res.checks.surroundWin=(G.phase==='win');
+      if(G.phase!=='win')res.pass=false;
+
+      /* 3) a full solver win (searches boards until the bot genuinely traps the mouse) */
+      var w=window.MT_DEV.autoWin('easy',null,500);
+      res.checks.autoWin=w.win; res.checks.autoWinMoves=w.moves; res.checks.autoWinSeed=w.seed;
+      if(!w.win)res.pass=false;
+
+      /* 4) a full forced escape */
+      var e=window.MT_DEV.autoEscape('hard',777,120);
+      res.checks.autoEscape=e.lose; res.checks.autoEscapeMoves=e.moves;
+      if(!e.lose)res.pass=false;
+
+      /* 5) mouse never steps onto a hedge (topology sanity over the escape run) */
+      startGame('medium', 42);
+      var legal=true, t; for(t=0;t<30 && G.phase==='play';t++){ var m0={r:G.mr,c:G.mc}; stepMouse();
+        if(G.grid[idx(G.mr,G.mc)]===HEDGE)legal=false;
+        var adj=false, j, nn=neighbors(m0.r,m0.c); for(j=0;j<nn.length;j++){ if(nn[j].r===G.mr&&nn[j].c===G.mc)adj=true; }
+        if(!(G.mr===m0.r&&G.mc===m0.c) && !adj)legal=false; }
+      res.checks.movesAreLegal=legal; if(!legal)res.pass=false;
+
+      return res; }
+  };
+}
+
+show('s-title');
+})();
+</script>
+</body>
+</html>

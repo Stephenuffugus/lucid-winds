@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='26' height='24' rx='4' fill='%230e140d'/%3E%3Crect x='6' y='7' width='4' height='4' rx='1' fill='%23c8a84b'/%3E%3Crect x='22' y='7' width='4' height='4' rx='1' fill='%23c8a84b'/%3E%3Crect x='6' y='21' width='4' height='4' rx='1' fill='%23c8a84b'/%3E%3Crect x='22' y='21' width='4' height='4' rx='1' fill='%23c8a84b'/%3E%3Crect x='12' y='11' width='8' height='10' rx='2' fill='%237ab356'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stop Motion">
+<title>Stop Motion by Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"stopmotion"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.92; max-width:440px; line-height:1.55}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.btn.dim{opacity:.38; pointer-events:none}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:440px; margin:0 auto}
+h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:14px 0; font-size:19px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+
+/* ---- range sliders (touch friendly) ---- */
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:8px;
+  background:#26301c; outline:none; border:1px solid var(--line); flex:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:32px; height:32px;
+  border-radius:50%; background:var(--sage); border:2px solid #b6e28a; cursor:pointer}
+input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; background:var(--sage); border:2px solid #b6e28a; cursor:pointer}
+
+/* ---- toggle ---- */
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+
+/* ---- studio ---- */
+#studio-top{flex:none; height:46px; display:flex; align-items:center; gap:8px; padding:0 8px; background:#0c110b; border-bottom:1px solid var(--line)}
+.top-btn{width:44px; height:38px; flex:none; border-radius:10px; border:1px solid var(--line); background:#121a0f; color:var(--cream); font-size:22px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center}
+#top-mid{flex:1; min-width:0; text-align:center; padding:0 4px}
+#frame-count{font-size:14px; font-weight:800; color:var(--gold); line-height:1.1}
+#tip-ticker{font-size:12px; color:var(--muted); line-height:1.25; height:30px; overflow:hidden; transition:opacity .2s; display:flex; align-items:center; justify-content:center}
+#stage-view{flex:none; position:relative; width:540px; height:470px; background:#05070a; overflow:hidden}
+#cam{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; display:block}
+#onion{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.5; pointer-events:none; display:none}
+#cam-msg{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:linear-gradient(180deg,#0e140d,#0b0f0b); color:var(--cream); font-size:17px; line-height:1.5; gap:10px}
+#cam-msg .cm-big{font-size:22px; font-weight:800; color:var(--sage)}
+#cam-msg .cm-hint{font-size:14px; color:var(--muted)}
+#thirds{position:absolute; inset:0; pointer-events:none; opacity:.35}
+#thirds .tl{position:absolute; background:rgba(232,220,200,.35)}
+#ctrl-row{flex:none; padding:10px 16px 4px; display:flex; flex-direction:column; gap:8px}
+.ctrl-line{display:flex; align-items:center; gap:12px}
+.ctrl-lab{font-size:14px; font-weight:700; color:var(--cream); width:80px; flex:none}
+.ctrl-val{font-size:13px; font-weight:800; color:var(--gold); width:56px; text-align:right; flex:none}
+#shutter-row{flex:none; padding:6px 16px}
+.shutter-btn{width:100%; min-height:80px; border-radius:18px; border:2px solid #b6e28a;
+  background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; font-size:22px; font-weight:800;
+  letter-spacing:.5px; box-shadow:0 4px 0 #2f5323,0 8px 20px #0006; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:12px}
+.shutter-btn:active{transform:translateY(2px); filter:brightness(1.1)}
+.shutter-dot{width:20px; height:20px; border-radius:50%; background:#2f5323; box-shadow:0 0 0 3px #b6e28a inset}
+#sel-bar{flex:none; padding:2px 16px 4px; display:none; gap:10px}
+#sel-bar .btn{min-height:46px; font-size:15px}
+#film-strip{flex:none; height:104px; display:flex; gap:8px; overflow-x:auto; overflow-y:hidden;
+  padding:8px 14px; align-items:center; -webkit-overflow-scrolling:touch; background:#080c07; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+#film-strip .empty{color:var(--muted); font-size:13px; padding:0 6px; white-space:nowrap}
+.filmcell{position:relative; flex:none; width:66px; height:84px; border-radius:8px; overflow:hidden;
+  border:2px solid var(--line); background:#000; cursor:pointer}
+.filmcell.sel{border-color:var(--gold); box-shadow:0 0 0 2px var(--gold)}
+.filmcell img{width:100%; height:100%; object-fit:cover; display:block}
+.filmcell .num{position:absolute; top:2px; left:4px; font-size:11px; font-weight:800; color:#fff; text-shadow:0 1px 2px #000}
+#action-row{flex:none; padding:8px 16px 12px; display:flex; gap:10px}
+#action-row .btn{min-height:52px; font-size:16px}
+
+/* ---- playback ---- */
+#pb-view{flex:1; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden}
+#pb-img{max-width:100%; max-height:100%; object-fit:contain; display:block}
+#pb-bar{flex:none; padding:14px 16px; display:flex; align-items:center; gap:12px; background:#0c110b; border-top:1px solid var(--line)}
+#pb-bar .btn{min-height:52px; flex:none; padding:0 16px; width:auto}
+
+/* ---- export ---- */
+#ex-preview{width:300px; max-width:88%; border-radius:12px; border:1px solid var(--line); background:#000; margin:12px auto}
+#ex-status{font-size:16px; color:var(--cream); line-height:1.5; max-width:420px; margin:8px auto}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Stop Motion</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Take a photo, move your object a tiny bit, take another. <b class="hl">Onion skin</b> shows a ghost of your last shot so you can line up the next one. Turn all your photos into a little <b class="hl">movie</b> you can play and share. Helpful tips show up as you go.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-open">Open Studio</button>
+      <button class="btn sm" id="b-how">How it works</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW / DIRECTIONS -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How it works</h2>
+    <div class="helprow"><div class="hi">1</div><div>Prop your phone so it stays <b class="hl">still</b>. Point the camera at your object.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Tap <b class="hl">Take Photo</b> to snap a frame. Move your object a tiny bit, then snap again.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>Turn on <b class="hl">Onion skin</b> to see a faded ghost of your last photo. Line up the next shot with it, then nudge your object.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Your frames fill the strip at the bottom. Tap a frame to <b>select</b>, then move it or delete it.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>Tap <b class="hl">Play</b> to watch your movie. Slide <b>Speed</b> to make it faster or slower.</div></div>
+    <div class="helprow"><div class="hi">6</div><div>Tap <b class="hl">Export</b> to build a video you can share or save. No camera? Tap <b>Import</b> to add photos from your phone.</div></div>
+    <div style="height:8px"></div>
+    <div style="font-size:15px; font-weight:800; color:var(--gold); margin:6px 0 4px">Tips for a great stop motion</div>
+    <div class="helprow"><div class="hi">+</div><div>Move your object in <b>small steps</b>. Small moves make smooth motion.</div></div>
+    <div class="helprow"><div class="hi">+</div><div>Keep the <b>light</b> steady so the film does not flicker.</div></div>
+    <div class="helprow"><div class="hi">+</div><div><b>More frames</b> means smoother film. Aim for at least 12.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- STUDIO -->
+  <div class="screen" id="s-studio">
+    <div id="studio-top">
+      <button class="top-btn" id="st-menu">&#8249;</button>
+      <div id="top-mid">
+        <div id="frame-count">0 frames</div>
+        <div id="tip-ticker"></div>
+      </div>
+      <button class="top-btn" id="st-help">?</button>
+    </div>
+    <div id="stage-view">
+      <video id="cam" autoplay muted playsinline></video>
+      <img id="onion" alt="">
+      <div id="thirds">
+        <div class="tl" style="left:33.3%; top:0; width:1px; height:100%"></div>
+        <div class="tl" style="left:66.6%; top:0; width:1px; height:100%"></div>
+        <div class="tl" style="top:33.3%; left:0; height:1px; width:100%"></div>
+        <div class="tl" style="top:66.6%; left:0; height:1px; width:100%"></div>
+      </div>
+      <div id="cam-msg"></div>
+      <canvas id="snap" width="540" height="470" style="display:none"></canvas>
+    </div>
+    <div id="ctrl-row">
+      <div class="ctrl-line">
+        <span class="ctrl-lab">Onion skin</span>
+        <div class="toggle on" id="tg-onion"><b></b></div>
+        <input type="range" id="sl-onion" min="10" max="90" value="50" aria-label="onion opacity">
+      </div>
+      <div class="ctrl-line">
+        <span class="ctrl-lab">Speed</span>
+        <input type="range" id="sl-fps" min="2" max="12" value="8" aria-label="frames per second">
+        <span class="ctrl-val" id="fps-val">8 fps</span>
+      </div>
+    </div>
+    <div id="shutter-row">
+      <button class="shutter-btn" id="shutter"><span class="shutter-dot"></span>Take Photo</button>
+    </div>
+    <div id="sel-bar">
+      <button class="btn sm" id="fb-left">&#9664; Move</button>
+      <button class="btn sm" id="fb-del">Delete</button>
+      <button class="btn sm" id="fb-right">Move &#9654;</button>
+    </div>
+    <div id="film-strip"></div>
+    <div id="action-row">
+      <button class="btn sm" id="a-play">&#9654; Play</button>
+      <button class="btn sm" id="a-import">Import</button>
+      <button class="btn primary sm" id="a-export">Export</button>
+      <input type="file" id="file-in" accept="image/*" multiple style="display:none">
+    </div>
+  </div>
+
+  <!-- PLAYBACK -->
+  <div class="screen" id="s-playback">
+    <div id="pb-view"><img id="pb-img" alt=""></div>
+    <div id="pb-bar">
+      <button class="btn sm" id="pb-toggle">Pause</button>
+      <input type="range" id="pb-fps" min="2" max="12" value="8" aria-label="playback fps">
+      <span class="ctrl-val" id="pb-fps-val">8 fps</span>
+      <button class="btn sm" id="pb-close">Done</button>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="screen center" id="s-export"><div class="pad center">
+    <div style="flex:1"></div>
+    <h2 class="sc-h" id="ex-title">Your movie</h2>
+    <div id="ex-status">Building your movie...</div>
+    <video id="ex-preview" playsinline controls loop style="display:none"></video>
+    <div id="ex-earn" class="sun-earn" style="display:none"></div>
+    <div style="flex:1"></div>
+    <div class="stack" id="ex-actions">
+      <button class="btn primary" id="ex-share">Share</button>
+      <div class="row">
+        <button class="btn sm" id="ex-download">Save file</button>
+        <button class="btn sm" id="ex-frames" style="display:none">Save frames</button>
+      </div>
+      <button class="btn ghost sm" id="ex-back">Back to studio</button>
+    </div>
+  </div></div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960;
+var BUILD='v1.0';
+var TESTMODE=/[?&]smtest=1/.test(location.search);
+
+/* frame output size (matches the 540x470 stage-view aspect for WYSIWYG capture) */
+var FW=540, FH=470;
+
+/* ---------- storage ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var PREF={ onionOn:true, onionOp:50, fps:8 };
+(function(){ try{ var s=JSON.parse(LS.get('sm_pref')||'{}'); if(typeof s.onionOn==='boolean')PREF.onionOn=s.onionOn; if(typeof s.onionOp==='number')PREF.onionOp=s.onionOp; if(typeof s.fps==='number')PREF.fps=s.fps; }catch(e){} })();
+function savePref(){ LS.set('sm_pref', JSON.stringify(PREF)); }
+
+/* ---------- sunbeam earn (30/day cap) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_stopmotion'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- fit ---------- */
+function fitCanvas(){ /* snap canvas is fixed pixel size FW x FH, no DPR scaling needed */ }
+fitCanvas();
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize',fit); fit();
+
+/* ---------- audio (light ui blips) ---------- */
+var AC=null;
+function ac(){ try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function blip(freq,dur,type,vol){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=(vol||0.1); o.connect(g); g.connect(c.destination); var t=c.currentTime; g.gain.setValueAtTime(vol||0.1,t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.1)); o.start(t); o.stop(t+(dur||0.1)); }catch(e){} }
+function sfx(kind){ if(kind==='snap'){ blip(880,0.05,'square',0.08); setTimeout(function(){blip(1320,0.05,'sine',0.06);},40); }
+  else if(kind==='ui')blip(440,0.05,'sine',0.06);
+  else if(kind==='done'){ blip(523,0.12,'triangle',0.12); setTimeout(function(){blip(784,0.18,'triangle',0.11);},110); }
+  else if(kind==='del')blip(200,0.08,'sawtooth',0.05); }
+function haptic(ms){ if(navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
+
+/* ---------- state ---------- */
+var frames=[];          /* [{full:dataURL, thumb:dataURL}] */
+var sel=-1;
+var onionOn=PREF.onionOn, onionOp=PREF.onionOp/100;
+var fps=PREF.fps;
+var camOK=false, camStarted=false, camStream=null;
+var pbTimer=null, pbIdx=0, pbPlaying=false, pbFullscreen=false;
+var tipTimer=null, tipIdx=-1;
+var curScreen='s-title';
+var lastBlob=null, lastBlobType='';
+
+var snap=$('snap');
+var thumbCv=document.createElement('canvas'); thumbCv.width=90; thumbCv.height=115;
+
+/* ---------- screens ---------- */
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; onShow(id); }
+function onShow(id){
+  if(id==='s-studio'){ startTips(); } else { stopTips(); }
+  if(id!=='s-playback'){ stopPlayback(); }
+}
+
+/* ---------- tips ---------- */
+var TIPS=[
+  'Move your object just a little between shots. Small moves make smooth motion.',
+  'Keep your phone steady. Prop it against something so it does not wobble.',
+  'More frames means smoother film. Aim for at least 12 frames.',
+  'Good, even light helps. Try not to let shadows move across your scene.',
+  'Turn on Onion skin to see where things were in your last photo.',
+  'Line up the ghost image, then nudge your object a tiny bit.',
+  'Keep your hands out of the frame when you take the shot.',
+  'A steady background makes the motion pop.',
+  'Try 8 to 12 frames per second for a lively look.',
+  'Take lots of photos. You can delete the ones you do not want.',
+  'Jumpy motion? Move your object in smaller steps.',
+  'Flicker between frames? Keep the light the same for every shot.',
+  'Blurry frame? Hold still and let the shot settle before you move on.'
+];
+var MILE={ 1:'First frame down. Now move your object a little and take the next.',
+  5:'Five frames. Tap Play to see your motion so far.',
+  10:'Ten frames. That is about one second of film.',
+  20:'Twenty frames. Looking smooth.',
+  30:'Thirty frames. You are making a real little movie.',
+  50:'Fifty frames. That is a serious scene.' };
+function setTicker(t){ var el=$('tip-ticker'); if(el){ el.textContent=t; el.style.opacity=1; } }
+function showTip(){ tipIdx=(tipIdx+1)%TIPS.length; var el=$('tip-ticker'); if(!el)return; el.style.opacity=0;
+  setTimeout(function(){ el.textContent='Tip: '+TIPS[tipIdx]; el.style.opacity=1; },200); }
+function startTips(){ stopTips(); if(!$('tip-ticker').textContent){ tipIdx=0; setTicker('Tip: '+TIPS[0]); } tipTimer=setInterval(showTip,5200); }
+function stopTips(){ if(tipTimer){ clearInterval(tipTimer); tipTimer=null; } }
+function resetTipTimer(){ if(tipTimer)clearInterval(tipTimer); tipTimer=setInterval(showTip,5200); }
+function encourage(n){ if(MILE[n]){ setTicker(MILE[n]); resetTipTimer(); } }
+
+/* ---------- camera ---------- */
+function openStudio(){ show('s-studio'); if(!camStarted){ camStarted=true; initCamera(); } paintControls(); updateStrip(); updateOnion(); updateCount(); updateSelBar(); }
+function initCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camFail('This device has no camera we can reach.'); return; }
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } }, audio:false })
+    .then(onStream)
+    .catch(function(){
+      /* retry with any camera before giving up */
+      navigator.mediaDevices.getUserMedia({ video:true, audio:false }).then(onStream).catch(function(err){
+        camFail(err && err.name==='NotAllowedError' ? 'Camera permission was blocked.' : 'No camera available.');
+      });
+    });
+}
+function onStream(stream){ camStream=stream; var v=$('cam'); try{ v.srcObject=stream; }catch(e){ try{ v.src=URL.createObjectURL(stream); }catch(_){} }
+  camOK=true; $('cam-msg').style.display='none'; var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
+function camFail(msg){ camOK=false; var m=$('cam-msg'); m.style.display='flex';
+  m.innerHTML='<div class="cm-big">Camera is off</div><div>'+msg+'</div><div class="cm-hint">You can still make a movie. Tap Import below to add photos from your phone.</div>'; }
+
+/* ---------- capture ---------- */
+function coverDraw(g, src, sw, sh){ if(!sw||!sh)return false;
+  var s=Math.max(FW/sw, FH/sh); var dw=sw*s, dh=sh*s;
+  g.fillStyle='#000'; g.fillRect(0,0,FW,FH);
+  g.drawImage(src, (FW-dw)/2, (FH-dh)/2, dw, dh); return true; }
+function pushFromSnap(){
+  var full=snap.toDataURL('image/jpeg',0.82);
+  var tg=thumbCv.getContext('2d'); tg.drawImage(snap,0,0,thumbCv.width,thumbCv.height);
+  var thumb=thumbCv.toDataURL('image/jpeg',0.7);
+  frames.push({ full:full, thumb:thumb });
+  onAdded();
+}
+function onAdded(){ sel=frames.length-1; updateStrip(true); updateOnion(); updateCount(); updateSelBar();
+  sfx('snap'); haptic(12); encourage(frames.length); }
+function capture(){
+  if(camOK){ var v=$('cam'); if(v.videoWidth){ var g=snap.getContext('2d'); if(coverDraw(g,v,v.videoWidth,v.videoHeight)){ pushFromSnap(); return true; } } }
+  /* no camera: guide the user to import */
+  setTicker('No camera photo yet. Tap Import to add photos, or allow the camera.'); resetTipTimer();
+  return false;
+}
+function addImageFile(file){ if(!file)return; var url=URL.createObjectURL(file); var im=new Image();
+  im.onload=function(){ var g=snap.getContext('2d'); coverDraw(g,im,im.naturalWidth||im.width,im.naturalHeight||im.height); pushFromSnap(); try{URL.revokeObjectURL(url);}catch(e){} };
+  im.onerror=function(){ try{URL.revokeObjectURL(url);}catch(e){} };
+  im.src=url; }
+
+/* ---------- filmstrip + selection ---------- */
+function updateCount(){ var n=frames.length; $('frame-count').textContent=n+' frame'+(n===1?'':'s');
+  var has=n>0; toggleDim('a-play',!has); toggleDim('a-export',!has); }
+function toggleDim(id,dim){ var el=$(id); if(!el)return; if(dim)el.classList.add('dim'); else el.classList.remove('dim'); }
+function updateStrip(scrollEnd){ var host=$('film-strip'); host.innerHTML='';
+  if(!frames.length){ var e=document.createElement('div'); e.className='empty'; e.textContent='No frames yet. Tap Take Photo to start.'; host.appendChild(e); return; }
+  for(var i=0;i<frames.length;i++){ (function(i){
+    var cell=document.createElement('div'); cell.className='filmcell'+(sel===i?' sel':'');
+    var img=document.createElement('img'); img.src=frames[i].thumb; cell.appendChild(img);
+    var num=document.createElement('div'); num.className='num'; num.textContent=(i+1); cell.appendChild(num);
+    cell.addEventListener('click',function(){ sel=(sel===i?-1:i); updateStrip(); updateSelBar(); sfx('ui'); });
+    host.appendChild(cell);
+  })(i); }
+  if(scrollEnd){ host.scrollLeft=host.scrollWidth; }
+  else if(sel>=0){ var target=sel*74; if(target<host.scrollLeft||target>host.scrollLeft+host.clientWidth-74) host.scrollLeft=Math.max(0,target-host.clientWidth/2); }
+}
+function updateSelBar(){ var bar=$('sel-bar'); if(sel<0||!frames.length){ bar.style.display='none'; return; }
+  bar.style.display='flex'; toggleDim('fb-left',sel<=0); toggleDim('fb-right',sel>=frames.length-1); }
+function deleteFrame(){ if(sel<0||sel>=frames.length)return; frames.splice(sel,1);
+  if(frames.length===0)sel=-1; else if(sel>=frames.length)sel=frames.length-1;
+  updateStrip(); updateOnion(); updateCount(); updateSelBar(); sfx('del'); }
+function moveFrame(dir){ var j=sel+dir; if(sel<0||j<0||j>=frames.length)return;
+  var tmp=frames[sel]; frames[sel]=frames[j]; frames[j]=tmp; sel=j; updateStrip(); updateOnion(); updateSelBar(); sfx('ui'); }
+
+/* ---------- onion skin ---------- */
+function updateOnion(){ var o=$('onion'); if(onionOn && frames.length){ o.src=frames[frames.length-1].full; o.style.opacity=onionOp; o.style.display='block'; } else { o.style.display='none'; } }
+function paintControls(){ var t=$('tg-onion'); if(onionOn)t.classList.add('on'); else t.classList.remove('on');
+  $('sl-onion').value=Math.round(onionOp*100); $('sl-fps').value=fps; $('fps-val').textContent=fps+' fps';
+  $('pb-fps').value=fps; $('pb-fps-val').textContent=fps+' fps'; }
+
+/* ---------- playback ---------- */
+function startPlayback(fullscreen){ if(!frames.length)return false; pbFullscreen=!!fullscreen;
+  if(fullscreen){ show('s-playback'); $('pb-toggle').textContent='Pause'; }
+  pbIdx=0; pbPlaying=true; runPb(); return true; }
+function runPb(){ clearTimeout(pbTimer); if(!pbPlaying||!frames.length)return;
+  var target=$( pbFullscreen?'pb-img':'pb-img'); target.src=frames[pbIdx%frames.length].full;
+  pbIdx=(pbIdx+1)%frames.length; pbTimer=setTimeout(runPb, Math.round(1000/fps)); }
+function stopPlayback(){ pbPlaying=false; clearTimeout(pbTimer); pbTimer=null; }
+function togglePlayback(){ if(pbPlaying){ stopPlayback(); $('pb-toggle').textContent='Play'; } else { pbPlaying=true; runPb(); $('pb-toggle').textContent='Pause'; } }
+
+/* ---------- export ---------- */
+function supportedMime(){ var opts=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  if(window.MediaRecorder && MediaRecorder.isTypeSupported){ for(var i=0;i<opts.length;i++){ if(MediaRecorder.isTypeSupported(opts[i]))return opts[i]; } }
+  return ''; }
+function canExport(){ var c=document.createElement('canvas'); return !!(window.MediaRecorder && c.captureStream && supportedMime()); }
+function exportMovie(){
+  show('s-export'); lastBlob=null; lastBlobType='';
+  $('ex-title').textContent='Your movie'; $('ex-earn').style.display='none';
+  var pv=$('ex-preview'); pv.style.display='none'; pv.removeAttribute('src');
+  $('ex-share').style.display=''; $('ex-download').style.display=''; $('ex-frames').style.display='none';
+  if(!frames.length){ $('ex-status').textContent='Take some photos first, then come back to export.'; $('ex-actions').querySelector('.row').style.display='none'; return; }
+  $('ex-actions').querySelector('.row').style.display='flex';
+  if(!canExport()){ exportFallback(); return; }
+  $('ex-status').textContent='Building your movie...';
+  var mime=supportedMime();
+  var c=document.createElement('canvas'); c.width=FW; c.height=FH; var g=c.getContext('2d');
+  var imgs=[]; var loaded=0, total=frames.length;
+  for(var i=0;i<total;i++){ (function(i){ var im=new Image();
+    im.onload=function(){ imgs[i]=im; if(++loaded===total)record(); };
+    im.onerror=function(){ imgs[i]=null; if(++loaded===total)record(); };
+    im.src=frames[i].full; })(i); }
+  function record(){
+    var stream, rec; try{ stream=c.captureStream(); rec=new MediaRecorder(stream,{mimeType:mime}); }
+    catch(e){ exportFallback(); return; }
+    var chunks=[];
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size)chunks.push(e.data); };
+    rec.onstop=function(){ try{ var tks=stream.getTracks(); for(var k=0;k<tks.length;k++)tks[k].stop(); }catch(_){}
+      var blob=new Blob(chunks,{type:mime}); lastBlob=blob; lastBlobType=blob.type||mime;
+      var url=URL.createObjectURL(blob); showExportResult(url); grantExport(); };
+    try{ rec.start(); }catch(e){ exportFallback(); return; }
+    var per=Math.round(1000/fps), idx=0;
+    // draw one black frame first so recorder has content
+    g.fillStyle='#000'; g.fillRect(0,0,FW,FH);
+    function stepDraw(){ if(idx>=imgs.length){ setTimeout(function(){ try{ rec.stop(); }catch(_){} }, per+120); return; }
+      if(imgs[idx]){ g.fillStyle='#000'; g.fillRect(0,0,FW,FH); g.drawImage(imgs[idx],0,0,FW,FH); }
+      idx++; setTimeout(stepDraw, per); }
+    stepDraw();
+  }
+}
+function showExportResult(url){ $('ex-status').textContent='Your movie is ready. Watch it below, then share or save.';
+  var pv=$('ex-preview'); pv.src=url; pv.style.display='block'; var p=pv.play&&pv.play(); if(p&&p.catch)p.catch(function(){});
+  sfx('done'); }
+function exportFallback(){ $('ex-title').textContent='Save your frames';
+  $('ex-status').textContent='This device cannot build a video file here. You can still watch your movie with Play, or save each frame as a photo to build the video on a computer.';
+  $('ex-share').style.display='none'; $('ex-download').style.display='none'; $('ex-frames').style.display=''; grantExport(); }
+function grantExport(){ var g=0; try{ if(window._sbCapEarn)g=window._sbCapEarn(3,'stopmotion:export')||0; }catch(e){}
+  if(g>0){ $('ex-earn').textContent='☀ +'+g+' sunbeams'; $('ex-earn').style.display='block'; } }
+function downloadBlob(){ if(!lastBlob)return; var a=document.createElement('a'); a.href=URL.createObjectURL(lastBlob); a.download='stop-motion.webm';
+  document.body.appendChild(a); a.click(); setTimeout(function(){ try{document.body.removeChild(a);}catch(e){} },200); }
+function shareBlob(){ if(!lastBlob){ return; }
+  try{ if(navigator.share && navigator.canShare){ var file=new File([lastBlob],'stop-motion.webm',{type:lastBlob.type||'video/webm'});
+    if(navigator.canShare({files:[file]})){ navigator.share({ files:[file], title:'My stop motion movie' }).catch(function(){}); return; } } }catch(e){}
+  downloadBlob(); }
+function saveFrames(){ var i=0; function next(){ if(i>=frames.length)return; var a=document.createElement('a'); a.href=frames[i].full;
+  a.download='frame-'+(i+1<10?'0':'')+(i+1)+'.jpg'; document.body.appendChild(a); a.click(); try{document.body.removeChild(a);}catch(e){} i++; setTimeout(next,180); } next(); }
+
+/* ---------- wire: title / how ---------- */
+tap('b-open',function(){ sfx('ui'); openStudio(); });
+tap('b-how',function(){ sfx('ui'); howReturn='s-title'; show('s-how'); });
+var howReturn='s-title';
+tap('how-back',function(){ sfx('ui'); LS.set('sm_seen_how','1'); show(howReturn); });
+
+/* ---------- wire: studio ---------- */
+tap('st-menu',function(){ sfx('ui'); show('s-title'); });
+tap('st-help',function(){ sfx('ui'); howReturn='s-studio'; show('s-how'); });
+tap('shutter',function(){ ac(); capture(); });
+$('tg-onion').addEventListener('click',function(e){ e.preventDefault(); onionOn=!onionOn; PREF.onionOn=onionOn; savePref(); paintControls(); updateOnion(); sfx('ui'); });
+$('sl-onion').addEventListener('input',function(){ onionOp=(parseInt(this.value,10)||50)/100; PREF.onionOp=Math.round(onionOp*100); savePref(); updateOnion(); });
+$('sl-fps').addEventListener('input',function(){ fps=parseInt(this.value,10)||8; PREF.fps=fps; savePref(); $('fps-val').textContent=fps+' fps'; $('pb-fps').value=fps; $('pb-fps-val').textContent=fps+' fps'; });
+tap('fb-left',function(){ moveFrame(-1); });
+tap('fb-right',function(){ moveFrame(1); });
+tap('fb-del',function(){ deleteFrame(); });
+tap('a-play',function(){ sfx('ui'); startPlayback(true); });
+tap('a-export',function(){ sfx('ui'); exportMovie(); });
+tap('a-import',function(){ sfx('ui'); $('file-in').click(); });
+$('file-in').addEventListener('change',function(){ var fl=this.files; if(fl&&fl.length){ for(var i=0;i<fl.length;i++)addImageFile(fl[i]); } this.value=''; });
+
+/* ---------- wire: playback ---------- */
+tap('pb-toggle',function(){ sfx('ui'); togglePlayback(); });
+tap('pb-close',function(){ sfx('ui'); stopPlayback(); show('s-studio'); });
+$('pb-fps').addEventListener('input',function(){ fps=parseInt(this.value,10)||8; PREF.fps=fps; savePref(); $('pb-fps-val').textContent=fps+' fps'; $('sl-fps').value=fps; $('fps-val').textContent=fps+' fps'; });
+
+/* ---------- wire: export ---------- */
+tap('ex-share',function(){ sfx('ui'); shareBlob(); });
+tap('ex-download',function(){ sfx('ui'); downloadBlob(); });
+tap('ex-frames',function(){ sfx('ui'); saveFrames(); });
+tap('ex-back',function(){ sfx('ui'); show('s-studio'); });
+
+$('buildstamp').textContent='Stop Motion '+BUILD;
+window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
+paintControls();
+
+/* ---------- DEV hook (?smtest=1) ---------- */
+if(TESTMODE){
+  window.SM_DEV={
+    enterStudio:function(){ openStudio(); return true; },
+    /* draw a synthetic frame with a bright object that moves each shot,
+       so onion skin and playback are clearly visible without a real camera */
+    captureSyntheticFrame:function(){
+      var g=snap.getContext('2d'); var n=frames.length;
+      var hue=(n*47)%360;
+      g.fillStyle='hsl('+hue+',55%,22%)'; g.fillRect(0,0,FW,FH);
+      /* ground line */
+      g.strokeStyle='rgba(232,220,200,0.25)'; g.lineWidth=2; g.beginPath(); g.moveTo(0,FH-60); g.lineTo(FW,FH-60); g.stroke();
+      /* moving ball */
+      var x=40+((n*60)%(FW-80)); var y=FH-80 - Math.abs(Math.sin(n*0.6))*160;
+      g.fillStyle='#'+['e58fa0','c8a84b','7ab356','5b9bd5','b57de0'][n%5];
+      g.beginPath(); g.arc(x,y,42,0,6.2832); g.fill();
+      g.fillStyle='#0c1608'; g.font='800 40px system-ui'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(''+(n+1), x, y);
+      g.fillStyle='rgba(232,220,200,0.85)'; g.font='700 22px system-ui'; g.textAlign='left'; g.textBaseline='alphabetic';
+      g.fillText('frame '+(n+1), 16, 34);
+      pushFromSnap();
+      return frames.length;
+    },
+    frameCount:function(){ return frames.length; },
+    setOnion:function(v){ v=+v; if(v<=0){ onionOn=false; } else { onionOn=true; onionOp=Math.min(1,v); } paintControls(); updateOnion(); return { on:onionOn, op:onionOp }; },
+    setFps:function(v){ fps=Math.max(2,Math.min(12,parseInt(v,10)||8)); paintControls(); return fps; },
+    play:function(){ return startPlayback(true); },
+    stop:function(){ stopPlayback(); return true; },
+    del:function(){ deleteFrame(); return frames.length; },
+    exportBlobType:function(){ return supportedMime()||'fallback'; },
+    canExport:function(){ return canExport(); },
+    state:function(){ return { frames:frames.length, sel:sel, onionOn:onionOn, onionOp:onionOp, fps:fps, camOK:camOK, screen:curScreen, playing:pbPlaying }; }
+  };
+}
+
+/* ---------- boot: directions auto-show first time ---------- */
+if(!LS.get('sm_seen_how')){ howReturn='s-title'; show('s-how'); }
+else { show('s-title'); }
+})();
+</script>
+</body>
+</html>
