@@ -164,6 +164,32 @@ function sfx(k,n){ switch(k){
   case 'ui': beep(440,0.05,'sine',0.05); break;
 } }
 function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(ms||8); }catch(e){} }
+
+/* ---------- ART LAYER: drop-in image swap (INERT until the claymation PNGs land) ----------
+   Cut sprites go in satellites/greenhouse-pinball/art/ (see art/README.md). Every draw
+   site does: PIN_ART.img(key) ? blit image : procedural fallback. While PIN_ART.enabled
+   is false NOTHING loads and every site draws procedurally exactly as before (zero 404s,
+   identical look). When Stephen's art drops: flip enabled=true, drop the PNGs named by the
+   manifest keys, bump VER to cache-bust, and extend the manifest + blit sites per the pack
+   wire-notes (art-asset-lists/pinball-claymation/00-art-direction.md). */
+var PIN_ART=(function(){
+  var DIR='art/', VER='1', cache={}, tried={};
+  var api={ enabled:false, DIR:DIR, VER:VER };
+  function load(key){ if(tried[key])return; tried[key]=1; var im=new Image();
+    im._ok=0; im.onload=function(){ im._ok=(im.naturalWidth>0)?1:0; }; im.onerror=function(){ im._ok=0; };
+    im.src=DIR+key+'.png?v='+api.VER; cache[key]=im; }
+  // manifest = every swappable key (matches the claymation pack asset keys). Grows at cut time.
+  var MAN=['table_night_shift','table_day_shift','table_toxic_spill','table_power_out','eyeball_core','eyeball_lit'];
+  api.load=load;
+  api.preload=function(){ if(!api.enabled)return; for(var i=0;i<MAN.length;i++)load(MAN[i]); };
+  api.ready=function(key){ if(!api.enabled)return false; var im=cache[key]; return !!(im&&im._ok&&im.complete&&im.naturalWidth>0); };
+  api.img=function(key){ return api.ready(key)?cache[key]:null; };
+  // sprite-strip frame index for sheet-10 animations: loops on t (sec); one-shots pass elapsed t.
+  api.frame=function(frames,fps,t){ var f=Math.floor((t*fps)%frames); return f<0?0:f; };
+  api.MAN=MAN;
+  return api;
+})();
+PIN_ART.preload();
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== table geometry ===== */
@@ -723,9 +749,13 @@ function render(){ if(!ctx||!G)return;
   ctx.save();
   var jx=(G.jolt||0)*(G.joltDir||0), jy=-(G.jolt||0)*0.3;
   if(SET.shake && (G.shake>0.4||G.jolt>0)){ ctx.translate((Math.random()*2-1)*G.shake+jx,(Math.random()*2-1)*G.shake+jy); }
-  // playfield backdrop
-  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0b100a'); bg.addColorStop(1,'#080b06'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  var lamp=ctx.createRadialGradient(VW/2,260,20,VW/2,260,460); lamp.addColorStop(0,'rgba(200,168,75,0.13)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH);
+  // playfield backdrop — art swap (claymation lab-shift) then procedural fallback
+  var _tImg=PIN_ART.img(['table_night_shift','table_day_shift','table_toxic_spill','table_power_out'][(G.season||0)%4]);
+  if(_tImg){ ctx.drawImage(_tImg,0,0,VW,VH); }
+  else {
+    var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0b100a'); bg.addColorStop(1,'#080b06'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+    var lamp=ctx.createRadialGradient(VW/2,260,20,VW/2,260,460); lamp.addColorStop(0,'rgba(200,168,75,0.13)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH);
+  }
   // walls
   ctx.strokeStyle='#3f6b34'; ctx.lineWidth=5; ctx.lineCap='round';
   for(var w=0;w<WALLS.length;w++){ var s=WALLS[w]; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); }
@@ -775,7 +805,9 @@ function render(){ if(!ctx||!G)return;
     if(b.trail)for(var tI=0;tI<b.trail.length;tI++){ var tp=b.trail[tI]; ctx.globalAlpha=(tI/b.trail.length)*0.4; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(tp.x,tp.y,b.r*0.7,0,7); ctx.fill(); } ctx.globalAlpha=1;
     var br=b.onRail?b.r*1.2:b.r;
     if(b.onRail){ ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.arc(b.x+5,b.y+9,br,0,7); ctx.fill(); }  // fake height shadow on a ramp
-    var bg2=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,br); bg2.addColorStop(0,'#fff6d8'); bg2.addColorStop(0.6,'#e8c65a'); bg2.addColorStop(1,'#a5872f'); ctx.fillStyle=bg2; ctx.beginPath(); ctx.arc(b.x,b.y,br,0,7); ctx.fill(); }
+    var _bImg=PIN_ART.img(G.multiball?'eyeball_lit':'eyeball_core');
+    if(_bImg){ ctx.drawImage(_bImg, b.x-br, b.y-br, br*2, br*2); }
+    else { var bg2=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,br); bg2.addColorStop(0,'#fff6d8'); bg2.addColorStop(0.6,'#e8c65a'); bg2.addColorStop(1,'#a5872f'); ctx.fillStyle=bg2; ctx.beginPath(); ctx.arc(b.x,b.y,br,0,7); ctx.fill(); } }
   // particles
   for(i=0;i<G.parts.length;i++){ var p=G.parts[i]; ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,2.8,0,7); ctx.fill(); } ctx.globalAlpha=1;
   // floats
