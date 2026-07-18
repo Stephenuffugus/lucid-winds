@@ -37,6 +37,7 @@
 
 | What | Status | Notes |
 |---|---|---|
+| **Pinball Claymation (Blobworks)** — reskin+rebrand of Greenhouse Pinball | **LISTED Jul 18** (Drive doc uploaded to 012Assets) | 11 prompt sheets in `art-asset-lists/pinball-claymation/`. Stephen ruling: leave botanical behind → goofy **Monster-Lab claymation** (plasticine/Aardman). New name TBD (rec **Blobworks**; alts Squish!/Gloop/Monster Mash). Engine UNCHANGED (still `satellites/greenhouse-pinball`); art is a drop-in swap + a dedicated **sprite-strip animation sheet** (sheet 10: mascot Blip, eyeball blink, bumper chomp, scoop gulp, MEGA MASH, TILT). Supersedes the old botanical GH-Pinball pack (that Drive doc left in place for Stephen to erase). Copy re-theme in wire pass: BLOOM→SLIME standups, SUN→ZAP rollovers, Pollen MB→GOO MB, FULL BLOOM→MEGA MASH. |
 | ~2 packs Stephen has generated, not yet delivered | AWAITING DROP | Per Jul 13 session. Identity unknown until they land — when they do, log here FIRST, then cut+wire. |
 | Dewball — Paper Lantern Parade | LISTED (21 prompt sheets ready, c155f924) | **No sheets generated yet.** `satellites/dewball/art-drop/` contains only the README landing-spot. Biggest open art target in the studio. |
 | Generate-order queue (13 games) | LISTED | See README "Generate order" table: Glyph Forge, Picnic Panic, Sproing(v2), Budburst, Pollen Panic, Tarot Run, Tomato Man, Grubtrap, Hedgerow, Hunch, Petalvex(v2), Rootbound, BarBrawl. |

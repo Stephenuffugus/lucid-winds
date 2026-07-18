@@ -11,7 +11,8 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Stream Hop](stream-hop/00-art-direction.md)** — *Lantern Ink* look · 7 sheets (💰 hopper-skins + trail/lane cosmetics). Lean on the 85 companions as hoppers.
 - **[Petal Slice](petal-slice/00-art-direction.md)** — 5 sheets (💰 blade skins + potting-bench backdrops + pod skin sets).
 - **[Seed Pot](seed-pot/00-art-direction.md)** — *Midnight Greenhouse* look · 7 sheets (💰 pot skins + seasonal bench backdrops + tier reskins). Companion Bloom uses the 85 companions.
-- **[Greenhouse Pinball](greenhouse-pinball/00-art-direction.md)** — *Moonlit Workbench* look · 4-season table backdrops + ball/flippers/bumpers + FX + 💰 table/flipper/ball skins & companion-host cameos.
+- **[Greenhouse Pinball](greenhouse-pinball/00-art-direction.md)** — *Moonlit Workbench* look · 4-season table backdrops + ball/flippers/bumpers + FX + 💰 table/flipper/ball skins & companion-host cameos. **⚠️ SUPERSEDED by the claymation rebrand below** (Stephen dropped the botanical theme).
+- **[Pinball Claymation → *Blobworks*](pinball-claymation/00-art-direction.md)** — the Greenhouse Pinball engine REBRANDED as a goofy **Monster-Lab claymation** table (plasticine/Aardman) · 11 sheets incl. a dedicated **sprite-strip animation sheet** (mascot Blip, eyeball blink, bumper chomp, scoop gulp, MEGA MASH) + 💰 skins/monster-buddy cameos. Engine unchanged (`satellites/greenhouse-pinball`); art is a drop-in swap. Name TBD (rec Blobworks).
 - **[Dew Snip](dew-snip/00-art-direction.md)** — *Paper Nocturne* look (layered papercut) · 5 sheets (sprites + 💰 keepsake-blooms/dew/vine/bellows skins + backgrounds + UI + FX). Built on `add-sproing-jumper` (not yet main); Nectar Lineage grows keepsake Grove blooms.
 
 ### Jul 10 classics wave (all built + verified on `add-sproing-jumper`, render procedurally; every pack has a 💰 cosmetics/economy sheet)
