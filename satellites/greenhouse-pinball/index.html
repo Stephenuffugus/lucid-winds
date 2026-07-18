@@ -153,7 +153,7 @@ function saveProg(){ LS.set('gp_prog', JSON.stringify(PROG)); }
 var AC=null; function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
 function beep(f,d,t,v,to){ if(!SET.sound)return; var c=ac(); if(!c)return; try{ var o=c.createOscillator(),g=c.createGain(); o.type=t||'sine'; o.frequency.value=f; if(to)o.frequency.exponentialRampToValueAtTime(to,c.currentTime+d); g.gain.value=v||0.05; g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+d); }catch(e){} }
 function sfx(k,n){ switch(k){
-  case 'bump': beep(180+(n||0)*30,0.09,'triangle',0.06,120); break;
+  case 'bump': var _pent=[0,2,4,7,9], _ci=n||0, _semi=_pent[_ci%5]+Math.floor(_ci/5)*12; var _bf=196*Math.pow(2,Math.min(_semi,24)/12); beep(_bf,0.09,'triangle',0.06,_bf*0.72); break;
   case 'flip': beep(320,0.05,'square',0.03,180); break;
   case 'sling': beep(420,0.06,'sawtooth',0.05,260); break;
   case 'launch': beep(200,0.2,'sawtooth',0.06,800); break;
@@ -295,7 +295,7 @@ function newGame(mode){
       lastRail:null, lastRailT:0, rush:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
-      netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
+      netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], scoreShown:0, callout:null, t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
   serveBall(); show('s-play');
 }
 function sway(){ return 0; }
@@ -449,7 +449,7 @@ function onBump(idx,kind){ var arr=kind==='bump'?BUMPERS:SLINGS, o=arr[idx]; o.l
 // FRENZY: every switch pays +2000 flat, refilling the ribbon extends it. Real
 // multiball now lives in the Pollen lock flow (this kills the old unbounded
 // ball-stack for good).
-function triggerBloom(){ G.growth=0; G.blooms++; G.rush=20;
+function triggerBloom(){ G.growth=0; G.blooms++; G.rush=20; callout('BLOOM RUSH','#a7d17a',true);
   G.score+=3000; G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,10); G.slow=0.3;
   float(VW/2,300,'🌸 BLOOM RUSH!'); float(VW/2,330,'every switch +2000');
   for(var k=0;k<24;k++){ var a=Math.PI*2*k/24; G.parts.push({x:VW/2,y:300,vx:Math.cos(a)*(120+Math.random()*180),vy:Math.sin(a)*(120+Math.random()*180),life:1.3,col:k%2?'#e58fa0':'#f2d98a'}); }
@@ -501,14 +501,14 @@ function onStandup(sh){ if(sh.cd>0)return; sh.cd=0.3; sh.lamp=2; rushHit();
   G.word|=(1<<sh.letter); comboHit(sh.x,sh.y); questShot(sh.id);
   burst(sh.x,sh.y,4,'#e58fa0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('bump',G.combo); haptic(5);
   if(G.word===0x1F){ G.score+=5000; G.lockLit=true; G.word=0;
-    float(265,224,'B·L·O·O·M!'); float(265,250,'+5000 · LOCK LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20);
+    float(265,224,'B·L·O·O·M!'); float(265,250,'+5000 · LOCK LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20); callout('BALL LOCK LIT','#e58fa0',false);
     for(var i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='standup')SHOTS[i].lamp=1; } }
 function onDrop(sh){ if(sh.down||sh.cd>0)return; sh.cd=0.2; sh.down=true; sh.lamp=0; rushHit();
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=500;
   comboHit(sh.x,sh.y); questShot(sh.id); burst(sh.x,sh.y,3,'#b57de0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('sling'); haptic(4);
   var allDown=true, i; for(i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='drop' && !SHOTS[i].down)allDown=false; }
   if(allDown){ G.score+=10000; G.scoopLit=true; G.dropResetT=0.5;
-    float(165,548,'THISTLE BANK!'); float(165,574,'+10000 · SCOOP LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20); } }
+    float(165,548,'THISTLE BANK!'); float(165,574,'+10000 · SCOOP LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20); callout('THISTLE BANK','#b57de0',false); } }
 function onScoop(b,sh){ b.captured=true; b.vx=0; b.vy=0; b.x=sh.x; b.y=sh.y;
   // Dribble-back guard (Stephen 7/17: the hole held the ball and paid points
   // forever). A ball that falls straight back in after an eject gets a quick,
@@ -596,12 +596,12 @@ function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
 function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
-  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30);
+  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true);
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
 function startPollenMB(){
-  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++;
+  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true);
   G.mbLevel=Math.min(2,1+(G.mbCount-1)*0.5);        // scales across the game, capped so the wizard stays king
   G.jpLadder=1; G.jpCount=0; G.superLit=false; G.superCount=0; G.mbAdded=false;
   G.mbSave=Math.max(5,10-3*(G.mbCount-1));          // 10s -> 7s -> 5s
@@ -614,7 +614,7 @@ function startPollenMB(){
 function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.scoopLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
   float(265,300,'MULTIBALL OVER'); sfx('drain'); }
 function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
-function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12);
+function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true);
   G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
   G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
   G.wizSave=12; float(265,300,'🌸 FULL BLOOM! 🌸'); float(265,334,'every shot = 1,000,000'); sfx('bloom'); haptic(40); }
@@ -625,6 +625,9 @@ function endWizard(){ G.wizard=false; G.mbTime=5; var bonus=3000000; G.score+=bo
 
 function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.random()*6.28, sp=50+Math.random()*150; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:0.9,col:col}); } }
 function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
+// P2: DMD-style callout — a transient punch-in announcement on a major event.
+function callout(txt,col,big){ if(!G)return; var t=big?1.9:1.35; G.callout={txt:txt,col:col||'#f2d98a',big:!!big,t:t,t0:t}; if(big)G.shake=Math.max(G.shake,6); }
+function rrect(x,y,w,h,r){ if(w<2*r)r=w/2; if(h<2*r)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 /* ===== update ===== */
 function step(dt){ if(!G)return; G.t+=dt;
@@ -650,7 +653,7 @@ function step(dt){ if(!G)return; G.t+=dt;
     else if(G.scoopMode==='super'){ var sj=Math.round(1000000*G.mbLevel); G.score+=sj; G.superLit=false; G.scoopLit=false;
       G.superCount=(G.superCount||0)+1; G.jpCount=0;
       var jpGrew=G.jpLadder<2; G.jpLadder=Math.min(2,G.jpLadder*2);   // one doubling, two supers max — the wizard stays king
-      float(265,300,'SUPER JACKPOT +'+sj); if(jpGrew)float(265,334,'jackpots doubled'); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,12); haptic(40); }
+      float(265,300,'SUPER JACKPOT +'+sj); if(jpGrew)float(265,334,'jackpots doubled'); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,12); haptic(40); callout('SUPER JACKPOT','#f2d98a',true); }
     else if(G.scoopMode==='quest'){ var qi=-1,qq; for(qq=0;qq<QUESTS.length;qq++){ if(!G.questsDone[qq]){ qi=qq; break; } } if(qi>=0)startQuest(qi); else { G.score+=15000; float(sb.x,sb.y-24,'+15000'); } }
     else { G.score+=G.scoopAward; float(sb.x,sb.y-24,'+'+G.scoopAward); } } }
   // rail (ramp/orbit) advance — tween the detached bead along its path, then inject at
@@ -676,7 +679,7 @@ function step(dt){ if(!G)return; G.t+=dt;
     if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*scoreMul()); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
       if(G.pollenMB && !G.mbAdded && G.spin.done>=8 && G.balls.length<5){ G.mbAdded=true;
         G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+14,vx:-80,vy:140,r:BALLR,inLane:false,trail:[]});
-        float(265,300,'ADD A BALL!'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(25); }
+        float(265,300,'ADD A BALL!'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(25); callout('ADD A BALL','#7ab356',false); }
       if(G.spin.done>=G.spin.n){ float(G.spin.x,G.spin.y-22,'SPIN +'+(G.spin.n*G.spin.val)); G.spin=null; } } }
   // quest timer, mode-intro dim, wizard ball-save countdown. A quest PAUSES during
   // Pollen MB (jackpots replace quest scoring, so the clock must not burn invisibly).
@@ -688,6 +691,10 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.rush>0){ G.rush-=dt; if(G.rush<=0){ G.rush=0; float(VW/2,300,'BLOOM RUSH OVER'); sfx('drain'); } }
   if(G.netTime>0 && G.netTime<900){ G.netTime-=dt; if(G.netTime<0)G.netTime=0; }
   if(G.comboT!=null){ G.comboT-=dt; if(G.comboT<=0){ G.combo=0; G.mult=1; G.comboT=null; } }
+  // P2: score rolls up to its target instead of snapping; callout decays.
+  if(G.scoreShown==null)G.scoreShown=G.score;
+  if(G.scoreShown!==G.score){ G.scoreShown+=(G.score-G.scoreShown)*Math.min(1,dt*9); if(Math.abs(G.score-G.scoreShown)<1)G.scoreShown=G.score; }
+  if(G.callout){ G.callout.t-=dt; if(G.callout.t<=0)G.callout=null; }
   if(G.slow<1){ G.slow+=dt*1.8; if(G.slow>1)G.slow=1; }
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
   if(G.netFlash>0){ G.netFlash-=dt*2; if(G.netFlash<0)G.netFlash=0; }
@@ -779,7 +786,7 @@ function render(){ if(!ctx||!G)return;
   if(G.wizard){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.035+0.03*Math.sin(G.t*3); ctx.fillStyle='#6b5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // FULL BLOOM golden GI
   else if(G.rush>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.03+0.025*Math.sin(G.t*5); ctx.fillStyle='#2e5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // Bloom Rush green GI
   // HUD
-  ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText(''+G.score, 16, 40);
+  ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText(''+Math.round(G.scoreShown!=null?G.scoreShown:G.score), 16, 40);
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY BLOOM':G.mode==='zen'?'ZEN GREENHOUSE':('BALL '+G.ball+'/'+G.maxBall), 18, 56);
   if(G.mult>1){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 22px system-ui'; ctx.fillText('×'+G.mult,VW-16,40); }
   if(G.bonusMult>1){ ctx.textAlign='left'; ctx.fillStyle='#7ab356'; ctx.font='800 12px system-ui'; ctx.fillText('BONUS ×'+G.bonusMult, 16, VH-48); }
@@ -799,6 +806,16 @@ function render(){ if(!ctx||!G)return;
     ctx.fillText('🌸 BLOOM RUSH · '+Math.ceil(G.rush)+'s', VW/2, 74);
     ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('every switch +2000 · refill the ribbon to extend', VW/2, 90); }
   else if(G.wizardReady){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 13px system-ui'; ctx.fillText('GREENHOUSE READY — SHOOT THE SCOOP', VW/2, 78); }
+  // P2: DMD callout — a transient punch-in plate on major events
+  if(G.callout && G.callout.t>0){ var co=G.callout, el=1-co.t/co.t0;
+    var appear=el<0.18?(el/0.18):1, fade=el>0.82?(1-(el-0.82)/0.18):1, ca=Math.max(0,Math.min(1,Math.min(appear,fade)));
+    var pop=el<0.18?(0.62+0.38*(el/0.18)):(el<0.34?(1+0.09*Math.sin((el-0.18)/0.16*3.14159)):1);
+    var cy=co.big?300:652, cw=(co.big?432:302)*pop, ch=(co.big?72:46)*pop, fs=(co.big?30:22)*pop;
+    ctx.save(); ctx.globalAlpha=ca; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(8,11,6,0.82)'; rrect(VW/2-cw/2,cy-ch/2,cw,ch,12); ctx.fill();
+    ctx.globalAlpha=ca*0.7; ctx.strokeStyle=co.col; ctx.lineWidth=2; rrect(VW/2-cw/2,cy-ch/2,cw,ch,12); ctx.stroke();
+    ctx.globalAlpha=ca; ctx.shadowColor=co.col; ctx.shadowBlur=14; ctx.fillStyle=co.col;
+    ctx.font='800 '+Math.round(fs)+'px system-ui'; ctx.fillText(co.txt,VW/2,cy); ctx.shadowBlur=0; ctx.textBaseline='alphabetic'; ctx.restore(); }
   // growth ribbon (left rail) + pollen lock lamps beneath it
   drawGrowth();
   for(var lk=0;lk<3;lk++){ ctx.fillStyle=lk<G.locked?'#f2d98a':'rgba(122,145,110,0.35)';
