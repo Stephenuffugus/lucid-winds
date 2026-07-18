@@ -42,10 +42,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
 .toggle.on{background:var(--deep)}
@@ -99,10 +99,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">⚡</div><div>A big <b>word</b> flashes each round. Do exactly that, fast. Most rounds are one tap, drag, or hold.</div></div>
-    <div class="helprow"><div class="hi">💚</div><div>You have <b>hearts</b>. Miss a round and you lose one. Run out and the meadow rests.</div></div>
-    <div class="helprow"><div class="hi">🌸</div><div>Every clean win fills the <b class="hl">Bloom Meter</b>. Fill it and the whole meadow blooms for a bonus keepsake.</div></div>
-    <div class="helprow"><div class="hi">⏩</div><div>It <b>speeds up</b> as you go, with a tougher round every so often. How long can you keep up?</div></div>
+    <div class="helprow"><div class="hi">1</div><div>A big <b>word</b> flashes each round, like TAP! or SWAT! A <b class="hl">small hint under the word</b> tells you exactly what to do, like "Tap the fly" or "Drag the basket under the petal".</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Do it before the <b>gold timer bar</b> above the field runs out. Most rounds are one tap, one drag, or one hold.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>You have <b>hearts</b>. Miss a round and you lose one. Run out and the meadow rests.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Every clean win fills the <b class="hl">Bloom Meter</b>. Fill it and the whole meadow blooms for a bonus keepsake.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>It <b>speeds up</b> as you go, with a tougher round every so often. How long can you keep up?</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -248,14 +249,14 @@ function circle(x,y,r,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,r,0,
 function bigTargetRing(x,y,r){ ctx.strokeStyle='rgba(232,220,200,0.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,r+8,0,6.2832); ctx.stroke(); }
 
 var LIB=[
- { id:'tapbug', word:'TAP!', base:3.4,
+ { id:'tapbug', word:'TAP!', how:'Tap the bug', base:3.4,
    setup:function(M){ M.x=rr(PA.x+70,PA.x+PA.w-70); M.y=rr(PA.y+70,PA.y+PA.h-70); M.vx=rr(-60,60); M.vy=rr(-60,60); M.won=false; },
    tick:function(M,dt){ M.x+=M.vx*dt; M.y+=M.vy*dt; if(M.x<PA.x+40||M.x>PA.x+PA.w-40)M.vx*=-1; if(M.y<PA.y+40||M.y>PA.y+PA.h-40)M.vy*=-1; },
    draw:function(M){ bigTargetRing(M.x,M.y,26); circle(M.x,M.y,26,'#d9c25a'); circle(M.x-8,M.y-4,5,'#0d100c'); circle(M.x+8,M.y-4,5,'#0d100c'); },
    down:function(M,x,y){ if(dist(x,y,M.x,M.y)<48)M.won=true; },
    autoWin:function(M){ this.down(M,M.x,M.y); } },
 
- { id:'water', word:'WATER!', base:3.4,
+ { id:'water', word:'WATER!', how:'Tap the droopy plant', base:3.4,
    setup:function(M){ M.x=pcx(); M.y=pcy()+40; M.won=false; },
    draw:function(M){ ctx.strokeStyle='#5c8f3f'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(M.x,M.y+50); ctx.lineTo(M.x,M.y-10); ctx.stroke();
      ctx.fillStyle=M.won?'#7ab356':'#8a6a3a'; ctx.beginPath(); ctx.ellipse(M.x-16,M.y-2,16,7,-0.5,0,6.2832); ctx.ellipse(M.x+16,M.y-6,16,7,0.5,0,6.2832); ctx.fill();
@@ -263,7 +264,7 @@ var LIB=[
    down:function(M,x,y){ if(dist(x,y,M.x,M.y)<90)M.won=true; },
    autoWin:function(M){ this.down(M,M.x,M.y); } },
 
- { id:'catch', word:'CATCH!', base:3.2,
+ { id:'catch', word:'CATCH!', how:'Drag the basket under the petal', base:3.2,
    setup:function(M){ M.px=rr(PA.x+50,PA.x+PA.w-50); M.py=PA.y+30; M.bx=pcx(); M.by=PA.y+PA.h-40; M.won=false; },
    tick:function(M,dt){ M.py+=260*dt; },
    draw:function(M){ circle(M.px,M.py,14,'#e58fa0');
@@ -273,14 +274,14 @@ var LIB=[
    finalize:function(M){ if(Math.abs(M.bx-M.px)<58)M.won=true; },
    autoWin:function(M){ this.move(M,M.px,0); } },
 
- { id:'popripe', word:'POP RIPE!', base:3.4,
+ { id:'popripe', word:'POP RIPE!', how:'Tap only the red berry', base:3.4,
    setup:function(M){ M.b=[]; var ripe=ri(0,2); for(var i=0;i<3;i++){ M.b.push({x:PA.x+PA.w*(i+1)/4, y:pcy(), ripe:i===ripe}); } M.won=false; M.dead=false; M.ripe=ripe; },
    draw:function(M){ for(var i=0;i<M.b.length;i++){ var b=M.b[i]; circle(b.x,b.y,30,b.ripe?'#c83a4a':'#6f9040'); if(SET.cb){ ctx.fillStyle='#fff'; ctx.font='700 16px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(b.ripe?'●':'○',b.x,b.y); } } },
    down:function(M,x,y){ for(var i=0;i<M.b.length;i++){ var b=M.b[i]; if(dist(x,y,b.x,b.y)<40){ if(b.ripe)M.won=true; else M.dead=true; } } },
    win:function(M){ return M.won && !M.dead; },
    autoWin:function(M){ var b=M.b[M.ripe]; this.down(M,b.x,b.y); } },
 
- { id:'count', word:'COUNT!', base:4.0,
+ { id:'count', word:'COUNT!', how:'Count the seeds, tap that number', base:4.0,
    setup:function(M){ M.n=ri(3,6); M.seeds=[]; for(var i=0;i<M.n;i++)M.seeds.push({x:rr(PA.x+50,PA.x+PA.w-50), y:rr(PA.y+40,PA.y+PA.h-180)});
      var opts=[M.n]; while(opts.length<3){ var o=ri(2,7); if(opts.indexOf(o)<0)opts.push(o); }
      for(var j=opts.length-1;j>0;j--){ var k=ri(0,j); var tmp=opts[j]; opts[j]=opts[k]; opts[k]=tmp; }
@@ -292,14 +293,14 @@ var LIB=[
    win:function(M){ return M.won && !M.dead; },
    autoWin:function(M){ var idx=M.opts.indexOf(M.n); var bx=PA.x+PA.w*(idx+0.5)/3, by=PA.y+PA.h-58; this.down(M,bx,by); } },
 
- { id:'swat', word:'SWAT!', base:3.0, boss:true,
+ { id:'swat', word:'SWAT!', how:'Tap the fast fly', base:3.0, boss:true,
    setup:function(M){ M.x=PA.x+40; M.y=rr(PA.y+60,PA.y+PA.h-60); M.vx=rr(120,200); M.won=false; },
    tick:function(M,dt){ M.x+=M.vx*dt; if(M.x>PA.x+PA.w-40||M.x<PA.x+40)M.vx*=-1; },
    draw:function(M){ circle(M.x,M.y,20,'#7d3450'); circle(M.x-7,M.y-6,4,'#e56b6b'); circle(M.x+7,M.y-6,4,'#e56b6b'); },
    down:function(M,x,y){ if(dist(x,y,M.x,M.y)<44)M.won=true; },
    autoWin:function(M){ this.down(M,M.x,M.y); } },
 
- { id:'grow', word:'GROW!', base:3.6,
+ { id:'grow', word:'GROW!', how:'Tap fast to grow past the line', base:3.6,
    setup:function(M){ M.p=0; M.won=false; },
    draw:function(M){ var bx=pcx(), top=PA.y+60, bot=PA.y+PA.h-60, h=bot-top;
      ctx.strokeStyle='#2a331f'; ctx.lineWidth=3; var lineY=top+h*0.28; ctx.beginPath(); ctx.moveTo(bx-90,lineY); ctx.lineTo(bx+90,lineY); ctx.stroke();
@@ -308,7 +309,7 @@ var LIB=[
    down:function(M,x,y){ M.p=Math.min(1,M.p+0.17); if(M.p>=0.72)M.won=true; },
    autoWin:function(M){ for(var i=0;i<6;i++)this.down(M,0,0); } },
 
- { id:'dodge', word:'DODGE!', base:3.2,
+ { id:'dodge', word:'DODGE!', how:'Drag your bloom away from the burr', base:3.2,
    setup:function(M){ M.tx=rr(PA.x+60,PA.x+PA.w-60); M.ty=PA.y+20; M.px=pcx(); M.py=PA.y+PA.h-50; M.won=false; },
    tick:function(M,dt){ M.ty+=250*dt; },
    draw:function(M){ ctx.fillStyle='#7d3450'; ctx.save(); ctx.translate(M.tx,M.ty); for(var s=0;s<8;s++){ var a=s/8*6.2832; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*16,Math.sin(a)*16); ctx.lineTo(Math.cos(a+0.3)*8,Math.sin(a+0.3)*8); ctx.fill(); } ctx.restore();
@@ -318,7 +319,7 @@ var LIB=[
    finalize:function(M){ if(Math.abs(M.px-M.tx)>72)M.won=true; },
    autoWin:function(M){ var far=(M.tx<pcx())?PA.x+PA.w-24:PA.x+24; this.move(M,far,0); } },
 
- { id:'wake', word:'HOLD!', base:3.6,
+ { id:'wake', word:'HOLD!', how:'Press and hold the flower', base:3.6,
    setup:function(M){ M.x=pcx(); M.y=pcy(); M.hold=0; M.holding=false; M.won=false; },
    tick:function(M,dt){ if(M.holding){ M.hold+=dt; if(M.hold>=0.7)M.won=true; } },
    draw:function(M){ var open=Math.min(1,M.hold/0.7); ctx.strokeStyle='#5c8f3f'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(M.x,M.y+70); ctx.lineTo(M.x,M.y); ctx.stroke();
@@ -327,14 +328,14 @@ var LIB=[
    up:function(M){ M.holding=false; },
    autoWin:function(M){ this.down(M,M.x,M.y); M.hold=1; M.won=true; } },
 
- { id:'feed', word:'FEED!', base:3.2,
+ { id:'feed', word:'FEED!', how:'Tap the fish', base:3.2,
    setup:function(M){ M.x=PA.x+60; M.y=pcy(); M.vx=rr(90,150); M.won=false; },
    tick:function(M,dt){ M.x+=M.vx*dt; if(M.x>PA.x+PA.w-50||M.x<PA.x+50)M.vx*=-1; M.y=pcy()+Math.sin(M.x/40)*30; },
    draw:function(M){ ctx.fillStyle='#e0894a'; ctx.save(); ctx.translate(M.x,M.y); ctx.scale(M.vx<0?-1:1,1); ctx.beginPath(); ctx.ellipse(0,0,24,13,0,0,6.2832); ctx.moveTo(-24,0); ctx.lineTo(-38,-10); ctx.lineTo(-38,10); ctx.fill(); ctx.restore(); circle(M.x+ (M.vx<0?-10:10),M.y-3,3,'#0d100c'); },
    down:function(M,x,y){ if(dist(x,y,M.x,M.y)<46)M.won=true; },
    autoWin:function(M){ this.down(M,M.x,M.y); } },
 
- { id:'aim', word:'AIM!', base:3.8, boss:true,
+ { id:'aim', word:'AIM!', how:'Drag the seed toward the target', base:3.8, boss:true,
    setup:function(M){ M.bx=pcx(); M.by=PA.y+PA.h-60; M.tx=rr(PA.x+60,PA.x+PA.w-60); M.ty=PA.y+50; M.dnx=0; M.dny=0; M.dragging=false; M.won=false; },
    draw:function(M){ circle(M.tx,M.ty,26,'#e58fa0'); circle(M.tx,M.ty,10,'#ffe9a8');
      circle(M.bx,M.by,18,'#c8a84b');
@@ -347,18 +348,18 @@ var LIB=[
      var cosang=(ax*bx2+ay*by2)/(la*lb); if(cosang>0.9)M.won=true; },
    autoWin:function(M){ this.down(M,M.bx,M.by); this.up(M,M.tx,M.ty); } },
 
- { id:'match', word:'MATCH!', base:4.0, boss:true,
-   setup:function(M){ var kinds=['🍀','🌿','🍁','🌾']; var pair=ri(0,3); M.tiles=[]; var seq=[pair,pair]; while(seq.length<4){ var k=ri(0,3); if(k!==pair)seq.push(k); }
+ { id:'match', word:'MATCH!', how:'Tap the two matching leaves', base:4.0, boss:true,
+   setup:function(M){ var kinds=[0,1,2,3]; var pair=ri(0,3); M.tiles=[]; var seq=[pair,pair]; while(seq.length<4){ var k=ri(0,3); if(k!==pair)seq.push(k); }
      for(var j=seq.length-1;j>0;j--){ var q=ri(0,j); var t=seq[j]; seq[j]=seq[q]; seq[q]=t; }
      for(var i=0;i<4;i++)M.tiles.push({k:seq[i], x:PA.x+PA.w*(i+0.5)/4, y:pcy(), sel:false});
      M.kinds=kinds; M.sel=[]; M.won=false; M.dead=false; },
    draw:function(M){ for(var i=0;i<M.tiles.length;i++){ var t=M.tiles[i]; ctx.fillStyle=t.sel?'#3f6b34':'#1a2415'; ctx.strokeStyle='#7ab356'; ctx.lineWidth=2; ctx.beginPath(); ctx.rect(t.x-42,t.y-42,84,84); ctx.fill(); ctx.stroke();
-     ctx.fillStyle='#e8dcc8'; ctx.font='40px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(M.kinds[t.k],t.x,t.y); } },
+     drawLeafKind(t.k,t.x,t.y); } },
    down:function(M,x,y){ for(var i=0;i<M.tiles.length;i++){ var t=M.tiles[i]; if(!t.sel && x>t.x-42&&x<t.x+42&&y>t.y-42&&y<t.y+42){ t.sel=true; M.sel.push(i); if(M.sel.length===2){ if(M.tiles[M.sel[0]].k===M.tiles[M.sel[1]].k)M.won=true; else M.dead=true; } return; } } },
    win:function(M){ return M.won && !M.dead; },
    autoWin:function(M){ var a=-1,b=-1; for(var i=0;i<4;i++)for(var j=i+1;j<4;j++){ if(M.tiles[i].k===M.tiles[j].k){a=i;b=j;} } this.down(M,M.tiles[a].x,M.tiles[a].y); this.down(M,M.tiles[b].x,M.tiles[b].y); } },
 
- { id:'sort', word:'SORT!', base:3.8,
+ { id:'sort', word:'SORT!', how:'Drag the bloom to the matching pot', base:3.8,
    setup:function(M){ var cols=['#e58fa0','#c8a84b']; M.c=ri(0,1); M.fx=pcx(); M.fy=PA.y+70; M.cols=cols; M.dragging=false; M.won=false; M.dead=false;
      M.pots=[{x:PA.x+PA.w*0.28, y:PA.y+PA.h-60, c:0},{x:PA.x+PA.w*0.72, y:PA.y+PA.h-60, c:1}]; },
    draw:function(M){ for(var i=0;i<2;i++){ var p=M.pots[i]; ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.moveTo(p.x-30,p.y-18); ctx.lineTo(p.x+30,p.y-18); ctx.lineTo(p.x+22,p.y+22); ctx.lineTo(p.x-22,p.y+22); ctx.fill(); ctx.strokeStyle=M.cols[p.c]; ctx.lineWidth=4; ctx.stroke(); }
@@ -369,7 +370,7 @@ var LIB=[
    win:function(M){ return M.won && !M.dead; },
    autoWin:function(M){ var p=M.pots[M.c]; this.down(M,M.fx,M.fy); this.up(M,p.x,p.y); } },
 
- { id:'shoo', word:'SHOO!', base:3.4,
+ { id:'shoo', word:'SHOO!', how:'Swipe across the crow', base:3.4,
    setup:function(M){ M.cx=pcx(); M.cy=pcy(); M.sx=0; M.crossed=false; M.dragging=false; M.won=false; },
    draw:function(M){ ctx.fillStyle='#22242a'; ctx.save(); ctx.translate(M.cx,M.cy); ctx.beginPath(); ctx.ellipse(0,0,28,18,0,0,6.2832); ctx.fill(); ctx.beginPath(); ctx.moveTo(-28,-4); ctx.lineTo(-46,-14); ctx.lineTo(-30,4); ctx.fill(); ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.moveTo(24,-2); ctx.lineTo(40,0); ctx.lineTo(24,4); ctx.fill(); ctx.restore(); },
    down:function(M,x,y){ M.dragging=true; M.sx=x; M.side=(x<M.cx)?-1:1; },
@@ -377,7 +378,7 @@ var LIB=[
    up:function(M,x,y){ M.dragging=false; if(M.crossed || Math.abs(x-M.sx)>150)M.won=true; },
    autoWin:function(M){ this.down(M,M.cx-120,M.cy); this.move(M,M.cx+30,M.cy); this.up(M,M.cx+140,M.cy); } },
 
- { id:'stack', word:'TAP NOW!', base:3.2, boss:true,
+ { id:'stack', word:'TAP NOW!', how:'Tap when the bar is in the green', base:3.2, boss:true,
    setup:function(M){ M.pos=0; M.dir=1; M.won=false; },
    tick:function(M,dt){ M.pos+=M.dir*1.3*dt; if(M.pos>1){M.pos=1;M.dir=-1;} if(M.pos<0){M.pos=0;M.dir=1;} },
    draw:function(M){ var top=PA.y+80, bot=PA.y+PA.h-80, x=pcx();
@@ -387,6 +388,17 @@ var LIB=[
    down:function(M,x,y){ if(M.pos>=0.42&&M.pos<=0.58)M.won=true; },
    autoWin:function(M){ M.pos=0.5; this.down(M,0,0); } }
 ];
+function drawLeafKind(k,x,y){ ctx.save(); ctx.translate(x,y);
+  if(k===0){ ctx.fillStyle='#4aa04a'; ctx.beginPath(); ctx.arc(-9,-6,9,0,6.2832); ctx.arc(9,-6,9,0,6.2832); ctx.arc(0,7,9,0,6.2832); ctx.fill();
+    ctx.strokeStyle='#2f6b2f'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(0,26); ctx.stroke(); }
+  else if(k===1){ ctx.fillStyle='#2f8a4f'; ctx.beginPath(); ctx.ellipse(0,0,11,22,0.5,0,6.2832); ctx.fill();
+    ctx.strokeStyle='#1d5c33'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(-9,16); ctx.lineTo(9,-16); ctx.stroke(); }
+  else if(k===2){ ctx.fillStyle='#d8813a'; for(var i=-1;i<=1;i++){ ctx.save(); ctx.rotate(i*0.7); ctx.beginPath();
+      ctx.moveTo(0,6); ctx.lineTo(-8,-16); ctx.lineTo(8,-16); ctx.closePath(); ctx.fill(); ctx.restore(); }
+    ctx.strokeStyle='#9c5a24'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,6); ctx.lineTo(0,24); ctx.stroke(); }
+  else { ctx.strokeStyle='#c8a84b'; ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(0,24); ctx.lineTo(0,-20); ctx.stroke();
+    for(var j=0;j<4;j++){ var yy=-18+j*8; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(-9,yy-7); ctx.moveTo(0,yy); ctx.lineTo(9,yy-7); ctx.stroke(); } }
+  ctx.restore(); }
 var LIBBYID={}; for(var _i=0;_i<LIB.length;_i++)LIBBYID[LIB[_i].id]=LIB[_i];
 
 /* ---------- run state ---------- */
@@ -467,8 +479,9 @@ function render(){ if(!ctx||!G)return; var th=curTheme();
   if(G.phase==='play'||G.phase==='result'){ if(G.M)G.micro.draw(G.M, Math.min(1,G.t/curDur())); }
   // prompt word
   if(G.phase==='prompt'||G.phase==='play'){ var fr=curFrame(); var scale=(G.phase==='prompt')?(0.6+Math.min(1,G.t/0.2)*0.5):1;
-    ctx.save(); ctx.translate(VW/2, PA.y-46); ctx.scale(scale,scale); ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font='800 40px system-ui'; ctx.fillStyle=fr.col; ctx.fillText(G.micro.word,0,0); ctx.restore(); }
+    ctx.save(); ctx.translate(VW/2, PA.y-60); ctx.scale(scale,scale); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='800 40px system-ui'; ctx.fillStyle=fr.col; ctx.fillText(G.micro.word,0,0); ctx.restore();
+    if(G.micro.how){ ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='600 17px system-ui'; ctx.fillStyle='#b9c2a5'; ctx.fillText(G.micro.how, VW/2, PA.y-28); } }
   // result stamp
   if(G.phase==='result'){ ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='800 44px system-ui'; ctx.fillStyle=G.resultWin?'#7ab356':'#e56b6b'; ctx.fillText(G.resultWin?'✓':'✗', VW/2, PA.y-46); }
   // flash

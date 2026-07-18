@@ -43,10 +43,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
-.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
 .toggle.on{background:var(--deep)}
@@ -130,7 +130,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen on" id="s-title"><div class="pad center">
     <div class="title-word">LINE LOOM</div>
     <div class="title-sub">weave every thread home</div>
-    <p class="ribbon">Stations wake across the valley, each with its own shape. Draw threads between them, let the shuttles carry every traveler to a matching shape, and keep any platform from overflowing. Serve a station gently for a whole week and it blooms.</p>
+    <p class="ribbon">The shapes are stations, and every traveler wants to reach a station with a matching shape. Draw colored lines between stations, let the shuttles carry everyone home, and do not let any station overflow.</p>
     <div class="stack" style="margin-top:20px">
       <button class="btn primary" id="b-loom">THE LOOM<span class="bsub">endless weave</span></button>
       <button class="btn" id="b-daily">DAILY WEAVE<span class="bsub" id="dailysub">same valley for everyone today</span></button>
@@ -149,12 +149,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div></div>
 
   <div class="screen" id="s-how"><div class="pad">
-    <h2 class="sc-h">How to weave</h2>
-    <div class="helprow"><span class="hi">&#128279;</span><span><b class="hl">Draw threads.</b> Pick a colored chip, then drag from a station to another station. Drag from a thread end to extend it further. Every thread has its own weave pattern and number, so no two read alike.</span></div>
-    <div class="helprow"><span class="hi">&#9673;</span><span><b class="hl">Shapes are destinations.</b> Each traveler shows the shape it wants. Shuttles ride your threads, stop at every station, and drop travelers at a matching shape, riding one transfer when they must.</span></div>
-    <div class="helprow"><span class="hi">&#9200;</span><span><b class="hl">Do not overflow.</b> A crowded platform starts a red ring. If the ring fills, the loom unravels. Trim from a thread end with UNWEAVE when a route stops earning its keep.</span></div>
-    <div class="helprow"><span class="hi">&#127754;</span><span><b class="hl">The river.</b> Threads cross the water only on bridges, and bridges are scarce. Each week the loom offers a gift: a new thread, a shuttle, bigger baskets, or a bridge.</span></div>
-    <div class="helprow"><span class="hi">&#127804;</span><span><b class="hl">Bloom Junctions.</b> Keep a connected station calm and busy for a full week and it blooms: a bigger platform and bonus deliveries. Bloom every shape in one run and the loom mints a keepsake for your Grove.</span></div>
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><span class="hi">1</span><span>The white shapes (circles, squares, triangles) are <b class="hl">stations</b>. Tap a <b>numbered color chip</b> at the bottom, then drag from one station to another to draw a line between them. Drag from the end of a line to make it longer.</span></div>
+    <div class="helprow"><span class="hi">2</span><span>Small shapes pop up next to a station. Those are <b class="hl">travelers</b>, and each one shows the station shape it wants to reach. Shuttles ride your lines and drop every traveler at a matching shape.</span></div>
+    <div class="helprow"><span class="hi">3</span><span>If too many travelers pile up at one station, a <b>red ring</b> starts to fill around it. If the ring fills all the way, the game ends. Tap <b>UNWEAVE</b>, then a line end, to take that piece of line back.</span></div>
+    <div class="helprow"><span class="hi">4</span><span>Lines can only cross the <b class="hl">river</b> on a bridge, and bridges are rare. At the end of each week you pick one gift: a new line color, a shuttle, bigger stations, or a bridge.</span></div>
+    <div class="helprow"><span class="hi">5</span><span>Keep a station calm and busy for a whole week and it <b class="hl">blooms</b>: more room and bonus deliveries. Bloom every shape in one run to earn a keepsake flower for your Grove.</span></div>
     <div class="stack" style="margin-top:14px"><button class="btn" id="how-back">BACK</button></div>
   </div></div>
 
@@ -242,10 +242,10 @@ var BGS={
   blueprint:{name:"Blueprint", bg:"#0e2237", grid:"#16304a", river:"#0a1725", redge:"#2c5170", st:"#cfe4f5", req:{k:"streak",v:5,t:"5 day Daily Weave streak"}}
 };
 var WEEKLY_POOL=[
-  {id:"line", wi:"🧵", wt:"A new thread", wd:"Unlock one more line to weave with."},
-  {id:"shuttle", wi:"🚆", wt:"A new shuttle", wd:"One more carrier joins your busiest thread."},
-  {id:"carriage", wi:"🧺", wt:"Bigger baskets", wd:"Every shuttle carries one more traveler."},
-  {id:"bridge", wi:"🌉", wt:"A bridge", wd:"Cross the river with one more thread."}
+  {id:"line", wi:'<svg width="34" height="34" viewBox="0 0 34 34"><path d="M4 24 C12 10 22 26 30 10" fill="none" stroke="#d8b84f" stroke-width="3.5" stroke-linecap="round"/></svg>', wt:"A new line", wd:"Unlock one more line color to draw with."},
+  {id:"shuttle", wi:'<svg width="34" height="34" viewBox="0 0 34 34"><rect x="5" y="11" width="24" height="12" rx="6" fill="#7ab356"/><circle cx="12" cy="26" r="2.6" fill="#c8d8b8"/><circle cx="22" cy="26" r="2.6" fill="#c8d8b8"/></svg>', wt:"A new shuttle", wd:"One more carrier joins your busiest line."},
+  {id:"carriage", wi:'<svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 12 L28 12 L24 27 L10 27 Z" fill="#b78d4a"/><path d="M10 12 C10 6 24 6 24 12" fill="none" stroke="#b78d4a" stroke-width="3"/></svg>', wt:"Bigger baskets", wd:"Every shuttle carries one more traveler."},
+  {id:"bridge", wi:'<svg width="34" height="34" viewBox="0 0 34 34"><path d="M3 24 C10 10 24 10 31 24" fill="none" stroke="#8fb3d8" stroke-width="3.5"/><line x1="3" y1="24" x2="31" y2="24" stroke="#8fb3d8" stroke-width="3"/><line x1="11" y1="16" x2="11" y2="24" stroke="#8fb3d8" stroke-width="2"/><line x1="23" y1="16" x2="23" y2="24" stroke="#8fb3d8" stroke-width="2"/></svg>', wt:"A bridge", wd:"Cross the river with one more line."}
 ];
 
 /* ---------- store ---------- */
@@ -486,7 +486,7 @@ function pickWeekly(i){
 }
 function showWeekly(){
   if(!G.weekly)return;
-  var fill=function(el,w){ el.querySelector(".wi").textContent=w.wi; el.querySelector(".wt").textContent=w.wt; el.querySelector(".wd").textContent=w.wd; };
+  var fill=function(el,w){ el.querySelector(".wi").innerHTML=w.wi; el.querySelector(".wt").textContent=w.wt; el.querySelector(".wd").textContent=w.wd; };
   fill($("wk0"),G.weekly.a); fill($("wk1"),G.weekly.b);
   $("weekly").classList.add("on");
 }
