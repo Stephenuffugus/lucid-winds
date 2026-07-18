@@ -862,7 +862,7 @@ function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.
   $('grove-sub').textContent = n? ('You have grown '+n+' keepsake star'+(n===1?'':'s')+'. Thread more Perfects to fill your Sky Map.') : 'Thread the center of a gap for a Perfect. Your best streak grows keepsake stars here.';
   var start=Math.max(0,n-60);
   for(var i=start;i<n;i++){ var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); g.clearRect(0,0,70,70); drawFlower(g,35,36,1.3,PROG.blooms[i]>>>0); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no stars yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='No stars yet'; host.appendChild(e); }
 }
 function _wardSpr(g, it, cw, chh){ var im=it.sp?_spr(it.sp):null; if(!_sfReady(im))return false;
   var h=Math.min(chh-8, im.naturalHeight), s=h/im.naturalHeight, w=im.naturalWidth*s; if(w>cw-8){ s=(cw-8)/im.naturalWidth; w=cw-8; h=im.naturalHeight*s; }

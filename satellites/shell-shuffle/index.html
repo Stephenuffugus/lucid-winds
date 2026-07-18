@@ -220,7 +220,8 @@
 
   <header>
     <h1>Shell Shuffle</h1>
-    <p>Keep your eye on the ball. · build 20</p>
+    <p>Keep your eye on the ball.</p>
+    <!-- build 20 -->
   </header>
 
   <div class="status" id="status">Tap Start and find the ball!</div>
@@ -236,7 +237,21 @@
     <button class="btn" id="actBtn">Start Game</button>
   </div>
   <div class="hint" id="hint">Each round adds a cup, shuffles faster, and pays more coins.</div>
+  <button id="openHelp" style="display:block;margin:8px auto 0;min-height:44px;padding:8px 18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:var(--cream);font:inherit;font-weight:800;font-size:14px;cursor:pointer;">? How to play</button>
   <button id="exitPortal" style="display:block;margin:6px auto 0;min-height:44px;padding:10px 18px;background:none;border:none;color:rgba(255,255,255,.55);font:inherit;font-weight:700;font-size:14px;cursor:pointer;">← All Sky Wolf games</button>
+</div>
+
+<!-- HOW TO PLAY -->
+<div class="paused-overlay" id="helpOv">
+  <h2>How to Play</h2>
+  <div style="max-width:340px;text-align:left;font-size:16px;line-height:1.5;font-weight:700;color:var(--cream);">
+    <p style="margin:0 0 12px;">1. Tap <b>Start Game</b>. A ball hides under one cup.</p>
+    <p style="margin:0 0 12px;">2. Watch closely as the cups shuffle around.</p>
+    <p style="margin:0 0 12px;">3. When they stop, tap the cup you think hides the ball.</p>
+    <p style="margin:0 0 12px;">4. Guess right to win coins. Each round adds a cup, shuffles faster, and pays more.</p>
+    <p style="margin:0;">Spend coins in the <b>Shop</b> on new balls and cups. Come back daily to build your streak and unlock exclusives.</p>
+  </div>
+  <button class="btn" id="closeHelp">Got it</button>
 </div>
 
 <!-- PAUSED -->
@@ -843,7 +858,7 @@
     const s = state.daily.streak;
     const fig = STREAK_UNLOCK[s+1];
     if(fig) return {title:'Shell Shuffle 🔥', body:`1 more day for the ${FIGURE_NAME[fig]}! Don't let your ${s}-day streak slip.`};
-    if(s>=2)   return {title:'Shell Shuffle 🔥', body:`Keep your ${s}-day streak alive — play today!`};
+    if(s>=2)   return {title:'Shell Shuffle 🔥', body:`Keep your ${s}-day streak alive. Play today!`};
     if(s===1)  return {title:'Shell Shuffle 🎁', body:`Your streak just started. Come back for day 2!`};
     return {title:'Shell Shuffle 🎁', body:`Your daily reward is ready. Tap to play!`};
   }
@@ -917,6 +932,8 @@
   }
   function openDaily(){ refreshWeek(); save(); $('claimNote').textContent=''; renderDaily(); syncRemindBtn(); $('daily').classList.add('open'); }
   function closeDaily(){ $('daily').classList.remove('open'); }
+  $('openHelp').onclick=()=>$('helpOv').classList.add('open');
+  $('closeHelp').onclick=()=>$('helpOv').classList.remove('open');
   $('openDaily').onclick=openDaily;
   $('closeDaily').onclick=closeDaily;
   $('remindBtn').onclick=askNotify;

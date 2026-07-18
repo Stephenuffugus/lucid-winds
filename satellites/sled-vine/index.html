@@ -83,7 +83,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .lvlcard.locked{opacity:.62; cursor:default; filter:saturate(.6)}
 .lvlcard.locked::after{content:'🔒'; display:block; text-align:center; font-size:12px; opacity:.8; margin-top:2px}
 .lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
-.lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.15}
+.lvlcard .lt{font-size:.76rem; color:#b9c3a8; text-align:center; line-height:1.15}
 .lvlcard .ls{font-size:14px; letter-spacing:1px; color:var(--gold); height:16px}
 .lvlcard.done{border-color:var(--deep)}
 .wardcard{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 10px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
@@ -808,7 +808,7 @@ function renderTrials(){
   }
   var W=WORLDS[SV_TVIEW];                            // LEVELS OF A WORLD
   $("trials-h").textContent=W.name;
-  $("trials-sub").textContent=W.hint+" — one clean ride each.";
+  $("trials-sub").textContent=W.hint+". One clean ride each.";
   var back=document.createElement("div"); back.className="lvlcard"; back.innerHTML='<div class="ln">◄</div><div class="lt">Worlds</div>';
   back.onclick=function(){ SV_TVIEW=-1; renderTrials(); }; g.appendChild(back);
   var j; for(j=0;j<W.lv.length;j++)(function(j){

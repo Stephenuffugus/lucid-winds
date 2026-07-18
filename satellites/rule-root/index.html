@@ -84,6 +84,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 /* softlock prompt */
 #soft{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); z-index:14; display:none; background:#1a1410ee; border:1px solid var(--gold); border-radius:16px; padding:16px 20px; text-align:center; max-width:320px}
 #soft.on{display:block}
+#toast{position:absolute; left:50%; bottom:118px; transform:translateX(-50%); z-index:16; display:none; background:#1a1410f2; border:1px solid var(--gold); border-radius:14px; padding:11px 18px; text-align:center; max-width:280px; font-size:14px; font-weight:600; color:var(--cream); pointer-events:none; box-shadow:0 6px 20px #0009}
+#toast.on{display:block}
 #soft .st{font-size:16px; font-weight:800; color:var(--gold)}
 #soft .ss{font-size:12.5px; color:var(--cream); margin:6px 0 12px}
 /* win toast area reused from screens */
@@ -125,6 +127,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="ss">No rule makes you anything. Take the last move back.</div>
     <button class="btn sm primary" id="soft-undo">Undo</button>
   </div>
+
+  <div id="toast"></div>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
@@ -617,6 +621,7 @@ function hideScreens(){
 }
 
 function startLevel(mode,idx){
+  if(typeof _cancelHint==='function')_cancelHint();
   G={mode:mode,idx:idx,st:defToState(idx),undo:[],won:false,hintEnt:null,fx:[],t:0};
   RUNPAY=0;
   hideScreens();
@@ -647,7 +652,7 @@ function doMove(dir){
   else if(ra<rb)sndBreak();
   else sndMove();
   if(ns.seedGot&&!G.st.seedGot)sndSeed();
-  G.st=ns; G.hintEnt=null;
+  G.st=ns; G.hintEnt=null; _cancelHint();
   updMoves();
   checkSoft();
   render();
@@ -659,10 +664,17 @@ function checkSoft(){
 }
 function doUndo(){
   if(!G||!G.undo.length||G.won||G.st.won)return;
-  G.st=G.undo.pop(); G.hintEnt=null;
+  G.st=G.undo.pop(); G.hintEnt=null; _cancelHint();
   sndPush(); updMoves(); checkSoft(); render();
 }
 function doRestart(){ if(!G)return; startLevel(G.mode,G.idx); }
+var _toastT=0;
+function toast(msg){
+  var el=$('toast'); if(!el)return;
+  el.textContent=msg; el.className='on';
+  if(_toastT)clearTimeout(_toastT);
+  _toastT=setTimeout(function(){ el.className=''; },1900);
+}
 
 function winLevel(){
   if(!G||G.won)return;
@@ -704,10 +716,62 @@ function winLevel(){
 }
 
 /* ---- hint ---- */
+/* Resumable breadth-first solver so the hint search can be time-sliced and
+   never freezes the main thread. Every solvable shipped level is found within
+   ~30000 states (measured), so HINT_MAXSTATES:60000 covers them with headroom
+   while the wall-clock abort stops the huge final level from hanging. */
+var HINT_MAXSTATES=60000, HINT_MAXDEPTH=45, HINT_WALLMS=4000;
+function makeSolver(st0,opts){
+  opts=opts||{};
+  var maxStates=opts.maxStates||60000, maxDepth=opts.maxDepth||45;
+  var reqSeed=!!opts.requireSeed;
+  var q=[{s:st0,p:''}],head=0,seen={},count=1,done=false,result=null;
+  seen[ser(st0)]=1;
+  if(st0.won&&!reqSeed){ done=true; result={found:true,path:''}; }
+  return {
+    step:function(budget){
+      var did=0;
+      while(!done&&head<q.length&&did<budget){
+        var cur=q[head++];
+        if(cur.p.length>=maxDepth)continue;
+        for(var d=0;d<4;d++){
+          var ns=stepState(cur.s,DIRS[d]);
+          var key=ser(ns);
+          if(seen[key])continue;
+          seen[key]=1; count++; did++;
+          if(ns.won&&(!reqSeed||ns.seedGot)){ done=true; result={found:true,path:cur.p+DIRS[d]}; return; }
+          if(count>maxStates){ done=true; result={found:false,path:null}; return; }
+          if(!ns.won&&youCount(ns)>0)q.push({s:ns,p:cur.p+DIRS[d]});
+        }
+      }
+      if(!done&&head>=q.length){ done=true; result={found:false,path:null}; }
+    },
+    isDone:function(){ return done; },
+    result:function(){ return result; }
+  };
+}
+var _hintSolver=null,_hintRAF=0,_hintStart=0;
+var _raf=window.requestAnimationFrame?function(f){return window.requestAnimationFrame(f);}:function(f){return setTimeout(f,16);};
+var _caf=window.cancelAnimationFrame?function(id){window.cancelAnimationFrame(id);}:function(id){clearTimeout(id);};
+function _cancelHint(){ if(_hintRAF){ _caf(_hintRAF); _hintRAF=0; } _hintSolver=null; }
 function doHint(){
   if(!G||G.won)return;
-  var res=solveState(G.st,{maxStates:200000,maxDepth:50});
-  if(!res.found){ G.hintEnt=null; render(); return; }
+  _cancelHint();
+  _hintSolver=makeSolver(G.st,{maxStates:HINT_MAXSTATES,maxDepth:HINT_MAXDEPTH});
+  _hintStart=Date.now();
+  _hintTick();
+}
+function _hintTick(){
+  if(!_hintSolver)return;
+  var sliceStart=Date.now();
+  while(!_hintSolver.isDone()&&Date.now()-sliceStart<12)_hintSolver.step(1200);
+  if(_hintSolver.isDone()){ var res=_hintSolver.result(); _hintSolver=null; _hintRAF=0; _applyHint(res); return; }
+  if(Date.now()-_hintStart>HINT_WALLMS){ _hintSolver=null; _hintRAF=0; toast('No hint for this one. Try a move.'); return; }
+  _hintRAF=_raf(_hintTick);
+}
+function _applyHint(res){
+  if(!G||G.won)return;
+  if(!res||!res.found){ G.hintEnt=null; render(); toast('No hint for this one. Try a move.'); return; }
   // find the first word tile that moves along the solution
   var st=G.st, path=res.path, i;
   var rules0=ruleKey(st);
@@ -1102,7 +1166,9 @@ if(/[?&]rrtest=1/.test(location.search)){
       var rules=parseRules(G.st),pm=propMap(rules),locked=lockedSet(G.st,rules);
       var o={mode:G.mode,idx:G.idx,moves:G.st.moves,won:G.st.won,seedGot:G.st.seedGot,
         ents:G.st.ents.length,yous:youCount(G.st),rules:rules.length,locked:locked.length,
-        soft:youCount(G.st)===0&&!G.st.won};
+        soft:youCount(G.st)===0&&!G.st.won,
+        hint:G.hintEnt?{w:G.hintEnt.w||G.hintEnt.k,x:G.hintEnt.x,y:G.hintEnt.y}:null,
+        hinting:!!_hintSolver};
       var nan=false,i;
       for(i=0;i<G.st.ents.length;i++){ var e=G.st.ents[i];
         if(!isFinite(e.x)||!isFinite(e.y))nan=true; }
@@ -1163,7 +1229,14 @@ if(/[?&]rrtest=1/.test(location.search)){
       if(G&&G.st.won&&!G.won)winLevel();
       return {ok:ok,moves:G?G.st.moves:-1,path:path};
     },
-    hint:function(){ doHint(); return G&&G.hintEnt?{w:G.hintEnt.w||G.hintEnt.k,x:G.hintEnt.x,y:G.hintEnt.y}:null; },
+    hint:function(){
+      if(!G||G.won)return null;
+      _cancelHint();
+      var s=makeSolver(G.st,{maxStates:HINT_MAXSTATES,maxDepth:HINT_MAXDEPTH});
+      while(!s.isDone())s.step(20000);
+      _applyHint(s.result());
+      return G&&G.hintEnt?{w:G.hintEnt.w||G.hintEnt.k,x:G.hintEnt.x,y:G.hintEnt.y}:null;
+    },
     earnTest:function(){ return window._sbCapEarn(3,'rrtest'); },
     prog:function(){ return PROG; },
     core:{mkLevel:mkLevel,stepState:stepState,solveState:solveState,ser:ser,parseRules:parseRules,

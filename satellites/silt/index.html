@@ -157,6 +157,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
           <button class="btn sm" id="b-zen">🌙 Zen</button>
         </div>
         <div class="row">
+          <button class="btn sm" id="b-trials">🎯 Trials</button>
+          <button class="btn sm" id="b-daily">📅 Daily</button>
+        </div>
+        <div class="row">
           <button class="btn sm ghost" id="b-how">How</button>
           <button class="btn sm ghost" id="b-ward">Wardrobe</button>
           <button class="btn sm ghost" id="b-grove">Grove</button>
@@ -197,7 +201,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="helprow"><div class="hi">🔥</div><div>FIRE eats vines and oil. WATER quenches it into rising MIST, and mist cools on stone ceilings and rains back down.</div></div>
       <div class="helprow"><div class="hi">🌸</div><div>Raise <b>5 blooms at once</b> and the garden is counted. Every third garden presses a keepsake into your Grove.</div></div>
       <div class="helprow"><div class="hi">🔷</div><div>New matter to play with: heat <b>sand</b> into <b class="hl">glass</b>; <b class="hl">lava</b> flows, burns and cools to stone (water quenches it); <b class="hl">ice</b> &amp; <b class="hl">snow</b> melt to water; a bloom breathes <b class="hl">pollen</b> that re-sows soil; fire leaves <b class="hl">ash</b> that damp soil drinks to grow again; <b class="hl">moss</b> and glow-<b class="hl">spore</b> creep over wet stone.</div></div>
-      <div class="helprow"><div class="hi">🌱</div><div>Your <b>garden is saved</b> — leave and come back and it's right where you left it. Scenes start a fresh little world; the dock's <b>Clear</b> begins a new garden.</div></div>
+      <div class="helprow"><div class="hi">🌱</div><div>Your <b>garden is saved</b>. Leave and come back and it's right where you left it. Scenes start a fresh little world; the dock's <b>Clear</b> begins a new garden.</div></div>
       <div class="helprow"><div class="hi">🎬</div><div><b>Scenes</b> start you in a ready-made little world. <b>Bloom Rush</b> is 90 seconds to grow as many blooms as you can.</div></div>
       <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
     </div>
@@ -925,7 +929,7 @@ function renderDock(){
 }
 function renderBudget(){
   var k; for(k=1;k<=NEL;k++){ var elb=$("bud-"+k); if(!elb)continue;
-    if(G&&G.budget){ var left=G.budget[k]; elb.textContent=(left===undefined)?"–":left;
+    if(G&&G.budget){ var left=G.budget[k]; elb.textContent=(left===undefined)?".":left;
       var chip=elb.parentNode; if(left!==undefined&&left<=0)chip.classList.add("off"); else chip.classList.remove("off");
       if(left===undefined)chip.classList.add("off");
     } else { elb.textContent=""; var ch2=elb.parentNode; ch2.classList.remove("off"); } }

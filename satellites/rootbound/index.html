@@ -118,7 +118,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">🌼</div><div>The <b class="hl">golden bloom</b> is the big 2×2 planter. Your job is to slide it down and out the gate at the bottom.</div></div>
-    <div class="helprow"><div class="hi">↔</div><div>Drag any planter into an empty space. Planters slide, they never lift or turn — clear a path.</div></div>
+    <div class="helprow"><div class="hi">↔</div><div>Drag any planter into an empty space. Planters slide, they never lift or turn. Clear a path.</div></div>
     <div class="helprow"><div class="hi">🚪</div><div>Get the golden bloom to the gate at the bottom-centre and it slips free. Bed solved!</div></div>
     <div class="helprow"><div class="hi">↶</div><div>Undo a slide, reset the bed, or take a <b>Nudge</b> hint if the roots get tangled.</div></div>
     <div class="helprow"><div class="hi">⭐</div><div>Fewer slides earns more stars and more Sunbeams. Finish near par for three stars.</div></div>
@@ -134,7 +134,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:8px"></div>
     <button class="btn sm" id="set-wipe" style="max-width:400px;margin:0 auto 12px">Reset all progress</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Rootbound — a Sky Wolf remake of the classic sliding-block puzzle Klotski.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+    <div class="foot">Rootbound. A Sky Wolf remake of the classic sliding-block puzzle Klotski.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
   </div></div>
 
   <!-- WIN -->
@@ -144,10 +144,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h" style="font-size:28px;margin-top:6px" id="win-title">Bloom set free!</h2>
     <div class="bigstars" id="win-stars">★ ★ ★</div>
     <div style="width:100%;margin-top:8px">
-      <div class="win-stat"><span>Bed</span><b id="win-name">—</b></div>
+      <div class="win-stat"><span>Bed</span><b id="win-name">-</b></div>
       <div class="win-stat"><span>Your slides</span><b id="win-moves">0</b></div>
       <div class="win-stat"><span>Par</span><b id="win-par">0</b></div>
-      <div class="win-stat"><span>Best</span><b id="win-best">—</b></div>
+      <div class="win-stat"><span>Best</span><b id="win-best">-</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
@@ -428,20 +428,20 @@ function finalizeWin(){
   $('win-name').textContent=(idx+1)+'. '+NAMES[idx];
   $('win-moves').textContent=''+moves;
   $('win-par').textContent=''+opt;
-  $('win-best').textContent=(BEST[idx]!=null?BEST[idx]+' slides':'—')+(isBest?'  ★ new!':'');
+  $('win-best').textContent=(BEST[idx]!=null?BEST[idx]+' slides':'-')+(isBest?'  ★ new!':'');
   $('win-stars').textContent=['','★ ☆ ☆','★ ★ ☆','★ ★ ★'][st];
   $('win-title').textContent=st===3?'Perfect! Bloom freed':'Bloom set free!';
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):(prevStars>0?'☀ already gathered here':'☀ daily sun gathered');
   var nb=$('win-next'); nb.style.display=(idx<LEVELS.length-1)?'flex':'none';
   lastWin={ moves:moves, stars:st, name:NAMES[idx], idx:idx };
-  setTimeout(function(){ _show('s-win'); updateCtrl(); },560);
+  setTimeout(function(){ if(curScreen===null){ _show('s-win'); } updateCtrl(); },560);
 }
 
 /* ============================ share (fleet-standard) ================================= */
 function shareRootbound(){
   var url="https://lucidwinds.com/satellites/rootbound/";
   var w=lastWin||{ moves:(G?G.moves:0), stars:0, name:(G?NAMES[G.idx]:'the bed') };
-  var txt="Rootbound — freed the bloom in "+w.moves+" slides ("+w.stars+"★) on "+w.name+"! Can you beat it?";
+  var txt="Rootbound: freed the bloom in "+w.moves+" slides ("+w.stars+"★) on "+w.name+"! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toast('Copied to clipboard'); }).catch(function(){}); }
 }
@@ -455,7 +455,7 @@ function doHint(){
     if(!G) return;
     var mv=hintMove(G.pieces);
     G.thinking=false;
-    if(!mv){ toast('No nudge here — try Undo'); render(); return; }
+    if(!mv){ toast('No nudge here. Try Undo'); render(); return; }
     var pi=-1; for(var i=0;i<G.pieces.length;i++) if(G.pieces[i].id===mv.pieceId){ pi=i; break; }
     if(pi<0){ render(); return; }
     // HIGHLIGHT ONLY: glow the planter to move + say which way. The PLAYER makes the slide, so

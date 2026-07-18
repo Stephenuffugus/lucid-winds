@@ -49,8 +49,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .go-score{font-size:64px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
-.go-stat{display:flex; justify-content:space-between; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
-.go-stat b{color:var(--sage)}
+.go-stat{display:flex; justify-content:space-between; gap:16px; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
+.go-stat span{text-align:left}
+.go-stat b{color:var(--sage); padding-left:16px; white-space:nowrap}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#221a0c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 .ladder{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; max-width:440px; margin:14px auto 0}
@@ -66,7 +67,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Seed Pot</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Drop seeds into the pot. Two of the same kind touch and <b class="hl">grow</b> into the next — seed to sprout to bloom. Merge two Heirloom Blooms and a <b class="hl">companion hatches</b>. Just don't overflow the rim.</div>
+    <div class="ribbon">Drop seeds into the pot. Two of the same kind touch and <b class="hl">grow</b> into the next. Seed to sprout to bloom. Merge two Heirloom Blooms and a <b class="hl">companion hatches</b>. Just don't overflow the rim.</div>
     <div class="ladder" id="ladder"></div>
     <div style="flex:1"></div>
     <div class="stack">
@@ -88,9 +89,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">👆</div><div>Move your finger to aim, then <b>tap or release</b> to drop the seed into the pot.</div></div>
-    <div class="helprow"><div class="hi">🌱</div><div>Two of the <b class="hl">same kind</b> that touch merge into the next one up the growth ladder — and score more.</div></div>
-    <div class="helprow"><div class="hi">🦋</div><div>Merge two <b class="hl">Heirloom Blooms</b> and a <b>companion hatches</b> — it clears a patch of the pot and pays big.</div></div>
-    <div class="helprow"><div class="hi">🌿</div><div>If seeds pile up over the <b style="color:var(--red)">overgrowth vine</b> at the rim, you have a few seconds before the pot overflows. <b>Classic:</b> that ends the run. <b>Zen:</b> it just composts a loose seed — no death.</div></div>
+    <div class="helprow"><div class="hi">🌱</div><div>Two of the <b class="hl">same kind</b> that touch merge into the next one up the growth ladder, and score more.</div></div>
+    <div class="helprow"><div class="hi">🦋</div><div>Merge two <b class="hl">Heirloom Blooms</b> and a <b>companion hatches</b>, and it clears a patch of the pot and pays big.</div></div>
+    <div class="helprow"><div class="hi">🌿</div><div>If seeds pile up over the <b style="color:var(--red)">overgrowth vine</b> at the rim, you have a few seconds before the pot overflows. <b>Classic:</b> that ends the run. <b>Zen:</b> it just composts a loose seed, no death.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -205,6 +206,16 @@ function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>1
 /* ===== pot geometry ===== */
 var WX0=96, WX1=444, FLOOR=902, DROPY=150, DANGER=214;  // pot interior + lines
 var GRAV=2100;
+/* measured outer silhouette of the painted pot (fractions of the pot draw rect,
+   [yf,leftf,rightf]); used only to CLIP the settled fruit so nothing spills past
+   the tapered terracotta onto the deck. Physics box is unchanged. */
+var POT_SIL=[[0.262,0.02,0.977],[0.34,0.02,0.973],[0.419,0.027,0.97],[0.497,0.04,0.957],[0.576,0.06,0.94],[0.654,0.087,0.913],[0.733,0.117,0.883],[0.811,0.153,0.847],[0.89,0.193,0.807],[0.942,0.243,0.76],[0.968,0.31,0.697]];
+function potSilPath(){ var PX0=WX0-40, PY0=DANGER-12, PW=(WX1+40)-(WX0-40), PH=(FLOOR+30)-(DANGER-12), i, p;
+  ctx.beginPath(); ctx.moveTo(PX0,120);
+  for(i=0;i<POT_SIL.length;i++){ p=POT_SIL[i]; ctx.lineTo(PX0+p[1]*PW, PY0+p[0]*PH); }
+  for(i=POT_SIL.length-1;i>=0;i--){ p=POT_SIL[i]; ctx.lineTo(PX0+p[2]*PW, PY0+p[0]*PH); }
+  ctx.lineTo(PX0+PW,120); ctx.closePath();
+}
 
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0;
@@ -344,8 +355,12 @@ function render(){ if(!ctx||!G)return;
     var lamp=ctx.createRadialGradient(VW/2,240,20,VW/2,240,420); lamp.addColorStop(0,'rgba(200,168,75,0.14)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH); }
   // pot (terracotta) behind fruits
   drawPot();
-  // fruits
+  // fruits (clipped to the painted pot silhouette so settled fruit stays nestled
+  // inside the terracotta instead of spilling past the tapered base onto the deck)
+  var _potIm=_spr('pot/pot_'+seasonNm()), _potClip=_spReady(_potIm);
+  if(_potClip){ ctx.save(); potSilPath(); ctx.clip(); }
   for(var i=0;i<G.fruits.length;i++) drawFruit(G.fruits[i]);
+  if(_potClip){ ctx.restore(); }
   // rings (art) else stroke
   var rim=_spr('fx/ring_thick'), rimOk=_spReady(rim);
   for(i=0;i<G.rings.length;i++){ var r=G.rings[i];
@@ -467,7 +482,7 @@ function drawLadder(){ var host=$('ladder'); host.innerHTML='';
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/satellites/seed-pot/"; var sc=(G&&G.score)||0; var txt="Seed Pot — I grew "+sc+" nectar and hatched companions in the pot! Beat it?";
+function shareIt(){ var url="https://lucidwinds.com/satellites/seed-pot/"; var sc=(G&&G.score)||0; var txt="Seed Pot: I grew "+sc+" nectar and hatched companions in the pot! Beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 

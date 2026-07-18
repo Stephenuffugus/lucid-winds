@@ -180,13 +180,13 @@ var COMMIT_DX=94;                          // swipe commit threshold
 var MET=[
   {k:'sun',  nm:'Sun',      L:'S', col:'#d9b85a', gl:'☀'},
   {k:'rain', nm:'Rain',     L:'R', col:'#6fb0e0', gl:'🌧'},
-  {k:'soil', nm:'Soil',     L:'O', col:'#9c7a4a', gl:'🌱'},
+  {k:'soil', nm:'Soil',     L:'So', col:'#9c7a4a', gl:'🌱'},
   {k:'wild', nm:'Wildlife', L:'W', col:'#c58fe0', gl:'🦋'}
 ];
 
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, haptic:true, cb:false };
+var SET={ sound:true, haptic:true, cb:true };
 (function(){ try{ var s=JSON.parse(LS.get('ss_set')||'{}'); ['sound','haptic','cb'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('ss_set', JSON.stringify(SET)); }
 
@@ -412,7 +412,7 @@ function computeKeep(){ var ks=['sun','rain','soil','wild']; var dom='soil', dv=
   for(var i=0;i<4;i++){ if(G.lean[ks[i]]>dv){ dv=G.lean[ks[i]]; dom=ks[i]; } }
   // balance quality: how centered the meters ended (higher = better bloom)
   var bal=0; for(var j=0;j<4;j++){ bal += Math.min(G.meters[ks[j]],100-G.meters[ks[j]]); }
-  var quality=Math.min(5, Math.floor((G.seasonsSurvived*1) + (bal/4)/12));
+  var quality=Math.min(5, Math.floor(G.seasonsSurvived/4) + Math.floor((bal/4)/25));
   var seed=((G.lean.sun+7)*73856093 ^ (G.lean.rain+7)*19349663 ^ (G.lean.soil+7)*83492791 ^ (G.lean.wild+7)*2654435761 ^ (G.cardsPlayed*40503))>>>0;
   G.dom=dom; G.quality=quality; G.keepSeed=seed; G.haiku=makeHaiku(seed,dom);
 }

@@ -136,7 +136,7 @@ h2.sc-h{font-size:24px; color:var(--dew); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-chambers">
     <div class="pad">
       <h2 class="sc-h" style="text-align:center">Chambers</h2>
-      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Ten still waters, each with one quiet problem.</div>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Still waters, each with one quiet problem.</div>
       <div class="grid" id="chambergrid"></div>
       <div style="height:16px"></div>
       <div class="stack"><button class="btn sm ghost" id="chambers-back">Back</button></div>
@@ -151,6 +151,7 @@ h2.sc-h{font-size:24px; color:var(--dew); font-weight:800; margin-bottom:4px}
       <div class="helprow"><div class="hi">⚠️</div><div>Anything bigger than you carries a <b>pulsing ring and a notch mark</b>, whatever its color. When you outgrow it, the ring fades. Watch the rings, not the hues.</div></div>
       <div class="helprow"><div class="hi">🌊</div><div>The <b>Season Current</b> flows through every chamber and slowly turns through spring, summer, autumn and winter. Riding it is free travel. Masters drift more and tap less.</div></div>
       <div class="helprow"><div class="hi">🎯</div><div>Each <b>Chamber</b> has one goal, written at the top. The bar shows how close you are. Losing too much of yourself ends the drift.</div></div>
+      <div class="helprow"><div class="hi">🌿</div><div>Some deeper waters hold <b>special motes</b>. <b>Thorned</b> ones prick and drain you until you grow half again bigger than them, then you can drink them in. <b>Skittish</b> ones flee as you near. <b>Amber</b> ones graze and slowly grow. Watch the rings.</div></div>
       <div class="helprow"><div class="hi">✿</div><div>Clearing a chamber for the first time <b>blossoms your spore</b> into a keepsake for the Grove.</div></div>
       <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
     </div>
@@ -779,7 +780,7 @@ var WARD=[
  {cat:"Membrane",key:"membrane",id:"plain",name:"Plain Spore",icon:"🫧",need:function(){return true;},needTxt:"Free"},
  {cat:"Membrane",key:"membrane",id:"comet",name:"Comet Rim",icon:"☄️",need:function(){return chambersDone()>=3;},needTxt:"Clear 3 chambers"},
  {cat:"Membrane",key:"membrane",id:"lichen",name:"Lichen Mottle",icon:"🌿",need:function(){return chambersDone()>=7;},needTxt:"Clear 7 chambers"},
- {cat:"Membrane",key:"membrane",id:"prism",name:"Prism Veil",icon:"🌈",need:function(){return chambersDone()>=10;},needTxt:"Clear all 10 chambers"},
+ {cat:"Membrane",key:"membrane",id:"prism",name:"Prism Veil",icon:"🌈",need:function(){return chambersDone()>=10;},needTxt:"Clear 10 chambers"},
  {cat:"Trail",key:"trail",id:"dust",name:"Dust",icon:"·",need:function(){return true;},needTxt:"Free"},
  {cat:"Trail",key:"trail",id:"petal",name:"Petal Wake",icon:"✿",need:function(){return PROG.bloomWins>=3;},needTxt:"Win 3 Bloom Hunts"},
  {cat:"Trail",key:"trail",id:"ember",name:"Ember Wake",icon:"🔥",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
@@ -831,7 +832,7 @@ function loop(){
   if(!G.paused&&G.phase==="play")tickSim();
   render();
 }
-document.addEventListener("visibilitychange",function(){ if(document.hidden&&G&&!G.paused){ G.paused=true; } });
+document.addEventListener("visibilitychange",function(){ if(document.hidden&&G&&!G.paused){ G.paused=true; $("hud-pause").textContent="▶"; } });
 
 /* ---------- fit stage ---------- */
 function fit(){ var st=document.getElementById("stage");

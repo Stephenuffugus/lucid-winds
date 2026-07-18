@@ -353,7 +353,20 @@ function startMode(m){ G.mode=m; runEarn=0; G.selected=[]; G.mistakes=0; G.phase
   $('rg-mode').textContent = m==='grove'?'Grove Groups':(m==='daily'?'Daily Roots':(m==='zen'?'Zen Sort':'Tangle'));
   var sub = (m==='daily')?('Today · streak '+SAVE.streak):(m==='tangle'?'5 groups · expert':(m==='zen'?'No fail':'Endless'));
   $('rg-sub').textContent=sub;
+  setPlayCtrl(); var mx=$('rg-shuffle'); if(mx) mx.style.display='';
   renderBoard(); show('s-play'); ac();
+}
+
+function setPlayCtrl(){ var c=$('rg-ctrl'); if(!c) return;
+  c.innerHTML='<button class="cbtn" id="rg-hint">Hint</button><button class="cbtn" id="rg-clear">Deselect</button><button class="cbtn primary" id="rg-submit" disabled>Submit</button>';
+  $('rg-hint').addEventListener('click',function(e){e.preventDefault();hint();});
+  $('rg-clear').addEventListener('click',function(e){e.preventDefault();clearSel();});
+  $('rg-submit').addEventListener('click',function(e){e.preventDefault();submit();});
+}
+function setEndCtrl(){ var c=$('rg-ctrl'); if(!c) return;
+  c.innerHTML='<button class="cbtn primary" id="rg-again">Play Again</button><button class="cbtn" id="rg-menu">Menu</button>';
+  $('rg-again').addEventListener('click',function(e){e.preventDefault();startMode(G.mode);});
+  $('rg-menu').addEventListener('click',function(e){e.preventDefault();show('s-title');});
 }
 
 function tierSym(tier){ return ['','•','••','•••','••••','★'][tier]||''; }
@@ -425,8 +438,8 @@ function endBoard(win){ G.phase='over';
     var bonus=earn(G.mistakes===0?3:2, 'rootgroups:board'); save(); sfxWin();
     toast('Board solved! +'+bonus+' sunbeams'+(G.mistakes===0?' · flawless':''));
   } else { save(); toast('The rest of the garden reveals itself'); reveal(); }
-  setTimeout(function(){ if(G.mode==='zen'||win) return; }, 10);
-  /* auto-return to menu after a beat, or let player leave */
+  var mx=$('rg-shuffle'); if(mx) mx.style.display='none';
+  setEndCtrl();
 }
 function reveal(){ var gi; for(gi=0;gi<G.groups.length;gi++){ if(!G.groups[gi].solved){ G.groups[gi].solved=true; var i; for(i=0;i<G.tiles.length;i++) if(G.tiles[i].gi===gi) G.tiles[i].solved=true; } } renderBoard(); }
 
@@ -476,9 +489,6 @@ tap('b-set',function(){ show('s-set'); });
 tap('set-back',function(){ show('s-title'); });
 tap('rg-back',function(){ show('s-title'); });
 tap('rg-shuffle',function(){ if(G.phase!=='play')return; var rnd=rng((Date.now()>>>0)^(G.selected.length*7)); shuffle(G.tiles,rnd); renderBoard(); });
-tap('rg-hint',hint);
-tap('rg-clear',clearSel);
-tap('rg-submit',submit);
 wireToggle('tg-sound','sound'); wireToggle('tg-sym','sym');
 $('buildstamp').textContent='Root Groups '+BUILD+' · '+CATS.length+' categories';
 
