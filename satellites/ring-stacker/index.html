@@ -157,7 +157,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v3.1";
+var BUILD="v3.2";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -256,7 +256,7 @@ function newGame(mode){
       score:0, rings:0, chainBest:0, level:PROG.level, quota:quotaFor(PROG.level), quotaDone:0,
       cur:null, next:null, dropT:0, over:false, pieces:0,
       pieceBudget:(mode==='daily'?96:0), sbRun:0,
-      fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0 };
+      fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0 };
   G.next=G.feed(); G.next2=G.feed();
   spawn();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
@@ -289,11 +289,13 @@ function cellsOf(x,y,rot,k){ var s=SHAPES[k][rot],out=[],i; for(i=0;i<4;i++)out.
    that falls past everything without grabbing on drifts into the void
    and is lost. Reaching the ceiling (locking above the sky) ends the run. */
 function collides(x,y,rot){
+  // The sun is NOT solid: pieces fall and slide straight through it (no
+  // invisible wall at the center). It still supports landings from above,
+  // and any cell overlapping the sun at lock time is vaporized in a spark.
   var cs=cellsOf(x,y,rot,G.cur.k),i;
   for(i=0;i<4;i++){
     var cx=cs[i][0], cy=cs[i][1];
     if(cx<0||cx>=N||cy>=N)return true;
-    if(isCore(cx,cy))return true;                 // the sun is solid: build ON it
     if(cy>=0&&G.grid[cy][cx])return true;
   }
   return false;
@@ -384,14 +386,14 @@ function lockPiece(slammed){
     }
   }
   for(i=0;i<4;i++){
+    if(isCore(cs[i][0],cs[i][1])){ G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.5}); continue; } // burned by the sun
     G.grid[cs[i][1]][cs[i][0]]=PCOLS[G.cur.k];
     G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.22});
   }
   G.score+=8; SFX.lock();
   G.cur=null;
   if(slammed){ spinStructure(); SFX.spin(); G.spinA=1; }
-  resolveRings();
-  if(!G.over)spawn();
+  resolveRingsStaged();
 }
 function spinStructure(){ // 90° clockwise around the core
   var ng=emptyGrid(),x,y;
@@ -407,36 +409,77 @@ function ringComplete(D){
   for(i=0;i<rc.length;i++){ if(!G.grid[rc[i][1]][rc[i][0]])return false; }
   return true;
 }
-function resolveRings(){
-  var chain=0;
-  while(true){
-    var D=0,d;
-    for(d=1;d<=RMAX;d++){ if(ringComplete(d)){ D=d; break; } }
-    if(!D)break;
-    chain++;
-    var pts=(RMAX+2-D)*100*chain;
-    G.score+=pts; G.rings++; G.quotaDone++;
-    PROG.ringsEver++; saveProg();
-    var rc=RINGS[D-1],i;
-    for(i=0;i<rc.length;i++){ G.grid[rc[i][1]][rc[i][0]]=null; G.pulse.push({x:rc[i][0],y:rc[i][1],life:0.55}); }
-    // inward crush: every cell outside ring D steps one ring toward the core
-    var ng=emptyGrid(),x,y;
-    for(y=0;y<N;y++)for(x=0;x<N;x++){
-      if(!G.grid[y][x])continue;
-      var E=cheb(x,y);
-      if(E<=D){ ng[y][x]=G.grid[y][x]; continue; }
-      var dx=x-C, dy=y-C;
-      var nx=x, ny=y;
-      if(Math.abs(dx)===E)nx=x-(dx>0?1:-1);
-      if(Math.abs(dy)===E)ny=y-(dy>0?1:-1);
-      if(!isCore(nx,ny))ng[ny][nx]=G.grid[y][x];   // merges just overwrite — the crush
-    }
-    G.grid=ng;
-    SFX.ring(chain-1);
-    G.floats.push({x:270,y:BY+C*PITCH,txt:'RING '+D+(chain>1?' · CHAIN x'+chain:'')+' +'+pts,life:1.4,big:true});
-    if(chain>G.chainBest)G.chainBest=chain;
+/* ═══ STAGED RING CLEAR — the reward moment ═══
+   Ring completes -> cells POP (scale up + shatter into colored shards,
+   ~0.45s) -> the outer structure SLIDES one ring inward with animated
+   motion (~0.28s) -> chain re-checks. The next piece waits until the
+   celebration finishes. */
+function findRing(){ for(var d=1;d<=RMAX;d++){ if(ringComplete(d))return d; } return 0; }
+function resolveRingsStaged(){ G.chainN=0; nextRingStage(); }
+function nextRingStage(){
+  var D=findRing();
+  if(!D){
+    if(G.chainN&&G.mode==='journey')checkQuota();
+    if(!G.over)spawn();
+    return;
   }
-  if(chain&&G.mode==='journey')checkQuota();
+  G.chainN++;
+  var chain=G.chainN;
+  var pts=(RMAX+2-D)*100*chain;
+  G.score+=pts; G.rings++; G.quotaDone++;
+  PROG.ringsEver++; saveProg();
+  if(chain>G.chainBest)G.chainBest=chain;
+  SFX.ring(chain-1);
+  G.floats.push({x:270,y:BY+C*PITCH,txt:'RING '+D+(chain>1?' · CHAIN x'+chain:'')+' +'+pts,life:1.5,big:true});
+  var rc=RINGS[D-1],i,pop=[];
+  for(i=0;i<rc.length;i++){
+    var px=rc[i][0], py=rc[i][1];
+    if(!G.grid[py][px])continue;
+    pop.push({x:px,y:py,col:ringColOf(px,py)});
+    G.grid[py][px]=null;
+    // shards burst outward from the sun through each popped cell
+    var ang=Math.atan2(py-C,px-C);
+    for(var k2=0;k2<3;k2++){
+      G.shards.push({x:px,y:py,col:ringColOf(px,py),
+        vx:Math.cos(ang)*(3+Math.random()*5)+(Math.random()*2-1)*2,
+        vy:Math.sin(ang)*(3+Math.random()*5)-2-Math.random()*3,
+        rot:Math.random()*6.28, vr:(Math.random()*2-1)*9,
+        life:0.6+Math.random()*0.35});
+    }
+  }
+  G.popAnim={cells:pop, t:0, dur:0.45, D:D};
+  G.shakeT=Math.max(G.shakeT,0.18);
+}
+function doCrush(D){
+  // compute the inward crush and remember every move for the slide animation
+  var ng=emptyGrid(),x,y,moves=[];
+  for(y=0;y<N;y++)for(x=0;x<N;x++){
+    if(!G.grid[y][x])continue;
+    var E=cheb(x,y);
+    if(E<=D){ ng[y][x]=G.grid[y][x]; continue; }
+    var dx=x-C, dy=y-C;
+    var nx=x, ny=y;
+    if(Math.abs(dx)===E)nx=x-(dx>0?1:-1);
+    if(Math.abs(dy)===E)ny=y-(dy>0?1:-1);
+    if(!isCore(nx,ny)){
+      ng[ny][nx]=G.grid[y][x];   // merges just overwrite — the crush
+      if(nx!==x||ny!==y)moves.push({fx:x,fy:y,tx:nx,ty:ny});
+    }
+  }
+  G.grid=ng;
+  if(moves.length)G.slideAnim={t:0, dur:0.28, moves:moves};
+  else G.slideAnim={t:0, dur:0.06, moves:[]};
+}
+function stepAnims(dt){
+  if(G.popAnim){
+    G.popAnim.t+=dt;
+    if(G.popAnim.t>=G.popAnim.dur){ var D=G.popAnim.D; G.popAnim=null; doCrush(D); }
+    return;
+  }
+  if(G.slideAnim){
+    G.slideAnim.t+=dt;
+    if(G.slideAnim.t>=G.slideAnim.dur){ G.slideAnim=null; nextRingStage(); }
+  }
 }
 function checkQuota(){
   if(G.quotaDone<G.quota)return;
@@ -484,7 +527,9 @@ function loop(ts){
     var iv=dropInterval();
     while(G.dropT>=iv&&G.cur){ G.dropT-=iv; softStep(); }
   }
+  stepAnims(dt);
   var i;
+  for(i=G.shards.length-1;i>=0;i--){ var sh=G.shards[i]; sh.vy+=22*dt; sh.x+=sh.vx*dt; sh.y+=sh.vy*dt; sh.rot+=sh.vr*dt; sh.life-=dt; if(sh.life<=0)G.shards.splice(i,1); }
   for(i=G.pulse.length-1;i>=0;i--){ G.pulse[i].life-=dt; if(G.pulse[i].life<=0)G.pulse.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ var f=G.floats[i]; f.y-=24*dt; f.life-=dt*0.8; if(f.life<=0)G.floats.splice(i,1); }
   if(G.spinA>0)G.spinA=Math.max(0,G.spinA-dt*3.2);
@@ -547,14 +592,61 @@ function render(){
   }
   // cells — colored by their RING (distance from the core) => concentric bands
   var x,y;
+  var slideSkip=null;
+  if(G.slideAnim&&G.slideAnim.moves.length){
+    slideSkip={};
+    for(i=0;i<G.slideAnim.moves.length;i++){ var mv0=G.slideAnim.moves[i]; slideSkip[mv0.tx+','+mv0.ty]=true; }
+  }
+  function drawCell(px,py,col,alpha){
+    if(alpha!==undefined)ctx.globalAlpha=alpha;
+    ctx.fillStyle=col; rr(px,py,CELL,CELL,5); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.22)'; rr(px,py,CELL,CELL*0.42,5); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.18)'; rr(px,py+CELL*0.72,CELL,CELL*0.28,5); ctx.fill();
+    ctx.strokeStyle=hexA(col,0.9); ctx.lineWidth=1; rr(px+0.5,py+0.5,CELL-1,CELL-1,5); ctx.stroke();
+    if(alpha!==undefined)ctx.globalAlpha=1;
+  }
   for(y=0;y<N;y++)for(x=0;x<N;x++){
     if(!G.grid[y][x])continue;
-    var col=ringColOf(x,y);
+    if(slideSkip&&slideSkip[x+','+y])continue;   // drawn mid-slide below
     var p=cellPx(x,y);
-    ctx.fillStyle=col; rr(p.x,p.y,CELL,CELL,5); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.22)'; rr(p.x,p.y,CELL,CELL*0.42,5); ctx.fill();   // top gloss
-    ctx.fillStyle='rgba(0,0,0,0.18)'; rr(p.x,p.y+CELL*0.72,CELL,CELL*0.28,5); ctx.fill(); // bottom shade
-    ctx.strokeStyle=hexA(col,0.9); ctx.lineWidth=1; rr(p.x+0.5,p.y+0.5,CELL-1,CELL-1,5); ctx.stroke();
+    drawCell(p.x,p.y,ringColOf(x,y));
+  }
+  // crush slide — outer cells glide one ring toward the sun
+  if(G.slideAnim&&G.slideAnim.moves.length){
+    var st=Math.min(1,G.slideAnim.t/G.slideAnim.dur);
+    var ease=1-Math.pow(1-st,3);
+    for(i=0;i<G.slideAnim.moves.length;i++){
+      var mv=G.slideAnim.moves[i];
+      var fp=cellPx(mv.fx,mv.fy), tp=cellPx(mv.tx,mv.ty);
+      drawCell(fp.x+(tp.x-fp.x)*ease, fp.y+(tp.y-fp.y)*ease, ringColOf(mv.tx,mv.ty));
+    }
+  }
+  // ring POP — cleared cells swell, glow and burst
+  if(G.popAnim){
+    var pt=Math.min(1,G.popAnim.t/G.popAnim.dur);
+    var scale=1+pt*1.1, pa=1-pt*pt;
+    for(i=0;i<G.popAnim.cells.length;i++){
+      var pc=G.popAnim.cells[i];
+      var pp=cellPx(pc.x,pc.y);
+      var cxm=pp.x+CELL/2, cym=pp.y+CELL/2, half=CELL/2*scale;
+      ctx.globalAlpha=pa;
+      ctx.fillStyle=pc.col; rr(cxm-half,cym-half,half*2,half*2,6); ctx.fill();
+      ctx.fillStyle='rgba(255,251,230,'+(0.65*pa).toFixed(2)+')'; rr(cxm-half*0.6,cym-half*0.6,half*1.2,half*1.2,5); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+  }
+  // shards — colored fragments flying out of popped rings
+  for(i=0;i<G.shards.length;i++){
+    var sh=G.shards[i];
+    var sp2=cellPx(sh.x,sh.y);
+    ctx.save();
+    ctx.translate(sp2.x+CELL/2,sp2.y+CELL/2);
+    ctx.rotate(sh.rot);
+    ctx.globalAlpha=Math.max(0,Math.min(1,sh.life*2));
+    ctx.fillStyle=sh.col;
+    ctx.fillRect(-4,-4,8,8);
+    ctx.restore();
+    ctx.globalAlpha=1;
   }
   // ceiling warning — glows when the structure builds within 4 rows of the sky
   var minLockY=N;
@@ -685,7 +777,7 @@ $('buildstamp').textContent='Sunforge '+BUILD+' · level '+(PROG.level+1)+' · r
 if(/[?&]rsdev=1/.test(location.search)){
   window._RS={ newGame:newGame, softStep:softStep, tryMove:tryMove, tryRotate:tryRotate, slam:slam,
     state:function(){ return G; }, freeze:function(){ running=false; }, render:render,
-    lost:function(){ return _devLost; } };
+    anims:function(dt){ stepAnims(dt||0.1); }, lost:function(){ return _devLost; } };
 }
 
 /* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
