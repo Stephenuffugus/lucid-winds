@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ring Stacker">
+<meta name="apple-mobile-web-app-title" content="Sunforge">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230e1018'/%3E%3Crect x='7' y='7' width='18' height='18' rx='3' fill='none' stroke='%234ac8b4' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' rx='2' fill='none' stroke='%23e0a843' stroke-width='2'/%3E%3Crect x='14.5' y='14.5' width='3' height='3' fill='%23ffd76a'/%3E%3C/svg%3E">
-<title>Ring Stacker · Sky Wolf Studios</title>
+<title>Sunforge · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
@@ -81,7 +81,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">RING STACKER</div>
+    <div class="title-word">SUNFORGE</div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Pieces <b style="color:var(--teal)">stick</b> to the golden core and to anything already stuck. Grow <b style="color:var(--teal)">square rings</b> outward toward the walls. <b style="color:var(--gold)">SLAM</b> spins the whole gyre a quarter turn. Miss the structure and the piece is lost to the void.</div>
     <div style="flex:1"></div>
@@ -107,6 +107,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <button class="cbtn" id="c-right" style="right:14px; bottom:calc(100px + env(safe-area-inset-bottom,0px))">▶</button>
     <button class="cbtn" id="c-rot"   style="left:14px;  bottom:calc(20px + env(safe-area-inset-bottom,0px))">⟳</button>
     <button class="cbtn" id="c-down"  style="right:14px; bottom:calc(20px + env(safe-area-inset-bottom,0px))">▼</button>
+    <button class="tbtn" id="b-hold" style="right:10px" title="Hold piece">&#8646;</button>
     <button id="slambtn">SLAM</button>
   </div>
 
@@ -156,7 +157,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v2.0";
+var BUILD="v3.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -206,9 +207,10 @@ function todayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+
    outside crushes inward one ring (merges allowed). SLAM (hard drop)
    spins the whole locked structure 90° clockwise as the piece lands.
    ===================================================================== */
-var N=15, C=7;                      // board size, core index
-var CELL=30, GAP=2, PITCH=CELL+GAP; // 15*32-2 = 478 px board
-var BX=(540-(N*PITCH-GAP))/2, BY=118;
+var N=19, C=9;                      // board size, core index (v3: 19x19, 9 rings)
+var CELL=24, GAP=2, PITCH=CELL+GAP; // 19*26-2 = 492 px board
+var BX=(540-(N*PITCH-GAP))/2, BY=112;
+var RMAX=9;                          // outermost ring
 /* tetromino cell sets, 4 rotations each (x,y offsets from piece origin) */
 var SHAPES={
   I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
@@ -228,8 +230,8 @@ var PKEYS=['I','O','T','S','Z','J','L'];
    Because color is chosen live at render time, when a ring clears and the
    outside crushes inward, every surviving cell recolors to its new ring — the
    whole gyre visibly flows one color-band toward the core. */
-var RING_COL=[ '#ffd76a', '#ff5d6c', '#ff9f45', '#ffd93b', '#4fd67a', '#33c2d6', '#4d9bf7', '#c56bf0' ];
-function ringColOf(x,y){ var d=cheb(x,y); return RING_COL[d]||RING_COL[7]; }
+var RING_COL=[ '#ffd76a', '#ff5d6c', '#ff9f45', '#ffd93b', '#4fd67a', '#33c2d6', '#4d9bf7', '#c56bf0', '#f06bb8', '#9b8cf7' ];
+function ringColOf(x,y){ var d=cheb(x,y); return RING_COL[d]||RING_COL[RMAX]; }
 function hexA(h,a){ var n=parseInt(h.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
 var G=null, running=false, lastTs=0;
@@ -238,7 +240,7 @@ function emptyGrid(){ var g=[],y,x; for(y=0;y<N;y++){ g.push([]); for(x=0;x<N;x+
 function isCore(x,y){ return x===C&&y===C; }
 function cheb(x,y){ return Math.max(Math.abs(x-C),Math.abs(y-C)); }
 function ringCells(D){ var out=[],x,y; for(y=C-D;y<=C+D;y++)for(x=C-D;x<=C+D;x++){ if(cheb(x,y)===D)out.push([x,y]); } return out; }
-var RINGS=[]; (function(){ for(var d=1;d<=7;d++)RINGS.push(ringCells(d)); })();
+var RINGS=[]; (function(){ for(var d=1;d<=RMAX;d++)RINGS.push(ringCells(d)); })();
 
 function bagFeed(rng){
   var bag=[];
@@ -250,25 +252,26 @@ function bagFeed(rng){
 function newGame(mode){
   var seed = mode==='daily' ? ((dayNum()*2654435761)>>>0) : ((Math.random()*2147483647)|0);
   var rng=mulberry32(seed);
-  G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(),
+  G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(), hold:null, holdUsed:false, next2:null,
       score:0, rings:0, chainBest:0, level:PROG.level, quota:quotaFor(PROG.level), quotaDone:0,
       cur:null, next:null, dropT:0, over:false, pieces:0,
-      pieceBudget:(mode==='daily'?80:0), sbRun:0,
+      pieceBudget:(mode==='daily'?96:0), sbRun:0,
       fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0 };
-  G.next=G.feed();
+  G.next=G.feed(); G.next2=G.feed();
   spawn();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
 }
 function quotaFor(lvl){ return 2+Math.min(6,Math.floor(lvl/2)); }
 function dropInterval(){
-  if(!G)return 0.8;
-  if(G.mode==='zen')return 0.9;
-  if(G.mode==='daily')return 0.55;
-  return Math.max(0.18, 0.8*Math.pow(0.93,G.level));
+  if(!G)return 0.9;
+  if(G.mode==='zen')return 1.05;
+  if(G.mode==='daily')return 0.62;
+  return Math.max(0.2, 0.9*Math.pow(0.93,G.level));
 }
 function spawn(){
-  var k=G.next; G.next=G.feed();
+  var k=G.next; G.next=G.next2; G.next2=G.feed();
   G.cur={ k:k, rot:0, x:C-2, y:-2 };
+  G.holdUsed=false;
   G.pieces++;
   if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun(); return; }
   if(collides(G.cur.x,G.cur.y,G.cur.rot)){
@@ -346,6 +349,20 @@ function stickDrop(){
   while(!touchingAt(G.cur.x,y,G.cur.rot) && !collides(G.cur.x,y+1,G.cur.rot)) y++;
   return {y:y, stick:touchingAt(G.cur.x,y,G.cur.rot)};
 }
+function holdPiece(){
+  if(!G||!G.cur||G.over||G.holdUsed)return;
+  var k=G.cur.k;
+  if(G.hold===null||G.hold===undefined){
+    G.hold=k; G.cur=null; spawn();
+    if(G.cur)G.holdUsed=true;
+  } else {
+    var h=G.hold;
+    G.cur={k:h,rot:0,x:C-2,y:-2};
+    if(collides(G.cur.x,G.cur.y,G.cur.rot)){ G.cur={k:k,rot:0,x:C-2,y:-2}; return; }
+    G.hold=k; G.holdUsed=true;
+  }
+  SFX.rot();
+}
 function slam(){
   if(!G.cur||G.over)return;
   var sd=stickDrop();
@@ -368,6 +385,7 @@ function lockPiece(slammed){
   }
   for(i=0;i<4;i++){
     G.grid[cs[i][1]][cs[i][0]]=PCOLS[G.cur.k];
+    G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.22});
   }
   G.score+=8; SFX.lock();
   G.cur=null;
@@ -393,10 +411,10 @@ function resolveRings(){
   var chain=0;
   while(true){
     var D=0,d;
-    for(d=1;d<=7;d++){ if(ringComplete(d)){ D=d; break; } }
+    for(d=1;d<=RMAX;d++){ if(ringComplete(d)){ D=d; break; } }
     if(!D)break;
     chain++;
-    var pts=(9-D)*100*chain;
+    var pts=(RMAX+2-D)*100*chain;
     G.score+=pts; G.rings++; G.quotaDone++;
     PROG.ringsEver++; saveProg();
     var rc=RINGS[D-1],i;
@@ -489,11 +507,22 @@ function render(){
           : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+Math.max(0,G.pieceBudget-G.pieces)+' pieces left · rings '+G.rings)
           : 'ZEN · rings '+G.rings;
   ctx.fillText(sub, 236, 84);
-  // next preview
-  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,26,68,68,12); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('NEXT',486,22);
+  // next / after / hold previews
+  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,24,68,46,10); ctx.fill();
+  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('NEXT',486,20);
   var ns=SHAPES[G.next][0],i;
-  for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+12+ns[i][0]*12,26+14+ns[i][1]*12,10,10,2); ctx.fill(); }
+  for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+14+ns[i][0]*10,24+8+ns[i][1]*10,8,8,2); ctx.fill(); }
+  if(G.next2){
+    ctx.fillStyle='rgba(255,255,255,0.03)'; rr(452,76,68,32,8); ctx.fill();
+    var n2=SHAPES[G.next2][0];
+    for(i=0;i<4;i++){ ctx.fillStyle=hexA(PCOLS[G.next2],0.6); rr(452+18+n2[i][0]*7,76+5+n2[i][1]*7,5.5,5.5,1.5); ctx.fill(); }
+  }
+  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(86,24,68,46,10); ctx.fill();
+  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('HOLD',120,20);
+  if(G.hold){
+    var hs=SHAPES[G.hold][0];
+    for(i=0;i<4;i++){ ctx.fillStyle=G.holdUsed?hexA(PCOLS[G.hold],0.35):PCOLS[G.hold]; rr(86+14+hs[i][0]*10,24+8+hs[i][1]*10,8,8,2); ctx.fill(); }
+  }
   // board panel
   ctx.fillStyle='rgba(255,255,255,0.028)';
   rr(BX-8,BY-8,N*PITCH-GAP+16,N*PITCH-GAP+16,14); ctx.fill();
@@ -506,7 +535,7 @@ function render(){
   // ring frames — every ring drawn as a colored square target that brightens
   // and thickens as it fills, so the concentric colored rings are unmistakable
   var d;
-  for(d=6;d>=1;d--){
+  for(d=RMAX-1;d>=1;d--){
     var p0=cellPx(C-d,C-d);
     var w=(2*d+1)*PITCH-GAP;
     var done=0, rc=RINGS[d-1];
@@ -526,6 +555,16 @@ function render(){
     ctx.fillStyle='rgba(255,255,255,0.22)'; rr(p.x,p.y,CELL,CELL*0.42,5); ctx.fill();   // top gloss
     ctx.fillStyle='rgba(0,0,0,0.18)'; rr(p.x,p.y+CELL*0.72,CELL,CELL*0.28,5); ctx.fill(); // bottom shade
     ctx.strokeStyle=hexA(col,0.9); ctx.lineWidth=1; rr(p.x+0.5,p.y+0.5,CELL-1,CELL-1,5); ctx.stroke();
+  }
+  // ceiling warning — glows when the structure builds within 4 rows of the sky
+  var minLockY=N;
+  for(y=0;y<N&&minLockY===N;y++){ for(x=0;x<N;x++){ if(G.grid[y][x]){ minLockY=y; break; } } }
+  if(minLockY<=3){
+    var wA=(0.22+0.14*Math.sin(G.t*6))*(1-minLockY/4);
+    var wg=ctx.createLinearGradient(0,BY-6,0,BY+70);
+    wg.addColorStop(0,'rgba(255,93,108,'+wA.toFixed(3)+')');
+    wg.addColorStop(1,'rgba(255,93,108,0)');
+    ctx.fillStyle=wg; ctx.fillRect(BX-6,BY-6,N*PITCH-GAP+12,76);
   }
   // core — the golden SUN everything rings around
   var cp=cellPx(C,C);
@@ -590,6 +629,7 @@ hold('c-left',function(){ tryMove(-1); });
 hold('c-right',function(){ tryMove(1); });
 hold('c-down',function(){ if(G&&G.cur)softStep(); },160);
 tap('c-rot',function(){ tryRotate(); });
+tap('b-hold',function(){ holdPiece(); });
 tap('slambtn',function(){ slam(); });
 cv.addEventListener('pointerdown',function(e){
   if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
@@ -602,6 +642,7 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(); }
   else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(); }
   else if(e.key===' '){ e.preventDefault(); slam(); }
+  else if(e.key==='c'||e.key==='C'||e.key==='Shift'){ e.preventDefault(); holdPiece(); }
 });
 
 /* ---------- screens ---------- */
@@ -614,8 +655,8 @@ function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.le
   var bd=$('b-daily'); if(bd)bd.innerHTML='Daily Gyre'+((rec&&rec.day===todayKey())?' ✓':''); }
 function shareIt(){
   var txt = G&&G.mode==='daily'
-    ? 'Ring Stacker Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
-    : 'Ring Stacker · '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
+    ? 'Sunforge Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
+    : 'Sunforge · '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
   var url='https://lucidwinds.com/satellites/ring-stacker/';
   try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
   try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}
@@ -638,7 +679,7 @@ function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.clas
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
 wireToggle('tg-sound','sound');
 wireToggle('tg-ghost','ghost');
-$('buildstamp').textContent='Ring Stacker '+BUILD+' · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
+$('buildstamp').textContent='Sunforge '+BUILD+' · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
 
 /* headless test hook — only exists with ?rsdev=1 in the URL */
 if(/[?&]rsdev=1/.test(location.search)){

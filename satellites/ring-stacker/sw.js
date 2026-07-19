@@ -1,5 +1,5 @@
 /* Ring Stacker service worker — installability. NETWORK-FIRST (house rule). */
-var CACHE = "ring-stacker-v1";
+var CACHE = "ring-stacker-v3";
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
