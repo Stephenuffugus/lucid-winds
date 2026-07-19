@@ -66,6 +66,24 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .stars{font-size:34px; letter-spacing:8px; margin-top:8px}
+.lvlbanner{position:absolute; left:0; right:0; top:38%; text-align:center; z-index:26; pointer-events:none;
+  font-size:52px; font-weight:800; letter-spacing:6px; color:#ffd76a; text-shadow:0 4px 18px #000c;
+  opacity:0; transform:scale(0.8)}
+.lvlbanner.go{animation:bannerIn 1.7s ease forwards}
+@keyframes bannerIn{ 0%{opacity:0; transform:scale(0.7)} 18%{opacity:1; transform:scale(1.06)} 30%{transform:scale(1)} 78%{opacity:1} 100%{opacity:0; transform:scale(1.04)} }
+.multburst{position:absolute; left:0; right:0; top:34%; text-align:center; z-index:27; pointer-events:none;
+  font-size:74px; font-weight:900; color:#ffd76a; text-shadow:0 6px 24px #000d; opacity:0}
+.multburst.go{animation:bannerIn 1.5s ease forwards}
+.coach{position:absolute; left:0; right:0; bottom:120px; text-align:center; z-index:26; pointer-events:none;
+  font-size:22px; font-weight:800; letter-spacing:2px; color:#f2f0fa; text-shadow:0 2px 10px #000c;
+  animation:coachPulse 1.1s ease infinite}
+@keyframes coachPulse{ 0%,100%{opacity:0.55; transform:scale(1)} 50%{opacity:1; transform:scale(1.08)} }
+.combo.pulse{animation:comboPop 0.28s ease}
+@keyframes comboPop{ 0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)} }
+#progflag{position:absolute; right:52px; top:calc(env(safe-area-inset-top,0px) + 58px); font-size:15px; z-index:25; pointer-events:none}
+#cfwrap{position:fixed; left:0; top:0; right:0; bottom:0; z-index:999; pointer-events:none; overflow:hidden}
+.cf{position:absolute; top:-14px; width:9px; height:13px; pointer-events:none; animation:cfFall linear forwards}
+@keyframes cfFall{ 0%{top:-14px} 100%{top:105vh} }
 #b-music{flex:0 0 64px; font-size:20px}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
@@ -107,7 +125,11 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="hud"><div class="sc" id="h-score">0</div><div class="lv" id="h-lvl">LEVEL 1</div></div>
     <div class="combo" id="h-combo">x2</div>
     <div id="progbar"><div id="progfill"></div></div>
+    <div id="progflag">🏁</div>
     <div id="pops"></div>
+    <div class="lvlbanner" id="lvlbanner">LEVEL 1</div>
+    <div class="multburst" id="multburst">x5!</div>
+    <div class="coach" id="coach" style="display:none">TAP TO FLIP!</div>
     <button class="tbtn" id="b-home">&#8249;</button>
   </div>
 
@@ -134,7 +156,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v3.0";
+var BUILD="v3.5";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -185,6 +207,14 @@ var SFX={
   tickup:function(step){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='square'; o.frequency.value=600+step*90;
     g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.08); },
+  land:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(105,t+0.05);
+    g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.08); },
+  milestone:function(n){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var f=[660,830,990]; for(var i=0;i<f.length;i++){ (function(fr,dt){
+      var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(1+n*0.02);
+      g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.1,t+dt+0.015); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.16);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.18); })(f[i],i*0.07); } },
   win:function(mult){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[523,659,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(mult>=5?1.19:1);
@@ -204,7 +234,7 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
    slice-master's proven constants, scaled from px to world units.
    ===================================================================== */
 var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
-var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null;
+var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null, kshadow=null;
 var chunks=[], sparks=[], meshes=[];
 var G=null, running=false, lastTs=0;
 
@@ -259,6 +289,27 @@ function buildKnife(){
   trail.position.set(-1.4,-1.05,0); knife.add(trail);
   knife.scale.set(0.55,0.55,0.55); // knife reads ~3.5 units long in world space
   scene.add(knife);
+  // landing shadow — the platforming readability anchor
+  kshadow=new THREE.Mesh(new THREE.CircleGeometry(1.6,18), new THREE.MeshBasicMaterial({color:0x0a140a, transparent:true, opacity:0.35}));
+  kshadow.rotation.x=-Math.PI/2;
+  scene.add(kshadow);
+}
+
+/* label plates: text painted into a canvas texture (numbers allowed here —
+   they are gameplay UI, rendered by us, not baked art) */
+function textPlate(txt, w, h, fg, bg, size){
+  var cv=document.createElement('canvas'); cv.width=256; cv.height=128;
+  var g=cv.getContext('2d');
+  if(bg){ g.fillStyle=bg; g.fillRect(0,0,256,128); }
+  g.font='900 '+(size||84)+'px system-ui,sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.lineWidth=10; g.strokeStyle='rgba(0,0,0,0.55)';
+  g.strokeText(txt,128,68);
+  g.fillStyle=fg||'#ffffff';
+  g.fillText(txt,128,68);
+  var tex=new THREE.CanvasTexture(cv);
+  var m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({map:tex, transparent:true}));
+  return m;
 }
 
 /* ---------- level construction ---------- */
@@ -291,7 +342,7 @@ function mushroom(x){
   cap.position.set(x,2.2,0);
   return {x:x-2.1,y:0,w:4.2,h:2.9,solid:true,spring:true};
 }
-function fruitAt(x,y,f){
+function fruitAt(x,y,f,support){
   var m;
   if(f.n==='banana'){
     m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(f.r*2.2,f.r*0.9,f.r*0.9), new THREE.MeshLambertMaterial({color:f.col})));
@@ -302,10 +353,41 @@ function fruitAt(x,y,f){
     lf.position.set(x,y+f.r*1.3,0);
   } else {
     m=addMesh(new THREE.Mesh(new THREE.SphereGeometry(f.r,14,10), new THREE.MeshLambertMaterial({color:f.col})));
-    if(f.n==='apple'||f.n==='watermelon'){ var st2=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.2,0.7,0.2), new THREE.MeshLambertMaterial({color:WOOD_D}))); st2.position.set(x,y+f.r+0.3,0); }
+    if(f.n==='apple'||f.n==='watermelon'||f.n==='plum'||f.n==='orange'){
+      var st2=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.16,0.6,0.16), new THREE.MeshLambertMaterial({color:WOOD_D})));
+      st2.position.set(x,y+f.r+0.25,0);
+      var lf2=addMesh(new THREE.Mesh(new THREE.SphereGeometry(f.r*0.28,6,5), new THREE.MeshLambertMaterial({color:LEAF})));
+      lf2.position.set(x+f.r*0.3,y+f.r+0.4,0);
+      lf2.scale.set(1.6,0.5,0.8);
+    }
   }
   m.position.set(x,y,0);
+  // gloss dot — the little shine that makes fruit read juicy
+  var gl=addMesh(new THREE.Mesh(new THREE.SphereGeometry(f.r*0.18,6,5), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.65})));
+  gl.position.set(x-f.r*0.35, y+f.r*0.4, f.r*0.75);
+  // grounding (Stephen 7/19: no floating fruit) — pole from the ground, or a
+  // vine string from an overhead branch; callers pass 'pole' | 'vine' | none
+  if(support==='pole' && y>f.r*1.1){
+    var pole=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,y-f.r*0.6,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
+    pole.position.set(x,(y-f.r*0.6)/2,0);
+    var dish=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(f.r*0.7,f.r*0.55,0.22,8), new THREE.MeshLambertMaterial({color:WOOD})));
+    dish.position.set(x,y-f.r*0.75,0);
+  } else if(support==='vine'){
+    var topY=y+4.5;
+    var str=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,topY-y-f.r*0.6,4), new THREE.MeshLambertMaterial({color:0x4e8a44})));
+    str.position.set(x,(topY+y+f.r*0.6)/2,0);
+  }
   return {x:x,y:y,r:f.r,f:f,mesh:m,cut:false};
+}
+/* one overhead branch spanning an arc of hanging fruit */
+function branchOver(x0,x1,y){
+  var w=(x1-x0)+4;
+  var br=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.45,w,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  br.rotation.z=Math.PI/2;
+  br.position.set((x0+x1)/2, y, 0);
+  var lf=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.4,7,6), new THREE.MeshLambertMaterial({color:0x3f7a38})));
+  lf.position.set(x1+2, y+0.6, 0);
+  lf.scale.set(1.6,0.7,1);
 }
 function crystal(x,y){
   var m=addMesh(new THREE.Mesh(new THREE.ConeGeometry(1.1,3.2,5), new THREE.MeshLambertMaterial({color:CRYSTAL, emissive:0x551133})));
@@ -317,18 +399,64 @@ function buildLevel(lvl){
   clearWorld();
   var rng=mulberry32(((lvl*2654435761)>>>0)^0x51C3D);
   var len=90+Math.min(lvl,40)*14;
+  // sky backdrop: painted gradient with a sun — cheap, huge, gorgeous
+  (function(){
+    var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
+    var g2=cv.getContext('2d');
+    var grd=g2.createLinearGradient(0,0,0,256);
+    grd.addColorStop(0,'#2a4d5e'); grd.addColorStop(0.55,'#4a7a6a'); grd.addColorStop(0.85,'#c9b46a'); grd.addColorStop(1,'#e0c47a');
+    g2.fillStyle=grd; g2.fillRect(0,0,64,256);
+    var tex=new THREE.CanvasTexture(cv);
+    var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(len+260,110), new THREE.MeshBasicMaterial({map:tex, fog:false})));
+    sky.position.set(len/2,34,-34);
+    var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
+    sunD.position.set(len*0.72,44,-33);
+  })();
+  // drifting clouds (static puffs, parallax by depth)
+  for(var cx2=-10;cx2<len+40;cx2+=26+rng()*22){
+    var cl=addMesh(new THREE.Mesh(new THREE.SphereGeometry(3.2+rng()*2.6,8,6), new THREE.MeshLambertMaterial({color:0xf2efe6, fog:false})));
+    cl.position.set(cx2, 30+rng()*12, -28-rng()*4);
+    cl.scale.set(1.8,0.55,1);
+  }
   // the mossy forest counter running the whole course
   var g=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,3,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
   g.position.set(len/2,-1.5,0);
+  var soil=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,1.1,14.2), new THREE.MeshLambertMaterial({color:0x4a3826})));
+  soil.position.set(len/2,-2.6,0);
   var lip=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,0.5,14.4), new THREE.MeshLambertMaterial({color:0x557a48})));
   lip.position.set(len/2,0,0);
-  // backdrop trees for depth
+  // ground stripes every 8 units: scale + speed read
+  for(var sx=0;sx<len+20;sx+=8){
+    var stp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4,0.08,13.6), new THREE.MeshLambertMaterial({color:0x628a54})));
+    stp.position.set(sx+2,0.26,0);
+  }
+  // grass tufts + tiny flowers, sparse, front edge biased
+  for(var gx=2;gx<len+10;gx+=3+rng()*4){
+    if(rng()<0.6){
+      var tuft=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.28,0.9+rng()*0.6,5), new THREE.MeshLambertMaterial({color:0x6fae58})));
+      tuft.position.set(gx, 0.6, 3.5+rng()*2.5);
+    }
+    if(rng()<0.22){
+      var stem=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,4), new THREE.MeshLambertMaterial({color:0x5a8a48})));
+      stem.position.set(gx+1, 0.7, -3-rng()*2);
+      var bloom=addMesh(new THREE.Mesh(new THREE.SphereGeometry(0.24,6,5), new THREE.MeshLambertMaterial({color:rng()<0.5?0xf2e6c0:0xe8a0b8})));
+      bloom.position.set(gx+1, 1.2, stem.position.z);
+    }
+  }
+  // backdrop trees for depth (two rows, varied greens)
   for(var tx=-10;tx<len+30;tx+=9+rng()*8){
     var th=8+rng()*10;
     var tr=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.1,th,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
     tr.position.set(tx,-1+th/2,-9-rng()*6);
-    var cr=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6+rng()*2.4,9,7), new THREE.MeshLambertMaterial({color:0x3f7a38})));
+    var crCol=[0x3f7a38,0x4a8a3e,0x37683a][Math.floor(rng()*3)];
+    var cr=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6+rng()*2.4,9,7), new THREE.MeshLambertMaterial({color:crCol})));
     cr.position.set(tx,-1+th+1.5,tr.position.z);
+  }
+  // near bushes for the front parallax band
+  for(var bx=0;bx<len+20;bx+=14+rng()*12){
+    var bh=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.2+rng()*0.8,7,6), new THREE.MeshLambertMaterial({color:0x2f5a30})));
+    bh.position.set(bx, -0.2, 6.4+rng()*1.2);
+    bh.scale.set(1.5,0.8,1);
   }
   var blocks=[], items=[], crystals=[];
   var x=14;
@@ -351,21 +479,23 @@ function buildLevel(lvl){
     if(seg==='ground'){                 // fruit run on the ground
       var n=2+Math.floor(rng()*3);
       for(var i=0;i<n;i++){ var f=FRUIT[Math.floor(rng()*FRUIT.length)]; items.push(fruitAt(x,f.r*0.9,f)); x+=4+rng()*2.5; }
-    } else if(seg==='arc'){             // floating fruit arc at hop height
+    } else if(seg==='arc'){             // fruit hanging from an overhead branch
       var na=3+Math.floor(rng()*3);
-      var baseY=3.5+rng()*6;            // 3.5 to 9.5: one-hop and flyer height
+      var baseY=3.5+rng()*4.5;
+      var ax0=x;
       for(var ia=0;ia<na;ia++){
         var fa=FRUIT[Math.floor(rng()*FRUIT.length)];
-        var arcY=baseY+Math.sin(ia/(na-1||1)*Math.PI)*2.2;
-        items.push(fruitAt(x,arcY,fa)); x+=3.6+rng()*1.6;
+        var arcY=baseY+Math.sin(ia/(na-1||1)*Math.PI)*1.6;
+        items.push(fruitAt(x,arcY,fa,'vine')); x+=3.6+rng()*1.6;
       }
+      branchOver(ax0-1, x-2, baseY+6.1);
       x+=2;
     } else if(seg==='wall'){            // wall to hop (taller with level)
       var h=3+Math.floor(rng()*(2+d*3))*1.6;
       blocks.push(woodBox(x,0,3.4,h));
       var ftop=FRUIT[Math.floor(rng()*4)];
       items.push(fruitAt(x+1.7,h+ftop.r*0.9,ftop));
-      if(rng()<0.5){ var fh=FRUIT[Math.floor(rng()*4)]; items.push(fruitAt(x+1.7,h+5+rng()*3,fh)); }
+      if(rng()<0.5){ var fh=FRUIT[Math.floor(rng()*4)]; items.push(fruitAt(x+1.7,h+5+rng()*3,fh,'pole')); }
       x+=7+rng()*3;
     } else if(seg==='steps'){           // crate steps with fruit on top
       var steps=2+Math.floor(rng()*2);
@@ -379,10 +509,10 @@ function buildLevel(lvl){
       var fs=FRUIT[Math.floor(rng()*FRUIT.length)];
       items.push(fruitAt(x,sh+2.2,fs));
       x+=6.5+rng()*2.5;
-    } else if(seg==='shroom'){          // mushroom springboard + sky fruit reward
+    } else if(seg==='shroom'){          // mushroom springboard + sky fruit on a tall pole
       blocks.push(mushroom(x));
       var fm=FRUIT[Math.floor(rng()*FRUIT.length)];
-      items.push(fruitAt(x+4,9+rng()*4,fm));
+      items.push(fruitAt(x+4,8.5+rng()*3.5,fm,'pole'));
       x+=6+rng()*3;
     } else {                            // pink crystal squeeze
       crystals.push(crystal(x,0));
@@ -391,16 +521,31 @@ function buildLevel(lvl){
       x+=6.5+rng()*2.5;
     }
   }
-  // THE SCORE WALL — stick it high
+  // THE SCORE WALL — an unmissable landmark you stick as high as you dare
   var wallX=len+8;
   var bands=[[1,0x8a8f9e],[2,0x4ac8b4],[3,0x5b9bd5],[5,0xc56bf0],[10,0xffd76a]];
+  var bandMats=[];
   for(var b2=0;b2<bands.length;b2++){
-    var bm=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3,4.6,10), new THREE.MeshLambertMaterial({color:bands[b2][1]})));
+    var mat=new THREE.MeshLambertMaterial({color:bands[b2][1]});
+    bandMats.push(mat);
+    var bm=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3,4.6,10), mat));
     bm.position.set(wallX+1.5, b2*4.6+2.3, 0);
+    // big painted multiplier label on the player-facing side of each band
+    var lb=addMesh(textPlate('x'+bands[b2][0], 3.4, 2.2, '#ffffff'));
+    lb.position.set(wallX+1.5, b2*4.6+2.3, 5.2);
+    // and one on the approach face so it reads from the run-up too
+    var lb2=addMesh(textPlate('x'+bands[b2][0], 3.2, 2.0, '#ffffff'));
+    lb2.rotation.y=-Math.PI/2;
+    lb2.position.set(wallX-0.05, b2*4.6+2.3, 0);
   }
   var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,26,11), new THREE.MeshLambertMaterial({color:WOOD_D})));
   post.position.set(wallX+3.6,13,0);
-  return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands};
+  // finish flag on top: silhouette you can spot from far down the course
+  var pole2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,6,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  pole2.position.set(wallX+1.5,26,0);
+  var flag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), new THREE.MeshLambertMaterial({color:0xffd76a, side:THREE.DoubleSide})));
+  flag.position.set(wallX-0.4,27.6,0);
+  return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands, bandMats:bandMats};
 }
 
 function newGame(lvl){
@@ -416,6 +561,12 @@ function newGame(lvl){
   $('h-lvl').textContent='LEVEL '+lvl;
   $('h-combo').classList.remove('on');
   $('progfill').style.width='0%';
+  // level intro banner sweep
+  var bn=$('lvlbanner');
+  if(bn){ bn.textContent='LEVEL '+lvl; bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
+  // first-timer coach: pulses until the first flip
+  var co=$('coach');
+  if(co) co.style.display=(lvl===1)?'block':'none';
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
@@ -426,6 +577,7 @@ function doTap(){
   if(!G||G.done)return;
   ac();
   G.vy=TAPVY; G.vx=RUNVX; G.w=TAPW; G.grounded=false; G.taps++;
+  if(G.taps===1){ var co=$('coach'); if(co)co.style.display='none'; }
   SFX.flip();
 }
 $('gl').addEventListener('pointerdown', function(e){
@@ -496,7 +648,11 @@ function sliceFruit(it){
   G.shake=Math.min(0.22,0.08+G.combo*0.004);
   SFX.slice(G.combo, f.pitch);
   var cEl=$('h-combo');
-  if(G.combo>=2){ cEl.textContent='x'+G.combo; cEl.classList.add('on'); }
+  if(G.combo>=2){
+    cEl.textContent='x'+G.combo; cEl.classList.add('on');
+    cEl.classList.remove('pulse'); void cEl.offsetWidth; cEl.classList.add('pulse');
+  }
+  if(G.combo===5||G.combo===10||G.combo===15||G.combo===20) SFX.milestone(G.combo);
 }
 function hitCrystal(cr){
   if(cr.hitT && G.t-cr.hitT<1)return;
@@ -536,7 +692,7 @@ function loop(ts){
     if(ny-KR<=0 && G.vy<=0){
       ny=KR;
       if(G.vy<-9){ G.vy=-G.vy*0.25; SFX.wood(); spawnSparks(nx,0.2,0x9aa25a,3); }
-      else { G.vy=0; G.grounded=true; }
+      else { if(G.vy<-2.5)SFX.land(); G.vy=0; G.grounded=true; }
     }
     // solid wood (blocks, stumps, springy mushroom caps)
     var bl=G.world.blocks, i;
@@ -549,7 +705,7 @@ function loop(ts){
           else {
             ny=b.y+b.h+KR;
             if(G.vy<-9){ G.vy=-G.vy*0.25; SFX.wood(); }
-            else { G.vy=0; G.grounded=true; }
+            else { if(G.vy<-2.5)SFX.land(); G.vy=0; G.grounded=true; }
           }
           continue;
         }
@@ -580,13 +736,17 @@ function loop(ts){
     // THE SCORE WALL — stick it and multiply
     if(G.x+KR>=G.world.wallX && G.vx>0){
       G.x=G.world.wallX-KR*0.4;
+      // overshooters slam into the gold top band; nothing sticks in thin air
+      if(G.y>21.2)G.y=21.2;
       G.done=true; G.doneT=0; G.stuckY=G.y;
       var band=Math.min(4,Math.max(0,Math.floor(G.y/4.6)));
       G.mult=G.world.bands[band][0];
       G.ang=0.35; G.w=0;
       SFX.stick(); G.shake=0.35;
       spawnSparks(G.x,G.y,0xffd76a,14);
-      popup('x'+G.mult+'!', G.x-2, G.y+2, '#ffd76a');
+      if(G.world.bandMats&&G.world.bandMats[band]&&G.world.bandMats[band].emissive)G.world.bandMats[band].emissive.setHex(0x554400);
+      var mb=$('multburst');
+      if(mb){ mb.textContent='x'+G.mult+'!'; mb.classList.remove('go'); void mb.offsetWidth; mb.classList.add('go'); }
     }
 
     $('h-score').textContent=G.score.toLocaleString();
@@ -602,13 +762,24 @@ function loop(ts){
       var iv=setInterval(function(){ st++; SFX.tickup(st); if(st>=target){ clearInterval(iv); } }, 90);
       SFX.win(G.mult);
     }
-    if(G.doneT>1.6){ running=false; finishLevel(); return; }
+    if(G.doneT>2.4){ running=false; finishLevel(); return; }
   }
 
   // knife transform + spin trail
   knife.position.set(G.x,G.y,0);
   knife.rotation.z=G.ang;
   if(trail)trail.material.opacity=Math.min(0.6, Math.abs(G.w)*0.05);
+  // landing shadow: finds the surface under the knife, fades with height
+  if(kshadow){
+    var gY=0, bl2=G.world.blocks;
+    for(var sb=0;sb<bl2.length;sb++){ var bb=bl2[sb]; if(G.x>bb.x-0.5&&G.x<bb.x+bb.w+0.5&&bb.y+bb.h<=G.y+0.4&&bb.y+bb.h>gY)gY=bb.y+bb.h; }
+    var hgt=Math.max(0,G.y-gY);
+    kshadow.position.set(G.x, gY+0.14, 0);
+    var sc=Math.max(0.45, 1.5-hgt*0.05);
+    kshadow.scale.set(sc,sc,sc);
+    kshadow.material.opacity=Math.max(0.1, 0.4-hgt*0.012);
+    kshadow.visible=!G.done;
+  }
 
   // chunks + sparks
   var c;
@@ -626,17 +797,25 @@ function loop(ts){
   }
   if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
 
-  // THREE-QUARTER SIDE CHASE — behind and above, looking along the course
-  // so the forest counter recedes to the RIGHT with real depth.
-  var camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:23 };
-  camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*4.5);
-  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*5);
+  // THREE-QUARTER SIDE CHASE — behind and above, looking along the course.
+  // On the finale the camera pulls back and frames the WHOLE score wall so
+  // you watch yourself stick it (Stephen: could not see the wall).
+  var camT, lookX, lookY;
+  if(G.done){
+    camT={ x:G.world.wallX-16.5, y:13.5, z:30 };
+    lookX=G.world.wallX+1; lookY=Math.min(20,Math.max(7,G.stuckY*0.6+5));
+  } else {
+    camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:23 };
+    lookX=G.x+5.5; lookY=Math.max(3,G.y*0.45+1.5);
+  }
+  camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*(G.done?2.6:4.5));
+  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*(G.done?2.6:5));
   camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4);
   var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.4:0;
   camera.position.x+=kx;
-  camera.lookAt(G.x+5.5, Math.max(3,G.y*0.45+1.5), -1);
+  camera.lookAt(lookX, lookY, -1);
 
-  renderer.render(scene,camera);
+  if(!window._S3skiprender)renderer.render(scene,camera);
   requestAnimationFrame(loop);
 }
 
@@ -651,7 +830,25 @@ function finishLevel(){
   $('go-title').textContent='LEVEL '+lvl+' CLEAR';
   $('go-stars').textContent = stars===3?'★★★':(stars===2?'★★☆':'★☆☆');
   $('go-stars').style.color = stars===3?'#ffd76a':(stars===2?'#e0c37a':'#948fae');
-  $('go-score').textContent=G.score.toLocaleString();
+  // score counts up — small ceremony
+  (function(){ var el=$('go-score'), target=G.score, e2=0;
+    el.textContent='0';
+    var iv2=setInterval(function(){ e2+=33; var p=Math.min(1,e2/850);
+      el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString();
+      if(p>=1)clearInterval(iv2); },33); })();
+  // confetti for the big sticks — body-level overlay, always on top
+  if(stars===3){ (function(){
+    var wrap=document.getElementById('cfwrap');
+    if(!wrap){ wrap=document.createElement('div'); wrap.id='cfwrap'; document.body.appendChild(wrap); }
+    var COLS=['#ffd76a','#ff6d9d','#4ac8b4','#8de8ff','#c56bf0'];
+    for(var i=0;i<44;i++){ var cf=document.createElement('div'); cf.className='cf';
+      cf.style.left=(Math.random()*100)+'%';
+      cf.style.background=COLS[i%COLS.length];
+      cf.style.animationDuration=(1.6+Math.random()*1.8)+'s';
+      cf.style.animationDelay=(Math.random()*0.8)+'s';
+      wrap.appendChild(cf);
+      (function(el2){ setTimeout(function(){ if(el2.parentNode)el2.parentNode.removeChild(el2); }, 4600); })(cf);
+    } })(); }
   $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the wall at x'+G.mult;
   $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
   var sb=0;
