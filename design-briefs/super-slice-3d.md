@@ -29,21 +29,15 @@ Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, sta
 3. **[DONE — v4.6]** **Longer + larger levels** — depth ~doubled (170 + level*26, up to ~1340), wider shaft (SW 9.2), content scales with depth.
 4. **[DONE — v4.6]** **Endless mode** — deep pit, live DEPTH-in-metres HUD, ramping fall speed, blade-wall ends the run, best-depth saved + shown on the menu, "PIT CONQUERED" if you reach the bottom clean. Third title button.
 5. **[DONE — v5.0]** **Economy + cosmetics** — currency "Slivers" (localStorage `s3d_slivers`) earned every run; KNIFE FORGE with 9 swappable blades (Classic free / Cleaver 150 / Rainbow Brush 300 / Katana 500 / Crystal 800 / Golden 1500 / Cosmic Edge trophy=50 clean dives / Starforge + Wolf Fang = Support-the-Studio premium). Known prices, no lootboxes, cosmetic-only, equip persists across modes. Premium tier SCAFFOLDED (marked "Support the Studio", not yet buyable — see below).
-6. **[SHIPPED 2026-07-19]** **Wall Climb mode** — built per the spec below as an ENDLESS
-   height-chase first (Stephen 7/19: "see how high you can get"): handle KICK off the walls
-   (13.8 impulse), blade touch = stuck, THE MIST rises from below (1.15 accelerating to 4.6
-   with height + time), sticky SAP wall patches dampen kicks to 6.0, 25m milestones pay score,
-   slivers pay by height, `PROG.climbBest`, 4th title button + its own portal card
-   (`?mode=climb` boots straight in), Wallbreaker Pick trophy blade at 100m. Bot-proven:
-   `scripts/slice3d/bot_climb.js` (kick/blade-fail/sap/mist/pogo-climbability/sting/gourd/
-   obstacles/forge + boot, all green).
-   **v5.5 (same day): GOAL LEVELS SHIPPED** — "Wall Climb · Level N" (deterministic per-level
-   chimneys, SUMMIT ribbon at 58+16*lvl meters, tighter spacing + faster mist per level,
-   clean climb = x2 + 3 stars, PROG.climbLevel + per-level bests) alongside "Sky Endless ·
-   best Nm" (the portal card boots endless). Controls REDONE to Stephen's spec: journey-style
-   tap-to-flick, parked start, run begins on first tap (CL_* constants hold the feel).
-   Journey got its own obstacle wave (lvl 4+): thorn bushes, wasp patrols, boom gourds,
-   CRUMBLING SHELVES (arm on landing, drop 0.45s later). bot_climb = 15 probes, all green.
+6. **[SHIPPED 2026-07-19, FINAL FORM v5.6]** **Wall Climb mode** — after two iterations
+   Stephen test-played and set the final design: THE JOURNEY ENDING, STRETCHED TALL. Journey
+   engine (mode 'run', same tap/flip physics), 26-unit runway with warmup fruit, ONE MEGA
+   WALL: 10 bands (x1..x15, 46 tall) at level 1 growing to 20 bands (x75, 92 tall).
+   Blade = stick (multiplier + stars by height fraction), handle = thunk back. Level ladder
+   `PROG.climbLevel`, per-level bests ('c'+lvl), Wallbreaker Pick trophy at a x30+ stick,
+   `?mode=climb` portal card. The v5.2-v5.5 chimney/mist/kick/flick builds are REMOVED.
+   Verified: bot_climb 15 probes (build/flappy/stick-low/stick-high/bounce/top-clamp/finish/
+   ledge/bonk/obstacles/crumble/forge + boot). NEXT: "an entire group of worlds and levels".
 7. **[SHIPPED 2026-07-19]** **New obstacle wave** (Freefall lvl 3+ bags AND the climb):
    WASPS (oscillate across the shaft, contact stings you down), swinging PLANKS (blade cuts
    for 25x combo points, handle bonks), brown GATES (full-width slab rows with one hole),
@@ -55,16 +49,15 @@ Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, sta
 - **Cross-game unlock token:** buying a supporter blade drops a token other Sky Wolf games can read (e.g. a portal-level `sws_supporter` flag) to unlock a matching cosmetic elsewhere. Design the token shape with the portal/other games in mind.
 - **Sliver daily soft-cap** (anti-farming) if it ever matters; currently uncapped (cosmetic-only, low risk).
 
-## Wall Climb — full build spec (mode='climb', shares skins + currency)
-Stephen: "climb the wall by literally kicking your back side off of it and keep strategically bouncing your back and avoid touching your blade." The Freefall duality, inverted: now the walls are your friend (kick off them with the HANDLE/back to gain height) and the blade is still the enemy.
-- **Geometry:** a narrow chimney (SW ~6.5, closer than the pit) extending UPWARD (+y). Start at the bottom, climb to a goal line at the top; endless-climb variant later.
-- **Physics:** reuse the Freefall physics head (gravity down, hold LEFT/RIGHT to steer + spin, release to settle). You fall unless you keep kicking.
-- **Wall contact = the climb:** HANDLE into a wall → a strong KICK: `vy = KICK_UP` (big upward impulse) + `vx` toward the opposite wall, a satisfying kick/thump SFX, sparks. You zig-zag UP wall to wall. BLADE into a wall → FAIL (same stick-and-die as Freefall). So you must spin so the handle/back leads into each wall.
-- **Pressure = a rising void** from below (`voidY += voidSpeed*dt`, speed grows with height/level). Fall into it → fail. This forces constant upward progress ("climb or die").
-- **Content:** fruit + brown stacks mounted on wall brackets between the kick lanes — cut them BLADE-first (mid-flight, away from walls) for points/combo. Same cut/bonk rules.
-- **Win/score:** reach the top goal (or in endless, height before the void takes you). Score = height climbed + slices*combo. Best height saved. Clean-climb (no wall-blade touches, which is implicit since they're fatal) → bonus.
-- **Feel to nail (needs device test):** the KICK_UP magnitude vs gravity vs void speed is the whole game — tune so a skilled rhythm climbs steadily and a mistimed kick (or a blade-lead) is punished. Bot-prove completable with a kick-timing policy before ship; screenshot the chimney + a kick moment + the void.
-- **Menu:** a fourth title button ("Wall Climb"), same visual language. Own progression (`PROG.climbLevel` / `PROG.climbBest`).
+## Wall Climb — design history (the chimney is DEAD)
+The original spec here (narrow chimney, handle-kick ascent, rising void) was built two ways
+(hold-steer v5.2, tap-to-flick v5.5) and BOTH felt wrong in Stephen's hands ("skippy and
+jumps around"). His final ruling (7/19): "it should literally just be like the normal game's
+ending. same physics and everything — essentially the shortest level with the tallest
+finishing wall with a scaling score multiplier." That is what shipped in v5.6 (see roadmap
+item 6). Do NOT rebuild the chimney. Journey also gained LEDGE ASSIST + forward head-bonks
+(no more stuck pockets on fruit shelves) and a pulled-back camera (z 26) from the same
+feedback session.
 
 ## Economy design (detail, for batch 5)
 - **Currency = "Slivers"** (per-game, localStorage `s3d_slivers`, later server-mirrored). NOT sunbeams — sunbeams remain the studio-wide earn-and-carry hook (still awarded on top, capped 30/day via `_sbCapEarn`). Slivers are the spend sink this game lacked.
