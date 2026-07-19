@@ -706,7 +706,11 @@ function soloResult(){ if(_devSweep)return; $('go-title').style.color=''; $('go-
    MAIN LOOP
    ===================================================================== */
 var cv=$('game'), ctx=cv.getContext('2d');
-var PF={x:36,y:298,cell:40}, OF={x:372,y:300,cell:22};
+/* MBM-scale layout (Stephen 7/19: "classic Mean Bean Machine board size was
+   damn near perfect"): the player board DOMINATES — 348x696 of the 540x960
+   stage (72% of the height; the Genesis original ran ~86% with no touch
+   controls). Rival board + NEXT live in a slim right rail. */
+var PF={x:16,y:112,cell:58}, OF={x:398,y:352,cell:21};
 var running=false, lastT=0, _devLost=false;
 
 function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
@@ -832,25 +836,25 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   ctx.font='italic 800 15px system-ui'; ctx.textAlign='left';
   ctx.lineWidth=3; ctx.strokeStyle='#0c0a06'; ctx.strokeText('POP N', 66, 34); ctx.strokeText('LOCK', 122, 34);
   ctx.fillStyle='#ff2fb9'; ctx.fillText('POP N', 66, 34); ctx.fillStyle='#2ff0e0'; ctx.fillText('LOCK', 122, 34);
+  /* player score inline with the wordmark, top-left */
+  ctx.fillStyle='#9a9078'; ctx.font='600 11px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', 66, 56);
+  ctx.fillStyle='#f0e9d8'; ctx.font='800 26px system-ui'; ctx.fillText((MATCH.pf?MATCH.pf.score:0).toLocaleString(), 66, 84);
+  /* right rail: opponent card, NEXT, rival board */
   if(MATCH.mode==='campaign' && MATCH.stage>=0){ var st=ROSTER[MATCH.stage];
-    /* opponent portrait */
-    var ox=360, oy=96, ow=150, oh=150;
-    ctx.fillStyle='#1a1608'; rr(ox,oy,ow,84,12); ctx.fill(); ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,84,12); ctx.stroke();
-    ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+30, oy+52);
-    ctx.fillStyle='#f0e9d8'; ctx.font='700 13px system-ui'; wrapText(st.nm, ox+92, oy+34, 100, 15);
+    var ox=380, oy=64, ow=144;
+    ctx.fillStyle='#1a1608'; rr(ox,oy,ow,88,12); ctx.fill(); ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,88,12); ctx.stroke();
+    ctx.textAlign='center'; ctx.font='30px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+38);
+    ctx.fillStyle='#f0e9d8'; ctx.font='700 12px system-ui'; wrapText(st.nm, ox+ow/2, oy+58, 134, 14);
     ctx.textAlign='left';
   }
-  /* player score (label + number stacked, warning strip sits above at PF.y-26) */
-  ctx.fillStyle='#9a9078'; ctx.font='600 11px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', PF.x, 214);
-  ctx.fillStyle='#f0e9d8'; ctx.font='800 22px system-ui'; ctx.fillText((MATCH.pf?MATCH.pf.score:0).toLocaleString(), PF.x, 240);
-  /* next piece preview */
-  if(MATCH.pf&&MATCH.pf.next){ var nx=292, ny=300; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
+  /* next piece preview in the rail */
+  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=186; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
     ctx.fillStyle='#161207'; rr(nx,ny,52,86,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,52,86,8); ctx.stroke();
     drawPod(nx+11,ny+8,30,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(nx+11,ny+42,30,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
-  if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-46);
-    ctx.fillStyle='#f0e9d8'; ctx.font='700 13px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-32);
+  if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-42);
+    ctx.fillStyle='#f0e9d8'; ctx.font='700 14px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-26);
     drawBoardFrame(OF,'rival', MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f')); drawField(MATCH.of,OF,true); }
 
   /* chain floats */
@@ -884,9 +888,9 @@ function floatColor(t){ if(t.indexOf('ALL')>=0)return '#ffd21a'; if(t.indexOf('D
   if(t.indexOf('ILL')===0)return '#ff2fb9'; if(t.indexOf('DOPE')===0)return '#c24bff'; if(t.indexOf('DEF')===0)return '#ffd21a';
   if(t.indexOf('FRESH')===0)return '#39ff14'; if(t.indexOf('SOLVENT')>=0)return '#7ec850'; return '#fff8dc'; }
 function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i<f.floats.length;i++){ var fl=f.floats[i]; var a=Math.min(1,fl.life); ctx.globalAlpha=a;
-  var fs=(F===PF?22:14); var punch=Math.max(0,fl.life-0.82)/0.18; fs=Math.round(fs*(1+punch*0.5));
+  var fs=(F===PF?28:14); var punch=Math.max(0,fl.life-0.82)/0.18; fs=Math.round(fs*(1+punch*0.5));
   ctx.font='italic 800 '+fs+'px system-ui';
-  var yy=F.y+ (F===PF?170:90) - (1-fl.life)*30; var xx=F.x+COLS*F.cell/2;
+  var yy=F.y+ (F===PF?300:90) - (1-fl.life)*30; var xx=F.x+COLS*F.cell/2;
   ctx.lineWidth=Math.max(2,fs*0.18); ctx.strokeStyle='#0c0a06'; ctx.strokeText(fl.txt, xx, yy);
   ctx.fillStyle=floatColor(fl.txt); ctx.fillText(fl.txt, xx, yy); }
   ctx.globalAlpha=1; ctx.textAlign='left'; }
@@ -908,7 +912,7 @@ tap('c-rot',function(){ if(playable()){ hap(8); tryRotate(pf(),1); } });
 tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });
 cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play')return;
   if(MATCH.phase==='intro'){ e.preventDefault(); MATCH.t=0; MATCH.phase='count'; SFX.count(); return; }
-  if(MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW); if(x<300 && playable()){ e.preventDefault(); ac(); tryRotate(pf(),1); } },{passive:false});
+  if(MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW); if(x<PF.x+COLS*PF.cell+8 && playable()){ e.preventDefault(); ac(); tryRotate(pf(),1); } },{passive:false});
 document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playable())return;
   if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); moveP(pf(),1); }
