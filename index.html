@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.17.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.19.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -41389,13 +41389,15 @@ document.addEventListener('keydown', function(e) {
     }
 
     // ── Pi Payment Hook ──────────────────────────────────
-    var _piOn = !!window.LW_PI_ENABLED;
-    // Web crypto rail sells greenhouse slots in 10-packs (server grants 10; the
-    // count reconciles on vault hydrate). Show the USD pack price on web.
-    var _web = !!(window.LW_WebPay && window.LW_WebPay.active());
+    // Pi branding only inside Pi Browser; the web always shows the USD pack
+    // price (static catalog, needs no SDK). Web crypto rail sells greenhouse
+    // slots in 10-packs (server grants 10; count reconciles on vault hydrate).
+    var _inPi = !!(window.LW_WebPay && window.LW_WebPay.inPiBrowser());
+    var _piOn = !!window.LW_PI_ENABLED && _inPi;
+    var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('slot');
     var _bodyCopy = _web
-      ? 'Add <b>10 slots</b> for <b>' + _wUsd + '</b> — pay in any crypto?'
+      ? 'Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay in any crypto?'
       : _piOn
         ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
         : 'Add slot ' + (current + 1) + '?';
@@ -41447,7 +41449,7 @@ document.addEventListener('keydown', function(e) {
     _lwConfirm({
       title: 'EXPAND GREENHOUSE',
       body: _web
-        ? ('Add <b>10 slots</b> for <b>' + _wUsd + '</b> — pay in any crypto?')
+        ? ('Add <b>10 slots</b> for <b>' + _wUsd + '</b>. Pay in any crypto?')
         : ('Add ' + qty + ' slots (slot ' + (current + 1) + ' through ' + (current + qty) + ')' + (_piOn ? ' for <b>' + cost + ' Pi</b>?' : '?')),
       yes: _web ? ('PAY ' + _wUsd) : (_piOn ? ('PAY ' + cost + ' PI') : 'EXPAND'),
       no: 'NOT YET'
@@ -47159,11 +47161,11 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     var _price = window._nurClipSlotPrice(current + 1);
-    var _piOn = !!window.LW_PI_ENABLED;
-    var _web = !!(window.LW_WebPay && window.LW_WebPay.active());
+    var _piOn = !!window.LW_PI_ENABLED && !!(window.LW_WebPay && window.LW_WebPay.inPiBrowser());
+    var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('nursery_clipping_slot', {slot: current + 1});
     var _bodyCopy = _web
-      ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _wUsd + '</b> — pay in any crypto?'
+      ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay in any crypto?'
       : _piOn
         ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
         : 'Add clipping slot ' + (current + 1) + '?';
@@ -47207,11 +47209,11 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     var _price = window._nurSlotPrice(current + 1);
-    var _piOn = !!window.LW_PI_ENABLED;
-    var _web = !!(window.LW_WebPay && window.LW_WebPay.active());
+    var _piOn = !!window.LW_PI_ENABLED && !!(window.LW_WebPay && window.LW_WebPay.inPiBrowser());
+    var _web = !!(window.LW_WebPay && window.LW_WebPay.showUsd());
     var _wUsd = _web && window.LW_WebPay.priceStr('nursery_slot', {slot: current + 1});
     var _bodyCopy = _web
-      ? 'Add slot ' + (current + 1) + ' for <b>' + _wUsd + '</b> — pay in any crypto?'
+      ? 'Add slot ' + (current + 1) + ' for <b>' + _wUsd + '</b>. Pay in any crypto?'
       : _piOn
         ? 'Add slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
         : 'Add slot ' + (current + 1) + '?';
@@ -56157,7 +56159,7 @@ function _doCollectFeral(f,mk){
     _lwPressure({
       title: 'SEED POUCH FULL',
       body: 'Your pouch is full. Send a seed to the nursery to grow it, or expand the pouch.',
-      pi: { label: (window.LW_WebPay && LW_WebPay.active()) ? ('+5 SEEDS · ' + (LW_WebPay.priceStr('seed_pouch_slot',{tier:'seed15'}) || '$1')) : '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
+      pi: { label: (window.LW_WebPay && LW_WebPay.showUsd()) ? ('+5 SEEDS · ' + (LW_WebPay.priceStr('seed_pouch_slot',{tier:'seed15'}) || '$1')) : '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
       alts: [
         { label: 'OPEN BACKPACK', action: function(){ if (window.FG_Backpack && FG_Backpack.toggle) FG_Backpack.toggle(); } }
       ]
@@ -77096,6 +77098,10 @@ var LW_WebPay = {
   shouldHandle: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
   available: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
   active: function(){ return this.available(); },
+  // Label rails (no SDK requirement — the USD catalog is static). Pi branding
+  // must only ever appear inside Pi Browser; every web surface shows USD.
+  inPiBrowser: function(){ return _wpInPiBrowser(); },
+  showUsd: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser(); },
   // Display-only USD catalog (server functions/fulfill.js is the source of
   // truth; this only drives button labels). Keep in lockstep with LW_WEB_PRICES.
   _usd: {
@@ -93363,7 +93369,7 @@ window.LW_GIFTS = (function(){
     var _capNow = getPouchCap();
     var _capFootHtml = 'Stock + windows refresh at midnight · pouch cap '+_capNow;
     if (_capNow < 40 && window.LW_PI_ENABLED){
-      _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Expand your item pouch (max 40).">' + ((window.LW_WebPay && LW_WebPay.active()) ? ('+5 SLOTS · ' + (LW_WebPay.priceStr('item_pouch_slot') || '$1')) : '+1 SLOT · 1 π') + '</button>';
+      _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Expand your item pouch (max 40).">' + ((window.LW_WebPay && LW_WebPay.showUsd()) ? ('+5 SLOTS · ' + (LW_WebPay.priceStr('item_pouch_slot') || '$1')) : '+1 SLOT · 1 π') + '</button>';
     } else if (_capNow >= 40) {
       _capFootHtml += ' (max)';
     }
@@ -93373,7 +93379,7 @@ window.LW_GIFTS = (function(){
       var _epToday = '';
       try { _epToday = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
       if (_epToday !== todayStr()) {
-        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · ' + ((window.LW_WebPay && LW_WebPay.active()) ? (LW_WebPay.priceStr('emergency_pouch') || '$3') : '10 π') + '</button>';
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · ' + ((window.LW_WebPay && LW_WebPay.showUsd()) ? (LW_WebPay.priceStr('emergency_pouch') || '$3') : '10 π') + '</button>';
       } else {
         _capFootHtml += ' · <span style="opacity:0.55;">EMERGENCY USED TODAY</span>';
       }
