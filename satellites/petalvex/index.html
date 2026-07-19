@@ -204,9 +204,10 @@ var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly', skin:'pv
 /* Default for EVERYONE is the original procedural coloured triangles ('classic').
    The Enamel Botanica art pack is an unlockable skin: earned by any nudge-free solve
    (i.e. the existing pvx_best map has at least one recorded best time). */
-function skinUnlocked(){ var b=loadBest(); for(var kk in b){ if(b.hasOwnProperty(kk)) return true; } return false; }
-var SKIN=(function(){ var s=LS.get(K.skin); return (s==='enamel'&&skinUnlocked())?'enamel':'classic'; })();
-function setSkin(k){ if(k==='enamel'&&!skinUnlocked()) return false; SKIN=(k==='enamel')?'enamel':'classic'; LS.set(K.skin,SKIN); applySkin(); return true; }
+function skinUnlocked(){ return true; }
+/* OriVex ships the Folded Paper art as the DEFAULT look; Classic Triangles is an opt-in alternate. */
+var SKIN=(function(){ var s=LS.get(K.skin); return (s==='classic')?'classic':'enamel'; })();
+function setSkin(k){ SKIN=(k==='classic')?'classic':'enamel'; LS.set(K.skin,SKIN); applySkin(); return true; }
 
 /* ============================ audio ================================= */
 var AC=null, SET={ sound:true, color:true };
@@ -431,9 +432,12 @@ function seamFor(cellIdx){
 
 /* ============================ render ================================= */
 /* ---------- background art (DROP-IN; procedural fills stay as fallback) ---------- */
-var PV_ASSET_V='pvart2';
+var PV_ASSET_V='ov1';
 function _pvImg(src){ var im=new Image(); try{ im.src=src+'?v='+PV_ASSET_V; }catch(e){} return im; }
 var PV_BED=_pvImg('assets/bg/bg_bed.jpg');
+var PV_BEDS=(function(){ var a=[],i; for(i=0;i<8;i++)a.push(_pvImg('assets/bg/bg_theme_'+i+'.jpg')); return a; })();
+var _pvThemeN=0;
+function pvBed(){ if(P&&P.themeIdx!=null&&PV_BEDS[P.themeIdx]&&_pvReady(PV_BEDS[P.themeIdx]))return PV_BEDS[P.themeIdx]; return PV_BED; }
 function _pvReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
 /* sprite art map — enamel wedges / frame / fx motes, drawn over the procedural shapes when ready */
 var PV_SPR={};
@@ -450,7 +454,7 @@ function render(){
   var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09');
   ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
   // enamel puzzle-bed backdrop only when the Enamel Botanica skin is selected (classic keeps the procedural fill)
-  if(SKIN==='enamel'&&_pvReady(PV_BED)){ try{ ctx.drawImage(PV_BED,0,0,VW,VH); }catch(e){} }
+  if(SKIN==='enamel'){ var _bed=pvBed(); if(_pvReady(_bed)){ try{ ctx.drawImage(_bed,0,0,VW,VH); }catch(e){} } }
   if(!P) return;
   computeLayout();
   // ---- HUD ----
@@ -693,6 +697,7 @@ function startMode(key){
   var seed=null;
   if(mode.daily){ seed=Math.floor(Date.now()/864e5); }
   P=genPuzzle(mode, seed);
+  P.themeIdx = mode.daily ? (((seed%8)+8)%8) : (_pvThemeN++ % 8);
   parts=[]; drag=null;
   show(null); // canvas gameplay (no DOM screen)
   computeLayout(); render();
@@ -782,8 +787,7 @@ function applySkin(){
 }
 var SKINS=[
   { key:'classic', ico:'🔺', name:'Classic Triangles', d:'The original look. Bright painted triangles.' },
-  { key:'enamel',  ico:'💠', name:'Enamel Botanica', d:'Glossy enamel tiles laced with gold wire.',
-    lock:'Locked. Solve any bed with no nudges to earn it.' }
+  { key:'enamel',  ico:'📄', name:'Folded Paper', d:'Origami paper facets, folded and pressed.' }
 ];
 function buildSkinRow(){
   var host=$('skin-list'); if(!host) return; host.innerHTML='';
