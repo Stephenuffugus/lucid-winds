@@ -932,7 +932,10 @@ var GS = (function(){
   var instBuffers = {};   // folder → {midi → AudioBuffer}
   var _instPending = {};  // folder/midi → true while fetching
   var _instLoadCount = 0;
-  var layerInst = {bass:null, chords:null, melody:null}; // GM folder or null
+  // Real recorded instruments are the DEFAULT voice of a fresh song (synths
+  // cover playback until the notes stream in, and forever offline).
+  var INST_DEFAULTS = {bass:'electric_bass_finger', chords:'electric_piano_1', melody:'marimba'};
+  var layerInst = {bass:INST_DEFAULTS.bass, chords:INST_DEFAULTS.chords, melody:INST_DEFAULTS.melody}; // GM folder or null
 
   function _instLoadUI(delta){
     _instLoadCount = Math.max(0, _instLoadCount + delta);
@@ -1452,7 +1455,7 @@ var GS = (function(){
     for(var i=0;i<LAYER_TYPES.length;i++){
       var lt = LAYER_TYPES[i];
       var rows = lt.type === 'drum' ? (lt.rows + extraDrumRows.length) : getScaleNotes(lt.octave).length;
-      v[lt.id] = {grid:[], mute:false, solo:false, vol:80, preset:lt.id==='bass'?'Pluck Bass':lt.id==='chords'?'Warm Pad':lt.id==='melody'?'Sine Lead':'', lens:{}};
+      v[lt.id] = {grid:[], mute:false, solo:false, vol:80, preset:lt.id==='bass'?'inst:electric_bass_finger':lt.id==='chords'?'inst:electric_piano_1':lt.id==='melody'?'inst:marimba':'', lens:{}};
       for(var r=0;r<rows*STEPS;r++) v[lt.id].grid.push(0);
     }
     return v;
@@ -2581,6 +2584,8 @@ var GS = (function(){
     currentSection = 'A'; currentVar = 0;
     _undoStack = [];
     _curSongId = null; _curSongName = '';
+    layerSampleName.bass = layerSampleName.chords = layerSampleName.melody = null;
+    layerInst.bass = INST_DEFAULTS.bass; layerInst.chords = INST_DEFAULTS.chords; layerInst.melody = INST_DEFAULTS.melody;
   }
 
   function autosaveTick(){
@@ -3438,6 +3443,7 @@ var GS = (function(){
       initPianoRollDrag();
       initKeysPads();
       preloadKitSamples(currentKit); // real drum recordings warm up early
+      prefetchAllInst();             // default real instruments warm up too
       // Restore samples from the vault (survives refresh)
       idbRestoreSamples();
       // Restore where the player left off: autosave first, then legacy save.
@@ -3715,6 +3721,7 @@ var GS = (function(){
         stashCurrent();
         resetSongData();
         renderAll();
+        prefetchAllInst();
         markDirty();
       } else {
         applyStarter(STARTERS[i]);

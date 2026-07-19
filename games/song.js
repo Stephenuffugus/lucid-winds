@@ -28,7 +28,7 @@ function _songAddDaySpent(n){
 
 function GSG(a){
   var fr=document.createElement('iframe');
-  fr.src='/studio.html?v=20260719c'; // bump on studio.html edits (host caches HTML)
+  fr.src='/studio.html?v=20260719d'; // bump on studio.html edits (host caches HTML)
   fr.style.cssText='width:100%;height:calc(100vh - 40px);border:none;border-radius:8px;background:#060610';
   fr.allow='autoplay';
   a.appendChild(fr);
