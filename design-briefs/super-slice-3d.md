@@ -18,12 +18,28 @@ Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, sta
 - **Wall Climb:** blade into the wall = FAIL; you kick your handle/back off the wall to ascend; blade cuts hazards/targets that drift past.
 
 ## Build roadmap (priority order; each batch bot-verified + deployed)
-1. **Deadly walls** — blade-into-wall STICKS + FAILS; new fail screen (retry / menu), fail SFX, the knife visibly buried in the wall. Handle bounce unchanged. Pads/stacks stay non-fatal (only the two side walls kill) so the risk hierarchy is learnable. *(BUILDING FIRST.)*
-2. **Brown cuttable stacks** — layered brown slabs spanning part of the pit; blade cut reveals a bright inner color per slab + a juicy chorus of slice SFX + split halves; handle contact bounces off (cannot pass). Slice-through builds combo. Multiple SFX variants by depth/material.
-3. **Longer + larger levels** — deeper shafts, more content density, wider readable pit, gentler level-1 → steep late curve. Retune camera for the longer fall.
-4. **Endless mode** — procedurally deepening pit, no floor; distance + combo score; speed ramps; a "cash out" or death-ends-run model; own best-distance record. Third menu entry under Freefall.
-5. **Economy + cosmetics** — per-game currency ("Slivers"): earned from runs (score/clean-dives/distance), spent on a KNIFE FORGE of knives/swords/skins with KNOWN thresholds (no lootboxes). Skins are cosmetic-only (never change hitbox). Premium "Support the Studio" tier: a few showpiece blades behind the existing web-pay/Pi rail; a supporter flag unlocks them + grants a CROSS-GAME unlock token. Skin data lives in the shared satellite so it persists across modes.
-6. **Wall Climb mode** — new build: vertical ascent, kick the handle off the wall to climb, blade-touch fails, targets/hazards drift past to cut/avoid. Shares skins + currency.
+1. **[DONE — v4.4]** **Deadly walls** — blade-into-wall STICKS + FAILS; fail screen (Try Again / Replay / Menu), fail buzz, the knife buried in the wall + red sparks + "STUCK!". Handle bounce unchanged. Pads stay non-fatal (only the two side walls kill).
+2. **[DONE — v4.5]** **Brown cuttable stacks** — columns of brown slabs down the pit; blade cut reveals a bright inner color + split halves + a rising SFX.slab chain; handle contact deflects off and costs combo.
+3. **[DONE — v4.6]** **Longer + larger levels** — depth ~doubled (170 + level*26, up to ~1340), wider shaft (SW 9.2), content scales with depth.
+4. **[DONE — v4.6]** **Endless mode** — deep pit, live DEPTH-in-metres HUD, ramping fall speed, blade-wall ends the run, best-depth saved + shown on the menu, "PIT CONQUERED" if you reach the bottom clean. Third title button.
+5. **[DONE — v5.0]** **Economy + cosmetics** — currency "Slivers" (localStorage `s3d_slivers`) earned every run; KNIFE FORGE with 9 swappable blades (Classic free / Cleaver 150 / Rainbow Brush 300 / Katana 500 / Crystal 800 / Golden 1500 / Cosmic Edge trophy=50 clean dives / Starforge + Wolf Fang = Support-the-Studio premium). Known prices, no lootboxes, cosmetic-only, equip persists across modes. Premium tier SCAFFOLDED (marked "Support the Studio", not yet buyable — see below).
+6. **[NEXT — build with Stephen's Freefall feel-feedback]** **Wall Climb mode** — see full spec below.
+
+## Still owed on the economy (needs Stephen's payment side)
+- **Real-money premium purchase:** wire Starforge / Wolf Fang buy → existing `LW_WebPay` (USD) / Pi (in Pi Browser) rail. On success set a `supporter` entitlement (localStorage now, server-mirrored later) that unlocks the premium blades. Needs the NOWPayments IPN / Pi product setup Stephen manages.
+- **Cross-game unlock token:** buying a supporter blade drops a token other Sky Wolf games can read (e.g. a portal-level `sws_supporter` flag) to unlock a matching cosmetic elsewhere. Design the token shape with the portal/other games in mind.
+- **Sliver daily soft-cap** (anti-farming) if it ever matters; currently uncapped (cosmetic-only, low risk).
+
+## Wall Climb — full build spec (mode='climb', shares skins + currency)
+Stephen: "climb the wall by literally kicking your back side off of it and keep strategically bouncing your back and avoid touching your blade." The Freefall duality, inverted: now the walls are your friend (kick off them with the HANDLE/back to gain height) and the blade is still the enemy.
+- **Geometry:** a narrow chimney (SW ~6.5, closer than the pit) extending UPWARD (+y). Start at the bottom, climb to a goal line at the top; endless-climb variant later.
+- **Physics:** reuse the Freefall physics head (gravity down, hold LEFT/RIGHT to steer + spin, release to settle). You fall unless you keep kicking.
+- **Wall contact = the climb:** HANDLE into a wall → a strong KICK: `vy = KICK_UP` (big upward impulse) + `vx` toward the opposite wall, a satisfying kick/thump SFX, sparks. You zig-zag UP wall to wall. BLADE into a wall → FAIL (same stick-and-die as Freefall). So you must spin so the handle/back leads into each wall.
+- **Pressure = a rising void** from below (`voidY += voidSpeed*dt`, speed grows with height/level). Fall into it → fail. This forces constant upward progress ("climb or die").
+- **Content:** fruit + brown stacks mounted on wall brackets between the kick lanes — cut them BLADE-first (mid-flight, away from walls) for points/combo. Same cut/bonk rules.
+- **Win/score:** reach the top goal (or in endless, height before the void takes you). Score = height climbed + slices*combo. Best height saved. Clean-climb (no wall-blade touches, which is implicit since they're fatal) → bonus.
+- **Feel to nail (needs device test):** the KICK_UP magnitude vs gravity vs void speed is the whole game — tune so a skilled rhythm climbs steadily and a mistimed kick (or a blade-lead) is punished. Bot-prove completable with a kick-timing policy before ship; screenshot the chimney + a kick moment + the void.
+- **Menu:** a fourth title button ("Wall Climb"), same visual language. Own progression (`PROG.climbLevel` / `PROG.climbBest`).
 
 ## Economy design (detail, for batch 5)
 - **Currency = "Slivers"** (per-game, localStorage `s3d_slivers`, later server-mirrored). NOT sunbeams — sunbeams remain the studio-wide earn-and-carry hook (still awarded on top, capped 30/day via `_sbCapEarn`). Slivers are the spend sink this game lacked.
