@@ -126,7 +126,6 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <button class="btn ff" id="b-ff">Freefall &middot; Level <span id="t-fflvl">1</span></button>
       <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
       <button class="btn climb" id="b-climb">Wall Climb &middot; Level <span id="t-clvl">1</span></button>
-      <button class="btn climb2" id="b-climb2">Sky Endless &middot; best <span id="t-cbest">0</span>m</button>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-forge">&#9874; Forge</button>
@@ -295,9 +294,6 @@ var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
 // Freefall tuning: gentle fall so you have time to aim the blade; hold a side
 // to STEER and FLIP, release to settle the spin and hold your orientation
 var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
-/* WALL CLIMB feel (Stephen 7/19: journey-style TAP TO FLICK, not freefall
-   hold-steer; starts ON the ground; the run begins on the first tap) */
-var CL_GRAV=40, CL_TAPVY=15, CL_TAPVX=10.5, CL_TAPW=12, CL_KICK=15, CL_PLAT=-0.95;
 var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null, kshadow=null;
 var chunks=[], sparks=[], meshes=[];
 var sbSession=0; // sunbeams earned this play session; 12/run cap must persist across levels
@@ -362,7 +358,7 @@ var SKINS={
     return [ bladeMesh(6.6,1.9,0.5,km(0xffd24a,0x3a2a00)), kbox(6.6,0.36,0.58,km(0xfff2a8,0x4a3800),-1.6,-0.9), kbox(1.2,1.2,0.5,km(0xffe27a,0x4a3800),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0xb8801e,0x8a5e14,0xfff2a8)); }},
   cosmicedge:{name:'Cosmic Edge',tier:'trophy',price:-1,earn:'50 clean dives',icon:{b:'#c56bf0',h:'#3a1a5e',a:'#ff8ac2'},make:function(){
     return [ bladeMesh(6.8,1.9,0.5,km(0xc56bf0,0x3a0a5a)), kbox(6.8,0.4,0.6,km(0xff8ac2,0x5a0a3a),-1.6,-0.9), kbox(1.3,1.3,0.5,km(0xe0a8ff,0x5a1a7a),-5.3,-0.1,Math.PI/4) ].concat(stdGrip(0x3a1a5e,0x24103a,0xff8ac2)); }},
-  wallbreaker:{name:'Wallbreaker Pick',tier:'trophy',price:-1,earn:'climb 100m',icon:{b:'#8de8ff',h:'#3a2c20',a:'#ffd76a'},make:function(){
+  wallbreaker:{name:'Wallbreaker Pick',tier:'trophy',price:-1,earn:'stick x30 on the climb wall',icon:{b:'#8de8ff',h:'#3a2c20',a:'#ffd76a'},make:function(){
     return [ bladeMesh(5.4,1.5,0.55,km(0x9fd8e8,0x0c2a34)), kbox(1.5,2.3,0.6,km(0x8de8ff,0x123a44),-4.4,0.7,0.55), kbox(5.6,0.3,0.6,km(0xe8f6ff),-1.5,-0.75), kbox(0.9,0.9,0.6,km(0xffd76a),1.7,0.4,Math.PI/4) ].concat(stdGrip(0x3a2c20,0x27201a,0xffd76a)); }},
   starforge:{name:'Starforge Blade',tier:'support',price:-2,premium:true,icon:{b:'#bfe0ff',h:'#1a2a4e',a:'#ffe27a'},make:function(){
     return [ bladeMesh(7.0,1.9,0.55,km(0xdfeeff,0x2a4a8a)), kbox(7.0,0.44,0.64,km(0xffffff,0x4a6aca),-1.6,-0.9), kbox(1.3,1.3,0.55,km(0xffe27a,0x6a4a00),-5.4,-0.1,Math.PI/4), kbox(0.9,3.2,1.1,km(0xffe27a,0x4a3800),1.75,0) ].concat([ kbox(3.6,1.6,0.85,km(0x1a2a4e,0x0a1a3a),3.9,0), kbox(0.36,1.7,0.9,km(0xffe27a,0x4a3800),3.0,0), kbox(0.36,1.7,0.9,km(0xffe27a,0x4a3800),4.7,0) ]); }},
@@ -557,9 +553,8 @@ function boomAt(x,y,vineTop){
 function hitSting(t,label){
   if(t.hitT && G.t-t.hitT<1)return; t.hitT=G.t;
   var away=(G.x<t.x)?-1:1;
-  G.vx=away*8.5; G.vy=Math.min(G.vy, G.climbing?-8:-6); G.w+=away*5;
+  G.vx=away*8.5; G.vy=Math.min(G.vy,-6); G.w+=away*5;
   G.combo=0; var ce=$('h-combo'); if(ce)ce.classList.remove('on');
-  G.kickStreak=0;
   G.chips=(G.chips||0)+1; G.shake=Math.max(G.shake,0.3);
   SFX.zap(); spawnSparks(t.x,t.y,0xff5a4a,10);
   popup(label||'OUCH!', t.x, t.y+2, '#ff8a6a');
@@ -570,9 +565,8 @@ function boomGourd(it){
   if(it.mesh.parent)it.mesh.parent.remove(it.mesh); else scene.remove(it.mesh);
   disposeMesh(it.mesh);
   var away=(G.x<it.x)?-1:1;
-  G.vx=away*11; G.vy=Math.min(G.vy, G.climbing?-8:-6); G.w+=away*7;
+  G.vx=away*11; G.vy=Math.min(G.vy,-6); G.w+=away*7;
   G.combo=0; var ceb=$('h-combo'); if(ceb)ceb.classList.remove('on');
-  G.kickStreak=0;
   G.chips=(G.chips||0)+1; G.shake=Math.max(G.shake,0.45);
   SFX.zap(); spawnSparks(it.x,it.y,0xff8a3c,18); spawnSparks(it.x,it.y,0x2c3a24,8);
   popup('BOOM!', it.x, it.y+2, '#ff8a3c');
@@ -1072,180 +1066,106 @@ function buildFreefall(lvl){
    HANDLE off the walls to rocket upward; one blade touch sticks you; the
    mist below never stops rising. Endless: how high can you get?
    ===================================================================== */
+/* =====================================================================
+   WALL CLIMB — the journey ending, stretched TALL. Same physics as the
+   normal game: the shortest runway into the TALLEST finishing wall with
+   scaling multiplier bands. Flip-climb the face, stick the blade as high
+   as you dare. (Stephen 7/19: "same physics and everything, essentially
+   the shortest level with the tallest finishing wall".)
+   ===================================================================== */
 function buildClimb(lvl){
   clearWorld();
-  var endlessC=!lvl;
-  var rng=endlessC?mulberry32((Math.random()*0xffffffff)>>>0):mulberry32(((lvl*40503769)>>>0)^0xC11B);
-  var SW=6.5;
-  var goal=endlessC?0:(58+Math.min(lvl,24)*16);   // L1 summit at 74m, growing 16m a level
-  var H=endlessC?560:goal+26;
-  // backdrop: forest floor at the bottom rising to open sky
+  lvl=lvl||1;
+  var rng=mulberry32(((lvl*77003651)>>>0)^0xC1B);
+  var len=26;                                   // the shortest runway
+  // THE MEGA WALL: multiplier bands that scale with height (and level)
+  var MULTS=[1,2,3,4,5,6,8,10,12,15,18,22,26,30,35,40,45,50,60,75];
+  var nb=Math.min(MULTS.length, 9+Math.min(lvl,11));   // L1 = 10 bands (46 tall), grows with level
+  var BANDCOLS=[0x8a8f9e,0x4ac8b4,0x5b9bd5,0xc56bf0,0xffd76a,0xff6d9d,0x4ac86a,0xff9a3c,0x8de8ff,0xe05b5b];
+  var bands=[], b3;
+  for(b3=0;b3<nb;b3++)bands.push([MULTS[b3], BANDCOLS[b3%BANDCOLS.length]]);
+  var wallX=len+8, wallTop=nb*4.6;
+  // sky backdrop tall enough to crown the wall, sun above the flag
   (function(){
-    var cv=document.createElement('canvas'); cv.width=64; cv.height=512;
+    var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
     var g2=cv.getContext('2d');
-    var grd=g2.createLinearGradient(0,512,0,0);
-    grd.addColorStop(0,'#20301c'); grd.addColorStop(0.4,'#2c4a3a'); grd.addColorStop(0.75,'#2a4d5e'); grd.addColorStop(1,'#7ab0c9');
-    g2.fillStyle=grd; g2.fillRect(0,0,64,512);
-    g2.fillStyle='rgba(255,255,255,0.05)';
-    for(var st=30;st<512;st+=44){ g2.fillRect(0,st,64,5); }
-    var back=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(SW*2+8, H+80), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)})));
-    back.position.set(0, H/2-6, -6.8);
+    var grd=g2.createLinearGradient(0,256,0,0);
+    grd.addColorStop(0,'#e0c47a'); grd.addColorStop(0.25,'#c9b46a'); grd.addColorStop(0.6,'#4a7a6a'); grd.addColorStop(1,'#2a4d5e');
+    g2.fillStyle=grd; g2.fillRect(0,0,64,256);
+    var tex=new THREE.CanvasTexture(cv);
+    var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(len+300,wallTop+140), new THREE.MeshBasicMaterial({map:tex, fog:false})));
+    sky.position.set(len/2+16,(wallTop+140)/2-16,-34);
+    var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
+    sunD.position.set(wallX-6, wallTop+14, -33);
   })();
-  var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(5,22), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.85})));
-  sunD.position.set(0, endlessC?H+26:goal+13, -6.5);
-  // SUMMIT ribbon (goal levels): posts + gold ribbon + banner you climb TO
-  if(!endlessC){
-    for(var ps=-1;ps<=1;ps+=2){
-      var post=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,4.2,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
-      post.position.set(ps*(SW-0.8), goal-1, 2.2);
-    }
-    var rib=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2-1.2,0.32,0.32), new THREE.MeshBasicMaterial({color:0xffd76a})));
-    rib.position.set(0, goal+1, 2.2);
-    var sumLb=addMesh(textPlate('SUMMIT', 6.4, 2.2, '#ffd76a'));
-    sumLb.position.set(0, goal+4.6, -2);
+  // the mossy counter (same look as the journey, short)
+  var g=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,3,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
+  g.position.set(len/2,-1.5,0);
+  var soil=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,1.1,14.2), new THREE.MeshLambertMaterial({color:0x4a3826})));
+  soil.position.set(len/2,-2.6,0);
+  var lip=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,0.5,14.4), new THREE.MeshLambertMaterial({color:0x557a48})));
+  lip.position.set(len/2,0,0);
+  for(var sx=0;sx<len+8;sx+=8){
+    var stp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4,0.08,13.6), new THREE.MeshLambertMaterial({color:0x628a54})));
+    stp.position.set(sx+2,0.26,0);
   }
-  // chimney side walls with ledges
-  for(var side=-1;side<=1;side+=2){
-    var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, H+60, 13), new THREE.MeshLambertMaterial({color:side<0?0x6a5138:0x5f4832})));
-    wallM.position.set(side*(SW+3), H/2-6, 0);
-    for(var wy=2;wy<H;wy+=9+rng()*6){
-      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), new THREE.MeshLambertMaterial({color:0x4e3b28})));
-      ledge.position.set(side*(SW+0.4), wy, 0);
+  for(var gx=3;gx<len;gx+=3+rng()*4){
+    if(rng()<0.6){
+      var tuft=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.28,0.9+rng()*0.6,5), new THREE.MeshLambertMaterial({color:0x6fae58})));
+      tuft.position.set(gx, 0.6, 3.5+rng()*2.5);
     }
   }
-  // launch platform
-  var plat=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+4,2.5,12), new THREE.MeshLambertMaterial({color:0x3a2c20})));
-  plat.position.set(0,-2.6,0);
-  var grass=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+4,0.5,12.2), new THREE.MeshLambertMaterial({color:0x3c5a34})));
-  grass.position.set(0,-1.2,0);
-  var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[], sap=[], wind=[], windMeshes=[], motes=[];
-  var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
-  function stackAt(px,py,n){
-    for(var sk=0;sk<n;sk++){
-      var ic=SLAB_IN[Math.floor(rng()*SLAB_IN.length)];
-      var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.4,1.15,4.2), new THREE.MeshLambertMaterial({color:0x7a5230})));
-      m.position.set(px,py-sk*1.32,0);
-      var grn=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.5,0.12,4.3), new THREE.MeshLambertMaterial({color:0x5e3c1e})));
-      grn.position.set(px,py-sk*1.32+0.62,0);
-      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false});
-    }
+  var blocks=[], items=[], crystals=[];
+  // a short warmup line of fruit down the runway
+  var fx1=6;
+  while(fx1<len-3){ var f=FRUIT[Math.floor(rng()*FRUIT.length)]; items.push(fruitAt(fx1, f.r*0.9, f)); fx1+=4+rng()*2; }
+  // THE WALL — many bands, big painted multipliers on both faces
+  var bandMats=[], b2;
+  for(b2=0;b2<bands.length;b2++){
+    var mat=new THREE.MeshLambertMaterial({color:bands[b2][1]});
+    bandMats.push(mat);
+    var bm=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3,4.6,10), mat));
+    bm.position.set(wallX+1.5, b2*4.6+2.3, 0);
+    var lb=addMesh(textPlate('x'+bands[b2][0], 3.4, 2.2, '#ffffff'));
+    lb.position.set(wallX+1.5, b2*4.6+2.3, 5.2);
+    var lb2=addMesh(textPlate('x'+bands[b2][0], 3.2, 2.0, '#ffffff'));
+    lb2.rotation.y=-Math.PI/2;
+    lb2.position.set(wallX-0.1, b2*4.6+2.3, 0);
   }
-  // ambient dust motes drifting in the chimney light
-  for(var mo=0;mo<14;mo++){
-    var mm=addMesh(new THREE.Mesh(new THREE.SphereGeometry(0.09+rng()*0.08,4,3), new THREE.MeshBasicMaterial({color:0xfff6d8, transparent:true, opacity:0.5})));
-    mm.position.set((rng()*2-1)*(SW-1), rng()*40, 1+rng()*2);
-    motes.push({mesh:mm, vx:(rng()*2-1)*0.5, vy:0.25+rng()*0.5});
-  }
-  function padAt(px,py){
-    var cush=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2,12,9), new THREE.MeshLambertMaterial({color:0x8de8ff, emissive:0x1c4a5a})));
-    cush.position.set(px,py,0); cush.scale.set(1.25,0.8,1);
-    var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,0.4,16), new THREE.MeshLambertMaterial({color:0xffffff, emissive:0x335566})));
-    ring.position.set(px,py,0);
-    pads.push({x:px,y:py,r:2});
-  }
-  // furniture climbs with you: gentle at the bottom, nasty up high
-  var y=13;
-  while(y<H-12){
-    var bag=['stack','swing','branch','pad','fruit'];
-    if(y>45){ bag.push('thorn','sap'); }
-    if(y>70){ bag.push('wind','goldf'); }
-    if(y>95){ bag.push('wasp','gourd','thorn'); }
-    if(y>150){ bag.push('crystalW','wasp','sap','plank','wind'); }
-    var seg=bag[Math.floor(rng()*bag.length)];
-    var f=FRUIT[Math.floor(rng()*FRUIT.length)];
-    if(seg==='stack'){
-      stackAt((rng()*2-1)*(SW-3.6), y, 2+Math.floor(rng()*2));
-    } else if(seg==='swing'){
-      var rod2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
-      rod2.rotation.z=Math.PI/2; rod2.position.set(0,y+3,0);
-      items.push(swingFruit(rng()*4-2, y+3, 2.4+rng()*1.2, f, 0.55+rng()*0.35, 1.2+rng()*0.7, rng()*6.28));
-    } else if(seg==='branch'){
-      var rod3=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
-      rod3.rotation.z=Math.PI/2; rod3.position.set(0,y+3,0);
-      var nb2=1+Math.floor(rng()*2);
-      for(var nbi2=0;nbi2<=nb2;nbi2++){
-        var fb2=FRUIT[Math.floor(rng()*FRUIT.length)];
-        items.push(fruitAt(-SW+2.5+rng()*(SW*2-5), y+3-(1.6+rng()*1.4), fb2, 'vine', y+3));
-      }
-    } else if(seg==='pad'){
-      padAt((rng()*2-1)*(SW-2.8), y);
-    } else if(seg==='fruit'){
-      items.push(fruitAt((rng()*2-1)*(SW-3), y, f, 'vine', y+2.6));
-    } else if(seg==='thorn'){
-      var tsn2=rng()<0.5?-1:1;
-      thorns.push(thornAt(tsn2*(SW-1.4), y));
-    } else if(seg==='sap'){
-      var ssn=rng()<0.5?-1:1, y0=y-2, y1=y+4.5;
-      sap.push({side:ssn, y0:y0, y1:y1});
-      var sapM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.7, y1-y0, 8), new THREE.MeshLambertMaterial({color:0x7fae3a, emissive:0x1c2a08})));
-      sapM.position.set(ssn*(SW-0.1), (y0+y1)/2, 0);
-      for(var dr=0;dr<2;dr++){ var drip=addMesh(new THREE.Mesh(new THREE.SphereGeometry(0.32,6,5), new THREE.MeshLambertMaterial({color:0x7fae3a})));
-        drip.position.set(ssn*(SW-0.2), y0-0.6-dr*1.1, 0); }
-    } else if(seg==='wasp'){
-      wasps.push(waspAt(0, y, SW-2.0, 0.9+rng()*0.6, rng()*6.28));
-    } else if(seg==='gourd'){
-      items.push(boomAt((rng()*2-1)*(SW-3.2), y, y+2.8));
-    } else if(seg==='crystalW'){
-      var csn=rng()<0.5?-1:1;
-      crystals.push(crystal(csn*(SW-2.4), y));
-    } else if(seg==='plank'){
-      planks.push(plankAt((rng()*2-1)*2, y+4, 2.6+rng()*1.2, 0.5+rng()*0.3, 0.8+rng()*0.5, rng()*6.28));
-    } else if(seg==='wind'){
-      // a gust corridor: constant sideways shove + drifting leaves
-      var wdir=rng()<0.5?-1:1, wy0=y-1, wy1=y+7;
-      wind.push({y0:wy0, y1:wy1, dir:wdir});
-      for(var ws=0;ws<3;ws++){
-        var streak=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(4.5,0.22), new THREE.MeshBasicMaterial({color:0xdfefe0, transparent:true, opacity:0.28, side:THREE.DoubleSide})));
-        streak.position.set(-wdir*(SW-2)+wdir*ws*2.6, wy0+1.5+ws*1.9, 1.5);
-        streak.rotation.z=wdir*0.08;
-        windMeshes.push({mesh:streak, dir:wdir, sp:2.6+rng()*1.6});
-      }
-    } else if(seg==='goldf'){
-      var rodG2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
-      rodG2.rotation.z=Math.PI/2; rodG2.position.set(0,y+3,0);
-      items.push(swingFruit(rng()*4-2, y+3, 2.0+rng()*0.8, GOLDF, 0.8+rng()*0.25, 2.1+rng()*0.6, rng()*6.28));
-    }
-    y+=(endlessC?7:Math.max(4.8, 7-lvl*0.22))+rng()*4;
-  }
-  // THE MIST — the rising void (solid body + glowing rim + a wispy crown)
-  var mistM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+10,34,12.5), new THREE.MeshLambertMaterial({color:0x8fa89a, transparent:true, opacity:0.85})));
-  mistM.position.set(0,-31,1);
-  var rimM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+10,0.5,12.6), new THREE.MeshBasicMaterial({color:0xcfe8da, transparent:true, opacity:0.9})));
-  rimM.position.set(0,-14,1);
-  var wispM=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(SW*2+10,5), new THREE.MeshBasicMaterial({color:0xbfd8cc, transparent:true, opacity:0.2, side:THREE.DoubleSide})));
-  wispM.position.set(0,-11,1.2);
-  return {ff:true, climb:true, len:H, SW:SW, floorY:-40, goal:goal, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
-    wasps:wasps, planks:planks, thorns:thorns, sap:sap, wind:wind, windMeshes:windMeshes, motes:motes,
-    voidMesh:mistM, voidRim:rimM, voidWisp:wispM,
-    zones:[[1,0]], zoneMats:[], wallX:1e9, bands:[[1,0]], bandMats:[]};
+  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,wallTop+6,11), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  post.position.set(wallX+3.6,(wallTop+6)/2-1,0);
+  var pole2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,6,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  pole2.position.set(wallX+1.5,wallTop+3,0);
+  var flag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), new THREE.MeshLambertMaterial({color:0xffd76a, side:THREE.DoubleSide})));
+  flag.position.set(wallX-0.4,wallTop+4.6,0);
+  return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands, bandMats:bandMats,
+    wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true};
 }
 
 function newClimb(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
-  var endlessC=!lvl;
-  var built=buildClimb(lvl||0);
-  G={ mode:'ff', climbing:true, endless:false, started:false, lvl:lvl||1, climbLvl:lvl||0, climbGoal:built.goal||0, world:built,
-      x:0, y:CL_PLAT+KR, vx:0, vy:0, ang:0, w:0, grounded:true,
-      score:0, combo:0, comboBest:0, slices:0, taps:0, depth:0, height:0,
-      voidY:-14, voidSpeed:endlessC?1.15:(0.95+Math.min(lvl,20)*0.05), voidT:0, kicks:0,
-      done:false, doneT:0, counted:false, mult:1, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
+  lvl=lvl||1;
+  var built=buildClimb(lvl);
+  G={ mode:'run', climbWall:true, lvl:lvl, world:built,
+      x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
+      score:0, combo:0, comboBest:0, slices:0, taps:0,
+      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
-  camera.position.set(0, 16, 40);
+  camera.position.set(-10, 18, 40);
   $('h-score').textContent='0';
-  $('h-lvl').textContent=endlessC?'WALL CLIMB':('CLIMB '+lvl);
+  $('h-lvl').textContent='WALL CLIMB '+lvl;
   $('h-combo').classList.remove('on');
-  $('progbar').style.display=endlessC?'none':'block';
+  $('progbar').style.display='block';
   $('progfill').style.width='0%';
   var bn=$('lvlbanner');
-  if(bn){ bn.textContent=endlessC?'WALL CLIMB':('CLIMB '+lvl+' · SUMMIT '+built.goal+'m'); bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
+  if(bn){ bn.textContent='WALL CLIMB '+lvl; bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
   var co=$('coach');
-  if(co){ co.textContent='TAP LEFT OR RIGHT TO FLICK. KICK YOUR HANDLE OFF THE WALLS.'; co.style.display='block'; }
+  if(co){ co.textContent='FLIP UP THE WALL. STICK THE BLADE AS HIGH AS YOU DARE.'; co.style.display=(lvl===1)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
 }
-function newClimbEndless(){ newClimb(0); }
 
 function newGame(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
@@ -1304,13 +1224,7 @@ function newEndless(){ newFF(1, true); }
 function doTap(side){
   if(!G||G.done)return;
   ac();
-  if(G.climbing){
-    // TAP TO FLICK: pop up and toward the tapped side, flipping as you go
-    if(!G.started)G.started=true;
-    if(side)G.lastSide=side;
-    var cs2=side||G.lastSide||1;
-    G.vy=CL_TAPVY; G.vx=cs2*CL_TAPVX; G.w=-cs2*CL_TAPW; G.grounded=false; G.taps++;
-  } else if(G.mode==='ff'){
+  if(G.mode==='ff'){
     // continuous hold physics does the steering + flipping; doTap only records
     // the pressed side and counts the tap (coach dismiss below)
     if(side){ G.lastSide=side; G.hold=side; }
@@ -1457,28 +1371,6 @@ function ffWall(x,y,dir){
     spawnSparks(x,y,0xff5a4a,16);
     var mbw=$('multburst');
     if(mbw){ mbw.textContent='STUCK!'; mbw.style.color='#ff6a5a'; mbw.classList.remove('go'); void mbw.offsetWidth; mbw.classList.add('go'); }
-  } else if(G.climbing){
-    // THE CLIMB: a clean handle KICK off the wall rockets you upward.
-    // Sticky sap patches on the wall dampen the kick badly.
-    var sappy=false, sps3=G.world.sap||[], si3;
-    for(si3=0;si3<sps3.length;si3++){ var s3=sps3[si3];
-      if(s3.side===dir && y>s3.y0 && y<s3.y1){ sappy=true; break; } }
-    G.vy = sappy?6.5:CL_KICK;
-    G.vx = away*(sappy?5.2:8.6);
-    G.w += away*0.9;
-    G.kicks=(G.kicks||0)+1;
-    G.shake=Math.max(G.shake, sappy?0.1:0.2);
-    if(sappy){ SFX.wood(); popup('sticky!', x, y+1.6, '#9fe04a'); G.kickStreak=0; }
-    else {
-      SFX.spring(); spawnSparks(x,y,0x8de8ff,6);
-      if(G.kicks===1)popup('KICK!', x-dir*2.4, y+2, '#ffd76a');
-      G.kickStreak=(G.kickStreak||0)+1;
-      if(G.kickStreak===5||G.kickStreak===10||G.kickStreak===15||G.kickStreak===20){
-        var stb=G.kickStreak*30; G.score+=stb;
-        popup('KICK STREAK x'+G.kickStreak+'  +'+stb, x-dir*2.4, y+3.6, '#8de8ff');
-        SFX.milestone(G.kickStreak);
-      }
-    }
   } else {
     // clean handle bounce
     var sp=Math.abs(G.vx)*0.72; if(sp<3.4)sp=3.4;
@@ -1546,29 +1438,7 @@ function loop(ts){
   G.t+=dt;
 
   if(!G.done){
-    if(G.mode==='ff' && G.climbing){
-      // WALL CLIMB: journey-style TAP TO FLICK. Parked on the pad until the
-      // first tap; then each tap pops you up toward a wall, flipping. Hold =
-      // keep flicking in rhythm. No hold-steer, no freefall physics.
-      if(G.started){
-        if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); } }
-        if(G.grounded){
-          G.vx*=Math.pow(0.2,dt); G.w=0;
-          var tgtA=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgtA-G.ang)*Math.min(1,dt*8);
-        } else {
-          G.vy-=CL_GRAV*dt; if(G.vy<-26)G.vy=-26;
-          G.ang+=G.w*dt; G.w*=Math.pow(0.7,dt);
-          G.vx*=Math.pow(0.82,dt);
-        }
-        // wind corridors: a steady sideways shove + drifting leaves
-        var wz=G.world.wind, wzi;
-        if(wz){ for(wzi=0;wzi<wz.length;wzi++){ var wzz=wz[wzi];
-          if(G.y>wzz.y0 && G.y<wzz.y1){
-            G.vx += wzz.dir*9*dt;
-            if(Math.random()<0.10)spawnSparks(G.x-wzz.dir*2.5, G.y+Math.random()*2-1, 0x9fe08a, 1);
-            break; } } }
-      }
-    } else if(G.mode==='ff'){
+    if(G.mode==='ff'){
       // FREEFALL: hold a side to STEER across the pit and FLIP the blade;
       // release to settle the spin so your orientation holds while you aim
       var hd = G.holding ? (G.hold||G.lastSide||0) : 0;
@@ -1629,12 +1499,6 @@ function loop(ts){
       var SW=G.world.SW;
       if(nx-KR<-SW){ nx=-SW+KR; ffWall(nx,ny,-1); }
       else if(nx+KR>SW){ nx=SW-KR; ffWall(nx,ny,1); }
-      // the climb launch pad catches you while the mist is still below it
-      if(G.climbing && G.started && G.voidY<CL_PLAT-1.2 && ny-KR<=CL_PLAT && G.vy<=0){
-        ny=CL_PLAT+KR; G.vy=0;
-        if(!G.grounded){ SFX.land(); }
-        G.grounded=true;
-      }
       // cushion pads: hit handle-first to bounce + bonus, blade chips
       var pds=G.world.pads, ip;
       if(pds){ for(ip=0;ip<pds.length;ip++){ var pd=pds[ip];
@@ -1671,7 +1535,7 @@ function loop(ts){
             popup('+'+ppts,pk.x,pk.y+1,'#ffd76a'); SFX.slab(G.combo);
           } else {
             var pshp=(G.x<pk.x)?-1:1; nx=pk.x+pshp*(pk.w/2+KR);
-            G.vx=pshp*Math.max(5,Math.abs(G.vx)); if(!G.climbing && G.vy>-3)G.vy=-3;
+            G.vx=pshp*Math.max(5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3;
             SFX.wood(); G.shake=Math.max(G.shake,0.14);
             G.combo=0; var cep=$('h-combo'); if(cep)cep.classList.remove('on');
           }
@@ -1679,7 +1543,7 @@ function loop(ts){
       // shelves/brackets in the pit are pass-through fruit mounts, so the dive
       // never stalls; the only things you land on is the floor at the bottom
       // THE BULLSEYE FLOOR — blade down STICKS, handle bounces you back up
-      if(!G.climbing && ny-KR<=G.world.floorY && G.vy<=0){
+      if(ny-KR<=G.world.floorY && G.vy<=0){
         var bladeY=-Math.sin(G.ang);
         if(bladeY<-0.15){
           nx=Math.max(-SW+0.6,Math.min(SW-0.6,nx));
@@ -1743,13 +1607,22 @@ function loop(ts){
           }
           continue;
         }
-        // head bonk from below (tables, beams)
+        // head bonk from below (tables, beams): keep sliding forward so
+        // fruit-shelf pockets can never trap the knife (Stephen 7/19)
         if(G.vy>0 && G.y+KR<=b.y+0.4 && ny+KR>b.y){
-          ny=b.y-KR; G.vy=-2.5; SFX.wood(); G.shake=Math.max(G.shake,0.08);
+          ny=b.y-KR; G.vy=-2.5; if(G.vx>0 && G.vx<RUNVX*0.7)G.vx=RUNVX*0.7;
+          SFX.wood(); G.shake=Math.max(G.shake,0.08);
           continue;
         }
-        // side bump: bounce back, never stick (both directions)
+        // side contact: LEDGE ASSIST first — if the top is within a hop,
+        // step up onto it instead of bouncing off (no more stuck pockets)
         if(ny+KR>b.y && ny-KR<b.y+b.h){
+          var topGap=(b.y+b.h)-(ny-KR);
+          if(topGap>0 && topGap<1.9){
+            ny=b.y+b.h+KR; if(G.vy<0){ G.vy=0; G.grounded=true; }
+            if(b.crumble && !b.crumbleT){ b.crumbleT=G.t; SFX.wood(); }
+            continue;
+          }
           if(G.vx>0 && G.x+KR<=b.x+0.6){ nx=b.x-KR; G.vx=-G.vx*0.35; SFX.wood(); G.shake=Math.max(G.shake,0.12); spawnSparks(b.x,ny,WOOD,4); }
           else if(G.vx<0 && G.x-KR>=b.x+b.w-0.6){ nx=b.x+b.w+KR; G.vx=-G.vx*0.35; SFX.wood(); G.shake=Math.max(G.shake,0.12); spawnSparks(b.x+b.w,ny,WOOD,4); }
         }
@@ -1795,10 +1668,11 @@ function loop(ts){
       var bladeX=-Math.cos(G.ang);
       if(bladeX>0.05){
         G.x=G.world.wallX-KR*0.4;
-        // overshooters slam into the gold top band; nothing sticks in thin air
-        if(G.y>21.2)G.y=21.2;
+        // overshooters slam into the top band; nothing sticks in thin air
+        var wTop=(G.world.wallTop||23);
+        if(G.y>wTop-1.8)G.y=wTop-1.8;
         G.done=true; G.doneT=0; G.stuckY=G.y;
-        var band=Math.min(4,Math.max(0,Math.floor(G.y/4.6)));
+        var band=Math.min(G.world.bands.length-1,Math.max(0,Math.floor(G.y/4.6)));
         G.mult=G.world.bands[band][0];
         G.stickA=Math.PI+0.32; G.ang=G.stickA; G.w=0;
         SFX.stick(); G.shake=0.35;
@@ -1819,71 +1693,8 @@ function loop(ts){
       }
     }
 
-    if(G.mode==='ff' && !G.climbing){ var dNow=Math.max(0,4-G.y); if(dNow>G.depth)G.depth=dNow; }
-    // WALL CLIMB: height milestones + THE RISING MIST
-    if(G.climbing && !G.done){
-      var hNow=Math.max(0,G.y-3.5);
-      if(hNow>G.height){
-        var pm=Math.floor(G.height/25), nm2=Math.floor(hNow/25);
-        G.height=hNow;
-        if(nm2>pm){ popup((nm2*25)+'m!', G.x, G.y+2.6, '#8de8ff'); SFX.milestone(Math.min(20,nm2*5)); G.score+=nm2*40; $('h-score').textContent=G.score.toLocaleString(); }
-      }
-      if(G.started)G.voidT+=dt;
-      if(G.voidT>2.2){
-        G.voidSpeed=Math.min(4.6, 1.15 + G.height*0.010 + (G.voidT-2.2)*0.018);
-        G.voidY += G.voidSpeed*dt;
-      }
-      if(G.world.voidMesh){
-        G.world.voidMesh.position.y=G.voidY-17;
-        if(G.world.voidRim){ G.world.voidRim.position.y=G.voidY; G.world.voidRim.material.opacity=0.72+Math.sin(G.t*3.1)*0.2; }
-        if(G.world.voidWisp){ G.world.voidWisp.position.y=G.voidY+2.6; G.world.voidWisp.material.opacity=0.15+Math.sin(G.t*2.2+1.3)*0.07; }
-      }
-      // mist breathing down your neck: brighter rim + a nervous rumble
-      var mistGap=G.y-G.voidY;
-      if(mistGap<8){
-        if(G.world.voidRim)G.world.voidRim.material.opacity=1;
-        G.shake=Math.max(G.shake,0.05+(8-mistGap)*0.012);
-        if(!G.mistWarned && mistGap<6){ G.mistWarned=true; popup('CLIMB!', G.x, G.y+3, '#cfe8da'); }
-      } else if(mistGap>12){ G.mistWarned=false; }
-      // ambient dust motes ride the chimney with you
-      var mts=G.world.motes, mi2;
-      if(mts){ for(mi2=0;mi2<mts.length;mi2++){ var mt=mts[mi2];
-        mt.mesh.position.x+=mt.vx*dt; mt.mesh.position.y+=mt.vy*dt;
-        if(Math.abs(mt.mesh.position.x)>G.world.SW-0.6)mt.vx=-mt.vx;
-        if(mt.mesh.position.y<G.y-26 || mt.mesh.position.y>G.y+34){
-          mt.mesh.position.y=G.y+20+Math.random()*10;
-          mt.mesh.position.x=(Math.random()*2-1)*(G.world.SW-1);
-        } } }
-      // wind streaks drift and wrap so the gust reads in motion
-      var wms=G.world.windMeshes, wmi;
-      if(wms){ for(wmi=0;wmi<wms.length;wmi++){ var wm=wms[wmi];
-        wm.mesh.position.x+=wm.dir*wm.sp*dt;
-        if(wm.dir>0 && wm.mesh.position.x>G.world.SW-0.5)wm.mesh.position.x=-G.world.SW+0.5;
-        if(wm.dir<0 && wm.mesh.position.x<-G.world.SW+0.5)wm.mesh.position.x=G.world.SW-0.5;
-      } }
-      if(G.y < G.voidY){
-        G.done=true; G.failed=true; G.mistDeath=true; G.doneT=0; G.stuckY=G.y;
-        G.vx=0; G.vy=0; G.w=0;
-        SFX.fail(); spawnSparks(G.x,G.y,0x9fb8a8,14); G.shake=Math.max(G.shake,0.4);
-        var mbm=$('multburst');
-        if(mbm){ mbm.textContent='SWALLOWED!'; mbm.style.color='#9fb8a8'; mbm.classList.remove('go'); void mbm.offsetWidth; mbm.classList.add('go'); }
-      }
-      // SUMMIT: crossing the goal ribbon wins the climb level
-      if(G.climbGoal && !G.done && G.y>=G.climbGoal){
-        G.done=true; G.failed=false; G.doneT=0; G.counted=false; G.stuckY=G.y;
-        G.mult=((G.chips||0)===0)?2:1;   // clean climb doubles the take
-        G.stickA=G.ang; G.vx=0; G.vy=1.5; G.w=0;
-        SFX.stick(); G.shake=0.3;
-        spawnSparks(0,G.climbGoal+1,0xffd76a,18);
-        var mbs=$('multburst');
-        if(mbs){ mbs.textContent='SUMMIT!'; mbs.style.color='#ffd76a'; mbs.classList.remove('go'); void mbs.offsetWidth; mbs.classList.add('go'); }
-      }
-    }
-    if(G.climbing){
-      $('h-score').textContent=G.score.toLocaleString();
-      $('h-lvl').textContent='HEIGHT '+Math.round(G.height)+'m';
-      if(G.climbGoal)$('progfill').style.width=Math.max(0,Math.min(100,G.height/G.climbGoal*100)).toFixed(1)+'%';
-    } else if(G.endless){
+    if(G.mode==='ff'){ var dNow=Math.max(0,4-G.y); if(dNow>G.depth)G.depth=dNow; }
+    if(G.endless){
       $('h-score').textContent=G.score.toLocaleString();
       $('h-lvl').textContent='DEPTH '+Math.round(G.depth)+'m';
     } else {
@@ -1943,17 +1754,7 @@ function loop(ts){
   // On the finale the camera pulls back and frames the WHOLE score wall so
   // you watch yourself stick it (Stephen: could not see the wall).
   var camT, lookX, lookY;
-  if(G.climbing && !G.done){
-    // climb chase: ride alongside, eyes UP the chimney; the camera leads
-    // your rise so a big kick shows you where you are going
-    var rise=Math.min(4.2, Math.max(0,G.vy)*0.22);
-    camT={ x:G.x*0.35, y:G.y+7+rise*0.6, z:24 };
-    lookX=G.x*0.35; lookY=G.y+3.5+rise;
-  } else if(G.climbing && G.done && !G.failed){
-    // summit ceremony: frame the ribbon and the sun
-    camT={ x:0, y:(G.climbGoal||G.y)+7, z:26 };
-    lookX=0; lookY=(G.climbGoal||G.y)+2.5;
-  } else if(G.mode==='ff'){
+  if(G.mode==='ff'){
     if(G.failed){
       camT={ x:G.x*0.5, y:G.stuckY+5, z:19 };
       lookX=G.x*0.55; lookY=G.stuckY;
@@ -1965,10 +1766,16 @@ function loop(ts){
       lookX=G.x*0.35; lookY=G.y-4.5;
     }
   } else if(G.done){
-    camT={ x:G.world.wallX-16.5, y:13.5, z:30 };
-    lookX=G.world.wallX+1; lookY=Math.min(20,Math.max(7,G.stuckY*0.6+5));
+    if(G.climbWall){
+      // frame the stick wherever it landed on the tall wall
+      camT={ x:G.world.wallX-18, y:G.stuckY+4.5, z:32 };
+      lookX=G.world.wallX+0.5; lookY=G.stuckY;
+    } else {
+      camT={ x:G.world.wallX-16.5, y:13.5, z:30 };
+      lookX=G.world.wallX+1; lookY=Math.min(20,Math.max(7,G.stuckY*0.6+5));
+    }
   } else {
-    camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:23 };
+    camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:26 };
     lookX=G.x+5.5; lookY=Math.max(3,G.y*0.45+1.5);
   }
   camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*(G.done?2.6:4.5));
@@ -1985,56 +1792,12 @@ function loop(ts){
 /* ---------- finish ---------- */
 function slivPayout(){
   var base=Math.round(G.score/45);
-  if(G.climbing) base+=Math.round((G.height||0)/3);
-  else if(G.endless) base+=Math.round((G.depth||0)/4);
+  if(G.endless) base+=Math.round((G.depth||0)/4);
   else if((G.chips||0)===0 && !G.failed) base+=30;
   return Math.max(G.failed?6:15, base);
 }
 function awardSlivers(){ var n=slivPayout(); SLIV+=n; saveSliv(); var e=$('t-sliv'); if(e)e.textContent=SLIV; return n; }
 function failLevel(){
-  if(G.climbing && G.climbGoal){
-    // a climb LEVEL lost: show the level story, no endless-best bookkeeping
-    var hL=Math.round(G.height||0);
-    G.score += hL*2;
-    saveProg();
-    $('go-title').textContent=G.mistDeath?'THE MIST TOOK YOU':'STUCK IN THE WALL';
-    $('go-stars').textContent='✕';
-    $('go-stars').style.color='#ff6a5a';
-    (function(){ var el=$('go-score'), target=G.score, e2=0; el.textContent='0';
-      var ivf=setInterval(function(){ e2+=33; var p=Math.min(1,e2/650);
-        el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString(); if(p>=1)clearInterval(ivf); },33); })();
-    $('go-lab').textContent='reached '+hL+'m of the '+G.climbGoal+'m summit';
-    $('go-detail').textContent=(G.kicks||0)+' kicks · '+G.slices+' sliced · climb '+(G.climbLvl||1);
-    $('go-sun').textContent='◆ +'+awardSlivers()+' slivers';
-    $('go-next').textContent='Try Again';
-    show('s-go');
-    return;
-  }
-  if(G.climbing){
-    var hM=Math.round(G.height||0);
-    G.score += hM*3;
-    var cb=PROG.climbBest||0, cnb=hM>cb;
-    if(cnb)PROG.climbBest=hM;
-    var earnedWB=false;
-    if(hM>=100 && SKN.owned.indexOf('wallbreaker')<0){ SKN.owned.push('wallbreaker'); saveSkins(); earnedWB=true; }
-    saveProg();
-    $('go-title').textContent='HEIGHT '+hM+'m';
-    $('go-stars').textContent=cnb?'★':'✕';
-    $('go-stars').style.color=cnb?'#8de8ff':'#ff6a5a';
-    (function(){ var el=$('go-score'), target=G.score, e2=0;
-      el.textContent='0';
-      var iv2=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/650);
-        el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
-        if(pr>=1)clearInterval(iv2); },33); })();
-    $('go-lab').textContent=(cnb?'★ highest yet · ':'')+(G.mistDeath?'the mist swallowed you':'the blade caught the wall');
-    $('go-detail').textContent=(G.kicks||0)+' kicks · '+G.slices+' sliced · best '+(PROG.climbBest||0)+'m'+(earnedWB?' · WALLBREAKER PICK UNLOCKED':'');
-    var svc=awardSlivers();
-    $('go-sun').textContent='◆ +'+svc+' slivers';
-    $('go-next').textContent='Climb Again';
-    var tc=$('t-cbest'); if(tc)tc.textContent=PROG.climbBest||0;
-    show('s-go');
-    return;
-  }
   var depthM=Math.round(G.depth||Math.max(0,4-G.y));
   if(G.endless){
     // endless payoff: score folds in a depth bonus; best depth saved
@@ -2071,27 +1834,27 @@ function failLevel(){
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
   if(G.failed){ return failLevel(); }
-  if(G.climbing){
-    // SUMMIT — a climb level cleared
-    var clvl=G.climbLvl||1, chipsC=G.chips||0;
-    var bkeyC='c'+clvl;
+  if(G.climbWall){
+    // THE WALL CLIMB PAYOFF: your multiplier is where you stuck it
+    var bkeyC='c'+lvl;
     if(G.score>(PROG.best[bkeyC]||0))PROG.best[bkeyC]=G.score;
-    if(clvl>=(PROG.climbLevel||1))PROG.climbLevel=clvl+1;
-    if(Math.round(G.height)>=100 && SKN.owned.indexOf('wallbreaker')<0){ SKN.owned.push('wallbreaker'); saveSkins(); }
+    if(lvl>=(PROG.climbLevel||1))PROG.climbLevel=lvl+1;
+    var earnedWB=false;
+    if(G.mult>=30 && SKN.owned.indexOf('wallbreaker')<0){ SKN.owned.push('wallbreaker'); saveSkins(); earnedWB=true; }
     saveProg();
-    var starsC = (G.mult>=2) ? 3 : (chipsC<=2 ? 2 : 1);
-    $('go-title').textContent='CLIMB '+clvl+' SUMMIT';
-    $('go-stars').textContent = starsC===3?'★★★':(starsC===2?'★★☆':'★☆☆');
-    $('go-stars').style.color = starsC===3?'#ffd76a':(starsC===2?'#e0c37a':'#948fae');
+    var tmw=G.world.topMult||10, fracW=G.mult/tmw;
+    var starsW = fracW>=0.55?3 : (fracW>=0.2?2:1);
+    $('go-title').textContent='WALL CLIMB '+lvl+' \u00b7 x'+G.mult;
+    $('go-stars').textContent = starsW===3?'\u2605\u2605\u2605':(starsW===2?'\u2605\u2605\u2606':'\u2605\u2606\u2606');
+    $('go-stars').style.color = starsW===3?'#ffd76a':(starsW===2?'#e0c37a':'#948fae');
     (function(){ var el=$('go-score'), target=G.score, e2=0; el.textContent='0';
-      var ivc=setInterval(function(){ e2+=33; var p=Math.min(1,e2/850);
-        el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString(); if(p>=1)clearInterval(ivc); },33); })();
-    $('go-lab').textContent=(G.mult>=2?'clean climb · score doubled':'you made the summit');
-    $('go-detail').textContent=(G.kicks||0)+' kicks · '+G.slices+' sliced · best combo x'+Math.max(1,G.comboBest);
-    $('go-sun').textContent='◆ +'+awardSlivers()+' slivers';
+      var ivw=setInterval(function(){ e2+=33; var p=Math.min(1,e2/850);
+        el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString(); if(p>=1)clearInterval(ivw); },33); })();
+    $('go-lab').textContent=(G.mult>=tmw?'THE TOP OF THE WALL':'stuck it at x'+G.mult+' of x'+tmw);
+    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+(earnedWB?' \u00b7 WALLBREAKER PICK UNLOCKED':'');
+    $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
     $('go-next').textContent='Next Climb';
-    var gr2=$('go-retry'); if(gr2)gr2.style.display='';
-    var tcl=$('t-clvl'); if(tcl)tcl.textContent=PROG.climbLevel||1;
+    var tclw=$('t-clvl'); if(tclw)tclw.textContent=PROG.climbLevel||1;
     show('s-go'); return;
   }
   if(G.endless){
@@ -2201,7 +1964,6 @@ function attractLoop(ts){
 tap('b-play',function(){ newGame(PROG.level); });
 tap('b-ff',function(){ newFF(PROG.ffLevel); });
 tap('b-climb',function(){ newClimb(PROG.climbLevel||1); });
-tap('b-climb2',function(){ newClimbEndless(); });
 tap('b-endless',function(){ newEndless(); });
 tap('b-forge',function(){ renderForge(); show('s-forge'); });
 tap('forge-back',function(){ show('s-title'); });
@@ -2245,25 +2007,24 @@ window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){re
 tap('b-how',function(){ show('s-how'); });
 tap('how-back',function(){ show('s-title'); });
 tap('b-home',function(){ running=false; show('s-title'); });
-tap('go-next',function(){ if(G&&G.climbing){ if(G.climbGoal)newClimb(G.failed?G.climbLvl:(PROG.climbLevel||1)); else newClimbEndless(); }
+tap('go-next',function(){ if(G&&G.climbWall)newClimb(PROG.climbLevel||1);
   else if(G&&G.endless)newEndless(); else if(G&&G.mode==='ff')newFF((G&&G.failed)?G.lvl:PROG.ffLevel); else newGame(PROG.level); });
-tap('go-retry',function(){ if(G&&G.climbing){ if(G.climbGoal)newClimb(G.climbLvl); else newClimbEndless(); }
+tap('go-retry',function(){ if(G&&G.climbWall)newClimb(G.lvl);
   else if(G&&G.endless)newEndless(); else if(G&&G.mode==='ff')newFF(G.lvl); else newGame(G?G.lvl:PROG.level); });
 tap('go-home',function(){ show('s-title'); });
 $('t-lvl').textContent=PROG.level;
 $('t-fflvl').textContent=PROG.ffLevel;
 if(!PROG.endlessBest)PROG.endlessBest=0;
 $('t-ebest').textContent=PROG.endlessBest;
-$('t-cbest').textContent=PROG.climbBest||0;
 $('t-clvl').textContent=PROG.climbLevel||1;
 /* Wall Climb portal card entry: /satellites/slice-3d/?mode=climb drops straight in */
-if(/[?&]mode=climb/.test(location.search)){ setTimeout(function(){ newClimbEndless(); },80); }
+if(/[?&]mode=climb/.test(location.search)){ setTimeout(function(){ newClimb(PROG.climbLevel||1); },80); }
 $('buildstamp').textContent='Super Slice 3D '+BUILD;
 startAttract();
 
 /* headless test hook — only with ?dev=1 */
 if(/[?&]dev=1/.test(location.search)){
-  window._S3={ newGame:newGame, newFF:newFF, newEndless:newEndless, newClimb:newClimb, newClimbEndless:newClimbEndless, tap:doTap,
+  window._S3={ newGame:newGame, newFF:newFF, newEndless:newEndless, newClimb:newClimb, tap:doTap,
     hold:function(side){ if(G){ G.hold=side||0; G.holding=(side!==0&&side!=null); if(side)G.lastSide=side; } },
     state:function(){ return G; }, world:function(){ return G?G.world:null; },
     freeze:function(){ running=false; },
