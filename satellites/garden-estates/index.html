@@ -85,7 +85,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>The goal.</b> Be the last gardener with coins. Buy plots, grow greenhouses, and collect rent until your rivals run dry.</div></div>
-    <div class="helprow"><div class="hi">2</div><div><b>Your turn.</b> Tap <b class="hl">Roll Dice</b>. Your pawn walks that many spaces. Every time you pass the green <b>Gate</b>, the bank pays you 200 coins.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>Your turn.</b> Tap <b class="hl">Roll Dice</b>. Your pawn walks that many spaces. Every time you pass the green <b>Gate</b>, the bank pays you $200.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Empty plot.</b> Tap <b class="hl">Buy</b> to own it, or <b>Pass</b> to leave it. Own both plots of one color and you have a full set.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>A rival's plot.</b> You pay them rent. A full set and taller greenhouses mean much bigger rent.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b>Build.</b> Own a full color set, then tap either of those plots on the board to raise a <b class="hl">greenhouse</b>. Build them evenly across the set.</div></div>
@@ -102,6 +102,9 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:8px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div class="settingline"><span>Click through rival turns</span><div class="toggle" id="tg-pace"><b></b></div></div>
+    <div class="settingline"><span>Game speed</span><button class="btn ghost sm" id="bt-speed" style="min-height:44px;width:auto;padding:0 18px">Normal</button></div>
+    <div style="font-size:12px;color:#8a9178;max-width:400px;margin:0 auto;line-height:1.5;text-align:center">Click through shows each step of a rival's turn and waits for your tap. Game speed changes how fast pawns walk and cards appear.</div>
     <div style="height:8px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
@@ -135,8 +138,9 @@ var TESTMODE=/[?&]getest=1/.test(location.search);
 
 /* ---------- storage + settings ---------- */
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, haptic:true };
-(function(){ try{ var s=JSON.parse(LS.get('ge_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.haptic==='boolean')SET.haptic=s.haptic; }catch(e){} })();
+var SET={ sound:true, haptic:true, pace:'auto', speed:1 };
+function spd(){ return SET.speed||1; }
+(function(){ try{ var s=JSON.parse(LS.get('ge_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.haptic==='boolean')SET.haptic=s.haptic; if(s.pace==='step'||s.pace==='auto')SET.pace=s.pace; if(s.speed===0.7||s.speed===1||s.speed===1.6)SET.speed=s.speed; }catch(e){} })();
 function saveSet(){ LS.set('ge_set', JSON.stringify(SET)); }
 var PROG={ wins:0, games:0 };
 (function(){ try{ var s=JSON.parse(LS.get('ge_save')||'{}'); if(s.wins)PROG.wins=s.wins; if(s.games)PROG.games=s.games; }catch(e){} })();
@@ -235,20 +239,20 @@ var WEATHER=[
   {msg:'Sudden bloom carries you to the Greenhouse Gate.', kind:'toStart'},
   {msg:'A warm spell. Walk on to the Fern Conservatory.', kind:'toIndex', val:26},
   {msg:'Cold snap. Step back three spaces.', kind:'back', val:3},
-  {msg:'Greenhouse glass cracks. Pay 25 per greenhouse.', kind:'perHouse', val:25},
+  {msg:'Greenhouse glass cracks. Pay $25 per greenhouse.', kind:'perHouse', val:25},
   {msg:'A compost order arrives. Go straight to Compost.', kind:'jail'},
-  {msg:'Bumper harvest! Collect 150 from the bank.', kind:'money', val:150},
-  {msg:'Hail damages the beds. Pay 60.', kind:'money', val:-60},
+  {msg:'Bumper harvest! Collect $150 from the bank.', kind:'money', val:150},
+  {msg:'Hail damages the beds. Pay $60.', kind:'money', val:-60},
   {msg:'You find a Compost pass. Keep it for later.', kind:'getout'}
 ];
 var ALMANAC=[
-  {msg:'Farmers market day. Collect 100.', kind:'money', val:100},
-  {msg:'Water bill is due. Pay 75.', kind:'money', val:-75},
-  {msg:'You win the flower show. Collect 120.', kind:'money', val:120},
-  {msg:'New tools for the shed. Pay 60.', kind:'money', val:-60},
-  {msg:"Grandma's garden inheritance. Collect 200.", kind:'money', val:200},
-  {msg:'A thorn needs a doctor. Pay 50.', kind:'money', val:-50},
-  {msg:'It is your planting birthday. Each rival gives you 25.', kind:'eachPlayer', val:25},
+  {msg:'Farmers market day. Collect $100.', kind:'money', val:100},
+  {msg:'Water bill is due. Pay $75.', kind:'money', val:-75},
+  {msg:'You win the flower show. Collect $120.', kind:'money', val:120},
+  {msg:'New tools for the shed. Pay $60.', kind:'money', val:-60},
+  {msg:"Grandma's garden inheritance. Collect $200.", kind:'money', val:200},
+  {msg:'A thorn needs a doctor. Pay $50.', kind:'money', val:-50},
+  {msg:'It is your planting birthday. Each rival gives you $25.', kind:'eachPlayer', val:25},
   {msg:'You find a Compost pass. Keep it for later.', kind:'getout'}
 ];
 function drawCardObj(deck){ var arr=(deck==='weather')?WEATHER:ALMANAC; return arr[irand(arr.length)]; }
@@ -266,7 +270,7 @@ function makePlayers(count, humanP0){
   var pl=[]; for(var i=0;i<count;i++){
     var isCPU = humanP0 ? (i>0) : true;
     var nm = (humanP0&&i===0) ? 'You' : PNAMES_CPU[i];
-    pl.push({ name:nm, isCPU:isCPU, cash:1500, pos:0, alive:true, jail:0, consec:0, getOut:0, color:PCOLORS[i] });
+    pl.push({ name:nm, isCPU:isCPU, cash:1500, pos:0, alive:true, jail:0, consec:0, getOut:0, color:PCOLORS[i], token:TOKENS[i%TOKENS.length] });
   }
   return pl;
 }
@@ -331,22 +335,22 @@ function verbFor(p,verb){ return (p.name==='You') ? ('You are '+verb) : (p.name+
 function turnLabel(p){ return (p.name==='You') ? 'Your turn' : (p.name+"'s turn"); }
 
 /* ---------- turn engine (animated) ---------- */
-function enterIdle(){ G.phase='idle'; if(cpu(G.cur))G.pre=0.5; }
+function enterIdle(){ G.phase='idle'; if(cpu(G.cur))G.pre=0.5/spd(); }
 function startTurn(){ var p=G.players[G.cur]; if(!p.alive){ endTurn(); return; } p.consec=0; G.turnNo++; G.gotDouble=false;
   toast(turnLabel(p)); enterIdle(); }
-function waitThen(sec,fn){ G.phase='wait'; G.pre=sec; G._after=fn; }
+function waitThen(sec,fn){ G.phase='wait'; G.pre=sec/spd(); G._after=fn; }
 function endPhaseFor(pi){ if(cpu(pi)){ cpuBuild(pi); waitThen(0.55,endTurn); } else { G.phase='turnend'; } }
 function endTurn(){ if(checkWin())return; var n=G.players.length, i=G.cur, tries=0;
   do{ i=(i+1)%n; tries++; } while(!G.players[i].alive && tries<=n); G.cur=i; startTurn(); }
 
 function startRoll(){ var p=G.players[G.cur];
   if(p.jail>0 && p.getOut>0){ p.getOut--; p.jail=0; toast(p.name+' uses a Compost pass.'); }
-  G.wasJailed = p.jail>0; G.phase='rolling'; G.rollT=0.55; G._dr=-1; sfx('roll'); }
+  G.wasJailed = p.jail>0; G.phase='rolling'; G.rollT=0.55/spd(); G._dr=-1; sfx('roll'); }
 function endRoll(){ var p=G.players[G.cur]; var d0=G.dice[0], d1=G.dice[1], sum=d0+d1;
   if(G.wasJailed){ G.wasJailed=false;
     if(d0===d1){ p.jail=0; toast(p.name+' rolls doubles and leaves Compost.'); G.gotDouble=false; startMoving(sum); return; }
     p.jail--;
-    if(p.jail<=0){ toast(p.name+' pays 50 and leaves Compost.'); var ok=payMoney(G.cur,50,-1); if(checkWin())return; if(p.alive)startMoving(sum); else endTurn(); }
+    if(p.jail<=0){ toast(p.name==='You' ? 'You pay $50 and leave Compost.' : p.name+' pays $50 and leaves Compost.'); var ok=payMoney(G.cur,50,-1); if(checkWin())return; if(p.alive)startMoving(sum); else endTurn(); }
     else { toast(p.name+' stays in Compost.'); endPhaseFor(G.cur); }
     return;
   }
@@ -356,9 +360,9 @@ function endRoll(){ var p=G.players[G.cur]; var d0=G.dice[0], d1=G.dice[1], sum=
   startMoving(sum);
 }
 function sendToJail(pi){ var p=G.players[pi]; p.pos=JAIL_IDX; p.jail=3; p.consec=0; }
-function startMoving(steps){ G.moveLeft=steps; G.phase='moving'; G.stepT=0.10; }
+function startMoving(steps){ G.moveLeft=steps; G.phase='moving'; G.stepT=0.10/spd(); }
 function advanceOneCell(){ var p=G.players[G.cur]; p.pos=(p.pos+1)%N; sfx('move');
-  if(p.pos===START_IDX){ var inc=goIncome(); if(inc>0){ collect(G.cur,inc); toast(p.name+' passes the Gate and collects '+inc+'.'); } }
+  if(p.pos===START_IDX){ var inc=goIncome(); if(inc>0){ collect(G.cur,inc); toast(p.name==='You' ? 'You pass the gate. Collect $'+inc+'.' : p.name+' passes the gate. Collects $'+inc+'.'); } }
   G.moveLeft--; if(G.moveLeft<=0){ waitThen(0.2, onLanded); } else { G.stepT=0.10; } }
 function onLanded(){ resolveSpace(G.cur); }
 
@@ -369,8 +373,8 @@ function resolveSpace(pi){ var p=G.players[pi], i=p.pos, s=SPACES[i];
     if(s.sub==='rest'){ toast(p.name+' relaxes on the Garden Bench.'); afterResolve(pi,true); return; }
     toast(p.name+' is just visiting the Compost.'); afterResolve(pi,true); return;
   }
-  if(s.t==='tax'){ toast(p.name+' pays '+s.name+' of '+s.amount+'.'); var ok=payMoney(pi,s.amount,-1); afterResolve(pi,ok); return; }
-  if(s.t==='card'){ var c=drawCardObj(s.deck); G.pendingCard=c; G.cardDeck=s.deck; toast((s.deck==='weather'?'Weather: ':'Almanac: ')+c.msg); sfx('card'); G.phase='cardshow'; G.pre=1.35; return; }
+  if(s.t==='tax'){ toast((p.name==='You'?'You pay $':p.name+' pays $')+s.amount+' for '+s.name+'.'); var ok=payMoney(pi,s.amount,-1); afterResolve(pi,ok); return; }
+  if(s.t==='card'){ var c=drawCardObj(s.deck); G.pendingCard=c; G.cardDeck=s.deck; toast((s.deck==='weather'?'Weather: ':'Almanac: ')+c.msg); sfx('card'); G.phase='cardshow'; G.pre=1.35/spd(); return; }
   // ownable: prop / station / utility
   if(s.owner===-1){
     if(cpu(pi)){ if(cpuWantsBuy(pi,i)){ doBuy(pi,i); sfx('buy'); toast(p.name+' buys '+s.name+' for '+s.price+'.'); } else { toast(p.name+' leaves '+s.name+' unsold.'); } afterResolve(pi,true); }
@@ -379,7 +383,7 @@ function resolveSpace(pi){ var p=G.players[pi], i=p.pos, s=SPACES[i];
   }
   if(s.owner===pi){ toast('You already own '+s.name+'.'); afterResolve(pi,true); return; }
   var rent=rentFor(i,G.dice[0]+G.dice[1]);
-  toast(p.name+' pays '+rent+' rent to '+G.players[s.owner].name+'.'); sfx('rent'); haptic(12);
+  toast((p.name==='You'?'You pay $':p.name+' pays $')+rent+' rent to '+G.players[s.owner].name+'.'); sfx('rent'); haptic(12);
   var ok2=payMoney(pi,rent,s.owner); afterResolve(pi,ok2);
 }
 function applyPendingCard(){ var c=G.pendingCard; G.pendingCard=null; var pi=G.cur;
@@ -467,9 +471,9 @@ function step(dt){ if(!G)return; G.t+=dt; if(G.flashBuild>0)G.flashBuild-=dt;
   if(G.phase==='rolling'){ G.rollT-=dt; if(Math.floor(G.t*24)!==G._dr){ G._dr=Math.floor(G.t*24); G.dice=[1+irand(6),1+irand(6)]; }
     if(G.rollT<=0){ G.dice=[1+irand(6),1+irand(6)]; endRoll(); } }
   else if(G.phase==='moving'){ G.stepT-=dt; if(G.stepT<=0)advanceOneCell(); }
-  else if(G.phase==='cardshow'){ G.pre-=dt; if(G.pre<=0)applyPendingCard(); }
-  else if(G.phase==='wait'){ G.pre-=dt; if(G.pre<=0){ var fn=G._after; G._after=null; if(fn)fn(); } }
-  else if(G.phase==='idle'){ if(cpu(G.cur)){ G.pre-=dt; if(G.pre<=0)startRoll(); } }
+  else if(G.phase==='cardshow'){ if(stepFrozen()){} else { G.pre-=dt; if(G.pre<=0){ G.stepGo=false; applyPendingCard(); } } }
+  else if(G.phase==='wait'){ if(stepFrozen()){} else { G.pre-=dt; if(G.pre<=0){ G.stepGo=false; var fn=G._after; G._after=null; if(fn)fn(); } } }
+  else if(G.phase==='idle'){ if(cpu(G.cur)){ if(stepFrozen()){} else { G.pre-=dt; if(G.pre<=0){ G.stepGo=false; startRoll(); } } } }
 }
 
 function rr(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -514,12 +518,12 @@ function drawCell(i){ var s=SPACES[i], rc=cellRect(i), x=rc.x, y=rc.y;
     txt(s.deck==='weather'?'WEATHER':'ALMANAC', x+CS/2, y+CS-9, '800 8px system-ui', '#a8b294','center'); return; }
   if(s.t==='tax'){ txt('◆', x+CS/2, y+CS/2-2, '700 16px system-ui', '#d0a24a','center');
     txt(s.name.split(' ')[0].toUpperCase(), x+CS/2, y+CS-18, '800 8px system-ui', '#c9b98a','center');
-    txt('-'+s.amount, x+CS/2, y+CS-8, '800 10px system-ui', '#e2a0a0','center'); return; }
+    txt('-$'+s.amount, x+CS/2, y+CS-8, '800 10px system-ui', '#e2a0a0','center'); return; }
   // prop / station / utility: code + price + owner + houses
   var codeY=y+CS-24, priceY=y+CS-11;
   txt(s.code, x+CS/2, codeY, '800 10px system-ui', '#dbe6cf','center');
   var ownerTxt = s.owner>=0 ? '' : (s.price+'');
-  if(s.owner<0)txt(s.price+'', x+CS/2, priceY, '700 10px system-ui', '#a8b294','center');
+  if(s.owner<0)txt('$'+s.price, x+CS/2, priceY, '700 10px system-ui', '#a8b294','center');
   // owner marker
   if(s.owner>=0){ ctx.fillStyle=G.players[s.owner].color; ctx.beginPath(); ctx.arc(x+CS/2, priceY-2, 5,0,6.2832); ctx.fill();
     ctx.strokeStyle='#0a0f09'; ctx.lineWidth=1.2; ctx.stroke(); }
@@ -539,12 +543,50 @@ function drawCorner(i,x,y,s){
   if(s.sub==='start')txt('+200', x+CS/2, y+16, '800 9px system-ui', '#8ec462','center');
   if(s.sub==='gotocompost')txt('COMPOST', x+CS/2, y+16, '800 8px system-ui', '#e0a0a0','center');
 }
+/* SILVER GARDEN TOKENS (Jessie 7/19): flower, shovel, leaf, tree, ladybug,
+   wheelbarrow — classic-board silver with a colored base ring per player. */
+var TOKENS=['flower','shovel','leaf','tree','ladybug','wheelbarrow'];
+var SIL='#d7dce6', SIL_D='#9aa2b2', SIL_O='#3c4250';
+function drawToken(kind,cx,cy,sc,pcol){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(sc,sc);
+  // colored base ring so every player stays recognizable
+  ctx.beginPath(); ctx.ellipse(0,7.5,7.5,3,0,0,6.2832); ctx.fillStyle=pcol; ctx.globalAlpha=0.9; ctx.fill(); ctx.globalAlpha=1;
+  ctx.lineWidth=1.4; ctx.strokeStyle=SIL_O; ctx.fillStyle=SIL;
+  if(kind==='flower'){
+    for(var k=0;k<5;k++){ var a=-1.5708+k*1.2566; ctx.beginPath(); ctx.ellipse(Math.cos(a)*4.4,-1+Math.sin(a)*4.4,3.1,2.1,a,0,6.2832); ctx.fill(); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0,-1,2.6,0,6.2832); ctx.fillStyle=SIL_D; ctx.fill(); ctx.stroke();
+  } else if(kind==='shovel'){
+    ctx.beginPath(); ctx.rect(-1.1,-8,2.2,9); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-4,1); ctx.quadraticCurveTo(-4,7,0,8.5); ctx.quadraticCurveTo(4,7,4,1); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.rect(-3,-9.5,6,2.2); ctx.fill(); ctx.stroke();
+  } else if(kind==='leaf'){
+    ctx.beginPath(); ctx.moveTo(0,8); ctx.quadraticCurveTo(-7.5,2,-3,-5); ctx.quadraticCurveTo(0,-9,3,-5); ctx.quadraticCurveTo(7.5,2,0,8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,7); ctx.lineTo(0,-6); ctx.strokeStyle=SIL_D; ctx.stroke();
+  } else if(kind==='tree'){
+    ctx.beginPath(); ctx.rect(-1.4,1,2.8,7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-3,-1,3.6,0,6.2832); ctx.arc(3,-1,3.6,0,6.2832); ctx.arc(0,-5,4.2,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(-3,-1,3.6,0,6.2832); ctx.stroke(); ctx.beginPath(); ctx.arc(3,-1,3.6,0,6.2832); ctx.stroke(); ctx.beginPath(); ctx.arc(0,-5,4.2,0,6.2832); ctx.stroke();
+  } else if(kind==='ladybug'){
+    ctx.beginPath(); ctx.ellipse(0,0,6,5,0,0,6.2832); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,-5.4,2.4,0,6.2832); ctx.fillStyle=SIL_D; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-4.4); ctx.lineTo(0,4.6); ctx.strokeStyle=SIL_O; ctx.stroke();
+    ctx.fillStyle=SIL_O;
+    ctx.beginPath(); ctx.arc(-2.6,-1,1,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(2.6,-1,1,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(-2,2.4,1,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(2,2.4,1,0,6.2832); ctx.fill();
+  } else { /* wheelbarrow */
+    ctx.beginPath(); ctx.moveTo(-6.5,-3); ctx.lineTo(5,-3); ctx.lineTo(3,2.4); ctx.lineTo(-4.5,2.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-1,5.4,2.6,0,6.2832); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5,-3); ctx.lineTo(8,0.5); ctx.strokeStyle=SIL_D; ctx.lineWidth=1.8; ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawPawns(){ for(var pi=0;pi<G.players.length;pi++){ var p=G.players[pi]; if(!p.alive)continue;
-    var rc=cellRect(p.pos); var ox=(pi%2)*13-6, oy=Math.floor(pi/2)*13-6;
+    var rc=cellRect(p.pos); var ox=(pi%2)*15-7, oy=Math.floor(pi/2)*15-8;
     var cx=rc.x+CS/2+ox, cy=rc.y+22+oy;
-    ctx.beginPath(); ctx.arc(cx,cy,7.5,0,6.2832); ctx.fillStyle=p.color; ctx.fill();
-    ctx.lineWidth=2; ctx.strokeStyle=(pi===G.cur)?'#ffffff':'#0a0f09'; ctx.stroke();
-    if(pi===G.cur){ ctx.globalAlpha=0.5+0.4*Math.sin(G.t*5); ctx.beginPath(); ctx.arc(cx,cy,10.5,0,6.2832); ctx.strokeStyle='#fff'; ctx.lineWidth=1.4; ctx.stroke(); ctx.globalAlpha=1; }
+    drawToken(p.token||'flower', cx, cy, 1.05, p.color);
+    if(pi===G.cur){ ctx.globalAlpha=0.5+0.4*Math.sin(G.t*5); ctx.beginPath(); ctx.arc(cx,cy,12,0,6.2832); ctx.strokeStyle='#fff'; ctx.lineWidth=1.4; ctx.stroke(); ctx.globalAlpha=1; }
   }
 }
 function drawDie(cx,cy,sz,val){
@@ -563,8 +605,8 @@ function drawCenter(){
   ctx.strokeStyle='#243019'; ctx.lineWidth=1.4; rr(x,y,w,h,14); ctx.stroke();
   var p=G.players[G.cur];
   // current player banner
-  ctx.fillStyle=p.color; fillRR(x+14,y+16,14,14,3);
-  txt(p.name+(p.jail>0?' (in Compost)':''), x+36, y+28, '800 15px system-ui', '#e8dcc8','left');
+  drawToken(p.token||'flower', x+21, y+23, 1.0, p.color);
+  txt(p.name+(p.jail>0?' (in Compost)':''), x+40, y+28, '800 15px system-ui', '#e8dcc8','left');
   txt('$'+p.cash, x+w-14, y+28, '800 17px system-ui', '#c8a84b','right');
   // dice
   var dy=y+64, dsz=42;
@@ -581,13 +623,17 @@ function drawCenter(){
   var nm = s.name || '';
   txt(nm, x+w/2, iy+18, '800 14px system-ui', '#e8dcc8','center');
   if(s.t==='prop'||s.t==='station'||s.t==='utility'){
-    var sub = 'price '+s.price;
+    var sub = 'price $'+s.price;
     if(s.owner>=0){ if(s.owner===G.cur)sub='yours'; else sub='rent to '+G.players[s.owner].name; }
     if(s.t==='prop'&&s.houses>0)sub+=' · '+s.houses+' greenhouse'+(s.houses>1?'s':'');
     txt(sub, x+w/2, iy+34, '600 11px system-ui', '#a8b294','center');
   }
 }
 function wrap(str,max){ var words=(str||'').split(' '), lines=[], cur=''; for(var i=0;i<words.length;i++){ var t=cur?cur+' '+words[i]:words[i]; if(t.length>max){ if(cur)lines.push(cur); cur=words[i]; } else cur=t; } if(cur)lines.push(cur); return lines; }
+
+/* Click-through pacing (Jessie 7/19): in step mode a rival's turn pauses at
+   each decision point until the player taps. */
+function stepFrozen(){ return SET.pace==='step' && G && cpu(G.cur) && !G.stepGo; }
 
 /* bottom panel */
 var MENU_BTN={x:8,y:14,w:44,h:44}, HELP_BTN={x:VW-52,y:14,w:44,h:44};
@@ -600,8 +646,8 @@ function drawBottom(){
     ctx.fillStyle=(i===G.cur)?'#182210':'#0f150c'; fillRR(px,cy,cw,ch,10);
     ctx.strokeStyle=(i===G.cur)?p.color:'#243019'; ctx.lineWidth=(i===G.cur)?2:1; rr(px,cy,cw,ch,10); ctx.stroke();
     ctx.globalAlpha=p.alive?1:0.4;
-    ctx.fillStyle=p.color; fillRR(px+10,cy+12,12,12,3);
-    txt(p.name, px+28, cy+22, '800 13px system-ui', '#e8dcc8','left');
+    drawToken(p.token||'flower', px+17, cy+19, 0.85, p.color);
+    txt(p.name, px+32, cy+22, '800 13px system-ui', '#e8dcc8','left');
     txt(p.alive?('$'+p.cash):'out', px+10, cy+44, '800 16px system-ui', p.alive?'#c8a84b':'#8a9178','left');
     var props=0; for(var k=0;k<N;k++)if(SPACES[k].owner===i)props++;
     txt(props+' plots', px+10, cy+60, '600 10px system-ui', '#8a9178','left');
@@ -614,9 +660,9 @@ function drawBottom(){
   // action area
   var human = G.hasHuman && G.cur===0;
   if(G.phase==='buyprompt' && human){ var s=SPACES[G.buyIdx];
-    txt('Buy '+s.name+' for '+s.price+'?', VW/2, 782, '800 15px system-ui', '#e8dcc8','center');
+    txt('Buy '+s.name+' for $'+s.price+'?', VW/2, 782, '800 15px system-ui', '#e8dcc8','center');
     if(s.t==='prop' && completesGroupIfBought(0,G.buyIdx))txt('completes the '+GROUPS[s.group].name+' set!', VW/2, 800, '700 11px system-ui', '#8ec462','center');
-    drawBtn(BUY_BTN, (G.players[0].cash>=s.price)?'Buy '+s.price:'Cannot afford', G.players[0].cash>=s.price, true);
+    drawBtn(BUY_BTN, (G.players[0].cash>=s.price)?'Buy $'+s.price:'Cannot afford', G.players[0].cash>=s.price, true);
     drawBtn(PASS_BTN, 'Pass', true, false);
     return;
   }
@@ -661,10 +707,11 @@ function onDown(e){ if(curScreen!=='s-play'||!G)return; e.preventDefault(); ac()
   if(inBtn(p,MENU_BTN)){ sfx('ui'); show('s-title'); return; }
   if(inBtn(p,HELP_BTN)){ sfx('ui'); show('s-how'); return; }
   if(G.phase==='over')return;
+  if(stepFrozen()){ G.stepGo=true; sfx('ui'); return; }
   var human = G.hasHuman && G.cur===0;
   if(!human)return;
   if(G.phase==='buyprompt'){
-    if(inBtn(p,BUY_BTN)){ var s=SPACES[G.buyIdx]; if(G.players[0].cash>=s.price){ doBuy(0,G.buyIdx); sfx('buy'); var rc=cellRect(G.buyIdx); burst(rc.x+CS/2,rc.y+CS/2,s.t==='prop'?GROUPS[s.group].color:'#c8a84b'); toast('You buy '+s.name+' for '+s.price+'.'); afterResolve(0,true); } return; }
+    if(inBtn(p,BUY_BTN)){ var s=SPACES[G.buyIdx]; if(G.players[0].cash>=s.price){ doBuy(0,G.buyIdx); sfx('buy'); var rc=cellRect(G.buyIdx); burst(rc.x+CS/2,rc.y+CS/2,s.t==='prop'?GROUPS[s.group].color:'#c8a84b'); toast('You buy '+s.name+' for $'+s.price+'.'); afterResolve(0,true); } return; }
     if(inBtn(p,PASS_BTN)){ toast('You pass on '+SPACES[G.buyIdx].name+'.'); afterResolve(0,true); return; }
     return;
   }
@@ -698,6 +745,17 @@ tap('ge-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic');
+(function(){
+  var tp=$('tg-pace');
+  function paintPace(){ if(tp)tp.classList.toggle('on', SET.pace==='step'); }
+  if(tp)tp.addEventListener('click',function(){ SET.pace=(SET.pace==='step')?'auto':'step'; if(G)G.stepGo=false; paintPace(); saveSet(); sfx('ui'); });
+  paintPace();
+  var bs=$('bt-speed');
+  var SPEEDS=[[0.7,'Relaxed'],[1,'Normal'],[1.6,'Fast']];
+  function paintSpeed(){ if(!bs)return; for(var i=0;i<SPEEDS.length;i++){ if(SPEEDS[i][0]===SET.speed)bs.textContent=SPEEDS[i][1]; } }
+  if(bs)bs.addEventListener('click',function(){ var idx=0; for(var i=0;i<SPEEDS.length;i++){ if(SPEEDS[i][0]===SET.speed)idx=i; } SET.speed=SPEEDS[(idx+1)%SPEEDS.length][0]; paintSpeed(); saveSet(); sfx('ui'); });
+  paintSpeed();
+})();
 $('buildstamp').textContent='Garden Estates '+BUILD;
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
 
