@@ -83,7 +83,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">RING STACKER</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Stack falling pieces into <b style="color:var(--teal)">square rings</b> around the golden core. <b style="color:var(--gold)">SLAM</b> a piece and the whole gyre spins a quarter turn. Finish a ring and everything crushes inward.</div>
+    <div class="ribbon">Pieces <b style="color:var(--teal)">stick</b> to the golden core and to anything already stuck. Grow <b style="color:var(--teal)">square rings</b> outward toward the walls. <b style="color:var(--gold)">SLAM</b> spins the whole gyre a quarter turn. Miss the structure and the piece is lost to the void.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-journey">Journey <span id="j-lvl" style="font-weight:600;font-size:14px;opacity:.8"></span></button>
@@ -113,8 +113,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top.</b> Move with ◀ ▶, spin the piece with ⟳ (or tap the board), nudge down with ▼.</div></div>
-    <div class="helprow"><div class="hi">2</div><div>Your goal is to build <b style="color:var(--teal)">square rings</b> around the golden core, not rows. Fill every cell of a ring and it <b>erases</b>, and everything outside crushes inward one ring. Chains score big.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top and STICK</b> to the golden core, or to anything already stuck, the moment they touch it. The floor and walls hold nothing: miss the structure and the piece drifts into the void. Move with ◀ ▶, spin with ⟳ (or tap the board), nudge down with ▼.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Grow the structure from the core outward into <b style="color:var(--teal)">square rings</b>. Fill every cell of a ring and it <b>erases</b>, and everything outside crushes inward one ring. Chains score big.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly and spins the whole gyre a quarter turn as it lands. Set a piece down gently and nothing spins. Slam to swing a gap around to where the next piece can reach it.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends. Topping out just clears the sky.</div></div>
     <div style="height:18px"></div>
@@ -156,7 +156,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.1";
+var BUILD="v2.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -279,18 +279,46 @@ function spawn(){
   }
 }
 function cellsOf(x,y,rot,k){ var s=SHAPES[k][rot],out=[],i; for(i=0;i<4;i++)out.push([x+s[i][0],y+s[i][1]]); return out; }
-/* The core is the SUN at the heart of the gyre: pieces fall PAST it (it is
-   not an obstacle and gives no support). A cell that comes to rest overlapping
-   the sun is vaporized in a spark. Cells can therefore reach under the core
-   by normal stacking; SLAM-spins swing whole walls (and their gaps) around. */
+/* ACCRETION (2026-07-19 redesign, director call): the SUN is the seed.
+   Pieces STICK the moment any cell touches the core or anything already
+   stuck — the structure grows outward from the center toward the walls,
+   floor and ceiling. The floor and side walls give NO support: a piece
+   that falls past everything without grabbing on drifts into the void
+   and is lost. Reaching the ceiling (locking above the sky) ends the run. */
 function collides(x,y,rot){
   var cs=cellsOf(x,y,rot,G.cur.k),i;
   for(i=0;i<4;i++){
     var cx=cs[i][0], cy=cs[i][1];
     if(cx<0||cx>=N||cy>=N)return true;
+    if(isCore(cx,cy))return true;                 // the sun is solid: build ON it
     if(cy>=0&&G.grid[cy][cx])return true;
   }
   return false;
+}
+/* True when any cell of the piece is orthogonally adjacent to the core or a
+   stuck cell — the moment of accretion. */
+function touchingAt(x,y,rot){
+  var cs=cellsOf(x,y,rot,G.cur.k),i,j;
+  var DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(i=0;i<4;i++){
+    for(j=0;j<4;j++){
+      var nx=cs[i][0]+DIRS[j][0], ny=cs[i][1]+DIRS[j][1];
+      if(isCore(nx,ny))return true;
+      if(nx>=0&&nx<N&&ny>=0&&ny<N&&G.grid[ny][nx])return true;
+    }
+  }
+  return false;
+}
+var _devLost=0;
+function losePiece(slammed){
+  // Nothing to grab: the piece drifts past the gyre into the void
+  _devLost++;
+  var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
+  for(i=0;i<4;i++){ if(cs[i][1]>=0&&cs[i][1]<N)G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.35}); }
+  G.floats.push({x:270,y:BY+(N-1)*PITCH,txt:'lost to the void',life:1.0});
+  SFX.move();
+  G.cur=null;
+  spawn();
 }
 function tryMove(dx){ if(!G.cur||G.over)return false; if(!collides(G.cur.x+dx,G.cur.y,G.cur.rot)){ G.cur.x+=dx; SFX.move(); return true; } return false; }
 function tryRotate(){
@@ -299,28 +327,46 @@ function tryRotate(){
   for(i=0;i<kicks.length;i++){ if(!collides(G.cur.x+kicks[i],G.cur.y,nr)){ G.cur.x+=kicks[i]; G.cur.rot=nr; SFX.rot(); return true; } }
   return false;
 }
-function softStep(){ // one row down; returns false if it locked
+function softStep(){ // one row down; returns false if it locked or was lost
   if(!G.cur||G.over)return false;
-  if(!collides(G.cur.x,G.cur.y+1,G.cur.rot)){ G.cur.y++; return true; }
-  lockPiece(false); return false;
+  if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ lockPiece(false); return false; }
+  if(!collides(G.cur.x,G.cur.y+1,G.cur.rot)){
+    G.cur.y++;
+    if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ lockPiece(false); return false; }
+    return true;
+  }
+  // Bottom of the board with nothing grabbed: no floor support in the gyre
+  losePiece(false);
+  return false;
 }
-function hardDropY(){ var y=G.cur.y; while(!collides(G.cur.x,y+1,G.cur.rot))y++; return y; }
+/* Where a hard drop ends: first row where the piece grabs on, or the lowest
+   legal row (stick:false = it will be lost to the void). */
+function stickDrop(){
+  var y=G.cur.y;
+  while(!touchingAt(G.cur.x,y,G.cur.rot) && !collides(G.cur.x,y+1,G.cur.rot)) y++;
+  return {y:y, stick:touchingAt(G.cur.x,y,G.cur.rot)};
+}
 function slam(){
   if(!G.cur||G.over)return;
-  G.cur.y=hardDropY();
-  SFX.slam(); G.shakeT=0.25;
-  lockPiece(true);
+  var sd=stickDrop();
+  G.cur.y=sd.y;
+  if(sd.stick){
+    SFX.slam(); G.shakeT=0.25;
+    lockPiece(true);
+  } else {
+    SFX.slam(); G.shakeT=0.15;
+    losePiece(true);
+  }
 }
 function lockPiece(slammed){
   var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
   for(i=0;i<4;i++){
-    if(cs[i][1]<0){ // locked above the sky
+    if(cs[i][1]<0){ // the structure reached the ceiling
       if(G.mode==='zen'){ G.grid=emptyGrid(); G.cur=null; G.floats.push({x:270,y:BY+200,txt:'the wind clears the gyre',life:1.6,big:true}); spawn(); return; }
       endRun(); return;
     }
   }
   for(i=0;i<4;i++){
-    if(isCore(cs[i][0],cs[i][1])){ G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.5}); continue; }   // vaporized by the sun
     G.grid[cs[i][1]][cs[i][0]]=PCOLS[G.cur.k];
   }
   G.score+=8; SFX.lock();
@@ -498,12 +544,13 @@ function render(){
   ctx.fillStyle='#ffcf4d'; rr(cp.x-1,cp.y-1,CELL+2,CELL+2,8); ctx.fill();       // sun body
   ctx.fillStyle='#ffe38a'; rr(cp.x+3,cp.y+3,CELL-6,CELL-6,6); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,'+(0.72+0.28*pls)+')'; rr(cp.x+8,cp.y+8,CELL-16,CELL-16,4); ctx.fill(); // white-hot center
-  // ghost (core-overlap cells shown hot — they will vaporize)
+  // ghost — where the piece will GRAB ON; red when it would miss everything
+  // and drift into the void
   if(G.cur&&SET.ghost&&!G.over){
-    var gy=hardDropY();
-    var gc=cellsOf(G.cur.x,gy,G.cur.rot,G.cur.k);
+    var gd=stickDrop();
+    var gc=cellsOf(G.cur.x,gd.y,G.cur.rot,G.cur.k);
     for(i=0;i<4;i++){ if(gc[i][1]<0)continue; var gp=cellPx(gc[i][0],gc[i][1]);
-      ctx.strokeStyle=isCore(gc[i][0],gc[i][1])?'rgba(255,150,60,0.85)':'rgba(238,240,246,0.3)';
+      ctx.strokeStyle=gd.stick?'rgba(238,240,246,0.3)':'rgba(255,93,108,0.55)';
       ctx.lineWidth=1.5; rr(gp.x+1,gp.y+1,CELL-2,CELL-2,5); ctx.stroke(); }
   }
   // falling piece
@@ -526,7 +573,7 @@ function render(){
   ctx.globalAlpha=1;
   // footer hint
   ctx.fillStyle='#8d90a8'; ctx.font='600 11px system-ui,sans-serif';
-  ctx.fillText('build square rings around the core · SLAM spins the gyre', 270, BY+N*PITCH+18);
+  ctx.fillText('pieces stick to the sun · grow rings outward · SLAM spins the gyre', 270, BY+N*PITCH+18);
   ctx.restore();
 }
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
@@ -592,6 +639,13 @@ function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.clas
 wireToggle('tg-sound','sound');
 wireToggle('tg-ghost','ghost');
 $('buildstamp').textContent='Ring Stacker '+BUILD+' · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
+
+/* headless test hook — only exists with ?rsdev=1 in the URL */
+if(/[?&]rsdev=1/.test(location.search)){
+  window._RS={ newGame:newGame, softStep:softStep, tryMove:tryMove, tryRotate:tryRotate, slam:slam,
+    state:function(){ return G; }, freeze:function(){ running=false; }, render:render,
+    lost:function(){ return _devLost; } };
+}
 
 /* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
 (function(){
