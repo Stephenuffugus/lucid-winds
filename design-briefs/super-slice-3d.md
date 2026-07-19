@@ -15,7 +15,7 @@
 Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, stacks, ropes) and the HANDLE bounces (walls, pads). What is deadly vs rewarding flips per mode:
 - **Journey:** blade sticks the score wall (good, ends level); handle bounces off it (retry).
 - **Freefall:** blade into a side wall = STICK + FAIL; handle bounces clean; blade cuts fruit/stacks; blade down sticks the bullseye floor to win.
-- **Wall Climb:** blade into the wall = FAIL; you kick your handle/back off the wall to ascend; blade cuts hazards/targets that drift past.
+- **Wall Climb:** blade into the wall = FAIL; you kick your handle/back off the wall to ascend; blade cuts hazards/targets that drift past. **CONTROLS (Stephen 7/19, v5.5): journey-style TAP TO FLICK — tap left/right pops the knife up toward that wall, flipping; NO freefall hold-steer. Starts PARKED on the launch pad; the run begins on the first tap.**
 
 ## Build roadmap (priority order; each batch bot-verified + deployed)
 1. **[DONE — v4.4]** **Deadly walls** — blade-into-wall STICKS + FAILS; fail screen (Try Again / Replay / Menu), fail buzz, the knife buried in the wall + red sparks + "STUCK!". Handle bounce unchanged. Pads stay non-fatal (only the two side walls kill).
@@ -30,7 +30,14 @@ Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, sta
    slivers pay by height, `PROG.climbBest`, 4th title button + its own portal card
    (`?mode=climb` boots straight in), Wallbreaker Pick trophy blade at 100m. Bot-proven:
    `scripts/slice3d/bot_climb.js` (kick/blade-fail/sap/mist/pogo-climbability/sting/gourd/
-   obstacles/forge + boot, all green). Goal-line level variant still open per the spec.
+   obstacles/forge + boot, all green).
+   **v5.5 (same day): GOAL LEVELS SHIPPED** — "Wall Climb · Level N" (deterministic per-level
+   chimneys, SUMMIT ribbon at 58+16*lvl meters, tighter spacing + faster mist per level,
+   clean climb = x2 + 3 stars, PROG.climbLevel + per-level bests) alongside "Sky Endless ·
+   best Nm" (the portal card boots endless). Controls REDONE to Stephen's spec: journey-style
+   tap-to-flick, parked start, run begins on first tap (CL_* constants hold the feel).
+   Journey got its own obstacle wave (lvl 4+): thorn bushes, wasp patrols, boom gourds,
+   CRUMBLING SHELVES (arm on landing, drop 0.45s later). bot_climb = 15 probes, all green.
 7. **[SHIPPED 2026-07-19]** **New obstacle wave** (Freefall lvl 3+ bags AND the climb):
    WASPS (oscillate across the shaft, contact stings you down), swinging PLANKS (blade cuts
    for 25x combo points, handle bonks), brown GATES (full-width slab rows with one hole),
