@@ -224,6 +224,15 @@ var PODS=[
   {r:27, body:'#e8c65a', core:'#8a6d1e', kind:'blossom', sp:'blossom_gold',  half:'blossom_gold'}
 ];
 
+/* Special objects (Jessie 7/19: more variety) — painted sprites that were
+   shipped but never wired. Bonus pod pays big, the seed cluster bursts into
+   extra berries mid-air, the nectar droplet pours on slow motion. */
+var SPECIALS=[
+  {r:32, body:'#e8c65a', core:'#8a6d1e', kind:'bonus',   sp:'bonus_pod',      half:'pod'},
+  {r:34, body:'#7ab356', core:'#3f6b34', kind:'cluster', sp:'seed_cluster',   half:'pod'},
+  {r:25, body:'#5b9bd5', core:'#274867', kind:'nectar',  sp:'nectar_droplet', half:'blue'}
+];
+
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0;
 function newGame(mode){
@@ -245,24 +254,33 @@ function spawnWave(){
   else {
     var n=1+Math.floor(rng()* (1+Math.min(3,d*0.4)));
     for(var i=0;i<n;i++) launchPod(pickPod(), rng);
+    if(rng()<0.14) launchSpecial(rng);
   }
-  // burrs (not in zen)
-  if(G.mode!=='zen' && G.t>4 && rng() < Math.min(0.5,0.14+d*0.04)) launchBurr(rng);
+  // burrs (not in zen) — a little meaner as the run heats up
+  if(G.mode!=='zen' && G.t>4 && rng() < Math.min(0.55,0.14+d*0.045)){ launchBurr(rng); if(d>4&&rng()<0.3)launchBurr(rng); }
+}
+function launchSpecial(rng){
+  var def=SPECIALS[Math.floor(rng()*SPECIALS.length)];
+  var x=70+rng()*(VW-140);
+  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*260+(x<VW/2?50:-50), vy:-(1150+rng()*260), r:def.r, body:def.body, core:def.core, kind:def.kind, sp:def.sp, half:def.half, rot:rng()*6.28, vr:(rng()-0.5)*4, sliced:false, burr:false, graft:null });
 }
 function pickPod(){ return PODS[Math.floor(G.rng()*PODS.length)]; }
 function launchPod(def,rng){
   var x=60+rng()*(VW-120);
-  var vy=-(980+rng()*260 + diff()*20);
+  // higher, floatier tosses on bigger fruit (Jessie: more room, jump higher)
+  var vy=-(1120+rng()*300 + diff()*20);
   var vx=(rng()-0.5)*300 + (x<VW/2?60:-60);
-  G.objs.push({ x:x, y:VH+40, vx:vx, vy:vy, r:def.r, body:def.body, core:def.core, kind:def.kind, sp:def.sp, half:def.half, rot:rng()*6.28, vr:(rng()-0.5)*5, sliced:false, burr:false, graft:null });
+  var rr=def.r*(0.95+rng()*0.45);
+  G.objs.push({ x:x, y:VH+40, vx:vx, vy:vy, r:rr, body:def.body, core:def.core, kind:def.kind, sp:def.sp, half:def.half, rot:rng()*6.28, vr:(rng()-0.5)*5, sliced:false, burr:false, graft:null });
 }
 function launchBurr(rng){
   var x=60+rng()*(VW-120);
-  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*260, vy:-(980+rng()*220), r:24, body:'#8a221a', core:'#e5604d', kind:'burr', sp:'burr', rot:0, vr:(rng()-0.5)*3, sliced:false, burr:true, graft:null });
+  var spinner=diff()>3&&rng()<0.35; // whirling burr: same thorn, wilder flight
+  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*(spinner?420:260), vy:-(1100+rng()*260), r:spinner?22:26, body:'#8a221a', core:'#e5604d', kind:'burr', sp:'burr', rot:0, vr:spinner?(rng()<0.5?-13:13):(rng()-0.5)*3, sliced:false, burr:true, graft:null });
 }
 function spawnGraft(){
   var rng=G.rng, n=3+(rng()<0.4?1:0), members=[], gid=++G.strokeId+9000;
-  var baseX=90+rng()*(VW-180), baseVy=-(1000+rng()*160), spread=(VW-140);
+  var baseX=90+rng()*(VW-180), baseVy=-(1130+rng()*180), spread=(VW-140);
   for(var i=0;i<n;i++){
     var t=n>1?i/(n-1):0.5, x=baseX + (t-0.5)*spread*0.7 + (rng()-0.5)*30;
     x=Math.max(50,Math.min(VW-50,x));
@@ -295,6 +313,13 @@ function sliceObj(o,idx,dirx,diry){
   // score + combo
   G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboTimer=0.9;
   var pts=Math.round(10*(1+G.combo*0.12));
+  if(o.kind==='bonus'){ pts+=60; float(o.x,o.y-34,'GOLDEN POD +60'); G.flash=Math.max(G.flash,0.3); }
+  else if(o.kind==='cluster'){
+    float(o.x,o.y-34,'SEED BURST');
+    for(var ci=0;ci<3;ci++){ var bd=PODS[Math.floor(Math.random()*3)];
+      G.objs.push({ x:o.x+(ci-1)*26, y:o.y, vx:(ci-1)*160+(Math.random()-0.5)*60, vy:-(560+Math.random()*220), r:bd.r*0.72, body:bd.body, core:bd.core, kind:bd.kind, sp:bd.sp, half:bd.half, rot:Math.random()*6.28, vr:(Math.random()-0.5)*6, sliced:false, burr:false, graft:null }); }
+  }
+  else if(o.kind==='nectar'){ G.slow=0.35; float(o.x,o.y-34,'NECTAR TIME'); G.flash=Math.max(G.flash,0.25); }
   G.score+=pts; sfx('slice'); sfx('combo',G.combo); haptic(6);
   if(G.combo>=3){ float(o.x,o.y-20,'✦ '+G.combo+'x'); G.slow=Math.min(G.slow,0.55); }
   // graft progress
