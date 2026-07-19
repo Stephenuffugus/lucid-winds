@@ -15,6 +15,11 @@ cut border-flood + inpaint (no head-holes; ma_05 de-striped). Raw: `art-drop/blo
   **bumper_c** = Dib&Dob (twins). idle→`_idle`, hit→`_lit`. (Stephen re-sent 1&2 non-purple for cut+contrast.)
 - **GREEN**: **sling** = octopus · **scoop** = tube-head (idle/lit/open) · **standup_lit/done** = crowned King.
 - **post_nub** = a clay cone post (from the parts sheets).
+- **SIZE BALANCE + parts (Jul 19 later, VER a3→a4)**: capped the tall Stretch bumper's HEIGHT
+  (r*3.4) so it stops overhanging; flasks/drops r*3.2→r*4.0, return gates r*2.6→r*3.4. Wired
+  **throat_heart** (clay heart) + **return_gate/_lit** (cream/teal clay arrows) from the parts sheets.
+  Parked again: scoop stays the tube-head MONSTER (funnel swap lost a monster + rendered small);
+  rollover chevron lanes reverted (they added purple).
 - **PARKED** (cut, in `art-drop/blobworks-art2/`, NOT wired): the rail / curve / Y-junction / striped-rail /
   ramp / domino-block parts — the engine bakes rails into the `table_*` backdrop, so per-piece blits
   would misalign. Wire later via a table-backdrop re-bake or new WALLS-keyed blit sites.
