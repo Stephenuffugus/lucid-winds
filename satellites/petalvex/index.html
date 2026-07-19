@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OriVex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>OriVex · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/petalvex/; harmless 404 at repo root, guarded) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
@@ -107,7 +109,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <span id="title-fallback" style="display:none">OriVex</span>
     </div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Slot the leaf tiles so every touching edge shares a number. A quiet botanical logic puzzle.</div>
+    <div class="ribbon">Slot the folded paper tiles so every touching edge shares a number. A quiet origami logic puzzle.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">▦&nbsp; Play</button>
@@ -115,6 +117,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
       </div>
+      <button class="btn ghost sm" id="b-install">＋ Add to Home Screen</button>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -262,7 +265,10 @@ var MODES=[
   { key:'s4', ico:'4', t:'Bud',    d:'4 × 4 · numbers 0 to 7', n:4, maxv:8 },
   { key:'s5', ico:'5', t:'Bloom',  d:'5 × 5 · numbers 0 to 9', n:5, maxv:10 },
   { key:'s6', ico:'6', t:'Thicket',d:'6 × 6 · expert',      n:6, maxv:10 },
-  { key:'dly',ico:'★', t:'Daily Bed', d:'One shared 4 × 4 a day', n:4, maxv:8, daily:true }
+  { key:'dly3',ico:'★', t:'Daily · Sprout',  d:'3 × 3 · same for everyone today', n:3, maxv:6,  daily:true },
+  { key:'dly4',ico:'★', t:'Daily · Bud',     d:'4 × 4 · same for everyone today', n:4, maxv:8,  daily:true },
+  { key:'dly5',ico:'★', t:'Daily · Bloom',   d:'5 × 5 · same for everyone today', n:5, maxv:10, daily:true },
+  { key:'dly6',ico:'★', t:'Daily · Thicket', d:'6 × 6 · same for everyone today', n:6, maxv:10, daily:true }
 ];
 function modeByKey(k){ for(var i=0;i<MODES.length;i++) if(MODES[i].key===k) return MODES[i]; return MODES[1]; }
 
@@ -659,8 +665,8 @@ function winPuzzle(){
   var total=Math.max(1, Math.round((base+speed)*hintPenalty));
   // daily bed rewards only the FIRST solve of the day — otherwise it can be re-solved for sunbeams
   var dailyDone=false;
-  if(P.mode.daily){ var today=String(Math.floor(Date.now()/864e5));
-    if(LS.get(K.dly)===today){ dailyDone=true; total=0; } else { LS.set(K.dly, today); } }
+  if(P.mode.daily){ var today=String(Math.floor(Date.now()/864e5)); var dk=K.dly+P.n;  /* per-size daily claim */
+    if(LS.get(dk)===today){ dailyDone=true; total=0; } else { LS.set(dk, today); } }
   var granted=0; if(total>0){ try{ if(window._sbCapEarn) granted=window._sbCapEarn(total,'petalvex:solve')||0; }catch(e){} }
   // fill win screen
   $('win-size').textContent=n+' × '+n;
@@ -696,7 +702,7 @@ function sharePetalvex(){
 function startMode(key){
   var mode=modeByKey(key);
   var seed=null;
-  if(mode.daily){ seed=Math.floor(Date.now()/864e5); }
+  if(mode.daily){ seed=Math.floor(Date.now()/864e5)*11 + mode.n; }  /* per-day AND per-size: each difficulty is its own shared daily */
   P=genPuzzle(mode, seed);
   P.themeIdx = mode.daily ? (((seed%8)+8)%8) : (_pvThemeN++ % 8);
   parts=[]; drag=null;
@@ -706,7 +712,9 @@ function startMode(key){
 }
 function startClock(){ stopClock(); clockTimer=setInterval(function(){ if(P&&!P.solved&&curScreen===null) render(); },1000); }
 function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=0; } }
-var MODE_UI={ s3:'mode_sprout', s4:'mode_bud', s5:'mode_bloom', s6:'mode_thicket', dly:'mode_daily' };
+/* mode-plate art was the old botanical enamel set — off-theme for Folded Paper, so the
+   mode cards now use their clean number / ★ glyphs instead. */
+var MODE_UI={};
 function buildModeList(){
   var host=$('mode-list'); host.innerHTML=''; var best=loadBest();
   for(var i=0;i<MODES.length;i++){ (function(m){
@@ -849,6 +857,16 @@ function boot(){
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ buildSkinRow(); show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
+  // ---- add to home screen (button stays useful even if beforeinstallprompt never fires) ----
+  (function(){ var b=$('b-install'); if(!b)return;
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){} }
+    function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
+    if(standalone()){ b.style.display='none'; return; }
+    var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+    b.addEventListener('click',function(){ sfx('ui'); if(deferred){ deferred.prompt(); deferred=null; return; }
+      var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+      alert(ios?'To add OriVex to your Home Screen:\n\nTap the Share button, then Add to Home Screen. It opens full screen like an app.':'To add OriVex to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
+  })();
   tap('modes-back', function(){ show('s-title'); });
   tap('how-back', function(){ show(P?null:'s-title'); if(P) updateCtrlVisibility(); });
   tap('set-back', function(){ show(P&&!P.solved?null:'s-title'); if(P&&!P.solved) updateCtrlVisibility(); });
