@@ -65,3 +65,12 @@
 | What | Date | Ruling |
 |---|---|---|
 | `satellites/sprout-march/` (852-line prototype) | Jul 16 | Stephen: "wasn't good and not worth the effort to make it good." Deleted, never committed. Do not rebuild. |
+
+## Chaff Wars — "Buff the Block" 80s reskin — LISTED (2026-07-19)
+
+Asset manifest (245 assets: 44 Classic MVP / 41 Powers / 160 polish) authored and
+dropped in Stephen's 012Assets Google Drive folder as a Doc, and saved in-repo at
+`satellites/chaff-wars/context/ASSET-LIST.md`. Status: **LISTED** (awaiting art).
+The game already SHIPS themed + playable with zero art files (procedural neon pods,
+colorblind glyphs, crew colors, taunts, neon UI, WebAudio 80s beat). Art enhances.
+Cut/wire target when files land: `satellites/chaff-wars/art-drop/` → mark DROPPED.
