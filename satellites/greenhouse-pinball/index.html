@@ -104,7 +104,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">7</div><div>Roll through the top <b class="hl">Z·A·P</b> lanes to build your bonus, and <b class="hl">nudge</b> the table (two-finger tap) to save a doomed ball. Nudge too much and it <b>TILTS</b>, the claws freeze.</div></div>
     <div class="helprow"><div class="hi">8</div><div>A stretchy <b class="hl">goo net</b> catches your very first drain, so nothing feels cheap. Have fun, mash the lab.</div></div>
     <div class="helprow"><div class="hi">💫</div><div>The <b class="hl">Heartvine ramp</b> changes its exit after every pass (watch the gold flag), a quick double on the Fern ramp <b class="hl">crosses over</b>, and a charged <b class="hl">Taproot</b> kicks a doomed bead back up the left outlane. Roll both inlane gates to recharge it.</div></div>
-    <div class="helprow"><div class="hi">🌿</div><div>The <b class="hl">moss net</b> glows across the drain and bounces a doomed bead back — once per ball, and always on your last ball.</div></div>
+    <div class="helprow"><div class="hi">🌿</div><div>The <b class="hl">moss net</b> glows across the drain and bounces a doomed bead back, once per ball, and always on your last ball.</div></div>
     <div class="helprow"><div class="hi">🪴</div><div><b>Classic:</b> 3 balls. <b>Zen:</b> endless, drains just re-launch. <b>Daily:</b> one seeded table a day.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -355,7 +355,7 @@ function newGame(mode){
   LFLIP.a=LFLIP.pa=LFLIP.restA; LFLIP.up=false; RFLIP.a=RFLIP.pa=RFLIP.restA; RFLIP.up=false;
   for(var i=0;i<BUMPERS.length;i++)BUMPERS[i].lit=0; for(i=0;i<SLINGS.length;i++)SLINGS[i].lit=0;
   buildShots();
-  G={ mode:mode, rng:rng, balls:[], score:0, growth:0, blooms:0, combo:0, bestCombo:0, mult:1, ball:1, maxBall:mode==='classic'||mode==='daily'?3:99,
+  G={ mode:mode, rng:rng, season:(rng()*4)|0, balls:[], score:0, growth:0, blooms:0, combo:0, bestCombo:0, mult:1, ball:1, maxBall:mode==='classic'||mode==='daily'?3:99,
       awaitLaunch:false, plunge:0, plungeHold:false, skillLit:-1, skillWin:0, skillDone:false,
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
       kickLit:false, kickRetL:false, kickRetR:false,
@@ -638,7 +638,7 @@ function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
       sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,10); haptic(25);
       G.score+=5000; G.bonusBase+=2000; float(sh.x,sh.y-20,'CHAIN START +5000'); return; }
     if(G.chainMB){ if(G.chainN<7){ G.chainN++; addChainBall();
-        callout(G.chainN>=7?('BALL '+G.chainN+' — MAX CHAIN!'):('BALL '+G.chainN+'!'),'#37e0c0',G.chainN>=7);
+        callout(G.chainN>=7?('BALL '+G.chainN+' · MAX CHAIN!'):('BALL '+G.chainN+'!'),'#37e0c0',G.chainN>=7);
         sfx('save'); G.flash=Math.max(G.flash,0.4); G.shake=Math.max(G.shake,5); haptic(15); }
       var _cp=Math.round(sh.value*scoreMul()*G.chainN); G.score+=_cp; G.bonusBase+=800; float(sh.x,sh.y-20,'+'+_cp); questShot(sh.id); return; } }
   if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
@@ -662,7 +662,7 @@ function addChainBall(){ G.balls.push({x:LOCK_NEST.x,y:LOCK_NEST.y+16,vx:(Math.r
 function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)rot=1;
   // ripping the Dandelion gear winds up the CHAIN — light it, then a ramp shot starts a scaling multiball
   if(!G.chainLit && !G.chainMB && !G.pollenMB && !G.wizard){ G.spinTotal=(G.spinTotal||0)+rot;
-    if(G.spinTotal>=18){ G.chainLit=true; G.spinTotal=0; callout('CHAIN LIT — SHOOT ANY RAMP','#37e0c0',true); sfx('bloom'); G.flash=Math.max(G.flash,0.5); } }
+    if(G.spinTotal>=18){ G.chainLit=true; G.spinTotal=0; callout('CHAIN LIT · SHOOT ANY RAMP','#37e0c0',true); sfx('bloom'); G.flash=Math.max(G.flash,0.5); } }
   G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
 function onReturn(sh){ sh.cd=0.7; sh.lamp=1; rushHit();
   var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=400; comboHit(sh.x,sh.y);
@@ -690,7 +690,7 @@ function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit
 function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
   float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,273,220,VW-92,VH-150,120,11);
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
-  if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
+  if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY · SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
 function startPollenMB(){
   G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true); playAnim('goo_boilover',6,358,410,LOCK_NEST.x,LOCK_NEST.y+70,150,12);
@@ -806,7 +806,7 @@ function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.blooms*3 + (isBest?2:0) + Math.floor(G.score/1200)); if(amt>0)granted=window._sbCapEarn(amt,'greenhousepinball:'+G.mode)||0; } }catch(e){}
   $('go-score').textContent=G.score;
   $('go-lab').textContent=(G.mode==='daily'?"today's table":'nectar');
-  $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
+  $('go-best').textContent='Best '+(PROG.best[G.mode]!=null?PROG.best[G.mode]:G.score);
   $('go-blooms').textContent=G.blooms; $('go-combo').textContent=G.bestCombo;
   $('go-balls').textContent=G.ball;
   $('go-emoji').innerHTML='<img src="art/'+(isBest?'eyeball_lit':'eyeball_core')+'.png?v='+PIN_ART.VER+'" style="width:56px;height:56px;object-fit:contain" onerror="this.parentNode.textContent=\''+(isBest?'★':'◎')+'\'">';
@@ -932,9 +932,9 @@ function render(){ if(!ctx||!G)return;
     if(G.mbSave>0){ ctx.fillStyle='#7ab356'; ctx.font='700 11px system-ui'; ctx.fillText('BALL SAVE '+Math.ceil(G.mbSave), VW/2, 108); } }
   else if(G.chainMB){ ctx.textAlign='center'; ctx.fillStyle='#37e0c0'; ctx.font='800 16px system-ui';
     ctx.fillText('CHAIN MULTIBALL · '+G.chainN+(G.chainN>=7?' (MAX)':' BALLS'), VW/2, 74);
-    ctx.fillStyle='#8ec9c0'; ctx.font='700 12px system-ui'; ctx.fillText(G.chainN>=7?'seven going — clear the lab!':'shoot a ramp to add a ball (up to 7)', VW/2, 92);
+    ctx.fillStyle='#8ec9c0'; ctx.font='700 12px system-ui'; ctx.fillText(G.chainN>=7?'seven going, clear the lab!':'shoot a ramp to add a ball (up to 7)', VW/2, 92);
     if(G.chainSave>0){ ctx.fillStyle='#7ab356'; ctx.font='700 11px system-ui'; ctx.fillText('BALL SAVE '+Math.ceil(G.chainSave), VW/2, 108); } }
-  else if(G.chainLit){ ctx.save(); ctx.textAlign='center'; ctx.globalAlpha=0.6+0.4*Math.sin(G.t*6); ctx.fillStyle='#37e0c0'; ctx.font='800 15px system-ui'; ctx.fillText('CHAIN LIT — SHOOT ANY RAMP', VW/2, 80); ctx.restore(); }
+  else if(G.chainLit){ ctx.save(); ctx.textAlign='center'; ctx.globalAlpha=0.6+0.4*Math.sin(G.t*6); ctx.fillStyle='#37e0c0'; ctx.font='800 15px system-ui'; ctx.fillText('CHAIN LIT · SHOOT ANY RAMP', VW/2, 80); ctx.restore(); }
   else if(G.quest){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 14px system-ui'; ctx.fillText(G.quest.name.toUpperCase(), VW/2, 72);
     ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText(G.quest.blurb, VW/2, 88);
     var qtw=200, qtf=Math.max(0,G.quest.timer/G.quest.tmax); ctx.fillStyle='rgba(20,28,18,0.6)'; ctx.fillRect(VW/2-qtw/2,94,qtw,6);
@@ -942,7 +942,7 @@ function render(){ if(!ctx||!G)return;
   else if(G.rush>0){ ctx.textAlign='center'; ctx.fillStyle='#a7d17a'; ctx.font='800 15px system-ui';
     ctx.fillText('🌸 BLOOM RUSH · '+Math.ceil(G.rush)+'s', VW/2, 74);
     ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText('every switch +2000 · refill the ribbon to extend', VW/2, 90); }
-  else if(G.wizardReady){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 13px system-ui'; ctx.fillText('GREENHOUSE READY — SHOOT THE SCOOP', VW/2, 78); }
+  else if(G.wizardReady){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 13px system-ui'; ctx.fillText('GREENHOUSE READY · SHOOT THE SCOOP', VW/2, 78); }
   // P2: DMD callout — a transient punch-in plate on major events
   if(G.callout && G.callout.t>0){ var co=G.callout, el=1-co.t/co.t0;
     var appear=el<0.18?(el/0.18):1, fade=el>0.82?(1-(el-0.82)/0.18):1, ca=Math.max(0,Math.min(1,Math.min(appear,fade)));
@@ -1093,7 +1093,7 @@ function drawGrowth(){ var x=30, y0=120, y1=520, h=y1-y0, fill=Math.min(1,G.grow
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/satellites/greenhouse-pinball/"; var sc=(G&&G.score)||0; var txt="Greenhouse Pinball — I grew "+sc+" nectar on the living table! Beat it?";
+function shareIt(){ var url="https://lucidwinds.com/satellites/greenhouse-pinball/"; var sc=(G&&G.score)||0; var txt="Blobworks: I grew "+sc+" nectar on the living table! Beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 
