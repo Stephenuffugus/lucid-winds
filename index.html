@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.19.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.19.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -7575,8 +7575,9 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
 
       <div class="settings-group">
         <div class="settings-group-label">SUPPORT</div>
-        <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.55;">Lucid Winds is a one-person studio. I keep it ad-free, no popups, no tracking-for-sale. Tips and Pi support keep it that way.</div>
-        <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab('about');},250);}">Support the Studio</button>
+        <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.55;">Lucid Winds is a one-person studio. I keep it ad-free, no popups, no tracking-for-sale. Tips and unlocks keep it that way.</div>
+        <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openBloomStore)_openBloomStore();">Unlock Upgrades</button>
+        <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab('about');},250);}">Tip Jar and About</button>
       </div>
 
       <div class="settings-group">
@@ -41521,9 +41522,10 @@ document.addEventListener('keydown', function(e) {
     wrap.innerHTML = '<div onclick="_closeBloomStore()" style="position:fixed;inset:0;background:rgba(5,7,4,0.82);z-index:100050;"></div>'
       + '<div style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);background:#12160f;border:1px solid rgba(200,168,75,0.5);border-radius:16px;padding:18px 16px 14px;z-index:100051;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
       + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.25rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:2px;">GROW YOUR GARDEN</div>'
-      + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">Pay in any crypto. Unlocks are permanent and synced to your account.</div>'
+      + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">' + ((window.LW_WebPay && LW_WebPay.showUsd()) ? 'Pay in any crypto. Unlocks are permanent and synced to your account.' : 'Unlocks are permanent and synced to your account.') + '</div>'
       + rows
       + '<button onclick="_closeBloomStore()" style="display:block;width:100%;min-height:48px;margin-top:12px;background:transparent;border:1px solid rgba(138,145,120,0.35);border-radius:12px;color:var(--muted);font-family:\'Bebas Neue\',sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;">NOT YET</button>'
+      + '<button onclick="_closeBloomStore();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab(\'about\');},250);}" style="display:block;width:100%;min-height:44px;margin-top:8px;background:transparent;border:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.68rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Prefer to simply leave a tip? The tip jar is here ♡</button>'
       + '</div>';
     document.body.appendChild(wrap);
   };
@@ -89381,6 +89383,10 @@ function _bosAboutContent() {
   if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
     h += '<div style="padding:0.8rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;font-style:italic;">Tip jar coming soon. The creator is setting up payment routes \u2014 check back in the next update.</div>';
   }
+
+  // Cross-link to the unlock store — supporting and unlocking live together
+  h += '<button onclick="if(window._openBloomStore)_openBloomStore();" style="display:block;width:100%;min-height:52px;margin:0.9rem 0 0;padding:12px 14px;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.5);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;cursor:pointer;">GROW YOUR GARDEN · UNLOCK UPGRADES</button>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:0.4rem;line-height:1.5;">Permanent expansions: slots, pouches, and the one-of-one Founder\'s Bloom.</div>';
 
   // Closing
   h += '<div style="margin-top:1rem;padding:0.8rem;text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);line-height:1.6;">A garden tended by attention.<br>Thank you for tending mine.</div>';
