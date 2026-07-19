@@ -538,6 +538,8 @@ function plankAt(px,py,L,amp,speed,phase){
 }
 /* boom gourd: a dark spiky trap fruit — SLICING it is the mistake */
 var GOURD={n:'gourd',r:1.25,col:0x2c3a24,inner:0xff8a3c,pts:0,pitch:0.6};
+/* golden fruit: rare, small, fast — the 150 point prize cut */
+var GOLDF={n:'goldfruit',r:0.95,col:0xffd24a,inner:0xfff2a8,pts:150,pitch:1.5};
 function boomAt(x,y,vineTop){
   var it=fruitAt(x,y,GOURD,'vine',vineTop); it.boom=true;
   for(var s=0;s<5;s++){ var aa=0.35+s/5*6.283;
@@ -551,6 +553,7 @@ function hitSting(t,label){
   var away=(G.x<t.x)?-1:1;
   G.vx=away*8.5; G.vy=Math.min(G.vy, G.climbing?-8:-6); G.w+=away*5;
   G.combo=0; var ce=$('h-combo'); if(ce)ce.classList.remove('on');
+  G.kickStreak=0;
   G.chips=(G.chips||0)+1; G.shake=Math.max(G.shake,0.3);
   SFX.zap(); spawnSparks(t.x,t.y,0xff5a4a,10);
   popup(label||'OUCH!', t.x, t.y+2, '#ff8a6a');
@@ -563,6 +566,7 @@ function boomGourd(it){
   var away=(G.x<it.x)?-1:1;
   G.vx=away*11; G.vy=Math.min(G.vy, G.climbing?-8:-6); G.w+=away*7;
   G.combo=0; var ceb=$('h-combo'); if(ceb)ceb.classList.remove('on');
+  G.kickStreak=0;
   G.chips=(G.chips||0)+1; G.shake=Math.max(G.shake,0.45);
   SFX.zap(); spawnSparks(it.x,it.y,0xff8a3c,18); spawnSparks(it.x,it.y,0x2c3a24,8);
   popup('BOOM!', it.x, it.y+2, '#ff8a3c');
@@ -879,7 +883,7 @@ function buildFreefall(lvl){
     var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack'];
     if(lvl>=2)bag.push('swing','shroom','bumper','stack');
     if(lvl>=3)bag.push('crystal','bumper','stack','wasp');
-    if(lvl>=4)bag.push('plank','gate');
+    if(lvl>=4)bag.push('plank','gate','goldf');
     if(lvl>=5)bag.push('thorn','gourd','wasp');
     if(lvl>=7)bag.push('plank','thorn','gate');
     for(var bi=bag.length-1;bi>0;bi--){ var bj=Math.floor(rng()*(bi+1)); var bt=bag[bi]; bag[bi]=bag[bj]; bag[bj]=bt; }
@@ -959,6 +963,11 @@ function buildFreefall(lvl){
       items.push(boomAt((rng()*2-1)*(SW-3.2), y-2.2, y));
       var fg2=FRUIT[Math.floor(rng()*FRUIT.length)];
       items.push(fruitAt((rng()*2-1)*(SW-3.2), y-4.6, fg2, 'vine', y-2));
+    } else if(seg==='goldf'){
+      // the golden prize swings FAST on a short string
+      var rodG=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+      rodG.rotation.z=Math.PI/2; rodG.position.set(0,y,0);
+      items.push(swingFruit(rng()*4-2, y, 2.2+rng()*0.8, GOLDF, 0.8+rng()*0.25, 2.1+rng()*0.6, rng()*6.28));
     } else if(seg==='shroom'){
       var sgn2=rng()<0.5?-1:1;
       var mw2=3.4, mbx=sgn2<0?-SW:SW-mw2;
@@ -1059,7 +1068,7 @@ function buildClimb(){
   plat.position.set(0,-2.6,0);
   var grass=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+4,0.5,12.2), new THREE.MeshLambertMaterial({color:0x3c5a34})));
   grass.position.set(0,-1.2,0);
-  var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[], sap=[];
+  var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[], sap=[], wind=[];
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   function stackAt(px,py,n){
     for(var sk=0;sk<n;sk++){
@@ -1083,8 +1092,9 @@ function buildClimb(){
   while(y<H-12){
     var bag=['stack','swing','branch','pad','fruit'];
     if(y>45){ bag.push('thorn','sap'); }
+    if(y>70){ bag.push('wind','goldf'); }
     if(y>95){ bag.push('wasp','gourd','thorn'); }
-    if(y>150){ bag.push('crystalW','wasp','sap','plank'); }
+    if(y>150){ bag.push('crystalW','wasp','sap','plank','wind'); }
     var seg=bag[Math.floor(rng()*bag.length)];
     var f=FRUIT[Math.floor(rng()*FRUIT.length)];
     if(seg==='stack'){
@@ -1124,6 +1134,19 @@ function buildClimb(){
       crystals.push(crystal(csn*(SW-2.4), y));
     } else if(seg==='plank'){
       planks.push(plankAt((rng()*2-1)*2, y+4, 2.6+rng()*1.2, 0.5+rng()*0.3, 0.8+rng()*0.5, rng()*6.28));
+    } else if(seg==='wind'){
+      // a gust corridor: constant sideways shove + drifting leaves
+      var wdir=rng()<0.5?-1:1, wy0=y-1, wy1=y+7;
+      wind.push({y0:wy0, y1:wy1, dir:wdir});
+      for(var ws=0;ws<3;ws++){
+        var streak=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(4.5,0.22), new THREE.MeshBasicMaterial({color:0xdfefe0, transparent:true, opacity:0.28, side:THREE.DoubleSide})));
+        streak.position.set(-wdir*(SW-2)+wdir*ws*2.6, wy0+1.5+ws*1.9, 1.5);
+        streak.rotation.z=wdir*0.08;
+      }
+    } else if(seg==='goldf'){
+      var rodG2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+      rodG2.rotation.z=Math.PI/2; rodG2.position.set(0,y+3,0);
+      items.push(swingFruit(rng()*4-2, y+3, 2.0+rng()*0.8, GOLDF, 0.8+rng()*0.25, 2.1+rng()*0.6, rng()*6.28));
     }
     y+=7+rng()*4;
   }
@@ -1133,7 +1156,7 @@ function buildClimb(){
   var rimM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+10,0.5,12.6), new THREE.MeshBasicMaterial({color:0xcfe8da, transparent:true, opacity:0.9})));
   rimM.position.set(0,-14,1);
   return {ff:true, climb:true, len:H, SW:SW, floorY:-40, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
-    wasps:wasps, planks:planks, thorns:thorns, sap:sap, voidMesh:mistM, voidRim:rimM,
+    wasps:wasps, planks:planks, thorns:thorns, sap:sap, wind:wind, voidMesh:mistM, voidRim:rimM,
     zones:[[1,0]], zoneMats:[], wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
 
@@ -1376,10 +1399,16 @@ function ffWall(x,y,dir){
     G.w += away*0.9;
     G.kicks=(G.kicks||0)+1;
     G.shake=Math.max(G.shake, sappy?0.1:0.16);
-    if(sappy){ SFX.wood(); popup('sticky!', x, y+1.6, '#9fe04a'); }
+    if(sappy){ SFX.wood(); popup('sticky!', x, y+1.6, '#9fe04a'); G.kickStreak=0; }
     else {
       SFX.spring(); spawnSparks(x,y,0x8de8ff,6);
       if(G.kicks===1)popup('KICK!', x-dir*2.4, y+2, '#ffd76a');
+      G.kickStreak=(G.kickStreak||0)+1;
+      if(G.kickStreak===5||G.kickStreak===10||G.kickStreak===15||G.kickStreak===20){
+        var stb=G.kickStreak*30; G.score+=stb;
+        popup('KICK STREAK x'+G.kickStreak+'  +'+stb, x-dir*2.4, y+3.6, '#8de8ff');
+        SFX.milestone(G.kickStreak);
+      }
     }
   } else {
     // clean handle bounce
@@ -1462,6 +1491,13 @@ function loop(ts){
         G.w *= Math.pow(0.1,dt);        // settle spin -> aimable orientation
       }
       G.vx *= Math.pow(0.5,dt);          // horizontal drag keeps drift in control
+      // climb wind corridors: a steady sideways shove + drifting leaves
+      if(G.climbing){ var wz=G.world.wind, wzi;
+        if(wz){ for(wzi=0;wzi<wz.length;wzi++){ var wzz=wz[wzi];
+          if(G.y>wzz.y0 && G.y<wzz.y1){
+            G.vx += wzz.dir*9*dt;
+            if(Math.random()<0.10)spawnSparks(G.x-wzz.dir*2.5, G.y+Math.random()*2-1, 0x9fe08a, 1);
+            break; } } } }
       G.ang += G.w*dt;
     } else {
       // hold = keep flipping in rhythm (same rules, comfy thumb)

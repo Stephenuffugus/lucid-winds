@@ -90,15 +90,36 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     r.gourd={ cut:!!W.items[0].cut, score:G.score, combo:G.combo, chips:G.chips||0,
       pass: !!W.items[0].cut && G.score===preScore && G.combo===0 && (G.chips||0)>=1 };
 
+    // TEST WIND: a gust corridor shoves you sideways with no input
+    S.newClimb(); S.freeze();
+    G=S.state(); W=S.world();
+    W.wind.length=0; W.wind.push({y0:50,y1:60,dir:1});
+    G.x=0; G.y=55; G.vx=0; G.vy=6; G.ang=PI/2; G.w=0; G.holding=false; G.voidT=0;
+    S.stepN(25,16);
+    r.wind={ vx:+G.vx.toFixed(2), pass: G.vx>1.2 };
+
+    // TEST KICK STREAK: 5 clean kicks pay the streak bonus
+    S.newClimb(); S.freeze();
+    G=S.state(); W=S.world();
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0;
+    var preSc=G.score, ki;
+    for(ki=0;ki<5;ki++){
+      var sd2=(ki%2===0)?-1:1;
+      G.x=sd2<0?-W.SW+2.2:W.SW-2.2; G.y=30+ki*2; G.vx=(sd2<0)?-8:8; G.vy=0; G.ang=(sd2<0)?PI:0; G.w=0; G.holding=false;
+      S.stepN(8,16);
+    }
+    r.streak={ kickStreak:G.kickStreak||0, scoreGain:G.score-preSc,
+      pass: (G.kickStreak||0)>=5 && (G.score-preSc)>=150 };
+
     // TEST OBSTACLE PRESENCE: high freefall levels roll the new hazards
-    var counts={wasps:0,planks:0,thorns:0,gourds:0}, b;
+    var counts={wasps:0,planks:0,thorns:0,gourds:0,gold:0}, b;
     for(b=0;b<4;b++){
       S.newFF(8); S.freeze(); W=S.world();
       counts.wasps+=W.wasps.length; counts.planks+=W.planks.length; counts.thorns+=W.thorns.length;
-      var gi; for(gi=0;gi<W.items.length;gi++){ if(W.items[gi].boom)counts.gourds++; }
+      var gi; for(gi=0;gi<W.items.length;gi++){ if(W.items[gi].boom)counts.gourds++; if(W.items[gi].f&&W.items[gi].f.n==='goldfruit')counts.gold++; }
     }
     r.obstacles={ counts:counts,
-      pass: counts.wasps>0 && counts.planks>0 && counts.thorns>0 && counts.gourds>0 };
+      pass: counts.wasps>0 && counts.planks>0 && counts.thorns>0 && counts.gourds>0 && counts.gold>0 };
 
     // TEST FORGE: wallbreaker skin card shows up in the store (via the DOM)
     var fb=document.getElementById('b-forge'); if(fb)fb.click();
@@ -107,7 +128,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     r.forge={ cards:names.length, hasWallbreaker: names.indexOf('Wallbreaker Pick')>=0,
       pass: names.indexOf('Wallbreaker Pick')>=0 };
 
-    r.allPass = r.kick.pass && r.bladeFail.pass && r.sap.pass && r.mist.pass && r.pogo.pass && r.sting.pass && r.gourd.pass && r.obstacles.pass && r.forge.pass;
+    r.allPass = r.kick.pass && r.bladeFail.pass && r.sap.pass && r.mist.pass && r.pogo.pass && r.sting.pass && r.gourd.pass && r.wind.pass && r.streak.pass && r.obstacles.pass && r.forge.pass;
     return r;
   });
   // boot path: ?mode=climb drops straight into the climb
