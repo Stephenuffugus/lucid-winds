@@ -302,7 +302,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <button class="gs-btn" onclick="GS.zoom(1)" style="padding:8px 12px;min-width:48px">+</button>
     <button class="gs-btn" id="gs-accent" onclick="GS.toggleAccent()">★ Accent</button>
     <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:120px">
-      <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option><option value="House">House</option><option value="World">World</option>
+      <option value="Real Drums">🥁 Real Drums</option><option value="World Beat">🌍 World Beat</option><option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option><option value="House">House</option><option value="World">World</option>
     </select>
   </div>
   <!-- FEEL -->
@@ -509,7 +509,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 </div>
 
 <div class="gs-foot">
-  <a href="/">← Back to Lucid Winds</a> · Music Studio v2.1
+  <a href="/">← Back to Lucid Winds</a> · Music Studio v2.2
 </div>
 
 <script>
@@ -702,7 +702,7 @@ var GS = (function(){
   for(var ci=0;ci<SCALE_CATS.length;ci++){var cat=SCALE_CATS[ci];for(var sk in cat.scales)SCALES[sk]=cat.scales[sk];}
 
   // ── Drum Kit System ──
-  var currentKit = 'Standard';
+  var currentKit = 'Real Drums'; // real recordings by default; synths cover until loaded
   var DRUM_KITS = {};
 
   // Kit factory: generates 8 drum sounds per kit
@@ -768,7 +768,105 @@ var GS = (function(){
     {name:'Tabla',syn:mkTone(240,0.2,'sine',0.8)},{name:'Cymbal',syn:mkNoise(4500,0.5,0.4)}
   ];
 
-  var DRUMS = DRUM_KITS['Standard'];
+  // ═══ REAL RECORDED DRUMS — VCSL (Versilian Community Sample Library) ═══
+  // Professionally recorded acoustic percussion, CC0 (verified on upstream
+  // sgossner/VCSL 2026-07-19) — commercial use OK. Served from the smpldsnds
+  // web mirror via jsDelivr (CORS *). Each pad has 2-3 round-robin takes so
+  // repeated hits breathe like a real player. Synth fallback plays until the
+  // recordings arrive (and forever if offline).
+  var VCSL_BASE = 'https://cdn.jsdelivr.net/gh/smpldsnds/sgossner-vcsl@main/';
+  var _vcslExt = null;
+  function vcslExt(){
+    if(_vcslExt) return _vcslExt;
+    var a = document.createElement('audio');
+    _vcslExt = (a.canPlayType && a.canPlayType('audio/ogg; codecs="vorbis"')) ? '.ogg' : '.m4a';
+    return _vcslExt;
+  }
+  var _MS = 'Membranophones/Struck Membranophones/';
+  var _IS = 'Idiophones/Struck Idiophones/';
+  var REAL_KIT_DEFS = {
+    'Real Drums': [
+      {name:'Kick',   vol:1.15, f:[_MS+'Bass Drum 1/BDrumNew_hit_v7_rr1_Sum', _MS+'Bass Drum 1/BDrumNew_hit_v7_rr2_Sum', _MS+'Bass Drum 1/BDrumNew_hit_v5_rr1_Sum']},
+      {name:'Snare',  vol:1,    f:[_MS+'Snare Drum, Modern 1/Snare2_HitSN_v7_rr1_Mid', _MS+'Snare Drum, Modern 1/Snare2_HitSN_v7_rr2_Mid', _MS+'Snare Drum, Modern 1/Snare2_HitSN_v9_rr1_Mid']},
+      {name:'Hi-Hat', vol:0.8,  f:[_IS+'Hi-Hat Cymbal/HiHat_HitC_v3_rr1_Mid', _IS+'Hi-Hat Cymbal/HiHat_HitC_v3_rr2_Mid', _IS+'Hi-Hat Cymbal/HiHat_HitC_v2_rr1_Mid']},
+      {name:'O-Hat',  vol:0.8,  f:[_IS+'Hi-Hat Cymbal/HiHat_HitO_rr1_Mid', _IS+'Hi-Hat Cymbal/HiHat_HitO_rr2_Mid']},
+      {name:'Clap',   vol:1,    f:[_IS+'Claps/Clap_rr1', _IS+'Claps/Clap_rr2', _IS+'Claps/Clap_rr3']},
+      {name:'Tom',    vol:1,    f:[_MS+'Tom 1/Stick/TomH_HitS_v4_rr1_Mid', _MS+'Tom 1/Stick/TomH_HitS_v4_rr2_Mid', _MS+'Tom 2/Stick/TomL_HitS_v4_rr1_Mid']},
+      {name:'Rim',    vol:0.9,  f:[_MS+'Tom 1/TomH_rimS_v4_rr1_Mid', _MS+'Tom 1/TomH_rimS_v4_rr2_Mid']},
+      {name:'Crash',  vol:0.7,  f:[_IS+'Clash Cymbals 1/cymbal_crash1_ff2', _IS+'Clash Cymbals 1/cymbal_crash1_ff3']}
+    ],
+    'World Beat': [
+      {name:'Deep Drum', vol:1.1, f:[_MS+'Frame Drum/HDrumL_Hit_v3_rr1_Sum', _MS+'Frame Drum/HDrumL_Hit_v3_rr2_Sum', _MS+'Frame Drum/HDrumL_HitMuted_v3_rr1_Sum']},
+      {name:'Conga',   vol:1,   f:[_MS+'Conga/Conga_HitN_v3_rr1_Sum', _MS+'Conga/Conga_HitN_v3_rr2_Sum', _MS+'Conga/Conga_HitFM_v2_rr1_Sum']},
+      {name:'Bongo',   vol:1,   f:[_MS+'Bongos/BongoH_Hit1_v3_rr1_Mid', _MS+'Bongos/BongoH_Hit1_v3_rr2_Mid', _MS+'Bongos/BongoL_Hit1_v3_rr1_Mid']},
+      {name:'Cajon',   vol:1,   f:[_MS+'Cajon/Cajon_hit1_fff_rr1', _MS+'Cajon/Cajon_hit1_fff_rr2', _MS+'Cajon/Cajon_hit2_f_rr1']},
+      {name:'Shaker',  vol:0.85,f:[_IS+'Shaker, Small/Mid_ShakerHighFaster_Down_rr1', _IS+'Shaker, Small/Mid_ShakerHighFaster_Down_rr2', _IS+'Shaker, Small/Mid_ShakerHighFaster_Up_rr1']},
+      {name:'Claves',  vol:0.9, f:[_IS+'Claves/Claves1_Hit_v3_rr1_Mid', _IS+'Claves/Claves1_Hit_v2_rr1_Mid', _IS+'Claves/Claves2_Hit_v3_rr1_Mid']},
+      {name:'Cowbell', vol:0.8, f:[_IS+'Cowbells/Cowbell1_Hit_v3_rr1_Mid', _IS+'Cowbells/Cowbell1_Hit_v4_rr1_Mid']},
+      {name:'Tamb',    vol:0.85,f:[_IS+'Tambourine 1/Tamb1_Hit_v2_rr1_Mid', _IS+'Tambourine 1/Tamb1_Hit_v1_rr1_Mid']}
+    ]
+  };
+  (function(){
+    // Register the real kits with synth fallbacks pad-for-pad
+    var std = DRUM_KITS['Standard'], wld = DRUM_KITS['World'];
+    var fallbacks = {
+      'Real Drums': [std[0], std[1], std[2], std[3], std[4], std[5], std[6], std[7]],
+      'World Beat': [wld[0], wld[1], wld[2], wld[6], wld[3], wld[4], wld[5], wld[3]]
+    };
+    for(var kn in REAL_KIT_DEFS){
+      DRUM_KITS[kn] = [];
+      for(var i=0;i<REAL_KIT_DEFS[kn].length;i++){
+        var pad = REAL_KIT_DEFS[kn][i];
+        DRUM_KITS[kn].push({name:pad.name, syn:fallbacks[kn][i].syn, smp:pad.f, smpVol:pad.vol});
+      }
+    }
+  })();
+
+  var realDrumBuffers = {}; // sample path → AudioBuffer
+  function loadRealSample(path, cb){
+    if(realDrumBuffers[path]){ if(cb) cb(true); return; }
+    var key = 'vcsl:'+path;
+    if(_instPending[key]){ if(cb) cb(false); return; }
+    _instPending[key] = true;
+    _instLoadUI(1);
+    fetch(VCSL_BASE + encodeURI(path + vcslExt())).then(function(r){
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.arrayBuffer();
+    }).then(function(ab){
+      return new Promise(function(res, rej){ getCtx().decodeAudioData(ab, res, rej); });
+    }).then(function(buf){
+      realDrumBuffers[path] = buf;
+      delete _instPending[key];
+      _instLoadUI(-1);
+      if(cb) cb(true);
+    }).catch(function(){
+      delete _instPending[key];
+      _instLoadUI(-1);
+      if(cb) cb(false);
+    });
+  }
+  function preloadKitSamples(name){
+    var kit = DRUM_KITS[name];
+    if(!kit) return;
+    for(var i=0;i<kit.length;i++){
+      if(kit[i].smp) for(var j=0;j<kit[i].smp.length;j++) loadRealSample(kit[i].smp[j]);
+    }
+  }
+  function ensureKitLoaded(name, done){
+    var kit = DRUM_KITS[name], need = [];
+    if(kit){
+      for(var i=0;i<kit.length;i++){
+        if(kit[i].smp) for(var j=0;j<kit[i].smp.length;j++){
+          if(!realDrumBuffers[kit[i].smp[j]]) need.push(kit[i].smp[j]);
+        }
+      }
+    }
+    if(!need.length){ done(); return; }
+    var left = need.length;
+    for(var n=0;n<need.length;n++) loadRealSample(need[n], function(){ left--; if(left<=0) done(); });
+  }
+
+  var DRUMS = DRUM_KITS['Real Drums'];
 
   // ═══ INSTRUMENT LIBRARY — streamed real instruments ═══
   // FluidR3 General MIDI soundfont, rendered to one mp3 per note, served from
@@ -1002,9 +1100,26 @@ var GS = (function(){
       var src=c.createBufferSource(),g=c.createGain();
       src.buffer=sampleBuffers[sName];g.gain.value=(vol||1)*0.5;
       src.connect(g);g.connect(dst);src.start(t);
-    } else {
-      DRUMS[idx].syn(t, vol);
+      return;
     }
+    var pad = DRUMS[idx];
+    if(pad.smp){
+      // Real recorded kit: random round-robin among loaded takes
+      var loaded = [];
+      for(var li=0;li<pad.smp.length;li++){
+        if(realDrumBuffers[pad.smp[li]]) loaded.push(realDrumBuffers[pad.smp[li]]);
+      }
+      if(loaded.length){
+        var c2=getCtx(),dst2=getDest('drums');
+        var src2=c2.createBufferSource(),g2=c2.createGain();
+        src2.buffer=loaded[Math.floor(Math.random()*loaded.length)];
+        g2.gain.value=(vol||1)*(pad.smpVol||1)*0.9;
+        src2.connect(g2);g2.connect(dst2);src2.start(t);
+        return;
+      }
+      preloadKitSamples(currentKit); // not here yet: fetch, synth covers this hit
+    }
+    pad.syn(t, vol);
   }
 
   // ── Pitched sample playback for note layers ──
@@ -2643,7 +2758,7 @@ var GS = (function(){
         chords:[[0,0,3,0,1],[4,0,2,0,1],[8,3,3,0,1],[12,3,2,0,1],[16,4,3,0,1],[20,4,2,0,1],[24,3,3,0,1],[28,4,2,0,1]],
         melody:[[0,4,3,1],[8,3,2,1],[12,2,2,1],[16,4,3,1],[24,2,2,1],[28,1,2,1]]},
      arr:['A1','B1','A1','B1']},
-    {name:'Pop', emoji:'⭐', desc:'Bright chords and a singalong hook', bpm:110, kit:'Standard', groove:'none', hum:10, root:0, scale:'Ionian (Major)',
+    {name:'Pop', emoji:'⭐', desc:'Bright chords and a singalong hook', bpm:110, kit:'Real Drums', groove:'none', hum:10, root:0, scale:'Ionian (Major)',
      inst:{bass:'inst:electric_bass_finger', chords:'inst:acoustic_grand_piano', melody:'inst:lead_3_calliope'},
      A:{drums:{0:'x.......x.x.....x.......x.x.....',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
         bass:[[0,0,6],[8,4,6],[16,5,6],[24,3,6]],
@@ -2665,7 +2780,7 @@ var GS = (function(){
         chords:[[0,0,4,0,1],[6,0,2,0,1],[8,2,4,0,1],[16,3,4,0,1],[22,3,2,0,1],[24,4,4,0,1]],
         melody:[[0,7,2,1],[4,4,2,1],[8,5,2,1],[12,4,2,1],[16,2,3,1],[22,3,2,1],[26,4,4,1]]},
      arr:['A1','A1','B1','B1']},
-    {name:'Rock', emoji:'🎸', desc:'Driving drums and crunchy guitars', bpm:120, kit:'Standard', groove:'none', hum:12, root:4, scale:'Aeolian (Minor)',
+    {name:'Rock', emoji:'🎸', desc:'Driving drums and crunchy guitars', bpm:120, kit:'Real Drums', groove:'none', hum:12, root:4, scale:'Aeolian (Minor)',
      inst:{bass:'inst:electric_bass_pick', chords:'inst:overdriven_guitar', melody:'inst:distortion_guitar'},
      A:{drums:{0:'x.....x.....x...x.....x.....x...',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',7:'X...............................'},
         bass:[[0,0,2],[2,0,2],[4,0,2],[6,0,2],[8,5,2],[10,5,2],[12,5,2],[14,5,2],[16,3,2],[18,3,2],[20,3,2],[22,3,2],[24,4,2],[26,4,2],[28,4,2],[30,4,2]],
@@ -2687,7 +2802,7 @@ var GS = (function(){
         chords:[[0,0,16,0,1],[16,4,16,0,1]],
         melody:[[0,4,2,1],[4,3,1,1],[6,2,2,1],[10,4,2,1],[16,7,3,1],[22,4,2,1],[26,2,4,1]]},
      arr:['A1','B1','B1','A1']},
-    {name:'Funk', emoji:'🕺', desc:'Syncopated bass and clav stabs', bpm:105, kit:'Standard', groove:'SP-1200', hum:15, root:2, scale:'Funk (Dorian)',
+    {name:'Funk', emoji:'🕺', desc:'Syncopated bass and clav stabs', bpm:105, kit:'Real Drums', groove:'SP-1200', hum:15, root:2, scale:'Funk (Dorian)',
      inst:{bass:'inst:slap_bass_1', chords:'inst:clavinet', melody:'inst:brass_section'},
      A:{drums:{0:'x.....x...x...x.x.....x...x.....',1:'....X.......X.x.....X..x....X...',2:'x.x.X.x.x.x.X.x.x.x.X.x.x.x.X.x.',3:'..............................x.'},
         bass:[[0,0,1],[3,0,1],[6,4,1],[8,0,2],[12,3,1],[14,4,1],[16,0,1],[19,0,1],[22,4,1],[24,5,2],[28,4,1],[30,3,1]],
@@ -3322,6 +3437,7 @@ var GS = (function(){
       renderAll();
       initPianoRollDrag();
       initKeysPads();
+      preloadKitSamples(currentKit); // real drum recordings warm up early
       // Restore samples from the vault (survives refresh)
       idbRestoreSamples();
       // Restore where the player left off: autosave first, then legacy save.
@@ -4009,7 +4125,7 @@ var GS = (function(){
           }
         }
       }
-      ensureInstNotes(needed, function(){
+      ensureInstNotes(needed, function(){ ensureKitLoaded(currentKit, function(){
         try{
           var sampleRate = 44100;
           // Exact duration walk (swing changes per-step durations)
@@ -4050,7 +4166,7 @@ var GS = (function(){
           _oCtx = null; _oBus = null;
           _toast('Export error: '+e.message);
         }
-      });
+      }); });
     },
     setFX: function(lid, param, val){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
@@ -4320,6 +4436,8 @@ var GS = (function(){
       currentKit = name;
       DRUMS = DRUM_KITS[name];
       LAYER_TYPES[0].labels = DRUMS.map(function(d){return d.name});
+      preloadKitSamples(name); // no-op for synth kits
+      markDirty();
       renderLayers();
     },
     toggleMetro: function(){
