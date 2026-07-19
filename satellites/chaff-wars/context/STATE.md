@@ -17,8 +17,14 @@ Last updated 2026-07-19 (session: recovery + Classic polish + 80s theme design).
 ## IN PROGRESS (this session)
 - **80s graffiti B-BOY theme** — design in `DESIGN-80s-theme.md`; procedural reskin
   of palette/HUD/characters is the next code step (art files come later via ASSET-LIST).
-- **Powers mode** — design in `DESIGN-powers-mode.md`; scaffolding (mode select +
-  power meter + a couple of powers) to be programmed. Classic stays the focus.
+- **Powers mode** — design in `DESIGN-powers-mode.md`. FRAMEWORK SCAFFOLDED (commit
+  after 75b3b44e): Sap meter (`f.sap`, `addSap`, `SAP_*`), charge hook in
+  `finishResolve` (gated on `MATCH.powers`), `POWERS` table, `powerReady/firePower`,
+  the Keeper's **SOLVENT** power (clears your own chaff), a `⚡` power button
+  (`#b-power`, glows when ready) + `q` key, opt-in via **`?powers=1`**. Superset
+  design means it's fully INERT in Classic (verified: proofCheck + ramp unchanged).
+  NEXT: mode-select menu (`#b-powers`), opponent powers (AI casts), the other 14
+  powers from the design doc, on-canvas Sap bar. Test now: append `?powers=1`.
 - **Music in-portal** — see TODO below.
 
 ## TODO (priority order)

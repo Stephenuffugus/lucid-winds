@@ -63,6 +63,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
+.tbtn.pwr{right:10px; left:auto; width:58px; height:58px; font-size:27px; opacity:.5; border-color:#7ec850}
+.tbtn.pwr.ready{opacity:1; box-shadow:0 0 0 2px rgba(126,200,80,.4),0 0 18px rgba(126,200,80,.6); border-color:#a6e07a}
 /* responsive thumb-friendly control bar: never overlaps, scales to any phone */
 .ctrlbar{position:absolute; left:0; right:0; bottom:0; z-index:30; display:flex; align-items:flex-end; gap:9px;
   padding:0 9px calc(11px + var(--sab)); pointer-events:none}
@@ -131,6 +133,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- PLAY chrome -->
   <div class="screen" id="s-play">
     <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
+    <button class="tbtn pwr" id="b-power" aria-label="Fire power (Solvent)" style="display:none">⚡</button>
     <div class="ctrlbar">
       <div class="cc">
         <button class="cbtn" id="c-left"  aria-label="Move left">◀</button>
@@ -452,7 +455,22 @@ function makeField(colors,ai,q,react,hcap){ return {
   gravMs:400, gravAcc:0, softHold:false,
   res:null, fall:null, pop:null, floats:[], flashDanger:0,
   aiTarget:null, aiTimer:0, aiStep:0,
+  sap:0, powerId:null, powerCd:0, powerCast:false,
   rng:Math.random }; }
+
+/* ===== POWERS MODE (opt-in via ?powers=1; superset design - fully INERT when powerId=null,
+   so Classic is unchanged). Full spec + the 14 opponent powers: context/DESIGN-powers-mode.md.
+   Scaffolded here: the Sap meter + the Keeper's SOLVENT power. Mode-select UI + opponent
+   powers + the other 14 powers = next-model task. ===== */
+var SAP_MAX=100, SAP_PER_BEAN=0.7, SAP_PER_CHAIN=2.0;
+function addSap(f,n){ f.sap=Math.max(0,Math.min(SAP_MAX,(f.sap||0)+n)); }
+var POWERS={
+  'keeper-solvent':{ name:'Solvent', cost:35, cd:9000, tint:'#7ec850',
+    apply:function(f){ var r,c,n=0; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.grid[r][c]===CHAFF){ f.grid[r][c]=0; n++; } }
+      if(n){ applyGravity(f.grid); f.floats.push({x:0,y:0,txt:'SOLVENT!',life:1.1,big:true,fld:f}); if(SFX.allclear)SFX.allclear(); } return n; } }
+};
+function powerReady(f){ return !!(MATCH.powers && f && f.powerId && !f.powerCast && (f.powerCd||0)<=0 && (f.sap||0)>=POWERS[f.powerId].cost); }
+function firePower(f){ if(!powerReady(f))return false; var P=POWERS[f.powerId]; f.sap-=P.cost; f.powerCd=P.cd; try{ P.apply(f); }catch(e){} if(typeof hap==='function')hap(20); return true; }
 
 function fieldPiece(f){ var n=(f.rng()* f.colors)|0; if(n>=f.colors)n=f.colors-1; return n; }
 function newPiece(f){ return {c1:fieldPiece(f)+1, c2:fieldPiece(f)+1}; }
@@ -491,6 +509,7 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
 }
 
 function finishResolve(f){ var R=f.res; f.score+=R.score;
+  if(MATCH.powers)addSap(f,R.cleared*SAP_PER_BEAN+R.chain*SAP_PER_CHAIN);
   /* outgoing Chaff from this chain */
   var pts=R.score + f.carry; if(f.allBonus){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }
   var out=Math.floor(pts/TARGET_POINTS); f.carry=pts-out*TARGET_POINTS;
@@ -554,11 +573,14 @@ var MATCH={ pf:null, of:null, phase:'none', t:0, stage:-1, mode:'campaign', coun
 function preDropChaff(f,rows){ var i,c; for(i=0;i<rows;i++)for(c=0;c<COLS;c++){ var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t>=0)f.grid[t][c]=CHAFF; } }
 
 function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=stageIndex;
+  MATCH.powers=/[?&]powers=1/.test(location.search);
   if(MATCH.mode==='solo'){ MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/1.3; MATCH.of=null;
+    if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
     MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null; MATCH.soloLevel=1; MATCH.soloClears=0;
     spawnPiece(MATCH.pf); MATCH.pf.state='wait'; show('s-play'); running=true; SFX.count(); return; }
   var st=ROSTER[stageIndex];
   MATCH.pf=makeField(st.colors,false); MATCH.pf.gravMs=1000/st.fall;
+  if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
   MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
   if(st.startChaff>0)preDropChaff(MATCH.pf,st.startChaff);
   spawnPiece(MATCH.pf); MATCH.pf.state='wait';
@@ -616,9 +638,10 @@ function update(dt){ if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ M
   if(MATCH.phase!=='fight')return;
   tickField(MATCH.pf,dt,false);
   if(MATCH.of)tickField(MATCH.of,dt,true);
+  if(MATCH.powers){ var bp=$('b-power'); if(bp)bp.classList.toggle('ready',powerReady(MATCH.pf)); }
 }
 
-function tickField(f,dt,isAI){ if(!f)return;
+function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   decayFall(f,dt);
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
   if(f.flashDanger>0)f.flashDanger-=dt;
@@ -766,6 +789,7 @@ document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playa
   if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); moveP(pf(),1); }
   else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(pf(),1); }
+  else if(e.key==='q'||e.key==='Q'){ e.preventDefault(); firePower(pf()); }
   else if(e.key==='z'||e.key==='Z'){ e.preventDefault(); tryRotate(pf(),-1); }
   else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(pf()); }
   else if(e.key===' '){ e.preventDefault(); hardDrop(pf()); }
@@ -777,7 +801,8 @@ function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play'
    ===================================================================== */
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
-  if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); }
+  if(id!=='s-play'){ running=false; } applyBig(); paintTitle();
+  var bp=$('b-power'); if(bp)bp.style.display=(id==='s-play'&&MATCH.powers)?'flex':'none'; }
 function applyBig(){ try{ if(SET.big)document.body.classList.add('bigctrl'); else document.body.classList.remove('bigctrl'); }catch(e){} }
 function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
 
@@ -794,6 +819,7 @@ tap('b-campaign',function(){ SFX.ui(); buildLadder(); show('s-select'); });
 tap('b-solo',function(){ SFX.ui(); startMatch(-1,'solo'); });
 tap('b-how',function(){ SFX.ui(); show('s-how'); });
 tap('b-set',function(){ SFX.ui(); show('s-set'); });
+tap('b-power',function(){ firePower(pf()); });
 tap('how-back',function(){ SFX.ui(); show(curReturn()); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
 tap('sel-back',function(){ SFX.ui(); show('s-title'); });
@@ -1031,7 +1057,10 @@ if(/[?&]cwdev=1/.test(location.search)){
         botMove(f,q==null?1:q); pump(f,0); }
       return {n:cnt, avg:+(sum/Math.max(1,cnt)).toFixed(2), max:+mx.toFixed(2)}; },
     botMove:botMove, render:render, moveP:moveP, rotate:tryRotate, drop:hardDrop, soft:softStep,
-    refMove:refMove, playMatch:playMatch, sweep:sweep, diag:diag };
+    refMove:refMove, playMatch:playMatch, sweep:sweep, diag:diag,
+    powerTest:function(){ this.start(0,1); MATCH.powers=true; MATCH.pf.powerId='keeper-solvent'; MATCH.pf.grid[12][0]=CHAFF; MATCH.pf.grid[12][1]=CHAFF; MATCH.pf.sap=SAP_MAX;
+      var cb=countChaff(MATCH.pf.grid), ready=powerReady(MATCH.pf), fired=firePower(MATCH.pf), ca=countChaff(MATCH.pf.grid);
+      return {powerId:MATCH.pf.powerId, ready:ready, fired:fired, chaffBefore:cb, chaffAfter:ca, sapAfter:MATCH.pf.sap, cd:MATCH.pf.powerCd}; } };
 }
 })();
 </script>
