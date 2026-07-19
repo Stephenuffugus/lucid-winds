@@ -31,6 +31,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST CUT: blade facing a fruit below -> sliced
     S.newFF(1); S.freeze();
     G=S.state(); W=S.world();
+    if(W.slabs)W.slabs.length=0; if(W.pads)W.pads.length=0; if(W.crystals)W.crystals.length=0;
     var target=null;
     for(var i=0;i<W.items.length;i++){ if(!W.items[i].sw){ target=W.items[i]; break; } }
     G.x=target.x; G.y=target.y+2.4; G.vx=0; G.vy=-14; G.ang=PI/2; G.w=0; G.holding=false; G.hold=0; // blade down at fruit below
@@ -42,6 +43,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST BONK: handle facing a fruit below -> bonked (consumed, not sliced)
     S.newFF(1); S.freeze();
     G=S.state(); W=S.world();
+    if(W.slabs)W.slabs.length=0; if(W.pads)W.pads.length=0; if(W.crystals)W.crystals.length=0;
     var t2=null;
     for(var j=0;j<W.items.length;j++){ if(!W.items[j].sw){ t2=W.items[j]; break; } }
     G.x=t2.x; G.y=t2.y+2.4; G.vx=0; G.vy=-14; G.ang=-PI/2; G.w=0; G.holding=false; G.hold=0; // handle down toward fruit

@@ -268,6 +268,7 @@ var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
 var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null, kshadow=null;
 var chunks=[], sparks=[], meshes=[];
 var sbSession=0; // sunbeams earned this play session; 12/run cap must persist across levels
+var G_ENDLESS=false; // set while building an endless pit
 function disposeMesh(m){
   if(m.geometry)m.geometry.dispose();
   if(m.children)for(var i=0;i<m.children.length;i++)disposeMesh(m.children[i]);
@@ -683,8 +684,8 @@ function buildLevel(lvl){
 function buildFreefall(lvl){
   clearWorld();
   var rng=mulberry32(((lvl*1597334677)>>>0)^0xFA11);
-  var SW=8.4;                                   // shaft half-width
-  var depth=100+Math.min(lvl,40)*12;
+  var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
+  var depth=(G_ENDLESS?3200:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
   var floorY=-depth;
   // sky above the rim + sun
   (function(){
