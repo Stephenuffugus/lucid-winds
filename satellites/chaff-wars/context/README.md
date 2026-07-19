@@ -1,4 +1,8 @@
-# Chaff Wars — Context / Handoff Folder
+# Pop N Lock (formerly Chaff Wars) — Context / Handoff Folder
+
+> RENAMED 2026-07-19: display name is **Pop N Lock**; slug stays `chaff-wars`.
+> MULTIPLAYER v1 shipped (see STATE.md VERSUS section — Firestore rules deploy pending).
+> Art pack: `art-asset-lists/pop-n-lock/` (neon 80s b-boy animals in parachute pants).
 
 For continuing this build (especially when switching to another model for more
 intricate work). Read in this order:

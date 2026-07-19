@@ -1,6 +1,46 @@
-# Chaff Wars — Current State & TODO
+# Pop N Lock (formerly Chaff Wars) — Current State & TODO
 
-Last updated 2026-07-19 (session: recovery + Classic polish + 80s theme design).
+Last updated 2026-07-19 EVE (session: rename + art pack + MULTIPLAYER v1).
+Display name is **Pop N Lock** (Stephen's pick; pods POP, pieces LOCK, the dance).
+Slug/gameId/save keys unchanged: `satellites/chaff-wars/`, `chaffwars`, `cw_*`/`sw_sb_chaffwars`.
+
+## ⚡ NEW THIS SESSION (all deployed to main)
+- **RENAME** → Pop N Lock everywhere player-facing (title, HUD, manifest, portal card,
+  install strings). sw cache bumped v2. Commit 42709c77.
+- **MULTIPLAYER v1** (commit 960cf010) — room-code versus. See VERSUS section below.
+  ⛔ **STEPHEN ACTION REQUIRED: deploy `firestore-rules-8.txt` (repo root) via Firebase
+  Console → Firestore → Rules — online rooms are DENIED until then** (lobby shows a
+  friendly "not switched on yet" message). Local relay + bot proof work without it.
+- **ART PACK** — `art-asset-lists/pop-n-lock/` (00 + 9 sheets, "Neon Boombox": 80s
+  graffiti ANIMAL B-BOYS in SHINY PARACHUTE PANTS). Dropped as Docs in the 012Assets
+  Drive folder ("Pop N Lock — Art Pack (Neon Boombox, 2026-07-19)"). Ledger: LISTED.
+
+## VERSUS (multiplayer) — how it works
+- Own-board-authoritative relay: each client simulates ONLY its own board and publishes
+  compact snapshots (78-char grid string + score/pending) plus numbered garbage EVENTS;
+  the rival board is display-only (`f.remote` → tickField early-returns).
+- Same piece sequence both sides (shared `mulberry32(seed)`, authentic Puyo). 4 colors.
+- Transports (module `MP` + `_mp*` fns, bottom of the main script):
+  `'fs'` = Firestore `cwRooms/{code}` + `inputs/{uid}` onSnapshot relay riding the
+  sunbeam-sdk firebase app (`firebase.app('sunbeam-sdk')`; auth shared with portal;
+  players must be signed in — no anonymous auth exists);
+  `'local'` = BroadcastChannel (same browser; `?mplocal=1`; what the bots use).
+- Win/lose: top-out publishes `d:1` → opponent Victory. 15s heartbeat staleness or an
+  explicit leave = forfeit win. Quit buttons all route through `_mpLeave()`.
+- rAF-starvation watchdog (near `loop()`): background/occluded tabs advance the sim by
+  real elapsed time in 50ms steps — keeps an app-switching player alive + enables
+  headless two-page testing (puppeteer waitForFunction must use `polling:500`, not rAF).
+- **PROOF:** `node scripts/chaffwars/bot_versus.js` (server on :8901 first) — two headless
+  pages, host+guest over the local relay, uneven bots to a real top-out. Latest: PASS
+  (garbage crossed both ways, one winner one loser 5000 vs 1500, zero errors).
+- No sunbeams from versus (two-account farmable).
+
+## VERSUS — next steps (in order)
+1. Stephen deploys firestore-rules-8.txt, then a real two-phone test (create/join by code).
+2. Rematch flow (room doc round+seed bump; v1 returns to lobby).
+3. VS intro screen (portraits face off — art pack sheet 08 vs-frame + crew idles).
+4. Cleanup TTL for stale cwRooms docs (Cloud Function or manual; junk is harmless now).
+5. Matchmaking beyond friend-codes (random opponent queue) — design only, later.
 
 ## DONE + DEPLOYED (on `main`)
 - Engine: faithful Puyo/MBM, Tsu ruleset. `proofCheck()` all-pass. Correct + stable.
