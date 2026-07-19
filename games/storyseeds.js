@@ -45,7 +45,7 @@ window._gameFns.storyseeds=function SS(a){
   var pan=document.createElement('div');pan.id='SSpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_SSNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_SSSave()">💾 SAVE</button> <button class="gb" onclick="_SSJournal()">📖 JOURNAL</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_SSNew()">↻ New Game</button> <button class="gb" onclick="_SSSave()">💾 SAVE</button> <button class="gb" onclick="_SSJournal()">📖 JOURNAL</button>';
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('SS-journal');if(o)o.remove();});
   // 2026-07-04: entries were being written into a void — saved forever, viewable
   // never. The journal is the whole point of a journal.

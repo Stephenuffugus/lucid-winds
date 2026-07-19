@@ -217,7 +217,7 @@ function GU(a){
   tb.innerHTML='<div class="utbb" style="flex:0 0 auto;min-width:82px;display:flex;align-items:center;justify-content:center;pointer-events:none;border-color:rgba(74,124,53,.18);">\u23f1\ufe0f&nbsp;<span id="Ut">0:00</span></div><button class="utbb" id="Upen" onclick="_UP()">\u270f\ufe0f NOTES</button><button class="utbb" id="Uerr" onclick="_UE()">\ud83d\udc41 MISTAKES</button>';
   a.appendChild(tb);
   var pd=document.createElement('div');pd.className='up';pd.id='Upad';a.appendChild(pd);
-  mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb-new" onclick="_UG()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb" onclick="_UG()">↻ New Game</button>';
   function fmtT(ms2){var t=Math.max(0,Math.floor(ms2/1000)),m=Math.floor(t/60),sx=t%60;return m+':'+(sx<10?'0':'')+sx;}
   // guard on gd (created per-mount, actually disconnected on game switch —
   // `a` is the app's permanent mount div, so a.isConnected never goes false)

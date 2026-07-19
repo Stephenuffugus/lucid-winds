@@ -17,7 +17,7 @@ function GTP(a){
   ms(a,'Streak: <strong id="TPst">0</strong> · Left: <strong id="TPlf">28</strong>');mm(a);
   var gd=document.createElement('div');gd.id='TPgd';a.appendChild(gd);
   var _tpStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="TPundoBtn" onclick="_TPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb-new" onclick="_TPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="TPundoBtn" onclick="_TPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_TPN()">↻ New Game</button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({peaks:peaks, stock:stock, waste:waste, moves:moves, streak:streak, removed:removed}));
     refreshUndoBtn();

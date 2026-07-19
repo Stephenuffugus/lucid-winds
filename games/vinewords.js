@@ -159,7 +159,7 @@ window._gameFns.vinewords=function VW(a){
   pan.appendChild(summary);
 
   // Controls
-  mc(a).innerHTML='<button class="gb-new" onclick="_VWN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_VWN()">↻ New Game</button>';
 
   // Pointer coords helper
   function boardRect(){return boardWrap.getBoundingClientRect();}

@@ -58,7 +58,7 @@ window._gameFns.vinecross=function VC(a){
     +'<option value="13">13×13</option>'
     +'<option value="15">15×15</option>'
     +'</select>'
-    +'<button class="gb-new" onclick="_VCN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    +'<button class="gb" onclick="_VCN()">↻ New Game</button>';
 
   function renderStats(){
     var played=stats.w+stats.l+stats.d;

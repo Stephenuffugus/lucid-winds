@@ -135,7 +135,7 @@ window._gameFns.livingstones = function LS(a){
   var pan=document.createElement('div');pan.id='LSpan';
   pan.style.cssText='max-width:440px;margin:0 auto;padding:8px 6px;user-select:none;text-align:center;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_LSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_LSN()">↻ New Game</button>';
 
   // Hash a board to detect ko (positional superko).
   function hashBoard(b){

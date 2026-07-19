@@ -17,7 +17,7 @@ function GKL(a){
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
   var _kStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb-new" onclick="_KLN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
+  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb" onclick="_KLN()">↻ New Game</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
   // Snapshot the full game state so undo can restore it exactly. Plain JSON
   // round-trip because every card is a flat {s,r,up} object. Called BEFORE
   // any mutation — every move, stock draw, and stock recycle.

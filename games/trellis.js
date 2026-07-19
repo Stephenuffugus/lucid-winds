@@ -635,7 +635,7 @@ window._gameFns.trellis = function TR(a){
   pan=document.createElement('div');pan.id='TRpan';
   pan.style.cssText='max-width:460px;margin:0 auto;padding:6px 4px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_TRnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_TRnew()">↻ New Game</button>';
 
   window._TRnew=function(){
     TRgen++; // invalidate any in-flight aiTurn/endGame timers from the previous game

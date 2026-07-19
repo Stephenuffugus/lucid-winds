@@ -95,7 +95,7 @@ window._gameFns.seedsow=function SS(a){
     +'<option value="2">Sapling</option>'
     +'<option value="3">Grove</option>'
     +'<option value="4">Old Growth</option>'
-    +'</select><button class="gb-new" onclick="_SSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    +'</select><button class="gb" onclick="_SSN()">↻ New Game</button>';
 
   function renderStats(){
     var p=stats.w+stats.l+stats.d;

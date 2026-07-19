@@ -14,7 +14,7 @@ function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0,won=false; // won latch (202
   ms(a,'#<strong id="Lp">1</strong> · 👆<strong id="Lm">0</strong> · ✅<strong id="Ls">'+sl+'</strong>');mm(a);
   var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
   var bg=document.createElement('img');bg.src='assets/games/lights/grid.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
-  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.cssText='position:absolute;top:7%;left:7%;right:7%;bottom:7%;grid-template-columns:repeat(5,1fr);gap:clamp(2px,1vw,5px)';bw.appendChild(gd);a.appendChild(bw);mc(a).innerHTML='<button class="gb-new" onclick="_LN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_LR()">↩️ Reset</button>';
+  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.cssText='position:absolute;top:7%;left:7%;right:7%;bottom:7%;grid-template-columns:repeat(5,1fr);gap:clamp(2px,1vw,5px)';bw.appendChild(gd);a.appendChild(bw);mc(a).innerHTML='<button class="gb" onclick="_LN()">↻ New Game</button><button class="gb" onclick="_LR()">↩️ Reset</button>';
   function tg(r,c){if(r>=0&&r<SZ&&c>=0&&c<SZ)gr[r*SZ+c]=gr[r*SZ+c]?0:1}function ok(){for(var i=0;i<SZ*SZ;i++)if(gr[i])return false;return true}
   var _lampOn='assets/games/lights/shroom-on.png';
   var _lampOff='assets/games/lights/shroom-off.png';

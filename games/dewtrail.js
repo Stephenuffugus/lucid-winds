@@ -180,7 +180,7 @@ window._gameFns.dewtrail=function DT(a){
   ms(a,'<span style="color:var(--gold)">Dew Trail</span> · <span id="DTd">#'+dayNum()+'</span> · <span id="DTt">0:00</span> · 🔥<span id="DTs">'+streak().n+'</span>');
   mm(a);
   pan=document.createElement('div');pan.className='dt-wrap';a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_DTN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_DTN()">↻ New Game</button>';
 
   function streak(){
     try{return JSON.parse(localStorage.getItem('lw_dt_streak')||'{"n":0,"last":""}');}catch(e){return {n:0,last:''};}

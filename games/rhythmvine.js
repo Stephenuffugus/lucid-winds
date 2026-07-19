@@ -39,7 +39,7 @@ window._gameFns.rhythmvine=function RV(a){
   // entire stage rendered 2px wide in the portal.
   pan.style.cssText='position:relative;width:100%;max-width:520px;margin:0 auto;padding:0;box-sizing:border-box;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_RVN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_RVCAL()">⚙ CALIBRATE</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_RVN()">↻ New Game</button> <button class="gb" onclick="_RVCAL()">⚙ CALIBRATE</button>';
 
   // ─── Styles (scoped ids only) ─────────────────────────────
   var css=document.createElement('style');

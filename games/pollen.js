@@ -717,7 +717,7 @@ window._gameFns.pollen = function PN(a){
   pan.style.cssText='max-width:min(760px,calc(100vw - 16px));margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_PNrules()" style="min-height:52px;padding:0.5rem 1rem;font-size:0.72rem;letter-spacing:.1em">📖 RULES</button>'
-    +'<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    +'<button class="gb" onclick="_PNnew()">↻ New Game</button>';
 
   // ═══ RULES BOOK ═══
   // Structured explainer covering objective, setup, turn actions,

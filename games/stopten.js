@@ -155,7 +155,7 @@ window._gameFns.stopten=function ST(a){
   pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_STR()" style="min-height:48px;padding:8px 18px;font-size:0.75rem;letter-spacing:0.1em">📖 RULES</button>'
-    +'<button class="gb-new" onclick="_STN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    +'<button class="gb" onclick="_STN()">↻ New Game</button>';
 
   function tiers(delta){
     if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',face:'happy',sb:3};

@@ -322,7 +322,7 @@ function GW(a){
   wl=document.createElement('div');wl.id='Wl';
   wl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 8px;font-size:.72rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
   a.appendChild(wl);
-  mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb-new" onclick="_WN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb" onclick="_WN()">↻ New Game</button>';
   window._WN();
 }
 

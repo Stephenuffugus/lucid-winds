@@ -149,7 +149,7 @@ function GBS(a){
     '<button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> '+
     '<button class="gb" id="BSconfirmBtn" onclick="_BSToggleConfirm()" style="min-width:120px;font-size:0.7rem;letter-spacing:0.06em;">'+(confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF')+'</button> '+
     '<button class="gb" id="BSzoomBtn" onclick="_BSToggleZoom()" style="min-width:80px;font-size:0.7rem;letter-spacing:0.06em;">'+(enemyZoom>1?'🔍 1.5×':'🔍 1×')+'</button> '+
-    '<button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    '<button class="gb" onclick="_BSN()">↻ New Game</button>';
 
   // Leaving mid-turn (in-app exit, not the standalone shell's full nav):
   // cancel the pending aiTurn() timeout so it can't fire sounds/banners/

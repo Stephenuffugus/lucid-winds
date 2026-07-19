@@ -80,7 +80,7 @@ window._gameFns.petalmatch = function PM(a){
   overlayHost.style.cssText='position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;';
   pan.appendChild(overlayHost);
 
-  mc(a).innerHTML='<button class="gb-new" onclick="_PMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_PMR()">RETRY LV</button> <button class="gb" onclick="_PMH()">HINT</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_PMN()">↻ New Game</button> <button class="gb" onclick="_PMR()">RETRY LV</button> <button class="gb" onclick="_PMH()">HINT</button>';
 
   // ───────── level generator ─────────
   function genLevel(lv){
