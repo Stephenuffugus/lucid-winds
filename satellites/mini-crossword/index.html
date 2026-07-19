@@ -103,6 +103,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 <div id="cluebar">
   <button class="nav" id="clue-prev">‹</button>
   <div class="cluetext"><b id="clue-lab">1A</b><span id="clue-txt">·</span></div>
+  <button class="nav" id="clue-flip" style="min-width:76px;font-size:0.72rem;font-weight:800;letter-spacing:0.04em;color:#ffd76a">ACROSS ⇄</button>
   <button class="nav" id="clue-next">›</button>
 </div>
 
@@ -121,6 +122,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
   </div>
 </div>
 
+<canvas id="confetti" width="540" height="960" style="position:absolute;inset:0;width:540px;height:960px;pointer-events:none;z-index:60;display:none"></canvas>
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">SOLVED</h1>
   <div class="tag" id="over-sub">·</div>
@@ -130,6 +132,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
     <div class="chip"><b id="ov-ink">0</b><span>ink won</span></div>
   </div>
   <button class="btn gold" id="over-next">NEW MINI →</button>
+  <button class="btn sm" id="over-share">📤 Share</button>
   <button class="btn sm" id="over-menu">menu</button>
 </div>
 
@@ -1095,8 +1098,48 @@ function doWin(){
   $("ov-time").textContent=fmtTime(CUR.seconds);
   $("ov-streak").textContent=PROG.streak;
   $("ov-ink").textContent=CUR.ink;
-  setTimeout(function(){ if(CUR&&CUR.phase==="won")show("s-over"); }, 800);
+  setTimeout(function(){ if(CUR&&CUR.phase==="won"){ show("s-over"); startConfetti(); } }, 800);
 }
+
+/* ── Confetti celebration (Jessie 7/19): rains and pops on the win screen,
+   and the screen stays until a button is pressed. ── */
+var _cf=null;
+function startConfetti(){
+  var cv=$("confetti"); if(!cv)return;
+  cv.style.display="block";
+  var cx=cv.getContext("2d");
+  var COLS=["#ffd76a","#ff6d9d","#4ac8b4","#8de8ff","#c56bf0","#7ec98f","#ff9f45"];
+  var bits=[],i;
+  for(i=0;i<130;i++)bits.push({x:Math.random()*540,y:-20-Math.random()*960,vx:(Math.random()*2-1)*30,vy:70+Math.random()*120,rot:Math.random()*6.28,vr:(Math.random()*2-1)*7,w:6+Math.random()*7,h:4+Math.random()*5,col:COLS[i%COLS.length],sway:Math.random()*6.28});
+  var pops=[],last=0,t=0,popT=0;
+  function boom(){
+    var px=60+Math.random()*420, py=140+Math.random()*440;
+    for(var k=0;k<22;k++){ var a=Math.random()*6.28, sp=90+Math.random()*160;
+      pops.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:0.8+Math.random()*0.4,r:2.5+Math.random()*2.5,col:COLS[k%COLS.length]}); }
+  }
+  boom();
+  _cf={raf:null,stop:false};
+  function frame(ts){
+    if(!_cf||_cf.stop){ cx.clearRect(0,0,540,960); cv.style.display="none"; return; }
+    if(!last)last=ts; var dt=Math.min(0.05,(ts-last)/1000); last=ts; t+=dt; popT+=dt;
+    if(popT>1.1){ popT=0; boom(); }
+    cx.clearRect(0,0,540,960);
+    for(var b=0;b<bits.length;b++){ var f=bits[b];
+      f.y+=f.vy*dt; f.x+=f.vx*dt+Math.sin(t*2+f.sway)*22*dt; f.rot+=f.vr*dt;
+      if(f.y>980){ f.y=-20; f.x=Math.random()*540; }
+      cx.save(); cx.translate(f.x,f.y); cx.rotate(f.rot);
+      cx.fillStyle=f.col; cx.fillRect(-f.w/2,-f.h/2,f.w,f.h*Math.abs(Math.sin(t*3+f.sway)));
+      cx.restore(); }
+    for(var q=pops.length-1;q>=0;q--){ var pp=pops[q];
+      pp.vy+=220*dt; pp.x+=pp.vx*dt; pp.y+=pp.vy*dt; pp.life-=dt;
+      if(pp.life<=0){ pops.splice(q,1); continue; }
+      cx.globalAlpha=Math.min(1,pp.life*1.6); cx.fillStyle=pp.col;
+      cx.beginPath(); cx.arc(pp.x,pp.y,pp.r,0,6.28); cx.fill(); cx.globalAlpha=1; }
+    _cf.raf=requestAnimationFrame(frame);
+  }
+  _cf.raf=requestAnimationFrame(frame);
+}
+function stopConfetti(){ if(_cf){ _cf.stop=true; _cf=null; } }
 
 /* ---------- HUD / clue ---------- */
 function updateHud(){ if(!CUR)return;
@@ -1107,6 +1150,7 @@ function updateHud(){ if(!CUR)return;
 function updateClue(){ if(!CUR)return; var s=curSlot(); if(!s)return;
   $("clue-lab").textContent=s.num+(s.dir==='A'?"A":"D");
   $("clue-txt").textContent=s.clue;
+  var fb=$("clue-flip"); if(fb)fb.textContent=(s.dir==='A'?"ACROSS":"DOWN")+" ⇄";
   /* sync slotIdx for prev/next nav */
   CUR.slotIdx=CUR.navSlots.indexOf(s); }
 function gotoSlot(delta){
@@ -1223,6 +1267,12 @@ function renderShop(){ $("shop-ink").textContent=PROG.ink; $("shop-streak").text
 function tap(id,fn){ $(id).addEventListener("click",fn); }
 tap("hud-back",function(){ stopToMenu(); });
 $("clue-prev").addEventListener("click",function(){ if(running)gotoSlot(-1); });
+$("clue-flip").addEventListener("click",function(){
+  if(!running||!CUR||CUR.sel<0)return;
+  var other=CUR.dir==='A'?'D':'A';
+  var has=other==='A'?cellAcrossSlot(CUR.sel):cellDownSlot(CUR.sel);
+  if(has){ CUR.dir=other; updateClue(); render(); }
+});
 $("clue-next").addEventListener("click",function(){ if(running)gotoSlot(1); });
 cvs.addEventListener("pointerup",function(e){
   if(!running||!CUR||CUR.phase!=="play")return;
@@ -1245,8 +1295,14 @@ tap("b-shop",function(){ renderShop(); show("s-shop"); });
 tap("shop-back",function(){ show("s-title"); stamp(); });
 tap("b-how",function(){ show("s-how"); });
 tap("how-back",function(){ show("s-title"); stamp(); });
-tap("over-menu",function(){ stopToMenu(); });
-tap("over-next",function(){ var m=CUR?CUR.mode:"endless"; running=false; stopTimer(); panelOn(false);
+tap("over-menu",function(){ stopConfetti(); stopToMenu(); });
+tap("over-share",function(){
+  var txt="Mini Crossword: solved in "+fmtTime(CUR?CUR.seconds:0)+(PROG.streak>1?(" with an ink streak of "+PROG.streak):"")+". Can you beat it?";
+  var url="https://lucidwinds.com/satellites/mini-crossword/";
+  try{ if(navigator.share){ navigator.share({text:txt,url:url})["catch"](function(){}); return; } }catch(e){}
+  try{ navigator.clipboard.writeText(txt+" "+url); var b=$("over-share"); if(b){ b.textContent="Copied!"; setTimeout(function(){ b.textContent="📤 Share"; },1400); } }catch(e){}
+});
+tap("over-next",function(){ stopConfetti(); var m=CUR?CUR.mode:"endless"; running=false; stopTimer(); panelOn(false);
   beginPlay(m,{seedSalt:(PROG.solves*13+ (Date.now()&1023))}); });
 
 /* ---------- draw loop (light; render is event-driven, this keeps flashes/timer smooth) ---------- */
