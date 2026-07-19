@@ -33,6 +33,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST KICK: handle into the left wall -> upward rocket, no fail
     S.newClimbEndless(); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     G.x=-W.SW+2; G.y=30; G.vx=-9; G.vy=-2; G.ang=PI; G.w=0; G.holding=false; G.hold=0; G.grounded=false;
     var vyPeak=-99, st;
     for(st=0;st<30;st++){ S.stepN(1,16); if(G.vy>vyPeak)vyPeak=G.vy; if(G.kicks>=1&&st>2)break; }
@@ -42,6 +43,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST BLADE FAIL: blade into the left wall -> stuck, run over
     S.newClimbEndless(); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     G.x=-W.SW+2; G.y=30; G.vx=-9; G.vy=-2; G.ang=0; G.w=0; G.holding=false; G.hold=0; G.grounded=false;
     S.stepN(30,16);
     r.bladeFail={ failed:!!G.failed, done:!!G.done, pass: !!G.failed && !!G.done };
@@ -49,6 +51,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST SAP: a sap patch dampens the kick hard
     S.newClimbEndless(); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     W.sap.push({side:-1,y0:26,y1:34});
     G.x=-W.SW+2; G.y=30; G.vx=-9; G.vy=-2; G.ang=PI; G.w=0; G.holding=false; G.hold=0; G.grounded=false;
     var vyPeakS=-99, st2;
@@ -58,7 +61,8 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
 
     // TEST MIST: an idle started run gets swallowed by the rising void
     S.newClimbEndless(); S.freeze();
-    G=S.state(); G.started=true;
+    G=S.state(); W=S.world(); G.started=true;
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     G.x=0; G.y=6; G.vx=0; G.vy=0; G.ang=PI/2; G.w=0; G.voidT=8; G.voidY=5.2; G.holding=false; G.grounded=false;
     S.stepN(160,16);
     r.mist={ failed:!!G.failed, mistDeath:!!G.mistDeath, pass: !!G.failed && !!G.mistDeath };
@@ -87,6 +91,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     S.newClimb(2); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
     r.summitSetup={ goal:W.goal, climbGoal:G.climbGoal };
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     G.x=0; G.y=W.goal-0.8; G.vx=0; G.vy=14; G.ang=PI/2; G.w=0; G.holding=false; G.grounded=false; G.voidY=-14; G.voidT=0;
     S.stepN(25,16);
     var wonNow = G.done && !G.failed;
@@ -97,6 +102,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST STING: a thorn contact knocks DOWN and resets combo
     S.newClimbEndless(); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
     G.x=0; G.y=40; G.vx=6; G.vy=0; G.ang=PI/2; G.w=0; G.combo=5; G.grounded=false;
     W.thorns.push({x:2.2,y:40,r:1.7});
     S.stepN(12,16);
@@ -106,7 +112,8 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     // TEST WIND: a gust corridor shoves you sideways with no input
     S.newClimbEndless(); S.freeze();
     G=S.state(); W=S.world(); G.started=true;
-    W.wind.length=0; W.wind.push({y0:50,y1:60,dir:1});
+    W.thorns.length=0; W.wasps.length=0; W.sap.length=0; W.crystals.length=0; W.planks.length=0; W.wind.length=0; W.pads.length=0; W.slabs.length=0; W.items.length=0;
+    W.wind.push({y0:50,y1:60,dir:1});
     G.x=0; G.y=55; G.vx=0; G.vy=6; G.ang=PI/2; G.w=0; G.holding=false; G.voidT=0; G.grounded=false;
     S.stepN(25,16);
     r.wind={ vx:+G.vx.toFixed(2), pass: G.vx>1.0 };
