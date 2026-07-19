@@ -74,3 +74,13 @@ dropped in Stephen's 012Assets Google Drive folder as a Doc, and saved in-repo a
 The game already SHIPS themed + playable with zero art files (procedural neon pods,
 colorblind glyphs, crew colors, taunts, neon UI, WebAudio 80s beat). Art enhances.
 Cut/wire target when files land: `satellites/chaff-wars/art-drop/` → mark DROPPED.
+
+## Pop N Lock (formerly Chaff Wars) — "Neon Boombox" 80s b-boy pack — LISTED (2026-07-19)
+
+Full prompt pack at `art-asset-lists/pop-n-lock/` (00-art-direction + 9 sheets):
+5 crew sheets (14 Grey Crew animals + Keeper, idle/win/lose, ALL in shiny
+parachute pants), 2 backgrounds, the lettered POP N LOCK wildstyle logo (+
+stacked icon variant), text-free UI chrome (incl. the multiplayer room-code
+cassette card), and an optional FX sheet. Dropped in Stephen's 012Assets
+Drive folder as one Doc per sheet. Status: **LISTED** (awaiting generation).
+Game ships fully playable procedural; raws land at `satellites/chaff-wars/art-drop/`.
