@@ -93,7 +93,8 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     }
     S.stepN(200,16); // play the finale out so the finish screen shows
     G=S.state();
-    r.run={done:done, mult:G.mult, steps:steps, goOn:document.getElementById('s-go').classList.contains('on')};
+    r.run={done:done, mult:G.mult, steps:steps, goOn:document.getElementById('s-go').classList.contains('on'),
+      detail:document.getElementById('go-detail').textContent, lab:document.getElementById('go-lab').textContent};
 
     window._S3skiprender=false;
     return r;
@@ -105,7 +106,8 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     && out.bonk.consumed && out.bonk.notSliced
     && out.run.done && out.run.mult>=1 && out.run.goOn
     && out.padBounce.found && out.padBounce.comboKept && out.padBounce.gotBonus && out.padBounce.chips===0
-    && out.padChip.found && out.padChip.chipped && out.padChip.comboZeroed;
+    && out.padChip.found && out.padChip.chipped && out.padChip.comboZeroed
+    && /clean dive/.test(out.run.detail);
   console.log(ok?'ORIENT OK':'FAIL','· errors:',errors.length?errors.join(' | '):'none');
   await browser.close();
   process.exit(ok&&!errors.length?0:1);

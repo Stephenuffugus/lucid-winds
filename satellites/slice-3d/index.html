@@ -1342,6 +1342,9 @@ function loop(ts){
 /* ---------- finish ---------- */
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
+  // clean-dive payoff: keeping the blade off the walls all the way down pays
+  var chips=G.chips||0, cleanBonus=0;
+  if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus; }
   var bkey=(ff?'f':'l')+lvl;
   var best=PROG.best[bkey]||0, nb=G.score>best;
   if(nb){ PROG.best[bkey]=G.score; }
@@ -1371,8 +1374,12 @@ function finishLevel(){
       wrap.appendChild(cf);
       (function(el2){ setTimeout(function(){ if(el2.parentNode)el2.parentNode.removeChild(el2); }, 4600); })(cf);
     } })(); }
-  $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult;
-  $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
+  $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult+(cleanBonus>0?(' · +'+cleanBonus+' clean dive'):'');
+  if(ff){
+    $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest);
+  } else {
+    $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
+  }
   var sb=0;
   if(sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
   $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
