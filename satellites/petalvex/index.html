@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Petalvex">
-<title>Petalvex · Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="OriVex">
+<title>OriVex · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/petalvex/; harmless 404 at repo root, guarded) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"petalvex"}).catch(function(){});</script>
@@ -104,7 +104,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word" id="title-word">
       <img id="title-logo" alt="Petalvex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.setAttribute('data-err','1');this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
-      <span id="title-fallback" style="display:none">Petalvex</span>
+      <span id="title-fallback" style="display:none">OriVex</span>
     </div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Slot the leaf tiles so every touching edge shares a number. A quiet botanical logic puzzle.</div>
@@ -152,7 +152,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div id="skin-list" style="width:100%;max-width:400px;margin:0 auto"></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Petalvex, a Sky Wolf remake of the classic TetraVex.</div>
+    <div class="foot">OriVex, a Sky Wolf remake of the classic TetraVex.</div>
   </div></div>
 
   <!-- WIN -->
@@ -321,7 +321,7 @@ function computeLayout(){
   var boardTop=topHud+8;
   // reserve tray height depending on count
   var trayRows=Math.ceil(n*n / n); // roughly n rows if n cols
-  var cell=Math.min(maxBoard/n, 360/n); // cap board so tray always has room
+  var cell=Math.min(maxBoard/n, 460/n); // board ~28% bigger (Stephen 7/19: showcase the puzzle); tray adapts below
   cell=Math.floor(cell);
   var boardW=cell*n;
   LAY.cell=cell;
@@ -679,9 +679,9 @@ function sharePetalvex(){
   if(P && P.solved){
     var nud = P.hints===0 ? "no nudges" : (P.hints+" nudge"+(P.hints>1?"s":""));
     var what = (P.mode && P.mode.daily) ? "today's Daily bed" : ("a "+P.n+"×"+P.n+" bed");
-    txt="Petalvex: solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
+    txt="OriVex: solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
   } else {
-    txt="Petalvex, a botanical TetraVex. Can you solve the bed?";
+    txt="OriVex, an origami TetraVex. Can you solve the bed?";
   }
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){}).catch(function(){}); }
@@ -823,7 +823,7 @@ function boot(){
   fit();
   /* keep the pack's logo + win bloom preloaded (onerror keeps text/emoji fallback);
      applySkin() decides which surfaces show — classic (default) stays fully procedural */
-  (function(){ var tl=$('title-logo'); if(tl) tl.src='assets/ui/logo_petalvex.png?v='+PV_ASSET_V;
+  (function(){ var tl=$('title-logo'); if(tl){ tl.style.display='none'; var f=$('title-fallback'); if(f)f.style.display='block'; } /* old logo reads Petalvex; OriVex wordmark art pending (orivex pack) */ (function(unused){})('assets/ui/logo_petalvex.png?v='+PV_ASSET_V);
     var wb=$('win-bloom'); if(wb) wb.src='assets/ui/win_bloom.png?v='+PV_ASSET_V; })();
   applySkin();
   buildSkinRow();
@@ -850,7 +850,7 @@ function boot(){
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
   wireToggle('tg-color', function(){ return SET.color; }, function(v){ SET.color=v; });
 
-  $('buildstamp').textContent='Petalvex '+BUILD;
+  $('buildstamp').textContent='OriVex '+BUILD;
   // first-run: bounce to how-to once
   if(!LS.get(K.seen)){ LS.set(K.seen,'1'); show('s-how'); }   // first run: actually show the how-to
   render();
