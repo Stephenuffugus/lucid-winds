@@ -72,7 +72,12 @@
       '.lwfb-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147482000;' +
         'min-height:44px;border-radius:22px;border:1px solid rgba(200,168,75,.4);background:rgba(13,16,12,.86);' +
         'color:#e8dcc8;font-family:"DM Mono",monospace;font-size:.66rem;padding:0 14px;cursor:pointer;' +
-        'box-shadow:0 6px 20px rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}';
+        'box-shadow:0 6px 20px rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);' +
+        'touch-action:none;user-select:none;-webkit-user-select:none;}' +
+      /* Jessie/Stephen 7/19: the bug must be clearable — drag it anywhere, or tap the x to hide it */
+      '.lwfb-x{position:absolute;top:-7px;left:-7px;width:20px;height:20px;border-radius:50%;' +
+        'background:rgba(13,16,12,.95);border:1px solid rgba(200,168,75,.5);color:#8a9178;' +
+        'font-size:11px;line-height:18px;text-align:center;cursor:pointer;font-family:sans-serif;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -205,7 +210,54 @@
 
   function mountFab(opts) {
     if (document.querySelector('.lwfb-fab')) return;
-    document.body.appendChild(button(opts));
+    // Respect a this-session dismissal (Stephen 7/19: full-screen players
+    // must be able to clear the button). It returns on the next visit.
+    try { if (sessionStorage.getItem('lwfb_hidden') === '1') return; } catch (e) {}
+    var b = button(opts);
+    // x badge — one tap hides the fab for this session
+    var x = document.createElement('span');
+    x.className = 'lwfb-x';
+    x.textContent = '\u00d7';
+    x.setAttribute('aria-label', 'Hide feedback button');
+    x.addEventListener('click', function (ev) {
+      ev.stopPropagation(); ev.preventDefault();
+      try { sessionStorage.setItem('lwfb_hidden', '1'); } catch (e) {}
+      if (b.parentNode) b.parentNode.removeChild(b);
+    });
+    b.appendChild(x);
+    // drag anywhere: past a small slop the tap becomes a move; position is
+    // remembered for the session so it stays where the player parked it
+    var drag = null;
+    try {
+      var saved = sessionStorage.getItem('lwfb_pos');
+      if (saved) { var sp = JSON.parse(saved); b.style.left = sp.l + 'px'; b.style.top = sp.t + 'px'; b.style.right = 'auto'; b.style.bottom = 'auto'; }
+    } catch (e) {}
+    b.addEventListener('pointerdown', function (ev) {
+      drag = { sx: ev.clientX, sy: ev.clientY, moved: false,
+               bx: b.getBoundingClientRect().left, by: b.getBoundingClientRect().top };
+    });
+    window.addEventListener('pointermove', function (ev) {
+      if (!drag) return;
+      var dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 10) return;
+      drag.moved = true;
+      var nl = Math.max(4, Math.min(window.innerWidth - b.offsetWidth - 4, drag.bx + dx));
+      var nt = Math.max(4, Math.min(window.innerHeight - b.offsetHeight - 4, drag.by + dy));
+      b.style.left = nl + 'px'; b.style.top = nt + 'px';
+      b.style.right = 'auto'; b.style.bottom = 'auto';
+      ev.preventDefault();
+    });
+    window.addEventListener('pointerup', function () {
+      if (!drag) return;
+      if (drag.moved) {
+        // a drag is not a click — swallow the click that follows
+        var stop = function (ce) { ce.stopPropagation(); ce.preventDefault(); b.removeEventListener('click', stop, true); };
+        b.addEventListener('click', stop, true);
+        try { sessionStorage.setItem('lwfb_pos', JSON.stringify({ l: parseInt(b.style.left) || 0, t: parseInt(b.style.top) || 0 })); } catch (e) {}
+      }
+      drag = null;
+    });
+    document.body.appendChild(b);
   }
 
   window.LW_Feedback = { open: open, button: button, mountFab: mountFab, close: close };
