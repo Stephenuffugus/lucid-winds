@@ -82,6 +82,52 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 .scard .buy{font-size:.66rem; color:var(--gold)}
 .howp{max-width:360px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
 .howp b{color:var(--gold)} .howp .sym{color:var(--teal); font-weight:bold}
+
+/* ============================================================
+   80s COMIC LAYER — graffiti squirrel skin (Acorn Drop)
+   ============================================================ */
+#s-title{ background:linear-gradient(180deg,#140e26cc 0%, #0a0714e0 62%, #0a0714f6 100%),
+  url('assets/backgrounds/bg_title.jpg?v=ad1') center/cover no-repeat #0d0a14; }
+#s-over{ background:linear-gradient(180deg,#140e26d6 0%, #0a0714ee 74%, #0a0714fb 100%),
+  url('assets/backgrounds/bg_win.jpg?v=ad1') center/cover no-repeat #0d0a14; }
+#s-select,#s-shop,#s-how{ background:linear-gradient(180deg,#150f26f0 0%, #0a0714fa 100%),
+  url('assets/backgrounds/bg_cellar.jpg?v=ad1') center/cover no-repeat #0d0a14; }
+/* comic wordmark */
+#s-title h1{ font-size:2.9rem; font-weight:900; font-style:italic; letter-spacing:.02em;
+  transform:skewX(-7deg); margin-top:26px; line-height:1;
+  text-shadow: 3px 3px 0 #12060a, 4px 4px 0 #12060a, -1px -1px 0 #12060a, 0 0 22px rgba(200,168,75,.45); }
+#s-title h1 .a{ color:#ffd21e; } #s-title h1 .b{ color:#2ee6d6; }
+#s-title .tag{ font-weight:700; color:#e8dcc8; text-shadow:1px 1px 0 #12060a; max-width:330px; }
+/* halftone dot screen */
+.halftone{ background-image:radial-gradient(circle, rgba(0,0,0,.22) 1px, transparent 1.6px); background-size:6px 6px; }
+/* comic buttons */
+#s-title .btn, #s-over .btn{ font-weight:800; border-width:2px; border-color:#12060a;
+  box-shadow:3px 3px 0 #12060ac0; }
+#s-title .btn:active, #s-over .btn:active{ box-shadow:1px 1px 0 #12060ac0; transform:translate(2px,2px); }
+/* comic speech bubble (shared) */
+.toon-bubble{ position:relative; display:inline-block; background:#fff8ee; color:#1c0d12;
+  border:3px solid #12060a; border-radius:15px; box-shadow:4px 4px 0 #12060a;
+  padding:8px 15px; font-weight:900; font-style:italic; letter-spacing:.01em;
+  font-size:.98rem; text-transform:uppercase; line-height:1.12; }
+.toon-bubble:after{ content:""; position:absolute; left:26px; bottom:-15px; width:0; height:0;
+  border:9px solid transparent; border-top-color:#12060a; }
+.toon-bubble:before{ content:""; position:absolute; left:29px; bottom:-9px; width:0; height:0;
+  border:6px solid transparent; border-top-color:#fff8ee; z-index:1; }
+/* title mascot + greeting */
+.title-mascot{ position:absolute; right:-14px; bottom:0; width:232px; max-width:54%;
+  filter:drop-shadow(0 8px 10px #000b); pointer-events:none; z-index:2; }
+.title-hi{ position:absolute; right:118px; bottom:210px; z-index:3; transform:rotate(-5deg); pointer-events:none; }
+/* over-screen mascot + quip */
+.over-mascot{ width:150px; margin:2px 0 -6px; filter:drop-shadow(0 6px 8px #000b); }
+#over-quip{ margin:2px 0 10px; transform:rotate(-3deg); }
+/* in-play announcer (the 80s chat box) */
+#toon{ position:absolute; left:10px; bottom:150px; z-index:41; display:none;
+  align-items:flex-end; gap:2px; pointer-events:none; max-width:420px; }
+#toon.on{ display:flex; animation:toonpop .34s cubic-bezier(.2,1.5,.45,1); }
+#toon-face{ width:84px; height:auto; margin-right:-6px; margin-bottom:-2px;
+  filter:drop-shadow(0 4px 6px #000b); }
+#toon-say{ margin-bottom:20px; }
+@keyframes toonpop{ 0%{ transform:translateY(20px) scale(.55); opacity:0 } 60%{ opacity:1 } 100%{ transform:none; opacity:1 } }
 </style>
 </head>
 <body>
@@ -116,6 +162,8 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
     <button class="btn sm" id="b-shop">🛒 Shop</button>
     <button class="btn sm" id="b-how">❓ How</button>
   </div>
+  <img class="title-mascot" src="assets/ui/mascot_hero.png?v=ad1" alt="" onerror="this.style.display='none'">
+  <div class="title-hi toon-bubble">Ready to<br>stash, chief?</div>
 </div>
 
 <div class="screen" id="s-select">
@@ -128,6 +176,8 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">STASH CLEARED</h1>
   <div class="tag" id="over-sub">—</div>
+  <img id="over-mascot" class="over-mascot" src="assets/ui/mascot_roar.png?v=ad1" alt="" onerror="this.style.display='none'">
+  <div id="over-quip" class="toon-bubble">STASH SECURED!</div>
   <div id="overstats">
     <div class="chip"><b id="ov-score">0</b><span>score</span></div>
     <div class="chip"><b id="ov-grumps">0</b><span>pests</span></div>
@@ -155,6 +205,7 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
   <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
 </div>
 
+<div id="toon"><img id="toon-face" src="assets/ui/mascot_point.png?v=ad1" alt="" onerror="this.style.display='none'"><div id="toon-say" class="toon-bubble">STASH IT!</div></div>
 <div id="toast"></div>
 <div id="buildstamp"></div>
 </div></div>
@@ -275,6 +326,55 @@ function bottleSkin(){ return BOTTLES[PROG.bottle]||BOTTLES["amber-glass"]; }
 function backSkin(){ var b=BACKS[PROG.back]; if(!b||!b.top)b=BACKS.cellar; return b; }
 
 /* ============================================================
+   ART ASSETS — sprite skin over the procedural draws (graffiti squirrel).
+   Every draw guards on imgOk() and falls back to the procedural path,
+   so the game is fully playable even if an asset 404s.
+   ============================================================ */
+var ART_V="ad1", _IMG={};
+function img(p){ if(!_IMG[p]){ var im=new Image(); im.onload=_artLoaded; try{ im.src="assets/"+p+"?v="+ART_V; }catch(e){} _IMG[p]=im; } return _IMG[p]; }
+function imgOk(im){ return !!(im&&im.complete&&im.naturalWidth>0); }
+/* if the shop is open when a late asset arrives, repaint its swatches once */
+var _shopDirty=false;
+function _artLoaded(){ var s=$("s-shop"); if(s&&s.classList.contains("on")&&!_shopDirty){ _shopDirty=true;
+  setTimeout(function(){ _shopDirty=false; var ss=$("s-shop"); if(ss&&ss.classList.contains("on"))renderShop(); }, 140); } }
+var BACK_IMG={ cellar:"bg_cellar", sunset:"bg_sunset", tide:"bg_tide", amberroom:"bg_amberroom" };
+var BOTTLE_IMG={ "amber-glass":"hollow_amber", "sea-glass":"hollow_sea", "cut-crystal":"hollow_crystal", "apothecary":"hollow_apothecary" };
+var ACORN_IMG=["acorn_teal","acorn_amber","acorn_rose","acorn_wild"]; /* tone 0..3 */
+var TONE_NAME=["teal","amber","rose"];                                 /* grump/burst tone 0..2 */
+/* the delivered art skins ONLY the default Oakling tones (teal/amber/rose/gold);
+   other capsule sets keep the procedural colored tiles so colors stay consistent. */
+function usingArtSet(){ return (PROG.capset||"tonic")==="tonic"; }
+function preloadArt(){ var k,i,j,fams=["classic","sourpuss","fizzlings"];
+  for(k in BACK_IMG)img("backgrounds/"+BACK_IMG[k]+".jpg");
+  img("backgrounds/bg_title.jpg"); img("backgrounds/bg_win.jpg");
+  for(k in BOTTLE_IMG)img("sprites/"+BOTTLE_IMG[k]+".png");
+  for(i=0;i<ACORN_IMG.length;i++)img("sprites/"+ACORN_IMG[i]+".png");
+  for(i=0;i<fams.length;i++)for(j=0;j<3;j++)img("sprites/grump_"+fams[i]+"_"+TONE_NAME[j]+".png");
+  for(i=0;i<3;i++)img("fx/burst_"+TONE_NAME[i]+".png");
+  var mm=["mascot_hero","mascot_point","mascot_roar","mascot_leap","mascot_stance","mascot_peace"];
+  for(i=0;i<mm.length;i++)img("ui/"+mm[i]+".png");
+}
+
+/* ---------- mascot announcer (the 80s chat box) ---------- */
+var TOON_POSE={ hype:"mascot_point", hero:"mascot_hero", win:"mascot_roar", lose:"mascot_leap", stance:"mascot_stance", peace:"mascot_peace" };
+var QUIP_START=["STASH IT!","LET'S GO NUTS!","PACK IT TIGHT!","FOUR OR MORE!","GET CRACKIN'!"];
+var QUIP_CHAIN=["RADICAL!","NICE CRACK!","TOTALLY NUTS!","COMBO, BABY!","GNARLY!","CHAIN IT!","BOOM!"];
+var QUIP_GRUMP=["PEST BUSTED!","EAT ACORN!","GET OUTTA MY TREE!","POW!","STASHED 'EM!"];
+var QUIP_WIN=["STASH SECURED!","TUBULAR!","WINTER'S SET!","NUTS ABOUT YOU!","TOP OF THE TREE!"];
+var QUIP_LOSE=["JAMMED UP!","AW, NUTS...","SHAKE IT OFF!","RUN IT BACK!","ALMOST HAD IT!"];
+function quip(a,seed){ return a[(seed>>>0)%a.length]; }
+var _toonT=null;
+function showToon(text,mood){
+  var el=$("toon"); if(!el)return;
+  var f=$("toon-face"); if(f){ var m=TOON_POSE[mood]||"mascot_point"; f.src="assets/ui/"+m+".png?v="+ART_V; }
+  var s=$("toon-say"); if(s)s.textContent=text;
+  el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
+  if(_toonT)clearTimeout(_toonT);
+  _toonT=setTimeout(function(){ el.classList.remove("on"); }, 1700);
+}
+function hideToon(){ var el=$("toon"); if(el)el.classList.remove("on"); if(_toonT)clearTimeout(_toonT); }
+
+/* ============================================================
    CORE ENGINE — grid arrays. tone: -1 empty, 0..2 tone, 3 wild.
    kind: 0 empty, 1 grump, 2 capsule-half.  link: 0 none, 1 up,2 right,3 down,4 left
    ============================================================ */
@@ -348,7 +448,10 @@ function findMatches(){
 function markCount(mark){ var n=0,i; for(i=0;i<W*H;i++)if(mark[i])n++; return n; }
 function clearMarked(mark){
   var i, cleared=0, grumps=0;
-  for(i=0;i<W*H;i++){ if(mark[i]){ if(K[i]===1)grumps++; cleared++; T[i]=-1; K[i]=0; L[i]=0; } }
+  for(i=0;i<W*H;i++){ if(mark[i]){
+    if(K[i]===1){ grumps++;
+      if(CUR&&!CUR.synthetic&&CUR.popFx&&CUR.popFx.length<40){ var _x=i%W; CUR.popFx.push({x:_x,y:(i-_x)/W,t:(T[i]<0?0:T[i]),life:1.0}); } }
+    cleared++; T[i]=-1; K[i]=0; L[i]=0; } }
   /* relink: any half whose partner is gone becomes loose */
   for(i=0;i<W*H;i++){ if(K[i]===2&&L[i]!==0){
     var x=i%W,y=(i-x)/W, px=x,py=y, l=L[i];
@@ -502,7 +605,9 @@ function postLock(){
     CUR.score+=pts;
     CUR.caps+=r.grumps*2 + r.chains;
     CUR.grumpsLeft=countGrumps();
-    if(!CUR.synthetic){ sndFizz(Math.min(4,r.chains)); if(r.grumps>0)sndGrump(); CUR.flashT=10; }
+    if(!CUR.synthetic){ sndFizz(Math.min(4,r.chains)); if(r.grumps>0)sndGrump(); CUR.flashT=10;
+      if(r.grumps>0) showToon(quip(QUIP_GRUMP, (CUR.ticks+r.grumps)>>>0), "hype");
+      else if(r.chains>=2) showToon(quip(QUIP_CHAIN, (CUR.ticks+r.chains)>>>0), "hype"); }
   }
   var grumpWin=(CUR.mode==="service"||CUR.mode==="daily"||CUR.mode==="sprint");
   if(grumpWin && CUR.grumpsLeft===0){ doWin(); return; }
@@ -548,6 +653,9 @@ function doWin(){
   $("ov-caps").textContent=CUR.caps;
   $("over-next").style.display=(CUR.mode==="service"&&CUR.level<19)?"":"none";
   $("over-next").textContent="NEXT STASH →";
+  hideToon();
+  var _omw=$("over-mascot"); if(_omw)_omw.src="assets/ui/"+TOON_POSE.win+".png?v="+ART_V;
+  var _oqw=$("over-quip"); if(_oqw)_oqw.textContent=quip(QUIP_WIN,(CUR.score+CUR.grumpsTotal)>>>0);
   setTimeout(function(){ if(CUR&&CUR.phase==="won")show("s-over"); }, 900);
 }
 function doOver(){
@@ -559,6 +667,9 @@ function doOver(){
   $("ov-grumps").textContent=(CUR.grumpsTotal-CUR.grumpsLeft);
   $("ov-caps").textContent=CUR.caps;
   $("over-next").style.display="none";
+  hideToon();
+  var _oml=$("over-mascot"); if(_oml)_oml.src="assets/ui/"+TOON_POSE.lose+".png?v="+ART_V;
+  var _oql=$("over-quip"); if(_oql)_oql.textContent=quip(QUIP_LOSE,(CUR.score+CUR.grumpsTotal)>>>0);
   setTimeout(function(){ if(CUR&&CUR.phase==="over")show("s-over"); }, 900);
 }
 
@@ -600,16 +711,24 @@ function drawSym(c,shape,x,y,r,col,dark){
 function toneColor(t){ if(t===3)return "#f3e18a"; return toneCols()[t]||"#888"; }
 function toneShape(t){ if(t===3)return "star"; return SYM[t]||"disc"; }
 function drawPiece(c,t,px,py,cell,isGrump,linkDir){
-  var cx=px+cell/2, cy=py+cell/2, r=cell*0.30, col=toneColor(t);
-  /* capsule/pill body */
-  c.fillStyle=col; c.globalAlpha=0.16; c.fillRect(px+3,py+3,cell-6,cell-6); c.globalAlpha=1;
+  var cx=px+cell/2, cy=py+cell/2, r=cell*0.30, col=toneColor(t), baseA=c.globalAlpha;
+  /* ART SPRITE PATH — default Oakling set only (keeps tone colours consistent) */
+  if(usingArtSet()){
+    var sp;
+    if(isGrump){ sp=img("sprites/grump_"+(PROG.grump||"classic")+"_"+(TONE_NAME[t]||"teal")+".png"); }
+    else { sp=img("sprites/"+(ACORN_IMG[t]||"acorn_teal")+".png"); }
+    if(imgOk(sp)){ var pd=isGrump?0:1; try{ c.drawImage(sp,px+pd,py+pd,cell-pd*2,cell-pd*2); }catch(e){} return; }
+  }
+  /* capsule/pill body — scale every alpha by the caller's baseA so the
+     translucent ghost preview stays translucent on ALL capsets + during load */
+  c.fillStyle=col; c.globalAlpha=baseA*0.16; c.fillRect(px+3,py+3,cell-6,cell-6); c.globalAlpha=baseA;
   /* connector nub toward partner */
-  if(linkDir){ c.fillStyle=col; c.globalAlpha=0.5;
+  if(linkDir){ c.fillStyle=col; c.globalAlpha=baseA*0.5;
     if(linkDir===1)c.fillRect(cx-cell*0.16,py+1,cell*0.32,cell*0.4);
     else if(linkDir===3)c.fillRect(cx-cell*0.16,cy,cell*0.32,cell*0.4);
     else if(linkDir===2)c.fillRect(cx,cy-cell*0.16,cell*0.4,cell*0.32);
     else if(linkDir===4)c.fillRect(px+1,cy-cell*0.16,cell*0.4,cell*0.32);
-    c.globalAlpha=1; }
+    c.globalAlpha=baseA; }
   /* rounded body */
   c.fillStyle=col; c.strokeStyle="rgba(0,0,0,0.35)"; c.lineWidth=1.5;
   roundRect(c,px+4,py+4,cell-8,cell-8,isGrump?cell*0.34:cell*0.26); c.fill(); c.stroke();
@@ -632,19 +751,29 @@ function roundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x
 function render(){
   if(!CUR)return;
   var bk=backSkin(), bs=bottleSkin(), cell=PF.cell, ox=PF.ox, oy=PF.oy, x,y,i;
-  var grd=ctx.createLinearGradient(0,0,0,820); grd.addColorStop(0,rgb(bk.top)); grd.addColorStop(1,rgb(bk.bot));
-  ctx.fillStyle=grd; ctx.fillRect(0,0,540,820);
-  /* bottle neck + cork */
+  var bgi=img("backgrounds/"+(BACK_IMG[PROG.back]||"bg_cellar")+".jpg");
+  if(imgOk(bgi)){ ctx.drawImage(bgi,0,0,540,820); }
+  else { var grd=ctx.createLinearGradient(0,0,0,820); grd.addColorStop(0,rgb(bk.top)); grd.addColorStop(1,rgb(bk.bot));
+    ctx.fillStyle=grd; ctx.fillRect(0,0,540,820); }
+  /* bottle: art hollow frame (drawn on top AFTER pieces) or procedural fallback */
   var bw=W*cell, bh=H*cell;
-  ctx.fillStyle=bs.glass; ctx.fillRect(ox-6,oy-6,bw+12,bh+12);
-  ctx.strokeStyle=bs.rim; ctx.lineWidth=3; ctx.strokeRect(ox-6,oy-6,bw+12,bh+12);
-  ctx.fillStyle=bs.rim; ctx.globalAlpha=0.8;
-  ctx.fillRect(ox+cell*3-4,oy-30,cell*2+8,26); ctx.globalAlpha=1;
-  ctx.fillStyle="#c8a84b"; ctx.fillRect(ox+cell*3, oy-40, cell*2, 14);
+  var frameI=img("sprites/"+(BOTTLE_IMG[PROG.bottle]||"hollow_amber")+".png");
+  var artFrame=imgOk(frameI);
+  if(!artFrame){
+    ctx.fillStyle=bs.glass; ctx.fillRect(ox-6,oy-6,bw+12,bh+12);
+    ctx.strokeStyle=bs.rim; ctx.lineWidth=3; ctx.strokeRect(ox-6,oy-6,bw+12,bh+12);
+    ctx.fillStyle=bs.rim; ctx.globalAlpha=0.8;
+    ctx.fillRect(ox+cell*3-4,oy-30,cell*2+8,26); ctx.globalAlpha=1;
+    ctx.fillStyle="#c8a84b"; ctx.fillRect(ox+cell*3, oy-40, cell*2, 14);
+  } else {
+    /* recess tint so the play well reads as a shadowed hollow behind the frame */
+    ctx.fillStyle="rgba(6,4,12,0.30)"; ctx.fillRect(ox,oy,bw,bh);
+  }
   /* faint grid */
-  ctx.strokeStyle=bs.wall; ctx.lineWidth=1;
+  ctx.strokeStyle=bs.wall; ctx.lineWidth=1; ctx.globalAlpha=artFrame?0.42:1;
   for(x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(ox+x*cell,oy); ctx.lineTo(ox+x*cell,oy+bh); ctx.stroke(); }
   for(y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(ox,oy+y*cell); ctx.lineTo(ox+bw,oy+y*cell); ctx.stroke(); }
+  ctx.globalAlpha=1;
   /* settled pieces */
   for(y=0;y<H;y++)for(x=0;x<W;x++){ i=idx(x,y);
     if(K[i]===0)continue;
@@ -671,13 +800,32 @@ function render(){
     if(inb(p[0],p[1])) ctx.strokeRect(ox+p[0]*cell+1.5, oy+p[1]*cell+1.5, cell-3, cell-3);
     ctx.restore();
   }
+  /* burst FX on cleared pests (over pieces, under the frame) */
+  if(CUR.popFx&&CUR.popFx.length){
+    for(var pf=CUR.popFx.length-1; pf>=0; pf--){ var f=CUR.popFx[pf];
+      var sz=cell*(0.9+(1-f.life)*1.1), bx=ox+f.x*cell+cell/2, by=oy+f.y*cell+cell/2;
+      ctx.globalAlpha=Math.max(0,f.life);
+      var bi=usingArtSet()?img("fx/burst_"+(TONE_NAME[f.t]||"teal")+".png"):null;
+      if(bi&&imgOk(bi)){ try{ ctx.drawImage(bi,bx-sz/2,by-sz/2,sz,sz); }catch(e){} }
+      else { ctx.fillStyle=toneColor(f.t); ctx.beginPath(); ctx.arc(bx,by,sz*0.34,0,6.283); ctx.fill(); }
+      ctx.globalAlpha=1;
+      f.life-=0.07; if(f.life<=0)CUR.popFx.splice(pf,1);
+    }
+  }
   /* fizz flash */
   if(CUR.flashT>0){ ctx.fillStyle="rgba(255,235,150,"+(0.10*CUR.flashT/10)+")"; ctx.fillRect(ox-6,oy-6,bw+12,bh+12); }
-  /* next preview in neck area */
-  ctx.fillStyle="rgba(232,220,200,0.55)"; ctx.font="11px sans-serif"; ctx.textAlign="left";
-  ctx.fillText("next",14,oy+10);
+  /* art hollow frame on top (border + cork cap the well edges) */
+  if(artFrame){ try{ ctx.drawImage(frameI,0,0,540,820); }catch(e){} }
+  /* next preview chip (top-left neck, sits cleanly over the frame) */
+  ctx.save();
+  ctx.fillStyle="rgba(11,8,18,0.74)"; roundRect(ctx,6,oy+1,76,45,11); ctx.fill();
+  ctx.strokeStyle="rgba(200,168,75,0.55)"; ctx.lineWidth=1.5; roundRect(ctx,6,oy+1,76,45,11); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle="rgba(232,220,200,0.72)"; ctx.font="bold 9px sans-serif"; ctx.textAlign="left";
+  ctx.fillText("NEXT",12,oy+12);
   if(CUR.queue&&CUR.queue.length){ var nq=CUR.queue[0];
-    drawPiece(ctx,nq.a,10,oy+16,30,false,2); drawPiece(ctx,nq.b,40,oy+16,30,false,4); }
+    drawPiece(ctx,nq.a,10,oy+15,30,false,0); drawPiece(ctx,nq.b,44,oy+15,30,false,0); }
+  ctx.textAlign="left";
   /* win/over overlay text */
   if(CUR.phase==="won"||CUR.phase==="over"){
     ctx.fillStyle=CUR.phase==="won"?"rgba(120,220,150,0.9)":"rgba(230,120,110,0.9)";
@@ -703,8 +851,9 @@ function beginPlay(mode,arg,opts){
   $("h-stage").textContent = mode==="service" ? "Stash "+(CUR.level+1) : MODES[mode].name;
   $("h-note").textContent = mode==="zen" ? "no fail · free gather" : "match four to crack";
   updateHud(); running=true; CUR.fallAcc=0;
+  showToon(quip(QUIP_START, (CUR.seed^(CUR.level+1))>>>0), "hype");
 }
-function stopToMenu(){ running=false; CUR=null; $("hud").classList.remove("on"); $("dock").classList.remove("on"); show("s-title"); stamp(); }
+function stopToMenu(){ running=false; CUR=null; hideToon(); $("hud").classList.remove("on"); $("dock").classList.remove("on"); show("s-title"); stamp(); }
 
 function renderSelect(){
   var g=$("lvlgrid"); g.innerHTML="";
@@ -723,17 +872,33 @@ function renderSelect(){
 function drawSwatch(cv,it){
   var c=cv.getContext("2d"), Wc=cv.width, Hc=cv.height;
   c.clearRect(0,0,Wc,Hc);
-  if(it.key==="capset"){ var cols=(CAPSETS[it.id]||CAPSETS.tonic).cols, k;
+  if(it.key==="capset"){
+    if(it.id==="tonic"){ var nm=["acorn_teal","acorn_amber","acorn_rose"], kk, sz=Math.min(Hc-8,(Wc-12)/3), ok=true;
+      for(kk=0;kk<3;kk++)if(!imgOk(img("sprites/"+nm[kk]+".png")))ok=false;
+      if(ok){ for(kk=0;kk<3;kk++){ var aim=img("sprites/"+nm[kk]+".png"), axx=6+kk*((Wc-12)/3)+(((Wc-12)/3)-sz)/2;
+        try{ c.drawImage(aim,axx,(Hc-sz)/2,sz,sz); }catch(e){} } return; } }
+    var cols=(CAPSETS[it.id]||CAPSETS.tonic).cols, k;
     for(k=0;k<3;k++){ var px=8+k*((Wc-16)/3); drawPieceSwatch(c,cols[k],SYM[k],px+((Wc-16)/6),Hc/2,Math.min(Hc,(Wc-16)/3)*0.42); } }
-  else if(it.key==="bottle"){ var b=BOTTLES[it.id]; c.fillStyle=b.glass; c.fillRect(6,6,Wc-12,Hc-12);
+  else if(it.key==="bottle"){
+    var fim=img("sprites/"+(BOTTLE_IMG[it.id]||"hollow_amber")+".png");
+    if(imgOk(fim)){ var fs=Math.min((Wc-4)/540,(Hc-2)/820), fw=540*fs, fh=820*fs;
+      try{ c.drawImage(fim,(Wc-fw)/2,(Hc-fh)/2,fw,fh); }catch(e){} return; }
+    var b=BOTTLES[it.id]; c.fillStyle=b.glass; c.fillRect(6,6,Wc-12,Hc-12);
     c.strokeStyle=b.rim; c.lineWidth=3; c.strokeRect(6,6,Wc-12,Hc-12);
     c.fillStyle=b.rim; c.globalAlpha=0.8; c.fillRect(Wc/2-9,2,18,8); c.globalAlpha=1; }
-  else if(it.key==="grump"){ var g=GRUMPS[it.id], cx=Wc/2, cy=Hc/2, r=Math.min(Wc,Hc)*0.32;
+  else if(it.key==="grump"){
+    var gim=img("sprites/grump_"+it.id+"_rose.png");
+    if(imgOk(gim)){ var gz=Math.min(Wc,Hc)-6; try{ c.drawImage(gim,(Wc-gz)/2,(Hc-gz)/2,gz,gz); }catch(e){} return; }
+    var g=GRUMPS[it.id], cx=Wc/2, cy=Hc/2, r=Math.min(Wc,Hc)*0.32;
     c.fillStyle="#d76a86"; roundRect(c,cx-r,cy-r,r*2,r*2,r*0.7); c.fill();
     c.fillStyle="rgba(0,0,0,0.72)"; c.beginPath(); c.arc(cx-r*0.4,cy-r*0.1,r*0.15,0,6.283); c.fill(); c.beginPath(); c.arc(cx+r*0.4,cy-r*0.1,r*0.15,0,6.283); c.fill();
     c.strokeStyle="rgba(0,0,0,0.72)"; c.lineWidth=2; c.beginPath(); c.arc(cx,cy+r*0.6,r*0.5,3.6,5.8); c.stroke();
     if(g.brow>0){ c.beginPath(); c.moveTo(cx-r*0.6,cy-r*0.45); c.lineTo(cx-r*0.15,cy-r*0.22); c.moveTo(cx+r*0.6,cy-r*0.45); c.lineTo(cx+r*0.15,cy-r*0.22); c.lineWidth=g.brow*1.6; c.stroke(); } }
-  else { var bk=BACKS[it.id]||BACKS.cellar; var gr=c.createLinearGradient(0,0,0,Hc); gr.addColorStop(0,rgb(bk.top)); gr.addColorStop(1,rgb(bk.bot)); c.fillStyle=gr; c.fillRect(4,4,Wc-8,Hc-8); }
+  else { var bgn=BACK_IMG[it.id];
+    if(bgn){ var bim=img("backgrounds/"+bgn+".jpg");
+      if(imgOk(bim)){ var scv=Math.max((Wc-8)/540,(Hc-8)/820), iw=540*scv, ih=820*scv;
+        c.save(); c.beginPath(); c.rect(4,4,Wc-8,Hc-8); c.clip(); try{ c.drawImage(bim,(Wc-iw)/2,(Hc-ih)/2,iw,ih); }catch(e){} c.restore(); return; } }
+    var bk=BACKS[it.id]||BACKS.cellar; var gr=c.createLinearGradient(0,0,0,Hc); gr.addColorStop(0,rgb(bk.top)); gr.addColorStop(1,rgb(bk.bot)); c.fillStyle=gr; c.fillRect(4,4,Wc-8,Hc-8); }
 }
 function drawPieceSwatch(c,col,shape,x,y,r){ c.fillStyle=col; roundRect(c,x-r,y-r,r*2,r*2,r*0.5); c.fill(); drawSym(c,shape,x,y,r*0.62,"rgba(255,255,255,0.9)",true); }
 function renderShop(){
@@ -834,6 +999,7 @@ function loop(ts){
   } else if(CUR&&!CUR.synthetic&&(CUR.phase==="won"||CUR.phase==="over")){ render(); }
 }
 stamp();
+preloadArt();
 requestAnimationFrame(loop);
 
 /* ============================================================
