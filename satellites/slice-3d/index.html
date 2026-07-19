@@ -43,6 +43,18 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.92; max-width:400px; line-height:1.55; text-shadow:0 1px 8px rgba(0,0,0,0.85)}
 .btn.ff{background:linear-gradient(180deg,#8fd8f2,#3e9ecc); color:#0c2a38; border-color:#5cb8dd}
 .btn.endless{background:linear-gradient(180deg,#f2a8d8,#c04f9e); color:#2a0c22; border-color:#dd5cb8}
+.forge-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px}
+.forge-wallet{font-size:20px; font-weight:800; color:#ffd76a}
+.forge-sub{font-size:12px; color:var(--muted); line-height:1.4; margin-bottom:12px}
+#forge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.fcard{background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
+.fcard:active{transform:scale(0.97)}
+.fcard.eq{border-color:#ffd76a; box-shadow:0 0 0 1px #ffd76a inset}
+.ficon{width:120px; height:70px; max-width:100%; display:block; margin:0 auto 6px}
+.fname{font-size:13px; font-weight:700; color:var(--ink)}
+.fstat{font-size:12px; margin-top:3px; color:var(--muted)}
+#forge-toast{position:absolute; left:0; right:0; bottom:96px; text-align:center; font-size:15px; font-weight:700; color:#ffd76a; text-shadow:0 2px 8px #000c; opacity:0; pointer-events:none; transition:opacity .2s}
+#forge-toast.show{opacity:1}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f38,#171322); color:var(--ink);
   font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -113,6 +125,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-forge">&#9874; Forge</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
       </div>
     </div>
@@ -130,6 +143,15 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">6</div><div><b style="color:var(--rose)">Aim the blade at fruit</b> and it cuts. But keep the <b>handle</b> toward the walls: <b style="color:#ff6a5a">touch your blade to a wall and it sticks, and the dive is over.</b> Land <b>blade down</b> on the bullseye floor to finish, closer to the center for a bigger multiplier.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- KNIFE FORGE -->
+  <div class="screen" id="s-forge"><div class="pad">
+    <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet">&#9670; <span id="forge-bal">0</span></div></div>
+    <div class="forge-sub">Earn slivers every dive. Unlock knives and swords - each is pure style, never changes how you play.</div>
+    <div id="forge-grid"></div>
+    <div id="forge-toast"></div>
+    <button class="btn primary" id="forge-back" style="max-width:400px;margin:10px auto 0">Done</button>
   </div></div>
 
   <!-- PLAY HUD -->
@@ -168,7 +190,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v4.6";
+var BUILD="v5.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -305,25 +327,58 @@ function initGL(){
   return true;
 }
 
+var knifeBody=[];
+function km(c,e,op){ var m=new THREE.MeshLambertMaterial({color:c, emissive:e||0x000000}); if(op!=null){ m.transparent=true; m.opacity=op; } return m; }
+function kbox(w,h,d,mat,x,y,rot){ var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x||0,y||0,0); if(rot)m.rotation.z=rot; return m; }
+// standard grip (guard + handle + 3 bands); blade recipe is per-skin
+function stdGrip(woodC,bandC,guardC){
+  var o=[ kbox(0.7,2.6,0.9,km(guardC),1.75,0), kbox(3.6,1.5,0.8,km(woodC),3.9,0) ];
+  for(var i=0;i<3;i++)o.push(kbox(0.34,1.56,0.84,km(bandC),2.9+i*0.95,0));
+  return o;
+}
+function bladeMesh(w,h,d,mat){ var m=kbox(w,h,d,mat,-1.6,0); return m; }
+// each skin.make() returns body meshes (meshes[0] is the blade); blade points -x, grip +x
+var SKINS={
+  classic:{name:'Classic Chef',tier:'starter',price:0,icon:{b:'#cfd6e4',h:'#8a5a30',a:'#d8a437'},make:function(){
+    return [ bladeMesh(6.4,1.7,0.5,km(0xcfd6e4)), kbox(6.4,0.34,0.56,km(0xf4f8ff),-1.6,-0.85), kbox(1.1,1.1,0.5,km(0xcfd6e4),-5.1,-0.15,Math.PI/4) ].concat(stdGrip(0x8a5a30,0x6e4423,0xd8a437)); }},
+  cleaver:{name:'Iron Cleaver',tier:'common',price:150,icon:{b:'#9aa4b2',h:'#2a2a2e',a:'#5a5a60'},make:function(){
+    return [ bladeMesh(6.0,2.5,0.6,km(0x9aa4b2)), kbox(6.0,0.34,0.66,km(0xdfe6ef),-1.6,-1.25), kbox(0.8,3.0,1.0,km(0x3a3a40),1.9,0) ].concat([ kbox(3.2,1.5,0.9,km(0x24242a),3.9,0), kbox(0.9,1.6,0.95,km(0x111114),3.0,0), kbox(0.9,1.6,0.95,km(0x111114),4.6,0) ]); }},
+  paintbrush:{name:'Rainbow Brush',tier:'common',price:300,icon:{b:'#ff5aa8',h:'#c07a2a',a:'#ffd76a'},make:function(){
+    return [ bladeMesh(5.4,1.8,0.5,km(0xff5aa8)), kbox(1.6,2.1,0.62,km(0x8de8ff),-4.6,0), kbox(1.0,1.0,0.55,km(0xffd76a),-5.4,0,Math.PI/4) ].concat(stdGrip(0xc07a2a,0x8a561e,0xffd76a)); }},
+  katana:{name:'Midnight Katana',tier:'rare',price:500,icon:{b:'#c8d0dc',h:'#7a1420',a:'#141418'},make:function(){
+    return [ bladeMesh(7.6,0.95,0.34,km(0xc8d0dc)), kbox(7.6,0.28,0.4,km(0xffffff),-1.9,-0.5), kbox(1.2,1.2,0.42,km(0xe6ebf2),-5.9,0,Math.PI/4), kbox(0.5,2.9,1.0,km(0x141418),1.6,0) ].concat([ kbox(3.9,1.15,0.75,km(0x7a1420),4.1,0), kbox(0.28,1.2,0.8,km(0xd8a437),2.9,0), kbox(0.28,1.2,0.8,km(0xd8a437),4.0,0), kbox(0.28,1.2,0.8,km(0xd8a437),5.1,0) ]); }},
+  crystal:{name:'Crystal Shard',tier:'rare',price:800,icon:{b:'#8de8ff',h:'#dfe9ff',a:'#ffffff'},make:function(){
+    return [ bladeMesh(6.6,1.9,0.5,km(0x8de8ff,0x123a44,0.72)), kbox(6.6,0.34,0.56,km(0xffffff,0x2a5a66),-1.6,-0.95), kbox(1.2,1.2,0.5,km(0xbdf2ff,0x2a5a66),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0xbfe6ef,0x8fb8c4,0xffffff)); }},
+  gold:{name:'Golden Fortune',tier:'epic',price:1500,icon:{b:'#ffd24a',h:'#b8801e',a:'#fff2a8'},make:function(){
+    return [ bladeMesh(6.6,1.9,0.5,km(0xffd24a,0x3a2a00)), kbox(6.6,0.36,0.58,km(0xfff2a8,0x4a3800),-1.6,-0.9), kbox(1.2,1.2,0.5,km(0xffe27a,0x4a3800),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0xb8801e,0x8a5e14,0xfff2a8)); }},
+  cosmicedge:{name:'Cosmic Edge',tier:'trophy',price:-1,earn:'50 clean dives',icon:{b:'#c56bf0',h:'#3a1a5e',a:'#ff8ac2'},make:function(){
+    return [ bladeMesh(6.8,1.9,0.5,km(0xc56bf0,0x3a0a5a)), kbox(6.8,0.4,0.6,km(0xff8ac2,0x5a0a3a),-1.6,-0.9), kbox(1.3,1.3,0.5,km(0xe0a8ff,0x5a1a7a),-5.3,-0.1,Math.PI/4) ].concat(stdGrip(0x3a1a5e,0x24103a,0xff8ac2)); }},
+  starforge:{name:'Starforge Blade',tier:'support',price:-2,premium:true,icon:{b:'#bfe0ff',h:'#1a2a4e',a:'#ffe27a'},make:function(){
+    return [ bladeMesh(7.0,1.9,0.55,km(0xdfeeff,0x2a4a8a)), kbox(7.0,0.44,0.64,km(0xffffff,0x4a6aca),-1.6,-0.9), kbox(1.3,1.3,0.55,km(0xffe27a,0x6a4a00),-5.4,-0.1,Math.PI/4), kbox(0.9,3.2,1.1,km(0xffe27a,0x4a3800),1.75,0) ].concat([ kbox(3.6,1.6,0.85,km(0x1a2a4e,0x0a1a3a),3.9,0), kbox(0.36,1.7,0.9,km(0xffe27a,0x4a3800),3.0,0), kbox(0.36,1.7,0.9,km(0xffe27a,0x4a3800),4.7,0) ]); }},
+  wolffang:{name:'Wolf Fang',tier:'support',price:-2,premium:true,icon:{b:'#e8edf5',h:'#20242c',a:'#6ab0ff'},make:function(){
+    return [ bladeMesh(7.2,1.6,0.5,km(0xe8edf5,0x2a3a5a)), kbox(7.2,0.34,0.58,km(0x6ab0ff,0x1a4a8a),-1.9,-0.75), kbox(1.5,1.5,0.5,km(0xffffff,0x3a5a9a),-5.9,0.1,Math.PI/4), kbox(0.7,2.9,1.0,km(0x6ab0ff,0x1a4a8a),1.7,0) ].concat([ kbox(3.7,1.5,0.85,km(0x20242c),3.9,0), kbox(0.34,1.6,0.9,km(0x0e1014),3.0,0), kbox(0.34,1.6,0.9,km(0x0e1014),4.7,0) ]); }}
+};
+var SKIN_ORDER=['classic','cleaver','paintbrush','katana','crystal','gold','cosmicedge','starforge','wolffang'];
+// currency + ownership
+var SLIV=(function(){ try{ return parseInt(LS.g('s3d_slivers'),10)||0; }catch(e){ return 0; } })();
+var SKN=(function(){ try{ return JSON.parse(LS.g('s3d_skins'))||{owned:['classic'],equip:'classic'}; }catch(e){ return {owned:['classic'],equip:'classic'}; } })();
+if(!SKN.owned)SKN.owned=['classic']; if(SKN.owned.indexOf('classic')<0)SKN.owned.push('classic'); if(!SKN.equip)SKN.equip='classic';
+function saveSliv(){ LS.s('s3d_slivers',String(SLIV)); }
+function saveSkins(){ LS.s('s3d_skins',JSON.stringify(SKN)); }
+function ownsSkin(k){ return SKN.owned.indexOf(k)>=0; }
+function paintKnife(key){
+  if(!knife)return;
+  for(var i=0;i<knifeBody.length;i++){ knife.remove(knifeBody[i]); disposeMesh(knifeBody[i]); }
+  knifeBody=[];
+  var sk=SKINS[key]||SKINS.classic;
+  var ms=sk.make();
+  for(var j=0;j<ms.length;j++){ knife.add(ms[j]); knifeBody.push(ms[j]); }
+  blade=ms[0]||blade;
+}
+function applySkin(key){ if(!SKINS[key])return; SKN.equip=key; saveSkins(); paintKnife(key); }
 function buildKnife(){
   knife=new THREE.Group();
-  var silver=new THREE.MeshLambertMaterial({color:0xcfd6e4});
-  var bright=new THREE.MeshLambertMaterial({color:0xf4f8ff});
-  var gold=new THREE.MeshLambertMaterial({color:0xd8a437});
-  var wood=new THREE.MeshLambertMaterial({color:0x8a5a30});
-  var woodD=new THREE.MeshLambertMaterial({color:0x6e4423});
-  blade=new THREE.Mesh(new THREE.BoxGeometry(6.4,1.7,0.5), silver);
-  blade.position.x=-1.6; knife.add(blade);
-  var edge=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.34,0.56), bright);
-  edge.position.set(-1.6,-0.85,0); knife.add(edge);
-  var tip=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.1,0.5), silver);
-  tip.position.set(-5.1,-0.15,0); tip.rotation.z=Math.PI/4; knife.add(tip);
-  var guard=new THREE.Mesh(new THREE.BoxGeometry(0.7,2.6,0.9), gold);
-  guard.position.x=1.75; knife.add(guard);
-  var handle=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.5,0.8), wood);
-  handle.position.x=3.9; knife.add(handle);
-  for(var i=0;i<3;i++){ var band=new THREE.Mesh(new THREE.BoxGeometry(0.34,1.56,0.84), woodD);
-    band.position.set(2.9+i*0.95,0,0); knife.add(band); }
+  paintKnife(SKN.equip);
   trail=new THREE.Mesh(new THREE.BoxGeometry(8.2,0.24,0.22), new THREE.MeshBasicMaterial({color:0xdfe9ff, transparent:true, opacity:0}));
   trail.position.set(-1.4,-1.05,0); knife.add(trail);
   knife.scale.set(0.55,0.55,0.55); // knife reads ~3.5 units long in world space
@@ -1416,6 +1471,13 @@ function loop(ts){
 }
 
 /* ---------- finish ---------- */
+function slivPayout(){
+  var base=Math.round(G.score/45);
+  if(G.endless) base+=Math.round((G.depth||0)/4);
+  else if((G.chips||0)===0 && !G.failed) base+=30;
+  return Math.max(G.failed?6:15, base);
+}
+function awardSlivers(){ var n=slivPayout(); SLIV+=n; saveSliv(); var e=$('t-sliv'); if(e)e.textContent=SLIV; return n; }
 function failLevel(){
   var depthM=Math.round(G.depth||Math.max(0,4-G.y));
   if(G.endless){
@@ -1443,7 +1505,8 @@ function failLevel(){
     $('go-lab').textContent='the blade caught the wall';
     $('go-detail').textContent=G.slices+' sliced \u00b7 fell '+depthM+' before you stuck';
   }
-  $('go-sun').textContent='';
+  var svf=awardSlivers();
+  $('go-sun').textContent='\u25c6 +'+svf+' slivers';
   $('go-next').textContent=G.endless?'Dive Again':'Try Again';
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
   var te=$('t-ebest'); if(te)te.textContent=PROG.endlessBest||0;
@@ -1465,7 +1528,7 @@ function finishLevel(){
         el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString(); if(pr>=1)clearInterval(iv3); },33); })();
     $('go-lab').textContent='you dived the whole pit clean';
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 '+dM+'m';
-    $('go-sun').textContent='';
+    $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
     $('go-next').textContent='Dive Again';
     var te2=$('t-ebest'); if(te2)te2.textContent=PROG.endlessBest||0;
     show('s-go'); return;
@@ -1473,7 +1536,10 @@ function finishLevel(){
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
   var chips=G.chips||0, cleanBonus=0;
-  if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus; }
+  if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus;
+    PROG.cleanDives=(PROG.cleanDives||0)+1;
+    if(PROG.cleanDives>=50 && SKN.owned.indexOf('cosmicedge')<0){ SKN.owned.push('cosmicedge'); saveSkins(); }
+  }
   var bkey=(ff?'f':'l')+lvl;
   var best=PROG.best[bkey]||0, nb=G.score>best;
   if(nb){ PROG.best[bkey]=G.score; }
@@ -1511,7 +1577,8 @@ function finishLevel(){
   }
   var sb=0;
   if(sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
-  $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
+  var svw=awardSlivers();
+  $('go-sun').textContent = (sb>0?('☀ +'+sb+'   '):'')+'\u25c6 +'+svw+' slivers';
   $('t-lvl').textContent=PROG.level;
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
   show('s-go');
@@ -1555,6 +1622,45 @@ function attractLoop(ts){
 tap('b-play',function(){ newGame(PROG.level); });
 tap('b-ff',function(){ newFF(PROG.ffLevel); });
 tap('b-endless',function(){ newEndless(); });
+tap('b-forge',function(){ renderForge(); show('s-forge'); });
+tap('forge-back',function(){ show('s-title'); });
+function drawSkinIcon(sk,cvs){
+  var g=cvs.getContext('2d'), W=cvs.width, H=cvs.height, cy=H*0.5; g.clearRect(0,0,W,H);
+  g.fillStyle=sk.icon.b; g.beginPath(); g.moveTo(W*0.05,cy); g.lineTo(W*0.5,cy-H*0.22); g.lineTo(W*0.5,cy+H*0.22); g.closePath(); g.fill();
+  g.fillStyle=sk.icon.a; g.fillRect(W*0.12,cy+H*0.13,W*0.36,H*0.06);
+  g.fillStyle=sk.icon.a; g.fillRect(W*0.49,cy-H*0.3,W*0.045,H*0.6);
+  g.fillStyle=sk.icon.h; g.fillRect(W*0.56,cy-H*0.14,W*0.38,H*0.28);
+  g.fillStyle='rgba(0,0,0,0.25)'; for(var i=0;i<3;i++)g.fillRect(W*(0.62+i*0.09),cy-H*0.14,W*0.02,H*0.28);
+}
+function popupForge(msg){ var t=$('forge-toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); }
+function renderForge(){
+  var b=$('forge-bal'); if(b)b.textContent=SLIV;
+  var wrap=$('forge-grid'); if(!wrap)return; wrap.innerHTML='';
+  for(var i=0;i<SKIN_ORDER.length;i++){ (function(key){
+    var sk=SKINS[key], owned=ownsSkin(key), equipped=SKN.equip===key;
+    var card=document.createElement('div'); card.className='fcard'+(equipped?' eq':'');
+    var cv=document.createElement('canvas'); cv.width=120; cv.height=70; cv.className='ficon'; card.appendChild(cv); drawSkinIcon(sk,cv);
+    var nm=document.createElement('div'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
+    var st=document.createElement('div'); st.className='fstat';
+    if(equipped){ st.textContent='EQUIPPED'; st.style.color='#ffd76a'; }
+    else if(owned){ st.textContent='Tap to equip'; st.style.color=''; }
+    else if(sk.premium){ st.textContent='Support the Studio'; st.style.color='#f2a8d8'; }
+    else if(sk.price<0){ st.textContent=sk.earn||'Locked'; st.style.color='#8de8ff'; }
+    else { st.textContent='\u25c6 '+sk.price; st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
+    card.appendChild(st);
+    card.onclick=function(){ forgeTap(key); };
+    wrap.appendChild(card);
+  })(SKIN_ORDER[i]); }
+}
+function forgeTap(key){
+  var sk=SKINS[key];
+  if(ownsSkin(key)){ applySkin(key); renderForge(); ac(); SFX.flip(); return; }
+  if(sk.premium){ popupForge('Support the Studio to unlock this blade'); return; }
+  if(sk.price<0){ popupForge('Unlock by earning: '+(sk.earn||'special')); return; }
+  if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.stick(); popupForge(sk.name+' forged!'); }
+  else { popupForge('Need '+(sk.price-SLIV)+' more slivers'); }
+}
+window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();} };
 tap('b-how',function(){ show('s-how'); });
 tap('how-back',function(){ show('s-title'); });
 tap('b-home',function(){ running=false; show('s-title'); });
