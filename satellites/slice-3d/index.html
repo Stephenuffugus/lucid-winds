@@ -58,14 +58,14 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .combo{position:absolute; right:14px; top:calc(env(safe-area-inset-top,0px) + 74px); background:rgba(255,109,157,0.16); border:1px solid var(--rose);
   color:var(--rose); font-weight:800; font-size:15px; padding:6px 12px; border-radius:18px; z-index:25; pointer-events:none; opacity:0; transition:opacity .2s}
 .combo.on{opacity:1}
-#depthbar{position:absolute; right:8px; top:170px; bottom:170px; width:6px; background:rgba(255,255,255,0.07); border-radius:3px; z-index:25; pointer-events:none}
-#depthfill{position:absolute; left:0; top:0; width:100%; height:0%; background:linear-gradient(180deg,var(--teal),var(--gold)); border-radius:3px}
-.go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
-.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
-.stars{font-size:34px; letter-spacing:8px; margin-top:8px}
+#progbar{position:absolute; left:70px; right:70px; top:calc(env(safe-area-inset-top,0px) + 66px); height:6px; background:rgba(255,255,255,0.07); border-radius:3px; z-index:25; pointer-events:none}
+#progfill{position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--gold)); border-radius:3px}
 #pops{position:absolute; inset:0; pointer-events:none; z-index:24; overflow:hidden}
 .pop3d{position:absolute; font-weight:800; font-size:22px; text-shadow:0 2px 8px #000c; transform:translate(-50%,-50%); animation:popFloat 0.9s ease-out forwards}
 @keyframes popFloat{ 0%{opacity:0; margin-top:6px; transform:translate(-50%,-50%) scale(0.7)} 15%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} 100%{opacity:0; margin-top:-52px; transform:translate(-50%,-50%) scale(1)} }
+.go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.stars{font-size:34px; letter-spacing:8px; margin-top:8px}
 #b-music{flex:0 0 64px; font-size:20px}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
@@ -79,7 +79,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">SUPER SLICE 3D</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Fall through towers of color. Every stack you slice <b style="color:var(--rose)">splits open</b> and spills its insides. Tap left or right to flip the blade that way. Walls bounce, they never grab. Land dead center on the golden pad for the big multiplier.</div>
+    <div class="ribbon">Flip the knife along the forest counter in full 3D. <b style="color:var(--rose)">Slice the fruit</b>, it splits right open. Hop the wooden walls, spring off the mushroom caps, dodge the pink crystals, and <b style="color:var(--gold)">stick the score wall high</b> for the big multiplier.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">Level <span id="t-lvl">1</span></button>
@@ -94,10 +94,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>The blade falls on its own.</b> Tap the LEFT side of the screen to flip left, the RIGHT side to flip right. Each flip hops and steers the blade.</div></div>
-    <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice every colored stack you touch.</b> Slabs split open where the blade passes and spill their bright insides. Every slice grows your combo.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b>Grey stone cannot be cut.</b> It bounces you back up and resets the combo. Walls bounce too, and never grab the handle.</div></div>
-    <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The golden pad</b> waits at the bottom. Land in the center ring for x3 on your whole run. Deeper levels, taller towers.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. Hold to keep flipping. Resting on the ground is fine, tap to get moving again.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
+    <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH: the higher your blade lands, the bigger the multiplier on everything you cut.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -106,7 +106,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen on" id="s-play" style="display:none">
     <div class="hud"><div class="sc" id="h-score">0</div><div class="lv" id="h-lvl">LEVEL 1</div></div>
     <div class="combo" id="h-combo">x2</div>
-    <div id="depthbar"><div id="depthfill"></div></div>
+    <div id="progbar"><div id="progfill"></div></div>
     <div id="pops"></div>
     <button class="tbtn" id="b-home">&#8249;</button>
   </div>
@@ -134,7 +134,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v2.0";
+var BUILD="v3.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -148,33 +148,46 @@ var LS={ g:function(k){ try{return localStorage.getItem(k);}catch(e){return null
 var PROG=(function(){ try{ return JSON.parse(LS.g('s3d_prog'))||{level:1,best:{}}; }catch(e){ return {level:1,best:{}}; } })();
 function saveProg(){ LS.s('s3d_prog', JSON.stringify(PROG)); }
 
-/* ---------- audio ---------- */
+/* ---------- audio (the sfx Stephen loves, embellished) ---------- */
 var AC=null;
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
 var SFX={
-  _on:true,
-  slice:function(combo){ var c=ac(); if(!c)return; var t=c.currentTime;
+  slice:function(combo,base){ var c=ac(); if(!c)return; var t=c.currentTime; base=base||500;
     var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.09,c.sampleRate),d=b.getChannelData(0);
     for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);
-    n.buffer=b; var f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2600+Math.min(combo,16)*140; f.Q.value=1.2;
-    var g=c.createGain(); g.gain.setValueAtTime(0.28,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+    n.buffer=b; var f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.min(combo,16)*130; f.Q.value=1.2;
+    var g=c.createGain(); g.gain.setValueAtTime(0.26,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
     n.connect(f); f.connect(g); g.connect(c.destination); n.start(t);
     var o=c.createOscillator(),og=c.createGain(); o.type='sine';
-    o.frequency.setValueAtTime(500+Math.min(combo,16)*46,t); o.frequency.exponentialRampToValueAtTime(900+Math.min(combo,16)*60,t+0.06);
+    o.frequency.setValueAtTime(base+Math.min(combo,16)*40,t); o.frequency.exponentialRampToValueAtTime(base*1.8+Math.min(combo,16)*55,t+0.06);
     og.gain.setValueAtTime(0.12,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.1);
     o.connect(og); og.connect(c.destination); o.start(t); o.stop(t+0.11); },
   flip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(560,t+0.09);
-    g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.11); },
-  wall:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
-    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(90,t+0.08);
-    g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.11); },
-  rock:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
-    var o=c.createOscillator(),g=c.createGain(); o.type='square'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(60,t+0.14);
-    g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.18); },
+    g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.11); },
+  wood:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(95,t+0.07);
+    g.gain.setValueAtTime(0.17,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.1);
+    var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.04,c.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    n.buffer=b; var f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+    var g2=c.createGain(); g2.gain.setValueAtTime(0.12,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+    n.connect(f); f.connect(g2); g2.connect(c.destination); n.start(t); },
+  spring:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(720,t+0.16);
+    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+  zap:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(680,t); o.frequency.exponentialRampToValueAtTime(120,t+0.18);
+    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+  stick:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(60,t+0.22);
+    g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.32); },
+  tickup:function(step){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='square'; o.frequency.value=600+step*90;
+    g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.08); },
   win:function(mult){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[523,659,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
-      var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(mult>=3?1.19:1);
+      var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(mult>=5?1.19:1);
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.14,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.34);
       o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.38); })(f[i],i*0.11); } }
 };
@@ -183,16 +196,27 @@ var SFX={
 function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 
 /* =====================================================================
-   3D WORLD — a vertical shaft. The knife falls; colorful slab stacks
-   float in the shaft; slicing splits a slab at the blade's x into two
-   halves that fly apart and reveal a juicy inner color. Grey stone
-   bounces. Walls bounce (they never grab the handle). Golden finish
-   pad at the bottom with center-multiplier zones.
+   3D FOREST COUNTER — v3 (director pivot): the ORIGINAL slice-master
+   ruleset (tap = fixed hop forward with spin, settle flat when grounded,
+   slice only while moving, solid wood to hop over and land on, stick
+   the multiplier wall at the end) played LEFT TO RIGHT through a 3D
+   forest at the three-quarter camera angle. Physics mirrors
+   slice-master's proven constants, scaled from px to world units.
    ===================================================================== */
-var SW=15;            // shaft half-width
+var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
 var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null;
-var slabs=[], chunks=[], sparks=[];
+var chunks=[], sparks=[], meshes=[];
 var G=null, running=false, lastTs=0;
+
+var FRUIT=[
+  {n:'apple',      r:1.5, col:0xe5453c, inner:0xf8e9c8, pts:10, pitch:520},
+  {n:'orange',     r:1.4, col:0xf2a13c, inner:0xffd9a0, pts:10, pitch:560},
+  {n:'plum',       r:1.2, col:0x8a5ac0, inner:0xe8c8f5, pts:15, pitch:640},
+  {n:'banana',     r:1.3, col:0xf5d442, inner:0xfff2c0, pts:15, pitch:600},
+  {n:'pineapple',  r:1.9, col:0xe8b93c, inner:0xffe9a8, pts:20, pitch:440},
+  {n:'watermelon', r:2.4, col:0x4e9a4e, inner:0xff6d7e, pts:30, pitch:380}
+];
+var WOOD=0x8a5a30, WOOD_D=0x5e3c1e, LEAF=0x4e8a44, CAP=0xc46a4a, CRYSTAL=0xff8ac2;
 
 function initGL(){
   if(renderer) return true;
@@ -202,12 +226,12 @@ function initGL(){
     renderer.setPixelRatio(1);
   }catch(e){ return false; }
   scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x161226);
-  scene.fog=new THREE.Fog(0x161226, 52, 130);
-  camera=new THREE.PerspectiveCamera(55, 540/960, 0.1, 300);
-  var amb=new THREE.AmbientLight(0xffffff, 0.62); scene.add(amb);
-  var sun=new THREE.DirectionalLight(0xfff2d8, 0.85); sun.position.set(10,30,26); scene.add(sun);
-  var fill=new THREE.DirectionalLight(0x8da4ff, 0.3); fill.position.set(-14,-8,18); scene.add(fill);
+  scene.background=new THREE.Color(0x1a2416);
+  scene.fog=new THREE.Fog(0x1a2416, 40, 95);
+  camera=new THREE.PerspectiveCamera(50, 540/960, 0.1, 300);
+  var amb=new THREE.AmbientLight(0xffffff, 0.6); scene.add(amb);
+  var sun=new THREE.DirectionalLight(0xfff2d8, 0.9); sun.position.set(-14,30,24); scene.add(sun);
+  var fill=new THREE.DirectionalLight(0x9db8ff, 0.28); fill.position.set(16,8,-14); scene.add(fill);
   buildKnife();
   return true;
 }
@@ -233,285 +257,384 @@ function buildKnife(){
     band.position.set(2.9+i*0.95,0,0); knife.add(band); }
   trail=new THREE.Mesh(new THREE.BoxGeometry(8.2,0.24,0.22), new THREE.MeshBasicMaterial({color:0xdfe9ff, transparent:true, opacity:0}));
   trail.position.set(-1.4,-1.05,0); knife.add(trail);
+  knife.scale.set(0.55,0.55,0.55); // knife reads ~3.5 units long in world space
   scene.add(knife);
 }
 
-function shaftDecor(depth){
-  // Three-quarter view: the camera sits high on the +x side looking down
-  // and across, so only the FAR (left) wall and back panel are built.
-  // The near side stays open to the void; physics walls are independent.
-  var group=new THREE.Group();
-  var wallMat=new THREE.MeshLambertMaterial({color:0x241e3c});
-  var wallL=new THREE.Mesh(new THREE.BoxGeometry(2, depth+140, 26), wallMat);
-  wallL.position.set(-SW-1, -depth/2+20, -3); group.add(wallL);
-  var back=new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, depth+140, 2), new THREE.MeshLambertMaterial({color:0x1b1630}));
-  back.position.set(0, -depth/2+20, -11); group.add(back);
-  // ledge stripes down the far wall + floating depth rings for speed feel
-  var stripeMat=new THREE.MeshLambertMaterial({color:0x352c58});
-  var ringMat=new THREE.MeshLambertMaterial({color:0x2c2448});
-  for(var y=10; y>-depth-30; y-=14){
-    var sL=new THREE.Mesh(new THREE.BoxGeometry(0.7,5,24), stripeMat);
-    sL.position.set(-SW+0.1, y, -3); group.add(sL);
-    var rg=new THREE.Mesh(new THREE.BoxGeometry(SW*2+4,0.5,0.5), ringMat);
-    rg.position.set(0, y-7, 5.4); group.add(rg);
+/* ---------- level construction ---------- */
+function clearWorld(){
+  var i;
+  for(i=0;i<meshes.length;i++){ scene.remove(meshes[i]); if(meshes[i].geometry)meshes[i].geometry.dispose(); }
+  for(i=0;i<chunks.length;i++){ scene.remove(chunks[i].mesh); chunks[i].mesh.geometry.dispose(); }
+  for(i=0;i<sparks.length;i++){ scene.remove(sparks[i].mesh); }
+  meshes=[]; chunks=[]; sparks=[];
+}
+function addMesh(m){ scene.add(m); meshes.push(m); return m; }
+function woodBox(x,y,w,h){
+  var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,h,6), new THREE.MeshLambertMaterial({color:WOOD})));
+  m.position.set(x+w/2,y+h/2,0);
+  var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.3,6.2), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  top.position.set(x+w/2,y+h,0);
+  return {x:x,y:y,w:w,h:h,solid:true,spring:false};
+}
+function stump(x,h){
+  var m=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.7,2,h,10), new THREE.MeshLambertMaterial({color:WOOD})));
+  m.position.set(x,h/2,0);
+  var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,0.25,10), new THREE.MeshLambertMaterial({color:0xc9a06a})));
+  ring.position.set(x,h,0);
+  return {x:x-1.8,y:0,w:3.6,h:h,solid:true,spring:false};
+}
+function mushroom(x){
+  var st=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.9,2.2,8), new THREE.MeshLambertMaterial({color:0xe8dcc0})));
+  st.position.set(x,1.1,0);
+  var cap=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.2,12,8,0,Math.PI*2,0,Math.PI/2), new THREE.MeshLambertMaterial({color:CAP})));
+  cap.position.set(x,2.2,0);
+  return {x:x-2.1,y:0,w:4.2,h:2.9,solid:true,spring:true};
+}
+function fruitAt(x,y,f){
+  var m;
+  if(f.n==='banana'){
+    m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(f.r*2.2,f.r*0.9,f.r*0.9), new THREE.MeshLambertMaterial({color:f.col})));
+    m.rotation.z=0.4;
+  } else if(f.n==='pineapple'){
+    m=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(f.r*0.7,f.r*0.8,f.r*1.7,10), new THREE.MeshLambertMaterial({color:f.col})));
+    var lf=addMesh(new THREE.Mesh(new THREE.ConeGeometry(f.r*0.5,f.r*0.9,6), new THREE.MeshLambertMaterial({color:LEAF})));
+    lf.position.set(x,y+f.r*1.3,0);
+  } else {
+    m=addMesh(new THREE.Mesh(new THREE.SphereGeometry(f.r,14,10), new THREE.MeshLambertMaterial({color:f.col})));
+    if(f.n==='apple'||f.n==='watermelon'){ var st2=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.2,0.7,0.2), new THREE.MeshLambertMaterial({color:WOOD_D}))); st2.position.set(x,y+f.r+0.3,0); }
   }
-  return group;
-}
-
-/* kid-bright slab colors: outer face + juicy inner reveal */
-function slabColors(rng){
-  var h=rng(); var s=0.72+rng()*0.2; var l=0.52+rng()*0.1;
-  var outer=new THREE.Color(); outer.setHSL(h,s,l);
-  var inner=new THREE.Color(); inner.setHSL((h+0.06)%1, Math.min(1,s+0.15), Math.min(0.78,l+0.2));
-  return {outer:outer.getHex(), inner:inner.getHex()};
-}
-
-function makeSlab(x,y,w,colors,hard){
-  var mat = hard
-    ? new THREE.MeshLambertMaterial({color:0x6e6a7c})
-    : new THREE.MeshLambertMaterial({color:colors.outer});
-  var m=new THREE.Mesh(new THREE.BoxGeometry(w,1.7,10), mat);
   m.position.set(x,y,0);
-  scene.add(m);
-  return {mesh:m, x:x, y:y, w:w, hard:!!hard, inner:hard?0x8a8698:colors.inner, outer:hard?0x6e6a7c:colors.outer, sliced:false};
+  return {x:x,y:y,r:f.r,f:f,mesh:m,cut:false};
+}
+function crystal(x,y){
+  var m=addMesh(new THREE.Mesh(new THREE.ConeGeometry(1.1,3.2,5), new THREE.MeshLambertMaterial({color:CRYSTAL, emissive:0x551133})));
+  m.position.set(x,y+1.6,0);
+  return {x:x,y:y,w:2.2,h:3.4,mesh:m};
 }
 
 function buildLevel(lvl){
-  // wipe previous
-  var i;
-  for(i=0;i<slabs.length;i++){ scene.remove(slabs[i].mesh); slabs[i].mesh.geometry.dispose(); }
-  for(i=0;i<chunks.length;i++){ scene.remove(chunks[i].mesh); chunks[i].mesh.geometry.dispose(); }
-  for(i=0;i<sparks.length;i++){ scene.remove(sparks[i].mesh); }
-  slabs=[]; chunks=[]; sparks=[];
-  if(G&&G.decor)scene.remove(G.decor);
-  if(G&&G.pad)scene.remove(G.pad);
-
-  var rng=mulberry32(((lvl*2654435761)>>>0)^0x5A1CE);
-  var depth=130+Math.min(lvl,40)*18;
-  var decor=shaftDecor(depth); scene.add(decor);
-
-  // stacks of slabs down the shaft
-  var y=-16;
-  while(y>-depth+26){
-    var stackN=3+Math.floor(rng()*(3+Math.min(5,1+lvl*0.4)));
-    var w=9+rng()*11;
-    var cx=(rng()*2-1)*(SW-2-w/2);
-    var hardStack = lvl>=3 && rng()<Math.min(0.22, 0.06+lvl*0.012);
-    var goldStack = !hardStack && rng()<0.09;
-    if(goldStack) stackN=Math.min(stackN,2);
-    var cols=slabColors(rng);
-    for(var k=0;k<stackN;k++){
-      // each layer of a soft stack gets its own colour: cutting reveals a rainbow
-      var layerCols = hardStack ? cols : slabColors(rng);
-      var jx = hardStack ? 0 : (rng()*2-1)*0.9; // hand-stacked wobble
-      var sl = makeSlab(cx+jx, y-k*1.85, w, goldStack?{outer:0xffd76a,inner:0xfff3c0}:layerCols, hardStack);
-      if(goldStack){ sl.gold=true; sl.mesh.material.color.setHex(0xffd76a); }
-      slabs.push(sl);
-    }
-    y-=stackN*1.85 + 9 + rng()*9;
+  clearWorld();
+  var rng=mulberry32(((lvl*2654435761)>>>0)^0x51C3D);
+  var len=90+Math.min(lvl,40)*14;
+  // the mossy forest counter running the whole course
+  var g=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,3,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
+  g.position.set(len/2,-1.5,0);
+  var lip=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,0.5,14.4), new THREE.MeshLambertMaterial({color:0x557a48})));
+  lip.position.set(len/2,0,0);
+  // backdrop trees for depth
+  for(var tx=-10;tx<len+30;tx+=9+rng()*8){
+    var th=8+rng()*10;
+    var tr=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.1,th,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+    tr.position.set(tx,-1+th/2,-9-rng()*6);
+    var cr=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6+rng()*2.4,9,7), new THREE.MeshLambertMaterial({color:0x3f7a38})));
+    cr.position.set(tx,-1+th+1.5,tr.position.z);
   }
-
-  // golden finish pad with multiplier zones
-  var pad=new THREE.Group();
-  var padY=-depth;
-  var z1=new THREE.Mesh(new THREE.BoxGeometry(SW*2,2.2,10), new THREE.MeshLambertMaterial({color:0x8a6a1e}));
-  z1.position.set(0,padY,0); pad.add(z1);
-  var z2=new THREE.Mesh(new THREE.BoxGeometry(SW*1.1,2.3,10.2), new THREE.MeshLambertMaterial({color:0xd8a437}));
-  z2.position.set(0,padY+0.03,0); pad.add(z2);
-  var z3=new THREE.Mesh(new THREE.BoxGeometry(SW*0.42,2.4,10.4), new THREE.MeshLambertMaterial({color:0xffe38a}));
-  z3.position.set(0,padY+0.06,0); pad.add(z3);
-  scene.add(pad);
-
-  return {depth:depth, decor:decor, pad:pad, padY:padY};
+  var blocks=[], items=[], crystals=[];
+  var x=14;
+  var d=Math.min(1,lvl/22);
+  // Segment BAG: every level guarantees a mix (fruit runs, floating arcs,
+  // walls, steps, stumps, mushrooms, crystals) instead of luck-of-the-roll.
+  // Fruit lives at EVERY altitude so ground bouncers and high flyers both
+  // have things to slice.
+  function segBag(){
+    var bag=['ground','arc','wall','steps','stump','ground','arc'];
+    if(lvl>=2)bag.push('shroom','shroom');
+    if(lvl>=3)bag.push('crystal');
+    for(var bi=bag.length-1;bi>0;bi--){ var bj=Math.floor(rng()*(bi+1)); var bt=bag[bi]; bag[bi]=bag[bj]; bag[bj]=bt; }
+    return bag;
+  }
+  var bag=[];
+  while(x<len-14){
+    if(!bag.length)bag=segBag();
+    var seg=bag.pop();
+    if(seg==='ground'){                 // fruit run on the ground
+      var n=2+Math.floor(rng()*3);
+      for(var i=0;i<n;i++){ var f=FRUIT[Math.floor(rng()*FRUIT.length)]; items.push(fruitAt(x,f.r*0.9,f)); x+=4+rng()*2.5; }
+    } else if(seg==='arc'){             // floating fruit arc at hop height
+      var na=3+Math.floor(rng()*3);
+      var baseY=3.5+rng()*6;            // 3.5 to 9.5: one-hop and flyer height
+      for(var ia=0;ia<na;ia++){
+        var fa=FRUIT[Math.floor(rng()*FRUIT.length)];
+        var arcY=baseY+Math.sin(ia/(na-1||1)*Math.PI)*2.2;
+        items.push(fruitAt(x,arcY,fa)); x+=3.6+rng()*1.6;
+      }
+      x+=2;
+    } else if(seg==='wall'){            // wall to hop (taller with level)
+      var h=3+Math.floor(rng()*(2+d*3))*1.6;
+      blocks.push(woodBox(x,0,3.4,h));
+      var ftop=FRUIT[Math.floor(rng()*4)];
+      items.push(fruitAt(x+1.7,h+ftop.r*0.9,ftop));
+      if(rng()<0.5){ var fh=FRUIT[Math.floor(rng()*4)]; items.push(fruitAt(x+1.7,h+5+rng()*3,fh)); }
+      x+=7+rng()*3;
+    } else if(seg==='steps'){           // crate steps with fruit on top
+      var steps=2+Math.floor(rng()*2);
+      for(var s2=0;s2<steps;s2++){ blocks.push(woodBox(x,0,3.2,2.2*(s2+1))); x+=3.4; }
+      var ff=FRUIT[Math.floor(rng()*FRUIT.length)];
+      items.push(fruitAt(x-1.6,2.2*steps+ff.r*0.9,ff));
+      x+=5+rng()*3;
+    } else if(seg==='stump'){           // tree stump garden
+      var sh=2.4+rng()*2.4;
+      blocks.push(stump(x,sh));
+      var fs=FRUIT[Math.floor(rng()*FRUIT.length)];
+      items.push(fruitAt(x,sh+2.2,fs));
+      x+=6.5+rng()*2.5;
+    } else if(seg==='shroom'){          // mushroom springboard + sky fruit reward
+      blocks.push(mushroom(x));
+      var fm=FRUIT[Math.floor(rng()*FRUIT.length)];
+      items.push(fruitAt(x+4,9+rng()*4,fm));
+      x+=6+rng()*3;
+    } else {                            // pink crystal squeeze
+      crystals.push(crystal(x,0));
+      var fc=FRUIT[Math.floor(rng()*4)];
+      items.push(fruitAt(x+3.4,fc.r*0.9,fc));
+      x+=6.5+rng()*2.5;
+    }
+  }
+  // THE SCORE WALL — stick it high
+  var wallX=len+8;
+  var bands=[[1,0x8a8f9e],[2,0x4ac8b4],[3,0x5b9bd5],[5,0xc56bf0],[10,0xffd76a]];
+  for(var b2=0;b2<bands.length;b2++){
+    var bm=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3,4.6,10), new THREE.MeshLambertMaterial({color:bands[b2][1]})));
+    bm.position.set(wallX+1.5, b2*4.6+2.3, 0);
+  }
+  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,26,11), new THREE.MeshLambertMaterial({color:WOOD_D})));
+  post.position.set(wallX+3.6,13,0);
+  return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands};
 }
 
 function newGame(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   var built=buildLevel(lvl);
-  G={ lvl:lvl, depth:built.depth, decor:built.decor, pad:built.pad, padY:built.padY,
-      x:0, y:14, vx:0, vy:0, rot:0, spin:0,
-      score:0, combo:0, comboBest:0, slices:0, rocks:0,
-      done:false, doneT:0, shake:0, sbRun:0, t:0 };
-  knife.position.set(0,14,0); knife.rotation.z=0;
-  camera.position.set(4, 44, 52); // intro sweep: the chase lerp reels it in
+  G={ lvl:lvl, world:built,
+      x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
+      score:0, combo:0, comboBest:0, slices:0, taps:0,
+      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, sbRun:0 };
+  knife.position.set(G.x,G.y,0); knife.rotation.z=0;
+  camera.position.set(-10, 18, 38); // intro sweep reels in via the chase lerp
   $('h-score').textContent='0';
   $('h-lvl').textContent='LEVEL '+lvl;
   $('h-combo').classList.remove('on');
-  $('depthfill').style.height='0%';
+  $('progfill').style.width='0%';
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
 }
 
-/* ---------- input: tap left = flip left, tap right = flip right ---------- */
-function flip(dir){
+/* ---------- input: tap to flip, hold to keep flipping (original rules) ---------- */
+function doTap(){
   if(!G||G.done)return;
   ac();
-  G.vy=Math.min(G.vy+15, 15);
-  G.vx+= dir*7;
-  G.vx=Math.max(-16,Math.min(16,G.vx));
-  G.spin=dir*-11;
+  G.vy=TAPVY; G.vx=RUNVX; G.w=TAPW; G.grounded=false; G.taps++;
   SFX.flip();
 }
 $('gl').addEventListener('pointerdown', function(e){
   if(!running||!G||G.done)return;
   e.preventDefault();
-  var rect=$('gl').getBoundingClientRect();
-  var px=(e.clientX-rect.left)/rect.width;
-  flip(px<0.5?-1:1);
+  G.holding=true; G.holdT=0;
+  doTap();
 },{passive:false});
+window.addEventListener('pointerup', function(){ if(G)G.holding=false; });
+window.addEventListener('pointercancel', function(){ if(G)G.holding=false; });
 document.addEventListener('keydown',function(e){
   if(!running||!G||G.done)return;
-  if(e.key==='ArrowLeft'){ e.preventDefault(); flip(-1); }
-  else if(e.key==='ArrowRight'){ e.preventDefault(); flip(1); }
-  else if(e.key===' '){ e.preventDefault(); flip(G.vx>=0?1:-1); }
+  if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doTap(); }
 });
 
-/* score popups projected from world space onto the stage */
+/* ---------- juice ---------- */
 function popup(txt, wx, wy, color){
   if(!camera) return;
   var el=$('pops'); if(!el) return;
   var v=new THREE.Vector3(wx, wy, 0);
   v.project(camera);
   if(v.z>1) return;
-  var d=document.createElement('div');
-  d.className='pop3d';
-  d.style.left=((v.x*0.5+0.5)*540).toFixed(0)+'px';
-  d.style.top=((-v.y*0.5+0.5)*960).toFixed(0)+'px';
-  d.style.color=color||'#fff';
-  d.textContent=txt;
-  el.appendChild(d);
-  setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); }, 950);
+  var dv=document.createElement('div');
+  dv.className='pop3d';
+  dv.style.left=((v.x*0.5+0.5)*540).toFixed(0)+'px';
+  dv.style.top=((-v.y*0.5+0.5)*960).toFixed(0)+'px';
+  dv.style.color=color||'#fff';
+  dv.textContent=txt;
+  el.appendChild(dv);
+  setTimeout(function(){ if(dv.parentNode)dv.parentNode.removeChild(dv); }, 950);
 }
-
-/* ---------- slicing ---------- */
-function spawnChunk(x,y,w,inner,outer,vx,spin){
-  // half-slab with the cut face glowing in the inner colour
+function spawnChunk(x,y,w,h,inner,outer,vx,spin){
   var mats=[
-    new THREE.MeshLambertMaterial({color:outer}), // +x
-    new THREE.MeshLambertMaterial({color:outer}), // -x
-    new THREE.MeshLambertMaterial({color:outer}), // +y
-    new THREE.MeshLambertMaterial({color:inner}), // -y
-    new THREE.MeshLambertMaterial({color:inner}), // +z front shows the juicy inside
-    new THREE.MeshLambertMaterial({color:outer})  // -z
+    new THREE.MeshLambertMaterial({color:outer}),
+    new THREE.MeshLambertMaterial({color:outer}),
+    new THREE.MeshLambertMaterial({color:outer}),
+    new THREE.MeshLambertMaterial({color:inner}),
+    new THREE.MeshLambertMaterial({color:inner}),
+    new THREE.MeshLambertMaterial({color:outer})
   ];
-  // cut face = the side facing the blade
   mats[vx<0?0:1]=new THREE.MeshLambertMaterial({color:inner});
-  var m=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.8,w),1.7,10), mats);
+  var m=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.6,w),Math.max(0.6,h),Math.max(0.6,w)), mats);
   m.position.set(x,y,0);
   scene.add(m);
-  chunks.push({mesh:m, vx:vx, vy:3+Math.random()*4, vr:spin, life:1.5});
+  chunks.push({mesh:m, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
 }
 function spawnSparks(x,y,color,n){
   for(var i=0;i<n;i++){
-    var m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.55,0.55), new THREE.MeshBasicMaterial({color:color}));
-    m.position.set(x+(Math.random()*2-1)*1.4, y+(Math.random()*2-1)*0.8, 1+Math.random()*2);
+    var m=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), new THREE.MeshBasicMaterial({color:color}));
+    m.position.set(x+(Math.random()*2-1)*1, y+(Math.random()*2-1)*0.6, 1+Math.random()*2);
     scene.add(m);
-    sparks.push({mesh:m, vx:(Math.random()*2-1)*14, vy:4+Math.random()*10, vz:(Math.random()*2-1)*6, life:0.55+Math.random()*0.3});
+    sparks.push({mesh:m, vx:(Math.random()*2-1)*10, vy:4+Math.random()*8, vz:(Math.random()*2-1)*5, life:0.5+Math.random()*0.3});
   }
 }
-function sliceSlab(s){
-  s.sliced=true;
-  scene.remove(s.mesh); s.mesh.geometry.dispose();
-  var cut=Math.max(s.x-s.w/2+1, Math.min(s.x+s.w/2-1, G.x)); // blade x inside the slab
-  var lw=cut-(s.x-s.w/2), rw=(s.x+s.w/2)-cut;
-  spawnChunk(cut-lw/2-0.3, s.y, lw, s.inner, s.outer, -7-Math.random()*5, -(2+Math.random()*3));
-  spawnChunk(cut+rw/2+0.3, s.y, rw, s.inner, s.outer, 7+Math.random()*5, (2+Math.random()*3));
-  spawnSparks(cut, s.y, s.inner, s.gold?16:7);
+function sliceFruit(it){
+  it.cut=true;
+  scene.remove(it.mesh); if(it.mesh.geometry)it.mesh.geometry.dispose();
+  var f=it.f;
+  spawnChunk(it.x-f.r*0.45, it.y, f.r, f.r*1.6, f.inner, f.col, -6-Math.random()*4, -(2+Math.random()*3));
+  spawnChunk(it.x+f.r*0.45, it.y, f.r, f.r*1.6, f.inner, f.col, 6+Math.random()*4, (2+Math.random()*3));
+  spawnSparks(it.x, it.y, f.inner, 6);
   G.combo=Math.min(G.combo+1,30);
   if(G.combo>G.comboBest)G.comboBest=G.combo;
   G.slices++;
-  var pts=10*G.combo + (s.gold?60:0);
+  var pts=f.pts*Math.max(1,G.combo);
   G.score+=pts;
-  popup('+'+pts, s.x, s.y, s.gold?'#ffd76a':'#ffffff');
-  G.vy*=0.5; if(G.vy>-3)G.vy=-3;   // the satisfying knife-through-butter catch
-  G.shake=Math.min(0.2,0.08+G.combo*0.004);
-  SFX.slice(G.combo);
+  popup('+'+pts, it.x, it.y+1.5, f.n==='watermelon'?'#ff6d7e':'#ffffff');
+  G.shake=Math.min(0.22,0.08+G.combo*0.004);
+  SFX.slice(G.combo, f.pitch);
   var cEl=$('h-combo');
   if(G.combo>=2){ cEl.textContent='x'+G.combo; cEl.classList.add('on'); }
 }
-function hitRock(s){
-  G.vy=20; G.vx*=-0.4;
-  G.combo=0; G.rocks++;
+function hitCrystal(cr){
+  if(cr.hitT && G.t-cr.hitT<1)return;
+  cr.hitT=G.t;
+  G.vx=-7; G.vy=10; G.grounded=false; G.combo=0;
   $('h-combo').classList.remove('on');
   G.shake=0.3;
-  spawnSparks(G.x, G.y-1.5, 0x9a96aa, 6);
-  SFX.rock();
+  spawnSparks(cr.x, cr.y+2, CRYSTAL, 8);
+  popup('ouch', cr.x, cr.y+3, '#ff8ac2');
+  SFX.zap();
 }
 
 /* ---------- main loop ---------- */
 function loop(ts){
   if(!running)return;
   if(!lastTs)lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+  if(dt<0)dt=0; // clock hiccups (tab restore, test harnesses) never run physics backward
   G.t+=dt;
 
   if(!G.done){
-    // physics
-    G.vy-=46*dt; if(G.vy<-38)G.vy=-38;
-    G.vx*=Math.pow(0.35,dt); // air drag on steering
-    G.x+=G.vx*dt; G.y+=G.vy*dt;
-    G.spin*=Math.pow(0.14,dt);
-    G.rot+=(G.spin + (G.vy<0?-1.2:0))*dt;
-    // walls bounce, never grab
-    if(G.x<-SW+3.4){ G.x=-SW+3.4; if(G.vx<0){ G.vx=-G.vx*0.75; G.shake=0.12; spawnSparks(G.x-2,G.y,0x8da4ff,4); SFX.wall(); } }
-    if(G.x> SW-3.4){ G.x= SW-3.4; if(G.vx>0){ G.vx=-G.vx*0.75; G.shake=0.12; spawnSparks(G.x+2,G.y,0x8da4ff,4); SFX.wall(); } }
-    // slabs
-    for(var i=0;i<slabs.length;i++){
-      var s=slabs[i];
-      if(s.sliced)continue;
-      if(Math.abs(G.y-s.y)<1.9 && Math.abs(G.x-s.x)<s.w/2+2.6){
-        if(s.hard){ if(G.vy<0) hitRock(s); }
-        else sliceSlab(s);
+    // hold = keep flipping in rhythm (same rules, comfy thumb)
+    if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(); } }
+    // physics (mirrors slice-master's grounded/air split)
+    if(G.grounded){
+      G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;
+      G.w*=Math.pow(0.03,dt); if(Math.abs(G.w)<0.4)G.w=0;
+      G.ang+=G.w*dt;
+      if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*Math.min(1,dt*8); }
+    } else {
+      G.vy-=GRAV*dt;
+      G.ang+=G.w*dt; G.w*=Math.pow(0.7,dt);
+    }
+    var nx=G.x+G.vx*dt, ny=G.y+G.vy*dt;
+
+    // ground plane
+    G.grounded=false;
+    if(ny-KR<=0 && G.vy<=0){
+      ny=KR;
+      if(G.vy<-9){ G.vy=-G.vy*0.25; SFX.wood(); spawnSparks(nx,0.2,0x9aa25a,3); }
+      else { G.vy=0; G.grounded=true; }
+    }
+    // solid wood (blocks, stumps, springy mushroom caps)
+    var bl=G.world.blocks, i;
+    for(i=0;i<bl.length;i++){
+      var b=bl[i];
+      if(nx+KR>b.x && nx-KR<b.x+b.w){
+        // landing on top
+        if(G.y-KR>=b.y+b.h-0.5 && ny-KR<b.y+b.h && G.vy<=0){
+          if(b.spring){ ny=b.y+b.h+KR; G.vy=TAPVY*1.35; G.w=TAPW*1.2; G.grounded=false; SFX.spring(); spawnSparks(nx,b.y+b.h,CAP,5); popup('BOING',nx,b.y+b.h+2,'#ffb49a'); }
+          else {
+            ny=b.y+b.h+KR;
+            if(G.vy<-9){ G.vy=-G.vy*0.25; SFX.wood(); }
+            else { G.vy=0; G.grounded=true; }
+          }
+          continue;
+        }
+        // side bump: bounce back, never stick
+        if(ny+KR>b.y && ny-KR<b.y+b.h && G.vx>0 && G.x+KR<=b.x+0.6){
+          nx=b.x-KR; G.vx=-G.vx*0.35; SFX.wood(); G.shake=Math.max(G.shake,0.12); spawnSparks(b.x,ny,WOOD,4);
+        }
       }
     }
-    // finish pad
-    if(G.y<=G.padY+2.4){
-      G.y=G.padY+2.4;
-      G.done=true; G.doneT=0;
-      var ax=Math.abs(G.x);
-      G.mult = ax<SW*0.21 ? 3 : (ax<SW*0.55 ? 2 : 1);
-      G.score*=G.mult;
-      spawnSparks(G.x,G.y-1,0xffd76a,18);
-      SFX.win(G.mult);
+    G.x=Math.max(0.5,nx); G.y=ny;
+
+    var speed=Math.abs(G.vx)+Math.abs(G.vy);
+    // slicing sweep (only while genuinely moving, like the original)
+    if(speed>4){
+      var its=G.world.items;
+      for(i=0;i<its.length;i++){
+        var it=its[i]; if(it.cut)continue;
+        var dx=G.x-it.x, dy2=G.y-it.y;
+        if(dx*dx+dy2*dy2 < (it.r+KR+0.6)*(it.r+KR+0.6)) sliceFruit(it);
+      }
+      var crs=G.world.crystals;
+      for(i=0;i<crs.length;i++){
+        var cr=crs[i];
+        if(G.x+KR>cr.x-1.1 && G.x-KR<cr.x+1.1 && G.y-KR<cr.y+cr.h && G.y+KR>cr.y){ hitCrystal(cr); break; }
+      }
     }
+
+    // THE SCORE WALL — stick it and multiply
+    if(G.x+KR>=G.world.wallX && G.vx>0){
+      G.x=G.world.wallX-KR*0.4;
+      G.done=true; G.doneT=0; G.stuckY=G.y;
+      var band=Math.min(4,Math.max(0,Math.floor(G.y/4.6)));
+      G.mult=G.world.bands[band][0];
+      G.ang=0.35; G.w=0;
+      SFX.stick(); G.shake=0.35;
+      spawnSparks(G.x,G.y,0xffd76a,14);
+      popup('x'+G.mult+'!', G.x-2, G.y+2, '#ffd76a');
+    }
+
     $('h-score').textContent=G.score.toLocaleString();
-    var pct=Math.max(0,Math.min(100,(14-G.y)/(14-G.padY)*100));
-    $('depthfill').style.height=pct.toFixed(1)+'%';
+    var pct=Math.max(0,Math.min(100,G.x/G.world.wallX*100));
+    $('progfill').style.width=pct.toFixed(1)+'%';
   } else {
     G.doneT+=dt;
-    G.rot+=dt*2.4;
-    if(G.doneT>1.15){ running=false; finishLevel(); return; }
+    if(G.doneT>0.4 && !G.counted){
+      G.counted=true;
+      G.score=G.score*G.mult;
+      $('h-score').textContent=G.score.toLocaleString();
+      var st=0, target=Math.min(G.mult,8);
+      var iv=setInterval(function(){ st++; SFX.tickup(st); if(st>=target){ clearInterval(iv); } }, 90);
+      SFX.win(G.mult);
+    }
+    if(G.doneT>1.6){ running=false; finishLevel(); return; }
   }
 
-  // knife transform + spin trail glow
+  // knife transform + spin trail
   knife.position.set(G.x,G.y,0);
-  knife.rotation.z=G.rot;
-  if(trail)trail.material.opacity=Math.min(0.65, Math.abs(G.spin)*0.055);
+  knife.rotation.z=G.ang;
+  if(trail)trail.material.opacity=Math.min(0.6, Math.abs(G.w)*0.05);
 
-  // chunks fall away
-  for(var c=chunks.length-1;c>=0;c--){
+  // chunks + sparks
+  var c;
+  for(c=chunks.length-1;c>=0;c--){
     var ch=chunks[c];
     ch.vy-=40*dt; ch.mesh.position.x+=ch.vx*dt; ch.mesh.position.y+=ch.vy*dt;
     ch.mesh.rotation.z+=ch.vr*dt; ch.life-=dt;
     if(ch.life<=0){ scene.remove(ch.mesh); ch.mesh.geometry.dispose(); chunks.splice(c,1); }
   }
-  for(var p=sparks.length-1;p>=0;p--){
-    var sp=sparks[p];
-    sp.vy-=44*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
+  for(c=sparks.length-1;c>=0;c--){
+    var sp=sparks[c];
+    sp.vy-=42*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
     sp.life-=dt;
-    if(sp.life<=0){ scene.remove(sp.mesh); sparks.splice(p,1); }
+    if(sp.life<=0){ scene.remove(sp.mesh); sparks.splice(c,1); }
   }
   if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
 
-  // THREE-QUARTER CHASE CAM — high on the open side, looking down and
-  // across the shaft so slab tops and sides recede in real perspective.
-  var camT={ x:G.x*0.3+13, y:G.y+15, z:26 };
+  // THREE-QUARTER SIDE CHASE — behind and above, looking along the course
+  // so the forest counter recedes to the RIGHT with real depth.
+  var camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:23 };
   camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*4.5);
-  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*7);
-  camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4.5);
-  var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.6:0;
+  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*5);
+  camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4);
+  var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.4:0;
   camera.position.x+=kx;
-  camera.lookAt(G.x*0.3-4, G.y-7, -2);
+  camera.lookAt(G.x+5.5, Math.max(3,G.y*0.45+1.5), -1);
 
   renderer.render(scene,camera);
   requestAnimationFrame(loop);
@@ -524,13 +647,13 @@ function finishLevel(){
   if(nb){ PROG.best['l'+lvl]=G.score; }
   if(lvl>=PROG.level){ PROG.level=lvl+1; }
   saveProg();
-  var stars = G.mult>=3 ? 3 : (G.mult>=2 ? 2 : 1);
+  var stars = G.mult>=5 ? 3 : (G.mult>=2 ? 2 : 1);
   $('go-title').textContent='LEVEL '+lvl+' CLEAR';
   $('go-stars').textContent = stars===3?'★★★':(stars===2?'★★☆':'★☆☆');
   $('go-stars').style.color = stars===3?'#ffd76a':(stars===2?'#e0c37a':'#948fae');
   $('go-score').textContent=G.score.toLocaleString();
-  $('go-lab').textContent=(nb?'★ new best · ':'')+'x'+G.mult+' landing';
-  $('go-detail').textContent=G.slices+' slabs sliced · best combo x'+Math.max(1,G.comboBest);
+  $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the wall at x'+G.mult;
+  $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
   var sb=0;
   if(G.sbRun<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; G.sbRun+=sb; } }catch(e){} }
   $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
@@ -560,13 +683,15 @@ $('buildstamp').textContent='Super Slice 3D '+BUILD+' · level '+PROG.level;
 
 /* headless test hook — only with ?dev=1 */
 if(/[?&]dev=1/.test(location.search)){
-  window._S3={ newGame:newGame, flip:flip,
-    state:function(){ return G; }, slabs:function(){ return slabs; },
+  window._S3={ newGame:newGame, tap:doTap,
+    state:function(){ return G; }, world:function(){ return G?G.world:null; },
     freeze:function(){ running=false; },
-    stepN:function(n,dtms){ // manual fixed stepping while frozen
+    stepN:function(n,dtms){
       var fake=lastTs||1000;
+      var fin=false;
       running=true;
-      for(var i=0;i<n;i++){ fake+=dtms; var keep=requestAnimationFrame; window.requestAnimationFrame=function(){}; loop(fake); window.requestAnimationFrame=keep; if(!running)break; }
+      for(var i=0;i<n;i++){ fake+=dtms; var keep=requestAnimationFrame; window.requestAnimationFrame=function(){}; loop(fake); window.requestAnimationFrame=keep; if(!running){ fin=true; break; } }
+      if(!fin)running=false; // stay frozen between manual steps (no live RAF races)
     } };
 }
 
