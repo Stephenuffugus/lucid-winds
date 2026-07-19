@@ -465,10 +465,14 @@ function planAI(f){ var pair={c1:f.cur.c1,c2:f.cur.c2}; var mv=aiChooseMove(f.gr
   f.aiTarget=mv; f.aiTimer=0; f.aiStep=0; }
 function aiUpdate(f,dt){ if(f.state!=='play'||!f.cur||!f.aiTarget)return; f.aiTimer+=dt;
   var stepEvery=Math.max(45, f.react/7);
-  if(f.aiTimer>=stepEvery){ f.aiTimer=0;
-    if(f.cur.rot!==f.aiTarget.rot){ tryRotate(f,1); return; }
-    if(f.cur.c<f.aiTarget.col){ moveP(f,1); return; }
-    if(f.cur.c>f.aiTarget.col){ moveP(f,-1); return; }
+  if(f.aiTimer>=stepEvery){ f.aiTimer=0; f.aiStep++;
+    /* stuck-guard: if the target orientation/column is unreachable (blocked by a
+       tall stack) or we have dithered too long, hard-drop from here instead of
+       retrying the same blocked move forever (which used to freeze the opponent). */
+    var ok;
+    if(f.cur.rot!==f.aiTarget.rot){ ok=tryRotate(f,1); if(!ok||f.aiStep>14)hardDrop(f); return; }
+    if(f.cur.c<f.aiTarget.col){ ok=moveP(f,1); if(!ok||f.aiStep>14)hardDrop(f); return; }
+    if(f.cur.c>f.aiTarget.col){ ok=moveP(f,-1); if(!ok||f.aiStep>14)hardDrop(f); return; }
     hardDrop(f); }
 }
 
@@ -511,7 +515,7 @@ function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; M
 }
 
 var _sunToast='';
-function matchResult(result){ var st=ROSTER[MATCH.stage];
+function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   $('go-emoji').textContent = result==='win'? (st.em) : '🥀';
   $('go-title').textContent = result==='win'? 'Victory' : 'Defeat';
   $('go-lab').textContent = st.nm;
@@ -535,7 +539,7 @@ function matchResult(result){ var st=ROSTER[MATCH.stage];
   nb.style.display=hasNext?'flex':'none';
   show('s-go');
 }
-function soloResult(){ $('go-emoji').textContent='🌱'; $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
+function soloResult(){ if(_devSweep)return; $('go-emoji').textContent='🌱'; $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
   $('go-line').textContent='Best '+PROG.soloBest.toLocaleString();
   var rw=$('go-reward'); var sun=Math.min(6,Math.floor(MATCH.pf.score/1200)); var got=0; if(sun>0){ try{ if(window._sbCapEarn)got=window._sbCapEarn(sun,'chaffwars:solo')||0; }catch(e){} }
   if(got>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got+' Sunbeams'; } else rw.style.display='none';
@@ -776,6 +780,59 @@ if(/[?&]cwdev=1/.test(location.search)){
     guard=0; while(f.cur.c>mv.col && guard++<7){ if(!moveP(f,-1))break; }
     hardDrop(f); return true; }
   function pump(f,ms){ /* advance a field through resolve/drop synchronously */ var guard=0; while(f.state==='resolve'&&guard++<400){ resolveTick(f,240); } }
+  var _devSweep=false;
+  /* ---- survival-aware reference player (a competent-human proxy): builds toward
+     chains but fires 2+ readily and emergency-fires when the stack gets tall ---- */
+  var REF_K={ wPotential:52, wPotentialScore:0.02, wWaste:6, wEdgeTrigger:18,
+    wConnect:5, wBury:-8, wBump:-3, wHeight:-4, wMaxHeight:-8, wChoke:-40,
+    wGarbage:-10, wChainFire:1.0, counter:true, fireThreshold:2 };
+  function refMove(f){ if(!f||f.state!=='play'||!f.cur)return false;
+    var pair={c1:f.cur.c1,c2:f.cur.c2}, cands=enumPlacements(pair.c1,pair.c2);
+    var h=colHeights(f.grid), maxH=0, i; for(i=0;i<COLS;i++){ if(h[i]>maxH)maxH=h[i]; }
+    var danger=(h[SPAWN_COL]>=9)||(maxH>=11);
+    var best=null, bestSc=-1e18;
+    for(i=0;i<cands.length;i++){ var sp=simPlace(f.grid,cands[i].col,cands[i].rot,pair.c1,pair.c2); if(!sp)continue; var sc;
+      if(danger){ var rh=colHeights(sp.grid), mh=0, th=0, j; for(j=0;j<COLS;j++){ th+=rh[j]; if(rh[j]>mh)mh=rh[j]; }
+        sc=sp.res.score*1000 + sp.res.cleared*20 - th*3 - mh*6; }
+      else { sc=evalBoard(sp.grid,REF_K,f.colors,sp.res,f.pending); }
+      if(sc>bestSc){ bestSc=sc; best=cands[i]; } }
+    if(!best)best={col:SPAWN_COL,rot:0};
+    var g=0; while(f.cur.rot!==best.rot && g++<6){ if(!tryRotate(f,1))break; }
+    g=0; while(f.cur && f.cur.c<best.col && g++<7){ if(!moveP(f,1))break; }
+    g=0; while(f.cur && f.cur.c>best.col && g++<7){ if(!moveP(f,-1))break; }
+    if(f.cur)hardDrop(f); return true; }
+  /* ---- time-faithful full match: refMove player (own cadence) vs a pest's
+     native real-time AI. Runs the REAL update() loop so pest fall-speed and
+     reaction actually pressure the player (the basis of the difficulty ramp). ---- */
+  function playMatch(stage,seed,opts){ opts=opts||{};
+    var cadence=opts.cadence||380, maxMs=opts.maxMs||150000, dt=16;
+    window.CW_DEV.start(stage,seed);
+    MATCH.pf.gravMs=1e9;                 /* player never gravity-locks; it acts by cadence hardDrop */
+    var t=0, pAcc=cadence, guard=0, pMaxH=0, oMaxH=0, i, mh, hh;
+    while(MATCH.phase==='fight' && t<maxMs && guard++<200000){
+      update(dt); t+=dt;
+      if(MATCH.phase!=='fight')break;
+      hh=colHeights(MATCH.pf.grid); mh=0; for(i=0;i<COLS;i++)if(hh[i]>mh)mh=hh[i]; if(mh>pMaxH)pMaxH=mh;
+      if(MATCH.of){ hh=colHeights(MATCH.of.grid); mh=0; for(i=0;i<COLS;i++)if(hh[i]>mh)mh=hh[i]; if(mh>oMaxH)oMaxH=mh; }
+      if(MATCH.pf.state==='play' && MATCH.pf.cur){ pAcc+=dt; if(pAcc>=cadence){ pAcc=0; refMove(MATCH.pf); } }
+      else pAcc=cadence;
+    }
+    var res=(MATCH.phase==='done')?MATCH.result:'timeout';
+    return { stage:stage, seed:seed, result:res, pf:MATCH.pf.score, of:MATCH.of?MATCH.of.score:0,
+      ms:t, pMaxH:pMaxH, oMaxH:oMaxH, pfDead:!!MATCH.pf.dead, ofDead:MATCH.of?!!MATCH.of.dead:false }; }
+  /* ---- sweep every pest across seeds; report per-stage win-rate ---- */
+  function sweep(seeds,opts){ seeds=seeds||[1,2,3,4,5,6,7,8,9,10]; opts=opts||{};
+    _devSweep=true;                      /* suppress result-screen DOM + sunbeam grants for the rest of this probe session */
+    var rows=[], s, k, r;
+    for(s=0;s<ROSTER.length;s++){ var wins=0,to=0,sumMs=0,sumPf=0,sumOf=0,sumPH=0;
+      for(k=0;k<seeds.length;k++){ r=playMatch(s,seeds[k],opts);
+        if(r.result==='win')wins++; else if(r.result==='timeout')to++;
+        sumMs+=r.ms; sumPf+=r.pf; sumOf+=r.of; sumPH+=r.pMaxH; }
+      var n=seeds.length;
+      rows.push({ stage:s, id:ROSTER[s].id, q:ROSTER[s].q, fall:ROSTER[s].fall, startChaff:ROSTER[s].startChaff,
+        n:n, wins:wins, losses:n-wins-to, timeouts:to, winRate:+(wins/n).toFixed(2),
+        avgSec:+(sumMs/n/1000).toFixed(1), avgPf:Math.round(sumPf/n), avgOf:Math.round(sumOf/n), avgPeakH:+(sumPH/n).toFixed(1) }); }
+    return rows; }
   window.CW_DEV={
     roster:function(){ return ROSTER.map(function(s){ return {id:s.id,colors:s.colors,q:s.q,react:s.react,startChaff:s.startChaff,hcap:s.hcap}; }); },
     start:function(stage,seed){ startMatch(stage==null?0:stage,'campaign'); MATCH.phase='fight'; MATCH.pf.state='play'; MATCH.of.state='play';
@@ -828,7 +885,8 @@ if(/[?&]cwdev=1/.test(location.search)){
         var t0=perf.now(); aiChooseMove(f.grid,pair,q==null?1:q,f.colors,f.pending); var dt=perf.now()-t0; if(dt>mx)mx=dt; sum+=dt; cnt++;
         botMove(f,q==null?1:q); pump(f,0); }
       return {n:cnt, avg:+(sum/Math.max(1,cnt)).toFixed(2), max:+mx.toFixed(2)}; },
-    botMove:botMove, render:render, moveP:moveP, rotate:tryRotate, drop:hardDrop, soft:softStep };
+    botMove:botMove, render:render, moveP:moveP, rotate:tryRotate, drop:hardDrop, soft:softStep,
+    refMove:refMove, playMatch:playMatch, sweep:sweep };
 }
 })();
 </script>
