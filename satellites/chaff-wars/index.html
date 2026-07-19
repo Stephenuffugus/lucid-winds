@@ -20,11 +20,13 @@
   --gold:#e8c15a; --sprout:#7ec850; --crimson:#e0433f; --dew:#4f9ee8; --shade:#b06fe0;
   --sab:env(safe-area-inset-bottom,0px); --ch:90px; --cfs:31px; --dfs:19px; }
 body.bigctrl{ --ch:116px; --cfs:40px; --dfs:24px; }
+#b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 14px rgba(255,215,106,.4)}
+#b-bgm.playing{border-color:#ff5db1; box-shadow:0 0 0 2px rgba(255,93,177,.3),0 0 16px rgba(255,93,177,.45)}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 80% at 50% 0%, #201a10 0%, #0d0b07 70%, #000 100%)}
+  background:radial-gradient(90% 55% at 18% 0%, rgba(255,47,185,0.20), transparent 60%), radial-gradient(90% 55% at 82% 4%, rgba(47,240,224,0.15), transparent 60%), radial-gradient(120% 95% at 50% 100%, #16101e 0%, #06040a 82%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#1a1710 0%, #0f0d09 100%)}
@@ -33,9 +35,9 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #s-play .tbtn,#s-play .cbtn,#s-play #dropbtn{pointer-events:auto}
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
-.title-word{font-size:52px; line-height:1.02; font-weight:800; letter-spacing:1px;
-  background:linear-gradient(120deg,#9fe06a,#e8c15a 55%,#e0685f); -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 4px 26px rgba(180,220,120,0.14)}
+.title-word{font-size:56px; line-height:1.0; font-weight:800; letter-spacing:2px; font-style:italic; color:#ff2fb9;
+  text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(255,47,185,0.65), 0 0 42px rgba(47,240,224,0.4)}
+.title-word .w2{color:#2ff0e0; text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(47,240,224,0.65), 0 0 42px rgba(255,47,185,0.4)}
 .title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.9; max-width:410px; line-height:1.55}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
@@ -98,7 +100,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">CHAFF<br>WARS</div>
+    <div class="title-word">CHAFF<br><span class="w2">WARS</span></div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Clear falling <b style="color:var(--sprout)">seedpods</b> in groups of four or more. Set off big <b style="color:var(--gold)">chains</b> and every pop buries your rival pest in worthless grey <b>Chaff</b>. Top out and you lose the plot.</div>
     <div style="flex:1"></div>
@@ -111,6 +113,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="b-set">⚙ Settings</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
+        <button class="btn sm" id="b-bgm" title="80s beat" aria-label="Toggle 80s background beat" onclick="cwBgmToggle()">&#9835; Beat</button>
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -161,6 +164,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
     <div class="settingline"><span>Big controls</span><div class="toggle on" id="tg-big"><b></b></div></div>
     <div class="settingline"><span>Fullscreen</span><div class="toggle" id="tg-full"><b></b></div></div>
+    <div class="settingline"><span>Tag shapes <span style="color:var(--muted);font-size:11px">(color-blind aid)</span></span><div class="toggle on" id="tg-tags"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
     <button class="btn ghost sm" id="set-reset" style="max-width:400px;margin:0 auto 8px">Reset campaign progress</button>
@@ -200,8 +204,8 @@ window.addEventListener('resize',fit); window.addEventListener('orientationchang
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, big:true };
-(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; if(typeof s.big==='boolean')SET.big=s.big; }catch(e){} })();
+var SET={ sound:true, ghost:true, big:true, tags:true };
+(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; if(typeof s.big==='boolean')SET.big=s.big; if(typeof s.tags==='boolean')SET.tags=s.tags; }catch(e){} })();
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
 (function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
@@ -413,29 +417,29 @@ function pestChooseMove(f){ if(!f.cur)return {col:SPAWN_COL,rot:0};
    startChaff=rows pre-dropped on player, hcap=AI outgoing multiplier.
    ===================================================================== */
 var ROSTER=[
- {id:'aphid-swarm',    nm:'The Aphid Swarm',      em:'🐛', ac:'#7ec850', colors:4, fall:1.2, q:0.10, react:900, startChaff:0, hcap:1.00, taunt:"So many of us and so few of you.",        lose:"Squished but not sorry."},
- {id:'gnat-king-cole', nm:'Gnat King Cole',       em:'🦟', ac:'#a0c0d0', colors:4, fall:1.5, q:0.18, react:850, startChaff:0, hcap:1.00, taunt:"Care to dance before you wilt?",         lose:"That was a flat note."},
- {id:'cabbage-moth',   nm:'Mabel Cabbagewing',    em:'🦋', ac:'#e8e0cf', colors:4, fall:1.9, q:0.26, react:800, startChaff:0, hcap:1.00, taunt:"I laid my eggs in the good soil already.", lose:"Back to the porch light I go."},
- {id:'slug-slugmore',  nm:'Sir Reginald Slugmore',em:'🐌', ac:'#b0a0c8', colors:4, fall:2.3, q:0.34, react:750, startChaff:0, hcap:1.00, taunt:"I shall arrive eventually.",              lose:"How dreadfully slippery of me."},
- {id:'cutworm',        nm:'Chompers the Cutworm',  em:'🪱', ac:'#d0a070', colors:4, fall:2.8, q:0.56, react:660, startChaff:0, hcap:1.10, taunt:"Timber, little sprout.",                 lose:"I bit off more than I could chew."},
- {id:'june-beetle',    nm:'Baron von Beetle',      em:'🪲', ac:'#6ab0a0', colors:4, fall:3.4, q:0.63, react:610, startChaff:0, hcap:1.08, taunt:"Nothing dents this shell.",             lose:"Flipped on my back again."},
- {id:'garden-snail',   nm:'Escargeddon',           em:'🐌', ac:'#c08a50', colors:4, fall:4.0, q:0.57, react:600, startChaff:0, hcap:1.00, taunt:"Eat my slime trail.",                   lose:"Slow and steady lost the race."},
- {id:'crow-cawlin',    nm:'Cawlin the Crow',       em:'🐦', ac:'#7d8794', colors:4, fall:4.7, q:0.64, react:540, startChaff:0, hcap:1.05, taunt:"Caw caw, and that means checkmate.",    lose:"Fine, you keep your silly corn."},
- {id:'gopher-gustavo', nm:'Gustavo the Gopher',    em:'🦫', ac:'#b08040', colors:5, fall:5.5, q:0.71, react:480, startChaff:0, hcap:1.05, taunt:"I am already under your garden.",       lose:"Back down the hole for me."},
- {id:'deer-duchess',   nm:'Duchess Dapple',        em:'🦌', ac:'#d0b090', colors:5, fall:6.4, q:0.78, react:420, startChaff:0, hcap:1.10, taunt:"Your tulips looked delicious.",         lose:"I hear the neighbor grows hostas."},
- {id:'bindweed-lady',  nm:'Lady Bindweed',         em:'🌿', ac:'#8fbf6a', colors:5, fall:7.3, q:0.85, react:370, startChaff:0, hcap:1.15, taunt:"Let me give you one big tight hug.",     lose:"Prune me and I grow back twice."},
- {id:'powdery-mildew', nm:'Miss Mildew',           em:'🍄', ac:'#c4c4bc', colors:5, fall:8.2, q:0.92, react:310, startChaff:1, hcap:1.10, taunt:"You already look a little grey to me.",  lose:"Wiped clean, for now."},
- {id:'baron-greymould',nm:'Baron Greymould',       em:'👑', ac:'#9a9a8a', colors:5, fall:9.2, q:0.97, react:260, startChaff:2, hcap:1.25, taunt:"Soon this whole valley will be grey and quiet.", lose:"Impossible, my beautiful rot.", boss:true},
- {id:'ronin-hare',     nm:'The Ronin Hare',        em:'🐰', ac:'#e8e0d0', colors:5, fall:10.5,q:1.00, react:230, startChaff:2, hcap:1.30, taunt:"One garden, one blade, one lesson.",     lose:"A worthy harvest, Keeper.", secret:true}
+ {id:'aphid-swarm',    nm:'The Aphid Swarm',      em:'🐛', ac:'#39ff14', colors:4, fall:1.2, q:0.10, react:900, startChaff:0, hcap:1.00, taunt:"We tagged your whole block before you even woke up, homie.", lose:"Squished but not sorry."},
+ {id:'gnat-king-cole', nm:'Gnat King Cole',       em:'🦟', ac:'#2e8bff', colors:4, fall:1.5, q:0.18, react:850, startChaff:0, hcap:1.00, taunt:"Care to bust a move before you wilt, playa?", lose:"That was a flat note."},
+ {id:'cabbage-moth',   nm:'Mabel Cabbagewing',    em:'🦋', ac:'#22e0e0', colors:4, fall:1.9, q:0.26, react:800, startChaff:0, hcap:1.00, taunt:"I already laid my throwies in your good dirt, sucka.", lose:"Back to the porch light I go."},
+ {id:'slug-slugmore',  nm:'Sir Reginald Slugmore',em:'🐌', ac:'#b06fe0', colors:4, fall:2.3, q:0.34, react:750, startChaff:0, hcap:1.00, taunt:"I shall glide over here eventually, and you shall lose.", lose:"How dreadfully slippery of me."},
+ {id:'cutworm',        nm:'Chompers the Cutworm',  em:'🪱', ac:'#ff7a18', colors:4, fall:2.8, q:0.56, react:660, startChaff:0, hcap:1.10, taunt:"Timber, little sprout, I am cuttin you down.", lose:"I bit off more than I could chew."},
+ {id:'june-beetle',    nm:'Baron von Beetle',      em:'🪲', ac:'#1fc7b0', colors:4, fall:3.4, q:0.63, react:610, startChaff:0, hcap:1.08, taunt:"Nothin dents this shell, so quit frontin.", lose:"Flipped on my back again."},
+ {id:'garden-snail',   nm:'Escargeddon',           em:'🐌', ac:'#e07b3a', colors:4, fall:4.0, q:0.57, react:600, startChaff:0, hcap:1.00, taunt:"Eat my slime trail, this yard is crew territory now.", lose:"Slow and steady lost the race."},
+ {id:'crow-cawlin',    nm:'Cawlin the Crow',       em:'🐦', ac:'#2ff0e0', colors:4, fall:4.7, q:0.64, react:540, startChaff:0, hcap:1.05, taunt:"Caw caw, and that means I just served you, kid.", lose:"Fine, you keep your silly corn."},
+ {id:'gopher-gustavo', nm:'Gustavo the Gopher',    em:'🦫', ac:'#e0a03a', colors:5, fall:5.5, q:0.71, react:480, startChaff:0, hcap:1.05, taunt:"I am already under your garden, so relax and take the L.", lose:"Back down the hole for me."},
+ {id:'deer-duchess',   nm:'Duchess Dapple',        em:'🦌', ac:'#ff5c8a', colors:5, fall:6.4, q:0.78, react:420, startChaff:0, hcap:1.10, taunt:"Your tulips looked delicious, and so does this win.", lose:"I hear the neighbor grows hostas."},
+ {id:'bindweed-lady',  nm:'Lady Bindweed',         em:'🌿', ac:'#ff3bc0', colors:5, fall:7.3, q:0.85, react:370, startChaff:0, hcap:1.15, taunt:"Come get one big tight hug, then you are done, homie.", lose:"Prune me and I grow back twice."},
+ {id:'powdery-mildew', nm:'Miss Mildew',           em:'🍄', ac:'#b8a6c8', colors:5, fall:8.2, q:0.92, react:310, startChaff:1, hcap:1.10, taunt:"You already look a little grey to me, playa.", lose:"Wiped clean, for now."},
+ {id:'baron-greymould',nm:'Baron Greymould',       em:'👑', ac:'#7bff2a', colors:5, fall:9.2, q:0.97, react:260, startChaff:2, hcap:1.25, taunt:"Soon this whole valley gets buffed grey and stays real quiet.", lose:"Impossible, my beautiful rot.", boss:true},
+ {id:'ronin-hare',     nm:'The Ronin Hare',        em:'🐰', ac:'#e0433f', colors:5, fall:10.5,q:1.00, react:230, startChaff:2, hcap:1.30, taunt:"One garden, one blade, one lesson, kid.", lose:"A worthy harvest, Keeper.", secret:true}
 ];
 
 /* seedpod palette: 0..4 map to color values 1..5 */
 var PAL=[
- {bs:'#e0433f',lt:'#ff8a72',dk:'#a3241f'},  /* Crimson  */
- {bs:'#5fb03a',lt:'#9fe06a',dk:'#357a24'},  /* Sprout   */
- {bs:'#4f9ee8',lt:'#8fc8ff',dk:'#245aa3'},  /* Dewdrop  */
- {bs:'#e6b23a',lt:'#ffe07a',dk:'#a87d1c'},  /* Sunbean  */
- {bs:'#a86ad8',lt:'#d0a6ff',dk:'#6b2fa3'}   /* Nightshade */
+ {bs:'#ff3b3b',lt:'#ff8a72',dk:'#b01818'},  /* Redline (neon)  */
+ {bs:'#3be04a',lt:'#9fff6a',dk:'#1e8e2e'},  /* Toxic (neon)    */
+ {bs:'#2e8bff',lt:'#8fc8ff',dk:'#1550b0'},  /* Ice (neon)      */
+ {bs:'#ffd21a',lt:'#ffe97a',dk:'#b88a00'},  /* Voltage (neon)  */
+ {bs:'#c24bff',lt:'#e0a6ff',dk:'#7a1fc0'}   /* Ultra (neon)    */
 ];
 var CHAFF_PAL={bs:'#7a7a70',lt:'#9a9a90',dk:'#4a4a42'};
 
@@ -481,7 +485,7 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
     var colors=0; for(kk in cset)colors++;
     R.score+=10*cl*stepMult(R.chain,colors,gb); R.cleared+=cl; R.chaff+=nchf;
     SFX.pop(R.chain); if(nchf)SFX.shatter();
-    if(R.chain>=2)f.floats.push({x:0,y:0,txt:'Chain '+R.chain+'!',life:1.0,big:true,fld:f});
+    if(R.chain>=2)f.floats.push({x:0,y:0,txt:(R.chain>=5?'ILL! ':R.chain>=4?'DOPE! ':R.chain>=3?'DEF! ':'FRESH! ')+'x'+R.chain,life:1.0,big:true,fld:f});
     R.sub='pop'; R.t=0; R._chf=chf; }
   else if(R.sub==='pop'){ if(R.t>230){ var r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.pop[r][c])f.grid[r][c]=0; } f.pop=null; R.sub='grav'; R.t=0; } }
 }
@@ -491,7 +495,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score;
   var pts=R.score + f.carry; if(f.allBonus){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }
   var out=Math.floor(pts/TARGET_POINTS); f.carry=pts-out*TARGET_POINTS;
   if(f.hcap&&f.hcap!==1)out=Math.round(out*f.hcap);
-  if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CLEAR!',life:1.4,big:true,fld:f}); }
+  if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CITY!',life:1.4,big:true,fld:f}); }
   /* counter: in Tsu, offset against own pending first, remainder to opponent.
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
@@ -655,14 +659,25 @@ function gazeFor(f,r,c){ var v=f.grid[r][c]; var gx=0,gy=0.35,n=0; var nb=[[-1,0
   for(k=0;k<4;k++){ var nr=r+nb[k][0], nc=c+nb[k][1]; if(nr<0||nr>=ROWS||nc<0||nc>=COLS)continue; if(f.grid[nr][nc]===v){ gx+=nb[k][3]; gy+=nb[k][2]; n++; } }
   if(n>0){ var m=Math.sqrt(gx*gx+gy*gy)||1; return {x:gx/m,y:gy/m}; } return {x:0,y:0.35}; }
 
+/* per-color colorblind "tag shape" — star / chevron / droplet / bolt / diamond */
+function podGlyph(ci,gx,gy,gr,col){ ctx.save(); ctx.translate(gx,gy); ctx.fillStyle=col;
+  ctx.strokeStyle='rgba(12,10,6,0.9)'; ctx.lineWidth=Math.max(1,gr*0.3); ctx.lineJoin='round'; ctx.beginPath();
+  if(ci===0){ var a; for(a=0;a<8;a++){ var ang=a*Math.PI/4, rad=(a%2?gr*0.42:gr), px=Math.sin(ang)*rad, py=-Math.cos(ang)*rad; if(a===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);} ctx.closePath(); }
+  else if(ci===1){ ctx.moveTo(-gr,gr*0.5); ctx.lineTo(0,-gr*0.55); ctx.lineTo(gr,gr*0.5); ctx.lineTo(gr*0.5,gr*0.5); ctx.lineTo(0,gr*0.05); ctx.lineTo(-gr*0.5,gr*0.5); ctx.closePath(); }
+  else if(ci===2){ ctx.moveTo(0,-gr); ctx.quadraticCurveTo(gr*0.92,gr*0.25,0,gr); ctx.quadraticCurveTo(-gr*0.92,gr*0.25,0,-gr); ctx.closePath(); }
+  else if(ci===3){ ctx.moveTo(gr*0.25,-gr); ctx.lineTo(-gr*0.5,gr*0.15); ctx.lineTo(-gr*0.02,gr*0.15); ctx.lineTo(-gr*0.25,gr); ctx.lineTo(gr*0.5,-gr*0.15); ctx.lineTo(gr*0.02,-gr*0.15); ctx.closePath(); }
+  else { ctx.moveTo(0,-gr); ctx.lineTo(gr*0.8,0); ctx.lineTo(0,gr); ctx.lineTo(-gr*0.8,0); ctx.closePath(); }
+  ctx.stroke(); ctx.fill(); ctx.restore(); }
 function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
   var g=ctx.createRadialGradient(cx-r*0.32,cy-r*0.4,r*0.15,cx,cy,r*1.15); g.addColorStop(0,pal.lt); g.addColorStop(0.62,pal.bs); g.addColorStop(1,pal.dk);
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.26)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.34,r*0.2,-0.5,0,6.2832); ctx.fill();
-  if(s>=20){ var ex=r*0.36, ey=-r*0.04, er=r*0.27, gx=(gaze?gaze.x:0), gy=(gaze?gaze.y:0.35),k;
+  ctx.lineWidth=Math.max(1.5,r*0.13); ctx.strokeStyle='#0c0a06'; ctx.stroke();   /* chunky spray-throwie outline */
+  ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.32,r*0.18,-0.5,0,6.2832); ctx.fill();
+  if(s>=16 && SET.tags) podGlyph(ci,cx,cy-r*0.46,r*0.3,pal.lt);   /* colorblind tag shape (top) */
+  if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0), gy=(gaze?gaze.y:0.35),k;
     for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
       ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); }
-    ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*0.36,r*0.26,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
+    ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*0.5,r*0.22,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
   }
   if(alpha!=null)ctx.globalAlpha=1;
 }
@@ -791,7 +806,7 @@ tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot
 
 function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
-wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','big');
+wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','big'); wireToggle('tg-tags','tags');
 $('buildstamp').textContent='Chaff Wars '+BUILD;
 
 /* ---------- add to home screen ---------- */
@@ -832,6 +847,49 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
   function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
   function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
   if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
+
+/* ---------- 80s electro-funk background beat (WebAudio, no assets, offline-safe) ---------- */
+(function(){
+  var TEMPO=110, SPB=60/TEMPO/2;            /* seconds per 8th note */
+  var BASS=[110.00,110.00,146.83,110.00,130.81,130.81,164.81,146.83]; /* A-minor synth bass */
+  var LEAD=[440.00,523.25,659.25,523.25,587.33,523.25,440.00,392.00]; /* arp on top */
+  var B={on:false,master:null,timer:null,next:0,step:0,noise:null};
+  try{ B.on=localStorage.getItem('cw_bgm')==='1'; }catch(e){}
+  function noiseBuf(ctx){ if(B.noise)return B.noise; var n=Math.floor(ctx.sampleRate*0.2), buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0), i;
+    for(i=0;i<n;i++)d[i]=Math.random()*2-1; B.noise=buf; return buf; }
+  function tone(ctx,t,f,d,type,g,dest){ var o=ctx.createOscillator(),a=ctx.createGain();
+    o.type=type;o.frequency.value=f;a.gain.setValueAtTime(0,t);
+    a.gain.linearRampToValueAtTime(g,t+0.012);a.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(a);a.connect(dest);o.start(t);o.stop(t+d+0.02); }
+  function kick(ctx,t,dest){ var o=ctx.createOscillator(),a=ctx.createGain();
+    o.frequency.setValueAtTime(155,t);o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+    a.gain.setValueAtTime(1.0,t);a.gain.exponentialRampToValueAtTime(0.0001,t+0.17);
+    o.connect(a);a.connect(dest);o.start(t);o.stop(t+0.19); }
+  function noiseHit(ctx,t,dur,hp,g,dest){ var s=ctx.createBufferSource();s.buffer=noiseBuf(ctx);
+    var f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=hp; var a=ctx.createGain();
+    a.gain.setValueAtTime(g,t);a.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f);f.connect(a);a.connect(dest);s.start(t);s.stop(t+dur+0.02); }
+  function schedule(){ var ctx=ac(); if(!ctx||!B.on)return;  /* ac()=null when Sound is off -> obeys master toggle */
+    if(!B.master){B.master=ctx.createGain();B.master.gain.value=0.15;B.master.connect(ctx.destination);}
+    if(B.next<ctx.currentTime)B.next=ctx.currentTime+0.06;
+    while(B.next<ctx.currentTime+0.25){ var i=B.step%8;
+      tone(ctx,B.next,BASS[i],SPB*0.95,'sawtooth',0.55,B.master);
+      if(i%2===0)tone(ctx,B.next,LEAD[i],SPB*0.7,'square',0.15,B.master);
+      if(i%4===0)kick(ctx,B.next,B.master);                    /* kick on beats 1 & 3 */
+      if(i===4)noiseHit(ctx,B.next,0.16,1200,0.45,B.master);   /* snare backbeat */
+      noiseHit(ctx,B.next,0.03,7000,i%2?0.09:0.15,B.master);   /* hi-hats */
+      B.next+=SPB;B.step++; } }
+  function paint(){ var b=$('b-bgm'); if(b)b.classList.toggle('playing',B.on); }
+  function start(){ B.on=true; try{localStorage.setItem('cw_bgm','1');}catch(e){}
+    B.step=0;B.next=0; if(B.timer)clearInterval(B.timer); B.timer=setInterval(schedule,60); schedule(); paint(); }
+  function stop(){ B.on=false; try{localStorage.setItem('cw_bgm','0');}catch(e){}
+    if(B.timer){clearInterval(B.timer);B.timer=null;} paint(); }
+  window.cwBgmToggle=function(){ if(B.on)stop(); else start(); };
+  paint();
+  /* persisted on -> arm a one-shot gesture (mobile autoplay policy) */
+  if(B.on){ B.on=false; var k=function(){ document.removeEventListener('pointerdown',k,true); start(); };
+    document.addEventListener('pointerdown',k,true); }
 })();
 
 fit(); paintTitle(); requestAnimationFrame(loop);
