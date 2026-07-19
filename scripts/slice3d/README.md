@@ -3,7 +3,7 @@
 Headless puppeteer suites for /satellites/slice-3d/ (both modes). Run from repo root:
 
     node scripts/slice3d/bot_journey.js     # 4 Journey levels end to end (expects LOGIC OK)
-    node scripts/slice3d/bot_freefall.js    # 3 Freefall levels + 4 mechanic unit tests (expects FREEFALL OK)
+    node scripts/slice3d/bot_freefall.js    # orientation mechanic: chip/clean-bounce/cut/bonk + winnable run (expects ORIENT OK)
     node scripts/slice3d/bot_mechanics.js   # handle-bounce / blade-stick / swing slice / head-bonk (expects MECHANICS OK)
     node scripts/slice3d/bot_cycle.js       # menu-game-menu-how lifecycle (expects CYCLE OK)
     SP=/tmp node scripts/slice3d/shot_freefall.js   # screenshots to $SP

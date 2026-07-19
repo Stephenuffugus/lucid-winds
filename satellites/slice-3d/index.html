@@ -104,7 +104,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">SUPER SLICE 3D</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the canyon shaft and <b style="color:var(--gold)">stick the bullseye floor</b>. Blade first, always.</div>
+    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the pit, keep the <b>handle</b> off the walls, and <b style="color:var(--gold)">stick the bullseye floor</b> blade down.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
@@ -124,7 +124,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
-    <div class="helprow"><div class="hi">5</div><div><b style="color:#8fd8f2">Freefall mode</b> drops you down a canyon shaft. Tap the LEFT or RIGHT side of the screen to steer, slice everything on the way down, then land <b>blade first</b> on the bullseye floor. The closer to the center, the bigger the multiplier.</div></div>
+    <div class="helprow"><div class="hi">5</div><div><b style="color:#8fd8f2">Freefall mode</b> drops you down a deep pit. Hold the LEFT or RIGHT side of the screen to drift that way and flip the knife. The walls bounce you back and forth.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b style="color:var(--rose)">Aim the blade at fruit</b> and it cuts. But keep the <b>handle</b> toward the walls: touch your blade to a wall and it chips, and your combo is gone. Land <b>blade down</b> on the bullseye floor to finish, closer to the center for a bigger multiplier.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -210,6 +211,11 @@ var SFX={
   spring:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(720,t+0.16);
     g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+  chip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(90,t+0.16);
+    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.19); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.2);
+    var o2=c.createOscillator(),g2=c.createGain(); o2.type='square'; o2.frequency.setValueAtTime(1400,t); o2.frequency.exponentialRampToValueAtTime(300,t+0.08);
+    g2.gain.setValueAtTime(0.05,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.1); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.11); },
   zap:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(680,t); o.frequency.exponentialRampToValueAtTime(120,t+0.18);
     g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
@@ -246,6 +252,9 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
    slice-master's proven constants, scaled from px to world units.
    ===================================================================== */
 var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
+// Freefall tuning: gentle fall so you have time to aim the blade; hold a side
+// to STEER and FLIP, release to settle the spin and hold your orientation
+var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
 var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null, kshadow=null;
 var chunks=[], sparks=[], meshes=[];
 var sbSession=0; // sunbeams earned this play session; 12/run cap must persist across levels
@@ -860,7 +869,7 @@ function newFF(lvl){
   var bn=$('lvlbanner');
   if(bn){ bn.textContent='FREEFALL '+lvl; bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
   var co=$('coach');
-  if(co){ co.textContent='TAP LEFT OR RIGHT TO STEER!'; co.style.display=(lvl===1)?'block':'none'; }
+  if(co){ co.textContent='HOLD A SIDE TO STEER AND FLIP'; co.style.display=(lvl===1)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
@@ -871,14 +880,10 @@ function doTap(side){
   if(!G||G.done)return;
   ac();
   if(G.mode==='ff'){
-    // record steering intent BEFORE the cooldown gate, so a held button that
-    // changes sides mid-fall steers the new way (not the stale one)
-    if(side)G.lastSide=side;
-    // cooldown: hold sustains flips but never spam-climbs the shaft
-    if(G.t-(G.lastTapT||-9)<0.24)return;
-    G.lastTapT=G.t;
-    var sd=G.lastSide||1;
-    G.vy=7.2; G.vx=sd*8; G.w=TAPW*sd; G.grounded=false; G.taps++;
+    // continuous hold physics does the steering + flipping; doTap only records
+    // the pressed side and counts the tap (coach dismiss below)
+    if(side){ G.lastSide=side; G.hold=side; }
+    G.taps++;
   } else {
     G.vy=TAPVY; G.vx=RUNVX; G.w=TAPW; G.grounded=false; G.taps++;
   }
@@ -890,16 +895,21 @@ $('gl').addEventListener('pointerdown', function(e){
   e.preventDefault();
   var side=1;
   try{ var rc=$('gl').getBoundingClientRect(); side=((e.clientX-rc.left)/rc.width)<0.5?-1:1; }catch(err){}
-  G.holding=true; G.holdT=0;
+  G.holding=true; G.holdT=0; G.hold=side; G.lastSide=side;
   doTap(side);
 },{passive:false});
-window.addEventListener('pointerup', function(){ if(G)G.holding=false; });
-window.addEventListener('pointercancel', function(){ if(G)G.holding=false; });
+window.addEventListener('pointerup', function(){ if(G){ G.holding=false; G.hold=0; } });
+window.addEventListener('pointercancel', function(){ if(G){ G.holding=false; G.hold=0; } });
 document.addEventListener('keydown',function(e){
   if(!running||!G||G.done)return;
-  if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doTap(G.lastSide); }
-  else if(e.key==='ArrowLeft'){ e.preventDefault(); doTap(-1); }
-  else if(e.key==='ArrowRight'){ e.preventDefault(); doTap(1); }
+  if(e.key==='ArrowLeft'){ e.preventDefault(); G.hold=-1; G.holding=true; G.lastSide=-1; doTap(-1); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); G.hold=1; G.holding=true; G.lastSide=1; doTap(1); }
+  else if(e.key===' '||e.key==='ArrowUp'){ e.preventDefault(); doTap(G.lastSide); }
+});
+document.addEventListener('keyup',function(e){
+  if(!G)return;
+  if(e.key==='ArrowLeft' && G.hold===-1){ G.hold=0; G.holding=false; }
+  else if(e.key==='ArrowRight' && G.hold===1){ G.hold=0; G.holding=false; }
 });
 
 /* ---------- juice ---------- */
@@ -997,6 +1007,43 @@ function hitCrystal(cr){
   popup('ouch', cr.x, cr.y+3, '#ff8ac2');
   SFX.zap();
 }
+/* Freefall wall contact: handle bounces clean, BLADE chips (the thing to avoid) */
+function ffWall(x,y,dir){
+  // dir -1 = left wall (normal points +x), +1 = right wall (normal points -x)
+  var bladeX=-Math.cos(G.ang);
+  var bladeIntoWall = dir<0 ? (bladeX < -0.35) : (bladeX > 0.35);
+  var away = -dir; // +1 = push right off the left wall, -1 = push left off the right wall
+  if(bladeIntoWall){
+    // CHIP: combo lost, hard knockback, spun by the impact
+    G.combo=0; var cEl=$('h-combo'); if(cEl)cEl.classList.remove('on');
+    G.vx = away*9;
+    G.vy = Math.min(G.vy,-3);
+    G.w += away*8;
+    G.chips=(G.chips||0)+1;
+    G.shake=Math.max(G.shake,0.32);
+    SFX.chip();
+    spawnSparks(x,y,0xff5a4a,11);
+    popup('CHIP!', x-1, y+2, '#ff6a5a');
+    if(!G.chipCoached){ G.chipCoached=true; popup('handle off the walls', x+away*2-2, y+4.6, '#ffd76a'); }
+  } else {
+    // clean handle bounce
+    var sp=Math.abs(G.vx)*0.72; if(sp<3.4)sp=3.4;
+    G.vx = away*sp;
+    G.shake=Math.max(G.shake,0.1);
+    SFX.wood();
+    spawnSparks(x,y,WOOD,4);
+  }
+}
+/* Freefall handle-on-fruit: a wasted hit, the fruit is bonked away uncut */
+function ffBonk(it){
+  it.cut=true;
+  if(it.mesh){ if(it.mesh.parent)it.mesh.parent.remove(it.mesh); else scene.remove(it.mesh); disposeMesh(it.mesh); }
+  spawnSparks(it.x, it.y, 0xbfae8a, 5);
+  popup('bonk', it.x, it.y+1.2, '#c8bfa8');
+  SFX.wood();
+  G.vx += (G.x<it.x? -2 : 2);
+  G.shake=Math.max(G.shake,0.1);
+}
 
 /* ---------- main loop ---------- */
 function loop(ts){
@@ -1006,17 +1053,33 @@ function loop(ts){
   G.t+=dt;
 
   if(!G.done){
-    // hold = keep flipping in rhythm (same rules, comfy thumb)
-    if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); } }
-    // physics (mirrors slice-master's grounded/air split)
-    if(G.grounded){
-      G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;
-      G.w*=Math.pow(0.03,dt); if(Math.abs(G.w)<0.4)G.w=0;
-      G.ang+=G.w*dt;
-      if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*Math.min(1,dt*8); }
+    if(G.mode==='ff'){
+      // FREEFALL: hold a side to STEER across the pit and FLIP the blade;
+      // release to settle the spin so your orientation holds while you aim
+      var hd = G.holding ? (G.hold||G.lastSide||0) : 0;
+      G.vy -= GRAV_FF*dt; if(G.vy < -FF_TERM) G.vy = -FF_TERM;
+      if(hd!==0){
+        G.vx += hd*FF_STEER*dt;
+        G.w  += hd*FF_SPIN*dt;
+        if(G.w>FF_MAXW)G.w=FF_MAXW; if(G.w<-FF_MAXW)G.w=-FF_MAXW;
+      } else {
+        G.w *= Math.pow(0.1,dt);        // settle spin -> aimable orientation
+      }
+      G.vx *= Math.pow(0.5,dt);          // horizontal drag keeps drift in control
+      G.ang += G.w*dt;
     } else {
-      G.vy-=GRAV*dt;
-      G.ang+=G.w*dt; G.w*=Math.pow(0.7,dt);
+      // hold = keep flipping in rhythm (same rules, comfy thumb)
+      if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); } }
+      // physics (mirrors slice-master's grounded/air split)
+      if(G.grounded){
+        G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;
+        G.w*=Math.pow(0.03,dt); if(Math.abs(G.w)<0.4)G.w=0;
+        G.ang+=G.w*dt;
+        if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*Math.min(1,dt*8); }
+      } else {
+        G.vy-=GRAV*dt;
+        G.ang+=G.w*dt; G.w*=Math.pow(0.7,dt);
+      }
     }
     var nx=G.x+G.vx*dt, ny=G.y+G.vy*dt;
 
@@ -1033,35 +1096,13 @@ function loop(ts){
     G.grounded=false;
     var bl=G.world.blocks, i, b;
     if(G.mode==='ff'){
-      // terminal velocity down the shaft
-      if(G.vy<-34)G.vy=-34;
-      // canyon side walls: ALWAYS bounce, never stick (the Freefall promise)
+      // canyon side walls: ALWAYS bounce you back into the pit. Handle contact
+      // bounces clean; BLADE contact CHIPS (combo lost) -> keep the handle out
       var SW=G.world.SW;
-      if(nx-KR<-SW){ nx=-SW+KR; G.vx=-G.vx*0.72; SFX.wood(); G.shake=Math.max(G.shake,0.1); spawnSparks(-SW,ny,WOOD,4); }
-      else if(nx+KR>SW){ nx=SW-KR; G.vx=-G.vx*0.72; SFX.wood(); G.shake=Math.max(G.shake,0.1); spawnSparks(SW,ny,WOOD,4); }
-      // shelves: land on top, bonk the underside, bump either side
-      for(i=0;i<bl.length;i++){
-        b=bl[i];
-        if(nx+KR>b.x && nx-KR<b.x+b.w){
-          if(G.y-KR>=b.y+b.h-0.5 && ny-KR<=b.y+b.h && G.vy<=0){
-            if(b.spring){ ny=b.y+b.h+KR; G.vy=15; G.w=TAPW*1.2; G.grounded=false; SFX.spring(); spawnSparks(nx,b.y+b.h,CAP,5); popup('BOING',nx,b.y+b.h+2,'#ffb49a'); }
-            else {
-              ny=b.y+b.h+KR;
-              if(G.vy<-9){ G.vy=-G.vy*0.25; SFX.wood(); }
-              else { if(G.vy<-2.5)SFX.land(); G.vy=0; G.grounded=true; }
-            }
-            continue;
-          }
-          if(G.vy>0 && G.y+KR<=b.y+0.4 && ny+KR>b.y){
-            ny=b.y-KR; G.vy=-2.5; SFX.wood(); G.shake=Math.max(G.shake,0.08);
-            continue;
-          }
-          if(ny+KR>b.y && ny-KR<b.y+b.h){
-            if(G.vx>0 && G.x+KR<=b.x+0.6){ nx=b.x-KR; G.vx=-G.vx*0.5; SFX.wood(); }
-            else if(G.vx<0 && G.x-KR>=b.x+b.w-0.6){ nx=b.x+b.w+KR; G.vx=-G.vx*0.5; SFX.wood(); }
-          }
-        }
-      }
+      if(nx-KR<-SW){ nx=-SW+KR; ffWall(nx,ny,-1); }
+      else if(nx+KR>SW){ nx=SW-KR; ffWall(nx,ny,1); }
+      // shelves/brackets in the pit are pass-through fruit mounts, so the dive
+      // never stalls; the only things you land on is the floor at the bottom
       // THE BULLSEYE FLOOR — blade down STICKS, handle bounces you back up
       if(ny-KR<=G.world.floorY && G.vy<=0){
         var bladeY=-Math.sin(G.ang);
@@ -1131,7 +1172,13 @@ function loop(ts){
       for(i=0;i<its.length;i++){
         var it=its[i]; if(it.cut)continue;
         var dx=G.x-it.x, dy2=G.y-it.y;
-        if(dx*dx+dy2*dy2 < (it.r+KR+0.6)*(it.r+KR+0.6)) sliceFruit(it);
+        if(dx*dx+dy2*dy2 < (it.r+KR+0.6)*(it.r+KR+0.6)){
+          if(G.mode==='ff'){
+            // the blade must face the fruit; a handle hit just bonks it away
+            var bX=-Math.cos(G.ang), bY=-Math.sin(G.ang);
+            if((it.x-G.x)*bX + (it.y-G.y)*bY > 0) sliceFruit(it); else ffBonk(it);
+          } else sliceFruit(it);
+        }
       }
       var crs=G.world.crystals;
       for(i=0;i<crs.length;i++){
@@ -1344,6 +1391,7 @@ startAttract();
 /* headless test hook — only with ?dev=1 */
 if(/[?&]dev=1/.test(location.search)){
   window._S3={ newGame:newGame, newFF:newFF, tap:doTap,
+    hold:function(side){ if(G){ G.hold=side||0; G.holding=(side!==0&&side!=null); if(side)G.lastSide=side; } },
     state:function(){ return G; }, world:function(){ return G?G.world:null; },
     freeze:function(){ running=false; },
     stepN:function(n,dtms){
