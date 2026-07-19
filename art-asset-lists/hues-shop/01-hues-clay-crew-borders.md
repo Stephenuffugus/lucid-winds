@@ -1,0 +1,18 @@
+<!-- Hues · Sheet 1: CLAY CREW borders — 8 claymation critter frames for the Border Shop -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — "Clay Crew" (Hues / Sky Wolf Studios color-matching game). Hand-squished plasticine in the Aardman tradition: soft studio light from upper-left, visible thumbprints and fingernail dents, slightly uneven sausage-rolled clay coils, tiny accidental smudges where colors got worked together, matte with the faintest waxy sheen. Warm, goofy, kid-thumbed, museum-of-a-six-year-old energy. Every border is a RECTANGULAR PICTURE FRAME (landscape, about 460x330 inside its cell, with a fully EMPTY transparent center window) built from clay, with a small clay CRITTER hugging one or two corners — the critters are the stars. Colors must sing against Hues' near-black charcoal UI (#0a0a0c): butter yellow #f2d06b, tomato #e0584a, sky #6fb5e0, leaf #74b862, plum #9a6fc4, cream #efe6d4, terracotta #c47a52, blush #e59aa8. NO text, letters, numbers, logos or watermarks anywhere. Compress under 150KB.
+
+Create one sprite sheet. File: hues_clay_borders.png. Grid: 4 columns x 2 rows (8 cells, left-to-right, top-to-bottom). Cell: 512x512. Master: 2048x1024.
+
+KNOCKOUT: Flat magenta #FF00FF fills the entire background of every cell AND the empty center window of every frame. NO magenta or hot pink anywhere inside the art (keep blush #e59aa8 clearly warmer and greyer than #FF00FF). Frames are 9-SLICE-SAFE: keep each rail an even thickness (about 46px) along every edge, all personality in the CORNERS, rails simple and repeatable — the engine stretches the rails to fit different swatch sizes. One critter per frame maximum of two corners occupied; critters may overlap the rail outward but never inward past the window edge.
+
+BORDERS (cells 1-8):
+1. border_clay_frog — "Frog Prince" (Common 300): a squat butter-and-leaf clay frame with coil-rolled rails; a fat leaf-green frog sits on the top-left corner, throat bubble mid-puff, googly clay eyes looking INTO the window (at the player's color).
+2. border_clay_worm — "Inchworm Inn" (Common 350): terracotta rails with thumbprint texture; a cheerful plum inchworm arches over the top rail like a handle, tiny clay flag stuck in the bottom-right corner.
+3. border_clay_snail — "Slow Loop" (Uncommon 800): cream rails with a subtle pressed-spiral pattern; a snail with a two-tone shell (tomato + butter swirl) rides the bottom-right corner, glossy clay slime trail along the bottom rail.
+4. border_clay_ladybug — "Lucky Spots" (Uncommon 900): leaf-green rails flecked with tiny clay grass blades; a chunky ladybug with uneven hand-cut spots grips the top-right corner, one wing case slightly open.
+5. border_clay_gecko — "Wall Gecko" (Rare 2,000): sky-blue rails; a long butter-yellow gecko wraps the whole left rail, toes splayed in fat clay dots, tail curling under the bottom-left corner, one eye swiveled toward the window.
+6. border_clay_blobs — "Blob Buddies" (Rare 2,400): rails made of shoulder-to-shoulder squished blob critters in mixed palette colors, each with a different dot-eye expression; two corner blobs high-five at the top-left. (Cousins of the Blobworks crew — cross-game wink.)
+7. border_clay_monster_a — "Chomp Frame A" (Epic 5,000, frame A of a 2-frame alive pair): plum rails; a wide friendly monster mouth spans the bottom rail, clay teeth slightly uneven, eyes on stalks rising from the top rail, eyes OPEN.
+8. border_clay_monster_b — "Chomp Frame B" (the swap frame, same item): identical to cell 7 in every measurement, but the stalk eyes are mid-BLINK (lids halfway) and the mouth is a touch wider — the engine alternates 7/8 every 1.6 seconds so the frame feels alive.
