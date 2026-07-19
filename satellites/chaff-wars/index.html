@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#12100c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chaff Wars">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2312100c'/%3E%3Ccircle cx='16' cy='17' r='9' fill='%235fb03a'/%3E%3Ccircle cx='12' cy='16' r='2.4' fill='%23fff'/%3E%3Ccircle cx='20' cy='16' r='2.4' fill='%23fff'/%3E%3Ccircle cx='12.4' cy='16.6' r='1.1' fill='%23161810'/%3E%3Ccircle cx='20.4' cy='16.6' r='1.1' fill='%23161810'/%3E%3Cpath d='M16 5 q4 3 1 7' stroke='%234e9a2e' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Chaff Wars · Sky Wolf Studios</title>
+<!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"chaffwars"}).catch(function(){});</script>
+<style>
+:root{ --bg:#12100c; --panel:#1c1a12; --line:#33301f; --ink:#f0e9d8; --muted:#9a9078;
+  --gold:#e8c15a; --sprout:#7ec850; --crimson:#e0433f; --dew:#4f9ee8; --shade:#b06fe0; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #201a10 0%, #0d0b07 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#1a1710 0%, #0f0d09 100%)}
+.screen.on{display:flex}
+#s-play{background:transparent; pointer-events:none}
+#s-play .tbtn,#s-play .cbtn,#s-play #dropbtn{pointer-events:auto}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1.02; font-weight:800; letter-spacing:1px;
+  background:linear-gradient(120deg,#9fe06a,#e8c15a 55%,#e0685f); -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 4px 26px rgba(180,220,120,0.14)}
+.title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.9; max-width:410px; line-height:1.55}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f14,#191509); color:var(--ink);
+  font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
+.btn.primary{background:linear-gradient(180deg,#7ec850,#4c9a2e); color:#0f1a06; border-color:#a6e07a; box-shadow:0 4px 0 #356b1e, 0 8px 20px #0006}
+.btn.sm{min-height:50px; font-size:15px}
+.btn.ghost{background:#161309; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
+.helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#161309}
+.toggle{width:64px; height:36px; border-radius:20px; background:#2a2618; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:#3f6a2e}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--ink); transition:left .15s}
+.toggle.on b{left:31px; background:#e6ffcf}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:48px; height:48px; border-radius:12px;
+  border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; z-index:30}
+#b-home{left:10px}
+.cbtn{position:absolute; width:104px; height:88px; border-radius:18px; border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(38,32,20,.94),rgba(22,19,10,.94)); color:var(--ink); font-size:32px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; z-index:30}
+.cbtn:active{filter:brightness(1.3)}
+#dropbtn{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(120px + env(safe-area-inset-bottom,0px)); width:236px; height:56px; border-radius:18px;
+  border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e); color:#0f1a06; font-size:19px; font-weight:800; letter-spacing:2px;
+  cursor:pointer; z-index:30; box-shadow:0 4px 0 #356b1e, 0 8px 20px #0006}
+#dropbtn:active{transform:translateX(-50%) translateY(3px)}
+.go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+/* campaign ladder */
+#ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
+.foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:64px}
+.foe .fem{font-size:30px; width:52px; height:52px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#221c10}
+.foe .fmid{flex:1; text-align:left; min-width:0}
+.foe .fnm{font-weight:800; font-size:16px; color:var(--ink)}
+.foe .fds{font-size:12px; color:var(--muted); line-height:1.35; margin-top:2px}
+.foe .fno{font-weight:800; color:var(--gold); font-size:15px; width:26px; flex:none; text-align:center}
+.foe.locked{opacity:.42; cursor:default}
+.foe.beaten{border-color:#3f6a2e}
+.foe.beaten .fno::after{content:" ✓"; color:var(--sprout)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">CHAFF<br>WARS</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Clear falling <b style="color:var(--sprout)">seedpods</b> in groups of four or more. Set off big <b style="color:var(--gold)">chains</b> and every pop buries your rival pest in worthless grey <b>Chaff</b>. Top out and you lose the plot.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-campaign">Campaign <span id="c-prog" style="font-weight:600;font-size:14px;opacity:.85"></span></button>
+      <div class="row">
+        <button class="btn sm" id="b-solo">Solo Endless</button>
+        <button class="btn sm" id="b-how">How to play</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-set">⚙ Settings</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- CAMPAIGN SELECT -->
+  <div class="screen" id="s-select"><div class="pad">
+    <h2 class="sc-h">Keeper's Stand</h2>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">Beat each garden pest to unlock the next. Match their color count and out chain them before your plot fills with Chaff.</div>
+    <div id="ladder"></div>
+    <div style="height:14px"></div>
+    <button class="btn ghost sm" id="sel-back" style="max-width:420px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- PLAY chrome -->
+  <div class="screen" id="s-play">
+    <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
+    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(16px + env(safe-area-inset-bottom,0px))">◀</button>
+    <button class="cbtn" id="c-right" style="left:124px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">▶</button>
+    <button class="cbtn" id="c-down"  style="right:124px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">▼</button>
+    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">⟳</button>
+    <button id="dropbtn">DROP</button>
+  </div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with ◀ ▶, spin with ⟳ or by tapping the board, and nudge them down with ▼. Press <b style="color:var(--sprout)">DROP</b> to slam a pod down instantly.</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Line up <b>four or more of the same color</b> touching side to side or top to bottom and they pop. Pods above fall into the gap, so one clear can trigger the next for a <b style="color:var(--gold)">chain</b>.</div></div>
+    <div class="helprow"><div class="hi">3</div><div>Every chain drops grey <b>Chaff</b> on your rival. The bigger the chain, the more Chaff you send. Chaff never pops on its own, but it shatters when a colored group right next to it clears.</div></div>
+    <div class="helprow"><div class="hi">4</div><div>Send Chaff while Chaff is falling toward you and the two cancel out, so a well timed chain is also a shield. Whoever gets stacked up to the top first loses.</div></div>
+    <div class="helprow"><div class="hi">5</div><div>Clear your whole board for an <b>All Clear</b>, which loads a huge bonus onto your very next attack.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
+    <div class="settingline"><span>Big controls</span><div class="toggle on" id="tg-big"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
+    <button class="btn ghost sm" id="set-reset" style="max-width:400px;margin:0 auto 8px">Reset campaign progress</button>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- RESULT -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:46px" id="go-emoji">🌱</div>
+    <div class="go-score" id="go-title">Win</div>
+    <div class="go-lab" id="go-lab">result</div>
+    <div id="go-line" style="margin:12px auto 0;max-width:360px;font-size:15px;line-height:1.5;color:var(--ink);font-style:italic"></div>
+    <div class="pill" id="go-reward" style="display:none"></div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-next">Next ▶</button>
+      <div class="row">
+        <button class="btn sm" id="go-retry">↻ Again</button>
+        <button class="btn sm" id="go-home">◄ Menu</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var BUILD="v1.0";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+
+/* ---------- stage fit ---------- */
+var VW=540, VH=960;
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+
+/* ---------- storage ---------- */
+var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, ghost:true, big:true };
+(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; if(typeof s.big==='boolean')SET.big=s.big; }catch(e){} })();
+function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
+var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
+(function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
+function saveProg(){ LS.s('cw_prog', JSON.stringify(PROG)); }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,t,g,slide){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), v=c.createGain();
+  o.type=t||'triangle'; o.frequency.value=f; if(slide)o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+d);
+  v.gain.value=g||0.07; v.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d);
+  o.connect(v); v.connect(c.destination); o.start(); o.stop(c.currentTime+d); }catch(e){} }
+var SFX={
+  ui:function(){ beep(520,0.05,'triangle',0.05); },
+  move:function(){ beep(300,0.03,'square',0.02); },
+  rot:function(){ beep(440,0.05,'triangle',0.035); },
+  lock:function(){ beep(200,0.06,'triangle',0.05); },
+  drop:function(){ beep(150,0.12,'sawtooth',0.06,70); },
+  pop:function(ch){ var b=300*Math.pow(1.16,ch||0); beep(b,0.1,'triangle',0.09); setTimeout(function(){beep(b*1.5,0.1,'triangle',0.07);},60); },
+  chaff:function(){ beep(120,0.14,'square',0.05); },
+  shatter:function(){ beep(90,0.16,'sawtooth',0.05,50); },
+  warn:function(){ beep(660,0.09,'sine',0.05); },
+  allclear:function(){ [523,659,784,1046].forEach(function(f,i){ setTimeout(function(){beep(f,0.16,'triangle',0.08);},i*80); }); },
+  win:function(){ [523,659,784,1046,1318].forEach(function(f,i){ setTimeout(function(){beep(f,0.14,'triangle',0.09);},i*110); }); },
+  lose:function(){ beep(300,0.4,'sine',0.08,80); setTimeout(function(){beep(180,0.5,'sine',0.07,70);},180); },
+  count:function(){ beep(500,0.09,'triangle',0.06); },
+  go:function(){ beep(760,0.2,'triangle',0.09,900); }
+};
+
+/* ---------- seeded rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* =====================================================================
+   ENGINE  — Puyo Puyo Tsu rules, reskinned as botanical "Chaff Wars".
+   Board: 6 columns x 13 rows. Row 0 is a hidden spawn buffer, rows 1..12
+   are the 12 visible rows. Cell values: 0 empty, 1..5 seedpod colors,
+   6 = Chaff (grey garbage). Pods fall as pairs, 4+ same color connected
+   pop, pops cascade into chains, chains bury the rival in Chaff.
+   ===================================================================== */
+var COLS=6, ROWS=13, VISROWS=12, SPAWN_COL=2, CHAFF=6;
+
+/* --- RULESET (Director's design fork — verified against puyonexus.com) ------
+   Dr. Robotnik's Mean Bean Machine is Puyo Puyo 1 (1992): NO offsetting, NO
+   all-clear bonus, chain power doubles then caps at 999 from chain 9.
+   Puyo Puyo Tsu (1994, the modern competitive standard) adds offsetting,
+   all-clear, and a linear chain-power ramp. We DEFAULT to Tsu because the
+   Director wants live multiplayer (offsetting is what makes versus deep) and
+   described countering ("they get sent back"). Flip RULES.classic=true for a
+   faithful, nostalgic Mean Bean Machine feel with one boolean. ------------- */
+var RULES={ classic:false };
+/* Chain power indexed by chain number (index 1 = chain 1). */
+var CHAIN_POWER_TSU    =[0, 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512];
+var CHAIN_POWER_CLASSIC=[0, 0, 8, 16, 32, 64, 128, 256, 512, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999];
+/* Color bonus indexed by number of distinct colors popped in one step (both games). */
+var COLOR_BONUS=[0, 0, 3, 6, 12, 24];
+/* Group bonus by group size (4..), summed per group. Caps at 10 for 11+ (both games). */
+function groupBonus(n){ if(n<=4)return 0; if(n===5)return 2; if(n===6)return 3; if(n===7)return 4; if(n===8)return 5; if(n===9)return 6; if(n===10)return 7; return 10; }
+var TARGET_POINTS=70;          /* garbage divisor (fixed, no margin time — both games) */
+var ALLCLEAR_NUIS=30;          /* Tsu: All Clear loads +30 Chaff onto the next attack */
+var GARBAGE_CAP=30;            /* max Chaff dropped on a board in one turn (5 rows) */
+
+function chainPow(ch){ var t=RULES.classic?CHAIN_POWER_CLASSIC:CHAIN_POWER_TSU; return t[ch<t.length?ch:t.length-1]; }
+function colorBon(n){ return COLOR_BONUS[n<COLOR_BONUS.length?n:COLOR_BONUS.length-1]; }
+function stepMult(ch,colors,gb){ var m=chainPow(ch)+colorBon(colors)+gb; if(m<1)m=1; if(m>999)m=999; return m; }
+
+function newGrid(){ var g=[],r,c; for(r=0;r<ROWS;r++){ g[r]=[]; for(c=0;c<COLS;c++)g[r][c]=0; } return g; }
+function cloneGrid(g){ var o=[],r; for(r=0;r<ROWS;r++)o[r]=g[r].slice(); return o; }
+function isColor(v){ return v>=1 && v<=5; }
+function boardEmpty(g){ var r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(g[r][c]!==0)return false; return true; }
+
+/* gravity: compact each column downward, preserving order */
+function applyGravity(g){ var c,r,write; for(c=0;c<COLS;c++){ write=ROWS-1; for(r=ROWS-1;r>=0;r--){ if(g[r][c]!==0){ if(write!==r){ g[write][c]=g[r][c]; g[r][c]=0; } write--; } } for(;write>=0;write--)g[write][c]=0; } }
+/* gravity that reports moves for animation */
+function applyGravityMoves(g){ var moves=[],c,r,write; for(c=0;c<COLS;c++){ write=ROWS-1; for(r=ROWS-1;r>=0;r--){ if(g[r][c]!==0){ if(write!==r){ g[write][c]=g[r][c]; g[r][c]=0; moves.push({c:c,from:r,to:write}); } write--; } } for(;write>=0;write--)g[write][c]=0; } return moves; }
+
+/* find connected same-color groups (orthogonal) of size >= 4 */
+function findGroups(g){ var seen=[],r,c,groups=[]; for(r=0;r<ROWS;r++){ seen[r]=[]; for(c=0;c<COLS;c++)seen[r][c]=0; }
+  for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=g[r][c]; if(!isColor(v)||seen[r][c])continue;
+    var stack=[[r,c]], cells=[]; seen[r][c]=1;
+    while(stack.length){ var p=stack.pop(), pr=p[0], pc=p[1]; cells.push({r:pr,c:pc});
+      var nb=[[pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]],k;
+      for(k=0;k<4;k++){ var nr=nb[k][0], nc=nb[k][1]; if(nr<0||nr>=ROWS||nc<0||nc>=COLS)continue; if(!seen[nr][nc]&&g[nr][nc]===v){ seen[nr][nc]=1; stack.push([nr,nc]); } } }
+    if(cells.length>=4)groups.push({color:v,cells:cells}); }
+  return groups; }
+
+/* mark chaff cells orthogonally adjacent to a popped colored cell */
+function markChaffAround(g,r,c,out){ var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]],k; for(k=0;k<4;k++){ var nr=nb[k][0], nc=nb[k][1]; if(nr<0||nr>=ROWS||nc<0||nc>=COLS)continue; if(g[nr][nc]===CHAFF)out[nr*COLS+nc]={r:nr,c:nc}; } }
+
+/* full instant resolution — mutates g to final state, returns totals (used by AI) */
+function computeResolve(g){ var chain=0,score=0,cleared=0,chaff=0; applyGravity(g);
+  while(true){ var groups=findGroups(g); if(!groups.length)break; chain++;
+    var cset={},gb=0,cl=0,cells=[],chf={},i,j; for(i=0;i<groups.length;i++){ var gr=groups[i]; cset[gr.color]=1; gb+=groupBonus(gr.cells.length); cl+=gr.cells.length; for(j=0;j<gr.cells.length;j++){ var cc=gr.cells[j]; cells.push(cc); markChaffAround(g,cc.r,cc.c,chf); } }
+    var colors=0,kk; for(kk in cset)colors++;
+    score+=10*cl*stepMult(chain,colors,gb); cleared+=cl;
+    for(i=0;i<cells.length;i++)g[cells[i].r][cells[i].c]=0;
+    for(kk in chf){ var pr=chf[kk]; g[pr.r][pr.c]=0; chaff++; }
+    applyGravity(g); }
+  return {chain:chain,score:score,cleared:cleared,chaff:chaff,allClear:(chain>0&&boardEmpty(g))}; }
+
+/* ---------- piece geometry ---------- */
+function partnerOf(cur){ var r=cur.r,c=cur.c; if(cur.rot===0)return {r:r-1,c:c}; if(cur.rot===1)return {r:r,c:c+1}; if(cur.rot===2)return {r:r+1,c:c}; return {r:r,c:c-1}; }
+function pieceCells(cur){ var p=partnerOf(cur); return [{r:cur.r,c:cur.c,col:cur.c1},{r:p.r,c:p.c,col:cur.c2}]; }
+function cellFree(g,r,c){ if(c<0||c>=COLS||r>=ROWS)return false; if(r<0)return true; return g[r][c]===0; }
+function fits(g,cur){ var cs=pieceCells(cur),i; for(i=0;i<2;i++)if(!cellFree(g,cs[i].r,cs[i].c))return false; return true; }
+
+/* =====================================================================
+   AI  — 1-ply placement search with chain-potential heuristic.
+   Difficulty knobs derived from a single q in [0,1] (per opponent).
+   ===================================================================== */
+function aiKnobs(q){ return {
+  thinkQuality: 0.15+0.85*q,
+  topK: Math.max(1, Math.round(1+6*(1-q))),
+  fireThreshold: Math.max(1, Math.round(1+4*q)),
+  counter: q>=0.6,
+  wPotential: 60*q, wPotentialScore:0.02*q, wWaste:40*q, wEdgeTrigger:25*q,
+  wConnect:2+6*q, wBury:-4-6*q, wBump:-2-2*q,
+  wHeight:-3, wMaxHeight:-6, wChoke:-30, wGarbage:-12, wChainFire:1.0 }; }
+
+function colHeights(g){ var h=[],c,r; for(c=0;c<COLS;c++){ h[c]=0; for(r=0;r<ROWS;r++){ if(g[r][c]!==0){ h[c]=ROWS-r; break; } } } return h; }
+function countLinks(g){ var n=0,r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=g[r][c]; if(!isColor(v))continue; if(c+1<COLS&&g[r][c+1]===v)n++; if(r+1<ROWS&&g[r+1][c]===v)n++; } return n; }
+function countBuried(g){ var n=0,r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=g[r][c]; if(!isColor(v))continue;
+  var linked=(c>0&&g[r][c-1]===v)||(c+1<COLS&&g[r][c+1]===v)||(r>0&&g[r-1][c]===v)||(r+1<ROWS&&g[r+1][c]===v);
+  var buried=(r>0&&g[r-1][c]!==0&&g[r-1][c]!==v); if(!linked&&buried)n++; } return n; }
+function countChaff(g){ var n=0,r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(g[r][c]===CHAFF)n++; return n; }
+
+function dropSingle(g,col,color){ var o=cloneGrid(g),r; for(r=ROWS-1;r>=0;r--){ if(o[r][col]===0){ o[r][col]=color; return o; } } return o; }
+function estimatePotential(g,ncolors){ var best={len:0,score:0,col:-1}; var h=colHeights(g),col,ci; for(ci=1;ci<=ncolors;ci++){ for(col=0;col<COLS;col++){ if(h[col]>=VISROWS)continue; var t=dropSingle(g,col,ci); var r=computeResolve(t); if(r.chain>best.len||(r.chain===best.len&&r.score>best.score)){ best.len=r.chain; best.score=r.score; best.col=col; } } } return best; }
+
+/* simulate placing a pair at (col,rot) then resolving. returns {grid,res} or null */
+function simPlace(g,col,rot,cA,cB){ var o=cloneGrid(g); var cur={r:1,c:col,rot:rot,c1:cA,c2:cB};
+  if(!fits(o,cur)){ cur.r=0; if(!fits(o,cur))return null; }
+  while(true){ var nx={r:cur.r+1,c:cur.c,rot:cur.rot,c1:cur.c1,c2:cur.c2}; if(fits(o,nx))cur.r++; else break; }
+  var cs=pieceCells(cur),i; for(i=0;i<2;i++){ if(cs[i].r<0)return null; o[cs[i].r][cs[i].c]=cs[i].col; }
+  var res=computeResolve(o); return {grid:o,res:res}; }
+
+function enumPlacements(cA,cB){ var out=[],c; var same=(cA===cB);
+  for(c=0;c<COLS;c++)out.push({col:c,rot:0});           /* vertical, A bottom */
+  if(!same)for(c=0;c<COLS;c++)out.push({col:c,rot:2});  /* vertical, A top */
+  for(c=0;c<COLS-1;c++)out.push({col:c,rot:1});         /* horizontal A left */
+  if(!same)for(c=1;c<COLS;c++)out.push({col:c,rot:3});  /* horizontal A right */
+  return out; }
+
+function evalBoard(g,k,ncolors,realized,incoming){ var s=0,i; var h=colHeights(g); var totalH=0,maxH=0;
+  for(i=0;i<COLS;i++){ totalH+=h[i]; if(h[i]>maxH)maxH=h[i]; }
+  s+=k.wHeight*totalH + k.wMaxHeight*maxH;
+  s+=k.wChoke*Math.max(0,h[SPAWN_COL]-9);
+  var bump=0; for(i=0;i<COLS-1;i++)bump+=Math.abs(h[i]-h[i+1]); s+=k.wBump*bump;
+  s+=k.wConnect*countLinks(g); s+=k.wBury*countBuried(g); s+=k.wGarbage*countChaff(g);
+  var pot=estimatePotential(g,ncolors); s+=k.wPotential*pot.len + k.wPotentialScore*pot.score;
+  if(pot.col===0||pot.col===COLS-1)s+=k.wEdgeTrigger;
+  /* realized chain gating: reward firing when big or when countering incoming, else punish premature pop */
+  if(realized.chain>0){ var fireNow=(k.counter&&incoming>=6&&pot.len>=1);
+    if(fireNow||realized.chain>=k.fireThreshold)s+=k.wChainFire*realized.score;
+    else s-=k.wWaste*realized.chain*realized.cleared; }
+  return s; }
+
+function aiChooseMove(g,pair,q,ncolors,incoming){ var k=aiKnobs(q); var cands=enumPlacements(pair.c1,pair.c2); var scored=[],i;
+  for(i=0;i<cands.length;i++){ var sp=simPlace(g,cands[i].col,cands[i].rot,pair.c1,pair.c2); if(!sp)continue;
+    var sc=evalBoard(sp.grid,k,ncolors,sp.res,incoming||0); scored.push({col:cands[i].col,rot:cands[i].rot,score:sc}); }
+  if(!scored.length)return {col:SPAWN_COL,rot:0};
+  scored.sort(function(a,b){ return b.score-a.score; });
+  if(Math.random()>k.thinkQuality)return scored[(Math.random()*scored.length)|0];
+  var poolN=Math.min(k.topK,scored.length); var r=Math.min(poolN-1,(Math.random()*Math.random()*poolN)|0); return scored[r]; }
+
+/* =====================================================================
+   CAMPAIGN ROSTER  (design: "Keeper's Stand"). q=think-quality, react=ms,
+   startChaff=rows pre-dropped on player, hcap=AI outgoing multiplier.
+   ===================================================================== */
+var ROSTER=[
+ {id:'aphid-swarm',    nm:'The Aphid Swarm',      em:'🐛', ac:'#7ec850', colors:4, fall:1.2, q:0.10, react:900, startChaff:0, hcap:1.00, taunt:"So many of us and so few of you.",        lose:"Squished but not sorry."},
+ {id:'gnat-king-cole', nm:'Gnat King Cole',       em:'🦟', ac:'#a0c0d0', colors:4, fall:1.5, q:0.18, react:850, startChaff:0, hcap:1.00, taunt:"Care to dance before you wilt?",         lose:"That was a flat note."},
+ {id:'cabbage-moth',   nm:'Mabel Cabbagewing',    em:'🦋', ac:'#e8e0cf', colors:4, fall:1.9, q:0.26, react:800, startChaff:0, hcap:1.00, taunt:"I laid my eggs in the good soil already.", lose:"Back to the porch light I go."},
+ {id:'slug-slugmore',  nm:'Sir Reginald Slugmore',em:'🐌', ac:'#b0a0c8', colors:4, fall:2.3, q:0.34, react:750, startChaff:0, hcap:1.00, taunt:"I shall arrive eventually.",              lose:"How dreadfully slippery of me."},
+ {id:'cutworm',        nm:'Chompers the Cutworm',  em:'🪱', ac:'#d0a070', colors:4, fall:2.8, q:0.42, react:700, startChaff:0, hcap:1.00, taunt:"Timber, little sprout.",                 lose:"I bit off more than I could chew."},
+ {id:'june-beetle',    nm:'Baron von Beetle',      em:'🪲', ac:'#6ab0a0', colors:4, fall:3.4, q:0.50, react:650, startChaff:0, hcap:1.00, taunt:"Nothing dents this shell.",             lose:"Flipped on my back again."},
+ {id:'garden-snail',   nm:'Escargeddon',           em:'🐌', ac:'#c08a50', colors:4, fall:4.0, q:0.57, react:600, startChaff:0, hcap:1.00, taunt:"Eat my slime trail.",                   lose:"Slow and steady lost the race."},
+ {id:'crow-cawlin',    nm:'Cawlin the Crow',       em:'🐦', ac:'#7d8794', colors:4, fall:4.7, q:0.64, react:540, startChaff:0, hcap:1.05, taunt:"Caw caw, and that means checkmate.",    lose:"Fine, you keep your silly corn."},
+ {id:'gopher-gustavo', nm:'Gustavo the Gopher',    em:'🦫', ac:'#b08040', colors:5, fall:5.5, q:0.71, react:480, startChaff:0, hcap:1.05, taunt:"I am already under your garden.",       lose:"Back down the hole for me."},
+ {id:'deer-duchess',   nm:'Duchess Dapple',        em:'🦌', ac:'#d0b090', colors:5, fall:6.4, q:0.78, react:420, startChaff:0, hcap:1.10, taunt:"Your tulips looked delicious.",         lose:"I hear the neighbor grows hostas."},
+ {id:'bindweed-lady',  nm:'Lady Bindweed',         em:'🌿', ac:'#8fbf6a', colors:5, fall:7.3, q:0.85, react:370, startChaff:0, hcap:1.15, taunt:"Let me give you one big tight hug.",     lose:"Prune me and I grow back twice."},
+ {id:'powdery-mildew', nm:'Miss Mildew',           em:'🍄', ac:'#c4c4bc', colors:5, fall:8.2, q:0.92, react:310, startChaff:1, hcap:1.20, taunt:"You already look a little grey to me.",  lose:"Wiped clean, for now."},
+ {id:'baron-greymould',nm:'Baron Greymould',       em:'👑', ac:'#9a9a8a', colors:5, fall:9.2, q:0.97, react:260, startChaff:2, hcap:1.25, taunt:"Soon this whole valley will be grey and quiet.", lose:"Impossible, my beautiful rot.", boss:true},
+ {id:'ronin-hare',     nm:'The Ronin Hare',        em:'🐰', ac:'#e8e0d0', colors:5, fall:10.5,q:1.00, react:230, startChaff:3, hcap:1.40, taunt:"One garden, one blade, one lesson.",     lose:"A worthy harvest, Keeper.", secret:true}
+];
+
+/* seedpod palette: 0..4 map to color values 1..5 */
+var PAL=[
+ {bs:'#e0433f',lt:'#ff8a72',dk:'#a3241f'},  /* Crimson  */
+ {bs:'#5fb03a',lt:'#9fe06a',dk:'#357a24'},  /* Sprout   */
+ {bs:'#4f9ee8',lt:'#8fc8ff',dk:'#245aa3'},  /* Dewdrop  */
+ {bs:'#e6b23a',lt:'#ffe07a',dk:'#a87d1c'},  /* Sunbean  */
+ {bs:'#a86ad8',lt:'#d0a6ff',dk:'#6b2fa3'}   /* Nightshade */
+];
+var CHAFF_PAL={bs:'#7a7a70',lt:'#9a9a90',dk:'#4a4a42'};
+
+/* =====================================================================
+   FIELD  — one player's board + state machine.
+   ===================================================================== */
+function makeField(colors,ai,q,react,hcap){ return {
+  grid:newGrid(), cur:null, next:null, colors:colors, ai:!!ai, q:q||0, react:react||600, hcap:hcap||1,
+  state:'idle', score:0, pending:0, carry:0, allBonus:false, dead:false,
+  gravMs:400, gravAcc:0, softHold:false,
+  res:null, fall:null, pop:null, floats:[], flashDanger:0,
+  aiTarget:null, aiTimer:0, aiStep:0,
+  rng:Math.random }; }
+
+function fieldPiece(f){ var n=(f.rng()* f.colors)|0; if(n>=f.colors)n=f.colors-1; return n; }
+function newPiece(f){ return {c1:fieldPiece(f)+1, c2:fieldPiece(f)+1}; }
+function spawnPiece(f){ if(!f.next)f.next=newPiece(f); var p=f.next; f.next=newPiece(f);
+  f.cur={r:1,c:SPAWN_COL,rot:0,c1:p.c1,c2:p.c2};
+  if(!fits(f.grid,f.cur)){ f.cur=null; f.state='over'; f.dead=true; return false; }
+  f.state='play'; f.gravAcc=0;
+  if(f.ai){ planAI(f); }
+  return true; }
+
+function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else f.grid[cs[i].r][cs[i].c]=cs[i].col; }
+  f.cur=null; SFX.lock(); startResolve(f); }
+
+function hardDrop(f){ if(!f.cur)return; while(true){ var nx={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,nx))f.cur.r++; else break; } SFX.drop(); lockPiece(f); }
+
+/* ---- resolution state machine (animated, live) ---- */
+function startResolve(f){ f.state='resolve'; f.res={sub:'grav',t:0,chain:0,score:0,cleared:0,chaff:0}; f.pop=null; }
+function newLayer(){ var a=[],r,c; for(r=0;r<ROWS;r++){ a[r]=[]; for(c=0;c<COLS;c++)a[r][c]=0; } return a; }
+function setFall(f,moves){ if(!f.fall)f.fall=newLayer(); var i,cell= (f===MATCH.pf?PF.cell:OF.cell); for(i=0;i<moves.length;i++){ var m=moves[i]; f.fall[m.to][m.c]=(m.to-m.from)*cell; } }
+function decayFall(f,dt){ if(!f.fall)return; var r,c,any=false; var sp=Math.max(0.14, dt/90); for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.fall[r][c]>0){ f.fall[r][c]*= (1-sp); if(f.fall[r][c]<0.6)f.fall[r][c]=0; else any=true; } } if(!any)f.fall=null; }
+
+function resolveTick(f,dt){ var R=f.res; R.t+=dt;
+  if(R.sub==='grav'){ var moves=applyGravityMoves(f.grid); if(moves.length){ setFall(f,moves); R.sub='gravwait'; R.t=0; } else { R.sub='scan'; } }
+  else if(R.sub==='gravwait'){ if(R.t>110){ R.sub='scan'; } }
+  else if(R.sub==='scan'){ var groups=findGroups(f.grid); if(!groups.length){ finishResolve(f); return; }
+    R.chain++; var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
+    for(i=0;i<groups.length;i++){ var gr=groups[i]; cset[gr.color]=1; gb+=groupBonus(gr.cells.length); cl+=gr.cells.length;
+      for(j=0;j<gr.cells.length;j++){ var cc=gr.cells[j]; f.pop[cc.r][cc.c]=1; markChaffAround(f.grid,cc.r,cc.c,chf); } }
+    var kk,nchf=0; for(kk in chf){ var pc=chf[kk]; f.pop[pc.r][pc.c]=2; nchf++; }
+    var colors=0; for(kk in cset)colors++;
+    R.score+=10*cl*stepMult(R.chain,colors,gb); R.cleared+=cl; R.chaff+=nchf;
+    SFX.pop(R.chain); if(nchf)SFX.shatter();
+    if(R.chain>=2)f.floats.push({x:0,y:0,txt:'Chain '+R.chain+'!',life:1.0,big:true,fld:f});
+    R.sub='pop'; R.t=0; R._chf=chf; }
+  else if(R.sub==='pop'){ if(R.t>230){ var r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.pop[r][c])f.grid[r][c]=0; } f.pop=null; R.sub='grav'; R.t=0; } }
+}
+
+function finishResolve(f){ var R=f.res; f.score+=R.score;
+  /* outgoing Chaff from this chain */
+  var pts=R.score + f.carry; if(f.allBonus){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }
+  var out=Math.floor(pts/TARGET_POINTS); f.carry=pts-out*TARGET_POINTS;
+  if(f.hcap&&f.hcap!==1)out=Math.round(out*f.hcap);
+  if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CLEAR!',life:1.4,big:true,fld:f}); }
+  /* counter: in Tsu, offset against own pending first, remainder to opponent.
+     in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
+  var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
+  if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; } if(out>0 && opp){ opp.pending+=out; SFX.warn(); } }
+  f.res=null;
+  /* drop this board's own pending Chaff, then continue */
+  dropPending(f);
+}
+
+function dropPending(f){ if(f.pending<=0){ afterTurn(f); return; }
+  var drop=Math.min(f.pending,GARBAGE_CAP); f.pending-=drop;
+  var cols=[],i,c; var full=Math.floor(drop/COLS), rem=drop%COLS;
+  for(i=0;i<full;i++)for(c=0;c<COLS;c++)cols.push(c);
+  var pool=[0,1,2,3,4,5]; for(i=0;i<rem;i++){ var idx=(f.rng()*pool.length)|0; cols.push(pool[idx]); pool.splice(idx,1); }
+  var moves=[]; for(i=0;i<cols.length;i++){ c=cols[i]; var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t<0){ continue; } f.grid[t][c]=CHAFF; moves.push({c:c,from:-2,to:t}); }
+  setFall(f,moves.map(function(m){ return {c:m.c,from:0,to:m.to}; }));
+  SFX.chaff();
+  afterTurn(f);
+}
+
+function afterTurn(f){ /* spawn next piece; top-out ends the match */
+  if(f.dead){ endMatch(f===MATCH.pf?'lose':'win'); return; }
+  if(!spawnPiece(f)){ endMatch(f===MATCH.pf?'lose':'win'); return; }
+}
+
+/* ---- AI control ---- */
+function planAI(f){ var pair={c1:f.cur.c1,c2:f.cur.c2}; var mv=aiChooseMove(f.grid,pair,f.q,f.colors,f.pending);
+  f.aiTarget=mv; f.aiTimer=0; f.aiStep=0; }
+function aiUpdate(f,dt){ if(f.state!=='play'||!f.cur||!f.aiTarget)return; f.aiTimer+=dt;
+  var stepEvery=Math.max(45, f.react/7);
+  if(f.aiTimer>=stepEvery){ f.aiTimer=0;
+    if(f.cur.rot!==f.aiTarget.rot){ tryRotate(f,1); return; }
+    if(f.cur.c<f.aiTarget.col){ moveP(f,1); return; }
+    if(f.cur.c>f.aiTarget.col){ moveP(f,-1); return; }
+    hardDrop(f); }
+}
+
+/* ---- shared movement ---- */
+function moveP(f,dc){ if(f.state!=='play'||!f.cur)return false; var n={r:f.cur.r,c:f.cur.c+dc,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.c+=dc; if(!f.ai)SFX.move(); return true; } return false; }
+function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var nr=(f.cur.rot+(dir||1)+4)%4;
+  var kicks=[[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,1]],i;
+  for(i=0;i<kicks.length;i++){ var t={r:f.cur.r+kicks[i][1],c:f.cur.c+kicks[i][0],rot:nr,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,t)){ f.cur.rot=nr; f.cur.c=t.c; f.cur.r=t.r; if(!f.ai)SFX.rot(); return true; } }
+  return false; }
+function softStep(f){ if(f.state!=='play'||!f.cur)return; var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.r++; f.gravAcc=0; } else { lockPiece(f); } }
+function gravityStep(f){ var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))f.cur.r++; else lockPiece(f); }
+function ghostY(f){ if(!f.cur)return f.cur; var y=f.cur.r; while(true){ var n={r:y+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))y++; else break; } return y; }
+
+/* =====================================================================
+   MATCH  — real-time versus. Both fields tick every frame.
+   ===================================================================== */
+var MATCH={ pf:null, of:null, phase:'none', t:0, stage:-1, mode:'campaign', count:0, result:null };
+
+function preDropChaff(f,rows){ var i,c; for(i=0;i<rows;i++)for(c=0;c<COLS;c++){ var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t>=0)f.grid[t][c]=CHAFF; } }
+
+function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=stageIndex;
+  if(MATCH.mode==='solo'){ MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/1.3; MATCH.of=null;
+    MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null; MATCH.soloLevel=1; MATCH.soloClears=0;
+    spawnPiece(MATCH.pf); MATCH.pf.state='wait'; show('s-play'); running=true; SFX.count(); return; }
+  var st=ROSTER[stageIndex];
+  MATCH.pf=makeField(st.colors,false); MATCH.pf.gravMs=1000/st.fall;
+  MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
+  if(st.startChaff>0)preDropChaff(MATCH.pf,st.startChaff);
+  spawnPiece(MATCH.pf); MATCH.pf.state='wait';
+  spawnPiece(MATCH.of); MATCH.of.state='wait';
+  MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null;
+  show('s-play'); running=true; SFX.count();
+}
+
+function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result; running=false;
+  if(MATCH.pf)MATCH.pf.state='over'; if(MATCH.of)MATCH.of.state='over';
+  if(MATCH.mode==='solo'){ if(MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); } setTimeout(function(){ soloResult(); },700); return; }
+  if(result==='win')SFX.win(); else SFX.lose();
+  setTimeout(function(){ matchResult(result); },800);
+}
+
+var _sunToast='';
+function matchResult(result){ var st=ROSTER[MATCH.stage];
+  $('go-emoji').textContent = result==='win'? (st.em) : '🥀';
+  $('go-title').textContent = result==='win'? 'Victory' : 'Defeat';
+  $('go-lab').textContent = st.nm;
+  $('go-line').textContent = result==='win'? ('"'+st.lose+'"') : ('"'+st.taunt+'"');
+  var rw=$('go-reward'); rw.style.display='none'; _sunToast='';
+  if(result==='win'){ var firstTime=!PROG.beaten[st.id];
+    if(firstTime){ PROG.beaten[st.id]=true;
+      if(!st.secret && MATCH.stage>=PROG.unlocked)PROG.unlocked=Math.min(ROSTER.length-1,MATCH.stage+1);
+      var sun=0; if(MATCH.stage<=10)sun=2; else if(MATCH.stage<=12)sun=3; else sun=0;
+      /* campaign completion bonus after beating Baron Greymould (index 12) */
+      var justFinished=(st.id==='baron-greymould' && !PROG.done);
+      if(justFinished){ PROG.done=true; sun+=2; PROG.secret=true; }
+      if(st.id==='ronin-hare'){ /* cosmetic only, no sunbeams */ }
+      saveProg();
+      if(sun>0){ var got=0; try{ if(window._sbCapEarn)got=window._sbCapEarn(sun,'chaffwars:'+st.id)||0; }catch(e){} if(got>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got+' Sunbeams'; } }
+      if(justFinished){ $('go-line').textContent='"Impossible, my beautiful rot." The valley is green again, Keeper.'; }
+    } else { /* replay win: small daily-capped income */ var got2=0; try{ if(window._sbCapEarn)got2=window._sbCapEarn(1,'chaffwars:replay')||0; }catch(e){} if(got2>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got2+' Sunbeams'; } }
+  }
+  /* next button: show if there is an unlocked next stage */
+  var nb=$('go-next'); var hasNext=(result==='win' && MATCH.stage+1<ROSTER.length && (MATCH.stage+1<=PROG.unlocked || (ROSTER[MATCH.stage+1].secret&&PROG.secret)));
+  nb.style.display=hasNext?'flex':'none';
+  show('s-go');
+}
+function soloResult(){ $('go-emoji').textContent='🌱'; $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
+  $('go-line').textContent='Best '+PROG.soloBest.toLocaleString();
+  var rw=$('go-reward'); var sun=Math.min(6,Math.floor(MATCH.pf.score/1200)); var got=0; if(sun>0){ try{ if(window._sbCapEarn)got=window._sbCapEarn(sun,'chaffwars:solo')||0; }catch(e){} }
+  if(got>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got+' Sunbeams'; } else rw.style.display='none';
+  $('go-next').style.display='none'; show('s-go'); }
+
+/* =====================================================================
+   MAIN LOOP
+   ===================================================================== */
+var cv=$('game'), ctx=cv.getContext('2d');
+var PF={x:36,y:298,cell:40}, OF={x:372,y:300,cell:22};
+var running=false, lastT=0, _devLost=false;
+
+function update(dt){ if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
+  if(MATCH.phase!=='fight')return;
+  tickField(MATCH.pf,dt,false);
+  if(MATCH.of)tickField(MATCH.of,dt,true);
+}
+
+function tickField(f,dt,isAI){ if(!f)return;
+  decayFall(f,dt);
+  for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
+  if(f.flashDanger>0)f.flashDanger-=dt;
+  if(f.state==='play'){
+    if(isAI){ aiUpdate(f,dt); }
+    else { f.gravAcc+=dt; var g=f.softHold? Math.min(f.gravMs,40):f.gravMs; while(f.gravAcc>=g){ f.gravAcc-=g; gravityStep(f); if(f.state!=='play')break; } }
+    /* danger flash when spawn column stacking high */
+    var h=colHeights(f.grid); if(h[SPAWN_COL]>=VISROWS-2 && f.flashDanger<=0)f.flashDanger=400;
+  } else if(f.state==='resolve'){ resolveTick(f,dt); }
+  /* solo speed ramp */
+  if(MATCH.mode==='solo' && f===MATCH.pf){ MATCH.soloRamp=(MATCH.soloRamp||0)+dt; f.gravMs=Math.max(150, 770-(MATCH.soloRamp/1000)*7); }
+}
+
+function loop(t){ if(!lastT)lastT=t; var dt=t-lastT; lastT=t; if(dt>60)dt=60;
+  if(running)update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
+
+function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
+  ctx.fillStyle='#0c0a06'; rr(F.x-4,F.y-4,w+8,h+8,10); ctx.fill();
+  ctx.fillStyle='#161207'; ctx.fillRect(F.x,F.y,w,h);
+  /* grid lines */
+  ctx.strokeStyle='rgba(255,255,255,0.045)'; ctx.lineWidth=1; var i;
+  for(i=1;i<COLS;i++){ ctx.beginPath(); ctx.moveTo(F.x+i*F.cell,F.y); ctx.lineTo(F.x+i*F.cell,F.y+h); ctx.stroke(); }
+  for(i=1;i<VISROWS;i++){ ctx.beginPath(); ctx.moveTo(F.x,F.y+i*F.cell); ctx.lineTo(F.x+w,F.y+i*F.cell); ctx.stroke(); }
+  ctx.strokeStyle=accent||'#33301f'; ctx.lineWidth=2.5; rr(F.x-4,F.y-4,w+8,h+8,10); ctx.stroke();
+  /* spawn column marker */
+  ctx.fillStyle='rgba(232,193,90,0.10)'; ctx.fillRect(F.x+SPAWN_COL*F.cell,F.y,F.cell,6);
+}
+
+function gazeFor(f,r,c){ var v=f.grid[r][c]; var gx=0,gy=0.35,n=0; var nb=[[-1,0,0,-1],[1,0,0,1],[0,-1,-1,0],[0,1,1,0]],k;
+  for(k=0;k<4;k++){ var nr=r+nb[k][0], nc=c+nb[k][1]; if(nr<0||nr>=ROWS||nc<0||nc>=COLS)continue; if(f.grid[nr][nc]===v){ gx+=nb[k][3]; gy+=nb[k][2]; n++; } }
+  if(n>0){ var m=Math.sqrt(gx*gx+gy*gy)||1; return {x:gx/m,y:gy/m}; } return {x:0,y:0.35}; }
+
+function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
+  var g=ctx.createRadialGradient(cx-r*0.32,cy-r*0.4,r*0.15,cx,cy,r*1.15); g.addColorStop(0,pal.lt); g.addColorStop(0.62,pal.bs); g.addColorStop(1,pal.dk);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.26)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.34,r*0.2,-0.5,0,6.2832); ctx.fill();
+  if(s>=20){ var ex=r*0.36, ey=-r*0.04, er=r*0.27, gx=(gaze?gaze.x:0), gy=(gaze?gaze.y:0.35),k;
+    for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
+      ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); }
+    ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*0.36,r*0.26,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
+  }
+  if(alpha!=null)ctx.globalAlpha=1;
+}
+function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
+  var g=ctx.createRadialGradient(cx-r*0.3,cy-r*0.35,r*0.15,cx,cy,r*1.1); g.addColorStop(0,CHAFF_PAL.lt); g.addColorStop(0.7,CHAFF_PAL.bs); g.addColorStop(1,CHAFF_PAL.dk);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
+  ctx.strokeStyle='rgba(30,30,26,0.6)'; ctx.lineWidth=Math.max(1,r*0.1); ctx.beginPath(); ctx.moveTo(cx-r*0.5,cy-r*0.4); ctx.lineTo(cx-r*0.1,cy); ctx.lineTo(cx-r*0.4,cy+r*0.3); ctx.stroke();
+  if(s>=20){ var er=r*0.2,k; for(k=-1;k<=1;k+=2){ ctx.fillStyle='#2b2b26'; ctx.beginPath(); ctx.arc(cx+k*r*0.32,cy-r*0.02,er,0,6.2832); ctx.fill(); }
+    ctx.strokeStyle='rgba(30,30,26,0.6)'; ctx.lineWidth=Math.max(1,r*0.1); ctx.beginPath(); ctx.moveTo(cx-r*0.28,cy+r*0.36); ctx.lineTo(cx+r*0.28,cy+r*0.36); ctx.stroke(); }
+  if(alpha!=null)ctx.globalAlpha=1;
+}
+
+function drawField(f,F,mini){ if(!f)return; var r,c;
+  for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
+    var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
+    var yy=p.y-off;
+    if(v===CHAFF)drawChaff(p.x,yy,F.cell,scale,alpha); else drawPod(p.x,yy,F.cell,v-1, mini?null:gazeFor(f,r,c),scale,alpha); }
+  /* falling piece + ghost */
+  if(f.cur && (f.state==='play')){ var cs=pieceCells(f.cur),i;
+    if(!mini && SET.ghost){ var gy=ghostY(f); var gcur={r:gy,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; var gcs=pieceCells(gcur);
+      for(i=0;i<2;i++){ if(gcs[i].r<1)continue; var gp=cellPx(F,gcs[i].r,gcs[i].c); ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(gp.x+F.cell/2,gp.y+F.cell/2,F.cell*0.42,0,6.2832); ctx.stroke(); } }
+    for(i=0;i<2;i++){ if(cs[i].r<1)continue; var pp=cellPx(F,cs[i].r,cs[i].c); drawPod(pp.x,pp.y,F.cell,cs[i].col-1,{x:0,y:0.35},1,1); } }
+  /* pending Chaff warning row above the board */
+  var pw=f.pending; if(pw>0){ var ics=Math.min(pw, mini?12:12); var iw=mini?9:13; var bx=F.x; var by=F.y-(mini?16:26);
+    for(i=0;i<ics;i++){ drawChaff(bx+i*(iw+1), by, iw, 1, 0.9); } if(pw>ics){ ctx.fillStyle='#e0685f'; ctx.font='700 '+(mini?9:12)+'px system-ui'; ctx.fillText('+'+(pw-ics), bx+ics*(iw+1)+2, by+iw*0.75); } }
+  /* danger flash */
+  if(f.flashDanger>0){ ctx.globalAlpha=Math.min(0.4,f.flashDanger/1000); ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
+}
+
+function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
+  if(curScreen!=='s-play'){ return; }
+  /* header band */
+  ctx.fillStyle='#e8c15a'; ctx.font='800 15px system-ui'; ctx.textAlign='left'; ctx.fillText('CHAFF WARS', 66, 34);
+  if(MATCH.mode==='campaign' && MATCH.stage>=0){ var st=ROSTER[MATCH.stage];
+    /* opponent portrait */
+    var ox=360, oy=96, ow=150, oh=150;
+    ctx.fillStyle='#1a1608'; rr(ox,oy,ow,84,12); ctx.fill(); ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,84,12); ctx.stroke();
+    ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+30, oy+52);
+    ctx.fillStyle='#f0e9d8'; ctx.font='700 13px system-ui'; wrapText(st.nm, ox+92, oy+34, 100, 15);
+    ctx.textAlign='left';
+  }
+  /* player score (label + number stacked, warning strip sits above at PF.y-26) */
+  ctx.fillStyle='#9a9078'; ctx.font='600 11px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', PF.x, 214);
+  ctx.fillStyle='#f0e9d8'; ctx.font='800 22px system-ui'; ctx.fillText((MATCH.pf?MATCH.pf.score:0).toLocaleString(), PF.x, 240);
+  /* next piece preview */
+  if(MATCH.pf&&MATCH.pf.next){ var nx=292, ny=300; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
+    ctx.fillStyle='#161207'; rr(nx,ny,52,86,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,52,86,8); ctx.stroke();
+    drawPod(nx+11,ny+8,30,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(nx+11,ny+42,30,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
+
+  drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
+  if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-46);
+    ctx.fillStyle='#f0e9d8'; ctx.font='700 13px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-32);
+    drawBoardFrame(OF,'rival', MATCH.stage>=0?ROSTER[MATCH.stage].ac:'#33301f'); drawField(MATCH.of,OF,true); }
+
+  /* chain floats */
+  drawFloats(MATCH.pf,PF); if(MATCH.of)drawFloats(MATCH.of,OF);
+
+  /* countdown overlay */
+  if(MATCH.phase==='count'){ ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(0,0,VW,VH); ctx.textAlign='center';
+    ctx.fillStyle='#e8c15a'; ctx.font='800 90px system-ui'; ctx.fillText(MATCH.count>0?MATCH.count:'GO', VW/2, VH/2+30);
+    if(MATCH.mode==='campaign'&&MATCH.stage>=0){ ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ROSTER[MATCH.stage].taunt+'"', VW/2, VH/2+80, 380, 22); }
+    ctx.textAlign='left'; }
+}
+function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i<f.floats.length;i++){ var fl=f.floats[i]; var a=Math.min(1,fl.life); ctx.globalAlpha=a;
+  ctx.fillStyle=fl.txt.indexOf('ALL')>=0?'#e8c15a':'#fff8dc'; ctx.font='800 '+(F===PF?22:14)+'px system-ui';
+  var yy=F.y+ (F===PF?170:90) - (1-fl.life)*30; ctx.fillText(fl.txt, F.x+COLS*F.cell/2, yy); }
+  ctx.globalAlpha=1; ctx.textAlign='left'; }
+function wrapText(txt,x,y,maxW,lh){ var words=txt.split(' '),line='',i,yy=y; for(i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxW&&line){ ctx.fillText(line,x,yy); line=words[i]+' '; yy+=lh; } else line=test; } ctx.fillText(line,x,yy); }
+function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
+
+/* =====================================================================
+   INPUT
+   ===================================================================== */
+function pf(){ return MATCH.pf; }
+function hold(id,fn,first){ var el=$(id),t=null,r=null; if(!el)return;
+  function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); fn(); t=setTimeout(function(){ r=setInterval(fn,80); },first||200); });
+  el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop); }
+hold('c-left',function(){ if(playable())moveP(pf(),-1); });
+hold('c-right',function(){ if(playable())moveP(pf(),1); });
+(function(){ var el=$('c-down'); if(!el)return; el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); if(pf())pf().softHold=true; }); function up(){ if(pf())pf().softHold=false; } el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up); })();
+tap('c-rot',function(){ if(playable())tryRotate(pf(),1); });
+tap('dropbtn',function(){ if(playable())hardDrop(pf()); });
+cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play'||MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW); if(x<300 && playable()){ e.preventDefault(); ac(); tryRotate(pf(),1); } },{passive:false});
+document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playable())return;
+  if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); moveP(pf(),1); }
+  else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(pf(),1); }
+  else if(e.key==='z'||e.key==='Z'){ e.preventDefault(); tryRotate(pf(),-1); }
+  else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(pf()); }
+  else if(e.key===' '){ e.preventDefault(); hardDrop(pf()); }
+});
+function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play' && pf().cur; }
+
+/* =====================================================================
+   SCREENS + WIRING
+   ===================================================================== */
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
+  if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); }
+function applyBig(){ var big=SET.big; var els=document.querySelectorAll('.cbtn'); for(var i=0;i<els.length;i++){ els[i].style.transform=''; } }
+function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
+
+function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; var i;
+  for(i=0;i<ROSTER.length;i++){ var st=ROSTER[i]; var unlocked=(i<=PROG.unlocked)|| (st.secret&&PROG.secret); var beaten=!!PROG.beaten[st.id];
+    var row=document.createElement('div'); row.className='foe'+(unlocked?'':' locked')+(beaten?' beaten':'');
+    var lock = unlocked? '' : '🔒';
+    row.innerHTML='<div class="fno">'+(st.secret?'★':(i+1))+'</div><div class="fem">'+(unlocked?st.em:'🔒')+'</div><div class="fmid"><div class="fnm">'+(unlocked?st.nm:'??? Locked')+'</div><div class="fds">'+(unlocked?(st.colors+' colors · '+(st.boss?'Final boss':st.secret?'Secret duel':'Pest '+(i+1)))+(beaten?' · cleared':'') :'Beat the pest before to unlock.')+'</div></div>';
+    (function(idx,unl){ row.addEventListener('click',function(){ if(!unl)return; SFX.ui(); startMatch(idx,'campaign'); }); })(i,unlocked);
+    lad.appendChild(row); }
+}
+
+tap('b-campaign',function(){ SFX.ui(); buildLadder(); show('s-select'); });
+tap('b-solo',function(){ SFX.ui(); startMatch(-1,'solo'); });
+tap('b-how',function(){ SFX.ui(); show('s-how'); });
+tap('b-set',function(){ SFX.ui(); show('s-set'); });
+tap('how-back',function(){ SFX.ui(); show(curReturn()); });
+tap('set-back',function(){ SFX.ui(); show('s-title'); });
+tap('sel-back',function(){ SFX.ui(); show('s-title'); });
+tap('b-home',function(){ SFX.ui(); running=false; MATCH.phase='none'; show(MATCH.mode==='solo'?'s-title':'s-select'); if(MATCH.mode==='campaign')buildLadder(); });
+tap('go-home',function(){ SFX.ui(); show('s-title'); });
+tap('go-retry',function(){ SFX.ui(); if(MATCH.mode==='solo')startMatch(-1,'solo'); else startMatch(MATCH.stage,'campaign'); });
+tap('go-next',function(){ SFX.ui(); var n=MATCH.stage+1; if(n<ROSTER.length)startMatch(n,'campaign'); else { buildLadder(); show('s-select'); } });
+var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
+tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
+
+function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
+wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','big');
+$('buildstamp').textContent='Chaff Wars '+BUILD;
+
+/* ---------- add to home screen ---------- */
+(function(){ var btn=$('b-install'); if(!btn)return;
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
+  if(standalone()){ btn.style.display='none'; return; }
+  var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
+  btn.addEventListener('click',function(){ SFX.ui(); if(deferred){ deferred.prompt(); deferred=null; return; }
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(ios ? 'To add Chaff Wars to your Home Screen:\n\nTap the Share button, then Add to Home Screen.' : 'To add Chaff Wars to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
+})();
+
+/* ---------- embedded-in-portal back handshake ---------- */
+(function(){ var EMB=/[?&]embed=1(&|$)/.test(location.search); if(EMB&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} } })();
+
+/* ---------- Sky Wolf sunbeam earn standard: 30/day/game cap ---------- */
+window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+  var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0}; grant=Math.min(n,Math.max(0,30-(s.n||0)));
+  if(grant>0){ s.n=(s.n||0)+grant; localStorage.setItem(k,JSON.stringify(s)); } }catch(e){}
+  if(grant>0 && window.Sunbeam&&window.Sunbeam.earn)window.Sunbeam.earn(grant,tag)['catch'](function(){}); return grant; };
+
+/* ---------- studio soundtrack (standalone only) ---------- */
+(function(){ var btn=$('b-music'); if(!btn)return; var embedded; try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }catch(e){ embedded=true; }
+  if(embedded){ btn.style.display='none'; return; }
+  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
+  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
+
+fit(); paintTitle(); requestAnimationFrame(loop);
+
+/* =====================================================================
+   HEADLESS DEV HOOK + BOT  (only with ?cwdev=1)
+   ===================================================================== */
+if(/[?&]cwdev=1/.test(location.search)){
+  function botMove(f,q){ if(!f||f.state!=='play'||!f.cur)return false; var pair={c1:f.cur.c1,c2:f.cur.c2};
+    var mv=aiChooseMove(f.grid,pair,q==null?0.9:q,f.colors,f.pending);
+    var guard=0; while(f.cur.rot!==mv.rot && guard++<6){ if(!tryRotate(f,1))break; }
+    guard=0; while(f.cur.c<mv.col && guard++<7){ if(!moveP(f,1))break; }
+    guard=0; while(f.cur.c>mv.col && guard++<7){ if(!moveP(f,-1))break; }
+    hardDrop(f); return true; }
+  function pump(f,ms){ /* advance a field through resolve/drop synchronously */ var guard=0; while(f.state==='resolve'&&guard++<400){ resolveTick(f,240); } }
+  window.CW_DEV={
+    roster:function(){ return ROSTER.map(function(s){ return {id:s.id,colors:s.colors,q:s.q,react:s.react,startChaff:s.startChaff,hcap:s.hcap}; }); },
+    start:function(stage,seed){ startMatch(stage==null?0:stage,'campaign'); MATCH.phase='fight'; MATCH.pf.state='play'; MATCH.of.state='play';
+      if(seed!=null){ var rp=mulberry32(seed),ro=mulberry32(seed*7+3); MATCH.pf.rng=rp; MATCH.of.rng=ro; MATCH.pf.next=newPiece(MATCH.pf); MATCH.of.next=newPiece(MATCH.of); MATCH.pf.cur=null; MATCH.of.cur=null; spawnPiece(MATCH.pf); spawnPiece(MATCH.of); }
+      running=false; return this.state(); },
+    state:function(){ return { phase:MATCH.phase, result:MATCH.result, stage:MATCH.stage,
+      pf:{score:MATCH.pf.score,pending:MATCH.pf.pending,state:MATCH.pf.state,dead:MATCH.pf.dead,carry:MATCH.pf.carry},
+      of:MATCH.of?{score:MATCH.of.score,pending:MATCH.of.pending,state:MATCH.of.state,dead:MATCH.of.dead}:null }; },
+    grid:function(who){ var f=(who==='of')?MATCH.of:MATCH.pf; return f.grid.map(function(r){ return r.slice(); }); },
+    resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },
+    /* simulate a full match: player bot vs AI, up to N turns; returns outcome */
+    sim:function(stage,seed,maxTurns){ this.start(stage,seed); var turns=0,mt=maxTurns||300;
+      while(MATCH.phase==='fight' && turns<mt){ turns++;
+        var f=MATCH.pf; if(f.state==='play'&&f.cur){ botMove(f,0.9); pump(f,0); if(f.state==='play'){} }
+        var a=MATCH.of; if(a&&a.state==='play'&&a.cur){ /* AI at its stage skill */ botMove(a,a.q); pump(a,0); }
+        /* both fields may be in resolve after drop; pump handled by botMove path via afterTurn spawn */
+        if(MATCH.phase==='done')break;
+        /* guard: if a field is stuck not in play (waiting), force resolve pump */
+        if(MATCH.pf.state==='resolve')pump(MATCH.pf,0);
+        if(MATCH.of&&MATCH.of.state==='resolve')pump(MATCH.of,0);
+      }
+      return { turns:turns, phase:MATCH.phase, result:MATCH.result, pf:this.state().pf, of:this.state().of }; },
+    /* pure-engine chain proof on a hand-built board */
+    proofCheck:function(){
+      var out={};
+      /* 1: a vertical 4 of color 1 pops as chain 1 */
+      var g=newGrid(); g[12][0]=1; g[11][0]=1; g[10][0]=1; g[9][0]=1; var r1=computeResolve(g); out.basicPop={chain:r1.chain,cleared:r1.cleared,pass:(r1.chain===1&&r1.cleared===4)};
+      /* 2: adjacent chaff shatters when a group next to it pops */
+      var g2=newGrid(); g2[12][0]=1; g2[12][1]=1; g2[11][0]=1; g2[11][1]=1; g2[12][2]=CHAFF; g2[11][2]=CHAFF; var r2=computeResolve(g2); out.chaffClear={chain:r2.chain,chaff:r2.chaff,pass:(r2.chain===1&&r2.chaff>=1)};
+      /* 3: two-step chain. col0 is R,R,R,B (B trapped on top); col1 R,B,B;
+         col2 B. The four Rs pop first (chain 1); the B in col0 falls and the
+         two Bs in col1 fall, joining col2's B into a 4-group (chain 2). */
+      var g3=newGrid();
+      g3[12][0]=1;g3[11][0]=1;g3[10][0]=1;g3[9][0]=2;
+      g3[12][1]=1;g3[11][1]=2;g3[10][1]=2;
+      g3[12][2]=2;
+      var r3=computeResolve(g3); out.twoChain={chain:r3.chain,pass:(r3.chain>=2)};
+      /* 4: scoring sanity — a single 4-group scores 40 (10*4*1) */
+      var g4=newGrid(); g4[12][0]=3;g4[12][1]=3;g4[11][0]=3;g4[11][1]=3; var r4=computeResolve(g4); out.score40={score:r4.score,pass:(r4.score===40)};
+      out.allPass=out.basicPop.pass&&out.chaffClear.pass&&out.twoChain.pass&&out.score40.pass;
+      return out; },
+    setRule:function(k,v){ RULES[k]=v; return RULES; },
+    demo:function(stage,seed,n){ this.start(stage==null?8:stage,seed==null?4242:seed); var i;
+      for(i=0;i<(n||13);i++){ if(MATCH.pf.state==='play'&&MATCH.pf.cur){ botMove(MATCH.pf,0.5); pump(MATCH.pf,0); }
+        if(MATCH.of&&MATCH.of.state==='play'&&MATCH.of.cur){ botMove(MATCH.of,0.5); pump(MATCH.of,0); } if(MATCH.phase==='done')break; }
+      /* leave a live falling piece on the player board for a natural shot */
+      if(MATCH.pf.state==='play'){} MATCH.phase='fight'; if(MATCH.pf&&MATCH.pf.cur){ MATCH.pf.cur.r=3; MATCH.pf.cur.c=1; } MATCH.pf.pending=5; render(); return this.state(); },
+    bench:function(stage,q,n){ this.start(stage==null?12:stage,999); var mx=0,sum=0,cnt=0,i; var perf=(window.performance||Date);
+      for(i=0;i<(n||40);i++){ var f=MATCH.pf; if(f.state!=='play'||!f.cur)break; var pair={c1:f.cur.c1,c2:f.cur.c2};
+        var t0=perf.now(); aiChooseMove(f.grid,pair,q==null?1:q,f.colors,f.pending); var dt=perf.now()-t0; if(dt>mx)mx=dt; sum+=dt; cnt++;
+        botMove(f,q==null?1:q); pump(f,0); }
+      return {n:cnt, avg:+(sum/Math.max(1,cnt)).toFixed(2), max:+mx.toFixed(2)}; },
+    botMove:botMove, render:render, moveP:moveP, rotate:tryRotate, drop:hardDrop, soft:softStep };
+}
+})();
+</script>
+</body>
+</html>
