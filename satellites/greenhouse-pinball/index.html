@@ -1073,7 +1073,7 @@ function drawGrowth(){ var x=30, y0=120, y1=520, h=y1-y0, fill=Math.min(1,G.grow
   // claymation REACTION meter (art) — fill state by growth; erupts during Bloom Rush
   var _mk=(G.rush>0)?'meter_erupt':(fill<0.02?'meter_empty':fill<0.34?'meter_low':fill<0.67?'meter_mid':fill<0.99?'meter_high':'meter_erupt');
   var _mi=PIN_ART.img(_mk);
-  if(_mi){ var _mh=h, _mw=_mh*_mi.width/_mi.height; ctx.drawImage(_mi, 6, y0, _mw, _mh); return; }
+  if(_mi){ var _mh=196, _mw=_mh*_mi.width/_mi.height; ctx.drawImage(_mi, 4, y0+4, _mw, _mh); return; }
   if(G.rush>0){ // frenzy: the ribbon burns gold with the time remaining
     ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(G.t*7); ctx.strokeStyle='#f2d98a'; ctx.lineWidth=3;
     ctx.strokeRect(x-8,y0-3,16,h+6);

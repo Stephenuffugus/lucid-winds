@@ -780,7 +780,10 @@ function applySkin(){
   var ids=['s-title','s-modes','s-how','s-set','s-win'];
   for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el) el.style.background=css; }
   var tl=$('title-logo'), tf=$('title-fallback');
-  if(tl&&tf){ var ok=art&&tl.getAttribute('data-err')!=='1'; tl.style.display=ok?'block':'none'; tf.style.display=ok?'none':'block'; }
+  /* only reveal the logo image if it actually has a src (OriVex wordmark art is pending, so boot
+     leaves it srcless — without this guard applySkin would show a broken-image icon reading the
+     DEAD name "Petalvex"; keep the "OriVex" text fallback until real art ships) */
+  if(tl&&tf){ var ok=art&&!!tl.getAttribute('src')&&tl.getAttribute('data-err')!=='1'; tl.style.display=ok?'block':'none'; tf.style.display=ok?'none':'block'; }
   var wb=$('win-bloom'), wf=$('win-fallback');
   if(wb&&wf){ var ok2=art&&wb.getAttribute('data-err')!=='1'; wb.style.display=ok2?'block':'none'; wf.style.display=ok2?'none':'block'; }
   if(P) render();
