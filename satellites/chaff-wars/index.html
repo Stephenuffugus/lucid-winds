@@ -63,6 +63,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
+.vs-code{font-size:64px; font-weight:800; letter-spacing:14px; font-style:italic; color:#2ff0e0; text-indent:14px;
+  text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 0 0 22px rgba(47,240,224,0.6)}
 .tbtn.pwr{right:10px; left:auto; width:58px; height:58px; font-size:27px; opacity:.5; border-color:#7ec850}
 .tbtn.pwr.ready{opacity:1; box-shadow:0 0 0 2px rgba(126,200,80,.4),0 0 18px rgba(126,200,80,.6); border-color:#a6e07a}
 /* responsive thumb-friendly control bar: never overlaps, scales to any phone */
@@ -109,7 +111,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="b-campaign">Campaign <span id="c-prog" style="font-weight:600;font-size:14px;opacity:.85"></span></button>
       <div class="row">
+        <button class="btn sm" id="b-versus">🕺 Versus</button>
         <button class="btn sm" id="b-solo">Solo Endless</button>
+      </div>
+      <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
       </div>
       <div class="row">
@@ -148,6 +153,31 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div>
 
   <!-- HOW -->
+  <!-- VERSUS LOBBY -->
+  <div class="screen" id="s-vs"><div class="pad">
+    <h2 class="sc-h">Versus</h2>
+    <p class="ribbon" style="margin-top:6px">Battle a friend live. One of you creates the room, the other joins with the code. Both players get the exact same pods. Chains you pop drop grey Chaff on their board.</p>
+    <div style="height:10px"></div>
+    <div id="vs-auth" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:#1a1410; color:var(--gold); font-size:14px; line-height:1.5">Online rooms need a Lucid Winds account. Sign in on the portal first, then come back and battle.</div>
+    <div id="vs-lobby">
+      <button class="btn primary" id="b-vs-create">Create Room</button>
+      <div style="height:12px"></div>
+      <div class="row">
+        <input id="vs-join-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" style="flex:1; min-height:60px; border-radius:16px; border:1px solid var(--line); background:#171308; color:var(--ink); font-size:24px; font-weight:800; letter-spacing:8px; text-align:center; text-transform:uppercase">
+        <button class="btn sm" id="b-vs-join" style="flex:1">Join Room</button>
+      </div>
+    </div>
+    <div id="vs-wait" style="display:none; text-align:center">
+      <div style="color:var(--muted); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px">Room code</div>
+      <div class="vs-code" id="vs-code">····</div>
+      <div id="vs-status" style="color:var(--muted); font-size:14px; margin-top:14px">Waiting for a rival to join…</div>
+    </div>
+    <div style="height:14px"></div>
+    <div id="vs-msg" style="color:#ff8a72; font-size:13px; min-height:18px; text-align:center"></div>
+    <div style="flex:1"></div>
+    <button class="btn ghost sm" id="vs-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with ◀ ▶, spin with ⟳ or by tapping the board, and nudge them down with ▼. Press <b style="color:var(--sprout)">DROP</b> to slam a pod down instantly.</div></div>
@@ -482,7 +512,8 @@ function spawnPiece(f){ if(!f.next)f.next=newPiece(f); var p=f.next; f.next=newP
   return true; }
 
 function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else f.grid[cs[i].r][cs[i].c]=cs[i].col; }
-  f.cur=null; SFX.lock(); startResolve(f); }
+  f.cur=null; SFX.lock(); startResolve(f);
+  if(MATCH.mode==='versus'&&f===MATCH.pf)_mpPub(true); }
 
 function hardDrop(f){ if(!f.cur)return; while(true){ var nx={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,nx))f.cur.r++; else break; } SFX.drop(); lockPiece(f); }
 
@@ -518,7 +549,9 @@ function finishResolve(f){ var R=f.res; f.score+=R.score;
   /* counter: in Tsu, offset against own pending first, remainder to opponent.
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
-  if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; } if(out>0 && opp){ opp.pending+=out; SFX.warn(); } }
+  if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; }
+    if(out>0){ if(MATCH.mode==='versus'&&f===MATCH.pf){ _mpGarbage(out); }
+      else if(opp){ opp.pending+=out; SFX.warn(); } } }
   f.res=null;
   /* drop this board's own pending Chaff, then continue */
   dropPending(f);
@@ -591,6 +624,7 @@ function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=s
 
 function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result; running=false;
   if(MATCH.pf)MATCH.pf.state='over'; if(MATCH.of)MATCH.of.state='over';
+  if(MATCH.mode==='versus'){ _mpPub(true); if(result==='win')SFX.win(); else SFX.lose(); setTimeout(function(){ versusResult(result); },800); return; }
   if(MATCH.mode==='solo'){ if(MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); } setTimeout(function(){ soloResult(); },700); return; }
   if(result==='win')SFX.win(); else SFX.lose();
   setTimeout(function(){ matchResult(result); },800);
@@ -638,6 +672,9 @@ function update(dt){ if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ M
   if(MATCH.phase!=='fight')return;
   tickField(MATCH.pf,dt,false);
   if(MATCH.of)tickField(MATCH.of,dt,true);
+  if(MATCH.mode==='versus'){ var nowT=Date.now();
+    if(nowT-MP.lastPub>900)_mpPub(true);                             /* heartbeat */
+    if(MP.oppLastT && nowT-MP.oppLastT>15000 && MATCH.phase==='fight'){ MP.forfeit=true; if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
   if(MATCH.powers){ var bp=$('b-power'); if(bp)bp.classList.toggle('ready',powerReady(MATCH.pf)); }
 }
 
@@ -645,6 +682,7 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   decayFall(f,dt);
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
   if(f.flashDanger>0)f.flashDanger-=dt;
+  if(f.remote)return;   /* versus: the rival board is a remote display, driven by snapshots */
   if(f.state==='play'){
     if(isAI){ aiUpdate(f,dt); }
     else { f.gravAcc+=dt; var g=f.softHold? Math.min(f.gravMs,40):f.gravMs; while(f.gravAcc>=g){ f.gravAcc-=g; gravityStep(f); if(f.state!=='play')break; } }
@@ -655,11 +693,24 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   if(MATCH.mode==='solo' && f===MATCH.pf){ MATCH.soloRamp=(MATCH.soloRamp||0)+dt; f.gravMs=Math.max(150, 770-(MATCH.soloRamp/1000)*7); }
 }
 
+var _rafWall=0;
 function loop(t){ if(!lastT)lastT=t; var dt=t-lastT; lastT=t; if(dt>60)dt=60;
+  _rafWall=Date.now();
   if(running)update(dt);
   render();
   requestAnimationFrame(loop);
 }
+/* rAF-starvation watchdog: browsers throttle or pause rAF in background /
+   occluded tabs, which would freeze a versus match (and trip the forfeit
+   timer) if a player app-switches for a moment. If the render loop has not
+   ticked for 250ms, advance the sim by REAL elapsed time in 50ms steps so
+   gameplay and heartbeats keep flowing. Foreground rAF is untouched. */
+var _bgLast=0;
+setInterval(function(){ if(!running)return; var n=Date.now();
+  if(n-_rafWall<250){ _bgLast=0; return; }
+  if(!_bgLast)_bgLast=n; var d=n-_bgLast; _bgLast=n;
+  var steps=Math.min(20,Math.floor(d/50)); while(steps-->0)update(50);
+},200);
 
 /* =====================================================================
    RENDER
@@ -753,7 +804,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
   if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-46);
     ctx.fillStyle='#f0e9d8'; ctx.font='700 13px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-32);
-    drawBoardFrame(OF,'rival', MATCH.stage>=0?ROSTER[MATCH.stage].ac:'#33301f'); drawField(MATCH.of,OF,true); }
+    drawBoardFrame(OF,'rival', MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f')); drawField(MATCH.of,OF,true); }
 
   /* chain floats */
   drawFloats(MATCH.pf,PF); if(MATCH.of)drawFloats(MATCH.of,OF);
@@ -823,9 +874,11 @@ tap('b-power',function(){ firePower(pf()); });
 tap('how-back',function(){ SFX.ui(); show(curReturn()); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
 tap('sel-back',function(){ SFX.ui(); show('s-title'); });
-tap('b-home',function(){ SFX.ui(); running=false; MATCH.phase='none'; show(MATCH.mode==='solo'?'s-title':'s-select'); if(MATCH.mode==='campaign')buildLadder(); });
-tap('go-home',function(){ SFX.ui(); show('s-title'); });
-tap('go-retry',function(){ SFX.ui(); if(MATCH.mode==='solo')startMatch(-1,'solo'); else startMatch(MATCH.stage,'campaign'); });
+tap('b-home',function(){ SFX.ui(); running=false; MATCH.phase='none';
+  if(MATCH.mode==='versus'){ _mpLeave(); MATCH.mode='campaign'; show('s-title'); return; }
+  show(MATCH.mode==='solo'?'s-title':'s-select'); if(MATCH.mode==='campaign')buildLadder(); });
+tap('go-home',function(){ SFX.ui(); if(MATCH.mode==='versus'){ _mpLeave(); MATCH.mode='campaign'; } show('s-title'); });
+tap('go-retry',function(){ SFX.ui(); if(MATCH.mode==='versus'){ _mpLeave(); MATCH.mode='campaign'; _vsOpen(); return; } if(MATCH.mode==='solo')startMatch(-1,'solo'); else startMatch(MATCH.stage,'campaign'); });
 tap('go-next',function(){ SFX.ui(); var n=MATCH.stage+1; if(n<ROSTER.length)startMatch(n,'campaign'); else { buildLadder(); show('s-select'); } });
 var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
 tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
@@ -917,6 +970,121 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
   if(B.on){ B.on=false; var k=function(){ document.removeEventListener('pointerdown',k,true); start(); };
     document.addEventListener('pointerdown',k,true); }
 })();
+
+/* =====================================================================
+   VERSUS — online multiplayer v1 (room-code relay).
+   Both players get the SAME piece sequence (shared seed, authentic Puyo).
+   Each client is authoritative over its OWN board; it publishes compact
+   board snapshots + garbage EVENTS; the rival board is display-only.
+   Transports: 'fs' = Firestore relay via cwRooms/{code} (production; rides
+   the sunbeam-sdk firebase app; REQUIRES the cwRooms rules from
+   firestore-rules-8.txt to be deployed). 'local' = BroadcastChannel
+   (same-browser tabs; dev bots + ?mplocal=1).
+   ===================================================================== */
+var MP={ mode:null, code:null, role:null, seed:0, uid:null, oppUid:null, db:null, ch:null,
+  unsubRoom:null, unsubOpp:null, begun:false, lastEvtIn:0, evtOut:0, outQ:[], lastPub:0,
+  oppLastT:0, forfeit:false, forceLocal:/[?&]mplocal=1/.test(location.search), leave:null };
+
+function _mpCode(){ var A='ABCDEFGHJKMNPQRSTUVWXYZ23456789', s='', i; for(i=0;i<4;i++)s+=A.charAt((Math.random()*A.length)|0); return s; }
+function _mpEncGrid(g){ var s='',r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)s+=g[r][c]; return s; }
+function _mpDecGrid(str){ var g=newGrid(),r,c,i=0; if(!str||str.length<ROWS*COLS)return g; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ g[r][c]=+str.charAt(i++)||0; } return g; }
+
+function _mpGarbage(out){ MP.evtOut++; MP.outQ.push({i:MP.evtOut,n:out}); if(MP.outQ.length>8)MP.outQ=MP.outQ.slice(-8); _mpPub(true); }
+function _mpPub(force){ if(MATCH.mode!=='versus'||!MP.code)return; var now=Date.now();
+  if(!force && now-MP.lastPub<450)return; MP.lastPub=now;
+  var f=MATCH.pf; if(!f)return;
+  _mpSend({ g:_mpEncGrid(f.grid), s:f.score, p:f.pending, d:f.dead?1:0, e:MP.outQ.slice(-8), t:now }); }
+function _mpSend(payload){
+  if(MP.mode==='local'){ if(MP.ch){ try{ MP.ch.postMessage({t:'state',uid:MP.uid,s:payload}); }catch(e){} } }
+  else if(MP.mode==='fs'&&MP.db){ try{ MP.db.collection('cwRooms').doc(MP.code).collection('inputs').doc(MP.uid).set(payload)['catch'](function(){}); }catch(e){} } }
+
+function _mpOnOpp(s){ if(!s||MATCH.mode!=='versus')return; MP.oppLastT=Date.now();
+  if(s.g&&MATCH.of)MATCH.of.grid=_mpDecGrid(s.g);
+  if(MATCH.of){ MATCH.of.score=s.s||0; MATCH.of.pending=s.p||0; }
+  var evts=s.e||[],i; for(i=0;i<evts.length;i++){ if(evts[i]&&evts[i].i>MP.lastEvtIn){ MP.lastEvtIn=evts[i].i; if(MATCH.pf&&MATCH.phase==='fight'){ MATCH.pf.pending+=(+evts[i].n||0); SFX.warn(); } } }
+  if(s.d&&MATCH.phase==='fight'){ if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
+
+function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false; MATCH.result=null;
+  MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/2.4; MATCH.pf.rng=mulberry32(MP.seed>>>0);
+  MATCH.of=makeField(4,false); MATCH.of.remote=true;
+  spawnPiece(MATCH.pf); MATCH.pf.state='wait'; MATCH.of.state='play';
+  MATCH.phase='count'; MATCH.t=0; MATCH.count=3;
+  MP.lastEvtIn=0; MP.evtOut=0; MP.outQ=[]; MP.lastPub=0; MP.oppLastT=Date.now(); MP.forfeit=false;
+  var gr=$('go-retry'); if(gr)gr.style.display='';
+  show('s-play'); running=true; SFX.count(); }
+
+function versusResult(result){ if(_devSweep)return;
+  $('go-emoji').textContent = result==='win' ? '🕺' : '🥀';
+  $('go-title').textContent = result==='win' ? 'Victory' : 'Defeat';
+  $('go-lab').textContent = 'Versus';
+  $('go-line').textContent = result==='win' ? (MP.forfeit ? 'Your rival left the block.' : 'You buffed their block back to neon.') : 'Your plot got buffed grey. Run it back.';
+  var rw=$('go-reward'); if(rw)rw.style.display='none';   /* no sunbeams in versus (farmable) */
+  $('go-next').style.display='none';
+  var gr=$('go-retry'); if(gr)gr.style.display='none';
+  show('s-go'); }
+
+/* ---- local transport (BroadcastChannel: same-browser tabs, dev bots) ---- */
+function _mpLocalOpen(code,isHost){ MP.mode='local'; MP.code=code; MP.role=isHost?'host':'guest'; MP.begun=false;
+  if(!MP.uid)MP.uid='L'+((Math.random()*1e6)|0);
+  if(isHost)MP.seed=(Math.random()*0xffffffff)>>>0;
+  if(typeof BroadcastChannel==='undefined'){ _vsMsg('Local rooms are not supported in this browser.'); return false; }
+  try{ MP.ch=new BroadcastChannel('pnl-'+code); }catch(e){ _vsMsg('Local rooms are not supported in this browser.'); return false; }
+  MP.ch.onmessage=function(ev){ var m=ev.data||{};
+    if(m.t==='join'&&MP.role==='host'&&!MP.begun){ MP.oppUid=m.uid; try{ MP.ch.postMessage({t:'room',seed:MP.seed,host:MP.uid}); }catch(e){} MP.begun=true; startVersus(); }
+    else if(m.t==='room'&&MP.role==='guest'&&!MP.begun){ MP.seed=m.seed; MP.oppUid=m.host; MP.begun=true; startVersus(); }
+    else if(m.t==='state'&&m.uid!==MP.uid){ _mpOnOpp(m.s); }
+    else if(m.t==='leave'&&m.uid!==MP.uid){ if(MATCH.mode==='versus'&&MATCH.phase==='fight'){ MP.forfeit=true; if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } } };
+  if(!isHost){ var tries=0; var knock=function(){ if(MP.begun||tries++>=5||!MP.ch)return; try{ MP.ch.postMessage({t:'join',uid:MP.uid}); }catch(e){} setTimeout(knock,700); }; knock(); }
+  return true; }
+
+/* ---- Firestore transport (production; needs cwRooms rules deployed) ---- */
+function _mpFsReady(){ try{ if(!window.firebase)return null; var app=firebase.app('sunbeam-sdk'); var u=app.auth().currentUser; if(!u)return null;
+  return { db:app.firestore(), uid:u.uid, name:((u.displayName||u.email||'Keeper')+'').slice(0,20) }; }catch(e){ return null; } }
+function _mpFsSubRoom(ref){ MP.unsubRoom=ref.onSnapshot(function(snap){ var d=snap&&snap.exists?snap.data():null; if(!d)return;
+    if(MP.role==='host'&&d.guestUid&&d.state==='waiting'){ try{ ref.update({state:'ready'})['catch'](function(){}); }catch(e){} }
+    if(d.state==='ready'&&!MP.begun){ MP.seed=d.seed>>>0; MP.oppUid=(MP.role==='host')?d.guestUid:d.hostUid;
+      try{ MP.unsubOpp=MP.db.collection('cwRooms').doc(MP.code).collection('inputs').doc(MP.oppUid).onSnapshot(function(s){ if(s&&s.exists)_mpOnOpp(s.data()); }); }catch(e){}
+      MP.begun=true; startVersus(); } },
+  function(){ _vsMsg('Lost the room connection.'); }); }
+
+function _mpLeave(){ try{ if(MP.unsubRoom)MP.unsubRoom(); }catch(e){} MP.unsubRoom=null;
+  try{ if(MP.unsubOpp)MP.unsubOpp(); }catch(e){} MP.unsubOpp=null;
+  if(MP.ch){ try{ MP.ch.postMessage({t:'leave',uid:MP.uid}); }catch(e){} try{ MP.ch.close(); }catch(e){} MP.ch=null; }
+  if(MP.mode==='fs'&&MP.db&&MP.code&&MP.role==='host'){ try{ MP.db.collection('cwRooms').doc(MP.code)['delete']()['catch'](function(){}); }catch(e){} }
+  MP.code=null; MP.begun=false; MP.mode=null; MP.role=null; MP.oppUid=null; }
+MP.leave=_mpLeave;
+
+/* ---- lobby UI ---- */
+function _vsMsg(t){ var el=$('vs-msg'); if(el)el.textContent=t||''; }
+function _vsResetUI(){ var l=$('vs-lobby'), w=$('vs-wait'), a=$('vs-auth'); if(l)l.style.display=''; if(w)w.style.display='none'; if(a)a.style.display='none'; _vsMsg(''); }
+function _vsShowWait(code){ var l=$('vs-lobby'), w=$('vs-wait'); if(l)l.style.display='none'; if(w)w.style.display='block'; var c=$('vs-code'); if(c)c.textContent=code; }
+function _vsAuthNotice(){ var a=$('vs-auth'); if(a)a.style.display='block'; }
+function _vsOpen(){ _vsResetUI(); show('s-vs');
+  if(MP.forceLocal)return;
+  var tries=0; (function poll(){ if(curScreen!=='s-vs')return; if(_mpFsReady())return; if(tries++>=4){ _vsAuthNotice(); return; } setTimeout(poll,700); })(); }
+function _vsCreate(){ _vsMsg('');
+  if(MP.forceLocal){ MP.uid=null; if(_mpLocalOpen(_mpCode(),true))_vsShowWait(MP.code); return; }
+  var fsr=_mpFsReady(); if(!fsr){ _vsAuthNotice(); return; }
+  MP.mode='fs'; MP.db=fsr.db; MP.uid=fsr.uid; MP.role='host'; MP.code=_mpCode(); MP.seed=(Math.random()*0xffffffff)>>>0; MP.begun=false;
+  var ref=MP.db.collection('cwRooms').doc(MP.code);
+  ref.set({ hostUid:MP.uid, hostName:fsr.name, seed:MP.seed, round:1, state:'waiting', createdAt:Date.now() })
+    .then(function(){ _vsShowWait(MP.code); _mpFsSubRoom(ref); })
+    ['catch'](function(){ _vsMsg('Could not open a room. The online room service may not be switched on yet.'); }); }
+function _vsJoin(){ _vsMsg('');
+  var inp=$('vs-join-code'); var code=((inp&&inp.value)||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==4){ _vsMsg('Enter the four character room code.'); return; }
+  if(MP.forceLocal){ MP.uid=null; if(_mpLocalOpen(code,false)){ _vsShowWait(code); var st=$('vs-status'); if(st)st.textContent='Knocking on the door…'; } return; }
+  var fsr=_mpFsReady(); if(!fsr){ _vsAuthNotice(); return; }
+  MP.mode='fs'; MP.db=fsr.db; MP.uid=fsr.uid; MP.role='guest'; MP.code=code; MP.begun=false;
+  var ref=MP.db.collection('cwRooms').doc(code);
+  ref.get().then(function(snap){ if(!snap.exists){ _vsMsg('No room with that code.'); MP.code=null; return; }
+      return ref.update({ guestUid:MP.uid, guestName:fsr.name }).then(function(){ _vsShowWait(code); var st=$('vs-status'); if(st)st.textContent='Joined. Waiting for the battle to start…'; _mpFsSubRoom(ref); }); })
+    ['catch'](function(){ _vsMsg('Could not join that room. The online room service may not be switched on yet.'); MP.code=null; }); }
+
+tap('b-versus',function(){ SFX.ui(); _vsOpen(); });
+tap('vs-back',function(){ SFX.ui(); _mpLeave(); show('s-title'); });
+tap('b-vs-create',function(){ SFX.ui(); _vsCreate(); });
+tap('b-vs-join',function(){ SFX.ui(); _vsJoin(); });
 
 fit(); paintTitle(); requestAnimationFrame(loop);
 
@@ -1060,7 +1228,15 @@ if(/[?&]cwdev=1/.test(location.search)){
     refMove:refMove, playMatch:playMatch, sweep:sweep, diag:diag,
     powerTest:function(){ this.start(0,1); MATCH.powers=true; MATCH.pf.powerId='keeper-solvent'; MATCH.pf.grid[12][0]=CHAFF; MATCH.pf.grid[12][1]=CHAFF; MATCH.pf.sap=SAP_MAX;
       var cb=countChaff(MATCH.pf.grid), ready=powerReady(MATCH.pf), fired=firePower(MATCH.pf), ca=countChaff(MATCH.pf.grid);
-      return {powerId:MATCH.pf.powerId, ready:ready, fired:fired, chaffBefore:cb, chaffAfter:ca, sapAfter:MATCH.pf.sap, cd:MATCH.pf.powerCd}; } };
+      return {powerId:MATCH.pf.powerId, ready:ready, fired:fired, chaffBefore:cb, chaffAfter:ca, sapAfter:MATCH.pf.sap, cd:MATCH.pf.powerCd}; },
+    /* ---- versus (local BroadcastChannel) headless helpers ---- */
+    mpCreate:function(code){ MP.forceLocal=true; MP.uid='L'+((Math.random()*1e6)|0); _mpLocalOpen(code||_mpCode(),true); return MP.code; },
+    mpJoin:function(code){ MP.forceLocal=true; MP.uid='L'+((Math.random()*1e6)|0); _mpLocalOpen(code,false); return MP.code; },
+    mpState:function(){ return { phase:MATCH.phase, mode:MATCH.mode, code:MP.code, role:MP.role, begun:MP.begun,
+      evtOut:MP.evtOut, lastEvtIn:MP.lastEvtIn, result:MATCH.result, forfeit:MP.forfeit,
+      pf:MATCH.pf?{score:MATCH.pf.score,pending:MATCH.pf.pending,dead:MATCH.pf.dead,state:MATCH.pf.state}:null,
+      of:MATCH.of?{score:MATCH.of.score,pending:MATCH.of.pending,dead:MATCH.of.dead,remote:!!MATCH.of.remote}:null }; },
+    mpBot:function(q){ if(MATCH.mode==='versus'&&MATCH.pf&&MATCH.pf.state==='play'&&MATCH.pf.cur){ botMove(MATCH.pf,q==null?0.75:q); } return MATCH.phase; } };
 }
 })();
 </script>

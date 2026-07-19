@@ -1,0 +1,696 @@
+// LUCID WINDS — COMPLETE FIRESTORE SECURITY RULES
+// Updated: July 19, 2026 (v8)
+// Changes from v7:
+//   - NEW cwRooms/{roomCode} + inputs/{playerUid} — Pop N Lock (satellite
+//     chaff-wars) online VERSUS rooms. Relay model: host creates the room
+//     and owns its lifecycle; one guest claims the empty seat exactly once;
+//     hostUid frozen post-create; each player may write ONLY their own
+//     inputs doc (board snapshot + garbage events); any signed-in user can
+//     read (needed to join by code). No unauthenticated access anywhere.
+// Changes from v6:
+//   - wildDrops.update: ADD field immutability (ownerUid, hash, lat, lng,
+//     grade frozen post-create; only transient fields can change). Prevents
+//     post-create tampering where a client raises grade/EA after the fact.
+//   - meta/accountCounter: tighten allowed update to ONLY change `next`
+//     field (no extra fields injected) — defense-in-depth on top of the
+//     existing +1 increment check.
+//   - meta/accountCounter: ADD create rule (initial seed) restricted to
+//     `next == 1`, so the counter can be initialized but not reset.
+// Changes 2026-04-28 (P4 — anti-cheat field validation on Pi-paid entitlements):
+//   - Split the previous catch-all `vaults/{uid}/{document=**}` rule into
+//     three rules: root doc, meta/state, and a subcollection catch-all that
+//     EXCLUDES the validated paths. This is necessary because Firestore rules
+//     OR together — a recursive rule on the parent path silently overrides
+//     any stricter rule on a child path.
+//   - Root-doc validation:
+//       lw_pouch_cap     ≤ 40   (item pouch slot cap)
+//       lw_nursery_slots ≤ 6    (nursery slot cap mirror)
+//   - meta/state validation:
+//       slots            ≤ 100  (greenhouse slot cap; 60 base + prestige headroom)
+//   - Prevents a malicious client from raising these caps directly. Pi-paid
+//     entitlements only flow through the piComplete Cloud Function (admin SDK
+//     writes bypass rules entirely).
+//   - These caps are coarse — they don't stop hashWallet (Sunbeam) or Dew
+//     manipulation. Legit gameplay decrements + increments those freely, so
+//     real anti-cheat there needs server-authoritative writes via Cloud
+//     Functions (same path the Pi entitlements take). Documented as TODO
+//     at the top of the vaults section.
+// Deploy: Firebase Console → focus-grove-fffa8 → Firestore → Rules → paste → Publish
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ════════════════════════════════════════════════════════════
+    // VAULTS — fully private, owner + server only
+    // Contains: greenhouse, nursery, feralPouch, hashWallet,
+    //           breedingLog, compostLog, companions, trailSteps,
+    //           settings, purchases
+    //
+    // 2026-04-28 split into two rules:
+    //   1. Root doc (`vaults/{uid}`) — owner-only + cap validation on
+    //      Pi-paid entitlement fields. Prevents a malicious client from
+    //      writing oversized maxSlots / pouch_cap values directly.
+    //   2. Subcollection docs (`vaults/{uid}/{coll}/{doc}`) — lenient
+    //      owner-only. pendingRewards has its own override below.
+    //
+    // TODO production: hashWallet (Sunbeams) and feralPouch counts still
+    //   accept any owner-authored value. Real anti-cheat there needs
+    //   server-authoritative writes via Cloud Functions (the same path the
+    //   Pi entitlements take). Until that lands these rules are coarse.
+    // ════════════════════════════════════════════════════════════
+
+    // Helper for root-vault writes — validates the entitlement caps for
+    // root-doc fields the Pi-payment Cloud Function writes. Fields not
+    // listed here are unrestricted (free-form gameplay state). Real
+    // canonical paths:
+    //   vaults/{uid}.lw_pouch_cap          ≤ 40   (item pouch slot cap)
+    //   vaults/{uid}.lw_nursery_slots      ≤ 6    (nursery slot cap mirror)
+    //   vaults/{uid}.emergency_pouch_today is string (today's date YYYY-MM-DD)
+    //   vaults/{uid}.lw_hut_early_opens    is map  ({ date, opened:{key:ts} })
+    // Greenhouse slot cap (`meta/state.slots`) is validated on the meta
+    // subcollection rule below.
+    function validVaultRootCaps(data) {
+      return (
+        !('lw_pouch_cap' in data)
+        || (data.lw_pouch_cap is number
+            && data.lw_pouch_cap >= 0
+            && data.lw_pouch_cap <= 40)
+      ) && (
+        !('lw_nursery_slots' in data)
+        || (data.lw_nursery_slots is number
+            && data.lw_nursery_slots >= 0
+            && data.lw_nursery_slots <= 6)
+      ) && (
+        !('lw_nur_clipping_slots' in data)
+        || (data.lw_nur_clipping_slots is number
+            && data.lw_nur_clipping_slots >= 0
+            && data.lw_nur_clipping_slots <= 5)
+      );
+    }
+
+    // Helper for vaults/{uid}/meta/state — bounds the greenhouse slot cap.
+    //   meta/state.slots ≤ 100
+    //   (60 base + 40 prestige headroom — P4 prestige is +1/level so 100
+    //    covers prestige 1-40. Tighten when prestige caps elsewhere.)
+    //
+    // Audit security-deep H4 (2026-05-06): explicitly deny hashLedger here.
+    // It was previously accepted because the rule only checked `slots`.
+    // An attacker could write meta/state.hashLedger = {earned:9999999,
+    // spent:0} and the local UI would display 9.9M Sunbeams. mintPlant
+    // Cloud Function reads ROOT vault.hashLedger only (server-only via
+    // vaultServerFieldsImmutable), so the spend ceiling held — but the
+    // local display was misleading. Block client writes to hashLedger on
+    // meta/state too. Client also no longer mirrors it (index.html change).
+    function validMetaState(data) {
+      return (
+        !('hashLedger' in data)
+        && (
+          !('slots' in data)
+          || (data.slots is number
+              && data.slots >= 0
+              && data.slots <= 100)
+        )
+      );
+    }
+
+    // 2026-04-29 EVE — NFT-grade hardening. These root-vault fields are
+    // SERVER-MANAGED. Cloud Functions write them via admin SDK (which
+    // bypasses these rules); clients can never CHANGE them.
+    //
+    // Uses diff().affectedKeys() so map-type fields like hashLedger
+    // compare by structure. Only called from allow update where
+    // resource is guaranteed non-null, so no null guard needed.
+    function vaultServerFieldsImmutable() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['hashLedger', 'mintCounter', 'lastMintAt', 'dailyMints', 'earnRateMin', 'earnRateDay', 'lastEarnAt', 'lastEarnSource']);
+    }
+
+    // Root vault document
+    match /vaults/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && validVaultRootCaps(request.resource.data)
+        // On create, server fields must be absent (server seeds them on first mint/earn)
+        && !('hashLedger' in request.resource.data)
+        && !('mintCounter' in request.resource.data);
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && validVaultRootCaps(request.resource.data)
+        && vaultServerFieldsImmutable();
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MINT LOG — unforgeable proof of server-validated mints.
+    // Owner reads (to query their own mintable NFTs); only Cloud
+    // Functions admin SDK writes. The future NFT marketplace listing
+    // contract checks here: a plant can only list if a matching log
+    // entry exists. Client can forge serverSigned:true in localStorage
+    // but cannot forge a mintLog row.
+    // ════════════════════════════════════════════════════════════
+    match /mintLog/{uid}/mints/{plantHash} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+
+    // meta/state — slot cap validation
+    match /vaults/{uid}/meta/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && validMetaState(request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // hashWallet/state — Sunbeam balance cap (anti-cheat absolute ceiling).
+    // 10M Sunbeams is ~333k plants worth — well beyond any legit player. Any
+    // value above this is almost certainly tampered. Real anti-cheat (per-write
+    // delta validation, Cloud-Function-gated grants) is post-launch work.
+    match /vaults/{uid}/hashWallet/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && (
+          !('balance' in request.resource.data)
+          || (request.resource.data.balance is number
+              && request.resource.data.balance >= 0
+              && request.resource.data.balance <= 10000000)
+        )
+        && (
+          !('totalEarned' in request.resource.data)
+          || (request.resource.data.totalEarned is number
+              && request.resource.data.totalEarned >= 0
+              && request.resource.data.totalEarned <= 50000000)
+        );
+    }
+
+    // feralPouch/state — daily collection cap (anti-cheat). Cap is 100/day
+    // even though base is 2 + cryo 5 = max ~7 legit per day. 100 is the
+    // tampered-payload threshold; legit play never approaches it.
+    match /vaults/{uid}/feralPouch/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && (
+          !('collectedToday' in request.resource.data)
+          || (request.resource.data.collectedToday is number
+              && request.resource.data.collectedToday >= 0
+              && request.resource.data.collectedToday <= 100)
+        )
+        && (
+          !('maxDaily' in request.resource.data)
+          || (request.resource.data.maxDaily is number
+              && request.resource.data.maxDaily >= 0
+              && request.resource.data.maxDaily <= 20)
+        );
+    }
+
+    // Vault subcollection documents (catch-all for greenhouse, companions,
+    // settings, purchases, future subcollections + meta/dailyStats).
+    //
+    // IMPORTANT: Firestore rules OR together. To enforce all the more-specific
+    // rules above (meta/state slot-cap, hashWallet/feralPouch caps, pendingRewards),
+    // this catch-all EXCLUDES those paths. Otherwise the broader rule would
+    // silently allow an over-cap write that the more-specific rule denied.
+    match /vaults/{uid}/{collection}/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && !(collection == 'pendingRewards')
+        && !(collection == 'meta' && docId == 'state')
+        && !(collection == 'hashWallet' && docId == 'state')
+        && !(collection == 'feralPouch' && docId == 'state');
+    }
+
+    // PENDING REWARDS — other players can CREATE rewards for the vault owner
+    // (e.g. harvest Dew Drop payouts), owner can read and delete (claim)
+    //
+    // Audit security-deep M2 (2026-05-06): added `harvesterUid == auth.uid`
+    // check. Client writers (Group C) already populate harvesterUid with the
+    // calling user's uid. This rule prevents identity-spoofing griefing
+    // where attacker writes pendingRewards into someone else's vault with a
+    // fake harvesterUid implicating a third party. Real per-sender
+    // rate-limiting requires a Cloud Function (planned migration); the
+    // amount cap of 40 + this identity check bound damage in the meantime.
+    match /vaults/{uid}/pendingRewards/{rewardId} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid != uid  // can't reward yourself
+        && request.resource.data.keys().hasAll(['type', 'amount', 'grade', 'plantName', 'harvesterUid', 'timestamp'])
+        && request.resource.data.harvesterUid == request.auth.uid  // no identity spoofing
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.amount <= 40;  // max Cosmic reward
+      allow update: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // META — account counter for Pioneer badge sequencing
+    // Hardened 2026-04-28: tighter create + update rules.
+    // ════════════════════════════════════════════════════════════
+    match /meta/accountCounter {
+      allow read: if request.auth != null;
+      // Audit 4 C4 (2026-05-06): bootstrap path. The original rule allowed
+      // CREATE only with next == 1, but the client transaction at
+      // _createNewProfile reads cDoc, sees it doesn't exist (num=1 default),
+      // and writes next=num+1 = 2 to allocate accountNumber 1 to the first
+      // ever player. Pi reviewers on a fresh Firebase project hit this.
+      // Allow `next == 1 || next == 2` on CREATE so either pre-seeded or
+      // bootstrap-on-first-signup works. Subsequent UPDATE still strictly
+      // increments by 1 from the stored value.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['next'])
+        && (request.resource.data.next == 1 || request.resource.data.next == 2);
+      // Each write increments by exactly 1, only the `next` field allowed.
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['next'])
+        && request.resource.data.next == resource.data.next + 1;
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // PROFILES — public social identity
+    // Public read, owner write (except pollen — server only)
+    // ════════════════════════════════════════════════════════════
+    match /profiles/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && (!request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['pollen', 'pollenRate']));
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // FRIEND CODES — reverse lookup, one-time create, permanent
+    // ════════════════════════════════════════════════════════════
+    match /friendCodes/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/friendCodes/$(code));
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // FRIENDS — bilateral subcollection model
+    // Owner writes freely. Cross-writes for requests + accept/decline.
+    // ════════════════════════════════════════════════════════════
+    match /friends/{uid}/connections/{friendUid} {
+      // Owner reads their own connections
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Owner writes to their own connections
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // Friend can CREATE a pending_received request in my subcollection
+      allow create: if request.auth != null
+        && request.auth.uid == friendUid
+        && request.resource.data.status == "pending_received";
+
+      // Friend can UPDATE my doc to accept/decline
+      allow update: if request.auth != null
+        && request.auth.uid == friendUid
+        && resource.data.status == "pending_sent"
+        && request.resource.data.status in ["accepted", "declined"];
+
+      // Friend can DELETE (unfriend)
+      allow delete: if request.auth != null
+        && request.auth.uid == friendUid;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // FRIENDS INBOX — Friendship gifting + Twin Bloom proposals.
+    // Sender writes a gift doc into recipient's inbox; recipient flips
+    // claimed:true to consume. Loot / from / tier are immutable
+    // post-create — recipient cannot rewrite the loot to grant
+    // themselves better gear. Doctrine: NO free-text — fromName is the
+    // sender's display name (also HTML-escaped client-side at render).
+    // ════════════════════════════════════════════════════════════
+    match /friends/{uid}/inbox/{giftId} {
+      // Recipient reads their own inbox
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Sender creates a gift doc in recipient's inbox
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.claimed == false
+        && request.resource.data.keys().hasAll(['from','fromName','tier','loot','sentAt','claimed']);
+
+      // Recipient flips claimed:true. from/tier frozen so loot can't be rewritten.
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && resource.data.claimed == false
+        && request.resource.data.claimed == true
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.tier == resource.data.tier;
+
+      // Recipient can delete (cleanup of claimed gifts, decline of twin bloom proposals)
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // LEADERBOARDS — read-only for clients, server writes
+    // ════════════════════════════════════════════════════════════
+    match /leaderboards/{boardId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /leaderboards/ranks/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // GROVES (Community Gardens)
+    // Public read, curator controls, plant owner controls their slots
+    // ════════════════════════════════════════════════════════════
+    match /groves/{groveId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.curatorUid == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.curatorUid == request.auth.uid;
+      allow delete: if false;
+
+      // SLOTS
+      match /slots/{slotIndex} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+          && (get(/databases/$(database)/documents/groves/$(groveId)).data.curatorUid == request.auth.uid
+              || resource.data.ownerUid == request.auth.uid
+              || request.resource.data.ownerUid == request.auth.uid);
+      }
+
+      // SUBMISSIONS
+      match /submissions/{subId} {
+        allow read: if request.auth != null
+          && (request.auth.uid == resource.data.submitterUid
+              || request.auth.uid == get(/databases/$(database)/documents/groves/$(groveId)).data.curatorUid);
+        allow create: if request.auth != null
+          && request.resource.data.submitterUid == request.auth.uid
+          && request.resource.data.status == "pending";
+        allow update: if request.auth != null
+          && (request.auth.uid == get(/databases/$(database)/documents/groves/$(groveId)).data.curatorUid
+              || (request.auth.uid == resource.data.submitterUid
+                  && request.resource.data.status == "withdrawn"));
+      }
+
+      // WATERS — idempotent by composite doc ID
+      match /waters/{waterId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && waterId.matches(request.auth.uid + '_.*');
+        allow update, delete: if false;
+      }
+
+      // TIPS
+      match /tips/{tipId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.fromUid == request.auth.uid;
+        allow update: if request.auth != null
+          && request.auth.uid == resource.data.fromUid
+          && resource.data.status == "pending"
+          && request.resource.data.status in ["completed", "failed"];
+      }
+
+      // VISITORS
+      match /visitors/{visitorUid} {
+        allow read: if request.auth != null;
+        allow create, update: if request.auth != null
+          && request.auth.uid == visitorUid;
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // GIFTS (Care Packages)
+    // Sender creates, recipient reads + opens
+    // ════════════════════════════════════════════════════════════
+    match /gifts/{giftId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == resource.data.fromUid
+            || request.auth.uid == resource.data.toUid);
+      allow create: if request.auth != null
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.status == "sent";
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.toUid
+        && resource.data.status == "sent"
+        && request.resource.data.status == "opened";
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // FERAL SEEDS — public read, atomic claim only
+    // Server (admin SDK) creates seeds. Players can only claim.
+    // ════════════════════════════════════════════════════════════
+    match /feralSeeds/{seedId} {
+      allow read: if request.auth != null;
+      allow create: if false;  // Server-only
+      allow update: if request.auth != null
+        && resource.data.claimedBy == null
+        && resource.data.status == 'available'
+        && request.resource.data.claimedBy == request.auth.uid
+        && request.resource.data.status == 'claimed'
+        && request.resource.data.location == resource.data.location
+        && request.resource.data.seedHash == resource.data.seedHash
+        && request.resource.data.parentPlantHash == resource.data.parentPlantHash;
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // EVENTS — server-only write, client read
+    // ════════════════════════════════════════════════════════════
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /events/{eventId}/participants/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // WILD DROPS — owner creates, ANY auth user can delete (harvest)
+    // Owner can UPDATE (change defense game, water status). Other players
+    // can update transient fields on wild-born plants only.
+    //
+    // 2026-04-28 hardening: post-create field IMMUTABILITY. Identity-bearing
+    // fields (ownerUid, hash, grade, lat, lng, zone, wildBorn) cannot change
+    // after create. Prevents the post-create-tamper exploit where a client
+    // creates a Common drop then updates it to Cosmic. Transient fields
+    // (defenderGame, water status, decayAt, defense items, etc.) remain
+    // mutable.
+    //
+    // TODO Production: move harvest to Cloud Function with EA + GPS validation.
+    // ════════════════════════════════════════════════════════════
+    match /wildDrops/{dropId} {
+      allow read: if request.auth != null;
+      // Create: either a normal player drop (ownerUid == caller) OR a
+      // wild-born offspring where ownerUid is the 'wild' sentinel. Wild
+      // births can be triggered by any authenticated client running the
+      // reproduction check; the write itself is deterministic (docId is
+      // parentPair+date+zone) so multiple clients triggering the same
+      // birth converge on the same doc.
+      allow create: if request.auth != null
+        && request.resource.data.status == 'alive'
+        && request.resource.data.keys().hasAll(['lat', 'lng', 'hash', 'ownerUid', 'zone', 'status'])
+        && (
+          request.resource.data.ownerUid == request.auth.uid
+          || (request.resource.data.ownerUid == 'wild'
+              && request.resource.data.wildBorn == true)
+        );
+      allow delete: if request.auth != null;
+      // Update: own drops (standard) + any auth'd user can update transient
+      // fields on a wild-born plant. Identity-bearing fields are FROZEN
+      // post-create (post-create-tamper protection).
+      allow update: if request.auth != null
+        && (
+          resource.data.ownerUid == request.auth.uid
+          || resource.data.ownerUid == 'wild'
+        )
+        // Identity-bearing fields cannot change post-create:
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.hash == resource.data.hash
+        && request.resource.data.lat == resource.data.lat
+        && request.resource.data.lng == resource.data.lng
+        && request.resource.data.zone == resource.data.zone
+        // grade is optional (not all docs have it); if present in either,
+        // it must match.
+        && (
+          !('grade' in request.resource.data) && !('grade' in resource.data)
+          || request.resource.data.grade == resource.data.grade
+        )
+        // wildBorn is also frozen if it was ever set
+        && (
+          !('wildBorn' in resource.data)
+          || request.resource.data.wildBorn == resource.data.wildBorn
+        );
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // VELOCITY CHECKS — anti-spoof, server-only
+    // ════════════════════════════════════════════════════════════
+    match /velocityChecks/{uid} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // PI TRANSACTIONS — server writes, player reads their own
+    // ════════════════════════════════════════════════════════════
+    match /piTransactions/{txId} {
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;  // Server-only
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // WEB ORDERS — open-web/PWA crypto rail (NOWPayments).
+    // Mirror of piTransactions for the web rail. nowCreateInvoice (admin
+    // SDK) creates the order; nowIpn (admin SDK, HMAC-verified webhook)
+    // flips it to 'completed' + applies fulfillment. The CLIENT may only
+    // READ its own order (status-poll the pending → confirmed UX);
+    // it can never write — same trust model as Pi entitlements.
+    // ════════════════════════════════════════════════════════════
+    match /webOrders/{orderId} {
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;  // Server-only (admin SDK bypasses rules)
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MARKETPLACE LISTINGS
+    // Public browse, seller creates/delists, server handles sales
+    // ════════════════════════════════════════════════════════════
+    match /listings/{listingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.sellerUid == request.auth.uid
+        && request.resource.data.status == "active"
+        && request.resource.data.price >= 0.1;
+      allow update: if request.auth != null
+        && resource.data.sellerUid == request.auth.uid
+        && resource.data.status == "active"
+        && request.resource.data.status == "delisted";
+      allow delete: if false;
+
+      // FAVORITES
+      match /favorites/{uid} {
+        allow read: if request.auth != null;
+        allow create, delete: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // SELLER PROFILES — server-only write
+    match /sellerProfiles/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // CONTENT REGISTRY — server-only write, public read
+    // Holds expansion content: new leaves, companions, haiku phrases
+    // ════════════════════════════════════════════════════════════
+    match /contentRegistry/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;  // Admin SDK only
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // REFERRALS — inviter-owned referral state with shared subtree
+    // Inviter creates the parent doc with their inviterUid the first
+    // time they open the invite modal. Invitees write/update their
+    // own entry under invitees/{uid}. Inviter reads all invitees to
+    // settle payouts on level-up.
+    // ════════════════════════════════════════════════════════════
+    match /referrals/{code} {
+      // Inviter reads + writes their own referral doc
+      allow read: if request.auth != null
+        && resource != null
+        && resource.data.inviterUid == request.auth.uid;
+      // Inviter creates the doc (one-time, on opening invite modal)
+      allow create: if request.auth != null
+        && request.resource.data.inviterUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['inviterUid', 'createdAt']);
+      // Inviter updates own doc (e.g. pause referrals later)
+      allow update: if request.auth != null
+        && resource.data.inviterUid == request.auth.uid
+        && request.resource.data.inviterUid == resource.data.inviterUid;
+      allow delete: if false;
+
+      // INVITEES SUBCOLLECTION — cross-account write model
+      match /invitees/{uid} {
+        // Invitee reads their own entry; inviter reads all invitees
+        allow read: if request.auth != null
+          && (request.auth.uid == uid
+              || (exists(/databases/$(database)/documents/referrals/$(code))
+                  && get(/databases/$(database)/documents/referrals/$(code)).data.inviterUid == request.auth.uid));
+        // Invitee creates their own entry (signup with this inviter's code)
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.inviteeUid == uid
+          && request.resource.data.keys().hasAll(['inviteeUid', 'inviteeName', 'signedUpAt'])
+          && request.resource.data.milestoneReached == false;
+        // Invitee updates milestoneReached + milestoneAt only (on Lv 2)
+        allow update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.inviteeUid == resource.data.inviteeUid
+          && request.resource.data.signedUpAt == resource.data.signedUpAt
+          && request.resource.data.milestoneReached == true;
+        allow delete: if false;
+      }
+    }
+
+
+    // ════════════════════════════════════════════════════════════
+    // POP N LOCK VERSUS ROOMS — cwRooms/{roomCode}
+    // Online head-to-head relay for the chaff-wars satellite.
+    // Host creates + deletes; guest seat claimable once; hostUid frozen.
+    // Each player writes only their own inputs/{uid} doc.
+    // ════════════════════════════════════════════════════════════
+    match /cwRooms/{roomCode} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.hostUid == request.auth.uid
+                    && request.resource.data.state == 'waiting'
+                    && request.resource.data.keys().hasOnly(
+                         ['hostUid','hostName','guestUid','guestName','seed','round','state','createdAt']);
+      allow update: if request.auth != null
+                    && request.resource.data.hostUid == resource.data.hostUid
+                    && ( resource.data.hostUid == request.auth.uid
+                         || resource.data.guestUid == request.auth.uid
+                         || ( !('guestUid' in resource.data)
+                              && request.resource.data.guestUid == request.auth.uid ) )
+                    && request.resource.data.keys().hasOnly(
+                         ['hostUid','hostName','guestUid','guestName','seed','round','state','createdAt']);
+      allow delete: if request.auth != null
+                    && resource.data.hostUid == request.auth.uid;
+
+      match /inputs/{playerUid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == playerUid;
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // POC DATA — Attention Protocol proof-of-concept collections
+    // Auth required for all access (secured from previous open-write)
+    // ════════════════════════════════════════════════════════════
+    match /poc_data/{userId}/{document=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+    }
+    match /poc_sessions/{document=**} {
+      allow write: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+    match /poc_snapshots/{document=**} {
+      allow write: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+    match /poc_buffer/{document=**} {
+      allow write: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+  }
+}
