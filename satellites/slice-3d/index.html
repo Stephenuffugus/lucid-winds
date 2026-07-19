@@ -63,6 +63,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .stars{font-size:34px; letter-spacing:8px; margin-top:8px}
+#pops{position:absolute; inset:0; pointer-events:none; z-index:24; overflow:hidden}
+.pop3d{position:absolute; font-weight:800; font-size:22px; text-shadow:0 2px 8px #000c; transform:translate(-50%,-50%); animation:popFloat 0.9s ease-out forwards}
+@keyframes popFloat{ 0%{opacity:0; margin-top:6px; transform:translate(-50%,-50%) scale(0.7)} 15%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} 100%{opacity:0; margin-top:-52px; transform:translate(-50%,-50%) scale(1)} }
 #b-music{flex:0 0 64px; font-size:20px}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
@@ -104,6 +107,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="hud"><div class="sc" id="h-score">0</div><div class="lv" id="h-lvl">LEVEL 1</div></div>
     <div class="combo" id="h-combo">x2</div>
     <div id="depthbar"><div id="depthfill"></div></div>
+    <div id="pops"></div>
     <button class="tbtn" id="b-home">&#8249;</button>
   </div>
 
@@ -130,7 +134,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.0";
+var BUILD="v2.0";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -186,7 +190,7 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
    pad at the bottom with center-multiplier zones.
    ===================================================================== */
 var SW=15;            // shaft half-width
-var renderer=null, scene=null, camera=null, knife=null, blade=null;
+var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null;
 var slabs=[], chunks=[], sparks=[];
 var G=null, running=false, lastTs=0;
 
@@ -199,7 +203,7 @@ function initGL(){
   }catch(e){ return false; }
   scene=new THREE.Scene();
   scene.background=new THREE.Color(0x161226);
-  scene.fog=new THREE.Fog(0x161226, 46, 110);
+  scene.fog=new THREE.Fog(0x161226, 52, 130);
   camera=new THREE.PerspectiveCamera(55, 540/960, 0.1, 300);
   var amb=new THREE.AmbientLight(0xffffff, 0.62); scene.add(amb);
   var sun=new THREE.DirectionalLight(0xfff2d8, 0.85); sun.position.set(10,30,26); scene.add(sun);
@@ -227,25 +231,29 @@ function buildKnife(){
   handle.position.x=3.9; knife.add(handle);
   for(var i=0;i<3;i++){ var band=new THREE.Mesh(new THREE.BoxGeometry(0.34,1.56,0.84), woodD);
     band.position.set(2.9+i*0.95,0,0); knife.add(band); }
+  trail=new THREE.Mesh(new THREE.BoxGeometry(8.2,0.24,0.22), new THREE.MeshBasicMaterial({color:0xdfe9ff, transparent:true, opacity:0}));
+  trail.position.set(-1.4,-1.05,0); knife.add(trail);
   scene.add(knife);
 }
 
 function shaftDecor(depth){
+  // Three-quarter view: the camera sits high on the +x side looking down
+  // and across, so only the FAR (left) wall and back panel are built.
+  // The near side stays open to the void; physics walls are independent.
   var group=new THREE.Group();
   var wallMat=new THREE.MeshLambertMaterial({color:0x241e3c});
-  var wallL=new THREE.Mesh(new THREE.BoxGeometry(2, depth+120, 22), wallMat);
-  wallL.position.set(-SW-1, -depth/2+20, -2); group.add(wallL);
-  var wallR=new THREE.Mesh(new THREE.BoxGeometry(2, depth+120, 22), wallMat);
-  wallR.position.set(SW+1, -depth/2+20, -2); group.add(wallR);
-  var back=new THREE.Mesh(new THREE.BoxGeometry(SW*2+4, depth+120, 2), new THREE.MeshLambertMaterial({color:0x1b1630}));
-  back.position.set(0, -depth/2+20, -9); group.add(back);
-  // wall stripes for a sense of speed
+  var wallL=new THREE.Mesh(new THREE.BoxGeometry(2, depth+140, 26), wallMat);
+  wallL.position.set(-SW-1, -depth/2+20, -3); group.add(wallL);
+  var back=new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, depth+140, 2), new THREE.MeshLambertMaterial({color:0x1b1630}));
+  back.position.set(0, -depth/2+20, -11); group.add(back);
+  // ledge stripes down the far wall + floating depth rings for speed feel
   var stripeMat=new THREE.MeshLambertMaterial({color:0x352c58});
+  var ringMat=new THREE.MeshLambertMaterial({color:0x2c2448});
   for(var y=10; y>-depth-30; y-=14){
-    var sL=new THREE.Mesh(new THREE.BoxGeometry(0.6,5,20), stripeMat);
-    sL.position.set(-SW+0.1, y, -2); group.add(sL);
-    var sR=new THREE.Mesh(new THREE.BoxGeometry(0.6,5,20), stripeMat);
-    sR.position.set(SW-0.1, y, -2); group.add(sR);
+    var sL=new THREE.Mesh(new THREE.BoxGeometry(0.7,5,24), stripeMat);
+    sL.position.set(-SW+0.1, y, -3); group.add(sL);
+    var rg=new THREE.Mesh(new THREE.BoxGeometry(SW*2+4,0.5,0.5), ringMat);
+    rg.position.set(0, y-7, 5.4); group.add(rg);
   }
   return group;
 }
@@ -262,7 +270,7 @@ function makeSlab(x,y,w,colors,hard){
   var mat = hard
     ? new THREE.MeshLambertMaterial({color:0x6e6a7c})
     : new THREE.MeshLambertMaterial({color:colors.outer});
-  var m=new THREE.Mesh(new THREE.BoxGeometry(w,1.7,7), mat);
+  var m=new THREE.Mesh(new THREE.BoxGeometry(w,1.7,10), mat);
   m.position.set(x,y,0);
   scene.add(m);
   return {mesh:m, x:x, y:y, w:w, hard:!!hard, inner:hard?0x8a8698:colors.inner, outer:hard?0x6e6a7c:colors.outer, sliced:false};
@@ -289,11 +297,16 @@ function buildLevel(lvl){
     var w=9+rng()*11;
     var cx=(rng()*2-1)*(SW-2-w/2);
     var hardStack = lvl>=3 && rng()<Math.min(0.22, 0.06+lvl*0.012);
+    var goldStack = !hardStack && rng()<0.09;
+    if(goldStack) stackN=Math.min(stackN,2);
     var cols=slabColors(rng);
     for(var k=0;k<stackN;k++){
       // each layer of a soft stack gets its own colour: cutting reveals a rainbow
       var layerCols = hardStack ? cols : slabColors(rng);
-      slabs.push(makeSlab(cx, y-k*1.85, w, layerCols, hardStack));
+      var jx = hardStack ? 0 : (rng()*2-1)*0.9; // hand-stacked wobble
+      var sl = makeSlab(cx+jx, y-k*1.85, w, goldStack?{outer:0xffd76a,inner:0xfff3c0}:layerCols, hardStack);
+      if(goldStack){ sl.gold=true; sl.mesh.material.color.setHex(0xffd76a); }
+      slabs.push(sl);
     }
     y-=stackN*1.85 + 9 + rng()*9;
   }
@@ -320,6 +333,7 @@ function newGame(lvl){
       score:0, combo:0, comboBest:0, slices:0, rocks:0,
       done:false, doneT:0, shake:0, sbRun:0, t:0 };
   knife.position.set(0,14,0); knife.rotation.z=0;
+  camera.position.set(4, 44, 52); // intro sweep: the chase lerp reels it in
   $('h-score').textContent='0';
   $('h-lvl').textContent='LEVEL '+lvl;
   $('h-combo').classList.remove('on');
@@ -353,6 +367,23 @@ document.addEventListener('keydown',function(e){
   else if(e.key===' '){ e.preventDefault(); flip(G.vx>=0?1:-1); }
 });
 
+/* score popups projected from world space onto the stage */
+function popup(txt, wx, wy, color){
+  if(!camera) return;
+  var el=$('pops'); if(!el) return;
+  var v=new THREE.Vector3(wx, wy, 0);
+  v.project(camera);
+  if(v.z>1) return;
+  var d=document.createElement('div');
+  d.className='pop3d';
+  d.style.left=((v.x*0.5+0.5)*540).toFixed(0)+'px';
+  d.style.top=((-v.y*0.5+0.5)*960).toFixed(0)+'px';
+  d.style.color=color||'#fff';
+  d.textContent=txt;
+  el.appendChild(d);
+  setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); }, 950);
+}
+
 /* ---------- slicing ---------- */
 function spawnChunk(x,y,w,inner,outer,vx,spin){
   // half-slab with the cut face glowing in the inner colour
@@ -366,7 +397,7 @@ function spawnChunk(x,y,w,inner,outer,vx,spin){
   ];
   // cut face = the side facing the blade
   mats[vx<0?0:1]=new THREE.MeshLambertMaterial({color:inner});
-  var m=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.8,w),1.7,7), mats);
+  var m=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.8,w),1.7,10), mats);
   m.position.set(x,y,0);
   scene.add(m);
   chunks.push({mesh:m, vx:vx, vy:3+Math.random()*4, vr:spin, life:1.5});
@@ -386,11 +417,13 @@ function sliceSlab(s){
   var lw=cut-(s.x-s.w/2), rw=(s.x+s.w/2)-cut;
   spawnChunk(cut-lw/2-0.3, s.y, lw, s.inner, s.outer, -7-Math.random()*5, -(2+Math.random()*3));
   spawnChunk(cut+rw/2+0.3, s.y, rw, s.inner, s.outer, 7+Math.random()*5, (2+Math.random()*3));
-  spawnSparks(cut, s.y, s.inner, 7);
+  spawnSparks(cut, s.y, s.inner, s.gold?16:7);
   G.combo=Math.min(G.combo+1,30);
   if(G.combo>G.comboBest)G.comboBest=G.combo;
   G.slices++;
-  G.score+=10*G.combo;
+  var pts=10*G.combo + (s.gold?60:0);
+  G.score+=pts;
+  popup('+'+pts, s.x, s.y, s.gold?'#ffd76a':'#ffffff');
   G.vy*=0.5; if(G.vy>-3)G.vy=-3;   // the satisfying knife-through-butter catch
   G.shake=Math.min(0.2,0.08+G.combo*0.004);
   SFX.slice(G.combo);
@@ -450,9 +483,10 @@ function loop(ts){
     if(G.doneT>1.15){ running=false; finishLevel(); return; }
   }
 
-  // knife transform
+  // knife transform + spin trail glow
   knife.position.set(G.x,G.y,0);
   knife.rotation.z=G.rot;
+  if(trail)trail.material.opacity=Math.min(0.65, Math.abs(G.spin)*0.055);
 
   // chunks fall away
   for(var c=chunks.length-1;c>=0;c--){
@@ -469,14 +503,15 @@ function loop(ts){
   }
   if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
 
-  // camera chase with a little shake
-  var cy=G.y+7.5, cz=34;
-  camera.position.x+= (G.x*0.35 - camera.position.x)*Math.min(1,dt*5);
-  camera.position.y+= (cy - camera.position.y)*Math.min(1,dt*7);
-  camera.position.z=cz;
+  // THREE-QUARTER CHASE CAM — high on the open side, looking down and
+  // across the shaft so slab tops and sides recede in real perspective.
+  var camT={ x:G.x*0.3+13, y:G.y+15, z:26 };
+  camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*4.5);
+  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*7);
+  camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4.5);
   var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.6:0;
   camera.position.x+=kx;
-  camera.lookAt(G.x*0.35, G.y-1.5, 0);
+  camera.lookAt(G.x*0.3-4, G.y-7, -2);
 
   renderer.render(scene,camera);
   requestAnimationFrame(loop);
