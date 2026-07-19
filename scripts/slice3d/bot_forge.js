@@ -8,7 +8,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
   var out = await page.evaluate(function(){
     var F=window._S3forge, S=window._S3, r={};
     // apply every skin (must not error, knife must exist)
-    var keys=['classic','cleaver','paintbrush','katana','crystal','gold','cosmicedge','starforge','wolffang'];
+    var keys=['classic','cleaver','paintbrush','katana','crystal','gold','cosmicedge','wallbreaker','starforge','wolffang'];
     r.applied=[]; var appliedOk=true;
     for(var i=0;i<keys.length;i++){ try{ F.apply(keys[i]); r.applied.push(keys[i]); }catch(e){ appliedOk=false; r.applyErr=keys[i]+':'+e.message; break; } }
     F.apply('classic');
@@ -31,9 +31,9 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     return r;
   });
   console.log(JSON.stringify(out,null,1));
-  var ok = out.appliedAll && out.applied.length===9
+  var ok = out.appliedAll && out.applied.length===10
     && out.buy.ownedCleaver && out.buy.equipped && out.buy.slivLeft===1850 && out.buy.grew
-    && out.premiumBlocked && out.tooPoor && out.gridCards===9;
+    && out.premiumBlocked && out.tooPoor && out.gridCards===10;
   console.log(ok?'FORGE OK':'FAIL','· errors:',errors.length?errors.join(' | '):'none');
   await b.close();
   process.exit(ok&&!errors.length?0:1);

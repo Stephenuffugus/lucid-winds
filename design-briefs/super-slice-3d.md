@@ -23,7 +23,19 @@ Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, sta
 3. **[DONE — v4.6]** **Longer + larger levels** — depth ~doubled (170 + level*26, up to ~1340), wider shaft (SW 9.2), content scales with depth.
 4. **[DONE — v4.6]** **Endless mode** — deep pit, live DEPTH-in-metres HUD, ramping fall speed, blade-wall ends the run, best-depth saved + shown on the menu, "PIT CONQUERED" if you reach the bottom clean. Third title button.
 5. **[DONE — v5.0]** **Economy + cosmetics** — currency "Slivers" (localStorage `s3d_slivers`) earned every run; KNIFE FORGE with 9 swappable blades (Classic free / Cleaver 150 / Rainbow Brush 300 / Katana 500 / Crystal 800 / Golden 1500 / Cosmic Edge trophy=50 clean dives / Starforge + Wolf Fang = Support-the-Studio premium). Known prices, no lootboxes, cosmetic-only, equip persists across modes. Premium tier SCAFFOLDED (marked "Support the Studio", not yet buyable — see below).
-6. **[NEXT — build with Stephen's Freefall feel-feedback]** **Wall Climb mode** — see full spec below.
+6. **[SHIPPED 2026-07-19]** **Wall Climb mode** — built per the spec below as an ENDLESS
+   height-chase first (Stephen 7/19: "see how high you can get"): handle KICK off the walls
+   (13.8 impulse), blade touch = stuck, THE MIST rises from below (1.15 accelerating to 4.6
+   with height + time), sticky SAP wall patches dampen kicks to 6.0, 25m milestones pay score,
+   slivers pay by height, `PROG.climbBest`, 4th title button + its own portal card
+   (`?mode=climb` boots straight in), Wallbreaker Pick trophy blade at 100m. Bot-proven:
+   `scripts/slice3d/bot_climb.js` (kick/blade-fail/sap/mist/pogo-climbability/sting/gourd/
+   obstacles/forge + boot, all green). Goal-line level variant still open per the spec.
+7. **[SHIPPED 2026-07-19]** **New obstacle wave** (Freefall lvl 3+ bags AND the climb):
+   WASPS (oscillate across the shaft, contact stings you down), swinging PLANKS (blade cuts
+   for 25x combo points, handle bonks), brown GATES (full-width slab rows with one hole),
+   THORN brambles (any contact stings), BOOM GOURDS (dark spiky trap fruit — slicing it
+   explodes, no points, combo gone; teaches target discrimination), sticky SAP (climb walls).
 
 ## Still owed on the economy (needs Stephen's payment side)
 - **Real-money premium purchase:** wire Starforge / Wolf Fang buy → existing `LW_WebPay` (USD) / Pi (in Pi Browser) rail. On success set a `supporter` entitlement (localStorage now, server-mirrored later) that unlocks the premium blades. Needs the NOWPayments IPN / Pi product setup Stephen manages.
