@@ -17,7 +17,9 @@
 <script>window.Sunbeam&&Sunbeam.init({gameId:"chaffwars"}).catch(function(){});</script>
 <style>
 :root{ --bg:#12100c; --panel:#1c1a12; --line:#33301f; --ink:#f0e9d8; --muted:#9a9078;
-  --gold:#e8c15a; --sprout:#7ec850; --crimson:#e0433f; --dew:#4f9ee8; --shade:#b06fe0; }
+  --gold:#e8c15a; --sprout:#7ec850; --crimson:#e0433f; --dew:#4f9ee8; --shade:#b06fe0;
+  --sab:env(safe-area-inset-bottom,0px); --ch:90px; --cfs:31px; --dfs:19px; }
+body.bigctrl{ --ch:116px; --cfs:40px; --dfs:24px; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
@@ -59,14 +61,20 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
-.cbtn{position:absolute; width:104px; height:88px; border-radius:18px; border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(38,32,20,.94),rgba(22,19,10,.94)); color:var(--ink); font-size:32px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; z-index:30}
-.cbtn:active{filter:brightness(1.3)}
-#dropbtn{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(120px + env(safe-area-inset-bottom,0px)); width:236px; height:56px; border-radius:18px;
-  border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e); color:#0f1a06; font-size:19px; font-weight:800; letter-spacing:2px;
-  cursor:pointer; z-index:30; box-shadow:0 4px 0 #356b1e, 0 8px 20px #0006}
-#dropbtn:active{transform:translateX(-50%) translateY(3px)}
+/* responsive thumb-friendly control bar: never overlaps, scales to any phone */
+.ctrlbar{position:absolute; left:0; right:0; bottom:0; z-index:30; display:flex; align-items:flex-end; gap:9px;
+  padding:0 9px calc(11px + var(--sab)); pointer-events:none}
+.ctrlbar .cc{display:flex; gap:9px; flex:1 1 0; min-width:0}
+.ctrlbar .cc:last-child{justify-content:flex-end}
+.cbtn{pointer-events:auto; flex:1 1 0; min-width:0; height:var(--ch); border-radius:18px; border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(42,36,22,.96),rgba(24,21,12,.96)); color:var(--ink); font-size:var(--cfs);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none;
+  touch-action:manipulation; box-shadow:0 3px 0 #0007, 0 6px 14px #0005; transition:filter .05s, transform .05s}
+.cbtn:active{filter:brightness(1.4); transform:translateY(2px); box-shadow:0 1px 0 #0007}
+.cbtn.soft{flex:0 0 clamp(56px,17vw,92px)}
+#dropbtn.drop{flex:1.55 1 0; border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e);
+  color:#0f1a06; font-size:var(--dfs); font-weight:800; letter-spacing:2px; box-shadow:0 4px 0 #356b1e, 0 7px 16px #0006}
+#dropbtn.drop:active{transform:translateY(3px); box-shadow:0 1px 0 #356b1e; filter:brightness(1.05)}
 .go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
@@ -120,11 +128,17 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- PLAY chrome -->
   <div class="screen" id="s-play">
     <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
-    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(16px + env(safe-area-inset-bottom,0px))">◀</button>
-    <button class="cbtn" id="c-right" style="left:124px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">▶</button>
-    <button class="cbtn" id="c-down"  style="right:124px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">▼</button>
-    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(16px + env(safe-area-inset-bottom,0px))">⟳</button>
-    <button id="dropbtn">DROP</button>
+    <div class="ctrlbar">
+      <div class="cc">
+        <button class="cbtn" id="c-left"  aria-label="Move left">◀</button>
+        <button class="cbtn" id="c-right" aria-label="Move right">▶</button>
+      </div>
+      <button class="cbtn soft" id="c-down" aria-label="Soft drop">▼</button>
+      <div class="cc">
+        <button class="cbtn" id="c-rot"   aria-label="Rotate">⟳</button>
+        <button class="cbtn drop" id="dropbtn" aria-label="Hard drop">DROP</button>
+      </div>
+    </div>
   </div>
 
   <!-- HOW -->
@@ -146,6 +160,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
     <div class="settingline"><span>Big controls</span><div class="toggle on" id="tg-big"><b></b></div></div>
+    <div class="settingline"><span>Fullscreen</span><div class="toggle" id="tg-full"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
     <button class="btn ghost sm" id="set-reset" style="max-width:400px;margin:0 auto 8px">Reset campaign progress</button>
@@ -195,6 +210,7 @@ function saveProg(){ LS.s('cw_prog', JSON.stringify(PROG)); }
 /* ---------- audio ---------- */
 var AC=null;
 function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function hap(ms){ if(navigator.vibrate){ try{ navigator.vibrate(ms||10); }catch(e){} } }
 function beep(f,d,t,g,slide){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), v=c.createGain();
   o.type=t||'triangle'; o.frequency.value=f; if(slide)o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+d);
   v.gain.value=g||0.07; v.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d);
@@ -723,13 +739,13 @@ function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,
 function pf(){ return MATCH.pf; }
 function hold(id,fn,first){ var el=$(id),t=null,r=null; if(!el)return;
   function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
-  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); fn(); t=setTimeout(function(){ r=setInterval(fn,80); },first||200); });
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); hap(8); fn(); t=setTimeout(function(){ r=setInterval(fn,80); },first||200); });
   el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop); }
 hold('c-left',function(){ if(playable())moveP(pf(),-1); });
 hold('c-right',function(){ if(playable())moveP(pf(),1); });
-(function(){ var el=$('c-down'); if(!el)return; el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); if(pf())pf().softHold=true; }); function up(){ if(pf())pf().softHold=false; } el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up); })();
-tap('c-rot',function(){ if(playable())tryRotate(pf(),1); });
-tap('dropbtn',function(){ if(playable())hardDrop(pf()); });
+(function(){ var el=$('c-down'); if(!el)return; el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); hap(6); if(pf())pf().softHold=true; }); function up(){ if(pf())pf().softHold=false; } el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up); })();
+tap('c-rot',function(){ if(playable()){ hap(8); tryRotate(pf(),1); } });
+tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });
 cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play'||MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW); if(x<300 && playable()){ e.preventDefault(); ac(); tryRotate(pf(),1); } },{passive:false});
 document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playable())return;
   if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
@@ -747,7 +763,7 @@ function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play'
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
   if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); }
-function applyBig(){ var big=SET.big; var els=document.querySelectorAll('.cbtn'); for(var i=0;i<els.length;i++){ els[i].style.transform=''; } }
+function applyBig(){ try{ if(SET.big)document.body.classList.add('bigctrl'); else document.body.classList.remove('bigctrl'); }catch(e){} }
 function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
 
 function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; var i;
@@ -787,6 +803,17 @@ $('buildstamp').textContent='Chaff Wars '+BUILD;
   btn.addEventListener('click',function(){ SFX.ui(); if(deferred){ deferred.prompt(); deferred=null; return; }
     var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
     alert(ios ? 'To add Chaff Wars to your Home Screen:\n\nTap the Share button, then Add to Home Screen.' : 'To add Chaff Wars to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
+})();
+
+/* ---------- fullscreen toggle (Android/desktop; iOS uses Add to Home Screen) ---------- */
+(function(){ var el=$('tg-full'); if(!el)return;
+  function isFull(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
+  function paint(){ if(isFull())el.classList.add('on'); else el.classList.remove('on'); }
+  el.addEventListener('click',function(e){ e.preventDefault(); SFX.ui();
+    try{ if(isFull()){ (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); }
+      else { var d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d); } }catch(err){}
+    setTimeout(paint,150); });
+  document.addEventListener('fullscreenchange',paint); document.addEventListener('webkitfullscreenchange',paint); paint();
 })();
 
 /* ---------- embedded-in-portal back handshake ---------- */
