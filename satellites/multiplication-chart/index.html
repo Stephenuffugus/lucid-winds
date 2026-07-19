@@ -84,6 +84,7 @@ h2.sc-h{font-size:32px; color:#f4c95d; font-weight:800; margin-bottom:4px}
     <div style="height:20px"></div>
     <div class="stack">
       <button class="btn primary" id="b-prompt">Prompt Play</button>
+      <button class="btn primary" id="b-free" style="background:linear-gradient(180deg,#7ec98f,#4e9a63); border-color:#a8e0b5; color:#0c2412;">Free Play</button>
       <div class="row">
         <button class="btn sm" id="b-fillm">Fill: Multiply</button>
         <button class="btn sm" id="b-filld">Fill: Divide</button>
@@ -224,6 +225,7 @@ function bodyCol(h){ return 'hsl('+h+','+(SET.bright?72:34)+'%,'+(SET.bright?83:
 
 /* ---------- game start ---------- */
 function isPrompt(){ return G&&G.mode==='prompt'; }
+function isExplore(){ return G&&G.mode==='explore'; }
 function isFill(){ return G&&(G.mode==='fillMul'||G.mode==='fillDiv'); }
 function startGame(mode,N){ N=N||chartSize;
   G={ mode:mode, N:N, rng:mulberry32(Math.floor(Math.random()*1e9)), score:0, streak:0, bestStreak:0, phase:'play', t:0,
@@ -235,6 +237,10 @@ function startGame(mode,N){ N=N||chartSize;
   if(mode==='prompt'){ G.roundsTotal=8; genRound(); }
   else if(mode==='fillMul'){ genFillMul(); }
   else if(mode==='fillDiv'){ genFillDiv(); }
+  else if(mode==='explore'){
+    G.selRow=0; G.selCol=0;
+    G.prompt={text:'Tap any square to light up its row and column. Or tap one number on the top and one on the side to see their answer glow.'};
+  }
   toPlay();
 }
 
@@ -247,20 +253,20 @@ function genRound(){
   var pr={type:type}; G.correct={}; var cnt=0, r, c;
   if(type==='table'){
     var F=2+Math.floor(rng()*(N-1)); pr.F=F;
-    pr.text='Count by '+F+'s. Tap every answer in the '+F+' times table (the row that starts with '+F+').';
-    for(c=1;c<=N;c++){ G.correct[F+','+c]=true; cnt++; }
+    pr.text='Find the '+F+' times table. Tap every square in the '+F+' row AND the '+F+' column.';
+    for(c=1;c<=N;c++){ if(!G.correct[F+','+c]){G.correct[F+','+c]=true; cnt++;} if(!G.correct[c+','+F]){G.correct[c+','+F]=true; cnt++;} }
   } else if(type==='equals'){
     var X, tries=0;
     do{ var aa=2+Math.floor(rng()*(N-1)); var bb=2+Math.floor(rng()*(N-1)); X=aa*bb; tries++; }while(pairCount(X,N)<2 && tries<50);
-    pr.X=X; pr.text='Which numbers multiply to make '+X+'? Tap every square that equals '+X+'.';
+    pr.X=X; pr.text='Which numbers multiply to make '+X+'? Tap every square that shows '+X+'.';
     for(r=1;r<=N;r++)for(c=1;c<=N;c++){ if(r*c===X){ G.correct[r+','+c]=true; cnt++; } }
   } else if(type==='multiple'){
-    var opts=[3,4,6,7,8]; var n=opts[Math.floor(rng()*opts.length)]; var M=5; var vals=[]; var vset={};
-    for(var kk=1;kk<=M;kk++){ vals.push(n*kk); vset[n*kk]=1; } pr.n=n; pr.vals=vals;
-    pr.text='Count by '+n+'s: '+vals.join(', ')+'. Tap every square that equals one of these.';
-    for(r=1;r<=N;r++)for(c=1;c<=N;c++){ if(vset[r*c]){ G.correct[r+','+c]=true; cnt++; } }
+    var opts=[3,4,6,7,8]; var n=opts[Math.floor(rng()*opts.length)]; pr.n=n;
+    var top=n*N;
+    pr.text='Count by '+n+'s: '+n+', '+(2*n)+', '+(3*n)+' and keep going to '+top+'. Tap every square that shows a number you would say.';
+    for(r=1;r<=N;r++)for(c=1;c<=N;c++){ var pv=r*c; if(pv%n===0 && pv<=top){ G.correct[r+','+c]=true; cnt++; } }
   } else {
-    pr.text='Tap the square numbers: 1, 4, 9, 16, ... where a number is multiplied by itself.';
+    pr.text='Tap every square number: 1, 4, 9, 16 and so on. A square number is a number multiplied by itself.';
     for(var d=1;d<=N;d++){ G.correct[d+','+d]=true; cnt++; }
   }
   G.prompt=pr; G.correctCount=cnt; G.found={}; G.foundCount=0; G.wrong={}; G.roundClean=true; G.roundDone=false; G.roundDoneT=0;
@@ -301,6 +307,13 @@ function cellAt(p){ if(p.x<CX0||p.x>CX0+CVW||p.y<CY0||p.y>CY0+CVH)return null;
   if(r<0||r>G.N||c<0||c>G.N)return null; return {r:r,c:c}; }
 
 /* ---------- interactions ---------- */
+function clickExplore(r,c){
+  if(r===0&&c===0){ G.selRow=0; G.selCol=0; sfx('ui'); return; }
+  if(r===0&&c>0){ G.selCol=(G.selCol===c)?0:c; sfx('ui'); }
+  else if(c===0&&r>0){ G.selRow=(G.selRow===r)?0:r; sfx('ui'); }
+  else if(r>0&&c>0){ G.selRow=r; G.selCol=c; sfx('good'); }
+  if(G.selRow&&G.selCol){ haptic(6); sparkleCell(G.selRow,G.selCol); }
+}
 function clickCell(r,c){ if(!isPrompt()||G.phase!=='play'||G.roundDone)return; if(r<1||c<1)return;
   var key=r+','+c;
   if(G.correct[key]){ if(!G.found[key]){ G.found[key]=true; G.foundCount++; G.score+=10; sfx('good'); haptic(6); addFloatCell(r,c,'+10'); sparkleCell(r,c);
@@ -356,7 +369,9 @@ function onUp(e){ if(curScreen!=='s-play'||!G)return;
   if(G.pinch){ if(!e.touches||e.touches.length<2)G.pinch=null; }
   if(!G.drag)return; e.preventDefault(); var d=G.drag; G.drag=null; var p=evPos(e);
   if(d.kind==='tile'){ dropTile(d.ti,p); }
-  else if(d.kind==='chart'){ if(!d.moved&&isPrompt()){ var cc=cellAt({x:d.sx,y:d.sy}); if(cc)clickCell(cc.r,cc.c); } }
+  else if(d.kind==='chart'){ if(!d.moved){ var cc=cellAt({x:d.sx,y:d.sy});
+    if(cc&&isPrompt())clickCell(cc.r,cc.c);
+    else if(cc&&isExplore())clickExplore(cc.r,cc.c); } }
 }
 cv.addEventListener('touchstart',onDown,{passive:false});
 cv.addEventListener('touchmove',onMove,{passive:false});
@@ -406,10 +421,24 @@ function drawCell(x,y,r,c,cs){ var N=G.N; var pad=Math.max(1,cs*0.06); var rad=M
   if(isTop||isLeft){ var hv=isTop?c:r; var hue=hueFor(hv);
     ctx.fillStyle=headerCol(hue); roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad);
     if(blank&&blank.filled){ ctx.fillStyle='rgba(46,180,96,0.45)'; roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); }
+    if(isExplore()&&((isTop&&G.selCol===c)||(isLeft&&G.selRow===r))){
+      ctx.strokeStyle='#f4c95d'; ctx.lineWidth=Math.max(2,cs*0.08); rr(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); ctx.stroke();
+    }
     ctx.fillStyle='#ffffff'; drawNum(hv,x+cs/2,y+cs/2,cs,true); return; }
   var prod=r*c; var bhue=hueFor(r);
   ctx.fillStyle=bodyCol(bhue); roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad);
   var digCol='#182430';
+  if(isExplore()){
+    var onRow=(G.selRow&&r===G.selRow), onCol=(G.selCol&&c===G.selCol);
+    if(onRow&&onCol){
+      var pulse=0.55+0.25*Math.sin(G.t*5);
+      ctx.fillStyle='rgba(244,201,93,'+pulse.toFixed(2)+')'; roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad);
+      ctx.strokeStyle='#fff2c8'; ctx.lineWidth=Math.max(2,cs*0.08); rr(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); ctx.stroke();
+      digCol='#241c08';
+    } else if(onRow||onCol){
+      ctx.fillStyle='rgba(126,201,143,0.42)'; roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad);
+    }
+  }
   if(isPrompt()){ var key=r+','+c;
     if(G.found[key]){ ctx.fillStyle='rgba(40,168,88,0.9)'; roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); ctx.strokeStyle='#eaffee'; ctx.lineWidth=Math.max(1.4,cs*0.05); rr(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); ctx.stroke(); digCol='#ffffff'; }
     else if(G.wrong[key]!=null){ var a=Math.min(1,G.wrong[key]/0.7); ctx.fillStyle='rgba(228,74,74,'+(0.7*a)+')'; roundRectFill(x+pad,y+pad,cs-2*pad,cs-2*pad,rad); } }
@@ -443,7 +472,7 @@ function drawPromptText(text){ var fs=21, lines;
 
 function drawHUD(){
   hudBtn(B_MENU,'‹'); hudBtn(B_HELP,'?'); hudBtn(B_RESTART,'↻');
-  var modeLbl=(G.mode==='prompt')?'Prompt':(G.mode==='fillMul')?'Multiply':'Divide';
+  var modeLbl=(G.mode==='prompt')?'Prompt':(G.mode==='fillMul')?'Multiply':(G.mode==='explore')?'Free Play':'Divide';
   ctx.textAlign='center'; ctx.fillStyle='#a89bb0'; ctx.font='700 13px system-ui'; ctx.fillText(modeLbl+'  ·  '+G.N+'×'+G.N, VW/2, 26);
   ctx.textAlign='left'; ctx.fillStyle='#f4c95d'; ctx.font='800 18px system-ui'; ctx.fillText('Score '+G.score, 64, 30);
   if(isPrompt()){ ctx.textAlign='right'; ctx.fillStyle='#7ec98f'; ctx.font='800 16px system-ui'; ctx.fillText('Streak x'+G.streak, VW-118, 30); }
@@ -452,6 +481,18 @@ function drawHUD(){
 
 function drawBottom(){
   ctx.fillStyle='#100b12'; roundRectFill(0,BOT_Y,VW,BOT_H+4,0);
+  if(isExplore()){
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    if(G.selRow&&G.selCol){
+      ctx.fillStyle='#f4c95d'; ctx.font='800 34px system-ui';
+      ctx.fillText(G.selRow+' × '+G.selCol+' = '+(G.selRow*G.selCol), VW/2, BOT_Y+BOT_H/2);
+    } else {
+      ctx.fillStyle='#c9bcd2'; ctx.font='700 16px system-ui';
+      ctx.fillText(G.selRow?('Row '+G.selRow+' is lit. Pick a number on top.'):(G.selCol?('Column '+G.selCol+' is lit. Pick a number on the side.'):'Tap numbers to explore the chart.'), VW/2, BOT_Y+BOT_H/2);
+    }
+    ctx.textBaseline='alphabetic';
+    return;
+  }
   if(isPrompt()){
     ctx.textAlign='center'; ctx.fillStyle='#c9bcd2'; ctx.font='700 16px system-ui';
     ctx.fillText('Round '+(G.roundIndex+1)+' of '+G.roundsTotal+'   ·   found '+G.foundCount+' of '+G.correctCount, VW/2, BOT_Y+28);
@@ -510,7 +551,11 @@ function paintSize(){ var ids={10:'sz-10',12:'sz-12',15:'sz-15'}; for(var s in i
 function setSize(n){ chartSize=n; PROG.size=n; save(); paintSize(); sfx('ui'); }
 
 /* ---------- wire ---------- */
+if(/[?&]dev=1/.test(location.search)){
+  window._TT={ start:startGame, state:function(){return G;}, gen:function(){genRound();}, clickCell:clickCell, clickExplore:clickExplore };
+}
 tap('b-prompt',function(){ sfx('ui'); startGame('prompt',chartSize); });
+tap('b-free',function(){ sfx('ui'); startGame('explore',chartSize); });
 tap('b-fillm',function(){ sfx('ui'); startGame('fillMul',chartSize); });
 tap('b-filld',function(){ sfx('ui'); startGame('fillDiv',chartSize); });
 tap('b-how',function(){ sfx('ui'); show('s-how'); });
