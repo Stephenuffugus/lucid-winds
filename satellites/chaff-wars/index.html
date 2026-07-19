@@ -275,6 +275,10 @@ var SFX={
   lock:function(){ beep(200,0.06,'triangle',0.05); },
   drop:function(){ beep(150,0.12,'sawtooth',0.06,70); },
   pop:function(ch){ var b=300*Math.pow(1.16,ch||0); beep(b,0.1,'triangle',0.09); setTimeout(function(){beep(b*1.5,0.1,'triangle',0.07);},60); },
+  /* the RIVAL's pops: same ladder an octave down and muffled, so you can
+     HEAR their combo building across the yard and counter before it lands */
+  popRival:function(ch){ var b=150*Math.pow(1.16,ch||0); beep(b,0.12,'square',0.05); setTimeout(function(){beep(b*1.5,0.1,'square',0.035);},70); },
+  hype:function(tier){ beep(330+tier*90,0.09,'sawtooth',0.05); setTimeout(function(){beep(430+tier*90,0.11,'sawtooth',0.05);},70); },
   chaff:function(){ beep(120,0.14,'square',0.05); },
   shatter:function(){ beep(90,0.16,'sawtooth',0.05,50); },
   warn:function(){ beep(660,0.09,'sine',0.05); },
@@ -502,6 +506,7 @@ function makeField(colors,ai,q,react,hcap){ return {
   res:null, fall:null, pop:null, floats:[], flashDanger:0,
   aiTarget:null, aiTimer:0, aiStep:0,
   sap:0, powerId:null, powerCd:0, powerCast:false,
+  hype:0, hypeTier:0, chainGlow:0,
   rng:Math.random }; }
 
 /* ===== POWERS MODE (opt-in via ?powers=1; superset design - fully INERT when powerId=null,
@@ -549,14 +554,33 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
     var kk,nchf=0; for(kk in chf){ var pc=chf[kk]; f.pop[pc.r][pc.c]=2; nchf++; }
     var colors=0; for(kk in cset)colors++;
     R.score+=10*cl*stepMult(R.chain,colors,gb); R.cleared+=cl; R.chaff+=nchf;
-    SFX.pop(R.chain); if(nchf)SFX.shatter();
-    if(R.chain>=2)shake(2+R.chain*1.6, 220);
+    if(f===MATCH.of){ SFX.popRival(R.chain); f.chainGlow=1; }
+    else { SFX.pop(R.chain); if(R.chain>=2)shake(2+R.chain*1.6, 220); }
+    if(nchf)SFX.shatter();
     if(R.chain>=2)f.floats.push({x:0,y:0,txt:(R.chain>=5?'ILL! ':R.chain>=4?'DOPE! ':R.chain>=3?'DEF! ':'FRESH! ')+'x'+R.chain,life:1.0,big:true,fld:f});
     R.sub='pop'; R.t=0; R._chf=chf; }
   else if(R.sub==='pop'){ if(R.t>230){ var r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.pop[r][c])f.grid[r][c]=0; } f.pop=null; R.sub='grav'; R.t=0; } }
 }
 
+/* ===== THE HYPE METER — the rizz meter, 1988 edition. Fills from chains,
+   slices, and DENIED offsets; drains when Chaff lands on you; slow decay.
+   Tier ladder: WACK -> WARM -> FRESH -> DEF -> DOPE -> ILL. Maxing it =
+   ALL CITY HYPE: a flat +500 bonus (added OUTSIDE the resolve so it never
+   converts to Chaff and never disturbs the tuned garbage balance). ===== */
+var HYPE_TIERS=[[0,'WACK',0x6a6152],[20,'WARM',0xe0a03a],[40,'FRESH',0x39ff14],[60,'DEF',0xffd21a],[80,'DOPE',0xc24bff],[95,'ILL',0xff2fb9]];
+function hypeTierOf(h){ var t=0,i; for(i=0;i<HYPE_TIERS.length;i++){ if(h>=HYPE_TIERS[i][0])t=i; } return t; }
+function addHype(f,n){ if(f!==MATCH.pf)return; f.hype=Math.max(0,Math.min(100,(f.hype||0)+n));
+  var nt=hypeTierOf(f.hype);
+  if(nt>f.hypeTier){ f.hypeTier=nt;
+    if(nt>=2){ f.floats.push({x:0,y:0,txt:'HYPE: '+HYPE_TIERS[nt][1]+'!',life:0.9,big:true,fld:f}); SFX.hype(nt); }
+  } else if(nt<f.hypeTier) f.hypeTier=nt;
+  if(f.hype>=100){ f.hype=45; f.hypeTier=hypeTierOf(45);
+    f.score+=500; $('h-score').textContent=f.score.toLocaleString();
+    f.floats.push({x:0,y:0,txt:'ALL CITY HYPE! +500',life:1.4,big:true,fld:f});
+    SFX.allclear(); shake(6,260);
+  } }
 function finishResolve(f){ var R=f.res; f.score+=R.score;
+  if(R.chain>0)addHype(f, R.chain*13 + R.cleared*1.1);
   if(MATCH.powers)addSap(f,R.cleared*SAP_PER_BEAN+R.chain*SAP_PER_CHAIN);
   /* outgoing Chaff from this chain */
   var pts=R.score + f.carry; if(f.allBonus){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }
@@ -567,7 +591,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score;
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
   if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off;
-      if(off>0)f.floats.push({x:0,y:0,txt:'DENIED!',life:1.0,big:true,fld:f}); }
+      if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED!',life:1.0,big:true,fld:f}); addHype(f,10); } }
     if(out>0){ if(MATCH.mode==='versus'&&f===MATCH.pf){ _mpGarbage(out); }
       else if(opp){ opp.pending+=out; SFX.warn(); } } }
   f.res=null;
@@ -582,7 +606,7 @@ function dropPending(f){ if(f.pending<=0){ afterTurn(f); return; }
   var pool=[0,1,2,3,4,5]; for(i=0;i<rem;i++){ var idx=(f.rng()*pool.length)|0; cols.push(pool[idx]); pool.splice(idx,1); }
   var moves=[]; for(i=0;i<cols.length;i++){ c=cols[i]; var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t<0){ continue; } f.grid[t][c]=CHAFF; moves.push({c:c,from:-2,to:t}); }
   setFall(f,moves.map(function(m){ return {c:m.c,from:0,to:m.to}; }));
-  SFX.chaff(); if(f===MATCH.pf)shake(Math.min(8,2+drop*0.4), 200);
+  SFX.chaff(); if(f===MATCH.pf){ shake(Math.min(8,2+drop*0.4), 200); f.hype=Math.max(0,(f.hype||0)-drop*2); f.hypeTier=Math.min(f.hypeTier,hypeTierOf(f.hype)); }
   afterTurn(f);
 }
 
@@ -729,6 +753,8 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   decayFall(f,dt);
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
   if(f.flashDanger>0)f.flashDanger-=dt;
+  if(f.chainGlow>0)f.chainGlow=Math.max(0,f.chainGlow-dt*1.1);
+  if(f===MATCH.pf && f.hype>0 && MATCH.phase==='fight'){ f.hype=Math.max(0,f.hype-dt*1.3); var htd=hypeTierOf(f.hype); if(htd<f.hypeTier)f.hypeTier=htd; }
   if(f.remote)return;   /* versus: the rival board is a remote display, driven by snapshots */
   if(f.state==='play'){
     if(isAI){ aiUpdate(f,dt); }
@@ -853,9 +879,28 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     drawPod(nx+11,ny+8,30,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(nx+11,ny+42,30,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
+  /* THE HYPE METER: a slim neon bar hugging the board's right edge */
+  if(MATCH.pf && MATCH.phase!=='none'){ var hm=MATCH.pf.hype||0, ht=MATCH.pf.hypeTier||0;
+    var mx=369, mw=7, mh=VISROWS*PF.cell, my=PF.y;
+    ctx.fillStyle='#12100a'; ctx.fillRect(mx,my,mw,mh);
+    ctx.strokeStyle='#0c0a06'; ctx.lineWidth=1.5; ctx.strokeRect(mx,my,mw,mh);
+    if(hm>0){ var fh=mh*hm/100;
+      var hc=HYPE_TIERS[ht][2];
+      ctx.fillStyle='#'+('00000'+hc.toString(16)).slice(-6);
+      if(ht>=5){ ctx.globalAlpha=0.75+Math.sin(Date.now()/120)*0.25; }
+      ctx.fillRect(mx+1, my+mh-fh, mw-2, fh);
+      ctx.globalAlpha=1; }
+    for(var htk=1;htk<HYPE_TIERS.length;htk++){ var ty=my+mh-mh*HYPE_TIERS[htk][0]/100;
+      ctx.fillStyle='rgba(12,10,6,0.8)'; ctx.fillRect(mx,ty,mw,1); } }
   if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-42);
     ctx.fillStyle='#f0e9d8'; ctx.font='700 14px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-26);
-    drawBoardFrame(OF,'rival', MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f')); drawField(MATCH.of,OF,true); }
+    var rivAc=MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f');
+    drawBoardFrame(OF,'rival', rivAc); drawField(MATCH.of,OF,true);
+    /* rival combo telegraph: their frame flares while their chain is popping */
+    if(MATCH.of.chainGlow>0){ ctx.save(); ctx.globalAlpha=Math.min(0.9,MATCH.of.chainGlow);
+      ctx.strokeStyle=rivAc; ctx.lineWidth=4; ctx.shadowColor=rivAc; ctx.shadowBlur=14;
+      ctx.strokeRect(OF.x-4, OF.y-4, COLS*OF.cell+8, VISROWS*OF.cell+8);
+      ctx.restore(); } }
 
   /* chain floats */
   drawFloats(MATCH.pf,PF); if(MATCH.of)drawFloats(MATCH.of,OF);
@@ -1080,6 +1125,7 @@ function _mpSend(payload){
 
 function _mpOnOpp(s){ if(!s||MATCH.mode!=='versus')return; MP.oppLastT=Date.now();
   if(s.g&&MATCH.of)MATCH.of.grid=_mpDecGrid(s.g);
+  if(MATCH.of && (s.s||0)>MATCH.of.score && MATCH.phase==='fight'){ MATCH.of.chainGlow=1; SFX.popRival(2); }
   if(MATCH.of){ MATCH.of.score=s.s||0; MATCH.of.pending=s.p||0; }
   var evts=s.e||[],i; for(i=0;i<evts.length;i++){ if(evts[i]&&evts[i].i>MP.lastEvtIn){ MP.lastEvtIn=evts[i].i; if(MATCH.pf&&MATCH.phase==='fight'){ MATCH.pf.pending+=(+evts[i].n||0); SFX.warn(); } } }
   if(s.d&&MATCH.phase==='fight'){ if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
@@ -1318,6 +1364,9 @@ if(/[?&]cwdev=1/.test(location.search)){
       pf:MATCH.pf?{score:MATCH.pf.score,pending:MATCH.pf.pending,dead:MATCH.pf.dead,state:MATCH.pf.state}:null,
       of:MATCH.of?{score:MATCH.of.score,pending:MATCH.of.pending,dead:MATCH.of.dead,remote:!!MATCH.of.remote}:null }; },
     mpBot:function(q){ if(MATCH.mode==='versus'&&MATCH.pf&&MATCH.pf.state==='play'&&MATCH.pf.cur){ botMove(MATCH.pf,q==null?0.75:q); } return MATCH.phase; },
+    hypeSet:function(h){ MATCH.pf.hype=h; MATCH.pf.hypeTier=hypeTierOf(h); if(MATCH.of)MATCH.of.chainGlow=1; running=false; render();
+      var c2=document.getElementById('game').getContext('2d'); var px=c2.getImageData(372,760,1,1).data;
+      return {hype:MATCH.pf.hype, tier:MATCH.pf.hypeTier, meterPx:[px[0],px[1],px[2]]}; },
     beginStage:function(n){ startMatch(n,'campaign'); return {phase:MATCH.phase, scatterOnBoard:(function(){var k=0,r,c;for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(isColor(MATCH.pf.grid[r][c]))k++;return k;})()}; },
     seriesTest:function(){ startMatch(12,'campaign'); MATCH.phase='done'; matchResult('win');
       var a=SERIES?SERIES.me:-1, t=$('go-title').textContent; matchResult('win');
