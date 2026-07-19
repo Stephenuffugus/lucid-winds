@@ -200,9 +200,10 @@
   #toast { position:fixed; top:calc(64px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%);
            background:rgba(13,16,12,.92); border:1px solid rgba(200,168,75,.35);
            color:#e8dcc8; padding:8px 16px; border-radius:20px; font-size:.82rem;
-           z-index:30; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+           z-index:30; opacity:0; transition:opacity .3s; pointer-events:none;
+           white-space:normal; max-width:calc(100vw - 28px); word-wrap:break-word; text-align:center; }
   #toast.show { opacity:1; }
-  #hint { color:#8a9178; font-size:.74rem; }
+  #hint { color:#a7ad95; font-size:.82rem; }
 </style>
 </head>
 <body>
@@ -374,7 +375,7 @@
     [1400,"you're longer than a city bus"],
     [1600,"you're as long as a bowling lane"],
     [1900,"you're the size of a mature oak tree"],
-    [2500,"you're as long as a blue whale — the largest animal ever"],
+    [2500,"you're as long as a blue whale, the largest animal ever"],
     [2800,"you're as tall as the White House"],
     [3300,"you're as tall as a ten-story building"],
     [4500,"you're the height of Niagara Falls"],
@@ -2707,7 +2708,7 @@
       var hs=$("hudSize"); hs.classList.remove("pop"); void hs.offsetWidth; hs.classList.add("pop"); } }
     if(!W.zen){ var sb=starBars(W);
       if(!R.goalHit&&R.D>=sb[0]){ R.goalHit=true; R.goalAtT=Math.round((W.time-R.timer)*10)/10;
-        if(!silent){ winFanfare(); R.gold=1; toast("★ GOAL! Keep rolling — "+fmtSize(sb[1])+" for ★★"); } }
+        if(!silent){ winFanfare(); R.gold=1; toast("★ GOAL! Keep rolling. "+fmtSize(sb[1])+" for ★★"); } }
       if(!R.s2Hit&&R.D>=sb[1]){ R.s2Hit=true;
         if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.8); toast("★★! Next bar: "+fmtSize(sb[2])); } }
       if(!R.s3Hit&&R.D>=sb[2]){ R.s3Hit=true;
@@ -2876,7 +2877,7 @@
           var want=g.def.r+out*(r+g.def.need*0.08);
           R.x=wrapC(g.def.x+gnx*want); R.z=wrapC(g.def.z+gnz*want);
           var gvn=(R.vx*gnx+R.vz*gnz)*out; if(gvn<0){ R.vx-=1.6*gvn*gnx*out; R.vz-=1.6*gvn*gnz*out; bumpSound(); }
-          if(g.hintT<=0){ g.hintT=5; toast("🔒 "+g.def.label+" — you're "+fmtSize(R.D)+", need "+fmtSize(g.def.need)); } } }
+          if(g.hintT<=0){ g.hintT=5; toast("🔒 "+g.def.label+": you're "+fmtSize(R.D)+", need "+fmtSize(g.def.need)); } } }
       // props
       collideProps(h);
     }
@@ -3166,12 +3167,12 @@
     // results
     var titles=W.zen?["A gentle drift"]:["The clock beat you.","A fine roll.","A mighty roll!","A LEGENDARY ROLL!"];
     $("resTitle").textContent=R.clean?"👑 THE WORLD IS YOURS":(W.zen?titles[0]:titles[stars]);
-    $("resStars").textContent=W.zen?"☁":(stars>0?"★★★".slice(0,stars):"—");
+    $("resStars").textContent=W.zen?"☁":(stars>0?"★★★".slice(0,stars):"☆☆☆");
     var body="You rolled up to <b style='color:#c8a84b'>"+fmtSize(R.D)+"</b>";
     if(!W.zen) body+=" of a "+fmtSize(W.goalD)+" goal";
     body+=".<br>"+R.absorbs+" things absorbed · best combo ×"+R.comboBest;
-    if(R.clean) body+="<br>👑 CLEAN SWEEP — nothing left to roll, with "+fmtTime(R.timer)+" to spare";
-    if(R.goalAtT) body+="<br>⚡ Goal in "+fmtTime(R.goalAtT)+(newRec?" — NEW RECORD":"");
+    if(R.clean) body+="<br>👑 CLEAN SWEEP, nothing left to roll, with "+fmtTime(R.timer)+" to spare";
+    if(R.goalAtT) body+="<br>⚡ Goal in "+fmtTime(R.goalAtT)+(newRec?", NEW RECORD":"");
     if(R.keepsRun.length) body+="<br>✦ Keepsakes: "+R.keepsRun.join(", ");
     if(earned>0) body+="<br>☀ +"+earned+" Sunbeams";
     $("resBody").innerHTML=body;
@@ -3242,7 +3243,7 @@
       d.innerHTML=(un?"":"<div class='lk'>🔒</div>")+"<div class='nm'>"+sk.name+"</div>";
       d.onclick=function(){
         if(!un){ toast(sk.type==="absorbs"?("Absorb "+sk.need+" things ("+save.lifetimeAbsorbs+" so far)"):
-          (sk.type==="cleans"?("👑 Clean-sweep "+sk.need+" worlds — roll up EVERYTHING"):("Clear "+sk.need+" worlds"))); return; }
+          (sk.type==="cleans"?("👑 Clean-sweep "+sk.need+" worlds, roll up EVERYTHING"):("Clear "+sk.need+" worlds"))); return; }
         save.selectedSkin=sk.id; persist(); buildSkins(); toast(sk.name+" equipped"); };
       list.appendChild(d);
     })(SKINS[i]); }
