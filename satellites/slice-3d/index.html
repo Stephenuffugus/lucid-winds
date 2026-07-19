@@ -211,6 +211,11 @@ var SFX={
   spring:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(720,t+0.16);
     g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+  slab:function(combo){ var c=ac(); if(!c)return; var t=c.currentTime; var base=360+Math.min(combo||1,20)*24;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(base*2.1,t); o.frequency.exponentialRampToValueAtTime(base,t+0.05);
+    g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.13);
+    var o2=c.createOscillator(),g2=c.createGain(); o2.type='triangle'; o2.frequency.setValueAtTime(base*0.5,t);
+    g2.gain.setValueAtTime(0.07,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.09); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.1); },
   fail:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(60,t+0.5);
     g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.55); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.56);
@@ -718,7 +723,19 @@ function buildFreefall(lvl){
     var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:0x3f7a38})));
     rimTree.position.set(side*(SW+2.2), 11.6, -2);
   }
-  var blocks=[], items=[], crystals=[], pads=[];
+  var blocks=[], items=[], crystals=[], pads=[], slabs=[];
+  var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
+  // a stack of BROWN slabs: cut with the blade and each reveals a bright color
+  function stackAt(px,py,n){
+    for(var sk=0;sk<n;sk++){
+      var ic=SLAB_IN[Math.floor(rng()*SLAB_IN.length)];
+      var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.4,1.15,4.2), new THREE.MeshLambertMaterial({color:0x7a5230})));
+      m.position.set(px,py-sk*1.32,0);
+      var grn=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.5,0.12,4.3), new THREE.MeshLambertMaterial({color:0x5e3c1e})));
+      grn.position.set(px,py-sk*1.32+0.62,0);
+      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false});
+    }
+  }
   // a bright cushion you WANT to hit handle-first: bounce + bonus (blade chips)
   function padAt(px,py){
     var cush=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2,12,9), new THREE.MeshLambertMaterial({color:0x8de8ff, emissive:0x1c4a5a})));
@@ -730,9 +747,9 @@ function buildFreefall(lvl){
   // structure bag down the shaft; everything mounted, nothing floats
   var y=-4;
   function bagFF(){
-    var bag=['shelfL','shelfR','branch','shelfL','shelfR','mid'];
-    if(lvl>=2)bag.push('swing','shroom','bumper');
-    if(lvl>=3)bag.push('crystal','bumper');
+    var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack'];
+    if(lvl>=2)bag.push('swing','shroom','bumper','stack');
+    if(lvl>=3)bag.push('crystal','bumper','stack');
     for(var bi=bag.length-1;bi>0;bi--){ var bj=Math.floor(rng()*(bi+1)); var bt=bag[bi]; bag[bi]=bag[bj]; bag[bj]=bt; }
     return bag;
   }
@@ -773,6 +790,12 @@ function buildFreefall(lvl){
         var hl=1.8+rng()*1.6;
         items.push(fruitAt(hx, y-hl, fb, 'vine', y));
       }
+    } else if(seg==='stack'){
+      var skx=(rng()*2-1)*(SW-3.5);
+      var skn=3+Math.floor(rng()*4);
+      stackAt(skx, y, skn);
+      y-=skn*1.32+3.5;
+      continue;
     } else if(seg==='bumper'){
       var bpx=(rng()*2-1)*(SW-3);
       padAt(bpx, y);
@@ -841,7 +864,7 @@ function buildFreefall(lvl){
   }
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
-  return {ff:true, len:depth, SW:SW, floorY:floorY, blocks:blocks, items:items, crystals:crystals, pads:pads,
+  return {ff:true, len:depth, SW:SW, floorY:floorY, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
 
@@ -1074,6 +1097,23 @@ function ffPad(pad){
     if(!G.padCoached){ G.padCoached=true; popup('handle bounce!', G.x-2, G.y+3.6, '#ffd76a'); }
   }
 }
+/* Freefall: blade cuts a brown slab -> reveals its color, satisfying chunk */
+function sliceSlab(sl){
+  sl.cut=true;
+  if(sl.mesh){ if(sl.mesh.parent)sl.mesh.parent.remove(sl.mesh); else scene.remove(sl.mesh); disposeMesh(sl.mesh); }
+  if(sl.gline){ scene.remove(sl.gline); disposeMesh(sl.gline); }
+  spawnChunk(sl.x-sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, -5-Math.random()*3, -(2+Math.random()*3));
+  spawnChunk(sl.x+sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, 5+Math.random()*3, (2+Math.random()*3));
+  spawnSparks(sl.x, sl.y, sl.inner, 7);
+  G.combo=Math.min(G.combo+1,30); if(G.combo>G.comboBest)G.comboBest=G.combo;
+  G.slices++;
+  var pts=12*Math.max(1,G.combo); G.score+=pts;
+  popup('+'+pts, sl.x, sl.y+1, '#fff');
+  G.shake=Math.min(0.2,0.06+G.combo*0.003);
+  SFX.slab(G.combo);
+  var cEl=$('h-combo'); if(G.combo>=2){ cEl.textContent='x'+G.combo; cEl.classList.add('on'); cEl.classList.remove('pulse'); void cEl.offsetWidth; cEl.classList.add('pulse'); }
+  if(G.combo===5||G.combo===10||G.combo===15||G.combo===20) SFX.milestone(G.combo);
+}
 /* Freefall handle-on-fruit: a wasted hit, the fruit is bonked away uncut */
 function ffBonk(it){
   it.cut=true;
@@ -1146,6 +1186,20 @@ function loop(ts){
       if(pds){ for(ip=0;ip<pds.length;ip++){ var pd=pds[ip];
         var pdx=nx-pd.x, pdy=ny-pd.y;
         if(pdx*pdx+pdy*pdy < (pd.r+KR)*(pd.r+KR)) ffPad(pd);
+      } }
+      // brown slab stacks: blade cuts through (reveal color + chain), handle bonks off
+      var sls=G.world.slabs, isl;
+      if(sls){ for(isl=0;isl<sls.length;isl++){ var sl=sls[isl]; if(sl.cut)continue;
+        if(nx+KR>sl.x-sl.w/2 && nx-KR<sl.x+sl.w/2 && ny+KR>sl.y-sl.h/2 && ny-KR<sl.y+sl.h/2){
+          var bXs=-Math.cos(G.ang), bYs=-Math.sin(G.ang);
+          if((sl.x-G.x)*bXs+(sl.y-G.y)*bYs > 0) sliceSlab(sl);
+          else { // handle hit: deflect off the slab, keep sinking, lose combo
+            var pshs=(G.x<sl.x)?-1:1; nx=sl.x+pshs*(sl.w/2+KR);
+            G.vx=pshs*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3;
+            SFX.wood(); G.shake=Math.max(G.shake,0.12);
+            G.combo=0; var ces=$('h-combo'); if(ces)ces.classList.remove('on');
+          }
+        }
       } }
       // shelves/brackets in the pit are pass-through fruit mounts, so the dive
       // never stalls; the only things you land on is the floor at the bottom

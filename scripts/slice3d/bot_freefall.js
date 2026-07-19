@@ -54,6 +54,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     S.newFF(3); S.freeze();
     G=S.state(); W=S.world();
     var pad=(W.pads&&W.pads.length)?W.pads[0]:null;
+    if(W.slabs)W.slabs.length=0; if(W.items)W.items.length=0; if(W.crystals)W.crystals.length=0; // isolate the pad
     if(!pad){ r.padBounce={found:false}; r.padChip={found:false}; }
     else {
       G.combo=3; var sc0=G.score;
@@ -66,11 +67,40 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
       // TEST PAD CHIP: blade into the cushion -> chip
       S.newFF(3); S.freeze();
       G=S.state(); W=S.world(); pad=W.pads[0];
+      if(W.slabs)W.slabs.length=0; if(W.items)W.items.length=0; if(W.crystals)W.crystals.length=0;
       G.combo=3;
       G.x=pad.x-2.6; G.y=pad.y; G.vx=6; G.vy=-2; G.ang=PI; G.w=0; G.holding=false; G.hold=0; // blade world +x toward pad
       S.stepN(4,16);
       G=S.state();
       r.padChip={found:true, chipped:(G.chips||0)>0, comboZeroed:G.combo===0};
+    }
+
+    // TEST SLAB CUT: blade-down fall through a brown stack -> chain of cuts
+    S.newFF(2); S.freeze();
+    G=S.state(); W=S.world();
+    var stack=(W.slabs&&W.slabs.length)?W.slabs : null;
+    if(W.pads)W.pads.length=0; if(W.items)W.items.length=0; if(W.crystals)W.crystals.length=0; // isolate the stack
+    if(!stack){ r.slabCut={found:false}; r.slabBonk={found:false}; }
+    else {
+      // find the topmost slab of the first column (group by x)
+      var top=W.slabs[0];
+      for(var si=0;si<W.slabs.length;si++){ if(Math.abs(W.slabs[si].x-top.x)<0.1 && W.slabs[si].y>top.y) top=W.slabs[si]; }
+      G.x=top.x; G.y=top.y+3; G.vx=0; G.vy=-16; G.ang=PI/2; G.w=0; G.holding=false; G.hold=0; // blade down
+      var sl0=G.slices;
+      S.stepN(14,16);
+      G=S.state();
+      r.slabCut={found:true, cutCount:G.slices-sl0, combo:G.combo};
+      // TEST SLAB BONK: handle-down onto a slab -> no cut
+      S.newFF(2); S.freeze();
+      G=S.state(); W=S.world();
+      if(W.pads)W.pads.length=0; if(W.items)W.items.length=0; if(W.crystals)W.crystals.length=0;
+      var top2=W.slabs[0];
+      for(var si2=0;si2<W.slabs.length;si2++){ if(Math.abs(W.slabs[si2].x-top2.x)<0.1 && W.slabs[si2].y>top2.y) top2=W.slabs[si2]; }
+      G.x=top2.x; G.y=top2.y+3; G.vx=0; G.vy=-16; G.ang=-PI/2; G.w=0; G.holding=false; G.hold=0; // handle down
+      var sb0=G.slices;
+      S.stepN(4,16);
+      G=S.state();
+      r.slabBonk={found:true, noCut:top2.cut!==true && G.slices===sb0};
     }
 
     // TEST FULL RUN: steer toward center, settle blade-down near the floor, stick it
@@ -106,6 +136,8 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     && out.run.done && out.run.mult>=1 && out.run.goOn
     && out.padBounce.found && out.padBounce.comboKept && out.padBounce.gotBonus && out.padBounce.chips===0
     && out.padChip.found && out.padChip.chipped && out.padChip.comboZeroed
+    && out.slabCut.found && out.slabCut.cutCount>=2
+    && out.slabBonk.found && out.slabBonk.noCut
     && /clean dive/.test(out.run.detail);
   console.log(ok?'ORIENT OK':'FAIL','· errors:',errors.length?errors.join(' | '):'none');
   await browser.close();
