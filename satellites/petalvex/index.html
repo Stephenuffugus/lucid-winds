@@ -403,7 +403,7 @@ function drawTile(g, x, y, s, tile, alpha, seamState){
     g.fillStyle='#c8a84b'; g.fillRect(lx+ls*0.12, ly+ls*0.42, ls*0.76, ls*0.5); }
   // seam overlays
   if(seamState){
-    var lw=Math.max(3,s*0.06);
+    var lw=Math.max(2,s*0.042);
     /* colour-blind safe: 'bad' seams are thick + dashed, 'match' seams thin + solid,
        so they differ by pattern and width, not colour alone (numbers remain the ground truth). */
     function seam(a,bx,by,ex,ey){ if(!a) return;
@@ -432,7 +432,7 @@ function seamFor(cellIdx){
 
 /* ============================ render ================================= */
 /* ---------- background art (DROP-IN; procedural fills stay as fallback) ---------- */
-var PV_ASSET_V='ov1';
+var PV_ASSET_V='ov2';
 function _pvImg(src){ var im=new Image(); try{ im.src=src+'?v='+PV_ASSET_V; }catch(e){} return im; }
 var PV_BED=_pvImg('assets/bg/bg_bed.jpg');
 var PV_BEDS=(function(){ var a=[],i; for(i=0;i<8;i++)a.push(_pvImg('assets/bg/bg_theme_'+i+'.jpg')); return a; })();
@@ -474,8 +474,9 @@ function render(){
   var i, n=P.n;
   for(i=0;i<n*n;i++){
     var R=cellRect(i);
-    ctx.fillStyle='#0e140d'; ctx.fillRect(R.x,R.y,R.s,R.s);
-    ctx.strokeStyle='#233019'; ctx.lineWidth=1; ctx.strokeRect(R.x+0.5,R.y+0.5,R.s-1,R.s-1);
+    // translucent slot so the paper background stays visible through the empty bed
+    ctx.fillStyle=(SKIN==='enamel')?'rgba(18,22,14,0.26)':'#0e140d'; ctx.fillRect(R.x,R.y,R.s,R.s);
+    ctx.strokeStyle=(SKIN==='enamel')?'rgba(232,220,200,0.22)':'#233019'; ctx.lineWidth=1; ctx.strokeRect(R.x+0.5,R.y+0.5,R.s-1,R.s-1);
   }
   // subtle bed frame
   ctx.strokeStyle='rgba(120,90,52,0.55)'; ctx.lineWidth=3;
