@@ -176,7 +176,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">↩</div><div>Undo takes back every move, all the way to the start. There is no way to truly ruin a puzzle.</div></div>
     <div class="helprow"><div class="hi">🌰</div><div>Each garden hides one <b class="hl">seed</b> on a harder path. Collect them for wardrobe keys.</div></div>
     <div style="flex:1"></div>
-    <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+    <div class="stack"><button class="btn primary" id="how-back">Got it, let's grow</button></div>
   </div></div>
 
   <!-- SETTINGS -->
@@ -1087,7 +1087,13 @@ function refreshTitle(){
   var today=Math.floor(Date.now()/864e5);
   $('dailypill').textContent=PROG.daily.done===today?'done ✓':(PROG.daily.streak>0?'streak '+PROG.daily.streak:'new');
 }
-tap('b-journey',function(){ buildLevelGrid(false); show('s-levels'); });
+var _rrHowSeen=false; try{ _rrHowSeen=localStorage.getItem('rr_how_v1')==='1'; }catch(e){}
+var _rrAfterHow=null;
+function markHowSeen(){ _rrHowSeen=true; try{ localStorage.setItem('rr_how_v1','1'); }catch(e){} }
+tap('b-journey',function(){
+  if(!_rrHowSeen){ _rrAfterHow=function(){ buildLevelGrid(false); show('s-levels'); }; show('s-how'); return; }
+  buildLevelGrid(false); show('s-levels');
+});
 tap('b-zen',function(){ buildLevelGrid(true); show('s-levels'); });
 tap('b-daily',function(){ startLevel('daily',dailyIdx()); });
 tap('b-ward',function(){ buildWard(); show('s-ward'); });
@@ -1095,7 +1101,11 @@ tap('b-grove',function(){ buildGrove(); show('s-grove'); });
 tap('b-how',function(){ show('s-how'); });
 tap('b-set',function(){ show('s-set'); });
 tap('lvl-back',function(){ show('s-title'); refreshTitle(); });
-tap('how-back',function(){ show('s-title'); });
+tap('how-back',function(){
+  markHowSeen();
+  if(_rrAfterHow){ var f=_rrAfterHow; _rrAfterHow=null; f(); return; }
+  show('s-title');
+});
 tap('set-back',function(){ show('s-title'); });
 tap('ward-back',function(){ show('s-title'); });
 tap('grove-back',function(){ show('s-title'); });
