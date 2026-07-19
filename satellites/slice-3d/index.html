@@ -172,6 +172,7 @@ window.addEventListener('resize', fit); fit();
 /* ---------- persistence ---------- */
 var LS={ g:function(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, s:function(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
 var PROG=(function(){ try{ return JSON.parse(LS.g('s3d_prog'))||{level:1,best:{}}; }catch(e){ return {level:1,best:{}}; } })();
+if(!PROG.level)PROG.level=1;
 if(!PROG.ffLevel)PROG.ffLevel=1;
 if(!PROG.best)PROG.best={};
 function saveProg(){ LS.s('s3d_prog', JSON.stringify(PROG)); }
