@@ -51,6 +51,29 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     G=S.state();
     r.bonk={consumed:t2.cut===true, notSliced:G.slices===before2};
 
+    // TEST PAD BOUNCE: handle into a cushion -> bounce + bonus, combo kept
+    S.newFF(3); S.freeze();
+    G=S.state(); W=S.world();
+    var pad=(W.pads&&W.pads.length)?W.pads[0]:null;
+    if(!pad){ r.padBounce={found:false}; r.padChip={found:false}; }
+    else {
+      G.combo=3; var sc0=G.score;
+      G.x=pad.x-2.6; G.y=pad.y; G.vx=6; G.vy=-2; G.ang=PI; G.w=0; G.holding=false; G.hold=0; // blade points +x(right)=away from pad on the left? knife left of pad, blade world +x toward pad => need handle toward pad
+      // knife is LEFT of pad (x=pad.x-2.6), pad is to the RIGHT (+x). handle must face +x => blade faces -x => ang=0 (blade world -x). set ang=0
+      G.ang=0;
+      S.stepN(4,16);
+      G=S.state();
+      r.padBounce={found:true, comboKept:G.combo===3, gotBonus:G.score>sc0, chips:G.chips||0};
+      // TEST PAD CHIP: blade into the cushion -> chip
+      S.newFF(3); S.freeze();
+      G=S.state(); W=S.world(); pad=W.pads[0];
+      G.combo=3;
+      G.x=pad.x-2.6; G.y=pad.y; G.vx=6; G.vy=-2; G.ang=PI; G.w=0; G.holding=false; G.hold=0; // blade world +x toward pad
+      S.stepN(4,16);
+      G=S.state();
+      r.padChip={found:true, chipped:(G.chips||0)>0, comboZeroed:G.combo===0};
+    }
+
     // TEST FULL RUN: steer toward center, settle blade-down near the floor, stick it
     S.newFF(1); S.freeze();
     G=S.state(); W=S.world();
@@ -80,7 +103,9 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     && out.clean.chips===0 && out.clean.comboKept && out.clean.bouncedRight
     && out.cut.sliced
     && out.bonk.consumed && out.bonk.notSliced
-    && out.run.done && out.run.mult>=1 && out.run.goOn;
+    && out.run.done && out.run.mult>=1 && out.run.goOn
+    && out.padBounce.found && out.padBounce.comboKept && out.padBounce.gotBonus && out.padBounce.chips===0
+    && out.padChip.found && out.padChip.chipped && out.padChip.comboZeroed;
   console.log(ok?'ORIENT OK':'FAIL','· errors:',errors.length?errors.join(' | '):'none');
   await browser.close();
   process.exit(ok&&!errors.length?0:1);
