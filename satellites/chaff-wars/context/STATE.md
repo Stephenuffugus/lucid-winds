@@ -4,6 +4,29 @@ Last updated 2026-07-19 EVE (session: rename + art pack + MULTIPLAYER v1).
 Display name is **Pop N Lock** (Stephen's pick; pods POP, pieces LOCK, the dance).
 Slug/gameId/save keys unchanged: `satellites/chaff-wars/`, `chaffwars`, `cw_*`/`sw_sb_chaffwars`.
 
+## 🔥 FIRESTORE ARCHITECTURE (answer for Stephen's open question)
+**One Firestore project for the whole studio — do NOT make one per game.** The existing
+`focus-grove-fffa8` already serves the main game + all satellites via sunbeam-sdk. Separate
+projects would fragment player sign-ins (each game would need its own account), the sunbeam
+vault, and billing. The pattern: each game gets its own namespaced COLLECTION in the shared
+project with its own rules block (`cwRooms` for this game; a future game adds e.g. `xyRooms`).
+`firestore-rules-8.txt` is written exactly this way. No new project needed — just deploy
+the rules file to the existing one.
+
+## ⚡ v1.2 POLISH PASS (2026-07-19 night, commit d406c94d, deployed)
+- **Levels:** stage-intro entrance cards (tap to skip) · **best-of-3 boss + secret** (SERIES
+  state; interim round screens; rewards only on series win; per-game difficulty EASED to
+  compensate Bo3 compounding — boss ~25%/game ≈ 16%/encounter, secret ~20% ≈ 10%; the
+  math: p_series = p²(3−2p), keep it in mind for any future boss tuning) · scatter-start
+  stages 7/9/11 (5/7/9 pods both boards, "Cluttered yard" ladder label).
+- **CSS:** brick + neon-wash screens, magenta spray-pill primary buttons, neon cyan headers,
+  per-pest accent bars + rings on the ladder, beaten rows get a grey buff slash, outcome-
+  colored result titles.
+- **Gameplay feel:** screen shake (chains + chaff), "DENIED!" offset feedback, neon outlined
+  chain words with size-punch, neon countdown, two-tone canvas wordmark, faster DAS (170/70).
+- New dev helpers: `CW_DEV.beginStage(n)` (natural campaign start, for intro shots),
+  `CW_DEV.seriesTest()` (Bo3 flow proof).
+
 ## ⚡ NEW THIS SESSION (all deployed to main)
 - **RENAME** → Pop N Lock everywhere player-facing (title, HUD, manifest, portal card,
   install strings). sw cache bumped v2. Commit 42709c77.
