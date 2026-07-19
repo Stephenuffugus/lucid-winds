@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Garden Climb">
-<title>Garden Climb: Snakes &amp; Ladders</title>
+<meta name="apple-mobile-web-app-title" content="Snakes &amp; Ladders">
+<title>Snakes &amp; Ladders · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"snakesladders"}).catch(function(){});</script>
 <style>
@@ -65,9 +65,9 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Garden Climb</div>
+    <div class="title-word">Snakes &amp; Ladders</div>
     <div class="title-sub">Snakes &amp; Ladders</div>
-    <div class="ribbon">Roll the die and race up the garden. Land on a <b class="hl">climbing trellis</b> and your pawn shoots up the vine. Land on a <b class="hl">garden snake</b> and you slide back down. First to land exactly on square <b class="hl">100</b> at the top wins.</div>
+    <div class="ribbon">Roll the die and race up the garden. Land at the bottom of a <b class="hl">wooden ladder</b> and your pawn climbs straight up. Land on a <b class="hl">garden snake</b> and you slide back down. First to land exactly on square <b class="hl">100</b> at the top wins.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-vs">Play vs Computer</button>
@@ -85,7 +85,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>The goal.</b> Be the first pawn to land exactly on square <b class="hl">100</b> at the very top of the garden.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b>Rolling.</b> On your turn, tap the big <b class="hl">ROLL</b> button (or tap the die). It spins and stops on a number from 1 to 6, and your pawn hops that many squares.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b>Trellises climb up.</b> Land on the bottom of a green <b class="hl">trellis</b> and your pawn climbs the vine all the way to the top. Free progress.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Ladders climb up.</b> Land on the bottom of a wooden <b class="hl">ladder</b> and your pawn climbs all the way to the top. Free progress.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Snakes slide down.</b> Land on a <b class="hl">snake's head</b> and you slide down its body to the tail, back toward the start.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b>Land exactly.</b> You must finish on 100. If a roll would carry you past it, you <b class="hl">bounce back</b> the extra steps.</div></div>
     <div class="helprow"><div class="hi">6</div><div><b>Winning.</b> First pawn to reach 100 wins. Play the computer, or share one device and take turns with a friend.</div></div>
@@ -312,10 +312,10 @@ function render(){ if(!ctx||!G)return;
 function drawBoard(){
   ctx.fillStyle='#0b110a'; roundRectFill(BX-7,BY-7,BW+14,BW+14,12);
   for(var n=1;n<=100;n++){ var rc=cellRC(n); var x=BX+rc.col*cell, y=BY+rc.sr*cell;
-    ctx.fillStyle=PASTELS[Math.floor((n-1)/10)]; roundRectFill(x+1.5,y+1.5,cell-3,cell-3,7);
-    ctx.fillStyle=((rc.sr+rc.col)%2===0)?'rgba(255,255,255,0.16)':'rgba(0,0,0,0.06)'; roundRectFill(x+1.5,y+1.5,cell-3,cell-3,7);
-    if(n===100){ ctx.fillStyle='rgba(200,168,75,0.42)'; roundRectFill(x+1.5,y+1.5,cell-3,cell-3,7); }
-    ctx.strokeStyle='rgba(255,255,255,0.30)'; ctx.lineWidth=1; rr(x+1.5,y+1.5,cell-3,cell-3,7); ctx.stroke();
+    // checkerboard of green and light green (Jessie 7/19)
+    ctx.fillStyle=((rc.sr+rc.col)%2===0)?'#a9d489':'#7fb75e'; roundRectFill(x+1.5,y+1.5,cell-3,cell-3,7);
+    if(n===100){ ctx.fillStyle='rgba(200,168,75,0.5)'; roundRectFill(x+1.5,y+1.5,cell-3,cell-3,7); }
+    ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.lineWidth=1; rr(x+1.5,y+1.5,cell-3,cell-3,7); ctx.stroke();
   }
 }
 function drawNumbers(){ ctx.textAlign='left'; ctx.textBaseline='alphabetic';
@@ -333,41 +333,52 @@ function drawChutes(){
   for(k in SNAKES){ if(SNAKES.hasOwnProperty(k)){ drawSnake(parseInt(k,10), SNAKES[k]); } }
 }
 function drawLadder(a,b){ var A=squareCenter(a), B=squareCenter(b);
+  // Proper brown wooden ladder, no arrows (Jessie 7/19)
   var dx=B.x-A.x, dy=B.y-A.y; var len=Math.sqrt(dx*dx+dy*dy); var ux=dx/len, uy=dy/len; var px=-uy, py=ux;
   var wRail=7;
-  // rails
   ctx.lineCap='round';
-  ctx.strokeStyle='rgba(60,90,40,0.9)'; ctx.lineWidth=4.5;
+  ctx.strokeStyle='rgba(58,36,14,0.95)'; ctx.lineWidth=5;
   ctx.beginPath(); ctx.moveTo(A.x+px*wRail,A.y+py*wRail); ctx.lineTo(B.x+px*wRail,B.y+py*wRail); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(A.x-px*wRail,A.y-py*wRail); ctx.lineTo(B.x-px*wRail,B.y-py*wRail); ctx.stroke();
-  ctx.strokeStyle='rgba(122,179,86,0.95)'; ctx.lineWidth=2.4;
+  ctx.strokeStyle='#8a5a30'; ctx.lineWidth=2.8;
   ctx.beginPath(); ctx.moveTo(A.x+px*wRail,A.y+py*wRail); ctx.lineTo(B.x+px*wRail,B.y+py*wRail); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(A.x-px*wRail,A.y-py*wRail); ctx.lineTo(B.x-px*wRail,B.y-py*wRail); ctx.stroke();
-  // rungs
-  var rungs=Math.max(3,Math.round(len/26)); ctx.strokeStyle='rgba(90,138,58,0.9)'; ctx.lineWidth=2.2;
+  var rungs=Math.max(3,Math.round(len/26));
   for(var i=1;i<rungs;i++){ var t=i/rungs; var cx=A.x+dx*t, cy=A.y+dy*t;
+    ctx.strokeStyle='rgba(58,36,14,0.95)'; ctx.lineWidth=3.6;
     ctx.beginPath(); ctx.moveTo(cx+px*wRail,cy+py*wRail); ctx.lineTo(cx-px*wRail,cy-py*wRail); ctx.stroke();
-    // little leaf every other rung
-    if(i%2===0){ ctx.fillStyle='rgba(122,179,86,0.9)'; ctx.beginPath(); ctx.ellipse(cx+px*(wRail+4),cy+py*(wRail+4),4,2.2,Math.atan2(py,px),0,6.2832); ctx.fill(); }
+    ctx.strokeStyle='#a5713e'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx+px*wRail,cy+py*wRail); ctx.lineTo(cx-px*wRail,cy-py*wRail); ctx.stroke();
   }
-  // base marker leaf
-  ctx.fillStyle='#5f9a3c'; ctx.beginPath(); ctx.arc(A.x,A.y,5.5,0,6.2832); ctx.fill();
-  ctx.fillStyle='#eafbd6'; ctx.font='800 8px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('↑',A.x,A.y+0.5); ctx.textBaseline='alphabetic'; ctx.textAlign='left';
 }
 function drawSnake(head,tail){ var H=squareCenter(head), T=squareCenter(tail);
+  // Real snake anatomy (Jessie 7/19): body swells behind the head, tapers to
+  // a POINTY tail tip, and each snake has its own girth.
   var dx=T.x-H.x, dy=T.y-H.y; var len=Math.sqrt(dx*dx+dy*dy); var ux=dx/len, uy=dy/len; var px=-uy, py=ux;
   var waves=Math.max(1.5,len/70); var amp=Math.min(13,len*0.07+5); var N=26;
+  var girth=5.5+((head*7)%4);          // per-snake body thickness
   function pt(i){ var t=i/N; var bx=H.x+dx*t, by=H.y+dy*t; var s=Math.sin(t*Math.PI*waves)*amp*(1-t*0.35); return {x:bx+px*s, y:by+py*s}; }
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  // dark outline body
-  ctx.strokeStyle='rgba(70,48,18,0.85)'; ctx.lineWidth=10;
-  ctx.beginPath(); var p0=pt(0); ctx.moveTo(p0.x,p0.y); for(var i=1;i<=N;i++){ var q=pt(i); ctx.lineTo(q.x,q.y); } ctx.stroke();
-  // olive-brown body (distinct from green trellis ladders)
-  ctx.strokeStyle='#a5852f'; ctx.lineWidth=6.5;
-  ctx.beginPath(); ctx.moveTo(p0.x,p0.y); for(var j=1;j<=N;j++){ var q2=pt(j); ctx.lineTo(q2.x,q2.y); } ctx.stroke();
-  // belly stripe dots
-  ctx.fillStyle='rgba(230,240,190,0.55)';
-  for(var d=3;d<N;d+=4){ var qd=pt(d); ctx.beginPath(); ctx.arc(qd.x,qd.y,1.6,0,6.2832); ctx.fill(); }
+  function wid(i){ var t=i/N; return girth*(0.55+1.0*Math.sin(Math.min(1,t*3)*Math.PI/2))*Math.pow(1-t,0.55); }
+  // build the tapered outline: down one flank, around the point, back up
+  var L=[],R=[],i;
+  for(i=0;i<=N;i++){
+    var a=pt(i), b=pt(Math.min(N,i+1));
+    var ddx=b.x-a.x, ddy=b.y-a.y, dl=Math.sqrt(ddx*ddx+ddy*ddy)||1;
+    var nx=-ddy/dl, ny=ddx/dl, w=wid(i);
+    L.push({x:a.x+nx*w, y:a.y+ny*w}); R.push({x:a.x-nx*w, y:a.y-ny*w});
+  }
+  ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(L[0].x,L[0].y);
+  for(i=1;i<=N;i++)ctx.lineTo(L[i].x,L[i].y);
+  var tip=pt(N); ctx.lineTo(tip.x,tip.y);
+  for(i=N;i>=0;i--)ctx.lineTo(R[i].x,R[i].y);
+  ctx.closePath();
+  ctx.fillStyle='#a5852f'; ctx.fill();
+  ctx.strokeStyle='rgba(70,48,18,0.9)'; ctx.lineWidth=2.2; ctx.stroke();
+  // back pattern: diamond spots down the spine
+  ctx.fillStyle='rgba(70,48,18,0.4)';
+  for(var d=2;d<N-3;d+=3){ var qd=pt(d), wd=wid(d)*0.5;
+    ctx.beginPath(); ctx.moveTo(qd.x,qd.y-wd); ctx.lineTo(qd.x+wd,qd.y); ctx.lineTo(qd.x,qd.y+wd); ctx.lineTo(qd.x-wd,qd.y); ctx.closePath(); ctx.fill(); }
   // head
   ctx.fillStyle='#8f7328'; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.fill();
   ctx.strokeStyle='rgba(70,48,18,0.9)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(H.x,H.y,9,0,6.2832); ctx.stroke();
@@ -501,7 +512,7 @@ tap('set-back',function(){ sfx('ui'); show('s-title'); });
 tap('go-retry',function(){ sfx('ui'); startGame(G?G.mode:'vs'); });
 tap('go-home',function(){ sfx('ui'); show('s-title'); });
 tap('go-share',function(){ sfx('ui'); shareIt(); });
-function shareIt(){ var url='https://lucidwinds.com/satellites/snakes-ladders/'; var txt='I climbed the garden in Garden Climb 🦚🪴 (Snakes & Ladders). Play at '+url;
+function shareIt(){ var url='https://lucidwinds.com/satellites/snakes-ladders/'; var txt='I won Snakes & Ladders in the garden! Play at '+url;
   if(navigator.share){ navigator.share({title:'Garden Climb',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
 
