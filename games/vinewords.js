@@ -163,17 +163,26 @@ window._gameFns.vinewords=function VW(a){
 
   // Pointer coords helper
   function boardRect(){return boardWrap.getBoundingClientRect();}
-  function cellAt(x,y){
+  function cellAt(x,y,strict){
     var r=boardRect();
     var pad=8; // tolerate fingers straying just outside the board edges
     var dx=x-r.left,dy=y-r.top;
     if(dx<-pad||dy<-pad||dx>r.width+pad||dy>r.height+pad)return null;
     dx=Math.max(0,Math.min(r.width-0.01,dx));
     dy=Math.max(0,Math.min(r.height-0.01,dy));
-    var col=Math.floor(dx/(r.width/4));
-    var row=Math.floor(dy/(r.height/4));
+    var cw=r.width/4, ch=r.height/4;
+    var col=Math.floor(dx/cw);
+    var row=Math.floor(dy/ch);
     if(col<0)col=0;else if(col>3)col=3;
     if(row<0)row=0;else if(row>3)row=3;
+    if(strict){
+      // Drag mode only registers a cell near its CENTER, so the corners are
+      // dead zones and diagonal swipes stop clipping orthogonal neighbors
+      // (Jessie 7/19: diagonal drag barely worked).
+      var cx=(col+0.5)*cw, cy=(row+0.5)*ch;
+      var ddx=(dx-cx)/cw, ddy=(dy-cy)/ch;
+      if(ddx*ddx+ddy*ddy>0.36*0.36)return null;
+    }
     return [row,col];
   }
 
@@ -355,46 +364,39 @@ window._gameFns.vinewords=function VW(a){
     // path → submitWord → "3 letter min" shake on every click). Flag is
     // consumed by the click handler below.
     downHandled=true;
-    // Always enter drag mode so onMove can pick up the first cell even if
-    // the initial touch landed in a gap.
+    // Drag-only building (Jessie 7/19): touching down always STARTS a fresh
+    // path at that cell; the word grows only by dragging.
     draggingFromCanvas=true;
     var pt=getPoint(e);
     var c=cellAt(pt.x,pt.y);
-    if(!c)return;
-    // If this cell is already the last in path, treat as "submit"
-    if(path.length>0&&path[path.length-1][0]===c[0]&&path[path.length-1][1]===c[1]){
-      submitWord();draggingFromCanvas=false;return;
-    }
-    // If this cell is in path (not last), trim to include this cell
-    if(isInPath(c[0],c[1])){
-      for(var i=0;i<path.length;i++){
-        if(path[i][0]===c[0]&&path[i][1]===c[1]){path=path.slice(0,i+1);break;}
-      }
-    } else {
-      // Start a new path at this cell unless we can extend the current one
-      if(path.length>0){var last=path[path.length-1];if(adjacent(last,c))path.push(c);else path=[c];}
-      else path=[c];
-    }
+    path=c?[c]:[];
     render();
   }
   function onMove(e){
     if(!playing||paused||!draggingFromCanvas)return;
     e.preventDefault();
     var pt=getPoint(e);
-    var c=cellAt(pt.x,pt.y);
+    var c=cellAt(pt.x,pt.y,true);
     if(!c)return;
     // First cell pickup if onDown missed and path is still empty.
     if(path.length===0){path=[c];render();return;}
     var last=path[path.length-1];
     if(last[0]===c[0]&&last[1]===c[1])return;
+    // Slide back onto the previous cell to undo the last letter
+    if(path.length>=2&&path[path.length-2][0]===c[0]&&path[path.length-2][1]===c[1]){
+      path.pop();render();return;
+    }
     if(addToPath(c[0],c[1]))render();
   }
   function onUp(e){
     if(!draggingFromCanvas)return;
     draggingFromCanvas=false;
-    // Auto-submit if valid on finger release, otherwise leave for manual clear
+    // Release submits a valid word; anything else clears so the next drag
+    // starts clean (words are built by dragging only).
     var w=pathWord();
     if(w.length>=3&&DICT[w]&&!foundSet[w]){submitWord();}
+    else if(w.length>=3){submitWord();}
+    else {path=[];render();}
   }
   function getPoint(e){
     if(e.touches&&e.touches.length)return {x:e.touches[0].clientX,y:e.touches[0].clientY};
@@ -408,18 +410,9 @@ window._gameFns.vinewords=function VW(a){
   boardWrap.addEventListener('touchmove',onMove,{passive:false});
   window.addEventListener('touchend',onUp);
 
-  // Also allow tap-cell semantics (for accessibility; user clicks each letter)
+  // Tap-to-add removed (Jessie 7/19: words are dragged, never tapped).
   gridHost.addEventListener('click',function(e){
-    if(downHandled){downHandled=false;return;} // gesture already handled by onDown (mouse click / drag release)
-    if(!playing||paused)return;
-    if(draggingFromCanvas)return;
-    var t=e.target;
-    if(!t||!t.getAttribute)return;
-    var r=parseInt(t.getAttribute('data-r'),10);
-    var c=parseInt(t.getAttribute('data-c'),10);
-    if(isNaN(r)||isNaN(c))return;
-    if(path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c){submitWord();return;}
-    if(addToPath(r,c))render();
+    if(downHandled){downHandled=false;return;} // swallow the mouse click that trails onDown
   });
 
   // Buttons
