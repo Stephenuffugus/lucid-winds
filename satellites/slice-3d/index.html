@@ -104,7 +104,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">SUPER SLICE 3D</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the pit, keep the <b>handle</b> off the walls, and <b style="color:var(--gold)">stick the bullseye floor</b> blade down.</div>
+    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the pit, keep your <b>blade</b> off the walls or you stick and fall, and <b style="color:var(--gold)">land the bullseye floor</b> blade down.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
@@ -125,7 +125,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b style="color:#8fd8f2">Freefall mode</b> drops you down a deep pit. Hold the LEFT or RIGHT side of the screen to drift that way and flip the knife. The walls bounce you back and forth.</div></div>
-    <div class="helprow"><div class="hi">6</div><div><b style="color:var(--rose)">Aim the blade at fruit</b> and it cuts. But keep the <b>handle</b> toward the walls: touch your blade to a wall and it chips, and your combo is gone. Land <b>blade down</b> on the bullseye floor to finish, closer to the center for a bigger multiplier.</div></div>
+    <div class="helprow"><div class="hi">6</div><div><b style="color:var(--rose)">Aim the blade at fruit</b> and it cuts. But keep the <b>handle</b> toward the walls: <b style="color:#ff6a5a">touch your blade to a wall and it sticks, and the dive is over.</b> Land <b>blade down</b> on the bullseye floor to finish, closer to the center for a bigger multiplier.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -211,6 +211,11 @@ var SFX={
   spring:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(720,t+0.16);
     g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+  fail:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(60,t+0.5);
+    g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.55); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.56);
+    var o2=c.createOscillator(),g2=c.createGain(); o2.type='square'; o2.frequency.setValueAtTime(180,t); o2.frequency.exponentialRampToValueAtTime(48,t+0.4);
+    g2.gain.setValueAtTime(0.09,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.45); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.46); },
   chip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(90,t+0.16);
     g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.19); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.2);
@@ -1023,21 +1028,21 @@ function hitCrystal(cr){
 /* Freefall wall contact: handle bounces clean, BLADE chips (the thing to avoid) */
 function ffWall(x,y,dir){
   // dir -1 = left wall (normal points +x), +1 = right wall (normal points -x)
+  var SW=G.world.SW;
   var bladeX=-Math.cos(G.ang);
   var bladeIntoWall = dir<0 ? (bladeX < -0.35) : (bladeX > 0.35);
   var away = -dir; // +1 = push right off the left wall, -1 = push left off the right wall
   if(bladeIntoWall){
-    // CHIP: combo lost, hard knockback, spun by the impact
-    G.combo=0; var cEl=$('h-combo'); if(cEl)cEl.classList.remove('on');
-    G.vx = away*9;
-    G.vy = Math.min(G.vy,-3);
-    G.w += away*8;
-    G.chips=(G.chips||0)+1;
-    G.shake=Math.max(G.shake,0.32);
-    SFX.chip();
-    spawnSparks(x,y,0xff5a4a,11);
-    popup('CHIP!', x-1, y+2, '#ff6a5a');
-    if(!G.chipCoached){ G.chipCoached=true; popup('handle off the walls', x+away*2-2, y+4.6, '#ffd76a'); }
+    // FAIL: the blade bites into the wall, the knife sticks and the dive ends
+    G.x = dir<0 ? -SW-KR*0.2 : SW+KR*0.2;
+    G.stickA = dir<0 ? 0 : Math.PI; // blade buried into the wall
+    G.ang=G.stickA; G.vx=0; G.vy=0; G.w=0;
+    G.done=true; G.failed=true; G.doneT=0; G.stuckY=G.y;
+    G.shake=Math.max(G.shake,0.5);
+    SFX.fail();
+    spawnSparks(x,y,0xff5a4a,16);
+    var mbw=$('multburst');
+    if(mbw){ mbw.textContent='STUCK!'; mbw.style.color='#ff6a5a'; mbw.classList.remove('go'); void mbw.offsetWidth; mbw.classList.add('go'); }
   } else {
     // clean handle bounce
     var sp=Math.abs(G.vx)*0.72; if(sp<3.4)sp=3.4;
@@ -1266,7 +1271,7 @@ function loop(ts){
   } else {
     G.doneT+=dt;
     G.ang=(G.stickA||0.35)+Math.sin(G.doneT*15)*0.14*Math.exp(-G.doneT*2.4); // dart wobble
-    if(G.doneT>0.4 && !G.counted){
+    if(G.doneT>0.4 && !G.counted && !G.failed){
       G.counted=true;
       G.score=G.score*G.mult;
       $('h-score').textContent=G.score.toLocaleString();
@@ -1274,7 +1279,7 @@ function loop(ts){
       var iv=setInterval(function(){ st++; SFX.tickup(st); if(st>=target){ clearInterval(iv); } }, 90);
       SFX.win(G.mult);
     }
-    if(G.doneT>2.4){ running=false; finishLevel(); return; }
+    if(G.doneT>(G.failed?1.7:2.4)){ running=false; finishLevel(); return; }
   }
 
   // knife transform + spin trail
@@ -1314,7 +1319,10 @@ function loop(ts){
   // you watch yourself stick it (Stephen: could not see the wall).
   var camT, lookX, lookY;
   if(G.mode==='ff'){
-    if(G.done){
+    if(G.failed){
+      camT={ x:G.x*0.5, y:G.stuckY+5, z:19 };
+      lookX=G.x*0.55; lookY=G.stuckY;
+    } else if(G.done){
       camT={ x:0, y:G.world.floorY+14, z:28 };
       lookX=0; lookY=G.world.floorY+4;
     } else {
@@ -1340,8 +1348,29 @@ function loop(ts){
 }
 
 /* ---------- finish ---------- */
+function failLevel(){
+  var lvl=G.lvl;
+  // a fail does NOT advance, score not multiplied, still shows what you earned
+  $('go-title').textContent='STUCK IN THE WALL';
+  $('go-stars').textContent='\u2715';
+  $('go-stars').style.color='#ff6a5a';
+  (function(){ var el=$('go-score'), target=G.score, e2=0;
+    el.textContent='0';
+    var iv2=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/650);
+      el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
+      if(pr>=1)clearInterval(iv2); },33); })();
+  var fell=Math.max(0,Math.round(4-G.y));
+  $('go-lab').textContent='the blade caught the wall';
+  $('go-detail').textContent=G.slices+' sliced \u00b7 fell '+fell+' before you stuck';
+  $('go-sun').textContent='';
+  $('go-next').textContent='Try Again';
+  var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
+  show('s-go');
+}
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
+  if(G.failed){ return failLevel(); }
+  $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
   var chips=G.chips||0, cleanBonus=0;
   if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus; }
@@ -1428,7 +1457,7 @@ tap('b-ff',function(){ newFF(PROG.ffLevel); });
 tap('b-how',function(){ show('s-how'); });
 tap('how-back',function(){ show('s-title'); });
 tap('b-home',function(){ running=false; show('s-title'); });
-tap('go-next',function(){ if(G&&G.mode==='ff')newFF(PROG.ffLevel); else newGame(PROG.level); });
+tap('go-next',function(){ if(G&&G.mode==='ff')newFF((G&&G.failed)?G.lvl:PROG.ffLevel); else newGame(PROG.level); });
 tap('go-retry',function(){ if(G&&G.mode==='ff')newFF(G.lvl); else newGame(G?G.lvl:PROG.level); });
 tap('go-home',function(){ show('s-title'); });
 $('t-lvl').textContent=PROG.level;

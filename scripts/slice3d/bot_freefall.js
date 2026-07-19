@@ -11,14 +11,13 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     var S=window._S3, r={};
     var PI=Math.PI;
 
-    // TEST CHIP: blade into the left wall -> combo lost, chip counted, knocked away
+    // TEST FAIL: blade into the left wall -> knife STICKS and the run FAILS
     S.newFF(1); S.freeze();
     var G=S.state(), W=S.world();
-    G.combo=4;
     G.x=-W.SW+1.4; G.y=-20; G.vx=-9; G.vy=-4; G.ang=0; G.w=0; G.holding=false; G.hold=0;
     S.stepN(4,16);
     G=S.state();
-    r.chip={chips:G.chips||0, comboZeroed:G.combo===0, knockedRight:G.vx>0, x:+G.x.toFixed(1)};
+    r.wallFail={failed:G.failed===true, done:G.done===true, stopped:Math.abs(G.vx)<0.01&&Math.abs(G.vy)<0.01};
 
     // TEST CLEAN BOUNCE: handle into the left wall -> combo kept, no chip, bounced away
     S.newFF(1); S.freeze();
@@ -100,7 +99,7 @@ var puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
     return r;
   });
   console.log(JSON.stringify(out,null,1));
-  var ok = out.chip.chips>0 && out.chip.comboZeroed && out.chip.knockedRight
+  var ok = out.wallFail.failed && out.wallFail.done && out.wallFail.stopped
     && out.clean.chips===0 && out.clean.comboKept && out.clean.bouncedRight
     && out.cut.sliced
     && out.bonk.consumed && out.bonk.notSliced
