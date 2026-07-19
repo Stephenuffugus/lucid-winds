@@ -352,6 +352,47 @@ function aiChooseMove(g,pair,q,ncolors,incoming){ var k=aiKnobs(q); var cands=en
   var poolN=Math.min(k.topK,scored.length); var r=Math.min(poolN-1,(Math.random()*Math.random()*poolN)|0); return scored[r]; }
 
 /* =====================================================================
+   PEST AI  — the campaign opponent chooser. Survival-aware (never tops
+   itself out), builds chains for offense, and scales skill by q. Knobs
+   live in AI_TUNE so the headless sweep can search the difficulty curve
+   without recompiling; the baked defaults are the shipped difficulty.
+   ===================================================================== */
+/* Baked difficulty (2026-07-19, tuned via CW_DEV.sweep to Stephen's "Classic
+   arcade ramp": competent player wins ~90% early, ~60% mid, ~33% late, ~17% boss,
+   ~8% secret). blunderFloor keeps even q=1 pests fallible; blunderMax sets the
+   weakest pests; exp shapes the mid curve. dangerBase/Q/fireBase/holdQ retained
+   for the emergency-fire threshold. Re-tune with sweep([...],{tune:{...}}). */
+var AI_TUNE={ blunderFloor:0.30, blunderMax:0.66, blunderExp:0.76, dangerBase:7, dangerQ:2, fireBase:2, holdQ:0 };
+/* reliable "competent player" knob set — shared by the pest AI (pestChooseMove)
+   and, under ?cwdev=1, the refMove reference player. Fires 2+ chains, keeps the
+   board low, offsets incoming. Defined in main code so normal play can use it. */
+var REF_K={ wPotential:52, wPotentialScore:0.02, wWaste:6, wEdgeTrigger:18,
+  wConnect:5, wBury:-8, wBump:-3, wHeight:-4, wMaxHeight:-8, wChoke:-40,
+  wGarbage:-10, wChainFire:1.0, counter:true, fireThreshold:2 };
+function pestKnobs(q){ return {
+  wPotential:20+30*q, wPotentialScore:0.015*q, wWaste:3+4*q, wEdgeTrigger:8+12*q,
+  wConnect:3+5*q, wBury:-4-6*q, wBump:-2-2*q,
+  wHeight:-4, wMaxHeight:-8, wChoke:-50, wGarbage:-12-8*q,
+  wChainFire:1.2, counter:true, fireThreshold:AI_TUNE.fireBase+Math.round(AI_TUNE.holdQ*q) }; }
+function pestChooseMove(f){ if(!f.cur)return {col:SPAWN_COL,rot:0};
+  var pair={c1:f.cur.c1,c2:f.cur.c2}, cands=enumPlacements(pair.c1,pair.c2), q=f.q||0, T=AI_TUNE;
+  var h=colHeights(f.grid), maxH=0, i; for(i=0;i<COLS;i++)if(h[i]>maxH)maxH=h[i];
+  /* SAME reliable base logic as the refMove reference player (REF_K + danger fire),
+     so a q=1 pest plays as well as a competent human. Skill scales DOWN from there
+     purely via the blunder rate; danger-zone moves never blunder (no self-suicide). */
+  var danger=(h[SPAWN_COL]>=9)||(maxH>=11), scored=[];
+  for(i=0;i<cands.length;i++){ var sp=simPlace(f.grid,cands[i].col,cands[i].rot,pair.c1,pair.c2); if(!sp)continue; var sc;
+    if(danger){ var rh=colHeights(sp.grid), mh=0, th=0, j; for(j=0;j<COLS;j++){ th+=rh[j]; if(rh[j]>mh)mh=rh[j]; }
+      sc=sp.res.score*1000 + sp.res.cleared*20 - th*3 - mh*6; }
+    else sc=evalBoard(sp.grid,REF_K,f.colors,sp.res,f.pending);
+    scored.push({col:cands[i].col,rot:cands[i].rot,score:sc}); }
+  if(!scored.length)return {col:SPAWN_COL,rot:0};
+  scored.sort(function(a,b){ return b.score-a.score; });
+  var bf=T.blunderFloor||0, blunderP=bf+(T.blunderMax-bf)*Math.pow(1-q, T.blunderExp||1);
+  if(!danger && Math.random()<blunderP){ var lo=Math.floor(scored.length*0.4), idx=lo+((Math.random()*(scored.length-lo))|0); return scored[Math.min(idx,scored.length-1)]; }
+  return scored[0]; }
+
+/* =====================================================================
    CAMPAIGN ROSTER  (design: "Keeper's Stand"). q=think-quality, react=ms,
    startChaff=rows pre-dropped on player, hcap=AI outgoing multiplier.
    ===================================================================== */
@@ -461,8 +502,7 @@ function afterTurn(f){ /* spawn next piece; top-out ends the match */
 }
 
 /* ---- AI control ---- */
-function planAI(f){ var pair={c1:f.cur.c1,c2:f.cur.c2}; var mv=aiChooseMove(f.grid,pair,f.q,f.colors,f.pending);
-  f.aiTarget=mv; f.aiTimer=0; f.aiStep=0; }
+function planAI(f){ f.aiTarget=pestChooseMove(f); f.aiTimer=0; f.aiStep=0; }
 function aiUpdate(f,dt){ if(f.state!=='play'||!f.cur||!f.aiTarget)return; f.aiTimer+=dt;
   var stepEvery=Math.max(45, f.react/7);
   if(f.aiTimer>=stepEvery){ f.aiTimer=0; f.aiStep++;
@@ -781,22 +821,22 @@ if(/[?&]cwdev=1/.test(location.search)){
     hardDrop(f); return true; }
   function pump(f,ms){ /* advance a field through resolve/drop synchronously */ var guard=0; while(f.state==='resolve'&&guard++<400){ resolveTick(f,240); } }
   var _devSweep=false;
-  /* ---- survival-aware reference player (a competent-human proxy): builds toward
-     chains but fires 2+ readily and emergency-fires when the stack gets tall ---- */
-  var REF_K={ wPotential:52, wPotentialScore:0.02, wWaste:6, wEdgeTrigger:18,
-    wConnect:5, wBury:-8, wBump:-3, wHeight:-4, wMaxHeight:-8, wChoke:-40,
-    wGarbage:-10, wChainFire:1.0, counter:true, fireThreshold:2 };
+  var _refBlunder=0;                     /* yardstick imperfection: 0=flawless, ~0.15=competent human */
+  /* refMove = the reference "competent player" for winnability sweeps. It shares
+     REF_K (defined in main code) with the pest AI, so a q=1 pest ~ this player. */
   function refMove(f){ if(!f||f.state!=='play'||!f.cur)return false;
     var pair={c1:f.cur.c1,c2:f.cur.c2}, cands=enumPlacements(pair.c1,pair.c2);
     var h=colHeights(f.grid), maxH=0, i; for(i=0;i<COLS;i++){ if(h[i]>maxH)maxH=h[i]; }
-    var danger=(h[SPAWN_COL]>=9)||(maxH>=11);
-    var best=null, bestSc=-1e18;
+    var danger=(h[SPAWN_COL]>=9)||(maxH>=11), scored=[];
     for(i=0;i<cands.length;i++){ var sp=simPlace(f.grid,cands[i].col,cands[i].rot,pair.c1,pair.c2); if(!sp)continue; var sc;
       if(danger){ var rh=colHeights(sp.grid), mh=0, th=0, j; for(j=0;j<COLS;j++){ th+=rh[j]; if(rh[j]>mh)mh=rh[j]; }
         sc=sp.res.score*1000 + sp.res.cleared*20 - th*3 - mh*6; }
-      else { sc=evalBoard(sp.grid,REF_K,f.colors,sp.res,f.pending); }
-      if(sc>bestSc){ bestSc=sc; best=cands[i]; } }
-    if(!best)best={col:SPAWN_COL,rot:0};
+      else sc=evalBoard(sp.grid,REF_K,f.colors,sp.res,f.pending);
+      scored.push({col:cands[i].col,rot:cands[i].rot,score:sc}); }
+    if(!scored.length){ hardDrop(f); return true; }
+    scored.sort(function(a,b){ return b.score-a.score; });
+    var best=scored[0];
+    if(_refBlunder>0 && !danger && Math.random()<_refBlunder){ var lo=Math.floor(scored.length*0.4), idx=lo+((Math.random()*(scored.length-lo))|0); best=scored[Math.min(idx,scored.length-1)]; }
     var g=0; while(f.cur.rot!==best.rot && g++<6){ if(!tryRotate(f,1))break; }
     g=0; while(f.cur && f.cur.c<best.col && g++<7){ if(!moveP(f,1))break; }
     g=0; while(f.cur && f.cur.c>best.col && g++<7){ if(!moveP(f,-1))break; }
@@ -806,6 +846,7 @@ if(/[?&]cwdev=1/.test(location.search)){
      reaction actually pressure the player (the basis of the difficulty ramp). ---- */
   function playMatch(stage,seed,opts){ opts=opts||{};
     var cadence=opts.cadence||380, maxMs=opts.maxMs||150000, dt=16;
+    _refBlunder=opts.pBlunder||0;
     window.CW_DEV.start(stage,seed);
     MATCH.pf.gravMs=1e9;                 /* player never gravity-locks; it acts by cadence hardDrop */
     var t=0, pAcc=cadence, guard=0, pMaxH=0, oMaxH=0, i, mh, hh;
@@ -815,7 +856,7 @@ if(/[?&]cwdev=1/.test(location.search)){
       hh=colHeights(MATCH.pf.grid); mh=0; for(i=0;i<COLS;i++)if(hh[i]>mh)mh=hh[i]; if(mh>pMaxH)pMaxH=mh;
       if(MATCH.of){ hh=colHeights(MATCH.of.grid); mh=0; for(i=0;i<COLS;i++)if(hh[i]>mh)mh=hh[i]; if(mh>oMaxH)oMaxH=mh; }
       if(MATCH.pf.state==='play' && MATCH.pf.cur){ pAcc+=dt; if(pAcc>=cadence){ pAcc=0; refMove(MATCH.pf); } }
-      else pAcc=cadence;
+      else pAcc=0;   /* during resolve/spawn: reset so the NEXT piece waits a full cadence (not instant) */
     }
     var res=(MATCH.phase==='done')?MATCH.result:'timeout';
     return { stage:stage, seed:seed, result:res, pf:MATCH.pf.score, of:MATCH.of?MATCH.of.score:0,
@@ -823,6 +864,7 @@ if(/[?&]cwdev=1/.test(location.search)){
   /* ---- sweep every pest across seeds; report per-stage win-rate ---- */
   function sweep(seeds,opts){ seeds=seeds||[1,2,3,4,5,6,7,8,9,10]; opts=opts||{};
     _devSweep=true;                      /* suppress result-screen DOM + sunbeam grants for the rest of this probe session */
+    var _svT={}, tk; if(opts.tune){ for(tk in opts.tune){ _svT[tk]=AI_TUNE[tk]; AI_TUNE[tk]=opts.tune[tk]; } }
     var rows=[], s, k, r;
     for(s=0;s<ROSTER.length;s++){ var wins=0,to=0,sumMs=0,sumPf=0,sumOf=0,sumPH=0;
       for(k=0;k<seeds.length;k++){ r=playMatch(s,seeds[k],opts);
@@ -832,7 +874,25 @@ if(/[?&]cwdev=1/.test(location.search)){
       rows.push({ stage:s, id:ROSTER[s].id, q:ROSTER[s].q, fall:ROSTER[s].fall, startChaff:ROSTER[s].startChaff,
         n:n, wins:wins, losses:n-wins-to, timeouts:to, winRate:+(wins/n).toFixed(2),
         avgSec:+(sumMs/n/1000).toFixed(1), avgPf:Math.round(sumPf/n), avgOf:Math.round(sumOf/n), avgPeakH:+(sumPH/n).toFixed(1) }); }
+    for(tk in _svT)AI_TUNE[tk]=_svT[tk];
     return rows; }
+  /* ---- per-match diagnostic: counts pieces placed + chains fired each side ---- */
+  function diag(stage,seed,opts){ opts=opts||{}; var cadence=opts.cadence||430, maxMs=opts.maxMs||90000, dt=16;
+    _refBlunder=(opts.pBlunder!=null?opts.pBlunder:0.15);
+    window.CW_DEV.start(stage,seed); MATCH.pf.gravMs=1e9;
+    var t=0,pAcc=cadence,guard=0, pP=0,oP=0,pF=0,oF=0, pPrev=null,oPrev=null, pS=0,oS=0;
+    while(MATCH.phase==='fight' && t<maxMs && guard++<200000){
+      update(dt); t+=dt; if(MATCH.phase!=='fight')break;
+      if(MATCH.pf.cur&&MATCH.pf.cur!==pPrev){pP++;pPrev=MATCH.pf.cur;}
+      if(MATCH.of&&MATCH.of.cur&&MATCH.of.cur!==oPrev){oP++;oPrev=MATCH.of.cur;}
+      if(MATCH.pf.score>pS){pF++;pS=MATCH.pf.score;}
+      if(MATCH.of&&MATCH.of.score>oS){oF++;oS=MATCH.of.score;}
+      if(MATCH.pf.state==='play'&&MATCH.pf.cur){pAcc+=dt; if(pAcc>=cadence){pAcc=0; refMove(MATCH.pf);}} else pAcc=0;
+    }
+    return { stage:stage, result:MATCH.result, ms:t,
+      pfPieces:pP, ofPieces:oP, pfFires:pF, ofFires:oF,
+      pf:MATCH.pf.score, of:MATCH.of?MATCH.of.score:0,
+      pfPend:MATCH.pf.pending, ofPend:MATCH.of?MATCH.of.pending:0 }; }
   window.CW_DEV={
     roster:function(){ return ROSTER.map(function(s){ return {id:s.id,colors:s.colors,q:s.q,react:s.react,startChaff:s.startChaff,hcap:s.hcap}; }); },
     start:function(stage,seed){ startMatch(stage==null?0:stage,'campaign'); MATCH.phase='fight'; MATCH.pf.state='play'; MATCH.of.state='play';
@@ -886,7 +946,7 @@ if(/[?&]cwdev=1/.test(location.search)){
         botMove(f,q==null?1:q); pump(f,0); }
       return {n:cnt, avg:+(sum/Math.max(1,cnt)).toFixed(2), max:+mx.toFixed(2)}; },
     botMove:botMove, render:render, moveP:moveP, rotate:tryRotate, drop:hardDrop, soft:softStep,
-    refMove:refMove, playMatch:playMatch, sweep:sweep };
+    refMove:refMove, playMatch:playMatch, sweep:sweep, diag:diag };
 }
 })();
 </script>
