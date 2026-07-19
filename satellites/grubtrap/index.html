@@ -82,6 +82,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="ribbon">You're a field mouse in an overrun bed. Shove the stone planters to box the garden grubs into a corner until they curl up for good. A cozy remake of Rodent's Revenge.</div>
     <div style="flex:1"></div>
     <div class="stack">
+      <button class="btn primary" id="b-resume" style="display:none">▶&nbsp; Resume run</button>
       <button class="btn primary" id="b-play">🐭&nbsp; Play</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
@@ -112,7 +113,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Grubtrap — a Sky Wolf remake of the classic Rodent's Revenge.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+    <div class="foot">Grubtrap: a Sky Wolf remake of the classic Rodent's Revenge.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
   </div></div>
 
   <!-- GAME OVER -->
@@ -142,7 +143,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 /* ============================ helpers ================================= */
 function $(id){ return document.getElementById(id); }
 var curScreen='s-title';
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); updateResumeBtn(); }
+function updateResumeBtn(){ var b=$('b-resume'); if(!b) return; b.style.display=(curScreen==='s-title'&&G&&G.phase==='paused')?'flex':'none'; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 var BUILD='v1.0';
@@ -384,7 +386,7 @@ function advance(){ if(!G||G.phase!=='clear') return; G.level++; buildLevel(); r
 function shareGrub(){
   var url='https://lucidwinds.com/satellites/grubtrap/';
   var g=$('over-level').textContent, s=$('over-score').textContent;
-  var txt='Grubtrap — I cleared '+g+' ground'+(g==='1'?'':'s')+' and scored '+s+'! Can you beat it?';
+  var txt='Grubtrap: I cleared '+g+' ground'+(g==='1'?'':'s')+' and scored '+s+'! Can you beat it?';
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+'\n'+url).then(function(){}).catch(function(){}); }
 }
@@ -548,6 +550,7 @@ function buildCtrl(){
 }
 function updateCtrl(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&(G.phase==='play'||G.phase==='clear'))?'block':'none'; }
 function pauseToTitle(){ running=false; if(G) G.phase='paused'; heldDir=null; show('s-title'); updateRec(); }
+function resumeRun(){ if(!G||G.phase!=='paused') return; G.phase='play'; heldDir=null; show(null); running=true; lastTs=0; grubTimer=0; requestAnimationFrame(loop); }
 
 /* ============================ toggles / rec ================================= */
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get()) el.classList.add('on'); else el.classList.remove('on'); }
@@ -569,6 +572,7 @@ function boot(){
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden){ running=false; } else if(G&&(G.phase==='play'||G.phase==='clear')&&curScreen===null){ running=true; lastTs=0; requestAnimationFrame(loop); } });
   buildCtrl();
+  tap('b-resume', function(){ resumeRun(); });
   tap('b-play', function(){ newGame(); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });

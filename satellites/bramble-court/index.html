@@ -722,7 +722,7 @@ function renderDuel(){
   $("scorep").textContent="✿ "+sc.p;
   $("scoree").textContent=sc.e+" ▲";
   $("turnbanner").textContent=(S.phase!=="play")?"COURT ADJOURNED":
-    (S.turn===1?"YOUR TURN — pick a card":(G.busy?"RIVAL IS THINKING…":"RIVAL'S TURN"));
+    (S.turn===1?"YOUR TURN · pick a card":(G.busy?"RIVAL IS THINKING…":"RIVAL'S TURN"));
   $("turnbanner").style.color=(S.turn===1&&S.phase==="play")?"#c8e8a0":"#e0b9a8";
 }
 function uiHandTap(hi){
@@ -788,8 +788,8 @@ function finishDuel(){
         msgs.push("Daily streak "+PROG.streak); } }
     if(ctx.mode==="journey"&&!PROG.beat[ctx.rival]){
       PROG.beat[ctx.rival]=true;
-      msgs.push("First win! Claim a card below.");
-      offerClaim(ctx.rival);
+      var claimMsg=offerClaim(ctx.rival);
+      msgs.push(claimMsg||"First win! Claim a card below.");
     } else if(PROG.wins%3===0){ msgs.push(grantBooster()); }
     if(ctx.mode==="draft")PROG.draftWins++;
     $("over-sub").textContent="You held the court "+sc.p+" to "+sc.e+". "+msgs.join(" · ");
@@ -801,7 +801,7 @@ function payDuel(n,tag){ return window._sbCapEarn(n,tag); }
 function offerClaim(ri){
   var rv=RIVALS[ri], pool=[], i;
   for(i=0;i<rv.deck.length;i++)if(!ownCard(rv.deck[i]))pool.push(rv.deck[i]);
-  if(!pool.length){ $("over-sub").textContent+=" You already keep their whole retinue, so a seedling booster arrives instead. "+grantBooster(); return; }
+  if(!pool.length){ return "You already hold their whole retinue. "+grantBooster(); }
   var picks=pool.slice(0,3);
   var cw=$("claimwrap"), k;
   for(k=0;k<picks.length;k++){

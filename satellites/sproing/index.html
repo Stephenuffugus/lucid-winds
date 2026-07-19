@@ -172,6 +172,7 @@ input[type=range]{width:150px; accent-color:var(--sage)}
           <button class="btn sm" id="b-shop">🛍 Shop</button>
           <button class="btn sm" id="b-settings">⚙️ Settings</button>
         </div>
+        <button class="btn ghost sm" id="b-howto">❔ &nbsp;How to play</button>
         <button class="btn ghost sm" id="b-exit">← All Sky Wolf games</button>
       </div>
     </div>
@@ -378,7 +379,7 @@ var K={ coins:'sproing_coins', best:'sproing_best', book:'sproing_sketchbook',
   bounce:'sproing_bounce_seen', save:'sproing_save', streak:'sproing_streak',
   upgrades:'sproing_upgrades', trails:'sproing_trails', trail:'sproing_trail',
   ach:'sproing_ach', stats:'sproing_stats', levels:'sproing_levels',
-  acc:'sproing_acc', accs:'sproing_accs', theme:'sproing_theme', themes:'sproing_themes' };
+  acc:'sproing_acc', accs:'sproing_accs', theme:'sproing_theme', themes:'sproing_themes', coach:'sproing_coach_seen' };
 
 /* ---------- settings ---------- */
 var DEF_SET={ steer:'drag', steerSens:1, reduceMotion:'auto', highContrast:false, music:0.6, sfx:0.8,
@@ -1631,6 +1632,7 @@ function launch(mode, levelIdx){
   INP.dragX=null; INP.keyL=INP.keyR=false; INP.tiltAxis=0; lastTs=0;
   if(ST.coinDay!==dayStr()){ ST.coinDay=dayStr(); saveST(); addCoins(50); toast('☀ Morning Dew  +50 🪙'); }
   show(null);
+  if(!LS.get(K.coach)){ LS.set(K.coach,'1'); if(game){ game.paused=true; } coach(function(){ closeModal(); if(game){ game.paused=false; } lastTs=0; }); }
 }
 function startRun(){ launch(curMode||'endless', curLevelIdx); }   // used by retry/restart
 
@@ -1735,7 +1737,7 @@ function onGameOver(){
   checkAch();
   // unlock checks (beholder@3000 / golden acorn@streak7) are read live by isUnlocked
   $('over-alt').innerHTML=m+'<small style="font-size:22px;color:var(--gold)">m</small>';
-  $('over-title').textContent = (game.mode==='level'&&game.level) ? ('World '+(game.level.world+1)+'·'+(game.level.lw+1)+' — target '+game.level.targetM+'m') : (isBest?'New Best!':'You reached');
+  $('over-title').textContent = (game.mode==='level'&&game.level) ? ('World '+(game.level.world+1)+'·'+(game.level.lw+1)+', target '+game.level.targetM+'m') : (isBest?'New Best!':'You reached');
   $('over-title').style.fontSize = (game.mode==='level')?'19px':'26px';
   $('o-title').innerHTML = (game.mode==='level') ? '🗺 Levels' : '☰ Menu';
   $('over-best').textContent=best+' m';
@@ -1835,10 +1837,10 @@ function applyLefthand(){ var lh=SET.lefthand;
   mb.style.left=lh?'auto':'14px'; mb.style.right=lh?'14px':'auto';
   cb.style.left=lh?'14px':'auto'; cb.style.right=lh?'auto':'14px';
 }
-function coach(){ modal('<h3>How to climb</h3><p style="text-align:left">▲ You auto-hop — never press jump.<br>◀▶ Drag (or tilt / arrow keys) to steer onto leaves.<br>🍄 Springs and 🔥 power-ups fling you higher.<br>Dodge pests, grab 🪙 coins, chase your best height!</p><button class="btn sm primary" id="mx1">Got it</button>'); tap('mx1',closeModal); }
+function coach(cb){ modal('<h3>How to climb</h3><p style="text-align:left">▲ You auto-hop. Never press jump.<br>◀▶ Drag (or tilt / arrow keys) to steer onto leaves.<br>🍄 Springs and 🔥 power-ups fling you higher.<br>Dodge pests, grab 🪙 coins, chase your best height!</p><button class="btn sm primary" id="mx1">Got it</button>'); tap('mx1',cb||closeModal); }
 function confirmReset(){ modal('<h3>Reset everything?</h3><p>Deletes coins, skins, drawings, best score and settings. This cannot be undone.</p><div class="row"><button class="btn sm ghost" id="mx1">Cancel</button><button class="btn sm" id="mx2">Reset</button></div>');
   tap('mx1',closeModal); tap('mx2',function(){
-    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak,K.upgrades,K.trails,K.trail,K.ach,K.stats,K.levels,K.acc,K.accs,K.theme,K.themes].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak,K.upgrades,K.trails,K.trail,K.ach,K.stats,K.levels,K.acc,K.accs,K.theme,K.themes,K.coach].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
     // reset IN MEMORY (never navigate/reload while embedded — the fleet black-screen rule)
     coins=0; best=0; owned=[]; sketchbook=[]; equip={type:'default'}; skinCache={};
     upgrades={}; trailsOwned=['none']; trailEquip='none'; achDone={}; stats={coinsTotal:0,coinsEarned:0,aphids:0,powerups:0,maxChain:1,runs:0};
@@ -1895,7 +1897,7 @@ function boot(){
   window.addEventListener('blur',function(){ if(!SWS_EMBED && game&&game.running&&!game.paused&&curScreen===null) pauseRun(); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  tap('b-play',playPressed); tap('b-draw',function(){ openStudio(null); });
+  tap('b-play',playPressed); tap('b-draw',function(){ openStudio(null); }); tap('b-howto',function(){ coach(); });
   tap('m-adventure',function(){ openMap(); }); tap('m-endless',function(){ launch('endless'); });
   tap('m-daily',function(){ launch('daily'); }); tap('m-zen',function(){ launch('zen'); });
   tap('modes-back',toTitle); tap('map-back',openModes);

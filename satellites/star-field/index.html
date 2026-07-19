@@ -319,7 +319,7 @@ function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+
 /* ---------- board layout + render ---------- */
 var BX,BY,CELL;
 function layoutBoard(){ var N=G.N; var avail=Math.min(VW-40, VH-260); CELL=Math.floor(avail/N); BX=Math.floor((VW-CELL*N)/2); BY=110+Math.floor((VH-260-CELL*N)/2); }
-var TINTS=['#33402a','#2c3a3f','#3f3326','#2e3a2a','#3a2e3a','#26343f','#3f2e2e','#333f2a','#2a2f3f','#3f3a2a'];
+var TINTS=['#2f4524','#25444d','#4a3822','#3c4a24','#452449','#232f52','#4d2a2a','#264a38','#2a2a52','#4d4522'];
 function draw(){
   if(!G){ ctx.clearRect(0,0,VW,VH); return; }
   var N=G.N;
@@ -357,7 +357,7 @@ function draw(){
   if(anyConflict(conf)){ ctx.fillStyle='#e58fa0'; ctx.fillText('two stars are touching', VW/2, BY+CELL*N+58); }
   else { ctx.fillStyle='#8a9178'; ctx.font='13px system-ui'; ctx.fillText('Tap to plant a star · tap again to clear', VW/2, BY+CELL*N+58); }
   ctx.fillStyle='#8a9178'; ctx.font='13px system-ui';
-  ctx.fillText('One per row, column, and colored bed — none may touch', VW/2, BY+CELL*N+76);
+  ctx.fillText('One per row, column, and colored bed · none may touch', VW/2, BY+CELL*N+76);
 }
 function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
 function dot(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
@@ -492,7 +492,7 @@ function renderGallery(){ var host=$('gall-wrap'); host.innerHTML=''; var n=SAVE
   $('gall-sub').textContent = n? ('You have grown '+n+' constellation'+(n===1?'':'s')+'. Solve more skies to fill the Grove.') : 'Solve a sky and its stars bloom into a keepsake constellation here.';
   var start=Math.max(0,n-24);
   for(var i=start;i<n;i++){ var cvp=document.createElement('canvas'); cvp.width=96; cvp.height=84; cvp.style.background='#0f150c'; cvp.style.borderRadius='10px'; cvp.style.border='1px solid #2a331f'; drawKeepsake(cvp.getContext('2d'),96,84,SAVE.gallery[i]); host.appendChild(cvp); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:#8a9178;font-size:14px;padding:20px'; e.textContent='— no constellations yet —'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:#8a9178;font-size:14px;padding:20px'; e.textContent='No constellations yet'; host.appendChild(e); }
 }
 function renderWardrobe(){ var host=$('wd-grid'); host.innerHTML='';
   $('wd-sub').textContent='Solved '+SAVE.solves+' skies · '+SAVE.cleanSolves+' without a hint.';

@@ -94,7 +94,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
   <button class="hbtn" id="hud-back">⌂</button>
   <div class="chip"><b id="h-you" style="color:var(--gold)">● 🧱10 ↷1</b><span>you · fences · vault</span></div>
   <div class="chip"><b id="h-ai" style="color:var(--indigo)">▲ 🧱10 ↷1</b><span>rival · fences · vault</span></div>
-  <div class="chip grow"><b id="h-status">—</b><span id="h-mode">duel</span></div>
+  <div class="chip grow"><b id="h-status">...</b><span id="h-mode">duel</span></div>
 </div>
 
 <div id="dock">
@@ -128,11 +128,11 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
 
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">VICTORY</h1>
-  <div class="tag" id="over-sub">—</div>
+  <div class="tag" id="over-sub">...</div>
   <div id="overstats">
     <div class="chip"><b id="ov-a">0</b><span id="ov-al">moves</span></div>
     <div class="chip"><b id="ov-b">0</b><span id="ov-bl">fences</span></div>
-    <div class="chip"><b id="ov-c">—</b><span id="ov-cl">vault</span></div>
+    <div class="chip"><b id="ov-c">...</b><span id="ov-cl">vault</span></div>
   </div>
   <button class="btn gold" id="over-next">NEXT RUNG →</button>
   <button class="btn" id="over-retry">REMATCH</button>
@@ -1168,15 +1168,18 @@ function draw(){
   }
   else st=S.turn===0?"YOUR MOVE":"THE RIVAL THINKS…";
   ctx.fillText(st,270,by);
-  ctx.font="13px sans-serif"; ctx.fillStyle="rgba(200,200,210,0.75)";
-  ctx.fillText("● you race to the dotted top row · ▲ rival races to the marked bottom row",270,by+26);
-  if(G.mode!=="zen")
-    ctx.fillText("↷ vault: once per game, climb one fence, it becomes a gate for both",270,by+46);
+  ctx.font="17px sans-serif"; ctx.fillStyle="rgba(200,200,210,0.78)";
+  ctx.fillText("● you race up to the dotted top row",270,by+26);
+  ctx.fillText("▲ the rival races down to the marked row",270,by+48);
+  if(G.mode!=="zen"){
+    ctx.fillText("↷ vault once per game: climb over one fence",270,by+72);
+    ctx.fillText("it turns into a gate, open to both of you",270,by+94);
+  }
   ctx.textAlign="left";
 }
 function drawTitleHint(){
   ctx.fillStyle="rgba(232,220,200,0.5)";
-  ctx.font="14px sans-serif"; ctx.textAlign="center";
+  ctx.font="18px sans-serif"; ctx.textAlign="center";
   ctx.fillText("two pawns · twenty fences · one vault each",270,Y0+9*PITCH+30);
   ctx.textAlign="left";
 }
@@ -1187,6 +1190,13 @@ function frame(){
   draw();
   if(!G||G.S.phase!=="play"||G.devHold)return;
   var S=G.S, t=nowMs();
+  if(G.mode!=="zen"&&S.turn===0&&!G.anim&&!G.fenceMode&&S.fences[0]<=0){
+    if(pawnMoves(S,0).length===0&&vaultMoves(S,0).length===0){
+      toast("No move available, your turn passes");
+      applyUI({t:"pass"});
+      return;
+    }
+  }
   if(G.mode!=="zen"&&S.turn===1&&t>=G.aiAt&&!G.anim){
     var mv=G.mode==="daily"?dailyDefend(S):aiMove(S,G.aiRung);
     applyUI(mv);

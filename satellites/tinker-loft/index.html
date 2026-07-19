@@ -102,7 +102,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 
 <div id="hud">
   <button class="hbtn" id="hud-back">&#8962;</button>
-  <div class="chip grow"><b id="h-name">&mdash;</b><span id="h-goal">&mdash;</span></div>
+  <div class="chip grow"><b id="h-name">&#183;</b><span id="h-goal">&#183;</span></div>
   <div class="chip"><b id="h-nudge">&#9679; ready</b><span>one nudge</span></div>
 </div>
 <div id="hintbar"></div>
@@ -139,7 +139,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 
 <div class="screen" id="s-over">
   <h1 style="font-size:1.5rem" id="over-title">IT WORKS!</h1>
-  <div class="tag" id="over-sub">&mdash;</div>
+  <div class="tag" id="over-sub">&#183;</div>
   <div id="overstats">
     <div class="chip"><b id="ov-time">0</b><span>seconds</span></div>
     <div class="chip"><b id="ov-parts">0</b><span>parts used</span></div>
@@ -668,7 +668,7 @@ function enterEdit(){ PARTS=[]; SIM=null; PHASE="edit"; SEL=-1; PLACING=null; DR
   show(null); buildTray(); updateHud(); $("hintbar").textContent=DEF.hint||""; toast(DEF.name); }
 function backToEdit(){ SIM=null; PHASE="edit"; SEL=-1; DRAG=null; FX=[]; TRAIL_PTS=[]; buildTray(); updateHud(); }
 
-function updateHud(){ $("h-name").textContent=DEF?DEF.name:"—";
+function updateHud(){ $("h-name").textContent=DEF?DEF.name:"";
   $("h-goal").textContent=goalText(DEF);
   var n=$("h-nudge");
   if(MODE==='zen'||MODE==='sandbox'){ n.innerHTML="&#8734;"; }

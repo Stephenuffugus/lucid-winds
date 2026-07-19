@@ -503,7 +503,7 @@ function fail(){
 }
 function fillOver(){
   $("ov-score").textContent=Math.round(G.score);
-  $("ov-wave").textContent=Math.max(0,G.wave-1);
+  $("ov-wave").textContent=(G.mode==="daily"&&G.phase==="won")?10:Math.max(0,G.wave-1);
   $("ov-melt").textContent=G.melted;
 }
 

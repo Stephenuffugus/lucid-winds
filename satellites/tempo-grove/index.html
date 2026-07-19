@@ -37,7 +37,8 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 #pulsebar{height:12px; border:1px solid var(--line); border-radius:7px; background:#0f150cdd; overflow:hidden; margin-top:3px}
 #pulsefill{height:100%; width:0%; background:linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); border-radius:6px}
 #goalchip{position:absolute; left:50%; top:64px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
-  background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream)}
+  background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream);
+  max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center}
 #goalchip.on{display:block}
 #goalchip b{color:var(--gold)}
 #dock{position:absolute; left:0; bottom:0; width:540px; height:176px; z-index:12; background:linear-gradient(180deg,#0e140dee,#0b0f0b);
@@ -341,8 +342,8 @@ function goalChip(){
   var g=$("goalchip"), t="";
   if(G.mode==="daily")t="📅 <b>Daily Tempo</b> · 3 minute score attack";
   else if(G.mode==="sprint")t="⚡ <b>Sprint</b> · clear 30 squares";
-  else if(G.mode==="zen")t="🌙 <b>Zen Grove</b> · the stack never overflows";
-  else t="🌿 <b>Grove Session</b> · endless, the tempo climbs";
+  else if(G.mode==="zen")t="🌙 <b>Zen Grove</b> · no overflow";
+  else t="🌿 <b>Grove Session</b> · endless";
   g.innerHTML=t; g.classList.add("on");
   if(G.mode==="grove"||G.mode==="zen")setTimeout(function(){ g.classList.remove("on"); },2600);
 }

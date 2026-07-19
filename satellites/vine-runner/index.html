@@ -279,12 +279,12 @@ function buildStage(){
 
 function startGame(full){
   resetRun(full); buildStage(); state="play";
-  bannerMsg="LEVEL "+stage+" \u2014 "+theme().name; bannerT=2.0; levelFlash=0.6;
+  bannerMsg="LEVEL "+stage+" \u00b7 "+theme().name; bannerT=2.0; levelFlash=0.6;
 }
 function nextStage(){
   stage++; bestStage=Math.max(bestStage,stage);          // baseSpeed now derives from level in buildStage
   resetRun(false); buildStage(); state="play";
-  bannerMsg="LEVEL "+stage+" \u2014 "+theme().name; bannerT=2.0; levelFlash=0.6;
+  bannerMsg="LEVEL "+stage+" \u00b7 "+theme().name; bannerT=2.0; levelFlash=0.6;
 }
 
 // ---- spawner ------------------------------------------------------
@@ -1087,7 +1087,7 @@ function drawTitle(g){
     g.fillStyle=C.glow;
     g.fillText("VINE RUNNER", W/2, H*0.32);
   }
-  g.font="900 15px 'Titan One','Arial Black',sans-serif";
+  g.font="900 "+Math.min(15,W*0.037)+"px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream; g.globalAlpha=0.92;
   g.fillText("dash the halfpipe · gather seeds · reach the bloom", W/2, H*0.40);
   g.globalAlpha=1;
@@ -1115,7 +1115,7 @@ function drawTitle(g){
   if(Math.floor(animT*2)%2===0) g.fillText(usingTouch?"TAP TO GROW":"PRESS SPACE", W/2, H*0.62);
   g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.55)";
   g.fillText(usingTouch?"left half: steer  ·  JUMP button: jump":"←→ steer  ·  space jump  ·  P pause  ·  M mute", W/2, H*0.66);
-  g.fillText("hold a direction to whip — full loops give a speed surge", W/2, H*0.71);
+  g.fillText("hold a direction to whip · full loops give a speed surge", W/2, H*0.71);
 }
 
 function drawPause(g){
@@ -1126,7 +1126,7 @@ function drawPause(g){
   g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.24);
   g.font="900 14px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+" — "+T.name, W/2, H*0.295);
+  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+" · "+T.name, W/2, H*0.295);
 
   // RESUME button (explicit — no more tap-anywhere)
   g.fillStyle=hexA(T.glow,0.92); roundRect(g, L.resume.x-L.resume.w/2, L.resume.y-L.resume.h/2, L.resume.w, L.resume.h, 28); g.fill();
@@ -1167,7 +1167,9 @@ function drawGate(g){
   g.globalAlpha=ease;
   g.save(); g.translate(W/2, H*0.47); g.scale(pulse,pulse);
   g.font="900 "+Math.min(40,W*0.085)+"px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle=C.pink; g.fillText("LEVEL "+stage+" CLEARED!", 0, 0); g.restore();
+  g.shadowColor="rgba(4,18,10,0.85)"; g.shadowBlur=12;
+  g.fillStyle=C.pink; g.fillText("LEVEL "+stage+" CLEARED!", 0, 0);
+  g.shadowBlur=0; g.restore();
   g.font="900 15px 'Titan One','Arial Black',sans-serif"; g.fillStyle=hexA(T.glow,0.95);
   g.fillText(bannerMsg, W/2, H*0.515);
   g.font="900 16px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.cream;
@@ -1214,9 +1216,9 @@ function drawOver(g){
   g.textAlign="center";
   g.font="900 "+Math.min(44,W*0.09)+"px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.thorn; g.fillText(bannerMsg, W/2, H*0.40);
-  g.font="900 20px 'Titan One','Arial Black',sans-serif";
+  g.font="900 "+Math.min(20,W*0.046)+"px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText(seeds+" seeds   ·   level "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+"   ·   best combo x"+bestCombo, W/2, H*0.48);
+  g.fillText(seeds+" seeds  ·  level "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+"  ·  combo x"+bestCombo, W/2, H*0.48);
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle="rgba(242,240,220,0.7)";
   g.fillText(bestStage>TOWER_MAX? "best: tower cleared" : "best: level "+Math.min(bestStage,TOWER_MAX)+"/"+TOWER_MAX, W/2, H*0.54);
