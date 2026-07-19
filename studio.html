@@ -206,6 +206,27 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 .gs-chip:hover{background:rgba(42,48,37,.4);border-color:rgba(122,179,86,.3)}
 .gs-chip.on{border-color:#E8A0BF;color:#E8A0BF;background:rgba(232,160,191,.08)}
 .gs-inst-loading{font-size:.6rem;color:var(--gold);padding:2px 10px;display:none}
+/* Show mode + video recording */
+.gs-show{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#070905;z-index:120}
+.gs-show.open{display:block}
+.gs-show canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+.gs-show-ui{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;padding:14px;pointer-events:none}
+.gs-show-ui .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gs-show-ui button{pointer-events:auto}
+.gs-show-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:.08em;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.gs-rec-wrap{display:none;background:rgba(13,16,12,.85);border:1.5px solid #c75050;border-radius:10px;padding:10px 14px;pointer-events:auto}
+.gs-rec-wrap.on{display:block}
+.gs-rec-bar{height:8px;background:rgba(26,31,23,.9);border-radius:4px;overflow:hidden;margin:8px 0}
+.gs-rec-bar div{height:100%;width:0%;background:#c75050;border-radius:4px;transition:width .3s linear}
+/* Hum to melody */
+.gs-hum{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:92;padding:14px;border-top:2px solid #E8A0BF;border-radius:12px 12px 0 0;max-height:75vh;overflow-y:auto}
+.gs-hum.open{display:block}
+.gs-hum h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:#E8A0BF;letter-spacing:.08em}
+.gs-hum-status{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--cream);text-align:center;min-height:44px;letter-spacing:.08em;margin:8px 0}
+.gs-hum-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.gs-hum-dots div{width:14px;height:14px;border-radius:3px;background:var(--cell);border:1px solid var(--border)}
+.gs-hum-dots div.done{background:rgba(232,160,191,.7);border-color:#E8A0BF}
+.gs-hum-dots div.note{background:rgba(122,179,86,.85);border-color:var(--sage)}
 
 /* Mobile breakpoints */
 @media(max-width:480px){
@@ -306,7 +327,8 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <div class="gs-group-label">FILE</div>
     <button class="gs-btn" onclick="GS.save()">💾 Save</button>
     <button class="gs-btn" onclick="GS.openSongs()">🎵 Songs</button>
-    <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
+    <button class="gs-btn" onclick="GS.exportWAV()">⬇ Audio</button>
+    <button class="gs-btn" id="gs-video-btn" onclick="GS.exportVideo()">🎬 Video</button>
   </div>
   <!-- EDIT -->
   <div class="gs-group">
@@ -315,6 +337,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <button class="gs-btn" onclick="GS.pasteSection()">📌 Paste</button>
     <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear</button>
     <button class="gs-btn" onclick="GS.undo()">↩ Undo</button>
+    <button class="gs-btn" onclick="GS.redo()">↪ Redo</button>
   </div>
   <!-- TOOLS -->
   <div class="gs-group">
@@ -323,6 +346,9 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <button class="gs-btn" onclick="GS.openEuclid()">◉ Rhythm</button>
     <button class="gs-btn" onclick="GS.openCircle()">⊙ Circle</button>
     <button class="gs-btn" onclick="GS.openKeys()">🎹 Keys</button>
+    <button class="gs-btn" onclick="GS.openHum()">🎙 Hum</button>
+    <button class="gs-btn" onclick="GS.makeChorus()">✨ Chorus</button>
+    <button class="gs-btn" onclick="GS.openShow()">🌈 Show</button>
   </div>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
@@ -454,8 +480,36 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div class="gs-pad-grid" id="gs-pad-grid"></div>
 </div>
 
+<div class="gs-show" id="gs-show">
+  <canvas id="gs-show-canvas"></canvas>
+  <div class="gs-show-ui">
+    <div class="row">
+      <div class="gs-show-name" id="gs-show-name"></div>
+      <button class="gs-btn" onclick="GS.closeShow()">✕</button>
+    </div>
+    <div class="gs-rec-wrap" id="gs-rec-wrap">
+      <div style="font-size:.75rem;color:#c75050">⏺ Recording your music video, let it play…</div>
+      <div class="gs-rec-bar"><div id="gs-rec-bar-fill"></div></div>
+      <button class="gs-btn" onclick="GS.stopVideo()" style="border-color:#c75050;color:#c75050">⏹ Finish Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="gs-hum" id="gs-hum">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h3>🎙 HUM A MELODY</h3>
+    <button class="gs-btn" onclick="GS.closeHum()">✕</button>
+  </div>
+  <div style="font-size:.68rem;color:var(--muted);margin-top:4px;line-height:1.5">Whistle or hum near the mic. Four clicks count you in, then it listens for two bars and writes your tune into the Melody grid. Whistling works best!</div>
+  <div class="gs-hum-status" id="gs-hum-status">Ready</div>
+  <div class="gs-hum-dots" id="gs-hum-dots"></div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <button class="gs-btn" id="gs-hum-start" onclick="GS.humStart()" style="flex:1;border-color:#E8A0BF;color:#E8A0BF;min-height:52px">● Start Listening</button>
+  </div>
+</div>
+
 <div class="gs-foot">
-  <a href="/">← Back to Lucid Winds</a> · Music Studio v2.0
+  <a href="/">← Back to Lucid Winds</a> · Music Studio v2.1
 </div>
 
 <script>
@@ -477,8 +531,9 @@ var GS = (function(){
   // ── Audio Context + Routing ──
   var ctx = null;
   var fxReady = false;
-  var layerBus = {}; // per-layer: {input, filter, delayIn, delayNode, delayFb, delaySend, reverbSend, dry, output}
+  var layerBus = {}; // per-layer: {input, filter, delayIn, delayNode, delayFb, delaySend, reverbSend, dry, output, pan}
   var masterReverb = null, masterReverbGain = null, masterDry = null;
+  var masterComp = null, masterAnalyser = null; // live master chain (video tap + visualizer)
 
   // Offline-render overrides: while set, every synth/sample voice routes into
   // the OfflineAudioContext instead of the speakers. Only ever set inside the
@@ -513,7 +568,12 @@ var GS = (function(){
     comp.ratio.value = 4;
     comp.attack.value = 0.003;
     comp.release.value = 0.25;
-    comp.connect(c.destination);
+    // comp → analyser → destination (analyser feeds the visualizer, passes audio through)
+    var analyser = c.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.75;
+    comp.connect(analyser);
+    analyser.connect(c.destination);
 
     // Master reverb (convolution) — smaller impulse = fast first-play, good enough
     var reverb = c.createConvolver();
@@ -553,13 +613,18 @@ var GS = (function(){
       var output = c.createGain();
       output.gain.value = 1;
 
-      // Routing: input → filter → dry → output → destination
+      // Stereo placement (falls back to no pan on very old WebKit)
+      var pan = null;
+      if(c.createStereoPanner){ pan = c.createStereoPanner(); pan.pan.value = 0; }
+
+      // Routing: input → filter → dry → output → [pan] → comp → analyser → out
       //                          → delaySend → delay → delayFb (loop) → output
       //                          → reverbSend → reverb
       input.connect(filter);
       filter.connect(dry);
       dry.connect(output);
-      output.connect(comp);
+      if(pan){ output.connect(pan); pan.connect(comp); }
+      else output.connect(comp);
 
       // Delay chain
       filter.connect(delaySend);
@@ -572,9 +637,9 @@ var GS = (function(){
       filter.connect(reverbSend);
       reverbSend.connect(reverb);
 
-      buses[id] = {input:input, filter:filter, delayNode:delayNode, delayFb:delayFb, delaySend:delaySend, reverbSend:reverbSend, dry:dry, output:output};
+      buses[id] = {input:input, filter:filter, delayNode:delayNode, delayFb:delayFb, delaySend:delaySend, reverbSend:reverbSend, dry:dry, output:output, pan:pan};
     }
-    return {buses:buses, reverb:reverb, reverbGain:reverbGain};
+    return {buses:buses, reverb:reverb, reverbGain:reverbGain, comp:comp, analyser:analyser};
   }
 
   function initFX(){
@@ -583,6 +648,8 @@ var GS = (function(){
     var graph = buildBusGraph(ctx);
     masterReverb = graph.reverb;
     masterReverbGain = graph.reverbGain;
+    masterComp = graph.comp;
+    masterAnalyser = graph.analyser;
     layerBus = graph.buses;
   }
 
@@ -1302,9 +1369,10 @@ var GS = (function(){
     for(var i=0;i<ids.length;i++){
       var lid = ids[i], bus = busMap[lid];
       if(!bus || !v[lid]) continue;
-      var fx = v[lid].fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
+      var fx = v[lid].fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0, pan:0};
       var vol = (v[lid].vol !== undefined ? v[lid].vol : 80) / 80;
       var dTime = fx.delay > 0 ? (60 / bpm / 4 * 3) : 0;
+      var panV = fx.pan || 0;
       if(atTime !== undefined){
         // Offline render: schedule the change at the block boundary
         bus.filter.frequency.setValueAtTime(fx.filter, atTime);
@@ -1314,6 +1382,7 @@ var GS = (function(){
         bus.delayFb.gain.setValueAtTime(Math.min(fx.delayFb, 0.85), atTime);
         bus.reverbSend.gain.setValueAtTime(fx.reverb, atTime);
         bus.output.gain.setValueAtTime(vol, atTime);
+        if(bus.pan) bus.pan.pan.setValueAtTime(panV, atTime);
       } else {
         bus.filter.frequency.value = fx.filter;
         bus.filter.Q.value = fx.filterQ;
@@ -1322,6 +1391,7 @@ var GS = (function(){
         bus.delayFb.gain.value = Math.min(fx.delayFb, 0.85);
         bus.reverbSend.gain.value = fx.reverb;
         bus.output.gain.value = vol;
+        if(bus.pan) bus.pan.pan.value = panV;
       }
     }
   }
@@ -1665,7 +1735,7 @@ var GS = (function(){
         html += '<div style="padding:6px 10px"><button class="gs-btn" onclick="GS.addDrumSample()" style="font-size:.7rem;padding:8px 14px">+ Sample Pad ('+extraDrumRows.length+'/'+MAX_EXTRA_DRUMS+')</button></div>';
       }
       // FX controls below grid
-      var fxState = ld.fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
+      var fxState = ld.fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0, pan:0};
       var adsrState = ld.adsr || DEFAULT_ADSR;
       html += '</div>'
         +'<div style="display:flex;gap:10px;padding:8px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center">'
@@ -1675,6 +1745,7 @@ var GS = (function(){
         +'<span>Delay</span><input type="range" min="0" max="80" value="'+(fxState.delay*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'delay\',this.value/100)">'
         +'<span>Fb</span><input type="range" min="0" max="80" value="'+(fxState.delayFb*100)+'" style="width:60px" oninput="GS.setFX(\''+lt.id+'\',\'delayFb\',this.value/100)">'
         +'<span>Reverb</span><input type="range" min="0" max="100" value="'+(fxState.reverb*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'reverb\',this.value/100)">'
+        +'<span>Pan</span><input type="range" min="-50" max="50" value="'+((fxState.pan||0)*50)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'pan\',this.value/50)">'
         +'</div>'
         +(lt.type==='note'?'<div style="display:flex;gap:10px;padding:6px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
         +'<span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:.06em">ADSR</span>'
@@ -2116,8 +2187,7 @@ var GS = (function(){
       var v = getCurrentVar(); if(!v) return;
       var idx = r * STEPS + s;
       if((v[lid].grid[idx]||0) === _paint.val) return;
-      _undoStack.push({lid:lid, idx:idx, was:v[lid].grid[idx]||0, wasLen:1});
-      if(_undoStack.length > 200) _undoStack.shift();
+      pushUndo({lid:lid, idx:idx, was:v[lid].grid[idx]||0, wasLen:1});
       v[lid].grid[idx] = _paint.val;
       cell.classList.remove('on','accent');
       if(_paint.val){
@@ -2706,13 +2776,47 @@ var GS = (function(){
     el.innerHTML = html;
   }
 
+  // ═══ UNDO / REDO core ═══
+  var _redoStack = [];
+  function pushUndo(entry){
+    _undoStack.push(entry);
+    if(_undoStack.length > 200) _undoStack.shift();
+    _redoStack = []; // a fresh action invalidates the redo branch
+  }
+  // Capture the CURRENT value of whatever `entry` is about to overwrite,
+  // so applying `entry` can itself be reversed.
+  function snapshotOf(entry){
+    var v = getCurrentVar(); if(!v) return null;
+    if(entry.type === 'layer'){
+      var lensCopy = {};
+      if(v[entry.lid].lens){ for(var k in v[entry.lid].lens) lensCopy[k] = v[entry.lid].lens[k]; }
+      return {type:'layer', lid:entry.lid, grid:v[entry.lid].grid.slice(), lens:lensCopy};
+    }
+    return {lid:entry.lid, idx:entry.idx,
+      was:v[entry.lid].grid[entry.idx]||0,
+      wasLen:(v[entry.lid].lens&&v[entry.lid].lens[entry.idx])||1};
+  }
+  function applyUndoEntry(state){
+    var v = getCurrentVar(); if(!v) return;
+    if(state.type === 'layer'){
+      v[state.lid].grid = state.grid;
+      v[state.lid].lens = state.lens || {};
+    } else {
+      v[state.lid].grid[state.idx] = state.was;
+      if(v[state.lid].lens) delete v[state.lid].lens[state.idx];
+      if(state.was && state.wasLen > 1){
+        if(!v[state.lid].lens) v[state.lid].lens = {};
+        v[state.lid].lens[state.idx] = state.wasLen;
+      }
+    }
+  }
+
   // ═══ DICE — instant musical ideas per layer ═══
   function pushLayerUndo(lid){
     var v = getCurrentVar(); if(!v) return;
     var lensCopy = {};
     if(v[lid].lens){ for(var k in v[lid].lens) lensCopy[k] = v[lid].lens[k]; }
-    _undoStack.push({type:'layer', lid:lid, grid:v[lid].grid.slice(), lens:lensCopy});
-    if(_undoStack.length > 200) _undoStack.shift();
+    pushUndo({type:'layer', lid:lid, grid:v[lid].grid.slice(), lens:lensCopy});
   }
   var DICE_DRUM_PATS = [
     {0:'x.......x.......x.......x.......',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
@@ -2842,7 +2946,7 @@ var GS = (function(){
       if(v){
         var idx = rowIdx*STEPS + step; // "step" is the next scheduled step: close enough live
         if(!v[lid].grid[idx]){
-          _undoStack.push({lid:lid, idx:idx, was:0, wasLen:1});
+          pushUndo({lid:lid, idx:idx, was:0, wasLen:1});
           v[lid].grid[idx] = 1;
           _updateMini(lid);
           var cell = document.querySelector('.gs-cell[data-l="'+lid+'"][data-r="'+rowIdx+'"][data-s="'+step+'"]');
@@ -2869,6 +2973,346 @@ var GS = (function(){
     el.addEventListener('pointerup', clear);
     el.addEventListener('pointercancel', clear);
     el.addEventListener('pointerleave', clear);
+  }
+
+  // ═══ MIDI keyboard in (lazy: requested on first Keys open = user gesture) ═══
+  var _midiTried = false;
+  function onMIDIMsg(e){
+    var d = e.data;
+    if(!d || d.length < 3) return;
+    if((d[0] & 0xF0) === 0x90 && d[2] > 0){
+      var midi = d[1], kn = keysNotes();
+      var bestRow = -1, bestD = 999;
+      for(var i=0;i<kn.notes.length;i++){
+        var dd = Math.abs(noteToMidi(kn.notes[i].name) - midi);
+        if(dd < bestD){ bestD = dd; bestRow = i; }
+      }
+      if(bestRow >= 0) keysPadDown(bestRow); // plays + records when armed
+    }
+  }
+  function initMIDI(){
+    if(_midiTried || !navigator.requestMIDIAccess) return;
+    _midiTried = true;
+    try{
+      navigator.requestMIDIAccess().then(function(acc){
+        var found = '';
+        acc.inputs.forEach(function(inp){ inp.onmidimessage = onMIDIMsg; found = inp.name || 'keyboard'; });
+        if(found) _toast('MIDI ready: '+found);
+        acc.onstatechange = function(e){
+          try{
+            if(e.port && e.port.type === 'input' && e.port.state === 'connected'){
+              e.port.onmidimessage = onMIDIMsg;
+              _toast('MIDI keyboard connected');
+            }
+          }catch(err){}
+        };
+      }, function(){});
+    }catch(e){}
+  }
+
+  // ═══ SHOW MODE + VIDEO EXPORT — the visualizer is the video ═══
+  var _showRaf = null;
+  var _vid = null; // {rec, dest, timer, startCtxTime, duration, keepArrMode}
+  function showCanvas(){ return document.getElementById('gs-show-canvas'); }
+  function sizeShowCanvas(forVideo){
+    var cv = showCanvas(); if(!cv) return;
+    if(forVideo){ cv.width = 720; cv.height = 720; }
+    else {
+      var dpr = Math.min(window.devicePixelRatio||1, 2);
+      cv.width = Math.floor((cv.clientWidth||360)*dpr);
+      cv.height = Math.floor((cv.clientHeight||640)*dpr);
+    }
+  }
+  function drawShow(){
+    var cv = showCanvas(); if(!cv) return;
+    var g = cv.getContext('2d');
+    var w = cv.width, h = cv.height, cx = w/2, cy = h/2, m = Math.min(w,h);
+    g.fillStyle = 'rgba(7,9,5,.28)'; // trail fade
+    g.fillRect(0,0,w,h);
+    var colors = {A:'#7ab356', B:'#c8a84b', C:'#a0c4e8'};
+    var col = colors[currentSection] || '#7ab356';
+    var freq = null, bass = 0;
+    if(masterAnalyser){
+      freq = new Uint8Array(masterAnalyser.frequencyBinCount);
+      masterAnalyser.getByteFrequencyData(freq);
+      var sum = 0;
+      for(var i=1;i<=10;i++) sum += freq[i];
+      bass = sum/10/255;
+    }
+    var R = m*0.2*(1 + bass*0.35);
+    if(freq){
+      var BARS = 56;
+      g.lineWidth = Math.max(2, w*0.006);
+      for(var b=0;b<BARS;b++){
+        var bin = 2 + Math.floor(b*(freq.length*0.6)/BARS);
+        var mag = freq[bin]/255;
+        var ang = (b/BARS)*Math.PI*2 - Math.PI/2;
+        var r1 = R+6, r2 = R+6+mag*m*0.22;
+        g.strokeStyle = col;
+        g.globalAlpha = 0.25 + mag*0.75;
+        g.beginPath();
+        g.moveTo(cx+Math.cos(ang)*r1, cy+Math.sin(ang)*r1);
+        g.lineTo(cx+Math.cos(ang)*r2, cy+Math.sin(ang)*r2);
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    g.beginPath(); g.arc(cx,cy,R,0,Math.PI*2);
+    g.fillStyle = 'rgba(13,16,12,.82)'; g.fill();
+    g.strokeStyle = col; g.lineWidth = Math.max(2, w*0.005); g.stroke();
+    if(playing){
+      var pa = (step/STEPS)*Math.PI*2 - Math.PI/2;
+      g.beginPath();
+      g.arc(cx+Math.cos(pa)*(R+3), cy+Math.sin(pa)*(R+3), Math.max(4,w*0.01), 0, Math.PI*2);
+      g.fillStyle = '#e8dcc8'; g.fill();
+      if(step % 4 === 0){
+        g.beginPath(); g.arc(cx,cy,R*1.5,0,Math.PI*2);
+        g.strokeStyle = col; g.globalAlpha = 0.25; g.stroke(); g.globalAlpha = 1;
+      }
+    }
+    g.textAlign = 'center';
+    g.fillStyle = '#e8dcc8';
+    g.font = Math.floor(m*0.055)+'px "Bebas Neue", sans-serif';
+    g.fillText((_curSongName||'MY SONG').toUpperCase().substring(0,24), cx, cy+m*0.015);
+    g.font = Math.floor(m*0.022)+'px "DM Mono", monospace';
+    g.fillStyle = 'rgba(232,220,200,.5)';
+    g.fillText(bpm+' BPM', cx, cy+m*0.055);
+    g.fillText('made in Music Studio · lucidwinds.com', cx, h - m*0.03);
+  }
+  function showLoop(){
+    drawShow();
+    if(_vid){
+      var pct = Math.min(100, (getCtx().currentTime - _vid.startCtxTime)/_vid.duration*100);
+      var bar = document.getElementById('gs-rec-bar-fill');
+      if(bar) bar.style.width = pct.toFixed(1)+'%';
+    }
+    _showRaf = requestAnimationFrame(showLoop);
+  }
+  function arrangementSeconds(){
+    var d = 0;
+    for(var ai=0;ai<song.arrangement.length;ai++)
+      for(var s=0;s<STEPS;s++) d += getStepDuration(s);
+    return d;
+  }
+
+  // ═══ HUM A MELODY — pitch detection into the grid ═══
+  var _hum = null; // {stream, an, loop, samples, recStartCtx, stepDur, ticks:[]}
+  // Autocorrelation pitch detector, lag range tuned for hums + whistles
+  // (~75 Hz to ~1.8 kHz). Returns Hz or -1 for silence/noise.
+  function detectPitch(buf, sr){
+    var SIZE = buf.length, i, rms = 0;
+    for(i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+    var energy = rms;
+    rms = Math.sqrt(rms/SIZE);
+    if(rms < 0.015) return -1;
+    var MIN = Math.max(8, Math.floor(sr/1800)), MAX = Math.min(SIZE-2, Math.floor(sr/75));
+    var best = 0, bestLag = -1;
+    for(var lag=MIN; lag<=MAX; lag++){
+      var sum = 0;
+      for(i=0;i<SIZE-lag;i++) sum += buf[i]*buf[i+lag];
+      var norm = sum / (SIZE-lag) * SIZE; // normalize overlap window
+      if(norm > best){ best = norm; bestLag = lag; }
+    }
+    if(bestLag < 0 || best < energy*0.35) return -1; // not periodic enough
+    return sr/bestLag;
+  }
+  function humCleanup(){
+    if(!_hum) return;
+    if(_hum.loop) clearInterval(_hum.loop);
+    try{ if(_hum.stream) _hum.stream.getTracks().forEach(function(t){t.stop();}); }catch(e){}
+    _hum = null;
+    var btn = document.getElementById('gs-hum-start');
+    if(btn){ btn.textContent = '● Start Listening'; btn.disabled = false; }
+  }
+  function humClick(t, strong){
+    var c = getCtx();
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = strong ? 1200 : 800;
+    g.gain.setValueAtTime(strong ? 0.15 : 0.08, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.03);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+0.04);
+  }
+  function humRenderDots(state){
+    var el = document.getElementById('gs-hum-dots');
+    if(!el) return;
+    if(el.children.length !== STEPS){
+      var html = '';
+      for(var i=0;i<STEPS;i++) html += '<div></div>';
+      el.innerHTML = html;
+    }
+    for(var s=0;s<STEPS;s++){
+      var d = el.children[s];
+      d.className = '';
+      if(state && s < state.upto) d.className = state.voiced[s] ? 'note' : 'done';
+    }
+  }
+  function humApply(samples){
+    var notes = getScaleNotes(LAYER_TYPES[3].octave);
+    var rowPerStep = new Array(STEPS);
+    var placed = 0;
+    for(var s=0;s<STEPS;s++){
+      var fs = samples[s];
+      if(!fs || fs.length < 2) continue;
+      fs.sort(function(a,b){return a-b});
+      var f = fs[Math.floor(fs.length/2)]; // median
+      var midi = Math.round(69 + 12*Math.log(f/440)/Math.LN2);
+      var bestRow = -1, bestD = 999;
+      for(var r=0;r<notes.length;r++){
+        var dd = Math.abs(noteToMidi(notes[r].name) - midi);
+        // compare pitch classes too so octave-off whistles still land in key
+        var pc = Math.min(dd%12, 12-(dd%12)) + Math.floor(dd/12)*0.5;
+        if(pc < bestD){ bestD = pc; bestRow = r; }
+      }
+      if(bestRow >= 0){ rowPerStep[s] = bestRow; placed++; }
+    }
+    if(!placed){
+      _toast('Did not catch a tune. Try whistling louder, close to the mic');
+      return;
+    }
+    pushLayerUndo('melody');
+    var v = getCurrentVar();
+    v.melody.grid = v.melody.grid.map(function(){return 0});
+    v.melody.lens = {};
+    var s = 0;
+    while(s < STEPS){
+      var row = rowPerStep[s];
+      if(row === undefined){ s++; continue; }
+      var len = 1;
+      while(s+len < STEPS && rowPerStep[s+len] === row) len++;
+      v.melody.grid[row*STEPS+s] = 1;
+      if(len > 1) v.melody.lens[row*STEPS+s] = len;
+      s += len;
+    }
+    expandedLayer = 'melody';
+    markDirty();
+    renderLayers();
+    _toast('🎙 Your melody is in the grid! Undo brings the old one back');
+  }
+
+  // ═══ MAGIC BASS — bassline generated from the chord layer ═══
+  function magicBass(){
+    var v = getCurrentVar(); if(!v) return;
+    var L = (SCALES[scaleKey]||[0,2,4,5,7,9,11]).length;
+    var cRows = getScaleNotes(LAYER_TYPES[2].octave).length;
+    var rootDeg = new Array(STEPS), found = false;
+    for(var s=0;s<STEPS;s++){
+      for(var r=cRows-1;r>=0;r--){ // bottom row first = lowest chord note
+        if(getNoteHead(v.chords, r, s)){
+          rootDeg[s] = r < L ? (L-1-r) : (2*L-1-r);
+          found = true;
+          break;
+        }
+      }
+    }
+    if(!found){
+      _toast('Add chords first: use the ♪♪♪ chord brush or Circle → Use');
+      return;
+    }
+    // Fill gaps: carry the root forward, and backfill any leading gap
+    var last = -1;
+    for(s=0;s<STEPS;s++){ if(rootDeg[s] === undefined){ if(last>=0) rootDeg[s]=last; } else last = rootDeg[s]; }
+    var first = 0;
+    for(s=0;s<STEPS;s++){ if(rootDeg[s] !== undefined){ first = rootDeg[s]; break; } }
+    for(s=0;s<STEPS;s++){ if(rootDeg[s] === undefined) rootDeg[s] = first; }
+    var style = Math.floor(Math.random()*3);
+    var list = [];
+    var s2 = 0;
+    while(s2 < STEPS){
+      var deg = rootDeg[s2], end = s2;
+      while(end < STEPS && rootDeg[end] === deg) end++;
+      var len = end - s2;
+      if(style === 0){
+        // Long held roots
+        list.push([s2, deg, Math.min(len,8), 0]);
+        if(len > 8) list.push([s2+8, deg, Math.min(len-8,8), 0]);
+      } else if(style === 1){
+        // Driving 8ths with an octave pop
+        for(var k=s2;k<end;k+=2) list.push([k, deg, 1, ((k-s2)%8===6)?1:0]);
+      } else {
+        // Root-fifth bounce
+        for(var k2=s2;k2<end;k2+=4){
+          list.push([k2, deg, 2, 0]);
+          if(k2+2 < end) list.push([k2+2, deg+4, 1, 0]);
+        }
+      }
+      s2 = end;
+    }
+    pushLayerUndo('bass');
+    v.bass.grid = v.bass.grid.map(function(){return 0});
+    v.bass.lens = {};
+    fillNotes(v, 'bass', list);
+    markDirty();
+    renderLayers();
+    _toast('🧲 Bassline written from your chords. Tap again for another style');
+  }
+
+  // ═══ MAKE CHORUS — B1 grows from A1 with an energy lift ═══
+  function deepCopyVar(src){
+    var copy = {};
+    for(var lid in src){
+      var ld = src[lid];
+      var c = {grid:ld.grid.slice(), mute:ld.mute, solo:ld.solo, vol:ld.vol, preset:ld.preset||'', lens:{}};
+      if(ld.lens){ for(var lk in ld.lens) c.lens[lk] = ld.lens[lk]; }
+      if(ld.fx) c.fx = {filter:ld.fx.filter, filterQ:ld.fx.filterQ, delay:ld.fx.delay, delayFb:ld.fx.delayFb, reverb:ld.fx.reverb, pan:ld.fx.pan||0};
+      if(ld.adsr) c.adsr = {a:ld.adsr.a, d:ld.adsr.d, s:ld.adsr.s, r:ld.adsr.r};
+      if(ld.prob){ c.prob = {}; for(var pk in ld.prob) c.prob[pk] = ld.prob[pk]; }
+      if(ld.ratch){ c.ratch = {}; for(var rk in ld.ratch) c.ratch[rk] = ld.ratch[rk]; }
+      if(ld.probability !== undefined) c.probability = ld.probability;
+      if(ld.ratchetAll !== undefined) c.ratchetAll = ld.ratchetAll;
+      copy[lid] = c;
+    }
+    return copy;
+  }
+  function varHasNotes(v){
+    for(var lid in v){
+      var g = v[lid].grid;
+      for(var i=0;i<g.length;i++) if(g[i]) return true;
+    }
+    return false;
+  }
+  function makeChorus(){
+    var A = song.sections.A.vars[0];
+    if(!A || !varHasNotes(A)){
+      _toast('Build your Verse (A1) first, then the Chorus can grow from it');
+      return;
+    }
+    var B1 = song.sections.B.vars[0];
+    if(B1 && varHasNotes(B1) && !confirm('Replace B1 (Chorus) with a lifted copy of your Verse?')) return;
+    var copy = deepCopyVar(A);
+    // Drums: crash on the downbeat, hats pushed to steady 8ths
+    var dRows = DRUMS.length + extraDrumRows.length;
+    if(dRows > 7 && !copy.drums.grid[7*STEPS]) copy.drums.grid[7*STEPS] = 2;
+    for(var s=2;s<STEPS;s+=4){ if(!copy.drums.grid[2*STEPS+s]) copy.drums.grid[2*STEPS+s] = 1; }
+    // Melody: lift lower-octave notes up an octave
+    var L = (SCALES[scaleKey]||[0,2,4,5,7,9,11]).length;
+    var mRows = getScaleNotes(LAYER_TYPES[3].octave).length;
+    var mg = copy.melody.grid;
+    var newMg = [], newLens = {};
+    for(var i=0;i<mg.length;i++) newMg.push(0);
+    for(var r=0;r<mRows;r++){
+      for(var s3=0;s3<STEPS;s3++){
+        var val = mg[r*STEPS+s3];
+        if(!val) continue;
+        var nr = r >= L ? r - L : r;
+        if(!newMg[nr*STEPS+s3]){
+          newMg[nr*STEPS+s3] = val;
+          var ol = copy.melody.lens && copy.melody.lens[r*STEPS+s3];
+          if(ol > 1) newLens[nr*STEPS+s3] = ol;
+        }
+      }
+    }
+    copy.melody.grid = newMg;
+    copy.melody.lens = newLens;
+    song.sections.B.vars[0] = copy;
+    var hasB = false;
+    for(var ai=0;ai<song.arrangement.length;ai++) if(song.arrangement[ai].charAt(0)==='B') hasB = true;
+    if(!hasB) song.arrangement.push('B1','B1');
+    currentSection = 'B'; currentVar = 0;
+    applyFXState();
+    markDirty();
+    renderAll();
+    _toast('✨ Chorus built: crash, brighter hats, melody lifted. Make it yours!');
   }
 
   // ── Public API ──
@@ -2904,6 +3348,11 @@ var GS = (function(){
         // First visit: greet with the starter picker
         renderStarters();
         document.getElementById('gs-starters').classList.add('open');
+      }
+      // Video export needs MediaRecorder + canvas capture; hide where absent
+      if(!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream)){
+        var vb = document.getElementById('gs-video-btn');
+        if(vb) vb.style.display = 'none';
       }
       // Autosave loop: any interaction marks dirty, tick writes at most every 4s
       document.addEventListener('pointerdown', function(){ _dirty = true; }, true);
@@ -2950,7 +3399,7 @@ var GS = (function(){
         var ld = last[lid];
         var c = {grid:ld.grid.slice(), mute:ld.mute, solo:ld.solo, vol:ld.vol, preset:ld.preset||'', lens:{}};
         if(ld.lens){ for(var lk in ld.lens) c.lens[lk] = ld.lens[lk]; }
-        if(ld.fx) c.fx = {filter:ld.fx.filter, filterQ:ld.fx.filterQ, delay:ld.fx.delay, delayFb:ld.fx.delayFb, reverb:ld.fx.reverb};
+        if(ld.fx) c.fx = {filter:ld.fx.filter, filterQ:ld.fx.filterQ, delay:ld.fx.delay, delayFb:ld.fx.delayFb, reverb:ld.fx.reverb, pan:ld.fx.pan||0};
         if(ld.adsr) c.adsr = {a:ld.adsr.a, d:ld.adsr.d, s:ld.adsr.s, r:ld.adsr.r};
         if(ld.prob){ c.prob = {}; for(var pk in ld.prob) c.prob[pk] = ld.prob[pk]; }
         if(ld.ratch){ c.ratch = {}; for(var rk in ld.ratch) c.ratch[rk] = ld.ratch[rk]; }
@@ -3013,8 +3462,7 @@ var GS = (function(){
         return;
       }
 
-      _undoStack.push({lid:lid, idx:idx, was:cur, wasLen:(v[lid].lens&&v[lid].lens[idx])||1});
-      if(_undoStack.length > 200) _undoStack.shift();
+      pushUndo({lid:lid, idx:idx, was:cur, wasLen:(v[lid].lens&&v[lid].lens[idx])||1});
       markDirty();
       // Tap empty = place note (accent if accent mode on). Tap filled = remove.
       if(cur === 0) v[lid].grid[idx] = accentMode ? 2 : 1;
@@ -3180,6 +3628,7 @@ var GS = (function(){
     openKeys: function(){
       document.getElementById('gs-keys').classList.add('open');
       keysRender();
+      initMIDI(); // plug in a MIDI keyboard and it just works
     },
     closeKeys: function(){
       document.getElementById('gs-keys').classList.remove('open');
@@ -3191,6 +3640,157 @@ var GS = (function(){
       if(btn) btn.classList.toggle('on', _keysRec);
       if(_keysRec && !playing) _toast('Press ▶ Play too, and your taps will record');
     },
+    magicBass: function(){ magicBass(); },
+    makeChorus: function(){ makeChorus(); },
+    openShow: function(){
+      getCtx();
+      document.getElementById('gs-show').classList.add('open');
+      var nm = document.getElementById('gs-show-name');
+      if(nm) nm.textContent = '';
+      sizeShowCanvas(false);
+      if(!_showRaf) showLoop();
+      if(!playing) start();
+    },
+    closeShow: function(){
+      if(_vid) GS.stopVideo();
+      if(_showRaf){ cancelAnimationFrame(_showRaf); _showRaf = null; }
+      document.getElementById('gs-show').classList.remove('open');
+    },
+    exportVideo: function(){
+      if(_vid) return;
+      if(!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream)){
+        _toast('Video export is not supported in this browser');
+        return;
+      }
+      if(playing) stop();
+      getCtx(); // ensures masterComp + analyser exist
+      document.getElementById('gs-show').classList.add('open');
+      document.getElementById('gs-rec-wrap').classList.add('on');
+      sizeShowCanvas(true);
+      if(!_showRaf) showLoop();
+      try{
+        var duration = arrangementSeconds() + 0.8; // reverb tail
+        var dest = ctx.createMediaStreamDestination();
+        masterComp.connect(dest);
+        var stream = showCanvas().captureStream(30);
+        dest.stream.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
+        var mime = '';
+        var cand = ['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+        for(var i=0;i<cand.length;i++){
+          if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cand[i])){ mime = cand[i]; break; }
+        }
+        var rec = new MediaRecorder(stream, mime ? {mimeType:mime, videoBitsPerSecond:4000000} : undefined);
+        var chunks = [];
+        rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function(){
+          try{ masterComp.disconnect(dest); }catch(e){}
+          var type = rec.mimeType || mime || 'video/webm';
+          var ext = /mp4/.test(type) ? 'mp4' : 'webm';
+          var blob = new Blob(chunks, {type:type});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = (currentSongName()||'my-song').replace(/[^a-zA-Z0-9_\-]+/g,'-')+'.'+ext;
+          a.click();
+          URL.revokeObjectURL(url);
+          document.getElementById('gs-rec-wrap').classList.remove('on');
+          _toast('🎬 Video saved! Share it anywhere');
+        };
+        var keepArrMode = arrMode;
+        arrMode = true; // a video always plays the whole song
+        _vid = {rec:rec, dest:dest, startCtxTime:ctx.currentTime + 0.1, duration:duration, keepArrMode:keepArrMode};
+        rec.start(500);
+        start();
+        _vid.timer = setTimeout(function(){ GS.stopVideo(); }, (duration + 0.4)*1000);
+      }catch(e){
+        document.getElementById('gs-rec-wrap').classList.remove('on');
+        _toast('Video error: '+e.message);
+      }
+    },
+    stopVideo: function(){
+      if(!_vid) return;
+      var vv = _vid; _vid = null;
+      clearTimeout(vv.timer);
+      stop();
+      arrMode = vv.keepArrMode;
+      var btn = document.getElementById('gs-arr-mode');
+      if(btn){ btn.classList.toggle('on', arrMode); btn.textContent = arrMode ? '📋 Song' : '🔂 Loop'; }
+      try{ vv.rec.stop(); }catch(e){}
+    },
+    openHum: function(){
+      document.getElementById('gs-hum').classList.add('open');
+      document.getElementById('gs-hum-status').textContent = 'Ready';
+      humRenderDots(null);
+    },
+    closeHum: function(){
+      humCleanup();
+      document.getElementById('gs-hum').classList.remove('open');
+    },
+    humStart: function(){
+      if(_hum) return;
+      if(playing) stop();
+      if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+        _toast('Mic not available in this browser');
+        return;
+      }
+      var btn = document.getElementById('gs-hum-start');
+      if(btn){ btn.textContent = 'Listening…'; btn.disabled = true; }
+      navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}}).then(function(stream){
+        var c = getCtx();
+        var src = c.createMediaStreamSource(stream);
+        var an = c.createAnalyser();
+        an.fftSize = 2048;
+        src.connect(an); // analysis only, never to speakers
+        var beat = 60/bpm, stepDur = beat/4;
+        var t0 = c.currentTime + 0.2;
+        var recStart = t0 + 4*beat;
+        for(var k=0;k<4;k++) humClick(t0 + k*beat, k===0);
+        for(var k2=0;k2<STEPS/4;k2++) humClick(recStart + k2*beat, k2%4===0);
+        var samples = [];
+        for(var i=0;i<STEPS;i++) samples.push([]);
+        var timeBuf = new Float32Array(an.fftSize);
+        _hum = {stream:stream, an:an, samples:samples, recStart:recStart, stepDur:stepDur};
+        var statusEl = document.getElementById('gs-hum-status');
+        var notes = getScaleNotes(LAYER_TYPES[3].octave);
+        var voiced = new Array(STEPS);
+        _hum.loop = setInterval(function(){
+          if(!_hum) return;
+          var now = c.currentTime;
+          if(now < recStart){
+            statusEl.textContent = Math.ceil((recStart-now)/beat)+'…';
+            return;
+          }
+          var sIdx = Math.floor((now - recStart)/stepDur);
+          if(sIdx >= STEPS){
+            var got = _hum.samples;
+            humCleanup();
+            statusEl.textContent = 'Writing your melody…';
+            humApply(got);
+            GS.closeHum();
+            return;
+          }
+          an.getFloatTimeDomainData(timeBuf);
+          var f = detectPitch(timeBuf, c.sampleRate);
+          if(f > 0){
+            samples[sIdx].push(f);
+            voiced[sIdx] = true;
+            var midi = Math.round(69 + 12*Math.log(f/440)/Math.LN2);
+            var bestRow = -1, bestD = 999;
+            for(var r=0;r<notes.length;r++){
+              var dd = Math.abs(noteToMidi(notes[r].name) - midi);
+              if(dd < bestD){ bestD = dd; bestRow = r; }
+            }
+            statusEl.textContent = bestRow >= 0 ? '♪ '+notes[bestRow].name : '♪';
+          } else if(statusEl.textContent.charAt(0) !== '♪'){
+            statusEl.textContent = 'Listening…';
+          }
+          humRenderDots({upto:sIdx+1, voiced:voiced});
+        }, 55);
+      }).catch(function(err){
+        if(btn){ btn.textContent = '● Start Listening'; btn.disabled = false; }
+        _toast('Mic access denied: '+err.message);
+      });
+    },
     clearSection: function(){
       if(!confirm('Clear all layers in '+currentSection+(currentVar+1)+'?')) return;
       var v = getCurrentVar(); if(!v) return;
@@ -3200,17 +3800,18 @@ var GS = (function(){
     undo: function(){
       if(!_undoStack.length) return;
       var state = _undoStack.pop();
-      var v = getCurrentVar(); if(!v) return;
-      if(state.type === 'layer'){
-        v[state.lid].grid = state.grid;
-        v[state.lid].lens = state.lens || {};
-      } else {
-        v[state.lid].grid[state.idx] = state.was;
-        if(state.was && state.wasLen > 1){
-          if(!v[state.lid].lens) v[state.lid].lens = {};
-          v[state.lid].lens[state.idx] = state.wasLen;
-        }
-      }
+      var inverse = snapshotOf(state);
+      if(inverse) _redoStack.push(inverse);
+      applyUndoEntry(state);
+      markDirty();
+      renderLayers();
+    },
+    redo: function(){
+      if(!_redoStack.length) return;
+      var state = _redoStack.pop();
+      var inverse = snapshotOf(state);
+      if(inverse) _undoStack.push(inverse); // direct push: keep the redo chain alive
+      applyUndoEntry(state);
       markDirty();
       renderLayers();
     },
@@ -3453,9 +4054,10 @@ var GS = (function(){
     },
     setFX: function(lid, param, val){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
-      if(!v[lid].fx) v[lid].fx = {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
+      if(!v[lid].fx) v[lid].fx = {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0, pan:0};
       val = parseFloat(val);
       v[lid].fx[param] = val;
+      markDirty();
       // Apply to live audio nodes
       var bus = layerBus[lid];
       if(!bus) return;
@@ -3467,6 +4069,7 @@ var GS = (function(){
       }
       if(param === 'delayFb') bus.delayFb.gain.value = Math.min(val, 0.85);
       if(param === 'reverb') bus.reverbSend.gain.value = val;
+      if(param === 'pan' && bus.pan) bus.pan.pan.value = val;
     },
     setPreset: function(lid, name){
       var v = getCurrentVar(); if(!v||!v[lid]) return;

@@ -28,7 +28,7 @@ function _songAddDaySpent(n){
 
 function GSG(a){
   var fr=document.createElement('iframe');
-  fr.src='/studio.html?v=20260719'; // bump on studio.html edits (host caches HTML)
+  fr.src='/studio.html?v=20260719b'; // bump on studio.html edits (host caches HTML)
   fr.style.cssText='width:100%;height:calc(100vh - 40px);border:none;border-radius:8px;background:#060610';
   fr.allow='autoplay';
   a.appendChild(fr);
@@ -70,6 +70,7 @@ function GSG(a){
     try{
       if(typeof w.GS.save==='function'){ var _s=w.GS.save; w.GS.save=function(){ milestoneEarn(); return _s.apply(this,arguments); }; }
       if(typeof w.GS.exportWAV==='function'){ var _x=w.GS.exportWAV; w.GS.exportWAV=function(){ milestoneEarn(); return _x.apply(this,arguments); }; }
+      if(typeof w.GS.exportVideo==='function'){ var _v=w.GS.exportVideo; w.GS.exportVideo=function(){ milestoneEarn(); return _v.apply(this,arguments); }; }
     }catch(e){}
     try{ doc.addEventListener('pointerdown',function(){ interacted=true; },{passive:true}); }catch(e){}
   }
