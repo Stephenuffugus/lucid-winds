@@ -25,16 +25,17 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   background:radial-gradient(120% 80% at 50% 0%, #1c1830 0%, #0c0a14 70%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
-.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#191430 0%, #0d0b16 100%)}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,rgba(14,10,26,0.34) 0%, rgba(12,9,20,0.62) 45%, rgba(11,9,18,0.92) 82%)}
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn{pointer-events:auto}
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:44px; line-height:1.05; font-weight:800; letter-spacing:1px;
-  background:linear-gradient(120deg,#8de8ff,#ffd76a 55%,#ff6d9d); -webkit-background-clip:text; background-clip:text; color:transparent}
+  background:linear-gradient(120deg,#8de8ff,#ffd76a 55%,#ff6d9d); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 10px rgba(0,0,0,0.8))}
 .title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.85; max-width:400px; line-height:1.55}
+.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.92; max-width:400px; line-height:1.55; text-shadow:0 1px 8px rgba(0,0,0,0.85)}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f38,#171322); color:var(--ink);
   font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -554,6 +555,7 @@ function buildLevel(lvl){
 
 function newGame(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
+  attractOn=false; worldIsAttract=false;
   var built=buildLevel(lvl);
   G={ lvl:lvl, world:built,
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
@@ -891,6 +893,31 @@ function show(id){
   if(id!=='s-play'){ $('s-play').style.display='none'; }
   curScreen=id;
   if(id!=='s-play')running=false;
+  if(id==='s-title')startAttract(); else attractOn=false;
+}
+
+/* ---------- attract mode: the sunny world drifts behind the title ---------- */
+var attractOn=false, attractT=0, attractLast=0, attractLen=0, worldIsAttract=false;
+function startAttract(){
+  if(attractOn)return;
+  try{
+    if(!initGL())return;
+    if(!worldIsAttract){ var w=buildLevel(1); attractLen=w.len; knife.position.set(2,KR,0); knife.rotation.z=0; if(kshadow)kshadow.visible=false; worldIsAttract=true; }
+    attractOn=true; attractLast=0;
+    requestAnimationFrame(attractLoop);
+  }catch(e){}
+}
+function attractLoop(ts){
+  if(!attractOn||running){ attractOn=false; return; }
+  requestAnimationFrame(attractLoop);
+  if(ts-attractLast<33)return; // ~30fps is plenty for a menu
+  attractLast=ts;
+  attractT+=0.033;
+  var span=Math.max(30,attractLen-30);
+  var px=20+(0.5+0.5*Math.sin(attractT*0.06))*span;
+  camera.position.set(px-2, 10.5, 25);
+  camera.lookAt(px+6, 4.5, -1);
+  renderer.render(scene,camera);
 }
 tap('b-play',function(){ newGame(PROG.level); });
 tap('b-how',function(){ show('s-how'); });
@@ -901,6 +928,7 @@ tap('go-retry',function(){ newGame(G?G.lvl:PROG.level); });
 tap('go-home',function(){ show('s-title'); });
 $('t-lvl').textContent=PROG.level;
 $('buildstamp').textContent='Super Slice 3D '+BUILD+' · level '+PROG.level;
+startAttract();
 
 /* headless test hook — only with ?dev=1 */
 if(/[?&]dev=1/.test(location.search)){
