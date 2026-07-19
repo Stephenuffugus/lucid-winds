@@ -175,8 +175,43 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 /* Select styling */
 select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9178'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
 
+/* Modal overlays (starters, songs) */
+.gs-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:110;overflow-y:auto;padding:14px}
+.gs-modal.open{display:block}
+.gs-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.gs-modal-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
+.gs-modal-sub{font-size:.7rem;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.gs-starter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gs-starter-card{background:rgba(26,31,23,.7);border:1.5px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;transition:all .15s;min-height:88px;display:flex;flex-direction:column;gap:4px}
+.gs-starter-card:hover{border-color:var(--sage);background:rgba(26,31,23,.95);transform:translateY(-2px)}
+.gs-starter-card:active{transform:scale(.97)}
+.gs-starter-card .st-emoji{font-size:1.5rem}
+.gs-starter-card .st-name{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--cream);letter-spacing:.06em}
+.gs-starter-card .st-desc{font-size:.6rem;color:var(--muted);line-height:1.4}
+.gs-starter-card.blank{border-style:dashed}
+.gs-song-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(26,31,23,.6);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;min-height:48px}
+.gs-song-row .sn-name{flex:1;color:var(--cream);font-size:.75rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gs-song-row .sn-date{font-size:.6rem;color:var(--muted)}
+.gs-song-row button{min-height:40px}
+/* Keys jam panel */
+.gs-keys{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:90;padding:12px;border-top:2px solid var(--gold);border-radius:12px 12px 0 0;max-height:75vh;overflow-y:auto}
+.gs-keys.open{display:block}
+.gs-keys h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold);letter-spacing:.08em}
+.gs-pad-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.gs-pad{min-height:52px;border-radius:8px;border:1.5px solid var(--border);background:rgba(26,31,23,.8);color:var(--cream);font-family:'DM Mono',monospace;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .08s,border-color .08s}
+.gs-pad.hi{background:rgba(200,168,75,.12)}
+.gs-pad.lit{background:rgba(122,179,86,.85);border-color:var(--sage);color:#0d100c}
+/* Layer tool chips (dice, chord brush) */
+.gs-chip{font-size:.7rem;padding:6px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(74,124,53,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:36px;min-width:36px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gs-chip:hover{background:rgba(42,48,37,.4);border-color:rgba(122,179,86,.3)}
+.gs-chip.on{border-color:#E8A0BF;color:#E8A0BF;background:rgba(232,160,191,.08)}
+.gs-inst-loading{font-size:.6rem;color:var(--gold);padding:2px 10px;display:none}
+
 /* Mobile breakpoints */
 @media(max-width:480px){
+  .gs-starter-grid{grid-template-columns:repeat(2,1fr)}
+  .gs-pad-grid{gap:4px}
+  .gs-pad{min-height:48px;font-size:.62rem}
   .gs-transport{gap:4px;padding:6px 8px}
   .gs-btn{padding:8px 10px;font-size:clamp(.65rem,2vw,.8rem)}
   .gs-bpm{flex-wrap:nowrap}
@@ -209,8 +244,10 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <strong id="gs-bpm">120</strong>
   </div>
   <button class="gs-btn" id="gs-loop" onclick="GS.toggleLoop()">🔁</button>
+  <button class="gs-btn" onclick="GS.openStarters()" style="border-color:var(--gold);color:var(--gold)">✨ New</button>
   <button class="gs-btn" id="gs-toolbar-tog" onclick="GS.toggleToolbar()">⚙ Tools</button>
 </div>
+<div class="gs-inst-loading" id="gs-inst-loading">Loading sounds…</div>
 <div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
 <!-- TOOLBAR: Organized into labeled groups. Hidden by default; toggled
@@ -244,7 +281,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <button class="gs-btn" onclick="GS.zoom(1)" style="padding:8px 12px;min-width:48px">+</button>
     <button class="gs-btn" id="gs-accent" onclick="GS.toggleAccent()">★ Accent</button>
     <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:120px">
-      <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option>
+      <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option><option value="House">House</option><option value="World">World</option>
     </select>
   </div>
   <!-- FEEL -->
@@ -268,7 +305,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div class="gs-group">
     <div class="gs-group-label">FILE</div>
     <button class="gs-btn" onclick="GS.save()">💾 Save</button>
-    <button class="gs-btn" onclick="GS.load()">📂 Load</button>
+    <button class="gs-btn" onclick="GS.openSongs()">🎵 Songs</button>
     <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
   </div>
   <!-- EDIT -->
@@ -285,6 +322,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <button class="gs-btn" onclick="GS.openSampler()">🎤 Sampler</button>
     <button class="gs-btn" onclick="GS.openEuclid()">◉ Rhythm</button>
     <button class="gs-btn" onclick="GS.openCircle()">⊙ Circle</button>
+    <button class="gs-btn" onclick="GS.openKeys()">🎹 Keys</button>
   </div>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
@@ -376,8 +414,48 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div class="gs-sample-list" id="gs-sample-list"></div>
 </div>
 
+<div class="gs-modal" id="gs-starters">
+  <div class="gs-modal-head">
+    <h2>✨ START A SONG</h2>
+    <button class="gs-btn" onclick="GS.closeStarters()">✕</button>
+  </div>
+  <div class="gs-modal-sub">Pick a vibe and get a full beat instantly. Then make it yours: every note can be changed.</div>
+  <div class="gs-starter-grid" id="gs-starter-grid"></div>
+</div>
+
+<div class="gs-modal" id="gs-songs">
+  <div class="gs-modal-head">
+    <h2>🎵 MY SONGS</h2>
+    <button class="gs-btn" onclick="GS.closeSongs()">✕</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    <button class="gs-btn" onclick="GS.saveAs()" style="border-color:var(--sage);color:var(--sage)">💾 Save As New</button>
+    <button class="gs-btn" onclick="GS.copySongCode()">🔗 Copy Song Code</button>
+    <button class="gs-btn" onclick="GS.pasteSongCode()">📥 Paste Code</button>
+  </div>
+  <div class="gs-modal-sub" id="gs-songs-hint">Song codes let you share a song with a friend: copy yours, send it, they paste it here.</div>
+  <div id="gs-song-list"></div>
+</div>
+
+<div class="gs-keys" id="gs-keys">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+    <h3>🎹 KEYS</h3>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select class="gs-btn" id="gs-keys-layer" onchange="GS.keysRender()" style="font-size:.7rem;padding:8px 10px;min-height:44px">
+        <option value="melody" selected>Melody</option>
+        <option value="chords">Chords</option>
+        <option value="bass">Bass</option>
+      </select>
+      <button class="gs-btn" id="gs-keys-rec" onclick="GS.keysToggleRec()">⏺ Record</button>
+      <button class="gs-btn" onclick="GS.closeKeys()">✕</button>
+    </div>
+  </div>
+  <div style="font-size:.65rem;color:var(--muted);margin-top:4px">Tap pads to jam along. Turn on Record while playing and your taps land in the grid.</div>
+  <div class="gs-pad-grid" id="gs-pad-grid"></div>
+</div>
+
 <div class="gs-foot">
-  <a href="/">← Back to Lucid Winds</a> · Music Studio v1.1
+  <a href="/">← Back to Lucid Winds</a> · Music Studio v2.0
 </div>
 
 <script>
@@ -402,15 +480,20 @@ var GS = (function(){
   var layerBus = {}; // per-layer: {input, filter, delayIn, delayNode, delayFb, delaySend, reverbSend, dry, output}
   var masterReverb = null, masterReverbGain = null, masterDry = null;
 
+  // Offline-render overrides: while set, every synth/sample voice routes into
+  // the OfflineAudioContext instead of the speakers. Only ever set inside the
+  // synchronous scheduling pass of exportWAV, so user input can't interleave.
+  var _oCtx = null, _oBus = null;
+
   function getCtx(){
+    if(_oCtx) return _oCtx;
     if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if(ctx.state === 'suspended') ctx.resume();
     if(!fxReady) initFX();
     return ctx;
   }
 
-  function createImpulse(dur, decay){
-    var c = ctx;
+  function createImpulse(c, dur, decay){
     var len = Math.floor(c.sampleRate * dur);
     var buf = c.createBuffer(2, len, c.sampleRate);
     for(var ch=0;ch<2;ch++){
@@ -420,21 +503,27 @@ var GS = (function(){
     return buf;
   }
 
-  function initFX(){
-    if(fxReady) return;
-    fxReady = true;
-    var c = ctx;
+  // Build the full per-layer FX bus graph on ANY context (live or offline).
+  // Returns {buses, reverb, reverbGain}.
+  function buildBusGraph(c){
+    // Master glue compressor — stops clipping when layers stack up
+    var comp = c.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.knee.value = 24;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.25;
+    comp.connect(c.destination);
 
     // Master reverb (convolution) — smaller impulse = fast first-play, good enough
-    // Was 2.5s/2.5 decay (~220KB buffer, 100-200ms stall). Now 1.2s/3 (smaller, snappier).
-    masterReverb = c.createConvolver();
-    masterReverb.buffer = createImpulse(1.2, 3);
-    masterReverbGain = c.createGain();
-    masterReverbGain.gain.value = 1;
-    masterReverb.connect(masterReverbGain);
-    masterReverbGain.connect(c.destination);
+    var reverb = c.createConvolver();
+    reverb.buffer = createImpulse(c, 1.2, 3);
+    var reverbGain = c.createGain();
+    reverbGain.gain.value = 1;
+    reverb.connect(reverbGain);
+    reverbGain.connect(comp);
 
-    // Per-layer buses
+    var buses = {};
     var ids = ['drums','bass','chords','melody'];
     for(var i=0;i<ids.length;i++){
       var id = ids[i];
@@ -466,11 +555,11 @@ var GS = (function(){
 
       // Routing: input → filter → dry → output → destination
       //                          → delaySend → delay → delayFb (loop) → output
-      //                          → reverbSend → masterReverb
+      //                          → reverbSend → reverb
       input.connect(filter);
       filter.connect(dry);
       dry.connect(output);
-      output.connect(c.destination);
+      output.connect(comp);
 
       // Delay chain
       filter.connect(delaySend);
@@ -481,13 +570,24 @@ var GS = (function(){
 
       // Reverb send
       filter.connect(reverbSend);
-      reverbSend.connect(masterReverb);
+      reverbSend.connect(reverb);
 
-      layerBus[id] = {input:input, filter:filter, delayNode:delayNode, delayFb:delayFb, delaySend:delaySend, reverbSend:reverbSend, dry:dry, output:output};
+      buses[id] = {input:input, filter:filter, delayNode:delayNode, delayFb:delayFb, delaySend:delaySend, reverbSend:reverbSend, dry:dry, output:output};
     }
+    return {buses:buses, reverb:reverb, reverbGain:reverbGain};
+  }
+
+  function initFX(){
+    if(fxReady) return;
+    fxReady = true;
+    var graph = buildBusGraph(ctx);
+    masterReverb = graph.reverb;
+    masterReverbGain = graph.reverbGain;
+    layerBus = graph.buses;
   }
 
   function getDest(lid){
+    if(_oBus) return _oBus[lid] ? _oBus[lid].input : _oCtx.destination;
     if(!fxReady || !layerBus[lid]) return ctx.destination;
     return layerBus[lid].input;
   }
@@ -590,12 +690,176 @@ var GS = (function(){
   DRUM_KITS['Electronic'][1].syn = mkSnare(250,6000,0.1,1);
   DRUM_KITS['Electronic'][4].syn = mkClap(1500,0.8);
 
+  DRUM_KITS['House'] = [
+    {name:'H-Kick',syn:mkKick(180,0.22,1.1)},{name:'H-Snare',syn:mkSnare(220,5000,0.18,0.9)},{name:'H-Hat',syn:mkNoise(8500,0.04,0.5)},
+    {name:'H-OH',syn:mkNoise(7000,0.3,0.45)},{name:'H-Clap',syn:mkClap(1100,0.9)},{name:'H-Tom',syn:mkTone(100,0.25,'sine',0.9)},
+    {name:'Ride',syn:mkNoise(9500,0.35,0.3)},{name:'H-Crash',syn:mkNoise(4500,0.7,0.5)}
+  ];
+  DRUM_KITS['World'] = [
+    {name:'Djembe',syn:mkKick(90,0.25,1)},{name:'Conga',syn:mkTone(180,0.15,'sine',0.9)},{name:'Bongo',syn:mkTone(320,0.08,'sine',0.8)},
+    {name:'Shaker',syn:mkNoise(5500,0.07,0.4)},{name:'Clave',syn:mkTone(1100,0.03,'square',0.6)},{name:'Cowbell',syn:mkTone(540,0.08,'square',0.5)},
+    {name:'Tabla',syn:mkTone(240,0.2,'sine',0.8)},{name:'Cymbal',syn:mkNoise(4500,0.5,0.4)}
+  ];
+
   var DRUMS = DRUM_KITS['Standard'];
+
+  // ═══ INSTRUMENT LIBRARY — streamed real instruments ═══
+  // FluidR3 General MIDI soundfont, rendered to one mp3 per note, served from
+  // jsDelivr (gleitz/midi-js-soundfonts, MIT — commercial use OK, CORS *).
+  // Notes load on demand and cache in memory; if the network is down or a
+  // note has not arrived yet, playback falls back to the built-in synths so
+  // the studio never goes silent.
+  var INST_BASE = 'https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/FluidR3_GM/';
+  var INST_CATS = [
+    {name:'Pianos & Keys', list:[
+      ['acoustic_grand_piano','Grand Piano'],['bright_acoustic_piano','Bright Piano'],['electric_piano_1','Electric Piano'],['electric_piano_2','FM Piano'],
+      ['harpsichord','Harpsichord'],['clavinet','Clavinet'],['celesta','Celesta'],['music_box','Music Box']]},
+    {name:'Bells & Mallets', list:[
+      ['vibraphone','Vibraphone'],['glockenspiel','Glockenspiel'],['marimba','Marimba'],['xylophone','Xylophone'],
+      ['kalimba','Kalimba'],['tubular_bells','Chimes'],['dulcimer','Dulcimer'],['steel_drums','Steel Drums']]},
+    {name:'Organs', list:[
+      ['drawbar_organ','Jazz Organ'],['rock_organ','Rock Organ'],['church_organ','Church Organ'],['accordion','Accordion'],['harmonica','Harmonica']]},
+    {name:'Guitars', list:[
+      ['acoustic_guitar_nylon','Nylon Guitar'],['acoustic_guitar_steel','Steel Guitar'],['electric_guitar_jazz','Jazz Guitar'],
+      ['electric_guitar_clean','Clean Electric'],['electric_guitar_muted','Muted Electric'],['overdriven_guitar','Overdrive Guitar'],
+      ['distortion_guitar','Distortion Guitar'],['banjo','Banjo']]},
+    {name:'Basses', list:[
+      ['acoustic_bass','Upright Bass'],['electric_bass_finger','Finger Bass'],['electric_bass_pick','Pick Bass'],
+      ['fretless_bass','Fretless Bass'],['slap_bass_1','Slap Bass'],['synth_bass_1','Synth Bass'],['synth_bass_2','Rubber Bass']]},
+    {name:'Strings', list:[
+      ['violin','Violin'],['viola','Viola'],['cello','Cello'],['contrabass','Contrabass'],['pizzicato_strings','Pizzicato'],
+      ['orchestral_harp','Harp'],['string_ensemble_1','String Section'],['tremolo_strings','Tremolo Strings'],['timpani','Timpani']]},
+    {name:'Voices', list:[
+      ['choir_aahs','Choir Aahs'],['voice_oohs','Voice Oohs'],['synth_choir','Synth Choir']]},
+    {name:'Brass', list:[
+      ['trumpet','Trumpet'],['trombone','Trombone'],['tuba','Tuba'],['french_horn','French Horn'],
+      ['muted_trumpet','Muted Trumpet'],['brass_section','Brass Section']]},
+    {name:'Winds', list:[
+      ['flute','Flute'],['piccolo','Piccolo'],['clarinet','Clarinet'],['oboe','Oboe'],['bassoon','Bassoon'],
+      ['soprano_sax','Soprano Sax'],['alto_sax','Alto Sax'],['tenor_sax','Tenor Sax'],['recorder','Recorder'],
+      ['pan_flute','Pan Flute'],['whistle','Whistle'],['ocarina','Ocarina'],['shakuhachi','Shakuhachi']]},
+    {name:'Synths', list:[
+      ['lead_1_square','Square Wave'],['lead_2_sawtooth','Saw Wave'],['lead_3_calliope','Calliope'],['lead_6_voice','Voice Lead'],
+      ['pad_1_new_age','New Age Pad'],['pad_2_warm','Warm Synth Pad'],['pad_3_polysynth','Polysynth'],['pad_7_halo','Halo Pad'],
+      ['pad_8_sweep','Sweep Pad'],['fx_3_crystal','Crystal'],['fx_4_atmosphere','Atmosphere']]},
+    {name:'World', list:[
+      ['sitar','Sitar'],['koto','Koto'],['shamisen','Shamisen'],['bagpipe','Bagpipe'],['fiddle','Fiddle'],
+      ['shanai','Shanai'],['taiko_drum','Taiko Drum'],['agogo','Agogo'],['woodblock','Woodblock'],['tinkle_bell','Tinkle Bell']]},
+    {name:'Fun Sounds', list:[
+      ['bird_tweet','Birds'],['seashore','Ocean Waves'],['telephone_ring','Old Phone'],['applause','Applause'],
+      ['fx_6_goblins','Goblins'],['fx_8_scifi','Sci Fi']]}
+  ];
+  var INST_NAMES = {};
+  (function(){for(var i=0;i<INST_CATS.length;i++){var l=INST_CATS[i].list;for(var j=0;j<l.length;j++)INST_NAMES[l[j][0]]=l[j][1];}})();
+
+  var FLAT_NAMES = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  function noteToMidi(name){
+    var m = /^([A-G])(#|b)?(-?\d)$/.exec(name); if(!m) return 60;
+    var base = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]];
+    if(m[2]==='#') base++; if(m[2]==='b') base--;
+    return (parseInt(m[3])+1)*12 + base;
+  }
+  function midiToFile(midi){
+    var oct = Math.floor(midi/12)-1;
+    return FLAT_NAMES[midi%12] + oct;
+  }
+
+  var instBuffers = {};   // folder → {midi → AudioBuffer}
+  var _instPending = {};  // folder/midi → true while fetching
+  var _instLoadCount = 0;
+  var layerInst = {bass:null, chords:null, melody:null}; // GM folder or null
+
+  function _instLoadUI(delta){
+    _instLoadCount = Math.max(0, _instLoadCount + delta);
+    var el = document.getElementById('gs-inst-loading');
+    if(el) el.style.display = _instLoadCount > 0 ? 'block' : 'none';
+  }
+
+  function loadInstNote(inst, midi, cb){
+    if(!instBuffers[inst]) instBuffers[inst] = {};
+    if(instBuffers[inst][midi]){ if(cb) cb(true); return; }
+    var key = inst + '/' + midi;
+    if(_instPending[key]){ if(cb) cb(false); return; }
+    _instPending[key] = true;
+    _instLoadUI(1);
+    var url = INST_BASE + inst + '-mp3/' + midiToFile(midi) + '.mp3';
+    fetch(url).then(function(r){
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.arrayBuffer();
+    }).then(function(ab){
+      return new Promise(function(res, rej){ getCtx().decodeAudioData(ab, res, rej); });
+    }).then(function(buf){
+      instBuffers[inst][midi] = buf;
+      delete _instPending[key];
+      _instLoadUI(-1);
+      if(cb) cb(true);
+    }).catch(function(){
+      delete _instPending[key];
+      _instLoadUI(-1);
+      if(cb) cb(false);
+    });
+  }
+
+  // Load every note the layer's grid rows can currently reach
+  function prefetchLayerInst(lid){
+    var inst = layerInst[lid]; if(!inst) return;
+    var lt = null;
+    for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===lid)lt=LAYER_TYPES[i];}
+    if(!lt || lt.type!=='note') return;
+    var notes = getScaleNotes(lt.octave);
+    for(var n=0;n<notes.length;n++) loadInstNote(inst, noteToMidi(notes[n].name));
+  }
+  function prefetchAllInst(){
+    var lids=['bass','chords','melody'];
+    for(var i=0;i<lids.length;i++) prefetchLayerInst(lids[i]);
+  }
+
+  // Await-all loader used before export so the render has every note it needs
+  function ensureInstNotes(pairs, done){
+    var left = pairs.length;
+    if(!left){ done(); return; }
+    var fin = function(){ left--; if(left<=0) done(); };
+    for(var i=0;i<pairs.length;i++) loadInstNote(pairs[i][0], pairs[i][1], fin);
+  }
+
+  // Play a streamed instrument note. Returns false if no usable buffer yet
+  // (caller falls back to the synth preset for this hit).
+  function playInstNote(inst, noteName, t, vol, lid, dur){
+    var bank = instBuffers[inst];
+    if(!bank) return false;
+    var midi = noteToMidi(noteName);
+    var buf = bank[midi], rate = 1;
+    if(!buf){
+      // Nearest loaded neighbor, pitch-shifted
+      var best = null, bestDist = 99;
+      for(var k in bank){
+        var d = Math.abs(midi - k);
+        if(d < bestDist){ bestDist = d; best = parseInt(k); }
+      }
+      if(best === null || bestDist > 12){ loadInstNote(inst, midi); return false; }
+      buf = bank[best];
+      rate = Math.pow(2, (midi - best) / 12);
+      loadInstNote(inst, midi); // backfill the exact note for next time
+    }
+    var c = getCtx(), dst = getDest(lid);
+    var src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf;
+    src.playbackRate.value = rate;
+    var adsr = getADSR(lid);
+    var a=adsr.a||0.01, d2=adsr.d||0.1, r=adsr.r||0.15;
+    var holdTime = dur ? Math.max(0.05, dur - a - d2 - r) : Math.min(0.35, buf.duration);
+    applyADSR(g, t, (vol||1)*0.5, adsr, holdTime);
+    var envLen = a + d2 + holdTime + r;
+    if(dur && dur > buf.duration/rate) src.loop = true;
+    src.connect(g); g.connect(dst);
+    src.start(t); src.stop(t + envLen + 0.05);
+    return true;
+  }
 
   // ── Metronome ──
   var metronomeOn = false;
   function tickMetronome(t){
-    if(!metronomeOn) return;
+    if(!metronomeOn || _oCtx) return;
     var c = getCtx();
     var isDownbeat = step % (STEPS/4) === 0;  // every bar
     var isBeat = step % 4 === 0;  // every beat
@@ -948,10 +1212,9 @@ var GS = (function(){
     canvas.addEventListener('pointerleave', function(){dragging = null});
   }
 
-  // ── WAV encoder ──
+  // ── WAV encoder (interleaved, any channel count) ──
   function audioBufferToWav(buffer){
     var numCh=buffer.numberOfChannels,sr=buffer.sampleRate,len=buffer.length;
-    var data=buffer.getChannelData(0);
     var bitsPerSample=16,byteRate=sr*numCh*bitsPerSample/8;
     var blockAlign=numCh*bitsPerSample/8;
     var dataSize=len*numCh*bitsPerSample/8;
@@ -962,7 +1225,16 @@ var GS = (function(){
     writeStr(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,numCh,true);
     v.setUint32(24,sr,true);v.setUint32(28,byteRate,true);v.setUint16(32,blockAlign,true);v.setUint16(34,bitsPerSample,true);
     writeStr(36,'data');v.setUint32(40,dataSize,true);
-    for(var i=0;i<len;i++){var s=Math.max(-1,Math.min(1,data[i]));v.setInt16(44+i*2,s<0?s*0x8000:s*0x7FFF,true);}
+    var chans=[];
+    for(var ch=0;ch<numCh;ch++) chans.push(buffer.getChannelData(ch));
+    var off=44;
+    for(var i=0;i<len;i++){
+      for(var ch=0;ch<numCh;ch++){
+        var s=Math.max(-1,Math.min(1,chans[ch][i]));
+        v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);
+        off+=2;
+      }
+    }
     return buf;
   }
 
@@ -972,6 +1244,7 @@ var GS = (function(){
   var currentSection = 'A', currentVar = 0;
   var swing = 0; // 0-80, percentage of swing feel
   var accentMode = false;
+  var chordMode = false; // chords layer: one tap = full triad
   var humanize = 0; // 0-100, percentage of humanization
 
   // Layer types (octave is mutable, drum rows dynamic)
@@ -1023,21 +1296,37 @@ var GS = (function(){
     if(!sec.vars[currentVar]) sec.vars[currentVar] = createEmptyVar();
     return sec.vars[currentVar];
   }
-  function applyFXState(){
-    var v = getCurrentVar(); if(!v) return;
+  function applyFXTo(busMap, v, atTime){
+    if(!busMap || !v) return;
     var ids = ['drums','bass','chords','melody'];
     for(var i=0;i<ids.length;i++){
-      var lid = ids[i], bus = layerBus[lid];
+      var lid = ids[i], bus = busMap[lid];
       if(!bus || !v[lid]) continue;
       var fx = v[lid].fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
-      bus.filter.frequency.value = fx.filter;
-      bus.filter.Q.value = fx.filterQ;
-      bus.delaySend.gain.value = fx.delay;
-      bus.delayNode.delayTime.value = fx.delay > 0 ? (60 / bpm / 4 * 3) : 0;
-      bus.delayFb.gain.value = Math.min(fx.delayFb, 0.85);
-      bus.reverbSend.gain.value = fx.reverb;
-      bus.output.gain.value = (v[lid].vol !== undefined ? v[lid].vol : 80) / 80;
+      var vol = (v[lid].vol !== undefined ? v[lid].vol : 80) / 80;
+      var dTime = fx.delay > 0 ? (60 / bpm / 4 * 3) : 0;
+      if(atTime !== undefined){
+        // Offline render: schedule the change at the block boundary
+        bus.filter.frequency.setValueAtTime(fx.filter, atTime);
+        bus.filter.Q.setValueAtTime(fx.filterQ, atTime);
+        bus.delaySend.gain.setValueAtTime(fx.delay, atTime);
+        bus.delayNode.delayTime.setValueAtTime(dTime, atTime);
+        bus.delayFb.gain.setValueAtTime(Math.min(fx.delayFb, 0.85), atTime);
+        bus.reverbSend.gain.setValueAtTime(fx.reverb, atTime);
+        bus.output.gain.setValueAtTime(vol, atTime);
+      } else {
+        bus.filter.frequency.value = fx.filter;
+        bus.filter.Q.value = fx.filterQ;
+        bus.delaySend.gain.value = fx.delay;
+        bus.delayNode.delayTime.value = dTime;
+        bus.delayFb.gain.value = Math.min(fx.delayFb, 0.85);
+        bus.reverbSend.gain.value = fx.reverb;
+        bus.output.gain.value = vol;
+      }
     }
+  }
+  function applyFXState(){
+    applyFXTo(layerBus, getCurrentVar());
   }
 
   // ── Transport ──
@@ -1053,6 +1342,16 @@ var GS = (function(){
     if(hasSamples){
       html += '<optgroup label="Your Samples">';
       for(var sn in sampleBuffers) html += '<option value="smp:'+sn+'"'+((current==='smp:'+sn)?' selected':'')+'>🔊 '+sn+'</option>';
+      html += '</optgroup>';
+    }
+    // Streamed real instruments (needs network on first use, then cached)
+    for(var ci=0;ci<INST_CATS.length;ci++){
+      var cat = INST_CATS[ci];
+      html += '<optgroup label="'+cat.name+'">';
+      for(var ii=0;ii<cat.list.length;ii++){
+        var v = 'inst:'+cat.list[ii][0];
+        html += '<option value="'+v+'"'+(v===current?' selected':'')+'>'+cat.list[ii][1]+'</option>';
+      }
       html += '</optgroup>';
     }
     return html;
@@ -1203,9 +1502,10 @@ var GS = (function(){
         var nAcc = nCell === 2;
         var nv = nVol * gTime.vel * (nAcc ? 1.0 : 0.7);
         var ratch = (nLd.ratch && nLd.ratch[nIdx]) || 1;
-        var captFreq = nNotes[nr].freq, captLid = nLid, captDur = dur, captNl = nl;
+        var captFreq = nNotes[nr].freq, captName = nNotes[nr].name, captLid = nLid, captDur = dur, captNl = nl;
         scheduleRatchets(function(t){
           var hn = applyHumanize(nv, nAcc, t);
+          if(layerInst[captLid] && playInstNote(layerInst[captLid], captName, hn.time, hn.vel, captLid, captDur)) return;
           if(layerSampleName[captLid]) playSamplePitched(layerSampleName[captLid], captFreq, hn.time, hn.vel, captLid, captDur);
           else notePlayFns[captNl](captFreq, hn.time, hn.vel, captDur);
         }, ratch, _stepDur16, gTime.time);
@@ -1323,6 +1623,8 @@ var GS = (function(){
       html += '<div class="gs-layer ly-'+lt.id+(isExp?' expanded':'')+'">'
         +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
         +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.65rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
+        +'<div class="gs-chip" title="Roll a fresh idea" onclick="event.stopPropagation();GS.diceLayer(\''+lt.id+'\')">🎲</div>'
+        +(lt.id==='chords'?'<div class="gs-chip'+(chordMode?' on':'')+'" title="One tap places a full chord" onclick="event.stopPropagation();GS.toggleChordMode()">♪♪♪</div>':'')
         +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▲</div></div>':'')
         +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.65rem;padding:4px 6px;max-width:90px;background:rgba(26,31,23,.8);color:var(--cream);border-radius:4px;min-height:36px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
         +'<div class="gs-layer-mini">'+miniHtml+'</div>'
@@ -1559,19 +1861,21 @@ var GS = (function(){
   ];
 
   // Common progressions relative to root (as steps on the fifths circle)
+  // deg: scale-degree roots (0-based) used by "Use" to write the progression
+  // into the chords + bass grids. Degrees wrap into whatever scale is active.
   var PROG_PRESETS = [
-    {name:'Pop Canon',     nums:'I – V – vi – IV',       steps:[0,1,11,11], genre:'Pop, rock, country'},
-    {name:'50s / Doo-Wop', nums:'I – vi – IV – V',       steps:[0,11,11,1], genre:'Oldies, ballads'},
-    {name:'Jazz ii-V-I',   nums:'ii – V – I',            steps:[0,1,1],     genre:'Jazz, bossa nova'},
-    {name:'12-Bar Blues',   nums:'I – I – I – I – IV – IV – I – I – V – IV – I – V', steps:[0,0,0,0,11,0,1,0,1,11,1,1], genre:'Blues, rock & roll'},
-    {name:'Andalusian',    nums:'i – bVII – bVI – V',    steps:[0,10,11,1], genre:'Flamenco, metal, film'},
-    {name:'Royal Road',    nums:'IV – V – iii – vi',     steps:[0,1,1,11],  genre:'J-pop, anime, video games'},
-    {name:'Coltrane Changes',nums:'I – bVI – bIII – I',  steps:[0,8,8,4],   genre:'Jazz, Coltrane'},
-    {name:'Plagal',        nums:'I – IV – I',            steps:[0,11,1],    genre:'Gospel, hymns, Amen cadence'},
-    {name:'Minor Descent', nums:'i – bVII – bVI – bVII', steps:[0,10,11,1], genre:'Rock, grunge, emo'},
-    {name:'Rhythm Changes',nums:'I – vi – ii – V',       steps:[0,11,11,1], genre:'Bebop jazz, standards'},
-    {name:'Neo-Soul',      nums:'ii – V – I – IV',       steps:[0,1,1,11],  genre:'Neo-soul, R&B'},
-    {name:'Backdoor ii-V', nums:'ii – bVII – I',         steps:[0,10,2],    genre:'Jazz, steely dan'}
+    {name:'Pop Canon',     nums:'I – V – vi – IV',       steps:[0,1,11,11], deg:[0,4,5,3], genre:'Pop, rock, country'},
+    {name:'50s / Doo-Wop', nums:'I – vi – IV – V',       steps:[0,11,11,1], deg:[0,5,3,4], genre:'Oldies, ballads'},
+    {name:'Jazz ii-V-I',   nums:'ii – V – I',            steps:[0,1,1],     deg:[1,4,0], genre:'Jazz, bossa nova'},
+    {name:'12-Bar Blues',   nums:'I – I – I – I – IV – IV – I – I – V – IV – I – V', steps:[0,0,0,0,11,0,1,0,1,11,1,1], deg:[0,0,0,0,3,3,0,0,4,3,0,4], genre:'Blues, rock & roll'},
+    {name:'Andalusian',    nums:'i – bVII – bVI – V',    steps:[0,10,11,1], deg:[0,6,5,4], genre:'Flamenco, metal, film'},
+    {name:'Royal Road',    nums:'IV – V – iii – vi',     steps:[0,1,1,11],  deg:[3,4,2,5], genre:'J-pop, anime, video games'},
+    {name:'Coltrane Changes',nums:'I – bVI – bIII – I',  steps:[0,8,8,4],   deg:[0,5,2,0], genre:'Jazz, Coltrane'},
+    {name:'Plagal',        nums:'I – IV – I',            steps:[0,11,1],    deg:[0,3,0], genre:'Gospel, hymns, Amen cadence'},
+    {name:'Minor Descent', nums:'i – bVII – bVI – bVII', steps:[0,10,11,1], deg:[0,6,5,6], genre:'Rock, grunge, emo'},
+    {name:'Rhythm Changes',nums:'I – vi – ii – V',       steps:[0,11,11,1], deg:[0,5,1,4], genre:'Bebop jazz, standards'},
+    {name:'Neo-Soul',      nums:'ii – V – I – IV',       steps:[0,1,1,11],  deg:[1,4,0,3], genre:'Neo-soul, R&B'},
+    {name:'Backdoor ii-V', nums:'ii – bVII – I',         steps:[0,10,2],    deg:[1,6,0], genre:'Jazz, steely dan'}
   ];
 
   function drawCircle(highlights, showNums){
@@ -1645,8 +1949,8 @@ var GS = (function(){
         var chords = pr.nums;
         html += '<div class="prog-row" onclick="GS.circleShowProg('+p+')">'
           +'<div class="prog-name">'+pr.name+'</div>'
-          +'<div class="prog-chords">'+chords+'</div>'
-          +'<div class="prog-genre">'+pr.genre+'</div>'
+          +'<div class="prog-chords">'+chords+'<br><span class="prog-genre">'+pr.genre+'</span></div>'
+          +'<button class="gs-btn" style="padding:8px 12px;min-height:40px;border-color:var(--sage);color:var(--sage)" onclick="event.stopPropagation();GS.circleApplyProg('+p+')">Use</button>'
           +'</div>';
       }
       progsEl.innerHTML = html;
@@ -1793,28 +2097,93 @@ var GS = (function(){
     rowEl.innerHTML = html;
   }
 
-  // ── Piano Roll Drag-to-Extend ──
+  // ── Piano Roll Drag-to-Extend + Drum Paint ──
+  // Note layers: drag right from a note head to stretch it (unchanged).
+  // Drums: mouse paints as soon as it drags; touch holds ~170ms first so a
+  // quick swipe still scrolls the grid, then paints with scrolling locked.
+  var _paint = null; // {lid, val, active, holdTimer}
   function initPianoRollDrag(){
     var el = document.getElementById('gs-layers');
     if(!el) return;
     var startX = 0;
 
-    el.addEventListener('pointerdown', function(e){
-      var cell = e.target;
-      if(!cell.classList.contains('gs-cell')) return;
+    function paintCell(cell){
+      if(!_paint) return;
       var lid = cell.getAttribute('data-l');
-      if(lid === 'drums') return; // drums don't extend
+      if(lid !== _paint.lid) return;
       var r = parseInt(cell.getAttribute('data-r'));
       var s = parseInt(cell.getAttribute('data-s'));
       var v = getCurrentVar(); if(!v) return;
       var idx = r * STEPS + s;
+      if((v[lid].grid[idx]||0) === _paint.val) return;
+      _undoStack.push({lid:lid, idx:idx, was:v[lid].grid[idx]||0, wasLen:1});
+      if(_undoStack.length > 200) _undoStack.shift();
+      v[lid].grid[idx] = _paint.val;
+      cell.classList.remove('on','accent');
+      if(_paint.val){
+        cell.classList.add('on');
+        if(_paint.val === 2) cell.classList.add('accent');
+      }
+      _updateMini(lid);
+      markDirty();
+    }
+    function activatePaint(startCell){
+      if(!_paint || _paint.active) return;
+      _paint.active = true;
+      _pianoDidDrag = true; // suppress the click on the start cell
+      paintCell(startCell);
+    }
+
+    el.addEventListener('pointerdown', function(e){
+      var cell = e.target;
+      if(!cell.classList.contains('gs-cell')) return;
+      var lid = cell.getAttribute('data-l');
+      var r = parseInt(cell.getAttribute('data-r'));
+      var s = parseInt(cell.getAttribute('data-s'));
+      var v = getCurrentVar(); if(!v) return;
+      var idx = r * STEPS + s;
+      if(lid === 'drums'){
+        // Paint value: opposite of the start cell
+        var cur = v.drums.grid[idx] || 0;
+        _paint = {lid:'drums', val: cur ? 0 : (accentMode ? 2 : 1), active:false, holdTimer:null, startCell:cell};
+        _pianoDidDrag = false;
+        if(e.pointerType !== 'mouse'){
+          _paint.holdTimer = setTimeout(function(){ activatePaint(cell); }, 170);
+        }
+        startX = e.clientX;
+        return;
+      }
       if(!v[lid].grid[idx]) return; // only drag from note heads
       _pianoDidDrag = false;
       _pianoDrag = {lid:lid, row:r, startStep:s, idx:idx, origLen:(v[lid].lens&&v[lid].lens[idx])||1};
       startX = e.clientX;
     });
 
+    // Block native scroll while actively painting or stretching a note
+    el.addEventListener('touchmove', function(e){
+      if((_paint && _paint.active) || _pianoDrag) e.preventDefault();
+    }, {passive:false});
+
     el.addEventListener('pointermove', function(e){
+      if(_paint){
+        if(!_paint.active){
+          if(e.pointerType === 'mouse' && Math.abs(e.clientX - startX) > cellSize()*0.6){
+            activatePaint(_paint.startCell);
+          } else if(e.pointerType !== 'mouse'){
+            // Finger started moving before the hold finished: it's a scroll
+            if(Math.abs(e.clientX - startX) > 8 && _paint.holdTimer){
+              clearTimeout(_paint.holdTimer); _paint = null;
+            }
+            return;
+          }
+        }
+        if(_paint && _paint.active){
+          e.preventDefault();
+          var hit = document.elementFromPoint(e.clientX, e.clientY);
+          if(hit && hit.classList && hit.classList.contains('gs-cell')) paintCell(hit);
+        }
+        return;
+      }
       if(!_pianoDrag) return;
       var dx = e.clientX - startX;
       var cs = cellSize();
@@ -1837,10 +2206,17 @@ var GS = (function(){
       }
       if(!ld.lens) ld.lens = {};
       ld.lens[_pianoDrag.idx] = newLen;
+      markDirty();
       renderLayers();
     });
 
     function endDrag(){
+      if(_paint){
+        if(_paint.holdTimer) clearTimeout(_paint.holdTimer);
+        _paint = null;
+        // If painting happened, _pianoDidDrag is true and suppresses the click
+        setTimeout(function(){ _pianoDidDrag = false; }, 50);
+      }
       if(_pianoDrag){
         _pianoDrag = null;
         // _pianoDidDrag stays true briefly to suppress the click event
@@ -1849,6 +2225,650 @@ var GS = (function(){
     }
     el.addEventListener('pointerup', endDrag);
     el.addEventListener('pointercancel', endDrag);
+    el.addEventListener('contextmenu', function(e){
+      if(e.target.classList && e.target.classList.contains('gs-cell')) e.preventDefault();
+    });
+  }
+
+  // ═══ PERSISTENCE — full state, multi-song slots, autosave, sample vault ═══
+  var _dirty = false;
+  var _curSongId = null, _curSongName = '';
+  var _lastAutosave = '';
+  function markDirty(){ _dirty = true; }
+  function currentSongName(){ return _curSongName; }
+
+  // Run-length pack for grids: "val,count;val,count;…" (mostly zeros → tiny)
+  function packGrid(arr){
+    if(!arr || !arr.length) return '';
+    var out = [], cur = arr[0]||0, n = 1;
+    for(var i=1;i<arr.length;i++){
+      var v = arr[i]||0;
+      if(v === cur) n++;
+      else { out.push(cur+','+n); cur = v; n = 1; }
+    }
+    out.push(cur+','+n);
+    return out.join(';');
+  }
+  function unpackGrid(s){
+    if(Object.prototype.toString.call(s) === '[object Array]') return s; // legacy raw arrays
+    var out = [];
+    if(!s) return out;
+    var runs = s.split(';');
+    for(var i=0;i<runs.length;i++){
+      var p = runs[i].split(',');
+      var v = parseInt(p[0])||0, n = parseInt(p[1])||0;
+      for(var j=0;j<n;j++) out.push(v);
+    }
+    return out;
+  }
+
+  function serializeState(){
+    // Deep-copy song with packed grids
+    var sOut = {sections:{}, arrangement:song.arrangement.slice()};
+    for(var k in song.sections){
+      var sec = song.sections[k];
+      var vars = [];
+      for(var vi=0;vi<sec.vars.length;vi++){
+        var v = sec.vars[vi], vOut = {};
+        for(var lid in v){
+          var ld = v[lid];
+          vOut[lid] = {grid:packGrid(ld.grid), mute:!!ld.mute, solo:!!ld.solo,
+            vol:ld.vol, preset:ld.preset||'', lens:ld.lens||{},
+            fx:ld.fx||null, adsr:ld.adsr||null, prob:ld.prob||null, ratch:ld.ratch||null,
+            probability:ld.probability, ratchetAll:ld.ratchetAll};
+        }
+        vars.push(vOut);
+      }
+      sOut.sections[k] = {name:sec.name, vars:vars};
+    }
+    return {v:2, id:_curSongId, name:_curSongName, song:sOut, bpm:bpm, rootIdx:rootIdx,
+      scaleKey:scaleKey, steps:STEPS, kit:currentKit, swing:swing, humanize:humanize,
+      groove:activeGroove, layers:LAYER_TYPES.map(function(l){return {id:l.id,octave:l.octave}}),
+      layerInst:{bass:layerInst.bass,chords:layerInst.chords,melody:layerInst.melody},
+      layerSample:{bass:layerSampleName.bass,chords:layerSampleName.chords,melody:layerSampleName.melody},
+      drumSamples:drumSamples.slice(), extraDrumRows:extraDrumRows.slice()};
+  }
+
+  function applyState(data){
+    if(!data || !data.song) return false;
+    stop();
+    STEPS = data.steps || 32;
+    bpm = data.bpm || 120;
+    rootIdx = data.rootIdx || 0;
+    scaleKey = data.scaleKey || 'Min Penta';
+    swing = data.swing || 0;
+    humanize = data.humanize || 0;
+    activeGroove = data.groove || 'none';
+    if(data.kit && DRUM_KITS[data.kit]){ currentKit = data.kit; DRUMS = DRUM_KITS[currentKit]; LAYER_TYPES[0].labels = DRUMS.map(function(d){return d.name}); }
+    if(data.layers){data.layers.forEach(function(dl){for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===dl.id)LAYER_TYPES[i].octave=dl.octave;}});}
+    extraDrumRows = data.extraDrumRows || [];
+    drumSamples = data.drumSamples || [null,null,null,null,null,null,null,null];
+    if(data.layerInst){ layerInst.bass=data.layerInst.bass||null; layerInst.chords=data.layerInst.chords||null; layerInst.melody=data.layerInst.melody||null; }
+    if(data.layerSample){ layerSampleName.bass=data.layerSample.bass||null; layerSampleName.chords=data.layerSample.chords||null; layerSampleName.melody=data.layerSample.melody||null; }
+    // Rebuild song with unpacked grids
+    var sIn = data.song;
+    var newSong = {sections:{}, arrangement:(sIn.arrangement&&sIn.arrangement.length?sIn.arrangement.slice():['A1'])};
+    var defaults = {A:'Verse',B:'Chorus',C:'Bridge'};
+    var keys = ['A','B','C'];
+    for(var ki=0;ki<keys.length;ki++){
+      var k = keys[ki];
+      var secIn = sIn.sections[k] || {name:defaults[k], vars:[]};
+      var vars = [];
+      for(var vi=0;vi<secIn.vars.length;vi++){
+        var vIn = secIn.vars[vi], v = {};
+        for(var lid in vIn){
+          var ld = vIn[lid];
+          v[lid] = {grid:unpackGrid(ld.grid), mute:!!ld.mute, solo:!!ld.solo,
+            vol:ld.vol!==undefined?ld.vol:80, preset:ld.preset||'', lens:ld.lens||{}};
+          if(ld.fx) v[lid].fx = ld.fx;
+          if(ld.adsr) v[lid].adsr = ld.adsr;
+          if(ld.prob) v[lid].prob = ld.prob;
+          if(ld.ratch) v[lid].ratch = ld.ratch;
+          if(ld.probability!==undefined) v[lid].probability = ld.probability;
+          if(ld.ratchetAll!==undefined) v[lid].ratchetAll = ld.ratchetAll;
+        }
+        vars.push(v);
+      }
+      if(!vars.length) vars.push(createEmptyVar());
+      newSong.sections[k] = {name:secIn.name||defaults[k], vars:vars};
+    }
+    song = newSong;
+    _curSongId = data.id || null;
+    _curSongName = data.name || '';
+    currentSection = 'A'; currentVar = 0;
+    var bpmEl = document.getElementById('gs-bpm'); if(bpmEl) bpmEl.textContent = bpm;
+    var bpmRange = document.querySelector('.gs-transport .gs-bpm input'); if(bpmRange) bpmRange.value = bpm;
+    var swEl = document.getElementById('gs-swing'); if(swEl) swEl.textContent = swing+'%';
+    var huEl = document.getElementById('gs-humanize'); if(huEl) huEl.textContent = humanize+'%';
+    var kitEl = document.getElementById('gs-kit'); if(kitEl) kitEl.value = currentKit;
+    var stepsEl = document.getElementById('gs-steps'); if(stepsEl) stepsEl.value = ''+STEPS;
+    renderScaleSelectors();
+    var grEl = document.getElementById('gs-groove'); if(grEl) grEl.value = activeGroove;
+    applyFXState();
+    renderAll();
+    prefetchAllInst();
+    return true;
+  }
+
+  function songIndex(){
+    try{ var r = localStorage.getItem('gs_songs_idx'); if(r) return JSON.parse(r)||[]; }catch(e){}
+    return [];
+  }
+  function writeSongIndex(idx){
+    try{ localStorage.setItem('gs_songs_idx', JSON.stringify(idx)); }catch(e){}
+  }
+  function saveToSlot(id, name){
+    var data = serializeState();
+    data.id = id; data.name = name;
+    try{
+      localStorage.setItem('gs_song_'+id, JSON.stringify(data));
+      var idx = songIndex(), found = false;
+      for(var i=0;i<idx.length;i++){ if(idx[i].id===id){ idx[i].name=name; idx[i].up=Date.now(); found=true; } }
+      if(!found) idx.unshift({id:id, name:name, up:Date.now()});
+      writeSongIndex(idx);
+      _curSongId = id; _curSongName = name;
+      return true;
+    }catch(e){ _toast('Save failed: '+e.message); return false; }
+  }
+  function newSongId(){ return 's'+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36); }
+  function hasAnyNotes(){
+    for(var k in song.sections){
+      var sec = song.sections[k];
+      for(var vi=0;vi<sec.vars.length;vi++){
+        for(var lid in sec.vars[vi]){
+          var g = sec.vars[vi][lid].grid;
+          for(var i=0;i<g.length;i++) if(g[i]) return true;
+        }
+      }
+    }
+    return false;
+  }
+  // Before wiping the working song for a new one, make sure nothing is lost.
+  function stashCurrent(){
+    if(!hasAnyNotes()) return;
+    if(_curSongId){ saveToSlot(_curSongId, _curSongName||'My Song'); return; }
+    var d = new Date();
+    saveToSlot(newSongId(), 'Untitled '+(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes());
+    _toast('Your song was kept in My Songs');
+  }
+  function resetSongData(){
+    song = {sections:{A:{name:'Verse',vars:[createEmptyVar()]},B:{name:'Chorus',vars:[createEmptyVar()]},C:{name:'Bridge',vars:[createEmptyVar()]}}, arrangement:['A1']};
+    currentSection = 'A'; currentVar = 0;
+    _undoStack = [];
+    _curSongId = null; _curSongName = '';
+  }
+
+  function autosaveTick(){
+    if(!_dirty) return;
+    _dirty = false;
+    try{
+      var s = JSON.stringify(serializeState());
+      if(s === _lastAutosave) return;
+      _lastAutosave = s;
+      localStorage.setItem('gs_autosave', s);
+    }catch(e){}
+  }
+
+  function renderSongList(){
+    var el = document.getElementById('gs-song-list');
+    if(!el) return;
+    var idx = songIndex();
+    var html = '';
+    for(var i=0;i<idx.length;i++){
+      var s = idx[i];
+      var d = new Date(s.up||0);
+      var isCur = s.id === _curSongId;
+      html += '<div class="gs-song-row"'+(isCur?' style="border-color:var(--sage)"':'')+'>'
+        +'<div class="sn-name" onclick="GS.loadSong(\''+s.id+'\')">'+(isCur?'▸ ':'')+String(s.name).replace(/</g,'&lt;')+'</div>'
+        +'<div class="sn-date">'+(d.getMonth()+1)+'/'+d.getDate()+'</div>'
+        +'<button class="gs-btn" onclick="GS.loadSong(\''+s.id+'\')" style="padding:8px 12px">Open</button>'
+        +'<button class="gs-btn" onclick="GS.deleteSong(\''+s.id+'\')" style="padding:8px 12px;border-color:#c75050;color:#c75050">✕</button>'
+        +'</div>';
+    }
+    if(!html) html = '<div style="font-size:.7rem;color:var(--muted)">No saved songs yet. Save As New keeps the one you are working on.</div>';
+    el.innerHTML = html;
+  }
+
+  // ── Sample vault (IndexedDB) — samples survive refresh ──
+  function idbOpen(cb){
+    try{
+      var req = indexedDB.open('gs-studio', 1);
+      req.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains('samples')) db.createObjectStore('samples', {keyPath:'name'});
+      };
+      req.onsuccess = function(e){ cb(e.target.result); };
+      req.onerror = function(){ cb(null); };
+    }catch(e){ cb(null); }
+  }
+  function idbSaveSample(name, buf){
+    idbOpen(function(db){
+      if(!db) return;
+      try{
+        var data = new Float32Array(buf.getChannelData(0));
+        db.transaction('samples','readwrite').objectStore('samples')
+          .put({name:name, rate:buf.sampleRate, data:data});
+      }catch(e){}
+    });
+  }
+  function idbDeleteSample(name){
+    idbOpen(function(db){
+      if(!db) return;
+      try{ db.transaction('samples','readwrite').objectStore('samples').delete(name); }catch(e){}
+    });
+  }
+  function idbRestoreSamples(done){
+    idbOpen(function(db){
+      if(!db){ if(done) done(); return; }
+      try{
+        var req = db.transaction('samples','readonly').objectStore('samples').getAll();
+        req.onsuccess = function(e){
+          var rows = e.target.result || [];
+          if(rows.length){
+            var c = getCtx();
+            for(var i=0;i<rows.length;i++){
+              var row = rows[i];
+              try{
+                var buf = c.createBuffer(1, row.data.length, row.rate);
+                buf.getChannelData(0).set(row.data);
+                sampleBuffers[row.name] = buf;
+              }catch(err){}
+            }
+            renderLayers();
+          }
+          if(done) done();
+        };
+        req.onerror = function(){ if(done) done(); };
+      }catch(e){ if(done) done(); }
+    });
+  }
+
+  // ── Song codes (share a song as a paste-able string) ──
+  function makeSongCode(){
+    var json = JSON.stringify(serializeState());
+    return 'LWSONG1.'+btoa(unescape(encodeURIComponent(json)));
+  }
+  function readSongCode(code){
+    code = String(code||'').replace(/\s+/g,'');
+    if(code.indexOf('LWSONG1.') !== 0) return null;
+    try{ return JSON.parse(decodeURIComponent(escape(atob(code.substring(8))))); }catch(e){ return null; }
+  }
+
+  // ═══ SONG STARTERS — one tap to a full groove ═══
+  // Note entries: [step, scaleDegree, len, octaveUp, triad?]. Degrees wrap into
+  // the upper octave automatically, so triads work in any scale.
+  function noteRow(L, deg, up){
+    while(deg >= L){ deg -= L; up = 1; }
+    return up ? (L-1-deg) : (2*L-1-deg);
+  }
+  function fillDrums(v, rowMap){
+    for(var r in rowMap){
+      var str = rowMap[r];
+      for(var s=0;s<STEPS;s++){
+        var ch = str.charAt(s % str.length);
+        v.drums.grid[parseInt(r)*STEPS+s] = ch==='X' ? 2 : (ch==='x' ? 1 : 0);
+      }
+    }
+  }
+  function fillNotes(v, lid, list){
+    var L = (SCALES[scaleKey]||[0,2,4,5,7,9,11]).length;
+    if(!v[lid].lens) v[lid].lens = {};
+    for(var i=0;i<list.length;i++){
+      var e = list[i]; // [step, deg, len, up, triad]
+      var degs = e[4] ? [e[1], e[1]+2, e[1]+4] : [e[1]];
+      for(var di=0;di<degs.length;di++){
+        var row = noteRow(L, degs[di], e[3]||0);
+        var idx = row*STEPS + e[0];
+        if(idx >= 0 && idx < v[lid].grid.length){
+          v[lid].grid[idx] = 1;
+          if(e[2] > 1) v[lid].lens[idx] = Math.min(e[2], STEPS - e[0]);
+        }
+      }
+    }
+  }
+
+  var STARTERS = [
+    {name:'Hip Hop', emoji:'🎤', desc:'Boom bap drums and a head-nod bassline', bpm:92, kit:'Standard', groove:'MPC 60', hum:15, root:9, scale:'Min Penta',
+     inst:{bass:'inst:electric_bass_finger', chords:'inst:electric_piano_1', melody:'inst:vibraphone'},
+     A:{drums:{0:'x......x..x.....x......x..x.....',1:'........X...............X.......',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'..............................x.'},
+        bass:[[0,0,4],[8,0,2],[12,3,2],[16,0,4],[24,3,2],[28,4,2]],
+        chords:[[0,0,8,0,1],[16,3,8,0,1]],
+        melody:[[4,2,2,1],[12,4,2,1],[20,1,2,1],[28,0,2,1]]},
+     B:{drums:{0:'x......x..x...x.x......x..x.....',1:'........X.....x.........X.....x.',2:'x.xxx.x.x.xxx.x.x.xxx.x.x.xxx.x.',3:'......x...............x.........',7:'X...............................'},
+        bass:[[0,0,3],[4,2,2],[8,0,2],[12,3,2],[16,0,3],[20,2,2],[24,3,2],[28,4,3]],
+        chords:[[0,0,8,0,1],[8,4,8,0,1],[16,3,8,0,1],[24,4,8,0,1]],
+        melody:[[0,4,2,1],[4,2,2,1],[8,4,2,1],[12,5,3,1],[16,4,2,1],[20,2,2,1],[24,1,2,1],[28,0,4,1]]},
+     arr:['A1','A1','B1','A1']},
+    {name:'Trap', emoji:'🔥', desc:'Rolling hats, booming 808, icy bells', bpm:140, kit:'808', groove:'none', hum:0, root:0, scale:'Min Penta',
+     inst:{bass:'', chords:'inst:pad_7_halo', melody:'inst:music_box'},
+     preset:{bass:'Sub Bass'},
+     A:{drums:{0:'x.........x.....x.....x.....x...',1:'........X...............X.......',2:'x.x.x.x.x.x.xxx.x.x.x.x.xxxxx.x.',3:'..............x.................'},
+        bass:[[0,0,6],[10,0,2],[16,0,4],[22,2,2],[28,0,4]],
+        chords:[[0,0,16,0,1],[16,3,16,0,1]],
+        melody:[[0,4,2,1],[6,2,2,1],[12,0,2,1],[16,4,2,1],[22,3,2,1],[28,2,2,1]]},
+     B:{drums:{0:'x.....x...x.....x.....x...x..x..',1:'........X...............X....X..',2:'xxx.x.x.xxx.x.x.xxx.x.x.xxxxxxxx',3:'..............x...............x.'},
+        bass:[[0,0,4],[6,3,2],[10,0,2],[16,0,4],[22,2,2],[26,3,2],[28,0,4]],
+        chords:[[0,0,16,0,1],[16,4,16,0,1]],
+        melody:[[0,4,1,1],[2,3,1,1],[4,2,2,1],[8,4,1,1],[10,3,1,1],[12,2,2,1],[16,0,2,1],[20,2,2,1],[24,3,2,1],[28,4,4,1]]},
+     arr:['A1','A1','B1','B1']},
+    {name:'Lo-Fi Chill', emoji:'🌙', desc:'Dusty drums, warm keys, study vibes', bpm:75, kit:'Lo-Fi', groove:'Dilla', hum:25, root:2, scale:'Dorian',
+     inst:{bass:'inst:acoustic_bass', chords:'inst:electric_piano_1', melody:'inst:kalimba'},
+     A:{drums:{0:'x.....x...x.....x.....x.....x...',1:'........x...............x.......',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',7:'x.......x.......x.......x.......'},
+        bass:[[0,0,6],[8,3,4],[16,5,6],[24,4,4]],
+        chords:[[0,0,8,0,1],[8,3,8,0,1],[16,5,8,0,1],[24,4,8,0,1]],
+        melody:[[2,4,3,1],[10,2,2,1],[18,0,3,1],[26,1,2,1]]},
+     B:{drums:{0:'x.....x...x...x.x.....x...x.....',1:'........x......x........x.......',2:'x.x.xxx.x.x.x.x.x.x.xxx.x.x.x.x.',4:'....x...............x...........',7:'x.......x.......x.......x.......'},
+        bass:[[0,0,4],[4,2,3],[8,3,4],[12,4,3],[16,5,4],[20,4,3],[24,3,4],[28,1,3]],
+        chords:[[0,0,8,0,1],[8,2,8,0,1],[16,3,8,0,1],[24,4,8,0,1]],
+        melody:[[0,6,2,1],[4,5,2,1],[8,4,3,1],[14,2,2,1],[18,4,2,1],[22,5,2,1],[26,6,3,1]]},
+     arr:['A1','A1','B1','A1']},
+    {name:'House', emoji:'🪩', desc:'Four on the floor, hands in the air', bpm:124, kit:'House', groove:'House', hum:0, root:9, scale:'Min Penta',
+     inst:{bass:'inst:synth_bass_1', chords:'inst:electric_piano_2', melody:'inst:lead_2_sawtooth'},
+     A:{drums:{0:'x...x...x...x...x...x...x...x...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'..x...x...x...x...x...x...x...x.',4:'....X.......X.......X.......X...'},
+        bass:[[2,0,1],[6,0,1],[10,0,1],[14,0,1],[18,0,1],[22,3,1],[26,0,1],[30,4,1]],
+        chords:[[0,0,3,0,1],[8,0,3,0,1],[16,3,3,0,1],[24,4,3,0,1]],
+        melody:[[0,0,2,1],[8,2,2,1],[16,4,2,1],[24,2,2,1]]},
+     B:{drums:{0:'x...x...x...x...x...x...x...x...',1:'....X.......X.......X.......X...',2:'xxx.xxx.xxx.xxx.xxx.xxx.xxx.xxx.',3:'..x...x...x...x...x...x...x...x.',4:'....X.......X.......X.......X...',7:'X...............................'},
+        bass:[[2,0,1],[6,0,1],[10,3,1],[14,0,1],[18,0,1],[22,3,1],[26,4,1],[30,4,1]],
+        chords:[[0,0,3,0,1],[4,0,2,0,1],[8,3,3,0,1],[12,3,2,0,1],[16,4,3,0,1],[20,4,2,0,1],[24,3,3,0,1],[28,4,2,0,1]],
+        melody:[[0,4,3,1],[8,3,2,1],[12,2,2,1],[16,4,3,1],[24,2,2,1],[28,1,2,1]]},
+     arr:['A1','B1','A1','B1']},
+    {name:'Pop', emoji:'⭐', desc:'Bright chords and a singalong hook', bpm:110, kit:'Standard', groove:'none', hum:10, root:0, scale:'Ionian (Major)',
+     inst:{bass:'inst:electric_bass_finger', chords:'inst:acoustic_grand_piano', melody:'inst:lead_3_calliope'},
+     A:{drums:{0:'x.......x.x.....x.......x.x.....',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+        bass:[[0,0,6],[8,4,6],[16,5,6],[24,3,6]],
+        chords:[[0,0,8,0,1],[8,4,8,0,1],[16,5,8,0,1],[24,3,8,0,1]],
+        melody:[[0,2,2,1],[4,2,2,1],[8,1,2,1],[12,4,2,1],[16,2,3,1],[22,1,2,1],[24,0,6,1]]},
+     B:{drums:{0:'x.......x.x.....x.......x.x...x.',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.xxx.',3:'..............x...............x.',7:'X...............................'},
+        bass:[[0,0,3],[4,0,3],[8,4,3],[12,4,3],[16,5,3],[20,5,3],[24,3,3],[28,4,3]],
+        chords:[[0,0,8,0,1],[8,4,8,0,1],[16,5,8,0,1],[24,3,4,0,1],[28,4,4,0,1]],
+        melody:[[0,4,3,1],[4,4,2,1],[8,5,3,1],[14,4,2,1],[16,2,2,1],[20,4,2,1],[24,7,6,1]]},
+     arr:['A1','B1','A1','B1']},
+    {name:'Reggaeton', emoji:'🌴', desc:'Dembow bounce, beach energy', bpm:95, kit:'808', groove:'none', hum:8, root:9, scale:'Min Penta',
+     inst:{bass:'inst:synth_bass_2', chords:'inst:acoustic_guitar_nylon', melody:'inst:marimba'},
+     A:{drums:{0:'x...x...x...x...x...x...x...x...',1:'...x..x....x..x....x..x....x..x.',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+        bass:[[0,0,4],[8,0,4],[16,3,4],[24,4,4]],
+        chords:[[0,0,4,0,1],[8,0,4,0,1],[16,3,4,0,1],[24,4,4,0,1]],
+        melody:[[0,4,2,1],[6,3,2,1],[12,2,2,1],[16,4,2,1],[22,3,2,1],[28,0,2,1]]},
+     B:{drums:{0:'x...x...x...x...x...x...x...x...',1:'...X..x....X..x....X..x....X..x.',2:'x.xxx.x.x.xxx.x.x.xxx.x.x.xxx.x.',4:'........X...............X.......'},
+        bass:[[0,0,3],[4,0,2],[8,2,3],[12,0,2],[16,3,3],[20,3,2],[24,4,3],[28,4,2]],
+        chords:[[0,0,4,0,1],[6,0,2,0,1],[8,2,4,0,1],[16,3,4,0,1],[22,3,2,0,1],[24,4,4,0,1]],
+        melody:[[0,7,2,1],[4,4,2,1],[8,5,2,1],[12,4,2,1],[16,2,3,1],[22,3,2,1],[26,4,4,1]]},
+     arr:['A1','A1','B1','B1']},
+    {name:'Rock', emoji:'🎸', desc:'Driving drums and crunchy guitars', bpm:120, kit:'Standard', groove:'none', hum:12, root:4, scale:'Aeolian (Minor)',
+     inst:{bass:'inst:electric_bass_pick', chords:'inst:overdriven_guitar', melody:'inst:distortion_guitar'},
+     A:{drums:{0:'x.....x.....x...x.....x.....x...',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',7:'X...............................'},
+        bass:[[0,0,2],[2,0,2],[4,0,2],[6,0,2],[8,5,2],[10,5,2],[12,5,2],[14,5,2],[16,3,2],[18,3,2],[20,3,2],[22,3,2],[24,4,2],[26,4,2],[28,4,2],[30,4,2]],
+        chords:[[0,0,8,0,1],[8,5,8,0,1],[16,3,8,0,1],[24,4,8,0,1]],
+        melody:[[0,0,4,1],[8,2,4,1],[16,4,3,1],[22,3,2,1],[24,2,8,1]]},
+     B:{drums:{0:'x.....x.x.....x.x.....x.x.....x.',1:'....X.......X.......X.......X..x',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'..x...x...x...x...x...x...x...x.',7:'X...............X...............'},
+        bass:[[0,0,1],[2,0,1],[4,0,1],[6,0,1],[8,5,1],[10,5,1],[12,5,1],[14,5,1],[16,3,1],[18,3,1],[20,3,1],[22,3,1],[24,4,1],[26,4,1],[28,4,1],[30,4,1]],
+        chords:[[0,0,4,0,1],[4,0,4,0,1],[8,5,4,0,1],[12,5,4,0,1],[16,3,4,0,1],[20,3,4,0,1],[24,4,4,0,1],[28,4,4,0,1]],
+        melody:[[0,4,2,1],[4,4,2,1],[8,5,2,1],[12,7,2,1],[16,4,4,1],[20,2,2,1],[24,0,8,1]]},
+     arr:['A1','A1','B1','A1']},
+    {name:'Drum n Bass', emoji:'⚡', desc:'Fast breaks and deep rolling bass', bpm:170, kit:'Electronic', groove:'none', hum:0, root:5, scale:'Min Penta',
+     inst:{bass:'inst:synth_bass_2', chords:'inst:pad_2_warm', melody:'inst:fx_3_crystal'},
+     A:{drums:{0:'x.........x.....x.........x.....',1:'........X.............X.........',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+        bass:[[0,0,8],[10,2,4],[16,0,8],[26,3,4]],
+        chords:[[0,0,16,0,1],[16,3,16,0,1]],
+        melody:[[0,4,4,1],[8,3,2,1],[16,2,4,1],[24,4,2,1]]},
+     B:{drums:{0:'x.........x.....x....x....x.....',1:'........X.............X......X..',2:'x.xxx.x.x.x.xxx.x.xxx.x.x.xxxxx.',3:'....x.......x.......x.......x...'},
+        bass:[[0,0,4],[6,2,3],[10,3,4],[16,0,4],[22,2,3],[26,4,4]],
+        chords:[[0,0,16,0,1],[16,4,16,0,1]],
+        melody:[[0,4,2,1],[4,3,1,1],[6,2,2,1],[10,4,2,1],[16,7,3,1],[22,4,2,1],[26,2,4,1]]},
+     arr:['A1','B1','B1','A1']},
+    {name:'Funk', emoji:'🕺', desc:'Syncopated bass and clav stabs', bpm:105, kit:'Standard', groove:'SP-1200', hum:15, root:2, scale:'Funk (Dorian)',
+     inst:{bass:'inst:slap_bass_1', chords:'inst:clavinet', melody:'inst:brass_section'},
+     A:{drums:{0:'x.....x...x...x.x.....x...x.....',1:'....X.......X.x.....X..x....X...',2:'x.x.X.x.x.x.X.x.x.x.X.x.x.x.X.x.',3:'..............................x.'},
+        bass:[[0,0,1],[3,0,1],[6,4,1],[8,0,2],[12,3,1],[14,4,1],[16,0,1],[19,0,1],[22,4,1],[24,5,2],[28,4,1],[30,3,1]],
+        chords:[[0,0,1,0,1],[4,0,1,0,1],[10,0,2,0,1],[16,0,1,0,1],[20,3,1,0,1],[26,3,2,0,1]],
+        melody:[[8,4,2,1],[12,3,1,1],[24,5,2,1],[28,4,2,1]]},
+     B:{drums:{0:'x.....x...x...x.x.....x...x...x.',1:'....X.......X.x.....X..x....X..x',2:'x.x.X.x.x.x.X.x.x.x.X.x.x.x.X.x.',4:'........x...............x.......',7:'X...............................'},
+        bass:[[0,0,1],[2,0,1],[3,0,1],[6,4,1],[8,0,1],[10,2,1],[12,3,1],[14,4,1],[16,0,1],[18,0,1],[19,0,1],[22,4,1],[24,5,1],[26,4,1],[28,3,1],[30,2,1]],
+        chords:[[0,0,1,0,1],[4,0,1,0,1],[8,3,1,0,1],[10,0,2,0,1],[16,0,1,0,1],[20,3,1,0,1],[24,4,1,0,1],[26,3,2,0,1]],
+        melody:[[0,7,2,1],[4,5,1,1],[8,4,2,1],[12,3,1,1],[16,5,3,1],[22,4,2,1],[24,7,3,1],[28,5,2,1]]},
+     arr:['A1','A1','B1','A1']},
+    {name:'Dreamy', emoji:'🌌', desc:'Floating pads, harp and starlight', bpm:80, kit:'Lo-Fi', groove:'none', hum:20, root:0, scale:'Lydian',
+     inst:{bass:'inst:cello', chords:'inst:string_ensemble_1', melody:'inst:orchestral_harp'},
+     A:{drums:{0:'x...............x...............',2:'....x.......x.......x.......x...',6:'x.......x.......x.......x.......'},
+        bass:[[0,0,16],[16,3,16]],
+        chords:[[0,0,16,0,1],[16,3,16,0,1]],
+        melody:[[0,0,2,1],[4,2,2,1],[8,4,2,1],[12,6,2,1],[16,4,2,1],[20,2,2,1],[24,1,2,1],[28,0,4,1]]},
+     B:{drums:{0:'x.......x.......x.......x.......',2:'..x...x...x...x...x...x...x...x.',6:'x.......x.......x.......x.......'},
+        bass:[[0,4,16],[16,5,16]],
+        chords:[[0,4,16,0,1],[16,5,16,0,1]],
+        melody:[[0,7,2,1],[4,6,2,1],[8,4,3,1],[14,2,2,1],[16,4,2,1],[20,6,2,1],[24,7,8,1]]},
+     arr:['A1','B1','A1','B1']}
+  ];
+
+  function applyStarter(st){
+    stashCurrent();
+    bpm = st.bpm; rootIdx = st.root; scaleKey = st.scale;
+    swing = 0; humanize = st.hum||0; activeGroove = st.groove||'none';
+    if(DRUM_KITS[st.kit]){ currentKit = st.kit; DRUMS = DRUM_KITS[st.kit]; LAYER_TYPES[0].labels = DRUMS.map(function(d){return d.name}); }
+    STEPS = 32;
+    resetSongData();
+    _curSongName = st.name;
+    var lids = ['bass','chords','melody'];
+    var secs = ['A','B'];
+    for(var si=0;si<secs.length;si++){
+      var data = st[secs[si]];
+      if(!data) continue;
+      var v = song.sections[secs[si]].vars[0];
+      if(data.drums) fillDrums(v, data.drums);
+      for(var li=0;li<lids.length;li++){
+        var lid = lids[li];
+        if(data[lid]) fillNotes(v, lid, data[lid]);
+        var ps = (st.inst&&st.inst[lid]) || (st.preset&&st.preset[lid]) || '';
+        if(ps) v[lid].preset = ps;
+      }
+    }
+    for(var li=0;li<lids.length;li++){
+      var lid = lids[li];
+      var ps = (st.inst&&st.inst[lid]) || '';
+      layerSampleName[lid] = null;
+      layerInst[lid] = ps.indexOf('inst:')===0 ? ps.substring(5) : null;
+    }
+    song.arrangement = (st.arr||['A1']).slice();
+    // Sync every control to the new song
+    var bpmEl = document.getElementById('gs-bpm'); if(bpmEl) bpmEl.textContent = bpm;
+    var bpmRange = document.querySelector('.gs-transport .gs-bpm input'); if(bpmRange) bpmRange.value = bpm;
+    var swEl = document.getElementById('gs-swing'); if(swEl) swEl.textContent = swing+'%';
+    var huEl = document.getElementById('gs-humanize'); if(huEl) huEl.textContent = humanize+'%';
+    var kitEl = document.getElementById('gs-kit'); if(kitEl) kitEl.value = currentKit;
+    var stepsEl = document.getElementById('gs-steps'); if(stepsEl) stepsEl.value = '32';
+    renderScaleSelectors();
+    var grEl = document.getElementById('gs-groove'); if(grEl) grEl.value = activeGroove;
+    applyFXState();
+    renderAll();
+    prefetchAllInst();
+    markDirty();
+  }
+
+  function renderStarters(){
+    var el = document.getElementById('gs-starter-grid');
+    if(!el) return;
+    var html = '';
+    for(var i=0;i<STARTERS.length;i++){
+      var st = STARTERS[i];
+      html += '<div class="gs-starter-card" onclick="GS.useStarter('+i+')">'
+        +'<div class="st-emoji">'+st.emoji+'</div>'
+        +'<div class="st-name">'+st.name+'</div>'
+        +'<div class="st-desc">'+st.desc+'</div>'
+        +'<div class="st-desc" style="color:var(--sage)">'+st.bpm+' BPM</div>'
+        +'</div>';
+    }
+    html += '<div class="gs-starter-card blank" onclick="GS.useStarter(-1)">'
+      +'<div class="st-emoji">⬜</div>'
+      +'<div class="st-name">Blank Canvas</div>'
+      +'<div class="st-desc">Empty grid. Total freedom.</div>'
+      +'</div>';
+    el.innerHTML = html;
+  }
+
+  // ═══ DICE — instant musical ideas per layer ═══
+  function pushLayerUndo(lid){
+    var v = getCurrentVar(); if(!v) return;
+    var lensCopy = {};
+    if(v[lid].lens){ for(var k in v[lid].lens) lensCopy[k] = v[lid].lens[k]; }
+    _undoStack.push({type:'layer', lid:lid, grid:v[lid].grid.slice(), lens:lensCopy});
+    if(_undoStack.length > 200) _undoStack.shift();
+  }
+  var DICE_DRUM_PATS = [
+    {0:'x.......x.......x.......x.......',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+    {0:'x......x..x.....x......x..x.....',1:'........X...............X.......',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+    {0:'x...x...x...x...x...x...x...x...',3:'..x...x...x...x...x...x...x...x.',4:'....X.......X.......X.......X...'},
+    {0:'x.........x.....x.....x.....x...',1:'........X...............X.......',2:'x.x.x.x.x.x.xxx.x.x.x.x.xxxxx.x.'},
+    {0:'x.....x...x...x.x.....x...x.....',1:'....X.......X.x.....X..x....X...',2:'x.x.X.x.x.x.X.x.x.x.X.x.x.x.X.x.'},
+    {0:'x...x...x...x...x...x...x...x...',1:'...x..x....x..x....x..x....x..x.',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
+    {0:'x.........x.....x.........x.....',1:'........X.............X.........',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'....x.......x.......x.......x...'},
+    {0:'x.....x.....x...x.....x.....x...',1:'....X.......X.......X.......X...',2:'..x...x...x...x...x...x...x...x.',5:'..............x...............x.'}
+  ];
+  var DICE_BASS_RHYTHMS = [
+    [[0,4],[8,4],[16,4],[24,4]],
+    [[0,3],[4,3],[8,3],[12,3],[16,3],[20,3],[24,3],[28,3]],
+    [[0,2],[6,2],[8,2],[14,2],[16,2],[22,2],[24,2],[30,2]],
+    [[0,6],[10,2],[12,2],[16,6],[26,2],[28,2]],
+    [[0,1],[3,1],[6,1],[8,2],[12,1],[14,1],[16,1],[19,1],[22,1],[24,2],[28,1],[30,1]]
+  ];
+  function diceLayer(lid){
+    var v = getCurrentVar(); if(!v) return;
+    pushLayerUndo(lid);
+    var L = (SCALES[scaleKey]||[0,2,4,5,7,9,11]).length;
+    // Wipe the layer, then generate
+    v[lid].grid = v[lid].grid.map(function(){return 0});
+    v[lid].lens = {};
+    if(lid === 'drums'){
+      var pat = DICE_DRUM_PATS[Math.floor(Math.random()*DICE_DRUM_PATS.length)];
+      fillDrums(v, pat);
+      // Small mutation so no two rolls feel identical
+      for(var m=0;m<3;m++){
+        var rr = Math.floor(Math.random()*3), ss = Math.floor(Math.random()*STEPS);
+        var mi = rr*STEPS+ss;
+        if(Math.random()<0.5 && !v.drums.grid[mi]) v.drums.grid[mi] = 1;
+      }
+    } else if(lid === 'bass'){
+      var rhythm = DICE_BASS_RHYTHMS[Math.floor(Math.random()*DICE_BASS_RHYTHMS.length)];
+      var degs = [0,0,0, 3,4, 2,5]; // root-heavy pool
+      var list = [];
+      for(var i=0;i<rhythm.length;i++){
+        var deg = (i===0||Math.random()<0.4) ? 0 : degs[Math.floor(Math.random()*degs.length)];
+        list.push([rhythm[i][0], deg%L, rhythm[i][1], 0]);
+      }
+      fillNotes(v, 'bass', list);
+    } else if(lid === 'chords'){
+      var prog = PROG_PRESETS[Math.floor(Math.random()*PROG_PRESETS.length)];
+      applyProgTo(v, prog, false);
+      _toast('🎲 '+prog.name);
+      renderLayers(); markDirty();
+      return;
+    } else {
+      // Melody: rhythm cells + a scale walk that favors chord tones on beats
+      var list = [], pos = Math.floor(Math.random()*L);
+      var s = 0;
+      while(s < STEPS){
+        var len = [1,1,2,2,2,4][Math.floor(Math.random()*6)];
+        if(Math.random() < 0.65){
+          if(s % 8 === 0 && Math.random() < 0.6) pos = [0,2,4][Math.floor(Math.random()*3)] % L;
+          list.push([s, pos, len, 1]);
+          var mv = Math.floor(Math.random()*5)-2;
+          pos = Math.max(0, Math.min(L*2-1, pos+mv));
+        }
+        s += len;
+      }
+      fillNotes(v, lid, list);
+    }
+    _toast('🎲 New '+lid+' idea. Tap 🎲 again for another, ↩ Undo to go back');
+    renderLayers(); markDirty();
+  }
+
+  // Apply a chord progression to a variation (chords as triads + bass roots)
+  function applyProgTo(v, prog, withBass){
+    var degs = prog.deg || [0,4,5,3];
+    var L = (SCALES[scaleKey]||[0,2,4,5,7,9,11]).length;
+    var chordLen = Math.max(2, Math.floor(STEPS/degs.length));
+    var cList = [], bList = [];
+    for(var i=0;i<degs.length;i++){
+      var stp = i*chordLen;
+      if(stp >= STEPS) break;
+      cList.push([stp, degs[i]%L, chordLen, 0, 1]);
+      bList.push([stp, degs[i]%L, Math.min(4,chordLen), 0]);
+    }
+    v.chords.grid = v.chords.grid.map(function(){return 0});
+    v.chords.lens = {};
+    fillNotes(v, 'chords', cList);
+    if(withBass){
+      v.bass.grid = v.bass.grid.map(function(){return 0});
+      v.bass.lens = {};
+      fillNotes(v, 'bass', bList);
+    }
+  }
+
+  // ═══ KEYS — live jam pads with record-into-grid ═══
+  var _keysRec = false;
+  function keysNotes(){
+    var lid = document.getElementById('gs-keys-layer').value;
+    var lt = null;
+    for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===lid)lt=LAYER_TYPES[i];}
+    return {lid:lid, notes:getScaleNotes(lt?lt.octave:4)};
+  }
+  function keysRender(){
+    var el = document.getElementById('gs-pad-grid');
+    if(!el) return;
+    var kn = keysNotes();
+    var rootName = ALL_NOTES[rootIdx];
+    var html = '';
+    // Pads read low → high, left → right (notes array is high → low)
+    for(var i=kn.notes.length-1;i>=0;i--){
+      var n = kn.notes[i];
+      var isRoot = n.name.indexOf(rootName) === 0 && !(/[#b]/.test(n.name.charAt(rootName.length)));
+      html += '<div class="gs-pad'+(isRoot?' hi':'')+'" data-krow="'+i+'">'+n.name+'</div>';
+    }
+    el.innerHTML = html;
+  }
+  function keysPadDown(rowIdx){
+    var kn = keysNotes();
+    var n = kn.notes[rowIdx];
+    if(!n) return;
+    var t = getCtx().currentTime;
+    var lid = kn.lid;
+    if(layerInst[lid] && playInstNote(layerInst[lid], n.name, t, 1, lid)){}
+    else if(layerSampleName[lid]) playSamplePitched(layerSampleName[lid], n.freq, t, 1, lid);
+    else if(lid==='bass') playBassNote(n.freq, t, 1);
+    else if(lid==='chords') playChordNote(n.freq, t, 1);
+    else playLeadNote(n.freq, t, 1);
+    if(_keysRec && playing){
+      var v = getCurrentVar();
+      if(v){
+        var idx = rowIdx*STEPS + step; // "step" is the next scheduled step: close enough live
+        if(!v[lid].grid[idx]){
+          _undoStack.push({lid:lid, idx:idx, was:0, wasLen:1});
+          v[lid].grid[idx] = 1;
+          _updateMini(lid);
+          var cell = document.querySelector('.gs-cell[data-l="'+lid+'"][data-r="'+rowIdx+'"][data-s="'+step+'"]');
+          if(cell) cell.classList.add('on');
+          markDirty();
+        }
+      }
+    }
+  }
+  function initKeysPads(){
+    var el = document.getElementById('gs-pad-grid');
+    if(!el) return;
+    el.addEventListener('pointerdown', function(e){
+      var pad = e.target;
+      if(!pad.classList.contains('gs-pad')) return;
+      e.preventDefault();
+      pad.classList.add('lit');
+      keysPadDown(parseInt(pad.getAttribute('data-krow')));
+    });
+    var clear = function(e){
+      var pads = el.querySelectorAll('.gs-pad.lit');
+      for(var i=0;i<pads.length;i++) pads[i].classList.remove('lit');
+    };
+    el.addEventListener('pointerup', clear);
+    el.addEventListener('pointercancel', clear);
+    el.addEventListener('pointerleave', clear);
   }
 
   // ── Public API ──
@@ -1857,6 +2877,40 @@ var GS = (function(){
       renderScaleSelectors();
       renderAll();
       initPianoRollDrag();
+      initKeysPads();
+      // Restore samples from the vault (survives refresh)
+      idbRestoreSamples();
+      // Restore where the player left off: autosave first, then legacy save.
+      var restored = false;
+      try{
+        var au = localStorage.getItem('gs_autosave');
+        if(au){ restored = applyState(JSON.parse(au)); if(restored) _lastAutosave = au; }
+      }catch(e){}
+      if(!restored){
+        try{
+          var legacy = localStorage.getItem('gs_song');
+          if(legacy){
+            var ld = JSON.parse(legacy);
+            restored = applyState(ld);
+            if(restored){
+              // Promote the old single-slot save into My Songs
+              saveToSlot(newSongId(), 'My First Song');
+              localStorage.removeItem('gs_song');
+            }
+          }
+        }catch(e){}
+      }
+      if(!restored && !songIndex().length){
+        // First visit: greet with the starter picker
+        renderStarters();
+        document.getElementById('gs-starters').classList.add('open');
+      }
+      // Autosave loop: any interaction marks dirty, tick writes at most every 4s
+      document.addEventListener('pointerdown', function(){ _dirty = true; }, true);
+      document.addEventListener('change', function(){ _dirty = true; }, true);
+      setInterval(autosaveTick, 4000);
+      window.addEventListener('pagehide', function(){ _dirty = true; autosaveTick(); });
+      document.addEventListener('visibilitychange', function(){ if(document.hidden){ _dirty = true; autosaveTick(); } });
     },
     toggle: function(){
       if(playing) stop(); else start();
@@ -1879,8 +2933,8 @@ var GS = (function(){
       var btn = document.getElementById('gs-toolbar-tog');
       if(btn) btn.classList.toggle('on', !on);
     },
-    setRoot: function(v){rootIdx=parseInt(v);renderLayers();},
-    setScale: function(v){scaleKey=v;renderLayers();},
+    setRoot: function(v){rootIdx=parseInt(v);renderLayers();prefetchAllInst();markDirty();if(document.getElementById('gs-keys').classList.contains('open'))keysRender();},
+    setScale: function(v){scaleKey=v;renderLayers();prefetchAllInst();markDirty();if(document.getElementById('gs-keys').classList.contains('open'))keysRender();},
     selectSection: function(k, v){
       currentSection = k; currentVar = v;
       applyFXState();
@@ -1889,15 +2943,25 @@ var GS = (function(){
     addVar: function(k){
       var sec = song.sections[k];
       if(sec.vars.length >= 5) return;
-      // Copy last variation
+      // Deep-copy last variation (grid + note lengths + mix + sound settings)
       var last = sec.vars[sec.vars.length-1];
       var copy = {};
       for(var lid in last){
-        copy[lid] = {grid:last[lid].grid.slice(), mute:last[lid].mute, solo:last[lid].solo};
+        var ld = last[lid];
+        var c = {grid:ld.grid.slice(), mute:ld.mute, solo:ld.solo, vol:ld.vol, preset:ld.preset||'', lens:{}};
+        if(ld.lens){ for(var lk in ld.lens) c.lens[lk] = ld.lens[lk]; }
+        if(ld.fx) c.fx = {filter:ld.fx.filter, filterQ:ld.fx.filterQ, delay:ld.fx.delay, delayFb:ld.fx.delayFb, reverb:ld.fx.reverb};
+        if(ld.adsr) c.adsr = {a:ld.adsr.a, d:ld.adsr.d, s:ld.adsr.s, r:ld.adsr.r};
+        if(ld.prob){ c.prob = {}; for(var pk in ld.prob) c.prob[pk] = ld.prob[pk]; }
+        if(ld.ratch){ c.ratch = {}; for(var rk in ld.ratch) c.ratch[rk] = ld.ratch[rk]; }
+        if(ld.probability !== undefined) c.probability = ld.probability;
+        if(ld.ratchetAll !== undefined) c.ratchetAll = ld.ratchetAll;
+        copy[lid] = c;
       }
       sec.vars.push(copy);
       currentSection = k;
       currentVar = sec.vars.length - 1;
+      markDirty();
       renderAll();
     },
     expandLayer: function(id){
@@ -1926,8 +2990,32 @@ var GS = (function(){
       // Skip tail cells (part of an extended note)
       if(lid !== 'drums' && !cur && isNoteTail(v[lid], r, s)) return;
 
+      // Chord brush: one tap places/removes a full stacked triad
+      if(lid === 'chords' && chordMode){
+        pushLayerUndo('chords');
+        var rows = [r, r-2, r-4]; // adjacent rows are scale steps, so -2/-4 = 3rd/5th above
+        var val = cur === 0 ? (accentMode ? 2 : 1) : 0;
+        var notes = getScaleNotes(LAYER_TYPES[2].octave);
+        var t0 = getCtx().currentTime;
+        for(var ci=0;ci<rows.length;ci++){
+          var cr = rows[ci];
+          if(cr < 0) continue;
+          v.chords.grid[cr*STEPS+s] = val;
+          if(!val && v.chords.lens) delete v.chords.lens[cr*STEPS+s];
+          if(val && notes[cr]){
+            if(layerInst.chords && playInstNote(layerInst.chords, notes[cr].name, t0, 0.8, 'chords')){}
+            else if(layerSampleName.chords) playSamplePitched(layerSampleName.chords, notes[cr].freq, t0, 0.8, 'chords');
+            else playChordNote(notes[cr].freq, t0, 0.8);
+          }
+        }
+        markDirty();
+        renderLayers();
+        return;
+      }
+
       _undoStack.push({lid:lid, idx:idx, was:cur, wasLen:(v[lid].lens&&v[lid].lens[idx])||1});
       if(_undoStack.length > 200) _undoStack.shift();
+      markDirty();
       // Tap empty = place note (accent if accent mode on). Tap filled = remove.
       if(cur === 0) v[lid].grid[idx] = accentMode ? 2 : 1;
       else { v[lid].grid[idx] = 0; if(v[lid].lens) delete v[lid].lens[idx]; }
@@ -1942,7 +3030,8 @@ var GS = (function(){
           var oct = lid==='bass'?LAYER_TYPES[1].octave:lid==='chords'?LAYER_TYPES[2].octave:LAYER_TYPES[3].octave;
           var notes = getScaleNotes(oct);
           if(notes[r]){
-            if(layerSampleName[lid]) playSamplePitched(layerSampleName[lid], notes[r].freq, t, vel, lid);
+            if(layerInst[lid] && playInstNote(layerInst[lid], notes[r].name, t, vel, lid)){}
+            else if(layerSampleName[lid]) playSamplePitched(layerSampleName[lid], notes[r].freq, t, vel, lid);
             else if(lid==='bass') playBassNote(notes[r].freq, t, vel);
             else if(lid==='chords') playChordNote(notes[r].freq, t, vel);
             else playLeadNote(notes[r].freq, t, vel);
@@ -1976,30 +3065,131 @@ var GS = (function(){
       renderArrangement();
     },
     save: function(){
-      var data = {song:song, bpm:bpm, rootIdx:rootIdx, scaleKey:scaleKey,
-        layers:LAYER_TYPES.map(function(l){return {id:l.id,octave:l.octave}})};
-      try{
-        localStorage.setItem('gs_song', JSON.stringify(data));
-        _toast('Song saved!');
-      }catch(e){_toast('Save failed: '+e.message);}
+      // Quick save. First save asks for a name; after that it updates the slot.
+      if(_curSongId){
+        if(saveToSlot(_curSongId, _curSongName||'My Song')) _toast('Saved "'+(_curSongName||'My Song')+'"');
+        return;
+      }
+      var name = prompt('Name your song:', _curSongName||'My Song');
+      if(name === null) return;
+      name = String(name).substring(0,40).trim() || 'My Song';
+      if(saveToSlot(newSongId(), name)) _toast('Saved "'+name+'"');
+    },
+    saveAs: function(){
+      var name = prompt('Name this song:', (_curSongName?_curSongName+' 2':'My Song'));
+      if(name === null) return;
+      name = String(name).substring(0,40).trim() || 'My Song';
+      if(saveToSlot(newSongId(), name)){ _toast('Saved "'+name+'"'); renderSongList(); }
     },
     load: function(){
+      // Legacy path: open the most recent saved song
+      var idx = songIndex();
+      if(idx.length){ GS.loadSong(idx[0].id); return; }
+      _toast('No saved song found');
+    },
+    openSongs: function(){
+      document.getElementById('gs-songs').classList.add('open');
+      renderSongList();
+    },
+    closeSongs: function(){
+      document.getElementById('gs-songs').classList.remove('open');
+    },
+    loadSong: function(id){
       try{
-        var raw = localStorage.getItem('gs_song');
-        if(!raw){_toast('No saved song found');return;}
-        var data = JSON.parse(raw);
-        song = data.song;
-        bpm = data.bpm || 120;
-        rootIdx = data.rootIdx || 0;
-        scaleKey = data.scaleKey || 'Min Penta';
-        if(data.layers){data.layers.forEach(function(dl){for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===dl.id)LAYER_TYPES[i].octave=dl.octave;}});}
-        document.getElementById('gs-bpm').textContent = bpm;
-        currentSection = 'A'; currentVar = 0;
-        stop();
-        renderScaleSelectors();
-        renderAll();
-        _toast('Song loaded!');
+        var raw = localStorage.getItem('gs_song_'+id);
+        if(!raw){_toast('Song not found');return;}
+        stashCurrent();
+        if(applyState(JSON.parse(raw))){
+          _curSongId = id;
+          GS.closeSongs();
+          _toast('Loaded "'+_curSongName+'"');
+          markDirty();
+        }
       }catch(e){_toast('Load failed: '+e.message);}
+    },
+    deleteSong: function(id){
+      var idx = songIndex(), name = id;
+      for(var i=0;i<idx.length;i++){ if(idx[i].id===id) name = idx[i].name; }
+      if(!confirm('Delete "'+name+'"? This cannot be undone.')) return;
+      try{ localStorage.removeItem('gs_song_'+id); }catch(e){}
+      writeSongIndex(idx.filter(function(s){return s.id!==id}));
+      if(_curSongId === id){ _curSongId = null; }
+      renderSongList();
+    },
+    copySongCode: function(){
+      var code = makeSongCode();
+      var done = function(){ _toast('Song code copied. Send it to a friend!'); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(code).then(done, function(){ prompt('Copy this song code:', code); });
+      } else {
+        prompt('Copy this song code:', code);
+      }
+    },
+    pasteSongCode: function(){
+      var code = prompt('Paste a song code:');
+      if(!code) return;
+      var data = readSongCode(code);
+      if(!data){ _toast('That code did not work'); return; }
+      stashCurrent();
+      data.id = null;
+      data.name = (data.name||'Friend Song')+' (shared)';
+      if(applyState(data)){
+        GS.closeSongs();
+        _toast('Song loaded from code!');
+        markDirty();
+      }
+    },
+    openStarters: function(){
+      renderStarters();
+      document.getElementById('gs-starters').classList.add('open');
+    },
+    closeStarters: function(){
+      document.getElementById('gs-starters').classList.remove('open');
+    },
+    useStarter: function(i){
+      if(i < 0){
+        stashCurrent();
+        resetSongData();
+        renderAll();
+        markDirty();
+      } else {
+        applyStarter(STARTERS[i]);
+        _toast(STARTERS[i].name+' ready. Press ▶ Play, then make it yours');
+      }
+      GS.closeStarters();
+    },
+    diceLayer: function(lid){
+      diceLayer(lid);
+    },
+    toggleChordMode: function(){
+      chordMode = !chordMode;
+      if(chordMode) _toast('Chord brush on: one tap = full chord');
+      renderLayers();
+    },
+    circleApplyProg: function(idx){
+      var pr = PROG_PRESETS[idx];
+      var v = getCurrentVar(); if(!v) return;
+      pushLayerUndo('chords');
+      pushLayerUndo('bass');
+      applyProgTo(v, pr, true);
+      markDirty();
+      renderLayers();
+      _toast(pr.name+' written to Chords + Bass');
+      GS.closeCircle();
+    },
+    openKeys: function(){
+      document.getElementById('gs-keys').classList.add('open');
+      keysRender();
+    },
+    closeKeys: function(){
+      document.getElementById('gs-keys').classList.remove('open');
+    },
+    keysRender: function(){ keysRender(); },
+    keysToggleRec: function(){
+      _keysRec = !_keysRec;
+      var btn = document.getElementById('gs-keys-rec');
+      if(btn) btn.classList.toggle('on', _keysRec);
+      if(_keysRec && !playing) _toast('Press ▶ Play too, and your taps will record');
     },
     clearSection: function(){
       if(!confirm('Clear all layers in '+currentSection+(currentVar+1)+'?')) return;
@@ -2011,7 +3201,17 @@ var GS = (function(){
       if(!_undoStack.length) return;
       var state = _undoStack.pop();
       var v = getCurrentVar(); if(!v) return;
-      v[state.lid].grid[state.idx] = state.was;
+      if(state.type === 'layer'){
+        v[state.lid].grid = state.grid;
+        v[state.lid].lens = state.lens || {};
+      } else {
+        v[state.lid].grid[state.idx] = state.was;
+        if(state.was && state.wasLen > 1){
+          if(!v[state.lid].lens) v[state.lid].lens = {};
+          v[state.lid].lens[state.idx] = state.wasLen;
+        }
+      }
+      markDirty();
       renderLayers();
     },
     setVol: function(lid, val){
@@ -2114,28 +3314,46 @@ var GS = (function(){
     setSteps: function(val){
       var newSteps = parseInt(val);
       if(newSteps === STEPS) return;
-      // Resize all grids in all sections
+      // Resize all grids in all sections; remap idx-keyed maps (lens/prob/ratch)
       var keys = ['A','B','C'];
       for(var ki=0;ki<keys.length;ki++){
         var sec = song.sections[keys[ki]];
         for(var vi=0;vi<sec.vars.length;vi++){
           for(var lid in sec.vars[vi]){
-            var old = sec.vars[vi][lid].grid;
+            var ld = sec.vars[vi][lid];
+            var old = ld.grid;
             var lt = null;
             for(var li=0;li<LAYER_TYPES.length;li++){if(LAYER_TYPES[li].id===lid)lt=LAYER_TYPES[li];}
-            var rows = lt && lt.type==='drum' ? lt.rows : getScaleNotes(lt?lt.octave:3).length;
+            var rows = lt && lt.type==='drum' ? (lt.rows + extraDrumRows.length) : getScaleNotes(lt?lt.octave:3).length;
             var newGrid = [];
             for(var r=0;r<rows;r++){
               for(var s=0;s<newSteps;s++){
                 newGrid.push(s < STEPS ? (old[r*STEPS+s]||0) : 0);
               }
             }
-            sec.vars[vi][lid].grid = newGrid;
+            ld.grid = newGrid;
+            var maps = ['lens','prob','ratch'];
+            for(var mi=0;mi<maps.length;mi++){
+              var m = ld[maps[mi]];
+              if(!m) continue;
+              var remapped = {};
+              for(var mk in m){
+                var oi = parseInt(mk);
+                var or = Math.floor(oi/STEPS), os = oi%STEPS;
+                if(os < newSteps && or < rows){
+                  var nv = m[mk];
+                  if(maps[mi]==='lens') nv = Math.min(nv, newSteps - os);
+                  remapped[or*newSteps+os] = nv;
+                }
+              }
+              ld[maps[mi]] = remapped;
+            }
           }
         }
       }
       STEPS = newSteps;
       stop();
+      markDirty();
       renderAll();
     },
     copySection: function(){
@@ -2160,89 +3378,78 @@ var GS = (function(){
       renderLayers();
     },
     exportWAV: function(){
-      _toast('Rendering audio...');
-      try{
-        var sampleRate = 44100;
-        var stepDur = 60 / bpm / 4;
-        var totalSteps = 0;
-        for(var ai=0;ai<song.arrangement.length;ai++) totalSteps += STEPS;
-        var duration = totalSteps * stepDur;
-        var offCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * duration), sampleRate);
-        var t = 0;
-        for(var ai=0;ai<song.arrangement.length;ai++){
-          var block = song.arrangement[ai];
-          var sec = block.charAt(0);
-          var vr = parseInt(block.charAt(1)) - 1;
-          var sv = song.sections[sec].vars[vr];
-          if(!sv) continue;
-          for(var s=0;s<STEPS;s++){
-            // Drums
-            if(!sv.drums.mute){
-              var dV = (sv.drums.vol||80)/80;
-              for(var d=0;d<DRUMS.length;d++){
-                if(sv.drums.grid[d*STEPS+s]){
-                  // Simple kick/snare for export — sine burst
-                  var o=offCtx.createOscillator(),g=offCtx.createGain();
-                  o.type='sine';o.frequency.setValueAtTime(d===0?150:d===1?200:d<4?8000:300,t);
-                  if(d===0)o.frequency.exponentialRampToValueAtTime(40,t+0.12);
-                  g.gain.setValueAtTime((d<2?0.6:0.3)*dV,t);g.gain.exponentialRampToValueAtTime(0.001,t+(d<2?0.2:0.05));
-                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.3);
-                }
+      // Full-fidelity render: the REAL engine (kits, presets, streamed
+      // instruments, samples, FX buses, groove, swing, humanize, accents,
+      // note lengths, ratchets) scheduled into an OfflineAudioContext.
+      if(playing) stop();
+      _toast('Rendering audio…');
+      getCtx(); // make sure the live ctx exists for any decode fallbacks
+      // 1. Collect every streamed-instrument note the song needs
+      var needed = [], seen = {};
+      var noteLids = ['bass','chords','melody'];
+      for(var ai=0;ai<song.arrangement.length;ai++){
+        var block = song.arrangement[ai];
+        var sv = song.sections[block.charAt(0)];
+        sv = sv && sv.vars[parseInt(block.charAt(1))-1];
+        if(!sv) continue;
+        for(var nl=0;nl<3;nl++){
+          var lid = noteLids[nl], inst = layerInst[lid];
+          if(!inst || !sv[lid] || sv[lid].mute) continue;
+          var notes = getScaleNotes(LAYER_TYPES[nl+1].octave);
+          for(var r=0;r<notes.length;r++){
+            for(var s=0;s<STEPS;s++){
+              if(sv[lid].grid[r*STEPS+s]){
+                var midi = noteToMidi(notes[r].name);
+                var key = inst+'/'+midi;
+                if(!seen[key]){seen[key]=true; needed.push([inst, midi]);}
+                break;
               }
             }
-            // Bass
-            if(!sv.bass.mute){
-              var bV=(sv.bass.vol||80)/80;
-              var bn=getScaleNotes(LAYER_TYPES[1].octave);
-              for(var b=0;b<bn.length;b++){
-                if(sv.bass.grid[b*STEPS+s]){
-                  var o=offCtx.createOscillator(),g=offCtx.createGain();
-                  o.type='sawtooth';o.frequency.value=bn[b].freq;
-                  var f=offCtx.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(800,t);f.frequency.exponentialRampToValueAtTime(200,t+0.15);
-                  g.gain.setValueAtTime(0.12*bV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
-                  o.connect(f);f.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.22);
-                }
-              }
-            }
-            // Chords
-            if(!sv.chords.mute){
-              var cV=(sv.chords.vol||80)/80;
-              var cn=getScaleNotes(LAYER_TYPES[2].octave);
-              for(var c=0;c<cn.length;c++){
-                if(sv.chords.grid[c*STEPS+s]){
-                  var o=offCtx.createOscillator(),g=offCtx.createGain();
-                  o.type='sine';o.frequency.value=cn[c].freq;
-                  g.gain.setValueAtTime(0.06*cV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.32);
-                }
-              }
-            }
-            // Melody
-            if(!sv.melody.mute){
-              var mV=(sv.melody.vol||80)/80;
-              var mn=getScaleNotes(LAYER_TYPES[3].octave);
-              for(var m=0;m<mn.length;m++){
-                if(sv.melody.grid[m*STEPS+s]){
-                  var o=offCtx.createOscillator(),g=offCtx.createGain();
-                  o.type='sine';o.frequency.value=mn[m].freq;
-                  g.gain.setValueAtTime(0.07*mV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.17);
-                }
-              }
-            }
-            t += stepDur;
           }
         }
-        offCtx.startRendering().then(function(buffer){
-          var wav = audioBufferToWav(buffer);
-          var blob = new Blob([wav], {type:'audio/wav'});
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url; a.download = 'music-studio-export.wav';
-          a.click(); URL.revokeObjectURL(url);
-          _toast('Exported!');
-        });
-      }catch(e){_toast('Export error: '+e.message);}
+      }
+      ensureInstNotes(needed, function(){
+        try{
+          var sampleRate = 44100;
+          // Exact duration walk (swing changes per-step durations)
+          var duration = 0;
+          for(var ai=0;ai<song.arrangement.length;ai++)
+            for(var s=0;s<STEPS;s++) duration += getStepDuration(s);
+          var TAIL = 1.6; // let reverb + delay ring out
+          var offCtx = new OfflineAudioContext(2, Math.ceil(sampleRate*(duration+TAIL)), sampleRate);
+          var graph = buildBusGraph(offCtx);
+          // Save live position, then schedule the whole song synchronously
+          // with the offline overrides in place.
+          var keepSec = currentSection, keepVar = currentVar;
+          _oCtx = offCtx; _oBus = graph.buses;
+          var t = 0.02;
+          for(var ai=0;ai<song.arrangement.length;ai++){
+            var block = song.arrangement[ai];
+            currentSection = block.charAt(0);
+            currentVar = parseInt(block.charAt(1)) - 1;
+            var sv = getCurrentVar();
+            applyFXTo(graph.buses, sv, t);
+            for(var s=0;s<STEPS;s++){
+              scheduleStep(s, t);
+              t += getStepDuration(s);
+            }
+          }
+          _oCtx = null; _oBus = null;
+          currentSection = keepSec; currentVar = keepVar;
+          offCtx.startRendering().then(function(buffer){
+            var wav = audioBufferToWav(buffer);
+            var blob = new Blob([wav], {type:'audio/wav'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = (currentSongName()||'my-song').replace(/[^a-zA-Z0-9_\-]+/g,'-')+'.wav';
+            a.click(); URL.revokeObjectURL(url);
+            _toast('Exported!');
+          }).catch(function(e){_toast('Export error: '+e.message);});
+        }catch(e){
+          _oCtx = null; _oBus = null;
+          _toast('Export error: '+e.message);
+        }
+      });
     },
     setFX: function(lid, param, val){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
@@ -2264,12 +3471,27 @@ var GS = (function(){
     setPreset: function(lid, name){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
       v[lid].preset = name;
-      // Handle sample selection (prefixed with "smp:")
+      layerSampleName[lid] = null;
+      layerInst[lid] = null;
       if(name.indexOf('smp:') === 0){
         layerSampleName[lid] = name.substring(4);
-      } else {
-        layerSampleName[lid] = null;
+      } else if(name.indexOf('inst:') === 0){
+        var inst = name.substring(5);
+        layerInst[lid] = inst;
+        prefetchLayerInst(lid);
+        // Preview a mid-range note as soon as it lands
+        var lt = null;
+        for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===lid)lt=LAYER_TYPES[i];}
+        if(lt){
+          var notes = getScaleNotes(lt.octave);
+          var mid = notes[Math.floor(notes.length/2)];
+          if(mid) loadInstNote(inst, noteToMidi(mid.name), function(ok){
+            if(ok && layerInst[lid]===inst) playInstNote(inst, mid.name, getCtx().currentTime, 1, lid);
+          });
+        }
+        _toast((INST_NAMES[inst]||inst)+' loading…');
       }
+      markDirty();
     },
     openSampler: function(){
       document.getElementById('gs-sampler').classList.add('open');
@@ -2424,6 +3646,7 @@ var GS = (function(){
       if(sampleBuffers[name]){name += '-'+Math.floor(Math.random()*99)}
       sampleBuffers[name] = _editBuffer;
       _editName = name;
+      idbSaveSample(name, _editBuffer); // vault: survives refresh
       renderSampleList();
       renderLayers(); // update preset dropdowns
       document.getElementById('gs-rec-status').textContent = 'Saved "'+name+'" — available in all instruments';
@@ -2481,6 +3704,7 @@ var GS = (function(){
     deleteSample: function(name){
       if(!confirm('Delete "'+name+'"?')) return;
       delete sampleBuffers[name];
+      idbDeleteSample(name);
       // Clear any layer assignments pointing to this sample
       for(var lid in layerSampleName){if(layerSampleName[lid]===name)layerSampleName[lid]=null;}
       for(var di=0;di<drumSamples.length;di++){if(drumSamples[di]===name)drumSamples[di]=null;}
@@ -2576,7 +3800,10 @@ var GS = (function(){
           break;
         }
       }
+      prefetchLayerInst(layerId);
+      markDirty();
       renderLayers();
+      if(document.getElementById('gs-keys').classList.contains('open')) keysRender();
     }
   };
 })();
