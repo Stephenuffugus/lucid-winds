@@ -3,8 +3,9 @@
 Committed per ART-LEDGER rule 6. Cut with `scripts`-style border-flood + inpaint (never a head-hole).
 
 ## Sheets
-- `sheet1.png` — core monsters A (3x2): col=monster, row=idle/hit. Stretch / Chub / Dib&Dob.
-- `sheet2.png` — core monsters B (3x2): tube-head / octopus / crowned-king.
+- `sheet1.png` — core monsters A (3x2), **TEAL** clay: col=monster, row=idle/hit. Stretch / Chub / Dib&Dob.
+- `sheet2.png` — core monsters B (3x2), **GREEN** clay: tube-head / octopus / crowned-king.
+  (Jul 19: Stephen re-sent 1&2 non-purple — teal+green cut cleaner off magenta AND read more distinct on the dark table. Purple originals superseded.)
 - `sheet3a.png`, `sheet3b.png`, `sheet4.png` — clay table PARTS (rails, curves, Y-junctions,
   chevron arrows, gold funnel, striped rails, domino/eyes blocks, cone posts, ramps, grate).
 

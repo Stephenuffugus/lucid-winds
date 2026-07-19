@@ -8,12 +8,12 @@ drop a new PNG with the **same file name** into `art/`, bump `PIN_ART.VER` (cach
 Raw source: `art-drop/Pinball claymation/` (22 sheets + `PROMPTS.txt`). Re-cut anytime:
 `python3 scripts/cut_pinball_claymation.py all` → `art-drop/Pinball claymation/cut/` + preview contact sheets.
 
-## art2 — CORE MONSTERS REDO (Jul 19) ✅ VER bumped '2'→'a2'
+## art2 — CORE MONSTERS REDO (Jul 19) ✅ VER '2'→'a3' (non-purple respin)
 Replaced the indistinct "wall of purple" center bumpers with **6 distinct clay monsters** (idle+hit),
 cut border-flood + inpaint (no head-holes; ma_05 de-striped). Raw: `art-drop/blobworks-art2/`.
-- **bumper_a** = Stretch (tall, arms-crossed) · **bumper_b** = Chub (round, cream belly) ·
-  **bumper_c** = Dib&Dob (twins). idle→`_idle`, hit→`_lit`.
-- **sling** = octopus · **scoop** = tube-head (idle/lit/open) · **standup_lit/done** = crowned King.
+- **TEAL** bumpers: **bumper_a** = Stretch (tall, arms-crossed) · **bumper_b** = Chub (round, cream belly) ·
+  **bumper_c** = Dib&Dob (twins). idle→`_idle`, hit→`_lit`. (Stephen re-sent 1&2 non-purple for cut+contrast.)
+- **GREEN**: **sling** = octopus · **scoop** = tube-head (idle/lit/open) · **standup_lit/done** = crowned King.
 - **post_nub** = a clay cone post (from the parts sheets).
 - **PARKED** (cut, in `art-drop/blobworks-art2/`, NOT wired): the rail / curve / Y-junction / striped-rail /
   ramp / domino-block parts — the engine bakes rails into the `table_*` backdrop, so per-piece blits
