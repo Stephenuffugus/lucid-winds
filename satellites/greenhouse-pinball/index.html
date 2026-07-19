@@ -188,7 +188,7 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
    manifest keys, bump VER to cache-bust, and extend the manifest + blit sites per the pack
    wire-notes (art-asset-lists/pinball-claymation/00-art-direction.md). */
 var PIN_ART=(function(){
-  var DIR='art/', VER='a3', cache={}, tried={};
+  var DIR='art/', VER='a4', cache={}, tried={};
   var api={ enabled:true, DIR:DIR, VER:VER };
   function load(key){ if(tried[key])return; tried[key]=1; var im=new Image();
     im._ok=0; im.onload=function(){ im._ok=(im.naturalWidth>0)?1:0; }; im.onerror=function(){ im._ok=0; };
@@ -852,7 +852,7 @@ function render(){ if(!ctx||!G)return;
       ctx.fillStyle='rgba(255,246,210,0.5)'; ctx.beginPath(); ctx.arc(po.x-1.5,po.y-1.5,po.r*0.4,0,7); ctx.fill(); } }
   // bumpers (flower heads)
   drawShots();
-  for(var m=0;m<BUMPERS.length;m++){ var _bk=['bumper_a','bumper_b','bumper_c'][m]||'bumper_a', _bi=PIN_ART.img(BUMPERS[m].lit>0.05?(_bk+'_lit'):(_bk+'_idle')); if(_bi)artFit(_bi,BUMPERS[m].x,BUMPERS[m].y,BUMPERS[m].r*2.6); else drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e'); }
+  for(var m=0;m<BUMPERS.length;m++){ var _bk=['bumper_a','bumper_b','bumper_c'][m]||'bumper_a', _bi=PIN_ART.img(BUMPERS[m].lit>0.05?(_bk+'_lit'):(_bk+'_idle')); if(_bi){ var _br=BUMPERS[m].r, _bw=_br*2.6, _bh=_bw*_bi.height/_bi.width, _mxh=_br*3.4; if(_bh>_mxh){ _bw*=_mxh/_bh; _bh=_mxh; } ctx.drawImage(_bi, BUMPERS[m].x-_bw/2, BUMPERS[m].y-_bh/2, _bw, _bh); } else drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e'); }
   for(var g=0;g<SLINGS.length;g++){ var _si=PIN_ART.img(SLINGS[g].lit>0.05?'sling_lit':'sling_idle'); if(_si)artFit(_si,SLINGS[g].x,SLINGS[g].y,SLINGS[g].r*3.6); else drawBumper(SLINGS[g],'#7ab356','#3f6b34'); }
   // skill-shot ring on the lit bumper during the plunge window
   if(G.skillLit>=0 && G.skillWin>0){ var sk=BUMPERS[G.skillLit]; ctx.save(); ctx.globalAlpha=0.45+0.45*Math.sin(G.t*8); ctx.strokeStyle='#f5ebd0'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(sk.x,sk.y,sk.r+9,0,7); ctx.stroke(); ctx.restore(); }
@@ -979,7 +979,7 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
         ctx.fillStyle=done?'#d8b8c2':'#3a1520'; ctx.font='800 13px system-ui'; ctx.fillText('SLIME'.charAt(sh.letter),sh.x,sh.y+4.5);
       }
     } else if(sh.type==='drop'){ var _dn=(+sh.id.slice(1))%3||0, _di=PIN_ART.img((sh.down?'drop_down_':'drop_up_')+_dn);
-      if(_di){ artFit(_di,sh.x,sh.y,sh.r*3.2); }
+      if(_di){ artFit(_di,sh.x,sh.y,sh.r*4.0); }
       else if(sh.down){ ctx.fillStyle='rgba(90,60,110,0.28)'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.6,0,7); ctx.fill(); }
       else { ctx.fillStyle='#b57de0'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.fill(); ctx.fillStyle='rgba(230,200,245,0.8)'; ctx.beginPath(); ctx.arc(sh.x-3,sh.y-3,sh.r*0.34,0,7); ctx.fill(); }
     } else if(sh.type==='scoop'){ var slit=G.scoopLit;
@@ -1030,7 +1030,7 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
         ctx.fillStyle=on?'#f2d98a':'#5a6b4a'; ctx.font='800 12px system-ui'; ctx.textAlign='center'; ctx.fillText('ZAP'.charAt(sh.sunIdx),sh.x,sh.y+4); ctx.restore(); }
     } else if(sh.type==='return'){ var rg=sh.cd>0?(sh.cd/0.7):0;
       var _rgi=PIN_ART.img(rg>0.05?'return_gate_lit':'return_gate');
-      if(_rgi){ artFit(_rgi,sh.x,sh.y,sh.r*2.6); }
+      if(_rgi){ artFit(_rgi,sh.x,sh.y,sh.r*3.4); }
       else { ctx.save(); ctx.strokeStyle='rgba(122,179,86,'+(0.32+0.5*rg+0.14*fl)+')'; ctx.lineWidth=3; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(sh.x-9,sh.y-12); ctx.lineTo(sh.x-9,sh.y+12); ctx.moveTo(sh.x+9,sh.y-12); ctx.lineTo(sh.x+9,sh.y+12); ctx.stroke();
         if(rg>0.05){ ctx.fillStyle='rgba(242,217,138,'+(0.5*rg)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.5,0,7); ctx.fill(); } ctx.restore(); } }
