@@ -42,6 +42,7 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.92; max-width:400px; line-height:1.55; text-shadow:0 1px 8px rgba(0,0,0,0.85)}
 .btn.ff{background:linear-gradient(180deg,#8fd8f2,#3e9ecc); color:#0c2a38; border-color:#5cb8dd}
+.btn.endless{background:linear-gradient(180deg,#f2a8d8,#c04f9e); color:#2a0c22; border-color:#dd5cb8}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f38,#171322); color:var(--ink);
   font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -109,6 +110,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
       <button class="btn ff" id="b-ff">Freefall &middot; Level <span id="t-fflvl">1</span></button>
+      <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
@@ -166,7 +168,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v4.0";
+var BUILD="v4.6";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -685,7 +687,7 @@ function buildFreefall(lvl){
   clearWorld();
   var rng=mulberry32(((lvl*1597334677)>>>0)^0xFA11);
   var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
-  var depth=(G_ENDLESS?3200:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
+  var depth=(G_ENDLESS?900:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
   var floorY=-depth;
   // sky above the rim + sun
   (function(){
@@ -894,28 +896,32 @@ function newGame(lvl){
   requestAnimationFrame(loop);
 }
 
-function newFF(lvl){
+function newFF(lvl, endless){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
+  G_ENDLESS = !!endless;
   var built=buildFreefall(lvl);
-  G={ mode:'ff', lvl:lvl, world:built,
+  G_ENDLESS = false;
+  G={ mode:'ff', endless:!!endless, lvl:lvl, world:built,
       x:0, y:4, vx:0, vy:0, ang:0, w:0, grounded:false,
-      score:0, combo:0, comboBest:0, slices:0, taps:0,
+      score:0, combo:0, comboBest:0, slices:0, taps:0, depth:0,
       done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
   camera.position.set(0, 30, 44);
   $('h-score').textContent='0';
-  $('h-lvl').textContent='FREEFALL '+lvl;
+  $('h-lvl').textContent=endless?'ENDLESS':('FREEFALL '+lvl);
   $('h-combo').classList.remove('on');
   $('progfill').style.width='0%';
+  $('progbar').style.display=endless?'none':'block';
   var bn=$('lvlbanner');
-  if(bn){ bn.textContent='FREEFALL '+lvl; bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
+  if(bn){ bn.textContent=endless?'ENDLESS':('FREEFALL '+lvl); bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
   var co=$('coach');
-  if(co){ co.textContent='HOLD A SIDE TO STEER AND FLIP'; co.style.display=(lvl===1)?'block':'none'; }
+  if(co){ co.textContent=endless?'DIVE AS DEEP AS YOU DARE':'HOLD A SIDE TO STEER AND FLIP'; co.style.display=(lvl===1||endless)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
 }
+function newEndless(){ newFF(1, true); }
 
 /* ---------- input: tap to flip, hold to keep flipping (original rules) ---------- */
 function doTap(side){
@@ -1138,7 +1144,8 @@ function loop(ts){
       // FREEFALL: hold a side to STEER across the pit and FLIP the blade;
       // release to settle the spin so your orientation holds while you aim
       var hd = G.holding ? (G.hold||G.lastSide||0) : 0;
-      G.vy -= GRAV_FF*dt; if(G.vy < -FF_TERM) G.vy = -FF_TERM;
+      var term = G.endless ? Math.min(30, FF_TERM + (G.depth||0)*0.012) : FF_TERM;
+      G.vy -= GRAV_FF*dt; if(G.vy < -term) G.vy = -term;
       if(hd!==0){
         G.vx += hd*FF_STEER*dt;
         G.w  += hd*FF_SPIN*dt;
@@ -1318,11 +1325,17 @@ function loop(ts){
       }
     }
 
-    $('h-score').textContent=G.score.toLocaleString();
-    var pct=G.mode==='ff'
-      ? Math.max(0,Math.min(100,(4-G.y)/(4-G.world.floorY)*100))
-      : Math.max(0,Math.min(100,G.x/G.world.wallX*100));
-    $('progfill').style.width=pct.toFixed(1)+'%';
+    if(G.mode==='ff'){ var dNow=Math.max(0,4-G.y); if(dNow>G.depth)G.depth=dNow; }
+    if(G.endless){
+      $('h-score').textContent=G.score.toLocaleString();
+      $('h-lvl').textContent='DEPTH '+Math.round(G.depth)+'m';
+    } else {
+      $('h-score').textContent=G.score.toLocaleString();
+      var pct=G.mode==='ff'
+        ? Math.max(0,Math.min(100,(4-G.y)/(4-G.world.floorY)*100))
+        : Math.max(0,Math.min(100,G.x/G.world.wallX*100));
+      $('progfill').style.width=pct.toFixed(1)+'%';
+    }
   } else {
     G.doneT+=dt;
     G.ang=(G.stickA||0.35)+Math.sin(G.doneT*15)*0.14*Math.exp(-G.doneT*2.4); // dart wobble
@@ -1404,27 +1417,59 @@ function loop(ts){
 
 /* ---------- finish ---------- */
 function failLevel(){
-  var lvl=G.lvl;
-  // a fail does NOT advance, score not multiplied, still shows what you earned
-  $('go-title').textContent='STUCK IN THE WALL';
-  $('go-stars').textContent='\u2715';
-  $('go-stars').style.color='#ff6a5a';
+  var depthM=Math.round(G.depth||Math.max(0,4-G.y));
+  if(G.endless){
+    // endless payoff: score folds in a depth bonus; best depth saved
+    G.score += depthM*3;
+    var eb=PROG.endlessBest||0, enb=depthM>eb;
+    if(enb)PROG.endlessBest=depthM; saveProg();
+    $('go-title').textContent='DEPTH '+depthM+'m';
+    $('go-stars').textContent=enb?'\u2605':'\u2715';
+    $('go-stars').style.color=enb?'#f2a8d8':'#ff6a5a';
+  } else {
+    $('go-title').textContent='STUCK IN THE WALL';
+    $('go-stars').textContent='\u2715';
+    $('go-stars').style.color='#ff6a5a';
+  }
   (function(){ var el=$('go-score'), target=G.score, e2=0;
     el.textContent='0';
     var iv2=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/650);
       el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
       if(pr>=1)clearInterval(iv2); },33); })();
-  var fell=Math.max(0,Math.round(4-G.y));
-  $('go-lab').textContent='the blade caught the wall';
-  $('go-detail').textContent=G.slices+' sliced \u00b7 fell '+fell+' before you stuck';
+  if(G.endless){
+    $('go-lab').textContent=(PROG.endlessBest===depthM?'\u2605 deepest yet \u00b7 ':'')+'the blade caught the wall';
+    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 best '+(PROG.endlessBest||0)+'m';
+  } else {
+    $('go-lab').textContent='the blade caught the wall';
+    $('go-detail').textContent=G.slices+' sliced \u00b7 fell '+depthM+' before you stuck';
+  }
   $('go-sun').textContent='';
-  $('go-next').textContent='Try Again';
+  $('go-next').textContent=G.endless?'Dive Again':'Try Again';
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
+  var te=$('t-ebest'); if(te)te.textContent=PROG.endlessBest||0;
   show('s-go');
 }
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
   if(G.failed){ return failLevel(); }
+  if(G.endless){
+    // reached the very bottom without a fail = conquered the pit (rare)
+    var dM=Math.round(G.depth||900);
+    G.score += dM*3 + 5000;
+    if(dM>(PROG.endlessBest||0)){ PROG.endlessBest=dM; saveProg(); }
+    $('go-title').textContent='PIT CONQUERED';
+    $('go-stars').textContent='\u2605\u2605\u2605';
+    $('go-stars').style.color='#f2a8d8';
+    (function(){ var el=$('go-score'), target=G.score, e2=0; el.textContent='0';
+      var iv3=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/850);
+        el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString(); if(pr>=1)clearInterval(iv3); },33); })();
+    $('go-lab').textContent='you dived the whole pit clean';
+    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 '+dM+'m';
+    $('go-sun').textContent='';
+    $('go-next').textContent='Dive Again';
+    var te2=$('t-ebest'); if(te2)te2.textContent=PROG.endlessBest||0;
+    show('s-go'); return;
+  }
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
   var chips=G.chips||0, cleanBonus=0;
@@ -1509,20 +1554,23 @@ function attractLoop(ts){
 }
 tap('b-play',function(){ newGame(PROG.level); });
 tap('b-ff',function(){ newFF(PROG.ffLevel); });
+tap('b-endless',function(){ newEndless(); });
 tap('b-how',function(){ show('s-how'); });
 tap('how-back',function(){ show('s-title'); });
 tap('b-home',function(){ running=false; show('s-title'); });
-tap('go-next',function(){ if(G&&G.mode==='ff')newFF((G&&G.failed)?G.lvl:PROG.ffLevel); else newGame(PROG.level); });
-tap('go-retry',function(){ if(G&&G.mode==='ff')newFF(G.lvl); else newGame(G?G.lvl:PROG.level); });
+tap('go-next',function(){ if(G&&G.endless)newEndless(); else if(G&&G.mode==='ff')newFF((G&&G.failed)?G.lvl:PROG.ffLevel); else newGame(PROG.level); });
+tap('go-retry',function(){ if(G&&G.endless)newEndless(); else if(G&&G.mode==='ff')newFF(G.lvl); else newGame(G?G.lvl:PROG.level); });
 tap('go-home',function(){ show('s-title'); });
 $('t-lvl').textContent=PROG.level;
 $('t-fflvl').textContent=PROG.ffLevel;
+if(!PROG.endlessBest)PROG.endlessBest=0;
+$('t-ebest').textContent=PROG.endlessBest;
 $('buildstamp').textContent='Super Slice 3D '+BUILD;
 startAttract();
 
 /* headless test hook — only with ?dev=1 */
 if(/[?&]dev=1/.test(location.search)){
-  window._S3={ newGame:newGame, newFF:newFF, tap:doTap,
+  window._S3={ newGame:newGame, newFF:newFF, newEndless:newEndless, tap:doTap,
     hold:function(side){ if(G){ G.hold=side||0; G.holding=(side!==0&&side!=null); if(side)G.lastSide=side; } },
     state:function(){ return G; }, world:function(){ return G?G.world:null; },
     freeze:function(){ running=false; },
