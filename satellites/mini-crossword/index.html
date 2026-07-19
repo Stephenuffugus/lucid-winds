@@ -1029,13 +1029,11 @@ function selectCell(cell,forceDir){
   render(); updateClue();
 }
 function advance(){
+  /* Jessie 7/19: typing moves to the NEXT cell in the word, never skipping
+     ahead to an empty slot — you type straight down the line from where you
+     started. At the word's end the cursor stays put. */
   var s=curSlot(); if(!s)return; var pos=s.cells.indexOf(CUR.sel);
-  /* move to next empty cell in word, else next cell */
-  var i,next=-1;
-  for(i=pos+1;i<s.cells.length;i++){ if(CUR.grid[s.cells[i]]===""){ next=s.cells[i]; break; } }
-  if(next<0){ for(i=pos+1;i<s.cells.length;i++){ next=s.cells[i]; break; } }
-  if(next<0)next=s.cells[Math.min(pos+1,s.cells.length-1)];
-  CUR.sel=next;
+  if(pos>=0 && pos<s.cells.length-1) CUR.sel=s.cells[pos+1];
 }
 function typeLetter(ch){
   if(!CUR||CUR.phase!=="play"||CUR.sel<0)return false;
