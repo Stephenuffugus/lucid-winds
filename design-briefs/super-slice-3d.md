@@ -15,7 +15,13 @@
 Every mode is about **knife orientation on contact**: the BLADE cuts (fruit, stacks, ropes) and the HANDLE bounces (walls, pads). What is deadly vs rewarding flips per mode:
 - **Journey:** blade sticks the score wall (good, ends level); handle bounces off it (retry).
 - **Freefall:** blade into a side wall = STICK + FAIL; handle bounces clean; blade cuts fruit/stacks; blade down sticks the bullseye floor to win.
-- **Wall Climb:** blade into the wall = FAIL; you kick your handle/back off the wall to ascend; blade cuts hazards/targets that drift past. **CONTROLS (Stephen 7/19, v5.5): journey-style TAP TO FLICK — tap left/right pops the knife up toward that wall, flipping; NO freefall hold-steer. Starts PARKED on the launch pad; the run begins on the first tap.**
+- **Wall Climb (v5.6 FINAL DESIGN, Stephen 7/19 after test-play):** "literally the normal
+  game's ending — same physics and everything. essentially the shortest level with the
+  tallest finishing wall with a scaling score multiplier." A 26-unit journey runway into ONE
+  MEGA WALL (10 bands x1..x15 at L1, growing to 20 bands up to x75). Blade = stick (your
+  multiplier + ceremony), handle = thunk back down. Flappy-flip up the face. The earlier
+  chimney/mist/kick design (v5.2-v5.5) is DEAD — removed entirely, do not resurrect.
+  Next per Stephen: "an entire group of worlds and levels" on this foundation.
 
 ## Build roadmap (priority order; each batch bot-verified + deployed)
 1. **[DONE — v4.4]** **Deadly walls** — blade-into-wall STICKS + FAILS; fail screen (Try Again / Replay / Menu), fail buzz, the knife buried in the wall + red sparks + "STUCK!". Handle bounce unchanged. Pads stay non-fatal (only the two side walls kill).
