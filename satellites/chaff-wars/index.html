@@ -909,7 +909,7 @@ function podGlyph(ci,gx,gy,gr,col){ ctx.save(); ctx.translate(gx,gy); ctx.fillSt
 function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
   /* idle life: gentle breathe/squash + occasional blink + eye drift (skip on tiny minis and mid-pop) */
   var live = s>=16 && (scale==null||scale===1);
-  var ph=x*0.11+y*0.15, br=live?Math.sin(CW_T*2.3+ph):0, blink=live?((((CW_T*0.45+ph*1.7)%6.0)<0.16)?1:0):0;
+  var ph=x*0.11+y*0.15, br=live?Math.sin(CW_T*1.05+ph):0, blink=live?((((CW_T*0.3+ph*1.7)%6.0)<0.14)?1:0):0;
   ctx.save();
   if(live){ ctx.translate(cx,cy+br*r*0.03); ctx.scale(1+br*0.05,1-br*0.05); ctx.translate(-cx,-cy); }
   var _spr=CW_POD_ART?cwSpr('pods/pod-'+ci):null;
@@ -921,7 +921,7 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
     ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.32,r*0.18,-0.5,0,6.2832); ctx.fill();
     if(s>=16 && SET.tags) podGlyph(ci,cx,cy-r*0.46,r*0.3,pal.lt);   /* colorblind tag shape (top) */
   }
-  if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0)+(live?Math.sin(CW_T*0.8+ph)*0.14:0), gy=(gaze?gaze.y:0.35),k;
+  if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0)+(live?Math.sin(CW_T*0.38+ph)*0.14:0), gy=(gaze?gaze.y:0.35),k;
     for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey;
       if(blink){ ctx.strokeStyle='#15170e'; ctx.lineWidth=Math.max(1.4,er*0.5); ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(eyx-er*0.7,eyy); ctx.lineTo(eyx+er*0.7,eyy); ctx.stroke(); }
       else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
