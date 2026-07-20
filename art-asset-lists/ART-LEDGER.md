@@ -75,12 +75,20 @@ The game already SHIPS themed + playable with zero art files (procedural neon po
 colorblind glyphs, crew colors, taunts, neon UI, WebAudio 80s beat). Art enhances.
 Cut/wire target when files land: `satellites/chaff-wars/art-drop/` → mark DROPPED.
 
-## Pop N Lock (formerly Chaff Wars) — "Neon Boombox" 80s b-boy pack — LISTED (2026-07-19)
+## Pop N Lock (formerly Chaff Wars) — "Neon Boombox" 80s b-boy pack — DROPPED + CUT (2026-07-20)
 
 Full prompt pack at `art-asset-lists/pop-n-lock/` (00-art-direction + 9 sheets):
 5 crew sheets (14 Grey Crew animals + Keeper, idle/win/lose, ALL in shiny
 parachute pants), 2 backgrounds, the lettered POP N LOCK wildstyle logo (+
 stacked icon variant), text-free UI chrome (incl. the multiplayer room-code
-cassette card), and an optional FX sheet. Dropped in Stephen's 012Assets
-Drive folder as one Doc per sheet. Status: **LISTED** (awaiting generation).
-Game ships fully playable procedural; raws land at `satellites/chaff-wars/art-drop/`.
+cassette card), and an optional FX sheet.
+
+**DROPPED 2026-07-20:** 11 raw sheets committed to `satellites/chaff-wars/art-drop/`
+(see MANIFEST.md there). **CUT** via `scripts/cut_popnlock.py` (border-flood magenta
+knockout — interior magenta art preserved; content-band grid detection) into
+`satellites/chaff-wars/assets/`: **45 char** (15 ids × idle/win/lose, ids match
+`ROSTER`), **14 ui** (vs-frame, banner-win/lose/allclear, mode-a/b, next-window,
+power-lit/unlit, burst-1/2/3/go, room-card), **16 fx** (pop-splat/chaff-splat/
+buff-wipe/cast-aura × 4 frames), **2 logo** (stacked, wide), **2 bg** (battle-alley,
+menu-wall JPEG <300KB). All verified clean (checkerboard montage + halo audit).
+Status: **CUT — wiring behind image-loaded checks with procedural fallback.**
