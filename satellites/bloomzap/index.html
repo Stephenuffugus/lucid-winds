@@ -8,44 +8,54 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Bloomzap">
-<title>Bloomzap · Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Word Lightning">
+<title>Word Lightning · Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/bloomzap/; harmless 404 at repo root, guarded) -->
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"bloomzap"}).catch(function(){});</script>
 <style>
 :root{
-  --bg:#0d100c; --bg2:#141a12; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b;
-  --cream:#e8dcc8; --muted:#8a9178; --bark:#6b4a2b; --pink:#e58fa0; --ink:#12160f;
-  --pan:#0a0d09ee; --line:#2a331f; --zap:#e56a4d;
+  --bg:#0d1a30; --bg2:#16263e; --sage:#f5e14a; --deep:#3f6b34; --gold:#e6cd6a;
+  --cream:#e8ecf2; --muted:#8a94a8; --bark:#6b4a2b; --pink:#e58fa0; --ink:#0c1424;
+  --pan:#0a1120ee; --line:#2e3a50; --zap:#f5e14a;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--cream); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+  background:radial-gradient(120% 80% at 50% 0%, #12223a 0%, #060a16 70%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
-  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+  background:#0c1626; overflow:hidden; box-shadow:0 0 60px #000a}
+/* storm ambiance — angled rain + periodic lightning flash */
+#storm{position:absolute; inset:0; z-index:21; pointer-events:none; overflow:hidden}
+#rain{position:absolute; inset:-25%; opacity:0.15;
+  background-image:repeating-linear-gradient(72deg, rgba(200,220,255,0) 0 6px, rgba(200,220,255,0.55) 6px 7px, rgba(200,220,255,0) 7px 22px);
+  animation:rainfall .5s linear infinite}
+@keyframes rainfall{ from{transform:translate(0,0)} to{transform:translate(-42px,126px)} }
+#flash{position:absolute; inset:0; background:#eaf2ff; opacity:0; mix-blend-mode:screen; animation:lightning 9s ease-in infinite}
+@keyframes lightning{ 0%,91%,100%{opacity:0} 92%{opacity:0.5} 93%{opacity:0.06} 94.5%{opacity:0.42} 96%{opacity:0} }
 
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
-  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+  background:linear-gradient(180deg,#101f34 0%, #0a1424 100%)}
 .screen.on{display:flex}
 .pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
-.title-word{font-size:56px; line-height:1; color:var(--sage); font-weight:800;
-  text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-word{font-size:48px; line-height:1.02; color:var(--sage); font-weight:800;
+  text-shadow:0 3px 0 #1a1400, 0 0 34px #f5e14a66; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:410px; line-height:1.5}
 
 .btn{display:flex; align-items:center; justify-content:center; gap:10px;
   min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
-  background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
+  background:linear-gradient(180deg,#3c4454,#2a303e); color:var(--cream);
   font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
-.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a;
-  box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
+.btn.primary{background:linear-gradient(180deg,#4a5262,#363d4c); color:#e8ecf2; border-color:#5a6478;
+  box-shadow:0 4px 0 #232838, 0 8px 20px #0006}
+.btn.zap{background:linear-gradient(180deg,#f5e14a,#d8c020); color:#1a1200; border-color:#fff08a;
+  box-shadow:0 4px 0 #9a8410, 0 8px 22px #f5e14a33}
 .btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .btn.sm{min-height:52px; font-size:16px}
@@ -133,13 +143,14 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 </head>
 <body>
 <div id="wrap"><div id="stage">
+  <div id="storm"><div id="rain"></div><div id="flash"></div></div>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Bloomzap</div>
+    <div class="title-word">Word<br>Lightning</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Grow a bed of words from eight shared letters as fast as you can, then race your own best time. A quiet, unhurried word garden. Just you and the clock.</div>
+    <div class="ribbon">A dark and stormy night. Spell words from eight crackling letters before the lightning strikes — race a rival or beat your own best time. Fast, electric, and a little wild.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">🌱&nbsp; Play</button>
@@ -216,7 +227,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="tiles" id="tiles"></div>
     <div class="acts">
       <button class="btn sm" id="a-clear" style="flex:.7">⌫ Clear</button>
-      <button class="btn primary" id="a-plant" style="flex:1.3">🌿 Plant word</button>
+      <button class="btn zap" id="a-plant" style="flex:1.3">⚡ Submit</button>
     </div>
   </div></div>
 
@@ -291,11 +302,21 @@ function beep(freq,dur,type,vol,slideTo){ if(!SET.sound) return; var c=actx(); i
     o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
   }catch(e){}
 }
+/* rolling thunder (Word Lightning): a filtered-noise rumble + an initial crack */
+function thunder(){ if(!SET.sound) return; var c=actx(); if(!c) return;
+  try{ var dur=1.15, sr=c.sampleRate, buf=c.createBuffer(1, Math.floor(sr*dur), sr), d=buf.getChannelData(0), i;
+    for(i=0;i<d.length;i++){ var e=Math.pow(1-i/d.length,2.2); d[i]=(Math.random()*2-1)*e; }
+    var src=c.createBufferSource(); src.buffer=buf;
+    var lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(340,c.currentTime); lp.frequency.exponentialRampToValueAtTime(70,c.currentTime+dur);
+    var g=c.createGain(); g.gain.setValueAtTime(0.0001,c.currentTime); g.gain.linearRampToValueAtTime(0.55,c.currentTime+0.03); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(); src.stop(c.currentTime+dur+0.05);
+    beep(95,0.09,'square',0.11,45);
+  }catch(e){} }
 function sfx(kind){ switch(kind){
   case 'ui': beep(420,0.05,'triangle',0.09); break;
   case 'tap': beep(520,0.04,'sine',0.08); break;
   case 'plant': beep(440,0.08,'triangle',0.12,620); setTimeout(function(){ beep(680,0.09,'sine',0.10); },70); break;
-  case 'bad': beep(160,0.14,'sawtooth',0.08,110); break;
+  case 'bad': thunder(); break;
   case 'zap': beep(900,0.06,'sawtooth',0.13,180); setTimeout(function(){ beep(240,0.14,'square',0.10,90); },50); break;
   case 'aiplant': beep(300,0.07,'sine',0.07,360); break;
   case 'win': beep(523,0.11,'triangle',0.13); setTimeout(function(){ beep(659,0.11,'triangle',0.13); },110); setTimeout(function(){ beep(784,0.14,'triangle',0.14); },230); setTimeout(function(){ beep(1046,0.22,'triangle',0.13); },370); break;
@@ -516,7 +537,7 @@ function shareBloomzap(){
   if(r.mode==='ai'){ line=r.isWin?('beat the Rival with '+w+' word'+plural+' in '+r.time):('grew '+w+' word'+plural+' against the Rival'); }
   else if(r.timeout){ line='grew '+w+'/'+r.target+' words before time ran out'; }
   else { line='grew '+w+' word'+plural+' in '+r.time+(r.isBest?' (new best!)':''); }
-  var txt="Bloomzap · "+line+"! Can you beat it?";
+  var txt="Word Lightning · "+line+"! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt+"\n"+url).then(function(){
@@ -628,7 +649,7 @@ function boot(){
   $('p-quit').addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); stopAI(); if(G) G.over=true; show('s-title'); updateRec(); });
   $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound) sfx('ui'); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
-  $('buildstamp').textContent='Bloomzap '+BUILD+' · '+DICT.size+' words';
+  $('buildstamp').textContent='Word Lightning '+BUILD+' · '+DICT.size+' words';
   updateRec();
 }
 
