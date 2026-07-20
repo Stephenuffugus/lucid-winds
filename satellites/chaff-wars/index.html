@@ -261,7 +261,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.4";
+var BUILD="v1.5";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -383,6 +383,8 @@ function computeResolve(g){ var chain=0,score=0,cleared=0,chaff=0; applyGravity(
 
 /* ---------- piece geometry ---------- */
 function partnerOf(cur){ var r=cur.r,c=cur.c; if(cur.rot===0)return {r:r-1,c:c}; if(cur.rot===1)return {r:r,c:c+1}; if(cur.rot===2)return {r:r+1,c:c}; return {r:r,c:c-1}; }
+/* partner offset [dr,dc] from the pivot by rotation — used for the rotation tween */
+function _partnerOff(rot){ return rot===0?[-1,0]:rot===1?[0,1]:rot===2?[1,0]:[0,-1]; }
 function pieceCells(cur){ var p=partnerOf(cur); return [{r:cur.r,c:cur.c,col:cur.c1},{r:p.r,c:p.c,col:cur.c2}]; }
 function cellFree(g,r,c){ if(c<0||c>=COLS||r>=ROWS)return false; if(r<0)return true; return g[r][c]===0; }
 function fits(g,cur){ var cs=pieceCells(cur),i; for(i=0;i<2;i++)if(!cellFree(g,cs[i].r,cs[i].c))return false; return true; }
@@ -655,9 +657,9 @@ function aiUpdate(f,dt){ if(f.state!=='play'||!f.cur||!f.aiTarget)return; f.aiTi
 
 /* ---- shared movement ---- */
 function moveP(f,dc){ if(f.state!=='play'||!f.cur)return false; var n={r:f.cur.r,c:f.cur.c+dc,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.c+=dc; if(!f.ai)SFX.move(); return true; } return false; }
-function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var nr=(f.cur.rot+(dir||1)+4)%4;
+function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var oldRot=f.cur.rot, nr=(f.cur.rot+(dir||1)+4)%4;
   var kicks=[[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,1]],i;
-  for(i=0;i<kicks.length;i++){ var t={r:f.cur.r+kicks[i][1],c:f.cur.c+kicks[i][0],rot:nr,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,t)){ f.cur.rot=nr; f.cur.c=t.c; f.cur.r=t.r; if(!f.ai)SFX.rot(); return true; } }
+  for(i=0;i<kicks.length;i++){ var t={r:f.cur.r+kicks[i][1],c:f.cur.c+kicks[i][0],rot:nr,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,t)){ f.cur.rot=nr; f.cur.c=t.c; f.cur.r=t.r; f.cur.rotFrom=oldRot; f.cur.rotT=1; if(!f.ai)SFX.rot(); return true; } }
   return false; }
 function softStep(f){ if(f.state!=='play'||!f.cur)return; var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.r++; f.gravAcc=0; } else { lockPiece(f); } }
 function gravityStep(f){ var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))f.cur.r++; else lockPiece(f); }
@@ -777,6 +779,7 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
   if(f.flashDanger>0)f.flashDanger-=dt;
   if(f.chainGlow>0)f.chainGlow=Math.max(0,f.chainGlow-dt*1.1);
+  if(f.cur&&f.cur.rotT>0)f.cur.rotT=Math.max(0,f.cur.rotT-dt/90);   /* rotation tween (~90ms) */
   if(f===MATCH.pf && f.hype>0 && MATCH.phase==='fight'){ f.hype=Math.max(0,f.hype-dt*1.3); var htd=hypeTierOf(f.hype); if(htd<f.hypeTier)f.hypeTier=htd; }
   if(f.remote)return;   /* versus: the rival board is a remote display, driven by snapshots */
   if(f.state==='play'){
@@ -932,7 +935,19 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   if(f.cur && (f.state==='play')){ var cs=pieceCells(f.cur),i;
     if(!mini && SET.ghost){ var gy=ghostY(f); var gcur={r:gy,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; var gcs=pieceCells(gcur);
       for(i=0;i<2;i++){ if(gcs[i].r<1)continue; var gp=cellPx(F,gcs[i].r,gcs[i].c); ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(gp.x+F.cell/2,gp.y+F.cell/2,F.cell*0.42,0,6.2832); ctx.stroke(); } }
-    for(i=0;i<2;i++){ if(cs[i].r<1)continue; var pp=cellPx(F,cs[i].r,cs[i].c); drawPod(pp.x,pp.y,F.cell,cs[i].col-1,{x:0,y:0.35},1,1); } }
+    /* smooth glide: interpolate the active piece between grid rows using how far
+       it is through the current gravity step (render-only; logic still steps rows).
+       No offset when the cell below is blocked, so it never overlaps a resting pod. */
+    var gEff=f.softHold?Math.min(f.gravMs,40):f.gravMs;
+    var canFall=fits(f.grid,{r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2});
+    var fallOff=canFall?Math.min(F.cell*0.9,((f.gravAcc||0)/gEff)*F.cell):0;
+    for(i=0;i<2;i++){ if(cs[i].r<1)continue; var pp=cellPx(F,cs[i].r,cs[i].c); var dx=pp.x, dy=pp.y+fallOff;
+      /* rotation tween: swing the partner pod from its old cell to the new one */
+      if(i===1 && (f.cur.rotT||0)>0){ var piv=cellPx(F,f.cur.r,f.cur.c);
+        var oF=_partnerOff(f.cur.rotFrom||0), oT=_partnerOff(f.cur.rot), pr=1-f.cur.rotT;
+        dx=piv.x+(oF[1]+(oT[1]-oF[1])*pr)*F.cell;
+        dy=piv.y+(oF[0]+(oT[0]-oF[0])*pr)*F.cell+fallOff; }
+      drawPod(dx,dy,F.cell,cs[i].col-1,{x:0,y:0.35},1,1); } }
   /* pending Chaff warning row above the board */
   var pw=f.pending; if(pw>0){ var ics=Math.min(pw, mini?12:12); var iw=mini?9:13; var bx=F.x; var by=F.y-(mini?16:26);
     for(i=0;i<ics;i++){ drawChaff(bx+i*(iw+1), by, iw, 1, 0.9); } if(pw>ics){ ctx.fillStyle='#e0685f'; ctx.font='700 '+(mini?9:12)+'px system-ui'; ctx.fillText('+'+(pw-ics), bx+ics*(iw+1)+2, by+iw*0.75); } }
