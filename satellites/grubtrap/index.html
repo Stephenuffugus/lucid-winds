@@ -291,6 +291,7 @@ function sfx(kind){ switch(kind){
   case 'step': beep(300,0.035,'sine',0.05); break;
   case 'push': beep(180,0.06,'square',0.07,140); break;
   case 'trap': beep(523,0.09,'triangle',0.12,760); setTimeout(function(){ beep(784,0.10,'sine',0.11); },70); break;
+  case 'multi': beep(659,0.08,'triangle',0.13); setTimeout(function(){ beep(880,0.09,'triangle',0.13); },70); setTimeout(function(){ beep(1175,0.13,'triangle',0.13); },150); break;
   case 'catch': beep(200,0.16,'sawtooth',0.11,90); break;
   case 'clear': beep(523,0.10,'triangle',0.13); setTimeout(function(){ beep(659,0.10,'triangle',0.13); },100); setTimeout(function(){ beep(784,0.14,'triangle',0.14); },210); break;
   case 'over': beep(392,0.16,'triangle',0.1,300); setTimeout(function(){ beep(262,0.24,'triangle',0.1,175); },170); break;
@@ -450,14 +451,24 @@ function checkTraps(){
   }
   var trapped=[]; for(i=0;i<n;i++) if(!free[i]) trapped.push(i);
   if(!trapped.length) return;
+  // multi-pen combo: binding several grubs in a single push is skilful (the
+  // group-aware pinning rule makes it possible) — reward it with a multiplier.
+  var nt=trapped.length, mult=nt>=2?Math.min(3.5,1+(nt-1)*0.5):1;
+  var per=Math.round(50*G.level*mult), added=0, cx=0, cy=0;
   // trap from highest index so splice is safe
   for(var t=trapped.length-1;t>=0;t--){ var g2=grubs[trapped[t]];
     grid[idx(g2.c,g2.r)]=3; // seedball (solid)
-    G.penned++; G.score+=50*G.level;
-    burst(cellCX(g2.c), cellCY(g2.r), '#c8a84b', 12);
+    G.penned++; G.score+=per; added+=per;
+    cx+=cellCX(g2.c); cy+=cellCY(g2.r);
+    burst(cellCX(g2.c), cellCY(g2.r), '#c8a84b', nt>=2?18:12);
     grubs.splice(trapped[t],1);
   }
-  sfx('trap'); G.flash=0.3;
+  cx/=nt; cy/=nt;
+  if(nt>=2){ var NM=['','','Double','Triple','Quad','Quint'], nm=NM[nt]||(nt+'-fold');
+    G.penPop={ txt:nm+' Pen!', sub:'x'+mult+'  +'+added, t:1.25, cx:cx, cy:cy };
+    burst(cx, cy, '#f0d57a', 22); sfx('multi');
+  } else { sfx('trap'); }
+  G.flash=0.3;
   updateCtrl();
 }
 function heroCaught(){
@@ -575,6 +586,17 @@ function render(){
 
   if(G.flash>0){ ctx.fillStyle='rgba(229,106,77,'+(G.flash*0.35)+')'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS); }
 
+  // multi-pen combo banner (floats up + fades near the trap)
+  if(G.penPop){ var pp=G.penPop, k=clamp(pp.t/1.25,0,1), rise=(1.25-pp.t)*34;
+    var appear=clamp((1.25-pp.t)*8,0,1), sc=0.62+0.38*(1-Math.pow(1-appear,3));
+    var py=clamp(pp.cy-16-rise, FY+26, FY+ROWS*CS-42);
+    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.globalAlpha=clamp(k*1.5,0,1);
+    ctx.shadowColor='#0a0d09'; ctx.shadowBlur=8;
+    ctx.fillStyle='#f0d57a'; ctx.font='800 '+Math.round(27*sc)+'px system-ui'; ctx.fillText(pp.txt, VW/2, py);
+    ctx.fillStyle='#eafbd6'; ctx.font='800 '+Math.round(15*sc)+'px system-ui'; ctx.fillText(pp.sub, VW/2, py+22*sc);
+    ctx.restore(); ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  }
+
   if(G.phase==='clear'){
     var cel=G.celT||0;
     ctx.fillStyle='rgba(10,13,9,'+(0.30+0.32*clamp(cel*3,0,1))+')'; ctx.fillRect(0,FY,VW,ROWS*CS);
@@ -642,6 +664,7 @@ function loop(ts){
     if(heldDir && moveAcc>0){ moveAcc-=dt; if(moveAcc<=0){ moveHero(heldDir); moveAcc=0.13; } }
   }
   if(G && G.flash>0){ G.flash-=dt; if(G.flash<0) G.flash=0; }
+  if(G && G.penPop){ G.penPop.t-=dt; if(G.penPop.t<=0) G.penPop=null; }
   if(G && G.phase==='clear'){ G.celT=(G.celT||0)+dt; }
   for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=380*dt; p.life-=dt*0.85; if(p.life<=0) parts.splice(i,1); }
   for(var qi=pops.length-1;qi>=0;qi--){ pops[qi].t+=dt; if(pops[qi].t>=pops[qi].dur) pops.splice(qi,1); }
