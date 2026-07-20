@@ -1,5 +1,5 @@
 /* Merge & Blast service worker — installability. NETWORK-FIRST (house rule). */
-var CACHE = "slice-master-v1";
+var CACHE = "slice-master-v2";
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {

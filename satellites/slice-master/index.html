@@ -376,16 +376,27 @@ function step(){
     var cdx=G.kx-c.x, cdy=G.ky-c.y;
     if(cdx*cdx+cdy*cdy < 30*30){ c.got=true; G.coinsGot+=10; SFX.coin(); spark(c.x,c.y,'#ffd76a'); }
   }
-  // wall
+  // wall — blade-first STICKS (multiplier + level end); handle-first BOUNCES back.
+  // The knife's tip is local +x, so its world x-facing is cos(ang): >0 = blade
+  // leading into the wall (stick), <0 = handle leading (thunk off, try again).
   if(G.kx>=G.world.wallX){
-    G.kx=G.world.wallX; G.over=true; G.stuck=true;
-    var bands=wallBands(), m=2;
-    for(i=0;i<bands.length;i++){ if(G.ky>=bands[i].y0&&G.ky<bands[i].y1){ m=bands[i].m; break; } }
-    if(G.ky<bands[0].y0)m=bands[0].m;
-    G.mult=m;
-    SFX.stick(); G.shake=10;
-    (function(g){ setTimeout(function(){ if(G===g) endRun(); },750); })(G);
-    return;
+    if(Math.cos(G.ang)>0.05){
+      G.kx=G.world.wallX; G.over=true; G.stuck=true;
+      var bands=wallBands(), m=2;
+      for(i=0;i<bands.length;i++){ if(G.ky>=bands[i].y0&&G.ky<bands[i].y1){ m=bands[i].m; break; } }
+      if(G.ky<bands[0].y0)m=bands[0].m;
+      G.mult=m;
+      SFX.stick(); G.shake=10;
+      (function(g){ setTimeout(function(){ if(G===g) endRun(); },750); })(G);
+      return;
+    }
+    // handle hit the wall: thunk off, keep spinning, arc back for another approach
+    G.kx=G.world.wallX-KR*1.3;
+    G.vx=-Math.abs(G.vx)*0.5-70;
+    G.vy=Math.min(G.vy,-230);
+    G.w=(G.w>=0?1:-1)*TAPW*0.9; G.grounded=false; G.shake=8;
+    SFX.bounce(); spark(G.world.wallX,G.ky,'#e8b46a');
+    if(!G.handleCoached){ G.handleCoached=true; floater(G.kx,G.ky-26,'lead with the blade!'); }
   }
   // ground: SAFE — land and slide
   if(G.ky>=GROUND-KR){
@@ -758,6 +769,12 @@ if(/[?&]sltest=1/.test(location.search)){
       wallX:G.world.wallX, blocks:G.world.blocks.length, pinks:G.world.pinks.length, bonus:G.world.bonus }; },
     tapNow:doTap,
     tick:function(n){ var k; for(k=0;k<(n||1);k++){ if(!G||G.over)break; step(); } return window.SL_DEV.state(); },
+    /* drive a single wall contact at knife angle `ang` (0=blade-first, PI=handle-first) */
+    wallTest:function(ang){ newRun(1,false); running=false;
+      G.grounded=false; G.over=false; G.stuck=false; G.handleCoached=true;
+      G.kx=G.world.wallX-2; G.ky=400; G.vx=RUNVX; G.vy=0; G.ang=ang; G.w=0;
+      step();
+      return { over:!!G.over, stuck:!!G.stuck, vx:Math.round(G.vx), kx:Math.round(G.kx-G.world.wallX), mult:G.mult||0 }; },
     replay:function(lvl,ticks){
       newRun(lvl,false); running=false;
       var tset={}, k; for(k=0;k<ticks.length;k++)tset[ticks[k]]=1;
