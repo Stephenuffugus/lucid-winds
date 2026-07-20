@@ -56,6 +56,16 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 .wdot.on{border-color:var(--gold)}
 .wdot i{display:block; border-radius:50%; background:var(--ink)}
 #hint{text-align:center; color:var(--muted); font-size:14px; line-height:1.35; padding-top:2px}
+/* face stamp picker */
+#facepanel{position:absolute; left:8px; right:8px; bottom:8px; z-index:60; display:none;
+  background:var(--panel); border:1px solid var(--gold); border-radius:16px; padding:12px 12px 10px; box-shadow:0 -8px 30px rgba(0,0,0,.55)}
+#facepanel.on{display:block}
+.fp-title{color:var(--gold); font-weight:800; font-size:13px; letter-spacing:.4px; margin:2px 0 6px}
+.fp-row{display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px}
+.fp-stamp{flex:none; width:54px; height:54px; border-radius:12px; border:1px solid var(--line); background:#efe6d0; cursor:pointer; padding:0}
+.fp-stamp.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.55)}
+.fp-stamp canvas{width:100%; height:100%; display:block; border-radius:11px}
+#fp-close{width:100%; height:44px; margin-top:6px; font-size:16px}
 /* directions overlay */
 #helppanel{position:absolute; inset:0; z-index:70; display:none; background:rgba(10,8,6,0.94); padding:18px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch}
 #helppanel.on{display:block}
@@ -174,6 +184,7 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
       <div class="wdot" data-w="12" title="Marker"><i style="width:14px;height:14px"></i></div>
       <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
+      <button class="tbtn" id="b-faces" aria-label="Add eyes and mouths">😀 Faces</button>
       <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
       <button class="tbtn" id="b-newbook" aria-label="Start a new flipbook">📓 New</button>
       <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
@@ -186,6 +197,13 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <button class="tbtn" id="b-install" aria-label="Add to home screen">📲 Install</button>
     </div>
     <div id="hint">Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.</div>
+  </div>
+  <div id="facepanel">
+    <div class="fp-title">👀 Eyes — pick a pair</div>
+    <div class="fp-row" id="fp-eyes"></div>
+    <div class="fp-title">👄 Mouths — pick a feeling</div>
+    <div class="fp-row" id="fp-mouths"></div>
+    <button class="tbtn" id="fp-close">Done</button>
   </div>
 </div></div>
 
@@ -207,7 +225,7 @@ var pages=[null];            // dataURL per page (null = blank)
 var cur=0;
 var fpsOptions=[4,8,12,24], fpsIdx=1;
 var onionOn=true, firstOn=false;
-var color='#2a2438', width=6, erasing=false;
+var color='#2a2438', width=6, erasing=false, stampMode=null;
 var playing=false, playTimer=null, playFrame=0;
 var drawnThisSession=false, drawTicks=0, sunTimer=null;
 var cinema=false;
@@ -311,7 +329,9 @@ function strokeTo(x,y){
   pageX.globalCompositeOperation='source-over';
   lx=x; ly=y;
 }
-function onDown(e){ if(playing)return; e.preventDefault(); var p=evPos(e); drawing=true; lx=p.x; ly=p.y; strokeTo(p.x+0.01,p.y+0.01); drawnThisSession=true; }
+function onDown(e){ if(playing)return; e.preventDefault(); var p=evPos(e);
+  if(stampMode){ pageX.save(); stampMode.d(pageX,p.x,p.y,stampSize()); pageX.restore(); pageX.globalCompositeOperation='source-over'; markDirty(); drawnThisSession=true; return; }
+  drawing=true; lx=p.x; ly=p.y; strokeTo(p.x+0.01,p.y+0.01); drawnThisSession=true; }
 function onMove(e){ if(!drawing)return; e.preventDefault(); var p=evPos(e); strokeTo(p.x,p.y); }
 function onUp(){ if(!drawing)return; drawing=false; markDirty(); }   // cheap flag, no per-stroke encode/write
 /* Penny's old tablet couldn't draw AT ALL (Jul 17): it predates PointerEvent.
@@ -837,7 +857,7 @@ function toastHint(m){ var h=$('hint'); h.textContent=m;
     var d=document.createElement('div');
     d.className='swatch'+(i===0?' on':''); d.style.background=c;
     d.addEventListener('click',function(){
-      color=c; erasing=false; $('b-erase').classList.remove('on');
+      color=c; erasing=false; $('b-erase').classList.remove('on'); clearStamp();
       var all=row.querySelectorAll('.swatch'),k; for(k=0;k<all.length;k++)all[k].classList.remove('on');
       d.classList.add('on');
     });
@@ -855,8 +875,49 @@ function toastHint(m){ var h=$('hint'); h.textContent=m;
   })(dots[k]);
 })();
 $('b-erase').addEventListener('click',function(){
-  erasing=!erasing; $('b-erase').classList.toggle('on',erasing);
+  erasing=!erasing; $('b-erase').classList.toggle('on',erasing); if(erasing) clearStamp();
 });
+
+/* ---------- Face stamps (Stephen 7/20): pre-designed eyes + mouths you tap onto a
+   frame; change the feeling each page to ANIMATE an expression. Stick them on a
+   stuffed animal, a piece of fruit, anything. ---------- */
+var SK_INK='#232330', SK_W='#ffffff', SK_PINK='#e0546a', SK_TONG='#ea8a9a';
+function _sset(g,fill,stroke,lw){ g.lineCap='round'; g.lineJoin='round'; if(fill!=null)g.fillStyle=fill; if(stroke!=null)g.strokeStyle=stroke; if(lw!=null)g.lineWidth=lw; }
+function _eyeW(g,x,y,r){ g.fillStyle=SK_W; g.strokeStyle=SK_INK; g.lineWidth=Math.max(2,r*0.16); g.beginPath(); g.arc(x,y,r,0,7); g.fill(); g.stroke(); }
+function _pup(g,x,y,r,gloss){ g.fillStyle=SK_INK; g.beginPath(); g.arc(x,y,r,0,7); g.fill(); if(gloss){ g.fillStyle='rgba(255,255,255,0.9)'; g.beginPath(); g.arc(x-r*0.34,y-r*0.34,r*0.32,0,7); g.fill(); } }
+var STAMPS=[
+ {id:'e_googly',kind:'eyes',name:'Googly',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _eyeW(g,cx-ex,cy,er); _eyeW(g,cx+ex,cy,er); _pup(g,cx-ex+er*0.12,cy+er*0.22,er*0.44,1); _pup(g,cx+ex-er*0.12,cy+er*0.22,er*0.44,1); }},
+ {id:'e_happy',kind:'eyes',name:'Happy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _sset(g,null,SK_INK,Math.max(3,s*0.16)); for(var k=-1;k<=1;k+=2){ g.beginPath(); g.arc(cx+k*ex,cy+er*0.35,er*0.85,Math.PI*1.12,Math.PI*1.88); g.stroke(); } }},
+ {id:'e_wide',kind:'eyes',name:'Surprised',d:function(g,cx,cy,s){ var ex=s*0.74,er=s*0.56; _eyeW(g,cx-ex,cy,er); _eyeW(g,cx+ex,cy,er); _pup(g,cx-ex,cy,er*0.34,1); _pup(g,cx+ex,cy,er*0.34,1); }},
+ {id:'e_cute',kind:'eyes',name:'Sparkly',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.54; _eyeW(g,cx-ex,cy,er); _eyeW(g,cx+ex,cy,er); for(var k=-1;k<=1;k+=2){ _pup(g,cx+k*ex,cy+er*0.08,er*0.62,0); g.fillStyle='rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx+k*ex-er*0.28,cy-er*0.2,er*0.22,0,7); g.fill(); g.beginPath(); g.arc(cx+k*ex+er*0.22,cy+er*0.26,er*0.11,0,7); g.fill(); } }},
+ {id:'e_sleepy',kind:'eyes',name:'Sleepy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _sset(g,SK_INK,SK_INK,Math.max(3,s*0.13)); for(var k=-1;k<=1;k+=2){ g.beginPath(); g.arc(cx+k*ex,cy,er*0.8,0,Math.PI); g.stroke(); g.beginPath(); g.arc(cx+k*ex,cy+er*0.28,er*0.32,0,Math.PI); g.fill(); } }},
+ {id:'e_wink',kind:'eyes',name:'Wink',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _eyeW(g,cx-ex,cy,er); _pup(g,cx-ex,cy+er*0.1,er*0.5,1); _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.arc(cx+ex,cy+er*0.35,er*0.85,Math.PI*1.12,Math.PI*1.88); g.stroke(); }},
+ {id:'e_grumpy',kind:'eyes',name:'Grumpy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.42; _eyeW(g,cx-ex,cy+s*0.1,er); _eyeW(g,cx+ex,cy+s*0.1,er); _pup(g,cx-ex,cy+s*0.1,er*0.42,0); _pup(g,cx+ex,cy+s*0.1,er*0.42,0); _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.moveTo(cx-ex-er*0.9,cy-er*0.8); g.lineTo(cx-ex+er*0.5,cy-er*0.15); g.moveTo(cx+ex+er*0.9,cy-er*0.8); g.lineTo(cx+ex-er*0.5,cy-er*0.15); g.stroke(); }},
+ {id:'e_hearts',kind:'eyes',name:'Hearts',d:function(g,cx,cy,s){ var ex=s*0.72,r=s*0.46; g.fillStyle=SK_PINK; for(var k=-1;k<=1;k+=2){ var x=cx+k*ex; g.beginPath(); g.moveTo(x,cy+r*0.7); g.bezierCurveTo(x-r,cy-r*0.2,x-r*0.5,cy-r,x,cy-r*0.35); g.bezierCurveTo(x+r*0.5,cy-r,x+r,cy-r*0.2,x,cy+r*0.7); g.closePath(); g.fill(); } }},
+ {id:'e_dizzy',kind:'eyes',name:'Dizzy',d:function(g,cx,cy,s){ var ex=s*0.72,r=s*0.5; _sset(g,null,SK_INK,Math.max(2.5,s*0.1)); for(var k=-1;k<=1;k+=2){ var x=cx+k*ex; g.beginPath(); for(var a=0;a<Math.PI*4;a+=0.28){ var rr=r*(a/(Math.PI*4)); var px=x+Math.cos(a)*rr, py=cy+Math.sin(a)*rr; if(a===0)g.moveTo(px,py); else g.lineTo(px,py); } g.stroke(); } }},
+ {id:'m_smile',kind:'mouth',name:'Smile',d:function(g,cx,cy,s){ _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.arc(cx,cy-s*0.15,s*0.66,Math.PI*0.18,Math.PI*0.82); g.stroke(); }},
+ {id:'m_grin',kind:'mouth',name:'Grin',d:function(g,cx,cy,s){ _sset(g,SK_INK,SK_INK,Math.max(2,s*0.1)); g.beginPath(); g.arc(cx,cy-s*0.2,s*0.7,Math.PI*0.1,Math.PI*0.9); g.arc(cx,cy-s*0.2,s*0.38,Math.PI*0.9,Math.PI*0.1,true); g.closePath(); g.fill(); g.fillStyle=SK_W; g.fillRect(cx-s*0.5,cy+s*0.0,s*1.0,s*0.15); }},
+ {id:'m_whoa',kind:'mouth',name:'Whoa',d:function(g,cx,cy,s){ _sset(g,SK_TONG,SK_INK,Math.max(3,s*0.13)); g.beginPath(); g.ellipse(cx,cy,s*0.4,s*0.54,0,0,7); g.fill(); g.stroke(); }},
+ {id:'m_sad',kind:'mouth',name:'Sad',d:function(g,cx,cy,s){ _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.arc(cx,cy+s*0.5,s*0.66,Math.PI*1.2,Math.PI*1.8); g.stroke(); }},
+ {id:'m_tongue',kind:'mouth',name:'Tongue',d:function(g,cx,cy,s){ _sset(g,null,SK_INK,Math.max(3,s*0.15)); g.beginPath(); g.arc(cx,cy-s*0.15,s*0.6,Math.PI*0.12,Math.PI*0.88); g.stroke(); g.fillStyle=SK_TONG; g.strokeStyle=SK_INK; g.lineWidth=Math.max(2,s*0.08); g.beginPath(); g.ellipse(cx+s*0.16,cy+s*0.34,s*0.24,s*0.3,0,0,7); g.fill(); g.stroke(); }},
+ {id:'m_meh',kind:'mouth',name:'Meh',d:function(g,cx,cy,s){ _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.moveTo(cx-s*0.5,cy); g.lineTo(cx+s*0.5,cy); g.stroke(); }},
+ {id:'m_worried',kind:'mouth',name:'Worried',d:function(g,cx,cy,s){ _sset(g,null,SK_INK,Math.max(3,s*0.14)); g.beginPath(); g.moveTo(cx-s*0.55,cy); g.quadraticCurveTo(cx-s*0.28,cy-s*0.28,cx,cy); g.quadraticCurveTo(cx+s*0.28,cy+s*0.28,cx+s*0.55,cy); g.stroke(); }},
+ {id:'m_laugh',kind:'mouth',name:'Laugh',d:function(g,cx,cy,s){ _sset(g,SK_TONG,SK_INK,Math.max(3,s*0.13)); g.beginPath(); g.arc(cx,cy-s*0.05,s*0.6,0,Math.PI); g.closePath(); g.fill(); g.stroke(); }}
+];
+function stampSize(){ return width>=12?82:(width<=3?46:62); }
+function setStamp(st){ stampMode=st; erasing=false; var e=$('b-erase'); if(e)e.classList.remove('on'); var f=$('b-faces'); if(f)f.classList.add('on');
+  var btns=document.querySelectorAll('.fp-stamp'); for(var i=0;i<btns.length;i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-sid')===st.id);
+  var fp=$('facepanel'); if(fp)fp.classList.remove('on'); var h=$('hint'); if(h)h.textContent='Tap your drawing to add the '+st.name.toLowerCase()+'. Change the feeling each page to make a face move. Tap a color to draw again.'; }
+function clearStamp(){ stampMode=null; var f=$('b-faces'); if(f)f.classList.remove('on'); var btns=document.querySelectorAll('.fp-stamp'); for(var i=0;i<btns.length;i++) btns[i].classList.remove('on'); }
+function buildFacePanel(){ var er=$('fp-eyes'), mr=$('fp-mouths'); if(!er||!mr) return;
+  for(var i=0;i<STAMPS.length;i++){ (function(st){ var b=document.createElement('button'); b.className='fp-stamp'; b.setAttribute('data-sid',st.id); b.title=st.name;
+    var c=document.createElement('canvas'); c.width=100; c.height=100; st.d(c.getContext('2d'),50,52,32); b.appendChild(c);
+    b.addEventListener('click',function(){ setStamp(st); });
+    (st.kind==='eyes'?er:mr).appendChild(b); })(STAMPS[i]); } }
+(function(){ var bf=$('b-faces'), fp=$('facepanel'), fc=$('fp-close');
+  if(bf) bf.addEventListener('click',function(){ if(fp) fp.classList.toggle('on', !fp.classList.contains('on')); });
+  if(fc) fc.addEventListener('click',function(){ if(fp) fp.classList.remove('on'); });
+  buildFacePanel(); })();
 
 /* ---------- sunbeams for sustained animating (creative-tool standard) ---------- */
 // Standard capped earn helper (matches doodle-pad / budburst / mouse-trap): 30/day cap.
