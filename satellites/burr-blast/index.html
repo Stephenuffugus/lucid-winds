@@ -408,6 +408,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   </div>
   <div class="comic-dots" id="comicDots"></div>
   <div class="comic-nav">
+    <button class="btn ghost sm" id="btnComicBack">← Back</button>
     <button class="btn ghost sm" id="btnComicSkip">Skip</button>
     <button class="btn gold sm" id="btnComicNext">Next →</button>
   </div>
@@ -995,7 +996,7 @@ var AMMO = {
   burr:      { r:15, density:1.5, rest:0.28, fric:0.5, icon:'🌰', name:'Burr',          ability:null },
   split:     { r:13, density:1.15,rest:0.30, fric:0.5, icon:'🍃', name:'Split Seed',    ability:'split',
                ab:{ pellets:2, angle:0.30, perp:120, boost:1.05 } },
-  acorn:     { r:19, density:2.7, rest:0.16, fric:0.55,icon:'🌳', name:'Acorn',         ability:'slam',
+  acorn:     { r:19, density:2.7, rest:0.16, fric:0.55,icon:'🌰', name:'Acorn',         ability:'slam',
                ab:{ force:2100, drift:0.35 } },
   puffball:  { r:16, density:0.72,rest:0.34, fric:0.4, icon:'🍄', name:'Puffball',      ability:'spore',
                ab:{ power:600, radius:230, lift:0.95, radial:0.5 } },
@@ -1925,8 +1926,9 @@ function step(dt){
     var moving = worldMoving();
     var projGone = !G.proj || G.proj.dead;
     if(!moving) G.stillTime+=dt; else G.stillTime=0;
-    // resolve when things settle OR a hard timeout
-    if((projGone && !moving && G.stillTime>0.4) || (!moving && G.stillTime>0.55) || G.shotTime>6.0){
+    // resolve when things settle OR a hard timeout — snappy reload so the
+    // slingshot pops back to ready quickly and you can fire again (Jessie).
+    if((projGone && !moving && G.stillTime>0.16) || (!moving && G.stillTime>0.28) || G.shotTime>6.0){
       resolveShot();
     }
     // early win: pests all gone
@@ -2949,6 +2951,7 @@ function boot(){
   $('menuMascot').src='assets/bramble.png?v='+encodeURIComponent(BUILD);
   // comic controls
   $('btnComicNext').onclick=storyNext;
+  $('btnComicBack').onclick=storyPrev;
   $('btnComicSkip').onclick=storyFinish;
   $('comicCanvas').onclick=storyNext;
   window.addEventListener('resize', function(){ if($('scr-story').classList.contains('show')) renderStoryPanel(); });
@@ -3022,8 +3025,10 @@ function renderStoryPanel(){ var cv=$('comicCanvas'); if(!cv)return; var p=_stor
   var d=''; for(var i=0;i<_storyPanels.length;i++) d+='<span class="cdot'+(i===_storyIdx?' on':'')+'"></span>'; $('comicDots').innerHTML=d;
   $('btnComicNext').textContent=_storyIdx>=_storyPanels.length-1?'Play →':'Next →';
   $('btnComicSkip').style.visibility=_storyPanels.length>1?'visible':'hidden';
+  var bb=$('btnComicBack'); if(bb) bb.style.visibility=_storyIdx>0?'visible':'hidden';
 }
 function storyNext(){ SFX.click(); if(_storyIdx<_storyPanels.length-1){ _storyIdx++; renderStoryPanel(); } else storyFinish(); }
+function storyPrev(){ SFX.click(); if(_storyIdx>0){ _storyIdx--; renderStoryPanel(); } }
 function storyFinish(){ var f=_storyDone; _storyDone=null; if(f)f(); else goMenu(); }
 
 /* ---- world intro card ---- */
