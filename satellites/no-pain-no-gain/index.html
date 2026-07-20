@@ -127,6 +127,7 @@ var SET={ sound:true };
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
 var COINS=parseInt(LS.get(K.coins)||'0',10)||0;
 var BEST=parseInt(LS.get(K.best)||'0',10)||0;
+var BESTDROP=parseInt(LS.get('np_bestdrop')||'0',10)||0;
 
 /* audio */
 var AC=null;
@@ -221,7 +222,8 @@ function spawnDoll(dx,dy){
   var spin=(Math.random()-0.5)*3; for(var i=0;i<pts.length;i++){ pts[i].ox+=spin*(pts[i].y-dy)*0.02; pts[i].oy-=1.2; }
   doll={ pts:pts, sticks:sticks, head:head, chest:chest, hips:hips, rest:0, t:0 };
 }
-function dropDoll(){ spawnDoll(clamp(dropX||270,WALL_L+40,WALL_R-40), CEIL+10); sess.dmg=sess.dmg; sfx('drop'); }
+function finalizeDrop(){ if((sess.dropEarned||0)>BESTDROP){ BESTDROP=sess.dropEarned; LS.set('np_bestdrop',''+BESTDROP); } }
+function dropDoll(){ finalizeDrop(); sess.dropEarned=0; sess.combo=0; sess.lastHit=-9; spawnDoll(clamp(dropX||270,WALL_L+40,WALL_R-40), CEIL+10); sfx('drop'); }
 var dropX=270;
 
 /* ============================ physics ============================= */
@@ -279,7 +281,13 @@ function explode(h){ h.armed=false; h._dead=true; sfx('boom');
 var _rmq=[];
 function setTimeoutRemove(h){ _rmq.push(h); }
 function pruneHaz(){ if(!_rmq.length)return; for(var i=haz.length-1;i>=0;i--){ if(_rmq.indexOf(haz[i])>=0) haz.splice(i,1); } _rmq.length=0; }
-function award(d){ sess.dmg+=d; var c=Math.floor(d); if(c>0){ COINS+=c; if((t|0)%2===0)sfx('coin'); if(COINS>BEST){ BEST=COINS; } }
+function award(d){
+  /* carnage combo: fast consecutive damage builds a coin multiplier */
+  if(t-(sess.lastHit==null?-9:sess.lastHit) < 0.85) sess.combo=(sess.combo||0)+1; else sess.combo=1;
+  sess.lastHit=t; sess.comboT=1.3;
+  var mult=1+Math.min(sess.combo,50)*0.05;                    /* up to ~3.5x */
+  var earned=d*mult;
+  sess.dmg+=earned; var c=Math.floor(earned); if(c>0){ COINS+=c; sess.dropEarned=(sess.dropEarned||0)+c; if(((t*30)|0)%2===0)sfx('coin'); if(COINS>BEST){ BEST=COINS; } }
   /* sunbeams: 1 per 250 damage this session, capped by the studio helper */
   var due=Math.floor(sess.dmg/250)-sess.sunGiven; if(due>0){ var g=0; try{ if(window._sbCapEarn)g=window._sbCapEarn(due,'no-pain-no-gain')||0; }catch(e){} sess.sunGiven+=due; }
 }
@@ -362,7 +370,18 @@ function render(){
   for(var fi=0;fi<floats.length;fi++){ var f=floats[fi]; ctx.globalAlpha=clamp(f.life,0,1); ctx.fillStyle=f.col; ctx.fillText(f.v,f.x,f.y); }
   ctx.globalAlpha=1;
   drawHUD();
+  drawCombo();
   drawTray();
+}
+function drawCombo(){
+  if((sess.combo||0)<3 || sess.comboT<=0) return;
+  var mult=1+Math.min(sess.combo,50)*0.05, pulse=1+0.12*Math.sin(t*14), al=clamp(sess.comboT/1.3,0,1);
+  var col=sess.combo>=25?'#ff5aa8':(sess.combo>=12?'#f5c04a':'#9fd67e');
+  ctx.save(); ctx.globalAlpha=al; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='800 '+Math.round(32*pulse)+'px system-ui'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=16;
+  ctx.fillText(sess.combo+'× CARNAGE', VW/2, 152); ctx.shadowBlur=0;
+  ctx.font='800 16px system-ui'; ctx.fillStyle='#efe6cf'; ctx.fillText('coins ×'+mult.toFixed(1), VW/2, 180);
+  ctx.restore(); ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
 function claySeg(x1,y1,x2,y2,w,col,hi){ ctx.lineCap='round'; ctx.strokeStyle=col; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   ctx.strokeStyle=hi; ctx.lineWidth=w*0.42; ctx.beginPath(); ctx.moveTo(x1,y1-w*0.22); ctx.lineTo(x2,y2-w*0.22); ctx.stroke(); }
@@ -459,11 +478,12 @@ function loop(ts){ if(!running) return; var dt=lastTs?Math.min(0.05,(ts-lastTs)/
   if(doll){ stepPhysics(); doll.t+=dt; /* rest detection */ var mv=0,i; for(i=0;i<doll.pts.length;i++)mv+=Math.abs(doll.pts[i].x-doll.pts[i].ox)+Math.abs(doll.pts[i].y-doll.pts[i].oy); if(mv<1.5)doll.rest=Math.min(1,doll.rest+dt); else doll.rest=0; }
   for(i=parts.length-1;i>=0;i--){ var p=parts[i]; if(p.boom){ p.rt+=dt; if(p.rt>=p.dur)parts.splice(i,1); continue; } p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.vx*=0.98; p.life-=dt*0.9; if(p.life<=0)parts.splice(i,1); }
   for(i=floats.length-1;i>=0;i--){ var f=floats[i]; f.y+=f.vy; f.life-=dt*1.1; if(f.life<=0)floats.splice(i,1); }
+  if(sess.comboT>0){ sess.comboT-=dt; if(sess.comboT<=0) sess.combo=0; }
   render(); requestAnimationFrame(loop);
 }
 
 /* ============================ boot ============================= */
-function updateRec(){ var r=$('recbar'); if(BEST>0) r.innerHTML='Best purse <b>🪙 '+BEST+'</b>'; else r.textContent=''; }
+function updateRec(){ var r=$('recbar'); var h=''; if(BEST>0)h='Best purse <b>🪙 '+BEST+'</b>'; if(BESTDROP>0)h+=(h?' · ':'')+'Biggest drop <b>🪙 '+BESTDROP+'</b>'; r.innerHTML=h; }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
 function boot(){
   cv=$('game'); ctx=cv.getContext('2d');
@@ -509,7 +529,7 @@ if(/[?&]nptest=1/.test(location.search)){
   window.NP_DEV={
     startGame:startGame, drop:dropDoll, render:render, stop:function(){ running=false; },
     step:function(n){ for(var i=0;i<(n||1);i++) stepPhysics(); return NP_DEV.state(); },
-    state:function(){ return { coins:COINS, dmg:Math.round(sess.dmg), hazards:haz.length, doll:doll?doll.pts.length:0, rest:doll?doll.rest:null, headY:doll?Math.round(doll.head.y):null }; },
+    state:function(){ return { coins:COINS, dmg:Math.round(sess.dmg), hazards:haz.length, doll:doll?doll.pts.length:0, rest:doll?doll.rest:null, headY:doll?Math.round(doll.head.y):null, combo:sess.combo||0, dropEarned:sess.dropEarned||0, bestDrop:BESTDROP }; },
     setDropX:function(x){ dropX=x; }, place:function(tp,x,y){ if(OWNED[tp]) haz.push(newHaz(tp,x,y)); return haz.length; },
     clearHaz:function(){ haz=[]; }, give:function(c){ COINS+=c; }, own:function(tp){ OWNED[tp]=true; },
     owned:function(){ return OWNED; }, hazList:function(){ return haz.map(function(h){return h.t;}); },
