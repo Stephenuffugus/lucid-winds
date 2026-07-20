@@ -291,6 +291,9 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
    slice-master's proven constants, scaled from px to world units.
    ===================================================================== */
 var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
+// Wall Climb spin control (Stephen: slow it so you can time the blade). Tap gives a
+// slower, readable flip; HOLD brakes the spin and eases the blade to face the wall.
+var TAPW_CLIMB=-8.0, CLIMB_BRAKE=0.05, CLIMB_AIM=4.0;
 // Freefall tuning: gentle fall so you have time to aim the blade; hold a side
 // to STEER and FLIP, release to settle the spin and hold your orientation
 var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
@@ -1161,7 +1164,7 @@ function newClimb(lvl){
   var bn=$('lvlbanner');
   if(bn){ bn.textContent='WALL CLIMB '+lvl; bn.classList.remove('go'); void bn.offsetWidth; bn.classList.add('go'); }
   var co=$('coach');
-  if(co){ co.textContent='FLIP UP THE WALL. STICK THE BLADE AS HIGH AS YOU DARE.'; co.style.display=(lvl===1)?'block':'none'; }
+  if(co){ co.textContent='TAP TO FLIP UP · HOLD TO STEADY THE BLADE AND STICK IT HIGH'; co.style.display=(lvl===1)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
   running=true; lastTs=0;
   requestAnimationFrame(loop);
@@ -1230,7 +1233,7 @@ function doTap(side){
     if(side){ G.lastSide=side; G.hold=side; }
     G.taps++;
   } else {
-    G.vy=TAPVY; G.vx=RUNVX; G.w=TAPW; G.grounded=false; G.taps++;
+    G.vy=TAPVY; G.vx=RUNVX; G.w=(G.climbWall?TAPW_CLIMB:TAPW); G.grounded=false; G.taps++;
   }
   if(G.taps===1){ var co=$('coach'); if(co)co.style.display='none'; }
   SFX.flip();
@@ -1454,8 +1457,17 @@ function loop(ts){
       G.vx *= Math.pow(0.5,dt);          // horizontal drag keeps drift in control
       G.ang += G.w*dt;
     } else {
-      // hold = keep flipping in rhythm (same rules, comfy thumb)
-      if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); } }
+      // hold: Wall Climb = STEADY THE BLADE (brake the spin, then ease it to face the
+      // wall so you can stick clean — the "slow it down to climb" lever). Journey =
+      // keep flipping in rhythm (comfy thumb).
+      if(G.holding){
+        if(G.climbWall){
+          G.w*=Math.pow(CLIMB_BRAKE,dt);
+          if(Math.abs(G.w)<3){ var _k=Math.round((G.ang-Math.PI)/(2*Math.PI)), _tgt=Math.PI+_k*2*Math.PI; G.ang+=(_tgt-G.ang)*Math.min(1,dt*CLIMB_AIM); }
+        } else {
+          G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); }
+        }
+      }
       // physics (mirrors slice-master's grounded/air split)
       if(G.grounded){
         G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;
