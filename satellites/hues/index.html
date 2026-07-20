@@ -12,11 +12,29 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>HUES</title>
+<meta name="description" content="Hues — a daily color-matching game. Match the target shade by feel before the clock runs out, build a streak, and share your color squares.">
+<link rel="canonical" href="https://lucidwinds.com/satellites/hues/">
+<!-- Open Graph / Twitter social-share previews. Absolute URLs so the card renders
+     wherever the link is pasted (works from lucidwinds.com AND github.io mirror). -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="Hues — the daily color match">
+<meta property="og:description" content="Match the target shade by feel before the clock runs out. Play the daily, build a streak, and share your color squares.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/hues/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/hues/og-image.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hues — the daily color match">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hues — the daily color match">
+<meta name="twitter:description" content="Match the target shade by feel before the clock runs out. Play the daily and share your color squares.">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/hues/og-image.png?v=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
-<!-- Sky Wolf Studios — shared "sunbeam" currency SDK (additive; guarded so it never throws if blocked/offline) -->
-<script src="/sunbeam-sdk.js?v=4"></script>
+<!-- Sky Wolf Studios — shared "sunbeam" currency SDK (additive; guarded so it never throws if blocked/offline).
+     Absolute URL so it loads from BOTH lucidwinds.com (same-origin) and the github.io mirror (cross-origin). -->
+<script src="https://lucidwinds.com/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"hues"}).catch(function(){});</script>
 <style>
   :root{--bg:#0a0a0c;--ink:#f3f1ec;--ink-dim:#8d8a83;--ink-faint:#54524d;--line:#1e1e22;--line2:#2a2a30;
@@ -134,6 +152,11 @@
   .bd-deco::before{top:6px;left:6px;border-right:none;border-bottom:none}
   .bd-deco::after{bottom:6px;right:6px;border-left:none;border-top:none}
   .bd-prism{padding:3px;background:conic-gradient(from 0deg,#ff4d4d,#ffd24d,#4dff88,#4dd2ff,#b04dff,#ff4d4d)}
+  /* Image-frame borders (Stephen's art). One class; the frame PNG comes in via --bimg.
+     Frame art spec: square PNG, transparent hollow center, decorative frame in the outer ~25%.
+     border-image slices that 25% into the 9-slice corners+edges. See borders/README.md. */
+  .bd-img{padding:0;background:none;border:15px solid transparent;border-image:var(--bimg) 25% stretch}
+  .prev .bd-img{border-width:9px}
 
   .controls{margin-top:14px;display:flex;flex-direction:column;gap:12px}
   .spacer{flex:1 1 auto;min-height:22px}
@@ -454,12 +477,26 @@ const ymdStr=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+S
 const dailyNumber=()=>{const d=new Date();return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/86400000)+1;};
 const dailySeed=()=>{const d=new Date();return(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0;};
 
+/* ===== borders =====
+   Two kinds of border, one registry:
+     • procedural  — a `.bd-<id>` CSS rule (below) + a painter in paintShareBorder(); price via CONFIG.borderPrices
+     • image frame — `img:"borders/<name>.png"` + inline `price`; renders in-game via .bd-img/border-image
+                     AND on the shared result card via 9-slice. This is the path for Stephen's art —
+                     drop a PNG in borders/, add one line here, done. See borders/README.md for the art spec.
+   Anything with `img` automatically shows in the shop, in-game, AND on the share card. */
 const BORDERS=[
   {id:"hairline",name:"Hairline",ds:"Clean 1px edge"},{id:"bevel",name:"Bevel",ds:"Soft inset rim"},
   {id:"frost",name:"Frost",ds:"Frosted glass ring"},{id:"brutalist",name:"Brutalist",ds:"Hard offset slab"},
   {id:"gold",name:"Gold Leaf",ds:"Warm metallic frame"},{id:"neon",name:"Neon",ds:"Electric cyan glow"},
-  {id:"deco",name:"Deco",ds:"Art-deco corners"},{id:"prism",name:"Prism",ds:"Full spectrum"}]
-  .map(b=>({...b,price:CONFIG.borderPrices[b.id]}));
+  {id:"deco",name:"Deco",ds:"Art-deco corners"},{id:"prism",name:"Prism",ds:"Full spectrum"},
+  /* --- image-frame borders (reference implementation; add yours the same way) --- */
+  {id:"wildvine",name:"Wild Vine",ds:"Hand-drawn leafy frame",img:"borders/wildvine.png",price:500}
+]
+  .map(b=>({...b,price:b.price!=null?b.price:CONFIG.borderPrices[b.id]}));
+const borderById=id=>BORDERS.find(b=>b.id===id)||BORDERS[0];
+/* preload image-frame art so the share canvas can draw it (same-origin → no canvas taint) */
+const BORDER_IMGS={};
+BORDERS.forEach(b=>{if(b.img){const im=new Image();im.src=b.img;BORDER_IMGS[b.id]=im;}});
 const coins=()=>parseInt(Store.g(K.coins)||"0",10);
 const addCoins=n=>Store.s(K.coins,coins()+n);
 const owned=()=>(Store.g(K.owned)||"hairline").split(",").filter(Boolean);
@@ -509,7 +546,10 @@ const screens={menu:$("menu"),game:$("game"),result:$("result"),shop:$("shop")};
 function show(n){for(const k in screens)screens[k].classList.toggle("on",k===n);}
 const targetFrame=$("targetFrame"),yoursFrame=$("yoursFrame"),targetSwatch=$("targetSwatch"),yoursSwatch=$("yoursSwatch"),verdict=$("verdict");
 const pad=$("pad"),padHandle=$("padHandle"),strip=$("strip"),stripHandle=$("stripHandle"),timerBar=$("timerBar"),lockBtn=$("lockBtn"),timeNum=$("timeNum"),vignette=$("vignette");
-function applyEquippedBorder(){const c="frame bd-"+equipped();targetFrame.className=c;yoursFrame.className=c;}
+function applyBorderTo(el,id){const b=borderById(id);
+  if(b.img){el.className="frame bd-img";el.style.setProperty("--bimg",`url(${b.img})`);}
+  else{el.className="frame bd-"+id;el.style.removeProperty("--bimg");}}
+function applyEquippedBorder(){const id=equipped();applyBorderTo(targetFrame,id);applyBorderTo(yoursFrame,id);}
 
 /* ===== game ===== */
 let G=null;
@@ -650,11 +690,54 @@ function endlessResult(){const best=parseInt(Store.g(K.hi)||"0",10),isNew=G.scor
   $("resCoins").textContent="+ "+G.coinsRun+" 🪙";$("resSquares").textContent="";$("resVs").innerHTML="";$("resStreak").textContent="";renderRoundChips();
   setActions([{label:"Play again",cls:"btn-fill",fn:()=>startGame("endless")},{label:"Shop",cls:"btn-ghost",fn:openShop},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
+/* Rounded-rect path (module-level so paintShareBorder can use it) */
+function _rrp(x,px,py,pw,ph,r){x.beginPath();
+  x.moveTo(px+r,py);x.arcTo(px+pw,py,px+pw,py+ph,r);x.arcTo(px+pw,py+ph,px,py+ph,r);
+  x.arcTo(px,py+ph,px,py,r);x.arcTo(px,py,px+pw,py,r);x.closePath();}
+/* Draw the EQUIPPED border framing rect (rx,ry,rw,rh) onto ctx x, so a player's
+   border shows on their shared result card. Image-frame borders draw as a 9-slice;
+   every procedural border gets a faithful canvas painter too. */
+function paintShareBorder(x,id,rx,ry,rw,rh,R){
+  const b=borderById(id);
+  if(b.img){
+    const im=BORDER_IMGS[id];
+    if(im&&im.complete&&im.naturalWidth){
+      const s=im.naturalWidth,sb=Math.round(s*0.25),db=Math.round(rw*0.042);
+      const sX=[0,sb,s-sb],sW=[sb,s-2*sb,sb],sY=[0,sb,im.naturalHeight-sb],sH=[sb,im.naturalHeight-2*sb,sb];
+      const dX=[rx,rx+db,rx+rw-db],dW=[db,rw-2*db,db],dY=[ry,ry+db,ry+rh-db],dH=[db,rh-2*db,db];
+      for(let r=0;r<3;r++)for(let c=0;c<3;c++){ if(r===1&&c===1)continue; // hollow center
+        x.drawImage(im,sX[c],sY[r],sW[c],sH[r],dX[c],dY[r],dW[c],dH[r]); }
+    }
+    return;
+  }
+  x.save();
+  switch(id){
+    case "bevel":{const g=x.createLinearGradient(0,ry,0,ry+rh);g.addColorStop(0,"rgba(255,255,255,.55)");g.addColorStop(1,"rgba(0,0,0,.5)");
+      x.strokeStyle=g;x.lineWidth=15;_rrp(x,rx,ry,rw,rh,R);x.stroke();break;}
+    case "frost":x.strokeStyle="rgba(255,255,255,.5)";x.lineWidth=17;_rrp(x,rx,ry,rw,rh,R);x.stroke();
+      x.strokeStyle="rgba(255,255,255,.22)";x.lineWidth=3;_rrp(x,rx+12,ry+12,rw-24,rh-24,R-6);x.stroke();break;
+    case "brutalist":x.strokeStyle="rgba(0,0,0,.55)";x.lineWidth=18;_rrp(x,rx+13,ry+13,rw,rh,6);x.stroke();
+      x.strokeStyle="#efe8da";x.lineWidth=13;_rrp(x,rx,ry,rw,rh,6);x.stroke();break;
+    case "gold":{const g=x.createLinearGradient(rx,ry,rx+rw,ry+rh);g.addColorStop(0,"#f7e7a8");g.addColorStop(.4,"#bb8a2e");g.addColorStop(.6,"#f9efb6");g.addColorStop(1,"#8a6418");
+      x.strokeStyle=g;x.lineWidth=16;_rrp(x,rx,ry,rw,rh,R);x.stroke();break;}
+    case "neon":x.strokeStyle="#39d0ff";x.lineWidth=10;x.shadowColor="#39d0ff";x.shadowBlur=32;_rrp(x,rx,ry,rw,rh,R);x.stroke();x.stroke();break;
+    case "deco":{x.strokeStyle="rgba(233,196,106,.75)";x.lineWidth=4;_rrp(x,rx,ry,rw,rh,R);x.stroke();
+      const L=74;x.lineWidth=9;x.lineCap="round";x.strokeStyle="#e9c46a";
+      [[rx,ry,1,1],[rx+rw,ry,-1,1],[rx,ry+rh,1,-1],[rx+rw,ry+rh,-1,-1]].forEach(c=>{
+        x.beginPath();x.moveTo(c[0],c[1]+L*c[3]);x.lineTo(c[0],c[1]);x.lineTo(c[0]+L*c[2],c[1]);x.stroke();});break;}
+    case "prism":{let g;try{g=x.createConicGradient(0,rx+rw/2,ry+rh/2);}catch(e){g=x.createLinearGradient(rx,ry,rx+rw,ry+rh);}
+      ["#ff4d4d","#ffd24d","#4dff88","#4dd2ff","#b04dff","#ff4d4d"].forEach((c,i,a)=>g.addColorStop(i/(a.length-1),c));
+      x.strokeStyle=g;x.lineWidth=16;_rrp(x,rx,ry,rw,rh,R);x.stroke();break;}
+    case "hairline":x.strokeStyle="rgba(255,255,255,.30)";x.lineWidth=4;_rrp(x,rx,ry,rw,rh,R);x.stroke();break;
+    default:break;
+  }
+  x.restore();
+}
 /* Share card: the five target-vs-you color pairs as an IMAGE, so people can
    SEE how close you were — the color equivalent of the Wordle grid. Falls
    back to the text share wherever file-sharing isn't supported. */
 function buildShareCard(streak){
-  const W=1080,H=1350,cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const W=1080,H=1440,cv=document.createElement("canvas");cv.width=W;cv.height=H;
   const x=cv.getContext("2d");
   function rr(px,py,pw,ph,r){x.beginPath();
     x.moveTo(px+r,py);x.arcTo(px+pw,py,px+pw,py+ph,r);x.arcTo(px+pw,py+ph,px,py+ph,r);
@@ -687,8 +770,10 @@ function buildShareCard(streak){
   x.textAlign="center";
   if(streak>1){x.font="700 44px Georgia,serif";x.fillStyle="#d8a748";x.fillText("🔥 "+streak+" day streak",W/2,by+10);}
   x.font="700 40px Georgia,serif";x.fillStyle="#8f887c";
-  x.fillText("Can you beat my score?",W/2,H-120);
-  x.fillStyle="#b9b2a4";x.fillText("lucidwinds.com/satellites/hues",W/2,H-60);
+  x.fillText("Can you beat my score?",W/2,H-180);
+  x.fillStyle="#b9b2a4";x.fillText("lucidwinds.com/satellites/hues",W/2,H-120);
+  // frame the whole card with the player's equipped border (art shows on shares)
+  paintShareBorder(x,equipped(),20,20,W-40,H-40,44);
   return cv;
 }
 /* Show the card FIRST, then share from it. Stephen 7/17: the old flow silently
@@ -756,7 +841,9 @@ async function share(text,url){try{if(navigator.share){await navigator.share(url
   try{await navigator.clipboard.writeText(url?(text+"\n"+url):text);toast("Copied to clipboard");return;}catch(e){}toast("Couldn't copy. Long-press to select");}
 
 function openShop(){renderShop();show("shop");}
-function buildPreview(id){return`<div class="prev"><div class="frame bd-${id}"><div class="swatch" style="background:linear-gradient(90deg,hsl(265,70%,55%) 0 50%,hsl(28,85%,55%) 50% 100%)"></div></div></div>`;}
+function buildPreview(id){const b=borderById(id);
+  const cls=b.img?"frame bd-img":"frame bd-"+id,st=b.img?`style="--bimg:url(${b.img})"`:"";
+  return`<div class="prev"><div class="${cls}" ${st}><div class="swatch" style="background:linear-gradient(90deg,hsl(265,70%,55%) 0 50%,hsl(28,85%,55%) 50% 100%)"></div></div></div>`;}
 function renderShop(){$("shopCoins").textContent="🪙 "+coins().toLocaleString();const grid=$("shopGrid");grid.innerHTML="";const eq=equipped();
   BORDERS.forEach(b=>{const own=isOwned(b.id),isEq=eq===b.id;let btn;
     if(isEq)btn=`<div class="buy equipped">Equipped</div>`;
@@ -863,7 +950,7 @@ window._sbCapEarn=function(n,tag){
   // in the portal so it's easy to find; the tap gives the right instructions.)
   var ib=document.getElementById('installLink');
   if(ib){
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('/sw.js'); }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register(location.hostname.indexOf('github.io')>=0?'sw.js':'/sw.js').catch(function(){}); }catch(e){} }
     var standalone=!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone;
     if(standalone){ ib.style.display='none'; }
     else{
@@ -876,6 +963,27 @@ window._sbCapEarn=function(n,tag){
                   : 'To add Hues to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
       });
     }
+  }
+
+  /* headless-test hook (inert without ?hstest=1) — verifies borders in-game + on the share card */
+  if(/[?&]hstest=1/.test(location.search)){
+    window.HUES_TEST={
+      borders:function(){return BORDERS.map(function(b){return b.id;});},
+      setBorder:function(id){var o=owned();if(o.indexOf(id)<0)o.push(id);Store.s(K.owned,o.join(","));Store.s(K.equip,id);applyEquippedBorder();return equipped();},
+      equipped:equipped,
+      inGameClass:function(){return targetFrame.className+" | --bimg:"+(targetFrame.style.getPropertyValue("--bimg")||"(none)");},
+      /* fabricate a finished daily so buildShareCard has real data, return the PNG data URL */
+      shareCard:function(){
+        var rng=mulberry32(4242);
+        G={mode:"daily",rounds:CONFIG.roundsPerSet,rng:rng,score:8420,idx:CONFIG.roundsPerSet,level:CONFIG.roundsPerSet,history:[],tiers:[]};
+        for(var i=0;i<CONFIG.roundsPerSet;i++){
+          var t={h:rng()*360,s:0.42+rng()*0.5,v:0.5+rng()*0.4};
+          var y={h:t.h+(rng()-0.5)*36,s:Math.min(1,t.s+(rng()-0.5)*0.2),v:Math.min(1,t.v+(rng()-0.5)*0.15)};
+          var dE=4+rng()*30;G.history.push({t:t,y:y,dE:dE,pts:1500});G.tiers.push(tierFor(dE));
+        }
+        return buildShareCard(3).toDataURL("image/png");
+      }
+    };
   }
 })();
 </script>
