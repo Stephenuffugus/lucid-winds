@@ -793,7 +793,7 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
 }
 
 var _rafWall=0;
-function loop(t){ if(!lastT)lastT=t; var dt=t-lastT; lastT=t; if(dt>60)dt=60;
+function loop(t){ if(!lastT)lastT=t; var dt=t-lastT; lastT=t; if(dt>60)dt=60; CW_T=t/1000;
   _rafWall=Date.now();
   if(running)update(dt);
   render();
@@ -823,6 +823,7 @@ var CW_ART_V='pnl1';
    drawPod/drawChaff use the sprite body behind an image-loaded check (eyes/gaze
    still drawn on top for pods). CW_POD_BOX tunes the draw box vs the pod radius. */
 var CW_POD_ART=false, CW_POD_BOX=2.36;
+var CW_T=0; /* animation clock (seconds), advanced every frame in loop() */
 var _cwCache={};
 function _cwLoad(src){ var im=new Image(); im._cwsrc=src; try{ im.src=src+'?v='+CW_ART_V; }catch(e){} return im; }
 function _cwReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
@@ -906,6 +907,11 @@ function podGlyph(ci,gx,gy,gr,col){ ctx.save(); ctx.translate(gx,gy); ctx.fillSt
   else { ctx.moveTo(0,-gr); ctx.lineTo(gr*0.8,0); ctx.lineTo(0,gr); ctx.lineTo(-gr*0.8,0); ctx.closePath(); }
   ctx.stroke(); ctx.fill(); ctx.restore(); }
 function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
+  /* idle life: gentle breathe/squash + occasional blink + eye drift (skip on tiny minis and mid-pop) */
+  var live = s>=16 && (scale==null||scale===1);
+  var ph=x*0.11+y*0.15, br=live?Math.sin(CW_T*2.3+ph):0, blink=live?((((CW_T*0.45+ph*1.7)%6.0)<0.16)?1:0):0;
+  ctx.save();
+  if(live){ ctx.translate(cx,cy+br*r*0.03); ctx.scale(1+br*0.05,1-br*0.05); ctx.translate(-cx,-cy); }
   var _spr=CW_POD_ART?cwSpr('pods/pod-'+ci):null;
   if(_spr&&_cwReady(_spr)){ var _d=r*CW_POD_BOX; try{ ctx.drawImage(_spr,cx-_d/2,cy-_d/2,_d,_d); }catch(e){} }
   else {
@@ -915,11 +921,14 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
     ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.32,r*0.18,-0.5,0,6.2832); ctx.fill();
     if(s>=16 && SET.tags) podGlyph(ci,cx,cy-r*0.46,r*0.3,pal.lt);   /* colorblind tag shape (top) */
   }
-  if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0), gy=(gaze?gaze.y:0.35),k;
-    for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
-      ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); }
+  if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0)+(live?Math.sin(CW_T*0.8+ph)*0.14:0), gy=(gaze?gaze.y:0.35),k;
+    for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey;
+      if(blink){ ctx.strokeStyle='#15170e'; ctx.lineWidth=Math.max(1.4,er*0.5); ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(eyx-er*0.7,eyy); ctx.lineTo(eyx+er*0.7,eyy); ctx.stroke(); }
+      else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
+        ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); } }
     ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*0.5,r*0.22,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
   }
+  ctx.restore();
   if(alpha!=null)ctx.globalAlpha=1;
 }
 function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
