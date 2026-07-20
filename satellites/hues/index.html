@@ -940,10 +940,13 @@ window._sbCapEarn=function(n,tag){
   if(btn){
     if(embedded){ btn.style.display='none'; }
     else{
+      // root-relative on lucidwinds (unchanged); absolute on the github.io mirror so the
+      // player/tracks resolve there too (falls back gracefully via onerror either way).
+      var mbase=location.hostname.indexOf('github.io')>=0?'https://lucidwinds.com':'';
       var load=function(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); };
       var go=function(){ if(window.SWSPlayer)SWSPlayer.init({button:btn, autoplay:true}); };
-      var withPlayer=function(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); };
-      if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+      var withPlayer=function(){ if(window.SWSPlayer)go(); else load(mbase+'/music-player.js',go); };
+      if(window.LW_TRACKS)withPlayer(); else load(mbase+'/music-tracks.js',withPlayer);
     }
   }
   // INSTALL: always visible except when already installed as an app. (Shown even
