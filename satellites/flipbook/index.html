@@ -27,6 +27,12 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   color:var(--ink); font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 12px; font-weight:700}
 .tbtn.gold{background:linear-gradient(180deg,#e8c467,#c39a3b); color:#2a1e06; border-color:#f4dfa0}
 .tbtn.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3)}
+.tbtn:disabled{opacity:0.4; cursor:default}
+/* Play = the primary action: a bigger, unmistakable triangle. */
+#b-play{min-width:60px; font-size:0; position:relative}
+#b-play::after{content:""; display:block; width:0; height:0; border-style:solid;
+  border-width:13px 0 13px 21px; border-color:transparent transparent transparent #2a1e06; margin-left:3px}
+#stage.playing #b-play::after{border-width:0; width:15px; height:16px; background:#2a1e06; margin-left:0}
 #pageno{margin-left:auto; font-weight:800; font-size:15px; color:var(--muted); letter-spacing:1px}
 /* the notebook — spiral binding is DOWN THE LEFT SIDE (that's how you flip it) */
 #book{position:absolute; left:24px; right:14px; top:74px; bottom:170px; border-radius:8px 14px 14px 8px;
@@ -183,6 +189,8 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <div class="wdot" data-w="3" title="Fine pen"><i style="width:4px;height:4px"></i></div>
       <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
       <div class="wdot" data-w="12" title="Marker"><i style="width:14px;height:14px"></i></div>
+      <div class="wdot" data-w="20" title="Brush"><i style="width:20px;height:20px"></i></div>
+      <div class="wdot" data-w="30" title="Broad brush for fast colouring"><i style="width:28px;height:28px"></i></div>
       <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
       <button class="tbtn" id="b-faces" aria-label="Add eyes and mouths">😀 Faces</button>
       <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
@@ -190,6 +198,8 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
     </div>
     <div class="trow">
+      <button class="tbtn" id="b-undo" aria-label="Undo" disabled>↶ Undo</button>
+      <button class="tbtn" id="b-redo" aria-label="Redo" disabled>↷ Redo</button>
       <button class="tbtn" id="b-help" aria-label="How to use Flipbook">? Help</button>
       <button class="tbtn" id="b-voice" aria-label="Record voices">🎙 Voice</button>
       <button class="tbtn" id="b-export" aria-label="Export as a video">📤 Export</button>
@@ -314,6 +324,17 @@ function commitPage(){
   scheduleSave();
 }
 
+/* ---------- undo / redo (per-page canvas snapshots) ---------- */
+var undoStack=[], redoStack=[], UNDO_MAX=25;
+function _snap(){ try{ return pageC.toDataURL('image/png'); }catch(e){ return null; } }
+function updateUndoBtns(){ var u=$('b-undo'), r=$('b-redo'); if(u)u.disabled=!undoStack.length; if(r)r.disabled=!redoStack.length; }
+function clearHistory(){ undoStack.length=0; redoStack.length=0; updateUndoBtns(); }
+// snapshot the page state BEFORE a change so it can be undone (stroke, stamp, erase, clear)
+function beginAction(){ var s=_snap(); if(s){ undoStack.push(s); if(undoStack.length>UNDO_MAX)undoStack.shift(); } redoStack.length=0; updateUndoBtns(); }
+function _restore(url){ if(url==null){ blankPage(pageX); commitPage(); } else { drawDataURL(pageX, url, function(){ commitPage(); }); } }
+function doUndo(){ if(!undoStack.length)return; var s=_snap(); if(s!=null)redoStack.push(s); _restore(undoStack.pop()); updateUndoBtns(); }
+function doRedo(){ if(!redoStack.length)return; var s=_snap(); if(s!=null)undoStack.push(s); _restore(redoStack.pop()); updateUndoBtns(); }
+
 /* ---------- drawing ---------- */
 var drawing=false, lx=0, ly=0;
 function evPos(e){
@@ -330,6 +351,7 @@ function strokeTo(x,y){
   lx=x; ly=y;
 }
 function onDown(e){ if(playing)return; e.preventDefault(); var p=evPos(e);
+  beginAction();   // snapshot the page so this stroke/stamp can be undone
   if(stampMode){ pageX.save(); stampMode.d(pageX,p.x,p.y,stampSize()); pageX.restore(); pageX.globalCompositeOperation='source-over'; markDirty(); drawnThisSession=true; return; }
   drawing=true; lx=p.x; ly=p.y; strokeTo(p.x+0.01,p.y+0.01); drawnThisSession=true; }
 function onMove(e){ if(!drawing)return; e.preventDefault(); var p=evPos(e); strokeTo(p.x,p.y); }
@@ -357,7 +379,7 @@ function go(n){
   if(n>=MAXPAGES){ toastHint('This flipbook is full at '+MAXPAGES+' pages.'); return; }
   flushBitmap();                          // persist the page we're leaving before cur changes
   if(n>=pages.length)pages.push(null);   // flipping past the end adds a fresh page
-  cur=n; showPage(); scheduleSave();
+  cur=n; clearHistory(); showPage(); scheduleSave();
 }
 $('b-prev').addEventListener('click',function(){ go(cur-1); });
 $('b-next').addEventListener('click',function(){ go(cur+1); });
@@ -366,10 +388,14 @@ $('b-first').addEventListener('click',function(){ firstOn=!firstOn;
   if(firstOn&&cur===0)toastHint('Page 1 ghost shows on later pages. Flip ahead and line up your loop.');
   showPage(); save(); });
 $('b-fps').addEventListener('click',function(){ fpsIdx=(fpsIdx+1)%fpsOptions.length; showPage(); save(); });
-$('b-clear').addEventListener('click',function(){ blankPage(pageX); commitPage(); });
+$('b-clear').addEventListener('click',function(){ beginAction(); blankPage(pageX); commitPage(); });
+$('b-undo').addEventListener('click',function(){ doUndo(); });
+$('b-redo').addEventListener('click',function(){ doRedo(); });
+document.addEventListener('keydown',function(e){ if(!(e.ctrlKey||e.metaKey))return; var k=(e.key||'').toLowerCase();
+  if(k==='z'){ e.preventDefault(); if(e.shiftKey)doRedo(); else doUndo(); } else if(k==='y'){ e.preventDefault(); doRedo(); } });
 $('b-newbook').addEventListener('click',function(){
   if(!confirm('Start a fresh flipbook? This one will be erased.'))return;
-  pages=[null]; cur=0; showPage(); save();
+  pages=[null]; cur=0; clearHistory(); showPage(); save();
 });
 
 /* ---------- DAILY starter ------------------------------------------------
@@ -585,6 +611,7 @@ function startDaily(){
   if(playing)stopPlay();
   if(bookHasContent() && !confirm("Start today's daily starter? Your current flipbook will be erased.")) return;
   var name=makeDaily(dateKey());
+  clearHistory();
   $('hint').textContent="Today's starter is a "+name+". Flip forward and animate on top of it.";
 }
 $('b-daily').addEventListener('click', startDaily);
@@ -686,6 +713,7 @@ function startPlay(){
   flushBitmap();                          // make sure the page just drawn is in the playback
   playing=true; playFrame=0;
   $('playglass').classList.add('on');
+  $('stage').classList.add('playing');
   onionC.style.display='none';
   firstC.style.display='none';
   startVoicePlayback();
@@ -704,6 +732,7 @@ function stopPlay(){
   if(playTimer){ clearTimeout(playTimer); playTimer=null; }
   stopVoicePlayback();
   $('playglass').classList.remove('on');
+  $('stage').classList.remove('playing');
   if(cinema)exitCinema();
   showPage();
 }
@@ -956,7 +985,9 @@ if(/[?&]fbtest=1/.test(location.search)){
     state:function(){ return { cur:cur, pages:pages.length, fps:fpsOptions[fpsIdx], onion:onionOn, firstGhost:firstOn, playing:playing, cinema:cinema,
       canExport:canExport(), canRecord:!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder),
       voices:[!!voices[0],!!voices[1]], pointerFallback:!window.PointerEvent }; },
-    stroke:function(x0,y0,x1,y1){ lx=x0; ly=y0; strokeTo(x1,y1); commitPage(); return true; },
+    stroke:function(x0,y0,x1,y1){ beginAction(); lx=x0; ly=y0; strokeTo(x1,y1); commitPage(); return true; },
+    undo:doUndo, redo:doRedo, hist:function(){ return { u:undoStack.length, r:redoStack.length }; },
+    penWidth:function(){ return width; }, clearPage:function(){ beginAction(); blankPage(pageX); commitPage(); },
     go:go, play:startPlay, stop:stopPlay,
     firstGhost:function(v){ firstOn=!!v; showPage(); return firstOn; },
     cinemaOn:enterCinema, cinemaOff:exitCinema,
