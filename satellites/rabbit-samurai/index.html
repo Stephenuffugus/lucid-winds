@@ -348,7 +348,8 @@ function interact(dt){
 }
 function hurt(){ if(G.invuln>0||G.phase!=='play')return; G.lives--; sfx('hurt'); haptic([20,40,20]);
   releaseRope(false);
-  if(G.lives<=0){ gameOver(); return; }
+  if(G.lives<=0){ /* Jessie: dying restarts THIS level, not the whole game — keep your run score/progress */
+    G.lives=3; startLevel(G.li,false); floatUp(G.bx,G.by-30,'try again!'); return; }
   /* respawn at level start, keep collected progress */
   G.bx=G.lvl.spawn.x; G.by=G.lvl.spawn.y; G.vx=0; G.vy=0; G.invuln=1.4; G.followers=[]; G.trail=[];
   floatUp(G.bx,G.by-30,'ouch!');
