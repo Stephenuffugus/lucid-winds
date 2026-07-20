@@ -138,7 +138,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. Hold to keep flipping. Resting on the ground is fine, tap to get moving again.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. <b style="color:#ffd76a">Hold to spin faster</b> and time the blade so it sticks the wall, not the handle. Resting on the ground is fine, tap to get moving again.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
@@ -291,6 +291,10 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
    slice-master's proven constants, scaled from px to world units.
    ===================================================================== */
 var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
+// Variable spin (Stephen: vary the spin speed to skill-time the wall bounce).
+// A single tap spins at TAPW; HOLDING winds the blade up toward SPINMAX so you can
+// dial when the blade faces the wall. Runs in Journey + Wall Climb (mode 'run').
+var SPINRAMP=34, SPINMAX=27;
 // Freefall tuning: gentle fall so you have time to aim the blade; hold a side
 // to STEER and FLIP, release to settle the spin and hold your orientation
 var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
@@ -1454,8 +1458,13 @@ function loop(ts){
       G.vx *= Math.pow(0.5,dt);          // horizontal drag keeps drift in control
       G.ang += G.w*dt;
     } else {
-      // hold = keep flipping in rhythm (same rules, comfy thumb)
-      if(G.holding){ G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); } }
+      // hold = keep flipping in rhythm AND wind up the spin: the longer you hold,
+      // the faster the blade whirls, so you can dial its orientation for the wall.
+      if(G.holding){ G.holdT+=dt;
+        if(G.holdT>=0.27){ G.holdT=0; var _sw=G.w; doTap(G.lastSide); if(Math.abs(_sw)>Math.abs(G.w))G.w=_sw; }
+        G.w += (TAPW<0?-1:1)*SPINRAMP*dt;
+        if(G.w>SPINMAX)G.w=SPINMAX; if(G.w<-SPINMAX)G.w=-SPINMAX;
+      }
       // physics (mirrors slice-master's grounded/air split)
       if(G.grounded){
         G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;

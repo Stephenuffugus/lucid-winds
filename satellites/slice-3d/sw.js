@@ -1,5 +1,5 @@
 /* Super Slice 3D service worker — installability. NETWORK-FIRST (house rule). */
-var CACHE = "slice3d-v54";
+var CACHE = "slice3d-v55";
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
