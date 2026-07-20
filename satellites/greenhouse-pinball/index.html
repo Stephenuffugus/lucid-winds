@@ -720,6 +720,8 @@ function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
 // P2: DMD-style callout — a transient punch-in announcement on a major event.
 function callout(txt,col,big){ if(!G)return; var t=big?1.9:1.35; G.callout={txt:txt,col:col||'#f2d98a',big:!!big,t:t,t0:t}; if(big)G.shake=Math.max(G.shake,6); }
 function rrect(x,y,w,h,r){ if(w<2*r)r=w/2; if(h<2*r)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// stroke a point-list path in one style (used to draw the raised ramp channels)
+function strokePts(pts,col,wid){ if(!pts||!pts.length)return; ctx.strokeStyle=col; ctx.lineWidth=wid; ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]); ctx.stroke(); }
 // one-shot claymation animation overlay (sheet-13..17 frame strips): plays once at (x,y), width w
 var ANIM=null;
 function playAnim(key,frames,cw,ch,x,y,w,fps){ ANIM={key:key,frames:frames,cw:cw,ch:ch,x:x,y:y,w:w,fps:fps||16,t:0}; }
@@ -995,11 +997,18 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
       var rt=routeFor(sh), actP=rt.lock?null:rt.path, inactP=null;
       if(sh.alt) inactP = (actP===sh.path)?sh.alt.path:sh.path;
       else if(rt.lock) inactP = sh.path;                       // lock route itself is drawn gold by the nest
-      if(inactP){ ctx.strokeStyle=isR?'rgba(122,179,86,0.06)':'rgba(143,208,224,0.06)'; ctx.lineWidth=9;
-        ctx.beginPath(); ctx.moveTo(inactP[0][0],inactP[0][1]); for(var qi2=1;qi2<inactP.length;qi2++)ctx.lineTo(inactP[qi2][0],inactP[qi2][1]); ctx.stroke(); }
-      if(actP){ ctx.strokeStyle=isR?'rgba(122,179,86,0.20)':'rgba(143,208,224,0.18)'; ctx.lineWidth=13;
-        ctx.beginPath(); ctx.moveTo(actP[0][0],actP[0][1]); for(var pi=1;pi<actP.length;pi++)ctx.lineTo(actP[pi][0],actP[pi][1]); ctx.stroke();
-        if(qlit){ ctx.strokeStyle=isR?('rgba(200,168,75,'+(0.35+0.4*fl)+')'):('rgba(143,208,224,'+(0.4+0.45*fl)+')'); ctx.lineWidth=4; ctx.stroke(); } }
+      // inactive alt route: a faint dashed hint so the diverter's other exit still reads
+      if(inactP){ ctx.setLineDash([3,11]); strokePts(inactP, isR?'rgba(122,179,86,0.28)':'rgba(143,208,224,0.28)', 4); ctx.setLineDash([]); }
+      // ACTIVE route: draw it as an OBVIOUS raised clay channel (Stephen 7/20: ramps must be
+      // visible). Layered strokes = dark rail walls -> clay bed -> bright rolling groove -> glint.
+      if(actP){
+        strokePts(actP, 'rgba(14,10,5,0.55)', 20);                                    // outer wall shadow
+        strokePts(actP, isR?'rgba(107,74,43,0.94)':'rgba(60,80,94,0.94)', 16);        // clay bed (bark ramp / slate orbit)
+        strokePts(actP, isR?'rgba(84,56,30,0.96)':'rgba(46,62,76,0.96)', 13);         // inner bed shade (gives a wall lip)
+        strokePts(actP, isR?'rgba(150,186,112,0.6)':'rgba(150,208,224,0.6)', 7);      // rolling channel where the bead runs
+        strokePts(actP, 'rgba(255,247,214,0.30)', 2.5);                               // center glint
+        if(qlit){ ctx.save(); ctx.shadowColor=isR?'#f2d98a':'#37e0c0'; ctx.shadowBlur=12;
+          strokePts(actP, isR?('rgba(242,217,138,'+(0.55+0.4*fl)+')'):('rgba(55,224,192,'+(0.55+0.4*fl)+')'), 4.5); ctx.restore(); } }
       // diverter flag at the fork — points at the live exit side, flips with the route
       if(sh.fork && sh.alt && actP){ var exR=(rt.exit&&rt.exit.x>270);
         ctx.save(); ctx.translate(sh.fork[0],sh.fork[1]); ctx.fillStyle='rgba(242,217,138,'+(0.55+0.4*fl)+')';
@@ -1014,8 +1023,12 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
         var _ay=sh.y-_thr*0.72-6-4*_tg; ctx.save(); ctx.fillStyle=_hc; ctx.globalAlpha=0.7+0.3*_tg;
         ctx.beginPath(); ctx.moveTo(sh.x-9,_ay-9); ctx.lineTo(sh.x+9,_ay-9); ctx.lineTo(sh.x,_ay+3); ctx.closePath(); ctx.fill(); ctx.restore(); }
       if(_thi){ artFit(_thi,sh.x,sh.y,_thr); }
-      else { ctx.save(); ctx.translate(sh.x,sh.y); ctx.fillStyle=qlit?('rgba(255,246,210,'+(0.6+0.4*fl)+')'):(isR?'rgba(122,179,86,0.75)':'rgba(143,208,224,0.75)');
-        ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(0,-8); ctx.lineTo(8,7); ctx.lineTo(0,2); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      else { ctx.save(); ctx.translate(sh.x,sh.y);
+        // ramp MOUTH: a clay funnel narrowing upward + an up-arrow, so the entry reads clearly
+        ctx.strokeStyle=isR?'rgba(107,74,43,0.95)':'rgba(60,80,94,0.95)'; ctx.lineWidth=4.5; ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.beginPath(); ctx.moveTo(-14,11); ctx.lineTo(-7,-3); ctx.moveTo(14,11); ctx.lineTo(7,-3); ctx.stroke();
+        ctx.fillStyle=qlit?('rgba(255,246,210,'+(0.7+0.3*fl)+')'):(isR?'rgba(150,186,112,0.9)':'rgba(150,208,224,0.9)');
+        ctx.beginPath(); ctx.moveTo(-8,6); ctx.lineTo(0,-9); ctx.lineTo(8,6); ctx.lineTo(0,1); ctx.closePath(); ctx.fill(); ctx.restore(); }
     } else if(sh.type==='spinner'){ var qs=questLit('spinner'), ang=G.spin?G.spin.ang:G.t*0.7;
       var _spi=PIN_ART.img('spinner_gear');
       if(_spi){ ctx.save(); ctx.translate(sh.x,sh.y); ctx.rotate(ang); var _spw=sh.r*2.5, _sph=_spw*_spi.height/_spi.width; ctx.drawImage(_spi,-_spw/2,-_sph/2,_spw,_sph); ctx.restore(); }
