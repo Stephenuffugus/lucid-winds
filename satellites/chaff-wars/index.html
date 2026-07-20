@@ -29,13 +29,17 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   background:radial-gradient(90% 55% at 18% 0%, rgba(255,47,185,0.20), transparent 60%), radial-gradient(90% 55% at 82% 4%, rgba(47,240,224,0.15), transparent 60%), radial-gradient(120% 95% at 50% 100%, #16101e 0%, #06040a 82%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+/* menu screens sit on the "menu-wall" burner backdrop (assets/bg/menu-wall.jpg);
+   the neon washes + a soft dark scrim keep text/buttons legible over its lit
+   center. If the image is ever missing, the solid var(--bg) is the fallback.
+   Keep the ?v= in sync with CW_ART_V in the script. */
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:
-    radial-gradient(85% 40% at 15% 0%, rgba(255,47,185,0.10), transparent 60%),
-    radial-gradient(85% 40% at 85% 2%, rgba(47,240,224,0.08), transparent 60%),
-    linear-gradient(180deg, rgba(24,20,14,0.86) 0%, rgba(13,11,8,0.94) 100%),
-    repeating-linear-gradient(0deg, #191510 0 26px, #100d08 26px 29px),
-    repeating-linear-gradient(90deg, #17130d 0 58px, #131009 58px 61px)}
+    radial-gradient(85% 40% at 15% 0%, rgba(255,47,185,0.12), transparent 60%),
+    radial-gradient(85% 40% at 85% 2%, rgba(47,240,224,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(13,11,8,0.62) 0%, rgba(13,11,8,0.30) 44%, rgba(13,11,8,0.78) 100%),
+    url('assets/bg/menu-wall.jpg?v=pnl1') center/cover no-repeat,
+    var(--bg)}
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn,#s-play .cbtn,#s-play #dropbtn{pointer-events:auto}
@@ -44,6 +48,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:56px; line-height:1.0; font-weight:800; letter-spacing:2px; font-style:italic; color:#ff2fb9;
   text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(255,47,185,0.65), 0 0 42px rgba(47,240,224,0.4)}
 .title-word .w2{color:#2ff0e0; text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(47,240,224,0.65), 0 0 42px rgba(255,47,185,0.4)}
+.pnl-logo{display:none; width:86%; max-width:400px; margin:0 auto 2px; image-rendering:auto;
+  filter:drop-shadow(0 4px 22px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(255,47,185,0.25))}
 .title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.9; max-width:410px; line-height:1.55}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
@@ -73,8 +79,10 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 #b-home{left:10px}
 .vs-code{font-size:64px; font-weight:800; letter-spacing:14px; font-style:italic; color:#2ff0e0; text-indent:14px;
   text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 0 0 22px rgba(47,240,224,0.6)}
-.tbtn.pwr{right:10px; left:auto; width:58px; height:58px; font-size:27px; opacity:.5; border-color:#7ec850}
-.tbtn.pwr.ready{opacity:1; box-shadow:0 0 0 2px rgba(126,200,80,.4),0 0 18px rgba(126,200,80,.6); border-color:#a6e07a}
+.tbtn.pwr{right:10px; left:auto; width:58px; height:58px; font-size:27px; opacity:.5; border-color:#7ec850;
+  color:transparent; background:url('assets/ui/power-unlit.png?v=pnl1') center/contain no-repeat, rgba(18,16,12,0.55)}
+.tbtn.pwr.ready{opacity:1; box-shadow:0 0 0 2px rgba(126,200,80,.4),0 0 18px rgba(126,200,80,.6); border-color:#a6e07a;
+  background:url('assets/ui/power-lit.png?v=pnl1') center/contain no-repeat, rgba(18,16,12,0.25)}
 /* responsive thumb-friendly control bar: never overlaps, scales to any phone */
 .ctrlbar{position:absolute; left:0; right:0; bottom:0; z-index:30; display:flex; align-items:flex-end; gap:9px;
   padding:0 9px calc(11px + var(--sab)); pointer-events:none}
@@ -95,7 +103,10 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 /* campaign ladder */
 #ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
 .foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:64px}
-.foe .fem{font-size:30px; width:52px; height:52px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#221c10}
+.foe .fem{position:relative; font-size:30px; width:52px; height:52px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#221c10; overflow:hidden}
+.foe .fem img{position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); object-fit:contain; display:none}
+.foe .fem img.ok{display:block}
+.foe.beaten .fem img{filter:saturate(0.5) brightness(0.82)}
 .foe .fmid{flex:1; text-align:left; min-width:0}
 .foe .fnm{font-weight:800; font-size:16px; color:var(--ink)}
 .foe .fds{font-size:12px; color:var(--muted); line-height:1.35; margin-top:2px}
@@ -117,7 +128,8 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">POP N<br><span class="w2">LOCK</span></div>
+    <img class="pnl-logo" src="assets/logo/stacked.png?v=pnl1" alt="POP N LOCK" onload="var t=document.getElementById('pnl-title-txt');if(t)t.style.display='none';this.style.display='block';">
+    <div class="title-word" id="pnl-title-txt">POP N<br><span class="w2">LOCK</span></div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Clear falling <b style="color:var(--sprout)">seedpods</b> in groups of four or more. Set off big <b style="color:var(--gold)">chains</b> and every pop buries your rival pest in worthless grey <b>Chaff</b>. Top out and you lose the plot.</div>
     <div style="flex:1"></div>
@@ -182,7 +194,11 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
     </div>
     <div id="vs-wait" style="display:none; text-align:center">
       <div style="color:var(--muted); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px">Room code</div>
-      <div class="vs-code" id="vs-code">····</div>
+      <!-- the code prints onto the cassette's blank label (room-card sprite); if the
+           image is missing the wrapper is just padding and the code still shows -->
+      <div id="vs-cassette" style="position:relative; width:300px; max-width:82vw; aspect-ratio:296/219; min-height:150px; margin:0 auto; background:url('assets/ui/room-card.png?v=pnl1') center/contain no-repeat">
+        <div class="vs-code" id="vs-code" style="position:absolute; left:0; right:0; top:20.8%; transform:translateY(-50%); text-align:center; text-indent:10px; font-size:38px; letter-spacing:10px; color:#241a2e; text-shadow:none">····</div>
+      </div>
       <div id="vs-status" style="color:var(--muted); font-size:14px; margin-top:14px">Waiting for a rival to join…</div>
     </div>
     <div style="height:14px"></div>
@@ -220,8 +236,12 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
   <!-- RESULT -->
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
+    <img id="go-portrait" alt="" style="display:none; max-width:220px; max-height:240px; margin:0 auto; filter:drop-shadow(0 6px 22px rgba(0,0,0,0.6))">
     <div style="font-size:46px" id="go-emoji">🌱</div>
-    <div class="go-score" id="go-title">Win</div>
+    <div style="position:relative; display:inline-block; margin:0 auto">
+      <img id="go-banner" alt="" style="display:none; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:250px; max-width:92vw; z-index:0; pointer-events:none">
+      <div class="go-score" id="go-title" style="position:relative; z-index:1; padding:0 14px">Win</div>
+    </div>
     <div class="go-lab" id="go-lab">result</div>
     <div id="go-line" style="margin:12px auto 0;max-width:360px;font-size:15px;line-height:1.5;color:var(--ink);font-style:italic"></div>
     <div class="pill" id="go-reward" style="display:none"></div>
@@ -239,7 +259,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.2";
+var BUILD="v1.3";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -575,7 +595,8 @@ function addHype(f,n){ if(f!==MATCH.pf)return; f.hype=Math.max(0,Math.min(100,(f
     if(nt>=2){ f.floats.push({x:0,y:0,txt:'HYPE: '+HYPE_TIERS[nt][1]+'!',life:0.9,big:true,fld:f}); SFX.hype(nt); }
   } else if(nt<f.hypeTier) f.hypeTier=nt;
   if(f.hype>=100){ f.hype=45; f.hypeTier=hypeTierOf(45);
-    f.score+=500; $('h-score').textContent=f.score.toLocaleString();
+    f.score+=500;   /* score is drawn on canvas each frame; no DOM node (the old
+                       $('h-score') set threw on every ALL CITY HYPE — element never existed) */
     f.floats.push({x:0,y:0,txt:'ALL CITY HYPE! +500',life:1.4,big:true,fld:f});
     SFX.allclear(); shake(6,260);
   } }
@@ -659,7 +680,7 @@ function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=s
     if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
     MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null; MATCH.soloLevel=1; MATCH.soloClears=0;
     spawnPiece(MATCH.pf); MATCH.pf.state='wait'; show('s-play'); running=true; SFX.count(); return; }
-  var st=ROSTER[stageIndex];
+  var st=ROSTER[stageIndex]; cwPrefetch(st.id);
   MATCH.pf=makeField(st.colors,false); MATCH.pf.gravMs=1000/st.fall;
   if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
   MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
@@ -685,7 +706,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* best-of-3 series (boss + secret): interim round screens until someone takes 2 */
   if(SERIES&&SERIES.stage===MATCH.stage){ if(result==='win')SERIES.me++; else SERIES.them++;
     if(SERIES.me<2&&SERIES.them<2){
-      $('go-emoji').textContent=st.em;
+      $('go-emoji').textContent=st.em; _goPortrait(st.id, result==='win'?'lose':'win'); _goBanner(result==='win'?'win':'lose');
       $('go-title').textContent=(result==='win')?'Round won':'Round lost';
       $('go-title').style.color=(result==='win')?'#2ff0e0':'#9a9078';
       $('go-lab').textContent='Best of 3 · you '+SERIES.me+' · them '+SERIES.them;
@@ -696,7 +717,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
       show('s-go'); return; }
     result=(SERIES.me>=2)?'win':'lose'; SERIES=null; }
   $('go-next').textContent='Next ▶'; var _gr0=$('go-retry'); if(_gr0)_gr0.style.display='';
-  $('go-emoji').textContent = result==='win'? (st.em) : '🥀';
+  $('go-emoji').textContent = result==='win'? (st.em) : '🥀'; _goPortrait(st.id, result==='win'?'lose':'win'); _goBanner(result==='win'?'win':'lose');
   $('go-title').textContent = result==='win'? 'Victory' : 'Defeat';
   $('go-title').style.color = result==='win'? '#2ff0e0' : '#9a9078';
   $('go-lab').textContent = st.nm;
@@ -720,7 +741,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   nb.style.display=hasNext?'flex':'none';
   show('s-go');
 }
-function soloResult(){ if(_devSweep)return; $('go-title').style.color=''; $('go-emoji').textContent='🌱'; $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
+function soloResult(){ if(_devSweep)return; $('go-title').style.color=''; $('go-emoji').textContent='🌱'; _goPortrait(null); _goBanner('allclear'); $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
   $('go-line').textContent='Best '+PROG.soloBest.toLocaleString();
   var rw=$('go-reward'); var sun=Math.min(6,Math.floor(MATCH.pf.score/1200)); var got=0; if(sun>0){ try{ if(window._sbCapEarn)got=window._sbCapEarn(sun,'chaffwars:solo')||0; }catch(e){} }
   if(got>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got+' Sunbeams'; } else rw.style.display='none';
@@ -786,6 +807,65 @@ setInterval(function(){ if(!running)return; var n=Date.now();
 },200);
 
 /* =====================================================================
+   ART LAYER — "Neon Boombox" sprite pack (satellites/chaff-wars/assets/).
+   Every draw is behind an image-loaded check; the procedural neon look below
+   is the permanent fallback, so the game is identical with zero art files.
+   Cut by scripts/cut_popnlock.py. Bump CW_ART_V to bust the ?v= cache.
+   ===================================================================== */
+var CW_ART_V='pnl1';
+var _cwCache={};
+function _cwLoad(src){ var im=new Image(); im._cwsrc=src; try{ im.src=src+'?v='+CW_ART_V; }catch(e){} return im; }
+function _cwReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+/* PNG sprite by 'category/slug' (char/ui/fx/logo). */
+function cwSpr(path){ if(!_cwCache[path])_cwCache[path]=_cwLoad('assets/'+path+'.png'); return _cwCache[path]; }
+/* opaque JPG background by slug (battle-alley / menu-wall). */
+function cwBg(slug){ var k='bg/'+slug; if(!_cwCache[k])_cwCache[k]=_cwLoad('assets/bg/'+slug+'.jpg'); return _cwCache[k]; }
+/* draw a sprite CONTAIN-fit inside (cx,cy) box wxh; returns false if not loaded. */
+function cwFit(path,cx,cy,w,h,alpha){ var im=cwSpr(path); if(!_cwReady(im))return false;
+  var s=Math.min(w/im.naturalWidth,h/im.naturalHeight), dw=im.naturalWidth*s, dh=im.naturalHeight*s;
+  if(alpha!=null)ctx.globalAlpha=alpha; try{ ctx.drawImage(im,cx-dw/2,cy-dh/2,dw,dh); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return true; }
+/* tinted copy of a neutral (white/grey) FX sprite, cached by path+hex. Multiplies
+   the color into the sprite via source-atop so shading/highlights survive.
+   Returns a canvas (drawable like an image) or null if the base isn't loaded. */
+var _cwTint={};
+function cwTinted(path,hex){ var key=path+'|'+hex; if(_cwTint[key]!==undefined)return _cwTint[key];
+  var im=cwSpr(path); if(!_cwReady(im)){ return null; }   /* don't cache misses; retry once loaded */
+  var c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; var g=c.getContext('2d');
+  g.drawImage(im,0,0); g.globalCompositeOperation='source-atop'; g.globalAlpha=0.72; g.fillStyle=hex; g.fillRect(0,0,c.width,c.height);
+  _cwTint[key]=c; return c; }
+/* draw a possibly-tinted FX frame CONTAIN-fit in a box; hex=null -> untinted sprite. */
+function cwFx(path,hex,cx,cy,w,h,alpha){ var src=hex?cwTinted(path,hex):cwSpr(path); if(!_cwReady(src)&&!(src&&src.width))return false;
+  var iw=src.naturalWidth||src.width, ih=src.naturalHeight||src.height; var s=Math.min(w/iw,h/ih), dw=iw*s, dh=ih*s;
+  if(alpha!=null)ctx.globalAlpha=alpha; try{ ctx.drawImage(src,cx-dw/2,cy-dh/2,dw,dh); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return true; }
+/* draw a sprite COVER-fill across rect (x,y,w,h) clipped; returns false if not loaded. */
+function cwCover(im,x,y,w,h,alpha){ if(!_cwReady(im))return false;
+  var s=Math.max(w/im.naturalWidth,h/im.naturalHeight), dw=im.naturalWidth*s, dh=im.naturalHeight*s;
+  if(alpha!=null)ctx.globalAlpha=alpha;
+  ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  try{ ctx.drawImage(im,x+(w-dw)/2,y+(h-dh)/2,dw,dh); }catch(e){} ctx.restore();
+  if(alpha!=null)ctx.globalAlpha=1; return true; }
+/* opponent portrait pose: 'idle' during play; on the result screen the pest is
+   'lose' when the player won and 'win' when the player lost. */
+function cwPortrait(id,pose,cx,cy,w,h,alpha){ if(cwFit('char/'+id+'-'+pose,cx,cy,w,h,alpha))return true;
+  if(pose!=='idle'&&cwFit('char/'+id+'-idle',cx,cy,w,h,alpha))return true; return false; }
+/* warm the sprites we know we'll need for a stage the instant a match starts */
+function cwPrefetch(id){ if(!id)return; ['idle','win','lose'].forEach(function(p){ cwSpr('char/'+id+'-'+p); }); }
+/* result-screen portrait (DOM <img>); id=null hides it and restores the emoji. */
+function _goPortrait(id,pose){ var img=$('go-portrait'), em=$('go-emoji');
+  if(!img)return;
+  if(!id){ img.style.display='none'; if(em)em.style.display=''; return; }
+  function ok(){ if(img.complete&&img.naturalWidth>0){ img.style.display='block'; if(em)em.style.display='none'; } }
+  img.onload=ok; img.onerror=function(){ img.style.display='none'; if(em)em.style.display=''; };
+  img.src='assets/char/'+id+'-'+pose+'.png?v='+CW_ART_V; ok();
+}
+/* result-screen banner plate behind the verdict word ('win'|'lose'|'allclear'). */
+function _goBanner(kind){ var img=$('go-banner'); if(!img)return;
+  if(!kind){ img.style.display='none'; return; }
+  img.onload=function(){ img.style.display='block'; }; img.onerror=function(){ img.style.display='none'; };
+  img.src='assets/ui/banner-'+kind+'.png?v='+CW_ART_V; if(img.complete&&img.naturalWidth>0)img.style.display='block';
+}
+
+/* =====================================================================
    RENDER
    ===================================================================== */
 function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
@@ -841,7 +921,11 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
     var yy=p.y-off;
-    if(v===CHAFF)drawChaff(p.x,yy,F.cell,scale,alpha); else drawPod(p.x,yy,F.cell,v-1, mini?null:gazeFor(f,r,c),scale,alpha); }
+    if(v===CHAFF)drawChaff(p.x,yy,F.cell,scale,alpha); else drawPod(p.x,yy,F.cell,v-1, mini?null:gazeFor(f,r,c),scale,alpha);
+    /* splat FX over a popping cell: colored pops tint the neutral splat; chaff shatters grey */
+    if(!mini && f.pop && f.pop[r][c]){ var pr2=Math.min(1,f.res?f.res.t/230:0), fr=Math.min(4,1+((pr2*4)|0)), sc=F.cell/2;
+      if(f.pop[r][c]===2)cwFx('fx/chaff-splat-'+fr,null, p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.9*(1-pr2*0.35));
+      else cwFx('fx/pop-splat-'+fr, PAL[v-1]?PAL[v-1].bs:'#ffffff', p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.95*(1-pr2*0.25)); } }
   /* falling piece + ghost */
   if(f.cur && (f.state==='play')){ var cs=pieceCells(f.cur),i;
     if(!mini && SET.ghost){ var gy=ghostY(f); var gcur={r:gy,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; var gcs=pieceCells(gcur);
@@ -856,6 +940,9 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
 
 function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
   if(curScreen!=='s-play'){ return; }
+  /* battle-alley backdrop under both boards (procedural flat fill is the fallback);
+     drawn before the shake transform so the alley holds still while the boards shake */
+  cwCover(cwBg('battle-alley'),0,0,VW,VH);
   var shx=0,shy=0; if(SHAKE.t>0){ var shk=SHAKE.amp*(SHAKE.t/SHAKE.dur); shx=(Math.random()*2-1)*shk; shy=(Math.random()*2-1)*shk; }
   ctx.save(); ctx.translate(shx,shy);
   /* header band: two-tone neon wordmark */
@@ -867,15 +954,23 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   ctx.fillStyle='#f0e9d8'; ctx.font='800 26px system-ui'; ctx.fillText((MATCH.pf?MATCH.pf.score:0).toLocaleString(), 66, 84);
   /* right rail: opponent card, NEXT, rival board */
   if(MATCH.mode==='campaign' && MATCH.stage>=0){ var st=ROSTER[MATCH.stage];
-    var ox=380, oy=64, ow=144;
-    ctx.fillStyle='#1a1608'; rr(ox,oy,ow,88,12); ctx.fill(); ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,88,12); ctx.stroke();
-    ctx.textAlign='center'; ctx.font='30px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+38);
-    ctx.fillStyle='#f0e9d8'; ctx.font='700 12px system-ui'; wrapText(st.nm, ox+ow/2, oy+58, 134, 14);
+    var ox=380, oy=60, ow=148, oh=116;
+    ctx.fillStyle='#120f07'; rr(ox,oy,ow,oh,12); ctx.fill();
+    ctx.save(); rr(ox,oy,ow,oh,12); ctx.clip();
+    /* opponent b-boy portrait: idle in play, and on the result screen the pest is
+       'lose' when you won / 'win' when you lost. Emoji is the fallback. */
+    var opose=(MATCH.phase==='done'&&MATCH.result)?(MATCH.result==='win'?'lose':'win'):'idle';
+    if(!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26, 1)){
+      ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+46); }
+    ctx.fillStyle='rgba(10,8,4,0.78)'; ctx.fillRect(ox, oy+oh-24, ow, 24);
+    ctx.restore();
+    ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,oh,12); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle='#f0e9d8'; ctx.font='700 12px system-ui'; wrapText(st.nm, ox+ow/2, oy+oh-8, ow-8, 13);
     ctx.textAlign='left';
   }
   /* next piece preview in the rail */
-  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=186; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
-    ctx.fillStyle='#161207'; rr(nx,ny,52,86,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,52,86,8); ctx.stroke();
+  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
+    if(!cwFit('ui/next-window', nx+26, ny+43, 62, 98, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,52,86,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,52,86,8); ctx.stroke(); }
     drawPod(nx+11,ny+8,30,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(nx+11,ny+42,30,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
@@ -908,6 +1003,8 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   /* countdown overlay */
   if(MATCH.phase==='count'){ ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(0,0,VW,VH); ctx.textAlign='center';
     var cTxt=MATCH.count>0?(''+MATCH.count):'GO';
+    /* escalating spray-burst behind the numeral (3->burst-1 ... GO->burst-go) */
+    cwFit(MATCH.count>0?('ui/burst-'+(4-MATCH.count)):'ui/burst-go', VW/2, VH/2-4, 340, 340, 1);
     ctx.font='italic 800 104px system-ui';
     ctx.lineWidth=10; ctx.strokeStyle='#0c0a06'; ctx.strokeText(cTxt, VW/2, VH/2+30);
     ctx.fillStyle=MATCH.count>0?'#ff2fb9':'#39ff14'; ctx.fillText(cTxt, VW/2, VH/2+30);
@@ -915,17 +1012,18 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.textAlign='left'; }
   /* stage-intro card (campaign): the pest gets an entrance */
   if(MATCH.phase==='intro' && MATCH.mode==='campaign' && MATCH.stage>=0){ var ist=ROSTER[MATCH.stage];
-    ctx.fillStyle='rgba(8,6,4,0.86)'; ctx.fillRect(0,0,VW,VH);
-    ctx.globalAlpha=0.16; ctx.fillStyle=ist.ac; ctx.fillRect(0,VH/2-150,VW,300); ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(8,6,4,0.93)'; ctx.fillRect(0,0,VW,VH);
+    ctx.globalAlpha=0.15; ctx.fillStyle=ist.ac; ctx.fillRect(0,VH/2-186,VW,320); ctx.globalAlpha=1;
     ctx.textAlign='center';
     var tag=ist.boss?'FINAL BOSS':ist.secret?'SECRET DUEL':'STAGE '+(MATCH.stage+1);
     if(SERIES&&(SERIES.me+SERIES.them)>0)tag+=' · ROUND '+(SERIES.me+SERIES.them+1);
-    ctx.font='800 15px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-108);
-    ctx.font='72px system-ui'; ctx.fillText(ist.em, VW/2, VH/2-24);
-    ctx.font='italic 800 30px system-ui'; ctx.lineWidth=6; ctx.strokeStyle='#0c0a06'; ctx.strokeText(ist.nm, VW/2, VH/2+28);
-    ctx.fillStyle=ist.ac; ctx.fillText(ist.nm, VW/2, VH/2+28);
-    ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+66, 400, 22);
-    ctx.fillStyle='#6a6152'; ctx.font='600 12px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+130);
+    ctx.font='800 15px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-176);
+    /* the pest gets a big entrance portrait (b-boy, parachute pants and all) */
+    if(!cwPortrait(ist.id,'idle', VW/2, VH/2-36, 300, 238, 1)){ ctx.font='72px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(ist.em, VW/2, VH/2-24); }
+    ctx.font='italic 800 30px system-ui'; ctx.lineWidth=6; ctx.strokeStyle='#0c0a06'; ctx.strokeText(ist.nm, VW/2, VH/2+108);
+    ctx.fillStyle=ist.ac; ctx.fillText(ist.nm, VW/2, VH/2+108);
+    ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, 22);
+    ctx.fillStyle='#6a6152'; ctx.font='600 12px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+196);
     ctx.textAlign='left'; }
   ctx.restore();
 }
@@ -983,7 +1081,7 @@ function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; v
   for(i=0;i<ROSTER.length;i++){ var st=ROSTER[i]; var unlocked=(i<=PROG.unlocked)|| (st.secret&&PROG.secret); var beaten=!!PROG.beaten[st.id];
     var row=document.createElement('div'); row.className='foe'+(unlocked?'':' locked')+(beaten?' beaten':'');
     var lock = unlocked? '' : '🔒';
-    row.innerHTML='<div class="fno">'+(st.secret?'★':(i+1))+'</div><div class="fem"'+(unlocked?' style="box-shadow:inset 0 0 0 2px '+st.ac+'"':'')+'>'+(unlocked?st.em:'🔒')+'</div><div class="fmid"><div class="fnm">'+(unlocked?st.nm:'??? Locked')+'</div><div class="fds">'+(unlocked?(st.colors+' colors · '+(st.boss?'Final boss · Best of 3':st.secret?'Secret duel · Best of 3':'Pest '+(i+1))+(st.scatter?' · Cluttered yard':''))+(beaten?' · cleared':'') :'Beat the pest before to unlock.')+'</div></div>';
+    row.innerHTML='<div class="fno">'+(st.secret?'★':(i+1))+'</div><div class="fem"'+(unlocked?' style="box-shadow:inset 0 0 0 2px '+st.ac+'"':'')+'>'+(unlocked?('<img src="assets/char/'+st.id+'-idle.png?v='+CW_ART_V+'" alt="" onload="this.className=\'ok\'">'+st.em):'🔒')+'</div><div class="fmid"><div class="fnm">'+(unlocked?st.nm:'??? Locked')+'</div><div class="fds">'+(unlocked?(st.colors+' colors · '+(st.boss?'Final boss · Best of 3':st.secret?'Secret duel · Best of 3':'Pest '+(i+1))+(st.scatter?' · Cluttered yard':''))+(beaten?' · cleared':'') :'Beat the pest before to unlock.')+'</div></div>';
     if(unlocked)row.style.borderLeftColor=st.ac;
     (function(idx,unl){ row.addEventListener('click',function(){ if(!unl)return; SFX.ui(); startMatch(idx,'campaign'); }); })(i,unlocked);
     lad.appendChild(row); }
@@ -1140,7 +1238,7 @@ function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false;
   show('s-play'); running=true; SFX.count(); }
 
 function versusResult(result){ if(_devSweep)return;
-  $('go-emoji').textContent = result==='win' ? '🕺' : '🥀';
+  $('go-emoji').textContent = result==='win' ? '🕺' : '🥀'; _goPortrait('keeper', result==='win'?'win':'lose'); _goBanner(result==='win'?'win':'lose');
   $('go-title').textContent = result==='win' ? 'Victory' : 'Defeat';
   $('go-title').style.color = result==='win' ? '#2ff0e0' : '#9a9078';
   $('go-lab').textContent = 'Versus';
@@ -1368,6 +1466,20 @@ if(/[?&]cwdev=1/.test(location.search)){
       var c2=document.getElementById('game').getContext('2d'); var px=c2.getImageData(372,760,1,1).data;
       return {hype:MATCH.pf.hype, tier:MATCH.pf.hypeTier, meterPx:[px[0],px[1],px[2]]}; },
     beginStage:function(n){ startMatch(n,'campaign'); return {phase:MATCH.phase, scatterOnBoard:(function(){var k=0,r,c;for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(isColor(MATCH.pf.grid[r][c]))k++;return k;})()}; },
+    intro:function(n){ startMatch(n==null?9:n,'campaign'); running=false; MATCH.phase='intro'; MATCH.t=0; render(); return MATCH.phase; },
+    count:function(n,k){ startMatch(n==null?9:n,'campaign'); running=false; MATCH.phase='count'; MATCH.count=(k==null?2:k); render(); return MATCH.count; },
+    ladder:function(){ PROG.unlocked=ROSTER.length-1; PROG.secret=true; PROG.beaten={'aphid-swarm':true,'cutworm':true}; buildLadder(); show('s-select'); running=false; return curScreen; },
+    popShot:function(){ startMatch(0,'campaign'); running=false; var f=MATCH.pf; f.grid=newGrid();
+      f.grid[12][0]=1;f.grid[12][1]=1;f.grid[11][0]=1;f.grid[11][1]=1; f.grid[12][2]=CHAFF; f.grid[11][2]=CHAFF;
+      f.grid[12][4]=3;f.grid[11][4]=3;f.grid[12][5]=3;f.grid[11][5]=3;
+      MATCH.phase='fight'; startResolve(f); var guard=0; while(f.res&&f.res.sub!=='pop'&&guard++<20){ resolveTick(f,120); }
+      if(f.res)f.res.t=120; render();
+      var k=0,r,c; if(f.pop)for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(f.pop[r][c])k++;
+      return {sub:f.res?f.res.sub:null, popCells:k}; },
+    titleScreen:function(){ show('s-title'); running=false; return curScreen; },
+    lobby:function(code){ show('s-vs'); _vsShowWait(code||'AB7K'); running=false; return curScreen; },
+    result:function(n,r){ startMatch(n==null?12:n,'campaign'); running=false; MATCH.phase='done'; matchResult(r||'win'); return {title:$('go-title').textContent, portrait:$('go-portrait').style.display}; },
+    art:function(){ var out={}; ['char/baron-greymould-lose','ui/vs-frame','ui/power-lit','fx/pop-splat-2','bg/battle-alley'].forEach(function(p){ var im=p.indexOf('bg/')===0?cwBg(p.slice(3)):cwSpr(p); out[p]=_cwReady(im); }); return out; },
     seriesTest:function(){ startMatch(12,'campaign'); MATCH.phase='done'; matchResult('win');
       var a=SERIES?SERIES.me:-1, t=$('go-title').textContent; matchResult('win');
       return {afterR1:a, r1Title:t, seriesDoneAfter2:!SERIES, finalTitle:$('go-title').textContent}; } };

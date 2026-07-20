@@ -91,4 +91,16 @@ knockout — interior magenta art preserved; content-band grid detection) into
 power-lit/unlit, burst-1/2/3/go, room-card), **16 fx** (pop-splat/chaff-splat/
 buff-wipe/cast-aura × 4 frames), **2 logo** (stacked, wide), **2 bg** (battle-alley,
 menu-wall JPEG <300KB). All verified clean (checkerboard montage + halo audit).
-Status: **CUT — wiring behind image-loaded checks with procedural fallback.**
+
+**WIRED 2026-07-20 (v1.3):** every sprite behind an image-loaded check with the
+procedural draw as fallback. Menu-wall backdrop on all menu screens + stacked
+logo on the title; battle-alley behind the boards; b-boy portraits on the ladder
+tiles, the HUD opponent card, the stage-intro entrance, and the result screen
+(pest LOSE pose on your win / WIN pose on your loss); banner plates behind the
+verdict word; NEXT-window frame; escalating countdown bursts; per-pod-tinted
+pop-splats + grey chaff-splats; room-code cassette in the versus lobby; power-orb
+lit/unlit swap. Verified: parse OK, proofCheck.allPass, difficulty sweep shape
+intact, bot_versus green (one winner/garbage crossed/0 errors), every scene
+screenshotted. Also fixed a pre-existing crash: ALL-CITY-HYPE set a non-existent
+`#h-score` DOM node. NOT wired (optional, deferred): buff-wipe + cast-aura FX,
+vs-frame, mode plates, logo/wide. Status: **WIRED.**
