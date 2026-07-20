@@ -87,7 +87,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Get to the diamond.</b> Each level is a small maze of platforms. Reach the sparkling diamond at the far end to clear it. An old mole rat pops up and gives you a thumbs up.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b>Move and jump.</b> Hold the <b>left</b> and <b>right</b> pads at the bottom to run. Tap the big <b class="hl">JUMP</b> button to hop. On a keyboard use the arrow keys and the space bar.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b>Throw your rope.</b> Tap the <b class="hl">ROPE</b> button near a spinning porcupine to grab on. You swing around it, and the spin flings you fast. Tap JUMP or ROPE again to let go and sail up.</div></div>
+    <div class="helprow"><div class="hi">3</div><div><b>Throw your rope.</b> Press and hold anywhere on the screen near a spinning porcupine to grab on, then <b class="hl">drag left or right</b> to swing where you want. Let go to fling off (or tap JUMP).</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Bounce and launch.</b> Land on a green <b>bounce pad</b> to spring high. Step onto a <b>cannon</b> and it shoots you way up to reach the top ledges.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b>Free the mice.</b> Three mice sit in little cages. Run into a cage to pop the mouse out. Freed mice follow you in a happy line.</div></div>
     <div class="helprow"><div class="hi">6</div><div><b>Grab every carrot</b> for a bigger score. Watch the spikes in the pits. Fall in and you lose a heart. Clear a level to earn sunbeams.</div></div>
@@ -389,9 +389,10 @@ function burst(x,y,col,n){ for(var i=0;i<n;i++){ var a=Math.random()*6.28,s=40+M
 
 /* ---------- input processing ---------- */
 function processInput(){
-  var jumpEdge=G.held.jump&&!G.prevJump, ropeEdge=G.held.rope&&!G.prevRope;
+  var jumpEdge=G.held.jump&&!G.prevJump, ropeEdge=G.held.rope&&!G.prevRope, ropeUp=(!G.held.rope&&G.prevRope);
   if(jumpEdge){ if(G.rope.attached)releaseRope(true); else if(G.onGround){ G.vy=-JUMP; G.onGround=false; sfx('jump'); haptic(8); } }
-  if(ropeEdge){ if(G.rope.attached)releaseRope(true); else tryGrapple(); }
+  if(ropeEdge && !G.rope.attached) tryGrapple();      /* press the field -> shoot the rope */
+  if(ropeUp && G.rope.attached) releaseRope(true);    /* let go of the field -> fling off */
   G.prevJump=G.held.jump; G.prevRope=G.held.rope;
 }
 
@@ -603,7 +604,8 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
   padBtn(BLEFT,'◀', G.held.left);
   padBtn(BRIGHT,'▶', G.held.right);
   padBtn(BJUMP,'JUMP', G.held.jump, '#3f6b34');
-  padBtn(BROPE,'ROPE', G.held.rope, '#9a2f27');
+  /* rope has no button now — press/hold anywhere on the field to throw + swing (Jessie) */
+  if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
   ctx.globalAlpha=active?0.55:0.30; ctx.fillStyle=tint||'#243018'; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.28); ctx.fill();
@@ -625,10 +627,17 @@ function evList(e){ var out=[]; var r=cv.getBoundingClientRect();
 function inCircle(p,b){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2+8; return (p.x-cx)*(p.x-cx)+(p.y-cy)*(p.y-cy)<=r*r; }
 function inRect(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
 function applyPointers(pts){ if(!G)return;
-  var L=false,R=false,J=false,Ro=false;
+  var L=false,R=false,J=false,Ro=false,ropePt=null;
   for(var i=0;i<pts.length;i++){ var p=pts[i];
-    if(inCircle(p,BLEFT))L=true; if(inCircle(p,BRIGHT))R=true;
-    if(inCircle(p,BJUMP))J=true; if(inCircle(p,BROPE))Ro=true; }
+    if(inCircle(p,BLEFT)){ L=true; continue; }
+    if(inCircle(p,BRIGHT)){ R=true; continue; }
+    if(inCircle(p,BJUMP)){ J=true; continue; }
+    if(inRect(p,PAUSE)) continue;
+    /* Jessie: no ROPE button — any touch on the open field throws/holds the rope */
+    Ro=true; ropePt=p;
+  }
+  /* drag where you want to swing: the rope touch steers the pendulum */
+  if(Ro && ropePt && G.rope.attached){ if(ropePt.x < G.bx-14)L=true; else if(ropePt.x > G.bx+14)R=true; }
   G.held.left=L; G.held.right=R; G.held.jump=J; G.held.rope=Ro;
 }
 function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
