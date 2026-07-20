@@ -68,6 +68,27 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .recbar{font-size:13px;color:var(--muted);margin-top:8px}
 .recbar b{color:var(--gold)}
+.btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
+/* title screen wears the selected skin's art */
+#s-title.skinned{background:#0b0f0b center/cover no-repeat}
+#s-title.skinned .pad{background:linear-gradient(180deg,rgba(8,12,8,.6) 0%,rgba(8,12,8,.2) 34%,rgba(8,12,8,.36) 62%,rgba(8,12,8,.84) 100%)}
+/* skin picker */
+.skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:440px;margin:0 auto}
+.skin-card{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0f150c;cursor:pointer;text-align:left;padding:0;color:inherit;font:inherit}
+.skin-card .sc-art{width:100%;aspect-ratio:1/1;background:#0b0f0b center/cover no-repeat;display:block}
+.skin-card .sc-body{padding:9px 11px 11px}
+.skin-card .sc-name{display:block;font-size:15px;font-weight:800;color:var(--cream)}
+.skin-card .sc-stat{display:block;font-size:12px;margin-top:3px;line-height:1.3;color:var(--muted)}
+.skin-card.sel{border-color:#8fd06a;box-shadow:0 0 0 2px #8fd06a55}
+.skin-card.locked .sc-art{filter:grayscale(.5) brightness(.72)}
+.skin-card .sc-tag{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;letter-spacing:.4px;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.sc-tag.on{background:#8fd06a;color:#0c1207}
+.sc-tag.prem{background:linear-gradient(145deg,#e6cd6a,#b2913a);color:#241c07}
+.sc-tag.lock{background:rgba(0,0,0,.6);color:#bcd99a}
+#gt-toast{position:absolute;left:50%;bottom:250px;transform:translateX(-50%);z-index:40;max-width:82%;
+  background:rgba(10,14,9,.94);border:1px solid #4a6b30;border-radius:13px;padding:12px 16px;color:var(--cream);
+  font-size:14px;line-height:1.4;text-align:center;box-shadow:0 8px 26px #0009;opacity:0;pointer-events:none;transition:opacity .25s}
+#gt-toast.on{opacity:1}
 </style>
 </head>
 <body>
@@ -84,6 +105,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="b-resume" style="display:none">▶&nbsp; Resume run</button>
       <button class="btn primary" id="b-play">🐭&nbsp; Play</button>
+      <button class="btn gold sm" id="b-skins">🎨 Skins</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
@@ -113,7 +135,16 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Grubtrap: a Sky Wolf remake of the classic Rodent's Revenge.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+    <div class="foot">Grubtrap: a Sky Wolf remake of the classic Rodent's Revenge.<br>Canvas2D + WebAudio · eight unlockable garden looks.</div>
+  </div></div>
+
+  <!-- SKINS -->
+  <div class="screen" id="s-skins"><div class="pad">
+    <h2 class="sc-h">Board looks</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Pick a look for your board. Two unlock as you play; the rest are part of the Studio Supporter Pack. Every look is pure style and never changes how the game plays.</div>
+    <div class="skin-grid" id="skin-grid"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- GAME OVER -->
@@ -135,6 +166,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <button class="btn sm" id="over-title2">◄ Back</button>
     </div>
   </div></div>
+  <div id="gt-toast"></div>
 </div></div>
 
 <script>
@@ -147,7 +179,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 function updateResumeBtn(){ var b=$('b-resume'); if(!b) return; b.style.display=(curScreen==='s-title'&&G&&G.phase==='paused')?'flex':'none'; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.0';
+var BUILD='v1.1';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='gt_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -159,6 +191,80 @@ var SET={ sound:true };
 (function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
 var BEST=parseInt(LS.get(K.best)||'0',10)||0;
+
+/* ============================ skins ================================= */
+/* Each skin is a themed look: board tiles + hero/grub critters + a backdrop.
+   Pure cosmetic — never changes play. price 0 = free · -1 = earn by playing ·
+   premium = Support the Studio (real-money Supporter Pack, no fake grants). */
+var SKINS=[
+  { id:'s1', name:'Midnight Library', blurb:'A bookbinder’s midnight library.', price:0 },
+  { id:'s2', name:'Astral Bindery',   blurb:'Star-embossed books under the moon.', price:-1, need:5,  earn:'Clear 5 grounds' },
+  { id:'s3', name:'Neon Nocturne',    blurb:'Electric arcade neon.', price:-1, need:20, earn:'Clear 20 grounds' },
+  { id:'s4', name:'Paper Warren',     blurb:'Folded-paper fox and rabbits.', premium:true },
+  { id:'s5', name:'Stained Glass',    blurb:'Cathedral glass, moths and bats.', premium:true },
+  { id:'s6', name:'Clockwork',        blurb:'Arcane gears and green slimes.', premium:true },
+  { id:'s7', name:'Tide Pool',        blurb:'Submarine portholes and jellyfish.', premium:true },
+  { id:'s8', name:'Steamworks',       blurb:'Brass boilers, pipes and cogs.', premium:true }
+];
+function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i]; return SKINS[0]; }
+var UNLOCK_ALL=/[?&]gtunlock=1/.test(location.search); // Stephen: preview every look
+var SK=(function(){ try{ var o=JSON.parse(LS.get('gt_skins')); if(o&&o.owned) return o; }catch(e){} return null; })();
+if(!SK) SK={ owned:['s1'], sel:'s1' };
+if(!SK.owned || !SK.owned.length) SK.owned=['s1'];
+if(SK.owned.indexOf('s1')<0) SK.owned.unshift('s1');
+if(!SK.sel) SK.sel='s1';
+function saveSkins(){ LS.set('gt_skins', JSON.stringify({owned:SK.owned, sel:SK.sel})); }
+function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
+function ownsSkin(id){
+  if(SK.owned.indexOf(id)>=0) return true;
+  if(UNLOCK_ALL) return true;
+  if(supporterPack() && skinById(id).premium) return true; // studio-wide pack unlocks all premium
+  return false;
+}
+var STATS=(function(){ try{ var o=JSON.parse(LS.get('gt_stats')); if(o) return o; }catch(e){} return {}; })();
+if(typeof STATS.grounds!=='number') STATS.grounds=0;
+function saveStats(){ LS.set('gt_stats', JSON.stringify(STATS)); }
+function checkUnlocks(){ var got=[];
+  for(var i=0;i<SKINS.length;i++){ var s=SKINS[i];
+    if(s.price===-1 && s.need && SK.owned.indexOf(s.id)<0 && STATS.grounds>=s.need){ SK.owned.push(s.id); got.push(s); } }
+  if(got.length) saveSkins();
+  return got;
+}
+
+/* ---- sprite loading ---- */
+var SPRITE_KEYS=['soil','soil2','block','block2','wall','wallc','seed','seedpop','hero','herohit','grub','grubfast','life','fxtrap','fxalarm','fxclear'];
+var TILE_EXT={ soil:'jpg', soil2:'jpg', block:'jpg', block2:'jpg', wall:'jpg', wallc:'jpg', seed:'jpg', seedpop:'jpg' };
+var IMG={}, imgReady=false, imgSkinLoaded=null;
+function loadSkinAssets(id, cb){
+  var base='skins/'+id+'/', pack={}, pending=SPRITE_KEYS.length+1, gotAny=false;
+  function fin(){ IMG=pack; imgReady=gotAny; imgSkinLoaded=id; boardBase=null; if(cb) cb(); }
+  function one(key, url){ var im=new Image();
+    im.onload=function(){ pack[key]=im; gotAny=true; if(--pending===0) fin(); };
+    im.onerror=function(){ if(--pending===0) fin(); };
+    im.src=url; }
+  for(var i=0;i<SPRITE_KEYS.length;i++){ var k=SPRITE_KEYS[i]; one(k, base+'sprites/'+k+'.'+(TILE_EXT[k]||'png')); }
+  one('bg', base+'bg.jpg');
+}
+/* pre-rendered soil board (soil + a deterministic sprinkle of soil2 for variety) */
+var boardBase=null, boardKey='';
+function ensureBoard(){
+  if(!(imgReady && IMG.soil)){ boardBase=null; return; }
+  var key=imgSkinLoaded+':'+(COLS*CS)+'x'+(ROWS*CS)+':'+CS;
+  if(boardBase && boardKey===key) return;
+  var oc=document.createElement('canvas'); oc.width=COLS*CS; oc.height=ROWS*CS;
+  var g=oc.getContext('2d');
+  for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
+    var t=(IMG.soil2 && ((c*31+r*17)%100)<16)?IMG.soil2:IMG.soil;
+    g.drawImage(t, c*CS, r*CS, CS, CS);
+  }
+  boardBase=oc; boardKey=key;
+}
+function applyTitleSkin(){ var el=$('s-title'); if(!el) return; el.classList.add('skinned'); el.style.backgroundImage="url('skins/"+SK.sel+"/bg.jpg')"; }
+function drawCover(g,img,dx,dy,dw,dh){ var iw=img.width, ih=img.height, s=Math.max(dw/iw, dh/ih); var w=iw*s, h=ih*s; g.drawImage(img, dx+(dw-w)/2, dy+(dh-h)/2, w, h); }
+function drawSprite(g,img,cx,cy,size){ var ar=img.width/img.height, dw=size, dh=size; if(ar>=1) dh=size/ar; else dw=size*ar; g.drawImage(img, cx-dw/2, cy-dh/2, dw, dh); }
+var _toastT=null;
+function toast(msg, ms){ var el=$('gt-toast'); if(!el) return; el.textContent=msg; el.classList.add('on');
+  if(_toastT) clearTimeout(_toastT); _toastT=setTimeout(function(){ el.classList.remove('on'); }, ms||2600); }
 
 /* audio */
 var AC=null;
@@ -238,7 +344,7 @@ function buildLevel(){
     // carve a little breathing room so it isn't instantly trapped
     var freeN=0; if(!solidT(c-1,r))freeN++; if(!solidT(c+1,r))freeN++; if(!solidT(c,r-1))freeN++; if(!solidT(c,r+1))freeN++;
     if(freeN<2){ if(inBounds(c+1,r)&&grid[idx(c+1,r)]===1) grid[idx(c+1,r)]=0; }
-    grubs.push({ c:c, r:r, ox:0, oy:0 });
+    grubs.push({ c:c, r:r, ox:0, oy:0, v:grubs.length%2 });
   }
   G.phase='play'; G.flash=0; G.invuln=0;
   updateCtrl();
@@ -365,6 +471,10 @@ function levelClear(){
   try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'grubtrap:clear')||0; }catch(e){}
   G.lastSun=granted; G.clearT=1.5;
   for(var i=0;i<20;i++) burst(FX+Math.random()*COLS*CS, FY+Math.random()*ROWS*CS, '#8fd06a', 1);
+  // progression: count the cleared ground toward skin unlocks
+  STATS.grounds=(STATS.grounds||0)+1; saveStats();
+  var got=checkUnlocks();
+  if(got.length){ toast('New look unlocked: '+got[0].name+'!  Tap 🎨 Skins to wear it.', 3400); }
   updateCtrl();
 }
 function gameOver(){
@@ -398,42 +508,48 @@ function cellCX(c){ return FX+c*CS+CS/2; }
 function cellCY(r){ return FY+r*CS+CS/2; }
 function render(){
   ctx.clearRect(0,0,VW,VH);
-  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  if(imgReady && IMG.bg){ drawCover(ctx, IMG.bg, 0,0,VW,VH);
+    var scr=ctx.createLinearGradient(0,0,0,HUD); scr.addColorStop(0,'rgba(8,12,8,0.84)'); scr.addColorStop(1,'rgba(8,12,8,0)'); ctx.fillStyle=scr; ctx.fillRect(0,0,VW,HUD);
+  } else { var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH); }
   if(!G) return;
   // HUD
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.fillStyle='#7ab356'; ctx.font='800 24px system-ui'; ctx.fillText('Ground '+G.level, 16, 30);
   ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('grubs left '+grubs.length, 16, 54);
   ctx.textAlign='right';
-  var lx=VW-16; for(var i=0;i<Math.max(G.lives,0);i++){ drawWhisker(ctx, lx-i*20, 26); }
+  var lx=VW-16; for(var i=0;i<Math.max(G.lives,0);i++){ if(imgReady&&IMG.life){ var ps=22; ctx.drawImage(IMG.life, lx-i*22-ps, 26-ps/2, ps, ps); } else drawWhisker(ctx, lx-i*20, 26); }
   ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('score '+G.score, VW-16, 54);
   ctx.fillStyle='#8a9178'; ctx.textAlign='center'; ctx.fillText('penned '+G.penned, VW/2, 30);
 
-  // field bg
-  ctx.fillStyle='#171008'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS);
+  // field base (soil)
+  var useImg=imgReady && IMG.soil;
+  if(useImg){ ensureBoard(); if(boardBase){ ctx.drawImage(boardBase, FX, FY); } else { ctx.fillStyle='#171008'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS); } }
+  else { ctx.fillStyle='#171008'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS); }
   // cells
   var c,r;
   for(r=0;r<ROWS;r++) for(c=0;c<COLS;c++){ var v=grid[idx(c,r)]; var x=cellX(c), y=cellY(r);
-    if(v===0){ /* soil */ }
-    else if(v===1){ // planter
-      ctx.fillStyle='#3a2817'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
-      ctx.fillStyle='#5a4127'; ctx.fillRect(x+3,y+3,CS-6,CS-6);
-      ctx.fillStyle='#6aa64c'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS*0.42,CS*0.14,0,6.2832); ctx.fill();
-      ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1; ctx.strokeRect(x+1.5,y+1.5,CS-3,CS-3);
+    if(v===0){ /* soil (drawn by base) */ }
+    else if(v===1){ // planter / pushable block
+      if(useImg && IMG.block){ ctx.drawImage(IMG.block,x,y,CS,CS); }
+      else { ctx.fillStyle='#3a2817'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
+        ctx.fillStyle='#5a4127'; ctx.fillRect(x+3,y+3,CS-6,CS-6);
+        ctx.fillStyle='#6aa64c'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS*0.42,CS*0.14,0,6.2832); ctx.fill();
+        ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1; ctx.strokeRect(x+1.5,y+1.5,CS-3,CS-3); }
     }
-    else if(v===2){ // wall (hedge border)
-      ctx.fillStyle='#26301c'; ctx.fillRect(x,y,CS,CS);
-      ctx.fillStyle='#3f5a28'; ctx.fillRect(x+2,y+2,CS-4,CS-4);
+    else if(v===2){ // wall (immovable border)
+      if(useImg && IMG.wall){ ctx.drawImage(IMG.wall,x,y,CS,CS); }
+      else { ctx.fillStyle='#26301c'; ctx.fillRect(x,y,CS,CS); ctx.fillStyle='#3f5a28'; ctx.fillRect(x+2,y+2,CS-4,CS-4); }
     }
     else if(v===3){ // seedball (trapped grub)
-      ctx.fillStyle='#2a2410'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
-      ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.32,0,6.2832); ctx.fill();
-      ctx.fillStyle='#8a6b1e'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.18,0,6.2832); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(x+CS*0.4,y+CS*0.4,CS*0.09,0,6.2832); ctx.fill();
+      if(useImg && IMG.seed){ ctx.drawImage(IMG.seed,x,y,CS,CS); }
+      else { ctx.fillStyle='#2a2410'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
+        ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.32,0,6.2832); ctx.fill();
+        ctx.fillStyle='#8a6b1e'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.18,0,6.2832); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(x+CS*0.4,y+CS*0.4,CS*0.09,0,6.2832); ctx.fill(); }
     }
   }
   // field border
-  ctx.strokeStyle='#6b4a2b'; ctx.lineWidth=4; ctx.strokeRect(FX-2,FY-2,COLS*CS+4,ROWS*CS+4);
+  ctx.strokeStyle=(useImg?'rgba(107,74,43,0.5)':'#6b4a2b'); ctx.lineWidth=(useImg?3:4); ctx.strokeRect(FX-2,FY-2,COLS*CS+4,ROWS*CS+4);
 
   // grubs
   for(i=0;i<grubs.length;i++) drawGrub(ctx, grubs[i]);
@@ -461,6 +577,7 @@ function drawHero(g,h){ var x=cellCX(h.c), y=cellCY(h.r), s=CS*0.40;
   g.save(); g.translate(x,y);
   if(G && G.invuln>0){ g.globalAlpha=0.5+0.5*Math.abs(Math.sin(G.invuln*12)); }
   g.globalAlpha=(g.globalAlpha||1)*0.3; g.fillStyle='#000'; g.beginPath(); g.ellipse(0,s*0.7,s*0.9,s*0.35,0,0,6.2832); g.fill(); g.globalAlpha=(G&&G.invuln>0)?(0.5+0.5*Math.abs(Math.sin(G.invuln*12))):1;
+  if(imgReady){ var him=(G&&G.invuln>0&&IMG.herohit)?IMG.herohit:IMG.hero; if(him){ drawSprite(g,him,0,0,CS*1.06); g.restore(); return; } }
   // body
   g.fillStyle='#9a8b76'; g.beginPath(); g.arc(0,0,s,0,6.2832); g.fill();
   // ears
@@ -474,6 +591,7 @@ function drawHero(g,h){ var x=cellCX(h.c), y=cellCY(h.r), s=CS*0.40;
 function drawGrub(g,gr){ var x=cellCX(gr.c), y=cellCY(gr.r), s=CS*0.38;
   g.save(); g.translate(x,y);
   g.globalAlpha=0.3; g.fillStyle='#000'; g.beginPath(); g.ellipse(0,s*0.7,s*0.9,s*0.3,0,0,6.2832); g.fill(); g.globalAlpha=1;
+  if(imgReady){ var gim=(gr.v&&IMG.grubfast)?IMG.grubfast:IMG.grub; if(gim){ drawSprite(g,gim,0,0,CS*0.96); g.restore(); return; } }
   // segmented body
   g.fillStyle='#a7c24a';
   for(var i=2;i>=0;i--){ g.beginPath(); g.arc(-i*s*0.18+s*0.18, 0, s*(1-i*0.12), 0, 6.2832); g.fill(); }
@@ -558,6 +676,39 @@ function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get()) el.cl
   host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function updateRec(){ var r=$('recbar'); if(BEST>0) r.innerHTML='Best score <b>'+BEST+'</b>'; else r.textContent=''; }
 
+/* ============================ skin picker ================================= */
+function renderSkins(){
+  var grid=$('skin-grid'); if(!grid) return;
+  var html='';
+  for(var i=0;i<SKINS.length;i++){ var s=SKINS[i];
+    var owned=ownsSkin(s.id), seld=(SK.sel===s.id), cls='skin-card', tag='', stat;
+    if(seld){ cls+=' sel'; tag='<span class="sc-tag on">Wearing</span>'; stat='<span style="color:#8fd06a">Now wearing</span>'; }
+    else if(owned){ stat='Tap to wear'; }
+    else { cls+=' locked';
+      if(s.premium){ tag='<span class="sc-tag prem">Premium</span>'; stat='<span style="color:#e6cd6a">Support the Studio</span>'; }
+      else { tag='<span class="sc-tag lock">Locked</span>'; stat=s.earn+' &middot; '+Math.min(STATS.grounds||0,s.need)+'/'+s.need; }
+    }
+    html+='<button class="'+cls+'" data-skin="'+s.id+'">'+tag
+        +'<span class="sc-art" style="background-image:url(\'skins/'+s.id+'/thumb.jpg\')"></span>'
+        +'<span class="sc-body"><span class="sc-name">'+s.name+'</span><span class="sc-stat">'+stat+'</span></span></button>';
+  }
+  grid.innerHTML=html;
+  var cards=grid.querySelectorAll('.skin-card');
+  for(var j=0;j<cards.length;j++){ cards[j].addEventListener('click',function(){ onSkinTap(this.getAttribute('data-skin')); }); }
+}
+function onSkinTap(id){ var s=skinById(id); sfx('ui');
+  if(ownsSkin(id)){ if(SK.sel!==id){ SK.sel=id; saveSkins(); applyTitleSkin(); loadSkinAssets(id); sfx('trap'); toast('Now wearing '+s.name+'.',1600); } renderSkins(); }
+  else if(s.premium){ buySkin(s); }
+  else { toast(s.earn+' to unlock '+s.name+'. You are at '+(STATS.grounds||0)+'/'+s.need+'.', 2800); }
+}
+function buySkin(s){
+  // Real-money unlock routes through the studio payment rail once it is live.
+  // No fake grants here — ownership only ever changes via a real entitlement.
+  if(window.SWS_BUY_SKIN){ try{ window.SWS_BUY_SKIN({game:'grubtrap', skin:s.id, name:s.name}); return; }catch(e){} }
+  if(SWS_EMBED && parent!==window){ try{ parent.postMessage({sws:'buy', game:'grubtrap', item:'skin:'+s.id, name:s.name},'*'); }catch(e){} }
+  toast('“'+s.name+'” is part of the Studio Supporter Pack. Real-money unlocks arrive with studio payments. Thanks for supporting Sky Wolf!', 3800);
+}
+
 /* ============================ boot ================================= */
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
 function boot(){
@@ -576,15 +727,19 @@ function boot(){
   tap('b-play', function(){ newGame(); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
+  tap('b-skins', function(){ renderSkins(); show('s-skins'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
+  tap('skins-back', function(){ show('s-title'); });
   tap('over-again', function(){ newGame(); });
   tap('over-share', function(){ shareGrub(); });
   tap('over-title2', function(){ show('s-title'); updateRec(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   $('buildstamp').textContent='Grubtrap '+BUILD;
   updateRec();
+  applyTitleSkin();
+  loadSkinAssets(SK.sel);
 }
 
 /* ===== Sky Wolf Studios embed protocol ===== */
@@ -618,7 +773,15 @@ if(/[?&]gttest=1/.test(location.search)){
     clearArea:function(){ for(var r=1;r<ROWS-1;r++)for(var c=1;c<COLS-1;c++) grid[idx(c,r)]=0; },
     phase:function(){ return G?G.phase:null; }, level:function(){ return G?G.level:0; }, lives:function(){ return G?G.lives:0; }, penned:function(){ return G?G.penned:0; },
     share:shareGrub, gameOver:gameOver,
-    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_grubtrap')||'{}'); }catch(e){ return {}; } }
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_grubtrap')||'{}'); }catch(e){ return {}; } },
+    /* skins */
+    skins:function(){ return SKINS.map(function(s){ return {id:s.id,name:s.name,owned:ownsSkin(s.id),premium:!!s.premium,sel:SK.sel===s.id}; }); },
+    imgReady:function(){ return imgReady; }, imgSkin:function(){ return imgSkinLoaded; },
+    imgKeys:function(){ var k=[]; for(var n in IMG) if(IMG.hasOwnProperty(n)) k.push(n); return k; },
+    select:function(id){ if(ownsSkin(id)){ SK.sel=id; saveSkins(); loadSkinAssets(id); return true; } return false; },
+    loadSkin:function(id,cb){ loadSkinAssets(id,cb); }, renderSkins:renderSkins,
+    setGrounds:function(n){ STATS.grounds=n; saveStats(); return checkUnlocks().map(function(s){return s.id;}); },
+    owned:function(){ return SK.owned.slice(); }, stats:function(){ return STATS; }
   };
 }
 boot();
