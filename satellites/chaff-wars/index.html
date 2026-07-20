@@ -818,6 +818,11 @@ setInterval(function(){ if(!running)return; var n=Date.now();
    Cut by scripts/cut_popnlock.py. Bump CW_ART_V to bust the ?v= cache.
    ===================================================================== */
 var CW_ART_V='pnl1';
+/* Pod/piece art (sheet 10). Procedural throwies are the default; when the pod
+   sprites (assets/pods/pod-0..4.png + chaff.png) land, flip CW_POD_ART=true and
+   drawPod/drawChaff use the sprite body behind an image-loaded check (eyes/gaze
+   still drawn on top for pods). CW_POD_BOX tunes the draw box vs the pod radius. */
+var CW_POD_ART=false, CW_POD_BOX=2.36;
 var _cwCache={};
 function _cwLoad(src){ var im=new Image(); im._cwsrc=src; try{ im.src=src+'?v='+CW_ART_V; }catch(e){} return im; }
 function _cwReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
@@ -901,11 +906,15 @@ function podGlyph(ci,gx,gy,gr,col){ ctx.save(); ctx.translate(gx,gy); ctx.fillSt
   else { ctx.moveTo(0,-gr); ctx.lineTo(gr*0.8,0); ctx.lineTo(0,gr); ctx.lineTo(-gr*0.8,0); ctx.closePath(); }
   ctx.stroke(); ctx.fill(); ctx.restore(); }
 function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
-  var g=ctx.createRadialGradient(cx-r*0.32,cy-r*0.4,r*0.15,cx,cy,r*1.15); g.addColorStop(0,pal.lt); g.addColorStop(0.62,pal.bs); g.addColorStop(1,pal.dk);
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
-  ctx.lineWidth=Math.max(1.5,r*0.13); ctx.strokeStyle='#0c0a06'; ctx.stroke();   /* chunky spray-throwie outline */
-  ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.32,r*0.18,-0.5,0,6.2832); ctx.fill();
-  if(s>=16 && SET.tags) podGlyph(ci,cx,cy-r*0.46,r*0.3,pal.lt);   /* colorblind tag shape (top) */
+  var _spr=CW_POD_ART?cwSpr('pods/pod-'+ci):null;
+  if(_spr&&_cwReady(_spr)){ var _d=r*CW_POD_BOX; try{ ctx.drawImage(_spr,cx-_d/2,cy-_d/2,_d,_d); }catch(e){} }
+  else {
+    var g=ctx.createRadialGradient(cx-r*0.32,cy-r*0.4,r*0.15,cx,cy,r*1.15); g.addColorStop(0,pal.lt); g.addColorStop(0.62,pal.bs); g.addColorStop(1,pal.dk);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
+    ctx.lineWidth=Math.max(1.5,r*0.13); ctx.strokeStyle='#0c0a06'; ctx.stroke();   /* chunky spray-throwie outline */
+    ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.ellipse(cx-r*0.3,cy-r*0.42,r*0.32,r*0.18,-0.5,0,6.2832); ctx.fill();
+    if(s>=16 && SET.tags) podGlyph(ci,cx,cy-r*0.46,r*0.3,pal.lt);   /* colorblind tag shape (top) */
+  }
   if(s>=20){ var ex=r*0.34, ey=r*0.16, er=r*0.24, gx=(gaze?gaze.x:0), gy=(gaze?gaze.y:0.35),k;
     for(k=-1;k<=1;k+=2){ var eyx=cx+k*ex, eyy=cy+ey; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
       ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); }
@@ -914,6 +923,8 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
   if(alpha!=null)ctx.globalAlpha=1;
 }
 function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
+  var _cspr=CW_POD_ART?cwSpr('pods/chaff'):null;
+  if(_cspr&&_cwReady(_cspr)){ var _cd=r*CW_POD_BOX; try{ ctx.drawImage(_cspr,cx-_cd/2,cy-_cd/2,_cd,_cd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }
   var g=ctx.createRadialGradient(cx-r*0.3,cy-r*0.35,r*0.15,cx,cy,r*1.1); g.addColorStop(0,CHAFF_PAL.lt); g.addColorStop(0.7,CHAFF_PAL.bs); g.addColorStop(1,CHAFF_PAL.dk);
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
   ctx.strokeStyle='rgba(30,30,26,0.6)'; ctx.lineWidth=Math.max(1,r*0.1); ctx.beginPath(); ctx.moveTo(cx-r*0.5,cy-r*0.4); ctx.lineTo(cx-r*0.1,cy); ctx.lineTo(cx-r*0.4,cy+r*0.3); ctx.stroke();

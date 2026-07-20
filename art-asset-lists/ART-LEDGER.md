@@ -104,3 +104,13 @@ intact, bot_versus green (one winner/garbage crossed/0 errors), every scene
 screenshotted. Also fixed a pre-existing crash: ALL-CITY-HYPE set a non-existent
 `#h-score` DOM node. NOT wired (optional, deferred): buff-wipe + cast-aura FX,
 vs-frame, mode plates, logo/wide. Status: **WIRED.**
+
+**PIECE ART — Sheet 10 (pods + chaff) LISTED 2026-07-20.** Stephen asked for art on
+the falling pieces to match the board. Prompt sheet authored at
+`art-asset-lists/pop-n-lock/10-sheet-10-pods.md` and dropped in the 012Assets Drive
+folder ("Pop N Lock — Art Pack" → "10 — Seedpods + Chaff"). 5 pod bodies (frozen
+hue + colorblind tag-shape: star/chevron/droplet/bolt/diamond) + grey chaff, on
+2048 4x4 magenta; bodies only (engine draws eyes/gaze on top). **Drop-in wired:**
+`CW_POD_ART`/`CW_POD_BOX` flags in index.html + a gated sprite-body branch in
+drawPod/drawChaff (inert until `assets/pods/pod-0..4.png` + `chaff.png` land — flip
+`CW_POD_ART=true`, procedural stays the fallback). Status: **LISTED.**
