@@ -1774,6 +1774,12 @@ function loop(ts){
       camT={ x:G.world.wallX-16.5, y:13.5, z:30 };
       lookX=G.world.wallX+1; lookY=Math.min(20,Math.max(7,G.stuckY*0.6+5));
     }
+  } else if(G.climbWall){
+    // WALL CLIMB (live): sit a touch ABOVE the blade and pulled farther back so the
+    // blade reads and the wall you're climbing into fills the upper frame. (Stephen:
+    // camera was below the knife and too close.) Floor keeps it steady at the start.
+    camT={ x:G.x-1.5, y:Math.max(9,G.y+6.5), z:34 };
+    lookX=G.x+1.5; lookY=G.y+1.5;
   } else {
     camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:26 };
     lookX=G.x+5.5; lookY=Math.max(3,G.y*0.45+1.5);
