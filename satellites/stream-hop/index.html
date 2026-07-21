@@ -74,8 +74,9 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   transition:border-color .2s ease, background .2s ease}
 .musrow.on{border-color:var(--gold); background:rgba(200,168,75,0.08)}
 .musrow.locked{opacity:.62}
-.musrow .mi{width:40px; height:40px; border-radius:11px; flex:none; display:flex; align-items:center;
-  justify-content:center; font-size:19px; background:rgba(122,179,86,0.12); border:1px solid rgba(122,179,86,0.3)}
+.musrow .mi{width:52px; height:52px; border-radius:11px; flex:none; display:flex; align-items:center;
+  justify-content:center; font-size:19px; background:rgba(122,179,86,0.12); border:1px solid rgba(122,179,86,0.3);
+  position:relative; overflow:visible}
 .musrow.on .mi{background:rgba(200,168,75,0.16); border-color:rgba(200,168,75,0.5)}
 .musrow .mt{flex:1; min-width:0}
 .musrow .mt b{display:block; font-size:14.5px}
@@ -161,10 +162,13 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .24s cubic-bezier(.34,1.35,.5,1), background .24s ease}
 .toggle.on b{left:31px; background:#eafbd6}
 .skinrow{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:0 auto}
-.skincard{width:96px; min-height:126px; padding:12px 8px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; text-align:center}
-.skincard.on{border-color:var(--gold); background:rgba(200,168,75,0.10)}
+.skincard{width:102px; min-height:132px; padding:12px 8px; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; text-align:center;
+  transition:transform .16s cubic-bezier(.22,.9,.28,1), box-shadow .2s ease, border-color .2s ease}
+.skincard:not(.locked):hover{transform:translateY(-3px); border-color:#3f6b34; box-shadow:0 8px 22px #0007}
+.skincard:not(.locked):active{transform:translateY(0) scale(.97)}
+.skincard.on{border-color:var(--gold); background:rgba(200,168,75,0.10); box-shadow:0 0 0 2px rgba(200,168,75,.22), 0 6px 18px #0006}
 .skincard.locked{opacity:.5; cursor:default}
-.skincard canvas{width:56px; height:56px; display:block; margin:0 auto 6px}
+.skincard canvas{width:64px; height:64px; display:block; margin:0 auto 6px}
 .skincard .sn{font-size:12px; font-weight:800}
 .skincard .su{font-size:10px; color:var(--muted); margin-top:2px}
 .skincard .sr{font-size:9px; letter-spacing:.09em; text-transform:uppercase; font-weight:800; margin-top:3px}
@@ -514,7 +518,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.6';
+var BUILD='v3.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -619,7 +623,11 @@ var CHARS=[
   {id:'richuncle', name:'Rich Uncle Jimothy', rar:'secret', secret:1, sheet:'skins/richuncle', art:1,
    body:'#7d6f52', belly:'#c8b78d', eye:'#171512',
    hint:'They say one of them made it big. 300 bottlecaps big.',
-   bio:'Old bottlecap money.'}
+   bio:'Old bottlecap money.'},
+  {id:'sasquatch', name:'Sasquatch', rar:'secret', secret:1, sheet:'chars/sasquatch', art:1, scale:1.35,
+   body:'#5a4a36', belly:'#7a6a50', eye:'#1a140c',
+   hint:'The city\'s oldest local only shows himself to true historians.',
+   bio:'He has watched every neighbourhood change. He liked them all.'}
 ];
 function charById(id){ for(var i=0;i<CHARS.length;i++) if(CHARS[i].id===id)return CHARS[i]; return CHARS[0]; }
 function curChar(){ return charById(PROG.char||'jimothy'); }
@@ -674,7 +682,9 @@ function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._s
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
-var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
+var SPR_JPG={'music/cover-moonwalk':1,'music/cover-chiptune':1,'music/cover-bass':1,'music/cover-ballard':1,
+  'music/cover-xwalk':1,'music/cover-trashrun':1,'music/cover-pizza':1,
+  'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
   'lanes/rail2':1,'lanes/water-deep':1,'lanes/water-teal':1,'lanes/water-chop':1,
   'lanes/safe-waterfront':1,'lanes/safe-market':1,'lanes/safe-bridge':1,'lanes/safe-capitol':1,'lanes/safe-interbay':1,'lanes/safe-locks':1,
   'lanes/road-waterfront':1,'lanes/road-market':1,'lanes/road-bridge':1,'lanes/road-capitol':1,'lanes/road-interbay':1,'lanes/road-locks':1,
@@ -717,7 +727,9 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/rail-lightrail','sprites/rail-monorail','sprites/haz-dog','sprites/haz-raccoon',
   'sprites/prop-recyclebin','sprites/prop-produce','sprites/prop-coffeecart',
   'sprites/haz-crowdive','chars/seagull/leap','sprites/prop-steam',
-  'sprites/haz-otterswim','sprites/haz-heronwade','sprites/haz-pigeons'];
+  'sprites/haz-otterswim','sprites/haz-heronwade','sprites/haz-pigeons',
+  'sprites/sweeper-body','sprites/sweeper-edge','ui/glyph-pizza',
+  'sprites/planter-concrete','sprites/planter-barrel','sprites/planter-ferns'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
   var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
@@ -819,12 +831,24 @@ function advZoneIdx(n){ return Math.floor((n-1)/ADV_CHAP) % ZONES.length; }
 function advChapterName(n){ return ZONES[advZoneIdx(n)].name; }
 function advDiff(n){ return Math.min(9.5, (n-1)*0.4); }        // level 1 = easiest; full difficulty ~level 24
 function advEase(rlv){ return rlv?Math.max(0, 1-(rlv-1)*0.05):0; } // 1 at lvl1 -> 0 by lvl21 (eases density/speed)
+/* special levels: recurring flavors keyed by level number — variety forever */
+function advSpecial(n){ if(n<6) return null;
+  if(n%12===0) return 'storm';
+  if(n%8===5)  return 'sound';
+  if(n%8===2)  return 'railyard';
+  if(n%10===7) return 'rushhour';
+  if(n%9===4)  return 'steamnight';
+  return null; }
+var SPNAME={ storm:'STORM WATCH', sound:'FERRY CROSSING', railyard:'RAIL YARD',
+  rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT' };
 function advFlowerGoal(n){ return Math.min(9, 2+Math.floor(n/2)); }
 function advCoinGoal(n){ return Math.min(8, 2+Math.floor(n/3)); }
 function advStars(n){ return (PROG.adv.stars[n]||0); }
 function advStarCount(n){ var m=advStars(n),c=0; if(m&1)c++; if(m&2)c++; if(m&4)c++; return c; }
 function advTotalStars(){ var t=0; for(var k in PROG.adv.stars) t+=advStarCount(k); return t; }
-function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r)); return Math.min(9, r/26); }
+function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r));
+  var d=Math.min(9, r/26); if(r>260) d=Math.min(11.5, 9+(r-260)/140);   // the deep end keeps deepening
+  return d; }
 function makeLane(r){
   var rng=G.rng, d=diffAt(r), L={ r:r, ents:[] };
   // onboarding: first 3 rows always safe & calm
@@ -858,7 +882,9 @@ function makeLane(r){
     return L;
   }
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
-  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(0.55, (0.18+d*0.045)*zoneAt(r).wBias));
+  var spx=(G.mode==='adventure')?advSpecial(advLevelOfRow(r)):null;
+  var wMul=spx==='sound'?2.4:spx==='rushhour'?0.15:1;
+  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(0.62, (0.18+d*0.045)*zoneAt(r).wBias*wMul));
   if(wantWater){ L.type='water'; buildWater(L,d); }
   else { L.type='road'; buildRoad(L,d); }
   G.lastType=L.type;
@@ -897,14 +923,15 @@ function buildRoad(L,d){
   if(rng()<0.20) L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:'sprites/deco-manhole', h:TILE*0.72 };
   // steam alley: no traffic at all, but three manholes venting on a stagger. You
   // cross this one on rhythm, not on gaps — a different read from every other lane.
-  if(d>3.2 && rng()<0.10){
+  var spr2=(G.mode==='adventure')?advSpecial(advLevelOfRow(L.r)):null;
+  if(d>3.2 && rng()<(spr2==='steamnight'?0.30:0.10)){
     L.vents=[]; var vn=2+Math.floor(rng()*2), used={};
     for(var vi=0; vi<vn; vi++){ var vc=Math.floor(rng()*COLS); while(used[vc]) vc=(vc+1)%COLS; used[vc]=1;
       L.vents.push({ x:(vc+0.5)*TILE, ph:rng()*2.6, per:2.6+rng()*0.9 }); }
     L.speed=0; L.spacing=1; L.span=1; return;
   }
   // train lane: one long, fast train with a big gap — wait for the gap, then dash
-  if(d>3.5 && rng()<0.14){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
+  if(d>3.5 && rng()<(spr2==='railyard'?0.42:0.14)){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
     var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
     var tspan=VW+tsp*2, tn=Math.ceil(tspan/tsp), tph=rng()*tsp;
     var rk=rng()<0.5?'lightrail':'monorail';
@@ -912,7 +939,7 @@ function buildRoad(L,d){
     L.spacing=tsp; L.span=tn*tsp; return;
   }
   var rlv=(G.mode==='adventure')?advLevelOfRow(L.r):0, ease=advEase(rlv);
-  var express=d>4 && rng()<0.22*zoneAt(L.r).xBias; L.express=express;
+  var express=d>4 && rng()<0.22*zoneAt(L.r).xBias*(spr2==='rushhour'?2.2:1); L.express=express;
   L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1)*(1-ease*0.42); // px/s, slower early in Adventure
   // pick from the kinds unlocked at this difficulty: geese and cans early, buses late
   var pool=OBS_EARLY.slice();
@@ -935,7 +962,8 @@ function buildWater(L,d){
   if(rng()<0.24){ var wd=['sprites/deco-salmon','sprites/haz-otterswim','sprites/haz-heronwade'];
     L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:wd[Math.floor(rng()*wd.length)], h:TILE*0.56 }; }
   // ferry lane: big slow rafts drifting across the Sound — a wider, calmer ride
-  if(d>2.4 && rng()<0.22){
+  var spw=(G.mode==='adventure')?advSpecial(advLevelOfRow(L.r)):null;
+  if(d>2.4 && rng()<(spw==='sound'?0.5:0.22)){
     L.ferry=true; L.speed=(24+d*5+rng()*14)*(G.mode==='zen'?0.58:1);
     var fw=TILE*(3.2+rng()*1.3), fgap=TILE*(2.4+rng()*1.6), fsp=fw+fgap;
     var fspan=VW+fsp*2, fn=Math.ceil(fspan/fsp), fph=rng()*fsp;
@@ -1173,6 +1201,7 @@ function grabEgg(lane){ var k=lane.egg.kind; lane.egg=null; var e=eggById(k);
   if(!PROG.eggs) PROG.eggs={};
   PROG.eggs[k]=1; saveProg();
   var v=fresh?30:10; G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v;
+  if(eggsFound()>=EGGS.length) unlockSecret('sasquatch','The city\'s oldest local steps out of the trees...');
   float(G.cr.x, rowScreenY(G.cr.r)-30, e.name);
   float(G.cr.x, rowScreenY(G.cr.r)-52, (fresh?'FOUND! ':'')+'+'+v+' caps');
   burst(G.cr.x, rowScreenY(G.cr.r), 18, '#f0d68a');
@@ -1210,7 +1239,8 @@ function advLevelUp(newLevel){
     G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9, done:done, stars:stars };
     G.levelBanner=null;
     spr(ZONES[(nz+1)%ZONES.length].bg); }
-  else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars };
+  else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars, sp:advSpecial(newLevel) };
+  if(advSpecial(newLevel)==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; G.weather.dur=16; }
   G.flash=Math.max(G.flash,0.35); sfx('bank'); haptic(16);
   spawnFx('fx/glow-bloom', G.cr.x, rowScreenY(G.cr.r), TILE*2.4, 0.6); spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.6, 0.65);
   // one star pop per star actually earned on the level you just cleared
@@ -1615,6 +1645,7 @@ function render(){ if(!ctx||!G)return;
   // critter, then everything visually in front of him
   drawCritter();
   for(var r2=crRow+1;r2<=rhi;r2++){ drawRow(r2); }
+  drawSweeper();
   // particles
   for(var p=0;p<G.parts.length;p++){ var pt=G.parts[p]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
   if(G.fx)for(var q2=0;q2<G.fx.length;q2++){ var f2=G.fx[q2], pr=f2.t/f2.life; drawSprite(f2.n, f2.x, f2.y, f2.h*(0.55+pr*0.7), {a:Math.max(0,1-pr*1.05)}); }
@@ -1667,6 +1698,24 @@ function drawFirstRunHint(){
   ctx.fillStyle='#a8b096'; ctx.font='700 13px Fredoka,system-ui'; ctx.fillText('Swipe or use the corner arrows to change lanes', VW/2, y+16);
   ctx.textAlign='left'; ctx.restore();
 }
+/* THE STREET SWEEPER — the wilt as a machine. A tiling municipal monster whose
+   brushes crawl along the chase line; the purple row tint underneath reads as the
+   soaked, swept street it leaves behind. Procedural tint remains the fallback. */
+function drawSweeper(){
+  if(!G || G.mode==='zen' || G.mode==='rush' || !G.started) return;
+  var y=rowScreenY(G.chaseR); if(y < -TILE*0.2) return;
+  var body=spr('sprites/sweeper-body'), edge=spr('sprites/sweeper-edge');
+  if(!imgReady(body) || !imgReady(edge)) return;
+  var bh=TILE*2.05, bw=bh*(body.naturalWidth/body.naturalHeight);
+  var eh=TILE*0.8,  ew=eh*(edge.naturalWidth/edge.naturalHeight);
+  var bob=Math.sin(G.t*2.2)*2;
+  ctx.save();
+  var x0=-((G.t*26)%bw);
+  for(var x=x0-bw; x<VW+bw; x+=bw) ctx.drawImage(body, x, y-bh+eh*0.30+bob, bw, bh);
+  var x1=-((G.t*44)%ew);
+  for(var x2=x1-ew; x2<VW+ew; x2+=ew) ctx.drawImage(edge, x2, y-eh*0.42+bob*0.5, ew, eh);
+  ctx.restore();
+}
 /* the neighbourhood you are walking into, as a letterboxed card behind the name.
    Falls back to plain text if the strip has not loaded yet. */
 function drawZoneCard(bg, a){
@@ -1713,7 +1762,8 @@ function drawLevelBanner(){
   if(lb.done>=1){ var got=0,m=lb.stars||0; if(m&1)got++; if(m&2)got++; if(m&4)got++;
     ctx.font='800 15px Fredoka,system-ui'; ctx.fillStyle='#f2d98a'; ctx.fillText('LEVEL '+lb.done+' CLEARED', VW/2, VH*0.22-40);
     ctx.font='20px Fredoka,system-ui'; ctx.fillText((m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆'), VW/2, VH*0.22-16); }
-  ctx.font='700 12px Fredoka,system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText((lb.name||'').toUpperCase(), VW/2, VH*0.22+8);
+  ctx.font='700 12px Fredoka,system-ui'; ctx.fillStyle=lb.sp?'#e8c65a':'#8a9178';
+  ctx.fillText(((lb.sp&&SPNAME[lb.sp])?(SPNAME[lb.sp]+' · '):'')+(lb.name||'').toUpperCase(), VW/2, VH*0.22+8);
   ctx.font='800 30px Fredoka,system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
   ctx.fillText('Level '+lb.n, VW/2, VH*0.22+36);
   ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
@@ -1750,7 +1800,8 @@ function drawRow(r){
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
-    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){ drawShrub((c+0.5)*TILE, y, r); } }
+    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){ var pv=['concrete','barrel','ferns'][(r*7+c*3)%3];
+      if(!drawSprite('sprites/planter-'+pv, (c+0.5)*TILE, y, 0, {w:TILE*1.02, bottom:24, hmax:TILE*1.15})) drawShrub((c+0.5)*TILE, y, r); } }
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
       if(!drawSprite('sprites/coin-cap', L.coin, cy, 32)){
         ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); } }
@@ -1781,7 +1832,7 @@ function drawRow(r){
     for(var e2=0;e2<L.ents.length;e2++){ drawPad(L.ents[e2], y); }
     if(SET.cb){ ctx.fillStyle='rgba(91,155,213,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   }
-  // wilt overlay on rows the chase has taken
+  // wilt overlay on rows the chase has taken (the sweeper machine draws on top)
   if(G.mode!=='zen' && r <= G.chaseR+0.5){ var w=Math.min(1,(G.chaseR+0.5-r)); ctx.fillStyle='rgba(20,8,20,'+(0.35+0.45*w)+')'; ctx.fillRect(0,top,VW,TILE);
     if(r>G.chaseR-0.5){ ctx.fillStyle='rgba(120,40,90,0.35)'; ctx.fillRect(0,top,VW,4); } }
 }
@@ -1949,9 +2000,13 @@ function drawCritter(){
     if(sk.glow){ ctx.save(); var gg=ctx.createRadialGradient(x,cy,2,x,cy,30); gg.addColorStop(0,'rgba(245,230,168,0.5)'); gg.addColorStop(1,'rgba(245,230,168,0)'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(x,cy,30,0,7); ctx.fill(); ctx.restore(); }
     // the poses have very different shapes: size the wide ones (running, knocked
     // out) by width so every pose reads as the same amount of raccoon
-    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight;
-    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24, sx:sq, sy:st});
-    else drawSprite(pose, x, cy-6, TILE*0.98, {sx:sq, sy:st});
+    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1;
+    // side hops: mirror the 4-frame critters into their travel direction with a
+    // small lean into the hop — free extra frames, reads far less static
+    var sflip=false, srot=0;
+    if(G.hop && !sk.full){ if(G.hop.dir==='left'){ sflip=true; srot=0.10; } else if(G.hop.dir==='right'){ srot=0.10; } }
+    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot});
+    else drawSprite(pose, x, cy-6, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot});
     return;
   }
   // procedural critter (fallback)
@@ -2056,9 +2111,12 @@ function revealSong(t){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov
   $('br-name').textContent=t.title; $('br-bio').textContent='Unlocked — playing now';
   var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d');
   c.clearRect(0,0,124,124);
-  var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(200,168,75,0.5)'); gl.addColorStop(1,'rgba(200,168,75,0)');
-  c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
-  c.fillStyle='#e8dcc8'; c.font='54px Fredoka,system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('\u266B',62,64);
+  var cim=spr('music/cover-'+t.id), dcv=function(){ var c2=cvp.getContext('2d'); c2.save(); c2.beginPath();
+    if(c2.roundRect)c2.roundRect(2,2,120,120,12); else c2.rect(2,2,120,120); c2.clip(); c2.drawImage(cim,2,2,120,120); c2.restore(); };
+  if(imgReady(cim)) dcv(); else { cim.addEventListener('load', dcv);
+    var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(200,168,75,0.5)'); gl.addColorStop(1,'rgba(200,168,75,0)');
+    c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
+    c.fillStyle='#e8dcc8'; c.font='54px Fredoka,system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('\u266B',62,64); }
   ov.querySelector('.br-card').style.borderColor='#c8a84b';
   ov.classList.add('on'); sfx('unlock'); haptic(24);
   JMUS.play(t.id);
@@ -2371,8 +2429,10 @@ function renderMusic(){
   MUSIC.forEach(function(t){ var own=musOwned(t.id);
     var row=document.createElement('div'); row.className='musrow'+(sel===t.id&&own?' on':'')+(own?'':' locked');
     var ic=document.createElement('div'); ic.className='mi';
-    if(sel===t.id && own && st.playing && !st.teasing){ ic.innerHTML='<span class="eq"><b></b><b></b><b></b></span>'; }
-    else ic.innerHTML='<img src="assets/ui/'+(own?'glyph-music':'glyph-padlock')+'.png?a='+ARTV+'" style="width:26px;height:26px;object-fit:contain" alt="">';
+    var cov='assets/music/cover-'+t.id+'.jpg?a='+ARTV;
+    ic.innerHTML='<img src="'+cov+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px'+(own?'':';opacity:.35;filter:grayscale(.4)')+'" alt="">'+
+      (own?'':'<img src="assets/ui/glyph-padlock.png?a='+ARTV+'" style="position:absolute;width:22px;height:22px;right:-5px;bottom:-5px" alt="">');
+    if(sel===t.id && own && st.playing && !st.teasing){ ic.innerHTML+='<span class="eq" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><b></b><b></b><b></b></span>'; }
     row.appendChild(ic);
     var mt=document.createElement('div'); mt.className='mt';
     var b=document.createElement('b'); b.textContent=t.title; mt.appendChild(b);
