@@ -279,7 +279,8 @@ function newGame(mode){
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
       chaseR:-6, chaseSpd: (mode==='zen'||mode==='rush')?0:0.28, clock: mode==='rush'?60:0, t:0, parts:[], floats:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, skin:skinById(PROG.skin), started:false,
-      shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6} };
+      shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6},
+      weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 } };
   // camera init
   G.camY = -G.cr.r*TILE - VH*0.62; G.camYt=G.camY;
   genUpTo(20);
@@ -407,14 +408,38 @@ function bankBloom(){
 
 /* ===== physics / update ===== */
 function padUnder(lane,x){ for(var i=0;i<lane.ents.length;i++){ var e=lane.ents[i]; if(x>e.x-e.w/2-2 && x<e.x+e.w/2+2) return e; } return null; }
+/* ===== weather (Seattle rain/fog; cycles through a run) ===== */
+function stepWeather(dt){
+  var w=G.weather; if(!w) return;
+  if(G.started && G.phase==='play'){ w.t+=dt;
+    if(w.t>=w.dur){ w.t=0; w.dur=15+G.rng()*12;
+      var opts=['clear','rain','fog','rain'], nt; do{ nt=opts[Math.floor(G.rng()*opts.length)]; }while(nt===w.type);
+      w.type=nt;
+      float(VW/2, 150, nt==='rain'?'Rain moving in':nt==='fog'?'Fog rolling in':'Skies clearing');
+    }
+  }
+  var rT=(w.type==='rain')?1:0, fT=(w.type==='fog')?1:0, k=Math.min(1,dt*0.6);
+  w.rainA += (rT-w.rainA)*k; w.fog += (fT-w.fog)*k; w.mul = 1 + w.rainA*0.16;
+}
+function drawWeather(){
+  var w=G&&G.weather; if(!w) return;
+  if(w.fog>0.02){ var g=ctx.createLinearGradient(0,0,0,VH);
+    g.addColorStop(0,'rgba(150,166,182,'+(0.52*w.fog).toFixed(3)+')');
+    g.addColorStop(0.55,'rgba(150,166,182,'+(0.2*w.fog).toFixed(3)+')');
+    g.addColorStop(1,'rgba(150,166,182,0)'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
+  if(w.rainA>0.02){ var n=Math.floor(w.rainA*70); ctx.strokeStyle='rgba(190,210,235,'+(0.3*w.rainA).toFixed(3)+')'; ctx.lineWidth=1.4;
+    for(var i=0;i<n;i++){ var x=((i*97)%VW), y=(((i*57)+G.t*1000)%(VH+30)), len=9+((i*5)%9);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+len); ctx.stroke(); } }
+}
 function step(dt){
   if(!G) return;
   G.t+=dt;
+  stepWeather(dt);
   var slow = G.slowmo;
-  // move entities on visible-ish rows
+  // move entities on visible-ish rows (wet roads run a touch faster)
   var rlo=Math.floor(G.cr.r)-16, rhi=Math.floor(G.cr.r)+18;
   for(var r=rlo;r<=rhi;r++){ var L=G.lanes[r]; if(!L||!L.ents.length||(L.type!=='road'&&L.type!=='water'))continue;
-    var v=L.dir*L.speed*dt*slow;
+    var v=L.dir*L.speed*dt*slow*(L.type==='road'?G.weather.mul:1);
     for(var i=0;i<L.ents.length;i++){ var e=L.ents[i]; e.x+=v;
       if(L.dir>0 && e.x> VW+e.w) e.x-=L.span;
       else if(L.dir<0 && e.x< -e.w) e.x+=L.span; }
@@ -537,6 +562,8 @@ function render(){ if(!ctx||!G)return;
   ctx.textAlign='center'; ctx.font='800 15px system-ui';
   for(var f=0;f<G.floats.length;f++){ var fl=G.floats[f]; ctx.globalAlpha=Math.max(0,Math.min(1,fl.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(fl.txt,fl.x,fl.y); } ctx.globalAlpha=1;
   ctx.restore();
+  // weather over the field (under the HUD so it stays readable)
+  drawWeather();
 
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
@@ -790,7 +817,9 @@ if(/[?&]shtest=1/.test(location.search)){
     pow:applyPower, spawnPow:function(k){ var L=laneAt(G.cr.r); L.power={x:G.cr.x,kind:k}; return L.power; },
     spawnCoin:function(){ var L=laneAt(G.cr.r); L.coin=G.cr.x; return L.coin; },
     hurt:function(c){ die(c||'squish'); return {phase:G.phase,shield:G.shield}; },
-    powState:function(){ return {shield:G.shield,dashT:+G.dashT.toFixed(2),magnetT:+G.magnetT.toFixed(2),coins:G.coins,score:G.score,powsGot:G.powsGot,phase:G.phase}; }
+    powState:function(){ return {shield:G.shield,dashT:+G.dashT.toFixed(2),magnetT:+G.magnetT.toFixed(2),coins:G.coins,score:G.score,powsGot:G.powsGot,phase:G.phase}; },
+    setWeather:function(t){ var w=G.weather; w.type=t; w.rainA=(t==='rain')?1:0; w.fog=(t==='fog')?1:0; w.mul=1+w.rainA*0.16; return w.type; },
+    weatherState:function(){ var w=G.weather; return {type:w.type,rainA:+w.rainA.toFixed(2),fog:+w.fog.toFixed(2),mul:+w.mul.toFixed(3)}; }
   };
 }
 boot();
