@@ -115,6 +115,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .sup-note{font-size:12px; color:var(--muted); text-align:center; max-width:410px; margin:6px auto 12px; line-height:1.5; min-height:16px}
 .sup-heart{color:#e58fa0}
 #s-pause{background:rgba(5,8,5,0.86)}
+#s-clear{background:linear-gradient(180deg, rgba(10,14,9,0.97), rgba(6,9,6,0.99))}
+#fadeveil{position:absolute; inset:0; background:#000; opacity:0; pointer-events:none;
+  transition:opacity .4s ease; z-index:60}
+#fadeveil.on{opacity:1; pointer-events:auto}
 #s-pause .pad{justify-content:center}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
@@ -163,6 +167,11 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn.primary:active{box-shadow:0 1px 0 #3f6b34, 0 3px 10px #0006}
 .btn.sm{min-height:64px; font-size:17px}
 .bicon{width:46px; height:46px; object-fit:contain; flex:none; filter:drop-shadow(0 2px 3px #0007)}
+/* icon-forward mode cards: the medallions ARE the menu */
+.modebtn{flex-direction:column; gap:7px; min-height:118px; padding:12px 6px 10px; font-size:16.5px}
+.modebtn .bicon{width:64px; height:64px}
+.modebtn.wide{min-height:126px}
+.modebtn.wide .bicon{width:72px; height:72px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -279,21 +288,21 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="ribbon">Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-adventure"><img class="bicon" id="ic-adventure" alt="" style="width:56px;height:56px">Adventure</button>
+      <button class="btn primary" id="b-adventure" style="min-height:86px;font-size:23px"><img class="bicon" id="ic-adventure" alt="" style="width:64px;height:64px">Adventure</button>
       <div class="row">
-        <button class="btn sm" id="b-endless"><img class="bicon" id="ic-endless" alt="">Endless</button>
-        <button class="btn sm" id="b-rush"><img class="bicon" id="ic-rush" alt="">Rush</button>
-        <button class="btn sm" id="b-zen"><img class="bicon" id="ic-zen" alt="">Zen</button>
+        <button class="btn sm modebtn" id="b-endless"><img class="bicon" id="ic-endless" alt="">Endless</button>
+        <button class="btn sm modebtn" id="b-rush"><img class="bicon" id="ic-rush" alt="">Rush</button>
+        <button class="btn sm modebtn" id="b-zen"><img class="bicon" id="ic-zen" alt="">Zen</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
-        <button class="btn sm" id="b-skins"><img class="bicon" id="ic-skins" alt="">Critters</button>
+        <button class="btn sm modebtn wide" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
+        <button class="btn sm modebtn wide" id="b-skins"><img class="bicon" id="ic-skins" alt="">Critters</button>
       </div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
-        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt=""></button>
-        <button class="btn sm" id="b-feedback" title="Feedback" aria-label="Send feedback"><img class="bicon" id="ic-feedback" alt=""></button>
-        <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt=""></button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt="" style="width:54px;height:54px"></button>
+        <button class="btn sm" id="b-feedback" title="Feedback" aria-label="Send feedback"><img class="bicon" id="ic-feedback" alt="" style="width:54px;height:54px"></button>
+        <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt="" style="width:54px;height:54px"></button>
       </div>
       <button class="btn ghost sm" id="b-install"><img class="bicon" id="ic-install" alt="" style="width:40px;height:40px">Put Jimothy on your home screen</button>
       <button class="btn ghost sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
@@ -479,6 +488,26 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
+  <!-- LEVEL CLEAR — the full stop. Old-console arrival: zoom, stats, choice. -->
+  <div class="screen center" id="s-clear"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-sub" style="letter-spacing:6px">LEVEL CLEAR</div>
+    <div class="go-score" id="cl-level" style="font-size:76px">1</div>
+    <div id="cl-stars" style="font-size:30px; color:var(--gold); margin:2px 0 10px; letter-spacing:6px">★★★</div>
+    <div style="width:100%;max-width:300px">
+      <div class="go-stat"><span>Time</span><b id="cl-time">0:00</b></div>
+      <div class="go-stat"><span>Hops</span><b id="cl-hops">0</b></div>
+      <div class="go-stat"><span>Bottlecaps</span><b id="cl-caps">0</b></div>
+      <div class="go-stat"><span>Feasts banked</span><b id="cl-feasts">0</b></div>
+    </div>
+    <div class="pill" id="cl-streak" style="margin-top:14px">STREAK 1</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="cl-next">▶ Next level</button>
+      <button class="btn ghost sm" id="cl-menu">◄ Menu</button>
+    </div>
+  </div></div>
+
   <!-- GAME OVER -->
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
@@ -504,6 +533,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       </div>
     </div>
   </div></div>
+
+  <div id="fadeveil"></div>
 
   <!-- prize bin reveal -->
   <div id="bin-reveal"><div class="br-card">
@@ -534,7 +565,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.9';
+var BUILD='v4.0';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -561,7 +592,7 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
-  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{},
+  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1}, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
@@ -571,6 +602,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.maxCombo==='number')PROG.maxCombo=p.maxCombo; if(typeof p.dodges==='number')PROG.dodges=p.dodges;
   if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked;
   if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
+  if(typeof p.bestStreak==='number')PROG.bestStreak=p.bestStreak;
   if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1}; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
@@ -822,7 +854,7 @@ function newGame(mode, startLevel){
       chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:(mode==='adventure'?Math.min(0.28,0.11+(advL-1)*0.011):0.28), clock: mode==='rush'?60:0, t:0, parts:[], floats:[], fx:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
-      level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
+      level:advL, lvFlowers:0, lvCoins:0, lvHops:0, lvT:0, streak:0, deadCause:null,
       revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, capsEverPaid:0, idleT:0, saveT:0, fogT:0, landT:0, celeb:0,
       freezeT:0, vestT:0, bootsT:0, lampT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
@@ -885,7 +917,9 @@ function makeLane(r){
   // the two rows before a gate row are the MOAT: open water you cross on pads,
   // then leap into an alcove. Kicks in once the training levels are done.
   if(G.mode==='adventure'){ var rin=r%ADV_LEN, mlv=advLevelOfRow(r);
-    if(mlv>=4 && (rin===ADV_LEN-2 || rin===ADV_LEN-1)){
+    // some finales are moats, some are a flat-out sprint through traffic —
+    // levels where mlv%5 is 0 or 2 keep whatever the streets deal
+    if(mlv>=4 && (mlv%5!==0 && mlv%5!==2) && (rin===ADV_LEN-2 || rin===ADV_LEN-1)){
       L.type='water'; buildWater(L,d); G.lastType='water'; G.afterHazard=true;
       for(var me=0; me<L.ents.length; me++){ if(!L.ents[me].ferry) L.ents[me].w*=1.22; }  // finale pads run generous
       return L; } }
@@ -1049,6 +1083,7 @@ function finishHop(){
   collectPickups(lane);
   // forward progress → combo + trail + score
   if(h.dir==='up'){
+    if(G.mode==='adventure') G.lvHops=(G.lvHops||0)+1;
     if(G.cr.r>G.score){ G.score=G.cr.r; }
     if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
     else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
@@ -1102,7 +1137,10 @@ var ACH=[
   {id:'allpowers',  name:'Well Equipped',    desc:'Use all nine power ups.',               art:'ach/b21-31'},
   {id:'rush40',     name:'Rush Hour',        desc:'Cross 40 rows in a single Rush.',       art:'ach/b21-11'},
   {id:'fogwalk',    name:'Into The Fog',     desc:'Stay out in thick fog for 25 seconds.', art:'ach/b26-24'},
-  {id:'secrets',    name:'Both Secrets',     desc:'Find the two critters not in the bin.', art:'ach/b26-13'}
+  {id:'secrets',    name:'Both Secrets',     desc:'Find the two critters not in the bin.', art:'ach/b26-13'},
+  {id:'streak5',    name:'Hot Streak',       desc:'Clear 5 levels without dying.',         art:'ui/glyph-pizza'},
+  {id:'streak10',   name:'Untouchable',      desc:'Clear 10 levels without dying.',        art:'ui/glyph-sunbeam'},
+  {id:'streak25',   name:'The Long Feast',   desc:'Clear 25 levels without dying.',        art:'ui/medal-best'}
 ];
 /* ===== SEASONAL BADGES (sheet 29) — only earnable while that season is actually
    running, so they are a reason to come back rather than a thing to grind. Months
@@ -1153,6 +1191,9 @@ function achMet(id){
     case 'rush40':      return (P.best.rush||0)>=40;
     case 'fogwalk':     return !!P.fogWalked;
     case 'secrets':     return charOwned('ghost') && charOwned('richuncle');
+    case 'streak5':     return (P.bestStreak||0)>=5;
+    case 'streak10':    return (P.bestStreak||0)>=10;
+    case 'streak25':    return (P.bestStreak||0)>=25;
   }
   if(id.indexOf('ssn_')===0) return !!(P.seasons && P.seasons[id.slice(4)]);
   return false;
@@ -1264,16 +1305,16 @@ function advLevelUp(newLevel){
     // skin unlocks by furthest level reached
     checkAdvUnlocks(); achCheck();
   }
-  G.level=newLevel; G.lvFlowers=0; G.lvCoins=0;
+  // capture the cleared level's story BEFORE counters reset
+  G.streak=(G.streak||0)+1;
+  if(G.streak>(PROG.bestStreak||0)){ PROG.bestStreak=G.streak; saveProg(); }
+  G.pendingClear={ n:done, stars:PROG.adv.stars[done]||0, time:G.lvT||0, hops:G.lvHops||0,
+    caps:G.lvCoins||0, feasts:G.lvFlowers||0, streak:G.streak };
+  G.level=newLevel; G.lvFlowers=0; G.lvCoins=0; G.lvHops=0; G.lvT=0;
   // A new chapter is a real beat, so it gets the neighbourhood card and swallows the
   // level tag: one card, never two banners stacked on the same moment.
-  var nz=advZoneIdx(newLevel), stars=PROG.adv.stars[done]||0;
-  if(nz!==G.zone){ G.zone=nz; warmZoneTex(ZONES[nz]);
-    G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9, done:done, stars:stars };
-    G.levelBanner=null;
-    spr(ZONES[(nz+1)%ZONES.length].bg); }
-  else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars, sp:advSpecial(newLevel) };
-  if(advSpecial(newLevel)==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; G.weather.dur=16; }
+  var stars=PROG.adv.stars[done]||0;
+  spr(ZONES[(advZoneIdx(newLevel)+1)%ZONES.length].bg);
   G.flash=Math.max(G.flash,0.35); haptic(16);
   // ARRIVAL: hold the moment — Jimothy cheers in the alcove, the street waits,
   // the sweeper backs off, a little fanfare plays. Then the city rolls on.
@@ -1286,7 +1327,38 @@ function advLevelUp(newLevel){
   // one star pop per star actually earned on the level you just cleared
   var got=0,sm=stars||0; if(sm&1)got++; if(sm&2)got++; if(sm&4)got++;
   for(var si=0; si<got; si++) spawnFx('fx/star-pop', G.cr.x+(si-(got-1)/2)*40, rowScreenY(G.cr.r)-46, TILE*0.95, 0.75);
-  float(G.cr.x, rowScreenY(G.cr.r)-30, 'LEVEL '+done+' ✓');
+  // zoom in on the little guy, savour it, then the full-stop clear screen
+  G.levelBanner=null; G.zoneBanner=null;
+  setTimeout(showLevelClear, 1250);
+}
+/* THE FULL STOP — celebration screen after the zoom. Old-console rhythm:
+   stop, score the run, choose, fade to the next. */
+function showLevelClear(){
+  if(!G || !G.pendingClear || G.phase!=='play') return;
+  var pc=G.pendingClear;
+  $('cl-level').textContent=pc.n;
+  var m=pc.stars||0; $('cl-stars').textContent=(m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆');
+  var t=Math.max(0,Math.round(pc.time)); $('cl-time').textContent=Math.floor(t/60)+':'+('0'+(t%60)).slice(-2);
+  $('cl-hops').textContent=pc.hops;
+  $('cl-caps').textContent=pc.caps;
+  $('cl-feasts').textContent=pc.feasts;
+  $('cl-streak').textContent='STREAK '+pc.streak+((PROG.bestStreak||0)>pc.streak?('  ·  best '+PROG.bestStreak):(pc.streak>=2?'  ·  new best':''));
+  achCheck();
+  show('s-clear');
+}
+function resumeNextLevel(){
+  var v=$('fadeveil'); if(v)v.classList.add('on'); sfx('ui');
+  setTimeout(function(){
+    if(G){ G.pendingClear=null; G.celeb=0;
+      G.levelBanner={ n:G.level, name:advChapterName(G.level), t:2.6, sp:advSpecial(G.level) };
+      var nz=advZoneIdx(G.level);
+      if(nz!==G.zone){ G.zone=nz; warmZoneTex(ZONES[nz]);
+        G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9 }; G.levelBanner=null; }
+      if(advSpecial(G.level)==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; }
+    }
+    show('s-play');
+    setTimeout(function(){ if(v)v.classList.remove('on'); }, 60);
+  }, 420);
 }
 /* clearing a level you have never cleared before pays a handful of caps toward the bin */
 function checkAdvUnlocks(){ var lv=PROG.best.adventure||0;
@@ -1466,6 +1538,7 @@ function step(dt){
       else if(L.dir<0 && e.x< -e.w) e.x+=L.span; }
   }
   // hop animation
+  if(G.mode==='adventure' && G.phase==='play') G.lvT=(G.lvT||0)+dt;
   if(G.hop){ G.hop.t+=dt*slow; if(G.hop.t>=G.hop.dur) finishHop(); }
   // riding a pad (continuous drift + auto-center + coyote)
   var lane=laneAt(G.cr.r);
@@ -1554,7 +1627,7 @@ function die(cause){ if(!G||G.phase!=='play')return;
     if(cause==='sink'||cause==='swept'||(dl&&dl.type==='water'&&!padUnder(dl,G.cr.x))){ var rr=G.cr.r; while(rr>0 && laneAt(rr).type==='water') rr--; G.cr.r=rr; G.cr.x=Math.max(HALF,Math.min(VW-HALF,G.cr.x)); }
     return; }
   if(G.mode==='zen'){ zenReset(cause); return; }
-  G.deadCause=cause; G.phase='dying';
+  G.deadCause=cause; G.phase='dying'; G.streak=0;
   G.shake=Math.max(G.shake,10); sfx('die'); haptic(30);
   burst(G.cr.x, rowScreenY(G.cr.r), 12, cause==='sink'||cause==='swept'?'#5b9bd5':'#e58fa0');
   setTimeout(gameOver, 780);
@@ -1671,6 +1744,10 @@ function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   ctx.save();
   if(SET.shake && G.shake>0.4){ var sk=G.shake*SHAKE_SCALE; ctx.translate((Math.random()*2-1)*sk,(Math.random()*2-1)*sk); }
+  // level-clear zoom: the camera leans in on Jimothy while he cheers
+  if(G.celeb>0 && G.pendingClear){ var zp=Math.min(1,(1.35-G.celeb)/0.8), zs=1+0.62*(zp*zp*(3-2*zp));
+    var zcx=G.cr.x, zcy=rowScreenY(G.cr.r)-8;
+    ctx.translate(zcx,zcy); ctx.scale(zs,zs); ctx.translate(-zcx,-zcy); }
   // draw rows (behind → ahead), with the critter interleaved at his own row.
   // Higher rows sit LOWER on screen, closer to the camera — anything in a row past
   // his gets painted AFTER him, so a bus passing in front actually covers him
@@ -1840,10 +1917,16 @@ function drawRow(r){
       ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px Fredoka,system-ui'; ctx.textAlign='right'; ctx.fillText('LEVEL '+L.levelLine, VW-12, top+TILE-5); ctx.textAlign='left';
       // the dumpster feasts glowing in their alcoves — the finish line you leap into
       if(L.gates)for(var gg=0; gg<COLS; gg++){ if(L.gates[gg]){ var gx=(gg+0.5)*TILE;
-        var fg=ctx.createRadialGradient(gx,y,3,gx,y,26); fg.addColorStop(0,'rgba(240,214,138,'+(0.30+0.14*Math.sin(G.t*3+gg))+')'); fg.addColorStop(1,'rgba(240,214,138,0)');
-        ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(gx,y,26,0,7); ctx.fill();
+        // BEACON: a shaft of gold light so the finish reads from anywhere
+        var pu=0.55+0.28*Math.sin(G.t*3.2+gg*2);
+        var sh=ctx.createLinearGradient(0,y-TILE*2.4,0,y+8);
+        sh.addColorStop(0,'rgba(255,230,150,0)'); sh.addColorStop(0.55,'rgba(255,226,140,'+(0.13*pu)+')'); sh.addColorStop(1,'rgba(255,220,120,'+(0.34*pu)+')');
+        ctx.fillStyle=sh; ctx.fillRect(gx-TILE*0.42, y-TILE*2.4, TILE*0.84, TILE*2.4+8);
+        var fg=ctx.createRadialGradient(gx,y,3,gx,y,30); fg.addColorStop(0,'rgba(240,214,138,'+(0.34+0.2*pu)+')'); fg.addColorStop(1,'rgba(240,214,138,0)');
+        ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(gx,y,30,0,7); ctx.fill();
         drawSprite('sprites/obs-trashbags', gx, y-6, 0, {w:TILE*0.94, bottom:22});
-        drawSprite('sprites/pickup-fries', gx+8, y+6, 22); } } }
+        drawSprite('sprites/pickup-fries', gx+8+Math.sin(G.t*2.6+gg)*2, y+4, 22);
+        if(Math.floor(G.t*2)%3===gg%3 && Math.random()<0.09) G.parts.push({x:gx+(Math.random()-0.5)*30, y:y+4, vx:(Math.random()-0.5)*14, vy:-46-Math.random()*30, life:0.9, col:'#f2d98a'}); } } }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
@@ -2269,7 +2352,9 @@ function boot(){
   });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){ running=false; JMUS.setHidden(true); }
+    else { JMUS.setHidden(false); if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} } });
   // FIRST PLAY: rules before play (Jessie). The very first time any mode is
   // tapped, the How screen shows once and its button carries them into the game.
   var howNext=null;
@@ -2341,6 +2426,8 @@ function boot(){
   tap('pz-resume', resumeRun);
   tap('pz-restart', function(){ if(G&&G.mode==='adventure') newGame('adventure', G.level); else newGame(G?G.mode:'endless'); });
   tap('pz-menu', quitRun);
+  tap('cl-next', resumeNextLevel);
+  tap('cl-menu', quitRun);
   tap('go-continue', reviveRun);
   tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
   tap('go-levels', function(){ renderLevels(); show('s-levels'); });
@@ -2381,6 +2468,7 @@ function boot(){
     if(id==='s-play'){ pauseRun(); armBack(); return; }
     if(id==='s-pause'){ resumeRun(); armBack(); return; }
     if(id==='s-intro'){ endIntro(); armBack(); return; }
+    if(id==='s-clear'){ resumeNextLevel(); armBack(); return; }
     if(id==='s-feedback'){ sfx('ui'); show(fbFrom); armBack(); return; }
     if(id==='s-music'){ JMUS.endTease(); sfx('ui'); show(musFrom); armBack(); return; }
     if(id==='s-splash'||id==='s-title'){ try{ history.back(); }catch(e){} return; }  // really leave
@@ -2499,7 +2587,13 @@ var JMUS=(function(){
     else { if(teaseTimer)endTease(); var a=el(); fadeTo(a, 0, 350, function(){ try{ a.pause(); }catch(e){} }); } }
   function setMute(m){ if(m){ if(teaseTimer)endTease(); var a=el(); fadeTo(a, 0, 250, function(){ try{ a.pause(); }catch(e){} }); }
     else if(SET.music){ started=false; autostart(); } }
-  return { play:play, tease:teasePlay, endTease:endTease, autostart:autostart, setOn:setOn, setMute:setMute,
+  /* minimized or backgrounded: the music yields; it comes back when you do */
+  var hiddenPaused=false;
+  function setHidden(h){ var a=el();
+    if(h){ if(!a.paused){ hiddenPaused=true; try{ a.pause(); }catch(e){} } if(teaseTimer)endTease(); }
+    else if(hiddenPaused){ hiddenPaused=false;
+      if(SET.music && !SET.mute){ var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){}); } } }
+  return { play:play, tease:teasePlay, endTease:endTease, autostart:autostart, setOn:setOn, setMute:setMute, setHidden:setHidden,
     state:function(){ var a=el(); return { sel:PROG.musicSel||'moonwalk', playing:!a.paused, vol:+a.volume.toFixed(2),
       src:a.src.split('/').pop(), teasing:!!teaseTimer }; } };
 })();
