@@ -382,7 +382,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- SOUNDTRACK -->
   <div class="screen" id="s-music"><div class="pad">
     <h2 class="sc-h">Soundtrack</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px;max-width:400px">
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px;max-width:400px" id="mus-sub">
       Original music by Sky Wolf Studios. Tap a song to play it now; the gold note keeps it in your rotation, and the rotation takes turns while you hop. Locked songs play a ten second taste; earn the rest out on the street.</div>
     <div id="mus-rows" style="max-width:430px;width:100%"></div>
     <div style="height:12px"></div>
@@ -579,7 +579,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.1';
+var BUILD='v4.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -893,18 +893,22 @@ var ADV_LEN=16, ADV_CHAP=6;
 function advLevelOfRow(r){ return Math.floor(Math.max(0,r)/ADV_LEN)+1; }
 function advZoneIdx(n){ return Math.floor((n-1)/ADV_CHAP) % ZONES.length; }
 function advChapterName(n){ return ZONES[advZoneIdx(n)].name; }
-function advDiff(n){ return Math.min(9.5, (n-1)*0.4); }        // level 1 = easiest; full difficulty ~level 24
+function advDiff(n){ var d=Math.min(9.5, (n-1)*0.4);           // level 1 = easiest; ~full by 24
+  if(n>30) d=Math.min(11.2, 9.5+(n-30)*0.05);                    // the long game keeps sharpening
+  return d; }
 function advEase(rlv){ return rlv?Math.max(0, 1-(rlv-1)*0.05):0; } // 1 at lvl1 -> 0 by lvl21 (eases density/speed)
 /* special levels: recurring flavors keyed by level number — variety forever */
 function advSpecial(n){ if(n<6) return null;
   if(n%12===0) return 'storm';
+  if(n%11===6) return 'blackout';
   if(n%8===5)  return 'sound';
   if(n%8===2)  return 'railyard';
   if(n%10===7) return 'rushhour';
   if(n%9===4)  return 'steamnight';
+  if(n%13===9) return 'gullswarm';
   return null; }
 var SPNAME={ storm:'STORM WATCH', sound:'FERRY CROSSING', railyard:'RAIL YARD',
-  rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT' };
+  rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT', blackout:'BLACKOUT', gullswarm:'GULL SWARM' };
 function advFlowerGoal(n){ return Math.min(9, 2+Math.floor(n/2)); }
 function advCoinGoal(n){ return Math.min(8, 2+Math.floor(n/3)); }
 function advStars(n){ return (PROG.adv.stars[n]||0); }
@@ -1372,7 +1376,10 @@ function resumeNextLevel(){
       var nz=advZoneIdx(G.level);
       if(nz!==G.zone){ G.zone=nz; warmZoneTex(ZONES[nz]);
         G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9 }; G.levelBanner=null; }
-      if(advSpecial(G.level)==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; }
+      var rsp=advSpecial(G.level);
+      if(rsp==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; }
+      if(rsp==='blackout' && G.weather){ G.weather.type='fog'; G.weather.t=0; G.weather.dur=18; }
+      if(rsp==='gullswarm'){ G.gullT=Math.min(G.gullT,2.5); }
     }
     show('s-play');
     setTimeout(function(){ if(v)v.classList.remove('on'); }, 60);
@@ -1514,7 +1521,9 @@ function stepGull(dt){
       g.phase='dive'; g.t=0;
       if(G.phase==='play'){ G.shake=Math.max(G.shake,5); burst(VW/2, rowScreenY(g.row), 8, '#e8dcc8'); }
     }
-  } else if(g.t>=g.dur){ G.gull=null; G.gullT=8+G.rng()*7; }
+  } else if(g.t>=g.dur){ G.gull=null;
+    var gsp=(G.mode==='adventure')?advSpecial(G.level):null;
+    G.gullT=(gsp==='gullswarm') ? (3+G.rng()*3) : (8+G.rng()*7); }
 }
 function drawGullSprite(x,y,sc,dir,kind){
   // real art when it is loaded: the crow dives, the gull is the collectible's flying frame
@@ -2624,6 +2633,11 @@ var JMUS=(function(){
 })();
 function renderMusic(){
   var host=$('mus-rows'); if(!host)return; host.innerHTML='';
+  var subEl=$('mus-sub'); if(subEl){ var allOwn=true;
+    for(var ao=0; ao<MUSIC.length; ao++) if(!musOwned(MUSIC[ao].id)) allOwn=false;
+    subEl.textContent=allOwn
+      ? 'Original music by Sky Wolf Studios. The whole soundtrack is yours. Tap a song to play it now; the gold note keeps it in your rotation.'
+      : 'Original music by Sky Wolf Studios. Tap a song to play it now; the gold note keeps it in your rotation, and the rotation takes turns while you hop. Locked songs play a ten second taste; earn the rest out on the street.'; }
   var sel=PROG.musicSel||'moonwalk', st=JMUS.state();
   MUSIC.forEach(function(t){ var own=musOwned(t.id);
     var row=document.createElement('div'); row.className='musrow'+(sel===t.id&&own?' on':'')+(own?'':' locked');
