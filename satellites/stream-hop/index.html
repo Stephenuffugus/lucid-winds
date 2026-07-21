@@ -392,9 +392,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- PAUSE -->
   <div class="screen center" id="s-pause"><div class="pad center">
     <h2 class="sc-h" style="text-align:center">Paused</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:22px;text-align:center" id="pause-sub"></div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:18px;text-align:center" id="pause-sub"></div>
+    <div class="settingline" style="max-width:320px"><span>Music</span><div class="toggle on" id="tg-music-p"><b></b></div></div>
     <div class="stack" style="max-width:320px;margin:0 auto;width:100%">
       <button class="btn primary" id="pz-resume">▶ Keep hopping</button>
+      <button class="btn sm" id="pz-music">♫ Soundtrack</button>
       <button class="btn sm" id="pz-restart">↻ Start over</button>
       <button class="btn sm" id="pz-share">↗ Share Jimothy</button>
       <button class="btn ghost sm" id="pz-feedback">💬 Send feedback</button>
@@ -485,7 +487,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.3';
+var BUILD='v3.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -2145,8 +2147,10 @@ function boot(){
   tap('set-intro', function(){ playIntro(); });
   var si=$('s-intro'); if(si) si.addEventListener('pointerdown', function(e){ if(e.target.closest('#intro-nav'))return; ac(); nextIntroBeat(); });
   tap('b-set', function(){ show('s-set'); });
-  tap('b-music', function(){ renderMusic(); show('s-music'); });
-  tap('mus-back', function(){ JMUS.endTease(); show('s-title'); });
+  var musFrom='s-title';
+  tap('b-music', function(){ musFrom='s-title'; renderMusic(); show('s-music'); });
+  tap('pz-music', function(){ musFrom='s-pause'; renderMusic(); show('s-music'); });
+  tap('mus-back', function(){ JMUS.endTease(); show(musFrom); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
   tap('b-support', function(){ SUP.status(''); SUP.render(); show('s-support'); });
   tap('sup-back', function(){ show('s-title'); });
@@ -2186,12 +2190,40 @@ function boot(){
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
-  wireToggle('tg-music', function(){ return SET.music; }, function(v){ SET.music=v; JMUS.setOn(v); });
+  // the music switch lives in Settings AND on the pause screen — keep both lit together
+  function paintMusToggles(){ ['tg-music','tg-music-p'].forEach(function(id){ var el=$(id);
+    if(el){ if(SET.music)el.classList.add('on'); else el.classList.remove('on'); } }); }
+  wireToggle('tg-music', function(){ return SET.music; }, function(v){ SET.music=v; JMUS.setOn(v); paintMusToggles(); });
+  wireToggle('tg-music-p', function(){ return SET.music; }, function(v){ SET.music=v; JMUS.setOn(v); paintMusToggles(); });
+  paintMusToggles();
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
   wireToggle('tg-udL', function(){ return SET.udLeft; }, function(v){ SET.udLeft=v; applyPadLayout(); });
   wireToggle('tg-udR', function(){ return SET.udRight; }, function(v){ SET.udRight=v; applyPadLayout(); });
   $('buildstamp').textContent='Jimothy '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
+  /* ===== SYSTEM BACK — the phone's back button/gesture closes the menu you are
+     in, it does not throw you out of the game (Stephen: "back keeps taking me
+     out on accident"). One sentinel history entry stays armed; every handled
+     pop re-arms it. Backing out from the TITLE is the one real exit. ===== */
+  var BACK_TO={ 's-how':'s-title', 's-set':'s-title', 's-music':null, 's-skins':'s-title',
+    's-ach':'s-skins', 's-levels':'s-title', 's-support':'s-title', 's-go':'s-title' };
+  function armBack(){ try{ history.pushState({sh:1},''); }catch(e){} }
+  window.addEventListener('popstate', function(){
+    var rv=$('bin-reveal');
+    if(rv && rv.classList.contains('on')){ revealNext(); armBack(); return; }   // a card closes first
+    var id=curScreen;
+    if(id==='s-play'){ pauseRun(); armBack(); return; }
+    if(id==='s-pause'){ resumeRun(); armBack(); return; }
+    if(id==='s-intro'){ endIntro(); armBack(); return; }
+    if(id==='s-feedback'){ sfx('ui'); show(fbFrom); armBack(); return; }
+    if(id==='s-music'){ JMUS.endTease(); sfx('ui'); show(musFrom); armBack(); return; }
+    if(id==='s-splash'||id==='s-title'){ try{ history.back(); }catch(e){} return; }  // really leave
+    var to=BACK_TO[id]||'s-title';
+    if(to==='s-skins') renderBin();
+    sfx('ui'); show(to); armBack();
+  });
+  armBack();
+
   // splash video is the front door (shown on load); nudge autoplay + wire the tap.
   // Tapping it routes first-timers into the story intro, returning players to the menu.
   tap('splash-tap', splashTapped);
