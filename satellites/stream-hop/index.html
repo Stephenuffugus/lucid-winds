@@ -613,9 +613,14 @@ function zoneAt(r){ return ZONES[zoneIdx(r)]; }
 /* ===== sprite images — Jimothy art pack. EVERY draw keeps a procedural fallback,
    so the game runs identically if art is missing. Lazy-load + warm at boot. ===== */
 var IMGS={}, ART_ON=true;
+/* ⛔ ART CACHE-BUSTER: the host's edge cache serves art files by bare URL and
+   IGNORES in-place updates (it kept shipping the beheaded goose and the
+   pre-demagenta purple sprites long after they were fixed in the repo).
+   Bump ARTV whenever ANY file under assets/ changes in place. */
+var ARTV='32';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
-    im.src=path; IMGS[path]=im; } return im; }
+    im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
 var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
   'lanes/rail2':1,'lanes/water-deep':1,'lanes/water-teal':1,'lanes/water-chop':1,
