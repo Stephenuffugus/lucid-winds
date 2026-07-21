@@ -335,7 +335,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.1';
+var BUILD='v2.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -462,7 +462,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/coin-cap','sprites/obs-can','sprites/obs-rat','sprites/obs-goose','sprites/obs-trashbags','sprites/obs-cone',
   'sprites/pad-log','sprites/pad-pallet','sprites/pad-dumpster','sprites/pad-boxraft',
   'powers/power_coffee','powers/power_umbrella','powers/power_snacks','powers/hud_coffee','powers/hud_umbrella','powers/hud_snacks',
-  'fx/splash-water','fx/burst-gold','fx/glow-bloom'];
+  'fx/splash-water','fx/burst-gold','fx/glow-bloom','fx/splash-dust','fx/star-pop',
+  'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple'];
 function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
   var LT=['lanes/strip-safe','lanes/strip-road','lanes/strip-water','lanes/strip-rail']; for(var j=0;j<LT.length;j++) spr(LT[j]); }
 /* subtle lane texture: drawn over the flat zone color so the neighborhood tint still
@@ -559,6 +560,9 @@ function makeLane(r){
     var nb=Math.floor(rng()*3); for(var i=0;i<nb;i++){ var c=Math.floor(rng()*COLS); if(c!==Math.round(G.cr.x/TILE)) L.blocked[c]=1; }
     // a power-up drops on some safe rows past the onboarding — else maybe a coin
     if(r>=8 && rng()<0.15){ var pk=POWERS[Math.floor(rng()*POWERS.length)]; var pc=Math.floor(rng()*COLS); while(L.blocked[pc])pc=(pc+1)%COLS; L.power={ x:(pc+0.5)*TILE, kind:pk }; }
+    // a stash is a rare windfall of bottlecaps: spilled fries, or a real curb treasure
+    else if(r>=6 && rng()<0.06){ var sk=rng()<0.28?'treasure':'fries'; var sc=Math.floor(rng()*COLS);
+      while(L.blocked[sc])sc=(sc+1)%COLS; L.stash={ x:(sc+0.5)*TILE, kind:sk }; }
     else if(rng()<0.4) L.coin=(0.5+Math.floor(rng()*COLS))*TILE;
     return L;
   }
@@ -629,8 +633,10 @@ function startHop(dir){
 function finishHop(){
   var h=G.hop; G.cr.r=h.toR; G.cr.x=h.toX; G.hop=null;
   var lane=laneAt(G.cr.r);
-  // landing effects
-  puff(G.cr.x, rowScreenY(G.cr.r), lane.type);
+  // landing effects — a pad landing rings the water instead of splashing it
+  var padHit = lane.type==='water' && padUnder(lane, G.cr.x);
+  if(padHit) spawnFx('sprites/fx-ripple', G.cr.x, rowScreenY(G.cr.r)+6, TILE*1.5, 0.55);
+  else puff(G.cr.x, rowScreenY(G.cr.r), lane.type);
   collectPickups(lane);
   // forward progress → combo + trail + score
   if(h.dir==='up'){
@@ -653,7 +659,16 @@ function finishHop(){
 function collectPickups(lane){
   var cthr=G.magnetT>0?TILE*4:TILE*0.65;
   if(lane.coin!=null && Math.abs(G.cr.x-lane.coin)<cthr){ grabCoin(lane); }
+  if(lane.stash && Math.abs(G.cr.x-lane.stash.x)<Math.max(cthr,TILE*0.8)){ grabStash(lane); }
   if(lane.power && Math.abs(G.cr.x-lane.power.x)<TILE*0.78){ var k=lane.power.kind; lane.power=null; applyPower(k); }
+}
+function grabStash(lane){ var k=lane.stash.kind; lane.stash=null;
+  var v=(k==='treasure'?15:6)*(G.magnetT>0?2:1);
+  G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v;
+  float(G.cr.x, rowScreenY(G.cr.r)-26, '+'+v+' caps');
+  burst(G.cr.x, rowScreenY(G.cr.r), 14, '#e8c65a');
+  spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.7, 0.6);
+  G.flash=Math.max(G.flash,0.3); sfx('unlock'); haptic(14);
 }
 function grabCoin(lane){ lane.coin=null; var v=(G.magnetT>0?2:1); G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v; float(G.cr.x,rowScreenY(G.cr.r)-18,'+'+v); sfx('coin'); }
 /* completed level (newLevel-1): award stars, unlock the next, announce the next. */
@@ -681,6 +696,9 @@ function advLevelUp(newLevel){
   else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars };
   G.flash=Math.max(G.flash,0.35); sfx('bank'); haptic(16);
   spawnFx('fx/glow-bloom', G.cr.x, rowScreenY(G.cr.r), TILE*2.4, 0.6); spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.6, 0.65);
+  // one star pop per star actually earned on the level you just cleared
+  var got=0,sm=stars||0; if(sm&1)got++; if(sm&2)got++; if(sm&4)got++;
+  for(var si=0; si<got; si++) spawnFx('fx/star-pop', G.cr.x+(si-(got-1)/2)*40, rowScreenY(G.cr.r)-46, TILE*0.95, 0.75);
   float(G.cr.x, rowScreenY(G.cr.r)-30, 'LEVEL '+done+' ✓');
 }
 /* clearing a level you have never cleared before pays a handful of caps toward the bin */
@@ -846,7 +864,7 @@ function step(dt){
   if(G.dashT>0) G.dashT-=dt;
   if(G.magnetT>0){ G.magnetT-=dt;
     // magnet: sweep any coin on the row you're standing on into your paws
-    var mL=laneAt(G.cr.r); if(mL.coin!=null && G.phase==='play' && !G.hop){ grabCoin(mL); }
+    var mL=laneAt(G.cr.r); if(G.phase==='play' && !G.hop){ if(mL.coin!=null) grabCoin(mL); if(mL.stash) grabStash(mL); }
   }
   // Rush Hour clock (no wilt — the clock IS the pressure)
   if(G.mode==='rush' && G.started){ G.clock-=dt; if(G.clock<=0){ G.clock=0; die('time'); } }
@@ -961,7 +979,8 @@ function toast(txt){ float(VW/2, 120, txt); }
 /* particles + floats */
 function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.PI*2*i/n+Math.random(); var sp=60+Math.random()*140; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:1,col:col||'#c8a84b'}); } }
 function puff(x,y,type){ var col=type==='water'?'#7fb6cf':type==='road'?'#a08a5a':'#9fce6a'; for(var i=0;i<5;i++){ var a=Math.PI*(0.2+Math.random()*0.6)+Math.PI; G.parts.push({x:x,y:y+14,vx:(Math.random()-0.5)*70,vy:-30-Math.random()*40,life:0.6,col:col}); }
-  if(type==='water') spawnFx('fx/splash-water', x, y+4, TILE*1.35, 0.5); }
+  if(type==='water') spawnFx('fx/splash-water', x, y+4, TILE*1.35, 0.5);
+  else spawnFx('fx/splash-dust', x, y+8, TILE*1.05, 0.40); }
 function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
 /* one-shot art burst that expands + fades (water splash, bank burst, bloom glow) */
 function spawnFx(name,x,y,h,life){ if(!ART_ON||!G.fx||!imgReady(spr(name)))return; G.fx.push({n:name,x:x,y:y,t:0,life:life||0.5,h:h||TILE}); }
@@ -1104,6 +1123,10 @@ function drawRow(r){
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
       if(!drawSprite('sprites/coin-cap', L.coin, cy, 32)){
         ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); } }
+    if(L.stash){ var sy=y+Math.sin(G.t*2.4+L.stash.x)*2;
+      if(!drawSprite('sprites/pickup-'+L.stash.kind, L.stash.x, sy, 40)){
+        ctx.save(); ctx.translate(L.stash.x,sy); ctx.fillStyle='#c8a84b'; ctx.fillRect(-13,-9,26,18);
+        ctx.fillStyle='#e8c65a'; ctx.fillRect(-13,-9,26,5); ctx.restore(); } }
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
     ctx.fillStyle=Z.road[r&1]; ctx.fillRect(0,top,VW,TILE);
@@ -1476,6 +1499,9 @@ if(/[?&]shtest=1/.test(location.search)){
     render:function(){ return render(); }, gameOverNow:function(){ if(G)die('wilt'); }, mode:function(){return G?G.mode:null;},
     pow:applyPower, spawnPow:function(k){ var L=laneAt(G.cr.r); L.power={x:G.cr.x,kind:k}; return L.power; },
     spawnCoin:function(){ var L=laneAt(G.cr.r); L.coin=G.cr.x; return L.coin; },
+    spawnStash:function(k){ var L=laneAt(G.cr.r); L.stash={x:G.cr.x,kind:k||'treasure'}; return L.stash; },
+    grabStash:function(){ var L=laneAt(G.cr.r); if(!L.stash)return null; grabStash(L); return {coins:G.coins,lvCoins:G.lvCoins,score:G.score}; },
+    countStash:function(){ var n=0,t=0; for(var r=0;r<=G.maxGen;r++){ var L=G.lanes[r]; if(L&&L.stash){n++; if(L.stash.kind==='treasure')t++;} } return {stashes:n,treasure:t,rows:G.maxGen}; },
     hurt:function(c){ die(c||'squish'); return {phase:G.phase,shield:G.shield}; },
     powState:function(){ return {shield:G.shield,dashT:+G.dashT.toFixed(2),magnetT:+G.magnetT.toFixed(2),coins:G.coins,score:G.score,powsGot:G.powsGot,phase:G.phase}; },
     setWeather:function(t){ var w=G.weather; w.type=t; w.rainA=(t==='rain')?1:0; w.fog=(t==='fog')?1:0; w.mul=1+w.rainA*0.16; return w.type; },
