@@ -155,8 +155,12 @@
   /* Image-frame borders (Stephen's art). One class; the frame PNG comes in via --bimg.
      Frame art spec: square PNG, transparent hollow center, decorative frame in the outer ~25%.
      border-image slices that 25% into the 9-slice corners+edges. See borders/README.md. */
-  .bd-img{padding:0;background:none;border:15px solid transparent;border-image:var(--bimg) 25% stretch}
-  .prev .bd-img{border-width:9px}
+  /* Image-frame borders (Stephen's art pack). The frame PNG (transparent center
+     window, landscape ~1.39:1 to match the swatch) is stretched as an overlay so
+     the swatch shows through the window and the corner critters spill outward. */
+  .bd-img{padding:0;background:none;border:none;box-shadow:none;position:relative;overflow:visible}
+  .bd-img::after{content:"";position:absolute;inset:-11%;background:var(--bimg) center/100% 100% no-repeat;pointer-events:none;z-index:4}
+  .bd-img .swatch{border-radius:10px}
 
   .controls{margin-top:14px;display:flex;flex-direction:column;gap:12px}
   .spacer{flex:1 1 auto;min-height:22px}
@@ -489,14 +493,139 @@ const BORDERS=[
   {id:"frost",name:"Frost",ds:"Frosted glass ring"},{id:"brutalist",name:"Brutalist",ds:"Hard offset slab"},
   {id:"gold",name:"Gold Leaf",ds:"Warm metallic frame"},{id:"neon",name:"Neon",ds:"Electric cyan glow"},
   {id:"deco",name:"Deco",ds:"Art-deco corners"},{id:"prism",name:"Prism",ds:"Full spectrum"},
-  /* --- image-frame borders (reference implementation; add yours the same way) --- */
-  {id:"wildvine",name:"Wild Vine",ds:"Hand-drawn leafy frame",img:"borders/wildvine.png",price:500}
+  /* == CLAY CREW == */
+  {id:"clay_frog",name:"Frog Prince",ds:"Butter clay, googly frog",img:"borders/pack/s01_1.png",price:300},
+  {id:"clay_worm",name:"Inchworm Inn",ds:"Terracotta rails, arching worm",img:"borders/pack/s01_2.png",price:350},
+  {id:"clay_snail",name:"Slow Loop",ds:"Cream spirals, two-tone snail",img:"borders/pack/s01_3.png",price:800},
+  {id:"clay_ladybug",name:"Lucky Spots",ds:"Grassy rails, chunky ladybug",img:"borders/pack/s01_4.png",price:900},
+  {id:"clay_gecko",name:"Wall Gecko",ds:"Sky-blue rails, clinging gecko",img:"borders/pack/s01_5.png",price:2000},
+  {id:"clay_blobs",name:"Blob Buddies",ds:"Squished blob crew, all smiles",img:"borders/pack/s01_6.png",price:2400},
+  {id:"clay_chomp",name:"Chomp Frame",ds:"Plum monster mouth, stalk eyes",img:"borders/pack/s01_7.png",price:5000},
+  /* == CRAYON BOX == */
+  {id:"crayon_scribble",name:"Scribble Loop",ds:"One looping crayon scribble",img:"borders/pack/s02_1.png",price:250},
+  {id:"crayon_paper",name:"Torn Paper",ds:"Torn construction-paper strips",img:"borders/pack/s02_2.png",price:300},
+  {id:"crayon_arrows",name:"Look Here!",ds:"Doodled arrows pointing in",img:"borders/pack/s02_3.png",price:700},
+  {id:"crayon_fingerpaint",name:"Finger Painted",ds:"Rainbow finger-paint smears",img:"borders/pack/s02_4.png",price:850},
+  {id:"crayon_dots",name:"Dot Dot Dot",ds:"Fat bingo-dauber dots",img:"borders/pack/s02_5.png",price:1000},
+  {id:"crayon_chalk",name:"Sidewalk Chalk",ds:"Dusty pastel chalk rails",img:"borders/pack/s02_6.png",price:1800},
+  {id:"crayon_wax",name:"Melty Rainbow",ds:"Crayon tips mid-melt",img:"borders/pack/s02_7.png",price:4500},
+  /* == STICKER + PRESSED GARDEN == */
+  {id:"sticker_fruit",name:"Fruit Salad",ds:"Die-cut fruit stickers",img:"borders/pack/s03_1.png",price:400},
+  {id:"sticker_space",name:"Space Case",ds:"Rocket + planet stickers",img:"borders/pack/s03_2.png",price:900},
+  {id:"sticker_bugs",name:"Bug Jar",ds:"Follow-the-leader bug stickers",img:"borders/pack/s03_3.png",price:1900},
+  {id:"sticker_dino",name:"Dino Mite",ds:"Chomping T-rex stickers",img:"borders/pack/s03_4.png",price:2600},
+  {id:"pressed_fern",name:"Fern Study",ds:"Pressed fern fronds on cream",img:"borders/pack/s03_5.png",price:350},
+  {id:"pressed_pansy",name:"Pansy Page",ds:"Pressed pansies, gold line",img:"borders/pack/s03_6.png",price:1100},
+  {id:"pressed_wash",name:"Morning Wash",ds:"Loose dawn watercolor wash",img:"borders/pack/s03_7.png",price:2200},
+  {id:"pressed_gold",name:"Gilded",ds:"Cracked gold leaf on ink",img:"borders/pack/s03_8.png",price:4800},
+  /* == FOIL ARCADE + TROPHIES == */
+  {id:"foil_prism",name:"Prism Foil",ds:"Holographic rainbow foil",img:"borders/pack/s04_1.png",price:5500},
+  {id:"foil_neon",name:"Open Late",ds:"Double-tube neon diner",img:"borders/pack/s04_2.png",price:2500},
+  {id:"foil_crt",name:"Player One",ds:"CRT bezel + scanlines",img:"borders/pack/s04_3.png",price:2200},
+  {id:"foil_chameleon",name:"Golden Chameleon",ds:"Gold chameleon, hue-shifting",img:"borders/pack/s04_4.png",price:12000},
+  {id:"trophy_laurel",name:"Laurel Frame",ds:"Ink-white laurel, gilded leaves",img:"borders/pack/s04_5.png",price:2000},
+  {id:"trophy_stars",name:"Constellation",ds:"Star-dust connect-the-dots",img:"borders/pack/s04_6.png",price:4500},
+  {id:"trophy_summit",name:"Summit Trail",ds:"Mountain path to a flag",img:"borders/pack/s04_7.png",price:4500},
+  {id:"trophy_crown",name:"Versus Crown",ds:"Split rails under a gold crown",img:"borders/pack/s04_8.png",price:5000},
+  /* == MEDALS == */
+  {id:"medal_laurel",name:"Victory Laurel",ds:"Wreath of gilded leaves",img:"borders/pack/s05_1.png",price:2000},
+  {id:"medal_stars",name:"Star Field",ds:"Night rails strewn with stars",img:"borders/pack/s05_2.png",price:2000},
+  {id:"medal_summit",name:"High Summit",ds:"Winding peak with checkpoints",img:"borders/pack/s05_3.png",price:2200},
+  {id:"medal_crown",name:"Crown Ribbon",ds:"Regal crown and ribbon",img:"borders/pack/s05_4.png",price:4500},
+  {id:"medal_gold",name:"Gold Medal",ds:"Ornate gilt award frame",img:"borders/pack/s05_5.png",price:2400},
+  {id:"medal_rosette",name:"Prize Rosette",ds:"Striped ribbon rosette",img:"borders/pack/s05_6.png",price:2000},
+  {id:"medal_dark",name:"Dark Medallion",ds:"Deep navy medallion frame",img:"borders/pack/s05_7.png",price:2000},
+  {id:"medal_redcrown",name:"Red Crown",ds:"Scarlet crown and sabre",img:"borders/pack/s05_8.png",price:4800},
+  /* == STAINED GLASS == */
+  {id:"glass_rose",name:"Rose Window",ds:"Cathedral rainbow glass",img:"borders/pack/s06_1.png",price:2000},
+  {id:"glass_clover",name:"Clover Glass",ds:"Green panes, corner clovers",img:"borders/pack/s06_2.png",price:2000},
+  {id:"glass_moth",name:"Moth Lantern",ds:"Leaded moth and crescent",img:"borders/pack/s06_3.png",price:4800},
+  {id:"glass_koi",name:"Koi Pane",ds:"Glass koi and bubbles",img:"borders/pack/s06_4.png",price:5000},
+  {id:"glass_beetle",name:"Beetle Glass",ds:"Emerald soldered beetle",img:"borders/pack/s06_5.png",price:2200},
+  {id:"glass_raven",name:"Raven & Rose",ds:"Leaded raven and red rose",img:"borders/pack/s06_6.png",price:5200},
+  {id:"glass_firefly",name:"Firefly Chapel",ds:"Glowing glass fireflies",img:"borders/pack/s06_7.png",price:2400},
+  {id:"glass_lanternbug",name:"Lantern Bugs",ds:"Twin glass fireflies",img:"borders/pack/s06_8.png",price:2400},
+  /* == EMBROIDERY & LACE == */
+  {id:"stitch_sampler",name:"Sampler Stitch",ds:"Floral cross-stitch sampler",img:"borders/pack/s07_1.png",price:900},
+  {id:"stitch_doily",name:"Lace Doily",ds:"Crocheted white lace",img:"borders/pack/s07_2.png",price:800},
+  {id:"stitch_cherry",name:"Cherry Stitch",ds:"Stitched cherries",img:"borders/pack/s07_3.png",price:1000},
+  {id:"stitch_bluebird",name:"Bluebird Hoop",ds:"Embroidered bluebird",img:"borders/pack/s07_4.png",price:1900},
+  {id:"stitch_beetle",name:"Beetle Stitch",ds:"Stitched jewel beetle",img:"borders/pack/s07_5.png",price:1000},
+  {id:"stitch_sunflower",name:"Sunflower Hoop",ds:"Embroidered sunflower",img:"borders/pack/s07_6.png",price:1800},
+  {id:"stitch_owl",name:"Night Owl Hoop",ds:"Stitched owl at moon",img:"borders/pack/s07_7.png",price:2000},
+  {id:"stitch_owl2",name:"Wise Owl Hoop",ds:"Stitched perched owl",img:"borders/pack/s07_8.png",price:2000},
+  /* == PATCHWORK QUILT == */
+  {id:"quilt_daisy",name:"Daisy Patch",ds:"Patchwork with daisies",img:"borders/pack/s08_1.png",price:850},
+  {id:"quilt_gingham",name:"Gingham Quilt",ds:"Cozy gingham squares",img:"borders/pack/s08_2.png",price:800},
+  {id:"quilt_heart",name:"Heart Quilt",ds:"Quilted heart patch",img:"borders/pack/s08_3.png",price:950},
+  {id:"quilt_bee",name:"Denim & Bee",ds:"Denim patches, a bee",img:"borders/pack/s08_4.png",price:1800},
+  {id:"quilt_fox",name:"Fox Patch",ds:"Patchwork fox corner",img:"borders/pack/s08_5.png",price:2000},
+  {id:"quilt_cat",name:"Sleepy Cat Patch",ds:"Napping quilt cat",img:"borders/pack/s08_6.png",price:2000},
+  {id:"quilt_paw",name:"Paw Quilt",ds:"Paw-print patchwork",img:"borders/pack/s08_7.png",price:900},
+  {id:"quilt_beetle",name:"Beetle Patch",ds:"Stitched beetle patch",img:"borders/pack/s08_8.png",price:1000},
+  /* == NEON TUBE == */
+  {id:"neon_rails",name:"Neon Rails",ds:"Glowing bent tubing",img:"borders/pack/s09_1.png",price:2500},
+  {id:"neon_rainbow",name:"Rainbow Tube",ds:"Full-spectrum neon",img:"borders/pack/s09_2.png",price:4600},
+  {id:"neon_flutter",name:"Neon Flutter",ds:"Neon butterfly corner",img:"borders/pack/s09_3.png",price:4800},
+  {id:"neon_cat",name:"Neon Cat",ds:"Wire cat aglow",img:"borders/pack/s09_4.png",price:5000},
+  {id:"neon_dragonfly",name:"Dragonfly Wire",ds:"Neon dragonfly",img:"borders/pack/s09_5.png",price:4800},
+  {id:"neon_serpent",name:"Neon Serpent",ds:"Coiled neon snake",img:"borders/pack/s09_6.png",price:5000},
+  {id:"neon_hummer",name:"Hummingbird Neon",ds:"Neon hummingbird",img:"borders/pack/s09_7.png",price:5200},
+  {id:"neon_buzz",name:"Buzz Neon",ds:"Twin neon flyers",img:"borders/pack/s09_8.png",price:5200},
+  /* == WOODBLOCK PRINT == */
+  {id:"block_hatch",name:"Hatch Block",ds:"Woodcut hatch lines",img:"borders/pack/s10_1.png",price:850},
+  {id:"block_leaf",name:"Leaf Print",ds:"Carved leaf relief",img:"borders/pack/s10_2.png",price:900},
+  {id:"block_vine",name:"Folk Vine",ds:"Folk linocut vine",img:"borders/pack/s10_3.png",price:1000},
+  {id:"block_rooster",name:"Rooster Block",ds:"Printed folk rooster",img:"borders/pack/s10_4.png",price:1900},
+  {id:"block_stag",name:"Stag Print",ds:"Woodblock stag",img:"borders/pack/s10_5.png",price:2000},
+  {id:"block_octopus",name:"Octopus Block",ds:"Printed octopus",img:"borders/pack/s10_6.png",price:2200},
+  {id:"block_hare",name:"Moon Hare",ds:"Woodcut hare and moon",img:"borders/pack/s10_7.png",price:2000},
+  {id:"block_hare2",name:"Night Hare",ds:"Carved leaping hare",img:"borders/pack/s10_8.png",price:2000},
+  /* == MOSS TERRARIUM == */
+  {id:"moss_log",name:"Mossy Log",ds:"Soft living moss rails",img:"borders/pack/s11_1.png",price:1900},
+  {id:"moss_stone",name:"Stone & Moss",ds:"Mossed river stones",img:"borders/pack/s11_2.png",price:2000},
+  {id:"moss_mushroom",name:"Mushroom Ring",ds:"Moss with tiny mushrooms",img:"borders/pack/s11_3.png",price:2200},
+  {id:"moss_fern",name:"Fern Grotto",ds:"Ferns in deep moss",img:"borders/pack/s11_4.png",price:2000},
+  {id:"moss_crystal",name:"Crystal Moss",ds:"Moss and raw crystals",img:"borders/pack/s11_5.png",price:4500},
+  {id:"moss_deep",name:"Deep Moss",ds:"Dense forest moss",img:"borders/pack/s11_6.png",price:2000},
+  {id:"moss_snail",name:"Snail Garden",ds:"Moss with a snail",img:"borders/pack/s11_7.png",price:2300},
+  {id:"moss_snail2",name:"Terrarium Snail",ds:"Terrarium snail trail",img:"borders/pack/s11_8.png",price:2300},
+  /* == SEASON STICKERS == */
+  {id:"season_spring",name:"Spring Bugs",ds:"Spring bug stickers",img:"borders/pack/s12_1.png",price:400},
+  {id:"season_butterfly",name:"Butterfly Pack",ds:"Butterfly sticker set",img:"borders/pack/s12_2.png",price:900},
+  {id:"season_summer",name:"Summer Shells",ds:"Seaside shell stickers",img:"borders/pack/s12_3.png",price:900},
+  {id:"season_fruit",name:"Fruit Stand",ds:"Summer fruit stickers",img:"borders/pack/s12_4.png",price:400},
+  {id:"season_autumn",name:"Autumn Leaves",ds:"Fall leaf stickers",img:"borders/pack/s12_5.png",price:400},
+  {id:"season_acorn",name:"Acorn Fall",ds:"Acorns and oak leaves",img:"borders/pack/s12_6.png",price:850},
+  {id:"season_frost",name:"Winter Frost",ds:"Frost + snowflake stickers",img:"borders/pack/s12_7.png",price:1000},
+  {id:"season_fox",name:"Cozy Fox",ds:"Curled winter fox",img:"borders/pack/s12_8.png",price:1100},
+  /* == CLOCKWORK == */
+  {id:"clock_gears",name:"Brass Gears",ds:"Turning brass cogs",img:"borders/pack/s13_1.png",price:4500},
+  {id:"clock_copper",name:"Copper Rivets",ds:"Riveted copper plate",img:"borders/pack/s13_2.png",price:2500},
+  {id:"clock_bloom",name:"Mecha Bloom",ds:"Clockwork flower",img:"borders/pack/s13_3.png",price:4600},
+  {id:"clock_iron",name:"Iron Filigree",ds:"Wrought-iron scroll",img:"borders/pack/s13_4.png",price:2400},
+  {id:"clock_seahorse",name:"Clockwork Seahorse",ds:"Brass seahorse",img:"borders/pack/s13_5.png",price:5000},
+  {id:"clock_egg",name:"Gilded Egg",ds:"Jeweled clockwork egg",img:"borders/pack/s13_6.png",price:4800},
+  {id:"clock_koi",name:"Robo Koi",ds:"Mechanical koi",img:"borders/pack/s13_7.png",price:5000},
+  {id:"clock_bot",name:"Tin Bot",ds:"Little tin robot",img:"borders/pack/s13_8.png",price:4800},
+  /* == FABLE STONE == */
+  {id:"fable_stone",name:"Standing Stone",ds:"Carved standing stones",img:"borders/pack/s14_1.png",price:1900},
+  {id:"fable_iron",name:"Iron Studs",ds:"Studded iron gate",img:"borders/pack/s14_2.png",price:2000},
+  {id:"fable_heraldry",name:"Heraldry",ds:"Painted heraldic vines",img:"borders/pack/s14_3.png",price:2200},
+  {id:"fable_unicorn",name:"Unicorn Arch",ds:"Silver unicorn corner",img:"borders/pack/s14_4.png",price:5000},
+  {id:"fable_dragon",name:"Dragon Coil",ds:"Coiled emerald dragon",img:"borders/pack/s14_5.png",price:5500},
+  {id:"fable_gargoyle",name:"Gargoyle Gate",ds:"Stone gargoyle guard",img:"borders/pack/s14_6.png",price:5000},
+  {id:"fable_rune",name:"Rune Stone",ds:"Glowing rune blocks",img:"borders/pack/s14_7.png",price:2400},
+  {id:"fable_gargoyle2",name:"Stone Sentinel",ds:"Watchful gargoyle",img:"borders/pack/s14_8.png",price:5000}
 ]
   .map(b=>({...b,price:b.price!=null?b.price:CONFIG.borderPrices[b.id]}));
 const borderById=id=>BORDERS.find(b=>b.id===id)||BORDERS[0];
 /* preload image-frame art so the share canvas can draw it (same-origin → no canvas taint) */
+/* Lazy image cache — only the equipped border's PNG is fetched for the share
+   canvas; the other 100+ load on demand (shop tiles use CSS bg + lazy loading),
+   so page load stays light. */
 const BORDER_IMGS={};
-BORDERS.forEach(b=>{if(b.img){const im=new Image();im.src=b.img;BORDER_IMGS[b.id]=im;}});
+function borderImg(id){ if(!BORDER_IMGS[id]){ const b=borderById(id); if(b&&b.img){ const im=new Image(); im.src=b.img; BORDER_IMGS[id]=im; } } return BORDER_IMGS[id]; }
 const coins=()=>parseInt(Store.g(K.coins)||"0",10);
 const addCoins=n=>Store.s(K.coins,coins()+n);
 const owned=()=>(Store.g(K.owned)||"hairline").split(",").filter(Boolean);
@@ -549,7 +678,7 @@ const pad=$("pad"),padHandle=$("padHandle"),strip=$("strip"),stripHandle=$("stri
 function applyBorderTo(el,id){const b=borderById(id);
   if(b.img){el.className="frame bd-img";el.style.setProperty("--bimg",`url(${b.img})`);}
   else{el.className="frame bd-"+id;el.style.removeProperty("--bimg");}}
-function applyEquippedBorder(){const id=equipped();applyBorderTo(targetFrame,id);applyBorderTo(yoursFrame,id);}
+function applyEquippedBorder(){const id=equipped();applyBorderTo(targetFrame,id);applyBorderTo(yoursFrame,id);borderImg(id);/* warm the share-canvas image */}
 
 /* ===== game ===== */
 let G=null;
@@ -700,10 +829,13 @@ function _rrp(x,px,py,pw,ph,r){x.beginPath();
 function paintShareBorder(x,id,rx,ry,rw,rh,R){
   const b=borderById(id);
   if(b.img){
-    const im=BORDER_IMGS[id];
+    const im=borderImg(id);
     if(im&&im.complete&&im.naturalWidth){
-      const s=im.naturalWidth,sb=Math.round(s*0.25),db=Math.round(rw*0.042);
-      const sX=[0,sb,s-sb],sW=[sb,s-2*sb,sb],sY=[0,sb,im.naturalHeight-sb],sH=[sb,im.naturalHeight-2*sb,sb];
+      // 9-slice the landscape frame onto the portrait card: corner critters stay
+      // fixed, the thin rails stretch. Per-axis source slices (frame is ~1.39:1).
+      const iw=im.naturalWidth, ih=im.naturalHeight;
+      const sbx=Math.round(iw*0.30), sby=Math.round(ih*0.34), db=Math.round(Math.min(rw,rh)*0.14);
+      const sX=[0,sbx,iw-sbx],sW=[sbx,iw-2*sbx,sbx],sY=[0,sby,ih-sby],sH=[sby,ih-2*sby,sby];
       const dX=[rx,rx+db,rx+rw-db],dW=[db,rw-2*db,db],dY=[ry,ry+db,ry+rh-db],dH=[db,rh-2*db,db];
       for(let r=0;r<3;r++)for(let c=0;c<3;c++){ if(r===1&&c===1)continue; // hollow center
         x.drawImage(im,sX[c],sY[r],sW[c],sH[r],dX[c],dY[r],dW[c],dH[r]); }
