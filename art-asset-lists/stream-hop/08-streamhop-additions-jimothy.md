@@ -40,6 +40,33 @@ needed — but if you want them as art later, that would live on the FX sheet (0
 
 ---
 
+## 1b · JIMOTHY HERO — the character sprite (NEW — the game now DESCENDS toward the camera) ⭐ HIGH VALUE
+
+The camera has been **reversed**: instead of hopping *up and away* from the camera, Jimothy now comes
+**down from the top of the screen toward you**, so you see his FACE the whole run. This is built for your
+animated hero — the moment his frames land they drop straight in facing forward (no code needed).
+
+- Files: `assets/hero/jimothy-1.png` … up to `jimothy-6.png` (as many as you make, **1 is fine to start**).
+- **Facing the camera / forward** (front 3/4 is perfect), magenta #FF00FF knockout, soft baked contact
+  shadow optional (the game draws its own ground shadow). Square-ish cell, hero ~70% of it.
+- **How they animate:** whatever frames load (contiguously from 1) become the **hop cycle** — the game
+  picks a frame by hop phase (crouch → launch → peak → land) and shows **frame 1 while idle**. So:
+  - **1 frame** → a single face-forward Jimothy that still squashes/stretches and arcs on every hop.
+  - **2–4 frames** → a real hop animation (e.g. 1 crouch, 2 mid-air stretched, 3 landing).
+  - Up to **6** supported. The sprite inherits the game's juicy squash + hop arc automatically.
+- He is **never flipped** on left/right hops (you asked to always see his face). If you later want a
+  left/right lean, tell me and I'll add a subtle tilt.
+- Until any frame exists the game draws the placeholder frog, so nothing breaks — pure drop-in upgrade.
+
+## 1c · SPLASH SCREEN (optional, drop-in) 🖼️
+
+You mentioned a splash screen (maybe Midjourney-animated). Give me the file and I'll wire it:
+- **Static:** `assets/hero/splash.jpg` (or `.png`), portrait 1080×1920 — shows on the title screen behind
+  the wordmark, OR as a first-frame before the intro cinematic.
+- **Animated:** if you make it a short loop, either an animated `.gif`/`.webp` (`assets/hero/splash.webp`)
+  OR a numbered sequence `assets/hero/splash-1..N.png` and I'll play it like the hero hop-cycle. Tell me
+  the frame count + fps and I'll match it.
+
 ## 2 · INTRO CINEMATIC FRAMES  (new — the "fun little intro")  🎬 CINEMATIC
 
 The intro plays 4 full-screen frames on first launch (Ken Burns pan + animated rain overlay + a fading

@@ -201,7 +201,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.0';
+var BUILD='v1.1';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
@@ -283,7 +283,7 @@ function newGame(mode){
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6},
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   // camera init
-  G.camY = -G.cr.r*TILE - VH*0.62; G.camYt=G.camY;
+  G.camY = G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
   genUpTo(20);
   show('s-play');
 }
@@ -440,10 +440,10 @@ function stepWeather(dt){
 }
 function drawWeather(){
   var w=G&&G.weather; if(!w) return;
-  if(w.fog>0.02){ var g=ctx.createLinearGradient(0,0,0,VH);
-    g.addColorStop(0,'rgba(150,166,182,'+(0.52*w.fog).toFixed(3)+')');
-    g.addColorStop(0.55,'rgba(150,166,182,'+(0.2*w.fog).toFixed(3)+')');
-    g.addColorStop(1,'rgba(150,166,182,0)'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
+  if(w.fog>0.02){ var g=ctx.createLinearGradient(0,0,0,VH);   // ahead is DOWN now → fog thickens toward the bottom
+    g.addColorStop(0,'rgba(150,166,182,0)');
+    g.addColorStop(0.45,'rgba(150,166,182,'+(0.2*w.fog).toFixed(3)+')');
+    g.addColorStop(1,'rgba(150,166,182,'+(0.52*w.fog).toFixed(3)+')'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
   if(w.rainA>0.02){ var n=Math.floor(w.rainA*70); ctx.strokeStyle='rgba(190,210,235,'+(0.3*w.rainA).toFixed(3)+')'; ctx.lineWidth=1.4;
     for(var i=0;i<n;i++){ var x=((i*97)%VW), y=(((i*57)+G.t*1000)%(VH+30)), len=9+((i*5)%9);
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+len); ctx.stroke(); } }
@@ -536,7 +536,7 @@ function step(dt){
     if(!G.hop && G.dashT<=0 && G.cr.r <= G.chaseR+0.05) die('wilt');
   }
   // camera
-  G.camYt = -G.cr.r*TILE - VH*0.62;
+  G.camYt = G.cr.r*TILE - VH*0.40;
   G.camY += (G.camYt-G.camY)*Math.min(1, dt*8);
   // fx decay
   if(G.shake>0)G.shake*=Math.pow(0.001,dt);
@@ -591,7 +591,9 @@ function puff(x,y,type){ var col=type==='water'?'#7fb6cf':type==='road'?'#a08a5a
 function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
 
 /* ===== render ===== */
-function rowScreenY(r){ return (-r*TILE) - G.camY; }
+/* DESCENDING view: higher rows draw LOWER, so the hero comes down the screen
+   toward the camera (we see his face). Only this mapping + the camera flip. */
+function rowScreenY(r){ return (r*TILE) - G.camY; }
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05;
   if(G && (G.phase==='play'||G.phase==='dying')) step(dt);
   else if(G){ for(var p=G.parts.length-1;p>=0;p--){ var pt=G.parts[p]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=340*dt; pt.life-=dt*1.7; if(pt.life<=0)G.parts.splice(p,1);} }
@@ -729,9 +731,24 @@ function drawPad(e,y){ ctx.save(); ctx.translate(e.x,y);
   ctx.strokeStyle='rgba(20,32,15,0.4)'; ctx.lineWidth=1.5; for(var i=0;i<4;i++){ var a=-0.9+i*0.6; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*e.w*0.45,Math.sin(a)*TILE*0.3); ctx.stroke(); }
   ctx.restore();
 }
+/* ===== hero sprite hook — drops Stephen's Jimothy frames straight in, facing the
+   camera. Looks for assets/hero/jimothy-1.png .. jimothy-6.png; whatever loads
+   (contiguously from 1) becomes the hop-cycle — the frame is picked by hop phase,
+   idle shows frame 0. Falls back to the procedural critter until any frame lands.
+   Sprite inherits the squash/stretch + arc lift + shadow, so even one static frame
+   hops with life. Since the run now descends toward the camera, frames should be
+   drawn facing forward (we never flip the hero on left/right hops). ===== */
+var HERO={ imgs:[], tried:false };
+function loadHero(){ if(HERO.tried)return; HERO.tried=true;
+  for(var i=1;i<=6;i++){ (function(idx){ var im=new Image();
+    im.onload=function(){ if(im.naturalWidth>0) HERO.imgs[idx-1]=im; };
+    im.onerror=function(){}; im.src='assets/hero/jimothy-'+idx+'.png'; })(i); } }
+function heroFrames(){ var f=[]; for(var i=0;i<6;i++){ if(HERO.imgs[i]) f.push(HERO.imgs[i]); else break; } return f; }
+
 function drawCritter(){
-  var r=G.cr.r, x=G.cr.x, y=rowScreenY(r), arc=0, sq=1, st=1;
-  if(G.hop){ var p=G.hop.t/G.hop.dur; var pe=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+  loadHero();
+  var r=G.cr.r, x=G.cr.x, y=rowScreenY(r), arc=0, sq=1, st=1, p=0;
+  if(G.hop){ p=G.hop.t/G.hop.dur; var pe=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
     r=G.hop.fromR+(G.hop.toR-G.hop.fromR)*pe; x=G.hop.fromX+(G.hop.toX-G.hop.fromX)*pe; y=rowScreenY(r);
     arc=Math.sin(p*Math.PI)*20; st=1+Math.sin(p*Math.PI)*0.18; sq=1-Math.sin(p*Math.PI)*0.10;
   }
@@ -743,14 +760,19 @@ function drawCritter(){
   ctx.save(); ctx.translate(x,cy);
   if(sk.glow){ var gl=ctx.createRadialGradient(0,0,2,0,0,26); gl.addColorStop(0,'rgba(245,230,168,0.6)'); gl.addColorStop(1,'rgba(245,230,168,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,26,0,7); ctx.fill(); }
   ctx.scale(sq,st);
-  // body
-  ctx.fillStyle=sk.body; ctx.beginPath(); ctx.ellipse(0,0,17,15,0,0,7); ctx.fill();
-  ctx.fillStyle=sk.belly; ctx.beginPath(); ctx.ellipse(0,5,11,8,0,0,7); ctx.fill();
-  // back legs hint
-  ctx.fillStyle=sk.body; ctx.beginPath(); ctx.ellipse(-15,9,6,4,0.5,0,7); ctx.ellipse(15,9,6,4,-0.5,0,7); ctx.fill();
-  // eyes
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-6,-9,5,0,7); ctx.arc(6,-9,5,0,7); ctx.fill();
-  ctx.fillStyle=sk.eye; ctx.beginPath(); ctx.arc(-6,-9,2.4,0,7); ctx.arc(6,-9,2.4,0,7); ctx.fill();
+  var hero=heroFrames();
+  if(hero.length){
+    var img=G.hop ? hero[Math.min(hero.length-1, Math.floor(p*hero.length))] : hero[0];
+    var ih=46, asp=img.naturalHeight?img.naturalWidth/img.naturalHeight:1, iw=ih*asp;
+    ctx.drawImage(img, -iw/2, -ih/2-7, iw, ih);
+  } else {
+    // procedural critter (fallback)
+    ctx.fillStyle=sk.body; ctx.beginPath(); ctx.ellipse(0,0,17,15,0,0,7); ctx.fill();
+    ctx.fillStyle=sk.belly; ctx.beginPath(); ctx.ellipse(0,5,11,8,0,0,7); ctx.fill();
+    ctx.fillStyle=sk.body; ctx.beginPath(); ctx.ellipse(-15,9,6,4,0.5,0,7); ctx.ellipse(15,9,6,4,-0.5,0,7); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-6,-9,5,0,7); ctx.arc(6,-9,5,0,7); ctx.fill();
+    ctx.fillStyle=sk.eye; ctx.beginPath(); ctx.arc(-6,-9,2.4,0,7); ctx.arc(6,-9,2.4,0,7); ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -785,13 +807,13 @@ function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches
 var ptr={down:false,x:0,y:0,t:0};
 function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); var p=evPos(e); ptr.down=true; ptr.x=p.x; ptr.y=p.y; ptr.t=Date.now(); ac(); }
 function onUp(e){ if(curScreen!=='s-play'||!ptr.down)return; e.preventDefault(); ptr.down=false; var p=evPos(e); var dx=p.x-ptr.x, dy=p.y-ptr.y, ad=Math.abs(dx), ay=Math.abs(dy);
-  if(ad<24 && ay<24){ queueHop('up'); }
-  else if(ay>ad){ queueHop(dy<0?'up':'down'); }
+  if(ad<24 && ay<24){ queueHop('up'); }               // tap = forward (advance)
+  else if(ay>ad){ queueHop(dy>0?'up':'down'); }        // descending: swipe DOWN = forward, up = back
   else { queueHop(dx<0?'left':'right'); }
 }
 function onKey(e){ if(curScreen!=='s-play')return; var k=e.key;
-  if(k==='ArrowUp'||k==='w'||k==='W'){ queueHop('up'); e.preventDefault(); }
-  else if(k==='ArrowDown'||k==='s'||k==='S'){ queueHop('down'); e.preventDefault(); }
+  if(k==='ArrowDown'||k==='s'||k==='S'){ queueHop('up'); e.preventDefault(); }        // down = forward (descend)
+  else if(k==='ArrowUp'||k==='w'||k==='W'){ queueHop('down'); e.preventDefault(); }    // up = back
   else if(k==='ArrowLeft'||k==='a'||k==='A'){ queueHop('left'); e.preventDefault(); }
   else if(k==='ArrowRight'||k==='d'||k==='D'){ queueHop('right'); e.preventDefault(); }
 }
@@ -830,7 +852,7 @@ function boot(){
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
   // d-pad — pointerdown (not click) so hops feel instant
-  [['hp-up','up'],['hp-down','down'],['hp-left','left'],['hp-right','right']].forEach(function(pr){
+  [['hp-up','down'],['hp-down','up'],['hp-left','left'],['hp-right','right']].forEach(function(pr){
     var el=$(pr[0]); if(el) el.addEventListener('pointerdown',function(e){ e.preventDefault(); e.stopPropagation(); ac(); queueHop(pr[1]); },{passive:false});
   });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
