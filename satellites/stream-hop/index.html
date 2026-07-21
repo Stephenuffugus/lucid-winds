@@ -260,6 +260,7 @@ function sfx(k,n){ switch(k){
   case 'bank': beep(659,0.1,'triangle',0.08); setTimeout(function(){beep(880,0.1,'triangle',0.08);},80); setTimeout(function(){beep(1175,0.16,'sine',0.08);},170); break;
   case 'phew': beep(500,0.05,'sine',0.04,700); break;
   case 'die':  beep(300,0.16,'triangle',0.08,150); setTimeout(function(){beep(180,0.24,'sine',0.07,110);},130); break;
+  case 'gull': beep(1000,0.09,'sawtooth',0.05,560); setTimeout(function(){beep(760,0.11,'sawtooth',0.05,430);},80); setTimeout(function(){beep(880,0.09,'sawtooth',0.04,520);},170); break;
   case 'ui':   beep(440,0.05,'sine',0.05); break;
   case 'unlock': beep(659,0.1,'triangle',0.09); setTimeout(function(){beep(988,0.14,'sine',0.08);},120); break;
 } }
@@ -280,7 +281,7 @@ function newGame(mode){
       chaseR:-6, chaseSpd: (mode==='zen'||mode==='rush')?0:0.28, clock: mode==='rush'?60:0, t:0, parts:[], floats:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, skin:skinById(PROG.skin), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6},
-      weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 } };
+      weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   // camera init
   G.camY = -G.cr.r*TILE - VH*0.62; G.camYt=G.camY;
   genUpTo(20);
@@ -316,6 +317,13 @@ function makeLane(r){
 }
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
+  // train lane: one long, fast train with a big gap — wait for the gap, then dash
+  if(d>3.5 && rng()<0.14){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
+    var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
+    var tspan=VW+tsp*2, tn=Math.ceil(tspan/tsp), tph=rng()*tsp;
+    for(var t=0;t<tn;t++) L.ents.push({ x:t*tsp+tph-tsp, w:tw, kind:'train' });
+    L.spacing=tsp; L.span=tn*tsp; return;
+  }
   var express=d>4 && rng()<0.22*zoneAt(L.r).xBias; L.express=express;
   L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1); // px/s
   var kinds=['acorn','pod','hog','bug']; L.kind=kinds[Math.floor(rng()*kinds.length)];
@@ -440,10 +448,48 @@ function drawWeather(){
     for(var i=0;i<n;i++){ var x=((i*97)%VW), y=(((i*57)+G.t*1000)%(VH+30)), len=9+((i*5)%9);
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+len); ctx.stroke(); } }
 }
+/* ===== seagull — telegraphed row-strike; hop OFF the row (up/down) to dodge ===== */
+function stepGull(dt){
+  if(!G || G.mode==='zen') return;
+  if(!G.gull){
+    if(G.started && G.cr.r>=4 && G.phase==='play'){ G.gullT-=dt;
+      if(G.gullT<=0){ var side=G.rng()<0.5?-1:1; G.gull={ phase:'warn', row:G.cr.r, t:0, warnDur:1.15, dir:side, dur:0.5 }; sfx('gull'); } }
+    return;
+  }
+  var g=G.gull; g.t+=dt;
+  if(g.phase==='warn'){
+    if(g.t>=g.warnDur){
+      var onRow=(G.cr.r===g.row) && !(G.hop && G.hop.toR!==g.row);   // escaped by hopping up/down; sideways doesn't help
+      if(onRow && G.dashT<=0 && G.phase==='play') die('grabbed');
+      g.phase='dive'; g.t=0;
+      if(G.phase==='play'){ G.shake=Math.max(G.shake,5); burst(VW/2, rowScreenY(g.row), 8, '#e8dcc8'); }
+    }
+  } else if(g.t>=g.dur){ G.gull=null; G.gullT=8+G.rng()*7; }
+}
+function drawGullSprite(x,y,sc,dir){
+  ctx.save(); ctx.translate(x,y); ctx.scale(dir*sc,sc);
+  var flap=Math.sin(G.t*16)*0.5+0.5;
+  ctx.strokeStyle='#c9c2b0'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-2,-2); ctx.lineTo(-16,-4-12*flap); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2,-2); ctx.lineTo(16,-4-12*flap); ctx.stroke();
+  ctx.fillStyle='#e8dcc8'; ctx.beginPath(); ctx.ellipse(0,0,10,7,0,0,7); ctx.fill();
+  ctx.fillStyle='#d4a843'; ctx.beginPath(); ctx.moveTo(8,-1); ctx.lineTo(16,1); ctx.lineTo(8,3); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#2a2208'; ctx.beginPath(); ctx.arc(5,-2,1.6,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawGull(){
+  var g=G&&G.gull; if(!g) return; var ry=rowScreenY(g.row);
+  if(g.phase==='warn'){ var p=Math.min(1,g.t/g.warnDur);
+    if(Math.sin(g.t*22)>0){ ctx.save(); ctx.globalAlpha=0.22; ctx.fillStyle='#e05648'; ctx.fillRect(0,ry-HALF,VW,TILE); ctx.restore(); }
+    ctx.save(); ctx.globalAlpha=0.28+0.3*p; ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(VW/2,ry,18+34*p,7+9*p,0,0,7); ctx.fill(); ctx.restore();
+    drawGullSprite(VW/2, -34+(ry+34)*p, 1.5-0.5*p, 1);
+  } else { var q=Math.min(1,g.t/g.dur); var gx=g.dir<0? VW+40-(VW+80)*q : -40+(VW+80)*q; drawGullSprite(gx, ry-8, 1.0, g.dir); }
+}
 function step(dt){
   if(!G) return;
   G.t+=dt;
   stepWeather(dt);
+  stepGull(dt);
   var slow = G.slowmo;
   // move entities on visible-ish rows (wet roads run a touch faster)
   var rlo=Math.floor(G.cr.r)-16, rhi=Math.floor(G.cr.r)+18;
@@ -571,8 +617,9 @@ function render(){ if(!ctx||!G)return;
   ctx.textAlign='center'; ctx.font='800 15px system-ui';
   for(var f=0;f<G.floats.length;f++){ var fl=G.floats[f]; ctx.globalAlpha=Math.max(0,Math.min(1,fl.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(fl.txt,fl.x,fl.y); } ctx.globalAlpha=1;
   ctx.restore();
-  // weather over the field (under the HUD so it stays readable)
+  // weather + gull over the field (under the HUD so it stays readable)
   drawWeather();
+  drawGull();
 
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
@@ -650,6 +697,16 @@ function drawPowerFx(x,y){
   if(G.magnetT>0){ ctx.save(); ctx.globalAlpha=0.3+0.15*Math.sin(G.t*7); ctx.strokeStyle='#b6e08a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y-4,22+2*Math.sin(G.t*5),0,7); ctx.stroke(); ctx.restore(); }
 }
 function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
+  if(e.kind==='train'){ var hw=e.w*0.5, hh=TILE*0.32;
+    var lg=ctx.createRadialGradient(dir*(hw+8),0,1,dir*(hw+8),0,30); lg.addColorStop(0,'rgba(255,233,168,0.55)'); lg.addColorStop(1,'rgba(255,233,168,0)');
+    ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(dir*(hw+8),0,30,0,7); ctx.fill();                 // leading headlight glow (telegraph)
+    ctx.fillStyle='#2a2f3b'; ctx.fillRect(-hw,-hh,e.w,hh*2);                                       // body
+    ctx.fillStyle='#3d4557'; ctx.fillRect(-hw,-hh,e.w,4);                                          // roof
+    ctx.fillStyle='#e05648'; ctx.fillRect(-hw,hh-4,e.w,4);                                         // warning stripe
+    ctx.fillStyle='#8fb6d8'; for(var wx=-hw+16; wx<hw-16; wx+=32){ ctx.fillRect(wx,-hh*0.5,16,hh*0.65); } // windows
+    ctx.fillStyle='#ffe9a8'; ctx.beginPath(); ctx.arc(dir*(hw-6),0,5,0,7); ctx.fill();             // headlight
+    ctx.restore(); return;
+  }
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
   else if(e.kind==='hog'){ ctx.fillStyle='#5a4632'; ctx.beginPath(); ctx.arc(0,0,e.w*0.42,0,7); ctx.fill(); ctx.strokeStyle='#3a2c1e'; ctx.lineWidth=2; for(var s=0;s<10;s++){ var a=Math.PI*2*s/10; ctx.beginPath(); ctx.moveTo(Math.cos(a)*e.w*0.34,Math.sin(a)*e.w*0.34); ctx.lineTo(Math.cos(a)*e.w*0.55,Math.sin(a)*e.w*0.55); ctx.stroke(); } ctx.fillStyle='#e8dcc8'; ctx.beginPath(); ctx.arc(dir*e.w*0.3,-3,3,0,7); ctx.fill(); ctx.fillStyle='#12200f'; ctx.beginPath(); ctx.arc(dir*e.w*0.34,-3,1.4,0,7); ctx.fill(); }
@@ -837,7 +894,10 @@ if(/[?&]shtest=1/.test(location.search)){
     hurt:function(c){ die(c||'squish'); return {phase:G.phase,shield:G.shield}; },
     powState:function(){ return {shield:G.shield,dashT:+G.dashT.toFixed(2),magnetT:+G.magnetT.toFixed(2),coins:G.coins,score:G.score,powsGot:G.powsGot,phase:G.phase}; },
     setWeather:function(t){ var w=G.weather; w.type=t; w.rainA=(t==='rain')?1:0; w.fog=(t==='fog')?1:0; w.mul=1+w.rainA*0.16; return w.type; },
-    weatherState:function(){ var w=G.weather; return {type:w.type,rainA:+w.rainA.toFixed(2),fog:+w.fog.toFixed(2),mul:+w.mul.toFixed(3)}; }
+    weatherState:function(){ var w=G.weather; return {type:w.type,rainA:+w.rainA.toFixed(2),fog:+w.fog.toFixed(2),mul:+w.mul.toFixed(3)}; },
+    spawnGull:function(){ G.started=true; G.cr.r=Math.max(G.cr.r,4); G.gull={phase:'warn',row:G.cr.r,t:0,warnDur:1.15,dir:1,dur:0.5}; return {row:G.gull.row}; },
+    gullState:function(){ return G.gull?{phase:G.gull.phase,row:G.gull.row,t:+G.gull.t.toFixed(2)}:null; },
+    scanTrains:function(){ G.cr.r=380; render(); var n=0,r=0; for(r=0;r<=G.maxGen;r++){ var L=G.lanes[r]; if(L&&L.train)n++; } return {trainLanes:n,maxGen:G.maxGen}; }
   };
 }
 boot();
