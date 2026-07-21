@@ -1,4 +1,24 @@
-# JIMOTHY — session handoff (2026-07-21, build v3.0)
+# JIMOTHY — session handoff (2026-07-21 LAUNCH DAY, build v3.3)
+
+## Launch-day state (read this first)
+- LIVE at lucidwinds.com/satellites/stream-hop/ · share link **lucidwinds.com/jimothy/**
+  (alias page with OG tags, verified unfurling for FB/Twitter/Discord bots).
+- Testers are playing NOW. 💬 Feedback buttons (title/pause/game-over) POST to the
+  `swFeedback` cloud function → Firestore `feedback` collection (read it in the console).
+- $3 Supporter Pack is LIVE on the web rail (nowCreateInvoice → NOWPayments → nowIpn →
+  vaults/{uid}.sw_supporter). Invoice creation verified end-to-end from in-game; the
+  paid→completed webhook leg awaits ONE real test purchase (Jessie).
+- ⛔ ART CACHE-BUSTER: spr() appends ?a=ARTV. The host edge caches bare asset URLs
+  FOREVER — bump ARTV on any in-place art change or players keep the old file.
+- Big fixes this session: hero occlusion (painter's order interleave), bottom-anchored
+  sprites + pad height caps, TRAINS RENDER NOW (double-translate bug since v3.0),
+  goose head restored, goose/rat facing (OBS fl:1), hop-stall + mash-through cheats
+  closed, coins can't spawn in bushes, rules-before-play gate, FEAST retheme (no more
+  'Bloom' in player copy), install button, Week Old Pizza (7th song, 3 bin pulls).
+- Store kit: satellites/stream-hop/store-listing/ (copy, graphics, screenshots,
+  STORE-KIT.md Play runway, LAUNCH-POST.md drafts).
+
+# Previous handoff (2026-07-21 morning, build v3.0)
 
 **Read this plus `memory/project_streamhop_jimothy_buildout.md` before touching anything.**
 
