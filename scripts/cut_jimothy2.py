@@ -321,7 +321,39 @@ def do_weather():
         print('  fx/%s' % nm)
 
 
-GROUPS = {'lanes': do_lanes, 'weather': do_weather, 'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
+# ------------------------------------------------------------- badges (21,26)
+def largest_piece(rgba):
+    """These sheets are not on an even grid, so a cell often catches a sliver of its
+    neighbour. A badge is one solid object, so keep only the biggest blob."""
+    import numpy as np
+    from scipy import ndimage
+    a = np.asarray(rgba).copy()
+    solid = a[..., 3] > 40
+    lbl, n = ndimage.label(solid)
+    if n <= 1:
+        return rgba
+    sizes = np.bincount(lbl.ravel())
+    sizes[0] = 0
+    keep = sizes.argmax()
+    a[..., 3][lbl != keep] = 0
+    return Image.fromarray(a, 'RGBA')
+
+
+def do_badges():
+    for name, rows, cols in [('26', 4, 4), ('21', 3, 4)]:
+        img = sheet(name)
+        boxes = cells(img, rows, cols)
+        for r in range(rows):
+            for c in range(cols):
+                x0, y0, x1, y1 = boxes[r][c]
+                rgba = cj.knockout_region(img.crop((x0+8, y0+8, x1-8, y1-8)), drop_shadow=False)
+                rgba = largest_piece(rgba)
+                rgba = cj.fit(cj.tight(rgba, pad=4), 190)
+                cj.save_png(rgba, 'ach/b%s-%d%d.png' % (name, r+1, c+1), maxkb=70)
+        print('  ach/ from sheet %s (%dx%d)' % (name, rows, cols))
+
+
+GROUPS = {'lanes': do_lanes, 'weather': do_weather, 'badges': do_badges, 'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
           'veh': do_veh, 'rail': do_rail, 'animals': do_animals, 'hazards': do_hazards,
           'powers': do_powers, 'props': do_props, 'icon': do_icon, 'keyart': do_keyart}
 

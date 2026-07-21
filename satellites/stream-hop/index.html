@@ -305,6 +305,18 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     </div>
   </div></div>
 
+  <!-- BADGES -->
+  <div class="screen" id="s-ach"><div class="pad">
+    <h2 class="sc-h">Badges</h2>
+    <div class="bin-top">
+      <div class="bin-caps"><span id="ach-count">0</span> earned</div>
+      <div class="bin-count">25 caps each</div>
+    </div>
+    <div class="skinrow" id="ach-row"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="ach-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
   <!-- PRIZE BIN (the collection) -->
   <div class="screen" id="s-skins"><div class="pad">
     <h2 class="sc-h">Prize Bin</h2>
@@ -315,7 +327,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn primary" id="bin-pull" style="max-width:400px;margin:0 auto">Open the bin</button>
     <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
     <div class="skinrow" id="skin-row"></div>
-    <div style="height:18px"></div>
+    <div style="height:14px"></div>
+    <button class="btn sm" id="b-ach" style="max-width:400px;margin:0 auto 10px">🎖 Badges</button>
     <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -398,12 +411,15 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(l) l.classList.toggle('hide-ud', !SET.udLeft);
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
-  adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{}, v:0 };
+  adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
+  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
   if(typeof p.capsEver==='number')PROG.capsEver=p.capsEver; if(typeof p.advPaid==='number')PROG.advPaid=p.advPaid;
-  if(p.eggs)PROG.eggs=p.eggs; }catch(e){} })();
+  if(p.eggs)PROG.eggs=p.eggs; if(p.ach)PROG.ach=p.ach; if(p.pows)PROG.pows=p.pows;
+  if(typeof p.maxCombo==='number')PROG.maxCombo=p.maxCombo; if(typeof p.dodges==='number')PROG.dodges=p.dodges;
+  if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -782,7 +798,7 @@ function startHop(dir){
   if(dest.type==='safe' && dest.blocked){ var col=Math.round((dir==='left'||dir==='right'?toX:fromX)/TILE - 0.5); col=Math.max(0,Math.min(COLS-1,col)); if(dest.blocked[col]){ G.shake=Math.max(G.shake,3); return; } }
   G.hop={ t:0, dur:(G.dashT>0?HOP_DUR_DASH:HOP_DUR), fromR:fromR, toR:toR, fromX:fromX, toX:toX, dir:dir };
   G.ride=null; sfx('hop'); haptic(6);
-  if(!G.started && FIRST_RUN){ FIRST_RUN=false; LS.set('sh_hopped','1'); }
+  if(!G.started){ if(FIRST_RUN){ FIRST_RUN=false; LS.set('sh_hopped','1'); } if(!PROG.hopped){ PROG.hopped=1; saveProg(); achCheck(); } }
   G.started=true;
 }
 function finishHop(){
@@ -818,6 +834,102 @@ function collectPickups(lane){
   if(lane.stash && Math.abs(G.cr.x-lane.stash.x)<Math.max(cthr,TILE*0.8)){ grabStash(lane); }
   if(lane.egg && Math.abs(G.cr.x-lane.egg.x)<Math.max(cthr,TILE*0.8)){ grabEgg(lane); }
   if(lane.power && Math.abs(G.cr.x-lane.power.x)<TILE*0.78){ var k=lane.power.kind; lane.power=null; applyPower(k); }
+}
+/* ===== BADGES — eighteen of them, every condition read off something the game was
+   already tracking. Each pays 25 bottlecaps, so they feed the Prize Bin too. ===== */
+var ACH=[
+  {id:'first',      name:'Silly Little Guy', desc:'Take your first hop.',                  art:'ach/b26-11'},
+  {id:'rows100',    name:'City Block',       desc:'Cross 100 rows in one run.',            art:'ach/b21-22'},
+  {id:'rows300',    name:'Cross Town',       desc:'Cross 300 rows in one run.',            art:'ach/b26-34'},
+  {id:'combo10',    name:'Bloom Trail',      desc:'Reach a trail of 10.',                  art:'ach/b26-32'},
+  {id:'combo20',    name:'Long Trail',       desc:'Reach a trail of 20.',                  art:'ach/b21-23'},
+  {id:'chapter1',   name:'Waterfront Done',  desc:'Clear the whole Waterfront chapter.',   art:'ach/b21-14'},
+  {id:'level20',    name:'Deep Downtown',    desc:'Reach Adventure level 20.',             art:'ach/b26-43'},
+  {id:'stars30',    name:'Star Collector',   desc:'Earn 30 stars.',                        art:'ach/b26-44'},
+  {id:'critters5',  name:'A Few Friends',    desc:'Find 5 critters.',                      art:'ach/b26-41'},
+  {id:'crittersAll',name:'The Whole Crew',   desc:'Find every critter.',                   art:'ach/b21-34'},
+  {id:'landmarks',  name:'Local Historian',  desc:'Find all 8 Seattle landmarks.',         art:'ach/b26-42'},
+  {id:'caps500',    name:'Old Cap Money',    desc:'Bank 500 bottlecaps in total.',         art:'ach/b21-24'},
+  {id:'weather',    name:'Proper Seattle',   desc:'See rain and fog in the same run.',     art:'ach/b26-12'},
+  {id:'dodge',      name:'Not Today',        desc:'Duck a diving bird.',                   art:'ach/b26-33'},
+  {id:'allpowers',  name:'Well Equipped',    desc:'Use all nine power ups.',               art:'ach/b21-31'},
+  {id:'rush40',     name:'Rush Hour',        desc:'Cross 40 rows in a single Rush.',       art:'ach/b21-11'},
+  {id:'fogwalk',    name:'Into The Fog',     desc:'Stay out in thick fog for 25 seconds.', art:'ach/b26-24'},
+  {id:'secrets',    name:'Both Secrets',     desc:'Find the two critters not in the bin.', art:'ach/b26-13'}
+];
+function achDone(id){ return !!(PROG.ach && PROG.ach[id]); }
+function achCount(){ var n=0; for(var i=0;i<ACH.length;i++) if(achDone(ACH[i].id))n++; return n; }
+function bestRows(){ var b=PROG.best||{}; return Math.max(b.endless||0,b.daily||0,b.zen||0,b.rush||0); }
+function achMet(id){
+  var P=PROG;
+  switch(id){
+    case 'first':       return !!P.hopped;
+    case 'rows100':     return bestRows()>=100;
+    case 'rows300':     return bestRows()>=300;
+    case 'combo10':     return (P.maxCombo||0)>=10;
+    case 'combo20':     return (P.maxCombo||0)>=20;
+    case 'chapter1':    return (P.adv.maxLevel||1)>6;
+    case 'level20':     return (P.adv.maxLevel||1)>=20;
+    case 'stars30':     return advTotalStars()>=30;
+    case 'critters5':   return ownedCount()>=5;
+    case 'crittersAll': return ownedCount()>=CHARS.length;
+    case 'landmarks':   return eggsFound()>=EGGS.length;
+    case 'caps500':     return (P.capsEver||0)>=500;
+    case 'weather':     return !!P.wxBoth;
+    case 'dodge':       return (P.dodges||0)>=1;
+    case 'allpowers':   var n=0,k; for(k in (P.pows||{})) if(P.pows[k])n++; return n>=POWERS.length;
+    case 'rush40':      return (P.best.rush||0)>=40;
+    case 'fogwalk':     return !!P.fogWalked;
+    case 'secrets':     return charOwned('ghost') && charOwned('richuncle');
+  }
+  return false;
+}
+/* Evaluated after anything that could move a counter. Cheap: 18 switch cases. */
+function achCheck(){
+  if(!PROG.ach) PROG.ach={};
+  var won=[];
+  for(var i=0;i<ACH.length;i++){ var a=ACH[i];
+    if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); } }
+  if(won.length){ saveProg();
+    // mid-run it is a float on the board; anywhere else it earns a card. bankRun()
+    // fires this BEFORE show('s-go'), so test the run, not the screen.
+    if(curScreen==='s-play' && G && G.phase==='play'){ toast('🎖 '+won[0].name); sfx('unlock'); haptic(24); }
+    else {
+      // most badges land at game over, and show('s-go') closes any open reveal,
+      // so wait for the screen change to finish before putting the card up
+      var extra=won.length-1;
+      setTimeout(function(){ revealBadge(won[0], extra); }, 620);
+    }
+  }
+  return won.length;
+}
+function revealBadge(a, extra){ var ov=$('bin-reveal'); if(!ov)return;
+  $('br-rar').textContent='Badge earned'; $('br-rar').style.color='#c8a84b';
+  $('br-name').textContent=a.name;
+  $('br-bio').textContent=a.desc+'  (+25 caps)'+(extra>0?('  ·  and '+extra+' more'):'');
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124;
+  var draw=function(){ var c=cvp.getContext('2d'); c.clearRect(0,0,124,124); var im=spr(a.art);
+    if(imgReady(im)){ var h=118, w=h*(im.naturalWidth/im.naturalHeight); if(w>118){ w=118; h=w/(im.naturalWidth/im.naturalHeight); }
+      c.drawImage(im,(124-w)/2,(124-h)/2,w,h); } };
+  draw(); var bim=spr(a.art); if(!imgReady(bim)) bim.addEventListener('load', draw);
+  ov.querySelector('.br-card').style.borderColor='#c8a84b';
+  ov.classList.add('on'); sfx('unlock'); haptic(30);
+}
+function renderAch(){
+  var host=$('ach-row'); if(!host)return; host.innerHTML='';
+  $('ach-count').textContent=achCount()+' of '+ACH.length;
+  ACH.forEach(function(a){ var got=achDone(a.id); spr(a.art);
+    var card=document.createElement('div'); card.className='skincard'+(got?'':' locked');
+    var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
+    var nm=document.createElement('div'); nm.className='sn'; nm.textContent=a.name; card.appendChild(nm);
+    var su=document.createElement('div'); su.className='su'; su.textContent=a.desc; card.appendChild(su);
+    host.appendChild(card);
+    var paint=function(){ var c=cvp.getContext('2d'); c.clearRect(0,0,56,56); var im=spr(a.art);
+      if(!imgReady(im))return;
+      var h=52, w=h*(im.naturalWidth/im.naturalHeight); if(w>52){ w=52; h=w/(im.naturalWidth/im.naturalHeight); }
+      c.save(); if(!got) c.globalAlpha=0.30; c.drawImage(im,(56-w)/2,(56-h)/2,w,h); c.restore(); };
+    paint(); var im2=spr(a.art); if(!imgReady(im2)) im2.addEventListener('load', paint);
+  });
 }
 /* ===== landmarks — the second thing to collect. Eight real Seattle objects, each
    worth a pile of caps, and the game hands you the ones you have never found first. ===== */
@@ -870,7 +982,7 @@ function advLevelUp(newLevel){
     if(newLevel>(PROG.best.adventure||0)) PROG.best.adventure=newLevel;
     saveProg();
     // skin unlocks by furthest level reached
-    checkAdvUnlocks();
+    checkAdvUnlocks(); achCheck();
   }
   G.level=newLevel; G.lvFlowers=0; G.lvCoins=0;
   // A new chapter is a real beat, so it gets the neighbourhood card and swallows the
@@ -918,6 +1030,7 @@ function renderLevels(){
 }
 function applyPower(kind){
   G.powsGot++; var m=POWER_META[kind];
+  if(!PROG.pows)PROG.pows={}; if(!PROG.pows[kind]){ PROG.pows[kind]=1; saveProg(); }
   if(kind==='umbrella'){ G.shield=true; }
   else if(kind==='coffee'){ G.dashT=m.dur; if(G.chaseR>G.cr.r-8) G.chaseR=G.cr.r-8; }  // caffeinated: shove the wilt back
   else if(kind==='trash'){ G.magnetT=m.dur; }
@@ -934,6 +1047,7 @@ function applyPower(kind){
   float(G.cr.x, rowScreenY(G.cr.r)-30, m.name+'!'); sfx('unlock'); haptic(16);
 }
 function bankBloom(){
+  if((G.combo||0)>(PROG.maxCombo||0)){ PROG.maxCombo=G.combo; saveProg(); }
   var val=Math.round(50 + G.combo*G.combo*4 + G.crossings*20);
   G.score+= Math.round(val/10);
   G.flowers++; G.crossings++; G.lvFlowers=(G.lvFlowers||0)+1;
@@ -1018,6 +1132,7 @@ function stepGull(dt){
     if(g.t>=g.warnDur){
       var onRow=(G.cr.r===g.row) && !(G.hop && G.hop.toR!==g.row);   // escaped by hopping up/down; sideways doesn't help
       if(onRow && G.dashT<=0 && G.phase==='play') die('grabbed');
+      else if(G.phase==='play'){ PROG.dodges=(PROG.dodges||0)+1; if(PROG.dodges===1){ saveProg(); achCheck(); } }
       g.phase='dive'; g.t=0;
       if(G.phase==='play'){ G.shake=Math.max(G.shake,5); burst(VW/2, rowScreenY(g.row), 8, '#e8dcc8'); }
     }
@@ -1100,8 +1215,11 @@ function step(dt){
   if(G.landT>0) G.landT-=dt;
   G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
   // stay out in the thick fog long enough and something finds you
-  if(G.phase==='play' && G.weather.fog>0.5){ G.fogT=(G.fogT||0)+dt;
-    if(G.fogT>25) unlockSecret('ghost','Something pale found you in the fog...'); }
+  if(G.phase==='play' && G.weather.fog>0.5){ G.fogT=(G.fogT||0)+dt; G.sawFog=1;
+    if(G.fogT>25){ if(!PROG.fogWalked){ PROG.fogWalked=1; saveProg(); }
+      unlockSecret('ghost','Something pale found you in the fog...'); } }
+  if(G.phase==='play' && G.weather.rainA>0.5) G.sawRain=1;
+  if(G.sawFog && G.sawRain && !PROG.wxBoth){ PROG.wxBoth=1; saveProg(); achCheck(); }
   if(G.dashT>0) G.dashT-=dt;
   if(G.magnetT>0){ G.magnetT-=dt;
     // magnet: sweep any coin on the row you're standing on into your paws
@@ -1164,6 +1282,7 @@ function bankRun(){
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25));
     amt=Math.max(0, amt-(G.sunPaid||0));   // never pay the same rows twice after a continue
     if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; G.sunPaid=(G.sunPaid||0)+granted; } }catch(e){}
+  achCheck();
   return {isBest:isBest, granted:granted};
 }
 function gameOver(){ if(!G)return; G.phase='over'; running=false;
@@ -1662,7 +1781,7 @@ function binPull(){
   for(i=0;i<pool.length;i++){ roll-=(W[pool[i].rar]||1); if(roll<=0){ pick=pool[i]; break; } }
   PROG.chars[pick.id]=1; saveProg();
   binNote('Every cap you grab out there goes in the bin.');
-  revealChar(pick); renderBin();
+  revealChar(pick); renderBin(); setTimeout(achCheck, 900);
 }
 function revealChar(c){ var ov=$('bin-reveal'); if(!ov)return;
   $('br-rar').textContent=c.secret?'Secret':c.rar; $('br-rar').style.color=RARC[c.rar]||'#c8a84b';
@@ -1778,6 +1897,8 @@ function boot(){
   tap('b-zen', function(){ newGame('zen'); });
   tap('b-skins', function(){ renderBin(); show('s-skins'); });
   tap('bin-pull', binPull);
+  tap('b-ach', function(){ renderAch(); show('s-ach'); });
+  tap('ach-back', function(){ renderBin(); show('s-skins'); });
   tap('br-ok', closeReveal);
   var brv=$('bin-reveal'); if(brv) brv.addEventListener('click', function(e){ if(e.target===brv) closeReveal(); });
   tap('b-how', function(){ show('s-how'); });
@@ -1881,7 +2002,10 @@ if(/[?&]shtest=1/.test(location.search)){
       return {frames:out.length, poses:out.map(function(f){return f.pose;}).join(',')}; },
     revive:function(){ reviveRun(); return {phase:G.phase,r:G.cr.r,revives:G.revives,invuln:+G.invuln.toFixed(2),shield:G.shield,chase:+G.chaseR.toFixed(1),lane:laneAt(G.cr.r).type}; },
     reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),revives:G?G.revives:null,label:b?b.textContent:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null,adsLive:!!(window.LW_ADS&&window.LW_ADS.live)}; },
-    prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char}; },
+    prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char,eggs:eggsFound(),ach:achCount()}; },
+    ach:function(){ var o={}; for(var i=0;i<ACH.length;i++)o[ACH[i].id]=achDone(ACH[i].id)?1:0; return o; },
+    achCheck:function(){ return achCheck(); },
+    achScreen:function(){ renderAch(); return {cells:$('ach-row').children.length, count:$('ach-count').textContent}; },
     caps:function(n){ if(n!=null){ PROG.caps=n; saveProg(); } return PROG.caps; },
     pull:function(){ binPull(); return {caps:PROG.caps,owned:ownedCount(),pool:binPool().length,revealed:$('br-name').textContent,shown:$('bin-reveal').classList.contains('on')}; },
     bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
