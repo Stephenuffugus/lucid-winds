@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Stream Hop">
-<title>Stream Hop · Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Jimothy">
+<title>Jimothy · Sky Wolf Studios</title>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
 <style>
@@ -972,7 +972,7 @@ function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.cla
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
 function shareIt(){ var url="https://lucidwinds.com/satellites/stream-hop/"; var sc=(G&&G.score)||0;
-  var txt="Stream Hop. I hopped "+sc+" rows across the midnight garden! Can you go further?";
+  var txt="Jimothy the Seattle raccoon. I hopped "+sc+" lanes across the rainy city! Can you go further?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 
@@ -1061,7 +1061,7 @@ function boot(){
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
-  $('buildstamp').textContent='Stream Hop '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
+  $('buildstamp').textContent='Jimothy '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
   // splash video is the front door (shown on load); nudge autoplay + wire the tap.
   // Tapping it routes first-timers into the story intro, returning players to the menu.
   tap('splash-tap', startFromSplash);
