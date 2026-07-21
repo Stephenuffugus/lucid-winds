@@ -582,7 +582,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.3';
+var BUILD='v4.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -987,6 +987,7 @@ var OBS={
   bug:{s:'sprites/obs-trashbags',    w:46},
   cone:{s:'sprites/obs-cone',        w:40},
   barrier:{s:'sprites/obs-barrier',  w:48},
+  pigeons:{s:'sprites/haz-pigeons',  w:66, fly:1},
   scooter:{s:'sprites/veh-scooter',  w:62},
   skater:{s:'sprites/veh-skater',    w:68},
   cyclist:{s:'sprites/veh-cyclist',  w:76},
@@ -1001,9 +1002,11 @@ var OBS={
   foodtruck:{s:'sprites/veh-foodtruck', w:128},
   trolleybus:{s:'sprites/veh-trolleybus', w:170}
 };
-var OBS_EARLY=['acorn','pod','hog','bug','cone','barrier'];
-var OBS_MID  =['scooter','skater','cyclist','dog','raccoon','recyclebin'];
-var OBS_LATE =['sedan','taxi','van','produce','coffeecart'];
+/* only things that genuinely MOVE ride the lanes — parked junk (trash bags,
+   cones, barriers, bins, produce, the coffee cart) lives on the curbs now */
+var OBS_EARLY=['acorn','pod','hog','pigeons'];
+var OBS_MID  =['scooter','skater','cyclist','dog','raccoon'];
+var OBS_LATE =['sedan','taxi','van'];
 var OBS_BIG  =['foodtruck','trolleybus'];
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
@@ -1985,8 +1988,11 @@ function drawRow(r){
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
-    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){ var pv=['concrete','barrel','ferns'][(r*7+c*3)%3];
-      if(!drawSprite('sprites/planter-'+pv, (c+0.5)*TILE, y, 0, {w:TILE*1.02, bottom:24, hmax:TILE*1.15})) drawShrub((c+0.5)*TILE, y, r); } }
+    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){
+      var CURB=['planter-concrete','planter-barrel','planter-ferns','planter-concrete','planter-barrel','planter-ferns',
+        'obs-trashbags','prop-recyclebin','prop-produce','obs-cone','obs-barrier','prop-coffeecart'];
+      var pv=CURB[(r*7+c*3)%CURB.length];
+      if(!drawSprite('sprites/'+pv, (c+0.5)*TILE, y, 0, {w:TILE*1.0, bottom:24, hmax:TILE*1.25})) drawShrub((c+0.5)*TILE, y, r); } }
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
       if(!drawSprite('sprites/coin-cap', L.coin, cy, 32)){
         ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); } }
@@ -2081,7 +2087,8 @@ function drawObstacle(e,y,dir){
   // om.fl marks base art that FACES LEFT (goose, rat) so the flip test inverts —
   // without it they moonwalk: walking one way, facing the other.
   var om=OBS[e.kind];
-  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:(om.fl?dir>0:dir<0), bottom:24})) return;
+  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:(om.fl?dir>0:dir<0),
+      bottom:om.fly?6:24, dy:om.fly?Math.sin(G.t*6+e.x*0.05)*2.5:0})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
