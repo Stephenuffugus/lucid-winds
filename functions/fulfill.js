@@ -71,6 +71,7 @@ export const LW_WEB_PRICES = {
   seed_pouch_slot:       { tiers: { seed15: 100, seed20: 100 } },
   item_pouch_slot:       { bundle: 5, cents: 100 },
   emergency_pouch:       { base: 300 },
+  supporter_pack:        { base: 300 },
   half_bloom:            { base: 500 },
   full_bloom:            { base: 1000, completeCents: 500 },
 }
@@ -83,6 +84,7 @@ export const LW_WEB_LABELS = {
   item_pouch_slot: 'Item Pouch +5',
   seed_pouch_slot: 'Seed Pouch +5',
   emergency_pouch: 'Emergency Pouch (24h)',
+  supporter_pack: 'Studio Supporter Pack',
   half_bloom: 'Half Bloom Upgrade',
   full_bloom: 'Full Bloom Upgrade',
 }
@@ -221,6 +223,14 @@ export async function applyFulfillment(tx, db, uid, metadata) {
     )
     fulfillment.applied = true
     fulfillment.expiresInMs = 24 * 60 * 60 * 1000
+  } else if (type === 'supporter_pack') {
+    // Studio-wide cosmetic supporter flag. Satellite games (Jimothy, Hedgerow,
+    // Grubtrap) read vaults/{uid}.sw_supporter and unlock their premium
+    // cosmetics — skins and soundtrack songs only, never gameplay power.
+    const vaultDoc = await tx.get(vaultRef)
+    const was = !!(vaultDoc.exists && vaultDoc.data().sw_supporter)
+    tx.set(vaultRef, { sw_supporter: true, sw_supporter_at: Date.now() }, { merge: true })
+    fulfillment.applied = !was
   } else if (type === 'half_bloom' || type === 'full_bloom') {
     // Bloom bundle upgrades. Both Firestore reads happen before either write
     // (transaction ordering requirement). Grants never regress an existing

@@ -80,6 +80,18 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .eq b{width:3px; height:12px; background:var(--gold); border-radius:1px; transform-origin:bottom;
   animation:musbop .9s ease-in-out infinite}
 .eq b:nth-child(2){animation-delay:.25s} .eq b:nth-child(3){animation-delay:.5s}
+/* Support the Studio */
+.sup-card{width:100%; max-width:430px; margin:0 auto 14px; padding:16px 18px; border:1px solid var(--line);
+  border-radius:16px; background:#0f150c; font-size:13.5px; line-height:1.55; color:var(--cream)}
+.sup-card b{color:var(--gold)}
+.sup-perk{display:flex; gap:11px; align-items:center; margin:9px 0; font-size:14px}
+.sup-perk .pi2{width:30px; text-align:center; font-size:19px; flex:none}
+.sup-in{display:block; width:100%; max-width:430px; margin:0 auto 10px; padding:15px 16px; min-height:52px;
+  border:1px solid var(--line); border-radius:14px; background:#0c110a; color:var(--cream);
+  font-size:16px; font-family:inherit; outline:none}
+.sup-in:focus{border-color:#3f6b34}
+.sup-note{font-size:12px; color:var(--muted); text-align:center; max-width:410px; margin:6px auto 12px; line-height:1.5; min-height:16px}
+.sup-heart{color:#e58fa0}
 #s-pause{background:rgba(5,8,5,0.86)}
 #s-pause .pad{justify-content:center}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
@@ -93,6 +105,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen.on .stack > *{ animation: sh-rise .52s cubic-bezier(.22,.9,.28,1) both; }
 .screen.on .stack > *:nth-child(1){animation-delay:.05s} .screen.on .stack > *:nth-child(2){animation-delay:.11s}
 .screen.on .stack > *:nth-child(3){animation-delay:.17s} .screen.on .stack > *:nth-child(4){animation-delay:.23s}
+.screen.on .stack > *:nth-child(5){animation-delay:.29s} .screen.on .stack > *:nth-child(6){animation-delay:.35s}
 @keyframes sh-rise{ from{ opacity:0; transform:translateY(11px); } to{ opacity:1; transform:none; } }
 @keyframes sh-screen-in{ from{ opacity:0; transform:translateY(14px) scale(.984); } to{ opacity:1; transform:none; } }
 @keyframes sh-screen-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.992); } }
@@ -254,6 +267,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
+      <button class="btn ghost sm" id="b-support"><span class="sup-heart">♥</span>&nbsp; Support the Studio</button>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -318,8 +332,41 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px;max-width:400px">
       Original music by Sky Wolf Studios. Locked songs play a ten second taste; earn the rest out on the street.</div>
     <div id="mus-rows" style="max-width:430px;width:100%"></div>
-    <div style="height:18px"></div>
+    <div style="height:12px"></div>
+    <button class="btn sm" id="mus-sup" style="max-width:430px;margin:0 auto 10px"><span class="sup-heart">♥</span>&nbsp; Every song now · Supporter Pack $3</button>
     <button class="btn ghost sm" id="mus-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- SUPPORT THE STUDIO -->
+  <div class="screen" id="s-support"><div class="pad">
+    <h2 class="sc-h">Support the Studio</h2>
+    <div class="sup-card">
+      Jimothy is free, has no ads, and always will. If he made you smile, the
+      <b>Supporter Pack</b> is a one time <b>$3</b> thank you that unlocks:
+      <div class="sup-perk"><div class="pi2">🧢</div><div>Every Jimothy costume, instantly</div></div>
+      <div class="sup-perk"><div class="pi2">🎵</div><div>The entire original soundtrack</div></div>
+      <div class="sup-perk"><div class="pi2 sup-heart">♥</div><div>Our lasting gratitude, on every device you sign into</div></div>
+      <div style="margin-top:8px; color:var(--muted); font-size:12px">Critters, badges and landmarks stay earn-by-play for everyone. Supporting never buys progress.</div>
+    </div>
+    <div id="sup-auth" style="display:none">
+      <div class="sup-note">The pack ties to your free SKY WOLF STUDIOS account, so it follows you into every Sky Wolf game.</div>
+      <input class="sup-in" id="sup-email" type="email" autocomplete="email" placeholder="Email">
+      <input class="sup-in" id="sup-pass" type="password" autocomplete="current-password" placeholder="Password">
+      <button class="btn primary" id="sup-create" style="max-width:430px;margin:0 auto 10px">Create free account</button>
+      <button class="btn sm" id="sup-signin" style="max-width:430px;margin:0 auto">I already have one, sign me in</button>
+    </div>
+    <div id="sup-buywrap" style="display:none">
+      <button class="btn primary" id="sup-buy" style="max-width:430px;margin:0 auto"><span class="sup-heart">♥</span>&nbsp; Get the Supporter Pack · $3</button>
+    </div>
+    <div id="sup-thanks" style="display:none">
+      <div class="sup-card" style="border-color:var(--gold); text-align:center">
+        <span class="sup-heart" style="font-size:26px">♥</span><br>
+        <b>You are a supporter.</b><br>Every costume and every song is yours. Thank you for keeping the lights on.
+      </div>
+    </div>
+    <div class="sup-note" id="sup-status"></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="sup-back" style="max-width:430px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- PAUSE -->
@@ -356,6 +403,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
     <div class="skinrow" id="skin-row"></div>
     <div style="height:14px"></div>
+    <button class="btn sm" id="bin-sup" style="max-width:400px;margin:0 auto 10px"><span class="sup-heart">♥</span>&nbsp; Every costume + the soundtrack · $3</button>
     <button class="btn sm" id="b-ach" style="max-width:400px;margin:0 auto 10px">🎖 Badges</button>
     <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
@@ -523,7 +571,11 @@ var CHARS=[
 ];
 function charById(id){ for(var i=0;i<CHARS.length;i++) if(CHARS[i].id===id)return CHARS[i]; return CHARS[0]; }
 function curChar(){ return charById(PROG.char||'jimothy'); }
-function charOwned(id){ return !!(PROG.chars&&PROG.chars[id]); }
+/* the sheet-17 costumes (skins/*, never the secrets) come with the Supporter Pack;
+   critters and secrets stay earn-by-play for everyone */
+function charIsCostume(c){ return !!(c && c.sheet && c.sheet.indexOf('skins/')===0 && !c.secret); }
+function charOwned(id){ if(PROG.chars&&PROG.chars[id])return true;
+  return supporterPack() && charIsCostume(charById(id)); }
 function ownedCount(){ var n=0; for(var i=0;i<CHARS.length;i++) if(charOwned(CHARS[i].id))n++; return n; }
 
 /* ===== power-ups (Seattle-raccoon flavor; art is Stephen's reskin) ===== */
@@ -2035,6 +2087,16 @@ function boot(){
   tap('b-music', function(){ renderMusic(); show('s-music'); });
   tap('mus-back', function(){ JMUS.endTease(); show('s-title'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
+  tap('b-support', function(){ SUP.status(''); SUP.render(); show('s-support'); });
+  tap('sup-back', function(){ show('s-title'); });
+  tap('sup-buy', SUP.buy);
+  tap('sup-create', function(){ SUP.auth(true); });
+  tap('sup-signin', function(){ SUP.auth(false); });
+  tap('mus-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
+  tap('bin-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
+  SUP.render();
+  setTimeout(SUP.hydrate, 2600);   // after Sunbeam.init has had a chance to resolve
+  try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth') SUP.hydrate(); }); }catch(e){}
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
@@ -2083,7 +2145,7 @@ var MUSIC=[
    hint:'Bank 400 lifetime bottlecaps',test:function(){ return (PROG.capsEver||0)>=400; }}
 ];
 function musTrack(id){ for(var i=0;i<MUSIC.length;i++) if(MUSIC[i].id===id)return MUSIC[i]; return MUSIC[0]; }
-function musOwned(id){ var t=musTrack(id); return !!(t.free || (PROG.musicUn&&PROG.musicUn[id])); }
+function musOwned(id){ var t=musTrack(id); return !!(t.free || (PROG.musicUn&&PROG.musicUn[id]) || supporterPack()); }
 /* run alongside achCheck: promote any track whose condition is now met */
 function musicCheck(){
   if(!PROG.musicUn) PROG.musicUn={};
@@ -2165,6 +2227,97 @@ function renderMusic(){
   });
 }
 
+/* ===== SUPPORT THE STUDIO — the Supporter Pack ($3, one time) =====
+   A real checkout on the studio's web rail: nowCreateInvoice (cloud function,
+   NOWPayments invoice) with fulfillment landing in vaults/{uid}.sw_supporter via
+   the payment webhook. The pack ties to the free SKY WOLF STUDIOS account (the
+   sunbeam-sdk Firebase app, already loaded for sunbeam earns), and this client
+   re-hydrates the flag from the vault at boot + on sign-in, so it follows the
+   account onto any device. sw_supporter is STUDIO-WIDE: Hedgerow and Grubtrap
+   already honor the same localStorage flag. Never gameplay power, only cosmetics. */
+function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
+var SUP=(function(){
+  var watching=null;
+  function fbApp(){ try{ if(window.firebase) return firebase.app('sunbeam-sdk'); }catch(e){} return null; }
+  function snap(){ try{ if(window.Sunbeam&&Sunbeam._snapshot) return Sunbeam._snapshot(); }catch(e){} return {signedIn:false,uid:null}; }
+  function payOff(){ try{ return localStorage.getItem('lw_webpay_enabled')==='0'; }catch(e){ return false; } }
+  function status(t){ var el=$('sup-status'); if(el)el.textContent=t||''; }
+  function grant(quiet){ try{ localStorage.setItem('sw_supporter','1'); }catch(e){}
+    render();
+    if(quiet) return;
+    sfx('unlock'); haptic(30);
+    revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+      $('br-rar').textContent='Supporter'; $('br-rar').style.color='#e58fa0';
+      $('br-name').textContent='Thank you ♥';
+      $('br-bio').textContent='Every costume and every song is yours, on every device you sign into.';
+      var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d'); c.clearRect(0,0,124,124);
+      var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(229,143,160,0.5)'); gl.addColorStop(1,'rgba(229,143,160,0)');
+      c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
+      c.fillStyle='#e58fa0'; c.font='54px system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('♥',62,64);
+      ov.querySelector('.br-card').style.borderColor='#e58fa0'; ov.classList.add('on');
+    });
+  }
+  function watch(orderId){ var app=fbApp(); if(!app||!orderId||watching===orderId)return; watching=orderId;
+    try{ localStorage.setItem('sw_sup_order', orderId); }catch(e){}
+    var un=app.firestore().collection('webOrders').doc(orderId).onSnapshot(function(doc){
+      var d=doc&&doc.data&&doc.data(); if(!d)return;
+      if(d.status==='completed'){ try{ localStorage.removeItem('sw_sup_order'); }catch(e){} try{un();}catch(e){} watching=null; grant(false); }
+      else if(d.status==='underpaid'||d.status==='failed'||d.status==='expired'||d.status==='refunded'){
+        try{ localStorage.removeItem('sw_sup_order'); }catch(e){} try{un();}catch(e){} watching=null;
+        status('That payment came back "'+d.status+'". Nothing was unlocked. If money left your wallet, write to the studio and we will make it right.'); }
+      else status('Waiting for the payment to land. You can keep playing; it unlocks by itself.');
+    }, function(){ /* offline or rules hiccup: the boot re-hydrate still catches a paid order */ });
+  }
+  function buy(){ if(supporterPack())return;
+    if(payOff()){ status('Payments are paused right now. Everything stays earnable by playing.'); return; }
+    var app=fbApp(); if(!app){ status('Still connecting to the studio. Give it a second and tap again.'); return; }
+    var btn=$('sup-buy'); if(btn)btn.disabled=true; status('Opening checkout...');
+    app.functions('us-central1').httpsCallable('nowCreateInvoice')({type:'supporter_pack'}).then(function(res){
+      var d=(res&&res.data)||{}; if(btn)btn.disabled=false;
+      if(!d.ok||!d.invoiceUrl){ status('Checkout did not start. Nothing was charged.'); return; }
+      try{ window.open(d.invoiceUrl,'_blank'); }catch(e){}
+      status('Checkout opened in a new tab. This screen unlocks the moment payment lands.');
+      watch(d.orderId);
+    })['catch'](function(e){ if(btn)btn.disabled=false;
+      var m=(e&&e.message)||'';
+      if(m.indexOf('already a supporter')>=0){ grant(false); return; }
+      status(m||'Could not start checkout. Nothing was charged.'); });
+  }
+  function auth(create){ var em=($('sup-email')||{}).value||'', pw=($('sup-pass')||{}).value||'';
+    if(!em||em.indexOf('@')<1){ status('That email does not look right.'); return; }
+    if(pw.length<6){ status('Password needs at least 6 characters.'); return; }
+    if(!(window.Sunbeam&&Sunbeam.signInWithEmail)){ status('Still connecting to the studio. Try again in a second.'); return; }
+    status(create?'Creating your account...':'Signing in...');
+    (create?Sunbeam.createAccount(em,pw):Sunbeam.signInWithEmail(em,pw)).then(function(){
+      status(''); hydrate(); render();
+    })['catch'](function(e){ var c=(e&&e.code)||'';
+      status(c==='auth/email-already-in-use'?'That email already has an account. Tap sign in instead.'
+        : c==='auth/wrong-password'||c==='auth/invalid-credential'?'Wrong email or password.'
+        : c==='auth/user-not-found'?'No account with that email yet. Create one above.'
+        : c==='auth/weak-password'?'Password needs at least 6 characters.'
+        : (e&&e.message)||'That did not work.'); });
+  }
+  /* the entitlement lives on the ACCOUNT: pull it from the vault whenever signed in */
+  function hydrate(){ var app=fbApp(), s=snap(); if(!app||!s.signedIn||!s.uid)return;
+    app.firestore().collection('vaults').doc(s.uid).get().then(function(doc){
+      if(doc&&doc.exists&&doc.data().sw_supporter&&!supporterPack()){ grant(true); }
+    })['catch'](function(){});
+    var pend=null; try{ pend=localStorage.getItem('sw_sup_order'); }catch(e){}
+    if(pend&&!supporterPack()) watch(pend);
+  }
+  function render(){ var sup=supporterPack(), s=snap();
+    var au=$('sup-auth'), bw=$('sup-buywrap'), th=$('sup-thanks');
+    if(au)au.style.display=(!sup&&!s.signedIn)?'':'none';
+    if(bw)bw.style.display=(!sup&&s.signedIn)?'':'none';
+    if(th)th.style.display=sup?'':'none';
+    var tb=$('b-support'); if(tb)tb.innerHTML=sup?'<span class="sup-heart">♥</span>&nbsp; Thank you, supporter':'<span class="sup-heart">♥</span>&nbsp; Support the Studio';
+    var ms=$('mus-sup'); if(ms)ms.style.display=sup?'none':'';
+    var bs=$('bin-sup'); if(bs)bs.style.display=sup?'none':'';
+    if(sup){ if(curScreen==='s-music')renderMusic(); if(curScreen==='s-skins')renderBin(); }
+  }
+  return { buy:buy, auth:auth, hydrate:hydrate, render:render, watch:watch, status:status, grant:grant };
+})();
+
 /* ===== rewarded video hook =====
    A host that can actually show ads (Capacitor + AdMob, or the portal) defines
    window.LW_ADS before this file runs and we use theirs. Until then this stub grants
@@ -2242,6 +2395,11 @@ if(/[?&]shtest=1/.test(location.search)){
     chars:function(){ var o={}; for(var i=0;i<CHARS.length;i++)o[CHARS[i].id]=charOwned(CHARS[i].id)?1:0; return o; },
     fog:function(){ G.weather.fog=1; G.fogT=24.9; step(0.2); return {owned:charOwned('sasquatch'),fogT:+G.fogT.toFixed(1)}; },
     pose:function(){ return {pose:heroPose(G.hop?G.hop.t/G.hop.dur:0), ready:imgReady(spr(heroPose(G.hop?G.hop.t/G.hop.dur:0))), idleT:+(G.idleT||0).toFixed(1), shield:G.shield, gull:gullOnMe(), wilt:wiltClose()}; },
+    sup:function(v){ if(v!=null){ try{ localStorage.setItem('sw_supporter', v?'1':'0'); }catch(e){} SUP.render(); }
+      return {supporter:supporterPack(), signedIn:(window.Sunbeam&&Sunbeam._snapshot)?Sunbeam._snapshot().signedIn:null,
+        costumes:CHARS.filter(function(c){return charIsCostume(c);}).map(function(c){return c.id+':'+(charOwned(c.id)?1:0);}).join(','),
+        music:(function(){var o=[];for(var i=0;i<MUSIC.length;i++)o.push(MUSIC[i].id+':'+(musOwned(MUSIC[i].id)?1:0));return o.join(',');})()}; },
+    supScreen:function(){ SUP.render(); return { auth:$('sup-auth').style.display, buy:$('sup-buywrap').style.display, thanks:$('sup-thanks').style.display }; },
     poseFor:function(set){ for(var k in set) G[k]=set[k]; render(); return heroPose(G.hop?G.hop.t/G.hop.dur:0); }
   };
 }

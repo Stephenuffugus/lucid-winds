@@ -65,6 +65,14 @@ export const nowCreateInvoice = onCall(
       slotIndex = cur + 1
     }
 
+    // Supporter pack: one per account, server-derived.
+    if (type === 'supporter_pack') {
+      const vaultDoc = await db.collection('vaults').doc(uid).get()
+      if (vaultDoc.exists && vaultDoc.data().sw_supporter) {
+        throw new HttpsError('failed-precondition', 'You are already a supporter. Thank you!')
+      }
+    }
+
     // Bloom bundles: ownership is server-derived from the vault. Owning full
     // blocks both; owning half re-prices full to the $5 completion.
     let halfOwned = false
