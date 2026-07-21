@@ -72,6 +72,19 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#16220f; border:1px solid var(--line); color:var(--sage); font-weight:800; font-size:13px; margin-top:8px}
+/* ===== intro cinematic ===== */
+#s-intro{ background:#05070a; overflow:hidden; }
+#intro-img{ position:absolute; inset:-7%; background:#0b1018 center/cover no-repeat; background-image:radial-gradient(120% 80% at 50% 30%, #16283a, #05070a 75%); will-change:transform,opacity; }
+#intro-img.kb{ animation:sh-kb 6s ease-out both; }
+@keyframes sh-kb{ from{ transform:scale(1.0) translate(0,0);} to{ transform:scale(1.12) translate(-2.5%,-1.5%);} }
+#intro-rain{ position:absolute; inset:0; pointer-events:none; opacity:.45; mix-blend-mode:screen;
+  background-image:repeating-linear-gradient(74deg, rgba(180,205,235,0) 0 9px, rgba(180,205,235,.22) 9px 10px, rgba(180,205,235,0) 10px 24px);
+  animation:sh-rain .55s linear infinite; }
+@keyframes sh-rain{ from{ background-position:0 0;} to{ background-position:-70px 230px;} }
+#intro-fade{ position:absolute; inset:0; background:#05070a; opacity:0; transition:opacity .34s ease; pointer-events:none; }
+#intro-cap{ position:absolute; left:0; right:0; bottom:118px; text-align:center; color:#f5ebd0; font-size:20px; font-weight:700;
+  line-height:1.42; padding:0 30px; text-shadow:0 2px 12px #000, 0 0 2px #000; opacity:0; transition:opacity .5s ease; }
+#intro-nav{ position:absolute; left:0; right:0; bottom:34px; display:flex; justify-content:center; gap:12px; z-index:5; }
 </style>
 </head>
 <body>
@@ -111,6 +124,18 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="foot" id="buildstamp"></div>
   </div></div>
 
+  <!-- INTRO CINEMATIC (plays Stephen's Midjourney frames + hero; stylized fallback if absent) -->
+  <div class="screen" id="s-intro">
+    <div id="intro-img"></div>
+    <div id="intro-rain"></div>
+    <div id="intro-fade"></div>
+    <div id="intro-cap"></div>
+    <div id="intro-nav">
+      <button class="btn ghost sm" id="intro-skip">Skip ▸</button>
+      <button class="btn primary" id="intro-next" style="display:none">Let's hop →</button>
+    </div>
+  </div>
+
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
@@ -132,7 +157,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Screen shake</span><div class="toggle on" id="tg-shake"><b></b></div></div>
     <div class="settingline"><span>Colorblind cues</span><div class="toggle" id="tg-cb"><b></b></div></div>
-    <div style="height:8px"></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="set-intro" style="max-width:400px;margin:0 auto 10px">▶ Watch the intro</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -668,6 +694,34 @@ function onKey(e){ if(curScreen!=='s-play')return; var k=e.key;
   else if(k==='ArrowRight'||k==='d'||k==='D'){ queueHop('right'); e.preventDefault(); }
 }
 
+/* ===== intro cinematic — plays image frames (assets/intro/intro-N.jpg) with a
+   stylized gradient fallback, so it works now and Stephen's Midjourney frames +
+   Jimothy hero drop straight in. ===== */
+var INTRO=[
+  { img:'assets/intro/intro-1.jpg', cap:"Meet Jimothy. Seattle's most beloved, most deformed raccoon." },
+  { img:'assets/intro/intro-2.jpg', cap:"Word on the street: the greatest dumpster feast the city has ever seen." },
+  { img:'assets/intro/intro-3.jpg', cap:"But between Jimothy and dinner? The whole rainy city, and all its traffic." },
+  { img:'assets/intro/intro-4.jpg', cap:"One hop at a time, little buddy. Let's get you across." }
+];
+var introI=-1, introTimer=null;
+function playIntro(){ introI=-1; show('s-intro'); ac(); nextIntroBeat(); }
+function nextIntroBeat(){
+  if(introTimer){ clearTimeout(introTimer); introTimer=null; }
+  introI++;
+  if(introI>=INTRO.length){ endIntro(); return; }
+  var b=INTRO[introI], fade=$('intro-fade'), img=$('intro-img'), cap=$('intro-cap'), nxt=$('intro-next');
+  fade.style.opacity='1'; cap.style.opacity='0';
+  setTimeout(function(){
+    img.style.backgroundImage="url('"+b.img+"'), radial-gradient(120% 80% at 50% 30%, #16283a, #05070a 75%)";
+    img.classList.remove('kb'); void img.offsetWidth; img.classList.add('kb');
+    fade.style.opacity='0'; cap.textContent=b.cap; cap.style.opacity='1';
+  }, 340);
+  nxt.style.display=(introI===INTRO.length-1)?'':'none';
+  if(introI<INTRO.length-1){ introTimer=setTimeout(nextIntroBeat, 3700); }
+  sfx('phew');
+}
+function endIntro(){ if(introTimer){ clearTimeout(introTimer); introTimer=null; } try{ LS.set('sh_seenintro','1'); }catch(e){} show('s-title'); }
+
 function boot(){
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
@@ -686,6 +740,10 @@ function boot(){
   tap('b-zen', function(){ newGame('zen'); });
   tap('b-skins', function(){ renderSkins(); show('s-skins'); });
   tap('b-how', function(){ show('s-how'); });
+  tap('intro-skip', endIntro);
+  tap('intro-next', endIntro);
+  tap('set-intro', function(){ playIntro(); });
+  var si=$('s-intro'); if(si) si.addEventListener('pointerdown', function(e){ if(e.target.closest('#intro-nav'))return; ac(); nextIntroBeat(); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
   tap('how-back', function(){ show('s-title'); });
@@ -698,6 +756,8 @@ function boot(){
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
   $('buildstamp').textContent='Stream Hop '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
+  // first-visit: roll the intro cinematic before the title
+  if(!LS.get('sh_seenintro')){ playIntro(); }
 }
 
 /* ===== Sky Wolf embed + sunbeam ===== */
