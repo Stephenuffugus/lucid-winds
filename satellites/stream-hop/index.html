@@ -72,6 +72,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#16220f; border:1px solid var(--line); color:var(--sage); font-weight:800; font-size:13px; margin-top:8px}
+/* Adventure level select */
+.lv-head{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:460px; margin:0 auto 6px}
+#lv-list{flex:1; width:100%; max-width:460px; margin:0 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 4px 24px}
+.lv-chap{color:var(--gold); font-size:12px; letter-spacing:3px; text-transform:uppercase; font-weight:800; margin:16px 6px 8px; opacity:.9}
+.lv-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+.lv-cell{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:64px; border-radius:14px; background:linear-gradient(180deg,#1b2a12,#152210); border:1px solid #2c4020; color:var(--cream); cursor:pointer; font-family:inherit}
+.lv-cell:active{transform:translateY(1px)}
+.lv-cell.locked{opacity:.45; background:#12160f; border-color:#20281a; cursor:default}
+.lv-cell.cur{border-color:var(--sage); box-shadow:0 0 0 2px #7ab35655}
+.lv-n{font-size:20px; font-weight:800}
+.lv-st{font-size:12px; color:var(--gold); letter-spacing:1px; line-height:1}
 /* ===== intro cinematic ===== */
 #s-intro{ background:#05070a; overflow:hidden; }
 #intro-img{ position:absolute; inset:-7%; background:#0b1018 center/cover no-repeat; background-image:radial-gradient(120% 80% at 50% 30%, #16283a, #05070a 75%); will-change:transform,opacity; }
@@ -112,25 +123,36 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Stream Hop</div>
+    <div class="title-word">Jimothy</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Hop across the midnight garden. Dodge the tumbling acorns, ride the drifting lily pads, and weave a <b class="hl">Bloom Trail</b> as you go. Every clean crossing banks a flower.</div>
+    <div class="ribbon">Help Jimothy the deformed Seattle raccoon cross the rainy city, level after level, to the greatest dumpster feast in town. Dodge the geese and rolling cans, ride the ferries, and grab every bottlecap.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-endless">🐸&nbsp; Endless Stream</button>
+      <button class="btn primary" id="b-adventure">🗺&nbsp; Adventure</button>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily</button>
+        <button class="btn sm" id="b-endless">♾ Endless</button>
         <button class="btn sm" id="b-rush">⏱ Rush</button>
         <button class="btn sm" id="b-zen">🍃 Zen</button>
       </div>
       <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily</button>
         <button class="btn sm" id="b-skins">🐾 Hoppers</button>
-        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
     <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- ADVENTURE LEVEL SELECT -->
+  <div class="screen" id="s-levels"><div class="pad" style="padding-top:16px">
+    <div class="lv-head">
+      <button class="btn ghost sm" id="lv-back" style="min-width:52px">◄</button>
+      <div class="title-sub" style="margin:0">Adventure</div>
+      <div class="pill" id="lv-stars">0 ★</div>
+    </div>
+    <div id="lv-list"></div>
   </div></div>
 
   <!-- INTRO CINEMATIC (plays Stephen's Midjourney frames + hero; stylized fallback if absent) -->
@@ -197,6 +219,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <button class="btn primary" id="go-retry">↻ Hop again</button>
       <div class="row">
         <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-levels" style="display:none">🗺 Levels</button>
         <button class="btn sm" id="go-share">↗ Share</button>
       </div>
     </div>
@@ -210,7 +233,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.2';
+var BUILD='v1.3';
 var curScreen='s-splash';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
@@ -219,20 +242,20 @@ var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return nul
 var SET={ sound:true, shake:true, cb:false };
 (function(){ try{ var s=JSON.parse(LS.get('sh_set')||'{}'); ['sound','shake','cb'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('sh_set', JSON.stringify(SET)); }
-var PROG={ best:{endless:0,daily:0,zen:0,rush:0}, flowers:0, skin:'toadling', unlocked:{toadling:1} };
-(function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; }catch(e){} })();
+var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1}, adv:{maxLevel:1, stars:{}} };
+(function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}}; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 
 /* hopper skins — cosmetic tints, unlock by best endless distance */
 var SKINS=[
   {id:'toadling',  name:'Toadling',  body:'#7ab356', belly:'#a7d17a', unlock:0,   eye:'#12200f'},
-  {id:'newtling',  name:'Newtling',  body:'#5b9bd5', belly:'#a7cdea', unlock:40,  eye:'#0e1a26'},
-  {id:'beetle',    name:'Button Bug', body:'#e5604d', belly:'#f2a394', unlock:90,  eye:'#2a0f0b'},
-  {id:'firefly',   name:'Firefly',   body:'#e8c65a', belly:'#f5e6a8', unlock:160,  eye:'#2a2208', glow:1},
-  {id:'sprout',    name:'Sprout',    body:'#c8a84b', belly:'#e8dcc8', unlock:260,  eye:'#2a2208'},
-  {id:'mossback',  name:'Mossback',  body:'#5c8f3f', belly:'#8fbf6a', unlock:380,  eye:'#0e1a0b'},
-  {id:'lantern',   name:'Lantern Snail', body:'#d98a4a', belly:'#f2c88a', unlock:520, eye:'#2a1608', glow:1},
-  {id:'skywolf',   name:'Sky Wolf Pup',  body:'#8a9db5', belly:'#d6e0ee', unlock:700, eye:'#12161f'}
+  {id:'newtling',  name:'Newtling',  body:'#5b9bd5', belly:'#a7cdea', unlock:40,  advUnlock:3,  eye:'#0e1a26'},
+  {id:'beetle',    name:'Button Bug', body:'#e5604d', belly:'#f2a394', unlock:90,  advUnlock:6,  eye:'#2a0f0b'},
+  {id:'firefly',   name:'Firefly',   body:'#e8c65a', belly:'#f5e6a8', unlock:160,  advUnlock:10, eye:'#2a2208', glow:1},
+  {id:'sprout',    name:'Sprout',    body:'#c8a84b', belly:'#e8dcc8', unlock:260,  advUnlock:14, eye:'#2a2208'},
+  {id:'mossback',  name:'Mossback',  body:'#5c8f3f', belly:'#8fbf6a', unlock:380,  advUnlock:20, eye:'#0e1a0b'},
+  {id:'lantern',   name:'Lantern Snail', body:'#d98a4a', belly:'#f2c88a', unlock:520, advUnlock:28, eye:'#2a1608', glow:1},
+  {id:'skywolf',   name:'Sky Wolf Pup',  body:'#8a9db5', belly:'#d6e0ee', unlock:700, advUnlock:36, eye:'#12161f'}
 ];
 function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id)return SKINS[i]; return SKINS[0]; }
 
@@ -255,7 +278,7 @@ var ZONES=[
   {name:'Interbay',       safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6}
 ];
 var ZONE_LEN=26;
-function zoneIdx(r){ return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
+function zoneIdx(r){ if(G&&G.mode==='adventure') return advZoneIdx(advLevelOfRow(r)); return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
 function zoneAt(r){ return ZONES[zoneIdx(r)]; }
 
 /* ===== sprite images — Jimothy art pack. EVERY draw keeps a procedural fallback,
@@ -301,30 +324,55 @@ function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(m
 function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 
 /* ===== game state ===== */
-var G=null, cv, ctx, running=false, lastTs=0;
-function newGame(mode){
+var G=null, cv, ctx, running=false, lastTs=0, advRetryLevel=1;
+function newGame(mode, startLevel){
   var seed, rng;
   if(mode==='daily'){ var d=new Date(); seed=(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0; rng=mkRng(seed); }
   else { seed=(Date.now()>>>0)^(Math.floor(Math.random()*1e9)); rng=mkRng(seed); }
+  var advL=(mode==='adventure')?Math.max(1,startLevel||1):0;
+  var startRow=advL>1?(advL-1)*ADV_LEN:0;
+  if(mode==='adventure') advRetryLevel=advL;
   G={ mode:mode, rng:rng, lanes:{}, maxGen:-1, band:'safe', bandLeft:3, afterHazard:false, lastType:'safe',
-      cr:{ r:0, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play',
+      cr:{ r:startRow, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play',
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
-      chaseR:-6, chaseSpd: (mode==='zen'||mode==='rush')?0:0.28, clock: mode==='rush'?60:0, t:0, parts:[], floats:[], ride:null, coyote:0,
+      chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:0.28, clock: mode==='rush'?60:0, t:0, parts:[], floats:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, skin:skinById(PROG.skin), started:false,
-      shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6},
+      shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
+      level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
+  if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,t:2.6};
   // camera init
   G.camY = G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
-  genUpTo(20);
+  genUpTo(startRow+20);
+  if(mode==='adventure') G.levelBanner={ n:advL, name:advChapterName(advL), t:2.8 };
   show('s-play');
 }
 
 /* ===== lane generation (sequential, deterministic per run) ===== */
-function diffAt(r){ return Math.min(9, r/26); }
+/* ===== ADVENTURE campaign — never-ending, level after level (classic Frogger feel).
+   Levels are fixed 16-row stretches; each is one of 5 Seattle neighborhoods (a
+   chapter = 6 levels). Difficulty ramps by level. Each level scores up to 3 stars:
+   clear it / bank its flower goal / grab its coin goal. Clearing the furthest level
+   unlocks the next. Dying retries the CURRENT level (keep your unlocked progress). ===== */
+var ADV_LEN=16, ADV_CHAP=6;
+function advLevelOfRow(r){ return Math.floor(Math.max(0,r)/ADV_LEN)+1; }
+function advZoneIdx(n){ return Math.floor((n-1)/ADV_CHAP) % ZONES.length; }
+function advChapterName(n){ return ZONES[advZoneIdx(n)].name; }
+function advDiff(n){ return Math.min(9.5, 0.5 + (n-1)*0.5); }
+function advFlowerGoal(n){ return Math.min(9, 2+Math.floor(n/2)); }
+function advCoinGoal(n){ return Math.min(8, 2+Math.floor(n/3)); }
+function advStars(n){ return (PROG.adv.stars[n]||0); }
+function advStarCount(n){ var m=advStars(n),c=0; if(m&1)c++; if(m&2)c++; if(m&4)c++; return c; }
+function advTotalStars(){ var t=0; for(var k in PROG.adv.stars) t+=advStarCount(k); return t; }
+function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r)); return Math.min(9, r/26); }
 function makeLane(r){
   var rng=G.rng, d=diffAt(r), L={ r:r, ents:[] };
   // onboarding: first 3 rows always safe & calm
   if(r<3){ L.type='safe'; L.bank=(r===0); L.blocked={}; return L; }
+  // ADVENTURE: every level boundary is a safe "start line" bank — a fair launch + a
+  // clean checkpoint. Reset the band machine so the level's hazards start fresh.
+  if(G.mode==='adventure' && r%ADV_LEN===0){ G.band='safe'; G.bandLeft=1; G.lastType='safe';
+    L.type='safe'; L.bank=true; L.blocked={}; L.levelLine=advLevelOfRow(r); L.coin=(0.5+Math.floor(rng()*COLS))*TILE; return L; }
   if(G.bandLeft<=0){
     if(G.band==='safe'){ G.band='hazard'; G.bandLeft=Math.round(3+d*0.55+rng()*2); }
     else { G.band='safe'; G.bandLeft=1+(rng()<0.35?1:0); G.afterHazard=true; }
@@ -410,7 +458,8 @@ function finishHop(){
   // forward progress → combo + trail + score
   if(h.dir==='up'){
     if(G.cr.r>G.score){ G.score=G.cr.r; }
-    var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,t:2.4}; sfx('bank'); G.flash=Math.max(G.flash,0.25); }
+    if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
+    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,t:2.4}; sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
@@ -429,7 +478,51 @@ function collectPickups(lane){
   if(lane.coin!=null && Math.abs(G.cr.x-lane.coin)<cthr){ grabCoin(lane); }
   if(lane.power && Math.abs(G.cr.x-lane.power.x)<TILE*0.78){ var k=lane.power.kind; lane.power=null; applyPower(k); }
 }
-function grabCoin(lane){ lane.coin=null; var v=(G.magnetT>0?2:1); G.coins+=v; G.score+=v; float(G.cr.x,rowScreenY(G.cr.r)-18,'+'+v); sfx('coin'); }
+function grabCoin(lane){ lane.coin=null; var v=(G.magnetT>0?2:1); G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v; float(G.cr.x,rowScreenY(G.cr.r)-18,'+'+v); sfx('coin'); }
+/* completed level (newLevel-1): award stars, unlock the next, announce the next. */
+function advLevelUp(newLevel){
+  var done=newLevel-1;
+  if(done>=1){
+    var s=1; // ★ cleared
+    if((G.lvFlowers||0)>=advFlowerGoal(done)) s|=2;   // ★ flower goal
+    if((G.lvCoins||0)>=advCoinGoal(done)) s|=4;        // ★ coin goal
+    PROG.adv.stars[done]=(PROG.adv.stars[done]||0)|s;
+    if(newLevel>(PROG.adv.maxLevel||1)) PROG.adv.maxLevel=newLevel;
+    if(newLevel>(PROG.best.adventure||0)) PROG.best.adventure=newLevel;
+    saveProg();
+    // skin unlocks by furthest level reached
+    checkAdvUnlocks();
+  }
+  G.level=newLevel; G.lvFlowers=0; G.lvCoins=0;
+  G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:PROG.adv.stars[done]||0 };
+  G.flash=Math.max(G.flash,0.35); sfx('bank'); haptic(16);
+  float(G.cr.x, rowScreenY(G.cr.r)-30, 'LEVEL '+done+' ✓');
+}
+function checkAdvUnlocks(){ var lv=PROG.best.adventure||0;
+  SKINS.forEach(function(s){ if(s.advUnlock && !PROG.unlocked[s.id] && lv>=s.advUnlock){ PROG.unlocked[s.id]=1; saveProg(); setTimeout(function(){ toast('Befriended '+s.name+'!'); sfx('unlock'); },300); } });
+}
+function starStr(n){ var m=advStars(n); return (m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆'); }
+function renderLevels(){
+  var host=$('lv-list'); if(!host)return; host.innerHTML='';
+  var st=$('lv-stars'); if(st) st.textContent=advTotalStars()+' ★';
+  var maxLv=PROG.adv.maxLevel||1, maxShow=Math.max(30, maxLv+5), chapters=Math.ceil(maxShow/ADV_CHAP), curCell=null;
+  for(var c=0;c<chapters;c++){
+    var zi=c%ZONES.length, loop=Math.floor(c/ZONES.length);
+    var hdr=document.createElement('div'); hdr.className='lv-chap'; hdr.textContent=ZONES[zi].name+(loop>0?(' '+(loop+1)):''); host.appendChild(hdr);
+    var grid=document.createElement('div'); grid.className='lv-grid';
+    for(var i=0;i<ADV_CHAP;i++){ var n=c*ADV_CHAP+i+1; if(n>maxShow)break;
+      var unlocked=n<=maxLv;
+      var cell=document.createElement('button'); cell.className='lv-cell'+(unlocked?'':' locked')+(n===maxLv?' cur':'');
+      var top=document.createElement('div'); top.className='lv-n'; top.textContent=unlocked?n:'🔒'; cell.appendChild(top);
+      var sd=document.createElement('div'); sd.className='lv-st'; sd.textContent=unlocked?starStr(n):''; cell.appendChild(sd);
+      if(unlocked){ (function(nn){ cell.addEventListener('click',function(){ sfx('ui'); ac(); newGame('adventure',nn); }); })(n); }
+      if(n===maxLv)curCell=cell;
+      grid.appendChild(cell);
+    }
+    host.appendChild(grid);
+  }
+  if(curCell){ setTimeout(function(){ try{ curCell.scrollIntoView({block:'center'}); }catch(e){} },30); }
+}
 function applyPower(kind){
   G.powsGot++; var m=POWER_META[kind];
   if(kind==='umbrella'){ G.shield=true; }
@@ -441,7 +534,7 @@ function applyPower(kind){
 function bankBloom(){
   var val=Math.round(50 + G.combo*G.combo*4 + G.crossings*20);
   G.score+= Math.round(val/10);
-  G.flowers++; G.crossings++;
+  G.flowers++; G.crossings++; G.lvFlowers=(G.lvFlowers||0)+1;
   float(G.cr.x, rowScreenY(G.cr.r)-24, '✿ +'+val);
   var grade = G.combo>=14?'RARE BLOOM':G.combo>=8?'FINE BLOOM':'BLOOM';
   float(G.cr.x, rowScreenY(G.cr.r)-46, grade);
@@ -553,6 +646,7 @@ function step(dt){
   }
   // power-up timers
   if(G.zoneBanner && G.zoneBanner.t>0) G.zoneBanner.t-=dt;
+  if(G.levelBanner && G.levelBanner.t>0) G.levelBanner.t-=dt;
   if(G.dashT>0) G.dashT-=dt;
   if(G.magnetT>0){ G.magnetT-=dt;
     // magnet: sweep any coin on the row you're standing on into your paws
@@ -599,19 +693,31 @@ function die(cause){ if(!G||G.phase!=='play')return;
   setTimeout(gameOver, 780);
 }
 function gameOver(){ if(!G)return; G.phase='over'; running=false;
-  var best=PROG.best[G.mode]||0, isBest=G.score>best;
-  if(isBest){ PROG.best[G.mode]=G.score; }
+  var isBest=false;
+  if(G.mode!=='adventure'){ var best=PROG.best[G.mode]||0; isBest=G.score>best; if(isBest) PROG.best[G.mode]=G.score; }
   PROG.flowers=(PROG.flowers||0)+G.flowers;
   // unlock skins by endless best
   if(G.mode==='endless'){ SKINS.forEach(function(s){ if(!PROG.unlocked[s.id] && (PROG.best.endless||0)>=s.unlock){ PROG.unlocked[s.id]=1; setTimeout(function(){ toast('Befriended '+s.name+'!'); sfx('unlock'); },300); } }); }
   saveProg();
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25)); if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; } }catch(e){}
-  $('go-score').textContent=G.score;
-  $('go-lab').textContent=(G.mode==='daily'?"today's current":G.mode==='zen'?'rows (zen)':G.mode==='rush'?'rows in 60 seconds':'rows crossed');
-  $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
+  var rb=$('go-retry'), glv=$('go-levels');
+  if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
+  if(G.mode==='adventure'){
+    advRetryLevel=G.level;
+    $('go-emoji').textContent='🦝';
+    $('go-score').textContent=G.level;
+    $('go-lab').textContent=advChapterName(G.level)+' · Level '+G.level;
+    $('go-best').textContent='Furthest Lv '+(PROG.best.adventure||G.level)+' · '+advTotalStars()+'★';
+    if(rb) rb.textContent='↻ Retry Level '+G.level;
+  } else {
+    $('go-emoji').textContent=isBest?'🏅':'🥀';
+    $('go-score').textContent=G.score;
+    $('go-lab').textContent=(G.mode==='daily'?"today's current":G.mode==='zen'?'rows (zen)':G.mode==='rush'?'rows in 60 seconds':'rows crossed');
+    $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
+    if(rb) rb.textContent='↻ Hop again';
+  }
   $('go-flowers').textContent=G.flowers;
   $('go-trail').textContent=G.longest;
-  $('go-emoji').textContent=isBest?'🏅':'🥀';
   $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   setTimeout(function(){ show('s-go'); }, 40);
 }
@@ -658,12 +764,23 @@ function render(){ if(!ctx||!G)return;
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   // HUD
-  ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 46);
-  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY CURRENT':G.mode==='zen'?'ZEN MEADOW':G.mode==='rush'?'ROWS':'ROWS', 20, 62);
+  if(G.mode==='adventure'){
+    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText('Lv '+G.level, 18, 44);
+    ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(advChapterName(G.level).toUpperCase(), 20, 59);
+    // live star-goal chips (known targets = the mastery chase)
+    var fg=advFlowerGoal(G.level), cg=advCoinGoal(G.level);
+    ctx.font='700 12px system-ui';
+    ctx.fillStyle=((G.lvFlowers||0)>=fg)?'#7ab356':'#8a9178'; ctx.fillText('✿ '+(G.lvFlowers||0)+'/'+fg, 20, 76);
+    ctx.fillStyle=((G.lvCoins||0)>=cg)?'#e8c65a':'#8a9178'; ctx.fillText('● '+(G.lvCoins||0)+'/'+cg, 84, 76);
+  } else {
+    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 46);
+    ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY CURRENT':G.mode==='zen'?'ZEN MEADOW':'ROWS', 20, 62);
+  }
   if(G.mode==='rush'){ ctx.textAlign='center'; var cl=Math.max(0,G.clock); ctx.fillStyle=cl<=10?'#e5604d':'#f5ebd0'; ctx.font='800 34px system-ui'; ctx.fillText(cl.toFixed(1)+'s', VW/2, 46); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('RUSH HOUR', VW/2, 62); ctx.textAlign='left'; }
   if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-18, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-18, 60); }
   drawPowerHud();
   drawZoneBanner();
+  drawLevelBanner();
 }
 function drawZoneBanner(){
   if(!G||!G.zoneBanner||G.zoneBanner.t<=0)return;
@@ -671,6 +788,19 @@ function drawZoneBanner(){
   ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('NOW ENTERING', VW/2, VH*0.22-16);
   ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8; ctx.fillText(G.zoneBanner.name, VW/2, VH*0.22+14);
+  ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
+}
+function drawLevelBanner(){
+  if(!G||!G.levelBanner||G.levelBanner.t<=0)return;
+  var lb=G.levelBanner, t=lb.t, a=Math.min(1, t<0.4?t/0.4 : (t>2.0?(2.4-t)/0.4 : 1));
+  ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
+  // the level you just cleared → show its earned stars briefly
+  if(lb.done>=1){ var got=0,m=lb.stars||0; if(m&1)got++; if(m&2)got++; if(m&4)got++;
+    ctx.font='800 15px system-ui'; ctx.fillStyle='#f2d98a'; ctx.fillText('LEVEL '+lb.done+' CLEARED', VW/2, VH*0.22-40);
+    ctx.font='20px system-ui'; ctx.fillText((m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆'), VW/2, VH*0.22-16); }
+  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('LEVEL '+lb.n+' · '+(lb.name||''), VW/2, VH*0.22+8);
+  ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
+  ctx.fillText(lb.name||('Level '+lb.n), VW/2, VH*0.22+36);
   ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
 }
 function drawPowerHud(){
@@ -694,6 +824,9 @@ function drawRow(r){
   if(L.type==='safe'){
     ctx.fillStyle=Z.safe[r%2]; ctx.fillRect(0,top,VW,TILE);
     if(L.bank){ ctx.fillStyle='rgba(200,168,75,0.10)'; ctx.fillRect(0,top,VW,TILE); }
+    if(L.levelLine){ ctx.fillStyle='rgba(200,168,75,0.14)'; ctx.fillRect(0,top,VW,TILE);
+      ctx.strokeStyle='rgba(232,220,200,0.55)'; ctx.lineWidth=2; ctx.setLineDash([11,8]); ctx.beginPath(); ctx.moveTo(0,top+3); ctx.lineTo(VW,top+3); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LEVEL '+L.levelLine, VW/2, top+TILE-5); ctx.textAlign='left'; }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
@@ -904,6 +1037,8 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  tap('b-adventure', function(){ renderLevels(); show('s-levels'); });
+  tap('lv-back', function(){ show('s-title'); });
   tap('b-endless', function(){ newGame('endless'); });
   tap('b-daily', function(){ newGame('daily'); });
   tap('b-rush', function(){ newGame('rush'); });
@@ -919,7 +1054,8 @@ function boot(){
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
-  tap('go-retry', function(){ newGame(G?G.mode:'endless'); });
+  tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
+  tap('go-levels', function(){ renderLevels(); show('s-levels'); });
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
