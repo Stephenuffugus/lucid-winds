@@ -552,7 +552,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/veh-skater','sprites/veh-foodtruck','sprites/veh-trolleybus',
   'sprites/rail-lightrail','sprites/rail-monorail','sprites/haz-dog','sprites/haz-raccoon',
   'sprites/prop-recyclebin','sprites/prop-produce','sprites/prop-coffeecart',
-  'sprites/haz-crowdive','chars/seagull/leap','sprites/prop-steam'];
+  'sprites/haz-crowdive','chars/seagull/leap','sprites/prop-steam',
+  'sprites/haz-otterswim','sprites/haz-heronwade','sprites/haz-pigeons'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
   var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
@@ -705,6 +706,14 @@ function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
   // scenery only, never collides: a manhole sunk in the asphalt
   if(rng()<0.20) L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:'sprites/deco-manhole', h:TILE*0.72 };
+  // steam alley: no traffic at all, but three manholes venting on a stagger. You
+  // cross this one on rhythm, not on gaps — a different read from every other lane.
+  if(d>3.2 && rng()<0.10){
+    L.vents=[]; var vn=2+Math.floor(rng()*2), used={};
+    for(var vi=0; vi<vn; vi++){ var vc=Math.floor(rng()*COLS); while(used[vc]) vc=(vc+1)%COLS; used[vc]=1;
+      L.vents.push({ x:(vc+0.5)*TILE, ph:rng()*2.6, per:2.6+rng()*0.9 }); }
+    L.speed=0; L.spacing=1; L.span=1; return;
+  }
   // train lane: one long, fast train with a big gap — wait for the gap, then dash
   if(d>3.5 && rng()<0.14){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
     var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
@@ -733,8 +742,9 @@ function buildRoad(L,d){
 }
 function buildWater(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
-  // scenery only: a salmon running the channel underneath the crossing
-  if(rng()<0.18) L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:'sprites/deco-salmon', h:TILE*0.52 };
+  // scenery only: something living in the channel under the crossing
+  if(rng()<0.24){ var wd=['sprites/deco-salmon','sprites/haz-otterswim','sprites/haz-heronwade'];
+    L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:wd[Math.floor(rng()*wd.length)], h:TILE*0.56 }; }
   // ferry lane: big slow rafts drifting across the Sound — a wider, calmer ride
   if(d>2.4 && rng()<0.22){
     L.ferry=true; L.speed=(24+d*5+rng()*14)*(G.mode==='zen'?0.58:1);
@@ -1068,7 +1078,13 @@ function step(dt){
       var hit=false, nearGap=1e9;
       for(var j=0;j<lane.ents.length;j++){ var o=lane.ents[j]; var dx=Math.abs(o.x-G.cr.x); var thr=(o.w+G.cr.w)/2*0.72;
         if(dx<thr){ hit=true; break; } if(dx<nearGap)nearGap=dx; }
-      if(hit && G.vestT<=0) die('squish');
+      // a vent only catches you while it is actually blasting
+      var vented=false;
+      if(lane.vents){ for(var vv=0;vv<lane.vents.length;vv++){ var V=lane.vents[vv];
+        if(ventPhase(V)>0.55 && Math.abs(V.x-G.cr.x)<28){ vented=true; break; } } }
+      if(G.vestT>0){ /* hi vis: the street cannot touch you */ }
+      else if(vented) die('steam');
+      else if(hit) die('squish');
       else if(nearGap< (G.cr.w)*0.9 && !G.near[G.cr.r]){ G.near[G.cr.r]=1; sfx('phew'); float(G.cr.x, rowScreenY(G.cr.r)-16,'phew'); G.shake=Math.max(G.shake,4); }
     }
   }
@@ -1398,6 +1414,7 @@ function drawRow(r){
     laneTex(L.train?'lanes/rail2':('lanes/road-'+(Z.tex||'waterfront')), top, L.train?0.80:0.62);
     ctx.strokeStyle='rgba(200,168,75,0.18)'; ctx.lineWidth=2; ctx.setLineDash([12,14]); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); ctx.setLineDash([]);
     if(L.deco) drawSprite(L.deco.n, L.deco.x, y+3, L.deco.h, {a:0.85});
+    if(L.vents) drawVents(L, y);
     for(var e=0;e<L.ents.length;e++){ drawObstacle(L.ents[e], y, L.dir); }
     if(SET.cb){ ctx.fillStyle='rgba(229,96,77,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   } else { // water
@@ -1431,6 +1448,23 @@ function drawPowerFx(x,y){
   if(G.shield){ ctx.save(); ctx.globalAlpha=0.35+0.15*Math.sin(G.t*6); ctx.strokeStyle='#a7cdea'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y-4,26,0,7); ctx.stroke(); ctx.globalAlpha=0.14; ctx.fillStyle='#a7cdea'; ctx.beginPath(); ctx.arc(x,y-4,26,0,7); ctx.fill(); ctx.restore(); }
   if(G.dashT>0){ ctx.save(); ctx.globalAlpha=0.5; ctx.strokeStyle='#f0c98a'; ctx.lineWidth=2; for(var i=0;i<3;i++){ var oy=y-2+i*7-7; ctx.beginPath(); ctx.moveTo(x-20-i*4,oy); ctx.lineTo(x-34-i*6,oy); ctx.stroke(); } ctx.restore(); if(Math.random()<0.5)G.parts.push({x:x-14,y:y-6,vx:-80-Math.random()*60,vy:(Math.random()-0.5)*30,life:0.4,col:'#e9cfa0'}); }
   if(G.magnetT>0){ ctx.save(); ctx.globalAlpha=0.3+0.15*Math.sin(G.t*7); ctx.strokeStyle='#b6e08a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y-4,22+2*Math.sin(G.t*5),0,7); ctx.stroke(); ctx.restore(); }
+}
+/* 0 while the vent is quiet, rises through the hiss, >0.55 is the blast that kills */
+function ventPhase(v){ var t=((G.t+v.ph)%v.per)/v.per; return t<0.62?0:(t-0.62)/0.38; }
+function drawVents(L,y){
+  for(var i=0;i<L.vents.length;i++){ var v=L.vents[i], p=ventPhase(v);
+    drawSprite('sprites/deco-manhole', v.x, y+4, TILE*0.68, {a:0.9});
+    if(p<=0){ // quiet, but always readable as a vent: a faint shimmer
+      ctx.save(); ctx.globalAlpha=0.22; ctx.strokeStyle='#cfd8dd'; ctx.lineWidth=1.4;
+      for(var s=0;s<2;s++){ ctx.beginPath(); ctx.arc(v.x, y-6-s*7, 5+s*3, Math.PI*1.15, Math.PI*1.85); ctx.stroke(); }
+      ctx.restore(); continue; }
+    var grow=Math.min(1,p*1.6);
+    if(p<0.55){ ctx.save(); ctx.globalAlpha=0.35+0.4*grow; ctx.strokeStyle='#e8eef2'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(v.x, y, 16+10*grow, 0, 7); ctx.stroke(); ctx.restore(); }   // telegraph ring
+    if(!drawSprite('sprites/prop-steam', v.x, y-TILE*0.30*grow, TILE*(0.7+1.15*grow), {a:Math.min(1,0.5+p)})){
+      ctx.save(); ctx.globalAlpha=0.5*grow; ctx.fillStyle='#dfe6ea';
+      ctx.beginPath(); ctx.ellipse(v.x, y-14*grow, 14*grow, 26*grow, 0, 0, 7); ctx.fill(); ctx.restore(); }
+  }
 }
 function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='train'){ var hw=e.w*0.5, hh=TILE*0.32;
