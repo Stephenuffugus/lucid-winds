@@ -116,6 +116,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .sup-heart{color:#e58fa0}
 #s-pause{background:rgba(5,8,5,0.86)}
 #s-clear{background:linear-gradient(180deg, rgba(10,14,9,0.97), rgba(6,9,6,0.99))}
+@keyframes sharePulse{0%,100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}50%{box-shadow:0 0 0 5px rgba(200,168,75,.28)}}
+.btn.pulse{border-color:var(--gold); animation:sharePulse 1.6s ease-in-out infinite}
 @keyframes clPop{from{opacity:0;transform:scale(.2) rotate(-7deg)}60%{opacity:1;transform:scale(1.13) rotate(2.5deg)}to{opacity:1;transform:none}}
 @keyframes clWiggle{0%,100%{transform:rotate(-1.7deg)}50%{transform:rotate(1.7deg)}}
 #s-clear.on .title-sub{animation:sh-rise .5s cubic-bezier(.22,.9,.28,1) both .1s}
@@ -537,6 +539,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
     <div class="stack">
+      <button class="btn ghost sm" id="go-install" style="display:none"><img class="bicon" data-g="ui/glyph-install" style="width:30px;height:30px" alt="">Put Jimothy on your home screen</button>
       <button class="btn primary" id="go-continue" style="display:none">▶ Keep going</button>
       <button class="btn primary" id="go-retry">↻ Hop again</button>
       <div class="row">
@@ -579,7 +582,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.2';
+var BUILD='v4.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -606,7 +609,7 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
-  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0,
+  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1}, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
@@ -617,6 +620,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked;
   if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
   if(typeof p.bestStreak==='number')PROG.bestStreak=p.bestStreak;
+  if(typeof p.lastBonusDay==='number')PROG.lastBonusDay=p.lastBonusDay;
   if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1}; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
@@ -1069,6 +1073,7 @@ function laneAt(r){ if(r<0)return {r:r,type:'safe',ents:[],blocked:{}}; genUpTo(
 
 /* ===== input ===== */
 function queueHop(dir){ if(!G||G.phase!=='play')return;
+  if(G.resumeT>0)return; // countdown first
   if(G.celeb>0)return;   // savour the feast — the next level starts in a breath
   if(G.hop){ G.buf=dir; return; }
   startHop(dir);
@@ -1673,6 +1678,10 @@ function bankRun(){
   PROG.flowers=(PROG.flowers||0)+Math.max(0, G.flowers-(G.flowersPaid||0)); G.flowersPaid=G.flowers;
   PROG.caps=(PROG.caps||0)+Math.max(0, G.coins-(G.capsPaid||0)); G.capsPaid=G.coins;
   PROG.capsEver=(PROG.capsEver||0)+Math.max(0, G.coins-(G.capsEverPaid||0)); G.capsEverPaid=G.coins;
+  // first real run of the day pays a little welcome-back on top
+  var dayN=Math.floor(Date.now()/864e5);
+  if(PROG.lastBonusDay!==dayN && (G.score>0||G.coins>0)){ PROG.lastBonusDay=dayN;
+    PROG.caps=(PROG.caps||0)+15; G._dailyBonus=15; }
   if((PROG.capsEver||0)>=300) unlockSecret('richuncle','Old bottlecap money...');
   saveProg();
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25));
@@ -1692,6 +1701,10 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
       cbtn.disabled=false; if(rb)rb.classList.remove('primary'); }
     else { cbtn.style.display='none'; if(rb)rb.classList.add('primary'); } }
   deathCount++;
+  var gi=$('go-install');
+  if(gi){ var std=false; try{ std=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){}
+    if(deathCount===2 && !std && !LS.get('sh_instnudge')){ gi.style.display=''; LS.set('sh_instnudge','1'); }
+    else gi.style.display='none'; }
   if(deathCount%4===0){ try{ if(window.LW_ADS&&window.LW_ADS.interstitial) window.LW_ADS.interstitial(); }catch(e){} }
   if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
   if(G.mode==='adventure'){
@@ -1709,10 +1722,13 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
     $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
     if(rb) rb.textContent='↻ Hop again';
   }
+  var shb=$('go-share'); if(shb){ if(isBest && G.score>=15) shb.classList.add('pulse'); else shb.classList.remove('pulse'); }
   $('go-flowers').textContent=G.flowers;
   $('go-trail').textContent=G.longest;
-  $('go-caps').textContent=G.coins+'  (bank '+(PROG.caps||0)+')'+
-    (((PROG.caps||0)>=PULL_COST && binPool().length)?'  · bin ready':'');
+  var capsLine=G.coins+(G._dailyBonus?(' +'+G._dailyBonus+' daily'):'')+'  (bank '+(PROG.caps||0)+')';
+  if(binPool().length){ capsLine += ((PROG.caps||0)>=PULL_COST) ? '  · bin ready'
+      : ('  · '+(PULL_COST-(PROG.caps||0))+' to next critter'); }
+  $('go-caps').textContent=capsLine; G._dailyBonus=0;
   $('go-sun').innerHTML='<img src="assets/ui/glyph-sunbeam.png?a='+ARTV+'" style="width:22px;height:22px;vertical-align:-4px" alt="">'+
     (granted>0?(' +'+granted+' sunbeam'+(granted>1?'s':'')):' daily sun gathered');
   setTimeout(function(){ show('s-go'); }, 40);
@@ -1748,7 +1764,7 @@ function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
     : (G.score+' rows  ·  '+G.coins+' caps this run');
   sfx('ui'); show('s-pause');
 }
-function resumeRun(){ if(!G)return; sfx('ui'); show('s-play'); }
+function resumeRun(){ if(!G)return; sfx('ui'); if(G.phase==='play'&&G.started) G.resumeT=1.2; show('s-play'); }
 function quitRun(){ if(G) bankRun();   // walking away keeps everything you earned
   sfx('ui'); G=null; running=false; show('s-title'); }
 function toast(txt){ float(VW/2, 120, txt); }
@@ -1767,6 +1783,7 @@ function spawnFx(name,x,y,h,life){ if(!ART_ON||!G.fx||!imgReady(spr(name)))retur
    toward the camera (we see his face). Only this mapping + the camera flip. */
 function rowScreenY(r){ return (r*TILE) - G.camY; }
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05;
+  if(G && G.resumeT>0){ G.resumeT-=dt; render(); requestAnimationFrame(loop); return; }   // 3..2..1, breathe
   if(G && (G.phase==='play'||G.phase==='dying')) step(dt);
   else if(G){ for(var p=G.parts.length-1;p>=0;p--){ var pt=G.parts[p]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=340*dt; pt.life-=dt*1.7; if(pt.life<=0)G.parts.splice(p,1);} }
   render(); requestAnimationFrame(loop);
@@ -1832,6 +1849,12 @@ function render(){ if(!ctx||!G)return;
     if(drawSprite('ui/glyph-pizza', VW-118, 38, 26)) ctx.fillText(''+G.combo, VW-72, 44);
     else ctx.fillText('🍕 '+G.combo, VW-72, 44);
     ctx.font='700 11px Fredoka,system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('FEAST TRAIL', VW-72, 60); }
+  if(G.resumeT>0){ var rc=Math.ceil(G.resumeT/0.4);
+    ctx.save(); ctx.fillStyle='rgba(5,8,5,0.42)'; ctx.fillRect(0,0,VW,VH);
+    ctx.textAlign='center'; ctx.fillStyle='#f5ebd0'; ctx.font='800 92px Fredoka,system-ui';
+    ctx.shadowColor='#000'; ctx.shadowBlur=16; ctx.fillText(''+rc, VW/2, VH*0.44);
+    ctx.font='700 15px Fredoka,system-ui'; ctx.fillStyle='#a8b096'; ctx.shadowBlur=8;
+    ctx.fillText('get ready', VW/2, VH*0.44+38); ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore(); }
   drawFirstRunHint();
   drawPowerHud();
   drawZoneBanner();
@@ -2467,6 +2490,7 @@ function boot(){
   tap('go-levels', function(){ renderLevels(); show('s-levels'); });
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
+  tap('go-install', tryInstall);
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   // the music switch lives in Settings AND on the pause screen — keep both lit together
   function paintMusToggles(){ ['tg-music','tg-music-p'].forEach(function(id){ var el=$(id);
