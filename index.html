@@ -62671,9 +62671,11 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
   // Beta tester feedback collector. Posts to a Discord webhook when set,
   // otherwise copies to clipboard with explanation. Always backs up to
   // localStorage (lw_feedback) so feedback is never lost.
-  // To enable Discord delivery: set window.LW_FEEDBACK_WEBHOOK to your
-  // webhook URL (e.g. via dev panel or hardcode here for the beta).
-  window.LW_FEEDBACK_WEBHOOK = window.LW_FEEDBACK_WEBHOOK || 'https://discord.com/api/webhooks/1493357288147390574/XaFvrgDn3JhFfT3VxdNfiGAd_GY0LCbd-Qb1ve5Cxl9dXPZ-dBdMUbQgySqeaEdifC3w';
+  // Feedback rides the shared swFeedback cloud function: rate limited server
+  // side, archived in Firestore, forwarded to Discord from a SECRET webhook.
+  // Never put a Discord webhook URL in client code — this repo is public and
+  // the old one had to be rotated after it shipped here.
+  window.LW_FEEDBACK_URL = window.LW_FEEDBACK_URL || 'https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback';
 
   function _ctx(){
     // Snapshot what the player was looking at when they opened the form.
@@ -62790,14 +62792,14 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
       try{if(typeof gtag!=='undefined')gtag('event','feedback_submitted',{rating:rating,tags:tags.join(','),tab:c.tab,plants:c.plants});}catch(e){}
       // Try Discord webhook if configured.
       var sent=false;
-      if(window.LW_FEEDBACK_WEBHOOK){
-        var content='**'+(rating||'-')+'★** '+(tags.length?'`'+tags.join(', ')+'` ':'')+'\n'+
-          '> '+(msg||'(no message)').slice(0,1000)+'\n'+
-          '`'+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+(c.name?' · "'+c.name+'"':'')+'`';
+      if(window.LW_FEEDBACK_URL){
+        var body={ game:'lucid-winds',
+          msg:((rating?rating+' stars. ':'')+(tags.length?('['+tags.join(', ')+'] '):'')+(msg||'(no message)')).slice(0,2000),
+          meta:(c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+(c.name?' · "'+c.name+'"':'')).slice(0,600) };
         try{
-          fetch(window.LW_FEEDBACK_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:content})}).then(function(r){
+          fetch(window.LW_FEEDBACK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){
             if(r.ok)console.log('[LW] feedback delivered');
-          }).catch(function(e){console.warn('[LW] feedback webhook failed',e);});
+          }).catch(function(e){console.warn('[LW] feedback send failed',e);});
           sent=true;
         }catch(e){console.warn('[LW] feedback fetch threw',e);}
       }
