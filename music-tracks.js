@@ -99,7 +99,20 @@
     // matched public-domain Debussy turns up later, re-add it here.)
   ];
 
+  // ── UNLOCKED IN GAMES — the cross-game reward shelf. Games write earned
+  // tracks to localStorage 'sws_game_unlocks' ([{id,title,artist,src,game}]);
+  // anything found there joins the library on the next load. Unlock a song in
+  // Jimothy (or any future game), keep it in your studio player forever. ──
+  try{
+    var gu = JSON.parse(localStorage.getItem('sws_game_unlocks') || '[]');
+    var have = {}; for (var hi = 0; hi < window.LW_TRACKS.length; hi++) have[window.LW_TRACKS[hi].id] = 1;
+    for (var gj = 0; gj < gu.length; gj++) { var gt = gu[gj];
+      if (gt && gt.id && gt.src && !have[gt.id]) { have[gt.id] = 1;
+        window.LW_TRACKS.push({ id: gt.id, title: gt.title || gt.id, artist: gt.artist || 'Stephen',
+          mood: gt.game ? ('unlocked in ' + gt.game) : null, cat: 'Unlocked in Games', src: gt.src }); } }
+  } catch (e) {}
+
   // Drawer section order. Cats not listed here append after, first-seen order.
   // Empty cats don't render — these are pre-stubbed for future batches.
-  window.LW_TRACK_CATS = ['Originals','Classical','Ambient','Lo-fi','Nature'];
+  window.LW_TRACK_CATS = ['Originals','Unlocked in Games','Classical','Ambient','Lo-fi','Nature'];
 })();
