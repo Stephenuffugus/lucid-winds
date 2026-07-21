@@ -617,7 +617,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='32';
+var ARTV='33';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -815,8 +815,8 @@ function makeLane(r){
    the drawn width, and the lane gap is derived from it so wide traffic stays fair. */
 var OBS={
   acorn:{s:'sprites/obs-can',        w:44},
-  pod:{s:'sprites/obs-goose',        w:46},
-  hog:{s:'sprites/obs-rat',          w:50},
+  pod:{s:'sprites/obs-goose',        w:46, fl:1},
+  hog:{s:'sprites/obs-rat',          w:50, fl:1},
   bug:{s:'sprites/obs-trashbags',    w:46},
   cone:{s:'sprites/obs-cone',        w:40},
   barrier:{s:'sprites/obs-barrier',  w:48},
@@ -1557,6 +1557,9 @@ function render(){ if(!ctx||!G)return;
 
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // a whisper of dark behind the HUD so the counters survive a bright pad lane
+  var hgr=ctx.createLinearGradient(0,0,0,96); hgr.addColorStop(0,'rgba(6,9,6,0.60)'); hgr.addColorStop(1,'rgba(6,9,6,0)');
+  ctx.fillStyle=hgr; ctx.fillRect(0,0,VW,96);
   // HUD
   if(G.mode==='adventure'){
     ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText('Lv '+G.level, 18, 44);
@@ -1635,9 +1638,9 @@ function drawLevelBanner(){
   if(lb.done>=1){ var got=0,m=lb.stars||0; if(m&1)got++; if(m&2)got++; if(m&4)got++;
     ctx.font='800 15px system-ui'; ctx.fillStyle='#f2d98a'; ctx.fillText('LEVEL '+lb.done+' CLEARED', VW/2, VH*0.22-40);
     ctx.font='20px system-ui'; ctx.fillText((m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆'), VW/2, VH*0.22-16); }
-  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('LEVEL '+lb.n+' · '+(lb.name||''), VW/2, VH*0.22+8);
+  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText((lb.name||'').toUpperCase(), VW/2, VH*0.22+8);
   ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
-  ctx.fillText(lb.name||('Level '+lb.n), VW/2, VH*0.22+36);
+  ctx.fillText('Level '+lb.n, VW/2, VH*0.22+36);
   ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
 }
 function drawPowerHud(){
@@ -1668,7 +1671,7 @@ function drawRow(r){
     if(L.bank){ ctx.fillStyle='rgba(200,168,75,0.10)'; ctx.fillRect(0,top,VW,TILE); }
     if(L.levelLine){ ctx.fillStyle='rgba(200,168,75,0.14)'; ctx.fillRect(0,top,VW,TILE);
       ctx.strokeStyle='rgba(232,220,200,0.55)'; ctx.lineWidth=2; ctx.setLineDash([11,8]); ctx.beginPath(); ctx.moveTo(0,top+3); ctx.lineTo(VW,top+3); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px system-ui'; ctx.textAlign='center'; ctx.fillText('LEVEL '+L.levelLine, VW/2, top+TILE-5); ctx.textAlign='left'; }
+      ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px system-ui'; ctx.textAlign='right'; ctx.fillText('LEVEL '+L.levelLine, VW-12, top+TILE-5); ctx.textAlign='left'; }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
@@ -1743,12 +1746,16 @@ function drawVents(L,y){
       ctx.beginPath(); ctx.ellipse(v.x, y-14*grow, 14*grow, 26*grow, 0, 0, 7); ctx.fill(); ctx.restore(); }
   }
 }
-function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
+function drawObstacle(e,y,dir){
   if(e.kind==='train'){ var hw=e.w*0.5, hh=TILE*0.32;
-    if(drawSprite('sprites/rail-'+(e.rail||'lightrail'), e.x, y, 0, {w:e.w*1.02, flip:dir<0, bottom:26})){
+    // sprite path draws at ABSOLUTE coords — it must run before any translate.
+    // (It used to run inside a translate(e.x,y), which painted the train at twice
+    // its position: a lethal, completely invisible train with only its glow.)
+    if(drawSprite('sprites/rail-'+(e.rail||'lightrail'), e.x, y, 0, {w:e.w*1.02, flip:dir<0, bottom:26, hmax:TILE*1.9})){
       var tg=ctx.createRadialGradient(e.x+dir*(hw+8),y,1,e.x+dir*(hw+8),y,30);
       tg.addColorStop(0,'rgba(255,233,168,0.5)'); tg.addColorStop(1,'rgba(255,233,168,0)');
-      ctx.restore(); ctx.save(); ctx.fillStyle=tg; ctx.beginPath(); ctx.arc(e.x+dir*(hw+8),y,30,0,7); ctx.fill(); ctx.restore(); return; }
+      ctx.save(); ctx.fillStyle=tg; ctx.beginPath(); ctx.arc(e.x+dir*(hw+8),y,30,0,7); ctx.fill(); ctx.restore(); return; }
+    ctx.save(); ctx.translate(e.x,y);
     var lg=ctx.createRadialGradient(dir*(hw+8),0,1,dir*(hw+8),0,30); lg.addColorStop(0,'rgba(255,233,168,0.55)'); lg.addColorStop(1,'rgba(255,233,168,0)');
     ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(dir*(hw+8),0,30,0,7); ctx.fill();                 // leading headlight glow (telegraph)
     ctx.fillStyle='#2a2f3b'; ctx.fillRect(-hw,-hh,e.w,hh*2);                                       // body
@@ -1758,11 +1765,12 @@ function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
     ctx.fillStyle='#ffe9a8'; ctx.beginPath(); ctx.arc(dir*(hw-6),0,5,0,7); ctx.fill();             // headlight
     ctx.restore(); return;
   }
-  ctx.restore();
   // Jimothy obstacle sprites (rat / goose / rolling can / tumbling trash), face travel dir
-  // sized by WIDTH so the drawn vehicle matches the collision box the lane built
+  // sized by WIDTH so the drawn vehicle matches the collision box the lane built.
+  // om.fl marks base art that FACES LEFT (goose, rat) so the flip test inverts —
+  // without it they moonwalk: walking one way, facing the other.
   var om=OBS[e.kind];
-  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:dir<0, bottom:24})) return;
+  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:(om.fl?dir>0:dir<0), bottom:24})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
