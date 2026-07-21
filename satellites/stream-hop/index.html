@@ -361,7 +361,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.5';
+var BUILD='v2.6';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -391,6 +391,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
+var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
    Nobody loses anything: every one they had earned pays out as bottlecaps for the bin. */
 (function(){ if(PROG.v>=2) return;
@@ -661,6 +662,7 @@ function startHop(dir){
   if(dest.type==='safe' && dest.blocked){ var col=Math.round((dir==='left'||dir==='right'?toX:fromX)/TILE - 0.5); col=Math.max(0,Math.min(COLS-1,col)); if(dest.blocked[col]){ G.shake=Math.max(G.shake,3); return; } }
   G.hop={ t:0, dur:(G.dashT>0?0.105:0.17), fromR:fromR, toR:toR, fromX:fromX, toX:toX, dir:dir };
   G.ride=null; sfx('hop'); haptic(6);
+  if(!G.started && FIRST_RUN){ FIRST_RUN=false; LS.set('sh_hopped','1'); }
   G.started=true;
 }
 function finishHop(){
@@ -1086,9 +1088,21 @@ function render(){ if(!ctx||!G)return;
   if(G.mode==='rush'){ ctx.textAlign='center'; var cl=Math.max(0,G.clock); ctx.fillStyle=cl<=10?'#e5604d':'#f5ebd0'; ctx.font='800 34px system-ui'; ctx.fillText(cl.toFixed(1)+'s', VW/2, 46); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('RUSH HOUR', VW/2, 62); ctx.textAlign='left'; }
   // shifted left of the pause button, which owns the top right corner now
   if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-72, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-72, 60); }
+  drawFirstRunHint();
   drawPowerHud();
   drawZoneBanner();
   drawLevelBanner();
+}
+/* First run only, and only until the first hop: a lot of people are about to arrive
+   from a link with no idea what the controls are. Clears itself forever after one hop. */
+function drawFirstRunHint(){
+  if(!G || G.started || G.phase!=='play' || !FIRST_RUN) return;
+  var y=VH*0.70, a=Math.min(1, G.t*1.6);
+  ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
+  ctx.fillStyle='rgba(6,9,6,0.72)'; ctx.fillRect(0, y-40, VW, 78);
+  ctx.fillStyle='#f5ebd0'; ctx.font='800 19px system-ui'; ctx.fillText('Tap anywhere to hop forward', VW/2, y-10);
+  ctx.fillStyle='#a8b096'; ctx.font='700 13px system-ui'; ctx.fillText('Swipe or use the corner arrows to change lanes', VW/2, y+16);
+  ctx.textAlign='left'; ctx.restore();
 }
 /* the neighbourhood you are walking into, as a letterboxed card behind the name.
    Falls back to plain text if the strip has not loaded yet. */
