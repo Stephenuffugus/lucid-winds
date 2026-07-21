@@ -208,6 +208,20 @@ var POWER_META={
   trash:   { name:'Snacks',   col:'#7ab356', hi:'#b6e08a', dur:6.5 }            // Magnet: snacks fly in, double value
 };
 
+/* ===== zones (a run crosses named neighborhoods; palettes + hazard mix shift).
+   Names lean Seattle for Stephen's Jimothy reskin — trivially editable here.
+   wBias scales water frequency, xBias scales express (fast) lanes. ===== */
+var ZONES=[
+  {name:'The Waterfront', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
+  {name:'Pike Market',    safe:['#231f12','#28230f'], road:['#33291a','#38301c'], water:['#173a4a','#123240'], wBias:0.55, xBias:1.0},
+  {name:'Fremont',        safe:['#1e1a2a','#221d30'], road:['#2c2338','#31283c'], water:['#1a2f4a','#152840'], wBias:1.0,  xBias:0.9},
+  {name:'Capitol Hill',   safe:['#171518','#1b1920'], road:['#271a22','#2c1f28'], water:['#12303a','#0e2833'], wBias:0.7,  xBias:1.35},
+  {name:'Interbay',       safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6}
+];
+var ZONE_LEN=26;
+function zoneIdx(r){ return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
+function zoneAt(r){ return ZONES[zoneIdx(r)]; }
+
 /* ===== audio ===== */
 var AC=null; function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
 function beep(f,d,t,v,to){ if(!SET.sound)return; var c=ac(); if(!c)return; try{ var o=c.createOscillator(),g=c.createGain(); o.type=t||'sine'; o.frequency.value=f; if(to)o.frequency.exponentialRampToValueAtTime(to,c.currentTime+d); g.gain.value=v||0.05; g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+d); }catch(e){} }
@@ -238,7 +252,7 @@ function newGame(mode){
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
       chaseR:-6, chaseSpd: mode==='zen'?0:0.28, t:0, parts:[], floats:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, skin:skinById(PROG.skin), started:false,
-      shield:false, dashT:0, magnetT:0, powsGot:0 };
+      shield:false, dashT:0, magnetT:0, powsGot:0, zone:0, zoneBanner:{name:ZONES[0].name,t:2.6} };
   // camera init
   G.camY = -G.cr.r*TILE - VH*0.62; G.camYt=G.camY;
   genUpTo(20);
@@ -266,7 +280,7 @@ function makeLane(r){
     return L;
   }
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
-  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(0.5, 0.18+d*0.045));
+  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(0.55, (0.18+d*0.045)*zoneAt(r).wBias));
   if(wantWater){ L.type='water'; buildWater(L,d); }
   else { L.type='road'; buildRoad(L,d); }
   G.lastType=L.type;
@@ -274,7 +288,7 @@ function makeLane(r){
 }
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
-  var express=d>4 && rng()<0.22; L.express=express;
+  var express=d>4 && rng()<0.22*zoneAt(L.r).xBias; L.express=express;
   L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1); // px/s
   var kinds=['acorn','pod','hog','bug']; L.kind=kinds[Math.floor(rng()*kinds.length)];
   var w=(L.kind==='hog'?50:44); var gap=TILE*((express?2.4:1.7)+rng()*1.5); var spacing=w+gap;
@@ -319,6 +333,7 @@ function finishHop(){
   // forward progress → combo + trail + score
   if(h.dir==='up'){
     if(G.cr.r>G.score){ G.score=G.cr.r; }
+    var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,t:2.4}; sfx('bank'); G.flash=Math.max(G.flash,0.25); }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
@@ -396,6 +411,7 @@ function step(dt){
     }
   }
   // power-up timers
+  if(G.zoneBanner && G.zoneBanner.t>0) G.zoneBanner.t-=dt;
   if(G.dashT>0) G.dashT-=dt;
   if(G.magnetT>0){ G.magnetT-=dt;
     // magnet: sweep any coin on the row you're standing on into your paws
@@ -497,6 +513,15 @@ function render(){ if(!ctx||!G)return;
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY CURRENT':G.mode==='zen'?'ZEN MEADOW':'ROWS', 20, 62);
   if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-18, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-18, 60); }
   drawPowerHud();
+  drawZoneBanner();
+}
+function drawZoneBanner(){
+  if(!G||!G.zoneBanner||G.zoneBanner.t<=0)return;
+  var t=G.zoneBanner.t, a=Math.min(1, t<0.4?t/0.4 : (t>2.0?(2.4-t)/0.4 : 1));
+  ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
+  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('NOW ENTERING', VW/2, VH*0.22-16);
+  ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8; ctx.fillText(G.zoneBanner.name, VW/2, VH*0.22+14);
+  ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
 }
 function drawPowerHud(){
   if(!G)return; var items=[];
@@ -513,9 +538,9 @@ function drawPowerHud(){
 }
 function drawRow(r){
   var L=laneAt(r), y=rowScreenY(r); if(y<-TILE||y>VH+TILE)return;
-  var top=y-HALF;
+  var top=y-HALF, Z=zoneAt(r);
   if(L.type==='safe'){
-    ctx.fillStyle=(r%2===0)?'#16240f':'#182a11'; ctx.fillRect(0,top,VW,TILE);
+    ctx.fillStyle=Z.safe[r%2]; ctx.fillRect(0,top,VW,TILE);
     if(L.bank){ ctx.fillStyle='rgba(200,168,75,0.10)'; ctx.fillRect(0,top,VW,TILE); }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
@@ -524,12 +549,12 @@ function drawRow(r){
     if(L.coin!=null){ var cy=y; ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); }
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
-    ctx.fillStyle=(r%2===0)?'#2a2318':'#2f2a1c'; ctx.fillRect(0,top,VW,TILE);
+    ctx.fillStyle=Z.road[r%2]; ctx.fillRect(0,top,VW,TILE);
     ctx.strokeStyle='rgba(200,168,75,0.18)'; ctx.lineWidth=2; ctx.setLineDash([12,14]); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); ctx.setLineDash([]);
     for(var e=0;e<L.ents.length;e++){ drawObstacle(L.ents[e], y, L.dir); }
     if(SET.cb){ ctx.fillStyle='rgba(229,96,77,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   } else { // water
-    ctx.fillStyle=(r%2===0)?'#173a4a':'#123240'; ctx.fillRect(0,top,VW,TILE);
+    ctx.fillStyle=Z.water[r%2]; ctx.fillRect(0,top,VW,TILE);
     ctx.strokeStyle='rgba(127,182,207,0.16)'; ctx.lineWidth=1.5;
     for(var w=0;w<2;w++){ var wy=top+16+w*24+Math.sin(G.t*1.5+r+w)*2; ctx.beginPath(); ctx.moveTo(0,wy); for(var xx=0;xx<=VW;xx+=30){ ctx.lineTo(xx, wy+Math.sin(xx*0.08+G.t*2+r)*2); } ctx.stroke(); }
     for(var e2=0;e2<L.ents.length;e2++){ drawPad(L.ents[e2], y); }
