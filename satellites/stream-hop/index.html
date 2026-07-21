@@ -12,20 +12,20 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <title>Jimothy · Sky Wolf Studios</title>
-<meta name="description" content="Help Jimothy, Seattle's most beloved and most deformed raccoon, cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta name="description" content="Help Jimothy, Seattle's roundest and most beloved raccoon, cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <!-- share unfurl: a posted link has to sell the game on its own -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
-<meta property="og:title" content="Jimothy: Raccoon. Weird Shape. Big Adventure.">
-<meta property="og:description" content="Help Seattle's most beloved and most deformed raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta property="og:title" content="Jimothy: Little Round Raccoon. Big Adventure.">
+<meta property="og:description" content="Help Seattle's roundest and most beloved raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/stream-hop/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Jimothy the Seattle raccoon running down a Ballard street toward the Space Needle.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Jimothy: Raccoon. Weird Shape. Big Adventure.">
-<meta name="twitter:description" content="Help Seattle's most beloved and most deformed raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta name="twitter:title" content="Jimothy: Little Round Raccoon. Big Adventure.">
+<meta name="twitter:description" content="Help Seattle's roundest and most beloved raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy.jpg">
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
@@ -118,19 +118,19 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #s-title > .pad{ position:relative; z-index:2; }
 #s-title .title-sub{ text-shadow:0 1px 6px #000 }
 @keyframes sh-menu-drift{ from{ transform:scale(1.03) translateY(0); } to{ transform:scale(1.11) translateY(-2.5%); } }
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
-  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
-  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:74px; width:100%;
+  border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:20px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .1s cubic-bezier(.22,.9,.28,1), filter .14s ease, box-shadow .18s ease, border-color .2s ease, background .2s ease}
 .btn:hover{border-color:#3c5228; filter:brightness(1.05)}
 .btn:active{transform:translateY(2px) scale(.985); filter:brightness(1.14)}
 .btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a; box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
 .btn.primary:active{box-shadow:0 1px 0 #3f6b34, 0 3px 10px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:64px; font-size:17px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
-.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+.stack{display:flex; flex-direction:column; gap:13px; width:100%; max-width:448px; margin:0 auto}
 h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
@@ -236,7 +236,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Jimothy</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Help Jimothy the deformed Seattle raccoon cross the rainy city, level after level, to the greatest dumpster feast in town. Dodge the geese and rolling cans, ride the ferries, and grab every bottlecap.</div>
+    <div class="ribbon">Help Jimothy, Seattle's roundest and most beloved raccoon, cross the rainy city, level after level, to the greatest dumpster feast in town. Dodge the geese and rolling cans, ride the ferries, and grab every bottlecap.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-adventure">🗺&nbsp; Adventure</button>
@@ -414,7 +414,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.1';
+var BUILD='v3.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -573,14 +573,23 @@ var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'la
   'zonecard/capitol':1,'zonecard/interbay':1,'zonecard/locks':1};
 function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
-/* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn. */
+/* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn.
+   o.bottom anchors the sprite's BOTTOM edge o.bottom px below y instead of centering — boats,
+   vehicles and pads are 3/4-view art whose hull/wheels live at the frame bottom, so they sit
+   on their lane's ground line and any extra height rises INTO the rows behind (real depth),
+   instead of half the art being buried under the next row's background fill. */
 function drawSprite(name,x,y,h,o){ if(!ART_ON)return false; var im=spr(name); if(!imgReady(im))return false;
   o=o||{}; var asp=im.naturalWidth/im.naturalHeight, dw,dh;
   if(o.w){ dw=o.w; dh=o.w/asp; } else { dh=h; dw=h*asp; }
+  /* o.hmax: cap the derived height without giving up the collision-true width —
+     the flatten reads as camera foreshortening (a wide life ring becomes an
+     ellipse instead of a two-storey tower) */
+  if(o.hmax && dh>o.hmax) dh=o.hmax;
+  var ty = (o.bottom!=null) ? (o.bottom-dh) : (-dh/2+(o.anchor||0));
   ctx.save(); ctx.translate(x+(o.dx||0), y+(o.dy||0));
   if(o.flip)ctx.scale(-1,1); if(o.rot)ctx.rotate(o.rot); if(o.sx||o.sy)ctx.scale(o.sx||1,o.sy||1);
   if(o.a!=null)ctx.globalAlpha=o.a;
-  ctx.drawImage(im, -dw/2, -dh/2+(o.anchor||0), dw, dh); ctx.restore(); return true; }
+  ctx.drawImage(im, -dw/2, ty, dw, dh); ctx.restore(); return true; }
 var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/splash','hero/coffee','hero/magnet','hero/shield','hero/cheer',
   'hero/umbrella','hero/scared','hero/flee','hero/eat','hero/sit','hero/ko','hero/run-l','hero/run-r','hero/dash-run',
   'sprites/coin-cap','sprites/obs-can','sprites/obs-rat','sprites/obs-goose','sprites/obs-trashbags','sprites/obs-cone',
@@ -1463,16 +1472,21 @@ function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   ctx.save();
   if(SET.shake && G.shake>0.4){ var sk=G.shake*SHAKE_SCALE; ctx.translate((Math.random()*2-1)*sk,(Math.random()*2-1)*sk); }
-  // draw rows (behind → ahead)
+  // draw rows (behind → ahead), with the critter interleaved at his own row.
+  // Higher rows sit LOWER on screen, closer to the camera — anything in a row past
+  // his gets painted AFTER him, so a bus passing in front actually covers him
+  // instead of his body showing through it (Jessie's see-through report).
   var rlo=Math.floor(G.cr.r)-13, rhi=Math.floor(G.cr.r)+15; genUpTo(rhi);
-  for(var r=rlo;r<=rhi;r++){ drawRow(r); }
-  // trail (lantern-blooms)
+  var crRow=Math.max(rlo, Math.min(rhi, Math.round(critRowF())));
+  for(var r=rlo;r<=crRow;r++){ drawRow(r); }
+  // trail (lantern-blooms) — always on rows behind him, so painted before him
   for(var i=0;i<G.trail.length;i++){ var tr=G.trail[i]; var y=rowScreenY(tr.r); if(y<-40||y>VH+40)continue;
     var a=Math.min(1,tr.life)*0.9; ctx.globalAlpha=a; var gl=ctx.createRadialGradient(tr.x,y,1,tr.x,y,16); gl.addColorStop(0,'#ffe9a8'); gl.addColorStop(0.5,'#c8a84b'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(tr.x,y,16,0,7); ctx.fill();
     ctx.globalAlpha=a; ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(tr.x,y,3.2,0,7); ctx.fill();
   } ctx.globalAlpha=1;
-  // critter
+  // critter, then everything visually in front of him
   drawCritter();
+  for(var r2=crRow+1;r2<=rhi;r2++){ drawRow(r2); }
   // particles
   for(var p=0;p<G.parts.length;p++){ var pt=G.parts[p]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
   if(G.fx)for(var q2=0;q2<G.fx.length;q2++){ var f2=G.fx[q2], pr=f2.t/f2.life; drawSprite(f2.n, f2.x, f2.y, f2.h*(0.55+pr*0.7), {a:Math.max(0,1-pr*1.05)}); }
@@ -1674,7 +1688,7 @@ function drawVents(L,y){
 }
 function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='train'){ var hw=e.w*0.5, hh=TILE*0.32;
-    if(drawSprite('sprites/rail-'+(e.rail||'lightrail'), e.x, y, 0, {w:e.w*1.02, flip:dir<0})){
+    if(drawSprite('sprites/rail-'+(e.rail||'lightrail'), e.x, y, 0, {w:e.w*1.02, flip:dir<0, bottom:26})){
       var tg=ctx.createRadialGradient(e.x+dir*(hw+8),y,1,e.x+dir*(hw+8),y,30);
       tg.addColorStop(0,'rgba(255,233,168,0.5)'); tg.addColorStop(1,'rgba(255,233,168,0)');
       ctx.restore(); ctx.save(); ctx.fillStyle=tg; ctx.beginPath(); ctx.arc(e.x+dir*(hw+8),y,30,0,7); ctx.fill(); ctx.restore(); return; }
@@ -1691,7 +1705,7 @@ function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   // Jimothy obstacle sprites (rat / goose / rolling can / tumbling trash), face travel dir
   // sized by WIDTH so the drawn vehicle matches the collision box the lane built
   var om=OBS[e.kind];
-  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:dir<0})) return;
+  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:dir<0, bottom:24})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
@@ -1707,9 +1721,9 @@ var PADSPR={ log:'sprites/pad-log', pallet:'sprites/pad-pallet', dumpster:'sprit
   duckboat:'sprites/pad2-duckboat', dock:'sprites/pad2-dock',
   salmonback:'sprites/pad2-salmonback', otterback:'sprites/pad2-otterback' };
 function drawPad(e,y){
-  if(e.ferry){ if(drawSprite('sprites/pad2-barge', e.x, y, TILE, {w:e.w*1.02})) return;
-               if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04})) return; }
-  else { if(drawSprite(PADSPR[e.style]||'sprites/pad-log', e.x, y, TILE*0.9, {w:e.w*1.06})) return; }
+  if(e.ferry){ if(drawSprite('sprites/pad2-barge', e.x, y, TILE, {w:e.w*1.02, bottom:27, hmax:TILE*2.0})) return;
+               if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04, bottom:27, hmax:TILE*1.6})) return; }
+  else { if(drawSprite(PADSPR[e.style]||'sprites/pad-log', e.x, y, TILE*0.9, {w:e.w*1.06, bottom:26, hmax:TILE*1.5})) return; }
   ctx.save(); ctx.translate(e.x,y);
   if(e.ferry){ var hw=e.w*0.5;
     ctx.fillStyle='#33424f'; ctx.beginPath(); ctx.ellipse(0,7,hw,TILE*0.4,0,0,7); ctx.fill();               // hull
@@ -1737,6 +1751,10 @@ var POSE4={ idle:'idle', crouch:'crouch', leap:'leap', land:'land',
   'dash-run':'leap', 'run-l':'leap', 'run-r':'leap', flee:'leap',
   coffee:'idle', magnet:'idle', umbrella:'idle', scared:'idle', sit:'idle', eat:'idle', cheer:'idle',
   shield:'land', dizzy:'land', splash:'land', ko:'land' };
+/* the hero's row as a float, mid-hop included — his true spot in the painter's order */
+function critRowF(){ if(!G.hop) return G.cr.r;
+  var p=G.hop.t/G.hop.dur, pe=p*p*(3-2*p);
+  return G.hop.fromR+(G.hop.toR-G.hop.fromR)*pe; }
 function gullOnMe(){ return !!(G.gull && G.gull.phase==='warn' && Math.abs(G.gull.row-G.cr.r)<0.6); }
 function wiltClose(){ return G.started && G.mode!=='zen' && G.mode!=='rush' && (G.cr.r-G.chaseR)<2.4; }
 function heroPose(p){
@@ -1943,7 +1961,7 @@ function onKey(e){ var k=e.key;
    stylized gradient fallback, so it works now and Stephen's Midjourney frames +
    Jimothy hero drop straight in. ===== */
 var INTRO=[
-  { img:'assets/intro/intro-1.jpg', cap:"Meet Jimothy. Seattle's most beloved, most deformed raccoon." },
+  { img:'assets/intro/intro-1.jpg', cap:"Meet Jimothy. Seattle's roundest, most beloved raccoon." },
   { img:'assets/intro/intro-2.jpg', cap:"Word on the street: the greatest dumpster feast the city has ever seen." },
   { img:'assets/intro/intro-3.jpg', cap:"But between Jimothy and dinner? The whole rainy city, and all its traffic." },
   { img:'assets/intro/intro-4.jpg', cap:"One hop at a time, little buddy. Let's get you across." }
