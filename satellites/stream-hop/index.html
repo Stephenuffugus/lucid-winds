@@ -2590,6 +2590,7 @@ var JMUS=(function(){
     var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){});
     fadeTo(a, VOL, 500); started=true; }
   function teasePlay(t, done){
+    if(SET.mute){ if(done)setTimeout(done,80); return; }   // muted means muted, tastes included
     if(!tease){ tease=new Audio(); }
     tease.src=src(t); tease.loop=false; tease.volume=0;
     var a=el();
@@ -2607,7 +2608,7 @@ var JMUS=(function(){
       if(n>=steps){ a.volume=v; clearInterval(fade2); fade2=null; if(done)done(); } }, 40); }
   function endTease(done){ if(teaseTimer){ clearTimeout(teaseTimer); teaseTimer=null; }
     if(tease) fadeTo2(tease, 0, 450, function(){ try{ tease.pause(); }catch(e){} });
-    var a=el(); if(SET.music && started && a.src){ var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){}); fadeTo(a, VOL, 500); }
+    var a=el(); if(SET.music && !SET.mute && started && a.src){ var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){}); fadeTo(a, VOL, 500); }
     if(done)done(); }
   function autostart(){ if(started||!SET.music||SET.mute)return;
     play(PROG.musicSel||'moonwalk');
