@@ -490,12 +490,15 @@ var POWER_META={
 /* ===== zones (a run crosses named neighborhoods; palettes + hazard mix shift).
    Names lean Seattle for Stephen's Jimothy reskin — trivially editable here.
    wBias scales water frequency, xBias scales express (fast) lanes. ===== */
+/* Six real Seattle neighbourhoods, each with its own painted backdrop (sheet 16).
+   Palettes stay dark and desaturated on purpose: the sprites have to read on top. */
 var ZONES=[
   {name:'The Waterfront', bg:'zonecard/waterfront', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
-  {name:'Pike Market',    bg:'zonecard/market',     safe:['#231f12','#28230f'], road:['#33291a','#38301c'], water:['#173a4a','#123240'], wBias:0.55, xBias:1.0},
-  {name:'Fremont',        bg:'zonecard/bridge',     safe:['#1e1a2a','#221d30'], road:['#2c2338','#31283c'], water:['#1a2f4a','#152840'], wBias:1.0,  xBias:0.9},
-  {name:'Capitol Hill',   bg:'zonecard/dumpster',   safe:['#171518','#1b1920'], road:['#271a22','#2c1f28'], water:['#12303a','#0e2833'], wBias:0.7,  xBias:1.35},
-  {name:'Interbay',       bg:'zonecard/skyline',    safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6}
+  {name:'Pike Market',    bg:'zonecard/market',     safe:['#2a2011','#30250f'], road:['#3a2c17','#402f1a'], water:['#1b3c48','#153140'], wBias:0.55, xBias:1.0},
+  {name:'Fremont',        bg:'zonecard/bridge',     safe:['#1e2418','#22291b'], road:['#2c2b22','#312f26'], water:['#1a3242','#152a3a'], wBias:1.0,  xBias:0.9},
+  {name:'Capitol Hill',   bg:'zonecard/capitol',    safe:['#211526','#26192c'], road:['#2e1b2e','#331f34'], water:['#182a44','#13223a'], wBias:0.7,  xBias:1.35},
+  {name:'Interbay',       bg:'zonecard/interbay',   safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6},
+  {name:'Ballard Locks',  bg:'zonecard/locks',      safe:['#132420','#162a25'], road:['#22302c','#263631'], water:['#123c46','#0d323b'], wBias:1.4,  xBias:0.85}
 ];
 var ZONE_LEN=26;
 function zoneIdx(r){ if(G&&G.mode==='adventure') return advZoneIdx(advLevelOfRow(r)); return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
@@ -509,7 +512,8 @@ function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._s
     im.src=path; IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
 var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
-  'zonecard/waterfront':1,'zonecard/market':1,'zonecard/bridge':1,'zonecard/dumpster':1,'zonecard/skyline':1};
+  'zonecard/waterfront':1,'zonecard/market':1,'zonecard/bridge':1,
+  'zonecard/capitol':1,'zonecard/interbay':1,'zonecard/locks':1};
 function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
 /* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn. */
@@ -528,7 +532,13 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'fx/splash-water','fx/burst-gold','fx/glow-bloom','fx/splash-dust','fx/star-pop',
   'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple',
   'sprites/deco-manhole','sprites/deco-salmon',
-  'sprites/pad-lifering','sprites/pad-crate','sprites/obs-barrier'];
+  'sprites/pad-lifering','sprites/pad-crate','sprites/obs-barrier',
+  'sprites/pad2-kayak','sprites/pad2-paddleboard','sprites/pad2-ring','sprites/pad2-barge',
+  'sprites/pad2-duckboat','sprites/pad2-dock','sprites/pad2-salmonback','sprites/pad2-otterback',
+  'sprites/veh-sedan','sprites/veh-taxi','sprites/veh-van','sprites/veh-cyclist','sprites/veh-scooter',
+  'sprites/veh-skater','sprites/veh-foodtruck','sprites/veh-trolleybus',
+  'sprites/rail-lightrail','sprites/rail-monorail','sprites/haz-dog','sprites/haz-raccoon',
+  'sprites/prop-recyclebin','sprites/prop-produce','sprites/prop-coffeecart'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
   var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
@@ -642,6 +652,33 @@ function makeLane(r){
   G.lastType=L.type;
   return L;
 }
+/* Everything that can be in a road lane. w matters: it is both the collision box and
+   the drawn width, and the lane gap is derived from it so wide traffic stays fair. */
+var OBS={
+  acorn:{s:'sprites/obs-can',        w:44},
+  pod:{s:'sprites/obs-goose',        w:46},
+  hog:{s:'sprites/obs-rat',          w:50},
+  bug:{s:'sprites/obs-trashbags',    w:46},
+  cone:{s:'sprites/obs-cone',        w:40},
+  barrier:{s:'sprites/obs-barrier',  w:48},
+  scooter:{s:'sprites/veh-scooter',  w:62},
+  skater:{s:'sprites/veh-skater',    w:68},
+  cyclist:{s:'sprites/veh-cyclist',  w:76},
+  dog:{s:'sprites/haz-dog',          w:74},
+  raccoon:{s:'sprites/haz-raccoon',  w:72},
+  recyclebin:{s:'sprites/prop-recyclebin', w:60},
+  produce:{s:'sprites/prop-produce', w:68},
+  coffeecart:{s:'sprites/prop-coffeecart', w:78},
+  sedan:{s:'sprites/veh-sedan',      w:106},
+  taxi:{s:'sprites/veh-taxi',        w:106},
+  van:{s:'sprites/veh-van',          w:120},
+  foodtruck:{s:'sprites/veh-foodtruck', w:128},
+  trolleybus:{s:'sprites/veh-trolleybus', w:170}
+};
+var OBS_EARLY=['acorn','pod','hog','bug','cone','barrier'];
+var OBS_MID  =['scooter','skater','cyclist','dog','raccoon','recyclebin'];
+var OBS_LATE =['sedan','taxi','van','produce','coffeecart'];
+var OBS_BIG  =['foodtruck','trolleybus'];
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
   // scenery only, never collides: a manhole sunk in the asphalt
@@ -650,14 +687,24 @@ function buildRoad(L,d){
   if(d>3.5 && rng()<0.14){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
     var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
     var tspan=VW+tsp*2, tn=Math.ceil(tspan/tsp), tph=rng()*tsp;
-    for(var t=0;t<tn;t++) L.ents.push({ x:t*tsp+tph-tsp, w:tw, kind:'train' });
+    var rk=rng()<0.5?'lightrail':'monorail';
+    for(var t=0;t<tn;t++) L.ents.push({ x:t*tsp+tph-tsp, w:tw, kind:'train', rail:rk });
     L.spacing=tsp; L.span=tn*tsp; return;
   }
   var rlv=(G.mode==='adventure')?advLevelOfRow(L.r):0, ease=advEase(rlv);
   var express=d>4 && rng()<0.22*zoneAt(L.r).xBias; L.express=express;
   L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1)*(1-ease*0.42); // px/s, slower early in Adventure
-  var kinds=['acorn','pod','hog','bug','barrier','cone']; L.kind=kinds[Math.floor(rng()*kinds.length)];
-  var w=(L.kind==='hog'?50:44); var gap=TILE*((express?2.4:1.7)+rng()*1.5)*(1+ease*0.8); var spacing=w+gap;
+  // pick from the kinds unlocked at this difficulty: geese and cans early, buses late
+  var pool=OBS_EARLY.slice();
+  if(d>1.5) pool=pool.concat(OBS_MID);
+  if(d>3)   pool=pool.concat(OBS_LATE);
+  if(d>5)   pool=pool.concat(OBS_BIG);
+  L.kind=pool[Math.floor(rng()*pool.length)];
+  var meta=OBS[L.kind]||OBS.acorn, w=meta.w;
+  if(w>110) L.speed*=0.82;                       // a bus does not get to move like a rat
+  // a wide vehicle must still leave a hoppable window, so the gap scales with it
+  var gap=Math.max(TILE*((express?2.4:1.7)+rng()*1.5)*(1+ease*0.8), w*0.95);
+  var spacing=w+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:w, kind:L.kind });
   L.spacing=spacing; L.span=n*spacing;
@@ -676,7 +723,9 @@ function buildWater(L,d){
   }
   var rlvW=(G.mode==='adventure')?advLevelOfRow(L.r):0, easeW=advEase(rlvW);
   L.speed=(40+d*10+rng()*26)*(G.mode==='zen'?0.58:1)*(1-easeW*0.38);
-  var PADSTYLES=['log','pallet','dumpster','lifering','crate']; L.padStyle=PADSTYLES[Math.floor(rng()*PADSTYLES.length)];
+  var PADSTYLES=['log','pallet','dumpster','lifering','crate',
+    'kayak','paddleboard','ring','duckboat','dock','salmonback','otterback'];
+  L.padStyle=PADSTYLES[Math.floor(rng()*PADSTYLES.length)];
   var pw=TILE*(1.5+rng()*0.9)*(1+easeW*0.22), gap=TILE*(0.7+rng()*0.55)*(1-easeW*0.3), spacing=pw+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:pw, pad:1, style:L.padStyle });
@@ -1275,6 +1324,10 @@ function drawPowerFx(x,y){
 }
 function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='train'){ var hw=e.w*0.5, hh=TILE*0.32;
+    if(drawSprite('sprites/rail-'+(e.rail||'lightrail'), e.x, y, 0, {w:e.w*1.02, flip:dir<0})){
+      var tg=ctx.createRadialGradient(e.x+dir*(hw+8),y,1,e.x+dir*(hw+8),y,30);
+      tg.addColorStop(0,'rgba(255,233,168,0.5)'); tg.addColorStop(1,'rgba(255,233,168,0)');
+      ctx.restore(); ctx.save(); ctx.fillStyle=tg; ctx.beginPath(); ctx.arc(e.x+dir*(hw+8),y,30,0,7); ctx.fill(); ctx.restore(); return; }
     var lg=ctx.createRadialGradient(dir*(hw+8),0,1,dir*(hw+8),0,30); lg.addColorStop(0,'rgba(255,233,168,0.55)'); lg.addColorStop(1,'rgba(255,233,168,0)');
     ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(dir*(hw+8),0,30,0,7); ctx.fill();                 // leading headlight glow (telegraph)
     ctx.fillStyle='#2a2f3b'; ctx.fillRect(-hw,-hh,e.w,hh*2);                                       // body
@@ -1286,9 +1339,9 @@ function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   }
   ctx.restore();
   // Jimothy obstacle sprites (rat / goose / rolling can / tumbling trash), face travel dir
-  var OMAP={acorn:'sprites/obs-can',pod:'sprites/obs-goose',hog:'sprites/obs-rat',bug:'sprites/obs-trashbags',
-            barrier:'sprites/obs-barrier',cone:'sprites/obs-cone'};
-  if(OMAP[e.kind] && drawSprite(OMAP[e.kind], e.x, y, TILE*0.84, {flip:dir<0})) return;
+  // sized by WIDTH so the drawn vehicle matches the collision box the lane built
+  var om=OBS[e.kind];
+  if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:dir<0})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
@@ -1296,9 +1349,17 @@ function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   else { ctx.fillStyle='#b57de0'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.44,e.w*0.3,0,0,7); ctx.fill(); ctx.fillStyle='#12200f'; ctx.beginPath(); ctx.arc(-6,-3,2,0,7); ctx.arc(6,-3,2,0,7); ctx.fill(); }
   ctx.restore();
 }
+/* the crossings you can ride. Sheet 14 added eight, so a water lane is now a kayak,
+   a paddleboard, a life ring, a Duck boat, a dock, or a salmon you land on. */
+var PADSPR={ log:'sprites/pad-log', pallet:'sprites/pad-pallet', dumpster:'sprites/pad-dumpster',
+  lifering:'sprites/pad-lifering', crate:'sprites/pad-crate',
+  kayak:'sprites/pad2-kayak', paddleboard:'sprites/pad2-paddleboard', ring:'sprites/pad2-ring',
+  duckboat:'sprites/pad2-duckboat', dock:'sprites/pad2-dock',
+  salmonback:'sprites/pad2-salmonback', otterback:'sprites/pad2-otterback' };
 function drawPad(e,y){
-  if(e.ferry){ if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04})) return; }
-  else { if(drawSprite('sprites/pad-'+(e.style||'log'), e.x, y, TILE*0.9, {w:e.w*1.06})) return; }
+  if(e.ferry){ if(drawSprite('sprites/pad2-barge', e.x, y, TILE, {w:e.w*1.02})) return;
+               if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04})) return; }
+  else { if(drawSprite(PADSPR[e.style]||'sprites/pad-log', e.x, y, TILE*0.9, {w:e.w*1.06})) return; }
   ctx.save(); ctx.translate(e.x,y);
   if(e.ferry){ var hw=e.w*0.5;
     ctx.fillStyle='#33424f'; ctx.beginPath(); ctx.ellipse(0,7,hw,TILE*0.4,0,0,7); ctx.fill();               // hull
