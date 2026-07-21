@@ -140,6 +140,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a; box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
 .btn.primary:active{box-shadow:0 1px 0 #3f6b34, 0 3px 10px #0006}
 .btn.sm{min-height:64px; font-size:17px}
+.bicon{width:34px; height:34px; object-fit:contain; flex:none; filter:drop-shadow(0 2px 3px #0007)}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -254,19 +255,19 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="b-adventure">🗺&nbsp; Adventure</button>
       <div class="row">
-        <button class="btn sm" id="b-endless">♾ Endless</button>
-        <button class="btn sm" id="b-rush">⏱ Rush</button>
-        <button class="btn sm" id="b-zen">🍃 Zen</button>
+        <button class="btn sm" id="b-endless"><img class="bicon" id="ic-endless" alt="">Endless</button>
+        <button class="btn sm" id="b-rush"><img class="bicon" id="ic-rush" alt="">Rush</button>
+        <button class="btn sm" id="b-zen"><img class="bicon" id="ic-zen" alt="">Zen</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily</button>
-        <button class="btn sm" id="b-skins">🐾 Critters</button>
+        <button class="btn sm" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
+        <button class="btn sm" id="b-skins"><img class="bicon" id="ic-skins" alt="">Critters</button>
       </div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
         <button class="btn sm" id="b-feedback" title="Feedback" aria-label="Send feedback">💬</button>
-        <button class="btn sm" id="b-set">⚙</button>
+        <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt=""></button>
       </div>
       <button class="btn ghost sm" id="b-install" style="display:none">📲 Put Jimothy on your home screen</button>
       <button class="btn ghost sm" id="b-support"><span class="sup-heart">♥</span>&nbsp; Support the Studio</button>
@@ -414,7 +415,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <button class="btn primary" id="pz-resume">▶ Keep hopping</button>
       <button class="btn sm" id="pz-music">♫ Soundtrack</button>
       <button class="btn sm" id="pz-restart">↻ Start over</button>
-      <button class="btn sm" id="pz-share">↗ Share Jimothy</button>
+      <button class="btn sm" id="pz-share"><img class="bicon" id="ic-share2" alt="" style="width:28px;height:28px">Share Jimothy</button>
       <button class="btn ghost sm" id="pz-feedback">💬 Send feedback</button>
       <button class="btn ghost sm" id="pz-menu">◄ Leave the run</button>
     </div>
@@ -468,7 +469,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="go-home">◄ Menu</button>
         <button class="btn sm" id="go-levels" style="display:none">🗺 Levels</button>
-        <button class="btn sm" id="go-share">↗ Share</button>
+        <button class="btn sm" id="go-share"><img class="bicon" id="ic-share" alt="" style="width:28px;height:28px">Share</button>
         <button class="btn sm" id="go-feedback" title="Feedback" aria-label="Send feedback">💬</button>
       </div>
     </div>
@@ -1016,7 +1017,7 @@ var ACH=[
   {id:'first',      name:'Silly Little Guy', desc:'Take your first hop.',                  art:'ach/b26-11'},
   {id:'rows100',    name:'City Block',       desc:'Cross 100 rows in one run.',            art:'ach/b21-22'},
   {id:'rows300',    name:'Cross Town',       desc:'Cross 300 rows in one run.',            art:'ach/b26-34'},
-  {id:'combo10',    name:'Bloom Trail',      desc:'Reach a trail of 10.',                  art:'ach/b26-32'},
+  {id:'combo10',    name:'Feast Trail',      desc:'Reach a trail of 10.',                  art:'ach/b26-32'},
   {id:'combo20',    name:'Long Trail',       desc:'Reach a trail of 20.',                  art:'ach/b21-23'},
   {id:'chapter1',   name:'Waterfront Done',  desc:'Clear the whole Waterfront chapter.',   art:'ach/b21-14'},
   {id:'level20',    name:'Deep Downtown',    desc:'Reach Adventure level 20.',             art:'ach/b26-43'},
@@ -1510,13 +1511,14 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
   if(G.mode==='adventure'){
     advRetryLevel=G.level;
-    $('go-emoji').textContent='🦝';
+    $('go-emoji').innerHTML='<img src="assets/ui/glyph-raccoon.png?a='+ARTV+'" style="height:86px" alt="">';
     $('go-score').textContent=G.level;
     $('go-lab').textContent=advChapterName(G.level)+' · Level '+G.level;
     $('go-best').textContent='Furthest Lv '+(PROG.best.adventure||G.level)+' · '+advTotalStars()+'★';
     if(rb) rb.textContent='↻ Retry Level '+G.level;
   } else {
-    $('go-emoji').textContent=isBest?'🏅':'🥀';
+    if(isBest) $('go-emoji').innerHTML='<img src="assets/ui/medal-best.png?a='+ARTV+'" style="height:96px" alt="New best">';
+    else $('go-emoji').textContent='🥀';
     $('go-score').textContent=G.score;
     $('go-lab').textContent=(G.mode==='daily'?"today's current":G.mode==='zen'?'rows (zen)':G.mode==='rush'?'rows in 60 seconds':'rows crossed');
     $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
@@ -2220,6 +2222,11 @@ function boot(){
   wireToggle('tg-udL', function(){ return SET.udLeft; }, function(v){ SET.udLeft=v; applyPadLayout(); });
   wireToggle('tg-udR', function(){ return SET.udRight; }, function(v){ SET.udRight=v; applyPadLayout(); });
   $('buildstamp').textContent='Jimothy '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
+  // painted UI glyphs (sheet 5, recut) — srcs set here so the art cache-buster applies
+  [['ic-endless','glyph-endless'],['ic-rush','glyph-rush'],['ic-zen','glyph-zen'],
+   ['ic-daily','glyph-daily'],['ic-skins','glyph-raccoon'],['ic-set','glyph-settings'],
+   ['ic-share','glyph-share'],['ic-share2','glyph-share']].forEach(function(p){
+    var el=$(p[0]); if(el) el.src='assets/ui/'+p[1]+'.png?a='+ARTV; });
   /* ===== SYSTEM BACK — the phone's back button/gesture closes the menu you are
      in, it does not throw you out of the game (Stephen: "back keeps taking me
      out on accident"). One sentinel history entry stays armed; every handled
