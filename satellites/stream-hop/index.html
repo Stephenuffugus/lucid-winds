@@ -54,6 +54,16 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .hopbtn:active{background:rgba(122,179,86,0.42); transform:scale(.93)}
 .hopbtn.dir{width:92px; height:78px; font-size:30px}
 .hopcluster.hide-ud .hopbtn.ud{display:none}
+/* pause: a run had no exit at all before this, you either died or closed the tab */
+#pausebtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); right:12px;
+  width:48px; height:48px; border-radius:15px; border:1px solid rgba(122,179,86,0.38);
+  background:rgba(8,12,7,0.48); color:#e8dcc8; font-size:14px; letter-spacing:2px; font-weight:800;
+  display:none; align-items:center; justify-content:center; z-index:16; cursor:pointer;
+  transition:transform .1s cubic-bezier(.22,.9,.28,1), background .15s ease}
+#pausebtn.on{display:flex}
+#pausebtn:active{background:rgba(122,179,86,0.4); transform:scale(.93)}
+#s-pause{background:rgba(5,8,5,0.86)}
+#s-pause .pad{justify-content:center}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
@@ -180,6 +190,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
   <!-- Directional pad (Jessie 2026-07-15: show HOW to move up or sideways).
        Swipes and taps on the water still work — these are the discoverable way. -->
+  <button id="pausebtn" aria-label="Pause">❚❚</button>
   <div id="hoppad">
     <div class="hopcluster" id="hc-left">
       <button class="hopbtn ud" id="hp-upL" aria-label="hop back">▲</button>
@@ -279,6 +290,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
+  <!-- PAUSE -->
+  <div class="screen center" id="s-pause"><div class="pad center">
+    <h2 class="sc-h" style="text-align:center">Paused</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:22px;text-align:center" id="pause-sub"></div>
+    <div class="stack" style="max-width:320px;margin:0 auto;width:100%">
+      <button class="btn primary" id="pz-resume">▶ Keep hopping</button>
+      <button class="btn sm" id="pz-restart">↻ Start over</button>
+      <button class="btn ghost sm" id="pz-menu">◄ Leave the run</button>
+    </div>
+  </div></div>
+
   <!-- PRIZE BIN (the collection) -->
   <div class="screen" id="s-skins"><div class="pad">
     <h2 class="sc-h">Prize Bin</h2>
@@ -335,7 +357,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.2';
+var BUILD='v2.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -349,7 +371,8 @@ function show(id){ var el=$(id);
     _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 400); }
   if(el){ el.classList.remove('leaving'); el.classList.add('on'); }
   curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
-  var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
+  var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); }
+  var pb=$('pausebtn'); if(pb){ if(id==='s-play')pb.classList.add('on'); else pb.classList.remove('on'); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, shake:true, cb:false, udLeft:true, udRight:true };
@@ -908,18 +931,23 @@ function die(cause){ if(!G||G.phase!=='play')return;
   burst(G.cr.x, rowScreenY(G.cr.r), 12, cause==='sink'||cause==='swept'?'#5b9bd5':'#e58fa0');
   setTimeout(gameOver, 780);
 }
-function gameOver(){ if(!G)return; G.phase='over'; running=false;
+/* Everything a run earned, banked. Called when you die AND when you walk away from a
+   run, so leaving is never a punishment. A continued run passes through here more than
+   once, so it only ever banks the NEW progress. */
+function bankRun(){
+  if(!G) return {isBest:false, granted:0};
   var isBest=false;
   if(G.mode!=='adventure'){ var best=PROG.best[G.mode]||0; isBest=G.score>best; if(isBest) PROG.best[G.mode]=G.score; }
-  // a continued run lands here more than once, so only ever bank the NEW progress
   PROG.flowers=(PROG.flowers||0)+Math.max(0, G.flowers-(G.flowersPaid||0)); G.flowersPaid=G.flowers;
-  // unlock skins by endless best
-  // bottlecaps bank into the Prize Bin, new progress only (a continued run lands here twice)
   PROG.caps=(PROG.caps||0)+Math.max(0, G.coins-(G.capsPaid||0)); G.capsPaid=G.coins;
   saveProg();
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25));
     amt=Math.max(0, amt-(G.sunPaid||0));   // never pay the same rows twice after a continue
     if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; G.sunPaid=(G.sunPaid||0)+granted; } }catch(e){}
+  return {isBest:isBest, granted:granted};
+}
+function gameOver(){ if(!G)return; G.phase='over'; running=false;
+  var banked=bankRun(), isBest=banked.isBest, granted=banked.granted;
   var rb=$('go-retry'), glv=$('go-levels');
   // "Keep going": one continue per run, back on the last safe row with a shield.
   var cbtn=$('go-continue');
@@ -974,6 +1002,17 @@ function doRevive(){ if(!G)return;
   show('s-play');
   float(G.cr.x, rowScreenY(G.cr.r)-22, 'back up!');
 }
+/* ===== pause ===== */
+function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
+  var sub=$('pause-sub');
+  if(sub) sub.textContent = (G.mode==='adventure')
+    ? (advChapterName(G.level)+' · Level '+G.level+'  ·  '+G.coins+' caps this run')
+    : (G.score+' rows  ·  '+G.coins+' caps this run');
+  sfx('ui'); show('s-pause');
+}
+function resumeRun(){ if(!G)return; sfx('ui'); show('s-play'); }
+function quitRun(){ if(G) bankRun();   // walking away keeps everything you earned
+  sfx('ui'); G=null; running=false; show('s-title'); }
 function toast(txt){ float(VW/2, 120, txt); }
 
 /* particles + floats */
@@ -1035,7 +1074,8 @@ function render(){ if(!ctx||!G)return;
     ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY CURRENT':G.mode==='zen'?'ZEN MEADOW':'ROWS', 20, 62);
   }
   if(G.mode==='rush'){ ctx.textAlign='center'; var cl=Math.max(0,G.clock); ctx.fillStyle=cl<=10?'#e5604d':'#f5ebd0'; ctx.font='800 34px system-ui'; ctx.fillText(cl.toFixed(1)+'s', VW/2, 46); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('RUSH HOUR', VW/2, 62); ctx.textAlign='left'; }
-  if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-18, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-18, 60); }
+  // shifted left of the pause button, which owns the top right corner now
+  if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-72, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-72, 60); }
   drawPowerHud();
   drawZoneBanner();
   drawLevelBanner();
@@ -1361,7 +1401,9 @@ function onUp(e){ if(curScreen!=='s-play'||!ptr.down)return; e.preventDefault();
   else if(ay>ad){ queueHop(dy>0?'up':'down'); }        // descending: swipe DOWN = forward, up = back
   else { queueHop(dx<0?'left':'right'); }
 }
-function onKey(e){ if(curScreen!=='s-play')return; var k=e.key;
+function onKey(e){ var k=e.key;
+  if(k==='Escape'||k==='p'||k==='P'){ if(curScreen==='s-play')pauseRun(); else if(curScreen==='s-pause')resumeRun(); e.preventDefault(); return; }
+  if(curScreen!=='s-play')return;
   if(k==='ArrowDown'||k==='s'||k==='S'){ queueHop('up'); e.preventDefault(); }        // down = forward (descend)
   else if(k==='ArrowUp'||k==='w'||k==='W'){ queueHop('down'); e.preventDefault(); }    // up = back
   else if(k==='ArrowLeft'||k==='a'||k==='A'){ queueHop('left'); e.preventDefault(); }
@@ -1443,6 +1485,10 @@ function boot(){
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
+  var pbtn=$('pausebtn'); if(pbtn) pbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); pauseRun(); });
+  tap('pz-resume', resumeRun);
+  tap('pz-restart', function(){ if(G&&G.mode==='adventure') newGame('adventure', G.level); else newGame(G?G.mode:'endless'); });
+  tap('pz-menu', quitRun);
   tap('go-continue', reviveRun);
   tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
   tap('go-levels', function(){ renderLevels(); show('s-levels'); });
