@@ -19,6 +19,13 @@ export const stripeCreateCheckout = onCall(
     const uid = request.auth.uid
     const db = getFirestore()
     const kind = (request.data && request.data.kind) === 'donation' ? 'donation' : 'supporter_pack'
+    // gift tiers are a server-side whitelist — the client never names its own price
+    const DONATION_TIERS = [500, 1000, 2500]
+    let donationCents = 500
+    if (kind === 'donation') {
+      const c = Math.floor(Number(request.data && request.data.cents))
+      if (DONATION_TIERS.indexOf(c) !== -1) donationCents = c
+    }
 
     if (kind === 'supporter_pack') {
       const vaultDoc = await db.collection('vaults').doc(uid).get()
@@ -40,8 +47,8 @@ export const stripeCreateCheckout = onCall(
       uid,
       type: kind,
       metadata,
-      usdCents: kind === 'donation' ? null : 300,
-      usd: kind === 'donation' ? 'chosen at checkout' : '3.00',
+      usdCents: kind === 'donation' ? donationCents : 300,
+      usd: kind === 'donation' ? (donationCents / 100).toFixed(2) : '3.00',
       gateway: 'stripe',
       status: 'created',
       createdAt: FieldValue.serverTimestamp(),
@@ -53,12 +60,10 @@ export const stripeCreateCheckout = onCall(
     form.set('line_items[0][quantity]', '1')
     form.set('line_items[0][price_data][currency]', 'usd')
     if (kind === 'donation') {
-      // give-what-you-want: Stripe renders an amount picker, $5 preset, $1 floor.
-      // A gift of $3 or more also grants the Supporter Pack (handled in the webhook).
-      form.set('line_items[0][price_data][custom_unit_amount][enabled]', 'true')
-      form.set('line_items[0][price_data][custom_unit_amount][preset]', '500')
-      form.set('line_items[0][price_data][custom_unit_amount][minimum]', '100')
-      form.set('line_items[0][price_data][custom_unit_amount][maximum]', '50000')
+      // preset gift tiers (custom_unit_amount needs a saved Price + extra key perms;
+      // fixed inline amounts ride the already-working path). $3+ also grants the
+      // Supporter Pack in the webhook.
+      form.set('line_items[0][price_data][unit_amount]', String(donationCents))
       form.set('line_items[0][price_data][product_data][name]', 'Gift to Sky Wolf Studios')
       form.set('line_items[0][price_data][product_data][description]',
         'A direct thank-you to the one-person studio behind Jimothy. Gifts of $3 or more also unlock the Supporter Pack.')
