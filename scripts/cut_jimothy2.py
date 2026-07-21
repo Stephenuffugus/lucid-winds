@@ -340,7 +340,7 @@ def largest_piece(rgba):
 
 
 def do_badges():
-    for name, rows, cols in [('26', 4, 4), ('21', 3, 4)]:
+    for name, rows, cols in [('26', 4, 4), ('21', 3, 4), ('29', 4, 4)]:
         img = sheet(name)
         boxes = cells(img, rows, cols)
         for r in range(rows):

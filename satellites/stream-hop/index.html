@@ -412,14 +412,15 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
-  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, v:0 };
+  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
   if(typeof p.capsEver==='number')PROG.capsEver=p.capsEver; if(typeof p.advPaid==='number')PROG.advPaid=p.advPaid;
   if(p.eggs)PROG.eggs=p.eggs; if(p.ach)PROG.ach=p.ach; if(p.pows)PROG.pows=p.pows;
   if(typeof p.maxCombo==='number')PROG.maxCombo=p.maxCombo; if(typeof p.dodges==='number')PROG.dodges=p.dodges;
-  if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked; }catch(e){} })();
+  if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked;
+  if(p.seasons)PROG.seasons=p.seasons; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -857,6 +858,31 @@ var ACH=[
   {id:'fogwalk',    name:'Into The Fog',     desc:'Stay out in thick fog for 25 seconds.', art:'ach/b26-24'},
   {id:'secrets',    name:'Both Secrets',     desc:'Find the two critters not in the bin.', art:'ach/b26-13'}
 ];
+/* ===== SEASONAL BADGES (sheet 29) — only earnable while that season is actually
+   running, so they are a reason to come back rather than a thing to grind. Months
+   are 0 indexed. June counts as both Summer and Pride. ===== */
+var SEASONS=[
+  {id:'spring', name:'Blossom Season',        art:'ach/b29-31', mon:[2,3,4],  when:'March'},
+  {id:'summer', name:'Hot Jimothy Summer',    art:'ach/b29-43', mon:[5,6,7],  when:'June'},
+  {id:'pride',  name:'Pride Month',           art:'ach/b29-34', mon:[5],      when:'June'},
+  {id:'spooky', name:'Trash Panda Halloween', art:'ach/b29-11', mon:[9],      when:'October'},
+  {id:'winter', name:'Cold Snap',             art:'ach/b29-21', mon:[11,0,1], when:'December'}
+];
+var SEASON_MON=null;   /* dev override for testing out-of-season badges */
+function curMonth(){ return (SEASON_MON!=null)?SEASON_MON:new Date().getMonth(); }
+function seasonLive(s){ var m=curMonth(); for(var i=0;i<s.mon.length;i++) if(s.mon[i]===m) return true; return false; }
+function seasonById(id){ for(var i=0;i<SEASONS.length;i++) if(SEASONS[i].id===id)return SEASONS[i]; return null; }
+(function(){ for(var i=0;i<SEASONS.length;i++){ var s=SEASONS[i];
+  ACH.push({ id:'ssn_'+s.id, name:s.name, season:s.id, art:s.art,
+             desc:'Cross 20 rows during '+s.name+'.' }); } })();
+/* marked at the end of any run that got 20 rows in, while the season is live */
+function markSeasons(rows){ if(rows<20) return;
+  if(!PROG.seasons) PROG.seasons={};
+  var got=false;
+  for(var i=0;i<SEASONS.length;i++){ var s=SEASONS[i];
+    if(seasonLive(s) && !PROG.seasons[s.id]){ PROG.seasons[s.id]=1; got=true; } }
+  if(got) saveProg();
+}
 function achDone(id){ return !!(PROG.ach && PROG.ach[id]); }
 function achCount(){ var n=0; for(var i=0;i<ACH.length;i++) if(achDone(ACH[i].id))n++; return n; }
 function bestRows(){ var b=PROG.best||{}; return Math.max(b.endless||0,b.daily||0,b.zen||0,b.rush||0); }
@@ -882,6 +908,7 @@ function achMet(id){
     case 'fogwalk':     return !!P.fogWalked;
     case 'secrets':     return charOwned('ghost') && charOwned('richuncle');
   }
+  if(id.indexOf('ssn_')===0) return !!(P.seasons && P.seasons[id.slice(4)]);
   return false;
 }
 /* Evaluated after anything that could move a counter. Cheap: 18 switch cases. */
@@ -922,7 +949,12 @@ function renderAch(){
     var card=document.createElement('div'); card.className='skincard'+(got?'':' locked');
     var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
     var nm=document.createElement('div'); nm.className='sn'; nm.textContent=a.name; card.appendChild(nm);
-    var su=document.createElement('div'); su.className='su'; su.textContent=a.desc; card.appendChild(su);
+    var su=document.createElement('div'); su.className='su';
+    var sn=a.season?seasonById(a.season):null;
+    su.textContent = (sn && !got && !seasonLive(sn)) ? ('Returns in '+sn.when) : a.desc;
+    card.appendChild(su);
+    if(sn && !got && seasonLive(sn)){ var lv=document.createElement('div'); lv.className='sr';
+      lv.style.color='#e8c65a'; lv.textContent='live now'; card.appendChild(lv); }
     host.appendChild(card);
     var paint=function(){ var c=cvp.getContext('2d'); c.clearRect(0,0,56,56); var im=spr(a.art);
       if(!imgReady(im))return;
@@ -1282,6 +1314,7 @@ function bankRun(){
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25));
     amt=Math.max(0, amt-(G.sunPaid||0));   // never pay the same rows twice after a continue
     if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; G.sunPaid=(G.sunPaid||0)+granted; } }catch(e){}
+  markSeasons(G.score||0);
   achCheck();
   return {isBest:isBest, granted:granted};
 }
@@ -2006,6 +2039,10 @@ if(/[?&]shtest=1/.test(location.search)){
     ach:function(){ var o={}; for(var i=0;i<ACH.length;i++)o[ACH[i].id]=achDone(ACH[i].id)?1:0; return o; },
     achCheck:function(){ return achCheck(); },
     achScreen:function(){ renderAch(); return {cells:$('ach-row').children.length, count:$('ach-count').textContent}; },
+    season:function(m){ if(m===-1)SEASON_MON=null; else if(m!=null)SEASON_MON=m; var out={month:curMonth(),live:[]};
+      for(var i=0;i<SEASONS.length;i++) if(seasonLive(SEASONS[i])) out.live.push(SEASONS[i].id);
+      return out; },
+    markSeasons:function(r){ markSeasons(r==null?50:r); return PROG.seasons; },
     caps:function(n){ if(n!=null){ PROG.caps=n; saveProg(); } return PROG.caps; },
     pull:function(){ binPull(); return {caps:PROG.caps,owned:ownedCount(),pool:binPool().length,revealed:$('br-name').textContent,shown:$('bin-reveal').classList.contains('on')}; },
     bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
