@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
- * lines 68156-68481.
+ * lines 68278-68603.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -30,8 +30,8 @@
         '@keyframes yDieLift{0%{transform:translateY(0) scale(1)}100%{transform:translateY(-6px) scale(0.96)}}'+
         '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
         '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}'+
-        /* Yahtzee/Seed Shaker: cool sage cast so the dice sit against the green pan */
-        '.yDie img{filter:hue-rotate(-6deg) saturate(0.9) brightness(1.05) drop-shadow(0 2px 3px rgba(0,0,0,0.4));}'+
+        /* Yacht-Sea: cool blue cast so the dice sit against the navy pan */
+        '.yDie img{filter:hue-rotate(-16deg) saturate(0.92) brightness(1.06) drop-shadow(0 2px 3px rgba(0,0,0,0.4));}'+
         '@keyframes yBestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,220,112,0.4),inset 0 1px 0 rgba(255,255,255,0.08)}50%{box-shadow:0 0 12px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.12)}}'+
         '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}'+
         '@keyframes yYahtzeeIn{0%{opacity:0}100%{opacity:1}}'+
@@ -46,27 +46,27 @@
       return '<img src="'+window.LW_DICE.face(n)+'" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
     }
     var CATS=[
-      {name:'Ones',sub:'Sprouts',icon:'&#x1F331;',desc:'Sum of 1s'},
-      {name:'Twos',sub:'Twin Leaf',icon:'&#x1F33F;',desc:'Sum of 2s'},
-      {name:'Threes',sub:'Trillium',icon:'&#x2618;',desc:'Sum of 3s'},
-      {name:'Fours',sub:'Clover',icon:'&#x1F340;',desc:'Sum of 4s'},
-      {name:'Fives',sub:'Star Bloom',icon:'&#x2B50;',desc:'Sum of 5s'},
-      {name:'Sixes',sub:'Hex Petal',icon:'&#x1F33A;',desc:'Sum of 6s'},
-      {name:'3 of a Kind',sub:'Cluster',icon:'&#x1F33E;',desc:'Sum of all dice'},
-      {name:'4 of a Kind',sub:'Grove',icon:'&#x1F332;',desc:'Sum of all dice'},
-      {name:'Full House',sub:'Full Canopy',icon:'&#x1F333;',desc:'Three + a pair = 25'},
-      {name:'Small Straight',sub:'Trail',icon:'&#x1F6A4;',desc:'4 in a row = 30'},
-      {name:'Large Straight',sub:'River',icon:'&#x1F30A;',desc:'5 in a row = 40'},
-      {name:'Bloom',sub:'5 of a Kind',icon:'&#x2728;',desc:'All 5 match = 50'},
-      {name:'Chance',sub:'Wild Growth',icon:'&#x1F3B2;',desc:'Sum of all dice'}
+      {name:'Ones',sub:'Buoys',icon:'&#x1F6DF;',desc:'Sum of 1s'},
+      {name:'Twos',sub:'Oars',icon:'&#x1F6A3;',desc:'Sum of 2s'},
+      {name:'Threes',sub:'Shells',icon:'&#x1F41A;',desc:'Sum of 3s'},
+      {name:'Fours',sub:'Sails',icon:'&#x26F5;',desc:'Sum of 4s'},
+      {name:'Fives',sub:'Compass',icon:'&#x1F9ED;',desc:'Sum of 5s'},
+      {name:'Sixes',sub:'Anchors',icon:'&#x2693;',desc:'Sum of 6s'},
+      {name:'3 of a Kind',sub:'School',icon:'&#x1F41F;',desc:'Sum of all dice'},
+      {name:'4 of a Kind',sub:'Fleet',icon:'&#x1F6A2;',desc:'Sum of all dice'},
+      {name:'Full House',sub:'Full Deck',icon:'&#x26F4;',desc:'Three + a pair = 25'},
+      {name:'Small Straight',sub:'Wake',icon:'&#x1F6E5;',desc:'4 in a row = 30'},
+      {name:'Large Straight',sub:'Current',icon:'&#x1F30A;',desc:'5 in a row = 40'},
+      {name:'Yacht',sub:'5 of a Kind',icon:'&#x1F6A4;',desc:'All 5 match = 50'},
+      {name:'Chance',sub:'Tide',icon:'&#x1F3B2;',desc:'Sum of all dice'}
     ];
-    ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🎲 Turn <strong id="Yt" style="color:#7ab356;font-size:1.2em;">1</strong>/13 &middot; Roll <strong id="Yr" style="color:#ffdc70;font-size:1.2em;">0</strong>/3</span>');mm(a);
+    ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">⚓ Turn <strong id="Yt" style="color:#4aa8cf;font-size:1.2em;">1</strong>/13 &middot; Roll <strong id="Yr" style="color:#ffdc70;font-size:1.2em;">0</strong>/3</span>');mm(a);
     // Felted pan — rolls + scoresheet inside a single dark-forest table.
     var pan=document.createElement('div');pan.id='Ypan';
     var _Y_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
         +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="17"/>'
-        +'<feColorMatrix values="0 0 0 0 0.05  0 0 0 0 0.07  0 0 0 0 0.04  0 0 0 .08 0"/></filter>'
+        +'<feColorMatrix values="0 0 0 0 0.03  0 0 0 0 0.06  0 0 0 0 0.11  0 0 0 .08 0"/></filter>'
         +'<rect width="100%" height="100%" filter="url(#n)"/>'
       +'</svg>'
     );
@@ -75,7 +75,7 @@
         +'url("'+_Y_FELT+'"),'
         +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
         +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
-        +'linear-gradient(135deg,#1f3818 0%,#162a11 55%,#0e1d09 100%);'
+        +'linear-gradient(135deg,#123048 0%,#0c2036 55%,#07162a 100%);'
       +'background-size:180px 180px, auto, auto, auto;'
       +'border-radius:14px;'
       +'border:2px solid #6b4520;'
@@ -203,7 +203,7 @@
           +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
             +'<span style="font-size:1rem;line-height:1;flex-shrink:0;">'+CATS[i].icon+'</span>'
             +'<div style="min-width:0;">'
-              +'<div style="font-family:Georgia,serif;font-size:0.75rem;font-weight:700;color:#f5ebd0;line-height:1.1;">'+CATS[i].name+'</div>'
+              +'<div style="font-family:Georgia,serif;font-size:0.75rem;font-weight:700;color:#f5ebd0;line-height:1.1;">'+CATS[i].name+' <span style="font-weight:400;font-size:0.82em;color:#5fb0d9;letter-spacing:0.02em;">'+CATS[i].sub+'</span></div>'
               +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.06em;line-height:1.1;margin-top:1px;">'+CATS[i].desc+'</div>'
             +'</div>'
           +'</div>'
@@ -221,7 +221,7 @@
       h+='</div>';
       // Bonus progress bar
       h+='<div style="height:4px;background:rgba(0,0,0,0.5);border-radius:2px;margin:0 4px 6px;overflow:hidden;border:1px solid rgba(0,0,0,0.5);">';
-      h+='<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ab356,'+(bonus?'#ffdc70':'#a8d873')+');transition:width .4s;'+(bonus?'box-shadow:0 0 8px #ffdc7088;':'')+'"></div>';
+      h+='<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3fa9c9,'+(bonus?'#ffdc70':'#8fd6ee')+');transition:width .4s;'+(bonus?'box-shadow:0 0 8px #ffdc7088;':'')+'"></div>';
       h+='</div>';
       for(var i=0;i<6;i++)h+=row(i);
       // ── LOWER SECTION ────────────────────────────────────────────
