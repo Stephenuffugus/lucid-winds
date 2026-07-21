@@ -361,7 +361,19 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.6';
+/* ===== FEEL KNOBS — Stephen: "really slow the animation down and smooth it out,
+   it is way too jumpy and doesn't feel comfortable." The old hop was 0.17s, which is
+   ten frames for a four pose cycle, so the poses strobed. Everything below is tunable
+   from one place; SH_DEV.feel() reads and sets them live. ===== */
+var HOP_DUR=0.28;        /* seconds per hop (was 0.17) */
+var HOP_DUR_DASH=0.19;   /* while caffeinated (was 0.105) */
+var HOP_ARC=23;          /* peak lift in px */
+var HOP_STRETCH=0.13;    /* was 0.18 */
+var HOP_SQUASH=0.08;     /* was 0.10 */
+var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
+var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
+var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
+var BUILD='v2.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -539,7 +551,7 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
-      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, idleT:0, saveT:0, fogT:0,
+      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, idleT:0, saveT:0, fogT:0, landT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,bg:ZONES[0].bg,t:2.6};
   spr(ZONES[G.zone].bg); spr(ZONES[(G.zone+1)%ZONES.length].bg);   // this card and the next one
@@ -660,13 +672,13 @@ function startHop(dir){
   var dest=laneAt(toR);
   // refuse into a blocked bush on a safe row
   if(dest.type==='safe' && dest.blocked){ var col=Math.round((dir==='left'||dir==='right'?toX:fromX)/TILE - 0.5); col=Math.max(0,Math.min(COLS-1,col)); if(dest.blocked[col]){ G.shake=Math.max(G.shake,3); return; } }
-  G.hop={ t:0, dur:(G.dashT>0?0.105:0.17), fromR:fromR, toR:toR, fromX:fromX, toX:toX, dir:dir };
+  G.hop={ t:0, dur:(G.dashT>0?HOP_DUR_DASH:HOP_DUR), fromR:fromR, toR:toR, fromX:fromX, toX:toX, dir:dir };
   G.ride=null; sfx('hop'); haptic(6);
   if(!G.started && FIRST_RUN){ FIRST_RUN=false; LS.set('sh_hopped','1'); }
   G.started=true;
 }
 function finishHop(){
-  var h=G.hop; G.cr.r=h.toR; G.cr.x=h.toX; G.hop=null;
+  var h=G.hop; G.cr.r=h.toR; G.cr.x=h.toX; G.hop=null; G.landT=LAND_SETTLE;
   var lane=laneAt(G.cr.r);
   // landing effects — a pad landing rings the water instead of splashing it
   var padHit = lane.type==='water' && padUnder(lane, G.cr.x);
@@ -892,6 +904,7 @@ function step(dt){
   if(G.levelBanner && G.levelBanner.t>0) G.levelBanner.t-=dt;
   if(G.invuln>0) G.invuln-=dt;
   if(G.saveT>0) G.saveT-=dt;
+  if(G.landT>0) G.landT-=dt;
   G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
   // stay out in the thick fog long enough and something finds you
   if(G.phase==='play' && G.weather.fog>0.5){ G.fogT=(G.fogT||0)+dt;
@@ -912,7 +925,7 @@ function step(dt){
   }
   // camera
   G.camYt = G.cr.r*TILE - VH*0.40;
-  G.camY += (G.camYt-G.camY)*Math.min(1, dt*6);   // softer follow = smoother flow
+  G.camY += (G.camYt-G.camY)*Math.min(1, dt*CAM_FOLLOW);   // softer follow = smoother flow
   // fx decay
   if(G.shake>0)G.shake*=Math.pow(0.001,dt);
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
@@ -1048,7 +1061,7 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   ctx.save();
-  if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
+  if(SET.shake && G.shake>0.4){ var sk=G.shake*SHAKE_SCALE; ctx.translate((Math.random()*2-1)*sk,(Math.random()*2-1)*sk); }
   // draw rows (behind → ahead)
   var rlo=Math.floor(G.cr.r)-13, rhi=Math.floor(G.cr.r)+15; genUpTo(rhi);
   for(var r=rlo;r<=rhi;r++){ drawRow(r); }
@@ -1291,9 +1304,10 @@ function heroPose(p){
     n = G.dashT>0 ? 'dash-run'
       : G.hop.dir==='left'  ? 'run-l'
       : G.hop.dir==='right' ? 'run-r'
-      : (p<0.30?'crouch': p<0.72?'leap':'land'); }
+      : (p<0.24?'crouch': p<0.76?'leap':'land'); }
   else if(gullOnMe()) n='scared';                             // warnings beat power poses
   else if(wiltClose()) n='flee';
+  else if(G.landT>0) n='land';                                // hold the touchdown a beat
   else if(G.dashT>0) n='coffee';                              // dash (fire trail baked in)
   else if(G.magnetT>0) n='magnet';                            // snacks magnet (coins baked in)
   else if(G.shield) n='umbrella';                             // you can see that you are covered
@@ -1306,10 +1320,15 @@ function heroPose(p){
 }
 function drawCritter(){
   var r=G.cr.r, x=G.cr.x, y=rowScreenY(r), arc=0, sq=1, st=1, p=0;
-  if(G.hop){ p=G.hop.t/G.hop.dur; var pe=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+  if(G.hop){ p=G.hop.t/G.hop.dur;
+    // smoothstep, not easeInOutQuad: same start and end, but 25% lower peak speed
+    // through the middle, which is where the old hop read as a snap
+    var pe=p*p*(3-2*p);
     r=G.hop.fromR+(G.hop.toR-G.hop.fromR)*pe; x=G.hop.fromX+(G.hop.toX-G.hop.fromX)*pe; y=rowScreenY(r);
-    arc=Math.sin(p*Math.PI)*20; st=1+Math.sin(p*Math.PI)*0.18; sq=1-Math.sin(p*Math.PI)*0.10;
+    var lift=Math.sin(p*Math.PI);
+    arc=lift*HOP_ARC; st=1+lift*HOP_STRETCH; sq=1-lift*HOP_SQUASH;
   }
+  else if(G.landT>0){ var ls=G.landT/LAND_SETTLE; st=1-ls*0.06; sq=1+ls*0.05; }   // knees bending on touchdown
   var sk=G.chr||curChar(), cy=y-arc, shs=Math.max(0.45,1-arc/58);
   // ground shadow (shrinks as he lifts)
   ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.beginPath(); ctx.ellipse(x,y+13,16*sq*shs,6.5*shs,0,0,7); ctx.fill();
@@ -1594,6 +1613,13 @@ if(/[?&]shtest=1/.test(location.search)){
     gullState:function(){ return G.gull?{phase:G.gull.phase,row:G.gull.row,t:+G.gull.t.toFixed(2)}:null; },
     scanTrains:function(){ G.cr.r=380; render(); var n=0,r=0; for(r=0;r<=G.maxGen;r++){ var L=G.lanes[r]; if(L&&L.train)n++; } return {trainLanes:n,maxGen:G.maxGen}; },
     setTex:function(v){ TEX_A=v; render(); return TEX_A; },
+    feel:function(o){ if(o){ if(o.hop!=null)HOP_DUR=o.hop; if(o.dash!=null)HOP_DUR_DASH=o.dash;
+        if(o.arc!=null)HOP_ARC=o.arc; if(o.cam!=null)CAM_FOLLOW=o.cam; if(o.shake!=null)SHAKE_SCALE=o.shake;
+        if(o.settle!=null)LAND_SETTLE=o.settle; }
+      return {hop:HOP_DUR,dash:HOP_DUR_DASH,arc:HOP_ARC,cam:CAM_FOLLOW,shake:SHAKE_SCALE,settle:LAND_SETTLE}; },
+    hopTrace:function(){ var out=[]; queueHop('up'); var g=0;
+      while(G.hop && g++<80){ var p=G.hop.t/G.hop.dur; out.push({p:+p.toFixed(2), r:+(G.hop.fromR+(G.hop.toR-G.hop.fromR)*(p*p*(3-2*p))).toFixed(3), pose:heroPose(p).split('/')[1]}); step(1/60); }
+      return {frames:out.length, poses:out.map(function(f){return f.pose;}).join(',')}; },
     revive:function(){ reviveRun(); return {phase:G.phase,r:G.cr.r,revives:G.revives,invuln:+G.invuln.toFixed(2),shield:G.shield,chase:+G.chaseR.toFixed(1),lane:laneAt(G.cr.r).type}; },
     reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),revives:G?G.revives:null,label:b?b.textContent:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null,adsLive:!!(window.LW_ADS&&window.LW_ADS.live)}; },
     prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char}; },
