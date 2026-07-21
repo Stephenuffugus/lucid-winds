@@ -249,7 +249,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Jimothy</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">Help Jimothy, Seattle's roundest and most beloved raccoon, cross the rainy city, level after level, to the greatest dumpster feast in town. Dodge the geese and rolling cans, ride the ferries, and grab every bottlecap.</div>
+    <div class="ribbon">Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-adventure">🗺&nbsp; Adventure</button>
@@ -265,8 +265,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
+        <button class="btn sm" id="b-feedback" title="Feedback" aria-label="Send feedback">💬</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
+      <button class="btn ghost sm" id="b-install" style="display:none">📲 Put Jimothy on your home screen</button>
       <button class="btn ghost sm" id="b-support"><span class="sup-heart">♥</span>&nbsp; Support the Studio</button>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
@@ -299,11 +301,12 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">👆</div><div><b>Tap</b> to hop forward. <b>Swipe</b> left, right, or down to hop that way.</div></div>
+    <div class="helprow"><div class="hi">🎮</div><div>The <b>corner arrows</b> do the same: <b>▼</b> hops forward, <b>▲</b> hops back, <b>◀ ▶</b> hop sideways.</div></div>
     <div class="helprow"><div class="hi">⌨️</div><div>On a keyboard, use the <b>arrow keys</b> or <b>WASD</b>.</div></div>
     <div class="helprow"><div class="hi">🚗</div><div>The <b>streets</b> are full of geese, rats, rolling coffee cans, and rushing traffic. Time your hop through the gaps.</div></div>
     <div class="helprow"><div class="hi">🌊</div><div>On the <b>water</b>, land on a <b class="hl">floating pad</b> (a dumpster lid, a pallet, a log, or a ferry) and ride it. Fall in and you sink.</div></div>
-    <div class="helprow"><div class="hi">🍺</div><div>Grab every <b class="hl">bottlecap</b>. Each clean hop grows your <b class="hl">Bloom Trail</b>, and reaching a safe curb banks it for a big score. One bad hop wilts the whole trail.</div></div>
-    <div class="helprow"><div class="hi">🗺️</div><div><b class="hl">Adventure</b> crosses Seattle level after level. Clear a level to unlock the next and earn up to three stars: finish it, hit its flower goal, and grab its coin goal.</div></div>
+    <div class="helprow"><div class="hi">🍺</div><div>Grab every <b class="hl">bottlecap</b>. Each clean hop forward grows your <b class="hl">Feast Trail</b>, and reaching a safe curb banks it for a big score. One bad hop and the trail is gone.</div></div>
+    <div class="helprow"><div class="hi">🗺️</div><div><b class="hl">Adventure</b> crosses Seattle level after level. Clear a level to unlock the next and earn up to three stars: finish it, hit its feast goal, and grab its coin goal.</div></div>
     <div class="helprow"><div class="hi">🥀</div><div>Don't dawdle. The <b>wilt</b> creeps up from behind. Keep moving forward.</div></div>
     <div class="helprow"><div class="hi">☕</div><div><b>Power-ups</b> drop on safe rows. <b class="hl">Coffee</b> is a wilt-proof dash, the <b class="hl">Umbrella</b> saves you from one hit, and <b class="hl">Snacks</b> pull bottlecaps in and pay double.</div></div>
     <div class="helprow"><div class="hi">🐾</div><div>Your bottlecaps pile up in the <b class="hl">Prize Bin</b>. Spend them to pull a new Seattle critter to play as, and the bin never hands you the same one twice. A couple of them are not in the bin at all. You have to find those.</div></div>
@@ -335,6 +338,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <button class="btn sm" id="mus-sup" style="max-width:430px;margin:0 auto 10px"><span class="sup-heart">♥</span>&nbsp; Every song now · Supporter Pack $3</button>
     <button class="btn ghost sm" id="mus-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- FEEDBACK -->
+  <div class="screen" id="s-feedback"><div class="pad">
+    <h2 class="sc-h">Feedback</h2>
+    <div class="sup-note" style="text-align:left;max-width:430px;margin:0 auto 12px">Found a bug? Something feel off? Tell the studio. Every note gets read.</div>
+    <textarea class="sup-in" id="fb-msg" rows="6" maxlength="2000" placeholder="What happened? What would make it better?" style="min-height:150px;resize:vertical"></textarea>
+    <input class="sup-in" id="fb-contact" type="text" maxlength="200" autocomplete="email" placeholder="Email or @name if you want a reply (optional)">
+    <button class="btn primary" id="fb-send" style="max-width:430px;margin:0 auto 10px">Send it</button>
+    <div class="sup-note" id="fb-status"></div>
+    <button class="btn ghost sm" id="fb-back" style="max-width:430px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- SUPPORT THE STUDIO -->
@@ -376,6 +390,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="stack" style="max-width:320px;margin:0 auto;width:100%">
       <button class="btn primary" id="pz-resume">▶ Keep hopping</button>
       <button class="btn sm" id="pz-restart">↻ Start over</button>
+      <button class="btn sm" id="pz-share">↗ Share Jimothy</button>
+      <button class="btn ghost sm" id="pz-feedback">💬 Send feedback</button>
       <button class="btn ghost sm" id="pz-menu">◄ Leave the run</button>
     </div>
   </div></div>
@@ -416,7 +432,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="go-lab" id="go-lab">rows crossed</div>
     <div class="pill" id="go-best">Best 0</div>
     <div style="width:100%;max-width:300px;margin-top:14px">
-      <div class="go-stat"><span>Flowers banked</span><b id="go-flowers">0</b></div>
+      <div class="go-stat"><span>Feasts banked</span><b id="go-flowers">0</b></div>
       <div class="go-stat"><span>Longest trail</span><b id="go-trail">0</b></div>
       <div class="go-stat"><span>Bottlecaps</span><b id="go-caps">0</b></div>
     </div>
@@ -429,6 +445,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="go-home">◄ Menu</button>
         <button class="btn sm" id="go-levels" style="display:none">🗺 Levels</button>
         <button class="btn sm" id="go-share">↗ Share</button>
+        <button class="btn sm" id="go-feedback" title="Feedback" aria-label="Send feedback">💬</button>
       </div>
     </div>
   </div></div>
@@ -462,7 +479,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.2';
+var BUILD='v3.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -617,7 +634,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='33';
+var ARTV='34';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -801,7 +818,8 @@ function makeLane(r){
     // a real Seattle landmark, rarer still, and one you have never touched comes first
     else if(r>=10 && rng()<0.035){ var ec=Math.floor(rng()*COLS); while(L.blocked[ec])ec=(ec+1)%COLS;
       L.egg={ x:(ec+0.5)*TILE, kind:pickEgg(rng) }; }
-    else if(rng()<0.4) L.coin=(0.5+Math.floor(rng()*COLS))*TILE;
+    else if(rng()<0.4){ var kc=Math.floor(rng()*COLS); while(L.blocked[kc])kc=(kc+1)%COLS;   // never inside a bush (Jessie: uncollectable caps)
+      L.coin=(0.5+kc)*TILE; }
     return L;
   }
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
@@ -913,6 +931,10 @@ function startHop(dir){
   else if(dir==='left') toX=fromX-TILE; else if(dir==='right') toX=fromX+TILE;
   // clamp sideways to board
   if(toX<HALF)toX=HALF; if(toX>VW-HALF)toX=VW-HALF;
+  // a hop into the wall is not a hop — a stationary "hop" used to grant the
+  // same mid-air safety as a real one, which made the screen edge a free
+  // stall-forever spot (Jessie's cheat report)
+  if(toR===fromR && toX===fromX){ G.shake=Math.max(G.shake,2); return; }
   var dest=laneAt(toR);
   // refuse into a blocked bush on a safe row
   if(dest.type==='safe' && dest.blocked){ var col=Math.round((dir==='left'||dir==='right'?toX:fromX)/TILE - 0.5); col=Math.max(0,Math.min(COLS-1,col)); if(dest.blocked[col]){ G.shake=Math.max(G.shake,3); return; } }
@@ -944,8 +966,17 @@ function finishHop(){
   }
   // resolve landing hazard immediately (water needs a pad)
   if(lane.type==='water'){ var pad=padUnder(lane,G.cr.x); if(pad){ G.ride=pad; G.coyote=0; } else { G.coyote=0.001; } }
-  // fire buffered input
-  if(G.buf){ var b=G.buf; G.buf=null; startHop(b); }
+  // landing ON a car kills even when the next hop is already buffered — chained
+  // hops used to skip the road check entirely, so mashing forward was invincible
+  if(lane.type==='road' && G.phase==='play' && G.vestT<=0){
+    var lhit=null;
+    if(lane.vents){ for(var lv=0; lv<lane.vents.length; lv++){ if(ventPhase(lane.vents[lv])>0.55 && Math.abs(lane.vents[lv].x-G.cr.x)<28){ lhit='steam'; break; } } }
+    if(!lhit){ for(var lj=0; lj<lane.ents.length; lj++){ var lo=lane.ents[lj];
+      if(Math.abs(lo.x-G.cr.x)<(lo.w+G.cr.w)/2*0.72){ lhit='squish'; break; } } }
+    if(lhit) die(lhit);
+  }
+  // fire buffered input (never off a corpse)
+  if(G.buf){ var b=G.buf; G.buf=null; if(G.phase==='play') startHop(b); }
 }
 /* ===== pickups + power-ups ===== */
 function collectPickups(lane){
@@ -1203,8 +1234,8 @@ function bankBloom(){
   var val=Math.round(50 + G.combo*G.combo*4 + G.crossings*20);
   G.score+= Math.round(val/10);
   G.flowers++; G.crossings++; G.lvFlowers=(G.lvFlowers||0)+1;
-  float(G.cr.x, rowScreenY(G.cr.r)-24, '✿ +'+val);
-  var grade = G.combo>=14?'RARE BLOOM':G.combo>=8?'FINE BLOOM':'BLOOM';
+  float(G.cr.x, rowScreenY(G.cr.r)-24, '🍕 +'+val);
+  var grade = G.combo>=14?'LEGENDARY FEAST!':G.combo>=8?'BIG FEAST!':'FEAST!';
   float(G.cr.x, rowScreenY(G.cr.r)-46, grade);
   // celebrate: petal burst from the whole trail
   for(var i=0;i<Math.min(G.trail.length,18);i++){ var tr=G.trail[i]; burst(tr.x, rowScreenY(tr.r), 3, G.combo>=8?'#e58fa0':'#7ab356'); }
@@ -1384,7 +1415,10 @@ function step(dt){
     var lead = G.cr.r - 5 - Math.min(4, G.t*0.02);
     if(G.chaseR < lead) G.chaseR += Math.max(G.chaseSpd, (lead-G.chaseR)*0.4)*dt*(0.5+diffAt(G.cr.r)*0.09);
     else G.chaseR += G.chaseSpd*dt*(0.6+diffAt(G.cr.r)*0.12);
-    if(!G.hop && G.dashT<=0 && G.cr.r <= G.chaseR+0.05) die('wilt');
+    // only a FORWARD hop outruns the wilt; bouncing up/down or sideways inside
+    // the purple no longer grants mid-air immunity (the other half of the stall cheat)
+    var wr = G.hop ? (G.hop.dir==='up' ? Math.max(G.hop.fromR,G.hop.toR) : Math.min(G.hop.fromR,G.hop.toR)) : G.cr.r;
+    if(G.dashT<=0 && wr <= G.chaseR+0.05) die('wilt');
   }
   // camera
   G.camYt = G.cr.r*TILE - VH*0.40;
@@ -1567,7 +1601,7 @@ function render(){ if(!ctx||!G)return;
     // live star-goal chips (known targets = the mastery chase)
     var fg=advFlowerGoal(G.level), cg=advCoinGoal(G.level);
     ctx.font='700 12px system-ui';
-    ctx.fillStyle=((G.lvFlowers||0)>=fg)?'#7ab356':'#8a9178'; ctx.fillText('✿ '+(G.lvFlowers||0)+'/'+fg, 20, 76);
+    ctx.fillStyle=((G.lvFlowers||0)>=fg)?'#7ab356':'#8a9178'; ctx.fillText('🍕 '+(G.lvFlowers||0)+'/'+fg, 20, 76);
     ctx.fillStyle=((G.lvCoins||0)>=cg)?'#e8c65a':'#8a9178'; ctx.fillText('● '+(G.lvCoins||0)+'/'+cg, 84, 76);
   } else {
     ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 46);
@@ -1575,7 +1609,7 @@ function render(){ if(!ctx||!G)return;
   }
   if(G.mode==='rush'){ ctx.textAlign='center'; var cl=Math.max(0,G.clock); ctx.fillStyle=cl<=10?'#e5604d':'#f5ebd0'; ctx.font='800 34px system-ui'; ctx.fillText(cl.toFixed(1)+'s', VW/2, 46); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('RUSH HOUR', VW/2, 62); ctx.textAlign='left'; }
   // shifted left of the pause button, which owns the top right corner now
-  if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('✿ '+G.combo, VW-72, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('BLOOM TRAIL', VW-72, 60); }
+  if(G.combo>=2){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 20px system-ui'; ctx.fillText('🍕 '+G.combo, VW-72, 44); ctx.font='700 11px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('FEAST TRAIL', VW-72, 60); }
   drawFirstRunHint();
   drawPowerHud();
   drawZoneBanner();
@@ -1990,9 +2024,10 @@ function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; savePr
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/satellites/stream-hop/";
+function shareIt(){ var url="https://lucidwinds.com/jimothy/";
   var sc=(G&&G.score)||0, who=curChar(), txt;
-  if(G && G.mode==='adventure'){
+  if(!G){ txt="I found Jimothy, Seattle's roundest raccoon, and now I am hopping him across the rainy city. Come play, it is free."; }
+  else if(G && G.mode==='adventure'){
     txt="Jimothy the Seattle raccoon. I got to "+advChapterName(G.level)+", level "+G.level+
         ", with "+advTotalStars()+" stars. Can you get further?";
   } else {
@@ -2077,14 +2112,21 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  // FIRST PLAY: rules before play (Jessie). The very first time any mode is
+  // tapped, the How screen shows once and its button carries them into the game.
+  var howNext=null;
+  function startGated(fn){
+    if(!LS.get('sh_howseen')){ howNext=fn; var hb=$('how-back'); if(hb)hb.textContent="Got it, let's hop"; show('s-how'); return; }
+    fn();
+  }
   // a brand new player has exactly one unlocked level, so the map is a pointless tap
   // between them and the game. Send them straight in; the map returns once they have progress.
-  tap('b-adventure', function(){ if((PROG.adv.maxLevel||1)<=1){ newGame('adventure',1); return; } renderLevels(); show('s-levels'); });
+  tap('b-adventure', function(){ startGated(function(){ if((PROG.adv.maxLevel||1)<=1){ newGame('adventure',1); return; } renderLevels(); show('s-levels'); }); });
   tap('lv-back', function(){ show('s-title'); });
-  tap('b-endless', function(){ newGame('endless'); });
-  tap('b-daily', function(){ newGame('daily'); });
-  tap('b-rush', function(){ newGame('rush'); });
-  tap('b-zen', function(){ newGame('zen'); });
+  tap('b-endless', function(){ startGated(function(){ newGame('endless'); }); });
+  tap('b-daily', function(){ startGated(function(){ newGame('daily'); }); });
+  tap('b-rush', function(){ startGated(function(){ newGame('rush'); }); });
+  tap('b-zen', function(){ startGated(function(){ newGame('zen'); }); });
   tap('b-skins', function(){ renderBin(); show('s-skins'); });
   tap('bin-pull', binPull);
   tap('b-ach', function(){ renderAch(); show('s-ach'); });
@@ -2110,7 +2152,21 @@ function boot(){
   SUP.render();
   setTimeout(SUP.hydrate, 2600);   // after Sunbeam.init has had a chance to resolve
   try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth') SUP.hydrate(); }); }catch(e){}
-  tap('how-back', function(){ show('s-title'); });
+  tap('how-back', function(){ LS.set('sh_howseen','1');
+    var f=howNext; howNext=null; var hb=$('how-back'); if(hb)hb.textContent='Got it';
+    if(f) f(); else show('s-title'); });
+  tap('b-feedback', function(){ openFeedback('s-title'); });
+  tap('go-feedback', function(){ openFeedback('s-go'); });
+  tap('pz-feedback', function(){ openFeedback('s-pause'); });
+  tap('fb-back', function(){ show(fbFrom); });
+  tap('fb-send', sendFeedback);
+  tap('pz-share', shareIt);
+  tap('b-install', tryInstall);
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEv=e; installAvail(); });
+  window.addEventListener('appinstalled', function(){ installEv=null; var b=$('b-install'); if(b)b.style.display='none'; });
+  (function(){ var std=false;
+    try{ std=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){}
+    if(!std && /iphone|ipad|ipod/i.test(navigator.userAgent||'')) installAvail(); })();
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
   var pbtn=$('pausebtn'); if(pbtn) pbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); pauseRun(); });
@@ -2155,7 +2211,9 @@ var MUSIC=[
   {id:'xwalk',    title:'Jimothy Crosswalk',    file:'jimothy-crosswalk',    len:'2:21',
    hint:'Earn 8 badges',               test:function(){ return achCount()>=8; }},
   {id:'trashrun', title:'Midnight Trash Run',   file:'midnight-trash-run',   len:'3:02',
-   hint:'Bank 400 lifetime bottlecaps',test:function(){ return (PROG.capsEver||0)>=400; }}
+   hint:'Bank 400 lifetime bottlecaps',test:function(){ return (PROG.capsEver||0)>=400; }},
+  {id:'pizza',    title:'Week Old Pizza',       file:'week-old-pizza',       len:'1:19',
+   hint:'Pull 3 critters from the bin',test:function(){ return (PROG.pulls||0)>=3; }}
 ];
 function musTrack(id){ for(var i=0;i<MUSIC.length;i++) if(MUSIC[i].id===id)return MUSIC[i]; return MUSIC[0]; }
 function musOwned(id){ var t=musTrack(id); return !!(t.free || (PROG.musicUn&&PROG.musicUn[id]) || supporterPack()); }
@@ -2237,6 +2295,43 @@ function renderMusic(){
       if(own){ JMUS.play(t.id); sfx('ui'); renderMusic(); }
       else { JMUS.tease(t, function(){ if(curScreen==='s-music')renderMusic(); }); toast(t.hint); sfx('ui'); renderMusic(); } });
     host.appendChild(row);
+  });
+}
+
+/* ===== FEEDBACK — the testers' drop box. Anonymous POST to the studio's
+   swFeedback cloud function (admin-side Firestore write, no account needed). ===== */
+var FB_URL='https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback';
+var fbFrom='s-title';
+function openFeedback(from){ fbFrom=from||curScreen||'s-title'; var st=$('fb-status'); if(st)st.textContent=''; sfx('ui'); show('s-feedback'); }
+function sendFeedback(){
+  var ta=$('fb-msg'), msg=(ta&&ta.value)||'', st=$('fb-status');
+  if(!msg.replace(/\s/g,'')){ if(st)st.textContent='Write a little something first.'; return; }
+  var btn=$('fb-send'); if(btn)btn.disabled=true; if(st)st.textContent='Sending...';
+  var meta='build '+BUILD+' · sup '+(supporterPack()?1:0)+
+    (G?(' · '+G.mode+(G.mode==='adventure'?' lv'+G.level:'')+' r'+Math.floor(G.cr.r)):'');
+  fetch(FB_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({game:'jimothy', msg:msg.slice(0,2000),
+      contact:(($('fb-contact')||{}).value||'').slice(0,200), meta:meta})})
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if(btn)btn.disabled=false;
+    if(d&&d.ok){ if(ta)ta.value=''; if(st)st.textContent='Got it. Thank you for helping Jimothy.'; sfx('unlock'); haptic(14); }
+    else if(st)st.textContent='That did not go through. Try once more?'; })
+  ['catch'](function(){ if(btn)btn.disabled=false; if(st)st.textContent='No connection right now. Try again in a moment.'; });
+}
+
+/* ===== INSTALL — a real Add to Home Screen button. Chrome/Android hands us the
+   prompt through beforeinstallprompt; iPhone gets the two-tap instructions. ===== */
+var installEv=null;
+function installAvail(){ var b=$('b-install'); if(b)b.style.display=''; }
+function tryInstall(){
+  if(installEv){ try{ installEv.prompt(); }catch(e){} return; }
+  revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+    $('br-rar').textContent='Get the app'; $('br-rar').style.color='#c8a84b';
+    $('br-name').textContent='Add to Home Screen';
+    $('br-bio').textContent='Tap the Share button in your browser, then "Add to Home Screen". Jimothy installs like a real app, icon and all.';
+    var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d'); c.clearRect(0,0,124,124);
+    c.font='62px system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('📲',62,66);
+    ov.querySelector('.br-card').style.borderColor='#c8a84b'; ov.classList.add('on'); sfx('ui');
   });
 }
 
