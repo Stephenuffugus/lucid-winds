@@ -518,7 +518,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.7';
+var BUILD='v3.8';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -805,7 +805,7 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
-      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, capsEverPaid:0, idleT:0, saveT:0, fogT:0, landT:0,
+      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, capsEverPaid:0, idleT:0, saveT:0, fogT:0, landT:0, celeb:0,
       freezeT:0, vestT:0, bootsT:0, lampT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,bg:ZONES[0].bg,t:2.6};
@@ -856,7 +856,21 @@ function makeLane(r){
   // ADVENTURE: every level boundary is a safe "start line" bank — a fair launch + a
   // clean checkpoint. Reset the band machine so the level's hazards start fresh.
   if(G.mode==='adventure' && r%ADV_LEN===0){ G.band='safe'; G.bandLeft=1; G.lastType='safe';
-    L.type='safe'; L.bank=true; L.blocked={}; L.levelLine=advLevelOfRow(r); L.coin=(0.5+Math.floor(rng()*COLS))*TILE; return L; }
+    L.type='safe'; L.bank=true; L.blocked={}; L.levelLine=advLevelOfRow(r);
+    // FEAST GATES — the classic arrival: three open alcoves, the rest walled off.
+    // You have to LAND in one to finish the level (from the moat below, past lvl 3).
+    // Never on the row the run SPAWNS on: that one is a start line, not a finish.
+    if(r>0 && Math.abs(r-G.cr.r)>0.5){ var g1=1+Math.floor(rng()*2), g2=4+Math.floor(rng()*2)-1, g3=7+Math.floor(rng()*2)-1;
+      L.gates={}; L.gates[g1]=1; L.gates[g2]=1; L.gates[g3]=1;
+      for(var gc=0; gc<COLS; gc++){ if(!L.gates[gc]) L.blocked[gc]=1; } }
+    L.coin=null; return L; }
+  // the two rows before a gate row are the MOAT: open water you cross on pads,
+  // then leap into an alcove. Kicks in once the training levels are done.
+  if(G.mode==='adventure'){ var rin=r%ADV_LEN, mlv=advLevelOfRow(r);
+    if(mlv>=4 && (rin===ADV_LEN-2 || rin===ADV_LEN-1)){
+      L.type='water'; buildWater(L,d); G.lastType='water'; G.afterHazard=true;
+      for(var me=0; me<L.ents.length; me++){ if(!L.ents[me].ferry) L.ents[me].w*=1.22; }  // finale pads run generous
+      return L; } }
   if(G.bandLeft<=0){
     var adv=(G.mode==='adventure');
     if(G.band==='safe'){ G.band='hazard';
@@ -985,6 +999,7 @@ function laneAt(r){ if(r<0)return {r:r,type:'safe',ents:[],blocked:{}}; genUpTo(
 
 /* ===== input ===== */
 function queueHop(dir){ if(!G||G.phase!=='play')return;
+  if(G.celeb>0)return;   // savour the feast — the next level starts in a breath
   if(G.hop){ G.buf=dir; return; }
   startHop(dir);
 }
@@ -1241,7 +1256,14 @@ function advLevelUp(newLevel){
     spr(ZONES[(nz+1)%ZONES.length].bg); }
   else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars, sp:advSpecial(newLevel) };
   if(advSpecial(newLevel)==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; G.weather.dur=16; }
-  G.flash=Math.max(G.flash,0.35); sfx('bank'); haptic(16);
+  G.flash=Math.max(G.flash,0.35); haptic(16);
+  // ARRIVAL: hold the moment — Jimothy cheers in the alcove, the street waits,
+  // the sweeper backs off, a little fanfare plays. Then the city rolls on.
+  G.celeb=1.35; if(G.chaseR>G.cr.r-7) G.chaseR=G.cr.r-7;
+  var gl2=laneAt(G.cr.r), gcol=Math.round(G.cr.x/TILE-0.5);
+  if(gl2.gates && gl2.gates[gcol]){ var gb=(gcol>=3&&gcol<=5)?8:5; G.coins+=gb; G.lvCoins=(G.lvCoins||0)+1;
+    float(G.cr.x, rowScreenY(G.cr.r)-64, 'FEAST! +'+gb+' caps'); }
+  sfx('bank'); setTimeout(function(){ sfx('combo',3); },140); setTimeout(function(){ sfx('combo',5); },280); setTimeout(function(){ sfx('unlock'); },430);
   spawnFx('fx/glow-bloom', G.cr.x, rowScreenY(G.cr.r), TILE*2.4, 0.6); spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.6, 0.65);
   // one star pop per star actually earned on the level you just cleared
   var got=0,sm=stars||0; if(sm&1)got++; if(sm&2)got++; if(sm&4)got++;
@@ -1459,6 +1481,7 @@ function step(dt){
   if(G.vestT>0) G.vestT-=dt;
   if(G.bootsT>0) G.bootsT-=dt;
   if(G.lampT>0){ G.lampT-=dt; if(G.weather.fog>0){ G.weather.fog=Math.max(0, G.weather.fog-dt*1.6); } }
+  if(G.celeb>0) G.celeb-=dt;
   if(G.saveT>0) G.saveT-=dt;
   if(G.landT>0) G.landT-=dt;
   G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
@@ -1483,7 +1506,7 @@ function step(dt){
     // only a FORWARD hop outruns the wilt; bouncing up/down or sideways inside
     // the purple no longer grants mid-air immunity (the other half of the stall cheat)
     var wr = G.hop ? (G.hop.dir==='up' ? Math.max(G.hop.fromR,G.hop.toR) : Math.min(G.hop.fromR,G.hop.toR)) : G.cr.r;
-    if(G.dashT<=0 && wr <= G.chaseR+0.05) die('wilt');
+    if(G.dashT<=0 && !(G.celeb>0) && wr <= G.chaseR+0.05) die('wilt');
   }
   // camera
   G.camYt = G.cr.r*TILE - VH*0.40;
@@ -1796,7 +1819,13 @@ function drawRow(r){
     if(L.bank){ ctx.fillStyle='rgba(200,168,75,0.10)'; ctx.fillRect(0,top,VW,TILE); }
     if(L.levelLine){ ctx.fillStyle='rgba(200,168,75,0.14)'; ctx.fillRect(0,top,VW,TILE);
       ctx.strokeStyle='rgba(232,220,200,0.55)'; ctx.lineWidth=2; ctx.setLineDash([11,8]); ctx.beginPath(); ctx.moveTo(0,top+3); ctx.lineTo(VW,top+3); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px Fredoka,system-ui'; ctx.textAlign='right'; ctx.fillText('LEVEL '+L.levelLine, VW-12, top+TILE-5); ctx.textAlign='left'; }
+      ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.font='700 10px Fredoka,system-ui'; ctx.textAlign='right'; ctx.fillText('LEVEL '+L.levelLine, VW-12, top+TILE-5); ctx.textAlign='left';
+      // the dumpster feasts glowing in their alcoves — the finish line you leap into
+      if(L.gates)for(var gg=0; gg<COLS; gg++){ if(L.gates[gg]){ var gx=(gg+0.5)*TILE;
+        var fg=ctx.createRadialGradient(gx,y,3,gx,y,26); fg.addColorStop(0,'rgba(240,214,138,'+(0.30+0.14*Math.sin(G.t*3+gg))+')'); fg.addColorStop(1,'rgba(240,214,138,0)');
+        ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(gx,y,26,0,7); ctx.fill();
+        drawSprite('sprites/obs-trashbags', gx, y-6, 0, {w:TILE*0.94, bottom:22});
+        drawSprite('sprites/pickup-fries', gx+8, y+6, 22); } } }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
@@ -1953,8 +1982,13 @@ function critRowF(){ if(!G.hop) return G.cr.r;
   return G.hop.fromR+(G.hop.toR-G.hop.fromR)*pe; }
 function gullOnMe(){ return !!(G.gull && G.gull.phase==='warn' && Math.abs(G.gull.row-G.cr.r)<0.6); }
 function wiltClose(){ return G.started && G.mode!=='zen' && G.mode!=='rush' && (G.cr.r-G.chaseR)<2.4; }
+function heroPoseName(n){ var ch=G.chr||curChar();
+  if(!ch.art||!ch.sheet) return 'hero/'+n;
+  if(!ch.full) n = POSE4[n] || 'idle';
+  return ch.sheet+'/'+n; }
 function heroPose(p){
   var n;
+  if(G.celeb>0 && G.phase==='play') return heroPoseName('cheer');
   if(G.phase==='dying'){ var c=G.deadCause;
     n = c==='time' ? 'cheer' : (c==='sink'||c==='swept') ? 'splash' : (c==='wilt' ? 'dizzy' : 'ko'); }
   else if(G.saveT>0) n='shield';                              // bracing, just ate a hit
