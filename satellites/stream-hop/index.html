@@ -582,7 +582,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.4';
+var BUILD='v4.5';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -797,6 +797,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/haz-crowdive','chars/seagull/leap','sprites/prop-steam',
   'sprites/haz-otterswim','sprites/haz-heronwade','sprites/haz-pigeons',
   'sprites/sweeper-body','sprites/sweeper-edge','ui/glyph-pizza',
+  'sprites/mv-espresso','sprites/mv-bot','sprites/mv-leashdog',
+  'sprites/mv-walker','sprites/mv-ducks','sprites/mv-salmon',
   'sprites/planter-concrete','sprites/planter-barrel','sprites/planter-ferns'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
@@ -988,6 +990,12 @@ var OBS={
   cone:{s:'sprites/obs-cone',        w:40},
   barrier:{s:'sprites/obs-barrier',  w:48},
   pigeons:{s:'sprites/haz-pigeons',  w:66, fly:1},
+  espresso:{s:'sprites/mv-espresso', w:104},
+  bot:{s:'sprites/mv-bot',           w:54},
+  leashdog:{s:'sprites/mv-leashdog', w:86},
+  walker:{s:'sprites/mv-walker',     w:60},
+  ducks:{s:'sprites/mv-ducks',       w:112},
+  salmonfly:{s:'sprites/mv-salmon',  w:60, fly:1},
   scooter:{s:'sprites/veh-scooter',  w:62},
   skater:{s:'sprites/veh-skater',    w:68},
   cyclist:{s:'sprites/veh-cyclist',  w:76},
@@ -1004,9 +1012,9 @@ var OBS={
 };
 /* only things that genuinely MOVE ride the lanes — parked junk (trash bags,
    cones, barriers, bins, produce, the coffee cart) lives on the curbs now */
-var OBS_EARLY=['acorn','pod','hog','pigeons'];
-var OBS_MID  =['scooter','skater','cyclist','dog','raccoon'];
-var OBS_LATE =['sedan','taxi','van'];
+var OBS_EARLY=['acorn','pod','hog','pigeons','bot','ducks'];
+var OBS_MID  =['scooter','skater','cyclist','dog','raccoon','leashdog','walker','salmonfly'];
+var OBS_LATE =['sedan','taxi','van','espresso'];
 var OBS_BIG  =['foodtruck','trolleybus'];
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
