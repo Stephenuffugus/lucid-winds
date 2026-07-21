@@ -3,13 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0c">
+<meta name="theme-color" content="#0b0f0b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Ccircle cx='16' cy='13' r='6' fill='%237ab356'/%3E%3Ccircle cx='13' cy='11' r='1.5' fill='%230e140d'/%3E%3Ccircle cx='19' cy='11' r='1.5' fill='%230e140d'/%3E%3Ccircle cx='16' cy='24' r='3' fill='%23c8a84b'/%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Jimothy">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <title>Jimothy · Sky Wolf Studios</title>
+<meta name="description" content="Help Jimothy, Seattle's most beloved and most deformed raccoon, cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<!-- share unfurl: a posted link has to sell the game on its own -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="Jimothy: Raccoon. Weird Shape. Big Adventure.">
+<meta property="og:description" content="Help Seattle's most beloved and most deformed raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/stream-hop/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Jimothy the Seattle raccoon running down a Ballard street toward the Space Needle.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Jimothy: Raccoon. Weird Shape. Big Adventure.">
+<meta name="twitter:description" content="Help Seattle's most beloved and most deformed raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy.jpg">
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
 <style>
@@ -264,6 +281,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
     <div class="stack">
+      <button class="btn primary" id="go-continue" style="display:none">▶ Keep going</button>
       <button class="btn primary" id="go-retry">↻ Hop again</button>
       <div class="row">
         <button class="btn sm" id="go-home">◄ Menu</button>
@@ -281,7 +299,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.8';
+var BUILD='v1.9';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -348,7 +366,9 @@ var IMGS={}, ART_ON=true;
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path; IMGS[path]=im; } return im; }
-function spr(name){ return IMG('assets/'+name+'.png'); }
+/* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
+var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1};
+function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
 /* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn. */
 function drawSprite(name,x,y,h,o){ if(!ART_ON)return false; var im=spr(name); if(!imgReady(im))return false;
@@ -367,8 +387,10 @@ function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
   var LT=['lanes/strip-safe','lanes/strip-road','lanes/strip-water','lanes/strip-rail']; for(var j=0;j<LT.length;j++) spr(LT[j]); }
 /* subtle lane texture: drawn over the flat zone color so the neighborhood tint still
    shows through (readability first). alpha is deliberately low. */
-function laneTex(name, top, a){ if(!ART_ON)return; var im=spr(name); if(!imgReady(im))return;
-  ctx.save(); ctx.globalAlpha=a; ctx.drawImage(im, 0, top, VW, TILE); ctx.restore(); }
+var TEX_A=0.6; /* lane texture strength: 0 turns the strips off entirely, 1 = as authored.
+                  0.6 keeps the wet asphalt grain without muddying the lane read. */
+function laneTex(name, top, a){ if(!ART_ON||TEX_A<=0)return; var im=spr(name); if(!imgReady(im))return;
+  ctx.save(); ctx.globalAlpha=a*TEX_A; ctx.drawImage(im, 0, top, VW, TILE); ctx.restore(); }
 
 /* ===== audio ===== */
 var AC=null; function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
@@ -406,6 +428,7 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, skin:skinById(PROG.skin), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
+      revives:0, invuln:0, sunPaid:0, flowersPaid:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,t:2.6};
   // camera init
@@ -724,6 +747,7 @@ function step(dt){
   // power-up timers
   if(G.zoneBanner && G.zoneBanner.t>0) G.zoneBanner.t-=dt;
   if(G.levelBanner && G.levelBanner.t>0) G.levelBanner.t-=dt;
+  if(G.invuln>0) G.invuln-=dt;
   if(G.dashT>0) G.dashT-=dt;
   if(G.magnetT>0){ G.magnetT-=dt;
     // magnet: sweep any coin on the row you're standing on into your paws
@@ -757,6 +781,7 @@ function zenReset(cause){ // Zen Meadow is no-fail: drift back to the last safe 
 }
 function die(cause){ if(!G||G.phase!=='play')return;
   if(cause==='time'){ G.deadCause='time'; G.phase='dying'; G.flash=Math.max(G.flash,0.5); sfx('bank'); setTimeout(gameOver,350); return; }
+  if(G.invuln>0) return;   // just continued: a short grace window so you are not killed on the spot
   // umbrella shield: eat one fatal hit
   if(G.shield){ G.shield=false; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,8); sfx('phew'); haptic(20);
     float(G.cr.x,rowScreenY(G.cr.r)-22,'☂ saved!'); burst(G.cr.x,rowScreenY(G.cr.r),16,'#a7cdea'); G.coyote=0; G.ride=null; G.slowmo=0.45;
@@ -773,12 +798,23 @@ function die(cause){ if(!G||G.phase!=='play')return;
 function gameOver(){ if(!G)return; G.phase='over'; running=false;
   var isBest=false;
   if(G.mode!=='adventure'){ var best=PROG.best[G.mode]||0; isBest=G.score>best; if(isBest) PROG.best[G.mode]=G.score; }
-  PROG.flowers=(PROG.flowers||0)+G.flowers;
+  // a continued run lands here more than once, so only ever bank the NEW progress
+  PROG.flowers=(PROG.flowers||0)+Math.max(0, G.flowers-(G.flowersPaid||0)); G.flowersPaid=G.flowers;
   // unlock skins by endless best
   if(G.mode==='endless'){ SKINS.forEach(function(s){ if(!PROG.unlocked[s.id] && (PROG.best.endless||0)>=s.unlock){ PROG.unlocked[s.id]=1; setTimeout(function(){ toast('Befriended '+s.name+'!'); sfx('unlock'); },300); } }); }
   saveProg();
-  var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25)); if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; } }catch(e){}
+  var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.crossings*2 + (isBest?2:0) + Math.floor(G.score/25));
+    amt=Math.max(0, amt-(G.sunPaid||0));   // never pay the same rows twice after a continue
+    if(amt>0) granted=window._sbCapEarn(amt,'streamhop:'+G.mode)||0; G.sunPaid=(G.sunPaid||0)+granted; } }catch(e){}
   var rb=$('go-retry'), glv=$('go-levels');
+  // "Keep going": one continue per run, back on the last safe row with a shield.
+  var cbtn=$('go-continue');
+  if(cbtn){ if(canRevive()){ cbtn.style.display='';
+      cbtn.textContent=(window.LW_ADS&&window.LW_ADS.live)?'▶ Watch to continue':'▶ Keep going';
+      cbtn.disabled=false; if(rb)rb.classList.remove('primary'); }
+    else { cbtn.style.display='none'; if(rb)rb.classList.add('primary'); } }
+  deathCount++;
+  if(deathCount%4===0){ try{ if(window.LW_ADS&&window.LW_ADS.interstitial) window.LW_ADS.interstitial(); }catch(e){} }
   if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
   if(G.mode==='adventure'){
     advRetryLevel=G.level;
@@ -798,6 +834,29 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   $('go-trail').textContent=G.longest;
   $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   setTimeout(function(){ show('s-go'); }, 40);
+}
+/* ===== continue (rewarded) — one per run, and it puts you back where you fell.
+   A dead run is where players quit; a single second chance is the cheapest retention
+   there is, and it is the slot a rewarded video drops into later. ===== */
+var REVIVE_MAX=1, deathCount=0;
+function canRevive(){ return !!G && G.mode!=='zen' && G.deadCause!=='time' && (G.revives||0)<REVIVE_MAX; }
+function reviveRun(){ if(!canRevive())return;
+  var btn=$('go-continue'); var ads=window.LW_ADS||{};
+  if(typeof ads.rewarded!=='function'){ doRevive(); return; }
+  if(btn){ btn.disabled=true; }
+  ads.rewarded(function(ok){ if(btn) btn.disabled=false; if(ok) doRevive(); });
+}
+function doRevive(){ if(!G)return;
+  G.revives=(G.revives||0)+1;
+  var r=Math.floor(G.cr.r); while(r>0 && laneAt(r).type!=='safe') r--;   // last bank you stood on
+  G.cr.r=r; G.cr.x=Math.max(HALF,Math.min(VW-HALF,G.cr.x));
+  G.hop=null; G.buf=null; G.ride=null; G.coyote=0; G.near={}; G.gull=null; G.gullT=8;
+  G.phase='play'; G.deadCause=null; G.combo=0; G.trail=[];
+  G.shield=true; G.invuln=2; G.slowmo=1; G.chaseR=G.cr.r-8;             // shield + grace + the wilt pushed back
+  G.camY=G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
+  G.flash=Math.max(G.flash,0.5); sfx('unlock'); haptic(20);
+  show('s-play');
+  float(G.cr.x, rowScreenY(G.cr.r)-22, 'back up!');
 }
 function toast(txt){ float(VW/2, 120, txt); }
 
@@ -1149,6 +1208,7 @@ function boot(){
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
+  tap('go-continue', reviveRun);
   tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
   tap('go-levels', function(){ renderLevels(); show('s-levels'); });
   tap('go-home', function(){ show('s-title'); });
@@ -1163,7 +1223,17 @@ function boot(){
   // Tapping it routes first-timers into the story intro, returning players to the menu.
   tap('splash-tap', splashTapped);
   var sv=$('splash-vid'); if(sv){ sv.addEventListener('ended', splashEnded); }   // static poster shows until first tap
+  // installable: add to home screen, own icon, runs full screen. SW is network-first
+  // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 }
+
+/* ===== rewarded video hook =====
+   A host that can actually show ads (Capacitor + AdMob, or the portal) defines
+   window.LW_ADS before this file runs and we use theirs. Until then this stub grants
+   the reward for free and reports live:false, so the button never claims a video it
+   cannot play. Contract: rewarded(cb) -> cb(true) if the reward is earned. */
+window.LW_ADS = window.LW_ADS || { live:false, rewarded:function(cb){ cb(true); }, interstitial:function(){} };
 
 /* ===== Sky Wolf embed + sunbeam ===== */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
@@ -1200,7 +1270,11 @@ if(/[?&]shtest=1/.test(location.search)){
     weatherState:function(){ var w=G.weather; return {type:w.type,rainA:+w.rainA.toFixed(2),fog:+w.fog.toFixed(2),mul:+w.mul.toFixed(3)}; },
     spawnGull:function(){ G.started=true; G.cr.r=Math.max(G.cr.r,4); G.gull={phase:'warn',row:G.cr.r,t:0,warnDur:1.15,dir:1,dur:0.5}; return {row:G.gull.row}; },
     gullState:function(){ return G.gull?{phase:G.gull.phase,row:G.gull.row,t:+G.gull.t.toFixed(2)}:null; },
-    scanTrains:function(){ G.cr.r=380; render(); var n=0,r=0; for(r=0;r<=G.maxGen;r++){ var L=G.lanes[r]; if(L&&L.train)n++; } return {trainLanes:n,maxGen:G.maxGen}; }
+    scanTrains:function(){ G.cr.r=380; render(); var n=0,r=0; for(r=0;r<=G.maxGen;r++){ var L=G.lanes[r]; if(L&&L.train)n++; } return {trainLanes:n,maxGen:G.maxGen}; },
+    setTex:function(v){ TEX_A=v; render(); return TEX_A; },
+    revive:function(){ reviveRun(); return {phase:G.phase,r:G.cr.r,revives:G.revives,invuln:+G.invuln.toFixed(2),shield:G.shield,chase:+G.chaseR.toFixed(1),lane:laneAt(G.cr.r).type}; },
+    reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),revives:G?G.revives:null,label:b?b.textContent:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null,adsLive:!!(window.LW_ADS&&window.LW_ADS.live)}; },
+    prog:function(){ return {flowers:PROG.flowers,best:PROG.best}; }
   };
 }
 boot();
