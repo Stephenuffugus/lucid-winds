@@ -361,7 +361,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.4';
+var BUILD='v2.5';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -491,7 +491,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'powers/power_coffee','powers/power_umbrella','powers/power_snacks','powers/hud_coffee','powers/hud_umbrella','powers/hud_snacks',
   'fx/splash-water','fx/burst-gold','fx/glow-bloom','fx/splash-dust','fx/star-pop',
   'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple',
-  'sprites/deco-manhole','sprites/deco-salmon'];
+  'sprites/deco-manhole','sprites/deco-salmon',
+  'sprites/pad-lifering','sprites/pad-crate','sprites/obs-barrier'];
 function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
   var LT=['lanes/strip-safe','lanes/strip-road','lanes/strip-water','lanes/strip-rail']; for(var j=0;j<LT.length;j++) spr(LT[j]); }
 /* subtle lane texture: drawn over the flat zone color so the neighborhood tint still
@@ -615,7 +616,7 @@ function buildRoad(L,d){
   var rlv=(G.mode==='adventure')?advLevelOfRow(L.r):0, ease=advEase(rlv);
   var express=d>4 && rng()<0.22*zoneAt(L.r).xBias; L.express=express;
   L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1)*(1-ease*0.42); // px/s, slower early in Adventure
-  var kinds=['acorn','pod','hog','bug']; L.kind=kinds[Math.floor(rng()*kinds.length)];
+  var kinds=['acorn','pod','hog','bug','barrier','cone']; L.kind=kinds[Math.floor(rng()*kinds.length)];
   var w=(L.kind==='hog'?50:44); var gap=TILE*((express?2.4:1.7)+rng()*1.5)*(1+ease*0.8); var spacing=w+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:w, kind:L.kind });
@@ -635,7 +636,7 @@ function buildWater(L,d){
   }
   var rlvW=(G.mode==='adventure')?advLevelOfRow(L.r):0, easeW=advEase(rlvW);
   L.speed=(40+d*10+rng()*26)*(G.mode==='zen'?0.58:1)*(1-easeW*0.38);
-  var PADSTYLES=['log','pallet','dumpster']; L.padStyle=PADSTYLES[Math.floor(rng()*PADSTYLES.length)];
+  var PADSTYLES=['log','pallet','dumpster','lifering','crate']; L.padStyle=PADSTYLES[Math.floor(rng()*PADSTYLES.length)];
   var pw=TILE*(1.5+rng()*0.9)*(1+easeW*0.22), gap=TILE*(0.7+rng()*0.55)*(1-easeW*0.3), spacing=pw+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:pw, pad:1, style:L.padStyle });
@@ -1229,7 +1230,8 @@ function drawObstacle(e,y,dir){ ctx.save(); ctx.translate(e.x,y);
   }
   ctx.restore();
   // Jimothy obstacle sprites (rat / goose / rolling can / tumbling trash), face travel dir
-  var OMAP={acorn:'sprites/obs-can',pod:'sprites/obs-goose',hog:'sprites/obs-rat',bug:'sprites/obs-trashbags'};
+  var OMAP={acorn:'sprites/obs-can',pod:'sprites/obs-goose',hog:'sprites/obs-rat',bug:'sprites/obs-trashbags',
+            barrier:'sprites/obs-barrier',cone:'sprites/obs-cone'};
   if(OMAP[e.kind] && drawSprite(OMAP[e.kind], e.x, y, TILE*0.84, {flip:dir<0})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
