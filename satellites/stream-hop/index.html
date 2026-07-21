@@ -62,6 +62,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   transition:transform .1s cubic-bezier(.22,.9,.28,1), background .15s ease}
 #pausebtn.on{display:flex}
 #pausebtn:active{background:rgba(122,179,86,0.4); transform:scale(.93)}
+#b-music.playing{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.25), 0 0 14px rgba(200,168,75,.35)}
 #s-pause{background:rgba(5,8,5,0.86)}
 #s-pause .pad{justify-content:center}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
@@ -230,7 +231,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="b-daily">📅 Daily</button>
         <button class="btn sm" id="b-skins">🐾 Critters</button>
+      </div>
+      <div class="row">
         <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
         <button class="btn sm" id="b-set">⚙</button>
       </div>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
@@ -357,7 +361,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v2.3';
+var BUILD='v2.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -486,7 +490,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/pad-log','sprites/pad-pallet','sprites/pad-dumpster','sprites/pad-boxraft',
   'powers/power_coffee','powers/power_umbrella','powers/power_snacks','powers/hud_coffee','powers/hud_umbrella','powers/hud_snacks',
   'fx/splash-water','fx/burst-gold','fx/glow-bloom','fx/splash-dust','fx/star-pop',
-  'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple'];
+  'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple',
+  'sprites/deco-manhole','sprites/deco-salmon'];
 function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
   var LT=['lanes/strip-safe','lanes/strip-road','lanes/strip-water','lanes/strip-rail']; for(var j=0;j<LT.length;j++) spr(LT[j]); }
 /* subtle lane texture: drawn over the flat zone color so the neighborhood tint still
@@ -598,6 +603,8 @@ function makeLane(r){
 }
 function buildRoad(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
+  // scenery only, never collides: a manhole sunk in the asphalt
+  if(rng()<0.20) L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:'sprites/deco-manhole', h:TILE*0.72 };
   // train lane: one long, fast train with a big gap — wait for the gap, then dash
   if(d>3.5 && rng()<0.14){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
     var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
@@ -616,6 +623,8 @@ function buildRoad(L,d){
 }
 function buildWater(L,d){
   var rng=G.rng; L.dir=rng()<0.5?-1:1;
+  // scenery only: a salmon running the channel underneath the crossing
+  if(rng()<0.18) L.deco={ x:(0.5+Math.floor(rng()*COLS))*TILE, n:'sprites/deco-salmon', h:TILE*0.52 };
   // ferry lane: big slow rafts drifting across the Sound — a wider, calmer ride
   if(d>2.4 && rng()<0.22){
     L.ferry=true; L.speed=(24+d*5+rng()*14)*(G.mode==='zen'?0.58:1);
@@ -1172,6 +1181,7 @@ function drawRow(r){
     ctx.fillStyle=Z.road[r&1]; ctx.fillRect(0,top,VW,TILE);
     laneTex(L.train?'lanes/strip-rail':'lanes/strip-road', top, 0.40);
     ctx.strokeStyle='rgba(200,168,75,0.18)'; ctx.lineWidth=2; ctx.setLineDash([12,14]); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); ctx.setLineDash([]);
+    if(L.deco) drawSprite(L.deco.n, L.deco.x, y+3, L.deco.h, {a:0.85});
     for(var e=0;e<L.ents.length;e++){ drawObstacle(L.ents[e], y, L.dir); }
     if(SET.cb){ ctx.fillStyle='rgba(229,96,77,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   } else { // water
@@ -1179,6 +1189,7 @@ function drawRow(r){
     laneTex('lanes/strip-water', top, 0.40);
     ctx.strokeStyle='rgba(127,182,207,0.16)'; ctx.lineWidth=1.5;
     for(var w=0;w<2;w++){ var wy=top+16+w*24+Math.sin(G.t*1.5+r+w)*2; ctx.beginPath(); ctx.moveTo(0,wy); for(var xx=0;xx<=VW;xx+=30){ ctx.lineTo(xx, wy+Math.sin(xx*0.08+G.t*2+r)*2); } ctx.stroke(); }
+    if(L.deco) drawSprite(L.deco.n, L.deco.x+Math.sin(G.t*0.7+r)*9, y+4, L.deco.h, {a:0.55});
     for(var e2=0;e2<L.ents.length;e2++){ drawPad(L.ents[e2], y); }
     if(SET.cb){ ctx.fillStyle='rgba(91,155,213,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   }
@@ -1508,6 +1519,17 @@ function boot(){
   // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 }
+
+/* ===== studio soundtrack (house pattern: lazy loaded, hidden inside the portal embed
+   because the portal runs its own gapless jukebox) ===== */
+(function(){ var btn=$('b-music'); if(!btn)return; var embedded;
+  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }catch(e){ embedded=true; }
+  if(embedded){ btn.style.display='none'; return; }
+  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
+  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); else btn.style.display='none'; }
+  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
+  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+})();
 
 /* ===== rewarded video hook =====
    A host that can actually show ads (Capacitor + AdMob, or the portal) defines
