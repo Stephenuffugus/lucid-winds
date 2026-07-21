@@ -53,13 +53,26 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 @keyframes sh-screen-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.992); } }
 @keyframes sh-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes sh-pop{ from{ opacity:0; transform:translateY(9px) scale(.93); } to{ opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, .screen.leaving, .lv-cell, .screen.on .stack > *{ animation:none !important; } }
+@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, .screen.leaving, .lv-cell, .screen.on .stack > *, #s-title::before{ animation:none !important; } }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:52px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px; animation:sh-titleglow 3.6s ease-in-out infinite}
 @keyframes sh-titleglow{ 0%,100%{ text-shadow:0 3px 0 #14200f, 0 0 20px #7ab35633; } 50%{ text-shadow:0 3px 0 #14200f, 0 0 36px #7ab35677; } }
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:410px; line-height:1.5}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.94; max-width:410px; line-height:1.5; text-shadow:0 1px 6px #000, 0 0 2px #000}
+/* menu backdrop: a living rainy-Seattle scene behind the title, darkened + vignetted so text pops.
+   NOTE: do NOT set position here — .screen is already position:absolute inset:0 (full height); a
+   position:relative override would collapse it to content height and the bg would only fill the top. */
+#s-title{ background:#0b0f0b; overflow:hidden; }
+#s-title::before{ content:''; position:absolute; inset:-6%; z-index:0;
+  background:url('assets/bg/zone-street.jpg') center/cover no-repeat;
+  animation: sh-menu-drift 26s ease-in-out infinite alternate; }
+#s-title::after{ content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:linear-gradient(180deg, rgba(8,11,8,0.52) 0%, rgba(8,11,8,0.26) 34%, rgba(8,11,8,0.72) 70%, rgba(8,11,8,0.96) 100%),
+             radial-gradient(125% 80% at 50% 38%, transparent 42%, rgba(5,8,5,0.62) 100%); }
+#s-title > .pad{ position:relative; z-index:2; }
+#s-title .title-sub{ text-shadow:0 1px 6px #000 }
+@keyframes sh-menu-drift{ from{ transform:scale(1.03) translateY(0); } to{ transform:scale(1.11) translateY(-2.5%); } }
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
@@ -145,7 +158,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
   <!-- SPLASH (Stephen's animated start screen; PRESS START baked in) -->
   <div class="screen center on" id="s-splash" style="padding:0;background:#0b0f0b">
-    <video id="splash-vid" muted loop playsinline webkit-playsinline autoplay preload="auto" poster="assets/intro/splash.jpg"
+    <video id="splash-vid" muted playsinline webkit-playsinline preload="auto" poster="assets/intro/splash.jpg"
       style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0f0b">
       <source src="assets/intro/splash.mp4" type="video/mp4">
     </video>
@@ -268,7 +281,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.7';
+var BUILD='v1.8';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -1091,10 +1104,18 @@ function nextIntroBeat(){
   sfx('phew');
 }
 function endIntro(){ if(introTimer){ clearTimeout(introTimer); introTimer=null; } try{ LS.set('sh_seenintro','1'); }catch(e){} show('s-title'); }
-/* Stephen's animated splash IS the start screen (PRESS START baked in). Tap it to
-   enter: first-timers see the story intro, returning players go straight to the menu. */
-function startFromSplash(){ ac(); var v=$('splash-vid'); if(v){ try{ v.pause(); }catch(e){} }
-  if(!LS.get('sh_seenintro')){ playIntro(); } else { show('s-title'); } }
+/* Splash flow: the STATIC start-screen image shows on open (video poster). First tap
+   plays the animation ONCE; the moment it finishes it lands on the menu. A tap while it
+   plays skips straight to the menu. */
+var splashPlaying=false;
+function toMenu(){ splashPlaying=false; var v=$('splash-vid'); if(v){ try{ v.pause(); }catch(e){} } show('s-title'); }
+function splashTapped(){ ac(); var v=$('splash-vid');
+  if(splashPlaying){ toMenu(); return; }          // tapped mid-animation → skip to menu
+  if(!v){ toMenu(); return; }
+  splashPlaying=true;
+  try{ v.loop=false; v.currentTime=0; var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){ toMenu(); }); }
+  catch(e){ toMenu(); } }
+function splashEnded(){ if(curScreen==='s-splash') toMenu(); }
 
 function boot(){
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -1140,8 +1161,8 @@ function boot(){
   $('buildstamp').textContent='Jimothy '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
   // splash video is the front door (shown on load); nudge autoplay + wire the tap.
   // Tapping it routes first-timers into the story intro, returning players to the menu.
-  tap('splash-tap', startFromSplash);
-  var sv=$('splash-vid'); if(sv && sv.play){ var pr=sv.play(); if(pr&&pr.catch) pr.catch(function(){}); }
+  tap('splash-tap', splashTapped);
+  var sv=$('splash-vid'); if(sv){ sv.addEventListener('ended', splashEnded); }   // static poster shows until first tap
 }
 
 /* ===== Sky Wolf embed + sunbeam ===== */
