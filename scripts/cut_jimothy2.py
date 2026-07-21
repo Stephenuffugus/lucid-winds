@@ -292,7 +292,36 @@ def do_lanes():
     print('  lanes/rail2 %dKB' % strip(boxes[4][2], 'rail2.jpg'))
 
 
-GROUPS = {'lanes': do_lanes, 'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
+# ------------------------------------------------------------- weather fx (28)
+# 4x3 grid of full-screen atmosphere. We only need four of them.
+# tint is applied because these are painted ON magenta: every semi-transparent
+# pixel keeps a magenta cast that reads as purple confetti over the board. Weather
+# is light, not paint, so we flatten each layer to its luminance and re-tint it.
+WX = {(0, 2): ('wx-rain',  (198, 218, 245)),
+      (0, 1): ('wx-fog',   (168, 182, 196)),
+      (2, 0): ('wx-rays',  (250, 226, 168)),
+      (1, 0): ('wx-leaves',(214, 148,  72))}
+
+def do_weather():
+    import numpy as np
+    img = sheet('28')
+    boxes = cells(img, 3, 4)
+    for (r, c), (nm, tint) in WX.items():
+        rgba = cj.knockout_region(img.crop(boxes[r][c]), drop_shadow=False)
+        rgba = cj.tight(rgba, pad=0)
+        rgba = cj.fit(rgba, 300)
+        a = np.asarray(rgba).astype(np.float32)
+        luma = (a[..., 0]*0.299 + a[..., 1]*0.587 + a[..., 2]*0.114) / 255.0
+        for i in range(3):
+            a[..., i] = np.clip(luma * tint[i], 0, 255)
+        # weight alpha by brightness too, so the dark painted background falls away
+        a[..., 3] = np.clip(a[..., 3] * (0.25 + 0.75*luma), 0, 255)
+        out = Image.fromarray(a.astype('uint8'), 'RGBA')
+        cj.save_png(out, 'fx/%s.png' % nm, maxkb=70)
+        print('  fx/%s' % nm)
+
+
+GROUPS = {'lanes': do_lanes, 'weather': do_weather, 'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
           'veh': do_veh, 'rail': do_rail, 'animals': do_animals, 'hazards': do_hazards,
           'powers': do_powers, 'props': do_props, 'icon': do_icon, 'keyart': do_keyart}
 

@@ -551,7 +551,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/veh-sedan','sprites/veh-taxi','sprites/veh-van','sprites/veh-cyclist','sprites/veh-scooter',
   'sprites/veh-skater','sprites/veh-foodtruck','sprites/veh-trolleybus',
   'sprites/rail-lightrail','sprites/rail-monorail','sprites/haz-dog','sprites/haz-raccoon',
-  'sprites/prop-recyclebin','sprites/prop-produce','sprites/prop-coffeecart'];
+  'sprites/prop-recyclebin','sprites/prop-produce','sprites/prop-coffeecart',
+  'sprites/haz-crowdive','chars/seagull/leap','sprites/prop-steam'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
   var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
@@ -955,15 +956,38 @@ function stepWeather(dt){
   var rT=(w.type==='rain')?1:0, fT=(w.type==='fog')?1:0, k=Math.min(1,dt*0.6);
   w.rainA += (rT-w.rainA)*k; w.fog += (fT-w.fog)*k; w.mul = 1 + w.rainA*0.16;
 }
+/* a painted overlay tiled down the screen, scrolling. Falls back to nothing, so the
+   procedural weather underneath still carries the run if the art has not loaded. */
+function drawWxLayer(name, alpha, speed, drift){
+  if(!ART_ON||alpha<=0.01) return false;
+  var im=spr(name); if(!imgReady(im)) return false;
+  var h=VW*(im.naturalHeight/im.naturalWidth);
+  var off=(G.t*speed)%h, dx=drift?Math.sin(G.t*drift)*18:0;
+  ctx.save(); ctx.globalAlpha=alpha;
+  for(var y=-h+off; y<VH+h; y+=h) ctx.drawImage(im, dx, y, VW, h+1);
+  ctx.restore(); return true;
+}
 function drawWeather(){
   var w=G&&G.weather; if(!w) return;
   if(w.fog>0.02){ var g=ctx.createLinearGradient(0,0,0,VH);   // ahead is DOWN now → fog thickens toward the bottom
     g.addColorStop(0,'rgba(150,166,182,0)');
     g.addColorStop(0.45,'rgba(150,166,182,'+(0.2*w.fog).toFixed(3)+')');
-    g.addColorStop(1,'rgba(150,166,182,'+(0.52*w.fog).toFixed(3)+')'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
-  if(w.rainA>0.02){ var n=Math.floor(w.rainA*70); ctx.strokeStyle='rgba(190,210,235,'+(0.3*w.rainA).toFixed(3)+')'; ctx.lineWidth=1.4;
-    for(var i=0;i<n;i++){ var x=((i*97)%VW), y=(((i*57)+G.t*1000)%(VH+30)), len=9+((i*5)%9);
-      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+len); ctx.stroke(); } }
+    g.addColorStop(1,'rgba(150,166,182,'+(0.52*w.fog).toFixed(3)+')'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+    drawWxLayer('fx/wx-fog', 0.34*w.fog, 26, 0.35); }
+  if(w.rainA>0.02){
+    // real Seattle rain over the top; the procedural streaks stay underneath as backup
+    if(!drawWxLayer('fx/wx-rain', 0.26*w.rainA, 900, 0)){
+      var n=Math.floor(w.rainA*70); ctx.strokeStyle='rgba(190,210,235,'+(0.3*w.rainA).toFixed(3)+')'; ctx.lineWidth=1.4;
+      for(var i=0;i<n;i++){ var x=((i*97)%VW), y=(((i*57)+G.t*1000)%(VH+30)), len=9+((i*5)%9);
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+len); ctx.stroke(); }
+    } else {
+      var n2=Math.floor(w.rainA*34); ctx.strokeStyle='rgba(200,218,240,'+(0.22*w.rainA).toFixed(3)+')'; ctx.lineWidth=1.3;
+      for(var j=0;j<n2;j++){ var x2=((j*131)%VW), y2=(((j*83)+G.t*1400)%(VH+30)), l2=11+((j*7)%11);
+        ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-6,y2+l2); ctx.stroke(); }
+    }
+  }
+  // the street lamp power throws real light shafts while it burns
+  if(G.lampT>0) drawWxLayer('fx/wx-rays', 0.22*Math.min(1,G.lampT/1.2), 8, 0.6);
 }
 /* ===== seagull — telegraphed row-strike; hop OFF the row (up/down) to dodge ===== */
 function stepGull(dt){
@@ -971,7 +995,12 @@ function stepGull(dt){
   if(G.mode==='adventure' && G.level<5) return;   // no gulls in the first few Adventure levels
   if(!G.gull){
     if(G.started && G.cr.r>=4 && G.phase==='play'){ G.gullT-=dt;
-      if(G.gullT<=0){ var side=G.rng()<0.5?-1:1; G.gull={ phase:'warn', row:G.cr.r, t:0, warnDur:1.15, dir:side, dur:0.5 }; sfx('gull'); } }
+      if(G.gullT<=0){ var side=G.rng()<0.5?-1:1;
+        // deeper in, the gull gets replaced by a crow: same rules, half a second less warning
+        var hard=(G.mode==='adventure') ? (G.level>=12) : (G.cr.r>=110);
+        var isCrow = hard && G.rng()<0.5;
+        G.gull={ phase:'warn', row:G.cr.r, t:0, warnDur:isCrow?0.82:1.15, dir:side, dur:0.5, kind:isCrow?'crow':'gull' };
+        sfx('gull'); } }
     return;
   }
   var g=G.gull; g.t+=dt;
@@ -984,7 +1013,10 @@ function stepGull(dt){
     }
   } else if(g.t>=g.dur){ G.gull=null; G.gullT=8+G.rng()*7; }
 }
-function drawGullSprite(x,y,sc,dir){
+function drawGullSprite(x,y,sc,dir,kind){
+  // real art when it is loaded: the crow dives, the gull is the collectible's flying frame
+  var sname = (kind==='crow') ? 'sprites/haz-crowdive' : 'chars/seagull/leap';
+  if(drawSprite(sname, x, y, TILE*1.15*sc, {flip:dir<0})) return;
   ctx.save(); ctx.translate(x,y); ctx.scale(dir*sc,sc);
   var flap=Math.sin(G.t*16)*0.5+0.5;
   ctx.strokeStyle='#c9c2b0'; ctx.lineWidth=4; ctx.lineCap='round';
@@ -997,11 +1029,13 @@ function drawGullSprite(x,y,sc,dir){
 }
 function drawGull(){
   var g=G&&G.gull; if(!g) return; var ry=rowScreenY(g.row);
+  var crow=(g.kind==='crow');
   if(g.phase==='warn'){ var p=Math.min(1,g.t/g.warnDur);
-    if(Math.sin(g.t*22)>0){ ctx.save(); ctx.globalAlpha=0.22; ctx.fillStyle='#e05648'; ctx.fillRect(0,ry-HALF,VW,TILE); ctx.restore(); }
+    // the crow flashes faster and redder, because you get less time to read it
+    if(Math.sin(g.t*(crow?30:22))>0){ ctx.save(); ctx.globalAlpha=crow?0.30:0.22; ctx.fillStyle=crow?'#c9331f':'#e05648'; ctx.fillRect(0,ry-HALF,VW,TILE); ctx.restore(); }
     ctx.save(); ctx.globalAlpha=0.28+0.3*p; ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(VW/2,ry,18+34*p,7+9*p,0,0,7); ctx.fill(); ctx.restore();
-    drawGullSprite(VW/2, -34+(ry+34)*p, 1.5-0.5*p, 1);
-  } else { var q=Math.min(1,g.t/g.dur); var gx=g.dir<0? VW+40-(VW+80)*q : -40+(VW+80)*q; drawGullSprite(gx, ry-8, 1.0, g.dir); }
+    drawGullSprite(VW/2, -34+(ry+34)*p, 1.5-0.5*p, 1, g.kind);
+  } else { var q=Math.min(1,g.t/g.dur); var gx=g.dir<0? VW+40-(VW+80)*q : -40+(VW+80)*q; drawGullSprite(gx, ry-8, 1.0, g.dir, g.kind); }
 }
 function step(dt){
   if(!G) return;
