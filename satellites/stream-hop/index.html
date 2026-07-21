@@ -428,11 +428,11 @@ var POWER_META={
    Names lean Seattle for Stephen's Jimothy reskin — trivially editable here.
    wBias scales water frequency, xBias scales express (fast) lanes. ===== */
 var ZONES=[
-  {name:'The Waterfront', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
-  {name:'Pike Market',    safe:['#231f12','#28230f'], road:['#33291a','#38301c'], water:['#173a4a','#123240'], wBias:0.55, xBias:1.0},
-  {name:'Fremont',        safe:['#1e1a2a','#221d30'], road:['#2c2338','#31283c'], water:['#1a2f4a','#152840'], wBias:1.0,  xBias:0.9},
-  {name:'Capitol Hill',   safe:['#171518','#1b1920'], road:['#271a22','#2c1f28'], water:['#12303a','#0e2833'], wBias:0.7,  xBias:1.35},
-  {name:'Interbay',       safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6}
+  {name:'The Waterfront', bg:'zonecard/waterfront', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
+  {name:'Pike Market',    bg:'zonecard/market',     safe:['#231f12','#28230f'], road:['#33291a','#38301c'], water:['#173a4a','#123240'], wBias:0.55, xBias:1.0},
+  {name:'Fremont',        bg:'zonecard/bridge',     safe:['#1e1a2a','#221d30'], road:['#2c2338','#31283c'], water:['#1a2f4a','#152840'], wBias:1.0,  xBias:0.9},
+  {name:'Capitol Hill',   bg:'zonecard/dumpster',   safe:['#171518','#1b1920'], road:['#271a22','#2c1f28'], water:['#12303a','#0e2833'], wBias:0.7,  xBias:1.35},
+  {name:'Interbay',       bg:'zonecard/skyline',    safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6}
 ];
 var ZONE_LEN=26;
 function zoneIdx(r){ if(G&&G.mode==='adventure') return advZoneIdx(advLevelOfRow(r)); return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
@@ -445,7 +445,8 @@ function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._s
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path; IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
-var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1};
+var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
+  'zonecard/waterfront':1,'zonecard/market':1,'zonecard/bridge':1,'zonecard/dumpster':1,'zonecard/skyline':1};
 function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
 /* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn. */
@@ -457,6 +458,7 @@ function drawSprite(name,x,y,h,o){ if(!ART_ON)return false; var im=spr(name); if
   if(o.a!=null)ctx.globalAlpha=o.a;
   ctx.drawImage(im, -dw/2, -dh/2+(o.anchor||0), dw, dh); ctx.restore(); return true; }
 var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/splash','hero/coffee','hero/magnet','hero/shield','hero/cheer',
+  'hero/umbrella','hero/scared','hero/flee','hero/eat','hero/sit','hero/ko','hero/run-l','hero/run-r','hero/dash-run',
   'sprites/coin-cap','sprites/obs-can','sprites/obs-rat','sprites/obs-goose','sprites/obs-trashbags','sprites/obs-cone',
   'sprites/pad-log','sprites/pad-pallet','sprites/pad-dumpster','sprites/pad-boxraft',
   'powers/power_coffee','powers/power_umbrella','powers/power_snacks','powers/hud_coffee','powers/hud_umbrella','powers/hud_snacks',
@@ -506,9 +508,10 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
-      revives:0, invuln:0, sunPaid:0, flowersPaid:0,
+      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, idleT:0, saveT:0, fogT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
-  if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,t:2.6};
+  if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,bg:ZONES[0].bg,t:2.6};
+  spr(ZONES[G.zone].bg); spr(ZONES[(G.zone+1)%ZONES.length].bg);   // this card and the next one
   // camera init
   G.camY = G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
   genUpTo(startRow+20);
@@ -633,7 +636,7 @@ function finishHop(){
   if(h.dir==='up'){
     if(G.cr.r>G.score){ G.score=G.cr.r; }
     if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
-    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,t:2.4}; sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
+    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4}; spr(ZONES[(zi+1)%ZONES.length].bg); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
@@ -668,7 +671,14 @@ function advLevelUp(newLevel){
     checkAdvUnlocks();
   }
   G.level=newLevel; G.lvFlowers=0; G.lvCoins=0;
-  G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:PROG.adv.stars[done]||0 };
+  // A new chapter is a real beat, so it gets the neighbourhood card and swallows the
+  // level tag: one card, never two banners stacked on the same moment.
+  var nz=advZoneIdx(newLevel), stars=PROG.adv.stars[done]||0;
+  if(nz!==G.zone){ G.zone=nz;
+    G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9, done:done, stars:stars };
+    G.levelBanner=null;
+    spr(ZONES[(nz+1)%ZONES.length].bg); }
+  else G.levelBanner={ n:newLevel, name:advChapterName(newLevel), t:2.4, done:done, stars:stars };
   G.flash=Math.max(G.flash,0.35); sfx('bank'); haptic(16);
   spawnFx('fx/glow-bloom', G.cr.x, rowScreenY(G.cr.r), TILE*2.4, 0.6); spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.6, 0.65);
   float(G.cr.x, rowScreenY(G.cr.r)-30, 'LEVEL '+done+' ✓');
@@ -828,6 +838,8 @@ function step(dt){
   if(G.zoneBanner && G.zoneBanner.t>0) G.zoneBanner.t-=dt;
   if(G.levelBanner && G.levelBanner.t>0) G.levelBanner.t-=dt;
   if(G.invuln>0) G.invuln-=dt;
+  if(G.saveT>0) G.saveT-=dt;
+  G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
   // stay out in the thick fog long enough and something finds you
   if(G.phase==='play' && G.weather.fog>0.5){ G.fogT=(G.fogT||0)+dt;
     if(G.fogT>25) unlockSecret('sasquatch','Something found you in the fog...'); }
@@ -866,7 +878,7 @@ function die(cause){ if(!G||G.phase!=='play')return;
   if(cause==='time'){ G.deadCause='time'; G.phase='dying'; G.flash=Math.max(G.flash,0.5); sfx('bank'); setTimeout(gameOver,350); return; }
   if(G.invuln>0) return;   // just continued: a short grace window so you are not killed on the spot
   // umbrella shield: eat one fatal hit
-  if(G.shield){ G.shield=false; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,8); sfx('phew'); haptic(20);
+  if(G.shield){ G.shield=false; G.saveT=0.55; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,8); sfx('phew'); haptic(20);
     float(G.cr.x,rowScreenY(G.cr.r)-22,'☂ saved!'); burst(G.cr.x,rowScreenY(G.cr.r),16,'#a7cdea'); G.coyote=0; G.ride=null; G.slowmo=0.45;
     // if drowning, bump back to the nearest non-water row behind
     var dl=laneAt(G.cr.r);
@@ -1009,16 +1021,46 @@ function render(){ if(!ctx||!G)return;
   drawZoneBanner();
   drawLevelBanner();
 }
+/* the neighbourhood you are walking into, as a letterboxed card behind the name.
+   Falls back to plain text if the strip has not loaded yet. */
+function drawZoneCard(bg, a){
+  if(!ART_ON||!bg)return false; var im=spr(bg); if(!imgReady(im))return false;
+  var H=182, y=VH*0.22-92;
+  ctx.save(); ctx.globalAlpha=a;
+  ctx.beginPath(); ctx.rect(0,y,VW,H); ctx.clip();
+  var asp=im.naturalWidth/im.naturalHeight, dw=VW, dh=VW/asp;
+  if(dh<H){ dh=H; dw=H*asp; }
+  ctx.drawImage(im,(VW-dw)/2, y+(H-dh)/2, dw, dh);
+  var g=ctx.createLinearGradient(0,y,0,y+H);              // melt the edges into the lanes
+  g.addColorStop(0,'rgba(6,8,6,0.92)'); g.addColorStop(0.28,'rgba(6,8,6,0.12)');
+  g.addColorStop(0.72,'rgba(6,8,6,0.20)'); g.addColorStop(1,'rgba(6,8,6,0.94)');
+  ctx.fillStyle=g; ctx.fillRect(0,y,VW,H);
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha=a*0.55; ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(VW,y+0.5); ctx.moveTo(0,y+H-0.5); ctx.lineTo(VW,y+H-0.5); ctx.stroke();
+  ctx.restore();
+  return true;
+}
 function drawZoneBanner(){
   if(!G||!G.zoneBanner||G.zoneBanner.t<=0)return;
   var t=G.zoneBanner.t, a=Math.min(1, t<0.4?t/0.4 : (t>2.0?(2.4-t)/0.4 : 1));
-  ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
-  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('NOW ENTERING', VW/2, VH*0.22-16);
-  ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowColor='#000'; ctx.shadowBlur=8; ctx.fillText(G.zoneBanner.name, VW/2, VH*0.22+14);
+  var zb=G.zoneBanner;
+  drawZoneCard(zb.bg, a);
+  ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center'; ctx.shadowColor='#000';
+  // a chapter card also carries the level you just cleared and its stars
+  if(zb.done>=1){ var m=zb.stars||0;
+    ctx.font='800 14px system-ui'; ctx.fillStyle='#f2d98a'; ctx.shadowBlur=6;
+    ctx.fillText('LEVEL '+zb.done+' CLEARED', VW/2, VH*0.22-52);
+    ctx.font='19px system-ui'; ctx.fillText((m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆'), VW/2, VH*0.22-30); }
+  ctx.font='700 12px system-ui'; ctx.fillStyle='#c9cfba'; ctx.shadowBlur=6;
+  ctx.fillText('NOW ENTERING', VW/2, VH*0.22+(zb.done>=1?4:-16));
+  ctx.font='800 30px system-ui'; ctx.fillStyle='#f5ebd0'; ctx.shadowBlur=10;
+  ctx.fillText(zb.name, VW/2, VH*0.22+(zb.done>=1?34:14));
   ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore();
 }
 function drawLevelBanner(){
   if(!G||!G.levelBanner||G.levelBanner.t<=0)return;
+  if(G.zoneBanner && G.zoneBanner.t>0) return;   // the chapter card owns the moment
   var lb=G.levelBanner, t=lb.t, a=Math.min(1, t<0.4?t/0.4 : (t>2.0?(2.4-t)/0.4 : 1));
   ctx.save(); ctx.globalAlpha=a; ctx.textAlign='center';
   // the level you just cleared → show its earned stars briefly
@@ -1145,12 +1187,28 @@ function drawPad(e,y){
    FACE-FORWARD (never flipped l/r). Hop cycle crouch->leap->land, idle between;
    active dash/magnet swap to their signature pose. Procedural critter is the
    fallback until the art is present. ===== */
+/* Jimothy's face is the HUD. Every pose in the pack is wired to a thing the player
+   needs to know: the umbrella means you can eat a hit, scared means the gull has
+   your row, flee means the wilt is on your heels. Ordered by urgency. */
+function gullOnMe(){ return !!(G.gull && G.gull.phase==='warn' && Math.abs(G.gull.row-G.cr.r)<0.6); }
+function wiltClose(){ return G.started && G.mode!=='zen' && G.mode!=='rush' && (G.cr.r-G.chaseR)<2.4; }
 function heroPose(p){
   var n;
-  if(G.phase==='dying'){ var c=G.deadCause; n=c==='time'?'cheer':(c==='sink'||c==='swept')?'splash':'dizzy'; }
-  else if(G.dashT>0) n='coffee';        // dash pose (fire trail baked in)
-  else if(G.magnetT>0) n='magnet';      // snacks-magnet pose (coins baked in)
-  else if(G.hop) n=p<0.30?'crouch': p<0.72?'leap':'land';
+  if(G.phase==='dying'){ var c=G.deadCause;
+    n = c==='time' ? 'cheer' : (c==='sink'||c==='swept') ? 'splash' : (c==='wilt' ? 'dizzy' : 'ko'); }
+  else if(G.saveT>0) n='shield';                              // bracing, just ate a hit
+  else if(G.hop){                                             // mid hop
+    n = G.dashT>0 ? 'dash-run'
+      : G.hop.dir==='left'  ? 'run-l'
+      : G.hop.dir==='right' ? 'run-r'
+      : (p<0.30?'crouch': p<0.72?'leap':'land'); }
+  else if(gullOnMe()) n='scared';                             // warnings beat power poses
+  else if(wiltClose()) n='flee';
+  else if(G.dashT>0) n='coffee';                              // dash (fire trail baked in)
+  else if(G.magnetT>0) n='magnet';                            // snacks magnet (coins baked in)
+  else if(G.shield) n='umbrella';                             // you can see that you are covered
+  else if(G.idleT>8) n='eat';                                 // left alone long enough to snack
+  else if(G.idleT>4) n='sit';
   else n='idle';
   // the equipped critter picks the sheet; only Jimothy has art today, the rest draw procedurally
   var ch=G.chr||curChar();
@@ -1169,7 +1227,11 @@ function drawCritter(){
   var pose=heroPose(p);
   if(ART_ON && sk.art && imgReady(spr(pose))){
     if(sk.glow){ ctx.save(); var gg=ctx.createRadialGradient(x,cy,2,x,cy,30); gg.addColorStop(0,'rgba(245,230,168,0.5)'); gg.addColorStop(1,'rgba(245,230,168,0)'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(x,cy,30,0,7); ctx.fill(); ctx.restore(); }
-    drawSprite(pose, x, cy-6, TILE*0.98, {sx:sq, sy:st});
+    // the poses have very different shapes: size the wide ones (running, knocked
+    // out) by width so every pose reads as the same amount of raccoon
+    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight;
+    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24, sx:sq, sy:st});
+    else drawSprite(pose, x, cy-6, TILE*0.98, {sx:sq, sy:st});
     return;
   }
   // procedural critter (fallback)
@@ -1430,7 +1492,9 @@ if(/[?&]shtest=1/.test(location.search)){
     bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
     equip:function(id){ PROG.char=id; if(G)G.chr=charById(id); saveProg(); return {char:PROG.char,pose:G?heroPose(0):null}; },
     chars:function(){ var o={}; for(var i=0;i<CHARS.length;i++)o[CHARS[i].id]=charOwned(CHARS[i].id)?1:0; return o; },
-    fog:function(){ G.weather.fog=1; G.fogT=24.9; step(0.2); return {owned:charOwned('sasquatch'),fogT:+G.fogT.toFixed(1)}; }
+    fog:function(){ G.weather.fog=1; G.fogT=24.9; step(0.2); return {owned:charOwned('sasquatch'),fogT:+G.fogT.toFixed(1)}; },
+    pose:function(){ return {pose:heroPose(G.hop?G.hop.t/G.hop.dur:0), ready:imgReady(spr(heroPose(G.hop?G.hop.t/G.hop.dur:0))), idleT:+(G.idleT||0).toFixed(1), shield:G.shield, gull:gullOnMe(), wilt:wiltClose()}; },
+    poseFor:function(set){ for(var k in set) G[k]=set[k]; render(); return heroPose(G.hop?G.hop.t/G.hop.dur:0); }
   };
 }
 boot();
