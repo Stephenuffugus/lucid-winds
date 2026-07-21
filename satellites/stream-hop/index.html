@@ -100,8 +100,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="hopbtn" id="hp-right" aria-label="hop right">▶</button>
   </div>
 
+  <!-- SPLASH (Stephen's animated start screen; PRESS START baked in) -->
+  <div class="screen center on" id="s-splash" style="padding:0;background:#0b0f0b">
+    <video id="splash-vid" muted loop playsinline webkit-playsinline autoplay preload="auto" poster="assets/intro/splash.jpg"
+      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0f0b">
+      <source src="assets/intro/splash.mp4" type="video/mp4">
+    </video>
+    <div id="splash-tap" role="button" aria-label="Press start" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>
+  </div>
+
   <!-- TITLE -->
-  <div class="screen center on" id="s-title"><div class="pad center">
+  <div class="screen center" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word">Stream Hop</div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -201,8 +210,8 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.1';
-var curScreen='s-title';
+var BUILD='v1.2';
+var curScreen='s-splash';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
 
@@ -877,6 +886,10 @@ function nextIntroBeat(){
   sfx('phew');
 }
 function endIntro(){ if(introTimer){ clearTimeout(introTimer); introTimer=null; } try{ LS.set('sh_seenintro','1'); }catch(e){} show('s-title'); }
+/* Stephen's animated splash IS the start screen (PRESS START baked in). Tap it to
+   enter: first-timers see the story intro, returning players go straight to the menu. */
+function startFromSplash(){ ac(); var v=$('splash-vid'); if(v){ try{ v.pause(); }catch(e){} }
+  if(!LS.get('sh_seenintro')){ playIntro(); } else { show('s-title'); } }
 
 function boot(){
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -913,8 +926,10 @@ function boot(){
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
   $('buildstamp').textContent='Stream Hop '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
-  // first-visit: roll the intro cinematic before the title
-  if(!LS.get('sh_seenintro')){ playIntro(); }
+  // splash video is the front door (shown on load); nudge autoplay + wire the tap.
+  // Tapping it routes first-timers into the story intro, returning players to the menu.
+  tap('splash-tap', startFromSplash);
+  var sv=$('splash-vid'); if(sv && sv.play){ var pr=sv.play(); if(pr&&pr.catch) pr.catch(function(){}); }
 }
 
 /* ===== Sky Wolf embed + sunbeam ===== */
