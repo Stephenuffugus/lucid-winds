@@ -500,12 +500,12 @@ var POWER_META={
 /* Six real Seattle neighbourhoods, each with its own painted backdrop (sheet 16).
    Palettes stay dark and desaturated on purpose: the sprites have to read on top. */
 var ZONES=[
-  {name:'The Waterfront', bg:'zonecard/waterfront', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
-  {name:'Pike Market',    bg:'zonecard/market',     safe:['#2a2011','#30250f'], road:['#3a2c17','#402f1a'], water:['#1b3c48','#153140'], wBias:0.55, xBias:1.0},
-  {name:'Fremont',        bg:'zonecard/bridge',     safe:['#1e2418','#22291b'], road:['#2c2b22','#312f26'], water:['#1a3242','#152a3a'], wBias:1.0,  xBias:0.9},
-  {name:'Capitol Hill',   bg:'zonecard/capitol',    safe:['#211526','#26192c'], road:['#2e1b2e','#331f34'], water:['#182a44','#13223a'], wBias:0.7,  xBias:1.35},
-  {name:'Interbay',       bg:'zonecard/interbay',   safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6},
-  {name:'Ballard Locks',  bg:'zonecard/locks',      safe:['#132420','#162a25'], road:['#22302c','#263631'], water:['#123c46','#0d323b'], wBias:1.4,  xBias:0.85}
+  {name:'The Waterfront', bg:'zonecard/waterfront', tex:'waterfront', wtex:'water-deep', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
+  {name:'Pike Market',    bg:'zonecard/market',     tex:'market',     wtex:'water-teal', safe:['#2a2011','#30250f'], road:['#3a2c17','#402f1a'], water:['#1b3c48','#153140'], wBias:0.55, xBias:1.0},
+  {name:'Fremont',        bg:'zonecard/bridge',     tex:'bridge',     wtex:'water-teal', safe:['#1e2418','#22291b'], road:['#2c2b22','#312f26'], water:['#1a3242','#152a3a'], wBias:1.0,  xBias:0.9},
+  {name:'Capitol Hill',   bg:'zonecard/capitol',    tex:'capitol',    wtex:'water-deep', safe:['#211526','#26192c'], road:['#2e1b2e','#331f34'], water:['#182a44','#13223a'], wBias:0.7,  xBias:1.35},
+  {name:'Interbay',       bg:'zonecard/interbay',   tex:'interbay',   wtex:'water-deep', safe:['#1a1e1a','#1e221d'], road:['#2a2a28','#2f2f2c'], water:['#18384a','#13303f'], wBias:0.9,  xBias:1.6},
+  {name:'Ballard Locks',  bg:'zonecard/locks',      tex:'locks',      wtex:'water-chop', safe:['#132420','#162a25'], road:['#22302c','#263631'], water:['#123c46','#0d323b'], wBias:1.4,  xBias:0.85}
 ];
 var ZONE_LEN=26;
 function zoneIdx(r){ if(G&&G.mode==='adventure') return advZoneIdx(advLevelOfRow(r)); return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
@@ -519,6 +519,9 @@ function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._s
     im.src=path; IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
 var SPR_JPG={'lanes/strip-safe':1,'lanes/strip-road':1,'lanes/strip-water':1,'lanes/strip-rail':1,
+  'lanes/rail2':1,'lanes/water-deep':1,'lanes/water-teal':1,'lanes/water-chop':1,
+  'lanes/safe-waterfront':1,'lanes/safe-market':1,'lanes/safe-bridge':1,'lanes/safe-capitol':1,'lanes/safe-interbay':1,'lanes/safe-locks':1,
+  'lanes/road-waterfront':1,'lanes/road-market':1,'lanes/road-bridge':1,'lanes/road-capitol':1,'lanes/road-interbay':1,'lanes/road-locks':1,
   'zonecard/waterfront':1,'zonecard/market':1,'zonecard/bridge':1,
   'zonecard/capitol':1,'zonecard/interbay':1,'zonecard/locks':1};
 function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
@@ -552,11 +555,14 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
   var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
 function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
-  var LT=['lanes/strip-safe','lanes/strip-road','lanes/strip-water','lanes/strip-rail']; for(var j=0;j<LT.length;j++) spr(LT[j]); }
+}
+/* a zone's three lane surfaces, warmed when you enter it */
+function warmZoneTex(z){ if(!z)return; spr('lanes/safe-'+z.tex); spr('lanes/road-'+z.tex); spr('lanes/'+z.wtex); spr('lanes/rail2'); }
 /* subtle lane texture: drawn over the flat zone color so the neighborhood tint still
    shows through (readability first). alpha is deliberately low. */
-var TEX_A=0.6; /* lane texture strength: 0 turns the strips off entirely, 1 = as authored.
-                  0.6 keeps the wet asphalt grain without muddying the lane read. */
+var TEX_A=1;   /* lane texture strength: 0 turns the strips off entirely, 1 = as authored.
+                  Back to full now that sheet 20 gives every neighbourhood its own
+                  purpose-drawn pavement, road and water surface. */
 function laneTex(name, top, a){ if(!ART_ON||TEX_A<=0)return; var im=spr(name); if(!imgReady(im))return;
   ctx.save(); ctx.globalAlpha=a*TEX_A; ctx.drawImage(im, 0, top, VW, TILE); ctx.restore(); }
 
@@ -602,6 +608,7 @@ function newGame(mode, startLevel){
   if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,bg:ZONES[0].bg,t:2.6};
   spr(ZONES[G.zone].bg); spr(ZONES[(G.zone+1)%ZONES.length].bg);   // this card and the next one
   warmChar(G.chr);   // the equipped critter's hop cycle, so no frame pops in mid run
+  warmZoneTex(ZONES[G.zone]); warmZoneTex(ZONES[(G.zone+1)%ZONES.length]);
   // camera init
   G.camY = G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
   genUpTo(startRow+20);
@@ -775,7 +782,8 @@ function finishHop(){
   if(h.dir==='up'){
     if(G.cr.r>G.score){ G.score=G.cr.r; }
     if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
-    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4}; spr(ZONES[(zi+1)%ZONES.length].bg); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
+    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
+      spr(ZONES[(zi+1)%ZONES.length].bg); warmZoneTex(ZONES[(zi+1)%ZONES.length]); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
@@ -822,7 +830,7 @@ function advLevelUp(newLevel){
   // A new chapter is a real beat, so it gets the neighbourhood card and swallows the
   // level tag: one card, never two banners stacked on the same moment.
   var nz=advZoneIdx(newLevel), stars=PROG.adv.stars[done]||0;
-  if(nz!==G.zone){ G.zone=nz;
+  if(nz!==G.zone){ G.zone=nz; warmZoneTex(ZONES[nz]);
     G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9, done:done, stars:stars };
     G.levelBanner=null;
     spr(ZONES[(nz+1)%ZONES.length].bg); }
@@ -1294,7 +1302,7 @@ function drawRow(r){
   var top=y-HALF, Z=zoneAt(r);
   if(L.type==='safe'){
     ctx.fillStyle=Z.safe[r&1]; ctx.fillRect(0,top,VW,TILE);
-    laneTex('lanes/strip-safe', top, 0.34);
+    laneTex('lanes/safe-'+(Z.tex||'waterfront'), top, 0.60);
     if(L.bank){ ctx.fillStyle='rgba(200,168,75,0.10)'; ctx.fillRect(0,top,VW,TILE); }
     if(L.levelLine){ ctx.fillStyle='rgba(200,168,75,0.14)'; ctx.fillRect(0,top,VW,TILE);
       ctx.strokeStyle='rgba(232,220,200,0.55)'; ctx.lineWidth=2; ctx.setLineDash([11,8]); ctx.beginPath(); ctx.moveTo(0,top+3); ctx.lineTo(VW,top+3); ctx.stroke(); ctx.setLineDash([]);
@@ -1313,14 +1321,14 @@ function drawRow(r){
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
     ctx.fillStyle=Z.road[r&1]; ctx.fillRect(0,top,VW,TILE);
-    laneTex(L.train?'lanes/strip-rail':'lanes/strip-road', top, 0.40);
+    laneTex(L.train?'lanes/rail2':('lanes/road-'+(Z.tex||'waterfront')), top, L.train?0.80:0.62);
     ctx.strokeStyle='rgba(200,168,75,0.18)'; ctx.lineWidth=2; ctx.setLineDash([12,14]); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); ctx.setLineDash([]);
     if(L.deco) drawSprite(L.deco.n, L.deco.x, y+3, L.deco.h, {a:0.85});
     for(var e=0;e<L.ents.length;e++){ drawObstacle(L.ents[e], y, L.dir); }
     if(SET.cb){ ctx.fillStyle='rgba(229,96,77,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   } else { // water
     ctx.fillStyle=Z.water[r&1]; ctx.fillRect(0,top,VW,TILE);
-    laneTex('lanes/strip-water', top, 0.40);
+    laneTex('lanes/'+(Z.wtex||'water-deep'), top, 0.62);
     ctx.strokeStyle='rgba(127,182,207,0.16)'; ctx.lineWidth=1.5;
     for(var w=0;w<2;w++){ var wy=top+16+w*24+Math.sin(G.t*1.5+r+w)*2; ctx.beginPath(); ctx.moveTo(0,wy); for(var xx=0;xx<=VW;xx+=30){ ctx.lineTo(xx, wy+Math.sin(xx*0.08+G.t*2+r)*2); } ctx.stroke(); }
     if(L.deco) drawSprite(L.deco.n, L.deco.x+Math.sin(G.t*0.7+r)*9, y+4, L.deco.h, {a:0.55});

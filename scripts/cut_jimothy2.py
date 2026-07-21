@@ -266,7 +266,33 @@ def do_keyart():
     print('  bg/keyart-portrait.jpg %dKB' % (os.path.getsize(p2)//1024))
 
 
-GROUPS = {'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
+# ----------------------------------------------------------- lane strips (20)
+# 3 cols x 6 rows. col1 = the pavement you stand on, col2 = the road surface,
+# col3 = water / rail / extra. One row per neighbourhood.
+LANE_ROWS = ['waterfront', 'market', 'bridge', 'capitol', 'interbay', 'locks']
+
+def do_lanes():
+    img = sheet('20')
+    boxes = cells(img, 6, 3)
+    out = os.path.join(OUT, 'lanes')
+    os.makedirs(out, exist_ok=True)
+    def strip(box, rel, inset=6):
+        x0, y0, x1, y1 = box
+        im = img.crop((x0+inset, y0+inset, x1-inset, y1-inset)).resize((1080, 150), Image.LANCZOS)
+        p = os.path.join(out, rel)
+        im.save(p, 'JPEG', quality=78, optimize=True, progressive=True)
+        return os.path.getsize(p)//1024
+    for r, zid in enumerate(LANE_ROWS):
+        a = strip(boxes[r][0], 'safe-%s.jpg' % zid)
+        b = strip(boxes[r][1], 'road-%s.jpg' % zid)
+        print('  lanes/safe-%s %dKB  road-%s %dKB' % (zid, a, zid, b))
+    # water variants live in column 3 (rows 1, 3, 6) and the rail bed is row 5
+    for r, nm in [(0, 'water-deep'), (2, 'water-teal'), (5, 'water-chop')]:
+        print('  lanes/%s %dKB' % (nm, strip(boxes[r][2], nm + '.jpg')))
+    print('  lanes/rail2 %dKB' % strip(boxes[4][2], 'rail2.jpg'))
+
+
+GROUPS = {'lanes': do_lanes, 'chars': do_chars, 'costumes': do_costumes, 'bg': do_bg, 'pads': do_pads,
           'veh': do_veh, 'rail': do_rail, 'animals': do_animals, 'hazards': do_hazards,
           'powers': do_powers, 'props': do_props, 'icon': do_icon, 'keyart': do_keyart}
 
