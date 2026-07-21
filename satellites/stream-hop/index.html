@@ -1681,8 +1681,17 @@ function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; savePr
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/satellites/stream-hop/"; var sc=(G&&G.score)||0;
-  var txt="Jimothy the Seattle raccoon. I hopped "+sc+" lanes across the rainy city! Can you go further?";
+function shareIt(){ var url="https://lucidwinds.com/satellites/stream-hop/";
+  var sc=(G&&G.score)||0, who=curChar(), txt;
+  if(G && G.mode==='adventure'){
+    txt="Jimothy the Seattle raccoon. I got to "+advChapterName(G.level)+", level "+G.level+
+        ", with "+advTotalStars()+" stars. Can you get further?";
+  } else {
+    txt="Jimothy the Seattle raccoon. I hopped "+sc+" lanes across the rainy city"+
+        (who.id!=='jimothy' ? (" as a "+who.name) : "")+"! Can you go further?";
+  }
+  var owned=ownedCount();
+  if(owned>3) txt+=" "+owned+"/"+CHARS.length+" critters found.";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 
@@ -1759,7 +1768,9 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
-  tap('b-adventure', function(){ renderLevels(); show('s-levels'); });
+  // a brand new player has exactly one unlocked level, so the map is a pointless tap
+  // between them and the game. Send them straight in; the map returns once they have progress.
+  tap('b-adventure', function(){ if((PROG.adv.maxLevel||1)<=1){ newGame('adventure',1); return; } renderLevels(); show('s-levels'); });
   tap('lv-back', function(){ show('s-title'); });
   tap('b-endless', function(){ newGame('endless'); });
   tap('b-daily', function(){ newGame('daily'); });
