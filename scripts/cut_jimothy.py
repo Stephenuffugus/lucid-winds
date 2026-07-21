@@ -110,6 +110,17 @@ def tight(rgba, pad=6):
     x1 = min(rgba.width, x1+pad); y1 = min(rgba.height, y1+pad)
     return rgba.crop((int(x0), int(y0), int(x1), int(y1)))
 
+def clean_lower_purple(rgba):
+    """Scrub a baked purple contact-shadow from the LOWER region only (keeps a dark
+    head/body above intact). Used where shadow-absorption is disabled to save art."""
+    a = np.asarray(rgba).copy()
+    h, w = a.shape[:2]
+    r, g, b = a[..., 0].astype(int), a[..., 1].astype(int), a[..., 2].astype(int)
+    purple = ((r - g) >= 16) & ((b - g) >= 8) & (g <= 135) & (np.maximum(r, b) <= 210)
+    ys = np.arange(h)[:, None] * np.ones((1, w))
+    a[..., 3][purple & (ys >= h * 0.62)] = 0
+    return Image.fromarray(a, 'RGBA')
+
 def fit(img, longside):
     w, h = img.size
     s = longside / max(w, h)
@@ -161,8 +172,9 @@ POW_MAP = [
     ['hud_coffee','hud_umbrella','hud_snacks'],
 ]
 
-# cells whose art is legitimately purple/magenta — skip shadow absorption there
-NO_SHADOW = {'fx-ripple'}
+# cells to skip shadow-absorption for: legitimately purple art (fx-ripple), or a dark
+# element mostly ringed by magenta that the flood would eat (obs-goose's black head).
+NO_SHADOW = {'fx-ripple', 'obs-goose'}
 
 def cut_named(sheet, mapping, outdir, longside):
     print(f"[cut] {sheet} -> {outdir}/")
@@ -175,6 +187,8 @@ def cut_named(sheet, mapping, outdir, longside):
             if not name:
                 continue
             k = tight(knockout_region(img.crop(cells[r][c]), drop_shadow=name not in NO_SHADOW))
+            if name == 'obs-goose':
+                k = clean_lower_purple(k)   # goose keeps its black head (no shadow flood); scrub the foot-smear
             save_png(fit(k, longside), f"{outdir}/{name}.png")
 
 def cut_generic(sheet, rows, cols, outdir, longside):

@@ -30,25 +30,30 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   display:none; justify-content:space-between; align-items:flex-end; z-index:15; padding:0 16px; pointer-events:none}
 #hoppad.on{display:flex}
 .hopcluster{display:flex; flex-direction:column; gap:11px}
-.hopbtn{width:76px; height:64px; border-radius:16px; border:1px solid rgba(122,179,86,0.45);
-  background:rgba(8,12,7,0.5); color:#e8dcc8; font-size:25px; cursor:pointer; pointer-events:auto;
+.hopbtn{width:84px; height:70px; border-radius:17px; border:1px solid rgba(122,179,86,0.45);
+  background:rgba(8,12,7,0.5); color:#e8dcc8; font-size:27px; cursor:pointer; pointer-events:auto;
   display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent;
   transition:transform .1s cubic-bezier(.22,.9,.28,1), background .15s ease, opacity .28s ease}
 .hopbtn:active{background:rgba(122,179,86,0.42); transform:scale(.93)}
-.hopbtn.dir{width:84px; height:72px; font-size:27px}
+.hopbtn.dir{width:92px; height:78px; font-size:30px}
 .hopcluster.hide-ud .hopbtn.ud{display:none}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
 /* smooth screen entrances (menus only; the play canvas + splash video are excluded/faded) */
-.screen.on:not(#s-play):not(#s-splash){ animation: sh-screen-in .46s cubic-bezier(.22,.9,.28,1) both; }
+.screen.on:not(#s-play):not(#s-splash){ animation: sh-screen-in .5s cubic-bezier(.22,.9,.28,1) both; }
 #s-splash.on{ animation: sh-fade-in .6s ease both; }
-.screen.leaving{ animation: sh-screen-out .34s cubic-bezier(.4,0,.5,1) both !important; pointer-events:none; }
+.screen.leaving{ animation: sh-screen-out .38s cubic-bezier(.4,0,.5,1) both !important; pointer-events:none; }
+/* gentle staggered settle for the title menu buttons */
+.screen.on .stack > *{ animation: sh-rise .52s cubic-bezier(.22,.9,.28,1) both; }
+.screen.on .stack > *:nth-child(1){animation-delay:.05s} .screen.on .stack > *:nth-child(2){animation-delay:.11s}
+.screen.on .stack > *:nth-child(3){animation-delay:.17s} .screen.on .stack > *:nth-child(4){animation-delay:.23s}
+@keyframes sh-rise{ from{ opacity:0; transform:translateY(11px); } to{ opacity:1; transform:none; } }
 @keyframes sh-screen-in{ from{ opacity:0; transform:translateY(14px) scale(.984); } to{ opacity:1; transform:none; } }
 @keyframes sh-screen-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.992); } }
 @keyframes sh-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes sh-pop{ from{ opacity:0; transform:translateY(9px) scale(.93); } to{ opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, .screen.leaving, .lv-cell{ animation:none !important; } }
+@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, .screen.leaving, .lv-cell, .screen.on .stack > *{ animation:none !important; } }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:52px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px; animation:sh-titleglow 3.6s ease-in-out infinite}
@@ -72,10 +77,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
 .helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
-.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
-.toggle.on{background:var(--deep)}
-.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; transition:border-color .2s ease, background .2s ease}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); transition:background .24s ease, border-color .24s ease}
+.toggle.on{background:var(--deep); border-color:#3f6b34}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .24s cubic-bezier(.34,1.35,.5,1), background .24s ease}
 .toggle.on b{left:31px; background:#eafbd6}
 .skinrow{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:0 auto}
 .skincard{width:96px; padding:12px 8px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; text-align:center}
@@ -128,13 +133,13 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div id="hoppad">
     <div class="hopcluster" id="hc-left">
       <button class="hopbtn ud" id="hp-upL" aria-label="hop back">▲</button>
-      <button class="hopbtn ud" id="hp-downL" aria-label="hop forward">▼</button>
       <button class="hopbtn dir" id="hp-left" aria-label="hop left">◀</button>
+      <button class="hopbtn ud" id="hp-downL" aria-label="hop forward">▼</button>
     </div>
     <div class="hopcluster" id="hc-right">
       <button class="hopbtn ud" id="hp-upR" aria-label="hop back">▲</button>
-      <button class="hopbtn ud" id="hp-downR" aria-label="hop forward">▼</button>
       <button class="hopbtn dir" id="hp-right" aria-label="hop right">▶</button>
+      <button class="hopbtn ud" id="hp-downR" aria-label="hop forward">▼</button>
     </div>
   </div>
 
@@ -263,7 +268,7 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
-var BUILD='v1.6';
+var BUILD='v1.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -273,7 +278,7 @@ function show(id){ var el=$(id);
   var cur=document.querySelector('.screen.on');
   var ons=document.querySelectorAll('.screen.on'); for(var i=0;i<ons.length;i++){ if(ons[i]!==cur) ons[i].classList.remove('on'); }
   if(cur && cur!==el){ var c=cur; c.classList.add('leaving');
-    _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 330); }
+    _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 400); }
   if(el){ el.classList.remove('leaving'); el.classList.add('on'); }
   curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); } }
