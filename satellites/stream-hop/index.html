@@ -63,6 +63,23 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #pausebtn.on{display:flex}
 #pausebtn:active{background:rgba(122,179,86,0.4); transform:scale(.93)}
 #b-music.playing{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.25), 0 0 14px rgba(200,168,75,.35)}
+.musrow{display:flex; align-items:center; gap:13px; width:100%; padding:13px 14px; margin-bottom:10px;
+  border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease}
+.musrow.on{border-color:var(--gold); background:rgba(200,168,75,0.08)}
+.musrow.locked{opacity:.62}
+.musrow .mi{width:40px; height:40px; border-radius:11px; flex:none; display:flex; align-items:center;
+  justify-content:center; font-size:19px; background:rgba(122,179,86,0.12); border:1px solid rgba(122,179,86,0.3)}
+.musrow.on .mi{background:rgba(200,168,75,0.16); border-color:rgba(200,168,75,0.5)}
+.musrow .mt{flex:1; min-width:0}
+.musrow .mt b{display:block; font-size:14.5px}
+.musrow .mt i{display:block; font-style:normal; font-size:11.5px; color:var(--muted); margin-top:2px}
+.musrow .md{font-size:11px; color:var(--muted); flex:none}
+@keyframes musbop{0%,100%{transform:scaleY(0.35)}50%{transform:scaleY(1)}}
+.eq{display:inline-flex; gap:2px; align-items:flex-end; height:12px}
+.eq b{width:3px; height:12px; background:var(--gold); border-radius:1px; transform-origin:bottom;
+  animation:musbop .9s ease-in-out infinite}
+.eq b:nth-child(2){animation-delay:.25s} .eq b:nth-child(3){animation-delay:.5s}
 #s-pause{background:rgba(5,8,5,0.86)}
 #s-pause .pad{justify-content:center}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
@@ -284,7 +301,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-set"><div class="pad">
     <h2 class="sc-h">Settings</h2>
     <div style="height:8px"></div>
-    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Music</span><div class="toggle on" id="tg-music"><b></b></div></div>
+    <div class="settingline"><span>Sound effects</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Screen shake</span><div class="toggle on" id="tg-shake"><b></b></div></div>
     <div class="settingline"><span>Colorblind cues</span><div class="toggle" id="tg-cb"><b></b></div></div>
     <div class="settingline"><span>Left thumb up/down</span><div class="toggle on" id="tg-udL"><b></b></div></div>
@@ -292,6 +310,16 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-intro" style="max-width:400px;margin:0 auto 10px">▶ Watch the intro</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- SOUNDTRACK -->
+  <div class="screen" id="s-music"><div class="pad">
+    <h2 class="sc-h">Soundtrack</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px;max-width:400px">
+      Original music by Sky Wolf Studios. Locked songs play a ten second taste; earn the rest out on the street.</div>
+    <div id="mus-rows" style="max-width:430px;width:100%"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="mus-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- PAUSE -->
@@ -386,7 +414,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v3.0';
+var BUILD='v3.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -404,15 +432,16 @@ function show(id){ var el=$(id);
   var pb=$('pausebtn'); if(pb){ if(id==='s-play')pb.classList.add('on'); else pb.classList.remove('on'); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, shake:true, cb:false, udLeft:true, udRight:true };
-(function(){ try{ var s=JSON.parse(LS.get('sh_set')||'{}'); ['sound','shake','cb','udLeft','udRight'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+var SET={ sound:true, music:true, shake:true, cb:false, udLeft:true, udRight:true };
+(function(){ try{ var s=JSON.parse(LS.get('sh_set')||'{}'); ['sound','music','shake','cb','udLeft','udRight'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('sh_set', JSON.stringify(SET)); }
 function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(l) l.classList.toggle('hide-ud', !SET.udLeft);
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
-  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, v:0 };
+  ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{},
+  musicUn:{}, musicSel:'moonwalk', v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
@@ -420,7 +449,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.eggs)PROG.eggs=p.eggs; if(p.ach)PROG.ach=p.ach; if(p.pows)PROG.pows=p.pows;
   if(typeof p.maxCombo==='number')PROG.maxCombo=p.maxCombo; if(typeof p.dodges==='number')PROG.dodges=p.dodges;
   if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked;
-  if(p.seasons)PROG.seasons=p.seasons; }catch(e){} })();
+  if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -583,6 +612,30 @@ function warmZoneTex(z){ if(!z)return; spr('lanes/safe-'+z.tex); spr('lanes/road
 var TEX_A=1;   /* lane texture strength: 0 turns the strips off entirely, 1 = as authored.
                   Back to full now that sheet 20 gives every neighbourhood its own
                   purpose-drawn pavement, road and water surface. */
+/* A street shrub that blocks a sidewalk cell. The old version was two flat circles,
+   which read as programmer art next to the painted lanes. This one is layered: contact
+   shadow, dark under-mass, three shaded lobes with per-shrub jitter (seeded by row and
+   column so it never pops between frames), speckled leaf ticks and a moon-side rim. */
+function drawShrub(bx, y, r){
+  var s=((r*73+bx*1.31)%17)/17;                       // stable per-shrub variation
+  var w=15+s*3;
+  ctx.save(); ctx.translate(bx, y);
+  ctx.fillStyle='rgba(0,0,0,0.30)';
+  ctx.beginPath(); ctx.ellipse(0, 11, w*0.92, 5.2, 0, 0, 7); ctx.fill();      // ground contact
+  ctx.fillStyle='#1c2b13';
+  ctx.beginPath(); ctx.ellipse(0, 3, w, w*0.72, 0, 0, 7); ctx.fill();          // under-mass
+  var lobes=[[-w*0.45, -2, w*0.55], [w*0.42, -1, w*0.5], [0, -w*0.42, w*0.58]];
+  for(var i=0;i<3;i++){ var L2=lobes[i], lx=L2[0]+(s-0.5)*3, ly=L2[1], lr=L2[2];
+    var lg=ctx.createRadialGradient(lx-lr*0.35, ly-lr*0.45, lr*0.15, lx, ly, lr);
+    lg.addColorStop(0,'#4c7030'); lg.addColorStop(0.55,'#31531f'); lg.addColorStop(1,'#20351a');
+    ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 7); ctx.fill(); }
+  ctx.strokeStyle='rgba(130,180,90,0.35)'; ctx.lineWidth=1.2;                  // leaf ticks
+  for(var t=0;t<5;t++){ var a2=(t*1.7+s*6.3), tx=Math.cos(a2)*w*0.55, ty=-Math.abs(Math.sin(a2))*w*0.5-2;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx+2, ty-3); ctx.stroke(); }
+  ctx.strokeStyle='rgba(190,220,160,0.20)'; ctx.lineWidth=1.5;                 // moon-side rim
+  ctx.beginPath(); ctx.arc(-w*0.15, -w*0.30, w*0.62, Math.PI*1.05, Math.PI*1.75); ctx.stroke();
+  ctx.restore();
+}
 function laneTex(name, top, a){ if(!ART_ON||TEX_A<=0)return; var im=spr(name); if(!imgReady(im))return;
   ctx.save(); ctx.globalAlpha=a*TEX_A; ctx.drawImage(im, 0, top, VW, TILE); ctx.restore(); }
 
@@ -917,6 +970,7 @@ function achCheck(){
   var won=[];
   for(var i=0;i<ACH.length;i++){ var a=ACH[i];
     if(!PROG.ach[a.id] && achMet(a.id)){ PROG.ach[a.id]=1; PROG.caps=(PROG.caps||0)+25; won.push(a); } }
+  musicCheck();
   if(won.length){ saveProg();
     // mid-run it is a float on the board; anywhere else it earns a card. bankRun()
     // fires this BEFORE show('s-go'), so test the run, not the screen.
@@ -1392,7 +1446,7 @@ function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.PI*2*i/n+Math.random
 function puff(x,y,type){ var col=type==='water'?'#7fb6cf':type==='road'?'#a08a5a':'#9fce6a'; for(var i=0;i<5;i++){ var a=Math.PI*(0.2+Math.random()*0.6)+Math.PI; G.parts.push({x:x,y:y+14,vx:(Math.random()-0.5)*70,vy:-30-Math.random()*40,life:0.6,col:col}); }
   if(type==='water') spawnFx('fx/splash-water', x, y+4, TILE*1.35, 0.5);
   else spawnFx('fx/splash-dust', x, y+8, TILE*1.05, 0.40); }
-function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
+function float(x,y,txt){ if(G&&G.floats) G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
 /* one-shot art burst that expands + fades (water splash, bank burst, bloom glow) */
 function spawnFx(name,x,y,h,life){ if(!ART_ON||!G.fx||!imgReady(spr(name)))return; G.fx.push({n:name,x:x,y:y,t:0,life:life||0.5,h:h||TILE}); }
 
@@ -1547,7 +1601,7 @@ function drawRow(r){
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
-    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){ var bx=(c+0.5)*TILE; ctx.fillStyle='#24401a'; ctx.beginPath(); ctx.arc(bx,y,15,0,7); ctx.fill(); ctx.fillStyle='#31531f'; ctx.beginPath(); ctx.arc(bx-5,y-4,8,0,7); ctx.arc(bx+6,y-2,7,0,7); ctx.fill(); } }
+    if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){ drawShrub((c+0.5)*TILE, y, r); } }
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
       if(!drawSprite('sprites/coin-cap', L.coin, cy, 32)){
         ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); } }
@@ -1825,7 +1879,27 @@ function revealChar(c){ var ov=$('bin-reveal'); if(!ov)return;
   ov.querySelector('.br-card').style.borderColor=RARC[c.rar]||'#c8a84b';
   ov.classList.add('on'); sfx('unlock'); haptic(30);
 }
-function closeReveal(){ var ov=$('bin-reveal'); if(ov)ov.classList.remove('on'); }
+var _revQ=[];
+/* navigating away (show() calls this) closes the card AND drops anything queued —
+   chained cards are for the player sitting on the results screen, never a nag later */
+function closeReveal(){ var ov=$('bin-reveal'); if(ov)ov.classList.remove('on'); _revQ.length=0; }
+function revealOrQueue(fn){ var ov=$('bin-reveal');
+  if(ov && ov.classList.contains('on')) _revQ.push(fn); else fn(); }
+function revealNext(){ var f=_revQ.shift(); var ov=$('bin-reveal'); if(ov)ov.classList.remove('on');
+  if(f) setTimeout(f, 240); }
+/* the new-song card: same frame as a badge, note glyph, and the song starts playing */
+function revealSong(t){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+  $('br-rar').textContent='New song'; $('br-rar').style.color='#c8a84b';
+  $('br-name').textContent=t.title; $('br-bio').textContent='Unlocked — playing now';
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d');
+  c.clearRect(0,0,124,124);
+  var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(200,168,75,0.5)'); gl.addColorStop(1,'rgba(200,168,75,0)');
+  c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
+  c.fillStyle='#e8dcc8'; c.font='54px system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('\u266B',62,64);
+  ov.querySelector('.br-card').style.borderColor='#c8a84b';
+  ov.classList.add('on'); sfx('unlock'); haptic(24);
+  JMUS.play(t.id);
+}); }
 /* found by playing, never sold in the bin */
 function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; saveProg();
   if(curScreen==='s-play'){ toast(msg); sfx('unlock'); haptic(30); } else revealChar(charById(id)); }
@@ -1932,14 +2006,16 @@ function boot(){
   tap('bin-pull', binPull);
   tap('b-ach', function(){ renderAch(); show('s-ach'); });
   tap('ach-back', function(){ renderBin(); show('s-skins'); });
-  tap('br-ok', closeReveal);
-  var brv=$('bin-reveal'); if(brv) brv.addEventListener('click', function(e){ if(e.target===brv) closeReveal(); });
+  tap('br-ok', revealNext);
+  var brv=$('bin-reveal'); if(brv) brv.addEventListener('click', function(e){ if(e.target===brv) revealNext(); });
   tap('b-how', function(){ show('s-how'); });
   tap('intro-skip', endIntro);
   tap('intro-next', endIntro);
   tap('set-intro', function(){ playIntro(); });
   var si=$('s-intro'); if(si) si.addEventListener('pointerdown', function(e){ if(e.target.closest('#intro-nav'))return; ac(); nextIntroBeat(); });
   tap('b-set', function(){ show('s-set'); });
+  tap('b-music', function(){ renderMusic(); show('s-music'); });
+  tap('mus-back', function(){ JMUS.endTease(); show('s-title'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
@@ -1954,6 +2030,7 @@ function boot(){
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
+  wireToggle('tg-music', function(){ return SET.music; }, function(v){ SET.music=v; JMUS.setOn(v); });
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
   wireToggle('tg-udL', function(){ return SET.udLeft; }, function(v){ SET.udLeft=v; applyPadLayout(); });
@@ -1966,18 +2043,109 @@ function boot(){
   // installable: add to home screen, own icon, runs full screen. SW is network-first
   // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  JMUS.autostart(); musicCheck();
 }
 
-/* ===== studio soundtrack (house pattern: lazy loaded, hidden inside the portal embed
-   because the portal runs its own gapless jukebox) ===== */
-(function(){ var btn=$('b-music'); if(!btn)return; var embedded;
-  try{ embedded=/[?&]embed=1/.test(location.search)||(window.self!==window.top); }catch(e){ embedded=true; }
-  if(embedded){ btn.style.display='none'; return; }
-  function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
-  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); else btn.style.display='none'; }
-  function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
-  if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
+/* ===== THE JIMOTHY OST — six original tracks by Stephen. Cartridge Moonwalk is the
+   theme: it starts on the splash and loops as the game's music. The other five are
+   listed from day one but locked — tapping one plays a ten second taste, and each is
+   earned through play. Cartridge Moonwalk is also in the site-wide studio jukebox
+   (music-tracks.js); the locked five stay in-game until earned. ===== */
+var MUSIC=[
+  {id:'moonwalk', title:'Cartridge Moonwalk',   file:'cartridge-moonwalk',   len:'1:15', free:1},
+  {id:'chiptune', title:'Chiptune Loop Circuit',file:'chiptune-loop-circuit',len:'1:16',
+   hint:'Reach Adventure level 5',     test:function(){ return (PROG.adv.maxLevel||1)>=5; }},
+  {id:'bass',     title:'Pixel Bass Cruise',    file:'pixel-bass-cruise',    len:'1:57',
+   hint:'Befriend 5 critters',         test:function(){ return ownedCount()>=5; }},
+  {id:'ballard',  title:'Raccoon Run Ballard',  file:'raccoon-run-ballard',  len:'2:40',
+   hint:'Clear the Waterfront chapter',test:function(){ return (PROG.adv.maxLevel||1)>6; }},
+  {id:'xwalk',    title:'Jimothy Crosswalk',    file:'jimothy-crosswalk',    len:'2:21',
+   hint:'Earn 8 badges',               test:function(){ return achCount()>=8; }},
+  {id:'trashrun', title:'Midnight Trash Run',   file:'midnight-trash-run',   len:'3:02',
+   hint:'Bank 400 lifetime bottlecaps',test:function(){ return (PROG.capsEver||0)>=400; }}
+];
+function musTrack(id){ for(var i=0;i<MUSIC.length;i++) if(MUSIC[i].id===id)return MUSIC[i]; return MUSIC[0]; }
+function musOwned(id){ var t=musTrack(id); return !!(t.free || (PROG.musicUn&&PROG.musicUn[id])); }
+/* run alongside achCheck: promote any track whose condition is now met */
+function musicCheck(){
+  if(!PROG.musicUn) PROG.musicUn={};
+  var won=null;
+  for(var i=0;i<MUSIC.length;i++){ var t=MUSIC[i];
+    if(!t.free && !PROG.musicUn[t.id] && t.test && t.test()){ PROG.musicUn[t.id]=1; won=won||t; } }
+  if(won){ saveProg();
+    if(curScreen==='s-play' && G && G.phase==='play'){ toast('🎵 '+won.title+' unlocked'); sfx('unlock'); }
+    else setTimeout(function(){ revealSong(won); }, 900); }
+}
+var JMUS=(function(){
+  var main=null, tease=null, teaseTimer=null, fadeTimer=null, started=false;
+  var VOL=0.55, TEASE_S=10;
+  function el(){ if(!main){ main=new Audio(); main.loop=true; main.volume=0; } return main; }
+  function src(t){ return 'assets/music/'+t.file+'.mp3'; }
+  function fadeTo(a, v, ms, done){ if(fadeTimer)clearInterval(fadeTimer);
+    var steps=Math.max(1, Math.round((ms||400)/40)), dv=(v-a.volume)/steps, n=0;
+    fadeTimer=setInterval(function(){ n++; a.volume=Math.max(0,Math.min(1,a.volume+dv));
+      if(n>=steps){ a.volume=v; clearInterval(fadeTimer); fadeTimer=null; if(done)done(); } }, 40); }
+  function play(id){ if(!SET.music) { PROG.musicSel=id; saveProg(); return; }
+    var t=musTrack(id), a=el(), s2=src(t);
+    if(a.src.indexOf(s2)<0){ a.src=s2; }
+    PROG.musicSel=id; saveProg();
+    var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){});
+    fadeTo(a, VOL, 500); started=true; }
+  function teasePlay(t, done){
+    if(!tease){ tease=new Audio(); }
+    tease.src=src(t); tease.loop=false; tease.volume=0;
+    var a=el();
+    if(!a.paused) fadeTo(a, 0.06, 350);
+    var pr=tease.play(); if(pr&&pr.catch)pr.catch(function(){});
+    fadeTo2(tease, VOL, 350);
+    if(teaseTimer)clearTimeout(teaseTimer);
+    teaseTimer=setTimeout(function(){ endTease(done); }, TEASE_S*1000);
+  }
+  /* second fader so the duck + the tease ramp can run together */
+  var fade2=null;
+  function fadeTo2(a, v, ms, done){ if(fade2)clearInterval(fade2);
+    var steps=Math.max(1, Math.round((ms||400)/40)), dv=(v-a.volume)/steps, n=0;
+    fade2=setInterval(function(){ n++; a.volume=Math.max(0,Math.min(1,a.volume+dv));
+      if(n>=steps){ a.volume=v; clearInterval(fade2); fade2=null; if(done)done(); } }, 40); }
+  function endTease(done){ if(teaseTimer){ clearTimeout(teaseTimer); teaseTimer=null; }
+    if(tease) fadeTo2(tease, 0, 450, function(){ try{ tease.pause(); }catch(e){} });
+    var a=el(); if(SET.music && started && a.src){ var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){}); fadeTo(a, VOL, 500); }
+    if(done)done(); }
+  function autostart(){ if(started||!SET.music)return;
+    play(PROG.musicSel||'moonwalk');
+    /* if the browser refused (no gesture yet), arm a one-shot: the PRESS START tap counts */
+    var a=el();
+    setTimeout(function(){ if(a.paused && SET.music){
+      var once=function(){ document.removeEventListener('pointerdown', once, true);
+        if(SET.music){ var pr=a.play(); if(pr&&pr.catch)pr.catch(function(){}); fadeTo(a, VOL, 500); started=true; } };
+      document.addEventListener('pointerdown', once, true); } }, 300); }
+  function setOn(v){ if(v){ started=false; autostart(); }
+    else { if(teaseTimer)endTease(); var a=el(); fadeTo(a, 0, 350, function(){ try{ a.pause(); }catch(e){} }); } }
+  return { play:play, tease:teasePlay, endTease:endTease, autostart:autostart, setOn:setOn,
+    state:function(){ var a=el(); return { sel:PROG.musicSel||'moonwalk', playing:!a.paused, vol:+a.volume.toFixed(2),
+      src:a.src.split('/').pop(), teasing:!!teaseTimer }; } };
 })();
+function renderMusic(){
+  var host=$('mus-rows'); if(!host)return; host.innerHTML='';
+  var sel=PROG.musicSel||'moonwalk', st=JMUS.state();
+  MUSIC.forEach(function(t){ var own=musOwned(t.id);
+    var row=document.createElement('div'); row.className='musrow'+(sel===t.id&&own?' on':'')+(own?'':' locked');
+    var ic=document.createElement('div'); ic.className='mi';
+    if(sel===t.id && own && st.playing && !st.teasing){ ic.innerHTML='<span class="eq"><b></b><b></b><b></b></span>'; }
+    else ic.textContent=own?'♫':'🔒';
+    row.appendChild(ic);
+    var mt=document.createElement('div'); mt.className='mt';
+    var b=document.createElement('b'); b.textContent=t.title; mt.appendChild(b);
+    var i2=document.createElement('i');
+    i2.textContent=own?(sel===t.id?'now playing':'tap to play'):(t.hint+' · tap for a taste');
+    mt.appendChild(i2); row.appendChild(mt);
+    var md=document.createElement('div'); md.className='md'; md.textContent=t.len; row.appendChild(md);
+    row.addEventListener('click', function(){ ac();
+      if(own){ JMUS.play(t.id); sfx('ui'); renderMusic(); }
+      else { JMUS.tease(t, function(){ if(curScreen==='s-music')renderMusic(); }); toast(t.hint); sfx('ui'); renderMusic(); } });
+    host.appendChild(row);
+  });
+}
 
 /* ===== rewarded video hook =====
    A host that can actually show ads (Capacitor + AdMob, or the portal) defines
@@ -2043,6 +2211,12 @@ if(/[?&]shtest=1/.test(location.search)){
       for(var i=0;i<SEASONS.length;i++) if(seasonLive(SEASONS[i])) out.live.push(SEASONS[i].id);
       return out; },
     markSeasons:function(r){ markSeasons(r==null?50:r); return PROG.seasons; },
+    music:function(){ return JMUS.state(); },
+    musPlay:function(id){ JMUS.play(id); return JMUS.state(); },
+    musEnd:function(){ JMUS.endTease(); return JMUS.state(); },
+    setAdvMax:function(n){ PROG.adv.maxLevel=n; saveProg(); return PROG.adv.maxLevel; },
+    musicUn:function(){ var o={}; for(var i=0;i<MUSIC.length;i++)o[MUSIC[i].id]=musOwned(MUSIC[i].id)?1:0; return o; },
+    musScreen:function(){ renderMusic(); return {rows:$('mus-rows').children.length}; },
     caps:function(n){ if(n!=null){ PROG.caps=n; saveProg(); } return PROG.caps; },
     pull:function(){ binPull(); return {caps:PROG.caps,owned:ownedCount(),pool:binPool().length,revealed:$('br-name').textContent,shown:$('bin-reveal').classList.contains('on')}; },
     bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },

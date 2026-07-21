@@ -79,7 +79,8 @@ def cut_strip(img, box, out_dir, longside=260, shadow=True, maxkb=110, inset=12)
     bb = (max(0, bb[0]-pad), max(0, bb[1]-pad),
           min(frames[0].width, bb[2]+pad), min(frames[0].height, bb[3]+pad))
     for i, pose in enumerate(POSES):
-        f = cj.fit(frames[i].crop(bb), longside)
+        f = demagenta(frames[i].crop(bb))
+        f = cj.fit(f, longside)
         cj.save_png(f, os.path.join(out_dir, pose + '.png'), maxkb=maxkb)
     return out_dir
 
@@ -214,7 +215,7 @@ def auto_objects_n(img, expected, shadow=True, vert_ratio=0.5):
     return auto_objects(img, shadow=shadow, merge_px=mp, vert_ratio=vert_ratio), mp
 
 
-def cut_auto(img, names, out_fmt, longside=300, shadow=True, maxkb=130, pad=26):
+def cut_auto(img, names, out_fmt, longside=300, shadow=True, maxkb=130, pad=26, decontam=True):
     """Cut a sheet by object detection and name the results in reading order."""
     flat = [n for row in names for n in row] if names and isinstance(names[0], list) else list(names)
     boxes, mp = auto_objects_n(img, len(flat), shadow=shadow)
@@ -229,6 +230,8 @@ def cut_auto(img, names, out_fmt, longside=300, shadow=True, maxkb=130, pad=26):
         x1 = min(W, bx1 + pad); y1 = min(H, by1 + pad)
         rgba = cj.knockout_region(img.crop((x0, y0, x1, y1)), drop_shadow=shadow)
         rgba = piece_overlapping(rgba, (bx0 - x0, by0 - y0, bx1 - x0, by1 - y0))
+        if decontam:
+            rgba = demagenta(rgba)
         rgba = cj.fit(cj.tight(rgba, pad=3), longside)
         cj.save_png(rgba, out_fmt % nm, maxkb=maxkb)
     return True
@@ -361,7 +364,7 @@ def do_powers():
     # 12 objects: six pickups on top, six HUD glyphs underneath, in reading order
     print('  powers (15)')
     names = ['power_%s' % n for n in POW] + ['hud_%s' % n for n in POW]
-    cut_auto(sheet('15'), names, 'powers/%s.png', longside=200, maxkb=90)
+    cut_auto(sheet('15'), names, 'powers/%s.png', longside=200, maxkb=90, decontam=False)
 
 
 # ---------------------------------------------------------------- props (19)
@@ -462,6 +465,36 @@ def do_weather():
 
 
 # ------------------------------------------------------------- badges (21,26)
+def demagenta(rgba):
+    """Unmix baked-in magenta from semi-transparent art strokes.
+
+    Anywhere the artist painted a translucent stroke (water spray, a ring's hole,
+    a pull-tab opening, glass) over the magenta knockout, the flattened pixel is
+    art*(a) + magenta*(1-a): it survives the knockout but carries a purple cast.
+    Estimate the magenta fraction c = min(r-g, b-g)/210 (the knockout is ~235,25,235
+    so r-g == b-g == 210 at full strength; true violet art has b >> r and pure red
+    art has low b, so gating on |r-b| keeps intended colour safe), then solve the
+    blend for the true art colour and move the magenta share into TRANSPARENCY —
+    a ring's hole ends up actually showing the water beneath it."""
+    import numpy as np
+    a = np.asarray(rgba).astype(np.float32)
+    r, g, b, al = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
+    c = np.minimum(r - g, b - g) / 210.0
+    c = np.clip(c, 0, 0.92)
+    # the knockout family runs red-shifted (seen as far as 241,10,179), while
+    # intended violet art is blue-dominant — so gate on r-b, not |r-b|
+    gate = (c > 0.10) & ((r - b) > -40) & (al > 0)
+    c = np.where(gate, c, 0)
+    keep = 1.0 - c
+    MR, MG, MB = 235.0, 25.0, 235.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        a[..., 0] = np.clip((r - c * MR) / np.maximum(keep, 1e-3), 0, 255)
+        a[..., 1] = np.clip((g - c * MG) / np.maximum(keep, 1e-3), 0, 255)
+        a[..., 2] = np.clip((b - c * MB) / np.maximum(keep, 1e-3), 0, 255)
+    a[..., 3] = al * keep
+    return Image.fromarray(a.astype(np.uint8), 'RGBA')
+
+
 def piece_overlapping(rgba, box):
     """Keep the blob that actually IS the object we detected.
 

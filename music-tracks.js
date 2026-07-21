@@ -36,6 +36,8 @@
     {id:'the-quiet-room',            title:'The Quiet Room',              artist:'Stephen', cat:'Originals', src:'/assets/music/the-quiet-room.mp3'},
     {id:'fog-over-the-harbor',       title:'Fog Over the Harbor',         artist:'Stephen', cat:'Originals', src:'/assets/music/fog-over-the-harbor.mp3'},
     {id:'fog-over-the-harbor-upbeat',title:'Fog Over the Harbor (Upbeat)',artist:'Stephen', cat:'Originals', src:'/assets/music/fog-over-the-harbor-upbeat.mp3'},
+    // Jimothy theme — the rest of the Jimothy OST is unlocked by playing the game
+    {id:'cartridge-moonwalk',        title:'Cartridge Moonwalk',          artist:'Stephen', cat:'Originals', src:'/assets/music/cartridge-moonwalk.mp3'},
 
     // ── CLASSICAL — public domain, streamed from Internet Archive (Musopen,
     //    CC0: archive.org/details/musopen-chopin, licenseurl=publicdomain/zero/1.0).
