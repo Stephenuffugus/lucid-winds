@@ -18,10 +18,13 @@ export const stripeCreateCheckout = onCall(
     }
     const uid = request.auth.uid
     const db = getFirestore()
+    const kind = (request.data && request.data.kind) === 'donation' ? 'donation' : 'supporter_pack'
 
-    const vaultDoc = await db.collection('vaults').doc(uid).get()
-    if (vaultDoc.exists && vaultDoc.data().sw_supporter) {
-      throw new HttpsError('failed-precondition', 'You are already a supporter. Thank you!')
+    if (kind === 'supporter_pack') {
+      const vaultDoc = await db.collection('vaults').doc(uid).get()
+      if (vaultDoc.exists && vaultDoc.data().sw_supporter) {
+        throw new HttpsError('failed-precondition', 'You are already a supporter. Thank you!')
+      }
     }
 
     const key = process.env.STRIPE_SECRET_KEY
@@ -32,13 +35,13 @@ export const stripeCreateCheckout = onCall(
 
     const orderRef = db.collection('webOrders').doc()
     const orderId = orderRef.id
-    const metadata = { type: 'supporter_pack' }
+    const metadata = { type: kind }
     await orderRef.set({
       uid,
-      type: 'supporter_pack',
+      type: kind,
       metadata,
-      usdCents: 300,
-      usd: '3.00',
+      usdCents: kind === 'donation' ? null : 300,
+      usd: kind === 'donation' ? 'chosen at checkout' : '3.00',
       gateway: 'stripe',
       status: 'created',
       createdAt: FieldValue.serverTimestamp(),
@@ -49,13 +52,26 @@ export const stripeCreateCheckout = onCall(
     form.set('client_reference_id', orderId)
     form.set('line_items[0][quantity]', '1')
     form.set('line_items[0][price_data][currency]', 'usd')
-    form.set('line_items[0][price_data][unit_amount]', '300')
-    form.set('line_items[0][price_data][product_data][name]', 'Studio Supporter Pack')
-    form.set('line_items[0][price_data][product_data][description]',
-      'Every Jimothy costume and the full original soundtrack, on every device you sign into.')
+    if (kind === 'donation') {
+      // give-what-you-want: Stripe renders an amount picker, $5 preset, $1 floor.
+      // A gift of $3 or more also grants the Supporter Pack (handled in the webhook).
+      form.set('line_items[0][price_data][custom_unit_amount][enabled]', 'true')
+      form.set('line_items[0][price_data][custom_unit_amount][preset]', '500')
+      form.set('line_items[0][price_data][custom_unit_amount][minimum]', '100')
+      form.set('line_items[0][price_data][custom_unit_amount][maximum]', '50000')
+      form.set('line_items[0][price_data][product_data][name]', 'Gift to Sky Wolf Studios')
+      form.set('line_items[0][price_data][product_data][description]',
+        'A direct thank-you to the one-person studio behind Jimothy. Gifts of $3 or more also unlock the Supporter Pack.')
+      form.set('submit_type', 'donate')
+    } else {
+      form.set('line_items[0][price_data][unit_amount]', '300')
+      form.set('line_items[0][price_data][product_data][name]', 'Studio Supporter Pack')
+      form.set('line_items[0][price_data][product_data][description]',
+        'Every Jimothy costume and the full original soundtrack, on every device you sign into.')
+    }
     form.set('metadata[orderId]', orderId)
     form.set('metadata[uid]', uid)
-    form.set('metadata[type]', 'supporter_pack')
+    form.set('metadata[type]', kind)
     form.set('success_url', 'https://lucidwinds.com/satellites/stream-hop/?paid=1')
     form.set('cancel_url', 'https://lucidwinds.com/satellites/stream-hop/?paycancel=1')
 
@@ -78,7 +94,7 @@ export const stripeCreateCheckout = onCall(
     }
 
     await orderRef.set({ status: 'invoiced', sessionId: sess.id }, { merge: true })
-    logger.info('[stripeCreateCheckout] order=%s uid=%s session=%s', orderId, uid, sess.id)
-    return { ok: true, orderId, url: sess.url, usd: '3.00' }
+    logger.info('[stripeCreateCheckout] kind=%s order=%s uid=%s session=%s', kind, orderId, uid, sess.id)
+    return { ok: true, orderId, url: sess.url, usd: kind === 'donation' ? null : '3.00' }
   },
 )

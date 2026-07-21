@@ -377,12 +377,14 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div id="sup-buywrap" style="display:none">
       <button class="btn primary" id="sup-card" style="max-width:430px;margin:0 auto 10px;display:none">💳&nbsp; Support with a card · $3</button>
       <button class="btn primary" id="sup-buy" style="max-width:430px;margin:0 auto"><span class="sup-heart">♥</span>&nbsp; Get the Supporter Pack · $3</button>
+      <button class="btn ghost sm" id="sup-donate" style="max-width:430px;margin:10px auto 0;display:none">🎁 Give a little extra, you pick the amount</button>
     </div>
     <div id="sup-thanks" style="display:none">
       <div class="sup-card" style="border-color:var(--gold); text-align:center">
         <span class="sup-heart" style="font-size:26px">♥</span><br>
         <b>You are a supporter.</b><br>Every costume and every song is yours. Thank you for keeping the lights on.
       </div>
+      <button class="btn sm" id="sup-donate2" style="max-width:430px;margin:0 auto;display:none">🎁 Give a little extra</button>
     </div>
     <div class="sup-note" id="sup-status"></div>
     <div style="height:12px"></div>
@@ -2156,6 +2158,8 @@ function boot(){
   tap('sup-back', function(){ show('s-title'); });
   tap('sup-buy', SUP.buy);
   tap('sup-card', SUP.buyCard);
+  tap('sup-donate', SUP.donate);
+  tap('sup-donate2', SUP.donate);
   tap('sup-create', function(){ SUP.auth(true); });
   tap('sup-signin', function(){ SUP.auth(false); });
   tap('mus-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
@@ -2409,7 +2413,10 @@ var SUP=(function(){
     try{ localStorage.setItem('sw_sup_order', orderId); }catch(e){}
     var un=app.firestore().collection('webOrders').doc(orderId).onSnapshot(function(doc){
       var d=doc&&doc.data&&doc.data(); if(!d)return;
-      if(d.status==='completed'){ try{ localStorage.removeItem('sw_sup_order'); }catch(e){} try{un();}catch(e){} watching=null; grant(false); }
+      if(d.status==='completed'){ try{ localStorage.removeItem('sw_sup_order'); }catch(e){} try{un();}catch(e){} watching=null;
+        // a gift below the pack price completes without unlocking anything — pure thanks
+        if(d.type==='donation' && !(d.fulfillment&&d.fulfillment.applied)){ status('Your gift landed. Thank you, truly ♥'); sfx('unlock'); haptic(20); }
+        else grant(false); }
       else if(d.status==='underpaid'||d.status==='failed'||d.status==='expired'||d.status==='refunded'){
         try{ localStorage.removeItem('sw_sup_order'); }catch(e){} try{un();}catch(e){} watching=null;
         status('That payment came back "'+d.status+'". Nothing was unlocked. If money left your wallet, write to the studio and we will make it right.'); }
@@ -2430,6 +2437,21 @@ var SUP=(function(){
       var m=(e&&e.message)||'';
       if(m.indexOf('already a supporter')>=0){ grant(false); return; }
       status(m||'Could not start checkout. Nothing was charged.'); });
+  }
+  /* pick-your-amount gift on the Stripe rail — $3+ also grants the pack (webhook side) */
+  function donate(){ if(!STRIPE_ON)return;
+    if(payOff()){ status('Payments are paused right now.'); return; }
+    var app=fbApp(); if(!app){ status('Still connecting to the studio. Give it a second and tap again.'); return; }
+    var b1=$('sup-donate'), b2=$('sup-donate2'); if(b1)b1.disabled=true; if(b2)b2.disabled=true;
+    status('Opening the gift page...');
+    app.functions('us-central1').httpsCallable('stripeCreateCheckout')({kind:'donation'}).then(function(res){
+      var d=(res&&res.data)||{}; if(b1)b1.disabled=false; if(b2)b2.disabled=false;
+      if(!d.ok||!d.url){ status('That did not open. Nothing was charged.'); return; }
+      try{ window.open(d.url,'_blank'); }catch(e){}
+      status('Gift page opened in a new tab. You pick the amount.');
+      watch(d.orderId);
+    })['catch'](function(e){ if(b1)b1.disabled=false; if(b2)b2.disabled=false;
+      status((e&&e.message)||'That did not open. Nothing was charged.'); });
   }
   /* card checkout on the Stripe rail — same order doc, same watcher, same unlock */
   function buyCard(){ if(supporterPack()||!STRIPE_ON)return;
@@ -2476,12 +2498,14 @@ var SUP=(function(){
     if(th)th.style.display=sup?'':'none';
     var sc=$('sup-card'); if(sc)sc.style.display=STRIPE_ON?'':'none';
     var cb=$('sup-buy'); if(cb&&STRIPE_ON){ cb.classList.remove('primary'); cb.classList.add('sm'); cb.innerHTML='Or pay with crypto · $3'; }
+    var dn=$('sup-donate'); if(dn)dn.style.display=STRIPE_ON?'':'none';
+    var dn2=$('sup-donate2'); if(dn2)dn2.style.display=(STRIPE_ON&&s.signedIn)?'':'none';
     var tb=$('b-support'); if(tb)tb.innerHTML=sup?'<span class="sup-heart">♥</span>&nbsp; Thank you, supporter':'<span class="sup-heart">♥</span>&nbsp; Support the Studio';
     var ms=$('mus-sup'); if(ms)ms.style.display=sup?'none':'';
     var bs=$('bin-sup'); if(bs)bs.style.display=sup?'none':'';
     if(sup){ if(curScreen==='s-music')renderMusic(); if(curScreen==='s-skins')renderBin(); }
   }
-  return { buy:buy, buyCard:buyCard, auth:auth, hydrate:hydrate, render:render, watch:watch, status:status, grant:grant };
+  return { buy:buy, buyCard:buyCard, donate:donate, auth:auth, hydrate:hydrate, render:render, watch:watch, status:status, grant:grant };
 })();
 
 /* ===== rewarded video hook =====

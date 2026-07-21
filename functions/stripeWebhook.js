@@ -59,10 +59,19 @@ export const stripeWebhook = onRequest(
         if (!doc.exists) { logger.warn('[stripeWebhook] unknown order %s', orderId); return }
         const data = doc.data()
         if (data.status === 'completed') return // replayed webhook: no-op
-        const fulfillment = await applyFulfillment(tx, db, data.uid, data.metadata)
+        let fulfillment
+        if (data.type === 'donation') {
+          // a gift of $3 or more earns the Supporter Pack too; smaller gifts are pure thanks
+          fulfillment = (sess.amount_total >= 300)
+            ? await applyFulfillment(tx, db, data.uid, { type: 'supporter_pack' })
+            : { type: 'donation', applied: false, note: 'gift below pack price' }
+        } else {
+          fulfillment = await applyFulfillment(tx, db, data.uid, data.metadata)
+        }
         tx.set(ref, {
           status: 'completed',
           fulfillment,
+          amountTotalCents: sess.amount_total || null,
           completedAt: FieldValue.serverTimestamp(),
           stripeEventId: event.id,
         }, { merge: true })
