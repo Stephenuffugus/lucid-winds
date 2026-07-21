@@ -14,6 +14,22 @@ const MAX_MSG = 2000
 const MAX_META = 600
 const MAX_CONTACT = 200
 
+// Stephen's existing feedback channel — same webhook the main game's feedback
+// button uses (index.html LW_FEEDBACK_WEBHOOK). Delivery is fire-and-forget:
+// Discord being down must never lose the Firestore copy.
+const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1493357288147390574/XaFvrgDn3JhFfT3VxdNfiGAd_GY0LCbd-Qb1ve5Cxl9dXPZ-dBdMUbQgySqeaEdifC3w'
+
+function pingDiscord(doc) {
+  const lines = ['**' + doc.game + '** feedback', doc.msg]
+  if (doc.contact) lines.push('_reply to: ' + doc.contact + '_')
+  if (doc.meta) lines.push('`' + doc.meta + '`')
+  return fetch(DISCORD_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: lines.join('\n').slice(0, 1900) }),
+  }).catch((e) => logger.warn('[swFeedback] discord ping failed', e))
+}
+
 export const swFeedback = onRequest({ region: 'us-central1', cors: true }, async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return }
   if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'POST only' }); return }
@@ -30,6 +46,7 @@ export const swFeedback = onRequest({ region: 'us-central1', cors: true }, async
       at: FieldValue.serverTimestamp(),
     }
     await getFirestore().collection('feedback').add(doc)
+    await pingDiscord(doc)
     logger.info('[swFeedback] %s: %s', doc.game, msg.slice(0, 120))
     res.json({ ok: true })
   } catch (e) {
