@@ -398,11 +398,12 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(l) l.classList.toggle('hide-ud', !SET.udLeft);
   if(r) r.classList.toggle('hide-ud', !SET.udRight); }
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
-  adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, v:0 };
+  adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{}, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
-  if(typeof p.capsEver==='number')PROG.capsEver=p.capsEver; if(typeof p.advPaid==='number')PROG.advPaid=p.advPaid; }catch(e){} })();
+  if(typeof p.capsEver==='number')PROG.capsEver=p.capsEver; if(typeof p.advPaid==='number')PROG.advPaid=p.advPaid;
+  if(p.eggs)PROG.eggs=p.eggs; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -659,6 +660,9 @@ function makeLane(r){
     // a stash is a rare windfall of bottlecaps: spilled fries, or a real curb treasure
     else if(r>=6 && rng()<0.06){ var sk=rng()<0.28?'treasure':'fries'; var sc=Math.floor(rng()*COLS);
       while(L.blocked[sc])sc=(sc+1)%COLS; L.stash={ x:(sc+0.5)*TILE, kind:sk }; }
+    // a real Seattle landmark, rarer still, and one you have never touched comes first
+    else if(r>=10 && rng()<0.035){ var ec=Math.floor(rng()*COLS); while(L.blocked[ec])ec=(ec+1)%COLS;
+      L.egg={ x:(ec+0.5)*TILE, kind:pickEgg(rng) }; }
     else if(rng()<0.4) L.coin=(0.5+Math.floor(rng()*COLS))*TILE;
     return L;
   }
@@ -801,7 +805,38 @@ function collectPickups(lane){
   var cthr=G.magnetT>0?TILE*4:TILE*0.65;
   if(lane.coin!=null && Math.abs(G.cr.x-lane.coin)<cthr){ grabCoin(lane); }
   if(lane.stash && Math.abs(G.cr.x-lane.stash.x)<Math.max(cthr,TILE*0.8)){ grabStash(lane); }
+  if(lane.egg && Math.abs(G.cr.x-lane.egg.x)<Math.max(cthr,TILE*0.8)){ grabEgg(lane); }
   if(lane.power && Math.abs(G.cr.x-lane.power.x)<TILE*0.78){ var k=lane.power.kind; lane.power=null; applyPower(k); }
+}
+/* ===== landmarks — the second thing to collect. Eight real Seattle objects, each
+   worth a pile of caps, and the game hands you the ones you have never found first. ===== */
+var EGGS=[
+  {id:'rachelpig',  name:'Rachel the Pig'},
+  {id:'fremontdog', name:'The Fremont Dog'},
+  {id:'lenin',      name:'Fremont Lenin'},
+  {id:'gumwall',    name:'A Gum Wall Chunk'},
+  {id:'needle',     name:'Space Needle Charm'},
+  {id:'ferrytoken', name:'A Ferry Token'},
+  {id:'tallboy',    name:'A Rainier Tallboy Tab'},
+  {id:'orcacharm',  name:'An Orca Charm'}
+];
+function eggById(id){ for(var i=0;i<EGGS.length;i++) if(EGGS[i].id===id)return EGGS[i]; return EGGS[0]; }
+function eggsFound(){ var n=0; for(var i=0;i<EGGS.length;i++) if(PROG.eggs&&PROG.eggs[EGGS[i].id])n++; return n; }
+function pickEgg(rng){
+  var missing=[]; for(var i=0;i<EGGS.length;i++){ if(!(PROG.eggs&&PROG.eggs[EGGS[i].id])) missing.push(EGGS[i].id); }
+  var pool = missing.length ? missing : EGGS.map(function(e){ return e.id; });
+  return pool[Math.floor(rng()*pool.length)];
+}
+function grabEgg(lane){ var k=lane.egg.kind; lane.egg=null; var e=eggById(k);
+  var fresh=!(PROG.eggs&&PROG.eggs[k]);
+  if(!PROG.eggs) PROG.eggs={};
+  PROG.eggs[k]=1; saveProg();
+  var v=fresh?30:10; G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v;
+  float(G.cr.x, rowScreenY(G.cr.r)-30, e.name);
+  float(G.cr.x, rowScreenY(G.cr.r)-52, (fresh?'FOUND! ':'')+'+'+v+' caps');
+  burst(G.cr.x, rowScreenY(G.cr.r), 18, '#f0d68a');
+  spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*2, 0.7);
+  G.flash=Math.max(G.flash,fresh?0.55:0.3); sfx('unlock'); haptic(fresh?26:14);
 }
 function grabStash(lane){ var k=lane.stash.kind; lane.stash=null;
   var v=(k==='treasure'?15:6)*(G.magnetT>0?2:1);
@@ -1318,6 +1353,11 @@ function drawRow(r){
       if(!drawSprite('sprites/pickup-'+L.stash.kind, L.stash.x, sy, 40)){
         ctx.save(); ctx.translate(L.stash.x,sy); ctx.fillStyle='#c8a84b'; ctx.fillRect(-13,-9,26,18);
         ctx.fillStyle='#e8c65a'; ctx.fillRect(-13,-9,26,5); ctx.restore(); } }
+    if(L.egg){ var ey=y+Math.sin(G.t*2+L.egg.x)*2.5;
+      var gg=ctx.createRadialGradient(L.egg.x,ey,2,L.egg.x,ey,30);
+      gg.addColorStop(0,'rgba(240,214,138,0.30)'); gg.addColorStop(1,'rgba(240,214,138,0)');
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(L.egg.x,ey,30,0,7); ctx.fill();
+      drawSprite('sprites/egg-'+L.egg.kind, L.egg.x, ey, 52); }
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
     ctx.fillStyle=Z.road[r&1]; ctx.fillRect(0,top,VW,TILE);
@@ -1522,7 +1562,7 @@ function renderBin(){
   for(var w=0;w<CHARS.length;w++){ if(CHARS[w].art&&CHARS[w].sheet) spr(CHARS[w].sheet+'/idle'); }  // warm every portrait
   var pool=binPool(), caps=PROG.caps||0;
   $('bin-caps').textContent=caps;
-  $('bin-count').textContent=ownedCount()+' of '+CHARS.length+' found';
+  $('bin-count').textContent=ownedCount()+' of '+CHARS.length+' found  ·  🏛 '+eggsFound()+'/'+EGGS.length;
   var pb=$('bin-pull');
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
   else { pb.textContent='Open the bin · '+PULL_COST+' caps'; pb.classList.add('primary'); pb.classList.remove('ghost'); }
