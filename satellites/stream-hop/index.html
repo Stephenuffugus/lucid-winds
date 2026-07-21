@@ -480,11 +480,18 @@ function charOwned(id){ return !!(PROG.chars&&PROG.chars[id]); }
 function ownedCount(){ var n=0; for(var i=0;i<CHARS.length;i++) if(charOwned(CHARS[i].id))n++; return n; }
 
 /* ===== power-ups (Seattle-raccoon flavor; art is Stephen's reskin) ===== */
-var POWERS=['coffee','umbrella','trash'];
+var POWERS=['coffee','umbrella','trash','crosswalk','vest','boots','espresso','lamp','salmon'];
 var POWER_META={
-  coffee:  { name:'Coffee',   col:'#c8894b', hi:'#f0c98a', dur:4.2, chase:1 },  // Dash: fast hops + wilt-immune
-  umbrella:{ name:'Umbrella', col:'#5b9bd5', hi:'#a7cdea', dur:0 },             // Shield: survive one hit
-  trash:   { name:'Snacks',   col:'#7ab356', hi:'#b6e08a', dur:6.5 }            // Magnet: snacks fly in, double value
+  coffee:  { name:'Coffee',   col:'#c8894b', hi:'#f0c98a', dur:4.2, chase:1, spr:'coffee' },  // Dash: fast hops + wilt-immune
+  umbrella:{ name:'Umbrella', col:'#5b9bd5', hi:'#a7cdea', dur:0,   spr:'umbrella' },         // Shield: survive one hit
+  trash:   { name:'Snacks',   col:'#7ab356', hi:'#b6e08a', dur:6.5, spr:'snacks' },           // Magnet: snacks fly in, double value
+  /* sheet 15 */
+  crosswalk:{name:'Walk Signal', col:'#e8c65a', hi:'#fff0b8', dur:4.0, spr:'crosswalk', g:'🚶' }, // every road lane STOPS
+  vest:    { name:'Hi Vis Vest', col:'#d8e04a', hi:'#f2f78e', dur:6.0, spr:'vest',   g:'🦺' },    // traffic cannot hit you
+  boots:   { name:'Rain Boots',  col:'#5b9bd5', hi:'#a7cdea', dur:6.0, spr:'boots',  g:'👢' },    // walk straight over water
+  espresso:{ name:'Double Shot', col:'#a06a3a', hi:'#e0b078', dur:7.0, chase:1, spr:'espresso', g:'☕' }, // a longer, harder dash
+  lamp:    { name:'Street Lamp', col:'#f0d68a', hi:'#fff6d0', dur:9.0, spr:'lamp',   g:'💡' },    // burns off fog, keeps gulls off
+  salmon:  { name:'Salmon Dinner', col:'#e0705e', hi:'#f7b6a4', dur:0, spr:'salmon', g:'🐟' }     // instant caps + banks your trail
 };
 
 /* ===== zones (a run crosses named neighborhoods; palettes + hazard mix shift).
@@ -529,6 +536,8 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/coin-cap','sprites/obs-can','sprites/obs-rat','sprites/obs-goose','sprites/obs-trashbags','sprites/obs-cone',
   'sprites/pad-log','sprites/pad-pallet','sprites/pad-dumpster','sprites/pad-boxraft',
   'powers/power_coffee','powers/power_umbrella','powers/power_snacks','powers/hud_coffee','powers/hud_umbrella','powers/hud_snacks',
+  'powers/power_crosswalk','powers/power_vest','powers/power_boots','powers/power_espresso','powers/power_lamp','powers/power_salmon',
+  'powers/hud_crosswalk','powers/hud_vest','powers/hud_boots','powers/hud_lamp',
   'fx/splash-water','fx/burst-gold','fx/glow-bloom','fx/splash-dust','fx/star-pop',
   'sprites/pickup-fries','sprites/pickup-treasure','sprites/fx-ripple',
   'sprites/deco-manhole','sprites/deco-salmon',
@@ -587,7 +596,8 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, deadCause:null,
-      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, idleT:0, saveT:0, fogT:0, landT:0,
+      revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, capsEverPaid:0, idleT:0, saveT:0, fogT:0, landT:0,
+      freezeT:0, vestT:0, bootsT:0, lampT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
   if(mode!=='adventure') G.zoneBanner={name:ZONES[0].name,bg:ZONES[0].bg,t:2.6};
   spr(ZONES[G.zone].bg); spr(ZONES[(G.zone+1)%ZONES.length].bg);   // this card and the next one
@@ -857,6 +867,15 @@ function applyPower(kind){
   if(kind==='umbrella'){ G.shield=true; }
   else if(kind==='coffee'){ G.dashT=m.dur; if(G.chaseR>G.cr.r-8) G.chaseR=G.cr.r-8; }  // caffeinated: shove the wilt back
   else if(kind==='trash'){ G.magnetT=m.dur; }
+  else if(kind==='espresso'){ G.dashT=m.dur; if(G.chaseR>G.cr.r-12) G.chaseR=G.cr.r-12; }
+  else if(kind==='crosswalk'){ G.freezeT=m.dur; }           // the whole street obeys the signal
+  else if(kind==='vest'){ G.vestT=m.dur; }                  // traffic cannot touch you
+  else if(kind==='boots'){ G.bootsT=m.dur; G.ride=null; G.coyote=0; }  // walk straight over the water
+  else if(kind==='lamp'){ G.lampT=m.dur; G.gull=null; G.gullT=Math.max(G.gullT,m.dur+3); }
+  else if(kind==='salmon'){ var v=25; G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v;
+    float(G.cr.x, rowScreenY(G.cr.r)-44, '+'+v+' caps');
+    if(G.combo>0) bankBloom();                              // a proper meal banks the trail
+    spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.8, 0.6); }
   burst(G.cr.x, rowScreenY(G.cr.r), 12, m.hi||m.col); G.flash=Math.max(G.flash,0.4);
   float(G.cr.x, rowScreenY(G.cr.r)-30, m.name+'!'); sfx('unlock'); haptic(16);
 }
@@ -950,6 +969,7 @@ function step(dt){
   // move entities on visible-ish rows (wet roads run a touch faster)
   var rlo=Math.floor(G.cr.r)-16, rhi=Math.floor(G.cr.r)+18;
   for(var r=rlo;r<=rhi;r++){ var L=G.lanes[r]; if(!L||!L.ents.length||(L.type!=='road'&&L.type!=='water'))continue;
+    if(L.type==='road' && G.freezeT>0) continue;    // walk signal: the street holds still, the tide does not
     var v=L.dir*L.speed*dt*slow*(L.type==='road'?G.weather.mul:1);
     for(var i=0;i<L.ents.length;i++){ var e=L.ents[i]; e.x+=v;
       if(L.dir>0 && e.x> VW+e.w) e.x-=L.span;
@@ -960,7 +980,7 @@ function step(dt){
   // riding a pad (continuous drift + auto-center + coyote)
   var lane=laneAt(G.cr.r);
   if(!G.hop && G.phase==='play'){
-    if(lane.type==='water'){
+    if(lane.type==='water' && G.bootsT<=0){
       var pad=padUnder(lane,G.cr.x);
       if(pad){ G.ride=pad; G.coyote=0; G.cr.x += lane.dir*lane.speed*dt*slow; G.cr.x += (pad.x-G.cr.x)*0.10;
         if(G.cr.x< -4 || G.cr.x> VW+4){ die('swept'); } }
@@ -971,7 +991,7 @@ function step(dt){
       var hit=false, nearGap=1e9;
       for(var j=0;j<lane.ents.length;j++){ var o=lane.ents[j]; var dx=Math.abs(o.x-G.cr.x); var thr=(o.w+G.cr.w)/2*0.72;
         if(dx<thr){ hit=true; break; } if(dx<nearGap)nearGap=dx; }
-      if(hit) die('squish');
+      if(hit && G.vestT<=0) die('squish');
       else if(nearGap< (G.cr.w)*0.9 && !G.near[G.cr.r]){ G.near[G.cr.r]=1; sfx('phew'); float(G.cr.x, rowScreenY(G.cr.r)-16,'phew'); G.shake=Math.max(G.shake,4); }
     }
   }
@@ -979,6 +999,10 @@ function step(dt){
   if(G.zoneBanner && G.zoneBanner.t>0) G.zoneBanner.t-=dt;
   if(G.levelBanner && G.levelBanner.t>0) G.levelBanner.t-=dt;
   if(G.invuln>0) G.invuln-=dt;
+  if(G.freezeT>0) G.freezeT-=dt;
+  if(G.vestT>0) G.vestT-=dt;
+  if(G.bootsT>0) G.bootsT-=dt;
+  if(G.lampT>0){ G.lampT-=dt; if(G.weather.fog>0){ G.weather.fog=Math.max(0, G.weather.fog-dt*1.6); } }
   if(G.saveT>0) G.saveT-=dt;
   if(G.landT>0) G.landT-=dt;
   G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
@@ -1251,6 +1275,10 @@ function drawPowerHud(){
   if(G.shield) items.push({g:'☂',s:'powers/hud_umbrella',c:'#5b9bd5',f:1});
   if(G.dashT>0) items.push({g:'☕',s:'powers/hud_coffee',c:'#c8894b',f:Math.max(0,G.dashT/POWER_META.coffee.dur)});
   if(G.magnetT>0) items.push({g:'🗑',s:'powers/hud_snacks',c:'#7ab356',f:Math.max(0,G.magnetT/POWER_META.trash.dur)});
+  if(G.freezeT>0) items.push({g:'🚶',s:'powers/hud_crosswalk',c:'#e8c65a',f:Math.max(0,G.freezeT/POWER_META.crosswalk.dur)});
+  if(G.vestT>0)   items.push({g:'🦺',s:'powers/hud_vest',c:'#d8e04a',f:Math.max(0,G.vestT/POWER_META.vest.dur)});
+  if(G.bootsT>0)  items.push({g:'👢',s:'powers/hud_boots',c:'#5b9bd5',f:Math.max(0,G.bootsT/POWER_META.boots.dur)});
+  if(G.lampT>0)   items.push({g:'💡',s:'powers/hud_lamp',c:'#f0d68a',f:Math.max(0,G.lampT/POWER_META.lamp.dur)});
   if(!items.length)return;
   var by=78;
   for(var i=0;i<items.length;i++){ var it=items[i], px=18+i*44+15;
@@ -1305,15 +1333,15 @@ function drawRow(r){
 }
 function drawPower(pw,y){
   var by=y+Math.sin(G.t*3+pw.x)*2.4;
-  var pname=pw.kind==='coffee'?'powers/power_coffee':pw.kind==='umbrella'?'powers/power_umbrella':'powers/power_snacks';
-  if(drawSprite(pname, pw.x, by, 48)) return;
+  var pm=POWER_META[pw.kind]||POWER_META.coffee;
+  if(drawSprite('powers/power_'+(pm.spr||'snacks'), pw.x, by, 48)) return;
   var m=POWER_META[pw.kind]; ctx.save(); ctx.translate(pw.x, by);
   var gl=ctx.createRadialGradient(0,0,2,0,0,21); gl.addColorStop(0,m.hi||m.col); gl.addColorStop(1,'rgba(0,0,0,0)');
   ctx.globalAlpha=0.65; ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,21,0,7); ctx.fill(); ctx.globalAlpha=1;
   ctx.fillStyle=m.col; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.stroke();
   ctx.fillStyle='#fff'; ctx.font='700 16px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(pw.kind==='coffee'?'☕':pw.kind==='umbrella'?'☂':'🗑', 0, 1);
+  ctx.fillText(pm.g||(pw.kind==='coffee'?'☕':pw.kind==='umbrella'?'☂':'🗑'), 0, 1);
   ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.restore();
 }
 /* aura + fx around the critter for active powers */
