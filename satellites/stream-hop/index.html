@@ -843,8 +843,12 @@ var FINISHES=[
    bio:'Cast for a park that never got built.'},
   {id:'pewter', name:'Pewter',        rar:'common', lo:[38,42,50],   hi:[214,220,230], con:1.12,
    bio:'Souvenir shop, bottom shelf, half price.'},
+  /* ⛔ the dark finishes carry a deliberately strong rim. drawCritter's own fallback
+     already notes that the near-black critters have to stay readable on wet asphalt,
+     and a Night Sky orca on a rainy road is the worst case in the game — you must
+     never lose track of yourself mid-hop because you bought something pretty. */
   {id:'slick',  name:'Rain Slick',    rar:'common', lo:[12,18,26],   hi:[120,152,176], con:1.25,
-   rim:'rgba(190,220,240,0.50)', rw:1, glow:3, bio:'Wet through, and pleased about it.'},
+   rim:'rgba(190,220,240,0.55)', rw:2, glow:4, bio:'Wet through, and pleased about it.'},
   {id:'copper', name:'Copper Patina', rar:'rare',   lo:[30,52,50],   hi:[226,140,86],  con:1.12,
    bio:'Forty winters of weather, worn as a coat.'},
   {id:'verdi',  name:'Verdigris',     rar:'rare',   lo:[14,44,40],   hi:[168,232,206], con:1.06,
@@ -864,7 +868,7 @@ var FINISHES=[
   {id:'gold',   name:'Gold Leaf',     rar:'legend', lo:[92,52,8],    hi:[255,232,150], con:1.22,
    rim:'rgba(255,238,180,0.55)', rw:2, glow:4, bio:'Hammered thin over every last hair.'},
   {id:'night',  name:'Night Sky',     rar:'legend', lo:[6,8,28],     hi:[88,102,168],  con:1.02,
-   rim:'rgba(130,150,255,0.43)', rw:1, glow:5, stars:120, bio:'He is the sky now. Nobody knows how.'}
+   rim:'rgba(150,168,255,0.60)', rw:2, glow:7, stars:120, bio:'He is the sky now. Nobody knows how.'}
 ];
 function finById(id){ for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===id)return FINISHES[i]; return null; }
 /* the finish currently worn. '' / missing = his own painted colours, always free, always default */
