@@ -328,7 +328,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       </div>
       <div class="row">
         <button class="btn sm modebtn wide" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
-        <button class="btn sm modebtn wide" id="b-skins"><img class="bicon" id="ic-skins" alt="">Critters</button>
+        <button class="btn sm modebtn wide" id="b-skins"><img class="bicon" id="ic-skins" alt="">Prize Bin</button>
       </div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
@@ -2521,8 +2521,16 @@ function renderBin(){
    same for every player all day and needs no server, no countdown and no urgency copy.
    ⛔ Deliberately NOT here: consumable boosts, revives, or anything that touches a run.
    Caps buy looks. They never buy an advantage. ===== */
+/* Priced against MEASURED earn, not vibes: a cleared Adventure level pays ~12 caps
+   (ground loot + feast gate + salmon EV, flat across the whole campaign), a 2-minute
+   run banks ~70 grinding / ~130 while progressing, and a casual two-runs-a-day player
+   banks ~150-165 including the daily 15. So: common = one run, rare = about a day,
+   epic = a couple of days, legend = most of a week. The full shelf is ~3,460 caps,
+   which is weeks rather than the 30-45 minutes it takes to empty the 40-cap bin.
+   ⛔ Nothing is ever priced under 60 — the bin pull must stay the cheapest and most
+   exciting thing you can buy, which is the whole reason it survives untouched. */
 var PICK_COST=110;
-var FIN_COST={ common:60, rare:110, epic:190, legend:300 };
+var FIN_COST={ common:60, rare:150, epic:320, legend:700 };
 function finPrice(f){ return FIN_COST[f.rar]||120; }
 function charPrice(){ return PICK_COST; }
 function dayIndex(){ return Math.floor(Date.now()/864e5); }
@@ -2813,7 +2821,12 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){
-    if(document.hidden){ running=false; JMUS.setHidden(true); }
+    /* ⛔ bank BEFORE we stop the loop. Swiping the PWA away or letting the tab get
+       evicted mid-run used to throw away every cap earned since the run started —
+       there is no pagehide/beforeunload anywhere else in the file. bankRun is
+       idempotent (the G.capsPaid / G.capsEverPaid watermarks guarantee no double
+       pay), so calling it here as well as at game over is safe. */
+    if(document.hidden){ if(G && G.phase==='play') bankRun(); running=false; JMUS.setHidden(true); }
     else { JMUS.setHidden(false); if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} } });
   // FIRST PLAY: rules before play (Jessie). The very first time any mode is
   // tapped, the How screen shows once and its button carries them into the game.
@@ -2886,7 +2899,11 @@ function boot(){
       SET.mute=!SET.mute; saveSet(); mbtn.classList.toggle('muted', SET.mute); JMUS.setMute(SET.mute); }); }
   syncMusicLibrary();
   tap('pz-resume', resumeRun);
-  tap('pz-restart', function(){ if(G&&G.mode==='adventure') newGame('adventure', G.level); else newGame(G?G.mode:'endless'); });
+  /* ⛔ bank first. 'Leave the run' one line below calls quitRun, which banks — but
+     'Start over' used to drop straight into newGame() and bin the caps, on the very
+     screen that had just shown the player how many they had. */
+  tap('pz-restart', function(){ if(G) bankRun();
+    if(G&&G.mode==='adventure') newGame('adventure', G.level); else newGame(G?G.mode:'endless'); });
   tap('pz-menu', quitRun);
   tap('cl-next', resumeNextLevel);
   tap('cl-menu', quitRun);
