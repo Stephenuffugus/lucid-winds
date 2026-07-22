@@ -1125,6 +1125,13 @@ function dailyClock(ms){ var h=Math.floor(ms/36e5), m=Math.floor((ms%36e5)/6e4);
 /* Called at the top of every Daily run. Returns true if this is the one that counts. */
 function dailyStart(){
   var t=dayIndex(), d=PROG.daily;
+  /* YOUR VERY FIRST GO IS A WARM UP. Somebody arriving from a directory listing has
+     never touched the controls, and tapping the big Daily button first is the likeliest
+     thing they do. Letting that run stand would hand them a permanent result of eight
+     lanes earned while they worked out which way was forward. PROG.hopped is still 0
+     here because it is set on the first hop of a run, so this can only ever fire once
+     in a player's life, which is why it cannot be farmed. */
+  if(!PROG.hopped) return false;
   if(d.day===t) return false;                       // already spoken for → practice
   d.streak = (d.day===t-1) ? (d.streak||0)+1 : 1;   // showing up is what keeps a streak
   if(d.streak>(d.bestStreak||0)) d.bestStreak=d.streak;
@@ -1190,6 +1197,11 @@ function paintDaily(){
     if((D.streak||0)>1) s+=' · <span class="dl-streak">'+D.streak+' day streak</span>';
     s+='<br>Next course in '+dailyClock(dailyLeft())+'. Play it again anytime for practice.';
     el.innerHTML=s;
+  } else if(!PROG.hopped){
+    /* never played anything: say plainly that this one is a freebie, so the warm up
+       reads as generosity rather than as a result that mysteriously did not save */
+    el.innerHTML='<b>Daily #'+n+'</b> is ready · one run, same road for everyone'+
+      '<br>Your first go is a warm up. It will not count.';
   } else {
     el.innerHTML='<b>Daily #'+n+'</b> is ready · one run, same road for everyone'+
       ((D.streak||0)>0 ? (' · <span class="dl-streak">'+D.streak+' day streak</span>') : '');
@@ -3694,6 +3706,7 @@ if(/[?&]shtest=1/.test(location.search)){
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
+    setHopped:function(v){ PROG.hopped=v?1:0; saveProg(); return PROG.hopped; },
     dailyReset:function(){ PROG.daily={ day:0,no:0,score:0,cause:'',code:'',streak:0,bestStreak:0,hist:[] }; saveProg(); return PROG.daily; },
     dailySet:function(o){ for(var k in o) PROG.daily[k]=o[k]; saveProg(); return PROG.daily; },
     dailyShare:function(){ return shareText(); },
