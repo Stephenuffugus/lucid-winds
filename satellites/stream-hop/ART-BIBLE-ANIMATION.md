@@ -213,6 +213,44 @@ and staging, never a straight copy where a different body would do it differentl
 
 ---
 
+## 5b. Ten hard facts about how the engine draws and how the cutter cuts
+
+All measured in the live code, not assumed. Every one of these has already cost a frame somewhere in
+the first draft of the character sheets.
+
+1. **A frame with a big effect renders a tiny character.** `drawCritter` (index.html:2540)
+   normalises every frame *independently*: aspect over 1.12 → sized by **width to 74px**, otherwise
+   by **height to 59px**, centre-anchored. Anything a frame trails, throws or sprays is inside the
+   crop, so it is **subtracted from the animal**. Keep effects tight to the body.
+2. **"Same scale" has a checkable definition.** Jimothy's own twenty PNGs are 180–236 wide × 174–224
+   tall, aspect **0.81 to 1.33**, with 8 of 20 above the 1.12 switch. Stay inside that range. A frame
+   at 2:1 visibly shrinks the character mid-animation.
+3. **There is no ground in a sprite.** The cutter is a magenta border flood — it keeps *every*
+   non-magenta island and only deletes magenta connected to the background. Puddles, cast shadows,
+   curbs, drains, scattered leaves and spilled crumbs all survive as floating grey scum. Never paint
+   the floor.
+4. **A detached prop becomes its own sprite.** Anything that has left the body either cuts out
+   separately or inflates the crop and shrinks the animal. Props stay attached.
+5. **The knockout eats pink.** It removes the magenta colour family (about r≥135, g≤140, b≥135), so
+   hot-pink steam or glow will be deleted. Keep FX warm, cool or neutral.
+6. ⛔ **`chars/seagull/leap` is also the diving-gull hazard** (index.html:1759) — the same PNG flies
+   at the player as an obstacle. It must read as a clean diving bird and hold no food or props.
+7. **`run-r` gets mirrored to fake `run-l`.** Any text, badge, logo or asymmetric carry flips.
+   Asymmetric characters need `run-l` painted for real.
+8. ⛔ **No readable text anywhere.** Not on badges, signs, paddles, newspapers or diplomas. It
+   mirrors, and it is illegible at 59px. Suggest texture, never words.
+9. **Raccoons are plantigrade** — flat palms, five long spread fingers, heel down. Never
+   knuckle-walking. Sasquatch is the only exception.
+10. ⛔ **`coffee` is a STANDING frame.** The engine shows it while the player is *not moving*, for
+    4.2s or 7.0s. Jimothy's own reference painting is running, which makes it the wrong reference for
+    this one slot. Paint a wired, caffeinated character holding still.
+
+And one piece of vocabulary, because it caused real errors: **"standing four-square" means all four
+paws are on the ground and no limb is free.** A frame cannot be four-square *and* hold something —
+that is a fifth limb. Rear up, or put the prop down.
+
+---
+
 ## 6. The roster, in the order I would paint it
 
 Twenty-eight characters still need sheets. Each character gets its own doc with all eighteen frames
