@@ -2482,12 +2482,14 @@ function heroPose(p){
   else if(G.idleT>8) n='eat';                                 // left alone long enough to snack
   else if(G.idleT>4) n='sit';
   else n='idle';
+  G._pose=n;                     // the pose the engine WANTED, before any folding
   var ch=G.chr||curChar();
   if(!ch.art||!ch.sheet) return 'hero/'+n;
   // Jimothy has the full 20 pose pack. Every other critter and costume has the four
   // frame hop cycle, so the extended poses fold back onto the nearest of those four.
   // Without this a dashing crow would find no sprite and drop to the procedural blob.
-  if(!ch.full) n = POSE4[n] || 'idle';
+  if(!ch.full){ G._folded=(n!==(POSE4[n]||'idle')); n = POSE4[n] || 'idle'; }
+  else G._folded=false;
   return ch.sheet+'/'+n;
 }
 function drawCritter(){
@@ -2514,12 +2516,30 @@ function drawCritter(){
     // the poses have very different shapes: size the wide ones (running, knocked
     // out) by width so every pose reads as the same amount of raccoon
     var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1, fk=PROG.fin||'';
+    /* ===== STAND-IN POSES =====
+       Only Jimothy has the full pose pack. Everyone else has four hop frames, so the
+       engine used to fold "you just died" and "you just cleared a level" onto their
+       LANDING frame and hold the camera on it for a second and a half. Until the real
+       paintings land (ART-BIBLE-ANIMATION.md), fake the moment out of what we do have:
+       tip them over for a knockout, wobble them when they are dizzy, sink them when they
+       drown, bounce them when they cheer — and composite the FX art Stephen has ALREADY
+       painted on top. Costs nothing, and every one of these is overridden the instant a
+       real frame with that name appears in the character's folder. */
+    var fb = G._folded ? (G._pose||'') : '', fbY=0, fbA=1, fbX=0;
+    if(fb==='ko'){ srot += 1.45; fbY = TILE*0.34; }                       // tipped over, down on the road
+    else if(fb==='dizzy'){ srot += 0.26*Math.sin(G.t*7.5); fbY = TILE*0.16; }
+    else if(fb==='splash'){ var sp=deathProg(); fbY = TILE*0.34*sp; fbA = 1-0.30*sp; }
+    else if(fb==='cheer'){ srot += 0.13*Math.sin(G.t*9.5); fbY = -Math.abs(Math.sin(G.t*5.4))*6; }
+    else if(fb==='scared'){ fbX = Math.sin(G.t*34)*1.8; }
+    else if(fb==='flee'){ srot += 0.16; }
+    else if(fb==='dash-run'||fb==='coffee'){ srot += 0.12; }
     // side hops: mirror the 4-frame critters into their travel direction with a
     // small lean into the hop — free extra frames, reads far less static
     var sflip=false, srot=0;
     if(G.hop && !sk.full){ if(G.hop.dir==='left'){ sflip=true; srot=0.10; } else if(G.hop.dir==='right'){ srot=0.10; } }
-    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot, fin:fk});
-    else drawSprite(pose, x, cy-6, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot, fin:fk});
+    if(pasp>1.12) drawSprite(pose, x+fbX, cy-6+fbY, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot, fin:fk, a:fbA});
+    else drawSprite(pose, x+fbX, cy-6+fbY, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot, fin:fk, a:fbA});
+    if(fb) drawStandInFx(fb, x+fbX, cy-6+fbY, TILE*csc);
     return;
   }
   // procedural critter (fallback)
@@ -2534,6 +2554,75 @@ function drawCritter(){
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-6,-9,5,0,7); ctx.arc(6,-9,5,0,7); ctx.fill();
   ctx.fillStyle=sk.eye; ctx.beginPath(); ctx.arc(-6,-9,2.4,0,7); ctx.arc(6,-9,2.4,0,7); ctx.fill();
   ctx.restore();
+}
+
+/* Composited on top of a stand-in pose, out of art Stephen has already painted
+   (fx/star-pop, fx/splash-water, fx/burst-gold, powers/power_umbrella, sprites/coin-cap).
+   Every one of these disappears the moment the character gets its real frame — the
+   stand-in only runs when heroPose had to fold the pose it actually wanted. */
+function drawStandInFx(fb, x, y, T){
+  var i, a, r;
+  if(fb==='ko' || fb==='dizzy'){                       // stars going round his head
+    var n=3, sp=(fb==='dizzy')?3.6:2.4, ry=y-T*0.46;
+    for(i=0;i<n;i++){
+      a=G.t*sp + i*(6.2832/n);
+      var sx2=x+Math.cos(a)*T*0.50, sy2=ry+Math.sin(a)*T*0.15;
+      var sc=0.70+0.34*Math.sin(a);                    // the far ones read smaller
+      if(!drawSprite('fx/star-pop', sx2, sy2, T*0.46*sc, {a:0.60+0.40*sc})){
+        ctx.save(); ctx.globalAlpha=0.60+0.40*sc; ctx.fillStyle='#f4d873';
+        ctx.font='800 '+(T*0.46*sc).toFixed(0)+'px Fredoka,system-ui'; ctx.textAlign='center';
+        ctx.fillText('★', sx2, sy2+T*0.10); ctx.textAlign='left'; ctx.restore(); }
+    }
+    return;
+  }
+  if(fb==='splash'){                                   // water bursting where he went under
+    var wp=deathProg();
+    drawSprite('fx/splash-water', x, y+T*0.18, T*(1.05+wp*0.85), {a:Math.max(0,0.95-wp*0.5)});
+    drawSprite('sprites/fx-ripple', x, y+T*0.34, T*(0.5+wp*1.3), {a:Math.max(0,0.7-wp*0.6)});
+    return;
+  }
+  if(fb==='cheer'){                                    // a pop of gold on every bounce
+    var cb=Math.abs(Math.sin(G.t*5.4));
+    drawSprite('fx/burst-gold', x, y-T*0.10, T*(1.0+cb*0.5), {a:0.30+cb*0.45});
+    return;
+  }
+  if(fb==='umbrella'){                                 // he is holding one, so show one
+    drawSprite('powers/power_umbrella', x+T*0.20, y-T*0.62, T*0.86, {a:0.96});
+    return;
+  }
+  if(fb==='shield'){                                   // the dome, same blue-violet as Jimothy's
+    ctx.save(); ctx.globalAlpha=0.85; ctx.lineWidth=2.4;
+    var g2=ctx.createLinearGradient(x-T*0.7,y-T*0.7,x+T*0.7,y+T*0.4);
+    g2.addColorStop(0,'rgba(167,205,234,0.95)'); g2.addColorStop(1,'rgba(150,130,255,0.55)');
+    ctx.strokeStyle=g2; ctx.beginPath(); ctx.arc(x, y-T*0.06, T*0.70, Math.PI*0.06, Math.PI*0.94, true); ctx.stroke();
+    ctx.globalAlpha=0.16; ctx.fillStyle='#a7cdea'; ctx.fill(); ctx.restore();
+    return;
+  }
+  if(fb==='magnet'){                                   // bottlecaps spiralling in
+    for(i=0;i<4;i++){
+      a=G.t*2.6 + i*1.5708; r=T*(0.86-0.30*((G.t*1.7+i*0.25)%1));
+      drawSprite('sprites/coin-cap', x+Math.cos(a)*r, y-T*0.10+Math.sin(a)*r*0.42, T*0.26, {a:0.9});
+    }
+    return;
+  }
+  if(fb==='scared'){                                   // the warning mark, matching Jimothy's "!!"
+    ctx.save(); ctx.globalAlpha=0.6+0.4*Math.abs(Math.sin(G.t*9));
+    ctx.fillStyle='#e5604d'; ctx.font='800 '+(T*0.46).toFixed(0)+'px Fredoka,system-ui'; ctx.textAlign='center';
+    ctx.fillText('!', x, y-T*0.62); ctx.textAlign='left'; ctx.restore();
+    return;
+  }
+  if(fb==='flee' || fb==='dash-run' || fb==='coffee'){  // speed streaking off him
+    var hot=(fb!=='flee');
+    ctx.save(); ctx.lineWidth=2;
+    for(i=0;i<3;i++){
+      var ly=y-T*0.10+ (i-1)*T*0.22, lw=T*(0.55+0.22*Math.abs(Math.sin(G.t*14+i)));
+      ctx.globalAlpha=0.30+0.22*Math.sin(G.t*12+i*2);
+      ctx.strokeStyle=hot?'#f0a24b':'#e5604d';
+      ctx.beginPath(); ctx.moveTo(x-T*0.40-lw, ly); ctx.lineTo(x-T*0.40, ly); ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
 }
 
 /* ===== screens / skins UI ===== */
@@ -3052,7 +3141,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='19';
+  var SWV='20';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
