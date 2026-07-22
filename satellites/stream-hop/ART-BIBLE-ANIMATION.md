@@ -126,6 +126,41 @@ big, that is the version I would ship.
 
 ---
 
+## 3b. Retrofit the existing four, or repaint all eighteen fresh?
+
+**Repaint fresh. All eighteen in one sheet, one pass, per character.** Do not bolt fourteen new
+frames onto the four that already exist.
+
+This is not a preference, it is what the existing art already shows. Three raccoons, painted in
+three different sessions:
+
+| | |
+|---|---|
+| `hero/idle` (drop 1) | rounder and softer, muted grey-lavender fur, thin limbs, small face mask |
+| `skins/nordic/idle` (sheet 17) | warmer and browner, bigger head on the body, heavier mask, chunkier build |
+| `skins/hardhat/idle` (sheet 7) | bolder line, higher contrast, more cartoon, larger head, more saturated |
+
+Same character. Three visibly different animals. Line weight, proportion, palette and rendering all
+drifted between sessions — which nobody notices while they sit in separate folders, and everybody
+notices the moment they are **frames of the same animation**. A character that changes build halfway
+through its own death is worse than one that has no death frame at all.
+
+You are only saving four frames out of eighteen — twenty-two percent of the work — and risking one
+hundred percent of that character's coherence to do it.
+
+**So:**
+- Every character gets one sheet containing **all eighteen frames**, generated together so they share
+  one lighting setup, one palette and one build.
+- If your tool can style-match reliably, put the existing four frames **into** the new sheet as
+  reference and regenerate them anyway, so all eighteen still come out of a single pass.
+- ⛔ **Never ship a character with frames from two different sessions.** Keep the old folder until the
+  new sheet is cut and checked, then swap the whole folder at once. Mixed is the one outcome worse
+  than incomplete.
+- Bonus: repainting lets you apply what you have learned since. The sheet-17 costumes are better than
+  the sheet-18 critters, and the sheet-18 critters would benefit from being redone at that standard.
+
+---
+
 ## 4. Jimothy's twenty are the reference
 
 `assets/hero/`. This is the standard every other character is matched to — frame for frame in energy
