@@ -3046,7 +3046,14 @@ function boot(){
   var sv=$('splash-vid'); if(sv){ sv.addEventListener('ended', splashEnded); }   // static poster shows until first tap
   // installable: add to home screen, own icon, runs full screen. SW is network-first
   // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  /* ⛔ The host's edge cache serves BARE asset URLs from its own copy and ignores
+     no-cache — the same trap ARTV exists for. `sw.js` was pinned at jimothy-v1 out
+     there while the repo had reached v18, so every cache bump any of us has made
+     since launch never actually reached a player. Registering with the version in
+     the query string makes each release a new URL, which the edge cannot pin.
+     ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
+  var SWV='19';
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
 
