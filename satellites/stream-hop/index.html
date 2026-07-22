@@ -171,6 +171,9 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   background:linear-gradient(180deg, rgba(8,11,8,0.52) 0%, rgba(8,11,8,0.26) 34%, rgba(8,11,8,0.72) 70%, rgba(8,11,8,0.96) 100%),
              radial-gradient(125% 80% at 50% 38%, transparent 42%, rgba(5,8,5,0.62) 100%); }
 #s-title > .pad{ position:relative; z-index:2; }
+#s-title .title-rain{ position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.20; mix-blend-mode:screen;
+  background-image:repeating-linear-gradient(74deg, rgba(180,205,235,0) 0 9px, rgba(180,205,235,.22) 9px 10px, rgba(180,205,235,0) 10px 24px);
+  animation:sh-rain .6s linear infinite; }
 #s-title .title-sub{ text-shadow:0 1px 6px #000 }
 @keyframes sh-menu-drift{ from{ transform:scale(1.03) translateY(0); } to{ transform:scale(1.11) translateY(-2.5%); } }
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:74px; width:100%;
@@ -297,7 +300,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   </div>
 
   <!-- TITLE -->
-  <div class="screen center" id="s-title"><div class="pad center">
+  <div class="screen center" id="s-title"><div class="title-rain"></div><div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word">Jimothy</div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -582,7 +585,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.5';
+var BUILD='v4.6';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -869,7 +872,7 @@ function newGame(mode, startLevel){
   var startRow=advL>1?(advL-1)*ADV_LEN:0;
   if(mode==='adventure') advRetryLevel=advL;
   G={ mode:mode, rng:rng, lanes:{}, maxGen:-1, band:'safe', bandLeft:3, afterHazard:false, lastType:'safe',
-      cr:{ r:startRow, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play',
+      cr:{ r:startRow, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play', conf:[],
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
       chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:(mode==='adventure'?Math.min(0.28,0.11+(advL-1)*0.011):0.28), clock: mode==='rush'?60:0, t:0, parts:[], floats:[], fx:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
@@ -984,23 +987,23 @@ function makeLane(r){
    the drawn width, and the lane gap is derived from it so wide traffic stays fair. */
 var OBS={
   acorn:{s:'sprites/obs-can',        w:44},
-  pod:{s:'sprites/obs-goose',        w:46, fl:1},
-  hog:{s:'sprites/obs-rat',          w:50, fl:1},
+  pod:{s:'sprites/obs-goose',        w:46, fl:1, an:1},
+  hog:{s:'sprites/obs-rat',          w:50, fl:1, an:1},
   bug:{s:'sprites/obs-trashbags',    w:46},
   cone:{s:'sprites/obs-cone',        w:40},
   barrier:{s:'sprites/obs-barrier',  w:48},
   pigeons:{s:'sprites/haz-pigeons',  w:66, fly:1},
-  espresso:{s:'sprites/mv-espresso', w:104},
-  bot:{s:'sprites/mv-bot',           w:54},
-  leashdog:{s:'sprites/mv-leashdog', w:86},
-  walker:{s:'sprites/mv-walker',     w:60},
-  ducks:{s:'sprites/mv-ducks',       w:112},
+  espresso:{s:'sprites/mv-espresso', w:104, rt:1},
+  bot:{s:'sprites/mv-bot',           w:54, an:1},
+  leashdog:{s:'sprites/mv-leashdog', w:86, an:1},
+  walker:{s:'sprites/mv-walker',     w:60, an:1},
+  ducks:{s:'sprites/mv-ducks',       w:112, an:1},
   salmonfly:{s:'sprites/mv-salmon',  w:60, fly:1},
   scooter:{s:'sprites/veh-scooter',  w:62},
   skater:{s:'sprites/veh-skater',    w:68},
   cyclist:{s:'sprites/veh-cyclist',  w:76},
-  dog:{s:'sprites/haz-dog',          w:74},
-  raccoon:{s:'sprites/haz-raccoon',  w:72},
+  dog:{s:'sprites/haz-dog',          w:74, an:1},
+  raccoon:{s:'sprites/haz-raccoon',  w:72, an:1},
   recyclebin:{s:'sprites/prop-recyclebin', w:60},
   produce:{s:'sprites/prop-produce', w:68},
   coffeecart:{s:'sprites/prop-coffeecart', w:78},
@@ -1352,7 +1355,14 @@ function advLevelUp(newLevel){
   G.flash=Math.max(G.flash,0.35); haptic(16);
   // ARRIVAL: hold the moment — Jimothy cheers in the alcove, the street waits,
   // the sweeper backs off, a little fanfare plays. Then the city rolls on.
-  G.celeb=2.6; if(G.chaseR>G.cr.r-7) G.chaseR=G.cr.r-7;
+  G.celeb=2.6; G.slowmo=0.32; if(G.chaseR>G.cr.r-7) G.chaseR=G.cr.r-7;
+  // a burst of real confetti: spinning paper, not dots
+  if(!G.conf)G.conf=[];
+  var CC=['#e58fa0','#7ab356','#e8c65a','#5b9bd5','#f2d98a','#e8dcc8'];
+  for(var cfi=0; cfi<38; cfi++){ var ca=Math.random()*Math.PI*2, cs=90+Math.random()*160;
+    G.conf.push({ x:G.cr.x, y:rowScreenY(G.cr.r)-30, vx:Math.cos(ca)*cs*0.7, vy:Math.sin(ca)*cs-150,
+      rot:Math.random()*6.3, vr:(Math.random()-0.5)*9, w:5+Math.random()*5, h:3+Math.random()*4,
+      col:CC[Math.floor(Math.random()*CC.length)], life:1.6+Math.random()*0.8, ph:Math.random()*6.3 }); }
   var gl2=laneAt(G.cr.r), gcol=Math.round(G.cr.x/TILE-0.5);
   if(gl2.gates && gl2.gates[gcol]){ var gb=(gcol>=3&&gcol<=5)?8:5; G.coins+=gb; G.lvCoins=(G.lvCoins||0)+1;
     float(G.cr.x, rowScreenY(G.cr.r)-64, 'FEAST! +'+gb+' caps'); }
@@ -1376,10 +1386,19 @@ function showLevelClear(){
   var pc=G.pendingClear;
   $('cl-level').textContent=pc.n;
   var m=pc.stars||0; $('cl-stars').textContent=(m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆');
-  var t=Math.max(0,Math.round(pc.time)); $('cl-time').textContent=Math.floor(t/60)+':'+('0'+(t%60)).slice(-2);
-  $('cl-hops').textContent=pc.hops;
-  $('cl-caps').textContent=pc.caps;
-  $('cl-feasts').textContent=pc.feasts;
+  var t=Math.max(0,Math.round(pc.time));
+  var rm=false; try{ rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  if(rm){ $('cl-time').textContent=Math.floor(t/60)+':'+('0'+(t%60)).slice(-2);
+    $('cl-hops').textContent=pc.hops; $('cl-caps').textContent=pc.caps; $('cl-feasts').textContent=pc.feasts; }
+  else { // the numbers ROLL in, one beat after their row lands
+    var t0=null;
+    var roll=function(ts){ if(!t0)t0=ts; var pr=Math.min(1,(ts-t0)/700), e2=pr*pr*(3-2*pr);
+      var tv=Math.round(t*e2); $('cl-time').textContent=Math.floor(tv/60)+':'+('0'+(tv%60)).slice(-2);
+      $('cl-hops').textContent=Math.round(pc.hops*e2);
+      $('cl-caps').textContent=Math.round(pc.caps*e2);
+      $('cl-feasts').textContent=Math.round(pc.feasts*e2);
+      if(pr<1 && curScreen==='s-clear') requestAnimationFrame(roll); };
+    setTimeout(function(){ if(curScreen==='s-clear') requestAnimationFrame(roll); }, 850); }
   $('cl-streak').textContent='STREAK '+pc.streak+((PROG.bestStreak||0)>pc.streak?('  ·  best '+PROG.bestStreak):(pc.streak>=2?'  ·  new best':''));
   achCheck();
   show('s-clear');
@@ -1616,10 +1635,15 @@ function step(dt){
   if(G.bootsT>0) G.bootsT-=dt;
   if(G.lampT>0){ G.lampT-=dt; if(G.weather.fog>0){ G.weather.fog=Math.max(0, G.weather.fog-dt*1.6); } }
   if(G.celeb>0){ G.celeb-=dt;
-    if(G.pendingClear){ var CCOL=['#e58fa0','#7ab356','#e8c65a','#5b9bd5','#f2d98a'];
-      for(var cf=0; cf<3; cf++) G.parts.push({ x:G.cr.x+(Math.random()-0.5)*150,
-        y:rowScreenY(G.cr.r)-70-Math.random()*60, vx:(Math.random()-0.5)*90,
-        vy:-20-Math.random()*50, life:1.3, col:CCOL[Math.floor(Math.random()*CCOL.length)] }); } }
+    if(G.pendingClear && G.conf){ var CC2=['#e58fa0','#7ab356','#e8c65a','#5b9bd5','#f2d98a','#e8dcc8'];
+      if(Math.random()<0.7) G.conf.push({ x:G.cr.x+(Math.random()-0.5)*220, y:rowScreenY(G.cr.r)-150-Math.random()*60,
+        vx:(Math.random()-0.5)*50, vy:20+Math.random()*40, rot:Math.random()*6.3, vr:(Math.random()-0.5)*8,
+        w:5+Math.random()*5, h:3+Math.random()*4, col:CC2[Math.floor(Math.random()*CC2.length)],
+        life:1.8, ph:Math.random()*6.3 }); } }
+  if(G.conf)for(var cq=G.conf.length-1; cq>=0; cq--){ var cp=G.conf[cq];
+    cp.vy+=110*dt; cp.vx+=Math.sin(G.t*7+cp.ph)*28*dt;   // flutter
+    cp.x+=cp.vx*dt; cp.y+=cp.vy*dt; cp.rot+=cp.vr*dt; cp.life-=dt;
+    if(cp.life<=0) G.conf.splice(cq,1); }
   if(G.saveT>0) G.saveT-=dt;
   if(G.landT>0) G.landT-=dt;
   G.idleT = G.hop ? 0 : (G.idleT||0)+dt;    // drives the sit / snack idle poses
@@ -1827,6 +1851,10 @@ function render(){ if(!ctx||!G)return;
   // particles
   for(var p=0;p<G.parts.length;p++){ var pt=G.parts[p]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
   if(G.fx)for(var q2=0;q2<G.fx.length;q2++){ var f2=G.fx[q2], pr=f2.t/f2.life; drawSprite(f2.n, f2.x, f2.y, f2.h*(0.55+pr*0.7), {a:Math.max(0,1-pr*1.05)}); }
+  if(G.conf)for(var cq2=0;cq2<G.conf.length;cq2++){ var cf2=G.conf[cq2];
+    ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(1,cf2.life)); ctx.translate(cf2.x,cf2.y); ctx.rotate(cf2.rot);
+    ctx.fillStyle=cf2.col; ctx.fillRect(-cf2.w/2,-cf2.h/2,cf2.w,cf2.h*(0.5+0.5*Math.abs(Math.sin(G.t*9+cf2.ph)))); ctx.restore(); }
+  ctx.globalAlpha=1;
   // floats
   ctx.textAlign='center'; ctx.font='800 15px Fredoka,system-ui';
   for(var f=0;f<G.floats.length;f++){ var fl=G.floats[f]; ctx.globalAlpha=Math.max(0,Math.min(1,fl.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(fl.txt,fl.x,fl.y); } ctx.globalAlpha=1;
@@ -1837,6 +1865,10 @@ function render(){ if(!ctx||!G)return;
 
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // filmic vignette: the world breathes in a soft dark frame
+  var vg=ctx.createRadialGradient(VW/2,VH*0.46,VH*0.34, VW/2,VH*0.5,VH*0.72);
+  vg.addColorStop(0,'rgba(4,7,5,0)'); vg.addColorStop(1,'rgba(4,7,5,0.24)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,VW,VH);
   // a whisper of dark behind the HUD so the counters survive a bright pad lane
   var hgr=ctx.createLinearGradient(0,0,0,96); hgr.addColorStop(0,'rgba(6,9,6,0.60)'); hgr.addColorStop(1,'rgba(6,9,6,0)');
   ctx.fillStyle=hgr; ctx.fillRect(0,0,VW,96);
@@ -1851,7 +1883,8 @@ function render(){ if(!ctx||!G)return;
     else { ctx.fillStyle=((G.lvFlowers||0)>=fg)?'#7ab356':'#8a9178'; ctx.fillText('🍕 '+(G.lvFlowers||0)+'/'+fg, 20, 76); }
     ctx.fillStyle=((G.lvCoins||0)>=cg)?'#e8c65a':'#8a9178'; ctx.fillText('● '+(G.lvCoins||0)+'/'+cg, 84, 76);
   } else {
-    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px Fredoka,system-ui'; ctx.fillText(''+G.score, 18, 46);
+    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px Fredoka,system-ui';
+    ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=6; ctx.fillText(''+G.score, 18, 46); ctx.shadowBlur=0;
     ctx.font='700 12px Fredoka,system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY CURRENT':G.mode==='zen'?'ZEN MEADOW':'ROWS', 20, 62);
   }
   if(G.mode==='rush'){ ctx.textAlign='center'; var cl=Math.max(0,G.clock); ctx.fillStyle=cl<=10?'#e5604d':'#f5ebd0'; ctx.font='800 34px Fredoka,system-ui'; ctx.fillText(cl.toFixed(1)+'s', VW/2, 46); ctx.font='700 11px Fredoka,system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('RUSH HOUR', VW/2, 62); ctx.textAlign='left'; }
@@ -2096,7 +2129,9 @@ function drawObstacle(e,y,dir){
   // without it they moonwalk: walking one way, facing the other.
   var om=OBS[e.kind];
   if(om && drawSprite(om.s, e.x, y, 0, {w:e.w*1.06, flip:(om.fl?dir>0:dir<0),
-      bottom:om.fly?6:24, dy:om.fly?Math.sin(G.t*6+e.x*0.05)*2.5:0})) return;
+      bottom:om.fly?6:24,
+      dy:om.fly?Math.sin(G.t*6+e.x*0.05)*2.5 : (om.an?Math.abs(Math.sin(G.t*8+e.x*0.08))*-1.8:0),
+      rot:om.rt?Math.sin(G.t*15+e.x)*0.022:0})) return;
   ctx.save(); ctx.translate(e.x,y);
   if(e.kind==='acorn'){ ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.ellipse(0,3,e.w*0.36,e.w*0.42,0,0,7); ctx.fill(); ctx.fillStyle='#5c3a1a'; ctx.beginPath(); ctx.ellipse(0,-8,e.w*0.4,e.w*0.24,0,0,7); ctx.fill(); ctx.fillStyle='#3a250f'; ctx.fillRect(-1.5,-16,3,6); }
   else if(e.kind==='pod'){ ctx.fillStyle='#6f9040'; ctx.beginPath(); ctx.ellipse(0,0,e.w*0.5,e.w*0.28,0.2,0,7); ctx.fill(); ctx.fillStyle='#3f6b34'; for(var i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*9,0,4,0,7);ctx.fill();} }
@@ -2116,10 +2151,11 @@ var PADSPR={ log:'sprites/pad-log', pallet:'sprites/pad-pallet', dumpster:'sprit
 var PADH={ kayak:1.08, paddleboard:1.08, ring:1.18, lifering:1.18, crate:1.25, dumpster:1.25,
   log:1.15, pallet:1.15, boxraft:1.25, dock:1.4, duckboat:1.45, salmonback:1.35, otterback:1.35 };
 function drawPad(e,y){
-  if(e.ferry){ if(drawSprite('sprites/pad2-barge', e.x, y, TILE, {w:e.w*1.02, bottom:27, hmax:TILE*2.0})) return;
-               if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04, bottom:27, hmax:TILE*1.6})) return; }
+  var pbob=Math.sin(G.t*1.9+e.x*0.045)*(e.ferry?0.9:1.6);   // the water carries everything
+  if(e.ferry){ if(drawSprite('sprites/pad2-barge', e.x, y, TILE, {w:e.w*1.02, bottom:27, hmax:TILE*2.0, dy:pbob})) return;
+               if(drawSprite('sprites/pad-boxraft', e.x, y, TILE, {w:e.w*1.04, bottom:27, hmax:TILE*1.6, dy:pbob})) return; }
   else { if(drawSprite(PADSPR[e.style]||'sprites/pad-log', e.x, y, TILE*0.9,
-           {w:e.w*1.06, bottom:26, hmax:TILE*(PADH[e.style]||1.3)})) return; }
+           {w:e.w*1.06, bottom:26, hmax:TILE*(PADH[e.style]||1.3), dy:pbob})) return; }
   ctx.save(); ctx.translate(e.x,y);
   if(e.ferry){ var hw=e.w*0.5;
     ctx.fillStyle='#33424f'; ctx.beginPath(); ctx.ellipse(0,7,hw,TILE*0.4,0,0,7); ctx.fill();               // hull
@@ -2198,6 +2234,7 @@ function drawCritter(){
   else if(G.celeb>0 && G.pendingClear){ var cb=Math.abs(Math.sin(G.t*5.4));       // little victory hops
     arc=cb*11; st=1+cb*0.09; sq=1-cb*0.06; }
   else if(G.landT>0){ var ls=G.landT/LAND_SETTLE; st=1-ls*0.06; sq=1+ls*0.05; }   // knees bending on touchdown
+  else { st=1+0.022*Math.sin(G.t*2.6); sq=1-0.016*Math.sin(G.t*2.6); }            // he breathes
   var sk=G.chr||curChar(), cy=y-arc, shs=Math.max(0.45,1-arc/58);
   // ground shadow (shrinks as he lifts)
   ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.beginPath(); ctx.ellipse(x,y+13,16*sq*shs,6.5*shs,0,0,7); ctx.fill();
