@@ -255,6 +255,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#16220f; border:1px solid var(--line); color:var(--sage); font-weight:800; font-size:13px; margin-top:8px}
+/* THE DAILY — one course, one run, everybody the same road.
+   The strip is the shareable part, so it is styled like something you would paste. */
+.dl-note{margin:-2px auto 2px; max-width:420px; text-align:center; font-size:12px; color:var(--muted); line-height:1.5}
+.dl-note b{color:var(--gold); font-weight:800}
+.dl-card{width:100%; max-width:330px; margin:12px auto 2px; padding:12px 14px 13px; border-radius:14px;
+  background:rgba(12,18,9,0.72); border:1px solid rgba(200,168,75,0.34); text-align:center}
+.dl-no{font-family:Fredoka,system-ui; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); font-weight:700}
+.dl-strip{margin:9px 0 5px; line-height:1; font-size:0}
+.dl-sub{font-size:11.5px; color:var(--muted); line-height:1.5}
+.dl-streak{color:var(--sage); font-weight:800}
+.dl-prac{color:#e0b45a}
 /* Adventure level select */
 .lv-head{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:460px; margin:0 auto 6px}
 #lv-list{flex:1; width:100%; max-width:460px; margin:0 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; padding:6px 4px 24px}
@@ -331,6 +342,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm modebtn wide" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
         <button class="btn sm modebtn wide" id="b-skins"><img class="bicon" id="ic-skins" alt="">Prize Bin</button>
       </div>
+      <div class="dl-note" id="daily-note"></div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt="" style="width:54px;height:54px"></button>
@@ -578,6 +590,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="go-score" id="go-score">0</div>
     <div class="go-lab" id="go-lab">rows crossed</div>
     <div class="pill" id="go-best">Best 0</div>
+    <div class="dl-card" id="go-daily" style="display:none">
+      <div class="dl-no" id="go-dl-no">Daily #1</div>
+      <div class="dl-strip" id="go-dl-strip"></div>
+      <div class="dl-sub" id="go-dl-sub"></div>
+    </div>
     <div style="width:100%;max-width:300px;margin-top:14px">
       <div class="go-stat"><span>Feasts banked</span><b id="go-flowers">0</b></div>
       <div class="go-stat"><span>Longest trail</span><b id="go-trail">0</b></div>
@@ -629,7 +646,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v4.6';
+var BUILD='v5.0';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -643,6 +660,7 @@ function show(id){ var el=$(id);
     _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 400); }
   if(el){ el.classList.remove('leaving'); el.classList.add('on'); }
   curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
+  if(id==='s-title') paintDaily();
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); }
   var pb=$('pausebtn'); if(pb){ if(id==='s-play')pb.classList.add('on'); else pb.classList.remove('on'); }
   var mb=$('mutebtn'); if(mb){ if(id==='s-play')mb.classList.add('on'); else mb.classList.remove('on'); } }
@@ -658,7 +676,11 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0 };
+  fins:{}, fin:'', shopDay:0, v:0,
+  /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
+     means today is already spoken for. score is how far that one run got,
+     code is the road you crossed, streak counts days shown up in a row. */
+  daily:{ day:0, no:0, score:0, cause:'', code:'', streak:0, bestStreak:0, hist:[] } };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
@@ -669,6 +691,11 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
   if(typeof p.bestStreak==='number')PROG.bestStreak=p.bestStreak;
   if(typeof p.lastBonusDay==='number')PROG.lastBonusDay=p.lastBonusDay;
+  /* merged field by field rather than assigned, so a save from before the Daily existed
+     still comes back with every key present and nothing reads undefined */
+  if(p.daily){ var pd=p.daily, dk;
+    for(dk in PROG.daily){ if(typeof pd[dk]!=='undefined' && pd[dk]!==null) PROG.daily[dk]=pd[dk]; }
+    if(!PROG.daily.hist || !PROG.daily.hist.length) PROG.daily.hist=[]; }
   if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1};
   if(p.fins)PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
   if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay; }catch(e){} })();
@@ -1063,6 +1090,113 @@ function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>1
    Monday and Tuesday feel like the same road. */
 function daySeed(){ return ((dayIndex()*2654435761)>>>0); }
 
+/* ===================== THE DAILY =====================
+   One course a day, the same one for everybody, and one run at it.
+
+   The rules, and why each one is the way it is:
+
+   · YOUR RESULT IS THE FIRST RUN YOU START TODAY. Not the best run of the day, not the
+     last. The moment you tap Daily on a fresh day the day is spoken for, and the score
+     is whatever that run reaches. That is the only version that cannot be farmed: if the
+     result were "best of today" the answer would be to keep hopping until the road gave
+     you a good one, and comparing scores would mean nothing. It also means quitting the
+     run, closing the tab, or getting a phone call all leave the same honest number
+     behind, because the number is written as you go rather than at the end.
+   · YOU CAN STILL PLAY. Every run after the first is a practice run on the same course,
+     it earns caps like any other, and it never touches the result. Locking a stranger
+     out of a free game for twenty-two hours to protect a leaderboard nobody can see
+     would be a bad trade.
+   · NO CONTINUES. Everywhere else a continue costs 25 caps and is a kindness. Here it
+     would mean the player with more bottlecaps posts the better number, so canRevive
+     refuses in Daily.
+   · THE DAY TURNS OVER IN UTC, on dayIndex(), the same clock the course seed uses, so
+     nobody can reach tomorrow's road by moving their device to Tokyo.
+   · NO ACCOUNT, NO SERVER. It all lives in localStorage and the share text. ================ */
+
+/* Day 20655 was the day before the Daily became a real daily, so today is #1. */
+var DAILY_EPOCH=20655;
+function dailyNo(d){ return (typeof d==='number'?d:dayIndex()) - DAILY_EPOCH; }
+function dailyDone(){ return PROG.daily.day===dayIndex(); }
+/* ms until the next course, for the countdown on the menu */
+function dailyLeft(){ return ((dayIndex()+1)*864e5) - Date.now(); }
+function dailyClock(ms){ var h=Math.floor(ms/36e5), m=Math.floor((ms%36e5)/6e4);
+  return h>0 ? (h+'h '+m+'m') : (m>0 ? (m+'m') : 'any minute'); }
+
+/* Called at the top of every Daily run. Returns true if this is the one that counts. */
+function dailyStart(){
+  var t=dayIndex(), d=PROG.daily;
+  if(d.day===t) return false;                       // already spoken for → practice
+  d.streak = (d.day===t-1) ? (d.streak||0)+1 : 1;   // showing up is what keeps a streak
+  if(d.streak>(d.bestStreak||0)) d.bestStreak=d.streak;
+  d.day=t; d.no=dailyNo(t); d.score=0; d.cause=''; d.code='';
+  saveProg();
+  return true;
+}
+/* The course you actually crossed. Everyone's is the same road, so what the strip really
+   shows is how far you got and what took you out — which is the whole point of pasting it
+   somewhere. Capped at 20 marks (19 road plus the mark for what got you) and sampled evenly past
+   that, because a share that wraps
+   six lines on a phone does not get pasted.
+
+   Stored as a plain code string, not as emoji, and rendered two different ways on purpose:
+   the share text uses squares because that is what survives being pasted into a group
+   chat, and the card in the app draws real coloured blocks because emoji coverage is a
+   font question and a row of empty boxes would be the first thing a player saw. */
+function dailyCode(rows, cause){
+  if(!G || !G.lanes) return '';
+  var n=Math.max(0, Math.min(rows|0, 400)), out='', stepN=Math.max(1, Math.ceil(n/19)), r;
+  for(r=1; r<=n; r+=stepN){
+    var L=G.lanes[r], t=L?L.type:'safe';
+    out += (t==='water' ? 'w' : t==='road' ? 'r' : 's');
+  }
+  if(cause) out += (cause==='sink'||cause==='swept') ? 'd' : 'x';
+  return out;
+}
+var DL_EMOJI={ s:'🟩', r:'⬛', w:'🟦', d:'🌊', x:'💥' };
+var DL_COLOR={ s:'#4e7a33', r:'#2b2b2f', w:'#2f6f9e', d:'#7fc4e8', x:'#d8624f' };
+function dailyEmoji(code){ var o='',i; code=code||'';
+  for(i=0;i<code.length;i++) o+=(DL_EMOJI[code.charAt(i)]||''); return o; }
+function dailyBlocks(code){ var o='',i,c; code=code||'';
+  for(i=0;i<code.length;i++){ c=DL_COLOR[code.charAt(i)]; if(!c) continue;
+    o+='<i style="display:inline-block;width:12px;height:12px;margin:1px;border-radius:3px;background:'+c+'"></i>'; }
+  return o; }
+/* Writes the result as the run happens. Called on every new furthest row (cheap: it only
+   touches localStorage every fifth row) and again whenever the run ends or is abandoned,
+   so there is no exit from a Daily that loses the number. */
+function dailyMark(final){
+  if(!G || !G.dailyOfficial) return;
+  var d=PROG.daily;
+  if(d.day!==dayIndex()) return;                    // rolled over mid-run; leave it alone
+  if(G.score>(d.score||0)) d.score=G.score;
+  if(final){
+    d.cause=G.deadCause||'';
+    d.code=dailyCode(d.score, d.cause);
+    d.hist=(d.hist||[]); d.hist.push({ n:d.no, s:d.score });
+    if(d.hist.length>14) d.hist=d.hist.slice(-14);
+    G.dailyOfficial=false;                          // banked once; a continue cannot re-enter
+    saveProg(); return;
+  }
+  if(G.score%5===0) saveProg();
+}
+/* The line under the menu buttons. Before you have played it names today's course and
+   says what it is; after, it shows what you got and when the next one lands. Repainted
+   on every visit to the title and once a minute while you sit there, so the countdown
+   stays honest and the whole thing flips over by itself at midnight UTC. */
+function paintDaily(){
+  var el=$('daily-note'); if(!el) return;
+  var D=PROG.daily, n=dailyNo();
+  if(dailyDone()){
+    var s='<b>Daily #'+n+'</b> · you hopped '+(D.score||0)+' lane'+((D.score||0)===1?'':'s');
+    if((D.streak||0)>1) s+=' · <span class="dl-streak">'+D.streak+' day streak</span>';
+    s+='<br>Next course in '+dailyClock(dailyLeft())+'. Play it again anytime for practice.';
+    el.innerHTML=s;
+  } else {
+    el.innerHTML='<b>Daily #'+n+'</b> is ready · one run, same road for everyone'+
+      ((D.streak||0)>0 ? (' · <span class="dl-streak">'+D.streak+' day streak</span>') : '');
+  }
+}
+setInterval(function(){ if(curScreen==='s-title') paintDaily(); }, 60000);
+
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0, advRetryLevel=1;
 /* TWO STREAMS, ON PURPOSE.
@@ -1073,13 +1207,19 @@ var G=null, cv, ctx, running=false, lastTs=0, advRetryLevel=1;
    weather, and every lane after that came out different. Two players, same day, same
    seed, two completely different courses from row 21 on. Keep these apart. */
 function newGame(mode, startLevel){
+  /* starting anything at all ends the run you were in — including "Start over" from the
+     pause menu, which is the other way out of a Daily. Finalise it before G is replaced. */
+  if(G && G.dailyOfficial) dailyMark(true);
   var seed, rng, lrng;
   if(mode==='daily'){ seed=daySeed(); rng=mkRng(seed^0x9e3779b9); lrng=mkRng(seed); }
   else { seed=(Date.now()>>>0)^(Math.floor(Math.random()*1e9)); rng=mkRng(seed); lrng=mkRng(seed^0x9e3779b9); }
   var advL=(mode==='adventure')?Math.max(1,startLevel||1):0;
   var startRow=advL>1?(advL-1)*ADV_LEN:0;
   if(mode==='adventure') advRetryLevel=advL;
-  G={ mode:mode, rng:rng, lrng:lrng, seed:seed, lanes:{}, maxGen:-1, band:'safe', bandLeft:3, afterHazard:false, lastType:'safe',
+  /* claimed BEFORE the state object exists, so the day is spoken for the instant you tap
+     Daily — you cannot peek at the course and back out of a bad start */
+  var dailyOfficial = (mode==='daily') ? dailyStart() : false;
+  G={ mode:mode, rng:rng, lrng:lrng, seed:seed, dailyOfficial:dailyOfficial, lanes:{}, maxGen:-1, band:'safe', bandLeft:3, afterHazard:false, lastType:'safe',
       cr:{ r:startRow, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play', conf:[],
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
       chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:(mode==='adventure'?Math.min(0.28,0.11+(advL-1)*0.011):0.28), clock: mode==='rush'?60:0, t:0, parts:[], floats:[], fx:[], ride:null, coyote:0,
@@ -1334,7 +1474,7 @@ function finishHop(){
   // forward progress → combo + trail + score
   if(h.dir==='up'){
     if(G.mode==='adventure') G.lvHops=(G.lvHops||0)+1;
-    if(G.cr.r>G.score){ G.score=G.cr.r; }
+    if(G.cr.r>G.score){ G.score=G.cr.r; if(G.dailyOfficial) dailyMark(false); }
     if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
     else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
       spr(ZONES[(zi+1)%ZONES.length].bg); warmZoneTex(ZONES[(zi+1)%ZONES.length]); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
@@ -1951,6 +2091,11 @@ function deathCopy(c){ return DEATH_COPY[c] || {word:'DOWN',tint:'8,10,8',line:'
    once, so it only ever banks the NEW progress. */
 function bankRun(){
   if(!G) return {isBest:false, granted:0};
+  /* bankRun is also what fires when the app is hidden or swiped away mid-run, so the
+     Daily number is written here too — but only the score. Finalising (the cause, the
+     strip, the history entry) belongs to the run genuinely ending, in gameOver and
+     quitRun, because a run interrupted by a phone call is still going. */
+  dailyMark(false);
   var isBest=false;
   if(G.mode!=='adventure'){ var best=PROG.best[G.mode]||0; isBest=G.score>best; if(isBest) PROG.best[G.mode]=G.score; }
   PROG.flowers=(PROG.flowers||0)+Math.max(0, G.flowers-(G.flowersPaid||0)); G.flowersPaid=G.flowers;
@@ -1970,6 +2115,8 @@ function bankRun(){
   return {isBest:isBest, granted:granted};
 }
 function gameOver(){ if(!G)return; G.phase='over'; running=false;
+  var wasDaily=!!G.dailyOfficial;
+  dailyMark(true);                       // the run ended: cause, strip and history land here
   var banked=bankRun(), isBest=banked.isBest, granted=banked.granted;
   var rb=$('go-retry'), glv=$('go-levels');
   // "Keep going": one continue per run, back on the last safe row with a shield.
@@ -2005,6 +2152,20 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
     $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
     if(rb) rb.textContent='↻ Hop again';
   }
+  /* the Daily gets its own card: the number of the day, the road as squares, and either
+     what it cost you or a reminder that this one was only practice */
+  var dcard=$('go-daily');
+  if(dcard){ if(G.mode==='daily'){ var D=PROG.daily; dcard.style.display='';
+      $('go-dl-no').textContent='Daily #'+(D.no||dailyNo());
+      $('go-dl-strip').innerHTML=dailyBlocks(D.code);
+      var sub;
+      if(wasDaily){ sub=D.score+' lane'+(D.score===1?'':'s')+' · everybody hopped this same road today.';
+        if((D.streak||0)>1) sub+=' <span class="dl-streak">'+D.streak+' days in a row.</span>';
+        sub+='<br>New course in '+dailyClock(dailyLeft())+'.'; }
+      else { sub='<span class="dl-prac">Practice run.</span> Today\'s result stands at '+
+        (D.score||0)+' lane'+((D.score||0)===1?'':'s')+'.<br>New course in '+dailyClock(dailyLeft())+'.'; }
+      $('go-dl-sub').innerHTML=sub;
+    } else dcard.style.display='none'; }
   var shb=$('go-share'); if(shb){ if(isBest && G.score>=15) shb.classList.add('pulse'); else shb.classList.remove('pulse'); }
   /* the card names what got him, the same way the clear card names the level */
   var gc=$('go-cause'), gcl=$('go-causeline');
@@ -2035,7 +2196,10 @@ var REVIVE_MAX=1, REVIVE_COST=25, deathCount=0;
 /* You have to have got somewhere to be worth rescuing. A continue on row 3 is not a
    second chance, it is a refusal to let the run end. */
 function reviveEarned(){ return !!G && (G.mode==='adventure' ? G.level>=2 : G.score>=20); }
-function canRevive(){ return !!G && G.mode!=='zen' && G.deadCause!=='time'
+/* No continues on the Daily. Everywhere else 25 caps buys a second chance and that is a
+   kindness; on the one course everybody shares it would mean the player with the deeper
+   pockets posts the better number. One run, one result, no purchase involved. */
+function canRevive(){ return !!G && G.mode!=='zen' && G.mode!=='daily' && G.deadCause!=='time'
   && (G.revives||0)<REVIVE_MAX && reviveEarned(); }
 function canAffordRevive(){ return (PROG.caps||0)>=REVIVE_COST; }
 function reviveRun(){ if(!canRevive() || !canAffordRevive())return;
@@ -2066,8 +2230,8 @@ function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
   sfx('ui'); show('s-pause');
 }
 function resumeRun(){ if(!G)return; sfx('ui'); if(G.phase==='play'&&G.started) G.resumeT=1.2; show('s-play'); }
-function quitRun(){ if(G) bankRun();   // walking away keeps everything you earned
-  sfx('ui'); G=null; running=false; show('s-title'); }
+function quitRun(){ if(G){ dailyMark(true); bankRun(); }   // walking away keeps everything you earned,
+  sfx('ui'); G=null; running=false; show('s-title'); }     // and on the Daily it stands as your run
 function toast(txt){ float(VW/2, 120, txt); }
 
 /* particles + floats */
@@ -2930,9 +3094,24 @@ function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; savePr
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
-function shareIt(){ var url="https://lucidwinds.com/jimothy/";
+var SHARE_URL="https://lucidwinds.com/jimothy/";
+function shareIt(){ var txt=shareText();
+  if(navigator.share){ navigator.share({text:txt,url:SHARE_URL}).catch(function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+SHARE_URL).catch(function(){}); } }
+/* split out from shareIt so the text can be read and checked without opening a share sheet */
+function shareText(){
   var sc=(G&&G.score)||0, who=curChar(), txt;
   if(!G){ txt="I found Jimothy, Seattle's roundest raccoon, and now I am hopping him across the rainy city. Come play, it is free."; }
+  /* The Daily share is the one that has to survive being pasted into a group chat: the
+     day number so people know you are talking about the same road, the squares so they
+     can see how it went, and nothing else. No score inflation, no hashtags. */
+  else if(G && G.mode==='daily' && PROG.daily.day===dayIndex()){
+    var D=PROG.daily;
+    txt="Jimothy Daily #"+(D.no||dailyNo())+"\n"+dailyEmoji(D.code)+"\n"+
+        D.score+" lane"+(D.score===1?'':'s')+" across rainy Seattle";
+    if((D.streak||0)>1) txt+="  ·  "+D.streak+" day streak";
+    txt+="\nSame road for everybody. How far did you get?";
+  }
   else if(G && G.mode==='adventure'){
     txt="Jimothy the Seattle raccoon. I got to "+advChapterName(G.level)+", level "+G.level+
         ", with "+advTotalStars()+" stars. Can you get further?";
@@ -2940,10 +3119,10 @@ function shareIt(){ var url="https://lucidwinds.com/jimothy/";
     txt="Jimothy the Seattle raccoon. I hopped "+sc+" lanes across the rainy city"+
         (who.id!=='jimothy' ? (" as a "+who.name) : "")+"! Can you go further?";
   }
-  var owned=ownedCount();
-  if(owned>3) txt+=" "+owned+"/"+CHARS.length+" critters found.";
-  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
+  // the critter count is a nice brag on a normal run and clutter on a Daily card
+  var owned=ownedCount(), isDaily=!!(G && G.mode==='daily');
+  if(owned>3 && !isDaily) txt+=" "+owned+"/"+CHARS.length+" critters found.";
+  return txt; }
 
 /* ===== input wiring ===== */
 function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
@@ -3167,7 +3346,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='20';
+  var SWV='21';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -3513,6 +3692,12 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 if(/[?&]shtest=1/.test(location.search)){
   window.SH_DEV={ start:newGame, state:function(){return G;}, hop:queueHop,
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
+    daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
+      official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
+    dailyReset:function(){ PROG.daily={ day:0,no:0,score:0,cause:'',code:'',streak:0,bestStreak:0,hist:[] }; saveProg(); return PROG.daily; },
+    dailySet:function(o){ for(var k in o) PROG.daily[k]=o[k]; saveProg(); return PROG.daily; },
+    dailyShare:function(){ return shareText(); },
+    note:function(){ paintDaily(); return $('daily-note').textContent; },
     lanes:function(){ var o={}; for(var r=0;r<=G.maxGen;r++){ o[r]=G.lanes[r]?G.lanes[r].type:'?'; } return o; },
     step:function(dt){ step(dt||0.016); return {r:G.cr.r,x:Math.round(G.cr.x),phase:G.phase,score:G.score,combo:G.combo,chase:+G.chaseR.toFixed(1)}; },
     // hop forward, advancing sim until the hop settles; returns state
