@@ -40,20 +40,28 @@ embeds with no extra work.
 
 ## SUBMIT NOW — Jimothy
 
-- **URL:** `https://lucidwinds.com/satellites/stream-hop/`
+- **URL:** `https://lucidwinds.com/jimothy/`
 - **Title:** `Jimothy`
 - **Category:** `OTHER`
 - **Description:**
 
-> Hop Seattle's roundest raccoon across the rainy city. The Daily is one course a
-> day, the same road for everyone, and one run at it. Finish and you get a little
-> strip of squares to share, plus a streak for showing up. Free in the browser,
-> no account, no ads.
+> Hop Seattle's roundest raccoon across the rainy city. One road a day, the same
+> one for everybody, and one run at it. See how many lanes you get before the
+> traffic gets you, then share the little strip of squares that shows how your
+> run went. Come back tomorrow for a new road and keep your streak alive. Free in
+> the browser, no account, no ads.
 
-**Use the /satellites/stream-hop/ URL, not lucidwinds.com/jimothy/.** The short
-one is a pretty alias that bounces through a redirect, which is fine for a link
-in a post and worth avoiding inside an embedded card. The direct URL is the game
-itself and carries the same allow-listdle header.
+**Use the short `/jimothy/` URL.** Checked both on Jul 22 with curl: `/jimothy/`
+answers `HTTP/2 200` directly with no `location` header, so there is no redirect
+to avoid, and it is the nicer thing to have printed on a listing card. An earlier
+draft of this pack said it redirected; it does not. Both URLs carry the header
+that lets Conor embed the game:
+
+    content-security-policy: frame-ancestors 'self' ... https://listdle.com https://*.listdle.com
+
+Note the description says "how many lanes you get" rather than "finish". There is
+no finish line in the Daily, and a directory description that promises one would
+be the first thing a player noticed was untrue.
 
 ### Why Jimothy is worth his attention
 The Daily became a real daily on **Jul 22** (game build v5.0):
