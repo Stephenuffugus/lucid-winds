@@ -215,6 +215,19 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .skincard .sn{font-size:12px; font-weight:800}
 .skincard .su{font-size:10px; color:var(--muted); margin-top:2px}
 .skincard .sr{font-size:9px; letter-spacing:.09em; text-transform:uppercase; font-weight:800; margin-top:3px}
+.skincard .sp{font-size:10px; font-weight:800; color:var(--gold); margin-top:2px}
+.skincard.cant{opacity:.62}
+.skincard.cant .sp{color:var(--muted)}
+/* shop sections — the bin, the shelf and the collection are different acts on one screen */
+.sec-h{max-width:400px; margin:22px auto 2px; font-family:Fredoka,system-ui; font-size:17px; font-weight:600;
+  color:var(--cream); text-align:center; letter-spacing:.02em}
+.sec-h:first-child{margin-top:6px}
+.sec-sub{max-width:380px; margin:2px auto 12px; font-size:11.5px; color:var(--muted); text-align:center; line-height:1.45}
+.shoptabs{display:flex; gap:8px; width:100%; max-width:400px; margin:0 auto 4px}
+.shoptab{flex:1 1 0; min-width:0; min-height:48px; padding:0 10px; border:1px solid var(--line);
+  border-radius:14px; background:#0f150c; color:var(--muted);
+  font-family:Fredoka,system-ui; font-size:16px; font-weight:600; cursor:pointer}
+.shoptab.on{color:var(--cream); border-color:var(--sage); background:rgba(122,179,86,0.13)}
 /* Prize Bin */
 .bin-top{display:flex; justify-content:space-between; align-items:baseline; width:100%; max-width:400px;
   margin:0 auto 12px; font-size:13px}
@@ -491,16 +504,44 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="ach-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
-  <!-- PRIZE BIN (the collection) -->
+  <!-- THE PRIZE BIN — two acts on one screen: SHOP (spend caps) and COLLECTION (wear what you own) -->
   <div class="screen" id="s-skins"><div class="pad">
     <h2 class="sc-h">Prize Bin</h2>
     <div class="bin-top">
       <div class="bin-caps"><span id="bin-caps">0</span> bottlecaps</div>
       <div class="bin-count" id="bin-count"></div>
     </div>
-    <button class="btn primary" id="bin-pull" style="max-width:400px;margin:0 auto">Open the bin</button>
-    <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
-    <div class="skinrow" id="skin-row"></div>
+    <div class="shoptabs">
+      <button class="shoptab on" id="tab-shop">Shop</button>
+      <button class="shoptab" id="tab-coll">Collection</button>
+    </div>
+
+    <div id="shop-pane">
+      <div class="sec-h">Today's Find</div>
+      <div class="sec-sub" id="find-sub">Jimothy dragged something back this morning.</div>
+      <div class="skinrow" id="find-row"></div>
+
+      <div class="sec-h">The Bin</div>
+      <button class="btn primary" id="bin-pull" style="max-width:400px;margin:8px auto 0">Open the bin</button>
+      <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
+
+      <div class="sec-h">Pick One Out</div>
+      <div class="sec-sub">Skip the surprise and reach in for the one you want.</div>
+      <div class="skinrow" id="pick-row"></div>
+
+      <div class="sec-h">The Shelf</div>
+      <div class="sec-sub">A finish re-casts whoever you are playing as in a new material. One finish, every critter you own.</div>
+      <div class="skinrow" id="fin-row"></div>
+    </div>
+
+    <div id="coll-pane" style="display:none">
+      <div class="sec-h">Critters</div>
+      <div class="skinrow" id="skin-row"></div>
+      <div class="sec-h">Finishes</div>
+      <div class="sec-sub" id="finown-sub">Tap one to wear it. Tap it again to go back to his own colours.</div>
+      <div class="skinrow" id="finown-row"></div>
+    </div>
+
     <div style="height:14px"></div>
     <button class="btn sm" id="bin-sup" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/glyph-support" style="width:34px;height:34px" alt="">Every costume + the soundtrack · $3</button>
     <button class="btn sm" id="b-ach" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/medal-best" style="width:36px;height:36px" alt="">Badges</button>
@@ -613,7 +654,8 @@ function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
 var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'toadling', unlocked:{toadling:1},
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
-  musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1}, v:0 };
+  musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
+  fins:{}, fin:'', shopDay:0, v:0 };
 (function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
   if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
@@ -624,7 +666,9 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
   if(typeof p.bestStreak==='number')PROG.bestStreak=p.bestStreak;
   if(typeof p.lastBonusDay==='number')PROG.lastBonusDay=p.lastBonusDay;
-  if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1}; }catch(e){} })();
+  if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1};
+  if(p.fins)PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
+  if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -642,7 +686,7 @@ var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
    playable today. The moment real art lands, drop the four hop frames into
    assets/chars/<sheet>/{idle,crouch,leap,land}.png and set art:1 — nothing else
    changes, that critter just starts drawing as a sprite. ===== */
-var RARC={ starter:'#8a9178', common:'#7ab356', rare:'#5b9bd5', epic:'#c8a84b', secret:'#e58fa0' };
+var RARC={ starter:'#8a9178', common:'#7ab356', rare:'#5b9bd5', epic:'#c8a84b', legend:'#e0854f', secret:'#e58fa0' };
 var CHARS=[
   {id:'jimothy', name:'Jimothy', rar:'starter', sheet:'hero', art:1, full:1,
    body:'#8b8577', belly:'#cfc7b4', eye:'#171512', bio:'The silly little guy himself.'},
@@ -763,19 +807,146 @@ var SPR_JPG={'music/cover-moonwalk':1,'music/cover-chiptune':1,'music/cover-bass
   'zonecard/capitol':1,'zonecard/interbay':1,'zonecard/locks':1};
 function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
+
+/* ===== FINISHES — the Curio Shelf =====
+   Every critter in the bin is one of Stephen's paintings. A FINISH re-casts that same
+   painting in a material: gold leaf, old bronze, jade, river ice, a night sky. It is a
+   second, orthogonal wardrobe slot, so one purchase re-skins every critter you own.
+
+   How: the sprite's own luminance is mapped onto a two-stop ramp (shadow -> highlight),
+   which keeps every brush stroke, fur fleck and knitted stitch he painted and only
+   changes what the thing is made OF. Deliberately NOT a hue rotate — a hue slider over
+   hand-painted art looks like a hue slider. Materials read as intentional.
+   Cost: one getImageData pass per (frame, finish), baked ONCE into an offscreen canvas
+   and cached. All 13 finishes over a full frame measured 25ms total in headless Chrome,
+   so an equipped finish (4 frames) is ~2ms, once, and never again.
+   Chosen over ctx.filter / blend-mode stacks because per-pixel math is exact and behaves
+   identically on iOS Safari, where this studio has been burned by filters before. ===== */
+var FINISHES=[
+  {id:'bronze', name:'Old Bronze',    rar:'common', lo:[38,26,14],   hi:[212,152,74],  con:1.10,
+   bio:'Cast for a park that never got built.'},
+  {id:'pewter', name:'Pewter',        rar:'common', lo:[38,42,50],   hi:[214,220,230], con:1.12,
+   bio:'Souvenir shop, bottom shelf, half price.'},
+  {id:'slick',  name:'Rain Slick',    rar:'common', lo:[12,18,26],   hi:[120,152,176], con:1.25,
+   rim:'rgba(190,220,240,0.50)', rw:1, glow:3, bio:'Wet through, and pleased about it.'},
+  {id:'copper', name:'Copper Patina', rar:'rare',   lo:[30,52,50],   hi:[226,140,86],  con:1.12,
+   bio:'Forty winters of weather, worn as a coat.'},
+  {id:'verdi',  name:'Verdigris',     rar:'rare',   lo:[14,44,40],   hi:[168,232,206], con:1.06,
+   bio:'The green that only comes with time.'},
+  {id:'cyano',  name:'Cyanotype',     rar:'rare',   lo:[6,26,66],    hi:[178,224,255], con:1.18,
+   bio:'Printed by a stranger in 1902.'},
+  {id:'alabast',name:'Alabaster',     rar:'rare',   lo:[150,142,128],hi:[255,252,244], con:0.86, lift:0.06,
+   bio:'Museum lobby. Do not touch.'},
+  {id:'ice',    name:'River Ice',     rar:'epic',   lo:[28,68,112],  hi:[232,250,255], con:1.10,
+   rim:'rgba(200,242,255,0.62)', rw:2, glow:5, bio:'Carved on the coldest morning of the year.'},
+  {id:'jade',   name:'Jade',          rar:'epic',   lo:[6,46,34],    hi:[150,240,186], con:1.05,
+   rim:'rgba(190,255,220,0.35)', rw:1, glow:5, bio:'Small, heavy, and worth more than the shop.'},
+  {id:'amber',  name:'Amber',         rar:'epic',   lo:[78,30,4],    hi:[255,196,86],  con:1.16,
+   rim:'rgba(255,170,70,0.55)', rw:2, glow:6, bio:'Something was crossing the road. It got caught.'},
+  {id:'obsidian',name:'Obsidian',     rar:'epic',   lo:[6,6,12],     hi:[72,70,96],    con:1.30,
+   rim:'rgba(150,130,255,0.62)', rw:2, glow:7, bio:'Volcanic glass, from the mountain on clear days.'},
+  {id:'gold',   name:'Gold Leaf',     rar:'legend', lo:[92,52,8],    hi:[255,232,150], con:1.22,
+   rim:'rgba(255,238,180,0.55)', rw:2, glow:4, bio:'Hammered thin over every last hair.'},
+  {id:'night',  name:'Night Sky',     rar:'legend', lo:[6,8,28],     hi:[88,102,168],  con:1.02,
+   rim:'rgba(130,150,255,0.43)', rw:1, glow:5, stars:120, bio:'He is the sky now. Nobody knows how.'}
+];
+function finById(id){ for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===id)return FINISHES[i]; return null; }
+/* the finish currently worn. '' / missing = his own painted colours, always free, always default */
+function curFin(){ return (PROG&&PROG.fin)?finById(PROG.fin):null; }
+function finOwned(id){ return !!(PROG&&PROG.fins&&PROG.fins[id]); }
+function finCount(){ var n=0,i; for(i=0;i<FINISHES.length;i++) if(finOwned(FINISHES[i].id))n++; return n; }
+
+var FIN_CACHE={}, FIN_KEYS=[], FIN_CACHE_MAX=96;   // 20 hero poses + a shelf of previews, comfortably
+/* returns an offscreen canvas that quacks like an <img> (_st / naturalWidth / naturalHeight),
+   so imgReady() and drawSprite() consume it with no special-casing */
+function bakeFinish(im,f){
+  var w=im.naturalWidth, h=im.naturalHeight;
+  var pad=f.rim?((f.rw||2)+(f.glow||0)+6):0;
+  var t=document.createElement('canvas'); t.width=w; t.height=h;
+  var tc=t.getContext('2d');
+  tc.drawImage(im,0,0);
+  var d,p;
+  try{ d=tc.getImageData(0,0,w,h); p=d.data; }catch(e){ return im; }   // tainted canvas: wear no finish
+  var lo=f.lo, hi=f.hi, con=f.con||1, lift=f.lift||0, i, l;
+  for(i=0;i<p.length;i+=4){
+    if(p[i+3]===0) continue;
+    l=(0.299*p[i]+0.587*p[i+1]+0.114*p[i+2])/255;
+    l=(l-0.5)*con+0.5+lift; if(l<0)l=0; else if(l>1)l=1;
+    p[i]  =lo[0]+(hi[0]-lo[0])*l;
+    p[i+1]=lo[1]+(hi[1]-lo[1])*l;
+    p[i+2]=lo[2]+(hi[2]-lo[2])*l;
+  }
+  tc.putImageData(d,0,0);
+  if(f.stars){                                    // stars sit INSIDE the silhouette, seeded, never random
+    var seed=1337, rnd=function(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+    var a=d.data, placed=0, tries=0, x, y, r;
+    tc.fillStyle='rgba(255,255,255,0.94)';
+    while(placed<f.stars && tries<f.stars*90){ tries++;
+      x=(rnd()*w)|0; y=(rnd()*h)|0;
+      if(a[(y*w+x)*4+3]<130) continue;
+      r=0.5+rnd()*1.2; tc.beginPath(); tc.arc(x+0.5,y+0.5,r,0,7); tc.fill(); placed++; }
+  }
+  var out=t;
+  if(f.rim){                                      // flat silhouette stamped around a circle = rim light
+    var o=document.createElement('canvas'); o.width=w+pad*2; o.height=h+pad*2;
+    var oc=o.getContext('2d');
+    var s=document.createElement('canvas'); s.width=w; s.height=h;
+    var sc=s.getContext('2d');
+    sc.drawImage(im,0,0); sc.globalCompositeOperation='source-in';
+    sc.fillStyle=f.rim; sc.fillRect(0,0,w,h);
+    if(f.glow){ oc.save(); oc.filter='blur('+f.glow+'px)'; oc.drawImage(s,pad,pad); oc.restore(); }
+    for(var ang=0; ang<360; ang+=24){ var rad=ang*Math.PI/180;
+      oc.drawImage(s, pad+Math.cos(rad)*(f.rw||2), pad+Math.sin(rad)*(f.rw||2)); }
+    oc.drawImage(t,pad,pad);
+    out=o;
+  }
+  out._st=1; out.naturalWidth=out.width; out.naturalHeight=out.height;
+  /* a rim grows the canvas by `pad` on every side. Record the ORIGINAL aspect and the
+     grow factors so drawSprite can lay the finished sprite out exactly where the plain
+     one would have gone — the raccoon must not shrink 5% just because he is glowing. */
+  out._oasp=w/h; out._fpx=out.width/w; out._fpy=out.height/h; out._fpad=pad; out._foh=h;
+  return out;
+}
+/* bake the frames a run will actually ask for, up front, so no hop ever pays for a bake.
+   Jimothy carries the full 20-pose pack; everyone else folds onto the four hop frames. */
+function finWarm(fid,ch){
+  if(!fid) return 0;
+  ch=ch||curChar(); if(!ch.art||!ch.sheet) return 0;
+  var n=['idle','crouch','leap','land'], i;
+  if(ch.full) n=n.concat(['dash-run','run-l','run-r','flee','coffee','magnet','umbrella','scared','sit','eat','cheer','shield','dizzy','splash','ko']);
+  for(i=0;i<n.length;i++) finSpr(ch.sheet+'/'+n[i], fid);
+  return n.length;
+}
+function finSpr(name,fid){
+  var f=fid&&finById(fid); if(!f) return spr(name);
+  var k=fid+'|'+name, c=FIN_CACHE[k];
+  if(c) return c;
+  var im=spr(name);
+  if(!imgReady(im)) return im;                    // art still loading: show it plain, bake next frame
+  c=bakeFinish(im,f);
+  FIN_CACHE[k]=c; FIN_KEYS.push(k);
+  while(FIN_KEYS.length>FIN_CACHE_MAX){ delete FIN_CACHE[FIN_KEYS.shift()]; }
+  return c;
+}
+
 /* draw sprite 'name' centered at (x,y); size by height h (or width via o.w). returns true if drawn.
    o.bottom anchors the sprite's BOTTOM edge o.bottom px below y instead of centering — boats,
    vehicles and pads are 3/4-view art whose hull/wheels live at the frame bottom, so they sit
    on their lane's ground line and any extra height rises INTO the rows behind (real depth),
    instead of half the art being buried under the next row's background fill. */
-function drawSprite(name,x,y,h,o){ if(!ART_ON)return false; var im=spr(name); if(!imgReady(im))return false;
-  o=o||{}; var asp=im.naturalWidth/im.naturalHeight, dw,dh;
+function drawSprite(name,x,y,h,o){ if(!ART_ON)return false;
+  o=o||{}; var im=o.fin?finSpr(name,o.fin):spr(name); if(!imgReady(im))return false;
+  var asp=im._oasp||(im.naturalWidth/im.naturalHeight), dw,dh;
   if(o.w){ dw=o.w; dh=o.w/asp; } else { dh=h; dw=h*asp; }
   /* o.hmax: cap the derived height without giving up the collision-true width —
      the flatten reads as camera foreshortening (a wide life ring becomes an
      ellipse instead of a two-storey tower) */
   if(o.hmax && dh>o.hmax) dh=o.hmax;
   var ty = (o.bottom!=null) ? (o.bottom-dh) : (-dh/2+(o.anchor||0));
+  /* a finished sprite carries a transparent rim margin: grow the draw box by exactly
+     that margin so the art inside lands where the unfinished art would have, and push
+     a bottom-anchored one down by the margin so it still stands on its lane line */
+  if(im._fpx){ if(o.bottom!=null) ty -= dh*im._fpad/im._foh; dw*=im._fpx; dh*=im._fpy; }
   ctx.save(); ctx.translate(x+(o.dx||0), y+(o.dy||0));
   if(o.flip)ctx.scale(-1,1); if(o.rot)ctx.rotate(o.rot); if(o.sx||o.sy)ctx.scale(o.sx||1,o.sy||1);
   if(o.a!=null)ctx.globalAlpha=o.a;
@@ -2244,13 +2415,13 @@ function drawCritter(){
     if(sk.glow){ ctx.save(); var gg=ctx.createRadialGradient(x,cy,2,x,cy,30); gg.addColorStop(0,'rgba(245,230,168,0.5)'); gg.addColorStop(1,'rgba(245,230,168,0)'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(x,cy,30,0,7); ctx.fill(); ctx.restore(); }
     // the poses have very different shapes: size the wide ones (running, knocked
     // out) by width so every pose reads as the same amount of raccoon
-    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1;
+    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1, fk=PROG.fin||'';
     // side hops: mirror the 4-frame critters into their travel direction with a
     // small lean into the hop — free extra frames, reads far less static
     var sflip=false, srot=0;
     if(G.hop && !sk.full){ if(G.hop.dir==='left'){ sflip=true; srot=0.10; } else if(G.hop.dir==='right'){ srot=0.10; } }
-    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot});
-    else drawSprite(pose, x, cy-6, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot});
+    if(pasp>1.12) drawSprite(pose, x, cy-6, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot, fin:fk});
+    else drawSprite(pose, x, cy-6, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot, fin:fk});
     return;
   }
   // procedural critter (fallback)
@@ -2268,10 +2439,10 @@ function drawCritter(){
 }
 
 /* ===== screens / skins UI ===== */
-function drawSkinPreview(cv,sk,sc){ var c=cv.getContext('2d'); sc=sc||1;
+function drawSkinPreview(cv,sk,sc,fk){ var c=cv.getContext('2d'); sc=sc||1;
   c.clearRect(0,0,cv.width,cv.height);
   // a critter that has real art shows its portrait; the rest draw from their own colours
-  if(sk.art && sk.sheet){ var im=spr(sk.sheet+'/idle');
+  if(sk.art && sk.sheet){ var im=fk?finSpr(sk.sheet+'/idle',fk):spr(sk.sheet+'/idle');
     if(imgReady(im)){ var h=cv.height*0.86, w=h*(im.naturalWidth/im.naturalHeight);
       if(w>cv.width){ w=cv.width; h=w/(im.naturalWidth/im.naturalHeight); }
       c.drawImage(im,(cv.width-w)/2,(cv.height-h)/2,w,h); return; } }
@@ -2303,7 +2474,9 @@ function renderBin(){
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
   else { pb.textContent='Open the bin · '+PULL_COST+' caps'; pb.classList.add('primary'); pb.classList.remove('ghost'); }
   CHARS.forEach(function(s){ var un=charOwned(s.id);
-    if(s.secret && !un){ /* a locked secret shows as a rumour, never as a name */ }
+    /* the Collection is what you HAVE, plus the secrets as rumours. Everything you do not
+       own yet is a price tag now, and lives in the Shop tab where you can act on it. */
+    if(!un && !s.secret) return;
     var card=document.createElement('div'); card.className='skincard'+(PROG.char===s.id?' on':'')+(un?'':' locked');
     var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
     var nm=document.createElement('div'); nm.className='sn'; nm.textContent=un?s.name:(s.secret?'???':'Not found'); card.appendChild(nm);
@@ -2312,12 +2485,174 @@ function renderBin(){
     var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[s.rar]||'#8a9178';
     rr.textContent=(un||!s.secret)?s.rar:'secret'; card.appendChild(rr);
     host.appendChild(card);
-    drawSkinPreview(cvp, un?s:{body:'#232b1c',belly:'#1b2216',eye:'#232b1c'});
+    // owned critters wear whatever finish you have on, so the grid shows the real thing
+    drawSkinPreview(cvp, un?s:{body:'#232b1c',belly:'#1b2216',eye:'#232b1c'}, 1, un?PROG.fin:'');
     // portraits load async, so repaint this one cell the moment its art arrives
     if(un && s.art && s.sheet){ var pim=spr(s.sheet+'/idle');
-      if(!imgReady(pim)) (function(cc,ss){ pim.addEventListener('load', function(){ drawSkinPreview(cc, ss); }); })(cvp, s); }
-    if(un)card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); saveProg(); sfx('ui'); renderBin(); });
+      if(!imgReady(pim)) (function(cc,ss){ pim.addEventListener('load', function(){ drawSkinPreview(cc, ss, 1, PROG.fin); }); })(cvp, s); }
+    if(un)card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); finWarm(PROG.fin,s); saveProg(); sfx('ui'); renderBin(); });
   });
+  renderFind(); renderPick(); renderShelf();
+}
+
+/* ===== THE SHOP =====
+   Three ways to spend a bottlecap, deliberately different in kind, so "which lane" is a
+   real choice instead of a price list:
+     THE BIN        cheapest per critter, but you do not choose  (unchanged, 40 caps)
+     PICK ONE OUT   you choose, and you pay for the privilege
+     THE SHELF      a finish, which re-casts every critter you already own
+   TODAY'S FIND is one of those at a quarter off, chosen by the calendar day, so it is the
+   same for every player all day and needs no server, no countdown and no urgency copy.
+   ⛔ Deliberately NOT here: consumable boosts, revives, or anything that touches a run.
+   Caps buy looks. They never buy an advantage. ===== */
+var PICK_COST=110;
+var FIN_COST={ common:60, rare:110, epic:190, legend:300 };
+function finPrice(f){ return FIN_COST[f.rar]||120; }
+function charPrice(){ return PICK_COST; }
+function dayIndex(){ return Math.floor(Date.now()/864e5); }
+
+/* the whole shop as one stable, ordered list — the daily pick indexes into THIS, so
+   buying something else never reshuffles what today's find is */
+function shopStock(){
+  var out=[], i;
+  for(i=0;i<CHARS.length;i++){ var c=CHARS[i];
+    if(c.rar==='starter'||c.secret) continue;
+    out.push({kind:'char', id:c.id, o:c, price:charPrice(), owned:charOwned(c.id)}); }
+  for(i=0;i<FINISHES.length;i++){ var f=FINISHES[i];
+    out.push({kind:'fin', id:f.id, o:f, price:finPrice(f), owned:finOwned(f.id)}); }
+  return out;
+}
+function findDone(){ return PROG.shopDay===dayIndex(); }
+/* deterministic: hash the day number into the stable stock list, then walk forward to the
+   first thing you do not own yet. No clock, no server, no randomness. */
+function todaysFind(){
+  var st=shopStock(); if(!st.length) return null;
+  var d=dayIndex(), h=((d*2654435761)>>>0)%st.length, i, it=null;
+  for(i=0;i<st.length;i++){ var c=st[(h+i)%st.length]; if(!c.owned){ it=c; break; } }
+  if(!it) return null;
+  it.deal=Math.max(10, Math.round(it.price*0.75/5)*5);   // a quarter off, rounded to a 5
+  return it;
+}
+
+function shopCard(opts){
+  var card=document.createElement('div');
+  card.className='skincard'+(opts.on?' on':'')+(opts.cant?' cant':'');
+  var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
+  var nm=document.createElement('div'); nm.className='sn'; nm.textContent=opts.name; card.appendChild(nm);
+  var su=document.createElement('div'); su.className='su'; su.textContent=opts.sub||''; card.appendChild(su);
+  if(opts.price!=null){ var pr=document.createElement('div'); pr.className='sp';
+    pr.textContent=opts.was?(opts.was+' → '+opts.price+' caps'):(opts.price+' caps'); card.appendChild(pr); }
+  var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[opts.rar]||'#8a9178';
+  rr.textContent=opts.rar||''; card.appendChild(rr);
+  if(opts.onTap) card.addEventListener('click', opts.onTap);
+  opts.paint(cvp);
+  return card;
+}
+/* every finish previews on whoever you are currently playing as */
+function paintFin(cv,fid){
+  var ch=curChar();
+  drawSkinPreview(cv, ch, 1, fid);
+  if(ch.art && ch.sheet){ var im=spr(ch.sheet+'/idle');
+    if(!imgReady(im)) im.addEventListener('load', function(){ drawSkinPreview(cv, ch, 1, fid); }); }
+}
+
+function renderFind(){
+  var host=$('find-row'); if(!host)return; host.innerHTML='';
+  var sub=$('find-sub'), it=todaysFind();
+  if(!it){ sub.textContent='Nothing left to find. You have the whole shop.'; return; }
+  if(findDone()){ sub.textContent='You already took today’s find. He will drag something else back tomorrow.'; return; }
+  sub.textContent='Jimothy dragged this back this morning. A quarter off, today only.';
+  var isFin=it.kind==='fin', afford=(PROG.caps||0)>=it.deal;
+  host.appendChild(shopCard({
+    name:it.o.name, sub:afford?'tap to take it':((it.deal-(PROG.caps||0))+' more caps'),
+    price:it.deal, was:it.price, rar:it.o.rar, cant:!afford,
+    paint:function(cv){ if(isFin)paintFin(cv,it.id); else drawSkinPreview(cv,it.o,1,PROG.fin); },
+    onTap:function(){ buyFind(it); }
+  }));
+}
+function renderPick(){
+  var host=$('pick-row'); if(!host)return; host.innerHTML='';
+  var pool=binPool();
+  if(!pool.length){ host.innerHTML='<div class="sec-sub">Every critter is out of the bin already.</div>'; return; }
+  pool.forEach(function(s){
+    var afford=(PROG.caps||0)>=PICK_COST;
+    host.appendChild(shopCard({
+      name:s.name, sub:afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps'),
+      price:PICK_COST, rar:s.rar, cant:!afford,
+      paint:function(cv){ drawSkinPreview(cv,s,1,PROG.fin);
+        if(s.art&&s.sheet){ var im=spr(s.sheet+'/idle'); if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,s,1,PROG.fin); }); } },
+      onTap:function(){ buyChar(s, PICK_COST); }
+    }));
+  });
+}
+function renderShelf(){
+  var host=$('fin-row'); if(!host)return; host.innerHTML='';
+  var unsold=0;
+  FINISHES.forEach(function(f){
+    if(finOwned(f.id)){ unsold++; return; }                 // owned finishes live in the Collection
+    var p=finPrice(f), afford=(PROG.caps||0)>=p;
+    host.appendChild(shopCard({
+      name:f.name, sub:afford?'tap to buy':((p-(PROG.caps||0))+' more caps'),
+      price:p, rar:f.rar, cant:!afford,
+      paint:function(cv){ paintFin(cv,f.id); },
+      onTap:function(){ buyFin(f); }
+    }));
+  });
+  if(unsold===FINISHES.length) host.innerHTML='<div class="sec-sub">The shelf is bare. Every finish is yours.</div>';
+  renderOwnedFins();
+}
+function renderOwnedFins(){
+  var host=$('finown-row'); if(!host)return; host.innerHTML='';
+  var sub=$('finown-sub');
+  if(!finCount()){ if(sub)sub.textContent='Nothing on the shelf yet. Finishes are sold in the Shop tab.'; return; }
+  if(sub)sub.textContent='Tap one to wear it. Tap it again to go back to his own painted colours.';
+  host.appendChild(shopCard({                                // always an escape hatch back to the paint
+    name:'His Own Colours', sub:PROG.fin?'tap to wear':'worn', rar:'starter', on:!PROG.fin,
+    paint:function(cv){ paintFin(cv,''); },
+    onTap:function(){ PROG.fin=''; saveProg(); sfx('ui'); renderBin(); }
+  }));
+  FINISHES.forEach(function(f){
+    if(!finOwned(f.id))return;
+    host.appendChild(shopCard({
+      name:f.name, sub:PROG.fin===f.id?'worn':'tap to wear', rar:f.rar, on:PROG.fin===f.id,
+      paint:function(cv){ paintFin(cv,f.id); },
+      onTap:function(){ PROG.fin=(PROG.fin===f.id)?'':f.id; if(PROG.fin)finWarm(PROG.fin); saveProg(); sfx('ui'); renderBin(); }
+    }));
+  });
+}
+
+function spend(n){ if((PROG.caps||0)<n){ binNote('You need '+(n-(PROG.caps||0))+' more bottlecaps. Back out to the street.'); sfx('phew'); return false; }
+  PROG.caps-=n; return true; }
+function buyChar(c,price){ if(charOwned(c.id))return; if(!spend(price))return;
+  PROG.chars[c.id]=1; saveProg(); binNote(''); revealChar(c); renderBin(); setTimeout(achCheck,900); }
+function buyFin(f){ if(finOwned(f.id))return; if(!spend(finPrice(f)))return;
+  PROG.fins[f.id]=1; PROG.fin=f.id; finWarm(f.id); saveProg(); binNote(''); revealFin(f); renderBin(); }
+function buyFind(it){
+  if(it.kind==='fin'){ if(finOwned(it.id))return; if(!spend(it.deal))return;
+    PROG.fins[it.id]=1; PROG.fin=it.id; finWarm(it.id); PROG.shopDay=dayIndex(); saveProg(); binNote(''); revealFin(it.o); renderBin(); return; }
+  if(charOwned(it.id))return; if(!spend(it.deal))return;
+  PROG.chars[it.id]=1; PROG.shopDay=dayIndex(); saveProg(); binNote(''); revealChar(it.o); renderBin(); setTimeout(achCheck,900);
+}
+/* the finish reveal borrows the critter card, but shows YOUR critter wearing the new material */
+function revealFin(f){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+  $('br-rar').textContent='New finish'; $('br-rar').style.color=RARC[f.rar]||'#c8a84b';
+  $('br-name').textContent=f.name;
+  $('br-bio').textContent=(f.bio||'')+'  ·  Now worn by every critter you own.';
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124;
+  var ch=curChar(); drawSkinPreview(cvp, ch, 2.0, f.id);
+  if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
+    if(!imgReady(im)) im.addEventListener('load', function(){ drawSkinPreview(cvp, ch, 2.0, f.id); }); }
+  ov.querySelector('.br-card').style.borderColor=RARC[f.rar]||'#c8a84b';
+  ov.classList.add('on'); sfx('unlock'); haptic(30);
+}); }
+function shopTab(which,quiet){
+  var s=$('shop-pane'), c=$('coll-pane'), ts=$('tab-shop'), tc=$('tab-coll');
+  if(!s||!c)return;
+  var coll=(which==='coll');
+  s.style.display=coll?'none':''; c.style.display=coll?'':'none';
+  ts.classList.toggle('on',!coll); tc.classList.toggle('on',coll);
+  var sc=$('s-skins').querySelector('.pad'); if(sc)sc.scrollTop=0;
+  if(!quiet) renderBin();          // both panes repaint: caps, prices and worn state all move
 }
 function binPull(){
   var pool=binPool();
@@ -2479,8 +2814,10 @@ function boot(){
   tap('b-daily', function(){ startGated(function(){ newGame('daily'); }); });
   tap('b-rush', function(){ startGated(function(){ newGame('rush'); }); });
   tap('b-zen', function(){ startGated(function(){ newGame('zen'); }); });
-  tap('b-skins', function(){ renderBin(); show('s-skins'); });
+  tap('b-skins', function(){ shopTab('shop',1); renderBin(); show('s-skins'); });
   tap('bin-pull', binPull);
+  tap('tab-shop', function(){ shopTab('shop'); sfx('ui'); });
+  tap('tab-coll', function(){ shopTab('coll'); sfx('ui'); });
   tap('b-ach', function(){ renderAch(); show('s-ach'); });
   tap('ach-back', function(){ renderBin(); show('s-skins'); });
   tap('br-ok', revealNext);
@@ -2991,6 +3328,15 @@ if(/[?&]shtest=1/.test(location.search)){
     pull:function(){ binPull(); return {caps:PROG.caps,owned:ownedCount(),pool:binPool().length,revealed:$('br-name').textContent,shown:$('bin-reveal').classList.contains('on')}; },
     bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
     equip:function(id){ PROG.char=id; if(G)G.chr=charById(id); saveProg(); return {char:PROG.char,pose:G?heroPose(0):null}; },
+    screen:function(id){ if(id)show(id); return curScreen; },
+    fin:function(id){ if(id!=null){ PROG.fin=id; if(id)PROG.fins[id]=1; finWarm(id); saveProg(); } return {fin:PROG.fin,owned:finCount(),baked:FIN_KEYS.length}; },
+    finAll:function(){ for(var i=0;i<FINISHES.length;i++)PROG.fins[FINISHES[i].id]=1; saveProg(); return finCount(); },
+    own:function(ids){ (ids||'').split(',').forEach(function(id){ if(id)PROG.chars[id]=1; }); saveProg(); return ownedCount(); },
+    shop:function(){ var f=todaysFind(); return {caps:PROG.caps, find:f?(f.kind+':'+f.id+'@'+f.deal):null, findDone:findDone(),
+      pick:$('pick-row')?$('pick-row').children.length:-1, shelf:$('fin-row')?$('fin-row').children.length:-1,
+      owned:$('finown-row')?$('finown-row').children.length:-1, coll:$('skin-row')?$('skin-row').children.length:-1,
+      fin:PROG.fin, fins:finCount()}; },
+    finList:function(){ return FINISHES.map(function(f){ return f.id+':'+f.rar+(finOwned(f.id)?':owned':''); }).join(','); },
     chars:function(){ var o={}; for(var i=0;i<CHARS.length;i++)o[CHARS[i].id]=charOwned(CHARS[i].id)?1:0; return o; },
     fog:function(){ G.weather.fog=1; G.fogT=24.9; step(0.2); return {owned:charOwned('sasquatch'),fogT:+G.fogT.toFixed(1)}; },
     pose:function(){ return {pose:heroPose(G.hop?G.hop.t/G.hop.dur:0), ready:imgReady(spr(heroPose(G.hop?G.hop.t/G.hop.dur:0))), idleT:+(G.idleT||0).toFixed(1), shield:G.shield, gull:gullOnMe(), wilt:wiltClose()}; },
