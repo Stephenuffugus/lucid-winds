@@ -219,6 +219,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .skincard.cant{opacity:.62}
 .skincard.cant .sp{color:var(--muted)}
 /* shop sections — the bin, the shelf and the collection are different acts on one screen */
+.go-cause-line{font-size:12.5px; color:var(--muted); margin:2px 0 10px; text-align:center; max-width:300px; line-height:1.45}
 .sec-h{max-width:400px; margin:22px auto 2px; font-family:Fredoka,system-ui; font-size:17px; font-weight:600;
   color:var(--cream); text-align:center; letter-spacing:.02em}
 .sec-h:first-child{margin-top:6px}
@@ -571,6 +572,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- GAME OVER -->
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
+    <div class="title-sub" id="go-cause" style="letter-spacing:6px"></div>
+    <div class="go-cause-line" id="go-causeline"></div>
     <div style="font-size:44px" id="go-emoji">🥀</div>
     <div class="go-score" id="go-score">0</div>
     <div class="go-lab" id="go-lab">rows crossed</div>
@@ -1867,7 +1870,9 @@ function step(dt){
   // fx decay
   if(G.shake>0)G.shake*=Math.pow(0.001,dt);
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
-  if(G.slowmo<1){ G.slowmo += dt*2.2; if(G.slowmo>1)G.slowmo=1; }
+  // dying holds the crawl for the whole beat instead of springing back in 0.4s
+  if(G.death){ G.slowmo=Math.min(G.slowmo, 0.13+0.30*deathProg()); }
+  else if(G.slowmo<1){ G.slowmo += dt*2.2; if(G.slowmo>1)G.slowmo=1; }
   for(var p=G.parts.length-1;p>=0;p--){ var pt=G.parts[p]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=340*dt; pt.life-=dt*1.7; if(pt.life<=0)G.parts.splice(p,1); }
   for(var f=G.floats.length-1;f>=0;f--){ var fl=G.floats[f]; fl.y-=34*dt; fl.life-=dt*1.1; if(fl.life<=0)G.floats.splice(f,1); }
   if(G.fx)for(var q=G.fx.length-1;q>=0;q--){ G.fx[q].t+=dt; if(G.fx[q].t>=G.fx[q].life)G.fx.splice(q,1); }
@@ -1890,10 +1895,31 @@ function die(cause){ if(!G||G.phase!=='play')return;
     return; }
   if(G.mode==='zen'){ zenReset(cause); return; }
   G.deadCause=cause; G.phase='dying'; G.streak=0;
-  G.shake=Math.max(G.shake,10); sfx('die'); haptic(30);
-  burst(G.cr.x, rowScreenY(G.cr.r), 12, cause==='sink'||cause==='swept'?'#5b9bd5':'#e58fa0');
-  setTimeout(gameOver, 780);
+  /* ===== THE FULL STOP =====
+     Clearing a level gets a held beat, a camera lean and a fanfare. Losing used to get
+     780ms and a stats screen, which made dying feel like a page refresh. Same ceremony,
+     opposite feeling: the world drops to a crawl, the camera leans in on him, the colour
+     of whatever killed him washes the frame, and the light closes to a single circle.
+     Reduced motion keeps the wash and the word and skips the crawl and the lean. */
+  var rmD=false; try{ rmD=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  G.death={ t0:G.t, dur:rmD?0.85:DEATH_DUR, cause:cause, rm:rmD };
+  if(!rmD) G.slowmo=0.13;
+  G.shake=Math.max(G.shake,14); sfx('die'); haptic(30);
+  burst(G.cr.x, rowScreenY(G.cr.r), 18, cause==='sink'||cause==='swept'?'#5b9bd5':'#e58fa0');
+  setTimeout(gameOver, G.death.dur*1000);
 }
+var DEATH_DUR=1.55;
+function deathProg(){ return (G&&G.death) ? Math.min(1,(G.t-G.death.t0)/G.death.dur) : 0; }
+/* what got him, in his own voice — never "you died" */
+var DEATH_COPY={
+  squish:  {word:'FLATTENED',    tint:'58,12,12', line:'He did not see it coming.'},
+  grabbed: {word:'SNATCHED',     tint:'58,12,12', line:'The gull has been waiting all game.'},
+  sink:    {word:'IN THE DRINK', tint:'6,26,52',  line:'Raccoons can swim. Not like that.'},
+  swept:   {word:'WASHED OUT',   tint:'6,26,52',  line:'The current had other plans.'},
+  steam:   {word:'STEAMED',      tint:'58,30,10', line:'That grate was not a shortcut.'},
+  wilt:    {word:'SWEPT UP',     tint:'44,20,60', line:'The street sweeper waits for nobody.'}
+};
+function deathCopy(c){ return DEATH_COPY[c] || {word:'DOWN',tint:'8,10,8',line:'That is the street for you.'}; }
 /* Everything a run earned, banked. Called when you die AND when you walk away from a
    run, so leaving is never a punishment. A continued run passes through here more than
    once, so it only ever banks the NEW progress. */
@@ -1923,8 +1949,13 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   // "Keep going": one continue per run, back on the last safe row with a shield.
   var cbtn=$('go-continue');
   if(cbtn){ if(canRevive()){ cbtn.style.display='';
-      cbtn.textContent=(window.LW_ADS&&window.LW_ADS.live)?'▶ Watch to continue':'▶ Keep going';
-      cbtn.disabled=false; if(rb)rb.classList.remove('primary'); }
+      var afford=canAffordRevive();
+      cbtn.textContent = afford ? ('▶ Keep going · '+REVIVE_COST+' caps')
+                                : ('▶ Keep going · '+(REVIVE_COST-(PROG.caps||0))+' more caps');
+      cbtn.disabled=!afford;
+      cbtn.classList.toggle('ghost', !afford);
+      cbtn.classList.toggle('primary', afford);
+      if(rb)rb.classList.toggle('primary', !afford); }
     else { cbtn.style.display='none'; if(rb)rb.classList.add('primary'); } }
   deathCount++;
   var gi=$('go-install');
@@ -1949,8 +1980,20 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
     if(rb) rb.textContent='↻ Hop again';
   }
   var shb=$('go-share'); if(shb){ if(isBest && G.score>=15) shb.classList.add('pulse'); else shb.classList.remove('pulse'); }
-  $('go-flowers').textContent=G.flowers;
-  $('go-trail').textContent=G.longest;
+  /* the card names what got him, the same way the clear card names the level */
+  var gc=$('go-cause'), gcl=$('go-causeline');
+  if(gc){ if(G.deadCause && G.deadCause!=='time'){ var CC=deathCopy(G.deadCause);
+      gc.textContent=CC.word; gc.style.display=''; if(gcl){ gcl.textContent=CC.line; gcl.style.display=''; } }
+    else { gc.style.display='none'; if(gcl) gcl.style.display='none'; } }
+  /* and the numbers roll in, exactly like the win — losing gets the same ceremony */
+  var rmG=false; try{ rmG=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  if(rmG){ $('go-flowers').textContent=G.flowers; $('go-trail').textContent=G.longest; }
+  else { $('go-flowers').textContent='0'; $('go-trail').textContent='0';
+    var gt0=null, gf=G.flowers, gl=G.longest;
+    var groll=function(ts){ if(!gt0)gt0=ts; var gp=Math.min(1,(ts-gt0)/620), ge=gp*gp*(3-2*gp);
+      $('go-flowers').textContent=Math.round(gf*ge); $('go-trail').textContent=Math.round(gl*ge);
+      if(gp<1 && curScreen==='s-go') requestAnimationFrame(groll); };
+    setTimeout(function(){ if(curScreen==='s-go') requestAnimationFrame(groll); }, 420); }
   var capsLine=G.coins+(G._dailyBonus?(' +'+G._dailyBonus+' daily'):'')+'  (bank '+(PROG.caps||0)+')';
   if(binPool().length){ capsLine += ((PROG.caps||0)>=PULL_COST) ? '  · bin ready'
       : ('  · '+(PULL_COST-(PROG.caps||0))+' to next critter'); }
@@ -1962,21 +2005,27 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
 /* ===== continue (rewarded) — one per run, and it puts you back where you fell.
    A dead run is where players quit; a single second chance is the cheapest retention
    there is, and it is the slot a rewarded video drops into later. ===== */
-var REVIVE_MAX=1, deathCount=0;
-function canRevive(){ return !!G && G.mode!=='zen' && G.deadCause!=='time' && (G.revives||0)<REVIVE_MAX; }
-function reviveRun(){ if(!canRevive())return;
+var REVIVE_MAX=1, REVIVE_COST=25, deathCount=0;
+/* You have to have got somewhere to be worth rescuing. A continue on row 3 is not a
+   second chance, it is a refusal to let the run end. */
+function reviveEarned(){ return !!G && (G.mode==='adventure' ? G.level>=2 : G.score>=20); }
+function canRevive(){ return !!G && G.mode!=='zen' && G.deadCause!=='time'
+  && (G.revives||0)<REVIVE_MAX && reviveEarned(); }
+function canAffordRevive(){ return (PROG.caps||0)>=REVIVE_COST; }
+function reviveRun(){ if(!canRevive() || !canAffordRevive())return;
   var btn=$('go-continue'); var ads=window.LW_ADS||{};
   if(typeof ads.rewarded!=='function'){ doRevive(); return; }
   if(btn){ btn.disabled=true; }
   ads.rewarded(function(ok){ if(btn) btn.disabled=false; if(ok) doRevive(); });
 }
-function doRevive(){ if(!G)return;
-  G.revives=(G.revives||0)+1;
+function doRevive(){ if(!G || !canAffordRevive())return;
+  PROG.caps-=REVIVE_COST; saveProg();          // a real cost, out of the same tin the shop spends
+  G.revives=(G.revives||0)+1; G.death=null;
   var r=Math.floor(G.cr.r); while(r>0 && laneAt(r).type!=='safe') r--;   // last bank you stood on
   G.cr.r=r; G.cr.x=Math.max(HALF,Math.min(VW-HALF,G.cr.x));
   G.hop=null; G.buf=null; G.ride=null; G.coyote=0; G.near={}; G.gull=null; G.gullT=8;
   G.phase='play'; G.deadCause=null; G.combo=0; G.trail=[];
-  G.shield=true; G.invuln=2; G.slowmo=1; G.chaseR=G.cr.r-8;             // shield + grace + the wilt pushed back
+  G.shield=true; G.invuln=1.2; G.slowmo=1; G.chaseR=G.cr.r-4;           // alive again, but not safe
   G.camY=G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
   G.flash=Math.max(G.flash,0.5); sfx('unlock'); haptic(20);
   show('s-play');
@@ -2023,6 +2072,10 @@ function render(){ if(!ctx||!G)return;
     var zs=1+0.62*ze + (zp>=1 ? 0.03*Math.sin(G.t*5.4) : 0);   // settle into a happy breathe
     var zcx=G.cr.x, zcy=rowScreenY(G.cr.r)-8;
     ctx.translate(zcx,zcy); ctx.scale(zs,zs); ctx.translate(-zcx,-zcy); }
+  // the same lean, for the other ending
+  else if(G.death && !G.death.rm){ var xp=deathProg(), xe=xp*xp*(3-2*xp);
+    var xs=1+0.46*xe, xcx=G.cr.x, xcy=rowScreenY(critRowF())-8;
+    ctx.translate(xcx,xcy); ctx.scale(xs,xs); ctx.translate(-xcx,-xcy); }
   // draw rows (behind → ahead), with the critter interleaved at his own row.
   // Higher rows sit LOWER on screen, closer to the camera — anything in a row past
   // his gets painted AFTER him, so a bus passing in front actually covers him
@@ -2094,6 +2147,31 @@ function render(){ if(!ctx||!G)return;
   drawPowerHud();
   drawZoneBanner();
   drawLevelBanner();
+  drawDeathMoment();          // last, so the dark takes the HUD with it
+}
+/* The losing half of the full stop. A wash of whatever colour killed him on the first
+   beat, an iris closing to a single circle around him, and the word landing late — the
+   picture carries the moment, the text only names it. */
+function drawDeathMoment(){
+  if(!G || !G.death) return;
+  var dp=deathProg(), de=dp*dp*(3-2*dp), C=deathCopy(G.death.cause);
+  var sx=G.cr.x, sy=rowScreenY(critRowF())-8;
+  if(dp<0.30){ ctx.save(); ctx.globalAlpha=(0.30-dp)*1.5;      // the hit
+    ctx.fillStyle='rgb('+C.tint+')'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  var R=VH*(1.10-0.80*de), inner=Math.max(34, R*0.26);
+  var ig=ctx.createRadialGradient(sx,sy,inner, sx,sy,Math.max(inner+1,R));
+  ig.addColorStop(0,'rgba('+C.tint+',0)');
+  ig.addColorStop(0.65,'rgba('+C.tint+','+(0.55*de).toFixed(3)+')');
+  ig.addColorStop(1,'rgba(3,5,4,'+(0.94*de).toFixed(3)+')');
+  ctx.fillStyle=ig; ctx.fillRect(0,0,VW,VH);
+  if(dp>0.46){ var wa=Math.min(1,(dp-0.46)/0.26);
+    ctx.save(); ctx.globalAlpha=wa; ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,0.85)'; ctx.shadowBlur=16;
+    ctx.fillStyle='#e8dcc8'; ctx.font='800 '+(30+6*wa).toFixed(1)+'px Fredoka,system-ui';
+    ctx.fillText(C.word, VW/2, VH*0.27);
+    ctx.globalAlpha=wa*0.85; ctx.fillStyle='#a8b096'; ctx.font='700 14px Nunito,system-ui';
+    ctx.fillText(C.line, VW/2, VH*0.27+26);
+    ctx.shadowBlur=0; ctx.textAlign='left'; ctx.restore(); }
 }
 /* First run only, and only until the first hop: a lot of people are about to arrive
    from a link with no idea what the controls are. Clears itself forever after one hop. */
@@ -3346,7 +3424,9 @@ if(/[?&]shtest=1/.test(location.search)){
       while(G.hop && g++<80){ var p=G.hop.t/G.hop.dur; out.push({p:+p.toFixed(2), r:+(G.hop.fromR+(G.hop.toR-G.hop.fromR)*(p*p*(3-2*p))).toFixed(3), pose:heroPose(p).split('/')[1]}); step(1/60); }
       return {frames:out.length, poses:out.map(function(f){return f.pose;}).join(',')}; },
     revive:function(){ reviveRun(); return {phase:G.phase,r:G.cr.r,revives:G.revives,invuln:+G.invuln.toFixed(2),shield:G.shield,chase:+G.chaseR.toFixed(1),lane:laneAt(G.cr.r).type}; },
-    reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),revives:G?G.revives:null,label:b?b.textContent:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null,adsLive:!!(window.LW_ADS&&window.LW_ADS.live)}; },
+    reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),earned:reviveEarned(),afford:canAffordRevive(),cost:REVIVE_COST,caps:PROG.caps,revives:G?G.revives:null,label:b?b.textContent:null,disabled:b?b.disabled:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null}; },
+    death:function(){ return G&&G.death ? {prog:+deathProg().toFixed(2), cause:G.death.cause, word:deathCopy(G.death.cause).word, slowmo:+G.slowmo.toFixed(2), phase:G.phase} : null; },
+    goCard:function(){ return {cause:$('go-cause').textContent, line:$('go-causeline').textContent, score:$('go-score').textContent, feasts:$('go-flowers').textContent, trail:$('go-trail').textContent}; },
     prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char,eggs:eggsFound(),ach:achCount()}; },
     ach:function(){ var o={}; for(var i=0;i<ACH.length;i++)o[ACH[i].id]=achDone(ACH[i].id)?1:0; return o; },
     achCheck:function(){ return achCheck(); },
