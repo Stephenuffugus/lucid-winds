@@ -1,5 +1,10 @@
 # JIMOTHY — Sheet 14: the three missing hop frames for the six errand costumes
 
+> **Delivered to 012Assets 2026-07-22** as a Google Doc, next to Sheet 13:
+> https://docs.google.com/document/d/1CUvtNy81m73Vy3FG513_FiBrOpioD6-XRZ6dnAHCFuo/edit
+> ⛔ A sheet that only exists in this repo is a sheet Stephen cannot see. Always deliver
+> the Doc as well — this is the same mistake Sheet 10 made.
+
 **Status:** the six costumes are ALREADY IN THE GAME and playable. This sheet is the
 polish pass that makes them animate like everyone else. Nothing is blocked on it.
 
