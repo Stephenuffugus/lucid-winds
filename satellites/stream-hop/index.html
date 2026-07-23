@@ -145,6 +145,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* smooth screen entrances (menus only; the play canvas + splash video are excluded/faded) */
 .screen.on:not(#s-play):not(#s-splash){ animation: sh-screen-in .5s cubic-bezier(.22,.9,.28,1) both; }
 #s-splash.on{ animation: sh-fade-in .6s ease both; }
+#splash-hint{ position:absolute; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#3a2f1c; font:700 15px/1 Fredoka,system-ui,sans-serif; letter-spacing:.16em; text-shadow:0 1px 2px rgba(242,231,207,.9); animation: sh-splash-pulse 1.7s ease-in-out infinite; }
+@keyframes sh-splash-pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:.95; } }
 .screen.leaving{ animation: sh-screen-out .38s cubic-bezier(.4,0,.5,1) both !important; pointer-events:none; }
 /* gentle staggered settle for the title menu buttons */
 .screen.on .stack > *{ animation: sh-rise .52s cubic-bezier(.22,.9,.28,1) both; }
@@ -156,7 +158,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 @keyframes sh-screen-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.992); } }
 @keyframes sh-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes sh-pop{ from{ opacity:0; transform:translateY(9px) scale(.93); } to{ opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, .screen.leaving, .lv-cell, .screen.on .stack > *, #s-title::before{ animation:none !important; }
+@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, #splash-hint, .screen.leaving, .lv-cell, .screen.on .stack > *, #s-title::before{ animation:none !important; }
   #s-clear.on #cl-level, #s-clear.on #cl-stars, #s-clear.on .go-stat, #s-clear.on #cl-streak, #s-clear.on .title-sub{ animation:none !important; opacity:1 !important; } }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
@@ -319,13 +321,12 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     </div>
   </div>
 
-  <!-- SPLASH (Stephen's animated start screen; PRESS START baked in) -->
-  <div class="screen center on" id="s-splash" style="padding:0;background:#0b0f0b">
-    <video id="splash-vid" muted playsinline webkit-playsinline preload="auto" poster="assets/intro/splash.jpg"
-      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0f0b">
-      <source src="assets/intro/splash.mp4" type="video/mp4">
-    </video>
-    <div id="splash-tap" role="button" aria-label="Press start" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>
+  <!-- SPLASH (static ink-wash keyart front door — tap to enter. The old AI intro video is retired.) -->
+  <div class="screen center on" id="s-splash" style="padding:0;background:#f2e7cf">
+    <img id="splash-img" src="assets/jimothy-hero.png?a=39" alt="Jimothy"
+      style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f2e7cf">
+    <div id="splash-hint">TAP TO START</div>
+    <div id="splash-tap" role="button" aria-label="Tap to start" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>
   </div>
 
   <!-- TITLE -->
@@ -394,7 +395,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/map" alt=""></div><div><b class="hl">Adventure</b> crosses Seattle level after level. Clear a level to unlock the next and earn up to three stars: finish it, hit its feast goal, and grab its coin goal.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/wilt" alt=""></div><div>Don't dawdle. The <b>wilt</b> creeps up from behind. Keep moving forward.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/coffee" alt=""></div><div><b>Power-ups</b> drop on safe rows. <b class="hl">Coffee</b> is a wilt-proof dash, the <b class="hl">Umbrella</b> saves you from one hit, and <b class="hl">Snacks</b> pull bottlecaps in and pay double.</div></div>
-    <div class="helprow"><div class="hi"><img class="hicon" data-g="how/paws" alt=""></div><div>Your bottlecaps pile up in the <b class="hl">Prize Bin</b>. Spend them to pull a new Seattle critter to play as, and the bin never hands you the same one twice. A couple of them are not in the bin at all. You have to find those.</div></div>
+    <div class="helprow"><div class="hi"><img class="hicon" data-g="how/paws" alt=""></div><div>Your bottlecaps pile up in the <b class="hl">Prize Bin</b>. Spend them to pull a new Seattle critter to play as, and the bin never hands you the same one twice. A couple of critters are not in the bin at all: collect all eight hidden <b class="hl">Seattle landmarks</b> scattered through the city and a secret critter unlocks.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -680,7 +681,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0,
+  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0,
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -704,7 +705,8 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.fins)PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
   if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay;
   if(typeof p.rewardDay==='number')PROG.rewardDay=p.rewardDay;
-  if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak; }catch(e){} })();
+  if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak;
+  if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -810,17 +812,20 @@ function ownedCount(){ var n=0; for(var i=0;i<CHARS.length;i++) if(charOwned(CHA
 
 /* ===== power-ups (Seattle-raccoon flavor; art is Stephen's reskin) ===== */
 var POWERS=['coffee','umbrella','trash','crosswalk','vest','boots','espresso','lamp','salmon'];
+/* `tip` is the one-line, player-facing "what it does" — shown the first time you ever
+   grab a power (a slow-down coach card) and again in a quiet float the first time you
+   see each new kind, so people actually learn the nine powers. */
 var POWER_META={
-  coffee:  { name:'Coffee',   col:'#c8894b', hi:'#f0c98a', dur:4.2, chase:1, spr:'coffee' },  // Dash: fast hops + wilt-immune
-  umbrella:{ name:'Umbrella', col:'#5b9bd5', hi:'#a7cdea', dur:0,   spr:'umbrella' },         // Shield: survive one hit
-  trash:   { name:'Snacks',   col:'#7ab356', hi:'#b6e08a', dur:6.5, spr:'snacks' },           // Magnet: snacks fly in, double value
+  coffee:  { name:'Coffee',   col:'#c8894b', hi:'#f0c98a', dur:4.2, chase:1, spr:'coffee',   tip:'Dash! Faster hops, and the sweeper falls back.' },
+  umbrella:{ name:'Umbrella', col:'#5b9bd5', hi:'#a7cdea', dur:0,   spr:'umbrella',          tip:'A shield — it saves you from one hit.' },
+  trash:   { name:'Snacks',   col:'#7ab356', hi:'#b6e08a', dur:6.5, spr:'snacks',            tip:'Bottlecaps fly to you and count double.' },
   /* sheet 15 */
-  crosswalk:{name:'Walk Signal', col:'#e8c65a', hi:'#fff0b8', dur:4.0, spr:'crosswalk', g:'🚶' }, // every road lane STOPS
-  vest:    { name:'Hi Vis Vest', col:'#d8e04a', hi:'#f2f78e', dur:6.0, spr:'vest',   g:'🦺' },    // traffic cannot hit you
-  boots:   { name:'Rain Boots',  col:'#5b9bd5', hi:'#a7cdea', dur:6.0, spr:'boots',  g:'👢' },    // walk straight over water
-  espresso:{ name:'Double Shot', col:'#a06a3a', hi:'#e0b078', dur:7.0, chase:1, spr:'espresso', g:'☕' }, // a longer, harder dash
-  lamp:    { name:'Street Lamp', col:'#f0d68a', hi:'#fff6d0', dur:9.0, spr:'lamp',   g:'💡' },    // burns off fog, keeps gulls off
-  salmon:  { name:'Salmon Dinner', col:'#e0705e', hi:'#f7b6a4', dur:0, spr:'salmon', g:'🐟' }     // instant caps + banks your trail
+  crosswalk:{name:'Walk Signal', col:'#e8c65a', hi:'#fff0b8', dur:4.0, spr:'crosswalk', g:'🚶', tip:'The whole street stops for you.' },
+  vest:    { name:'Hi Vis Vest', col:'#d8e04a', hi:'#f2f78e', dur:6.0, spr:'vest',   g:'🦺', tip:'Traffic cannot touch you.' },
+  boots:   { name:'Rain Boots',  col:'#5b9bd5', hi:'#a7cdea', dur:6.0, spr:'boots',  g:'👢', tip:'Walk straight over the water.' },
+  espresso:{ name:'Double Shot', col:'#a06a3a', hi:'#e0b078', dur:7.0, chase:1, spr:'espresso', g:'☕', tip:'A longer, stronger dash.' },
+  lamp:    { name:'Street Lamp', col:'#f0d68a', hi:'#fff6d0', dur:9.0, spr:'lamp',   g:'💡', tip:'Burns off fog and keeps the gulls away.' },
+  salmon:  { name:'Salmon Dinner', col:'#e0705e', hi:'#f7b6a4', dur:0, spr:'salmon', g:'🐟', tip:'A feast! Instant caps, and it banks your trail.' }
 };
 
 /* ===== zones (a run crosses named neighborhoods; palettes + hazard mix shift).
@@ -1465,7 +1470,8 @@ function genUpTo(r){ while(G.maxGen<r){ G.maxGen++; G.lanes[G.maxGen]=makeLane(G
 function laneAt(r){ if(r<0)return {r:r,type:'safe',ents:[],blocked:{}}; genUpTo(r); return G.lanes[r]; }
 
 /* ===== input ===== */
-function queueHop(dir){ if(!G||G.phase!=='play')return;
+function queueHop(dir){ if(G&&G.coach){ dismissCoach(); return; }   // a teaching card eats the first input
+  if(!G||G.phase!=='play')return;
   if(G.resumeT>0)return; // countdown first
   if(G.celeb>0)return;   // savour the feast — the next level starts in a breath
   if(G.hop){ G.buf=dir; return; }
@@ -1698,12 +1704,17 @@ function grabEgg(lane){ var k=lane.egg.kind; lane.egg=null; var e=eggById(k);
   if(!PROG.eggs) PROG.eggs={};
   PROG.eggs[k]=1; saveProg();
   var v=fresh?30:10; G.coins+=v; G.lvCoins=(G.lvCoins||0)+1; G.score+=v;
+  var teach=fresh && !PROG.taughtEgg;   // first landmark ever → explain the hunt
   if(eggsFound()>=EGGS.length) unlockSecret('sasquatch','The city\'s oldest local steps out of the trees...');
   float(G.cr.x, rowScreenY(G.cr.r)-30, e.name);
   float(G.cr.x, rowScreenY(G.cr.r)-52, (fresh?'FOUND! ':'')+'+'+v+' caps');
   burst(G.cr.x, rowScreenY(G.cr.r), 18, '#f0d68a');
   spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*2, 0.7);
   G.flash=Math.max(G.flash,fresh?0.55:0.3); sfx('unlock'); haptic(fresh?26:14);
+  if(teach){ PROG.taughtEgg=1; saveProg();
+    showCoach('sprites/egg-'+k, e.name,
+      'A hidden Seattle landmark! Find all '+EGGS.length+' scattered across the city to unlock a secret critter you can play as.',
+      'The Prize Bin shows how many you have found.'); }
 }
 function grabStash(lane){ var k=lane.stash.kind; lane.stash=null;
   var v=(k==='treasure'?15:6)*(G.magnetT>0?2:1);
@@ -1836,7 +1847,10 @@ function renderLevels(){
 }
 function applyPower(kind){
   G.powsGot++; var m=POWER_META[kind];
-  if(!PROG.pows)PROG.pows={}; if(!PROG.pows[kind]){ PROG.pows[kind]=1; saveProg(); }
+  if(!PROG.pows)PROG.pows={};
+  var freshKind=!PROG.pows[kind];                 // never picked up THIS power before
+  var firstEver=!PROG.taughtPower;                // never picked up ANY power before
+  if(freshKind){ PROG.pows[kind]=1; saveProg(); }
   if(kind==='umbrella'){ G.shield=true; }
   else if(kind==='coffee'){ G.dashT=m.dur; if(G.chaseR>G.cr.r-8) G.chaseR=G.cr.r-8; }  // caffeinated: shove the wilt back
   else if(kind==='trash'){ G.magnetT=m.dur; }
@@ -1851,6 +1865,11 @@ function applyPower(kind){
     spawnFx('fx/burst-gold', G.cr.x, rowScreenY(G.cr.r), TILE*1.8, 0.6); }
   burst(G.cr.x, rowScreenY(G.cr.r), 12, m.hi||m.col); G.flash=Math.max(G.flash,0.4);
   float(G.cr.x, rowScreenY(G.cr.r)-30, m.name+'!'); sfx('unlock'); haptic(16);
+  // TEACH: first power ever = slow down and explain. After that, one quiet line the
+  // first time each new kind shows up, so the nine powers get learned without nagging.
+  if(firstEver){ PROG.taughtPower=1; saveProg();
+    showCoach('powers/power_'+(m.spr||'snacks'), m.name, m.tip||'', "That is a power-up. Grab them whenever you can."); }
+  else if(freshKind && m.tip){ toast(m.name+' — '+m.tip); }
 }
 function bankBloom(){
   if((G.combo||0)>(PROG.maxCombo||0)){ PROG.maxCombo=G.combo; saveProg(); }
@@ -2334,6 +2353,13 @@ function resumeRun(){ if(!G)return; sfx('ui'); if(G.phase==='play'&&G.started) G
 function quitRun(){ if(G){ dailyMark(true); bankRun(); }   // walking away keeps everything you earned,
   sfx('ui'); G=null; running=false; show('s-title'); }     // and on the Daily it stands as your run
 function toast(txt){ float(VW/2, 120, txt); }
+/* COACH — the "slow down and show them" moment. Freezes the world (loop skips step
+   while G.coach is set) and lays a card over the frozen frame with the thing they just
+   touched: its art, its name, and one plain line about what it does. The very next
+   input dismisses it (handled in queueHop) and hands back a 2-count breather so a
+   reflex game never punishes them for reading. Fires once per concept, ever. */
+function showCoach(art,name,line,sub){ if(!G)return; G.coach={art:art,name:name,line:line,sub:sub||'Tap to keep hopping',t:0}; sfx('unlock'); haptic(20); }
+function dismissCoach(){ if(!G||!G.coach)return; G.coach=null; if(G.phase==='play'&&G.started) G.resumeT=0.8; sfx('ui'); }
 
 /* particles + floats */
 function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.PI*2*i/n+Math.random(); var sp=60+Math.random()*140; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:1,col:col||'#c8a84b'}); } }
@@ -2349,6 +2375,7 @@ function spawnFx(name,x,y,h,life){ if(!ART_ON||!G.fx||!imgReady(spr(name)))retur
    toward the camera (we see his face). Only this mapping + the camera flip. */
 function rowScreenY(r){ return (r*TILE) - G.camY; }
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05;
+  if(G && G.coach){ G.coach.t+=dt; render(); requestAnimationFrame(loop); return; }        // teaching card up — world held
   if(G && G.resumeT>0){ G.resumeT-=dt; render(); requestAnimationFrame(loop); return; }   // 3..2..1, breathe
   if(G && (G.phase==='play'||G.phase==='dying')) step(dt);
   else if(G){ for(var p=G.parts.length-1;p>=0;p--){ var pt=G.parts[p]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=340*dt; pt.life-=dt*1.7; if(pt.life<=0)G.parts.splice(p,1);} }
@@ -2439,6 +2466,7 @@ function render(){ if(!ctx||!G)return;
   drawZoneBanner();
   drawLevelBanner();
   drawDeathMoment();          // last, so the dark takes the HUD with it
+  drawCoach();                // teaching card sits on top of everything
 }
 /* The losing half of the full stop. A wash of whatever colour killed him on the first
    beat, an iris closing to a single circle around him, and the word landing late — the
@@ -2474,6 +2502,39 @@ function drawFirstRunHint(){
   ctx.fillStyle='#f5ebd0'; ctx.font='800 19px Fredoka,system-ui'; ctx.fillText('Tap anywhere to hop forward', VW/2, y-10);
   ctx.fillStyle='#a8b096'; ctx.font='700 13px Fredoka,system-ui'; ctx.fillText('Swipe or use the corner arrows to change lanes', VW/2, y+16);
   ctx.textAlign='left'; ctx.restore();
+}
+/* The teaching card, drawn over the frozen frame. Kept calm and readable — a raccoon
+   game does not need a manual, just one clear look at the thing you just found. */
+function _rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function _wrap(txt,max){ var words=(txt||'').split(' '), lines=[], cur='';
+  for(var i=0;i<words.length;i++){ var t=cur?cur+' '+words[i]:words[i];
+    if(ctx.measureText(t).width>max && cur){ lines.push(cur); cur=words[i]; } else cur=t; }
+  if(cur)lines.push(cur); return lines; }
+function drawCoach(){
+  if(!G||!G.coach)return; var c=G.coach, a=Math.min(1,c.t*3.2);
+  ctx.save();
+  ctx.globalAlpha=a; ctx.fillStyle='rgba(5,8,5,0.66)'; ctx.fillRect(0,0,VW,VH);
+  var CW=442, x=(VW-CW)/2, pop=1-(1-Math.min(1,c.t*4))*(1-Math.min(1,c.t*4));
+  // measure body so the card height fits the text
+  ctx.font='700 17px Nunito,system-ui'; var body=_wrap(c.line, CW-56);
+  var CH=150 + body.length*24 + 14, y=VH*0.30;
+  ctx.translate(VW/2,y+CH/2); ctx.scale(0.94+0.06*pop,0.94+0.06*pop); ctx.translate(-VW/2,-(y+CH/2));
+  // card
+  ctx.fillStyle='#141a12'; ctx.strokeStyle='rgba(200,168,75,0.85)'; ctx.lineWidth=2.5;
+  _rr(x,y,CW,CH,20); ctx.fill(); ctx.stroke();
+  ctx.textAlign='center';
+  // art
+  var ay=y+66; if(!drawSprite(c.art, VW/2, ay, 78)){ ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(VW/2,ay,30,0,7); ctx.fill(); }
+  // name
+  ctx.fillStyle='#f2d98a'; ctx.font='800 25px Fredoka,system-ui'; ctx.fillText(c.name||'', VW/2, y+128);
+  // body
+  ctx.fillStyle='#e8dcc8'; ctx.font='700 17px Nunito,system-ui';
+  for(var i=0;i<body.length;i++) ctx.fillText(body[i], VW/2, y+158+i*24);
+  // sub / dismiss hint
+  var pu=0.6+0.4*Math.sin(c.t*4);
+  ctx.globalAlpha=a*pu; ctx.fillStyle='#a8b096'; ctx.font='800 14px Fredoka,system-ui';
+  ctx.fillText(c.sub||'Tap to keep hopping', VW/2, y+CH-18);
+  ctx.restore();
 }
 /* THE STREET SWEEPER — the wilt as a machine. A tiling municipal monster whose
    brushes crawl along the chase line; the purple row tint underneath reads as the
@@ -2583,15 +2644,29 @@ function drawRow(r){
         ctx.fillStyle=sh; ctx.fillRect(gx-TILE*0.42, y-TILE*2.4, TILE*0.84, TILE*2.4+8);
         var fg=ctx.createRadialGradient(gx,y,3,gx,y,30); fg.addColorStop(0,'rgba(240,214,138,'+(0.34+0.2*pu)+')'); fg.addColorStop(1,'rgba(240,214,138,0)');
         ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(gx,y,30,0,7); ctx.fill();
+        // LANDING RING on the alcove floor — reads as a spot to STAND, not décor
+        ctx.save();
+        ctx.strokeStyle='rgba(255,238,160,'+(0.55+0.3*pu)+')'; ctx.lineWidth=2.4;
+        ctx.beginPath(); ctx.ellipse(gx, y+HALF-7, TILE*0.33, 7.5, 0, 0, 7); ctx.stroke();
+        ctx.fillStyle='rgba(255,230,150,'+(0.14+0.1*pu)+')'; ctx.fill();
+        ctx.restore();
         drawSprite('sprites/obs-trashbags', gx, y-6, 0, {w:TILE*0.94, bottom:22});
         drawSprite('sprites/pickup-fries', gx+8+Math.sin(G.t*2.6+gg)*2, y+4, 22);
+        // bobbing "land here" chevron floating over the alcove — the finish target from anywhere
+        var gbob=Math.sin(G.t*3.4+gg)*3.5;
+        ctx.save(); ctx.translate(gx, y-TILE*1.18-gbob);
+        ctx.fillStyle='rgba(255,236,150,'+(0.72+0.28*pu)+')';
+        ctx.beginPath(); ctx.moveTo(-12,-9); ctx.lineTo(0,7); ctx.lineTo(12,-9); ctx.lineTo(6,-9); ctx.lineTo(0,-1); ctx.lineTo(-6,-9); ctx.closePath(); ctx.fill();
+        ctx.restore();
         if(Math.floor(G.t*2)%3===gg%3 && Math.random()<0.09) G.parts.push({x:gx+(Math.random()-0.5)*30, y:y+4, vx:(Math.random()-0.5)*14, vy:-46-Math.random()*30, life:0.9, col:'#f2d98a'}); } } }
     // firefly specks + bushes
     ctx.fillStyle='rgba(232,220,200,0.5)';
     for(var i=0;i<4;i++){ var fx=((r*57+i*131)%VW); var fy=top+8+((r*29+i*47)%(TILE-16)); ctx.globalAlpha=0.3+0.3*Math.sin(G.t*2+i+r); ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } ctx.globalAlpha=1;
     if(L.blocked)for(var c=0;c<COLS;c++){ if(L.blocked[c]){
+      // ⛔ NO trash bags here: a trash bag ALWAYS means "feast / land here" (the gate alcove).
+      // Curb walls are unmistakable street furniture so players never confuse a wall for the finish.
       var CURB=['planter-concrete','planter-barrel','planter-ferns','planter-concrete','planter-barrel','planter-ferns',
-        'obs-trashbags','prop-recyclebin','prop-produce','obs-cone','obs-barrier','prop-coffeecart'];
+        'prop-roadworks','prop-recyclebin','prop-produce','obs-cone','obs-barrier','prop-coffeecart'];
       var pv=CURB[(r*7+c*3)%CURB.length];
       if(!drawSprite('sprites/'+pv, (c+0.5)*TILE, y, 0, {w:TILE*1.0, bottom:24, hmax:TILE*1.25})) drawShrub((c+0.5)*TILE, y, r); } }
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
@@ -3273,15 +3348,10 @@ function endIntro(){ if(introTimer){ clearTimeout(introTimer); introTimer=null; 
 /* Splash flow: the STATIC start-screen image shows on open (video poster). First tap
    plays the animation ONCE; the moment it finishes it lands on the menu. A tap while it
    plays skips straight to the menu. */
-var splashPlaying=false;
-function toMenu(){ splashPlaying=false; var v=$('splash-vid'); if(v){ try{ v.pause(); }catch(e){} } show('s-title'); }
-function splashTapped(){ ac(); var v=$('splash-vid');
-  if(splashPlaying){ toMenu(); return; }          // tapped mid-animation → skip to menu
-  if(!v){ toMenu(); return; }
-  splashPlaying=true;
-  try{ v.loop=false; v.currentTime=0; var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){ toMenu(); }); }
-  catch(e){ toMenu(); } }
-function splashEnded(){ if(curScreen==='s-splash') toMenu(); }
+function toMenu(){ show('s-title'); }
+// Static keyart splash: one tap unlocks audio and drops straight into the menu.
+// The old 4-second AI intro video is retired (it read as "AI" and hurt us on socials).
+function splashTapped(){ ac(); toMenu(); }
 
 function boot(){
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -3435,10 +3505,8 @@ function boot(){
   });
   armBack();
 
-  // splash video is the front door (shown on load); nudge autoplay + wire the tap.
-  // Tapping it routes first-timers into the story intro, returning players to the menu.
+  // static keyart splash is the front door (shown on load); one tap enters the menu.
   tap('splash-tap', splashTapped);
-  var sv=$('splash-vid'); if(sv){ sv.addEventListener('ended', splashEnded); }   // static poster shows until first tap
   // installable: add to home screen, own icon, runs full screen. SW is network-first
   // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
   /* ⛔ The host's edge cache serves BARE asset URLs from its own copy and ignores
@@ -3447,7 +3515,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='31';
+  var SWV='32';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
