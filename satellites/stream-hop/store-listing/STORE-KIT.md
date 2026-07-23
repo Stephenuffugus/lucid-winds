@@ -17,7 +17,7 @@ No new code is needed; the steps below are console work.
 |---|---|
 | App icon 512x512 + 192 + maskable | `assets/icons/` (referenced by the manifest) |
 | Feature graphic 1024x500 | `store-listing/feature-graphic-1024x500.jpg` |
-| Share/OG card 1200x630 | `assets/og-jimothy.jpg` |
+| Share/OG card 1200x630 | `assets/og-jimothy3.jpg` (ink-wash keyart, 1200x630) |
 | Screenshots 1080x1920 | `store-listing/shot-*.png` (regenerate any time with the probe) |
 | Privacy policy | https://lucidwinds.com/privacy.html (LIVE) |
 | Manifest + service worker | `manifest.webmanifest`, `sw.js` (network-first) |
