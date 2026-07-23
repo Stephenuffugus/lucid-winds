@@ -14,25 +14,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.webmanifest?v=27">
 <link rel="apple-touch-icon" href="assets/icons/jimothy-apple-180.png">
-<title>Jimothy · Sky Wolf Studios</title>
-<meta name="description" content="Help Jimothy, Seattle's roundest and most beloved raccoon, cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<title>Jimothy the Jumping Nugget · Sky Wolf Studios</title>
+<meta name="description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <!-- share unfurl: a posted link has to sell the game on its own -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
-<meta property="og:title" content="Jimothy: Little Round Raccoon. Big Adventure.">
-<meta property="og:description" content="Help Seattle's roundest and most beloved raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta property="og:title" content="Jimothy the Jumping Nugget">
+<meta property="og:description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/stream-hop/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Jimothy, a round Seattle raccoon painted in ink wash, between the Space Needle and Mount Rainier.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Jimothy: Little Round Raccoon. Big Adventure.">
-<meta name="twitter:description" content="Help Seattle's roundest and most beloved raccoon cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta name="twitter:title" content="Jimothy the Jumping Nugget">
+<meta name="twitter:description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg">
 <link rel="canonical" href="https://lucidwinds.com/satellites/stream-hop/">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy","alternateName":"Jimothy: Little Round Raccoon. Big Adventure.","url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Help Jimothy, Seattle's roundest and most beloved raccoon, cross the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy","alternateName":["Jimothy the Jumping Nugget","Jimothy: Little Round Raccoon. Big Adventure."],"url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
 </script>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
@@ -145,6 +145,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* smooth screen entrances (menus only; the play canvas + splash video are excluded/faded) */
 .screen.on:not(#s-play):not(#s-splash){ animation: sh-screen-in .5s cubic-bezier(.22,.9,.28,1) both; }
 #s-splash.on{ animation: sh-fade-in .6s ease both; }
+#splash-tag{ position:absolute; left:0; right:0; bottom:calc(58px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#2a2114; font:800 20px/1.1 Fredoka,system-ui,sans-serif; letter-spacing:.01em; text-shadow:0 1px 3px rgba(242,231,207,.95); }
 #splash-hint{ position:absolute; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#3a2f1c; font:700 15px/1 Fredoka,system-ui,sans-serif; letter-spacing:.16em; text-shadow:0 1px 2px rgba(242,231,207,.9); animation: sh-splash-pulse 1.7s ease-in-out infinite; }
 @keyframes sh-splash-pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:.95; } }
 .screen.leaving{ animation: sh-screen-out .38s cubic-bezier(.4,0,.5,1) both !important; pointer-events:none; }
@@ -325,6 +326,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen center on" id="s-splash" style="padding:0;background:#f2e7cf">
     <img id="splash-img" src="assets/jimothy-hero.png?a=39" alt="Jimothy"
       style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f2e7cf">
+    <div id="splash-tag">Jimothy the Jumping Nugget</div>
     <div id="splash-hint">TAP TO START</div>
     <div id="splash-tap" role="button" aria-label="Tap to start" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>
   </div>
@@ -3284,7 +3286,7 @@ function shareIt(){ var txt=shareText();
 /* split out from shareIt so the text can be read and checked without opening a share sheet */
 function shareText(){
   var sc=(G&&G.score)||0, who=curChar(), txt;
-  if(!G){ txt="I found Jimothy, Seattle's roundest raccoon, and now I am hopping him across the rainy city. Come play, it is free."; }
+  if(!G){ txt="Meet Jimothy the Jumping Nugget, Seattle's roundest raccoon. Come hop him across the rainy city, it is free."; }
   /* The Daily share is the one that has to survive being pasted into a group chat: the
      day number so people know you are talking about the same road, the squares so they
      can see how it went, and nothing else. No score inflation, no hashtags. */
@@ -3296,10 +3298,10 @@ function shareText(){
     txt+="\nSame road for everybody. How far did you get?";
   }
   else if(G && G.mode==='adventure'){
-    txt="Jimothy the Seattle raccoon. I got to "+advChapterName(G.level)+", level "+G.level+
+    txt="Jimothy the Jumping Nugget. I got to "+advChapterName(G.level)+", level "+G.level+
         ", with "+advTotalStars()+" stars. Can you get further?";
   } else {
-    txt="Jimothy the Seattle raccoon. I hopped "+sc+" lanes across the rainy city"+
+    txt="Jimothy the Jumping Nugget. I hopped "+sc+" lanes across the rainy city"+
         (who.id!=='jimothy' ? (" as a "+who.name) : "")+"! Can you go further?";
   }
   // the critter count is a nice brag on a normal run and clutter on a Daily card
@@ -3522,7 +3524,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='34';
+  var SWV='35';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
