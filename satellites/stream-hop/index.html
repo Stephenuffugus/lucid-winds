@@ -427,6 +427,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Left thumb up/down</span><div class="toggle on" id="tg-udL"><b></b></div></div>
     <div class="settingline"><span>Right thumb up/down</span><div class="toggle on" id="tg-udR"><b></b></div></div>
     <div style="height:12px"></div>
+    <button class="btn ghost sm" id="set-code" style="max-width:400px;margin:0 auto 10px">🎟 Redeem a code</button>
     <button class="btn ghost sm" id="set-intro" style="max-width:400px;margin:0 auto 10px">▶ Watch the intro</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
@@ -593,6 +594,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     </div>
 
     <div style="height:14px"></div>
+    <button class="btn ghost sm" id="bin-code" style="max-width:400px;margin:0 auto 10px">🎟 Redeem a code</button>
     <button class="btn sm" id="bin-sup" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/glyph-support" style="width:34px;height:34px" alt="">The pack costumes + the soundtrack · $3</button>
     <button class="btn sm" id="b-ach" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/medal-best" style="width:36px;height:36px" alt="">Badges</button>
     <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
@@ -685,7 +687,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.2';
+var BUILD='v5.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -715,7 +717,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0,
+  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{},
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -741,6 +743,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.rewardDay==='number')PROG.rewardDay=p.rewardDay;
   if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak;
   if(typeof p.tokens==='number')PROG.tokens=p.tokens;
+  if(p.codes)PROG.codes=p.codes;
   if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
@@ -2504,6 +2507,127 @@ function claimReward(streak, caps, skinId, token){
   try{ paintDaily(); }catch(e){}
 }
 function maybeDailyReward(){ if(rewardReady()) setTimeout(openDailyReward, 320); }
+
+/* ===== 🎟 REDEEM CODES ============================================================
+   Stephen wanted two things a code can do: hand ONE friend the costume she invented,
+   and give everybody else something to type in from a post. Same machine.
+
+   ⛔ THE PLAINTEXT CODE IS NOT IN THIS FILE. The deployed index.html is public, so a
+   table of readable codes would be a table of free costumes about ten minutes after
+   launch. Each entry carries two independent 32-bit hashes of (salt + code) plus the
+   code's length. Guessing a string that lands on BOTH hashes AND the right length is
+   not something you do in a browser console. Mint new ones with
+   `node scripts/make-code.js YOURCODE`, which prints the line to paste and the
+   shareable link.
+
+   A code is single use PER PLAYER (PROG.codes), works offline, and never needs an
+   account. It cannot be a server-checked one-person-only code without a login, so a
+   personal gift that gets forwarded means a few extra raccoons in the world — the
+   deliberate trade for "it works instantly, for anyone, forever". Codes give looks and
+   bottlecaps only, never progress, exactly like everything else caps can buy.
+   Links work too: lucidwinds.com/jimothy/?code=XXXX opens the game with it filled in. */
+var CODE_SALT='jimothy-hops-';
+function codeNorm(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function codeHash(code){
+  var s=CODE_SALT+codeNorm(code), a=2166136261, b=5381, i, c;
+  for(i=0;i<s.length;i++){ c=s.charCodeAt(i);
+    a^=c; a=(a*16777619)>>>0;                                  // FNV-1a
+    b=(((b*33)>>>0)^c)>>>0; }                                  // djb2-xor
+  return { a:a>>>0, b:b>>>0, n:codeNorm(code).length };
+}
+/* gives: {caps:N} and/or {char:'id'} and/or {fin:'id'} and/or {tokens:N}
+   until: optional dayIndex the code stops working on (seasonal drops) */
+var CODES=[
+  { a:1166995472, b:3565293249, n:7,  gives:{caps:100}, name:'Welcome to the neighbourhood' },
+  { a:378637704,  b:2219563811, n:10, gives:{caps:150}, name:'Trash panda money' },
+  { a:1734438252, b:4149312879, n:6,  gives:{caps:60, tokens:1}, name:'A nugget and a continue' }
+];
+function codeFind(entered){
+  var h=codeHash(entered), i;
+  for(i=0;i<CODES.length;i++){ var C=CODES[i];
+    if(C.a===h.a && C.b===h.b && C.n===h.n) return C; }
+  return null;
+}
+function codeKey(C){ return C.a+'-'+C.b; }                     // what a used code is filed under
+function codeUsed(C){ return !!(PROG.codes && PROG.codes[codeKey(C)]); }
+var _codeEl=null, _codeFails=0, _codeLock=0;
+function codeNote(t,good){ var n=$('code-note'); if(!n)return;
+  n.textContent=t||''; n.style.color=good?'#7ab356':'#c8a84b'; }
+function openCodeBox(prefill){
+  if(!_codeEl){
+    _codeEl=document.createElement('div'); _codeEl.id='code-ov';
+    _codeEl.style.cssText='position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(6,8,6,.8);padding:22px';
+    _codeEl.innerHTML='<div style="max-width:360px;width:100%;background:#12160f;border:1px solid #2c3326;border-radius:18px;padding:22px 20px;box-shadow:0 14px 48px rgba(0,0,0,.6);text-align:center">'
+      +'<div style="color:#c8a84b;font:800 22px Fredoka,system-ui;margin-bottom:2px">Redeem a code</div>'
+      +'<div style="color:#8a9178;font:600 12.5px Nunito,system-ui;margin-bottom:14px">Codes turn up in posts, in videos, and in the hands of people who helped make this. Capitals and spaces do not matter.</div>'
+      +'<input id="code-in" class="sup-in" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="TYPE IT HERE" style="text-align:center;letter-spacing:.12em;font-weight:800">'
+      +'<div id="code-note" style="min-height:34px;color:#c8a84b;font:700 13px Nunito,system-ui;margin:2px 0 10px;line-height:1.35"></div>'
+      +'<button id="code-go" class="btn primary" style="width:100%;margin-bottom:8px">Redeem</button>'
+      +'<button id="code-close" class="btn sm" style="width:100%">Close</button></div>';
+    document.body.appendChild(_codeEl);
+    _codeEl.querySelector('#code-go').onclick=function(){ redeemCode($('code-in').value); };
+    _codeEl.querySelector('#code-close').onclick=closeCodeBox;
+    _codeEl.querySelector('#code-in').addEventListener('keydown', function(e){ if(e.key==='Enter') redeemCode(this.value); });
+  }
+  codeNote('');
+  _codeEl.style.display='flex';
+  var inp=$('code-in'); inp.value=codeNorm(prefill||'');
+  if(!prefill) setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 120);
+  sfx('ui');
+}
+function closeCodeBox(){ if(_codeEl)_codeEl.style.display='none'; sfx('ui'); }
+function redeemCode(raw){
+  var entered=codeNorm(raw);
+  if(!entered){ codeNote('Type the code in first.'); return; }
+  var now=+new Date();
+  if(_codeLock>now){ codeNote('Give it a moment. Try again in '+Math.ceil((_codeLock-now)/1000)+' seconds.'); return; }
+  var C=codeFind(entered);
+  if(!C){                                                      // a light brake on guessing
+    _codeFails++; if(_codeFails>=5){ _codeLock=now+45000; _codeFails=0; }
+    codeNote('That one is not ours. Check it letter by letter.'); sfx('phew'); return; }
+  if(C.until && dayIndex()>C.until){ codeNote('That code has expired. There will be others.'); sfx('phew'); return; }
+  if(codeUsed(C)){ codeNote('You have already used that one.'); sfx('phew'); return; }
+  var g=C.gives||{}, got=[];
+  if(!PROG.codes)PROG.codes={};
+  PROG.codes[codeKey(C)]=dayIndex();
+  if(g.caps){ PROG.caps=(PROG.caps||0)+g.caps; got.push(g.caps+' bottlecaps'); }
+  if(g.tokens){ PROG.tokens=(PROG.tokens||0)+g.tokens; got.push(g.tokens+' free continue'+(g.tokens>1?'s':'')); }
+  var gotChar=null, gotFin=null;
+  if(g.char && !charOwned(g.char)){ PROG.chars[g.char]=1; gotChar=charById(g.char); got.push(gotChar.name); }
+  if(g.fin && !finOwned(g.fin)){ PROG.fins[g.fin]=1; PROG.fin=g.fin; finWarm(g.fin); gotFin=finById(g.fin); got.push(gotFin.name); }
+  saveProg(); sfx('unlock'); haptic(30);
+  closeCodeBox();
+  try{ achCheck(); }catch(e){}
+  if(gotChar) revealChar(gotChar);
+  else if(gotFin) revealFin(gotFin);
+  else revealGift(C.name||'A gift', got.join(' and '));
+  if(curScreen==='s-skins') renderBin();
+  try{ paintDaily(); }catch(e){}
+}
+/* the plain gift card, for codes that hand over caps rather than a costume */
+function revealGift(title, line){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+  $('br-rar').textContent='Code redeemed'; $('br-rar').style.color='#c8a84b';
+  $('br-name').textContent=title; $('br-bio').textContent=line;
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d'); c.clearRect(0,0,124,124);
+  var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(200,168,75,0.5)'); gl.addColorStop(1,'rgba(200,168,75,0)');
+  c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
+  if(!drawCvSprite(c,'sprites/coin-cap',62,62,66)){
+    c.fillStyle='#e8dcc8'; c.font='54px Fredoka,system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('★',62,64); }
+  ov.querySelector('.br-card').style.borderColor='#c8a84b';
+  ov.classList.add('on'); sfx('unlock'); haptic(30);
+}); }
+/* draw a sprite into an arbitrary 2d context (the reveal cards are not the game canvas) */
+function drawCvSprite(c,name,x,y,h){ var im=spr(name); if(!imgReady(im)) return false;
+  var w=h*(im.naturalWidth/im.naturalHeight); c.drawImage(im, x-w/2, y-h/2, w, h); return true; }
+/* a link like lucidwinds.com/jimothy/?code=SHINOTHY lands here */
+function codeFromUrl(){
+  var m=/[?&]code=([A-Za-z0-9\- ]{1,24})/.exec(location.search||'');
+  if(!m) return;
+  var c=codeNorm(decodeURIComponent(m[1]));
+  if(!c) return;
+  setTimeout(function(){ openCodeBox(c); codeNote('Someone sent you this one. Tap Redeem.'); }, 900);
+  try{ if(window.history&&history.replaceState) history.replaceState(null,'',location.pathname); }catch(e){}
+}
 /* ===== pause ===== */
 function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
   var sub=$('pause-sub');
@@ -3640,6 +3764,8 @@ function boot(){
   tap('b-how', function(){ show('s-how'); });
   tap('intro-skip', endIntro);
   tap('intro-next', endIntro);
+  tap('set-code', function(){ openCodeBox(); });
+  tap('bin-code', function(){ openCodeBox(); });
   tap('set-intro', function(){ playIntro(); });
   var si=$('s-intro'); if(si) si.addEventListener('pointerdown', function(e){ if(e.target.closest('#intro-nav'))return; ac(); nextIntroBeat(); });
   tap('b-set', function(){ show('s-set'); });
@@ -3754,7 +3880,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='37';
+  var SWV='38';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4214,10 +4340,17 @@ if(/[?&]shtest=1/.test(location.search)){
         costumes:CHARS.filter(function(c){return charIsCostume(c);}).map(function(c){return c.id+':'+(charOwned(c.id)?1:0);}).join(','),
         music:(function(){var o=[];for(var i=0;i<MUSIC.length;i++)o.push(MUSIC[i].id+':'+(musOwned(MUSIC[i].id)?1:0));return o.join(',');})()}; },
     supScreen:function(){ SUP.render(); return { auth:$('sup-auth').style.display, buy:$('sup-buywrap').style.display, thanks:$('sup-thanks').style.display }; },
-    poseFor:function(set){ for(var k in set) G[k]=set[k]; render(); return heroPose(G.hop?G.hop.t/G.hop.dur:0); }
+    poseFor:function(set){ for(var k in set) G[k]=set[k]; render(); return heroPose(G.hop?G.hop.t/G.hop.dur:0); },
+    code:function(c){ if(c==null) return {codes:CODES.length, used:PROG.codes};
+      openCodeBox(); redeemCode(c);
+      return {caps:PROG.caps, tokens:PROG.tokens, used:PROG.codes, note:$('code-note')?$('code-note').textContent:null,
+        open:!!(_codeEl&&_codeEl.style.display==='flex')}; },
+    codeReset:function(){ PROG.codes={}; _codeFails=0; _codeLock=0; saveProg(); return PROG.codes; },
+    codeBox:function(pre){ openCodeBox(pre); return {open:_codeEl.style.display==='flex', value:$('code-in').value}; }
   };
 }
 boot();
+codeFromUrl();          // ?code=XXXX in the link opens the box with it filled in
 })();
 </script>
 </body>
