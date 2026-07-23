@@ -1,6 +1,6 @@
 /* Jimothy service worker — installability + offline art. NETWORK-FIRST (house rule),
    so a deploy goes live the moment it lands; the cache is only the fallback. */
-var CACHE = "jimothy-v24";
+var CACHE = "jimothy-v25";
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
