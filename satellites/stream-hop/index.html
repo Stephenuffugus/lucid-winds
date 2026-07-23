@@ -664,7 +664,7 @@ function show(id){ var el=$(id);
     _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 400); }
   if(el){ el.classList.remove('leaving'); el.classList.add('on'); }
   curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
-  if(id==='s-title') paintDaily();
+  if(id==='s-title'){ paintDaily(); maybeDailyReward(); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); }
   var pb=$('pausebtn'); if(pb){ if(id==='s-play')pb.classList.add('on'); else pb.classList.remove('on'); }
   var mb=$('mutebtn'); if(mb){ if(id==='s-play')mb.classList.add('on'); else mb.classList.remove('on'); } }
@@ -680,7 +680,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0,
+  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0,
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -702,7 +702,9 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
     if(!PROG.daily.hist || !PROG.daily.hist.length) PROG.daily.hist=[]; }
   if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1};
   if(p.fins)PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
-  if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay; }catch(e){} })();
+  if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay;
+  if(typeof p.rewardDay==='number')PROG.rewardDay=p.rewardDay;
+  if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
@@ -2274,6 +2276,52 @@ function confirmRevive(){
   showConfirm('Are you sure you want to spend '+REVIVE_COST+' bottlecaps to continue from where you were?',
     '▶ Yes, continue', 'No thanks', reviveRun);
 }
+/* ===== daily / weekly login reward — a free gift every day, a NEW SKIN every 7th day
+   in a row. Miss a day and the 7-day climb restarts, so it rewards showing up. The
+   weekly skins are the give-away pool below (commons + rares); epics, secrets and the
+   shark onesie stay behind the Supporter Pack / earn-by-play so this never undercuts
+   them. Supporter-Pack owners already own the pool, so they just get the caps. ===== */
+var REWARD_CAPS=[15,25,40,55,70,90,120];   // bottlecaps for cycle-day 1..7
+var REWARD_SKINS=['soggy','market','deckhand','summer','nordic','barista','scout','hardhat'];
+function rewardReady(){ return (PROG.rewardDay||0) < dayIndex(); }
+function rewardNextStreak(){ var rd=PROG.rewardDay||0, rs=PROG.rewardStreak||0, t=dayIndex();
+  if(rd===t) return rs; if(rd===t-1) return rs+1; return 1; }        // consecutive, else restart
+function rewardCycleDay(s){ return ((s-1)%7)+1; }
+function nextRewardSkin(){ for(var i=0;i<REWARD_SKINS.length;i++){ if(!charOwned(REWARD_SKINS[i])) return REWARD_SKINS[i]; } return null; }
+var _rewardEl=null;
+function openDailyReward(){
+  if(!rewardReady()) return;
+  if(_rewardEl && _rewardEl.style.display==='flex') return;
+  var streak=rewardNextStreak(), cyc=rewardCycleDay(streak), caps=REWARD_CAPS[cyc-1];
+  var skin=(cyc===7)?nextRewardSkin():null;
+  if(!_rewardEl){ _rewardEl=document.createElement('div'); _rewardEl.id='reward-ov';
+    _rewardEl.style.cssText='position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(6,8,6,.8);padding:22px';
+    document.body.appendChild(_rewardEl); }
+  var pills='';
+  for(var d=1; d<=7; d++){ var isT=(d===cyc), done=(d<cyc), lab=(d===7)?'🦝':(''+d);
+    var bg=isT?'#c8a84b':done?'#3a4a2c':'#1a2016', col=isT?'#12160f':done?'#9db07f':'#6c7a58';
+    pills+='<div style="flex:1;min-width:0;text-align:center;padding:9px 2px;border-radius:9px;background:'+bg+';color:'+col+';font:800 15px Fredoka,system-ui;'+(isT?'box-shadow:0 0 0 2px #e8dcc8;':'')+'">'+lab+'</div>'; }
+  var line=skin?('+'+caps+' caps and a NEW skin!'):('+'+caps+' bottlecaps');
+  _rewardEl.innerHTML='<div style="max-width:360px;width:100%;background:#12160f;border:1px solid #2c3326;border-radius:18px;padding:22px 20px;box-shadow:0 14px 48px rgba(0,0,0,.6);text-align:center">'
+    +'<div style="color:#c8a84b;font:800 22px Fredoka,system-ui;margin-bottom:2px">Daily Reward</div>'
+    +'<div style="color:#8a9178;font:700 13px Nunito,system-ui;margin-bottom:16px">Day '+streak+' &middot; a new skin every 7th day in a row</div>'
+    +'<div style="display:flex;gap:5px;margin-bottom:16px">'+pills+'</div>'
+    +'<div style="color:#e8dcc8;font:700 18px Nunito,system-ui;margin-bottom:16px">Today: '+line+'</div>'
+    +'<button id="reward-claim" class="btn primary" style="width:100%">Claim</button></div>';
+  _rewardEl.querySelector('#reward-claim').onclick=function(){ claimReward(streak, caps, skin); };
+  _rewardEl.style.display='flex';
+}
+function claimReward(streak, caps, skinId){
+  if(!rewardReady()){ if(_rewardEl)_rewardEl.style.display='none'; return; }
+  PROG.caps=(PROG.caps||0)+caps; PROG.rewardDay=dayIndex(); PROG.rewardStreak=streak;
+  var granted=null;
+  if(skinId && !charOwned(skinId)){ PROG.chars[skinId]=1; granted=charById(skinId); }
+  saveProg(); sfx('unlock'); try{ achCheck(); }catch(e){}
+  if(_rewardEl)_rewardEl.style.display='none';
+  if(granted){ revealChar(granted); }
+  try{ paintDaily(); }catch(e){}
+}
+function maybeDailyReward(){ if(rewardReady()) setTimeout(openDailyReward, 320); }
 /* ===== pause ===== */
 function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
   var sub=$('pause-sub');
@@ -3399,7 +3447,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='30';
+  var SWV='31';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
