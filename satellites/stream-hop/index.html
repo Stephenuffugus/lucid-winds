@@ -2241,6 +2241,35 @@ function doRevive(){ if(!G || !canAffordRevive())return;
   show('s-play');
   float(G.cr.x, rowScreenY(G.cr.r)-22, 'back up!');
 }
+/* a tiny styled yes/no confirm, built once and reused (matches the game's own buttons) */
+var _confirmEl=null;
+function showConfirm(msg, yesLabel, noLabel, onYes){
+  if(!_confirmEl){
+    _confirmEl=document.createElement('div');
+    _confirmEl.id='confirm-ov';
+    _confirmEl.style.cssText='position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(6,8,6,.74);padding:24px';
+    _confirmEl.innerHTML='<div style="max-width:340px;width:100%;background:#12160f;border:1px solid #2c3326;border-radius:16px;padding:22px 20px;box-shadow:0 12px 44px rgba(0,0,0,.55);text-align:center">'
+      +'<div id="confirm-msg" style="color:#e8dcc8;font:600 17px/1.45 Nunito,system-ui;margin-bottom:18px"></div>'
+      +'<button id="confirm-yes" class="btn primary" style="width:100%;margin-bottom:8px"></button>'
+      +'<button id="confirm-no" class="btn sm" style="width:100%"></button></div>';
+    document.body.appendChild(_confirmEl);
+  }
+  _confirmEl.querySelector('#confirm-msg').textContent=msg;
+  var yb=_confirmEl.querySelector('#confirm-yes'), nb=_confirmEl.querySelector('#confirm-no');
+  yb.textContent=yesLabel; nb.textContent=noLabel;
+  function close(){ _confirmEl.style.display='none'; yb.onclick=null; nb.onclick=null; }
+  yb.onclick=function(){ close(); if(onYes)onYes(); };
+  nb.onclick=function(){ close(); };
+  _confirmEl.style.display='flex';
+}
+/* gate the paid continue behind an "are you sure" (skip the prompt when it's a free ad revive) */
+function confirmRevive(){
+  if(!canRevive() || !canAffordRevive()) return;
+  var ads=window.LW_ADS||{};
+  if(typeof ads.rewarded==='function'){ reviveRun(); return; }
+  showConfirm('Are you sure you want to spend '+REVIVE_COST+' bottlecaps to continue from where you were?',
+    '▶ Yes, continue', 'No thanks', reviveRun);
+}
 /* ===== pause ===== */
 function pauseRun(){ if(curScreen!=='s-play'||!G||G.phase!=='play')return;
   var sub=$('pause-sub');
@@ -3303,7 +3332,7 @@ function boot(){
   tap('pz-menu', quitRun);
   tap('cl-next', resumeNextLevel);
   tap('cl-menu', quitRun);
-  tap('go-continue', reviveRun);
+  tap('go-continue', confirmRevive);
   tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
   tap('go-levels', function(){ renderLevels(); show('s-levels'); });
   tap('go-home', function(){ show('s-title'); });
@@ -3366,7 +3395,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='28';
+  var SWV='29';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
