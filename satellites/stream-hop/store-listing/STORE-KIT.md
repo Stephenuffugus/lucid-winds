@@ -56,7 +56,8 @@ No new code is needed; the steps below are console work.
 > Six original tracks by Sky Wolf Studios, earned through play.
 >
 > Free forever. No ads. No energy bars. A single optional $3 Supporter Pack
-> unlocks the costumes and soundtrack instantly, and never sells progress.
+> unlocks fourteen costumes and the soundtrack instantly, and never sells
+> progress. Show up seven days in a row and the next costume is free.
 > Made with love in the Pacific Northwest.
 
 **Category:** Arcade · **Tags:** casual, arcade, endless hopper

@@ -5,6 +5,18 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 
 ---
 
+## ✅ DONE 2026-07-23 late (committed + pushed to main, live) — the weekly streak, the shop shelves, the colours
+Stephen's list, all shipped and headless-verified (SWV/cache **v36**, BUILD v5.1):
+- **The weekly prize is now NAMED AND SHOWN.** New strip above the Shop/Collection tabs (both tabs carry it): the costume you are working toward, its portrait, the 7 day pills, and how many days are left. Tapping it claims today's gift. The daily card shows the same skin every day, not just on day 7.
+- **Missing a day never costs the prize.** The week restarts at day 1, but the target is always the first skin you do not own, so the thing you were walking toward is still there. (This was already true in code; nothing said so.)
+- **The dailies climb 15 / 25 / 40 / 55 / 70 / 90 / 120**, and **day 4 pays a FREE CONTINUE** instead of caps (`PROG.tokens`). A token spends before bottlecaps do, the game over button reads "▶ Keep going · free continue", and the count shows in the Prize Bin header.
+- **⛔ THE SUPPORTER PACK IS A FIXED LIST NOW** (`PACK_COSTUMES`, 14 ids). It used to be "any costume whose sheet is skins/*", which meant **every costume painted from now on would silently fall into a $3 pack people already bought**. New costumes are earned on the streak instead. All player-facing copy quotes `packCount()` so the promise cannot drift: bin button, support screen perk, thank-you card, grant card, STORE-KIT listing.
+- **Shop/Collection relabelled.** Tabs say what they are ("Shop · spend caps" / "Collection · wear what you own"), every shelf carries a count or a price ("The Bin 21 LEFT", "Colours 0 OF 13 OWNED"), and the Collection is sorted **Costumes / Critters / Secrets / Colours** with a "Playing as X in Y" line at the top.
+- **⛔ "I don't see a way to change colors."** The switch existed but only appeared once you already owned a finish, so a new player saw one grey line and nothing to press. Every colour is listed in the Collection now: owned ones are tappable, locked ones are dimmed with their price and send you to the shelf. Finishes are labelled **Colours** everywhere (his word), with "a colour is a material" in the sub.
+- Day-7 pill emoji 🦝 → ★ (headless proved the raccoon renders as a tofu box; same lesson as the Daily strip).
+- New dev hooks behind `?shtest=1`: `SH_DEV.reward() / rewardSet(streak,day) / rewardReset() / rewardOpen() / tokens(n) / pack()`.
+- ⏭ **When the new art lands:** append the new ids to `REWARD_SKINS` (bottom of the ladder) and do NOT add them to `PACK_COSTUMES`. That is the whole split. Supporters currently own all 8 pool skins, so their day 7 pays double caps until new ones exist.
+
 ## ✅ DONE 2026-07-23 pm (committed + pushed to main, live) — "polish for money" pass
 - **Retired the AI splash video.** Front door is now the static ink-wash keyart (`jimothy-hero.png`) + "TAP TO START"; one tap → menu. The `.mp4` no longer loads. (Stephen: the 4s AI video was the #1 thing drawing AI hate on socials.)
 - **Feast-gate landing now unmistakable.** `obs-trashbags` was used BOTH as the land-here target AND as a curb wall → confusion. Trash bags are feast-only now; walls are plain street furniture (bins/planters/cones/barrier/roadworks); each open gate gets a downward chevron + glowing floor ring.
@@ -67,5 +79,5 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 
 ## Reference
 - Deploy = commit → `git push origin add-sproing-jumper` and `git push origin add-sproing-jumper:main` (Hostinger auto-deploys main).
-- ⛔ Every release: bump **ARTV** (assets) and/or **SWV + sw.js CACHE** (code) together. Currently SWV/cache = **v31**, ARTV = **38**.
+- ⛔ Every release: bump **ARTV** (assets) and/or **SWV + sw.js CACHE** (code) together. Currently SWV/cache = **v36**, ARTV = **39**.
 - Cutting/masking/skin details live in memory: `project_streamhop_jimothy_buildout.md`.

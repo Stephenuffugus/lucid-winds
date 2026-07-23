@@ -231,11 +231,25 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   color:var(--cream); text-align:center; letter-spacing:.02em}
 .sec-h:first-child{margin-top:6px}
 .sec-sub{max-width:380px; margin:2px auto 12px; font-size:11.5px; color:var(--muted); text-align:center; line-height:1.45}
+/* the little count/price hint that rides on a section heading, so every shelf says
+   plainly what it is and how much of it you already have */
+.sec-n{display:inline-block; margin-left:7px; font-family:Nunito,system-ui; font-size:11px;
+  font-weight:800; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; vertical-align:2px}
 .shoptabs{display:flex; gap:8px; width:100%; max-width:400px; margin:0 auto 4px}
-.shoptab{flex:1 1 0; min-width:0; min-height:48px; padding:0 10px; border:1px solid var(--line);
+.shoptab{flex:1 1 0; min-width:0; min-height:52px; padding:6px 8px; border:1px solid var(--line);
   border-radius:14px; background:#0f150c; color:var(--muted);
-  font-family:Fredoka,system-ui; font-size:16px; font-weight:600; cursor:pointer}
+  font-family:Fredoka,system-ui; font-size:16px; font-weight:600; cursor:pointer; line-height:1.15}
 .shoptab.on{color:var(--cream); border-color:var(--sage); background:rgba(122,179,86,0.13)}
+.tab-sub{display:block; font-family:Nunito,system-ui; font-size:10px; font-weight:700;
+  letter-spacing:.05em; opacity:.75; margin-top:2px}
+/* THE WEEKLY PRIZE strip — the free lane, sat above the paid ones */
+.wk{display:flex; align-items:center; gap:11px; width:100%; max-width:400px; margin:0 auto 12px;
+  padding:11px 12px; border:1px solid #3b4a2c; border-radius:14px; background:rgba(122,179,86,0.07)}
+.wk canvas{width:52px; height:52px; flex:0 0 auto}
+.wk-lab{font:800 10px Nunito,system-ui; letter-spacing:.09em; color:var(--sage)}
+.wk-name{font:800 15px Fredoka,system-ui; color:var(--cream); line-height:1.2}
+.wk-sub{font:600 11.5px Nunito,system-ui; color:var(--muted); line-height:1.35}
+.wk-pills{display:flex; gap:3px; margin-top:5px}
 /* Prize Bin */
 .bin-top{display:flex; justify-content:space-between; align-items:baseline; width:100%; max-width:400px;
   margin:0 auto 12px; font-size:13px}
@@ -450,10 +464,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       Jimothy is free, has no ads, and always will be. If he made you smile, the
       <b>Supporter Pack</b> is a one time <b>$3</b> thank you that truly keeps
       this little studio going, and it unlocks:
-      <div class="sup-perk"><div class="pi2">🧢</div><div>Every Jimothy costume, instantly</div></div>
+      <div class="sup-perk"><div class="pi2">🧢</div><div><span id="sup-perk-cos">The fourteen costumes in the pack</span>, instantly</div></div>
       <div class="sup-perk"><div class="pi2">🎵</div><div>The entire original soundtrack</div></div>
       <div class="sup-perk"><div class="pi2 sup-heart">♥</div><div>Our lasting gratitude, on every device you sign into</div></div>
-      <div style="margin-top:8px; color:var(--muted); font-size:12px">Critters, badges and landmarks stay earn-by-play for everyone. Supporting never buys progress. Thank you for being here at all.</div>
+      <div style="margin-top:8px; color:var(--muted); font-size:12px">The pack is those costumes and the music, and that is all it ever is. New costumes are earned by showing up: one every seventh day in a row. Critters, colours, badges and landmarks stay earn-by-play for everyone, and supporting never buys progress. Thank you for being here at all.</div>
     </div>
     <div style="position:relative;max-width:430px;margin:0 auto 14px">
       <img id="sup-banner" src="assets/ui/sup-banner.jpg?a=35" alt="The seven costumed Jimothys under the marquee" style="display:block;width:100%;border-radius:14px">
@@ -481,7 +495,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div id="sup-thanks" style="display:none">
       <div class="sup-card" style="border-color:var(--gold); text-align:center">
         <img src="assets/ui/sup-heart.png?a=35" style="width:46px;height:46px;object-fit:contain" alt=""><br>
-        <b>You are a supporter.</b><br>Every costume and every song is yours. Thank you for keeping the lights on.
+        <b>You are a supporter.</b><br><span id="sup-thanks-line">The pack costumes and every song are yours.</span> Thank you for keeping the lights on.
       </div>
       <div id="sup-donate2" style="display:none;max-width:430px;margin:0 auto">
         <div class="sup-note" style="margin-bottom:8px">Feel like giving a little extra?</div>
@@ -531,39 +545,55 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="bin-caps"><span id="bin-caps">0</span> bottlecaps</div>
       <div class="bin-count" id="bin-count"></div>
     </div>
+    <!-- THE WEEKLY PRIZE sits above the tabs on purpose: it is the one thing on this
+         screen that cannot be bought, so it must be visible from both of them. -->
+    <div id="weekly-strip"></div>
     <div class="shoptabs">
-      <button class="shoptab on" id="tab-shop">Shop</button>
-      <button class="shoptab" id="tab-coll">Collection</button>
+      <button class="shoptab on" id="tab-shop">Shop <span class="tab-sub">spend caps</span></button>
+      <button class="shoptab" id="tab-coll">Collection <span class="tab-sub">wear what you own</span></button>
     </div>
 
     <div id="shop-pane">
-      <div class="sec-h">Today's Find</div>
+      <div class="sec-h">Today's Find <span class="sec-n">a quarter off</span></div>
       <div class="sec-sub" id="find-sub">Jimothy dragged something back this morning.</div>
       <div class="skinrow" id="find-row"></div>
 
-      <div class="sec-h">The Bin</div>
+      <div class="sec-h">The Bin <span class="sec-n" id="bin-n"></span></div>
+      <div class="sec-sub">A surprise critter for 40 caps. Always one you do not own yet, never a duplicate. The cheapest way in.</div>
       <button class="btn primary" id="bin-pull" style="max-width:400px;margin:8px auto 0">Open the bin</button>
       <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
 
-      <div class="sec-h">Pick One Out</div>
-      <div class="sec-sub">Skip the surprise and reach in for the one you want.</div>
+      <div class="sec-h">Pick One Out <span class="sec-n" id="pick-n"></span></div>
+      <div class="sec-sub">Skip the surprise and choose exactly who you want, for 110 caps.</div>
       <div class="skinrow" id="pick-row"></div>
 
-      <div class="sec-h">The Shelf</div>
-      <div class="sec-sub">A finish re-casts whoever you are playing as in a new material. One finish, every critter you own.</div>
+      <div class="sec-h">Colours <span class="sec-n" id="shelf-n"></span></div>
+      <div class="sec-sub">A colour is a material: bronze, jade, gold leaf, night sky. Buy it once and every critter you own can wear it. You change it over in the Collection tab.</div>
       <div class="skinrow" id="fin-row"></div>
     </div>
 
     <div id="coll-pane" style="display:none">
-      <div class="sec-h">Critters</div>
-      <div class="skinrow" id="skin-row"></div>
-      <div class="sec-h">Finishes</div>
-      <div class="sec-sub" id="finown-sub">Tap one to wear it. Tap it again to go back to his own colours.</div>
+      <div class="sec-sub" id="coll-wearing" style="margin-top:8px"></div>
+
+      <div class="sec-h">Costumes <span class="sec-n" id="cos-n"></span></div>
+      <div class="sec-sub" id="cos-sub">Jimothy, dressed for the day. Tap one to wear it.</div>
+      <div class="skinrow" id="cos-row"></div>
+
+      <div class="sec-h">Critters <span class="sec-n" id="crit-n"></span></div>
+      <div class="sec-sub" id="crit-sub">The rest of the neighbourhood. Tap one to play as it.</div>
+      <div class="skinrow" id="crit-row"></div>
+
+      <div class="sec-h">Secrets <span class="sec-n" id="sec-n"></span></div>
+      <div class="sec-sub">Never sold. These three are found out on the street.</div>
+      <div class="skinrow" id="sec-row"></div>
+
+      <div class="sec-h">Colours <span class="sec-n" id="finown-n"></span></div>
+      <div class="sec-sub" id="finown-sub">Tap a colour to recast whoever you are playing as. Tap it again for his own painted colours.</div>
       <div class="skinrow" id="finown-row"></div>
     </div>
 
     <div style="height:14px"></div>
-    <button class="btn sm" id="bin-sup" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/glyph-support" style="width:34px;height:34px" alt="">Every costume + the soundtrack · $3</button>
+    <button class="btn sm" id="bin-sup" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/glyph-support" style="width:34px;height:34px" alt="">The pack costumes + the soundtrack · $3</button>
     <button class="btn sm" id="b-ach" style="max-width:400px;margin:0 auto 10px"><img class="bicon" data-g="ui/medal-best" style="width:36px;height:36px" alt="">Badges</button>
     <button class="btn ghost sm" id="skins-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
@@ -653,7 +683,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.0';
+var BUILD='v5.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -683,7 +713,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0,
+  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0,
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -708,6 +738,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay;
   if(typeof p.rewardDay==='number')PROG.rewardDay=p.rewardDay;
   if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak;
+  if(typeof p.tokens==='number')PROG.tokens=p.tokens;
   if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
@@ -805,9 +836,22 @@ var CHARS=[
 ];
 function charById(id){ for(var i=0;i<CHARS.length;i++) if(CHARS[i].id===id)return CHARS[i]; return CHARS[0]; }
 function curChar(){ return charById(PROG.char||'jimothy'); }
-/* the sheet-17 costumes (skins/*, never the secrets) come with the Supporter Pack;
-   critters and secrets stay earn-by-play for everyone */
-function charIsCostume(c){ return !!(c && c.sheet && c.sheet.indexOf('skins/')===0 && !c.secret); }
+/* ===== WHAT THE SUPPORTER PACK CONTAINS — A FIXED LIST, NOT A RULE =====
+   ⛔ This used to be "any costume whose sheet starts with skins/", which quietly meant
+   every costume Stephen paints from here on would fall into a $3 pack people already
+   bought, forever. Stephen's call (2026-07-23): the pack is the costumes that were
+   already wired when it went on sale, and nothing else. Costumes painted from now on
+   are EARNED on the weekly streak (see REWARD_SKINS), so the pack keeps its promise
+   and new art still has somewhere to live.
+   ⛔ Never add an id here without Stephen saying so, and never turn it back into a
+   pattern match. The player-facing copy quotes packCount(), so the list IS the promise. */
+var PACK_COSTUMES={ soggy:1, summer:1, nordic:1, barista:1, fishmonger:1, grad:1, labcoat:1,
+  deckhand:1, market:1, hardhat:1, scout:1, firstfrost:1, garage:1, shark:1 };
+function charIsCostume(c){ return !!(c && PACK_COSTUMES[c.id]); }
+/* costume = a dressed-up Jimothy, critter = another animal. Used to sort the Collection
+   into two shelves a person can actually scan. Secrets sit in their own row. */
+function charIsSkin(c){ return !!(c && c.sheet && c.sheet.indexOf('skins/')===0); }
+function packCount(){ var n=0,k; for(k in PACK_COSTUMES) if(PACK_COSTUMES[k]) n++; return n; }
 function charOwned(id){ if(PROG.chars&&PROG.chars[id])return true;
   return supporterPack() && charIsCostume(charById(id)); }
 function ownedCount(){ var n=0; for(var i=0;i<CHARS.length;i++) if(charOwned(CHARS[i].id))n++; return n; }
@@ -2176,8 +2220,9 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   // "Keep going": one continue per run, back on the last safe row with a shield.
   var cbtn=$('go-continue');
   if(cbtn){ if(canRevive()){ cbtn.style.display='';
-      var afford=canAffordRevive();
-      cbtn.textContent = afford ? ('▶ Keep going · '+REVIVE_COST+' caps')
+      var afford=canAffordRevive(), free=reviveTokens()>0;
+      cbtn.textContent = free   ? ('▶ Keep going · free continue')
+                       : afford ? ('▶ Keep going · '+REVIVE_COST+' caps')
                                 : ('▶ Keep going · '+(REVIVE_COST-(PROG.caps||0))+' more caps');
       cbtn.disabled=!afford;
       cbtn.classList.toggle('ghost', !afford);
@@ -2255,7 +2300,10 @@ function reviveEarned(){ return !!G && (G.mode==='adventure' ? G.level>=2 : G.sc
    pockets posts the better number. One run, one result, no purchase involved. */
 function canRevive(){ return !!G && G.mode!=='zen' && G.mode!=='daily' && G.deadCause!=='time'
   && (G.revives||0)<REVIVE_MAX && reviveEarned(); }
-function canAffordRevive(){ return (PROG.caps||0)>=REVIVE_COST; }
+/* a free continue token (the day-4 login gift) spends before bottlecaps do — the gift
+   should be the thing that saves you, not the tin you were saving for a costume */
+function reviveTokens(){ return PROG.tokens||0; }
+function canAffordRevive(){ return reviveTokens()>0 || (PROG.caps||0)>=REVIVE_COST; }
 function reviveRun(){ if(!canRevive() || !canAffordRevive())return;
   var btn=$('go-continue'); var ads=window.LW_ADS||{};
   if(typeof ads.rewarded!=='function'){ doRevive(); return; }
@@ -2263,7 +2311,9 @@ function reviveRun(){ if(!canRevive() || !canAffordRevive())return;
   ads.rewarded(function(ok){ if(btn) btn.disabled=false; if(ok) doRevive(); });
 }
 function doRevive(){ if(!G || !canAffordRevive())return;
-  PROG.caps-=REVIVE_COST; saveProg();          // a real cost, out of the same tin the shop spends
+  if(reviveTokens()>0) PROG.tokens=reviveTokens()-1;   // the free one first, always
+  else PROG.caps-=REVIVE_COST;                 // otherwise a real cost, out of the tin the shop spends
+  saveProg();
   G.revives=(G.revives||0)+1; G.death=null;
   var r=Math.floor(G.cr.r); while(r>0 && laneAt(r).type!=='safe') r--;   // last bank you stood on
   G.cr.r=r; G.cr.x=Math.max(HALF,Math.min(VW-HALF,G.cr.x));
@@ -2301,52 +2351,103 @@ function confirmRevive(){
   if(!canRevive() || !canAffordRevive()) return;
   var ads=window.LW_ADS||{};
   if(typeof ads.rewarded==='function'){ reviveRun(); return; }
+  if(reviveTokens()>0){                        // the free one needs no haggling, just a nod
+    showConfirm('Use your free continue and carry on from where you fell? You have '+reviveTokens()+'.',
+      '▶ Yes, continue', 'No thanks', reviveRun); return; }
   showConfirm('Are you sure you want to spend '+REVIVE_COST+' bottlecaps to continue from where you were?',
     '▶ Yes, continue', 'No thanks', reviveRun);
 }
-/* ===== daily / weekly login reward — a free gift every day, a NEW SKIN every 7th day
-   in a row. Miss a day and the 7-day climb restarts, so it rewards showing up. The
-   weekly skins are the give-away pool below (commons + rares); epics, secrets and the
-   shark onesie stay behind the Supporter Pack / earn-by-play so this never undercuts
-   them. Supporter-Pack owners already own the pool, so they just get the caps. ===== */
+/* ===== THE DAILY GIFT AND THE WEEKLY SKIN =========================================
+   Show up: bottlecaps, climbing all week. Show up seven days in a row: the next
+   costume on the board is yours.
+
+   The rule that makes it kind — MISSING A DAY COSTS YOU TIME, NEVER THE PRIZE. The
+   week restarts at day 1, but rewardTargetId() is always the first skin you do not
+   own, so the thing you were walking toward is still sitting there when you come
+   back. Earn it and the board rolls to the next one, and the ladder keeps growing as
+   Stephen paints. Nobody is ever punished for having a life.
+
+   ⛔ The weekly skins are EARNED and are deliberately NOT in PACK_COSTUMES — that is
+   the whole point of the split. If a player already owns everything on the board
+   (a Supporter, or a long streak), day 7 pays double caps instead so the seventh day
+   still feels like the seventh day.
+   Day 4 pays a FREE CONTINUE instead of caps, so the week has a shape and there is a
+   reason to reach the middle of it. ===== */
 var REWARD_CAPS=[15,25,40,55,70,90,120];   // bottlecaps for cycle-day 1..7
+var REWARD_TOKEN_DAY=4;                    // the mid-week gift that is not more caps
 var REWARD_SKINS=['soggy','market','deckhand','summer','nordic','barista','scout','hardhat'];
 function rewardReady(){ return (PROG.rewardDay||0) < dayIndex(); }
 function rewardNextStreak(){ var rd=PROG.rewardDay||0, rs=PROG.rewardStreak||0, t=dayIndex();
   if(rd===t) return rs; if(rd===t-1) return rs+1; return 1; }        // consecutive, else restart
 function rewardCycleDay(s){ return ((s-1)%7)+1; }
-function nextRewardSkin(){ for(var i=0;i<REWARD_SKINS.length;i++){ if(!charOwned(REWARD_SKINS[i])) return REWARD_SKINS[i]; } return null; }
+function rewardTargetId(){ for(var i=0;i<REWARD_SKINS.length;i++){ if(!charOwned(REWARD_SKINS[i])) return REWARD_SKINS[i]; } return null; }
+function rewardTarget(){ var id=rewardTargetId(); return id?charById(id):null; }
+function nextRewardSkin(){ return rewardTargetId(); }               // old name, still used by hooks
+/* where the player stands right now: which cycle day they are ON (claimed today) or
+   heading INTO (not claimed yet), and how many more days until the skin lands */
+function rewardStand(){
+  var claimedToday=!rewardReady(), streak=claimedToday?(PROG.rewardStreak||0):rewardNextStreak();
+  var cyc=rewardCycleDay(streak||1);
+  return { claimed:claimedToday, streak:streak, cyc:cyc, left:claimedToday?(7-cyc):(7-cyc+1) };
+}
 var _rewardEl=null;
+function rewardPills(cyc, tint){
+  var pills='', d;
+  /* ⛔ NO EMOJI IN THE PILLS. Headless proved (and the Daily strip already learned) that
+     emoji coverage is a font question — 🦝 renders as a tofu box on plenty of devices.
+     A star and a play triangle are typographic and land everywhere. */
+  for(d=1; d<=7; d++){ var isT=(d===cyc), done=(d<cyc), lab=(d===7)?'★':(d===REWARD_TOKEN_DAY?'▶':(''+d));
+    var bg=isT?'#c8a84b':done?'#3a4a2c':'#1a2016', col=isT?'#12160f':done?'#9db07f':'#6c7a58';
+    pills+='<div style="flex:1;min-width:0;text-align:center;padding:'+(tint?'6px 2px':'9px 2px')+';border-radius:9px;background:'+bg+';color:'+col+';font:800 '+(tint?'13px':'15px')+' Fredoka,system-ui;'+(isT?'box-shadow:0 0 0 2px #e8dcc8;':'')+'">'+lab+'</div>'; }
+  return pills;
+}
 function openDailyReward(){
   if(!rewardReady()) return;
   if(_rewardEl && _rewardEl.style.display==='flex') return;
   var streak=rewardNextStreak(), cyc=rewardCycleDay(streak), caps=REWARD_CAPS[cyc-1];
-  var skin=(cyc===7)?nextRewardSkin():null;
+  var tgt=rewardTarget(), skin=(cyc===7)?(tgt?tgt.id:null):null;
+  if(cyc===7 && !skin) caps=caps*2;                   // nothing left to win — pay for the week instead
+  var token=(cyc===REWARD_TOKEN_DAY);
   if(!_rewardEl){ _rewardEl=document.createElement('div'); _rewardEl.id='reward-ov';
     _rewardEl.style.cssText='position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(6,8,6,.8);padding:22px';
     document.body.appendChild(_rewardEl); }
-  var pills='';
-  for(var d=1; d<=7; d++){ var isT=(d===cyc), done=(d<cyc), lab=(d===7)?'🦝':(''+d);
-    var bg=isT?'#c8a84b':done?'#3a4a2c':'#1a2016', col=isT?'#12160f':done?'#9db07f':'#6c7a58';
-    pills+='<div style="flex:1;min-width:0;text-align:center;padding:9px 2px;border-radius:9px;background:'+bg+';color:'+col+';font:800 15px Fredoka,system-ui;'+(isT?'box-shadow:0 0 0 2px #e8dcc8;':'')+'">'+lab+'</div>'; }
-  var line=skin?('+'+caps+' caps and a NEW skin!'):('+'+caps+' bottlecaps');
+  var line=skin?('+'+caps+' caps and '+tgt.name+' is yours!')
+        : token?('+'+caps+' caps and a free continue')
+        : ('+'+caps+' bottlecaps');
+  /* the prize is NAMED and SHOWN every single day, not just on day 7 — a streak you
+     cannot see the end of is just a chore */
+  var goal = tgt
+    ? '<div style="display:flex;align-items:center;gap:10px;background:#0f150c;border:1px solid #2c3326;border-radius:12px;padding:10px 12px;margin-bottom:14px;text-align:left">'
+      +'<canvas id="reward-goal-cv" width="48" height="48" style="width:48px;height:48px;flex:0 0 auto"></canvas>'
+      +'<div style="min-width:0"><div style="color:#8a9178;font:800 10px Nunito,system-ui;letter-spacing:.09em">THIS WEEK’S SKIN</div>'
+      +'<div style="color:#e8dcc8;font:800 15px Fredoka,system-ui">'+tgt.name+'</div>'
+      +'<div style="color:#8a9178;font:600 12px Nunito,system-ui">'+(cyc===7?'Claim it now.':((7-cyc+1)+' more days in a row'))+'</div></div></div>'
+    : '';
   _rewardEl.innerHTML='<div style="max-width:360px;width:100%;background:#12160f;border:1px solid #2c3326;border-radius:18px;padding:22px 20px;box-shadow:0 14px 48px rgba(0,0,0,.6);text-align:center">'
     +'<div style="color:#c8a84b;font:800 22px Fredoka,system-ui;margin-bottom:2px">Daily Reward</div>'
-    +'<div style="color:#8a9178;font:700 13px Nunito,system-ui;margin-bottom:16px">Day '+streak+' &middot; a new skin every 7th day in a row</div>'
-    +'<div style="display:flex;gap:5px;margin-bottom:16px">'+pills+'</div>'
+    +'<div style="color:#8a9178;font:700 13px Nunito,system-ui;margin-bottom:16px">Day '+cyc+' of 7'
+      +(streak>7?(' &middot; '+streak+' days in a row'):'')+'</div>'
+    +'<div style="display:flex;gap:5px;margin-bottom:16px">'+rewardPills(cyc)+'</div>'
+    +goal
     +'<div style="color:#e8dcc8;font:700 18px Nunito,system-ui;margin-bottom:16px">Today: '+line+'</div>'
     +'<button id="reward-claim" class="btn primary" style="width:100%">Claim</button></div>';
-  _rewardEl.querySelector('#reward-claim').onclick=function(){ claimReward(streak, caps, skin); };
+  if(tgt){ var gcv=_rewardEl.querySelector('#reward-goal-cv');
+    drawSkinPreview(gcv, tgt, 0.85, '');            // the prize as painted, not as you happen to be dressed
+    if(tgt.art && tgt.sheet){ var gim=spr(tgt.sheet+'/idle');
+      if(!imgReady(gim)) gim.addEventListener('load', function(){ drawSkinPreview(gcv, tgt, 0.85, ''); }); } }
+  _rewardEl.querySelector('#reward-claim').onclick=function(){ claimReward(streak, caps, skin, token); };
   _rewardEl.style.display='flex';
 }
-function claimReward(streak, caps, skinId){
+function claimReward(streak, caps, skinId, token){
   if(!rewardReady()){ if(_rewardEl)_rewardEl.style.display='none'; return; }
   PROG.caps=(PROG.caps||0)+caps; PROG.rewardDay=dayIndex(); PROG.rewardStreak=streak;
+  if(token) PROG.tokens=(PROG.tokens||0)+1;
   var granted=null;
   if(skinId && !charOwned(skinId)){ PROG.chars[skinId]=1; granted=charById(skinId); }
   saveProg(); sfx('unlock'); try{ achCheck(); }catch(e){}
   if(_rewardEl)_rewardEl.style.display='none';
   if(granted){ revealChar(granted); }
+  else if(token){ revealToken(); }
   try{ paintDaily(); }catch(e){}
 }
 function maybeDailyReward(){ if(rewardReady()) setTimeout(openDailyReward, 320); }
@@ -3026,35 +3127,80 @@ var PULL_COST=40;
 function binPool(){ var o=[],i,c; for(i=0;i<CHARS.length;i++){ c=CHARS[i];
   if(c.rar==='starter'||c.secret||charOwned(c.id))continue; o.push(c); } return o; }
 function binNote(t){ var n=$('bin-note'); if(n)n.textContent=t; }
+/* one Collection cell. Owned = tap to play as it. Unowned secret = a rumour. */
+function collCard(s){
+  var un=charOwned(s.id);
+  var card=document.createElement('div'); card.className='skincard'+(PROG.char===s.id?' on':'')+(un?'':' locked');
+  var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
+  var nm=document.createElement('div'); nm.className='sn'; nm.textContent=un?s.name:'???'; card.appendChild(nm);
+  var su=document.createElement('div'); su.className='su';
+  su.textContent=un?(PROG.char===s.id?'equipped':'tap to play'):'not found yet'; card.appendChild(su);
+  var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[s.rar]||'#8a9178';
+  rr.textContent=un?s.rar:'secret'; card.appendChild(rr);
+  // owned critters wear whatever colour you have on, so the grid shows the real thing
+  drawSkinPreview(cvp, un?s:{body:'#232b1c',belly:'#1b2216',eye:'#232b1c'}, 1, un?PROG.fin:'');
+  if(un && s.art && s.sheet){ var pim=spr(s.sheet+'/idle');      // portraits load async
+    if(!imgReady(pim)) pim.addEventListener('load', function(){ drawSkinPreview(cvp, s, 1, PROG.fin); }); }
+  if(un) card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); warmChar(s); finWarm(PROG.fin,s); saveProg(); sfx('ui'); renderBin(); });
+  return card;
+}
 function renderBin(){
-  var host=$('skin-row'); if(!host)return; host.innerHTML='';
+  var cosR=$('cos-row'), critR=$('crit-row'), secR=$('sec-row'); if(!cosR||!critR||!secR)return;
+  cosR.innerHTML=''; critR.innerHTML=''; secR.innerHTML='';
   for(var w=0;w<CHARS.length;w++){ if(CHARS[w].art&&CHARS[w].sheet) spr(CHARS[w].sheet+'/idle'); }  // warm every portrait
   var pool=binPool(), caps=PROG.caps||0;
   $('bin-caps').textContent=caps;
-  $('bin-count').innerHTML=ownedCount()+' of '+CHARS.length+' found  ·  <img src="assets/ui/glyph-landmark.png?a='+ARTV+'" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length;
+  $('bin-count').innerHTML=ownedCount()+' of '+CHARS.length+' found  ·  <img src="assets/ui/glyph-landmark.png?a='+ARTV+'" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length
+    +((PROG.tokens||0)>0?('  ·  ▶ '+PROG.tokens+' free continue'+(PROG.tokens>1?'s':'')):'');
   var pb=$('bin-pull');
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
   else { pb.textContent='Open the bin · '+PULL_COST+' caps'; pb.classList.add('primary'); pb.classList.remove('ghost'); }
-  CHARS.forEach(function(s){ var un=charOwned(s.id);
-    /* the Collection is what you HAVE, plus the secrets as rumours. Everything you do not
-       own yet is a price tag now, and lives in the Shop tab where you can act on it. */
-    if(!un && !s.secret) return;
-    var card=document.createElement('div'); card.className='skincard'+(PROG.char===s.id?' on':'')+(un?'':' locked');
-    var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
-    var nm=document.createElement('div'); nm.className='sn'; nm.textContent=un?s.name:(s.secret?'???':'Not found'); card.appendChild(nm);
-    var su=document.createElement('div'); su.className='su';
-    su.textContent=un?(PROG.char===s.id?'equipped':'tap to play'):(s.secret?'secret':'in the bin'); card.appendChild(su);
-    var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[s.rar]||'#8a9178';
-    rr.textContent=(un||!s.secret)?s.rar:'secret'; card.appendChild(rr);
-    host.appendChild(card);
-    // owned critters wear whatever finish you have on, so the grid shows the real thing
-    drawSkinPreview(cvp, un?s:{body:'#232b1c',belly:'#1b2216',eye:'#232b1c'}, 1, un?PROG.fin:'');
-    // portraits load async, so repaint this one cell the moment its art arrives
-    if(un && s.art && s.sheet){ var pim=spr(s.sheet+'/idle');
-      if(!imgReady(pim)) (function(cc,ss){ pim.addEventListener('load', function(){ drawSkinPreview(cc, ss, 1, PROG.fin); }); })(cvp, s); }
-    if(un)card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); warmChar(s); finWarm(PROG.fin,s); saveProg(); sfx('ui'); renderBin(); });
+  /* THE COLLECTION IS SORTED THE WAY A PERSON THINKS ABOUT IT: costumes (Jimothy in an
+     outfit), critters (a different animal), secrets (found, never sold). Everything you
+     do not own yet is a price tag and lives in the Shop tab, except the secrets, which
+     stay here as three question marks because that is the whole game of them. */
+  var nCos=0,tCos=0,nCrit=0,tCrit=0,nSec=0,tSec=0;
+  CHARS.forEach(function(s){
+    if(s.secret){ tSec++; if(charOwned(s.id))nSec++; secR.appendChild(collCard(s)); return; }
+    var isSkin=charIsSkin(s) || s.id==='jimothy';
+    if(isSkin){ tCos++; if(charOwned(s.id)){ nCos++; cosR.appendChild(collCard(s)); } }
+    else { tCrit++; if(charOwned(s.id)){ nCrit++; critR.appendChild(collCard(s)); } }
   });
-  renderFind(); renderPick(); renderShelf();
+  $('cos-n').textContent=nCos+' of '+tCos;
+  $('crit-n').textContent=nCrit+' of '+tCrit;
+  $('sec-n').textContent=nSec+' of '+tSec;
+  if(!cosR.children.length) cosR.innerHTML='<div class="sec-sub">No costumes yet. The weekly streak gives one away, and the Shop sells the rest.</div>';
+  if(!critR.children.length) critR.innerHTML='<div class="sec-sub">No critters yet. Open the bin in the Shop tab.</div>';
+  var cc=curChar(), cf=curFin();
+  $('coll-wearing').innerHTML='Playing as <b style="color:var(--cream)">'+cc.name+'</b>'
+    +(cf?(' in <b style="color:var(--gold)">'+cf.name+'</b>'):' in his own painted colours');
+  renderFind(); renderPick(); renderShelf(); renderWeekly();
+}
+/* ===== THE WEEKLY PRIZE STRIP — what the streak is actually for, named and shown.
+   Sits above the Shop/Collection tabs so both tabs carry it: this is the only thing on
+   the screen you cannot buy, and it should never be the thing nobody noticed. ===== */
+function renderWeekly(){
+  var host=$('weekly-strip'); if(!host)return;
+  var tgt=rewardTarget(), st=rewardStand();
+  if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">WEEKLY PRIZE</div>'
+      +'<div class="wk-name">Every weekly skin is yours</div>'
+      +'<div class="wk-sub">Day seven pays double bottlecaps until Stephen paints the next one.</div></div></div>';
+    return; }
+  var sub = st.claimed
+    ? (st.left===0 ? 'Claimed. The next one is on the board tomorrow.'
+                   : (st.left+' more day'+(st.left===1?'':'s')+' in a row. Come back tomorrow.'))
+    : 'Tap to claim today’s gift. '+st.left+' more day'+(st.left===1?'':'s')+' in a row to earn him.';
+  host.innerHTML='<div class="wk"'+(st.claimed?'':' id="wk-tap" style="cursor:pointer"')+'><canvas id="wk-cv" width="52" height="52"></canvas>'
+    +'<div style="min-width:0;flex:1"><div class="wk-lab">WEEKLY PRIZE · FREE</div>'
+    +'<div class="wk-name">'+tgt.name+'</div>'
+    +'<div class="wk-sub">'+sub+'</div>'
+    +'<div class="wk-pills">'+rewardPills(st.cyc,1)+'</div></div></div>';
+  // an unclaimed gift is claimable from right here — never make someone go and find it
+  var tapEl=$('wk-tap'); if(tapEl) tapEl.addEventListener('click', function(){ sfx('ui'); openDailyReward(); });
+  var cv=$('wk-cv'); if(!cv)return;
+  drawSkinPreview(cv, tgt, 0.9, '');                 // ditto: a prize is shown as painted
+  if(tgt.art && tgt.sheet){ var im=spr(tgt.sheet+'/idle');
+    if(!imgReady(im)) im.addEventListener('load', function(){ drawSkinPreview(cv, tgt, 0.9, ''); }); }
 }
 
 /* ===== THE SHOP =====
@@ -3142,12 +3288,16 @@ function renderFind(){
 }
 function renderPick(){
   var host=$('pick-row'); if(!host)return; host.innerHTML='';
-  var pool=binPool();
+  var pool=binPool(), tgt=rewardTargetId();
+  var bn=$('bin-n'); if(bn)bn.textContent=pool.length?(pool.length+' left'):'empty';
+  var pn=$('pick-n'); if(pn)pn.textContent=pool.length?('110 caps each'):'';
   if(!pool.length){ host.innerHTML='<div class="sec-sub">Every critter is out of the bin already.</div>'; return; }
   pool.forEach(function(s){
     var afford=(PROG.caps||0)>=PICK_COST;
     host.appendChild(shopCard({
-      name:s.name, sub:afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps'),
+      /* if this is the one the streak is walking them toward, say so — nobody should
+         spend 110 caps on a costume that was going to be free in three days */
+      name:s.name, sub:(s.id===tgt)?'free on day 7':(afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps')),
       price:PICK_COST, rar:s.rar, cant:!afford,
       paint:function(cv){ drawSkinPreview(cv,s,1,PROG.fin);
         if(s.art&&s.sheet){ var im=spr(s.sheet+'/idle'); if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,s,1,PROG.fin); }); } },
@@ -3157,9 +3307,10 @@ function renderPick(){
 }
 function renderShelf(){
   var host=$('fin-row'); if(!host)return; host.innerHTML='';
-  var unsold=0;
+  var owned=finCount();
+  var sn=$('shelf-n'); if(sn)sn.textContent=owned+' of '+FINISHES.length+' owned';
   FINISHES.forEach(function(f){
-    if(finOwned(f.id)){ unsold++; return; }                 // owned finishes live in the Collection
+    if(finOwned(f.id)) return;                              // colours you own live in the Collection
     var p=finPrice(f), afford=(PROG.caps||0)>=p;
     host.appendChild(shopCard({
       name:f.name, sub:afford?'tap to buy':((p-(PROG.caps||0))+' more caps'),
@@ -3168,25 +3319,39 @@ function renderShelf(){
       onTap:function(){ buyFin(f); }
     }));
   });
-  if(unsold===FINISHES.length) host.innerHTML='<div class="sec-sub">The shelf is bare. Every finish is yours.</div>';
+  if(owned===FINISHES.length) host.innerHTML='<div class="sec-sub">The shelf is bare. Every colour is yours.</div>';
   renderOwnedFins();
 }
+/* ===== THE COLOURS YOU OWN =====
+   ⛔ Stephen, 2026-07-23: "i also dont see a way to change colors for the skins i've
+   unlocked." The switch was here, but it only appeared once you already owned a colour,
+   so a player with none saw one grey line of text and nothing to press. Every colour is
+   listed now: the ones you own are tappable, the ones you do not are dimmed with their
+   price and send you to the Shop shelf. The control is always visible, whether or not
+   you have anything to put in it. ===== */
 function renderOwnedFins(){
   var host=$('finown-row'); if(!host)return; host.innerHTML='';
-  var sub=$('finown-sub');
-  if(!finCount()){ if(sub)sub.textContent='Nothing on the shelf yet. Finishes are sold in the Shop tab.'; return; }
-  if(sub)sub.textContent='Tap one to wear it. Tap it again to go back to his own painted colours.';
+  var sub=$('finown-sub'), n=$('finown-n');
+  if(n)n.textContent=finCount()+' of '+FINISHES.length;
+  if(sub)sub.textContent=finCount()
+    ? 'Tap a colour to recast '+curChar().name+'. Tap it again for his own painted colours. One colour, every critter you own.'
+    : 'A colour recasts any critter you own in a new material. You do not own one yet: tap any of these to go and buy it.';
   host.appendChild(shopCard({                                // always an escape hatch back to the paint
     name:'His Own Colours', sub:PROG.fin?'tap to wear':'worn', rar:'starter', on:!PROG.fin,
     paint:function(cv){ paintFin(cv,''); },
     onTap:function(){ PROG.fin=''; saveProg(); sfx('ui'); renderBin(); }
   }));
   FINISHES.forEach(function(f){
-    if(!finOwned(f.id))return;
+    var own=finOwned(f.id), p=finPrice(f);
     host.appendChild(shopCard({
-      name:f.name, sub:PROG.fin===f.id?'worn':'tap to wear', rar:f.rar, on:PROG.fin===f.id,
+      name:f.name, sub:own?(PROG.fin===f.id?'worn':'tap to wear'):'in the Shop',
+      price:own?null:p, rar:f.rar, on:own&&PROG.fin===f.id, cant:!own,
       paint:function(cv){ paintFin(cv,f.id); },
-      onTap:function(){ PROG.fin=(PROG.fin===f.id)?'':f.id; if(PROG.fin)finWarm(PROG.fin); saveProg(); sfx('ui'); renderBin(); }
+      onTap:function(){
+        if(!own){ shopTab('shop'); binNote(f.name+' is on the Colours shelf, '+p+' caps.'); sfx('ui');
+          try{ var fr=$('fin-row'); if(fr&&fr.scrollIntoView) fr.scrollIntoView({block:'center'}); }catch(e){}
+          return; }
+        PROG.fin=(PROG.fin===f.id)?'':f.id; if(PROG.fin)finWarm(PROG.fin); saveProg(); sfx('ui'); renderBin(); }
     }));
   });
 }
@@ -3213,6 +3378,18 @@ function revealFin(f){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)
   if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
     if(!imgReady(im)) im.addEventListener('load', function(){ drawSkinPreview(cvp, ch, 2.0, f.id); }); }
   ov.querySelector('.br-card').style.borderColor=RARC[f.rar]||'#c8a84b';
+  ov.classList.add('on'); sfx('unlock'); haptic(30);
+}); }
+/* the day-4 gift gets the same card as a new critter — a free continue is worth a beat */
+function revealToken(){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
+  $('br-rar').textContent='Free continue'; $('br-rar').style.color='#c8a84b';
+  $('br-name').textContent='Saved for a bad hop';
+  $('br-bio').textContent='Use it on the game over screen and carry on from where you fell. This one costs no bottlecaps.';
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d'); c.clearRect(0,0,124,124);
+  var gl=c.createRadialGradient(62,62,6,62,62,58); gl.addColorStop(0,'rgba(200,168,75,0.5)'); gl.addColorStop(1,'rgba(200,168,75,0)');
+  c.fillStyle=gl; c.beginPath(); c.arc(62,62,58,0,7); c.fill();
+  c.fillStyle='#e8dcc8'; c.font='54px Fredoka,system-ui'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('▶',62,64);
+  ov.querySelector('.br-card').style.borderColor='#c8a84b';
   ov.classList.add('on'); sfx('unlock'); haptic(30);
 }); }
 function shopTab(which,quiet){
@@ -3524,7 +3701,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='35';
+  var SWV='36';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -3741,7 +3918,7 @@ var SUP=(function(){
     revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
       $('br-rar').textContent='Supporter'; $('br-rar').style.color='#e58fa0';
       $('br-name').textContent='Thank you ♥';
-      $('br-bio').textContent='Every costume and every song is yours, on every device you sign into.';
+      $('br-bio').textContent='The '+packCount()+' pack costumes and every song are yours, on every device you sign into. New costumes are earned on the weekly streak.';
       var cvp=$('br-cv'); cvp.width=124; cvp.height=124; var c=cvp.getContext('2d'); c.clearRect(0,0,124,124);
       var hi=spr('ui/sup-heart'), dh=function(){ var c2=cvp.getContext('2d'); c2.clearRect(0,0,124,124); c2.drawImage(hi,6,6,112,112); };
       if(imgReady(hi)) dh(); else { hi.addEventListener('load', dh);
@@ -3842,7 +4019,13 @@ var SUP=(function(){
     var dn2=$('sup-donate2'); if(dn2)dn2.style.display=(STRIPE_ON&&s.signedIn)?'':'none';
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     var ms=$('mus-sup'); if(ms)ms.style.display=sup?'none':'';
-    var bs=$('bin-sup'); if(bs)bs.style.display=sup?'none':'';
+    var bs=$('bin-sup'); if(bs){ bs.style.display=sup?'none':'';
+      /* ⛔ the pack copy QUOTES the list — packCount() is the single source of truth, so
+         the promise can never drift from what PACK_COSTUMES actually grants */
+      bs.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:34px;height:34px">'
+        +'The '+packCount()+' pack costumes + the soundtrack · $3'; }
+    var pk=$('sup-perk-cos'); if(pk)pk.textContent='The '+packCount()+' costumes in the pack';
+    var tl=$('sup-thanks-line'); if(tl)tl.textContent='All '+packCount()+' pack costumes and every song are yours.';
     if(sup){ if(curScreen==='s-music')renderMusic(); if(curScreen==='s-skins')renderBin(); }
   }
   return { buy:buy, buyCard:buyCard, donate:donate, auth:auth, hydrate:hydrate, render:render, watch:watch, status:status, grant:grant };
@@ -3930,7 +4113,17 @@ if(/[?&]shtest=1/.test(location.search)){
     musScreen:function(){ renderMusic(); return {rows:$('mus-rows').children.length}; },
     caps:function(n){ if(n!=null){ PROG.caps=n; saveProg(); } return PROG.caps; },
     pull:function(){ binPull(); return {caps:PROG.caps,owned:ownedCount(),pool:binPool().length,revealed:$('br-name').textContent,shown:$('bin-reveal').classList.contains('on')}; },
-    bin:function(){ renderBin(); return {cells:$('skin-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
+    bin:function(){ renderBin(); return {costumes:$('cos-row').children.length,critters:$('crit-row').children.length,
+      secrets:$('sec-row').children.length,count:$('bin-count').textContent,btn:$('bin-pull').textContent}; },
+    reward:function(){ var t=rewardTarget(), st=rewardStand();
+      return {ready:rewardReady(), target:t?t.id:null, streak:st.streak, cycleDay:st.cyc, daysLeft:st.left,
+        claimedToday:st.claimed, tokens:PROG.tokens||0, pool:REWARD_SKINS.join(','), strip:!!$('weekly-strip').children.length}; },
+    rewardReset:function(d){ PROG.rewardDay=(d==null?0:d); PROG.rewardStreak=0; saveProg(); return {rewardDay:PROG.rewardDay}; },
+    rewardSet:function(streak,day){ PROG.rewardStreak=streak; PROG.rewardDay=(day==null?dayIndex()-1:day); saveProg();
+      return {streak:PROG.rewardStreak, day:PROG.rewardDay, next:rewardNextStreak()}; },
+    rewardOpen:function(){ openDailyReward(); return {open:!!(_rewardEl&&_rewardEl.style.display==='flex')}; },
+    tokens:function(n){ if(n!=null){ PROG.tokens=n; saveProg(); } return PROG.tokens||0; },
+    pack:function(){ return {count:packCount(), ids:Object.keys(PACK_COSTUMES).join(',')}; },
     equip:function(id){ PROG.char=id; if(G)G.chr=charById(id); saveProg(); return {char:PROG.char,pose:G?heroPose(0):null}; },
     screen:function(id){ if(id)show(id); return curScreen; },
     fin:function(id){ if(id!=null){ PROG.fin=id; if(id)PROG.fins[id]=1; finWarm(id); saveProg(); } return {fin:PROG.fin,owned:finCount(),baked:FIN_KEYS.length}; },
@@ -3938,7 +4131,8 @@ if(/[?&]shtest=1/.test(location.search)){
     own:function(ids){ (ids||'').split(',').forEach(function(id){ if(id)PROG.chars[id]=1; }); saveProg(); return ownedCount(); },
     shop:function(){ var f=todaysFind(); return {caps:PROG.caps, find:f?(f.kind+':'+f.id+'@'+f.deal):null, findDone:findDone(),
       pick:$('pick-row')?$('pick-row').children.length:-1, shelf:$('fin-row')?$('fin-row').children.length:-1,
-      owned:$('finown-row')?$('finown-row').children.length:-1, coll:$('skin-row')?$('skin-row').children.length:-1,
+      owned:$('finown-row')?$('finown-row').children.length:-1,
+      coll:($('cos-row')?$('cos-row').children.length:0)+($('crit-row')?$('crit-row').children.length:0),
       fin:PROG.fin, fins:finCount()}; },
     finList:function(){ return FINISHES.map(function(f){ return f.id+':'+f.rar+(finOwned(f.id)?':owned':''); }).join(','); },
     chars:function(){ var o={}; for(var i=0;i<CHARS.length;i++)o[CHARS[i].id]=charOwned(CHARS[i].id)?1:0; return o; },
