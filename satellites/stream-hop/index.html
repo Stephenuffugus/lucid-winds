@@ -603,7 +603,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-sub" style="letter-spacing:6px">LEVEL CLEAR</div>
     <div class="go-score" id="cl-level" style="font-size:76px">1</div>
-    <div id="cl-stars" style="font-size:30px; color:var(--gold); margin:2px 0 10px; letter-spacing:6px">★★★</div>
+    <div id="cl-stars" style="font-size:30px; color:var(--gold); margin:2px 0 2px; letter-spacing:6px">★★★</div>
+    <!-- say WHY you got the stars you got: a star nobody can explain is just decoration -->
+    <div id="cl-goals" style="font-size:11.5px; color:var(--muted); margin:0 0 10px; letter-spacing:.02em"></div>
     <div style="width:100%;max-width:300px">
       <div class="go-stat"><span>Time</span><b id="cl-time">0:00</b></div>
       <div class="go-stat"><span>Hops</span><b id="cl-hops">0</b></div>
@@ -683,7 +685,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.1';
+var BUILD='v5.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -1303,6 +1305,10 @@ function newGame(mode, startLevel){
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, lvHops:0, lvT:0, streak:0, deadCause:null,
+      /* what each Adventure level actually CONTAINS, tallied as the road is built.
+         The star goals read this — see tallySupply. lastBank models the Feast Trail:
+         a bank only pays when there were 2+ rows since the last one. */
+      sup:{}, lastBank:startRow,
       revives:0, invuln:0, sunPaid:0, flowersPaid:0, capsPaid:0, capsEverPaid:0, idleT:0, saveT:0, fogT:0, landT:0, celeb:0,
       freezeT:0, vestT:0, bootsT:0, lampT:0,
       weather:{ type:'clear', t:0, dur:13, rainA:0, fog:0, mul:1 }, gull:null, gullT:8+rng()*6 };
@@ -1343,8 +1349,40 @@ function advSpecial(n){ if(n<6) return null;
   return null; }
 var SPNAME={ storm:'STORM WATCH', sound:'FERRY CROSSING', railyard:'RAIL YARD',
   rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT', blackout:'BLACKOUT', gullswarm:'GULL SWARM' };
-function advFlowerGoal(n){ return Math.min(9, 2+Math.floor(n/2)); }
-function advCoinGoal(n){ return Math.min(8, 2+Math.floor(n/3)); }
+/* ===== ⛔⛔ THE THREE STARS — GOALS COME FROM THE LEVEL, NOT FROM A CURVE =====
+   Stephen, 2026-07-23: "i've only EVER gotten 1 star." He was right, and it was not the
+   award code — it was arithmetic. The old goals were a curve (flowers 2+n/2 to 9, caps
+   2+n/3 to 8) written as if feasts and bottlecaps were plentiful. MEASURED against the
+   real generator over 20 levels: a level contains 2-5 bank rows and 0-5 coins. So from
+   level 3 the cap star was usually impossible, from level 6 the feast star ALWAYS was,
+   and level 4 in that sample shipped ZERO coins. One star, forever, exactly as reported.
+
+   The fix: tally what each level actually holds while the road is being built, and ask
+   for a share of THAT. A goal can now never exceed the supply, and never be zero.
+   Feasts want 80% of the banks the level offers, caps 60% of the caps it drops, so
+   three stars means "you worked this level over", not "you got lucky with the seed".
+   The 80% is deliberate slack: a continue drops your trail to nothing, so one rescue
+   costs you at most the slack rather than silently making the star unreachable.
+   Outside a run (the level map) the old curve stands in purely as a display. ===== */
+function advSup(n){ return (G && G.sup && G.sup[n]) || null; }
+function advFlowerGoal(n){ var S=advSup(n); if(!S) return Math.min(9, 2+Math.floor(n/2));
+  return Math.max(1, Math.round(S.feasts*0.8)); }
+function advCoinGoal(n){ var S=advSup(n); if(!S) return Math.min(8, 2+Math.floor(n/3));
+  return Math.max(1, Math.round(S.caps*0.6)); }
+/* Counts one freshly built row into its level's supply. A GATE row is the finish line of
+   the level BELOW it, so its arrival feast and its alcove caps score for the level you
+   are clearing, not the one you are about to start. */
+function tallySupply(r, L){
+  if(!L || r<=0) return;
+  var gate=(r%ADV_LEN===0), lv=gate?(advLevelOfRow(r)-1):advLevelOfRow(r);
+  if(lv<1) return;
+  var S=G.sup[lv]||(G.sup[lv]={caps:0,feasts:0});
+  if(L.bank){ if(r-(G.lastBank||0)>=2) S.feasts++;    // combo>=2 is what bankBloom asks for
+    G.lastBank=r; }
+  if(L.gates) S.caps++;                                // the alcove you land in pays caps
+  if(L.coin!=null) S.caps++;
+  if(L.stash) S.caps++;                                // a stash bumps lvCoins too
+}
 function advStars(n){ return (PROG.adv.stars[n]||0); }
 function advStarCount(n){ var m=advStars(n),c=0; if(m&1)c++; if(m&2)c++; if(m&4)c++; return c; }
 function advTotalStars(){ var t=0; for(var k in PROG.adv.stars) t+=advStarCount(k); return t; }
@@ -1400,7 +1438,11 @@ function makeLane(r){
     // a real Seattle landmark, rarer still, and one you have never touched comes first
     else if(r>=10 && rng()<0.035){ var ec=Math.floor(rng()*COLS); while(L.blocked[ec])ec=(ec+1)%COLS;
       L.egg={ x:(ec+0.5)*TILE, kind:pickEgg(rng, G.mode==='daily') }; }
-    else if(rng()<0.4){ var kc=Math.floor(rng()*COLS); while(L.blocked[kc])kc=(kc+1)%COLS;   // never inside a bush (Jessie: uncollectable caps)
+    /* Adventure drops caps more often than the open modes: its safe rows thin out fast
+       (11 on level 1, 4 by level 18) and the cap star has to have something to ask for.
+       ⛔ Threshold only — the draw is taken either way, so the Daily's shared course is
+       byte-identical to before. */
+    else if(rng() < (G.mode==='adventure'?0.62:0.4)){ var kc=Math.floor(rng()*COLS); while(L.blocked[kc])kc=(kc+1)%COLS;   // never inside a bush (Jessie: uncollectable caps)
       L.coin=(0.5+kc)*TILE; }
     return L;
   }
@@ -1512,7 +1554,8 @@ function buildWater(L,d){
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:pw, pad:1, style:L.padStyle });
   L.spacing=spacing; L.span=n*spacing;
 }
-function genUpTo(r){ while(G.maxGen<r){ G.maxGen++; G.lanes[G.maxGen]=makeLane(G.maxGen); } }
+function genUpTo(r){ while(G.maxGen<r){ G.maxGen++; var _L=G.lanes[G.maxGen]=makeLane(G.maxGen);
+  if(G.mode==='adventure') tallySupply(G.maxGen, _L); } }
 function laneAt(r){ if(r<0)return {r:r,type:'safe',ents:[],blocked:{}}; genUpTo(r); return G.lanes[r]; }
 
 /* ===== input ===== */
@@ -1799,8 +1842,14 @@ function advLevelUp(newLevel){
   G.streak=(G.streak||0)+1;
   if(G.streak>(PROG.bestStreak||0)){ PROG.bestStreak=G.streak; saveProg(); }
   G.pendingClear={ n:done, stars:PROG.adv.stars[done]||0, time:G.lvT||0, hops:G.lvHops||0,
-    caps:G.lvCoins||0, feasts:G.lvFlowers||0, streak:G.streak };
+    caps:G.lvCoins||0, feasts:G.lvFlowers||0, streak:G.streak,
+    fGoal:advFlowerGoal(done), cGoal:advCoinGoal(done) };   // read before the counters reset
   G.level=newLevel; G.lvFlowers=0; G.lvCoins=0; G.lvHops=0; G.lvT=0;
+  /* build the WHOLE next level right now (the renderer only runs ~15 rows ahead, which
+     is one row short of a 16-row level). The star goals read the level's supply, so they
+     have to be settled before the player takes the first hop, or the HUD would tick the
+     target upward under them as the last rows appeared. */
+  genUpTo(newLevel*ADV_LEN);
   // A new chapter is a real beat, so it gets the neighbourhood card and swallows the
   // level tag: one card, never two banners stacked on the same moment.
   var stars=PROG.adv.stars[done]||0;
@@ -1836,6 +1885,10 @@ function showLevelClear(){
   var pc=G.pendingClear;
   $('cl-level').textContent=pc.n;
   var m=pc.stars||0; $('cl-stars').textContent=(m&1?'★':'☆')+(m&2?'★':'☆')+(m&4?'★':'☆');
+  var gl=$('cl-goals');
+  if(gl) gl.innerHTML='<span style="color:'+((m&1)?'#c8a84b':'#8a9178')+'">'+((m&1)?'★':'☆')+' cleared</span>'
+    +' &nbsp;·&nbsp; <span style="color:'+((m&2)?'#c8a84b':'#8a9178')+'">'+((m&2)?'★':'☆')+' feasts '+(pc.feasts||0)+'/'+(pc.fGoal||1)+'</span>'
+    +' &nbsp;·&nbsp; <span style="color:'+((m&4)?'#c8a84b':'#8a9178')+'">'+((m&4)?'★':'☆')+' caps '+(pc.caps||0)+'/'+(pc.cGoal||1)+'</span>';
   var t=Math.max(0,Math.round(pc.time));
   var rm=false; try{ rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
   if(rm){ $('cl-time').textContent=Math.floor(t/60)+':'+('0'+(t%60)).slice(-2);
@@ -3701,7 +3754,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='36';
+  var SWV='37';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4109,6 +4162,24 @@ if(/[?&]shtest=1/.test(location.search)){
     musPlay:function(id){ JMUS.play(id); return JMUS.state(); },
     musEnd:function(){ JMUS.endTease(); return JMUS.state(); },
     setAdvMax:function(n){ PROG.adv.maxLevel=n; saveProg(); return PROG.adv.maxLevel; },
+    /* the star system, readable from outside: what the level holds, what it asks for,
+       what you have so far, and what is already banked in the save */
+    advGoals:function(n){ n=n||(G?G.level:1);
+      return { level:n, sup:(G&&G.sup&&G.sup[n])||null, fGoal:advFlowerGoal(n), cGoal:advCoinGoal(n),
+        lvFlowers:G?(G.lvFlowers||0):null, lvCoins:G?(G.lvCoins||0):null, stars:PROG.adv.stars[n]||0 }; },
+    advStars:function(clear){ if(clear){ PROG.adv.stars={}; saveProg(); } return JSON.parse(JSON.stringify(PROG.adv.stars)); },
+    /* park the hero one row below the level's gate, on an open alcove column, with the
+       counters you name — the honest way to test the award path end to end */
+    advToGate:function(f,c){ if(!G)return null;
+      var gr=G.level*ADV_LEN, gl=laneAt(gr), cols=[], k;
+      for(k in (gl.gates||{})) cols.push(+k);
+      G.cr.r=gr-1; G.cr.x=((cols.length?cols[0]:4)+0.5)*TILE; G.hop=null; G.buf=null; G.ride=null;
+      G.celeb=0; G.pendingClear=null; G.slowmo=1;            // a previous clear must not block this hop
+      G.chaseR=G.cr.r-9; G.lanes[gr-1].ents=[]; G.lanes[gr-1].type='safe';
+      if(f!=null)G.lvFlowers=f; if(c!=null)G.lvCoins=c;
+      queueHop('up'); var g=0; while(G.hop && g++<60) step(0.02);
+      var pc=G.pendingClear;
+      return pc?{ n:pc.n, stars:pc.stars, feasts:pc.feasts, fGoal:pc.fGoal, caps:pc.caps, cGoal:pc.cGoal }:{ none:true, phase:G.phase }; },
     musicUn:function(){ var o={}; for(var i=0;i<MUSIC.length;i++)o[MUSIC[i].id]=musOwned(MUSIC[i].id)?1:0; return o; },
     musScreen:function(){ renderMusic(); return {rows:$('mus-rows').children.length}; },
     caps:function(n){ if(n!=null){ PROG.caps=n; saveProg(); } return PROG.caps; },
