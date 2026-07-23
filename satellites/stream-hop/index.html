@@ -760,13 +760,16 @@ var CHARS=[
    body:'#3b3a63', belly:'#c3bfe0', eye:'#171512', bio:'Honorary doctorate. Entirely deserved.'},
   {id:'labcoat', name:'Jimothy MD', rar:'epic', sheet:'skins/labcoat', art:1,
    body:'#e6e6e2', belly:'#ffffff', eye:'#171512', bio:'The doctor will see you now. He is a raccoon.'},
-  /* --- Jimothy out running errands (asset sheet 7). Stephen painted these standing, one
-     pose each, so all four hop frames point at the same file for now: the engine's own
-     squash, stretch and arc still carry the hop. The moment real crouch/leap/land frames
-     land in assets/skins/<id>/, they overwrite and these animate like everyone else. --- */
-  {id:'deckhand', name:'Deckhand Jimothy', rar:'common', sheet:'skins/deckhand', art:1,
+  /* --- Jimothy out running errands (asset sheet 7). These started as one standing pose
+     each, folding onto the four hop frames. Now getting their FULL painted packs (19 poses),
+     opted in with full:1 like the hero. Deckhand (skin sheet 1a+1b) still carries a
+     placeholder run-l (copy of leap) until Stephen's true left sprint lands. Market (sheet
+     2a+2b + a separately-painted leftrun) has a REAL run-l. The doc rule holds: paint the
+     left sprint, never mirror it — the pack/strap swaps sides. The rest still fold onto four
+     frames until their own full sheets arrive. --- */
+  {id:'deckhand', name:'Deckhand Jimothy', rar:'common', sheet:'skins/deckhand', art:1, full:1,
    body:'#5d6472', belly:'#c3bda8', eye:'#171512', bio:'Ties the ferry up. Unties it again.'},
-  {id:'market',   name:'Market Day Jimothy', rar:'common', sheet:'skins/market', art:1,
+  {id:'market',   name:'Market Day Jimothy', rar:'common', sheet:'skins/market', art:1, full:1,
    body:'#6f6a53', belly:'#c8bd9a', eye:'#171512', bio:'One baguette, and nobody saw him pay.'},
   {id:'hardhat',  name:'Hard Hat Jimothy', rar:'rare', sheet:'skins/hardhat', art:1,
    body:'#8a7a5c', belly:'#cbbb92', eye:'#171512', bio:'Third generation. The road is never finished.'},
@@ -838,7 +841,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='35';
+var ARTV='37';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -3358,7 +3361,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='21';
+  var SWV='23';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
