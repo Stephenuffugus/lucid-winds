@@ -1029,7 +1029,12 @@ var WARM=['hero/idle','hero/crouch','hero/leap','hero/land','hero/dizzy','hero/s
   'sprites/planter-concrete','sprites/planter-barrel','sprites/planter-ferns'];
 /* only Jimothy's poses are preloaded at boot; any other critter warms when equipped */
 function warmChar(c){ if(!c||!c.art||!c.sheet||c.sheet==='hero')return;
-  var P=['idle','crouch','leap','land']; for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
+  var P=['idle','crouch','leap','land'];
+  // full-pack costumes/critters need ALL 19 poses warmed, or the first time the engine
+  // wants sit/eat/coffee/shield/etc it finds no loaded sprite and flashes the procedural
+  // blob for a frame. Same list finWarm bakes.
+  if(c.full) P=P.concat(['dash-run','run-l','run-r','flee','coffee','magnet','umbrella','scared','sit','eat','cheer','shield','dizzy','splash','ko']);
+  for(var i=0;i<P.length;i++) spr(c.sheet+'/'+P[i]); }
 function warmSprites(){ for(var i=0;i<WARM.length;i++) spr(WARM[i]);
 }
 /* a zone's three lane surfaces, warmed when you enter it */
@@ -2882,7 +2887,7 @@ function renderBin(){
     // portraits load async, so repaint this one cell the moment its art arrives
     if(un && s.art && s.sheet){ var pim=spr(s.sheet+'/idle');
       if(!imgReady(pim)) (function(cc,ss){ pim.addEventListener('load', function(){ drawSkinPreview(cc, ss, 1, PROG.fin); }); })(cvp, s); }
-    if(un)card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); finWarm(PROG.fin,s); saveProg(); sfx('ui'); renderBin(); });
+    if(un)card.addEventListener('click',function(){ PROG.char=s.id; if(G)G.chr=charById(s.id); warmChar(s); finWarm(PROG.fin,s); saveProg(); sfx('ui'); renderBin(); });
   });
   renderFind(); renderPick(); renderShelf();
 }
@@ -3361,7 +3366,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='25';
+  var SWV='26';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
