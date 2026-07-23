@@ -5,7 +5,13 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 
 ---
 
-## ✅ DONE this session (all committed + pushed to main, live on lucidwinds.com/jimothy)
+## ✅ DONE 2026-07-23 pm (committed + pushed to main, live) — "polish for money" pass
+- **Retired the AI splash video.** Front door is now the static ink-wash keyart (`jimothy-hero.png`) + "TAP TO START"; one tap → menu. The `.mp4` no longer loads. (Stephen: the 4s AI video was the #1 thing drawing AI hate on socials.)
+- **Feast-gate landing now unmistakable.** `obs-trashbags` was used BOTH as the land-here target AND as a curb wall → confusion. Trash bags are feast-only now; walls are plain street furniture (bins/planters/cones/barrier/roadworks); each open gate gets a downward chevron + glowing floor ring.
+- **Teaching coach (freeze-and-show).** First power-up ever + first landmark ever freeze the world and show a card (art + name + what it does / skin-unlock explainer). Each new power KIND after that gets a one-line toast. Once per concept ever (`PROG.taughtPower`/`taughtEgg`). How screen made explicit on the landmark→skin unlock.
+- SWV/cache **v31→v32**. Verified headless (puppeteer): no JS errors, splash→menu, both coaches fire/freeze/dismiss, render clean while frozen. HEAD 981cd605.
+
+## ✅ DONE earlier session (all committed + pushed to main, live on lucidwinds.com/jimothy)
 - 29 skins → full **19-frame animation packs** (16 costumes + 13 critters), all `full:1`
 - **Real left-run sprints** for every skin (mirrored run-r → run-l; Scout + Market have hand-painted lefts)
 - **Fallback-blob fix** (warm the full pose pack so costumes never flash the vector blob)
