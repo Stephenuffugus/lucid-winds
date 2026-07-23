@@ -1507,15 +1507,19 @@ function finishHop(){
   if(h.dir==='up'){
     if(G.mode==='adventure') G.lvHops=(G.lvHops||0)+1;
     if(G.cr.r>G.score){ G.score=G.cr.r; if(G.dailyOfficial) dailyMark(false); }
-    if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
-    else { var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
+    // non-adventure: neighbourhood banner on a zone change
+    if(G.mode!=='adventure'){ var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
       spr(ZONES[(zi+1)%ZONES.length].bg); warmZoneTex(ZONES[(zi+1)%ZONES.length]); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
     sfx('combo', G.combo);
-    // reach a bank after a hazard stretch → bank the Bloom Trail
+    // reach a bank after a hazard stretch → bank the Feast Trail
     if(lane.bank && G.combo>=2){ bankBloom(); }
+    // ADVENTURE level-up runs LAST, AFTER the arrival feast has banked, so the level
+    // you just cleared scores its own final feast. (Stars used to be checked here,
+    // before combo++/bankBloom, so the guaranteed arrival feast never counted → 1 star.)
+    if(G.mode==='adventure'){ var nlv=advLevelOfRow(G.cr.r); if(nlv>G.level) advLevelUp(nlv); }
   }
   // resolve landing hazard immediately (water needs a pad)
   if(lane.type==='water'){ var pad=padUnder(lane,G.cr.x); if(pad){ G.ride=pad; G.coyote=0; } else { G.coyote=0.001; } }
@@ -1728,6 +1732,12 @@ function grabCoin(lane){ lane.coin=null; var v=(G.magnetT>0?2:1); G.coins+=v; G.
 /* completed level (newLevel-1): award stars, unlock the next, announce the next. */
 function advLevelUp(newLevel){
   var done=newLevel-1;
+  // The feast alcove you LAND in to clear the level pays caps. Credit them to THIS
+  // level's coin goal BEFORE scoring stars — this bonus used to be applied after the
+  // counters reset, so it landed on the next level and the coin star under-counted.
+  var gl2=laneAt(G.cr.r), gcol=Math.round(G.cr.x/TILE-0.5);
+  if(gl2.gates && gl2.gates[gcol]){ var gb=(gcol>=3&&gcol<=5)?8:5; G.coins+=gb; G.lvCoins=(G.lvCoins||0)+1;
+    float(G.cr.x, rowScreenY(G.cr.r)-64, 'FEAST! +'+gb+' caps'); }
   if(done>=1){
     var s=1; // ★ cleared
     if((G.lvFlowers||0)>=advFlowerGoal(done)) s|=2;   // ★ flower goal
@@ -1760,9 +1770,6 @@ function advLevelUp(newLevel){
     G.conf.push({ x:G.cr.x, y:rowScreenY(G.cr.r)-30, vx:Math.cos(ca)*cs*0.7, vy:Math.sin(ca)*cs-150,
       rot:Math.random()*6.3, vr:(Math.random()-0.5)*9, w:5+Math.random()*5, h:3+Math.random()*4,
       col:CC[Math.floor(Math.random()*CC.length)], life:1.6+Math.random()*0.8, ph:Math.random()*6.3 }); }
-  var gl2=laneAt(G.cr.r), gcol=Math.round(G.cr.x/TILE-0.5);
-  if(gl2.gates && gl2.gates[gcol]){ var gb=(gcol>=3&&gcol<=5)?8:5; G.coins+=gb; G.lvCoins=(G.lvCoins||0)+1;
-    float(G.cr.x, rowScreenY(G.cr.r)-64, 'FEAST! +'+gb+' caps'); }
   sfx('bank'); setTimeout(function(){ sfx('combo',3); },140); setTimeout(function(){ sfx('combo',5); },280); setTimeout(function(){ sfx('unlock'); },430);
   setTimeout(function(){ sfx('combo',6); },640); setTimeout(function(){ sfx('combo',7); },840); setTimeout(function(){ sfx('bank'); },1080);
   // two more waves of stars while the camera hangs on him
@@ -2677,9 +2684,9 @@ function drawRow(r){
         ctx.save(); ctx.translate(L.stash.x,sy); ctx.fillStyle='#c8a84b'; ctx.fillRect(-13,-9,26,18);
         ctx.fillStyle='#e8c65a'; ctx.fillRect(-13,-9,26,5); ctx.restore(); } }
     if(L.egg){ var ey=y+Math.sin(G.t*2+L.egg.x)*2.5;
-      var gg=ctx.createRadialGradient(L.egg.x,ey,2,L.egg.x,ey,30);
-      gg.addColorStop(0,'rgba(240,214,138,0.30)'); gg.addColorStop(1,'rgba(240,214,138,0)');
-      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(L.egg.x,ey,30,0,7); ctx.fill();
+      var egl=ctx.createRadialGradient(L.egg.x,ey,2,L.egg.x,ey,30);
+      egl.addColorStop(0,'rgba(240,214,138,0.30)'); egl.addColorStop(1,'rgba(240,214,138,0)');
+      ctx.fillStyle=egl; ctx.beginPath(); ctx.arc(L.egg.x,ey,30,0,7); ctx.fill();
       drawSprite('sprites/egg-'+L.egg.kind, L.egg.x, ey, 52); }
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
@@ -2700,7 +2707,7 @@ function drawRow(r){
     if(SET.cb){ ctx.fillStyle='rgba(91,155,213,0.9)'; ctx.beginPath(); if(L.dir>0){ctx.moveTo(8,y-5);ctx.lineTo(16,y);ctx.lineTo(8,y+5);}else{ctx.moveTo(VW-8,y-5);ctx.lineTo(VW-16,y);ctx.lineTo(VW-8,y+5);} ctx.fill(); }
   }
   // wilt overlay on rows the chase has taken (the sweeper machine draws on top)
-  if(G.mode!=='zen' && r <= G.chaseR+0.5){ var w=Math.min(1,(G.chaseR+0.5-r)); ctx.fillStyle='rgba(20,8,20,'+(0.35+0.45*w)+')'; ctx.fillRect(0,top,VW,TILE);
+  if(G.mode!=='zen' && r <= G.chaseR+0.5){ var wv=Math.min(1,(G.chaseR+0.5-r)); ctx.fillStyle='rgba(20,8,20,'+(0.35+0.45*wv)+')'; ctx.fillRect(0,top,VW,TILE);
     if(r>G.chaseR-0.5){ ctx.fillStyle='rgba(120,40,90,0.35)'; ctx.fillRect(0,top,VW,4); } }
 }
 function drawPower(pw,y){
@@ -3515,7 +3522,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='33';
+  var SWV='34';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
