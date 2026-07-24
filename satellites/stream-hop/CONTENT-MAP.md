@@ -52,6 +52,12 @@ unlock something the shop will never sell. Mint any code with
 | `TRASHPANDA` | 150 bottlecaps | |
 | `NUGGET` | 60 caps + a free continue | |
 
+**Every redemption pings Discord** (🎟 **BOOGIE** redeemed in **jimothy** → Disco
+Jimothy) and lands in the `codeRedemptions` collection, never in `feedback`. That is what
+makes per-channel codes worth doing: give TikTok one word, Reddit another, and the pings
+tell you which platform actually converts. Fire and forget, so a costume never waits on a
+network call.
+
 A link works as well as typing: `https://lucidwinds.com/jimothy/?code=BOOGIE`.
 ⛔ The words are **not** in the game file (it is public) — only two hashes and a length.
 ⛔ A code cannot be locked to one person without a login, so a forwarded code is a code

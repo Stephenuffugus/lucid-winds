@@ -706,7 +706,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.7';
+var BUILD='v5.8';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -2703,6 +2703,7 @@ function redeemCode(raw){
   if(g.char && !charOwned(g.char)){ PROG.chars[g.char]=1; gotChar=charById(g.char); got.push(gotChar.name); }
   if(g.fin && !finOwned(g.fin)){ PROG.fins[g.fin]=1; PROG.fin=g.fin; finWarm(g.fin); gotFin=finById(g.fin); got.push(gotFin.name); }
   saveProg(); sfx('unlock'); haptic(30);
+  pingCode(entered, got.join(' and '));
   closeCodeBox();
   try{ achCheck(); }catch(e){}
   if(gotChar) revealChar(gotChar);
@@ -2710,6 +2711,38 @@ function redeemCode(raw){
   else revealGift(C.name||'A gift', got.join(' and '));
   if(curScreen==='s-skins') renderBin();
   try{ paintDaily(); }catch(e){}
+}
+/* ===== TELLING STEPHEN A CODE LANDED ==========================================
+   Stephen 2026-07-24, on marketing: he needs to know WHICH channel a code came from.
+   Give every platform its own word, post one each, and these pings are the answer.
+
+   Sent through the feedback endpoint that already exists, so there is no new server,
+   no new secret, and the same abuse armour (per IP throttle, duplicate swallow, an
+   hourly Discord budget with the overflow still stored). It lands in `codeRedemptions`,
+   never in the `feedback` collection he reads by hand.
+
+   ⛔ FIRE AND FORGET. A player's costume must never wait on a network call, and must
+   never fail because of one: the unlock has already been saved before this runs, and
+   every error here is swallowed on purpose.
+   What goes: the code, what it gave, a random tag for this browser (so two people using
+   the same code do not read as one person twice), and the first six characters of an
+   account id ONLY if they happen to be signed in. No email, no name, nothing typed. */
+function deviceTag(){
+  var t=''; try{ t=localStorage.getItem('sh_tag')||''; }catch(e){}
+  if(!t){ t=Math.random().toString(36).slice(2,8); try{ localStorage.setItem('sh_tag',t); }catch(e){} }
+  return t;
+}
+function pingCode(code, gave){
+  try{
+    var who='';
+    try{ var sn=window.Sunbeam&&Sunbeam._snapshot?Sunbeam._snapshot():null;
+      if(sn&&sn.signedIn&&sn.uid) who=' acct:'+String(sn.uid).slice(0,6); }catch(e){}
+    fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback',{
+      method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true,
+      body:JSON.stringify({ kind:'code', game:'jimothy', code:code,
+        msg:(gave||'redeemed'), meta:'tag:'+deviceTag()+who+' build '+BUILD })
+    }).catch(function(){});
+  }catch(e){}
 }
 /* the plain gift card, for codes that hand over caps rather than a costume */
 function revealGift(title, line){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov)return;
@@ -4054,7 +4087,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='42';
+  var SWV='43';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }

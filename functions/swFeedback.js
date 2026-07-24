@@ -1,5 +1,6 @@
 /**
- * swFeedback — anonymous player feedback drop-box for Sky Wolf games.
+ * swFeedback — anonymous drop-box for Sky Wolf games: player feedback, and (since
+ * 2026-07-24) redeem-code pings.
  *
  * Public HTTP endpoint (testers should never need an account to report a bug).
  * Writes to the `feedback` collection via the Admin SDK — no Firestore rules
@@ -53,11 +54,18 @@ function pingBudgetOk() {
   return ++pingCount <= 24
 }
 
+/* A redemption is not feedback, so it gets its own collection and its own line. Stephen
+   asked for this to see WHICH channel a code came from: give every promo code its own
+   word, post one per platform, and the pings tell you which platform actually converts. */
+function isCode(b) { return String(b.kind || '') === 'code' }
+
 function pingDiscord(doc) {
   const hook = process.env.DISCORD_FEEDBACK_WEBHOOK || ''
   if (!hook.startsWith('https://discord.com/api/webhooks/')) return Promise.resolve()
   if (!pingBudgetOk()) { logger.info('[swFeedback] ping budget spent; stored only'); return Promise.resolve() }
-  const lines = ['**' + doc.game + '** feedback', doc.msg]
+  const lines = doc.kind === 'code'
+    ? ['\uD83C\uDF9F **' + doc.code + '** redeemed in **' + doc.game + '** \u2192 ' + doc.msg]
+    : ['**' + doc.game + '** feedback', doc.msg]
   if (doc.contact) lines.push('_reply to: ' + doc.contact + '_')
   if (doc.meta) lines.push('`' + doc.meta + '`')
   return fetch(hook, {
@@ -79,6 +87,7 @@ export const swFeedback = onRequest(
       if (msg.length < 2) { res.status(400).json({ ok: false, error: 'Empty message' }); return }
       if (throttled(ip)) { res.status(429).json({ ok: false, error: 'Slow down a little.' }); return }
       if (isDuplicate(ip, msg)) { res.json({ ok: true }); return }   // swallowed, silently
+      const code = isCode(b) ? String(b.code || '').slice(0, 40).toUpperCase() : ''
       const doc = {
         game: String(b.game || 'unknown').slice(0, 40),
         msg,
@@ -87,9 +96,13 @@ export const swFeedback = onRequest(
         ua: String(req.get('user-agent') || '').slice(0, 300),
         at: FieldValue.serverTimestamp(),
       }
-      await getFirestore().collection('feedback').add(doc)
+      if (code) { doc.kind = 'code'; doc.code = code }
+      /* ⛔ Redemptions do NOT go in `feedback`. Stephen triages that collection by hand;
+         burying a bug report under a hundred code pings would be a bad trade for a
+         counter. Same endpoint, same abuse armour, different drawer. */
+      await getFirestore().collection(code ? 'codeRedemptions' : 'feedback').add(doc)
       await pingDiscord(doc)
-      logger.info('[swFeedback] %s: %s', doc.game, msg.slice(0, 120))
+      logger.info('[swFeedback] %s %s: %s', code ? 'code' : 'feedback', doc.game, msg.slice(0, 120))
       res.json({ ok: true })
     } catch (e) {
       logger.error('[swFeedback] failed', e)
