@@ -754,7 +754,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.8';
+var BUILD='v6.9';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -4223,8 +4223,19 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='53';
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
+  var SWV='54';
+  if('serviceWorker' in navigator){ try{
+    /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
+       deploy is fetched immediately — but an already-OPEN page keeps showing the version
+       it loaded with until someone reloads. That is why Stephen kept seeing an old build
+       after a fix shipped. When a NEW service worker takes control (only after there was
+       already one — so a first-ever visit does NOT reload), reload once so the running
+       game jumps to the new version on its own. */
+    var _hadCtrl = !!navigator.serviceWorker.controller, _refreshed=false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if(_refreshed || !_hadCtrl) return; _refreshed=true; location.reload(); });
+    navigator.serviceWorker.register('sw.js?v='+SWV);
+  }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
 
