@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="manifest" href="manifest.webmanifest?v=27">
+<link rel="manifest" href="manifest.webmanifest?v=28">
 <link rel="apple-touch-icon" href="assets/icons/jimothy-apple-180.png">
 <title>Jimothy the Jumping Nugget · Sky Wolf Studios</title>
 <meta name="description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg">
 <link rel="canonical" href="https://lucidwinds.com/satellites/stream-hop/">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy","alternateName":["Jimothy the Jumping Nugget","Jimothy: Little Round Raccoon. Big Adventure."],"url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy","alternateName":["Jimothy the Jumping Nugget"],"url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
 </script>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
@@ -721,7 +721,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.0';
+var BUILD='v6.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -4179,7 +4179,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='45';
+  var SWV='46';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
