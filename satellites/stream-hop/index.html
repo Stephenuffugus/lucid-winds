@@ -241,6 +241,17 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
    plainly what it is and how much of it you already have */
 .sec-n{display:inline-block; margin-left:7px; font-family:Nunito,system-ui; font-size:11px;
   font-weight:800; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; vertical-align:2px}
+/* ⛔ 48 REAL pixels of touch target, house rule. The stage is scaled to fit the phone
+   (about 0.76 on a 412px screen), so a 48px button in here is only 36px under a thumb.
+   The button is 64 stage px and transparent; the pill you can see is the span inside it. */
+#b-acct{ position:absolute; z-index:6; top:calc(2px + env(safe-area-inset-top,0px)); right:4px;
+  min-height:64px; padding:0 8px; border:0; background:none; cursor:pointer;
+  display:flex; align-items:center; font-family:Fredoka,system-ui }
+#b-acct span{ display:inline-flex; align-items:center; min-height:42px; padding:0 17px;
+  border:1px solid var(--line); border-radius:21px; background:rgba(15,21,12,.82);
+  color:var(--cream); font-size:14px; font-weight:600; letter-spacing:.02em;
+  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px) }
+#b-acct.in span{ color:var(--sage); border-color:#3f6b34 }
 .shoptabs{display:flex; gap:8px; width:100%; max-width:400px; margin:0 auto 4px}
 .shoptab{flex:1 1 0; min-width:0; min-height:52px; padding:6px 8px; border:1px solid var(--line);
   border-radius:14px; background:#0f150c; color:var(--muted);
@@ -352,7 +363,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   </div>
 
   <!-- TITLE -->
-  <div class="screen center" id="s-title"><div class="title-rain"></div><div class="pad center">
+  <div class="screen center" id="s-title"><div class="title-rain"></div>
+    <!-- Stephen 2026-07-24: "we should make a little sign up or sign in button in the top
+         right corner to prompt people to create an account too if they want." -->
+    <button id="b-acct" aria-label="Sign in to your Sky Wolf Studios account"><span>Sign in</span></button>
+    <div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word">Jimothy</div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -484,7 +499,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div style="position:absolute;top:7%;left:50%;transform:translateX(-50%);font-family:'Fredoka';font-weight:700;letter-spacing:.13em;color:#4a3a1c;font-size:14px;white-space:nowrap">THE SUPPORTER PACK</div>
     </div>
     <div id="sup-auth" style="display:none">
-      <div class="sup-note">The pack ties to your free SKY WOLF STUDIOS account, so it follows you into every Sky Wolf game.</div>
+      <div class="sup-note">A free <b>SKY WOLF STUDIOS account</b> is one login for every game in the arcade, and it carries your Supporter Pack onto any device you sign into. Your bottlecaps and costumes are saved on this device.</div>
       <input class="sup-in" id="sup-email" type="email" autocomplete="email" placeholder="Email">
       <input class="sup-in" id="sup-pass" type="password" autocomplete="current-password" placeholder="Password">
       <button class="btn primary" id="sup-create" style="max-width:430px;margin:0 auto 10px">Create free account</button>
@@ -706,7 +721,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.9';
+var BUILD='v6.0';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -1524,7 +1539,20 @@ function makeLane(r){
        by the time you arrive that column means nothing. What it DID do was make the
        course depend on where you were standing, so two people on the same Daily got
        different bushes. Three bushes in nine columns can never wall a row off. */
-    var nb=Math.floor(rng()*3); for(var i=0;i<nb;i++){ var c=Math.floor(rng()*COLS); L.blocked[c]=1; }
+    /* ⛔⛔ NEVER BUSH AN ALCOVE. The row directly above a feast gate is the one row where
+       "three bushes can never wall a row off" is FALSE: the player is standing in an
+       alcove with walls to the left and right and a moat behind, so their ONLY legal move
+       is straight up. A bush landing on that column seals them in, and the only way out is
+       to die — which is exactly what Stephen hit ("i just finished a level and then to
+       play the next one i had to die"). Measured before the fix: 8.97% of level clears,
+       nearly one in eleven.
+       ⛔ The gate columns are read from the row BELOW, not from where the player is
+       standing, so the course stays identical for everybody on the same Daily. */
+    var gateBelow=(G.mode==='adventure' && r>0 && (r%ADV_LEN)===1 && G.lanes[r-1] && G.lanes[r-1].gates) ? G.lanes[r-1].gates : null;
+    var nb=Math.floor(rng()*3);
+    for(var i=0;i<nb;i++){ var c=Math.floor(rng()*COLS);
+      if(gateBelow && gateBelow[c]) continue;              // that one is somebody's way out
+      L.blocked[c]=1; }
     // a power-up drops on some safe rows past the onboarding — else maybe a coin
     if(r>=8 && rng()<0.15){ var pk=POWERS[Math.floor(rng()*POWERS.length)]; var pc=Math.floor(rng()*COLS); while(L.blocked[pc])pc=(pc+1)%COLS; L.power={ x:(pc+0.5)*TILE, kind:pk }; }
     // a stash is a rare windfall of bottlecaps: spilled fries, or a real curb treasure
@@ -1971,6 +1999,8 @@ function advLevelUp(newLevel){
   // ARRIVAL: hold the moment — Jimothy cheers in the alcove, the street waits,
   // the sweeper backs off, a little fanfare plays. Then the city rolls on.
   G.celeb=2.6; G.slowmo=0.32; if(G.chaseR>G.cr.r-7) G.chaseR=G.cr.r-7;
+  G.gull=null; G.gullT=Math.max(G.gullT||0, 6);        // no bird dives over the party
+  G.shield=G.shield; G.invuln=Math.max(G.invuln,0.6);  // and a beat of grace on the far side
   // a burst of real confetti: spinning paper, not dots
   if(!G.conf)G.conf=[];
   var CC=['#e58fa0','#7ab356','#e8c65a','#5b9bd5','#f2d98a','#e8dcc8'];
@@ -2316,6 +2346,14 @@ function zenReset(cause){ // Zen Meadow is no-fail: drift back to the last safe 
   G.shake=Math.max(G.shake,6); sfx('phew'); float(G.cr.x, rowScreenY(G.cr.r)-16, 'safe!');
 }
 function die(cause){ if(!G||G.phase!=='play')return;
+  /* ⛔⛔ THE CELEBRATION IS SACRED. Stephen, 2026-07-24: "i literally hit the celebration
+     and was celebrating and it landed on me, ruined my streak, and is asking me if i want
+     to continue." A gull dive resolves on its own timer and only checks G.phase, which is
+     still 'play' while the level-clear plays out — so the game could take a level you had
+     ALREADY FINISHED, break the streak, and then offer to sell it back for 25 bottlecaps.
+     Once the gate is cleared the level is banked and the player is untouchable until the
+     clear screen takes over. This guard covers every cause, not just the gull. */
+  if(G.celeb>0 || G.pendingClear) return;
   if(cause==='time'){ G.deadCause='time'; G.phase='dying'; G.flash=Math.max(G.flash,0.5); sfx('bank'); setTimeout(gameOver,350); return; }
   if(G.invuln>0) return;   // just continued: a short grace window so you are not killed on the spot
   // umbrella shield: eat one fatal hit
@@ -2495,7 +2533,10 @@ function doRevive(){ if(!G || !canAffordRevive())return;
 }
 /* a tiny styled yes/no confirm, built once and reused (matches the game's own buttons) */
 var _confirmEl=null;
-function showConfirm(msg, yesLabel, noLabel, onYes){
+/* opts.danger: for anything that spends. The cancel goes ON TOP, where the finger that
+   opened the dialog already is, and the yes button is dead for a moment so a second tap
+   cannot sail through it. Stephen lost 25 bottlecaps to exactly that double tap. */
+function showConfirm(msg, yesLabel, noLabel, onYes, danger){
   if(!_confirmEl){
     _confirmEl=document.createElement('div');
     _confirmEl.id='confirm-ov';
@@ -2509,8 +2550,16 @@ function showConfirm(msg, yesLabel, noLabel, onYes){
   _confirmEl.querySelector('#confirm-msg').textContent=msg;
   var yb=_confirmEl.querySelector('#confirm-yes'), nb=_confirmEl.querySelector('#confirm-no');
   yb.textContent=yesLabel; nb.textContent=noLabel;
-  function close(){ _confirmEl.style.display='none'; yb.onclick=null; nb.onclick=null; }
-  yb.onclick=function(){ close(); if(onYes)onYes(); };
+  var box=yb.parentNode;
+  if(danger){ box.insertBefore(nb, yb); nb.className='btn primary'; yb.className='btn sm';
+    nb.style.marginBottom='8px'; yb.style.marginBottom='0'; }
+  else { box.insertBefore(yb, nb); yb.className='btn primary'; nb.className='btn sm';
+    yb.style.marginBottom='8px'; nb.style.marginBottom='0'; }
+  var armed=!danger, armT=null;
+  if(danger){ yb.style.opacity='0.45'; armT=setTimeout(function(){ armed=true; yb.style.opacity='1'; }, 450); }
+  function close(){ _confirmEl.style.display='none'; yb.onclick=null; nb.onclick=null;
+    if(armT)clearTimeout(armT); yb.style.opacity='1'; }
+  yb.onclick=function(){ if(!armed)return; close(); if(onYes)onYes(); };
   nb.onclick=function(){ close(); };
   _confirmEl.style.display='flex';
 }
@@ -2522,8 +2571,8 @@ function confirmRevive(){
   if(reviveTokens()>0){                        // the free one needs no haggling, just a nod
     showConfirm('Use your free continue and carry on from where you fell? You have '+reviveTokens()+'.',
       '▶ Yes, continue', 'No thanks', reviveRun); return; }
-  showConfirm('Are you sure you want to spend '+REVIVE_COST+' bottlecaps to continue from where you were?',
-    '▶ Yes, continue', 'No thanks', reviveRun);
+  showConfirm('Spend '+REVIVE_COST+' bottlecaps to carry on from where you fell? You have '+(PROG.caps||0)+'.',
+    '▶ Yes, spend '+REVIVE_COST, 'No, keep my caps', reviveRun, true);
 }
 /* ===== THE DAILY GIFT AND THE WEEKLY SKIN =========================================
    Show up: bottlecaps, climbing all week. Show up seven days in a row: the next
@@ -4010,6 +4059,9 @@ function boot(){
   tap('b-how', function(){ show('s-how'); });
   tap('intro-skip', endIntro);
   tap('intro-next', endIntro);
+  tap('b-acct', function(){ show('s-support'); sfx('ui');
+    setTimeout(function(){ var t=$('sup-auth').style.display==='none' ? $('sup-thanks') : $('sup-auth');
+      if(t && t.scrollIntoView) try{ t.scrollIntoView({block:'center'}); }catch(e){} }, 260); });
   tap('b-code', function(){ openCodeBox(); });
   tap('set-code', function(){ openCodeBox(); });
   tap('bin-code', function(){ openCodeBox(); });
@@ -4127,7 +4179,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='44';
+  var SWV='45';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4453,6 +4505,13 @@ var SUP=(function(){
     var cb=$('sup-buy'); if(cb&&STRIPE_ON){ cb.classList.remove('primary'); cb.classList.add('sm'); cb.innerHTML='Or pay with crypto · $3'; }
     var dn=$('sup-donate'); if(dn)dn.style.display=STRIPE_ON?'':'none';
     var dn2=$('sup-donate2'); if(dn2)dn2.style.display=(STRIPE_ON&&s.signedIn)?'':'none';
+    /* ⛔ The chip says what is TRUE today: an account carries the Supporter Pack across
+       devices. It does NOT carry the collection yet — bottlecaps, costumes and streaks are
+       saved on the device. Do not promise "your progress follows you" until it does. */
+    var ac=$('b-acct');
+    if(ac){ var acs=ac.querySelector('span')||ac;
+      acs.textContent = s.signedIn ? '✓ Signed in' : 'Sign in';
+      ac.classList.toggle('in', !!s.signedIn); }
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     var ms=$('mus-sup'); if(ms)ms.style.display=sup?'none':'';
     var bs=$('bin-sup'); if(bs){ bs.style.display=sup?'none':'';
@@ -4557,6 +4616,9 @@ if(/[?&]shtest=1/.test(location.search)){
     advToGate:function(f,c){ if(!G)return null;
       var gr=G.level*ADV_LEN, gl=laneAt(gr), cols=[], k;
       for(k in (gl.gates||{})) cols.push(+k);
+      /* ⚠️ this flattens the moat row under the gate, which is convenient for testing and
+         HID the alcove softlock for weeks: in the real game that row is water, so "hop back
+         down" is drowning, not an escape. Remember that when testing gates. */
       G.cr.r=gr-1; G.cr.x=((cols.length?cols[0]:4)+0.5)*TILE; G.hop=null; G.buf=null; G.ride=null;
       G.celeb=0; G.pendingClear=null; G.slowmo=1;            // a previous clear must not block this hop
       G.chaseR=G.cr.r-9; G.lanes[gr-1].ents=[]; G.lanes[gr-1].type='safe';
