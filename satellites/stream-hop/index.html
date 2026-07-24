@@ -687,7 +687,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.3';
+var BUILD='v5.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -825,7 +825,44 @@ var CHARS=[
    body:'#4e5a70', belly:'#bcc6d8', eye:'#171512', bio:'Practice is at his place. Bring your own amp.'},
   {id:'shark', name:'Shark Onesie Jimothy', rar:'epic', sheet:'skins/shark', art:1, full:1,
    body:'#3f6f8c', belly:'#e8eef2', eye:'#171512', bio:'It is a costume. He is aware it is a costume.'},
+  /* --- 2026-07-24 drop: thirteen more, every one a full 19 pose pack ------------------
+     ⛔ NONE of these are in PACK_COSTUMES. The pack is what it was when it went on sale;
+     these are earned. Five extend the weekly streak ladder (REWARD_SKINS), five go in
+     the bin and the shop, two are secrets you find by playing, and Shinothy comes from a
+     code because she is a gift. --- */
+  {id:'froggery', name:'Froggery Jimothy', rar:'rare', sheet:'skins/froggery', art:1, full:1,
+   body:'#6fbe3a', belly:'#cfe07a', eye:'#171512', bio:'Crossing roads is the family trade.'},
+  {id:'dino',    name:'Dino Onesie Jimothy', rar:'rare', sheet:'skins/dino', art:1, full:1,
+   body:'#6ea62f', belly:'#e3d488', eye:'#171512', bio:'Extinct? He has never felt better.'},
+  {id:'knight',  name:'Cardboard Knight Jimothy', rar:'rare', sheet:'skins/knight', art:1, full:1,
+   body:'#b98b4e', belly:'#d8b57e', eye:'#171512', bio:'Armour from a fridge box. Valour entirely his own.'},
+  {id:'hazmat',  name:'Hazmat Jimothy', rar:'rare', sheet:'skins/hazmat', art:1, full:1,
+   body:'#f0bf20', belly:'#f7d75a', eye:'#171512', bio:'Somebody had to go through that bin. He volunteered.'},
+  {id:'pirate',  name:'Pirate Jimothy', rar:'rare', sheet:'skins/pirate', art:1, full:1,
+   body:'#35606e', belly:'#cfc2a6', eye:'#171512', bio:'Buried his caps somewhere. Cannot remember where.'},
+  {id:'astronaut', name:'Astronaut Jimothy', rar:'epic', sheet:'skins/astronaut', art:1, full:1,
+   body:'#e6e2d6', belly:'#f2efe6', eye:'#171512', bio:'Trained for zero gravity. Applies it to the fence.'},
+  {id:'alien',   name:'Little Green Jimothy', rar:'epic', sheet:'skins/alien', art:1, full:1,
+   body:'#b9c2c8', belly:'#cfe6dd', eye:'#171512', bio:'Took a wrong turn at Rainier. Stayed for the dumpsters.'},
+  {id:'disco',   name:'Disco Jimothy', rar:'epic', sheet:'skins/disco', art:1, full:1,
+   body:'#efe6cf', belly:'#f7f1e2', eye:'#171512', bio:'Every night is Saturday when you sleep all day.'},
+  {id:'robot',   name:'Robot Jimothy', rar:'epic', sheet:'skins/robot', art:1, full:1,
+   body:'#9aa0a6', belly:'#c2c8ce', eye:'#e8c63a', bio:'Beep. Boop. Fries.'},
+  {id:'wizard',  name:'Wizard Jimothy', rar:'epic', sheet:'skins/wizard', art:1, full:1,
+   body:'#2b3566', belly:'#c8b45e', eye:'#171512', bio:'Turned a bin lid into a slightly better bin lid.'},
   /* --- found by playing, never sold in the bin --- */
+  {id:'mothman', name:'Mothman', rar:'secret', secret:1, sheet:'skins/mothman', art:1, full:1,
+   body:'#3a3438', belly:'#6a6058', eye:'#d0281e',
+   hint:'When the lights go out, something with red eyes crosses with you.',
+   bio:'Seen once, believed by nobody, photographed badly.'},
+  {id:'trashking', name:'The Trash King', rar:'secret', secret:1, sheet:'skins/trashking', art:1, full:1,
+   body:'#4a3a2c', belly:'#8a7a5e', eye:'#171512',
+   hint:'Twenty five neighbourhoods deep, somebody already rules the alley.',
+   bio:'Long may he reign over the lane behind the market.'},
+  {id:'shinothy', name:'Shinothy', rar:'secret', secret:1, sheet:'skins/shinothy', art:1, full:1,
+   body:'#1a1a1e', belly:'#d8cfc0', eye:'#171512',
+   hint:'Dreamed up by a friend of the studio. Somebody out there has the code.',
+   bio:'Sequins, chains, and a tail worth more than the van.'},
   {id:'ghost',   name:'Ghost Jimothy', rar:'secret', secret:1, sheet:'skins/ghost', art:1, full:1,
    body:'#dfe3e0', belly:'#ffffff', eye:'#171512',
    hint:'Something pale moves around out there when the fog rolls in.',
@@ -903,7 +940,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='39';
+var ARTV='40';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1840,6 +1877,14 @@ function advLevelUp(newLevel){
     saveProg();
     // skin unlocks by furthest level reached
     checkAdvUnlocks(); achCheck();
+    /* ⛔ Two of the 2026-07-24 costumes are FOUND, never sold. Mothman turns up on a
+       blackout level, because a moth belongs in the dark with the streetlights out, and
+       the Trash King is what clearing twenty five neighbourhoods gets you — the campaign
+       milestone that had been sitting open. Held until the clear screen rather than
+       toasted mid-celebration: a secret deserves its own card, not a line of text lost
+       under confetti. */
+    if(advSpecial(done)==='blackout' && !charOwned('mothman')){ PROG.chars.mothman=1; saveProg(); G.secretFound='mothman'; }
+    if(done>=25 && !charOwned('trashking')){ PROG.chars.trashking=1; saveProg(); G.secretFound='trashking'; }
   }
   // capture the cleared level's story BEFORE counters reset
   G.streak=(G.streak||0)+1;
@@ -1908,6 +1953,8 @@ function showLevelClear(){
   $('cl-streak').textContent='STREAK '+pc.streak+((PROG.bestStreak||0)>pc.streak?('  ·  best '+PROG.bestStreak):(pc.streak>=2?'  ·  new best':''));
   achCheck();
   show('s-clear');
+  if(G.secretFound){ var sid=G.secretFound; G.secretFound=null;      // the card lands after the numbers
+    setTimeout(function(){ if(curScreen==='s-clear') revealChar(charById(sid)); }, 1500); }
 }
 function resumeNextLevel(){
   var v=$('fadeveil'); if(v)v.classList.add('on'); sfx('ui');
@@ -2431,7 +2478,11 @@ function confirmRevive(){
    reason to reach the middle of it. ===== */
 var REWARD_CAPS=[15,25,40,55,70,90,120];   // bottlecaps for cycle-day 1..7
 var REWARD_TOKEN_DAY=4;                    // the mid-week gift that is not more caps
-var REWARD_SKINS=['soggy','market','deckhand','summer','nordic','barista','scout','hardhat'];
+/* The ladder, in the order they are given away. Thirteen rungs is thirteen weeks of
+   somebody coming back tomorrow. Append to the END as Stephen paints; never insert in
+   the middle, or a player two days from a costume watches it change into another. */
+var REWARD_SKINS=['soggy','market','deckhand','summer','nordic','barista','scout','hardhat',
+                  'froggery','dino','knight','hazmat','pirate'];
 function rewardReady(){ return (PROG.rewardDay||0) < dayIndex(); }
 function rewardNextStreak(){ var rd=PROG.rewardDay||0, rs=PROG.rewardStreak||0, t=dayIndex();
   if(rd===t) return rs; if(rd===t-1) return rs+1; return 1; }        // consecutive, else restart
@@ -2540,7 +2591,10 @@ function codeHash(code){
 var CODES=[
   { a:1166995472, b:3565293249, n:7,  gives:{caps:100}, name:'Welcome to the neighbourhood' },
   { a:378637704,  b:2219563811, n:10, gives:{caps:150}, name:'Trash panda money' },
-  { a:1734438252, b:4149312879, n:6,  gives:{caps:60, tokens:1}, name:'A nugget and a continue' }
+  { a:1734438252, b:4149312879, n:6,  gives:{caps:60, tokens:1}, name:'A nugget and a continue' },
+  /* SHINOTHY — the costume a friend of the studio dreamed up, hers to hand out.
+     Not sold anywhere, not in the pack, not on the streak ladder. */
+  { a:2457313452, b:3839454035, n:8,  gives:{char:'shinothy'}, name:'Shinothy' }
 ];
 function codeFind(entered){
   var h=codeHash(entered), i;
@@ -3880,7 +3934,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='38';
+  var SWV='39';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
