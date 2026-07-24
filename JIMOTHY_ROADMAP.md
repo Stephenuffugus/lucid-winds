@@ -17,14 +17,14 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 | PHONEHOME | Little Green Jimothy | `https://lucidwinds.com/jimothy/?code=PHONEHOME` |
 | BOOGIE | Disco Jimothy | `https://lucidwinds.com/jimothy/?code=BOOGIE` |
 | BEEPBOOP | Robot Jimothy | `https://lucidwinds.com/jimothy/?code=BEEPBOOP` |
-| ABRACADABRA | Wizard Jimothy | `https://lucidwinds.com/jimothy/?code=ABRACADABRA` |
+| ABRACADABRA | Wizothy | `https://lucidwinds.com/jimothy/?code=ABRACADABRA` |
 | JIMOTHY | 100 bottlecaps | `https://lucidwinds.com/jimothy/?code=JIMOTHY` |
 | TRASHPANDA | 150 bottlecaps | `https://lucidwinds.com/jimothy/?code=TRASHPANDA` |
 | NUGGET | 60 caps + a free continue | `https://lucidwinds.com/jimothy/?code=NUGGET` |
 Typing is forgiving (case, spaces, dashes). One use per player. ⛔ The plaintext is NOT in the file — only hashes — so nobody can read index.html and take the lot. Without a login a code cannot be locked to one person, so a forwarded code means a few extra raccoons; that is the trade for "works instantly, forever".
 
 ### ⭐ The 13 and where they come from (⛔ NONE are in the Supporter Pack)
-- **Weekly, and NOT FOR SALE** (5 rungs): Froggery → Dino Onesie → Cardboard Knight → Hazmat → Pirate
+- **Weekly, and NOT FOR SALE** (5 rungs): Froggothy → Dinothy → Cardboard Knight → Hazmat → Pirate
 - **Codes, and NOT FOR SALE** (5): Astronaut, Little Green, Disco, Robot, Wizard
 - **Found by playing**: **Mothman** on any blackout level · **The Trash King** at level 25 (this closes the open "what does level 25 unlock" question)
 - **Code only**: Shinothy

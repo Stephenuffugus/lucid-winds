@@ -24,8 +24,8 @@ bought.
 
 | week | costume | shown in the shop as |
 |---|---|---|
-| 1 | Froggery Jimothy | Play 1 week |
-| 2 | Dino Onesie Jimothy | Play 2 weeks |
+| 1 | Froggothy | Play 1 week |
+| 2 | Dinothy | Play 2 weeks |
 | 3 | Cardboard Knight Jimothy | Play 3 weeks |
 | 4 | Hazmat Jimothy | Play 4 weeks |
 | 5 | Pirate Jimothy | Play 5 weeks |
@@ -47,7 +47,7 @@ unlock something the shop will never sell. Mint any code with
 | `PHONEHOME` | Little Green Jimothy | |
 | `BOOGIE` | Disco Jimothy | |
 | `BEEPBOOP` | Robot Jimothy | |
-| `ABRACADABRA` | Wizard Jimothy | |
+| `ABRACADABRA` | Wizothy | |
 | `JIMOTHY` | 100 bottlecaps | safe to post anywhere |
 | `TRASHPANDA` | 150 bottlecaps | |
 | `NUGGET` | 60 caps + a free continue | |
