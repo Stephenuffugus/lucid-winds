@@ -571,6 +571,16 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="sec-h">Colours <span class="sec-n" id="shelf-n"></span></div>
       <div class="sec-sub">A colour is a material: bronze, jade, gold leaf, night sky. Buy it once and every critter you own can wear it. You change it over in the Collection tab.</div>
       <div class="skinrow" id="fin-row"></div>
+
+      <!-- the two lanes bottlecaps cannot reach. They sit in the shop on purpose: people
+           should see what showing up and following along are worth. -->
+      <div class="sec-h">Come Back For These <span class="sec-n" id="weekly-n"></span></div>
+      <div class="sec-sub">Not for sale, at any price. One costume for every seven days in a row.</div>
+      <div class="skinrow" id="weekly-row"></div>
+
+      <div class="sec-h">Codes Unlock These <span class="sec-n" id="coden"></span></div>
+      <div class="sec-sub">Codes turn up in posts, in videos, and in the hands of people who helped make this. Got one? Tap any of them.</div>
+      <div class="skinrow" id="code-row"></div>
     </div>
 
     <div id="coll-pane" style="display:none">
@@ -687,7 +697,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.4';
+var BUILD='v5.5';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -826,29 +836,31 @@ var CHARS=[
   {id:'shark', name:'Shark Onesie Jimothy', rar:'epic', sheet:'skins/shark', art:1, full:1,
    body:'#3f6f8c', belly:'#e8eef2', eye:'#171512', bio:'It is a costume. He is aware it is a costume.'},
   /* --- 2026-07-24 drop: thirteen more, every one a full 19 pose pack ------------------
-     ⛔ NONE of these are in PACK_COSTUMES. The pack is what it was when it went on sale;
-     these are earned. Five extend the weekly streak ladder (REWARD_SKINS), five go in
-     the bin and the shop, two are secrets you find by playing, and Shinothy comes from a
-     code because she is a gift. --- */
-  {id:'froggery', name:'Froggery Jimothy', rar:'rare', sheet:'skins/froggery', art:1, full:1,
+     ⛔ NONE of these are in PACK_COSTUMES, and NONE of them can be bought. `via` is what
+     lane a costume lives in — 'weekly' is earned by showing up seven days in a row,
+     'code' is typed in from a post or a friend — and anything carrying it is kept out of
+     the bin, Pick One Out and Today's Find. That exclusivity is the entire point: a
+     weekly prize you could buy for 110 caps (about one day of play) is not a reason to
+     come back tomorrow. See CONTENT-MAP.md. --- */
+  {id:'froggery', name:'Froggery Jimothy', rar:'rare', sheet:'skins/froggery', art:1, full:1, via:'weekly',
    body:'#6fbe3a', belly:'#cfe07a', eye:'#171512', bio:'Crossing roads is the family trade.'},
-  {id:'dino',    name:'Dino Onesie Jimothy', rar:'rare', sheet:'skins/dino', art:1, full:1,
+  {id:'dino',    name:'Dino Onesie Jimothy', rar:'rare', sheet:'skins/dino', art:1, full:1, via:'weekly',
    body:'#6ea62f', belly:'#e3d488', eye:'#171512', bio:'Extinct? He has never felt better.'},
-  {id:'knight',  name:'Cardboard Knight Jimothy', rar:'rare', sheet:'skins/knight', art:1, full:1,
+  {id:'knight',  name:'Cardboard Knight Jimothy', rar:'rare', sheet:'skins/knight', art:1, full:1, via:'weekly',
    body:'#b98b4e', belly:'#d8b57e', eye:'#171512', bio:'Armour from a fridge box. Valour entirely his own.'},
-  {id:'hazmat',  name:'Hazmat Jimothy', rar:'rare', sheet:'skins/hazmat', art:1, full:1,
+  {id:'hazmat',  name:'Hazmat Jimothy', rar:'rare', sheet:'skins/hazmat', art:1, full:1, via:'weekly',
    body:'#f0bf20', belly:'#f7d75a', eye:'#171512', bio:'Somebody had to go through that bin. He volunteered.'},
-  {id:'pirate',  name:'Pirate Jimothy', rar:'rare', sheet:'skins/pirate', art:1, full:1,
+  {id:'pirate',  name:'Pirate Jimothy', rar:'rare', sheet:'skins/pirate', art:1, full:1, via:'weekly',
    body:'#35606e', belly:'#cfc2a6', eye:'#171512', bio:'Buried his caps somewhere. Cannot remember where.'},
-  {id:'astronaut', name:'Astronaut Jimothy', rar:'epic', sheet:'skins/astronaut', art:1, full:1,
+  {id:'astronaut', name:'Astronaut Jimothy', rar:'epic', sheet:'skins/astronaut', art:1, full:1, via:'code',
    body:'#e6e2d6', belly:'#f2efe6', eye:'#171512', bio:'Trained for zero gravity. Applies it to the fence.'},
-  {id:'alien',   name:'Little Green Jimothy', rar:'epic', sheet:'skins/alien', art:1, full:1,
+  {id:'alien',   name:'Little Green Jimothy', rar:'epic', sheet:'skins/alien', art:1, full:1, via:'code',
    body:'#b9c2c8', belly:'#cfe6dd', eye:'#171512', bio:'Took a wrong turn at Rainier. Stayed for the dumpsters.'},
-  {id:'disco',   name:'Disco Jimothy', rar:'epic', sheet:'skins/disco', art:1, full:1,
+  {id:'disco',   name:'Disco Jimothy', rar:'epic', sheet:'skins/disco', art:1, full:1, via:'code',
    body:'#efe6cf', belly:'#f7f1e2', eye:'#171512', bio:'Every night is Saturday when you sleep all day.'},
-  {id:'robot',   name:'Robot Jimothy', rar:'epic', sheet:'skins/robot', art:1, full:1,
+  {id:'robot',   name:'Robot Jimothy', rar:'epic', sheet:'skins/robot', art:1, full:1, via:'code',
    body:'#9aa0a6', belly:'#c2c8ce', eye:'#e8c63a', bio:'Beep. Boop. Fries.'},
-  {id:'wizard',  name:'Wizard Jimothy', rar:'epic', sheet:'skins/wizard', art:1, full:1,
+  {id:'wizard',  name:'Wizard Jimothy', rar:'epic', sheet:'skins/wizard', art:1, full:1, via:'code',
    body:'#2b3566', belly:'#c8b45e', eye:'#171512', bio:'Turned a bin lid into a slightly better bin lid.'},
   /* --- found by playing, never sold in the bin --- */
   {id:'mothman', name:'Mothman', rar:'secret', secret:1, sheet:'skins/mothman', art:1, full:1,
@@ -2481,8 +2493,13 @@ var REWARD_TOKEN_DAY=4;                    // the mid-week gift that is not more
 /* The ladder, in the order they are given away. Thirteen rungs is thirteen weeks of
    somebody coming back tomorrow. Append to the END as Stephen paints; never insert in
    the middle, or a player two days from a costume watches it change into another. */
-var REWARD_SKINS=['soggy','market','deckhand','summer','nordic','barista','scout','hardhat',
-                  'froggery','dino','knight','hazmat','pirate'];
+var REWARD_SKINS=['froggery','dino','knight','hazmat','pirate'];
+/* ⛔ Every id here MUST carry via:'weekly' in CHARS, or the costume you are walking
+   toward is quietly on sale in the next tab for one day's bottlecaps. Append to the END
+   as Stephen paints; never insert in the middle, or somebody two days from a costume
+   watches it turn into a different one. The old eight (soggy, market, deckhand, summer,
+   nordic, barista, scout, hardhat) came OFF this ladder on 2026-07-24: they are in the
+   $3 pack, so they could never have been "the one you cannot buy". */
 function rewardReady(){ return (PROG.rewardDay||0) < dayIndex(); }
 function rewardNextStreak(){ var rd=PROG.rewardDay||0, rs=PROG.rewardStreak||0, t=dayIndex();
   if(rd===t) return rs; if(rd===t-1) return rs+1; return 1; }        // consecutive, else restart
@@ -2594,7 +2611,15 @@ var CODES=[
   { a:1734438252, b:4149312879, n:6,  gives:{caps:60, tokens:1}, name:'A nugget and a continue' },
   /* SHINOTHY — the costume a friend of the studio dreamed up, hers to hand out.
      Not sold anywhere, not in the pack, not on the streak ladder. */
-  { a:2457313452, b:3839454035, n:8,  gives:{char:'shinothy'}, name:'Shinothy' }
+  { a:2457313452, b:3839454035, n:8,  gives:{char:'shinothy'}, name:'Shinothy' },
+  /* the five promo costumes. Post one and the people who follow you can unlock something
+     the shop will never sell — that is the whole point of the lane. See CONTENT-MAP.md
+     for which word is which, and mint replacements with scripts/make-code.js. */
+  { a:3952715292, b:2938750039, n:8,  gives:{char:'astronaut'}, name:'Astronaut Jimothy' },
+  { a:899682332, b:560716470, n:9, gives:{char:'alien'},    name:'Little Green Jimothy' },
+  { a:2998713344, b:3966951660, n:6,      gives:{char:'disco'},     name:'Disco Jimothy' },
+  { a:358136124, b:938503653, n:8,  gives:{char:'robot'},     name:'Robot Jimothy' },
+  { a:1087786068, b:1058421539, n:11,         gives:{char:'wizard'},    name:'Wizard Jimothy' }
 ];
 function codeFind(entered){
   var h=codeHash(entered), i;
@@ -3356,7 +3381,7 @@ function drawSkinPreview(cv,sk,sc,fk){ var c=cv.getContext('2d'); sc=sc||1;
    critter you do not own yet, so the collection can never stall on a duplicate. ===== */
 var PULL_COST=40;
 function binPool(){ var o=[],i,c; for(i=0;i<CHARS.length;i++){ c=CHARS[i];
-  if(c.rar==='starter'||c.secret||charOwned(c.id))continue; o.push(c); } return o; }
+  if(c.rar==='starter'||c.secret||c.via||charOwned(c.id))continue; o.push(c); } return o; }
 function binNote(t){ var n=$('bin-note'); if(n)n.textContent=t; }
 /* one Collection cell. Owned = tap to play as it. Unowned secret = a rumour. */
 function collCard(s){
@@ -3405,7 +3430,56 @@ function renderBin(){
   var cc=curChar(), cf=curFin();
   $('coll-wearing').innerHTML='Playing as <b style="color:var(--cream)">'+cc.name+'</b>'
     +(cf?(' in <b style="color:var(--gold)">'+cf.name+'</b>'):' in his own painted colours');
-  renderFind(); renderPick(); renderShelf(); renderWeekly();
+  renderFind(); renderPick(); renderShelf(); renderWeekly(); renderLanes();
+}
+/* ===== THE TWO LANES BOTTLECAPS CANNOT REACH ===================================
+   Stephen, 2026-07-24: "the ones you get from the weekly you can't buy... i think it
+   would be good to have it in the costume shop saying play 1 week, or come back for 2
+   weeks to unlock."
+
+   Both lanes are LOCKED cards in the shop, priced in what you have to DO. Showing them
+   here rather than hiding them is the point: a costume nobody knows about is not a
+   reason to come back tomorrow, and a code nobody knows exists never gets looked for.
+   The countdown on the one you are chasing is live, the ones behind it are counted in
+   weeks, and owned ones drop out of the lane and turn up in the Collection. ===== */
+function renderLanes(){
+  var host=$('weekly-row'); if(!host)return; host.innerHTML='';
+  var tgt=rewardTargetId(), st=rewardStand(), owned=0, wait=0, i;
+  for(i=0;i<REWARD_SKINS.length;i++){
+    var c=charById(REWARD_SKINS[i]);
+    if(charOwned(c.id)){ owned++; continue; }
+    wait++;
+    var sub = (c.id===tgt)
+      ? (st.left+' more day'+(st.left===1?'':'s')+' in a row')
+      : ('Play '+wait+' week'+(wait===1?'':'s'));
+    (function(ch,isNext){
+      host.appendChild(shopCard({
+        name:ch.name, sub:sub, rar:ch.rar, cant:true, on:isNext,
+        paint:function(cv){ drawSkinPreview(cv,ch,1,'');
+          if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
+            if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,ch,1,''); }); } },
+        onTap:function(){ binNote(ch.name+' is not for sale. Show up seven days in a row and he is yours.'); sfx('ui'); }
+      }));
+    })(c, c.id===tgt);
+  }
+  $('weekly-n').textContent=owned+' of '+REWARD_SKINS.length+' earned';
+  if(!host.children.length) host.innerHTML='<div class="sec-sub">You have earned every one of them. Day seven pays double bottlecaps now.</div>';
+
+  var ch2=$('code-row'); if(!ch2)return; ch2.innerHTML='';
+  var got=0, tot=0;
+  CHARS.forEach(function(c){
+    if(c.via!=='code')return; tot++;
+    if(charOwned(c.id)){ got++; return; }
+    ch2.appendChild(shopCard({
+      name:c.name, sub:'needs a code', rar:c.rar, cant:true,
+      paint:function(cv){ drawSkinPreview(cv,c,1,'');
+        if(c.art&&c.sheet){ var im=spr(c.sheet+'/idle');
+          if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,c,1,''); }); } },
+      onTap:function(){ openCodeBox(); }
+    }));
+  });
+  $('coden').textContent=got+' of '+tot+' found';
+  if(!ch2.children.length) ch2.innerHTML='<div class="sec-sub">Every code costume is yours. Watch for more.</div>';
 }
 /* ===== THE WEEKLY PRIZE STRIP — what the streak is actually for, named and shown.
    Sits above the Shop/Collection tabs so both tabs carry it: this is the only thing on
@@ -3463,7 +3537,7 @@ function dayIndex(){ return Math.floor(Date.now()/864e5); }
 function shopStock(){
   var out=[], i;
   for(i=0;i<CHARS.length;i++){ var c=CHARS[i];
-    if(c.rar==='starter'||c.secret) continue;
+    if(c.rar==='starter'||c.secret||c.via) continue;   // weekly + code costumes are never for sale
     out.push({kind:'char', id:c.id, o:c, price:charPrice(), owned:charOwned(c.id)}); }
   for(i=0;i<FINISHES.length;i++){ var f=FINISHES[i];
     out.push({kind:'fin', id:f.id, o:f, price:finPrice(f), owned:finOwned(f.id)}); }
@@ -3934,7 +4008,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='39';
+  var SWV='40';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
