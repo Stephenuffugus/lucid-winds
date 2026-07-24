@@ -478,6 +478,39 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="fb-back" style="max-width:430px;margin:0 auto">◄ Back</button>
   </div></div>
 
+  <!-- YOUR ACCOUNT ------------------------------------------------------------------
+       ⛔ Stephen 2026-07-24: "the sign in button took me to the donate and support button
+       which would be very offputting to me as a player... sign up cant take you to donate
+       where there is no sign up." He is right. Signing up and being asked for money are
+       two different conversations and they get two different screens. Nothing on this one
+       sells anything. -->
+  <div class="screen" id="s-account"><div class="pad">
+    <h2 class="sc-h">Your account</h2>
+    <div class="sup-card" style="text-align:left">
+      A <b>SKY WOLF STUDIOS account</b> is free, and it is one login for every game in the
+      arcade. You never need one to play: Jimothy works fine without it.
+      <div class="sup-perk"><div class="pi2">🦝</div><div>Your costumes, bottlecaps and streak are kept safe, and come back if you lose this phone</div></div>
+      <div class="sup-perk"><div class="pi2">🎵</div><div>Songs you earn turn up in the studio player on the website</div></div>
+      <div class="sup-perk"><div class="pi2">💛</div><div>Anything you have supported carries onto every device you sign into</div></div>
+    </div>
+    <div id="ac-form">
+      <input class="sup-in" id="ac-email" type="email" autocomplete="email" placeholder="Email">
+      <input class="sup-in" id="ac-pass" type="password" autocomplete="current-password" placeholder="Password, at least 6 characters">
+      <button class="btn primary" id="ac-create" style="max-width:430px;margin:0 auto 10px">Create a free account</button>
+      <button class="btn sm" id="ac-signin" style="max-width:430px;margin:0 auto">I already have one, sign me in</button>
+    </div>
+    <div id="ac-in" style="display:none">
+      <div class="sup-card" style="border-color:var(--sage);text-align:center">
+        <b id="ac-who">Signed in</b>
+        <div id="ac-saved" style="color:var(--muted);font-size:12.5px;margin-top:6px"></div>
+      </div>
+      <button class="btn sm" id="ac-out" style="max-width:430px;margin:0 auto">Sign out on this device</button>
+    </div>
+    <div class="sup-note" id="ac-status"></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="ac-back" style="max-width:430px;margin:0 auto">◄ Back</button>
+  </div></div>
+
   <!-- SUPPORT THE STUDIO -->
   <div class="screen" id="s-support"><div class="pad">
     <h2 class="sc-h">Support the Studio</h2>
@@ -498,12 +531,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <img id="sup-banner" src="assets/ui/sup-banner.jpg?a=35" alt="The seven costumed Jimothys under the marquee" style="display:block;width:100%;border-radius:14px">
       <div style="position:absolute;top:7%;left:50%;transform:translateX(-50%);font-family:'Fredoka';font-weight:700;letter-spacing:.13em;color:#4a3a1c;font-size:14px;white-space:nowrap">THE SUPPORTER PACK</div>
     </div>
+    <!-- ⛔ Signing up and being asked for money are two different conversations. The account
+         lives on its own screen; this one only explains why the pack needs one. -->
     <div id="sup-auth" style="display:none">
-      <div class="sup-note">A free <b>SKY WOLF STUDIOS account</b> is one login for every game in the arcade, and it carries your Supporter Pack onto any device you sign into. Your bottlecaps and costumes are saved on this device.</div>
-      <input class="sup-in" id="sup-email" type="email" autocomplete="email" placeholder="Email">
-      <input class="sup-in" id="sup-pass" type="password" autocomplete="current-password" placeholder="Password">
-      <button class="btn primary" id="sup-create" style="max-width:430px;margin:0 auto 10px">Create free account</button>
-      <button class="btn sm" id="sup-signin" style="max-width:430px;margin:0 auto">I already have one, sign me in</button>
+      <div class="sup-note">The pack ties to your free <b>SKY WOLF STUDIOS account</b> so it follows you onto any device. Making one takes a moment and costs nothing.</div>
+      <button class="btn primary" id="sup-goacct" style="max-width:430px;margin:0 auto">Set up my free account</button>
     </div>
     <div id="sup-buywrap" style="display:none">
       <button class="btn primary" id="sup-card" style="max-width:430px;margin:0 auto 10px;display:none">💳&nbsp; Support with a card · $3</button>
@@ -721,7 +753,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.1';
+var BUILD='v6.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -780,7 +812,9 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(p.codes)PROG.codes=p.codes;
   if(typeof p.roads==='number')PROG.roads=p.roads;
   if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
-function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
+function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG));
+  try{ cloudPush(); }catch(e){}   // debounced, and only ever after a pull
+}
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
 /* The botanical hoppers (Toadling, Button Bug...) retired when the game became Jimothy.
    Nobody loses anything: every one they had earned pays out as bottlecaps for the bin. */
@@ -4059,9 +4093,18 @@ function boot(){
   tap('b-how', function(){ show('s-how'); });
   tap('intro-skip', endIntro);
   tap('intro-next', endIntro);
-  tap('b-acct', function(){ show('s-support'); sfx('ui');
-    setTimeout(function(){ var t=$('sup-auth').style.display==='none' ? $('sup-thanks') : $('sup-auth');
-      if(t && t.scrollIntoView) try{ t.scrollIntoView({block:'center'}); }catch(e){} }, 260); });
+  tap('b-acct', function(){ paintAccount(); show('s-account'); sfx('ui'); });
+  tap('ac-create', function(){ SUP.auth(true,'ac-email','ac-pass','ac-status'); });
+  tap('ac-signin', function(){ SUP.auth(false,'ac-email','ac-pass','ac-status'); });
+  tap('ac-back',   function(){ show('s-title'); });
+  tap('ac-out', function(){
+    showConfirm('Sign out on this device? Everything stays safe on your account, and your collection stays on this phone too.',
+      'Sign out', 'Stay signed in', function(){
+        try{ if(window.Sunbeam&&Sunbeam.signOut) Sunbeam.signOut(); }catch(e){}
+        _cloudReady=false;
+        setTimeout(function(){ paintAccount(); try{ SUP.render(); }catch(e){} }, 400);
+      }, true);
+  });
   tap('b-code', function(){ openCodeBox(); });
   tap('set-code', function(){ openCodeBox(); });
   tap('bin-code', function(){ openCodeBox(); });
@@ -4080,8 +4123,7 @@ function boot(){
   tap('sup-d5', function(){ SUP.donate(500); });   tap('sup-d5b', function(){ SUP.donate(500); });
   tap('sup-d10', function(){ SUP.donate(1000); }); tap('sup-d10b', function(){ SUP.donate(1000); });
   tap('sup-d25', function(){ SUP.donate(2500); }); tap('sup-d25b', function(){ SUP.donate(2500); });
-  tap('sup-create', function(){ SUP.auth(true); });
-  tap('sup-signin', function(){ SUP.auth(false); });
+  tap('sup-goacct', function(){ paintAccount(); show('s-account'); sfx('ui'); });
   tap('mus-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
   tap('bin-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
   SUP.render();
@@ -4149,7 +4191,7 @@ function boot(){
      in, it does not throw you out of the game (Stephen: "back keeps taking me
      out on accident"). One sentinel history entry stays armed; every handled
      pop re-arms it. Backing out from the TITLE is the one real exit. ===== */
-  var BACK_TO={ 's-how':'s-title', 's-set':'s-title', 's-music':null, 's-skins':'s-title',
+  var BACK_TO={ 's-how':'s-title', 's-set':'s-title', 's-music':null, 's-skins':'s-title', 's-account':'s-title',
     's-ach':'s-skins', 's-levels':'s-title', 's-support':'s-title', 's-go':'s-title' };
   function armBack(){ try{ history.pushState({sh:1},''); }catch(e){} }
   window.addEventListener('popstate', function(){
@@ -4179,7 +4221,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='46';
+  var SWV='47';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4396,7 +4438,8 @@ var SUP=(function(){
   function fbApp(){ try{ if(window.firebase) return firebase.app('sunbeam-sdk'); }catch(e){} return null; }
   function snap(){ try{ if(window.Sunbeam&&Sunbeam._snapshot) return Sunbeam._snapshot(); }catch(e){} return {signedIn:false,uid:null}; }
   function payOff(){ try{ return localStorage.getItem('lw_webpay_enabled')==='0'; }catch(e){ return false; } }
-  function status(t){ var el=$('sup-status'); if(el)el.textContent=t||''; }
+  var _statusEl='sup-status';
+  function status(t){ var el=$(_statusEl); if(el)el.textContent=t||''; }
   function grant(quiet){ try{ localStorage.setItem('sw_supporter','1'); }catch(e){}
     try{ if(!PROG.playlist)PROG.playlist={}; for(var gi=0; gi<MUSIC.length; gi++) PROG.playlist[MUSIC[gi].id]=1;
       saveProg(); syncMusicLibrary(); }catch(e){}
@@ -4474,13 +4517,15 @@ var SUP=(function(){
       if(m.indexOf('already a supporter')>=0){ grant(false); return; }
       status(m||'Could not start card checkout. Nothing was charged.'); });
   }
-  function auth(create){ var em=($('sup-email')||{}).value||'', pw=($('sup-pass')||{}).value||'';
+  function auth(create, emId, pwId, statusId){
+    _statusEl = statusId || 'sup-status';
+    var em=($(emId||'ac-email')||{}).value||'', pw=($(pwId||'ac-pass')||{}).value||'';
     if(!em||em.indexOf('@')<1){ status('That email does not look right.'); return; }
     if(pw.length<6){ status('Password needs at least 6 characters.'); return; }
     if(!(window.Sunbeam&&Sunbeam.signInWithEmail)){ status('Still connecting to the studio. Try again in a second.'); return; }
     status(create?'Creating your account...':'Signing in...');
     (create?Sunbeam.createAccount(em,pw):Sunbeam.signInWithEmail(em,pw)).then(function(){
-      status(''); hydrate(); render();
+      status(''); hydrate(); render(); try{ cloudPull(true); }catch(e){}
     })['catch'](function(e){ var c=(e&&e.code)||'';
       status(c==='auth/email-already-in-use'?'That email already has an account. Tap sign in instead.'
         : c==='auth/wrong-password'||c==='auth/invalid-credential'?'Wrong email or password.'
@@ -4526,6 +4571,96 @@ var SUP=(function(){
   return { buy:buy, buyCard:buyCard, donate:donate, auth:auth, hydrate:hydrate, render:render, watch:watch, status:status, grant:grant };
 })();
 
+/* ===== YOUR COLLECTION, ON YOUR ACCOUNT =========================================
+   Stephen asked whether this needed a second Firebase or a rules change. Neither: the
+   studio's existing rules already let a signed-in player create and update their own
+   vaults/{uid} document, and the validator there only constrains named Lucid Winds
+   fields, so a `jimothy` blob rides along untouched. One account, one project, one
+   login for every game in the arcade — which is the whole point of the branding.
+
+   ⛔⛔ THE MERGE IS GENEROUS, DELIBERATELY. Two devices are not a conflict to resolve,
+   they are two halves of one collection: anything unlocked in either place stays
+   unlocked, and every counter takes the higher number. Nobody signs into their own
+   account and watches costumes disappear. What you are WEARING is a device preference
+   and stays local, because your phone and your laptop are allowed to disagree.
+
+   ⛔ Nothing is ever pushed before a pull has happened, or a fresh install would
+   overwrite a full collection with nothing. ===== */
+var CLOUD_KEYS_SET=['chars','fins','musicUn','ach','eggs','pows','seasons','playlist','codes'];
+var CLOUD_KEYS_MAX=['caps','capsEver','pulls','flowers','hopped','dodges','maxCombo','bestStreak',
+                    'roads','tokens','advPaid','fogWalked','wxBoth','shopDay','rewardDay','rewardStreak',
+                    'taughtPower','taughtEgg','lastBonusDay'];
+var _cloudReady=false, _cloudT=null, _cloudBusy=false;
+function cloudDoc(){ try{ var app=null;
+    try{ if(window.firebase) app=firebase.app('sunbeam-sdk'); }catch(e){}     // the SDK's own app
+    if(!app||!window.Sunbeam||!Sunbeam._snapshot)return null;
+    var sn=Sunbeam._snapshot(); if(!sn||!sn.signedIn||!sn.uid)return null;
+    return app.firestore().collection('vaults').doc(sn.uid);
+  }catch(e){ return null; } }
+function cloudBlob(){
+  var o={v:1}, i, k;
+  for(i=0;i<CLOUD_KEYS_SET.length;i++){ k=CLOUD_KEYS_SET[i]; o[k]=PROG[k]||{}; }
+  for(i=0;i<CLOUD_KEYS_MAX.length;i++){ k=CLOUD_KEYS_MAX[i]; o[k]=PROG[k]||0; }
+  o.best=PROG.best||{}; o.adv=PROG.adv||{maxLevel:1,stars:{}};
+  o.daily=PROG.daily||{}; o.at=Date.now();
+  return o;
+}
+function cloudMerge(c){
+  if(!c||typeof c!=='object')return false;
+  var changed=false, i, k, kk;
+  for(i=0;i<CLOUD_KEYS_SET.length;i++){ k=CLOUD_KEYS_SET[i];
+    if(!PROG[k])PROG[k]={};
+    for(kk in (c[k]||{})){ if(c[k][kk] && !PROG[k][kk]){ PROG[k][kk]=c[k][kk]; changed=true; } } }
+  for(i=0;i<CLOUD_KEYS_MAX.length;i++){ k=CLOUD_KEYS_MAX[i];
+    if(typeof c[k]==='number' && c[k]>(PROG[k]||0)){ PROG[k]=c[k]; changed=true; } }
+  for(kk in (c.best||{})){ if((c.best[kk]||0)>(PROG.best[kk]||0)){ PROG.best[kk]=c.best[kk]; changed=true; } }
+  if(c.adv){ if((c.adv.maxLevel||0)>(PROG.adv.maxLevel||0)){ PROG.adv.maxLevel=c.adv.maxLevel; changed=true; }
+    for(kk in (c.adv.stars||{})){ var was=PROG.adv.stars[kk]||0, now=was|(c.adv.stars[kk]||0);
+      if(now!==was){ PROG.adv.stars[kk]=now; changed=true; } } }              // stars OR together
+  if(c.daily && (c.daily.day||0)>(PROG.daily.day||0)){                        // the newer day wins
+    var keepBest=Math.max(PROG.daily.bestStreak||0, c.daily.bestStreak||0);
+    for(kk in PROG.daily){ if(typeof c.daily[kk]!=='undefined') PROG.daily[kk]=c.daily[kk]; }
+    PROG.daily.bestStreak=keepBest; changed=true; }
+  else if(c.daily && (c.daily.bestStreak||0)>(PROG.daily.bestStreak||0)){ PROG.daily.bestStreak=c.daily.bestStreak; changed=true; }
+  return changed;
+}
+function paintAccount(){
+  var s=(window.Sunbeam&&Sunbeam._snapshot)?Sunbeam._snapshot():{signedIn:false};
+  var f=$('ac-form'), i=$('ac-in'); if(!f||!i)return;
+  f.style.display=s.signedIn?'none':'';
+  i.style.display=s.signedIn?'':'none';
+  if(s.signedIn){
+    $('ac-who').textContent = s.email ? s.email : 'You are signed in';
+    var n=0,k; for(k in (PROG.chars||{})) if(PROG.chars[k]) n++;
+    $('ac-saved').textContent = n+' costume'+(n===1?'':'s')+' and '+(PROG.caps||0)+' bottlecaps are saved to this account'
+      + (_cloudReady?'.':', syncing...');
+  }
+  var chip=$('b-acct'); if(chip){ var cs=chip.querySelector('span')||chip;
+    cs.textContent=s.signedIn?'✓ Signed in':'Sign in'; chip.classList.toggle('in', !!s.signedIn); }
+}
+function cloudPull(thenPush){
+  var d=cloudDoc(); if(!d){ _cloudReady=false; return; }
+  d.get().then(function(doc){
+    var c=(doc&&doc.exists)?doc.data().jimothy:null;
+    var changed=c?cloudMerge(c):false;
+    _cloudReady=true;
+    if(changed){ saveProg(); try{ syncMusicLibrary(); }catch(e){}
+      try{ if(curScreen==='s-skins')renderBin(); if(curScreen==='s-title')paintDaily(); }catch(e){} }
+    if(thenPush) cloudPush(true);
+    paintAccount();
+  })['catch'](function(){ _cloudReady=false; });
+}
+function cloudPush(now){
+  if(!_cloudReady) return;
+  if(_cloudT){ clearTimeout(_cloudT); _cloudT=null; }
+  if(!now){ _cloudT=setTimeout(function(){ _cloudT=null; cloudPush(true); }, 4000); return; }
+  if(_cloudBusy) return;
+  var d=cloudDoc(); if(!d) return;
+  _cloudBusy=true;
+  d.set({ jimothy: cloudBlob() }, {merge:true})
+    .then(function(){ _cloudBusy=false; paintAccount(); })
+    ['catch'](function(){ _cloudBusy=false; });
+}
 /* ===== rewarded video hook =====
    A host that can actually show ads (Capacitor + AdMob, or the portal) defines
    window.LW_ADS before this file runs and we use theirs. Until then this stub grants
@@ -4666,11 +4801,18 @@ if(/[?&]shtest=1/.test(location.search)){
       return {caps:PROG.caps, tokens:PROG.tokens, used:PROG.codes, note:$('code-note')?$('code-note').textContent:null,
         open:!!(_codeEl&&_codeEl.style.display==='flex')}; },
     codeReset:function(){ PROG.codes={}; _codeFails=0; _codeLock=0; saveProg(); return PROG.codes; },
+    cloud:function(what){ if(what==='pull'){ cloudPull(false); return 'pulling'; }
+      if(what==='push'){ _cloudReady=true; cloudPush(true); return 'pushing'; }
+      var sn=(window.Sunbeam&&Sunbeam._snapshot)?Sunbeam._snapshot():{};
+      return {ready:_cloudReady, signedIn:!!sn.signedIn, uid:sn.uid||null, doc:!!cloudDoc(),
+        blobKeys:Object.keys(cloudBlob()).length, chars:Object.keys(PROG.chars||{}).length, caps:PROG.caps||0}; },
+    cloudWipeLocal:function(){ try{ localStorage.removeItem('sh_prog'); }catch(e){} return 'local save cleared'; },
     codeBox:function(pre){ openCodeBox(pre); return {open:_codeEl.style.display==='flex', value:$('code-in').value}; }
   };
 }
 boot();
 renderPowerHelp();
+setTimeout(function(){ try{ cloudPull(true); paintAccount(); }catch(e){} }, 1200);
 codeFromUrl();          // ?code=XXXX in the link opens the box with it filled in
 })();
 </script>

@@ -103,13 +103,37 @@
   // tracks to localStorage 'sws_game_unlocks' ([{id,title,artist,src,game}]);
   // anything found there joins the library on the next load. Unlock a song in
   // Jimothy (or any future game), keep it in your studio player forever. ──
+  /* ⛔⛔ THIS HAS TO BE RE-RUNNABLE. Stephen: "i unlocked all the songs in jimothy... and
+     when i go back to the studios i dont have access to the songs from jimothy."
+
+     Nothing was wrong with the data — the key, the shape and the paths were all correct
+     and the songs were sitting in localStorage the whole time. The bug was that this
+     folded them in exactly ONCE, when the script parsed. Leaving for a game and coming
+     back returns you to a page restored from the back/forward cache, whose JavaScript
+     never runs again, so the studio still had the track list it built before you played.
+     Only a hard reload ever showed them.
+
+     ⛔ It must PUSH INTO THE SAME ARRAY, never replace it: both players hold
+     window.LW_TRACKS by reference and re-derive their groups on every render, so pushing
+     makes a new song appear the moment the drawer is opened, with no reload at all. */
+  function foldGameUnlocks(){
+    try{
+      var gu = JSON.parse(localStorage.getItem('sws_game_unlocks') || '[]');
+      var have = {}; for (var hi = 0; hi < window.LW_TRACKS.length; hi++) have[window.LW_TRACKS[hi].id] = 1;
+      for (var gj = 0; gj < gu.length; gj++) { var gt = gu[gj];
+        if (gt && gt.id && gt.src && !have[gt.id]) { have[gt.id] = 1;
+          window.LW_TRACKS.push({ id: gt.id, title: gt.title || gt.id, artist: gt.artist || 'Stephen',
+            mood: gt.game ? ('unlocked in ' + gt.game) : null, cat: 'Unlocked in Games', src: gt.src }); } }
+    } catch (e) {}
+  }
+  foldGameUnlocks();
+  window.LW_FOLD_GAME_UNLOCKS = foldGameUnlocks;                 // hosts can call it directly
   try{
-    var gu = JSON.parse(localStorage.getItem('sws_game_unlocks') || '[]');
-    var have = {}; for (var hi = 0; hi < window.LW_TRACKS.length; hi++) have[window.LW_TRACKS[hi].id] = 1;
-    for (var gj = 0; gj < gu.length; gj++) { var gt = gu[gj];
-      if (gt && gt.id && gt.src && !have[gt.id]) { have[gt.id] = 1;
-        window.LW_TRACKS.push({ id: gt.id, title: gt.title || gt.id, artist: gt.artist || 'Stephen',
-          mood: gt.game ? ('unlocked in ' + gt.game) : null, cat: 'Unlocked in Games', src: gt.src }); } }
+    // coming back from a game: bfcache restore (JS never re-runs), a tab regaining focus,
+    // and an iframe-hosted game writing the key from another document
+    window.addEventListener('pageshow', function(e){ if (e && e.persisted) foldGameUnlocks(); });
+    window.addEventListener('focus', foldGameUnlocks);
+    window.addEventListener('storage', function(e){ if (!e.key || e.key === 'sws_game_unlocks') foldGameUnlocks(); });
   } catch (e) {}
 
   // Drawer section order. Cats not listed here append after, first-seen order.

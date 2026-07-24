@@ -793,7 +793,7 @@
     function go(){ if(global.SWSPlayer) global.SWSPlayer.init({ button: button }); }
     function withPlayer(){ if(global.SWSPlayer) go(); else musLoadScript('/music-player.js', go); }
     if(global.LW_TRACKS) withPlayer();
-    else musLoadScript('/music-tracks.js?v=2026.06.24.17', withPlayer);
+    else musLoadScript('/music-tracks.js?v=2026.07.24.02', withPlayer);
   }
 
   // ════════════════════════════════════════════════════════════════════
