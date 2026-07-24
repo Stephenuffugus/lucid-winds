@@ -753,7 +753,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.4';
+var BUILD='v6.5';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -4236,7 +4236,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='49';
+  var SWV='50';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4447,7 +4447,8 @@ function tryInstall(){
    account onto any device. sw_supporter is STUDIO-WIDE: Hedgerow and Grubtrap
    already honor the same localStorage flag. Never gameplay power, only cosmetics. */
 function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
-var STRIPE_ON=true;   /* card checkout — flips to true the moment the Stripe rail is deployed */
+var ITCH_BUILD=(function(){ try{ return window.__ITCH_BUILD===true; }catch(e){ return false; } })();
+var STRIPE_ON=!ITCH_BUILD;   /* card checkout — off in the itch build (itch owns that rail); on everywhere else */
 var SUP=(function(){
   var watching=null;
   function fbApp(){ try{ if(window.firebase) return firebase.app('sunbeam-sdk'); }catch(e){} return null; }
@@ -4559,7 +4560,7 @@ var SUP=(function(){
   function render(){ var sup=supporterPack(), s=snap();
     var au=$('sup-auth'), bw=$('sup-buywrap'), th=$('sup-thanks');
     if(au)au.style.display=(!sup&&!s.signedIn)?'':'none';
-    if(bw)bw.style.display=(!sup&&s.signedIn)?'':'none';
+    if(bw)bw.style.display=(!ITCH_BUILD&&!sup&&s.signedIn)?'':'none';
     if(th)th.style.display=sup?'':'none';
     var sc=$('sup-card'); if(sc)sc.style.display=STRIPE_ON?'':'none';
     var cb=$('sup-buy'); if(cb&&STRIPE_ON){ cb.classList.remove('primary'); cb.classList.add('sm'); cb.innerHTML='Or pay with crypto · $3'; }
@@ -4573,8 +4574,9 @@ var SUP=(function(){
       acs.textContent = s.signedIn ? '✓ Signed in' : 'Sign in';
       ac.classList.toggle('in', !!s.signedIn); }
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
-    var ms=$('mus-sup'); if(ms)ms.style.display=sup?'none':'';
-    var bs=$('bin-sup'); if(bs){ bs.style.display=sup?'none':'';
+    if(ITCH_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
+    var ms=$('mus-sup'); if(ms)ms.style.display=(sup||ITCH_BUILD)?'none':'';
+    var bs=$('bin-sup'); if(bs){ bs.style.display=(sup||ITCH_BUILD)?'none':'';
       /* ⛔ the pack copy QUOTES the list — packCount() is the single source of truth, so
          the promise can never drift from what PACK_COSTUMES actually grants */
       bs.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:34px;height:34px">'
