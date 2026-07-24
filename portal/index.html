@@ -33,14 +33,27 @@
      Guarded everywhere with window.gtag checks; ad-blockers just no-op it. -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XE58S4X6RX');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d1410; --panel:#15201a; --panel2:#1c2a22; --ink:#e8f1e9;
-    --muted:#8fa896; --line:#2a3a30; --sun:#ffce4a; --sun2:#ffb020; --leaf:#5fc08a;
+    /* Night-forest arcade palette (2026-07-24 redesign — the concept Stephen approved).
+       Kept the OLD variable NAMES so every existing card/tab/wallet re-skins for free.
+       Two accents with jobs: --sun/--gold = flagship + reward, --leaf/--aurora = live/members. */
+    --bg:#080c09; --ground-2:#0b110c; --panel:#121a13; --panel2:#1a251b;
+    --ink:#f1e9d8; --cream:#f1e9d8; --muted:#98a28e; --muted-dim:#63705a;
+    --line:#2a3722; --line-soft:#1d281b;
+    --sun:#e4bd5f; --sun2:#c19a41; --leaf:#82ddcd;
+    --gold:#e4bd5f; --gold-deep:#c19a41; --gold-glow:rgba(228,189,95,.2);
+    --aurora:#82ddcd; --aurora-deep:#43a293; --aurora-glow:rgba(130,221,205,.18);
+    --moon:#b3cce6;
+    --disp:'Fredoka',ui-rounded,'Segoe UI',system-ui,sans-serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#1a2a20 0,var(--bg) 60%);
-       color:var(--ink);font:16px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 'Nunito',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 8px;flex-wrap:wrap}
@@ -238,18 +251,176 @@
   footer{color:var(--muted);font-size:12px;text-align:center;padding:40px 0 30px}
   .note{background:#1a1206;border:1px solid #3a2a0a;color:#e8c878;font-size:12.5px;
         border-radius:10px;padding:9px 12px;margin-top:14px}
+
+  /* ===== 2026-07-24 ARCADE REDESIGN (night-forest) ===== */
+  .wrap{position:relative;z-index:1}
+  h1,h2,h3{font-family:var(--disp)}
+  .eyebrow{font-family:var(--disp);font-weight:700;font-size:.78rem;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--gold)}
+  .eyebrow.cool{color:var(--aurora)}
+  /* starfield behind everything */
+  .sky{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(130% 90% at 82% -12%,rgba(130,221,205,.10),transparent 55%),
+      radial-gradient(90% 60% at 6% 6%,rgba(228,189,95,.06),transparent 60%),
+      linear-gradient(180deg,#0a110b 0%,#080c09 42%,#070a08 100%)}
+  .sky::after{content:"";position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(1.1px 1.1px at 20% 30%,rgba(241,233,216,.5),transparent),
+      radial-gradient(1.1px 1.1px at 66% 18%,rgba(241,233,216,.32),transparent),
+      radial-gradient(1.1px 1.1px at 82% 52%,rgba(130,221,205,.4),transparent),
+      radial-gradient(1.1px 1.1px at 40% 72%,rgba(241,233,216,.28),transparent),
+      radial-gradient(1.5px 1.5px at 12% 62%,rgba(228,189,95,.34),transparent),
+      radial-gradient(1.1px 1.1px at 90% 80%,rgba(179,204,230,.4),transparent);
+    animation:twinkle 8s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.32}50%{opacity:.72}}
+
+  /* sticky-feel top bar mark */
+  header{padding:16px 0 6px}
+  .mark{display:flex;align-items:center;gap:11px;min-width:0}
+  .mark .wolfmini{width:40px;height:40px;border-radius:10px;object-fit:cover;object-position:center 30%;
+    border:1px solid var(--line);background:#0e1510;flex:none}
+  .mark-tx{display:flex;flex-direction:column;line-height:1.05}
+  .mark-tx b{font-family:var(--disp);font-size:1.06rem;font-weight:700}
+  .mark-tx small{color:var(--muted);font-weight:600;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase}
+
+  /* MASTHEAD — wolf centered, words on the left over a scrim */
+  .masthead{position:relative;height:clamp(230px,34vw,360px);overflow:hidden;border-radius:20px;
+    border:1px solid var(--line);margin:8px 0 4px}
+  .masthead img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;
+    opacity:.97;animation:mastBreathe 18s ease-in-out infinite}
+  @keyframes mastBreathe{0%,100%{transform:scale(1.02)}50%{transform:scale(1.07)}}
+  .masthead::after{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(90deg,#080c09 2%,rgba(8,12,9,.88) 26%,rgba(8,12,9,.35) 52%,transparent 72%),
+      linear-gradient(180deg,rgba(8,12,9,.3) 0%,transparent 34%,rgba(8,12,9,.55) 82%,#080c09 100%)}
+  .masthead .brandline{position:absolute;inset:0;z-index:2;display:flex;align-items:center;padding:0 clamp(20px,5vw,48px)}
+  .masthead .st{font-family:var(--disp);font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+    font-size:clamp(.78rem,1.9vw,1.05rem);color:var(--moon);opacity:0;animation:riseIn .9s .15s cubic-bezier(.2,.7,.2,1) forwards}
+  .masthead .aw{font-family:var(--disp);font-weight:700;font-size:clamp(2.2rem,6.5vw,4rem);color:#fff;
+    text-shadow:0 4px 40px rgba(0,0,0,.75);margin:4px 0 0;line-height:.96;
+    opacity:0;animation:riseIn .9s .28s cubic-bezier(.2,.7,.2,1) forwards}
+  .masthead .sub{color:var(--cream);opacity:0;font-size:clamp(.95rem,1.6vw,1.1rem);margin-top:12px;max-width:44ch;
+    animation:riseIn .9s .42s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes riseIn{from{opacity:0;transform:translateY(24px)}to{opacity:.92;transform:none}}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;
+    border-radius:13px;padding:13px 24px;cursor:pointer;border:1px solid transparent;font-size:1.02rem;
+    transition:transform .15s,box-shadow .2s,border-color .2s}
+  .btn.play{background:linear-gradient(160deg,var(--gold),var(--gold-deep));color:#1a1305;
+    box-shadow:0 14px 36px -12px var(--gold-glow)}
+  .btn.play:hover{transform:translateY(-2px);box-shadow:0 20px 50px -12px rgba(228,189,95,.5)}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--cream)}
+  .btn.ghost:hover{border-color:var(--aurora-deep);transform:translateY(-2px)}
+  .cta-row{display:flex;gap:11px;flex-wrap:wrap;margin-top:6px}
+
+  /* FLAGSHIP — Lucid Winds */
+  .flagship{position:relative;display:grid;grid-template-columns:1fr .8fr;margin:20px 0;
+    border-radius:22px;overflow:hidden;border:1px solid var(--gold-deep);isolation:isolate;
+    background:linear-gradient(120deg,#131b0f 0%,#0e1510 62%);
+    box-shadow:0 40px 100px -48px rgba(0,0,0,.95),0 0 0 1px rgba(228,189,95,.09),0 0 100px -54px var(--gold-glow)}
+  .flagship .copy{padding:40px 18px 40px 40px;display:flex;flex-direction:column;gap:15px;justify-content:center}
+  .flagship .pat{display:inline-flex;align-self:flex-start;padding:7px 14px;border-radius:999px;
+    border:1px solid var(--gold-deep);background:rgba(228,189,95,.09);font-family:var(--disp);font-weight:700;
+    font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+  .flagship h1{font-size:clamp(2.6rem,6vw,3.8rem);line-height:.94;margin:0;
+    background:linear-gradient(118deg,#fff 22%,var(--gold) 125%);-webkit-background-clip:text;background-clip:text;
+    color:transparent;background-size:220% 100%;animation:shimmer 7s ease-in-out infinite}
+  @keyframes shimmer{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+  .flagship .tag{color:var(--cream);font-size:1.06rem;opacity:.92;max-width:42ch;line-height:1.5;margin:0}
+  .flagship .facts{display:flex;gap:26px;flex-wrap:wrap}
+  .flagship .facts div{display:flex;flex-direction:column}
+  .flagship .facts b{font-family:var(--disp);font-size:1.4rem;color:var(--gold);line-height:1.1}
+  .flagship .facts small{color:var(--muted);font-size:.78rem;margin-top:2px}
+  .flagship .art{position:relative;display:flex;align-items:center;justify-content:center;padding:26px;
+    background:radial-gradient(70% 70% at 58% 46%,#17240f 0%,#0a0f0b 82%)}
+  .flagship .art img{max-width:100%;max-height:360px;width:auto;height:auto;border-radius:14px;
+    box-shadow:0 26px 64px -22px rgba(0,0,0,.8),0 0 0 1px rgba(228,189,95,.28),0 0 0 6px rgba(228,189,95,.06)}
+  .flagship::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:linear-gradient(115deg,transparent 32%,rgba(228,189,95,.14) 47%,rgba(255,255,255,.06) 50%,transparent 66%);
+    transform:translateX(-30%);animation:sheen 6.5s ease-in-out 1.4s infinite}
+  @keyframes sheen{0%{transform:translateX(-40%)}18%,100%{transform:translateX(140%)}}
+
+  /* FEATURED THIS WEEK */
+  .feature{position:relative;display:grid;grid-template-columns:1.06fr .94fr;margin:20px 0;
+    border-radius:20px;overflow:hidden;border:1px solid var(--line);
+    background:linear-gradient(120deg,#111a12 0%,#0e1510 60%);box-shadow:0 28px 74px -44px rgba(0,0,0,.9)}
+  .feature .copy{padding:34px 34px;display:flex;flex-direction:column;gap:13px;justify-content:center}
+  .feature h2{font-size:clamp(2rem,5vw,3rem);line-height:.98;margin:0}
+  .feature .tag{color:var(--cream);font-size:1.04rem;opacity:.88;max-width:38ch;margin:0}
+  .feature .why{display:flex;gap:9px;align-items:center;color:var(--gold);font-size:.92rem;font-weight:700}
+  .feature .why .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  .feature .art{position:relative;min-height:260px;background:linear-gradient(120deg,#111a12,#0e1510)}
+  .feature .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 30%,#000 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 30%,#000 100%);
+    animation:kenburns 22s ease-in-out infinite alternate}
+  @keyframes kenburns{from{transform:scale(1.02)}to{transform:scale(1.1)}}
+  .feature .fbadge{position:absolute;top:18px;right:18px;z-index:3;padding:7px 14px;border-radius:999px;
+    background:rgba(8,12,9,.74);border:1px solid var(--gold-deep);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+
+  /* section head for the arcade */
+  h2.arcade-h{font-size:1.4rem;letter-spacing:0;text-transform:none;color:var(--cream);
+    border-bottom:1px solid var(--line);padding-bottom:10px;margin:34px 0 12px}
+  h2.arcade-h span{color:var(--muted);font-size:.92rem;font-weight:600;font-family:'Nunito',sans-serif}
+
+  /* game cards: gold hover + a quick glint (keeps existing .card markup) */
+  .card{overflow:hidden}
+  .card:hover{border-color:var(--gold-deep)}
+  .card::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+    background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.1) 50%,transparent 60%);
+    transform:translateX(-60%);transition:opacity .2s}
+  .card:hover::after{opacity:1;animation:sweep 1.1s ease-out}
+  @keyframes sweep{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+  .tabs button.on{background:var(--aurora);color:#04201c;border-color:var(--aurora)}
+  .tabs button:hover{border-color:var(--aurora-deep);color:var(--cream)}
+
+  /* MEMBERS */
+  .members{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--aurora-deep);margin:30px 0 10px;
+    background:radial-gradient(90% 130% at 100% 0%,rgba(130,221,205,.16),transparent 60%),linear-gradient(120deg,#0f1a18,#0c1310)}
+  .members .m-inner{display:grid;grid-template-columns:1fr 1fr;gap:34px;padding:40px 38px}
+  .members h2{font-size:1.9rem;margin:8px 0 8px}
+  .members .lede{color:var(--cream);opacity:.88;max-width:40ch;font-size:1.02rem;margin:0}
+  .perks{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:13px}
+  .perks li{display:flex;gap:13px;align-items:flex-start}
+  .perks .p{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;
+    background:rgba(130,221,205,.1);border:1px solid var(--aurora-deep);font-size:16px}
+  .perks b{font-family:var(--disp);font-weight:600;display:block;font-size:1.02rem}
+  .perks small{color:var(--muted);font-size:.9rem}
+  .join{margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .btn.join-btn{background:linear-gradient(160deg,var(--aurora),var(--aurora-deep));color:#04201c}
+  .join .free{color:var(--muted);font-size:.9rem}
+
+  /* scroll reveal + shine sweeps */
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .feature::before,.members::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+    background:linear-gradient(115deg,transparent 34%,rgba(255,255,255,.06) 48%,rgba(228,189,95,.1) 51%,transparent 64%);
+    transform:translateX(-120%);animation:sweep2 7s ease-in-out infinite}
+  .feature::before{animation-delay:2.2s}
+  .members::before{animation-delay:3.6s;background:linear-gradient(115deg,transparent 34%,rgba(130,221,205,.12) 50%,transparent 64%)}
+  @keyframes sweep2{0%{transform:translateX(-120%)}22%,100%{transform:translateX(120%)}}
+
+  @media (max-width:860px){
+    .flagship,.feature{grid-template-columns:1fr}
+    .feature .art{min-height:190px;order:-1}
+    .feature .art img{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 42%);mask-image:linear-gradient(0deg,transparent 0,#000 42%)}
+    .flagship .copy,.feature .copy{padding:28px 24px}
+    .members .m-inner{grid-template-columns:1fr;gap:22px;padding:30px 24px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .sky::after,.masthead img,.flagship::before,.flagship h1,.feature .art img,.feature::before,.members::before,.card:hover::after,
+    .masthead .st,.masthead .aw,.masthead .sub{animation:none!important;opacity:1!important}
+  }
 </style>
 </head>
 <body>
+<div class="sky"></div>
 <div class="wrap">
   <header>
-    <div class="brand-banner">
-      <img src="/portal-assets/sky-wolf-banner.png" alt="Sky Wolf Studios">
-      <span class="bb-stack">
-        <span class="bb-name">Sky Wolf</span>
-        <span class="bb-name">Studios</span>
-      </span>
-    </div>
+    <a class="mark" href="https://lucidwinds.com" aria-label="Sky Wolf Studios">
+      <img class="wolfmini" src="/portal-assets/sky-wolf-banner.png" alt="">
+      <span class="mark-tx"><b>Sky Wolf Studios</b><small>The Arcade</small></span>
+    </a>
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
@@ -261,7 +432,51 @@
     </div>
   </header>
 
-  <!-- Soundtrack — large, can't-miss button right under the banner. -->
+  <!-- Cinematic masthead: the wolf stays centered, brand words rise in on the left -->
+  <div class="masthead reveal">
+    <img src="/portal-assets/sky-wolf-banner.png" alt="Sky Wolf Studios">
+    <div class="brandline">
+      <div>
+        <div class="st">Sky Wolf Studios</div>
+        <div class="aw">The Arcade</div>
+        <p class="sub">160+ free games. No install, no account. Tap a game and it opens right here while the music keeps playing.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLAGSHIP — Lucid Winds, the permanent gold-framed heart of the studio -->
+  <section class="flagship reveal">
+    <div class="copy">
+      <span class="pat">✦ Patent-pending art engine</span>
+      <h1>Lucid Winds</h1>
+      <p class="tag">Earn sunbeams playing little games, then grow living plant art that is one of one. Same hash, same plant, forever. Nobody else can ever grow yours.</p>
+      <div class="facts">
+        <div><b>1 of 1</b><small>every plant</small></div>
+        <div><b>66</b><small>games inside</small></div>
+        <div><b>10²²</b><small>possible plants</small></div>
+      </div>
+      <div class="cta-row">
+        <a class="btn play" href="https://lucidwinds.com/?from=portal">Enter the greenhouse</a>
+        <a class="btn ghost" href="https://lucidwinds.com/name/">Grow your name ▸</a>
+      </div>
+    </div>
+    <div class="art"><img src="/assets/hash-mint-moment-540x540.jpg" alt="A freshly minted one-of-one Lucid Winds plant"></div>
+  </section>
+
+  <!-- FEATURED THIS WEEK -->
+  <section class="feature reveal">
+    <div class="copy">
+      <span class="eyebrow">Featured this week</span>
+      <h2>Jimothy</h2>
+      <p class="tag">The Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</p>
+      <div class="why"><span class="dot"></span>44 hand-painted costumes and a fresh daily run</div>
+      <div class="cta-row"><a class="btn play" href="/jimothy/">Play Jimothy</a></div>
+    </div>
+    <div class="art"><img src="/satellites/stream-hop/assets/og-jimothy3.jpg" alt="Jimothy, a round Seattle raccoon"></div>
+    <span class="fbadge"><span class="eyebrow">New</span></span>
+  </section>
+
+  <!-- Soundtrack — large, can't-miss button. -->
   <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
     <span class="mf-thumb"><img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
     <span class="mf-text">
@@ -271,18 +486,36 @@
     <span class="eq"><i></i><i></i><i></i></span>
   </button>
 
-  <section class="hero">
-    <p>Play any game, earn <b style="color:var(--sun)">sunbeams</b>, and grow unique living plant art in
-    <a href="https://lucidwinds.com" style="color:var(--leaf)">Lucid Winds</a>. No sign-up needed. Tap a game and it opens right here, the music keeps playing as you switch, and your sunbeams travel with you across the whole studio (they follow your account once you sign in).</p>
-  </section>
+  <!-- Legacy Lucid Winds hub tile — kept in the DOM (JS renders here) but hidden;
+       the gold flagship above now fills this role. -->
+  <h2 style="display:none">Featured</h2>
+  <div class="grid hub-grid" id="hub-card" style="display:none"></div>
 
-  <h2>Featured</h2>
-  <div class="grid hub-grid" id="hub-card"></div>
-
-  <h2>The Arcade: every game in the studio</h2>
+  <h2 class="arcade-h">The Arcade <span>every game in the studio</span></h2>
   <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="garden"></div>
+
+  <!-- SKY WOLF MEMBERS — a free studio account. Every perk here is real today. -->
+  <section class="members reveal">
+    <div class="m-inner">
+      <div>
+        <span class="eyebrow cool">Sky Wolf Members</span>
+        <h2>One account. The whole orchard.</h2>
+        <p class="lede">Make a free studio account and everything you earn follows you. No fees, no catch, no ads.</p>
+        <div class="join">
+          <button class="btn join-btn" id="members-join" type="button">Create your free account</button>
+          <span class="free">Free, forever</span>
+        </div>
+      </div>
+      <ul class="perks">
+        <li><span class="p">☀️</span><div><b>Cross-game sunbeams</b><small>Earn in any game, spend anywhere in the studio.</small></div></li>
+        <li><span class="p">☁️</span><div><b>Cloud save</b><small>Your collection and progress on every device.</small></div></li>
+        <li><span class="p">🎵</span><div><b>Studio soundtrack</b><small>Original music that plays as you browse and play.</small></div></li>
+        <li><span class="p">🌱</span><div><b>A plant to start</b><small>New members grow a one-of-one on their first visit to Lucid Winds.</small></div></li>
+      </ul>
+    </div>
+  </section>
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
 </div>
@@ -1603,6 +1836,28 @@ document.addEventListener('click', function(e){
     chip.innerHTML=avatarSVG(A,42); chip.addEventListener('click',openProf); wallet.insertBefore(chip,wallet.firstChild); }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountChip); else mountChip();
   window.swsOpenProfile=openProf;
+})();
+</script>
+
+<!-- Redesign motion: reveal-on-scroll (guarded, with a fail-safe that always shows
+     content), and the Members button opens the existing sign-in / sign-up modal. -->
+<script>
+(function(){
+  function showAll(){ try{ var n=document.querySelectorAll('.reveal'); for(var i=0;i<n.length;i++) n[i].classList.add('in'); }catch(e){} }
+  try{
+    var rev=document.querySelectorAll('.reveal');
+    if(window.IntersectionObserver){
+      var io=new IntersectionObserver(function(es){
+        for(var i=0;i<es.length;i++){ if(es[i].isIntersecting){ es[i].target.classList.add('in'); io.unobserve(es[i].target); } }
+      },{rootMargin:'0px 0px -6% 0px',threshold:0.05});
+      for(var j=0;j<rev.length;j++) io.observe(rev[j]);
+      setTimeout(showAll,1500);           /* never leave anything invisible */
+    } else { showAll(); }
+  }catch(e){ showAll(); }
+  try{
+    var mj=document.getElementById('members-join');
+    if(mj) mj.addEventListener('click',function(){ var s=document.getElementById('signin'); if(s) s.click(); });
+  }catch(e){}
 })();
 </script>
 </body>
