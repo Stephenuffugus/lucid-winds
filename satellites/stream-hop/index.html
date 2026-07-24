@@ -753,7 +753,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.5';
+var BUILD='v6.6';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -3379,27 +3379,18 @@ function heroPose(p){
       : (p<0.24?'crouch': p<0.76?'leap':'land'); }
   else if(gullOnMe()) n='scared';                             // warnings beat power poses
   else if(wiltClose()) n='flee';
-  /* Stephen: "when I move left, in between hops it immediately pops back right instead
-     of maintaining the same direction I was going." A side hop now KEEPS its running
-     frame through the landing beat, so the move reads as finished in the direction it
-     went. (The neutral frames after that are painted facing whichever way the artist
-     drew them, which differs per sheet — this is the honest fix that needs no repaint.) */
-  else if(G.landT>0) n = (G.face==='left'?'run-l':G.face==='right'?'run-r':'land');   // land facing your travel
+  /* ⛔ RETURN TO NEUTRAL AFTER EACH MOVE (Stephen 2026-07-24: holding the run frame while
+     standing "looks like he's frozen going either direction"). The hop itself is
+     directional (run-l/run-r above); the landing keeps that direction for just a beat so
+     it eases in rather than snapping, and then he settles back to the front-facing idle.
+     Neutral is the resting pose — the directional frames only ever show mid-move. */
+  else if(G.landT>0) n = (G.face==='left'?'run-l':G.face==='right'?'run-r':'land');   // a beat of follow-through
   else if(G.dashT>0) n='coffee';                              // dash (fire trail baked in)
   else if(G.magnetT>0) n='magnet';                            // snacks magnet (coins baked in)
   else if(G.shield) n='umbrella';                             // you can see that you are covered
-  else if(G.idleT>8) n='eat';                                 // long rest: cute pose, direction stops mattering
+  else if(G.idleT>8) n='eat';                                 // long rest: cute pose
   else if(G.idleT>4) n='sit';
-  /* ⛔⛔ FACE THE WAY YOU LAST MOVED (Stephen: "have everyone face the direction they last
-     moved"). The run-l / run-r frames are the ONLY ones whose facing is known for certain
-     (run-l is a verified mirror of run-r, and every run-r faces right), so the standing
-     stance holds one of THEM rather than trying to guess which way a painted idle faces.
-     Went sideways -> keep facing that way; went forward -> the front idle, looking at the
-     camera as you come toward it, which is the charming resting pose. No new art, no
-     recolour, and it can never put a character back-to-front. */
-  else if(G.face==='left')  n='run-l';
-  else if(G.face==='right') n='run-r';
-  else n='idle';
+  else n='idle';                                              // settled: neutral, facing the camera
   G._pose=n;                     // the pose the engine WANTED, before any folding
   var ch=G.chr||curChar();
   if(!ch.art||!ch.sheet) return 'hero/'+n;
@@ -4236,7 +4227,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='50';
+  var SWV='51';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
