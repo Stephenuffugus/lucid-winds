@@ -16,6 +16,7 @@
 <link rel="apple-touch-icon" href="assets/icons/jimothy-apple-180.png">
 <title>Jimothy the Jumping Nugget · Sky Wolf Studios</title>
 <meta name="description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
+<meta name="keywords" content="Jimothy, Jimothy the Jumping Nugget, Jimothy game, raccoon game, Frogger, Crossy Road, free browser game, Seattle raccoon, hopper, Sky Wolf Studios">
 <!-- share unfurl: a posted link has to sell the game on its own -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
@@ -32,7 +33,7 @@
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg">
 <link rel="canonical" href="https://lucidwinds.com/satellites/stream-hop/">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy","alternateName":["Jimothy the Jumping Nugget"],"url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy the Jumping Nugget","alternateName":["Jimothy","Jimothy the Jumping Nugget game","Jimothy raccoon game"],"keywords":"Jimothy, Jimothy the Jumping Nugget, Jimothy game, raccoon game, Frogger, Crossy Road, free browser game, Seattle raccoon, hopper","url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
 </script>
 <script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
@@ -186,8 +187,24 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
    a phone where the button stack is taller than the 960px stage clipped the TITLE off the
    TOP and made it unreachable (you cannot scroll above a centered flex overflow). Keeping
    the flex:1 spacers still vertically centers the block whenever it DOES fit. */
-#s-title > .pad{ position:relative; z-index:2; justify-content:flex-start; padding-top:16px; padding-bottom:20px; }
-#s-title .stack{ gap:9px; }
+#s-title > .pad{ position:relative; z-index:2; justify-content:flex-start; padding-top:14px; padding-bottom:14px;
+  scrollbar-width:none; -ms-overflow-style:none; }
+/* The home menu is ONE screen — no scrollbar up the side (Stephen). Content is trimmed to
+   fit the 960px stage; the hidden scrollbar is belt-and-suspenders for very short phones. */
+#s-title > .pad::-webkit-scrollbar{ display:none; }
+#s-title .stack{ gap:8px; }
+#s-title .btn.sm{ min-height:56px; font-size:16px; }
+/* Colour-code the modes so Endless / Rush / Zen get noticed too, not just green Adventure. */
+#b-endless{ border-color:#5b9bd5; background:linear-gradient(180deg,#16202b,#111a22); }
+#b-rush{ border-color:#e5804d; background:linear-gradient(180deg,#241a12,#19120c); }
+#b-zen{ border-color:#a98fd0; background:linear-gradient(180deg,#1f1a2b,#161221); }
+#b-daily{ border-color:var(--gold); background:linear-gradient(180deg,#241f10,#191507); }
+#b-skins{ border-color:#e58fa0; background:linear-gradient(180deg,#291820,#1e1218); }
+#b-endless .bicon{ filter:drop-shadow(0 0 7px rgba(91,155,213,.75)); }
+#b-rush .bicon{ filter:drop-shadow(0 0 7px rgba(229,128,77,.75)); }
+#b-zen .bicon{ filter:drop-shadow(0 0 7px rgba(169,143,208,.75)); }
+#b-daily .bicon{ filter:drop-shadow(0 0 7px rgba(200,168,75,.75)); }
+#b-skins .bicon{ filter:drop-shadow(0 0 7px rgba(229,143,160,.75)); }
 #s-title .title-rain{ position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.20; mix-blend-mode:screen;
   background-image:repeating-linear-gradient(74deg, rgba(180,205,235,0) 0 9px, rgba(180,205,235,.22) 9px 10px, rgba(180,205,235,0) 10px 24px);
   animation:sh-rain .6s linear infinite; }
@@ -764,7 +781,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.0';
+var BUILD='v7.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -4233,7 +4250,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='55';
+  var SWV='56';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
