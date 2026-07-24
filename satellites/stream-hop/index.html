@@ -753,7 +753,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v6.2';
+var BUILD='v6.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -1448,7 +1448,7 @@ function newGame(mode, startLevel){
       chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:(mode==='adventure'?Math.min(0.28,0.11+(advL-1)*0.011):0.28), clock: mode==='rush'?60:0, t:0, parts:[], floats:[], fx:[], ride:null, coyote:0,
       shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
-      level:advL, lvFlowers:0, lvCoins:0, lvHops:0, lvT:0, streak:0, deadCause:null,
+      level:advL, lvFlowers:0, lvCoins:0, lvHops:0, lvT:0, streak:0, deadCause:null, face:'fwd',
       /* what each Adventure level actually CONTAINS, tallied as the road is built.
          The star goals read this — see tallySupply. lastBank models the Feast Trail:
          a bank only pays when there were 2+ rows since the last one. */
@@ -1726,7 +1726,10 @@ function queueHop(dir){ if(G&&G.coach){ dismissCoach(); return; }   // a teachin
 function startHop(dir){
   /* the direction you last went, remembered so the landing beat can keep facing it
      instead of snapping forward the instant the hop lands (Stephen 2026-07-24) */
-  if(dir==='left') G.lastSide='run-l'; else if(dir==='right') G.lastSide='run-r'; else G.lastSide=null;
+  /* forward and back point you at the camera again (you are coming toward it); left and
+     right turn you and STAY turned until you move a different way */
+  if(dir==='left') G.face='left'; else if(dir==='right') G.face='right';
+  else if(dir==='up'||dir==='down') G.face='fwd';
   var fromR=G.cr.r, fromX=G.cr.x, toR=fromR, toX=fromX;
   if(dir==='up') toR=fromR+1; else if(dir==='down') toR=Math.max(0,fromR-1);
   else if(dir==='left') toX=fromX-TILE; else if(dir==='right') toX=fromX+TILE;
@@ -3381,13 +3384,21 @@ function heroPose(p){
      frame through the landing beat, so the move reads as finished in the direction it
      went. (The neutral frames after that are painted facing whichever way the artist
      drew them, which differs per sheet — this is the honest fix that needs no repaint.) */
-  else if(G.landT>0 && G.lastSide) n=G.lastSide;
-  else if(G.landT>0) n='land';                                // hold the touchdown a beat
+  else if(G.landT>0) n = (G.face==='left'?'run-l':G.face==='right'?'run-r':'land');   // land facing your travel
   else if(G.dashT>0) n='coffee';                              // dash (fire trail baked in)
   else if(G.magnetT>0) n='magnet';                            // snacks magnet (coins baked in)
   else if(G.shield) n='umbrella';                             // you can see that you are covered
-  else if(G.idleT>8) n='eat';                                 // left alone long enough to snack
+  else if(G.idleT>8) n='eat';                                 // long rest: cute pose, direction stops mattering
   else if(G.idleT>4) n='sit';
+  /* ⛔⛔ FACE THE WAY YOU LAST MOVED (Stephen: "have everyone face the direction they last
+     moved"). The run-l / run-r frames are the ONLY ones whose facing is known for certain
+     (run-l is a verified mirror of run-r, and every run-r faces right), so the standing
+     stance holds one of THEM rather than trying to guess which way a painted idle faces.
+     Went sideways -> keep facing that way; went forward -> the front idle, looking at the
+     camera as you come toward it, which is the charming resting pose. No new art, no
+     recolour, and it can never put a character back-to-front. */
+  else if(G.face==='left')  n='run-l';
+  else if(G.face==='right') n='run-r';
   else n='idle';
   G._pose=n;                     // the pose the engine WANTED, before any folding
   var ch=G.chr||curChar();
@@ -3444,6 +3455,10 @@ function drawCritter(){
     // small lean into the hop — free extra frames, reads far less static
     var sflip=false, srot=0;
     if(G.hop && !sk.full){ if(G.hop.dir==='left'){ sflip=true; srot=0.10; } else if(G.hop.dir==='right'){ srot=0.10; } }
+    /* run-l/run-r and the standing stance already carry their own direction. The one
+       painted-right frame that can appear while travelling LEFT is dash-run (a dashing
+       side hop), so mirror just that one so a left dash faces left. */
+    else if(pose.slice(-8)==='dash-run' && (G.hop?G.hop.dir==='left':G.face==='left')) sflip=true;
     if(pasp>1.12) drawSprite(pose, x+fbX, cy-6+fbY, 0, {w:TILE*1.24*csc, sx:sq, sy:st, flip:sflip, rot:srot, fin:fk, a:fbA});
     else drawSprite(pose, x+fbX, cy-6+fbY, TILE*0.98*csc, {sx:sq, sy:st, flip:sflip, rot:srot, fin:fk, a:fbA});
     if(fb) drawStandInFx(fb, x+fbX, cy-6+fbY, TILE*csc);
@@ -4221,7 +4236,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='47';
+  var SWV='48';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
