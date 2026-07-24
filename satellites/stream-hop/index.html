@@ -145,8 +145,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* smooth screen entrances (menus only; the play canvas + splash video are excluded/faded) */
 .screen.on:not(#s-play):not(#s-splash){ animation: sh-screen-in .5s cubic-bezier(.22,.9,.28,1) both; }
 #s-splash.on{ animation: sh-fade-in .6s ease both; }
-#splash-tag{ position:absolute; left:0; right:0; bottom:calc(58px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#2a2114; font:800 20px/1.1 Fredoka,system-ui,sans-serif; letter-spacing:.01em; text-shadow:0 1px 3px rgba(242,231,207,.95); }
-#splash-hint{ position:absolute; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#3a2f1c; font:700 15px/1 Fredoka,system-ui,sans-serif; letter-spacing:.16em; text-shadow:0 1px 2px rgba(242,231,207,.9); animation: sh-splash-pulse 1.7s ease-in-out infinite; }
+#splash-tag{ position:absolute; left:0; right:0; bottom:calc(64px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#2a2114; font:800 27px/1.12 Fredoka,system-ui,sans-serif; letter-spacing:.01em; text-shadow:0 1px 3px rgba(242,231,207,.95); }
+#splash-hint{ position:absolute; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom,0px)); z-index:2; text-align:center; color:#3a2f1c; font:800 20px/1 Fredoka,system-ui,sans-serif; letter-spacing:.18em; text-shadow:0 1px 2px rgba(242,231,207,.9); animation: sh-splash-pulse 1.7s ease-in-out infinite; }
 @keyframes sh-splash-pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:.95; } }
 .screen.leaving{ animation: sh-screen-out .38s cubic-bezier(.4,0,.5,1) both !important; pointer-events:none; }
 /* gentle staggered settle for the title menu buttons */
@@ -578,7 +578,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="skinrow" id="pick-row"></div>
 
       <div class="sec-h">Colours <span class="sec-n" id="shelf-n"></span></div>
-      <div class="sec-sub">A colour is a material: bronze, jade, gold leaf, night sky. Buy it once and every critter you own can wear it. You change it over in the Collection tab.</div>
+      <div class="sec-sub" id="shelf-sub">A colour is a material: bronze, jade, gold leaf, night sky. Buy it once and every critter you own can wear it. You change it over in the Collection tab.</div>
       <div class="skinrow" id="fin-row"></div>
 
       <!-- the two lanes bottlecaps cannot reach. They sit in the shop on purpose: people
@@ -706,7 +706,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.8';
+var BUILD='v5.9';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -973,7 +973,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='41';
+var ARTV='42';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1003,6 +1003,20 @@ function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
    so an equipped finish (4 frames) is ~2ms, once, and never again.
    Chosen over ctx.filter / blend-mode stacks because per-pixel math is exact and behaves
    identically on iOS Safari, where this studio has been burned by filters before. ===== */
+/* ⛔⛔ RETIRED 2026-07-24. Stephen: "i absolutely do not like all the colored variations
+   of our animals and jimothys. the colored versions look like shit and arent worth it.
+   theyre cluttering up and making a mess of the characters."
+
+   He is right, and the reason is worth writing down: finishes were built when 29
+   characters WAS the wardrobe and it needed multiplying. There are 44 hand painted
+   characters now, so the problem they solved does not exist any more — and a luminance
+   ramp, however carefully built, always flattens the palette the artist chose. A grid of
+   bronze raccoons reads as one muddy colour instead of 44 different paintings.
+
+   The machinery is left INTACT and dormant behind FIN_ON rather than deleted: bakeFinish
+   is good code, it is proven on iOS, and turning it back on is one line. Anyone who
+   bought one gets their bottlecaps back, once, at boot. ⛔ Do not delete this. */
+var FIN_ON=false;
 var FINISHES=[
   {id:'bronze', name:'Old Bronze',    rar:'common', lo:[38,26,14],   hi:[212,152,74],  con:1.10,
    bio:'Cast for a park that never got built.'},
@@ -1035,10 +1049,18 @@ var FINISHES=[
   {id:'night',  name:'Night Sky',     rar:'legend', lo:[6,8,28],     hi:[88,102,168],  con:1.02,
    rim:'rgba(150,168,255,0.60)', rw:2, glow:7, stars:120, bio:'He is the sky now. Nobody knows how.'}
 ];
+(function refundFinishes(){
+  if(FIN_ON) return;
+  var owed=0, k;
+  for(k in (PROG.fins||{})){ if(!PROG.fins[k]) continue;
+    for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===k) owed+=(FIN_COST[FINISHES[i].rar]||120); }
+  if(owed>0){ PROG.caps=(PROG.caps||0)+owed; }
+  if(owed>0 || PROG.fin){ PROG.fins={}; PROG.fin=''; saveProg(); }
+})();
 function finById(id){ for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===id)return FINISHES[i]; return null; }
 /* the finish currently worn. '' / missing = his own painted colours, always free, always default */
-function curFin(){ return (PROG&&PROG.fin)?finById(PROG.fin):null; }
-function finOwned(id){ return !!(PROG&&PROG.fins&&PROG.fins[id]); }
+function curFin(){ return (FIN_ON&&PROG&&PROG.fin)?finById(PROG.fin):null; }
+function finOwned(id){ return FIN_ON && !!(PROG&&PROG.fins&&PROG.fins[id]); }
 function finCount(){ var n=0,i; for(i=0;i<FINISHES.length;i++) if(finOwned(FINISHES[i].id))n++; return n; }
 
 var FIN_CACHE={}, FIN_KEYS=[], FIN_CACHE_MAX=96;   // 20 hero poses + a shelf of previews, comfortably
@@ -1640,6 +1662,9 @@ function queueHop(dir){ if(G&&G.coach){ dismissCoach(); return; }   // a teachin
   startHop(dir);
 }
 function startHop(dir){
+  /* the direction you last went, remembered so the landing beat can keep facing it
+     instead of snapping forward the instant the hop lands (Stephen 2026-07-24) */
+  if(dir==='left') G.lastSide='run-l'; else if(dir==='right') G.lastSide='run-r'; else G.lastSide=null;
   var fromR=G.cr.r, fromX=G.cr.x, toR=fromR, toX=fromX;
   if(dir==='up') toR=fromR+1; else if(dir==='down') toR=Math.max(0,fromR-1);
   else if(dir==='left') toX=fromX-TILE; else if(dir==='right') toX=fromX+TILE;
@@ -3268,6 +3293,12 @@ function heroPose(p){
       : (p<0.24?'crouch': p<0.76?'leap':'land'); }
   else if(gullOnMe()) n='scared';                             // warnings beat power poses
   else if(wiltClose()) n='flee';
+  /* Stephen: "when I move left, in between hops it immediately pops back right instead
+     of maintaining the same direction I was going." A side hop now KEEPS its running
+     frame through the landing beat, so the move reads as finished in the direction it
+     went. (The neutral frames after that are painted facing whichever way the artist
+     drew them, which differs per sheet — this is the honest fix that needs no repaint.) */
+  else if(G.landT>0 && G.lastSide) n=G.lastSide;
   else if(G.landT>0) n='land';                                // hold the touchdown a beat
   else if(G.dashT>0) n='coffee';                              // dash (fire trail baked in)
   else if(G.magnetT>0) n='magnet';                            // snacks magnet (coins baked in)
@@ -3308,7 +3339,7 @@ function drawCritter(){
     if(sk.glow){ ctx.save(); var gg=ctx.createRadialGradient(x,cy,2,x,cy,30); gg.addColorStop(0,'rgba(245,230,168,0.5)'); gg.addColorStop(1,'rgba(245,230,168,0)'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(x,cy,30,0,7); ctx.fill(); ctx.restore(); }
     // the poses have very different shapes: size the wide ones (running, knocked
     // out) by width so every pose reads as the same amount of raccoon
-    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1, fk=PROG.fin||'';
+    var pim=spr(pose), pasp=pim.naturalWidth/pim.naturalHeight, csc=sk.scale||1, fk=(FIN_ON?(PROG.fin||''):'');
     /* ===== STAND-IN POSES =====
        Only Jimothy has the full pose pack. Everyone else has four hop frames, so the
        engine used to fold "you just died" and "you just cleared a level" onto their
@@ -3422,6 +3453,7 @@ function drawStandInFx(fb, x, y, T){
 function drawSkinPreview(cv,sk,sc,fk){ var c=cv.getContext('2d'); sc=sc||1;
   c.clearRect(0,0,cv.width,cv.height);
   // a critter that has real art shows its portrait; the rest draw from their own colours
+  if(!FIN_ON) fk='';
   if(sk.art && sk.sheet){ var im=fk?finSpr(sk.sheet+'/idle',fk):spr(sk.sheet+'/idle');
     if(imgReady(im)){ var h=cv.height*0.86, w=h*(im.naturalWidth/im.naturalHeight);
       if(w>cv.width){ w=cv.width; h=w/(im.naturalWidth/im.naturalHeight); }
@@ -3491,8 +3523,14 @@ function renderBin(){
   if(!critR.children.length) critR.innerHTML='<div class="sec-sub">No critters yet. Open the bin in the Shop tab.</div>';
   var cc=curChar(), cf=curFin();
   $('coll-wearing').innerHTML='Playing as <b style="color:var(--cream)">'+cc.name+'</b>'
-    +(cf?(' in <b style="color:var(--gold)">'+cf.name+'</b>'):' in his own painted colours');
+    +(cf?(' in <b style="color:var(--gold)">'+cf.name+'</b>'):'');
   renderFind(); renderPick(); renderShelf(); renderWeekly(); renderLanes();
+}
+/* takes a whole shelf off the screen: its heading, its blurb and its row */
+function hideSection(){ var i, el;
+  for(i=0;i<arguments.length;i++){ el=$(arguments[i]); if(!el)continue;
+    el.style.display='none';
+    if(el.className==='sec-n' && el.parentNode) el.parentNode.style.display='none'; }
 }
 /* ===== THE TWO LANES BOTTLECAPS CANNOT REACH ===================================
    Stephen, 2026-07-24: "the ones you get from the weekly you can't buy... i think it
@@ -3690,6 +3728,7 @@ function renderPick(){
 }
 function renderShelf(){
   var host=$('fin-row'); if(!host)return; host.innerHTML='';
+  if(!FIN_ON){ hideSection('shelf-n','fin-row','shelf-sub'); renderOwnedFins(); return; }
   var owned=finCount();
   var sn=$('shelf-n'); if(sn)sn.textContent=owned+' of '+FINISHES.length+' owned';
   FINISHES.forEach(function(f){
@@ -3714,6 +3753,7 @@ function renderShelf(){
    you have anything to put in it. ===== */
 function renderOwnedFins(){
   var host=$('finown-row'); if(!host)return; host.innerHTML='';
+  if(!FIN_ON){ hideSection('finown-n','finown-row','finown-sub'); return; }
   var sub=$('finown-sub'), n=$('finown-n');
   if(n)n.textContent=finCount()+' of '+FINISHES.length;
   if(sub)sub.textContent=finCount()
@@ -4087,7 +4127,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='43';
+  var SWV='44';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4119,9 +4159,19 @@ function musicCheck(){
   if(!PROG.musicUn) PROG.musicUn={};
   var won=null;
   for(var i=0;i<MUSIC.length;i++){ var t=MUSIC[i];
-    if(!t.free && !PROG.musicUn[t.id] && t.test && t.test()){ PROG.musicUn[t.id]=1; won=won||t; } }
+    if(t.free || PROG.musicUn[t.id] || !t.test || !t.test()) continue;
+    /* ⛔ RECORD IT, BUT DO NOT ANNOUNCE IT TO SOMEBODY WHO ALREADY HAS IT. A supporter
+       owns every song the moment they pay, so hitting the milestone that "unlocks" one
+       was telling Stephen he had won something he had been listening to for days. The
+       unlock is still written (so the song survives if supporter status ever lapses) —
+       it just does not get a card. The milestone still pays out as a badge, which is
+       what a milestone should be. */
+    var already = musOwned(t.id);
+    PROG.musicUn[t.id]=1;
+    if(!already) won=won||t; }
+  saveProg(); syncMusicLibrary();          // the record is written either way
   if(won){ if(!PROG.playlist)PROG.playlist={}; PROG.playlist[won.id]=1;   // new songs join the rotation
-    saveProg(); syncMusicLibrary();
+    saveProg();
     if(curScreen==='s-play' && G && G.phase==='play'){ toast('🎵 '+won.title+' unlocked'); sfx('unlock'); }
     else setTimeout(function(){ revealSong(won); }, 900); }
 }

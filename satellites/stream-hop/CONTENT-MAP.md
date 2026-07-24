@@ -76,7 +76,13 @@ everyone has. Fine for a promo, worth knowing for a gift.
 ## 🛒 THE BIN & SHOP — what bottlecaps buy
 Twelve Seattle critters and the fourteen pack costumes. The bin is 40 caps for one you do
 not own (never a duplicate), Pick One Out is 110 for a specific one, Today's Find is one
-of them at a quarter off. Colours (13 materials) are sold here too.
+of them at a quarter off.
+
+⛔ **Colours (the 13 material finishes) were RETIRED 2026-07-24.** Stephen: they looked
+like a hue slider dragged over his paintings and cluttered the collection. They were built
+when 29 characters was the whole wardrobe and it needed multiplying; with 44 hand painted
+characters the problem is gone. The code is dormant behind `FIN_ON`, not deleted, and
+anyone who bought one was refunded.
 
 ## 💛 SUPPORTER PACK — $3, and it never grows
 `PACK_COSTUMES`, fourteen ids: soggy, summer, nordic, barista, fishmonger, grad, labcoat,
