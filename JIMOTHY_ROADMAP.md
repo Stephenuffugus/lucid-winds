@@ -5,6 +5,27 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 
 ---
 
+## ✅ DONE 2026-07-24 (live, build v5.4, ARTV 40, SWV/cache 39) — 13 new costumes + redeem codes + the star fix
+
+### 🎟 YOUR CODES (hand these out; mint more with `node scripts/make-code.js WORD`)
+| code | gives | link to send |
+|---|---|---|
+| **SHINOTHY** | the Shinothy costume | `https://lucidwinds.com/jimothy/?code=SHINOTHY` |
+| JIMOTHY | 100 bottlecaps | `https://lucidwinds.com/jimothy/?code=JIMOTHY` |
+| TRASHPANDA | 150 bottlecaps | `https://lucidwinds.com/jimothy/?code=TRASHPANDA` |
+| NUGGET | 60 caps + a free continue | `https://lucidwinds.com/jimothy/?code=NUGGET` |
+Typing is forgiving (case, spaces, dashes). One use per player. ⛔ The plaintext is NOT in the file — only hashes — so nobody can read index.html and take the lot. Without a login a code cannot be locked to one person, so a forwarded code means a few extra raccoons; that is the trade for "works instantly, forever".
+
+### ⭐ The 13 and where they come from (⛔ NONE are in the Supporter Pack)
+- **Weekly streak** (ladder now 13 rungs = 13 weeks): Froggery, Dino Onesie, Cardboard Knight, Hazmat, Pirate
+- **Bin + shop**: Astronaut, Little Green, Disco, Robot, Wizard
+- **Found by playing**: **Mothman** on any blackout level · **The Trash King** at level 25 (this closes the open "what does level 25 unlock" question)
+- **Code only**: Shinothy
+- Frogger → **Froggery** (Konami own the other name and we are heading for Steam)
+
+### 🔴 The star bug is FIXED (it was arithmetic, not the award code)
+Measured: a level holds 2-5 bank rows and 0-5 coins, but the goals climbed to 9 and 8 — so the cap star was usually impossible from level 3 and the feast star ALWAYS impossible from level 6. Goals now come from what each level actually contains (80% of its feasts, 60% of its caps), can never exceed supply, and the clear card says why: `★ cleared · ★ feasts 2/2 · ☆ caps 1/2`.
+
 ## ✅ DONE 2026-07-23 late (committed + pushed to main, live) — the weekly streak, the shop shelves, the colours
 Stephen's list, all shipped and headless-verified (SWV/cache **v36**, BUILD v5.1):
 - **The weekly prize is now NAMED AND SHOWN.** New strip above the Shop/Collection tabs (both tabs carry it): the costume you are working toward, its portrait, the 7 day pills, and how many days are left. Tapping it claims today's gift. The daily card shows the same skin every day, not just on day 7.
@@ -36,15 +57,20 @@ Stephen's list, all shipped and headless-verified (SWV/cache **v36**, BUILD v5.1
 ---
 
 ## 🔴 PRIORITY — BROKEN, fix first
+_(none open — the star bug is fixed, see 2026-07-24 above)_
+
+<details><summary>fixed 2026-07-24: star bug</summary>
 1. **Star bug — only ever earns 1 star.** Goals are low (L1 = 2 pizzas + 2 coins over 16 rows), so 1-star-only is almost certainly a bug, not difficulty. Trace star-award logic `index.html ~1714–1730` (s|=1 finish, s|=2 flowers≥advFlowerGoal, s|=4 coins≥advCoinGoal) — check lvFlowers/lvCoins are populated at check time and the bitmask saves to `PROG.adv.stars[done]` before the ~1730 reset.
 
 ---
+
+</details>
 
 ## 🟡 DECISIONS NEEDED FROM STEPHEN (these unblock the build)
 1. **Campaign: finite or endless?** It's currently **endless — no ending to beat.** Fork:
    - **A)** Stay endless, guarantee a missing egg every ~3 levels → Sasquatch by ~lvl 24.
    - **B)** Build a **finite campaign (~24–50 levels) with a real finale**, eggs paced across it, last one at the finish → Sasquatch on completion. *(My rec — this is the "I beat it" moment people screenshot & share. Stephen leaning here: Sasquatch @ ~lvl 50.)*
-2. **Level 25 reward** — what unlocks? (a skin? a finish/material? a cap payout?)
+2. ~~**Level 25 reward**~~ — ANSWERED 2026-07-24: clearing level 25 unlocks **The Trash King**. Say if you would rather it were something else.
 3. **Difficulty past 24** — green-light the gentle, testable extension? (see 🟢 #1)
 4. **Pad-ride tightening** — green-light bumping the pad-center pull 0.10→~0.20? (see 🟢 #2)
 
@@ -79,5 +105,5 @@ Stephen's list, all shipped and headless-verified (SWV/cache **v36**, BUILD v5.1
 
 ## Reference
 - Deploy = commit → `git push origin add-sproing-jumper` and `git push origin add-sproing-jumper:main` (Hostinger auto-deploys main).
-- ⛔ Every release: bump **ARTV** (assets) and/or **SWV + sw.js CACHE** (code) together. Currently SWV/cache = **v36**, ARTV = **39**.
+- ⛔ Every release: bump **ARTV** (assets) and/or **SWV + sw.js CACHE** (code) together. Currently SWV/cache = **v39**, ARTV = **40**.
 - Cutting/masking/skin details live in memory: `project_streamhop_jimothy_buildout.md`.
