@@ -211,18 +211,24 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .toggle.on{background:var(--deep); border-color:#3f6b34}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .24s cubic-bezier(.34,1.35,.5,1), background .24s ease}
 .toggle.on b{left:31px; background:#eafbd6}
-.skinrow{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:0 auto}
-.skincard{width:102px; min-height:132px; padding:12px 8px; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; text-align:center;
+/* ⛔ GRID, not flex-wrap. Wrapping cards of different heights left every row ragged and
+   floated the last one or two into the middle of nowhere; Stephen called the character
+   select "disshevelled" and he was right. A grid gives fixed columns and stretches every
+   card in a row to the same height for free. */
+.skinrow{display:grid; grid-template-columns:repeat(3,102px); gap:10px; justify-content:center; max-width:440px; margin:0 auto}
+.skinrow > .sec-sub{grid-column:1/-1}
+.skincard{width:102px; min-height:132px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; text-align:center;
   transition:transform .16s cubic-bezier(.22,.9,.28,1), box-shadow .2s ease, border-color .2s ease}
 .skincard:not(.locked):hover{transform:translateY(-3px); border-color:#3f6b34; box-shadow:0 8px 22px #0007}
 .skincard:not(.locked):active{transform:translateY(0) scale(.97)}
 .skincard.on{border-color:var(--gold); background:rgba(200,168,75,0.10); box-shadow:0 0 0 2px rgba(200,168,75,.22), 0 6px 18px #0006}
 .skincard.locked{opacity:.5; cursor:default}
 .skincard canvas{width:64px; height:64px; display:block; margin:0 auto 6px}
-.skincard .sn{font-size:12px; font-weight:800}
-.skincard .su{font-size:10px; color:var(--muted); margin-top:2px}
+.skincard .sn{font-size:12px; font-weight:800; line-height:1.18; width:100%; min-height:2.36em;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.skincard .su{font-size:10px; color:var(--muted); margin-top:3px; line-height:1.25}
 .skincard .sr{font-size:9px; letter-spacing:.09em; text-transform:uppercase; font-weight:800; margin-top:3px}
-.skincard .sp{font-size:10px; font-weight:800; color:var(--gold); margin-top:2px}
+.skincard .sp{font-size:10px; font-weight:800; color:var(--gold); margin-top:2px; min-height:1.2em}
 .skincard.cant{opacity:.62}
 .skincard.cant .sp{color:var(--muted)}
 /* shop sections — the bin, the shelf and the collection are different acts on one screen */
@@ -700,7 +706,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v5.6';
+var BUILD='v5.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 function show(id){ var el=$(id);
@@ -730,7 +736,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{},
+  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{}, roads:0,
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -757,6 +763,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak;
   if(typeof p.tokens==='number')PROG.tokens=p.tokens;
   if(p.codes)PROG.codes=p.codes;
+  if(typeof p.roads==='number')PROG.roads=p.roads;
   if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG)); }
 var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
@@ -874,6 +881,10 @@ var CHARS=[
    body:'#4a3a2c', belly:'#8a7a5e', eye:'#171512',
    hint:'Twenty five neighbourhoods deep, somebody already rules the alley.',
    bio:'Long may he reign over the lane behind the market.'},
+  {id:'chicken', name:'Chicken Suit Jimothy', rar:'secret', secret:1, sheet:'skins/chicken', art:1, full:1,
+   body:'#efe7d6', belly:'#f7f2e6', eye:'#171512',
+   hint:'Cross enough roads and somebody is going to ask you why.',
+   bio:'Why did the chicken cross the road? He will never say.'},
   {id:'shinothy', name:'Shinothy', rar:'secret', secret:1, sheet:'skins/shinothy', art:1, full:1,
    body:'#1a1a1e', belly:'#d8cfc0', eye:'#171512',
    hint:'Dreamed up by a friend of the studio. Somebody out there has the code.',
@@ -891,6 +902,13 @@ var CHARS=[
    hint:'The city\'s oldest local only shows himself to true historians.',
    bio:'He has watched every neighbourhood change. He liked them all.'}
 ];
+/* ⛔ CARD LABEL ONLY. Keeps "Dr. Jimothy" and "Jimothy MD" whole (a stub of three
+   characters is not a name), and never touches a critter. */
+function cardName(c){
+  var n=(c&&c.name)||'';
+  if(n.length>12 && n.slice(-8)===' Jimothy' && n.length-8>=4) return n.slice(0,-8);
+  return n;
+}
 function charById(id){ for(var i=0;i<CHARS.length;i++) if(CHARS[i].id===id)return CHARS[i]; return CHARS[0]; }
 function curChar(){ return charById(PROG.char||'jimothy'); }
 /* ===== WHAT THE SUPPORTER PACK CONTAINS — A FIXED LIST, NOT A RULE =====
@@ -955,7 +973,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='40';
+var ARTV='41';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1655,6 +1673,13 @@ function finishHop(){
     if(G.mode!=='adventure'){ var zi=zoneIdx(G.cr.r); if(zi!==G.zone){ G.zone=zi; G.zoneBanner={name:ZONES[zi].name,bg:ZONES[zi].bg,t:2.4};
       spr(ZONES[(zi+1)%ZONES.length].bg); warmZoneTex(ZONES[(zi+1)%ZONES.length]); sfx('bank'); G.flash=Math.max(G.flash,0.25); } }
     G.combo++; if(G.combo>G.longest)G.longest=G.combo;
+    /* THE CHICKEN. Every road lane you ever cross is counted, and at three hundred the
+       oldest joke about crossing roads finally gets asked. Kept in memory and persisted
+       by the saves that already happen (bankRun, game over) — a localStorage write on
+       every hop would be madness. */
+    if(lane.type==='road'){ PROG.roads=(PROG.roads||0)+1;
+      if(PROG.roads>=300 && !charOwned('chicken')){ PROG.chars.chicken=1; saveProg();
+        unlockSecret('chicken','Why did the chicken cross the road?'); } }
     G.trail.push({ r:h.fromR, x:h.fromX, life:1 });
     if(G.trail.length>60)G.trail.shift();
     sfx('combo', G.combo);
@@ -3391,9 +3416,10 @@ function collCard(s){
   var un=charOwned(s.id);
   var card=document.createElement('div'); card.className='skincard'+(PROG.char===s.id?' on':'')+(un?'':' locked');
   var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
-  var nm=document.createElement('div'); nm.className='sn'; nm.textContent=un?s.name:'???'; card.appendChild(nm);
+  var nm=document.createElement('div'); nm.className='sn'; nm.textContent=un?cardName(s):'???'; card.appendChild(nm);
   var su=document.createElement('div'); su.className='su';
   su.textContent=un?(PROG.char===s.id?'equipped':'tap to play'):'not found yet'; card.appendChild(su);
+  var pr=document.createElement('div'); pr.className='sp'; pr.textContent=''; card.appendChild(pr);
   var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[s.rar]||'#8a9178';
   rr.textContent=un?s.rar:'secret'; card.appendChild(rr);
   // owned critters wear whatever colour you have on, so the grid shows the real thing
@@ -3472,7 +3498,7 @@ function renderLanes(){
       : ('Play '+wait+' week'+(wait===1?'':'s'));
     (function(ch,isNext){
       host.appendChild(shopCard({
-        name:ch.name, sub:sub, rar:ch.rar, cant:true, on:isNext,
+        name:cardName(ch), sub:sub, rar:ch.rar, cant:true, on:isNext,
         paint:function(cv){ drawSkinPreview(cv,ch,1,'');
           if(ch.art&&ch.sheet){ var im=spr(ch.sheet+'/idle');
             if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,ch,1,''); }); } },
@@ -3489,7 +3515,7 @@ function renderLanes(){
     if(c.via!=='code')return; tot++;
     if(charOwned(c.id)){ got++; return; }
     ch2.appendChild(shopCard({
-      name:c.name, sub:'needs a code', rar:c.rar, cant:true,
+      name:cardName(c), sub:'needs a code', rar:c.rar, cant:true,
       paint:function(cv){ drawSkinPreview(cv,c,1,'');
         if(c.art&&c.sheet){ var im=spr(c.sheet+'/idle');
           if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,c,1,''); }); } },
@@ -3579,8 +3605,9 @@ function shopCard(opts){
   var cvp=document.createElement('canvas'); cvp.width=56; cvp.height=56; card.appendChild(cvp);
   var nm=document.createElement('div'); nm.className='sn'; nm.textContent=opts.name; card.appendChild(nm);
   var su=document.createElement('div'); su.className='su'; su.textContent=opts.sub||''; card.appendChild(su);
-  if(opts.price!=null){ var pr=document.createElement('div'); pr.className='sp';
-    pr.textContent=opts.was?(opts.was+' → '+opts.price+' caps'):(opts.price+' caps'); card.appendChild(pr); }
+  var pr=document.createElement('div'); pr.className='sp';
+  pr.textContent=(opts.price!=null)?(opts.was?(opts.was+' → '+opts.price+' caps'):(opts.price+' caps')):'';
+  card.appendChild(pr);          // always present, so a priced card and a free one are the same height
   var rr=document.createElement('div'); rr.className='sr'; rr.style.color=RARC[opts.rar]||'#8a9178';
   rr.textContent=opts.rar||''; card.appendChild(rr);
   if(opts.onTap) card.addEventListener('click', opts.onTap);
@@ -3603,7 +3630,7 @@ function renderFind(){
   sub.textContent='Jimothy dragged this back this morning. A quarter off, today only.';
   var isFin=it.kind==='fin', afford=(PROG.caps||0)>=it.deal;
   host.appendChild(shopCard({
-    name:it.o.name, sub:afford?'tap to take it':((it.deal-(PROG.caps||0))+' more caps'),
+    name:(it.kind==='char'?cardName(it.o):it.o.name), sub:afford?'tap to take it':((it.deal-(PROG.caps||0))+' more caps'),
     price:it.deal, was:it.price, rar:it.o.rar, cant:!afford,
     paint:function(cv){ if(isFin)paintFin(cv,it.id); else drawSkinPreview(cv,it.o,1,PROG.fin); },
     onTap:function(){ buyFind(it); }
@@ -3620,7 +3647,7 @@ function renderPick(){
     host.appendChild(shopCard({
       /* if this is the one the streak is walking them toward, say so — nobody should
          spend 110 caps on a costume that was going to be free in three days */
-      name:s.name, sub:(s.id===tgt)?'free on day 7':(afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps')),
+      name:cardName(s), sub:(s.id===tgt)?'free on day 7':(afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps')),
       price:PICK_COST, rar:s.rar, cant:!afford,
       paint:function(cv){ drawSkinPreview(cv,s,1,PROG.fin);
         if(s.art&&s.sheet){ var im=spr(s.sheet+'/idle'); if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,s,1,PROG.fin); }); } },
@@ -4027,7 +4054,7 @@ function boot(){
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
      ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='41';
+  var SWV='42';
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v='+SWV); }catch(e){} }
   JMUS.autostart(); musicCheck();
 }
@@ -4423,7 +4450,8 @@ if(/[?&]shtest=1/.test(location.search)){
     reviveState:function(){ var b=$('go-continue'); return {can:canRevive(),earned:reviveEarned(),afford:canAffordRevive(),cost:REVIVE_COST,caps:PROG.caps,revives:G?G.revives:null,label:b?b.textContent:null,disabled:b?b.disabled:null,shown:b?b.style.display!=='none':null,deadCause:G?G.deadCause:null}; },
     death:function(){ return G&&G.death ? {prog:+deathProg().toFixed(2), cause:G.death.cause, word:deathCopy(G.death.cause).word, slowmo:+G.slowmo.toFixed(2), phase:G.phase} : null; },
     goCard:function(){ return {cause:$('go-cause').textContent, line:$('go-causeline').textContent, score:$('go-score').textContent, feasts:$('go-flowers').textContent, trail:$('go-trail').textContent}; },
-    prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char,eggs:eggsFound(),ach:achCount()}; },
+    prog:function(){ return {flowers:PROG.flowers,best:PROG.best,caps:PROG.caps,pulls:PROG.pulls,owned:ownedCount(),char:PROG.char,eggs:eggsFound(),ach:achCount(),roads:PROG.roads||0}; },
+    roads:function(n){ if(n!=null){ PROG.roads=n; saveProg(); } return PROG.roads||0; },
     ach:function(){ var o={}; for(var i=0;i<ACH.length;i++)o[ACH[i].id]=achDone(ACH[i].id)?1:0; return o; },
     achCheck:function(){ return achCheck(); },
     achScreen:function(){ renderAch(); return {cells:$('ach-row').children.length, count:$('ach-count').textContent}; },
