@@ -7,18 +7,25 @@ Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to bui
 
 ## ✅ DONE 2026-07-24 (live, build v5.4, ARTV 40, SWV/cache 39) — 13 new costumes + redeem codes + the star fix
 
-### 🎟 YOUR CODES (hand these out; mint more with `node scripts/make-code.js WORD`)
-| code | gives | link to send |
+### 🗺 THE FULL MAP → `satellites/stream-hop/CONTENT-MAP.md` (source of truth, keep it current)
+
+### 🎟 YOUR CODES (mint more any time with `node scripts/make-code.js WORD`)
+| code | unlocks | link to send |
 |---|---|---|
-| **SHINOTHY** | the Shinothy costume | `https://lucidwinds.com/jimothy/?code=SHINOTHY` |
+| **SHINOTHY** | **Shinothy** (her gift) | `https://lucidwinds.com/jimothy/?code=SHINOTHY` |
+| MOONWALK | Astronaut Jimothy | `https://lucidwinds.com/jimothy/?code=MOONWALK` |
+| PHONEHOME | Little Green Jimothy | `https://lucidwinds.com/jimothy/?code=PHONEHOME` |
+| BOOGIE | Disco Jimothy | `https://lucidwinds.com/jimothy/?code=BOOGIE` |
+| BEEPBOOP | Robot Jimothy | `https://lucidwinds.com/jimothy/?code=BEEPBOOP` |
+| ABRACADABRA | Wizard Jimothy | `https://lucidwinds.com/jimothy/?code=ABRACADABRA` |
 | JIMOTHY | 100 bottlecaps | `https://lucidwinds.com/jimothy/?code=JIMOTHY` |
 | TRASHPANDA | 150 bottlecaps | `https://lucidwinds.com/jimothy/?code=TRASHPANDA` |
 | NUGGET | 60 caps + a free continue | `https://lucidwinds.com/jimothy/?code=NUGGET` |
 Typing is forgiving (case, spaces, dashes). One use per player. ⛔ The plaintext is NOT in the file — only hashes — so nobody can read index.html and take the lot. Without a login a code cannot be locked to one person, so a forwarded code means a few extra raccoons; that is the trade for "works instantly, forever".
 
 ### ⭐ The 13 and where they come from (⛔ NONE are in the Supporter Pack)
-- **Weekly streak** (ladder now 13 rungs = 13 weeks): Froggery, Dino Onesie, Cardboard Knight, Hazmat, Pirate
-- **Bin + shop**: Astronaut, Little Green, Disco, Robot, Wizard
+- **Weekly, and NOT FOR SALE** (5 rungs): Froggery → Dino Onesie → Cardboard Knight → Hazmat → Pirate
+- **Codes, and NOT FOR SALE** (5): Astronaut, Little Green, Disco, Robot, Wizard
 - **Found by playing**: **Mothman** on any blackout level · **The Trash King** at level 25 (this closes the open "what does level 25 unlock" question)
 - **Code only**: Shinothy
 - Frogger → **Froggery** (Konami own the other name and we are heading for Steam)
