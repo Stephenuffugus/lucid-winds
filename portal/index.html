@@ -23,7 +23,7 @@
      fired beforeinstallprompt and iOS made a plain Safari bookmark. scope is "/"
      on purpose — a game card navigates to /play/<id>.html, and a /portal/ scope
      would kick the player out of the installed app into browser chrome. -->
-<link rel="manifest" href="/portal/manifest.webmanifest?v=1">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=2">
 <link rel="apple-touch-icon" href="/portal-assets/icons/skywolf-apple-touch-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/portal-assets/icons/skywolf-192.png">
 <meta name="theme-color" content="#0b0f0b">
@@ -287,7 +287,11 @@
 
   /* sticky-feel top bar mark */
   header{padding:16px 0 6px}
-  .mark{display:flex;align-items:center;gap:11px;min-width:0}
+  .mark{display:flex;align-items:center;gap:11px;min-width:0;
+        background:none;border:0;padding:4px 6px 4px 0;margin:0;color:inherit;font:inherit;
+        text-align:left;cursor:pointer;min-height:48px;border-radius:12px}
+  .mark:hover .wolfmini,.mark:focus-visible .wolfmini{border-color:rgba(200,168,75,.85)}
+  .mark-tx small.installable{color:var(--gold, #c8a84b)}
   .mark .wolfmini{width:40px;height:40px;border-radius:10px;object-fit:cover;object-position:center 30%;
     border:1px solid var(--line);background:#0e1510;flex:none}
   .mark-tx{display:flex;flex-direction:column;line-height:1.05}
@@ -429,10 +433,14 @@
 <div class="sky"></div>
 <div class="wrap">
   <header>
-    <a class="mark" href="https://lucidwinds.com" aria-label="Sky Wolf Studios">
-      <img class="wolfmini" src="/portal-assets/sky-wolf-banner.png" alt="">
-      <span class="mark-tx"><b>Sky Wolf Studios</b><small>The Arcade</small></span>
-    </a>
+    <!-- ⛔ 2026-07-25: this used to be <a href="https://lucidwinds.com">, so tapping the
+         ARCADE's own logo threw you into Lucid Winds. The studio mark is not a link to a
+         different product — it is the arcade's identity, and now it is the install button.
+         Wolf HEAD (square crop), not the wide banner squeezed into a 40px box. -->
+    <button class="mark" id="hdr-install" type="button" aria-label="Add the Arcade to your Home Screen">
+      <img class="wolfmini" src="/portal-assets/icons/skywolf-192.png" alt="">
+      <span class="mark-tx"><b>Sky Wolf Studios</b><small id="mark-sub">The Arcade</small></span>
+    </button>
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
@@ -1719,83 +1727,73 @@ document.addEventListener('click', function(e){
 </script>
 
 <!-- ============================================================
-     ADD TO HOMESCREEN (2026-07-25)
-     Same pattern already shipped in Dewball / Flipbook / OriVex: the button
-     stays useful even when beforeinstallprompt never fires (iOS never fires
-     it), because on those browsers it explains the Share-sheet route instead.
-     Hidden entirely once the arcade is already running standalone.
-     Position is a bottom-LEFT pill: bottom-centre at 24px is taken by
-     #sws-soon-toast. Move it into the header any time; the logic doesn't
-     care where the button lives.
+     ADD TO HOMESCREEN (2026-07-25, rev 2)
+
+     ⛔ WHY THE ICONS WERE IDENTICAL. Before today the portal had NO manifest
+     and NO <link rel="icon">, so "Add to Home Screen" fell all the way back to
+     the site-wide favicon — which is LUCID WINDS' icon. Both shortcuts landed
+     on the homescreen looking exactly the same, with no way to tell them
+     apart. Stephen spent real time deleting the wrong one. The arcade now has
+     its own manifest, its own id, and the wolf head.
+
+     The button IS the studio mark in the header, not a floating pill. Tapping
+     your own logo should claim the app, not send you to a different product.
+     Works on iOS too, where beforeinstallprompt never fires — there it
+     explains the Share-sheet route instead.
      ============================================================ -->
 <script>
 (function () {
+  var btn = document.getElementById('hdr-install');
+  var sub = document.getElementById('mark-sub');
+  if (!btn) return;
+
   var standalone = false;
   try {
     standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
               || window.navigator.standalone === true;
   } catch (e) {}
-  if (standalone) return;                       // already installed, say nothing
-  try { if (localStorage.getItem('sws_install_dismissed') === '1') return; } catch (e) {}
 
   var deferred = null;
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+  var ios = /iPhone|iPad|iPod/.test(navigator.userAgent || '');
 
-  window.addEventListener('load', function () {
-    var wrap = document.createElement('div');
-    wrap.id = 'sws-install';
-    wrap.style.cssText = 'position:fixed;left:12px;bottom:14px;z-index:140;display:flex;'
-      + 'align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:14px;'
-      + 'background:rgba(11,15,11,.92);border:1px solid rgba(122,179,86,.55);'
-      + 'box-shadow:0 6px 20px rgba(0,0,0,.45);backdrop-filter:blur(6px);'
-      + 'font-family:Nunito,system-ui,sans-serif;';
+  function offer() {
+    if (standalone || !sub) return;              // already installed, leave the mark alone
+    sub.textContent = 'Add to Home Screen';
+    sub.className = 'installable';
+  }
+  function clear() {
+    if (!sub) return;
+    sub.textContent = 'The Arcade';
+    sub.className = '';
+  }
 
-    var icon = document.createElement('img');
-    icon.src = '/portal-assets/icons/skywolf-192.png';
-    icon.alt = '';
-    icon.style.cssText = 'width:34px;height:34px;border-radius:9px;display:block;flex:0 0 auto';
-
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'Add to Home Screen';
-    btn.style.cssText = 'min-height:48px;background:none;border:0;color:#e8dcc8;'
-      + 'font:600 .84rem/1.1 Nunito,system-ui,sans-serif;cursor:pointer;padding:0 4px;text-align:left';
-
-    var x = document.createElement('button');
-    x.type = 'button';
-    x.setAttribute('aria-label', 'Dismiss');
-    x.textContent = '×';
-    x.style.cssText = 'min-width:44px;min-height:44px;background:none;border:0;color:#8a9178;'
-      + 'font-size:1.2rem;line-height:1;cursor:pointer';
-
-    btn.onclick = function () {
-      if (deferred) {
-        deferred.prompt();
-        deferred.userChoice.then(function (c) {
-          if (c && c.outcome === 'accepted') wrap.remove();
-          deferred = null;
-        })['catch'](function () {});
-        return;
-      }
-      var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-      alert(ios
-        ? 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen like an app.'
-        : 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
-    };
-
-    x.onclick = function () {
-      try { localStorage.setItem('sws_install_dismissed', '1'); } catch (e) {}
-      wrap.remove();
-    };
-
-    wrap.appendChild(icon); wrap.appendChild(btn); wrap.appendChild(x);
-    document.body.appendChild(wrap);
+  // Android/desktop tell us when it is installable. iOS never does, so offer
+  // it there on sight rather than leaving the button looking dead.
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e; offer();
   });
+  if (ios && !standalone) offer();
 
-  window.addEventListener('appinstalled', function () {
-    var el = document.getElementById('sws-install');
-    if (el) el.remove();
-  });
+  btn.onclick = function () {
+    if (standalone) return;                      // running as the app already
+    if (deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(function (c) {
+        if (c && c.outcome === 'accepted') { standalone = true; clear(); }
+        deferred = null;
+      })['catch'](function () {});
+      return;
+    }
+    alert(ios
+      ? 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\n'
+        + 'Tap the Share button, then Add to Home Screen.\n\n'
+        + 'It gets the wolf head icon and opens fullscreen, separate from Lucid Winds.'
+      : 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\n'
+        + 'Open the browser menu, then Add to Home Screen or Install.\n\n'
+        + 'It gets the wolf head icon and opens fullscreen, separate from Lucid Winds.');
+  };
+
+  window.addEventListener('appinstalled', function () { standalone = true; clear(); });
 })();
 </script>
 
