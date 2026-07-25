@@ -53,7 +53,7 @@ Stephen's list, all shipped and headless-verified (SWV/cache **v36**, BUILD v5.1
 
 ## ✅ DONE earlier session (all committed + pushed to main, live on lucidwinds.com/jimothy)
 - 29 skins → full **19-frame animation packs** (16 costumes + 13 critters), all `full:1`
-- **Real left-run sprints** for every skin (mirrored run-r → run-l; Scout + Market have hand-painted lefts)
+- **Real left-run sprints** for every skin (mirrored run-r → run-l; Scout + Market have their own lefts)
 - **Fallback-blob fix** (warm the full pose pack so costumes never flash the vector blob)
 - **New ink-wash home-screen icon + portal thumbnail** (+ manifest cache-bust so it actually lands)
 - **"Are you sure? — spend 25 caps"** confirm before a paid continue

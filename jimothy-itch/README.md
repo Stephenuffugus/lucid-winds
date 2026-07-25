@@ -70,11 +70,11 @@ Jimothy the Jumping Nugget
 
 Meet Jimothy: Seattle's roundest, most beloved raccoon. Hop him across the rainy city — dodging traffic, riding dumpster lids and kayaks down the canal — home to the greatest dumpster feast in town.
 
-A hopper in the Frogger and Crossy Road tradition, hand-painted from a real Seattle neighbourhood up, with a raccoon who is genuinely trying his best.
+A hopper in the Frogger and Crossy Road tradition, built from a real Seattle neighbourhood up, with a raccoon who is genuinely trying his best.
 
 What's in it
 - 44 characters to collect: Jimothy in every costume (frog, shark, wizard, astronaut, dinosaur), the whole Seattle neighbourhood, and secrets you have to find.
-- A real campaign across six painted Seattle neighbourhoods, plus Endless, a daily seeded run everyone shares, a 60-second Rush, and a no-fail Zen mode.
+- A real campaign across six Seattle neighbourhoods, plus Endless, a daily seeded run everyone shares, a 60-second Rush, and a no-fail Zen mode.
 - Costumes you earn, not buy: one free costume for every seven days you show up, and hidden codes tucked into posts and videos.
 - An original soundtrack by the studio.
 - Weather that rolls in, feast trails, and a street sweeper on your tail.

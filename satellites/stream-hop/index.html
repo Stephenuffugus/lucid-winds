@@ -26,7 +26,7 @@
 <meta property="og:image" content="https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Jimothy, a round Seattle raccoon painted in ink wash, between the Space Needle and Mount Rainier.">
+<meta property="og:image:alt" content="Jimothy, a round Seattle raccoon, between the Space Needle and Mount Rainier.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Jimothy the Jumping Nugget">
 <meta name="twitter:description" content="Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
@@ -759,7 +759,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="skinrow" id="sec-row"></div>
 
       <div class="sec-h">Colours <span class="sec-n" id="finown-n"></span></div>
-      <div class="sec-sub" id="finown-sub">Tap a colour to recast whoever you are playing as. Tap it again for his own painted colours.</div>
+      <div class="sec-sub" id="finown-sub">Tap a colour to recast whoever you are playing as. Tap it again for his own original colours.</div>
       <div class="skinrow" id="finown-row"></div>
     </div>
 
@@ -1163,7 +1163,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='48';
+var ARTV='49';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1187,7 +1187,7 @@ function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
    How: the sprite's own luminance is mapped onto a two-stop ramp (shadow -> highlight),
    which keeps every brush stroke, fur fleck and knitted stitch he painted and only
    changes what the thing is made OF. Deliberately NOT a hue rotate — a hue slider over
-   hand-painted art looks like a hue slider. Materials read as intentional.
+   this art looks like a hue slider. Materials read as intentional.
    Cost: one getImageData pass per (frame, finish), baked ONCE into an offscreen canvas
    and cached. All 13 finishes over a full frame measured 25ms total in headless Chrome,
    so an equipped finish (4 frames) is ~2ms, once, and never again.
@@ -1198,8 +1198,7 @@ function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
    theyre cluttering up and making a mess of the characters."
 
    He is right, and the reason is worth writing down: finishes were built when 29
-   characters WAS the wardrobe and it needed multiplying. There are 44 hand painted
-   characters now, so the problem they solved does not exist any more — and a luminance
+   characters WAS the wardrobe and it needed multiplying. There are 44 characters now, so the problem they solved does not exist any more — and a luminance
    ramp, however carefully built, always flattens the palette the artist chose. A grid of
    bronze raccoons reads as one muddy colour instead of 44 different paintings.
 
@@ -3987,7 +3986,7 @@ function renderOwnedFins(){
   var sub=$('finown-sub'), n=$('finown-n');
   if(n)n.textContent=finCount()+' of '+FINISHES.length;
   if(sub)sub.textContent=finCount()
-    ? 'Tap a colour to recast '+curChar().name+'. Tap it again for his own painted colours. One colour, every critter you own.'
+    ? 'Tap a colour to recast '+curChar().name+'. Tap it again for his own original colours. One colour, every critter you own.'
     : 'A colour recasts any critter you own in a new material. You do not own one yet: tap any of these to go and buy it.';
   host.appendChild(shopCard({                                // always an escape hatch back to the paint
     name:'His Own Colours', sub:PROG.fin?'tap to wear':'worn', rar:'starter', on:!PROG.fin,

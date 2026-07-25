@@ -38,7 +38,7 @@ The script makes two changes and nothing else:
 - itch unpacks the zip and serves it from `html-classic.itch.zone` in an iframe.
 
 ## The one thing to weigh: size
-The bundle is **~226 MB** (44 characters × 19 painted poses + backgrounds). That is within
+The bundle is **~226 MB** (44 characters × 19 poses + backgrounds). That is within
 itch's 1 GB limit and the game lazy-loads sprites, so a player only downloads what they
 meet (~10–20 MB a session) — but the one-time upload is chunky and itch's browser uploader
 can be flaky at that size. Two options if it is a problem:

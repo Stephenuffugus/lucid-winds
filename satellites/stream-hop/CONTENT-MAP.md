@@ -81,8 +81,7 @@ of them at a quarter off.
 
 ⛔ **Colours (the 13 material finishes) were RETIRED 2026-07-24.** Stephen: they looked
 like a hue slider dragged over his paintings and cluttered the collection. They were built
-when 29 characters was the whole wardrobe and it needed multiplying; with 45 hand painted
-characters the problem is gone. The code is dormant behind `FIN_ON`, not deleted, and
+when 29 characters was the whole wardrobe and it needed multiplying; with 45 characters the problem is gone. The code is dormant behind `FIN_ON`, not deleted, and
 anyone who bought one was refunded.
 
 ## 💛 SUPPORTER PACK — $3, and it never grows

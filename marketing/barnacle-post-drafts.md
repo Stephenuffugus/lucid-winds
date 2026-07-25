@@ -29,7 +29,7 @@ people scroll past before they reach it.
 | 1 | you on camera, gameplay behind you | I said a stupid thing to my wife last week. |
 | 2 | | I said Danny DeVito is the Jimothy of people. |
 | 3 | idle sprite filling the screen | Short. Round. Magnificent. |
-| 4 | | And then I had to go and paint him into my game. |
+| 4 | | And then I had to go and put him in my game. |
 | 5 | costume running, hopping, getting flattened | Eighteen frames. He is a legend tier costume. He is in there. |
 | 6 | the code box with the empty field | There is one code that unlocks him. |
 | 7 | straight to camera | I am only giving it to Danny DeVito. That is the whole plan. That is it. |
@@ -47,7 +47,7 @@ On screen text over gameplay, one line per beat:
 > my game is about a round raccoon
 > I told my wife Danny DeVito is the Jimothy of people
 > she agreed immediately
-> so I painted him
+> so I made him
 > eighteen frames, legend tier, fully playable
 > there is exactly one code that unlocks him
 > Danny gets it
@@ -80,7 +80,7 @@ On screen text over gameplay, one line per beat:
 ### Option A. Short. Best odds.
 
 > I said out loud that Danny DeVito is the Jimothy of people, and then I had to go and
-> paint him into my raccoon game.
+> put him in my raccoon game.
 >
 > One code unlocks him. Danny gets it. Nobody else gets it.
 >
@@ -98,9 +98,9 @@ On screen text over gameplay, one line per beat:
 ### Option C. Two tweets, the second on the reply.
 
 > **1.** Danny DeVito is the Jimothy of people. Short, round, magnificent. I have
-> thought about this every day for a week so I painted him into my game.
+> thought about this every day for a week so I put him in my game.
 >
-> **2.** He is a legend tier costume, eighteen hand painted frames, and there is exactly
+> **2.** He is a legend tier costume, eighteen frames, and there is exactly
 > one code that unlocks him. I am giving it to Danny and to nobody else. Everything else
 > in the game is free and there are no ads.
 > lucidwinds.com/jimothy

@@ -23,7 +23,7 @@ by someone else — steer clear of it)._
 - **Genre:** Action → also tag as Arcade
 - **Tags (itch lets you add ~10):**
   `arcade`, `endless-runner`, `frogger`, `crossy-road`, `casual`, `cute`, `animals`,
-  `pixel-art` (it is painted, but this is what people search), `singleplayer`, `mobile`
+  `pixel-art` (it is not pixel art, but this is what people search), `singleplayer`, `mobile`
 - **Community:** Comments on (free, easy engagement)
 - **App store links:** leave blank for now (Play/Steam later)
 
@@ -55,14 +55,14 @@ Fresh, current-build shots are in `store-listing/itch-shots/`:
 > — dodging traffic, riding dumpster lids and kayaks down the canal — home to the
 > greatest dumpster feast in town.
 >
-> A hopper in the Frogger and Crossy Road tradition, hand-painted from a real Seattle
+> A hopper in the Frogger and Crossy Road tradition, built from a real Seattle
 > neighbourhood up, with a raccoon who is genuinely trying his best.
 >
 > **What's in it**
 > - 🦝 **44 characters to collect** — Jimothy in every costume (frog, shark, wizard,
 >   astronaut, dinosaur…), the whole Seattle neighbourhood (crows, a coyote, an orca),
 >   and secrets you have to find.
-> - 🗺️ **A real campaign** across six painted Seattle neighbourhoods, plus Endless, a
+> - 🗺️ **A real campaign** across six Seattle neighbourhoods, plus Endless, a
 >   daily seeded run everyone shares, a 60-second Rush, and a no-fail Zen mode.
 > - 🎟️ **Costumes you earn, not buy** — one free costume for every seven days you show
 >   up, and hidden codes tucked into posts and videos.

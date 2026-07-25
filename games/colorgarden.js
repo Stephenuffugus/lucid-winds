@@ -1,5 +1,5 @@
 // ═══ COLOR GARDEN — real line-art coloring book ═══
-// 50 hand-drawn pages, HSV color wheel with brightness slider, pinch
+// 50 pages, HSV color wheel with brightness slider, pinch
 // to zoom, drag to pan. Flood-fill stays sharp at every zoom level
 // because fills run on a full-resolution source canvas; the view is
 // just a window into that source.

@@ -410,7 +410,7 @@ def main():
     for f, n in zip(frames, names):
         f.save(os.path.join(a.out, n + '.png'))
     # THE NINETEENTH POSE. Every shipped pack uses run-l = mirror(run-r) (verified
-    # against deckhand and crow); only Market has a hand-painted left sprint. Mirroring
+    # against deckhand and crow); only Market has its own left sprint. Mirroring
     # flips asymmetric props to the wrong side, which is why a real painting always wins,
     # but at hop speed it reads far better than reusing a forward-facing leap.
     if a.runl:
