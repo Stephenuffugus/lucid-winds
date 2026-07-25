@@ -64,8 +64,11 @@ Ordered by value per hour of work.
   homescreen button in case people just want one game").
 - [ ] **Portal black screen going in/out of games** — pressing back again fixes it. Needs a
   repro session on the iframe jukebox lifecycle; a watchdog already exists.
-- [ ] **Blobworks code debt** — slime tube top-left too big (shrink), and Blip's intro
-  animation is still skippy. Code, not art. Movement sheet already provided.
+- [~] **Blobworks code debt** — slime meter shrunk 196→150 so it stops overhanging the
+  painted eyeball jars (verified by screenshot, not guessed; one number to tune at
+  `index.html:1104` if Stephen wants it smaller). STILL OPEN: Blip's intro animation is
+  skippy. Also noted: `art/tube_straight.png` and `art/tube_curve.png` are referenced
+  nowhere in the code.
 - [ ] **Gnome Blitz** — new game, Dutch Blitz with garden gnomes.
 - [ ] **Scrabble Overturn / Scrabble UpWords** — new game ideas, unspecced.
 - [ ] **Nature Sound ID app** — needs an audio-fingerprint approach decision first; model on
