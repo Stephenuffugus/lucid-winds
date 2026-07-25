@@ -101,10 +101,9 @@ Ordered by value per hour of work.
   Fill in the `SOCIAL` array at the top of that file as each account is created (Instagram,
   Twitter, Facebook, itch.io, YouTube, Discord). Empty entries stay hidden, so there is never
   a dead link. Nothing else on the page needs editing.
-- [ ] **Satellite social previews** — 80 of 83 satellites still have no `og:image`, so their
-  links post as grey boxes. The `/play/` shells are done (62 cards). Same generator applies;
-  satellites need per-game hero art picked rather than a uniform card, so it's a session not
-  a script run.
+- [x] **Social previews DONE** — 62 `/play/` shells + 77 satellites now have 1200x630 cards
+  and og:/twitter: tags. Every game link posts with a picture. Three satellites still need
+  card art before they can get one: `mahjong`, `rootbound`, `sprout-dice`.
 
 ---
 
