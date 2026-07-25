@@ -29,10 +29,16 @@ his go-ahead on a redesign.
 
 ### Design intent / direction needed
 - [?] **Petal Academy** — "what's the point?" Purpose unclear, can't fix without knowing it.
-- [?] **Super Slice 3D S1–S5** — ⚠️ possibly already superseded. The Jul 19 batch says the v3
-  pivot SHIPPED (horizontal runner, original ruleset, fruit/wood/mushrooms). The Jul 20 list
-  still tracks S1–S5 as open. **VERIFY WHICH IS TRUE before building anything here**, then
-  re-test. ⛔ Do NOT re-add hold-to-spin, chimney, mist, or kick — dead twice.
+- [x] **Super Slice 3D S1–S5 — RESOLVED, they were already done.** Checked the code, not the
+  notes: `satellites/slice-3d/index.html:211` reads `var BUILD="v5.0"`, two whole versions
+  past the v3 pivot. All five asks are present — horizontal lane movement, brown/wood blocks,
+  fruit that splits, tap-vs-hold branching, segment-bag random levels, and the sound effects.
+  The Jul 20 list was carrying stale entries. ⛔ Do NOT re-add hold-to-spin, chimney, mist,
+  or kick — dead twice.
+  **Player-visible tell:** the title screen footer prints "Super Slice 3D v5.0" (`#buildstamp`).
+- [ ] **Bump `BUILD` when shipping Slice 3D.** It last changed 2026-07-19, but two gameplay
+  commits landed after it (wall-climb HOLD, the hold-to-spin revert). The stamp is the only
+  version tell a player or Stephen has, and right now it under-reports. Cheap discipline fix.
 - [?] **Rabbit Samurai** — two overlapping asks: retheme to "Hedgehog Hammer Throw", AND
   rework from sideways auto-runner to a 2D platformer through a maze / open land. Big
   redesign, needs his call on scope.
