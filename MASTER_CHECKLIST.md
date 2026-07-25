@@ -231,7 +231,16 @@ not.** These are per-game and specific:
 - [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
 - [ ] ALL games earn sunbeams inside LW
 - [ ] Silt — consistent element-behaviour message
-- [ ] New game: Mouse Trap. Also open from Penny's queue: Plant Flip, Mecha Chameleon
+- [x] ~~New game: Mouse Trap~~ — ALREADY BUILT. Verified 2026-07-25: `satellites/mouse-trap/`
+  exists and has a live portal card ("Trap the little garden mouse before it scurries off
+  the edge"). Another stale entry on the Jul 16 list.
+- [ ] Penny's queue, still open: Plant Flip, Mecha Chameleon
+- [ ] **NEW GAME: Bubble Bobble remake** (Stephen 2026-07-25). Checked the whole repo,
+  the portal, the satellites and the memory dir: there is NO Bubble Bobble and there was
+  NO note for one. It is a genuinely new ask. Two players, trap enemies in bubbles, pop
+  them, single screen platformer, fixed levels. Needs a name and a botanical or studio
+  angle before building — every other remake got one (Snakes & Ladders → Garden Climb,
+  Monopoly → Garden Estates, Yatzy → Yacht-Sea).
 
 ### Naming + economy calls (Stephen only)
 - [?] Merge & Blast and Super Slice both still carry placeholder names — "⛔ Stephen NAMES it"
