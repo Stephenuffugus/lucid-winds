@@ -8192,7 +8192,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
       </div>
       <div id="kb-music" onclick="if(window.LW_MUSIC)LW_MUSIC.openDrawer();" title="Soundtrack" aria-label="Soundtrack" role="button"><img src="/portal-assets/music-thumb.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">&#9835;</div>
-      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall){executePWAInstall();}else{alert('To add Lucid Winds to your Home Screen:\n\niPhone: Share button, then Add to Home Screen.\nAndroid: the ⋮ menu, then Add to Home screen.');}" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
     </div>
     <!-- Row 2: currency + hut (3 buttons) -->
     <div class="kb-row2">
@@ -11251,14 +11251,46 @@ window.addEventListener('beforeinstallprompt', function(e) {
 // Execute install when user taps the INSTALL button in the keeper bar
 // (or any other call site that routes here). Safely handles both the
 // legacy branded modal (pwa-install-modal) and the split build case.
+// \u26d4 2026-07-25 (Stephen): "the button clicked but didn't do anything, I had to
+// click the three dots and go down to Install on Home. The button should work
+// or at least provide directions."
+//
+// TWO ways this went silent, both fixed below:
+//   1. deferredPrompt.prompt() can THROW \u2014 most often because the event was
+//      already consumed by an earlier click (it is only nulled inside the
+//      userChoice callback, so a rejected/never-settled choice left a dead
+//      event in the variable forever). An uncaught throw = nothing happens.
+//   2. Chrome simply declines to show the dialog in some states.
+// Every path now ends in either the native prompt or written directions.
+// Nothing silently does nothing.
+function _pwaDirections() {
+  var ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua)) {
+    alert('To add Lucid Winds to your Home Screen:\n\nTap the Share button (\u2191) at the bottom of Safari, then "Add to Home Screen".\n\nIt opens fullscreen, with its own icon.');
+  } else if (/Android/.test(ua)) {
+    alert('To add Lucid Winds to your Home Screen:\n\nTap the \u22ee menu (top right of the browser), then "Add to Home screen" or "Install app".\n\nIt opens fullscreen, with its own icon.');
+  } else {
+    alert('To install Lucid Winds:\n\nLook for the install icon in your address bar, or open the browser menu and choose "Install Lucid Winds".');
+  }
+}
+
 window.executePWAInstall = function() {
   var legacyModal = document.getElementById('pwa-install-modal');
   if (!deferredPrompt) {
     if (legacyModal) legacyModal.classList.remove('open');
-    alert('To add Lucid Winds to your Home Screen:\n\niPhone/iPad: Tap the Share button (\u2191) then "Add to Home Screen"\n\nAndroid: Tap the \u22ee menu then "Add to Home Screen"\n\nDesktop: Look for the install icon in your address bar, or use browser menu \u2192 Install Lucid Winds.');
+    _pwaDirections();
     return;
   }
-  deferredPrompt.prompt();
+  try {
+    deferredPrompt.prompt();
+  } catch (err) {
+    // Dead or already-consumed event. Clear it so the next tap goes straight
+    // to directions instead of throwing again, then tell the player what to do.
+    deferredPrompt = null;
+    if (legacyModal) legacyModal.classList.remove('open');
+    _pwaDirections();
+    return;
+  }
   deferredPrompt.userChoice.then(function(result) {
     if (legacyModal) legacyModal.classList.remove('open');
     if (result.outcome === 'accepted') {
@@ -11271,6 +11303,12 @@ window.executePWAInstall = function() {
       if (typeof gtag !== 'undefined') gtag('event', 'pwa_install', { outcome: 'dismissed' });
     }
     deferredPrompt = null;
+  })['catch'](function(){
+    // userChoice rejected. Without this the event stayed in deferredPrompt
+    // forever and every later tap threw into the void.
+    deferredPrompt = null;
+    if (legacyModal) legacyModal.classList.remove('open');
+    _pwaDirections();
   });
 };
 
