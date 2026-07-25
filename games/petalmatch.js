@@ -159,26 +159,26 @@ window._gameFns.petalmatch = function PM(a){
               label:'Reach '+tgt+' points'};
     }
     if(kind==='dew'){
-      var dewN=Math.round(4+d*9);
+      var dewN=Math.round(3+d*7);
       var dbl=d>0.55;
       if(dbl)dewN=Math.round(dewN*0.7);   // double layer already doubles the work
       return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,finale:finale,
               label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
     if(kind==='gather'){
-      var per=Math.round(14+d*38);
+      var per=Math.round(16+d*44);
       var colors=d<0.3?1:(d<0.6?2:3);
       return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,finale:finale,
               label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
     }
     if(kind==='thorns'){
-      var th=Math.round(7+d*23);
-      var hits=d<0.28?1:(d<0.62?2:3);
+      var th=Math.round(9+d*27);
+      var hits=d<0.2?1:(d<0.55?2:3);
       return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,finale:finale,
               label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
     }
     // mix — the chapter finale, and the one intentional spike
-    var mDew=Math.round(3+d*8), mTh=Math.round(3+d*7);
+    var mDew=Math.round(2+d*6), mTh=Math.round(3+d*7);
     var mScore=Math.round((1800+lv*340+lv*lv*60)*(1+d*1.4));
     return {kind:'mix',chapter:ch,moves:mv,dew:mDew,thorns:mTh,target:mScore,finale:finale,
             label:'Mixed: score + clear tiles + break thorns'};
