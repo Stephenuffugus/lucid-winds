@@ -911,7 +911,11 @@ var FIRST_RUN = !LS.get('sh_hopped');   // drives the one time control hint
    changes, that critter just starts drawing as a sprite. ===== */
 var RARC={ starter:'#8a9178', common:'#7ab356', rare:'#5b9bd5', epic:'#c8a84b', legend:'#e0854f', secret:'#e58fa0' };
 var CHARS=[
-  {id:'jimothy', name:'Jimothy', rar:'starter', sheet:'hero', art:1, full:1,
+  /* scale 1.12: the 2026-07-25 re-cut gave him his skull back, and the engine sizes
+     every pose BY ITS BOX — a taller sprite therefore drew a SMALLER raccoon. 1.12 is
+     idle's exact growth (221 -> 247 px), so his body renders the size it always did
+     and the restored head is what sticks up. Lower this if he reads too big. */
+  {id:'jimothy', name:'Jimothy', rar:'starter', sheet:'hero', art:1, full:1, scale:1.12,
    body:'#8b8577', belly:'#cfc7b4', eye:'#171512', bio:'The silly little guy himself.'},
   /* --- Seattle critters (asset sheet 18) --- */
   {id:'pigeon',  name:'City Pigeon', rar:'common', sheet:'chars/pigeon', art:1, full:1,
@@ -1100,7 +1104,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='43';
+var ARTV='44';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
