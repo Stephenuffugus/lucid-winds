@@ -87,7 +87,18 @@ Theme deliberately left open for the designer; every asset is described by funct
   the previous game and often incorrect". Exactly right: `_PMN` and `_PMR` rebuilt the
   board but never cleared `hintCells`, so the old board's coordinates were drawn on the
   new one. Verified both paths call `clearHint()`; smoke 66 pass 0 fail; cache v3→v4.
-- [ ] **Difficulty banding** ⭐ do FIRST, needs no art. Confirmed in `genLevel()`: levels
+- [x] ⭐ **THORNS WERE UNBREAKABLE BY NORMAL MATCHES — fixed.** The player's actual wall.
+  `toClear` was only filled from match groups, and a match group requires `type>=0` while
+  a thorn is `type -2`, so a match next to a thorn did nothing; only a special exploding
+  on it worked. Verified with the harness: thorn level win rate **0% → 63%**.
+- [x] **Balance harness built** — `scripts/petalmatch_balance.js` plays the real game with
+  an objective-aware bot and reports measured win rates. Drives `_PM_TEST` → real
+  `handleEnd()`, reimplements nothing. Verified working after three separate false-0%
+  traps (file:// base href, rAF throttling, and win-detection racing the auto-advance).
+- [ ] **Dew levels measure 12.5%** — too low even with the objective-aware bot. Investigate
+  the same way the thorn bug was found before tuning any numbers.
+- [ ] **Difficulty banding** ⭐ next, needs no art. Sawtooth still measures a 55% average
+  swing between adjacent levels because the fixed 10-step rotation is untouched. Confirmed in `genLevel()`: levels
   rotate on a FIXED 10-step pattern, so blocker levels are walls and everything between
   is a stroll, forever, in the same order. Level 25 = 12 blockers × 2 hits = 24 breaks in
   39 moves. Fix: seed the order per chapter, rate every generated level and reject
