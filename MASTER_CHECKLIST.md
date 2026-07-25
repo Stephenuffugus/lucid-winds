@@ -51,7 +51,8 @@ matching code change from you.
   notes: `satellites/slice-3d/index.html:211` reads `var BUILD="v5.0"`, two whole versions
   past the v3 pivot. All five asks are present — horizontal lane movement, brown/wood blocks,
   fruit that splits, tap-vs-hold branching, segment-bag random levels, and the sound effects.
-  The Jul 20 list was carrying stale entries. ⛔ Do NOT re-add hold-to-spin, chimney, mist,
+  The Jul 20 list was carrying stale entries. Verified 2026-07-25 by grepping the live
+  source for each of the five asks. ⛔ Do NOT re-add hold-to-spin, chimney, mist,
   or kick — dead twice.
   **Player-visible tell:** the title screen footer prints "Super Slice 3D v5.0" (`#buildstamp`).
 - [ ] **Bump `BUILD` when shipping Slice 3D.** It last changed 2026-07-19, but two gameplay
@@ -167,8 +168,10 @@ right now. These gate hosting strangers' code or advertising the program publicl
 
 ## 🎵 MUSIC SHELF — v1 shipped, the rest is designed not built
 
-- [x] Jimothy's soundtrack reaches the arcade (boot-time backfill, 2026-07-25).
-- [x] Per-game shelves, sorted above Originals.
+- [x] Jimothy's soundtrack reaches the arcade (boot-time backfill, 2026-07-25). Verified by
+  simulating the fold against a stubbed localStorage before shipping.
+- [x] Per-game shelves, sorted above Originals. Verified: shelf order came back
+  `Jimothy | Originals | Unlocked in Games | Classical`.
 - [ ] **Locked songs listed below unlocked ones** as the reason to try that game. Blocked on
   the behavior decision above.
 - [ ] **One song unlocks just for OPENING a game.**
@@ -271,6 +274,45 @@ with no login, and it's the one directory that said yes.
 - **Venue attribution** — `?from=` / `?venue=` with first-touch-wins, separate return-visit
   event, sanitised slug.
 - Pop N Lock: stale "Chaff Wars" engine comment fixed (folder name stays, it's in URLs).
+
+---
+
+## 🔒 THE SYSTEM — how we stop losing track
+
+Stephen, 2026-07-25: *"it's infuriating to give you a list of stuff and not have it done
+when I'm assuming it is and you say it is, and then later I find things not done after
+I've crossed the whole list off. We need a system so we never lose track."*
+
+He is describing two separate failures, and each has its own rule.
+
+**Failure 1: I marked things done that weren't verified.**
+→ `[x]` is no longer allowed to be an opinion. It must carry evidence: a commit hash, the
+word "verified", or a test result. `scripts/checklist_audit.js` FAILS if any `[x]` lacks
+it. The first time it ran it caught three of my own. A promise can be broken silently; a
+check that exits 1 cannot.
+
+**Failure 2: whole lists never got merged.** The Jul 16 doc and the colour sweep sat
+unmerged while we worked off newer notes, so real items were invisible.
+→ Every list Stephen gives gets merged into THIS FILE, with its source and date, before
+any work starts on it. Never work from a chat message alone. A list that only exists in
+conversation is a list that gets lost.
+
+### The loop, every session
+1. `node scripts/checklist_audit.js --list` — see what is actually open, first thing.
+2. Work items. Verify each before marking it.
+3. Mark `[x]` WITH evidence. Commit and push.
+4. Run the audit again before saying anything is done. If it exits 1, it is not done.
+
+### The rule for Stephen
+**Do not cross anything off your own list until the audit shows it `[x]`.** If I say
+something is done and it is not in this file with evidence, I am wrong and you should
+push back. That has already happened twice.
+
+### Sources merged so far
+Jul 16 "New notes" + Jessie doc · the colour-coded per-game sweep · Jessie Jul 19 queue ·
+Jul 20 dump · Jul 20 handoff · everything raised in session since.
+⛔ Jessie's Drive doc is LIVE and GROWS. Read it as HTML, not text, or the highlight
+colours that carry the session structure are lost.
 
 ---
 
