@@ -232,9 +232,26 @@ var TEST=/[?&]cbtest=1/.test(location.search);
 var VW=540, VH=960;
 
 /* ---------- stage fit: scale the fixed 540x960 stage to the viewport ---------- */
-function fitStage(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+/* ⛔ MEASURE visualViewport, NEVER innerHeight. Jessie: "Cipher Bloom off-screen."
+   On a real phone innerHeight reports the height INCLUDING the strip behind the
+   collapsing URL bar, so scaling off it makes the stage bigger than the area the
+   player can actually see, and the bottom of the board walks off the screen.
+   visualViewport reports what is genuinely visible. Headless browsers have no URL
+   bar, which is why this never reproduced in testing and only Jessie saw it. */
+function fitStage(){
+  var vv = window.visualViewport;
+  var iw = (vv && vv.width)  || window.innerWidth  || 540;
+  var ih = (vv && vv.height) || window.innerHeight || 960;
+  var s = Math.min(iw/VW, ih/VH);
+  $('stage').style.transform='translateZ(0) scale('+s+')';
+}
 window.addEventListener('resize',fitStage);
 window.addEventListener('orientationchange',function(){ setTimeout(fitStage,200); });
+// The URL bar sliding away fires visualViewport events, not window resize.
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fitStage);
+  window.visualViewport.addEventListener('scroll', fitStage);
+}
 fitStage();
 
 /* ---------- storage + settings ---------- */

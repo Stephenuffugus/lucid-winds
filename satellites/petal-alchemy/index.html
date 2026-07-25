@@ -209,9 +209,25 @@ h2.sc-h{font-size:30px; color:var(--pink); font-weight:800; margin-bottom:4px}
 (function(){
 "use strict";
 function $(id){ return document.getElementById(id); }
-function fitStage(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/540, ih/960); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+/* ⛔ MEASURE visualViewport, NEVER innerHeight. Jessie: "Petal Alchemy off-screen."
+   On a real phone innerHeight includes the strip behind the collapsing URL bar, so
+   scaling off it makes the stage bigger than what the player can actually see and
+   the bottom walks off screen. Headless has no URL bar, so this never reproduced
+   in testing and only Jessie hit it. Same fix as cipher-bloom. */
+function fitStage(){
+  var vv = window.visualViewport;
+  var iw = (vv && vv.width)  || window.innerWidth  || 540;
+  var ih = (vv && vv.height) || window.innerHeight || 960;
+  var s = Math.min(iw/540, ih/960);
+  $('stage').style.transform='translateZ(0) scale('+s+')';
+}
 window.addEventListener('resize',fitStage);
 window.addEventListener('orientationchange',function(){ setTimeout(fitStage,200); });
+// The URL bar sliding away fires visualViewport events, not window resize.
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fitStage);
+  window.visualViewport.addEventListener('scroll', fitStage);
+}
 fitStage();
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var BUILD='v1.0';
