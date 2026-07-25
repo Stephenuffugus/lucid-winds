@@ -192,8 +192,32 @@ window._gameFns.petalmatch = function PM(a){
     opts=opts||{};
     return {type:type,x:c*CELL,targetX:c*CELL,y:(opts.yStart!==undefined?opts.yStart:r*CELL),targetY:r*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0,clearAt:0,bounceAt:0};
   }
+  /* ⛔ DEW BELONGS TO THE SQUARE, NOT THE GEM. Added 2026-07-25.
+     jelly used to live only on the cell OBJECT, and processSegment moves cell
+     objects downward on collapse. Two bugs fell out of that:
+       1. A double-layer dew tile lost its second layer. The first match
+          decremented 2 to 1, then the cell was nulled and replaced by a fresh
+          gem with jelly 0, so the remaining layer vanished. Double-layer levels
+          were quietly single-layer.
+       2. Dew RODE THE FALLING GEM. An uncleared dew gem dropping into a gap
+          carried the dew to a new square, so the pattern the level was seeded
+          with slid around the board as you played.
+     jellyBoard is now the source of truth, indexed by board position. cell.jelly
+     is just a render mirror, re-synced after every collapse. */
+  var jellyBoard=[];
+  function initJellyBoard(){
+    jellyBoard=[];
+    for(var r=0;r<ROWS;r++){jellyBoard[r]=[];for(var c=0;c<COLS;c++)jellyBoard[r][c]=0;}
+  }
+  function syncJellyToCells(){
+    for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+      if(grid[r]&&grid[r][c])grid[r][c].jelly=jellyBoard[r][c]||0;
+    }
+  }
+
   function initGrid(){
     grid=[];
+    initJellyBoard();
     for(var r=0;r<ROWS;r++){grid[r]=[];
       for(var c=0;c<COLS;c++){
         var t;
@@ -218,7 +242,7 @@ window._gameFns.petalmatch = function PM(a){
         tries++;
         var r=2+Math.floor(Math.random()*6);
         var c=Math.floor(Math.random()*COLS);
-        if(grid[r][c]&&grid[r][c].jelly===0){grid[r][c].jelly=layers;placed++;}
+        if(grid[r][c]&&grid[r][c].jelly===0){grid[r][c].jelly=layers;jellyBoard[r][c]=layers;placed++;}
       }
     }
     if(objective.kind==='thorns'||objective.kind==='mix'){
@@ -538,6 +562,10 @@ window._gameFns.petalmatch = function PM(a){
     }
   }
   function collapseAndRefill(){
+    collapseAndRefill_inner();
+    syncJellyToCells();   // dew stays on its square after everything has moved
+  }
+  function collapseAndRefill_inner(){
     // Gems can't fall through thorns. Process each column as segments
     // separated by thorns: [top of segment .. bottom of segment]. Each segment
     // collapses + refills independently so gaps above a thorn get new gems.
@@ -574,8 +602,9 @@ window._gameFns.petalmatch = function PM(a){
         objState.gatherGot[cell.type]=(objState.gatherGot[cell.type]||0)+1;
       }
       // Jelly strips a layer instead of removing the gem. Only strips ONCE per clear.
-      if(cell.jelly>0){
-        cell.jelly--;
+      if(jellyBoard[r][c]>0){
+        jellyBoard[r][c]--;          // the SQUARE loses a layer, not the gem
+        cell.jelly=jellyBoard[r][c];
         dewStripped++;
         fx.push({kind:'dewstrip',r:r,c:c,t:Date.now()});
         // Note: the gem still clears (standard match-3 jelly behavior)
