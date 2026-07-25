@@ -2,7 +2,7 @@
 _Last updated: 2026-07-24. This file is the source of truth for the roster. If you change
 who gives what, change it here in the same commit._
 
-Forty four characters. **Five lanes, and each lane means one thing**, so a player can
+Forty five characters. **Five lanes, and each lane means one thing**, so a player can
 always answer "how do I get that one?" without being told.
 
 | lane | how you get it | can you buy it? |
@@ -35,7 +35,7 @@ Once all five are yours, day seven pays double bottlecaps until there are more.
 ⛔ Append only — never insert in the middle, or somebody two days from a costume watches
 it turn into a different one.
 
-## 🎟 CODES — five costumes to hand out, plus one gift
+## 🎟 CODES — six costumes to hand out, plus one gift
 Codes are the lane that brings people IN: post one, and the people who follow you can
 unlock something the shop will never sell. Mint any code with
 `node scripts/make-code.js WORD`, which prints the paste line and a link.
@@ -48,6 +48,7 @@ unlock something the shop will never sell. Mint any code with
 | `BOOGIE` | Disco Jimothy | |
 | `BEEPBOOP` | Robot Jimothy | |
 | `ABRACADABRA` | Wizothy | |
+| `THEBARNACLE69` | **The Barnacle** (`legend`) | ⛔ Stephen is handing this to ONE man and nobody else. Do not post it, do not put it in a code round-up, do not hand it to a directory. The whole bit is that the costume sits visible in the code row and almost nobody can open it. |
 | `JIMOTHY` | 100 bottlecaps | safe to post anywhere |
 | `TRASHPANDA` | 150 bottlecaps | |
 | `NUGGET` | 60 caps + a free continue | |
@@ -80,7 +81,7 @@ of them at a quarter off.
 
 ⛔ **Colours (the 13 material finishes) were RETIRED 2026-07-24.** Stephen: they looked
 like a hue slider dragged over his paintings and cluttered the collection. They were built
-when 29 characters was the whole wardrobe and it needed multiplying; with 44 hand painted
+when 29 characters was the whole wardrobe and it needed multiplying; with 45 hand painted
 characters the problem is gone. The code is dormant behind `FIN_ON`, not deleted, and
 anyone who bought one was refunded.
 

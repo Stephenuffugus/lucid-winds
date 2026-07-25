@@ -425,7 +425,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Jimothy</div>
     <div class="title-tag">The Jumping Nugget</div>
-    <div class="title-sub">Sky Wolf Studios</div>
+    <!-- Stephen 2026-07-25: the studio name came off here — it is already on the button at
+         the bottom of this same screen, and saying it twice was just filling space. -->
     <div class="ribbon">Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</div>
     <div style="flex:1"></div>
     <!-- ⛔ FIVE BUTTONS. Feedback said the home screen had way too much going on, so the
@@ -1003,6 +1004,14 @@ var CHARS=[
    body:'#9aa0a6', belly:'#c2c8ce', eye:'#e8c63a', bio:'Beep. Boop. Fries.'},
   {id:'wizard',  name:'Wizothy', rar:'epic', sheet:'skins/wizard', art:1, full:1, via:'code',
    body:'#2b3566', belly:'#c8b45e', eye:'#171512', bio:'Turned a bin lid into a slightly better bin lid.'},
+  /* THE BARNACLE — Stephen made a joke that a certain short, round, magnificent actor is
+     the Jimothy of people, and then had to go and paint him. ONE code exists and Stephen
+     is handing it to exactly one man. Deliberately via:'code' and not secret:1, because a
+     secret shows as three question marks and the whole point is that you can SEE him
+     sitting there unlockable and know you are not the one with the code. */
+  {id:'barnacle', name:'The Barnacle', rar:'legend', sheet:'skins/barnacle', art:1, full:1, via:'code',
+   body:'#26262b', belly:'#efe9db', eye:'#171512',
+   bio:'Short, round, magnificent. The Jimothy of people.'},
   /* --- found by playing, never sold in the bin --- */
   {id:'mothman', name:'Mothman', rar:'secret', secret:1, sheet:'skins/mothman', art:1, full:1,
    body:'#3a3438', belly:'#6a6058', eye:'#d0281e',
@@ -1104,7 +1113,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='44';
+var ARTV='45';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -2836,7 +2845,11 @@ var CODES=[
   { a:899682332, b:560716470, n:9, gives:{char:'alien'},    name:'Little Green Jimothy' },
   { a:2998713344, b:3966951660, n:6,      gives:{char:'disco'},     name:'Disco Jimothy' },
   { a:358136124, b:938503653, n:8,  gives:{char:'robot'},     name:'Robot Jimothy' },
-  { a:1087786068, b:1058421539, n:11,         gives:{char:'wizard'},    name:'Wizothy' }
+  { a:1087786068, b:1058421539, n:11,         gives:{char:'wizard'},    name:'Wizothy' },
+  /* ONE man has this one. If it leaks, mint a replacement with scripts/make-code.js and
+     swap these two numbers — everyone who already redeemed it keeps the costume, because
+     ownership lives in PROG.chars, not in the code. */
+  { a:634727962, b:3706792679, n:13, gives:{char:'barnacle'}, name:'The Barnacle' }
 ];
 function codeFind(entered){
   var h=codeHash(entered), i;
@@ -4041,8 +4054,27 @@ function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; savePr
 
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
   var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
-function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', (window.innerHeight||960)+'px'); }catch(e){} }
-function fit(){ setAppH(); var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+/* ⛔ MEASURE THE VISUAL VIEWPORT, NOT window.innerHeight (Stephen 2026-07-25: "the splash
+   screen is kind of zoomed in a little and it doesnt load and i cant press start").
+   On phones innerHeight keeps reporting the TALL url-bar-hidden height even while the
+   actually-visible area is shorter. The stage was therefore scaled to a height that does
+   not exist: it rendered a little too big AND, because #wrap is that same phantom height
+   and centres the stage in it, sat shifted down far enough to push TAP TO START off the
+   bottom edge. visualViewport is the only number that tracks the browser chrome, and
+   fit() re-reading innerHeight is why the existing visualViewport listener never helped. */
+function vpW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function vpH(){
+  var vv=window.visualViewport, ih=window.innerHeight||960;
+  if(!vv||!vv.height) return ih;
+  /* ⛔ The on-screen keyboard shrinks the visual viewport too, and the game must NOT
+     shrink behind somebody typing a redeem code. Browser chrome costs at most ~15% of
+     the height; a keyboard costs 35-50%. Past a quarter of the screen it is a keyboard,
+     so keep the full height and ignore it. */
+  return (vv.height < ih*0.75) ? ih : vv.height;
+}
+function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', vpH()+'px'); }catch(e){} }
+function fit(){ setAppH(); var s=Math.min(vpW()/VW, vpH()/VH);
+  var st=$('stage'); if(st) st.style.transform='translateZ(0) scale('+s+')'; }
 var SHARE_URL="https://lucidwinds.com/jimothy/";
 function shareIt(){ var txt=shareText();
   if(navigator.share){ navigator.share({text:txt,url:SHARE_URL}).catch(function(){}); return; }
@@ -4127,11 +4159,28 @@ function toMenu(){ show('s-title'); }
 function splashTapped(){ ac(); toMenu(); }
 
 function boot(){
+  /* ⛔ THE WAY OUT OF THE SPLASH GETS WIRED FIRST, BEFORE ANYTHING THAT CAN THROW.
+     It used to be wired 171 lines into boot(), after warmSprites, SUP.render, the glyph
+     src table and every button on the game — so a single failure anywhere in there left
+     the player looking at TAP TO START with nothing listening, and the only way out was
+     a reload. Two listeners on purpose: the overlay, and the splash screen itself as a
+     backstop if the overlay div ever goes missing. */
+  tap('splash-tap', splashTapped);
+  var _sp=$('s-splash');
+  if(_sp) _sp.addEventListener('pointerdown', function(){ if(curScreen==='s-splash') splashTapped(); });
+  fit();   // and size the stage before anything can throw, or it renders at native 540x960
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   warmSprites();
   setAppH(); fit(); window.addEventListener('resize',fit);
-  if(window.visualViewport){ window.visualViewport.addEventListener('resize',fit); window.visualViewport.addEventListener('scroll',setAppH); }
+  if(window.visualViewport){ window.visualViewport.addEventListener('resize',fit); window.visualViewport.addEventListener('scroll',fit); }
   window.addEventListener('orientationchange',function(){ setTimeout(fit,250); });
+  /* boot() runs the moment the script parses, which on a phone is BEFORE the url bar has
+     finished settling — so measure again when the page is really done, when it comes back
+     from the bfcache, and twice more on a timer. fit() is cheap and idempotent. */
+  window.addEventListener('load', fit);
+  window.addEventListener('pageshow', fit);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) fit(); });
+  setTimeout(fit, 250); setTimeout(fit, 1200);
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
   // d-pad — pointerdown (not click) so hops feel instant
@@ -4296,8 +4345,7 @@ function boot(){
   });
   armBack();
 
-  // static keyart splash is the front door (shown on load); one tap enters the menu.
-  tap('splash-tap', splashTapped);
+  // (the splash tap is wired at the very top of boot() now — see the note there)
   // installable: add to home screen, own icon, runs full screen. SW is network-first
   // (house rule) so a deploy is live immediately; the cache is only the offline fallback.
   /* ⛔ The host's edge cache serves BARE asset URLs from its own copy and ignores
@@ -4908,7 +4956,10 @@ if(/[?&]shtest=1/.test(location.search)){
     codeBox:function(pre){ openCodeBox(pre); return {open:_codeEl.style.display==='flex', value:$('code-in').value}; }
   };
 }
-boot();
+/* ⛔ If boot() throws partway, the splash tap and fit() have ALREADY run (they are the
+   first thing it does), so the player can still get into the menu. Shout about it rather
+   than dying silently — a half-booted game used to look exactly like a stuck splash. */
+try{ boot(); }catch(_e){ try{ console.error('Jimothy boot failed:', _e); }catch(_e2){} }
 renderPowerHelp();
 setTimeout(function(){ try{ cloudPull(true); paintAccount(); }catch(e){} }, 1200);
 codeFromUrl();          // ?code=XXXX in the link opens the box with it filled in
