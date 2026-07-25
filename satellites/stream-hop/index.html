@@ -214,25 +214,30 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
    squeezed to 56px to fit. */
 #s-title .stack{ gap:12px; }
 #s-title .btn.sm{ min-height:64px; font-size:17.5px; }
-#b-games{ letter-spacing:1.6px; }
 #b-support{ border-color:rgba(200,168,75,0.42); }
 #s-games .stack{ gap:11px; }
-/* ⛔ ADVENTURE IS THE POINT OF THIS SCREEN and it was the SMALLEST thing on it: 80px,
-   under a 104px mode row and a 112px Daily. Now it is unmistakably the hero and the
-   others give way. Stephen: "adventure should easily be the largest". */
-/* ⛔ It is the biggest card, NOT a big green slab. The four mode cards are dark fills
-   with a coloured border and a glowing medallion, and they look expensive because the
-   painted street shows through them. Adventure was a flat green rectangle sitting on
-   top of that art, which is most of why the green read cheap. Same language as its
-   neighbours, sage instead of blue/orange/purple/gold, at nearly twice the size. */
-#b-adventure{ min-height:164px !important; font-size:31px !important; gap:18px;
+/* ⛔⛔ NO BIG GREEN SLABS. Stephen, twice: "its like green screen green and its shitty",
+   then "why is the games button still that ugly bright green on the home screen". The
+   hue was never the whole problem. Every other card in this game is a DARK fill with a
+   coloured border and a glowing medallion, so the painted street shows through and they
+   look expensive. A filled .btn.primary rectangle sits ON TOP of that art and looks like
+   a web button, and no amount of picking a nicer green fixes that.
+   GAMES and ADVENTURE are the same card in sage. They are the two doors into the game,
+   they are the biggest thing on their screen, and neither is a slab. */
+#b-games, #b-adventure{
   background:linear-gradient(180deg,#1e3a18,#101d0d) !important;
   border:2px solid #7ab356 !important; color:var(--cream) !important;
   text-shadow:0 2px 0 #0b160a, 0 0 14px rgba(122,179,86,.35) !important;
   box-shadow:0 0 0 1px rgba(122,179,86,.18) inset, 0 6px 26px #0009 !important; }
-#b-adventure:active{ box-shadow:0 0 0 1px rgba(122,179,86,.18) inset, 0 3px 12px #0009 !important; }
-#b-adventure .bicon{ width:104px !important; height:104px !important;
-  filter:drop-shadow(0 0 10px rgba(122,179,86,.75)); }
+#b-games:active, #b-adventure:active{
+  box-shadow:0 0 0 1px rgba(122,179,86,.18) inset, 0 3px 12px #0009 !important; }
+#b-games .bicon, #b-adventure .bicon{ filter:drop-shadow(0 0 10px rgba(122,179,86,.75)); }
+#b-games{ letter-spacing:1.6px; }
+/* ⛔ ADVENTURE IS THE POINT OF THE GAMES SCREEN and it was the SMALLEST thing on it:
+   80px, under a 104px mode row and a 112px Daily. Stephen: "adventure should easily be
+   the largest". Now it is, and the others give way. */
+#b-adventure{ min-height:164px !important; font-size:31px !important; gap:18px; }
+#b-adventure .bicon{ width:104px !important; height:104px !important; }
 #s-games .modebtn{ min-height:96px; font-size:15.5px; }
 #s-games .modebtn .bicon{ width:54px; height:54px; }
 #s-games .modebtn.wide{ min-height:92px; }
@@ -1158,7 +1163,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='47';
+var ARTV='48';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
