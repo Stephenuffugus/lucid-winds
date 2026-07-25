@@ -83,36 +83,105 @@ window._gameFns.petalmatch = function PM(a){
   mc(a).innerHTML='<button class="gb" onclick="_PMN()">↻ New Game</button> <button class="gb" onclick="_PMR()">RETRY LV</button> <button class="gb" onclick="_PMH()">HINT</button>';
 
   // ───────── level generator ─────────
+  /* ═══════════════════════════════════════════════════════════════════
+     LEVEL GENERATION — banded, 2026-07-25
+
+     THE OLD VERSION rotated on a FIXED 10-step pattern that never varied:
+       score, dew, gather, score, thorns, dew, gather, thorns, score, mix
+     Two things were wrong with it, and a player felt both without seeing the
+     code: "the levels that involve hitting the thorns are immensely more
+     difficult than the levels between them" and "I fear when I beat level 25
+     the next 2 levels will be very easy."
+
+     1. The ORDER never changed, so after one chapter you knew what was coming.
+     2. Each objective kind scaled on its own private numbers, so a blocker
+        level and the score level next to it were nowhere near each other in
+        difficulty. Measured: score and gather at 100%, dew at 31%.
+
+     THE NEW VERSION drives every kind from ONE difficulty curve, d(lv), so a
+     level's demand is set by where it sits on the ladder rather than by which
+     objective it happens to be. The order is seeded per chapter so it varies
+     while still guaranteeing every kind appears.
+
+     ⛔ The numbers below were calibrated with scripts/petalmatch_balance.js,
+     which plays the real game with a bot and reports the true win rate. If you
+     change them, re-run it. Do not hand-tune this by eye — that is exactly how
+     it ended up a sawtooth.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  // 0 at level 1, approaching 1 deep in the ladder. Steep early so the game
+  // stops being trivial quickly, then flattening so it never becomes hopeless.
+  function _diff(lv){
+    var d=1-Math.pow(0.965,lv-1);
+    return d>0.97?0.97:d;
+  }
+  // Deterministic per-level shuffle, so the ladder is fixed for everyone
+  // (shareable, comparable) but not the same 10 steps on repeat.
+  function _lvRand(seed){
+    var x=Math.sin(seed*12.9898)*43758.5453;
+    return x-Math.floor(x);
+  }
+  function _chapterOrder(chapter){
+    var kinds=['score','dew','gather','thorns','score','dew','gather','thorns','mix'];
+    for(var i=kinds.length-1;i>0;i--){
+      var j=Math.floor(_lvRand(chapter*97+i)*(i+1));
+      var t=kinds[i];kinds[i]=kinds[j];kinds[j]=t;
+    }
+    return kinds;
+  }
+
   function genLevel(lv){
     var chapter=Math.floor((lv-1)/10);
     var sub=(lv-1)%10;
-    // Per-chapter 10-level pattern: intro light then rotate objectives, mix at end
-    var pattern=['score','dew','gather','score','thorns','dew','gather','thorns','score','mix'];
-    var kind=pattern[sub];
-    var mv=24+Math.floor(lv*0.6);
-    if(mv>48)mv=48;
     var ch=Math.min(chapter,3);
+    var d=_diff(lv);
+
+    // The last level of every chapter is a DELIBERATE wall. The player said the
+    // challenge is their favourite part; what they disliked was it arriving at
+    // random and then vanishing. So it is now scheduled, and it is the only one.
+    var finale=(sub===9);
+    var kind=finale?'mix':_chapterOrder(chapter)[sub];
+
+    // Moves shrink slightly as a share of demand rather than growing forever.
+    var mv=26+Math.floor(lv*0.45);
+    if(mv>52)mv=52;
+    if(finale)mv+=6;
+
+    // Each kind is scaled from the SAME d, so neighbours land in one band.
     if(kind==='score'){
-      return {kind:'score',chapter:ch,moves:mv,target:500+lv*280,label:'Reach '+(500+lv*280)+' points'};
+      /* ⛔ Score targets must scale SUPERLINEARLY. Points per clear are already
+         multiplied by `level` in the scoring formula, so a target that grows
+         linearly with level keeps the exact same difficulty forever — which is
+         why score levels measured 100% at every depth. The lv*lv term is what
+         makes a late score level actually ask something. */
+      var tgt=Math.round((2600+lv*520+lv*lv*95)*(1+d*2.0));
+      return {kind:'score',chapter:ch,moves:mv,target:tgt,finale:finale,
+              label:'Reach '+tgt+' points'};
     }
     if(kind==='dew'){
-      var dewN=Math.min(14+chapter*6,36);
-      var dbl=chapter>=2;
-      return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
+      var dewN=Math.round(4+d*9);
+      var dbl=d>0.55;
+      if(dbl)dewN=Math.round(dewN*0.7);   // double layer already doubles the work
+      return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,finale:finale,
+              label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
     if(kind==='gather'){
-      var per=Math.min(8+chapter*3,24);
-      var colors=Math.min(1+Math.floor(chapter/2)+(sub>3?1:0),3);
-      if(colors<1)colors=1;
-      return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
+      var per=Math.round(12+d*34);
+      var colors=d<0.3?1:(d<0.65?2:3);
+      return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,finale:finale,
+              label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
     }
     if(kind==='thorns'){
-      var th=Math.min(6+chapter*3,22);
-      var hits=Math.min(1+Math.floor(chapter/2),4);
-      return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
+      var th=Math.round(4+d*16);
+      var hits=d<0.4?1:(d<0.75?2:3);
+      return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,finale:finale,
+              label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
     }
-    // mix
-    return {kind:'mix',chapter:ch,moves:mv+4,dew:Math.min(8+chapter*4,20),thorns:Math.min(3+chapter,14),target:700+lv*350,label:'Mixed: score + clear tiles + break thorns'};
+    // mix — the chapter finale, and the one intentional spike
+    var mDew=Math.round(3+d*8), mTh=Math.round(3+d*7);
+    var mScore=Math.round((1800+lv*340+lv*lv*60)*(1+d*1.4));
+    return {kind:'mix',chapter:ch,moves:mv,dew:mDew,thorns:mTh,target:mScore,finale:finale,
+            label:'Mixed: score + clear tiles + break thorns'};
   }
 
   function resetObjState(){
