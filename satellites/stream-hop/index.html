@@ -4501,6 +4501,14 @@ function syncMusicLibrary(){ try{
       src:'/satellites/stream-hop/assets/music/'+t.file+'.mp3' }); }
   localStorage.setItem('sws_game_unlocks', JSON.stringify(reg));
 }catch(e){} }
+/* ⛔ BACKFILL ON BOOT (2026-07-25). Stephen: "i unlocked all the songs in jimothy
+   but only the first song that comes with the game is accessible in the arcade."
+   Every other call to this lives on an unlock EVENT (earn a track, redeem a code,
+   buy the pack), so a song unlocked before the bridge existed was never exported,
+   and a reinstall never backfilled. Running it once at boot re-derives the whole
+   shelf from PROG, so simply opening Jimothy repairs the arcade's library.
+   Safe here: PROG, MUSIC and musOwned are all defined above this line. */
+syncMusicLibrary();
 /* the ROTATION: which owned songs take turns as the game music */
 function rotList(){ var o=[]; for(var i=0;i<MUSIC.length;i++){ var t=MUSIC[i];
   if(musOwned(t.id) && PROG.playlist && PROG.playlist[t.id]) o.push(t.id); }

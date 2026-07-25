@@ -116,14 +116,27 @@
      ⛔ It must PUSH INTO THE SAME ARRAY, never replace it: both players hold
      window.LW_TRACKS by reference and re-derive their groups on every render, so pushing
      makes a new song appear the moment the drawer is opened, with no reload at all. */
+  /* Drawer section order. Cats not listed here append after, first-seen order.
+     Empty cats don't render — these are pre-stubbed for future batches.
+     Declared BEFORE foldGameUnlocks so the fold can register game sections. */
+  window.LW_TRACK_CATS = ['Originals','Unlocked in Games','Classical','Ambient','Lo-fi','Nature'];
+
+  /* PER-GAME SECTIONS (2026-07-25, Stephen). A game with its own soundtrack gets
+     its own shelf named after the game, and those shelves sort ABOVE Originals —
+     what you earned by playing is the thing you want to see first. Games without
+     a `game` field still land in the generic 'Unlocked in Games' shelf. */
   function foldGameUnlocks(){
     try{
       var gu = JSON.parse(localStorage.getItem('sws_game_unlocks') || '[]');
       var have = {}; for (var hi = 0; hi < window.LW_TRACKS.length; hi++) have[window.LW_TRACKS[hi].id] = 1;
+      var cats = window.LW_TRACK_CATS, top = 0;
       for (var gj = 0; gj < gu.length; gj++) { var gt = gu[gj];
         if (gt && gt.id && gt.src && !have[gt.id]) { have[gt.id] = 1;
+          var cat = gt.game || 'Unlocked in Games';
+          // register the game's shelf at the top of the order, once, in first-seen order
+          if (cats.indexOf(cat) < 0) { cats.splice(top++, 0, cat); }
           window.LW_TRACKS.push({ id: gt.id, title: gt.title || gt.id, artist: gt.artist || 'Stephen',
-            mood: gt.game ? ('unlocked in ' + gt.game) : null, cat: 'Unlocked in Games', src: gt.src }); } }
+            mood: gt.game ? ('unlocked in ' + gt.game) : null, cat: cat, src: gt.src }); } }
     } catch (e) {}
   }
   foldGameUnlocks();
@@ -136,7 +149,4 @@
     window.addEventListener('storage', function(e){ if (!e.key || e.key === 'sws_game_unlocks') foldGameUnlocks(); });
   } catch (e) {}
 
-  // Drawer section order. Cats not listed here append after, first-seen order.
-  // Empty cats don't render — these are pre-stubbed for future batches.
-  window.LW_TRACK_CATS = ['Originals','Unlocked in Games','Classical','Ambient','Lo-fi','Nature'];
 })();
