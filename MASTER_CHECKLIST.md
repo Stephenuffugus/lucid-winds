@@ -97,6 +97,14 @@ Ordered by value per hour of work.
   Lakewood), Barflyy (Kent). Verify hours before driving. Attribution links are LIVE — use
   `?from=<slug>` today.
 - [ ] **Cold email follow-ups** — sent the batch Jul 24 night, 2 bounced. Follow up the rest.
+- [?] **Social handles** — `/links.html` is live and is the one link to put in every bio.
+  Fill in the `SOCIAL` array at the top of that file as each account is created (Instagram,
+  Twitter, Facebook, itch.io, YouTube, Discord). Empty entries stay hidden, so there is never
+  a dead link. Nothing else on the page needs editing.
+- [ ] **Satellite social previews** — 80 of 83 satellites still have no `og:image`, so their
+  links post as grey boxes. The `/play/` shells are done (62 cards). Same generator applies;
+  satellites need per-game hero art picked rather than a uniform card, so it's a session not
+  a script run.
 
 ---
 
