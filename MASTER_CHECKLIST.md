@@ -101,9 +101,21 @@ Ordered by value per hour of work.
   Fill in the `SOCIAL` array at the top of that file as each account is created (Instagram,
   Twitter, Facebook, itch.io, YouTube, Discord). Empty entries stay hidden, so there is never
   a dead link. Nothing else on the page needs editing.
-- [x] **Social previews DONE** — 62 `/play/` shells + 77 satellites now have 1200x630 cards
-  and og:/twitter: tags. Every game link posts with a picture. Three satellites still need
-  card art before they can get one: `mahjong`, `rootbound`, `sprout-dice`.
+- [x] **Social previews DONE — 100% coverage.** 66/68 `/play/` shells and 83/83 satellites
+  have 1200x630 cards + og:/twitter: tags. Games with real card art use it; the 7 with none
+  get a studio-mark fallback (the wolf, never a fake screenshot). The 2 remaining `/play/`
+  files are `index.html` (a directory listing, not a game) and `power-scalers.html` (below).
+- [?] **`play/power-scalers.html` — decide: delete, redirect, or keep.** It's a 2,245-line
+  legacy duplicate. The portal deliberately points at `/satellites/power-scalers/` instead
+  (see the comment at `portal/index.html:646`), so nothing links to this copy, but it is
+  still reachable by direct URL and its `<title>` says "Lucid Winds · OC Arena" — a name
+  that appears nowhere else. A redirect to the satellite is probably right.
+- [?] **Portal black screen — needs a repro, not a guess.** Read every open/close path in the
+  overlay lifecycle (`openGame`/`closeGame`/`requestClose`/`popstate`, `portal/index.html`
+  ~1300-1650). It's already hardened with a double-back guard, a srcdoc navigation guard,
+  satellite reframe recovery, and a 600ms fallback, and every close path consumes its own
+  history entry correctly. No defect found by reading. Guessing at a fix here risks breaking
+  the close path for all 159 games. Needs Stephen to catch it live, ideally on his phone.
 
 ---
 
