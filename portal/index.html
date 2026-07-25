@@ -1678,6 +1678,47 @@ document.addEventListener('click', function(e){
 </script>
 
 <!-- ============================================================
+     VENUE ATTRIBUTION (2026-07-25)
+     For the local-business pitch: every board game bar / arcade Stephen talks
+     to gets its own link, e.g. lucidwinds.com/portal/?from=greendragon, and he
+     can tell them honestly how many people it brought.
+
+     FIRST TOUCH WINS. The venue handed the player the link; if that player
+     comes back a week later by typing the URL, the venue still earned them.
+     Overwriting on the last visit would credit the venue with nothing.
+
+     Fires a GA4 `venue_referral` event once per browser (not per visit), plus
+     `venue_return` on later visits so repeat value is visible separately.
+     Slug is sanitised because it lands in analytics and in localStorage.
+     ============================================================ -->
+<script>
+(function () {
+  try {
+    var KEY = 'sws_venue';
+    var q = (location.search || '').match(/[?&](?:from|venue)=([^&]{1,40})/);
+    var slug = q ? decodeURIComponent(q[1]).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32) : '';
+
+    var rec = null;
+    try { rec = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+
+    if (slug && (!rec || !rec.slug)) {
+      // first ever touch — this venue gets the credit from here on
+      rec = { slug: slug, first: Date.now(), visits: 1 };
+      try { localStorage.setItem(KEY, JSON.stringify(rec)); } catch (e) {}
+      if (window.gtag) gtag('event', 'venue_referral', { venue: slug, first_touch: true });
+    } else if (rec && rec.slug) {
+      rec.visits = (rec.visits || 1) + 1;
+      try { localStorage.setItem(KEY, JSON.stringify(rec)); } catch (e) {}
+      if (window.gtag) gtag('event', 'venue_return', { venue: rec.slug, visits: rec.visits });
+    }
+
+    // Let the rest of the portal (and future partner surfaces) read it.
+    window.SWS_VENUE = rec && rec.slug ? rec.slug : null;
+  } catch (e) {}
+})();
+</script>
+
+<!-- ============================================================
      ADD TO HOMESCREEN (2026-07-25)
      Same pattern already shipped in Dewball / Flipbook / OriVex: the button
      stays useful even when beforeinstallprompt never fires (iOS never fires
