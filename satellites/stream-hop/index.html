@@ -217,6 +217,26 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #b-games{ letter-spacing:1.6px; }
 #b-support{ border-color:rgba(200,168,75,0.42); }
 #s-games .stack{ gap:11px; }
+/* ⛔ ADVENTURE IS THE POINT OF THIS SCREEN and it was the SMALLEST thing on it: 80px,
+   under a 104px mode row and a 112px Daily. Now it is unmistakably the hero and the
+   others give way. Stephen: "adventure should easily be the largest". */
+/* ⛔ It is the biggest card, NOT a big green slab. The four mode cards are dark fills
+   with a coloured border and a glowing medallion, and they look expensive because the
+   painted street shows through them. Adventure was a flat green rectangle sitting on
+   top of that art, which is most of why the green read cheap. Same language as its
+   neighbours, sage instead of blue/orange/purple/gold, at nearly twice the size. */
+#b-adventure{ min-height:164px !important; font-size:31px !important; gap:18px;
+  background:linear-gradient(180deg,#1e3a18,#101d0d) !important;
+  border:2px solid #7ab356 !important; color:var(--cream) !important;
+  text-shadow:0 2px 0 #0b160a, 0 0 14px rgba(122,179,86,.35) !important;
+  box-shadow:0 0 0 1px rgba(122,179,86,.18) inset, 0 6px 26px #0009 !important; }
+#b-adventure:active{ box-shadow:0 0 0 1px rgba(122,179,86,.18) inset, 0 3px 12px #0009 !important; }
+#b-adventure .bicon{ width:104px !important; height:104px !important;
+  filter:drop-shadow(0 0 10px rgba(122,179,86,.75)); }
+#s-games .modebtn{ min-height:96px; font-size:15.5px; }
+#s-games .modebtn .bicon{ width:54px; height:54px; }
+#s-games .modebtn.wide{ min-height:92px; }
+#s-games .modebtn.wide .bicon{ width:56px; height:56px; }
 /* Colour-code the modes so Endless / Rush / Zen get noticed too, not just green Adventure. */
 #b-endless{ border-color:#5b9bd5; background:linear-gradient(180deg,#16202b,#111a22); }
 #b-rush{ border-color:#e5804d; background:linear-gradient(180deg,#241a12,#19120c); }
@@ -239,8 +259,15 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   transition:transform .1s cubic-bezier(.22,.9,.28,1), filter .14s ease, box-shadow .18s ease, border-color .2s ease, background .2s ease}
 .btn:hover{border-color:#3c5228; filter:brightness(1.05)}
 .btn:active{transform:translateY(2px) scale(.985); filter:brightness(1.14)}
-.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a; box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
-.btn.primary:active{box-shadow:0 1px 0 #3f6b34, 0 3px 10px #0006}
+/* Stephen 2026-07-25: "i dont like the color green youre using for it. its like green
+   screen green and its shitty." He is right. #7ab356 is a yellow leaning mid green and
+   over the blue black night street with its amber lamps it read acid and cheap. This is
+   a deeper moss with the yellow pulled out, cream text instead of near black so it still
+   carries at size, and a darker lip so it reads as a pressed object rather than a web
+   button. To try another: swap the two gradient stops and the border, nothing else. */
+.btn.primary{background:linear-gradient(180deg,#4f8d42,#2f5a2b); color:#f2f6e8; border-color:#79b262;
+  text-shadow:0 1px 0 #1b3318; box-shadow:0 4px 0 #21411e, 0 8px 22px #0007}
+.btn.primary:active{box-shadow:0 1px 0 #21411e, 0 3px 10px #0006}
 .btn.sm{min-height:64px; font-size:17px}
 .bicon{width:46px; height:46px; object-fit:contain; flex:none; filter:drop-shadow(0 2px 3px #0007)}
 /* icon-forward mode cards: the medallions ARE the menu */
@@ -813,6 +840,24 @@ function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var TILE=60, COLS=9, HALF=TILE/2;
+/* ===== HITBOXES — all four collision sites read these, nothing hard codes a number =====
+   Measured 2026-07-25. The hero's hitbox is 42px wide and he is DRAWN about 57px wide,
+   and obstacles are drawn at e.w*1.06, so what you see is always bigger than what kills.
+
+   ROAD was already generous to the point of looking wrong: at 0.72 a bus can overlap
+   him by 39px, more than half his body, and not touch him. Left alone because that is
+   the forgiving direction and it is Stephen's call to tighten. Raise HIT_ROAD toward
+   0.85 for a stricter street; the number is the fraction of the summed half widths that
+   actually kills.
+
+   WATER was the unfair one. padUnder() was a POINT test on his centre with a flat 2px
+   of grace, so with pads 90-144px apart and gaps of 42-75px, a 57px wide raccoon could
+   be visually straddling two logs and still sink. PAD_GRACE lets him overhang an edge
+   by a fraction of his own width and keep his footing, which is what the picture has
+   been promising all along. */
+var HIT_ROAD=0.72;    // road + train kill distance, as a fraction of summed half widths
+var HIT_VENT=28;      // px from a blasting steam vent's centre
+var PAD_GRACE=0.28;   // how far past a pad's edge his centre may sit and still ride it
 /* ===== FEEL KNOBS — Stephen: "really slow the animation down and smooth it out,
    it is way too jumpy and doesn't feel comfortable." The old hop was 0.17s, which is
    ten frames for a four pose cycle, so the poses strobed. Everything below is tunable
@@ -1113,7 +1158,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='46';
+var ARTV='47';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1873,9 +1918,9 @@ function finishHop(){
   // hops used to skip the road check entirely, so mashing forward was invincible
   if(lane.type==='road' && G.phase==='play' && G.vestT<=0){
     var lhit=null;
-    if(lane.vents){ for(var lv=0; lv<lane.vents.length; lv++){ if(ventPhase(lane.vents[lv])>0.55 && Math.abs(lane.vents[lv].x-G.cr.x)<28){ lhit='steam'; break; } } }
+    if(lane.vents){ for(var lv=0; lv<lane.vents.length; lv++){ if(ventPhase(lane.vents[lv])>0.55 && Math.abs(lane.vents[lv].x-G.cr.x)<HIT_VENT){ lhit='steam'; break; } } }
     if(!lhit){ for(var lj=0; lj<lane.ents.length; lj++){ var lo=lane.ents[lj];
-      if(Math.abs(lo.x-G.cr.x)<(lo.w+G.cr.w)/2*0.72){ lhit='squish'; break; } } }
+      if(Math.abs(lo.x-G.cr.x)<(lo.w+G.cr.w)/2*HIT_ROAD){ lhit='squish'; break; } } }
     if(lhit) die(lhit);
   }
   // fire buffered input (never off a corpse)
@@ -2266,7 +2311,11 @@ function bankBloom(){
 }
 
 /* ===== physics / update ===== */
-function padUnder(lane,x){ for(var i=0;i<lane.ents.length;i++){ var e=lane.ents[i]; if(x>e.x-e.w/2-2 && x<e.x+e.w/2+2) return e; } return null; }
+function padUnder(lane,x){
+  /* grace scales with the hero, not a flat 2px — see the HITBOXES note by TILE */
+  var g=2+(G&&G.cr?G.cr.w:42)*PAD_GRACE;
+  for(var i=0;i<lane.ents.length;i++){ var e=lane.ents[i]; if(x>e.x-e.w/2-g && x<e.x+e.w/2+g) return e; }
+  return null; }
 /* ===== weather (Seattle rain/fog; cycles through a run) ===== */
 function stepWeather(dt){
   var w=G.weather; if(!w) return;
@@ -2394,12 +2443,12 @@ function step(dt){
     // road collision
     if(lane.type==='road'){
       var hit=false, nearGap=1e9;
-      for(var j=0;j<lane.ents.length;j++){ var o=lane.ents[j]; var dx=Math.abs(o.x-G.cr.x); var thr=(o.w+G.cr.w)/2*0.72;
+      for(var j=0;j<lane.ents.length;j++){ var o=lane.ents[j]; var dx=Math.abs(o.x-G.cr.x); var thr=(o.w+G.cr.w)/2*HIT_ROAD;
         if(dx<thr){ hit=true; break; } if(dx<nearGap)nearGap=dx; }
       // a vent only catches you while it is actually blasting
       var vented=false;
       if(lane.vents){ for(var vv=0;vv<lane.vents.length;vv++){ var V=lane.vents[vv];
-        if(ventPhase(V)>0.55 && Math.abs(V.x-G.cr.x)<28){ vented=true; break; } } }
+        if(ventPhase(V)>0.55 && Math.abs(V.x-G.cr.x)<HIT_VENT){ vented=true; break; } } }
       if(G.vestT>0){ /* hi vis: the street cannot touch you */ }
       else if(vented) die('steam');
       else if(hit) die('squish');
@@ -4837,6 +4886,8 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 /* ===== headless test hook ===== */
 if(/[?&]shtest=1/.test(location.search)){
   window.SH_DEV={ start:newGame, state:function(){return G;}, hop:queueHop,
+    /* the real collision helpers, so a test measures the GAME and never a copy of it */
+    padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
