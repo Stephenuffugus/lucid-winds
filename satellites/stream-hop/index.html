@@ -432,7 +432,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
          five modes live behind GAMES now and the odds and ends live in Settings. If a new
          thing wants to be on this screen, it almost certainly wants to be on another one. -->
     <div class="stack">
-      <button class="btn primary" id="b-games" style="min-height:86px;font-size:25px">▶&nbsp; GAMES</button>
+      <button class="btn primary" id="b-games" style="min-height:86px;font-size:25px"><img class="bicon" id="ic-games" alt="" style="width:64px;height:64px">GAMES</button>
       <button class="btn" id="b-skins"><img class="bicon" id="ic-skins" alt="" style="width:52px;height:52px">Prize Bin</button>
       <div class="row">
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt="" style="width:40px;height:40px">Music</button>
@@ -1100,7 +1100,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='42';
+var ARTV='43';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -4264,7 +4264,7 @@ function boot(){
    ['ic-daily','glyph-daily'],['ic-skins','glyph-raccoon'],['ic-set','glyph-settings'],
    ['ic-share','glyph-share'],['ic-share2','glyph-share'],['ic-adventure','glyph-adventure'],
    ['ic-music','glyph-music'],['ic-feedback','glyph-feedback'],['ic-install','glyph-install'],
-   ['ic-support','glyph-support']].forEach(function(p){
+   ['ic-support','glyph-support'],['ic-games','glyph-games']].forEach(function(p){
     var el=$(p[0]); if(el) el.src='assets/ui/'+p[1]+'.png?a='+ARTV; });
   var dgs=document.querySelectorAll('img[data-g]');
   for(var dg=0; dg<dgs.length; dg++) dgs[dg].src='assets/'+dgs[dg].getAttribute('data-g')+'.png?a='+ARTV;
