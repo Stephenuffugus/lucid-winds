@@ -1163,7 +1163,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='49';
+var ARTV='50';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -1671,6 +1671,15 @@ function advStars(n){ return (PROG.adv.stars[n]||0); }
 function advStarCount(n){ var m=advStars(n),c=0; if(m&1)c++; if(m&2)c++; if(m&4)c++; return c; }
 function advTotalStars(){ var t=0; for(var k in PROG.adv.stars) t+=advStarCount(k); return t; }
 function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r));
+  /* ⛔⛔ ZEN IS A MODE, NOT A SPEED SETTING. Stephen 2026-07-25: "im playing zen mode and
+     it is hard as hell." He was right and the reason is measurable: Zen only ever divided
+     the SPEEDS by ~0.58 and then ran the exact Endless difficulty curve for everything
+     else. Measured at rows 221-320 it reached 51% water, 13% safe rows, ten-row unbroken
+     hazard runs and NINE trains. Slowing a Frogger down does not make it easier past a
+     point — density and water fraction do, and slow pads just mean longer waits inside a
+     ten-row gauntlet. Zen now has its own curve that tops out at 3.2 and never moves
+     again, which also keeps it permanently under the d>3.5 train gate. */
+  if(G&&G.mode==='zen') return Math.min(3.2, r/70);
   var d=Math.min(9, r/26); if(r>260) d=Math.min(11.5, 9+(r-260)/140);   // the deep end keeps deepening
   return d; }
 function makeLane(r){
@@ -1698,11 +1707,15 @@ function makeLane(r){
       for(var me=0; me<L.ents.length; me++){ if(!L.ents[me].ferry) L.ents[me].w*=1.22; }  // finale pads run generous
       return L; } }
   if(G.bandLeft<=0){
-    var adv=(G.mode==='adventure');
+    var adv=(G.mode==='adventure'), zen=(G.mode==='zen');
     if(G.band==='safe'){ G.band='hazard';
-      G.bandLeft = adv ? Math.max(1, Math.round(1 + d*0.5 + rng()*1.4)) : Math.round(3+d*0.55+rng()*2); }
+      G.bandLeft = adv ? Math.max(1, Math.round(1 + d*0.5 + rng()*1.4))
+                 : zen ? Math.max(1, Math.round(1 + d*0.28 + rng()*1.2))   // 1-3 rows, never a gauntlet
+                 : Math.round(3+d*0.55+rng()*2); }
     else { G.band='safe';
-      G.bandLeft = adv ? (1+(rng()<0.7?1:0)) : (1+(rng()<0.35?1:0)); G.afterHazard=true; }
+      G.bandLeft = adv ? (1+(rng()<0.7?1:0))
+                 : zen ? (1+(rng()<0.8?1:0)+(rng()<0.3?1:0))               // usually 2, often 3
+                 : (1+(rng()<0.35?1:0)); G.afterHazard=true; }
   }
   G.bandLeft--;
   if(G.band==='safe'){
@@ -1746,7 +1759,7 @@ function makeLane(r){
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
   var spx=(G.mode==='adventure')?advSpecial(advLevelOfRow(r)):null;
   var wMul=spx==='sound'?2.4:spx==='rushhour'?0.15:1;
-  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(0.62, (0.18+d*0.045)*zoneAt(r).wBias*wMul));
+  var wantWater = (G.lastType!=='safe') && (rng() < Math.min(G.mode==='zen'?0.20:0.62, (0.18+d*0.045)*zoneAt(r).wBias*wMul));
   if(wantWater){ L.type='water'; buildWater(L,d); }
   else { L.type='road'; buildRoad(L,d); }
   G.lastType=L.type;
@@ -1802,7 +1815,7 @@ function buildRoad(L,d){
     L.speed=0; L.spacing=1; L.span=1; return;
   }
   // train lane: one long, fast train with a big gap — wait for the gap, then dash
-  if(d>3.5 && rng()<(spr2==='railyard'?0.42:0.14)){ L.train=true; L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
+  if(d>3.5 && G.mode!=='zen' && rng()<(spr2==='railyard'?0.42:0.14)){ L.train=true;   /* never in Zen */ L.speed=(150+d*18+rng()*40)*(G.mode==='zen'?0.55:1);
     var tw=TILE*(4+rng()*1.5), tgap=TILE*(4.6+rng()*3), tsp=tw+tgap;
     var tspan=VW+tsp*2, tn=Math.ceil(tspan/tsp), tph=rng()*tsp;
     var rk=rng()<0.5?'lightrail':'monorail';
@@ -1846,7 +1859,9 @@ function buildWater(L,d){
   var PADSTYLES=['log','pallet','dumpster','lifering','crate',
     'kayak','paddleboard','ring','duckboat','dock','salmonback','otterback'];
   L.padStyle=PADSTYLES[Math.floor(rng()*PADSTYLES.length)];
-  var pw=TILE*(1.5+rng()*0.9)*(1+easeW*0.22), gap=TILE*(0.7+rng()*0.55)*(1-easeW*0.3), spacing=pw+gap;
+  var _zen=(G.mode==='zen');
+  var pw=TILE*(1.5+rng()*0.9)*(1+easeW*0.22)*(_zen?1.3:1),
+      gap=TILE*(0.7+rng()*0.55)*(1-easeW*0.3)*(_zen?0.75:1), spacing=pw+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:pw, pad:1, style:L.padStyle });
   L.spacing=spacing; L.span=n*spacing;
@@ -4892,6 +4907,7 @@ if(/[?&]shtest=1/.test(location.search)){
   window.SH_DEV={ start:newGame, state:function(){return G;}, hop:queueHop,
     /* the real collision helpers, so a test measures the GAME and never a copy of it */
     padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
+    advDiff:advDiff, advEase:advEase, diffAt:diffAt, lane:function(r){ return G.lanes[r]; },
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
