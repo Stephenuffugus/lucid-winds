@@ -1113,7 +1113,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='45';
+var ARTV='46';
 function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
     im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
@@ -4156,7 +4156,15 @@ function endIntro(){ if(introTimer){ clearTimeout(introTimer); introTimer=null; 
 function toMenu(){ show('s-title'); }
 // Static keyart splash: one tap unlocks audio and drops straight into the menu.
 // The old 4-second AI intro video is retired (it read as "AI" and hurt us on socials).
-function splashTapped(){ ac(); toMenu(); }
+/* ⛔⛔ CLICK ONLY, AND ONCE. 2026-07-25: I wired a pointerdown backstop here as
+   "insurance" and it broke the front door. pointerdown fires BEFORE click, so the
+   splash dismissed itself mid-gesture, the home menu rendered under the still-down
+   finger, and the click then landed on whatever was now beneath it. TAP TO START sits
+   at the BOTTOM of the splash; the bottom button of the home menu is "Sky Wolf Studios
+   Arcade". Tapping exactly where the game says to tap threw the player out to the
+   arcade. Never dismiss a full-screen tap target on pointerdown. */
+var _splashDone=false;
+function splashTapped(){ if(_splashDone) return; _splashDone=true; ac(); toMenu(); }
 
 function boot(){
   /* ⛔ THE WAY OUT OF THE SPLASH GETS WIRED FIRST, BEFORE ANYTHING THAT CAN THROW.
@@ -4164,10 +4172,11 @@ function boot(){
      src table and every button on the game — so a single failure anywhere in there left
      the player looking at TAP TO START with nothing listening, and the only way out was
      a reload. Two listeners on purpose: the overlay, and the splash screen itself as a
-     backstop if the overlay div ever goes missing. */
+     backstop if the overlay div ever goes missing. BOTH on click, never pointerdown,
+     and splashTapped() latches so the pair cannot fire twice. */
   tap('splash-tap', splashTapped);
   var _sp=$('s-splash');
-  if(_sp) _sp.addEventListener('pointerdown', function(){ if(curScreen==='s-splash') splashTapped(); });
+  if(_sp) _sp.addEventListener('click', function(){ if(curScreen==='s-splash') splashTapped(); });
   fit();   // and size the stage before anything can throw, or it renders at native 540x960
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   warmSprites();
