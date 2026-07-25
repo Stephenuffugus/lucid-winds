@@ -161,7 +161,23 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 @keyframes sh-screen-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.992); } }
 @keyframes sh-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes sh-pop{ from{ opacity:0; transform:translateY(9px) scale(.93); } to{ opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, #splash-hint, .screen.leaving, .lv-cell, .screen.on .stack > *, #s-title::before{ animation:none !important; }
+/* ===== THE SWOOSH — home ⇄ games slides sideways instead of fading, so stepping in and
+   stepping back read as two different directions rather than the same blink.
+   show(id,'push') goes deeper, show(id,'pop') comes back out. ===== */
+.screen.on.sh-push:not(#s-play):not(#s-splash){ animation: sh-in-right .46s cubic-bezier(.22,.9,.28,1) both; }
+.screen.on.sh-pop:not(#s-play):not(#s-splash){ animation: sh-in-left .46s cubic-bezier(.22,.9,.28,1) both; }
+.screen.leaving.sh-push{ animation: sh-out-left .4s cubic-bezier(.4,0,.5,1) both !important; }
+.screen.leaving.sh-pop{ animation: sh-out-right .4s cubic-bezier(.4,0,.5,1) both !important; }
+@keyframes sh-in-right{ from{ opacity:0; transform:translateX(40px) scale(.985); } to{ opacity:1; transform:none; } }
+@keyframes sh-in-left { from{ opacity:0; transform:translateX(-40px) scale(.985); } to{ opacity:1; transform:none; } }
+@keyframes sh-out-left { from{ opacity:1; transform:none; } to{ opacity:0; transform:translateX(-32px) scale(.99); } }
+@keyframes sh-out-right{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateX(32px) scale(.99); } }
+/* must sit AFTER the rules above and match their specificity, or the :not(#id) selectors
+   outweigh it and reduced-motion never actually stops the slide */
+@media (prefers-reduced-motion: reduce){
+  .screen.on.sh-push:not(#s-play):not(#s-splash), .screen.on.sh-pop:not(#s-play):not(#s-splash),
+  .screen.leaving.sh-push, .screen.leaving.sh-pop{ animation:none !important; } }
+@media (prefers-reduced-motion: reduce){ .screen.on:not(#s-play):not(#s-splash), #s-splash.on, #splash-hint, .screen.leaving, .lv-cell, .screen.on .stack > *, #s-title::before, #s-games::before{ animation:none !important; }
   #s-clear.on #cl-level, #s-clear.on #cl-stars, #s-clear.on .go-stat, #s-clear.on #cl-streak, #s-clear.on .title-sub{ animation:none !important; opacity:1 !important; } }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
@@ -175,11 +191,11 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* menu backdrop: a living rainy-Seattle scene behind the title, darkened + vignetted so text pops.
    NOTE: do NOT set position here — .screen is already position:absolute inset:0 (full height); a
    position:relative override would collapse it to content height and the bg would only fill the top. */
-#s-title{ background:#0b0f0b; overflow:hidden; }
-#s-title::before{ content:''; position:absolute; inset:-6%; z-index:0;
+#s-title, #s-games{ background:#0b0f0b; overflow:hidden; }
+#s-title::before, #s-games::before{ content:''; position:absolute; inset:-6%; z-index:0;
   background:url('assets/bg/zone-street.jpg') center/cover no-repeat;
   animation: sh-menu-drift 26s ease-in-out infinite alternate; }
-#s-title::after{ content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+#s-title::after, #s-games::after{ content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
   background:linear-gradient(180deg, rgba(8,11,8,0.52) 0%, rgba(8,11,8,0.26) 34%, rgba(8,11,8,0.72) 70%, rgba(8,11,8,0.96) 100%),
              radial-gradient(125% 80% at 50% 38%, transparent 42%, rgba(5,8,5,0.62) 100%); }
 /* Fill from the top and let the (now taller) menu scroll if a short screen needs it.
@@ -187,13 +203,20 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
    a phone where the button stack is taller than the 960px stage clipped the TITLE off the
    TOP and made it unreachable (you cannot scroll above a centered flex overflow). Keeping
    the flex:1 spacers still vertically centers the block whenever it DOES fit. */
-#s-title > .pad{ position:relative; z-index:2; justify-content:flex-start; padding-top:14px; padding-bottom:14px;
+#s-title > .pad, #s-games > .pad{ position:relative; z-index:2; justify-content:flex-start; padding-top:14px; padding-bottom:14px;
   scrollbar-width:none; -ms-overflow-style:none; }
 /* The home menu is ONE screen — no scrollbar up the side (Stephen). Content is trimmed to
    fit the 960px stage; the hidden scrollbar is belt-and-suspenders for very short phones. */
-#s-title > .pad::-webkit-scrollbar{ display:none; }
-#s-title .stack{ gap:8px; }
-#s-title .btn.sm{ min-height:56px; font-size:16px; }
+#s-title > .pad::-webkit-scrollbar, #s-games > .pad::-webkit-scrollbar{ display:none; }
+/* HOME IS FIVE BUTTONS (2026-07-25). Players said the menu had far too much going on, so
+   every mode moved one swoosh in behind GAMES, and the odds and ends (code, feedback,
+   install) moved into Settings. What is left gets room to breathe instead of being
+   squeezed to 56px to fit. */
+#s-title .stack{ gap:12px; }
+#s-title .btn.sm{ min-height:64px; font-size:17.5px; }
+#b-games{ letter-spacing:1.6px; }
+#b-support{ border-color:rgba(200,168,75,0.42); }
+#s-games .stack{ gap:11px; }
 /* Colour-code the modes so Endless / Rush / Zen get noticed too, not just green Adventure. */
 #b-endless{ border-color:#5b9bd5; background:linear-gradient(180deg,#16202b,#111a22); }
 #b-rush{ border-color:#e5804d; background:linear-gradient(180deg,#241a12,#19120c); }
@@ -205,7 +228,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #b-zen .bicon{ filter:drop-shadow(0 0 7px rgba(169,143,208,.75)); }
 #b-daily .bicon{ filter:drop-shadow(0 0 7px rgba(200,168,75,.75)); }
 #b-skins .bicon{ filter:drop-shadow(0 0 7px rgba(229,143,160,.75)); }
-#s-title .title-rain{ position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.20; mix-blend-mode:screen;
+#s-title .title-rain, #s-games .title-rain{ position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.20; mix-blend-mode:screen;
   background-image:repeating-linear-gradient(74deg, rgba(180,205,235,0) 0 9px, rgba(180,205,235,.22) 9px 10px, rgba(180,205,235,0) 10px 24px);
   animation:sh-rain .6s linear infinite; }
 #s-title .title-sub{ text-shadow:0 1px 6px #000 }
@@ -333,6 +356,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .dl-prac{color:#e0b45a}
 /* Adventure level select */
 .lv-head{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:460px; margin:0 auto 6px}
+/* ⛔ .btn is width:100%, so a back button dropped in here stretched across the bar and
+   shoved the heading off the right edge. Header buttons size to their own content. */
+.lv-head > .btn{flex:none; width:auto; padding:0 18px; min-height:52px}
+.lv-head > .title-sub{flex:1; text-align:center; padding:0 8px}
 #lv-list{flex:1; width:100%; max-width:460px; margin:0 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; padding:6px 4px 24px}
 .lv-chap{color:var(--gold); font-size:12px; letter-spacing:3px; text-transform:uppercase; font-weight:800; margin:16px 6px 8px; opacity:.9}
 .lv-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
@@ -401,6 +428,31 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town.</div>
     <div style="flex:1"></div>
+    <!-- ⛔ FIVE BUTTONS. Feedback said the home screen had way too much going on, so the
+         five modes live behind GAMES now and the odds and ends live in Settings. If a new
+         thing wants to be on this screen, it almost certainly wants to be on another one. -->
+    <div class="stack">
+      <button class="btn primary" id="b-games" style="min-height:86px;font-size:25px">▶&nbsp; GAMES</button>
+      <button class="btn" id="b-skins"><img class="bicon" id="ic-skins" alt="" style="width:52px;height:52px">Prize Bin</button>
+      <div class="row">
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt="" style="width:40px;height:40px">Music</button>
+        <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt="" style="width:40px;height:40px">Settings</button>
+      </div>
+      <button class="btn sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
+      <button class="btn ghost sm" id="b-exit">◄ Sky Wolf Studios Arcade</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- GAMES — every way to play, one swoosh in from home. -->
+  <div class="screen" id="s-games"><div class="title-rain"></div>
+    <div class="pad" style="padding-top:16px">
+    <div class="lv-head">
+      <button class="btn ghost sm" id="gm-back">◄</button>
+      <div class="title-sub" style="margin:0">Games</div>
+      <div style="width:56px;flex:none"></div>
+    </div>
+    <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-adventure" style="min-height:80px;font-size:23px"><img class="bicon" id="ic-adventure" alt="" style="width:64px;height:64px">Adventure</button>
       <div class="row">
@@ -408,23 +460,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
         <button class="btn sm modebtn" id="b-rush"><img class="bicon" id="ic-rush" alt="">Rush</button>
         <button class="btn sm modebtn" id="b-zen"><img class="bicon" id="ic-zen" alt="">Zen</button>
       </div>
-      <div class="row">
-        <button class="btn sm modebtn wide" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
-        <button class="btn sm modebtn wide" id="b-skins"><img class="bicon" id="ic-skins" alt="">Prize Bin</button>
-      </div>
+      <button class="btn sm modebtn wide" id="b-daily"><img class="bicon" id="ic-daily" alt="">Daily</button>
       <div class="dl-note" id="daily-note"></div>
-      <div class="row">
-        <button class="btn sm" id="b-how">How</button>
-        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><img class="bicon" id="ic-music" alt="" style="width:54px;height:54px"></button>
-        <button class="btn sm" id="b-set" aria-label="Settings"><img class="bicon" id="ic-set" alt="" style="width:54px;height:54px"></button>
-      </div>
-      <button class="btn sm" id="b-code">🎟 Enter a code</button>
-      <button class="btn sm" id="b-feedback" style="border-color:rgba(200,168,75,0.45)"><img class="bicon" id="ic-feedback" alt="" style="width:40px;height:40px">We would love to hear what you think</button>
-      <button class="btn ghost sm" id="b-install"><img class="bicon" id="ic-install" alt="" style="width:40px;height:40px">Put Jimothy on your home screen</button>
-      <button class="btn ghost sm" id="b-support"><img class="bicon" id="ic-support" alt="" style="width:40px;height:40px">Support the Studio</button>
-      <button class="btn ghost sm" id="b-exit">◄ Sky Wolf Studios Arcade</button>
+      <button class="btn ghost sm" id="b-how">How to play</button>
     </div>
-    <div class="foot" id="buildstamp"></div>
+    <div style="flex:1"></div>
   </div></div>
 
   <!-- ADVENTURE LEVEL SELECT -->
@@ -481,6 +521,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-code" style="max-width:400px;margin:0 auto 10px">🎟 Redeem a code</button>
     <button class="btn ghost sm" id="set-intro" style="max-width:400px;margin:0 auto 10px">▶ Watch the intro</button>
+    <!-- these two used to sit on the home menu and were most of why it felt cluttered -->
+    <button class="btn ghost sm" id="b-feedback" style="max-width:400px;margin:0 auto 10px;border-color:rgba(200,168,75,0.42)"><img class="bicon" id="ic-feedback" alt="" style="width:34px;height:34px">We would love to hear what you think</button>
+    <button class="btn ghost sm" id="b-install" style="max-width:400px;margin:0 auto 10px"><img class="bicon" id="ic-install" alt="" style="width:34px;height:34px">Put Jimothy on your home screen</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -781,21 +824,28 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.1';
+var BUILD='v7.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
-function show(id){ var el=$(id);
+/* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
+   in from the left (coming out). Left off, screens fade up the way they always have. */
+function show(id,dir){ var el=$(id);
   closeReveal();   // a prize reveal must never survive into the next screen
   // finalize any in-progress fade-out first, so fast navigation can never stack two screens
   if(_leaveTimer){ clearTimeout(_leaveTimer); _leaveTimer=null; }
   var lv=document.querySelectorAll('.screen.leaving'); for(var j=0;j<lv.length;j++){ lv[j].classList.remove('on'); lv[j].classList.remove('leaving'); }
+  // the swoosh is per-transition, never sticky — wipe it off everything before re-arming
+  var sw=document.querySelectorAll('.sh-push,.sh-pop');
+  for(var s=0;s<sw.length;s++){ sw[s].classList.remove('sh-push'); sw[s].classList.remove('sh-pop'); }
   var cur=document.querySelector('.screen.on');
   var ons=document.querySelectorAll('.screen.on'); for(var i=0;i<ons.length;i++){ if(ons[i]!==cur) ons[i].classList.remove('on'); }
-  if(cur && cur!==el){ var c=cur; c.classList.add('leaving');
-    _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving'); _leaveTimer=null; }, 400); }
-  if(el){ el.classList.remove('leaving'); el.classList.add('on'); }
+  if(cur && cur!==el){ var c=cur; c.classList.add('leaving'); if(dir)c.classList.add('sh-'+dir);
+    _leaveTimer=setTimeout(function(){ c.classList.remove('on'); c.classList.remove('leaving');
+      c.classList.remove('sh-push'); c.classList.remove('sh-pop'); _leaveTimer=null; }, 400); }
+  if(el){ el.classList.remove('leaving'); if(dir)el.classList.add('sh-'+dir); el.classList.add('on'); }
   curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
-  if(id==='s-title'){ paintDaily(); maybeDailyReward(); }
+  if(id==='s-title'||id==='s-games') paintDaily();   // the daily line lives on the games screen now
+  if(id==='s-title'){ maybeDailyReward(); }
   var hp=$('hoppad'); if(hp){ if(id==='s-play')hp.classList.add('on'); else hp.classList.remove('on'); }
   var pb=$('pausebtn'); if(pb){ if(id==='s-play')pb.classList.add('on'); else pb.classList.remove('on'); }
   var mb=$('mutebtn'); if(mb){ if(id==='s-play')mb.classList.add('on'); else mb.classList.remove('on'); } }
@@ -1446,7 +1496,7 @@ function paintDaily(){
       ((D.streak||0)>0 ? (' · <span class="dl-streak">'+D.streak+' day streak</span>') : '');
   }
 }
-setInterval(function(){ if(curScreen==='s-title') paintDaily(); }, 60000);
+setInterval(function(){ if(curScreen==='s-title'||curScreen==='s-games') paintDaily(); }, 60000);
 
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0, advRetryLevel=1;
@@ -4098,34 +4148,37 @@ function boot(){
     else { JMUS.setHidden(false); if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} } });
   // FIRST PLAY: rules before play (Jessie). The very first time any mode is
   // tapped, the How screen shows once and its button carries them into the game.
-  var howNext=null;
+  var howNext=null, howFrom='s-games';
   function startGated(fn){
     if(!LS.get('sh_howseen')){ howNext=fn; var hb=$('how-back'); if(hb)hb.textContent="Got it, let's hop"; show('s-how'); return; }
     fn();
   }
   // a brand new player has exactly one unlocked level, so the map is a pointless tap
   // between them and the game. Send them straight in; the map returns once they have progress.
-  tap('b-adventure', function(){ startGated(function(){ if((PROG.adv.maxLevel||1)<=1){ newGame('adventure',1); return; } renderLevels(); show('s-levels'); }); });
-  tap('lv-back', function(){ show('s-title'); });
+  // HOME → GAMES → the mode. One swoosh each way; back always retraces the step.
+  tap('b-games', function(){ sfx('ui'); show('s-games','push'); });
+  tap('gm-back', function(){ sfx('ui'); show('s-title','pop'); });
+  tap('b-adventure', function(){ startGated(function(){ if((PROG.adv.maxLevel||1)<=1){ newGame('adventure',1); return; } renderLevels(); show('s-levels','push'); }); });
+  tap('lv-back', function(){ show('s-games','pop'); });
   tap('b-endless', function(){ startGated(function(){ newGame('endless'); }); });
   tap('b-daily', function(){ startGated(function(){ newGame('daily'); }); });
   tap('b-rush', function(){ startGated(function(){ newGame('rush'); }); });
   tap('b-zen', function(){ startGated(function(){ newGame('zen'); }); });
-  tap('b-skins', function(){ shopTab('shop',1); renderBin(); show('s-skins'); });
+  tap('b-skins', function(){ shopTab('shop',1); renderBin(); show('s-skins','push'); });
   tap('bin-pull', binPull);
   tap('tab-shop', function(){ shopTab('shop'); sfx('ui'); });
   tap('tab-coll', function(){ shopTab('coll'); sfx('ui'); });
-  tap('b-ach', function(){ renderAch(); show('s-ach'); });
-  tap('ach-back', function(){ renderBin(); show('s-skins'); });
+  tap('b-ach', function(){ renderAch(); show('s-ach','push'); });
+  tap('ach-back', function(){ renderBin(); show('s-skins','pop'); });
   tap('br-ok', revealNext);
   var brv=$('bin-reveal'); if(brv) brv.addEventListener('click', function(e){ if(e.target===brv) revealNext(); });
-  tap('b-how', function(){ show('s-how'); });
+  tap('b-how', function(){ howFrom='s-games'; show('s-how','push'); });
   tap('intro-skip', endIntro);
   tap('intro-next', endIntro);
-  tap('b-acct', function(){ paintAccount(); show('s-account'); sfx('ui'); });
+  tap('b-acct', function(){ paintAccount(); show('s-account','push'); sfx('ui'); });
   tap('ac-create', function(){ SUP.auth(true,'ac-email','ac-pass','ac-status'); });
   tap('ac-signin', function(){ SUP.auth(false,'ac-email','ac-pass','ac-status'); });
-  tap('ac-back',   function(){ show('s-title'); });
+  tap('ac-back',   function(){ show('s-title','pop'); });
   tap('ac-out', function(){
     showConfirm('Sign out on this device? Everything stays safe on your account, and your collection stays on this phone too.',
       'Sign out', 'Stay signed in', function(){
@@ -4134,19 +4187,18 @@ function boot(){
         setTimeout(function(){ paintAccount(); try{ SUP.render(); }catch(e){} }, 400);
       }, true);
   });
-  tap('b-code', function(){ openCodeBox(); });
   tap('set-code', function(){ openCodeBox(); });
   tap('bin-code', function(){ openCodeBox(); });
   tap('set-intro', function(){ playIntro(); });
   var si=$('s-intro'); if(si) si.addEventListener('pointerdown', function(e){ if(e.target.closest('#intro-nav'))return; ac(); nextIntroBeat(); });
-  tap('b-set', function(){ show('s-set'); });
+  tap('b-set', function(){ sfx('ui'); show('s-set','push'); });
   var musFrom='s-title';
-  tap('b-music', function(){ musFrom='s-title'; renderMusic(); show('s-music'); });
-  tap('pz-music', function(){ musFrom='s-pause'; renderMusic(); show('s-music'); });
-  tap('mus-back', function(){ JMUS.endTease(); show(musFrom); });
+  tap('b-music', function(){ musFrom='s-title'; sfx('ui'); renderMusic(); show('s-music','push'); });
+  tap('pz-music', function(){ musFrom='s-pause'; renderMusic(); show('s-music','push'); });
+  tap('mus-back', function(){ JMUS.endTease(); show(musFrom,'pop'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
-  tap('b-support', function(){ SUP.status(''); SUP.render(); show('s-support'); });
-  tap('sup-back', function(){ show('s-title'); });
+  tap('b-support', function(){ SUP.status(''); sfx('ui'); SUP.render(); show('s-support','push'); });
+  tap('sup-back', function(){ show('s-title','pop'); });
   tap('sup-buy', SUP.buy);
   tap('sup-card', SUP.buyCard);
   tap('sup-d5', function(){ SUP.donate(500); });   tap('sup-d5b', function(){ SUP.donate(500); });
@@ -4160,11 +4212,11 @@ function boot(){
   try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth') SUP.hydrate(); }); }catch(e){}
   tap('how-back', function(){ LS.set('sh_howseen','1');
     var f=howNext; howNext=null; var hb=$('how-back'); if(hb)hb.textContent='Got it';
-    if(f) f(); else show('s-title'); });
-  tap('b-feedback', function(){ openFeedback('s-title'); });
+    if(f) f(); else show(howFrom||'s-games','pop'); });
+  tap('b-feedback', function(){ openFeedback('s-set'); });
   tap('go-feedback', function(){ openFeedback('s-go'); });
   tap('pz-feedback', function(){ openFeedback('s-pause'); });
-  tap('fb-back', function(){ show(fbFrom); });
+  tap('fb-back', function(){ show(fbFrom,'pop'); });
   tap('fb-send', sendFeedback);
   tap('pz-share', shareIt);
   tap('b-install', tryInstall);
@@ -4173,8 +4225,8 @@ function boot(){
   (function(){ var std=false;
     try{ std=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){}
     if(std){ var b=$('b-install'); if(b)b.style.display='none'; } })();   // already installed: hide
-  tap('set-back', function(){ show('s-title'); });
-  tap('skins-back', function(){ show('s-title'); });
+  tap('set-back', function(){ show('s-title','pop'); });
+  tap('skins-back', function(){ show('s-title','pop'); });
   var pbtn=$('pausebtn'); if(pbtn) pbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); pauseRun(); });
   var mbtn=$('mutebtn'); if(mbtn){ if(SET.mute)mbtn.classList.add('muted');
     mbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
@@ -4191,7 +4243,7 @@ function boot(){
   tap('cl-menu', quitRun);
   tap('go-continue', confirmRevive);
   tap('go-retry', function(){ if(G&&G.mode==='adventure') newGame('adventure', advRetryLevel); else newGame(G?G.mode:'endless'); });
-  tap('go-levels', function(){ renderLevels(); show('s-levels'); });
+  tap('go-levels', function(){ renderLevels(); show('s-levels','push'); });
   tap('go-home', function(){ show('s-title'); });
   tap('go-share', shareIt);
   tap('go-install', tryInstall);
@@ -4220,8 +4272,8 @@ function boot(){
      in, it does not throw you out of the game (Stephen: "back keeps taking me
      out on accident"). One sentinel history entry stays armed; every handled
      pop re-arms it. Backing out from the TITLE is the one real exit. ===== */
-  var BACK_TO={ 's-how':'s-title', 's-set':'s-title', 's-music':null, 's-skins':'s-title', 's-account':'s-title',
-    's-ach':'s-skins', 's-levels':'s-title', 's-support':'s-title', 's-go':'s-title' };
+  var BACK_TO={ 's-how':'s-games', 's-set':'s-title', 's-music':null, 's-skins':'s-title', 's-account':'s-title',
+    's-ach':'s-skins', 's-games':'s-title', 's-levels':'s-games', 's-support':'s-title', 's-go':'s-title' };
   function armBack(){ try{ history.pushState({sh:1},''); }catch(e){} }
   window.addEventListener('popstate', function(){
     var rv=$('bin-reveal');
@@ -4231,12 +4283,12 @@ function boot(){
     if(id==='s-pause'){ resumeRun(); armBack(); return; }
     if(id==='s-intro'){ endIntro(); armBack(); return; }
     if(id==='s-clear'){ resumeNextLevel(); armBack(); return; }
-    if(id==='s-feedback'){ sfx('ui'); show(fbFrom); armBack(); return; }
-    if(id==='s-music'){ JMUS.endTease(); sfx('ui'); show(musFrom); armBack(); return; }
+    if(id==='s-feedback'){ sfx('ui'); show(fbFrom,'pop'); armBack(); return; }
+    if(id==='s-music'){ JMUS.endTease(); sfx('ui'); show(musFrom,'pop'); armBack(); return; }
     if(id==='s-splash'||id==='s-title'){ try{ history.back(); }catch(e){} return; }  // really leave
     var to=BACK_TO[id]||'s-title';
     if(to==='s-skins') renderBin();
-    sfx('ui'); show(to); armBack();
+    sfx('ui'); show(to,'pop'); armBack();   // system back is always a step OUT, so it swooshes back
   });
   armBack();
 
@@ -4427,7 +4479,7 @@ function renderMusic(){
    swFeedback cloud function (admin-side Firestore write, no account needed). ===== */
 var FB_URL='https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback';
 var fbFrom='s-title';
-function openFeedback(from){ fbFrom=from||curScreen||'s-title'; var st=$('fb-status'); if(st)st.textContent=''; sfx('ui'); show('s-feedback'); }
+function openFeedback(from){ fbFrom=from||curScreen||'s-title'; var st=$('fb-status'); if(st)st.textContent=''; sfx('ui'); show('s-feedback','push'); }
 function sendFeedback(){
   var ta=$('fb-msg'), msg=(ta&&ta.value)||'', st=$('fb-status');
   if(!msg.replace(/\s/g,'')){ if(st)st.textContent='Write a little something first.'; return; }
@@ -4687,7 +4739,7 @@ function cloudPull(thenPush){
     var changed=c?cloudMerge(c):false;
     _cloudReady=true;
     if(changed){ saveProg(); try{ syncMusicLibrary(); }catch(e){}
-      try{ if(curScreen==='s-skins')renderBin(); if(curScreen==='s-title')paintDaily(); }catch(e){} }
+      try{ if(curScreen==='s-skins')renderBin(); if(curScreen==='s-title'||curScreen==='s-games')paintDaily(); }catch(e){} }
     if(thenPush) cloudPush(true);
     paintAccount();
   })['catch'](function(){ _cloudReady=false; });
