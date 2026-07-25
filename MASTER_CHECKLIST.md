@@ -203,12 +203,27 @@ not.** These are per-game and specific:
   Verified: scale drops 0.7222 → 0.6250 when the visible area shrinks. ⚠️ needs Jessie
   to confirm on her actual device — headless has no URL bar so it cannot reproduce there.
 - [x] Petal Alchemy — off-screen FIXED, same root cause, same fix, verified the same way.
+- [x] **STUDIO-WIDE VIEWPORT SWEEP — 47 games fixed.** This was never a handful of games;
+  nearly every satellite sized its stage off `innerHeight`. Done in three verified waves:
+  the 2 Jessie reported → 9 → the 6 other games she flagged → 32 more matching the exact
+  proven signature. Verified 32/32 + 6/6 + 8/8 shrink correctly, all parse clean, smoke
+  suites pass, 8 service worker caches bumped.
+  ⛔ **NOT swept, deliberately:** ~30 other `innerHeight` patterns do genuinely different
+  things (dewball's 3D camera aspect, burr-blast canvas DPI, vinewinder's fixed -260,
+  blooming-words percentages). A regex over those would have broken real games. If any
+  of them turn out to be off-screen on device, they need individual review.
 - [x] **Swept the other 9** — bridgevine, leaf-fit, nova-bloom, pollinator-paths,
   root-weave, spore-drift, tempo-grove, silt (scaled stages) + garden-td (full-bleed
   canvas, different shape, handled separately). Unblocked by Stephen confirming the first
   two on his phone. Verified: 8/8 stages shrink 0.7222 → 0.5417 when the visible area
   shrinks, garden-td canvas 844px → 520px, all 9 parse clean, 0 page errors.
-- [ ] Loop Warden — start button problem
+- [~] Loop Warden — start button. Sizing FIXED (see the viewport sweep below), which is
+  the likely cause: an oversized stage pushes the button off the bottom on a real phone.
+  Verified all four mode buttons DO fire and BEGIN THE WATCH exists and is not below the
+  fold at 390x844, so it was never a dead button. STILL OPEN: every touch target on that
+  screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
+- [ ] **48px touch targets across the satellites.** Loop Warden's buttons are 40px and
+  35px. Rule 11 says 48px minimum. Worth auditing studio-wide rather than one game.
 - [ ] Line Loom — "incomprehensible", needs rules + rework of how it explains itself
 - [ ] Mini Crossword — layout
 - [ ] Bridgevine — scroll
