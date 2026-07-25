@@ -70,6 +70,11 @@ Ordered by value per hour of work.
 - [ ] **Scrabble Overturn / Scrabble UpWords** — new game ideas, unspecced.
 - [ ] **Nature Sound ID app** — needs an audio-fingerprint approach decision first; model on
   Merlin Bird.
+- [ ] **Jade Garden is documented but never built.** `GAMES_MANIFEST.md:105` describes it
+  (mahjong, match free pairs, hint + shuffle) and the portal has a search alias for it, but
+  there is no `games/jade.js`, no shell, and no card. No player can reach it, so nothing is
+  broken — it's just owed. Removed from the smoke list so the suite reads green; put it back
+  the day the game lands.
 - [ ] **Chameleon 3D card repoint** — pinned to `releases/v3.0.0/abduct-3d.html`; repoint
   when he ships a new release. A postMessage earn bridge was offered; needs event definitions.
 
