@@ -197,8 +197,16 @@ before building."
 ### PURPLE — the per-game readability sweep (Jessie's biggest batch, mostly open)
 The `/play/` shells got directions pages and the font pass on 7/18. **⛔ The SATELLITES did
 not.** These are per-game and specific:
-- [ ] Cipher Bloom — content off-screen
-- [ ] Petal Alchemy — content off-screen
+- [x] Cipher Bloom — off-screen FIXED. `fitStage()` measured `innerHeight`, which on a
+  real phone includes the strip behind the URL bar, so the stage scaled bigger than the
+  visible area. Now prefers `visualViewport` and listens to its resize/scroll events.
+  Verified: scale drops 0.7222 → 0.6250 when the visible area shrinks. ⚠️ needs Jessie
+  to confirm on her actual device — headless has no URL bar so it cannot reproduce there.
+- [x] Petal Alchemy — off-screen FIXED, same root cause, same fix, verified the same way.
+- [ ] **Sweep the other 9 with the same innerHeight bug** — bridgevine, garden-td,
+  leaf-fit, nova-bloom, pollinator-paths, root-weave, spore-drift, tempo-grove, silt.
+  Held deliberately until Jessie confirms the fix works on a real phone. If it does,
+  this is a mechanical sweep.
 - [ ] Loop Warden — start button problem
 - [ ] Line Loom — "incomprehensible", needs rules + rework of how it explains itself
 - [ ] Mini Crossword — layout
