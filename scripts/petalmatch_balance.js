@@ -83,10 +83,16 @@ const BOT = `(async () => {
     const s = T.state();
     if (s.level > startLevel) return { won: true, movesLeft: s.moves, score: s.score };
     if (s.lost || s.moves <= 0) return { won: false, movesLeft: 0, score: s.score };
-    const mv = T.moves();
+    const mv = T.movesScored();
     if (!mv.length) { await sleep(30); continue; }
-    const pick = mv[Math.floor(Math.random() * mv.length)];
-    T.play(pick[0][0], pick[0][1], pick[1][0], pick[1][1]);
+    /* Play like a decent human, not a perfect solver and not a coin flip:
+       pick randomly from the TOP THIRD of moves by objective value. A perfect
+       greedy bot would measure what a machine can do; we want what a good
+       player does. */
+    mv.sort((x, y) => y.s - x.s);
+    const top = mv.slice(0, Math.max(1, Math.ceil(mv.length / 3)));
+    const pick = top[Math.floor(Math.random() * top.length)];
+    T.play(pick.a[0], pick.a[1], pick.b[0], pick.b[1]);
     await sleep(4);
   }
   const s = T.state();

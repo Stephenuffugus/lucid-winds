@@ -338,6 +338,31 @@ window._gameFns.petalmatch = function PM(a){
       finalSpawns.push(spawnMap[sk2]);
       delete toClear[sk2];
     }
+
+    /* ⛔ THORNS TAKE DAMAGE FROM AN ADJACENT MATCH. Added 2026-07-25.
+       A player: "the levels that involve hitting the thorns are immensely more
+       difficult than the levels between them." The balance harness measured
+       thorn levels at a 0% win rate against levels either side at 100%.
+       The cause: toClear was only ever filled from match groups, and a match
+       group requires type>=0 while a thorn is type -2. So a match right next to
+       a thorn did NOTHING. Thorns could only be damaged by a special piece
+       exploding on them, which is why those levels felt like a brick wall.
+       Every game in this genre damages a blocker adjacent to a match. Now so do
+       we. Deduped by key, so two matched cells touching the same thorn is one
+       hit, not two. */
+    var thornHitKeys={};
+    for(var tk in toClear){
+      var tp=tk.split(','),tr=parseInt(tp[0],10),tc=parseInt(tp[1],10);
+      var nb=[[tr+1,tc],[tr-1,tc],[tr,tc+1],[tr,tc-1]];
+      for(var nbi=0;nbi<4;nbi++){
+        var nr=nb[nbi][0],ncc=nb[nbi][1];
+        if(!inBounds(nr,ncc))continue;
+        var ncell=grid[nr]&&grid[nr][ncc];
+        if(ncell&&ncell.type===-2)thornHitKeys[nr+','+ncc]=1;
+      }
+    }
+    for(var thk in thornHitKeys)toClear[thk]=1;
+
     return {toClear:toClear,spawns:finalSpawns};
   }
 
@@ -1200,6 +1225,60 @@ window._gameFns.petalmatch = function PM(a){
         if(cell&&cell.special){
           if(c<COLS-1&&canSwap(r,c+1))out.push([[r,c],[r,c+1]]);
           else if(r<ROWS-1&&canSwap(r+1,c))out.push([[r,c],[r+1,c]]);
+        }
+      }
+      return out;
+    },
+    /* Every legal move, SCORED by how much it advances the current objective.
+       A random-move bot badly under-rates blocker levels, because a human aims
+       at the blockers and a coin flip does not. Balancing against a bot weaker
+       than a real player would make the whole ladder too easy.
+       Uses the real findMatches(), so the cells counted here are the cells the
+       engine would actually clear. */
+    movesScored:function(){
+      var kind=objective&&objective.kind, out=[], r, c;
+      function scoreSwap(ar,ac,br,bc){
+        swap(ar,ac,br,bc);
+        var groups=findMatches(), n=0, jelly=0, thorn=0, seen={};
+        for(var g=0;g<groups.length;g++){
+          for(var i=0;i<groups[g].length;i++){
+            var cell=groups[g][i], k=cell.r+','+cell.c;
+            if(seen[k])continue; seen[k]=1; n++;
+            var gc=grid[cell.r]&&grid[cell.r][cell.c];
+            if(gc&&gc.jelly>0)jelly++;
+            // a thorn is broken by a match ADJACENT to it, so look around
+            var d=[[1,0],[-1,0],[0,1],[0,-1]];
+            for(var q=0;q<4;q++){
+              var nr=cell.r+d[q][0], nc2=cell.c+d[q][1];
+              if(inBounds(nr,nc2)&&grid[nr][nc2]&&grid[nr][nc2].type===-2)thorn++;
+            }
+          }
+        }
+        swap(ar,ac,br,bc);
+        if(!n)return -1;
+        var s=n;                                  // bigger matches make specials
+        if(n>=4)s+=3;                             // actively chase specials
+        if(kind==='dew'||kind==='mix')s+=jelly*5;
+        if(kind==='thorns'||kind==='mix')s+=thorn*5;
+        return s;
+      }
+      for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
+        if(!canSwap(r,c))continue;
+        if(c<COLS-1&&canSwap(r,c+1)){
+          var s1=scoreSwap(r,c,r,c+1);
+          if(s1>=0)out.push({a:[r,c],b:[r,c+1],s:s1});
+        }
+        if(r<ROWS-1&&canSwap(r+1,c)){
+          var s2=scoreSwap(r,c,r+1,c);
+          if(s2>=0)out.push({a:[r,c],b:[r+1,c],s:s2});
+        }
+      }
+      // firing an existing special is usually strong, rate it highly
+      for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
+        var cl=grid[r][c];
+        if(cl&&cl.special){
+          if(c<COLS-1&&canSwap(r,c+1))out.push({a:[r,c],b:[r,c+1],s:9});
+          else if(r<ROWS-1&&canSwap(r+1,c))out.push({a:[r,c],b:[r+1,c],s:9});
         }
       }
       return out;
