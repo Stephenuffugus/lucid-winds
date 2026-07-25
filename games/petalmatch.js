@@ -166,14 +166,14 @@ window._gameFns.petalmatch = function PM(a){
               label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
     if(kind==='gather'){
-      var per=Math.round(12+d*34);
-      var colors=d<0.3?1:(d<0.65?2:3);
+      var per=Math.round(14+d*38);
+      var colors=d<0.3?1:(d<0.6?2:3);
       return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,finale:finale,
               label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
     }
     if(kind==='thorns'){
-      var th=Math.round(4+d*16);
-      var hits=d<0.4?1:(d<0.75?2:3);
+      var th=Math.round(7+d*23);
+      var hits=d<0.28?1:(d<0.62?2:3);
       return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,finale:finale,
               label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
     }

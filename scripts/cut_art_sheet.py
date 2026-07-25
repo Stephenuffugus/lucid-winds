@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Generic art-sheet cutter. Any grid, any names, any game.
+
+    # look first, write nothing
+    python3 scripts/cut_art_sheet.py sheets/pieces.png --cols 4 --rows 2 \
+        --contact /tmp/pieces.png --dry
+
+    # then write, with real names
+    python3 scripts/cut_art_sheet.py sheets/pieces.png --cols 4 --rows 2 \
+        --names base-1,base-2,base-3,base-4,base-5,base-6,base-7,base-8 \
+        --out assets/games/petalmatch --contact /tmp/pieces.png
+
+    # don't know the layout? let it find the gutters
+    python3 scripts/cut_art_sheet.py sheets/whatever.png --auto --contact /tmp/x.png --dry
+
+WHY THIS EXISTS
+  Stephen is making 23 sheets for Petal Match. The proven cutter at
+  satellites/stream-hop/scripts/cut_sheet.py is hard-wired to Jimothy: a 3x3
+  grid and 18 fixed pose names. This is the same engine with the grid and the
+  names made arguments.
+
+⛔ IT IMPORTS THE JIMOTHY RIG RATHER THAN COPYING IT. Every rule in that file
+  was learned by shipping the mistake once. Duplicating the logic here means the
+  next fix lands in one file and not the other, and the wrong one gets used.
+
+THE RULES IT INHERITS, all of which still apply:
+  1. NEVER cut on an even grid. Frames are painted by hand and never land on
+     exact thirds. It finds the real gutters (columns that are entirely
+     background) and splits at their midpoints, so a detached spark or petal
+     stays with the frame it belongs to.
+  2. NEVER key on "looks like magenta". It MEASURES the sheet's own background
+     colour and keys on distance to it, with a soft ramp so edges stay smooth
+     instead of eroded. A hard key ate 27,669 painted pixels from one sheet.
+  3. LOOK AT EVERY SPRITE. --contact writes a montage on a checkerboard. Open
+     it. Sheets that cut "fine" have still shipped a clipped hat.
+  4. Sheets get swapped and mislabelled. Check the contact sheet against your
+     names BEFORE writing anything. --dry exists for exactly this.
+"""
+import argparse, os, sys
+
+RIG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                   '..', 'satellites', 'stream-hop', 'scripts')
+sys.path.insert(0, os.path.abspath(RIG))
+
+try:
+    import cut_sheet as rig            # the proven engine
+except Exception as e:                 # pragma: no cover
+    sys.exit('cannot import the Jimothy cutting rig at %s\n  %s' % (RIG, e))
+
+import numpy as np
+from PIL import Image
+from scipy import ndimage
+
+
+def cut_grid(path, cols, rows, pad=3, t0=30, t1=62, auto=False):
+    """Same pipeline as the rig's cut(), with the grid made a parameter."""
+    im = Image.open(path).convert('RGB')
+    rgb = np.array(im)
+    key = rig.find_key(rgb)
+    alpha, wr, wc = rig.background(rgb, key, t0, t1)
+    solid = alpha > 0.5
+    solid_open = ndimage.binary_opening(solid, np.ones((3, 3)))
+
+    xprof, yprof = solid_open.sum(axis=0), solid_open.sum(axis=1)
+    if auto:
+        # Try plausible layouts and keep the one whose gutters are cleanest.
+        best = None
+        for c in range(1, 9):
+            for r in range(1, 9):
+                if c * r < 2:
+                    continue
+                try:
+                    xc, _, xb = rig.gutters(xprof, c - 1)
+                    yc, _, yb = rig.gutters(yprof, r - 1)
+                except Exception:
+                    continue
+                score = (len(xb) if xb else 0) + (len(yb) if yb else 0)
+                if len(xc) == c - 1 and len(yc) == r - 1:
+                    if best is None or score < best[0]:
+                        best = (score, c, r)
+        if best:
+            cols, rows = best[1], best[2]
+            print('  auto-detected layout: %d cols x %d rows' % (cols, rows))
+        else:
+            print('  ⚠ auto-detect failed, falling back to %dx%d' % (cols, rows))
+
+    xcuts, (x0, x1), xbridge = rig.gutters(xprof, cols - 1)
+    ycuts, (y0, y1), ybridge = rig.gutters(yprof, rows - 1)
+    if xbridge:
+        print('  ⚠ %d column gutter(s) bridged by paint — check the contact sheet' % len(xbridge))
+    if ybridge:
+        print('  ⚠ %d row gutter(s) bridged by paint — check the contact sheet' % len(ybridge))
+
+    xs = [x0] + list(xcuts) + [x1]
+    ys = [y0] + list(ycuts) + [y1]
+
+    rgba = np.dstack([rig.despill(rgb, alpha), (alpha * 255).astype(np.uint8)])
+    frames, dropped = [], []
+    for ri in range(len(ys) - 1):
+        for ci in range(len(xs) - 1):
+            sub = rgba[ys[ri]:ys[ri + 1], xs[ci]:xs[ci + 1]]
+            a = sub[:, :, 3] > 8
+            if not a.any():
+                frames.append(Image.new('RGBA', (8, 8), (0, 0, 0, 0)))
+                dropped.append(0)
+                continue
+            rr = np.where(a.any(axis=1))[0]
+            cc = np.where(a.any(axis=0))[0]
+            t, b = max(0, rr[0] - pad), min(sub.shape[0], rr[-1] + 1 + pad)
+            l, r = max(0, cc[0] - pad), min(sub.shape[1], cc[-1] + 1 + pad)
+            frames.append(Image.fromarray(sub[t:b, l:r], 'RGBA'))
+            dropped.append(0)
+    return frames, dropped
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('sheets', nargs='+')
+    ap.add_argument('--cols', type=int, default=3)
+    ap.add_argument('--rows', type=int, default=3)
+    ap.add_argument('--auto', action='store_true', help='detect the grid from the gutters')
+    ap.add_argument('--names', help='comma separated, in reading order')
+    ap.add_argument('--prefix', default='frame', help='used when --names is not given')
+    ap.add_argument('--out')
+    ap.add_argument('--contact')
+    ap.add_argument('--t0', type=int, default=30)
+    ap.add_argument('--t1', type=int, default=62)
+    ap.add_argument('--dry', action='store_true')
+    a = ap.parse_args()
+
+    names_in = [n.strip() for n in a.names.split(',')] if a.names else None
+    all_frames, all_names = [], []
+
+    for sheet in a.sheets:
+        print(os.path.basename(sheet))
+        frames, _ = cut_grid(sheet, a.cols, a.rows, t0=a.t0, t1=a.t1, auto=a.auto)
+        for i, f in enumerate(frames):
+            idx = len(all_frames) + i
+            n = names_in[idx] if names_in and idx < len(names_in) else '%s-%02d' % (a.prefix, idx + 1)
+            print('    %-16s %4dx%-4d' % (n, f.width, f.height))
+            all_names.append(n)
+        all_frames += frames
+
+    if names_in and len(names_in) != len(all_frames):
+        print('  ⚠ %d names given but %d frames cut. Check the contact sheet before writing.'
+              % (len(names_in), len(all_frames)))
+
+    if a.contact:
+        print('  contact →', rig.contact(all_frames, all_names, a.contact))
+    if a.dry or not a.out:
+        print('  (dry run, nothing written)')
+        return
+
+    os.makedirs(a.out, exist_ok=True)
+    for f, n in zip(all_frames, all_names):
+        f.save(os.path.join(a.out, n + '.png'))
+    print('  wrote %d files → %s' % (len(all_frames), a.out))
+
+
+if __name__ == '__main__':
+    main()
