@@ -768,7 +768,28 @@ function buildPicker(){
 function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); }
   paint(); var host=el.parentNode||el; host.style.cursor='pointer';
   host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); if(S&&curScreen==='s-play') refreshStates(); }); }
-function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/540, ih/960); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+/* ⛔ MEASURE visualViewport, NEVER innerHeight (studio-wide sweep 2026-07-25).
+   innerHeight includes the strip behind the collapsing URL bar, so a stage scaled
+   off it is bigger than the area the player can actually see and the bottom walks
+   off screen. Jessie reported this as "off-screen" on Cipher Bloom and Petal
+   Alchemy; Stephen confirmed the fix on device before this swept the rest.
+   ⛔ Headless browsers have no URL bar, so it CANNOT reproduce in automated
+   testing. Do not "simplify" this back to innerHeight. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+(function(){
+  if(!window.visualViewport) return;
+  // The URL bar sliding away fires visualViewport events, NOT window resize.
+  function _vvFire(){
+    var e;
+    try { e = new Event('resize'); }
+    catch(_) { e = document.createEvent('Event'); e.initEvent('resize', false, false); }
+    window.dispatchEvent(e);
+  }
+  window.visualViewport.addEventListener('resize', _vvFire);
+  window.visualViewport.addEventListener('scroll', _vvFire);
+})();
+function fit(){ var iw=_vvW(), ih=_vvH(); var s=Math.min(iw/540, ih/960); $('stage').style.transform='translateZ(0) scale('+s+')'; }
 function boot(){
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });

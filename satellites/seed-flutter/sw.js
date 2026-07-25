@@ -2,7 +2,7 @@
    NETWORK-FIRST, never cache-first (house rule: Hostinger already ignores
    no-cache headers; a cache-first worker would pin players to stale builds).
    The cache is a pure offline fallback. Bump CACHE on any shipped change. */
-var CACHE = "cosmic-cadets-v1";
+var CACHE = "cosmic-cadets-v2";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest",
              "./icons/icon-192.png", "./icons/icon-512.png"];
 

@@ -13,7 +13,7 @@
    3. ACTIVATE RACE. skipWaiting + clients.claim takes over a LIVE page mid-boot,
       and activate deleted every cache immediately, so a page still pulling
       assets lost its cache underneath it and hit bug 2. Fired on every deploy. */
-var CACHE = "chaff-wars-v6";
+var CACHE = "chaff-wars-v7";
 var NET_TIMEOUT = 4000;
 
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
