@@ -884,8 +884,29 @@ function saveSoon(){ if(_saveT)clearTimeout(_saveT); _saveT=setTimeout(saveGame,
    ===================================================================== */
 var canvas=el('game'), ctx=canvas.getContext('2d');
 var view={ cssW:0,cssH:0,dpr:1,scale:1,offX:0,offY:0,buyLift:0,buyLiftT:0 };
+/* ⛔ MEASURE visualViewport, NEVER innerHeight (swept 2026-07-25).
+   Same root cause as the eight scaled-stage games, different shape: this one
+   sizes a full-bleed CANVAS. innerHeight reports the height including the strip
+   behind the collapsing URL bar, so the canvas came out taller than the visible
+   area and the bottom of the board sat below the fold. Jessie hit this class of
+   bug on Cipher Bloom and Petal Alchemy; Stephen confirmed the fix on device.
+   Headless has no URL bar, so it CANNOT reproduce in automated testing. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+(function(){
+  if(!window.visualViewport) return;
+  // The URL bar sliding away fires visualViewport events, NOT window resize.
+  function _vvFire(){
+    var e;
+    try { e = new Event('resize'); }
+    catch(_) { e = document.createEvent('Event'); e.initEvent('resize', false, false); }
+    window.dispatchEvent(e);
+  }
+  window.visualViewport.addEventListener('resize', _vvFire);
+  window.visualViewport.addEventListener('scroll', _vvFire);
+})();
 function resize(){
-  var cssW=window.innerWidth, cssH=window.innerHeight, dpr=Math.min(2,window.devicePixelRatio||1);
+  var cssW=_vvW(), cssH=_vvH(), dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr);
   canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
   var scale=Math.min(cssW/VW, cssH/VH);

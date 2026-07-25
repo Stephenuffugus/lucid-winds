@@ -245,7 +245,29 @@ var ENEMY_COL={ moth:"#e58fa0", wasp:"#ffb84d", dart:"#9ee6ff", serpent:"#7ab356
   mine:"#c98bde", bulb:"#5b9bd5" };
 
 /* ---------- stage fit ---------- */
-function fit(){ var vw=window.innerWidth, vh=window.innerHeight, s=Math.min(vw/W, vh/H);
+/* ⛔ MEASURE visualViewport, NEVER innerHeight (swept 2026-07-25).
+   On a real phone innerHeight reports the height INCLUDING the strip behind the
+   collapsing URL bar, so a stage scaled off it comes out bigger than what the
+   player can actually see and the bottom walks off screen. Jessie hit exactly
+   this on Cipher Bloom and Petal Alchemy; Stephen confirmed the fix on device
+   before this sweep. Headless browsers have no URL bar, so it CANNOT reproduce
+   in automated testing — do not "simplify" this back to innerHeight. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+(function(){
+  if(!window.visualViewport) return;
+  // The URL bar sliding away fires visualViewport events, NOT window resize.
+  // Every one of these files already re-fits on resize, so forward to that.
+  function _vvFire(){
+    var e;
+    try { e = new Event('resize'); }
+    catch(_) { e = document.createEvent('Event'); e.initEvent('resize', false, false); }
+    window.dispatchEvent(e);
+  }
+  window.visualViewport.addEventListener('resize', _vvFire);
+  window.visualViewport.addEventListener('scroll', _vvFire);
+})();
+function fit(){ var vw=_vvW(), vh=_vvH(), s=Math.min(vw/W, vh/H);
   $("stage").style.transform="scale("+s+")"; }
 window.addEventListener("resize",fit); fit();
 
