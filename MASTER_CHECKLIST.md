@@ -203,10 +203,11 @@ not.** These are per-game and specific:
   Verified: scale drops 0.7222 → 0.6250 when the visible area shrinks. ⚠️ needs Jessie
   to confirm on her actual device — headless has no URL bar so it cannot reproduce there.
 - [x] Petal Alchemy — off-screen FIXED, same root cause, same fix, verified the same way.
-- [ ] **Sweep the other 9 with the same innerHeight bug** — bridgevine, garden-td,
-  leaf-fit, nova-bloom, pollinator-paths, root-weave, spore-drift, tempo-grove, silt.
-  Held deliberately until Jessie confirms the fix works on a real phone. If it does,
-  this is a mechanical sweep.
+- [x] **Swept the other 9** — bridgevine, leaf-fit, nova-bloom, pollinator-paths,
+  root-weave, spore-drift, tempo-grove, silt (scaled stages) + garden-td (full-bleed
+  canvas, different shape, handled separately). Unblocked by Stephen confirming the first
+  two on his phone. Verified: 8/8 stages shrink 0.7222 → 0.5417 when the visible area
+  shrinks, garden-td canvas 844px → 520px, all 9 parse clean, 0 page errors.
 - [ ] Loop Warden — start button problem
 - [ ] Line Loom — "incomprehensible", needs rules + rework of how it explains itself
 - [ ] Mini Crossword — layout
