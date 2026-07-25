@@ -78,6 +78,35 @@ matching code change from you.
 
 ---
 
+## 🌸 PETAL MATCH FULL BUILD-OUT (Stephen 2026-07-25, from a real player's notes)
+
+Spec + complete asset list live in Drive → 012Assets → **PETAL MATCH** (6 docs).
+Theme deliberately left open for the designer; every asset is described by function.
+
+- [x] **Stale hint bug FIXED** — player reported "the hint is always the last hint from
+  the previous game and often incorrect". Exactly right: `_PMN` and `_PMR` rebuilt the
+  board but never cleared `hintCells`, so the old board's coordinates were drawn on the
+  new one. Verified both paths call `clearHint()`; smoke 66 pass 0 fail; cache v3→v4.
+- [ ] **Difficulty banding** ⭐ do FIRST, needs no art. Confirmed in `genLevel()`: levels
+  rotate on a FIXED 10-step pattern, so blocker levels are walls and everything between
+  is a stroll, forever, in the same order. Level 25 = 12 blockers × 2 hits = 24 breaks in
+  39 moves. Fix: seed the order per chapter, rate every generated level and reject
+  out-of-band ones, keep ONE deliberate spike at each chapter's end.
+- [ ] **Timed mode + mode switching** ⭐ second, also no art. The player's explicit ask:
+  a 2-minute pure-score mode, and the ability to change modes WITHOUT losing Journey
+  progress. Their frustration was feeling locked in, not the missing mode.
+- [ ] **Endless + Daily modes** (Daily makes it directory-eligible)
+- [ ] **New specials** — strip (6), quake (7), and the three nobody else ships:
+  ⭐ serpentine (travels a winding path), large 2×2 piece, box-of-six. Serpentine first,
+  it is the differentiator.
+- [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
+  ⛔ No real money, no ads. Tools must help, never be required.
+- [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
+- [?] **Art** — ~150 sprites + 4 chapter backgrounds + ~30 sounds. Phased; the game is
+  shippable after the pieces alone.
+
+---
+
 ## 🟢 READY TO BUILD — no blockers, just needs a session
 
 Ordered by value per hour of work.
