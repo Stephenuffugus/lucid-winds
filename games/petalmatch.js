@@ -1163,6 +1163,71 @@ window._gameFns.petalmatch = function PM(a){
   };
   window._PMH=function(){requestHint();};
 
+  /* ═══════════════════════════════════════════════════════════════════
+     BALANCE HARNESS (2026-07-25)
+
+     ⛔ THIS DUPLICATES NO GAME LOGIC ON PURPOSE. The rarity engine was
+     hand-mirrored in a sim twice, drifted from the live code twice, and
+     shipped a wrong distribution both times. So this hook drives the REAL
+     handleEnd() through the REAL swap path with synthetic coordinates. If
+     the game changes, the harness changes with it, for free.
+
+     Used by scripts/petalmatch_balance.js to measure the actual win rate of
+     every level with a bot, instead of guessing at difficulty numbers.
+     Costs nothing at runtime: it defines functions and never calls them.
+     ═══════════════════════════════════════════════════════════════════ */
+  window._PM_TEST={
+    // Every legal move on the board right now, as [[r1,c1],[r2,c2]] pairs.
+    // Uses the real canSwap/findMatches, same as findValidSwap does.
+    moves:function(){
+      var out=[],r,c;
+      for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
+        if(!canSwap(r,c))continue;
+        if(c<COLS-1&&canSwap(r,c+1)){
+          swap(r,c,r,c+1);
+          if(findMatches().length>0)out.push([[r,c],[r,c+1]]);
+          swap(r,c,r,c+1);
+        }
+        if(r<ROWS-1&&canSwap(r+1,c)){
+          swap(r,c,r+1,c);
+          if(findMatches().length>0)out.push([[r,c],[r+1,c]]);
+          swap(r,c,r+1,c);
+        }
+      }
+      // special+anything is always legal
+      for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
+        var cell=grid[r][c];
+        if(cell&&cell.special){
+          if(c<COLS-1&&canSwap(r,c+1))out.push([[r,c],[r,c+1]]);
+          else if(r<ROWS-1&&canSwap(r+1,c))out.push([[r,c],[r+1,c]]);
+        }
+      }
+      return out;
+    },
+    // Play one move by driving the REAL input handler.
+    play:function(r1,c1,r2,c2){
+      var rect=canvas.getBoundingClientRect();
+      tsR=r1;tsC=c1;selected={r:r1,c:c1};
+      handleEnd(rect.left+(c2+0.5)*CELL, rect.top+(r2+0.5)*CELL);
+    },
+    state:function(){
+      return {level:level,score:score,moves:moves,lost:lost,won:won,
+              animating:animating,objKind:objective&&objective.kind,
+              objLabel:objective&&objective.label,
+              dew:objState.dewRemaining,thorns:objState.thornRemaining,
+              complete:isObjComplete()};
+    },
+    // Jump straight to a level for measurement.
+    setLevel:function(lv){
+      level=lv;objective=genLevel(lv);moves=objective.moves;
+      score=0;won=false;lost=false;animating=false;selected=null;fx=[];
+      resetObjState();
+      initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
+      updateHUD();
+    },
+    genLevel:function(lv){return genLevel(lv);}
+  };
+
   _PMN();
 };
 })();
