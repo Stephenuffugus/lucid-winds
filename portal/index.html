@@ -18,6 +18,18 @@
 <meta name="twitter:title" content="Sky Wolf Studios Arcade: 140+ free browser games">
 <meta name="twitter:description" content="No ads, no sign-up. Tap a game and play.">
 <meta name="twitter:image" content="https://lucidwinds.com/portal-assets/og-portal-1200x630.jpg">
+<!-- Installable (2026-07-25). The portal had NO manifest, so the hub was the one
+     surface in the whole studio that couldn't go on a homescreen: Android never
+     fired beforeinstallprompt and iOS made a plain Safari bookmark. scope is "/"
+     on purpose — a game card navigates to /play/<id>.html, and a /portal/ scope
+     would kick the player out of the installed app into browser chrome. -->
+<link rel="manifest" href="/portal/manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="/portal-assets/icons/skywolf-apple-touch-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/portal-assets/icons/skywolf-192.png">
+<meta name="theme-color" content="#0b0f0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sky Wolf">
 <!-- perf-lite detection (2026-06-15): tag <html> before first paint on weak
      library tablets so expensive effects can be dropped. Mirrors index.html. -->
 <script>(function(){var o=null;try{o=localStorage.getItem('lw_perf_lite');}catch(e){}var lite=false;if(o==='1')lite=true;else if(o==='0')lite=false;else{var c=navigator.hardwareConcurrency||2,m=navigator.deviceMemory||0,ua=navigator.userAgent||'';if(c<=4)lite=true;if(m>0&&m<=4)lite=true;if(/iPhone|iPad|iPod/.test(ua)){var x=ua.match(/OS (\d+)/);if(x&&parseInt(x[1],10)<16)lite=true;if(c<=2)lite=true;}if(/Android/.test(ua)&&c<=4)lite=true;}if(lite&&document.documentElement)document.documentElement.classList.add('perf-lite');window._perfLite=lite;})();</script>
@@ -1663,6 +1675,87 @@ document.addEventListener('click', function(e){
       } catch (e) {}
     });
   }
+</script>
+
+<!-- ============================================================
+     ADD TO HOMESCREEN (2026-07-25)
+     Same pattern already shipped in Dewball / Flipbook / OriVex: the button
+     stays useful even when beforeinstallprompt never fires (iOS never fires
+     it), because on those browsers it explains the Share-sheet route instead.
+     Hidden entirely once the arcade is already running standalone.
+     Position is a bottom-LEFT pill: bottom-centre at 24px is taken by
+     #sws-soon-toast. Move it into the header any time; the logic doesn't
+     care where the button lives.
+     ============================================================ -->
+<script>
+(function () {
+  var standalone = false;
+  try {
+    standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+              || window.navigator.standalone === true;
+  } catch (e) {}
+  if (standalone) return;                       // already installed, say nothing
+  try { if (localStorage.getItem('sws_install_dismissed') === '1') return; } catch (e) {}
+
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+
+  window.addEventListener('load', function () {
+    var wrap = document.createElement('div');
+    wrap.id = 'sws-install';
+    wrap.style.cssText = 'position:fixed;left:12px;bottom:14px;z-index:140;display:flex;'
+      + 'align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:14px;'
+      + 'background:rgba(11,15,11,.92);border:1px solid rgba(122,179,86,.55);'
+      + 'box-shadow:0 6px 20px rgba(0,0,0,.45);backdrop-filter:blur(6px);'
+      + 'font-family:Nunito,system-ui,sans-serif;';
+
+    var icon = document.createElement('img');
+    icon.src = '/portal-assets/icons/skywolf-192.png';
+    icon.alt = '';
+    icon.style.cssText = 'width:34px;height:34px;border-radius:9px;display:block;flex:0 0 auto';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Add to Home Screen';
+    btn.style.cssText = 'min-height:48px;background:none;border:0;color:#e8dcc8;'
+      + 'font:600 .84rem/1.1 Nunito,system-ui,sans-serif;cursor:pointer;padding:0 4px;text-align:left';
+
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Dismiss');
+    x.textContent = '×';
+    x.style.cssText = 'min-width:44px;min-height:44px;background:none;border:0;color:#8a9178;'
+      + 'font-size:1.2rem;line-height:1;cursor:pointer';
+
+    btn.onclick = function () {
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(function (c) {
+          if (c && c.outcome === 'accepted') wrap.remove();
+          deferred = null;
+        })['catch'](function () {});
+        return;
+      }
+      var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      alert(ios
+        ? 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen like an app.'
+        : 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+    };
+
+    x.onclick = function () {
+      try { localStorage.setItem('sws_install_dismissed', '1'); } catch (e) {}
+      wrap.remove();
+    };
+
+    wrap.appendChild(icon); wrap.appendChild(btn); wrap.appendChild(x);
+    document.body.appendChild(wrap);
+  });
+
+  window.addEventListener('appinstalled', function () {
+    var el = document.getElementById('sws-install');
+    if (el) el.remove();
+  });
+})();
 </script>
 
 <!-- ============================================================
