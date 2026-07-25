@@ -1132,8 +1132,17 @@ window._gameFns.petalmatch = function PM(a){
   canvas.addEventListener('mousedown',function(e){handleStart(e.clientX,e.clientY);});
   canvas.addEventListener('mouseup',function(e){handleEnd(e.clientX,e.clientY);});
 
+  /* ⛔ 2026-07-25, reported by a player: "when you run out of moves and start a new
+     game, the hint it shows is always the last hint from the previous game and often
+     incorrect." Exactly right. Both restart paths rebuilt the grid but never cleared
+     hintCells, so the OLD board's coordinates survived and got drawn over the NEW
+     board. lastInputAt has to move too, or the 5s idle timer fires a hint instantly
+     on a board the player has not even looked at yet. */
+  function clearHint(){ hintCells=null; hintTimer=0; lastInputAt=Date.now(); }
+
   window._PMN=function(){
     if(rafId)cancelAnimationFrame(rafId);
+    clearHint();
     initCanvas();level=bestLevel;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
@@ -1144,6 +1153,7 @@ window._gameFns.petalmatch = function PM(a){
   window._PMR=function(){
     // Retry this level with fresh board and moves, don't reset progression
     if(rafId)cancelAnimationFrame(rafId);
+    clearHint();                    // same stale-hint bug as _PMN, same fix
     initCanvas();score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
