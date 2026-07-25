@@ -14,6 +14,24 @@ Last updated: 2026-07-25
 These are not "waiting for a decision I could make." Each needs his art, his intent, or
 his go-ahead on a redesign.
 
+### 🎨 ART STEPHEN ASKED FOR A LIST OF — exactly what to make, and where it goes
+
+Ordered by how much it unblocks. Everything here is blocked ONLY on the art existing.
+
+| # | What to make | Drop it here | Unblocks |
+|---|---|---|---|
+| 1 | **Pop N Lock pieces** — 5 pods + 1 chaff, from sheet 10 in the "Pop N Lock — Art Pack" Drive folder | `satellites/chaff-wars/assets/pods/pod-0.png` … `pod-4.png` + `chaff.png` | Flip `CW_POD_ART=true` and the game uses your art instead of drawn shapes |
+| 2 | **Petal Match flower gems** — 8 to 28 PNGs, filenames listed in `project_petalmatch_art_spec.md` | `assets/games/petalmatch/` (⛔ directory does not exist yet, create it) | Turns a whole game from procedural shapes into your art. Mechanical swap once they land |
+| 3 | **Blobworks monsters** — the purple middle monsters, sheet 12 | Blobworks art folder | Jessie's "redo the purple monsters" |
+| 4 | **Blobworks modular ramps** — sheet 13 | same | Ramps are drawn procedurally right now as a stand-in |
+| 5 | **OriVex** — origami clean-paper triangle sheets + WIDE peaceful backgrounds with contrast against the number colours | `art-asset-lists/orivex/` pack has the spec | O2 + O3, two open items |
+| 6 | **Card art, 3 satellites** — `mahjong`, `rootbound`, `sprout-dice` | `portal-assets/thumbs/<slug>.jpg`, 480×480 square | They currently post to social with the studio logo instead of game art |
+| 7 | **Card art, 4 games** — `breathing`, `doubleshutter`, `stonegarden`, `stopten` | same | Same, plus they get real homescreen icons |
+| 8 | **Sky Wolf head, square re-render** *(optional)* | `portal-assets/` | Current icon is cut from the wide banner, so the ears are clipped — they're clipped in the source too |
+
+Any PNG dropped in the right place gets wired by me next session. Nothing here needs a
+matching code change from you.
+
 ### Art he needs to generate or drop in
 - [?] **Pop N Lock piece art** — generate pods/chaff from sheet-10 Doc, drop PNGs into
   `satellites/chaff-wars/assets/pods/pod-0..4.png` + `chaff.png`, then flip `CW_POD_ART=true`.
@@ -158,6 +176,59 @@ right now. These gate hosting strangers' code or advertising the program publicl
   the game re-exports on boot, which is exactly why that fix mattered, but it isn't durable.
 - [ ] **Music rewards as a partner perk** — "integrate and your game gets a shelf, and your
   players unlock a track that plays everywhere." A stronger hook than sunbeams alone.
+
+---
+
+## 📒 THE JUL 16-18 LIST — recovered 2026-07-25, this is the one we were going down
+
+⚠️ **I missed this when I built this file.** I merged the Jul 19/20 sources and did not
+merge Jessie's Jul 16 doc or the colour-coded per-game sweep. Stephen was right that it
+did not feel done. Source of truth is still the live Drive doc ("Notes on Games from
+Jessie", `1NWkCIbodKNS1dhsDEUgTcVsRc_oIJcbxOeA9iNWP_eQ`) — ⛔ **read it as HTML, not text,
+or the highlight colours that carry the session structure are lost.** It grows; check it
+every session.
+
+**Status below is 7-8 days old and NOT re-verified.** Treat each as "probably open, confirm
+before building."
+
+### PURPLE — the per-game readability sweep (Jessie's biggest batch, mostly open)
+The `/play/` shells got directions pages and the font pass on 7/18. **⛔ The SATELLITES did
+not.** These are per-game and specific:
+- [ ] Cipher Bloom — content off-screen
+- [ ] Petal Alchemy — content off-screen
+- [ ] Loop Warden — start button problem
+- [ ] Line Loom — "incomprehensible", needs rules + rework of how it explains itself
+- [ ] Mini Crossword — layout
+- [ ] Bridgevine — scroll
+- [ ] Plot Bloom — neighbours wording + depth
+- [ ] Root Groups — text
+- [ ] Season Sway — wording
+- [ ] Hedgerow — replay-level
+- [ ] Tinker Loft — her list, incl. finger-drag; plus "Tinker Shop" rename
+- [ ] Micro Meadow — rename to "Think Fast"
+- [ ] Leaf Fit — rename + rotate
+- [ ] Merge & Blast — level-goal consistency (512 tile colour already fixed)
+- [ ] **Directions pages + readable fonts for every SATELLITE** (the shells are done)
+
+### From the Jul 16 "New notes" + Jessie doc
+- [~] Pong Arena — landscape long-court still open (per-mode geometry + control remap)
+- [ ] Portal: live "N playing now" per game (needs presence; design first)
+- [ ] Portal search — "similar type" matching + her assistant-to-guide idea
+- [ ] Comet Cadets — alien level-worlds (water / fire poles / ice / tornado / rain / desert)
+- [ ] Dewtrail — retheme away from dew, THEN Jessie does the art
+- [ ] Mosaic Draft — clarity pass
+- [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
+- [ ] ALL games earn sunbeams inside LW
+- [ ] Silt — consistent element-behaviour message
+- [ ] New game: Mouse Trap. Also open from Penny's queue: Plant Flip, Mecha Chameleon
+
+### Naming + economy calls (Stephen only)
+- [?] Merge & Blast and Super Slice both still carry placeholder names — "⛔ Stephen NAMES it"
+- [?] Tempo Grove rename (nothing plant-like about it)
+- [?] LW 100 plant slots — cap is 60, economy call
+- [?] Hues border-shop coin pricing
+- [?] Hunch "see others" gallery — PARKED, public kid UGC needs his moderation sign-off.
+  Full design already written at `design-briefs/hunch-gallery.md`.
 
 ---
 
