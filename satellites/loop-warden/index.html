@@ -215,7 +215,27 @@ function $(id){ return document.getElementById(id); }
 var BUILD="1.0";
 
 /* ---------- fit stage ---------- */
-function fit(){ var w=window.innerWidth,h=window.innerHeight;
+/* ⛔ MEASURE visualViewport, NEVER innerHeight (swept 2026-07-25, wave 2).
+   innerHeight includes the strip behind the collapsing URL bar, so a stage scaled
+   off it is bigger than what the player can actually see and the bottom walks off
+   screen. Jessie flagged THIS GAME. Stephen confirmed the fix on device on Cipher
+   Bloom and Petal Alchemy first. Headless has no URL bar so it CANNOT reproduce in
+   automated testing — do not "simplify" this back to innerHeight. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+(function(){
+  if(!window.visualViewport) return;
+  // The URL bar sliding away fires visualViewport events, NOT window resize.
+  function _vvFire(){
+    var e;
+    try { e = new Event('resize'); }
+    catch(_) { e = document.createEvent('Event'); e.initEvent('resize', false, false); }
+    window.dispatchEvent(e);
+  }
+  window.visualViewport.addEventListener('resize', _vvFire);
+  window.visualViewport.addEventListener('scroll', _vvFire);
+})();
+function fit(){ var w=_vvW(),h=_vvH();
   var s=Math.min(w/540,h/960); $("stage").parentNode.style.transform="";
   $("stage").style.transform="scale("+s+")"; }
 window.addEventListener("resize",fit); fit();
