@@ -789,7 +789,7 @@ var FEATURED = [
 var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
-var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
+var EXT = {breathing:"jpg",colorgarden:"jpg",petalmatch:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
 var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["word","Word"],["math","Math"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"],["indev","In Development"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
@@ -930,7 +930,7 @@ function card(g, isFeat){
   var shot;
   // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
   // bump this when the image files change (2026-07-19: Acorn Drop card art).
-  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026072101'; });
+  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026072601'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
