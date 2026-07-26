@@ -52,6 +52,19 @@
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
+  # ⛔⛔ SERVICE WORKERS MUST NEVER BE EDGE-CACHED.
+  # A stale worker is not a stale asset, it is stale CODE that intercepts every
+  # request the app makes — and a broken one can stop its own replacement from
+  # ever being fetched. sw.js matched none of the .js rules above, so it fell
+  # through to Hostinger's 7-day default. That is exactly how the 2026-07-26
+  # Jimothy worker fix reached zero players: the edge had pinned sw.js?v=56 for
+  # a week, so the app kept installing the broken worker from cache while the
+  # repo, origin and the bare sw.js URL all looked correct.
+  # FilesMatch tests the basename, so this covers every satellites/*/sw.js too.
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+
   # Game-specific scripts and word banks (games/*.js, word-banks.js) —
   # these genuinely don't change often and can stay aggressively cached.
   <FilesMatch "^(word-banks)\.js$">

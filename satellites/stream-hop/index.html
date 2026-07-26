@@ -4430,8 +4430,20 @@ function boot(){
      there while the repo had reached v18, so every cache bump any of us has made
      since launch never actually reached a player. Registering with the version in
      the query string makes each release a new URL, which the edge cannot pin.
-     ⛔ Bump SWV together with the CACHE name in sw.js on every release. */
-  var SWV='56';
+     ⛔ Bump SWV together with the CACHE name in sw.js on every release.
+
+     ⛔⛔ 2026-07-26 — I broke this exact rule and it cost a whole day. The
+     cross-origin worker fix bumped the CACHE name inside sw.js but left SWV at
+     56, so the app kept asking for sw.js?v=56 — a URL Cloudflare had been
+     holding since Jul 24 under the host's 7-day default for .js. Origin was
+     right, the repo was right, and `curl .../sw.js` (no query) returned the
+     fixed file, so the deploy looked verified. It was not: the bare URL is not
+     the URL the app requests. Every player kept installing the broken worker.
+     VERIFY THE VERSIONED URL, and only that URL:
+         curl -sI "https://lucidwinds.com/satellites/stream-hop/sw.js?v=<SWV>"
+     .htaccess now sends sw.js as no-store so the edge cannot pin it again, but
+     the SWV bump is still what mints a clean cache key on the day of release. */
+  var SWV='57';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
