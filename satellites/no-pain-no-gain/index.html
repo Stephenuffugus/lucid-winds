@@ -339,7 +339,8 @@ function trayIdxAt(x){ return Math.floor((x+trayScroll)/CHW); }
 function placeHazAt(p){ if(!OWNED[mode] || p.y>=GY-4 || p.y<=CEIL) return; var yy=(mode==='spike'||mode==='spring')?clamp(p.y,CEIL,GY-13):p.y; haz.push(newHaz(mode,clamp(p.x,WALL_L+30,WALL_R-30),yy)); sfx('place'); }
 function onDown(e){ if(curScreen!==null) return; e.preventDefault(); var p=evPos(e);
   if(hitBtn(p, dropRect)){ dropDoll(); return; }
-  if(hitBtn(p, resetRect)){ doll=null; return; }
+  if(hitBtn(p, resetRect)){ haz=[]; doll=null; sfx('place'); return; }
+  if(hitBtn(p, undoRect)){ if(haz.length){ haz.pop(); sfx('place'); } return; }
   if(hitBtn(p, menuRect)){ running=false; show('s-title'); updateRec(); return; }
   if(p.y>=TRAY_Y-8){ trayDrag={sx:p.x, dp:p, scrolled:false, ss:trayScroll}; return; }
   var existing=hazAt(p.x,p.y);
@@ -360,7 +361,7 @@ function handleTray(p){ var idx=trayIdxAt(p.x);
 }
 
 /* ============================ render ============================= */
-var dropRect={x:VW-118,y:14,w:104,h:44}, resetRect={x:VW-118,y:64,w:104,h:40}, menuRect={x:14,y:14,w:44,h:44};
+var dropRect={x:VW-118,y:14,w:104,h:44}, resetRect={x:VW-118,y:64,w:104,h:48}, undoRect={x:VW-118,y:118,w:104,h:48}, menuRect={x:14,y:14,w:44,h:44};
 function hitBtn(p,r){ return p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h; }
 function render(){
   ctx.clearRect(0,0,VW,VH);
@@ -466,6 +467,7 @@ function drawHUD(){
   /* drop + reset */
   btnRect(dropRect,'🟢 DROP','#7cc25a','#0c1207');
   btnRect(resetRect,'↻ Clear','#2a2110','#cbb88a');
+  btnRect(undoRect,'↩ Undo','#2a2110','#cbb88a');
 }
 function btnRect(r,label,bg,fg){ ctx.fillStyle=bg; rrect(r.x,r.y,r.w,r.h,12); ctx.fill(); ctx.fillStyle=fg; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,r.x+r.w/2,r.y+r.h/2); }
 function chipHi(x0,col){ ctx.fillStyle=(col==='#9fd67e')?'rgba(124,194,90,0.18)':'rgba(224,88,74,0.18)'; rrect(x0+4,TRAY_Y+2,CHW-8,86,12); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; rrect(x0+4,TRAY_Y+2,CHW-8,86,12); ctx.stroke(); }
