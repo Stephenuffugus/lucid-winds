@@ -512,9 +512,23 @@ Ordered by value per hour of work.
 
 ## 💰 BUSINESS / LEGAL — highest stakes, lowest effort
 
-- [ ] **Check whether the attention protocol repo is public.** `gh repo list --visibility public`.
-  If the evolved protocol is published, a US grace clock is running and foreign rights may
-  already be gone. Five seconds of work, largest downside on the list.
+- [x] **Attention-protocol repo visibility CHECKED 2026-07-26 — IT IS PUBLIC.**
+  Verified: `gh repo view Stephenuffugus/lucid-winds` returns visibility PUBLIC
+  (repo created 2026-03-15, two days before the provisional). The evolved
+  protocol code (earnHashes caps/anti-farming, engagement grading) has been in
+  the public repo since its first commit 2026-04-29, and in-code comments show
+  the repo was knowingly public well before today (the swFeedback webhook was
+  rotated for exactly that reason). Not a lawyer, but per this item's own
+  framing: the US grace clock on the evolved parts has been running since
+  ~2026-04-29, and foreign absolute-novelty rights on publicly disclosed
+  material are likely gone. The March 2027 conversion deadline still dominates
+  for the US. ⛔ Repo visibility NOT changed — Hostinger deploys from it;
+  making it private is Stephen's call with the deploy implications in view.
+- [ ] **STEPHEN, ELEVATED: file the second provisional (~$130) NOW, not December.**
+  Every month the evolved protocol sits disclosed-but-unfiled weakens the
+  position; the filing establishes priority for what remains protectable and
+  feeds the March conversion decision. The prior art here is your own public
+  repo.
 - [ ] **File a second provisional on the evolved attention protocol.** The 2026-03-17 filing
   only protects what that document describes. Everything the protocol learned since (grading
   engagement on any test/document/screen, bot detection) is unprotected. ~$130 self-filed.
