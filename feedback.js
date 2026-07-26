@@ -74,10 +74,16 @@
         'color:#e8dcc8;font-family:"DM Mono",monospace;font-size:.66rem;padding:0 14px;cursor:pointer;' +
         'box-shadow:0 6px 20px rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);' +
         'touch-action:none;user-select:none;-webkit-user-select:none;}' +
-      /* Jessie/Stephen 7/19: the bug must be clearable — drag it anywhere, or tap the x to hide it */
-      '.lwfb-x{position:absolute;top:-7px;left:-7px;width:20px;height:20px;border-radius:50%;' +
+      /* Jessie/Stephen 7/19 + 7/26: the bug must be clearable — drag it
+         anywhere, or tap the x to hide it for the rest of the day. Own class
+         (NOT .lwfb-x — that is the form's close button; sharing the class made
+         the two rule sets fight and broke both). 48px tap zone hung off the
+         fab's top-left corner, small visible dot inside it. */
+      '.lwfb-fab-x{position:absolute;top:-34px;left:-34px;width:48px;height:48px;' +
+        'display:flex;align-items:center;justify-content:center;background:transparent;cursor:pointer;}' +
+      '.lwfb-fab-x span{display:block;width:24px;height:24px;border-radius:50%;' +
         'background:rgba(13,16,12,.95);border:1px solid rgba(200,168,75,.5);color:#8a9178;' +
-        'font-size:11px;line-height:18px;text-align:center;cursor:pointer;font-family:sans-serif;}';
+        'font-size:13px;line-height:22px;text-align:center;font-family:sans-serif;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -208,20 +214,30 @@
     return b;
   }
 
+  // Day bucket for the fab dismissal: hidden for the rest of the local day,
+  // back tomorrow. Feedback matters; permanent removal is too strong.
+  function dayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
   function mountFab(opts) {
     if (document.querySelector('.lwfb-fab')) return;
-    // Respect a this-session dismissal (Stephen 7/19: full-screen players
-    // must be able to clear the button). It returns on the next visit.
-    try { if (sessionStorage.getItem('lwfb_hidden') === '1') return; } catch (e) {}
+    // Respect a dismissal (Stephen 7/19 + 7/26: full-screen players must be
+    // able to clear the button). Hidden until tomorrow, then it returns.
+    try { if (localStorage.getItem('lwfb_hidden_day') === dayKey()) return; } catch (e) {}
     var b = button(opts);
-    // x badge — one tap hides the fab for this session
+    // x badge — one tap hides the fab for the rest of the day
     var x = document.createElement('span');
-    x.className = 'lwfb-x';
-    x.textContent = '\u00d7';
-    x.setAttribute('aria-label', 'Hide feedback button');
+    x.className = 'lwfb-fab-x';
+    x.setAttribute('role', 'button');
+    x.setAttribute('aria-label', 'Hide feedback button for the rest of today');
+    var dot = document.createElement('span');
+    dot.textContent = '\u00d7';
+    x.appendChild(dot);
     x.addEventListener('click', function (ev) {
       ev.stopPropagation(); ev.preventDefault();
-      try { sessionStorage.setItem('lwfb_hidden', '1'); } catch (e) {}
+      try { localStorage.setItem('lwfb_hidden_day', dayKey()); } catch (e) {}
       if (b.parentNode) b.parentNode.removeChild(b);
     });
     b.appendChild(x);

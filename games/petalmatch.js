@@ -591,7 +591,8 @@ window._gameFns.petalmatch = function PM(a){
 
   walletRow.innerHTML=petalGlyph(15)+
     '<strong id="PMpet" style="color:#7ab356;font-size:0.8rem;">0</strong>'+
-    '<span style="letter-spacing:0.06em;">PETALS</span>';
+    '<span style="letter-spacing:0.06em;">PETALS</span>'+
+    '<span id="PMstk" style="color:#c8a84b;letter-spacing:0.05em;"></span>';
 
   var boostBtn=document.createElement('button');
   boostBtn.type='button';
@@ -1655,6 +1656,84 @@ window._gameFns.petalmatch = function PM(a){
     step();
   }
 
+
+  /* ═══ ALGORITHMIC HOOKS — Stephen 2026-07-26: "see what you can do about
+     algorithmic hooks". The honest versions only: reward showing up, name a
+     near miss for what it was, and catch a player who is genuinely stuck.
+     ⛔ No dark patterns: nothing here manufactures difficulty, hides odds, or
+     touches real money. The ladder the bot measured is untouched — these pay
+     Petals and soften a losing streak, they never make a level harder. */
+
+  // One number for "how done was this objective", shared by the progress bar
+  // and the out-of-moves screen so they can never disagree.
+  function progressPct(){
+    if(!objective)return 0;
+    var pct;
+    if(objective.kind==='score')pct=Math.min(100,score/objective.target*100);
+    else if(objective.kind==='dew')pct=100-(objState.dewRemaining/Math.max(1,dewTotal(objective))*100);
+    else if(objective.kind==='thorns')pct=100-(objState.thornRemaining/objective.thorns*100);
+    else if(objective.kind==='gather'){
+      var got=0,need=0;
+      for(var t in objState.gatherTargets){need+=objState.gatherTargets[t];got+=Math.min(objState.gatherGot[t]||0,objState.gatherTargets[t]);}
+      pct=need>0?got/need*100:0;
+    }
+    else if(objective.kind==='mix'){
+      var p1=Math.min(1,score/objective.target);
+      var p2=1-(objState.dewRemaining/Math.max(1,dewTotal(objective)));
+      var p3=1-(objState.thornRemaining/Math.max(1,objective.thorns));
+      pct=(p1+p2+p3)/3*100;
+    }
+    else pct=100;
+    return pct;
+  }
+
+  /* Daily streak: the FIRST level cleared each day pays a bonus that climbs
+     with consecutive days, capped so it never dwarfs play itself. UTC day
+     buckets, same convention as the Petals earn cap. A missed day resets. */
+  var PM_STREAK_PAY=[5,8,11,14,17,20];
+  function pmDailyStreak(){
+    var today=Math.floor(Date.now()/864e5),rec=null;
+    try{ rec=JSON.parse(localStorage.getItem('lw_pm_streak')||'null'); }catch(e){}
+    if(rec&&rec.d===today) return {first:false,streak:rec.n||1};
+    var n=(rec&&rec.d===today-1)?(rec.n||0)+1:1;
+    try{ localStorage.setItem('lw_pm_streak',JSON.stringify({d:today,n:n})); }catch(e){}
+    return {first:true,streak:n,bonus:PM_STREAK_PAY[Math.min(n-1,PM_STREAK_PAY.length-1)]};
+  }
+  function pmStreakToday(){
+    try{ var r=JSON.parse(localStorage.getItem('lw_pm_streak')||'null');
+      if(r&&r.d===Math.floor(Date.now()/864e5))return r.n||0; }catch(e){}
+    return 0;
+  }
+
+  /* Consecutive losses on ONE level. Three in a row means the player is not
+     unlucky, they are stuck — every retry from then on opens with a free
+     Bloom Burst until they clear it. Keyed by level and persisted, so rage
+     quitting and coming back tomorrow still gets the hand up. */
+  var lastLossPct=0;
+  function pmFailBump(){
+    var f=null;
+    try{ f=JSON.parse(localStorage.getItem('lw_pm_fails')||'null'); }catch(e){}
+    if(!f||f.lv!==level)f={lv:level,n:0};
+    f.n++;
+    try{ localStorage.setItem('lw_pm_fails',JSON.stringify(f)); }catch(e){}
+    return f.n;
+  }
+  function pmFailsClear(){ try{ localStorage.removeItem('lw_pm_fails'); }catch(e){} }
+  function pmComebackDue(){
+    try{ var f=JSON.parse(localStorage.getItem('lw_pm_fails')||'null');
+      return !!(f&&f.lv===level&&f.n>=3); }catch(e){ return false; }
+  }
+  // Drop a Bloom Burst on a plain mid-board flower. Shared by the paid Head
+  // Start boost and the free comeback grant, so they can never drift apart.
+  function placeHeadStart(){
+    for(var tries=0;tries<80;tries++){
+      var r=2+Math.floor(Math.random()*(ROWS-4)),c=Math.floor(Math.random()*COLS);
+      var cell=grid[r]&&grid[r][c];
+      if(cell&&cell.type>=0&&!cell.special&&!jellyBoard[r][c]){ cell.special='burst'; return true; }
+    }
+    return false;
+  }
+
   function updateHUD(){
     var e;
     try{ renderShelf(); }catch(err){}   // keeps the wallet + affordability honest
@@ -1665,22 +1744,7 @@ window._gameFns.petalmatch = function PM(a){
     syncBackdrop();   // the conservatory changes with the chapter
     if(e=document.getElementById('PMmv'))e.textContent=moves;
     if(e=document.getElementById('PMbar')){
-      var pct;
-      if(objective.kind==='score')pct=Math.min(100,score/objective.target*100);
-      else if(objective.kind==='dew')pct=100-(objState.dewRemaining/Math.max(1,dewTotal(objective))*100);
-      else if(objective.kind==='thorns')pct=100-(objState.thornRemaining/objective.thorns*100);
-      else if(objective.kind==='gather'){
-        var got=0,need=0;
-        for(var t in objState.gatherTargets){need+=objState.gatherTargets[t];got+=Math.min(objState.gatherGot[t]||0,objState.gatherTargets[t]);}
-        pct=need>0?got/need*100:0;
-      }
-      else if(objective.kind==='mix'){
-        var p1=Math.min(1,score/objective.target);
-        var p2=1-(objState.dewRemaining/Math.max(1,dewTotal(objective)));
-        var p3=1-(objState.thornRemaining/Math.max(1,objective.thorns));
-        pct=(p1+p2+p3)/3*100;
-      }
-      else pct=100;
+      var pct=progressPct();
       e.style.width=pct+'%';
       // light the star pips the fill has reached
       var pips=document.getElementsByClassName('PMpip');
@@ -1934,12 +1998,7 @@ window._gameFns.petalmatch = function PM(a){
       activeTypes=Math.max(3,TYPES-1);
       initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
     } else if(key==='head'){
-      // Drop a Bloom Burst onto a plain flower somewhere in the middle rows.
-      for(var tries=0;tries<80;tries++){
-        var r=2+Math.floor(Math.random()*(ROWS-4)),c=Math.floor(Math.random()*COLS);
-        var cell=grid[r]&&grid[r][c];
-        if(cell&&cell.type>=0&&!cell.special&&!jellyBoard[r][c]){ cell.special='burst'; break; }
-      }
+      placeHeadStart();   // shared with the free comeback grant, one placement rule
     }
     movedThisLevel=true;           // one boost per level
     pmSay(it.n+'! '+PM_PETALS.get()+' Petals left.');
@@ -1965,6 +2024,12 @@ window._gameFns.petalmatch = function PM(a){
     boostBtn.style.opacity=PM_PETALS.can(PM_SHOP.breath.c)?'1':'0.42';
     reviveBtn.style.display=lost?'flex':'none';
     reviveBtn.style.opacity=PM_PETALS.can(PM_SHOP.moves.c)?'1':'0.42';
+    /* a revive offered at 85% done deserves to look like the answer */
+    var near=lost&&lastLossPct>=80;
+    reviveBtn.style.borderColor=near?'rgba(200,168,75,0.95)':'rgba(122,179,86,0.75)';
+    reviveBtn.style.boxShadow=near?'0 0 14px rgba(200,168,75,0.6)':'none';
+    var se=document.getElementById('PMstk');
+    if(se){ var sn=pmStreakToday(); se.textContent=sn>=2?('· DAY '+sn):''; }
   }
 
   function checkState(){
@@ -1986,12 +2051,18 @@ window._gameFns.petalmatch = function PM(a){
         petalsWon=PM_EARN_REPLAY;
       }
       PM_PETALS.add(petalsWon);
+      pmFailsClear();
+      /* First clear of the day pays the streak. Announced with the level line
+         so it reads as one earned moment, not a second popup. */
+      var stk=pmDailyStreak();
+      if(stk.first)PM_PETALS.add(stk.bonus);
       var finalScore=score; // capture BEFORE the reset — _sr recorded 0 for every win
       objective=genLevel(level);
       moves=objective.moves;
       score=0;
       resetObjState();
-      sm('LEVEL '+prevLv+' COMPLETE!  +'+petalsWon+' Petals');
+      sm('LEVEL '+prevLv+' COMPLETE!  +'+petalsWon+' Petals'
+        +(stk.first?('  ·  day '+stk.streak+' streak, +'+stk.bonus+' bonus'):''));
       /* A new level means a new pre-level window and a fresh full deck.
          ⛔ activeTypes MUST reset or a single Thin Meadow would quietly make
          every level after it easier, for free, for the rest of the run. */
@@ -2013,7 +2084,16 @@ window._gameFns.petalmatch = function PM(a){
     }
     if(moves<=0){
       lost=true;
-      sm('Out of moves. Retry the level or start over.');_play('lose');
+      /* Near-miss framing. Losing at 85% done and losing at 20% are different
+         emotions; the message and the shelf should know the difference. The
+         percentage shown is the SAME number the progress bar drew, via
+         progressPct(), so the screen never contradicts itself. */
+      lastLossPct=progressPct();
+      var failN=pmFailBump();
+      if(lastLossPct>=80)sm('SO CLOSE. '+Math.round(lastLossPct)+'% done. Five more moves would do it.');
+      else if(failN>=3)sm('Out of moves. This one is a wall. Your next retry starts with a free Bloom Burst.');
+      else sm('Out of moves. Retry the level or start over.');
+      _play('lose');
       banner('OUT OF MOVES','#c47a7a');
       if(!won){_e('game_loss');_sr('petalmatch',{w:false,s:score,lv:level});}
       else _sr('petalmatch',{w:true,s:score,lv:level});
@@ -2686,8 +2766,17 @@ window._gameFns.petalmatch = function PM(a){
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
     initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
-    updateHUD();rafId=requestAnimationFrame(loop);
-    sm('Retrying level '+level);
+    /* The comeback: three straight losses on this level and every retry opens
+       with a free Bloom Burst until it is beaten. Placed directly (not through
+       pmBoost) so it costs nothing and does NOT spend the one-boost-per-level
+       window — a stuck player can still buy Deep Breath on top. */
+    if(pmComebackDue()&&placeHeadStart()){
+      updateHUD();rafId=requestAnimationFrame(loop);
+      sm('Third try. Have a Bloom Burst on the house.');
+    } else {
+      updateHUD();rafId=requestAnimationFrame(loop);
+      sm('Retrying level '+level);
+    }
   };
   window._PMH=function(){requestHint();};
 
@@ -2725,6 +2814,12 @@ window._gameFns.petalmatch = function PM(a){
     },
     // Click a shelf/boost control by its key, the way a finger would.
     tapShop:function(key){ pmTap(key); return aiming; },
+    // hook probes: the streak/comeback/near-miss state, and specials on board
+    hooks:function(){ var n=0,r,c;
+      for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ var cl=grid[r]&&grid[r][c]; if(cl&&cl.special)n++; }
+      return {streak:pmStreakToday(),comebackDue:pmComebackDue(),lossPct:lastLossPct,
+              specials:n,progress:+progressPct().toFixed(1)}; },
+    retry:function(){ window._PMR(); },
     buyBoost:function(key){ return pmBoost(key); },
     revive:function(){ pmRevive(); },
     types:function(){ return activeTypes; },
