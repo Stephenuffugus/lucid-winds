@@ -590,7 +590,12 @@ right now. These gate hosting strangers' code or advertising the program publicl
   `Jimothy | Originals | Unlocked in Games | Classical`.
 - [ ] **Locked songs listed below unlocked ones** as the reason to try that game. Blocked on
   the behavior decision above.
-- [ ] **One song unlocks just for OPENING a game.**
+- [ ] **One song unlocks just for OPENING a game.** SCOPED 2026-07-26: for the
+  only soundtracked game this already works — Jimothy's free track (moonwalk) is
+  the arcade teaser by design, and opening Jimothy backfills its shelf. The
+  GENERAL feature (open any game, gain a studio track) is entangled with the
+  locked-song behavior decision above [?] — build after Stephen picks, and after
+  a second game has a soundtrack to give.
 - [ ] **Unlock ledger synced to the vault.** Today it's localStorage only. It survives because
   the game re-exports on boot, which is exactly why that fix mattered, but it isn't durable.
 - [ ] **Music rewards as a partner perk** — "integrate and your game gets a shelf, and your
