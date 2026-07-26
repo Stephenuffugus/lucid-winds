@@ -81,6 +81,27 @@ matching code change from you.
   medals + `rank-row` (needs a leaderboard), and `spec-strip`/`quake`/`serpent`/`big`/`box`
   (match-6, match-7 and travelling-piece mechanics the game does not have). The alternate
   green/purple/teal skins need a skin picker.
+- [x] **Petal Match LAYOUT — clean and tight (2026-07-26)** — Stephen: "make this damn game look
+  good... everything should fit clean and tight." Read the six spec docs in Drive → 012Assets →
+  PETAL MATCH first; doc 04 §B specifies ONE HUD strip with the objective, a score bar carrying
+  the star thresholds, and a moves frame. I had built two chunky stacked panels with 14-16px
+  borders and stacked two-line labels eating a third of the screen. Now:
+  one `hud-bar` objective strip on a single row (emblem · chapter · goal), three `pill-thin`
+  chips for SCORE/LV/MOVES, and a progress bar with the three star pips lighting as it fills.
+  ⛔ NEW TOOL `scripts/measure_9slice.py` — border-image slices are now MEASURED, not guessed.
+  It caught three real errors: the board frame was set to 24% when the art's rim is 8.4%
+  (3× too big, crushing the corner ornament); `bar-slider` and `slot-rect` are ASYMMETRIC and
+  not 9-sliceable at all; and it handles hollow frames (transparent interior) like `board-frame`.
+  Board frame now hugs: measured at 320/360/412/430px the frame is EXACTLY board+36 in both
+  axes, chips one row, buttons one row, zero horizontal overflow at every width.
+  Also swapped the two flat-rectangle effects for painted art: `fx-beam-h`/`fx-beam-v` for the
+  line-clear sweep (was a flat gold fillRect — the most-seen effect in the game) and `fx-plume`
+  for the area burst (was a flat yellow square). Plus vignette corner ornaments.
+  ⛔ `confetti-petals` TRIED AND REMOVED — it is a SHEET of ~8 separate petals, not a composed
+  burst, so drawing it whole blew each petal up to 200px and swamped the screen. It would need
+  cutting into individual petals, and `fx-shard-1..3` already do that job.
+  Verified: 55/55 sprites, 0 404s, 0 page errors, plaque asserted alone at level-up, bot still
+  wins levels through the real input handler.
 - [?] **Blobworks purple monsters** — asset list delivered (sheet 12). Needs the art.
 - [?] **OriVex sheets + backdrops** — asset lists delivered (D3). Needs the art.
 - [?] **Sky Wolf arcade icon** — current icon is cut from the banner, so the ears are

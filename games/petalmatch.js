@@ -26,7 +26,12 @@ window._gameFns.petalmatch = function PM(a){
      to 8, re-run scripts/petalmatch_balance.js and expect to retune, do not
      just change the number. Art: base-7-hydrangea.png, base-8-thistle.png. */
   var ROWS=8,COLS=8,TYPES=6,CELL=36;
-  var PM_FRAME=14;   // painted board-frame border, in px per side
+  /* Painted board-frame border, px per side. measure_9slice.py says the art's
+     rim is 33-34px; rendering it near that would eat 68px of a 412px screen,
+     so 18 is the compromise — a 1.8x downscale of the ornament, still crisp,
+     and the board stays big. ⛔ Subtracted in initCanvas AND used as the
+     wrapper border width, so the two can never disagree. */
+  var PM_FRAME=18;
   /* How much of a cell a painted piece fills. 1.0 = edge to edge. Just under
      that leaves a hairline so neighbouring flowers read as separate pieces
      instead of one carpet. Raise toward 1.0 for a denser board. */
@@ -107,34 +112,88 @@ window._gameFns.petalmatch = function PM(a){
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;position:relative;z-index:1;';
   a.appendChild(pan);
 
+  /* ═══ HUD ════════════════════════════════════════════════════════════
+     Doc 04 §B: ONE strip holding the objective, a score bar with the star
+     thresholds on it, and a moves frame. The first pass built two chunky
+     stacked panels with 14-16px borders and two-line stacked labels, which ate
+     a third of the screen above the board and read loose.
+
+     Measured with scripts/measure_9slice.py so the slices are data:
+       hud-bar    frame 18/21px sides, 27/27 top+bottom -> 14.7% 3.9%  SYMMETRIC
+       pill-thin  frame 38/39px sides, 15/19 top+bottom -> 17.2% 9.5%  SYMMETRIC
+       bar-slider + slot-rect are ASYMMETRIC (a round slot on one end only) —
+       the tool flags them; they are used as whole images, never stretched.
+     ═══════════════════════════════════════════════════════════════════ */
+  var PM_RT='/assets/games/petalmatch/runtime/';
   var objBar=document.createElement('div');
   objBar.id='PMobj';
-  /* Painted chrome (2026-07-26). border-image, NOT background-image: these
-     frames have ornate corners that must stay their own size while the middle
-     stretches. Each rule keeps its original background colour underneath, so if
-     the art fails to load the panel reads exactly as it did before. */
-  objBar.style.cssText='padding:10px 18px;background:rgba(26,31,23,0.55);border:14px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-objbar.png") 34% 26% fill round;border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;font-size:0.82rem;color:#e8dcc8;line-height:1.35;';
+  objBar.style.cssText='padding:5px 10px;background:rgba(26,31,23,0.55);'+
+    'border:11px solid transparent;border-width:11px 7px;'+
+    "border-image:url('"+PM_RT+"hud-bar.png') 14.7% 3.9% fill round;"+
+    'margin:3px 0 0;font-family:DM Mono,monospace;font-size:0.8rem;color:#e8dcc8;line-height:1.3;';
   pan.appendChild(objBar);
 
+  /* Score / level / moves as three compact chips on ONE row, in the same pill
+     the buttons wear, so the whole column reads as one set of furniture. */
   var hud=document.createElement('div');
-  hud.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:10px 16px;background:rgba(26,31,23,0.5);border:16px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-panel.png") 26% fill round;border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;';
-  hud.innerHTML='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">SCORE</div><div id="PMsc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">LEVEL</div><div id="PMlv2" style="font-size:1.1rem;color:#e8dcc8;">'+level+'</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">MOVES</div><div id="PMmv" style="font-size:1.1rem;color:#e8dcc8;">'+moves+'</div></div>';
+  hud.style.cssText='display:flex;gap:4px;margin:3px 0 0;font-family:DM Mono,monospace;';
+  var CHIP='flex:1 1 0;min-width:0;padding:1px 3px;border:8px solid transparent;border-width:8px 13px;'+
+    "border-image:url('"+PM_RT+"pill-thin.png') 17.2% 9.5% fill round;"+
+    'display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;min-height:38px;';
+  var LBL='font-family:Bebas Neue,sans-serif;font-size:0.68rem;color:#7ab356;letter-spacing:0.09em;';
+  hud.innerHTML=
+    '<div style="'+CHIP+'"><span style="'+LBL+'">SCORE</span><span id="PMsc" style="font-size:0.95rem;color:#c8a84b;">0</span></div>'+
+    '<div style="'+CHIP+'"><span style="'+LBL+'">LV</span><span id="PMlv2" style="font-size:0.95rem;color:#e8dcc8;">'+level+'</span></div>'+
+    '<div style="'+CHIP+'"><span style="'+LBL+'">MOVES</span><span id="PMmv" style="font-size:0.95rem;color:#e8dcc8;">'+moves+'</span></div>';
   pan.appendChild(hud);
 
+  /* Objective progress. Doc 04 §B6-B7: the bar fills toward the target and
+     carries the three star thresholds ON it, so the player can see which rating
+     they are heading for without a separate readout. Thresholds match
+     starsFor(): 3 stars needs 35% of the move budget left, 2 needs 15% — so as
+     the bar fills, the pips it has passed light up. */
   var bar=document.createElement('div');
-  bar.style.cssText='width:90%;max-width:300px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;margin:4px auto;overflow:hidden;';
-  bar.innerHTML='<div id="PMbar" style="height:100%;background:#7ab356;transition:width .3s;width:100%;"></div>';
+  bar.style.cssText='position:relative;width:94%;max-width:320px;height:7px;'+
+    'background:rgba(12,18,10,0.72);border:1px solid rgba(200,168,75,0.30);'+
+    'border-radius:4px;margin:6px auto 7px;';
+  bar.innerHTML='<div style="position:absolute;inset:0;border-radius:3px;overflow:hidden;">'+
+    '<div id="PMbar" style="height:100%;background:linear-gradient(90deg,#5d9440,#7ab356 60%,#c8a84b);transition:width .3s;width:0;"></div></div>'+
+    '<span class="PMpip" data-at="34" style="position:absolute;left:34%;top:50%;width:5px;height:5px;margin:-3px 0 0 -3px;border-radius:50%;background:#3d4a33;box-shadow:0 0 0 1px rgba(0,0,0,.5);"></span>'+
+    '<span class="PMpip" data-at="67" style="position:absolute;left:67%;top:50%;width:5px;height:5px;margin:-3px 0 0 -3px;border-radius:50%;background:#3d4a33;box-shadow:0 0 0 1px rgba(0,0,0,.5);"></span>'+
+    '<span class="PMpip" data-at="100" style="position:absolute;left:100%;top:50%;width:5px;height:5px;margin:-3px 0 0 -3px;border-radius:50%;background:#3d4a33;box-shadow:0 0 0 1px rgba(0,0,0,.5);"></span>';
   pan.appendChild(bar);
 
   canvas=document.createElement('canvas');
-  canvas.style.cssText='display:block;border-radius:8px;margin:4px auto;touch-action:none;';
+  /* ⛔ NO margin and NO padding on the wrapper. Both were there, and between
+     them the frame stood ~28px taller than the square board it surrounds, so it
+     sat around the board with a band of dead space along the bottom. The frame
+     must hug. */
+  canvas.style.cssText='display:block;margin:0;touch-action:none;';
   /* ⛔ The frame goes on a WRAPPER, never on the canvas itself. A border on the
      canvas shifts the box the input handler measures against, and every tap
-     would land on the wrong cell. */
+     would land on the wrong cell.
+     Slice measured, not guessed — scripts/measure_9slice.py reports ui-board as
+     a HOLLOW frame (transparent interior) with a 33/34px rim, i.e. 8.4%. It was
+     set to 24%, nearly 3x too big, which crushed the corner ornament. */
   var boardWrap=document.createElement('div');
-  boardWrap.style.cssText='display:inline-block;line-height:0;padding:2px;'+
-    'border:'+PM_FRAME+'px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-board.png") 24% fill round;';
+  boardWrap.style.cssText='display:inline-block;line-height:0;padding:0;font-size:0;'+
+    'border:'+PM_FRAME+'px solid transparent;'+
+    "border-image:url('"+PM_RT+"ui-board.png') 8.4% fill round;";
   boardWrap.appendChild(canvas);
+  /* Painted corner ornaments over the play column. Pure decoration, pointer
+     events off, and mirrored from ONE file so the pair always match. */
+  (function(){
+    var vc=['left:0;top:0;','right:0;top:0;transform:scaleX(-1);',
+            'left:0;bottom:0;transform:scaleY(-1);','right:0;bottom:0;transform:scale(-1,-1);'];
+    for(var i=0;i<vc.length;i++){
+      var v=document.createElement('img');
+      v.src=PM_RT+'vignette-corner-a.png';
+      v.alt='';
+      v.onerror=function(){ if(this.parentNode) this.parentNode.removeChild(this); };
+      v.style.cssText='position:absolute;'+vc[i]+'width:52px;opacity:0.55;pointer-events:none;z-index:2;';
+      pan.appendChild(v);
+    }
+  })();
   pan.appendChild(boardWrap);
 
   overlayHost=document.createElement('div');
@@ -300,13 +359,20 @@ window._gameFns.petalmatch = function PM(a){
     var o=objective,s=objState;
     var em=OBJ_EMBLEM[o.kind];
     var badge=(em&&PM_ART.has(em))
-      ? '<img src="'+PM_ART.url(em)+'" alt="" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.7));">'
+      ? '<img src="'+PM_ART.url(em)+'" alt="" style="width:26px;height:26px;object-fit:contain;flex:0 0 auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.7));">'
       : '';
-    var html='<div style="font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;color:#c8a84b;font-size:0.82rem;margin-bottom:3px;">'+badge+'OBJECTIVE · '+CHAPTERS[o.chapter].name.toUpperCase()+'</div>';
+    /* ONE row: emblem, chapter name, then the objective text pushed to the
+       right. The old layout stacked "OBJECTIVE · MEADOW" above the goal on its
+       own line, which doubled the strip's height to say very little. */
+    var html='<div style="display:flex;align-items:center;gap:7px;text-align:left;">'
+      + badge
+      + '<span style="font-family:Bebas Neue,sans-serif;letter-spacing:0.09em;color:#c8a84b;font-size:0.78rem;flex:0 0 auto;">'
+      + CHAPTERS[o.chapter].name.toUpperCase() + '</span>'
+      + '<span style="flex:1 1 auto;text-align:right;font-size:0.78rem;">';
     if(o.kind==='score'){
-      html+='<div>Reach <strong style="color:#c8a84b;">'+o.target+'</strong> points</div>';
+      html+='Reach <strong style="color:#c8a84b;">'+o.target+'</strong> pts';
     } else if(o.kind==='dew'){
-      html+='<div>Clear <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong> / '+o.dew+' Dew tile'+(o.dew===1?'':'s')+(o.doubleLayer?' (double)':'')+'</div>';
+      html+='Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+o.dew+(o.doubleLayer?' ×2':'');
     } else if(o.kind==='gather'){
       var parts=[];
       for(var t in s.gatherTargets){
@@ -314,12 +380,13 @@ window._gameFns.petalmatch = function PM(a){
         var flower=GEMS[t].name,color=GEMS[t].color;
         parts.push('<span style="color:'+color+';">●</span> '+Math.min(got,need)+'/'+need);
       }
-      html+='<div>Gather '+parts.join(' &nbsp; ')+'</div>';
+      html+=parts.join(' ');
     } else if(o.kind==='thorns'){
-      html+='<div>Break <strong style="color:#c47a50;">'+s.thornRemaining+'</strong> / '+o.thorns+' Thorn'+(o.thorns===1?'':'s')+(o.hits>1?' ('+o.hits+' hits each)':'')+'</div>';
+      html+='Thorns <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns+(o.hits>1?' ×'+o.hits:'');
     } else if(o.kind==='mix'){
-      html+='<div>Score <strong>'+score+'</strong>/'+o.target+' &nbsp; Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+o.dew+' &nbsp; Thorns <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns+'</div>';
+      html+='<strong>'+score+'</strong>/'+o.target+' · <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+o.dew+' · <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns;
     }
+    html+='</span></div>';
     var oe=document.getElementById('PMobj');
     if(oe)oe.innerHTML=html;
   }
@@ -391,6 +458,12 @@ window._gameFns.petalmatch = function PM(a){
     el.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'+
       'pointer-events:none;text-align:center;width:74vw;max-width:300px;'+
       'animation:pmBanner 1.8s ease-out forwards;';
+    /* ⛔ NO confetti-petals here. I tried it and it swamped the whole screen:
+       that file is a SHEET of ~8 separate petals, not a composed burst, so
+       drawing it whole blows each petal up to 200px. It would need cutting into
+       individual petals to be a particle — and fx-shard-1..3 already are that,
+       and the shell's own win celebration already rains petals over the top.
+       Three petal effects at once is worse than one. */
     var h='';
     if(PM_ART.has('laurel-burst'))
       h+='<img src="'+PM_ART.url('laurel-burst')+'" alt="" style="position:absolute;left:50%;top:50%;'+
@@ -1035,6 +1108,14 @@ window._gameFns.petalmatch = function PM(a){
       }
       else pct=100;
       e.style.width=pct+'%';
+      // light the star pips the fill has reached
+      var pips=document.getElementsByClassName('PMpip');
+      for(var pi=0;pi<pips.length;pi++){
+        var at=parseFloat(pips[pi].getAttribute('data-at'));
+        var on=pct>=at-0.5;
+        pips[pi].style.background = on ? '#f0d477' : '#3d4a33';
+        pips[pi].style.boxShadow  = on ? '0 0 6px 1px rgba(240,212,119,.85)' : '0 0 0 1px rgba(0,0,0,.5)';
+      }
     }
     renderObjective();
   }
@@ -1303,6 +1384,7 @@ window._gameFns.petalmatch = function PM(a){
                  'ring-corners','ring-plain','ring-ornate',
                  'cover-crack','ice-shatter',
                  'combo-cross','combo-mega','combo-storm','combo-hydra',
+                 'fx-beam-h','fx-beam-v','fx-plume',
                  'banner-path','banner-orrery','banner-vine','banner-lotus'];
     var loaded = 0;
     function fetch(k){
@@ -1340,6 +1422,18 @@ window._gameFns.petalmatch = function PM(a){
       has:function(k){ return !!imgs[k]; },
       url:function(k){ return base + k + '.png'; },
       onWarm:function(cb){ warmCbs.push(cb); },
+      /* Stretch to an explicit box, ignoring aspect. The line-clear beams are
+         the only thing that wants this: a row beam must span the whole board
+         width regardless of the source art's proportions. */
+      stretch:function(k,x,y,w,h,alpha){
+        var im = imgs[k];
+        if(!im) return false;
+        ctx.save();
+        ctx.globalAlpha = alpha===undefined ? 1 : alpha;
+        ctx.drawImage(im, x, y, w, h);
+        ctx.restore();
+        return true;
+      },
       /* Free-floating sprite at an arbitrary size + alpha + spin. Used by the
          clear/combo effects, which are not on the cell grid. */
       fx:function(k,cx,cy,box,alpha,rot){
@@ -1415,18 +1509,34 @@ window._gameFns.petalmatch = function PM(a){
     for(var i=0;i<fx.length;i++){
       var f=fx[i],age=now-f.t;
       if(f.kind==='sweep'){
-        if(age>180)continue;
-        var a2=1-age/180;
-        ctx.save();ctx.globalAlpha=a2;ctx.fillStyle='rgba(200,168,75,0.6)';
-        if(f.dir==='h')ctx.fillRect(0,f.r*CELL,COLS*CELL,CELL);
-        else ctx.fillRect(f.c*CELL,0,CELL,ROWS*CELL);
-        ctx.restore();
+        // line special — Stephen's painted beam down the row/column. It was a
+        // flat gold fillRect, which is the single most-seen effect in the game.
+        if(age>300)continue;
+        var t1=age/300, a2=t1<0.2?(t1/0.2):(1-(t1-0.2)/0.8), gw=0.55+0.45*Math.min(1,t1*2.2);
+        if(f.dir==='h'){
+          var bh=CELL*1.55*gw;
+          if(!PM_ART.stretch('fx-beam-h',0,f.r*CELL+CELL/2-bh/2,COLS*CELL,bh,a2)){
+            ctx.save();ctx.globalAlpha=a2;ctx.fillStyle='rgba(200,168,75,0.6)';
+            ctx.fillRect(0,f.r*CELL,COLS*CELL,CELL);ctx.restore();
+          }
+        } else {
+          var bw=CELL*1.55*gw;
+          if(!PM_ART.stretch('fx-beam-v',f.c*CELL+CELL/2-bw/2,0,bw,ROWS*CELL,a2)){
+            ctx.save();ctx.globalAlpha=a2;ctx.fillStyle='rgba(200,168,75,0.6)';
+            ctx.fillRect(f.c*CELL,0,CELL,ROWS*CELL);ctx.restore();
+          }
+        }
       } else if(f.kind==='flash'){
-        if(age>180)continue;
-        var a3=1-age/180,half=(f.size||3)/2;
-        ctx.save();ctx.globalAlpha=a3;ctx.fillStyle='rgba(255,216,107,0.5)';
-        ctx.fillRect((f.c-Math.floor(half))*CELL,(f.r-Math.floor(half))*CELL,f.size*CELL,f.size*CELL);
-        ctx.restore();
+        // area burst — painted plume, expanding. Was a flat yellow square.
+        if(age>300)continue;
+        var t3=age/300, a3=1-t3, sz3=(f.size||3);
+        if(!PM_ART.fx('fx-plume',f.c*CELL+CELL/2,f.r*CELL+CELL/2,
+                      CELL*sz3*(0.7+t3*0.55),a3*0.95,t3*0.35)){
+          var half=sz3/2;
+          ctx.save();ctx.globalAlpha=a3;ctx.fillStyle='rgba(255,216,107,0.5)';
+          ctx.fillRect((f.c-Math.floor(half))*CELL,(f.r-Math.floor(half))*CELL,sz3*CELL,sz3*CELL);
+          ctx.restore();
+        }
       } else if(f.kind==='dewstrip'){
         // dew tile breaking — painted ice-shatter, expanding ring as fallback
         if(age>360)continue;
