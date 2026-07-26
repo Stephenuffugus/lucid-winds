@@ -14,14 +14,31 @@ Last updated: 2026-07-26
 - [~] **CRITICAL: Jimothy unopenable while LOGGED IN.** His words: "if i log in i cant
   open jimthy. i have to clear my browsing data and i can log in again and then if i
   close it and try to play again while logged in, i cant... its punishing players who
-  are logged in and actively playing." NOT the July-25 splash-freeze (that SW template
-  is fixed and live, CACHE jimothy-v67) — this one is auth-correlated: boot with a
-  PERSISTED Firebase session fails, boot signed-out works, signing in mid-session works.
-  Repro in progress against the live site with a throwaway account.
-- [~] **Petal Match green-background regeneration doc → Drive 012Assets.** Yesterday's
-  skin cut left pink/purple items unreliable: they sit too close to the magenta key,
-  and a couple of sheets have a slight inconsistency. Stephen: put those items on a
-  green (or dark) background and he will remake them. Doc lists exactly which items.
+  are logged in and actively playing."
+  INVESTIGATED 2026-07-26, commit 51eb37ff:
+  · NOT the July-25 splash freeze: the fixed worker (4s timeout) is confirmed served
+    at every ?v= URL, cf-cache-status BYPASS. Found + fixed en route: SWV had drifted
+    to 57 vs CACHE 67 (registration URL frozen ten bumps); now lockstep at 68.
+  · DID NOT REPRODUCE: live-site repro with a throwaway account ran his exact
+    close-and-reopen-signed-in sequence — all three boots opened, signed-in state
+    intact. Harness kept at `satellites/stream-hop/scripts/login_repro.js`. Throwaway
+    deleted after.
+  · SHIPPED INSTEAD OF A GUESS: boot breadcrumbs. Every boot logs its stages; a boot
+    that never reaches its first frame is auto-reported (with the exact dying stage,
+    SW + installed-PWA flags) through swFeedback to Discord on the next good boot.
+    Verified headless end-to-end with the POST intercepted. Next occurrence on his
+    phone names the layer. WAITING ON: one occurrence, or Stephen's answers — what
+    does the failure look like (white page / frozen splash / arcade black screen),
+    and is he opening the installed app, a tab, or through the portal, and where did
+    he log in (Jimothy's chip vs the portal/LW)?
+- [x] **Petal Match green-background regeneration doc → Drive 012Assets.** DONE
+  2026-07-26: "PETAL MATCH — Pink + Purple Remakes on GREEN (cutting sheets)", doc id
+  1XlXg6N0yLLk0HIl4Xr5X5QlU9VAVI6Gf7aaOUE4qc60, in 012Assets root. Item list is
+  MEASURED, not guessed — every cut sprite was scanned for pink/purple fraction and
+  key-danger (share of paint a colour key would eat); 60+ items grouped into 5
+  proposed green sheets, background spec included (flat 00FF00, no shadows onto the
+  background, green/teal art stays on magenta). Sheet 4's lost board shadow flagged
+  mandatory.
 - [ ] **More large lists of notes are coming.** Merge each into THIS file on arrival,
   with source + date, before working it. Do not work from the chat message alone.
 
