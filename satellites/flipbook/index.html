@@ -37,20 +37,24 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(120% 80% at 50% 0%, #201a14 0%, #0e0b08 70%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
-.topbar{position:absolute; top:0; left:0; right:0; height:64px; display:flex; align-items:center; gap:8px; padding:8px 10px; z-index:30}
-.tbtn{min-width:48px; height:48px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
-  color:var(--ink); font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 12px; font-weight:700}
+.topbar{position:absolute; top:0; left:0; right:0; height:86px; display:flex; align-items:center; gap:8px; padding:8px 10px; z-index:30}
+/* ⛔ TOUCH TARGETS: the 540x960 stage is transform-scaled to the viewport, so CSS px
+   are NOT rendered px. On a 375-390px phone the scale is 0.69-0.72, so the old
+   48px buttons measured ~35px on glass (Jessie audit). 70px CSS >= 48px rendered
+   even at the iPhone SE scale (0.694). Do not shrink these back to 48. */
+.tbtn{min-width:70px; height:70px; border-radius:14px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
+  color:var(--ink); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 12px; font-weight:700}
 .tbtn.gold{background:linear-gradient(180deg,#e8c467,#c39a3b); color:#2a1e06; border-color:#f4dfa0}
 .tbtn.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3)}
 .tbtn:disabled{opacity:0.4; cursor:default}
 /* Play = the primary action: a bigger, unmistakable triangle. */
-#b-play{min-width:60px; font-size:0; position:relative}
+#b-play{min-width:84px; font-size:0; position:relative}
 #b-play::after{content:""; display:block; width:0; height:0; border-style:solid;
-  border-width:13px 0 13px 21px; border-color:transparent transparent transparent #2a1e06; margin-left:3px}
-#stage.playing #b-play::after{border-width:0; width:15px; height:16px; background:#2a1e06; margin-left:0}
-#pageno{margin-left:auto; font-weight:800; font-size:15px; color:var(--muted); letter-spacing:1px}
+  border-width:16px 0 16px 26px; border-color:transparent transparent transparent #2a1e06; margin-left:4px}
+#stage.playing #b-play::after{border-width:0; width:20px; height:20px; background:#2a1e06; margin-left:0}
+#pageno{margin-left:auto; font-weight:800; font-size:16px; color:var(--muted); letter-spacing:1px}
 /* the notebook — spiral binding is DOWN THE LEFT SIDE (that's how you flip it) */
-#book{position:absolute; left:24px; right:14px; top:74px; bottom:170px; border-radius:8px 14px 14px 8px;
+#book{position:absolute; left:24px; right:14px; top:96px; bottom:148px; border-radius:8px 14px 14px 8px;
   background:linear-gradient(180deg,var(--paper) 0%, var(--paper2) 100%);
   box-shadow:0 14px 30px rgba(0,0,0,0.55), inset 0 -3px 0 rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)}
 #book::before{ /* spiral binding — convex silver wire loops down the left edge */
@@ -60,33 +64,41 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 #book::after{ /* stacked page edges — on the RIGHT, opposite the binding */
   content:''; position:absolute; top:4px; bottom:4px; right:-6px; width:6px; border-radius:0 12px 12px 0;
   background:repeating-linear-gradient(90deg,#d8cbaa 0 1.5px,#efe6d0 1.5px 3px); opacity:0.9}
-#margin{position:absolute; left:34px; top:0; bottom:0; width:1.5px; background:rgba(212,110,110,0.35); pointer-events:none}
+/* Jessie 7/26: the page is a clean sheet. No margin line, no printed anything.
+   The whole surface is drawable, so nothing may sit on the paper. */
 canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
 #onion{opacity:0.28; pointer-events:none}
 #playglass{position:absolute; inset:0; display:none; align-items:flex-end; justify-content:center; padding:10px; pointer-events:none}
 #playglass.on{display:flex}
 #playchip{background:rgba(20,18,16,0.85); border:1px solid var(--gold); color:var(--gold); font-weight:800;
   padding:8px 18px; border-radius:20px; font-size:13px; letter-spacing:1px}
-/* tools */
-#tools{position:absolute; left:10px; right:10px; bottom:10px; display:flex; flex-direction:column; gap:8px; z-index:30}
+/* tools — accordion (Jessie 7/26): three menus, one open at a time, tap the open
+   tab again and everything tucks away so the page stays clean. Tabs sit at the
+   very bottom for one hand; open sections grow upward above them. */
+#tools{position:absolute; left:10px; right:10px; bottom:8px; display:flex; flex-direction:column; gap:8px; z-index:30}
 .trow{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap}
-.swatch{width:44px; height:44px; border-radius:50%; border:2.5px solid rgba(255,255,255,0.18); cursor:pointer}
+.acc-body{display:none; flex-direction:column; gap:8px; background:rgba(20,18,16,0.88);
+  border:1px solid var(--line); border-radius:16px; padding:10px 6px}
+.acc-body.open{display:flex}
+.acc-tab{flex:1; padding:0 4px}
+.acc-tab.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3); color:var(--gold)}
+.swatch{width:70px; height:70px; border-radius:50%; border:3px solid rgba(255,255,255,0.18); cursor:pointer}
 .swatch.on{border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
-.wdot{width:48px; height:44px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
+.wdot{width:70px; height:70px; border-radius:14px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
   display:flex; align-items:center; justify-content:center; cursor:pointer}
 .wdot.on{border-color:var(--gold)}
 .wdot i{display:block; border-radius:50%; background:var(--ink)}
-#hint{text-align:center; color:var(--muted); font-size:14px; line-height:1.35; padding-top:2px}
+#hint{text-align:center; color:var(--muted); font-size:16px; line-height:1.35; padding-top:2px}
 /* face stamp picker */
 #facepanel{position:absolute; left:8px; right:8px; bottom:8px; z-index:60; display:none;
   background:var(--panel); border:1px solid var(--gold); border-radius:16px; padding:12px 12px 10px; box-shadow:0 -8px 30px rgba(0,0,0,.55)}
 #facepanel.on{display:block}
 .fp-title{color:var(--gold); font-weight:800; font-size:13px; letter-spacing:.4px; margin:2px 0 6px}
 .fp-row{display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px}
-.fp-stamp{flex:none; width:54px; height:54px; border-radius:12px; border:1px solid var(--line); background:#efe6d0; cursor:pointer; padding:0}
+.fp-stamp{flex:none; width:70px; height:70px; border-radius:14px; border:1px solid var(--line); background:#efe6d0; cursor:pointer; padding:0}
 .fp-stamp.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.55)}
-.fp-stamp canvas{width:100%; height:100%; display:block; border-radius:11px}
-#fp-close{width:100%; height:44px; margin-top:6px; font-size:16px}
+.fp-stamp canvas{width:100%; height:100%; display:block; border-radius:13px}
+#fp-close{width:100%; height:70px; margin-top:6px; font-size:17px}
 /* directions overlay */
 #helppanel{position:absolute; inset:0; z-index:70; display:none; background:rgba(10,8,6,0.94); padding:18px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch}
 #helppanel.on{display:block}
@@ -98,13 +110,13 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 .hp-sub{font-weight:800; color:var(--gold); font-size:16px; margin:4px 0 8px}
 .hp-keys{list-style:none; margin:0 0 16px 0; font-size:15px; line-height:1.5}
 .hp-keys li{margin-bottom:8px; color:var(--ink)}
-#hp-close{width:100%; height:50px; font-size:17px}
+#hp-close{width:100%; height:70px; font-size:17px}
 #onionFirst{opacity:0.30; pointer-events:none}
 /* cinema mode: chrome melts away, the book fills the stage on black */
 #stage.cinema{background:#000}
 #stage.cinema .topbar, #stage.cinema #tools{display:none}
 #stage.cinema #book{left:0; right:0; top:0; bottom:0; border-radius:0; box-shadow:none}
-#stage.cinema #book::before, #stage.cinema #book::after, #stage.cinema #margin{display:none}
+#stage.cinema #book::before, #stage.cinema #book::after{display:none}
 #stage.cinema canvas.page{object-fit:contain}
 #stage.cinema #playglass{display:none!important}
 #cinemachip{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); background:rgba(20,18,16,0.7);
@@ -112,14 +124,14 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
   display:none; z-index:40; pointer-events:none}
 #stage.cinema #cinemachip{display:block}
 /* voice panel */
-#voicepanel{position:absolute; left:14px; right:14px; bottom:170px; z-index:45; display:none;
+#voicepanel{position:absolute; left:14px; right:14px; bottom:8px; z-index:45; display:none;
   background:rgba(24,21,17,0.97); border:1px solid var(--gold); border-radius:16px; padding:14px}
 #voicepanel.on{display:block}
 .vslot{display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid var(--line)}
 .vslot:last-of-type{border-bottom:none}
 .vlab{font-weight:800; font-size:14px; width:70px}
-.vbtn{min-width:48px; height:44px; border-radius:10px; border:1px solid var(--line); background:rgba(20,18,16,0.85);
-  color:var(--ink); font-size:15px; cursor:pointer; padding:0 10px; font-weight:700}
+.vbtn{min-width:70px; height:70px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,16,0.85);
+  color:var(--ink); font-size:16px; cursor:pointer; padding:0 10px; font-weight:700}
 .vbtn.rec{border-color:#c85a5a; color:#e88}
 .vbtn.rec.live{background:#7a2a2a; color:#fff; animation:recpulse 1s infinite}
 @keyframes recpulse{50%{box-shadow:0 0 0 4px rgba(200,90,90,0.35)}}
@@ -137,9 +149,6 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
     <button class="tbtn" id="b-prev" aria-label="Previous page">‹</button>
     <button class="tbtn" id="b-next" aria-label="Next page">›</button>
     <button class="tbtn" id="b-onion" aria-label="Onion skin">👻</button>
-    <button class="tbtn" id="b-first" aria-label="Show page one as a ghost" title="Ghost of page 1. Line up your loop">1</button>
-    <button class="tbtn" id="b-fps" aria-label="Frames per second">8fps</button>
-    <button class="tbtn" id="b-cinema" aria-label="Cinema mode">⛶</button>
     <button class="tbtn gold" id="b-play" aria-label="Play the flipbook">▶</button>
     <div id="pageno">1 / 1</div>
   </div>
@@ -148,7 +157,6 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
     <canvas class="page" id="onionFirst" width="512" height="716"></canvas>
     <canvas class="page" id="onion" width="512" height="716"></canvas>
     <canvas class="page" id="page" width="512" height="716"></canvas>
-    <div id="margin"></div>
     <div id="playglass"><div id="playchip">PLAYING · tap to stop</div></div>
   </div>
   <div id="cinemachip">tap anywhere to leave the cinema</div>
@@ -166,13 +174,14 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
       </ol>
       <div class="hp-sub">What the buttons do</div>
       <ul class="hp-keys">
+        <li>Draw, Pages, and More are menus at the bottom. Tap one to open it, tap it again to tuck everything away so the whole page is clear.</li>
         <li>👻 Onion skin: see the page just before this one, faintly.</li>
-        <li>1: show page one as a blue ghost so you can line up a smooth loop.</li>
-        <li>8fps: how fast it plays. Tap to change the speed.</li>
-        <li>⛶ Cinema: play big on a full black screen.</li>
+        <li>1 Ghost (in Pages): show page one as a blue ghost so you can line up a smooth loop.</li>
+        <li>8fps (in More): how fast it plays. Tap to change the speed.</li>
+        <li>⛶ Cinema (in More): play big on a full black screen.</li>
         <li>🎙 Voice: record yourself talking over the cartoon.</li>
         <li>📤 Export saves it as a video. ↗ Share sends it to a friend.</li>
-        <li>☀ Daily: start with today's surprise drawing to trace.</li>
+        <li>☀ Daily (in Pages): start with today's surprise drawing to trace.</li>
         <li>◻ Erase, ✕ Page clears the page, 📓 New starts a fresh book.</li>
       </ul>
       <button class="tbtn gold" id="hp-close">Got it</button>
@@ -199,38 +208,62 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
   </div>
 
   <div id="tools">
-    <div class="trow" id="colors"></div>
-    <div class="trow">
-      <div class="wdot" data-w="3" title="Fine pen"><i style="width:4px;height:4px"></i></div>
-      <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
-      <div class="wdot" data-w="12" title="Marker"><i style="width:14px;height:14px"></i></div>
-      <div class="wdot" data-w="20" title="Brush"><i style="width:20px;height:20px"></i></div>
-      <div class="wdot" data-w="30" title="Broad brush for fast colouring"><i style="width:28px;height:28px"></i></div>
-      <button class="tbtn" id="b-fill" aria-label="Fill an area with colour">🪣 Fill</button>
-      <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
-      <button class="tbtn" id="b-faces" aria-label="Add eyes and mouths">😀 Faces</button>
-      <button class="tbtn" id="b-copyprev" aria-label="Copy the previous page onto this one">⧉ Copy</button>
-      <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
-      <button class="tbtn" id="b-newbook" aria-label="Start a new flipbook">📓 New</button>
-      <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
+    <div class="acc-body" id="acc-draw">
+      <div class="trow" id="colors"></div>
+      <div class="trow">
+        <div class="wdot" data-w="3" title="Fine pen"><i style="width:4px;height:4px"></i></div>
+        <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
+        <div class="wdot" data-w="12" title="Marker"><i style="width:14px;height:14px"></i></div>
+        <div class="wdot" data-w="20" title="Brush"><i style="width:20px;height:20px"></i></div>
+        <div class="wdot" data-w="30" title="Broad brush for fast colouring"><i style="width:28px;height:28px"></i></div>
+      </div>
+      <div class="trow">
+        <button class="tbtn" id="b-fill" aria-label="Fill an area with colour">🪣 Fill</button>
+        <button class="tbtn" id="b-erase" aria-label="Eraser">◻ Erase</button>
+        <button class="tbtn" id="b-faces" aria-label="Add eyes and mouths">😀 Faces</button>
+      </div>
+      <div class="trow">
+        <button class="tbtn" id="b-undo" aria-label="Undo" disabled>↶ Undo</button>
+        <button class="tbtn" id="b-redo" aria-label="Redo" disabled>↷ Redo</button>
+      </div>
+    </div>
+    <div class="acc-body" id="acc-pages">
+      <div class="trow">
+        <button class="tbtn" id="b-copyprev" aria-label="Copy the previous page onto this one">⧉ Copy</button>
+        <button class="tbtn" id="b-clear" aria-label="Clear this page">✕ Page</button>
+        <button class="tbtn" id="b-newbook" aria-label="Start a new flipbook">📓 New</button>
+        <button class="tbtn" id="b-daily" aria-label="Start today's daily starter">☀ Daily</button>
+      </div>
+      <div class="trow">
+        <button class="tbtn" id="b-first" aria-label="Show page one as a ghost" title="Ghost of page 1. Line up your loop">1 Ghost</button>
+        <button class="tbtn" id="b-loop" aria-label="Repeat all pages to make the animation longer">🔁 Loop</button>
+        <button class="tbtn" id="b-boomerang" aria-label="Add the pages in reverse for a there-and-back loop">⇄ Boomerang</button>
+      </div>
+    </div>
+    <div class="acc-body" id="acc-more">
+      <div class="trow">
+        <button class="tbtn" id="b-fps" aria-label="Frames per second">8fps</button>
+        <button class="tbtn" id="b-cinema" aria-label="Cinema mode">⛶ Cinema</button>
+        <button class="tbtn" id="b-voice" aria-label="Record voices">🎙 Voice</button>
+        <button class="tbtn" id="b-export" aria-label="Export as a video">📤 Export</button>
+      </div>
+      <div class="trow">
+        <button class="tbtn" id="b-share" aria-label="Share your flipbook">↗ Share</button>
+        <button class="tbtn" id="b-install" aria-label="Add to home screen">📲 Install</button>
+        <button class="tbtn" id="b-help" aria-label="How to use Flipbook">? Help</button>
+      </div>
     </div>
     <div class="trow">
-      <button class="tbtn" id="b-undo" aria-label="Undo" disabled>↶ Undo</button>
-      <button class="tbtn" id="b-redo" aria-label="Redo" disabled>↷ Redo</button>
-      <button class="tbtn" id="b-help" aria-label="How to use Flipbook">? Help</button>
-      <button class="tbtn" id="b-voice" aria-label="Record voices">🎙 Voice</button>
-      <button class="tbtn" id="b-loop" aria-label="Repeat all pages to make the animation longer">🔁 Loop</button>
-      <button class="tbtn" id="b-boomerang" aria-label="Add the pages in reverse for a there-and-back loop">⇄ Boomerang</button>
-      <button class="tbtn" id="b-export" aria-label="Export as a video">📤 Export</button>
-      <button class="tbtn" id="b-share" aria-label="Share your flipbook">↗ Share</button>
-      <button class="tbtn" id="b-install" aria-label="Add to home screen">📲 Install</button>
+      <button class="tbtn acc-tab" id="tab-draw" aria-label="Open the drawing tools">✏ Draw</button>
+      <button class="tbtn acc-tab" id="tab-pages" aria-label="Open the page tools">📄 Pages</button>
+      <button class="tbtn acc-tab" id="tab-more" aria-label="Open more tools">⋯ More</button>
     </div>
     <div id="hint">Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.</div>
   </div>
   <div id="facepanel">
-    <div class="fp-title">👀 Eyes — pick a pair</div>
+    <div class="fp-title">👀 Eyes: pick a pair</div>
     <div class="fp-row" id="fp-eyes"></div>
-    <div class="fp-title">👄 Mouths — pick a feeling</div>
+    <div class="fp-title">👄 Mouths: pick a feeling</div>
     <div class="fp-row" id="fp-mouths"></div>
     <button class="tbtn" id="fp-close">Done</button>
   </div>
@@ -239,7 +272,7 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 <script>
 (function(){
 "use strict";
-var BUILD="v2.1", MAXPAGES=100;
+var BUILD="v2.2", MAXPAGES=100;
 function $(id){ return document.getElementById(id); }
 
 /* ---------- stage fit ---------- */
@@ -1001,6 +1034,29 @@ function toastHint(m){ var h=$('hint'); h.textContent=m;
     });
   })(dots[k]);
 })();
+/* ---------- accordion menu (Jessie 7/26): one section open at a time; tapping
+   the open tab closes it so the whole notebook is visible. Remembered per device. */
+(function(){
+  var SECTS=['draw','pages','more'];
+  function setAcc(name){
+    var i;
+    for(i=0;i<SECTS.length;i++){
+      var s=SECTS[i], body=$('acc-'+s), tab=$('tab-'+s), on=(s===name);
+      if(body)body.classList.toggle('open',on);
+      if(tab)tab.classList.toggle('on',on);
+    }
+    try{ localStorage.setItem('fb_acc', name||'none'); }catch(e){}
+  }
+  var k;
+  for(k=0;k<SECTS.length;k++)(function(s){
+    $('tab-'+s).addEventListener('click',function(){
+      setAcc($('acc-'+s).classList.contains('open')?null:s);
+    });
+  })(SECTS[k]);
+  var start='draw';
+  try{ var sv=localStorage.getItem('fb_acc'); if(sv==='none')start=null; else if(sv&&SECTS.indexOf(sv)>=0)start=sv; }catch(e){}
+  setAcc(start);
+})();
 $('b-erase').addEventListener('click',function(){
   erasing=!erasing; $('b-erase').classList.toggle('on',erasing); if(erasing){ clearStamp(); clearFill(); }
 });
@@ -1022,7 +1078,17 @@ var STAMPS=[
  {id:'e_happy',kind:'eyes',name:'Happy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _sset(g,null,SK_INK,Math.max(3,s*0.16)); for(var k=-1;k<=1;k+=2){ g.beginPath(); g.arc(cx+k*ex,cy+er*0.35,er*0.85,Math.PI*1.12,Math.PI*1.88); g.stroke(); } }},
  {id:'e_wide',kind:'eyes',name:'Surprised',d:function(g,cx,cy,s){ var ex=s*0.74,er=s*0.56; _eyeW(g,cx-ex,cy,er); _eyeW(g,cx+ex,cy,er); _pup(g,cx-ex,cy,er*0.34,1); _pup(g,cx+ex,cy,er*0.34,1); }},
  {id:'e_cute',kind:'eyes',name:'Sparkly',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.54; _eyeW(g,cx-ex,cy,er); _eyeW(g,cx+ex,cy,er); for(var k=-1;k<=1;k+=2){ _pup(g,cx+k*ex,cy+er*0.08,er*0.62,0); g.fillStyle='rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx+k*ex-er*0.28,cy-er*0.2,er*0.22,0,7); g.fill(); g.beginPath(); g.arc(cx+k*ex+er*0.22,cy+er*0.26,er*0.11,0,7); g.fill(); } }},
- {id:'e_sleepy',kind:'eyes',name:'Sleepy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _sset(g,SK_INK,SK_INK,Math.max(3,s*0.13)); for(var k=-1;k<=1;k+=2){ g.beginPath(); g.arc(cx+k*ex,cy,er*0.8,0,Math.PI); g.stroke(); g.beginPath(); g.arc(cx+k*ex,cy+er*0.28,er*0.32,0,Math.PI); g.fill(); } }},
+ /* Jessie 7/26: the old Sleepy stamp (stroked semicircle + a filled half-disc
+    under each eye) read as droopy OPEN eyes with bags. Replaced with proper
+    closed lids: one gentle downward arc per eye plus three little lashes.
+    A flat line reads as dead, so the lid keeps a soft curve. */
+ {id:'e_closed',kind:'eyes',name:'Closed',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5,R=er*1.05,k,j; _sset(g,null,SK_INK,Math.max(3,s*0.15));
+   for(k=-1;k<=1;k+=2){ var x=cx+k*ex, oy=cy-er*0.55;
+     g.lineWidth=Math.max(3,s*0.15); g.beginPath(); g.arc(x,oy,R,Math.PI*0.26,Math.PI*0.74); g.stroke();
+     g.lineWidth=Math.max(2,s*0.09);
+     for(j=-1;j<=1;j++){ var a=Math.PI*0.5+j*Math.PI*0.19;
+       g.beginPath(); g.moveTo(x+Math.cos(a)*R,oy+Math.sin(a)*R);
+       g.lineTo(x+Math.cos(a)*(R+er*0.42),oy+Math.sin(a)*(R+er*0.42)); g.stroke(); } } }},
  {id:'e_wink',kind:'eyes',name:'Wink',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.5; _eyeW(g,cx-ex,cy,er); _pup(g,cx-ex,cy+er*0.1,er*0.5,1); _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.arc(cx+ex,cy+er*0.35,er*0.85,Math.PI*1.12,Math.PI*1.88); g.stroke(); }},
  {id:'e_grumpy',kind:'eyes',name:'Grumpy',d:function(g,cx,cy,s){ var ex=s*0.72,er=s*0.42; _eyeW(g,cx-ex,cy+s*0.1,er); _eyeW(g,cx+ex,cy+s*0.1,er); _pup(g,cx-ex,cy+s*0.1,er*0.42,0); _pup(g,cx+ex,cy+s*0.1,er*0.42,0); _sset(g,null,SK_INK,Math.max(3,s*0.16)); g.beginPath(); g.moveTo(cx-ex-er*0.9,cy-er*0.8); g.lineTo(cx-ex+er*0.5,cy-er*0.15); g.moveTo(cx+ex+er*0.9,cy-er*0.8); g.lineTo(cx+ex-er*0.5,cy-er*0.15); g.stroke(); }},
  {id:'e_hearts',kind:'eyes',name:'Hearts',d:function(g,cx,cy,s){ var ex=s*0.72,r=s*0.46; g.fillStyle=SK_PINK; for(var k=-1;k<=1;k+=2){ var x=cx+k*ex; g.beginPath(); g.moveTo(x,cy+r*0.7); g.bezierCurveTo(x-r,cy-r*0.2,x-r*0.5,cy-r,x,cy-r*0.35); g.bezierCurveTo(x+r*0.5,cy-r,x+r,cy-r*0.2,x,cy+r*0.7); g.closePath(); g.fill(); } }},
