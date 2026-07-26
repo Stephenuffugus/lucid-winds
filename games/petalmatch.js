@@ -1035,7 +1035,74 @@ window._gameFns.petalmatch = function PM(a){
     ctx.restore();
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     PAINTED ART (2026-07-26). Stephen's 23 sheets are cut, so the board
+     draws his sprites instead of the procedural shapes it was standing in
+     with. The procedural path is KEPT as the fallback and still runs if a
+     sprite is missing or has not downloaded yet — the game is never blank
+     while art loads, and it still works if the files ever go away.
+
+     Sprites come from assets/games/petalmatch/runtime/, which holds 160px
+     copies. The masters stay full size; a board cell is ~36 CSS px, so
+     shipping 500px masters would be a 40MB download to draw thumbnails.
+     ═══════════════════════════════════════════════════════════════════ */
+  var PM_ART = (function(){
+    var imgs = {}, base = '/assets/games/petalmatch/runtime/';
+    var WANT = ['base-0','base-1','base-2','base-3','base-4','base-5',
+                'spec-line-h','spec-line-v','spec-burst','spec-wild',
+                'block-3','block-2','block-1','block-0','cover-2','cover-1'];
+    var loaded = 0;
+    for(var i=0;i<WANT.length;i++){
+      (function(k){
+        var im = new Image();
+        im.onload = function(){ imgs[k] = im; loaded++; };
+        im.onerror = function(){ /* leave it out; the fallback covers it */ };
+        im.src = base + k + '.png';
+      })(WANT[i]);
+    }
+    function put(k,cx,cy,sz){
+      var im = imgs[k];
+      if(!im) return false;
+      // fit the sprite inside the cell, preserving its aspect
+      var r = Math.min(sz/im.width, sz/im.height);
+      var w = im.width*r, h = im.height*r;
+      ctx.drawImage(im, cx-w/2, cy-h/2, w, h);
+      return true;
+    }
+    return {
+      count:function(){ return loaded; },
+      /* The dew/ice tile cover, drawn UNDER the piece. jelly is the number of
+         layers still on this square. */
+      cover:function(layers,cx,cy,sz){
+        return put(layers >= 2 ? 'cover-2' : 'cover-1', cx, cy, sz);
+      },
+      /* Returns true when it has drawn the cell, false to let the
+         procedural renderer handle it. */
+      draw:function(cell,cx,cy,sz){
+        var k = null;
+        if(cell.type === -2){
+          var hp = cell.block|0;
+          k = 'block-' + (hp>=3?3:(hp>=1?hp:0));
+        } else if(cell.special === 'spore' || cell.type === -1){
+          k = 'spec-wild';
+        } else if(cell.special === 'vine'){
+          k = (cell.stripeDir === 'v') ? 'spec-line-v' : 'spec-line-h';
+        } else if(cell.special === 'burst'){
+          k = 'spec-burst';
+        } else if(cell.type >= 0){
+          k = 'base-' + (cell.type % 6);
+        }
+        if(!k) return false;
+        // the piece art is drawn a touch larger than the cell so petals
+        // and spikes read at board size instead of shrinking to a dot
+        return put(k, cx, cy, sz*1.18);
+      }
+    };
+  })();
+  window.PM_ART = PM_ART;
+
   function drawGem(cell,cx,cy,sz){
+    if(PM_ART.draw(cell,cx,cy,sz)) return;
     if(cell.type===-2){drawThorn(cx,cy,sz,cell.block);return;}
     if(cell.type===-1||cell.special==='spore'){drawSpore(cx,cy,sz);return;}
     drawFlower(cell.type,cx,cy,sz,cell.special,cell.stripeDir);
@@ -1088,10 +1155,14 @@ window._gameFns.petalmatch = function PM(a){
         ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
         // Jelly overlay — translucent dew/moss tint
         if(jelly>0){
-          ctx.fillStyle=jelly===2?'rgba(155,200,255,0.35)':'rgba(155,200,255,0.2)';
-          ctx.fillRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
-          ctx.strokeStyle='rgba(200,230,255,0.6)';ctx.lineWidth=1;
-          ctx.strokeRect(c*CELL+3,r*CELL+3,CELL-6,CELL-6);
+          // Painted ice-cover art when it has loaded; the old tint is the
+          // fallback so a dew level is never invisible while art downloads.
+          if(!PM_ART.cover(jelly, c*CELL+CELL/2, r*CELL+CELL/2, CELL)){
+            ctx.fillStyle=jelly===2?'rgba(155,200,255,0.35)':'rgba(155,200,255,0.2)';
+            ctx.fillRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+            ctx.strokeStyle='rgba(200,230,255,0.6)';ctx.lineWidth=1;
+            ctx.strokeRect(c*CELL+3,r*CELL+3,CELL-6,CELL-6);
+          }
         }
       }
     }
