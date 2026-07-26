@@ -652,18 +652,14 @@ not.** These are per-game and specific:
   Verified all four mode buttons DO fire and BEGIN THE WATCH exists and is not below the
   fold at 390x844, so it was never a dead button. STILL OPEN: every touch target on that
   screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
-- [~] **48px TOUCH-TARGET SWEEP — worst SEVEN done (commits da8b517d + cbd4cb3f),
-  measured in RENDERED px.** ⭐ Root cause split discovered: most "under-48" games
-  are the SCALED-STAGE ILLUSION — 48 CSS px on a 0.72-scaled 540x960 stage renders
-  ~35px real. Standard now set: 72 stage px in scaled games, 48 real px unscaled,
-  invisible pseudo tap zones where visuals must stay small, ⛔ never vw units
-  inside a scaled stage (double-shrink). Done: vinewinder, pollen-panic,
-  nova-bloom, cipher-bloom, bramble-court, chaff-wars, flipbook — every screen
-  re-measured at 390x844 + 360x800, zero under 48 effective, screenshots eyeballed.
-  One documented exemption: cipher-bloom keyboard/cell WIDTH (26 keys across).
-  REMAINING: ~69 satellites flagged by the old audit — re-audit with the
-  rendered-px method (many share the same .btn template; the 72-stage-px fix is
-  reusable). Memory: touch-targets-measure-rendered-px.
+- [x] **48px TOUCH-TARGET SWEEP — FLEET COMPLETE (commit d84b3788), 83/83 clean,
+  measured in RENDERED px by the independent auditor (scripts/touch_audit.js,
+  permanent).** 18 clean this morning -> 79 after the 8-agent workflow (63 games)
+  -> 83 after four hand-finished stragglers. One standard fleet-wide: 72 stage px
+  in scaled games / 48 real px unscaled / outward-only tap zones for small
+  visuals / no vw in scaled stages. Documented exemptions: contiguous board
+  grids + the crossword keyboard (geometry). Re-run `node scripts/touch_audit.js`
+  any time; any NEW game must pass it before shipping.
 - [x] **Line Loom "incomprehensible" — FIXED.** Investigated first: the title screen already
   explains the game and there IS a how-to page, so information was never the gap. The gap
   was first contact — you land on a near-black board with four small outlines and six
