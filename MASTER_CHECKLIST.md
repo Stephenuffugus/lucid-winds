@@ -71,9 +71,12 @@ items are marked here so nobody re-does them.
   opens with a FREE Bloom Burst until cleared, shares placeHeadStart() with the
   paid boost). Hooks probe 5/5 through the real input path; powerup probe 19/19.
   Ladder untouched — nothing manufactures difficulty.
-- [ ] **"Fully developed"** — standing direction; the open feature list is already in
-  the PETAL MATCH FULL BUILD-OUT section above (timed mode, endless/daily, new
-  specials, competitive layer).
+- [x] **Timed mode pays Petals, capped like the daily — verified (commit 44ac6865).**
+  1 per 5000 score, hard cap 20/day (the streak's ceiling), end panel names the
+  cap when it binds. Probe 16/16: a 15000 run paid exactly 3; a planted 19/20 day
+  let exactly the remainder through.
+- [ ] **"Fully developed"** — standing direction; still open from the build-out
+  list: endless + daily modes, new specials (serpentine first), competitive layer.
 
 ### 🎬 Stop Motion (`satellites/stop-motion`)
 - [ ] **Animatable eyes + mouths library (Stephen)** — pre-designed eyeballs/mouths
@@ -184,10 +187,15 @@ items are marked here so nobody re-does them.
 - [ ] **Desc placement (Jessie)**: short desc on the thumbnail, long desc after the
   intro page — check what the portal card + game intro actually show and split if
   needed.
-- [ ] **Some bottle caps uncollectable** — can't move sideways mid-jump to reach
-  them. Gameplay: either guarantee caps spawn reachable or allow the lateral hop.
-- [ ] **Edge-of-screen cheat** — hugging the very edge and quickly jumping down
-  dodges deaths too easily.
+- [x] **Bottle caps all reachable, verified (commit 888dbc63).** Measured 337
+  generated caps: 14.2% had the hop-up approach bushed, 0.89% fully walled in
+  (the uncollectable case). Column walk now also requires the approach cell
+  clear — zero new rng draws so Daily generation stays reproducible. After:
+  0.00% on both, coin rate unchanged. BUILD v7.4, SWV+CACHE 69.
+- [x] **Edge-of-screen cheat — verified ALREADY FIXED in code** (startHop: a hop
+  into the wall is refused outright, so a stationary "hop" no longer grants
+  mid-air safety; the comment cites Jessie's report). Down-hop at row 0 is the
+  same refusal. Needs her device to confirm the feel.
 
 ### 🎨 Other per-game (Jessie 7/21)
 - [ ] **Kakuro**: missing description/rules/objective page before the game.
