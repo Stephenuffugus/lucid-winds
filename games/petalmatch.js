@@ -18,6 +18,13 @@ if(!document.getElementById('pm-special-kf')){
 
 window._gameFns = window._gameFns || {};
 window._gameFns.petalmatch = function PM(a){
+  /* ⛔ TYPES STAYS AT 6. Stephen 2026-07-26: the 7th and 8th flowers
+     (hydrangea, thistle) are cut and waiting, but they are for EXPANSIONS or
+     far-later difficulty, not the base ladder. Raising TYPES makes every single
+     level harder at once — fewer matches exist on a board with more colours —
+     and the whole measured balance pass was calibrated at 6. If this ever goes
+     to 8, re-run scripts/petalmatch_balance.js and expect to retune, do not
+     just change the number. Art: base-7-hydrangea.png, base-8-thistle.png. */
   var ROWS=8,COLS=8,TYPES=6,CELL=36;
   // 6 flower types: rose / daisy / violet / forgetmenot / clover / cherry
   var GEMS=[

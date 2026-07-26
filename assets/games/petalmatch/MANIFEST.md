@@ -84,3 +84,14 @@ measured background is not magenta.
 ~42 MB of PNG. Deliberately NOT shrunk further: the studio rule is never
 overshrink the art. Handle at wiring time with lazy-loading, or a WebP build
 step, rather than by degrading sprites.
+
+## ⛔ The 7th and 8th flowers are deliberately unused
+
+`base-7-hydrangea` and `base-8-thistle` are cut and ready but NOT in play.
+Stephen 2026-07-26: they are for **expansions or far-later difficulty**.
+
+The board runs 6 colours. Adding a 7th or 8th makes every level harder at once,
+because more colours means fewer matches exist on any given board, and the whole
+measured balance pass was calibrated at 6. If they are ever switched on, re-run
+`scripts/petalmatch_balance.js` and expect to retune the ladder — do not just
+raise `TYPES`.
