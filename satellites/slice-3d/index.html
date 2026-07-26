@@ -142,7 +142,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
       <button class="btn ff" id="b-ff">Freefall &middot; Level <span id="t-fflvl">1</span></button>
       <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
-      <button class="btn climb" id="b-climb">Wall Climb &middot; Level <span id="t-clvl">1</span></button>
+      <!-- Wall Climb moved to its own arcade listing (Super Slice Wall Climb,
+           /satellites/slice-3d/?mode=climb) per Stephen 2026-07-26; the mode code and
+           the ?mode=climb boot stay, only the menu button left. -->
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-forge">&#9874; Forge</button>
@@ -156,7 +158,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. Hold to keep flipping. Resting on the ground is fine, tap to get moving again.</div></div>
-    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">Wall Climb is different: HOLD steadies the blade.</b> Tap to flip up the face, then hold and the spin brakes and the blade turns to face the wall, ready to stick. Release to flip again. That is the whole climb.</div></div>
+    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">Super Slice Wall Climb</b> plays by the normal rules: tap to flip up the face and stick the blade high. Or switch to <b style="color:#3ecc8e">Be the Blade</b> on the climb screen: hold and circle your finger and the knife spins with it, and handle bounces off the wall ride your spin upward. Glancing blade touches scrape off; only a committed blade angle sticks.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
@@ -211,7 +213,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.1";
+var BUILD="v5.2";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -247,6 +249,7 @@ var PROG=(function(){ try{ return JSON.parse(LS.g('s3d_prog'))||{level:1,best:{}
 if(!PROG.level)PROG.level=1;
 if(!PROG.ffLevel)PROG.ffLevel=1;
 if(!PROG.climbBest)PROG.climbBest=0;
+if(!PROG.clControl)PROG.clControl='tap';   // climb scheme: 'tap' | 'blade' (Be the Blade)
 if(!PROG.climbLevel)PROG.climbLevel=1;
 if(!PROG.best)PROG.best={};
 function saveProg(){ LS.s('s3d_prog', JSON.stringify(PROG)); }
@@ -332,7 +335,10 @@ function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; var t=Math.
 var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
 // Wall Climb spin control (Stephen: slow it so you can time the blade). Tap gives a
 // slower, readable flip; HOLD brakes the spin and eases the blade to face the wall.
-var TAPW_CLIMB=-8.0, CLIMB_BRAKE=0.05, CLIMB_AIM=4.0;
+/* TAPW_CLIMB matches TAPW again — Stephen: keep the climb like the normal
+   game. The old slow flip (-8) and the hold-brake (both my earlier attempt at
+   "slow it down") are retired; the constants stay only as tuning handles. */
+var TAPW_CLIMB=-12.5;
 // Freefall tuning: gentle fall so you have time to aim the blade; hold a side
 // to STEER and FLIP, release to settle the spin and hold your orientation
 var GRAV_FF=21, FF_TERM=19, FF_STEER=30, FF_SPIN=17, FF_MAXW=7.5;
@@ -860,6 +866,13 @@ function buildLevel(lvl){
   // THE SCORE WALL — an unmissable landmark you stick as high as you dare
   var wallX=len+8;
   var bands=[[1,0x8a8f9e],[2,0x4ac8b4],[3,0x5b9bd5],[5,0xc56bf0],[10,0xffd76a]];
+  /* Stephen: "the highest score shouldn't necessarily be at the top." The x10
+     jackpot now lands in one of the top three slots per run (drawn from the
+     run's own rng, so the wall is readable on approach and fair per seed). Top
+     is still GOOD — bands 2..4 hold 3/5/10 in some order — but you read the
+     wall and aim, instead of always slamming the ceiling. */
+  var jSlot=2+Math.floor(rng()*3);
+  if(jSlot!==4){ var jb=bands[4]; bands[4]=bands[jSlot]; bands[jSlot]=jb; }
   var bandMats=[];
   for(var b2=0;b2<bands.length;b2++){
     var mat=new THREE.MeshLambertMaterial({color:bands[b2][1]});
@@ -1184,6 +1197,31 @@ function buildClimb(lvl){
     wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true};
 }
 
+/* The scheme toggle, climb only: TAPS <-> BE THE BLADE. 72 stage px (the
+   rendered-px touch law), persisted, and it retells the one-line how each
+   time it flips. Removed when any other mode starts. */
+function ensureClimbToggle(){
+  var b=$('cl-ctl');
+  if(!b){
+    b=document.createElement('button');
+    b.id='cl-ctl';
+    b.style.cssText='position:absolute;right:10px;top:86px;z-index:30;min-height:72px;'+
+      'padding:0 16px;border-radius:14px;border:1px solid #3ecc8e88;background:#0c2a1ccc;'+
+      'color:#a8f2c8;font:700 15px system-ui;cursor:pointer';
+    b.addEventListener('click',function(ev){ ev.preventDefault();
+      PROG.clControl=(PROG.clControl==='blade')?'tap':'blade'; saveProg();
+      paintClimbToggle();
+      try{ popupForge(PROG.clControl==='blade'
+        ? 'BE THE BLADE: circle your finger to spin.'
+        : 'CLASSIC: tap to flip.'); }catch(e){}
+    });
+    $('stage').appendChild(b);
+  }
+  paintClimbToggle();
+  b.style.display='';
+}
+function paintClimbToggle(){ var b=$('cl-ctl'); if(b)b.textContent=(PROG.clControl==='blade')?'◌ Be the Blade':'◉ Classic taps'; }
+function hideClimbToggle(){ var b=$('cl-ctl'); if(b)b.style.display='none'; }
 function newClimb(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
@@ -1193,12 +1231,12 @@ function newClimb(lvl){
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0,
       done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
-  /* The brake was undiscoverable: base-game muscle memory says hold = keep
-     flipping, and nothing in the climb ever said otherwise (Stephen: "almost
-     impossible to gain footing... it only spins at a consistent rate" — the
-     slow-down HE ASKED FOR was already on the hold, unannounced). Say it at
-     the moment it matters, every climb start; it is 1.4s of toast. */
-  setTimeout(function(){ try{ popupForge('HOLD steadies the blade. Release to flip.'); }catch(e){} }, 600);
+  ensureClimbToggle();
+  setTimeout(function(){ try{
+    popupForge(PROG.clControl==='blade'
+      ? 'Circle your finger to spin. Bounce up the wall.'
+      : 'Tap to flip. Stick the blade HIGH.');
+  }catch(e){} }, 600);
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
   camera.position.set(-10, 18, 40);
   $('h-score').textContent='0';
@@ -1216,6 +1254,7 @@ function newClimb(lvl){
 }
 
 function newGame(lvl){
+  try{ hideClimbToggle(); }catch(e){}
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
   var built=buildLevel(lvl);
@@ -1242,6 +1281,7 @@ function newGame(lvl){
 }
 
 function newFF(lvl, endless){
+  try{ hideClimbToggle(); }catch(e){}
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
   G_ENDLESS = !!endless;
@@ -1266,7 +1306,8 @@ function newFF(lvl, endless){
   running=true; lastTs=0;
   requestAnimationFrame(loop);
 }
-function newEndless(){ newFF(1, true); }
+function newEndless(){
+  try{ hideClimbToggle(); }catch(e){} newFF(1, true); }
 
 /* ---------- input: tap to flip, hold to keep flipping (original rules) ---------- */
 function doTap(side){
@@ -1283,16 +1324,57 @@ function doTap(side){
   if(G.taps===1){ var co=$('coach'); if(co)co.style.display='none'; }
   SFX.flip();
 }
+/* ═══ BE THE BLADE (Stephen 2026-07-26, his design) ══════════════════════
+   "you touch and then it kind of follows the rotation of your finger but will
+   also bounce off the wall so you touch and hold and have to swipe in half
+   circles to keep spinning it the direction you want to keep bouncing it up
+   the wall."
+   Implementation: while your finger is down in the climb (scheme 'blade'),
+   its ANGULAR motion around the canvas centre drives the knife's spin — the
+   knife follows the circles you draw. Handle-first wall hits convert spin
+   into upward kick, so sustained circles ride the wall upward. A quick tap
+   (short, no orbit) still flips like normal, so you are never stranded.
+   Toggle lives on the climb HUD, persisted in PROG.clControl. */
+var bladePrev=null;
+function bladeCtl(){ return !!(G&&G.climbWall&&PROG.clControl==='blade'); }
 $('gl').addEventListener('pointerdown', function(e){
   if(!running||!G||G.done)return;
   e.preventDefault();
-  var side=1;
-  try{ var rc=$('gl').getBoundingClientRect(); side=((e.clientX-rc.left)/rc.width)<0.5?-1:1; }catch(err){}
-  G.holding=true; G.holdT=0; G.hold=side; G.lastSide=side;
+  var side=1, rc=null;
+  try{ rc=$('gl').getBoundingClientRect(); side=((e.clientX-rc.left)/rc.width)<0.5?-1:1; }catch(err){}
+  G.lastSide=side;
+  if(bladeCtl()&&rc){
+    G.bladeDrag={ t0:performance.now(), orbited:0,
+      ang:Math.atan2(e.clientY-(rc.top+rc.height/2), e.clientX-(rc.left+rc.width/2)) };
+    bladePrev=performance.now();
+    return;                                  // no tap yet: a quick release still taps below
+  }
+  G.holding=true; G.holdT=0; G.hold=side;
   doTap(side);
 },{passive:false});
-window.addEventListener('pointerup', function(){ if(G){ G.holding=false; G.hold=0; } });
-window.addEventListener('pointercancel', function(){ if(G){ G.holding=false; G.hold=0; } });
+$('gl').addEventListener('pointermove', function(e){
+  if(!G||!G.bladeDrag)return;
+  e.preventDefault();
+  var rc; try{ rc=$('gl').getBoundingClientRect(); }catch(err){ return; }
+  var a=Math.atan2(e.clientY-(rc.top+rc.height/2), e.clientX-(rc.left+rc.width/2));
+  var d=a-G.bladeDrag.ang;
+  while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
+  G.bladeDrag.ang=a; G.bladeDrag.orbited+=Math.abs(d);
+  /* screen y grows downward, so a clockwise finger is a negative world spin;
+     the knife's follow is direct and slightly geared so half-circles feel
+     strong without needing frantic full loops */
+  G.w += d*3.2;
+  if(G.w>15)G.w=15; if(G.w<-15)G.w=-15;
+},{passive:false});
+window.addEventListener('pointerup', function(e){
+  if(G&&G.bladeDrag){
+    var quick=(performance.now()-G.bladeDrag.t0)<220 && G.bladeDrag.orbited<0.35;
+    G.bladeDrag=null;
+    if(quick)doTap(G.lastSide);              // a tap is still a tap
+  }
+  if(G){ G.holding=false; G.hold=0; }
+});
+window.addEventListener('pointercancel', function(){ if(G){ G.bladeDrag=null; G.holding=false; G.hold=0; } });
 document.addEventListener('keydown',function(e){
   if(!running||!G||G.done)return;
   if(e.key==='ArrowLeft'){ e.preventDefault(); G.hold=-1; G.holding=true; G.lastSide=-1; doTap(-1); }
@@ -1421,6 +1503,11 @@ function ffWall(x,y,dir){
     if(mbw){ mbw.textContent='STUCK!'; mbw.style.color='#ff6a5a'; mbw.classList.remove('go'); void mbw.offsetWidth; mbw.classList.add('go'); }
   } else {
     // clean handle bounce
+    /* ⛔ clamp the knife back OUTSIDE the wall plane. Without this the handle
+       visibly buried into the rock on every bounce (Stephen: "the handle can
+       go into the wall too much") — the velocity flipped but the position
+       stayed wherever the frame put it. */
+    G.x = dir<0 ? -SW+KR*0.55 : SW-KR*0.55;
     var sp=Math.abs(G.vx)*0.72; if(sp<3.4)sp=3.4;
     G.vx = away*sp;
     G.shake=Math.max(G.shake,0.1);
@@ -1505,18 +1592,18 @@ function loop(ts){
       // hold: Wall Climb = STEADY THE BLADE (brake the spin, then ease it to face the
       // wall so you can stick clean — the "slow it down to climb" lever). Journey =
       // keep flipping in rhythm (comfy thumb).
-      if(G.holding){
-        if(G.climbWall){
-          G.w*=Math.pow(CLIMB_BRAKE,dt);
-          if(Math.abs(G.w)<3){ var _k=Math.round((G.ang-Math.PI)/(2*Math.PI)), _tgt=Math.PI+_k*2*Math.PI; G.ang+=(_tgt-G.ang)*Math.min(1,dt*CLIMB_AIM); }
-        } else {
-          G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); }
-        }
+      if(G.holding && !G.bladeDrag){
+        /* Stephen played the hold-brake and vetoed it: "it does a small partial
+           rotation and stops" — killed 2026-07-26. Climb holds now repeat-flip
+           exactly like the base game; the finesse scheme is Be the Blade below. */
+        G.holdT+=dt; if(G.holdT>=0.27){ G.holdT=0; doTap(G.lastSide); }
       }
       // physics (mirrors slice-master's grounded/air split)
       if(G.grounded){
         G.vx*=Math.pow(0.2,dt); if(G.vx<0.35)G.vx=0;
-        G.w*=Math.pow(0.03,dt); if(Math.abs(G.w)<0.4)G.w=0;
+        // Be the Blade: a held finger owns the spin even on the ground, so you
+        // can wind up before hopping at the wall
+        if(!G.bladeDrag){ G.w*=Math.pow(0.03,dt); if(Math.abs(G.w)<0.4)G.w=0; }
         G.ang+=G.w*dt;
         if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*Math.min(1,dt*8); }
       } else {
@@ -1723,7 +1810,14 @@ function loop(ts){
     if(G.mode!=='ff' && G.x+KR>=G.world.wallX && G.vx>0){
       // knife blade points local -x, so its world direction is -cos(ang)
       var bladeX=-Math.cos(G.ang);
-      if(bladeX>0.05){
+      /* Journey's wall is a one-time finale: any blade touch (0.05, ~3 deg)
+         sticking is the point. The CLIMB lives against this wall, and the same
+         hair trigger made every graze end the run (Stephen: "too sensitive
+         about the blade touching the wall and sticking"). Climb now needs a
+         COMMITTED angle (~27 deg into the wall) to stick; shallower blade
+         touches scrape off like a handle hit. */
+      var stickNeed=G.climbWall?0.45:0.05;
+      if(bladeX>stickNeed){
         G.x=G.world.wallX-2.3;   // sit the knife back so the BLADE sticks partway in (tip embedded, body + handle proud) instead of burying to the handle
         // overshooters slam into the top band; nothing sticks in thin air
         var wTop=(G.world.wallTop||23);
@@ -1741,8 +1835,16 @@ function loop(ts){
         // handle hit the wall: thunk off, spin, try the approach again
         G.x=G.world.wallX-KR;
         G.vx=-Math.abs(G.vx)*0.5-4;
-        G.vy=Math.max(G.vy,4);
-        G.w=TAPW*0.9; G.grounded=false;
+        if(G.bladeDrag||bladeCtl()){
+          /* Be the Blade: the spin you built IS the climb. A handle strike
+             converts angular speed into upward kick, so drawing circles and
+             kissing the wall handle-first rides you up the face. */
+          G.vy=Math.max(G.vy, 3.2+Math.min(11, Math.abs(G.w)*0.62));
+        } else {
+          G.vy=Math.max(G.vy,4);
+          G.w=TAPW*0.9;
+        }
+        G.grounded=false;
         G.shake=0.3; SFX.wood();
         spawnSparks(G.world.wallX,G.y,WOOD,6);
         popup('handle!',G.x-1,G.y+2,'#e8b46a');
@@ -2026,7 +2128,7 @@ function attractLoop(ts){
 }
 tap('b-play',function(){ newGame(PROG.level); });
 tap('b-ff',function(){ newFF(PROG.ffLevel); });
-tap('b-climb',function(){ newClimb(PROG.climbLevel||1); });
+/* b-climb removed with the menu button; climb boots via ?mode=climb */
 tap('b-endless',function(){ newEndless(); });
 tap('b-forge',function(){ renderForge(); show('s-forge'); });
 tap('forge-back',function(){ show('s-title'); });
@@ -2079,7 +2181,7 @@ $('t-lvl').textContent=PROG.level;
 $('t-fflvl').textContent=PROG.ffLevel;
 if(!PROG.endlessBest)PROG.endlessBest=0;
 $('t-ebest').textContent=PROG.endlessBest;
-$('t-clvl').textContent=PROG.climbLevel||1;
+(function(){var e=$('t-clvl'); if(e)e.textContent=PROG.climbLevel||1;})();  // span left with the removed menu button
 /* Wall Climb portal card entry: /satellites/slice-3d/?mode=climb drops straight in */
 if(/[?&]mode=climb/.test(location.search)){ setTimeout(function(){ newClimb(PROG.climbLevel||1); },80); }
 $('buildstamp').textContent='Super Slice 3D '+BUILD;
