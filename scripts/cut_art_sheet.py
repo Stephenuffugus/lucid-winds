@@ -87,6 +87,12 @@ def safe_key(rgb, verbose=True):
     if verbose:
         print('    background key measured from the border: rgb(%d,%d,%d), %.0f%% of the sheet'
               % (key[0], key[1], key[2], cover * 100))
+        r_, g_, b_ = key
+        if not (r_ > 150 and b_ > 150 and g_ < 90):
+            print('    ⚠ THE MEASURED BACKGROUND IS NOT MAGENTA. Every Petal Match sheet is')
+            print('      painted on magenta, so this is probably FULL-BLEED ART with no')
+            print('      background to remove. Keying it will delete whatever part of the')
+            print('      painting sits near this colour. Check before writing.')
         if cover < 0.20:
             print('    ⚠ that colour covers less than 20%% of the sheet. Either the sheet is very'
                   ' densely painted, or the border is not background. CHECK THE CONTACT SHEET.')
@@ -101,6 +107,64 @@ def safe_key(rgb, verbose=True):
         except Exception:
             pass
     return key
+
+
+def cut_rowwise(path, rows, pad=3, t0=30, t1=62, verbose=True):
+    """Split into ROWS first, then find each row's columns INDEPENDENTLY.
+
+    ⛔ WHY THIS EXISTS. A whole-sheet grid computes column gutters across every
+    row at once, so a gap in row 2 forces a cut straight through a wide element
+    in row 1. That is exactly what happened on Petal Match sheet 13: the wide HUD
+    bar spans two columns, and the shared gutter sliced it in half, then every
+    name after it shifted by one.
+
+    Real sheets are not grids. They are rows of things, and each row has its own
+    spacing. This measures each row on its own terms, so a row holding one wide
+    banner and three round badges cuts correctly without being told anything.
+    """
+    im = Image.open(path).convert('RGB')
+    rgb = np.array(im)
+    key = safe_key(rgb, verbose=verbose)
+    alpha, wr, wc = rig.background(rgb, key, t0, t1)
+    solid = ndimage.binary_opening(alpha > 0.5, np.ones((3, 3)))
+
+    ycuts, (y0, y1), ybridge = rig.gutters(solid.sum(axis=1), rows - 1)
+    if ybridge and verbose:
+        print('  ⚠ %d row gutter(s) bridged by paint' % len(ybridge))
+    ys = [y0] + list(ycuts) + [y1]
+
+    rgba = np.dstack([rig.despill(rgb, alpha), (alpha * 255).astype(np.uint8)])
+    frames, layout = [], []
+    for ri in range(len(ys) - 1):
+        band = solid[ys[ri]:ys[ri + 1]]
+        prof = band.sum(axis=0)
+        # how many things are in THIS row? count runs of content in its own profile
+        on = prof > 0
+        runs, prev = 0, False
+        for v in on:
+            if v and not prev:
+                runs += 1
+            prev = v
+        runs = max(1, runs)
+        try:
+            xcuts, (x0, x1), _ = rig.gutters(prof, runs - 1)
+        except Exception:
+            xcuts, x0, x1 = [], int(np.argmax(on)), int(len(on) - np.argmax(on[::-1]))
+        xs = [x0] + list(xcuts) + [x1]
+        layout.append(len(xs) - 1)
+        for ci in range(len(xs) - 1):
+            sub = rgba[ys[ri]:ys[ri + 1], xs[ci]:xs[ci + 1]]
+            a = sub[:, :, 3] > 8
+            if not a.any():
+                continue
+            rr = np.where(a.any(axis=1))[0]
+            cc = np.where(a.any(axis=0))[0]
+            t, b = max(0, rr[0] - pad), min(sub.shape[0], rr[-1] + 1 + pad)
+            l, r = max(0, cc[0] - pad), min(sub.shape[1], cc[-1] + 1 + pad)
+            frames.append(Image.fromarray(sub[t:b, l:r], 'RGBA'))
+    if verbose:
+        print('    row layout: %s  (%d frames)' % (' + '.join(str(n) for n in layout), len(frames)))
+    return frames, [0] * len(frames)
 
 
 def cut_grid(path, cols, rows, pad=3, t0=30, t1=62, auto=False):
@@ -212,12 +276,23 @@ def qa_frames(frames, names, sheet_label):
             # deliberately clipped one reads 72%. 35% separates them with room to
             # spare, and crying wolf across 23 sheets would make the whole report
             # ignorable.
+            # ⚠ CLIPPED IS ADVISORY, NOT A VERDICT. It means "put your eyes on
+            # this frame", not "remake this sprite". Tiles, panels and frames are
+            # rectangular by design and legitimately carry paint on an edge, and
+            # the 3px pad makes the exact reading jitter. The contact sheet is
+            # the arbiter; this just says where to look first.
             h_, w_ = opaque.shape
-            share = max(
-                opaque[0].sum() / float(w_), opaque[-1].sum() / float(w_),
-                opaque[:, 0].sum() / float(h_), opaque[:, -1].sum() / float(h_))
-            if share > 0.35:
-                flags.append('CLIPPED(%d%% of one edge is paint)' % round(share * 100))
+            e = [opaque[0].sum() / float(w_), opaque[-1].sum() / float(w_),
+                 opaque[:, 0].sum() / float(h_), opaque[:, -1].sum() / float(h_)]
+            share = max(e)
+            # ⛔ A SQUARE SPRITE IS NOT A CLIPPED SPRITE. Board tiles, panels and
+            # frames are rectangular BY DESIGN, so paint runs along every edge.
+            # Flagging those buried the real clips in noise on the panel sheets.
+            # A genuine clip cuts through ONE side (occasionally two, at a
+            # corner); a deliberate rectangle is heavy on three or four.
+            rectangular = sum(1 for x in e if x > 0.70) >= 3
+            if share > 0.35 and not rectangular:
+                flags.append('look: %d%% of one edge is paint' % round(share * 100))
             faint = int(((a > 8) & (a < 90)).sum())
             if total and faint > total * 0.45:
                 flags.append('HALO(%d faint px)' % faint)
@@ -245,6 +320,8 @@ def main():
     ap.add_argument('--cols', type=int, default=3)
     ap.add_argument('--rows', type=int, default=3)
     ap.add_argument('--auto', action='store_true', help='detect the grid from the gutters')
+    ap.add_argument('--rowwise', type=int, metavar='ROWS',
+                    help='split into ROWS, then find each row\'s columns independently')
     ap.add_argument('--names', help='comma separated, in reading order')
     ap.add_argument('--prefix', default='frame', help='used when --names is not given')
     ap.add_argument('--out')
@@ -261,7 +338,10 @@ def main():
     redo_all = []
     for sheet in a.sheets:
         print(os.path.basename(sheet))
-        frames, _ = cut_grid(sheet, a.cols, a.rows, t0=a.t0, t1=a.t1, auto=a.auto)
+        if a.rowwise:
+            frames, _ = cut_rowwise(sheet, a.rowwise, t0=a.t0, t1=a.t1)
+        else:
+            frames, _ = cut_grid(sheet, a.cols, a.rows, t0=a.t0, t1=a.t1, auto=a.auto)
         for i, f in enumerate(frames):
             idx = len(all_frames) + i
             n = names_in[idx] if names_in and idx < len(names_in) else '%s-%02d' % (a.prefix, idx + 1)
@@ -284,8 +364,8 @@ def main():
         print('=' * 62)
         for sheet, n, flags in redo_all:
             print('  %-22s %-16s %s' % (sheet, n, ', '.join(flags)))
-        print('\nCLIPPED means the cut went through the art: usually fixable by re-cutting,')
-        print('not by repainting. Everything else usually needs the sprite made again.')
+        print('\n"look:" is ADVISORY — squares and frames trip it legitimately. Check the')
+        print('contact sheet. EMPTY/SPARSE/TINY/HALO are the ones that usually need a redo.')
 
     if a.contact:
         print('  contact →', rig.contact(all_frames, all_names, a.contact))
