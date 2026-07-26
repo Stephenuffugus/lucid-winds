@@ -74,6 +74,24 @@ achievements `achv-flame` `achv-collection` `achv-compass` `achv-tower`
 ## Board skins (sheet 23) — three complete looks
 `skin-teal-bg/-frame/-grid` `skin-green-…` `skin-purple-…`
 
+## 🟢 GREEN-SHEET REMAKES (2026-07-26) — the pink/purple set, recut clean
+Stephen regenerated the unreliable pink/purple items on flat green per the
+012Assets doc; 5 sheets -> 77 masters recut by `scripts/cut_petalmatch_green.py`
+(projection banding on clean green gutters + true chroma-key UNMIXING — alpha
+alone left every soft glow with a green fringe; dividing the key back out of
+semi-transparent pixels is what fixed it). 36 runtime copies replaced in place,
+sized to match what they replaced.
+- ⭐ `board-shadow` EXISTS AGAIN (the magenta-on-magenta casualty) and is wired
+  under the board frame at z0. RGB forced to flat near-black — a shadow is
+  neutral; the generator painted it greenish.
+- ⛔ Runtime art URLs now carry `?v=PM_AV` (games/petalmatch.js). Same-path
+  swaps + the host's 7-day image edge pin = stale art without it. Bump PM_AV
+  on any in-place art change.
+- New masters awaiting mechanics: tool set + ready glows (possible powerup
+  icons: hammer=DIG, hourglass=+5 MOVES — Stephen's call), star-1/2/3/gold,
+  streak-flame, achv-tower/compass/collection, skin-purple set, emblem
+  rocket/serpent/cascade/orb/gate/cradle, spec box/strip/quake/serpent+trail.
+
 ## Full-bleed art (kept whole, NOT keyed)
 `chapter-bg-1..4.jpg` `share-card.jpg`
 ⛔ These are paintings with no magenta surround. Keying them ate the path, water

@@ -503,9 +503,25 @@ window._gameFns.petalmatch = function PM(a){
      set to 24%, nearly 3x too big, which crushed the corner ornament. */
   var boardWrap=document.createElement('div');
   boardWrap.style.cssText='display:inline-block;line-height:0;padding:0;font-size:0;'+
+    'position:relative;z-index:1;'+
     'border:'+PM_FRAME+'px solid transparent;'+
     "border-image:url('"+PM_RT+"ui-board.png') 8.4% fill round;";
   boardWrap.appendChild(canvas);
+  /* The board shadow — the ONE item lost to magenta-on-magenta in the first
+     art drop, remade on the 2026-07-26 green sheets. A wrapper stacks it
+     under the frame: shadow at z0, boardWrap at z1, so it can never paint
+     over the painted frame. Slightly oversized and dropped low, like a real
+     cast shadow. onerror removes it, so a missing file costs nothing. */
+  var bwWrap=document.createElement('div');
+  bwWrap.style.cssText='display:inline-block;position:relative;line-height:0;font-size:0;';
+  var bshadow=document.createElement('img');
+  bshadow.alt='';
+  bshadow.src=PM_RT+'board-shadow.png?v=g1';
+  bshadow.onerror=function(){ if(this.parentNode)this.parentNode.removeChild(this); };
+  bshadow.style.cssText='position:absolute;left:-2%;top:1%;width:104%;height:104%;'+
+    'z-index:0;pointer-events:none;opacity:0.85;';
+  bwWrap.appendChild(bshadow);
+  bwWrap.appendChild(boardWrap);
   /* Painted corner ornaments over the play column. Pure decoration, pointer
      events off, and mirrored from ONE file so the pair always match. */
   (function(){
@@ -520,7 +536,7 @@ window._gameFns.petalmatch = function PM(a){
       pan.appendChild(v);
     }
   })();
-  pan.appendChild(boardWrap);
+  pan.appendChild(bwWrap);
 
   /* ═══ POWERUP SHELF ══════════════════════════════════════════════════
      The three mid-level powerups, the Petal balance, and BOOST. It is one
@@ -2219,6 +2235,12 @@ window._gameFns.petalmatch = function PM(a){
      shipping 500px masters would be a 40MB download to draw thumbnails.
      ═══════════════════════════════════════════════════════════════════ */
   var PM_ART = (function(){
+    /* ⛔ PM_AV stamps every runtime image URL. The green-sheet pass REPLACED
+       thirty-six PNGs at the SAME paths, and the host edge pins images for up
+       to 7 days (the shell.js lesson, feedback_verify_the_versioned_url) — an
+       unversioned swap means players keep the old pink-fringed cuts for a
+       week. Bump PM_AV on any in-place art change. */
+    var PM_AV='g1';
     var imgs = {}, base = '/assets/games/petalmatch/runtime/';
     var WANT = ['base-0','base-1','base-2','base-3','base-4','base-5',
                 'spec-line-h','spec-line-v','spec-burst','spec-wild',
@@ -2243,7 +2265,7 @@ window._gameFns.petalmatch = function PM(a){
       var im = new Image();
       im.onload = function(){ imgs[k] = im; loaded++; };
       im.onerror = function(){ /* leave it out; the fallback covers it */ };
-      im.src = base + k + '.png';
+      im.src = base + k + '.png?v=' + PM_AV;
     }
     var warmCbs=[];
     for(var i=0;i<WANT.length;i++) fetch(WANT[i]);
@@ -2272,7 +2294,7 @@ window._gameFns.petalmatch = function PM(a){
     return {
       count:function(){ return loaded; },
       has:function(k){ return !!imgs[k]; },
-      url:function(k){ return base + k + '.png'; },
+      url:function(k){ return base + k + '.png?v=' + PM_AV; },
       onWarm:function(cb){ warmCbs.push(cb); },
       /* Stretch to an explicit box, ignoring aspect. The line-clear beams are
          the only thing that wants this: a row beam must span the whole board
