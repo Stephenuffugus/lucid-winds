@@ -48,12 +48,16 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:48px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #3a2c10, 0 0 26px #c8a84b44; letter-spacing:1px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+/* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
+   SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
+   px = 52px real on a 390w phone, 48px on a 360w phone. The old 60/50 stage-px
+   buttons landed at 43/36 real px. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#d9b85a,#b2913a); color:#241c08; border-color:#eed48a; box-shadow:0 4px 0 #6f5a23, 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -64,7 +68,12 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none;
   color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+/* the difficulty cycler is a text control; give it a real 72-stage-px tap box
+   (negative margin keeps the row height unchanged) */
+#diff-lab{display:inline-flex; align-items:center; justify-content:center; min-height:72px; min-width:110px; padding:0 12px; margin:-18px -12px}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+/* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
+.toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -90,12 +99,18 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #pl-top{display:flex; align-items:center; justify-content:space-between; padding:12px 14px 6px; flex:none}
 #pl-top .pchip{font-size:13px; font-weight:800; color:var(--gold); background:#241d10; border:1px solid var(--line); padding:6px 12px; border-radius:20px}
 #pl-top .pmode{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted)}
-.iconbtn{min-width:46px; min-height:46px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.iconbtn{min-width:46px; min-height:46px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative}
+/* invisible tap-zone extension to 72x72 stage px (52px real on a 390w phone);
+   the visible 46px chip stays. Corner buttons sit far apart, safe to extend. */
+.iconbtn::after{content:""; position:absolute; left:-13px; right:-13px; top:-13px; bottom:-13px}
 #paper{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:6px 12px; border-radius:14px;
   background:linear-gradient(180deg,#e8dcc8,#dccbb0); color:var(--ink); padding:18px 12px 14px;
   box-shadow:inset 0 0 40px #0002, 0 4px 18px #0007}
 .vline{display:flex; flex-wrap:wrap; justify-content:center; gap:2px 3px; margin-bottom:14px}
-.cell{width:34px; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding-top:2px}
+/* cell HEIGHT padded to 68 stage px (49px real on a 390w phone) for the 48px
+   rule; cell WIDTH is physically constrained by letter-aligned cryptogram
+   lines on a 540px stage (same exemption as keyboard keys). */
+.cell{width:34px; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding-top:4px; padding-bottom:3px}
 .cell .pl{font-family:Georgia,'Times New Roman',serif; font-size:27px; font-weight:800; height:32px; line-height:32px; color:var(--ink); letter-spacing:0}
 .cell .pl.empty{color:transparent}
 .cell .un{width:28px; height:2px; background:#9a8a6a; border-radius:2px; margin:1px 0 2px}
@@ -122,7 +137,10 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #pl-bar .prog b{display:block; height:100%; background:linear-gradient(90deg,var(--sage),var(--gold)); width:0}
 #kbd{flex:none; padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:5px}
 .krow{display:flex; gap:4px; justify-content:center}
-.kbtn{flex:1; max-width:70px; min-height:62px; border-radius:9px; border:1px solid var(--line); background:linear-gradient(180deg,#1a2415,#121a0f);
+/* key HEIGHT raised to 72 stage px for the 48px rule; key WIDTH is physically
+   constrained by ten letters per row on a 540px stage (like any phone keyboard)
+   and stays content-sized. */
+.kbtn{flex:1; max-width:70px; min-height:72px; border-radius:9px; border:1px solid var(--line); background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:21px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
 .kbtn:active{filter:brightness(1.2)}
 .kbtn.used{opacity:.32}

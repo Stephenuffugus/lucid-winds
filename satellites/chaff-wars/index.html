@@ -67,12 +67,17 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   filter:drop-shadow(0 4px 22px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(255,47,185,0.25))}
 .title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.9; max-width:410px; line-height:1.55}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+/* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
+   SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
+   px = 52px real on a 390w phone, 48px on a 360w phone. The old 60/50 stage-px
+   buttons landed at 43/36 real px. min-width keeps content-hugging result
+   buttons (Again / Menu) wide enough too. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%; min-width:96px;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f14,#191509); color:var(--ink);
   font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.25)}
 .btn.primary{background:linear-gradient(180deg,#ff2fb9,#b81f86); color:#1c0413; border-color:#ff8ad4; box-shadow:0 4px 0 #7a1257, 0 8px 22px rgba(255,47,185,0.35), 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px; border-color:#3d3550}
+.btn.sm{min-height:72px; font-size:15px; border-color:#3d3550}
 .btn.sm:active{box-shadow:0 0 14px rgba(47,240,224,0.35)}
 #go-share{border-color:#1d6b63; color:#2ff0e0; text-shadow:0 0 12px rgba(47,240,224,0.35)}
 .btn.ghost{background:#161309; color:var(--muted)}
@@ -85,6 +90,8 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#161309}
 .toggle{width:64px; height:36px; border-radius:20px; background:#2a2618; position:relative; cursor:pointer; border:1px solid var(--line)}
+/* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
+.toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:#a3237c; border-color:#ff5db1}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--ink); transition:left .15s}
 .toggle.on b{left:31px; background:#e6ffcf}
@@ -92,6 +99,9 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:48px; height:48px; border-radius:12px;
   border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
+/* invisible tap-zone extension to 72x72 stage px (52px real on a 390w phone);
+   the visible 48px chip stays. Home and power sit in opposite corners, safe. */
+.tbtn::after{content:""; position:absolute; left:-12px; right:-12px; top:-12px; bottom:-12px}
 #b-home{left:10px}
 .vs-code{font-size:64px; font-weight:800; letter-spacing:14px; font-style:italic; color:#2ff0e0; text-indent:14px;
   text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 0 0 22px rgba(47,240,224,0.6)}
@@ -111,7 +121,10 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .cbtn:active{filter:brightness(1.4); transform:translateY(2px); box-shadow:0 1px 0 #0007}
 /* soft-drop + the two rotate buttons are compact so movement + DROP stay the
    biggest targets even with six buttons on the bar */
-.cbtn.soft,.cbtn.rotbtn{flex:0 0 clamp(48px,14vw,72px)}
+/* fixed stage units, NOT vw: 14vw of a 390w phone is 54.6 stage px which the
+   stage scale then shrinks to 39 real px (under the 48px rule). 78 stage px
+   = 56 real px on a 390w phone, 52 on 360w. */
+.cbtn.soft,.cbtn.rotbtn{flex:0 0 78px}
 #dropbtn.drop{flex:1.55 1 0; border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e);
   color:#0f1a06; font-size:var(--dfs); font-weight:800; letter-spacing:2px; box-shadow:0 4px 0 #356b1e, 0 7px 16px #0006}
 #dropbtn.drop:active{transform:translateY(3px); box-shadow:0 1px 0 #356b1e; filter:brightness(1.05)}
@@ -120,7 +133,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 /* campaign ladder */
 #ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
-.foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:64px}
+.foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:72px}
 .foe .fem{position:relative; font-size:30px; width:52px; height:52px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#221c10; overflow:hidden}
 .foe .fem img{position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); object-fit:contain; display:none}
 .foe .fem img.ok{display:block}
@@ -206,7 +219,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
       <button class="btn primary" id="b-vs-create">Create Room</button>
       <div style="height:12px"></div>
       <div class="row">
-        <input id="vs-join-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" style="flex:1; min-height:60px; border-radius:16px; border:1px solid var(--line); background:#171308; color:var(--ink); font-size:24px; font-weight:800; letter-spacing:8px; text-align:center; text-transform:uppercase">
+        <input id="vs-join-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" style="flex:1; min-height:72px; border-radius:16px; border:1px solid var(--line); background:#171308; color:var(--ink); font-size:24px; font-weight:800; letter-spacing:8px; text-align:center; text-transform:uppercase">
         <button class="btn sm" id="b-vs-join" style="flex:1">Join Room</button>
       </div>
     </div>

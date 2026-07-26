@@ -49,12 +49,16 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .title-word{font-size:47px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:2px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+/* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
+   SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
+   px = 52px real on a 390w phone, 48px on a 360w phone. The old 60/50 stage-px
+   buttons landed at 43/36 real px. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:10px; width:100%}
 .row>.btn{flex:1}
@@ -65,6 +69,8 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+/* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
+.toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -74,7 +80,9 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .wardcard .wt{flex:1}
 .wardcard .wn{font-size:15px; font-weight:700}
 .wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
-.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.wardcard .we{min-width:96px; min-height:60px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative}
+/* tap zone extends to 72 stage px tall; visible chip stays 60 */
+.wardcard .we::after{content:""; position:absolute; left:0; right:0; top:-6px; bottom:-6px}
 .wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
 #toast{position:absolute; left:50%; bottom:120px; transform:translateX(-50%) translateY(16px); z-index:60; background:#1a2415ee;
   border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap; max-width:92%}
@@ -111,7 +119,9 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .cardel.back.bk-eye{background:linear-gradient(150deg,#241a2e,#120a18 70%)}
 /* ---- duel layout ---- */
 #duelhead{display:flex; align-items:center; gap:10px; padding:12px 14px 4px}
-#duelhead .dh-b{min-width:48px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#0f150cdd; color:var(--cream); font-size:17px; display:flex; align-items:center; justify-content:center; cursor:pointer}
+#duelhead .dh-b{min-width:56px; min-height:56px; border:1px solid var(--line); border-radius:12px; background:#0f150cdd; color:var(--cream); font-size:17px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative}
+/* tap zone extends to 72x72 stage px; corner chips sit far apart, safe */
+#duelhead .dh-b::after{content:""; position:absolute; left:-8px; right:-8px; top:-8px; bottom:-8px}
 #turnbanner{flex:1; text-align:center; font-size:14px; font-weight:800; letter-spacing:1px}
 #scorewrap{display:flex; gap:12px; justify-content:center; padding:2px 0 4px; font-size:13px; font-weight:800}
 #scorewrap .scp{color:var(--sage)} #scorewrap .sce{color:var(--rust)}
@@ -135,7 +145,7 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .colgrid .cardel.miss{filter:grayscale(1) brightness(.4)}
 .colgrid .cardel.indeck{outline:2px solid var(--gold)}
 .filters{display:flex; gap:6px; justify-content:center; margin-bottom:12px; flex-wrap:wrap}
-.filters button{min-height:48px; padding:0 13px; border:1px solid var(--line); border-radius:12px; background:#0f150c; color:var(--muted); font-size:13px; font-weight:700; cursor:pointer}
+.filters button{min-height:72px; min-width:72px; padding:0 14px; border:1px solid var(--line); border-radius:12px; background:#0f150c; color:var(--muted); font-size:13px; font-weight:700; cursor:pointer}
 .filters button.on{color:var(--gold); border-color:var(--gold)}
 #claimwrap{display:flex; gap:12px; justify-content:center; margin:12px 0}
 #claimwrap .cardel{width:104px; height:136px}

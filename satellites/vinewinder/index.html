@@ -50,8 +50,10 @@
     box-shadow:0 30px 60px -20px rgba(36,56,43,.28), inset 0 0 0 1px rgba(255,255,255,.6)}
   canvas{display:block}
   .stagebtns{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:2}
+  /* 48px minimum touch target (studio rule 11, sweep 2026-07-26). These render
+     unscaled, so px are real screen px. 36px circles were under the rule. */
   .stagebtns button{
-    width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+    width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
     background:rgba(255,255,255,.55);backdrop-filter:blur(4px);
     color:var(--ink);font-size:15px;line-height:1;
     display:flex;align-items:center;justify-content:center;
@@ -108,7 +110,7 @@
   .ghostbtn:focus-visible{outline:3px solid var(--pollen);outline-offset:3px}
   .primary{font-family:inherit;font-weight:600;font-size:14px;letter-spacing:.1em;
     text-transform:uppercase;color:#fbfdf9;background:var(--vine);border:none;
-    border-radius:999px;padding:13px 30px;cursor:pointer;margin-top:2px;
+    border-radius:999px;padding:13px 30px;min-height:48px;cursor:pointer;margin-top:2px;
     box-shadow:0 10px 24px -8px rgba(47,93,58,.55);
     transition:transform .18s ease, background .18s ease}
   .primary:hover{transform:translateY(-2px);background:#376b44}
@@ -133,7 +135,8 @@
   .meta-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:2px}
   .metabtn{font-family:inherit;font-weight:600;font-size:12.5px;color:var(--ink);cursor:pointer;
     background:rgba(255,255,255,.66);border:1.5px solid rgba(47,93,58,.2);border-radius:999px;
-    padding:9px 18px;transition:transform .15s,border-color .15s}
+    padding:9px 18px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;
+    transition:transform .15s,border-color .15s}
   .metabtn:hover{transform:translateY(-2px);border-color:var(--vine)}
   #goExtra{display:flex;flex-direction:column;gap:6px;align-items:center;max-width:44ch}
   #goExtra:empty{display:none}
