@@ -60,6 +60,16 @@
   # once silently pins shared CODE for a week, and the failure looks like a game
   # bug rather than a stale file. no-cache still allows a cheap 304, so this
   # costs a revalidation, not a re-download.
+  # ⛔ MODULAR GAME CODE REVALIDATES (2026-07-26, the Stephen's-phone lesson).
+  # The LW app loads games/<id>.js?v=LW_VERSION, but the game files ship many
+  # times between app bumps — a Cloudflare colo that cached the URL early served
+  # STALE GAME CODE to its whole region through incognito, cleared data, and a
+  # factory reset, because the pin lived in the CDN, not the device. A subdir
+  # .htaccess did not take on this host (origin kept sending max-age=14400), so
+  # the rule lives here via SetEnvIf, which the host provably honors.
+  SetEnvIf Request_URI "^/games/.+\.js$" GAMEJS=1
+  Header set Cache-Control "no-cache, must-revalidate" env=GAMEJS
+
   <FilesMatch "^(shell|sunbeam-sdk|feedback)\.(js|css)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
