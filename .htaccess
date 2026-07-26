@@ -60,15 +60,20 @@
   # once silently pins shared CODE for a week, and the failure looks like a game
   # bug rather than a stale file. no-cache still allows a cheap 304, so this
   # costs a revalidation, not a re-download.
-  # ⛔ MODULAR GAME CODE REVALIDATES (2026-07-26, the Stephen's-phone lesson).
-  # The LW app loads games/<id>.js?v=LW_VERSION, but the game files ship many
-  # times between app bumps — a Cloudflare colo that cached the URL early served
-  # STALE GAME CODE to its whole region through incognito, cleared data, and a
-  # factory reset, because the pin lived in the CDN, not the device. A subdir
-  # .htaccess did not take on this host (origin kept sending max-age=14400), so
-  # the rule lives here via SetEnvIf, which the host provably honors.
-  SetEnvIf Request_URI "^/games/.+\.js$" GAMEJS=1
-  Header set Cache-Control "no-cache, must-revalidate" env=GAMEJS
+  # ⛔ ALL JAVASCRIPT REVALIDATES (2026-07-26, the Stephen's-phone lesson).
+  # The LW app loads games/<id>.js?v=LW_VERSION, but game files ship many times
+  # between app bumps — a Cloudflare colo that cached the URL early served STALE
+  # GAME CODE to Stephen's whole region through incognito, cleared data, and a
+  # factory reset (the pin lived in the CDN, not his device). A games/ subdir
+  # .htaccess did NOT take on this host, and neither did SetEnvIf+Header env=
+  # (origin kept sending max-age=14400 for both). FilesMatch on the basename is
+  # the one mechanism this host provably honors (shell.js carries its rule
+  # live), and it cannot express directories — so every .js revalidates. This
+  # studio ships js daily; the cost is 304s, the alternative is regional stale
+  # code that looks like a haunted phone.
+  <FilesMatch "\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
 
   <FilesMatch "^(shell|sunbeam-sdk|feedback)\.(js|css)$">
     Header set Cache-Control "no-cache, must-revalidate"
