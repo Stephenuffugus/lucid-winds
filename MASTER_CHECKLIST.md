@@ -40,8 +40,163 @@ Last updated: 2026-07-26
   proposed green sheets, background spec included (flat 00FF00, no shadows onto the
   background, green/teal art stays on magenta). Sheet 4's lost board shadow flagged
   mandatory.
-- [ ] **More large lists of notes are coming.** Merge each into THIS file on arrival,
-  with source + date, before working it. Do not work from the chat message alone.
+- [x] **More large lists of notes are coming.** Landed 2026-07-26 (Stephen's notes +
+  Jessie's 7/21 doc) and merged below as THE JUL 21+26 LIST, verified against code
+  before writing — three Jimothy items were already done, two renames already live.
+
+---
+
+## 📒 THE JUL 21+26 LIST — Stephen 2026-07-26 notes + Jessie 2026-07-21
+
+Merged 2026-07-26 before any work started. Duplicates against older sections were
+FOLDED (the older entry got extended rather than doubled). Verified-already-done
+items are marked here so nobody re-does them.
+
+### 🌸 Petal Match — ACTIVE PRIORITY (a player is on it daily; "our version of Candy Crush")
+- [ ] **Green-background sheets LANDED** — `assets/petalmatch-green/` (5 sheets + his
+  prompt doc, from my green-sheet spec). Cut them, swap the pink/purple sprites in
+  place, verify by screenshot: images FILL their boxes and sit clean.
+- [ ] **Cover art mismatch (Jessie)** — the portal thumb + og card don't match the new
+  painted gameplay art. Repoint to the painted set (share-card.jpg exists).
+- [ ] **Algorithmic hooks (Stephen: "see what you can do")** — retention design:
+  streaks, near-miss framing, variable reward, comeback moments. Design first, my
+  proposals to him before building; no dark patterns, no ads, no real money.
+- [ ] **"Fully developed"** — standing direction; the open feature list is already in
+  the PETAL MATCH FULL BUILD-OUT section above (timed mode, endless/daily, new
+  specials, competitive layer).
+
+### 🎬 Stop Motion (`satellites/stop-motion`)
+- [ ] **Animatable eyes + mouths library (Stephen)** — pre-designed eyeballs/mouths
+  with emotions to overlay on filmed objects (stuffed animals, fruit) and animate
+  frame to frame. Needs an asset list doc + a sticker-layer feature in the app.
+- [ ] **Camera permission flow (Jessie)** — a grant-permission button; if denied,
+  guide to the phone's settings and back. (A web page cannot literally open Android
+  settings — best honest version: detect denial, show per-platform instructions.)
+
+### 🖥 Studio-wide / portal
+- [ ] **Feedback button must be dismissable (Stephen)** — swipe away or an X so it
+  never blocks fullscreen play. Applies to the shared shell button + satellites.
+- [x] **Word Lightning rename** — already live in the portal: bloomzap card reads
+  "Word Lightning" with the storm description + thumb (verified portal/index.html:730
+  2026-07-26). Slug stays `bloomzap` per the display≠slug law.
+- [x] **OriVex rename** — already live: petalvex card reads "OriVex" (verified
+  portal/index.html:732). Slug stays `petalvex`.
+- [ ] **Mosaic Draft vs Mosaic Garden (Jessie: "same game twice?")** — verified NOT
+  duplicates: Draft is the Azul-style satellite, Garden is the simple /play/ tile
+  filler. Open action: make the two cards obviously different (Garden's desc is
+  thin) so players don't think they're duplicates.
+
+### 🌈 Hues — featured elsewhere, Stephen wants the shop built out
+- [ ] **Shop build-out** — "a ton more unlockables, balanced economy, work for them
+  but fun." Borders with critters in the corners. Claymation + crayon styles plus
+  new directions.
+- [ ] **Asset sheet list doc → 012Assets** (Stephen: "under the GitHub folder in the
+  drive") — many unique mix-and-match artistic directions.
+
+### 🟣 Blobworks (extends the older Blobworks entry)
+- [ ] **Purple middle monsters redo — asset list doc** (was already blocked-on-art;
+  he now wants the list refreshed).
+- [ ] **Ramps: modular piece-together set** — his idea: ramp segments as assets that
+  snap together, distinguishable and cool. Asset list + wiring plan.
+- [ ] **Slime tube top-left: much smaller** — direction confirmed (older entry said
+  "one number to tune at index.html:1104 if Stephen wants it smaller" — he does).
+- [ ] **Blip's intro animation still skippy** — he provided a movement sheet; redo
+  carefully or pull the old assets and do it right. Take time on it.
+
+### 🗡 Super Slice 3D — NEW DESIGN DIRECTION (supersedes "it's done" state, not the
+    dead-features law: chimney/mist/kick/hold-to-spin stay DEAD)
+- [ ] **Mix the ORIGINAL game into the 3D layout**: this camera angle, but the guy
+  moves LEFT-TO-RIGHT (not down a tunnel). Brown/wood blocks, fruit that splits in
+  half, tap = knife bounces farther, tap-and-hold = original rules, in 3D style.
+- [ ] **Wall-climb mode: spin needs a footing mechanic** — constant spin rate makes
+  climbing nearly impossible. Some way to slow/regulate the spin. "Really close to
+  being a great game."
+- [ ] **Sound: keep + embellish** — he loves the current SFX direction.
+- [ ] **Randomly generated levels** (walls, caps, forest feel like the original) —
+  after the core is fun. Art/backgrounds AFTER playable ("we'll get into the assets
+  once the game is playable and fun"). Bump BUILD stamp when shipping.
+
+### 🍃 OriVex (extends the older OriVex entry)
+- [ ] **Board bigger on screen** — puzzle is too small; showcase the origami look.
+- [ ] **Thumbnail shows the full board** (Jessie: board partially out of view).
+- [ ] **Asset list doc in 012Assets** — origami clean-paper triangles (subtle,
+  beautiful, numbers on them) + WIDE gorgeous peaceful backgrounds contrasting the
+  triangle colours. (A repo pack exists at art-asset-lists/orivex/; the law says it
+  must ALSO be a Drive doc in 012Assets — confirm/create.)
+
+### ⚡ Word Lightning (bloomzap) — in-game retheme still open (rename is done)
+- [ ] **Asset list doc → 012Assets** under the name Word Lightning. Aesthetic spec
+  from Jessie: mid-century illustration — clean defined lines, vibrant flat colour,
+  geometric simplified forms, limited palette, press-printed texture.
+- [ ] **In-game storm retheme**: dark navy background, angled rain, lightning
+  flashes; buttons storm-cloud gray; "plant word" button → "Submit" in lightning
+  yellow; play button gets a lightning bolt not a plant; replace ALL plant symbols
+  ("how do you want to play" + "Choose a bed" sections); rename "Choose a bed"
+  wording to match the storm theme.
+- [ ] **Next-level button after each win** — no bouncing back to the menu.
+
+### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
+- [ ] **2D: capture still not really possible** — refine being caught, add more
+  abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
+- [ ] **Jessie: online 1v1 broken** — "host a code could not reach the relay."
+  Memory says versus needs `?mp=wss://` when iframed — verify the portal embed
+  passes it; the game is an external github.io repo.
+- [ ] **River line map (Jessie)**: if you're the colour of the water you should be
+  able to pass under the bridge unseen — camouflage rule gap on that map.
+- [ ] **3D version: LOCATE THE BUILD.** Stephen: "I know we coded a whole bunch for
+  it but I don't know where it is." Memory says card pinned to
+  `releases/v3.0.0/abduct-3d.html` in the external repo — verify what exists there
+  and report state before any building. Kenney asset packs (~50k CC0 assets) or the
+  white bathroom-sign blob as placeholder art. ⛔ Careful with resources: build,
+  don't endlessly test-play.
+
+### 🦝 Jimothy (Jessie 7/21 — game is being promoted, checked against live code)
+- [x] **"Don't call him deformed"** — verified 0 hits for "deformed" across the
+  game, portal and alias pages (grep 2026-07-26). Portal desc is one sentence.
+- [x] **Rules/objective/buttons page before play** — already built: `startGated`
+  shows the How screen once before the first mode (verified in code, 6 call sites).
+- [ ] **Desc placement (Jessie)**: short desc on the thumbnail, long desc after the
+  intro page — check what the portal card + game intro actually show and split if
+  needed.
+- [ ] **Some bottle caps uncollectable** — can't move sideways mid-jump to reach
+  them. Gameplay: either guarantee caps spawn reachable or allow the lateral hop.
+- [ ] **Edge-of-screen cheat** — hugging the very edge and quickly jumping down
+  dodges deaths too easily.
+
+### 🎨 Other per-game (Jessie 7/21)
+- [ ] **Kakuro**: missing description/rules/objective page before the game.
+- [ ] **Inkbound**: thumbnail desc → 1 concise sentence; starting skin should be one
+  of the LIGHTEST skins.
+- [ ] **Hedgerow** (extends older replay-level entry): share button on level
+  complete; NEXT LEVEL button; rules page with start button; real level ladder —
+  at least 100 levels, progressively harder, changing scenery.
+- [ ] **Hunch**: early-submit button does not work (bug). Research classic
+  Pictionary clue banks; grow the prompt bank so children can play and understand.
+- [ ] **Flipbook**: 5th eyeball set (the "closed" one) is bad — remove, add a real
+  closed-eyes set; accordion menu; the notebook should be COMPLETELY blank so
+  people can draw on all of it.
+- [ ] **Yacht-Sea**: artwork remake to fit the nautical theme (colours, symbols,
+  ideas) + make an asset list doc.
+- [ ] **No Pain No Gain**: undo button (remove last piece); a real END to runs
+  (fully build out); description loses the word "cozy"; the clear button does not
+  work (bug).
+- [ ] **Sprout Dice** (extends older ⚠️ entry): Jessie: "this game doesn't make
+  sense." Needs a first-contact/clarity pass or a rethink.
+- [ ] **Hexa Hive**: study the real Hexa Sort — tiles should MOVE to the next stack
+  visibly (like cards shuffling) with an ascending stretch sound, not teleport.
+- [ ] **Pop N Lock**: share-your-victory button after a win; thumbnail should show
+  actual gameplay better.
+- [ ] **Plot Bloom** (extends older entry): desc → 1 concise sentence; game needs
+  reworking to make sense.
+- [ ] **Mini Crossword** (extends older layout entry): typing bounces the cursor
+  back to the first open slot every letter — should flow along the word from where
+  you started, across or down.
+
+### 💡 New game ideas (Stephen + Jessie — need names/design before building)
+- [ ] **Fox picnic hang-man** — hangman alternative where a fox creeps toward the
+  picnic with each wrong letter (Etsy listing 1089120913 is the reference concept;
+  OUR OWN style and mechanics, no copying).
+- [ ] **Sculpting game** — clay on a wheel, additive/subtractive sculpting.
 
 ---
 
