@@ -140,15 +140,27 @@ items are marked here so nobody re-does them.
 
 ### 🗡 Super Slice 3D — NEW DESIGN DIRECTION (supersedes "it's done" state, not the
     dead-features law: chimney/mist/kick/hold-to-spin stay DEAD)
-- [ ] **Mix the ORIGINAL game into the 3D layout**: this camera angle, but the guy
-  moves LEFT-TO-RIGHT (not down a tunnel). Brown/wood blocks, fruit that splits in
-  half, tap = knife bounces farther, tap-and-hold = original rules, in 3D style.
+- [x] **Left-to-right 3D layout — verified ALREADY BUILT** (the v3 director pivot:
+  "the ORIGINAL slice-master ruleset... played LEFT TO RIGHT through a 3D forest",
+  index.html:322; wood blocks, splitting fruit, tap/hold rules all present). The
+  Jul-26 note predates his seeing v5.x.
+- [ ] **Randomly generated levels / more art** — after Stephen confirms the core is
+  fun ("we'll get into the assets once the game is playable and fun").
 - [x] **Wall-climb footing — the brake EXISTED, discoverability shipped (commit
   1a873a02).** Hold already brakes the spin and turns the blade to the wall
   (wired, traced end to end) — but the how-to taught the OPPOSITE ("hold to keep
   flipping") and nothing in the climb ever said otherwise. Now: a dedicated
-  how-to row + a toast at every climb start. Physics untouched. ⚠️ Stephen
-  feel-test with the knowledge; constants tune from his report if still hard.
+  how-to row + a toast at every climb start. Physics untouched. SUPERSEDED SAME
+  DAY by his playtest verdict, next entry.
+- [x] **Climb REBUILT to Stephen's own design (commit 659a4f13, verified: parse +
+  static wires + the boot probe caught and fixed its one real bug).** Hold-brake
+  KILLED ("small partial rotation and stops"); climb back to normal tap rules;
+  stick needs a committed ~27 degree blade angle (was 3); freefall handle clamps
+  outside the wall; x10 jackpot varies within the top three bands; portal card is
+  "Super Slice Wall Climb" beside Super Slice 3D, climb button removed from the
+  in-game menu; BE THE BLADE shipped as a persisted toggle (circle your finger to
+  spin; handle strikes convert spin to height). ⚠️ Feel constants tuned blind —
+  no GPU here; 3D games get boot checks, Stephen's phone verifies feel.
 - [ ] **Sound: keep + embellish** — he loves the current SFX direction.
 - [ ] **Randomly generated levels** (walls, caps, forest feel like the original) —
   after the core is fun. Art/backgrounds AFTER playable ("we'll get into the assets
