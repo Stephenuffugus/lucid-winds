@@ -199,7 +199,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 function updateResumeBtn(){ var b=$('b-resume'); if(!b) return; b.style.display=(curScreen==='s-title'&&G&&G.phase==='paused')?'flex':'none'; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.3';
+var BUILD='v1.4';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='gt_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -218,24 +218,28 @@ var BEST=parseInt(LS.get(K.best)||'0',10)||0;
    Pure cosmetic — never changes play. price 0 = free · -1 = earn by playing ·
    premium = Support the Studio (real-money Supporter Pack, no fake grants). */
 var SKINS=[
-  /* s2 is the free starter (lightest non-premium look, measured in play — Jessie call);
-     s1 Midnight Library moved onto its old 5-grounds earn rung so the ladder keeps its first reward. */
-  { id:'s2', name:'Astral Bindery',   blurb:'Star-embossed books under the moon.', price:0 },
-  { id:'s1', name:'Midnight Library', blurb:'A bookbinder’s midnight library.', price:-1, need:5,  earn:'Clear 5 grounds' },
+  /* s7 Tide Pool is the free starter — the LIGHTEST skin in measured play
+     (canvas luminance 48.8 vs old default s1's 32.1). It was a Supporter Pack
+     item; Stephen 2026-07-26: "premium skin is fine" — blessed out of the pack
+     so every new player begins on the brightest board. Supporters lose nothing,
+     they own everything already. The earn ladder is now three rungs: Astral
+     Bindery at 5 grounds, Midnight Library at 10, Neon Nocturne at 20. */
+  { id:'s7', name:'Tide Pool',        blurb:'Submarine portholes and jellyfish.', price:0 },
+  { id:'s2', name:'Astral Bindery',   blurb:'Star-embossed books under the moon.', price:-1, need:5,  earn:'Clear 5 grounds' },
+  { id:'s1', name:'Midnight Library', blurb:'A bookbinder’s midnight library.', price:-1, need:10, earn:'Clear 10 grounds' },
   { id:'s3', name:'Neon Nocturne',    blurb:'Electric arcade neon.', price:-1, need:20, earn:'Clear 20 grounds' },
   { id:'s4', name:'Paper Warren',     blurb:'Folded-paper fox and rabbits.', premium:true },
   { id:'s5', name:'Stained Glass',    blurb:'Cathedral glass, moths and bats.', premium:true },
   { id:'s6', name:'Clockwork',        blurb:'Arcane gears and green slimes.', premium:true },
-  { id:'s7', name:'Tide Pool',        blurb:'Submarine portholes and jellyfish.', premium:true },
   { id:'s8', name:'Steamworks',       blurb:'Brass boilers, pipes and cogs.', premium:true }
 ];
 function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i]; return SKINS[0]; }
 var UNLOCK_ALL=/[?&]gtunlock=1/.test(location.search); // Stephen: preview every look
 var SK=(function(){ try{ var o=JSON.parse(LS.get('gt_skins')); if(o&&o.owned) return o; }catch(e){} return null; })();
-if(!SK) SK={ owned:['s2'], sel:'s2' };
-if(!SK.owned || !SK.owned.length) SK.owned=['s2'];
-if(SK.owned.indexOf('s2')<0) SK.owned.unshift('s2'); // free starter is owned by everyone; saved profiles keep whatever else they own
-if(!SK.sel) SK.sel='s2';
+if(!SK) SK={ owned:['s7'], sel:'s7' };
+if(!SK.owned || !SK.owned.length) SK.owned=['s7'];
+if(SK.owned.indexOf('s7')<0) SK.owned.unshift('s7'); // free starter is owned by everyone; saved profiles keep whatever else they own
+if(!SK.sel) SK.sel='s7';
 function saveSkins(){ LS.set('gt_skins', JSON.stringify({owned:SK.owned, sel:SK.sel})); }
 function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
 function ownsSkin(id){
@@ -678,7 +682,7 @@ function loop(ts){
     var iv=grubInterval();
     while(grubTimer>=iv){ grubTimer-=iv; grubStep(); if(!G||G.phase!=='play') break; }
     // dpad hold-repeat
-    if(heldDir && moveAcc>0){ moveAcc-=dt; if(moveAcc<=0){ moveHero(heldDir); moveAcc=0.13; } }
+    if(heldDir && moveAcc>0){ moveAcc-=dt; if(moveAcc<=0){ moveHero(heldDir); moveAcc=0.11; } }
   }
   if(G && G.flash>0){ G.flash-=dt; if(G.flash<0) G.flash=0; }
   if(G && G.penPop){ G.penPop.t-=dt; if(G.penPop.t<=0) G.penPop=null; }
@@ -696,14 +700,37 @@ function onDown(e){
   if(curScreen!==null||!G) return;
   var p=evPos(e);
   if(G.phase==='clear'){ e.preventDefault(); if((G.celT||0)>0.6) advance(); return; }
-  // swipe start recorded; also allow tap on field to advance clear (handled). movement via dpad.
-  swipeStart=p;
+  swipeStart=p; dragAnchor=null; didDrag=false;
 }
-var swipeStart=null;
+/* ═══ GLIDE STEERING (Stephen: "we just want the controls to be better and
+   have swipe controls too") ═════════════════════════════════════════════
+   The old swipe fired ONE step per complete swipe-and-lift, measured on
+   pointerup — pushing a planter six tiles meant six full gestures. Now the
+   finger DRAWS the path: once a drag passes the dead zone the mouse takes a
+   step, and every further GLIDE_STEP px of travel in a direction is another
+   step, no lift needed. Direction can bend mid-drag (down then right walks
+   the corner). A short flick still works exactly as before, the dpad and
+   keys are untouched, and taps still advance the clear banner. */
+var swipeStart=null, dragAnchor=null, didDrag=false;
+var GLIDE_DEAD=24, GLIDE_STEP=34;
+function onMove(e){
+  if(!G||G.phase!=='play'||!swipeStart) return;
+  var p=evPos(e);
+  var ax=dragAnchor?dragAnchor.x:swipeStart.x, ay=dragAnchor?dragAnchor.y:swipeStart.y;
+  var dx=p.x-ax, dy=p.y-ay;
+  var need=dragAnchor?GLIDE_STEP:GLIDE_DEAD;
+  if(Math.abs(dx)<need && Math.abs(dy)<need) return;
+  e.preventDefault();
+  didDrag=true;
+  if(Math.abs(dx)>Math.abs(dy)) moveHero(dx>0?'right':'left'); else moveHero(dy>0?'down':'up');
+  dragAnchor=p;
+}
 function onUp(e){
-  if(!G||G.phase!=='play'||!swipeStart) { swipeStart=null; return; }
-  var p=evPos(e); var dx=p.x-swipeStart.x, dy=p.y-swipeStart.y; swipeStart=null;
-  if(Math.abs(dx)<18 && Math.abs(dy)<18) return; // not a swipe
+  if(!G||G.phase!=='play'||!swipeStart) { swipeStart=null; dragAnchor=null; return; }
+  var p=evPos(e); var dx=p.x-swipeStart.x, dy=p.y-swipeStart.y;
+  var flick=!didDrag && (Math.abs(dx)>=18||Math.abs(dy)>=18);
+  swipeStart=null; dragAnchor=null; didDrag=false;
+  if(!flick) return;
   if(Math.abs(dx)>Math.abs(dy)) moveHero(dx>0?'right':'left'); else moveHero(dy>0?'down':'up');
 }
 
@@ -721,7 +748,7 @@ function buildCtrl(){
   // bigger buttons + real gaps so adjacent taps don't collide
   function mk(dir,txt,left,bottom){ var b=document.createElement('button'); b.textContent=txt;
     b.style.cssText='position:absolute;width:68px;height:68px;left:'+left+'px;bottom:'+bottom+'px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:28px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408;touch-action:none;-webkit-tap-highlight-color:transparent';
-    var press=function(ev){ ev.preventDefault(); if(!G||G.phase!=='play'||curScreen!==null) return; moveHero(dir); heldDir=dir; moveAcc=0.28; };
+    var press=function(ev){ ev.preventDefault(); if(!G||G.phase!=='play'||curScreen!==null) return; moveHero(dir); heldDir=dir; moveAcc=0.20; };
     var release=function(ev){ if(heldDir===dir){ heldDir=null; moveAcc=0; } };
     b.addEventListener('pointerdown',press); b.addEventListener('pointerup',release); b.addEventListener('pointerleave',release); b.addEventListener('pointercancel',release);
     bar.appendChild(b); return b; }
@@ -806,6 +833,7 @@ function boot(){
   cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false});
+  cv.addEventListener('pointermove',onMove,{passive:false});
   window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',function(e){ if(!G||G.phase!=='play'||curScreen!==null) return;
     var k=e.key; if(k==='ArrowUp'||k==='w') moveHero('up'); else if(k==='ArrowDown'||k==='s') moveHero('down'); else if(k==='ArrowLeft'||k==='a') moveHero('left'); else if(k==='ArrowRight'||k==='d') moveHero('right'); else return; e.preventDefault(); });
