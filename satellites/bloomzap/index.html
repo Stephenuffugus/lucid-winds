@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0c">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='6' fill='%230e140d'/%3E%3Ctext x='16' y='15' font-size='13' font-weight='800' text-anchor='middle' fill='%237ab356' font-family='sans-serif'%3EW%3C/text%3E%3Cpath d='M9 20 L15 27 L23 12' stroke='%23c8a84b' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0d1a30">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='6' fill='%230d1a30'/%3E%3Ctext x='16' y='15' font-size='13' font-weight='800' text-anchor='middle' fill='%23e8ecf2' font-family='sans-serif'%3EW%3C/text%3E%3Cpath d='M21 11 L14 19 L18 19 L11 27' stroke='%23f5e14a' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -30,7 +30,7 @@
 <script>window.Sunbeam&&Sunbeam.init({gameId:"bloomzap"}).catch(function(){});</script>
 <style>
 :root{
-  --bg:#0d1a30; --bg2:#16263e; --sage:#f5e14a; --deep:#3f6b34; --gold:#e6cd6a;
+  --bg:#0d1a30; --bg2:#16263e; --sage:#f5e14a; --deep:#6a5f18; --gold:#e6cd6a;
   --cream:#e8ecf2; --muted:#8a94a8; --bark:#6b4a2b; --pink:#e58fa0; --ink:#0c1424;
   --pan:#0a1120ee; --line:#2e3a50; --zap:#f5e14a;
 }
@@ -72,7 +72,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .btn.zap{background:linear-gradient(180deg,#f5e14a,#d8c020); color:#1a1200; border-color:#fff08a;
   box-shadow:0 4px 0 #9a8410, 0 8px 22px #f5e14a33}
 .btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
-.btn.ghost{background:#0f150c; color:var(--muted)}
+.btn.ghost{background:#0d1322; color:var(--muted)}
 .btn.sm{min-height:52px; font-size:16px}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -94,7 +94,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .pboard{flex:1; display:flex; flex-direction:column; min-height:0}
 .pbar{display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line)}
 .pbar .pb-mid{font-size:13px; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase}
-.iconbtn{width:48px;height:48px;border-radius:11px;border:1px solid var(--line);background:#12180e;color:var(--cream);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.iconbtn{width:48px;height:48px;border-radius:11px;border:1px solid var(--line);background:#121a2a;color:var(--cream);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 .rack{padding:10px 14px}
 .rack-hd{display:flex; align-items:center; justify-content:space-between; margin-bottom:7px}
@@ -106,9 +106,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .chips{display:flex; flex-wrap:wrap; gap:6px}
 .chip{min-width:62px; height:34px; padding:0 10px; border-radius:9px; border:1px solid var(--line);
   display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; letter-spacing:.5px;
-  background:#141c10; color:var(--cream)}
-.chip.slot{border-style:dashed; color:#2f3a22; background:#0d120a; font-weight:600}
-.rack.you .chip.full{background:#1c2c12; border-color:#4c6b34; color:#d6f0b8}
+  background:#141c2c; color:var(--cream)}
+.chip.slot{border-style:dashed; color:#2f3a50; background:#0d1220; font-weight:600}
+.rack.you .chip.full{background:#2a2712; border-color:#9a8410; color:#f5ecb0}
 .rack.ai .chip.full{background:#2a1720; border-color:#7a3a52; color:#f2c6d4}
 .chip.zapping{animation:zapfx .5s ease forwards}
 @keyframes zapfx{ 0%{transform:scale(1);opacity:1} 40%{transform:scale(1.25) rotate(-4deg); background:var(--zap); color:#fff; border-color:#ffb199} 100%{transform:scale(.2) rotate(10deg); opacity:0} }
@@ -124,7 +124,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .ann.zapyou{color:var(--zap)}
 .ann.zapthem{color:var(--gold)}
 .worddisp{margin:2px 14px 6px; min-height:56px; border-radius:14px; border:1px solid var(--line);
-  background:#0c110a; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px; position:relative}
+  background:#0c1220; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px; position:relative}
 .worddisp .wl{font-size:30px; font-weight:800; color:var(--gold); letter-spacing:2px}
 .worddisp .wghost{font-size:16px; color:var(--muted); font-weight:600}
 .worddisp.bad{animation:shake .3s}
@@ -134,23 +134,23 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
 .tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:6px 14px}
 .tile{aspect-ratio:1/1; border-radius:14px; border:1px solid var(--line);
-  background:linear-gradient(180deg,#233015,#18220f); color:var(--cream);
+  background:linear-gradient(180deg,#37404f,#252c38); color:var(--cream);
   font-size:34px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
-  box-shadow:0 3px 0 #0d1408; transition:transform .06s, filter .1s}
+  box-shadow:0 3px 0 #10141c; transition:transform .06s, filter .1s}
 .tile:active{transform:translateY(2px)}
-.tile.used{background:#0e140b; color:#3a4a26; box-shadow:none; border-style:dashed}
+.tile.used{background:linear-gradient(180deg,#f5e14a,#d8c020); color:#1a1200; border-color:#fff08a; box-shadow:0 3px 0 #9a8410}
 .tile .pip{position:absolute; bottom:5px; right:8px; font-size:11px; color:var(--muted); font-weight:700}
 .acts{display:flex; gap:10px; padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px))}
 .acts .btn{min-height:56px}
 
 .res-list{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:6px 0 2px}
-.res-chip{padding:4px 9px; border-radius:8px; font-size:13px; font-weight:700; border:1px solid var(--line); background:#141c10}
+.res-chip{padding:4px 9px; border-radius:8px; font-size:13px; font-weight:700; border:1px solid var(--line); background:#141c2c}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
-  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
-.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0d1322}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26303c; position:relative; cursor:pointer; border:1px solid var(--line)}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
-.toggle.on b{left:31px; background:#eafbd6}
+.toggle.on b{left:31px; background:#f5e14a}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .recbar{font-size:13px;color:var(--muted);margin-top:8px}
 .recbar b{color:var(--gold)}
@@ -165,10 +165,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Word<br>Lightning</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">A dark and stormy night. Spell words from eight crackling letters before the lightning strikes — race a rival or beat your own best time. Fast, electric, and a little wild.</div>
+    <div class="ribbon">A dark and stormy night. Spell words from eight crackling letters before the lightning strikes. Race a rival or beat your own best time. Fast, electric, and a little wild.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-play">🌱&nbsp; Play</button>
+      <button class="btn primary" id="b-play">⚡&nbsp; Play</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
@@ -182,7 +182,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- MODE SELECT -->
   <div class="screen" id="s-mode"><div class="pad">
     <h2 class="sc-h">How do you want to play?</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Four ways to grow your word garden.</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Five ways to chase the lightning.</div>
     <div class="stack" id="mode-list" style="max-width:440px"></div>
     <div style="height:16px"></div>
     <button class="btn ghost sm" id="mode-back" style="max-width:440px;margin:0 auto">◄ Back</button>
@@ -190,8 +190,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
   <!-- DIFFICULTY -->
   <div class="screen" id="s-diff"><div class="pad">
-    <h2 class="sc-h">Choose a bed</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Grow every word as fast as you can, then beat your best time.</div>
+    <h2 class="sc-h">Choose your storm</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Strike every word as fast as you can, then beat your best time.</div>
     <div class="stack" id="diff-list" style="max-width:440px"></div>
     <div style="height:16px"></div>
     <button class="btn ghost sm" id="diff-back" style="max-width:440px;margin:0 auto">◄ Back</button>
@@ -200,11 +200,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">🔤</div><div>Tap the shared letter tiles to spell a word (3-5 letters), then <b>Plant</b> it onto your trellis.</div></div>
-    <div class="helprow"><div class="hi">🌿</div><div>Fill the bed. Grow <b class="hl">all the words</b> the mode asks for. Every word comes from the same eight letters.</div></div>
+    <div class="helprow"><div class="hi">🔤</div><div>Tap the shared letter tiles to spell a word (3-5 letters), then <b>Submit</b> it to your strike line.</div></div>
+    <div class="helprow"><div class="hi">🌧️</div><div>Fill the storm. Strike <b class="hl">all the words</b> the mode asks for. Every word comes from the same eight letters.</div></div>
     <div class="helprow"><div class="hi">⏱️</div><div>The <b>clock</b> runs from your first move to your last word. Finish, then come back and <b class="hl">beat your best time</b>.</div></div>
     <div class="helprow"><div class="hi">🕵️</div><div>No rush and no rival. Take your time, but the fastest, cleverest fills set the records.</div></div>
-    <div class="helprow"><div class="hi">☀️</div><div>Fill a bed to earn Sunbeams for your garden. A fresh best time pays a little extra.</div></div>
+    <div class="helprow"><div class="hi">☀️</div><div>Fill a storm to earn Sunbeams. A fresh best time pays a little extra.</div></div>
     <div style="height:20px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -216,26 +216,26 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Bloomzap · a Sky Wolf solo remake of the classic word game WordZap.<br>Single self-contained file · lexicon of 9,600 words · zero assets.</div>
+    <div class="foot">Word Lightning · a Sky Wolf solo remake of the classic word game WordZap.<br>Single self-contained file · lexicon of 9,600 words · zero assets.</div>
   </div></div>
 
   <!-- PLAY -->
   <div class="screen" id="s-play"><div class="pboard">
     <div class="pbar">
       <button class="iconbtn" id="p-quit">✕</button>
-      <div class="pb-mid" id="p-diff">Bloomzap</div>
+      <div class="pb-mid" id="p-diff">Word Lightning</div>
       <button class="iconbtn" id="p-mute">🔊</button>
     </div>
     <div class="rack ai" id="rack-ai">
-      <div class="rack-hd"><div class="rh-who"><span class="av" id="ai-av">🦔</span><span id="ai-name">Rival</span></div><div class="rh-score" id="ai-score">0 / 7</div></div>
+      <div class="rack-hd"><div class="rh-who"><span class="av" id="ai-av">🌩️</span><span id="ai-name">Rival</span></div><div class="rh-score" id="ai-score">0 / 7</div></div>
       <div class="chips" id="ai-chips"></div>
     </div>
     <div class="rack you" id="rack-you">
-      <div class="rack-hd"><div class="rh-who"><span class="av">🌱</span><span>You</span></div><div class="rh-score" id="you-score">0 / 7</div></div>
+      <div class="rack-hd"><div class="rh-who"><span class="av">⚡</span><span>You</span></div><div class="rh-score" id="you-score">0 / 7</div></div>
       <div class="chips" id="you-chips"></div>
     </div>
     <div class="midfill" id="midfill">
-      <div id="bedinfo">🌾 <b id="bedleft">–</b> words still in the shared bed</div>
+      <div id="bedinfo">🌧️ <b id="bedleft">–</b> words still in the storm</div>
       <div id="announce" class="ann"></div>
     </div>
     <div class="worddisp" id="worddisp"><div class="msg" id="wmsg"></div><span class="wghost" id="wghost">tap letters to spell</span></div>
@@ -253,15 +253,15 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="res-title">You win!</h2>
     <div style="font-size:15px;color:var(--muted);margin-top:4px" id="res-sub"></div>
     <div style="width:100%;margin-top:16px">
-      <div style="font-size:13px;color:var(--sage);font-weight:800;letter-spacing:1px;text-transform:uppercase">Your trellis</div>
+      <div style="font-size:13px;color:var(--sage);font-weight:800;letter-spacing:1px;text-transform:uppercase">Your strikes</div>
       <div class="res-list" id="res-you"></div>
-      <div style="font-size:13px;color:var(--pink);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-top:10px" id="res-ailbl">Rival's trellis</div>
+      <div style="font-size:13px;color:var(--pink);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-top:10px" id="res-ailbl">Rival's strikes</div>
       <div class="res-list" id="res-ai"></div>
     </div>
     <div class="sun-earn" id="res-sun" style="margin-top:14px; font-size:20px; color:var(--gold); font-weight:800">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="res-again">↻ Play again</button>
+      <button class="btn zap" id="res-again">⚡ Next round</button>
       <div class="row">
         <button class="btn sm gold" id="res-share">↗ Share</button>
         <button class="btn sm" id="res-diff">Modes</button>
@@ -282,7 +282,7 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; if(id!=='s-play') stopAI(); }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.0';
+var BUILD='v1.1';
 
 var DICT=(function(){ var s=new Set(); var a=DICT_STR.split(' '); for(var i=0;i<a.length;i++) if(a[i]) s.add(a[i]); return s; })();
 
@@ -375,9 +375,9 @@ function genPool(seed){
 var DIFFS=[
   /* Jessie 2026-07: "the easy computer destroyed me every time" — Sprout's
      rival now blooms a word every ~17s (was ~9.5s effective), Garden ~5.6s */
-  { key:'sprout', ico:'🌱', name:'Sprout',  t:'Sprout',  d:'Grow 5 words · a quick bloom', target:5,  base:4, aiMs:7000, aiSkip:0.6 },
-  { key:'bud',    ico:'🌿', name:'Garden',  t:'Garden',  d:'Grow 7 words · the classic bed', target:7,  base:6, aiMs:4200, aiSkip:0.25 },
-  { key:'bloom',  ico:'🌻', name:'Thicket', t:'Thicket', d:'Grow 10 words · a full thicket', target:10, base:9, aiMs:2500, aiSkip:0.0 }
+  { key:'sprout', ico:'💧', name:'Drizzle',  t:'Drizzle',  d:'Strike 5 words · a passing shower', target:5,  base:4, aiMs:7000, aiSkip:0.6 },
+  { key:'bud',    ico:'🌧️', name:'Downpour', t:'Downpour', d:'Strike 7 words · the classic storm', target:7,  base:6, aiMs:4200, aiSkip:0.25 },
+  { key:'bloom',  ico:'⛈️', name:'Tempest',  t:'Tempest',  d:'Strike 10 words · a raging tempest', target:10, base:9, aiMs:2500, aiSkip:0.0 }
 ];
 function diffByKey(k){ for(var i=0;i<DIFFS.length;i++) if(DIFFS[i].key===k) return DIFFS[i]; return DIFFS[1]; }
 /* Storm mode (Jessie 7/19): a level ladder. Each level is a fresh timed bed that
@@ -395,11 +395,11 @@ var pendingMode='solo';         // mode chosen on the s-mode screen
 // Play modes (2026-07-08): Solo (beat your best time), Vs Garden (race a
 // rival), Timed (countdown), Free play (no clock, no rival).
 var MODES=[
-  {key:'solo', ico:'🌱', t:'Solo',      d:'Fill the bed at your own pace, then beat your best time.'},
-  {key:'ai',   ico:'🦔', t:'Vs Garden', d:'Race a rival to fill the bed first.'},
+  {key:'solo', ico:'🌙', t:'Solo',      d:'Fill the storm at your own pace, then beat your best time.'},
+  {key:'ai',   ico:'🌩️', t:'Vs Rival',  d:'Race a rival to fill the storm first.'},
   {key:'storm',ico:'⚡', t:'Storm',     d:'Clear escalating levels back to back until the storm catches you.'},
-  {key:'timed',ico:'⏱️', t:'Timed',     d:'Beat the clock. Fill the bed before time runs out.'},
-  {key:'free', ico:'🍃', t:'Free play', d:'No clock, no rival. Just grow words.'}
+  {key:'timed',ico:'⏱️', t:'Timed',     d:'Beat the clock. Fill the storm before time runs out.'},
+  {key:'free', ico:'☁️', t:'Free play', d:'No clock, no rival. Just spell words.'}
 ];
 function modeByKey(k){ for(var i=0;i<MODES.length;i++) if(MODES[i].key===k) return MODES[i]; return MODES[0]; }
 function bestKey(g){ return g.mode==='timed' ? ('timed:'+g.D.key) : g.D.key; }
@@ -426,23 +426,23 @@ function startGame(mode, diffKey){
       counts:countsOf(pool.letters), budget: mode==='timed'?(D.target*10*1000):(mode==='storm'?D.budgetMs:0) };
   show('s-play');
   var _ra=$('rack-ai');
-  if(mode==='ai'){ if(_ra) _ra.style.display=''; $('ai-name').textContent='Rival'; $('ai-av').textContent='🦔'; $('ai-score').textContent='0 / '+D.target; $('ai-chips').innerHTML=''; }
+  if(mode==='ai'){ if(_ra) _ra.style.display=''; $('ai-name').textContent='Rival'; $('ai-av').textContent='🌩️'; $('ai-score').textContent='0 / '+D.target; $('ai-chips').innerHTML=''; }
   else { if(_ra) _ra.style.display='none'; }
   $('you-score').textContent='0 / '+D.target;
   var _bi=$('bedinfo');
   if(_bi){
     var note;
-    if(mode==='ai') note='🌾 <b id="bedleft">–</b> words in the shared bed  ·  first to '+D.target+' wins';
-    else if(mode==='storm') note='⚡ <b>Level 1</b>  ·  grow '+D.target+' words before the clock';
-    else if(mode==='timed') note='🌾 <b id="bedleft">–</b> words left  ·  ⏱ '+Math.round(D.target*10)+'s on the clock';
-    else if(mode==='free') note='🌾 <b id="bedleft">–</b> words left  ·  🍃 no clock, take your time';
-    else { var bt=BEST[D.key]; note='🌾 <b id="bedleft">–</b> words still in the bed'+(bt?('  ·  🏅 best '+fmtTime(bt)):''); }
+    if(mode==='ai') note='🌧️ <b id="bedleft">–</b> words in the shared storm  ·  first to '+D.target+' wins';
+    else if(mode==='storm') note='⚡ <b>Level 1</b>  ·  strike '+D.target+' words before the clock';
+    else if(mode==='timed') note='🌧️ <b id="bedleft">–</b> words left  ·  ⏱ '+Math.round(D.target*10)+'s on the clock';
+    else if(mode==='free') note='🌧️ <b id="bedleft">–</b> words left  ·  ☁️ no clock, take your time';
+    else { var bt=BEST[D.key]; note='🌧️ <b id="bedleft">–</b> words still in the storm'+(bt?('  ·  🏅 best '+fmtTime(bt)):''); }
     _bi.innerHTML=note;
   }
   renderPlay();
   if(mode==='ai') renderRack('ai');
   var _a=$('announce'); if(_a){ _a.textContent=''; _a.className='ann'; }
-  if(mode==='free'){ var el=$('p-diff'); if(el) el.textContent='🍃 Free play'; }
+  if(mode==='free'){ var el=$('p-diff'); if(el) el.textContent='☁️ Free play'; }
   else { startTimer(); if(mode==='ai'){ aiPlantIv=setInterval(aiPlant,(D.aiMs||2800)); } }
 }
 
@@ -472,8 +472,8 @@ function plant(){
   if(!G||G.over) return;
   var w=curWord().toLowerCase();
   if(w.length<3){ sfx('bad'); flashMsg('need 3+ letters'); return; }
-  if(!DICT.has(w)){ sfx('bad'); flashMsg('not in the seed book'); G.cur=[]; renderWord(); renderTiles(); return; }
-  if(G.taken[w]){ sfx('bad'); flashMsg(G.taken[w]==='you'?'already on your trellis':'the rival grew that one'); G.cur=[]; renderWord(); renderTiles(); return; }
+  if(!DICT.has(w)){ sfx('bad'); flashMsg('not in the storm glossary'); G.cur=[]; renderWord(); renderTiles(); return; }
+  if(G.taken[w]){ sfx('bad'); flashMsg(G.taken[w]==='you'?'already on your strike line':'the Rival struck that one'); G.cur=[]; renderWord(); renderTiles(); return; }
   // claim
   G.taken[w]='you'; G.you.push(w);
   sfx('plant'); G.cur=[]; renderWord(); renderTiles(); renderRacks('you', w);
@@ -501,7 +501,7 @@ function nextLevel(){
   G.taken={}; G.dead={}; G.you=[]; G.ai=[]; G.cur=[];
   G.startT=Date.now(); G.pausedMs=0; G._hidAt=0; G.budget=D2.budgetMs;
   $('you-score').textContent='0 / '+D2.target;
-  var _bi=$('bedinfo'); if(_bi) _bi.innerHTML='⚡ <b>Level '+G.level+'</b>  ·  grow '+D2.target+' words before the clock';
+  var _bi=$('bedinfo'); if(_bi) _bi.innerHTML='⚡ <b>Level '+G.level+'</b>  ·  strike '+D2.target+' words before the clock';
   renderPlay();
   startTimer();
 }
@@ -520,7 +520,7 @@ function aiPlant(){
   var pick=avail[Math.floor(Math.random()*Math.min(avail.length,6))];
   G.taken[pick]='ai'; G.ai.push(pick);
   sfx('aiplant'); renderRack('ai', pick); updateBed();
-  announce('🦔 grew "'+pick.toUpperCase()+'"', 'zapthem');
+  announce('🌩️ struck "'+pick.toUpperCase()+'"', 'zapthem');
   if(G.ai.length>=G.D.target){ endGame('ai'); return; }
 }
 
@@ -559,9 +559,9 @@ function endGame(who){
   var emoji,title,sub;
   if(who==='stormover'){ emoji=stormRec?'🏅':'⛈️'; title=stormRec?'New storm record!':'The storm caught you'; sub='Reached Level '+(G.level||1)+'  ·  cleared '+stormCleared+' level'+(stormCleared===1?'':'s'); }
   else if(who==='timeout'){ emoji='⏳'; title="Time's up"; sub=D.t+' · '+G.you.length+'/'+D.target+' words in '+fmtTime(G.budget); }
-  else if(mode==='ai'){ emoji=isWin?'🏆':'🥀'; title=isWin?'You beat the Rival!':'The Rival filled first'; sub=D.t+' · you '+G.you.length+' · rival '+G.ai.length+' · '+fmtTime(elapsed); }
-  else if(mode==='free'){ emoji='🌸'; title='Bed grown!'; sub=D.t+' · '+G.you.length+' words · free play'; }
-  else { emoji=isBest?'🏅':'🌸'; title=isBest?'New best time!':'Bed grown!'; sub=D.t+' · '+G.you.length+' words in '+fmtTime(elapsed)+(mode==='timed'?' · timed':'')+((!isBest&&prevBest)?('   ·   best '+fmtTime(prevBest)):''); }
+  else if(mode==='ai'){ emoji=isWin?'🏆':'🌧️'; title=isWin?'You beat the Rival!':'The Rival filled first'; sub=D.t+' · you '+G.you.length+' · rival '+G.ai.length+' · '+fmtTime(elapsed); }
+  else if(mode==='free'){ emoji='⚡'; title='Storm cleared!'; sub=D.t+' · '+G.you.length+' words · free play'; }
+  else { emoji=isBest?'🏅':'⚡'; title=isBest?'New best time!':'Storm cleared!'; sub=D.t+' · '+G.you.length+' words in '+fmtTime(elapsed)+(mode==='timed'?' · timed':'')+((!isBest&&prevBest)?('   ·   best '+fmtTime(prevBest)):''); }
   // snapshot the real run result for the Share button
   _lastRes={ mode:mode, words:(who==='stormover'?stormCleared:G.you.length), target:D.target, ai:G.ai.length,
     time:fmtTime(who==='timeout'?G.budget:elapsed), isBest:(who==='stormover'?stormRec:isBest), isWin:isWin,
@@ -571,7 +571,7 @@ function endGame(who){
   $('res-sub').textContent=sub;
   fillResList('res-you', G.you, 'you');
   var _al=$('res-ailbl'), _ai=$('res-ai');
-  if(mode==='ai'){ if(_al){ _al.style.display=''; _al.textContent="Rival's trellis"; } if(_ai){ _ai.style.display=''; fillResList('res-ai', G.ai, 'ai'); } }
+  if(mode==='ai'){ if(_al){ _al.style.display=''; _al.textContent="Rival's strikes"; } if(_ai){ _ai.style.display=''; fillResList('res-ai', G.ai, 'ai'); } }
   else { if(_al) _al.style.display='none'; if(_ai) _ai.style.display='none'; }
   $('res-sun').textContent = granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   sfx((isWin||mode==='free')?'win':'lose');
@@ -579,9 +579,9 @@ function endGame(who){
 }
 function fillResList(id, arr, who){
   var host=$(id); host.innerHTML='';
-  if(!arr.length){ var e=document.createElement('div'); e.className='res-chip'; e.style.opacity='.5'; e.textContent='—'; host.appendChild(e); return; }
+  if(!arr.length){ var e=document.createElement('div'); e.className='res-chip'; e.style.opacity='.5'; e.textContent='–'; host.appendChild(e); return; }
   var sorted=arr.slice().sort();
-  for(var i=0;i<sorted.length;i++){ var c=document.createElement('div'); c.className='res-chip'; c.style.borderColor=who==='you'?'#4c6b34':'#7a3a52'; c.textContent=sorted[i].toUpperCase(); host.appendChild(c); }
+  for(var i=0;i<sorted.length;i++){ var c=document.createElement('div'); c.className='res-chip'; c.style.borderColor=who==='you'?'#9a8410':'#7a3a52'; c.textContent=sorted[i].toUpperCase(); host.appendChild(c); }
 }
 // fleet-standard share — built from the REAL last-run result
 function shareBloomzap(){
@@ -589,9 +589,9 @@ function shareBloomzap(){
   var url="https://lucidwinds.com/satellites/bloomzap/";
   var w=r.words, plural=(w===1?'':'s'), line;
   if(r.storm){ line='rode out '+w+' storm level'+(w===1?'':'s')+(r.isBest?' (new best!)':''); }
-  else if(r.mode==='ai'){ line=r.isWin?('beat the Rival with '+w+' word'+plural+' in '+r.time):('grew '+w+' word'+plural+' against the Rival'); }
-  else if(r.timeout){ line='grew '+w+'/'+r.target+' words before time ran out'; }
-  else { line='grew '+w+' word'+plural+' in '+r.time+(r.isBest?' (new best!)':''); }
+  else if(r.mode==='ai'){ line=r.isWin?('beat the Rival with '+w+' word'+plural+' in '+r.time):('struck '+w+' word'+plural+' against the Rival'); }
+  else if(r.timeout){ line='struck '+w+'/'+r.target+' words before time ran out'; }
+  else { line='struck '+w+' word'+plural+' in '+r.time+(r.isBest?' (new best!)':''); }
   var txt="Word Lightning · "+line+"! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){
