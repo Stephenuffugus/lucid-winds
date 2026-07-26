@@ -5,7 +5,25 @@ dump, Jessie's Jul 19 queue, the Jul 20 handoff, and everything raised since. Wh
 Stephen brings a new list, MERGE IT INTO THIS FILE rather than starting a fifth one.
 
 Marks: `[ ]` not started · `[~]` in progress · `[x]` done + deployed · `[?]` blocked on Stephen
-Last updated: 2026-07-25
+Last updated: 2026-07-26
+
+---
+
+## 🚨 FROM STEPHEN 2026-07-26 (chat) — merged before work started, per the system
+
+- [~] **CRITICAL: Jimothy unopenable while LOGGED IN.** His words: "if i log in i cant
+  open jimthy. i have to clear my browsing data and i can log in again and then if i
+  close it and try to play again while logged in, i cant... its punishing players who
+  are logged in and actively playing." NOT the July-25 splash-freeze (that SW template
+  is fixed and live, CACHE jimothy-v67) — this one is auth-correlated: boot with a
+  PERSISTED Firebase session fails, boot signed-out works, signing in mid-session works.
+  Repro in progress against the live site with a throwaway account.
+- [~] **Petal Match green-background regeneration doc → Drive 012Assets.** Yesterday's
+  skin cut left pink/purple items unreliable: they sit too close to the magenta key,
+  and a couple of sheets have a slight inconsistency. Stephen: put those items on a
+  green (or dark) background and he will remake them. Doc lists exactly which items.
+- [ ] **More large lists of notes are coming.** Merge each into THIS file on arrival,
+  with source + date, before working it. Do not work from the chat message alone.
 
 ---
 

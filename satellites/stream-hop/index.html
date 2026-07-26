@@ -35,8 +35,43 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"VideoGame","name":"Jimothy the Jumping Nugget","alternateName":["Jimothy","Jimothy the Jumping Nugget game","Jimothy raccoon game"],"keywords":"Jimothy, Jimothy the Jumping Nugget, Jimothy game, raccoon game, Frogger, Crossy Road, free browser game, Seattle raccoon, hopper","url":"https://lucidwinds.com/satellites/stream-hop/","image":"https://lucidwinds.com/satellites/stream-hop/assets/og-jimothy3.jpg","description":"Meet Jimothy the Jumping Nugget. Hop Seattle's roundest, most beloved raccoon across the rainy city to the greatest dumpster feast in town. Free to play in your browser.","genre":["Arcade","Casual","Endless runner"],"applicationCategory":"GameApplication","operatingSystem":"Web browser, Android, iOS","gamePlatform":["Web browser","Android","iOS"],"inLanguage":"en","author":{"@type":"Organization","name":"Sky Wolf Studios","url":"https://lucidwinds.com/"},"publisher":{"@type":"Organization","name":"Sky Wolf Studios"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"}}
 </script>
+<script>
+/* ===== BOOT BREADCRUMB (2026-07-26) ==============================================
+   Stephen: "if i log in i cant open jimothy. i have to clear my browsing data...
+   its punishing players who are logged in and actively playing."
+   A live repro (fresh profile, throwaway account, close + reopen signed in, real
+   site, real SW) did NOT reproduce it, so this stops the guessing: every boot
+   writes a breadcrumb of how far it got, and a boot that never reaches its first
+   frame is reported by the NEXT successful boot through the existing swFeedback
+   drop box (rare by construction, deduped server-side, 6h client cooldown).
+   ⛔ This block sits BEFORE the sunbeam-sdk script tag on purpose — if that
+   synchronous script ever hangs or dies, the breadcrumb still recorded 'html'
+   and the absence of 'sdk-tag' names the killer. If a dead boot has NO
+   breadcrumb at all, the page died before HTML parsed: network/SW/edge layer.
+   Known noise, accepted: closing the tab inside the ~1s boot window, or a
+   second tab racing the same key, logs a false death. The cooldown and the
+   server's dedupe keep that to a whisper. */
+(function(){try{
+  var prev=null; try{ prev=JSON.parse(localStorage.getItem('sh_bootlog')||'null'); }catch(e){}
+  if(prev&&prev.c!==1){
+    var dead=[]; try{ dead=JSON.parse(localStorage.getItem('sh_bootdead')||'[]'); }catch(e){}
+    dead.push(prev); while(dead.length>3)dead.shift();
+    try{ localStorage.setItem('sh_bootdead',JSON.stringify(dead)); }catch(e){}
+  }
+  var log={t:Date.now(),c:0,s:[],
+    sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),
+    pwa:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)};
+  window._bootMark=function(st){try{ log.s.push(st+'@'+(Date.now()-log.t));
+    localStorage.setItem('sh_bootlog',JSON.stringify(log)); }catch(e){}};
+  window._bootClean=function(){ log.c=1; window._bootMark('clean'); };
+  window._bootMark('html');
+}catch(e){}})();
+</script>
 <script src="/sunbeam-sdk.js?v=5"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"streamhop"}).catch(function(){});</script>
+<script>window._bootMark&&_bootMark('sdk-tag');
+window.Sunbeam&&Sunbeam.init({gameId:"streamhop"})
+  .then(function(s){ window._bootMark&&_bootMark(s&&s.signedIn?'sb-ready-in':'sb-ready-out'); })
+  .catch(function(){ window._bootMark&&_bootMark('sb-fail'); });</script>
 <style>
 :root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
   --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --water:#1f4a5e; }
@@ -875,7 +910,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.2';
+var BUILD='v7.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -4235,6 +4270,7 @@ var _splashDone=false;
 function splashTapped(){ if(_splashDone) return; _splashDone=true; ac(); toMenu(); }
 
 function boot(){
+  window._bootMark&&_bootMark('boot-in');
   /* ⛔ THE WAY OUT OF THE SPLASH GETS WIRED FIRST, BEFORE ANYTHING THAT CAN THROW.
      It used to be wired 171 lines into boot(), after warmSprites, SUP.render, the glyph
      src table and every button on the game — so a single failure anywhere in there left
@@ -4243,6 +4279,7 @@ function boot(){
      backstop if the overlay div ever goes missing. BOTH on click, never pointerdown,
      and splashTapped() latches so the pair cannot fire twice. */
   tap('splash-tap', splashTapped);
+  window._bootMark&&_bootMark('tap-wired');
   var _sp=$('s-splash');
   if(_sp) _sp.addEventListener('click', function(){ if(curScreen==='s-splash') splashTapped(); });
   fit();   // and size the stage before anything can throw, or it renders at native 540x960
@@ -4443,7 +4480,11 @@ function boot(){
          curl -sI "https://lucidwinds.com/satellites/stream-hop/sw.js?v=<SWV>"
      .htaccess now sends sw.js as no-store so the edge cannot pin it again, but
      the SWV bump is still what mints a clean cache key on the day of release. */
-  var SWV='57';
+  /* ⛔ SWV and sw.js CACHE move TOGETHER now. They had drifted 57 vs 67 — ten cache
+     bumps while the registered URL never changed. Survivable only because the
+     no-cache header rule covers every ?v= URL (verified BYPASS at the edge); do
+     not rely on that twice. */
+  var SWV='68';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -4891,7 +4932,8 @@ function cloudPull(thenPush){
       try{ if(curScreen==='s-skins')renderBin(); if(curScreen==='s-title'||curScreen==='s-games')paintDaily(); }catch(e){} }
     if(thenPush) cloudPush(true);
     paintAccount();
-  })['catch'](function(){ _cloudReady=false; });
+    window._bootMark&&_bootMark('pull-ok');
+  })['catch'](function(){ _cloudReady=false; window._bootMark&&_bootMark('pull-fail'); });
 }
 function cloudPush(now){
   if(!_cloudReady) return;
@@ -5053,15 +5095,38 @@ if(/[?&]shtest=1/.test(location.search)){
       return {ready:_cloudReady, signedIn:!!sn.signedIn, uid:sn.uid||null, doc:!!cloudDoc(),
         blobKeys:Object.keys(cloudBlob()).length, chars:Object.keys(PROG.chars||{}).length, caps:PROG.caps||0}; },
     cloudWipeLocal:function(){ try{ localStorage.removeItem('sh_prog'); }catch(e){} return 'local save cleared'; },
-    codeBox:function(pre){ openCodeBox(pre); return {open:_codeEl.style.display==='flex', value:$('code-in').value}; }
+    codeBox:function(pre){ openCodeBox(pre); return {open:_codeEl.style.display==='flex', value:$('code-in').value}; },
+    bootlog:function(){ var cur=null,dead=null; try{ cur=JSON.parse(localStorage.getItem('sh_bootlog')||'null'); }catch(e){}
+      try{ dead=JSON.parse(localStorage.getItem('sh_bootdead')||'null'); }catch(e){}
+      return {current:cur, dead:dead, sent:+(localStorage.getItem('sh_bootdead_sent')||0)}; }
   };
 }
 /* ⛔ If boot() throws partway, the splash tap and fit() have ALREADY run (they are the
    first thing it does), so the player can still get into the menu. Shout about it rather
    than dying silently — a half-booted game used to look exactly like a stuck splash. */
-try{ boot(); }catch(_e){ try{ console.error('Jimothy boot failed:', _e); }catch(_e2){} }
+try{ boot(); window._bootMark&&_bootMark('boot-out');
+  requestAnimationFrame(function(){ window._bootClean&&_bootClean(); });
+}catch(_e){ try{ window._bootMark&&_bootMark('boot-threw'); console.error('Jimothy boot failed:', _e); }catch(_e2){} }
 renderPowerHelp();
 setTimeout(function(){ try{ cloudPull(true); paintAccount(); }catch(e){} }, 1200);
+/* Report the most recent DEAD boot (see the breadcrumb block in <head>). Fires only
+   when a previous boot never reached its first frame, from a boot that did — so the
+   game is up and the network can be trusted for one small POST. 6h cooldown; the
+   endpoint also dedupes and budget-caps its Discord pings. */
+setTimeout(function(){ try{
+  var dead=JSON.parse(localStorage.getItem('sh_bootdead')||'[]');
+  if(!dead.length) return;
+  var last=+(localStorage.getItem('sh_bootdead_sent')||0);
+  if(Date.now()-last<216e5){ localStorage.removeItem('sh_bootdead'); return; }
+  var d=dead[dead.length-1];
+  var msg='BOOTLOG auto-report: a previous boot never finished. stages=['+((d.s||[]).join(' '))+']'
+    +' sw:'+(d.sw?1:0)+' pwa:'+(d.pwa?1:0)+' deaths:'+dead.length
+    +' at:'+new Date(d.t||0).toISOString();
+  fetch(FB_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({game:'jimothy', msg:msg.slice(0,2000), meta:'build '+BUILD+' bootlog'})})
+  .then(function(){ localStorage.setItem('sh_bootdead_sent',String(Date.now())); localStorage.removeItem('sh_bootdead'); })
+  ['catch'](function(){});
+}catch(e){} }, 5000);
 codeFromUrl();          // ?code=XXXX in the link opens the box with it filled in
 })();
 </script>
