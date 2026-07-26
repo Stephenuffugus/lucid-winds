@@ -273,7 +273,12 @@ not.** These are per-game and specific:
   screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
 - [ ] **48px touch targets across the satellites.** Loop Warden's buttons are 40px and
   35px. Rule 11 says 48px minimum. Worth auditing studio-wide rather than one game.
-- [ ] Line Loom — "incomprehensible", needs rules + rework of how it explains itself
+- [x] **Line Loom "incomprehensible" — FIXED.** Investigated first: the title screen already
+  explains the game and there IS a how-to page, so information was never the gap. The gap
+  was first contact — you land on a near-black board with four small outlines and six
+  numbered buttons and nothing names the VERB. Added one first-run coach card on the board
+  ("Drag from one station to another"), 48px dismiss, shown once. Verified headless:
+  appears, dismisses, does not return, 0 errors.
 - [ ] Mini Crossword — layout
 - [ ] Bridgevine — scroll
 - [ ] Plot Bloom — neighbours wording + depth
@@ -281,7 +286,8 @@ not.** These are per-game and specific:
 - [ ] Season Sway — wording
 - [ ] Hedgerow — replay-level
 - [ ] Tinker Loft — her list, incl. finger-drag; plus "Tinker Shop" rename
-- [ ] Micro Meadow — rename to "Think Fast"
+- [x] **Micro Meadow renamed to Think Fast** — 10 display strings + portal card + social
+  card regenerated. Slug stays `micro-meadow` (URLs). Verified 0 old strings remain.
 - [ ] Leaf Fit — rename + rotate
 - [ ] Merge & Blast — level-goal consistency (512 tile colour already fixed)
 - [ ] **Directions pages + readable fonts for every SATELLITE** (the shells are done)
