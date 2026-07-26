@@ -849,7 +849,7 @@ window.MC_BANK=MC_BANK;
 (function(){
 "use strict";
 function $(id){ return document.getElementById(id); }
-var BUILD="1.0";
+var BUILD="1.1";
 var N=5;
 var BANK=(window.MC_BANK&&window.MC_BANK.length>=60)?window.MC_BANK:MC_BANK_STARTER;
 
@@ -1045,10 +1045,24 @@ function selectCell(cell,forceDir){
 }
 function advance(){
   /* Jessie 7/19: typing moves to the NEXT cell in the word, never skipping
-     ahead to an empty slot — you type straight down the line from where you
-     started. At the word's end the cursor stays put. */
+     ahead to an empty slot mid-word — you type straight down the line from
+     where you started.
+     Stephen 7/26: at the word's END the cursor no longer sits on the last
+     square eating every letter ("bouncing me back to that open slot") — it
+     continues FORWARD to the next word in the same direction, landing on that
+     word's first open square. Never jumps backward. If nothing ahead has an
+     open square, it stays put. */
   var s=curSlot(); if(!s)return; var pos=s.cells.indexOf(CUR.sel);
-  if(pos>=0 && pos<s.cells.length-1) CUR.sel=s.cells[pos+1];
+  if(pos>=0 && pos<s.cells.length-1){ CUR.sel=s.cells[pos+1]; return; }
+  var i,j,best=null;
+  for(i=0;i<CUR.slots.length;i++){ var t=CUR.slots[i];
+    if(t.dir!==s.dir||t.cells[0]<=s.cells[0])continue;
+    var open=-1;
+    for(j=0;j<t.cells.length;j++){ if(CUR.grid[t.cells[j]]===""){ open=t.cells[j]; break; } }
+    if(open<0)continue;
+    if(best===null||t.cells[0]<best.start)best={start:t.cells[0],cell:open};
+  }
+  if(best)CUR.sel=best.cell;
 }
 function typeLetter(ch){
   if(!CUR||CUR.phase!=="play"||CUR.sel<0)return false;
