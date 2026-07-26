@@ -79,9 +79,15 @@ items are marked here so nobody re-does them.
   list: endless + daily modes, new specials (serpentine first), competitive layer.
 
 ### 🎬 Stop Motion (`satellites/stop-motion`)
-- [ ] **Animatable eyes + mouths library (Stephen)** — pre-designed eyeballs/mouths
-  with emotions to overlay on filmed objects (stuffed animals, fruit) and animate
-  frame to frame. Needs an asset list doc + a sticker-layer feature in the app.
+- [x] **Eyes + mouths ASSET DOC delivered + verified in 012Assets** (doc id
+  1g2AcAoxQDQ81INWH2YRoTlbWOeP10AEdGlLMnowwoyU): 6 sheets, 45 sticker states —
+  googly, cartoon, button-and-stitch, claymation families (7 eye states + 6
+  mouths each), an expression add-on pack, and a 6-shape lip-sync ladder. Built
+  around how the app actually works: stickers hold STATE between frames and the
+  player steps them, so stop motion itself does the animating.
+- [ ] **Sticker-layer feature in the Stop Motion app** — the code side that
+  consumes those sheets: drag/size/rotate stickers over the live view, state
+  stepping between shots, composited into the captured frame. Build when art lands.
 - [ ] **Camera permission flow (Jessie)** — a grant-permission button; if denied,
   guide to the phone's settings and back. (A web page cannot literally open Android
   settings — best honest version: detect denial, show per-platform instructions.)
