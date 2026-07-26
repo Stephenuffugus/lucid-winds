@@ -425,8 +425,11 @@ matching code change from you.
   would undo good marketing.
 - [?] **X1 pacing sweep** — the Monopoly anchor already has Relaxed/Normal/Fast. A blanket
   sweep across all games would violate no-blanket-fixes. Needs specific game callouts.
-- [?] **Locked-song behavior** — he offered three options: not accessible / snippet only /
-  fully listenable in the portal but locked for in-game use. Pick one before building.
+- [x] **Locked-song behavior — STEPHEN RULED 2026-07-26: the easter-egg model.**
+  "Music unlocks when you unlock it in a game, it gets added to your player.
+  They may be all easter eggs and that's cool — most games will end up with
+  their own songs eventually." So: locked songs simply are not in the player
+  until found; no teaser rows, no snippets. Current wiring already matches.
 - [?] **Daily rollover rule** — local midnight vs UTC. We do both by accident today. Wordle
   uses local. Recommendation: local everywhere EXCEPT where a timezone jump would scout a
   shared course early (Jimothy).
@@ -533,11 +536,13 @@ Ordered by value per hour of work.
   material are likely gone. The March 2027 conversion deadline still dominates
   for the US. ⛔ Repo visibility NOT changed — Hostinger deploys from it;
   making it private is Stephen's call with the deploy implications in view.
-- [ ] **STEPHEN, ELEVATED: file the second provisional (~$130) NOW, not December.**
-  Every month the evolved protocol sits disclosed-but-unfiled weakens the
-  position; the filing establishes priority for what remains protectable and
-  feeds the March conversion decision. The prior art here is your own public
-  repo.
+- [x] **Second provisional — STEPHEN RULED 2026-07-26, verified as his direct words (decision recorded, no
+  further nagging).** His plan: revenue first; if the first provisional is not
+  converting by its expiry (2027-03-17), file the second cheaply near that date
+  (micro-entity fees apply with fewer than 5 prior applications). Noted for the
+  calendar: that timing still lands inside the 12-month US grace window from the
+  ~2026-04-29 public disclosure. One reminder exists in the BUSINESS section
+  (December decision point), nothing else.
 - [ ] **File a second provisional on the evolved attention protocol.** The 2026-03-17 filing
   only protects what that document describes. Everything the protocol learned since (grading
   engagement on any test/document/screen, bot detection) is unprotected. ~$130 self-filed.
@@ -597,8 +602,9 @@ right now. These gate hosting strangers' code or advertising the program publicl
   simulating the fold against a stubbed localStorage before shipping.
 - [x] Per-game shelves, sorted above Originals. Verified: shelf order came back
   `Jimothy | Originals | Unlocked in Games | Classical`.
-- [ ] **Locked songs listed below unlocked ones** as the reason to try that game. Blocked on
-  the behavior decision above.
+- [x] **Locked-song teaser rows — CLOSED, not wanted, verified against his words
+  (Stephen's easter-egg ruling 2026-07-26).** Songs appear when found; hiding
+  them IS the design.
 - [ ] **One song unlocks just for OPENING a game.** SCOPED 2026-07-26: for the
   only soundtracked game this already works — Jimothy's free track (moonwalk) is
   the arcade teaser by design, and opening Jimothy backfills its shelf. The

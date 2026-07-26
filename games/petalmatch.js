@@ -36,6 +36,12 @@ window._gameFns.petalmatch = function PM(a){
      that leaves a hairline so neighbouring flowers read as separate pieces
      instead of one carpet. Raise toward 1.0 for a denser board. */
   var PM_FILL=0.96;
+  /* Visible build stamp — the Jimothy/Slice lesson: the stamp is the only
+     version tell a phone has. Stephen saw half-size flowers today because his
+     device held a days-old copy while the live site was current; with this on
+     screen, "is it stale?" is answered by looking. Keep it in lockstep with
+     the ?v= on play/petalmatch.html. */
+  var PM_BUILD='v22';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -638,7 +644,8 @@ window._gameFns.petalmatch = function PM(a){
   walletInfo.innerHTML=petalGlyph(15)+
     '<strong id="PMpet" style="color:#7ab356;font-size:0.8rem;">0</strong>'+
     '<span style="letter-spacing:0.06em;">PETALS</span>'+
-    '<span id="PMstk" style="color:#c8a84b;letter-spacing:0.05em;"></span>';
+    '<span id="PMstk" style="color:#c8a84b;letter-spacing:0.05em;"></span>'+
+    '<span style="color:#5a614f;font-size:0.55rem;margin-left:4px;">'+PM_BUILD+'</span>';
 
   var boostBtn=document.createElement('button');
   boostBtn.type='button';
