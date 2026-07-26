@@ -21,7 +21,7 @@ Ordered by how much it unblocks. Everything here is blocked ONLY on the art exis
 | # | What to make | Drop it here | Unblocks |
 |---|---|---|---|
 | 1 | **Pop N Lock pieces** — 5 pods + 1 chaff, from sheet 10 in the "Pop N Lock — Art Pack" Drive folder | `satellites/chaff-wars/assets/pods/pod-0.png` … `pod-4.png` + `chaff.png` | Flip `CW_POD_ART=true` and the game uses your art instead of drawn shapes |
-| 2 | **Petal Match flower gems** — 8 to 28 PNGs, filenames listed in `project_petalmatch_art_spec.md` | `assets/games/petalmatch/` (⛔ directory does not exist yet, create it) | Turns a whole game from procedural shapes into your art. Mechanical swap once they land |
+| 2 | ~~**Petal Match art**~~ ✅ **DONE 2026-07-26** — 185 sprites + 5 paintings cut from 23 sheets and the board is wired and live | `assets/games/petalmatch/` | Only redo: sheet 4's board shadow is magenta-on-magenta, no data to recover |
 | 3 | **Blobworks monsters** — the purple middle monsters, sheet 12 | Blobworks art folder | Jessie's "redo the purple monsters" |
 | 4 | **Blobworks modular ramps** — sheet 13 | same | Ramps are drawn procedurally right now as a stand-in |
 | 5 | **OriVex** — origami clean-paper triangle sheets + WIDE peaceful backgrounds with contrast against the number colours | `art-asset-lists/orivex/` pack has the spec | O2 + O3, two open items |
@@ -36,9 +36,11 @@ matching code change from you.
 - [?] **Pop N Lock piece art** — generate pods/chaff from sheet-10 Doc, drop PNGs into
   `satellites/chaff-wars/assets/pods/pod-0..4.png` + `chaff.png`, then flip `CW_POD_ART=true`.
   Also needs a device test of the control/difficulty/animation changes.
-- [?] **Petal Match gems** — drop 8–28 flower PNGs into `assets/games/petalmatch/` (dir does
-  not exist yet) per `project_petalmatch_art_spec.md`. Then it's a mechanical draw→drawImage
-  swap. Not doing a speculative procedural rework that his art would discard.
+- [x] **Petal Match art DONE** — 23 sheets cut to 185 sprites + 5 full-bleed paintings, board
+  wired and live at `/play/petalmatch.html`. Verified: 16/16 board sprites load, 0 404s, 0 page
+  errors, all 6 special/blocker cases resolve, balance unaffected, smoke 66 pass 0 fail.
+  Procedural renderer kept as a fallback. ⛔ TYPES stays at 6; flowers 7 and 8 are for
+  expansions. One redo logged (board shadow, magenta on magenta).
 - [?] **Blobworks purple monsters** — asset list delivered (sheet 12). Needs the art.
 - [?] **OriVex sheets + backdrops** — asset lists delivered (D3). Needs the art.
 - [?] **Sky Wolf arcade icon** — current icon is cut from the banner, so the ears are
