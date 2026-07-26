@@ -88,9 +88,11 @@ items are marked here so nobody re-does them.
 - [ ] **Sticker-layer feature in the Stop Motion app** — the code side that
   consumes those sheets: drag/size/rotate stickers over the live view, state
   stepping between shots, composited into the captured frame. Build when art lands.
-- [ ] **Camera permission flow (Jessie)** — a grant-permission button; if denied,
-  guide to the phone's settings and back. (A web page cannot literally open Android
-  settings — best honest version: detect denial, show per-platform instructions.)
+- [x] **Camera permission flow DONE, verified (commit d6fc6d84, 15/15 across three
+  permission states).** Pre-prompt explains before asking; denial gets per-platform
+  steps + Try again + the import fallback; a permissions watcher auto-resumes the
+  camera the instant the toggle flips (closest possible to "back to the game" —
+  a web page cannot open the settings app, told honestly in the card copy).
 
 ### 🖥 Studio-wide / portal
 - [x] **Feedback button dismissable DONE, verified (rode into e6c11ca7; cache rule
@@ -106,10 +108,10 @@ items are marked here so nobody re-does them.
   2026-07-26). Slug stays `bloomzap` per the display≠slug law.
 - [x] **OriVex rename** — already live: petalvex card reads "OriVex" (verified
   portal/index.html:732). Slug stays `petalvex`.
-- [ ] **Mosaic Draft vs Mosaic Garden (Jessie: "same game twice?")** — verified NOT
-  duplicates: Draft is the Azul-style satellite, Garden is the simple /play/ tile
-  filler. Open action: make the two cards obviously different (Garden's desc is
-  thin) so players don't think they're duplicates.
+- [x] **Mosaic twins untangled DONE (commit fc56aa7e).** Garden's card now leads
+  with "Simple solo filler, no drafting" — front-loaded to survive the two-line
+  clamp; Draft already leads with the Azul drafting line. Verified side by side
+  in one screenshot.
 
 ### 🌈 Hues — featured elsewhere, Stephen wants the shop built out
 - [ ] **Shop build-out** — "a ton more unlockables, balanced economy, work for them
@@ -166,12 +168,13 @@ items are marked here so nobody re-does them.
   spec, grounded in the real code (5 modes, 3 beds), incl. proposed storm renames
   (Choose your storm: Drizzle/Downpour/Tempest) and a complete wording-sweep list
   for the wiring pass.
-- [ ] **In-game storm retheme**: dark navy background, angled rain, lightning
-  flashes; buttons storm-cloud gray; "plant word" button → "Submit" in lightning
-  yellow; play button gets a lightning bolt not a plant; replace ALL plant symbols
-  ("how do you want to play" + "Choose a bed" sections); rename "Choose a bed"
-  wording to match the storm theme.
-- [ ] **Next-level button after each win** — no bouncing back to the menu.
+- [x] **In-game storm retheme + next-round button DONE, verified (commit 900d6432,
+  30/30 headless assertions + screenshots reviewed).** Full wording map (Choose
+  your storm: Drizzle/Downpour/Tempest, Vs Rival, strikes, storm glossary), navy +
+  storm-gray + lightning-yellow surfaces, all plant glyphs replaced incl. favicon,
+  yellow "Next round" re-enters with the same mode + storm. Best-time keys kept.
+  ⚠️ Stephen: settings copy says 9,600 words, the stamp measures 13,511 — pick the
+  brag. Art sheets from the spec doc still slot in later.
 
 ### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
 - [ ] **2D: capture still not really possible** — refine being caught, add more
@@ -207,12 +210,24 @@ items are marked here so nobody re-does them.
   same refusal. Needs her device to confirm the feel.
 
 ### 🎨 Other per-game (Jessie 7/21)
-- [ ] **Kakuro**: missing description/rules/objective page before the game.
-- [ ] **Inkbound**: thumbnail desc → 1 concise sentence; starting skin should be one
-  of the LIGHTEST skins.
-- [ ] **Hedgerow** (extends older replay-level entry): share button on level
-  complete; NEXT LEVEL button; rules page with start button; real level ladder —
-  at least 100 levels, progressively harder, changing scenery.
+- [x] **Kakuro rules gate — verified ALREADY FIXED** (the 7/18 directions sweep,
+  commit 8712fee0 on main; fresh-profile headless proof: card auto-shows before
+  first play, dismiss writes the flag, second visit skips). Jessie's 7/21 note
+  predates/straddles the sweep's deploy. Screenshots on file. ⚠️ Minor: the card
+  promises "Notes help track possibilities" — unaudited whether a notes mode exists.
+- [x] **Inkbound both DONE, verified (commits fc56aa7e + 8cc7393b).** Card copy one
+  sentence. Starter skin: MEASURED every skin's in-play canvas luminance — the old
+  default was the darkest of all 8 (32.1); new free starter is Astral Bindery
+  (43.2, lightest non-premium). The two absolute lightest are PAID Supporter skins
+  — making one free is Stephen's revenue call, flagged. Existing players keep
+  their skin (12/12 profile assertions). BUILD v1.3.
+- [x] **Hedgerow gate + next + share DONE, verified (commit 6a410965, 21/21).**
+  Rules-before-play gate (first visit only), 56px "Next ground" wired to the real
+  advance path, Share on level complete (also fixed shareHedgerow bragging
+  "0 grounds" mid-run). Buttons use the game's "grounds" voice.
+- [ ] **Hedgerow 100-level ladder** — still open, design+build. Baseline
+  established: real successive grounds already exist (each adds a pest + speed to
+  a cap); the ladder extends that with scenery changes, not from scratch.
 - [x] **Hunch early-submit HARDENED, verified (Hunch repo, pushed to main, sw v5).**
   Honest finding: the listener/guard/hit-target were all correct and the deployed
   site matched HEAD — the tap was being eaten at the device layer. Closed both
@@ -241,10 +256,15 @@ items are marked here so nobody re-does them.
   sense." Needs a first-contact/clarity pass or a rethink.
 - [ ] **Hexa Hive**: study the real Hexa Sort — tiles should MOVE to the next stack
   visibly (like cards shuffling) with an ascending stretch sound, not teleport.
-- [ ] **Pop N Lock**: share-your-victory button after a win; thumbnail should show
-  actual gameplay better.
-- [ ] **Plot Bloom** (extends older entry): desc → 1 concise sentence; game needs
-  reworking to make sense.
+- [x] **Pop N Lock share button DONE, verified (commit dc270259).** Campaign +
+  versus wins share a rival-naming brag (navigator.share + Copied! fallback),
+  hidden on defeats/interim rounds/solo score. BUILD v1.6, sw v9.
+- [ ] **Pop N Lock thumbnail** — should show actual gameplay better. Art call:
+  screenshot-based card vs a painted piece; needs Stephen's pick.
+- [x] **Plot Bloom desc → one sentence DONE (commit fc56aa7e, rendered + verified).**
+- [ ] **Plot Bloom rework** — "needs reworking to make more sense" still open;
+  needs design intent (what confused Jessie: neighbours wording + depth, per the
+  older note).
 - [x] **Mini Crossword typing FIXED, verified (commit 0f535a33).** advance() parked
   the cursor at a word's last cell forever; now flows forward to the next
   same-direction word with an open square. Real-keydown probe: trail 2-3-4-6-7-8,
