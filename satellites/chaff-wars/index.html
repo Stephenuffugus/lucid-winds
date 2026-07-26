@@ -74,6 +74,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn.primary{background:linear-gradient(180deg,#ff2fb9,#b81f86); color:#1c0413; border-color:#ff8ad4; box-shadow:0 4px 0 #7a1257, 0 8px 22px rgba(255,47,185,0.35), 0 8px 20px #0006}
 .btn.sm{min-height:50px; font-size:15px; border-color:#3d3550}
 .btn.sm:active{box-shadow:0 0 14px rgba(47,240,224,0.35)}
+#go-share{border-color:#1d6b63; color:#2ff0e0; text-shadow:0 0 12px rgba(47,240,224,0.35)}
 .btn.ghost{background:#161309; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -269,6 +270,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
         <button class="btn sm" id="go-retry">↻ Again</button>
         <button class="btn sm" id="go-home">◄ Menu</button>
       </div>
+      <button class="btn sm" id="go-share" style="display:none">⤴ Share your victory</button>
     </div>
   </div></div>
 </div></div>
@@ -276,7 +278,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.5";
+var BUILD="v1.6";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -743,6 +745,23 @@ function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; M
   setTimeout(function(){ matchResult(result); },800);
 }
 
+/* ---- share your victory (Jessie 7/26): navigator.share, clipboard fallback ---- */
+var SHARE_URL='https://lucidwinds.com/satellites/chaff-wars/';
+var SHARE_LABEL='⤴ Share your victory';
+var _shareBrag='';
+function setShare(brag){ var b=$('go-share'); if(!b)return; _shareBrag=brag||'';
+  b.textContent=SHARE_LABEL; b.style.display=brag?'flex':'none'; }
+function _legacyCopy(s){ try{ var ta=document.createElement('textarea'); ta.value=s; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }catch(e){} }
+function doShare(){ var text=_shareBrag||'I just won in Pop N Lock!';
+  if(navigator.share){ try{ navigator.share({title:'Pop N Lock', text:text, url:SHARE_URL})['catch'](function(){}); return; }catch(e){} }
+  var full=text+' '+SHARE_URL;
+  function ok(){ var b=$('go-share'); if(!b)return; b.textContent='Copied!';
+    setTimeout(function(){ var b2=$('go-share'); if(b2)b2.textContent=SHARE_LABEL; },1600); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(full).then(ok,function(){ _legacyCopy(full); ok(); }); }
+  else { _legacyCopy(full); ok(); } }
+tap('go-share',function(){ SFX.ui(); doShare(); });
+
 var _sunToast='';
 function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* best-of-3 series (boss + secret): interim round screens until someone takes 2 */
@@ -756,6 +775,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
       var srw=$('go-reward'); if(srw)srw.style.display='none';
       var snb=$('go-next'); snb.style.display='flex'; snb.textContent='Next Round ▶';
       var sgr=$('go-retry'); if(sgr)sgr.style.display='none';
+      setShare(null);
       show('s-go'); return; }
     result=(SERIES.me>=2)?'win':'lose'; SERIES=null; }
   $('go-next').textContent='Next ▶'; var _gr0=$('go-retry'); if(_gr0)_gr0.style.display='';
@@ -781,13 +801,14 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* next button: show if there is an unlocked next stage */
   var nb=$('go-next'); var hasNext=(result==='win' && MATCH.stage+1<ROSTER.length && (MATCH.stage+1<=PROG.unlocked || (ROSTER[MATCH.stage+1].secret&&PROG.secret)));
   nb.style.display=hasNext?'flex':'none';
+  setShare(result==='win' ? ('I just beat '+st.nm+' in Pop N Lock!') : null);
   show('s-go');
 }
 function soloResult(){ if(_devSweep)return; $('go-title').style.color=''; $('go-emoji').textContent='🌱'; _goPortrait(null); _goBanner('allclear'); $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
   $('go-line').textContent='Best '+PROG.soloBest.toLocaleString();
   var rw=$('go-reward'); var sun=Math.min(6,Math.floor(MATCH.pf.score/1200)); var got=0; if(sun>0){ try{ if(window._sbCapEarn)got=window._sbCapEarn(sun,'chaffwars:solo')||0; }catch(e){} }
   if(got>0){ rw.style.display='inline-block'; rw.textContent='☀ +'+got+' Sunbeams'; } else rw.style.display='none';
-  $('go-next').style.display='none'; show('s-go'); }
+  $('go-next').style.display='none'; setShare(null); show('s-go'); }
 
 /* =====================================================================
    MAIN LOOP
@@ -1322,6 +1343,7 @@ function versusResult(result){ if(_devSweep)return;
   var rw=$('go-reward'); if(rw)rw.style.display='none';   /* no sunbeams in versus (farmable) */
   $('go-next').style.display='none';
   var gr=$('go-retry'); if(gr)gr.style.display='none';
+  setShare(result==='win' ? 'I just won a versus battle in Pop N Lock!' : null);
   show('s-go'); }
 
 /* ---- local transport (BroadcastChannel: same-browser tabs, dev bots) ---- */
@@ -1555,6 +1577,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     titleScreen:function(){ show('s-title'); running=false; return curScreen; },
     lobby:function(code){ show('s-vs'); _vsShowWait(code||'AB7K'); running=false; return curScreen; },
     result:function(n,r){ startMatch(n==null?12:n,'campaign'); running=false; MATCH.phase='done'; matchResult(r||'win'); return {title:$('go-title').textContent, portrait:$('go-portrait').style.display}; },
+    vsResult:function(r){ running=false; MATCH.mode='versus'; MATCH.phase='done'; MP.forfeit=false; versusResult(r||'win'); return {title:$('go-title').textContent, share:$('go-share').style.display}; },
     art:function(){ var out={}; ['char/baron-greymould-lose','ui/vs-frame','ui/power-lit','fx/pop-splat-2','bg/battle-alley'].forEach(function(p){ var im=p.indexOf('bg/')===0?cwBg(p.slice(3)):cwSpr(p); out[p]=_cwReady(im); }); return out; },
     seriesTest:function(){ startMatch(12,'campaign'); MATCH.phase='done'; matchResult('win');
       var a=SERIES?SERIES.me:-1, t=$('go-title').textContent; matchResult('win');
