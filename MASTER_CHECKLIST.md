@@ -95,10 +95,19 @@ Theme deliberately left open for the designer; every asset is described by funct
   an objective-aware bot and reports measured win rates. Drives `_PM_TEST` → real
   `handleEnd()`, reimplements nothing. Verified working after three separate false-0%
   traps (file:// base href, rAF throttling, and win-detection racing the auto-advance).
-- [ ] **Dew levels measure 12.5%** — too low even with the objective-aware bot. Investigate
-  the same way the thorn bug was found before tuning any numbers.
-- [ ] **Difficulty banding** ⭐ next, needs no art. Sawtooth still measures a 55% average
-  swing between adjacent levels because the fixed 10-step rotation is untouched. Confirmed in `genLevel()`: levels
+- [x] **Dew was two bugs, not tuning** — dew rode the falling gem (jelly lived on the cell
+  object and collapse moves objects down), and double-layer tiles silently lost their
+  second layer. Fixed with a position-indexed `jellyBoard`. Verified: a double-layer level
+  completes properly, 26 dew cleared in 12 moves.
+- [x] ⭐ **DIFFICULTY BANDING DONE — ladder is balanced.** Fixed 10-step rotation replaced
+  by a seeded order plus one shared difficulty curve driving every objective, with a
+  scheduled spike at each chapter's end (the player LIKED the wall, they disliked it being
+  random). Score targets made superlinear because points already scale with level.
+  **Verified at 40 trials/level:** every kind now lands in a 12-point band —
+  thorns 63.7 / gather 58.3 / mix 57.5 / score 53.8 / dew 51.7. Level-to-level swing
+  **62.5% → 11.4%**. Was: thorns 0%, score 100%.
+  ⛔ Seven calibration passes, two of which OVERSHOT. Re-run `scripts/petalmatch_balance.js`
+  after touching any coefficient in `genLevel`; never hand-tune by eye. Confirmed in `genLevel()`: levels
   rotate on a FIXED 10-step pattern, so blocker levels are walls and everything between
   is a stroll, forever, in the same order. Level 25 = 12 blockers × 2 hits = 24 breaks in
   39 moves. Fix: seed the order per chapter, rate every generated level and reject
