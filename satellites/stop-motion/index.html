@@ -87,9 +87,12 @@ input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; 
 #stage-view{flex:none; position:relative; width:540px; height:470px; background:#05070a; overflow:hidden}
 #cam{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; display:block}
 #onion{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.5; pointer-events:none; display:none}
-#cam-msg{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:linear-gradient(180deg,#0e140d,#0b0f0b); color:var(--cream); font-size:17px; line-height:1.5; gap:10px}
+#cam-msg{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px 28px; background:linear-gradient(180deg,#0e140d,#0b0f0b); color:var(--cream); font-size:16px; line-height:1.5; gap:10px; overflow-y:auto; -webkit-overflow-scrolling:touch}
 #cam-msg .cm-big{font-size:22px; font-weight:800; color:var(--sage)}
-#cam-msg .cm-hint{font-size:14px; color:var(--muted)}
+#cam-msg .cm-hint{font-size:13px; color:var(--muted)}
+#cam-msg .btn{max-width:320px; min-height:52px; font-size:17px; flex:none}
+.cm-steps{text-align:left; font-size:14px; line-height:1.55; margin:2px 0; padding:10px 14px 10px 34px; background:#10160e; border:1px solid var(--line); border-radius:12px; max-width:430px; color:var(--cream)}
+.cm-steps li{margin:5px 0}
 #thirds{position:absolute; inset:0; pointer-events:none; opacity:.35}
 #thirds .tl{position:absolute; background:rgba(232,220,200,.35)}
 #ctrl-row{flex:none; padding:10px 16px 4px; display:flex; flex-direction:column; gap:8px}
@@ -250,7 +253,7 @@ input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; 
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960;
-var BUILD='v1.0';
+var BUILD='v1.1';
 var TESTMODE=/[?&]smtest=1/.test(location.search);
 
 /* frame output size (matches the 540x470 stage-view aspect for WYSIWYG capture) */
@@ -358,23 +361,91 @@ function stopTips(){ if(tipTimer){ clearInterval(tipTimer); tipTimer=null; } }
 function resetTipTimer(){ if(tipTimer)clearInterval(tipTimer); tipTimer=setInterval(showTip,5200); }
 function encourage(n){ if(MILE[n]){ setTicker(MILE[n]); resetTipTimer(); } }
 
-/* ---------- camera ---------- */
-function openStudio(){ show('s-studio'); if(!camStarted){ camStarted=true; initCamera(); } paintControls(); updateStrip(); updateOnion(); updateCount(); updateSelBar(); }
+/* ---------- camera + permission flow ----------
+   A web page cannot open the phone's settings app, so this is the honest
+   version: pre-prompt explains WHY before the browser asks, and on denial
+   we show per-platform steps to re-enable plus a Try again button. Where
+   navigator.permissions is supported we also watch for the permission
+   flipping to granted (e.g. desktop address bar toggle) and auto-start. */
+var camUIState='';
+function openStudio(){ show('s-studio'); if(!camStarted){ camStarted=true; camBoot(); } paintControls(); updateStrip(); updateOnion(); updateCount(); updateSelBar(); }
+function isIOS(){ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
+function isAndroid(){ return /Android/.test(navigator.userAgent||''); }
+function camMsg(html){ var m=$('cam-msg'); m.style.display='flex'; m.innerHTML=html; }
+function bindCamBtn(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(); }); }
+function camBoot(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camNoCam(); return; }
+  var handled=false;
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      handled=true;
+      navigator.permissions.query({ name:'camera' }).then(function(st){
+        watchPerm(st);
+        if(st.state==='granted'){ initCamera(); }
+        else if(st.state==='denied'){ camDenied(); }
+        else { camAsk(); }
+      }).catch(function(){ camAsk(); });
+    }
+  }catch(e){ handled=false; }
+  if(!handled){ camAsk(); }
+}
+function watchPerm(st){ try{ st.onchange=function(){ if(st.state==='granted' && !camOK){ initCamera(); } }; }catch(e){} }
+function camAsk(){ camUIState='ask';
+  camMsg('<div class="cm-big">Camera time</div>'
+    +'<div>Stop Motion uses your camera to snap the photos that become your movie. Photos stay on your device.</div>'
+    +'<button class="btn primary" id="cm-allow">Allow camera</button>'
+    +'<div class="cm-hint">Your browser will ask to use the camera. Tap Allow when it does.</div>'
+    +'<div class="cm-hint">No camera? Tap Import below to build your movie from photos instead.</div>');
+  bindCamBtn('cm-allow', initCamera);
+}
+function camWait(){ camUIState='wait';
+  camMsg('<div class="cm-big">One moment</div>'
+    +'<div>Asking for the camera. If your browser shows a popup, tap Allow.</div>'); }
+function camSteps(){
+  if(isIOS()) return [
+    'Open the <b>Settings</b> app on your device',
+    'Scroll down and tap <b>Safari</b> (or the browser you are using)',
+    'Tap <b>Camera</b> and choose <b>Allow</b> or <b>Ask</b>',
+    'Come back here and tap <b>Try again</b>' ];
+  if(isAndroid()) return [
+    'Tap the <b>lock icon</b> next to the address bar',
+    'Tap <b>Permissions</b>, then <b>Camera</b>',
+    'Choose <b>Allow</b>',
+    'Tap <b>Try again</b> below' ];
+  return [
+    'Click the <b>camera icon</b> near the right end of the address bar',
+    'Choose <b>Allow</b>',
+    'Click <b>Try again</b> below' ];
+}
+function camDenied(){ camUIState='denied'; camOK=false;
+  var steps=camSteps(); var li=''; for(var i=0;i<steps.length;i++) li+='<li>'+steps[i]+'</li>';
+  camMsg('<div class="cm-big">Camera is blocked</div>'
+    +'<div>This game cannot open your settings for you, but turning the camera back on only takes a moment:</div>'
+    +'<ol class="cm-steps">'+li+'</ol>'
+    +'<button class="btn primary" id="cm-retry">Try again</button>'
+    +'<div class="cm-hint">Some browsers ask again when you tap Try again. Others need the steps above first.</div>'
+    +'<div class="cm-hint">No camera? Tap Import below to build your movie from photos instead.</div>');
+  bindCamBtn('cm-retry', initCamera);
+}
+function camNoCam(){ camUIState='nocam'; camOK=false;
+  camMsg('<div class="cm-big">Camera is off</div>'
+    +'<div>This device has no camera we can reach.</div>'
+    +'<div class="cm-hint">You can still make a movie. Tap Import below to add photos from your phone.</div>'); }
 function initCamera(){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camFail('This device has no camera we can reach.'); return; }
+  camWait();
   navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } }, audio:false })
     .then(onStream)
     .catch(function(){
       /* retry with any camera before giving up */
       navigator.mediaDevices.getUserMedia({ video:true, audio:false }).then(onStream).catch(function(err){
-        camFail(err && err.name==='NotAllowedError' ? 'Camera permission was blocked.' : 'No camera available.');
+        var n=err && err.name;
+        if(n==='NotAllowedError' || n==='PermissionDeniedError'){ camDenied(); }
+        else { camNoCam(); }
       });
     });
 }
 function onStream(stream){ camStream=stream; var v=$('cam'); try{ v.srcObject=stream; }catch(e){ try{ v.src=URL.createObjectURL(stream); }catch(_){} }
-  camOK=true; $('cam-msg').style.display='none'; var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
-function camFail(msg){ camOK=false; var m=$('cam-msg'); m.style.display='flex';
-  m.innerHTML='<div class="cm-big">Camera is off</div><div>'+msg+'</div><div class="cm-hint">You can still make a movie. Tap Import below to add photos from your phone.</div>'; }
+  camOK=true; camUIState='on'; $('cam-msg').style.display='none'; var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
 
 /* ---------- capture ---------- */
 function coverDraw(g, src, sw, sh){ if(!sw||!sh)return false;
@@ -564,7 +635,8 @@ if(TESTMODE){
     del:function(){ deleteFrame(); return frames.length; },
     exportBlobType:function(){ return supportedMime()||'fallback'; },
     canExport:function(){ return canExport(); },
-    state:function(){ return { frames:frames.length, sel:sel, onionOn:onionOn, onionOp:onionOp, fps:fps, camOK:camOK, screen:curScreen, playing:pbPlaying }; }
+    camUI:function(){ return camUIState; },
+    state:function(){ return { frames:frames.length, sel:sel, onionOn:onionOn, onionOp:onionOp, fps:fps, camOK:camOK, camUI:camUIState, screen:curScreen, playing:pbPlaying }; }
   };
 }
 
