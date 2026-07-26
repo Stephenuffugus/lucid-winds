@@ -671,7 +671,16 @@ not.** These are per-game and specific:
   ("Drag from one station to another"), 48px dismiss, shown once. Verified headless:
   appears, dismisses, does not return, 0 errors.
 - [ ] Mini Crossword — layout
-- [ ] Bridgevine — scroll
+- [x] **Bridgevine "scroll" — investigated, NOT reproducible, nothing changed
+  (verified headless 2026-07-26).** Page scroll containment fully present
+  (overflow:hidden + overscroll-behavior:none + touch-action:none + passive:false
+  preventDefault); scrollY stayed 0 through board drags at 390x844 AND 360x800
+  and in a portal-embed simulation; all 7 screens reachable (overflowing ones
+  scroll inside their own pad); the OTHER reading — the goal parchment "scroll"
+  text spilling — measured 0px overflow in all 14 trials + all modes (its fix
+  was a20cf2d8). Note likely predates that fix. 21 screenshots on file.
+  ⚠️ If Jessie hits it again: which screen, and standalone or inside the arcade —
+  one sentence re-arms the exact repro.
 - [ ] Plot Bloom — neighbours wording + depth
 - [ ] Root Groups — text
 - [ ] Season Sway — wording
