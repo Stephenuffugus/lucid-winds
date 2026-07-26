@@ -243,9 +243,18 @@ items are marked here so nobody re-does them.
   listener beside the onclick (survives a never-synthesized click; roundActive
   guard makes double-fire a no-op). Verified incl. a dead-click simulation.
   Submit row raised to 48px. ⚠️ Needs Jessie's device to confirm the real-world fix.
-- [ ] **Hunch prompt bank**: research classic Pictionary clue banks; grow the bank
-  so children can play and understand. Also open (found in code, flagged): the
-  round timer starts on round LOAD, not first stroke.
+- [x] **Hunch prompt bank DONE, verified (Hunch repo commit c43e256, pushed).**
+  342 original prompts in classic Pictionary category spirit: EASY 178 (kid-cold:
+  dog, rainbow, snowman) + STANDARD 164 (lighthouse, telescope, volcano),
+  70/30-weighted into tier 1, the jellyfish-juggling combo grammar pulled off
+  tier 1, Daily pool grown to 522. Guesser-sync finding: nothing to sync — the
+  vision guesser is open-ended and concrete objects RAISE its win rate. Verified:
+  20/20 fresh rounds from the new bank, 1000-draw split 695/305, zero dupes.
+  prompts.js now ?v=2 (was an unversioned shared file), sw v6.
+- [?] **Hunch kids-mode pin (Stephen)**: hit-based escalation still promotes into
+  abstract tier 2 after 4 hits; a true KIDS mode would pin tier 1 (one constant,
+  documented in code). Also open: the round timer starts on round LOAD, not
+  first stroke.
 - [x] **Flipbook all three DONE, verified (commit cbd4cb3f).** Closed eyes redrawn
   (the old set was droopy-open with bags); three-tab accordion (Draw/Pages/More),
   IDs unchanged; the red margin line removed — stroke through its old position
