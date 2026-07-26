@@ -26,6 +26,11 @@ window._gameFns.petalmatch = function PM(a){
      to 8, re-run scripts/petalmatch_balance.js and expect to retune, do not
      just change the number. Art: base-7-hydrangea.png, base-8-thistle.png. */
   var ROWS=8,COLS=8,TYPES=6,CELL=36;
+  var PM_FRAME=14;   // painted board-frame border, in px per side
+  /* How much of a cell a painted piece fills. 1.0 = edge to edge. Just under
+     that leaves a hairline so neighbouring flowers read as separate pieces
+     instead of one carpet. Raise toward 1.0 for a denser board. */
+  var PM_FILL=0.96;
   // 6 flower types: rose / daisy / violet / forgetmenot / clover / cherry
   var GEMS=[
     {name:'rose',color:'#c47a7a',mid:'#8b4d4d',hi:'#e8b5b5'},
@@ -60,17 +65,59 @@ window._gameFns.petalmatch = function PM(a){
 
   ms(a,'<strong id="PMchap">Meadow</strong> · L<strong id="PMlv">'+level+'</strong> · best L<strong id="PMbest">'+bestLevel+'</strong>');
   mm(a);
+  /* ═══ CHAPTER BACKDROP ═══════════════════════════════════════════════
+     Stephen painted four full-bleed conservatories, one per chapter, and the
+     board was sitting on a flat #1a2416 rectangle instead. This is that art.
+
+     It is an absolutely-positioned child of the mount, NOT a fixed layer and
+     NOT an inline background on the mount itself. Both of those leak: the same
+     #fg-ag element is reused for every game in LW's game tab, so a fixed
+     backdrop would still be on screen behind Bloom Breaker. A child element
+     dies with `mountEl.innerHTML=''` and cannot outlive the game.
+     ═══════════════════════════════════════════════════════════════════ */
+  /* ⛔ z-index:-1 plus isolation:isolate on the mount, NOT z-index:0.
+     A positioned z-index:0 element paints ABOVE static in-flow content, so the
+     backdrop swallowed the "Swipe to swap" hint line the shell writes straight
+     into the mount. Negative z-index paints after the parent's background but
+     before its in-flow children, which is exactly what a backdrop wants, and
+     isolation:isolate makes the mount a stacking context so it cannot slide
+     out behind the page instead. */
+  try{ if(!a.style.position) a.style.position='relative'; a.style.isolation='isolate'; }catch(e){}
+  var backdrop=document.createElement('div');
+  backdrop.id='PMbg';
+  backdrop.style.cssText='position:absolute;inset:0;z-index:-1;pointer-events:none;'+
+    'background:#12160f center top/cover no-repeat;';
+  a.appendChild(backdrop);
+  var bgChapter=-1;
+  function syncBackdrop(){
+    var ci=objective?objective.chapter:0;
+    if(ci===bgChapter) return;
+    bgChapter=ci;
+    /* Light scrim only. The first pass sat this painting under 0.55-0.72 black
+       plus a heavy inset shadow and it read as a flat dark rectangle — all that
+       work invisible. The panels and the board carry their own opaque backing,
+       so the backdrop does not need to be dimmed to keep text legible. */
+    backdrop.style.backgroundImage=
+      'linear-gradient(rgba(10,13,9,0.18),rgba(10,13,9,0.34)),'+
+      'url("/assets/games/petalmatch/runtime/chapter-bg-'+((ci%4)+1)+'.jpg")';
+  }
+  syncBackdrop();
+
   var pan=document.createElement('div');
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;position:relative;';
+  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;position:relative;z-index:1;';
   a.appendChild(pan);
 
   var objBar=document.createElement('div');
   objBar.id='PMobj';
-  objBar.style.cssText='padding:8px 10px;background:rgba(26,31,23,0.55);border:1px solid rgba(122,179,86,0.25);border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;font-size:0.82rem;color:#e8dcc8;line-height:1.35;';
+  /* Painted chrome (2026-07-26). border-image, NOT background-image: these
+     frames have ornate corners that must stay their own size while the middle
+     stretches. Each rule keeps its original background colour underneath, so if
+     the art fails to load the panel reads exactly as it did before. */
+  objBar.style.cssText='padding:10px 18px;background:rgba(26,31,23,0.55);border:14px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-objbar.png") 34% 26% fill round;border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;font-size:0.82rem;color:#e8dcc8;line-height:1.35;';
   pan.appendChild(objBar);
 
   var hud=document.createElement('div');
-  hud.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px;background:rgba(26,31,23,0.5);border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;';
+  hud.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:10px 16px;background:rgba(26,31,23,0.5);border:16px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-panel.png") 26% fill round;border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;';
   hud.innerHTML='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">SCORE</div><div id="PMsc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">LEVEL</div><div id="PMlv2" style="font-size:1.1rem;color:#e8dcc8;">'+level+'</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">MOVES</div><div id="PMmv" style="font-size:1.1rem;color:#e8dcc8;">'+moves+'</div></div>';
   pan.appendChild(hud);
 
@@ -81,7 +128,14 @@ window._gameFns.petalmatch = function PM(a){
 
   canvas=document.createElement('canvas');
   canvas.style.cssText='display:block;border-radius:8px;margin:4px auto;touch-action:none;';
-  pan.appendChild(canvas);
+  /* ⛔ The frame goes on a WRAPPER, never on the canvas itself. A border on the
+     canvas shifts the box the input handler measures against, and every tap
+     would land on the wrong cell. */
+  var boardWrap=document.createElement('div');
+  boardWrap.style.cssText='display:inline-block;line-height:0;padding:2px;'+
+    'border:'+PM_FRAME+'px solid transparent;border-image:url("/assets/games/petalmatch/runtime/ui-board.png") 24% fill round;';
+  boardWrap.appendChild(canvas);
+  pan.appendChild(boardWrap);
 
   overlayHost=document.createElement('div');
   overlayHost.style.cssText='position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;';
@@ -256,7 +310,11 @@ window._gameFns.petalmatch = function PM(a){
   function initCanvas(){
     ctx=canvas.getContext('2d');
     dpr=window.devicePixelRatio||1;
-    var maxSize=Math.min((a.clientWidth||360)-24,360);
+    /* ⛔ PM_FRAME is subtracted here AND used as the wrapper border width below.
+       The painted board frame adds real width; when only the wrapper knew about
+       it the board overflowed the screen and the right column was cut off. One
+       constant drives both so they can never disagree again. */
+    var maxSize=Math.min((a.clientWidth||360)-24-(PM_FRAME*2),360);
     CELL=Math.floor(maxSize/COLS);
     var total=COLS*CELL;
     canvas.width=total*dpr;canvas.height=ROWS*CELL*dpr;
@@ -788,6 +846,7 @@ window._gameFns.petalmatch = function PM(a){
     if(e=document.getElementById('PMlv2'))e.textContent=level;
     if(e=document.getElementById('PMlv'))e.textContent=level;
     if(e=document.getElementById('PMchap'))e.textContent=CHAPTERS[objective.chapter].name;
+    syncBackdrop();   // the conservatory changes with the chapter
     if(e=document.getElementById('PMmv'))e.textContent=moves;
     if(e=document.getElementById('PMbar')){
       var pct;
@@ -1057,7 +1116,8 @@ window._gameFns.petalmatch = function PM(a){
     var imgs = {}, base = '/assets/games/petalmatch/runtime/';
     var WANT = ['base-0','base-1','base-2','base-3','base-4','base-5',
                 'spec-line-h','spec-line-v','spec-burst','spec-wild',
-                'block-3','block-2','block-1','block-0','cover-2','cover-1'];
+                'block-3','block-2','block-1','block-0','cover-2','cover-1',
+                'cell-empty','cell-alt','cell-locked'];
     var loaded = 0;
     for(var i=0;i<WANT.length;i++){
       (function(k){
@@ -1067,25 +1127,35 @@ window._gameFns.petalmatch = function PM(a){
         im.src = base + k + '.png';
       })(WANT[i]);
     }
-    function put(k,cx,cy,sz){
+    /* box = the width AND height of the square the sprite must fit inside,
+       in board pixels. Every sprite is trimmed hard to its own alpha (measured:
+       the painted pixels reach all four edges of all 16 files), so a box of one
+       CELL draws a flower edge to edge. Aspect is preserved, so a wide piece
+       like spec-line-h fills the width and centres vertically. */
+    function put(k,cx,cy,box){
       var im = imgs[k];
       if(!im) return false;
-      // fit the sprite inside the cell, preserving its aspect
-      var r = Math.min(sz/im.width, sz/im.height);
+      var r = Math.min(box/im.width, box/im.height);
       var w = im.width*r, h = im.height*r;
       ctx.drawImage(im, cx-w/2, cy-h/2, w, h);
       return true;
     }
     return {
       count:function(){ return loaded; },
+      /* The painted board tile, drawn UNDER everything. Full cell, no gap —
+         these are square tiles with their own bevelled edge, so they butt up
+         against each other the way the sheet was painted. */
+      tile:function(alt,x,y,sz){
+        return put(alt ? 'cell-alt' : 'cell-empty', x+sz/2, y+sz/2, sz);
+      },
       /* The dew/ice tile cover, drawn UNDER the piece. jelly is the number of
          layers still on this square. */
       cover:function(layers,cx,cy,sz){
         return put(layers >= 2 ? 'cover-2' : 'cover-1', cx, cy, sz);
       },
       /* Returns true when it has drawn the cell, false to let the
-         procedural renderer handle it. */
-      draw:function(cell,cx,cy,sz){
+         procedural renderer handle it. `box` is the full square to fill. */
+      draw:function(cell,cx,cy,box){
         var k = null;
         if(cell.type === -2){
           var hp = cell.block|0;
@@ -1100,16 +1170,22 @@ window._gameFns.petalmatch = function PM(a){
           k = 'base-' + (cell.type % 6);
         }
         if(!k) return false;
-        // the piece art is drawn a touch larger than the cell so petals
-        // and spikes read at board size instead of shrinking to a dot
-        return put(k, cx, cy, sz*1.18);
+        return put(k, cx, cy, box);
       }
     };
   })();
   window.PM_ART = PM_ART;
 
   function drawGem(cell,cx,cy,sz){
-    if(PM_ART.draw(cell,cx,cy,sz)) return;
+    /* ⛔ sz is the PROCEDURAL RADIUS (CELL*0.4 at rest, times the pop/bounce
+       animation scale). The painted sprites are trimmed to their own alpha and
+       want the whole CELL, so handing them sz drew every flower into a box
+       under half a cell wide — a big petal painting floating in dead space.
+       Stephen 2026-07-26: "the flowers should fill the boxes."
+       Divide out the 0.4 to recover the animation scale, then multiply by the
+       fill fraction. Keep it derived like this: the procedural fallback below
+       still needs sz as a radius, so the two must not be hand-synced. */
+    if(PM_ART.draw(cell,cx,cy,sz*(PM_FILL/0.4))) return;
     if(cell.type===-2){drawThorn(cx,cy,sz,cell.block);return;}
     if(cell.type===-1||cell.special==='spore'){drawSpore(cx,cy,sz);return;}
     drawFlower(cell.type,cx,cy,sz,cell.special,cell.stripeDir);
@@ -1157,9 +1233,13 @@ window._gameFns.petalmatch = function PM(a){
       for(var c=0;c<COLS;c++){
         var cell=grid[r][c];
         var jelly=cell&&cell.jelly||0;
-        var base=(r+c)%2===0?ch.tile1:ch.tile2;
-        ctx.fillStyle=base;
-        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+        /* Painted board tile (cell-empty / cell-alt alternating) when it has
+           loaded. The flat two-tone checker stays as the fallback so the board
+           is never a blank rectangle while the art downloads. */
+        if(!PM_ART.tile((r+c)%2===1, c*CELL, r*CELL, CELL)){
+          ctx.fillStyle=(r+c)%2===0?ch.tile1:ch.tile2;
+          ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+        }
         // Jelly overlay — translucent dew/moss tint
         if(jelly>0){
           // Painted ice-cover art when it has loaded; the old tint is the
