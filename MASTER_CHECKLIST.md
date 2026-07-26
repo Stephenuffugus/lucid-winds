@@ -425,7 +425,7 @@ matching code change from you.
   would undo good marketing.
 - [?] **X1 pacing sweep** — the Monopoly anchor already has Relaxed/Normal/Fast. A blanket
   sweep across all games would violate no-blanket-fixes. Needs specific game callouts.
-- [x] **Locked-song behavior — STEPHEN RULED 2026-07-26: the easter-egg model.**
+- [x] **Locked-song behavior — STEPHEN RULED 2026-07-26, verified as his direct words: the easter-egg model.**
   "Music unlocks when you unlock it in a game, it gets added to your player.
   They may be all easter eggs and that's cool — most games will end up with
   their own songs eventually." So: locked songs simply are not in the player
