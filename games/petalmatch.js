@@ -368,6 +368,21 @@ window._gameFns.petalmatch = function PM(a){
   var timedEnd=0, timedOver=false;
   function timedBest(){ try{ return parseInt(localStorage.getItem('lw_pm_timed_best')||'0',10)||0; }catch(e){ return 0; } }
   function timedBestSet(v){ try{ localStorage.setItem('lw_pm_timed_best',String(v)); }catch(e){} }
+  /* Timed pays Petals — Stephen 2026-07-26: "timed mode can pay petals, cap it
+     like the daily." 1 Petal per 5000 score, hard-capped at 20 a day (the same
+     ceiling the daily streak tops out at), UTC day bucket like everything else.
+     ⛔ The cap is the whole defence: timed is unbounded score, so an uncapped
+     rate would out-earn Journey in an afternoon and hollow out the shop. */
+  var TIMED_PAY_PER=5000, TIMED_PAY_CAP=20;
+  function timedPay(sc){
+    var today=Math.floor(Date.now()/864e5),rec=null;
+    try{ rec=JSON.parse(localStorage.getItem('lw_pm_timed_earn')||'null'); }catch(e){}
+    if(!rec||rec.d!==today)rec={d:today,n:0};
+    var earn=Math.min(Math.floor(sc/TIMED_PAY_PER), Math.max(0,TIMED_PAY_CAP-rec.n));
+    if(earn>0){ rec.n+=earn; try{ localStorage.setItem('lw_pm_timed_earn',JSON.stringify(rec)); }catch(e){}
+      PM_PETALS.add(earn); }
+    return {earn:earn,capLeft:Math.max(0,TIMED_PAY_CAP-rec.n)};
+  }
 
   /* Which flower types this level actually deals. Normally TYPES; Thin Meadow
      drops it by one for a single level. ⛔ TYPES itself STAYS AT 6 (Stephen,
@@ -1803,6 +1818,7 @@ window._gameFns.petalmatch = function PM(a){
     timedOver=true; lost=true;             // lost gates input; the panel owns the screen
     var best=timedBest(), isBest=score>best;
     if(isBest)timedBestSet(score);
+    var pay=timedPay(score);
     try{ _play('lose'); }catch(e){}
     if(score>0){ try{ _e('milestone'); _sr('petalmatch',{w:false,s:score,lv:level}); }catch(e){} }
     clearTimedPanel();
@@ -1813,8 +1829,11 @@ window._gameFns.petalmatch = function PM(a){
       'box-shadow:0 10px 34px rgba(0,0,0,0.6);font-family:DM Mono,monospace;color:#e8dcc8;';
     timedPanel.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;letter-spacing:0.12em;color:#c8a84b;">TIME</div>'
       +'<div style="font-size:1.1rem;margin:6px 0 2px;">'+score+' points</div>'
-      +'<div style="font-size:0.72rem;color:'+(isBest?'#7ab356':'#8a9178')+';margin-bottom:10px;">'
-      +(isBest?'New best!':'Best '+timedBest())+'</div>';
+      +'<div style="font-size:0.72rem;color:'+(isBest?'#7ab356':'#8a9178')+';">'
+      +(isBest?'New best!':'Best '+timedBest())+'</div>'
+      +'<div style="font-size:0.72rem;color:'+(pay.earn>0?'#c8a84b':'#8a9178')+';margin-bottom:10px;">'
+      +(pay.earn>0?('+'+pay.earn+' Petals'+(pay.capLeft===0?' · daily cap reached':''))
+                  :(pay.capLeft===0?'Daily Petal cap reached. Score still counts.':''))+'</div>';
     var again=document.createElement('button');
     again.type='button';
     again.style.cssText='width:100%;min-height:48px;margin:0 0 6px;border-radius:9px;cursor:pointer;'+
@@ -2960,6 +2979,7 @@ window._gameFns.petalmatch = function PM(a){
     mode:function(m){ if(m==='timed')startTimed(); else if(m==='journey')backToJourney();
       return {mode:mode,over:timedOver,best:timedBest(),left:mode==='timed'?Math.max(0,timedEnd-Date.now()):0}; },
     timedExpire:function(){ if(mode==='timed'){ timedEnd=Date.now()-1; } return 'expiring'; },
+    timedEarn:function(){ try{ return JSON.parse(localStorage.getItem('lw_pm_timed_earn')||'null'); }catch(e){ return null; } },
     buyBoost:function(key){ return pmBoost(key); },
     revive:function(){ pmRevive(); },
     types:function(){ return activeTypes; },
