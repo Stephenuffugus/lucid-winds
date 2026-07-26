@@ -138,9 +138,12 @@ items are marked here so nobody re-does them.
 - [ ] **Mix the ORIGINAL game into the 3D layout**: this camera angle, but the guy
   moves LEFT-TO-RIGHT (not down a tunnel). Brown/wood blocks, fruit that splits in
   half, tap = knife bounces farther, tap-and-hold = original rules, in 3D style.
-- [ ] **Wall-climb mode: spin needs a footing mechanic** — constant spin rate makes
-  climbing nearly impossible. Some way to slow/regulate the spin. "Really close to
-  being a great game."
+- [x] **Wall-climb footing — the brake EXISTED, discoverability shipped (commit
+  1a873a02).** Hold already brakes the spin and turns the blade to the wall
+  (wired, traced end to end) — but the how-to taught the OPPOSITE ("hold to keep
+  flipping") and nothing in the climb ever said otherwise. Now: a dedicated
+  how-to row + a toast at every climb start. Physics untouched. ⚠️ Stephen
+  feel-test with the knowledge; constants tune from his report if still hard.
 - [ ] **Sound: keep + embellish** — he loves the current SFX direction.
 - [ ] **Randomly generated levels** (walls, caps, forest feel like the original) —
   after the core is fun. Art/backgrounds AFTER playable ("we'll get into the assets
@@ -366,9 +369,9 @@ matching code change from you.
   source for each of the five asks. ⛔ Do NOT re-add hold-to-spin, chimney, mist,
   or kick — dead twice.
   **Player-visible tell:** the title screen footer prints "Super Slice 3D v5.0" (`#buildstamp`).
-- [ ] **Bump `BUILD` when shipping Slice 3D.** It last changed 2026-07-19, but two gameplay
-  commits landed after it (wall-climb HOLD, the hold-to-spin revert). The stamp is the only
-  version tell a player or Stephen has, and right now it under-reports. Cheap discipline fix.
+- [x] **Slice 3D BUILD stamp bumped v5.0 -> v5.1 (commit 1a873a02, verified in
+  file).** The stamp now covers the post-v5.0 gameplay commits; sw CACHE
+  slice3d-v60 in the same push.
 - [?] **Rabbit Samurai** — two overlapping asks: retheme to "Hedgehog Hammer Throw", AND
   rework from sideways auto-runner to a 2D platformer through a maze / open land. Big
   redesign, needs his call on scope.
