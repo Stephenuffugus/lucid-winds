@@ -356,6 +356,19 @@ window._gameFns.petalmatch = function PM(a){
     };
   })();
 
+  /* ═══ TIMED MODE — doc 06 §2, the player's other main ask ═══════════════
+     "I wish there was a different mode... maybe a timed mode that is based on
+     points accumulated" and "I wish I could change modes" keeping their level.
+     TIMED: 2 minutes, pure score, no objective, the board just keeps giving.
+     ⛔ Switching modes NEVER touches Journey progress — their frustration was
+     not the missing mode, it was feeling locked in. Journey's level/bestLevel
+     are simply left alone; the toggle rebuilds the board, nothing else. */
+  var mode='journey';
+  var TIMED_MS=120000;
+  var timedEnd=0, timedOver=false;
+  function timedBest(){ try{ return parseInt(localStorage.getItem('lw_pm_timed_best')||'0',10)||0; }catch(e){ return 0; } }
+  function timedBestSet(v){ try{ localStorage.setItem('lw_pm_timed_best',String(v)); }catch(e){} }
+
   /* Which flower types this level actually deals. Normally TYPES; Thin Meadow
      drops it by one for a single level. ⛔ TYPES itself STAYS AT 6 (Stephen,
      and the whole balance pass is calibrated at 6) — this is a per-level,
@@ -470,7 +483,7 @@ window._gameFns.petalmatch = function PM(a){
   hud.innerHTML=
     '<div style="'+CHIP+'"><span style="'+LBL+'">SCORE</span><span id="PMsc" style="font-size:0.95rem;color:#c8a84b;">0</span></div>'+
     '<div style="'+CHIP+'"><span style="'+LBL+'">LV</span><span id="PMlv2" style="font-size:0.95rem;color:#e8dcc8;">'+level+'</span></div>'+
-    '<div style="'+CHIP+'"><span style="'+LBL+'">MOVES</span><span id="PMmv" style="font-size:0.95rem;color:#e8dcc8;">'+moves+'</span></div>';
+    '<div style="'+CHIP+'"><span id="PMmvLbl" style="'+LBL+'">MOVES</span><span id="PMmv" style="font-size:0.95rem;color:#e8dcc8;">'+moves+'</span></div>';
   pan.appendChild(hud);
 
   /* Objective progress. Doc 04 §B6-B7: the bar fills toward the target and
@@ -557,9 +570,27 @@ window._gameFns.petalmatch = function PM(a){
   pan.appendChild(shelfWrap);
 
   var walletRow=document.createElement('div');
-  walletRow.style.cssText='display:flex;justify-content:center;align-items:center;gap:5px;'+
+  walletRow.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;'+
     'margin:0 0 5px;font-size:0.68rem;color:#8a9178;';
   shelfWrap.appendChild(walletRow);
+  var walletInfo=document.createElement('div');
+  walletInfo.style.cssText='display:flex;align-items:center;gap:5px;min-height:48px;';
+  walletRow.appendChild(walletInfo);
+  /* Mode toggle. Doc 06: switchable WITHOUT touching Journey progress — this
+     button only ever rebuilds the board; level and bestLevel are never read
+     or written by the switch. 48px touch law. */
+  var modeBtn=document.createElement('button');
+  modeBtn.type='button';
+  modeBtn.style.cssText='min-height:48px;padding:3px 12px;cursor:pointer;flex:0 0 auto;'+
+    'background:rgba(18,24,16,0.88);border:1px solid rgba(200,168,75,0.45);border-radius:9px;'+
+    'color:#c8a84b;font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.08em;';
+  modeBtn.id='PMmode';
+  modeBtn.addEventListener('click',function(ev){ ev.preventDefault();
+    if(animating)return;
+    if(mode==='timed')backToJourney(); else startTimed();
+    renderShelf();
+  });
+  walletRow.appendChild(modeBtn);
 
   var shelf=document.createElement('div');
   shelf.style.cssText='display:flex;gap:4px;justify-content:center;align-items:stretch;';
@@ -589,7 +620,7 @@ window._gameFns.petalmatch = function PM(a){
     return b;
   }
 
-  walletRow.innerHTML=petalGlyph(15)+
+  walletInfo.innerHTML=petalGlyph(15)+
     '<strong id="PMpet" style="color:#7ab356;font-size:0.8rem;">0</strong>'+
     '<span style="letter-spacing:0.06em;">PETALS</span>'+
     '<span id="PMstk" style="color:#c8a84b;letter-spacing:0.05em;"></span>';
@@ -943,7 +974,9 @@ window._gameFns.petalmatch = function PM(a){
       + '<span style="font-family:Bebas Neue,sans-serif;letter-spacing:0.09em;color:#c8a84b;font-size:0.78rem;flex:0 0 auto;">'
       + CHAPTERS[o.chapter].name.toUpperCase() + '</span>'
       + '<span style="flex:1 1 auto;text-align:right;font-size:0.78rem;">';
-    if(o.kind==='score'){
+    if(o.kind==='timed'){
+      html+='TIMED · best <strong style="color:#c8a84b;">'+timedBest()+'</strong>';
+    } else if(o.kind==='score'){
       html+='Reach <strong style="color:#c8a84b;">'+o.target+'</strong> pts';
     } else if(o.kind==='dew'){
       html+='Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+dewTotal(o)+(o.doubleLayer?' ×2':'');
@@ -1734,6 +1767,89 @@ window._gameFns.petalmatch = function PM(a){
     return false;
   }
 
+  function startTimed(){
+    if(mode==='timed')return;
+    mode='timed'; timedOver=false; timedEnd=Date.now()+TIMED_MS;
+    won=false; lost=false; score=0; animating=false; selected=null; fx=[];
+    aiming=null; movedThisLevel=true; pmCloseBoost(); clearTimedPanel();
+    activeTypes=TYPES;
+    /* a pseudo-objective: seedObstacles matches no blocker kind, so the board
+       is clean; isObjComplete defaults false, so Journey's advance never fires */
+    objective={kind:'timed',chapter:objective?objective.chapter:0,moves:9999,target:0,
+               finale:false,label:'Two minutes. Score everything.'};
+    moves=9999;
+    resetObjState();
+    initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
+    clearHint();
+    sm('TIMED. Two minutes, pure score. Go.');
+    updateHUD();render();
+  }
+  function backToJourney(){
+    if(mode==='journey')return;
+    mode='journey'; timedOver=false; clearTimedPanel();
+    won=false; lost=false; score=0; animating=false; selected=null; fx=[];
+    aiming=null; movedThisLevel=false; activeTypes=TYPES;
+    objective=genLevel(level); moves=objective.moves;
+    resetObjState();
+    initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
+    clearHint();
+    sm('Back to the Journey. Level '+level+', right where you left it.');
+    updateHUD();render();
+  }
+  var timedPanel=null;
+  function clearTimedPanel(){ if(timedPanel&&timedPanel.parentNode)timedPanel.parentNode.removeChild(timedPanel); timedPanel=null; }
+  function endTimed(){
+    if(timedOver)return;
+    timedOver=true; lost=true;             // lost gates input; the panel owns the screen
+    var best=timedBest(), isBest=score>best;
+    if(isBest)timedBestSet(score);
+    try{ _play('lose'); }catch(e){}
+    if(score>0){ try{ _e('milestone'); _sr('petalmatch',{w:false,s:score,lv:level}); }catch(e){} }
+    clearTimedPanel();
+    timedPanel=document.createElement('div');
+    timedPanel.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'+
+      'z-index:9;width:86%;max-width:320px;padding:14px;border-radius:12px;text-align:center;'+
+      'background:rgba(12,16,10,0.96);border:1px solid rgba(200,168,75,0.55);'+
+      'box-shadow:0 10px 34px rgba(0,0,0,0.6);font-family:DM Mono,monospace;color:#e8dcc8;';
+    timedPanel.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;letter-spacing:0.12em;color:#c8a84b;">TIME</div>'
+      +'<div style="font-size:1.1rem;margin:6px 0 2px;">'+score+' points</div>'
+      +'<div style="font-size:0.72rem;color:'+(isBest?'#7ab356':'#8a9178')+';margin-bottom:10px;">'
+      +(isBest?'New best!':'Best '+timedBest())+'</div>';
+    var again=document.createElement('button');
+    again.type='button';
+    again.style.cssText='width:100%;min-height:48px;margin:0 0 6px;border-radius:9px;cursor:pointer;'+
+      'background:rgba(20,27,17,0.94);border:1px solid rgba(122,179,86,0.6);color:#7ab356;'+
+      'font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.08em;';
+    again.textContent='PLAY AGAIN';
+    again.addEventListener('click',function(ev){ ev.preventDefault(); mode='journey'; startTimed(); });
+    var back=document.createElement('button');
+    back.type='button';
+    back.style.cssText='width:100%;min-height:48px;border-radius:9px;cursor:pointer;'+
+      'background:rgba(30,38,26,0.9);border:1px solid rgba(200,168,75,0.4);color:#c8a84b;'+
+      'font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.08em;';
+    back.textContent='BACK TO JOURNEY';
+    back.addEventListener('click',function(ev){ ev.preventDefault(); backToJourney(); });
+    timedPanel.appendChild(again);
+    timedPanel.appendChild(back);
+    pan.appendChild(timedPanel);
+    updateHUD();
+  }
+  /* The clock. One quarter-second interval for the whole mount; does nothing
+     outside timed mode. Cleared nowhere on purpose: the LW game tab tears the
+     mount down with innerHTML='', and an interval touching only dead nodes is
+     harmless, but be tidy anyway and keep a handle. */
+  setInterval(function(){
+    if(mode!=='timed'||timedOver)return;
+    var left=timedEnd-Date.now();
+    if(left<=0){ endTimed(); return; }
+    var e=document.getElementById('PMmv');
+    if(e){ var sec=Math.ceil(left/1000);
+      e.textContent=Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2);
+      e.style.color=sec<=10?'#c47a7a':'#e8dcc8'; }
+    var bar=document.getElementById('PMbar');
+    if(bar)bar.style.width=(left/TIMED_MS*100)+'%';
+  },250);
+
   function updateHUD(){
     var e;
     try{ renderShelf(); }catch(err){}   // keeps the wallet + affordability honest
@@ -1742,8 +1858,12 @@ window._gameFns.petalmatch = function PM(a){
     if(e=document.getElementById('PMlv'))e.textContent=level;
     if(e=document.getElementById('PMchap'))e.textContent=CHAPTERS[objective.chapter].name;
     syncBackdrop();   // the conservatory changes with the chapter
-    if(e=document.getElementById('PMmv'))e.textContent=moves;
+    if(e=document.getElementById('PMmvLbl'))e.textContent=(mode==='timed')?'TIME':'MOVES';
+    if(mode!=='timed'){
+      if(e=document.getElementById('PMmv')){ e.textContent=moves; e.style.color='#e8dcc8'; }
+    }
     if(e=document.getElementById('PMbar')){
+      if(mode==='timed')return;          // the ticker owns the bar and clock in timed
       var pct=progressPct();
       e.style.width=pct+'%';
       // light the star pips the fill has reached
@@ -2020,6 +2140,13 @@ window._gameFns.petalmatch = function PM(a){
       b.style.borderColor=(aiming===mid[i])?'rgba(122,179,86,0.95)':'rgba(200,168,75,0.42)';
       b.style.boxShadow=(aiming===mid[i])?'0 0 10px rgba(122,179,86,0.55)':'none';
     }
+    var mb=document.getElementById('PMmode');
+    if(mb)mb.textContent=(mode==='timed')?'JOURNEY':'TIMED';
+    if(mode==='timed'){
+      boostBtn.style.display='none';
+      reviveBtn.style.display='none';
+      return;
+    }
     boostBtn.style.display=(!movedThisLevel||lost)?'flex':'none';
     boostBtn.style.opacity=PM_PETALS.can(PM_SHOP.breath.c)?'1':'0.42';
     reviveBtn.style.display=lost?'flex':'none';
@@ -2033,6 +2160,14 @@ window._gameFns.petalmatch = function PM(a){
   }
 
   function checkState(){
+    /* Timed has no objective and no move budget; the clock is the only judge.
+       Everything below is Journey's business. */
+    if(mode==='timed'){
+      if(timedOver)return;
+      if(!findValidSwap()){ sm('No moves, shuffling!'); shuffleGrid(); }
+      lastInputAt=Date.now();hintCells=null;
+      return;
+    }
     if(isObjComplete()){
       // rate the level on the budget it was WON with, before any of it resets
       var earnedStars=starsFor(moves,objective.moves);
@@ -2745,6 +2880,7 @@ window._gameFns.petalmatch = function PM(a){
     /* A fresh level means a fresh pre-level window and a full deck again.
        ⛔ activeTypes must reset here too, or a Thin Meadow bought before a
        retry would carry into every later level for free. */
+    mode='journey';timedOver=false;clearTimedPanel();
     activeTypes=TYPES;movedThisLevel=false;aiming=null;pmCloseBoost();
     initCanvas();level=bestLevel;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
@@ -2761,6 +2897,7 @@ window._gameFns.petalmatch = function PM(a){
     /* A fresh level means a fresh pre-level window and a full deck again.
        ⛔ activeTypes must reset here too, or a Thin Meadow bought before a
        retry would carry into every later level for free. */
+    mode='journey';timedOver=false;clearTimedPanel();
     activeTypes=TYPES;movedThisLevel=false;aiming=null;pmCloseBoost();
     initCanvas();score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
@@ -2820,6 +2957,9 @@ window._gameFns.petalmatch = function PM(a){
       return {streak:pmStreakToday(),comebackDue:pmComebackDue(),lossPct:lastLossPct,
               specials:n,progress:+progressPct().toFixed(1)}; },
     retry:function(){ window._PMR(); },
+    mode:function(m){ if(m==='timed')startTimed(); else if(m==='journey')backToJourney();
+      return {mode:mode,over:timedOver,best:timedBest(),left:mode==='timed'?Math.max(0,timedEnd-Date.now()):0}; },
+    timedExpire:function(){ if(mode==='timed'){ timedEnd=Date.now()-1; } return 'expiring'; },
     buyBoost:function(key){ return pmBoost(key); },
     revive:function(){ pmRevive(); },
     types:function(){ return activeTypes; },
