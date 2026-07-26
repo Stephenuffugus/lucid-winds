@@ -199,7 +199,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 function updateResumeBtn(){ var b=$('b-resume'); if(!b) return; b.style.display=(curScreen==='s-title'&&G&&G.phase==='paused')?'flex':'none'; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.2';
+var BUILD='v1.3';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='gt_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -218,8 +218,10 @@ var BEST=parseInt(LS.get(K.best)||'0',10)||0;
    Pure cosmetic — never changes play. price 0 = free · -1 = earn by playing ·
    premium = Support the Studio (real-money Supporter Pack, no fake grants). */
 var SKINS=[
-  { id:'s1', name:'Midnight Library', blurb:'A bookbinder’s midnight library.', price:0 },
-  { id:'s2', name:'Astral Bindery',   blurb:'Star-embossed books under the moon.', price:-1, need:5,  earn:'Clear 5 grounds' },
+  /* s2 is the free starter (lightest non-premium look, measured in play — Jessie call);
+     s1 Midnight Library moved onto its old 5-grounds earn rung so the ladder keeps its first reward. */
+  { id:'s2', name:'Astral Bindery',   blurb:'Star-embossed books under the moon.', price:0 },
+  { id:'s1', name:'Midnight Library', blurb:'A bookbinder’s midnight library.', price:-1, need:5,  earn:'Clear 5 grounds' },
   { id:'s3', name:'Neon Nocturne',    blurb:'Electric arcade neon.', price:-1, need:20, earn:'Clear 20 grounds' },
   { id:'s4', name:'Paper Warren',     blurb:'Folded-paper fox and rabbits.', premium:true },
   { id:'s5', name:'Stained Glass',    blurb:'Cathedral glass, moths and bats.', premium:true },
@@ -230,10 +232,10 @@ var SKINS=[
 function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i]; return SKINS[0]; }
 var UNLOCK_ALL=/[?&]gtunlock=1/.test(location.search); // Stephen: preview every look
 var SK=(function(){ try{ var o=JSON.parse(LS.get('gt_skins')); if(o&&o.owned) return o; }catch(e){} return null; })();
-if(!SK) SK={ owned:['s1'], sel:'s1' };
-if(!SK.owned || !SK.owned.length) SK.owned=['s1'];
-if(SK.owned.indexOf('s1')<0) SK.owned.unshift('s1');
-if(!SK.sel) SK.sel='s1';
+if(!SK) SK={ owned:['s2'], sel:'s2' };
+if(!SK.owned || !SK.owned.length) SK.owned=['s2'];
+if(SK.owned.indexOf('s2')<0) SK.owned.unshift('s2'); // free starter is owned by everyone; saved profiles keep whatever else they own
+if(!SK.sel) SK.sel='s2';
 function saveSkins(){ LS.set('gt_skins', JSON.stringify({owned:SK.owned, sel:SK.sel})); }
 function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
 function ownsSkin(id){
