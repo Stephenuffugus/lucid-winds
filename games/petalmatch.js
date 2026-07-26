@@ -141,7 +141,39 @@ window._gameFns.petalmatch = function PM(a){
   overlayHost.style.cssText='position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;';
   pan.appendChild(overlayHost);
 
-  mc(a).innerHTML='<button class="gb" onclick="_PMN()">↻ New Game</button> <button class="gb" onclick="_PMR()">RETRY LV</button> <button class="gb" onclick="_PMH()">HINT</button>';
+  /* Controls wear Stephen's painted pill. border-image again, so the gold caps
+     and the laurel keep their own size while the middle stretches to whatever
+     the label needs — and the interior stays the dark card the house rule asks
+     for, never a filled slab sitting on top of painted art.
+
+     ⛔ ui-pill, NOT pill-button. pill-button carries a flower medallion on its
+     LEFT end only: measured, that medallion is 135 of 404px, so a 9-slice would
+     need a 33% left slice and at a ~125px button there would be no middle left
+     to stretch. ui-pill is symmetric — measured frame 38/39px on the sides
+     (9.5%) and 15/19px top and bottom (~17%). Those measurements ARE the slice
+     values below; do not eyeball them. */
+  /* ⛔ Applied with style.cssText, NEVER as a style="" attribute in an HTML
+     string. url("...") contains double quotes, which close the attribute early
+     — the whole rule is silently dropped and you get the plain .gb pill back
+     with no error anywhere. That cost a build/screenshot cycle to spot.
+
+     flex:1 1 0 makes the three share the row. .gcr wraps, and the 32px of
+     border each button now carries pushed the row over 412px, so HINT dropped
+     to a second line. */
+  var PM_PILL='border:9px solid transparent;border-width:9px 15px;'+
+    "border-image:url('/assets/games/petalmatch/runtime/ui-pill.png') 17% 9.5% fill round;"+
+    'background:none;box-shadow:none;border-radius:0;padding:2px 4px;min-height:48px;'+
+    // the laurel caps eat 30px of a ~128px button, so the label has to stay on
+    // one line or "New Game" breaks in half between the leaves
+    'color:#e8dcc8;flex:1 1 0;min-width:0;white-space:nowrap;font-size:0.74rem;';
+  var mcRow=mc(a);
+  mcRow.innerHTML='<button class="gb" onclick="_PMN()">↻ New Game</button>'+
+    '<button class="gb" onclick="_PMR()">RETRY LV</button>'+
+    '<button class="gb" onclick="_PMH()">HINT</button>';
+  (function(){
+    var bs=mcRow.getElementsByTagName('button');
+    for(var bi=0;bi<bs.length;bi++) bs[bi].style.cssText+=PM_PILL;
+  })();
 
   // ───────── level generator ─────────
   /* ═══════════════════════════════════════════════════════════════════
@@ -257,9 +289,20 @@ window._gameFns.petalmatch = function PM(a){
     }
   }
 
+  /* Objective emblems. MANIFEST warned these are keyed by SHAPE and told us to
+     confirm the mapping before wiring, so: dew shield = clear the dew tiles,
+     clover = gather colours, beam = reach a score, cross = break thorns (the
+     four-armed thorn cross), lotus = the mixed chapter finale. */
+  var OBJ_EMBLEM={score:'emblem-beam',dew:'emblem-dewshield',gather:'emblem-clover',
+                  thorns:'emblem-cross',mix:'emblem-lotus'};
+
   function renderObjective(){
     var o=objective,s=objState;
-    var html='<div style="font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;color:#c8a84b;font-size:0.82rem;margin-bottom:3px;">OBJECTIVE · '+CHAPTERS[o.chapter].name.toUpperCase()+'</div>';
+    var em=OBJ_EMBLEM[o.kind];
+    var badge=(em&&PM_ART.has(em))
+      ? '<img src="'+PM_ART.url(em)+'" alt="" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.7));">'
+      : '';
+    var html='<div style="font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;color:#c8a84b;font-size:0.82rem;margin-bottom:3px;">'+badge+'OBJECTIVE · '+CHAPTERS[o.chapter].name.toUpperCase()+'</div>';
     if(o.kind==='score'){
       html+='<div>Reach <strong style="color:#c8a84b;">'+o.target+'</strong> points</div>';
     } else if(o.kind==='dew'){
@@ -294,8 +337,38 @@ window._gameFns.petalmatch = function PM(a){
     return false;
   }
 
+  /* Painted call-outs. Stephen cut NICE / GREAT / AMAZING / INCREDIBLE /
+     LAST MOVE as finished lettering, so the big moments show his art instead of
+     a Bebas string. Anything without a matching painting keeps the text banner,
+     which is also what shows if the art has not warmed yet. */
+  var BANNER_ART={
+    'BLOOM!':'pop-nice',
+    'BLOOM BURST!':'pop-great',
+    'VINE CROSS!':'pop-great',
+    'PLUS BLAST!':'pop-amazing',
+    'MEGA BURST!':'pop-amazing',
+    'PETAL STORM!':'pop-amazing',
+    'SPORE CLOUD!':'pop-amazing',
+    "GARDEN'S GRACE!":'pop-incredible'
+  };
+  function bannerArt(key){
+    var now=Date.now();
+    if(now-lastBannerAt<400)return true;   // swallowed, same as the text path
+    lastBannerAt=now;
+    var el=document.createElement('img');
+    el.src=PM_ART.url(key);
+    el.style.cssText='position:absolute;left:50%;top:50%;width:62vw;max-width:260px;'+
+      'transform:translate(-50%,-50%);pointer-events:none;'+
+      'filter:drop-shadow(0 3px 10px rgba(0,0,0,0.85));animation:pmBanner 1.1s ease-out forwards;';
+    overlayHost.appendChild(el);
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},1200);
+    return true;
+  }
+
   // ───────── banners (agent C: BLOOM! / PETAL STORM! / GARDEN'S GRACE!) ─────────
   function banner(text,color){
+    var art=BANNER_ART[text];
+    if(art&&PM_ART.has(art)&&bannerArt(art))return;
     var now=Date.now();
     if(now-lastBannerAt<400)return;
     lastBannerAt=now;
@@ -1118,15 +1191,32 @@ window._gameFns.petalmatch = function PM(a){
                 'spec-line-h','spec-line-v','spec-burst','spec-wild',
                 'block-3','block-2','block-1','block-0','cover-2','cover-1',
                 'cell-empty','cell-alt','cell-locked'];
+    /* Second wave: nothing here is needed to draw a playable board, so it must
+       not compete with the pieces for bandwidth on a phone. Warmed after the
+       board is up. Each is still guarded at the draw site, so a combo that
+       lands before its pop has arrived falls back to the text banner. */
+    var LATER = ['fx-burst','fx-sparkle','fx-ring','fx-flash',
+                 'pop-nice','pop-great','pop-amazing','pop-incredible','pop-lastmove',
+                 'emblem-dewshield','emblem-clover','emblem-beam','emblem-cross','emblem-lotus',
+                 'star-lit','star-empty'];
     var loaded = 0;
-    for(var i=0;i<WANT.length;i++){
-      (function(k){
-        var im = new Image();
-        im.onload = function(){ imgs[k] = im; loaded++; };
-        im.onerror = function(){ /* leave it out; the fallback covers it */ };
-        im.src = base + k + '.png';
-      })(WANT[i]);
+    function fetch(k){
+      var im = new Image();
+      im.onload = function(){ imgs[k] = im; loaded++; };
+      im.onerror = function(){ /* leave it out; the fallback covers it */ };
+      im.src = base + k + '.png';
     }
+    var warmCbs=[];
+    for(var i=0;i<WANT.length;i++) fetch(WANT[i]);
+    setTimeout(function(){
+      for(var j=0;j<LATER.length;j++) fetch(LATER[j]);
+      /* Anything drawn ONCE at mount (the objective emblem) has already missed
+         its chance by now, so tell it to repaint. Without this the emblem only
+         appeared after the first move happened to re-render the bar. */
+      setTimeout(function(){
+        for(var c=0;c<warmCbs.length;c++){ try{ warmCbs[c](); }catch(e){} }
+      }, 700);
+    }, 1500);
     /* box = the width AND height of the square the sprite must fit inside,
        in board pixels. Every sprite is trimmed hard to its own alpha (measured:
        the painted pixels reach all four edges of all 16 files), so a box of one
@@ -1142,6 +1232,24 @@ window._gameFns.petalmatch = function PM(a){
     }
     return {
       count:function(){ return loaded; },
+      has:function(k){ return !!imgs[k]; },
+      url:function(k){ return base + k + '.png'; },
+      onWarm:function(cb){ warmCbs.push(cb); },
+      /* Free-floating sprite at an arbitrary size + alpha + spin. Used by the
+         clear/combo effects, which are not on the cell grid. */
+      fx:function(k,cx,cy,box,alpha,rot){
+        var im = imgs[k];
+        if(!im) return false;
+        var r = Math.min(box/im.width, box/im.height);
+        var w = im.width*r, h = im.height*r;
+        ctx.save();
+        ctx.globalAlpha = alpha===undefined ? 1 : alpha;
+        ctx.translate(cx,cy);
+        if(rot) ctx.rotate(rot);
+        ctx.drawImage(im, -w/2, -h/2, w, h);
+        ctx.restore();
+        return true;
+      },
       /* The painted board tile, drawn UNDER everything. Full cell, no gap —
          these are square tiles with their own bevelled edge, so they butt up
          against each other the way the sheet was painted. */
@@ -1175,6 +1283,8 @@ window._gameFns.petalmatch = function PM(a){
     };
   })();
   window.PM_ART = PM_ART;
+  // the objective bar is painted once at mount, before the second art wave lands
+  PM_ART.onWarm(function(){ try{ renderObjective(); }catch(e){} });
 
   function drawGem(cell,cx,cy,sz){
     /* ⛔ sz is the PROCEDURAL RADIUS (CELL*0.4 at rest, times the pop/bounce
@@ -1295,17 +1405,20 @@ window._gameFns.petalmatch = function PM(a){
         }
         var sz=CELL*0.4*renderScale*(1+spawnBoost);
         if(sz>0.5)drawGem(cell,cx,cy,sz);
-        // Clear-spark ring when pop peaks
+        // Clear burst when the pop peaks — Stephen's painted fx-burst expanding
+        // and fading. The stroked ring below is the fallback until it warms.
         if(cell.clearAt){
           var ca2=now-cell.clearAt;
           if(ca2>60&&ca2<220){
-            var ringA=1-(ca2-60)/160;
-            ctx.save();ctx.globalAlpha=ringA*0.7;
-            ctx.strokeStyle=cell.type===-1?'#e8dcc8':(GEMS[cell.type]?GEMS[cell.type].color:'#c8a84b');
-            ctx.lineWidth=2;
-            var rad=CELL*0.35+(ca2-60)/160*CELL*0.5;
-            ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
-            ctx.restore();
+            var t2=(ca2-60)/160, ringA=1-t2;
+            if(!PM_ART.fx('fx-burst',cx,cy,CELL*(0.9+t2*1.1),ringA*0.9,t2*0.9)){
+              ctx.save();ctx.globalAlpha=ringA*0.7;
+              ctx.strokeStyle=cell.type===-1?'#e8dcc8':(GEMS[cell.type]?GEMS[cell.type].color:'#c8a84b');
+              ctx.lineWidth=2;
+              var rad=CELL*0.35+t2*CELL*0.5;
+              ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
+              ctx.restore();
+            }
           }
         }
         if(selected&&selected.r===r&&selected.c===c){

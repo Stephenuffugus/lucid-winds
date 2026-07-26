@@ -41,6 +41,19 @@ matching code change from you.
   errors, all 6 special/blocker cases resolve, balance unaffected, smoke 66 pass 0 fail.
   Procedural renderer kept as a fallback. ⛔ TYPES stays at 6; flowers 7 and 8 are for
   expansions. One redo logged (board shadow, magenta on magenta).
+- [x] **Petal Match art ON SCREEN properly (2026-07-26)** — the first pass wired the files but
+  was never LOOKED at. Stephen: "the flowers should fill the boxes, and wheres the background."
+  Both were real: pieces were drawn into 0.4 of a cell (a radius/box units bug) and the four
+  painted conservatories were cut but never referenced. Now fixed + widened.
+  Verified by screenshot at 412x915 via the new `scripts/petalmatch_shot.js`:
+  35/35 sprites load, 0 404s, 0 page errors; pieces fill the cell (PM_FILL 0.96); all four
+  chapter backdrops confirmed (Meadow/Summer/Autumn/Winter, shot at levels 1/12/26/40);
+  painted board tiles, objective emblems, ui-pill buttons on one row, combo pop art and
+  fx-burst all confirmed warmed and rendering. Gameplay unaffected — balance bot levels 1-6
+  plays every objective kind, "reasonably smooth level to level".
+  Runtime art 183KB after quantizing (was 1036KB); pops/fx/emblems load in a deferred second
+  wave so they never compete with the board.
+  ⛔ STILL UNWIRED: tools, medals, map nodes, tutorial art, banners, alternate skins.
 - [?] **Blobworks purple monsters** — asset list delivered (sheet 12). Needs the art.
 - [?] **OriVex sheets + backdrops** — asset lists delivered (D3). Needs the art.
 - [?] **Sky Wolf arcade icon** — current icon is cut from the banner, so the ears are
