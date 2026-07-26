@@ -246,9 +246,13 @@ items are marked here so nobody re-does them.
 - [ ] **Hunch prompt bank**: research classic Pictionary clue banks; grow the bank
   so children can play and understand. Also open (found in code, flagged): the
   round timer starts on round LOAD, not first stroke.
-- [ ] **Flipbook**: 5th eyeball set (the "closed" one) is bad — remove, add a real
-  closed-eyes set; accordion menu; the notebook should be COMPLETELY blank so
-  people can draw on all of it.
+- [x] **Flipbook all three DONE, verified (commit cbd4cb3f).** Closed eyes redrawn
+  (the old set was droopy-open with bags); three-tab accordion (Draw/Pages/More),
+  IDs unchanged; the red margin line removed — stroke through its old position
+  asserted inking. ⭐ Found WHY its controls measured 35px: they were 48 CSS px on
+  a transform-scaled stage — CSS pixels lie by the stage scale. Raised to 70 CSS
+  = 48.6+ rendered at iPhone SE. ⛔ The whole 48px sweep must measure RENDERED px
+  (memory: touch-targets-measure-rendered-px). BUILD v2.2, sw v6.
 - [x] **Yacht-Sea asset list doc DELIVERED + verified in 012Assets** (doc id
   1KbneGqftkctM9at2gpGQ2DIhMO5yLoZkCJ1QQFm5k2Q): 7 sheets — own brass-porthole dice
   (the game currently borrows the LOCKED shared dice with a blue filter; doc routes
