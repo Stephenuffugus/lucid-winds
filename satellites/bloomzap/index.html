@@ -216,7 +216,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">Word Lightning · a Sky Wolf solo remake of the classic word game WordZap.<br>Single self-contained file · lexicon of 9,600 words · zero assets.</div>
+    <div class="foot">Word Lightning · a Sky Wolf solo remake of the classic word game WordZap.<br>Single self-contained file · lexicon of <span id="lexcount">13,511</span> words · zero assets.</div>
   </div></div>
 
   <!-- PLAY -->
@@ -730,6 +730,7 @@ function boot(){
   $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound) sfx('ui'); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   $('buildstamp').textContent='Word Lightning '+BUILD+' · '+DICT.size+' words';
+try{ var _lx=document.getElementById('lexcount'); if(_lx)_lx.textContent=DICT.size.toLocaleString(); }catch(e){}
   updateRec();
 }
 
