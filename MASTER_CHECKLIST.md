@@ -63,9 +63,14 @@ items are marked here so nobody re-does them.
   (87KB jpg, was a 385KB png over the 150KB law), OG 1200x630 with the title composed
   into the painting's own dark panel, icons 192/512 on the crystal lotus, portal thumb
   cache stamp bumped to 2026072601.
-- [ ] **Algorithmic hooks (Stephen: "see what you can do")** — retention design:
-  streaks, near-miss framing, variable reward, comeback moments. Design first, my
-  proposals to him before building; no dark patterns, no ads, no real money.
+- [x] **Algorithmic hooks SHIPPED, verified (commit e6c11ca7).** The honest three:
+  daily streak (first clear each day pays a climbing Petal bonus, 5..20 cap, DAY N
+  chip on the wallet row), near-miss framing (out-of-moves says HOW close via the
+  same progressPct() the bar draws — the screen cannot contradict itself; +5 Moves
+  glows gold at 80%+), comeback grant (3 straight losses on one level = every retry
+  opens with a FREE Bloom Burst until cleared, shares placeHeadStart() with the
+  paid boost). Hooks probe 5/5 through the real input path; powerup probe 19/19.
+  Ladder untouched — nothing manufactures difficulty.
 - [ ] **"Fully developed"** — standing direction; the open feature list is already in
   the PETAL MATCH FULL BUILD-OUT section above (timed mode, endless/daily, new
   specials, competitive layer).
@@ -79,8 +84,14 @@ items are marked here so nobody re-does them.
   settings — best honest version: detect denial, show per-platform instructions.)
 
 ### 🖥 Studio-wide / portal
-- [ ] **Feedback button must be dismissable (Stephen)** — swipe away or an X so it
-  never blocks fullscreen play. Applies to the shared shell button + satellites.
+- [x] **Feedback button dismissable DONE, verified (rode into e6c11ca7; cache rule
+  d36adfaa).** Investigated first: the only FAB floating OVER gameplay is the
+  portal's (shells use a sticky-header button; the LW app retired its floater in
+  April). 48px corner × hides it for the rest of the day (localStorage day bucket,
+  returns tomorrow — feedback matters). Verified headless: tap removes, persists
+  across reload, returns on a stale day key. Also closed the cache gap it exposed:
+  feedback.js matched no .htaccess rule (the shell.js trap) — now in the
+  revalidation rule + loaded ?v=2.
 - [x] **Word Lightning rename** — already live in the portal: bloomzap card reads
   "Word Lightning" with the storm description + thumb (verified portal/index.html:730
   2026-07-26). Slug stays `bloomzap` per the display≠slug law.
@@ -206,9 +217,12 @@ items are marked here so nobody re-does them.
   actual gameplay better.
 - [ ] **Plot Bloom** (extends older entry): desc → 1 concise sentence; game needs
   reworking to make sense.
-- [ ] **Mini Crossword** (extends older layout entry): typing bounces the cursor
-  back to the first open slot every letter — should flow along the word from where
-  you started, across or down.
+- [x] **Mini Crossword typing FIXED, verified (commit 0f535a33).** advance() parked
+  the cursor at a word's last cell forever; now flows forward to the next
+  same-direction word with an open square. Real-keydown probe: trail 2-3-4-6-7-8,
+  one fill per keystroke, backspace steps back one, built-in solve checks pass.
+  BUILD stamp 1.1 so a stale phone copy is provable. Older "layout" note stays
+  open pending Jessie's specifics.
 
 ### 💡 New game ideas (Stephen + Jessie — need names/design before building)
 - [ ] **Fox picnic hang-man** — hangman alternative where a fox creeps toward the
@@ -384,9 +398,12 @@ Theme deliberately left open for the designer; every asset is described by funct
   is a stroll, forever, in the same order. Level 25 = 12 blockers × 2 hits = 24 breaks in
   39 moves. Fix: seed the order per chapter, rate every generated level and reject
   out-of-band ones, keep ONE deliberate spike at each chapter's end.
-- [ ] **Timed mode + mode switching** ⭐ second, also no art. The player's explicit ask:
-  a 2-minute pure-score mode, and the ability to change modes WITHOUT losing Journey
-  progress. Their frustration was feeling locked in, not the missing mode.
+- [x] **Timed mode + mode switching SHIPPED, verified (commit c22be0a7).** 48px
+  TIMED toggle on the shelf: 2 minutes, pure score, clean board, best saved; end
+  panel with PLAY AGAIN / BACK TO JOURNEY. The switch reads/writes NOTHING of
+  Journey progress — probe proves level untouched + full budget on return (12/12
+  through the real UI). Timed pays no Petals yet: unbounded-score farm vector,
+  Stephen's economy call.
 - [ ] **Endless + Daily modes** (Daily makes it directory-eligible)
 - [ ] **New specials** — strip (6), quake (7), and the three nobody else ships:
   ⭐ serpentine (travels a winding path), large 2×2 piece, box-of-six. Serpentine first,
