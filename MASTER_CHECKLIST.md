@@ -106,6 +106,9 @@ items are marked here so nobody re-does them.
 - [x] **Word Lightning rename** — already live in the portal: bloomzap card reads
   "Word Lightning" with the storm description + thumb (verified portal/index.html:730
   2026-07-26). Slug stays `bloomzap` per the display≠slug law.
+- [x] **Word count brag = the real number (Stephen: "do the real number"; commit
+  0c94ebf6).** Footer renders DICT.size live (13,511 today), verified headless —
+  it can never drift from the dictionary again.
 - [x] **OriVex rename** — already live: petalvex card reads "OriVex" (verified
   portal/index.html:732). Slug stays `petalvex`.
 - [x] **Mosaic twins untangled DONE (commit fc56aa7e).** Garden's card now leads
@@ -196,9 +199,9 @@ items are marked here so nobody re-does them.
   game, portal and alias pages (grep 2026-07-26). Portal desc is one sentence.
 - [x] **Rules/objective/buttons page before play** — already built: `startGated`
   shows the How screen once before the first mode (verified in code, 6 call sites).
-- [ ] **Desc placement (Jessie)**: short desc on the thumbnail, long desc after the
-  intro page — check what the portal card + game intro actually show and split if
-  needed.
+- [x] **Desc placement DONE (commit in SWV70 push, verified in file).** Card keeps
+  the one-sentence short desc; the How screen (gates every first play) now opens
+  with the long description before the mechanics rows.
 - [x] **Bottle caps all reachable, verified (commit 888dbc63).** Measured 337
   generated caps: 14.2% had the hop-up approach bushed, 0.89% fully walled in
   (the uncollectable case). Column walk now also requires the approach cell
@@ -221,6 +224,11 @@ items are marked here so nobody re-does them.
   (43.2, lightest non-premium). The two absolute lightest are PAID Supporter skins
   — making one free is Stephen's revenue call, flagged. Existing players keep
   their skin (12/12 profile assertions). BUILD v1.3.
+- [x] **Stephen ruled "premium skin is fine" + better controls (commit 3593c86d,
+  verified by touch-event probe 4/4 + screenshot).** Tide Pool (measured lightest,
+  48.8) is the free starter; earn ladder re-formed 5/10/20 grounds. GLIDE
+  STEERING added: one drag walks the mouse tile by tile (3 tiles in one gesture
+  in the probe), flick still steps one, dpad snappier. BUILD v1.4.
 - [x] **Hedgerow gate + next + share DONE, verified (commit 6a410965, 21/21).**
   Rules-before-play gate (first visit only), 56px "Next ground" wired to the real
   advance path, Share on level complete (also fixed shareHedgerow bragging
