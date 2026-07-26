@@ -75,14 +75,23 @@ const BOT = `(async () => {
      a flat 0% across the whole ladder — a completely fake result that looked
      plausible enough to publish. */
   const startLevel = T.state().level;
+  /* ⛔ REMEMBER THE MOVE COUNT FROM BEFORE THE ADVANCE. Same root cause as the
+     win-detection note above: checkState() advances the level AND resets
+     moves=objective.moves in the same tick, so by the time this loop can see
+     s.level go up, s.moves is the NEXT level's fresh budget. Reporting that as
+     "moves left" made a 37-move level look like it was won without spending a
+     single move. This was wrong from the day it was written and stayed hidden
+     because the value was accumulated and never printed. */
+  let prevMoves = T.state().moves;
   let guard = 0;
   while (guard++ < 400) {
     // wait out the animation the real engine is running
     let spins = 0;
     while (T.state().animating && spins++ < 400) await sleep(4);
     const s = T.state();
-    if (s.level > startLevel) return { won: true, movesLeft: s.moves, score: s.score };
+    if (s.level > startLevel) return { won: true, movesLeft: prevMoves, score: s.score };
     if (s.lost || s.moves <= 0) return { won: false, movesLeft: 0, score: s.score };
+    prevMoves = s.moves;
     const mv = T.movesScored();
     if (!mv.length) { await sleep(30); continue; }
     /* Play like a decent human, not a perfect solver and not a coin flip:
@@ -96,7 +105,7 @@ const BOT = `(async () => {
     await sleep(4);
   }
   const s = T.state();
-  return { won: s.level > startLevel, movesLeft: s.moves, score: s.score, bailed: true };
+  return { won: s.level > startLevel, movesLeft: prevMoves, score: s.score, bailed: true };
 })()`;
 
 (async () => {
@@ -157,24 +166,48 @@ const BOT = `(async () => {
   const ready = await page.evaluate(() => !!window._PM_TEST);
   if (!ready) { console.error('_PM_TEST missing — is the harness hook still in games/petalmatch.js?'); process.exit(1); }
 
-  console.log('level  kind      win%   avg moves left   objective');
-  console.log('─'.repeat(74));
+  /* `left` is the average moves still in hand on a WIN. It was computed and
+     silently thrown away while the header claimed a column for it, so the bar
+     was just the win rate printed twice. It is worth showing: win% says whether
+     a level is beatable, `left` says how comfortably, which is what separates a
+     designed breather from filler. A level won at 95% with 2 moves left is a
+     nail-biter; won at 95% with 15 left is a level that is not doing anything. */
+  console.log('level  kind      win%                        left   rated  meas   objective');
+  console.log('─'.repeat(88));
   const rows = [];
 
   for (let lv = FROM; lv <= TO; lv++) {
     const obj = await page.evaluate(l => window._PM_TEST.genLevel(l), lv);
+    /* `rated` is what the generator INTENDED this level to cost (eff), `meas`
+       is what it actually cost the bot. Their gap is where the load model is
+       wrong, and it carries far more information per trial than win/loss does:
+       level 25 read 97% at both 4 and 5 tiles (win rate said nothing) while one
+       load reading showed it playing at 0.25 against a rated 0.57 and named the
+       problem immediately. ⛔ Tune the escalators and PM_YIELD off this gap. */
+    const rated = await page.evaluate(l => {
+      try { return window._PM_TEST.load ? window._PM_TEST.load(l).eff : null; } catch (e) { return null; }
+    }, lv);
     let wins = 0, leftSum = 0;
     for (let t = 0; t < TRIALS; t++) {
       const r = await page.evaluate(new Function('LEVEL', 'return ' + BOT), lv);
       if (r.won) { wins++; leftSum += r.movesLeft; }
     }
     const rate = wins / TRIALS;
-    rows.push({ lv, kind: obj.kind, rate });
+    const left = wins ? leftSum / wins : 0;
+    /* measured load = share of the move budget a WINNING run actually spent.
+       ⛔ Wins only — a loss spends the whole budget by definition, so folding
+       losses in would drag every hard level toward 1.0 and hide the signal. It
+       therefore reads LOW on levels that lose often; compare like with like. */
+    const meas = (wins && obj.moves) ? (obj.moves - left) / obj.moves : null;
+    rows.push({ lv, kind: obj.kind, rate, left, rated, meas });
     const bar = '█'.repeat(Math.round(rate * 20)).padEnd(20, '·');
     console.log(
       String(lv).padStart(5) + '  ' + String(obj.kind).padEnd(8) +
-      (rate * 100).toFixed(0).padStart(5) + '%  ' + bar + '  ' +
-      String(obj.label || '').slice(0, 34)
+      (rate * 100).toFixed(0).padStart(5) + '%  ' + bar +
+      (wins ? left.toFixed(1) : '  -').padStart(7) +
+      (rated == null ? '     -' : rated.toFixed(2).padStart(7)) +
+      (meas == null ? '     -' : meas.toFixed(2).padStart(6)) + '   ' +
+      String(obj.label || '').slice(0, 30)
     );
   }
 
@@ -194,8 +227,29 @@ const BOT = `(async () => {
   jag /= (rates.length - 1);
   console.log('\nspread (max-min)      ' + (spread * 100).toFixed(0) + '%');
   console.log('avg jump level-to-level ' + (jag * 100).toFixed(1) + '%   <- the sawtooth number');
+
+  /* ═══ THE NOISE FLOOR — PRINTED, NOT REMEMBERED ══════════════════════
+     Added 2026-07-26 after nearly re-tuning the whole ladder around a level
+     that swung 67% -> 8% between two runs on IDENTICAL content, and another
+     that went 17% -> 0% on a target that had been made EASIER. Both were
+     noise. A per-level win rate is a binomial sample, and at 12 trials one
+     standard error is over 14 points, so a 2-sigma swing of ~29 points is
+     ORDINARY. Whole-run drift of ~5 points on the by-kind rows is ordinary too.
+
+     ⛔ TUNE ON THE BY-KIND ROWS. They pool 4-9 levels and are the only numbers
+     here stable enough to act on. Before believing any single level, re-run
+     that level alone at 30+ trials — `node scripts/petalmatch_balance.js 27 27 30`.
+     ═══════════════════════════════════════════════════════════════════ */
+  const se1 = Math.round(100 * 0.5 / Math.sqrt(TRIALS));
+  console.log('\n⛔ NOISE FLOOR at ' + TRIALS + ' trials: +/-' + se1 + ' points per level (1 sigma),'
+            + ' so a ' + (2 * se1) + '-point swing on ONE level is ordinary.');
+  console.log('   Tune on the BY OBJECTIVE KIND rows above. To trust a single level,'
+            + ' re-run it alone at 30+ trials.');
+  if (TRIALS < 25) console.log('   ⛔ ' + TRIALS + ' trials is a SMELL TEST, not a measurement.');
+
   console.log(jag > 0.25
-    ? '⛔ SAWTOOTH. Adjacent levels swing wildly. This is what the player felt.'
+    ? '⛔ level-to-level swing is large — check it is the scheduled spikes (positions 4 and 8)\n'
+      + '   and not noise, before changing anything. See the noise floor above.'
     : '✓ reasonably smooth level to level.');
 
   await browser.close();

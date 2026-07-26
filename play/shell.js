@@ -606,7 +606,7 @@
     /* `cards` is OPTIONAL and additive — a game with painted rules art can show
        it instead of describing the mechanics in words. Every other game in this
        table omits it and renders exactly as before. */
-    petalmatch:{g:"Clear each level's objective before the moves run out.",h:"Swap two neighbours to line up three or more of the same flower. Every level asks for something different: reach a score, clear the dew tiles, break the thorns, or gather set colours. Match more than three and you make a special piece — set two specials off together for the big ones.",c:["Drag a flower onto a neighbour to swap","HINT shows a move when you are stuck","RETRY LV replays the level you are on"],
+    petalmatch:{g:"Clear each level's objective before the moves run out.",h:"Swap two neighbours to line up three or more of the same flower. Every level asks for something different: reach a score, clear the dew tiles, break the thorns, or gather set colours. Match more than three and you make a special piece. Set two specials off together for the big ones.",c:["Drag a flower onto a neighbour to swap","HINT shows a move when you are stuck","RETRY LV replays the level you are on"],
       cards:[
         {src:'/assets/games/petalmatch/runtime/tut-swap.png',   cap:'Swap two neighbours'},
         {src:'/assets/games/petalmatch/runtime/tut-match3.png', cap:'Three in a row clears'},

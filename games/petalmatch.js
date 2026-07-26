@@ -36,6 +36,197 @@ window._gameFns.petalmatch = function PM(a){
      that leaves a hairline so neighbouring flowers read as separate pieces
      instead of one carpet. Raise toward 1.0 for a denser board. */
   var PM_FILL=0.96;
+
+  /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
+     over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
+     dropped. MEDIAN not mean — a couple of runaway cascades drag the mean up
+     and would make every level look easier than it plays.
+     ⛔ Re-run the calibrator if scoring, board size or the piece count change. */
+  var PM_YIELD={score:78.29,dew:0.30,gather:0.80,thorns:1.20};
+  /* ⛔ gather is the SINGLE-COLOUR yield. The calibrator measured 1.80 across
+     levels running 1-3 colours, but ANY of the target colours counts, so the
+     real yield scales WITH the colour count — it is not one constant. Using
+     the blended 1.80 and then dividing the per-colour goal by `colors` made a
+     1-colour level ask 42 of ONE type in 30 moves: measured 0% win rate, a
+     brick wall. Single-colour yield back-solved from that same run (level 14,
+     2 colours, 46 total, 58% win) is 0.80 per colour per move.
+
+     PM_KFIX corrects each kind's target load against MEASURED win rates. The
+     load model says how much work a level asks; it does not say how steeply a
+     kind punishes being asked. Measured on the first banded ladder (levels
+     1-24, 12 trials): thorns 29%, gather 35%, dew 48%, mix 71%, score 73% —
+     same rating, wildly different outcomes. Thorns fall off far faster with
+     load than score does. ⛔ These are tuned FROM the harness, never by eye;
+     re-run scripts/petalmatch_balance.js after touching them. */
+  var PM_KFIX={score:1.22,dew:0.80,gather:1.30,thorns:0.72,mix:1.55};
+  /* Calibration log — by-kind win rate from scripts/petalmatch_balance.js.
+     Each pass records its OWN level range and trial count; they are not
+     comparable across different ranges, because a window that holds more
+     relief levels reads generous and one that holds more spikes reads harsh.
+       pass 1  {1.05,0.90,1.00,0.82,1.05}  thorns 29  gather 35  dew 48  score 73  mix 71
+       pass 2  same + gather colour fix    thorns 35  gather 87  dew 40  score 67  mix 73
+       pass 3  {1.08,0.78,1.35,0.70,1.12}  thorns 36  gather 50  dew 58  score 67  mix 48
+               sawtooth 31.2 -> 26.8 -> 15.6, harness verdict flipped to smooth
+       pass 4  {1.08,0.80,1.25,0.58,1.10}  thorns 54  gather 73  dew 47  score 81  mix 50
+       pass 5  {1.22,0.80,1.30,0.60,1.10}  levels 1-20 at 16 trials:
+               thorns 58  gather 70  score 55  dew 42  mix 55
+               by-kind range 44 points -> 28.  sawtooth 31.2% -> 13.2%.
+       pass 6  ⭐ THE RHYTHM REWORK (see PM_RHYTHM up top). Same KFIX, new curve,
+               levels 1-20 at 16 trials:
+               score 82.3  gather 84.4  thorns 62.5  dew 57.8  mix 56.3
+               lv1 100%, lv2 100% — onboarding finally lands. Chapter 1 read
+               100 100 63 81 75 100 63 81 81 44(finale), which is the shape.
+               Two faults, both invisible in the by-kind rows:
+                 · MIX 56% — a chapter FINALE is meant to be the wall of its
+                   chapter at 30-45%. Chapter 2's finale measured 69%, EASIER
+                   than four ordinary levels around it. mix 1.10 -> 1.35.
+                 · 2-HIT THORNS are not 2x a 1-hit thorn. 1-hit levels measured
+                   75/81%, the first 2-hit levels 44/50% at a LOWER rating. You
+                   have to re-find a match beside the SAME thorn on a board that
+                   has moved, so the cost is super-linear. Divisor is now
+                   pow(hits,1.35), which is invisible to PM_KFIX because it is
+                   a within-kind split.
+       pass 7  {1.22,0.80,1.30,0.60,1.35} + pow(hits,1.35) + shallower lobe 1,
+               levels 1-20 at 16 trials:
+               thorns 81.3  score 80.2  gather 79.7  dew 53.1  mix 53.1
+               · the hits exponent WORKED: the 2-hit levels went 44/50 -> 69/75.
+               · it also left thorns as a whole at 81%, i.e. filler. The original
+                 complaint was that thorns were too HARD, so generous is the
+                 right side to err on, but not this generous. 0.60 -> 0.72.
+               · mix barely moved (56.3 -> 53.1) for a 23% demand rise, and a
+                 chapter finale still is not a wall. 1.35 -> 1.55. ⛔ Only 2 mix
+                 levels exist in 1-20, so that row is 32 samples and noisy —
+                 measure finales over a range wide enough to hold three.
+       pass 8  {1.22,0.80,1.30,0.72,1.55}, levels 1-30 at 12 trials (360 games):
+               score 73.1  gather 70.8  dew 70.8  thorns 56.9  mix 55.6
+               ⭐ by-kind range 17.5 points, the tightest yet (was 28 at pass 5)
+               and thorns landed (81.3 -> 56.9). Chapter 1 read
+               100 100 67 92 92 100 67 75 50 33(finale) — that is the shape.
+               Three faults left, all invisible in the by-kind rows:
+                 · FINALES GET EASIER WITH DEPTH: 33 / 58 / 75 by chapter, while
+                   RATED 0.80 / 1.03 / 1.13. Fixed with PM_FINALE_STEP.
+                 · DOUBLE-LAYER DEW: level 25 asked 3 tiles and measured 100%.
+                   The /2 divisor over-compensates. Fixed with PM_DBL.
+                 · LEVEL 28 at 17%, the hardest level in the game and not a
+                   finale. Lobe 7 dialled +0.20 -> +0.14.
+       pass 9  + PM_FINALE_STEP 0.11, PM_DBL 1.45, lobe7 0.14
+               levels 1-30 at 12 trials (360 games):
+               score 68.5  dew 66.7  gather 63.9  thorns 55.6  mix 44.4
+               ⭐ ALL FIVE KINDS INSIDE TARGET (middle 55-75, finale 30-45), and
+               the four non-finale kinds span 13 points. Finales 42/33/58.
+       ⛔ pass 9 also printed FOUR chapter-3 levels under 30% (one at 0%) and I
+          almost re-tuned the whole chapter around them. They were NOISE. The
+          giveaway: level 27 was the SAME 7 thorns that read 67% one pass
+          earlier, and level 28 read 0% on a target that had just been made
+          EASIER (101630 -> 95530, previously 17%). Re-measured at 30 trials:
+               24 score 17->40   26 gather 25->53   27 thorns 8->43
+               28 score 0->30    29 thorns 50->40   30 mix 58->40
+          Chapter 3 was healthy the whole time, and all three finales land in
+          band (42/33/40). At 12 trials one sigma is >14 points, so a 29-point
+          swing on ONE level is ordinary and across 30 levels several will do it
+          by chance. The harness now prints its own noise floor after every run.
+          ⛔ TUNE ON THE BY-KIND ROWS. Verify any single level at 30+ trials.
+       pass 10 the one real outlier that survived verification: level 25,
+          double-layer dew, 97% of 30 runs. Tuning it did nothing — 97% at 4
+          tiles, 97% at 5, 97% at 8 — and THAT is what exposed the real fault:
+          dewRemaining counted tiles while the board decremented layers, so
+          half the dew on a double-layer board was never required. See
+          dewTotal(). ⭐ When moving the input does not move the output, the
+          model is not mis-tuned, it is measuring the wrong thing. Stop turning
+          the dial and go read the mechanic.
+     ⛔ Read the BY-KIND averages, not single levels. At 12 trials one level
+     is +/-14 points of noise — level 17 and level 21 are the same objective
+     and measured 58% and 8% in the same run. The by-kind rows pool 48-72
+     runs and are what the tuning follows. */
+  /* ⛔ DECLARED HERE, NOT NEXT TO _loadOf FURTHER DOWN. genLevel() is called at
+     mount (objective=genLevel(level), ~line 60) but `var` only hoists the NAME,
+     not the value — so with the table sitting 240 lines lower PM_YIELD was
+     undefined at that call and the whole game threw on boot. Anything genLevel
+     reads has to be assigned above the first call to it. */
+
+  /* ═══ THE HEARTBEAT ══════════════════════════════════════════════════
+     Stephen 2026-07-26: "i think weve been ruining it for the one player
+     playing a lot."  He was right, and this table is the apology.
+
+     The balance work chased ONE obsessive player who was stuck on level 25.
+     Their wall turned out to be three real BUGS (thorns unbreakable by a normal
+     match, dew sliding around on falling gems, double-layer dew silently
+     single-layer). Those are fixed. But we kept going and tuned the SAWTOOTH
+     out of the ladder as well — and the sawtooth was never the disease.
+
+     What that left, measured by scripts/petalmatch_ladder.js: every non-finale
+     level between 0.59 and 1.07 load, mean 0.84, average level-to-level jump
+     0.061. A flat line. Forty levels each asking 60-100% of a competent
+     player's entire move budget, with no level you ever crush. Technically
+     balanced, emotionally dead — the satisfaction in a match-3 comes from the
+     CONTRAST, the easy board after the wall, and we had deleted the contrast.
+
+     So the per-chapter curve is no longer a monotone ramp. It BREATHES:
+       relief, relief, step, SPIKE, breathe, step, step, SPIKE, breathe, FINALE
+     Ceiling unchanged (~1.08 non-finale, so the hard levels are still hard);
+     the FLOOR is what drops. Positions 3 and 7 are the scheduled walls, and
+     _KSLOT guarantees they land on an open-board kind rather than a blocker.
+
+     ⛔ Read these as `eff` in the ladder report — eff is this number BEFORE
+     PM_KFIX, so the report reads the curve straight back. Re-run
+     scripts/petalmatch_ladder.js after touching it, and the bot harness
+     scripts/petalmatch_balance.js after touching PM_KFIX or PM_YIELD. */
+  /* Lobe 1 is -0.06, not the -0.14 it started as: with PM_AMP deepening the
+     down-beats, chapter 2 opened on TWO levels that both measured 100% in the
+     bot harness. One breather per chapter is the design; two in a row is
+     filler, which the harness calls at anything over ~95% mid-ladder. */
+  /* Lobe 7 is +0.14, not the +0.20 it started as. It is the big scheduled
+     spike, and at chapter 3 that put level 28 at a 17% win rate — the hardest
+     level in the game, and not even a finale. A spike should hurt (level 18
+     measured 31/31/33% across three passes and that is exactly right); 17% is a
+     brick wall wearing a spike's clothes. */
+  var PM_RHYTHM=[-0.22,-0.06,-0.02,+0.12,-0.12,0.00,+0.08,+0.14,-0.04,+0.34];
+  var PM_BASE=[0.46,0.70,0.80,0.88];   // chapter 1 · 2 · 3 · 4+
+  /* ⛔ AMPLIFIES THE DOWN-BEATS ONLY. The base climbs 0.46 → 0.88 across the
+     chapters, so a fixed -0.22 relief lobe stops being relief: by chapter 4 the
+     easiest board still wanted 0.66 of the move budget and the ladder report's
+     floor check failed on chapters 2, 3 and 4. Deepening the negative lobes as
+     the base rises keeps ONE genuine breather per chapter — a board you finish
+     with half your moves in hand — while the positive lobes stay untouched so
+     the ceiling does not creep (max 1.08 non-finale, 1.22 on the last finale). */
+  var PM_AMP=[1.0,1.6,1.9,2.2];
+  /* A chapter finale must be the wall of its chapter (30-45% win). Measured
+     pass 8: chapter 1 finale 33% ✓, chapter 2 58%, chapter 3 75% — RATED harder
+     each time and MEASURED easier each time. Extra moves are worth more than
+     the linear model credits (more moves means more cascade luck), and the
+     finale carries +6 on top of a budget that already grows with level, so the
+     model's compensation falls further behind with depth. This kicker puts it
+     back. ⛔ Applies to the finale lobe only. */
+  var PM_FINALE_STEP=0.11;
+  /* ⛔ ONE CONSTANT, READ BY BOTH THE GENERATOR AND THE RATER. A double-layer
+     dew tile is NOT 2x the work of a single: the layers sit on one cell and a
+     cascade very often clears that cell more than once, so halving the count
+     for double-layer levels overshot badly — level 25 measured 100% asking for
+     just 3 tiles. Every time this file has had a generator term the rater did
+     not share (gather colours, thorn hits) it produced a phantom reading, so
+     the number lives in one place now.
+
+     2.0 is not a tuned number, it is the MECHANIC: after the dewTotal() fix a
+     double-layer tile requires exactly two layer strips, and the yield is
+     measured in strips per move, so one double tile is two units of demand.
+     It was only ever anything else because it was silently compensating for the
+     bug — while dewRemaining was seeded with the TILE count and decremented per
+     LAYER, half the dew on a double-layer board was never required, and level
+     25 read 97% of 30 runs at 4 tiles, at 5 AND at 8. A dial that does nothing
+     is not a dial that needs turning; it is a sign the model is measuring the
+     wrong quantity.
+
+     ⛔ Do NOT re-tune this to make double-layer levels easier or harder. That is
+     what PM_RHYTHM and PM_KFIX are for. This one says what the mechanic costs.
+
+     ⛔ And it is NOT the thorns escalator, which runs the other way
+     (pow(hits,1.35), SUPER-linear) because a live thorn BLOCKS the board so its
+     extra hits genuinely cost more than the raw hit count — that one IS a tuned
+     measurement, 2-hit levels moved 44/50% -> 69/75% when the exponent went in.
+     One escalator is linear-by-definition, the other is empirical. Never assume
+     one behaves like another; measure each. */
+  var PM_DBL=2.0;
+  var _KSLOT=[0,0,1,0,1,0,1,0,1,2];    // 0 open board · 1 blocker · 2 finale
   // 6 flower types: rose / daisy / violet / forgetmenot / clover / cherry
   var GEMS=[
     {name:'rose',color:'#c47a7a',mid:'#8b4d4d',hi:'#e8b5b5'},
@@ -261,8 +452,13 @@ window._gameFns.petalmatch = function PM(a){
      it ended up a sawtooth.
      ═══════════════════════════════════════════════════════════════════ */
 
-  // 0 at level 1, approaching 1 deep in the ladder. Steep early so the game
-  // stops being trivial quickly, then flattening so it never becomes hopeless.
+  /* 0 at level 1, approaching 1 deep in the ladder.
+     ⛔ THIS NO LONGER SETS HOW HARD A LEVEL IS. It used to be the whole curve;
+     since the PM_RHYTHM rework it only decides WHEN THE ESCALATORS TURN ON —
+     double-layer dew, multi-hit thorns, how many gather colours. Those change
+     the CHARACTER of a level, and the target load then compensates for them
+     (a 3-hit thorn level simply gets fewer thorns). Difficulty itself comes
+     from PM_BASE + PM_RHYTHM. Do not reach for this to make things harder. */
   function _diff(lv){
     var d=1-Math.pow(0.965,lv-1);
     return d>0.97?0.97:d;
@@ -273,13 +469,96 @@ window._gameFns.petalmatch = function PM(a){
     var x=Math.sin(seed*12.9898)*43758.5453;
     return x-Math.floor(x);
   }
+  /* ═══ WHICH OBJECTIVE SITS WHERE ═════════════════════════════════════
+     The old version shuffled all nine kinds together, and it shipped LEVEL 1
+     AS A THORNS LEVEL: a brand-new player's very first board was littered with
+     blockers, for a mechanic nothing had introduced, with the HUD reading
+     "Thorns 11/11" and no explanation of what a thorn was. It also let two
+     blocker levels land back to back.
+
+     So the SHAPE is fixed now and only the contents rotate. _KSLOT puts
+     blockers (dew, thorns) at positions 2/4/6/8 and open boards (score,
+     gather) everywhere else, which means blockers are never adjacent AND the
+     two scheduled spikes at positions 3 and 7 always land on an open kind.
+     That is the direct answer to the player's "the levels that involve hitting
+     the thorns are immensely more difficult than the levels between them" —
+     the drama now goes on the levels that play clean.
+
+     Chapter 1 is the UN-shuffled version, which makes it a teaching run:
+       score · gather · dew · score · thorns · gather · dew · score · thorns · mix
+     One new mechanic at a time, each with a clean level either side of it. */
+  function _shuf(a,seed){
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(_lvRand(seed+i)*(i+1));
+      var t=a[i];a[i]=a[j];a[j]=t;
+    }
+  }
   function _chapterOrder(chapter){
-    var kinds=['score','dew','gather','thorns','score','dew','gather','thorns','mix'];
-    for(var i=kinds.length-1;i>0;i--){
-      var j=Math.floor(_lvRand(chapter*97+i)*(i+1));
-      var t=kinds[i];kinds[i]=kinds[j];kinds[j]=t;
+    var open=['score','gather','score','gather','score'];
+    var blk =['dew','thorns','dew','thorns'];
+    if(chapter>0){ _shuf(open,chapter*97); _shuf(blk,chapter*97+53); }
+    var kinds=[],oi=0,bi=0;
+    for(var i=0;i<10;i++){
+      kinds.push(_KSLOT[i]===2?'mix':(_KSLOT[i]?blk[bi++]:open[oi++]));
     }
     return kinds;
+  }
+
+  /* ═══ DIFFICULTY RATING — doc 06 §1c ═════════════════════════════════
+     "Rate each generated level with a difficulty score and reject any level
+      that falls outside the band for its position. This is the real fix: stop
+      hand-guessing and let the generator prove each level is in range."
+
+     demand = the raw work an objective asks for, in its own units.
+     yield  = how much of that a competent player achieves PER MOVE. ⛔ These
+              are MEASURED by scripts/petalmatch_calibrate.js driving the real
+              game, never estimated. Re-run it if the scoring or board changes.
+     load   = demand / (yield * moves).  1.0 means the average run finishes
+              exactly as the last move is spent, so higher = harder.
+
+     Score yield scales with level because points per clear are already
+     multiplied by `level` in the scoring formula.
+     ═══════════════════════════════════════════════════════════════════ */
+  function _demandOf(o){
+    if(!o) return 0;
+    if(o.kind==='score')  return o.target;
+    /* PM_DBL, not 2 — a double layer costs less than two tiles. ⛔ The literal
+       2 that belongs here is in seedObstacles, which places the real layers. */
+    if(o.kind==='dew')    return (o.dew||0)*(o.doubleLayer?PM_DBL:1);
+    if(o.kind==='gather') return (o.perColor||0)*(o.colors||1);
+    if(o.kind==='thorns') return (o.thorns||0)*(o.hits||1);
+    if(o.kind==='mix')    return (o.target||0);   // the parts are rated separately
+    return 0;
+  }
+  function _loadOf(o,lv){
+    if(!o||!o.moves) return 0;
+    var m=o.moves;
+    /* ⛔ THE RATER MUST USE THE SAME MODEL AS THE GENERATOR. When genLevel
+       stopped dividing the gather goal by the colour count but this still
+       treated the yield as one flat constant, the two disagreed and the ladder
+       report showed a phantom 1.67 spike on a level that was correctly built. */
+    function part(kind,dem,mult){
+      var y=PM_YIELD[kind];
+      if(!y) return 0;
+      if(kind==='score') y=y*lv;      // points per move grow with the level multiplier
+      if(mult) y=y*mult;
+      return dem/(y*m);
+    }
+    if(o.kind==='mix'){
+      // all three must be finished out of ONE shared move budget, so the loads add
+      return part('score',o.target||0)
+           + part('dew',(o.dew||0)*(o.doubleLayer?PM_DBL:1))
+           + part('thorns',(o.thorns||0)*(o.hits||1));
+    }
+    // gather: any of the target colours counts, so the yield scales with them
+    if(o.kind==='gather') return part('gather',_demandOf(o),o.colors||1);
+    /* thorns: genLevel divides the count by pow(hits,1.35), so the rater has to
+       climb back up by pow(hits,0.35) or it reads a 2-hit level as 21% easier
+       than the generator built it. Same class of bug as the gather note above —
+       ⛔ WHEN THE GENERATOR GETS A NEW TERM, THE RATER GETS IT TOO.
+       (mult scales the YIELD, so a negative exponent raises the load.) */
+    if(o.kind==='thorns') return part('thorns',_demandOf(o),Math.pow(o.hits||1,-0.35));
+    return part(o.kind,_demandOf(o));
   }
 
   function genLevel(lv){
@@ -299,46 +578,110 @@ window._gameFns.petalmatch = function PM(a){
     if(mv>52)mv=52;
     if(finale)mv+=6;
 
-    // Each kind is scaled from the SAME d, so neighbours land in one band.
+    /* ═══ THE BAND ═══════════════════════════════════════════════════
+       Doc 06 §1: "The curve does not rise. It SAWTOOTHS. Every 3rd or 4th
+       level is a wall and the rest are a stroll, forever, in the same order."
+
+       Measured with scripts/petalmatch_ladder.js, the old generator ran a
+       non-finale load from 0.29 to 3.05 — spread 2.77, avg level-to-level jump
+       0.547. Level 25 rated 2.23 sitting between a 1.67 and a 1.26, which is
+       exactly where the player got stuck.
+
+       So the demand is no longer hand-written per kind. Each level gets a
+       TARGET LOAD from its position, and the demand is solved backwards from
+       it: demand = load × yield × moves. Every kind lands on the same curve by
+       construction, so a dew level and a score level next to each other now ask
+       the same amount of the player.
+
+       load 1.0 = the average competent run finishes exactly as the last move
+       goes, so roughly a coin flip.
+       ⛔ The escalators (double-layer dew, multi-hit thorns, more gather
+       colours) are kept — they change the CHARACTER of a level — but the count
+       now compensates, so a 3-hit thorn level simply has fewer thorns.
+
+       ⛔ The position term is PM_RHYTHM, NOT a ramp. It used to be
+       `base+(sub/8)*0.18`, which is a monotone climb, and stacking that on a
+       per-chapter base produced the flat 0.59-1.07 ladder with no relief in it
+       anywhere. See the PM_RHYTHM comment up top for why that had to go.
+       ═══════════════════════════════════════════════════════════════ */
+    var base=PM_BASE[ch], lobe=PM_RHYTHM[sub];   // ch is already min(chapter,3)
+    if(finale) lobe+=ch*PM_FINALE_STEP;          // deep finales must stay walls
+    var target=base+(lobe<0?lobe*PM_AMP[ch]:lobe);
+    target*=(PM_KFIX[kind]||1);
+
     if(kind==='score'){
-      /* ⛔ Score targets must scale SUPERLINEARLY. Points per clear are already
-         multiplied by `level` in the scoring formula, so a target that grows
-         linearly with level keeps the exact same difficulty forever — which is
-         why score levels measured 100% at every depth. The lv*lv term is what
-         makes a late score level actually ask something. */
-      var tgt=Math.round((2600+lv*520+lv*lv*95)*(1+d*2.0));
+      /* Points per clear are multiplied by `level` in the scoring formula, so
+         the per-move yield grows with lv and the target has to grow with it —
+         that is why this reads as superlinear. It comes out of the measurement
+         now instead of a hand-picked lv*lv coefficient. */
+      var tgt=Math.round(target*(PM_YIELD.score*lv)*mv/10)*10;
       return {kind:'score',chapter:ch,moves:mv,target:tgt,finale:finale,
               label:'Reach '+tgt+' points'};
     }
     if(kind==='dew'){
-      var dewN=Math.round(3+d*7);
       var dbl=d>0.55;
-      if(dbl)dewN=Math.round(dewN*0.7);   // double layer already doubles the work
+      var dewN=Math.round(target*PM_YIELD.dew*mv/(dbl?PM_DBL:1));
+      /* The floor is on STRIPS, not tiles — 3 layer strips minimum. A flat
+         3-TILE floor meant a double-layer level could never ask less than 6
+         strips, so it bound on exactly the relief levels it should not have
+         touched and dragged them well above their rated position. */
+      var dewMin=dbl?2:3;
+      if(dewN<dewMin)dewN=dewMin;
       return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,finale:finale,
               label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
     if(kind==='gather'){
-      var per=Math.round(16+d*44);
       var colors=d<0.3?1:(d<0.6?2:3);
+      /* NOT divided by colours: PM_YIELD.gather is per colour per move, so each
+         extra colour raises the yield and the total demand together. Dividing
+         here is what built the 1-colour brick walls. */
+      var per=Math.round(target*PM_YIELD.gather*mv);
+      if(per<8)per=8;
       return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,finale:finale,
               label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
     }
     if(kind==='thorns'){
-      var th=Math.round(9+d*27);
-      var hits=d<0.2?1:(d<0.55?2:3);
+      /* 1 hit for the whole of chapter 1. It was d<0.2, which flips at level 8,
+         so the teaching chapter's second thorns level already wanted two hits
+         per thorn before the player had broken one. Multi-hit is chapter 2's
+         escalation now; 3-hit stays at the old d>=0.55 (level 24). */
+      var hits=d<0.30?1:(d<0.55?2:3);
+      /* ⛔ NOT /hits. Measured pass 6: 1-hit thorn levels won 75% and 81%, the
+         first 2-hit levels 44% and 50% — at a LOWER difficulty rating. Breaking
+         a thorn twice is worse than breaking two thorns once, because after the
+         first hit the board has moved and you have to re-find a match beside
+         that same tile. The exponent buys the count back down. */
+      var th=Math.round(target*PM_YIELD.thorns*mv/Math.pow(hits,1.35));
+      if(th<5)th=5;
       return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,finale:finale,
               label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
     }
-    // mix — the chapter finale, and the one intentional spike
-    var mDew=Math.round(2+d*6), mTh=Math.round(3+d*7);
-    var mScore=Math.round((1800+lv*340+lv*lv*60)*(1+d*1.4));
+    /* mix — the chapter finale. All three come out of ONE move budget, so the
+       target load is SPLIT between them rather than each getting the full
+       amount. That split is why the old mix levels were the worst offenders:
+       they asked three full objectives out of one budget. */
+    var sScore=target*0.40, sDew=target*0.30, sTh=target*0.30;
+    var mScore=Math.round(sScore*(PM_YIELD.score*lv)*mv/10)*10;
+    var mDew=Math.round(sDew*PM_YIELD.dew*mv);   if(mDew<2)mDew=2;
+    var mTh=Math.round(sTh*PM_YIELD.thorns*mv);  if(mTh<3)mTh=3;
     return {kind:'mix',chapter:ch,moves:mv,dew:mDew,thorns:mTh,target:mScore,finale:finale,
             label:'Mixed: score + clear tiles + break thorns'};
   }
 
+  /* ⛔ dewRemaining counts LAYER STRIPS, not tiles, so its starting value has to
+     be tiles x layers. It used to be seeded with the TILE count while
+     processSegment decremented it once per layer stripped, which meant an
+     8-tile double-layer level finished after 8 strips out of the 16 layers
+     actually on the board. "Double layer" was decorative: it cost the same as
+     a single-layer level of the same tile count while the HUD printed "x2",
+     and it measured 97% win at 4, 5 AND 8 tiles because changing the tile
+     count barely changed the real work. Same family as the three bugs the
+     stuck player found — the objective counter and the board disagreeing. */
+  function dewTotal(o){ return (o&&o.dew||0)*(o&&o.doubleLayer?2:1); }
+
   function resetObjState(){
     objState={dewRemaining:0,thornRemaining:0,gatherTargets:{},gatherGot:{}};
-    if(objective.kind==='dew'||objective.kind==='mix'){objState.dewRemaining=objective.dew||0;}
+    if(objective.kind==='dew'||objective.kind==='mix'){objState.dewRemaining=dewTotal(objective);}
     if(objective.kind==='thorns'||objective.kind==='mix'){objState.thornRemaining=objective.thorns||0;}
     if(objective.kind==='gather'){
       // pick N distinct types and per-color goal
@@ -372,7 +715,7 @@ window._gameFns.petalmatch = function PM(a){
     if(o.kind==='score'){
       html+='Reach <strong style="color:#c8a84b;">'+o.target+'</strong> pts';
     } else if(o.kind==='dew'){
-      html+='Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+o.dew+(o.doubleLayer?' ×2':'');
+      html+='Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+dewTotal(o)+(o.doubleLayer?' ×2':'');
     } else if(o.kind==='gather'){
       var parts=[];
       for(var t in s.gatherTargets){
@@ -384,7 +727,7 @@ window._gameFns.petalmatch = function PM(a){
     } else if(o.kind==='thorns'){
       html+='Thorns <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns+(o.hits>1?' ×'+o.hits:'');
     } else if(o.kind==='mix'){
-      html+='<strong>'+score+'</strong>/'+o.target+' · <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+o.dew+' · <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns;
+      html+='<strong>'+score+'</strong>/'+o.target+' · <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+dewTotal(o)+' · <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns;
     }
     html+='</span></div>';
     var oe=document.getElementById('PMobj');
@@ -1093,7 +1436,7 @@ window._gameFns.petalmatch = function PM(a){
     if(e=document.getElementById('PMbar')){
       var pct;
       if(objective.kind==='score')pct=Math.min(100,score/objective.target*100);
-      else if(objective.kind==='dew')pct=100-(objState.dewRemaining/objective.dew*100);
+      else if(objective.kind==='dew')pct=100-(objState.dewRemaining/Math.max(1,dewTotal(objective))*100);
       else if(objective.kind==='thorns')pct=100-(objState.thornRemaining/objective.thorns*100);
       else if(objective.kind==='gather'){
         var got=0,need=0;
@@ -1102,7 +1445,7 @@ window._gameFns.petalmatch = function PM(a){
       }
       else if(objective.kind==='mix'){
         var p1=Math.min(1,score/objective.target);
-        var p2=1-(objState.dewRemaining/Math.max(1,objective.dew));
+        var p2=1-(objState.dewRemaining/Math.max(1,dewTotal(objective)));
         var p3=1-(objState.thornRemaining/Math.max(1,objective.thorns));
         pct=(p1+p2+p3)/3*100;
       }
@@ -1120,6 +1463,31 @@ window._gameFns.petalmatch = function PM(a){
     renderObjective();
   }
 
+  /* ═══ SAY WHAT THE THING IS, ONCE ════════════════════════════════════
+     The HUD read "Thorns 11/11" and "Dew 4/4" and the game never once said
+     what a thorn or a dew tile was, or how you were supposed to deal with it.
+     Every objective kind was introduced cold. The rules card in play/shell.js
+     lists them, but it is one wall of text shown before the board exists, and
+     nobody re-reads it four levels later when a new blocker turns up.
+
+     Once per kind per session, on the level where that kind first appears.
+     ⛔ The 2400ms wait is load-bearing: checkState() fires sm('LEVEL N
+     COMPLETE!') immediately, levelPlaque owns the next ~1.3s and chapterPlate
+     goes at 1300ms. Anything sooner gets stomped or does the stomping. */
+  var _taught={};
+  var _TEACH={
+    dew:'Dew sits UNDER the flowers. Clear a flower on top of it to wipe it.',
+    thorns:'Thorns will not swap. Match flowers right beside one to break it.',
+    gather:'Gather: only the flower named in the goal counts. Go hunting.',
+    mix:'Finale. Score, dew and thorns, all out of one move budget.'
+  };
+  function teachFor(o){
+    if(!o||!_TEACH[o.kind]||_taught[o.kind])return;
+    _taught[o.kind]=1;
+    var line=_TEACH[o.kind];
+    setTimeout(function(){try{sm(line);}catch(e){}},2400);
+  }
+
   function checkState(){
     if(isObjComplete()){
       // rate the level on the budget it was WON with, before any of it resets
@@ -1132,6 +1500,7 @@ window._gameFns.petalmatch = function PM(a){
       score=0;
       resetObjState();
       sm('LEVEL '+prevLv+' COMPLETE!');
+      teachFor(objective);           // explains the NEW level's kind, if it is new
       levelPlaque(prevLv,earnedStars);
       // staggered: the plaque owns the first 1.3s, then the chapter announces
       (function(ci){ setTimeout(function(){ try{ chapterPlate(ci); }catch(e){} }, 1300); })(objective.chapter);
@@ -1789,6 +2158,7 @@ window._gameFns.petalmatch = function PM(a){
     initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
     updateHUD();rafId=requestAnimationFrame(loop);
     sm('Swipe to swap. Match 3+ flowers.');
+    teachFor(objective);   // a player resuming deep in the ladder gets it too
   };
   window._PMR=function(){
     // Retry this level with fresh board and moves, don't reset progression
@@ -1909,12 +2279,38 @@ window._gameFns.petalmatch = function PM(a){
       handleEnd(rect.left+(c2+0.5)*CELL, rect.top+(r2+0.5)*CELL);
     },
     state:function(){
+      /* gathered/budget are here for scripts/petalmatch_calibrate.js, which
+         measures how much of each objective a real bot achieves PER MOVE. Those
+         measured yields are what _rateLevel uses to band difficulty — doc 06
+         §1c: "stop hand-guessing and let the generator prove each level is in
+         range". Without the achieved totals there is nothing to calibrate from. */
+      var gathered=0;
+      for(var t in objState.gatherTargets){
+        gathered+=Math.min(objState.gatherGot[t]||0, objState.gatherTargets[t]);
+      }
       return {level:level,score:score,moves:moves,lost:lost,won:won,
               animating:animating,objKind:objective&&objective.kind,
               objLabel:objective&&objective.label,
               dew:objState.dewRemaining,thorns:objState.thornRemaining,
+              gathered:gathered,
+              budget:objective?objective.moves:0,
+              demand:objective?_demandOf(objective):0,
               complete:isObjComplete()};
     },
+    // Difficulty rating for a level, so a script can prove the ladder is a
+    // band and not a sawtooth without replaying every level.
+    load:function(lv){
+      var o=genLevel(lv), raw=_loadOf(o,lv);
+      /* raw  = demand vs the measured per-move yield.
+         eff  = raw normalised by PM_KFIX, i.e. how HARD it should actually play.
+         ⛔ Judge the ladder on eff, not raw. PM_KFIX deliberately gives each
+         kind a different raw load precisely because the same raw load produces
+         very different win rates per kind — thorns fall off far faster than
+         score. So a flat `raw` would mean an UNEVEN game, and reading raw made
+         the ladder report cry sawtooth at a ladder that measures smooth. */
+      return {lv:lv,kind:o.kind,finale:!!o.finale,moves:o.moves,
+              demand:_demandOf(o),load:+raw.toFixed(3),
+              eff:+(raw/(PM_KFIX[o.kind]||1)).toFixed(3)}; },
     // Jump straight to a level for measurement.
     setLevel:function(lv){
       level=lv;objective=genLevel(lv);moves=objective.moves;
