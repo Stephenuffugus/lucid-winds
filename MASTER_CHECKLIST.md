@@ -53,7 +53,34 @@ matching code change from you.
   plays every objective kind, "reasonably smooth level to level".
   Runtime art 183KB after quantizing (was 1036KB); pops/fx/emblems load in a deferred second
   wave so they never compete with the board.
-  ⛔ STILL UNWIRED: tools, medals, map nodes, tutorial art, banners, alternate skins.
+- [x] **Petal Match art — EVERYTHING WIREABLE IS WIRED (2026-07-26)** — Stephen: "get it all
+  done." Added on top of the pass above: painted selection corners (`ring-corners`), hint ring
+  (`ring-plain`), a charged-piece ring on every special (`ring-ornate`), petal-shard particles on
+  every clear (hard capped at 26 so a spore+spore cascade cannot turn into a slideshow),
+  `ice-shatter` when a dew tile breaks, `cover-crack` for a half-broken double-dew tile, the four
+  `combo-*` detonations drawn ON THE BOARD at the square they went off, a LEVEL + 3-star plaque
+  with `laurel-burst` on level complete, a chapter title plate when the chapter turns, and the
+  five painted `tut-*` cards inside the how-to-play card.
+  Verified by `scripts/petalmatch_fx_probe.js` (new — drives the real game through `_PM_TEST`
+  and shoots the moments a static screenshot cannot catch): 52/52 sprites, 0 404s, 0 page
+  errors, 5/5 tutorial images in the rules card, level-up captured with the call-out layer
+  asserted to hold the plaque ALONE. Balance bot levels 1-8 plays every objective kind,
+  "reasonably smooth level to level".
+  Runtime art now 2.7MB on disk, all quantized, split into a board-critical wave and a deferred
+  second wave 1.5s later.
+  ⛔ FOUND + FIXED EN ROUTE — the shell's generic `✿ NICE! ✿` win flourish printed straight
+  through the new plaque. Shell now honours `LW_PLAY.ownWin` so a game with its own win screen
+  opts out; the other 65 games are untouched.
+  ⛔ ALSO FOUND — `play/shell.js` (66 pages) and `sunbeam-sdk.js` matched no `.htaccess` rule and
+  sat on the host's 7-day edge default; `shell.js?v=18` was measured as a live cf-cache HIT with
+  `max-age=604800`. Same class as the Jimothy worker bug. Both now `no-cache, must-revalidate`,
+  and shell bumped to `?v=19` across all 66 play pages.
+  ⛔ NOT DONE, and deliberately NOT invented — these need game systems and economy calls that
+  are Stephen's, not art wiring: the 16 tool/booster sprites (needs a booster economy), the level
+  map (`map-node-*`, needs a map screen), shop art (`coin`/`gem`/`price-bar`, needs a shop),
+  medals + `rank-row` (needs a leaderboard), and `spec-strip`/`quake`/`serpent`/`big`/`box`
+  (match-6, match-7 and travelling-piece mechanics the game does not have). The alternate
+  green/purple/teal skins need a skin picker.
 - [?] **Blobworks purple monsters** — asset list delivered (sheet 12). Needs the art.
 - [?] **OriVex sheets + backdrops** — asset lists delivered (D3). Needs the art.
 - [?] **Sky Wolf arcade icon** — current icon is cut from the banner, so the ears are

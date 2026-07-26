@@ -317,10 +317,18 @@
         p.style.cssText = 'position:absolute;top:-14vh;left:'+left+'vw;font-size:'+sz+'px;color:'+colors[i%colors.length]+';animation:swsPetalFall '+dur+'s linear '+delay+'s 1 forwards;';
         ov.appendChild(p);
       }
-      var burst = document.createElement('div');
-      burst.style.cssText = "position:absolute;top:38%;left:0;right:0;text-align:center;font-family:'Bebas Neue',sans-serif;letter-spacing:0.18em;font-size:2.3rem;color:#c8a84b;text-shadow:0 2px 16px rgba(0,0,0,0.85);animation:swsWinPop 2.2s ease 1 forwards;";
-      burst.textContent = '✿ NICE! ✿';
-      ov.appendChild(burst);
+      /* ⛔ A game that paints its OWN win screen opts out of this generic
+         flourish with LW_PLAY.ownWin — otherwise two celebrations fire at once
+         and print through each other. Petal Match hit exactly that: its painted
+         LEVEL/stars plaque sits mid-board and this "NICE!" is at 38% of the
+         viewport, so they overlapped into an unreadable mess. The falling
+         petals above are harmless and still play for everyone. */
+      if (!(typeof LW_PLAY !== 'undefined' && LW_PLAY && LW_PLAY.ownWin)) {
+        var burst = document.createElement('div');
+        burst.style.cssText = "position:absolute;top:38%;left:0;right:0;text-align:center;font-family:'Bebas Neue',sans-serif;letter-spacing:0.18em;font-size:2.3rem;color:#c8a84b;text-shadow:0 2px 16px rgba(0,0,0,0.85);animation:swsWinPop 2.2s ease 1 forwards;";
+        burst.textContent = '✿ NICE! ✿';
+        ov.appendChild(burst);
+      }
       document.body.appendChild(ov);
       setTimeout(function(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }, 2800);
     } catch (e) {}
@@ -595,7 +603,17 @@
     mosaic:{g:"Score the most points by tiling your mosaic.",h:"Draft same-colored tiles and load them into a row. A row holds only one color, and when it fills, one tile moves onto your wall for points. Extra tiles fall to the floor and cost you. The Mirror plays against you.",c:["Tap tiles to draft them","Tap one of your rows to place them","Watch the floor line, it subtracts points"]},
     rootflow:{g:"Connect every pair of matching roots.",h:"Draw a path from each root to its twin without crossing any other path, and fill every square of the garden.",c:["Drag from a root to its matching root","Redraw a path any time","HINT reveals one path"]},
     rootmaze:{g:"Reach the exit before the computer does.",h:"You and the computer race through the same maze, and the walls shift as you go. Keep moving and adapt when a path closes.",c:["Swipe to move through the maze"]},
-    petalmatch:{g:"Hit the target score by matching petals.",h:"Swap two neighbors to line up three or more of a kind. Bigger lines and chain reactions score more.",c:["Drag a petal onto a neighbor to swap","Matches of 4+ and cascades pay extra"]},
+    /* `cards` is OPTIONAL and additive — a game with painted rules art can show
+       it instead of describing the mechanics in words. Every other game in this
+       table omits it and renders exactly as before. */
+    petalmatch:{g:"Clear each level's objective before the moves run out.",h:"Swap two neighbours to line up three or more of the same flower. Every level asks for something different: reach a score, clear the dew tiles, break the thorns, or gather set colours. Match more than three and you make a special piece — set two specials off together for the big ones.",c:["Drag a flower onto a neighbour to swap","HINT shows a move when you are stuck","RETRY LV replays the level you are on"],
+      cards:[
+        {src:'/assets/games/petalmatch/runtime/tut-swap.png',   cap:'Swap two neighbours'},
+        {src:'/assets/games/petalmatch/runtime/tut-match3.png', cap:'Three in a row clears'},
+        {src:'/assets/games/petalmatch/runtime/tut-line.png',   cap:'Four makes a line piece'},
+        {src:'/assets/games/petalmatch/runtime/tut-wild.png',   cap:'Five makes a wild'},
+        {src:'/assets/games/petalmatch/runtime/tut-combo.png',  cap:'Two specials together'}
+      ]},
     sprout:{g:"Find the hidden five-letter word in six guesses.",h:"After each guess the letters change color. Green means right letter, right spot. Gold means the letter is in the word but somewhere else. Gray means it is not in the word.",c:["Type a five-letter word","Press ENTER to guess"]},
     vinewords:{g:"Find as many words as you can in two minutes.",h:"Connect neighboring letters, diagonals included, to spell words of three or more letters. Longer words score much more.",c:["Drag through neighboring letters","Lift your finger to submit the word"]},
     chess:{g:"Checkmate the computer's king.",h:"Full classic chess, including castling, en passant, and pawn promotion. Tap a piece to see everywhere it can go.",c:["Tap a piece, then tap a highlighted square","♜ Court changes the piece set","Undo takes back your last move","The dropdown changes difficulty"]},
@@ -710,6 +728,23 @@
     h += '<h2>' + esc(LW_PLAY.name || LW_PLAY.id) + '</h2>';
     if (d.g) h += '<div class="shell-dir-sec"><div class="shell-dir-h">The goal</div><p>' + esc(d.g) + '</p></div>';
     if (d.h) h += '<div class="shell-dir-sec"><div class="shell-dir-h">How it plays</div><p>' + esc(d.h) + '</p></div>';
+    /* Painted rules cards, when a game has them. Purely additive: a game
+       without `cards` renders exactly as it always did. Images are lazy and
+       carry onerror, so a missing file costs a gap, never a broken card. */
+    if (d.cards && d.cards.length) {
+      h += '<div class="shell-dir-sec"><div class="shell-dir-h">How it works</div>';
+      h += '<div style="display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch">';
+      for (var ci = 0; ci < d.cards.length; ci++) {
+        var cd = d.cards[ci];
+        h += '<figure style="margin:0;flex:0 0 auto;width:112px;text-align:center">'
+          +  '<img src="' + esc(cd.src) + '" alt="" loading="lazy" '
+          +  'onerror="this.style.display=\'none\'" '
+          +  'style="width:112px;height:112px;object-fit:contain;display:block">'
+          +  '<figcaption style="font-size:.68rem;line-height:1.25;opacity:.85;margin-top:3px">'
+          +  esc(cd.cap) + '</figcaption></figure>';
+      }
+      h += '</div></div>';
+    }
     if (d.c && d.c.length) {
       h += '<div class="shell-dir-sec"><div class="shell-dir-h">The controls</div><ul>';
       for (var i = 0; i < d.c.length; i++) h += '<li>' + esc(d.c[i]) + '</li>';

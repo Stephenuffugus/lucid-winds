@@ -52,6 +52,18 @@
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
+  # ⛔⛔ SHARED CODE REVALIDATES. Same trap as sw.js below, found the same day:
+  # `shell.js` is loaded by 66 play pages and `sunbeam-sdk.js` by every game on
+  # the site, and NEITHER matched a rule above — so both sat on the host's 7-day
+  # default. Measured live: shell.js?v=18 was a cf-cache HIT with
+  # max-age=604800. The ?v= bump is the intended cache-buster, but forgetting it
+  # once silently pins shared CODE for a week, and the failure looks like a game
+  # bug rather than a stale file. no-cache still allows a cheap 304, so this
+  # costs a revalidation, not a re-download.
+  <FilesMatch "^(shell|sunbeam-sdk)\.(js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
   # ⛔⛔ SERVICE WORKERS MUST NEVER BE EDGE-CACHED.
   # A stale worker is not a stale asset, it is stale CODE that intercepts every
   # request the app makes — and a broken one can stop its own replacement from

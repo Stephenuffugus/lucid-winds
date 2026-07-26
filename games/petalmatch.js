@@ -365,6 +365,74 @@ window._gameFns.petalmatch = function PM(a){
     return true;
   }
 
+  /* ═══ LEVEL COMPLETE PLAQUE ══════════════════════════════════════════
+     Stars are a RATING, not a currency — nothing is spent, earned or stored by
+     them, so this is a display decision rather than an economy one. Rated on
+     moves left as a fraction of the level's own budget, which already scales
+     with difficulty, so a hard level is not automatically a one-star.
+       >=35% of the budget left = 3   >=15% = 2   otherwise 1
+     ⛔ If stars ever start BUYING something, that is Stephen's call, not mine.
+     ═══════════════════════════════════════════════════════════════════ */
+  function starsFor(movesLeft,budget){
+    var f=movesLeft/Math.max(1,budget);
+    return f>=0.35?3:(f>=0.15?2:1);
+  }
+  function levelPlaque(lv,stars){
+    /* ⛔ The winning move is very often ALSO a combo, so pop-nice and this
+       plaque landed on the same frame and printed straight through each other.
+       Clear whatever call-out is on screen and hold banners off for the length
+       of the plaque. banner() swallows anything inside 400ms of lastBannerAt,
+       so parking that stamp in the FUTURE mutes it for the whole window. */
+    while(overlayHost.firstChild) overlayHost.removeChild(overlayHost.firstChild);
+    lastBannerAt=Date.now()+1500;
+    // no star art yet: fall back to the text banner, and un-mute so it shows
+    if(!PM_ART.has('star-lit')){ lastBannerAt=0; banner('LEVEL COMPLETE','#c8a84b'); return; }
+    var el=document.createElement('div');
+    el.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'+
+      'pointer-events:none;text-align:center;width:74vw;max-width:300px;'+
+      'animation:pmBanner 1.8s ease-out forwards;';
+    var h='';
+    if(PM_ART.has('laurel-burst'))
+      h+='<img src="'+PM_ART.url('laurel-burst')+'" alt="" style="position:absolute;left:50%;top:50%;'+
+         'transform:translate(-50%,-50%);width:118%;opacity:0.55;">';
+    h+='<div style="position:relative;font-family:Bebas Neue,sans-serif;letter-spacing:0.16em;'+
+       'font-size:1.5rem;color:#c8a84b;text-shadow:0 0 16px rgba(200,168,75,.8),0 2px 6px rgba(0,0,0,.9);">'+
+       'LEVEL '+lv+'</div>';
+    h+='<div style="position:relative;margin-top:4px;">';
+    for(var i=1;i<=3;i++){
+      var lit=i<=stars;
+      h+='<img src="'+PM_ART.url(lit?'star-lit':'star-empty')+'" alt="" style="width:46px;height:46px;'+
+         'object-fit:contain;margin:0 3px;'+(lit?'':'opacity:.35;filter:grayscale(1);')+
+         'filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));">';
+    }
+    h+='</div>';
+    el.innerHTML=h;
+    overlayHost.appendChild(el);
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},1900);
+  }
+
+  /* Chapter title plate, shown once when the chapter turns over. */
+  var CHAPTER_BANNER=['banner-path','banner-orrery','banner-vine','banner-lotus'];
+  var bannerChapter=-1;
+  function chapterPlate(ci){
+    if(ci===bannerChapter) return;
+    var first=bannerChapter===-1;
+    bannerChapter=ci;
+    if(first) return;                       // do not announce the opening chapter
+    var art=CHAPTER_BANNER[ci%4];
+    if(!PM_ART.has(art)) return;
+    var el=document.createElement('div');
+    el.style.cssText='position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);'+
+      'pointer-events:none;width:84vw;max-width:340px;animation:pmBanner 2.1s ease-out forwards;';
+    el.innerHTML='<img src="'+PM_ART.url(art)+'" alt="" style="width:100%;display:block;'+
+      'filter:drop-shadow(0 4px 12px rgba(0,0,0,.85));">'+
+      '<div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);'+
+      'font-family:Bebas Neue,sans-serif;letter-spacing:0.2em;font-size:1.35rem;color:#e8dcc8;'+
+      'text-shadow:0 2px 8px rgba(0,0,0,.95);">'+CHAPTERS[ci].name.toUpperCase()+'</div>';
+    overlayHost.appendChild(el);
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},2200);
+  }
+
   // ───────── banners (agent C: BLOOM! / PETAL STORM! / GARDEN'S GRACE!) ─────────
   function banner(text,color){
     var art=BANNER_ART[text];
@@ -687,6 +755,34 @@ window._gameFns.petalmatch = function PM(a){
     return null;
   }
 
+  /* A special+special detonation gets its own painted burst ON THE BOARD, at
+     the square it went off, sized in cells. These four are FX art, not
+     lettering — the pop-* lettering still fires separately through banner().
+     spanCells is roughly how far each combo actually reaches. */
+  function comboFx(key,r,c,spanCells){
+    fx.push({kind:'comboart',art:key,r:r,c:c,span:spanCells||4,t:Date.now()});
+  }
+
+  /* Petal fragments thrown out of a cleared cell.
+     ⛔ HARD CAPPED. A spore+spore combo clears two whole colours — 20+ cells at
+     3 shards each would be 60 sprites a frame on a phone for no extra joy. The
+     cap keeps a big cascade from turning into a slideshow, and shards are pure
+     decoration so dropping them costs the player nothing. */
+  var SHARD_CAP=26;
+  var SHARD_ART=['fx-shard-1','fx-shard-2','fx-shard-3'];
+  function spawnShards(r,c){
+    if(fx.length>SHARD_CAP)return;
+    var n=2+(Math.random()<0.5?1:0);
+    for(var i=0;i<n;i++){
+      var ang=Math.random()*Math.PI*2, spd=0.035+Math.random()*0.045;
+      fx.push({kind:'shard',art:SHARD_ART[(Math.random()*3)|0],
+               x:c*CELL+CELL/2, y:r*CELL+CELL/2,
+               vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd-0.055,
+               spin:(Math.random()<0.5?-1:1)*(0.5+Math.random()),
+               t:Date.now()});
+    }
+  }
+
   function handleSpecialCombo(a,b,toClear,queue,pendingBurstPop){
     if(!a||!b)return false;
     var sa=a.cell.special,sb=b.cell.special;
@@ -703,7 +799,7 @@ window._gameFns.petalmatch = function PM(a){
       clearColor(second,toClear,queue);
       toClear[a.r+','+a.c]=1;toClear[b.r+','+b.c]=1;
       queue.push(a.r+','+a.c);queue.push(b.r+','+b.c);
-      pts=1400;score+=pts;banner('GARDEN\'S GRACE!','#c8a84b');sm('GARDEN\'S GRACE! +'+pts);return true;
+      pts=1400;score+=pts;comboFx('combo-hydra',b.r,b.c,7);banner('GARDEN\'S GRACE!','#c8a84b');sm('GARDEN\'S GRACE! +'+pts);return true;
     }
     if(sa==='spore'||sb==='spore'){
       var sporeCell=sa==='spore'?a:b,otherCell=sa==='spore'?b:a;
@@ -719,19 +815,19 @@ window._gameFns.petalmatch = function PM(a){
         }
       }
       toClear[sporeCell.r+','+sporeCell.c]=1;queue.push(sporeCell.r+','+sporeCell.c);
-      pts=500;score+=pts;banner('PETAL STORM!','#e8b5b5');sm('PETAL STORM! +'+pts);return true;
+      pts=500;score+=pts;comboFx('combo-storm',sporeCell.r,sporeCell.c,6);banner('PETAL STORM!','#e8b5b5');sm('PETAL STORM! +'+pts);return true;
     }
     if(sa==='vine'&&sb==='vine'){
       var tr=b.r,tc=b.c;
       for(var cc2=0;cc2<COLS;cc2++){var k3=tr+','+cc2;toClear[k3]=1;queue.push(k3);}
       for(var rr2=0;rr2<ROWS;rr2++){var k4=rr2+','+tc;toClear[k4]=1;queue.push(k4);}
-      pts=300;score+=pts;banner('VINE CROSS!','#7ab356');sm('VINE CROSS! +'+pts);return true;
+      pts=300;score+=pts;comboFx('combo-cross',tr,tc,6);banner('VINE CROSS!','#7ab356');sm('VINE CROSS! +'+pts);return true;
     }
     if((sa==='vine'&&sb==='burst')||(sa==='burst'&&sb==='vine')){
       var tr2=b.r,tc2=b.c;
       for(var dc=-1;dc<=1;dc++)for(var ccA=0;ccA<COLS;ccA++){var rA=tr2+dc;if(!inBounds(rA,ccA))continue;var kA=rA+','+ccA;toClear[kA]=1;queue.push(kA);}
       for(var dr2=-1;dr2<=1;dr2++)for(var rrA=0;rrA<ROWS;rrA++){var cA=tc2+dr2;if(!inBounds(rrA,cA))continue;var kB=rrA+','+cA;toClear[kB]=1;queue.push(kB);}
-      pts=600;score+=pts;banner('PLUS BLAST!','#c8a84b');sm('PLUS BLAST! +'+pts);return true;
+      pts=600;score+=pts;comboFx('combo-cross',tr2,tc2,6);banner('PLUS BLAST!','#c8a84b');sm('PLUS BLAST! +'+pts);return true;
     }
     if(sa==='burst'&&sb==='burst'){
       var tr3=b.r,tc3=b.c;
@@ -740,7 +836,7 @@ window._gameFns.petalmatch = function PM(a){
         var kC=rx+','+cx;toClear[kC]=1;queue.push(kC);
       }
       fx.push({kind:'flash',r:tr3,c:tc3,size:5,t:Date.now()});
-      pts=800;score+=pts;banner('MEGA BURST!','#ffb060');sm('MEGA BURST! +'+pts);return true;
+      pts=800;score+=pts;comboFx('combo-mega',tr3,tc3,5);banner('MEGA BURST!','#ffb060');sm('MEGA BURST! +'+pts);return true;
     }
     return false;
   }
@@ -866,7 +962,7 @@ window._gameFns.petalmatch = function PM(a){
         else if(sp.special==='burst'){spawnBonus+=100;banner('BLOOM BURST!','#c8a84b');}
         else if(sp.special==='spore'){spawnBonus+=200;banner('SPORE CLOUD!','#e8dcc8');}
       }
-      for(var ck in det.toClear){var cp=ck.split(',');var _cc=grid[cp[0]][cp[1]];if(_cc&&_cc.type!==-2&&!_cc.clearAt)_cc.clearAt=Date.now();}
+      for(var ck in det.toClear){var cp=ck.split(',');var _cc=grid[cp[0]][cp[1]];if(_cc&&_cc.type!==-2&&!_cc.clearAt){_cc.clearAt=Date.now();spawnShards(+cp[0],+cp[1]);}}
       setTimeout(function(){
         var counts=applyClear(det.toClear);/* clear anim runs 280ms in render; we wait 300ms before actually nulling cells */
         var pts=(counts.p*10+counts.v*20+counts.b*30+counts.s*40+counts.dew*15+counts.thorns*25)*comboCount*level+spawnBonus;
@@ -892,7 +988,7 @@ window._gameFns.petalmatch = function PM(a){
             }
             var newBurstPop=[];
             expandActivations(secondClear,newBurstPop);
-            for(var sk in secondClear){var sp2=sk.split(',');var _cc2=grid[sp2[0]][sp2[1]];if(_cc2&&_cc2.type!==-2&&!_cc2.clearAt)_cc2.clearAt=Date.now();}
+            for(var sk in secondClear){var sp2=sk.split(',');var _cc2=grid[sp2[0]][sp2[1]];if(_cc2&&_cc2.type!==-2&&!_cc2.clearAt){_cc2.clearAt=Date.now();spawnShards(+sp2[0],+sp2[1]);}}
             setTimeout(function(){
               var cc2=applyClear(secondClear);
               var pp=(cc2.p*10+cc2.v*20+cc2.b*30+cc2.s*40+cc2.dew*15+cc2.thorns*25)*comboCount*level;
@@ -945,6 +1041,8 @@ window._gameFns.petalmatch = function PM(a){
 
   function checkState(){
     if(isObjComplete()){
+      // rate the level on the budget it was WON with, before any of it resets
+      var earnedStars=starsFor(moves,objective.moves);
       level++;
       var prevLv=level-1;
       var finalScore=score; // capture BEFORE the reset — _sr recorded 0 for every win
@@ -953,7 +1051,9 @@ window._gameFns.petalmatch = function PM(a){
       score=0;
       resetObjState();
       sm('LEVEL '+prevLv+' COMPLETE!');
-      banner('LEVEL COMPLETE','#c8a84b');
+      levelPlaque(prevLv,earnedStars);
+      // staggered: the plaque owns the first 1.3s, then the chapter announces
+      (function(ci){ setTimeout(function(){ try{ chapterPlate(ci); }catch(e){} }, 1300); })(objective.chapter);
       _playWin();
       if(level>bestLevel){bestLevel=level;try{localStorage.setItem('lw_pm_level',String(bestLevel));}catch(e){}var bel=document.getElementById('PMbest');if(bel)bel.textContent=bestLevel;}
       if(!won){won=true;_e('game_win');}
@@ -1196,9 +1296,14 @@ window._gameFns.petalmatch = function PM(a){
        board is up. Each is still guarded at the draw site, so a combo that
        lands before its pop has arrived falls back to the text banner. */
     var LATER = ['fx-burst','fx-sparkle','fx-ring','fx-flash',
+                 'fx-shard-1','fx-shard-2','fx-shard-3',
                  'pop-nice','pop-great','pop-amazing','pop-incredible','pop-lastmove',
                  'emblem-dewshield','emblem-clover','emblem-beam','emblem-cross','emblem-lotus',
-                 'star-lit','star-empty'];
+                 'star-lit','star-empty','laurel-burst',
+                 'ring-corners','ring-plain','ring-ornate',
+                 'cover-crack','ice-shatter',
+                 'combo-cross','combo-mega','combo-storm','combo-hydra',
+                 'banner-path','banner-orrery','banner-vine','banner-lotus'];
     var loaded = 0;
     function fetch(k){
       var im = new Image();
@@ -1258,8 +1363,12 @@ window._gameFns.petalmatch = function PM(a){
       },
       /* The dew/ice tile cover, drawn UNDER the piece. jelly is the number of
          layers still on this square. */
-      cover:function(layers,cx,cy,sz){
-        return put(layers >= 2 ? 'cover-2' : 'cover-1', cx, cy, sz);
+      cover:function(layers,cx,cy,sz,cracked){
+        /* cracked = a DOUBLE-layer tile that has already taken one hit. There
+           is no per-tile "was 2" flag, and adding one would be new game state;
+           the level knows it is a doubleLayer level, and a tile down to 1 layer
+           on such a level is by definition a cracked one. */
+        return put(layers >= 2 ? 'cover-2' : (cracked ? 'cover-crack' : 'cover-1'), cx, cy, sz);
       },
       /* Returns true when it has drawn the cell, false to let the
          procedural renderer handle it. `box` is the full square to fill. */
@@ -1319,14 +1428,30 @@ window._gameFns.petalmatch = function PM(a){
         ctx.fillRect((f.c-Math.floor(half))*CELL,(f.r-Math.floor(half))*CELL,f.size*CELL,f.size*CELL);
         ctx.restore();
       } else if(f.kind==='dewstrip'){
-        if(age>240)continue;
-        var a4=1-age/240;
-        ctx.save();ctx.globalAlpha=a4;ctx.strokeStyle='rgba(155,200,255,0.9)';ctx.lineWidth=2;
-        var rad=(age/240)*CELL*0.7;
-        ctx.beginPath();ctx.arc(f.c*CELL+CELL/2,f.r*CELL+CELL/2,rad,0,Math.PI*2);ctx.stroke();
-        ctx.restore();
+        // dew tile breaking — painted ice-shatter, expanding ring as fallback
+        if(age>360)continue;
+        var t4=age/360, a4=1-t4;
+        if(!PM_ART.fx('ice-shatter',f.c*CELL+CELL/2,f.r*CELL+CELL/2,CELL*(0.85+t4*0.75),a4,0)){
+          ctx.save();ctx.globalAlpha=a4;ctx.strokeStyle='rgba(155,200,255,0.9)';ctx.lineWidth=2;
+          var rad=t4*CELL*0.7;
+          ctx.beginPath();ctx.arc(f.c*CELL+CELL/2,f.r*CELL+CELL/2,rad,0,Math.PI*2);ctx.stroke();
+          ctx.restore();
+        }
       } else if(f.kind==='beam'){
         if(age>250)continue;
+      } else if(f.kind==='comboart'){
+        // painted special+special detonation: punches out fast, fades slow
+        if(age>620)continue;
+        var t5=age/620;
+        var grow=0.55+1.45*(1-Math.pow(1-t5,3));      // ease-out expansion
+        var al5=t5<0.15?(t5/0.15):(1-(t5-0.15)/0.85);
+        PM_ART.fx(f.art,f.c*CELL+CELL/2,f.r*CELL+CELL/2,CELL*f.span*grow,al5*0.95,t5*0.5);
+      } else if(f.kind==='shard'){
+        // a petal fragment thrown from a cleared cell, with gravity
+        if(age>520)continue;
+        var t6=age/520;
+        PM_ART.fx(f.art, f.x+f.vx*age, f.y+f.vy*age+0.00042*age*age,
+                  CELL*0.44, 1-t6, f.spin*age*0.004);
       }
       keep.push(f);
     }
@@ -1354,7 +1479,8 @@ window._gameFns.petalmatch = function PM(a){
         if(jelly>0){
           // Painted ice-cover art when it has loaded; the old tint is the
           // fallback so a dew level is never invisible while art downloads.
-          if(!PM_ART.cover(jelly, c*CELL+CELL/2, r*CELL+CELL/2, CELL)){
+          if(!PM_ART.cover(jelly, c*CELL+CELL/2, r*CELL+CELL/2, CELL,
+                           objective.doubleLayer && jelly===1)){
             ctx.fillStyle=jelly===2?'rgba(155,200,255,0.35)':'rgba(155,200,255,0.2)';
             ctx.fillRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
             ctx.strokeStyle='rgba(200,230,255,0.6)';ctx.lineWidth=1;
@@ -1363,16 +1489,20 @@ window._gameFns.petalmatch = function PM(a){
         }
       }
     }
-    // hint overlay
+    // hint overlay — painted petal ring, pulsing. Drawn UNDER the pieces so it
+    // reads as the board glowing rather than something stuck on top of a flower.
     if(hintCells&&Date.now()-lastInputAt>4500){
-      ctx.save();
-      ctx.strokeStyle='rgba(232,220,200,'+(0.5+0.5*Math.sin(Date.now()*0.008))+')';
-      ctx.lineWidth=3;
+      var pulse=0.5+0.5*Math.sin(Date.now()*0.008);
       for(var hi=0;hi<hintCells.length;hi++){
         var hr=hintCells[hi][0],hc=hintCells[hi][1];
-        ctx.strokeRect(hc*CELL+3,hr*CELL+3,CELL-6,CELL-6);
+        if(!PM_ART.fx('ring-plain',hc*CELL+CELL/2,hr*CELL+CELL/2,CELL*1.04,0.35+0.5*pulse,0)){
+          ctx.save();
+          ctx.strokeStyle='rgba(232,220,200,'+pulse+')';
+          ctx.lineWidth=3;
+          ctx.strokeRect(hc*CELL+3,hr*CELL+3,CELL-6,CELL-6);
+          ctx.restore();
+        }
       }
-      ctx.restore();
     }
     var now=Date.now();
     for(r=0;r<ROWS;r++){
@@ -1421,9 +1551,15 @@ window._gameFns.petalmatch = function PM(a){
             }
           }
         }
+        // a charged piece wears the ornate ring so specials read at a glance
+        if(cell.special) PM_ART.fx('ring-ornate',cx,cy,CELL*1.12,0.5,spinAngle*0.25);
         if(selected&&selected.r===r&&selected.c===c){
-          ctx.strokeStyle='#e8dcc8';ctx.lineWidth=2;
-          ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+          // painted corner flourishes on the held piece, gently breathing
+          var selP=1+0.06*Math.sin(Date.now()*0.006);
+          if(!PM_ART.fx('ring-corners',cx,cy,CELL*1.1*selP,0.95,0)){
+            ctx.strokeStyle='#e8dcc8';ctx.lineWidth=2;
+            ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+          }
         }
       }
     }
@@ -1571,6 +1707,10 @@ window._gameFns.petalmatch = function PM(a){
      Costs nothing at runtime: it defines functions and never calls them.
      ═══════════════════════════════════════════════════════════════════ */
   window._PM_TEST={
+    /* The call-out layer, so a probe can assert what is on screen rather than
+       squinting at a screenshot. This is how the level plaque overlapping the
+       combo pop was pinned down. */
+    overlay:function(){ return overlayHost; },
     // Every legal move on the board right now, as [[r1,c1],[r2,c2]] pairs.
     // Uses the real canSwap/findMatches, same as findValidSwap does.
     moves:function(){
