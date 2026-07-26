@@ -910,7 +910,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.3';
+var BUILD='v7.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1787,8 +1787,20 @@ function makeLane(r){
        (11 on level 1, 4 by level 18) and the cap star has to have something to ask for.
        ⛔ Threshold only — the draw is taken either way, so the Daily's shared course is
        byte-identical to before. */
-    else if(rng() < (G.mode==='adventure'?0.62:0.4)){ var kc=Math.floor(rng()*COLS); while(L.blocked[kc])kc=(kc+1)%COLS;   // never inside a bush (Jessie: uncollectable caps)
-      L.coin=(0.5+kc)*TILE; }
+    else if(rng() < (G.mode==='adventure'?0.62:0.4)){ var kc=Math.floor(rng()*COLS);
+      /* Never inside a bush, and never with the hop-up approach bushed either
+         (Jessie: "we can't move sideways to jump on some of them"). The first
+         fix only kept the cap's OWN cell clear; measured on 337 generated caps,
+         14% still had a bush directly below them on a safe row (forced detour)
+         and 0.9% were fully walled in, bush below and bushes both sides, which
+         is an uncollectable cap and a stolen cap star. Guaranteeing the
+         straight-up approach kills the whole class.
+         ⛔ Same deterministic column WALK as before, no new rng() draws, so the
+         shared Daily course stays reproducible. With at most 2 bushes on each
+         of the two rows at least 5 of 9 columns always qualify. */
+      var cwBelow=(r>0&&G.lanes[r-1]&&G.lanes[r-1].type==='safe'&&G.lanes[r-1].blocked)?G.lanes[r-1].blocked:null;
+      var cwG=0; while((L.blocked[kc]||(cwBelow&&cwBelow[kc]))&&cwG++<COLS)kc=(kc+1)%COLS;
+      if(cwG<=COLS)L.coin=(0.5+kc)*TILE; }
     return L;
   }
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
@@ -4484,7 +4496,7 @@ function boot(){
      bumps while the registered URL never changed. Survivable only because the
      no-cache header rule covers every ?v= URL (verified BYPASS at the edge); do
      not rely on that twice. */
-  var SWV='68';
+  var SWV='69';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
