@@ -109,17 +109,18 @@ close with evidence (scripts/checklist_audit.js green throughout).
 
 ### 🚨 Evening: the haunted-phone staleness, solved (a6e5ecd3 + memory)
 - Stephen saw days-old Petal Match through incognito, cleared data, and a FACTORY
-  RESET. Root cause was two layers deep: (1) the LW app loads games/<id>.js?v=
+  RESET. Root cause, corrected same night: (1) the LW app loads games/<id>.js?v=
   LW_VERSION, which only moves when index.html ships, so his regional Cloudflare
-  colo pinned morning-old game code for his whole region; (2) every .htaccess
-  header fix committed since mid-July NEVER DEPLOYED — the host's git deploy
-  excludes dotfiles, so the live server runs an old vintage (measured: the sw
-  rule live, the July-25 shell/sunbeam rules not).
-- Fixed what code can fix: LW_VERSION bumped (fresh URL at every colo, live and
-  verified), all-js revalidation rule written into the repo .htaccess ready to
-  activate. STEPHEN ACTION: paste the repo's .htaccess over the live one in
-  hPanel File Manager — one time, activates everything.
-- Standing rule until then: bump LW_VERSION on EVERY ship touching games/*.js.
+  colo pinned morning-old game code for his whole region; (2) Hostinger's
+  CDN/Cache Manager OVERRIDES Cache-Control for static assets regardless of
+  .htaccess (which deploys fine — proven by our security headers serving live).
+  Their layer exempts sw.js, which is why that one rule "worked" and masked the
+  override. Every caching-header edit since July was silently rewritten.
+- Fixed in code, live and verified: LW_VERSION bumped (fresh URL at every colo —
+  Stephen's phone un-stuck by this alone). STANDING LAW: versioned URLs are the
+  ONLY cache-bust on this host; bump LW_VERSION on EVERY ship touching
+  games/*.js. Optional 3-tap cleanup for Stephen: hPanel → Performance → Cache
+  Manager → Purge All.
 - Jimothy on his phone IS current (v70 worker + breadcrumbs verified live) — his
   stuck-after-signin reports itself: check the Discord feedback channel for a
   BOOTLOG line naming the dying stage.
