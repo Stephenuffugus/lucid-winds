@@ -31,8 +31,9 @@ Last updated: 2026-07-26
     does the failure look like (white page / frozen splash / arcade black screen),
     and is he opening the installed app, a tab, or through the portal, and where did
     he log in (Jimothy's chip vs the portal/LW)?
-- [x] **Petal Match green-background regeneration doc → Drive 012Assets.** DONE
-  2026-07-26: "PETAL MATCH — Pink + Purple Remakes on GREEN (cutting sheets)", doc id
+- [x] **Petal Match green-background regeneration doc → Drive 012Assets.** DONE +
+  verified 2026-07-26 (create call returned the doc in 012Assets, owner Stephen):
+  "PETAL MATCH — Pink + Purple Remakes on GREEN (cutting sheets)", doc id
   1XlXg6N0yLLk0HIl4Xr5X5QlU9VAVI6Gf7aaOUE4qc60, in 012Assets root. Item list is
   MEASURED, not guessed — every cut sprite was scanned for pink/purple fraction and
   key-danger (share of paint a colour key would eat); 60+ items grouped into 5
