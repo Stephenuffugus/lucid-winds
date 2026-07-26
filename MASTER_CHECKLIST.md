@@ -476,11 +476,15 @@ Theme deliberately left open for the designer; every asset is described by funct
 
 Ordered by value per hour of work.
 
-- [ ] **Per-game install buttons** — ~50 `/play/<id>.html` shells already build the button in
-  `play/shell.js:829`, but there's no per-game manifest, so they install as generic
-  bookmarks. One generated manifest per shell using the existing thumbnail as icon covers
-  all of them at once. Directly what Stephen asked for ("each game have an install to
-  homescreen button in case people just want one game").
+- [x] **Per-game install identity COMPLETE, verified (commit f844b1f8).** Reality
+  was better than the note: 62 of 66 shells already had proper manifests; the last
+  4 (breathing, doubleshutter, stonegarden, stopten) got the full petalmatch
+  pattern + real-art icons (sourced from portal cards, NOT the wolf-fallback OG
+  cards, dodging an identity collision; baked checkerboard corners repainted).
+  Their OG social cards upgraded from wolf-fallback to real art in the same pass.
+  All 66 manifests parse with unique ids; HTTP spot-checks pass. ⛔ make_og_cards.py
+  regenerates ALL 66 — it clobbered the hand-composed Petal Match card once,
+  caught + restored; mind it on future runs.
 - [ ] **Portal black screen going in/out of games** — pressing back again fixes it. Needs a
   repro session on the iframe jukebox lifecycle; a watchdog already exists.
 - [~] **Blobworks code debt** — slime meter shrunk 196→150 so it stops overhanging the
