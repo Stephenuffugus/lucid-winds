@@ -107,6 +107,23 @@ close with evidence (scripts/checklist_audit.js green throughout).
 - Inkbound: premium skin as free starter is fine. Petal Match TYPES stays 6.
 - Timed mode pays Petals, capped like the daily.
 
+### 🚨 Evening: the haunted-phone staleness, solved (a6e5ecd3 + memory)
+- Stephen saw days-old Petal Match through incognito, cleared data, and a FACTORY
+  RESET. Root cause was two layers deep: (1) the LW app loads games/<id>.js?v=
+  LW_VERSION, which only moves when index.html ships, so his regional Cloudflare
+  colo pinned morning-old game code for his whole region; (2) every .htaccess
+  header fix committed since mid-July NEVER DEPLOYED — the host's git deploy
+  excludes dotfiles, so the live server runs an old vintage (measured: the sw
+  rule live, the July-25 shell/sunbeam rules not).
+- Fixed what code can fix: LW_VERSION bumped (fresh URL at every colo, live and
+  verified), all-js revalidation rule written into the repo .htaccess ready to
+  activate. STEPHEN ACTION: paste the repo's .htaccess over the live one in
+  hPanel File Manager — one time, activates everything.
+- Standing rule until then: bump LW_VERSION on EVERY ship touching games/*.js.
+- Jimothy on his phone IS current (v70 worker + breadcrumbs verified live) — his
+  stuck-after-signin reports itself: check the Discord feedback channel for a
+  BOOTLOG line naming the dying stage.
+
 ### 🔴 Open and elevated (see MASTER_CHECKLIST.md for the full 90)
 - Jimothy login lockout: armed with breadcrumbs, waiting for one occurrence
 - Super Slice climb feel: four one-line constants awaiting Stephen's thumb
