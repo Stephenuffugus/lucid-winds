@@ -52,11 +52,62 @@ from PIL import Image
 from scipy import ndimage
 
 
+def safe_key(rgb, verbose=True):
+    """Background colour, chosen by BORDER CONTACT rather than by hue.
+
+    ⛔ WHY THIS OVERRIDES THE RIG'S find_key FOR THESE SHEETS.
+    Stephen, 2026-07-26: "sheets 7, 8, 9 and some others seem to have purples and
+    pinks in them so we need to be really careful."
+
+    The Jimothy rig's find_key looks for the "magenta family" (r>150, b>150,
+    g<90) and, if it finds 1000+ such pixels, assumes THOSE are the background.
+    That is correct for Jimothy, whose sheets are painted on magenta. It is
+    DANGEROUS for a sheet whose background is something else and whose ART is
+    pink or purple: the painted pink satisfies the same test, the rig keys on the
+    art, and the art is what gets deleted.
+
+    Background has one property art does not: it touches the edge of the sheet
+    and keeps going. So we take the modal colour of a border band, then check it
+    actually covers a plausible share of the sheet. If the two methods disagree,
+    we say so loudly rather than silently picking one.
+    """
+    a = rgb.astype(np.int16)
+    h, w = a.shape[:2]
+    band = max(2, min(h, w) // 100)
+    edge = np.concatenate([
+        a[:band].reshape(-1, 3), a[-band:].reshape(-1, 3),
+        a[:, :band].reshape(-1, 3), a[:, -band:].reshape(-1, 3)])
+    q = (edge // 8 * 8)
+    vals, counts = np.unique(q, axis=0, return_counts=True)
+    mode = vals[counts.argmax()]
+    near = (np.abs(a - mode).max(axis=2) < 24)
+    key = a[near].reshape(-1, 3).mean(axis=0)
+    cover = float(near.mean())
+
+    if verbose:
+        print('    background key measured from the border: rgb(%d,%d,%d), %.0f%% of the sheet'
+              % (key[0], key[1], key[2], cover * 100))
+        if cover < 0.20:
+            print('    ⚠ that colour covers less than 20%% of the sheet. Either the sheet is very'
+                  ' densely painted, or the border is not background. CHECK THE CONTACT SHEET.')
+        # Would the hue-based method have disagreed? That is the pink-art trap.
+        try:
+            hue_key = rig.find_key(rgb)
+            if np.abs(np.array(hue_key) - key).max() > 40:
+                print('    ⚠ THE HUE-BASED KEY DISAGREES: rgb(%d,%d,%d) vs border rgb(%d,%d,%d).'
+                      % (hue_key[0], hue_key[1], hue_key[2], key[0], key[1], key[2]))
+                print('      That is the pink/purple-art trap. Using the BORDER key, which is'
+                      ' the safe one. Look hard at the contact sheet before writing.')
+        except Exception:
+            pass
+    return key
+
+
 def cut_grid(path, cols, rows, pad=3, t0=30, t1=62, auto=False):
     """Same pipeline as the rig's cut(), with the grid made a parameter."""
     im = Image.open(path).convert('RGB')
     rgb = np.array(im)
-    key = rig.find_key(rgb)
+    key = safe_key(rgb)
     alpha, wr, wc = rig.background(rgb, key, t0, t1)
     solid = alpha > 0.5
     solid_open = ndimage.binary_opening(solid, np.ones((3, 3)))
