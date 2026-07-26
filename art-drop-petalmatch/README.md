@@ -50,3 +50,27 @@ before trusting `--auto`, and compare contact sheets.
 The REDO LIST at the end of a run is the list he asked for. Note the difference:
 - **CLIPPED** usually means the CUT was wrong, not the art. Re-cut it first.
 - **SPARSE / TINY / EMPTY / HALO** usually means the sprite needs remaking.
+
+---
+
+## Two cutters, and when to use which
+
+**`scripts/cut_art_sheet.py`** — the general one. Decides what is background by
+COLOUR DISTANCE. Right for normal sheets: green leaves, gold frames, blue ice on
+magenta.
+
+**`scripts/cut_pink_sheet.py`** — for sheets whose ART is close in colour to the
+BACKGROUND. It decides what is background by REACHABILITY instead: flood fill
+from the sheet border, and whatever the flood cannot reach is art, no matter how
+pink it is.
+
+Measured on a worst case (a petal whose fill sits 10 units from the background):
+```
+colour-distance cutter   84x80 frame,   4,209 px   ← ate the whole petal body
+flood cutter            224x220 frame, 38,300 px   ← petal intact
+```
+
+⭐ **Better still: stop making the problem.** If pink and purple assets are going
+onto their own sheets anyway, generate those sheets on a **GREEN or DARK**
+background rather than magenta. Pink art on green separates trivially and needs
+neither tool's cleverness. The flood cutter is the safety net, not the plan.
