@@ -97,9 +97,14 @@
   .mode.wild .tag{background:var(--petal)}
   .mode.zephyr .tag{background:var(--amber)}
   .overlay .controls{font-size:12px;color:var(--ink-soft);opacity:.85;max-width:52ch;margin-top:2px}
+  /* ⛔ 48px MINIMUM TOUCH TARGET (studio rule 11). Audited 2026-07-26: this was
+     the worst control in the whole studio at 15px tall — a bare underlined text
+     button with no padding. It stays visually a text link; the tap area is what
+     grows. Vinewinder renders unscaled, so these px are real screen px. */
   .ghostbtn{font-family:inherit;font-weight:600;font-size:12px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--ink-soft);background:none;border:none;
-    cursor:pointer;margin-top:4px;text-decoration:underline;text-underline-offset:3px}
+    cursor:pointer;margin-top:4px;text-decoration:underline;text-underline-offset:3px;
+    min-height:48px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center}
   .ghostbtn:focus-visible{outline:3px solid var(--pollen);outline-offset:3px}
   .primary{font-family:inherit;font-weight:600;font-size:14px;letter-spacing:.1em;
     text-transform:uppercase;color:#fbfdf9;background:var(--vine);border:none;
@@ -142,8 +147,12 @@
   .go-bar{height:8px;border-radius:999px;background:rgba(47,93,58,.15);overflow:hidden}
   .go-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--vine),var(--pollen));border-radius:999px;transition:width .7s ease}
   .tabrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  /* 48px minimum touch target. Pill shape and type size unchanged; only the tap
+     area grows, via padding rather than a fixed height so the pill still hugs
+     its label. */
   .tabb{font-family:inherit;font-weight:600;font-size:12px;color:var(--ink-soft);cursor:pointer;
-    background:none;border:1.5px solid transparent;border-radius:999px;padding:7px 15px}
+    background:none;border:1.5px solid transparent;border-radius:999px;padding:7px 15px;
+    min-height:48px;display:inline-flex;align-items:center;justify-content:center}
   .tabb.on{color:#fff;background:var(--vine)}
   .shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:10px;width:min(460px,90vw);max-height:54vh;overflow-y:auto;padding:2px}
   .cositem{text-align:left;background:rgba(255,255,255,.66);border:1.5px solid rgba(47,93,58,.18);border-radius:12px;padding:10px;cursor:pointer;font-family:inherit;color:var(--ink)}

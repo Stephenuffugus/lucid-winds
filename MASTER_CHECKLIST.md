@@ -271,8 +271,12 @@ not.** These are per-game and specific:
   Verified all four mode buttons DO fire and BEGIN THE WATCH exists and is not below the
   fold at 390x844, so it was never a dead button. STILL OPEN: every touch target on that
   screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
-- [ ] **48px touch targets across the satellites.** Loop Warden's buttons are 40px and
-  35px. Rule 11 says 48px minimum. Worth auditing studio-wide rather than one game.
+- [~] **48px TOUCH-TARGET SWEEP — Stephen approved 2026-07-26.** Audited all 83 satellites
+  headlessly: only **7 are clean**. 76 have controls under the 48px minimum. Most common is
+  the "Daily" button at 38px; worst is Vinewinder's Back at **15px**, then Pollen Panic 29px,
+  Flipbook and Nova Bloom 35px, Cipher Bloom / Bramble Court / Chaff Wars 36px.
+  It is a studio-wide habit, not two sloppy games. Doing it worst-first with a screenshot
+  check on each, since raising a min-height can shift a tight layout.
 - [x] **Line Loom "incomprehensible" — FIXED.** Investigated first: the title screen already
   explains the game and there IS a how-to page, so information was never the gap. The gap
   was first contact — you land on a near-black board with four small outlines and six
