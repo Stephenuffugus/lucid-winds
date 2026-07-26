@@ -624,12 +624,18 @@ not.** These are per-game and specific:
   Verified all four mode buttons DO fire and BEGIN THE WATCH exists and is not below the
   fold at 390x844, so it was never a dead button. STILL OPEN: every touch target on that
   screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
-- [~] **48px TOUCH-TARGET SWEEP — Stephen approved 2026-07-26.** Audited all 83 satellites
-  headlessly: only **7 are clean**. 76 have controls under the 48px minimum. Most common is
-  the "Daily" button at 38px; worst is Vinewinder's Back at **15px**, then Pollen Panic 29px,
-  Flipbook and Nova Bloom 35px, Cipher Bloom / Bramble Court / Chaff Wars 36px.
-  It is a studio-wide habit, not two sloppy games. Doing it worst-first with a screenshot
-  check on each, since raising a min-height can shift a tight layout.
+- [~] **48px TOUCH-TARGET SWEEP — worst SEVEN done (commits da8b517d + cbd4cb3f),
+  measured in RENDERED px.** ⭐ Root cause split discovered: most "under-48" games
+  are the SCALED-STAGE ILLUSION — 48 CSS px on a 0.72-scaled 540x960 stage renders
+  ~35px real. Standard now set: 72 stage px in scaled games, 48 real px unscaled,
+  invisible pseudo tap zones where visuals must stay small, ⛔ never vw units
+  inside a scaled stage (double-shrink). Done: vinewinder, pollen-panic,
+  nova-bloom, cipher-bloom, bramble-court, chaff-wars, flipbook — every screen
+  re-measured at 390x844 + 360x800, zero under 48 effective, screenshots eyeballed.
+  One documented exemption: cipher-bloom keyboard/cell WIDTH (26 keys across).
+  REMAINING: ~69 satellites flagged by the old audit — re-audit with the
+  rendered-px method (many share the same .btn template; the 72-stage-px fix is
+  reusable). Memory: touch-targets-measure-rendered-px.
 - [x] **Line Loom "incomprehensible" — FIXED.** Investigated first: the title screen already
   explains the game and there IS a how-to page, so information was never the gap. The gap
   was first contact — you land on a near-black board with four small outlines and six
