@@ -42,7 +42,29 @@ window._gameFns.petalmatch = function PM(a){
      dropped. MEDIAN not mean — a couple of runaway cascades drag the mean up
      and would make every level look easier than it plays.
      ⛔ Re-run the calibrator if scoring, board size or the piece count change. */
-  var PM_YIELD={score:78.29,dew:0.30,gather:0.80,thorns:1.20};
+  var PM_YIELD={score:78.29,dew:0.1395,gather:0.80,thorns:1.20};
+  /* ═══ RE-CALIBRATED 2026-07-26, DEW ONLY — and why only dew ═══════════
+     After the dewTotal() fix the calibrator (itself fixed, it had the mirror of
+     the same bug) re-measured all four yields over 320 runs, levels 1-40:
+         score 68.87   dew 0.1395   gather 1.7778   thorns 0.4737
+     Only `dew` was adopted. The others are NOT pasted in, deliberately:
+
+     · gather 1.7778 is the BLENDED figure across levels running 1 to 3 colours
+       and pasting it is a KNOWN TRAP — see the note above. It already shipped a
+       1-colour level asking 42 of ONE flower in 30 moves, measured 0% win.
+     · score and thorns: demand is target x KFIX x YIELD x moves, so scaling a
+       yield by k and its KFIX by 1/k leaves the game identical. PM_KFIX was
+       empirically tuned AGAINST the old yields, and all three of those kinds
+       currently measure inside their target band (score 68.5, gather 63.9,
+       thorns 55.6). Re-basing them would mean re-tuning every KFIX and
+       re-running the whole ladder to arrive back where we started.
+       ⛔ A more accurate constant is not automatically a better game.
+
+     dew is the exception because its MECHANIC changed, not just its number: a
+     double-layer tile now genuinely costs two strips, so the old 0.30 was
+     measured against a different game. It was making dew levels ask about
+     twice what is achievable (level 23 won 30% of 30 runs, level 25 23%).
+     PM_KFIX.dew moves with it — see below. */
   /* ⛔ gather is the SINGLE-COLOUR yield. The calibrator measured 1.80 across
      levels running 1-3 colours, but ANY of the target colours counts, so the
      real yield scales WITH the colour count — it is not one constant. Using
@@ -58,7 +80,15 @@ window._gameFns.petalmatch = function PM(a){
      same rating, wildly different outcomes. Thorns fall off far faster with
      load than score does. ⛔ These are tuned FROM the harness, never by eye;
      re-run scripts/petalmatch_balance.js after touching them. */
-  var PM_KFIX={score:1.22,dew:0.80,gather:1.30,thorns:0.72,mix:1.55};
+  /* dew is 1.18, not the 0.80 it sat at for eight passes. PM_YIELD.dew was
+     re-based from 0.30 to the measured 0.1395 (a 0.465x move), and demand is
+     target x KFIX x YIELD x moves, so KFIX has to climb to stop dew levels
+     collapsing into freebies. 1.18 does not merely restore the old demand
+     (that would be 0.80/0.465 = 1.72) — dew was genuinely TOO HARD once
+     double-layer started costing what it claims, measuring 30% and 23% on
+     levels 23 and 25, so this deliberately lands lower and asks about 4-5
+     tiles where it was asking 7. */
+  var PM_KFIX={score:1.22,dew:1.18,gather:1.30,thorns:0.72,mix:1.55};
   /* Calibration log — by-kind win rate from scripts/petalmatch_balance.js.
      Each pass records its OWN level range and trial count; they are not
      comparable across different ranges, because a window that holds more
@@ -134,6 +164,14 @@ window._gameFns.petalmatch = function PM(a){
           dewTotal(). ⭐ When moving the input does not move the output, the
           model is not mis-tuned, it is measuring the wrong thing. Stop turning
           the dial and go read the mechanic.
+       pass 11 after the dewTotal() fix, dew was genuinely too hard: level 23
+          won 30% of 30 runs and level 25 23%. Re-ran the (also fixed)
+          calibrator, 320 runs over levels 1-40, and adopted the measured dew
+          yield ONLY: 0.30 -> 0.1395. PM_KFIX.dew 0.80 -> 1.18 to go with it,
+          and the tile floor 3 -> 2, which had started binding on most of
+          chapters 1-2 and was shoving early dew levels above their designed
+          position — enough that the ladder report failed spike placement.
+          ⛔ score/gather/thorns yields were NOT adopted; see the PM_YIELD note.
      ⛔ Read the BY-KIND averages, not single levels. At 12 trials one level
      is +/-14 points of noise — level 17 and level 21 are the same objective
      and measured 58% and 8% in the same run. The by-kind rows pool 48-72
@@ -621,12 +659,15 @@ window._gameFns.petalmatch = function PM(a){
     if(kind==='dew'){
       var dbl=d>0.55;
       var dewN=Math.round(target*PM_YIELD.dew*mv/(dbl?PM_DBL:1));
-      /* The floor is on STRIPS, not tiles — 3 layer strips minimum. A flat
-         3-TILE floor meant a double-layer level could never ask less than 6
-         strips, so it bound on exactly the relief levels it should not have
-         touched and dragged them well above their rated position. */
-      var dewMin=dbl?2:3;
-      if(dewN<dewMin)dewN=dewMin;
+      /* Floor of 2, down from 3. Once PM_YIELD.dew was re-based to the real
+         0.1395 strips/move, an early dew level genuinely wants 2 tiles, and a
+         3-tile floor was binding on most of chapter 1 and 2 — dragging those
+         levels well above their designed position and breaking the rhythm hard
+         enough that the ladder report failed on spike placement. A floor is
+         there to stop a 1-tile level, which any stray cascade clears; it is not
+         there to set difficulty. ⛔ Applies to double-layer too: 2 tiles is
+         already 4 strips there. */
+      if(dewN<2)dewN=2;
       return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,finale:finale,
               label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
