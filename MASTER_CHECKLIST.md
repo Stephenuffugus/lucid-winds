@@ -196,8 +196,16 @@ items are marked here so nobody re-does them.
 - [ ] **Hedgerow** (extends older replay-level entry): share button on level
   complete; NEXT LEVEL button; rules page with start button; real level ladder —
   at least 100 levels, progressively harder, changing scenery.
-- [ ] **Hunch**: early-submit button does not work (bug). Research classic
-  Pictionary clue banks; grow the prompt bank so children can play and understand.
+- [x] **Hunch early-submit HARDENED, verified (Hunch repo, pushed to main, sw v5).**
+  Honest finding: the listener/guard/hit-target were all correct and the deployed
+  site matched HEAD — the tap was being eaten at the device layer. Closed both
+  mechanisms: touch-action:manipulation (double-tap-zoom hold) + a pointerup
+  listener beside the onclick (survives a never-synthesized click; roundActive
+  guard makes double-fire a no-op). Verified incl. a dead-click simulation.
+  Submit row raised to 48px. ⚠️ Needs Jessie's device to confirm the real-world fix.
+- [ ] **Hunch prompt bank**: research classic Pictionary clue banks; grow the bank
+  so children can play and understand. Also open (found in code, flagged): the
+  round timer starts on round LOAD, not first stroke.
 - [ ] **Flipbook**: 5th eyeball set (the "closed" one) is bad — remove, add a real
   closed-eyes set; accordion menu; the notebook should be COMPLETELY blank so
   people can draw on all of it.
@@ -206,9 +214,12 @@ items are marked here so nobody re-does them.
   (the game currently borrows the LOCKED shared dice with a blue filter; doc routes
   around the lock), 13 log emblems matching the real scoring rows, log-book UI,
   4 backgrounds, celebration set, thumbnail. Art itself still [?] on Stephen.
-- [ ] **No Pain No Gain**: undo button (remove last piece); a real END to runs
-  (fully build out); description loses the word "cozy"; the clear button does not
-  work (bug).
+- [x] **No Pain No Gain Clear + Undo DONE, verified (pushed with the NPNG commit).**
+  Clear only nulled the ragdoll and never touched the placed-traps array — in
+  build mode it did nothing visible. Now empties the board; Undo added (haz.pop,
+  48px, no em-dash); verified headless through the real UI incl. undo-past-empty.
+- [ ] **No Pain No Gain, still open**: a real END to runs (fully build out);
+  description loses the word "cozy".
 - [ ] **Sprout Dice** (extends older ⚠️ entry): Jessie: "this game doesn't make
   sense." Needs a first-contact/clarity pass or a rethink.
 - [ ] **Hexa Hive**: study the real Hexa Sort — tiles should MOVE to the next stack
