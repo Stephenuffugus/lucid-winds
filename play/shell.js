@@ -606,7 +606,7 @@
     /* `cards` is OPTIONAL and additive — a game with painted rules art can show
        it instead of describing the mechanics in words. Every other game in this
        table omits it and renders exactly as before. */
-    petalmatch:{g:"Clear each level's objective before the moves run out.",h:"Swap two neighbours to line up three or more of the same flower. Every level asks for something different: reach a score, clear the dew tiles, break the thorns, or gather set colours. Match more than three and you make a special piece. Set two specials off together for the big ones.",c:["Drag a flower onto a neighbour to swap","HINT shows a move when you are stuck","RETRY LV replays the level you are on"],
+    petalmatch:{g:"Clear each level's objective before the moves run out.",h:"Swap two neighbours to line up three or more of the same flower. Every level asks for something different: reach a score, clear the dew tiles, break the thorns, or gather set colours. Match more than three and you make a special piece. Set two specials off together for the big ones.",h2:"Clearing a level pays PETALS, and Petals buy help. DIG lifts out one flower, CUT takes a whole row and column, WASH removes a thorn or a dew tile outright. BOOST is chosen before your first move. Run out of moves and you can buy five more.",c:["Drag a flower onto a neighbour to swap","Petals are earned by clearing levels","DIG, CUT and WASH need a target, so tap one then tap the board","BOOST only works before your first move","HINT shows a move when you are stuck","RETRY LV replays the level you are on"],
       cards:[
         {src:'/assets/games/petalmatch/runtime/tut-swap.png',   cap:'Swap two neighbours'},
         {src:'/assets/games/petalmatch/runtime/tut-match3.png', cap:'Three in a row clears'},
@@ -728,6 +728,12 @@
     h += '<h2>' + esc(LW_PLAY.name || LW_PLAY.id) + '</h2>';
     if (d.g) h += '<div class="shell-dir-sec"><div class="shell-dir-h">The goal</div><p>' + esc(d.g) + '</p></div>';
     if (d.h) h += '<div class="shell-dir-sec"><div class="shell-dir-h">How it plays</div><p>' + esc(d.h) + '</p></div>';
+    /* Optional second section, for a game with an economy or a second system to
+       explain. Purely additive — every game without `h2` renders exactly as it
+       always did. ⛔ Added because the copy was written into the table first and
+       silently dropped: only `h` was ever read, so the whole paragraph existed
+       in the data and appeared nowhere on screen. */
+    if (d.h2) h += '<div class="shell-dir-sec"><div class="shell-dir-h">' + esc(d.h2h || 'Petals and powerups') + '</div><p>' + esc(d.h2) + '</p></div>';
     /* Painted rules cards, when a game has them. Purely additive: a game
        without `cards` renders exactly as it always did. Images are lazy and
        carry onerror, so a missing file costs a gap, never a broken card. */

@@ -265,6 +265,103 @@ window._gameFns.petalmatch = function PM(a){
      one behaves like another; measure each. */
   var PM_DBL=2.0;
   var _KSLOT=[0,0,1,0,1,0,1,0,1,2];    // 0 open board · 1 blocker · 2 finale
+  /* ═══ PETALS — Petal Match's own currency ════════════════════════════
+     Stephen 2026-07-26: "add powerups like candy crush that people can buy
+     with in game currency they earn."
+
+     ⛔ NOT SUNBEAMS, and that is a locked-doctrine call, not a preference.
+     reference_economy_lanes pins Sunbeams to "mint plants only, 30 = 1 plant,
+     NEVER anything else purchasable" — a 30-Sunbeam powerup is literally one
+     plant not minted, so powerups would cannibalise the exact loop Sunbeams
+     exist to drive. Dew is the time-skip lane and is earned from Wild tending
+     INSIDE Lucid Winds, so it does not exist at all for someone playing this
+     standalone in the arcade. Hence a fourth thing, earned here and spent here.
+
+     Stephen chose game-local over arcade-wide (2026-07-26). ⛔ If that is ever
+     revisited, the migration is the hard part: balances live in localStorage
+     per browser, so going arcade-wide means a shared helper plus a merge for
+     players who already banked Petals here. Keep PM_PETALS as the ONLY reader
+     and writer of the key so that swap stays a one-file change.
+
+     A premium currency may top these up later. Nothing here assumes one, and
+     nothing here is gated behind one — "not buying must still work". */
+  var PM_PETAL_KEY='lw_pm_petals';
+  var PM_PAID_KEY='lw_pm_paid';        // levels whose FIRST-clear bounty is spent
+
+  /* First clear pays by stars; a replay pays a flat trickle. ⛔ The split is
+     what stops level 1 becoming a Petal farm — it is a 100%-win board, so a
+     flat per-clear payout would make grinding it strictly better than playing
+     the game. The trickle is deliberately kept non-zero so a player stuck on a
+     spike still banks toward the +5 Moves that gets them past it. */
+  var PM_EARN_FIRST=[0,7,11,15];       // index by stars 1..3
+  var PM_EARN_REPLAY=2;
+
+  /* `i` is a SHORT TEXT LABEL, deliberately not an emoji. The first pass used
+     emoji and they rendered as tofu boxes in the screenshot probe, because
+     headless Chrome here has no emoji font. Real phones would almost certainly
+     have shown them — but that is the point: a glyph I cannot screenshot is a
+     glyph I cannot verify, and "it is wired" is not "it is on screen" in this
+     game more than any other. Text renders in the font the game already ships.
+     ⛔ These are placeholders for PAINTED icons. When art lands, cut them to
+     assets/games/petalmatch/runtime/ as pu-<key>.png and swap in an <img> with
+     the usual onerror fallback to this text. */
+  var PM_SHOP={
+    trowel:{n:'Trowel',      c:15,i:'DIG', w:'mid', d:'Lift out any one flower'},
+    shears:{n:'Shears',      c:25,i:'CUT', w:'mid', d:'Cut a whole row and column'},
+    can:   {n:'Watering Can',c:20,i:'WASH',w:'mid', d:'Wash one blocker away entirely'},
+    moves: {n:'+5 Moves',    c:30,i:'+5',  w:'lose',d:'Five more moves, right now'},
+    head:  {n:'Head Start',  c:25,i:'HEAD',w:'pre', d:'Open with a Bloom Burst ready'},
+    breath:{n:'Deep Breath', c:20,i:'AIR', w:'pre', d:'Five extra moves this level'},
+    thin:  {n:'Thin Meadow', c:40,i:'THIN',w:'pre', d:'One flower type stays away'}
+  };
+
+  /* The Petal mark, drawn inline so it never depends on an emoji font either. */
+  function petalGlyph(px,fill){
+    var g='',i,a;
+    for(i=0;i<5;i++){
+      a=(-90+i*72)*Math.PI/180;
+      g+='<circle cx="'+(12+Math.cos(a)*6.4).toFixed(2)+'" cy="'+(12+Math.sin(a)*6.4).toFixed(2)+'" r="4.3"/>';
+    }
+    return '<svg width="'+px+'" height="'+px+'" viewBox="0 0 24 24" aria-hidden="true" '+
+      'style="display:block;flex:0 0 auto;"><g fill="'+(fill||'#e8b5b5')+'">'+g+'</g>'+
+      '<circle cx="12" cy="12" r="3.4" fill="#c8a84b"/></svg>';
+  }
+
+  var PM_PETALS=(function(){
+    function rd(k,dflt){ try{ var v=localStorage.getItem(k); return v==null?dflt:v; }catch(e){ return dflt; } }
+    function wr(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+    var bal=parseInt(rd(PM_PETAL_KEY,'0'),10); if(!(bal>=0))bal=0;
+    var paid={};
+    (function(){
+      var raw=rd(PM_PAID_KEY,'');
+      if(!raw)return;
+      var parts=String(raw).split(',');
+      for(var i=0;i<parts.length;i++) if(parts[i]) paid[parts[i]]=1;
+    })();
+    return {
+      get:function(){ return bal; },
+      can:function(n){ return bal>=n; },
+      add:function(n){ if(!(n>0))return 0; bal+=n; wr(PM_PETAL_KEY,bal); return n; },
+      /* ⛔ Returns false and spends NOTHING when short. Every caller must check
+         the return value before applying an effect, or a player at 0 Petals
+         gets free powerups. */
+      spend:function(n){ if(bal<n)return false; bal-=n; wr(PM_PETAL_KEY,bal); return true; },
+      firstClear:function(lv){ return !paid[lv]; },
+      markPaid:function(lv){
+        if(paid[lv])return;
+        paid[lv]=1;
+        var out=[]; for(var k in paid) out.push(k);
+        wr(PM_PAID_KEY,out.join(','));
+      }
+    };
+  })();
+
+  /* Which flower types this level actually deals. Normally TYPES; Thin Meadow
+     drops it by one for a single level. ⛔ TYPES itself STAYS AT 6 (Stephen,
+     and the whole balance pass is calibrated at 6) — this is a per-level,
+     paid-for, opt-in deviation, which is exactly what a booster is. */
+  var activeTypes=TYPES;
+
   // 6 flower types: rose / daisy / violet / forgetmenot / clover / cherry
   var GEMS=[
     {name:'rose',color:'#c47a7a',mid:'#8b4d4d',hi:'#e8b5b5'},
@@ -424,6 +521,82 @@ window._gameFns.petalmatch = function PM(a){
     }
   })();
   pan.appendChild(boardWrap);
+
+  /* ═══ POWERUP SHELF ══════════════════════════════════════════════════
+     The three mid-level powerups, the Petal balance, and BOOST. It is one
+     compact row of its own and NOT part of the New Game / Retry / Hint row —
+     that row is already at capacity (adding a fourth pill once pushed HINT
+     onto a second line at 412px, see the PM_PILL note).
+
+     ⛔ Handlers are attached with addEventListener, not inline onclick. The
+     house rule is that anything called from an inline onclick has to live on
+     window; building the elements here means nothing new needs exporting. */
+  /* Two rows, not one. On a 412px phone the wallet chip plus four buttons
+     measured ~440px and BOOST ran off the edge of the column. Giving the
+     buttons their own row with flex:1 1 0 lets them share the width evenly and
+     the longest label (WASH) stops setting the size of everything. */
+  var shelfWrap=document.createElement('div');
+  shelfWrap.id='PMshelf';
+  shelfWrap.style.cssText='margin:7px 0 0;font-family:DM Mono,monospace;';
+  pan.appendChild(shelfWrap);
+
+  var walletRow=document.createElement('div');
+  walletRow.style.cssText='display:flex;justify-content:center;align-items:center;gap:5px;'+
+    'margin:0 0 5px;font-size:0.68rem;color:#8a9178;';
+  shelfWrap.appendChild(walletRow);
+
+  var shelf=document.createElement('div');
+  shelf.style.cssText='display:flex;gap:4px;justify-content:center;align-items:stretch;';
+  shelfWrap.appendChild(shelf);
+
+  var PU_BTN='min-height:48px;flex:1 1 0;min-width:0;padding:3px 4px;cursor:pointer;'+
+    'background:rgba(18,24,16,0.88);border:1px solid rgba(200,168,75,0.42);border-radius:9px;'+
+    'color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.62rem;line-height:1.25;'+
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;';
+
+  var shelfBtns={};
+  function mkPU(key){
+    var it=PM_SHOP[key];
+    var b=document.createElement('button');
+    b.type='button';
+    b.style.cssText=PU_BTN;
+    b.title=it.n+' — '+it.d;
+    b.setAttribute('aria-label',it.n+', '+it.c+' petals. '+it.d);
+    /* ⛔ Bare number, NOT petalGlyph()+number. At 9px the mark rendered as a
+       plus sign and "DIG +15" read as a reward of 15 rather than a price of 15.
+       The wallet chip beside it already establishes what the number is in. */
+    b.innerHTML='<span style="font-family:Bebas Neue,sans-serif;font-size:0.82rem;'+
+                'letter-spacing:0.07em;color:#e8dcc8;line-height:1;">'+it.i+'</span>'+
+                '<span style="color:#c8a84b;font-size:0.66rem;">'+it.c+'</span>';
+    b.addEventListener('click',function(ev){ ev.preventDefault(); pmTap(key); });
+    shelfBtns[key]=b;
+    return b;
+  }
+
+  walletRow.innerHTML=petalGlyph(15)+
+    '<strong id="PMpet" style="color:#7ab356;font-size:0.8rem;">0</strong>'+
+    '<span style="letter-spacing:0.06em;">PETALS</span>';
+
+  var boostBtn=document.createElement('button');
+  boostBtn.type='button';
+  boostBtn.style.cssText=PU_BTN;
+  boostBtn.innerHTML='<span style="font-family:Bebas Neue,sans-serif;font-size:0.86rem;'+
+                     'letter-spacing:0.08em;color:#7ab356;line-height:1;">BOOST</span>';
+  boostBtn.addEventListener('click',function(ev){ ev.preventDefault(); pmOpenBoost(); });
+
+  var reviveBtn=document.createElement('button');
+  reviveBtn.type='button';
+  reviveBtn.style.cssText=PU_BTN+'border-color:rgba(122,179,86,0.75);';
+  reviveBtn.innerHTML='<span style="font-family:Bebas Neue,sans-serif;font-size:0.86rem;'+
+                      'letter-spacing:0.07em;color:#7ab356;line-height:1;">+5 MOVES</span>'+
+                      '<span style="color:#c8a84b;font-size:0.66rem;">'+PM_SHOP.moves.c+'</span>';
+  reviveBtn.addEventListener('click',function(ev){ ev.preventDefault(); pmRevive(); });
+
+  shelf.appendChild(mkPU('trowel'));
+  shelf.appendChild(mkPU('shears'));
+  shelf.appendChild(mkPU('can'));
+  shelf.appendChild(boostBtn);
+  shelf.appendChild(reviveBtn);
 
   overlayHost=document.createElement('div');
   overlayHost.style.cssText='position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;';
@@ -953,7 +1126,7 @@ window._gameFns.petalmatch = function PM(a){
     for(var r=0;r<ROWS;r++){grid[r]=[];
       for(var c=0;c<COLS;c++){
         var t;
-        do{t=Math.floor(Math.random()*TYPES);}
+        do{t=Math.floor(Math.random()*activeTypes);}
         while((c>=2&&grid[r][c-1]&&grid[r][c-1].type===t&&grid[r][c-2]&&grid[r][c-2].type===t)||
               (r>=2&&grid[r-1][c]&&grid[r-1][c].type===t&&grid[r-2][c]&&grid[r-2][c].type===t));
         grid[r][c]=mkCell(t,r,c);
@@ -1249,9 +1422,9 @@ window._gameFns.petalmatch = function PM(a){
       // Tuned down from full-board wipe to clearing 2 random colors.
       // Still the biggest combo but leaves the board with structure.
       var used={};
-      var first=Math.floor(Math.random()*TYPES);used[first]=1;
+      var first=Math.floor(Math.random()*activeTypes);used[first]=1;
       var second;
-      do{second=Math.floor(Math.random()*TYPES);}while(used[second]);
+      do{second=Math.floor(Math.random()*activeTypes);}while(used[second]);
       clearColor(first,toClear,queue);
       clearColor(second,toClear,queue);
       toClear[a.r+','+a.c]=1;toClear[b.r+','+b.c]=1;
@@ -1261,7 +1434,7 @@ window._gameFns.petalmatch = function PM(a){
     if(sa==='spore'||sb==='spore'){
       var sporeCell=sa==='spore'?a:b,otherCell=sa==='spore'?b:a;
       var tgt=otherCell.cell.type;
-      if(tgt<0){tgt=Math.floor(Math.random()*TYPES);}
+      if(tgt<0){tgt=Math.floor(Math.random()*activeTypes);}
       var convertTo=otherCell.cell.special||'burst';
       for(var rr=0;rr<ROWS;rr++)for(var cc=0;cc<COLS;cc++){
         var cell=grid[rr][cc];
@@ -1315,7 +1488,7 @@ window._gameFns.petalmatch = function PM(a){
     }
     for(var r2=writeR;r2>=top;r2--){
       if(grid[r2][c])continue;
-      var t=Math.floor(Math.random()*TYPES);
+      var t=Math.floor(Math.random()*activeTypes);
       var nc=mkCell(t,r2,c,{yStart:(r2-writeR-2)*CELL}); // drop from above
       nc.bounceAt=Date.now()+(writeR-r2+2)*55;
       grid[r2][c]=nc;
@@ -1468,6 +1641,7 @@ window._gameFns.petalmatch = function PM(a){
 
   function updateHUD(){
     var e;
+    try{ renderShelf(); }catch(err){}   // keeps the wallet + affordability honest
     if(e=document.getElementById('PMsc'))e.textContent=score;
     if(e=document.getElementById('PMlv2'))e.textContent=level;
     if(e=document.getElementById('PMlv'))e.textContent=level;
@@ -1529,18 +1703,286 @@ window._gameFns.petalmatch = function PM(a){
     setTimeout(function(){try{sm(line);}catch(e){}},2400);
   }
 
+  /* ═══ POWERUPS ═══════════════════════════════════════════════════════
+     ⛔ Every targeted powerup builds a `toClear` set and hands it to the REAL
+     applyClear/collapseAndRefill/resolveCascade path. None of them reimplement
+     clearing, thorn hits, dew stripping or gather counting — that is how the
+     objective counters and the board stay in agreement, and disagreeing
+     counters are the bug family that made this game bad twice already.
+
+     ⛔ A powerup does NOT cost a move. It costs Petals. Charging both is the
+     mean version and would make them worthless on the level where you need
+     them, which is the one you are about to lose. */
+  var aiming=null;          // powerup key waiting for the player to pick a cell
+  var movedThisLevel=false; // BOOST is a PRE-level choice, so it hides after move 1
+
+  function pmSay(t){ try{ sm(t); }catch(e){} }
+
+  function pmResolveAfter(){
+    collapseAndRefill();updateHUD();render();
+    animating=true;
+    setTimeout(function(){
+      resolveCascade(null,null,function(){ animating=false;selected=null;checkState();updateHUD(); });
+    },220);
+  }
+
+  function pmScoreFor(counts){
+    return (counts.p*10+counts.v*20+counts.b*30+counts.s*40+counts.dew*15+counts.thorns*25)*level;
+  }
+
+  // Is this a legal target? Checked BEFORE any Petals change hands.
+  function pmValid(key,r,c){
+    if(!grid[r])return false;
+    if(key==='trowel')return !!grid[r][c];
+    if(key==='shears')return true;
+    if(key==='can'){
+      var cell=grid[r][c];
+      return !!((cell&&cell.type===-2)||(jellyBoard[r]&&jellyBoard[r][c]>0));
+    }
+    return false;
+  }
+
+  function pmApply(key,r,c){
+    var toClear={},k;
+    if(key==='trowel'){
+      toClear[r+','+c]=1;
+    } else if(key==='shears'){
+      /* Row AND column — a cross. The shelf label says "row and column"; it is
+         one tap with no orientation toggle to get wrong, and at 25 Petals it
+         has to be worth more than two Trowels. */
+      for(var i=0;i<COLS;i++) toClear[r+','+i]=1;
+      for(var j=0;j<ROWS;j++) toClear[j+','+c]=1;
+    } else if(key==='can'){
+      /* The Watering Can removes a blocker OUTRIGHT rather than chipping it,
+         which is what makes it worth 20 on a 3-hit thorn level where a Trowel
+         would only take a third of it off. Done directly, not through
+         applyClear, because applyClear deliberately strips exactly one layer
+         or lands exactly one hit per clear. */
+      var cell=grid[r][c];
+      if(cell&&cell.type===-2){
+        grid[r][c]=null;
+        objState.thornRemaining=Math.max(0,objState.thornRemaining-1);
+        fx.push({kind:'flash',r:r,c:c,size:1,t:Date.now()});
+      } else {
+        var layers=jellyBoard[r][c]||0;
+        jellyBoard[r][c]=0;
+        if(grid[r][c])grid[r][c].jelly=0;
+        objState.dewRemaining=Math.max(0,objState.dewRemaining-layers);
+        fx.push({kind:'dewstrip',r:r,c:c,t:Date.now()});
+      }
+      pmResolveAfter();
+      return;
+    }
+    var pend=[];
+    expandActivations(toClear,pend);
+    var counts=applyClear(toClear);
+    score+=pmScoreFor(counts);
+    _play('snap');
+    pmResolveAfter();
+  }
+
+  function pmTap(key){
+    var it=PM_SHOP[key];
+    if(lost){ pmSay('Out of moves. Buy +5 Moves, or retry the level.'); return; }
+    if(animating){ return; }
+    if(aiming===key){ aiming=null; pmSay('Cancelled.'); renderShelf(); return; }
+    if(!PM_PETALS.can(it.c)){
+      pmSay('Need '+it.c+' Petals for the '+it.n+'. You have '+PM_PETALS.get()+'.');
+      return;
+    }
+    aiming=key;
+    pmSay(it.n+': tap a '+(key==='can'?'thorn or dew tile':'flower')+'. Tap '+it.i+' again to cancel.');
+    renderShelf();
+  }
+
+  // Called from handleStart when a tap lands while a powerup is armed.
+  function pmAimAt(r,c){
+    var key=aiming;
+    if(!key)return false;
+    var it=PM_SHOP[key];
+    if(!pmValid(key,r,c)){
+      pmSay(key==='can'?'The Watering Can only works on a thorn or a dew tile.'
+                       :'Nothing there to use the '+it.n+' on.');
+      return true;                      // consumed the tap, charged nothing
+    }
+    if(!PM_PETALS.spend(it.c)){         // re-checked at the moment of spending
+      pmSay('Not enough Petals.');
+      aiming=null;renderShelf();return true;
+    }
+    aiming=null;
+    movedThisLevel=true;
+    pmSay(it.n+'! '+PM_PETALS.get()+' Petals left.');
+    pmApply(key,r,c);
+    renderShelf();
+    return true;
+  }
+
+  function pmRevive(){
+    if(!lost)return;
+    var it=PM_SHOP.moves;
+    if(!PM_PETALS.spend(it.c)){
+      pmSay('Need '+it.c+' Petals for five more moves. You have '+PM_PETALS.get()+'.');
+      return;
+    }
+    lost=false;
+    moves+=5;
+    pmSay('Five more moves. '+PM_PETALS.get()+' Petals left.');
+    _play('snap');
+    updateHUD();render();renderShelf();
+  }
+
+  /* Pre-level boosters. ⛔ They are offered through a button rather than a card
+     gating every level, because checkState() advances the moment an objective
+     completes and a modal on every advance would break the run of a winning
+     streak. BOOST is available until the first move of a level, which is the
+     honest window for a "pre-level" choice, and it is also right there on the
+     out-of-moves screen where it actually gets used. */
+  function pmOpenBoost(){
+    if(movedThisLevel&&!lost){ pmSay('Boosts are chosen before the first move. Retry the level to use one.'); return; }
+    pmBoostPanel(['head','breath','thin']);
+  }
+
+  var boostPanel=null;
+  function pmCloseBoost(){
+    if(boostPanel&&boostPanel.parentNode)boostPanel.parentNode.removeChild(boostPanel);
+    boostPanel=null;
+  }
+  function pmBoostPanel(keys){
+    pmCloseBoost();
+    boostPanel=document.createElement('div');
+    boostPanel.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'+
+      'z-index:9;width:88%;max-width:330px;padding:12px;border-radius:12px;'+
+      'background:rgba(12,16,10,0.96);border:1px solid rgba(200,168,75,0.5);'+
+      'box-shadow:0 10px 34px rgba(0,0,0,0.6);font-family:DM Mono,monospace;color:#e8dcc8;';
+    var head=document.createElement('div');
+    head.style.cssText='font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:1rem;'+
+      'color:#c8a84b;text-align:center;margin-bottom:9px;';
+    head.innerHTML='BOOST LEVEL '+level+'&nbsp; · &nbsp;'+
+      '<span style="display:inline-flex;align-items:center;gap:3px;vertical-align:-2px;">'+
+      petalGlyph(13)+'<span style="color:#7ab356;">'+PM_PETALS.get()+'</span></span>';
+    boostPanel.appendChild(head);
+
+    for(var i=0;i<keys.length;i++){
+      (function(key){
+        var it=PM_SHOP[key];
+        var afford=PM_PETALS.can(it.c);
+        var row=document.createElement('button');
+        row.type='button';
+        row.style.cssText='display:flex;align-items:center;gap:9px;width:100%;min-height:48px;'+
+          'margin:0 0 6px;padding:7px 9px;border-radius:9px;cursor:pointer;text-align:left;'+
+          'background:rgba(20,27,17,0.94);border:1px solid rgba(200,168,75,'+(afford?'0.45':'0.18')+');'+
+          'color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.68rem;line-height:1.3;'+
+          'opacity:'+(afford?'1':'0.45')+';';
+        /* ⛔ 56px, not 38. "HEAD" and "THIN" in Bebas at 0.9rem measure wider
+           than 38px, so the label ran straight over the item name beside it.
+           Fixed width plus overflow:hidden so a longer label can never do it
+           again — flex:0 0 auto alone does not stop the TEXT overflowing. */
+        row.innerHTML='<span style="font-family:Bebas Neue,sans-serif;font-size:0.82rem;'+
+          'letter-spacing:0.05em;color:#c8a84b;width:56px;flex:0 0 auto;'+
+          'overflow:hidden;white-space:nowrap;">'+it.i+'</span>'+
+          '<span style="flex:1 1 auto;min-width:0;"><strong style="color:#7ab356;">'+it.n+'</strong><br>'+it.d+'</span>'+
+          '<span style="display:flex;align-items:center;gap:3px;color:#c8a84b;white-space:nowrap;">'+
+          petalGlyph(11)+it.c+'</span>';
+        row.addEventListener('click',function(ev){
+          ev.preventDefault();
+          if(pmBoost(key))pmCloseBoost();
+        });
+        boostPanel.appendChild(row);
+      })(keys[i]);
+    }
+
+    var close=document.createElement('button');
+    close.type='button';
+    close.style.cssText='width:100%;min-height:48px;border-radius:9px;cursor:pointer;'+
+      'background:rgba(30,38,26,0.9);border:1px solid rgba(122,179,86,0.35);color:#8a9178;'+
+      'font-family:DM Mono,monospace;font-size:0.7rem;';
+    close.textContent='Play without a boost';
+    close.addEventListener('click',function(ev){ ev.preventDefault(); pmCloseBoost(); });
+    boostPanel.appendChild(close);
+    pan.appendChild(boostPanel);
+  }
+
+  function pmBoost(key){
+    var it=PM_SHOP[key];
+    if(!PM_PETALS.spend(it.c)){
+      pmSay('Need '+it.c+' Petals for '+it.n+'. You have '+PM_PETALS.get()+'.');
+      return false;
+    }
+    if(key==='breath'){
+      moves+=5;
+    } else if(key==='thin'){
+      /* Deal one fewer flower type for this level only. The board has to be
+         rebuilt or the colour we just removed is still sitting on it — only
+         REFILLS would respect activeTypes. Safe here because a boost can only
+         be bought before the first move. */
+      activeTypes=Math.max(3,TYPES-1);
+      initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
+    } else if(key==='head'){
+      // Drop a Bloom Burst onto a plain flower somewhere in the middle rows.
+      for(var tries=0;tries<80;tries++){
+        var r=2+Math.floor(Math.random()*(ROWS-4)),c=Math.floor(Math.random()*COLS);
+        var cell=grid[r]&&grid[r][c];
+        if(cell&&cell.type>=0&&!cell.special&&!jellyBoard[r][c]){ cell.special='burst'; break; }
+      }
+    }
+    movedThisLevel=true;           // one boost per level
+    pmSay(it.n+'! '+PM_PETALS.get()+' Petals left.');
+    _play('snap');
+    updateHUD();render();renderShelf();
+    return true;
+  }
+
+  function renderShelf(){
+    var el=document.getElementById('PMpet');
+    if(el)el.textContent=PM_PETALS.get();
+    var mid=['trowel','shears','can'];
+    for(var i=0;i<mid.length;i++){
+      var b=shelfBtns[mid[i]];if(!b)continue;
+      var it=PM_SHOP[mid[i]];
+      var afford=PM_PETALS.can(it.c);
+      b.disabled=!!lost;
+      b.style.opacity=(afford&&!lost)?'1':'0.42';
+      b.style.borderColor=(aiming===mid[i])?'rgba(122,179,86,0.95)':'rgba(200,168,75,0.42)';
+      b.style.boxShadow=(aiming===mid[i])?'0 0 10px rgba(122,179,86,0.55)':'none';
+    }
+    boostBtn.style.display=(!movedThisLevel||lost)?'flex':'none';
+    boostBtn.style.opacity=PM_PETALS.can(PM_SHOP.breath.c)?'1':'0.42';
+    reviveBtn.style.display=lost?'flex':'none';
+    reviveBtn.style.opacity=PM_PETALS.can(PM_SHOP.moves.c)?'1':'0.42';
+  }
+
   function checkState(){
     if(isObjComplete()){
       // rate the level on the budget it was WON with, before any of it resets
       var earnedStars=starsFor(moves,objective.moves);
       level++;
       var prevLv=level-1;
+      /* Petals. Full bounty the FIRST time a level is cleared, a flat trickle
+         on every clear after that. ⛔ The split is load-bearing: level 1 is a
+         100% board, so a flat per-clear payout would make farming it strictly
+         better than playing the game. The trickle stays non-zero so a player
+         grinding a spike still banks toward the +5 Moves that gets them past. */
+      var petalsWon;
+      if(PM_PETALS.firstClear(prevLv)){
+        petalsWon=PM_EARN_FIRST[earnedStars]||PM_EARN_FIRST[1];
+        PM_PETALS.markPaid(prevLv);
+      } else {
+        petalsWon=PM_EARN_REPLAY;
+      }
+      PM_PETALS.add(petalsWon);
       var finalScore=score; // capture BEFORE the reset — _sr recorded 0 for every win
       objective=genLevel(level);
       moves=objective.moves;
       score=0;
       resetObjState();
-      sm('LEVEL '+prevLv+' COMPLETE!');
+      sm('LEVEL '+prevLv+' COMPLETE!  +'+petalsWon+' Petals');
+      /* A new level means a new pre-level window and a fresh full deck.
+         ⛔ activeTypes MUST reset or a single Thin Meadow would quietly make
+         every level after it easier, for free, for the rest of the run. */
+      activeTypes=TYPES;
+      movedThisLevel=false;
+      aiming=null;
+      pmCloseBoost();
       teachFor(objective);           // explains the NEW level's kind, if it is new
       levelPlaque(prevLv,earnedStars);
       // staggered: the plaque owns the first 1.3s, then the chapter announces
@@ -2106,7 +2548,12 @@ window._gameFns.petalmatch = function PM(a){
     var rect=canvas.getBoundingClientRect();
     tsR=Math.floor((y-rect.top)/CELL);tsC=Math.floor((x-rect.left)/CELL);
     if(tsR<0||tsR>=ROWS||tsC<0||tsC>=COLS){tsR=-1;return;}
+    /* ⛔ BEFORE the canSwap gate, not after. canSwap rejects thorns, and the
+       Watering Can exists precisely to be aimed at one — putting this check
+       after it made thorns untargetable by the powerup built for them. */
+    if(aiming){ pmAimAt(tsR,tsC); tsR=-1; return; }
     if(!canSwap(tsR,tsC)){tsR=-1;return;}
+    movedThisLevel=true;   // a real board interaction closes the pre-level window
     selected={r:tsR,c:tsC};
     lastInputAt=Date.now();hintCells=null;
   }
@@ -2193,6 +2640,10 @@ window._gameFns.petalmatch = function PM(a){
   window._PMN=function(){
     if(rafId)cancelAnimationFrame(rafId);
     clearHint();
+    /* A fresh level means a fresh pre-level window and a full deck again.
+       ⛔ activeTypes must reset here too, or a Thin Meadow bought before a
+       retry would carry into every later level for free. */
+    activeTypes=TYPES;movedThisLevel=false;aiming=null;pmCloseBoost();
     initCanvas();level=bestLevel;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
@@ -2205,6 +2656,10 @@ window._gameFns.petalmatch = function PM(a){
     // Retry this level with fresh board and moves, don't reset progression
     if(rafId)cancelAnimationFrame(rafId);
     clearHint();                    // same stale-hint bug as _PMN, same fix
+    /* A fresh level means a fresh pre-level window and a full deck again.
+       ⛔ activeTypes must reset here too, or a Thin Meadow bought before a
+       retry would carry into every later level for free. */
+    activeTypes=TYPES;movedThisLevel=false;aiming=null;pmCloseBoost();
     initCanvas();score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
@@ -2232,6 +2687,25 @@ window._gameFns.petalmatch = function PM(a){
        squinting at a screenshot. This is how the level plaque overlapping the
        combo pop was pinned down. */
     overlay:function(){ return overlayHost; },
+    /* Board readout for the powerup probe: where the blockers are, and what
+       the wallet says. A powerup that "fired" without changing the board is
+       the failure mode worth catching, and you cannot see thornRemaining or a
+       jelly layer in a screenshot. */
+    board:function(){
+      var out={thorns:[],dew:[],flowers:[],petals:PM_PETALS.get(),aiming:aiming};
+      for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+        var cell=grid[r]&&grid[r][c];
+        if(jellyBoard[r]&&jellyBoard[r][c]>0)out.dew.push([r,c,jellyBoard[r][c]]);
+        if(cell&&cell.type===-2)out.thorns.push([r,c,cell.block]);
+        else if(cell&&cell.type>=0)out.flowers.push([r,c]);
+      }
+      return out;
+    },
+    // Click a shelf/boost control by its key, the way a finger would.
+    tapShop:function(key){ pmTap(key); return aiming; },
+    buyBoost:function(key){ return pmBoost(key); },
+    revive:function(){ pmRevive(); },
+    types:function(){ return activeTypes; },
     // Every legal move on the board right now, as [[r1,c1],[r2,c2]] pairs.
     // Uses the real canSwap/findMatches, same as findValidSwap does.
     moves:function(){
@@ -2355,6 +2829,11 @@ window._gameFns.petalmatch = function PM(a){
     // Jump straight to a level for measurement.
     setLevel:function(lv){
       level=lv;objective=genLevel(lv);moves=objective.moves;
+      /* Jumping to a level IS entering a level, so it clears the per-level
+         powerup state exactly like checkState/_PMN/_PMR do. Without this a
+         probe that bought Thin Meadow on one level saw it still active on the
+         next and reported a leak the real game does not have. */
+      activeTypes=TYPES;movedThisLevel=false;aiming=null;pmCloseBoost();
       score=0;won=false;lost=false;animating=false;selected=null;fx=[];
       resetObjState();
       initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
