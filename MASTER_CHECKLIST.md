@@ -53,11 +53,16 @@ FOLDED (the older entry got extended rather than doubled). Verified-already-done
 items are marked here so nobody re-does them.
 
 ### 🌸 Petal Match — ACTIVE PRIORITY (a player is on it daily; "our version of Candy Crush")
-- [ ] **Green-background sheets LANDED** — `assets/petalmatch-green/` (5 sheets + his
-  prompt doc, from my green-sheet spec). Cut them, swap the pink/purple sprites in
-  place, verify by screenshot: images FILL their boxes and sit clean.
-- [ ] **Cover art mismatch (Jessie)** — the portal thumb + og card don't match the new
-  painted gameplay art. Repoint to the painted set (share-card.jpg exists).
+- [x] **Green-background sheets CUT + WIRED, verified (commit 6181e431).** 5 sheets ->
+  77 masters via `scripts/cut_petalmatch_green.py` (projection banding + true
+  chroma-key UNMIXING after the first pass left green fringes on every glow), 36
+  runtime sprites replaced in place, the LOST board shadow remade + wired under the
+  frame, runtime art URLs stamped `?v=PM_AV` (7-day image edge pin), 0 404s,
+  screenshots at levels 1 + 3, dew count cross-checked vs the engine.
+- [x] **Cover art mismatch FIXED, verified by looking (commit fd65891b).** Portal card
+  (87KB jpg, was a 385KB png over the 150KB law), OG 1200x630 with the title composed
+  into the painting's own dark panel, icons 192/512 on the crystal lotus, portal thumb
+  cache stamp bumped to 2026072601.
 - [ ] **Algorithmic hooks (Stephen: "see what you can do")** — retention design:
   streaks, near-miss framing, variable reward, comeback moments. Design first, my
   proposals to him before building; no dark patterns, no ads, no real money.
@@ -90,14 +95,19 @@ items are marked here so nobody re-does them.
 - [ ] **Shop build-out** — "a ton more unlockables, balanced economy, work for them
   but fun." Borders with critters in the corners. Claymation + crayon styles plus
   new directions.
-- [ ] **Asset sheet list doc → 012Assets** (Stephen: "under the GitHub folder in the
-  drive") — many unique mix-and-match artistic directions.
+- [x] **Asset sheet list doc DELIVERED + verified in 012Assets** (doc id
+  1skxzJqR3G7TDwLVE4OUWw4ML6kyM5nDqYa2Qi03LZaI): 15 sheets, ~86 new borders in 10
+  styles incl. claymation + crayon waves, an earned Trophy Grove lane, win bursts,
+  textures, shop furniture, coin skins, and an economy sketch marked as his call.
+  Grounded in the live shop (118 borders, real price ladder, real earn rates).
 
 ### 🟣 Blobworks (extends the older Blobworks entry)
-- [ ] **Purple middle monsters redo — asset list doc** (was already blocked-on-art;
-  he now wants the list refreshed).
-- [ ] **Ramps: modular piece-together set** — his idea: ramp segments as assets that
-  snap together, distinguishable and cool. Asset list + wiring plan.
+- [x] **Monsters + modular ramps asset doc DELIVERED + verified in 012Assets** (doc id
+  1d3trNH9TPh6D68NjRsfe_MqOY5_-BB3DNKmGwTkIGk4): 3 monster sheets on GREEN key
+  (purple art) sized to the real bumper slots incl. the 1.3x height cap that
+  skinnied the old one, and a 5-sheet modular ramp kit — one material per route so
+  the ball reads at a glance, one angle per piece with the engine rotating (the
+  cheap trade), orphan tube_straight/curve ruled superseded. Art itself still [?].
 - [ ] **Slime tube top-left: much smaller** — direction confirmed (older entry said
   "one number to tune at index.html:1104 if Stephen wants it smaller" — he does).
 - [ ] **Blip's intro animation still skippy** — he provided a movement sheet; redo
@@ -119,15 +129,20 @@ items are marked here so nobody re-does them.
 ### 🍃 OriVex (extends the older OriVex entry)
 - [ ] **Board bigger on screen** — puzzle is too small; showcase the origami look.
 - [ ] **Thumbnail shows the full board** (Jessie: board partially out of view).
-- [ ] **Asset list doc in 012Assets** — origami clean-paper triangles (subtle,
-  beautiful, numbers on them) + WIDE gorgeous peaceful backgrounds contrasting the
-  triangle colours. (A repo pack exists at art-asset-lists/orivex/; the law says it
-  must ALSO be a Drive doc in 012Assets — confirm/create.)
+- [x] **Asset list doc DELIVERED + verified in 012Assets** (doc id
+  16-0XVWbCFxfFHSBrxmU-jcT_0cB2vJhyyvP6MyDO6CA): supersedes the stale repo pack,
+  which contradicted the engine (ink/stock swap on digits 0 and 9, dead asset
+  proposals with no code hook). 3 triangle sheets tuned to the live VINK inks
+  (pink/purple stocks on GREEN key), 16 backgrounds with pairing logic, thumbnail
+  spec = composite from a real solved board. Numbers are printed by the engine;
+  faces generated blank — verified in code.
 
 ### ⚡ Word Lightning (bloomzap) — in-game retheme still open (rename is done)
-- [ ] **Asset list doc → 012Assets** under the name Word Lightning. Aesthetic spec
-  from Jessie: mid-century illustration — clean defined lines, vibrant flat colour,
-  geometric simplified forms, limited palette, press-printed texture.
+- [x] **Asset list doc DELIVERED + verified in 012Assets** (doc id
+  1c7siUYwxEn4fW6AdShIr5NO5y-AIMP-Rfq-glf58AJ8): 10 sheets in the full mid-century
+  spec, grounded in the real code (5 modes, 3 beds), incl. proposed storm renames
+  (Choose your storm: Drizzle/Downpour/Tempest) and a complete wording-sweep list
+  for the wiring pass.
 - [ ] **In-game storm retheme**: dark navy background, angled rain, lightning
   flashes; buttons storm-cloud gray; "plant word" button → "Submit" in lightning
   yellow; play button gets a lightning bolt not a plant; replace ALL plant symbols
@@ -175,8 +190,11 @@ items are marked here so nobody re-does them.
 - [ ] **Flipbook**: 5th eyeball set (the "closed" one) is bad — remove, add a real
   closed-eyes set; accordion menu; the notebook should be COMPLETELY blank so
   people can draw on all of it.
-- [ ] **Yacht-Sea**: artwork remake to fit the nautical theme (colours, symbols,
-  ideas) + make an asset list doc.
+- [x] **Yacht-Sea asset list doc DELIVERED + verified in 012Assets** (doc id
+  1KbneGqftkctM9at2gpGQ2DIhMO5yLoZkCJ1QQFm5k2Q): 7 sheets — own brass-porthole dice
+  (the game currently borrows the LOCKED shared dice with a blue filter; doc routes
+  around the lock), 13 log emblems matching the real scoring rows, log-book UI,
+  4 backgrounds, celebration set, thumbnail. Art itself still [?] on Stephen.
 - [ ] **No Pain No Gain**: undo button (remove last piece); a real END to runs
   (fully build out); description loses the word "cozy"; the clear button does not
   work (bug).
