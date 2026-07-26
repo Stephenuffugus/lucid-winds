@@ -34,7 +34,7 @@
      library tablets so expensive effects can be dropped. Mirrors index.html. -->
 <script>(function(){var o=null;try{o=localStorage.getItem('lw_perf_lite');}catch(e){}var lite=false;if(o==='1')lite=true;else if(o==='0')lite=false;else{var c=navigator.hardwareConcurrency||2,m=navigator.deviceMemory||0,ua=navigator.userAgent||'';if(c<=4)lite=true;if(m>0&&m<=4)lite=true;if(/iPhone|iPad|iPod/.test(ua)){var x=ua.match(/OS (\d+)/);if(x&&parseInt(x[1],10)<16)lite=true;if(c<=2)lite=true;}if(/Android/.test(ua)&&c<=4)lite=true;}if(lite&&document.documentElement)document.documentElement.classList.add('perf-lite');window._perfLite=lite;})();</script>
 <!-- Sunbeam SDK (live). Same-origin when this portal is hosted at lucidwinds.com; cross-origin auth works via Firebase authorized-domains. -->
-<script src="https://lucidwinds.com/sunbeam-sdk.js"></script>
+<script src="https://lucidwinds.com/sunbeam-sdk.js?v=5"></script>
 <!-- Shared soundtrack manifest + player — same list & player the game shells use. -->
 <!-- ?v stamp busts the SW stale cache so new tracks show up immediately. Bump this when tracks change. -->
 <script src="/music-tracks.js?v=2026.07.25.01"></script>
@@ -1465,7 +1465,7 @@ document.addEventListener('click', function(e){
       +'<link rel="stylesheet" href="/shared.css?v=20260718">'
       +'<link rel="stylesheet" href="/play/shell.css?v=6">'
       +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
-      +'<script defer src="/sunbeam-sdk.js?v=2'+bq+'"><\/script>'
+      +'<script defer src="/sunbeam-sdk.js?v=5'+bq+'"><\/script>'
       +'<script defer src="/play/shell.js?v=16'+bq+'"><\/script>'
       +scripts
       +'</head><body>'
