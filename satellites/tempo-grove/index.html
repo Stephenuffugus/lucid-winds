@@ -43,7 +43,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 #hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
   padding:10px 12px; align-items:flex-start; gap:10px}
 #hud.on{display:flex}
-#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+#hud .hbtn{pointer-events:auto; cursor:pointer; min-width:72px; min-height:72px; border:1px solid var(--line); border-radius:12px;
   background:#0f150cdd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
 #hud .hbtn.lit{border-color:var(--gold); color:var(--gold)}
 #pulsewrap{flex:1; pointer-events:none; padding-top:4px}
@@ -51,7 +51,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 #pulselabel b{color:var(--gold); font-variant-numeric:tabular-nums}
 #pulsebar{height:12px; border:1px solid var(--line); border-radius:7px; background:#0f150cdd; overflow:hidden; margin-top:3px}
 #pulsefill{height:100%; width:0%; background:linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); border-radius:6px}
-#goalchip{position:absolute; left:50%; top:64px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
+#goalchip{position:absolute; left:50%; top:92px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
   background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream);
   max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center}
 #goalchip.on{display:block}
@@ -60,7 +60,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
   border-top:1px solid var(--line); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:none; flex-direction:column; gap:6px}
 #dock.on{display:flex}
 .dockrow{display:flex; gap:6px; flex:1}
-.chip{flex:1; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
+.chip{flex:1; min-height:72px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; padding:2px 0; position:relative}
 .chip .ci{font-size:19px; line-height:1.15}
 .chip .cn{font-size:.7rem; letter-spacing:.4px; color:var(--muted); text-transform:uppercase}
@@ -75,12 +75,14 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 .title-word{font-size:50px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:3px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -89,8 +91,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
 .helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:18px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:""; position:absolute; top:-18px; bottom:-18px; left:-10px; right:-10px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -100,9 +103,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .wardcard .wt{flex:1}
 .wardcard .wn{font-size:15px; font-weight:700}
 .wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
-.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center}
+.wardcard .we{min-width:78px; min-height:72px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center}
 .wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
-.trackrow{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 8px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; min-height:56px}
+.trackrow{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 8px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; min-height:72px}
 .trackrow.sel{border-color:var(--gold)}
 .trackrow .ti{font-size:20px; width:30px; text-align:center; flex:none; color:var(--gold)}
 .trackrow .tt{flex:1}
@@ -628,24 +631,24 @@ function render(){
 
   /* queue preview */
   ctx.fillStyle="#8a9178"; ctx.font="11px sans-serif"; ctx.textAlign="left";
-  ctx.fillText("NEXT",FX0,FY0-160);
+  ctx.fillText("NEXT",FX0,FY0-116);
   var q=G.bag.slice(0,2),qi;
   for(qi=0;qi<q.length;qi++){
-    var qx=FX0+qi*76, qy=FY0-146, cells=q[qi], ci;
+    var qx=FX0+qi*76, qy=FY0-102, cells=q[qi], ci;
     for(ci=0;ci<4;ci++){
       var cx0=qx+(ci%2)*26, cy0=qy+Math.floor(ci/2)*26;
       miniCell(cx0,cy0,24,cells[ci],skin);
     } }
   /* mode readout right */
   ctx.textAlign="right"; ctx.fillStyle="#e8dcc8"; ctx.font="bold 20px sans-serif";
-  ctx.fillText(String(G.score),510,FY0-146);
+  ctx.fillText(String(G.score),510,FY0-102);
   ctx.fillStyle="#8a9178"; ctx.font="11px sans-serif";
-  ctx.fillText(G.squaresRun+" SQUARES · SWEEP "+(G.sweeps+1),510,FY0-128);
+  ctx.fillText(G.squaresRun+" SQUARES · SWEEP "+(G.sweeps+1),510,FY0-84);
   if(G.mode==="daily"){ var left=Math.max(0,G.timeLimit-G.tick);
     ctx.fillStyle="#ffe9a8"; ctx.font="bold 15px sans-serif";
-    ctx.fillText(fmtT(left),510,FY0-108); }
+    ctx.fillText(fmtT(left),510,FY0-64); }
   if(G.mode==="sprint"){ ctx.fillStyle="#ffe9a8"; ctx.font="bold 15px sans-serif";
-    ctx.fillText(G.squaresRun+" / "+G.goal,510,FY0-108); }
+    ctx.fillText(G.squaresRun+" / "+G.goal,510,FY0-64); }
   ctx.textAlign="left";
 }
 function fmtT(ticks){ var s=Math.ceil(ticks/TPS); return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }

@@ -52,32 +52,35 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:52px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #1a1405, 0 0 26px #c8a84b44; letter-spacing:1px}
 .title-sub{color:var(--dew); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#d6b24e,#b3902f); color:#1a1405; border-color:#e8cd78; box-shadow:0 4px 0 #6d5410, 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:22px; color:var(--gold); font-weight:800; margin-bottom:6px; text-align:center}
 .hl{color:var(--gold); font-weight:800}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:15px}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:19px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:15px}
 .toggle{width:60px; height:34px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle::after{content:""; position:absolute; top:-19px; bottom:-19px; left:-10px; right:-10px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:29px; background:#eafbd6}
 .grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
-.card{width:132px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; padding:12px; text-align:center}
+.card{width:132px; min-height:72px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; padding:12px; text-align:center; display:flex; flex-direction:column; justify-content:center}
 .card.locked{opacity:.45}
 .card.on{border-color:var(--gold)}
 .card .cn{font-size:15px; font-weight:700; color:var(--cream)}
 .card .cs{font-size:12px; color:var(--muted); margin-top:4px}
 .gallwrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
-.top{position:absolute; left:0; right:0; top:0; height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; z-index:30}
-.tbtn{min-width:46px; height:46px; border-radius:12px; border:1px solid var(--line); background:rgba(15,21,12,.72); color:#cfe0c2; font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.top{position:absolute; left:0; right:0; top:0; min-height:72px; display:flex; align-items:center; justify-content:space-between; padding:6px 10px; z-index:30}
+.tbtn{min-width:72px; height:72px; border-radius:12px; border:1px solid var(--line); background:rgba(15,21,12,.72); color:#cfe0c2; font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
 .tbtn.on{background:var(--deep); color:#eafbd6}
 .tlabel{font-size:14px; color:var(--cream); font-weight:700; text-align:center; flex:1}
 .tlabel small{display:block; color:var(--gold); font-size:11px; letter-spacing:1px}

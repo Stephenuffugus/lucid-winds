@@ -47,12 +47,12 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:54px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #2c250f, 0 0 26px #c8a84b44; letter-spacing:2px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
-.btn{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:60px; width:100%;
+.btn{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d33); color:#171204; border-color:#e2c87a; box-shadow:0 4px 0 #6b5723, 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .btn .bsub{display:block; font-size:11px; font-weight:400; opacity:.72; letter-spacing:1px}
 .row{display:flex; gap:12px; width:100%}
@@ -64,6 +64,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#241d10; border:1px solid #6f5a23; border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:""; position:absolute; top:-12px; left:-10px; right:-10px; bottom:-24px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -81,24 +82,25 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   box-shadow:0 14px 40px rgba(0,0,0,.6)}
 #coach .coach-t{font-size:21px; font-weight:800; color:var(--gold); line-height:1.25}
 #coach .coach-s{margin-top:10px; font-size:15px; line-height:1.55; color:var(--cream)}
-#coach .coach-x{margin-top:18px; min-height:48px; width:100%; border-radius:14px;
+#coach .coach-x{margin-top:18px; min-height:72px; width:100%; border-radius:14px;
   border:1px solid rgba(200,168,75,.55); background:#141b10; color:var(--cream);
   font-size:15px; font-weight:800; letter-spacing:1px; cursor:pointer}
 #hud.on{display:block}
 #topbar{position:absolute; top:0; left:0; right:0; display:flex; align-items:center; gap:8px; padding:12px 12px 6px; pointer-events:auto}
-.icobtn{width:48px; height:48px; border-radius:12px; border:1px solid var(--line); background:#0f150cdd; color:var(--cream); font-size:19px; cursor:pointer; flex:none}
+.icobtn{width:60px; height:60px; border-radius:12px; border:1px solid var(--line); background:#0f150cdd; color:var(--cream); font-size:19px; cursor:pointer; flex:none; position:relative}
+.icobtn::after{content:""; position:absolute; top:-12px; left:-12px; right:0; bottom:0}
 #weekchip{flex:1; text-align:center; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--cream); background:#0f150cbb; border:1px solid var(--line); border-radius:20px; padding:9px 6px; white-space:nowrap; overflow:hidden}
 #hudscore{min-width:64px; text-align:right; font-size:20px; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums}
 #bridgechip{font-size:12px; color:var(--cream); background:#0f150cbb; border:1px solid var(--line); border-radius:20px; padding:9px 10px; white-space:nowrap}
 #botbar{position:absolute; left:0; right:0; bottom:0; padding:8px 10px 14px; display:flex; flex-direction:column; gap:8px; pointer-events:auto; background:linear-gradient(180deg, transparent, #05070aee 30%)}
 #chips{display:flex; gap:8px; justify-content:center}
-.chip{flex:1; max-width:78px; height:56px; border-radius:14px; border:2px solid var(--line); background:#0f150c; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
+.chip{flex:1; max-width:78px; height:72px; border-radius:14px; border:2px solid var(--line); background:#0f150c; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
 .chip .cn{font-size:13px; font-weight:800; color:var(--cream)}
 .chip canvas{width:52px; height:10px}
 .chip.sel{border-color:var(--cream); background:#1a2415}
 .chip.lock{opacity:.38}
 #toolrow{display:flex; gap:8px; align-items:center}
-#unweave{flex:1; min-height:48px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:14px; font-weight:700; letter-spacing:1px; cursor:pointer}
+#unweave{flex:1; min-height:72px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:14px; font-weight:700; letter-spacing:1px; cursor:pointer}
 #unweave.armed{background:#3a1a16; border-color:var(--warn); color:#f2c4be}
 #poolchip{flex:1; text-align:center; font-size:12px; color:var(--muted); background:#0f150c; border:1px solid var(--line); border-radius:12px; padding:13px 6px}
 #toast{position:absolute; left:50%; bottom:180px; transform:translateX(-50%) translateY(16px); background:#1a2415ee; border:1px solid var(--gold); color:var(--cream); border-radius:22px; padding:9px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap; z-index:18}
@@ -117,7 +119,8 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .wcell canvas{width:110px; height:44px; display:block; margin:0 auto 6px}
 .wcell .wn{font-size:13px; font-weight:800; color:var(--cream)}
 .wcell .wr{font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.3; min-height:26px}
-.wcell button{margin-top:7px; width:100%; min-height:34px; border-radius:9px; border:1px solid var(--line); background:#1a2415; color:var(--cream); font-size:12px; font-weight:700; cursor:pointer}
+.wcell button{margin-top:7px; width:100%; min-height:48px; border-radius:9px; border:1px solid var(--line); background:#1a2415; color:var(--cream); font-size:12px; font-weight:700; cursor:pointer; position:relative}
+.wcell button::after{content:""; position:absolute; top:-12px; left:0; right:0; bottom:-12px}
 .wcell.locked{opacity:.5}
 .wcell.eq button{background:var(--deep); border-color:var(--sage)}
 .wgroup{width:100%; text-align:center; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin:14px 0 4px}

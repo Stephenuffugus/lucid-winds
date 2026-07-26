@@ -47,12 +47,12 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:54px; line-height:1; color:var(--blue); font-weight:800; text-shadow:0 3px 0 #0f2330, 0 0 26px #5b9bd544; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#5b9bd5,#3f78ad); color:#08121a; border-color:#8fc3ea; box-shadow:0 4px 0 #2b567c, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -61,7 +61,7 @@ h2.sc-h{font-size:24px; color:var(--blue); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
 .helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; min-height:74px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
@@ -620,7 +620,9 @@ function drawDrop(){ var d=G.drop; if(d.dead && G.phase!=='dying')return; ctx.sa
 
 /* ===== input ===== */
 function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
-function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+function inBtn(p,b){ /* hit zone padded to 72 stage px min (art unchanged) */
+  var px=Math.max(0,(72-b.w)/2), py=Math.max(0,(72-b.h)/2);
+  return p.x>=b.x-px&&p.x<=b.x+b.w+px&&p.y>=b.y-py&&p.y<=b.y+b.h+py; }
 var ptr={down:false, x:0,y:0, sx:0,sy:0, moved:0, handled:false};
 function segInt(ax,ay,bx,by,cx,cy,dx,dy){ // segment AB vs CD
   var d1x=bx-ax,d1y=by-ay,d2x=dx-cx,d2y=dy-cy; var den=d1x*d2y-d1y*d2x; if(Math.abs(den)<1e-6)return false;

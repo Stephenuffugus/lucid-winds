@@ -54,7 +54,8 @@
   button{font-family:var(--ui);cursor:pointer;border:none;color:inherit;background:none}
   .coins-pill{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--coin);
     border:1px solid var(--line2);border-radius:30px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px}
-  .soundtog{font-size:16px;border:1px solid var(--line2);border-radius:30px;padding:7px 12px;opacity:.8}
+  .soundtog{font-size:16px;border:1px solid var(--line2);border-radius:30px;padding:7px 12px;opacity:.8;position:relative;min-width:50px;min-height:50px}
+  .soundtog::after{content:"";position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px}
   #rulesOv{position:fixed;inset:0;background:rgba(8,8,12,.9);display:none;align-items:center;justify-content:center;z-index:80;padding:22px}
   #rulesOv.on{display:flex}
   .rules-card{background:#16161e;border:1px solid var(--line2);border-radius:18px;max-width:420px;width:100%;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
@@ -85,7 +86,7 @@
   .mode-btn .meta{font-family:var(--mono);font-size:12px;color:var(--ink-dim);text-align:right;white-space:nowrap}
   .streak-flag{color:var(--warn);font-weight:600}
   .seg{display:flex;gap:6px;width:100%;max-width:320px;margin-top:16px}
-  .seg button{flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--line2);font-size:12px;font-weight:600;
+  .seg button{flex:1;padding:9px 0;min-height:48px;border-radius:10px;border:1px solid var(--line2);font-size:12px;font-weight:600;
     letter-spacing:.04em;color:var(--ink-dim);transition:.18s}
   .seg button.on{color:var(--bg);background:var(--ink);border-color:var(--ink)}
   .seg-label{font-size:10px;letter-spacing:.26em;color:var(--ink-faint);margin:18px 0 8px;text-transform:uppercase}
@@ -109,7 +110,7 @@
   .hud-l{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
   .gmenu{font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ink);
     background:rgba(255,255,255,.07);border:1px solid var(--line2);border-radius:20px;padding:0 15px;
-    min-height:44px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    min-height:48px;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .gmenu:active{transform:scale(.96)}
   .hud .label{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint)}
   .hud .levelv{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:.03em;display:block;margin-top:3px}
@@ -167,9 +168,10 @@
   .pad{position:relative;width:100%;height:clamp(108px,22vh,210px);flex:0 1 auto;border-radius:16px;cursor:crosshair;touch-action:none;
     background-color:#f00;background-image:linear-gradient(to top,#000,rgba(0,0,0,0)),linear-gradient(to right,#fff,rgba(255,255,255,0));
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-  .strip{position:relative;width:100%;height:28px;border-radius:10px;cursor:ew-resize;touch-action:none;
+  .strip{position:relative;width:100%;height:36px;border-radius:10px;cursor:ew-resize;touch-action:none;
     background:linear-gradient(to right,#f00 0%,#ff0 16.6%,#0f0 33.3%,#0ff 50%,#00f 66.6%,#f0f 83.3%,#f00 100%);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  .strip::after{content:"";position:absolute;top:-6px;left:0;right:0;bottom:-6px}
   .handle{position:absolute;width:24px;height:24px;border-radius:50%;transform:translate(-50%,-50%);
     box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.55),0 4px 10px rgba(0,0,0,.4);pointer-events:none}
   .strip .handle{top:50%}
@@ -230,7 +232,7 @@
   .squares{font-size:25px;letter-spacing:5px;margin:14px 0 4px}
   .streak-big{font-size:15px;color:var(--warn);font-weight:600;margin-bottom:22px}
   .res-actions{display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px}
-  .res-actions button{padding:14px;border-radius:14px;font-weight:600;font-size:14px;letter-spacing:.03em}
+  .res-actions button{padding:14px;min-height:48px;border-radius:14px;font-weight:600;font-size:14px;letter-spacing:.03em}
   .btn-fill{background:var(--ink);color:#0a0a0c}.btn-ghost{border:1px solid var(--line2);color:var(--ink)}
   .vs-line{display:flex;justify-content:space-between;width:100%;max-width:300px;font-family:var(--mono);
     padding:13px 18px;border-radius:12px;border:1px solid var(--line2);margin-bottom:10px;font-size:15px}
@@ -240,7 +242,7 @@
   #shop{padding-top:calc(18px + env(safe-area-inset-top))}
   .shop-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
   .shop-top h2{font-family:var(--serif);font-style:italic;font-size:34px}
-  .back{font-size:13px;color:var(--ink-dim);letter-spacing:.04em;padding:6px 0}
+  .back{font-size:13px;color:var(--ink-dim);letter-spacing:.04em;padding:6px 14px 6px 0;min-height:48px;min-width:48px;display:inline-flex;align-items:center}
   .shop-note{font-size:12px;color:var(--ink-faint);margin-bottom:18px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-bottom:20px}
   .tile{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
@@ -249,7 +251,7 @@
   .tile .prev .frame{border-radius:14px}
   .tile .nm{font-size:14px;font-weight:600}
   .tile .ds{font-size:11px;color:var(--ink-dim);margin-top:-6px}
-  .tile .buy{margin-top:auto;padding:9px;border-radius:10px;font-size:13px;font-weight:600;text-align:center}
+  .tile .buy{margin-top:auto;padding:9px;min-height:48px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center}
   .buy.locked{background:var(--ink);color:var(--bg)}
   .buy.cant{border:1px solid var(--line2);color:var(--ink-faint)}
   .buy.owned{border:1px solid var(--line2);color:var(--ink-dim)}

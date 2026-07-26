@@ -218,6 +218,18 @@
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
   }
+
+  /* LW-vendored: touch-target floor (2026-07-26). Unscaled layout, so the floor
+     is 48 real px. Chips that must stay visually slim get an invisible ::after
+     tap zone extending OUTWARD only (neighbours are non-interactive board/preview). */
+  .menubtn{width:48px;height:48px}
+  .lvlbtn{min-height:48px}
+  .ctl{min-height:48px}
+  .btn{min-height:48px}
+  .toggle{min-height:48px}
+  .journal-chip::after{content:"";position:absolute;left:-6px;right:-6px;top:-11px;bottom:-11px}
+  .sheet .close{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
+    padding:0;margin:-12px -12px 0 0}
 </style>
 </head>
 <body>

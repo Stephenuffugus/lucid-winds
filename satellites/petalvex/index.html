@@ -58,8 +58,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:400px; line-height:1.5}
 .ribbon b{color:var(--gold)}
 
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px;
-  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  min-height:72px; width:100%; border:1px solid var(--line); border-radius:16px;
   background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
   font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .06s ease, filter .12s ease}
@@ -68,7 +70,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
 .btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
 .btn.ghost{background:#0f150c; color:var(--muted)}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
@@ -95,14 +97,15 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
-  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+  margin:0 auto 12px; padding:18px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .settingline span{font-size:16px}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:""; position:absolute; top:-18px; bottom:-18px; left:-10px; right:-10px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
 .sk-head{color:var(--muted); font-size:12px; letter-spacing:3px; text-transform:uppercase; width:100%; max-width:400px; margin:0 auto 10px}
-.skincard{display:flex; align-items:center; gap:12px; width:100%; min-height:64px; margin-bottom:12px; padding:12px 16px;
+.skincard{display:flex; align-items:center; gap:12px; width:100%; min-height:72px; margin-bottom:12px; padding:12px 16px;
   border:1px solid var(--line); border-radius:14px; background:#0f150c; color:var(--cream); cursor:pointer; text-align:left;
   font-family:inherit; transition:transform .06s ease}
 .skincard:active{transform:translateY(1px)}
@@ -360,7 +363,7 @@ function computeLayout(){
   var cols=n<=4?n:(n===5?6:6);
   if(n===3) cols=3;
   LAY.trayCols=cols;
-  var avail=VH-trayTop-78; /* reserve the 66px control bar + margin */
+  var avail=VH-trayTop-96; /* reserve the 84px control bar + margin */
   var tc=Math.min((VW-pad*2)/cols, avail/Math.ceil(n*n/cols));
   tc=Math.floor(Math.min(tc, cell)); // tray tiles never bigger than board tiles
   if(tc<34) tc=34;
@@ -756,11 +759,11 @@ function toModes(){ buildModeList(); show('s-modes'); }
 function buildControlBar(){
   if($('ctrlbar')) return;
   var bar=document.createElement('div'); bar.id='ctrlbar';
-  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:66px;display:none;z-index:12;'+
-    'padding:9px 10px;gap:8px;align-items:stretch;justify-content:center;'+
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:84px;display:none;z-index:12;'+
+    'padding:6px 10px;gap:8px;align-items:stretch;justify-content:center;'+
     'background:linear-gradient(0deg,#0a0d09 60%,#0a0d0900)';
   function mk(txt,fn,cls){ var b=document.createElement('button'); b.textContent=txt;
-    b.style.cssText='flex:1;max-width:150px;min-height:48px;border-radius:12px;border:1px solid var(--line);'+
+    b.style.cssText='flex:1;max-width:150px;min-height:72px;border-radius:12px;border:1px solid var(--line);'+
       'background:'+(cls==='p'?'linear-gradient(180deg,#d8b84f,#b2913a);color:#241c07;border-color:#e6cd6a':'#12180e;color:#e8dcc8')+';'+
       'font-size:15px;font-weight:700;cursor:pointer';
     b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(); }); return b; }

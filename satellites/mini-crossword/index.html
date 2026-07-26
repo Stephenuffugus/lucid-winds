@@ -42,7 +42,9 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 #hud{position:absolute; left:0; top:0; width:540px; padding:10px 12px; display:none; z-index:12; pointer-events:none; align-items:flex-start; gap:8px}
 #hud.on{display:flex}
 #hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid #ffffff2e; border-radius:12px;
-  background:#140f24b8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center}
+  background:#140f24b8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center;
+  position:relative}
+#hud .hbtn::after{content:""; position:absolute; top:-10px; left:-12px; right:-8px; bottom:-14px}
 #hud .chip{background:#140f24b8; border:1px solid #ffffff24; border-radius:12px; min-height:48px; padding:6px 10px; display:flex; flex-direction:column; justify-content:center}
 #hud .chip b{font-size:.95rem} #hud .chip span{font-size:.66rem; color:var(--muted)}
 #hud .grow{flex:1}
@@ -50,7 +52,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 #cluebar{position:absolute; left:0; top:496px; width:540px; height:72px; display:none; z-index:12;
   padding:0 6px; align-items:center; gap:6px}
 #cluebar.on{display:flex}
-#cluebar .nav{min-width:44px; min-height:56px; border:1px solid #ffffff26; border-radius:12px; background:#191330d0;
+#cluebar .nav{min-width:72px; min-height:72px; border:1px solid #ffffff26; border-radius:12px; background:#191330d0;
   color:var(--cream); font-size:1.3rem; display:flex; align-items:center; justify-content:center}
 #cluebar .cluetext{flex:1; min-height:56px; background:#1b1636d0; border:1px solid #c8a84b40; border-radius:12px;
   display:flex; align-items:center; padding:6px 12px; font-size:1.08rem; line-height:1.3}
@@ -61,7 +63,9 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 #kb.on{display:flex}
 .kbrow{display:flex; gap:6px; justify-content:center}
 .key{flex:1; min-height:72px; max-width:56px; border-radius:10px; border:1px solid #ffffff26; background:#211a3a;
-  color:var(--cream); font-size:1.45rem; font-weight:600; display:flex; align-items:center; justify-content:center}
+  color:var(--cream); font-size:1.45rem; font-weight:600; display:flex; align-items:center; justify-content:center;
+  position:relative}
+.key::after{content:""; position:absolute; top:-4px; left:-3px; right:-3px; bottom:-4px}
 .key:active{background:#2f2550}
 .key.wide{max-width:96px; font-size:1.1rem; background:#191330}
 .key.act{max-width:96px; background:#241c10; border-color:#c8a84b55; font-size:1rem}
@@ -73,13 +77,13 @@ h1{font-size:2.05rem; letter-spacing:.1em; margin:12px 0 2px; text-align:center}
 h1 .a{color:var(--cream)} h1 .b{color:var(--gold)}
 .tag{color:var(--muted); font-size:.85rem; margin-bottom:18px; text-align:center; max-width:360px}
 .btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:360px;
-  min-height:56px; margin:6px 0; border-radius:16px; border:1px solid #ffffff26;
+  min-height:72px; margin:6px 0; border-radius:16px; border:1px solid #ffffff26;
   background:linear-gradient(180deg,#1e1836,#131024); color:var(--cream); font-size:1.02rem; letter-spacing:.04em}
 .btn:active{transform:scale(.985)}
 .btn.gold{border-color:#c8a84b66; background:linear-gradient(180deg,#2a2410,#171307)}
 .btn.blue{border-color:#5b9bd54d; background:linear-gradient(180deg,#14202b,#0b1219)}
 .btn.teal{border-color:#46b3a655; background:linear-gradient(180deg,#0f2320,#08150f)}
-.btn.sm{min-height:48px; max-width:300px; font-size:.9rem}
+.btn.sm{min-height:72px; max-width:300px; font-size:.9rem}
 .btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
 #toast{position:absolute; left:50%; bottom:250px; transform:translateX(-50%); background:#140f24e8; z-index:40;
   border:1px solid #c8a84b55; color:var(--cream); padding:10px 18px; border-radius:14px; font-size:.85rem;

@@ -48,7 +48,9 @@
 
   /* ---- overlays ---- */
   .scr{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:flex-start; padding:calc(env(safe-area-inset-top,0) + 18px) 16px calc(env(safe-area-inset-bottom,0) + 18px);
+    justify-content:flex-start; padding:calc(env(safe-area-inset-top,0) + 64px) 16px calc(env(safe-area-inset-bottom,0) + 18px);
+    /* top pad clears the fixed exit link (48px tall at top:10) so screen back
+       buttons no longer sit underneath its tap zone */
     overflow-y:auto; overscroll-behavior:contain; z-index:10; background:radial-gradient(120% 80% at 50% -10%, rgba(28,40,20,.55), rgba(8,10,7,.92) 70%);
     -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);}
   .scr.hidden{display:none;}
@@ -71,7 +73,7 @@
   .btn.gold{background:linear-gradient(180deg,#e0c268,#b8943c); color:#241a06; border-color:#efd589;
     box-shadow:0 3px 0 #7d631f;}
   .btn.ghost{background:rgba(20,26,16,.5); border-color:var(--line);}
-  .btn.sm{min-height:44px; min-width:44px; font-size:14px; padding:10px 14px; border-radius:11px;}
+  .btn.sm{min-height:48px; min-width:48px; font-size:14px; padding:10px 14px; border-radius:11px;}
   .btn.wide{width:min(340px,86vw);}
   .btn:disabled{opacity:.4; cursor:default;}
   .btn .k{font-family:'JetBrains Mono',monospace; font-size:12px; opacity:.7;}
@@ -105,7 +107,7 @@
   /* shop */
   .tabs{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin:2px 0 12px;}
   .tab{border:1px solid var(--line2); background:rgba(20,26,16,.5); color:var(--ink-dim);
-    border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; min-height:44px;}
+    border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; min-height:48px;}
   .tab.on{background:var(--sage); color:#10160c; border-color:var(--sage);}
   .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(460px,94vw);}
   @media(max-width:360px){ .grid{grid-template-columns:repeat(2,1fr);} }
@@ -163,11 +165,12 @@
   /* result squares */
   #resSquares{font-family:'JetBrains Mono',monospace; font-size:22px; line-height:1.25; letter-spacing:2px; text-align:center; margin:8px 0;}
   .exit{position:absolute; top:calc(env(safe-area-inset-top,0) + 10px); left:12px; z-index:12;}
-  .link-btn{background:none; border:none; color:var(--ink-dim); font-size:13px; cursor:pointer; padding:8px; font-family:inherit;}
+  .link-btn{background:none; border:none; color:var(--ink-dim); font-size:13px; cursor:pointer; padding:8px; font-family:inherit;
+    min-height:48px; display:inline-flex; align-items:center;}
   .settingrow{display:flex; align-items:center; justify-content:space-between; width:100%; padding:9px 2px; border-bottom:1px solid var(--line);}
   .settingrow:last-child{border-bottom:none;}
   .sw{width:52px; height:30px; border-radius:999px; background:#20261a; border:1px solid var(--line2); position:relative; cursor:pointer; flex:0 0 auto;}
-  .sw::before{content:''; position:absolute; inset:-8px;}   /* invisible 8px hit-slop → 46px tap target, pill stays slim (44px touch floor) */
+  .sw::before{content:''; position:absolute; inset:-9px;}   /* invisible 9px hit-slop → 48px tap target, pill stays slim (48px touch floor; rows are 18px apart so this stops at the midpoint) */
   .sw .kn{position:absolute; top:2px; left:2px; width:24px; height:24px; border-radius:50%; background:var(--ink-faint); transition:left .15s,background .15s;}
   .sw.on{background:#3a5a28; border-color:var(--sage);} .sw.on .kn{left:24px; background:var(--sage);}
   .tut{max-width:24em; color:var(--ink-dim); font-size:13.5px; line-height:1.5; text-align:left;}

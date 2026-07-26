@@ -47,12 +47,14 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.92; max-width:430px; line-height:1.55}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
-.btn.sm{min-height:54px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -61,8 +63,9 @@ h2.sc-h{font-size:32px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:14px; align-items:flex-start; margin:16px 0; font-size:20px; line-height:1.5; font-weight:500}
 .helprow .hi{font-size:19px; font-weight:800; width:40px; height:40px; line-height:38px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:17px}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:18px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:17px}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle::after{content:""; position:absolute; top:-18px; bottom:-18px; left:-10px; right:-10px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}

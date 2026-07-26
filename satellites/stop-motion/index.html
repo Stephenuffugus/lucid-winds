@@ -46,12 +46,14 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.92; max-width:440px; line-height:1.55}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .btn.dim{opacity:.38; pointer-events:none}
 .row{display:flex; gap:12px; width:100%}
@@ -66,21 +68,24 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 
 /* ---- range sliders (touch friendly) ---- */
-input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:8px;
-  background:#26301c; outline:none; border:1px solid var(--line); flex:1}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:32px; height:32px;
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:72px; border-radius:8px;
+  background:transparent; outline:none; border:0; flex:1; cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:10px; border-radius:8px; background:#26301c; border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:32px; height:32px; margin-top:-12px;
   border-radius:50%; background:var(--sage); border:2px solid #b6e28a; cursor:pointer}
+input[type=range]::-moz-range-track{height:10px; border-radius:8px; background:#26301c; border:1px solid var(--line)}
 input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; background:var(--sage); border:2px solid #b6e28a; cursor:pointer}
 
 /* ---- toggle ---- */
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle::after{content:""; position:absolute; top:-18px; bottom:-18px; left:-6px; right:-6px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
 
 /* ---- studio ---- */
-#studio-top{flex:none; height:46px; display:flex; align-items:center; gap:8px; padding:0 8px; background:#0c110b; border-bottom:1px solid var(--line)}
-.top-btn{width:44px; height:38px; flex:none; border-radius:10px; border:1px solid var(--line); background:#121a0f; color:var(--cream); font-size:22px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center}
+#studio-top{flex:none; height:72px; display:flex; align-items:center; gap:8px; padding:0 8px; background:#0c110b; border-bottom:1px solid var(--line)}
+.top-btn{width:72px; height:72px; flex:none; border-radius:10px; border:1px solid var(--line); background:#121a0f; color:var(--cream); font-size:22px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center}
 #top-mid{flex:1; min-width:0; text-align:center; padding:0 4px}
 #frame-count{font-size:14px; font-weight:800; color:var(--gold); line-height:1.1}
 #tip-ticker{font-size:13px; color:#b8c0a8; line-height:1.25; height:30px; overflow:hidden; transition:opacity .2s; display:flex; align-items:center; justify-content:center}
@@ -90,16 +95,16 @@ input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; 
 #cam-msg{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:22px 28px; background:linear-gradient(180deg,#0e140d,#0b0f0b); color:var(--cream); font-size:16px; line-height:1.5; gap:10px; overflow-y:auto; -webkit-overflow-scrolling:touch}
 #cam-msg .cm-big{font-size:22px; font-weight:800; color:var(--sage)}
 #cam-msg .cm-hint{font-size:13px; color:var(--muted)}
-#cam-msg .btn{max-width:320px; min-height:52px; font-size:17px; flex:none}
+#cam-msg .btn{max-width:320px; min-height:72px; font-size:17px; flex:none}
 .cm-steps{text-align:left; font-size:14px; line-height:1.55; margin:2px 0; padding:10px 14px 10px 34px; background:#10160e; border:1px solid var(--line); border-radius:12px; max-width:430px; color:var(--cream)}
 .cm-steps li{margin:5px 0}
 #thirds{position:absolute; inset:0; pointer-events:none; opacity:.35}
 #thirds .tl{position:absolute; background:rgba(232,220,200,.35)}
-#ctrl-row{flex:none; padding:10px 16px 4px; display:flex; flex-direction:column; gap:8px}
+#ctrl-row{flex:none; padding:0 16px; display:flex; flex-direction:column; gap:4px}
 .ctrl-line{display:flex; align-items:center; gap:12px}
 .ctrl-lab{font-size:14px; font-weight:700; color:var(--cream); width:80px; flex:none}
 .ctrl-val{font-size:13px; font-weight:800; color:var(--gold); width:56px; text-align:right; flex:none}
-#shutter-row{flex:none; padding:6px 16px}
+#shutter-row{flex:none; padding:2px 16px}
 .shutter-btn{width:100%; min-height:80px; border-radius:18px; border:2px solid #b6e28a;
   background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; font-size:22px; font-weight:800;
   letter-spacing:.5px; box-shadow:0 4px 0 #2f5323,0 8px 20px #0006; cursor:pointer;
@@ -107,23 +112,23 @@ input[type=range]::-moz-range-thumb{width:32px; height:32px; border-radius:50%; 
 .shutter-btn:active{transform:translateY(2px); filter:brightness(1.1)}
 .shutter-dot{width:20px; height:20px; border-radius:50%; background:#2f5323; box-shadow:0 0 0 3px #b6e28a inset}
 #sel-bar{flex:none; padding:2px 16px 4px; display:none; gap:10px}
-#sel-bar .btn{min-height:46px; font-size:15px}
-#film-strip{flex:none; height:104px; display:flex; gap:8px; overflow-x:auto; overflow-y:hidden;
-  padding:8px 14px; align-items:center; -webkit-overflow-scrolling:touch; background:#080c07; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+#sel-bar .btn{min-height:72px; font-size:15px}
+#film-strip{flex:none; height:96px; display:flex; gap:8px; overflow-x:auto; overflow-y:hidden;
+  padding:4px 14px; align-items:center; -webkit-overflow-scrolling:touch; background:#080c07; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
 #film-strip .empty{color:var(--muted); font-size:13px; padding:0 6px; white-space:nowrap}
-.filmcell{position:relative; flex:none; width:66px; height:84px; border-radius:8px; overflow:hidden;
+.filmcell{position:relative; flex:none; width:72px; height:84px; border-radius:8px; overflow:hidden;
   border:2px solid var(--line); background:#000; cursor:pointer}
 .filmcell.sel{border-color:var(--gold); box-shadow:0 0 0 2px var(--gold)}
 .filmcell img{width:100%; height:100%; object-fit:cover; display:block}
 .filmcell .num{position:absolute; top:2px; left:4px; font-size:11px; font-weight:800; color:#fff; text-shadow:0 1px 2px #000}
-#action-row{flex:none; padding:8px 16px 12px; display:flex; gap:10px}
-#action-row .btn{min-height:52px; font-size:16px}
+#action-row{flex:none; padding:4px 16px 6px; display:flex; gap:10px}
+#action-row .btn{min-height:72px; font-size:16px}
 
 /* ---- playback ---- */
 #pb-view{flex:1; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden}
 #pb-img{max-width:100%; max-height:100%; object-fit:contain; display:block}
 #pb-bar{flex:none; padding:14px 16px; display:flex; align-items:center; gap:12px; background:#0c110b; border-top:1px solid var(--line)}
-#pb-bar .btn{min-height:52px; flex:none; padding:0 16px; width:auto}
+#pb-bar .btn{min-height:72px; flex:none; padding:0 16px; width:auto}
 
 /* ---- export ---- */
 #ex-preview{width:300px; max-width:88%; border-radius:12px; border:1px solid var(--line); background:#000; margin:12px auto}

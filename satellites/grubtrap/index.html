@@ -54,14 +54,14 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:410px; line-height:1.5}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px;
-  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  min-height:72px; width:100%; border:1px solid var(--line); border-radius:16px;
   background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
   font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a;
   box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -75,8 +75,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .win-stat b{color:var(--gold)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
-  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+  min-height:72px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:''; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -105,7 +106,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   font-size:14px;line-height:1.4;text-align:center;box-shadow:0 8px 26px #0009;opacity:0;pointer-events:none;transition:opacity .25s}
 #gt-toast.on{opacity:1}
 .seg{display:flex;gap:6px}
-.seg button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#12180e;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.seg button{min-height:72px;min-width:72px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#12180e;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .seg button.on{background:var(--deep);color:#eafbd6;border-color:#8fd06a}
 </style>
 </head>
@@ -741,13 +742,13 @@ function buildCtrl(){
   bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:'+DPAD+'px;display:none;z-index:12;background:linear-gradient(0deg,#0a0d09 72%,#0a0d0900)';
   // pause button — top center, clear of both thumbs
   var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='☰ Menu';
-  pause.style.cssText='position:absolute;left:50%;transform:translateX(-50%);top:12px;min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:15px;font-weight:700;cursor:pointer';
+  pause.style.cssText='position:absolute;left:50%;transform:translateX(-50%);top:12px;min-height:72px;min-width:120px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:15px;font-weight:700;cursor:pointer';
   pause.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pauseToTitle(); });
   bar.appendChild(pause);
   // split thumb controls: up/down on the LEFT, left/right on the RIGHT —
   // bigger buttons + real gaps so adjacent taps don't collide
   function mk(dir,txt,left,bottom){ var b=document.createElement('button'); b.textContent=txt;
-    b.style.cssText='position:absolute;width:68px;height:68px;left:'+left+'px;bottom:'+bottom+'px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:28px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408;touch-action:none;-webkit-tap-highlight-color:transparent';
+    b.style.cssText='position:absolute;width:72px;height:72px;left:'+left+'px;bottom:'+bottom+'px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:28px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408;touch-action:none;-webkit-tap-highlight-color:transparent';
     var press=function(ev){ ev.preventDefault(); if(!G||G.phase!=='play'||curScreen!==null) return; moveHero(dir); heldDir=dir; moveAcc=0.20; };
     var release=function(ev){ if(heldDir===dir){ heldDir=null; moveAcc=0; } };
     b.addEventListener('pointerdown',press); b.addEventListener('pointerup',release); b.addEventListener('pointerleave',release); b.addEventListener('pointercancel',release);

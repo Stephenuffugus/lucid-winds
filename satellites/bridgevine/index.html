@@ -42,7 +42,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 #hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
   padding:10px 12px; align-items:flex-start; gap:10px}
 #hud.on{display:flex}
-#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+#hud .hbtn{pointer-events:auto; min-width:72px; min-height:72px; border:1px solid var(--line); border-radius:12px;
   background:#0f150cdd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
 #hudmid{flex:1; display:flex; gap:8px; justify-content:center; pointer-events:none}
 .hchip{min-width:82px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#0f150cdd;
@@ -58,7 +58,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
   border-top:1px solid var(--line); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:none; flex-direction:column; gap:6px}
 #dock.on{display:flex}
 .dockrow{display:flex; gap:6px; flex:1}
-.chip{flex:1; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
+.chip{flex:1; min-height:72px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; padding:2px 0; position:relative}
 .chip .ci{font-size:17px; line-height:1.15}
 .chip .cn{font-size:.7rem; letter-spacing:.4px; color:var(--muted); text-transform:uppercase}
@@ -74,12 +74,12 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 .title-word{font-size:50px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:3px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px} /* 72 stage px = 52 rendered at 390w (touch law: rendered px) */
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}

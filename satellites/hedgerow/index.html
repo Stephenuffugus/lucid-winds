@@ -55,7 +55,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:410px; line-height:1.5}
 
 .btn{display:flex; align-items:center; justify-content:center; gap:10px;
-  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  min-height:72px; width:100%; border:1px solid var(--line); border-radius:16px;
   background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
   font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .06s ease, filter .12s ease}
@@ -64,7 +64,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
 .btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
 .btn.ghost{background:#0f150c; color:var(--muted)}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
@@ -77,8 +77,9 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .win-stat b{color:var(--gold)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
-  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+  min-height:72px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:''; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -309,7 +310,7 @@ function sfx(kind){ switch(kind){
 /* ============================ state ================================= */
 var cv, ctx, VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
 var COLS=15, ROWS=22, CS=34, FX=15, FY=112;
-var HUD=112, CTRLH=78;
+var HUD=112, CTRLH=94;
 var grid=null;      // 0 open, 1 claimed, 2 hedge(wall)
 var balls=[];
 var wall=null;      // growing hedge
@@ -671,13 +672,13 @@ function onDown(e){
 function buildCtrl(){
   if($('ctrlbar')) return;
   var bar=document.createElement('div'); bar.id='ctrlbar';
-  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:74px;display:none;z-index:12;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:90px;display:none;z-index:12;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
   var ori=document.createElement('button'); ori.id='ori-btn';
-  ori.style.cssText='flex:1.4;min-height:52px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px';
+  ori.style.cssText='flex:1.4;min-height:72px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px';
   ori.addEventListener('click',function(e){ e.preventDefault(); curOrient=(curOrient==='h')?'v':'h'; paintOri(); sfx('ui'); });
   bar.appendChild(ori);
   var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='Menu';
-  pause.style.cssText='flex:1;min-height:52px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
+  pause.style.cssText='flex:1;min-height:72px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
   pause.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pauseToTitle(); });
   bar.appendChild(pause);
   $('stage').appendChild(bar);
@@ -687,13 +688,13 @@ function buildCtrl(){
 function buildClearBar(){
   if($('clearbar')) return;
   var bar=document.createElement('div'); bar.id='clearbar';
-  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:74px;display:none;z-index:13;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:90px;display:none;z-index:13;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
   var next=document.createElement('button'); next.id='next-btn'; next.innerHTML='Next ground &#9654;';
-  next.style.cssText='flex:1.6;min-height:52px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#7ab356,#5c8f3f);color:#0c1207;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #3f6b34';
+  next.style.cssText='flex:1.6;min-height:72px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#7ab356,#5c8f3f);color:#0c1207;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #3f6b34';
   next.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); advance(); });
   bar.appendChild(next);
   var sh=document.createElement('button'); sh.id='clear-share-btn'; sh.textContent='Share';
-  sh.style.cssText='flex:1;min-height:52px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
+  sh.style.cssText='flex:1;min-height:72px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
   sh.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); shareHedgerow(); });
   bar.appendChild(sh);
   $('stage').appendChild(bar);

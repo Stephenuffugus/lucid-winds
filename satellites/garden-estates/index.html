@@ -47,12 +47,12 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:440px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:16px}
+.btn.sm{min-height:72px; font-size:16px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -61,7 +61,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:14px; align-items:flex-start; margin:13px 0; font-size:18px; line-height:1.45; font-weight:500}
 .helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--sage); background:#18220f; border:1px solid #4a6b30; border-radius:50%}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; min-height:74px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
@@ -118,7 +118,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
     <div class="settingline"><span>Click through rival turns</span><div class="toggle" id="tg-pace"><b></b></div></div>
-    <div class="settingline"><span>Game speed</span><button class="btn ghost sm" id="bt-speed" style="min-height:44px;width:auto;padding:0 18px">Normal</button></div>
+    <div class="settingline"><span>Game speed</span><button class="btn ghost sm" id="bt-speed" style="width:auto;min-width:120px;padding:0 18px">Normal</button></div>
     <div style="font-size:12px;color:#8a9178;max-width:400px;margin:0 auto;line-height:1.5;text-align:center">Click through shows each step of a rival's turn and waits for your tap. Game speed changes how fast pawns walk and cards appear.</div>
     <div style="height:8px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
@@ -734,7 +734,9 @@ function burst(x,y,col){ for(var i=0;i<10;i++){ var a=Math.random()*6.2832,s=40+
 
 /* ---------- input ---------- */
 function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
-function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+function inBtn(p,b){ /* hit zone padded to 72 stage px min (art unchanged) */
+  var px=Math.max(0,(72-b.w)/2), py=Math.max(0,(72-b.h)/2);
+  return p.x>=b.x-px&&p.x<=b.x+b.w+px&&p.y>=b.y-py&&p.y<=b.y+b.h+py; }
 function cellAt(p){ for(var i=0;i<N;i++){ var rc=cellRect(i); if(p.x>=rc.x&&p.x<=rc.x+rc.w&&p.y>=rc.y&&p.y<=rc.y+rc.h)return i; } return -1; }
 function tryHumanBuild(i){ if(!G.hasHuman||G.cur!==0)return false; if(!(G.phase==='idle'||G.phase==='turnend'))return false;
   if(!canBuild(0,i))return false; buildOne(0,i); var rc=cellRect(i); burst(rc.x+CS/2,rc.y+CS/2,'#8ec462'); sfx('build'); haptic(10);
@@ -779,12 +781,14 @@ tap('ge-again',function(){ sfx('ui'); startMatch(G?G.players.length:2, true); })
 tap('ge-home',function(){ sfx('ui'); show('s-title'); });
 tap('ge-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
-  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
+  var host=el.parentNode||el; host.style.cursor='pointer'; /* whole settingline row = tap target (fleet 72-stage-px law) */
+  host.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic');
 (function(){
   var tp=$('tg-pace');
   function paintPace(){ if(tp)tp.classList.toggle('on', SET.pace==='step'); }
-  if(tp)tp.addEventListener('click',function(){ SET.pace=(SET.pace==='step')?'auto':'step'; if(G)G.stepGo=false; paintPace(); saveSet(); sfx('ui'); });
+  var tpHost=tp?(tp.parentNode||tp):null; /* whole settingline row = tap target (fleet 72-stage-px law) */
+  if(tpHost){ tpHost.style.cursor='pointer'; tpHost.addEventListener('click',function(){ SET.pace=(SET.pace==='step')?'auto':'step'; if(G)G.stepGo=false; paintPace(); saveSet(); sfx('ui'); }); }
   paintPace();
   var bs=$('bt-speed');
   var SPEEDS=[[0.7,'Relaxed'],[1,'Normal'],[1.6,'Fast']];

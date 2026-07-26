@@ -1,5 +1,5 @@
 // OriVex service worker — minimal, keeps the game installable + offline-tolerant.
-var CACHE='orivex-v2';
+var CACHE='orivex-v3';
 self.addEventListener('install',function(e){ self.skipWaiting(); });
 self.addEventListener('activate',function(e){ e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch',function(e){

@@ -46,12 +46,14 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #14240f, 0 0 26px #7ab35644; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:14px; color:var(--cream); font-size:13.5px; opacity:.9; max-width:430px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:58px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:15px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:17px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#7ab356,#4f7d35); color:#0c1408; border-color:#9fd07a; box-shadow:0 4px 0 #2f4a1f, 0 8px 18px #0006}
-.btn.sm{min-height:50px; font-size:14px}
+.btn.sm{min-height:72px; font-size:14px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:10px; width:100%}
 .row>.btn{flex:1}
@@ -61,7 +63,7 @@ h2.sc-h{font-size:22px; color:var(--sage); font-weight:800; margin-bottom:4px; t
 /* play */
 #s-play{padding:0}
 .topbar{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; gap:8px}
-.hbtn{min-width:46px; height:46px; border-radius:12px; border:1px solid var(--line); background:rgba(15,21,12,.7);
+.hbtn{min-width:72px; height:72px; border-radius:12px; border:1px solid var(--line); background:rgba(15,21,12,.7);
   color:var(--cream); font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
 .scorebox{flex:1; text-align:center}
 .scorebox .sv{font-size:26px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums; line-height:1}
@@ -109,8 +111,9 @@ h2.sc-h{font-size:22px; color:var(--sage); font-weight:800; margin-bottom:4px; t
 .wcard.lock{opacity:.5}
 .wcard .wt{font-size:13px; font-weight:700; margin-top:6px}
 .wcard .ws{font-size:11px; color:var(--muted); margin-top:3px}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:13px 15px; border:1px solid var(--line); border-radius:13px; background:#0f150c; font-size:14px}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:19px 15px; border:1px solid var(--line); border-radius:13px; background:#0f150c; font-size:14px}
 .toggle{width:60px; height:34px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle::after{content:""; position:absolute; top:-19px; bottom:-19px; left:-10px; right:-10px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:29px; background:#eafbd6}

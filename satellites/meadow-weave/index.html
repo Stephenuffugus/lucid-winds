@@ -47,12 +47,12 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #1f3016, 0 0 26px #5c8f3f44; letter-spacing:1px}
 .title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(180deg,#6ea34a,#4a7a2f); color:#0e1707; border-color:#8fc86a; box-shadow:0 4px 0 #2f5020, 0 8px 20px #0006}
-.btn.sm{min-height:52px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -61,8 +61,9 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
 .helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; min-height:72px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
 .toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle::after{content:''; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
@@ -522,7 +523,7 @@ function drawPreview(cx,cy,s,tile,rot,alpha){ tile=tile||G.next; rot=(rot==null)
   if(alpha!=null)ctx.globalAlpha=1;
 }
 function drawQuests(trayY){ ctx.textAlign='right'; ctx.font='600 11px system-ui'; for(var i=0;i<G.quests.length;i++){ var qz=G.quests[i]; ctx.fillStyle= qz.done?'#7ab356':'#c8a84b'; ctx.fillText((qz.done?'✓ ':'')+BIOMES[qz.biome].nm+' x'+qz.size, VW-20, trayY+120+i*16); } }
-var HB_MENU={x:8,y:70,w:44,h:44}, HB_ROT={x:166,y:VH-116,w:100,h:50}, HB_UNDO={x:274,y:VH-116,w:100,h:50}, HB_PLACE={x:0,y:0,w:0,h:0};
+var HB_MENU={x:8,y:70,w:44,h:44}, HB_ROT={x:166,y:VH-127,w:100,h:72}, HB_UNDO={x:274,y:VH-127,w:100,h:72}, HB_PLACE={x:0,y:0,w:0,h:0};
 var TRAY_CUR={x:VW-88, y:VH-150+88, s:44};
 var dragT={on:false, away:false, x:0, y:0, baseAng:0, accum:0};
 function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.7)'; rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
@@ -542,7 +543,9 @@ function stopLoop(){ running=false; }
 
 /* ---------- input ---------- */
 function evPos(e){ var rct=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e; return { x:(t.clientX-rct.left)*VW/rct.width, y:(t.clientY-rct.top)*VH/rct.height }; }
-function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+/* touch-target law: pad expands the hit zone OUTWARD past the drawn box so a
+   control reads at least 72 stage px without moving the art */
+function inBtn(p,b,pad){ pad=pad||0; return p.x>=b.x-pad&&p.x<=b.x+b.w+pad&&p.y>=b.y-pad&&p.y<=b.y+b.h+pad; }
 var ptr={down:false, x:0,y:0, sx:0,sy:0, moved:0, panning:false};
 function onDown(e){ if(curScreen!=='play')return; e.preventDefault(); ac(); var p=evPos(e); ptr.down=true; ptr.x=p.x; ptr.y=p.y; ptr.sx=p.x; ptr.sy=p.y; ptr.moved=0; ptr.panning=false;
   // picking up YOUR TILE: hold near it to twist-rotate, pull away to drag
@@ -584,7 +587,7 @@ function onUp(e){ if(curScreen!=='play'||!ptr.down)return; e.preventDefault(); p
     return;
   }
   if(ptr.panning||ptr.moved>14)return;
-  if(inBtn(p,HB_MENU)){ sfx('ui'); toTitle(); return; }
+  if(inBtn(p,HB_MENU,14)){ sfx('ui'); toTitle(); return; }
   if(inBtn(p,HB_ROT)){ G.rot=(G.rot+1)%6; sfx('rotate'); return; }
   if(inBtn(p,HB_UNDO)){ undoPlace(); return; }
   if(G.phase!=='play')return;

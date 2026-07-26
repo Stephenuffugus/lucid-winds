@@ -43,7 +43,9 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
   align-items:flex-start; gap:10px}
 #hud.on{display:flex}
 #hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid #ffffff2e; border-radius:12px;
-  background:#0d100cb8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center}
+  background:#0d100cb8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center;
+  position:relative}
+#hud .hbtn::after{content:""; position:absolute; top:-10px; left:-12px; right:-8px; bottom:-14px}
 #hud .chip{background:#0d100cb8; border:1px solid #ffffff24; border-radius:12px; min-height:48px;
   padding:6px 12px; display:flex; flex-direction:column; justify-content:center}
 #hud .chip b{font-size:.95rem} #hud .chip span{font-size:.7rem; color:var(--muted)}
@@ -64,12 +66,12 @@ h1{font-size:2.1rem; letter-spacing:.14em; margin:14px 0 2px; text-align:center}
 h1 .a{color:var(--dew)} h1 .b{color:var(--gold)}
 .tag{color:var(--muted); font-size:.85rem; margin-bottom:20px; text-align:center}
 .btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:360px;
-  min-height:58px; margin:7px 0; border-radius:16px; border:1px solid #ffffff26;
+  min-height:72px; margin:7px 0; border-radius:16px; border:1px solid #ffffff26;
   background:linear-gradient(180deg,#18231a,#0f1710); color:var(--cream); font-size:1.02rem; letter-spacing:.04em}
 .btn:active{transform:scale(.985)}
 .btn.gold{border-color:#c8a84b66; background:linear-gradient(180deg,#2a2410,#171307)}
 .btn.blue{border-color:#5b9bd54d; background:linear-gradient(180deg,#14202b,#0b1219)}
-.btn.sm{min-height:48px; max-width:300px; font-size:.9rem}
+.btn.sm{min-height:72px; max-width:300px; font-size:.9rem}
 .btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
 #lvlgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:380px; margin-top:6px}
 .lvlcard{border:1px solid #ffffff22; border-radius:14px; background:#101a12; min-height:86px; padding:8px 6px;

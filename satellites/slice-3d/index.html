@@ -49,7 +49,7 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn{pointer-events:auto}
-.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.pad{padding:26px; flex:1; width:100%; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch} /* width:100%: .screen.center otherwise shrinks the pad to content and the result-screen buttons collapse narrow */
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:44px; line-height:1.05; font-weight:800; letter-spacing:1px;
   background:linear-gradient(120deg,#8de8ff,#ffd76a 55%,#ff6d9d); -webkit-background-clip:text; background-clip:text; color:transparent;
@@ -72,12 +72,14 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .fstat{font-size:12px; margin-top:3px; color:var(--muted)}
 #forge-toast{position:absolute; left:0; right:0; bottom:96px; text-align:center; font-size:15px; font-weight:700; color:#ffd76a; text-shadow:0 2px 8px #000c; opacity:0; pointer-events:none; transition:opacity .2s}
 #forge-toast.show{opacity:1}
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+/* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
+   72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f38,#171322); color:var(--ink);
   font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
 .btn.primary{background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; border-color:#ffe49a; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
-.btn.sm{min-height:50px; font-size:15px}
+.btn.sm{min-height:72px; font-size:15px}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
@@ -85,7 +87,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
 .helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#151126; border:1px solid var(--teal); border-radius:50%}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
-.tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:48px; height:48px; border-radius:12px;
+.tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:72px; height:72px; border-radius:12px;
   border:1px solid var(--line); background:rgba(18,16,28,0.75); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
@@ -121,7 +123,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #cfwrap{position:fixed; left:0; top:0; right:0; bottom:0; z-index:999; pointer-events:none; overflow:hidden}
 .cf{position:absolute; top:-14px; width:9px; height:13px; pointer-events:none; animation:cfFall linear forwards}
 @keyframes cfFall{ 0%{top:-14px} 100%{top:105vh} }
-#b-music{flex:0 0 64px; font-size:20px}
+#b-music{flex:0 0 72px; font-size:20px}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 </head>
