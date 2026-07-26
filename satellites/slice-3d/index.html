@@ -154,6 +154,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. Hold to keep flipping. Resting on the ground is fine, tap to get moving again.</div></div>
+    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">Wall Climb is different: HOLD steadies the blade.</b> Tap to flip up the face, then hold and the spin brakes and the blade turns to face the wall, ready to stick. Release to flip again. That is the whole climb.</div></div>
     <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
@@ -208,7 +209,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.0";
+var BUILD="v5.1";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -1190,6 +1191,12 @@ function newClimb(lvl){
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0,
       done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
+  /* The brake was undiscoverable: base-game muscle memory says hold = keep
+     flipping, and nothing in the climb ever said otherwise (Stephen: "almost
+     impossible to gain footing... it only spins at a consistent rate" — the
+     slow-down HE ASKED FOR was already on the hold, unannounced). Say it at
+     the moment it matters, every climb start; it is 1.4s of toast. */
+  setTimeout(function(){ try{ popupForge('HOLD steadies the blade. Release to flip.'); }catch(e){} }, 600);
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
   camera.position.set(-10, 18, 40);
   $('h-score').textContent='0';
