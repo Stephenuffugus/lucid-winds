@@ -132,9 +132,11 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="foot" id="buildstamp"></div>
   </div></div>
 
-  <!-- HOW -->
+  <!-- HOW (also the first-visit rules gate: the button reads Start and begins the game) -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
+    <div style="color:var(--cream);font-size:15px;line-height:1.5;margin:2px 0 0;opacity:.92">Fence the garden pests into a corner and reclaim the bed. A Sky Wolf remake of the classic JezzBall.</div>
+    <div style="color:var(--gold);font-size:15px;font-weight:700;margin:8px 0 0"><b>Objective:</b> reclaim 75% of every ground without losing all your leaves.</div>
     <div class="helprow"><div class="hi">1</div><div>Tap the bed to grow a <b>hedge wall</b>. It sprouts both ways until it hits an edge or another hedge, splitting the bed in two.</div></div>
     <div class="helprow"><div class="hi">2</div><div>Use the <b>⇆ / ⇅</b> button to choose whether the next hedge grows across or up-and-down.</div></div>
     <div class="helprow"><div class="hi">3</div><div>Any patch of bed with <b>no pests</b> in it once a hedge closes gets reclaimed and planted. Reclaim <b class="hl">75%</b> to clear the ground.</div></div>
@@ -194,14 +196,14 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); if(id==='s-title'){ var rb=$('b-resume'); if(rb) rb.style.display=(G&&G.phase==='paused')?'flex':'none'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.1';
+var BUILD='v1.2';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='hg_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
   return { get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null); }catch(e){ return k in mem?mem[k]:null; } },
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } } };
 })();
-var K={ set:'hg_set', best:'hg_best' };
+var K={ set:'hg_set', best:'hg_best', seen:'hg_seen' };
 var SET={ sound:true };
 (function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
@@ -332,6 +334,15 @@ function fieldW(){ return COLS*CS; }
 function fieldH(){ return ROWS*CS; }
 
 /* ============================ level / start ================================= */
+/* First-visit rules gate (studio standard: rules before play, mouse-trap pattern).
+   Play routes through the How to play screen once; its button reads Start and
+   begins the run. The flag is set when Start is pressed, so a player who bails
+   without starting sees the gate again next visit. */
+var gatePending=false;
+function playRequest(){
+  if(LS.get(K.seen)!=='1'){ gatePending=true; $('how-back').textContent='Start'; show('s-how'); return; }
+  newGame();
+}
 function newGame(){
   layout();
   G={ level:1, lives:3, score:0, scoreAtLevelStart:0, target:TARGET, pct:0, phase:'play', flash:0, cleanLevel:true };
@@ -497,9 +508,13 @@ function gameOver(){
 }
 function advance(){ if(!G||G.phase!=='clear') return; G.level++; G.scoreAtLevelStart=G.score; startLevel(); running=true; lastTs=0; requestAnimationFrame(loop); }
 function retryLevel(){ if(!G) return; G.lives=3; G.score=G.scoreAtLevelStart||0; startLevel(); show(null); running=true; lastTs=0; requestAnimationFrame(loop); }
-/* fleet-standard share (built from the real run result) */
+/* fleet-standard share (built from the real run result).
+   During the clear banner G.level IS the ground just cleared (advance() bumps it
+   after); on the game-over screen G.level is the ground you died on, so cleared
+   is level-1. */
 function shareHedgerow(){
-  var g=G?Math.max(0,G.level-1):0, sc=G?G.score:0;
+  var g=0, sc=G?G.score:0;
+  if(G) g=(G.phase==='clear')?G.level:Math.max(0,G.level-1);
   var url="https://lucidwinds.com/satellites/hedgerow/";
   var txt="Hedgerow: I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
@@ -586,7 +601,7 @@ function render(){
     ctx.fillStyle='#8fd06a'; ctx.font='800 40px system-ui'; ctx.fillText('Ground cleared!', VW/2, FY+fieldH()/2-40);
     ctx.fillStyle='#e8dcc8'; ctx.font='700 20px system-ui'; ctx.fillText(Math.round(G.pct*100)+'% reclaimed'+(G.cleanLevel?'  ·  clean! +1 leaf':''), VW/2, FY+fieldH()/2+2);
     if(G.lastSun>0){ ctx.fillStyle='#c8a84b'; ctx.font='800 18px system-ui'; ctx.fillText('☀ +'+G.lastSun+' sunbeam'+(G.lastSun>1?'s':''), VW/2, FY+fieldH()/2+34); }
-    ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.fillText('tap to grow the next ground', VW/2, FY+fieldH()/2+72);
+    ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.fillText('tap the bed or press Next ground', VW/2, FY+fieldH()/2+72);
   }
 }
 function drawLeaf(g,x,y,s){ g.save(); g.translate(x,y); g.fillStyle='#7ab356'; g.beginPath(); g.moveTo(0,-s); g.quadraticCurveTo(s,-s*0.3,0,s); g.quadraticCurveTo(-s,-s*0.3,0,-s); g.fill(); g.strokeStyle='#3f6b34'; g.lineWidth=1; g.beginPath(); g.moveTo(0,-s*0.7); g.lineTo(0,s*0.7); g.stroke(); g.restore(); }
@@ -668,8 +683,26 @@ function buildCtrl(){
   $('stage').appendChild(bar);
   paintOri();
 }
+/* level-complete bar: swaps in for the control bar while the clear banner is up */
+function buildClearBar(){
+  if($('clearbar')) return;
+  var bar=document.createElement('div'); bar.id='clearbar';
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:74px;display:none;z-index:13;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
+  var next=document.createElement('button'); next.id='next-btn'; next.innerHTML='Next ground &#9654;';
+  next.style.cssText='flex:1.6;min-height:52px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#7ab356,#5c8f3f);color:#0c1207;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #3f6b34';
+  next.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); advance(); });
+  bar.appendChild(next);
+  var sh=document.createElement('button'); sh.id='clear-share-btn'; sh.textContent='Share';
+  sh.style.cssText='flex:1;min-height:52px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
+  sh.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); shareHedgerow(); });
+  bar.appendChild(sh);
+  $('stage').appendChild(bar);
+}
 function paintOri(){ var o=$('ori-btn'); if(!o) return; o.innerHTML = curOrient==='h' ? '⇆&nbsp; Across' : '⇅&nbsp; Up · Down'; }
-function updateCtrl(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&(G.phase==='play'||G.phase==='clear'))?'flex':'none'; }
+function updateCtrl(){
+  var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&G.phase==='play')?'flex':'none';
+  var cb=$('clearbar'); if(cb) cb.style.display=(curScreen===null&&G&&G.phase==='clear')?'flex':'none';
+}
 function pauseToTitle(){ running=false; if(G){ G._pausedPhase=(G.phase==='paused')?(G._pausedPhase||'play'):G.phase; G.phase='paused'; } show('s-title'); updateRec(); }
 function resumeGame(){ if(!G||G.phase!=='paused') return; G.phase=G._pausedPhase||'play'; show(null); running=true; lastTs=0; requestAnimationFrame(loop); }
 
@@ -743,13 +776,17 @@ function boot(){
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden){ running=false; } else if(G&&(G.phase==='play'||G.phase==='clear')&&curScreen===null){ running=true; lastTs=0; requestAnimationFrame(loop); } });
   buildCtrl();
+  buildClearBar();
   tap('b-resume', function(){ resumeGame(); });
-  tap('b-play', function(){ newGame(); });
-  tap('b-how', function(){ show('s-how'); });
+  tap('b-play', function(){ playRequest(); });
+  tap('b-how', function(){ gatePending=false; $('how-back').textContent='Got it'; show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-skins', function(){ renderSkins(); show('s-skins'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
-  tap('how-back', function(){ show('s-title'); });
+  tap('how-back', function(){
+    if(gatePending){ gatePending=false; LS.set(K.seen,'1'); $('how-back').textContent='Got it'; newGame(); }
+    else show('s-title');
+  });
   tap('set-back', function(){ show('s-title'); });
   tap('skins-back', function(){ show('s-title'); });
   tap('over-retry', function(){ retryLevel(); });
