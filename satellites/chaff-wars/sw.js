@@ -13,7 +13,7 @@
    3. ACTIVATE RACE. skipWaiting + clients.claim takes over a LIVE page mid-boot,
       and activate deleted every cache immediately, so a page still pulling
       assets lost its cache underneath it and hit bug 2. Fired on every deploy. */
-var CACHE = "chaff-wars-v7";
+var CACHE = "chaff-wars-v8";
 var NET_TIMEOUT = 4000;
 
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
@@ -41,13 +41,39 @@ function fromCache(req) {
         return shell || new Response("Offline", { status: 503, statusText: "Offline" });
       });
     }
-    return new Response("", { status: 504, statusText: "Offline and not cached" });
+    /* ⛔ FAIL HONESTLY. This used to hand back an empty 200-ish body, which for a
+       <script> or <img> is worse than failing: an empty script does not throw, so
+       the page believes it loaded and breaks somewhere far away instead. A real
+       network error lets onerror fire and the app notice. */
+    return Response.error();
   });
 }
 
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
+
+  /* ⛔⛔ CROSS-ORIGIN REQUESTS GO STRAIGHT TO THE NETWORK. NEVER TOUCH THEM.
+     Stephen 2026-07-26: "if I open the game and then sign in, then close it and
+     open it again from the homescreen, it half loads a slightly expanded splash
+     and won't load all the way."
+
+     THIS WAS MY BUG, introduced by the splash-hang fix earlier the same day.
+     That fix wrapped EVERY request, including third-party ones. The Sunbeam SDK
+     lazy-loads Firebase from gstatic.com, so a signed-in player pulls scripts
+     from another origin. Those are never cacheable here (res.type is not
+     "basic"), so on a slow launch the 4s timeout fired, fromCache missed, and it
+     handed the page an EMPTY 504 body — for a <script> tag. An empty script does
+     not throw. It silently "succeeds", firebase never defines, and the app
+     half-boots forever.
+
+     Signed-OUT players never load Firebase, which is exactly why only signing in
+     triggered it, and why it looked like the bug we thought was fixed.
+
+     A service worker has no business proxying other people's origins. */
+  var sameOrigin = true;
+  try { sameOrigin = new URL(req.url).origin === self.location.origin; } catch (err) {}
+  if (!sameOrigin) return;
 
   e.respondWith(new Promise(function (resolve) {
     var settled = false;
