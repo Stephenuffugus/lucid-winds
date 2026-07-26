@@ -164,6 +164,81 @@ def cut_grid(path, cols, rows, pad=3, t0=30, t1=62, auto=False):
     return frames, dropped
 
 
+
+def qa_frames(frames, names, sheet_label):
+    """Per-frame quality check. Produces the REDO LIST.
+
+    Stephen 2026-07-26: "if a sprite or two need redone when we're done with it
+    all that's fine, I'll have you make a list and I'll whip up the assets."
+
+    So this is that list, generated rather than eyeballed. 23 sheets is far too
+    many to catch a clipped ear by looking, and a clipped ear is exactly the kind
+    of thing that ships and is noticed three weeks later.
+
+    Each check exists because it catches a REAL failure mode of this pipeline:
+      CLIPPED  opaque pixels run right up to the frame edge, which means the
+               gutter split cut through the art rather than between it. The most
+               important check by far.
+      SPARSE   almost nothing in the frame. Usually a stray speck that got kept
+               as its own sprite because a gutter was found in the wrong place.
+      TINY     far smaller than its siblings on the same sheet. Same cause.
+      HALO     a large share of barely-transparent pixels around the edge, which
+               means the key was slightly off and left a coloured fringe.
+      EMPTY    nothing at all.
+    """
+    import numpy as _np
+    rows, redo = [], []
+    areas = [f.width * f.height for f in frames if f.width > 8]
+    med = sorted(areas)[len(areas) // 2] if areas else 0
+
+    for f, n in zip(frames, names):
+        a = _np.array(f)[:, :, 3]
+        opaque = a > 200
+        total = int(opaque.sum())
+        flags = []
+
+        if total < 50:
+            flags.append('EMPTY')
+        else:
+            if total < 900:
+                flags.append('SPARSE(%d px)' % total)
+            if med and f.width * f.height < med * 0.18:
+                flags.append('TINY(%d%% of median)' % round(100.0 * f.width * f.height / med))
+            # CLIPPING. Measured per edge as a SHARE of that edge, not as a raw
+            # count. A clean sprite whose bounding box happens to sit against the
+            # sheet's own outer boundary still shows some opaque pixels on one
+            # side; a genuinely cut-through sprite shows a long continuous run.
+            # Tested on a trap sheet: a clean bloom reads 21% of one edge, a
+            # deliberately clipped one reads 72%. 35% separates them with room to
+            # spare, and crying wolf across 23 sheets would make the whole report
+            # ignorable.
+            h_, w_ = opaque.shape
+            share = max(
+                opaque[0].sum() / float(w_), opaque[-1].sum() / float(w_),
+                opaque[:, 0].sum() / float(h_), opaque[:, -1].sum() / float(h_))
+            if share > 0.35:
+                flags.append('CLIPPED(%d%% of one edge is paint)' % round(share * 100))
+            faint = int(((a > 8) & (a < 90)).sum())
+            if total and faint > total * 0.45:
+                flags.append('HALO(%d faint px)' % faint)
+
+        rows.append((n, f.width, f.height, total, flags))
+        if flags:
+            redo.append((sheet_label, n, flags))
+    return rows, redo
+
+
+def print_qa(rows, redo, sheet_label):
+    print('    QA')
+    for n, w, h, px, flags in rows:
+        mark = '  ⛔ ' + ', '.join(flags) if flags else '  ok'
+        print('      %-16s %4dx%-4d %7d px%s' % (n, w, h, px, mark))
+    if redo:
+        print('    ⛔ %d frame(s) on this sheet want a look or a redo' % len(redo))
+    else:
+        print('    ✓ all frames clean')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('sheets', nargs='+')
@@ -177,11 +252,13 @@ def main():
     ap.add_argument('--t0', type=int, default=30)
     ap.add_argument('--t1', type=int, default=62)
     ap.add_argument('--dry', action='store_true')
+    ap.add_argument('--qa', action='store_true', help='per-frame quality check + redo list')
     a = ap.parse_args()
 
     names_in = [n.strip() for n in a.names.split(',')] if a.names else None
     all_frames, all_names = [], []
 
+    redo_all = []
     for sheet in a.sheets:
         print(os.path.basename(sheet))
         frames, _ = cut_grid(sheet, a.cols, a.rows, t0=a.t0, t1=a.t1, auto=a.auto)
@@ -190,11 +267,25 @@ def main():
             n = names_in[idx] if names_in and idx < len(names_in) else '%s-%02d' % (a.prefix, idx + 1)
             print('    %-16s %4dx%-4d' % (n, f.width, f.height))
             all_names.append(n)
+        if a.qa:
+            these = all_names[len(all_frames):]
+            rows, redo = qa_frames(frames, these, os.path.basename(sheet))
+            print_qa(rows, redo, os.path.basename(sheet))
+            redo_all += redo
         all_frames += frames
 
     if names_in and len(names_in) != len(all_frames):
         print('  ⚠ %d names given but %d frames cut. Check the contact sheet before writing.'
               % (len(names_in), len(all_frames)))
+
+    if a.qa and redo_all:
+        print('\n' + '=' * 62)
+        print('REDO LIST — %d frame(s) across %d sheet(s)' % (len(redo_all), len(a.sheets)))
+        print('=' * 62)
+        for sheet, n, flags in redo_all:
+            print('  %-22s %-16s %s' % (sheet, n, ', '.join(flags)))
+        print('\nCLIPPED means the cut went through the art: usually fixable by re-cutting,')
+        print('not by repainting. Everything else usually needs the sprite made again.')
 
     if a.contact:
         print('  contact →', rig.contact(all_frames, all_names, a.contact))
