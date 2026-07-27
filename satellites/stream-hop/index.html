@@ -986,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.6';
+var BUILD='v7.7';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1023,7 +1023,7 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   adv:{maxLevel:1, stars:{}}, caps:0, capsEver:0, chars:{jimothy:1}, char:'jimothy', pulls:0, advPaid:0, eggs:{},
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
-  fins:{}, fin:'', shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{}, roads:0,
+  fins:{}, fin:'', finsRefunded:0, shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{}, roads:0,
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
@@ -1051,7 +1051,8 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   if(typeof p.tokens==='number')PROG.tokens=p.tokens;
   if(p.codes)PROG.codes=p.codes;
   if(typeof p.roads==='number')PROG.roads=p.roads;
-  if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg; }catch(e){} })();
+  if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg;
+  if(p.finsRefunded)PROG.finsRefunded=1; }catch(e){} })();
 function saveProg(){ LS.set('sh_prog', JSON.stringify(PROG));
   try{ cloudPush(); }catch(e){}   // debounced, and only ever after a pull
 }
@@ -1351,11 +1352,29 @@ var FINISHES=[
 ];
 (function refundFinishes(){
   if(FIN_ON) return;
-  var owed=0, k;
-  for(k in (PROG.fins||{})){ if(!PROG.fins[k]) continue;
-    for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===k) owed+=(FIN_COST[FINISHES[i].rar]||120); }
-  if(owed>0){ PROG.caps=(PROG.caps||0)+owed; }
-  if(owed>0 || PROG.fin){ PROG.fins={}; PROG.fin=''; saveProg(); }
+  /* ⛔⛔ THE SIGNED-IN LOCKOUT LIVED HERE (2026-07-24 → 07-27). This block runs
+     2,600 lines BEFORE `var FIN_COST` is assigned, so FIN_COST was undefined at
+     this point — but only a player whose PROG.fins had entries ever entered the
+     loop that read it. Fresh installs never crashed; a finish OWNER crashed on
+     every boot after cloud pull restored their fins: TypeError at top level,
+     the whole script died, boot() never ran, and only clearing site data
+     (which erased the fins) revived it until the next pull. Stephen was locked
+     out of his own game for three days by this. Rules now enforced here:
+     nothing in this block may reference a definition that lives below it, the
+     whole thing is try/caught so it can never take boot down, and the refund
+     pays once ever (PROG.finsRefunded, cloud-synced) because 'fins' is in the
+     union merge and reappears after every pull. */
+  try{
+    var COST={common:60, rare:150, epic:320, legend:700};
+    var owed=0, had=false, k;
+    for(k in (PROG.fins||{})){ if(PROG.fins[k]){ had=true; break; } }
+    if(had && !PROG.finsRefunded){
+      for(k in PROG.fins){ if(!PROG.fins[k]) continue;
+        for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===k) owed+=(COST[FINISHES[i].rar]||120); }
+      if(owed>0){ PROG.caps=(PROG.caps||0)+owed; PROG.finsRefunded=1; }
+    }
+    if(had || PROG.fin){ PROG.fins={}; PROG.fin=''; saveProg(); }
+  }catch(e){}
 })();
 function finById(id){ for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===id)return FINISHES[i]; return null; }
 /* the finish currently worn. '' / missing = his own painted colours, always free, always default */
@@ -4962,7 +4981,7 @@ var SUP=(function(){
 var CLOUD_KEYS_SET=['chars','fins','musicUn','ach','eggs','pows','seasons','playlist','codes'];
 var CLOUD_KEYS_MAX=['caps','capsEver','pulls','flowers','hopped','dodges','maxCombo','bestStreak',
                     'roads','tokens','advPaid','fogWalked','wxBoth','shopDay','rewardDay','rewardStreak',
-                    'taughtPower','taughtEgg','lastBonusDay'];
+                    'taughtPower','taughtEgg','lastBonusDay','finsRefunded'];
 var _cloudReady=false, _cloudT=null, _cloudBusy=false;
 function cloudDoc(){ try{ var app=null;
     try{ if(window.firebase) app=firebase.app('sunbeam-sdk'); }catch(e){}     // the SDK's own app
