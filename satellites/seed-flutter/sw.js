@@ -2,7 +2,7 @@
    NETWORK-FIRST, never cache-first (house rule: Hostinger already ignores
    no-cache headers; a cache-first worker would pin players to stale builds).
    The cache is a pure offline fallback. Bump CACHE on any shipped change. */
-var CACHE = "cosmic-cadets-v3";
+var CACHE = "cosmic-cadets-v4";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest",
              "./icons/icon-192.png", "./icons/icon-512.png"];
 
@@ -29,7 +29,18 @@ self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
   e.respondWith(
-    fetch(req).then(function (res) {
+    /* 2026-07-27: fetch(req) is NOT "network" — it consults the browser HTTP
+       cache first, and the host stamps HTML stale-while-revalidate=86400,
+       licensing a DAY-OLD page without a server round trip. That is the
+       clear-data-works-then-breaks-again cycle. Navigations revalidate for
+       real (304 when unchanged); a navigate Request can't carry RequestInit,
+       so refetch by URL and re-issue any redirect as a real one. */
+    (req.mode === "navigate"
+      ? fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(function (res) {
+          return (res && res.redirected) ? Response.redirect(res.url, 302) : res;
+        })
+      : fetch(req)
+    ).then(function (res) {
       if (res && res.status === 200 && res.type === "basic") {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); });

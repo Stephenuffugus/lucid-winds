@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v17';
-var ASSET_CACHE = 'lw-assets-v17';
-var GAME_CACHE = 'lw-games-v17';
+var CACHE_VERSION = 'lw-v18';
+var ASSET_CACHE = 'lw-assets-v18';
+var GAME_CACHE = 'lw-games-v18';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
@@ -30,10 +30,10 @@ var PRECACHE = [
   // ?v stamps must match the shells' <link>/<script> tags; if they drift,
   // runtime cache-first below self-heals (just not pre-warmed). Keep in sync
   // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
-  '/shared.css?v=20260701',
-  '/play/shell.css?v=6',
-  '/play/shell.js?v=12',
-  '/sunbeam-sdk.js?v=2'
+  '/shared.css?v=20260718',
+  '/play/shell.css?v=9',
+  '/play/shell.js?v=21',
+  '/sunbeam-sdk.js?v=5'
 ];
 
 // ── INSTALL: precache critical assets ──
@@ -129,15 +129,28 @@ self.addEventListener('fetch', function(event) {
   // network is too slow AND we have a cached copy, serve it; the late network
   // response still refreshes the cache for next launch. Normal + offline paths
   // are unchanged.
-  if (event.request.mode === 'navigate' || url.pathname.match(/\.html$/)) {
+  // 2026-07-27 haunted-phone fix: fetch(event.request) is NOT "network" — it
+  // consults the browser HTTP cache first, and the host stamps HTML with
+  // stale-while-revalidate=86400, licensing a DAY-OLD page without a server
+  // round trip. Installed-portal players got yesterday's pages (with
+  // yesterday's ?v= stamps feeding the cache-first game rule below) while a
+  // typed incognito URL was fresh. cache:'no-cache' forces conditional
+  // revalidation (304 when unchanged). A navigate Request can't carry
+  // RequestInit, so refetch by URL; a host redirect is re-issued as a real
+  // one (a navigation handed a followed-redirect response is a network error).
+  if (event.request.mode === 'navigate' || (url.origin === self.location.origin && url.pathname.match(/\.html$/))) {
     event.respondWith(new Promise(function(resolve) {
       var settled = false;
       function done(r) { if (!settled && r) { settled = true; resolve(r); } }
       var timer = setTimeout(function() {
         caches.match(event.request).then(function(c) { done(c); });
       }, 5000);
-      fetch(event.request).then(function(response) {
+      fetch(event.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(function(response) {
         clearTimeout(timer);
+        if (response.redirected && event.request.mode === 'navigate') {
+          done(Response.redirect(response.url, 302));
+          return;
+        }
         var clone = response.clone();
         caches.open(ASSET_CACHE).then(function(cache) { cache.put(event.request, clone); });
         done(response);
