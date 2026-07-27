@@ -167,7 +167,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.6';
+var BUILD='v1.6.1';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -1101,11 +1101,11 @@ function drawGrowth(){ var x=30, y0=120, y1=520, h=y1-y0, fill=Math.min(1,G.grow
   // claymation REACTION meter (art) — fill state by growth; erupts during Bloom Rush
   var _mk=(G.rush>0)?'meter_erupt':(fill<0.02?'meter_empty':fill<0.34?'meter_low':fill<0.67?'meter_mid':fill<0.99?'meter_high':'meter_erupt');
   var _mi=PIN_ART.img(_mk);
-  // Jessie 7/19: "slime tube top-left TOO BIG". At 196 tall it overhung the
-  // painted eyeball jars in the table frame and read as a separate object
-  // pasted on top of the art instead of part of the cabinet. 150 sits inside
-  // the left rail. Height drives width (aspect preserved) — change _mh only.
-  if(_mi){ var _mh=150, _mw=_mh*_mi.width/_mi.height; ctx.drawImage(_mi, 4, y0+4, _mw, _mh); return; }
+  // Jessie 7/19: "slime tube top-left TOO BIG". 196 overhung the painted
+  // eyeball jars; 150 sat inside the left rail; Stephen confirmed "much
+  // smaller" (checklist 7/26) so it now reads as a gauge, not a prop.
+  // Height drives width (aspect preserved) — change _mh only.
+  if(_mi){ var _mh=104, _mw=_mh*_mi.width/_mi.height; ctx.drawImage(_mi, 4, y0+4, _mw, _mh); return; }
   if(G.rush>0){ // frenzy: the ribbon burns gold with the time remaining
     ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(G.t*7); ctx.strokeStyle='#f2d98a'; ctx.lineWidth=3;
     ctx.strokeRect(x-8,y0-3,16,h+6);
