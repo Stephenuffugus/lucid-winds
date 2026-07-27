@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if(!("loading" in HTMLImageElement.prototype)||/[?&]lite=1/.test(location.search))document.documentElement.className+=" lite";</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sky Wolf Studios Arcade: 140+ free browser games</title>
@@ -427,6 +429,17 @@
     .sky::after,.masthead img,.flagship::before,.flagship h1,.feature .art img,.feature::before,.members::before,.card:hover::after,
     .masthead .st,.masthead .aw,.masthead .sub{animation:none!important;opacity:1!important}
   }
+
+  /* LITE MODE (old-iPad lifesaver 2026-07-27): applied automatically on
+     Safari before 15.4 (no native img lazy) or with ?lite=1. Kills the
+     full-viewport animated star layer, backdrop blurs, and shadows —
+     the compositing memory that crashed 1GB WebKit tabs. */
+  html.lite .sky{background:#080c09}
+  html.lite .sky::after{display:none}
+  html.lite *,html.lite *::before,html.lite *::after{
+    animation:none!important;transition:none!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+    box-shadow:none!important;text-shadow:none!important}
 </style>
 </head>
 <body>
@@ -1051,9 +1064,35 @@ function renderGarden(cat){
       '<div class="fav-empty">No favorites yet.<br>Tap the ♡ in a game\'s corner and it will wait for you here.</div>';
     return;
   }
-  document.getElementById('garden').innerHTML =
-    items.map(function(it){return card(it.g,it.feat);}).join('');
-  _lwLazyBoot();
+  _lwPaintCards(document.getElementById('garden'), items);
+}
+/* Lite mode paints the grid in bites of 24 as you approach the end — 160
+   gradient cards in one DOM pass is its own memory spike on 1GB WebKit.
+   Normal browsers keep the single-pass render. */
+function _lwPaintCards(el, items){
+  var lite = document.documentElement.classList.contains('lite');
+  if (!lite || items.length <= 30 || !('IntersectionObserver' in window)) {
+    el.innerHTML = items.map(function(it){return card(it.g,it.feat);}).join('');
+    _lwLazyBoot();
+    return;
+  }
+  var idx = 0;
+  el.innerHTML = '';
+  (function chunk(){
+    var end = Math.min(idx + 24, items.length), html = '';
+    for (; idx < end; idx++) html += card(items[idx].g, items[idx].feat);
+    el.insertAdjacentHTML('beforeend', html);
+    _lwLazyBoot();
+    if (idx < items.length) {
+      var sn = document.createElement('div');
+      sn.style.cssText = 'height:44px';
+      el.appendChild(sn);
+      var io = new IntersectionObserver(function(es){
+        if (es[0].isIntersecting) { io.disconnect(); if (sn.parentNode) sn.parentNode.removeChild(sn); chunk(); }
+      }, { rootMargin: '900px 0px' });
+      io.observe(sn);
+    }
+  })();
 }
 /* ── SEARCH (Jessie 2026-07-14 + Stephen 2026-07-16) ─────────────────────
    One box over EVERYTHING (satellites + garden games), and it speaks
@@ -1140,10 +1179,9 @@ function searchGames(qraw){
     return words.every(function(w){return hay.indexOf(w)>=0;});
   });
   out.sort(function(a,b){var x=a.nm.toLowerCase(),y=b.nm.toLowerCase();return x<y?-1:(x>y?1:0);});
-  document.getElementById('garden').innerHTML = out.length
-    ? out.map(function(it){return card(it.g,it.feat);}).join('')
-    : '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
-  _lwLazyBoot();
+  if (out.length) _lwPaintCards(document.getElementById('garden'), out);
+  else document.getElementById('garden').innerHTML =
+    '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
 }
 (function(){
   var si=document.getElementById('gsearch'), t=0;
