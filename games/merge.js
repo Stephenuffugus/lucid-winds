@@ -12,10 +12,10 @@ function GR(a){
   // Sheet themes activate when their art drops (prompt packs: art-asset-lists/merge/).
   var THEMES=[
     {key:'grove', name:'Midnight Grove', kind:'svg',   wired:true,  unlock:0},
-    {key:'ember', name:'Ember Forge',    kind:'sheet', wired:false, unlock:256},
-    {key:'tide',  name:'Tidepool',       kind:'sheet', wired:false, unlock:512},
-    {key:'cosmos',name:'Tiny Cosmos',    kind:'sheet', wired:false, unlock:1024},
-    {key:'sugar', name:'Sugar Rush',     kind:'sheet', wired:false, unlock:2048}
+    {key:'ember', name:'Ember Forge',    kind:'sheet', wired:true,  unlock:256},
+    {key:'tide',  name:'Tidepool',       kind:'sheet', wired:true,  unlock:512},
+    {key:'cosmos',name:'Tiny Cosmos',    kind:'sheet', wired:false, unlock:1024}, // sheet B (512/1024/2048 + assets) still owed — gpt7 arrived as a dupe of Sugar A
+    {key:'sugar', name:'Sugar Rush',     kind:'sheet', wired:true,  unlock:2048}
   ];
   var MK='lw_merge_maxtile';
   function gMax(){try{return parseInt(localStorage.getItem(MK),10)||0;}catch(e){return 0;}}

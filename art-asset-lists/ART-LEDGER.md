@@ -118,3 +118,22 @@ hue + colorblind tag-shape: star/chevron/droplet/bolt/diamond) + grey chaff, on
 `CW_POD_ART`/`CW_POD_BOX` flags in index.html + a gated sprite-body branch in
 drawPod/drawChaff (inert until `assets/pods/pod-0..4.png` + `chaff.png` land — flip
 `CW_POD_ART=true`, procedural stays the fallback). Status: **LISTED.**
+
+**MERGE 2048 THEME SHEETS — LANDED 2026-07-27, CUT + WIRED same day.** Drop:
+`assets/newest request-20260727T004719Z-1-001.zip` + `...025421Z...zip` (identical
+re-export, same 14 files) — 8 ChatGPT half-sheets (1774x887, 4x2 cells, magenta key)
+per the `art-asset-lists/merge/` pack, split A (tiles 2-256) / B (512-2048 + theme
+assets) per theme. Identified by LOOKING: gpt1/2=Ember Forge, gpt3/4=Tidepool,
+gpt5=Tiny Cosmos A, gpt6=Sugar Rush A, **gpt7=byte-identical dupe of gpt6**,
+gpt8=Sugar Rush B. ⛔ **TINY COSMOS SHEET B NEVER ARRIVED** (tiles 512/1024/2048,
+empty mark, board bg, emblem, burst, wilt) — ONE regenerate owed from the
+`MERGE 03 — TINY COSMOS` doc's sheet-B prompt. Cut: cluster method for A sheets
+(sugar objects cross the grid midline — even-grid cut bled cupcake into gumdrops),
+grid+margin+bleed-drop for ember/sugar B (drawn cell frames defeat clustering),
+magenta-preferred key sampling, fringe kill, pngquant to 3.2MB. 41 tiles at
+`assets/games/merge/themes/{ember,tide,cosmos,sugar}/t<val>.png`. Ember/Tidepool/
+Sugar `wired:true` in games/merge.js (cosmos stays false til B lands), merge.html
+?v=6. Verified: contact-sheet eyeballed tile by tile + headless boards screenshotted
+in all 3 themes, 0 broken imgs, 0 404s. Board bg / emblem / burst / wilt cells from
+the B sheets are NOT yet consumed by the game (tileArt only draws tiles) — future
+polish. Status: **WIRED (3 of 4 themes).**

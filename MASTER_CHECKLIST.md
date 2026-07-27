@@ -460,9 +460,12 @@ matching code change from you.
   specifics. More levels? New mechanics? New hazards? Ask before big content work.
 - [?] **Garden Path rename** — Jessie's note is cut off mid-sentence ("look back at the real
   Candy Land board and notice how…"). Ask her what the rest was.
-- [?] **Game descriptions, 1-sentence sweep** — 119/161 are multi-sentence, but many are his
-  deliberate rich featured copy. Needs him to say which cards stay long. Blind sweeping
-  would undo good marketing.
+- [x] **Game descriptions, 1-sentence sweep — DONE 2026-07-27 (commit f0f0c6d8).** Stephen
+  ruled the question himself after Jessie hit the Blobworks wall of text: Jessie's list meant
+  ALL of them, no exceptions. Every one of the 97 portal `ds:` fields rewritten to exactly one
+  sentence, no dashes, ≤130 chars, applied by exact-match script with automated copy checks
+  (scratchpad desc_sweep.js: 97/97 replaced, 0 misses). Headless verified: 0 JS errors, new
+  Blobworks line renders, old copy gone.
 - [?] **X1 pacing sweep** — the Monopoly anchor already has Relaxed/Normal/Fast. A blanket
   sweep across all games would violate no-blanket-fixes. Needs specific game callouts.
 - [x] **Locked-song behavior — STEPHEN RULED 2026-07-26, verified as his direct words: the easter-egg model.**
@@ -561,8 +564,11 @@ Ordered by value per hour of work.
   there is no `games/jade.js`, no shell, and no card. No player can reach it, so nothing is
   broken — it's just owed. Removed from the smoke list so the suite reads green; put it back
   the day the game lands.
-- [ ] **Chameleon 3D card repoint** — pinned to `releases/v3.0.0/abduct-3d.html`; repoint
-  when he ships a new release. A postMessage earn bridge was offered; needs event definitions.
+- [x] **Chameleon 3D card — repointed AND surfaced (2026-07-27, commit f0f0c6d8).** The
+  card already tracked the live repo-root `abduct-3d.html` (repointed Jul 20, 08cfeb4c);
+  what kept Stephen from seeing it was `beta:true` hiding it in the In Development tab.
+  Beta flag removed — the 3D card now sits directly beside the 2D card in the default
+  view. Still open: postMessage earn bridge needs event definitions.
 
 ---
 
