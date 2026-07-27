@@ -555,10 +555,19 @@ Ordered by value per hour of work.
   `index.html:1104` if Stephen wants it smaller). STILL OPEN: Blip's intro animation is
   skippy. Also noted: `art/tube_straight.png` and `art/tube_curve.png` are referenced
   nowhere in the code.
-- [ ] **FLAGSHIP: Litterbugs** — hashblock #2, bugs made of trash that BATTLE
-  (dumpster-king async fights). Brief written 2026-07-27:
-  `design-briefs/flagship-litterbugs.md`. ⛔ Stephen calls pending: battles
-  yes/no, tone, lock the name. No code before approval.
+- [ ] **FLAGSHIP: Litterbugs** — hashblock #2. UPDATE 2026-07-27: Stephen's
+  **Stephenuffugus/Litter_Bug** repo is far along (turn-based battler, 134/0
+  smoke, 4 pages) — read its NEXT_SESSION.md + PART_CATALOG.md before anything.
+  Brief `design-briefs/flagship-litterbugs.md` converges with it (battles).
+  Art answer: parts-based PNG/SVG library (~3MB for 180 parts, space fear
+  disproven). PARKED until Stephen says go.
+- [ ] **Feedback queue triage — new standing chore.** Every session: query the
+  Firestore `feedback` collection (fleet fab wired 2026-07-27, all 82
+  satellites + 66 classics + portal + app now report there). Fix what players
+  hit, newest games first.
+- [ ] **Jimothy super-easy mode — real player request** (feedback queue: "Too
+  hard... make a super-easy version for old dummies like me"). ⛔ Stephen calls
+  the difficulty design.
 - [ ] **FLAGSHIP: The Attic (Retro Attic collab)** — hashblock #3, one-of-one
   fake vintage objects (records/VHS/cards), condition-grade rarity, parody text
   engine, store as GPS dig site. Brief written 2026-07-27:
