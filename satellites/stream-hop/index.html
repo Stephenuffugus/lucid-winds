@@ -58,19 +58,78 @@
     dead.push(prev); while(dead.length>3)dead.shift();
     try{ localStorage.setItem('sh_bootdead',JSON.stringify(dead)); }catch(e){}
   }
-  var log={t:Date.now(),c:0,s:[],
+  var au=0; try{ au=(localStorage.getItem('sh_auth')==='1')?1:0; }catch(e){}
+  var log={t:Date.now(),c:0,s:[],auth:au,
     sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),
     pwa:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)};
   window._bootMark=function(st){try{ log.s.push(st+'@'+(Date.now()-log.t));
     localStorage.setItem('sh_bootlog',JSON.stringify(log)); }catch(e){}};
   window._bootClean=function(){ log.c=1; window._bootMark('clean'); };
   window._bootMark('html');
+  /* ⛔ EARLY dead-boot report — from HERE, not only from a later healthy boot.
+     The old report (still below, now a no-op backstop) waited for a GOOD boot,
+     but when every reopen dies the only good boot comes from clearing browser
+     data, which erases the evidence. This runs the moment HTML parses, so a
+     dead boot's successor reports it even if that successor dies too. */
+  try{
+    var dead0=JSON.parse(localStorage.getItem('sh_bootdead')||'[]');
+    if(dead0.length){
+      var last0=+(localStorage.getItem('sh_bootdead_sent')||0);
+      if(Date.now()-last0>=216e5){
+        var d0=dead0[dead0.length-1];
+        var msg0='BOOTLOG early report: previous boot never finished. stages=['+((d0.s||[]).join(' '))+']'
+          +' sw:'+(d0.sw?1:0)+' pwa:'+(d0.pwa?1:0)+' auth:'+(d0.auth?1:0)+' deaths:'+dead0.length
+          +' at:'+new Date(d0.t||0).toISOString();
+        fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({game:'jimothy', msg:msg0.slice(0,2000), meta:'bootlog-early'})})
+        .then(function(){ try{ localStorage.setItem('sh_bootdead_sent',String(Date.now()));
+          localStorage.removeItem('sh_bootdead'); }catch(e){} })['catch'](function(){});
+      }
+    }
+  }catch(e){}
+  /* ⛔ BOOT WATCHDOG + one-tap repair — the player-facing replacement for
+     "clear your browser data" (which also wipes sign-in and the breadcrumbs).
+     12 VISIBLE seconds without a first frame paints a FIX IT button that
+     unregisters every worker + empties CacheStorage + reloads. localStorage
+     (sign-in, progress) is untouched. A healthy boot marks clean on its first
+     rAF, long before 12s, and kills the watchdog. Hidden tabs don't count. */
+  var vsec=0;
+  var wd=setInterval(function(){
+    if(log.c===1){ clearInterval(wd); return; }
+    if(document.hidden) return;
+    if(++vsec<12) return;
+    clearInterval(wd);
+    try{
+      window._bootMark('watchdog');
+      var d=document.createElement('div');
+      d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#0d100c;color:#e8dcc8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;text-align:center;padding:24px';
+      d.innerHTML='<div style="font-size:22px;font-weight:700;margin-bottom:12px">Jimothy got stuck loading</div>'
+        +'<div style="font-size:15px;color:#8a9178;max-width:300px;margin-bottom:22px">Tap the button and it will clean up and reload. Your progress and sign in are safe.</div>'
+        +'<button id="sh-repair" style="min-height:56px;padding:14px 34px;font-size:19px;font-weight:700;border-radius:14px;border:1px solid #7ab356;background:#1c2817;color:#e8dcc8">FIX IT</button>';
+      (document.body||document.documentElement).appendChild(d);
+      document.getElementById('sh-repair').onclick=function(){
+        this.textContent='Cleaning up…';
+        var done=function(){ try{ location.reload(); }catch(e){} };
+        var t=setTimeout(done,4000);
+        var jobs=[];
+        try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+            var u=[]; for(var i=0;i<rs.length;i++) u.push(rs[i].unregister()); return Promise.all(u); })); }catch(e){}
+        try{ if(window.caches&&caches.keys)
+          jobs.push(caches.keys().then(function(ks){
+            var z=[]; for(var i=0;i<ks.length;i++) z.push(caches['delete'](ks[i])); return Promise.all(z); })); }catch(e){}
+        Promise.all(jobs).then(function(){ clearTimeout(t); done(); },function(){ clearTimeout(t); done(); });
+      };
+    }catch(e){}
+  },1000);
 }catch(e){}})();
 </script>
 <script src="/sunbeam-sdk.js?v=5"></script>
 <script>window._bootMark&&_bootMark('sdk-tag');
 window.Sunbeam&&Sunbeam.init({gameId:"streamhop"})
-  .then(function(s){ window._bootMark&&_bootMark(s&&s.signedIn?'sb-ready-in':'sb-ready-out'); })
+  .then(function(s){ window._bootMark&&_bootMark(s&&s.signedIn?'sb-ready-in':'sb-ready-out');
+    try{ localStorage.setItem('sh_auth', s&&s.signedIn?'1':'0'); }catch(e){} })
   .catch(function(){ window._bootMark&&_bootMark('sb-fail'); });</script>
 <style>
 :root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
@@ -913,7 +972,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.4';
+var BUILD='v7.5';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -4391,7 +4450,8 @@ function boot(){
   tap('bin-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
   SUP.render();
   setTimeout(SUP.hydrate, 2600);   // after Sunbeam.init has had a chance to resolve
-  try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth') SUP.hydrate(); }); }catch(e){}
+  try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth'){ SUP.hydrate();
+    try{ localStorage.setItem('sh_auth', s.signedIn?'1':'0'); }catch(e){} } }); }catch(e){}
   tap('how-back', function(){ LS.set('sh_howseen','1');
     var f=howNext; howNext=null; var hb=$('how-back'); if(hb)hb.textContent='Got it';
     if(f) f(); else show(howFrom||'s-games','pop'); });
