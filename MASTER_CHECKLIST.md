@@ -167,8 +167,14 @@ items are marked here so nobody re-does them.
   once the game is playable and fun"). Bump BUILD stamp when shipping.
 
 ### 🍃 OriVex (extends the older OriVex entry)
-- [ ] **Board bigger on screen** — puzzle is too small; showcase the origami look.
-- [ ] **Thumbnail shows the full board** (Jessie: board partially out of view).
+- [x] **Board bigger on screen DONE, verified (2026-07-27 sweep).** Board 460->512
+  stage px, sits 22px higher; tray re-columned so tray tiles GREW 64->76; all 4 bed
+  sizes screenshot-verified at 375x667 + 540x960, no clipping. sw orivex-v4 +
+  registration ?v=4 lockstep, portal card ?v=ov4.
+- [x] **Thumbnail shows the full board DONE, verified.** Root cause was the crop:
+  old thumb was 270x480 portrait, portal card is 1:1 object-fit:cover, so it was
+  center-cropped square. New 480x480 thumb rendered from a REAL solved 3x3 board,
+  38.5KB, portal thumb URL cache-busted ?r=20260727.
 - [x] **Asset list doc DELIVERED + verified in 012Assets** (doc id
   16-0XVWbCFxfFHSBrxmU-jcT_0cB2vJhyyvP6MyDO6CA): supersedes the stale repo pack,
   which contradicted the engine (ink/stock swap on digits 0 and 9, dead asset
@@ -194,17 +200,26 @@ items are marked here so nobody re-does them.
 ### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
 - [ ] **2D: capture still not really possible** — refine being caught, add more
   abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
-- [ ] **Jessie: online 1v1 broken** — "host a code could not reach the relay."
-  Memory says versus needs `?mp=wss://` when iframed — verify the portal embed
-  passes it; the game is an external github.io repo.
+- [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
+  a Render deploy.** The relay server was NEVER DEPLOYED: game falls back to
+  wss://stephenuffugus.github.io/ws and GitHub Pages rejects WebSocket upgrades
+  (probed: HTTP 404, no 101). The repo already ships server/relay.mjs + render.yaml
+  (a one-click Render.com blueprint), but abduct-relay.onrender.com answers 404
+  x-render-routing: no-server (probed). ⛔ STEPHEN ACTION: Render.com -> New ->
+  Blueprint -> pick abduct_a_chameleon -> deploy, then tell us the service URL.
+  The one-line portal ?mp= edit is pre-written in the 2026-07-27 sweep report
+  (do NOT apply before the relay is live). Free-tier caveat: service sleeps when
+  idle, first versus after a quiet period may need one ~30s retry.
 - [ ] **River line map (Jessie)**: if you're the colour of the water you should be
   able to pass under the bridge unseen — camouflage rule gap on that map.
-- [ ] **3D version: LOCATE THE BUILD.** Stephen: "I know we coded a whole bunch for
-  it but I don't know where it is." Memory says card pinned to
-  `releases/v3.0.0/abduct-3d.html` in the external repo — verify what exists there
-  and report state before any building. Kenney asset packs (~50k CC0 assets) or the
-  white bathroom-sign blob as placeholder art. ⛔ Careful with resources: build,
-  don't endlessly test-play.
+- [x] **3D version LOCATED, verified (2026-07-27 live probes).** The live 3D build
+  is the repo ROOT abduct-3d.html (HTTP 200, 111,207 bytes, title "ABDUCTEE —
+  Multiplayer") — exactly what the portal 3D card already points at. The
+  releases/v3.0.0 copy also still exists (97,972 bytes) but is an older frozen
+  snapshot. 3D multiplayer uses Playroom's servers (playroomkit/insertCoin in
+  source, zero raw WebSocket code), so it does NOT need the 2D relay and should
+  work today. Next step when Stephen wants it: play it, then decide direction
+  (Kenney packs etc.).
 
 ### 🦝 Jimothy (Jessie 7/21 — game is being promoted, checked against live code)
 - [x] **"Don't call him deformed"** — verified 0 hits for "deformed" across the
@@ -285,10 +300,20 @@ items are marked here so nobody re-does them.
   48px, no em-dash); verified headless through the real UI incl. undo-past-empty.
 - [ ] **No Pain No Gain, still open**: a real END to runs (fully build out);
   description loses the word "cozy".
-- [ ] **Sprout Dice** (extends older ⚠️ entry): Jessie: "this game doesn't make
-  sense." Needs a first-contact/clarity pass or a rethink.
-- [ ] **Hexa Hive**: study the real Hexa Sort — tiles should MOVE to the next stack
-  visibly (like cards shuffling) with an ascending stretch sound, not teleport.
+- [x] **Sprout Dice clarity DONE, verified (2026-07-27 sweep).** Jessie was right
+  and it was a BUG: the End Turn button rendered as a ~15px sliver OFF-SCREEN at
+  every phone width (flex CSS bug) — players spent dice and hit a dead end. Fixed,
+  plus one-time coach card naming the verb, labeled Resolve bar, "Floor 1 of 12",
+  legible die labels, em-dash sweep; root sprout-dice.html regenerated in sync.
+  Verdict: core loop does NOT need a rethink. Watch two soft spots if she still
+  stumbles: Wild die silently picks Thorn/Bark by target; Root's effect has no
+  visible feedback moment.
+- [x] **Hexa Hive dealing animation DONE, verified (2026-07-27 sweep).** Chips fly
+  source->anchor one at a time (55ms stagger, eased arc, capped ~1.1s) with an
+  ascending WebAudio blip per landing; board commits only after the flight,
+  input locked mid-flight; merge outcomes byte-identical (mid-flight screenshots
+  + lock/clear probes). NOTE: Hedgerow + Grubtrap are separate copies of this
+  engine and still teleport — same patch ports nearly verbatim if wanted.
 - [x] **Pop N Lock share button DONE, verified (commit dc270259).** Campaign +
   versus wins share a rival-naming brag (navigator.share + Copied! fallback),
   hidden on defeats/interim rounds/solo score. BUILD v1.6, sw v9.
@@ -515,6 +540,10 @@ Ordered by value per hour of work.
   caught + restored; mind it on future runs.
 - [ ] **Portal black screen going in/out of games** — pressing back again fixes it. Needs a
   repro session on the iframe jukebox lifecycle; a watchdog already exists.
+  ⚠️ NEW LEAD 2026-07-27: the SW fleet fix (all 12 workers were serving day-old
+  pages via the HTTP cache, with a 5s cache-fallback race on cold launches) has
+  the same fingerprint as this bug. Watch whether it recurs post-fix before
+  spending a repro session.
 - [~] **Blobworks code debt** — slime meter shrunk 196→150 so it stops overhanging the
   painted eyeball jars (verified by screenshot, not guessed; one number to tune at
   `index.html:1104` if Stephen wants it smaller). STILL OPEN: Blip's intro animation is
@@ -695,16 +724,70 @@ not.** These are per-game and specific:
   was a20cf2d8). Note likely predates that fix. 21 screenshots on file.
   ⚠️ If Jessie hits it again: which screen, and standalone or inside the arcade —
   one sentence re-arms the exact repro.
-- [ ] Plot Bloom — neighbours wording + depth
-- [ ] Root Groups — text
-- [ ] Season Sway — wording
-- [ ] Hedgerow — replay-level
-- [ ] Tinker Loft — her list, incl. finger-drag; plus "Tinker Shop" rename
+- [x] **Plot Bloom neighbours+depth DONE, verified (commit e4d6fb02).** Coach + help now
+  define a neighbour literally (8 touching squares, corners included, 3x3 diagram
+  in both) and depth as pay-once-then-keep-counting; piece names match the SYN
+  matrix; empty-board zeros explained. Mechanics untouched; autoplay run clean.
+- [x] **Root Groups text DONE + real bug, verified (commit e4d6fb02).** 15 sub-floor text
+  styles raised to 0.7rem rendered; help corrected (dots not leaves, real 3-dew
+  hint cost); AND the audit surfaced that a HINTED TILE WAS UNSELECTABLE, making
+  every hinted board unwinnable — fixed (one word), proven end to end. Portal ds
+  hint sentence updated to match.
+- [x] **Season Sway wording DONE, verified (commit e4d6fb02).** Loss messages were
+  direction-blind ("The wild ran out." over a FULL meter) — now "Too much
+  Wildlife." / "Not enough Sun." on overlay + results; Seed Vow HUD counts cards
+  ("Favor Wildlife · 16 left"); How screen explains all four modes; fonts to
+  spec; HUD buttons to 48px rendered. Open Director call: Zen Tending has no end
+  state (How screen now says "never ends", at least honest).
+- [x] **Hedgerow replay-level DONE, verified (2026-07-27 sweep).** Replay button
+  on the level-complete bar (the gap: a COMPLETED ground vanished the moment you
+  pressed Next). Keep-best rule: total banked on replay, re-clear takes the
+  better attempt, mid-replay death ends at the bank; progress/skins/best never
+  regress (localStorage-verified). Declined without Stephen: a start-at-any-ground
+  picker (changes run economy). Pre-existing note: advance() stacks an extra rAF
+  chain per Next press — future pass.
+- [x] **Tinker Loft finger-drag + Tinker Shop DONE, verified (commit b1e65e14).** Pulled
+  Jessie's actual Drive doc: "Tinker Shop" = the WARDROBE screen rename (done),
+  NOT the game title. Finger-drag added: drag parts from the tray (part rides
+  ~40px above the thumb, validity ring), tilt planks by end handles snapped to
+  the proven angle set; old controls intact; all 14 level proofs still pass.
+- [ ] **Tinker Loft, rest of Jessie's doc list**: level-name plaque above the game
+  box (covers the top nails today); scissors bigger + rotatable so they visibly
+  cut the string; clearer per-level hints (Updraft never says ring the bell);
+  Sandbox renamed + a catch container; her doc-wide capitalization/punctuation
+  sweep.
 - [x] **Micro Meadow renamed to Think Fast** — 10 display strings + portal card + social
   card regenerated. Slug stays `micro-meadow` (URLs). Verified 0 old strings remain.
-- [ ] Leaf Fit — rename + rotate
-- [ ] Merge & Blast — level-goal consistency (512 tile colour already fixed)
-- [ ] **Directions pages + readable fonts for every SATELLITE** (the shells are done)
+- [x] **Leaf Fit rotate DONE + fatal bug, verified (commit e4d6fb02).** Rotation existed
+  but dropped the species id: every rotated placement wrote undefined into the
+  grid as INVISIBLE unclearable cells that poisoned the board. Fixed; game-over
+  check now rotation-aware (no premature end while a rotated fit exists); sage
+  rotate-hint glyph when only a rotation fits.
+- [ ] **Leaf Fit rename — ⛔ STEPHEN PICKS.** Candidates from the sweep: Trellis
+  (matches in-game Daily/Zen Trellis), Sprig Fit, Leaf Lattice. Keep the leaf-fit
+  slug/URL either way (installed PWA + shared links).
+- [x] **Merge & Blast level-goal consistency DONE, verified (2026-07-27 sweep).**
+  Make-goals could sit BELOW shown progress ("Make a 16 (best 64)") and complete
+  on any merge — targets now max(ladder, best+1); score goals say "Score N more"
+  matching the base-relative check; biggest-tile seeded from the opening board.
+  5 live level completions verified; sw v7 lockstep.
+- [~] **Directions pages + readable fonts for every SATELLITE** — AUDITOR BUILT +
+  FLEET MEASURED (2026-07-27): scripts/satellite_ux_audit.js (rendered-px fonts,
+  pre-play directions detection incl. coach cards + onboarding decks, em-dashes;
+  83/83 satellites, 0 errors; JSON + table in the sweep report). QUEUES:
+  (a) 14 satellites with NO pre-play directions: star-field, stream-hop*,
+  pollen-panic, impossible-garden, petal-plunge, budburst, power-scalers,
+  flatulence-fighter, dewball, vinewinder, pong, bramblewick, pitbike-rally,
+  vine-runner* (*stream-hop lands on a splash; vine-runner paints directions on
+  canvas, DOM audit can't see them — verified by screenshot).
+  (b) Real-copy font offenders after excluding the buildstamp pattern:
+  pollen-panic worst (25 nodes of 8px mode descriptions), then line-loom daily
+  subtitle, frost-watch chip, hues, dewball, vinewinder, shell-shuffle, flipbook.
+  (c) 4 em-dash games, one-line fixes each: hues, bramblewick x2,
+  dragon-philosophy x2, pitbike-rally.
+  ⛔ STEPHEN RULING NEEDED: ~60 games' worst offender is the tiny div#buildstamp
+  version stamp (6.8-7.8px). Player copy that must hit the 0.7rem floor, or dev
+  chrome the auditor should exempt? One-line filter either way.
 
 ### From the Jul 16 "New notes" + Jessie doc
 - [~] Pong Arena — landscape long-court still open (per-mode geometry + control remap)

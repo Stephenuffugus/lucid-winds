@@ -13,6 +13,41 @@ Rules for maintaining this file:
 
 ---
 
+## 2026-07-27 evening — 12-agent checklist sweep (dinner window)
+
+12 parallel agents, one checklist item each, investigate-first with screenshot
+evidence; integrated, version-bumped, shipped `e4d6fb02` + `b1e65e14`. The
+headline: three "confusing game" notes were hiding REAL BUGS —
+- **Root Groups**: a hinted tile was unselectable → every hinted board
+  unwinnable (one-word fix, proven end to end); plus full readability pass.
+- **Sprout Dice**: the End Turn button rendered off-screen at every phone width
+  (flex CSS bug) — THE "doesn't make sense"; fixed + coach card + labeled HUD.
+- **Leaf Fit**: rotation dropped the species id — rotated placements wrote
+  invisible unclearable cells that poisoned the board; fixed + rotation-aware
+  game-over + rotate-hint glyph. Rename awaits Stephen (Trellis / Sprig Fit /
+  Leaf Lattice suggested).
+Also shipped: **OriVex** full-width board + real-board 480x480 thumb (old
+portrait thumb was being square-cropped — Jessie's exact complaint);
+**Hexa Hive** chip-by-chip dealing animation with ascending blips (mid-flight
+screenshots + input-lock proof); **Hedgerow** replay button with keep-best rule;
+**Merge & Blast** honest goals (target always above current best, "Score N
+more"); **Season Sway** direction-aware loss messages (was telling players the
+OPPOSITE of why they lost); **Plot Bloom** neighbours defined with a diagram;
+**Tinker Loft** finger-drag + the "Tinker Shop" rename resolved from Jessie's
+actual Drive doc (it's the Wardrobe screen, NOT the game title).
+Diagnosis-only: **Chameleon 1v1** — the relay server was NEVER DEPLOYED
+(render.yaml blueprint exists, abduct-relay.onrender.com answers no-server;
+GitHub Pages can't do WebSockets). Stephen action: deploy the Render blueprint,
+then a pre-written one-line portal edit. **3D build located**: repo root
+abduct-3d.html (111KB, live, Playroom-based → unaffected by the relay).
+New permanent tool: **scripts/satellite_ux_audit.js** (sibling of
+touch_audit.js) — fleet-measured fonts/directions/em-dashes across 83
+satellites: 14 games lack pre-play directions, pollen-panic is the worst
+real-copy font offender, 4 games carry em-dashes, and ~60 games' "worst font"
+is just the buildstamp (Stephen ruling wanted: exempt or fix).
+
+---
+
 ## 2026-07-27 — the haunted phone, solved for real (the service-worker HTTP-cache law)
 
 Stephen's decisive test: typed URL in incognito = fresh v22; portal / saved icons =
