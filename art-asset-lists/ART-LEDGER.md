@@ -137,3 +137,13 @@ Sugar `wired:true` in games/merge.js (cosmos stays false til B lands), merge.htm
 in all 3 themes, 0 broken imgs, 0 404s. Board bg / emblem / burst / wilt cells from
 the B sheets are NOT yet consumed by the game (tileArt only draws tiles) — future
 polish. Status: **WIRED (3 of 4 themes).**
+
+**TINY COSMOS SHEET B — LANDED 2026-07-27 (assets/gpt6.png), CUT + WIRED same
+hour.** The regenerate owed from the morning drop (original gpt7 was a dupe of
+Sugar A). Radiant star t512 / supernova bloom t1024 / spiral galaxy t2048, plus
+ghost mark, starfield board, Saturn emblem, burst, shooting-star wilt (the five
+extras remain uncut — game consumes tiles only). Same B-sheet cut path
+(grid+margin+bleed-drop, measured key, fringe kill), pngquant. cosmos
+wired:true, unlock 1024, merge.html ?v=8. Verified: full 11-tile ladder
+contact-strip eyeballed + in-game board screenshot, 0 broken imgs, 0 404s.
+ALL FOUR MERGE THEMES NOW LIVE. Status: **WIRED.**

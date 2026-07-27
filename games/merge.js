@@ -14,7 +14,7 @@ function GR(a){
     {key:'grove', name:'Midnight Grove', kind:'svg',   wired:true,  unlock:0},
     {key:'ember', name:'Ember Forge',    kind:'sheet', wired:true,  unlock:256},
     {key:'tide',  name:'Tidepool',       kind:'sheet', wired:true,  unlock:512},
-    {key:'cosmos',name:'Tiny Cosmos',    kind:'sheet', wired:false, unlock:1024}, // sheet B (512/1024/2048 + assets) still owed — gpt7 arrived as a dupe of Sugar A
+    {key:'cosmos',name:'Tiny Cosmos',    kind:'sheet', wired:true,  unlock:1024},
     {key:'sugar', name:'Sugar Rush',     kind:'sheet', wired:true,  unlock:2048}
   ];
   var MK='lw_merge_maxtile';
