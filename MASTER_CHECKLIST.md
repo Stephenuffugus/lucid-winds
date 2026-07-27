@@ -783,8 +783,14 @@ not.** These are per-game and specific:
   (b) Real-copy font offenders after excluding the buildstamp pattern:
   pollen-panic worst (25 nodes of 8px mode descriptions), then line-loom daily
   subtitle, frost-watch chip, hues, dewball, vinewinder, shell-shuffle, flipbook.
-  (c) 4 em-dash games, one-line fixes each: hues, bramblewick x2,
-  dragon-philosophy x2, pitbike-rally.
+  (c) em-dash games: hues FIXED 2026-07-27 (empty-state placeholder now blank,
+  not "BEST em-dash"); bramblewick + pitbike-rally folded into the directions
+  wave. ⛔ dragon-philosophy is a TRAP, own careful session: it is a vendored
+  MINIFIED React bundle with 38 em-dashes as its entire copy voice (card ability
+  text, log lines, coach copy), AND the log styling classifies entries by
+  startsWith("em-dash") - a blind sweep breaks the game. Fix belongs in its
+  source project or as a surgical string pass that preserves the turn-marker
+  prefix logic.
   ⛔ STEPHEN RULING NEEDED: ~60 games' worst offender is the tiny div#buildstamp
   version stamp (6.8-7.8px). Player copy that must hit the 0.7rem floor, or dev
   chrome the auditor should exempt? One-line filter either way.

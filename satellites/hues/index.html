@@ -275,7 +275,7 @@
     <div class="swatch-row" id="menuSwatches"></div>
     <div class="modes">
       <button class="mode-btn primary" data-mode="daily"><span>Daily Hue<small id="dailySub">one puzzle a day</small></span><span class="meta" id="dailyMeta">—</span></button>
-      <button class="mode-btn" data-mode="endless"><span>Endless<small>survive · stages · earn coins</small></span><span class="meta" id="endlessMeta">BEST —</span></button>
+      <button class="mode-btn" data-mode="endless"><span>Endless<small>survive · stages · earn coins</small></span><span class="meta" id="endlessMeta"></span></button>
       <button class="mode-btn" data-mode="versus"><span>Versus<small>pass &amp; play · 2 players</small></span><span class="meta">LOCAL</span></button>
     </div>
     <div class="seg-label">Endless difficulty</div>
@@ -1012,7 +1012,7 @@ $("menuSound").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");se
 
 function refreshMenu(){
   $("menuCoins").textContent="🪙 "+coins().toLocaleString();
-  const b=parseInt(Store.g(K.hi)||"0",10);$("endlessMeta").textContent=b>0?("BEST "+b.toLocaleString()):"BEST —";
+  const b=parseInt(Store.g(K.hi)||"0",10);$("endlessMeta").textContent=b>0?("BEST "+b.toLocaleString()):"";
   const done=Store.g(K.dDone)===todayStr(),streak=parseInt(Store.g(K.dStreak)||"0",10);
   $("dailyMeta").innerHTML="#"+dailyNumber()+(streak>0?`<br><span class="streak-flag">🔥 ${streak}</span>`:"");
   $("dailySub").textContent=done?("done today · "+parseInt(Store.g(K.dDoneScore)||"0",10).toLocaleString()+" pts"):"one puzzle a day";
