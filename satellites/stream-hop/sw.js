@@ -20,7 +20,7 @@
       bug 2, and died. Deploying constantly made this fire constantly. Cache
       cleanup now runs after the claim, on a delay, and only touches our own
       versioned caches. */
-var CACHE = "jimothy-v70";
+var CACHE = "jimothy-v71";
 var NET_TIMEOUT = 4000;
 
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
@@ -91,7 +91,18 @@ self.addEventListener("fetch", function (e) {
       if (!settled) fromCache(req).then(done);
     }, NET_TIMEOUT);
 
-    fetch(req).then(function (res) {
+    /* 2026-07-27: fetch(req) is NOT "network" — it consults the browser HTTP
+       cache first, and the host stamps HTML stale-while-revalidate=86400,
+       licensing a DAY-OLD page without a server round trip. That is the
+       clear-data-works-then-breaks-again cycle. Navigations revalidate for
+       real (304 when unchanged); a navigate Request can't carry RequestInit,
+       so refetch by URL and re-issue any redirect as a real one. */
+    var live = req.mode === "navigate"
+      ? fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(function (res) {
+          return (res && res.redirected) ? Response.redirect(res.url, 302) : res;
+        })
+      : fetch(req);
+    live.then(function (res) {
       clearTimeout(timer);
       if (res && res.status === 200 && res.type === "basic") {
         var copy = res.clone();
