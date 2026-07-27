@@ -312,9 +312,17 @@ function endFreeze(){
       }
     }
   }
-  // Splice rows out, shift everything down
-  for(var j=0;j<pendingRows.length;j++){
-    grid.splice(pendingRows[j],1);
+  // Splice rows out, shift everything down.
+  // ⛔ MUST run top-down (ascending). findClearedLines returns rows bottom-up,
+  // and every unshift below bumps all indices by one — descending order made a
+  // double clear eat one full row + one innocent row above it, a Tetris eat two
+  // of each ("finish 4 rows but only 2 disappear", player report 2026-07-27).
+  // Ascending self-corrects: each splice+unshift leaves the remaining full rows
+  // back at their original indices. Singles were unaffected, which is why it
+  // survived testing.
+  var rowsAsc=pendingRows.slice().sort(function(a,b){return a-b;});
+  for(var j=0;j<rowsAsc.length;j++){
+    grid.splice(rowsAsc[j],1);
     grid.unshift(new Array(COLS).fill(null));
   }
   var clearCount=pendingRows.length;
