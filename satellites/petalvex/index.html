@@ -492,7 +492,8 @@ function render(){
   ctx.fillText(P.n+' × '+P.n+' bed', 18, 58);
   // timer + moves right
   ctx.textAlign='right';
-  ctx.fillStyle='#e8dcc8'; ctx.font='800 22px system-ui';
+  // #e8dcc8 cream was invisible on the cream paper background (QA 7/27)
+  ctx.fillStyle='#5c6350'; ctx.font='800 22px system-ui';
   ctx.fillText(P.solved?fmtTime(P.t):fmtTime(Date.now()-P.startT), VW-18, 34);
   ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui';
   ctx.fillText('nudges '+P.hints, VW-18, 58);
@@ -944,6 +945,6 @@ if(/[?&]pvxtest=1/.test(location.search)){
 boot();
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=3';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'petalvex',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=4';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'petalvex',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>

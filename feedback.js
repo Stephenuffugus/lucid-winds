@@ -87,7 +87,16 @@
         'display:flex;align-items:center;justify-content:center;background:transparent;cursor:pointer;}' +
       '.lwfb-fab-x span{display:block;width:24px;height:24px;border-radius:50%;' +
         'background:rgba(13,16,12,.95);border:1px solid rgba(200,168,75,.5);color:#8a9178;' +
-        'font-size:13px;line-height:22px;text-align:center;font-family:sans-serif;}';
+        'font-size:13px;line-height:22px;text-align:center;font-family:sans-serif;}' +
+      /* Mini fab for satellites (2026-07-27 QA sweep): the labeled pill sat on
+         top of game controls in 7 of 11 games (Inkbound's move arrow, Pop N
+         Lock's rotate, shop rows). Satellites get a small translucent circle
+         parked above the typical bottom control bar instead. */
+      '.lwfb-fab.lwfb-mini{min-height:44px;width:44px;padding:0;border-radius:50%;' +
+        'font-size:1.15rem;line-height:44px;text-align:center;opacity:.72;' +
+        'bottom:calc(96px + env(safe-area-inset-bottom,0px));}' +
+      '.lwfb-fab.lwfb-mini:active{opacity:1;}' +
+      '.lwfb-fab.lwfb-mini .lwfb-fab-x{top:-30px;left:-30px;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -209,10 +218,12 @@
 
   function button(opts) {
     injectCSS();
+    var mini = opts && (opts.mini || opts.surface === 'satellite');
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = (opts && opts.className) || 'lwfb-fab';
-    b.textContent = (opts && opts.label) || '🐞 Feedback';
+    b.className = (opts && opts.className) || (mini ? 'lwfb-fab lwfb-mini' : 'lwfb-fab');
+    b.textContent = (opts && opts.label) || (mini ? '🐞' : '🐞 Feedback');
+    b.setAttribute('aria-label', 'Report a bug or send feedback');
     b.addEventListener('click', function () { open(opts || {}); });
     return b;
   }
