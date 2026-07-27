@@ -82,8 +82,18 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 .acc-body.open{display:flex}
 .acc-tab{flex:1; padding:0 4px}
 .acc-tab.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3); color:var(--gold)}
-.swatch{width:70px; height:70px; border-radius:50%; border:3px solid rgba(255,255,255,0.18); cursor:pointer}
+.swatch{width:48px; height:48px; border-radius:50%; border:3px solid rgba(255,255,255,0.18); cursor:pointer}
 .swatch.on{border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
+.swatch.cur{width:56px; height:56px; border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
+.swatch.recent{width:44px; height:44px}
+#palette{display:none; flex-direction:column; gap:8px; background:rgba(14,17,13,0.92);
+  border:1px solid rgba(255,255,255,0.14); border-radius:14px; padding:10px}
+#palette.open{display:flex}
+#wheel{width:180px; height:180px; border-radius:50%; touch-action:none;
+  border:3px solid rgba(255,255,255,0.18); cursor:crosshair}
+#shade{-webkit-appearance:slider-vertical; writing-mode:vertical-lr; direction:rtl;
+  width:44px; height:150px; accent-color:#c8a84b}
+#b-eyedrop.on{border-color:#fff; box-shadow:0 0 0 2px rgba(200,168,75,0.55)}
 .wdot{width:70px; height:70px; border-radius:14px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
   display:flex; align-items:center; justify-content:center; cursor:pointer}
 .wdot.on{border-color:var(--gold)}
@@ -209,7 +219,22 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 
   <div id="tools">
     <div class="acc-body" id="acc-draw">
-      <div class="trow" id="colors"></div>
+      <!-- Colour bar: current colour + open/hide + eyedropper. The full palette
+           (swatches, recents, wheel) lives collapsed behind 🎨 so the tools no
+           longer bury half the page (Stephen 2026-07-27). -->
+      <div class="trow">
+        <div class="swatch cur" id="cur-color" role="button" aria-label="Open colours"></div>
+        <button class="tbtn" id="b-palette" aria-label="Show or hide the colours">🎨 Colors</button>
+        <button class="tbtn" id="b-eyedrop" aria-label="Match a colour from your drawing">🎯 Match</button>
+      </div>
+      <div id="palette">
+        <div class="trow" id="colors"></div>
+        <div class="trow" id="recent-row"></div>
+        <div class="trow">
+          <canvas id="wheel" width="200" height="200" aria-label="Colour wheel"></canvas>
+          <input type="range" id="shade" min="12" max="100" value="100" aria-label="Light and dark">
+        </div>
+      </div>
       <div class="trow">
         <div class="wdot" data-w="3" title="Fine pen"><i style="width:4px;height:4px"></i></div>
         <div class="wdot on" data-w="6" title="Pen"><i style="width:8px;height:8px"></i></div>
@@ -451,6 +476,16 @@ function strokeTo(x,y){
   lx=x; ly=y;
 }
 function onDown(e){ if(playing)return; e.preventDefault(); var p=evPos(e);
+  if(eyedrop){ /* 🎯 match a colour straight off the drawing — no stroke, no undo snapshot */
+    try{
+      var px=pageX.getImageData(Math.max(0,Math.min(CW-1,p.x|0)),Math.max(0,Math.min(CH-1,p.y|0)),1,1).data;
+      if(px[3]<16){ toastHint('That spot is empty paper. Tap a drawn line to match its colour.'); return; }
+      var c=hexOf(px[0],px[1],px[2]);
+      setInk(c); pushRecent(c);
+      eyedrop=false; $('b-eyedrop').classList.remove('on');
+      toastHint('Matched! You are drawing with that colour now.');
+    }catch(err){}
+    return; }
   beginAction();   // snapshot the page so this stroke/stamp/fill can be undone
   if(fillMode){ floodFill(p.x,p.y,color); drawnThisSession=true; return; }
   if(stampMode){ pageX.save(); stampMode.d(pageX,p.x,p.y,stampSize()); pageX.restore(); pageX.globalCompositeOperation='source-over'; markDirty(); drawnThisSession=true; return; }
@@ -527,6 +562,7 @@ document.addEventListener('keydown',function(e){ if(!(e.ctrlKey||e.metaKey))retu
 $('b-newbook').addEventListener('click',function(){
   if(!confirm('Start a fresh flipbook? This one will be erased.'))return;
   pages=[null]; cur=0; clearHistory(); showPage(); save();
+  clearRecents();   // recent colours belong to the book they were mixed for
 });
 
 /* ---------- DAILY starter ------------------------------------------------
@@ -1010,20 +1046,82 @@ function toastHint(m){ var h=$('hint'); h.textContent=m;
   if(hintT)clearTimeout(hintT);
   hintT=setTimeout(function(){ h.textContent='Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.'; },3200); }
 
-/* ---------- tools ui ---------- */
+/* ---------- tools ui: colours ----------
+   Stephen 2026-07-27: the colour selection buried half the screen. The full
+   palette (inks + recents + wheel) now collapses behind 🎨, any colour is
+   pickable on an HSV wheel + shade slider, 🎯 matches a colour straight off
+   the drawing, and the colours you have used in THIS book sit in a recents
+   row (cleared when a new book starts). */
+var eyedrop=false, RECENTS=[];
+try{ RECENTS=JSON.parse(localStorage.getItem('fb_recents')||'[]'); }catch(e){ RECENTS=[]; }
+function hexOf(r,g,b){ function h(v){ v=Math.max(0,Math.min(255,Math.round(v))); var s=v.toString(16); return s.length<2?'0'+s:s; } return '#'+h(r)+h(g)+h(b); }
+function rgbOfHex(c){ var m=/^#?([0-9a-f]{6})$/i.exec(c||''); if(!m)return null; var n=parseInt(m[1],16); return [n>>16&255,n>>8&255,n&255]; }
+function hsv2rgb(h,s,v){ var c=v*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=v-c, r=0,g=0,b=0;
+  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
+  else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return [(r+m)*255,(g+m)*255,(b+m)*255]; }
+function markSwatch(c){ var all=document.querySelectorAll('#colors .swatch, #recent-row .swatch'),k;
+  for(k=0;k<all.length;k++)all[k].classList.toggle('on', all[k].getAttribute('data-c')===c); }
+function setInk(c){ color=c; erasing=false; $('b-erase').classList.remove('on'); clearStamp();
+  $('cur-color').style.background=c; markSwatch(c); }
+function pushRecent(c){ var i=RECENTS.indexOf(c); if(i>-1)RECENTS.splice(i,1);
+  if(INKS.indexOf(c)<0)RECENTS.unshift(c);   // the fixed inks have their own row
+  while(RECENTS.length>10)RECENTS.pop();
+  try{ localStorage.setItem('fb_recents',JSON.stringify(RECENTS)); }catch(e){}
+  renderRecents(); }
+function clearRecents(){ RECENTS=[]; try{ localStorage.setItem('fb_recents','[]'); }catch(e){} renderRecents(); }
+function renderRecents(){ var row=$('recent-row'); row.innerHTML='';
+  RECENTS.forEach(function(c){ var d=document.createElement('div');
+    d.className='swatch recent'; d.style.background=c; d.setAttribute('data-c',c);
+    d.addEventListener('click',function(){ setInk(c); });
+    row.appendChild(d); });
+  row.style.display=RECENTS.length?'flex':'none'; }
 (function buildColors(){
   var row=$('colors');
   INKS.forEach(function(c,i){
     var d=document.createElement('div');
-    d.className='swatch'+(i===0?' on':''); d.style.background=c;
-    d.addEventListener('click',function(){
-      color=c; erasing=false; $('b-erase').classList.remove('on'); clearStamp();
-      var all=row.querySelectorAll('.swatch'),k; for(k=0;k<all.length;k++)all[k].classList.remove('on');
-      d.classList.add('on');
-    });
+    d.className='swatch'+(i===0?' on':''); d.style.background=c; d.setAttribute('data-c',c);
+    d.addEventListener('click',function(){ setInk(c); });
     row.appendChild(d);
   });
+  $('cur-color').style.background=INKS[0];
+  renderRecents();
 })();
+(function buildPalette(){
+  var pal=$('palette'), btn=$('b-palette');
+  function toggle(open){ var on=(open!==undefined)?open:!pal.classList.contains('open');
+    pal.classList.toggle('open',on); btn.textContent=on?'▲ Hide':'🎨 Colors'; }
+  btn.addEventListener('click',function(){ toggle(); });
+  $('cur-color').addEventListener('click',function(){ toggle(); });
+  /* the wheel: hue by angle, saturation by radius, value from the shade slider */
+  var wc=$('wheel'), wx=wc.getContext('2d'), R=100, val=1, lastH=0, lastS=1;
+  function paintWheel(){ var img=wx.createImageData(200,200), d=img.data, x,y;
+    for(y=0;y<200;y++)for(x=0;x<200;x++){ var dx=x-R, dy=y-R, r=Math.sqrt(dx*dx+dy*dy), o=(y*200+x)*4;
+      if(r>R){ d[o+3]=0; continue; }
+      var h=(Math.atan2(dy,dx)*180/Math.PI+360)%360, s=Math.min(1,r/R);
+      var rgb=hsv2rgb(h,s,val);
+      d[o]=rgb[0]; d[o+1]=rgb[1]; d[o+2]=rgb[2]; d[o+3]=255; }
+    wx.putImageData(img,0,0); }
+  paintWheel();
+  function pickAt(e){ var rc=wc.getBoundingClientRect();
+    var x=(e.clientX-rc.left)*200/rc.width, y=(e.clientY-rc.top)*200/rc.height;
+    var dx=x-R, dy=y-R, r=Math.sqrt(dx*dx+dy*dy); if(r>R)r=R;
+    lastH=(Math.atan2(dy,dx)*180/Math.PI+360)%360; lastS=Math.min(1,r/R);
+    var rgb=hsv2rgb(lastH,lastS,val); setInk(hexOf(rgb[0],rgb[1],rgb[2])); }
+  var picking=false;
+  wc.addEventListener('pointerdown',function(e){ e.preventDefault(); picking=true; pickAt(e);
+    try{ wc.setPointerCapture(e.pointerId); }catch(err){} });
+  wc.addEventListener('pointermove',function(e){ if(picking){ e.preventDefault(); pickAt(e); } });
+  function pickEnd(){ if(picking){ picking=false; pushRecent(color); } }
+  wc.addEventListener('pointerup',pickEnd); wc.addEventListener('pointercancel',pickEnd);
+  $('shade').addEventListener('input',function(){ val=this.value/100; paintWheel();
+    var rgb=hsv2rgb(lastH,lastS,val); setInk(hexOf(rgb[0],rgb[1],rgb[2])); });
+  $('shade').addEventListener('change',function(){ pushRecent(color); });
+})();
+$('b-eyedrop').addEventListener('click',function(){
+  eyedrop=!eyedrop; this.classList.toggle('on',eyedrop);
+  if(eyedrop)toastHint('Tap your drawing to match a colour.');
+});
 (function buildWidths(){
   var dots=document.querySelectorAll('.wdot'),k;
   for(k=0;k<dots.length;k++)(function(d){
