@@ -28,7 +28,12 @@ function GR(a){
   })();
   function tileArt(val){
     var v=Math.min(val,2048);
-    if(_thCur.kind==='svg')return '<img src="assets/games/merge/plant-'+v+'.svg" style="width:100%;height:100%;object-fit:contain;pointer-events:none" alt="">';
+    // Stephen 2026-07-27: the plants read tiny on the cards — the SVGs are tall
+    // (70x95), so contain-fit letterboxes them hard in a square tile. Scaled up
+    // 1.55x; the spill past the tile edge is transparent margin, and overflow
+    // stays visible on the tile stack. Sheet themes keep 100%: their tile art is
+    // painted to a deliberate size ladder (45%->90%) and must not be inflated.
+    if(_thCur.kind==='svg')return '<img src="assets/games/merge/plant-'+v+'.svg" style="width:100%;height:100%;object-fit:contain;pointer-events:none;transform:scale(1.55);transform-origin:center 58%" alt="">';
     return '<img src="assets/games/merge/themes/'+_thCur.key+'/t'+v+'.png" style="width:100%;height:100%;object-fit:contain;pointer-events:none" alt="">';
   }
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
@@ -43,6 +48,10 @@ function GR(a){
   // Grid container — CSS grid provides the cell positions
   var bd=document.createElement('div');bd.className='tb';bd.id='Rb2';
   bd.style.position='relative';
+  // Bigger board (Stephen 2026-07-27). Inline so it wins over shared.css's
+  // clamp(280px,88vw,400px) without touching the fleet-wide stylesheet — only
+  // this game uses .tb. posOf() reads clientWidth, so cells scale with it.
+  bd.style.width='min(96vw,480px)';
   a.appendChild(bd);
 
   // 16 static background cells (empty squares that never move)
