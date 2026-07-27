@@ -219,6 +219,7 @@
            white-space:normal; max-width:calc(100vw - 28px); word-wrap:break-word; text-align:center; }
   #toast.show { opacity:1; }
   #hint { color:#a7ad95; font-size:.82rem; }
+  .howp { text-align:left; color:#e8dcc8; font-size:.84rem; line-height:1.55; }
 </style>
 </head>
 <body>
@@ -250,6 +251,7 @@
   <p class="tag">Everything smaller sticks. Grow from a crumb-sized bead into something that swallows harbors. Left thumb rolls, right thumb looks.</p>
   <div id="worldRow"></div>
   <div class="row">
+    <button class="btn ghost" id="mHow">How to Roll</button>
     <button class="btn ghost" id="mSkins">Skins</button>
     <button class="btn ghost" id="mCollect">Collection</button>
     <button class="btn ghost" id="mMute">Sound: On</button>
@@ -262,6 +264,17 @@
   <div id="rotateTip" class="hidden">Turn your phone sideways for horizon mode. Bigger world, no browser bar.</div>
   <button class="btn ghost" id="mExit">◄ Sky Wolf Studios Arcade</button>
   <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double-tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
+</div>
+
+<!-- HOW TO ROLL -->
+<div id="howto" class="overlay hidden">
+  <div class="close" id="howClose">&times;</div>
+  <h2>How to Roll</h2>
+  <p class="tag">You are a bead of dew. Everything smaller than you sticks.</p>
+  <div class="card"><h3>What you do</h3><p class="howp">Roll into anything smaller than your ball and it sticks, making you bigger. Things too big to grab shove you around instead. Grow first, then come back and swallow them.</p></div>
+  <div class="card"><h3>How you win</h3><p class="howp">Reach the goal size before the clock runs out to earn a star. Keep rolling past the goal for two or three stars and extra Sunbeams. Dream Meadow has no clock, just an endless drift.</p></div>
+  <div class="card"><h3>Controls</h3><p class="howp">Left thumb rolls. Right thumb turns the camera. Double-tap the right side to flip around. Tap the water drop when it glows to dash.<br>Keys: WASD roll, Q and E turn, R and F tilt, SPACE dash.</p></div>
+  <button class="btn ghost" id="howBack">Back</button>
 </div>
 
 <!-- SKINS -->
@@ -3350,7 +3363,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=3")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=4")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -3384,6 +3397,8 @@
       if(isFs()) exitFullscreen(); else goFullscreen();
     };
     $("mInstall").onclick=doInstall;
+    $("mHow").onclick=function(){ $("howto").classList.remove("hidden"); };
+    $("howClose").onclick=$("howBack").onclick=function(){ $("howto").classList.add("hidden"); };
     $("mSkins").onclick=function(){ buildSkins(); $("skins").classList.remove("hidden"); };
     $("skinsClose").onclick=$("skinsBack").onclick=function(){ $("skins").classList.add("hidden"); };
     $("mCollect").onclick=function(){ buildCollection(); $("collect").classList.remove("hidden"); };

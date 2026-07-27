@@ -7,7 +7,7 @@
    players to a stale build and we would be debugging ghosts. The cache here is a
    pure offline fallback: we always try the network, and only reach for the cache
    when the network fails. Bump CACHE on any shipped change to evict the old shell. */
-var CACHE = "dewball-v3";
+var CACHE = "dewball-v4";
 var SHELL = ["./", "./index.html", "./three.min.js", "./manifest.webmanifest",
              "./icons/icon-192.png", "./icons/icon-512.png"];
 

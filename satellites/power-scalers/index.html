@@ -328,6 +328,9 @@
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
   .modal h3{font-family:var(--font-display);letter-spacing:.04em;margin:0 0 4px;font-size:20px}
   .modal .sub{color:var(--mist);font-size:13px;margin-bottom:12px}
+  .help-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:11px 12px;margin-bottom:8px;font-size:13px;line-height:1.45;color:var(--ghost)}
+  .help-row .hi{flex:0 0 auto;width:26px;text-align:center;font-size:16px;color:var(--aur-teal)}
+  .help-row b{color:var(--aur-gold)}
 
   .train-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);margin-bottom:10px}
   .train-opt .ti{font-size:22px;width:30px;text-align:center}
@@ -1383,7 +1386,8 @@ function screenHome(){
       <p>Spin your race, roll your stats, then grow a Path-of-Exile-style skill web, socket support augments into your powers, and throw your originals into the arena. Tap any character to open its sheet.</p>
       <div class="hero-actions"><button class="btn primary" data-act="startCreate">✦ Create OC</button>
         ${n>=2?`<button class="btn" data-act="nav" data-k="battle">⚔ Battle</button>`:""}
-        ${n>=4?`<button class="btn" data-act="nav" data-k="tourney">♛ Tournament</button>`:""}</div></div>
+        ${n>=4?`<button class="btn" data-act="nav" data-k="tourney">♛ Tournament</button>`:""}
+        <button class="btn ghost" data-act="help" title="How to play" aria-label="How to play">? How to Play</button></div></div>
     <div class="section-h"><span class="n">01</span><h2>Your Roster</h2><span class="c">${n} character${n===1?"":"s"}</span></div>
     ${roster}`;
 }
@@ -1795,6 +1799,16 @@ function selectNode(id){
 function openModal(html){ $modal.innerHTML=`<div class="modal-back" data-act="closeModal"><div class="modal" data-stop="1">${html}</div></div>`; }
 function closeModal(){ $modal.innerHTML=""; }
 
+/* ---------- HOW TO PLAY ---------- */
+function openHelp(){
+  openModal(`<h3>How to Play</h3><div class="sub">Forge original characters, then prove them in the arena.</div>
+    <div class="help-row"><span class="hi">✦</span><div><b>Forge.</b> Tap Create OC. Spin the race wheel, roll your stats, spend Aether on powers, and name your fighter.</div></div>
+    <div class="help-row"><span class="hi">⚔</span><div><b>Fight.</b> Duel your roster in Battle or send a champion up the Gauntlet ladder. Fights play out on their own, round by round. A fighter falls at 0 HP. Wins pay Glory and XP.</div></div>
+    <div class="help-row"><span class="hi">◈</span><div><b>Grow.</b> Open a character sheet to spend skill points on the Skill Web, socket support augments and jewels, reforge their grades with Glory, and choose an Ascendancy at level 15.</div></div>
+    <div class="help-row"><span class="hi">♛</span><div><b>Goal.</b> Build the strongest OC you can, conquer all 12 Gauntlet rungs, and take the tournament crown.</div></div>
+    <button class="btn primary" data-act="closeHelp" style="width:100%;margin-top:8px">Got it</button>`);
+}
+
 /* ---------- POWERS & AUGMENTS TAB ---------- */
 function powerTagsFor(p){ if(p.key==="stand") return (standByKey(p.arch)||{}).tags||[]; return (powerByKey(p.key)||{}).tags||[]; }
 function powerDisplayName(p){ if(p.key==="stand") return (standByKey(p.arch)||{}).name||"Stand"; return (powerByKey(p.key)||{}).name||p.key; }
@@ -2159,6 +2173,8 @@ function handleAct(act,el,e){
   switch(act){
     case "home": goto("home"); break;
     case "exit": SWS_EXIT(); break;
+    case "help": openHelp(); break;
+    case "closeHelp": closeModal(); break;
     case "nav": goto(el.dataset.k); break;
     case "startCreate": state.draft=newDraft(); state.screen="create"; render(); break;
     case "cancelCreate": state.draft=null; goto("home"); break;

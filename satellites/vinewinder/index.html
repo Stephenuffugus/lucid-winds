@@ -66,7 +66,7 @@
   .hud .stat b{font-family:'Fraunces',serif;font-weight:500;font-style:italic;
      font-size:21px;letter-spacing:0;color:var(--ink);margin-right:5px}
   #effects{display:flex;gap:8px;justify-content:center;margin-top:8px;min-height:26px;flex-wrap:wrap}
-  .chip{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  .chip{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
     padding:5px 12px;border-radius:999px;color:#fff;display:none;align-items:center;gap:6px}
   .chip.on{display:flex}
   .chip.ghost{background:var(--moon)} .chip.slow{background:var(--amber)}
@@ -91,9 +91,11 @@
   .mode:focus-visible{outline:3px solid var(--pollen);outline-offset:3px}
   .mode h3{font-family:'Fraunces',serif;font-style:italic;font-weight:480;font-size:19px;margin-bottom:5px}
   .mode small{display:block;font-size:11.5px;line-height:1.5;color:var(--ink-soft)}
-  .mode .tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.1em;
+  /* Font floor sweep 2026-07-27: player copy renders at real px here (no stage
+     transform); studio floor is 0.7rem (11.2px) rendered, so nothing below 11.5px. */
+  .mode .tag{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.1em;
     text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-bottom:8px;color:#fff}
-  .mode .pb{display:block;margin-top:8px;font-size:10.5px;letter-spacing:.08em;
+  .mode .pb{display:block;margin-top:8px;font-size:11.5px;letter-spacing:.08em;
     text-transform:uppercase;color:var(--vine);font-weight:600}
   .mode.heirloom .tag{background:var(--vine)}
   .mode.wild .tag{background:var(--petal)}
@@ -144,7 +146,7 @@
   .go-good{color:var(--vine);font-weight:600}
   .go-near{font-size:14.5px;font-weight:700;color:var(--amber)}
   .go-petals{font-size:18px;font-weight:700;color:var(--vine);font-family:'Fraunces',serif;font-style:italic}
-  .go-x2{font-size:10px;font-weight:700;letter-spacing:.06em;background:var(--pollen);color:#fff;border-radius:999px;padding:2px 8px;margin-left:4px;vertical-align:2px}
+  .go-x2{font-size:11.5px;font-weight:700;letter-spacing:.06em;background:var(--pollen);color:#fff;border-radius:999px;padding:2px 8px;margin-left:4px;vertical-align:2px}
   .go-next{width:min(300px,80vw);margin-top:2px}
   .go-next-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:4px}
   .go-bar{height:8px;border-radius:999px;background:rgba(47,93,58,.15);overflow:hidden}
@@ -161,7 +163,7 @@
   .cositem{text-align:left;background:rgba(255,255,255,.66);border:1.5px solid rgba(47,93,58,.18);border-radius:12px;padding:10px;cursor:pointer;font-family:inherit;color:var(--ink)}
   .cositem:disabled{opacity:.55;cursor:default}
   .cositem .cn{font-weight:700;font-size:13px}
-  .cositem .ct{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .cositem .ct{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
   .cositem .cc{font-size:12px;color:var(--vine);font-weight:700;margin-top:4px}
   .cositem.owned{border-color:rgba(47,93,58,.35)} .cositem.on{border-color:var(--pollen);box-shadow:0 0 0 2px rgba(224,171,58,.3)}
   .cositem .sw{height:20px;border-radius:6px;margin-top:6px;border:1px solid rgba(0,0,0,.08)}
@@ -170,6 +172,11 @@
   .missrow .mt{font-weight:600;font-size:13px;display:flex;justify-content:space-between;gap:8px}
   .missrow .mbar{height:6px;border-radius:999px;background:rgba(47,93,58,.14);margin-top:6px;overflow:hidden}
   .missrow .mbar i{display:block;height:100%;background:var(--vine);transition:width .4s}
+  /* how-to-play panel (2026-07-27: pre-play rules, house standard) */
+  .howrow{width:min(360px,88vw);text-align:left;background:rgba(255,255,255,.62);
+    border:1.5px solid rgba(47,93,58,.16);border-radius:12px;padding:11px 13px;margin:0 auto 8px}
+  .howrow .hv{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:15px;color:var(--vine)}
+  .howrow .hd{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-top:2px}
 </style>
 </head>
 <body>
@@ -192,6 +199,7 @@
     </div>
     <h2 id="ovTitle">Vinewinder</h2>
     <p id="ovText">Steer the vine. Eat seeds to grow and score. Don't crash into anything.</p>
+    <button class="ghostbtn" id="howBtn" style="margin-top:0">How to play</button>
     <div id="goExtra"></div>
     <button class="daily-card" id="dailyCard" style="display:none"></button>
     <div class="modes" id="modeRow">
@@ -250,12 +258,38 @@
     <div id="missionList"></div>
     <button class="ghostbtn" id="missionBack">← Back</button>
   </div>
+
+  <!-- HOW TO PLAY -->
+  <div class="overlay" id="howOverlay">
+    <h2>How to Play</h2>
+    <div class="howrow">
+      <div class="hv">Steer</div>
+      <div class="hd">Arrow keys, WASD, or swipe. The vine keeps moving; you choose where it turns.</div>
+    </div>
+    <div class="howrow">
+      <div class="hv">Grow</div>
+      <div class="hd">Eat seeds to grow longer and score. Eat quickly to build a streak for bonus seeds. Golden seeds are worth 3.</div>
+    </div>
+    <div class="howrow">
+      <div class="hv">Survive</div>
+      <div class="hd">The run ends if the vine hits a wall, a garden bed, a thorn, or its own body. Press space or the ❚❚ button to pause.</div>
+    </div>
+    <div class="howrow">
+      <div class="hv">Gardens</div>
+      <div class="hd">Classic is pure snake. Power Garden wraps at the edges and drops power-up blossoms. Windstorm gets faster and thornier. Grove adds maze walls.</div>
+    </div>
+    <div class="howrow">
+      <div class="hv">Earn</div>
+      <div class="hd">Every run pays 🌼 Petals. Spend them in the Nursery Shop on new vines, seeds, and gardens. Clear daily missions for more.</div>
+    </div>
+    <button class="ghostbtn" id="howBack">← Back</button>
+  </div>
 </div>
 
 <div class="hud">
   <div class="stat"><b id="score">0</b>seeds</div>
   <div class="stat"><b id="best">0</b>best</div>
-  <div class="stat"><b id="modeLabel" style="font-size:17px">—</b>garden</div>
+  <div class="stat"><b id="modeLabel" style="font-size:17px">·</b>garden</div>
 </div>
 <div id="effects">
   <span class="chip streak" id="chipStreak">Streak ×<span>0</span></span>
@@ -674,6 +708,7 @@
     vwbar.style.display='flex';
     modeRow.style.display='flex';
     metaBtns.style.display='flex';
+    $('howBtn').style.display='inline-flex';
     againBtn.style.display='none';
     changeBtn.style.display='none';
     overlay.classList.add('show');
@@ -736,12 +771,16 @@
       const row=document.createElement('div'); row.className='missrow'+(m.done?' done':'');
       row.innerHTML=`<div class="mt"><span>${m.text}</span><span>${m.done?'✓ +'+m.pay+' 🌼':m.pay+' 🌼'}</span></div>`+
         `<div class="mbar"><i style="width:${pct}%"></i></div>`+
-        `<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">${Math.min(m.prog,m.target)} / ${m.target}</div>`;
+        `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">${Math.min(m.prog,m.target)} / ${m.target}</div>`;
       box.appendChild(row);
     }
   }
   $('missionBtn').onclick=()=>{ buildMissions(); overlay.classList.remove('show'); $('missionOverlay').classList.add('show'); };
   $('missionBack').onclick=()=>{ $('missionOverlay').classList.remove('show'); showMenu(); };
+
+  /* ---------- how to play ---------- */
+  $('howBtn').onclick=()=>{ overlay.classList.remove('show'); $('howOverlay').classList.add('show'); };
+  $('howBack').onclick=()=>{ $('howOverlay').classList.remove('show'); showMenu(); };
 
   /* ---------- logic ---------- */
   function effStepMs(){ return stepMs * (effects.slow>0 ? 1.75 : 1); }
@@ -891,6 +930,7 @@
     dailyCard.style.display='none';
     modeRow.style.display='none';
     metaBtns.style.display='none';
+    $('howBtn').style.display='none';
     againBtn.style.display='inline-block';
     changeBtn.style.display='inline-block';
     draw(performance.now(),16,1);

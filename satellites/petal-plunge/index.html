@@ -1308,22 +1308,25 @@ function buildTitle(){
       '<div class="row">'+
         '<button class="btn ghost" id="tShop">🛍️ Shop</button>'+
         '<button class="btn ghost" id="tDaily">📅 Daily</button>'+
+        '<button class="btn ghost" id="tHow">❓ How</button>'+
         '<button class="btn ghost" id="tSet">⚙︎</button>'+
       '</div>'+
       (deepest>0?'<div class="sub" style="margin-top:6px">Deepest plunge: <b style="color:var(--gold)">'+deepest+'</b></div>':'')+
     '</div><div class="spacer"></div>'+
     '<div class="sub" style="opacity:.6">Sky Wolf Studios · a Lucid Winds game</div>';
   $("tPlay").onclick=function(){ SFX.ui(); if(!P.seenTut){ buildTut(); show("scrTut"); } else gotoModes(); };
+  $("tHow").onclick=function(){ SFX.ui(); buildTut(true); show("scrTut"); };
   $("tShop").onclick=function(){ SFX.ui(); openShop(); };
   $("tDaily").onclick=function(){ SFX.ui(); openDaily(); };
   $("tSet").onclick=function(){ SFX.ui(); buildSettings(); show("scrSettings"); };
 }
 function gotoTitle(){ buildTitle(); show("scrTitle"); }
 
-/* ---------- TUTORIAL (first run) ---------- */
-function buildTut(){
+/* ---------- TUTORIAL (first run; also the HOW panel from the title) ---------- */
+function buildTut(ref){
   $("scrTut").innerHTML=
-    '<div class="h" style="margin-top:8vh">How to Plunge</div>'+
+    (ref?'<div style="width:100%;display:flex;justify-content:flex-start;max-width:420px;margin:6px auto 4px"><button class="btn sm ghost" id="tutBack">←</button></div>':'')+
+    '<div class="h" style="margin-top:'+(ref?'6px':'8vh')+'">How to Plunge</div>'+
     '<div class="card" style="margin-top:14px"><div class="tut">'+
       '<p><b class="em">Carve.</b> Tap or hold the <b>left / right</b> of the screen (or ◀ ▶ keys) to steer across the slope. Turning sideways slows you; pointing downhill is fastest.</p>'+
       '<p style="margin-top:10px"><b class="em">Tuck.</b> Hold the <b>middle</b> (or ↓) to bomb straight downhill for speed. You can\'t hard-carve while tucking.</p>'+
@@ -1332,6 +1335,7 @@ function buildTut(){
       '<p style="margin-top:10px"><b class="em">Petals</b> 🌸. Spend them in the Shop on riders, sleds, trails &amp; skies.</p>'+
     '</div></div>'+
     '<div class="spacer"></div><button class="btn primary wide" id="tutGo">Let\'s go ▶</button>';
+  if(ref)$("tutBack").onclick=function(){ SFX.ui(); gotoTitle(); };
   $("tutGo").onclick=function(){ P.seenTut=1; saveProfile(true); SFX.ui(); gotoModes(); };
 }
 

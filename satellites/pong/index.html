@@ -98,7 +98,7 @@ h1,h2,h3,p{margin:0}
 .btn:active{transform:scale(.96)} .btn.primary{background:linear-gradient(120deg,var(--p1),var(--accent));color:#05060e;border:0}
 .btn.ghost{background:transparent} .btn.wide{width:100%}
 .sec-title{font-family:var(--fmono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin:14px 2px 2px;display:flex;justify-content:space-between;align-items:center}
-.back-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:22;width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:20px;display:flex;align-items:center;justify-content:center}
+.back-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:22;width:48px;height:48px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:20px;display:flex;align-items:center;justify-content:center}
 
 /* result */
 .result-card{margin:auto;text-align:center;display:flex;flex-direction:column;gap:12px;max-width:420px;width:100%}
@@ -146,6 +146,13 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
 .camp-node .info .d{font-size:11px;color:var(--muted)}
 .camp-node .st{font-size:16px}
 .chip{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+/* how to play */
+.how-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.how-card p{font-size:13px;line-height:1.55;color:var(--muted)}
+.how-card p b{color:var(--ink)}
+.how-mode{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--muted)}
+.how-mode .ic{flex:0 0 24px;width:24px;text-align:center;font-size:17px;line-height:1.25}
+.how-mode b{color:var(--ink)}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important}}
 </style>
 </head>
@@ -180,7 +187,8 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
       <button class="mbtn" data-go="modes"><span class="ic">🎮</span><span class="t">Free Play</span><span class="d">Pick any arena &amp; settings.</span></button>
       <button class="mbtn" data-go="shop"><span class="ic">🎨</span><span class="t">Skins</span><span class="d">Paddles, balls, trails, arenas.</span></button>
       <button class="mbtn" data-go="settings"><span class="ic">⚙️</span><span class="t">Settings</span><span class="d">Sound, difficulty, controls.</span></button>
-      <button class="mbtn" data-go="exit"><span class="ic">←</span><span class="t">All Games</span><span class="d">Back to Sky Wolf Studios.</span></button>
+      <button class="mbtn" data-go="how"><span class="ic">❓</span><span class="t">How to Play</span><span class="d">Rules &amp; every arena, explained.</span></button>
+      <button class="mbtn" data-go="exit" style="grid-column:1 / -1"><span class="ic">←</span><span class="t">All Games</span><span class="d">Back to Sky Wolf Studios.</span></button>
     </div>
     <div class="fine" id="menuFine">Currency is earned by playing and only spends here. No purchases, ever.</div>
   </div>
@@ -234,6 +242,32 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
     <div class="sec-title">Data</div>
     <button class="btn ghost wide" id="btnReset">Reset all progress &amp; skins</button>
     <div class="fine">Pong Arena · Sky Wolf Studios · sunbeams travel with you across the studio.</div>
+  </div>
+</div>
+
+<!-- ══ HOW TO PLAY ══ -->
+<div id="scrHow" class="screen hidden">
+  <button class="back-x" data-go="menu">✕</button>
+  <div class="screen-inner">
+    <div class="sec-title" style="margin-top:34px">How to Play</div>
+    <div class="how-card">
+      <p><b>Drag</b> to move your paddle and block the ball. When the machine misses, you score.</p>
+      <p><b>Win the match</b> by reaching the target score first. Pick the target and difficulty in Free Play. Career levels set their own.</p>
+      <p><b>Curve the ball:</b> flick your paddle sideways at the moment you strike. Spin bends the flight.</p>
+      <p><b>Power-ups:</b> in Gauntlet arenas, steer the ball through a capsule. Whoever touched the ball last gets the boost.</p>
+      <p><b>Rewards:</b> matches pay ⚡ Rally and 💎 Gems for the Skins shop. Everything is earned by playing.</p>
+    </div>
+    <div class="sec-title">The Arenas</div>
+    <div class="how-card">
+      <div class="how-mode"><span class="ic">🏓</span><span><b>Classic</b>: side paddles. Drag up and down to guard your goal line.</span></div>
+      <div class="how-mode"><span class="ic">🔼</span><span><b>Sky Duel</b>: paddles on top and bottom. Slide left and right.</span></div>
+      <div class="how-mode"><span class="ic">🌀</span><span><b>Orbit</b>: curved paddles on a ring. Circle around to cover your arc.</span></div>
+      <div class="how-mode"><span class="ic">⚡</span><span><b>Gauntlet</b>: the classic court plus power-ups, bumpers and a moving block.</span></div>
+      <div class="how-mode"><span class="ic">🛡️</span><span><b>Survival</b>: solo. One paddle, three walls, three lives. Rack up returns.</span></div>
+      <div class="how-mode"><span class="ic">⁘</span><span><b>Multiball</b>: three balls at once under classic rules. Any ball can score.</span></div>
+      <div class="how-mode"><span class="ic">🏆</span><span><b>Career</b>: The Gauntlet ladder. Win each level to unlock the next.</span></div>
+    </div>
+    <button class="btn primary wide" data-go="menu" style="margin-top:4px">Got it</button>
   </div>
 </div>
 
@@ -1355,7 +1389,7 @@ S._diff=S._diff||'normal'; S._target=S._target||7;
 
 /* ═══════════════════════════ UI ═══════════════════════════ */
 const UI=(function(){
-  const scr={menu:$('#scrMenu'),modes:$('#scrModes'),campaign:$('#scrCamp'),shop:$('#scrShop'),settings:$('#scrSettings'),pause:$('#scrPause'),result:$('#scrResult')};
+  const scr={menu:$('#scrMenu'),modes:$('#scrModes'),campaign:$('#scrCamp'),shop:$('#scrShop'),settings:$('#scrSettings'),how:$('#scrHow'),pause:$('#scrPause'),result:$('#scrResult')};
   let cur='menu';
   function playerSide(){ if(S.opt.hand==='left')return 'left'; if(S.opt.hand==='right')return 'right'; return 'left'; }
   function show(name){

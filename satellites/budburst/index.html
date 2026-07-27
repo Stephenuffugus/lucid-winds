@@ -251,6 +251,30 @@
   .buy.up{border:1px solid var(--gold);color:var(--gold)}
   .lvl.boss .num{color:var(--rose)}
   .lvl.boss{border-color:#4a2838}
+
+  /* how-to-play: menu ? button, rules panel, first-play coach card */
+  #howBtn{font-size:20px;font-weight:800;color:var(--ink)}
+  .how-wrap{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+    background:rgba(6,8,5,.74);padding:20px}
+  .how-wrap.on{display:flex}
+  .how-card{width:100%;max-width:360px;max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    border:1px solid var(--sage);border-radius:18px;background:linear-gradient(180deg,#1a2213,#10140d);
+    padding:20px 18px;text-align:left;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  .how-card h3{font-family:var(--serif);font-style:italic;font-size:28px;margin-bottom:12px;color:var(--ink)}
+  .how-row{display:flex;gap:11px;margin-bottom:12px;align-items:flex-start}
+  .how-row .hic{font-size:17px;line-height:1.35;flex:0 0 24px;text-align:center}
+  .how-row div{font-size:13px;line-height:1.45;color:var(--ink-dim)}
+  .how-row b{color:var(--ink)}
+  .how-card .btn-fill,.coach-in .btn-fill{width:100%;padding:14px;border-radius:14px;min-height:48px;
+    font-weight:800;font-size:14px;letter-spacing:.04em;margin-top:6px}
+  .coach{position:absolute;inset:0;z-index:7;display:none;align-items:center;justify-content:center;
+    padding:24px;background:rgba(6,8,5,.6)}
+  .coach.on{display:flex}
+  .coach-in{width:100%;max-width:300px;border:1px solid var(--sage);border-radius:18px;text-align:center;
+    background:linear-gradient(180deg,#1a2213,#10140d);padding:20px 18px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  .coach-t{font-family:var(--serif);font-style:italic;font-size:26px;color:var(--ink)}
+  .coach-s{font-size:13px;line-height:1.5;color:var(--ink-dim);margin:10px 0 8px}
+  .coach-s b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -259,7 +283,10 @@
   <!-- MENU -->
   <section class="screen on" id="menu">
     <div class="topbar">
-      <button class="icbtn" id="soundBtn">🔊</button>
+      <div class="cur-wrap">
+        <button class="icbtn" id="soundBtn">🔊</button>
+        <button class="icbtn" id="howBtn" aria-label="How to play">?</button>
+      </div>
       <div class="cur-wrap"><div class="coins-pill" id="menuCoins">🪙 0</div><div class="coins-pill nectar" id="menuNectar">🍯 0</div></div>
     </div>
     <div class="wordmark"><span class="l1">BUD</span><span class="l2">burst</span></div>
@@ -281,7 +308,7 @@
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="link-btn" id="shopLink">🎨 Bloom Shop</button>
     <button class="link-btn" id="exitLink" style="opacity:.85">← All Sky Wolf games</button>
-    <div class="build-stamp" id="buildStamp">BUDBURST · BUILD 2026-07-05b</div>
+    <div class="build-stamp" id="buildStamp">BUDBURST · BUILD 2026-07-27a</div>
   </section>
 
   <!-- MAP -->
@@ -329,6 +356,13 @@
       <canvas id="arena"></canvas>
       <div class="combo-pop" id="comboPop"></div>
       <div id="dangerVig"></div>
+      <div class="coach" id="coachCard">
+        <div class="coach-in">
+          <div class="coach-t">Drag to aim</div>
+          <div class="coach-s"><b>Drag</b> on the board to aim, <b>let go</b> to fire. Link <b>3 or more buds of one color</b> to pop them. Keep the buds above the dashed line.</div>
+          <button class="btn-fill" id="coachBtn">GOT IT</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -355,6 +389,18 @@
 
 </div>
 <div class="toast" id="toast"></div>
+
+<div class="how-wrap" id="howWrap">
+  <div class="how-card">
+    <h3>How to play</h3>
+    <div class="how-row"><span class="hic">🎯</span><div><b>Drag to aim, let go to fire.</b> Your bud flies up, bounces off the walls, and sticks to the canopy.</div></div>
+    <div class="how-row"><span class="hic">🌸</span><div><b>Link 3 or more buds of one color</b> to pop them. Buds left hanging with nothing holding them fall too.</div></div>
+    <div class="how-row"><span class="hic">⇄</span><div><b>Tap the small NEXT bud</b> beside the launcher to swap your shot. Rainbow buds match any color. Bombs blast everything around them.</div></div>
+    <div class="how-row"><span class="hic">🏆</span><div><b>Win by finishing the goal shown at the top:</b> clear the board, harvest buds, rescue seeds, or crack the boss core.</div></div>
+    <div class="how-row"><span class="hic">⚠️</span><div><b>You lose</b> if buds cross the dashed line at the bottom or your shots run out.</div></div>
+    <button class="btn-fill" id="howClose">GOT IT</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -393,7 +439,7 @@ const K={coins:"bb.coins",nectar:"bb.nectar",owned:"bb.owned",skin:"bb.skin",
          lowned:"bb.lowned",launcher:"bb.launcher",bgowned:"bb.bgowned",bg:"bb.bg",
          prog:"bb.prog",pzProg:"bb.pz.prog",endBest:"bb.endless.best",blitzBest:"bb.blitz.best",arcadeBest:"bb.arcade.best",zenTotal:"bb.zen.total",
          abil:"bb.abil",loadout:"bb.loadout",boost:"bb.boost",
-         dLast:"bb.daily.last",dStreak:"bb.daily.streak",dStars:"bb.daily.stars",sound:"bb.sound",sym:"bb.sym",hap:"bb.hap",miss:"bb.miss"};
+         dLast:"bb.daily.last",dStreak:"bb.daily.streak",dStars:"bb.daily.stars",sound:"bb.sound",sym:"bb.sym",hap:"bb.hap",miss:"bb.miss",coach:"bb.coach"};
 
 /* ---- rng ---------------------------------------------------------------- */
 function mulberry32(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -616,6 +662,7 @@ let aimAngle=-Math.PI/2, aiming=false;
 let cur=null, next=null;    // ammo buds
 let ammoRng=null;           // seeded for daily, else Math.random
 let shotsFired=0, stuckStreak=0, runSb=0;
+let coachUp=false;          // one-time first-play coach card is covering the arena
 
 function rnd(){return ammoRng?ammoRng():Math.random();}
 
@@ -773,6 +820,12 @@ function beginPlay(){
   cur=null;next=null;refillAmmo();
   aimAngle=-Math.PI/2;state="aiming";lastT=0;
   applyBg();syncModeHud();updateHud();show("game");$("dangerVig").style.opacity=0;
+  maybeCoach();
+}
+/* one-time coach card: names the verb on very first play, then never again */
+function maybeCoach(){
+  if(Store.g(K.coach)==="1"){coachUp=false;$("coachCard").classList.remove("on");return;}
+  coachUp=true;$("coachCard").classList.add("on");
 }
 
 /* ============================================================================
@@ -1212,8 +1265,8 @@ function frame(t){
   if(curScreen==="game"){
     // physics
     if(state==="flying"){stepProjectile(dt);}
-    // real-time timers (freeze buff + blitz clock)
-    if(G&&(state==="aiming"||state==="flying")){
+    // real-time timers (freeze buff + blitz clock) — paused while the first-play coach card is up
+    if(G&&!coachUp&&(state==="aiming"||state==="flying")){
       if(G.freeze>0)G.freeze=Math.max(0,G.freeze-dt);
       if(G.mode==="blitz"&&G.timeLeft>0){G.timeLeft-=dt;updateTimer();
         if(G.timeLeft<=0&&state==="aiming"){G.timeLeft=0;state="over";setTimeout(levelLost,100);}}
@@ -1292,7 +1345,7 @@ cv.addEventListener("pointerup",e=>{if(curScreen!=="game")return;if(aiming){aimi
 cv.addEventListener("pointercancel",()=>{aiming=false;});
 // desktop hover-aim
 cv.addEventListener("mousemove",e=>{if(curScreen!=="game"||state!=="aiming"||aiming)return;const p=pointerPos(e);if(p.y<shooterY)setAimFromPoint(p.x,p.y);});
-window.addEventListener("keydown",e=>{if(curScreen!=="game")return;
+window.addEventListener("keydown",e=>{if(curScreen!=="game"||coachUp)return;
   if(e.key==="ArrowLeft"){aimAngle-=0.04;clampAim();}else if(e.key==="ArrowRight"){aimAngle+=0.04;clampAim();}
   else if(e.key===" "||e.key==="ArrowUp"){e.preventDefault();fire();}else if(e.key==="Shift"){swapAmmo();}});
 
@@ -1548,6 +1601,10 @@ function setToggleIcons(){$("symBtn").classList.toggle("on",(Store.g(K.sym)||"1"
 $("soundBtn").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");setSoundIcon();if(soundOn){ac();beep(660,0.08,0.06);}};
 $("symBtn").onclick=()=>{const v=(Store.g(K.sym)||"1")==="1"?"0":"1";Store.s(K.sym,v);symBold=(v==="1");setToggleIcons();toast(v==="1"?"High-contrast glyphs on":"Glyphs subtle");};
 $("hapBtn").onclick=()=>{hapOn=!hapOn;Store.s(K.hap,hapOn?"1":"0");setToggleIcons();if(hapOn)buzz(20);};
+$("howBtn").onclick=()=>{$("howWrap").classList.add("on");};
+$("howClose").onclick=()=>{$("howWrap").classList.remove("on");};
+$("howWrap").addEventListener("click",e=>{if(e.target===$("howWrap"))$("howWrap").classList.remove("on");});
+$("coachBtn").onclick=()=>{Store.s(K.coach,"1");coachUp=false;$("coachCard").classList.remove("on");};
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{const m=b.dataset.mode;
   if(m==="adventure")openMap();else if(m==="arcade")openLoadout();else if(m==="blitz")startBlitz();
   else if(m==="puzzle")openPuzzles();else if(m==="endless")startEndless();else if(m==="zen")startZen();else startDaily();}));

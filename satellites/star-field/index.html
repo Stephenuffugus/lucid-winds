@@ -86,6 +86,10 @@ h2.sc-h{font-size:22px; color:var(--gold); font-weight:800; margin-bottom:6px; t
 .tlabel small{display:block; color:var(--gold); font-size:11px; letter-spacing:1px}
 .footnote{color:var(--muted); font-size:12px; text-align:center; margin-top:14px; line-height:1.5}
 .pill{display:inline-block; background:#0f150c; border:1px solid var(--line); border-radius:20px; padding:6px 14px; font-size:13px; color:var(--gold); margin:4px}
+/* How to Play cards. 17px stage px renders ~11.8 real px at the 0.69 phone
+   scale, which clears the 0.7rem rendered-readability floor. */
+.howcard{width:100%; max-width:420px; margin:0 auto 12px; padding:16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:17px; line-height:1.55; color:var(--cream); text-align:left}
+.howcard b{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -105,6 +109,7 @@ h2.sc-h{font-size:22px; color:var(--gold); font-weight:800; margin-bottom:6px; t
         <button class="btn sm" onclick="SFUI.play('zen')">🍃 Zen</button>
         <button class="btn sm" onclick="SFUI.play('deep')">✦ Deep Field</button>
       </div>
+      <button class="btn ghost" onclick="SFUI.show('s-howto')">❔ How to Play</button>
       <div class="row">
         <button class="btn ghost sm" onclick="SFUI.show('s-gallery')">✿ Grove</button>
         <button class="btn ghost sm" onclick="SFUI.show('s-wardrobe')">🎨 Skins</button>
@@ -164,6 +169,16 @@ h2.sc-h{font-size:22px; color:var(--gold); font-weight:800; margin-bottom:6px; t
     <div class="settingline"><span>High-contrast regions</span><div class="toggle" id="tg-cb" onclick="SF.tog('cb')"><b></b></div></div>
     <div class="settingline"><span>Auto-mark by default</span><div class="toggle" id="tg-auto" onclick="SF.tog('auto')"><b></b></div></div>
     <div class="ribbon center" style="margin-top:8px">Tap a cell: empty → dot → ⭐ star → empty. Auto-mark dots the cells a star rules out.</div>
+    <div class="stack" style="margin-top:18px"><button class="btn" onclick="SFUI.show('s-title')">Back</button></div>
+  </div></div>
+
+  <!-- HOW TO PLAY -->
+  <div id="s-howto" class="screen"><div class="pad">
+    <h2 class="sc-h">How to Play</h2>
+    <div class="howcard"><b>Plant stars.</b> Tap a cell to plant a star. Tap again to leave a dot that means no star here. One more tap clears the cell.</div>
+    <div class="howcard"><b>Win the sky.</b> Place exactly one star in every row, every column, and every colored bed. The sky blooms the moment the last star lands.</div>
+    <div class="howcard"><b>Give them room.</b> No two stars may touch, not even at the corners. Touching stars glow pink until you move one.</div>
+    <div class="howcard"><b>Helpers.</b> ◈ auto-marks the cells a new star rules out. 💡 plants one correct star for you. ↺ deals a fresh sky.</div>
     <div class="stack" style="margin-top:18px"><button class="btn" onclick="SFUI.show('s-title')">Back</button></div>
   </div></div>
 

@@ -26,7 +26,10 @@
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden}
   body{background:var(--loam);color:var(--ink);font-family:'Silkscreen',monospace;display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none;touch-action:none}
-  #hud{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;padding:8px 12px 4px;font-size:10px;letter-spacing:.5px;gap:6px}
+  /* Font floor sweep 2026-07-27: this game renders unscaled, so CSS px are real
+     rendered px. Studio floor is 0.7rem rendered (11.2px); everything that was
+     8-10px player copy is raised to >=11.2px below. */
+  #hud{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;padding:8px 8px 4px;font-size:11.2px;letter-spacing:.5px;gap:4px}
   #hud .stat b{display:block;font-size:14px;color:var(--seed)}
   #hud .petals b{color:var(--bloom)}
   #hud .icons{display:flex;gap:6px}
@@ -38,13 +41,13 @@
   #lives span{width:11px;height:11px;border-radius:50%;background:#D6453A;display:inline-block;box-shadow:inset -3px -2px 0 rgba(0,0,0,.35)}
   #stage{position:relative;flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
   canvas{display:block;border-radius:10px}
-  #foot{padding:5px 0 10px;font-size:8px;color:var(--dim);letter-spacing:1px}
+  #foot{padding:5px 0 10px;font-size:11.2px;color:var(--dim);letter-spacing:1px}
   .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(10,16,8,.85);backdrop-filter:blur(3px);border-radius:10px;z-index:3}
   .card{background:var(--panel);border:2px solid var(--hedge);border-radius:16px;padding:20px 18px;width:100%;max-width:380px;max-height:100%;overflow-y:auto;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
   h1{font-family:'Fraunces',serif;font-weight:900;font-size:36px;line-height:1;color:var(--seed)}
   h1 em{font-style:normal;color:var(--bloom)}
-  .sub{font-size:9px;color:var(--marigold);letter-spacing:3px;margin:6px 0 14px}
-  .tag{font-size:9px;color:var(--dim);margin-top:12px;line-height:1.8}
+  .sub{font-size:11.2px;color:var(--marigold);letter-spacing:3px;margin:6px 0 12px}
+  .tag{font-size:11.2px;color:var(--dim);margin-top:12px;line-height:1.6}
   button{font-family:'Silkscreen',monospace;font-size:13px;color:var(--loam);background:var(--seed);border:0;border-radius:10px;padding:12px 22px;margin:6px 4px;min-width:48px;min-height:48px;cursor:pointer}
   button.alt{background:transparent;color:var(--seed);border:2px solid var(--hedge)}
   button:active{transform:translateY(1px)}
@@ -52,21 +55,24 @@
   .modes{display:flex;flex-direction:column;gap:8px;margin:10px 0;text-align:left}
   .modecard{background:rgba(0,0,0,.25);border:1px solid var(--hedge);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
   .modecard .mi{flex:1}
-  .modecard .mn{font-size:11px;color:var(--seed)}
-  .modecard .md{font-size:8px;color:var(--dim);line-height:1.6;margin-top:2px}
-  .modecard .mb{font-size:8px;color:var(--marigold);margin-top:2px}
-  .modecard button{font-size:9px;padding:9px 12px;margin:0;white-space:nowrap}
+  .modecard .mn{font-size:12px;color:var(--seed)}
+  .modecard .md{font-size:11.2px;color:var(--dim);line-height:1.45;margin-top:3px}
+  .modecard .mb{font-size:11.2px;color:var(--marigold);margin-top:3px}
+  .modecard button{font-size:11.2px;padding:9px 12px;margin:0;white-space:nowrap}
   .shopgrid{display:flex;flex-direction:column;gap:8px;margin:10px 0;text-align:left}
   .shoprow{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border-radius:10px;padding:8px 10px}
   .swatch{width:28px;height:28px;border-radius:50%;flex-shrink:0;box-shadow:inset -5px -4px 0 rgba(0,0,0,.3)}
   .swatch.sq{border-radius:8px}
-  .shoprow .nm{flex:1;font-size:10px;line-height:1.5}
-  .shoprow .pr{font-size:9px;color:var(--bloom)}
-  .shoprow button{font-size:9px;padding:8px 10px;margin:0}
-  .secthead{font-size:9px;color:var(--marigold);letter-spacing:2px;margin-top:10px}
+  .shoprow .nm{flex:1;font-size:11.2px;line-height:1.4}
+  .shoprow .pr{font-size:11.2px;color:var(--bloom)}
+  .shoprow button{font-size:11.2px;padding:8px 10px;margin:0}
+  .secthead{font-size:11.2px;color:var(--marigold);letter-spacing:2px;margin-top:10px}
   .big{font-family:'Fraunces',serif;font-weight:900;font-size:24px;color:var(--seed)}
   .hidden{display:none!important}
-  #toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--hedge);border-radius:8px;padding:6px 14px;font-size:9px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9}
+  #toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--hedge);border-radius:8px;padding:6px 14px;font-size:11.2px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9}
+  #howRules{font-size:11.2px;color:var(--ink);text-align:left;line-height:1.5;margin:10px 0 4px}
+  #howRules p{margin:8px 0}
+  #howRules b{color:var(--marigold)}
 </style>
 </head>
 <body>
@@ -91,11 +97,27 @@
     <div class="card">
       <h1>Pollen<br><em>Panic</em></h1>
       <div class="sub">A LUCID WINDS GAME</div>
+      <button class="alt" id="btnHow" style="margin:0 0 10px">HOW TO PLAY</button>
       <div class="modes" id="modeList"></div>
       <div class="secthead">· TODAY'S MISSIONS ·</div>
       <div id="missionBox" class="tag" style="text-align:left;margin-top:6px"></div>
       <button class="alt" id="btnShop">NURSERY&nbsp;&#127800;</button>
       <div class="tag">Swipe or arrow keys · munch every seed<br>Blooms wilt the pests · grab sunberries</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="howto">
+    <div class="card">
+      <div class="big">How To Play</div>
+      <div id="howRules">
+        <p><b>STEER</b> with a swipe or the arrow keys.</p>
+        <p><b>MUNCH</b> every seed to clear the garden and move up a level.</p>
+        <p><b>DODGE</b> the pests. One touch costs a life, and the run ends when all three are gone. Petal Rush is timed instead.</p>
+        <p><b>BLOOMS</b> in the corners wilt the pests. Munch wilted pests back to back for big chains.</p>
+        <p><b>GUST</b> blows nearby pests home. You earn more gusts as your score climbs.</p>
+        <p><b>PETALS</b> drop as you play. Spend them on new modes and skins in the Nursery.</p>
+      </div>
+      <button id="btnHowBack">GOT IT</button>
     </div>
   </div>
 
@@ -119,8 +141,8 @@
     <div class="card">
       <div class="big" id="overTitle">Composted!</div>
       <div class="sub" id="overSub"></div>
-      <div style="font-size:11px;margin:10px 0;color:var(--bloom)">+<span id="overPetals">0</span> PETALS EARNED</div>
-      <div id="overTop" style="font-size:9px;line-height:1.9;color:var(--dim);margin-bottom:8px"></div>
+      <div style="font-size:12px;margin:10px 0;color:var(--bloom)">+<span id="overPetals">0</span> PETALS EARNED</div>
+      <div id="overTop" style="font-size:11.2px;line-height:1.7;color:var(--dim);margin-bottom:8px"></div>
       <button id="btnAgain">PLAY AGAIN</button>
       <button class="alt" id="btnMenu">MENU</button>
     </div>
@@ -128,7 +150,7 @@
 
   <div id="toast"></div>
 </div>
-<div id="foot">LUCID WINDS · v4 FINAL</div>
+<div id="foot">LUCID WINDS · v4.1</div>
 
 <script>
 "use strict";
@@ -160,10 +182,10 @@ const W=19,H=21,TUNNEL_Y=9,DOOR={x:9,y:8},HOUSE={x:9,y:9},FRUIT_POS={x:9.5,y:11.
 
 /* ============ MODES ============ */
 const MODES={
-  classic:{name:"Classic Garden",price:0,  mult:1,  desc:"The original stroll. Gardens rotate every 2 levels."},
-  meadow: {name:"Meadow Shuffle",price:250,mult:1.5,desc:"New garden every level. The sunberry wanders. Faster."},
-  superb: {name:"Super Bloom",   price:400,mult:1.5,desc:"Blooms make you GIANT. Trample every pest in sight."},
-  rush:   {name:"Petal Rush",    price:600,mult:2,  desc:"120 seconds. Endless reseeding gardens. Pure score."}
+  classic:{name:"Classic Garden",price:0,  mult:1,  desc:"The original stroll. New garden every 2 levels."},
+  meadow: {name:"Meadow Shuffle",price:250,mult:1.5,desc:"Faster. New garden every level, roaming sunberry."},
+  superb: {name:"Super Bloom",   price:400,mult:1.5,desc:"Blooms make you GIANT. Trample every pest."},
+  rush:   {name:"Petal Rush",    price:600,mult:2,  desc:"120 seconds of endless gardens. Pure score."}
 };
 
 /* ============ COSMETICS ============ */
@@ -973,6 +995,8 @@ document.getElementById("btnAgain").onclick=()=>startGame();
 document.getElementById("btnMenu").onclick=()=>{document.getElementById("over").classList.add("hidden");buildMenu();document.getElementById("menu").classList.remove("hidden");mode="menu";};
 document.getElementById("btnShop").onclick=()=>{buildShop();document.getElementById("menu").classList.add("hidden");document.getElementById("shop").classList.remove("hidden");};
 document.getElementById("btnShopBack").onclick=()=>{document.getElementById("shop").classList.add("hidden");buildMenu();document.getElementById("menu").classList.remove("hidden");};
+document.getElementById("btnHow").onclick=()=>{document.getElementById("menu").classList.add("hidden");document.getElementById("howto").classList.remove("hidden");};
+document.getElementById("btnHowBack").onclick=()=>{document.getElementById("howto").classList.add("hidden");document.getElementById("menu").classList.remove("hidden");};
 document.getElementById("btnMute").onclick=async()=>{save.muted=!save.muted;await persist();updateHUD();};
 document.getElementById("btnPause").onclick=()=>{if(mode==="play"||mode==="paused")togglePause();};
 document.getElementById("btnGust").onclick=()=>useGust();

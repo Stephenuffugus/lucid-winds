@@ -85,6 +85,9 @@ h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
 .playcap{position:absolute; top:58px; left:50%; transform:translateX(-50%); z-index:8; max-width:88%; text-align:center;
   font-size:15px; font-weight:600; color:var(--cream); background:rgba(10,9,16,.62); border:1px solid var(--line);
   border-radius:12px; padding:9px 14px; line-height:1.35; opacity:0; transition:opacity .8s ease; pointer-events:none}
+.howcard{width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#15141f; text-align:left}
+.howcard .hw-t{color:var(--gold); font-size:16px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px}
+.howcard .hw-b{color:var(--cream); font-size:17px; line-height:1.45}
 </style>
 </head>
 <body>
@@ -101,6 +104,7 @@ h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
         <div class="btn sm" onclick="IG.go('daily')">Daily Path</div>
         <div class="btn sm" onclick="IG.openLevels('zen')">Free Play</div>
       </div>
+      <div class="btn ghost" onclick="IG.show('s-how')">How to Play</div>
       <div class="row">
         <div class="btn sm ghost" onclick="IG.show('s-wardrobe')">Wardrobe</div>
         <div class="btn sm ghost" onclick="IG.show('s-gallery')">Gallery</div>
@@ -114,6 +118,27 @@ h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
     <div class="hintline" id="lv-sub">Solve each to open the next.</div>
     <div class="grid" id="lvl-grid"></div>
     <div class="btn ghost sm" style="max-width:420px;margin:8px auto 0" onclick="IG.show('s-title')">Back</div>
+  </div></div>
+
+  <div id="s-how" class="screen"><div class="pad">
+    <h2 class="sc-h">How to Play</h2>
+    <div class="howcard" style="margin-top:12px">
+      <div class="hw-t">Turn</div>
+      <div class="hw-b">Tap a round knob to turn its vine arm. Each turn changes which gaps the vines bridge.</div>
+    </div>
+    <div class="howcard">
+      <div class="hw-t">Walk</div>
+      <div class="hw-b">Tap any tile and the wanderer walks to it along connected paths. A vine that spans a gap joins the two sides, even when the angles look like they could never meet.</div>
+    </div>
+    <div class="howcard">
+      <div class="hw-t">Bloom</div>
+      <div class="hw-b">Walk the wanderer onto the golden bloom to finish the garden. There is no way to lose, so take your time.</div>
+    </div>
+    <div class="howcard">
+      <div class="hw-t">Modes</div>
+      <div class="hw-b">Journey opens gardens in order. Daily Path offers one garden each day. Free Play lets you wander any garden, with a glowing hint knob if you pause.</div>
+    </div>
+    <div class="btn ghost" style="max-width:420px;margin:8px auto 0" onclick="IG.show('s-title')">Back</div>
   </div></div>
 
   <div id="s-play" class="screen"><div class="badge" id="hud-badge">Garden 1</div><div class="playcap" id="hud-cap"></div></div>
@@ -501,9 +526,12 @@ function startLevel(idx, mode){
   G=buildLevel(LEVELS[idx], idx); G.mode=mode||'journey'; G.usedHint=false; G.time=0;
   if(G.mode==='daily'){ G.dailyIdx=idx; }
   $('hud-badge').textContent = (mode==='daily'?'Daily · ':'Garden ')+(mode==='daily'?LEVELS[idx].name:(idx+1));
-  // first-garden prompt so a first-timer knows the knob is interactive; fades away after a bit
+  // first-garden prompt so a first-timer knows the knob is interactive; fades away after a bit.
+  // Also fires once on a player's very first garden (capSeen flag), because Daily Path
+  // can land a brand-new player on any garden index.
   var cap=$('hud-cap'); if(cap){ clearTimeout(capTimer);
-    if(idx===0){ cap.textContent='Turn the vine arm, then walk to the bloom.';
+    if(idx===0 || !SAVE.capSeen){ cap.textContent='Turn the vine arm, then walk to the bloom.';
+      if(!SAVE.capSeen){ SAVE.capSeen=true; save(); }
       cap.style.opacity='0'; setTimeout(function(){ cap.style.opacity='1'; }, 60);
       capTimer=setTimeout(function(){ cap.style.opacity='0'; }, 7000);
     } else { cap.style.opacity='0'; cap.textContent=''; }

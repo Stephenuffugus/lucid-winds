@@ -66,6 +66,10 @@
   .card .sub{ font-style:italic; color:#5a5342; margin:0; font-size:1.02rem;}
   .rule{ height:0; border-top:1px solid var(--sage); opacity:.5; width:60%; margin:14px auto;}
   .kbd{ display:inline-block; background:var(--sage); color:var(--paper); padding:1px 8px; border-radius:4px; font-size:.8rem; letter-spacing:.05em; font-style:normal;}
+  .how-list{ text-align:left; font-size:.92rem; line-height:1.45; color:#463f31; margin:0;}
+  .how-list p{ margin:0 0 10px;}
+  .how-list p:last-child{ margin-bottom:0;}
+  .how-list b{ color:var(--sage-2);}
 
   .btn{ font-family:inherit; font-size:1.1rem; letter-spacing:.12em; text-transform:uppercase; color:var(--paper); background:var(--sage);
     border:none; border-radius:8px; padding:15px 34px; cursor:pointer; box-shadow:0 6px 0 var(--sage-2), 0 10px 18px var(--shadow); transition:transform .06s ease, box-shadow .06s ease;}
@@ -202,7 +206,7 @@
   .lean:active,.lean.held{ transform:translateY(3px); box-shadow:0 1px 0 #1d7a63; background:linear-gradient(180deg,#8ff0d3,var(--mint)); color:#03251d; border-color:var(--mint-deep);}
   .wobble-track{ flex:1; align-self:center; position:relative; height:18px; border-radius:10px; background:rgba(43,58,49,.22); border:1.5px solid var(--sage-2); overflow:hidden;}
   .wobble-track::before{ content:""; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--sage-2); opacity:.45;}
-  .wobble-track .wlabel{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:.56rem; letter-spacing:.24em; text-transform:uppercase; color:var(--sage-2); opacity:.55; z-index:0; pointer-events:none;}
+  .wobble-track .wlabel{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--sage-2); opacity:.55; z-index:0; pointer-events:none; white-space:nowrap;}
   .wobble-track .wd{ position:absolute; top:50%; left:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; z-index:1;
     background:radial-gradient(circle at 35% 30%, #9fe6d2, var(--mint-deep)); box-shadow:0 1px 6px rgba(0,0,0,.35); transition:left .06s linear, background .12s;}
   .wobble-track.danger .wd{ background:radial-gradient(circle at 35% 30%, #f0a89f, var(--crimson));}
@@ -295,6 +299,24 @@
       <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">🔊 Sound</button>
       <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">📳 Haptics</button>
     </div>
+  </div>
+
+  <!-- ============ HOW TO PLAY ============ -->
+  <div id="howScreen" class="screen hidden">
+    <div class="card" style="max-width:420px;">
+      <div class="eyebrow">The program notes</div>
+      <h1 style="font-size:2rem;">How to play</h1>
+      <div class="rule"></div>
+      <div class="how-list">
+        <p><b>Hold both pads</b> to clench it in. Pressure climbs the whole time you sit there.</p>
+        <p>Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap before it slips.</p>
+        <p>When a cover noise hits, tap <b>VENT</b> to drop the pressure. Vent the instant the noise starts for a perfect.</p>
+        <p><b>Tap leaks</b> to plug them. Cough makes your own cover, sip drains pressure, waft fans a fresh strike away.</p>
+        <p>Any sound the room hears is a strike. <b>Three strikes and you are exposed.</b> Outlast the acts and run up the score.</p>
+      </div>
+    </div>
+    <button class="btn" id="howPractice">Practice run</button>
+    <button class="btn ghost" id="howClose">Back</button>
   </div>
 
   <!-- ============ INTERTITLE ============ -->
@@ -411,7 +433,7 @@
 
   <!-- tutorial overlay -->
   <div id="tutOverlay" class="hidden">
-    <div class="tut-card" id="tutText">Hold <b>both pads</b> to clench it in.</div>
+    <div class="tut-card coach-card" id="tutText">Hold <b>both pads</b> to clench it in.</div>
     <button class="btn ghost" id="tutSkip">Skip</button>
   </div>
 
@@ -695,7 +717,7 @@
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
   const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipCdEl=$("sipCd");
   const breathBtn=$("breathBtn"), breathFill=$("breathFill"), wobbleTrack=$("wobbleTrack"), wobbleDot=$("wobbleDot"), leanLbtn=$("leanLbtn"), leanRbtn=$("leanRbtn");
-  const wardScreen=$("wardScreen"), dailyNote=$("dailyNote"), diffRow=$("diffRow");
+  const wardScreen=$("wardScreen"), dailyNote=$("dailyNote"), diffRow=$("diffRow"), howScreen=$("howScreen");
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ==================================================================
@@ -754,7 +776,7 @@
     if(raf) cancelAnimationFrame(raf);
     loop();
   }
-  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen].forEach(s=>s.classList.add("hidden")); }
+  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen,howScreen].forEach(s=>s.classList.add("hidden")); }
 
   function sceneIdx(i){ return S.sceneOrder? S.sceneOrder[i%S.sceneOrder.length] : (i%SCENES.length); }
   function showIntro(idx){
@@ -1069,6 +1091,7 @@
     breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
     hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
 
+  function openHow(){ startScreen.classList.add("hidden"); howScreen.classList.remove("hidden"); }
   function openMedals(){ buildMedals(); startScreen.classList.add("hidden"); medalsScreen.classList.remove("hidden"); }
   function openStats(){ buildStats(); startScreen.classList.add("hidden"); statsScreen.classList.remove("hidden"); }
   function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
@@ -1406,7 +1429,9 @@
   $("pauseBtn").addEventListener("click",pauseGame);
   $("resumeBtn").addEventListener("click",resumeGame);
   $("quitBtn").addEventListener("click",()=>{ if(S) gameOver(); });
-  $("howBtn").addEventListener("click",startTutorial);
+  $("howBtn").addEventListener("click",openHow);
+  $("howPractice").addEventListener("click",startTutorial);
+  $("howClose").addEventListener("click",toMenu);
   $("tutSkip").addEventListener("click",endTutorial);
   $("medalsBtn").addEventListener("click",openMedals);
   $("statsBtn").addEventListener("click",openStats);

@@ -32,6 +32,8 @@
   .layer{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; }
   .layer.on{ display:flex; }
   #menu.on{ background:linear-gradient(rgba(6,9,5,0.72),rgba(6,9,5,0.9)), url('assets/menu.jpg?v=2026-07-06.art') center/cover no-repeat; }
+  #how.on{ background:rgba(5,8,4,0.94); z-index:5; }
+  #coach.on{ background:rgba(5,8,4,0.78); z-index:6; }
   .panel{ pointer-events:auto; width:min(88vw,420px); max-height:92vh; overflow-y:auto;
     background:rgba(13,16,12,0.92); border:1px solid rgba(200,168,75,0.4); border-radius:16px;
     padding:22px 20px 26px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.6); }
@@ -80,7 +82,7 @@
     <div class="lbl" style="margin-top:12px">Verdancy (difficulty)</div>
     <div class="seg" id="verSeg"></div>
     <div class="small" id="verDesc" style="margin-top:6px"></div>
-    <div class="row"><button class="btn primary" id="playBtn">PLANT &amp; PLAY</button></div>
+    <div class="row"><button class="btn primary" id="playBtn">PLANT &amp; PLAY</button><button class="btn" id="howBtn">HOW TO PLAY</button></div>
     <div class="toggle"><span>Manual aim (advanced routing)</span><div class="sw" id="swAim"></div></div>
     <div class="toggle"><span>Reduced motion</span><div class="sw" id="swMotion"></div></div>
     <div class="toggle"><span>Sound</span><div class="sw on" id="swSound"></div></div>
@@ -104,6 +106,37 @@
     <div class="row"><button class="btn primary" id="againBtn">GROW AGAIN</button>
     <button class="btn" id="shareBtn">SHARE</button>
     <button class="btn" id="menuBtn">MENU</button></div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY (opens from the menu HOW TO PLAY button) -->
+<div class="layer" id="how">
+  <div class="panel" id="howtoPanel">
+    <h1 class="logo" style="font-size:1.4rem">How to play</h1>
+    <div class="how">
+      <b>Drag</b> anywhere to steer your rooted plant around the field. Weapons fire on their own.<br><br>
+      Your shots barely scratch pests. They <b>paint</b> statuses on them. When two statuses meet
+      on one pest they <b>react</b>, and the reaction is what kills.<br><br>
+      <b>Pollen</b> supercharges the next reaction. <b>Spore</b> spreads it to the crowd.
+      <b>Nectar</b> lures swarms into a tight ball. <b>Frost</b> stores damage for a shatter.<br><br>
+      Sweep up <b>Loam</b> motes from fallen pests to level up, then draft new weapons,
+      passives, and companions to shape your build.<br><br>
+      <b>Win:</b> survive long enough to face the ground's final boss and take it down.<br>
+      <b>Lose:</b> pests that touch your plant drain its health. At zero, the garden sleeps.
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="howClose">GOT IT</button></div>
+  </div>
+</div>
+
+<!-- FIRST-RUN COACH CARD (one time, before the first planting) -->
+<div class="layer" id="coach">
+  <div class="panel" style="max-width:340px">
+    <div class="how" style="text-align:center">
+      <b>DRAG</b> anywhere to move your plant.<br>
+      Weapons fire on their own. When two statuses meet on one pest they
+      <b>react</b>, and reactions do the killing.
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="coachBtn">GOT IT</button></div>
   </div>
 </div>
 
@@ -446,31 +479,31 @@ var G=null;
    Each: distinct pest pool + pacing + palette + boss arc. Reaction-lane themed.
    hazard field is data for a follow-up pass (env hazards) — currently no-op. ---------------- */
 var STAGES=[
- { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick — just you and the reaction engine.',
+ { id:'greenhouse', name:'Greenhouse Floor', flavor:'Home turf. No gimmick, just you and the reaction engine.',
    pal:{t:'#0f150d',b:'#070a06',acc:'122,179,86'},
    pool:function(t){ if(t<25)return['aphid','aphid','mite','thrip']; if(t<70)return['aphid','mite','locust','beetle','thrip','weevil']; if(t<140)return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug']; return['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','scale','cutworm','beetle','wasp']; },
    tune:{rateMul:1,hpMul:1,burstEvery:60,eliteEvery:72,eliteStart:55}, hazard:null,
-   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER — break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen — dodge the volleys'}] },
+   bosses:[{id:'grubfather',at:150,intro:'GRUBFATHER: break the shell with Rot (Spore + Sap)'},{id:'stormwing',afterPrev:45,final:true,intro:'STORMWING, the Locust Queen. Dodge the volleys'}] },
  { id:'sunkenbeds', name:'The Sunken Beds', flavor:'Slow and thick. Sap cracks the shell.',
    pal:{t:'#0e1a16',b:'#040a08',acc:'74,138,118'},
    pool:function(t){ if(t<20)return['aphid','aphid','mite','mealybug']; if(t<70)return['aphid','mite','mealybug','mealybug','scale','beetle']; if(t<140)return['mealybug','scale','beetle','beetle','slug','slug','cutworm','mite']; return['slug','slug','scale','scale','beetle','cutworm','cutworm','mealybug','weevil','thrip']; },
    tune:{rateMul:0.8,hpMul:1.0,burstEvery:60,eliteEvery:999,eliteStart:999}, hazard:{type:'pools',n:4,r:66},
-   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron — any Sap reaction cracks her shell'}] },
+   bosses:[{id:'tideshell',at:130,final:true,crackOn:{status:'sap',hits:1},intro:'TIDESHELL, the Bog Matron. Any Sap reaction cracks her shell'}] },
  { id:'sundrift', name:'The Sundrift Meadow', flavor:'Fast and light. A dense, squishy swarm.',
    pal:{t:'#241a08',b:'#0f0a04',acc:'230,210,74'},
    pool:function(t){ if(t<20)return['aphid','aphid','aphid','thrip']; if(t<60)return['aphid','thrip','thrip','mite','wasp']; if(t<130)return['wasp','wasp','locust','locust','thrip','mite','aphid']; return['wasp','wasp','locust','locust','locust','thrip','thrip','mite','aphid','weevil']; },
    tune:{rateMul:1.33,hpMul:0.9,burstEvery:45,eliteEvery:999,eliteStart:999}, hazard:{type:'heat'},
-   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN — Stormwing at her hottest'}] },
+   bosses:[{id:'stormwing',at:100,final:true,tune:{fireT:1.4,addMix:['wasp','locust']},intro:'THE SOLSTICE QUEEN: Stormwing at her hottest'}] },
  { id:'understory', name:'The Hothouse Understory', flavor:'Immune-heavy. Spore the crowd, then chain.',
    pal:{t:'#120a1a',b:'#06040a',acc:'155,122,214'},
    pool:function(t){ if(t<25)return['aphid','mite','weevil']; if(t<80)return['weevil','weevil','beetle','mealybug','mite']; if(t<150)return['mealybug','mealybug','weevil','beetle','beetle','cutworm','locust']; return['mealybug','mealybug','weevil','weevil','beetle','cutworm','cutworm','scale','vineborer']; },
    tune:{rateMul:1.0,hpMul:1.05,burstEvery:60,eliteEvery:45,eliteStart:40}, hazard:{type:'sporefog',cycle:35,active:8},
-   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER — land Spore reactions to break her ward'}] },
+   bosses:[{id:'broodmother',at:160,final:true,crackOn:{status:'spore',hits:8},intro:'CORDYCEPS BROODMOTHER: land Spore reactions to break her ward'}] },
  { id:'longdark', name:'The Long Dark Conservatory', flavor:'Everything, at once, at its coldest. Shatter them.',
    pal:{t:'#060a12',b:'#010208',acc:'143,208,232'},
    pool:function(t){ if(t<15)return['aphid','mite','thrip']; return['aphid','locust','beetle','beetle','slug','wasp','mite','weevil','weevil','scale','mealybug','cutworm','cutworm','thrip']; },
    tune:{rateMul:1.1,hpMul:1.15,burstEvery:40,eliteEvery:50,eliteStart:30}, hazard:{type:'frostsnap',snap:20,wave:30},
-   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW — it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN — the true end'}] }
+   bosses:[{id:'frostmaw',at:135,intro:'FROSTMAW: it hits harder while it is frozen'},{id:'wiltqueen',afterPrev:50,final:true,intro:'THE WILT QUEEN: the true end'}] }
 ];
 var BOSS_SPAWN={grubfather:spawnGrubfather, stormwing:spawnStormwing, tideshell:spawnTideshell, broodmother:spawnBroodmother, frostmaw:spawnFrostmaw, wiltqueen:spawnWiltQueen};
 var BOSS_NAMES={grubfather:'The Grubfather', stormwing:'Stormwing', tideshell:'Tideshell', broodmother:'The Broodmother', frostmaw:'Frostmaw', wiltqueen:'The Wilt Queen'};
@@ -1056,7 +1089,7 @@ function endRun(win){
     'Time survived: <b>'+fmtTime(G.time)+'</b><br>Pests cleared: <b>'+G.kills+'</b><br>Loam banked: <b>'+G.loamRun+'</b> 🌱'+
     (stageUnlocked?'<br><b style="color:#7ab356">New ground unlocked: '+STAGES[store.stagesUnlocked-1].name+'</b>':'')+
     (unlocked?'<br><b style="color:#c8a84b">New Verdancy unlocked: '+VERD[store.maxVerdancy].name+'</b>':'')+
-    '<br><span class="small">Codex — Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
+    '<br><span class="small">Codex · Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
   _lastResult={ time:G.time, kills:G.kills, stage:(G.stage?G.stage.name:''), win:win };
   showLayer('over');
 }
@@ -1068,7 +1101,7 @@ function shareBramblewick(){
   var url="https://lucidwinds.com/satellites/bramblewick/";
   var r=_lastResult||{ time:(G?G.time:0), kills:(G?G.kills:0), stage:(G&&G.stage?G.stage.name:''), win:(G?G.win:false) };
   var verb=r.win?"held the night for ":"survived ";
-  var txt="Bramblewick — "+verb+fmtTime(r.time)+", "+r.kills+" pests cleared on "+r.stage+"! Can you beat it?";
+  var txt="Bramblewick: "+verb+fmtTime(r.time)+", "+r.kills+" pests cleared on "+r.stage+"! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ if(typeof toast==='function') toast('Copied!'); }).catch(function(){}); }
 }
@@ -1347,7 +1380,7 @@ function drawGlyph(kind,x,y,r){
 function drawBossBar(p){ var w=VW*0.7, x=(VW-w)/2, y=54; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-2,y-2,w+4,12);
   ctx.fillStyle=p.armorBack?'#8a6a4a':'#c65b5b'; ctx.fillRect(x,y,w*Math.max(0,p.hp/p.maxhp),8);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' — shell up':''), VW/2, y-6); }
+  ctx.fillText(p.meta.name.toUpperCase()+(p.armorBack?' (shell up)':''), VW/2, y-6); }
 function drawFX(){
   for(var i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; var t=f.life/f.max;
     if(f.kind==='ring'||f.kind==='react'||f.kind==='nova'){ ctx.globalAlpha=t*0.8; ctx.strokeStyle=f.col; ctx.lineWidth=(f.kind==='nova')?4:2.5; ctx.beginPath(); ctx.arc(f.x,f.y, f.r*(1-t*0.5), 0,6.283); ctx.stroke();
@@ -1379,7 +1412,7 @@ function drawHUD(){
   // active family tier badges
   for(var f in G.familyTier){ if(G.familyTier[f]>=2){ ctx.fillStyle=G.familyTier[f]>=3?'#e8c24b':'#8a9178'; ctx.fillText(capW(f).slice(0,3)+'·T'+G.familyTier[f], lx, ly); lx+=ctx.measureText(capW(f).slice(0,3)+'·T'+G.familyTier[f]).width+7; } }
   // Graft Compass: the nearest pending evolution
-  if(!G.boss){ var ng=nextGraft(); if(ng){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='bold 10px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('\u25c8 '+ng.name+' \u2014 '+graftHint(ng), VW/2, 60); ctx.textAlign='left'; } }
+  if(!G.boss){ var ng=nextGraft(); if(ng){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='bold 10px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('\u25c8 '+ng.name+' \u00b7 '+graftHint(ng), VW/2, 60); ctx.textAlign='left'; } }
   // toast line (boss cues, phase transitions)
   if(G.toast){ ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,'+Math.min(1,G.toast.t)+')'; ctx.font='bold 12px sans-serif'; ctx.textBaseline='middle'; ctx.fillText(G.toast.text, VW/2, 112); }
   // exit hint
@@ -1391,7 +1424,7 @@ function drawDraft(){
   // dim
   ctx.fillStyle='rgba(5,7,4,0.72)'; ctx.fillRect(0,0,VW,VH);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('LEVEL '+G.level+' — DRAFT', VW/2, VH*0.30);
+  ctx.fillText('LEVEL '+G.level+': DRAFT', VW/2, VH*0.30);
   ctx.font='12px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText('Tap a card', VW/2, VH*0.30+22);
   var cards=G.draft.cards; var cw=VW-64, ch=96, gap=14; var startY=VH*0.38;
   for(var i=0;i<cards.length;i++){ var c=cards[i]; var x=32, y=startY+i*(ch+gap);
@@ -1485,8 +1518,8 @@ requestAnimationFrame(frame);
 /* ==================================================================
    UI WIRING
    ================================================================== */
-function showLayer(id){ ['menu','over'].forEach(function(l){ document.getElementById(l).classList.toggle('on', l===id); }); }
-function hideLayers(){ document.getElementById('menu').classList.remove('on'); document.getElementById('over').classList.remove('on'); }
+function showLayer(id){ ['menu','over','how','coach'].forEach(function(l){ document.getElementById(l).classList.toggle('on', l===id); }); }
+function hideLayers(){ ['menu','over','how','coach'].forEach(function(l){ document.getElementById(l).classList.remove('on'); }); }
 
 // verdancy segmented control
 var verSeg=document.getElementById('verSeg'), verDesc=document.getElementById('verDesc');
@@ -1499,7 +1532,7 @@ var STAGE_SHORT=['Greenhouse','Sunken Beds','Sundrift','Understory','Long Dark']
 var stageSeg=document.getElementById('stageSeg'), stageDesc=document.getElementById('stageDesc');
 var selStage=Math.min(store.stagesUnlocked-1, STAGES.length-1);
 function renderStageSeg(){ stageSeg.innerHTML=''; for(var i=0;i<STAGES.length;i++){ (function(i){ var locked=i>=store.stagesUnlocked; var b=document.createElement('button'); b.textContent=(locked?'🔒 ':'')+(STAGE_SHORT[i]||STAGES[i].name); if(locked){ b.disabled=true; } if(i===selStage) b.className='sel'; b.onclick=function(){ if(i>=store.stagesUnlocked) return; selStage=i; renderStageSeg(); }; stageSeg.appendChild(b); })(i); }
-  var st=STAGES[selStage]; stageDesc.textContent=st.name+' — '+st.flavor; }
+  var st=STAGES[selStage]; stageDesc.textContent=st.name+' · '+st.flavor; }
 renderStageSeg();
 
 // toggles
@@ -1512,7 +1545,22 @@ document.getElementById('playBtn').onclick=function(){ audio(); startGame(selVer
 document.getElementById('againBtn').onclick=function(){ startGame(G?G.verdancy:selVer, G?G.stageId:selStage); };
 document.getElementById('shareBtn').onclick=function(){ shareBramblewick(); };
 document.getElementById('menuBtn').onclick=function(){ G=null; showLayer('menu'); selStage=Math.min(selStage, store.stagesUnlocked-1); renderVerSeg(); renderStageSeg(); };
-function startGame(v,s){ hideLayers(); newGame(v, s||0); }
+
+// HOW TO PLAY panel (overlays the menu; closing returns to it)
+document.getElementById('howBtn').onclick=function(){ document.getElementById('how').classList.add('on'); };
+document.getElementById('howClose').onclick=function(){ document.getElementById('how').classList.remove('on'); };
+
+// one-time coach card before the very first planting (localStorage flag)
+var COACH_KEY='lw_bramblewick_coach1';
+var pendingStart=null;
+function coachSeen(){ try{ return !!localStorage.getItem(COACH_KEY); }catch(e){ return true; } }
+document.getElementById('coachBtn').onclick=function(){
+  try{ localStorage.setItem(COACH_KEY,'1'); }catch(e){}
+  var ps=pendingStart||[selVer,selStage]; pendingStart=null;
+  hideLayers(); newGame(ps[0], ps[1]||0); };
+function startGame(v,s){
+  if(!coachSeen()){ pendingStart=[v,s||0]; document.getElementById('coach').classList.add('on'); return; }
+  hideLayers(); newGame(v, s||0); }
 
 /* ==================================================================
    DEV BRIDGE (?bramblewicktest=1)
