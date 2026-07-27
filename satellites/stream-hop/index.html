@@ -66,6 +66,20 @@
     localStorage.setItem('sh_bootlog',JSON.stringify(log)); }catch(e){}};
   window._bootClean=function(){ log.c=1; window._bootMark('clean'); };
   window._bootMark('html');
+  /* ⛔ NAME THE KILLER (2026-07-27). The signed-in lockout's breadcrumb trail is
+     [html, sdk-tag, sb-ready-in, watchdog] — the main script dies at TOP LEVEL
+     before boot-in, with no marker saying where. These two listeners put the
+     exact message + line into the trail, so the early report carries the
+     autopsy, not just the time of death. */
+  window.addEventListener('error',function(ev){ try{
+    var m=String(ev&&ev.message||'?').slice(0,90);
+    var f=String(ev&&ev.filename||'').split('/').pop().slice(0,30);
+    window._bootMark('err:'+m+' @'+f+':'+(ev&&ev.lineno||0)+':'+(ev&&ev.colno||0));
+  }catch(e){} });
+  window.addEventListener('unhandledrejection',function(ev){ try{
+    var r=ev&&ev.reason; var m=String(r&&(r.message||r)||'?').slice(0,90);
+    window._bootMark('rej:'+m);
+  }catch(e){} });
   /* ⛔ EARLY dead-boot report — from HERE, not only from a later healthy boot.
      The old report (still below, now a no-op backstop) waited for a GOOD boot,
      but when every reopen dies the only good boot comes from clearing browser
@@ -972,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.5';
+var BUILD='v7.6';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
