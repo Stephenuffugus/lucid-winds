@@ -32,7 +32,7 @@ var PRECACHE = [
   // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
   '/shared.css?v=20260718',
   '/play/shell.css?v=9',
-  '/play/shell.js?v=21',
+  '/play/shell.js?v=22',
   '/sunbeam-sdk.js?v=5'
 ];
 

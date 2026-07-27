@@ -1677,9 +1677,13 @@ document.addEventListener('click', function(e){
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       try {
-        navigator.serviceWorker.getRegistration().then(function (reg) {
-          if (!reg) navigator.serviceWorker.register('/sw.js').catch(function () {});
-        }).catch(function () {});
+        /* ⛔ VERSIONED URL, ALWAYS RE-REGISTERED (2026-07-27). The bare /sw.js
+           is edge-pinned for 7 DAYS (measured: max-age=604800, HIT, age 2.9d) —
+           a bare registration kept installed portals on the July-17 worker.
+           register() with the same URL is a no-op, with a new one it updates,
+           so calling it unconditionally is safe and re-points old installs.
+           Bump ?v= in lockstep with CACHE_VERSION in sw.js. */
+        navigator.serviceWorker.register('/sw.js?v=18').catch(function () {});
       } catch (e) {}
     });
   }

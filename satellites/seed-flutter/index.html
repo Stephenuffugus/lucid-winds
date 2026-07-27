@@ -1015,7 +1015,7 @@ $('buildstamp').textContent='Cosmic Cadets '+BUILD;
   // wire BOTH the title-screen and settings install buttons to one handler
   var btns=[]; ['b-install','b-install-title'].forEach(function(id){ var e=$(id); if(e)btns.push(e); });
   if(!btns.length)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=4'); }catch(e){} }
   function standalone(){
     return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)
         || !!window.navigator.standalone;
