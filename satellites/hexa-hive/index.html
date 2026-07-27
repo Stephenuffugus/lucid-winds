@@ -160,7 +160,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 function rnd(n){ return (Math.random()*n)|0; }
-var BUILD='v1.0';
+var BUILD='v1.1';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='hh_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -228,6 +228,8 @@ var queue=[];            // tray pieces {c,n}
 var selIdx=-1;
 var G=null;              // {mode, level, score, pops, quota, phase, hab, combo, clearT, celT}
 var parts=[], pops=[], bees=[];
+var FLY=null;            // live merge flight {anchor,color,group,chips,outMap,landed,t,settle}
+var rq=[], rGuard=0, resolveDone=null;  // cascade queue for the step resolver
 var running=false, lastTs=0;
 var LAY={ size:40, cx:270, cy:390, boardTop:100, boardBot:700, trayY:800 };
 
@@ -267,7 +269,7 @@ function newGame(mode){
 }
 function buildLevel(){
   layout();
-  board={}; parts=[]; pops=[]; selIdx=-1; G.phase='play'; G.combo=0;
+  board={}; parts=[]; pops=[]; selIdx=-1; FLY=null; rq=[]; resolveDone=null; G.phase='play'; G.combo=0;
   G.hab=HABITATS[(G.level-1)%HABITATS.length];
   G.quota = G.mode==='zen' ? 0 : (4 + G.level*2);
   G.pops = G.mode==='zen'? G.pops : 0;
@@ -292,22 +294,26 @@ function spawnBees(){ bees=[]; var n=2+rnd(2),i; for(i=0;i<n;i++) bees.push({ ph
 /* ============================ core: place + resolve ============================= */
 function anyEmptyCell(){ for(var i=0;i<CELLS.length;i++) if(isEmpty(CELLS[i].key)) return true; return false; }
 function placeAt(k){
-  if(!G||G.phase!=='play'||selIdx<0) return false;
+  if(!G||G.phase!=='play'||selIdx<0||FLY) return false;
   if(!VALID[k]||!isEmpty(k)) return false;
   var piece=queue[selIdx];
   board[k]={layers:[{c:piece.c, n:piece.n}]};
   queue.splice(selIdx,1); selIdx=-1; refillQueue();
   sfx('place');
   G.combo=0;
-  resolve([k]);
-  afterPlace();
+  startResolve([k], afterPlace);
   return true;
 }
-/* merge same-top-color connected groups onto the anchor; pop runs that reach POP; cascade */
-function resolve(seed){
-  var q=seed.slice(), guard=0;
-  while(q.length && guard++<3000){
-    var k=q.shift(); var cell=board[k]; if(!cell||!cell.layers.length) continue;
+/* merge same-top-color connected groups onto the anchor; pop runs that reach POP; cascade.
+   v1.1: merged chips FLY to the anchor one after another (cards-dealing stagger,
+   eased arc) with an ascending blip as each lands. Board state commits only when
+   the whole flight has landed, so an interrupted animation can never corrupt the
+   board; placing is locked while a flight is live (placeAt checks FLY). */
+function resolve(seed){ startResolve(seed, null); }
+function startResolve(seed, done){ rq=seed.slice(); rGuard=0; resolveDone=done; resolveStep(); }
+function resolveStep(){
+  while(rq.length && rGuard++<3000){
+    var k=rq.shift(); var cell=board[k]; if(!cell||!cell.layers.length) continue;
     var TC=topColor(cell);
     /* flood connected same-top-color */
     var group=[], seen={}, st=[k]; seen[k]=1;
@@ -316,20 +322,68 @@ function resolve(seed){
     }
     if(group.length<=1){
       /* single cell: just check if its top run already reached POP */
-      if(cell.layers.length && topLayer(cell).c===TC && topLayer(cell).n>=POP){ doPop(k); if(!isEmpty(k)) q.push(k); }
+      if(cell.layers.length && topLayer(cell).c===TC && topLayer(cell).n>=POP){ doPop(k); if(!isEmpty(k)) rq.push(k); }
       continue;
     }
-    /* merge: pull every group cell's top run onto the anchor (the just-changed cell k) */
-    var N=0, i; for(i=0;i<group.length;i++){ N+=topLayer(board[group[i]]).n; }
-    for(i=0;i<group.length;i++){ board[group[i]].layers.pop(); }
-    if(!board[k]) board[k]={layers:[]};
-    board[k].layers.push({c:TC, n:N});
-    sfx('merge');
-    /* revealed cells may now merge with their own neighbors — re-check them */
-    for(i=0;i<group.length;i++){ if(group[i]!==k && !isEmpty(group[i])) q.push(group[i]); }
-    if(N>=POP){ doPop(k); }
-    if(!isEmpty(k)) q.push(k);
+    beginTransfer(k, TC, group);
+    return; /* commitTransfer() re-enters resolveStep when every chip has landed */
   }
+  var d=resolveDone; resolveDone=null;
+  if(d) d();
+}
+/* visual y of the top chip of a stack, with `extra` chips added (+) or removed (-) */
+function visTopY(k, extra){
+  var c=cellByKey(k); if(!c) return LAY.cy;
+  var total=cellHeight(board[k])+(extra||0); if(total<1) total=1;
+  var s=LAY.size, shown=Math.min(total,14);
+  var step=Math.min(s*0.16,(s*0.9)/Math.max(1,shown));
+  return c.y + s*0.30 - (shown-1)*step;
+}
+function beginTransfer(anchor, TC, group){
+  var aCell=cellByKey(anchor);
+  var chips=[], i, j, idx=0, total=0;
+  for(i=0;i<group.length;i++){ if(group[i]!==anchor) total+=topLayer(board[group[i]]).n; }
+  var STAG=Math.min(0.055, 0.9/Math.max(1,total)), DUR=0.22;
+  for(i=0;i<group.length;i++){
+    var sk=group[i]; if(sk===anchor) continue;
+    var sc=cellByKey(sk), n=topLayer(board[sk]).n;
+    for(j=0;j<n;j++){
+      var sx=sc.x, sy=visTopY(sk,-j), tx=aCell.x, ty=visTopY(anchor, idx+1);
+      var dx=tx-sx, dy=ty-sy, dist=Math.sqrt(dx*dx+dy*dy);
+      chips.push({ src:sk, sx:sx, sy:sy, tx:tx, ty:ty,
+        mx:(sx+tx)/2, my:Math.min(sy,ty)-(26+dist*0.14),
+        delay:idx*STAG, dur:DUR, out:false, landed:false });
+      idx++;
+    }
+  }
+  FLY={ anchor:anchor, color:TC, group:group, chips:chips, outMap:{}, landed:0, t:0, settle:0.06 };
+}
+function updateFly(dt){
+  if(!FLY) return;
+  FLY.t+=dt;
+  var i, all=true;
+  for(i=0;i<FLY.chips.length;i++){ var ch=FLY.chips[i];
+    if(!ch.out && FLY.t>=ch.delay){ ch.out=true; FLY.outMap[ch.src]=(FLY.outMap[ch.src]||0)+1; }
+    if(!ch.landed){
+      if(FLY.t>=ch.delay+ch.dur){ ch.landed=true; FLY.landed++; blipLand(FLY.landed); }
+      else all=false;
+    }
+  }
+  if(all){ FLY.settle-=dt; if(FLY.settle<=0) commitTransfer(); }
+}
+/* ascending stretch: each consecutive landing blips a higher pitch, sliding up */
+function blipLand(i){ var n=Math.min(i,14), f=460+n*48; beep(f,0.07,'sine',0.09,f*1.35); }
+function commitTransfer(){
+  var F=FLY; FLY=null; if(!F) return;
+  var N=0, i;
+  for(i=0;i<F.group.length;i++){ var gc=board[F.group[i]]; if(gc&&gc.layers.length&&topColor(gc)===F.color){ N+=topLayer(gc).n; gc.layers.pop(); } }
+  if(!board[F.anchor]) board[F.anchor]={layers:[]};
+  board[F.anchor].layers.push({c:F.color, n:N});
+  /* revealed cells may now merge with their own neighbors — re-check them */
+  for(i=0;i<F.group.length;i++){ if(F.group[i]!==F.anchor && !isEmpty(F.group[i])) rq.push(F.group[i]); }
+  if(N>=POP){ doPop(F.anchor); }
+  if(!isEmpty(F.anchor)) rq.push(F.anchor);
+  resolveStep();
 }
 function doPop(k){
   var cell=board[k]; if(!cell||!cell.layers.length) return;
@@ -391,6 +445,8 @@ function render(){
   drawBees();
   /* chip stacks */
   for(i=0;i<CELLS.length;i++){ var c2=CELLS[i]; if(!isEmpty(c2.key)) drawStack(c2); }
+  /* chips flying between stacks during a merge */
+  if(FLY) drawFly();
   /* tray */
   drawTray();
   /* particles + pops */
@@ -435,6 +491,13 @@ function drawStack(c){
   var cell=board[c.key]; if(!cell) return; var s=LAY.size;
   /* flat chip list bottom->top */
   var chips=[], i,j; for(i=0;i<cell.layers.length;i++){ for(j=0;j<cell.layers[i].n;j++) chips.push(cell.layers[i].c); }
+  /* mid-flight visuals: departed chips leave the source, landed chips grow the anchor */
+  if(FLY){
+    var fo=FLY.outMap[c.key]||0;
+    if(fo>0) chips.length=Math.max(0, chips.length-fo);
+    if(c.key===FLY.anchor){ for(i=0;i<FLY.landed;i++) chips.push(FLY.color); }
+    if(!chips.length) return;
+  }
   var total=chips.length; var shown=Math.min(total,14);
   var step=Math.min(s*0.16, (s*0.9)/Math.max(1,shown));
   var rx=s*0.6, ry=s*0.28;
@@ -445,10 +508,28 @@ function drawStack(c){
     ctx.fillStyle=col.b; ctx.beginPath(); ctx.ellipse(c.x, y, rx, ry, 0,0,6.2832); ctx.fill();
     ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(c.x-rx*0.3, y-ry*0.35, rx*0.42, ry*0.34, 0,0,6.2832); ctx.fill();
   }
-  /* top-run count */
-  var tl=topLayer(cell); if(tl){ var topY=baseY-(shown-1)*step;
+  /* top-run count (counted from the drawn chips so mid-flight numbers stay honest) */
+  var runN=0, lastC=chips[chips.length-1];
+  for(i=chips.length-1;i>=0&&chips[i]===lastC;i--) runN++;
+  if(runN>0){ var topY=baseY-(shown-1)*step;
     ctx.fillStyle='#1a1206'; ctx.font='800 '+Math.round(s*0.34)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(''+tl.n, c.x, topY-1); }
+    ctx.fillText(''+runN, c.x, topY-1); }
+}
+/* chips in flight between stacks: eased quadratic arc, slight mid-air swell */
+function drawFly(){
+  var s=LAY.size, rx=s*0.6, ry=s*0.28, col=COLORS[FLY.color], i;
+  for(i=0;i<FLY.chips.length;i++){ var ch=FLY.chips[i];
+    if(!ch.out||ch.landed) continue;
+    var u=clamp((FLY.t-ch.delay)/ch.dur,0,1);
+    var e=u<0.5? 2*u*u : 1-Math.pow(-2*u+2,2)/2;
+    var v=1-e;
+    var x=v*v*ch.sx + 2*v*e*ch.mx + e*e*ch.tx;
+    var y=v*v*ch.sy + 2*v*e*ch.my + e*e*ch.ty;
+    var sc=1+0.22*Math.sin(Math.PI*e);
+    ctx.fillStyle=col.d; ctx.beginPath(); ctx.ellipse(x, y+ry*0.42*sc, rx*sc, ry*sc, 0,0,6.2832); ctx.fill();
+    ctx.fillStyle=col.b; ctx.beginPath(); ctx.ellipse(x, y, rx*sc, ry*sc, 0,0,6.2832); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.ellipse(x-rx*0.3*sc, y-ry*0.35*sc, rx*0.42*sc, ry*0.34*sc, 0,0,6.2832); ctx.fill();
+  }
 }
 function drawTray(){
   var n=3, gap=14, tw=Math.min(120, (VW-40-gap*2)/3), ty=LAY.trayY, s=Math.min(38, tw*0.44);
@@ -503,6 +584,7 @@ function loop(ts){
   if(!running) return;
   var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
   if(G && G.phase==='clear'){ G.celT=(G.celT||0)+dt; }
+  if(FLY) updateFly(dt);
   var i; for(i=0;i<bees.length;i++) bees[i].ph+=bees[i].sp*dt;
   for(i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=360*dt; p.life-=dt*0.85; if(p.life<=0) parts.splice(i,1); }
   for(i=pops.length-1;i>=0;i--){ pops[i].t+=dt; if(pops[i].t>=pops[i].dur) pops.splice(i,1); }
@@ -611,6 +693,7 @@ if(/[?&]hhtest=1/.test(location.search)){
     select:function(i){ selIdx=i; }, place:function(k){ selIdx=(selIdx<0?0:selIdx); return placeAt(k); },
     setCell:function(k,layers){ board[k]={layers:layers.map(function(a){return {c:a[0],n:a[1]};})}; },
     resolve:function(k){ resolve([k]); }, topColor:function(k){ return topColor(board[k]); }, height:function(k){ return cellHeight(board[k]); },
+    fly:function(){ return FLY?{ anchor:FLY.anchor, landed:FLY.landed, total:FLY.chips.length, t:FLY.t }:null; },
     anyEmpty:anyEmptyCell, advance:advance, over:gameOver, phase:function(){ return G?G.phase:null; },
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_hexa-hive')||'{}'); }catch(e){ return {}; } }
   };

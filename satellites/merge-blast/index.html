@@ -161,7 +161,7 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.0";
+var BUILD="v1.1";
 /* ---------- sunbeam earn hook (30/day cap) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0; try{ var k='sw_sb_mergeblast'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){} var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0; s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){} if(granted>0&&window.Sunbeam&&Sunbeam.earn)Sunbeam.earn(granted,tag)['catch'](function(){}); return granted; };
 
@@ -244,6 +244,15 @@ function newGame(mode){
      games opened with no 2 tile at all (Jessie 7/16) */
   for(r=0;r<ROWS;r++){ G.grid.push([]); for(c=0;c<COLS;c++){ var x=rng(); G.grid[r].push(x<0.5?1:(x<0.8?2:3)); } }
   ensureGroup();
+  /* every "biggest/best" display (zen HUD, make-goal progress, result pill, share)
+     reads bigE, but it started at 1 ("biggest 2") while the opening board visibly
+     seeds 8 tiles — seed it from the board so screens match what the player sees.
+     maxE follows silently (no celebrate) so the title stamp cannot read lower
+     than a result screen just did. */
+  var mx=1;
+  for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(G.grid[r][c]>mx)mx=G.grid[r][c]; }
+  G.bigE=mx;
+  if(mx>PROG.maxE){ PROG.maxE=mx; saveProg(); }
   if(mode==='journey') setGoal();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
 }
@@ -329,12 +338,20 @@ function refill(){
 /* ---------- goals (journey) ---------- */
 function setGoal(){
   var lvl=G.level, kind=lvl%3;
-  if(kind===0)      G.goal={t:'make', e:4+Math.floor(lvl/6), txt:''};
+  /* level-goal consistency (playtest 7/26): the make target must always sit ABOVE
+     the run's current best. The bare ladder re-issued "Make a 16" at level 4 while
+     the HUD progress (run-wide bigE) already read "best 64", so the shown goal was
+     below the shown progress and any merge completed it. bigE now drives both the
+     progress display and the target floor; the win check is unchanged. */
+  if(kind===0)      G.goal={t:'make', e:Math.max(4+Math.floor(lvl/6), G.bigE+1), txt:''};
   else if(kind===1) G.goal={t:'clear', n:26+lvl*4, got:0, txt:''};
   else              G.goal={t:'score', s:900*(1+Math.floor(lvl/3)), base:G.score, txt:''};
   if(G.goal.t==='make') G.goal.txt='Make a '+labelOf(G.goal.e);
   if(G.goal.t==='clear') G.goal.txt='Blast '+G.goal.n+' tiles';
-  if(G.goal.t==='score') G.goal.txt='Score '+G.goal.s.toLocaleString();
+  /* "more" because the win check is score gained THIS level (base-relative), while
+     the header right above shows the run total — "Score 900" next to a 12,000
+     header read as already done */
+  if(G.goal.t==='score') G.goal.txt='Score '+G.goal.s.toLocaleString()+' more';
 }
 function checkGoal(mergedE, clearedN){
   if(!G.goal)return;
@@ -512,7 +529,7 @@ $('buildstamp').textContent='Merge & Blast '+BUILD+' · level '+(PROG.level+1)+'
 /* ---------- add to home screen (Dewball pattern) ---------- */
 (function(){
   var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=6'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=7'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null;

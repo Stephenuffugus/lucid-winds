@@ -197,7 +197,7 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); if(id==='s-title'){ var rb=$('b-resume'); if(rb) rb.style.display=(G&&G.phase==='paused')?'flex':'none'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.2';
+var BUILD='v1.3';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='hg_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -346,7 +346,7 @@ function playRequest(){
 }
 function newGame(){
   layout();
-  G={ level:1, lives:3, score:0, scoreAtLevelStart:0, target:TARGET, pct:0, phase:'play', flash:0, cleanLevel:true };
+  G={ level:1, lives:3, score:0, scoreAtLevelStart:0, target:TARGET, pct:0, phase:'play', flash:0, cleanLevel:true, bankBest:0, replayLevel:0, clearedMax:0 };
   startLevel();
   show(null);
   running=true; lastTs=0; requestAnimationFrame(loop);
@@ -475,6 +475,10 @@ function levelClear(){
   G.phase='clear';
   var bonus=Math.round((G.pct*100))*G.level;
   G.score+=bonus;
+  /* replay score rule: keep best result. A replayed clear can only ever match
+     or beat the total banked when Replay was pressed, never lower it. */
+  if(G.replayLevel===G.level){ G.replayLevel=0; if((G.bankBest||0)>G.score) G.score=G.bankBest; }
+  if(G.level>(G.clearedMax||0)) G.clearedMax=G.level; // real clears this run; dying mid-replay cannot roll it back
   if(G.cleanLevel && G.lives<5){ G.lives++; }
   sfx('clear');
   // sunbeams
@@ -492,12 +496,14 @@ function levelClear(){
 }
 function gameOver(){
   G.phase='dead'; wall=null; running=false; sfx('over');
+  if((G.bankBest||0)>G.score) G.score=G.bankBest; // dying mid-replay never loses the total already banked
   if(G.score>BEST){ BEST=G.score; LS.set(K.best, ''+BEST); }
-  $('over-level').textContent=''+(G.level-1);
+  var gc=Math.max(G.clearedMax||0, G.level-1); // grounds actually cleared; a replay death cannot understate it
+  $('over-level').textContent=''+gc;
   $('over-score').textContent=''+G.score;
   $('over-best').textContent=''+BEST;
-  $('over-title').textContent=(G.level>1)?('You reclaimed '+(G.level-1)+' ground'+(G.level-1>1?'s':'')):'The pests held the bed';
-  $('over-emoji').innerHTML=(G.level>3)
+  $('over-title').textContent=(gc>0)?('You reclaimed '+gc+' ground'+(gc>1?'s':'')):'The pests held the bed';
+  $('over-emoji').innerHTML=(gc>2)
     ?'<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 50 C28 36 28 28 28 18" fill="none" stroke="#5c8f3f" stroke-width="3.5" stroke-linecap="round"/><path d="M28 26 C20 26 15 21 14 14 C22 14 27 19 28 26Z" fill="#7ab356"/><path d="M28 20 C36 20 41 15 42 8 C34 8 29 13 28 20Z" fill="#8fd06a"/></svg>'
     :'<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 50 C28 34 26 26 20 18" fill="none" stroke="#8a6a3c" stroke-width="3.5" stroke-linecap="round"/><path d="M20 18 C14 20 11 26 13 31 C19 30 22 24 20 18Z" fill="#a8763c"/><path d="M27 34 C33 33 36 29 36 24 C30 25 27 29 27 34Z" fill="#8f8a4a"/></svg>';
   var rb=$('over-retry'); if(rb){ rb.textContent='↻ Replay ground '+G.level; rb.style.display=(G.level>1)?'':'none'; }
@@ -509,13 +515,24 @@ function gameOver(){
 }
 function advance(){ if(!G||G.phase!=='clear') return; G.level++; G.scoreAtLevelStart=G.score; startLevel(); running=true; lastTs=0; requestAnimationFrame(loop); }
 function retryLevel(){ if(!G) return; G.lives=3; G.score=G.scoreAtLevelStart||0; startLevel(); show(null); running=true; lastTs=0; requestAnimationFrame(loop); }
+/* Replay the ground just cleared (Jessie playtest note). Banks the current total
+   first so the run score can only improve; persistent progress (hg_stats grounds
+   counter, skin unlocks, best score) is never touched or rolled back here. */
+function replayGround(){
+  if(!G||G.phase!=='clear') return;
+  if(G.score>(G.bankBest||0)) G.bankBest=G.score;
+  G.replayLevel=G.level;
+  G.score=G.scoreAtLevelStart||0;
+  startLevel();
+  if(!running){ running=true; lastTs=0; requestAnimationFrame(loop); }
+}
 /* fleet-standard share (built from the real run result).
    During the clear banner G.level IS the ground just cleared (advance() bumps it
    after); on the game-over screen G.level is the ground you died on, so cleared
    is level-1. */
 function shareHedgerow(){
   var g=0, sc=G?G.score:0;
-  if(G) g=(G.phase==='clear')?G.level:Math.max(0,G.level-1);
+  if(G) g=Math.max(G.clearedMax||0, (G.phase==='clear')?G.level:Math.max(0,G.level-1));
   var url="https://lucidwinds.com/satellites/hedgerow/";
   var txt="Hedgerow: I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
@@ -690,9 +707,13 @@ function buildClearBar(){
   var bar=document.createElement('div'); bar.id='clearbar';
   bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:90px;display:none;z-index:13;padding:9px 12px;gap:10px;align-items:stretch;justify-content:center;background:linear-gradient(0deg,#0a0d09 70%,#0a0d0900)';
   var next=document.createElement('button'); next.id='next-btn'; next.innerHTML='Next ground &#9654;';
-  next.style.cssText='flex:1.6;min-height:72px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#7ab356,#5c8f3f);color:#0c1207;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #3f6b34';
+  next.style.cssText='flex:1.3;min-height:72px;border-radius:14px;border:1px solid #8fd06a;background:linear-gradient(180deg,#7ab356,#5c8f3f);color:#0c1207;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #3f6b34';
   next.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); advance(); });
   bar.appendChild(next);
+  var rep=document.createElement('button'); rep.id='clear-replay-btn'; rep.innerHTML='&#8635; Replay';
+  rep.style.cssText='flex:1;min-height:72px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:17px;font-weight:700;cursor:pointer';
+  rep.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); replayGround(); });
+  bar.appendChild(rep);
   var sh=document.createElement('button'); sh.id='clear-share-btn'; sh.textContent='Share';
   sh.style.cssText='flex:1;min-height:72px;border-radius:14px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:16px;font-weight:700;cursor:pointer';
   sh.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); shareHedgerow(); });
@@ -838,6 +859,7 @@ if(/[?&]hgtest=1/.test(location.search)){
     floodClaim:floodClaim, recompute:recomputePct, render:render,
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_hedgerow')||'{}'); }catch(e){ return {}; } },
     phase:function(){ return G?G.phase:null; }, advance:advance, forceOver:gameOver, share:shareHedgerow,
+    replay:replayGround, bank:function(){ return G?{bankBest:G.bankBest||0, replayLevel:G.replayLevel||0, score:G.score, level:G.level}:null; },
     /* skins */
     skins:function(){ return SKINS.map(function(s){ return {id:s.id,name:s.name,owned:ownsSkin(s.id),premium:!!s.premium,sel:SK.sel===s.id}; }); },
     imgReady:function(){ return imgReady; }, imgSkin:function(){ return imgSkinLoaded; },

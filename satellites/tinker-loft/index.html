@@ -64,7 +64,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:790px; display
 #tray{flex:1; display:flex; gap:8px; overflow-x:auto; padding:4px 2px; align-items:center}
 .traybtn{flex:none; width:86px; min-height:118px; border-radius:14px; border:1px solid #ffffff26;
   background:#221808; color:var(--cream); display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:2px; padding:6px 2px}
+  justify-content:center; gap:2px; padding:6px 2px; touch-action:pan-x}
 .traybtn canvas{width:52px; height:52px}
 .traybtn .tn{font-size:.7rem; color:var(--cream)} .traybtn .tc{font-size:.78rem; color:var(--brass); font-weight:700}
 .traybtn.sel{border-color:var(--brass); background:#33240e; box-shadow:0 0 12px #c8a84b44}
@@ -142,7 +142,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
   <button class="btn" id="b-sandbox">&#129520; Sandbox</button>
   <button class="btn" id="b-zen">&#127769; Zen Loft</button>
   <div class="btnrow">
-    <button class="btn sm" id="b-ward">&#127913; Wardrobe</button>
+    <button class="btn sm" id="b-ward">&#128736; Tinker Shop</button>
     <button class="btn sm" id="b-how">&#10067; How</button>
   </div>
 </div>
@@ -168,7 +168,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 </div>
 
 <div class="screen" id="s-ward">
-  <h1 style="font-size:1.4rem">WARDROBE</h1>
+  <h1 style="font-size:1.4rem">TINKER SHOP</h1>
   <div class="tag">earned by tinkering &middot; no purchases, thresholds shown</div>
   <div id="wardbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <button class="btn sm" id="ward-back" style="margin-top:16px">&larr; back</button>
@@ -176,8 +176,8 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 
 <div class="screen" id="s-how">
   <h1 style="font-size:1.4rem">HOW TO TINKER</h1>
-  <p class="howp">Every machine gives you a <b>goal</b> and a tray of <b>parts</b>. Tap a part, tap the loft to place it, drag to fine tune, then press <b>RUN</b> and watch honest physics do the rest.</p>
-  <p class="howp"><b>Planks</b> are ramps (TILT cycles their angle). <b>Dominoes</b> topple in chains. <b>Fans</b> blow sideways, <b>balloons</b> only rise, <b>funnels</b> catch and drop, <b>seesaws</b> tip under weight, and <b>scissors</b> cut the nearest string when something rolls over them.</p>
+  <p class="howp">Every machine gives you a <b>goal</b> and a tray of <b>parts</b>. Drag a part straight from the tray onto the loft, or tap a part and then tap the loft. Drag placed parts to fine tune, grab either end of a plank to tilt it, then press <b>RUN</b> and watch honest physics do the rest.</p>
+  <p class="howp"><b>Planks</b> are ramps (drag an end to tilt them, or use the TILT button). <b>Dominoes</b> topple in chains. <b>Fans</b> blow sideways, <b>balloons</b> only rise, <b>funnels</b> catch and drop, <b>seesaws</b> tip under weight, and <b>scissors</b> cut the nearest string when something rolls over them.</p>
   <p class="howp"><b>The One Nudge:</b> while the machine runs you may tap ONCE anywhere. The nearest moving piece gets a small shove toward your finger. Some machines are built around that single tap. Clear a bench without spending it for a <b>&#9733; no-nudge star</b>.</p>
   <p class="howp"><b>Daily Contraption</b> is the same remix for every player with a streak to keep. <b>Sandbox</b> is a free build with every part. <b>Zen Loft</b> opens every bench with bottomless parts and endless nudges, and pays no sunbeams.</p>
   <button class="btn sm" id="how-back" style="margin-top:10px">&larr; back</button>
@@ -191,7 +191,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 (function(){
 "use strict";
 function $(id){ return document.getElementById(id); }
-var BUILD="1.0";
+var BUILD="1.1";
 
 /* ---------- fit stage ---------- */
 function fit(){ var w=window.innerWidth,h=window.innerHeight;
@@ -656,7 +656,7 @@ var WARD=[
 /* ---------- game state ---------- */
 var cv=$("game"), cx=cv.getContext("2d");
 var MODE="workshop", LVL=0, DEF=null, PARTS=[], SIM=null, PHASE="menu";
-var SEL=-1, PLACING=null, DRAG=null, DAILY=null, RUNEARN=0, FRAME=0;
+var SEL=-1, PLACING=null, DRAG=null, ROT=null, DAILY=null, RUNEARN=0, FRAME=0;
 var FX=[], TRAIL_PTS=[];
 var PARTORDER=['plank','marble','balloon','domino','fan','bucket','seesaw','scissors'];
 var PARTNAMES={plank:"Plank",marble:"Marble",balloon:"Balloon",domino:"Domino",fan:"Fan",bucket:"Funnel",seesaw:"Seesaw",scissors:"Scissors"};
@@ -681,9 +681,9 @@ function startLevel(i,mode){ MODE=mode||"workshop"; LVL=i; DEF=TL.cloneLevel(TL.
   DAILY=null; enterEdit(); }
 function startDaily(){ MODE="daily"; DAILY=TL.genDaily(dayCodeUTC()); DEF=DAILY.def; LVL=DAILY.baseIdx; enterEdit(); }
 function startSandbox(){ MODE="sandbox"; DEF=TL.cloneLevel(TL.SANDBOX); DEF.inv=TL.cloneInv(TL.SANDBOX.inv); DAILY=null; enterEdit(); }
-function enterEdit(){ PARTS=[]; SIM=null; PHASE="edit"; SEL=-1; PLACING=null; DRAG=null; RUNEARN=0; FX=[]; TRAIL_PTS=[];
+function enterEdit(){ PARTS=[]; SIM=null; PHASE="edit"; SEL=-1; PLACING=null; DRAG=null; ROT=null; TRAYDRAG=null; RUNEARN=0; FX=[]; TRAIL_PTS=[];
   show(null); buildTray(); updateHud(); $("hintbar").textContent=DEF.hint||""; toast(DEF.name); }
-function backToEdit(){ SIM=null; PHASE="edit"; SEL=-1; DRAG=null; FX=[]; TRAIL_PTS=[]; buildTray(); updateHud(); }
+function backToEdit(){ SIM=null; PHASE="edit"; SEL=-1; DRAG=null; ROT=null; FX=[]; TRAIL_PTS=[]; buildTray(); updateHud(); }
 
 function updateHud(){ $("h-name").textContent=DEF?DEF.name:"";
   $("h-goal").textContent=goalText(DEF);
@@ -705,7 +705,9 @@ function buildTray(){ var tr=$("tray"); tr.innerHTML=""; var i;
     var nm=document.createElement("div"); nm.className="tn"; nm.textContent=PARTNAMES[t];
     var ct=document.createElement("div"); ct.className="tc";
     b.appendChild(ic); b.appendChild(nm); b.appendChild(ct);
+    b.addEventListener("pointerdown",function(e){ trayDragStart(e,t); });
     b.addEventListener("click",function(){ if(PHASE!=='edit')return;
+      if(Date.now()-TRAYDROP_AT<400)return;
       if(invLeft(t)<=0){ toast("none left in the tray"); return; }
       PLACING=(PLACING===t)?null:t; SEL=-1; refreshTray(); sndPick(); });
     tr.appendChild(b);
@@ -799,17 +801,62 @@ function onDown(e){ e.preventDefault(); var p=evPos(e);
   if(PLACING){ if(tryPlace(PLACING,p.x,p.y,0)){ sndPlace(); SEL=PARTS.length-1;
       if(invLeft(PLACING)<=0)PLACING=null; refreshTray(); }
     else toast("no room there"); return; }
+  /* finger tilt (Jessie 7/16): grab either end of the selected plank to swing it.
+     Snaps to the same TL.ANGLES the TILT button uses, so physics stay identical. */
+  if(SEL>=0&&PARTS[SEL]&&PARTS[SEL].t==='plank'){ var rp=PARTS[SEL], ra=(rp.a||0)*Math.PI/180;
+    var ex=Math.cos(ra)*60, ey=Math.sin(ra)*60;
+    var d1x=p.x-(rp.x+ex), d1y=p.y-(rp.y+ey), d2x=p.x-(rp.x-ex), d2y=p.y-(rp.y-ey);
+    var q1=d1x*d1x+d1y*d1y, q2=d2x*d2x+d2y*d2y;
+    if(q1<34*34||q2<34*34){ ROT={i:SEL,end:(q1<=q2)?1:-1}; sndPick(); return; } }
   var h=hitPart(p.x,p.y);
   if(h>=0){ SEL=h; DRAG={i:h,ox:PARTS[h].x-p.x,oy:PARTS[h].y-p.y}; sndPick(); refreshTray(); }
   else { SEL=-1; refreshTray(); } }
-function onMove(e){ if(PHASE!=='edit'||!DRAG)return; e.preventDefault(); var p=evPos(e);
+function onMove(e){ if(PHASE!=='edit')return;
+  if(ROT){ e.preventDefault(); var rp2=PARTS[ROT.i];
+    if(!rp2||rp2.t!=='plank'){ ROT=null; return; }
+    var pr=evPos(e), ang=Math.atan2(pr.y-rp2.y,pr.x-rp2.x)*180/Math.PI;
+    if(ROT.end<0)ang+=180;
+    while(ang>90)ang-=180; while(ang<-90)ang+=180;
+    if(ang>45)ang=45; else if(ang<-45)ang=-45;
+    var bi=0,bd=1e9,k; for(k=0;k<TL.ANGLES.length;k++){ var df=Math.abs(TL.ANGLES[k]-ang); if(df<bd){ bd=df; bi=k; } }
+    rp2.a=TL.ANGLES[bi]; return; }
+  if(!DRAG)return; e.preventDefault(); var p=evPos(e);
   var pt=PARTS[DRAG.i], nx=p.x+DRAG.ox, ny=p.y+DRAG.oy;
   var others=PARTS.slice(0,DRAG.i).concat(PARTS.slice(DRAG.i+1));
   if(TL.validPlace(DEF,others,pt.t,nx,ny)){ pt.x=nx; pt.y=ny; } }
-function onUp(){ DRAG=null; }
+function onUp(){ DRAG=null; ROT=null; }
 cv.addEventListener("pointerdown",onDown);
 cv.addEventListener("pointermove",onMove);
 window.addEventListener("pointerup",onUp);
+
+/* ---------- finger drag from the tray (Jessie 7/16) ----------
+   Additive: pointerdown on a tray part, drag up onto the loft, release to place.
+   The ghost rides 56 stage px (about 40 rendered px) above the finger so the
+   thumb never hides it. Tap-a-part-then-tap-the-loft still works unchanged. */
+var TRAYDRAG=null, TRAYDROP_AT=0;
+function trayDragStart(e,t){ if(PHASE!=='edit')return; if(invLeft(t)<=0)return;
+  TRAYDRAG={t:t,sx:e.clientX,sy:e.clientY,x:0,y:0,live:false,ok:false}; }
+function trayDragMove(e){ if(!TRAYDRAG)return;
+  if(PHASE!=='edit'){ TRAYDRAG=null; return; }
+  if(!TRAYDRAG.live){ var mx=e.clientX-TRAYDRAG.sx, my=e.clientY-TRAYDRAG.sy;
+    if(my<-12&&Math.abs(my)>Math.abs(mx)){ TRAYDRAG.live=true; PLACING=null; SEL=-1; refreshTray(); sndPick(); }
+    else return; }
+  if(e.cancelable)e.preventDefault();
+  var p=evPos(e), gx=p.x, gy=p.y-56;
+  if(gx<34)gx=34; else if(gx>506)gx=506;
+  if(gy<44)gy=44; else if(gy>736)gy=736;
+  TRAYDRAG.x=gx; TRAYDRAG.y=gy;
+  TRAYDRAG.ok=p.y<790&&invLeft(TRAYDRAG.t)>0&&TL.validPlace(DEF,PARTS,TRAYDRAG.t,gx,gy); }
+function trayDragEnd(e){ if(!TRAYDRAG)return; var td=TRAYDRAG; TRAYDRAG=null;
+  if(!td.live||PHASE!=='edit')return;
+  TRAYDROP_AT=Date.now();
+  var p=evPos(e);
+  if(p.y>=790)return;
+  if(tryPlace(td.t,td.x,td.y,0)){ sndPlace(); SEL=PARTS.length-1; refreshTray(); }
+  else toast("no room there"); }
+window.addEventListener("pointermove",trayDragMove);
+window.addEventListener("pointerup",trayDragEnd);
+window.addEventListener("pointercancel",function(){ TRAYDRAG=null; });
 
 $("et-rot").addEventListener("click",function(){ if(SEL<0)return; var p=PARTS[SEL];
   if(p.t==='plank'){ var i=0,k; for(k=0;k<TL.ANGLES.length;k++)if(TL.ANGLES[k]===p.a)i=k;
@@ -1043,6 +1090,20 @@ function render(){
     for(i=0;i<PARTS.length;i++){ drawPartOnBoard(PARTS[i],false);
       if(i===SEL){ cx.save(); cx.strokeStyle="#c8a84b"; cx.setLineDash([4,4]);
         cx.strokeRect(PARTS[i].x-34,PARTS[i].y-34,68,68); cx.setLineDash([]); cx.restore(); } }
+    /* tilt handles on the selected plank */
+    if(SEL>=0&&PARTS[SEL]&&PARTS[SEL].t==='plank'){ var hp=PARTS[SEL], ha=(hp.a||0)*Math.PI/180;
+      var hx=Math.cos(ha)*60, hy=Math.sin(ha)*60, hk;
+      cx.save();
+      for(hk=-1;hk<=1;hk+=2){ cx.fillStyle="rgba(200,168,75,0.92)";
+        cx.beginPath(); cx.arc(hp.x+hk*hx,hp.y+hk*hy,9,0,7); cx.fill();
+        cx.strokeStyle="rgba(0,0,0,0.5)"; cx.lineWidth=1.5; cx.stroke();
+        cx.fillStyle="#171009"; cx.beginPath(); cx.arc(hp.x+hk*hx,hp.y+hk*hy,3,0,7); cx.fill(); }
+      cx.restore(); }
+    /* ghost part riding above the finger during a tray drag */
+    if(TRAYDRAG&&TRAYDRAG.live){ drawPartOnBoard({t:TRAYDRAG.t,x:TRAYDRAG.x,y:TRAYDRAG.y,a:0},true);
+      cx.save(); cx.setLineDash([4,4]); cx.lineWidth=2;
+      cx.strokeStyle=TRAYDRAG.ok?"#c8a84b":"#c96a5a";
+      cx.beginPath(); cx.arc(TRAYDRAG.x,TRAYDRAG.y,30,0,7); cx.stroke(); cx.setLineDash([]); cx.restore(); }
   } else if(SIM){
     for(i=0;i<SIM.strings.length;i++){ var st2=SIM.strings[i]; if(st2.cut)continue;
       var c2=SIM.circles[st2.ci]; drawString(st2.ax,st2.ay,c2.x,c2.y); }
@@ -1162,6 +1223,7 @@ if(/[?&]tltest=1/.test(location.search)){
       else startLevel(opts.level||0,'workshop');
       return true; },
     place:function(t,x,y,a){ var ok=tryPlace(t,x,y,a||0); if(ok)refreshTray(); return ok; },
+    parts:function(){ return JSON.parse(JSON.stringify(PARTS)); },
     applyProof:function(i){ startLevel(i,'workshop'); var pr=TL.PROOFS[i],k;
       for(k=0;k<pr.parts.length;k++){ var p=pr.parts[k]; tryPlace(p.t,p.x,p.y,p.a||0); }
       refreshTray(); return PARTS.length; },
