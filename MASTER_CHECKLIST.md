@@ -555,6 +555,15 @@ Ordered by value per hour of work.
   `index.html:1104` if Stephen wants it smaller). STILL OPEN: Blip's intro animation is
   skippy. Also noted: `art/tube_straight.png` and `art/tube_curve.png` are referenced
   nowhere in the code.
+- [ ] **FLAGSHIP: Litterbugs** — hashblock #2, bugs made of trash that BATTLE
+  (dumpster-king async fights). Brief written 2026-07-27:
+  `design-briefs/flagship-litterbugs.md`. ⛔ Stephen calls pending: battles
+  yes/no, tone, lock the name. No code before approval.
+- [ ] **FLAGSHIP: The Attic (Retro Attic collab)** — hashblock #3, one-of-one
+  fake vintage objects (records/VHS/cards), condition-grade rarity, parody text
+  engine, store as GPS dig site. Brief written 2026-07-27:
+  `design-briefs/flagship-attic.md`. ⛔ Stephen calls pending: name, launch
+  classes, what the store wants, paper text-engine taste test OK?
 - [ ] **Gnome Blitz** — new game, Dutch Blitz with garden gnomes.
 - [ ] **Scrabble Overturn / Scrabble UpWords** — new game ideas, unspecced.
 - [ ] **Nature Sound ID app** — needs an audio-fingerprint approach decision first; model on
