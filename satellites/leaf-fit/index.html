@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Leaf Fit">
-<title>Leaf Fit · Sky Wolf Studios</title>
+<meta name="apple-mobile-web-app-title" content="Tetroku">
+<title>Tetroku · Sky Wolf Studios</title>
 <!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
      link posted rendered as a bare grey box. Card art from the portal thumb. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
-<meta property="og:title" content="Leaf Fit">
-<meta property="og:description" content="Leaf Fit. Free to play at Sky Wolf Studios.">
+<meta property="og:title" content="Tetroku">
+<meta property="og:description" content="Tetroku. Free to play at Sky Wolf Studios.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/leaf-fit/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/leaf-fit/og/card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Leaf Fit">
-<meta name="twitter:description" content="Leaf Fit. Free to play at Sky Wolf Studios.">
+<meta name="twitter:title" content="Tetroku">
+<meta name="twitter:description" content="Tetroku. Free to play at Sky Wolf Studios.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/leaf-fit/og/card.jpg">
 
 <script src="/sunbeam-sdk.js?v=5"></script>
@@ -90,7 +90,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Leaf Fit</div>
+    <div class="title-word">Tetroku</div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Drag leaf sprigs onto the midnight trellis. Fill a whole <b class="hl">row</b>, <b class="hl">column</b>, or <b class="hl">3×3 patch</b> and it clears in a shower of pollen. Bank enough pollen and a <b class="hl">Bloom</b> saves you when the bed fills up. You only ever lose to your own play. Tap a sprig to turn it.</div>
     <div style="flex:1"></div>
@@ -187,7 +187,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.1';
+var BUILD='v1.2';
 var TESTMODE=/[?&]lftest=1/.test(location.search);
 
 /* board geometry (9x9 authentic Woodoku with 3x3 boxes) */
@@ -660,8 +660,8 @@ function renderWard(){ renderWardList('ward-leaves','leaf',LEAFSETS,PROG.leaf,fu
   renderWardList('ward-boards','board',BOARDS,PROG.board,function(v){PROG.board=v;}); }
 
 /* ---------- share ---------- */
-function shareIt(){ var url='https://lucidwinds.com/satellites/leaf-fit/'; var txt='I scored '+(PROG.best||0)+' on Leaf Fit 🧩 and grew '+(PROG.grewTotal||0)+' flowers. Play at '+url;
-  if(navigator.share){ navigator.share({title:'Leaf Fit',text:txt,url:url}).catch(function(){}); }
+function shareIt(){ var url='https://lucidwinds.com/satellites/leaf-fit/'; var txt='I scored '+(PROG.best||0)+' on Tetroku 🧩 and grew '+(PROG.grewTotal||0)+' flowers. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Tetroku',text:txt,url:url}).catch(function(){}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
 
 /* ---------- wire ---------- */
@@ -684,7 +684,7 @@ tap('go-share',function(){ sfx('ui'); shareIt(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-cb','cb'); wireToggle('tg-glow','glow');
-$('buildstamp').textContent='Leaf Fit '+BUILD;
+$('buildstamp').textContent='Tetroku '+BUILD;
 window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
 
 /* ---------- test hook ---------- */

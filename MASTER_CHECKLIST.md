@@ -772,9 +772,10 @@ not.** These are per-game and specific:
   grid as INVISIBLE unclearable cells that poisoned the board. Fixed; game-over
   check now rotation-aware (no premature end while a rotated fit exists); sage
   rotate-hint glyph when only a rotation fits.
-- [ ] **Leaf Fit rename — ⛔ STEPHEN PICKS.** Candidates from the sweep: Trellis
-  (matches in-game Daily/Zen Trellis), Sprig Fit, Leaf Lattice. Keep the leaf-fit
-  slug/URL either way (installed PWA + shared links).
+- [x] **Leaf Fit rename DONE — Stephen picked TETROKU (Tetris + Sudoku), 2026-07-27.**
+  All 11 display strings swapped (portal card + satellite title/OG/share/buildstamp),
+  BUILD bumped v1.1→v1.2. Slug/URL stays leaf-fit (installed PWA + shared links),
+  per the display≠slug pattern.
 - [x] **Merge & Blast level-goal consistency DONE, verified (2026-07-27 sweep).**
   Make-goals could sit BELOW shown progress ("Make a 16 (best 64)") and complete
   on any merge — targets now max(ladder, best+1); score goals say "Score N more"
