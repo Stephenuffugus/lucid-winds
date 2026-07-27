@@ -129,7 +129,7 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.0';
+var BUILD='v1.1';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='np_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -238,8 +238,21 @@ function spawnDoll(dx,dy){
   doll={ pts:pts, sticks:sticks, head:head, chest:chest, hips:hips, rest:0, t:0 };
 }
 function finalizeDrop(){ if((sess.dropEarned||0)>BESTDROP){ BESTDROP=sess.dropEarned; LS.set('np_bestdrop',''+BESTDROP); } }
-function dropDoll(){ finalizeDrop(); sess.dropEarned=0; sess.combo=0; sess.lastHit=-9; spawnDoll(clamp(dropX||270,WALL_L+40,WALL_R-40), CEIL+10); sfx('drop'); }
+function dropDoll(){ finalizeDrop(); runOver=null; sess.dropEarned=0; sess.combo=0; sess.maxCombo=0; sess.lastHit=-9; sess.lastDmgT=t; spawnDoll(clamp(dropX||270,WALL_L+40,WALL_R-40), CEIL+10); sfx('drop'); }
 var dropX=270;
+
+/* ============================ run end ============================= */
+/* A run ends when Clayton settles (rest) or goes 15s without taking any
+   damage (covers fan-float and slow-roll stalemates). Physics freezes so
+   the payout is final; the body stays as a freeze-frame under the card. */
+var runOver=null;
+function endRun(reason){
+  var wasBest=(sess.dropEarned||0)>BESTDROP;
+  finalizeDrop();
+  runOver={ reason:reason, earned:sess.dropEarned||0, maxCombo:sess.maxCombo||0, newBest:wasBest, t0:t };
+  if(wasBest){ burst(VW/2,VH*0.34,'#f5c04a',22); sfx('buy'); } else sfx('ui');
+}
+var roDropRect={x:VW/2-190,y:0,w:184,h:58}, roBuildRect={x:VW/2+6,y:0,w:184,h:58};
 
 /* ============================ physics ============================= */
 function integrate(){ var p,i,vx,vy; for(i=0;i<doll.pts.length;i++){ p=doll.pts[i];
@@ -300,6 +313,8 @@ function award(d){
   /* carnage combo: fast consecutive damage builds a coin multiplier */
   if(t-(sess.lastHit==null?-9:sess.lastHit) < 0.85) sess.combo=(sess.combo||0)+1; else sess.combo=1;
   sess.lastHit=t; sess.comboT=1.3;
+  if((sess.combo||0)>(sess.maxCombo||0)) sess.maxCombo=sess.combo;
+  sess.lastDmgT=t;
   var mult=1+Math.min(sess.combo,50)*0.05;                    /* up to ~3.5x */
   var earned=d*mult;
   sess.dmg+=earned; var c=Math.floor(earned); if(c>0){ COINS+=c; sess.dropEarned=(sess.dropEarned||0)+c; if(((t*30)|0)%2===0)sfx('coin'); if(COINS>BEST){ BEST=COINS; } }
@@ -338,6 +353,11 @@ function trayMaxScroll(){ return Math.max(0,(HAZTYPES.length+1)*CHW - VW); }
 function trayIdxAt(x){ return Math.floor((x+trayScroll)/CHW); }
 function placeHazAt(p){ if(!OWNED[mode] || p.y>=GY-4 || p.y<=CEIL) return; var yy=(mode==='spike'||mode==='spring')?clamp(p.y,CEIL,GY-13):p.y; haz.push(newHaz(mode,clamp(p.x,WALL_L+30,WALL_R-30),yy)); sfx('place'); }
 function onDown(e){ if(curScreen!==null) return; e.preventDefault(); var p=evPos(e);
+  if(runOver){
+    if(hitBtn(p, roDropRect)){ sfx('ui'); dropDoll(); return; }
+    if(hitBtn(p, roBuildRect)||t-runOver.t0>0.35){ sfx('ui'); runOver=null; doll=null; return; }
+    return;
+  }
   if(hitBtn(p, dropRect)){ dropDoll(); return; }
   if(hitBtn(p, resetRect)){ haz=[]; doll=null; sfx('place'); return; }
   if(hitBtn(p, undoRect)){ if(haz.length){ haz.pop(); sfx('place'); } return; }
@@ -388,6 +408,34 @@ function render(){
   drawHUD();
   drawCombo();
   drawTray();
+  if(runOver) drawRunOver();
+}
+function drawRunOver(){
+  var ro=runOver, cx=VW/2, py=VH*0.30, pw=420, ph=ro.maxCombo>=3?300:272, px=cx-pw/2;
+  var pop=clamp((t-ro.t0)/0.22,0,1); pop=1-(1-pop)*(1-pop);
+  ctx.save(); ctx.globalAlpha=pop*0.55; ctx.fillStyle='#000'; ctx.fillRect(0,0,VW,VH); ctx.globalAlpha=1;
+  ctx.translate(cx,py+ph/2); ctx.scale(0.8+0.2*pop,0.8+0.2*pop); ctx.translate(-cx,-(py+ph/2));
+  ctx.globalAlpha=pop;
+  ctx.fillStyle='#1c130a'; rrect(px,py,pw,ph,22); ctx.fill();
+  ctx.strokeStyle='#5a4020'; ctx.lineWidth=3; rrect(px,py,pw,ph,22); ctx.stroke();
+  ctx.strokeStyle='rgba(245,192,74,0.35)'; ctx.lineWidth=1.5; rrect(px+7,py+7,pw-14,ph-14,16); ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#7cc25a'; ctx.font='800 30px system-ui';
+  ctx.fillText(ro.reason==='idle'?'CLAYTON GOT COMFY':'CLAYTON IS DOWN', cx, py+44);
+  var yy=py+96;
+  ctx.font='800 34px system-ui'; ctx.fillStyle='#f5c04a';
+  ctx.fillText('🪙 +'+ro.earned+' this drop', cx, yy); yy+=42;
+  if(ro.earned===0){ ctx.font='700 17px system-ui'; ctx.fillStyle='#c98a8a'; ctx.fillText('Not a scratch. Add more traps!', cx, yy); yy+=34; }
+  if(ro.maxCombo>=3){ ctx.font='800 18px system-ui'; ctx.fillStyle='#9fd67e'; ctx.fillText('best combo '+ro.maxCombo+'× carnage', cx, yy); yy+=30; }
+  ctx.font='700 16px system-ui'; ctx.fillStyle=ro.newBest?'#f5c04a':'#9a9078';
+  ctx.fillText(ro.newBest?'★ NEW BIGGEST DROP ★':'biggest drop 🪙 '+BESTDROP, cx, yy);
+  var by=py+ph-76; roDropRect.y=by; roBuildRect.y=by;
+  roDropRect.x=cx-190; roBuildRect.x=cx+6;
+  btnRect(roDropRect,'🟢 DROP AGAIN','#7cc25a','#0c1207');
+  btnRect(roBuildRect,'🔧 BUILD','#2a2110','#cbb88a');
+  ctx.font='600 12px system-ui'; ctx.fillStyle='#9a9078';
+  ctx.fillText('tap anywhere else to build', cx, py+ph-12);
+  ctx.restore(); ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
 function drawCombo(){
   if((sess.combo||0)<3 || sess.comboT<=0) return;
@@ -492,7 +540,9 @@ function rrect(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+
 
 /* ============================ loop ============================= */
 function loop(ts){ if(!running) return; var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts; t=ts/1000;
-  if(doll){ stepPhysics(); doll.t+=dt; /* rest detection */ var mv=0,i; for(i=0;i<doll.pts.length;i++)mv+=Math.abs(doll.pts[i].x-doll.pts[i].ox)+Math.abs(doll.pts[i].y-doll.pts[i].oy); if(mv<1.5)doll.rest=Math.min(1,doll.rest+dt); else doll.rest=0; }
+  if(doll&&!runOver){ stepPhysics(); doll.t+=dt; /* rest detection */ var mv=0,i; for(i=0;i<doll.pts.length;i++)mv+=Math.abs(doll.pts[i].x-doll.pts[i].ox)+Math.abs(doll.pts[i].y-doll.pts[i].oy); if(mv<1.5)doll.rest=Math.min(1.7,doll.rest+dt); else doll.rest=0;
+    if(doll.rest>=1.6 && doll.t>1.0) endRun('rest');
+    else if(doll.t>4 && t-(sess.lastDmgT||0)>15) endRun('idle'); }
   for(i=parts.length-1;i>=0;i--){ var p=parts[i]; if(p.boom){ p.rt+=dt; if(p.rt>=p.dur)parts.splice(i,1); continue; } p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.vx*=0.98; p.life-=dt*0.9; if(p.life<=0)parts.splice(i,1); }
   for(i=floats.length-1;i>=0;i--){ var f=floats[i]; f.y+=f.vy; f.life-=dt*1.1; if(f.life<=0)floats.splice(i,1); }
   if(sess.comboT>0){ sess.comboT-=dt; if(sess.comboT<=0) sess.combo=0; }
@@ -567,7 +617,7 @@ if(/[?&]nptest=1/.test(location.search)){
   window.NP_DEV={
     startGame:startGame, drop:dropDoll, render:render, stop:function(){ running=false; },
     step:function(n){ for(var i=0;i<(n||1);i++) stepPhysics(); return NP_DEV.state(); },
-    state:function(){ return { coins:COINS, dmg:Math.round(sess.dmg), hazards:haz.length, doll:doll?doll.pts.length:0, rest:doll?doll.rest:null, headY:doll?Math.round(doll.head.y):null, combo:sess.combo||0, dropEarned:sess.dropEarned||0, bestDrop:BESTDROP }; },
+    state:function(){ return { coins:COINS, dmg:Math.round(sess.dmg), hazards:haz.length, doll:doll?doll.pts.length:0, rest:doll?doll.rest:null, headY:doll?Math.round(doll.head.y):null, combo:sess.combo||0, dropEarned:sess.dropEarned||0, bestDrop:BESTDROP, runOver:runOver?{reason:runOver.reason,earned:runOver.earned,newBest:runOver.newBest}:null }; },
     setDropX:function(x){ dropX=x; }, place:function(tp,x,y){ if(OWNED[tp]) haz.push(newHaz(tp,x,y)); return haz.length; },
     clearHaz:function(){ haz=[]; }, give:function(c){ COINS+=c; }, own:function(tp){ OWNED[tp]=true; },
     owned:function(){ return OWNED; }, hazList:function(){ return haz.map(function(h){return h.t;}); },
