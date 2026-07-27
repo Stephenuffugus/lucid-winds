@@ -933,14 +933,14 @@ function card(g, isFeat){
   var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026072601'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
-    if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
+    if (g.thumb) shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
     else         shot = '<span class="ph">'+(g.ic||"🌿")+'</span>';
   }
   else if(extUrl && g[6]){
-    shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g[6])+'" onerror="_lwPh(this)">';
+    shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv(g[6])+'" onerror="_lwPh(this)">';
   }
   else { var ext = EXT[g[0]] || "png";
-         shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(SHOT+g[0]+'.'+ext)+'" onerror="_lwPh(this)">'; }
+         shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv(SHOT+g[0]+'.'+ext)+'" onerror="_lwPh(this)">'; }
   var fk = favKey(g, isFeat), fon = !!favMap()[fk];
   var favBtn = (hub || soon) ? '' :
     '<span class="fav-btn'+(fon?' on':'')+'" role="button" tabindex="0" aria-label="Favorite" aria-pressed="'+(fon?'true':'false')+'" data-fk="'+fk+'" onclick="return swsFavToggle(event,this)">'+(fon?'♥':'♡')+'</span>';
@@ -982,6 +982,37 @@ window.swsComingSoon = swsComingSoon;
 // at the top. The rest of FEATURED (the studio satellites — the "newest"
 // games) now renders inside the garden under the New tab, not a separate
 // strip, so the newest games are mixed in with the rest (see renderGarden).
+/* ── Old-iPad lifesaver (2026-07-27): loading="lazy" is IGNORED by Safari
+   before 15.4, so every thumbnail decoded at once and the tab hit Safari's
+   memory ceiling ("A problem repeatedly occurred"). Cards now render with
+   data-lwsrc and only get a real src as they approach the viewport
+   (IntersectionObserver, iOS 12.2+). If even THAT is missing, images load
+   in gentle batches so no single decode burst can kill the tab. */
+var _lwIO = null;
+function _lwLazyBoot(){
+  var imgs = document.querySelectorAll('img[data-lwsrc]');
+  if (!imgs.length) return;
+  function promote(im){ im.src = im.getAttribute('data-lwsrc'); im.removeAttribute('data-lwsrc'); }
+  // Observe the SIZED wrapper, not the img — a srcless img collapses to a
+  // 0x0 rect and the observer never sees it enter the viewport.
+  function wrapOf(im){ return (im.closest && im.closest('.shot')) || im.parentElement || im; }
+  if ('IntersectionObserver' in window) {
+    if (!_lwIO) _lwIO = new IntersectionObserver(function(es){
+      for (var i = 0; i < es.length; i++) if (es[i].isIntersecting) {
+        _lwIO.unobserve(es[i].target);
+        var im = es[i].target.querySelector ? es[i].target.querySelector('img[data-lwsrc]') : null;
+        if (im) promote(im);
+      }
+    }, { rootMargin: '700px 0px' });
+    for (var i = 0; i < imgs.length; i++) _lwIO.observe(wrapOf(imgs[i]));
+  } else {
+    var q = Array.prototype.slice.call(imgs);
+    var t = setInterval(function(){
+      for (var n = 0; n < 6 && q.length; n++) promote(q.shift());
+      if (!q.length) clearInterval(t);
+    }, 350);
+  }
+}
 (function(){
   var hubEntry = null;
   for (var i = 0; i < FEATURED.length; i++) {
@@ -989,6 +1020,7 @@ window.swsComingSoon = swsComingSoon;
   }
   var hubEl = document.getElementById('hub-card');
   if (hubEl) hubEl.innerHTML = hubEntry ? card(hubEntry, true) : '';
+  _lwLazyBoot();
 })();
 
 function renderGarden(cat){
@@ -1021,6 +1053,7 @@ function renderGarden(cat){
   }
   document.getElementById('garden').innerHTML =
     items.map(function(it){return card(it.g,it.feat);}).join('');
+  _lwLazyBoot();
 }
 /* ── SEARCH (Jessie 2026-07-14 + Stephen 2026-07-16) ─────────────────────
    One box over EVERYTHING (satellites + garden games), and it speaks
@@ -1110,6 +1143,7 @@ function searchGames(qraw){
   document.getElementById('garden').innerHTML = out.length
     ? out.map(function(it){return card(it.g,it.feat);}).join('')
     : '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
+  _lwLazyBoot();
 }
 (function(){
   var si=document.getElementById('gsearch'), t=0;
