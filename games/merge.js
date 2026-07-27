@@ -20,6 +20,15 @@ function GR(a){
   var MK='lw_merge_maxtile';
   function gMax(){try{return parseInt(localStorage.getItem(MK),10)||0;}catch(e){return 0;}}
   function sMax(v){try{if(v>gMax())localStorage.setItem(MK,String(v));}catch(e){}}
+  // Retroactive unlock credit: the maxtile key only exists since Jul 17, but
+  // best SCORE persists from Jul 03 — players who ground out big tiles on
+  // older builds deserve their themes. Minimum score to build tile T is
+  // T*(log2(T)-1); thresholds sit ~10% under that to credit 4-spawn luck.
+  (function(){
+    var s=0;try{s=parseInt(localStorage.getItem('lw_merge_best'),10)||0;}catch(e){}
+    var t=s>=18400?2048:s>=8300?1024:s>=3700?512:s>=1600?256:0;
+    if(t>gMax())sMax(t);
+  })();
   var _thCur=(function(){
     var k='grove';
     try{k=localStorage.getItem('lw_merge_theme')||'grove';}catch(e){}
