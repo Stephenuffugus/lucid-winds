@@ -104,10 +104,10 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .enemy .en-name{font-size:12px; font-weight:800; text-align:center; margin:2px 0; color:var(--cream)}
 .enemy .intent{position:absolute; top:-9px; right:-6px; background:#1a1410; border:1px solid var(--line); border-radius:12px;
   padding:2px 8px; font-size:12px; font-weight:800; display:flex; gap:3px; align-items:center}
-.enemy .en-shield{position:absolute; top:-9px; left:-6px; background:#12233a; border:1px solid var(--shield); color:var(--shield); border-radius:12px; padding:2px 7px; font-size:11px; font-weight:800}
-.hpbar{height:12px; border-radius:7px; background:#0a0d08; overflow:hidden; margin-top:4px; border:1px solid #0006; position:relative}
+.enemy .en-shield{position:absolute; top:-9px; left:-6px; background:#12233a; border:1px solid var(--shield); color:var(--shield); border-radius:12px; padding:2px 7px; font-size:0.7rem; font-weight:800}
+.hpbar{height:14px; border-radius:7px; background:#0a0d08; overflow:hidden; margin-top:4px; border:1px solid #0006; position:relative}
 .hpbar > i{display:block; height:100%; background:linear-gradient(90deg,#d8564a,#e8823a); transition:width .3s}
-.hpbar > span{position:absolute; inset:0; text-align:center; font-size:10px; font-weight:800; color:#fff; line-height:12px; text-shadow:0 1px 2px #000}
+.hpbar > span{position:absolute; inset:0; text-align:center; font-size:0.7rem; font-weight:800; color:#fff; line-height:14px; text-shadow:0 1px 2px #000}
 
 /* garden bar */
 .garden{padding:6px 14px 2px; flex-shrink:0}
@@ -115,7 +115,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .gicon{font-size:22px}
 .gbar{flex:1; height:18px; border-radius:10px; background:#0a0d08; overflow:hidden; position:relative; border:1px solid #0006}
 .gbar > i{display:block; height:100%; background:linear-gradient(90deg,#5c8f3f,#7ecb5a); transition:width .3s}
-.gbar > span{position:absolute; inset:0; text-align:center; font-size:11px; font-weight:800; line-height:18px; color:#fff; text-shadow:0 1px 2px #000}
+.gbar > span{position:absolute; inset:0; text-align:center; font-size:0.7rem; font-weight:800; line-height:18px; color:#fff; text-shadow:0 1px 2px #000}
 .blockchip{color:var(--shield); font-weight:800; font-size:14px; min-width:44px; text-align:right}
 .garden.targetable .gbar{box-shadow:0 0 0 2px #7ecb5a66; border-color:var(--heal)}
 .garden.targetable{cursor:pointer}
@@ -133,7 +133,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 @keyframes rolljig{0%{transform:rotate(-8deg) scale(.9)}50%{transform:rotate(8deg) scale(1.05)}100%{transform:none}}
 .die .sym{font-size:24px; line-height:1; font-weight:900}
 .die .val{font-size:13px; font-weight:900; color:var(--ink); margin-top:1px}
-.die .lbl{font-size:8px; color:#5a5238; letter-spacing:.3px; text-transform:uppercase; position:absolute; bottom:3px}
+.die .lbl{font-size:0.7rem; color:#5a5238; letter-spacing:.3px; text-transform:uppercase; position:absolute; bottom:3px}
 .t-thorn{color:var(--red)} .t-spread{color:var(--coral)} .t-heal{color:#3f8f3a} .t-bark{color:#3a72a8}
 .t-root{color:#7a3fb0} .t-wild{color:#b8901f} .t-blank{color:#8a8268}
 /* painted dice (die_<rarity>_<face>.png fills the chassis; value is a corner badge) */
@@ -145,7 +145,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .die.art .lbl{ color:#f0e8d4; text-shadow:0 1px 2px #000,0 0 3px #000; z-index:2; }
 .tray-ctrl{display:flex; gap:9px; margin-top:9px}
 .tray-ctrl .btn{margin:0}
-.reroll{flex:0 0 auto; min-width:120px}
+.reroll{flex:0 0 auto; width:auto; min-width:120px}
 .hint{text-align:center; font-size:12px; color:var(--muted); min-height:16px; margin-top:5px}
 
 /* reward */
@@ -164,8 +164,16 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 /* settings rows */
 .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 2px; border-bottom:1px solid #1c2416; max-width:420px; margin:0 auto; width:100%}
 .seg{display:flex; border:1px solid var(--line); border-radius:11px; overflow:hidden}
-.seg button{min-height:44px; min-width:56px; background:#0f150c; color:var(--muted); border:0; font-size:13px; font-weight:700; cursor:pointer; padding:0 10px}
+.seg button{min-height:48px; min-width:56px; background:#0f150c; color:var(--muted); border:0; font-size:13px; font-weight:700; cursor:pointer; padding:0 10px}
 .seg button.sel{background:var(--sage); color:#0c1207}
+
+/* first-run coach card */
+#coach{position:absolute; inset:0; z-index:60; background:rgba(5,7,4,.82); display:none; align-items:center; justify-content:center; padding:22px}
+#coach.on{display:flex}
+.coach-card{background:linear-gradient(180deg,#1a2415,#121a0f); border:1px solid var(--gold); border-radius:18px; padding:20px 18px; max-width:400px; width:100%; box-shadow:0 10px 40px #000c}
+.coach-card .coach-t{color:var(--gold); font-weight:900; font-size:19px; text-align:center; margin-bottom:10px}
+.coach-card p{font-size:14px; line-height:1.55; margin:0 0 10px}
+.coach-card .btn{margin-top:4px; min-height:52px}
 
 /* modal / toast */
 #toast{position:absolute; left:50%; bottom:96px; transform:translateX(-50%); background:#1a1410ee; border:1px solid var(--gold);
@@ -208,6 +216,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
     <div class="hdr"><button class="icobtn" id="map-quit">✕</button><h2 id="map-title">The Trellis</h2>
       <div class="coinpill">🪙 <span id="map-coins">0</span></div></div>
     <div class="garden" id="map-garden"></div>
+    <div class="hint">Tap the glowing floor to enter</div>
     <div class="scroll"><div id="map-list"></div></div>
   </div>
 
@@ -215,7 +224,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   <div class="screen" id="s-combat">
     <div id="combat">
       <div class="c-top">
-        <button class="icobtn" id="c-menu" style="width:40px;height:40px;font-size:16px">⏸</button>
+        <button class="icobtn" id="c-menu" style="font-size:16px">⏸</button>
         <div class="c-floor" id="c-floor">Floor 1</div>
         <div class="coinpill">🪙 <span id="c-coins">0</span></div>
       </div>
@@ -228,6 +237,17 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
           <button class="btn gold reroll" id="c-reroll">🎲 Reroll (1)</button>
           <button class="btn primary" id="c-end">End Turn ▸</button>
         </div>
+      </div>
+    </div>
+    <!-- one-time coach card -->
+    <div id="coach">
+      <div class="coach-card">
+        <div class="coach-t">Your first climb</div>
+        <p><b>Tap a die, then tap a target.</b></p>
+        <p><span class="t-thorn" style="font-weight:800">⚔ Thorn</span> and <span class="t-spread" style="font-weight:800">✸ Spread</span> strike pests. <span class="t-heal" style="font-weight:800">♥ Heal</span> and <span class="t-bark" style="font-weight:800">⛨ Bark</span> go to your garden.</p>
+        <p>The green <b>Resolve</b> bar is your life. If it empties, the climb ends.</p>
+        <p>The pill above each pest shows its <b>next move</b>. Block it with Bark or defeat the pest first, then press <b>End Turn</b>.</p>
+        <button class="btn primary" id="coach-ok">Got it</button>
       </div>
     </div>
   </div>
@@ -285,7 +305,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   </div>
 
   <div id="toast"></div>
-  <div class="buildstamp" id="buildstamp">v1.0</div>
+  <div class="buildstamp" id="buildstamp">v1.1</div>
 </div></div>
 
 <!-- ============================ ENGINE ============================ -->
@@ -444,7 +464,7 @@ return {mulberry32:mulberry32,hashSeed:hashSeed,DICE:DICE,ENEMIES:ENEMIES,RELICS
 'use strict';
 var $=function(id){ return document.getElementById(id); };
 var SYM={thorn:'⚔',spread:'✸',heal:'♥',bark:'⛨',root:'⊘',wild:'★',blank:'·'};
-var LBL={thorn:'Thorn',spread:'Spread',heal:'Heal',bark:'Bark',root:'Root',wild:'Wild',blank:'—'};
+var LBL={thorn:'Thorn',spread:'Spread',heal:'Heal',bark:'Bark',root:'Root',wild:'Wild',blank:'Blank'};
 var ARTV='?v=20260707sda';   // painted-art cache-bust
 
 /* ---------- persistence ---------- */
@@ -463,11 +483,11 @@ function reduced(){ return SET.reduce==='on'||(SET.reduce==='auto'&&mqReduce); }
 
 /* starter-dice unlocks purchasable in the Greenhouse */
 var UNLOCKS=[
-  {id:'nettle',type:'die',cost:120,name:'Nettle',emoji:'🌿',desc:'Aggressive thorn die — added to your starting set.'},
+  {id:'nettle',type:'die',cost:120,name:'Nettle',emoji:'🌿',desc:'Aggressive thorn die, added to your starting set.'},
   {id:'clover',type:'die',cost:120,name:'Clover',emoji:'🍀',desc:'Flexible Wild die for your starting set.'},
   {id:'vine',type:'die',cost:150,name:'Vine',emoji:'🍃',desc:'Control die (Root) for your starting set.'},
   {id:'toughroot',type:'buff',cost:200,name:'Hardy Roots',emoji:'💪',desc:'Permanently start every climb with +3 max Resolve.'},
-  {id:'endless',type:'endless',cost:400,name:'Endless Trellis',emoji:'♾️',desc:'Unlock Endless mode — climb forever, scaling harder each floor.'}
+  {id:'endless',type:'endless',cost:400,name:'Endless Trellis',emoji:'♾️',desc:'Unlock Endless mode: climb forever, scaling harder each floor.'}
 ];
 
 /* ---------- audio ---------- */
@@ -537,20 +557,22 @@ function renderMap(){
   if(curEl){ setTimeout(function(){ try{ curEl.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'}); }catch(e){ try{ curEl.scrollIntoView(); }catch(e2){} } },30); }
 }
 function enterNode(){ var node=RUN.nodes[POS];
-  if(node.type==='rest'){ var before=G.resolve; G.resolve=Math.min(G.maxResolve,G.resolve+6); toast('Rested — healed '+(G.resolve-before)+' Resolve'); sfx('heal');
+  if(node.type==='rest'){ var before=G.resolve; G.resolve=Math.min(G.maxResolve,G.resolve+6); toast('Rested: healed '+(G.resolve-before)+' Resolve'); sfx('heal');
     // rest also gives a small gift
     openReward(true); return; }
   CS=SD.startEncounter(G,node,RUN.scale||1); CS.rng=RUN._combatRng; CS.dmgBonus=RUN.dmgBonus||0; SD.newTurn(CS); SEL=-1;
   var df=(RUN.cycle||0)*12+node.floor;
-  $('c-floor').textContent = node.type==='boss'?('BOSS'+(RUN.cycle>0?' · Trellis '+(RUN.cycle+1):'')):((node.type==='elite'?'ELITE · Floor ':'Floor ')+df);
+  $('c-floor').textContent = node.type==='boss'?('BOSS'+(RUN.cycle>0?' · Trellis '+(RUN.cycle+1):'')):((node.type==='elite'?'ELITE · Floor ':'Floor ')+df+(MODE==='endless'?'':' of 12'));
   show('s-combat'); renderCombat(); sfx('roll');
+  if(!LS.get('sd_coach')){ $('coach').classList.add('on'); }
 }
+tap('coach-ok',function(){ $('coach').classList.remove('on'); LS.set('sd_coach','1'); });
 
 /* ---------- COMBAT RENDER ---------- */
 function renderGardenBar(container, targetable){
   var pct=Math.max(0,Math.round(G.resolve/G.maxResolve*100));
   container.className='garden'+(targetable?' targetable':'');
-  container.innerHTML='<div class="grow"><span class="gicon">🌱</span><div class="gbar"><i style="width:'+pct+'%"></i><span>'+Math.max(0,G.resolve)+' / '+G.maxResolve+'</span></div><span class="blockchip">'+(G.block>0?('⛨'+G.block):'')+'</span></div>';
+  container.innerHTML='<div class="grow"><span class="gicon">🌱</span><div class="gbar"><i style="width:'+pct+'%"></i><span>Resolve '+Math.max(0,G.resolve)+' / '+G.maxResolve+'</span></div><span class="blockchip">'+(G.block>0?('⛨'+G.block):'')+'</span></div>';
   if(targetable){ container.onclick=function(){ onTarget({kind:'garden'}); }; } else { container.onclick=null; }
 }
 function intentText(e){ if(!e.intent) return ''; var it=e.intent;
@@ -591,15 +613,15 @@ function renderCombat(){
 }
 function selectDie(i){ if(CS.dice[i].assigned) return; SEL=(SEL===i?-1:i); sfx('sel'); renderCombat(); }
 function updateHint(){ var h=$('c-hint');
-  if(SEL<0){ var un=CS.dice.filter(function(d){return !d.assigned;}).length; h.textContent = un? 'Tap a die, then a target — or End Turn':'All dice used — End Turn'; return; }
+  if(SEL<0){ var un=CS.dice.filter(function(d){return !d.assigned;}).length; h.textContent = un? 'Tap a die, then a target, or End Turn':'All dice used. Press End Turn'; return; }
   var d=CS.dice[SEL], t=d.face.t, ef=SD.faceValue(G,d.face);
-  if(t==='blank') h.textContent='Blank — reroll it, or End Turn';
-  else if(t==='thorn') h.textContent='Thorn '+ef.v+' — tap a pest to strike';
-  else if(t==='spread') h.textContent='Spread '+ef.v+' — tap any pest to hit ALL';
-  else if(t==='root') h.textContent='Root '+ef.v+' — tap a pest to weaken its attack';
-  else if(t==='heal') h.textContent='Heal '+ef.v+' — tap your garden';
-  else if(t==='bark') h.textContent='Bark '+ef.v+' — tap your garden to block';
-  else if(t==='wild') h.textContent='Wild — tap a pest to strike, or your garden to block';
+  if(t==='blank') h.textContent='Blank: reroll it or End Turn';
+  else if(t==='thorn') h.textContent='Thorn '+ef.v+': tap a pest to strike';
+  else if(t==='spread') h.textContent='Spread '+ef.v+': tap any pest to hit ALL';
+  else if(t==='root') h.textContent='Root '+ef.v+': tap a pest to weaken its attack';
+  else if(t==='heal') h.textContent='Heal '+ef.v+': tap your garden';
+  else if(t==='bark') h.textContent='Bark '+ef.v+': tap your garden to block';
+  else if(t==='wild') h.textContent='Wild: tap a pest to strike or your garden to block';
 }
 function updateTargets(){
   var d=(SEL>=0)?CS.dice[SEL]:null; var t=d?d.face.t:null;
@@ -655,16 +677,16 @@ function endlessCycle(){ RUN.cycle++; RUN.scale=1+0.3*RUN.cycle; RUN.dmgBonus=RU
   RUN.nodes=SD.makeRun(RUN.seed+'-c'+RUN.cycle).nodes; POS=0;
   G.resolve=Math.min(G.maxResolve,G.resolve+8);
   META.endlessBest=Math.max(META.endlessBest||0,RUN.cycle*12); saveMeta();
-  toast('Trellis '+(RUN.cycle+1)+' — climb on! The pests grow fiercer.'); sfx('reward');
+  toast('Trellis '+(RUN.cycle+1)+': climb on! The pests grow fiercer.'); sfx('reward');
   renderMap(); show('s-map');
 }
 function openReward(isRest){
   var opts=SD.rewardOptions(CS||{g:G}, RUN._combatRng);
-  var grid=$('reward-grid'); grid.innerHTML=''; $('reward-title').textContent=isRest?'Rest — pick a gift':'Choose a gift';
+  var grid=$('reward-grid'); grid.innerHTML=''; $('reward-title').textContent=isRest?'Rest: pick a gift':'Choose a gift';
   opts.forEach(function(opt){ var card=document.createElement('div'); card.className='rcard';
     var ri,rt,rd,rar='rar-common';
     if(opt.kind==='die'){ var d=SD.DICE[opt.id]; ri='🎲'; rt='New die: '+d.name; rar='rar-'+(d.rarity==='rare'?'rare':d.rarity==='uncommon'?'uncommon':'common');
-      rd=faceSummary(d)+(G.diceIds.length>=6?' — (dice full, replaces nothing)':''); }
+      rd=faceSummary(d)+(G.diceIds.length>=6?' (dice full, replaces nothing)':''); }
     else if(opt.kind==='relic'){ var r=SD.RELICS[opt.id]; ri=r.emoji; rt='Relic: '+r.name; rar='rar-rare'; rd=r.desc; }
     else if(opt.kind==='heal'){ ri='💚'; rt='Rejuvenate'; rd='Heal '+opt.v+' Resolve now.'; }
     else if(opt.kind==='maxhp'){ ri='🌳'; rt='Grow'; rd='+'+opt.v+' max Resolve (and heal it).'; }
@@ -715,7 +737,7 @@ function renderHub(){ $('hub-coins').textContent=META.coins;
     body.appendChild(card);
   });
 }
-function buyUnlock(u){ if(META.coins<u.cost){ toast('Not enough coins — keep climbing!'); sfx('lose'); return; }
+function buyUnlock(u){ if(META.coins<u.cost){ toast('Not enough coins. Keep climbing!'); sfx('lose'); return; }
   META.coins-=u.cost; if(u.type==='endless'){ META.endlessUnlocked=true; $('b-endless').disabled=false; } else META.unlocked[u.id]=true; saveMeta(); sfx('coin'); toast('Unlocked '+u.name+'!'); renderHub();
 }
 
@@ -735,14 +757,14 @@ function segRow(label, opts, cur, fn){ var row=document.createElement('div'); ro
 }
 function renderHow(){ $('how-body').innerHTML=
   '<div class="small" style="line-height:1.6;max-width:440px;margin:0 auto">'+
-  '<p><b class="gold">Goal:</b> climb 12 floors of the trellis and fell the boss that waits at the top (a different one each run). Your garden\'s <b>Resolve</b> (🌱) is your life — if it hits 0, the run ends.</p>'+
+  '<p><b class="gold">Goal:</b> climb 12 floors of the trellis and fell the boss that waits at the top (a different one each run). Your garden\'s <b>Resolve</b> (🌱) is your life. If it hits 0, the run ends.</p>'+
   '<p style="margin-top:12px"><b class="gold">Each turn</b> your plant dice roll. Tap a die, then tap a target:</p>'+
-  '<p style="margin-top:6px"><span class="t-thorn" style="font-weight:800">⚔ Thorn</span> — strike one pest. &nbsp; <span class="t-spread" style="font-weight:800">✸ Spread</span> — hit ALL pests.</p>'+
-  '<p><span class="t-heal" style="font-weight:800">♥ Heal</span> — restore Resolve. &nbsp; <span class="t-bark" style="font-weight:800">⛨ Bark</span> — block damage this turn.</p>'+
-  '<p><span class="t-root" style="font-weight:800">⊘ Root</span> — weaken a pest\'s attack. &nbsp; <span class="t-wild" style="font-weight:800">★ Wild</span> — strikes a pest like Thorn, or blocks like Bark.</p>'+
-  '<p style="margin-top:12px">Pests show their <b>intent</b> (top-right). Block or kill before they strike. You get a <b>reroll</b> each turn — select a die and hit Reroll.</p>'+
-  '<p style="margin-top:12px"><b class="gold">After each win</b>, draft a new die, a relic, or healing. Build a wild synergy — then start again. Coins buy permanent unlocks in the Greenhouse.</p>'+
-  '<p style="margin-top:12px" class="muted">Tip: turtling doesn\'t work — after turn 8 the pests grow furious and hit harder every turn. Push the pace.</p>'+
+  '<p style="margin-top:6px"><span class="t-thorn" style="font-weight:800">⚔ Thorn</span>: strike one pest. &nbsp; <span class="t-spread" style="font-weight:800">✸ Spread</span>: hit ALL pests.</p>'+
+  '<p><span class="t-heal" style="font-weight:800">♥ Heal</span>: restore Resolve. &nbsp; <span class="t-bark" style="font-weight:800">⛨ Bark</span>: block damage this turn.</p>'+
+  '<p><span class="t-root" style="font-weight:800">⊘ Root</span>: weaken a pest\'s attack. &nbsp; <span class="t-wild" style="font-weight:800">★ Wild</span>: strikes a pest like Thorn, or blocks like Bark.</p>'+
+  '<p style="margin-top:12px">Pests show their <b>intent</b> in the pill by their head: that is their next move. Block or kill before they strike. You get a <b>reroll</b> each turn: select a die and hit Reroll.</p>'+
+  '<p style="margin-top:12px"><b class="gold">After each win</b>, draft a new die, a relic, or healing. Build a wild synergy, then start again. Coins buy permanent unlocks in the Greenhouse.</p>'+
+  '<p style="margin-top:12px" class="muted">Tip: turtling does not work. After turn 8 the pests grow furious and hit harder every turn. Push the pace.</p>'+
   '</div>';
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

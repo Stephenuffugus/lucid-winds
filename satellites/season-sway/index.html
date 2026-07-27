@@ -46,7 +46,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:50px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #3a2c10, 0 0 26px #c8a84b44; letter-spacing:1px}
 .title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.ribbon{margin-top:16px; color:var(--cream); font-size:16px; opacity:.9; max-width:430px; line-height:1.5}
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
@@ -72,14 +72,14 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .wardcard.locked{opacity:.5}
 .wardcard.on{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
 .wardcard canvas{width:96px; height:64px; display:block; margin:0 auto 6px}
-.wardcard .wn{font-size:13px; font-weight:700; color:var(--cream)}
-.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.wardcard .wn{font-size:16px; font-weight:700; color:var(--cream)}
+.wardcard .wt{font-size:16px; color:var(--muted); margin-top:2px}
 .grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .go-big{font-size:26px; font-weight:800; color:var(--gold); line-height:1.1}
-.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.go-lab{font-size:16px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
 .sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
-.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:16px; margin-top:8px}
 .haiku{margin:8px 0; font-size:17px; line-height:1.6; color:var(--cream); font-style:italic; min-height:80px}
 </style>
 </head>
@@ -92,7 +92,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="title-word">Season Sway</div>
     <div class="title-sub">Sky Wolf Studios</div>
-    <div class="ribbon">A card game about tending one little garden. Swipe to answer each visitor and keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance for as many seasons as you can.</div>
+    <div class="ribbon">A card game about tending one little garden. Swipe each visitor's card left or right to answer, and keep <b class="hl">Sun, Rain, Soil</b> and <b class="hl">Wildlife</b> in balance for as many seasons as you can.</div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-year">🃏&nbsp; The Keeper's Year</button>
@@ -120,6 +120,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">2</div><div><b>How:</b> swipe each visitor's card <b>left or right</b> to answer them. As you drag, arrows over the meters show which ones that choice will move.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Watch for:</b> every 6 cards the <b>season turns</b>, and each season pushes one meter toward an edge. Balance ahead of it.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Keep:</b> every finished run grows a <b>keepsake bloom</b> and a haiku in your Grove, and earns sunbeams.</div></div>
+    <div class="helprow"><div class="hi">5</div><div><b>Modes:</b> <b>The Keeper's Year</b> runs until a meter breaks. <b>Daily Almanac</b> is one rewarded run per day, with the same cards for everyone. <b>Seed Vow</b> deals 18 cards and names one meter; answer in that meter's favor more than any other to keep the vow. <b>Zen Tending</b> never ends and earns no sunbeams, so just relax.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -138,10 +139,10 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- WARDROBE -->
   <div class="screen" id="s-ward"><div class="pad">
     <h2 class="sc-h">Wardrobe</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by tending. Tap to equip.</div>
-    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Card backs</div>
+    <div style="color:var(--muted);font-size:16px;margin-bottom:16px">Earn cosmetics by tending. Tap to equip.</div>
+    <div style="font-size:16px;color:var(--gold);font-weight:800;margin:6px 0 8px">Card backs</div>
     <div class="wardwrap" id="ward-backs"></div>
-    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Gardens</div>
+    <div style="font-size:16px;color:var(--gold);font-weight:800;margin:16px 0 8px">Gardens</div>
     <div class="wardwrap" id="ward-tables"></div>
     <div style="height:18px"></div>
     <button class="btn ghost sm" id="ward-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
@@ -150,7 +151,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- GROVE -->
   <div class="screen" id="s-grove"><div class="pad">
     <h2 class="sc-h">Your Grove</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="grove-sub">Every run you finish grows a keepsake bloom here.</div>
+    <div style="color:var(--muted);font-size:16px;margin-bottom:16px" id="grove-sub">Every run you finish grows a keepsake bloom here.</div>
     <div class="grovewrap" id="grove-wrap"></div>
     <div style="height:18px"></div>
     <button class="btn ghost sm" id="grove-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
@@ -163,7 +164,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <canvas id="go-plant" width="150" height="150" style="margin:6px auto"></canvas>
     <div style="font-size:16px;font-weight:800;color:var(--cream)" id="go-name">Keepsake Bloom</div>
     <div class="haiku" id="go-haiku"></div>
-    <div class="pill" id="go-best">best 0</div>
+    <div class="pill" id="go-best">Best 0</div>
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="height:10px"></div>
     <div class="stack">
@@ -183,7 +184,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.0';
+var BUILD='v1.1';
 var TESTMODE=/[?&]sstest=1/.test(location.search);
 
 /* layout */
@@ -386,7 +387,8 @@ var G=null, running=false, lastTs=0, curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
 function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
 
-var VOWS=[ {k:'sun',nm:'a Sun-bloom'}, {k:'rain',nm:'a Rain-bloom'}, {k:'soil',nm:'a Soil-bloom'}, {k:'wild',nm:'a Wildlife-bloom'} ];
+var VOWS=[ {k:'sun',nm:'Sun'}, {k:'rain',nm:'Rain'}, {k:'soil',nm:'Soil'}, {k:'wild',nm:'Wildlife'} ];
+function metName(k){ for(var i=0;i<MET.length;i++){ if(MET[i].k===k)return MET[i].nm; } return k; }
 
 function startGame(mode){
   var rng = mode==='daily'?mulberry32(dateSeed()) : mulberry32(Math.floor(Math.random()*1e9));
@@ -471,6 +473,7 @@ function endRun(brokeK){
   // zen earns nothing
   var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'seasonsway:'+G.mode)||0; }catch(e){} }
   G.sunAmt=granted; G.ended=win?'win':(brokeK?'broke':'rest'); G.brokeK=brokeK; G.vowKept=vowKept;
+  G.brokeHigh = brokeK ? (G.meters[brokeK]>=100) : false;
   save();
   sfx(win?'win':'end'); haptic(win?[10,40,10]:[12,60]);
   // brief ending beat then results
@@ -509,14 +512,14 @@ function render(){ if(!ctx||!G)return;
 }
 
 function drawHUD(sea){
-  ctx.textAlign='left'; ctx.fillStyle='#c8a84b'; ctx.font='700 14px system-ui';
-  ctx.fillText(sea.nm+'  ·  card '+(G.cardsPlayed+1), 66, 26);
-  ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui';
-  ctx.fillText(G.mode==='vow'?('Vow: '+G.vow.nm):('seasons '+G.seasonsSurvived), VW-66, 26);
+  ctx.textAlign='left'; ctx.fillStyle='#c8a84b'; ctx.font='700 17px system-ui';
+  ctx.fillText(G.mode==='vow'?sea.nm:(sea.nm+' · Card '+(G.cardsPlayed+1)), 90, 49);
+  ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 17px system-ui';
+  ctx.fillText(G.mode==='vow'?('Favor '+G.vow.nm+' · '+Math.max(0,G.cardLimit-G.cardsPlayed)+' left'):('Seasons '+G.seasonsSurvived), VW-90, 49);
   hudBtn(HB_MENU,'‹'); hudBtn(HB_RETRY,'↻');
 }
-var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
-function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+var HB_MENU={x:8,y:8,w:70,h:70}, HB_RETRY={x:VW-78,y:8,w:70,h:70};
+function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,14); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,14); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 30px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 function drawPlant(){ // grows with G.growth; color leans toward dominant so far
@@ -553,7 +556,7 @@ function drawMeters(){ var ks=['sun','rain','soil','wild']; var n=4; var pad=26;
     ctx.strokeStyle='rgba(232,220,200,0.35)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(barX-4,barTop+barH*0.5); ctx.lineTo(barX+barW+4,barTop+barH*0.5); ctx.stroke();
     // icon + label
     ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='16px system-ui'; ctx.fillText(m.gl, x+gw/2, MET_Y+22);
-    ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText(SET.cb?m.nm:m.L, x+gw/2, MET_Y+MET_H-8);
+    ctx.fillStyle='#8a9178'; ctx.font='700 17px system-ui'; ctx.fillText(SET.cb?m.nm:m.L, x+gw/2, MET_Y+MET_H-8);
     // directional preview arrow
     if(pend){ var d=pend.d[i]; if(d!==0){ ctx.fillStyle=d>0?'#9ad06b':'#e58f8f'; ctx.font='800 18px system-ui';
       ctx.fillText(d>0?'▲':'▼', barX+barW+16, barTop+barH*0.5+6); } }
@@ -581,12 +584,12 @@ function drawCard(){ if(!G.card)return;
   ctx.fillStyle=bk.ink; ctx.font='500 17px system-ui';
   wrap(G.card.q, 0, -CARD_H/2+130, CARD_W-56, 24);
   // choice hints
-  ctx.font='700 14px system-ui';
+  ctx.font='700 17px system-ui';
   ctx.textAlign='left'; ctx.fillStyle= dl>0.2?'#2b567c':'#6a5a3a'; ctx.fillText('◄ '+G.card.l.t, -CARD_W/2+18, CARD_H/2-20);
   ctx.textAlign='right'; ctx.fillStyle= dr>0.2?'#7a5a10':'#6a5a3a'; ctx.fillText(G.card.r.t+' ►', CARD_W/2-18, CARD_H/2-20);
   ctx.restore();
   // hint text
-  if(G.cardsPlayed<2 && Math.abs(G.dragX)<6){ ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(G.t*4); ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='700 14px system-ui'; ctx.fillText('swipe the card ◄ or ►', VW/2, CARD_CY+CARD_H/2+34); ctx.restore(); }
+  if(G.cardsPlayed<2 && Math.abs(G.dragX)<6){ ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(G.t*4); ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='700 17px system-ui'; ctx.fillText('Swipe the card ◄ or ►', VW/2, CARD_CY+CARD_H/2+34); ctx.restore(); }
 }
 function wrap(txt,cx,cy,maxw,lh){ var words=txt.split(' '), line='', y=cy, lines=[];
   for(var i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxw && line){ lines.push(line); line=words[i]+' '; } else line=test; } lines.push(line);
@@ -594,21 +597,21 @@ function wrap(txt,cx,cy,maxw,lh){ var words=txt.split(' '), line='', y=cy, lines
 
 function drawEnding(){ var a=Math.min(1,(G.endT||0)/0.5); ctx.save(); ctx.globalAlpha=0.5*a; ctx.fillStyle= G.ended==='win'?'#ffe9a8':'#0a0d0a'; ctx.fillRect(0,0,VW,VH); ctx.restore();
   ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='800 22px system-ui';
-  ctx.fillText(G.ended==='win'?'The vow is kept.':(G.brokeK?('The '+G.brokeK+' ran out.'):'The garden rests.'), VW/2, VH/2);
+  ctx.fillText(G.ended==='win'?'The vow is kept.':(G.brokeK?((G.brokeHigh?'Too much ':'Not enough ')+metName(G.brokeK)+'.'):'The vow was not kept.'), VW/2, VH/2);
   drawFlower(ctx, VW/2, VH/2-90, 1.6*a+0.2, G.keepSeed, G.dom, G.quality);
 }
 
 function showResults(){ G.phase='result';
-  $('go-title').textContent = G.ended==='win'?'The vow is kept!':(G.brokeK?'The garden rests':'A gentle close');
+  $('go-title').textContent = G.ended==='win'?'The vow is kept!':(G.brokeK?((G.brokeHigh?'Too much ':'Not enough ')+metName(G.brokeK)):'The vow was not kept');
   $('go-lab').textContent = G.seasonsSurvived+' season'+(G.seasonsSurvived===1?'':'s')+' tended · '+G.cardsPlayed+' cards';
   var c=$('go-plant'), g=c.getContext('2d'); g.clearRect(0,0,150,150); drawFlower(g,75,80,2.0,G.keepSeed,G.dom,G.quality);
   var names={sun:'Sunward Bloom',rain:'Rainkeep Bloom',soil:'Deeproot Bloom',wild:'Wildheart Bloom'};
   var tier=['a common keepsake','an uncommon keepsake','a fine keepsake','a rare keepsake','a radiant keepsake','a legendary keepsake'][Math.min(5,G.quality)];
   $('go-name').textContent = names[G.dom]+' · '+tier;
   $('go-haiku').innerHTML = G.haiku[0]+'<br>'+G.haiku[1]+'<br>'+G.haiku[2];
-  var best = G.mode==='vow'?('vows kept '+(PROG.bestVow||0)):('best seasons '+(PROG.bestSeasons||0));
+  var best = G.mode==='vow'?('Vows kept: '+(PROG.bestVow||0)):('Best seasons: '+(PROG.bestSeasons||0));
   $('go-best').textContent=best;
-  $('go-sun').textContent = G.sunAmt>0?('☀ +'+G.sunAmt+' sunbeams'):(G.mode==='zen'?'a cozy tending':(G.mode==='daily'?'daily already claimed':'☀ no sunbeams this run'));
+  $('go-sun').textContent = G.sunAmt>0?('☀ +'+G.sunAmt+' sunbeams'):(G.mode==='zen'?'Zen Tending earns no sunbeams':(G.mode==='daily'?'Daily sunbeams already claimed today':'☀ No sunbeams this run'));
   running=false; show('s-go');
 }
 
@@ -646,7 +649,7 @@ function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.
     var isObj=(b&&typeof b==='object'); var seed=isObj?(b.s>>>0):(b>>>0);
     var dom=isObj?(doms[b.d]||'soil'):doms[seed%4]; var q=isObj?Math.min(5,b.q||0):3;
     var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); drawFlower(g,35,40,1.3,seed,dom,q); host.appendChild(c); }
-  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='No blooms yet.'; host.appendChild(e); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:16px;padding:20px'; e.textContent='No blooms yet.'; host.appendChild(e); }
 }
 function wardCanvas(kind,it){ var c=document.createElement('canvas'); c.width=96; c.height=64; var g=c.getContext('2d');
   if(kind==='back'){ g.fillStyle=it.col; g.beginPath(); g.moveTo(30,6); g.arcTo(66,6,66,58,8); g.arcTo(66,58,30,58,8); g.arcTo(30,58,30,6,8); g.arcTo(30,6,66,6,8); g.closePath(); g.fill(); g.fillStyle=it.ink; g.font='20px system-ui'; g.textAlign='center'; g.fillText('❦',48,40); }

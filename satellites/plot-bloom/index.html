@@ -102,8 +102,11 @@ h2.sc-h{font-size:22px; color:var(--sage); font-weight:800; margin-bottom:4px; t
 #pb-coach.on{display:flex}
 .coach-card{background:linear-gradient(180deg,#141c0f,#0e140b); border:1px solid #2c3a1c; border-radius:18px; padding:24px 20px; max-width:400px; width:100%; text-align:center; box-shadow:0 12px 40px #000c}
 .coach-h{font-size:19px; font-weight:800; color:var(--sage); margin:8px 0 10px}
-.coach-b{font-size:14.5px; line-height:1.7; color:var(--cream); text-align:left}
+.coach-b{font-size:16px; line-height:1.6; color:var(--cream); text-align:left}
 .coach-b b{color:var(--gold)}
+.coach-nb{display:grid; grid-template-columns:repeat(3,32px); gap:4px; justify-content:center; margin:10px auto}
+.coach-nb i{width:32px; height:32px; border-radius:7px; background:#223618; border:1px solid #4f7d35; box-shadow:0 0 10px #7ab35633; font-style:normal}
+.coach-nb i.c{background:#141b0d; border-color:var(--gold); box-shadow:none; display:flex; align-items:center; justify-content:center; font-size:19px}
 /* grids for gallery/wardrobe */
 .gwrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:6px auto}
 .wcard{width:132px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:12px; text-align:center; cursor:pointer}
@@ -162,10 +165,14 @@ canvas.kc{background:#0c1208; border-radius:10px}
         <div><svg width="40" height="40" viewBox="0 0 56 56"><path d="M28 50 C28 36 28 28 28 18" fill="none" stroke="#5c8f3f" stroke-width="3.5" stroke-linecap="round"/><path d="M28 26 C20 26 15 21 14 14 C22 14 27 19 28 26Z" fill="#7ab356"/><path d="M28 20 C36 20 41 15 42 8 C34 8 29 13 28 20Z" fill="#8fd06a"/></svg></div>
         <div class="coach-h">Grow the happiest garden</div>
         <div class="coach-b">
-          <b>1.</b> Tap a piece in your hand at the bottom.<br>
-          <b>2.</b> Every square then shows the points that spot would earn. <b style="color:#a8e06a">Green</b> means good neighbors.<br>
-          <b>3.</b> The numbers show what a spot pays <b>right now</b>. The real game is planting so your <b>next</b> pieces have big numbers too.<br>
-          <b>4.</b> Big placements grow the plot, unlock new pieces, and can burst into a keepsake bloom.
+          <b>1.</b> Tap a piece in your hand, then tap a square to plant it.<br>
+          <b>2.</b> A piece's neighbors are the 8 squares touching it, corners included:
+        </div>
+        <div class="coach-nb"><i></i><i></i><i></i><i></i><i class="c">🌷</i><i></i><i></i><i></i><i></i></div>
+        <div class="coach-b">
+          <b>3.</b> Pick up a piece and every empty square shows the points it would earn there. <b style="color:#a8e06a">Green</b> squares sit beside pieces it loves, <b style="color:#e08a8a">red</b> beside pieces it clashes with. Your first piece pays 0 because nothing is beside it yet.<br>
+          <b>4.</b> Points are paid once, when you plant. But planted pieces keep working: they count as neighbors for everything planted beside them later. Plant where your next pieces will love the company.<br>
+          <b>5.</b> Fill the bar up top to grow the plot. Score 6 or more with one planting for a keepsake bloom.
         </div>
         <button class="btn primary" style="margin-top:16px" onclick="PB.coachDone()">Got it, let's plant</button>
       </div>
@@ -206,16 +213,19 @@ canvas.kc{background:#0c1208; border-radius:10px}
   <!-- HELP -->
   <div id="s-help" class="screen"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="ribbon" style="max-width:460px;text-align:left;line-height:1.6">
-      <b style="color:var(--sage)">Goal.</b> Fill the plot with good neighbors for the highest score. The squares show what each spot pays now, but the skill is planning ahead: a tree planted today can feed three placements tomorrow.<br>
-      <b style="color:var(--sage)">Plant.</b> Tap a piece in your hand, then tap a square. Once a piece is picked, every empty square shows the points that spot would earn.<br>
-      <b style="color:var(--sage)">Watch.</b> Points fill the bar at the top. The plot grows and new pieces join your hand.<br><br>
+    <div class="ribbon" style="max-width:460px;text-align:left;line-height:1.6;font-size:16px">
+      <b style="color:var(--sage)">Goal.</b> Fill the plot with pieces that love their neighbors and score as high as you can.<br>
+      <b style="color:var(--sage)">Plant.</b> Tap a piece in your hand, then tap an empty square. While a piece is picked up, every empty square shows the exact points it would earn there.<br>
+      <b style="color:var(--sage)">Neighbors.</b> A square's neighbors are the 8 squares touching it, corners included. A new piece earns points from each neighbor it loves and loses points for each neighbor it clashes with. Pieces two or more squares away pay nothing.
+      <div class="coach-nb"><i></i><i></i><i></i><i></i><i class="c">🌷</i><i></i><i></i><i></i><i></i></div>
+      <b style="color:var(--sage)">Plan ahead.</b> Points are paid once, the moment you plant. A planted piece still matters after that: it counts as a neighbor for everything planted beside it later. A pond planted today raises the numbers on the squares around it for the flowers, trees, and veg you plant tomorrow.<br>
+      <b style="color:var(--sage)">Grow.</b> Points fill the bar at the top. When it fills, the plot grows and new kinds of pieces join your hand.<br><br>
       <b style="color:var(--gold)">Who loves whom</b><br>
-      🌷 Flowers love 🐝 bees, 💧 ponds and 🪑 benches.<br>
+      🌷 Flowers love 🐝 hives, 💧 ponds and 🪑 benches.<br>
       🌳 Trees love benches and ponds but crowd other trees.<br>
-      💧 Ponds feed 🥕 veg. 🌿 Hedges shelter veg.<br>
-      🐝 Hives hate benches.<br><br>
-      Score <b class="hl">6 or more</b> on a single placement and it bursts into a <b class="hl">Harmony Bloom</b>, a keepsake flower for your Gallery.
+      💧 Ponds feed 🥕 veg but crowd other ponds. 🌿 Hedges shelter veg.<br>
+      🐝 Hives hate benches, and two hives quarrel.<br><br>
+      Score <b class="hl">6 or more</b> with one planting and it bursts into a <b class="hl">Harmony Bloom</b>, a keepsake flower for your Gallery.
     </div>
     <div class="settingline" style="margin-top:16px">Sound <div class="toggle" id="tg-sound" onclick="PB.tog('sound')"><b></b></div></div>
     <div class="settingline">Colourblind labels <div class="toggle" id="tg-cb" onclick="PB.tog('cb')"><b></b></div></div>
@@ -464,7 +474,7 @@ function render(){
   hint('');
 }
 var hintT=null;
-function hint(msg){ var h=$('pb-hint'); if(!h)return; if(msg){ h.textContent=msg; } else { h.textContent=(G && G.sel<0)?'Pick a piece, then tap a plot square.':'Tap a square. The numbers show the points.'; } }
+function hint(msg){ var h=$('pb-hint'); if(!h)return; if(msg){ h.textContent=msg; } else if(G && G.sel<0){ h.textContent='Pick a piece, then tap a plot square.'; } else if(G && G.placed===0){ h.textContent='All 0 for now. Points come from planting beside neighbors.'; } else { h.textContent='Tap a square. The numbers show the points.'; } }
 var toastT=null;
 function toast(msg){ var t=$('pb-toast'); if(!t)return; t.textContent=msg; t.classList.add('on'); if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('on');},1900); }
 function flashBloom(){ var f=$('bloomflash'); if(!f)return; f.style.transition='none'; f.style.opacity='0.9'; setTimeout(function(){ f.style.transition='opacity .6s'; f.style.opacity='0'; },30); }
