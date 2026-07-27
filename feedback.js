@@ -16,7 +16,11 @@
 (function () {
   if (window.LW_Feedback) return;
 
-  var ENDPOINT = window.LW_FB_ENDPOINT || '/api/feedback.php';
+  // 2026-07-27: reports now go to the swFeedback cloud function (Firestore
+  // queue + instant Discord ping) instead of /api/feedback.php — the PHP
+  // mail() route delivered to an inbox nobody watches, so player reports
+  // from the classics were effectively vanishing.
+  var ENDPOINT = window.LW_FB_ENDPOINT || 'https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback';
 
   function ctx(opts) {
     var g = window.LW_FB_CONTEXT || {};
@@ -156,18 +160,17 @@
       if (document.getElementById('lwfb-website').value) { close(); return; } // honeypot
       go.disabled = true; msg.className = 'lwfb-msg'; msg.textContent = 'Sending...';
 
+      // swFeedback wants {game, msg} — fold the form into one readable msg
+      var _name = (document.getElementById('lwfb-name').value || '').trim();
+      var _contact = (document.getElementById('lwfb-contact').value || '').trim();
+      var _game = (document.getElementById('lwfb-game').value || '').trim();
       var payload = {
-        type: state.type,
-        game: (document.getElementById('lwfb-game').value || '').trim(),
-        name: (document.getElementById('lwfb-name').value || '').trim(),
-        details: details,
-        contact: (document.getElementById('lwfb-contact').value || '').trim(),
-        website: '',
-        surface: c.surface,
-        account: c.account,
-        uid: c.uid,
-        version: c.version,
-        token: window.LW_FB_TOKEN || ''
+        game: _game || c.surface || 'unknown',
+        msg: '[' + state.type + '] ' + details +
+          (_name ? ' — from ' + _name : '') +
+          (_contact ? ' <' + _contact + '>' : '') +
+          (c.version ? ' (v' + c.version + ')' : '') +
+          (c.surface ? ' [' + c.surface + ']' : '')
       };
 
       var done = false;

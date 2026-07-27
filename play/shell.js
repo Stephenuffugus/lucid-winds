@@ -683,7 +683,7 @@
     }
     if (window.LW_Feedback) { go(); return; }
     var s = document.createElement('script');
-    s.src = '/feedback.js';
+    s.src = '/feedback.js?v=3';
     s.onload = go;
     s.onerror = function () { try { alert('Feedback is unavailable right now.'); } catch (e) {} };
     document.head.appendChild(s);
