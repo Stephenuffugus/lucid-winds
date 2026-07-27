@@ -312,8 +312,11 @@ items are marked here so nobody re-does them.
   source->anchor one at a time (55ms stagger, eased arc, capped ~1.1s) with an
   ascending WebAudio blip per landing; board commits only after the flight,
   input locked mid-flight; merge outcomes byte-identical (mid-flight screenshots
-  + lock/clear probes). NOTE: Hedgerow + Grubtrap are separate copies of this
-  engine and still teleport — same patch ports nearly verbatim if wanted.
+  + lock/clear probes). PORT NOTE RETRACTED, verified 2026-07-27: an agent
+  claimed Hedgerow + Grubtrap were engine copies that still teleport — FALSE.
+  Hedgerow is the JezzBall remake, Grubtrap is Inkbound (Rodent's Revenge);
+  the hex stack-merge engine exists ONLY in Hexa Hive (exhaustive grep for its
+  distinctive function names). Nothing anywhere teleports; no port exists to do.
 - [x] **Pop N Lock share button DONE, verified (commit dc270259).** Campaign +
   versus wins share a rival-naming brag (navigator.share + Copied! fallback),
   hidden on defeats/interim rounds/solo score. BUILD v1.6, sw v9.
@@ -771,26 +774,36 @@ not.** These are per-game and specific:
   on any merge — targets now max(ladder, best+1); score goals say "Score N more"
   matching the base-relative check; biggest-tile seeded from the opening board.
   5 live level completions verified; sw v7 lockstep.
-- [~] **Directions pages + readable fonts for every SATELLITE** — AUDITOR BUILT +
-  FLEET MEASURED (2026-07-27): scripts/satellite_ux_audit.js (rendered-px fonts,
-  pre-play directions detection incl. coach cards + onboarding decks, em-dashes;
-  83/83 satellites, 0 errors; JSON + table in the sweep report). QUEUES:
-  (a) 14 satellites with NO pre-play directions: star-field, stream-hop*,
-  pollen-panic, impossible-garden, petal-plunge, budburst, power-scalers,
-  flatulence-fighter, dewball, vinewinder, pong, bramblewick, pitbike-rally,
-  vine-runner* (*stream-hop lands on a splash; vine-runner paints directions on
-  canvas, DOM audit can't see them — verified by screenshot).
-  (b) Real-copy font offenders after excluding the buildstamp pattern:
-  pollen-panic worst (25 nodes of 8px mode descriptions), then line-loom daily
-  subtitle, frost-watch chip, hues, dewball, vinewinder, shell-shuffle, flipbook.
-  (c) em-dash games: hues FIXED 2026-07-27 (empty-state placeholder now blank,
-  not "BEST em-dash"); bramblewick + pitbike-rally folded into the directions
-  wave. ⛔ dragon-philosophy is a TRAP, own careful session: it is a vendored
-  MINIFIED React bundle with 38 em-dashes as its entire copy voice (card ability
-  text, log lines, coach copy), AND the log styling classifies entries by
-  startsWith("em-dash") - a blind sweep breaks the game. Fix belongs in its
-  source project or as a surgical string pass that preserves the turn-marker
-  prefix logic.
+- [~] **Directions pages + readable fonts for every SATELLITE** — DIRECTIONS HALF
+  DONE, verified (commit f9aec63c): all 12 real no-directions satellites now show
+  rules before play (star-field, pollen-panic, impossible-garden, petal-plunge,
+  budburst, power-scalers, flatulence-fighter, dewball, vinewinder, pong,
+  bramblewick, pitbike-rally), each re-gated through the auditor
+  (scripts/satellite_ux_audit.js) flipping to directions-found with 0 em-dashes.
+  vine-runner + stream-hop exempt with cause (canvas-painted directions /
+  Jimothy splash). Bonus fixes in the wave: pollen-panic's 25-node 8px font
+  rescue, vinewinder's 12-style font pass, flatulence-fighter's 9px label,
+  petal-plunge's tutorial made re-readable, pong's 48px back-x everywhere.
+  STILL OPEN (fonts half):
+  (b) Real-copy font offenders: line-loom daily subtitle, frost-watch chip,
+  hues, shell-shuffle, flipbook, dewball world-card sub-labels (8-9.6px),
+  star-field + impossible-garden title-screen smalls (~9-10.4px), pong menu
+  tagline, budburst dailyMeta. One batch, small surgical edits.
+  ⛔ STEPHEN RULING still needed: ~60 games' worst offender is the tiny
+  div#buildstamp version stamp (6.8-7.8px). Player copy that must hit the
+  0.7rem floor, or dev chrome the auditor should exempt?
+  (c) em-dash remainders: hues FIXED; bramblewick + pitbike-rally landing
+  copy FIXED in the wave. STILL OPEN: power-scalers has ~39 em-dashes on
+  deeper screens (race blurbs, battle log, reforge toasts); pitbike-rally has
+  runtime strings in src-dly17/ui.js (vendored module cache scheme: needs a
+  new src-<ver> dir copy, fix in external repo Stephenuffugus/skywolf-pitbike-rally
+  FIRST, then re-vendor — same for the HOW panel added here).
+  ⛔ dragon-philosophy TRAP unchanged: vendored MINIFIED React bundle, 38
+  em-dashes as its whole copy voice, log styling keyed on startsWith(em-dash);
+  own careful session or source-project fix.
+  NOTE for re-vendors: pollen-panic body edits + power-scalers three-way vendor
+  drift (arena/ vs play/ vs satellites/ now differ; satellite is newest) — port
+  or retire the stale copies.
   ⛔ STEPHEN RULING NEEDED: ~60 games' worst offender is the tiny div#buildstamp
   version stamp (6.8-7.8px). Player copy that must hit the 0.7rem floor, or dev
   chrome the auditor should exempt? One-line filter either way.

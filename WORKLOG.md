@@ -13,6 +13,31 @@ Rules for maintaining this file:
 
 ---
 
+## 2026-07-27 late — directions wave: 12 games get rules-before-play (f9aec63c)
+
+Second 13-agent wave off the fleet auditor's queue. All 12 real no-directions
+satellites now show a HOW affordance on the landing screen, each in its own
+game's style, each re-gated through scripts/satellite_ux_audit.js (all flipped
+to directions-found, 0 em-dashes, 0 parse errors): star-field, pollen-panic
+(+ the fleet's worst font rescue: 25 nodes of 8px mode copy raised to floor),
+impossible-garden, petal-plunge (mandatory tutorial finally re-readable),
+budburst (+ drag coach that pauses timed modes), power-scalers (agent caught
+its own wordmark-wrap regression and reverted its first placement),
+flatulence-fighter (had a great tutorial the DOM audit couldn't see; now also
+a quick rules card + Practice Run), dewball (sw v4 lockstep), vinewinder
+(+ 12-style font pass), pong (+ 48px back-x fleet-standard), bramblewick
+(+ full em-dash sweep incl. canvas graft banner), pitbike-rally (+ rotate
+overlay em-dash; deep vendored-module strings deferred to the external repo).
+The 13th agent VERIFIED the hexa-port claim before touching anything and
+retracted it: Hedgerow = JezzBall remake, Grubtrap = Inkbound; the stack-merge
+engine exists only in Hexa Hive; zero files changed. Also inline: hues
+empty-state dash removed; dragon-philosophy documented as a trap (38 em-dashes
+in a minified React bundle whose log styling keys on the em-dash character).
+Stephen's proportionality rule from tonight saved to memory: never full-audit
+a massive game for a simple change — grep to the surface.
+
+---
+
 ## 2026-07-27 evening — 12-agent checklist sweep (dinner window)
 
 12 parallel agents, one checklist item each, investigate-first with screenshot
