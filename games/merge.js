@@ -33,14 +33,27 @@ function GR(a){
     // 1.55x; the spill past the tile edge is transparent margin, and overflow
     // stays visible on the tile stack. Sheet themes keep 100%: their tile art is
     // painted to a deliberate size ladder (45%->90%) and must not be inflated.
-    if(_thCur.kind==='svg')return '<img src="assets/games/merge/plant-'+v+'.svg" style="width:100%;height:100%;object-fit:contain;pointer-events:none;transform:scale(1.55);transform-origin:center 58%" alt="">';
+    // Grove serves baked PNGs (scripts/bake_merge_tiles.js), not the raw SVGs:
+    // each plant SVG is ~400 paths + Gaussian blurs, and 16 of them re-rasterizing
+    // on every merge is what made the board crawl. Same art, bitmap decode.
+    if(_thCur.kind==='svg')return '<img src="assets/games/merge/plant-'+v+'.png" style="width:100%;height:100%;object-fit:contain;pointer-events:none;transform:scale(1.55);transform-origin:center 58%" alt="">';
     return '<img src="assets/games/merge/themes/'+_thCur.key+'/t'+v+'.png" style="width:100%;height:100%;object-fit:contain;pointer-events:none" alt="">';
   }
+  // Warm the current theme's 11 tile images up front — without this the first
+  // merge to each new value stalls on a network fetch mid-animation.
+  function _warm(){
+    var vals=[2,4,8,16,32,64,128,256,512,1024,2048];
+    for(var i=0;i<vals.length;i++){
+      var im=new Image();
+      im.src=_thCur.kind==='svg'?'assets/games/merge/plant-'+vals[i]+'.png':'assets/games/merge/themes/'+_thCur.key+'/t'+vals[i]+'.png';
+    }
+  }
+  _warm();
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
   // Best = best SCORE, persisted (2026-07-03: was best-tile-this-session,
   // reset to 2 on every new game — meaningless as a record).
   var BK='lw_merge_best',_recordThisGame=false;
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('R-over');if(o)o.remove();var th=document.getElementById('RThemeOv');if(th)th.remove();});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('R-over');if(o)o.remove();var th=document.getElementById('RThemeOv');if(th)th.remove();if(window._RmergeRs){window.removeEventListener('resize',window._RmergeRs);window._RmergeRs=null;}});
   function gBest(){try{return parseInt(localStorage.getItem(BK),10)||0;}catch(e){return 0;}}
   function sBest(v){try{localStorage.setItem(BK,String(v));}catch(e){}}
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">'+gBest()+'</strong>');mm(a);
@@ -83,7 +96,7 @@ function GR(a){
       var t=THEMES[i];
       var open=t.unlock<=mx;
       var pick=open&&t.wired;
-      var thumb=t.kind==='svg'?'<img src="assets/games/merge/plant-2048.svg" style="width:52px;height:52px;object-fit:contain">':(t.wired?'<img src="assets/games/merge/themes/'+t.key+'/t2048.png" style="width:52px;height:52px;object-fit:contain">':'<span style="font-family:\'Bebas Neue\',sans-serif;font-size:'+(open?'0.7rem':'1.05rem')+';color:var(--muted);letter-spacing:.05em">'+(open?'SOON':t.unlock)+'</span>');
+      var thumb=t.kind==='svg'?'<img src="assets/games/merge/plant-2048.png" style="width:52px;height:52px;object-fit:contain">':(t.wired?'<img src="assets/games/merge/themes/'+t.key+'/t2048.png" style="width:52px;height:52px;object-fit:contain">':'<span style="font-family:\'Bebas Neue\',sans-serif;font-size:'+(open?'0.7rem':'1.05rem')+';color:var(--muted);letter-spacing:.05em">'+(open?'SOON':t.unlock)+'</span>');
       var sub=pick?(t.key===_thCur.key?'in bloom now':'tap to plant this look')
         :(open?'unlocked · art arriving soon':'grow a '+t.unlock+' bloom to unlock');
       h+='<div onclick="'+(pick?'_RTheme(\''+t.key+'\')':'')+'" style="display:flex;align-items:center;gap:12px;background:rgba(18,24,16,.85);border:1px solid '+(t.key===_thCur.key?'var(--gold)':'rgba(74,124,53,.25)')+';border-radius:12px;padding:10px 14px;margin-bottom:10px;min-height:64px;'+(pick?'cursor:pointer':'opacity:.62')+'">';
@@ -106,6 +119,7 @@ function GR(a){
       if(THEMES[i].key===key&&THEMES[i].wired&&THEMES[i].unlock<=gMax()){
         _thCur=THEMES[i];
         try{localStorage.setItem('lw_merge_theme',key);}catch(e){}
+        _warm();
         _play('click');
         window._RThemeOv(0);
         fullRedraw();
@@ -118,15 +132,29 @@ function GR(a){
   var tiles=[];
   var tileId=0;
 
-  // Get pixel position for a grid index (0-15)
-  function posOf(idx){
-    var gap=parseFloat(getComputedStyle(bd).gap)||6;
-    var cellW=(bd.clientWidth-gap*3-parseFloat(getComputedStyle(bd).paddingLeft)*2)/4;
-    if(cellW<=0) cellW=60;
-    var pad=parseFloat(getComputedStyle(bd).paddingLeft)||8;
-    var col=idx%4, row=Math.floor(idx/4);
-    return {x:pad+col*(cellW+gap), y:pad+row*(cellW+gap), w:cellW};
+  // Get pixel position for a grid index (0-15). Board metrics are cached —
+  // the old version ran getComputedStyle twice per tile per move (up to ~32
+  // forced style recalcs a swipe). Cache invalidates on resize.
+  var _pm=null;
+  function _metrics(){
+    if(_pm)return _pm;
+    var cs=getComputedStyle(bd);
+    var gap=parseFloat(cs.gap)||6;
+    var pad=parseFloat(cs.paddingLeft)||8;
+    var cellW=(bd.clientWidth-gap*3-pad*2)/4;
+    if(cellW<=0)cellW=60;
+    _pm={gap:gap,pad:pad,w:cellW};
+    return _pm;
   }
+  function posOf(idx){
+    var m=_metrics();
+    var col=idx%4, row=Math.floor(idx/4);
+    return {x:m.pad+col*(m.w+m.gap), y:m.pad+row*(m.w+m.gap), w:m.w};
+  }
+  function _onRs(){_pm=null;fullRedraw();}
+  if(window._RmergeRs)window.removeEventListener('resize',window._RmergeRs);
+  window._RmergeRs=_onRs;
+  window.addEventListener('resize',_onRs);
 
   // Create a tile DOM element at grid index with value
   function mkTile(idx,val,animate){
@@ -230,9 +258,13 @@ function GR(a){
     return {result:res,moves:moves};
   }
 
-  // Main move function
+  // Main move function. A swipe that lands during the 160ms animation lock is
+  // QUEUED (last one wins) instead of eaten — dropped inputs were half of why
+  // fast play felt sluggish.
+  var pend=null;
   window._Rm=function(d){
-    if(ov||busy)return;
+    if(ov)return;
+    if(busy){pend=d;return;}
     var o=g.slice();
     var allMoves=[];
 
@@ -331,6 +363,7 @@ function GR(a){
       }
       if(go){ov=true;_e('game_loss');_play('lose');sm('🍂 No moves! '+sc);_sr('merge',{w:false,s:sc});_RGameOver();}
       busy=false;
+      if(pend&&!ov){var p=pend;pend=null;window._Rm(p);}else pend=null;
     },160);
   };
 
@@ -374,7 +407,7 @@ function GR(a){
   }
 
   // New game
-  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;_recordThisGame=false;
+  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;_recordThisGame=false;pend=null;
     var _ro=document.getElementById('R-over');if(_ro)_ro.remove();
     var _rbN=document.getElementById('Rb');if(_rbN)_rbN.textContent=String(gBest());else return;
     for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
