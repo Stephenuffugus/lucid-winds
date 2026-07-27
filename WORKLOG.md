@@ -13,6 +13,41 @@ Rules for maintaining this file:
 
 ---
 
+## 2026-07-27 — the haunted phone, solved for real (the service-worker HTTP-cache law)
+
+Stephen's decisive test: typed URL in incognito = fresh v22; portal / saved icons =
+old, with a flash of the old version first. That killed every device theory and
+exposed the real mechanism, in three measured layers:
+
+1. **`fetch(req)` inside a service worker is NOT "network"** — it consults the
+   browser HTTP cache first, and the host stamps HTML `stale-while-revalidate=86400`,
+   licensing a DAY-OLD page with no server round trip. Every "network-first" worker
+   (root, /play/, satellites) faithfully served stale HTML whose stale ?v= stamps
+   then fed cache-first game rules. Incognito has no worker and no cache — the only
+   fresh path. This is also the clear-data-works-then-breaks-again Jimothy cycle,
+   and likely the loud Petal Match player's "old version".
+2. **Fix shipped to all 12 workers** (root, play, chaff-wars, flipbook, merge-blast,
+   seed-flutter, slice-master, nectar-drop, ring-stacker, slice-3d, dewball,
+   stream-hop): navigations fetch `{cache:'no-cache'}` (304 when unchanged, costs
+   headers not bytes), redirects re-issued as real ones, every CACHE bumped so
+   activation purges poisoned copies — `38ff7809`, jimothy worker itself `9ea55e75`
+   (missed the stage list first push; caught by origin probe).
+3. **Bare sw.js URLs are edge-pinned 7 DAYS** (measured max-age=604800, HIT, age
+   2.9d — the July-17 worker). The "service workers are exempt" belief died too.
+   Every registration now carries a version bumped in lockstep with its CACHE, and
+   the portal re-registers UNCONDITIONALLY (the old `if(!reg)` guard could never
+   re-point an old install): portal /sw.js?v=18, LW app LW_VERSION 2026.07.27.01,
+   shells /play/sw.js?v=2 via shell.js?v=22 across all 66 (healing a 65-shell v19
+   drift), stream-hop SWV 71, 9 satellites versioned — `8c2017a6`.
+- All 12 registered keys curl-verified serving the new builds. New verification
+  rule: probe a deploy with `?probe=$RANDOM` BEFORE fetching the real versioned
+  key — fetching a new key early can pin old bytes under the new name.
+- Memory law rewritten: feedback_htaccess_does_not_deploy.md (third and final
+  version — the Jul 26 "dotfiles don't deploy" and "sw.js exempt" theories both
+  corrected).
+
+---
+
 ## 2026-07-26 — the big day: Petal Match finished, Jessie's list, the fleet sweep
 
 69 commits pushed to main. Checklist ran 121 open at breakfast, ~90 by night, every
