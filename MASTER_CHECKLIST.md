@@ -978,7 +978,35 @@ not.** These are per-game and specific:
 - [~] Pong Arena — landscape long-court still open (per-mode geometry + control remap)
 - [ ] Portal: live "N playing now" per game (needs presence; design first)
 - [ ] Portal search — "similar type" matching + her assistant-to-guide idea
-- [ ] Comet Cadets — alien level-worlds (water / fire poles / ice / tornado / rain / desert)
+- [x] **Cosmic Cadets sprite scaling FIXED 2026-07-28** (⚠️ display≠slug: the note
+  says "Comet Cadets", the game ships as **Cosmic Cadets** at
+  `satellites/seed-flutter/` — another [[reference_display_name_slug_map]] trap).
+  Stephen: "some sprites are smaller than others and dont seem to flow the same
+  as the starting sprite." Verified and measured, he was exactly right.
+  `drawSeed` called `_blit(im, x, y, 42)` — scale to a fixed FILE height. The art
+  is framed inconsistently (files run 98x182 to 267x196, padding varies), so at
+  h=42 the cadets drew anywhere from **24px wide (crayon) to 90px (metallic
+  settle)** while the starting cadet is 41. A single skin's own poses swung as
+  hard: metallic gold idle 75 wide, flap 34, settle 90, so the character changed
+  size every time it flapped.
+  Fix: scale on the opaque CONTENT diagonal, take that scale from the skin's IDLE
+  pose and reuse it across that skin's poses (a flap can still stretch the shape
+  without resizing the creature), anchor on the CONTENT centre, and bound each
+  pose to the 0.84-1.18x band the default cadet's own three poses already sit in.
+  Bounds table measured by `scripts/cc_sprite_bounds.py` (committed, re-runnable).
+  Result: drawn width spread 4.0x -> 1.95x, worst within-skin swing 2.6x -> 1.33x
+  (the default cadet is 1.18x), and the **default cadet is pixel-identical** to
+  before (41.4x40.9 / 40.5x42.4 / 35.8x34.2). Hitbox untouched — HIT_R is a fixed
+  11 and never derived from the sprite, so difficulty does not move.
+  Verified: game runs and flaps headless, 0 JS errors, 3 blocks parse. Side-by-side
+  proof at `satellites/seed-flutter/art-drop/sprite_scale_before_after.jpg`.
+  ⚠️ ART GAP for Stephen: the 4 crayon skins and amber/frost/rosenova/sparkler have
+  NO flap or settle pose, so they alone stay frozen while every other skin animates.
+- [?] **Comet/Cosmic Cadets alien level-worlds** (water / fire poles / ice / tornado
+  / rain / desert) — ⛔ STEPHEN 2026-07-28: "i dont know if cadets needs world
+  levels or even a world mode". Parked on his call, do NOT build it. The game
+  already has sky PHASES (Rosedawn / Goldveil / Meteor / Frostnight) which may be
+  what the note was reaching for.
 - [ ] Dewtrail — retheme away from dew, THEN Jessie does the art
 - [x] **Mosaic Draft clarity pass DONE 2026-07-28.** Looked at what a NEW player
   actually meets, because the rules panel auto-opens on first load

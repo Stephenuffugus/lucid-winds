@@ -239,6 +239,100 @@ function _bg(name){ if(!_BG[name])_BG[name]=_sfImg('assets/backgrounds/'+name+'.
 function _blit(im, cx, cy, h, rot){ if(!_sfReady(im))return false; var s=h/im.naturalHeight, w=im.naturalWidth*s;
   ctx.save(); ctx.translate(cx,cy); if(rot)ctx.rotate(rot); try{ ctx.drawImage(im,-w/2,-h/2,w,h); }catch(e){} ctx.restore(); return true; }
 
+/* ---- character sizing -------------------------------------------------------
+   Stephen 2026-07-28: "some sprites are smaller than others and dont seem to
+   flow the same as the starting sprite."  He was right, and it was measurable.
+   _blit scales to a fixed FILE height, but the art is framed inconsistently:
+   files run 98x182 to 267x196 with different amounts of transparent padding, so
+   at h=42 the cadets came out anywhere from 24px wide (crayon) to 90px (metallic
+   settle) — the starting cadet is 41. Worse, a single skin's own poses swung just
+   as hard, so the character changed size every time it flapped.
+
+   Fix: scale on the opaque CONTENT diagonal instead of the file height, take that
+   scale from the skin's IDLE pose and reuse it for that skin's other poses (so a
+   flap can still legitimately stretch the shape without changing the creature's
+   size), and anchor on the CONTENT centre so padding cannot shift it.
+   CADET_DIAG/BUDDY_DIAG are set to what the default cadet and Moon-Moth already
+   measured, so nothing about the starting look changes. */
+var _CB={
+ 'sprites/comet_cadet':[3,3,219,216],'sprites/comet_cadet_flap':[3,3,214,224],
+ 'sprites/comet_cadet_settle':[3,3,189,181],'cosmetics/comet_amber':[3,3,183,202],
+ 'cosmetics/comet_clay_blue':[6,2,238,185],'cosmetics/comet_clay_blue_flap':[2,2,156,236],
+ 'cosmetics/comet_clay_blue_settle':[2,2,207,104],'cosmetics/comet_clay_crown':[6,2,248,194],
+ 'cosmetics/comet_clay_crown_flap':[2,2,149,223],
+ 'cosmetics/comet_clay_crown_settle':[2,2,209,128],'cosmetics/comet_clay_gold':[2,2,263,192],
+ 'cosmetics/comet_clay_gold_flap':[2,2,154,230],'cosmetics/comet_clay_gold_settle':[2,2,190,99],
+ 'cosmetics/comet_clay_rose':[2,2,263,179],'cosmetics/comet_clay_rose_flap':[2,2,143,213],
+ 'cosmetics/comet_clay_rose_settle':[2,2,193,104],'cosmetics/comet_crayon_blue':[4,6,100,161],
+ 'cosmetics/comet_crayon_crown':[2,2,94,178],'cosmetics/comet_crayon_gold':[2,2,110,189],
+ 'cosmetics/comet_crayon_rose':[5,6,101,160],'cosmetics/comet_frost':[3,0,167,253],
+ 'cosmetics/comet_glass_blue':[2,2,226,129],'cosmetics/comet_glass_blue_flap':[2,2,153,214],
+ 'cosmetics/comet_glass_blue_settle':[2,2,131,133],'cosmetics/comet_glass_crown':[2,2,230,125],
+ 'cosmetics/comet_glass_crown_flap':[2,2,147,215],
+ 'cosmetics/comet_glass_crown_settle':[2,2,132,120],'cosmetics/comet_glass_gold':[2,2,221,129],
+ 'cosmetics/comet_glass_gold_flap':[2,2,153,202],
+ 'cosmetics/comet_glass_gold_settle':[2,2,128,137],'cosmetics/comet_glass_rose':[2,2,223,127],
+ 'cosmetics/comet_glass_rose_flap':[2,2,146,209],
+ 'cosmetics/comet_glass_rose_settle':[2,2,131,129],'cosmetics/comet_metallic_crown':[2,2,231,125],
+ 'cosmetics/comet_metallic_crown_flap':[2,2,185,229],
+ 'cosmetics/comet_metallic_crown_settle':[2,2,208,104],
+ 'cosmetics/comet_metallic_gold':[2,2,231,126],'cosmetics/comet_metallic_gold_flap':[2,2,184,226],
+ 'cosmetics/comet_metallic_gold_settle':[2,2,205,93],
+ 'cosmetics/comet_metallic_rose':[2,2,231,130],'cosmetics/comet_metallic_rose_flap':[2,2,183,227],
+ 'cosmetics/comet_metallic_rose_settle':[2,2,202,95],
+ 'cosmetics/comet_metallic_silver':[2,2,233,132],
+ 'cosmetics/comet_metallic_silver_flap':[2,2,183,226],
+ 'cosmetics/comet_metallic_silver_settle':[2,2,201,97],'cosmetics/comet_neon_blue':[2,2,193,135],
+ 'cosmetics/comet_neon_blue_flap':[2,2,182,191],'cosmetics/comet_neon_blue_settle':[2,2,173,92],
+ 'cosmetics/comet_neon_gold':[2,2,195,131],'cosmetics/comet_neon_gold_flap':[2,2,190,191],
+ 'cosmetics/comet_neon_gold_settle':[2,2,183,92],'cosmetics/comet_neon_rainbow':[2,2,213,126],
+ 'cosmetics/comet_neon_rainbow_flap':[2,2,171,140],
+ 'cosmetics/comet_neon_rainbow_settle':[2,2,173,122],'cosmetics/comet_neon_rose':[2,2,190,119],
+ 'cosmetics/comet_neon_rose_flap':[2,2,171,182],'cosmetics/comet_neon_rose_settle':[2,2,169,77],
+ 'cosmetics/comet_retro_blue':[2,2,204,134],'cosmetics/comet_retro_blue_flap':[2,2,167,182],
+ 'cosmetics/comet_retro_blue_settle':[2,2,187,89],'cosmetics/comet_retro_crown':[2,2,215,164],
+ 'cosmetics/comet_retro_crown_flap':[2,2,168,184],
+ 'cosmetics/comet_retro_crown_settle':[2,2,185,127],'cosmetics/comet_retro_gold':[2,2,198,138],
+ 'cosmetics/comet_retro_gold_flap':[2,2,167,183],'cosmetics/comet_retro_gold_settle':[2,2,185,95],
+ 'cosmetics/comet_retro_rose':[2,2,193,128],'cosmetics/comet_retro_rose_flap':[2,2,171,185],
+ 'cosmetics/comet_retro_rose_settle':[2,2,182,95],'cosmetics/comet_rosenova':[3,3,177,199],
+ 'cosmetics/comet_sparkler':[3,3,187,204],'cosmetics/buddy_clay_cat':[2,2,183,195],
+ 'cosmetics/buddy_clay_moth':[2,2,178,160],'cosmetics/buddy_clay_orb':[2,2,157,157],
+ 'cosmetics/buddy_clay_pup':[2,2,196,171],'cosmetics/buddy_crayon_cat':[2,2,226,239],
+ 'cosmetics/buddy_crayon_moth':[2,2,222,203],'cosmetics/buddy_crayon_orb':[2,2,191,172],
+ 'cosmetics/buddy_crayon_pup':[2,2,241,212],'cosmetics/buddy_glass_cat':[2,2,190,200],
+ 'cosmetics/buddy_glass_moth':[2,2,222,163],'cosmetics/buddy_glass_orb':[2,2,177,167],
+ 'cosmetics/buddy_glass_pup':[2,2,205,168],'cosmetics/buddy_metallic_cat':[2,2,175,188],
+ 'cosmetics/buddy_metallic_moth':[2,2,191,134],'cosmetics/buddy_metallic_orb':[2,2,119,137],
+ 'cosmetics/buddy_metallic_pup':[2,2,183,168],'cosmetics/buddy_moonmoth':[3,3,202,180],
+ 'cosmetics/buddy_neon_cat':[2,2,203,196],'cosmetics/buddy_neon_moth':[2,2,255,178],
+ 'cosmetics/buddy_neon_orb':[6,2,170,176],'cosmetics/buddy_neon_pup':[2,2,237,207],
+ 'cosmetics/buddy_retro_cat':[2,2,181,162],'cosmetics/buddy_retro_moth':[2,2,229,154],
+ 'cosmetics/buddy_retro_orb':[2,2,167,160],'cosmetics/buddy_retro_pup':[2,2,198,150],
+ 'cosmetics/buddy_sparklet':[3,3,135,145],'cosmetics/buddy_starpup':[0,3,215,203]
+};
+var CADET_DIAG=58.2, BUDDY_DIAG=46.4;
+function _cbDiag(key){ var b=_CB[key]; return b?Math.sqrt(b[2]*b[2]+b[3]*b[3]):0; }
+/* draw `im` (asset `key`) so its artwork centre sits at (cx,cy) and its content
+   diagonal matches `diag`, scaled as if it were `scaleKey` (the skin's idle pose). */
+function _blitN(im, key, scaleKey, cx, cy, diag, rot){
+  if(!_sfReady(im))return false;
+  var box=_CB[key], ref=_cbDiag(scaleKey||key)||_cbDiag(key);
+  if(!box||!ref) return _blit(im, cx, cy, diag*0.72, rot);   // unmeasured art: old behaviour
+  var s=diag/ref;
+  /* A flap SHOULD stretch the shape, so poses are not forced to one size — but a
+     few skins were drawn with poses so differently framed that the creature still
+     appeared to change size mid-animation. Bound each pose to the same band the
+     default cadet's own three poses already sit inside (0.84x-1.18x), which leaves
+     the default untouched and stops the worst offenders teleporting. */
+  var pd=Math.sqrt(box[2]*box[2]+box[3]*box[3])*s;
+  if(pd>diag*1.18) s*=diag*1.18/pd; else if(pd<diag*0.84) s*=diag*0.84/pd;
+  var w=im.naturalWidth*s, h=im.naturalHeight*s;
+  var ox=(box[0]+box[2]/2)*s, oy=(box[1]+box[3]/2)*s;
+  ctx.save(); ctx.translate(cx,cy); if(rot)ctx.rotate(rot);
+  try{ ctx.drawImage(im,-ox,-oy,w,h); }catch(e){}
+  ctx.restore(); return true; }
+
 /* keepsake-star roster (drawFlower reskin) + light rarity weighting keyed off the bloom seed */
 var _STARS=['star_dawnling','star_goldeye','star_moonbell','star_ember','star_violetnova',
   'star_frostcrystal','star_twinsprite','star_cometwisp','star_prismnova'];
@@ -763,7 +857,7 @@ function render(){ if(!ctx||!G)return;
   // companion sky-buddy (art) else emoji glyph
   var cp=curComp(); if(cp.id){ var bx=SEED_X-40+Math.sin(G.t*3)*4, by=G.y-24+Math.cos(G.t*2)*4;
     var bim=cp.sp?_spr(cp.sp):null;
-    if(_sfReady(bim)){ _blit(bim,bx,by,32); }
+    if(_sfReady(bim)){ _blitN(bim, cp.sp, cp.sp, bx, by, BUDDY_DIAG); }
     else if(cp.glyph){ ctx.globalAlpha=0.9; ctx.font='22px system-ui'; ctx.textAlign='center'; ctx.fillText(cp.glyph, bx, by); ctx.globalAlpha=1; } }
 
   // particles
@@ -846,7 +940,12 @@ function drawSeed(){ var sd=curSeed(); var rot=G.ang;
   }
   else { use = settling ? _spr('sprites/comet_cadet_settle')
              : (rising ? _spr('sprites/comet_cadet_flap') : _spr('sprites/comet_cadet')); }
-  if(_blit(use, SEED_X, G.y, 42, rot)) return;
+  var poseKey = (sd.id!==0 && sd.sp)
+      ? (settling ? (sd.settle||sd.sp) : (rising ? (sd.flap||sd.sp) : sd.sp))
+      : (settling ? 'sprites/comet_cadet_settle' : (rising ? 'sprites/comet_cadet_flap' : 'sprites/comet_cadet'));
+  var idleKey = (sd.id!==0 && sd.sp) ? sd.sp : 'sprites/comet_cadet';
+  if(!_sfReady(_spr(poseKey))) poseKey = idleKey;
+  if(_blitN(use, poseKey, idleKey, SEED_X, G.y, CADET_DIAG, rot)) return;
   // procedural fallback (pappus tuft + glowing body)
   ctx.save(); ctx.translate(SEED_X,G.y); ctx.rotate(G.ang);
   ctx.strokeStyle=sd.puff; ctx.lineWidth=1.4; ctx.globalAlpha=0.9;
