@@ -129,7 +129,7 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.1';
+var BUILD='v1.2';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='np_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -246,6 +246,18 @@ var dropX=270;
    damage (covers fan-float and slow-roll stalemates). Physics freezes so
    the payout is final; the body stays as a freeze-frame under the card. */
 var runOver=null;
+var MAXRUN=90;   /* seconds — the perpetual-damage backstop, see checkRunEnd */
+/* Every way a run can end, in one place so it stays testable (NP_DEV.runFor). */
+function checkRunEnd(){
+  if(doll.rest>=1.6 && doll.t>1.0) endRun('rest');
+  else if(doll.t>4 && t-(sess.lastDmgT||0)>15) endRun('idle');
+  /* Hard cap. Both tests above can be starved indefinitely by a perpetual-damage
+     build — a fan pinning Clayton against a saw keeps refreshing lastDmgT so
+     'idle' never fires, while he never stops moving so rest stays 0. That run
+     never ended and paid out forever. MAXRUN sits well past any honest run
+     (they settle in ~5-20s), so it only ever catches the exploit. */
+  else if(doll.t>MAXRUN) endRun('timeout');
+}
 function endRun(reason){
   var wasBest=(sess.dropEarned||0)>BESTDROP;
   finalizeDrop();
@@ -421,7 +433,7 @@ function drawRunOver(){
   ctx.strokeStyle='rgba(245,192,74,0.35)'; ctx.lineWidth=1.5; rrect(px+7,py+7,pw-14,ph-14,16); ctx.stroke();
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle='#7cc25a'; ctx.font='800 30px system-ui';
-  ctx.fillText(ro.reason==='idle'?'CLAYTON GOT COMFY':'CLAYTON IS DOWN', cx, py+44);
+  ctx.fillText(ro.reason==='idle'?'CLAYTON GOT COMFY':(ro.reason==='timeout'?'CLAYTON TAPPED OUT':'CLAYTON IS DOWN'), cx, py+44);
   var yy=py+96;
   ctx.font='800 34px system-ui'; ctx.fillStyle='#f5c04a';
   ctx.fillText('🪙 +'+ro.earned+' this drop', cx, yy); yy+=42;
@@ -541,8 +553,7 @@ function rrect(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+
 /* ============================ loop ============================= */
 function loop(ts){ if(!running) return; var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts; t=ts/1000;
   if(doll&&!runOver){ stepPhysics(); doll.t+=dt; /* rest detection */ var mv=0,i; for(i=0;i<doll.pts.length;i++)mv+=Math.abs(doll.pts[i].x-doll.pts[i].ox)+Math.abs(doll.pts[i].y-doll.pts[i].oy); if(mv<1.5)doll.rest=Math.min(1.7,doll.rest+dt); else doll.rest=0;
-    if(doll.rest>=1.6 && doll.t>1.0) endRun('rest');
-    else if(doll.t>4 && t-(sess.lastDmgT||0)>15) endRun('idle'); }
+    checkRunEnd(); }
   for(i=parts.length-1;i>=0;i--){ var p=parts[i]; if(p.boom){ p.rt+=dt; if(p.rt>=p.dur)parts.splice(i,1); continue; } p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.vx*=0.98; p.life-=dt*0.9; if(p.life<=0)parts.splice(i,1); }
   for(i=floats.length-1;i>=0;i--){ var f=floats[i]; f.y+=f.vy; f.life-=dt*1.1; if(f.life<=0)floats.splice(i,1); }
   if(sess.comboT>0){ sess.comboT-=dt; if(sess.comboT<=0) sess.combo=0; }
@@ -619,6 +630,13 @@ if(/[?&]nptest=1/.test(location.search)){
     step:function(n){ for(var i=0;i<(n||1);i++) stepPhysics(); return NP_DEV.state(); },
     state:function(){ return { coins:COINS, dmg:Math.round(sess.dmg), hazards:haz.length, doll:doll?doll.pts.length:0, rest:doll?doll.rest:null, headY:doll?Math.round(doll.head.y):null, combo:sess.combo||0, dropEarned:sess.dropEarned||0, bestDrop:BESTDROP, runOver:runOver?{reason:runOver.reason,earned:runOver.earned,newBest:runOver.newBest}:null }; },
     setDropX:function(x){ dropX=x; }, place:function(tp,x,y){ if(OWNED[tp]) haz.push(newHaz(tp,x,y)); return haz.length; },
+    /* Put the run in a given state and run the real end-checks — no duplicated
+       logic. keep='damage' simulates the perpetual-damage exploit (damage just
+       landed, Clayton still moving); keep='still' simulates settling. */
+    runFor:function(secs,keep){ if(!doll) return null; doll.t=secs;
+      if(keep==='still'){ doll.rest=1.7; } else { doll.rest=0; sess.lastDmgT=t; }
+      checkRunEnd(); return NP_DEV.state(); },
+    maxRun:function(){ return MAXRUN; },
     clearHaz:function(){ haz=[]; }, give:function(c){ COINS+=c; }, own:function(tp){ OWNED[tp]=true; },
     owned:function(){ return OWNED; }, hazList:function(){ return haz.map(function(h){return h.t;}); },
     pts:function(){ return doll?doll.pts.map(function(p){return {x:Math.round(p.x),y:Math.round(p.y)};}):null; }

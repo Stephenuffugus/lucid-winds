@@ -331,9 +331,16 @@ items are marked here so nobody re-does them.
   or 15s with no damage. "cozy" removed in ceed659c: grep count is 0 in the satellite,
   and the portal card :749 + in-game ribbon :86 are both clean. Only two files in the
   repo mention Clayton and both are current; all script blocks `node --check` clean.
-  ⚠️ **Edge case found during the audit, left open:** there is no max run length, so a
-  perpetual-damage build (fan pinning Clayton on a saw) keeps resetting `lastDmgT`
-  while `rest` never accumulates — neither trigger fires and the run never ends.
+  ✅ **Edge case found by the audit, then FIXED the same session (BUILD v1.2).** There
+  was no max run length: a perpetual-damage build (fan pinning Clayton on a saw) kept
+  refreshing `lastDmgT` so 'idle' never fired, while he never stopped moving so `rest`
+  stayed 0 — the run never ended and paid out forever. Added `MAXRUN=90s` as a third
+  trigger ('CLAYTON TAPPED OUT'). All three exits now live in one `checkRunEnd()` so the
+  logic is testable rather than duplicated, exposed via `NP_DEV.runFor()` behind
+  `?nptest=1`. Verified headless 6/6, 0 JS errors: alive at 89s, ends at 91s with
+  reason 'timeout', an honest 60s damage run is NOT cut short, settling still ends as
+  'rest'. 90s sits well past any real run (they settle in ~5-20s) so it only ever
+  catches the exploit.
 - [x] **Sprout Dice clarity DONE, verified (2026-07-27 sweep).** Jessie was right
   and it was a BUG: the End Turn button rendered as a ~15px sliver OFF-SCREEN at
   every phone width (flex CSS bug) — players spent dice and hit a dead end. Fixed,
