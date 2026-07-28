@@ -980,7 +980,23 @@ not.** These are per-game and specific:
 - [ ] Portal search — "similar type" matching + her assistant-to-guide idea
 - [ ] Comet Cadets — alien level-worlds (water / fire poles / ice / tornado / rain / desert)
 - [ ] Dewtrail — retheme away from dew, THEN Jessie does the art
-- [ ] Mosaic Draft — clarity pass
+- [x] **Mosaic Draft clarity pass DONE 2026-07-28.** Looked at what a NEW player
+  actually meets, because the rules panel auto-opens on first load
+  (`if(!SAVE.howSeen) showScreen("s-how")`) — it is literally the first screen of
+  the game. Two defects there, both fixed:
+  · **The version stamp printed across the rules.** `#buildstamp` is z-index 31
+    and `.screen` is 30, so "MOSAIC DRAFT v1.0" was drawn letter-on-letter over
+    rule 5. It is now an opaque footer strip (gradient to solid) with the screens
+    padded clear of it, so copy scrolls behind and fades out instead of colliding.
+  · **No way forward was visible.** The rules are ~890px taller than a phone
+    screen and GOT IT sat far below the fold with no scroll affordance — you met a
+    wall of text cut off mid sentence. GOT IT is now sticky: measured visible both
+    at scrollTop 0 and scrolled to the end, so the exit is always on screen and
+    doubles as the hint that the panel scrolls.
+  Checked first, NOT changed: the rules copy itself is good, and the
+  "GOT IT returns to the title instead of starting a duel" I suspected was my own
+  probe tapping a hidden button — the real first-run flow (load → rules → title)
+  is correct and matches the house "rules before play" standard.
 - [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
 - [ ] ALL games earn sunbeams inside LW
 - [x] **Silt element-behaviour message made consistent, 2026-07-28 (16/16 trial
