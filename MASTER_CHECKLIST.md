@@ -677,12 +677,34 @@ Ordered by value per hour of work.
   All 66 manifests parse with unique ids; HTTP spot-checks pass. ⛔ make_og_cards.py
   regenerates ALL 66 — it clobbered the hand-composed Petal Match card once,
   caught + restored; mind it on future runs.
-- [ ] **Portal black screen going in/out of games** — pressing back again fixes it. Needs a
-  repro session on the iframe jukebox lifecycle; a watchdog already exists.
-  ⚠️ NEW LEAD 2026-07-27: the SW fleet fix (all 12 workers were serving day-old
-  pages via the HTTP cache, with a 5s cache-fallback race on cold launches) has
-  the same fingerprint as this bug. Watch whether it recurs post-fix before
-  spending a repro session.
+- [~] **Portal "black screen going in/out of games" — ROOT CAUSE FOUND 2026-07-28,
+  and it is worse than a black screen: 30 games had no way out at all.**
+  Reproduced on the LIVE site, not localhost. Two facts, both measured:
+  1. **Satellite cards do not use the jukebox.** The portal's click interceptor
+     only matches `/play/<id>.html` and `github.io` links, so a tap on any
+     `/satellites/<slug>/` card is a FULL PAGE NAVIGATION away from the arcade
+     (`framenavigated` log: `/portal/` → `/satellites/leaf-fit/`). That is most of
+     the arcade. The portal's music stops and the jukebox is bypassed entirely.
+     ⚠️ Probably deliberate — framing Hostinger HTML is what the srcdoc shell
+     exists to dodge — but it is nowhere in the code as an intention.
+  2. **30 of 84 satellites had NO route back.** No `SWS_EXIT`, and zero references
+     to `/portal` anywhere in their source; their "◄ Back" buttons all go to their
+     own menus. Verified on the live site: from the portal, Tetroku's visible Back
+     did nothing for 8s. In a browser you can swipe back; in an installed PWA
+     there is no back gesture, so the player is simply stuck in the game.
+  **FIXED:** shared `/arcade-exit.js`, loaded by the 27 of those 30 that use the
+  house `#s-title` template. It adds ONE button to the title screen wearing that
+  game's own button classes, defines the standard `SWS_EXIT`, and no-ops if the
+  game already has an exit or a portal link. No floating overlay — the corner is
+  already the feedback fab's and games put controls at the edges.
+  Verified headless on all 27: **24 render a 305x55 button inside the title screen
+  with 0 JS errors**; the other 3 (stop-motion, doodle-pad, multiplication-chart)
+  boot past their title screen so the button is present but not shown at load.
+  ⛔ STILL OPEN: those 3 need an exit on the screen they actually boot into, and
+  chameleon-3d / dragon-philosophy / flatulence-fighter have no `#s-title` at all.
+  The original black-screen report is NOT yet reproduced: the phone back gesture
+  returns cleanly (portal repainted all 162 cards, 0 errors). Being stranded in a
+  game with no exit is the far likelier thing players were describing.
 - [~] **Blobworks code debt** — ~~slime meter shrunk 196→150 … one number to tune at
   `index.html:1104`~~ **STALE, corrected 2026-07-28:** it went 196→150→**104** and the
   number now lives at `satellites/greenhouse-pinball/index.html:1108` (see the closed
@@ -695,10 +717,15 @@ Ordered by value per hour of work.
   Brief `design-briefs/flagship-litterbugs.md` converges with it (battles).
   Art answer: parts-based PNG/SVG library (~3MB for 180 parts, space fear
   disproven). PARKED until Stephen says go.
-- [ ] **Feedback queue triage — new standing chore.** Every session: query the
-  Firestore `feedback` collection (fleet fab wired 2026-07-27, all 82
-  satellites + 66 classics + portal + app now report there). Fix what players
-  hit, newest games first.
+- [?] **Feedback queue triage — BLOCKED on this codespace 2026-07-28, one command
+  fixes it.** The standing chore is to query the Firestore `feedback` collection
+  every session (the fleet fab reports there from all 84 satellites + 66 classics
+  + portal + app). The method is recorded in `reference_firestore_crash_reports`:
+  read the firebase-tools refresh token from `~/.config/configstore/firebase-tools.json`
+  and exchange it for a REST token. **That file does not exist on this box** — it
+  lived on the codespace that wedged, same class of loss as the gh credential.
+  ⛔ STEPHEN / one-time: run `firebase login` in this codespace (or paste a CI
+  token) and the queue becomes readable again without anyone relaying Discord.
 - [ ] **Jimothy super-easy mode — real player request** (feedback queue: "Too
   hard... make a super-easy version for old dummies like me"). ⛔ Stephen calls
   the difficulty design.
