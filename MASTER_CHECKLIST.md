@@ -903,8 +903,19 @@ not.** These are per-game and specific:
   div#buildstamp version stamp (6.8-7.8px). Player copy that must hit the
   0.7rem floor, or dev chrome the auditor should exempt?
   (c) em-dash remainders: hues FIXED; bramblewick + pitbike-rally landing
-  copy FIXED in the wave. STILL OPEN: power-scalers has ~39 em-dashes on
-  deeper screens (race blurbs, battle log, reforge toasts); pitbike-rally has
+  copy FIXED in the wave. **power-scalers DONE 2026-07-28** — 44 found, 41 were
+  player-facing and every one was REWRITTEN rather than swapped for a comma at
+  random (race blurbs, power/archetype descriptions, battle-log lines, the
+  reforge toasts, tree and jewel hints, "— none —" in the alliance dropdown ->
+  "no alliance", and the "—" empty-value glyphs in the stat table -> "·"). The
+  3 left are inside code comments, which no player reads. Auditor: em-dashes in
+  visible text 0. Same pass took its two sub-11px offenders clean as well
+  (.brand .s "OC ARENA" 9px, .section-h .n 11px), so power-scalers is now clean
+  on fonts AND dashes; parses clean; landing screenshot checked.
+  ⚠️ `play/power-scalers.html` still carries 43 em-dashes — that is the stale
+  vendor copy with the open delete/redirect/keep call below; fix it there or
+  retire it, do not port blindly.
+  STILL OPEN: pitbike-rally has
   runtime strings in src-dly17/ui.js (vendored module cache scheme: needs a
   new src-<ver> dir copy, fix in external repo Stephenuffugus/skywolf-pitbike-rally
   FIRST, then re-vendor — same for the HOW panel added here).
