@@ -302,33 +302,19 @@ items are marked here so nobody re-does them.
   ⚠️ **FORK DEBT:** upstream 3D commits do NOT reach this copy. Un-fork steps in
   `satellites/chameleon-3d/VENDORED.md` — push `handoff-chameleon/0001-*.patch`
   upstream when a credential exists, repoint the card, delete the folder.
-- [ ] **3D props render untextured — 3 × 404 on
-  `assets/props/Textures/colormap.png` every load.** FOUND 2026-07-28 while
-  verifying the orientation fix. The Kenney prop `.glb` files all reference that
-  palette atlas and it is missing from the upstream repo too, so crates, barrels,
-  statues and grass render flat on the live github.io build as well. Fix = source
-  the real Kenney colormap PNG and drop it at that path (do NOT invent a palette,
-  it would recolour every prop wrong).
-  *Root-cause detail, kept for the un-fork:* Two
-  separate walls in `abduct-3d.html`, both only reachable AFTER Launch (setupTouch
-  runs after `await insertCoin()`, so neither can show during the Playroom lobby —
-  which is why the lobby looks fine): (1) `#rotate` is opaque, inset:0, z-70, with
-  NO dismiss path, clearing only on a `resize` reporting landscape — so any phone
-  that cannot produce a landscape viewport (OS rotation lock, installed PWA pinned
-  to portrait, portrait iframe container) sealed the player behind a black screen
-  forever; it also covered `#tapStart` (z-65), the ONE control that would have
-  rotated the screen for them. (2) `init()` re-showed `#clickToPlay` four lines
-  after `setupTouch()` hid it, so every phone that got past the gate was handed a
-  desktop "Click to capture mouse" prompt over the game. Fix adds
-  orientationchange + matchMedia + pageshow listeners, +250/+700ms re-checks
-  (mobile reports stale dims mid-rotation), a tappable "Already sideways? Tap to
-  play" escape that tries fullscreen+orientation-lock first, sticky dismissal, and
-  gates clickToPlay on `!touch.on`. Verified headless through the REAL Playroom
-  lobby on an emulated Pixel 9, 6/6, 0 JS errors — thumb-target after escaping
-  went from the desktop prompt to `stickR`, the real touch control.
-  ⛔ The codespace `ghu_` token is lucid-winds-scoped, so the UPSTREAM repo still
-  has the bug; that is what the fork above routes around. Patch + verifier +
-  apply instructions live in `handoff-chameleon/`.
+- [x] **3D props textured again 2026-07-28 — the atlas was recoverable from the
+  models themselves.** Every Kenney prop `.glb` points at one shared palette
+  atlas. **Eight of the twelve embed it** in a bufferView (barrel, boulder, chest,
+  crate, crates, pillar, table, character); the other four (grass, grass_small,
+  statue, tree) reference it externally as `Textures/colormap.png`, and that file
+  was never committed — three 404s per load and four props rendering flat.
+  Not a substitute palette: the eight embedded copies are byte-identical to each
+  other (sha256 `f9ae1825…`, 15794 bytes, 1024x1024 RGBA), so the real atlas was
+  extracted out of `barrel.glb` and written to the path the other four ask for.
+  Verified through the real game in the portal iframe: all three colormap requests
+  now return **200**, the probe's "no 404s on game assets" check passes, 0 console
+  errors, and every orientation check still passes. Also added upstream as
+  `handoff-chameleon/0003-*.patch` so the canonical repo gets it too.
 - [ ] **2D: capture still not really possible** — refine being caught, add more
   abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
 - [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
