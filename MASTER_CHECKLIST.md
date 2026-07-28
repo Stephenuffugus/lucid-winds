@@ -975,7 +975,23 @@ not.** These are per-game and specific:
   chrome the auditor should exempt? One-line filter either way.
 
 ### From the Jul 16 "New notes" + Jessie doc
-- [~] Pong Arena — landscape long-court still open (per-mode geometry + control remap)
+- [?] **Pong Arena landscape long-court — MEASURED 2026-07-28, and the landscape
+  half is already DONE; what remains is a one-line design call from Stephen.**
+  Verified on an emulated Pixel 9, Classic mode, rotating mid-match: `resize()`
+  already calls `rebuildArena()`, so the court rebuilds correctly and landscape
+  gives a proper full-length court — cyan paddle hard left, pink CPU hard right,
+  centre line, HUD intact, 0 JS errors. Screenshots on file.
+  The real defect is PORTRAIT: Classic keeps its paddles on the left and right
+  edges, so on a 412x915 phone the rally crosses only 412px while 915px of court
+  runs the other way. Most of the screen is dead space and the ball is across
+  almost instantly — which is why the title screen has to tell players "rotate
+  your phone for the full-length court".
+  ⛔ **THE CALL IS YOURS, and it is a mode-identity question, so I did not guess:**
+  should Classic flip its paddles to top/bottom when the phone is portrait (the
+  court then runs the long way and the drag remaps to horizontal) — accepting that
+  in portrait Classic then looks exactly like **Sky Duel**, and in landscape Sky
+  Duel looks exactly like Classic? The alternative is to leave portrait as the
+  stated compromise it is today. One sentence from you and it is built.
 - [ ] Portal: live "N playing now" per game (needs presence; design first)
 - [ ] Portal search — "similar type" matching + her assistant-to-guide idea
 - [x] **Cosmic Cadets sprite scaling FIXED 2026-07-28** (⚠️ display≠slug: the note
