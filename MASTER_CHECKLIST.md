@@ -990,9 +990,10 @@ not.** These are per-game and specific:
     padded clear of it, so copy scrolls behind and fades out instead of colliding.
   · **No way forward was visible.** The rules are ~890px taller than a phone
     screen and GOT IT sat far below the fold with no scroll affordance — you met a
-    wall of text cut off mid sentence. GOT IT is now sticky: measured visible both
-    at scrollTop 0 and scrolled to the end, so the exit is always on screen and
-    doubles as the hint that the panel scrolls.
+    wall of text cut off mid sentence. GOT IT is now sticky. Verified headless at
+    375x667: btnVisible true both at scrollTop 0 and at scrollTop 887 (the end),
+    0 JS errors, 3 blocks parse — so the exit is always on screen and doubles as
+    the hint that the panel scrolls. Shipped in commit 703c03a5.
   Checked first, NOT changed: the rules copy itself is good, and the
   "GOT IT returns to the title instead of starting a duel" I suspected was my own
   probe tapping a hidden button — the real first-run flow (load → rules → title)
