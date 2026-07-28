@@ -198,6 +198,26 @@ items are marked here so nobody re-does them.
   brag. Art sheets from the spec doc still slot in later.
 
 ### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
+- [~] **3D "turn it sideways and nothing happens" — ROOT-CAUSED + FIXED + VERIFIED
+  (2026-07-28), ⛔ NOT PUSHED, needs one `gh auth login`.** Stephen's report. Two
+  separate walls in `abduct-3d.html`, both only reachable AFTER Launch (setupTouch
+  runs after `await insertCoin()`, so neither can show during the Playroom lobby —
+  which is why the lobby looks fine): (1) `#rotate` is opaque, inset:0, z-70, with
+  NO dismiss path, clearing only on a `resize` reporting landscape — so any phone
+  that cannot produce a landscape viewport (OS rotation lock, installed PWA pinned
+  to portrait, portrait iframe container) sealed the player behind a black screen
+  forever; it also covered `#tapStart` (z-65), the ONE control that would have
+  rotated the screen for them. (2) `init()` re-showed `#clickToPlay` four lines
+  after `setupTouch()` hid it, so every phone that got past the gate was handed a
+  desktop "Click to capture mouse" prompt over the game. Fix adds
+  orientationchange + matchMedia + pageshow listeners, +250/+700ms re-checks
+  (mobile reports stale dims mid-rotation), a tappable "Already sideways? Tap to
+  play" escape that tries fullscreen+orientation-lock first, sticky dismissal, and
+  gates clickToPlay on `!touch.on`. Verified headless through the REAL Playroom
+  lobby on an emulated Pixel 9, 6/6, 0 JS errors — thumb-target after escaping
+  went from the desktop prompt to `stickR`, the real touch control.
+  ⛔ **BLOCKED:** the codespace `ghu_` token is lucid-winds-scoped; push 403s. The
+  commit + patch + verifier + apply instructions are in `handoff-chameleon/`.
 - [ ] **2D: capture still not really possible** — refine being caught, add more
   abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
 - [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
@@ -577,11 +597,18 @@ Ordered by value per hour of work.
 - [ ] **Scrabble Overturn / Scrabble UpWords** — new game ideas, unspecced.
 - [ ] **Nature Sound ID app** — needs an audio-fingerprint approach decision first; model on
   Merlin Bird.
-- [ ] **Jade Garden is documented but never built.** `GAMES_MANIFEST.md:105` describes it
-  (mahjong, match free pairs, hint + shuffle) and the portal has a search alias for it, but
-  there is no `games/jade.js`, no shell, and no card. No player can reach it, so nothing is
-  broken — it's just owed. Removed from the smoke list so the suite reads green; put it back
-  the day the game lands.
+- [x] **Jade Garden IS BUILT — the "never built" note was WRONG (corrected 2026-07-28).**
+  Stephen: "we also have a mahjong called jade garden… i just played it." Verified:
+  `satellites/mahjong/index.html` (64KB, `<title>Jade Garden · Sky Wolf Studios</title>`,
+  with `assets/` + `og/`), and a live portal card at `portal/index.html:750` pointing at
+  `/satellites/mahjong/` plus a search alias at :1113. The old note searched for
+  `games/jade.js` (the CLASSICS path), found nothing, and concluded the game did not exist —
+  it shipped as a SATELLITE under a different slug. Textbook
+  [[reference_display_name_slug_map]] trap: **display name ≠ slug ≠ directory.**
+  Corrected in the same pass: `scripts/smoke_shells.js` (comment claimed not-built) and
+  `GAMES_MANIFEST.md:105` (pointed at the non-existent `games/jade.js`).
+  ⚠️ Still open, Stephen's words: "the mahjong could maybe be improved" — no specifics yet,
+  needs him to say what bothered him before anyone touches it.
 - [x] **Chameleon 3D card — repointed AND surfaced (2026-07-27, commit f0f0c6d8).** The
   card already tracked the live repo-root `abduct-3d.html` (repointed Jul 20, 08cfeb4c);
   what kept Stephen from seeing it was `beta:true` hiding it in the In Development tab.

@@ -34,13 +34,13 @@ var FIRST_WAVE = [
   'sudoku', 'stopten', 'slider', 'mines', 'hanoi',
   // ── Wave 2 ──
   'battleship', 'c4', 'chess', 'colorsort', 'dailybloom', 'dewtrail',
-  // ⛔ 'jade' (Jade Garden, mahjong) is NOT BUILT. It is documented in
-  // GAMES_MANIFEST.md and has a portal search alias, but there is no
-  // games/jade.js, no play/jade.html, and no portal card — so no player can
-  // reach it and nothing is broken. It sat in this list failing on every run,
-  // which is worse than useless: a suite that is always red is a suite nobody
-  // reads. Listed here so the debt stays visible. Put it back in the array the
-  // day games/jade.js lands.
+  // ⛔ 'jade' (Jade Garden, mahjong) stays OUT of this array, but NOT because it
+  // is unbuilt — that older comment was wrong (corrected 2026-07-28, Stephen:
+  // "i just played it"). It shipped as a SATELLITE, satellites/mahjong/, with a
+  // live portal card at portal/index.html:750. This suite only covers CLASSICS
+  // shells (games/<id>.js + play/<id>.html) and Jade Garden is not one, so there
+  // is no games/jade.js to smoke. Satellite coverage belongs in the fleet smoke,
+  // not here. Do NOT re-add 'jade' to this array — it will fail forever.
   'gardenlines', 'juniper', 'kakuro', 'mosaic',
   'numbergarden', 'petalfall', 'petalmatch', 'pipe', 'pollen',
   'pottingbench', 'recall', 'rootflow', 'rootmaze', 'rootrush',

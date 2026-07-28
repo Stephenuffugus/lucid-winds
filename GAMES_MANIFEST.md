@@ -102,7 +102,7 @@ Columns:
 | `mosaic` | Mosaic Garden | puzzle | Pull colored tiles to fill mosaic rows for points. | `games/mosaic.js` | WORKING | Tap / drag | Self-contained |
 | `rootflow` | Root Flow | puzzle | Draw paths to connect matching roots. Fill every cell. | `games/rootflow.js` | WORKING | Drag | Self-contained |
 | `rootmaze` | Root Maze | puzzle | Navigate the shifting maze. Reach the treasure before the AI. | `games/rootmaze.js` | WORKING | Tap / swipe | Self-contained AI |
-| `jade` | Jade Garden | puzzle | Mahjong: match free pairs to clear the turtle. Hint + shuffle. | `games/jade.js` | WORKING | Tap | Tile-set assets in `/assets/games/jade/` |
+| `jade` | Jade Garden | puzzle | Mahjong: match free pairs to clear the turtle. Hint + shuffle. | `satellites/mahjong/index.html` (**SATELLITE, not a classic — there is no `games/jade.js`**; corrected 2026-07-28) | WORKING | Tap | Self-contained in `satellites/mahjong/assets/` |
 | `petalmatch` | Petal Match | puzzle | Swap botanical gems to make lines. Chain cascades for combos. | `games/petalmatch.js` | WORKING | Swap (tap two) | Self-contained match-3 |
 | `sprout` | Sprout | puzzle | Find the hidden 5-letter word in 6 guesses. Wordle-like. | `games/sprout.js` | WORKING | Keyboard | Needs 5-letter word list (in `word-banks.js`) |
 | `vinewords` | Vine Words | puzzle | Find words by connecting adjacent letters. 2 min timer. | `games/vinewords.js` | WORKING | Drag | Needs `vinewords-dict.js` (loaded by `_sg`) |
