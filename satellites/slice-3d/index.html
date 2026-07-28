@@ -1134,8 +1134,15 @@ function buildClimb(lvl){
   var rng=mulberry32(((lvl*77003651)>>>0)^0xC1B);
   var len=26;                                   // the shortest runway
   // THE MEGA WALL: multiplier bands that scale with height (and level)
-  var MULTS=[1,2,3,4,5,6,8,10,12,15,18,22,26,30,35,40,45,50,60,75];
-  var nb=Math.min(MULTS.length, 9+Math.min(lvl,11));   // L1 = 10 bands (46 tall), grows with level
+  /* Stephen 7/28: "the wall climb needs to just keep going and going so you can
+     see how high you can get on the wall. the whole challenge of the game is to
+     see how high you can make it." The wall used to STOP: 20 authored bands, and
+     at low levels only 10 of them, so the ceiling was set by your level rather
+     than your throw. The ladder now runs to 34 bands and every run gets the whole
+     wall, so nothing but the flip itself limits how high you go. */
+  var MULTS=[1,2,3,4,5,6,8,10,12,15,18,22,26,30,35,40,45,50,60,75,
+             90,110,130,155,185,220,260,310,370,440,520,620,750,900];
+  var nb=MULTS.length;   // the full wall, every run — no level ceiling
   var BANDCOLS=[0x8a8f9e,0x4ac8b4,0x5b9bd5,0xc56bf0,0xffd76a,0xff6d9d,0x4ac86a,0xff9a3c,0x8de8ff,0xe05b5b];
   var bands=[], b3;
   for(b3=0;b3<nb;b3++)bands.push([MULTS[b3], BANDCOLS[b3%BANDCOLS.length]]);
@@ -2007,8 +2014,11 @@ function finishLevel(){
     var earnedWB=false;
     if(G.mult>=30 && SKN.owned.indexOf('wallbreaker')<0){ SKN.owned.push('wallbreaker'); saveSkins(); earnedWB=true; }
     saveProg();
-    var tmw=G.world.topMult||10, fracW=G.mult/tmw;
-    var starsW = fracW>=0.55?3 : (fracW>=0.2?2:1);
+    /* Stars used to be a fraction of the wall's top multiplier. On an endless wall
+       the top is x900 and nobody is getting near it, so that would have handed out
+       one star forever. Fixed rungs instead: x10 is a solid climb, x26 is a great
+       one, and they mean the same thing on every run. */
+    var starsW = G.mult>=26?3 : (G.mult>=10?2:1);
     $('go-title').textContent='WALL CLIMB '+lvl+' \u00b7 x'+G.mult;
     $('go-stars').textContent = starsW===3?'\u2605\u2605\u2605':(starsW===2?'\u2605\u2605\u2606':'\u2605\u2606\u2606');
     $('go-stars').style.color = starsW===3?'#ffd76a':(starsW===2?'#e0c37a':'#948fae');
@@ -2184,6 +2194,17 @@ $('t-ebest').textContent=PROG.endlessBest;
 (function(){var e=$('t-clvl'); if(e)e.textContent=PROG.climbLevel||1;})();  // span left with the removed menu button
 /* Wall Climb portal card entry: /satellites/slice-3d/?mode=climb drops straight in */
 if(/[?&]mode=climb/.test(location.search)){ setTimeout(function(){ newClimb(PROG.climbLevel||1); },80); }
+/* Stephen 7/28: "The free fall game may need to be its own game too, call super
+   slice 3D free fall, and there should be an endless mode in that too to see how
+   far you can fall without sticking to the side." The endless fall already exists
+   (newEndless -> newFF(1,true), scored in metres of depth, and a stick ends it).
+   What it lacked was its own front door, so it now boots like the climb does:
+     ?mode=ff              -> the Freefall level ladder
+     ?mode=ff&endless=1    -> the endless drop
+   The menu buttons stay for now — pulling them the way Wall Climb's was pulled is
+   your call, since you said "may need to". */
+if(/[?&]mode=ff/.test(location.search)){ setTimeout(function(){
+  if(/[?&]endless=1/.test(location.search)) newEndless(); else newFF(PROG.ffLevel||1); },80); }
 $('buildstamp').textContent='Super Slice 3D '+BUILD;
 startAttract();
 

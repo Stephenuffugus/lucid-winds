@@ -48,16 +48,31 @@ Last updated: 2026-07-26
 
 ## 🚨 FROM STEPHEN + JESSIE 2026-07-28 (chat) — merged before work started
 
-- [ ] **Super Slice 3D — the wall climb must be ENDLESS.** Stephen: "the wall
-  climb needs to just keep going and going so you can see how high you can get on
-  the wall 30. the whole challenge of the game is to see how high you can make
-  it." So the climb should not end at a fixed wall/level — it keeps going and the
-  score IS the height reached.
-- [ ] **Super Slice 3D — FREE FALL may need to be its own game.** Stephen: "The
-  free fall game may need to be its own game too call super slice 3D free fall
-  and there should be an endless mode in that too to see how far the can fall
-  without sticking to the side." Two parts: split it out as its own titled game,
-  and give it an endless mode scored on distance fallen without sticking.
+- [x] **Super Slice wall climb is ENDLESS 2026-07-28.** The wall really did stop:
+  `MULTS` held 20 authored bands and `nb=Math.min(MULTS.length, 9+min(lvl,11))`
+  gave you only 10 of them at level 1 — so your ceiling was set by your LEVEL, not
+  your throw, which is the opposite of "see how high you can make it". The ladder
+  now runs to **34 bands (x1 up to x900)** and every run gets the whole wall, so
+  nothing but the flip limits the height.
+  Fixed the knock-on: stars were `G.mult / topMult`, which on a x900 wall would
+  have paid one star forever. They are fixed rungs now — x10 is a solid climb, x26
+  a great one — so a score means the same thing on every run. The x30 Wallbreaker
+  unlock still fires and is now genuinely reachable rather than level-gated.
+  Verified: climb boots and renders with 0 JS errors, 3 blocks parse, and load time
+  is indistinguishable from the normal mode (7.7s vs 7.5s headless, i.e. the extra
+  14 bands cost nothing measurable).
+- [x] **Super Slice 3D Free Fall now has its own front door 2026-07-28.** Checked
+  first: the endless drop you described ALREADY existed — `newEndless()` calls
+  `newFF(1,true)`, it scores DEPTH in metres, and sticking to the side ends the
+  run. It just had no way in from the arcade. Now it boots like the Wall Climb
+  does: `?mode=ff` for the level ladder, `?mode=ff&endless=1` for the endless drop,
+  plus a portal card **"Super Slice 3D Free Fall"** (🪂).
+  Verified: both URLs boot straight into the fall with 0 JS errors — the endless
+  one came up mid-dive reading "DEPTH 52M · DIVE AS DEEP AS YOU DARE". Screenshot
+  on file. 3 game blocks + 12 portal blocks parse.
+  ⛔ Left for you: Wall Climb had its in-game menu button REMOVED when it got its
+  own card. You said free fall "may need to" be its own game, so I added the card
+  and left both menu buttons alone. Say the word and they come out.
 - [x] **Pop N Lock second pod FIXED 2026-07-28 — it was never rendering slowly, it
   was not being drawn at all.** Pairs spawn at `r=1` with the partner at `r=0`, the
   hidden row above the board, and the draw loop began `if(cs[i].r<1)continue`. So
