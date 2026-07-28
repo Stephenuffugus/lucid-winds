@@ -862,11 +862,34 @@ not.** These are per-game and specific:
   NOT the game title. Finger-drag added: drag parts from the tray (part rides
   ~40px above the thumb, validity ring), tilt planks by end handles snapped to
   the proven angle set; old controls intact; all 14 level proofs still pass.
-- [ ] **Tinker Loft, rest of Jessie's doc list**: level-name plaque above the game
-  box (covers the top nails today); scissors bigger + rotatable so they visibly
-  cut the string; clearer per-level hints (Updraft never says ring the bell);
-  Sandbox renamed + a catch container; her doc-wide capitalization/punctuation
-  sweep.
+- [x] **Tinker Loft, rest of Jessie's doc list — ALL FIVE DONE 2026-07-28,
+  verified (14/14 level proofs still win, 0 NaN, 0 JS errors).**
+  · **Plaque above the box.** The level chip and hint used to float ON the machine
+    and the nails really are underneath them (spikes live at world y=52). The
+    canvas now starts at y=104 inside a real header band: back button, brass
+    plaque with level name + goal, nudge chip, and the hint on its own two-line
+    row. Cost was 8% of machine height, bought back by trimming the dock 170→148
+    (tray buttons 118→96 stage px, still 59.7px rendered, above the 48 floor).
+  · **Scissors bigger + rotatable.** Redrawn at proper size with real blades and
+    finger loops, and the dashed ring is now drawn at radius 36 — which is the
+    ACTUAL cut radius the physics has always used (it drew 22 and quietly cut 14px
+    wider, so the tool was lying about its reach). TILT now offers itself for
+    scissors and steps them 0/45/90/135; physics unchanged (the cut area is a
+    circle, so rotation is honest presentation, not a mechanic change).
+  · **Hints name their goal.** Updraft now says "Ring the bell up in the rafters";
+    12 of the 14 hints were rewritten the same way (Snip, Snip Trio, Fan Ferry,
+    Tilt Bridge, Chain Loft, The Long Way, The Bounce and the rest all name the
+    basket, bell or balloons).
+  · **Sandbox renamed "The Workbench"** (display only, MODE key stays `sandbox`)
+    **+ a catch bin** on the floor built from three slanted segs so a ball settles
+    instead of falling out of the loft. Ran 600 ticks clean.
+  · **Capitalization**: the outlier lowercase buttons ("back" ×3, "menu") are now
+    Title Case like every other button in the fleet.
+  · Bonus caught in the same pass: `fit()` measured `innerHeight`, the exact
+    signature the 47-game viewport sweep hunted — tinker-loft was MISSED by it.
+    Now visualViewport with its resize/scroll listeners. And its own font
+    offenders (.tag, .btn.sm, .lvlcard .lt/.ls) were raised, leaving only
+    `div#buildstamp` — the pending Director call.
 - [x] **Micro Meadow renamed to Think Fast** — 10 display strings + portal card + social
   card regenerated. Slug stays `micro-meadow` (URLs). Verified 0 old strings remain.
 - [x] **Leaf Fit rotate DONE + fatal bug, verified (commit e4d6fb02).** Rotation existed
