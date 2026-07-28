@@ -1026,7 +1026,24 @@ not.** These are per-game and specific:
   "GOT IT returns to the title instead of starting a duel" I suspected was my own
   probe tapping a hidden button — the real first-run flow (load → rules → title)
   is correct and matches the house "rules before play" standard.
-- [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
+- [x] **The two "coming soon" cards are gone — both were wrong, 2026-07-28.**
+  COMING SOON cards render as dead `<button>`s, so neither game could be opened.
+  · **Impossible Garden is FINISHED CODE.** Verified: it plays end to end (Daily
+    Path opens, the wanderer walks, vine arms turn), and its own harness
+    `IG_DEV.solveAllCheck()` reports **8 levels, 8 solved, 0 fails, 0 JS errors**.
+    What it is short of is CONTENT, not code — 8 levels is thin. So it is now
+    `beta:true` (IN DEVELOPMENT): a real link players can open, honestly labelled.
+    Remaining work is authoring more levels, which is a design job not a bug.
+  · **"Brawl" pointed at a game that no longer exists.** The card read
+    "Brawl · Multiplayer mayhem · 🍺"; the URL is live and now serves **WILD
+    WARDENS** (tame the wild, tend your grove, walk the real world — roster, skill
+    trees, territory, mastery, daily quests, and a FIGHT (DEMO) section). Card
+    corrected to the destination's OWN title, not a name I invented, and flipped
+    to IN DEVELOPMENT so it opens. ⚠️ STEPHEN: confirm the name, and whether
+    `portal-assets/thumbs/brawl.png` (a green brawler on stone blocks) is still
+    its art.
+  Verified in the live portal render: both cards are now `<a>` links with the
+  IN DEVELOPMENT badge; `soon:true` no longer appears anywhere in the portal.
 - [x] **ALL same-origin games earn sunbeams — audited and closed 2026-07-28.**
   Audit first: 79 of 84 satellites were wired. The 5 that were not:
   · **bloom-breaker** and **bramblewick** LOOKED wired — both call an internal
