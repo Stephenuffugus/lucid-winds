@@ -793,11 +793,23 @@ not.** These are per-game and specific:
   canvas, different shape, handled separately). Unblocked by Stephen confirming the first
   two on his phone. Verified: 8/8 stages shrink 0.7222 → 0.5417 when the visible area
   shrinks, garden-td canvas 844px → 520px, all 9 parse clean, 0 page errors.
-- [~] Loop Warden — start button. Sizing FIXED (see the viewport sweep below), which is
-  the likely cause: an oversized stage pushes the button off the bottom on a real phone.
-  Verified all four mode buttons DO fire and BEGIN THE WATCH exists and is not below the
-  fold at 390x844, so it was never a dead button. STILL OPEN: every touch target on that
-  screen is 40px or 35px against the project's 48px minimum. Needs Jessie to re-check.
+- [x] **Loop Warden — CLOSED 2026-07-28, measured.** Sizing was fixed by the viewport
+  sweep (an oversized stage was pushing the button off the bottom on a real phone), and
+  all four mode buttons were verified to fire with BEGIN THE WATCH above the fold at
+  390x844, so it was never a dead button. The "every touch target is 40px or 35px" half
+  of the note is now STALE: measured at 375x667 in rendered px, 8 of the 9 targets on
+  that screen are 48-50px. The single sub-48 hit was not Loop Warden's at all — it was
+  the shared fleet feedback fab (44x46), fixed below. Re-measured: **9 targets, 0 under
+  48px, 0 JS errors.** ⚠️ Jessie should still eyeball it on her own device; headless
+  cannot reproduce a URL bar.
+- [x] **Fleet feedback fab was under BOTH house minimums — fixed in shared code
+  2026-07-28.** `feedback.js` shipped the bug button at `min-height:44px` (mini variant
+  44x44) with `.66rem` label text: under the 48px touch minimum AND under the 0.7rem
+  readability floor, on all 84 satellites at once. Now 48px / 48x48 / `.72rem`, with
+  `border-radius` and `line-height` moved in step so the circle stays a circle. The
+  `feedback.js?v=4` reference was bumped to `?v=5` in all 84 HTML files in the same
+  commit, because a shared-asset fix behind a stale query string reaches nobody.
+  Verified on loop-warden: fab now measures 48x50, 0 targets under 48. Parses clean.
 - [x] **48px TOUCH-TARGET SWEEP — FLEET COMPLETE (commit d84b3788), 83/83 clean,
   measured in RENDERED px by the independent auditor (scripts/touch_audit.js,
   permanent).** 18 clean this morning -> 79 after the 8-agent workflow (63 games)

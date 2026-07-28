@@ -74,8 +74,8 @@
       '.lwfb-note{font-size:.55rem;color:#8a9178;margin-top:.5rem;line-height:1.5;text-align:center;}' +
       /* Floating launcher button */
       '.lwfb-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147482000;' +
-        'min-height:44px;border-radius:22px;border:1px solid rgba(200,168,75,.4);background:rgba(13,16,12,.86);' +
-        'color:#e8dcc8;font-family:"DM Mono",monospace;font-size:.66rem;padding:0 14px;cursor:pointer;' +
+        'min-height:48px;border-radius:24px;border:1px solid rgba(200,168,75,.4);background:rgba(13,16,12,.86);' +
+        'color:#e8dcc8;font-family:"DM Mono",monospace;font-size:.72rem;padding:0 14px;cursor:pointer;' +
         'box-shadow:0 6px 20px rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);' +
         'touch-action:none;user-select:none;-webkit-user-select:none;}' +
       /* Jessie/Stephen 7/19 + 7/26: the bug must be clearable — drag it
@@ -92,8 +92,8 @@
          top of game controls in 7 of 11 games (Inkbound's move arrow, Pop N
          Lock's rotate, shop rows). Satellites get a small translucent circle
          parked above the typical bottom control bar instead. */
-      '.lwfb-fab.lwfb-mini{min-height:44px;width:44px;padding:0;border-radius:50%;' +
-        'font-size:1.15rem;line-height:44px;text-align:center;opacity:.72;' +
+      '.lwfb-fab.lwfb-mini{min-height:48px;width:48px;padding:0;border-radius:50%;' +
+        'font-size:1.15rem;line-height:48px;text-align:center;opacity:.72;' +
         'bottom:calc(96px + env(safe-area-inset-bottom,0px));}' +
       '.lwfb-fab.lwfb-mini:active{opacity:1;}' +
       '.lwfb-fab.lwfb-mini .lwfb-fab-x{top:-30px;left:-30px;}';
