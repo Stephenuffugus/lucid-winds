@@ -203,8 +203,30 @@ items are marked here so nobody re-does them.
   brag. Art sheets from the spec doc still slot in later.
 
 ### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
-- [~] **3D "turn it sideways and nothing happens" — ROOT-CAUSED + FIXED + VERIFIED
-  (2026-07-28), ⛔ NOT PUSHED, needs one `gh auth login`.** Stephen's report. Two
+- [x] **3D "turn it sideways and nothing happens" — SHIPPED AND PLAYABLE
+  2026-07-28 PM (commit `ba570fac`), live at
+  `lucidwinds.com/satellites/chameleon-3d/`.** It was fixed in the morning and
+  still not reachable, because the fix could only be pushed to a repo this
+  codespace has no write token for. Delivery route changed instead of waiting:
+  the patched build is VENDORED at `satellites/chameleon-3d/` (index.html +
+  assets/*.glb + maps/*.json, 4.7MB; three.js and Playroom stay on CDNs) and the
+  portal 3D card now points there instead of github.io.
+  Verified ON THE LIVE SITE, emulated Pixel 9, through the real portal jukebox
+  iframe and the real Playroom lobby: prompt appears in portrait → ONE tap gets
+  into the game on a phone that never rotates → same tap clears `tapStart` →
+  `stickR` under the thumb; rotating back to portrait does not re-trap; a phone
+  that CAN rotate still clears it normally; every asset 200.
+  ⚠️ **FORK DEBT:** upstream 3D commits do NOT reach this copy. Un-fork steps in
+  `satellites/chameleon-3d/VENDORED.md` — push `handoff-chameleon/0001-*.patch`
+  upstream when a credential exists, repoint the card, delete the folder.
+- [ ] **3D props render untextured — 3 × 404 on
+  `assets/props/Textures/colormap.png` every load.** FOUND 2026-07-28 while
+  verifying the orientation fix. The Kenney prop `.glb` files all reference that
+  palette atlas and it is missing from the upstream repo too, so crates, barrels,
+  statues and grass render flat on the live github.io build as well. Fix = source
+  the real Kenney colormap PNG and drop it at that path (do NOT invent a palette,
+  it would recolour every prop wrong).
+  *Root-cause detail, kept for the un-fork:* Two
   separate walls in `abduct-3d.html`, both only reachable AFTER Launch (setupTouch
   runs after `await insertCoin()`, so neither can show during the Playroom lobby —
   which is why the lobby looks fine): (1) `#rotate` is opaque, inset:0, z-70, with
@@ -221,8 +243,9 @@ items are marked here so nobody re-does them.
   gates clickToPlay on `!touch.on`. Verified headless through the REAL Playroom
   lobby on an emulated Pixel 9, 6/6, 0 JS errors — thumb-target after escaping
   went from the desktop prompt to `stickR`, the real touch control.
-  ⛔ **BLOCKED:** the codespace `ghu_` token is lucid-winds-scoped; push 403s. The
-  commit + patch + verifier + apply instructions are in `handoff-chameleon/`.
+  ⛔ The codespace `ghu_` token is lucid-winds-scoped, so the UPSTREAM repo still
+  has the bug; that is what the fork above routes around. Patch + verifier +
+  apply instructions live in `handoff-chameleon/`.
 - [ ] **2D: capture still not really possible** — refine being caught, add more
   abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
 - [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
@@ -842,7 +865,11 @@ not.** These are per-game and specific:
 - [x] **Leaf Fit rename DONE — Stephen picked TETROKU (Tetris + Sudoku), 2026-07-27.**
   All 11 display strings swapped (portal card + satellite title/OG/share/buildstamp),
   BUILD bumped v1.1→v1.2. Slug/URL stays leaf-fit (installed PWA + shared links),
-  per the display≠slug pattern.
+  per the display≠slug pattern. **Evidence added 2026-07-28:** re-verified against
+  the LIVE site — `lucidwinds.com/portal/` and `/satellites/leaf-fit/` both serve
+  "Tetroku", byte-identical to the repo; the only "leaf fit" left is the portal
+  search alias at `portal/index.html:1149`, which is deliberate so the old name
+  still finds the game.
 - [x] **Merge & Blast level-goal consistency DONE, verified (2026-07-27 sweep).**
   Make-goals could sit BELOW shown progress ("Make a 16 (best 64)") and complete
   on any merge — targets now max(ladder, best+1); score goals say "Score N more"
