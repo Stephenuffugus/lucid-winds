@@ -165,7 +165,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <img class="emblem" src="assets/fx/emblem.png?v=tn1" alt="" onerror="this.style.display='none'">
       <div class="title-word">SILT</div>
       <div class="title-sub">a living sandbox</div>
-      <div class="ribbon">Paint sand, water, soil and seed. Watch a garden come alive under your finger, and keep its pulse beating.</div>
+      <div class="ribbon">Paint silt, water, soil and seed. Watch a garden come alive under your finger, and keep its pulse beating.</div>
       <div style="height:22px"></div>
       <div class="stack">
         <button class="btn primary" id="b-sandbox">🏖 Sandbox</button>
@@ -214,11 +214,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="pad">
       <h2 class="sc-h">How Silt works</h2>
       <div class="helprow"><div class="hi">👆</div><div>Pick an element chip, then <b>draw on the world</b>. Everything falls, flows, burns and grows by its own small rules.</div></div>
-      <div class="helprow"><div class="hi">🌱</div><div><b>Grow a garden:</b> water soaks SOIL dark. A SEED dropped on damp soil sprouts a vine, and a happy vine tips into a <b class="hl">bloom</b>.</div></div>
+      <div class="helprow"><div class="hi">🌱</div><div><b>Grow a garden:</b> <b>Soil</b> drinks <b>Water</b> and turns dark. A <b>Seed</b> on damp soil sprouts a <b>Vine</b>, and a happy vine tips into a <b class="hl">Bloom</b>.</div></div>
       <div class="helprow"><div class="hi">💓</div><div>The <b>Garden pulse</b> measures the living garden right now. Keep blooms alive and fires out. Holding a strong pulse is what earns sunbeams.</div></div>
-      <div class="helprow"><div class="hi">🔥</div><div>FIRE eats vines and oil. WATER quenches it into rising MIST, and mist cools on stone ceilings and rains back down.</div></div>
+      <div class="helprow"><div class="hi">🔥</div><div><b>Fire</b> eats <b>Vine</b> and <b>Oil</b>. <b>Water</b> quenches it into rising <b>Mist</b>, and mist cools on stone ceilings and rains back down.</div></div>
       <div class="helprow"><div class="hi">🌸</div><div>Raise <b>5 blooms at once</b> and the garden is counted. Every third garden presses a keepsake into your Grove.</div></div>
-      <div class="helprow"><div class="hi">🔷</div><div>New matter to play with: heat <b>sand</b> into <b class="hl">glass</b>; <b class="hl">lava</b> flows, burns and cools to stone (water quenches it); <b class="hl">ice</b> &amp; <b class="hl">snow</b> melt to water; a bloom breathes <b class="hl">pollen</b> that re-sows soil; fire leaves <b class="hl">ash</b> that damp soil drinks to grow again; <b class="hl">moss</b> and glow-<b class="hl">spore</b> creep over wet stone.</div></div>
+      <div class="helprow"><div class="hi">🔷</div><div>New matter to play with: <b>Silt</b> heated by fire fuses into <b class="hl">Glass</b>. <b class="hl">Lava</b> flows, burns, and cools to <b>Stone</b> where water touches it. <b class="hl">Ice</b> and <b class="hl">Snow</b> melt to water. A bloom breathes <b class="hl">Pollen</b> that re-sows soil. Fire leaves <b class="hl">Ash</b> that damp soil drinks to grow again. <b class="hl">Moss</b> and glowing <b class="hl">Spore</b> creep over wet stone and glass.</div></div>
+      <div class="helprow"><div class="hi">🪨</div><div>The quiet ones: <b>Stone</b> and <b>Glass</b> never move and nothing eats them, so they make walls and floors. <b>Silt</b> falls and piles into slopes. <b>Oil</b> pools like water and catches fire fastest of anything in the satchel.</div></div>
       <div class="helprow"><div class="hi">🌱</div><div>Your <b>garden is saved</b>. Leave and come back and it's right where you left it. Scenes start a fresh little world; the dock's <b>Clear</b> begins a new garden.</div></div>
       <div class="helprow"><div class="hi">🎬</div><div><b>Scenes</b> start you in a ready-made little world. <b>Bloom Rush</b> is 90 seconds to grow as many blooms as you can.</div></div>
       <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
@@ -376,7 +377,7 @@ function tickSim(){
       i=y*CW+x; el=g[i];
       if(el===E.EMPTY||el===E.STONE||el===E.GLASS||m[i])continue;
       if(el===E.SILT){
-        if(G.emergent){ /* heated sand fuses to glass */
+        if(G.emergent){ /* heated silt fuses to glass */
           if(((x>0&&g[i-1]===E.FIRE)||(x<CW-1&&g[i+1]===E.FIRE)||(y>0&&g[i-CW]===E.FIRE)||(y<CH-1&&g[i+CW]===E.FIRE))&&r()<0.55){ g[i]=E.GLASS; a[i]=0; continue; } }
         if(y<CH-1){ var b=i+CW;
           if(g[b]===E.EMPTY||g[b]===E.WATER||g[b]===E.MIST||g[b]===E.OIL){ swap(i,b); continue; }
@@ -439,7 +440,7 @@ function tickSim(){
         // spread
         for(dn=0;dn<4;dn++){ var ns=nbq[dn]; if(ns<0||ns>=N)continue; var ne=g[ns];
           if(FLAM[ne]&&r()<FLAM[ne]){ g[ns]=E.FIRE; a[ns]=ne===E.OIL?46:34; m[ns]=1; } }
-        // sand holds heat: fire beside sand lingers and keeps fusing it to glass, then goes out (emergent)
+        // silt holds heat: fire beside silt lingers and keeps fusing it to glass, then goes out (emergent)
         var hot=G.emergent&&((x>0&&g[i-1]===E.SILT)||(x<CW-1&&g[i+1]===E.SILT)||(y>0&&g[i-CW]===E.SILT)||(y<CH-1&&g[i+CW]===E.SILT));
         if(hot&&r()<0.72){ /* hold life */ }
         else if(life<=1){ g[i]=(r()<0.2)?E.MIST:(G.emergent&&r()<0.3?E.ASH:E.EMPTY); if(g[i]===E.MIST)a[i]=70; }
@@ -712,7 +713,7 @@ var NCLASSIC=12;           /* the original 12 trials; daily rotates within these
 /* ---------- Glassworks trials (13+) — teach the new elements; each machine-proven ----------
    emergent:true so glass-fusing / moss-creep / pollen self-seeding are live. */
 TRIALS.push(
- { name:"Glassblower", goalTxt:"Fuse 24 sand into glass", emergent:true,
+ { name:"Glassblower", goalTxt:"Fuse 24 silt into glass", emergent:true,
    budget:{2:640,10:240,8:40}, goal:{type:"count",el:E.GLASS,n:24},
    build:function(){ floorStone(); box(32,138,3,54,E.STONE); box(100,138,3,54,E.STONE); }, /* a glass kiln basin */
    proof:[{p:[50,150,10,2]},{p:[67,150,10,2]},{p:[84,150,10,2]},{s:70},

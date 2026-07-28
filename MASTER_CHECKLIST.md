@@ -983,7 +983,20 @@ not.** These are per-game and specific:
 - [ ] Mosaic Draft — clarity pass
 - [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
 - [ ] ALL games earn sunbeams inside LW
-- [ ] Silt — consistent element-behaviour message
+- [x] **Silt element-behaviour message made consistent, 2026-07-28 (16/16 trial
+  proofs still win, 0 JS errors).** The note was right and the worst case was
+  concrete: the game told you to **"Fuse 24 sand into glass"** and to "Paint sand,
+  water, soil and seed" — but there is no SAND chip. The element is **Silt**, which
+  is also the game's name. A player was being sent looking for something that does
+  not exist. Fixed in the goal text, the front-door ribbon and the help.
+  Second half was typographic: the help shouted some elements in caps (SOIL, SEED,
+  FIRE, WATER, MIST) and bolded others in lowercase (sand, glass, lava, ice...),
+  so the copy read as two different games. Now one convention throughout — bold
+  Title Case, exactly matching the chip labels the player taps.
+  Also added the missing row: Stone and Glass never move and nothing eats them
+  (verified in the sim — both are skipped by the update loop), Silt falls and piles,
+  Oil pools like water and is the most flammable thing in the satchel (FLAM 0.62,
+  highest of any element). Every drawable element now has a stated behaviour.
 - [x] ~~New game: Mouse Trap~~ — ALREADY BUILT. Verified 2026-07-25: `satellites/mouse-trap/`
   exists and has a live portal card ("Trap the little garden mouse before it scurries off
   the edge"). Another stale entry on the Jul 16 list.
