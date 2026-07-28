@@ -885,11 +885,20 @@ not.** These are per-game and specific:
   Jimothy splash). Bonus fixes in the wave: pollen-panic's 25-node 8px font
   rescue, vinewinder's 12-style font pass, flatulence-fighter's 9px label,
   petal-plunge's tutorial made re-readable, pong's 48px back-x everywhere.
-  STILL OPEN (fonts half):
-  (b) Real-copy font offenders: line-loom daily subtitle, frost-watch chip,
-  hues, shell-shuffle, flipbook, dewball world-card sub-labels (8-9.6px),
-  star-field + impossible-garden title-screen smalls (~9-10.4px), pong menu
-  tagline, budburst dailyMeta. One batch, small surgical edits.
+  (b) **DONE 2026-07-28 — all ten games, measured before and after.** Audited
+  first (`scripts/satellite_ux_audit.js`, rendered px at 375x667) rather than
+  trusting the 7-day-old note: every one of the ten really was serving player
+  copy under the 11.2px floor — 10 satellites, ~50 distinct selectors, worst
+  7.3px ("best wave", frost-watch). Fixed surgically, sized per stage scale
+  (scaled 540x960 stages need ~17px CSS to render 11.7px; unscaled games ~11.5px).
+  Also caught and fixed what the note missed: line-loom's whole IN-GAME HUD
+  (bridge/pool/week chips, shuttle numbers, UNWEAVE, the coach card and its GOT IT
+  button, 8.3-10.4px) — the title screen was never the only offender.
+  Re-audit: **8 of 10 fully clean, the other 2 clean except `div#buildstamp`**,
+  which is the Director call below. Landing screenshots eyeballed for overflow
+  (line-loom, star-field, frost-watch, budburst) — no clipping, no wrap breaks.
+  All 10 parse clean; flipbook sw v7→v8 and dewball sw v4→v5 bumped in lockstep
+  with their registration URLs so phones actually get the new CSS.
   ⛔ STEPHEN RULING still needed: ~60 games' worst offender is the tiny
   div#buildstamp version stamp (6.8-7.8px). Player copy that must hit the
   0.7rem floor, or dev chrome the auditor should exempt?
