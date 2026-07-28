@@ -127,13 +127,17 @@ Also named in that first email. Smallest file of the three and the most mechanic
 - Share: time taken plus a small found-order strip.
 - ~half a session.
 
-### 3. Three Sisters · `/play/set.html` (the SET game)
-No canonical `games/set.js` — it is one of the older inline builds, so **check where
-its code actually lives before estimating**. Named "Daily Trio" in an earlier note.
-- SET boards seed trivially; the deck is just an ordered shuffle.
-- Result = sets found in one timed pass.
-- ~half a session once the code is located, more if it needs pulling out of inline
-  first (see the canonical-games rule: inline is dead, `games/<id>.js` wins).
+### 3. Three Sisters · `/play/set.html` (the SET game) — ✅ BUILT, this section is stale
+**CORRECTED 2026-07-28.** The code was located and the daily was BUILT on 2026-07-16
+(commit 0b8f1129) — before this plan's estimate was written. It lives in
+`games/_inline/set.js`: DAILY TRIO mode button :186, date-seeded deck :397
+(`mulberry32(dayNum() + 77001)`), day helpers :146-164, one counted lock-in +
+practice replays + "Three Sisters Daily #N" share text :247-268, `window._setDaily`
+:422. Wired live at `play/set.html:36`.
+- Still inline rather than a canonical `games/set.js` (the canonical-games rule still
+  applies if anyone touches it).
+- Rolls at LOCAL midnight, not UTC — the same caveat as Word Sprout / Flood /
+  Minesweeper. Fix that before submitting it to Listdle.
 
 ---
 

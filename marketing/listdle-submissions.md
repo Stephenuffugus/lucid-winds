@@ -120,7 +120,10 @@ once Stephen wants to send more. Each still wants a device pass first.
 | Minesweeper | daily seeded board | `/play/mines.html` |
 | Stop at Ten | has a daily mode | `/play/stopten.html` |
 
-Three Sisters (`/play/set.html`) has NO daily mode. It needs a date seeded
-"Daily Trio" before it can be submitted. Vine Words and Word Search are the same
-story, and both were named in the very first email to Conor, so they are the two
-most worth building a daily into.
+~~Three Sisters (`/play/set.html`) has NO daily mode.~~ **CORRECTED 2026-07-28: it
+DOES.** "Daily Trio" shipped 2026-07-16 (commit 0b8f1129) and lives in
+`games/_inline/set.js` — date-seeded deck at :397, one counted lock-in and share text
+at :247-268, loaded by `play/set.html:36`. Its only gap for Listdle is that it rolls at
+LOCAL midnight rather than UTC. Vine Words and Word Search genuinely still have no
+daily, and both were named in the very first email to Conor, so they are the two most
+worth building a daily into.

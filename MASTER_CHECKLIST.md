@@ -133,8 +133,13 @@ items are marked here so nobody re-does them.
   skinnied the old one, and a 5-sheet modular ramp kit — one material per route so
   the ball reads at a glance, one angle per piece with the engine rotating (the
   cheap trade), orphan tube_straight/curve ruled superseded. Art itself still [?].
-- [ ] **Slime tube top-left: much smaller** — direction confirmed (older entry said
-  "one number to tune at index.html:1104 if Stephen wants it smaller" — he does).
+- [x] **Slime tube top-left: much smaller — SHIPPED (commit a23bd880), verified
+  2026-07-28.** Meter height 150→104 at `satellites/greenhouse-pinball/index.html:1108`
+  (Blobworks = the greenhouse-pinball dir; portal/index.html:755 maps the name). It now
+  reads as a gauge inside the left rail, clear of the painted eyeball jars — ~40×104 on a
+  540×960 stage, down 72% in area from the original 196. BUILD v1.6.1, sw cache v6 so it
+  is not stuck behind the worker. ⚠️ The commit's "Stephen confirmed 'much smaller'" quotes
+  his REQUEST, not sign-off on 104 — **pending his eyes**; tune `_mh` at :1108 if still off.
 - [ ] **Blip's intro animation still skippy** — he provided a movement sheet; redo
   carefully or pull the old assets and do it right. Take time on it.
 
@@ -318,8 +323,17 @@ items are marked here so nobody re-does them.
   Clear only nulled the ragdoll and never touched the placed-traps array — in
   build mode it did nothing visible. Now empties the board; Undo added (haz.pop,
   48px, no em-dash); verified headless through the real UI incl. undo-past-empty.
-- [ ] **No Pain No Gain, still open**: a real END to runs (fully build out);
-  description loses the word "cozy".
+- [x] **No Pain No Gain: run END + "cozy" — BOTH DONE, verified 2026-07-28.**
+  END shipped in 1ab3d865: `endRun()` at `satellites/no-pain-no-gain/index.html:249`
+  and `drawRunOver()` at :413 (run-over card with coins this drop, best combo, NEW
+  BIGGEST DROP, DROP AGAIN / BUILD), physics frozen while it shows, 350ms
+  accidental-tap grace at :356, two triggers at :543 — Clayton settling (rest ≥1.6s)
+  or 15s with no damage. "cozy" removed in ceed659c: grep count is 0 in the satellite,
+  and the portal card :749 + in-game ribbon :86 are both clean. Only two files in the
+  repo mention Clayton and both are current; all script blocks `node --check` clean.
+  ⚠️ **Edge case found during the audit, left open:** there is no max run length, so a
+  perpetual-damage build (fan pinning Clayton on a saw) keeps resetting `lastDmgT`
+  while `rest` never accumulates — neither trigger fires and the run never ends.
 - [x] **Sprout Dice clarity DONE, verified (2026-07-27 sweep).** Jessie was right
   and it was a BUG: the End Turn button rendered as a ~15px sliver OFF-SCREEN at
   every phone width (flex CSS bug) — players spent dice and hit a dead end. Fixed,
@@ -570,11 +584,12 @@ Ordered by value per hour of work.
   pages via the HTTP cache, with a 5s cache-fallback race on cold launches) has
   the same fingerprint as this bug. Watch whether it recurs post-fix before
   spending a repro session.
-- [~] **Blobworks code debt** — slime meter shrunk 196→150 so it stops overhanging the
-  painted eyeball jars (verified by screenshot, not guessed; one number to tune at
-  `index.html:1104` if Stephen wants it smaller). STILL OPEN: Blip's intro animation is
-  skippy. Also noted: `art/tube_straight.png` and `art/tube_curve.png` are referenced
-  nowhere in the code.
+- [~] **Blobworks code debt** — ~~slime meter shrunk 196→150 … one number to tune at
+  `index.html:1104`~~ **STALE, corrected 2026-07-28:** it went 196→150→**104** and the
+  number now lives at `satellites/greenhouse-pinball/index.html:1108` (see the closed
+  entry above). STILL OPEN: Blip's intro animation is skippy. Also noted:
+  `art/tube_straight.png` and `art/tube_curve.png` are referenced nowhere in the code
+  (ruled superseded — the engine rotates one angle per piece).
 - [ ] **FLAGSHIP: Litterbugs** — hashblock #2. UPDATE 2026-07-27: Stephen's
   **Stephenuffugus/Litter_Bug** repo is far along (turn-based battler, 134/0
   smoke, 4 pages) — read its NEXT_SESSION.md + PART_CATALOG.md before anything.
@@ -907,8 +922,14 @@ with no login, and it's the one directory that said yes.
   week into a day.
 - [ ] DL-C1 **Vine Words daily** — highest value, named in the first email to Conor.
 - [ ] DL-C2 **Word Search daily** — also named in that email.
-- [ ] DL-C3 **Three Sisters "Daily Trio"** — estimate unknown, older inline build, locate the
-  code before promising a number.
+- [x] DL-C3 **Three Sisters "Daily Trio" — ALREADY BUILT, the note was WRONG**
+  (corrected 2026-07-28). Shipped 2026-07-16 in commit 0b8f1129, **nine days before this
+  note was written.** Code is at `games/_inline/set.js`: mode button :186, date-seeded
+  deck :397 (`mulberry32(dayNum()+77001)` — so scores ARE comparable, unlike the two
+  ⚠️ games in DL-A), one counted lock-in + practice replays + share text :247-268, day
+  helpers :146-164, `window._setDaily` :422. Loaded live by `play/set.html:36`.
+  Remaining before submission: it rolls at LOCAL midnight (same caveat as Word Sprout /
+  Flood / Minesweeper) and the Listdle submission is still parked per Stephen.
 - ⛔ Do NOT submit any of these to Listdle before DL-A verifies them. Conor has been generous;
   sending a fake daily is how that ends.
 
