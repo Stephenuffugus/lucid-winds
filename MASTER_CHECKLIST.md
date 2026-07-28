@@ -993,7 +993,25 @@ not.** These are per-game and specific:
   Duel looks exactly like Classic? The alternative is to leave portrait as the
   stated compromise it is today. One sentence from you and it is built.
 - [ ] Portal: live "N playing now" per game (needs presence; design first)
-- [ ] Portal search — "similar type" matching + her assistant-to-guide idea
+- [x] **Portal search "similar type" matching DONE 2026-07-28 — and it uncovered
+  eight games nobody could find.** The ALIASES map is looked up as
+  `ALIASES[nm.toLowerCase()]`, so **renaming a game silently orphans its aliases**.
+  Eight had been orphaned: searching "blockudoku" or "woodoku" returned NOTHING
+  because the alias was still keyed on "leaf fit" after the game became Tetroku.
+  Same for Sunforge (was ring stacker), Acorn Drop (tonic drop), Jimothy (stream
+  hop), Think Fast (micro meadow), Blobworks (greenhouse pinball), Mancala (seed
+  sow) and Go (living stones). Re-keyed to current names with the OLD name folded
+  into the keywords, so both titles find the game. Loud comment added with a
+  rename checklist so the next rename cannot repeat it.
+  Search itself upgraded: **category is now searchable** (typing "puzzle" or
+  "dice" matched nothing before unless the word was in a name), hits are RANKED
+  (title 3 > alias 2 > category/description 1) instead of alphabetical, and a
+  narrow search now appends **type-neighbours** — other games sharing ≥2 alias
+  keywords with a hit.
+  Verified live: blockudoku/woodoku→Tetroku, frogger→Jimothy, dr mario→Acorn Drop,
+  warioware→Think Fast, pinball→Blobworks, baduk→Go, old names still resolve,
+  puzzle→8, dice→4, 12 blocks parse, 0 JS errors.
+  ⛔ STILL OPEN, needs Jessie: her "assistant-to-guide" idea — no spec written down.
 - [x] **Cosmic Cadets sprite scaling FIXED 2026-07-28** (⚠️ display≠slug: the note
   says "Comet Cadets", the game ships as **Cosmic Cadets** at
   `satellites/seed-flutter/` — another [[reference_display_name_slug_map]] trap).

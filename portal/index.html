@@ -1116,9 +1116,16 @@ function _lwPaintCards(el, items){
    One box over EVERYTHING (satellites + garden games), and it speaks
    classic: searching a famous game's name surfaces our take on it. */
 var ALIASES={
+  /* ⛔ KEYED ON THE GAME'S CURRENT DISPLAY NAME. searchGames() looks these up with
+     ALIASES[nm.toLowerCase()], so renaming a game silently orphans its aliases and
+     kills every classic-name search that pointed at it. That had happened to EIGHT
+     games (2026-07-28): searching "blockudoku" or "woodoku" returned nothing because
+     the alias was still keyed on "leaf fit" after the game became Tetroku. Each old
+     name is folded into the keyword list so the previous title still finds it.
+     RENAME CHECKLIST: change the key here in the same commit as the card. */
   'merge & blast':'merge and blast 2048 number blocks pop group collapse',
   'super slice':'slice master knife flip cut fruit stacks poki',
-  'ring stacker':'tetris rings blocks falling stack spin slam gyre',
+  'sunforge':'tetris rings blocks falling stack spin slam gyre ring stacker',
   'flipbook':'flip book animator draw animation onion skin notebook',
   'word trellis':'scrabble crossword builder',
   'word sprout':'wordle five letter daily guess',
@@ -1129,13 +1136,13 @@ var ALIASES={
   'spore drift':'osmos absorb',
   'berry vine':'zuma marble shooter chain',
   'jade garden':'mahjong solitaire tiles',
-  'tonic drop':'dr mario pills match four',
+  'acorn drop':'dr mario pills match four tonic drop',
   'sled vine':'line rider draw track sled',
   'frost watch':'missile command defend',
   'dewball':'katamari damacy rolling ball 3d',
   'seed pot':'suika watermelon merge drop 2048',
   'cosmic cadets':'flappy bird one tap flier',
-  'stream hop':'frogger crossy road hopper',
+  'jimothy':'frogger crossy road hopper stream hop',
   'inkbound':'grubtrap rodents revenge trap cheese book ink library mouse',
   'hexa hive':'hexa sort merge color hexagon puzzle stack honey bee combo relaxing asmr',
   'no pain, no gain':'ragdoll physics sandbox clay claymation traps spikes saw bomb damage coins stickman happy wheels',
@@ -1148,7 +1155,7 @@ var ALIASES={
   'root weave':'untangle planarity knots',
   'star field':'star battle two not touch logic',
   'plot bloom':'islanders city builder placing',
-  'micro meadow':'warioware microgames rapid',
+  'think fast':'warioware microgames rapid micro meadow',
   'impossible garden':'monument valley perspective',
   'rule root':'baba is you rules push',
   'first sprout':'a dark room idle text',
@@ -1157,12 +1164,12 @@ var ALIASES={
   'season sway':'reigns swipe kingdom',
   'meadow weave':'dorfromantik tile laying',
   'petal alchemy':'infinite craft little alchemy combine',
-  'leaf fit':'woodoku blockudoku block puzzle',
+  'tetroku':'woodoku blockudoku block puzzle leaf fit',
   'seed reel':'luck be a landlord slot builder',
   'petal plunge':'skifree ski slalom downhill',
   'tinker loft':'amazing alex rube goldberg contraption machine',
   'picnic panic':'space invaders galaga shooter waves',
-  'greenhouse pinball':'pinball table flippers',
+  'blobworks':'pinball table flippers greenhouse pinball',
   'petal slice':'fruit ninja slicing swipe',
   'burr blast':'angry birds sling destruction',
   'pong arena':'pong paddle duel',
@@ -1176,27 +1183,68 @@ var ALIASES={
   'klondike':'solitaire classic cards',
   'spider':'spider solitaire',
   'freecell':'freecell solitaire',
-  'seed sow':'mancala',
-  'living stones':'go baduk weiqi',
+  'mancala':'mancala seed sow',
+  'go (living stones)':'go baduk weiqi living stones',
   'five in a row':'gomoku gobang',
   'sixfold':'rock paper scissors duel stance',
   'sweet spot':'tennis timing ace',
   'skitterlings':'snake pikmin swarm',
   'power scalers':'incremental arena battler'
 };
+/* Jessie 7/16: "similar type" matching. The ALIASES map already lets you find a
+   game by the classic it plays like (search "blockudoku", get Tetroku), but three
+   things were missing: the CATEGORY was never searchable (typing "puzzle" or
+   "dice" matched nothing unless the word happened to be in a name), results were
+   ordered alphabetically so a title match could sit below a passing mention, and
+   nothing surfaced the games that are LIKE the one you found. Now: hits are
+   ranked (title > alias > category/description), and when a search lands on only
+   a couple of games we append their type-neighbours — other games sharing at
+   least two alias keywords with a hit — after the exact ones. */
+function _swsAliasWords(nm){
+  var a=ALIASES[(nm||'').toLowerCase()]||'';
+  return a? a.split(/\s+/).filter(function(w){return w.length>2;}) : [];
+}
 function searchGames(qraw){
   var q=(qraw||'').trim().toLowerCase();
   var tabs=document.getElementById('tabs');
   if(!q){ tabs.classList.remove('searching'); renderGarden(window._swsCat||'all'); return; }
   tabs.classList.add('searching');
-  var items=FEATURED.filter(function(g){return !g.hub;}).map(function(g){return {g:g,feat:true,nm:g.nm||'',ds:g.ds||''};})
-    .concat(GAMES.map(function(g){return {g:g,feat:false,nm:g[1]||'',ds:g[3]||''};}));
+  var catName={}; for(var ci=0;ci<CATS.length;ci++) catName[CATS[ci][0]]=CATS[ci][1];
+  var items=FEATURED.filter(function(g){return !g.hub;}).map(function(g){return {g:g,feat:true,nm:g.nm||'',ds:g.ds||'',cat:''};})
+    .concat(GAMES.map(function(g){return {g:g,feat:false,nm:g[1]||'',ds:g[3]||'',cat:(catName[g[2]]||g[2]||'')};}));
   var words=q.split(/\s+/);
-  var out=items.filter(function(it){
-    var hay=(it.nm+' '+it.ds+' '+(ALIASES[it.nm.toLowerCase()]||'')).toLowerCase();
-    return words.every(function(w){return hay.indexOf(w)>=0;});
-  });
-  out.sort(function(a,b){var x=a.nm.toLowerCase(),y=b.nm.toLowerCase();return x<y?-1:(x>y?1:0);});
+  var out=[];
+  for(var i=0;i<items.length;i++){
+    var it=items[i];
+    var nm=it.nm.toLowerCase(), al=(ALIASES[nm]||'').toLowerCase();
+    var rest=(it.ds+' '+it.cat).toLowerCase();
+    var all=nm+' '+al+' '+rest;
+    if(!words.every(function(w){return all.indexOf(w)>=0;})) continue;
+    var rank=0;
+    for(var w=0;w<words.length;w++){
+      if(nm.indexOf(words[w])>=0) rank+=3;
+      else if(al.indexOf(words[w])>=0) rank+=2;
+      else rank+=1;
+    }
+    it.rank=rank; out.push(it);
+  }
+  out.sort(function(a,b){ if(b.rank!==a.rank) return b.rank-a.rank;
+    var x=a.nm.toLowerCase(),y=b.nm.toLowerCase(); return x<y?-1:(x>y?1:0); });
+  /* type-neighbours: only when the query was specific enough to be about a game */
+  if(out.length && out.length<=3){
+    var seen={}; for(var k=0;k<out.length;k++) seen[out[k].nm]=1;
+    var want={}; for(var k2=0;k2<out.length;k2++){
+      var ws=_swsAliasWords(out[k2].nm); for(var j=0;j<ws.length;j++) want[ws[j]]=1; }
+    var near=[];
+    for(var m=0;m<items.length;m++){
+      var cand=items[m]; if(seen[cand.nm]) continue;
+      var cw=_swsAliasWords(cand.nm), hits=0;
+      for(var n=0;n<cw.length;n++) if(want[cw[n]]) hits++;
+      if(hits>=2){ cand.rank=-hits; near.push(cand); }
+    }
+    near.sort(function(a,b){ return a.rank-b.rank; });
+    out=out.concat(near.slice(0,6));
+  }
   if (out.length) _lwPaintCards(document.getElementById('garden'), out);
   else document.getElementById('garden').innerHTML =
     '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
