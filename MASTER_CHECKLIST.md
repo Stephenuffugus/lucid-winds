@@ -46,6 +46,40 @@ Last updated: 2026-07-26
 
 ---
 
+## 🚨 FROM STEPHEN + JESSIE 2026-07-28 (chat) — merged before work started
+
+- [ ] **Super Slice 3D — the wall climb must be ENDLESS.** Stephen: "the wall
+  climb needs to just keep going and going so you can see how high you can get on
+  the wall 30. the whole challenge of the game is to see how high you can make
+  it." So the climb should not end at a fixed wall/level — it keeps going and the
+  score IS the height reached.
+- [ ] **Super Slice 3D — FREE FALL may need to be its own game.** Stephen: "The
+  free fall game may need to be its own game too call super slice 3D free fall
+  and there should be an endless mode in that too to see how far the can fall
+  without sticking to the side." Two parts: split it out as its own titled game,
+  and give it an endless mode scored on distance fallen without sticking.
+- [ ] **Pop N Lock — you cannot see which piece you are holding.** Stephen: "its
+  hard to see what piece your even working with because the second blob seems to
+  render so slow it would really help gameplay." The second blob of the pair
+  renders late, so the piece reads wrong while you are trying to place it.
+- [ ] **Pop N Lock — reclaim the empty screen for the UI.** Stephen: "there seems
+  to be some open screen too that we can clean up and use to improve the overall
+  UI."
+- [ ] **Pop N Lock — pieces must move FASTER.** Stephen: "i really just need to be
+  able to move my pieces faster so i can play on higher difficulties without
+  having to slowly wait or fumble with the onscreen controls." Higher difficulty
+  is unplayable at the current input speed.
+- [ ] **Hues — the bottom bar is unswipeable on iPhone (Jessie 7/28).** "On an
+  Apple phone, when you go to swipe the bar at the bottom, it's too close to the
+  edge of the phone, so it's trying to swipe the entire window, rather than the
+  color bar." iOS reserves the bottom edge for its own system gesture, so the
+  control has to sit above that band.
+- [ ] **Hues — no rules before play (Jessie 7/28).** "Does not have the objective,
+  rules, how to play screen before the game starts." Needs a tutorial, and Stephen
+  ruled it comes AFTER the edge-swipe fix.
+
+---
+
 ## 📒 THE JUL 21+26 LIST — Stephen 2026-07-26 notes + Jessie 2026-07-21
 
 Merged 2026-07-26 before any work started. Duplicates against older sections were
