@@ -594,10 +594,17 @@ var FEATURED = [
   // is available later if the director wants portal rewards wired in.
   {nm:"Abduct a Chameleon", ds:"Paint yourself to match the ground and hold still until the alien hunters give up.", url:"https://stephenuffugus.github.io/abduct_a_chameleon/", ic:"🦎", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
   // Abductee 3D — the 3D multiplayer sibling (Playroom-based lobby), in active dev.
-  // Points at the LIVE root build (repo root abduct-3d.html, main branch) so it
-  // tracks the dev's latest push — NOT the frozen releases/v3.0.0 snapshot, which
-  // predated the P35+ character/prop/decoy work. Stays under the In Development tab.
-  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", url:"https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
+  // ⛔ 2026-07-28: this used to point at https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html.
+  // That build traps every phone behind the "turn it sideways" prompt (opaque
+  // full-screen #rotate with no dismiss path). The fix is written and verified but
+  // CANNOT be pushed to that repo from this codespace — the codespace GITHUB_TOKEN
+  // is scoped to lucid-winds only (403 on push). So the fixed build is vendored here
+  // at /satellites/chameleon-3d/ (abduct-3d.html + assets/ + maps/, upstream d57a94f
+  // + the orientation patch) and the card points at OUR copy so phones actually work.
+  // ⚠️ This is a FORK: upstream 3D commits will NOT appear here. The moment a push
+  // credential exists, push handoff-chameleon/0001-*.patch upstream and point this
+  // back at the github.io URL. See handoff-chameleon/README.md.
+  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", url:"/satellites/chameleon-3d/?v=20260728", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
   {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   {nm:"Sweet Spot", ds:"Time your swing and nail the tiny gold sweet spot for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
   {nm:"Tarot Run", ds:"A fast combo card run through a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
