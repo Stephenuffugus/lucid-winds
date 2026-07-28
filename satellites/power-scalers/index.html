@@ -412,6 +412,11 @@
   select.txt.small option{background:var(--void-2)}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}.wheel{transition:none !important}}
 </style>
+<!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
+     postMessage, but nothing on the portal side ever listened, so it paid nothing.
+     Now on the house standard: SDK + a 30/day capped helper. -->
+<script src="/sunbeam-sdk.js?v=5"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"powerscalers"}).catch(function(){});</script>
 </head>
 <body>
 <div class="aurora"><div class="m"></div></div>
@@ -420,6 +425,20 @@
 <div class="toast-wrap" id="toasts"></div>
 <div id="modal-root"></div>
 <script>
+/* Fleet earn standard (SUNBEAM_EARN_POLICY.md): 30 sunbeams/day/game, granted
+   through this capped helper rather than raw Sunbeam.earn. */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_powerscalers';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
 "use strict";
 /* ===================== DATA ===================== */
 const STAT_KEYS=["str","dur","sta","int","spd","cmb"];
@@ -1938,6 +1957,9 @@ function pickFighter(id){
   state.battleSel=sel; render();
 }
 function battleRewards(winnerOC,loserOC,res){
+  /* 2026-07-28: this game earned nothing at all. A resolved arena bout is the
+     unit of play here, so that is the earn moment. 30/day cap does the rest. */
+  if(window._sbCapEarn) window._sbCapEarn(3,'powerscalers:battle');
   const winG=Math.round((30+loserOC.level*3)*(1+(res.gloryBonus||0)));
   const loseG=8;
   const winXP=Math.round((40+loserOC.level*5)*(1+(res.xpBonus||0)));

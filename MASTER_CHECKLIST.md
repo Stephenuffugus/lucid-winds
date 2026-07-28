@@ -1027,7 +1027,24 @@ not.** These are per-game and specific:
   probe tapping a hidden button — the real first-run flow (load → rules → title)
   is correct and matches the house "rules before play" standard.
 - [ ] Finish the "coming soon" games (Impossible Garden is the flagged one)
-- [ ] ALL games earn sunbeams inside LW
+- [x] **ALL same-origin games earn sunbeams — audited and closed 2026-07-28.**
+  Audit first: 79 of 84 satellites were wired. The 5 that were not:
+  · **bloom-breaker** and **bramblewick** LOOKED wired — both call an internal
+    `earn()`/`earnMoment()` that posts `{sws:'earn'}` to the parent. Nothing on
+    the portal side has ever listened for that message (the portal handles
+    `ready`/`close`/`retryGame`/`game-music` only), so both games paid out
+    **nothing**, quietly, for their whole life. Now on the house standard: SDK +
+    a 30/day capped `_sbCapEarn`. bloom-breaker 3/level clear (4 if perfect),
+    6/world clear. bramblewick 2 per survived minute, 5/boss, 1/elite.
+  · **power-scalers** had no earn path at all. Now 3 per resolved arena bout,
+    which is the unit of play there.
+  · **chameleon-3d** — vendored external game, backend-free by design, no hooks.
+  · **dragon-philosophy** — ⛔ STILL OPEN: vendored MINIFIED React bundle. Same
+    trap as its em-dash copy; needs its own session or a source-project fix.
+  Verified headless on all three: SDK present, helper present, a probe grant
+  returns 3, per-game localStorage key written, 0 JS errors, all blocks parse.
+  Cap proven, not assumed: 40 consecutive 3-sunbeam calls granted exactly 30 and
+  then stopped (`sw_sb_powerscalers={"d":20662,"n":30}`).
 - [x] **Silt element-behaviour message made consistent, 2026-07-28 (16/16 trial
   proofs still win, 0 JS errors).** The note was right and the worst case was
   concrete: the game told you to **"Fuse 24 sand into glass"** and to "Paint sand,

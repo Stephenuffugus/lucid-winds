@@ -66,6 +66,11 @@
   /* level-up draft cards are drawn on canvas; menus only for meta screens */
   #dev{ position:absolute; left:6px; top:6px; z-index:9; font:11px/1.3 monospace; color:#9fd; background:rgba(0,0,0,0.5); padding:4px 6px; border-radius:6px; display:none; white-space:pre; pointer-events:none; }
 </style>
+<!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
+     postMessage, but nothing on the portal side ever listened, so it paid nothing.
+     Now on the house standard: SDK + a 30/day capped helper. -->
+<script src="/sunbeam-sdk.js?v=5"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"bramblewick"}).catch(function(){});</script>
 </head>
 <body>
 <div id="wrap"><canvas id="c"></canvas></div>
@@ -141,6 +146,20 @@
 </div>
 
 <script>
+/* Fleet earn standard (SUNBEAM_EARN_POLICY.md): 30 sunbeams/day/game, granted
+   through this capped helper rather than raw Sunbeam.earn. */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_bramblewick';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
 /* =====================================================================
    Sky Wolf Studios embed protocol (copy-verbatim; do not modify)
    ===================================================================== */
@@ -769,7 +788,7 @@ function killPest(p){
   // drop loam mote(s) — elites drop a cache
   var drops=p.elite?6:1;
   for(var di=0;di<drops;di++){ var m=motes.spawn(); if(m){ m.x=p.x+(drops>1?Math.random()*44-22:0); m.y=p.y+(drops>1?Math.random()*44-22:0); m.xp=p.elite?3:p.xp; m.t=13; m.vx=(Math.random()*60-30); m.vy=(Math.random()*60-30); } }
-  if(p.elite) earn('elite_down',{});
+  if(p.elite){ earn('elite_down',{}); if(window._sbCapEarn) window._sbCapEarn(1,'bramblewick:elite'); }
   if((G.passives.guttation||(G.laneMul&&G.laneMul.lifesteal)) && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
   if(G.familyTier.mycelium>=3){ gridQuery(p.x,p.y,40,function(o){ if(o.active) applyStatus(o,'spore',1); }); } // Mycelium T3: spore puff on kill
   spawnBurst(p.x,p.y,p.meta.col,5);
@@ -777,7 +796,7 @@ function killPest(p){
 function bossDefeated(p){
   var type=p.type; p.active=false; G.boss=null; G.kills++; G.bossesDown++;
   spawnBurst(p.x,p.y,'#e8c24b',24); G.shake=0.6; sndLevel();
-  earn('boss_down',{boss:type});
+  earn('boss_down',{boss:type}); if(window._sbCapEarn) window._sbCapEarn(5,'bramblewick:boss');
   // big loam cache
   for(var i=0;i<14;i++){ var m=motes.spawn(); if(m){ m.x=p.x+(Math.random()*80-40); m.y=p.y+(Math.random()*80-40); m.xp=3; m.t=14; m.vx=Math.random()*80-40; m.vy=Math.random()*80-40; } }
   // boss walker: record time, then advance to the next boss OR win on the final
@@ -983,7 +1002,8 @@ function update(dt){
   if(G.toast){ G.toast.t-=dt; if(G.toast.t<=0) G.toast=null; }
 
   // milestone earn (every 60s survived)
-  var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms}); }
+  var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms});
+    if(window._sbCapEarn) window._sbCapEarn(2,'bramblewick:minute'); }   /* 2 per survived minute, 30/day cap */
   if(saveT) saveNow();
 }
 function projBurst(pr){ spawnFX(pr.x,pr.y,'ring',ST_META[pr.status].col, pr.burstR, 0.3);
