@@ -69,14 +69,32 @@ Last updated: 2026-07-26
   able to move my pieces faster so i can play on higher difficulties without
   having to slowly wait or fumble with the onscreen controls." Higher difficulty
   is unplayable at the current input speed.
-- [ ] **Hues — the bottom bar is unswipeable on iPhone (Jessie 7/28).** "On an
-  Apple phone, when you go to swipe the bar at the bottom, it's too close to the
-  edge of the phone, so it's trying to swipe the entire window, rather than the
-  color bar." iOS reserves the bottom edge for its own system gesture, so the
-  control has to sit above that band.
-- [ ] **Hues — no rules before play (Jessie 7/28).** "Does not have the objective,
-  rules, how to play screen before the game starts." Needs a tutorial, and Stephen
-  ruled it comes AFTER the edge-swipe fix.
+- [x] **Hues iPhone edge-swipe FIXED 2026-07-28, measured on four iPhone sizes.**
+  iOS owns the bottom edge for its home-indicator gesture and a page cannot opt
+  out — `touch-action` does nothing there — so the only fix is to keep controls
+  out of the band. Measured before: the Lock button sat **22px** from the edge on
+  every iPhone and the hue strip's own tap zone extended a further 6px DOWNWARD,
+  toward the edge. Now: every screen reserves a hard 52px gutter on top of
+  `env(safe-area-inset-bottom)` (which reports 0 on exactly the phones this bit
+  hardest), the strip's tap zone grows UPWARD only, and the colour pad is allowed
+  to shrink so a short phone still fits without clipping the gutter away.
+  Verified: Lock now **43-58px** above the edge (was 22-28) and the hue strip
+  **105-266px** above it, on iPhone SE / 14 / 15 / Pro Max, plus another 34px of
+  real safe-area inset on any phone with an indicator. 5 blocks parse, 0 errors.
+- [x] **Hues rules made reachable 2026-07-28 — the tutorial already existed, it was
+  just invisible.** Checked before building anything: there IS a "How Hues works"
+  card (objective, the clock rule, speed and precision bonuses, the Daily Hue) and
+  it DOES fire before a first-ever game (`if(Store.g("hues_rules")!=="1")`), and
+  there is a "❓ How to play" button. The button sits at **y=907 inside an 1161px
+  menu** — below the fold on every iPhone, under the goals card and two other
+  links. So a returning player, who has already dismissed the first-run card, has
+  no way to reach the rules at all, which is exactly what Jessie hit.
+  Fix: the same control, hoisted into the menu header beside the sound toggle
+  where it cannot be missed. Verified as a RETURNING player (`hues_rules` already
+  set, page reloaded): the ❓ renders at 22px from the top, 50x50, visible with no
+  scrolling, and opens the rules overlay. 0 JS errors.
+  ⚠️ Deliberately NOT rebuilt as a new tutorial — the existing card is good and
+  writing a second one would have been work nobody needed.
 
 ---
 
