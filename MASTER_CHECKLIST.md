@@ -824,7 +824,17 @@ not.** These are per-game and specific:
   numbered buttons and nothing names the VERB. Added one first-run coach card on the board
   ("Drag from one station to another"), 48px dismiss, shown once. Verified headless:
   appears, dismisses, does not return, 0 errors.
-- [ ] Mini Crossword — layout
+- [x] **Mini Crossword layout FIXED 2026-07-28, measured.** The note was one word
+  ("layout"); the defect was two: the board ran y 96-506 in stage space while
+  `#cluebar` started at 496, so the bottom row of every puzzle was clipped by the
+  clue, and there was ~140px of dead air between the clue and the keyboard. The
+  clue bar now sits directly above the keyboard (618-690, keyboard 706-960) and
+  the reclaimed space went into bigger squares (cell 82 -> 96, a 17% larger
+  board). Font size, cursor ring and the tap hit-test all derive from GEO, so
+  they followed; the "SOLVED!" banner moved with the board.
+  Verified at 375x667: stack is HUD 0-68, board 96-576, clue 618-690, keyboard
+  706-960 — no overlaps; tapping the board still selects the right cell (clue
+  switched to "5A Get up or come about"); parses clean, 0 JS errors.
 - [x] **Bridgevine "scroll" — investigated, NOT reproducible, nothing changed
   (verified headless 2026-07-26).** Page scroll containment fully present
   (overflow:hidden + overscroll-behavior:none + touch-action:none + passive:false

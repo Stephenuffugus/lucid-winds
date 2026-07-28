@@ -49,7 +49,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 #hud .chip b{font-size:.95rem} #hud .chip span{font-size:.66rem; color:var(--muted)}
 #hud .grow{flex:1}
 /* clue bar */
-#cluebar{position:absolute; left:0; top:496px; width:540px; height:72px; display:none; z-index:12;
+#cluebar{position:absolute; left:0; top:618px; width:540px; height:72px; display:none; z-index:12;
   padding:0 6px; align-items:center; gap:6px}
 #cluebar.on{display:flex}
 #cluebar .nav{min-width:72px; min-height:72px; border:1px solid #ffffff26; border-radius:12px; background:#191330d0;
@@ -1196,7 +1196,13 @@ function gotoSlot(delta){
    RENDER
    ============================================================ */
 var cvs=$("game"), ctx=cvs.getContext("2d");
-var GEO={ cell:82, ox:0, oy:96 };
+/* Jessie 7/21 "Mini Crossword — layout": the board ran 96..506 while #cluebar
+   started at 496, so the bottom row was clipped by the clue, and there was ~140px
+   of dead air between the clue and the keyboard. Board now ends at 576, the clue
+   sits just above the keyboard, and the reclaimed space went into bigger squares
+   (82 -> 96, a 17% larger grid). Everything else — font size, cursor ring, tap
+   hit-test — is derived from GEO, so they follow. */
+var GEO={ cell:96, ox:0, oy:96 };
 GEO.ox=Math.floor((540-N*GEO.cell)/2);
 function render(){
   if(!CUR)return;
@@ -1227,7 +1233,7 @@ function render(){
     ctx.strokeStyle=pe.cur; ctx.lineWidth=3; ctx.strokeRect(ox+sc*cell+1.5,oy+sr*cell+1.5,cell-3,cell-3); }
   /* win overlay */
   if(CUR.phase==="won"){ ctx.fillStyle="rgba(120,220,150,0.9)"; ctx.font="bold 30px sans-serif"; ctx.textAlign="center";
-    ctx.fillText("SOLVED!",270,oy+N*cell+40); }
+    ctx.fillText("SOLVED!",270,oy+N*cell+34); }
   ctx.textAlign="left"; ctx.textBaseline="alphabetic";
 }
 
