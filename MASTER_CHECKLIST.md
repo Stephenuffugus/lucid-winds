@@ -46,6 +46,32 @@ Last updated: 2026-07-26
 
 ---
 
+## 🚨 FROM STEPHEN 2026-07-28 (chat, second batch) — merged before work started
+
+- [ ] **Super Slice Free Fall needs TWO versions.** Stephen: "super slice free fall
+  needs to have 2 versions, the levels, and the never ending." The `?mode=ff` card
+  shipped earlier today boots the level ladder only; the endless drop needs its own
+  front door too.
+- [ ] **Free fall: way bigger stacks of the brown blocks that open with colour.**
+  Stephen: "on free fall we want way larger stacks of the brown blocks that open
+  with color. people love those."
+- [ ] **PENNY BUG: pink spikes do not end the run immediately in the NORMAL game.**
+  Stephen relaying Penny: "on the normal, hitting pink spikes doesnt end your run
+  immediately." A hazard that does not kill on contact reads as broken.
+- [ ] **Per-mode instructions.** Stephen: "there should have clear instructions for
+  how free fall and the normal and wall climb play because the normal and wall
+  climb play differently than the freefall." One How screen covering three modes
+  that do not share rules is not enough.
+- [ ] **Chameleon games built out — colour + real multiplayer.** Stephen: "i would
+  love for the chameleon games to be built more, flavored with lots more color and
+  made into fully playable fun multiplayer games."
+- [ ] **Chameleon: the hider gets a head start.** Stephen: "in a normal game the
+  hider has a certain amount of time to hide before the seeker is allowed to see
+  anything until the time limit for the hider is up." Seeker vision blacked out /
+  held until the hide timer expires.
+
+---
+
 ## 🚨 FROM STEPHEN + JESSIE 2026-07-28 (chat) — merged before work started
 
 - [x] **Super Slice wall climb is ENDLESS 2026-07-28.** The wall really did stop:
