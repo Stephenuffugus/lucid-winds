@@ -58,17 +58,33 @@ Last updated: 2026-07-26
   and there should be an endless mode in that too to see how far the can fall
   without sticking to the side." Two parts: split it out as its own titled game,
   and give it an endless mode scored on distance fallen without sticking.
-- [ ] **Pop N Lock — you cannot see which piece you are holding.** Stephen: "its
-  hard to see what piece your even working with because the second blob seems to
-  render so slow it would really help gameplay." The second blob of the pair
-  renders late, so the piece reads wrong while you are trying to place it.
-- [ ] **Pop N Lock — reclaim the empty screen for the UI.** Stephen: "there seems
-  to be some open screen too that we can clean up and use to improve the overall
-  UI."
-- [ ] **Pop N Lock — pieces must move FASTER.** Stephen: "i really just need to be
-  able to move my pieces faster so i can play on higher difficulties without
-  having to slowly wait or fumble with the onscreen controls." Higher difficulty
-  is unplayable at the current input speed.
+- [x] **Pop N Lock second pod FIXED 2026-07-28 — it was never rendering slowly, it
+  was not being drawn at all.** Pairs spawn at `r=1` with the partner at `r=0`, the
+  hidden row above the board, and the draw loop began `if(cs[i].r<1)continue`. So
+  for the first whole row of fall the game drew ONE pod. That is what reads as "the
+  second blob renders so slow". It is now drawn, clipped to the board rect, so it
+  slides in from the top edge instead of popping into existence.
+  Second half of the same problem: the landing GHOST was two identical white rings,
+  telling you where the pair lands but not which pair it is. Each ghost ring now
+  carries its own pod's colour with a soft tint fill. Verified on an emulated Pixel
+  9: both pods visible at spawn, ghost shows blue+green matching the pair, 0 JS
+  errors, 3 blocks parse. Screenshot on file.
+- [~] **Pop N Lock dead screen — HALF DONE 2026-07-28.** Measured the cause: the
+  stage is a fixed 540x960 scaled to fit, so a 412x915 phone letterboxes ~90px of
+  black above and below. Filled it with the alley the game is already set in
+  (blurred, dimmed, vignetted) so it reads as the room continuing past the stage
+  instead of a void.
+  ⛔ **Did NOT move the board to use the space, deliberately.** `PF={x:16,y:112,
+  cell:58}` is Stephen's own MBM tuning from 7/19 ("classic Mean Bean Machine board
+  size was damn near perfect") and growing the board or the stage would undo it.
+  Putting real UI in that band is a layout call: say what you want there (bigger
+  score? chain counter? the NEXT pair? nothing?) and it goes in.
+- [x] **Pop N Lock piece movement SPED UP 2026-07-28.** The hold-to-repeat was
+  DAS 170ms / ARR 70ms — you waited a sixth of a second for the repeat to start and
+  then crawled one column every 70ms, so crossing the 6-wide board took ~0.5s. Now
+  **105ms / 33ms**: a single tap still moves exactly one column (the repeat cannot
+  fire inside a tap), but a held press crosses the board in ~0.2s. Verified the game
+  still loads and plays with 0 JS errors; 3 blocks parse.
 - [x] **Hues iPhone edge-swipe FIXED 2026-07-28, measured on four iPhone sizes.**
   iOS owns the bottom edge for its home-indicator gesture and a page cannot opt
   out — `touch-action` does nothing there — so the only fix is to keep controls
