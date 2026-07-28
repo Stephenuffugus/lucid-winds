@@ -1,0 +1,55 @@
+From b1fdb54f93d74179eec2c49579d407bcac130c92 Mon Sep 17 00:00:00 2001
+From: Stephenuffugus <99242197+Stephenuffugus@users.noreply.github.com>
+Date: Tue, 28 Jul 2026 18:58:52 +0000
+Subject: [PATCH 2/2] =?UTF-8?q?3D:=20left=20and=20right=20were=20mirrored?=
+ =?UTF-8?q?=20=E2=80=94=20strafing=20used=20UP=20x=20fwd=20where=20the=20c?=
+ =?UTF-8?q?amera=20sees=20fwd=20x=20UP?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Stephen: "my left and right are inverted in the abduct a chameleon 3D."
+
+moveLocal() built its strafe axis as right = UP x fwd. The camera looks ALONG
+fwd (orbit() parks it at c - fwd*dist and lookAt(c)), so the vector the player
+actually sees on their right is fwd x UP — the exact opposite. Every strafe input
+was mirrored: touch stick, keyboard A/D and the gamepad X axis alike. Forward and
+back were always correct, which is why it read as "left and right are inverted"
+rather than "the controls are broken".
+
+flyLocal() (spectator free-fly) had it right the whole time — the two functions
+disagreed, and the gameplay one was the wrong one.
+
+Measured, not reasoned: an instrumented copy of the real game exposed localPos +
+yaw, and the probe pushed the stick and read the world-space delta against the
+true screen-right vector.
+  before: stick RIGHT -> 4.5 units along screen-LEFT   (INVERTED)
+          stick LEFT  -> 4.5 units along screen-RIGHT  (INVERTED)
+          stick UP    -> forward                       (correct)
+  after:  RIGHT -> screen-right, LEFT -> screen-left, UP -> forward (all correct)
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ abduct-3d.html | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/abduct-3d.html b/abduct-3d.html
+index e6ad6e4..19aa9a5 100644
+--- a/abduct-3d.html
++++ b/abduct-3d.html
+@@ -1830,7 +1830,11 @@ function clientTick(dt){
+ 
+ function moveLocal(dt, role){
+   const y = role==='seeker' ? seekerYaw : yaw;
+-  fwd.set(Math.sin(y),0,Math.cos(y)); right.crossVectors(UP,fwd).normalize(); localYaw = y;
++  // right must be the vector the PLAYER sees on their right. The camera looks along
++  // fwd, so screen-right is fwd x UP. This was UP x fwd — the exact opposite — which
++  // mirrored strafing for touch, keyboard A/D and the gamepad alike ("my left and
++  // right are inverted"). flyLocal() below always had it the right way round.
++  fwd.set(Math.sin(y),0,Math.cos(y)); right.crossVectors(fwd,UP).normalize(); localYaw = y;
+   const mv = _a.set(0,0,0);
+   if(keys['KeyW']) mv.add(fwd); if(keys['KeyS']) mv.sub(fwd);
+   if(keys['KeyD']) mv.add(right); if(keys['KeyA']) mv.sub(right);
+-- 
+2.53.0
+

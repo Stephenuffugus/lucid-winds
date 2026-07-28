@@ -1,8 +1,19 @@
-# Chameleon 3D — phone fix, waiting on a push credential
+# Chameleon 3D — phone fixes, waiting on a push credential
 
 **Status:** built, verified, committed — but NOT yet pushed to
 `Stephenuffugus/abduct_a_chameleon`. It lives here so a codespace restart
-cannot eat it.
+cannot eat it. Meanwhile the same fixes ARE live to players: the patched build is
+vendored at `satellites/chameleon-3d/` and the portal card points there
+(see `satellites/chameleon-3d/VENDORED.md`).
+
+**Two patches now, apply both in order:**
+
+1. `0001-…-turn-it-sideways-…` — the orientation gate was a dead end.
+2. `0002-…-left-and-right-were-mirrored-…` — `moveLocal()` built its strafe axis
+   as `UP × fwd`; the camera looks along `fwd`, so screen-right is `fwd × UP`.
+   Every strafe input (touch, keyboard A/D, gamepad X) was mirrored. Measured on
+   an instrumented copy: before, stick RIGHT moved 4.5 units along screen-LEFT;
+   after, RIGHT/LEFT/FORWARD all correct.
 
 ## The bug Stephen hit
 
@@ -59,7 +70,7 @@ Run it with:
 
 ```bash
 git clone https://github.com/Stephenuffugus/abduct_a_chameleon.git
-cd abduct_a_chameleon && git am < ../0001-*.patch
+cd abduct_a_chameleon && git am ../000*.patch
 python3 -m http.server 8899 &
 node rotate_verify.js "http://localhost:8899/abduct-3d.html" .
 ```

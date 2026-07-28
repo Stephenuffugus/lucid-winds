@@ -1,8 +1,9 @@
 # chameleon-3d — vendored copy, NOT the source of truth
 
 This is a **fork** of `Stephenuffugus/abduct_a_chameleon` (upstream commit
-`d57a94f`) plus the orientation-gate patch in
-`/handoff-chameleon/0001-3d-orientation-gate-and-touch-mouse-prompt.patch`.
+`d57a94f`) plus the two phone patches in `/handoff-chameleon/`:
+`0001` (the orientation gate was a dead end) and `0002` (left/right were
+mirrored — `moveLocal()` used `UP × fwd` where the camera sees `fwd × UP`).
 
 ## Why it is here
 
@@ -22,7 +23,7 @@ Upstream 3D commits do **not** reach this copy. As soon as a push credential
 exists (`gh auth login --with-token` with a PAT that has `repo`):
 
 1. `git clone https://github.com/Stephenuffugus/abduct_a_chameleon.git`
-2. `git am < handoff-chameleon/0001-*.patch`, push to `main`
+2. `git am handoff-chameleon/000*.patch` (BOTH patches), push to `main`
 3. Point the portal card in `portal/index.html` back at
    `https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html`
 4. Delete this folder
