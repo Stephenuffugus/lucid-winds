@@ -1347,12 +1347,21 @@ not.** These are per-game and specific:
   exists and has a live portal card ("Trap the little garden mouse before it scurries off
   the edge"). Another stale entry on the Jul 16 list.
 - [ ] Penny's queue, still open: Plant Flip, Mecha Chameleon
-- [ ] **NEW GAME: Bubble Bobble remake** (Stephen 2026-07-25). Checked the whole repo,
-  the portal, the satellites and the memory dir: there is NO Bubble Bobble and there was
-  NO note for one. It is a genuinely new ask. Two players, trap enemies in bubbles, pop
-  them, single screen platformer, fixed levels. Needs a name and a botanical or studio
-  angle before building — every other remake got one (Snakes & Ladders → Garden Climb,
-  Monopoly → Garden Estates, Yatzy → Yacht-Sea).
+- [x] **NEW GAME: Bubble Bobble remake → BUBBLENAUT, SHIPPED (commit f28eb390),
+  live at `/satellites/bubblenaut/?v=1`.** Stephen gave the angle 7/29 ("alien
+  theme, Jessie keeps asking, different levels = different worlds with
+  different things to collect"). 5 worlds x 5 rooms, each world with its own
+  critter BRAIN (hop / drop-through / fly / dash / player-homing), palette, and
+  treasure; lifetime Collection screen per world; angry escapes; chain pops;
+  bottom-wrap; keyboard 2P on desktop; progress persists. All fleet standards
+  (gate, no em-dashes, SWS_EXIT, capped sunbeams, feedback fab, own manifest +
+  generated icons, og card, portal card + 'bubble bobble' alias). Evidence:
+  25/25 maps machine-validated, 14/14 gameplay-probe assertions on an emulated
+  phone (incl. a REAL find: held bubbles rose to unreachable ceilings — now
+  hover a jump above the catch), touch pads measured 84px rendered, both
+  probed worlds + thumb + og screenshots reviewed, live 200. ⚠️ 'Bubblenaut'
+  is a WORKING TITLE flagged in the buildstamp — ⛔ Stephen names it. Feel
+  pass pending Jessie's phone.
 
 ### Naming + economy calls (Stephen only)
 - [?] Merge & Blast and Super Slice both still carry placeholder names — "⛔ Stephen NAMES it"
