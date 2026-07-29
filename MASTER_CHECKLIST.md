@@ -920,7 +920,11 @@ Theme deliberately left open for the designer; every asset is described by funct
   asserted: inside thorns die, far corner survives) + 19/19 gate. ⛔ Doc 01
   ALSO specifies the last two: BIG 2x2 OCCUPIES FOUR CELLS (real multi-cell
   entity — own session) and BOX-OF-SIX leaves a 3-turn residue that upgrades
-  matches on it. STILL OPEN: those two.
+  matches on it. **BOX-OF-SIX SHIPPED (commit 5314bbe5, live v27, verified):**
+  2x3/3x2 block → box; hex-diamond burst + 3-move residue drawn under pieces
+  with the shipped hex-ring art; matches on residue bloom one rank higher.
+  6/6 real-page probe + 19/19 gate. Eight of doc 01's nine specials are live.
+  STILL OPEN: the 2x2 BIG piece only (multi-cell entity, own session).
 - [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
   ⛔ No real money, no ads. Tools must help, never be required.
 - [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
