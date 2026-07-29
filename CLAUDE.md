@@ -168,8 +168,13 @@ Block 8:      FG_Wild IIFE — Leaflet map, GPS, drops, ferals, territory,
               backpack wiring
 Block 9:      Dev panel + chimera toggle
 Block 10-11:  Swipe nav helpers
-Block 12:     Game engine — _e(), _play(), 27 game implementations, growth strip,
+Block 12:     Game engine — _e(), 27 game implementations, growth strip,
               win overlay
+              ⛔ `_play` is NOT the game launcher. It is the SOUND EFFECT player
+              (`window._play=_play` at ~64717 runs `_sfxDef[id]`), so
+              `window._play('hanoi')` silently plays nothing and looks like a
+              broken launcher. Corrected 2026-07-28 after it cost a debugging
+              round. Games launch through the picker, not through _play.
 Block 13:     Social/UI module
 Block 14:     XP/Level + PW_Social
 Block 15:     PW_Onboard — cinematic (4 beats) + auth + skip + gift plant
@@ -197,7 +202,7 @@ window.mintPlant                    window.renderGreenhouse
 window.loadGreenhouse               window.earnHashes
 window.getTotalHashes                window.updateDashboard
 window.buildAttentionPayload         window.updateFocusPlant
-window._e                           window._play
+window._e                           window._play  (SOUND effects, not games)
 window._playWin                     window._dismissWin
 window._restartCurrentGame           window._openGamePicker
 window.switchTab                    window.openCarousel
