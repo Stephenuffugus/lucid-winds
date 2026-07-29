@@ -910,7 +910,12 @@ Theme deliberately left open for the designer; every asset is described by funct
   19/19 powerup probe, screenshots eyeballed, balance 1-30 x30 trials before +
   after — by-kind aggregates within the stated noise floor, sawtooth 19.3→16.7,
   no retune (bot can't build serpents; ladder still assumes none, same caveat
-  as powerups). STILL OPEN: strip (6), quake (7), large 2x2, box-of-six.
+  as powerups). **STRIP + QUAKE SHIPPED same day (commit 784fe592, live v25,
+  verified):** 6-straight = CRYSTAL CROSS (full row AND column), 7-straight =
+  PETALQUAKE (cross + every thorn on the board takes a hit); any pairing fires
+  both (GARDEN SHAKER), the spore-convert board wipe intercepted; runtime art
+  cut from the shipped masters. 8/8 real-page probe + 19/19 powerup gate;
+  balance re-measured (see commit). STILL OPEN: large 2x2 piece, box-of-six.
 - [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
   ⛔ No real money, no ads. Tools must help, never be required.
 - [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
