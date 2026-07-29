@@ -94,6 +94,34 @@ Winds coverage even in English.
 | freetogame.com and similar "top browser games" lists | Email for inclusion. |
 | howtomarketagame.com/festivals | Meta-list of festival/showcase windows — mine it quarterly. |
 
+## Localized pitch templates (action 3, done — swap {GAME}/{URL}/{ONE-LINE})
+
+**Japanese (Freem!/夢現 listings, もぐらゲームス pitches):**
+> はじめまして。アメリカ・オハイオ州で、家族のために無料ブラウザゲームを
+> 作っている個人開発者のStephenと申します。「{GAME}」はダウンロード不要、
+> 広告なし、アカウント不要で、スマホのブラウザですぐ遊べます。{ONE-LINE}
+> よろしければぜひ一度遊んでみてください: {URL}
+> 制作の詳細(AIツールの使用を含む)はプレスキットに正直に書いています:
+> https://lucidwinds.com/press/
+
+**Traditional Chinese (Bahamut indie board, FilterGame):**
+> 大家好,我是Stephen,美國俄亥俄州的一人遊戲工作室。「{GAME}」是一款
+> 免費瀏覽器遊戲:不用下載、沒有廣告、不用註冊,手機打開就能玩。{ONE-LINE}
+> 歡迎試玩並給我任何建議:{URL}
+> 開發過程(包括AI工具的使用)都誠實寫在我們的press kit裡:
+> https://lucidwinds.com/press/
+
+**Portuguese-BR (Voxel, Adrenaline, BR communities):**
+> Oi! Sou o Stephen, um pai de familia em Ohio (EUA) que constroi jogos de
+> navegador gratuitos, sozinho. "{GAME}" roda direto no navegador do celular:
+> sem download, sem anuncios, sem cadastro. {ONE-LINE}
+> Joga ai e me conta o que achou: {URL}
+> Como os jogos sao feitos (incluindo uso de IA) esta escrito com honestidade
+> no nosso press kit: https://lucidwinds.com/press/
+
+⚠️ Native-speaker review is welcome before mass use, but all three are
+polite-register and honest. Lead with ONE game per pitch, never the portal.
+
 ## Next actions (in order)
 
 1. Stephen calls: the ads/exclusivity question (portal syndication yes/no),
