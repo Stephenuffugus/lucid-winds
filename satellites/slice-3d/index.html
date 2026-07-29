@@ -219,7 +219,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.2";
+var BUILD="v5.3";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -324,7 +324,41 @@ var SFX={
     var f=[523,659,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(mult>=5?1.19:1);
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.14,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.34);
-      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.38); })(f[i],i*0.11); } }
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.38); })(f[i],i*0.11); } },
+  rollup:function(p){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.value=480+p*520;
+    g.gain.setValueAtTime(0.035,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.06); },
+  newbest:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var f=[880,1318]; for(var i=0;i<f.length;i++){ (function(fr,dt){
+      var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(fr,t+dt); o.frequency.exponentialRampToValueAtTime(fr*1.06,t+dt+0.18);
+      g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.09,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.3);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.32); })(f[i],i*0.09); }
+    var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.25,c.sampleRate),d=b.getChannelData(0);
+    for(var i2=0;i2<d.length;i2++)d[i2]=(Math.random()*2-1)*Math.pow(1-i2/d.length,3)*0.5;
+    n.buffer=b; var hf=c.createBiquadFilter(); hf.type='highpass'; hf.frequency.value=6000;
+    var g3=c.createGain(); g3.gain.setValueAtTime(0.06,t); g3.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    n.connect(hf); hf.connect(g3); g3.connect(c.destination); n.start(t); },
+  unlock:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(58,t+0.16);
+    g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.24); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.26);
+    var f=[523,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
+      var o2=c.createOscillator(),g2=c.createGain(); o2.type='sine'; o2.frequency.value=fr;
+      g2.gain.setValueAtTime(0.001,t+dt); g2.gain.linearRampToValueAtTime(0.085,t+dt+0.015); g2.gain.exponentialRampToValueAtTime(0.001,t+dt+0.42);
+      o2.connect(g2); g2.connect(c.destination); o2.start(t+dt); o2.stop(t+dt+0.45); })(f[i],0.1+i*0.08); } },
+  jackpot:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var f=[523,659,784,1046,1318]; for(var i=0;i<f.length;i++){ (function(fr,dt){
+      var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr;
+      g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.13,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.4);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.44);
+      var o2=c.createOscillator(),g2=c.createGain(); o2.type='sine'; o2.frequency.value=fr*2;
+      g2.gain.setValueAtTime(0.001,t+dt); g2.gain.linearRampToValueAtTime(0.05,t+dt+0.02); g2.gain.exponentialRampToValueAtTime(0.001,t+dt+0.3);
+      o2.connect(g2); g2.connect(c.destination); o2.start(t+dt); o2.stop(t+dt+0.33); })(f[i],i*0.09); }
+    var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.3,c.sampleRate),d=b.getChannelData(0);
+    for(var i3=0;i3<d.length;i3++)d[i3]=(Math.random()*2-1)*Math.pow(1-i3/d.length,2)*0.6;
+    n.buffer=b; var bf=c.createBiquadFilter(); bf.type='bandpass'; bf.frequency.value=3000; bf.Q.value=0.8;
+    var g4=c.createGain(); g4.gain.setValueAtTime(0.1,t); g4.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+    n.connect(bf); bf.connect(g4); g4.connect(c.destination); n.start(t); }
 };
 
 /* ---------- rng ---------- */
@@ -1905,7 +1939,9 @@ function loop(ts){
       $('h-score').textContent=G.score.toLocaleString();
       var st=0, target=Math.min(G.mult,8);
       var iv=setInterval(function(){ st++; SFX.tickup(st); if(st>=target){ clearInterval(iv); } }, 90);
-      SFX.win(G.mult);
+      /* the x10 band/bullseye is the run's designed peak (climb reaches x10
+         routinely, so there it stays the normal win arp) */
+      if(G.mult>=10 && !G.climbWall) SFX.jackpot(); else SFX.win(G.mult);
     }
     if(G.doneT>(G.failed?1.7:2.4)){ running=false; finishLevel(); return; }
   }
@@ -2010,11 +2046,12 @@ function failLevel(){
     $('go-stars').textContent='\u2715';
     $('go-stars').style.color='#ff6a5a';
   }
-  (function(){ var el=$('go-score'), target=G.score, e2=0;
+  (function(){ var el=$('go-score'), target=G.score, e2=0, tk=0;
     el.textContent='0';
     var iv2=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/650);
       el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
-      if(pr>=1)clearInterval(iv2); },33); })();
+      tk++; if(pr<1&&tk%3===0)SFX.rollup(pr);
+      if(pr>=1){ clearInterval(iv2); if(enb)SFX.newbest(); } },33); })();
   if(G.endless){
     $('go-lab').textContent=(PROG.endlessBest===depthM?'\u2605 deepest yet \u00b7 ':'')+'the blade caught the wall';
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 best '+(PROG.endlessBest||0)+'m';
@@ -2048,9 +2085,14 @@ function finishLevel(){
     $('go-title').textContent='WALL CLIMB '+lvl+' \u00b7 x'+G.mult;
     $('go-stars').textContent = starsW===3?'\u2605\u2605\u2605':(starsW===2?'\u2605\u2605\u2606':'\u2605\u2606\u2606');
     $('go-stars').style.color = starsW===3?'#ffd76a':(starsW===2?'#e0c37a':'#948fae');
-    (function(){ var el=$('go-score'), target=G.score, e2=0; el.textContent='0';
+    (function(){ var el=$('go-score'), target=G.score, e2=0, tk=0; el.textContent='0';
       var ivw=setInterval(function(){ e2+=33; var p=Math.min(1,e2/850);
-        el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString(); if(p>=1)clearInterval(ivw); },33); })();
+        el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString();
+        tk++; if(p<1&&tk%3===0)SFX.rollup(p);
+        if(p>=1){ clearInterval(ivw); if(earnedWB)SFX.unlock(); } },33); })();
+    /* tmw's declaration was lost in the fixed-rungs change (31d2d4c4) — strict
+       mode then threw here on EVERY climb finish and the end panel never showed */
+    var tmw=(G.world&&G.world.topMult)||10;
     $('go-lab').textContent=(G.mult>=tmw?'THE TOP OF THE WALL':'stuck it at x'+G.mult+' of x'+tmw);
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+(earnedWB?' \u00b7 WALLBREAKER PICK UNLOCKED':'');
     $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
@@ -2066,9 +2108,11 @@ function finishLevel(){
     $('go-title').textContent='PIT CONQUERED';
     $('go-stars').textContent='\u2605\u2605\u2605';
     $('go-stars').style.color='#f2a8d8';
-    (function(){ var el=$('go-score'), target=G.score, e2=0; el.textContent='0';
+    (function(){ var el=$('go-score'), target=G.score, e2=0, tk=0; el.textContent='0';
       var iv3=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/850);
-        el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString(); if(pr>=1)clearInterval(iv3); },33); })();
+        el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
+        tk++; if(pr<1&&tk%3===0)SFX.rollup(pr);
+        if(pr>=1)clearInterval(iv3); },33); })();
     $('go-lab').textContent='you dived the whole pit clean';
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 '+dM+'m';
     $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
@@ -2078,10 +2122,10 @@ function finishLevel(){
   }
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
-  var chips=G.chips||0, cleanBonus=0;
+  var chips=G.chips||0, cleanBonus=0, earnedCE=false;
   if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus;
     PROG.cleanDives=(PROG.cleanDives||0)+1;
-    if(PROG.cleanDives>=50 && SKN.owned.indexOf('cosmicedge')<0){ SKN.owned.push('cosmicedge'); saveSkins(); }
+    if(PROG.cleanDives>=50 && SKN.owned.indexOf('cosmicedge')<0){ SKN.owned.push('cosmicedge'); saveSkins(); earnedCE=true; }
   }
   var bkey=(ff?'f':'l')+lvl;
   var best=PROG.best[bkey]||0, nb=G.score>best;
@@ -2093,12 +2137,14 @@ function finishLevel(){
   $('go-title').textContent=(ff?'FREEFALL ':'LEVEL ')+lvl+' CLEAR';
   $('go-stars').textContent = stars===3?'★★★':(stars===2?'★★☆':'★☆☆');
   $('go-stars').style.color = stars===3?'#ffd76a':(stars===2?'#e0c37a':'#948fae');
-  // score counts up — small ceremony
-  (function(){ var el=$('go-score'), target=G.score, e2=0;
+  // score counts up — small ceremony (ticks while it rolls; the gleam lands
+  // WITH the final number, so new-best reads as one moment, not two)
+  (function(){ var el=$('go-score'), target=G.score, e2=0, tk=0;
     el.textContent='0';
     var iv2=setInterval(function(){ e2+=33; var p=Math.min(1,e2/850);
       el.textContent=Math.round(target*(p*p*(3-2*p))).toLocaleString();
-      if(p>=1)clearInterval(iv2); },33); })();
+      tk++; if(p<1&&tk%3===0)SFX.rollup(p);
+      if(p>=1){ clearInterval(iv2); if(nb)SFX.newbest(); if(earnedCE)SFX.unlock(); } },33); })();
   // confetti for the big sticks — body-level overlay, always on top
   if(stars===3){ (function(){
     var wrap=document.getElementById('cfwrap');
@@ -2114,7 +2160,7 @@ function finishLevel(){
     } })(); }
   $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult+(cleanBonus>0?(' · +'+cleanBonus+' clean dive'):'');
   if(ff){
-    $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest);
+    $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest)+(earnedCE?' · COSMIC EDGE PICK UNLOCKED':'');
   } else {
     $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
   }
@@ -2201,7 +2247,7 @@ function forgeTap(key){
   if(ownsSkin(key)){ applySkin(key); renderForge(); ac(); SFX.flip(); return; }
   if(sk.premium){ popupForge('Support the Studio to unlock this blade'); return; }
   if(sk.price<0){ popupForge('Unlock by earning: '+(sk.earn||'special')); return; }
-  if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.stick(); popupForge(sk.name+' forged!'); }
+  if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.unlock(); popupForge(sk.name+' forged!'); }
   else { popupForge('Need '+(sk.price-SLIV)+' more slivers'); }
 }
 window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();} };
@@ -2247,7 +2293,11 @@ if(/[?&]dev=1/.test(location.search)){
       running=true;
       for(var i=0;i<n;i++){ fake+=dtms; var keep=requestAnimationFrame; window.requestAnimationFrame=function(){}; try{ loop(fake); }finally{ window.requestAnimationFrame=keep; } if(!running){ fin=true; break; } }
       if(!fin)running=false; // stay frozen between manual steps (no live RAF races)
-    } };
+    },
+    /* sound-probe rig (2026-07-29): reach the closure's SFX/finish paths */
+    sfx:SFX, failLevel:failLevel, finishLevel:finishLevel,
+    prog:function(){return PROG;}, skins:function(){return SKN;},
+    setAC:function(a){AC=a;}, g:function(v){ if(v!==undefined)G=v; return G; } };
 }
 
 /* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
