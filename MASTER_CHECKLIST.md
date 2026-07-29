@@ -91,10 +91,20 @@ Last updated: 2026-07-26
 - [ ] **Chameleon games built out — colour + real multiplayer.** Stephen: "i would
   love for the chameleon games to be built more, flavored with lots more color and
   made into fully playable fun multiplayer games."
-- [ ] **Chameleon: the hider gets a head start.** Stephen: "in a normal game the
-  hider has a certain amount of time to hide before the seeker is allowed to see
-  anything until the time limit for the hider is up." Seeker vision blacked out /
-  held until the hide timer expires.
+- [x] **Chameleon 3D hider head start SHIPPED 2026-07-28, proven with two real
+  players.** Rounds used to start with everyone loose at once, so a seeker could
+  watch the chameleons pick their spots — that is not hide and seek, it is chase.
+  `startRound` now publishes `hideEnds = now + HIDE_SECONDS (20)` and extends the
+  round clock by the same amount so the hunt itself is not shortened. During it:
+  the seeker is gated out of `moveLocal` and cannot beam, `detectAbductions`
+  returns early so nobody can be caught, the seeker gets an **opaque** blindfold
+  with a countdown (a dim overlay would still let them read the map), and hiders
+  get "Hide! N — the seekers are blind until this hits zero".
+  **Verified with TWO real clients in one Playroom room**: the seeker came up
+  blindfolded reading "The chameleons are choosing their spots", the hider saw the
+  hide banner, and the blindfold lifted on its own when the timer expired
+  (blind=true at +4s/+5s/+6s, blind=false at +7s). 0 JS errors on either client.
+  Also carried upstream as `handoff-chameleon/0004-*.patch`.
 
 ---
 
