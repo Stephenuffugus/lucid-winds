@@ -1611,10 +1611,17 @@ document.addEventListener('click', function(e){
       +'<base href="/">'
       +'<title>'+esc(name)+' — Sky Wolf Studios</title>'
       +'<link rel="stylesheet" href="/shared.css?v=20260718">'
-      +'<link rel="stylesheet" href="/play/shell.css?v=6">'
+      /* ⛔ 2026-07-28: this srcdoc was pinned at shell.css?v=6 / shell.js?v=16 while
+         the static /play/ shells used v=9 / v=24 and the service worker precached
+         v=9 / v=22 — THREE different cache keys for the same two files, and
+         /play/shell.js is served CACHE-FIRST. Any device that cached the old keys
+         back when the contents differed keeps serving that copy forever, which is
+         exactly the shape of "one game will not open from my home-screen arcade
+         but works everywhere else". Everything now points at one fresh key. */
+      +'<link rel="stylesheet" href="/play/shell.css?v=12">'
       +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
       +'<script defer src="/sunbeam-sdk.js?v=5'+bq+'"><\/script>'
-      +'<script defer src="/play/shell.js?v=16'+bq+'"><\/script>'
+      +'<script defer src="/play/shell.js?v=25'+bq+'"><\/script>'
       +scripts
       +'</head><body>'
       // Inline onclick fallback: if shell.js is stale/dead in this iframe
@@ -1831,7 +1838,7 @@ document.addEventListener('click', function(e){
            register() with the same URL is a no-op, with a new one it updates,
            so calling it unconditionally is safe and re-points old installs.
            Bump ?v= in lockstep with CACHE_VERSION in sw.js. */
-        navigator.serviceWorker.register('/sw.js?v=18').catch(function () {});
+        navigator.serviceWorker.register('/sw.js?v=19').catch(function () {});
       } catch (e) {}
     });
   }
