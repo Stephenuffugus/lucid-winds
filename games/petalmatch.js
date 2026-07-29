@@ -42,7 +42,7 @@ window._gameFns.petalmatch = function PM(a){
      device held a days-old copy while the live site was current; with this on
      screen, "is it stale?" is answered by looking. Keep it in lockstep with
      the ?v= on play/petalmatch.html. */
-  var PM_BUILD='v25';
+  var PM_BUILD='v26';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -1522,15 +1522,16 @@ window._gameFns.petalmatch = function PM(a){
         for(var cs=0;cs<COLS;cs++){var ks=r+','+cs;if(!toClear[ks]){toClear[ks]=1;queue.push(ks);}}
         for(var rs=0;rs<ROWS;rs++){var ks2=rs+','+c;if(!toClear[ks2]){toClear[ks2]=1;queue.push(ks2);}}
       } else if(spec==='quake'){
-        // the lotus shakes the whole garden: cross + every thorn takes a hit
-        fx.push({kind:'sweep',dir:'h',r:r,c:c,t:Date.now()});
-        fx.push({kind:'sweep',dir:'v',r:r,c:c,t:Date.now()});
+        /* doc 01 B6, Stephen's exact spec: "clears a large diamond".
+           Manhattan radius 3 = a 25-cell diamond; thorns inside take their
+           hit by inclusion. (First cut shipped a cross + board-wide thorn
+           sweep - my invention, not the doc - corrected same day.) */
         fx.push({kind:'flash',r:r,c:c,size:5,t:Date.now()});
-        for(var cq=0;cq<COLS;cq++){var kq=r+','+cq;if(!toClear[kq]){toClear[kq]=1;queue.push(kq);}}
-        for(var rq=0;rq<ROWS;rq++){var kq2=rq+','+c;if(!toClear[kq2]){toClear[kq2]=1;queue.push(kq2);}}
-        for(var rt=0;rt<ROWS;rt++)for(var ct=0;ct<COLS;ct++){
-          var tc=grid[rt][ct];
-          if(tc&&tc.type===-2){var kt=rt+','+ct;if(!toClear[kt]){toClear[kt]=1;fx.push({kind:'flash',r:rt,c:ct,size:1,t:Date.now()});}}
+        for(var rq=0;rq<ROWS;rq++)for(var cq=0;cq<COLS;cq++){
+          if(Math.abs(rq-r)+Math.abs(cq-c)<=3){
+            var kq=rq+','+cq;
+            if(!toClear[kq]){toClear[kq]=1;queue.push(kq);}
+          }
         }
       } else if(spec==='spore'){
         // When activated as a by-catch (not a direct swap), clear the most-represented color instead of random

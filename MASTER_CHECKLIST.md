@@ -910,12 +910,17 @@ Theme deliberately left open for the designer; every asset is described by funct
   19/19 powerup probe, screenshots eyeballed, balance 1-30 x30 trials before +
   after — by-kind aggregates within the stated noise floor, sawtooth 19.3→16.7,
   no retune (bot can't build serpents; ladder still assumes none, same caveat
-  as powerups). **STRIP + QUAKE SHIPPED same day (commit 784fe592, live v25,
-  verified):** 6-straight = CRYSTAL CROSS (full row AND column), 7-straight =
-  PETALQUAKE (cross + every thorn on the board takes a hit); any pairing fires
-  both (GARDEN SHAKER), the spore-convert board wipe intercepted; runtime art
-  cut from the shipped masters. 8/8 real-page probe + 19/19 powerup gate;
-  balance re-measured (see commit). STILL OPEN: large 2x2 piece, box-of-six.
+  as powerups). **STRIP + QUAKE SHIPPED (784fe592 + doc-correction 30min later,
+  live v26, verified):** 6-straight = CRYSTAL CROSS (full row AND column, per
+  doc 01 B5), 7-straight = PETALQUAKE — first cut shipped MY invented effect
+  (cross + board-wide thorn sweep); re-read the surviving Drive doc 01 and B6
+  says "clears a large diamond" — corrected to a Manhattan r=3 diamond the same
+  half hour, ?v bumped again (same-path law). Any special pairing fires both
+  (GARDEN SHAKER), spore-convert wipe intercepted. 8/8 real-page probe (diamond
+  asserted: inside thorns die, far corner survives) + 19/19 gate. ⛔ Doc 01
+  ALSO specifies the last two: BIG 2x2 OCCUPIES FOUR CELLS (real multi-cell
+  entity — own session) and BOX-OF-SIX leaves a 3-turn residue that upgrades
+  matches on it. STILL OPEN: those two.
 - [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
   ⛔ No real money, no ads. Tools must help, never be required.
 - [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
