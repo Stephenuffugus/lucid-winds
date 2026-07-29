@@ -917,7 +917,11 @@ Theme deliberately left open for the designer; every asset is described by funct
   says "clears a large diamond" — corrected to a Manhattan r=3 diamond the same
   half hour, ?v bumped again (same-path law). Any special pairing fires both
   (GARDEN SHAKER), spore-convert wipe intercepted. 8/8 real-page probe (diamond
-  asserted: inside thorns die, far corner survives) + 19/19 gate. ⛔ Doc 01
+  asserted: inside thorns die, far corner survives) + 19/19 gate. Balance
+  VERDICT for the full specials batch (endless + strip + diamond-quake + box),
+  clean 1-30 x30 run on final v27 vs the serpentine-era run: score 78.1→76.3,
+  gather 74.4→80.0, dew 65.0→64.4, thorns 58.9→57.2, mix 54.4→52.2 — all
+  inside the noise floor, NO RETUNE. ⛔ Doc 01
   ALSO specifies the last two: BIG 2x2 OCCUPIES FOUR CELLS (real multi-cell
   entity — own session) and BOX-OF-SIX leaves a 3-turn residue that upgrades
   matches on it. **BOX-OF-SIX SHIPPED (commit 5314bbe5, live v27, verified):**
