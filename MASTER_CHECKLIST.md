@@ -302,8 +302,15 @@ items are marked here so nobody re-does them.
   540×960 stage, down 72% in area from the original 196. BUILD v1.6.1, sw cache v6 so it
   is not stuck behind the worker. ⚠️ The commit's "Stephen confirmed 'much smaller'" quotes
   his REQUEST, not sign-off on 104 — **pending his eyes**; tune `_mh` at :1108 if still off.
-- [ ] **Blip's intro animation still skippy** — he provided a movement sheet; redo
-  carefully or pull the old assets and do it right. Take time on it.
+- [x] **Blip's skippy animation FIXED with the existing sheet (commit d14d078e),
+  verified.** Root cause: 5 discrete frames at 11fps straight through = 0.45s
+  slideshow ending mid-swing. Now ping-pong (0,1,2,3,4,3,2,1,0, 0.69s at 13fps)
+  + ease-in-out holding the extremes, landing on the rest frame. LOOKED at all
+  three anim sheets first: goo_boilover + mega_mash_erupt END settled so they
+  keep straight-through (once:true) — reversing would un-erupt. 4/4 blocks
+  parse, headless boot clean, frame table printed from the real math. BUILD
+  v1.7.0, sw blobworks-v7. ⚠️ Feel is **pending Stephen's eyes** — if still
+  skippy the next lever is a real in-between sheet (new art), not code.
 
 ### 🗡 Super Slice 3D — NEW DESIGN DIRECTION (supersedes "it's done" state, not the
     dead-features law: chimney/mist/kick/hold-to-spin stay DEAD)
