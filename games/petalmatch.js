@@ -42,7 +42,7 @@ window._gameFns.petalmatch = function PM(a){
      device held a days-old copy while the live site was current; with this on
      screen, "is it stale?" is answered by looking. Keep it in lockstep with
      the ?v= on play/petalmatch.html. */
-  var PM_BUILD='v26';
+  var PM_BUILD='v27';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -1056,6 +1056,7 @@ window._gameFns.petalmatch = function PM(a){
     'SPORE CLOUD!':'pop-amazing',
     'SERPENTINE!':'pop-amazing',
     'CRYSTAL CROSS!':'pop-amazing',
+    'BOX OF SIX!':'pop-amazing',
     'PETALQUAKE!':'pop-incredible',
     'GARDEN SHAKER!':'pop-incredible',
     'VINE SERPENT!':'pop-amazing',
@@ -1209,9 +1210,30 @@ window._gameFns.petalmatch = function PM(a){
     }
   }
 
+  /* ═══ BOX-OF-SIX residue (doc 01 B9) ═════════════════════════════════
+     The box detonation leaves an enchanted mark on the board for THREE
+     player moves; any straight match with a cell on residue spawns one
+     tier HIGHER than it earned. Indexed by board position like jelly;
+     value = moves remaining. */
+  var residueBoard=[];
+  function initResidueBoard(){
+    residueBoard=[];
+    for(var r=0;r<ROWS;r++){residueBoard[r]=[];for(var c=0;c<COLS;c++)residueBoard[r][c]=0;}
+  }
+  function tickResidue(){
+    for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+      if(residueBoard[r][c]>0)residueBoard[r][c]--;
+    }
+  }
+  function groupOnResidue(g){
+    for(var i=0;i<g.length;i++)if(residueBoard[g[i].r]&&residueBoard[g[i].r][g[i].c]>0)return true;
+    return false;
+  }
+
   function initGrid(){
     grid=[];
     initJellyBoard();
+    initResidueBoard();
     for(var r=0;r<ROWS;r++){grid[r]=[];
       for(var c=0;c<COLS;c++){
         var t;
@@ -1337,10 +1359,14 @@ window._gameFns.petalmatch = function PM(a){
        cascade luck - jackpot moments, ranked above everything else. */
     function runSpawn(g,dir){
       var sc=pickSpawnCell(g);
-      if(g.length>=7)spawns.push({r:sc.r,c:sc.c,special:'quake',type:-1});
-      else if(g.length===6)spawns.push({r:sc.r,c:sc.c,special:'strip',type:-1});
-      else if(g.length===5)spawns.push({r:sc.r,c:sc.c,special:'spore',type:-1});
-      else if(g.length===4)spawns.push({r:sc.r,c:sc.c,special:'vine',stripeDir:dir,type:g.type});
+      /* box residue (doc 01 B9): a match standing on the enchanted mark
+         spawns one tier HIGHER than it earned */
+      var up=groupOnResidue(g)?1:0;
+      var eff=g.length+up;
+      if(eff>=7)spawns.push({r:sc.r,c:sc.c,special:'quake',type:-1});
+      else if(eff===6)spawns.push({r:sc.r,c:sc.c,special:'strip',type:-1});
+      else if(eff===5)spawns.push({r:sc.r,c:sc.c,special:'spore',type:-1});
+      else if(eff===4)spawns.push({r:sc.r,c:sc.c,special:'vine',stripeDir:dir,type:g.type});
     }
     for(i=0;i<runs.h.length;i++){
       if(consumed['h'+i])continue;
@@ -1437,6 +1463,33 @@ window._gameFns.petalmatch = function PM(a){
     }
     return null;
   }
+  /* ═══ THE BOX OF SIX (doc 01 B9) ═════════════════════════════════════
+     Complete a full 2x3 or 3x2 rectangle of one type and the swapped cell
+     becomes the box. ⚠️ Like the S-pentomino, a filled rectangle CONTAINS
+     straight threes, so this check must run BEFORE normal resolution in
+     handleEnd or the engine eats it as two mundane matches. */
+  function boxAt(r,c){
+    var cell0=grid[r]&&grid[r][c];
+    if(!cell0||cell0.type<0||cell0.special)return null;
+    var t=cell0.type, shapes=[[2,3],[3,2]];
+    for(var s=0;s<2;s++){
+      var hR=shapes[s][0], wC=shapes[s][1];
+      for(var br=r-hR+1;br<=r;br++){
+        for(var bc=c-wC+1;bc<=c;bc++){
+          var ok=true,cells=[];
+          for(var rr=br;rr<br+hR&&ok;rr++)for(var cc=bc;cc<bc+wC;cc++){
+            if(!inBounds(rr,cc)){ok=false;break;}
+            var cl=grid[rr]&&grid[rr][cc];
+            if(!cl||cl.type!==t||cl.special){ok=false;break;}
+            cells.push({r:rr,c:cc});
+          }
+          if(ok)return {cells:cells,head:{r:r,c:c},type:t};
+        }
+      }
+    }
+    return null;
+  }
+
   /* Greedy winding walk. Value favours the things the level is actually about;
      the turn bonus is what makes the path SNAKE instead of beelining. */
   function serpPath(r,c,len){
@@ -1521,6 +1574,17 @@ window._gameFns.petalmatch = function PM(a){
         fx.push({kind:'sweep',dir:'v',r:r,c:c,t:Date.now()});
         for(var cs=0;cs<COLS;cs++){var ks=r+','+cs;if(!toClear[ks]){toClear[ks]=1;queue.push(ks);}}
         for(var rs=0;rs<ROWS;rs++){var ks2=rs+','+c;if(!toClear[ks2]){toClear[ks2]=1;queue.push(ks2);}}
+      } else if(spec==='box'){
+        /* doc 01 B9: a hexagonal burst (Manhattan r=2 reads hex on squares)
+           that leaves the three-move enchanted residue on the crater */
+        fx.push({kind:'flash',r:r,c:c,size:3,t:Date.now()});
+        for(var rb=0;rb<ROWS;rb++)for(var cb=0;cb<COLS;cb++){
+          if(Math.abs(rb-r)+Math.abs(cb-c)<=2){
+            var kb=rb+','+cb;
+            if(!toClear[kb]){toClear[kb]=1;queue.push(kb);}
+            residueBoard[rb][cb]=3;
+          }
+        }
       } else if(spec==='quake'){
         /* doc 01 B6, Stephen's exact spec: "clears a large diamond".
            Manhattan radius 3 = a 25-cell diamond; thorns inside take their
@@ -1690,7 +1754,7 @@ window._gameFns.petalmatch = function PM(a){
        (expandActivations runs each). Placed BEFORE the spore branch so a
        spore can never convert a whole colour into crosses - that would be
        a guaranteed board wipe every time. */
-    if(sa==='strip'||sa==='quake'||sb==='strip'||sb==='quake'){
+    if(sa==='strip'||sa==='quake'||sa==='box'||sb==='strip'||sb==='quake'||sb==='box'){
       toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
       toClear[b.r+','+b.c]=1;queue.push(b.r+','+b.c);
       pts=700;score+=pts;comboFx('combo-mega',b.r,b.c,6);banner('GARDEN SHAKER!','#d788c9');sm('GARDEN SHAKER! +'+pts);return true;
@@ -1822,7 +1886,7 @@ window._gameFns.petalmatch = function PM(a){
       if(cell.special==='vine')vineCells++;
       else if(cell.special==='burst')burstCells++;
       else if(cell.special==='spore')sporeCells++;
-      else if(cell.special==='serpent'||cell.special==='strip'||cell.special==='quake')sporeCells++; // top (40-point) tier
+      else if(cell.special==='serpent'||cell.special==='strip'||cell.special==='quake'||cell.special==='box')sporeCells++; // top (40-point) tier
       else plainCells++;
       grid[r][c]=null;
     }
@@ -2753,7 +2817,7 @@ window._gameFns.petalmatch = function PM(a){
                  'ring-corners','ring-plain','ring-ornate',
                  'cover-crack','ice-shatter',
                  'combo-cross','combo-mega','combo-storm','combo-hydra',
-                 'spec-serpent','serpent-trail','spec-strip','spec-quake',
+                 'spec-serpent','serpent-trail','spec-strip','spec-quake','spec-box','box-residue',
                  'fx-beam-h','fx-beam-v','fx-plume',
                  'banner-path','banner-orrery','banner-vine','banner-lotus'];
     var loaded = 0;
@@ -2849,6 +2913,8 @@ window._gameFns.petalmatch = function PM(a){
           k = 'spec-strip';
         } else if(cell.special === 'quake'){
           k = 'spec-quake';
+        } else if(cell.special === 'box'){
+          k = 'spec-box';
         } else if(cell.special === 'spore' || cell.type === -1){
           k = 'spec-wild';
         } else if(cell.special === 'vine'){
@@ -2972,6 +3038,15 @@ window._gameFns.petalmatch = function PM(a){
         if(!PM_ART.tile((r+c)%2===1, c*CELL, r*CELL, CELL)){
           ctx.fillStyle=(r+c)%2===0?ch.tile1:ch.tile2;
           ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+        }
+        // Box residue — the enchanted hex ring, drawn UNDER the piece,
+        // fading as its three moves run out (doc 01 B9)
+        if(residueBoard[r]&&residueBoard[r][c]>0){
+          if(!PM_ART.fx('box-residue', c*CELL+CELL/2, r*CELL+CELL/2, CELL*0.98, 0.3+residueBoard[r][c]*0.2, 0)){
+            ctx.save();ctx.globalAlpha=0.2+residueBoard[r][c]*0.15;
+            ctx.strokeStyle='#c99bd8';ctx.lineWidth=2;
+            ctx.strokeRect(c*CELL+4,r*CELL+4,CELL-8,CELL-8);ctx.restore();
+          }
         }
         // Jelly overlay — translucent dew/moss tint
         if(jelly>0){
@@ -3109,7 +3184,7 @@ window._gameFns.petalmatch = function PM(a){
     swap(tsR,tsC,swapR,swapC);
 
     if(aSpec||bSpec){
-      moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+      moves--;tickResidue();updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
       var swapPair=null;
       if(aSpec&&bSpec){
         swapPair={a:{r:swapR,c:swapC,cell:grid[swapR][swapC]},b:{r:tsR,c:tsC,cell:grid[tsR][tsC]}};
@@ -3131,7 +3206,7 @@ window._gameFns.petalmatch = function PM(a){
         score+=pts;banner('SPORE!','#e8dcc8');sm('SPORE! +'+pts);_play('snap');
         collapseAndRefill();updateHUD();
         setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
-      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||aSpec==='serpent'||aSpec==='strip'||aSpec==='quake'||bSpec==='vine'||bSpec==='burst'||bSpec==='serpent'||bSpec==='strip'||bSpec==='quake')){
+      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||aSpec==='serpent'||aSpec==='strip'||aSpec==='quake'||aSpec==='box'||bSpec==='vine'||bSpec==='burst'||bSpec==='serpent'||bSpec==='strip'||bSpec==='quake'||bSpec==='box')){
         var spR=aSpec?swapR:tsR,spC=aSpec?swapC:tsC;
         var toClear2={},pendBP2=[];
         toClear2[spR+','+spC]=1;
@@ -3145,14 +3220,38 @@ window._gameFns.petalmatch = function PM(a){
         resolveCascade({r:swapR,c:swapC},swapPair,function(){animating=false;selected=null;checkState();});
       }
     } else {
-      /* THE SERPENTINE check runs BEFORE normal match resolution: an S
-         pentomino CONTAINS a straight three, so checking after would let the
-         engine eat the shape as a mundane match. A W staircase contains no
-         run at all, so for that family this check is also what makes the
-         swap a legal move instead of a bump-back. */
+      /* THE BOX OF SIX first (biggest shape), THE SERPENTINE second - both
+         run BEFORE normal match resolution: a filled rectangle contains two
+         straight threes and an S pentomino contains one, so checking after
+         would let the engine eat the shapes as mundane matches. */
+      var bHit=boxAt(swapR,swapC)||boxAt(tsR,tsC);
+      if(bHit){
+        moves--;tickResidue();updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+        var bToClear={};
+        for(var bi=0;bi<bHit.cells.length;bi++){
+          var bcl=bHit.cells[bi];
+          if(bcl.r===bHit.head.r&&bcl.c===bHit.head.c)continue;
+          bToClear[bcl.r+','+bcl.c]=1;
+        }
+        var bHead=grid[bHit.head.r][bHit.head.c];
+        if(bHead){bHead.special='box';bHead.type=-1;bHead.stripeDir=null;bHead.spawnAnim=Date.now();}
+        score+=350;banner('BOX OF SIX!','#c8a84b');sm('BOX OF SIX! +350');_play('snap');_e('milestone');
+        var bPend=[];
+        expandActivations(bToClear,bPend);
+        for(var bck in bToClear){var bcp=bck.split(',');var _bcc=grid[bcp[0]][bcp[1]];if(_bcc&&_bcc.type!==-2&&!_bcc.clearAt){_bcc.clearAt=Date.now();spawnShards(+bcp[0],+bcp[1]);}}
+        setTimeout(function(){
+          var bCounts=applyClear(bToClear);
+          var bPts=(bCounts.p*10+bCounts.v*20+bCounts.b*30+bCounts.s*40+bCounts.dew*15+bCounts.thorns*25)*level;
+          score+=bPts;
+          collapseAndRefill();updateHUD();
+          setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
+        },300);
+        tsR=-1;tsC=-1;
+        return;
+      }
       var sHit=serpAt(swapR,swapC)||serpAt(tsR,tsC);
       if(sHit){
-        moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+        moves--;tickResidue();updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
         var sToClear={};
         for(var si=0;si<sHit.cells.length;si++){
           var scl=sHit.cells[si];
@@ -3173,7 +3272,7 @@ window._gameFns.petalmatch = function PM(a){
           setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
         },300);
       } else if(findMatches().length>0){
-        moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+        moves--;tickResidue();updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
         resolveCascade({r:swapR,c:swapC},null,function(){animating=false;selected=null;checkState();});
       } else {
         // Invalid swap: let the pieces visibly try and bump back so the player
@@ -3299,6 +3398,7 @@ window._gameFns.petalmatch = function PM(a){
     validSwap:function(){ return findValidSwap(); },
     serpProbe:function(r,c){ return serpAt(r,c); },
     fxCount:function(kind){ var n=0; for(var i=0;i<fx.length;i++)if(fx[i].kind===kind)n++; return n; },
+    residueAt:function(r,c){ return (residueBoard[r]&&residueBoard[r][c])||0; },
     // Every legal move on the board right now, as [[r1,c1],[r2,c2]] pairs.
     // Uses the real canSwap/findMatches, same as findValidSwap does.
     moves:function(){
