@@ -102,7 +102,7 @@
 <body>
 <div class="wrap">
   <h1>THE ATTIC<small>WORKING TITLE &middot; HASHBLOCK DEMO &middot; DEV ONLY</small></h1>
-  <p class="demo-note">Every pull is one SHA-256 hash. The hash picks the object class, era, name, wear, and story. Same hash, same object, forever. Records render their sleeve; other classes are tag cards for now.</p>
+  <p class="demo-note">Every pull is one SHA-256 hash. The hash picks the object class, era, name, wear, and story. Same hash, same object, forever. All five classes render their object: record sleeves, VHS clamshells, carded toys, board game lids, and cereal boxes.</p>
 
   <div class="btnRow"><button class="rummage" id="go">RUMMAGE</button></div>
 
@@ -121,6 +121,7 @@
 
 <script src="attic-engine.js"></script>
 <script src="sleeve-render.js"></script>
+<script src="object-render.js"></script>
 <script>
 (function () {
   'use strict';
@@ -137,7 +138,6 @@
     'NEAR MINT':      ['#c9a8e0', '#241c2a'],
     'MINT':           ['#f0d878', '#2a2414']
   };
-  var CLS_ICON = { RECORD:'🎵', VHS:'📼', TOY:'🧸', 'BOARD GAME':'🎲', CEREAL:'🥣' };
 
   function randHash() {
     var b = new Uint8Array(32), s = '', i;
@@ -148,31 +148,9 @@
 
   function hb(h, n) { return parseInt(h.substr(n * 2, 2), 16); }
 
-  // era-tinted tag card for the classes that have no dedicated renderer yet
-  function tagCard(h, it) {
-    var LOOKS = {
-      '1950s': ['#efe3cd', '#d24a35', '#1e2a32'], '1960s': ['#e8571d', '#f2b01e', '#241430'],
-      '1970s': ['#caa452', '#3f5b3a', '#241a10'], '1980s': ['#101018', '#ff2d7a', '#26f0e0'],
-      '1990s': ['#d8d4c8', '#8a2b20', '#191917']
-    };
-    var c = LOOKS[it.era] || LOOKS['1970s'];
-    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-    var fs = Math.min(24, 250 / (Math.max(6, it.name.length) * 0.62));
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="240" height="240">'
-      + '<rect width="300" height="300" fill="' + c[0] + '"/>'
-      + '<rect x="14" y="14" width="272" height="272" fill="none" stroke="' + c[2] + '" stroke-width="3"/>'
-      + '<text x="150" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" letter-spacing="6" fill="' + c[2] + '">' + esc(it.cls) + '</text>'
-      + '<rect x="30" y="120" width="240" height="70" fill="' + c[1] + '"/>'
-      + '<text x="150" y="163" text-anchor="middle" font-family="Georgia, serif" font-weight="800" font-size="' + fs + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
-      + '<text x="150" y="238" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="12" fill="' + c[2] + '">' + esc(String(it.sub).slice(0, 44)) + '</text>'
-      + '<text x="150" y="276" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="' + c[2] + '" opacity="0.7">' + it.year + '</text>'
-      + (it.grade === 'TRASHED' || it.grade === 'PLAYED' ? '<path d="M0 0 L30 0 L0 30 Z" fill="#ffffff" opacity="0.2"/><path d="M300 300 L270 300 L300 270 Z" fill="#ffffff" opacity="0.18"/>' : '')
-      + '</svg>';
-  }
-
+  // every class renders its object now (object-render.js dispatch)
   function artFor(h, it, size) {
-    if (it.cls === 'RECORD') return ATTIC_SLEEVE.renderSleeve(h, size || 240).svg;
-    return tagCard(h, it);
+    return ATTIC_OBJECT.renderItem(h, size || 240).svg;
   }
 
   function show(h) {
@@ -217,9 +195,7 @@
     var html = '', i;
     for (i = 0; i < pulls.length; i++) {
       var p = pulls[i];
-      var inner = p.it.cls === 'RECORD'
-        ? ATTIC_SLEEVE.renderSleeve(p.h, 90).svg
-        : (CLS_ICON[p.it.cls] || '📦');
+      var inner = ATTIC_OBJECT.renderItem(p.h, 90).svg;
       html += '<button class="slot" data-i="' + i + '" title="' + p.it.name + '">' + inner + '</button>';
     }
     shelf.innerHTML = html;
