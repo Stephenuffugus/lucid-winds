@@ -378,9 +378,11 @@ items are marked here so nobody re-does them.
   into the game on a phone that never rotates → same tap clears `tapStart` →
   `stickR` under the thumb; rotating back to portrait does not re-trap; a phone
   that CAN rotate still clears it normally; every asset 200.
-  ⚠️ **FORK DEBT:** upstream 3D commits do NOT reach this copy. Un-fork steps in
-  `satellites/chameleon-3d/VENDORED.md` — push `handoff-chameleon/0001-*.patch`
-  upstream when a credential exists, repoint the card, delete the folder.
+  ✅ **FORK RETIRED 2026-07-29.** A credential arrived, all five patches were pushed
+  to `Stephenuffugus/abduct_a_chameleon` (`d57a94f..455080b`), the portal card points
+  back at github.io, and `satellites/chameleon-3d/` + `handoff-chameleon/` are
+  deleted. Verified: the live upstream file is byte-identical to what we were serving
+  (sha256 `3fd847b7…`) and every asset it loads returns 200. One copy again.
 - [x] **3D props textured again 2026-07-28 — the atlas was recoverable from the
   models themselves.** Every Kenney prop `.glb` points at one shared palette
   atlas. **Eight of the twelve embed it** in a bufferView (barrel, boulder, chest,

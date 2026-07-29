@@ -34,25 +34,37 @@ REPO="${MEM_REPO:-Stephenuffugus/lucid-winds-memory}"
 WORK="${MEM_WORK:-/tmp/lw-memory-sync}"
 
 GH="env -u GITHUB_TOKEN -u GH_TOKEN gh"
+# A personal access token in a file is the path that actually works in a fresh
+# codespace. `gh auth login --with-token` REFUSES a token without the read:org
+# scope, which this script never needs, and the browser device flow has expired on
+# us three times. So: use a stored gh login if there is one, otherwise read a PAT
+# (repo scope is enough) from $GH_PAT_FILE, default ~/.gh_pat.
+PAT_FILE="${GH_PAT_FILE:-$HOME/.gh_pat}"
+TOKEN=""
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 check_auth() {
-  local tok
-  tok="$($GH auth token 2>/dev/null || true)"
-  [ -n "$tok" ] || die "not authenticated. Run: gh auth login"
-  case "$tok" in
-    ghu_*) die "only the codespace token is present (ghu_, scoped to lucid-winds).
-       It cannot reach $REPO. Run: gh auth login" ;;
+  TOKEN="$($GH auth token 2>/dev/null || true)"
+  case "$TOKEN" in
+    ghu_*|"") TOKEN="" ;;          # codespace token cannot reach another repo
   esac
-  $GH api "repos/$REPO" --jq .name >/dev/null 2>&1 \
-    || die "cannot see $REPO. Create it first:
-       gh repo create $REPO --private"
+  if [ -z "$TOKEN" ] && [ -n "${MEM_TOKEN:-}" ]; then TOKEN="$MEM_TOKEN"; fi
+  if [ -z "$TOKEN" ] && [ -f "$PAT_FILE" ]; then TOKEN="$(tr -d "\r\n" < "$PAT_FILE")"; fi
+  [ -n "$TOKEN" ] || die "no usable credential.
+       Put a GitHub token with 'repo' scope in $PAT_FILE (or set MEM_TOKEN).
+       github.com/settings/tokens/new -> tick repo -> generate.
+       Do NOT bother with 'gh auth login' — it demands a read:org scope this does not need."
+  curl -sf -H "Authorization: Bearer $TOKEN" "https://api.github.com/repos/$REPO" >/dev/null \
+    || die "that credential cannot see $REPO. Create it first:
+       curl -X POST -H \"Authorization: Bearer \$TOKEN\" https://api.github.com/user/repos -d '{\"name\":\"${REPO#*/}\",\"private\":true}'"
 }
+
+repo_url() { echo "https://x-access-token:${TOKEN}@github.com/${REPO}.git"; }
 
 clone_work() {
   rm -rf "$WORK"
-  $GH repo clone "$REPO" "$WORK" -- --quiet 2>/dev/null \
+  git -c credential.helper= clone -q "$(repo_url)" "$WORK" 2>/dev/null \
     || die "clone failed for $REPO"
 }
 
@@ -61,7 +73,7 @@ case "${1:-}" in
     check_auth; clone_work
     mkdir -p "$MEM"
     # additive on purpose: never delete a note this codespace wrote but has not pushed
-    rsync -a --exclude '.git' "$WORK"/ "$MEM"/
+    rsync -a --exclude '.git' "$WORK"/memory/ "$MEM"/
     echo "pulled $(find "$MEM" -type f -name '*.md' | wc -l) memory files into $MEM"
     ;;
   push)
@@ -69,7 +81,8 @@ case "${1:-}" in
     [ -d "$MEM" ] || die "no memory dir at $MEM"
     [ -f "$MEM/MEMORY.md" ] || die "$MEM has no MEMORY.md — refusing to push a half-empty memory over a good one"
     clone_work
-    rsync -a --delete --exclude '.git' "$MEM"/ "$WORK"/
+    mkdir -p "$WORK/memory"
+    rsync -a --delete --exclude '.git' "$MEM"/ "$WORK"/memory/
     cd "$WORK"
     git add -A
     if git diff --cached --quiet; then
@@ -77,14 +90,13 @@ case "${1:-}" in
     else
       git -c user.email=stephenfurpahs@gmail.com -c user.name=Stephenuffugus \
         commit -q -m "memory sync — $(git diff --cached --numstat | wc -l) files changed"
-      $GH auth setup-git >/dev/null 2>&1 || true
-      env -u GITHUB_TOKEN -u GH_TOKEN git push -q origin HEAD
+      git -c credential.helper= push -q "$(repo_url)" HEAD
       echo "pushed memory to $REPO"
     fi
     ;;
   status)
     check_auth; clone_work
-    rsync -an --delete --exclude '.git' "$MEM"/ "$WORK"/ | sed -n '2,40p'
+    rsync -an --delete --exclude '.git' "$MEM"/ "$WORK"/memory/ | sed -n '2,40p'
     ;;
   *)
     sed -n '1,30p' "$0"; exit 1 ;;
