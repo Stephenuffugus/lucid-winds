@@ -4,7 +4,7 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v21';
+var CACHE_VERSION = 'lw-v22';
 var ASSET_CACHE = 'lw-assets-v19';
 var GAME_CACHE = 'lw-games-v19';
 var TILE_CACHE = 'lw-tiles-v1';

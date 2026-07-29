@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b16">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b16'/%3E%3Ccircle cx='16' cy='15' r='9' fill='none' stroke='%2352d8ff' stroke-width='2'/%3E%3Cellipse cx='13' cy='12' rx='2.6' ry='3.4' fill='%2352d8ff' opacity='.55'/%3E%3Cpath d='M16 12c-3.4 0-5.4 2.5-5.4 5.2 0 1.9 1.2 3.3 2.4 3.3 1 0 1.4-.7 3-.7s2 .7 3 .7c1.2 0 2.4-1.4 2.4-3.3 0-2.7-2-5.2-5.4-5.2z' fill='%236fe8a8'/%3E%3Ccircle cx='14' cy='16.4' r='1.5' fill='%23070b16'/%3E%3Ccircle cx='18' cy='16.4' r='1.5' fill='%23070b16'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bubblenaut">
+<title>Bubblenaut · Sky Wolf Studios</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="Bubblenaut">
+<meta property="og:description" content="Trap alien critters in bubbles and pop them across five collectible worlds.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/bubblenaut/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bubblenaut">
+<meta name="twitter:description" content="Trap alien critters in bubbles and pop them across five collectible worlds.">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card.jpg">
+
+<!-- Same-origin Sunbeam SDK (guarded; harmless 404 outside lucidwinds.com) -->
+<script src="/sunbeam-sdk.js?v=5"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"bubblenaut"}).catch(function(){});</script>
+<style>
+:root{
+  --bg:#070b16; --panel:#0e1526; --line:#22304d; --mint:#6fe8a8; --deepmint:#2f9c66;
+  --pink:#ff7ac8; --cyan:#52d8ff; --cream:#eef2ff; --muted:#8b96b8; --gold:#ffd166;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #0b1224 0%, #05070f 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#070b16; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:radial-gradient(130% 90% at 50% 0%, #0d1730 0%, #070b16 62%, #05070f 100%)}
+.screen.on{display:flex}
+.pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1; color:var(--cyan); font-weight:800;
+  text-shadow:0 3px 0 #0a1d36, 0 0 30px #52d8ff44; letter-spacing:1px}
+.title-sub{color:var(--pink); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.9; max-width:420px; line-height:1.55}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px;
+  min-height:72px; width:100%; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,#152241,#0d1528); color:var(--cream);
+  font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
+.btn.primary{background:linear-gradient(180deg,#57e0ff,#2f9fd0); color:#06202e; border-color:#8ceaff;
+  box-shadow:0 4px 0 #1a5f80, 0 8px 20px #0007}
+.btn.mint{background:linear-gradient(180deg,#6fe8a8,#3fae72); color:#04180d; border-color:#9df0c4; box-shadow:0 4px 0 #23744a}
+.btn.ghost{background:#0b1120; color:var(--muted)}
+.btn.sm{min-height:72px; font-size:16px}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
+h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:14px; align-items:flex-start; margin:14px 0; font-size:19px; line-height:1.5; font-weight:500}
+.helprow .hi{font-size:18px; font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--cyan); background:#0d1a33; border:1px solid #2d5f8a; border-radius:50%}
+.win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto;
+  font-size:17px; padding:8px 4px; border-bottom:1px solid var(--line)}
+.win-stat b{color:var(--gold)}
+.sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
+  min-height:72px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0b1120}
+.toggle{width:64px; height:36px; border-radius:20px; background:#1a2440; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle::after{content:''; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
+.toggle.on{background:var(--deepmint)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#e2ffee}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+/* collection grid */
+.col-grid{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+.col-row{display:flex; align-items:center; gap:14px; border:1px solid var(--line); border-radius:14px;
+  background:#0b1120; padding:12px 16px; min-height:76px}
+.col-row canvas{flex:none}
+.col-name{font-size:17px; font-weight:800}
+.col-sub{font-size:14px; color:var(--muted); margin-top:2px}
+.col-count{margin-left:auto; font-size:24px; font-weight:800; color:var(--gold)}
+/* touch controls */
+#ctl{position:absolute; left:0; right:0; bottom:0; height:172px; display:none; z-index:12;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); gap:10px;
+  background:linear-gradient(0deg,#070b16 74%,#070b1600)}
+#ctl .side{display:flex; gap:10px; flex:1}
+.padbtn{flex:1; min-height:76px; border-radius:16px; border:1px solid var(--line);
+  background:linear-gradient(180deg,#131f3a,#0c1426); color:var(--cream); font-size:26px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:none}
+.padbtn.act{background:linear-gradient(180deg,#1d3158,#132038); border-color:#3a5a8a}
+.padbtn.bub{background:linear-gradient(180deg,#57e0ff,#2f9fd0); color:#06202e; border-color:#8ceaff}
+.padbtn.jmp{background:linear-gradient(180deg,#6fe8a8,#3fae72); color:#04180d; border-color:#9df0c4}
+#bn-toast{position:absolute; left:50%; bottom:196px; transform:translateX(-50%); z-index:40; max-width:84%;
+  background:rgba(8,12,24,.95); border:1px solid #2d5f8a; border-radius:13px; padding:12px 16px; color:var(--cream);
+  font-size:15px; line-height:1.4; text-align:center; box-shadow:0 8px 26px #000a; opacity:0; pointer-events:none; transition:opacity .25s}
+#bn-toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- touch controls -->
+  <div id="ctl">
+    <div class="side">
+      <button class="padbtn" id="t-left">◀</button>
+      <button class="padbtn" id="t-right">▶</button>
+    </div>
+    <div class="side">
+      <button class="padbtn jmp" id="t-jump">⬆</button>
+      <button class="padbtn bub" id="t-bub">◯</button>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">BUBBLENAUT</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Trap runaway alien critters in bubbles, pop them, and collect the treasures of five strange worlds.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-resume" style="display:none">Continue the voyage</button>
+      <button class="btn primary" id="b-play">◯ Play</button>
+      <button class="btn mint sm" id="b-2p" style="display:none">👽👽 Two players, one keyboard</button>
+      <button class="btn sm" id="b-col">✦ Collection</button>
+      <div class="row">
+        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-set">Settings</button>
+      </div>
+      <button class="btn ghost sm" id="b-exit">◀ Sky Wolf Studios Arcade</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW (first-visit rules gate) -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div style="color:var(--cream);font-size:15px;line-height:1.5;margin:2px 0 0;opacity:.92">You are a bubblenaut on specimen duty. The critters got loose across five worlds.</div>
+    <div style="color:var(--gold);font-size:15px;font-weight:700;margin:8px 0 0"><b>Objective:</b> clear every critter from the room to open the next one. Five rooms per world, five worlds.</div>
+    <div class="helprow"><div class="hi">◀▶</div><div><b>Move</b> with the pads (or A and D). Fall off the bottom and you drift back in from the top.</div></div>
+    <div class="helprow"><div class="hi">⬆</div><div><b>Jump</b> with the green button (or W). You can hop up through thin platforms.</div></div>
+    <div class="helprow"><div class="hi">◯</div><div><b>Bubble</b> with the blue button (or S). A fresh bubble traps any critter it touches, then floats away.</div></div>
+    <div class="helprow"><div class="hi">✦</div><div><b>Pop</b> a floating bubble by touching it. A trapped critter bursts into that world's treasure. Grab it before it fades. Bubbles popped together chain!</div></div>
+    <div class="helprow"><div class="hi">!</div><div>Leave a critter bubbled too long and it breaks out <b>angry</b>. Touching a loose critter costs a life.</div></div>
+    <div style="height:20px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:12px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◀ Back</button>
+    <div class="foot">Bubblenaut: a Sky Wolf original in the spirit of the classic bubble-trap arcades.<br>Canvas2D + WebAudio · five worlds · five treasures</div>
+  </div></div>
+
+  <!-- COLLECTION -->
+  <div class="screen" id="s-col"><div class="pad">
+    <h2 class="sc-h">Collection</h2>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:14px">Every world hides its own treasure. Pop a bubbled critter and catch what falls.</div>
+    <div class="col-grid" id="col-grid"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="col-back" style="max-width:400px;margin:0 auto">◀ Back</button>
+  </div></div>
+
+  <!-- GAME OVER -->
+  <div class="screen center" id="s-over"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:52px" id="over-emoji">🛸</div>
+    <h2 class="sc-h" style="font-size:28px;margin-top:6px" id="over-title">The critters won this one</h2>
+    <div style="width:100%;margin-top:14px">
+      <div class="win-stat"><span>Rooms cleared</span><b id="over-level">0</b></div>
+      <div class="win-stat"><span>Treasures caught</span><b id="over-treas">0</b></div>
+      <div class="win-stat"><span>Score</span><b id="over-score">0</b></div>
+      <div class="win-stat"><span>Best</span><b id="over-best">0</b></div>
+    </div>
+    <div class="sun-earn" id="over-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="over-retry">↻ Retry this room</button>
+      <button class="btn sm" id="over-again">Start over from world 1</button>
+      <button class="btn sm" id="over-share">Share</button>
+      <button class="btn sm" id="over-back">◀ Back</button>
+    </div>
+  </div></div>
+  <div id="bn-toast"></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+/* =============================== shell =============================== */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* studio-standard 30/day/game sunbeam cap helper */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_bubblenaut';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var day=new Date().toISOString().slice(0,10);
+    if(s.day!==day){ s={day:day,earned:0}; }
+    var room=30-(s.earned||0);
+    granted=Math.max(0,Math.min(n,room));
+    if(granted>0){ s.earned=(s.earned||0)+granted; localStorage.setItem(k,JSON.stringify(s));
+      if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag||'bubblenaut'); }
+  }catch(e){}
+  return granted;
+};
+
+function $(id){ return document.getElementById(id); }
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+  if(id) $(id).classList.add('on'); curScreen=id;
+  $('ctl').style.display=(id===null && TOUCH)?'flex':'none';
+  if(id==='s-title'){ var rb=$('b-resume'); rb.style.display=(G&&G.paused)?'flex':'none';
+    $('b-2p').style.display=TOUCH?'none':'flex'; } }
+function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+var BUILD='v1.0';
+var TOUCH=(('ontouchstart' in window)||navigator.maxTouchPoints>0);
+
+var LS=(function(){ var ok=true, mem={};
+  try{ var k='bn_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
+  return { get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null); }catch(e){ return k in mem?mem[k]:null; } },
+    set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } } };
+})();
+var K={ set:'bn_set', best:'bn_best', seen:'bn_seen', col:'bn_collection', far:'bn_furthest' };
+var SET={ sound:true };
+(function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
+function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
+var BEST=parseInt(LS.get(K.best)||'0',10)||0;
+var COLLECT=(function(){ try{ var c=JSON.parse(LS.get(K.col)||'null'); if(c&&c.length===5) return c; }catch(e){} return [0,0,0,0,0]; })();
+function saveCol(){ LS.set(K.col, JSON.stringify(COLLECT)); }
+var FURTHEST=parseInt(LS.get(K.far)||'0',10)||0;   // highest level index reached (0-24)
+
+/* =============================== audio =============================== */
+var AC=null;
+function actx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function beep(freq,dur,type,vol,slideTo){ if(!SET.sound) return; var c=actx(); if(!c) return;
+  try{ var o=c.createOscillator(), g=c.createGain(), t=c.currentTime; o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.12,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function sfx(kind){ switch(kind){
+  case 'ui': beep(430,0.05,'triangle',0.08); break;
+  case 'jump': beep(240,0.09,'square',0.05,420); break;
+  case 'shoot': beep(620,0.07,'sine',0.09,300); break;
+  case 'trap': beep(500,0.12,'triangle',0.1,180); break;
+  case 'pop': beep(700,0.07,'sine',0.11,1100); break;
+  case 'chain': beep(880,0.08,'sine',0.1,1400); break;
+  case 'collect': beep(1046,0.06,'triangle',0.1); setTimeout(function(){ beep(1318,0.09,'triangle',0.1); },60); break;
+  case 'hurt': beep(220,0.2,'sawtooth',0.11,80); break;
+  case 'angry': beep(180,0.14,'square',0.08,320); break;
+  case 'clear': beep(523,0.1,'triangle',0.12); setTimeout(function(){ beep(659,0.1,'triangle',0.12); },100); setTimeout(function(){ beep(784,0.1,'triangle',0.12); },200); setTimeout(function(){ beep(1046,0.16,'triangle',0.13); },300); break;
+  case 'over': beep(392,0.16,'triangle',0.1,300); setTimeout(function(){ beep(262,0.26,'triangle',0.1,160); },180); break;
+} }
+
+var _toastT=null;
+function toast(msg,ms){ var el=$('bn-toast'); if(!el) return; el.textContent=msg; el.classList.add('on');
+  if(_toastT) clearTimeout(_toastT); _toastT=setTimeout(function(){ el.classList.remove('on'); }, ms||2400); }
+
+/* =============================== worlds =============================== */
+/* Jessie: "different levels can be different worlds with different things to
+   collect." Each world owns a palette, a critter with its OWN behavior, and a
+   treasure. The collection screen keeps lifetime tallies per world. */
+var WORLDS=[
+  { name:'Moss Moon',       sky:['#0a1a12','#07130c'], plat:'#3fae72', solid:'#1d5c3c', glow:'#6fe8a8',
+    critter:'Hopper',  cCol:'#9be86f', treasure:'Sunfruit',    tCol:'#ffd166', tShape:'fruit' },
+  { name:'Crystal Caverns', sky:['#140f2a','#0b081c'], plat:'#7a5fd0', solid:'#43318a', glow:'#a98bff',
+    critter:'Skitter', cCol:'#c39bff', treasure:'Geode',       tCol:'#8be8ff', tShape:'gem' },
+  { name:'Rust Belt',       sky:['#1d130a','#120b06'], plat:'#b06a34', solid:'#6e3f1c', glow:'#ffab5e',
+    critter:'Drone',   cCol:'#ffb066', treasure:'Star Cog',    tCol:'#e8e2d0', tShape:'cog' },
+  { name:'Frost Ring',      sky:['#0a1522','#061019'], plat:'#5aa8d8', solid:'#2c5f86', glow:'#a8e6ff',
+    critter:'Slick',   cCol:'#9fd8ff', treasure:'Frost Pearl', tCol:'#e8f6ff', tShape:'pearl' },
+  { name:'Magma Core',      sky:['#1e0b0b','#140606'], plat:'#d05a3a', solid:'#84301c', glow:'#ff8a5e',
+    critter:'Cinder',  cCol:'#ff8a66', treasure:'Ember Opal',  tCol:'#ffcf8a', tShape:'opal' }
+];
+
+/* =============================== levels =============================== */
+/* 15 x 19 tiles. '#' solid, '=' thin platform (jump up through, land on top),
+   '.' air, 'P' player 1 spawn, 'Q' player 2 spawn, 'e' critter spawn.
+   Gaps in the bottom row wrap you back in from the top, like the arcades. */
+var L=[
+/* ---- world 1 · Moss Moon ---- */
+["###############","#.............#","#.............#","#P...........Q#","#====.....====#","#.............#","#..e.......e..#","#...=======...#","#.............#","#.............#","#=====...=====#","#.............#","#.............#","#....=====....#","#.............#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#P...........Q#","#===.......===#","#.............#","#......e......#","#....=====....#","#.............#","#.e.........e.#","#===.......===#","#.............#","#.............#","#......=......#","#....=====....#","#.............#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#.............#","#.....P.Q.....#","#....=====....#","#.............#","#.e.........e.#","#====.....====#","#.............#","#......e......#","#....=====....#","#.............#","#.e.........e.#","#====.....====#","#.............#","#.............#","#......=......#","#.............#","#.............#","###############"],
+["###############","#P...........Q#","#==.........==#","#.............#","#...e.....e...#","#..===...===..#","#.............#","#......e......#","#.....===.....#","#.............#","#..e.......e..#","#..===...===..#","#.............#","#.............#","#=============#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#.............#","#P...........Q#","#=====...=====#","#.............#","#..e...e...e..#","#..=========..#","#.............#","#.............#","#=====...=====#","#.....e.......#","#.............#","#..=========..#","#......e......#","#.............#","#=====...=====#","#.............#","#.............#","###############"],
+/* ---- world 2 · Crystal Caverns ---- */
+["###############","#.............#","#P.....#.....Q#","#====..#..====#","#......#......#","#..e...#...e..#","#..==..#..==..#","#......#......#","#......e......#","#....=====....#","#.............#","#.e.........e.#","#====.....====#","#.............#","#.............#","#....=====....#","#.............#","#.............#","###############"],
+["###############","#.............#","#..P.......Q..#","#..==.....==..#","#.............#","#e...........e#","#==...===...==#","#.............#","#.....e.e.....#","#....==.==....#","#.............#","#.............#","#..==.....==..#","#.....e.......#","#....=====....#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#......#......#","#.P....#....Q.#","#===...#...===#","#......#......#","#..e...#...e..#","#.===..#..===.#","#......#......#","#......#......#","#..e...#...e..#","#.===..#..===.#","#......#......#","#.............#","#......e......#","#....=====....#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#P...........Q#","#====.......==#","#.............#","#...e.....e...#","#...==...==...#","#......e......#","#.....===.....#","#.............#","#..e.......e..#","#..==.....==..#","#.............#","#......e......#","#.....===.....#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#.....P.Q.....#","#....=====....#","#.............#","#.e....#....e.#","#.==...#...==.#","#......#......#","#...e..#..e...#","#...==.#.==...#","#......#......#","#......#......#","#.e....#....e.#","#.==...#...==.#","#.............#","#......e......#","#....=====....#","#.............#","#.............#","###############"],
+/* ---- world 3 · Rust Belt ---- */
+["###############","#.............#","#P...........Q#","#=====...=====#","#.............#","#....e...e....#","#.............#","#...=======...#","#.............#","#..e.......e..#","#.............#","#====.....====#","#.............#","#......e......#","#....=====....#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#..P.......Q..#","#..===...===..#","#.............#","#e.....e.....e#","#.............#","#==...===...==#","#.............#","#.............#","#...e.....e...#","#..===...===..#","#.............#","#.............#","#=============#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#P.....#.....Q#","#====..#..====#","#......#......#","#..e...#...e..#","#......#......#","#.===..#..===.#","#......#......#","#...e..#..e...#","#......#......#","#.===..#..===.#","#......#......#","#......e......#","#.....===.....#","#.............#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#.....P.Q.....#","#....=====....#","#.............#","#.e....e....e.#","#==...===...==#","#.............#","#.............#","#...e.....e...#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#=====...=====#","#.............#","#.............#","###############"],
+["###############","#P...........Q#","#==.........==#","#.............#","#..e..e.e..e..#","#..=========..#","#.............#","#.............#","#....e...e....#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#..==.....==..#","#.............#","#.............#","#.............#","#####.....#####"],
+/* ---- world 4 · Frost Ring ---- */
+["###############","#.............#","#P...........Q#","#=====...=====#","#.............#","#..e.......e..#","#...=======...#","#.............#","#......e......#","#=====...=====#","#.............#","#..e.......e..#","#...=======...#","#.............#","#.............#","#=====...=====#","#.............#","#.............#","###############"],
+["###############","#.....P.Q.....#","#....=====....#","#.............#","#e...........e#","#====.......==#","#.............#","#...e.....e...#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#.e.........e.#","#==.........==#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#......#......#","#.P....#....Q.#","#.==...#...==.#","#......#......#","#..e...#...e..#","#..==..#..==..#","#......#......#","#......#......#","#..e...#...e..#","#..==..#..==..#","#......#......#","#.............#","#....e...e....#","#...=======...#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#..P.......Q..#","#..==.....==..#","#.............#","#.e...e.e...e.#","#.==.=====.==.#","#.............#","#.............#","#....e...e....#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#.............#","#=============#","#.............#","###############"],
+["###############","#P...........Q#","#==.........==#","#.............#","#...e.....e...#","#..===...===..#","#......e......#","#.....===.....#","#.............#","#.e.........e.#","#==....e....==#","#.....===.....#","#.............#","#...e.....e...#","#..===...===..#","#.............#","#.............#","#.............#","#####.....#####"],
+/* ---- world 5 · Magma Core ---- */
+["###############","#.............#","#P...........Q#","#====.....====#","#.............#","#..e...e...e..#","#..=========..#","#.............#","#.............#","#.e.........e.#","#====.....====#","#.............#","#......e......#","#.....===.....#","#.............#","#....=====....#","#.............#","#.............#","###############"],
+["###############","#.....P.Q.....#","#....=====....#","#.............#","#.e....e....e.#","#==...===...==#","#.............#","#...e.....e...#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#.e.........e.#","#==.........==#","#.............#","#.............#","#.............#","#####.....#####"],
+["###############","#P.....#.....Q#","#====..#..====#","#......#......#","#..e...#...e..#","#.===..#..===.#","#......#......#","#...e..#..e...#","#..===.#.===..#","#......#......#","#......e......#","#.....===.....#","#......#......#","#..e...#...e..#","#.===..#..===.#","#.............#","#.............#","#.............#","###############"],
+["###############","#.............#","#.P.........Q.#","#.==.......==.#","#.............#","#e...e...e...e#","#==.===.===.==#","#.............#","#.............#","#...e.....e...#","#...==...==...#","#.............#","#......e......#","#.....===.....#","#.............#","#=====...=====#","#.............#","#.............#","#####.....#####"],
+["###############","#.....P.Q.....#","#....=====....#","#.............#","#.e...e.e...e.#","#.==.=====.==.#","#.............#","#...e.....e...#","#...==...==...#","#......e......#","#.....===.....#","#.............#","#.e.........e.#","#.==.......==.#","#......e......#","#.....===.....#","#.............#","#.............#","###############"]
+];
+
+/* =============================== state =============================== */
+var cv, ctx, VW=540, VH=960;
+var TILE=36, COLS=15, ROWS=19, FX=0, FY=90;   // field starts under the HUD
+var grid=null, spawns={p:[],e:[]};
+var G=null;            // run state
+var players=[], bubbles=[], critters=[], treasures=[], parts=[];
+var running=false, lastTs=0, acc=0, DT=1/120;
+var stars=[];          // title + game backdrop starfield (seeded per world)
+
+function levelData(idx){ return L[clamp(idx,0,L.length-1)]; }
+function worldOf(idx){ return Math.floor(clamp(idx,0,24)/5); }
+function tileAt(c,r){ if(c<0||c>=COLS) return '#'; if(r<0||r>=ROWS) return '.'; return grid[r][c]; }
+function isSolid(c,r){ return tileAt(c,r)==='#'; }
+function isPlat(c,r){ var t=tileAt(c,r); return t==='='; }
+
+/* =============================== entities =============================== */
+function mkPlayer(i,c,r){
+  return { i:i, x:(FX+(c+0.5)*TILE), y:(FY+(r+1)*TILE-1), w:26, h:30, vx:0, vy:0,
+    face:i?-1:1, ground:false, lives:3, dead:false, inv:0, blink:0, anim:0,
+    col:i? '#ff7ac8':'#6fe8a8', dark:i?'#b04a8a':'#3fae72', shootCd:0, spawnC:c, spawnR:r };
+}
+function mkCritter(c,r,w){
+  var b={ x:FX+(c+0.5)*TILE, y:FY+(r+1)*TILE-1, w:26, h:26, vx:0, vy:0, dir:(c<COLS/2?1:-1),
+    world:w, angry:false, ground:false, hopT:1+Math.random()*2, dashT:0, phase:Math.random()*6.28,
+    anchorY:0, dead:false };
+  if(w===2){ b.anchorY=b.y-14; b.vy=0; }   // drones fly
+  return b;
+}
+function critSpeed(b){
+  var base=[70,110,90,80,100][b.world] + (G?G.wLevel*6:0);
+  if(b.world===3 && b.dashT>0) base*=2.2;
+  return base*(b.angry?1.5:1);
+}
+
+/* =============================== level flow =============================== */
+var gatePending=false;
+function playRequest(mode){
+  PENDING_MODE=mode||'1P';
+  if(LS.get(K.seen)!=='1'){ gatePending=true; $('how-back').textContent='Start'; show('s-how'); return; }
+  newGame(PENDING_MODE);
+}
+var PENDING_MODE='1P';
+function newGame(mode){
+  G={ mode:mode||'1P', level:FURTHEST>0?0:0, score:0, treasures:0, clearedMax:0, paused:false,
+    clearT:0, phase:'play', wLevel:0, flash:0, lostLifeThisLevel:false, lastSun:0 };
+  startLevel(0);
+  show(null); running=true; lastTs=0; acc=0; requestAnimationFrame(loop);
+}
+function continueGame(){
+  if(G&&G.paused){ G.paused=false; show(null); running=true; lastTs=0; requestAnimationFrame(loop); return; }
+  G={ mode:'1P', level:FURTHEST, score:0, treasures:0, clearedMax:0, paused:false,
+    clearT:0, phase:'play', wLevel:0, flash:0, lostLifeThisLevel:false, lastSun:0 };
+  startLevel(FURTHEST);
+  show(null); running=true; lastTs=0; acc=0; requestAnimationFrame(loop);
+}
+function startLevel(idx){
+  G.level=idx; var w=worldOf(idx); G.world=w; G.wLevel=idx%5;
+  G.phase='play'; G.clearT=0; G.lostLifeThisLevel=false;
+  var map=levelData(idx);
+  grid=[]; spawns={p:[],e:[]};
+  for(var r=0;r<ROWS;r++){ var row=map[r].split('');
+    for(var c=0;c<COLS;c++){ var ch=row[c];
+      if(ch==='P'){ spawns.p[0]={c:c,r:r}; row[c]='.'; }
+      else if(ch==='Q'){ spawns.p[1]={c:c,r:r}; row[c]='.'; }
+      else if(ch==='e'){ spawns.e.push({c:c,r:r}); row[c]='.'; }
+      else if(ch!=='#'&&ch!=='='&&ch!=='.'){ row[c]='.'; } }
+    grid.push(row); }
+  bubbles=[]; treasures=[]; parts=[];
+  critters=[];
+  for(var i=0;i<spawns.e.length;i++) mkAndPush(spawns.e[i]);
+  function mkAndPush(s){ critters.push(mkCritter(s.c,s.r,w)); }
+  var n=(G.mode==='2P')?2:1;
+  var old=players;
+  players=[];
+  for(var p=0;p<n;p++){ var sp=spawns.p[p]||spawns.p[0];
+    var pl=mkPlayer(p,sp.c,sp.r);
+    if(old[p]){ pl.lives=old[p].lives; }
+    players.push(pl); }
+  seedStars(w);
+  if(idx>FURTHEST){ FURTHEST=idx; LS.set(K.far,''+FURTHEST); }
+}
+function seedStars(w){ stars=[]; var seed=w*997+13;
+  function rnd(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
+  for(var i=0;i<46;i++) stars.push({x:rnd()*VW, y:FY+rnd()*(ROWS*TILE), r:0.6+rnd()*1.6, tw:rnd()*6.28});
+}
+function levelClear(){
+  G.phase='clear'; G.clearT=2.2; sfx('clear');
+  if(G.level>G.clearedMax) G.clearedMax=G.level;
+  var amt=2 + (G.lostLifeThisLevel?0:1) + ((G.level%5===4)?4:0);
+  G.lastSun=window._sbCapEarn(amt,'bubblenaut:clear')||0;
+  for(var i=0;i<26;i++) burst(FX+Math.random()*COLS*TILE, FY+Math.random()*ROWS*TILE, WORLDS[G.world].glow, 1);
+}
+function gameOver(){
+  G.phase='dead'; running=false; sfx('over');
+  if(G.score>BEST){ BEST=G.score; LS.set(K.best,''+BEST); }
+  $('over-level').textContent=''+(G.clearedMax+((G.phase==='clear')?1:0));
+  $('over-treas').textContent=''+G.treasures;
+  $('over-score').textContent=''+G.score;
+  $('over-best').textContent=''+BEST;
+  $('over-title').textContent=(G.clearedMax>0)?('You cleared '+(G.clearedMax+1)+' room'+(G.clearedMax>0?'s':'')):'The critters won this one';
+  var granted=0;
+  if(G.clearedMax>=1){ granted=window._sbCapEarn(1,'bubblenaut:consolation')||0; }
+  $('over-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'):'☀ better luck out there';
+  setTimeout(function(){ show('s-over'); },700);
+}
+function pauseToTitle(){ if(!G) return; G.paused=true; running=false; show('s-title'); }
+
+/* =============================== input =============================== */
+var keys={};
+document.addEventListener('keydown',function(e){
+  if(curScreen!==null){ return; }
+  keys[e.code]=true;
+  if(e.code==='KeyS'||e.code==='Slash'||e.code==='ArrowDown'||e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW') e.preventDefault();
+  if(e.code==='Escape'){ pauseToTitle(); }
+});
+document.addEventListener('keyup',function(e){ keys[e.code]=false; });
+function bindPad(id,on,off){
+  var el=$(id);
+  function down(e){ e.preventDefault(); el.classList.add('act'); on(); }
+  function up(e){ if(e) e.preventDefault(); el.classList.remove('act'); off(); }
+  el.addEventListener('pointerdown',down);
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up);
+}
+var touchCtl={left:false,right:false,jump:false,bub:false};
+bindPad('t-left',function(){touchCtl.left=true;},function(){touchCtl.left=false;});
+bindPad('t-right',function(){touchCtl.right=true;},function(){touchCtl.right=false;});
+bindPad('t-jump',function(){touchCtl.jump=true;},function(){touchCtl.jump=false;});
+bindPad('t-bub',function(){touchCtl.bub=true;},function(){touchCtl.bub=false;});
+function readCtl(p){
+  if(p.i===0){
+    return { left:keys['KeyA']||((G.mode==='1P')&&keys['ArrowLeft'])||touchCtl.left,
+             right:keys['KeyD']||((G.mode==='1P')&&keys['ArrowRight'])||touchCtl.right,
+             jump:keys['KeyW']||((G.mode==='1P')&&keys['ArrowUp'])||touchCtl.jump,
+             bub:keys['KeyS']||((G.mode==='1P')&&(keys['Space']||keys['ArrowDown']))||touchCtl.bub };
+  }
+  return { left:keys['ArrowLeft'], right:keys['ArrowRight'], jump:keys['ArrowUp'], bub:keys['ArrowDown']||keys['Slash'] };
+}
+
+/* =============================== physics =============================== */
+var GRAV=1500, WALK=210, JUMP=-620;
+function rectVsGrid(x,y,w,h){ // solid collision only
+  var c0=Math.floor((x-w/2-FX)/TILE), c1=Math.floor((x+w/2-FX)/TILE);
+  var r0=Math.floor((y-h-FY)/TILE), r1=Math.floor((y-1-FY)/TILE);
+  for(var r=r0;r<=r1;r++) for(var c=c0;c<=c1;c++) if(isSolid(c,r)) return {c:c,r:r};
+  return null;
+}
+function moveActor(a,dt,dropThrough){
+  // horizontal
+  var nx=a.x+a.vx*dt;
+  var hit=rectVsGrid(nx,a.y,a.w,a.h);
+  if(hit){ if(a.vx>0) nx=FX+hit.c*TILE-a.w/2-0.01; else if(a.vx<0) nx=FX+(hit.c+1)*TILE+a.w/2+0.01; a.vx=0; a.hitWall=true; }
+  else a.hitWall=false;
+  a.x=nx;
+  // vertical
+  a.vy+=GRAV*dt; if(a.vy>820) a.vy=820;
+  var ny=a.y+a.vy*dt;
+  a.ground=false;
+  if(a.vy>0){
+    // landing: solids AND thin platforms (feet crossing a tile top)
+    var feetR0=Math.floor((a.y-1-FY)/TILE), feetR1=Math.floor((ny-1-FY)/TILE);
+    var c0=Math.floor((a.x-a.w/2-FX)/TILE), c1=Math.floor((a.x+a.w/2-FX)/TILE);
+    for(var r=feetR0+1;r<=feetR1&&!a.ground;r++){
+      for(var c=c0;c<=c1;c++){
+        if(isSolid(c,r)||(isPlat(c,r)&&!dropThrough)){
+          ny=FY+r*TILE-0.01; a.vy=0; a.ground=true; break; } } }
+  } else if(a.vy<0){
+    var head=rectVsGrid(a.x,ny- a.h+a.h,a.w,a.h); // head vs solids only
+    var hr=Math.floor((ny-a.h-FY)/TILE);
+    var hc0=Math.floor((a.x-a.w/2-FX)/TILE), hc1=Math.floor((a.x+a.w/2-FX)/TILE);
+    for(var hc=hc0;hc<=hc1;hc++) if(isSolid(hc,hr)){ ny=FY+(hr+1)*TILE+a.h; a.vy=0; break; }
+  }
+  a.y=ny;
+  // world wrap: fall off the bottom, drift in from the top
+  if(a.y-a.h>FY+ROWS*TILE+8){ a.y=FY+2; a.vy=60; }
+  a.x=clamp(a.x, FX+TILE+a.w/2, FX+(COLS-1)*TILE-a.w/2);
+}
+
+function stepPlayers(dt){
+  for(var i=0;i<players.length;i++){ var p=players[i]; if(p.dead) continue;
+    var ctl=readCtl(p);
+    p.vx=0;
+    if(ctl.left){ p.vx=-WALK; p.face=-1; }
+    if(ctl.right){ p.vx=WALK; p.face=1; }
+    if(ctl.jump&&p.ground){ p.vy=JUMP; sfx('jump'); }
+    p.shootCd-=dt;
+    if(ctl.bub&&p.shootCd<=0){ p.shootCd=0.42; shoot(p); }
+    moveActor(p,dt,false);
+    p.anim+=dt*(Math.abs(p.vx)>1?9:2);
+    if(p.inv>0) p.inv-=dt;
+    // touch critters
+    if(p.inv<=0){
+      for(var c=0;c<critters.length;c++){ var b=critters[c]; if(b.dead) continue;
+        if(Math.abs(b.x-p.x)<(b.w+p.w)/2-4 && Math.abs((b.y-b.h/2)-(p.y-p.h/2))<(b.h+p.h)/2-4){ hurt(p); break; } } }
+    // pop floating bubbles by touch
+    for(var u=0;u<bubbles.length;u++){ var bu=bubbles[u];
+      if(bu.dead||bu.age<0.5) continue;
+      var dx=bu.x-p.x, dy=bu.y-(p.y-p.h/2);
+      if(dx*dx+dy*dy < (bu.r+12)*(bu.r+12)){ popBubble(u,true); } }
+    // collect treasures
+    for(var t=treasures.length-1;t>=0;t--){ var tr=treasures[t];
+      if(Math.abs(tr.x-p.x)<24 && Math.abs(tr.y-(p.y-p.h/2))<26){
+        treasures.splice(t,1); collectTreasure(); } }
+  }
+  var allDead=true; for(var q=0;q<players.length;q++) if(!players[q].dead) allDead=false;
+  if(allDead&&G.phase==='play') gameOver();
+}
+function hurt(p){
+  p.lives--; G.lostLifeThisLevel=true; sfx('hurt'); G.flash=0.4;
+  burst(p.x,p.y-p.h/2,p.col,14);
+  if(p.lives<=0){ p.dead=true; return; }
+  p.x=FX+(p.spawnC+0.5)*TILE; p.y=FY+(p.spawnR+1)*TILE-1; p.vx=0; p.vy=0; p.inv=2.2;
+}
+function shoot(p){
+  sfx('shoot');
+  bubbles.push({ x:p.x+p.face*22, y:p.y-p.h*0.62, vx:p.face*380, vy:0, r:15,
+    age:0, life:8, holds:null, dead:false, wob:Math.random()*6.28 });
+}
+function stepBubbles(dt){
+  for(var i=0;i<bubbles.length;i++){ var b=bubbles[i]; if(b.dead) continue;
+    b.age+=dt; b.wob+=dt*3;
+    if(b.age<0.45){ // active phase: flies straight, traps critters
+      b.x+=b.vx*dt;
+      var c=Math.floor((b.x+(b.vx>0?b.r:-b.r)-FX)/TILE), r=Math.floor((b.y-FY)/TILE);
+      if(isSolid(c,r)){ b.age=0.45; b.vx=0; }
+      if(!b.holds){
+        for(var e=0;e<critters.length;e++){ var cr=critters[e]; if(cr.dead) continue;
+          if(Math.abs(cr.x-b.x)<(cr.w/2+b.r) && Math.abs((cr.y-cr.h/2)-b.y)<(cr.h/2+b.r)){
+            b.holds={world:cr.world, angry:false, t:0}; cr.dead=true; b.r=19; sfx('trap');
+            // a held bubble hovers about one jump above the catch, so it is always
+            // reachable. Rising to the ceiling made traps over open floor unpoppable,
+            // which turned every good shot into a guaranteed angry respawn.
+            b.capY=Math.max(FY+TILE*1.6+b.r, b.y-115);
+            break; } } }
+    } else { // floating
+      b.vx*=0.9;
+      var rise=b.holds?((b.capY&&b.y<=b.capY)?0:-46):-58;
+      b.y+=rise*dt + Math.sin(b.wob)*10*dt;
+      if(b.holds&&b.capY&&b.y<b.capY) b.y+=(b.capY-b.y)*Math.min(1,dt*3);
+      b.x+=Math.cos(b.wob*0.7)*14*dt + b.vx*dt;
+      var cc=Math.floor((b.x-FX)/TILE), rr=Math.floor((b.y-b.r-FY)/TILE);
+      if(isSolid(cc,rr)) b.y=FY+(rr+1)*TILE+b.r+1;
+      if(b.x<FX+TILE+b.r) b.x=FX+TILE+b.r;
+      if(b.x>FX+(COLS-1)*TILE-b.r) b.x=FX+(COLS-1)*TILE-b.r;
+      b.life-=dt;
+      if(b.holds){ b.holds.t+=dt;
+        if(b.holds.t>7){ escapeBubble(i); continue; } }
+      if(b.life<=0){ if(b.holds) escapeBubble(i); else { b.dead=true; burst(b.x,b.y,'#8ceaff',5); } }
+    }
+  }
+  for(var k=bubbles.length-1;k>=0;k--) if(bubbles[k].dead) bubbles.splice(k,1);
+}
+function escapeBubble(i){
+  var b=bubbles[i]; if(!b.holds){ b.dead=true; return; }
+  sfx('angry');
+  var c=Math.floor((b.x-FX)/TILE), r=Math.floor((b.y-FY)/TILE);
+  var nb=mkCritter(clamp(c,1,COLS-2), clamp(r,1,ROWS-2), b.holds.world);
+  nb.angry=true; nb.y=b.y+nb.h/2; nb.x=b.x;
+  critters.push(nb);
+  b.dead=true; burst(b.x,b.y,'#ff7a6a',8);
+}
+function popBubble(i,byPlayer){
+  var b=bubbles[i]; if(b.dead) return;
+  b.dead=true;
+  if(b.holds){
+    sfx('pop'); G.score+=250;
+    treasures.push({ x:b.x, y:b.y, vy:-120, world:b.holds.world, life:12 });
+    burst(b.x,b.y,WORLDS[b.holds.world].cCol,10);
+  } else { sfx('chain'); G.score+=20; burst(b.x,b.y,'#8ceaff',6); }
+  // chain: neighbours pop too
+  for(var j=0;j<bubbles.length;j++){ var o=bubbles[j];
+    if(o.dead||o.age<0.45) continue;
+    var dx=o.x-b.x, dy=o.y-b.y;
+    if(dx*dx+dy*dy<64*64) popBubble(j,false);
+  }
+}
+function collectTreasure(){
+  sfx('collect');
+  var mult=1+G.world*0.5;
+  G.score+=Math.round(100*mult);
+  G.treasures++;
+  COLLECT[G.world]=(COLLECT[G.world]||0)+1; saveCol();
+}
+function stepTreasures(dt){
+  for(var i=treasures.length-1;i>=0;i--){ var t=treasures[i];
+    t.vy+=GRAV*0.7*dt; if(t.vy>500) t.vy=500;
+    var ny=t.y+t.vy*dt;
+    var c=Math.floor((t.x-FX)/TILE), r0=Math.floor((t.y-FY)/TILE), r1=Math.floor((ny-FY)/TILE);
+    var landed=false;
+    for(var r=r0+1;r<=r1;r++) if(isSolid(c,r)||isPlat(c,r)){ ny=FY+r*TILE-8; t.vy=0; landed=true; break; }
+    t.y=ny;
+    if(t.y>FY+ROWS*TILE+20){ t.y=FY+2; }
+    t.life-=dt; if(t.life<=0) treasures.splice(i,1);
+  }
+}
+function stepCritters(dt){
+  var alive=0;
+  for(var i=0;i<critters.length;i++){ var b=critters[i]; if(b.dead) continue; alive++;
+    var sp=critSpeed(b);
+    if(b.world===2){ // drone: flies a sine lane, bounces off walls
+      b.phase+=dt*2;
+      b.x+=b.dir*sp*dt;
+      b.y=b.anchorY+Math.sin(b.phase)*26;
+      var c=Math.floor((b.x+b.dir*(b.w/2+2)-FX)/TILE), r=Math.floor((b.y-b.h/2-FY)/TILE);
+      if(isSolid(c,r)||b.x<FX+TILE+b.w/2||b.x>FX+(COLS-1)*TILE-b.w/2){ b.dir*=-1; }
+      continue;
+    }
+    if(b.world===0){ b.hopT-=dt; if(b.hopT<=0&&b.ground){ b.vy=-520; b.hopT=1.6+Math.random()*2.2; } }
+    if(b.world===3){ b.dashT-=dt; if(b.dashT<=-3-Math.random()*3) b.dashT=0.7; }
+    if(b.world===4){ // cinder homes toward the nearest live player
+      var best=null,bd=1e9;
+      for(var p=0;p<players.length;p++){ if(players[p].dead) continue;
+        var d=Math.abs(players[p].x-b.x); if(d<bd){bd=d;best=players[p];} }
+      if(best&&bd>10) b.dir=(best.x>b.x)?1:-1;
+      if(best&&b.ground&&Math.random()<0.004) b.vy=-540;
+    }
+    b.vx=b.dir*sp;
+    moveActor(b,dt,(b.world===1&&Math.random()<0.002));  // skitters sometimes drop through
+    if(b.hitWall) b.dir*=-1;
+  }
+  if(alive===0&&bubbles.every(function(x){return !x.holds;})&&G.phase==='play') levelClear();
+}
+
+/* =============================== particles =============================== */
+function burst(x,y,col,count){ for(var i=0;i<(count||8);i++){ var a=Math.random()*6.2832, s=40+Math.random()*170;
+  parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-50,r:2+Math.random()*3,col:col,life:1}); } }
+
+/* =============================== render =============================== */
+function render(){
+  var W=WORLDS[G?G.world:0];
+  ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,W.sky[0]); bg.addColorStop(1,W.sky[1]);
+  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  // stars
+  for(var s=0;s<stars.length;s++){ var st=stars[s];
+    ctx.globalAlpha=0.35+0.3*Math.sin(st.tw+performance.now()/900);
+    ctx.fillStyle='#cfe6ff'; ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill(); }
+  ctx.globalAlpha=1;
+  if(!G) return;
+  // HUD
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle=W.glow; ctx.font='800 24px system-ui';
+  ctx.fillText('Room '+(G.level+1)+' / 25', 16, 30);
+  ctx.fillStyle='#8b96b8'; ctx.font='700 17px system-ui';
+  ctx.fillText(W.name+'  ·  '+W.treasure+'s', 16, 60);
+  ctx.textAlign='right';
+  ctx.fillStyle='#eef2ff'; ctx.font='800 24px system-ui'; ctx.fillText(''+G.score, VW-16, 30);
+  // lives per player
+  var lx=VW-16;
+  for(var pi=players.length-1;pi>=0;pi--){ var pl=players[pi];
+    for(var li=0;li<pl.lives;li++){ drawMiniAlien(lx-13, 60, 9, pl.col); lx-=26; }
+    lx-=8; }
+  // field tiles
+  for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){ var t=grid[r][c]; if(t==='.') continue;
+    var x=FX+c*TILE, y=FY+r*TILE;
+    if(t==='#'){
+      ctx.fillStyle=W.solid; ctx.fillRect(x,y,TILE,TILE);
+      ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(x,y,TILE,4);
+      ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fillRect(x,y+TILE-4,TILE,4);
+    } else {
+      ctx.fillStyle=W.plat;
+      roundRect(x+1,y+3,TILE-2,12,5); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.18)'; roundRect(x+3,y+4,TILE-6,4,2); ctx.fill();
+    } }
+  // treasures
+  for(var ti=0;ti<treasures.length;ti++){ var tr=treasures[ti];
+    var wob=Math.sin(performance.now()/220+tr.x)*2;
+    var fade=tr.life<2 ? (Math.floor(tr.life*8)%2===0?0.35:1) : 1;
+    ctx.globalAlpha=fade;
+    drawTreasure(tr.x, tr.y+wob, tr.world, 12);
+    ctx.globalAlpha=1; }
+  // critters
+  for(var ci=0;ci<critters.length;ci++){ var cr=critters[ci]; if(cr.dead) continue; drawCritter(cr); }
+  // players
+  for(var pj=0;pj<players.length;pj++){ var p=players[pj]; if(p.dead) continue;
+    if(p.inv>0 && Math.floor(p.inv*10)%2===0) continue;
+    drawAlien(p); }
+  // bubbles
+  for(var bi=0;bi<bubbles.length;bi++){ var b=bubbles[bi]; if(b.dead) continue; drawBubble(b); }
+  // particles
+  for(var qi=0;qi<parts.length;qi++){ var pa=parts[qi]; ctx.globalAlpha=clamp(pa.life,0,1);
+    ctx.fillStyle=pa.col; ctx.beginPath(); ctx.arc(pa.x,pa.y,pa.r,0,6.2832); ctx.fill(); }
+  ctx.globalAlpha=1;
+  if(G.flash>0){ ctx.fillStyle='rgba(255,90,80,'+(G.flash*0.35)+')'; ctx.fillRect(0,0,VW,VH); }
+  // clear banner
+  if(G.phase==='clear'){
+    ctx.fillStyle='rgba(5,8,18,0.72)'; ctx.fillRect(0,FY,VW,ROWS*TILE);
+    ctx.textAlign='center';
+    var last=(G.level===24);
+    var newWorld=(G.level%5===4)&&!last;
+    ctx.fillStyle=W.glow; ctx.font='800 40px system-ui';
+    ctx.fillText(last?'Voyage complete!':'Room cleared!', VW/2, FY+ROWS*TILE/2-46);
+    ctx.fillStyle='#eef2ff'; ctx.font='700 20px system-ui';
+    if(last) ctx.fillText('All five worlds, every critter bubbled', VW/2, FY+ROWS*TILE/2-8);
+    else if(newWorld) ctx.fillText('Next stop: '+WORLDS[worldOf(G.level+1)].name, VW/2, FY+ROWS*TILE/2-8);
+    else ctx.fillText(W.name+'  ·  room '+((G.level%5)+2)+' of 5', VW/2, FY+ROWS*TILE/2-8);
+    if(G.lastSun>0){ ctx.fillStyle='#ffd166'; ctx.font='800 18px system-ui';
+      ctx.fillText('☀ +'+G.lastSun+' sunbeam'+(G.lastSun>1?'s':''), VW/2, FY+ROWS*TILE/2+26); }
+  }
+}
+function roundRect(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawAlien(p){
+  var x=p.x, y=p.y, w=p.w, h=p.h;
+  var bob=Math.sin(p.anim)*1.6;
+  ctx.save(); ctx.translate(x,y+bob);
+  ctx.globalAlpha=0.3; ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(0,1,w*0.5,4,0,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
+  // legs
+  ctx.strokeStyle=p.dark; ctx.lineWidth=4; ctx.lineCap='round';
+  var lp=Math.sin(p.anim)*4*(Math.abs(p.vx)>1?1:0.2);
+  ctx.beginPath(); ctx.moveTo(-6,-8); ctx.lineTo(-6+lp,-1); ctx.moveTo(6,-8); ctx.lineTo(6-lp,-1); ctx.stroke();
+  // body dome
+  ctx.fillStyle=p.col; ctx.beginPath();
+  ctx.moveTo(-w/2,-6); ctx.quadraticCurveTo(-w/2,-h,0,-h); ctx.quadraticCurveTo(w/2,-h,w/2,-6);
+  ctx.quadraticCurveTo(w/2,-3,0,-3); ctx.quadraticCurveTo(-w/2,-3,-w/2,-6); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.ellipse(-5,-h+8,5,7,-0.4,0,6.2832); ctx.fill();
+  // eyes
+  ctx.fillStyle='#0a0f1c';
+  ctx.beginPath(); ctx.ellipse(p.face*3-5,-h*0.55,3.4,4.6,0,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(p.face*3+5,-h*0.55,3.4,4.6,0,0,6.2832); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(p.face*3-4,-h*0.6,1.2,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(p.face*3+6,-h*0.6,1.2,0,6.2832); ctx.fill();
+  // antenna
+  ctx.strokeStyle=p.dark; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(0,-h); ctx.quadraticCurveTo(p.face*4,-h-8,p.face*6,-h-9); ctx.stroke();
+  ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.face*6,-h-9,3,0,6.2832); ctx.fill();
+  ctx.restore();
+}
+function drawMiniAlien(x,y,s,col){
+  ctx.fillStyle=col; ctx.beginPath();
+  ctx.moveTo(x-s,y+s*0.6); ctx.quadraticCurveTo(x-s,y-s,x,y-s); ctx.quadraticCurveTo(x+s,y-s,x+s,y+s*0.6);
+  ctx.quadraticCurveTo(x,y+s,x-s,y+s*0.6); ctx.fill();
+  ctx.fillStyle='#0a0f1c';
+  ctx.beginPath(); ctx.arc(x-s*0.35,y-s*0.1,s*0.22,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+s*0.35,y-s*0.1,s*0.22,0,6.2832); ctx.fill();
+}
+function drawCritter(b){
+  var W=WORLDS[b.world];
+  var x=b.x, y=b.y-b.h/2, s=b.w/2;
+  ctx.save(); ctx.translate(x,y);
+  if(b.angry){ ctx.shadowColor='#ff5a4a'; ctx.shadowBlur=10; }
+  ctx.fillStyle=b.angry?'#ff6a56':W.cCol;
+  if(b.world===0){ // hopper blob with feet
+    ctx.beginPath(); ctx.ellipse(0,0,s,s*0.9,0,0,6.2832); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(-s*0.7,s*0.7,5,4); ctx.fillRect(s*0.7-5,s*0.7,5,4);
+  } else if(b.world===1){ // spiky skitter
+    ctx.beginPath();
+    for(var i=0;i<10;i++){ var a=i/10*6.2832, rr=(i%2===0)?s:s*0.62;
+      var px=Math.cos(a)*rr, py=Math.sin(a)*rr*0.9;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill();
+  } else if(b.world===2){ // mini saucer
+    ctx.beginPath(); ctx.ellipse(0,2,s*1.1,s*0.5,0,0,6.2832); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(0,-4,s*0.5,s*0.42,0,0,6.2832); ctx.fill();
+  } else if(b.world===3){ // teardrop slick
+    ctx.beginPath(); ctx.moveTo(0,-s*1.1); ctx.quadraticCurveTo(s,0,0,s*0.9); ctx.quadraticCurveTo(-s,0,0,-s*1.1); ctx.fill();
+  } else { // cinder flame
+    ctx.beginPath(); ctx.moveTo(0,-s*1.2); ctx.quadraticCurveTo(s*0.9,-s*0.1,s*0.5,s*0.7);
+    ctx.quadraticCurveTo(0,s*1.0,-s*0.5,s*0.7); ctx.quadraticCurveTo(-s*0.9,-s*0.1,0,-s*1.2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
+  // eyes: all critters share the googly pair, pointing their way
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(b.dir*3-4,-2,4,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(b.dir*3+4,-2,4,0,6.2832); ctx.fill();
+  ctx.fillStyle='#0a0f1c';
+  ctx.beginPath(); ctx.arc(b.dir*3-4+b.dir*1.4,-2,1.8,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(b.dir*3+4+b.dir*1.4,-2,1.8,0,6.2832); ctx.fill();
+  ctx.restore();
+}
+function drawBubble(b){
+  ctx.save(); ctx.translate(b.x,b.y);
+  ctx.strokeStyle='rgba(140,234,255,0.9)'; ctx.lineWidth=2;
+  ctx.fillStyle='rgba(82,216,255,0.14)';
+  ctx.beginPath(); ctx.arc(0,0,b.r,0,6.2832); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(-b.r*0.32,-b.r*0.32,b.r*0.34,3.5,5.2); ctx.stroke();
+  if(b.holds){
+    var W=WORLDS[b.holds.world];
+    var shake=b.holds.t>5?Math.sin(performance.now()/40)*2:0;
+    ctx.fillStyle=b.holds.t>5?'#ff6a56':W.cCol;
+    ctx.beginPath(); ctx.ellipse(shake,1,b.r*0.55,b.r*0.5,0,0,6.2832); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(shake-3,-2,2.6,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(shake+3,-2,2.6,0,6.2832); ctx.fill();
+    ctx.fillStyle='#0a0f1c';
+    ctx.beginPath(); ctx.arc(shake-3,-2,1.2,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(shake+3,-2,1.2,0,6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawTreasure(x,y,w,s){
+  var W=WORLDS[w];
+  ctx.save(); ctx.translate(x,y);
+  ctx.shadowColor=W.tCol; ctx.shadowBlur=8;
+  ctx.fillStyle=W.tCol;
+  if(W.tShape==='fruit'){ ctx.beginPath(); ctx.arc(0,1,s*0.8,0,6.2832); ctx.fill();
+    ctx.shadowBlur=0; ctx.strokeStyle='#3fae72'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(0,-s*0.7); ctx.quadraticCurveTo(4,-s*1.2,7,-s*1.1); ctx.stroke(); }
+  else if(W.tShape==='gem'){ ctx.beginPath(); ctx.moveTo(0,-s); ctx.lineTo(s*0.8,0); ctx.lineTo(0,s); ctx.lineTo(-s*0.8,0); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.moveTo(0,-s); ctx.lineTo(s*0.35,0); ctx.lineTo(0,0); ctx.closePath(); ctx.fill(); }
+  else if(W.tShape==='cog'){ for(var i=0;i<8;i++){ var a=i/8*6.2832; ctx.save(); ctx.rotate(a); ctx.fillRect(-2.4,-s,4.8,s*0.42); ctx.restore(); }
+    ctx.beginPath(); ctx.arc(0,0,s*0.62,0,6.2832); ctx.fill();
+    ctx.shadowBlur=0; ctx.fillStyle='#0a0f1c'; ctx.beginPath(); ctx.arc(0,0,s*0.24,0,6.2832); ctx.fill(); }
+  else if(W.tShape==='pearl'){ ctx.beginPath(); ctx.arc(0,0,s*0.75,0,6.2832); ctx.fill();
+    ctx.shadowBlur=0; ctx.fillStyle='rgba(120,190,255,0.55)'; ctx.beginPath(); ctx.arc(2,2,s*0.4,0,6.2832); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-2.5,-2.5,s*0.22,0,6.2832); ctx.fill(); }
+  else { ctx.beginPath(); // opal: rounded diamond with warm heart
+    ctx.moveTo(0,-s); ctx.quadraticCurveTo(s,0,0,s); ctx.quadraticCurveTo(-s,0,0,-s); ctx.fill();
+    ctx.shadowBlur=0; ctx.fillStyle='#ff8a5e'; ctx.beginPath(); ctx.arc(0,0,s*0.34,0,6.2832); ctx.fill(); }
+  ctx.restore();
+}
+
+/* =============================== loop =============================== */
+function loop(ts){
+  if(!running) return;
+  var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
+  if(G&&curScreen===null){
+    if(G.phase==='play'){
+      acc+=dt;
+      var steps=0;
+      while(acc>=DT&&steps<8){ stepPlayers(DT); stepBubbles(DT); stepCritters(DT); stepTreasures(DT); acc-=DT; steps++; }
+      if(steps>=8) acc=0;
+    } else if(G.phase==='clear'){
+      stepBubbles(dt); stepTreasures(dt);
+      // let treasures be grabbed during the banner
+      for(var i=0;i<players.length;i++){ var p=players[i]; if(p.dead) continue;
+        for(var t=treasures.length-1;t>=0;t--){ var tr=treasures[t];
+          if(Math.abs(tr.x-p.x)<24&&Math.abs(tr.y-(p.y-p.h/2))<26){ treasures.splice(t,1); collectTreasure(); } } }
+      G.clearT-=dt;
+      if(G.clearT<=0){
+        if(G.level>=24){ voyageComplete(); return; }
+        startLevel(G.level+1);
+      }
+    }
+    if(G.flash>0){ G.flash-=dt; if(G.flash<0) G.flash=0; }
+  }
+  for(var pi=parts.length-1;pi>=0;pi--){ var pa=parts[pi]; pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; pa.vy+=420*dt; pa.life-=dt*0.9; if(pa.life<=0) parts.splice(pi,1); }
+  render();
+  requestAnimationFrame(loop);
+}
+function voyageComplete(){
+  running=false;
+  if(G.score>BEST){ BEST=G.score; LS.set(K.best,''+BEST); }
+  var granted=window._sbCapEarn(8,'bubblenaut:voyage')||0;
+  $('over-emoji').textContent='🏆';
+  $('over-title').textContent='Voyage complete! All 25 rooms cleared';
+  $('over-level').textContent='25';
+  $('over-treas').textContent=''+G.treasures;
+  $('over-score').textContent=''+G.score;
+  $('over-best').textContent=''+BEST;
+  $('over-sun').textContent=granted>0?('☀ +'+granted+' sunbeams'):'☀ the cap is full for today';
+  $('over-retry').style.display='none';
+  show('s-over');
+}
+
+/* =============================== collection screen =============================== */
+function buildCollection(){
+  var g=$('col-grid'); g.innerHTML='';
+  var total=0;
+  for(var w=0;w<5;w++){ total+=COLLECT[w];
+    var row=document.createElement('div'); row.className='col-row';
+    var c=document.createElement('canvas'); c.width=48; c.height=48;
+    var cx=c.getContext('2d'); var keep=ctx; ctx=cx; drawTreasure(24,24,w,13); ctx=keep;
+    row.appendChild(c);
+    var txt=document.createElement('div');
+    txt.innerHTML='<div class="col-name">'+WORLDS[w].treasure+'s</div><div class="col-sub">'+WORLDS[w].name+' · guarded by '+WORLDS[w].critter+'s</div>';
+    row.appendChild(txt);
+    var n=document.createElement('div'); n.className='col-count'; n.textContent=''+(COLLECT[w]||0);
+    row.appendChild(n);
+    g.appendChild(row);
+  }
+  var tot=document.createElement('div'); tot.style.cssText='text-align:center;color:var(--gold);font-size:17px;font-weight:800;margin-top:6px';
+  tot.textContent='Lifetime treasures: '+total;
+  g.appendChild(tot);
+}
+
+/* =============================== share =============================== */
+function shareRun(){
+  var rooms=G?(G.clearedMax+1):0, tre=G?G.treasures:0, sc=G?G.score:0;
+  var url='https://lucidwinds.com/satellites/bubblenaut/';
+  var txt='Bubblenaut: I cleared '+rooms+' of 25 rooms and caught '+tre+' treasures for '+sc+' points! Can you beat it?';
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+'\n'+url).catch(function(){}); toast('Copied to clipboard'); }
+}
+
+/* =============================== fit + boot =============================== */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+function fit(){ var s=Math.min(_vvW()/VW,_vvH()/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit);
+if(window.visualViewport){ window.visualViewport.addEventListener('resize',fit); window.visualViewport.addEventListener('scroll',fit); }
+
+tap('b-play',function(){ playRequest('1P'); });
+tap('b-2p',function(){ playRequest('2P'); });
+tap('b-resume',function(){ continueGame(); });
+tap('b-col',function(){ buildCollection(); show('s-col'); });
+tap('col-back',function(){ show('s-title'); });
+tap('b-how',function(){ gatePending=false; $('how-back').textContent='Got it'; show('s-how'); });
+tap('how-back',function(){
+  if(gatePending){ gatePending=false; LS.set(K.seen,'1'); newGame(PENDING_MODE); }
+  else show('s-title'); });
+tap('b-set',function(){ show('s-set'); });
+tap('set-back',function(){ show('s-title'); });
+tap('b-exit',function(){ if(window.SWS_EXIT) SWS_EXIT(); });
+tap('over-retry',function(){ if(!G) return; G.phase='play';
+  for(var i=0;i<players.length;i++){ players[i].lives=3; players[i].dead=false; }
+  startLevel(G.level); show(null); running=true; lastTs=0; requestAnimationFrame(loop); });
+tap('over-again',function(){ $('over-retry').style.display='flex'; newGame(G?G.mode:'1P'); });
+tap('over-share',function(){ shareRun(); });
+tap('over-back',function(){ $('over-retry').style.display='flex'; show('s-title'); });
+$('tg-sound').addEventListener('click',function(){ SET.sound=!SET.sound; this.classList.toggle('on',SET.sound); saveSet(); sfx('ui'); });
+$('tg-sound').classList.toggle('on',SET.sound);
+
+cv=$('game'); ctx=cv.getContext('2d');
+(function(){ var d=Math.min(2,window.devicePixelRatio||1);
+  cv.width=VW*d; cv.height=VH*d; ctx.setTransform(d,0,0,d,0,0); })();
+FX=(VW-COLS*TILE)/2;
+fit();
+seedStars(0);
+G=null; render=render; // initial paint below
+(function idle(){ if(curScreen==='s-title'&&!running){ var keep=G; G=null;
+  var W=WORLDS[0]; ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#0d1730'); bg.addColorStop(1,'#05070f');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH); G=keep; }
+  requestAnimationFrame(idle); })();
+$('buildstamp').textContent='Bubblenaut '+BUILD+' · best '+BEST+' · working title, name is the Director’s call';
+if(FURTHEST>0){ $('b-resume').style.display='flex'; $('b-resume').textContent='Continue at room '+(FURTHEST+1); }
+$('b-2p').style.display=TOUCH?'none':'flex';
+
+/* test rig (headless suite + console) */
+try{ window.__bn={
+  get state(){ return { screen:curScreen, running:running, level:G?G.level:-1, world:G?G.world:-1,
+    phase:G?G.phase:null, score:G?G.score:0, treasures:G?G.treasures:0,
+    players:players.map(function(p){return {x:Math.round(p.x),y:Math.round(p.y),lives:p.lives,dead:p.dead};}),
+    critters:critters.filter(function(c){return !c.dead;}).length,
+    bubbles:bubbles.length, held:bubbles.filter(function(b){return !!b.holds;}).length,
+    heldPos:(function(){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead) return {x:Math.round(bubbles[i].x),y:Math.round(bubbles[i].y)}; return null; })(),
+    treasureDrops:treasures.length, collect:COLLECT.slice(), furthest:FURTHEST }; },
+  t:{ press:function(k,on){ keys[k]=!!on; },
+      warp:function(x,y){ if(players[0]){ players[0].x=x; players[0].y=y; players[0].vx=0; players[0].vy=0; } },
+      moveCritter:function(i,x,y){ if(critters[i]){ critters[i].x=x; critters[i].y=y; } },
+      clearCritters:function(){ for(var i=0;i<critters.length;i++) critters[i].dead=true; } } }; }catch(e){}
+
+})();
+</script>
+<script>/* fleet feedback fab */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=5';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'bubblenaut',surface:'satellite'});};document.head.appendChild(s);});</script>
+</body>
+</html>
