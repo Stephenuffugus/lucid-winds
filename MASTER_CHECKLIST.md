@@ -778,11 +778,22 @@ Ordered by value per hour of work.
   game's own button classes, defines the standard `SWS_EXIT`, and no-ops if the
   game already has an exit or a portal link. No floating overlay — the corner is
   already the feedback fab's and games put controls at the edges.
-  Verified headless on all 27: **24 render a 305x55 button inside the title screen
-  with 0 JS errors**; the other 3 (stop-motion, doodle-pad, multiplication-chart)
-  boot past their title screen so the button is present but not shown at load.
-  ⛔ STILL OPEN: those 3 need an exit on the screen they actually boot into, and
-  chameleon-3d / dragon-philosophy / flatulence-fighter have no `#s-title` at all.
+  **COMPLETED 2026-07-29 — 29/29 verified.** The stragglers are covered by a
+  fallback: games that boot past their title screen (stop-motion, doodle-pad,
+  multiplication-chart) or have no `#s-title` at all (flatulence-fighter,
+  dragon-philosophy) get a 48x48 corner chip instead, placed in the first corner
+  `elementFromPoint` reports as genuinely empty — never bottom-right, which belongs
+  to the feedback fab. Measured across all 29: **not one covers a control**, 0 JS
+  errors. (chameleon-3d dropped off this list entirely — it was un-forked back to
+  github.io the same day.)
+  ⛔ **The 48px rule bit me and it is worth reading twice.** I first "fixed" a 37px
+  button with a blanket `minHeight:48px` and made it WORSE — most of these games
+  draw a fixed 540x960 stage and transform-scale it, so 48 CSS px renders at ~37px
+  under the thumb, and the override replaced the games' own 72-stage-px buttons,
+  dropping leaf-fit and plot-bloom from 55px rendered to 37. The floor is now
+  applied in RENDERED pixels: take `rect.height / offsetHeight` for the stage
+  scale, then set `48 / scale` in the stage's own units.
+  See [[feedback_touch_targets_measure_rendered_px]].
   The original black-screen report is NOT yet reproduced: the phone back gesture
   returns cleanly (portal repainted all 162 cards, 0 errors). Being stranded in a
   game with no exit is the far likelier thing players were describing.
