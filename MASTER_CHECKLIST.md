@@ -980,8 +980,8 @@ right now. These gate hosting strangers' code or advertising the program publicl
 - ⛔ **Do NOT host partner code on lucidwinds.com** until the above lands — same-origin gives
   their code everything, including localStorage. Link-out gets ~90% of the value with none of
   the risk.
-- [x] **Partner agreement IP clause WRITTEN into the sendable offer (commit with
-  this note).** New "Who owns what" section in `PARTNER_INTEGRATION.md`: partner's
+- [x] **Partner agreement IP clause WRITTEN into the sendable offer (commit
+  c9cb068e).** New "Who owns what" section in `PARTNER_INTEGRATION.md`: partner's
   game stays entirely theirs; the protocol/SDK/economy are Sky Wolf Studios IP
   (patent pending); integration = non-exclusive license, not a stake; leaving is
   clean both ways; the why is stated (protects the patent story). FAQ contract
@@ -1017,7 +1017,7 @@ right now. These gate hosting strangers' code or advertising the program publicl
   script blocks parse (the one 'failure' is a regex false positive on a
   `<script` inside an HTML comment, identical at HEAD). ⚠️ Cross-device
   restore needs one real signed-in device pass to confirm end to end.
-- [x] **Music rewards as a partner perk — IN THE OFFER (commit with this note).**
+- [x] **Music rewards as a partner perk — IN THE OFFER (commit c9cb068e).**
   Added to `PARTNER_INTEGRATION.md` "What's in it for you": integrated games can
   get their own shelf in the cross-game jukebox, tracks unlocked in their game
   follow players studio-wide, labeled with the partner's name. Phrased strictly
