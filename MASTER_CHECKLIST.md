@@ -486,9 +486,16 @@ items are marked here so nobody re-does them.
   Rules-before-play gate (first visit only), 56px "Next ground" wired to the real
   advance path, Share on level complete (also fixed shareHedgerow bragging
   "0 grounds" mid-run). Buttons use the game's "grounds" voice.
-- [ ] **Hedgerow 100-level ladder** — still open, design+build. Baseline
-  established: real successive grounds already exist (each adds a pest + speed to
-  a cap); the ladder extends that with scenery changes, not from scratch.
+- [x] **Hedgerow 100-ground ladder SHIPPED (commit 42157e73), verified.** Ten
+  named bands of ten (Kitchen Beds → Midnight Bloom), each with a field tint
+  (composes with skins, no art touched) + band name in the HUD. Difficulty on 3
+  axes (pests 2→10 capped, speed 134→296, target 75→82%) with a sawtooth —
+  every band opens gentler than the last closed, asserted programmatically for
+  all 9 boundaries. Ground 100 = summit banner + 10 bonus sunbeams (daily cap
+  governs) + summit share line; past 100 runs endless. Evidence: recipe curve
+  printed + asserted, headless boots at ground 1 and pinned ground 95 with
+  screenshots reviewed (correct names/targets/tints/counts), 0 errors, BUILD
+  v1.4, card ?v=hg14. ⚠️ Difficulty FEEL pending Jessie's device.
 - [x] **Hunch early-submit HARDENED, verified (Hunch repo, pushed to main, sw v5).**
   Honest finding: the listener/guard/hit-target were all correct and the deployed
   site matched HEAD — the tap was being eaten at the device layer. Closed both
