@@ -50098,6 +50098,11 @@ document.addEventListener('keydown', function(e) {
       shopUnlocks:     _ls('sws_shop_unlocks')|| {},
       achievements:    _ls('sws_achievements')|| {},
       rewardsClaimed:  _ls('sws_rewards_claimed') || [],
+      // Cross-game music shelf ledger ('sws_game_unlocks', written by each
+      // game's bridge). Was localStorage-only: a data clear or new device
+      // lost the shelf until every soundtracked game was reopened. Rules-8
+      // treats unlisted root-vault fields as free-form gameplay state.
+      musicUnlocks:    _ls('sws_game_unlocks') || [],
       wildPlants:      _ls('fg_wild_plants')  || [],
       wildDropState:   _ls('fg_w_d')          || {},
       wildSteps:       _ls('lw_wild_steps')   || null,
@@ -50422,6 +50427,24 @@ document.addEventListener('keydown', function(e) {
       } catch(e) { _ss('sws_achievements', data.achievements); }
     }
     if (data.rewardsClaimed) _ss('sws_rewards_claimed',data.rewardsClaimed);
+    // Music shelf ledger: UNION cloud + local by track id — never drop a local
+    // find that has not synced yet. Entries are immutable {id,title,artist,src,
+    // game}, so no newest-wins needed. Fold immediately so the shelf fills on
+    // this device without waiting for a game to re-export it.
+    if (data.musicUnlocks && data.musicUnlocks.length) {
+      try {
+        var _muL = _ls('sws_game_unlocks') || [];
+        var _muHave = {}, _muOut = [], _muAdd = 0, _mi, _me;
+        for (_mi = 0; _mi < _muL.length; _mi++) { _me = _muL[_mi];
+          if (_me && _me.id && !_muHave[_me.id]) { _muHave[_me.id] = 1; _muOut.push(_me); } }
+        for (_mi = 0; _mi < data.musicUnlocks.length; _mi++) { _me = data.musicUnlocks[_mi];
+          if (_me && _me.id && _me.src && !_muHave[_me.id]) { _muHave[_me.id] = 1; _muOut.push(_me); _muAdd++; } }
+        if (_muAdd > 0) {
+          _ss('sws_game_unlocks', _muOut);
+          if (window.LW_FOLD_GAME_UNLOCKS) window.LW_FOLD_GAME_UNLOCKS();
+        }
+      } catch(e){}
+    }
     // Pi-paid nursery slot mirror — added 2026-04-28 alongside the Cloud
     // Function piComplete handler. The function writes the new slot count to
     // vaults/{uid}.lw_nursery_slots; this restores it client-side on login so

@@ -415,10 +415,11 @@ items are marked here so nobody re-does them.
   into soft ground, eyes only). Evidence: new 19-assertion capture acceptance
   suite (test/capture.js upstream patch) — a fleeing runner abducted in ~7s,
   freeze+match under the beam still escapes — plus the repo's full 14-suite
-  harness green incl. online 1v1 through a real local relay. ⚠️ FORK AGAIN:
-  the PAT 401'd today (worked yesterday); patches in `handoff-chameleon-2d/`,
-  un-fork steps in `satellites/chameleon-2d/VENDORED.md`. ⛔ STEPHEN ACTION:
-  fresh 7-day PAT (`repo` scope) to un-fork. Feel pass pending his phone.
+  harness green incl. online 1v1 through a real local relay. ✅ UN-FORKED same
+  day (commit 9a3f1d65): Stephen issued a fresh PAT, both commits pushed
+  upstream (455080b..46e13e6), github.io byte-verified (sha ce1b03c0…), card
+  repointed to github.io ?v=20260729b, vendored copy + patches deleted, portal
+  sw v21. Feel pass pending his phone.
 - [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
   a Render deploy.** The relay server was NEVER DEPLOYED: game falls back to
   wss://stephenuffugus.github.io/ws and GitHub Pages rejects WebSocket upgrades
@@ -974,8 +975,17 @@ right now. These gate hosting strangers' code or advertising the program publicl
   GENERAL feature (open any game, gain a studio track) is entangled with the
   locked-song behavior decision above [?] — build after Stephen picks, and after
   a second game has a soundtrack to give.
-- [ ] **Unlock ledger synced to the vault.** Today it's localStorage only. It survives because
-  the game re-exports on boot, which is exactly why that fix mattered, but it isn't durable.
+- [x] **Unlock ledger synced to the vault — SHIPPED (commit with this note),
+  verified by parse + isolated logic proof.** `musicUnlocks` rides the root
+  vault doc (rules-8 treats unlisted root fields as free-form, verified in the
+  rules file — no rules deploy needed): _buildPayload snapshots
+  `sws_game_unlocks`; _applyCloudData UNION-merges cloud+local by track id
+  (local finds never dropped, src-less entries rejected, no dupes — all four
+  asserted in an isolated run of the shipped code) and calls
+  LW_FOLD_GAME_UNLOCKS so the shelf fills without reopening a game. All app
+  script blocks parse (the one 'failure' is a regex false positive on a
+  `<script` inside an HTML comment, identical at HEAD). ⚠️ Cross-device
+  restore needs one real signed-in device pass to confirm end to end.
 - [ ] **Music rewards as a partner perk** — "integrate and your game gets a shelf, and your
   players unlock a track that plays everywhere." A stronger hook than sunbeams alone.
 
