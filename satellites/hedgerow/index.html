@@ -137,7 +137,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div style="color:var(--cream);font-size:15px;line-height:1.5;margin:2px 0 0;opacity:.92">Fence the garden pests into a corner and reclaim the bed. A Sky Wolf remake of the classic JezzBall.</div>
-    <div style="color:var(--gold);font-size:15px;font-weight:700;margin:8px 0 0"><b>Objective:</b> reclaim 75% of every ground without losing all your leaves.</div>
+    <div style="color:var(--gold);font-size:15px;font-weight:700;margin:8px 0 0"><b>Objective:</b> climb the 100-ground ladder. Reclaim each ground's target share (75% at first, more as you climb) without losing all your leaves. The scenery turns with every ten grounds.</div>
     <div class="helprow"><div class="hi">1</div><div>Tap the bed to grow a <b>hedge wall</b>. It sprouts both ways until it hits an edge or another hedge, splitting the bed in two.</div></div>
     <div class="helprow"><div class="hi">2</div><div>Use the <b>⇆ / ⇅</b> button to choose whether the next hedge grows across or up-and-down.</div></div>
     <div class="helprow"><div class="hi">3</div><div>Any patch of bed with <b>no pests</b> in it once a hedge closes gets reclaimed and planted. Reclaim <b class="hl">75%</b> to clear the ground.</div></div>
@@ -197,7 +197,7 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); if(id==='s-title'){ var rb=$('b-resume'); if(rb) rb.style.display=(G&&G.phase==='paused')?'flex':'none'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.3';
+var BUILD='v1.4';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='hg_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -320,6 +320,40 @@ var parts=[];
 var running=false, lastTs=0;
 var TARGET=0.75;
 
+/* ============================ the 100-ground ladder =============================
+   Jessie 7/21: "There should be different levels to beat. Make at least 100. They
+   should progressively get harder & change scenery." Ten named bands of ten
+   grounds. Scenery = a per-band field tint + the band name in the HUD, so it
+   composes with every skin instead of fighting the art. Difficulty climbs on
+   three axes (pests, speed, reclaim target) and SAWTOOTHS: each new band opens a
+   touch gentler than the last band closed, then outgrows it. Past ground 100 the
+   ladder keeps going endless (+2 speed per ground) — content is never removed. */
+var BANDS=[
+  { name:'Kitchen Beds',   tint:null,                       targ:0.75 },
+  { name:'Morning Meadow', tint:'rgba(255,236,150,0.05)',   targ:0.75 },
+  { name:'Clover Rows',    tint:'rgba(140,220,120,0.06)',   targ:0.75 },
+  { name:'High Summer',    tint:'rgba(255,190,90,0.07)',    targ:0.78 },
+  { name:'Berry Bramble',  tint:'rgba(230,120,170,0.06)',   targ:0.78 },
+  { name:'Harvest Gold',   tint:'rgba(240,180,60,0.08)',    targ:0.78 },
+  { name:'Autumn Smoke',   tint:'rgba(200,120,70,0.08)',    targ:0.80 },
+  { name:'First Frost',    tint:'rgba(150,200,255,0.08)',   targ:0.80 },
+  { name:'Deep Winter',    tint:'rgba(120,160,255,0.10)',   targ:0.82 },
+  { name:'Midnight Bloom', tint:'rgba(150,110,255,0.10)',   targ:0.82 }
+];
+function recipe(level){
+  var b=Math.min(9, Math.floor((level-1)/10));
+  var i=((level-1)%10)+1;                          // 1..10 inside the band
+  var beyond=Math.max(0, level-100);
+  var band=BANDS[b];
+  if(level>100) band={ name:'Beyond the Hedgerow', tint:BANDS[9].tint, targ:BANDS[9].targ };
+  return {
+    nb: Math.min(10, 2 + b + (i>5?1:0) + (i>9?1:0)),
+    speed: Math.min(300, 130 + b*14 + i*4 + beyond*2),
+    target: band.targ,
+    band: band
+  };
+}
+
 var BALL_COL=['#e58fa0','#d4842a','#c8a84b','#cf7a9a','#d9a24a'];
 
 /* ============================ layout ================================= */
@@ -356,8 +390,9 @@ function startLevel(){
   grid=new Array(COLS*ROWS); for(var i=0;i<grid.length;i++) grid[i]=0;
   wall=null; parts=[]; G.phase='play'; G.flash=0; G.cleanLevel=true;
   balls=[];
-  var nb=G.level+1;
-  var speed=140+G.level*10; if(speed>320) speed=320;
+  var rc=recipe(G.level);
+  var nb=rc.nb, speed=rc.speed;
+  G.target=rc.target; G.bandName=rc.band.name; G.bandTint=rc.band.tint;
   for(var b=0;b<nb;b++){
     var ang=Math.random()*6.2832;
     var bx=FX+CS*2+Math.random()*(fieldW()-CS*4);
@@ -481,8 +516,9 @@ function levelClear(){
   if(G.level>(G.clearedMax||0)) G.clearedMax=G.level; // real clears this run; dying mid-replay cannot roll it back
   if(G.cleanLevel && G.lives<5){ G.lives++; }
   sfx('clear');
-  // sunbeams
+  // sunbeams (ladder summit pays a bonus; the 30/day cap still governs)
   var amt=Math.max(1, 2+Math.floor(G.level/2)); if(G.pct>=0.9) amt+=1;
+  if(G.level===100) amt+=10;
   var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'hedgerow:clear')||0; }catch(e){}
   G.lastSun=granted;
   // celebratory particles
@@ -534,7 +570,9 @@ function shareHedgerow(){
   var g=0, sc=G?G.score:0;
   if(G) g=Math.max(G.clearedMax||0, (G.phase==='clear')?G.level:Math.max(0,G.level-1));
   var url="https://lucidwinds.com/satellites/hedgerow/";
-  var txt="Hedgerow: I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
+  var txt=(g>=100)
+    ? "Hedgerow: I climbed the whole 100-ground ladder for "+sc+" points! Can you?"
+    : "Hedgerow: I fenced off "+g+" ground"+(g===1?'':'s')+" of 100 for "+sc+" points! Can you beat it?";
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); }
 }
@@ -549,8 +587,8 @@ function render(){
   if(!G) return;
   // HUD
   ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillStyle='#7ab356'; ctx.font='800 24px system-ui'; ctx.fillText('Ground '+G.level, 16, 34);
-  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('reclaim '+Math.round(G.target*100)+'%', 16, 58);
+  ctx.fillStyle='#7ab356'; ctx.font='800 24px system-ui'; ctx.fillText('Ground '+G.level+(G.level<=100?' / 100':''), 16, 34);
+  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('reclaim '+Math.round(G.target*100)+'%  ·  '+(G.bandName||''), 16, 58);
   // lives (leaves)
   ctx.textAlign='right';
   var lx=VW-16;
@@ -585,6 +623,8 @@ function render(){
       else { ctx.fillStyle='#39301c'; ctx.fillRect(x,y,CS,CS); ctx.fillStyle='#5c8f3f'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
         ctx.fillStyle='#3f6b34'; ctx.fillRect(x+3,y+3,CS-6,CS-6); } }
   }
+  // band scenery tint — over the bed, under the pests, composes with every skin
+  if(G.bandTint){ ctx.fillStyle=G.bandTint; ctx.fillRect(FX,FY,fieldW(),fieldH()); }
   // field border
   ctx.strokeStyle=(imgReady?'rgba(107,74,43,0.5)':'#6b4a2b'); ctx.lineWidth=(imgReady?3:5); ctx.strokeRect(FX-2.5,FY-2.5,fieldW()+5,fieldH()+5);
   ctx.restore();
@@ -616,7 +656,12 @@ function render(){
   if(G.phase==='clear'){
     ctx.fillStyle='rgba(10,13,9,0.72)'; ctx.fillRect(0,FY,VW,fieldH());
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillStyle='#8fd06a'; ctx.font='800 40px system-ui'; ctx.fillText('Ground cleared!', VW/2, FY+fieldH()/2-40);
+    if(G.level===100){
+      ctx.fillStyle='#e6cd6a'; ctx.font='800 34px system-ui'; ctx.fillText('The whole hedgerow is yours!', VW/2, FY+fieldH()/2-64);
+      ctx.fillStyle='#8fd06a'; ctx.font='800 22px system-ui'; ctx.fillText('All 100 grounds reclaimed', VW/2, FY+fieldH()/2-28);
+    } else {
+      ctx.fillStyle='#8fd06a'; ctx.font='800 40px system-ui'; ctx.fillText('Ground cleared!', VW/2, FY+fieldH()/2-40);
+    }
     ctx.fillStyle='#e8dcc8'; ctx.font='700 20px system-ui'; ctx.fillText(Math.round(G.pct*100)+'% reclaimed'+(G.cleanLevel?'  ·  clean! +1 leaf':''), VW/2, FY+fieldH()/2+2);
     if(G.lastSun>0){ ctx.fillStyle='#c8a84b'; ctx.font='800 18px system-ui'; ctx.fillText('☀ +'+G.lastSun+' sunbeam'+(G.lastSun>1?'s':''), VW/2, FY+fieldH()/2+34); }
     ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.fillText('tap the bed or press Next ground', VW/2, FY+fieldH()/2+72);
