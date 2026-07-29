@@ -259,6 +259,18 @@ items are marked here so nobody re-does them.
 ### 🖥 Studio-wide / portal
 
 **── Stephen's Jul 29 directive (payments, press, gating, global growth) ──**
+- [x] **Retro Attic pitch site LIVE, verified 200 (commit e6ba0f94):**
+  `lucidwinds.com/prototypes/retro-attic-site/` — 70s-palette one-pager in the
+  store's own voice, public listing facts only (2475 Massillon Rd, phone,
+  toys/games/music), styled photo-placeholder grid ("your Facebook photos drop
+  right in" — no scraping, their ToS), clearly labeled a Sky Wolf concept top
+  and bottom, noindex, phone-first. Built for Stephen to show at the meeting.
+- [x] **Press kit v2 SHIPPED, verified (commit 43f80d21):** "Made nowhere else"
+  showcase (Music Studio with hum-a-melody + video export, HUNCH, Stop Motion,
+  Flipbook, Hues, Doodle Pad, Pom Pond, Lucid Winds, the Serpentine), "Games
+  that grow brains" kids/problem-solving section (exercise framing, no clinical
+  claims), creative thumbs in the screenshot grid, partner-games teaser line.
+  ⏭ When Stephen's two partner-feature deals firm up, they get a named section.
 - [x] **Workbench gate SHIPPED (commit db886c09, probe 10/10).** All six
   in-development games (Impossible Garden, Wild Wardens, Dragon Philosophy,
   Glyph Forge, Tarot Run, Abduct 3D) now show a professional IN DEVELOPMENT
@@ -957,12 +969,15 @@ Ordered by value per hour of work.
   entry above). STILL OPEN: Blip's intro animation is skippy. Also noted:
   `art/tube_straight.png` and `art/tube_curve.png` are referenced nowhere in the code
   (ruled superseded — the engine rotates one angle per piece).
-- [ ] **FLAGSHIP: Litterbugs** — hashblock #2. UPDATE 2026-07-27: Stephen's
-  **Stephenuffugus/Litter_Bug** repo is far along (turn-based battler, 134/0
-  smoke, 4 pages) — read its NEXT_SESSION.md + PART_CATALOG.md before anything.
-  Brief `design-briefs/flagship-litterbugs.md` converges with it (battles).
-  Art answer: parts-based PNG/SVG library (~3MB for 180 parts, space fear
-  disproven). PARKED until Stephen says go.
+- [~] **FLAGSHIP: Litterbugs — UNPARKED by Stephen 2026-07-29 ("liter bugs needs
+  worked on"), plan C SHIPPED, verified (Litter_Bug commit b3f83da).** The
+  dormant fx render pass (merged silhouette + cel bands + rim light + LOD) is
+  now the LIVE default look — pure seeded shading, zero identity drift, 200-roll
+  determinism gate green through the fx path, one-line revert (FX_LIVE=false).
+  `FX_BEFORE_AFTER.png` in that repo root is the director's-eye comparison.
+  Also fixed there: smoke.js still pointed at the renamed index.html, so its
+  suite was 0/15 at HEAD — now 136/0 total. NEXT: plan A (PART_CATALOG refine)
+  wants Stephen's session; plan B (authored wings) waits on his sref.
 - [?] **Feedback queue triage — BLOCKED on this codespace 2026-07-28, one command
   fixes it.** The standing chore is to query the Firestore `feedback` collection
   every session (the fleet fab reports there from all 84 satellites + 66 classics
