@@ -305,10 +305,19 @@ items are marked here so nobody re-does them.
   hard anti-AI, "platform not a game" — no further replies, spend zero sends
   on that circle. Hoka: pay-for-placement menu, no prices without a budget —
   declined by Stephen; their one good idea (press kit) is shipped.
-- [ ] **Bubblenaut: level structure + diversity pass** — Stephen 2026-07-29:
-  "fun just needs better level structure and diversity." My next build item.
-  Also: Stephen okayed the names — Bubblenaut is no longer a working title
-  (drop the buildstamp flag in this pass).
+- [x] **Bubblenaut level structure + diversity DONE, verified (commit d84e3f22,
+  live v1.1).** All 25 rooms rebuilt with a signature architecture per world
+  matched to its critter brain (islands/terraces · stalactites/geode/spires ·
+  asymmetric catwalks/windowed chimney · rings/icicles/broken bridges ·
+  descents/lattice/The Core). NEW permanent validator
+  `satellites/bubblenaut/scripts/bn_validate_maps.js` (physics-derived: rise
+  ≤3, hop ≤4, BFS reachability incl. wrap chutes) — 25/25 valid at 100%
+  reachability; it caught 2 real ladder breaks pre-ship. 25/25 distinct
+  silhouettes, 7 asymmetric rooms (was 0). Live-engine probe: all 25 rooms
+  entered with exact spawn counts, clean advance to The Core, 0 errors; five
+  signature rooms screenshot-reviewed. Name finalized — working-title tag
+  dropped from the buildstamp (Stephen approved). ⚠️ Feel pass still
+  Jessie's phone.
 - [x] **Feedback button dismissable DONE, verified (rode into e6c11ca7; cache rule
   d36adfaa).** Investigated first: the only FAB floating OVER gameplay is the
   portal's (shells use a sticky-header button; the LW app retired its floater in
