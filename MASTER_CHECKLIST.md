@@ -943,7 +943,15 @@ Ordered by value per hour of work.
   Games, Underhill's, Sweets and Geeks. Tier 3: Tabletop (Cleveland), 16-Bit (Ohio City +
   Lakewood), Barflyy (Kent). Verify hours before driving. Attribution links are LIVE — use
   `?from=<slug>` today.
-- [ ] **Cold email follow-ups** — sent the batch Jul 24 night, 2 bounced. Follow up the rest.
+- [?] **Cold email follow-ups — 26 DRAFTS ready in Gmail, ⛔ Stephen reviews +
+  sends (drafted 2026-07-29, verified 26/26 in the drafts folder, each threaded
+  as a reply onto its own Jul 24 send).** Checked the inbox first: zero replies
+  from any target, so nobody gets double-tapped. Voice per the outreach rules
+  (warm, dad, zero dashes), each short with one honest hook — the Reddit
+  player's first stranger review of Jimothy ("Great concept and artwork!") where
+  it fits, business asks for the syndication networks, a stop-by offer for the
+  Green Dragon. The 2 bounces (gamedeveloper.com, silvergames.com) got no draft;
+  both sites take submissions via web forms if Stephen wants a second try.
 - [?] **Social handles** — `/links.html` is live and is the one link to put in every bio.
   Fill in the `SOCIAL` array at the top of that file as each account is created (Instagram,
   Twitter, Facebook, itch.io, YouTube, Discord). Empty entries stay hidden, so there is never
