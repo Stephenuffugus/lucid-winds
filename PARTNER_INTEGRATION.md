@@ -23,6 +23,11 @@
   game).
 - **No revenue split required for v1.** The integration is currency-only.
   When cosmetics ship, the spend split is negotiable per partner.
+- **A shelf in the studio jukebox.** Integrated games can get their own
+  shelf in the cross-game music player: tracks your players unlock in
+  your game follow them into every other game in the studio, labeled
+  with your game's name. Your soundtrack becomes a reason to visit the
+  whole arcade — and the arcade becomes a reason to visit your game.
 
 ## What we get
 
@@ -259,6 +264,28 @@ URL and your `gameId`.
 
 ---
 
+## Who owns what (plain language, mirrored in the partner agreement)
+
+- **Your game stays yours. Entirely.** Code, art, name, players,
+  revenue — integrating changes none of it. We gain no rights to your
+  game beyond showing its card in our portal.
+- **The Sunbeam protocol stays ours.** The attention-verification
+  protocol, the SDK, the economy design, and the server infrastructure
+  are Sky Wolf Studios IP (patent pending). Integration grants you a
+  **non-exclusive license** to use the SDK and APIs while you
+  participate — a license, not a stake. No joint ownership is created
+  in either direction.
+- **Leaving is clean.** End the integration and your license ends with
+  it; your game is untouched, and neither side keeps a claim on the
+  other's work.
+- **Why we spell this out:** the protocol is the studio's core asset
+  and the subject of its patent filing. Clear license boundaries
+  protect both of us — you can build on the integration knowing exactly
+  what you have, and we can keep offering it knowing exactly what we
+  keep.
+
+---
+
 ## FAQ
 
 **Q. Will my players need to sign up?**
@@ -298,8 +325,9 @@ records for any continuing participation across other games.
 
 **Q. Is there a contract?**
 A. For v1, a lightweight partner agreement covers IP / branding /
-abuse / fair-use clauses. No equity, no exclusivity, no revenue split
-until cosmetics ship.
+abuse / fair-use clauses — the IP terms are exactly the "Who owns
+what" section above, in contract form. No equity, no exclusivity, no
+revenue split until cosmetics ship.
 
 ---
 
