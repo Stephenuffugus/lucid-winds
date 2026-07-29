@@ -891,7 +891,15 @@ Theme deliberately left open for the designer; every asset is described by funct
   Journey progress — probe proves level untouched + full budget on return (12/12
   through the real UI). Timed pays no Petals yet: unbounded-score farm vector,
   Stephen's economy call.
-- [ ] **Endless + Daily modes** (Daily makes it directory-eligible)
+- [~] **Endless + Daily modes — ENDLESS SHIPPED, verified (commit c3ef8ff3, live
+  PM_BUILD v24).** Zen rules: no clock, no counter (ZEN + ∞ in the HUD, budget
+  pinned in two places), no losing (stuck boards reshuffle), 10k milestone bar
+  + banner, best saved. Mode button cycles JOURNEY → TIMED → ENDLESS. Petals on
+  exit ride timedPay() so both score modes share ONE daily cap (no farm vector).
+  Evidence: 9/9 real-page probe (cycle, zen HUD, real swap scores, journey
+  restored exactly, shared cap honored at a planted 19/20, 0 errors) + 19/19
+  powerup gate. STILL OPEN: Daily (directory-eligible; the arcade daily-kit
+  block stays ⛔ parked by Stephen — his call whether PM daily waits with it).
 - [~] **New specials — ⭐ SERPENTINE SHIPPED (commit 7a7d81cb, live PM_BUILD v23,
   live-verified).** Five of a kind in an S or zigzag; the head becomes a snake
   that travels a winding 12-15 cell path seeking blockers/dew/gather colours.
