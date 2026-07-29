@@ -406,6 +406,13 @@ items are marked here so nobody re-does them.
   coarse re-aim) went 0/4 in 120s before → 3/3 in 20s on EASY after, while
   still going 0/5 on HARD — the ladder slopes again. test/huntfair.js EASY is
   a permanent gate in npm run all. ⚠️ Feel is pending Stephen's thumb.
+- [ ] **3D engagement redesign — BRIEF WRITTEN 2026-07-29, awaiting Stephen's
+  cut:** `design-briefs/chameleon-3d-engagement.md`. Answers his scan worry
+  (free reveal = degenerate; genre answer is probes that ping MOVEMENT + a
+  costed target-lock), his distraction ask (tail-drop decoy + pebble flick),
+  hide phase 35-45s (20s is below the genre floor), and a density-pass
+  template for hiding/painting detail. ⛔ Stephen picks the v1 cut before any
+  build.
 - [ ] **2D multiplayer Stephen wants WORKING (Jul 29): local via QR now,
   matchmaking later.** The 1v1 code + local relay are proven; the missing piece
   is a HOSTED relay. `render.yaml` sits in the repo ready to blueprint-deploy.
@@ -912,6 +919,15 @@ Ordered by value per hour of work.
   engine, store as GPS dig site. Brief written 2026-07-27:
   `design-briefs/flagship-attic.md`. ⛔ Stephen calls pending: name, launch
   classes, what the store wants, paper text-engine taste test OK?
+- [ ] **STUDIO ENGAGEMENT LAYER — Stephen's Jul 29 direction, brief written:**
+  `design-briefs/studio-engagement-layer.md`. His asks: studio-wide
+  achievement board, every game gets 2+ unlockable songs (he is recording
+  more music now), and a rewards/giveaway hook. Brief proposes: achievement
+  board FIRST (3-tier: per-game badges from one manifest, studio meta-badges,
+  portal trophy room riding the proven musicUnlocks vault pattern), 3-slot
+  song standard per game (teaser on open / milestone / deep cut), earned
+  cosmetic drops + seasonal collection events (⛔ lottery-law line drawn: no
+  play-to-enter chance prizes). ⛔ Stephen: greenlight + phase-1 game list.
 - [ ] **Gnome Blitz** — new game, Dutch Blitz with garden gnomes. Brief written
   2026-07-29: `design-briefs/gnome-blitz.md` — real-time Nertz race vs AI gnome
   rivals on a reaction-time model, fairness-first (no peeking, no rubber-band),
