@@ -335,7 +335,26 @@ items are marked here so nobody re-does them.
   in-game menu; BE THE BLADE shipped as a persisted toggle (circle your finger to
   spin; handle strikes convert spin to height). ⚠️ Feel constants tuned blind —
   no GPU here; 3D games get boot checks, Stephen's phone verifies feel.
-- [ ] **Sound: keep + embellish** — he loves the current SFX direction.
+- [x] **Sound: keep + embellish DONE, verified (commit 370b1e2a, live v5.3).** Every
+  existing voice byte-identical; four new ones in the same short-envelope
+  triangle/sine + noise-transient voice: rollup ticks under all four end-panel
+  score rolls, a newbest gleam that lands WITH the final number, an anvil+bell
+  unlock sting (WALLBREAKER, forge purchases, and the 50-clean-dives Cosmic Edge —
+  which used to be granted INVISIBLY and now prints on the panel like Wallbreaker),
+  and an x10 jackpot fanfare for the band/bullseye outside the climb. Evidence:
+  20/20 probe assertions through the real ?dev=1 rig — all four voices render
+  audible non-clipping audio offline (peaks 0.03–0.19), ticks/gleam/sting fire
+  through the real failLevel/finishLevel paths. sw slice3d-v64; live-verified
+  BUILD v5.3 via ?probe= URL.
+- [x] **REAL FIND while wiring the sound: every completed wall climb CRASHED at the
+  end panel (fixed same commit 370b1e2a).** The fixed-rungs change (31d2d4c4)
+  deleted `var tmw` but left the go-lab line reading it — strict mode threw
+  ReferenceError on every climb finish, so no score roll, no slivers, no Next
+  Climb, just a frozen dart. Parse checks pass on it (valid read), which is why
+  three verification passes missed it; only DRIVING a climb to its finish exposes
+  it. Proven both ways: HEAD copy throws "tmw is not defined", fixed build
+  completes ("stuck it at x3 of x900"). Declaration restored from the world's own
+  topMult.
 - [ ] **Randomly generated levels** (walls, caps, forest feel like the original) —
   after the core is fun. Art/backgrounds AFTER playable ("we'll get into the assets
   once the game is playable and fun"). Bump BUILD stamp when shipping.
