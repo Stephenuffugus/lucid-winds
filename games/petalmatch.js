@@ -2,7 +2,8 @@
 // 8x8 grid, swipe adjacent to swap. 3+ in a row clears. Cascades combo.
 // Objectives rotate per level: SCORE, DEW (jelly), GATHER (collect), THORNS (blockers), MIX.
 // Chapters of 10 levels each: Meadow (0), Summer (1), Autumn (2), Winter (3+).
-// Specials: Vine-Wrapped (4-match), Bloom Burst (L/T), Spore Cloud (5-match).
+// Specials: Vine-Wrapped (4-match), Bloom Burst (L/T), Spore Cloud (5-match),
+// Serpentine (5 in an S or zigzag - the doc-06 signature travelling piece).
 // Art: 6 flower gems drawn procedurally until artist delivers PNGs.
 (function(){
 'use strict';
@@ -41,7 +42,7 @@ window._gameFns.petalmatch = function PM(a){
      device held a days-old copy while the live site was current; with this on
      screen, "is it stale?" is answered by looking. Keep it in lockstep with
      the ?v= on play/petalmatch.html. */
-  var PM_BUILD='v22';
+  var PM_BUILD='v23';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -1045,6 +1046,11 @@ window._gameFns.petalmatch = function PM(a){
     'MEGA BURST!':'pop-amazing',
     'PETAL STORM!':'pop-amazing',
     'SPORE CLOUD!':'pop-amazing',
+    'SERPENTINE!':'pop-amazing',
+    'VINE SERPENT!':'pop-amazing',
+    'BLOOM TRAIL!':'pop-amazing',
+    'HYDRA BLOOM!':'pop-incredible',
+    'TWIN SERPENTS!':'pop-incredible',
     "GARDEN'S GRACE!":'pop-incredible'
   };
   function bannerArt(key){
@@ -1369,6 +1375,97 @@ window._gameFns.petalmatch = function PM(a){
 
   function inBounds(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS;}
 
+  /* ═══ THE SERPENTINE (doc 06: "the thing a video of this game would show") ═══
+     Made by completing FIVE of a kind in an S or zigzag. Two families:
+     - S/Z pentominoes. ⚠️ These CONTAIN a straight 3, so the check must run
+       BEFORE normal match resolution in handleEnd or the engine eats them as a
+       mundane three.
+     - W staircases (2-2-1 zigzag). These contain NO straight run at all, so
+       without this rule that swap would be REJECTED — the serpentine makes it
+       a real move.
+     On activation the serpent TRAVELS: a winding path of 12-15 cells that
+     seeks blockers, dew and gather colours, so it always feels like it knew
+     where to go. */
+  var SERP_SHAPES=[
+    [[0,0],[0,1],[1,1],[2,1],[2,2]],  // Z
+    [[0,2],[1,0],[1,1],[1,2],[2,0]],  // Z rot
+    [[0,1],[0,2],[1,1],[2,0],[2,1]],  // S
+    [[0,0],[1,0],[1,1],[1,2],[2,2]],  // S rot
+    [[0,0],[1,0],[1,1],[2,1],[2,2]],  // W staircase
+    [[0,1],[0,2],[1,0],[1,1],[2,0]],  // W rot
+    [[0,0],[0,1],[1,1],[1,2],[2,2]],  // W rot
+    [[0,2],[1,1],[1,2],[2,0],[2,1]]   // W rot
+  ];
+  function serpAt(r,c){
+    var cell0=grid[r]&&grid[r][c];
+    if(!cell0||cell0.type<0||cell0.special)return null;
+    var t=cell0.type;
+    for(var s=0;s<SERP_SHAPES.length;s++){
+      var sh=SERP_SHAPES[s];
+      for(var a=0;a<5;a++){
+        var br=r-sh[a][0],bc=c-sh[a][1];
+        var ok=true,cells=[];
+        for(var i=0;i<5;i++){
+          var rr=br+sh[i][0],cc=bc+sh[i][1];
+          if(!inBounds(rr,cc)){ok=false;break;}
+          var cl=grid[rr]&&grid[rr][cc];
+          if(!cl||cl.type!==t||cl.special){ok=false;break;}
+          cells.push({r:rr,c:cc});
+        }
+        if(ok)return {cells:cells,head:{r:r,c:c},type:t};
+      }
+    }
+    return null;
+  }
+  /* Greedy winding walk. Value favours the things the level is actually about;
+     the turn bonus is what makes the path SNAKE instead of beelining. */
+  function serpPath(r,c,len){
+    var path=[],visited={};
+    visited[r+','+c]=1;
+    var cr=r,cc=c,lastDir=-1;
+    var DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
+    while(path.length<len){
+      var best=null,bestV=-1,bestD=-1;
+      for(var d=0;d<4;d++){
+        var nr=cr+DIRS[d][0],nc=cc+DIRS[d][1];
+        if(!inBounds(nr,nc)||visited[nr+','+nc])continue;
+        var cell=grid[nr]&&grid[nr][nc];
+        var v=cell?1:0.2;
+        if(cell){
+          if(cell.type===-2)v=6;
+          else if(jellyBoard[nr][nc]>0)v=4;
+          else if(objState.gatherTargets&&objState.gatherTargets.hasOwnProperty(cell.type))v=2.5;
+        }
+        if(d!==lastDir)v+=0.6;
+        v+=Math.random()*0.3;
+        if(v>bestV){bestV=v;best=[nr,nc];bestD=d;}
+      }
+      if(!best)break;
+      cr=best[0];cc=best[1];lastDir=bestD;
+      visited[cr+','+cc]=1;
+      path.push({r:cr,c:cc});
+    }
+    return path;
+  }
+  function launchSerpent(r,c,len,toClear,queue,thick){
+    var path=serpPath(r,c,len);
+    for(var i=0;i<path.length;i++){
+      var p=path[i],k=p.r+','+p.c;
+      if(!toClear[k]){toClear[k]=1;queue.push(k);}
+      fx.push({kind:'serptrail',r:p.r,c:p.c,delay:60+i*50,t:Date.now()});
+      if(thick){
+        var nb=[[p.r+1,p.c],[p.r-1,p.c],[p.r,p.c+1],[p.r,p.c-1]];
+        for(var n2=0;n2<4;n2++){
+          var tr=nb[n2][0],tc=nb[n2][1];
+          if(!inBounds(tr,tc))continue;
+          var k2=tr+','+tc;
+          if(!toClear[k2]){toClear[k2]=1;queue.push(k2);}
+        }
+      }
+    }
+    return path.length;
+  }
+
   function expandActivations(toClear,pendingBurstPop){
     var activated={};
     var queue=[];
@@ -1395,6 +1492,9 @@ window._gameFns.petalmatch = function PM(a){
           var nk3=rr2+','+cc2;if(!toClear[nk3]){toClear[nk3]=1;queue.push(nk3);}
         }
         pendingBurstPop.push({r:r,c:c});
+      } else if(spec==='serpent'){
+        fx.push({kind:'serptrail',r:r,c:c,delay:0,t:Date.now()});
+        launchSerpent(r,c,13+((Math.random()*3)|0),toClear,queue,false);
       } else if(spec==='spore'){
         // When activated as a by-catch (not a direct swap), clear the most-represented color instead of random
         var counts=[0,0,0,0,0,0],maxT=0,maxN=0;
@@ -1444,6 +1544,26 @@ window._gameFns.petalmatch = function PM(a){
         }
       }
     }
+    /* An S-completing swap is a real move too (the serpentine). Checked after
+       straight runs (common, cheap) but BEFORE the special-anything pass, so
+       when the board holds a rare S opportunity the hint teaches THAT. */
+    for(var rS=0;rS<ROWS;rS++){
+      for(var cS=0;cS<COLS;cS++){
+        if(!canSwap(rS,cS))continue;
+        if(cS<COLS-1&&canSwap(rS,cS+1)){
+          swap(rS,cS,rS,cS+1);
+          var hitH=serpAt(rS,cS)||serpAt(rS,cS+1);
+          swap(rS,cS,rS,cS+1);
+          if(hitH)return [[rS,cS],[rS,cS+1]];
+        }
+        if(rS<ROWS-1&&canSwap(rS+1,cS)){
+          swap(rS,cS,rS+1,cS);
+          var hitV=serpAt(rS,cS)||serpAt(rS+1,cS);
+          swap(rS,cS,rS+1,cS);
+          if(hitV)return [[rS,cS],[rS+1,cS]];
+        }
+      }
+    }
     // Also consider any special piece — special+anything is always a valid move
     for(var r3=0;r3<ROWS;r3++)for(var c3=0;c3<COLS;c3++){
       var cell=grid[r3][c3];
@@ -1490,6 +1610,44 @@ window._gameFns.petalmatch = function PM(a){
     var sa=a.cell.special,sb=b.cell.special;
     if(!sa&&!sb)return false;
     var pts=0;
+    /* Serpent combos come FIRST: the generic spore branch below converts a
+       whole colour into copies of the partner special, which for a serpent
+       would be eight travelling snakes — a board wipe. Intercept the pairs.
+       Each branch nulls the combo cells' specials so expandActivations does
+       not fire a second, generic serpent from the same square. */
+    if(sa==='serpent'&&sb==='serpent'){
+      a.cell.special=null;b.cell.special=null;
+      toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
+      toClear[b.r+','+b.c]=1;queue.push(b.r+','+b.c);
+      launchSerpent(b.r,b.c,20,toClear,queue,false);
+      launchSerpent(a.r,a.c,20,toClear,queue,false);
+      pts=1000;score+=pts;comboFx('combo-hydra',b.r,b.c,7);banner('TWIN SERPENTS!','#d788c9');sm('TWIN SERPENTS! +'+pts);return true;
+    }
+    if((sa==='serpent'&&sb==='spore')||(sa==='spore'&&sb==='serpent')){
+      a.cell.special=null;b.cell.special=null;
+      toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
+      toClear[b.r+','+b.c]=1;queue.push(b.r+','+b.c);
+      launchSerpent(b.r,b.c,12,toClear,queue,false);
+      launchSerpent(b.r,b.c,12,toClear,queue,false);
+      launchSerpent(b.r,b.c,12,toClear,queue,false);
+      pts=900;score+=pts;comboFx('combo-hydra',b.r,b.c,7);banner('HYDRA BLOOM!','#c8a84b');sm('HYDRA BLOOM! +'+pts);return true;
+    }
+    if((sa==='serpent'&&sb==='vine')||(sa==='vine'&&sb==='serpent')){
+      a.cell.special=null;b.cell.special=null;
+      var trv=b.r,tcv=b.c;
+      for(var ccv=0;ccv<COLS;ccv++){var kv=trv+','+ccv;toClear[kv]=1;queue.push(kv);}
+      for(var rrv=0;rrv<ROWS;rrv++){var kv2=rrv+','+tcv;toClear[kv2]=1;queue.push(kv2);}
+      toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
+      launchSerpent(b.r,b.c,18,toClear,queue,false);
+      pts=600;score+=pts;comboFx('combo-cross',trv,tcv,6);banner('VINE SERPENT!','#7ab356');sm('VINE SERPENT! +'+pts);return true;
+    }
+    if((sa==='serpent'&&sb==='burst')||(sa==='burst'&&sb==='serpent')){
+      a.cell.special=null;b.cell.special=null;
+      toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
+      toClear[b.r+','+b.c]=1;queue.push(b.r+','+b.c);
+      launchSerpent(b.r,b.c,15,toClear,queue,true);
+      pts=700;score+=pts;comboFx('combo-storm',b.r,b.c,6);banner('BLOOM TRAIL!','#e8b5b5');sm('BLOOM TRAIL! +'+pts);return true;
+    }
     if(sa==='spore'&&sb==='spore'){
       // Tuned down from full-board wipe to clearing 2 random colors.
       // Still the biggest combo but leaves the board with structure.
@@ -1617,6 +1775,7 @@ window._gameFns.petalmatch = function PM(a){
       if(cell.special==='vine')vineCells++;
       else if(cell.special==='burst')burstCells++;
       else if(cell.special==='spore')sporeCells++;
+      else if(cell.special==='serpent')sporeCells++; // scores at the top (40-point) tier
       else plainCells++;
       grid[r][c]=null;
     }
@@ -2499,6 +2658,7 @@ window._gameFns.petalmatch = function PM(a){
                  'ring-corners','ring-plain','ring-ornate',
                  'cover-crack','ice-shatter',
                  'combo-cross','combo-mega','combo-storm','combo-hydra',
+                 'spec-serpent','serpent-trail',
                  'fx-beam-h','fx-beam-v','fx-plume',
                  'banner-path','banner-orrery','banner-vine','banner-lotus'];
     var loaded = 0;
@@ -2586,6 +2746,10 @@ window._gameFns.petalmatch = function PM(a){
         if(cell.type === -2){
           var hp = cell.block|0;
           k = 'block-' + (hp>=3?3:(hp>=1?hp:0));
+        } else if(cell.special === 'serpent'){
+          /* before the spore branch: the serpent is also type -1, and the
+             spore test would claim it for spec-wild */
+          k = 'spec-serpent';
         } else if(cell.special === 'spore' || cell.type === -1){
           k = 'spec-wild';
         } else if(cell.special === 'vine'){
@@ -2677,6 +2841,16 @@ window._gameFns.petalmatch = function PM(a){
         var t6=age/520;
         PM_ART.fx(f.art, f.x+f.vx*age, f.y+f.vy*age+0.00042*age*age,
                   CELL*0.44, 1-t6, f.spin*age*0.004);
+      } else if(f.kind==='serptrail'){
+        /* the serpent's petal wake: each path step pops in on its own delay,
+           so the stagger reads as the snake travelling cell to cell */
+        var agS=age-(f.delay||0);
+        if(agS>650)continue;
+        if(agS>=0){
+          var tS=agS/650, aS=tS<0.12?(tS/0.12):(1-(tS-0.12)/0.88);
+          PM_ART.fx('serpent-trail',f.c*CELL+CELL/2,f.r*CELL+CELL/2,
+                    CELL*(1.15+tS*0.5),aS*0.95,0);
+        }
       }
       keep.push(f);
     }
@@ -2858,7 +3032,7 @@ window._gameFns.petalmatch = function PM(a){
         score+=pts;banner('SPORE!','#e8dcc8');sm('SPORE! +'+pts);_play('snap');
         collapseAndRefill();updateHUD();
         setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
-      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||bSpec==='vine'||bSpec==='burst')){
+      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||aSpec==='serpent'||bSpec==='vine'||bSpec==='burst'||bSpec==='serpent')){
         var spR=aSpec?swapR:tsR,spC=aSpec?swapC:tsC;
         var toClear2={},pendBP2=[];
         toClear2[spR+','+spC]=1;
@@ -2871,18 +3045,47 @@ window._gameFns.petalmatch = function PM(a){
       } else {
         resolveCascade({r:swapR,c:swapC},swapPair,function(){animating=false;selected=null;checkState();});
       }
-    } else if(findMatches().length>0){
-      moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
-      resolveCascade({r:swapR,c:swapC},null,function(){animating=false;selected=null;checkState();});
     } else {
-      // Invalid swap: let the pieces visibly try and bump back so the player
-      // sees the rejection instead of the swap just vanishing.
-      animating=true;
-      var _tsR=tsR,_tsC=tsC,_swapR=swapR,_swapC=swapC;
-      setTimeout(function(){
-        swap(_tsR,_tsC,_swapR,_swapC);
-        animating=false;selected=null;_play('tap');
-      },160);
+      /* THE SERPENTINE check runs BEFORE normal match resolution: an S
+         pentomino CONTAINS a straight three, so checking after would let the
+         engine eat the shape as a mundane match. A W staircase contains no
+         run at all, so for that family this check is also what makes the
+         swap a legal move instead of a bump-back. */
+      var sHit=serpAt(swapR,swapC)||serpAt(tsR,tsC);
+      if(sHit){
+        moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+        var sToClear={};
+        for(var si=0;si<sHit.cells.length;si++){
+          var scl=sHit.cells[si];
+          if(scl.r===sHit.head.r&&scl.c===sHit.head.c)continue;
+          sToClear[scl.r+','+scl.c]=1;
+        }
+        var headCell=grid[sHit.head.r][sHit.head.c];
+        if(headCell){headCell.special='serpent';headCell.type=-1;headCell.stripeDir=null;headCell.spawnAnim=Date.now();}
+        score+=250;banner('SERPENTINE!','#d788c9');sm('SERPENTINE! +250');_play('snap');_e('milestone');
+        var sPend=[];
+        expandActivations(sToClear,sPend);
+        for(var sck in sToClear){var scp=sck.split(',');var _scc=grid[scp[0]][scp[1]];if(_scc&&_scc.type!==-2&&!_scc.clearAt){_scc.clearAt=Date.now();spawnShards(+scp[0],+scp[1]);}}
+        setTimeout(function(){
+          var sCounts=applyClear(sToClear);
+          var sPts=(sCounts.p*10+sCounts.v*20+sCounts.b*30+sCounts.s*40+sCounts.dew*15+sCounts.thorns*25)*level;
+          score+=sPts;
+          collapseAndRefill();updateHUD();
+          setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
+        },300);
+      } else if(findMatches().length>0){
+        moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
+        resolveCascade({r:swapR,c:swapC},null,function(){animating=false;selected=null;checkState();});
+      } else {
+        // Invalid swap: let the pieces visibly try and bump back so the player
+        // sees the rejection instead of the swap just vanishing.
+        animating=true;
+        var _tsR=tsR,_tsC=tsC,_swapR=swapR,_swapC=swapC;
+        setTimeout(function(){
+          swap(_tsR,_tsC,_swapR,_swapC);
+          animating=false;selected=null;_play('tap');
+        },160);
+      }
     }
     tsR=-1;tsC=-1;
   }
@@ -2990,6 +3193,13 @@ window._gameFns.petalmatch = function PM(a){
     buyBoost:function(key){ return pmBoost(key); },
     revive:function(){ pmRevive(); },
     types:function(){ return activeTypes; },
+    /* serpentine probe rig (2026-07-29): plant exact boards + read cells, so
+       the probe drives the REAL swap path (trap 4: real events, never play()) */
+    plant:function(list){ for(var i=0;i<list.length;i++){ var p=list[i]; var cl=grid[p[0]]&&grid[p[0]][p[1]]; if(cl){ cl.type=p[2]; cl.special=p[3]||null; cl.stripeDir=null; } } return true; },
+    cellAt:function(r,c){ var cl=grid[r]&&grid[r][c]; return cl?{type:cl.type,special:cl.special}:null; },
+    validSwap:function(){ return findValidSwap(); },
+    serpProbe:function(r,c){ return serpAt(r,c); },
+    fxCount:function(kind){ var n=0; for(var i=0;i<fx.length;i++)if(fx[i].kind===kind)n++; return n; },
     // Every legal move on the board right now, as [[r1,c1],[r2,c2]] pairs.
     // Uses the real canSwap/findMatches, same as findValidSwap does.
     moves:function(){

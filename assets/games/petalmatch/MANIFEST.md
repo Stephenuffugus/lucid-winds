@@ -90,7 +90,10 @@ sized to match what they replaced.
 - New masters awaiting mechanics: tool set + ready glows (possible powerup
   icons: hammer=DIG, hourglass=+5 MOVES — Stephen's call), star-1/2/3/gold,
   streak-flame, achv-tower/compass/collection, skin-purple set, emblem
-  rocket/serpent/cascade/orb/gate/cradle, spec box/strip/quake/serpent+trail.
+  rocket/serpent/cascade/orb/gate/cradle, spec box/strip/quake.
+- ⭐ `spec-serpent` + `serpent-trail` WIRED 2026-07-29 (the Serpentine shipped):
+  runtime copies cut at 160px max (alpha already reaches the master edges, so
+  a plain LANCZOS resize matches the pipeline). `emblem-serpent` still parked.
 
 ## Full-bleed art (kept whole, NOT keyed)
 `chapter-bg-1..4.jpg` `share-card.jpg`
