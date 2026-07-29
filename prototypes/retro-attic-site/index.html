@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Retro Attic Akron · Take a Walk Down Memory Lane</title>
+<meta name="description" content="Website concept for Retro Attic Akron. Toys, games, music, and memories at 2475 Massillon Rd.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f6ecd9; --paper:#efe2c8; --ink:#2c2118;
+    --orange:#e0662a; --mustard:#e8a92c; --teal:#2a8a80; --rust:#a53f22;
+    --shadow:0 10px 30px rgba(44,33,24,.25);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);
+       font-family:Nunito,system-ui,sans-serif;line-height:1.6;
+       background-image:repeating-linear-gradient(0deg, transparent 0 34px, rgba(44,33,24,.03) 34px 35px);}
+  .wrap{max-width:860px;margin:0 auto;padding:0 18px}
+
+  /* concept ribbon — this page is a pitch, and says so */
+  .concept{background:var(--ink);color:var(--cream);text-align:center;font-size:.78rem;
+           padding:7px 12px;letter-spacing:.5px}
+  .concept b{color:var(--mustard)}
+
+  header.hero{text-align:center;padding:52px 18px 40px;
+    background:
+      radial-gradient(600px 300px at 50% 0%, rgba(232,169,44,.25), transparent 70%);}
+  .sunburst{width:130px;height:130px;margin:0 auto 18px;border-radius:50%;
+    background:conic-gradient(var(--mustard) 0 20deg, var(--orange) 20deg 40deg, var(--mustard) 40deg 60deg, var(--orange) 60deg 80deg, var(--mustard) 80deg 100deg, var(--orange) 100deg 120deg, var(--mustard) 120deg 140deg, var(--orange) 140deg 160deg, var(--mustard) 160deg 180deg, var(--orange) 180deg 200deg, var(--mustard) 200deg 220deg, var(--orange) 220deg 240deg, var(--mustard) 240deg 260deg, var(--orange) 260deg 280deg, var(--mustard) 280deg 300deg, var(--orange) 300deg 320deg, var(--mustard) 320deg 340deg, var(--orange) 340deg 360deg);
+    display:grid;place-items:center;box-shadow:var(--shadow)}
+  .sunburst span{width:96px;height:96px;border-radius:50%;background:var(--ink);color:var(--cream);
+    display:grid;place-items:center;font-size:44px}
+  h1{font-family:Righteous,cursive;font-size:clamp(2.2rem,7vw,3.4rem);margin:0;
+     color:var(--rust);letter-spacing:1px;line-height:1.05}
+  h1 .akron{display:block;font-size:.42em;color:var(--teal);letter-spacing:6px;margin-top:6px}
+  .tagline{font-size:1.06rem;font-weight:700;color:var(--ink);opacity:.8;margin:14px 0 22px}
+  .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;min-height:50px;padding:10px 22px;
+       border-radius:999px;font-weight:800;text-decoration:none;font-size:1rem;
+       border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);transition:transform .12s}
+  .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.orange{background:var(--orange);color:var(--cream)}
+  .btn.teal{background:var(--teal);color:var(--cream)}
+
+  h2{font-family:Righteous,cursive;color:var(--rust);font-size:1.7rem;margin:44px 0 6px;text-align:center}
+  .sub{text-align:center;color:var(--ink);opacity:.65;margin:0 0 22px;font-weight:600}
+
+  .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .cat{background:var(--paper);border:3px solid var(--ink);border-radius:18px;padding:20px 14px;
+       text-align:center;box-shadow:5px 5px 0 rgba(44,33,24,.9)}
+  .cat .ic{font-size:2.2rem}
+  .cat b{display:block;margin-top:8px;font-size:1.02rem}
+  .cat small{color:var(--ink);opacity:.65;line-height:1.4;display:block;margin-top:4px}
+
+  .finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .find{aspect-ratio:1;border:3px dashed var(--rust);border-radius:16px;background:var(--paper);
+        display:grid;place-items:center;text-align:center;color:var(--rust);font-weight:800;
+        padding:12px;font-size:.92rem;line-height:1.35}
+  .find span{display:block;font-size:1.8rem;margin-bottom:6px}
+
+  .visit{background:var(--teal);color:var(--cream);border:3px solid var(--ink);border-radius:22px;
+         padding:26px 22px;box-shadow:var(--shadow);margin-top:8px}
+  .visit h2{color:var(--cream);margin-top:0}
+  .visit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;text-align:center}
+  .visit b{font-size:1.05rem}
+  .visit a{color:var(--mustard);font-weight:800}
+
+  .strip{margin:40px 0 0;padding:16px 0;background:var(--orange);color:var(--cream);
+         border-top:3px solid var(--ink);border-bottom:3px solid var(--ink);
+         text-align:center;font-family:Righteous,cursive;font-size:1.15rem;letter-spacing:1px}
+
+  footer{padding:28px 18px 40px;text-align:center;font-size:.85rem;color:var(--ink);opacity:.75}
+  footer a{color:var(--rust);font-weight:700}
+  @media(max-width:460px){ .cats{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+
+<div class="concept">WEBSITE CONCEPT · designed for Retro Attic Akron by <b>Sky Wolf Studios</b> · your photos and words drop right in</div>
+
+<header class="hero">
+  <div class="sunburst"><span>📻</span></div>
+  <h1>RETRO ATTIC<span class="akron">A K R O N</span></h1>
+  <p class="tagline">Take a walk down memory lane. Fresh finds every week.</p>
+  <div class="cta-row">
+    <a class="btn orange" href="https://maps.google.com/?q=2475+Massillon+Rd,+Akron,+OH">📍 Find the Attic</a>
+    <a class="btn teal" href="https://www.facebook.com/retroatticakron/">👍 Follow on Facebook</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h2>What's in the Attic</h2>
+  <p class="sub">Every aisle is somebody's childhood.</p>
+  <div class="cats">
+    <div class="cat"><div class="ic">🧸</div><b>Vintage Toys</b><small>Action figures, playsets, and the ones you wish you kept</small></div>
+    <div class="cat"><div class="ic">🕹️</div><b>Games</b><small>Video games, board games, and everything with dice in the box</small></div>
+    <div class="cat"><div class="ic">🎵</div><b>Music</b><small>Vinyl, cassettes, and the sound of the good old days</small></div>
+    <div class="cat"><div class="ic">🏆</div><b>Collectibles</b><small>Cards, comics, memorabilia, and the hunt itself</small></div>
+  </div>
+
+  <h2>This Week's Fresh Finds</h2>
+  <p class="sub">New inventory lands all the time. These squares fill themselves from your Facebook photos.</p>
+  <div class="finds">
+    <div class="find"><span>📸</span>Your latest haul photo goes here</div>
+    <div class="find"><span>📸</span>That glass case everyone asks about</div>
+    <div class="find"><span>📸</span>The wall of games</div>
+    <div class="find"><span>📸</span>Storefront, golden hour</div>
+    <div class="find"><span>📸</span>This week's grail</div>
+    <div class="find"><span>📸</span>A happy customer with a find</div>
+  </div>
+
+  <h2 style="margin-bottom:14px">Come Say Hi</h2>
+  <div class="visit">
+    <div class="visit-grid">
+      <div><b>📍 The Shop</b><br>2475 Massillon Rd<br>Akron, OH</div>
+      <div><b>📞 Call Us</b><br><a href="tel:+13302086700">(330) 208-6700</a></div>
+      <div><b>🕰️ Hours</b><br>Your hours go here,<br>updated any time</div>
+    </div>
+  </div>
+</div>
+
+<div class="strip">BUY · SELL · TRADE · REMINISCE</div>
+
+<footer>
+  This page is a design concept, built with public listing info and photo
+  placeholders — nothing here is the store's official site (yet).<br>
+  Concept by <a href="https://lucidwinds.com/portal/">Sky Wolf Studios</a>, Green, Ohio ·
+  we build fast, mobile-first sites and free browser games.
+</footer>
+
+</body>
+</html>
