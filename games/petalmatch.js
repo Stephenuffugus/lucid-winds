@@ -42,7 +42,7 @@ window._gameFns.petalmatch = function PM(a){
      device held a days-old copy while the live site was current; with this on
      screen, "is it stale?" is answered by looking. Keep it in lockstep with
      the ?v= on play/petalmatch.html. */
-  var PM_BUILD='v23';
+  var PM_BUILD='v24';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -375,6 +375,8 @@ window._gameFns.petalmatch = function PM(a){
   var timedEnd=0, timedOver=false;
   function timedBest(){ try{ return parseInt(localStorage.getItem('lw_pm_timed_best')||'0',10)||0; }catch(e){ return 0; } }
   function timedBestSet(v){ try{ localStorage.setItem('lw_pm_timed_best',String(v)); }catch(e){} }
+  function endlessBest(){ try{ return parseInt(localStorage.getItem('lw_pm_endless_best')||'0',10)||0; }catch(e){ return 0; } }
+  function endlessBestSet(v){ try{ localStorage.setItem('lw_pm_endless_best',String(v)); }catch(e){} }
   /* Timed pays Petals — Stephen 2026-07-26: "timed mode can pay petals, cap it
      like the daily." 1 Petal per 5000 score, hard-capped at 20 a day (the same
      ceiling the daily streak tops out at), UTC day bucket like everything else.
@@ -609,7 +611,11 @@ window._gameFns.petalmatch = function PM(a){
   modeBtn.id='PMmode';
   modeBtn.addEventListener('click',function(ev){ ev.preventDefault();
     if(animating)return;
-    if(mode==='timed')backToJourney(); else startTimed();
+    /* the mode button cycles JOURNEY -> TIMED -> ENDLESS -> JOURNEY;
+       its label always names the NEXT stop */
+    if(mode==='journey')startTimed();
+    else if(mode==='timed')startEndless();
+    else backToJourney();
     renderShelf();
   });
   walletRow.appendChild(modeBtn);
@@ -999,6 +1005,8 @@ window._gameFns.petalmatch = function PM(a){
       + '<span style="flex:1 1 auto;text-align:right;font-size:0.78rem;">';
     if(o.kind==='timed'){
       html+='TIMED · best <strong style="color:#c8a84b;">'+timedBest()+'</strong>';
+    } else if(o.kind==='endless'){
+      html+='ENDLESS · best <strong style="color:#7ab356;">'+endlessBest()+'</strong>';
     } else if(o.kind==='score'){
       html+='Reach <strong style="color:#c8a84b;">'+o.target+'</strong> pts';
     } else if(o.kind==='dew'){
@@ -1948,8 +1956,39 @@ window._gameFns.petalmatch = function PM(a){
     return false;
   }
 
+  /* ═══ ENDLESS MODE — doc 06's third mode. Zen rules: no clock, no move
+     counter, no objective, no losing. The board just keeps giving; score
+     and cascades are their own reward. Petals on exit ride timedPay(), so
+     BOTH score modes share ONE daily cap and no farm vector opens. ═══ */
+  function startEndless(){
+    if(mode==='endless')return;
+    var wasEndless=false;
+    mode='endless'; timedOver=false; clearTimedPanel(); endlessMile=0;
+    won=false; lost=false; score=0; animating=false; selected=null; fx=[];
+    aiming=null; movedThisLevel=true; pmCloseBoost();
+    activeTypes=TYPES;
+    objective={kind:'endless',chapter:objective?objective.chapter:0,moves:9999,target:0,
+               finale:false,label:'No clock. No counter. Just the garden.'};
+    moves=9999;
+    resetObjState();
+    initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
+    clearHint();
+    sm('ENDLESS. No clock, no counter. Breathe.');
+    updateHUD();render();
+  }
+  /* leaving endless settles the visit: best saved, Petals paid through the
+     SHARED timed cap so the two score modes can never stack past it */
+  function endlessSettle(){
+    if(score<=0)return;
+    if(score>endlessBest())endlessBestSet(score);
+    var pay=timedPay(score);
+    try{ _e('milestone'); _sr('petalmatch',{w:false,s:score,lv:level}); }catch(e){}
+    if(pay.earn>0)sm('+'+pay.earn+' Petals from the endless garden.'+(pay.capLeft===0?' Daily cap reached.':''));
+    else if(pay.capLeft===0)sm('Daily Petal cap reached. The score still counts.');
+  }
   function startTimed(){
     if(mode==='timed')return;
+    if(mode==='endless')endlessSettle();
     mode='timed'; timedOver=false; timedEnd=Date.now()+TIMED_MS;
     won=false; lost=false; score=0; animating=false; selected=null; fx=[];
     aiming=null; movedThisLevel=true; pmCloseBoost(); clearTimedPanel();
@@ -1967,6 +2006,7 @@ window._gameFns.petalmatch = function PM(a){
   }
   function backToJourney(){
     if(mode==='journey')return;
+    if(mode==='endless')endlessSettle();
     mode='journey'; timedOver=false; clearTimedPanel();
     won=false; lost=false; score=0; animating=false; selected=null; fx=[];
     aiming=null; movedThisLevel=false; activeTypes=TYPES;
@@ -1977,6 +2017,7 @@ window._gameFns.petalmatch = function PM(a){
     sm('Back to the Journey. Level '+level+', right where you left it.');
     updateHUD();render();
   }
+  var endlessMile=0;
   var timedPanel=null;
   function clearTimedPanel(){ if(timedPanel&&timedPanel.parentNode)timedPanel.parentNode.removeChild(timedPanel); timedPanel=null; }
   function endTimed(){
@@ -2043,12 +2084,16 @@ window._gameFns.petalmatch = function PM(a){
     if(e=document.getElementById('PMlv'))e.textContent=level;
     if(e=document.getElementById('PMchap'))e.textContent=CHAPTERS[objective.chapter].name;
     syncBackdrop();   // the conservatory changes with the chapter
-    if(e=document.getElementById('PMmvLbl'))e.textContent=(mode==='timed')?'TIME':'MOVES';
-    if(mode!=='timed'){
+    if(e=document.getElementById('PMmvLbl'))e.textContent=(mode==='timed')?'TIME':(mode==='endless'?'ZEN':'MOVES');
+    if(mode==='endless'){
+      moves=9999;   // belt to checkState's braces: the counter can never bind
+      if(e=document.getElementById('PMmv')){ e.textContent='∞'; e.style.color='#7ab356'; }
+    } else if(mode!=='timed'){
       if(e=document.getElementById('PMmv')){ e.textContent=moves; e.style.color='#e8dcc8'; }
     }
     if(e=document.getElementById('PMbar')){
       if(mode==='timed')return;          // the ticker owns the bar and clock in timed
+      if(mode==='endless'){ e.style.width=((score%10000)/100)+'%'; return; }  // rolling 10k milestone fill
       var pct=progressPct();
       e.style.width=pct+'%';
       // light the star pips the fill has reached
@@ -2326,7 +2371,7 @@ window._gameFns.petalmatch = function PM(a){
       b.style.boxShadow=(aiming===mid[i])?'0 0 10px rgba(122,179,86,0.55)':'none';
     }
     var mb=document.getElementById('PMmode');
-    if(mb)mb.textContent=(mode==='timed')?'JOURNEY':'TIMED';
+    if(mb)mb.textContent=(mode==='journey')?'TIMED':(mode==='timed'?'ENDLESS':'JOURNEY');
     if(mode==='timed'){
       boostBtn.style.display='none';
       reviveBtn.style.display='none';
@@ -2346,10 +2391,19 @@ window._gameFns.petalmatch = function PM(a){
 
   function checkState(){
     /* Timed has no objective and no move budget; the clock is the only judge.
+       Endless has neither clock NOR budget; a stuck board just reshuffles.
        Everything below is Journey's business. */
     if(mode==='timed'){
       if(timedOver)return;
       if(!findValidSwap()){ sm('No moves, shuffling!'); shuffleGrid(); }
+      lastInputAt=Date.now();hintCells=null;
+      return;
+    }
+    if(mode==='endless'){
+      moves=9999;   // the counter never binds; swaps in handleEnd decrement it, this pins it
+      var em=Math.floor(score/10000);
+      if(em>endlessMile){ endlessMile=em; banner('THE GARDEN GROWS','#7ab356'); }
+      if(!findValidSwap()){ sm('The garden resets itself.'); shuffleGrid(); }
       lastInputAt=Date.now();hintCells=null;
       return;
     }
@@ -3186,7 +3240,7 @@ window._gameFns.petalmatch = function PM(a){
       return {streak:pmStreakToday(),comebackDue:pmComebackDue(),lossPct:lastLossPct,
               specials:n,progress:+progressPct().toFixed(1)}; },
     retry:function(){ window._PMR(); },
-    mode:function(m){ if(m==='timed')startTimed(); else if(m==='journey')backToJourney();
+    mode:function(m){ if(m==='timed')startTimed(); else if(m==='endless')startEndless(); else if(m==='journey')backToJourney();
       return {mode:mode,over:timedOver,best:timedBest(),left:mode==='timed'?Math.max(0,timedEnd-Date.now()):0}; },
     timedExpire:function(){ if(mode==='timed'){ timedEnd=Date.now()-1; } return 'expiring'; },
     timedEarn:function(){ try{ return JSON.parse(localStorage.getItem('lw_pm_timed_earn')||'null'); }catch(e){ return null; } },
