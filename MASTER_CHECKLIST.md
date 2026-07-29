@@ -881,7 +881,13 @@ Ordered by value per hour of work.
   engine, store as GPS dig site. Brief written 2026-07-27:
   `design-briefs/flagship-attic.md`. ⛔ Stephen calls pending: name, launch
   classes, what the store wants, paper text-engine taste test OK?
-- [ ] **Gnome Blitz** — new game, Dutch Blitz with garden gnomes.
+- [ ] **Gnome Blitz** — new game, Dutch Blitz with garden gnomes. Brief written
+  2026-07-29: `design-briefs/gnome-blitz.md` — real-time Nertz race vs AI gnome
+  rivals on a reaction-time model, fairness-first (no peeking, no rubber-band),
+  sim-tuned difficulty. ⚠️ IP note in the brief: "Dutch Blitz" is trademarked;
+  the underlying game (Nertz) is public domain — own theme/terms, and the
+  working title leans on the trademark's key word. ⛔ Stephen calls: name, suit
+  themes, zone names, greenlight for v1 (placeholder cards before art spend).
 - [ ] **Scrabble Overturn / Scrabble UpWords** — new game ideas, unspecced.
 - [ ] **Nature Sound ID app** — needs an audio-fingerprint approach decision first; model on
   Merlin Bird.
