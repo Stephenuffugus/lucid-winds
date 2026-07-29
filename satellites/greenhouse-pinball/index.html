@@ -167,7 +167,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.6.1';
+var BUILD='v1.7.0';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -649,7 +649,7 @@ function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
   // --- CHAIN MULTIBALL: lit by the spinner, STARTED + GROWN by ramp shots (2 balls -> 7) ---
   if(_isRO && !G.wizard && !G.pollenMB){
     if(G.chainLit && !G.chainMB){ G.chainLit=false; G.chainMB=true; G.multiball=true; G.chainN=2; G.chainSave=9;
-      addChainBall(); callout('CHAIN MULTIBALL','#37e0c0',true); playAnim('goo_boilover',6,358,410,sh.x,sh.y+30,140,12);
+      addChainBall(); callout('CHAIN MULTIBALL','#37e0c0',true); playAnim('goo_boilover',6,358,410,sh.x,sh.y+30,140,12,{once:true});  // sheet ends settled-with-drips; reversed it would suck back in
       sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,10); haptic(25);
       G.score+=5000; G.bonusBase+=2000; float(sh.x,sh.y-20,'CHAIN START +5000'); return; }
     if(G.chainMB){ if(G.chainN<7){ G.chainN++; addChainBall();
@@ -703,12 +703,12 @@ function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit
   if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
   if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
 function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
-  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,273,220,VW-92,VH-150,120,11);
+  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30); callout(q.name.toUpperCase(),'#c8a84b',true); playAnim('blip_wave',5,273,220,VW-92,VH-150,120,13);   // 13fps over the 9-step ping-pong ≈ 0.7s of motion
   var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
   if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY · SHOOT THE COMPOST HEAP'); } }
 /* ===== Pollen Multiball — the scaling lock multiball (P1 STEP 17) ===== */
 function startPollenMB(){
-  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true); playAnim('goo_boilover',6,358,410,LOCK_NEST.x,LOCK_NEST.y+70,150,12);
+  G.pollenMB=true; G.multiball=true; G.mbTime=999; G.mbCount++; callout('MULTIBALL','#f2d98a',true); playAnim('goo_boilover',6,358,410,LOCK_NEST.x,LOCK_NEST.y+70,150,12,{once:true});
   G.mbLevel=Math.min(2,1+(G.mbCount-1)*0.5);        // scales across the game, capped so the wizard stays king
   G.jpLadder=1; G.jpCount=0; G.superLit=false; G.superCount=0; G.mbAdded=false;
   G.mbSave=Math.max(5,10-3*(G.mbCount-1));          // 10s -> 7s -> 5s
@@ -721,7 +721,7 @@ function startPollenMB(){
 function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.scoopLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
   float(265,300,'MULTIBALL OVER'); sfx('drain'); }
 function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
-function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true); playAnim('mega_mash_erupt',8,247,556,VW/2,VH*0.44,240,13);
+function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true); playAnim('mega_mash_erupt',8,247,556,VW/2,VH*0.44,240,13,{once:true});  // one-way story: erupt then buried in prizes
   G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
   G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
   G.wizSave=12; float(265,300,'🌸 FULL BLOOM! 🌸'); float(265,334,'every shot = 1,000,000'); sfx('bloom'); haptic(40); }
@@ -739,7 +739,29 @@ function rrect(x,y,w,h,r){ if(w<2*r)r=w/2; if(h<2*r)r=h/2; ctx.beginPath(); ctx.
 function strokePts(pts,col,wid){ if(!pts||!pts.length)return; ctx.strokeStyle=col; ctx.lineWidth=wid; ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]); ctx.stroke(); }
 // one-shot claymation animation overlay (sheet-13..17 frame strips): plays once at (x,y), width w
 var ANIM=null;
-function playAnim(key,frames,cw,ch,x,y,w,fps){ ANIM={key:key,frames:frames,cw:cw,ch:ch,x:x,y:y,w:w,fps:fps||16,t:0}; }
+/* Stephen: "Blip's intro animation is still skippy". It was 5 discrete frames at
+   11fps played once — 0.45s of slideshow, and a wave that stops dead at the end of
+   its swing. Two fixes with the art we already have:
+     · PING-PONG — a wave goes out AND back, so 5 frames become 9 of motion and the
+       pose returns to rest instead of snapping there.
+     · EASE — hold the extremes a little longer than the middle, which is how a real
+       wave moves and what stops five frames reading as five slides.
+   `once:true` restores the old straight-through playback for anything that needs it. */
+function playAnim(key,frames,cw,ch,x,y,w,fps,opt){
+  opt = opt || {};
+  ANIM = { key:key, frames:frames, cw:cw, ch:ch, x:x, y:y, w:w, fps:fps||16, t:0,
+           pong: opt.once ? false : true, ease: opt.ease !== false };
+}
+/* 0..1 through the whole cycle -> which frame to show */
+function _animFrame(a){
+  var span = a.pong ? (a.frames*2-1) : a.frames;      // 5 frames ping-ponged = 9 steps, last step = frame 0 (rest)
+  var u = (a.t*a.fps) / span;                          // 0..1 across the cycle
+  if(u>1) u=1;
+  if(a.ease) u = u<0.5 ? 2*u*u : 1-Math.pow(-2*u+2,2)/2;   // ease in-out, slower at the ends
+  var step = Math.floor(u*span);
+  if(step>=span) step = span-1;
+  return a.pong && step >= a.frames ? (a.frames*2-2-step) : Math.min(step, a.frames-1);
+}
 
 /* ===== update ===== */
 function step(dt){ if(!G)return; G.t+=dt;
@@ -808,7 +830,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   if(G.scoreShown==null)G.scoreShown=G.score;
   if(G.scoreShown!==G.score){ G.scoreShown+=(G.score-G.scoreShown)*Math.min(1,dt*9); if(Math.abs(G.score-G.scoreShown)<1)G.scoreShown=G.score; }
   if(G.callout){ G.callout.t-=dt; if(G.callout.t<=0)G.callout=null; }
-  if(ANIM){ ANIM.t+=dt; if(ANIM.t*ANIM.fps>=ANIM.frames)ANIM=null; }
+  if(ANIM){ ANIM.t+=dt; var _span=ANIM.pong?(ANIM.frames*2-1):ANIM.frames; if(ANIM.t*ANIM.fps>=_span)ANIM=null; }
   if(G.slow<1){ G.slow+=dt*1.8; if(G.slow>1)G.slow=1; }
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
   if(G.netFlash>0){ G.netFlash-=dt*2; if(G.netFlash<0)G.netFlash=0; }
@@ -930,7 +952,7 @@ function render(){ if(!ctx||!G)return;
   if(G.callout && G.callout.big && G.callout.t>0){ ctx.save(); ctx.globalCompositeOperation='lighter';
     ctx.globalAlpha=Math.min(0.13,(G.callout.t/G.callout.t0)*0.13)*(0.6+0.4*Math.sin(G.t*8)); ctx.fillStyle=G.callout.col; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   // one-shot claymation animation overlay (MEGA MASH erupt, goo boil-over, Blip cheer)
-  if(ANIM){ var _ai=PIN_ART.img(ANIM.key); if(_ai){ var _af=Math.min(ANIM.frames-1,Math.floor(ANIM.t*ANIM.fps)); var _ah=ANIM.w*ANIM.ch/ANIM.cw;
+  if(ANIM){ var _ai=PIN_ART.img(ANIM.key); if(_ai){ var _af=_animFrame(ANIM); var _ah=ANIM.w*ANIM.ch/ANIM.cw;
     ctx.drawImage(_ai, _af*ANIM.cw,0,ANIM.cw,ANIM.ch, ANIM.x-ANIM.w/2, ANIM.y-_ah/2, ANIM.w, _ah); } }
   if(G.wizard){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.035+0.03*Math.sin(G.t*3); ctx.fillStyle='#6b5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // FULL BLOOM golden GI
   else if(G.rush>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.03+0.025*Math.sin(G.t*5); ctx.fillStyle='#2e5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // Bloom Rush green GI
