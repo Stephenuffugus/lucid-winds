@@ -42,7 +42,7 @@ window._gameFns.petalmatch = function PM(a){
      device held a days-old copy while the live site was current; with this on
      screen, "is it stale?" is answered by looking. Keep it in lockstep with
      the ?v= on play/petalmatch.html. */
-  var PM_BUILD='v24';
+  var PM_BUILD='v25';
 
   /* MEASURED 2026-07-26 by scripts/petalmatch_calibrate.js: 320 real bot runs
      over levels 1-40, 8 trials each, ~64 clean samples per kind, only 2 runs
@@ -1055,6 +1055,9 @@ window._gameFns.petalmatch = function PM(a){
     'PETAL STORM!':'pop-amazing',
     'SPORE CLOUD!':'pop-amazing',
     'SERPENTINE!':'pop-amazing',
+    'CRYSTAL CROSS!':'pop-amazing',
+    'PETALQUAKE!':'pop-incredible',
+    'GARDEN SHAKER!':'pop-incredible',
     'VINE SERPENT!':'pop-amazing',
     'BLOOM TRAIL!':'pop-amazing',
     'HYDRA BLOOM!':'pop-incredible',
@@ -1328,21 +1331,30 @@ window._gameFns.petalmatch = function PM(a){
       }
       return group[Math.floor(group.length/2)];
     }
+    /* the straight-run ladder (doc 06): 4 = vine line, 5 = spore wild,
+       6 = STRIP (the crystal cross: row AND column), 7+ = QUAKE (cross plus
+       every thorn on the board takes a hit). Six and seven mostly arrive by
+       cascade luck - jackpot moments, ranked above everything else. */
+    function runSpawn(g,dir){
+      var sc=pickSpawnCell(g);
+      if(g.length>=7)spawns.push({r:sc.r,c:sc.c,special:'quake',type:-1});
+      else if(g.length===6)spawns.push({r:sc.r,c:sc.c,special:'strip',type:-1});
+      else if(g.length===5)spawns.push({r:sc.r,c:sc.c,special:'spore',type:-1});
+      else if(g.length===4)spawns.push({r:sc.r,c:sc.c,special:'vine',stripeDir:dir,type:g.type});
+    }
     for(i=0;i<runs.h.length;i++){
       if(consumed['h'+i])continue;
       g=runs.h[i];
       for(j=0;j<g.length;j++)toClear[g[j].r+','+g[j].c]=1;
-      if(g.length>=5){var sc=pickSpawnCell(g);spawns.push({r:sc.r,c:sc.c,special:'spore',type:-1});}
-      else if(g.length===4){var sc2=pickSpawnCell(g);spawns.push({r:sc2.r,c:sc2.c,special:'vine',stripeDir:'v',type:g.type});}
+      runSpawn(g,'v');
     }
     for(i=0;i<runs.v.length;i++){
       if(consumed['v'+i])continue;
       g=runs.v[i];
       for(j=0;j<g.length;j++)toClear[g[j].r+','+g[j].c]=1;
-      if(g.length>=5){var sc3=pickSpawnCell(g);spawns.push({r:sc3.r,c:sc3.c,special:'spore',type:-1});}
-      else if(g.length===4){var sc4=pickSpawnCell(g);spawns.push({r:sc4.r,c:sc4.c,special:'vine',stripeDir:'h',type:g.type});}
+      runSpawn(g,'h');
     }
-    var rank={burst:3,spore:2,vine:1};
+    var rank={quake:5,strip:4,burst:3,spore:2,vine:1};
     var spawnMap={};
     for(i=0;i<spawns.length;i++){
       var sp=spawns[i],sk=sp.r+','+sp.c;
@@ -1503,6 +1515,23 @@ window._gameFns.petalmatch = function PM(a){
       } else if(spec==='serpent'){
         fx.push({kind:'serptrail',r:r,c:c,delay:0,t:Date.now()});
         launchSerpent(r,c,13+((Math.random()*3)|0),toClear,queue,false);
+      } else if(spec==='strip'){
+        // the crystal cross: full row AND full column
+        fx.push({kind:'sweep',dir:'h',r:r,c:c,t:Date.now()});
+        fx.push({kind:'sweep',dir:'v',r:r,c:c,t:Date.now()});
+        for(var cs=0;cs<COLS;cs++){var ks=r+','+cs;if(!toClear[ks]){toClear[ks]=1;queue.push(ks);}}
+        for(var rs=0;rs<ROWS;rs++){var ks2=rs+','+c;if(!toClear[ks2]){toClear[ks2]=1;queue.push(ks2);}}
+      } else if(spec==='quake'){
+        // the lotus shakes the whole garden: cross + every thorn takes a hit
+        fx.push({kind:'sweep',dir:'h',r:r,c:c,t:Date.now()});
+        fx.push({kind:'sweep',dir:'v',r:r,c:c,t:Date.now()});
+        fx.push({kind:'flash',r:r,c:c,size:5,t:Date.now()});
+        for(var cq=0;cq<COLS;cq++){var kq=r+','+cq;if(!toClear[kq]){toClear[kq]=1;queue.push(kq);}}
+        for(var rq=0;rq<ROWS;rq++){var kq2=rq+','+c;if(!toClear[kq2]){toClear[kq2]=1;queue.push(kq2);}}
+        for(var rt=0;rt<ROWS;rt++)for(var ct=0;ct<COLS;ct++){
+          var tc=grid[rt][ct];
+          if(tc&&tc.type===-2){var kt=rt+','+ct;if(!toClear[kt]){toClear[kt]=1;fx.push({kind:'flash',r:rt,c:ct,size:1,t:Date.now()});}}
+        }
       } else if(spec==='spore'){
         // When activated as a by-catch (not a direct swap), clear the most-represented color instead of random
         var counts=[0,0,0,0,0,0],maxT=0,maxN=0;
@@ -1656,6 +1685,15 @@ window._gameFns.petalmatch = function PM(a){
       launchSerpent(b.r,b.c,15,toClear,queue,true);
       pts=700;score+=pts;comboFx('combo-storm',b.r,b.c,6);banner('BLOOM TRAIL!','#e8b5b5');sm('BLOOM TRAIL! +'+pts);return true;
     }
+    /* STRIP / QUAKE in any pairing: both specials fire where they stand
+       (expandActivations runs each). Placed BEFORE the spore branch so a
+       spore can never convert a whole colour into crosses - that would be
+       a guaranteed board wipe every time. */
+    if(sa==='strip'||sa==='quake'||sb==='strip'||sb==='quake'){
+      toClear[a.r+','+a.c]=1;queue.push(a.r+','+a.c);
+      toClear[b.r+','+b.c]=1;queue.push(b.r+','+b.c);
+      pts=700;score+=pts;comboFx('combo-mega',b.r,b.c,6);banner('GARDEN SHAKER!','#d788c9');sm('GARDEN SHAKER! +'+pts);return true;
+    }
     if(sa==='spore'&&sb==='spore'){
       // Tuned down from full-board wipe to clearing 2 random colors.
       // Still the biggest combo but leaves the board with structure.
@@ -1783,7 +1821,7 @@ window._gameFns.petalmatch = function PM(a){
       if(cell.special==='vine')vineCells++;
       else if(cell.special==='burst')burstCells++;
       else if(cell.special==='spore')sporeCells++;
-      else if(cell.special==='serpent')sporeCells++; // scores at the top (40-point) tier
+      else if(cell.special==='serpent'||cell.special==='strip'||cell.special==='quake')sporeCells++; // top (40-point) tier
       else plainCells++;
       grid[r][c]=null;
     }
@@ -1824,12 +1862,14 @@ window._gameFns.petalmatch = function PM(a){
         if(existing){
           existing.special=sp.special;
           existing.stripeDir=sp.stripeDir||null;
-          if(sp.special==='spore')existing.type=-1;
+          if(sp.special==='spore'||sp.special==='strip'||sp.special==='quake')existing.type=-1;
           existing.spawnAnim=Date.now();
         }
         if(sp.special==='vine'){spawnBonus+=50;sm('VINE WRAPPED!');}
         else if(sp.special==='burst'){spawnBonus+=100;banner('BLOOM BURST!','#c8a84b');}
         else if(sp.special==='spore'){spawnBonus+=200;banner('SPORE CLOUD!','#e8dcc8');}
+        else if(sp.special==='strip'){spawnBonus+=300;banner('CRYSTAL CROSS!','#d788c9');}
+        else if(sp.special==='quake'){spawnBonus+=400;banner('PETALQUAKE!','#c47a7a');}
       }
       for(var ck in det.toClear){var cp=ck.split(',');var _cc=grid[cp[0]][cp[1]];if(_cc&&_cc.type!==-2&&!_cc.clearAt){_cc.clearAt=Date.now();spawnShards(+cp[0],+cp[1]);}}
       setTimeout(function(){
@@ -2712,7 +2752,7 @@ window._gameFns.petalmatch = function PM(a){
                  'ring-corners','ring-plain','ring-ornate',
                  'cover-crack','ice-shatter',
                  'combo-cross','combo-mega','combo-storm','combo-hydra',
-                 'spec-serpent','serpent-trail',
+                 'spec-serpent','serpent-trail','spec-strip','spec-quake',
                  'fx-beam-h','fx-beam-v','fx-plume',
                  'banner-path','banner-orrery','banner-vine','banner-lotus'];
     var loaded = 0;
@@ -2804,6 +2844,10 @@ window._gameFns.petalmatch = function PM(a){
           /* before the spore branch: the serpent is also type -1, and the
              spore test would claim it for spec-wild */
           k = 'spec-serpent';
+        } else if(cell.special === 'strip'){
+          k = 'spec-strip';
+        } else if(cell.special === 'quake'){
+          k = 'spec-quake';
         } else if(cell.special === 'spore' || cell.type === -1){
           k = 'spec-wild';
         } else if(cell.special === 'vine'){
@@ -3086,7 +3130,7 @@ window._gameFns.petalmatch = function PM(a){
         score+=pts;banner('SPORE!','#e8dcc8');sm('SPORE! +'+pts);_play('snap');
         collapseAndRefill();updateHUD();
         setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
-      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||aSpec==='serpent'||bSpec==='vine'||bSpec==='burst'||bSpec==='serpent')){
+      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||aSpec==='serpent'||aSpec==='strip'||aSpec==='quake'||bSpec==='vine'||bSpec==='burst'||bSpec==='serpent'||bSpec==='strip'||bSpec==='quake')){
         var spR=aSpec?swapR:tsR,spC=aSpec?swapC:tsC;
         var toClear2={},pendBP2=[];
         toClear2[spR+','+spC]=1;
