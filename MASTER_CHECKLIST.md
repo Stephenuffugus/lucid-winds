@@ -391,6 +391,29 @@ items are marked here so nobody re-does them.
   brag. Art sheets from the spec doc still slot in later.
 
 ### 🦎 Abduct-a-Chameleon (2D external repo + lost 3D)
+- [x] **2D HUNT "almost impossible to catch the bots, even on easy" — Stephen's
+  Jul 29 playtest, FIXED same day (upstream commit 6903bd1, live on github.io,
+  card ?v=20260729c, sw lw-v23).** All three of his observations were code
+  facts, compounding: stepHunt reused the AI-hunts-player LOCK_TIME table so
+  the hunter's difficulty was INVERTED (EASY demanded 2.4s of continuous
+  contact, HARD only 1.1s); steerBot assigned velocity instantly (true
+  turn-on-a-dime); one flat flee speed (147) through a 26px catch circle.
+  Now: hunt-owned lock table 1.0/1.35/1.7, bot velocity inertia tau
+  .38/.28/.20, flee 106/124/138, hunter catch circle 34px with a 58px hold
+  ring (a sidestep pauses your charge instead of draining it). Hide-mode
+  constants untouched; full suite green (online.js fails identically at clean
+  HEAD here — env flake). Evidence: a HUMAN-MODEL hunter (200ms reaction,
+  coarse re-aim) went 0/4 in 120s before → 3/3 in 20s on EASY after, while
+  still going 0/5 on HARD — the ladder slopes again. test/huntfair.js EASY is
+  a permanent gate in npm run all. ⚠️ Feel is pending Stephen's thumb.
+- [ ] **2D multiplayer Stephen wants WORKING (Jul 29): local via QR now,
+  matchmaking later.** The 1v1 code + local relay are proven; the missing piece
+  is a HOSTED relay. `render.yaml` sits in the repo ready to blueprint-deploy.
+  ⛔ STEPHEN one-time: create a free Render account, New → Blueprint → pick
+  `Stephenuffugus/abduct_a_chameleon`, deploy, send me the wss:// URL. Then I
+  wire it as the default `?mp=` target and add a QR on the host screen that
+  encodes the join link (join code already exists, the QR is just the link in
+  camera form). Matchmaking (auto-pair strangers) parks until player volume.
 - [x] **3D "turn it sideways and nothing happens" — SHIPPED AND PLAYABLE
   2026-07-28 PM (commit `ba570fac`), live at
   `lucidwinds.com/satellites/chameleon-3d/`.** It was fixed in the morning and
@@ -789,9 +812,17 @@ Theme deliberately left open for the designer; every asset is described by funct
   through the real UI). Timed pays no Petals yet: unbounded-score farm vector,
   Stephen's economy call.
 - [ ] **Endless + Daily modes** (Daily makes it directory-eligible)
-- [ ] **New specials** — strip (6), quake (7), and the three nobody else ships:
-  ⭐ serpentine (travels a winding path), large 2×2 piece, box-of-six. Serpentine first,
-  it is the differentiator.
+- [~] **New specials — ⭐ SERPENTINE SHIPPED (commit 7a7d81cb, live PM_BUILD v23,
+  live-verified).** Five of a kind in an S or zigzag; the head becomes a snake
+  that travels a winding 12-15 cell path seeking blockers/dew/gather colours.
+  S/Z pentominoes intercept BEFORE normal resolution (they contain a straight
+  three); W staircases become legal moves that would have bump-backed. Combos:
+  TWIN SERPENTS / HYDRA BLOOM / VINE SERPENT / BLOOM TRAIL. Hint teaches S
+  moves; rules + tutorial row shipped. Evidence: 14/14 real-mouse-event probe,
+  19/19 powerup probe, screenshots eyeballed, balance 1-30 x30 trials before +
+  after — by-kind aggregates within the stated noise floor, sawtooth 19.3→16.7,
+  no retune (bot can't build serpents; ladder still assumes none, same caveat
+  as powerups). STILL OPEN: strip (6), quake (7), large 2x2, box-of-six.
 - [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
   ⛔ No real money, no ads. Tools must help, never be required.
 - [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
