@@ -257,6 +257,58 @@ items are marked here so nobody re-does them.
   a web page cannot open the settings app, told honestly in the card copy).
 
 ### 🖥 Studio-wide / portal
+
+**── Stephen's Jul 29 directive (payments, press, gating, global growth) ──**
+- [x] **Workbench gate SHIPPED (commit db886c09, probe 10/10).** All six
+  in-development games (Impossible Garden, Wild Wardens, Dragon Philosophy,
+  Glyph Forge, Tarot Run, Abduct 3D) now show a professional IN DEVELOPMENT
+  panel instead of launching; tester key unlocks all of them per device (key:
+  ask me or Stephen, djb2-hidden in source); the two locally-hosted ones are
+  also gated in-page via shared /dev-gate.js so direct URLs cannot skip it.
+- [x] **Press kit LIVE at lucidwinds.com/press/ (commit 327d22c1, 200 verified).**
+  Fact sheet, story, honest how-the-games-are-made statement, six pitchable
+  games, screenshots, downloadable marks. ⚠️ Future outreach: send clean URLs
+  (the Jul 24 batch went out with mangled google-redirect links) and pitch
+  GAMES, never "the platform" (Jupiter's one useful note).
+- [x] **Support the Studio LIVE, verified 200 (commit 327d22c1): /support.html + gold portal card
+  + footer links.** Free-help first, crypto tip jar (LW_CREATOR addresses),
+  greenhouse-slots path, Pi Browser hides non-Pi rails (compliance).
+- [~] **Payments audit 2026-07-29 — server side is HEALTHY, the last mile is
+  Stephen's device.** All endpoints probed live with correct auth walls:
+  piApprove/piComplete (Pi), nowCreateInvoice/nowIpn (crypto, HMAC secret
+  proven loaded), stripeCreateCheckout/stripeWebhook (CARD RAIL IS DEPLOYED:
+  $3 Supporter Pack + $5/10/25 gift tiers, server-priced, idempotent — but no
+  client UI references it and STRIPE_SECRET_KEY status unknown). Client web
+  rail is ON by default (LW_WEBPAY_ENABLED true since Jul 03). ⛔ STEPHEN:
+  1) NOWPayments dashboard → IPN callback URL must be
+  https://us-central1-focus-grove-fffa8.cloudfunctions.net/nowIpn,
+  2) one real slot purchase in Pi Browser + one on the web rail,
+  3) decide the card rail (needs a Stripe account key set as a secret; then I
+  wire the Supporter Pack button into /support.html). ⚠️ Functions run Node
+  20 (decommissioned 2026-10-30) — I upgrade + redeploy once firebase login
+  exists here.
+- [x] **Security audit 2026-07-29 — clean where I can see, verified by probe + sweep.** No secrets in the
+  public repo (patterns swept), no .env files, Discord webhook in Secret
+  Manager (after the documented rotation), server-priced catalogs, idempotent
+  fulfillment, earn caps, swFeedback throttled+deduped+budgeted. Known-open by
+  design: repo is public (Hostinger deploys from it), root vault free-form
+  fields (own-vault-only pollution). ⛔ STEPHEN (account layer, the real
+  attack surface): enable 2FA/passkeys on GitHub (a GitHub takeover IS a site
+  takeover), Google, Hostinger, and NOWPayments; keep PATs short-expiry.
+- [x] **International outreach research DONE, doc verified in repo: `marketing/international-outreach.md`.**
+  PH/JP/TW/SEA/LATAM outlets + submission directories + global portals, with
+  the two hard constraints called out: CrazyGames/Poki class portals REQUIRE
+  their ad SDK (collides with the no-ads rule — ⛔ Stephen's call + ambassador
+  list) and China is technically dead for us (Firebase blocked). ⭐ Best
+  no-conflict next move: itch.io studio page + ambassador uploads.
+- [x] **Jupiter + Hoka outcomes recorded, verified against the actual Gmail threads.** Jupiter (also answers IndieGamesPlus):
+  hard anti-AI, "platform not a game" — no further replies, spend zero sends
+  on that circle. Hoka: pay-for-placement menu, no prices without a budget —
+  declined by Stephen; their one good idea (press kit) is shipped.
+- [ ] **Bubblenaut: level structure + diversity pass** — Stephen 2026-07-29:
+  "fun just needs better level structure and diversity." My next build item.
+  Also: Stephen okayed the names — Bubblenaut is no longer a working title
+  (drop the buildstamp flag in this pass).
 - [x] **Feedback button dismissable DONE, verified (rode into e6c11ca7; cache rule
   d36adfaa).** Investigated first: the only FAB floating OVER gameplay is the
   portal's (shells use a sticky-header button; the LW app retired its floater in
