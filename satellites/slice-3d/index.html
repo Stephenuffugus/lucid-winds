@@ -155,15 +155,21 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div></div>
 
   <!-- HOW -->
+  <!-- Stephen 7/28: "there should have clear instructions for how free fall and the
+       normal and wall climb play because the normal and wall climb play differently
+       than the freefall." One flat list could not do that, so the rules that are
+       SHARED sit at the top and each mode gets its own headed block underneath. -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Tap anywhere to flip.</b> Every tap hops the knife forward with a spin. Hold to keep flipping. Resting on the ground is fine, tap to get moving again.</div></div>
-    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">Super Slice Wall Climb</b> plays by the normal rules: tap to flip up the face and stick the blade high. Or switch to <b style="color:#3ecc8e">Be the Blade</b> on the climb screen: hold and circle your finger and the knife spins with it, and handle bounces off the wall ride your spin upward. Glancing blade touches scrape off; only a committed blade angle sticks.</div></div>
-    <div class="helprow"><div class="hi">2</div><div><b style="color:var(--rose)">Slice everything soft.</b> Fruit splits open where the blade passes and spills its bright insides. Combos grow your score.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b>Brown wood is solid.</b> Hop over walls, land on crates, and bounce off the sides. Mushroom caps are springy. Pink crystals knock you back and break the combo.</div></div>
-    <div class="helprow"><div class="hi">4</div><div><b style="color:var(--gold)">The score wall</b> ends the run. Stick it HIGH and <b>blade first</b>: the higher your blade lands, the bigger the multiplier on everything you cut. Handle hits bounce you back for one more try.</div></div>
-    <div class="helprow"><div class="hi">5</div><div><b style="color:#8fd8f2">Freefall mode</b> drops you down a deep pit. Hold the LEFT or RIGHT side of the screen to drift that way and flip the knife. The walls bounce you back and forth.</div></div>
-    <div class="helprow"><div class="hi">6</div><div><b style="color:var(--rose)">Aim the blade at fruit</b> and it cuts. But keep the <b>handle</b> toward the walls: <b style="color:#ff6a5a">touch your blade to a wall and it sticks, and the dive is over.</b> Land <b>blade down</b> on the bullseye floor to finish, closer to the center for a bigger multiplier.</div></div>
+
+    <div class="helprow"><div class="hi">&#9679;</div><div><b>The part every mode shares.</b> Tap anywhere to flip the knife with a spin, and hold to keep flipping. <b style="color:var(--rose)">The blade cuts, the handle bonks.</b> Fruit splits open where the blade passes and pays a combo, while a handle-first hit just knocks you about and drops the combo.</div></div>
+
+    <div class="helprow"><div class="hi">&#9654;</div><div><b style="color:var(--gold)">SUPER SLICE 3D, the normal run.</b> You travel to the RIGHT along the ground. Brown wood is solid: hop walls, land on crates, bounce off mushroom caps. <b style="color:#ff8ac2">Pink crystals end the run on contact</b>, so treat them as walls, not bumps. The run finishes at the score wall: stick it HIGH and blade first for the multiplier.</div></div>
+
+    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall with no ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one endless wall and the height you stick at IS your score. The bands keep going, so nothing but your throw limits you. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
+
+    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
+
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -965,7 +971,7 @@ function buildFreefall(lvl){
   // structure bag down the shaft; everything mounted, nothing floats
   var y=-4;
   function bagFF(){
-    var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack'];
+    var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack','stack'];
     if(lvl>=2)bag.push('swing','shroom','bumper','stack');
     if(lvl>=3)bag.push('crystal','bumper','stack','wasp');
     if(lvl>=4)bag.push('plank','gate','goldf');
@@ -1012,8 +1018,11 @@ function buildFreefall(lvl){
         items.push(fruitAt(hx, y-hl, fb, 'vine', y));
       }
     } else if(seg==='stack'){
+      /* Stephen 7/28: "on free fall we want way larger stacks of the brown blocks
+         that open with color. people love those." Was 3-6 slabs; now 7-13, so a
+         stack is a real column you carve down through instead of a speed bump. */
       var skx=(rng()*2-1)*(SW-3.5);
-      var skn=3+Math.floor(rng()*4);
+      var skn=7+Math.floor(rng()*7);
       stackAt(skx, y, skn);
       y-=skn*1.32+3.5;
       continue;
@@ -1479,6 +1488,23 @@ function sliceFruit(it){
 function hitCrystal(cr){
   if(cr.hitT && G.t-cr.hitT<1)return;
   cr.hitT=G.t;
+  /* Penny, via Stephen 7/28: "on the normal, hitting pink spikes doesnt end your
+     run immediately." She is right — a spike you can shrug off does not read as a
+     hazard, it reads as a bug. In the NORMAL run the crystal now ends it there and
+     then. Freefall keeps the shove: down there the crystal is a course feature you
+     are meant to thread past at speed, and killing on contact would gut the dive. */
+  if(G.mode!=='ff' && !G.done){
+    G.vx=(G.x<cr.x+1.1)?-5:5; G.vy=6; G.w=(G.w||0)+8;
+    G.grounded=false; G.combo=0;
+    $('h-combo').classList.remove('on');
+    G.done=true; G.failed=true; G.doneT=0; G.stuckY=G.y;
+    G.shake=Math.max(G.shake,0.5);
+    SFX.fail();
+    spawnSparks(cr.x, cr.y+2, CRYSTAL, 18);
+    var mbs=$('multburst');
+    if(mbs){ mbs.textContent='SPIKED!'; mbs.style.color='#ff8ac2'; mbs.classList.remove('go'); void mbs.offsetWidth; mbs.classList.add('go'); }
+    return;
+  }
   G.vx=(G.x<cr.x+1.1)?-7:7;
   // journey: knocked up and back; freefall: shoved DOWN and away (an upward
   // knock in a falling game is a free altitude refill = hover exploit)

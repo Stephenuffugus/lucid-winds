@@ -48,20 +48,40 @@ Last updated: 2026-07-26
 
 ## 🚨 FROM STEPHEN 2026-07-28 (chat, second batch) — merged before work started
 
-- [ ] **Super Slice Free Fall needs TWO versions.** Stephen: "super slice free fall
-  needs to have 2 versions, the levels, and the never ending." The `?mode=ff` card
-  shipped earlier today boots the level ladder only; the endless drop needs its own
-  front door too.
-- [ ] **Free fall: way bigger stacks of the brown blocks that open with colour.**
-  Stephen: "on free fall we want way larger stacks of the brown blocks that open
-  with color. people love those."
-- [ ] **PENNY BUG: pink spikes do not end the run immediately in the NORMAL game.**
-  Stephen relaying Penny: "on the normal, hitting pink spikes doesnt end your run
-  immediately." A hazard that does not kill on contact reads as broken.
-- [ ] **Per-mode instructions.** Stephen: "there should have clear instructions for
-  how free fall and the normal and wall climb play because the normal and wall
-  climb play differently than the freefall." One How screen covering three modes
-  that do not share rules is not enough.
+- [x] **Free Fall has TWO cards 2026-07-28.** `?mode=ff` boots the authored level
+  ladder, `?mode=ff&endless=1` drops straight into the never-ending fall, and both
+  now have their own portal card off one shared build (the same pattern as Wall
+  Climb). Verified: both URLs boot into the fall with 0 JS errors, 12 portal blocks
+  parse. ⚠️ "Super Slice Endless Fall" is a descriptive name, not a ruling —
+  rename it whenever you like.
+- [x] **Free Fall slab stacks roughly doubled 2026-07-28.** They were 3-6 slabs
+  (`skn=3+rng()*4`); now **7-13**, so a stack is a column you carve down through
+  rather than a speed bump. Also added a third `stack` to the base segment bag, so
+  they turn up more often as well as running deeper. Verified in the endless drop:
+  mid-cut through a stack with the colour bursts firing and +20 chaining, 0 JS
+  errors, load time unchanged.
+- [x] **PENNY'S BUG FIXED 2026-07-28: pink crystals now end the normal run on
+  contact.** She was right and the code agreed with her: `hitCrystal` only set
+  `G.vx/G.vy` and cleared the combo, and the How screen literally said "Pink
+  crystals knock you back and break the combo". A hazard you can shrug off reads as
+  broken. In the normal run it now sets `done/failed`, plays the fail sting, throws
+  18 sparks and pops **SPIKED!**.
+  ⚠️ Deliberately NOT changed in Free Fall: down there the crystal is a course
+  feature you thread past at speed and killing on contact would gut the dive. That
+  difference is now written into the instructions.
+- [x] **Per-mode instructions written 2026-07-28.** The How screen was a flat
+  1-to-6 list that mixed all three modes together. It now opens with the rules that
+  are genuinely SHARED (tap to flip, blade cuts / handle bonks) and then gives each
+  mode its own headed, colour-coded block: **SUPER SLICE 3D** (travel right, wood is
+  solid, pink crystals END the run, finish on the score wall), **WALL CLIMB** (no
+  course, straight up one endless wall, height IS the score, plus Be the Blade), and
+  **FREE FALL** (falling not travelling, hold a side of the screen to drift, carve
+  the slab stacks, handle to the walls or the blade sticks you, crystals shove
+  instead of kill, two versions).
+  Verified: reads clean on one screen at 412x915 with Got it visible, 4 blocks
+  parse, and **0 em-dashes** in the new copy (I wrote 6 in the first draft and
+  swept them; the auditor only reads the landing screen, so that one was caught by
+  eye).
 - [ ] **Chameleon games built out — colour + real multiplayer.** Stephen: "i would
   love for the chameleon games to be built more, flavored with lots more color and
   made into fully playable fun multiplayer games."
