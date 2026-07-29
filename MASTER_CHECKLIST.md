@@ -69,6 +69,12 @@ Last updated: 2026-07-26
   ⚠️ Deliberately NOT changed in Free Fall: down there the crystal is a course
   feature you thread past at speed and killing on contact would gut the dive. That
   difference is now written into the instructions.
+  **Verified with the game's own `?dev=1` hook**, flying the knife into a real
+  crystal in a real level: normal run comes back `done:true, failed:true`; the same
+  collision in freefall comes back `done:false, failed:false`. 0 JS errors.
+  (First attempt failed and the probe was wrong, not the fix — crystal contact is
+  gated on `speed>4` inside the slicing sweep, so a knife parked on a crystal never
+  triggers. Worth remembering before calling that collision broken.)
 - [x] **Per-mode instructions written 2026-07-28.** The How screen was a flat
   1-to-6 list that mixed all three modes together. It now opens with the rules that
   are genuinely SHARED (tap to flip, blade cuts / handle bonks) and then gives each
