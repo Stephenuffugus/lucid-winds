@@ -403,8 +403,22 @@ items are marked here so nobody re-does them.
   now return **200**, the probe's "no 404s on game assets" check passes, 0 console
   errors, and every orientation check still passes. Also added upstream as
   `handoff-chameleon/0003-*.patch` so the canonical repo gets it too.
-- [ ] **2D: capture still not really possible** — refine being caught, add more
-  abilities, MANY more UFOs searching. May stay single-player (his words), BUT:
+- [x] **2D: capture reworked, fleets grown, 2 new abilities — SHIPPED (commit
+  c881a065), live at `/satellites/chameleon-2d/?v=20260729`.** Four separate
+  mechanisms each made capture impossible (track < walk speed; steer()'s
+  arrival damping made a chasing ship SLOWER than a walker inside 48px; charge
+  drained in the 26-64px ring; one tree cell erased the whole pursuit). All
+  four fixed: the beam grips, pursuit skips arrive-damping + turns 2x, charge
+  holds while locked and scales the break ring, chase fades slow, blatant
+  signals escalate 2x. Fleets 2/4/6 (+1 big maps, heat cap 8), separation
+  always on. New: TONGUE (zip to cover, the late-beam escape) + BURROW (sink
+  into soft ground, eyes only). Evidence: new 19-assertion capture acceptance
+  suite (test/capture.js upstream patch) — a fleeing runner abducted in ~7s,
+  freeze+match under the beam still escapes — plus the repo's full 14-suite
+  harness green incl. online 1v1 through a real local relay. ⚠️ FORK AGAIN:
+  the PAT 401'd today (worked yesterday); patches in `handoff-chameleon-2d/`,
+  un-fork steps in `satellites/chameleon-2d/VENDORED.md`. ⛔ STEPHEN ACTION:
+  fresh 7-day PAT (`repo` scope) to un-fork. Feel pass pending his phone.
 - [~] **Jessie: online 1v1 broken — DIAGNOSED end to end (2026-07-27), blocked on
   a Render deploy.** The relay server was NEVER DEPLOYED: game falls back to
   wss://stephenuffugus.github.io/ws and GitHub Pages rejects WebSocket upgrades
@@ -415,8 +429,15 @@ items are marked here so nobody re-does them.
   The one-line portal ?mp= edit is pre-written in the 2026-07-27 sweep report
   (do NOT apply before the relay is live). Free-tier caveat: service sleeps when
   idle, first versus after a quiet period may need one ~30s retry.
-- [ ] **River line map (Jessie)**: if you're the colour of the water you should be
-  able to pass under the bridge unseen — camouflage rule gap on that map.
+- [x] **River line map (Jessie) — bridges are REAL now (same commit c881a065).**
+  Root cause: the two "bridges" were concrete causeway TERRAIN that dammed the
+  river — there was no under-the-bridge to swim. Both strips re-tiled to water
+  with a new `bridge` cover type (40 deck cells): blocks LoS including the
+  swimmer's own cell, deck draws OVER the player (your eyes glint through),
+  editor + validator know the type, channel connectivity stitched. Proven in
+  test/capture.js scenario C: hunter 4 tiles away sees NOTHING under the deck
+  (maxSusp 0), same swimmer in open water hits suspicion 1.0. Her rule holds
+  end to end: swim the water line, duck the deck, cross unseen.
 - [x] **3D version LOCATED, verified (2026-07-27 live probes).** The live 3D build
   is the repo ROOT abduct-3d.html (HTTP 200, 111,207 bytes, title "ABDUCTEE —
   Multiplayer") — exactly what the portal 3D card already points at. The
