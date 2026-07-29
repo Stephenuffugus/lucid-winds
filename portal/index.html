@@ -991,7 +991,7 @@ function card(g, isFeat){
     return '<button type="button" class="card soon" onclick="swsComingSoon(\''+
       String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+inner+'</button>';
   }
-  var attr = ' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : '');
+  var attr = ' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : '') + (beta ? ' data-indev="1"' : '');
   // Satellites that ship their OWN music get flagged so the jukebox knows to
   // step aside (pause studio audio) when they open — otherwise both play at
   // once. The click handler reads this data attr. (2026-07-02)
@@ -1012,6 +1012,51 @@ function swsComingSoon(name){
   t._hideT = setTimeout(function(){ t.style.opacity='0'; }, 3200);
 }
 window.swsComingSoon = swsComingSoon;
+
+/* ── IN DEVELOPMENT gate ─────────────────────────────────────────────────
+   Workbench games stay visible (never removed — house law) but launching
+   needs the tester key, once per device. djb2 so the key is not a grep away;
+   this is curation, not security. */
+function swsDevOK(){ try{ return localStorage.getItem('sws_dev_ok')==='1'; }catch(e){ return false; } }
+function swsDevGate(card){
+  var old = document.getElementById('sws-devgate'); if(old) old.parentNode.removeChild(old);
+  var nmEl = card && card.querySelector ? card.querySelector('.nm') : null;
+  var nm = nmEl ? nmEl.textContent : 'This game';
+  var w = document.createElement('div'); w.id='sws-devgate';
+  w.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(6,10,6,.82);display:flex;align-items:center;justify-content:center;padding:20px;';
+  w.innerHTML =
+    '<div style="max-width:340px;width:100%;background:#101510;border:1px solid var(--sun,#c8a84b);border-radius:14px;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);">'+
+    '<div style="font-size:1.9rem;">🛠️</div>'+
+    '<div style="color:var(--sun,#c8a84b);font-weight:700;letter-spacing:1px;margin:6px 0 2px;">IN DEVELOPMENT</div>'+
+    '<div style="color:#e8dcc8;font-size:0.95rem;line-height:1.45;margin-bottom:14px;"><b>'+nm+'</b> is still on the studio workbench. It will open for everyone when it is ready.</div>'+
+    '<input id="sws-devkey" type="text" autocomplete="off" autocapitalize="none" placeholder="Tester key" style="width:100%;box-sizing:border-box;background:#0a0d0a;border:1px solid #3a4436;border-radius:9px;color:#e8dcc8;padding:12px;font-size:1rem;text-align:center;">'+
+    '<div style="display:flex;gap:10px;margin-top:12px;">'+
+    '<button id="sws-devback" style="flex:1;min-height:48px;background:transparent;border:1px solid #3a4436;border-radius:9px;color:#cfd8cf;font-size:0.95rem;">Back to the arcade</button>'+
+    '<button id="sws-devgo" style="flex:1;min-height:48px;background:var(--sun,#c8a84b);border:none;border-radius:9px;color:#241c06;font-weight:700;font-size:0.95rem;">Unlock</button>'+
+    '</div></div>';
+  document.body.appendChild(w);
+  function shut(){ if(w.parentNode) w.parentNode.removeChild(w); }
+  w.addEventListener('click', function(ev){ if(ev.target===w) shut(); });
+  document.getElementById('sws-devback').addEventListener('click', shut);
+  function djb2(s){ var h=5381; for(var i=0;i<s.length;i++){ h=(((h*33)>>>0)+s.charCodeAt(i))>>>0; } return h>>>0; }
+  function tryKey(){
+    var inp = document.getElementById('sws-devkey');
+    var v = (inp.value||'').trim().toLowerCase();
+    if(djb2(v)===3604640980){
+      try{ localStorage.setItem('sws_dev_ok','1'); }catch(e){}
+      shut();
+      swsComingSoon('Workbench unlocked — every in-development game');
+      if(card && card.click) setTimeout(function(){ card.click(); }, 250);
+    } else {
+      inp.style.borderColor='#c46a5a';
+      inp.value='';
+      inp.placeholder='Not that key';
+    }
+  }
+  document.getElementById('sws-devgo').addEventListener('click', tryKey);
+  document.getElementById('sws-devkey').addEventListener('keydown', function(ev){ if(ev.key==='Enter') tryKey(); });
+}
+window.swsDevOK = swsDevOK; window.swsDevGate = swsDevGate;
 
 // Hub card (Lucid Winds only — large hero with seed-art thumbnail) renders
 // at the top. The rest of FEATURED (the studio satellites — the "newest"
@@ -1769,6 +1814,16 @@ document.addEventListener('click', function(e){
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if(!a) return;
+    /* IN DEVELOPMENT gate (Stephen 2026-07-29: unfinished games must not be
+       playable by the public — a first impression is spent once). Runs BEFORE
+       the _blank early-return, because four of the six workbench games are
+       external new-tab links. Testers unlock every workbench game at once
+       with the tester key; it persists on the device. Curation, not
+       security — the games are unlisted doors, not secrets. */
+    if(a.getAttribute('data-indev') === '1' && !swsDevOK()){
+      e.preventDefault(); e.stopPropagation();
+      swsDevGate(a); return;
+    }
     if(a.target === '_blank') return;                       // new-tab apps (Pom Pond etc.)
     var href = a.getAttribute('href') || '';
     var playM = href.match(/\/play\/([^\/?#]+)\.html/);     // internal LW game
@@ -1837,7 +1892,7 @@ document.addEventListener('click', function(e){
            register() with the same URL is a no-op, with a new one it updates,
            so calling it unconditionally is safe and re-points old installs.
            Bump ?v= in lockstep with CACHE_VERSION in sw.js. */
-        navigator.serviceWorker.register('/sw.js?v=23').catch(function () {});
+        navigator.serviceWorker.register('/sw.js?v=24').catch(function () {});
       } catch (e) {}
     });
   }
