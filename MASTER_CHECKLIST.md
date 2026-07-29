@@ -924,7 +924,11 @@ Theme deliberately left open for the designer; every asset is described by funct
   2x3/3x2 block → box; hex-diamond burst + 3-move residue drawn under pieces
   with the shipped hex-ring art; matches on residue bloom one rank higher.
   6/6 real-page probe + 19/19 gate. Eight of doc 01's nine specials are live.
-  STILL OPEN: the 2x2 BIG piece only (multi-cell entity, own session).
+  ⚠️ Zoom-verified on board: the box piece fills its cell; the residue renders
+  under pieces per spec but reads SUBTLE (flowers overfill their cells, so it
+  shows as purple fringes) — if Stephen's eye wants it louder, bump its draw
+  box past CELL or layer a low-alpha pass over the piece. STILL OPEN: the 2x2
+  BIG piece only (multi-cell entity, own session).
 - [ ] **Economy** — coins earned by play, pre-level boosters, in-level tools, cosmetics.
   ⛔ No real money, no ads. Tools must help, never be required.
 - [ ] **Competitive layer** — leaderboards, achievements, streaks, share cards.
