@@ -88,9 +88,26 @@ Last updated: 2026-07-26
   parse, and **0 em-dashes** in the new copy (I wrote 6 in the first draft and
   swept them; the auditor only reads the landing screen, so that one was caught by
   eye).
-- [ ] **Chameleon games built out — colour + real multiplayer.** Stephen: "i would
-  love for the chameleon games to be built more, flavored with lots more color and
-  made into fully playable fun multiplayer games."
+- [~] **Chameleon buildout — COLOUR PASS DONE 2026-07-28, step one of several.**
+  Stephen: "flavored with lots more color". The world was sixteen shades of the
+  same dark slate, in a game whose entire mechanic is telling one surface from
+  another. Three changes, all values, no mechanic touched (camo matching reads
+  straight off `TERRAIN`, so it stays self-consistent):
+  · **TERRAIN** keeps every key, but grass is green, lava is hot, sand is warm,
+    ice is cold, crystal is violet — grounds you can actually choose between.
+  · **The sky** was one flat near-black colour, which is most of why everything
+    read grey. Now a gradient dome (deep indigo → violet → warm horizon) with the
+    fog recoloured to melt into it.
+  · **Lighting** was a cold hemisphere plus a cold moon. Now a warm sky bounce
+    over a violet ground bounce plus a low warm key, so surfaces separate by HUE
+    and not only brightness.
+  Verified: module parses, game boots and plays with 0 JS errors. Before/after at
+  `satellites/chameleon-3d/art-drop/colour_pass_before_after.jpg`. Carried upstream
+  as `handoff-chameleon/0005-*.patch`.
+  ⏭ STILL OPEN in this ask: "fully playable fun multiplayer". The hider head start
+  landed earlier today; next candidates are round feedback (who caught whom, a real
+  scoreboard), more than one map in rotation, and a reason to keep playing between
+  rounds. Those are design calls as much as code — say which matters most.
 - [x] **Chameleon 3D hider head start SHIPPED 2026-07-28, proven with two real
   players.** Rounds used to start with everyone loose at once, so a seeker could
   watch the chameleons pick their spots — that is not hide and seek, it is chase.
