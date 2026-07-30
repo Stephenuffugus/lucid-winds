@@ -986,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.7';
+var BUILD='v7.8';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1747,20 +1747,33 @@ var ADV_LEN=16, ADV_CHAP=6;
 function advLevelOfRow(r){ return Math.floor(Math.max(0,r)/ADV_LEN)+1; }
 function advZoneIdx(n){ return Math.floor((n-1)/ADV_CHAP) % ZONES.length; }
 function advChapterName(n){ return ZONES[advZoneIdx(n)].name; }
-function advDiff(n){ var d=Math.min(9.5, (n-1)*0.4);           // level 1 = easiest; ~full by 24
-  if(n>30) d=Math.min(11.2, 9.5+(n-30)*0.05);                    // the long game keeps sharpening
-  return d; }
-function advEase(rlv){ return rlv?Math.max(0, 1-(rlv-1)*0.05):0; } // 1 at lvl1 -> 0 by lvl21 (eases density/speed)
-/* special levels: recurring flavors keyed by level number — variety forever */
-function advSpecial(n){ if(n<6) return null;
-  if(n%12===0) return 'storm';
-  if(n%11===6) return 'blackout';
-  if(n%8===5)  return 'sound';
-  if(n%8===2)  return 'railyard';
-  if(n%10===7) return 'rushhour';
-  if(n%9===4)  return 'steamnight';
-  if(n%13===9) return 'gullswarm';
-  return null; }
+/* ⛔ THE CURVE IS A LONG CLIMB, NOT A RAMP TO A WALL (Stephen 2026-07-30:
+   "i literally spent a couple days stuck on level 23... i want the game to get
+   really hard but lets give them something to work towards and not just rocket
+   it into high gear"). The old curve hit 9.5 of a possible 11.5 by level 25 and
+   then had nothing left to give: measured, level 26 onward was one flat
+   difficulty with only per-row luck moving, so a player who reached 30 had seen
+   everything the game would ever show. This is a smooth approach to the ceiling
+   that never plateaus and never overshoots: gentle for the first ten levels,
+   real pressure by forty, the deep end past seventy, and still inching up at a
+   hundred and fifty. Level 23 now reads 5.2 where it used to read 8.8. */
+function advDiff(n){ return 11.5*(1-Math.exp(-n/38)); }
+/* the easing lever stretches with it (was spent by level 21, which is why the
+   mid game had no gentleness left to spend): eases density and speed */
+function advEase(rlv){ return rlv?Math.max(0, 1-(rlv-1)*0.025):0; } // 1 at lvl1 -> 0 by lvl41
+/* Special levels on an exact rhythm (Stephen 2026-07-30: "what if there was a
+   special kind of level every 5 or 10 levels?"). This used to be seven
+   overlapping modulos, which MEASURED out at 22 specials in the first 40
+   levels: a special was the norm, so none of them felt special, and a player
+   could never learn the pattern. Now every 5th level is a twist and every 10th
+   is one of the big landmark flavours. Nothing else is special. The two cycles
+   are different lengths, so the full pattern only repeats every 60 levels. */
+var SP10=['railyard','storm','sound','blackout'];   // landmarks, every 10th
+var SP5 =['rushhour','steamnight','gullswarm'];     // lighter twists, the other 5s
+function advSpecial(n){
+  if(n<5 || n%5!==0) return null;
+  if(n%10===0) return SP10[(n/10-1)%SP10.length];
+  return SP5[((n-5)/10)%SP5.length]; }
 var SPNAME={ storm:'STORM WATCH', sound:'FERRY CROSSING', railyard:'RAIL YARD',
   rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT', blackout:'BLACKOUT', gullswarm:'GULL SWARM' };
 /* ===== ⛔⛔ THE THREE STARS — GOALS COME FROM THE LEVEL, NOT FROM A CURVE =====
@@ -1812,7 +1825,26 @@ function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r))
   if(G&&G.mode==='zen') return Math.min(3.2, r/70);
   var d=Math.min(9, r/26); if(r>260) d=Math.min(11.5, 9+(r-260)/140);   // the deep end keeps deepening
   return d; }
+/* ⛔⛔ EVERY ADVENTURE LEVEL IS A FIXED COURSE (Stephen 2026-07-30: "having it
+   randomized each time you start a level feels like a rip off. each level needs
+   to be the same"). Adventure seeded its course stream from Date.now(), so
+   level 23 was a DIFFERENT level on every attempt and there was nothing a
+   player could learn or practise. The band machine already resets on every
+   level line, so re-seeding the course stream there makes level N byte
+   identical however you arrive: retry after a death, level select, or hopping
+   up from the level below.
+   ⛔ Only the COURSE stream moves. G.rng (clock driven: gulls, weather) stays
+   live so a run still feels alive, and the Daily is its own mode with its own
+   seeding, so no Daily course is touched by this. See the two-stream rule.
+   ⛔ The re-seed sits on the level's FIRST CONTENT row, not on the level line
+   itself: the line row draws its feast gates only when it is a finish and not
+   a spawn point, so seeding there left level N depending on whether the player
+   spawned on the line or hopped onto it (measured: retrying level 6 and
+   arriving at level 6 gave different courses). The gates belong to the level
+   below; the content rows above them are the level. */
+function levelSeed(n){ return ((n*2654435761)>>>0)^0x51CE; }
 function makeLane(r){
+  if(G.mode==='adventure' && r>0 && (r%ADV_LEN)===1) G.lrng=mkRng(levelSeed(advLevelOfRow(r)));
   var rng=G.lrng, d=diffAt(r), L={ r:r, ents:[] };
   // onboarding: first 3 rows always safe & calm
   if(r<3){ L.type='safe'; L.bank=(r===0); L.blocked={}; return L; }
@@ -5078,6 +5110,7 @@ if(/[?&]shtest=1/.test(location.search)){
     /* the real collision helpers, so a test measures the GAME and never a copy of it */
     padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
     advDiff:advDiff, advEase:advEase, diffAt:diffAt, lane:function(r){ return G.lanes[r]; },
+    special:advSpecial, levelSeed:levelSeed, spNames:SPNAME,
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
