@@ -1547,6 +1547,12 @@ document.addEventListener('click', function(e){
   // player is staring at the black screen, and we return them to the portal.
   var satLoads = 0;
   var recoverTimer = null;
+  /* Multi-page games (Litter Bug) post {sws:'ready'} at parse time, which can
+     land BEFORE our iframe onload arms the recovery timer — the ready cleared
+     nothing and the timer then closed a perfectly healthy page (Stephen's
+     "the trial crashed me back to the arcade", 7/30). Remember the last
+     ready; a fresh one at arm time means the page already declared alive. */
+  var lastReadyAt = 0;
   function clearRecover(){ if(recoverTimer){ clearTimeout(recoverTimer); recoverTimer = null; } }
   // Guards the close path: the srcdoc back link can emit sws:close twice
   // (inline onclick fallback + shell.js's listener). Without this, two
@@ -1779,7 +1785,9 @@ document.addEventListener('click', function(e){
         satLoads++;
         if(satLoads > 1){
           clearRecover();
-          recoverTimer = setTimeout(function(){ closing = false; requestClose(); }, 1600);
+          if(Date.now() - lastReadyAt > 4000){
+            recoverTimer = setTimeout(function(){ closing = false; requestClose(); }, 1600);
+          }
         }
       }
       try{
@@ -1860,7 +1868,7 @@ document.addEventListener('click', function(e){
   window.addEventListener('message', function(e){
     if(!e.data) return;
     if(e.data.sws === 'retryGame'){ if(srcdocOpts){ var ro=srcdocOpts; openGame({ srcdoc: buildShellDoc(ro.shellId, ro.shellName, 'x'+Date.now()%1000), shellId: ro.shellId, shellName: ro.shellName, title: ro.title }); } return; }
-    if(e.data.sws === 'ready'){ srcdocReady = true; clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked; srcdoc watchdog keeps running — the shell can be alive while the game module died
+    if(e.data.sws === 'ready'){ srcdocReady = true; lastReadyAt = Date.now(); clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked; srcdoc watchdog keeps running — the shell can be alive while the game module died
       // Hand the game our current music state so a cooperating game mutes its
       // own soundtrack when the player is on studio music (and unmutes when
       // they hand audio back to the game).
