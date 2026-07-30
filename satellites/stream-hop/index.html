@@ -4533,6 +4533,12 @@ function boot(){
   tap('sup-goacct', function(){ paintAccount(); show('s-account'); sfx('ui'); });
   tap('mus-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
   tap('bin-sup', function(){ SUP.status(''); SUP.render(); show('s-support'); });
+  /* ⛔ Steam: the player already paid for the game, and the build is not allowed
+     to show them a way to pay us again. So the Supporter Pack ships WITH it.
+     Granting beats hiding: hiding would lock the pack costumes and the
+     soundtrack away forever behind an upsell the Steam build never draws.
+     Quiet, so a fresh install does not open on a reveal card. */
+  if(STEAM_BUILD && !supporterPack()){ try{ SUP.grant(true); }catch(e){} }
   SUP.render();
   setTimeout(SUP.hydrate, 2600);   // after Sunbeam.init has had a chance to resolve
   try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth'){ SUP.hydrate();
@@ -4875,7 +4881,12 @@ function tryInstall(){
    already honor the same localStorage flag. Never gameplay power, only cosmetics. */
 function supporterPack(){ try{ return localStorage.getItem('sw_supporter')==='1'; }catch(e){ return false; } }
 var ITCH_BUILD=(function(){ try{ return window.__ITCH_BUILD===true; }catch(e){ return false; } })();
-var STRIPE_ON=!ITCH_BUILD;   /* card checkout — off in the itch build (itch owns that rail); on everywhere else */
+var STEAM_BUILD=(function(){ try{ return window.__STEAM_BUILD===true; }catch(e){ return false; } })();
+/* ⛔ A storefront build must show NO payment surface of ours. itch and Steam both
+   forbid taking money outside their rail, so every buy, donate and upsell hides.
+   On Steam the pack is granted instead of hidden — see boot(). */
+var STORE_BUILD=ITCH_BUILD||STEAM_BUILD;
+var STRIPE_ON=!STORE_BUILD;   /* card checkout — off in storefront builds (they own that rail); on everywhere else */
 var SUP=(function(){
   var watching=null;
   function fbApp(){ try{ if(window.firebase) return firebase.app('sunbeam-sdk'); }catch(e){} return null; }
@@ -4987,7 +4998,7 @@ var SUP=(function(){
   function render(){ var sup=supporterPack(), s=snap();
     var au=$('sup-auth'), bw=$('sup-buywrap'), th=$('sup-thanks');
     if(au)au.style.display=(!sup&&!s.signedIn)?'':'none';
-    if(bw)bw.style.display=(!ITCH_BUILD&&!sup&&s.signedIn)?'':'none';
+    if(bw)bw.style.display=(!STORE_BUILD&&!sup&&s.signedIn)?'':'none';
     if(th)th.style.display=sup?'':'none';
     var sc=$('sup-card'); if(sc)sc.style.display=STRIPE_ON?'':'none';
     var cb=$('sup-buy'); if(cb&&STRIPE_ON){ cb.classList.remove('primary'); cb.classList.add('sm'); cb.innerHTML='Or pay with crypto · $3'; }
@@ -5000,10 +5011,14 @@ var SUP=(function(){
     if(ac){ var acs=ac.querySelector('span')||ac;
       acs.textContent = s.signedIn ? '✓ Signed in' : 'Sign in';
       ac.classList.toggle('in', !!s.signedIn); }
+    /* ⛔ Steam: cloud sync is short circuited in the desktop build, so a Sign in
+       button there is a door with no room behind it. Hide it rather than ship a
+       button that fails. Everything on Steam lives on the machine. */
+    if(STEAM_BUILD&&ac)ac.style.display='none';
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
-    if(ITCH_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
-    var ms=$('mus-sup'); if(ms)ms.style.display=(sup||ITCH_BUILD)?'none':'';
-    var bs=$('bin-sup'); if(bs){ bs.style.display=(sup||ITCH_BUILD)?'none':'';
+    if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
+    var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';
+    var bs=$('bin-sup'); if(bs){ bs.style.display=(sup||STORE_BUILD)?'none':'';
       /* ⛔ the pack copy QUOTES the list — packCount() is the single source of truth, so
          the promise can never drift from what PACK_COSTUMES actually grants */
       bs.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:34px;height:34px">'

@@ -24,6 +24,13 @@ Each rewrite happens in the COPY, never in the canonical game.
    short circuited to a rejection, which callers already treat as offline.
    Earning still works. It just stays on the machine.
 
+4. **Commerce.** `window.__STEAM_BUILD=true` is injected as the first script in
+   the head. The game reads it into `STORE_BUILD` (the same lever the itch build
+   uses) and hides every payment surface, hides the Sign in button since there
+   is no cloud here, and grants the Supporter Pack outright. vendor.sh asserts
+   the flag exists in the game and lands before the game reads it, because an
+   earlier version wrote a flag nothing read and the strip silently did nothing.
+
 Also dropped: the service worker registration (a desktop app caches nothing
 useful and the splash hang bug class is not worth inheriting) and the web
 manifest tag (no install flow, and it only produced a missing file error).

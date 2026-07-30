@@ -37,11 +37,7 @@ s = s.replace('src="/sunbeam-sdk.js', 'src="sunbeam-sdk.js')
 #    the splash-hang class of bug is not worth inheriting.
 s = re.sub(r'navigator\.serviceWorker\.register\([^)]*\)', 'Promise.resolve({scope:"desktop"})', s)
 
-# 3) Steam owns commerce. The supporter pack and every tip route are stripped
-#    from the desktop build rather than left pointing at a web checkout.
-s = s.replace('<!--STEAM_STRIP_START-->', '').replace('<!--STEAM_STRIP_END-->', '')
-
-# 3b) the web manifest is a PWA install thing. A desktop app has no install
+# 3) the web manifest is a PWA install thing. A desktop app has no install
 #     flow and the tag only produces a missing-file error, so it goes.
 s = re.sub(r'<link rel="manifest"[^>]*>\s*', '', s)
 
@@ -50,11 +46,25 @@ s = re.sub(r'<link rel="preconnect" href="https://fonts\.[^>]*>\s*', '', s)
 s = re.sub(r'<link href="https://fonts\.googleapis\.com[^>]*>',
            '<link href="fonts/fonts.css" rel="stylesheet">', s)
 
-# 5) Firebase lives in the sunbeam SDK, not here. It is neutered separately
+# 5) Steam owns commerce. Valve does not allow a game to take money on a rail
+#    that is not theirs, so every buy, donate and upsell has to be dark. The
+#    game reads window.__STEAM_BUILD and hides all of them (STORE_BUILD, the
+#    same lever the itch build uses) AND grants the Supporter Pack outright,
+#    since a Steam player already paid and hiding it would lock the pack
+#    costumes away behind a button the build never draws.
+#    ⛔ This flag MUST be set before the game's own scripts run. An earlier
+#    version of this script wrote a differently-named flag that nothing read,
+#    which looked like a working strip and was not. Hence the assertions.
+FLAG = '<script>window.__STEAM_BUILD=true;/* Steam build: no payment surfaces */</script>'
+assert '__STEAM_BUILD' in s, 'canonical game no longer reads __STEAM_BUILD — the strip would silently do nothing'
+if '<head>' in s:
+    s = s.replace('<head>', '<head>\n' + FLAG, 1)
+else:
+    s = s.replace('<script', FLAG + '\n<script', 1)
+assert s.index('window.__STEAM_BUILD=true') < s.index('var STORE_BUILD'), 'flag must be set before the game reads it'
+
+# 6) Firebase lives in the sunbeam SDK, not here. It is neutered separately
 #    below, in the vendored copy of the SDK itself.
-s = s.replace('window.STEAM_BUILD=false', 'window.STEAM_BUILD=true')
-if 'window.STEAM_BUILD' not in s:
-    s = s.replace('<script>', '<script>window.STEAM_BUILD=true;</script>\n<script>', 1)
 
 open(p, 'w', encoding='utf-8').write(s)
 print('  rewrote index.html for the desktop build')
