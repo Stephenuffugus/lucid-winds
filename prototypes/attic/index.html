@@ -26,6 +26,48 @@
   h1 small { display:block; font-size:0.62rem; letter-spacing:0.3em; color:#8a7a5e; margin-top:4px; font-family:ui-monospace, monospace; }
   .demo-note { font-size:0.7rem; color:#8a7a5e; text-align:center; margin:8px 0 14px; line-height:1.5; max-width:340px; }
 
+  /* the economy bar: what you can spend, and what you are hunting */
+  .topbar { width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; margin:2px 0 12px; }
+  .tix { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0 14px;
+    background:#221b14; border:1px solid #4a3b26; border-radius:24px; color:#e8c977;
+    font-family:ui-monospace, monospace; font-size:0.78rem; letter-spacing:0.08em; }
+  .tix b { font-size:1rem; color:#f0d68a; }
+  .wantbtn { min-height:44px; padding:0 14px; background:#1c1610; border:1px solid #4a3b26;
+    border-radius:24px; color:#c4b294; font-family:ui-monospace, monospace; font-size:0.66rem;
+    letter-spacing:0.16em; cursor:pointer; }
+  .wantbtn b { color:#d9a94e; }
+  .wantbtn:active { background:#2a2016; }
+
+  .rummage[disabled] { opacity:0.45; filter:grayscale(0.6); }
+  .brokenote { font-size:0.68rem; color:#a8906a; text-align:center; margin-top:8px; line-height:1.5; }
+
+  /* WANT LIST: the reason to come back tomorrow */
+  .sheet { position:fixed; inset:0; z-index:60; background:rgba(10,8,5,0.86); display:none;
+    align-items:center; justify-content:center; padding:18px; }
+  .sheet.on { display:flex; }
+  .sheetcard { width:100%; max-width:420px; max-height:88vh; overflow-y:auto; background:#1e1811;
+    border:1px solid #4a3b26; border-radius:12px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,0.6); }
+  .sheetcard h2 { font-size:0.72rem; font-family:ui-monospace, monospace; letter-spacing:0.3em;
+    color:#d9a94e; font-weight:normal; margin-bottom:4px; }
+  .sheetsub { font-size:0.68rem; color:#8a7a5e; line-height:1.5; margin-bottom:12px; }
+  .want { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-top:1px solid #2e2418;
+    font-size:0.78rem; line-height:1.45; color:#d8c8a8; }
+  .want .mark { flex:none; width:22px; font-family:ui-monospace, monospace; color:#5e5240; }
+  .want.got { color:#8a7a5e; }
+  .want.got .mark { color:#7fb069; }
+  .want.got .txt { text-decoration:line-through; }
+  .closebtn { width:100%; min-height:48px; margin-top:14px; background:#2a2016; border:1px solid #4a3b26;
+    border-radius:9px; color:#e6d8bc; font-family:ui-monospace, monospace; font-size:0.7rem;
+    letter-spacing:0.2em; cursor:pointer; }
+  .scrapbtn { width:100%; min-height:44px; margin-top:10px; background:#1c1610; border:1px solid #4a3b26;
+    border-radius:8px; color:#a8906a; font-family:ui-monospace, monospace; font-size:0.62rem;
+    letter-spacing:0.18em; cursor:pointer; }
+  .scrapbtn:active { background:#2a2016; }
+  #toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:70; max-width:86%;
+    background:#241c12; border:1px solid #6a552c; border-radius:10px; padding:11px 16px; color:#f0e2c2;
+    font-size:0.76rem; line-height:1.45; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    opacity:0; pointer-events:none; transition:opacity 0.25s; }
+
   .card {
     width:100%; background:#221b14; border:1px solid #4a3b26; border-radius:10px;
     box-shadow:0 8px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
@@ -105,7 +147,13 @@
   <h1>THE ATTIC<small>WORKING TITLE &middot; HASHBLOCK DEMO &middot; DEV ONLY</small></h1>
   <p class="demo-note">Every pull is one SHA-256 hash. The hash picks the object class, era, name, wear, and story. Same hash, same object, forever. All five classes render their object: record sleeves, VHS clamshells, carded toys, board game lids, and cereal boxes.</p>
 
-  <div class="btnRow"><button class="rummage" id="go">RUMMAGE</button></div>
+  <div class="topbar">
+    <span class="tix"><b id="tixN">0</b> tickets</span>
+    <button class="wantbtn" id="wantOpen">WANT LIST <b id="wantN">0/8</b></button>
+  </div>
+
+  <div class="btnRow"><button class="rummage" id="go">RUMMAGE &middot; 1 TICKET</button></div>
+  <div class="brokenote" id="brokenote"></div>
 
   <div class="card" id="card"></div>
 
@@ -119,6 +167,16 @@
     <input id="hashIn" placeholder="e.g. 8f3c9a..." spellcheck="false" autocomplete="off">
   </div>
 </div>
+
+<div class="sheet" id="wantSheet">
+  <div class="sheetcard">
+    <h2>THE WANT LIST</h2>
+    <div class="sheetsub">Eight things you are hunting. They are yours alone, and they do not change. Cross one off and the shop pays you three tickets.</div>
+    <div id="wantRows"></div>
+    <button class="closebtn" id="wantClose">CLOSE</button>
+  </div>
+</div>
+<div id="toast"></div>
 
 <script src="attic-engine.js"></script>
 <script src="sleeve-render.js"></script>
@@ -149,6 +207,11 @@
       localStorage.setItem(SHELF_KEY, JSON.stringify(hs));
     } catch (e) {}
   }
+  /* which finds have already had their dust wiped, so re-opening one off the
+     shelf never pays a second time */
+  var R_KEY = 'attic_revealed_v1';
+  var revealed = (function () { try { return JSON.parse(localStorage.getItem(R_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+  function saveRevealed() { try { localStorage.setItem(R_KEY, JSON.stringify(revealed)); } catch (e) {} }
 
   var GRADE_LOOK = {
     'TRASHED':        ['#8a8378', '#2a2620'],
@@ -168,6 +231,130 @@
 
   function hb(h, n) { return parseInt(h.substr(n * 2, 2), 16); }
 
+  /* ── THE ECONOMY ────────────────────────────────────────────────────────
+     A rummage costs a ticket, so a dig is a decision instead of a button you
+     hold down. Five tickets land every day, a find in FINE or better pays one
+     back, and anything on your Want List pays three. Out of tickets with a
+     shelf full of junk? Scrap something. The maths is deliberately lossy
+     (about a third of finds pay), so tickets are the pace of the game. */
+  var W_KEY = 'attic_wallet_v1', DAILY = 5, GRAIL_PAY = 3, PAY_AT = 'FINE';
+  function dayIndex() { return Math.floor(Date.now() / 864e5); }
+  var WAL = (function () {
+    var w = { tix: 0, day: -1, wants: {} };
+    try { var raw = JSON.parse(localStorage.getItem(W_KEY) || 'null');
+      if (raw) { w.tix = raw.tix | 0; w.day = (raw.day == null ? -1 : raw.day); w.wants = raw.wants || {}; }
+    } catch (e) {}
+    return w;
+  })();
+  function saveWallet() { try { localStorage.setItem(W_KEY, JSON.stringify(WAL)); } catch (e) {} }
+
+  var toastT = null;
+  function toast(msg, ms) {
+    var el = document.getElementById('toast'); if (!el) return;
+    el.textContent = msg; el.style.opacity = '1';
+    if (toastT) clearTimeout(toastT);
+    toastT = setTimeout(function () { el.style.opacity = '0'; }, ms || 2800);
+  }
+
+  /* ── THE WANT LIST ──────────────────────────────────────────────────────
+     Eight grails, drawn once per device and never re-rolled, so a player has
+     their own standing hunt: the reason to open the attic tomorrow. Every
+     grail is checked against the REAL item, at the moment the dust comes off. */
+  var GRADE_ORDER = ['TRASHED', 'PLAYED', 'GOOD', 'FINE', 'NEAR MINT', 'MINT', 'FACTORY SEALED'];
+  function gIdx(g) { var i = GRADE_ORDER.indexOf(g); return i < 0 ? 2 : i; }
+  var CLS_LIST = ['RECORD', 'VHS', 'TOY', 'GAME', 'CEREAL'];
+  var CLS_WORD = { RECORD: 'record', VHS: 'tape', TOY: 'toy', GAME: 'board game', CEREAL: 'cereal box' };
+  var ERA_LIST = ['1950s', '1960s', '1970s', '1980s', '1990s'];
+  function grailPool() {
+    var P = [], i, j, c;
+    for (i = 0; i < CLS_LIST.length; i++) {
+      c = CLS_LIST[i];
+      P.push({ t: 'clsGrade', c: c, g: 'FINE', txt: 'a ' + CLS_WORD[c] + ' in FINE or better' });
+      P.push({ t: 'clsGrade', c: c, g: 'NEAR MINT', txt: 'a ' + CLS_WORD[c] + ' in NEAR MINT or better' });
+      for (j = 0; j < ERA_LIST.length; j++) P.push({ t: 'clsEra', c: c, e: ERA_LIST[j], txt: 'a ' + CLS_WORD[c] + ' from the ' + ERA_LIST[j] });
+    }
+    for (j = 0; j < ERA_LIST.length; j++) P.push({ t: 'era', e: ERA_LIST[j], g: 'GOOD', txt: 'anything from the ' + ERA_LIST[j] + ' in GOOD or better' });
+    P.push({ t: 'sealed', txt: 'anything still FACTORY SEALED' });
+    P.push({ t: 'error', txt: 'any factory error' });
+    P.push({ t: 'grade', g: 'MINT', txt: 'anything MINT or better' });
+    P.push({ t: 'errorCls', c: 'CEREAL', txt: 'a cereal box with a factory error' });
+    P.push({ t: 'errorCls', c: 'RECORD', txt: 'a record with a factory error' });
+    return P;
+  }
+  function grailMet(gr, it) {
+    var gi = gIdx(it.grade);
+    if (gr.t === 'clsGrade') return it.cls === gr.c && gi >= gIdx(gr.g);
+    if (gr.t === 'clsEra') return it.cls === gr.c && it.era === gr.e;
+    if (gr.t === 'era') return it.era === gr.e && gi >= gIdx(gr.g);
+    if (gr.t === 'sealed') return it.grade === 'FACTORY SEALED';
+    if (gr.t === 'error') return !!it.error;
+    if (gr.t === 'errorCls') return !!it.error && it.cls === gr.c;
+    if (gr.t === 'grade') return gi >= gIdx(gr.g);
+    return false;
+  }
+  function deviceId() {
+    var k = 'attic_device_v1', v = null;
+    try { v = localStorage.getItem(k); } catch (e) {}
+    if (!v) {
+      v = ''; var b = new Uint8Array(8), i;
+      (window.crypto || window.msCrypto).getRandomValues(b);
+      for (i = 0; i < 8; i++) v += ('0' + b[i].toString(16)).slice(-2);
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+    return v;
+  }
+  function seededRng(s) {
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return function () { h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
+  }
+  var GRAILS = (function () {
+    var P = grailPool(), rng = seededRng(deviceId() + ':wants'), i, j, t;
+    for (i = P.length - 1; i > 0; i--) { j = Math.floor(rng() * (i + 1)); t = P[i]; P[i] = P[j]; P[j] = t; }
+    /* keep the eight varied: at most two of any one shape, so nobody gets a
+       list of five near-identical hunts */
+    var out = [], seen = {};
+    for (i = 0; i < P.length && out.length < 8; i++) {
+      var k = P[i].t + (P[i].c || '');
+      if ((seen[k] || 0) >= 2) continue;
+      seen[k] = (seen[k] || 0) + 1; out.push(P[i]);
+    }
+    return out;
+  })();
+  function wantsGot() { var n = 0, i; for (i = 0; i < GRAILS.length; i++) if (WAL.wants[i]) n++; return n; }
+  function checkGrails(it) {
+    var i, hit = [];
+    for (i = 0; i < GRAILS.length; i++) {
+      if (WAL.wants[i]) continue;
+      if (grailMet(GRAILS[i], it)) { WAL.wants[i] = 1; hit.push(GRAILS[i].txt); }
+    }
+    if (hit.length) {
+      WAL.tix += GRAIL_PAY * hit.length; saveWallet(); paintWallet(); paintWants();
+      toast('WANT LIST: ' + hit[0] + '. Crossed off, plus ' + (GRAIL_PAY * hit.length) + ' tickets.', 4200);
+    }
+    return hit.length;
+  }
+  function paintWants() {
+    var box = document.getElementById('wantRows'), html = '', i;
+    for (i = 0; i < GRAILS.length; i++) {
+      var got = !!WAL.wants[i];
+      html += '<div class="want' + (got ? ' got' : '') + '"><span class="mark">' + (got ? '✓' : '·') +
+        '</span><span class="txt">' + GRAILS[i].txt + '</span></div>';
+    }
+    box.innerHTML = html;
+  }
+  function paintWallet() {
+    document.getElementById('tixN').textContent = WAL.tix;
+    document.getElementById('wantN').textContent = wantsGot() + '/' + GRAILS.length;
+    var go = document.getElementById('go'), bn = document.getElementById('brokenote');
+    if (WAL.tix < 1) {
+      go.setAttribute('disabled', 'disabled');
+      bn.textContent = pulls.length
+        ? 'Out of tickets. Scrap something off the shelf for one, or come back tomorrow for ' + DAILY + '.'
+        : 'Out of tickets. Come back tomorrow for ' + DAILY + '.';
+    } else { go.removeAttribute('disabled'); bn.textContent = ''; }
+  }
+
   // every class renders its object now (object-render.js dispatch)
   function artFor(h, it, size) {
     return ATTIC_OBJECT.renderItem(h, size || 240).svg;
@@ -186,7 +373,8 @@
       +   '<button class="gradeBtn" id="gb">WIPE OFF THE DUST &middot; CHECK CONDITION</button>'
       +   '<div class="gradePlate" id="gp"></div>'
       + '</div>'
-      + '<div class="meta">' + h.slice(0, 16) + '&hellip; &middot; ' + it.year + '</div>';
+      + '<div class="meta">' + h.slice(0, 16) + '&hellip; &middot; ' + it.year + '</div>'
+      + '<button class="scrapbtn" id="scrap">SCRAP THIS FOR A TICKET</button>';
     card.innerHTML = html;
     card.className = 'card on';
 
@@ -202,6 +390,24 @@
         gp.textContent = it.grade;
       }
       gs.className = 'gradeSlot graded';
+      /* the moment of truth pays: a keeper hands a ticket back, and the Want
+         List is settled here because condition is half of what a grail asks */
+      if (!revealed[h]) {
+        revealed[h] = 1; saveRevealed();
+        var earned = gIdx(it.grade) >= gIdx(PAY_AT) ? 1 : 0;
+        if (earned) { WAL.tix += earned; saveWallet(); }
+        var got = checkGrails(it);
+        paintWallet();
+        if (!got && earned) toast('A keeper. One ticket back.');
+      }
+    };
+    document.getElementById('scrap').onclick = function () {
+      var i;
+      for (i = 0; i < pulls.length; i++) if (pulls[i].h === h) { pulls.splice(i, 1); break; }
+      saveShelf(); renderShelf();
+      WAL.tix += 1; saveWallet(); paintWallet();
+      card.className = 'card';
+      toast('Back in the pile. One ticket.');
     };
 
     var known = false, k;
@@ -234,8 +440,30 @@
     if (p) show(p.h);
   }
 
-  document.getElementById('go').onclick = function () { show(randHash()); };
+  document.getElementById('go').onclick = function () {
+    if (WAL.tix < 1) { toast('No tickets left.'); return; }
+    WAL.tix -= 1; saveWallet(); paintWallet();
+    show(randHash());
+  };
+  document.getElementById('wantOpen').onclick = function () { paintWants(); document.getElementById('wantSheet').className = 'sheet on'; };
+  document.getElementById('wantClose').onclick = function () { document.getElementById('wantSheet').className = 'sheet'; };
+  document.getElementById('wantSheet').onclick = function (e) { if (e.target === this) this.className = 'sheet'; };
+
+  /* the day's allowance, granted once per day per device */
+  (function grantDaily() {
+    var d = dayIndex();
+    if (WAL.day === d) return;
+    var first = WAL.day < 0;
+    WAL.day = d; WAL.tix += DAILY; saveWallet();
+    setTimeout(function () {
+      toast(first ? ('The attic is open. ' + DAILY + ' tickets to get you started.')
+                  : (DAILY + ' fresh tickets for today.'));
+    }, 500);
+  })();
+
   renderShelf(); /* returning visitor sees their collection before the first pull */
+  paintWants();
+  paintWallet();
   document.getElementById('hashIn').addEventListener('change', function () {
     var v = String(this.value).trim().toLowerCase();
     if (/^[0-9a-f]{64}$/.test(v)) { show(v); this.value = ''; }
