@@ -494,14 +494,17 @@ items are marked here so nobody re-does them.
   hide phase 35-45s (20s is below the genre floor), and a density-pass
   template for hiding/painting detail. ⛔ Stephen picks the v1 cut before any
   build.
-- [ ] **2D multiplayer Stephen wants WORKING (Jul 29): local via QR now,
-  matchmaking later.** The 1v1 code + local relay are proven; the missing piece
-  is a HOSTED relay. `render.yaml` sits in the repo ready to blueprint-deploy.
-  ⛔ STEPHEN one-time: create a free Render account, New → Blueprint → pick
-  `Stephenuffugus/abduct_a_chameleon`, deploy, send me the wss:// URL. Then I
-  wire it as the default `?mp=` target and add a QR on the host screen that
-  encodes the join link (join code already exists, the QR is just the link in
-  camera form). Matchmaking (auto-pair strangers) parks until player volume.
+- [x] **2D MULTIPLAYER IS ON — Stephen deployed the relay, the game wires it,
+  verified end to end (upstream commit this session, card ?v=20260730b).**
+  Stephen created the Render web service walkthrough-style (abduct-a-chameleon
+  .onrender.com, free tier, ~30s cold wake); the game now defaults every
+  github.io/portal player to it (?mp= still overrides), the host screen shows
+  a scannable QR (vendored MIT qrcode-generator) that lands the second phone
+  IN the room via ?join=CODE (+ ?host=1 twin deep-link). PROOF: two real
+  browsers paired through the LIVE relay (room KHHC, zero errors, advanced to
+  level select), host QR screen screenshot-verified at phone width, and the
+  full local suite went green INCLUDING online.js's complete 1v1 (catch +
+  summary). Matchmaking (auto-pair strangers) parks until player volume.
 - [x] **3D "turn it sideways and nothing happens" — SHIPPED AND PLAYABLE
   2026-07-28 PM (commit `ba570fac`), live at
   `lucidwinds.com/satellites/chameleon-3d/`.** It was fixed in the morning and
