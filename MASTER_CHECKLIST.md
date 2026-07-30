@@ -479,8 +479,16 @@ items are marked here so nobody re-does them.
   coarse re-aim) went 0/4 in 120s before → 3/3 in 20s on EASY after, while
   still going 0/5 on HARD — the ladder slopes again. test/huntfair.js EASY is
   a permanent gate in npm run all. ⚠️ Feel is pending Stephen's thumb.
+- [x] **3D: Penny's first playtest fixes SHIPPED, live-verified on github.io
+  (upstream b7c264b, card ?v=20260730).** Her paint-mode trap was a 26px muted
+  close beside a touch-eating canvas — now a 48px high-contrast ✕ plus a
+  full-width DONE bar; and the hide window is 120s (was 20) per the director's
+  minimum-two-minutes call, single shared-state source. Boot verified headless
+  (0 errors), source-asserted, Pages deploy confirmed serving the new constant.
+  Her third note (few colors, no detail to paint against) = the density pass
+  below.
 - [ ] **3D engagement redesign — BRIEF WRITTEN 2026-07-29, awaiting Stephen's
-  cut:** `design-briefs/chameleon-3d-engagement.md`. Answers his scan worry
+  cut (Penny's "no details to paint" note now backs the density pass):** `design-briefs/chameleon-3d-engagement.md`. Answers his scan worry
   (free reveal = degenerate; genre answer is probes that ping MOVEMENT + a
   costed target-lock), his distraction ask (tail-drop decoy + pebble flick),
   hide phase 35-45s (20s is below the genre floor), and a density-pass
