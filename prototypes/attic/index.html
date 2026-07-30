@@ -129,7 +129,26 @@
   var card = document.getElementById('card');
   var shelf = document.getElementById('shelf');
   var shelfWrap = document.getElementById('shelfWrap');
+  /* THE SHELF is a real collection now: hashes persist in localStorage and
+     every item re-derives from its hash, so the whole shelf costs 64 bytes
+     a find. Newest first, no cap in storage, newest 24 drawn. */
+  var SHELF_KEY = 'attic_shelf_v1';
   var pulls = [];
+  (function () {
+    try {
+      var raw = JSON.parse(localStorage.getItem(SHELF_KEY) || '[]'), i;
+      for (i = 0; i < raw.length; i++) {
+        if (/^[0-9a-f]{64}$/.test(raw[i])) pulls.push({ h: raw[i], it: ATTIC.hashToItem(raw[i]) });
+      }
+    } catch (e) {}
+  })();
+  function saveShelf() {
+    try {
+      var hs = [], i;
+      for (i = 0; i < pulls.length; i++) hs.push(pulls[i].h);
+      localStorage.setItem(SHELF_KEY, JSON.stringify(hs));
+    } catch (e) {}
+  }
 
   var GRADE_LOOK = {
     'TRASHED':        ['#8a8378', '#2a2620'],
@@ -185,16 +204,19 @@
       gs.className = 'gradeSlot graded';
     };
 
-    pulls.unshift({ h: h, it: it });
-    if (pulls.length > 8) pulls.pop();
+    var known = false, k;
+    for (k = 0; k < pulls.length; k++) { if (pulls[k].h === h) { known = true; break; } }
+    if (!known) { pulls.unshift({ h: h, it: it }); saveShelf(); }
     renderShelf();
   }
 
   function renderShelf() {
     if (!pulls.length) return;
     shelfWrap.style.display = 'block';
-    var html = '', i;
-    for (i = 0; i < pulls.length; i++) {
+    var head = shelfWrap.querySelector('h2');
+    if (head) head.textContent = 'THE SHELF · ' + pulls.length + ' FIND' + (pulls.length === 1 ? '' : 'S') + (pulls.length > 24 ? ' · NEWEST 24' : '');
+    var html = '', i, n = Math.min(pulls.length, 24);
+    for (i = 0; i < n; i++) {
       var p = pulls[i];
       var inner = ATTIC_OBJECT.renderItem(p.h, 90).svg;
       html += '<button class="slot" data-i="' + i + '" title="' + p.it.name + '">' + inner + '</button>';
@@ -206,12 +228,14 @@
     }
   }
 
+  /* revisiting a find just shows it again; the shelf never reorders */
   function reshow(i) {
-    var p = pulls.splice(i, 1)[0];
+    var p = pulls[i];
     if (p) show(p.h);
   }
 
   document.getElementById('go').onclick = function () { show(randHash()); };
+  renderShelf(); /* returning visitor sees their collection before the first pull */
   document.getElementById('hashIn').addEventListener('change', function () {
     var v = String(this.value).trim().toLowerCase();
     if (/^[0-9a-f]{64}$/.test(v)) { show(v); this.value = ''; }
