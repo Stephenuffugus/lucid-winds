@@ -494,6 +494,20 @@ items are marked here so nobody re-does them.
   hide phase 35-45s (20s is below the genre floor), and a density-pass
   template for hiding/painting detail. ⛔ Stephen picks the v1 cut before any
   build.
+- [x] **2D 1v1 ROUND SHAPE fixed from the couch playtest (upstream commit this
+  session, card ?v=20260730d, all 14 suites green standalone).** Four walls
+  from Stephen + Penny playing live: HIDE PHASE 60s host-tunable ?hide2p=5..300
+  (hunter grounded + dark, clock waits, both screens count down) · TRACTOR
+  PULL (half speed under the ship, fading at the ring edge — his exact idea) ·
+  SCANNER BACK in 1v1 with 3 charges that EXPOSE for 6s (a blended hider could
+  NEVER be beamed even when found — the real deadlock) · sticky-stick heal
+  (a joystick whose pointer vanished kept walking; now dropped in gatherInput).
+  ⏭ NEXT THERE: multi-player lobby (host picks size, up to 5 hiders + seeker)
+  WITH role rotation between rounds — one build, roles become room settings.
+  📝 Design notes from the couch: weather layer idea (rain masks movement /
+  lightning reveals — pairs with the scan economy) and Penny's "the eyes give
+  it away" (candidate: eyes close while perfectly still = invisible but blind,
+  a real trade). Both Stephen's call.
 - [x] **2D MULTIPLAYER IS ON — Stephen deployed the relay, the game wires it,
   verified end to end (upstream commit this session, card ?v=20260730b).**
   Stephen created the Render web service walkthrough-style (abduct-a-chameleon
