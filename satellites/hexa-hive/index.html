@@ -110,10 +110,11 @@ h2.sc-h{font-size:26px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div>Tap a chip stack in your <b>tray</b>, then tap an empty <b>comb cell</b> to drop it in.</div></div>
+    <div class="helprow"><div class="hi">1</div><div>Tap a chip stack in your <b>tray</b>, then tap an empty <b>comb cell</b> to drop it in. Later trays arrive <b>mixed</b>, so clearing the top colour uncovers the one hiding under it.</div></div>
     <div class="helprow"><div class="hi">2</div><div>When your chips touch a cell whose <b>top color matches</b>, all of that color slides together into one taller stack.</div></div>
     <div class="helprow"><div class="hi">3</div><div>Stack <b class="hl">ten</b> of one color and it <b>pops</b> — clearing the cell and revealing any color hiding underneath.</div></div>
     <div class="helprow"><div class="hi">4</div><div>Chain pops for big combos. In a level, pop enough stacks to <b>finish the hive</b>. Fill the comb with no room left and it is over.</div></div>
+    <div class="helprow"><div class="hi">🐝</div><div>From the fourth hive on, a tired worker <b>naps on your tallest stack</b> and it stops merging while she sleeps. <b class="hl">Tap her</b> to shoo her off, or pop a stack next door and the noise startles her away.</div></div>
     <div class="helprow"><div class="hi">🌿</div><div><b>Zen</b> mode is endless and gentle — just pop honey and relax. Clear grounds to earn Sunbeams for your garden.</div></div>
     <div style="height:20px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -160,7 +161,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 function rnd(n){ return (Math.random()*n)|0; }
-var BUILD='v1.1';
+var BUILD='v2.0';
 
 var LS=(function(){ var ok=true, mem={};
   try{ var k='hh_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
@@ -168,8 +169,8 @@ var LS=(function(){ var ok=true, mem={};
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } } };
 })();
 var K={ set:'hh_set', best:'hh_best' };
-var SET={ sound:true };
-(function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
+var SET={ sound:true, beeSeen:false };
+(function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; if(s.beeSeen) SET.beeSeen=true; }catch(e){} })();
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
 var BEST=parseInt(LS.get(K.best)||'0',10)||0;
 
@@ -191,6 +192,8 @@ function sfx(kind){ switch(kind){
   case 'combo': beep(784,0.10,'triangle',0.12,1180); break;
   case 'clear': beep(523,0.10,'triangle',0.13); setTimeout(function(){ beep(659,0.10,'triangle',0.13); },110); setTimeout(function(){ beep(880,0.16,'triangle',0.14); },230); break;
   case 'over': beep(392,0.16,'triangle',0.1,300); setTimeout(function(){ beep(233,0.26,'triangle',0.1,150); },170); break;
+  case 'bee': beep(170,0.22,'sawtooth',0.045,140); break;
+  case 'shoo': beep(300,0.09,'triangle',0.07,560); break;
 } }
 
 /* ============================ state ============================= */
@@ -228,6 +231,7 @@ var queue=[];            // tray pieces {c,n}
 var selIdx=-1;
 var G=null;              // {mode, level, score, pops, quota, phase, hab, combo, clearT, celT}
 var parts=[], pops=[], bees=[];
+var sitters=[], flyoffs=[];   // bees napping ON stacks (blockers) + shooed bees leaving
 var FLY=null;            // live merge flight {anchor,color,group,chips,outMap,landed,t,settle}
 var rq=[], rGuard=0, resolveDone=null;  // cascade queue for the step resolver
 var running=false, lastTs=0;
@@ -269,17 +273,20 @@ function newGame(mode){
 }
 function buildLevel(){
   layout();
-  board={}; parts=[]; pops=[]; selIdx=-1; FLY=null; rq=[]; resolveDone=null; G.phase='play'; G.combo=0;
+  board={}; parts=[]; pops=[]; flyoffs=[]; selIdx=-1; FLY=null; rq=[]; resolveDone=null; G.phase='play'; G.combo=0;
   G.hab=HABITATS[(G.level-1)%HABITATS.length];
-  G.quota = G.mode==='zen' ? 0 : (4 + G.level*2);
+  G.quota = G.mode==='zen' ? 0 : quotaFor(G.level);
   G.pops = G.mode==='zen'? G.pops : 0;
-  // pre-seed some layered stacks (leave room to maneuver)
-  var fill = Math.min(4 + G.level, Math.floor(CELLS.length*0.5));
+  G.placed = 0; sitters=[];
+  // pre-seed layered stacks: more cells and deeper buried colours than v1.1,
+  // still leaving room to maneuver
+  var nc = colorsAt(G.level);
+  var fill = Math.min(5 + G.level, Math.floor(CELLS.length*0.6));
   var order = CELLS.slice(); shuffle(order);
-  var maxLayers = 1 + Math.min(2, Math.floor(G.level/3));
+  var maxLayers = 1 + Math.min(3, Math.floor(G.level/2));
   var i;
   for(i=0;i<fill;i++){ var c=order[i]; var nl=1+rnd(maxLayers), layers=[], j, prev=-1;
-    for(j=0;j<nl;j++){ var col; do{ col=rnd(NCOL); }while(col===prev); prev=col; layers.push({c:col, n:2+rnd(4)}); }
+    for(j=0;j<nl;j++){ var col; do{ col=rnd(nc); }while(col===prev&&nc>1); prev=col; layers.push({c:col, n:2+rnd(4)}); }
     board[c.key]={layers:layers};
   }
   queue=[]; refillQueue();
@@ -287,7 +294,36 @@ function buildLevel(){
   updateCtrl();
 }
 function shuffle(a){ var i,j,t; for(i=a.length-1;i>0;i--){ j=rnd(i+1); t=a[i]; a[i]=a[j]; a[j]=t; } }
-function genPiece(){ return { c:rnd(NCOL), n:1+rnd(4) }; }
+/* ── the difficulty curve (Jessie 7/30: far too easy) ────────────────────
+   v1.1 threw all six colours from level 1 and every tray piece was a single
+   colour, so nothing ever had to be peeled. The original Hexa Sort ramps on
+   three levers instead: colours grow with the level, tray pieces arrive as
+   MIXED stacks you must uncover top down, and the pre-placed comb runs
+   deeper. These numbers are that replica with Jessie's +10% already folded
+   in. Zen stays frozen at the gentle end on purpose. */
+function colorsAt(L){ if(G&&G.mode==='zen') return 4; if(L<=2) return 3; if(L<=4) return 4; if(L<=7) return 5; return NCOL; }
+function mixOdds(L){ if(G&&G.mode==='zen') return {two:0,three:0};
+  if(L<=2) return {two:0,three:0}; if(L<=4) return {two:0.28,three:0};
+  if(L<=7) return {two:0.50,three:0.11}; return {two:0.61,three:0.22}; }
+function quotaFor(L){ return Math.ceil((4+L*2)*1.1); }
+/* a piece is a stack of colour SEGMENTS, bottom to top, six chips at most */
+function genPiece(){
+  var L=G?G.level:1, nc=colorsAt(L), od=mixOdds(L);
+  var nseg=1;
+  if(Math.random()<od.two) nseg=(Math.random()<od.three)?3:2;
+  var segs=[], prev=-1, i, budget=6;
+  for(i=0;i<nseg;i++){
+    var col; do{ col=rnd(nc); }while(col===prev&&nc>1); prev=col;
+    var left=nseg-i-1;                                  /* every later seg needs a chip */
+    var maxN=Math.min(nseg>1?3:4, Math.max(1, budget-left));
+    var n=1+rnd(maxN);
+    segs.push({c:col, n:n}); budget-=n;
+  }
+  return { segs:segs };
+}
+/* flat chip colours bottom->top, for drawing a piece in the tray */
+function pieceChips(p){ var out=[], i, j; for(i=0;i<p.segs.length;i++){ for(j=0;j<p.segs[i].n;j++) out.push(p.segs[i].c); } return out; }
+function pieceTopN(p){ return p.segs[p.segs.length-1].n; }
 function refillQueue(){ while(queue.length<3) queue.push(genPiece()); }
 function spawnBees(){ bees=[]; var n=2+rnd(2),i; for(i=0;i<n;i++) bees.push({ ph:Math.random()*6.28, sp:0.3+Math.random()*0.4, rad:60+Math.random()*80, ox:LAY.cx+(Math.random()-0.5)*160, oy:LAY.cy+(Math.random()-0.5)*160, sz:9+Math.random()*4 }); }
 
@@ -297,10 +333,13 @@ function placeAt(k){
   if(!G||G.phase!=='play'||selIdx<0||FLY) return false;
   if(!VALID[k]||!isEmpty(k)) return false;
   var piece=queue[selIdx];
-  board[k]={layers:[{c:piece.c, n:piece.n}]};
+  /* the piece drops in as its own layers, so a mixed stack has to be peeled:
+     merge the top colour away and the colour under it comes into play */
+  var segs=[], si; for(si=0;si<piece.segs.length;si++) segs.push({c:piece.segs[si].c, n:piece.segs[si].n});
+  board[k]={layers:segs};
   queue.splice(selIdx,1); selIdx=-1; refillQueue();
   sfx('place');
-  G.combo=0;
+  G.combo=0; G.placed=(G.placed||0)+1;
   startResolve([k], afterPlace);
   return true;
 }
@@ -314,11 +353,12 @@ function startResolve(seed, done){ rq=seed.slice(); rGuard=0; resolveDone=done; 
 function resolveStep(){
   while(rq.length && rGuard++<3000){
     var k=rq.shift(); var cell=board[k]; if(!cell||!cell.layers.length) continue;
+    if(hasSitter(k)) continue;                  /* a napping bee freezes its stack out of every merge */
     var TC=topColor(cell);
     /* flood connected same-top-color */
     var group=[], seen={}, st=[k]; seen[k]=1;
-    while(st.length){ var ck=st.pop(); var cc=board[ck]; if(!cc||!cc.layers.length||topColor(cc)!==TC) continue; group.push(ck);
-      var nb=neighborsOf(ck), d; for(d=0;d<nb.length;d++){ var nk=nb[d]; if(seen[nk]) continue; var nc=board[nk]; if(nc&&nc.layers.length&&topColor(nc)===TC){ seen[nk]=1; st.push(nk); } }
+    while(st.length){ var ck=st.pop(); var cc=board[ck]; if(!cc||!cc.layers.length||topColor(cc)!==TC||hasSitter(ck)) continue; group.push(ck);
+      var nb=neighborsOf(ck), d; for(d=0;d<nb.length;d++){ var nk=nb[d]; if(seen[nk]) continue; var nc=board[nk]; if(nc&&nc.layers.length&&topColor(nc)===TC&&!hasSitter(nk)){ seen[nk]=1; st.push(nk); } }
     }
     if(group.length<=1){
       /* single cell: just check if its top run already reached POP */
@@ -394,11 +434,63 @@ function doPop(k){
   spawnPop(k, top.c, top.n, G.combo);
   sfx(G.combo>1?'combo':'pop');
   if(cell.layers.length===0) delete board[k];
+  startleAround(k);
+}
+
+/* ── the napping bees (Jessie 7/30) ──────────────────────────────────────
+   From level 4 a worker lands on your BEST stack, the longest top run, and
+   sleeps there. That stack is out of every merge until she leaves. Two ways
+   to move her, both instant: tap her, or pop a neighbouring stack and the
+   noise startles her off. Journey only, capped, never on an empty cell. */
+function hasSitter(k){ var i; for(i=0;i<sitters.length;i++){ if(sitters[i].key===k) return true; } return false; }
+/* she perches just ABOVE the top chip: sitting on it hid the run count, which
+   is the one number the player needs to plan the merge. One source of truth
+   for the draw, the tap target and the fly-off. */
+function sitterY(k){ return visTopY(k,0)-LAY.size*0.44; }
+function beeCadence(){ return G.level>=7?3:4; }
+function beeCap(){ return G.level>=7?2:1; }
+function maybeLandBee(){
+  if(!G||G.mode==='zen'||G.level<4||G.phase!=='play'||FLY) return null;
+  if(sitters.length>=beeCap()) return null;
+  if(((G.placed||0)%beeCadence())!==0) return null;
+  return landBee();
+}
+function landBee(){
+  var best=null, bestN=-1, i;
+  for(i=0;i<CELLS.length;i++){ var k=CELLS[i].key;
+    if(isEmpty(k)||hasSitter(k)) continue;
+    var n=topLayer(board[k]).n; if(n>bestN){ bestN=n; best=k; } }
+  if(!best) return null;
+  sitters.push({ key:best, bob:Math.random()*6.28, zT:0 });
+  sfx('bee');
+  if(!SET.beeSeen){ SET.beeSeen=true; saveSet(); toast('A bee is napping on that stack. Tap her to shoo her away.', 2800); }
+  return best;
+}
+function shooAt(k){
+  var i; for(i=0;i<sitters.length;i++){ if(sitters[i].key!==k) continue;
+    var c=cellByKey(k);
+    if(c) flyoffs.push({ x:c.x, y:sitterY(k), vx:(Math.random()<0.5?-1:1)*(70+Math.random()*70), vy:-110-Math.random()*70, ph:Math.random()*6.28, life:1.3, sz:LAY.size*0.34 });
+    sitters.splice(i,1); sfx('shoo');
+    return true;
+  }
+  return false;
+}
+/* a pop next door wakes her: the freed stack goes straight back into the
+   resolver, so startling a bee can set off the chain she was blocking */
+function startleAround(k){
+  if(!sitters.length) return;
+  var nb=neighborsOf(k), i, d;
+  for(i=sitters.length-1;i>=0;i--){
+    for(d=0;d<nb.length;d++){
+      if(sitters[i].key===nb[d]){ var freed=sitters[i].key; shooAt(freed); if(!isEmpty(freed)) rq.push(freed); break; }
+    }
+  }
 }
 function afterPlace(){
   if(G.combo>1){ toast(G.combo+'× combo!', 1100); }
   updateCtrl();
   if(G.mode!=='zen' && G.pops>=G.quota){ levelClear(); return; }
+  maybeLandBee();
   if(!anyEmptyCell()){ gameOver(); }
 }
 function levelClear(){
@@ -433,6 +525,16 @@ function shareHH(){
 
 /* ============================ rendering ============================= */
 function hexPath(g,cx,cy,size){ g.beginPath(); var i,a; for(i=0;i<6;i++){ a=Math.PI/180*(60*i); var x=cx+size*Math.cos(a), y=cy+size*Math.sin(a); if(i===0)g.moveTo(x,y); else g.lineTo(x,y); } g.closePath(); }
+/* A honeycomb chip is a HEX, not a disc (Jessie 7/30). Flat-top hexagon
+   squashed in y, using the exact rx/ry the old ellipses used, so every stack
+   metric, tray size and flight arc stays put. One painter for all three draw
+   sites: extruded dark side, flat top face, specular sliver. */
+function hexChipPath(g,cx,cy,rx,ry){ g.beginPath(); var i,a,x,y; for(i=0;i<6;i++){ a=Math.PI/180*(60*i); x=cx+rx*Math.cos(a); y=cy+ry*Math.sin(a); if(i===0)g.moveTo(x,y); else g.lineTo(x,y); } g.closePath(); }
+function drawChip(cx,cy,rx,ry,col){
+  hexChipPath(ctx,cx,cy+ry*0.42,rx,ry); ctx.fillStyle=col.d; ctx.fill();
+  hexChipPath(ctx,cx,cy,rx,ry); ctx.fillStyle=col.b; ctx.fill();
+  hexChipPath(ctx,cx-rx*0.22,cy-ry*0.28,rx*0.55,ry*0.5); ctx.fillStyle='rgba(255,255,255,0.20)'; ctx.fill();
+}
 function render(){
   ctx.clearRect(0,0,VW,VH);
   drawHabitat();
@@ -445,6 +547,7 @@ function render(){
   drawBees();
   /* chip stacks */
   for(i=0;i<CELLS.length;i++){ var c2=CELLS[i]; if(!isEmpty(c2.key)) drawStack(c2); }
+  drawSitters();
   /* chips flying between stacks during a merge */
   if(FLY) drawFly();
   /* tray */
@@ -503,10 +606,8 @@ function drawStack(c){
   var rx=s*0.6, ry=s*0.28;
   var baseY=c.y + s*0.30;
   var startIdx=total-shown; /* draw top `shown` chips */
-  for(i=0;i<shown;i++){ var ci=chips[startIdx+i]; var col=COLORS[ci]; var y=baseY - i*step;
-    ctx.fillStyle=col.d; ctx.beginPath(); ctx.ellipse(c.x, y+ry*0.42, rx, ry, 0,0,6.2832); ctx.fill();
-    ctx.fillStyle=col.b; ctx.beginPath(); ctx.ellipse(c.x, y, rx, ry, 0,0,6.2832); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(c.x-rx*0.3, y-ry*0.35, rx*0.42, ry*0.34, 0,0,6.2832); ctx.fill();
+  for(i=0;i<shown;i++){ var ci=chips[startIdx+i]; var y=baseY - i*step;
+    drawChip(c.x, y, rx, ry, COLORS[ci]);
   }
   /* top-run count (counted from the drawn chips so mid-flight numbers stay honest) */
   var runN=0, lastC=chips[chips.length-1];
@@ -526,9 +627,7 @@ function drawFly(){
     var x=v*v*ch.sx + 2*v*e*ch.mx + e*e*ch.tx;
     var y=v*v*ch.sy + 2*v*e*ch.my + e*e*ch.ty;
     var sc=1+0.22*Math.sin(Math.PI*e);
-    ctx.fillStyle=col.d; ctx.beginPath(); ctx.ellipse(x, y+ry*0.42*sc, rx*sc, ry*sc, 0,0,6.2832); ctx.fill();
-    ctx.fillStyle=col.b; ctx.beginPath(); ctx.ellipse(x, y, rx*sc, ry*sc, 0,0,6.2832); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.ellipse(x-rx*0.3*sc, y-ry*0.35*sc, rx*0.42*sc, ry*0.34*sc, 0,0,6.2832); ctx.fill();
+    drawChip(x, y, rx*sc, ry*sc, col);
   }
 }
 function drawTray(){
@@ -540,25 +639,45 @@ function drawTray(){
   for(i=0;i<queue.length && i<3;i++){ var cx=x0+i*(tw+gap)+tw/2, cy=ty+56; var sel=(i===selIdx);
     hexPath(ctx,cx,cy,s*(sel?1.06:0.98)); ctx.fillStyle=sel?'rgba(245,216,74,0.16)':'rgba(20,14,6,0.7)'; ctx.fill();
     hexPath(ctx,cx,cy,s*(sel?1.06:0.98)); ctx.lineWidth=sel?3:1.5; ctx.strokeStyle=sel?'#ffe98a':'rgba(245,216,74,0.3)'; ctx.stroke();
-    /* piece chips */
-    var pc=queue[i], col=COLORS[pc.c], rx=s*0.62, ry=s*0.3, step=Math.min(s*0.2,(s*0.8)/Math.max(1,pc.n)), baseY=cy+s*0.34, k;
-    for(k=0;k<Math.min(pc.n,8);k++){ var y=baseY-k*step;
-      ctx.fillStyle=col.d; ctx.beginPath(); ctx.ellipse(cx,y+ry*0.42,rx,ry,0,0,6.2832); ctx.fill();
-      ctx.fillStyle=col.b; ctx.beginPath(); ctx.ellipse(cx,y,rx,ry,0,0,6.2832); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(cx-rx*0.3,y-ry*0.35,rx*0.4,ry*0.32,0,0,6.2832); ctx.fill();
-    }
-    ctx.fillStyle='#1a1206'; ctx.font='800 '+Math.round(s*0.36)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(''+pc.n, cx, baseY-(Math.min(pc.n,8)-1)*step-1);
+    /* piece chips, drawn per segment so a mixed stack reads at a glance */
+    var pc=queue[i], pchips=pieceChips(pc), shown=Math.min(pchips.length,8);
+    var rx=s*0.62, ry=s*0.3, step=Math.min(s*0.2,(s*0.8)/Math.max(1,shown)), baseY=cy+s*0.34, k;
+    for(k=0;k<shown;k++){ drawChip(cx, baseY-k*step, rx, ry, COLORS[pchips[k]]); }
+    /* the label counts the TOP run, which is what the board will merge */
+    ctx.fillStyle='#1a1206'; ctx.font='800 '+Math.round(s*0.36)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(''+pieceTopN(pc), cx, baseY-(shown-1)*step-1);
   }
 }
+/* one bee. folded=true is the napping pose: wings tucked, no tilt. */
+function drawBee(x,y,sz,folded,ph){
+  ctx.save(); ctx.translate(x,y); if(!folded) ctx.rotate(Math.cos(ph)*0.3);
+  var wa=folded?0.22:0.4, ws=folded?0.34:0.5;
+  ctx.fillStyle='rgba(230,240,255,'+wa+')';
+  ctx.beginPath(); ctx.ellipse(-sz*0.2,-sz*0.7,sz*ws,sz*0.32,-0.5,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(sz*0.2,-sz*0.7,sz*ws,sz*0.32,0.5,0,6.2832); ctx.fill();
+  ctx.fillStyle='#f5c02a'; ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.7,0,0,6.2832); ctx.fill();
+  ctx.fillStyle='#241806'; ctx.fillRect(-sz*0.55,-sz*0.7,sz*0.28,sz*1.4); ctx.fillRect(sz*0.05,-sz*0.7,sz*0.28,sz*1.4);
+  ctx.restore();
+}
 function drawBees(){
-  var i; for(i=0;i<bees.length;i++){ var b=bees[i]; var x=b.ox+Math.cos(b.ph)*b.rad, y=b.oy+Math.sin(b.ph*1.3)*b.rad*0.6;
-    ctx.save(); ctx.translate(x,y); ctx.rotate(Math.cos(b.ph)*0.3);
-    /* wings */
-    ctx.fillStyle='rgba(230,240,255,0.4)'; ctx.beginPath(); ctx.ellipse(-b.sz*0.2,-b.sz*0.7,b.sz*0.5,b.sz*0.32,-0.5,0,6.2832); ctx.fill(); ctx.beginPath(); ctx.ellipse(b.sz*0.2,-b.sz*0.7,b.sz*0.5,b.sz*0.32,0.5,0,6.2832); ctx.fill();
-    /* body */
-    ctx.fillStyle='#f5c02a'; ctx.beginPath(); ctx.ellipse(0,0,b.sz,b.sz*0.7,0,0,6.2832); ctx.fill();
-    ctx.fillStyle='#241806'; ctx.fillRect(-b.sz*0.55,-b.sz*0.7,b.sz*0.28,b.sz*1.4); ctx.fillRect(b.sz*0.05,-b.sz*0.7,b.sz*0.28,b.sz*1.4);
-    ctx.restore();
+  var i; for(i=0;i<bees.length;i++){ var b=bees[i];
+    drawBee(b.ox+Math.cos(b.ph)*b.rad, b.oy+Math.sin(b.ph*1.3)*b.rad*0.6, b.sz, false, b.ph);
+  }
+  for(i=0;i<flyoffs.length;i++){ var f=flyoffs[i];
+    ctx.globalAlpha=clamp(f.life,0,1); drawBee(f.x, f.y, f.sz, false, f.ph); ctx.globalAlpha=1;
+  }
+}
+/* the sleepers sit ON their stack, so they draw after the chips */
+function drawSitters(){
+  var i, s=LAY.size;
+  for(i=0;i<sitters.length;i++){ var st=sitters[i]; var c=cellByKey(st.key); if(!c||isEmpty(st.key)) continue;
+    var y=sitterY(st.key)+Math.sin(st.bob*2)*2;
+    /* her shadow falls on the chip below, so she reads as perched not floating */
+    ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.beginPath(); ctx.ellipse(c.x, y+s*0.40, s*0.30, s*0.11, 0,0,6.2832); ctx.fill();
+    drawBee(c.x, y, s*0.34, true, st.bob);
+    var zp=(st.zT%2.2)/2.2;
+    if(zp<0.7){ ctx.save(); ctx.globalAlpha=(1-zp/0.7)*0.85; ctx.fillStyle='#f5d84a';
+      ctx.font='800 '+Math.round(s*0.28)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('z', c.x+s*0.40, y-s*0.42-zp*s*0.5); ctx.restore(); }
   }
 }
 function drawClearBanner(){
@@ -586,6 +705,10 @@ function loop(ts){
   if(G && G.phase==='clear'){ G.celT=(G.celT||0)+dt; }
   if(FLY) updateFly(dt);
   var i; for(i=0;i<bees.length;i++) bees[i].ph+=bees[i].sp*dt;
+  for(i=0;i<sitters.length;i++){ sitters[i].bob+=dt*1.6; sitters[i].zT+=dt; }
+  for(i=flyoffs.length-1;i>=0;i--){ var fo=flyoffs[i];
+    fo.x+=fo.vx*dt; fo.y+=fo.vy*dt; fo.vy+=40*dt; fo.ph+=dt*9; fo.life-=dt*0.9;
+    if(fo.life<=0) flyoffs.splice(i,1); }
   for(i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=360*dt; p.life-=dt*0.85; if(p.life<=0) parts.splice(i,1); }
   for(i=pops.length-1;i>=0;i--){ pops[i].t+=dt; if(pops[i].t>=pops[i].dur) pops.splice(i,1); }
   render();
@@ -599,6 +722,15 @@ function onDown(e){
   var p=evPos(e);
   if(G.phase==='clear'){ if((G.celT||0)>0.6) advance(); return; }
   if(G.phase!=='play') return;
+  /* napping bee? tap her off. Checked FIRST and with a generous radius, since
+     she sits on top of a comb cell that would otherwise eat the tap. */
+  if(sitters.length){
+    var si, hit=null;
+    for(si=0;si<sitters.length;si++){ var sc=cellByKey(sitters[si].key); if(!sc) continue;
+      var sdx=p.x-sc.x, sdy=p.y-sitterY(sitters[si].key);
+      if(sdx*sdx+sdy*sdy < 32*32){ hit=sitters[si].key; break; } }
+    if(hit){ shooAt(hit); if(!FLY && !isEmpty(hit)) resolve([hit]); return; }
+  }
   /* tray hit? */
   var ti=trayHit(p); if(ti>=0){ selIdx=(selIdx===ti?-1:ti); sfx('ui'); return; }
   /* board cell hit? */
@@ -686,10 +818,19 @@ if(/[?&]hhtest=1/.test(location.search)){
     state:function(){ return G?{ mode:G.mode, level:G.level, score:G.score, pops:G.pops, quota:G.quota, phase:G.phase, combo:G.combo, hab:G.hab.name }:null; },
     cells:function(){ return CELLS.map(function(c){ return c.key; }); },
     board:function(){ var o={},k; for(k in board){ if(board.hasOwnProperty(k)) o[k]=board[k].layers.map(function(l){return l.c+':'+l.n;}); } return o; },
-    queue:function(){ return queue.map(function(p){ return p.c+':'+p.n; }); },
+    queue:function(){ return queue.map(function(p){ return p.segs.map(function(s){ return s.c+':'+s.n; }).join('|'); }); },
     emptyCells:function(){ return CELLS.filter(function(c){ return isEmpty(c.key); }).map(function(c){return c.key;}); },
-    /* deterministic place: set queue[0] to a color/count then place on key */
-    setPiece:function(i,c,n){ if(queue[i]){ queue[i].c=c; queue[i].n=n; } },
+    /* deterministic place. setPiece(i,c,n) keeps the old single-colour form;
+       setPiece(i,[[c,n],[c,n]]) builds a mixed stack bottom->top. */
+    setPiece:function(i,c,n){ if(!queue[i]) return;
+      if(Object.prototype.toString.call(c)==='[object Array]'){ queue[i].segs=c.map(function(a){ return {c:a[0], n:a[1]}; }); }
+      else queue[i].segs=[{c:c, n:n}]; },
+    genPiece:function(){ return genPiece(); },
+    colorsAt:colorsAt, quotaFor:quotaFor, mixOdds:mixOdds,
+    setLevel:function(n){ if(!G) return null; G.level=n; buildLevel(); return G.level; },
+    sitters:function(){ return sitters.map(function(s){ return s.key; }); },
+    landBee:function(){ return landBee(); }, shoo:function(k){ return shooAt(k); },
+    placed:function(){ return G?(G.placed||0):0; },
     select:function(i){ selIdx=i; }, place:function(k){ selIdx=(selIdx<0?0:selIdx); return placeAt(k); },
     setCell:function(k,layers){ board[k]={layers:layers.map(function(a){return {c:a[0],n:a[1]};})}; },
     resolve:function(k){ resolve([k]); }, topColor:function(k){ return topColor(board[k]); }, height:function(k){ return cellHeight(board[k]); },
