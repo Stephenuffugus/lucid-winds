@@ -986,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.8';
+var BUILD='v7.9';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -3541,16 +3541,16 @@ function drawRow(r){
       var pv=CURB[(r*7+c*3)%CURB.length];
       if(!drawSprite('sprites/'+pv, (c+0.5)*TILE, y, 0, {w:TILE*1.0, bottom:24, hmax:TILE*1.25})) drawShrub((c+0.5)*TILE, y, r); } }
     if(L.coin!=null){ var cy=y+Math.sin(G.t*3+L.coin)*1.6;
+      pickupHalo(L.coin, cy, 21, '250,232,160');
       if(!drawSprite('sprites/coin-cap', L.coin, cy, 32)){
         ctx.save(); ctx.translate(L.coin,cy); var gl=ctx.createRadialGradient(0,0,1,0,0,14); gl.addColorStop(0,'#fff2c0'); gl.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fill(); ctx.fillStyle='#e8c65a'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(-2,-2,2,0,7); ctx.fill(); ctx.restore(); } }
     if(L.stash){ var sy=y+Math.sin(G.t*2.4+L.stash.x)*2;
+      pickupHalo(L.stash.x, sy, 25, '244,222,150');
       if(!drawSprite('sprites/pickup-'+L.stash.kind, L.stash.x, sy, 40)){
         ctx.save(); ctx.translate(L.stash.x,sy); ctx.fillStyle='#c8a84b'; ctx.fillRect(-13,-9,26,18);
         ctx.fillStyle='#e8c65a'; ctx.fillRect(-13,-9,26,5); ctx.restore(); } }
     if(L.egg){ var ey=y+Math.sin(G.t*2+L.egg.x)*2.5;
-      var egl=ctx.createRadialGradient(L.egg.x,ey,2,L.egg.x,ey,30);
-      egl.addColorStop(0,'rgba(240,214,138,0.30)'); egl.addColorStop(1,'rgba(240,214,138,0)');
-      ctx.fillStyle=egl; ctx.beginPath(); ctx.arc(L.egg.x,ey,30,0,7); ctx.fill();
+      pickupHalo(L.egg.x, ey, 31, '240,214,138');
       drawSprite('sprites/egg-'+L.egg.kind, L.egg.x, ey, 52); }
     if(L.power){ drawPower(L.power, y); }
   } else if(L.type==='road'){
@@ -3574,9 +3574,29 @@ function drawRow(r){
   if(G.mode!=='zen' && r <= G.chaseR+0.5){ var wv=Math.min(1,(G.chaseR+0.5-r)); ctx.fillStyle='rgba(20,8,20,'+(0.35+0.45*wv)+')'; ctx.fillRect(0,top,VW,TILE);
     if(r>G.chaseR-0.5){ ctx.fillStyle='rgba(120,40,90,0.35)'; ctx.fillRect(0,top,VW,4); } }
 }
+/* ⛔⛔ A PICKUP MUST NEVER READ AS SCENERY (Stephen 2026-07-30: "the static
+   obstacles and the stuff you can pick up are almost impossible to
+   distinguish"). He was right, and the reason was structural: every glow in
+   this file lived inside the PROCEDURAL FALLBACK, after an `if(drawSprite(...))
+   return;`. With the art pack loaded, which is every real session, a bottlecap
+   was a quietly bobbing sprite the same size as a trash bag, a fern or a
+   recycling bin. The halo now draws UNDER the art, always: a warm pool, a
+   breathing ring, and a contact shadow so the thing reads as grabbable and
+   sitting on the ground. Static props get none of it and never move, which is
+   the whole tell. Art is untouched. */
+function pickupHalo(x,y,rad,col){
+  var pu=0.5+0.5*Math.sin(G.t*3.4+x*0.05);
+  var gl=ctx.createRadialGradient(x,y,1,x,y,rad);
+  gl.addColorStop(0,'rgba('+col+',0.44)'); gl.addColorStop(0.55,'rgba('+col+',0.17)'); gl.addColorStop(1,'rgba('+col+',0)');
+  ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(x,y,rad,0,7); ctx.fill();
+  ctx.strokeStyle='rgba('+col+','+(0.20+pu*0.32).toFixed(2)+')'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x,y,rad*(0.60+pu*0.12),0,7); ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(x,y+rad*0.54,rad*0.40,rad*0.15,0,0,7); ctx.fill();
+}
 function drawPower(pw,y){
   var by=y+Math.sin(G.t*3+pw.x)*2.4;
   var pm=POWER_META[pw.kind]||POWER_META.coffee;
+  pickupHalo(pw.x, by, 26, '255,244,200');
   if(drawSprite('powers/power_'+(pm.spr||'snacks'), pw.x, by, 48)) return;
   var m=POWER_META[pw.kind]; ctx.save(); ctx.translate(pw.x, by);
   var gl=ctx.createRadialGradient(0,0,2,0,0,21); gl.addColorStop(0,m.hi||m.col); gl.addColorStop(1,'rgba(0,0,0,0)');
