@@ -176,7 +176,7 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v2.0";
+var BUILD="v2.1";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -349,10 +349,14 @@ function step(){
   var i, bl=G.world.blocks;
   // integrate
   if(G.grounded){
-    G.vx*=0.986; if(G.vx<10)G.vx=0;
-    G.w*=0.9; if(Math.abs(G.w)<0.4)G.w=0;
+    /* Stephen 7/30: "the blade slides on the ground... it needs to be more
+       crisp." 0.986/tick let a landing glide for ~2 seconds; a knife biting
+       the counter should die in a couple tenths. Taps supply all forward
+       motion, so killing the slide costs no distance. */
+    G.vx*=0.90; if(G.vx<45)G.vx=0;
+    G.w*=0.82; if(Math.abs(G.w)<0.5)G.w=0;
     G.ang+=G.w*DT;
-    if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*0.12; }  // blade settles flat at rest
+    if(G.w===0){ var tgt=Math.round(G.ang/Math.PI)*Math.PI; G.ang+=(tgt-G.ang)*0.24; }  // blade settles flat at rest
   } else {
     G.vy+=GRAV*DT;
     G.ang+=G.w*DT; G.w*=0.997;
@@ -385,7 +389,7 @@ function step(){
     if(G.kx>sb.x-KR && G.kx<sb.x+BLK+KR && G.ky>sb.y-KR && G.ky<sb.y+BLK+KR){
       var dxL=G.kx-(sb.x-KR), dxR=(sb.x+BLK+KR)-G.kx, dyT=G.ky-(sb.y-KR), dyB=(sb.y+BLK+KR)-G.ky;
       var mn=Math.min(dxL,dxR,dyT,dyB);
-      if(mn===dyT && G.vy>=0){ G.ky=sb.y-KR; G.vy=0; if(!G.grounded){ G.grounded=true; SFX.land(); } }
+      if(mn===dyT && G.vy>=0){ G.ky=sb.y-KR; G.vy=0; if(!G.grounded){ G.grounded=true; G.vx*=0.45; SFX.land(); } }
       else if(mn===dyB && G.vy<0){ G.ky=sb.y+BLK+KR; G.vy=0; }
       else if(mn===dxL && G.vx>0){ G.kx=sb.x-KR; G.vx=0; }
       else if(mn===dxR){ G.kx=sb.x+BLK+KR; }
@@ -440,7 +444,7 @@ function step(){
   // ground: SAFE — land and slide
   if(G.ky>=GROUND-KR){
     G.ky=GROUND-KR;
-    if(G.vy>0){ G.vy=0; if(!G.grounded){ G.grounded=true; SFX.land(); spark(G.kx,GROUND-6,'#5a5470'); } }
+    if(G.vy>0){ G.vy=0; if(!G.grounded){ G.grounded=true; G.vx*=0.45; SFX.land(); spark(G.kx,GROUND-6,'#5a5470'); } }
   }
   if(G.ky<40){ G.ky=40; if(G.vy<0)G.vy=0; }
 }
