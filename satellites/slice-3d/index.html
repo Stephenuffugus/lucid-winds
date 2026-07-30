@@ -219,7 +219,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.5";
+var BUILD="v5.6";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -420,13 +420,27 @@ function disposeMesh(m){
 }
 var G=null, running=false, lastTs=0;
 
+/* The produce aisle. Small and sharp pitches for the little ones, low and fat
+   for the heavy ones, so a combo climbs in pitch as well as in score. Points
+   track size, since a big one is a bigger commitment to swing at. Ten added
+   2026-07-30 for Stephen ("a lot of stuff" to cut). */
 var FRUIT=[
   {n:'apple',      r:1.5, col:0xe5453c, inner:0xf8e9c8, pts:10, pitch:520},
   {n:'orange',     r:1.4, col:0xf2a13c, inner:0xffd9a0, pts:10, pitch:560},
   {n:'plum',       r:1.2, col:0x8a5ac0, inner:0xe8c8f5, pts:15, pitch:640},
   {n:'banana',     r:1.3, col:0xf5d442, inner:0xfff2c0, pts:15, pitch:600},
   {n:'pineapple',  r:1.9, col:0xe8b93c, inner:0xffe9a8, pts:20, pitch:440},
-  {n:'watermelon', r:2.4, col:0x4e9a4e, inner:0xff6d7e, pts:30, pitch:380}
+  {n:'watermelon', r:2.4, col:0x4e9a4e, inner:0xff6d7e, pts:30, pitch:380},
+  {n:'lime',       r:1.1, col:0x7ac23c, inner:0xdcf5a8, pts:15, pitch:700},
+  {n:'kiwi',       r:1.2, col:0x8a6a3a, inner:0x9ada6a, pts:15, pitch:660},
+  {n:'dragonfruit',r:1.6, col:0xe8407a, inner:0xf5e8f0, pts:25, pitch:500},
+  {n:'starfruit',  r:1.3, col:0xf5e04a, inner:0xfff8c8, pts:25, pitch:620},
+  {n:'pomegranate',r:1.5, col:0xc0392b, inner:0xff5a6a, pts:20, pitch:470},
+  {n:'coconut',    r:1.7, col:0x6b4423, inner:0xfff8e8, pts:20, pitch:400},
+  {n:'pumpkin',    r:2.2, col:0xe07b26, inner:0xffd08a, pts:30, pitch:360},
+  {n:'turnip',     r:1.4, col:0xe8dcf0, inner:0xfff8ff, pts:15, pitch:580},
+  {n:'pepper',     r:1.3, col:0xd42a2a, inner:0xffd0c8, pts:20, pitch:680},
+  {n:'honeydew',   r:2.1, col:0xc8d86a, inner:0xe8f5b8, pts:30, pitch:390}
 ];
 var WOOD=0x8a5a30, WOOD_D=0x5e3c1e, LEAF=0x4e8a44, CAP=0xc46a4a, CRYSTAL=0xff8ac2;
 
@@ -697,6 +711,9 @@ function plankAt(px,py,L,amp,speed,phase){
 var GOURD={n:'gourd',r:1.25,col:0x2c3a24,inner:0xff8a3c,pts:0,pitch:0.6};
 /* golden fruit: rare, small, fast — the 150 point prize cut */
 var GOLDF={n:'goldfruit',r:0.95,col:0xffd24a,inner:0xfff2a8,pts:150,pitch:1.5};
+/* the pinata: one blade pass, a shower of colour, and the biggest single payout
+   in the pit. Hangs on a short string so it swings and you have to time it. */
+var PINATA={n:'pinata',r:1.8,col:0xe8407a,inner:0xffe27a,pts:260,pitch:330};
 function boomAt(x,y,vineTop){
   var it=fruitAt(x,y,GOURD,'vine',vineTop); it.boom=true;
   for(var s=0;s<5;s++){ var aa=0.35+s/5*6.283;
@@ -1075,8 +1092,10 @@ function buildFreefall(lvl){
     var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack','stack'];
     if(lvl>=2)bag.push('swing','shroom','bumper','stack');
     if(lvl>=3)bag.push('crystal','bumper','stack','wasp');
+    if(lvl>=3)bag.push('pinata');
     if(lvl>=4)bag.push('plank','gate','goldf');
     if(lvl>=5)bag.push('thorn','gourd','wasp');
+    if(lvl>=6)bag.push('melonwall','pinata');
     if(lvl>=7)bag.push('plank','thorn','gate');
     for(var bi=bag.length-1;bi>0;bi--){ var bj=Math.floor(rng()*(bi+1)); var bt=bag[bi]; bag[bi]=bag[bj]; bag[bj]=bt; }
     return bag;
@@ -1158,6 +1177,17 @@ function buildFreefall(lvl){
       items.push(boomAt((rng()*2-1)*(SW-3.2), y-2.2, y));
       var fg2=FRUIT[Math.floor(rng()*FRUIT.length)];
       items.push(fruitAt((rng()*2-1)*(SW-3.2), y-4.6, fg2, 'vine', y-2));
+    } else if(seg==='pinata'){
+      // strung across the shaft, swinging fast: the pit's jackpot
+      var rodP=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+      rodP.rotation.z=Math.PI/2; rodP.position.set(0,y,0);
+      items.push(swingFruit(rng()*3-1.5, y, 2.4+rng()*1.0, PINATA, 0.7+rng()*0.3, 1.6+rng()*0.5, rng()*6.28));
+    } else if(seg==='melonwall'){
+      // four melons across with one gap: cut the wall open or thread the hole
+      var holeM=Math.floor(rng()*4), mi;
+      for(mi=0;mi<4;mi++){ if(mi===holeM) continue;
+        items.push(fruitAt(-SW+2.2+mi*((SW*2-4.4)/3), y, FRUIT[5])); }
+      y-=3.0;
     } else if(seg==='goldf'){
       // the golden prize swings FAST on a short string
       var rodG=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
