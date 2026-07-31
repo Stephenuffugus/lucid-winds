@@ -1217,7 +1217,7 @@ function boot(){
   tap('b-fs', function(){ sfx('ui'); goFS(); });
   // ---- add to home screen (Dewball pattern: button stays useful even when the browser never fires beforeinstallprompt) ----
   (function(){ var b=$('b-install'); if(!b)return;
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=8').catch(function(){}); }catch(e){} }
     function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
     if(standalone()){ b.style.display='none'; return; }
     var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });

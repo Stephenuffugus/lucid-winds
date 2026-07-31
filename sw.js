@@ -4,13 +4,36 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v32';
+var CACHE_VERSION = 'lw-v33';
 var ASSET_CACHE = 'lw-assets-v19';
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
 // Assets to precache on install (critical path only)
+// Shown only when a navigation cannot be answered from the network OR the
+// cache. It must never be blank: a blank navigation is indistinguishable from
+// a broken app. No external assets, since by definition the network is unwell.
+var OFFLINE_PAGE = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<title>Sky Wolf Studios</title><style>'
+  + 'html,body{height:100%;margin:0;background:#0d100c;color:#e8dcc8;'
+  + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif}'
+  + 'main{min-height:100%;display:flex;flex-direction:column;align-items:center;'
+  + 'justify-content:center;gap:16px;text-align:center;padding:28px}'
+  + 'h1{font-size:21px;margin:0;color:#c8a84b}p{margin:0;font-size:16px;line-height:1.5;max-width:19em;color:#b9c0a8}'
+  + 'a,button{min-height:52px;display:flex;align-items:center;justify-content:center;padding:0 26px;'
+  + 'border-radius:13px;border:1px solid #3d5230;background:#1a2415;color:#cfe0c2;font-size:16px;'
+  + 'font-weight:700;text-decoration:none;cursor:pointer;width:min(320px,100%)}'
+  + 'button{background:#c8a84b;color:#1a1608;border-color:#e0c76b}'
+  + '</style></head><body><main>'
+  + '<h1>That did not load</h1>'
+  + '<p>The connection went quiet while this page was opening. Your games and '
+  + 'your sunbeams are safe.</p>'
+  + '<button onclick="location.reload()">Try again</button>'
+  + '<a href="/portal/">Back to the arcade</a>'
+  + '</main></body></html>';
+
 var PRECACHE = [
   '/assets/backgrounds/bg-game-540x960.jpg',
   '/assets/backgrounds/bg-greenhouse-540x960.jpg',
@@ -59,7 +82,11 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(function(names) {
       return Promise.all(
         names.filter(function(name) {
-          return keep.indexOf(name) === -1;
+          // ⛔ caches.keys() is ORIGIN-wide, not scope-wide. This used to delete
+          // every cache that was not one of ours, which wiped /play/'s cache and
+          // all thirteen satellite caches on every single deploy. Only touch the
+          // lw- family; other workers clean up after themselves.
+          return name.indexOf('lw-') === 0 && keep.indexOf(name) === -1;
         }).map(function(name) {
           return caches.delete(name);
         })
@@ -139,14 +166,38 @@ self.addEventListener('fetch', function(event) {
   // RequestInit, so refetch by URL; a host redirect is re-issued as a real
   // one (a navigation handed a followed-redirect response is a network error).
   if (event.request.mode === 'navigate' || (url.origin === self.location.origin && url.pathname.match(/\.html$/))) {
+    // 2026-07-31 THE BLACK SCREEN. Stephen: "sometimes when I click on a game it
+    // takes me to a black screen", and "when I click back, black screen there
+    // too". Cause, proven by driving this handler with a hung fetch and an
+    // empty cache: the 5s timer called done(undefined) on a cache MISS, and
+    // done() ignores a falsy value, so `settled` stayed false. If the network
+    // fetch then never settled either (a hung request, which is what a flaky
+    // mobile signal actually produces, rather than a clean failure) the promise
+    // handed to respondWith() never resolved and the browser painted NOTHING,
+    // forever, until a manual reload. It only ever hit players with the worker
+    // installed, which is why a fresh browser never showed it.
+    // ⛔ RULE FOR THIS HANDLER: every path must settle. A navigation that
+    // resolves to nothing is a black screen, not a slow load.
     event.respondWith(new Promise(function(resolve) {
       var settled = false;
       function done(r) { if (!settled && r) { settled = true; resolve(r); } }
+      function giveUp() {
+        if (settled) return;
+        settled = true;
+        resolve(new Response(OFFLINE_PAGE, {
+          status: 503,
+          headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+        }));
+      }
       var timer = setTimeout(function() {
         caches.match(event.request).then(function(c) { done(c); });
       }, 5000);
+      // The backstop. If the cache had nothing and the network is still silent,
+      // show a page that says so and offers a way out.
+      var hardStop = setTimeout(giveUp, 12000);
+      function stopTimers() { clearTimeout(timer); clearTimeout(hardStop); }
       fetch(event.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(function(response) {
-        clearTimeout(timer);
+        stopTimers();
         if (response.redirected && event.request.mode === 'navigate') {
           done(Response.redirect(response.url, 302));
           return;
@@ -154,12 +205,14 @@ self.addEventListener('fetch', function(event) {
         var clone = response.clone();
         caches.open(ASSET_CACHE).then(function(cache) { cache.put(event.request, clone); });
         done(response);
+        giveUp();   // no-op if done() took it; guarantees we never hang on a falsy response
       }).catch(function() {
-        clearTimeout(timer);
+        stopTimers();
         caches.match(event.request).then(function(c) {
-          // If there's no cache and the network failed, surface the failure.
-          if (c) done(c); else if (!settled) { settled = true; resolve(Response.error()); }
-        });
+          // No cache and the network failed: a readable page beats the
+          // browser's blank network-error screen, and it has a way back.
+          if (c) done(c); else giveUp();
+        }, giveUp);
       });
     }));
     return;

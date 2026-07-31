@@ -854,7 +854,7 @@
       || !!window.navigator.standalone;
     /* ⛔ Versioned registration (2026-07-27): bare SW URLs get edge-pinned for
        7 days, stranding installs on old workers. Bump ?v= with play/sw.js CACHE. */
-    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=2'); } catch (e) {} }
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=3'); } catch (e) {} }
     if (isStandalone) return;
     // Labeled button above the footer — the header is already full (back,
     // how-to, feedback, title, music, wallet) and an extra icon there

@@ -881,7 +881,7 @@ function boot(){
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   // ---- add to home screen (button stays useful even if beforeinstallprompt never fires) ----
   (function(){ var b=$('b-install'); if(!b)return;
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=4').catch(function(){}); }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=5').catch(function(){}); }catch(e){} }
     function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
     if(standalone()){ b.style.display='none'; return; }
     var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
