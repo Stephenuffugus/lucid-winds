@@ -48,36 +48,83 @@
    synchronous script ever hangs or dies, the breadcrumb still recorded 'html'
    and the absence of 'sdk-tag' names the killer. If a dead boot has NO
    breadcrumb at all, the page died before HTML parsed: network/SW/edge layer.
-   Known noise, accepted: closing the tab inside the ~1s boot window, or a
-   second tab racing the same key, logs a false death. The cooldown and the
-   server's dedupe keep that to a whisper. */
+   ⛔⛔ WHAT COUNTS AS DEAD (rewritten 2026-07-31). The original test was
+   "the previous boot never set c=1", and c was set from a requestAnimationFrame
+   after boot(). rAF DOES NOT RUN IN A HIDDEN TAB — so every backgrounded load,
+   every tab opened and switched away from, every prerender, was filed as a dead
+   boot and pinged Stephen's Discord. The reports proved it: four of the last six
+   showed `boot-out` (boot() completed cleanly) and were still reported as
+   "never finished", one of them still alive at 3.4s with no frame — a
+   backgrounded tab, not a crash.
+   The test is now POSITIVE: a boot is dead only when something actually declared
+   it dead — the 12-visible-second watchdog fired, or boot() threw. Both are the
+   conditions the player genuinely experiences as "it won't open". Absence of a
+   painted frame is no longer evidence of anything, because a hidden tab is
+   supposed to look exactly like that. */
 (function(){try{
+  /* ⛔ ONE-TIME PURGE. Every existing player is carrying a queue of "dead" boots
+     recorded by the old rAF test, and most of them are backgrounded tabs, not
+     crashes. Without this, shipping the fix would still deliver one last round of
+     the exact false reports it exists to stop. Drop the old queue; only deaths
+     declared by the new rule get reported from here on. */
+  try{ if(localStorage.getItem('sh_bootlog_v')!=='2'){
+    localStorage.removeItem('sh_bootdead');
+    localStorage.setItem('sh_bootlog_v','2'); } }catch(e){}
   var prev=null; try{ prev=JSON.parse(localStorage.getItem('sh_bootlog')||'null'); }catch(e){}
-  if(prev&&prev.c!==1){
+  if(prev&&prev.d===1){
     var dead=[]; try{ dead=JSON.parse(localStorage.getItem('sh_bootdead')||'[]'); }catch(e){}
     dead.push(prev); while(dead.length>3)dead.shift();
     try{ localStorage.setItem('sh_bootdead',JSON.stringify(dead)); }catch(e){}
   }
   var au=0; try{ au=(localStorage.getItem('sh_auth')==='1')?1:0; }catch(e){}
-  var log={t:Date.now(),c:0,s:[],auth:au,
+  var log={t:Date.now(),c:0,d:0,s:[],auth:au,
     sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),
     pwa:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)};
-  window._bootMark=function(st){try{ log.s.push(st+'@'+(Date.now()-log.t));
+  /* ⛔ One buggy browser extension fired 40+ identical unhandledrejections and ate
+     the ENTIRE 2000-char report — the trail was pure noise and named nothing. Marks
+     now collapse consecutive repeats into xN, cap the crash marks at 6, and cap the
+     whole trail at 30, so the useful stages always survive to the report. */
+  var _last='', _rep=0, _crash=0;
+  window._bootMark=function(st){try{
+    st=String(st);
+    var el=(Date.now()-log.t);
+    if(st===_last&&log.s.length){ _rep++; log.s[log.s.length-1]=st+' x'+(_rep+1)+'@'+el;
+      localStorage.setItem('sh_bootlog',JSON.stringify(log)); return; }
+    _last=st; _rep=0;
+    if(st.indexOf('err:')===0||st.indexOf('rej:')===0){
+      if(++_crash>6){ return; }
+    }
+    if(log.s.length>=30){ return; }
+    log.s.push(st+'@'+el);
     localStorage.setItem('sh_bootlog',JSON.stringify(log)); }catch(e){}};
   window._bootClean=function(){ log.c=1; window._bootMark('clean'); };
+  /* The ONLY way a boot gets reported. Called by the watchdog and by boot()'s catch. */
+  window._bootDead=function(why){try{ log.d=1; window._bootMark('DEAD:'+why);
+    localStorage.setItem('sh_bootlog',JSON.stringify(log)); }catch(e){}};
   window._bootMark('html');
   /* ⛔ NAME THE KILLER (2026-07-27). The signed-in lockout's breadcrumb trail is
      [html, sdk-tag, sb-ready-in, watchdog] — the main script dies at TOP LEVEL
      before boot-in, with no marker saying where. These two listeners put the
      exact message + line into the trail, so the early report carries the
      autopsy, not just the time of death. */
+  /* ⛔ Not our crash: browser extensions run in the page and their errors land on
+     these same listeners. A report full of `runtime.sendMessage` tells us nothing
+     about Jimothy and costs us the marks that would. Drop the known extension
+     signatures at the door. */
+  function _foreign(m,f){ m=String(m||''); f=String(f||'');
+    return m.indexOf('runtime.sendMessage')>=0 || m.indexOf('Extension context')>=0
+      || m.indexOf('message port closed')>=0 || f.indexOf('extension')>=0
+      || f.indexOf('moz-extension')>=0 || f.indexOf('chrome-extension')>=0; }
   window.addEventListener('error',function(ev){ try{
     var m=String(ev&&ev.message||'?').slice(0,90);
-    var f=String(ev&&ev.filename||'').split('/').pop().slice(0,30);
+    var fu=String(ev&&ev.filename||'');
+    if(_foreign(m,fu)) return;
+    var f=fu.split('/').pop().slice(0,30);
     window._bootMark('err:'+m+' @'+f+':'+(ev&&ev.lineno||0)+':'+(ev&&ev.colno||0));
   }catch(e){} });
   window.addEventListener('unhandledrejection',function(ev){ try{
     var r=ev&&ev.reason; var m=String(r&&(r.message||r)||'?').slice(0,90);
+    if(_foreign(m,'')) return;
     window._bootMark('rej:'+m);
   }catch(e){} });
   /* ⛔ EARLY dead-boot report — from HERE, not only from a later healthy boot.
@@ -116,6 +163,7 @@
     clearInterval(wd);
     try{
       window._bootMark('watchdog');
+      window._bootDead&&_bootDead('watchdog');   // 12 VISIBLE seconds, no first frame
       var d=document.createElement('div');
       d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#0d100c;color:#e8dcc8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;text-align:center;padding:24px';
       d.innerHTML='<div style="font-size:22px;font-weight:700;margin-bottom:12px">Jimothy got stuck loading</div>'
@@ -986,7 +1034,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.1';
+var BUILD='v8.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -5483,7 +5531,8 @@ if(/[?&]shtest=1/.test(location.search)){
    than dying silently — a half-booted game used to look exactly like a stuck splash. */
 try{ boot(); window._bootMark&&_bootMark('boot-out');
   requestAnimationFrame(function(){ window._bootClean&&_bootClean(); });
-}catch(_e){ try{ window._bootMark&&_bootMark('boot-threw'); console.error('Jimothy boot failed:', _e); }catch(_e2){} }
+}catch(_e){ try{ window._bootMark&&_bootMark('boot-threw:'+String(_e&&(_e.message||_e)).slice(0,90));
+  window._bootDead&&_bootDead('boot-threw'); console.error('Jimothy boot failed:', _e); }catch(_e2){} }
 renderPowerHelp();
 setTimeout(function(){ try{ cloudPull(true); paintAccount(); }catch(e){} }, 1200);
 /* Report the most recent DEAD boot (see the breadcrumb block in <head>). Fires only

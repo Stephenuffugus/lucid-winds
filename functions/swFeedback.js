@@ -11,8 +11,11 @@
  *    determined attacker can rotate IPs, but the casual spammer is boring)
  *  - duplicate drop: identical message from the same IP within an hour is
  *    swallowed silently (returns ok so scripts learn nothing)
- *  - Discord ping budget: 24 pings/hour globally; overflow still lands in
- *    Firestore, Stephen's channel never floods
+ *  - Discord ping budget: per-lane, 24/hour for humans and 6/hour for automated
+ *    boot diagnostics, so machine chatter can never starve a real bug report;
+ *    overflow still lands in Firestore, Stephen's channel never floods
+ *  - every ping's outcome is written back to the doc as `ping` — a report that
+ *    never reached Discord is now visible in the data instead of invisible
  *  - the webhook URL lives ONLY in Secret Manager (the old one was hardcoded
  *    client-side + in this public repo and had to be rotated — never again)
  */
@@ -27,8 +30,15 @@ const MAX_CONTACT = 200
 
 const ipHits = new Map()      // ip -> [timestamps]
 const seen = new Map()        // hash(ip+msg) -> timestamp
-let pingWindow = 0
-let pingCount = 0
+
+/* ⛔ SEPARATE BUDGETS (2026-07-31). One shared counter meant machine chatter
+   (boot diagnostics) and a real player's bug report drew from the same 24/hr
+   pool — the diagnostics could starve the thing Stephen actually reads. Each
+   lane now has its own window, so a flood of boot reports can never silence a
+   human. */
+const pingWindows = { human: 0, bootlog: 0 }
+const pingCounts = { human: 0, bootlog: 0 }
+const PING_CAP = { human: 24, bootlog: 6 }
 
 function throttled(ip) {
   const now = Date.now()
@@ -48,10 +58,10 @@ function isDuplicate(ip, msg) {
   return last && now - last < 60 * 60 * 1000
 }
 
-function pingBudgetOk() {
+function pingBudgetOk(lane) {
   const now = Date.now()
-  if (now - pingWindow > 60 * 60 * 1000) { pingWindow = now; pingCount = 0 }
-  return ++pingCount <= 24
+  if (now - pingWindows[lane] > 60 * 60 * 1000) { pingWindows[lane] = now; pingCounts[lane] = 0 }
+  return ++pingCounts[lane] <= PING_CAP[lane]
 }
 
 /* A redemption is not feedback, so it gets its own collection and its own line. Stephen
@@ -59,20 +69,75 @@ function pingBudgetOk() {
    word, post one per platform, and the pings tell you which platform actually converts. */
 function isCode(b) { return String(b.kind || '') === 'code' }
 
-function pingDiscord(doc) {
+/* Boot diagnostics are posted BY THE GAME, not by a person. They belong in their own
+   drawer for the same reason redemptions do: Stephen triages `feedback` by hand and a
+   machine report is not a player telling him something. */
+function isBootlog(b) {
+  return /bootlog/i.test(String(b.meta || '')) || /^BOOTLOG\b/.test(String(b.msg || ''))
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/* \u26D4 THE SILENT HOLE (fixed 2026-07-31). This used to be a bare `fetch(...).catch()`.
+   fetch does NOT reject on 4xx/5xx \u2014 so a dead webhook, a revoked token, or a 429
+   resolved happily and the function logged plain success. Stephen lost a real bug
+   report that way: the doc was in Firestore, the log said OK, and Discord never saw
+   it, leaving nothing to debug from. Now: status is checked, failures are LOUD, 429
+   and 5xx are retried, and the verdict is written back onto the document so the
+   question "did this reach Discord?" is answerable months later. */
+async function pingDiscord(doc) {
   const hook = process.env.DISCORD_FEEDBACK_WEBHOOK || ''
-  if (!hook.startsWith('https://discord.com/api/webhooks/')) return Promise.resolve()
-  if (!pingBudgetOk()) { logger.info('[swFeedback] ping budget spent; stored only'); return Promise.resolve() }
+  if (!hook.startsWith('https://discord.com/api/webhooks/')) {
+    logger.error('[swFeedback] DISCORD_FEEDBACK_WEBHOOK missing/malformed \u2014 ping skipped, report stored only')
+    return 'no-webhook'
+  }
+  const lane = doc.kind === 'bootlog' ? 'bootlog' : 'human'
+  if (!pingBudgetOk(lane)) {
+    logger.warn('[swFeedback] %s ping budget spent this hour; stored only', lane)
+    return 'budget-spent'
+  }
   const lines = doc.kind === 'code'
     ? ['\uD83C\uDF9F **' + doc.code + '** redeemed in **' + doc.game + '** \u2192 ' + doc.msg]
-    : ['**' + doc.game + '** feedback', doc.msg]
+    : doc.kind === 'bootlog'
+      ? ['\uD83E\uDD7E **' + doc.game + '** boot diagnostic (automated)', doc.msg]
+      : ['**' + doc.game + '** feedback', doc.msg]
   if (doc.contact) lines.push('_reply to: ' + doc.contact + '_')
   if (doc.meta) lines.push('`' + doc.meta + '`')
-  return fetch(hook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: lines.join('\n').slice(0, 1900) }),
-  }).catch((e) => logger.warn('[swFeedback] discord ping failed', e))
+  const body = JSON.stringify({ content: lines.join('\n').slice(0, 1900) })
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    let r
+    try {
+      r = await fetch(hook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+    } catch (e) {
+      logger.warn('[swFeedback] discord ping network error (attempt %d): %s', attempt, e && e.message)
+      if (attempt === 3) return 'network-error'
+      await sleep(400 * attempt)
+      continue
+    }
+    if (r.status >= 200 && r.status < 300) return 'ok'
+    const text = await r.text().catch(() => '')
+    if (r.status === 429) {
+      // Discord tells us exactly how long to wait; respect it once, then give up.
+      let waitMs = 1000
+      try { const j = JSON.parse(text); if (j.retry_after) waitMs = Math.ceil(j.retry_after * 1000) } catch (e) {}
+      logger.warn('[swFeedback] discord rate-limited, waiting %dms (attempt %d)', waitMs, attempt)
+      if (attempt === 3) return 'rate-limited'
+      await sleep(Math.min(waitMs, 5000))
+      continue
+    }
+    if (r.status >= 500) {
+      logger.warn('[swFeedback] discord %d (attempt %d)', r.status, attempt)
+      if (attempt === 3) return 'discord-5xx'
+      await sleep(500 * attempt)
+      continue
+    }
+    // 4xx that is not a rate limit means the webhook is wrong/revoked. Shout \u2014 this is
+    // the failure mode that silently ate a report, and it needs a human to fix it.
+    logger.error('[swFeedback] discord REJECTED ping: %d %s', r.status, text.slice(0, 300))
+    return 'http-' + r.status
+  }
+  return 'failed'
 }
 
 export const swFeedback = onRequest(
@@ -88,6 +153,7 @@ export const swFeedback = onRequest(
       if (throttled(ip)) { res.status(429).json({ ok: false, error: 'Slow down a little.' }); return }
       if (isDuplicate(ip, msg)) { res.json({ ok: true }); return }   // swallowed, silently
       const code = isCode(b) ? String(b.code || '').slice(0, 40).toUpperCase() : ''
+      const boot = !code && isBootlog(b)
       const doc = {
         game: String(b.game || 'unknown').slice(0, 40),
         msg,
@@ -97,12 +163,16 @@ export const swFeedback = onRequest(
         at: FieldValue.serverTimestamp(),
       }
       if (code) { doc.kind = 'code'; doc.code = code }
-      /* ⛔ Redemptions do NOT go in `feedback`. Stephen triages that collection by hand;
-         burying a bug report under a hundred code pings would be a bad trade for a
-         counter. Same endpoint, same abuse armour, different drawer. */
-      await getFirestore().collection(code ? 'codeRedemptions' : 'feedback').add(doc)
-      await pingDiscord(doc)
-      logger.info('[swFeedback] %s %s: %s', code ? 'code' : 'feedback', doc.game, msg.slice(0, 120))
+      if (boot) doc.kind = 'bootlog'
+      /* ⛔ Redemptions and boot diagnostics do NOT go in `feedback`. Stephen triages that
+         collection by hand; burying a bug report under a hundred machine pings would be a
+         bad trade for a counter. Same endpoint, same abuse armour, different drawer. */
+      const collection = code ? 'codeRedemptions' : boot ? 'bootlog' : 'feedback'
+      const ref = await getFirestore().collection(collection).add(doc)
+      const ping = await pingDiscord(doc)
+      // Written back so "did Stephen actually see this?" is answerable from the data alone.
+      await ref.update({ ping, pingedAt: FieldValue.serverTimestamp() }).catch(() => {})
+      logger.info('[swFeedback] %s %s [discord:%s]: %s', collection, doc.game, ping, msg.slice(0, 120))
       res.json({ ok: true })
     } catch (e) {
       logger.error('[swFeedback] failed', e)
