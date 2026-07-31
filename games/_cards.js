@@ -51,13 +51,13 @@ var _SUIT_NAME=['shroom','flower','bee','bird'];
 var _CD_BASE='assets/games/cards/';
 var _CD_BACK=_CD_BASE+'playing-card-backs.png';
 
-// ─── Floral deck (hand-drawn line-art: 4 suit pips + J/Q/K/A in red & black) ─
+// ─── Floral deck (line-art: 4 suit pips + J/Q/K/A in red & black) ─
 var _FL_BASE='assets/decks/floral/';
 // Suit pip filenames by idx (0=spades, 1=hearts, 2=diamonds, 3=clubs)
 var _FL_SUIT=['suit-spade.png','suit-heart.png','suit-diamond.png','suit-club.png'];
 
-// Style: 'lw' (botanical) | 'classic' (standard pips) | 'floral' (hand-drawn)
-// Default is FLORAL — Jessie's hand-drawn semi-traditional deck is our
+// Style: 'lw' (botanical) | 'classic' (standard pips) | 'floral' (line art)
+// Default is FLORAL — the semi-traditional floral deck is our
 // lead art. LW and Classic are unlockable alternate styles.
 var _STYLE_CYCLE=['floral','classic','lw'];
 var _DEFAULT_STYLE='floral';
@@ -75,7 +75,7 @@ function _cdSetStyle(s){
 }
 // Deck metadata used by the style picker.
 var _DECKS=[
-  {id:'floral', name:'Floral',  tag:'Semi-traditional · hand-drawn', unlocked:true},
+  {id:'floral', name:'Floral',  tag:'Semi-traditional · line art', unlocked:true},
   {id:'classic',name:'Classic', tag:'Standard pips · familiar',       unlocked:true},
   {id:'lw',     name:'Garden',  tag:'Botanical reskin · mushroom·bee·flower·bird', unlocked:true}
 ];
