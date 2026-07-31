@@ -23,6 +23,25 @@
 <style>
   html,body{margin:0;padding:0;overflow:hidden;background:#081C10;height:100%;touch-action:none;-webkit-user-select:none;user-select:none;}
   canvas{display:block;width:100vw;height:100vh;}
+
+/* ⛔ Stephen 2026-07-31: this game had no rules surface at all. Everything is
+   drawn on canvas, so the how-to is a DOM overlay, shown once per device with a
+   ? button to bring it back. Copy is read off the game's own title screen and
+   its real controls, not invented. */
+#vrHow{position:fixed;inset:0;z-index:120;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:#08140b;padding:24px 18px 28px;font-family:inherit;color:#e6f3d8}
+#vrHow .in{max-width:520px;margin:0 auto}
+#vrHow .kick{font-size:12px;letter-spacing:.22em;color:#9fe07a;font-weight:800}
+#vrHow h2{margin:6px 0 2px;font-size:26px;color:#f0d878}
+#vrHow h3{margin:18px 0 6px;font-size:12px;letter-spacing:.16em;color:#9fe07a;text-transform:uppercase}
+#vrHow p{margin:0 0 8px;font-size:15px;line-height:1.55}
+#vrHow ul{margin:0;padding-left:0;list-style:none}
+#vrHow li{font-size:14.5px;line-height:1.5;margin:7px 0}
+#vrHow li b{color:#f0d878}
+#vrHow .go{display:block;width:100%;min-height:56px;margin-top:20px;border-radius:14px;border:1px solid #f0d878;
+  background:#f0d878;color:#13210c;font-size:17px;font-weight:800;letter-spacing:.06em;cursor:pointer}
+#vrHowBtn{position:fixed;right:12px;top:12px;z-index:118;width:44px;height:44px;border-radius:50%;
+  background:#0d1a0edd;border:1px solid #2f5c30;color:#cfe8b8;font-size:19px;font-weight:800;cursor:pointer}
 </style>
 </head>
 <body>
@@ -1331,5 +1350,46 @@ portalEvent("ready");
 })();
 </script>
 <script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=5';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'vine-runner',surface:'satellite'});};document.head.appendChild(s);});</script>
+
+<div id="vrHow"><div class="in">
+  <div class="kick">HOW TO PLAY</div>
+  <h2>Vine Runner</h2>
+
+  <h3>The goal</h3>
+  <p>Dash down a halfpipe of living vine, gather every seed you can, and reach the
+  bloom at the end of the run. There are a hundred levels above you, and a new
+  runner joins you every ten.</p>
+
+  <h3>How it plays</h3>
+  <p>The pipe curls away beneath you and never stops moving. Steering across its
+  wall is what keeps you alive and what wins you speed: ride high enough to carry
+  a full loop and the vine gives you a surge. Thorns end the run, so read the
+  wall ahead rather than the ground under you.</p>
+
+  <h3>The controls</h3>
+  <ul>
+    <li><b>Left half of the screen</b> steers you around the pipe</li>
+    <li><b>The JUMP button</b> hops you over what you cannot go around</li>
+    <li><b>Hold a direction</b> to whip harder into the wall</li>
+    <li>A <b>full loop</b> pays you back with a burst of speed</li>
+  </ul>
+  <p style="opacity:.75;font-size:13px;margin-top:10px">On a keyboard the arrow
+  keys steer and space jumps.</p>
+
+  <button class="go" id="vrHowGo">▶ RUN</button>
+  <p style="opacity:.7;font-size:13px;text-align:center;margin-top:10px">Tap the ? in the corner to read this again any time.</p>
+</div></div>
+<button id="vrHowBtn" type="button" aria-label="How to play" title="How to play">?</button>
+<script>
+(function(){
+  var ov=document.getElementById('vrHow'), btn=document.getElementById('vrHowBtn');
+  function open(){ ov.style.display='block'; ov.scrollTop=0; }
+  function close(){ ov.style.display='none'; try{ localStorage.setItem('vinerunner_how_seen','1'); }catch(e){} }
+  document.getElementById('vrHowGo').addEventListener('click', close);
+  btn.addEventListener('click', open);
+  var seen=null; try{ seen=localStorage.getItem('vinerunner_how_seen'); }catch(e){}
+  if(!seen) open();
+})();
+</script>
 </body>
 </html>
