@@ -771,20 +771,22 @@ spelling than the code. [[reference_display_name_slug_map]] again.
 
 ## 👽 THE ABDUCTION FILES
 
-- [x] **320 of 1000 pages written AND LOADED** (banks 3, 4 and 5: upstream
-  `fe6b692`, `5cd4c3e`, `26e93ab`). Pages 101 to 320, all four threads, all
-  passing `tools/validate_pages.mjs` (40 to 90 words, unique numbers, unique
-  34-char openings, no dashes of any shape, headings under 40). Thread balance
-  FR 80 · SF 83 · HW 79 · IW 78, word range 45 to 73. Bank 5 moves the story for
-  the first time: the ministry orders a second valley, the captain refuses a
-  lift that could take subjects without them knowing, and the chameleons'
-  cousins over the ridge send word asking what to do.
+- [x] **480 of 1000 pages written AND LOADED** (banks 3 to 7: upstream
+  `fe6b692`, `5cd4c3e`, `26e93ab`, `cb1997f`, `4dd190d`). Pages 101 to 480, all
+  four threads, all passing `tools/validate_pages.mjs` (40 to 90 words, unique
+  numbers, unique 34-char openings, no dashes of any shape, headings under 40).
+  Balance FR 120 · SF 123 · HW 119 · IW 118, word range 45 to 73.
+  The story now moves rather than circling: a second valley opens, the thirty
+  year cataloguer hands over and the voice changes with him, the third survey
+  quietly stops filing and his successor decides not to report it, and at home
+  the archivist's copy of one ship's MARGINS gets published and does more for the
+  fleet's standing than four centuries of columns, including the first funding
+  rise in ninety years carried by a joke about a kettle.
   ⛔ Each bank is WIRED into `index.html` in the same commit and verified in a
-  browser (320 present, 320 unique, no console errors): a page file nothing
-  loads is a page nobody reads.
-  ⚠️ Recurring snag, three times now: a heading one character over the 40 limit.
-  The validator catches it every time, so it costs a minute, but write headings
-  short.
+  browser by page COUNT (480 present, 480 unique, no console errors): a page file
+  nothing loads is a page nobody reads.
+  ⚠️ The 40-character heading limit has now bitten on four banks out of five. The
+  validator catches it every time. Write headings short.
 
 ---
 
