@@ -771,13 +771,20 @@ spelling than the code. [[reference_display_name_slug_map]] again.
 
 ## 👽 THE ABDUCTION FILES
 
-- [x] **160 of 1000 pages, bank 3 written AND LOADED (upstream fe6b692).** Pages
-  101 to 160 in the four threads, all passing `tools/validate_pages.mjs` (40 to
-  90 words, unique numbers, unique openings, no dashes, headings under 40).
-  Thread balance FR 40 · SF 43 · HW 39 · IW 38. ⛔ `index.html` now pulls
-  `pages/files-3.js` alongside the first two, verified in a browser at 160 pages
-  present with 160 unique numbers and no console errors: a page file nothing
-  loads is a page nobody reads. Next batch is writing only, no new plumbing.
+- [x] **320 of 1000 pages written AND LOADED** (banks 3, 4 and 5: upstream
+  `fe6b692`, `5cd4c3e`, `26e93ab`). Pages 101 to 320, all four threads, all
+  passing `tools/validate_pages.mjs` (40 to 90 words, unique numbers, unique
+  34-char openings, no dashes of any shape, headings under 40). Thread balance
+  FR 80 · SF 83 · HW 79 · IW 78, word range 45 to 73. Bank 5 moves the story for
+  the first time: the ministry orders a second valley, the captain refuses a
+  lift that could take subjects without them knowing, and the chameleons'
+  cousins over the ridge send word asking what to do.
+  ⛔ Each bank is WIRED into `index.html` in the same commit and verified in a
+  browser (320 present, 320 unique, no console errors): a page file nothing
+  loads is a page nobody reads.
+  ⚠️ Recurring snag, three times now: a heading one character over the 40 limit.
+  The validator catches it every time, so it costs a minute, but write headings
+  short.
 
 ---
 
