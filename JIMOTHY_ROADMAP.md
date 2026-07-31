@@ -1,7 +1,56 @@
 # Jimothy — Roadmap & Execution Plan
-_Last updated: 2026-07-23. Pick up here next session._
+_Last updated: 2026-07-31. Pick up here next session._
 
 Legend: 🔴 broken/urgent · 🟡 needs Stephen's decision · 🟢 ready to build (my queue) · 👤 only Stephen can do · 🅿️ parked
+
+---
+
+## 📍 STATE OF PLAY — 2026-07-31 (read this before the older sections)
+
+Build **v8.2**, SWV/cache **jimothy-v74**. Anything marked 🟡 or 🔴 in the older
+sections below has been overtaken — they are kept for history, not as a to-do list.
+
+**The game is content-complete.** Audited today, measured not assumed:
+- **45 characters**, every one `full:1`, all four base poses present on disk,
+  **872 pose frames** across 44 sheet folders. No missing art, no placeholders.
+- **The campaign is finite and has an ending.** Course v2 shipped Jul 31: ten
+  named Seattle decades of ten levels — Pike Place, West Seattle, SoDo, Fremont,
+  Ballard, Capitol Hill, U District, Queen Anne, Georgetown, Downtown at Dusk —
+  a capstone every 10th level and **the feast at level 100**. Past 100 the last
+  three decades cycle so it never dead-ends. Levels 1-120 all resolve zone, name
+  and difficulty with no gaps. This closes old decision 🟡 #1 (finite vs endless)
+  and old queue item 🟢 #1 (difficulty past 24).
+- No TODO/FIXME/stub markers anywhere in the 5,560-line source.
+- Boots clean headless: no JS errors, no failed requests.
+
+**Still genuinely open** (small, and all Stephen's call, not build work):
+- Pad-ride tightening — old 🟡 #4, one number, still unratified.
+- The **◀ Sky Wolf Studios Arcade** button on the Steam title screen: the one
+  outbound surface still visible in the Steam build. Valve allows outbound links;
+  it just reads odd in a bought desktop game. Say hide or keep.
+
+### Steam — where it actually stands
+$100 Steam Direct fee **paid Jul 30**, so earliest release **Aug 29**, target
+**Tue Sep 1**. Full schedule and the two Valve clocks in
+`store/jimothy-steam/STEAM_SUBMIT.md`.
+
+⛔ **One thing blocks every technical step: the App ID.** Only the Steam account
+that paid can activate the app credit, so it has to be Stephen —
+partner.steamgames.com → dashboard → the unused app credit → name it
+`Jimothy the Jumping Nugget` → send me the number. Two minutes. Depot id,
+SteamPipe config and upload all key off it.
+
+The build is verified as of today, re-vendored from v8.2 and A/B proven against
+the same bundle with the flag off:
+
+| surface | normal game | Steam build |
+|---|---|---|
+| Support the Studio | visible | **hidden** |
+| Sign in | visible | **hidden** |
+| Supporter Pack | must be bought | **granted** |
+| external network calls | fonts + Firebase | **none — fully offline** |
+
+Old 👤 #3 (create the Steam account) is **done**.
 
 ---
 
