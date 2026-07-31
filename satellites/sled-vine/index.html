@@ -196,6 +196,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How Sled Vine works</h2>
+      <!-- THE-GOAL-ROW: Stephen 2026-07-31 wants the OBJECTIVE stated, not just
+           the mechanics. Copy is the game's own approved one-liner. -->
+      <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> Draw a hillside with glowing ink and ride your seed sled down it through rings to the goal flower.</div></div>
       <div class="helprow"><div class="hi">✏️</div><div><b>Draw lines</b> with your finger. The seed-sled drops from its perch and rides whatever you ink, picking up speed downhill and flying off the ends.</div></div>
       <div class="helprow"><div class="hi">◯</div><div>Steer the ride through every <b>bloom gate</b> (ring, diamond and star shapes), then into the waiting <b class="hl">goal flower</b>.</div></div>
       <div class="helprow"><div class="hi">🌿</div><div><b>Living Trail:</b> leaves sprout along your lines wherever the sled has ridden. Finish a trial and the whole trail blooms, pressing a keepsake into your Grove.</div></div>
@@ -908,6 +911,19 @@ tap("b-trials",function(){ SV_TVIEW=-1; renderTrials(); show("s-trials"); });
 tap("b-daily",function(){ startMode("daily"); });
 tap("b-free",function(){ startMode("free"); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='sled_vine_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("b-grove",function(){ renderGrove(); show("s-grove"); });
 tap("b-set",function(){ syncToggles(); show("s-set"); });

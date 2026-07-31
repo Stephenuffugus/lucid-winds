@@ -167,6 +167,8 @@ h1 .a{color:var(--dew)} h1 .b{color:var(--gold)}
 
 <div class="screen" id="s-how">
   <h1 style="font-size:1.4rem">HOW TO STROLL</h1>
+    <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+    <p class="howp"><b>The goal.</b> Run a tiny world that curls beneath your feet, ringing patches of dew to burst them into sunbeads.</p>
   <p class="howp">You run forward on a little world that curls away beneath you. <b>Tap ◀ ▶</b> (or either half of the field) to turn at the next tile. <b>JUMP</b> hops two tiles.</p>
   <p class="howp"><b>● Dew orbs</b> are the harvest, gather every one. <b>✳ Thorns</b> end the run. <b>◎ Sunbeads</b> are optional, take them all for a PERFECT. Silver <b>bumpers</b> knock you back and green <b>springs</b> throw you three tiles.</p>
   <p class="howp"><b>The old orchard secret:</b> walk a closed ring of dew orbs around others and everything sealed inside turns to sunbeads in one burst.</p>
@@ -843,6 +845,19 @@ tap("grove-back",function(){ show("s-title"); stamp(); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); stamp(); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='orb_orchard_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ show("s-title"); stamp(); });
 tap("over-menu",function(){ stopToMenu(); });
 tap("over-retry",function(){ if(!G)return stopToMenu();

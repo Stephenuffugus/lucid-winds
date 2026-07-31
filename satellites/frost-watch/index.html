@@ -144,6 +144,8 @@ h1 .a{color:var(--ice)} h1 .b{color:var(--warm)}
 
 <div class="screen" id="s-how">
   <h1 style="font-size:1.4rem">HOW TO KEEP WATCH</h1>
+    <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+    <p class="howp"><b>The goal.</b> Bloom bursts of warmth from three braziers to melt the falling frost before it reaches the rooftops.</p>
   <p class="howp">A sleeping town, three braziers, and a sky full of falling frost. <b>Tap anywhere</b> and the nearest stocked brazier sends a warmth burst there. It blooms into a <b>warm ring</b> that melts every shard it touches. Each brazier holds limited embers per wave.</p>
   <p class="howp">Know your shards by shape: <b>◆ straight shards</b> fall true. <b>⋔ splitters</b> fork into children partway down. <b>☽ seekers</b> curve toward your warmest ground. <b>⬢ glaciers</b> are slow and need two hits.</p>
   <p class="howp"><b>The Thaw Meadow:</b> every ground segment you keep safe thaws greener wave after wave, and every thawed row raises your score multiplier. One shard strike refreezes that segment back to bare ice.</p>
@@ -967,6 +969,19 @@ tap("b-zen",function(){ startZen(); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); stamp(); titleStats(); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='frost_watch_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ show("s-title"); stamp(); titleStats(); });
 tap("over-menu",function(){ stopToMenu(); });
 tap("over-again",function(){ againSame(); });

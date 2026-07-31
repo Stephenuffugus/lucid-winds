@@ -213,6 +213,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How Silt works</h2>
+      <!-- THE-GOAL-ROW: Stephen 2026-07-31 wants the OBJECTIVE stated, not just
+           the mechanics. Copy is the game's own approved one-liner. -->
+      <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> Paint silt, water, fire, and seed onto a pocket of living earth and let real physics take over.</div></div>
       <div class="helprow"><div class="hi">👆</div><div>Pick an element chip, then <b>draw on the world</b>. Everything falls, flows, burns and grows by its own small rules.</div></div>
       <div class="helprow"><div class="hi">🌱</div><div><b>Grow a garden:</b> <b>Soil</b> drinks <b>Water</b> and turns dark. A <b>Seed</b> on damp soil sprouts a <b>Vine</b>, and a happy vine tips into a <b class="hl">Bloom</b>.</div></div>
       <div class="helprow"><div class="hi">💓</div><div>The <b>Garden pulse</b> measures the living garden right now. Keep blooms alive and fires out. Holding a strong pulse is what earns sunbeams.</div></div>
@@ -1093,6 +1096,19 @@ tap("b-daily",function(){ startMode("daily"); });
 tap("b-trials",function(){ renderTrials(); show("s-trials"); });
 tap("trials-back",function(){ show("s-title"); stamp(); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='silt_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ show("s-title"); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); });

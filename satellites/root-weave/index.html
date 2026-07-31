@@ -181,6 +181,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How Root Weave works</h2>
+      <!-- THE-GOAL-ROW: Stephen 2026-07-31 wants the OBJECTIVE stated, not just
+           the mechanics. Copy is the game's own approved one-liner. -->
+      <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> Drag the glowing bulbs until no two roots cross and feel the knot loosen into living green vine.</div></div>
       <div class="helprow"><div class="hi">👆</div><div><b>Drag a bulb</b> anywhere on the soil. Roots that cross render as dry gray gnarl with an <b class="hl">✗</b> at every crossing point. Roots that run clean turn to living green vine.</div></div>
       <div class="helprow"><div class="hi">🧩</div><div>Every tangle is grown from a real flat weave first, then scrambled, so <b>a perfect untangling always exists</b>.</div></div>
       <div class="helprow"><div class="hi">🪢</div><div><b>Taproots</b> are anchored bulbs with a knot. They cannot be moved. Weave everything else around them.</div></div>
@@ -910,6 +913,19 @@ tap("b-daily",function(){ startMode("daily"); });
 tap("b-zen",function(){ startMode("zen"); });
 tap("b-gnarl",function(){ startMode("gnarl"); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='root_weave_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ if(G&&G.phase==="play"){ hideScreens(); } else { show("s-title"); } });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); });

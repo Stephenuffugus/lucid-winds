@@ -164,6 +164,8 @@ h1 .a{color:var(--warm)} h1 .b{color:var(--cream)}
 
 <div class="screen" id="s-how">
   <h1 style="font-size:1.4rem">HOW TO LIGHT A TOWN</h1>
+    <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+    <p class="howp"><b>The goal.</b> Place lamps at dusk until every square is lit, never letting one lamp shine into another.</p>
   <p class="howp">The square is a grid of <b>walkways</b> and dark <b>houses</b>. Tap a walkway to set a <b>lamp</b>. A lamp shines up, down, left and right until a house blocks the beam. Light <b>every walkway</b> to finish.</p>
   <p class="howp">Two rules of the guild: <b>no lamp may shine on another lamp</b>, and a <b>numbered house</b> must have exactly that many lamps against its walls. Broken rules show at once, clashing lamps get a red ✕ and an overfed house shows !</p>
   <p class="howp">Tap again for a gray ✕ <b>note</b> (a spot you believe holds no lamp), and a third tap clears. Watch the painted town behind the grid, its <b>windows kindle</b> as you light the square and fireflies come out near the end.</p>
@@ -928,6 +930,19 @@ tap("row-back",function(){ show("s-title"); stamp(); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); stamp(); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='lamplighter_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ show("s-title"); stamp(); });
 tap("over-menu",function(){ stopToMenu(); });
 tap("over-retry",function(){ if(!CUR)return stopToMenu();

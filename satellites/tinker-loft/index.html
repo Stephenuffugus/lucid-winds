@@ -183,6 +183,8 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 
 <div class="screen" id="s-how">
   <h1 style="font-size:1.4rem">HOW TO TINKER</h1>
+  <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+  <p class="howp"><b>The goal.</b> Build a happy little chain reaction from planks, balloons, and dominoes to carry a marble home.</p>
   <p class="howp">Every machine gives you a <b>goal</b> and a tray of <b>parts</b>. Drag a part straight from the tray onto the loft, or tap a part and then tap the loft. Drag placed parts to fine tune, grab either end of a plank to tilt it, then press <b>RUN</b> and watch honest physics do the rest.</p>
   <p class="howp"><b>Planks</b> are ramps (drag an end to tilt them, or use the TILT button). <b>Dominoes</b> topple in chains. <b>Fans</b> blow sideways, <b>balloons</b> only rise, <b>funnels</b> catch and drop, <b>seesaws</b> tip under weight, and <b>scissors</b> cut the nearest string when something rolls over them.</p>
   <p class="howp"><b>The One Nudge:</b> while the machine runs you may tap ONCE anywhere. The nearest moving piece gets a small shove toward your finger. Some machines are built around that single tap. Clear a bench without spending it for a <b>&#9733; no-nudge star</b>.</p>
@@ -1229,6 +1231,16 @@ $("b-daily").addEventListener("click",function(){ startDaily(); });
 $("b-sandbox").addEventListener("click",function(){ startSandbox(); });
 $("b-ward").addEventListener("click",openWard);
 $("b-how").addEventListener("click",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: the rules have to be the first thing a new
+   player sees. Once per device; the How button still reopens it. */
+(function(){
+  var K='tinker_loft_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 $("sel-back").addEventListener("click",function(){ show("s-title"); });
 $("ward-back").addEventListener("click",function(){ show("s-title"); });
 $("how-back").addEventListener("click",function(){ show("s-title"); });

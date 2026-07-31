@@ -182,6 +182,9 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How Tempo Grove works</h2>
+      <!-- THE-GOAL-ROW: Stephen 2026-07-31 wants the OBJECTIVE stated, not just
+           the mechanics. Copy is the game's own approved one-liner. -->
+      <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> Stack falling blocks to the beat while a golden sweepline clears what you grow on the bar.</div></div>
       <div class="helprow"><div class="hi">🟨</div><div>Quads of <b>Sun</b> (gold, solid dot) and <b>Moon</b> (indigo, hollow diamond) fall onto the field. Shift with ◀ ▶, spin with ⟳, slam with ⤓. You can also tap the field to spin and swipe down to slam.</div></div>
       <div class="helprow"><div class="hi">◼</div><div>Grow any <b>2x2 of one kind</b> and it lights up as a marked square. Bigger same-kind slabs mark as overlapping squares worth more.</div></div>
       <div class="helprow"><div class="hi">📏</div><div>The <b class="hl">sweepline</b> crosses the field on the beat of the music. Marked squares it passes are cleared together, and the stack settles.</div></div>
@@ -769,6 +772,19 @@ tap("b-tracks",function(){ renderTracks(); show("s-tracks"); });
 tap("tracks-back",function(){ if(G){ hideScreens(); } else show("s-title"); });
 tap("tracks-back-top",function(){ if(G){ hideScreens(); } else show("s-title"); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='tempo_grove_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("how-back",function(){ show("s-title"); });
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("ward-back",function(){ show("s-title"); });

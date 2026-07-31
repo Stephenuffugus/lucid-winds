@@ -186,6 +186,8 @@ h1.logo b{color:var(--pink); text-shadow:0 0 22px #e58fa088}
 
   <div class="screen" id="s-how">
     <h1 class="logo" style="font-size:1.3rem">HOW TO FLY</h1>
+    <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+    <div class="howtxt" style="margin-bottom:10px"><b>The goal.</b> A twin stick starfield where every enemy you clear plants a flower that charges your Bloom Bomb.</div>
     <div class="howtxt">
       <b>Left half</b> of the field is your flight stick. <b>Right half</b> aims and fires.
       The 🎯 toggle fires for you so one thumb is enough.<br><br>
@@ -1023,6 +1025,19 @@ tap("b-zen",function(){ startMode("zen"); toast("🌙 Zen Drift · nothing here 
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("b-grove",function(){ renderGrove(); show("s-grove"); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='nova_bloom_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("ward-back",toMenu); tap("grove-back",toMenu); tap("how-back",toMenu);
 tap("over-again",function(){ startMode(G?G.mode:"arena"); });
 tap("over-menu",toMenu);

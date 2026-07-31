@@ -244,6 +244,9 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how">
     <div class="pad">
       <h2 class="sc-h">How the Court plays</h2>
+      <!-- THE-GOAL-ROW: Stephen 2026-07-31 wants the OBJECTIVE stated, not just
+           the mechanics. Copy is the game's own approved one-liner. -->
+      <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> A three by three card duel in the old Triple Triad tradition where the soil itself takes sides.</div></div>
       <div class="helprow"><div class="hi">🖐</div><div>You and your rival each bring <b>5 cards</b>. Take turns placing them on the <b>3×3 court</b> until nine squares are filled.</div></div>
       <div class="helprow"><div class="hi">⚔️</div><div>Every card has four edge numbers. Place a card beside a rival card and <b>if your touching edge is higher, their card flips to your side</b>. Most cards at the end wins; the unplayed card counts for its holder.</div></div>
       <div class="helprow"><div class="hi">🌱</div><div><b class="hl">Rich Soil:</b> a fertile square gives its card <b>+1 on every edge</b>. A thorn square gives <b>−1</b>. The soil is visible before you place, so plan around it.</div></div>
@@ -1057,6 +1060,19 @@ tap("b-zen",function(){ renderZen(); show("s-zen"); });
 tap("b-deck",function(){ deckSel=0; renderDeck(); show("s-deck"); });
 tap("b-col",function(){ renderCol(); show("s-col"); });
 tap("b-how",function(){ show("s-how"); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='bramble_court_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('s-how'); }catch(e){}
+  }, 80);
+})();
 tap("b-ward",function(){ renderWard(); show("s-ward"); });
 tap("b-set",function(){ show("s-set"); });
 tap("journey-back",goHome); tap("zen-back",goHome); tap("draft-back",goHome);

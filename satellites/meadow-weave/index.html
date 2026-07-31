@@ -115,6 +115,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to weave</h2>
+    <!-- THE-GOAL-ROW: the OBJECTIVE, in the game's own approved words -->
+    <div class="helprow"><div class="hi">🎯</div><div><b>The goal.</b> Turn and lay hex tiles so meadow meets meadow and pond meets pond until the map comes alive.</div></div>
     <div class="helprow"><div class="hi">🔄</div><div>Tap <b>Rotate</b> to turn the next tile. Each hex has six edges, each a kind of land.</div></div>
     <div class="helprow"><div class="hi">👆</div><div>Tap a glowing empty slot to <b>place</b> it. Line up matching edges for points and a rising chime.</div></div>
     <div class="helprow"><div class="hi">🌾</div><div>Close off a whole region of one land and it <b class="hl">comes alive</b> and drops a <b class="hl">feral seed</b> into your pouch.</div></div>
@@ -613,7 +615,20 @@ tap('b-weave',function(){ sfx('ui'); startLevel('weave'); });
 tap('b-daily',function(){ sfx('ui'); startLevel('daily'); });
 tap('b-quest',function(){ sfx('ui'); startLevel('quest'); });
 tap('b-zen',function(){ sfx('ui'); startLevel('zen'); });
-tap('b-how',function(){ sfx('ui'); show('how'); }); tap('how-back',function(){ show('title'); });
+tap('b-how',function(){ sfx('ui'); show('how'); });
+/* AUTO-HOW — Stephen 2026-07-31: "when I click on the game to open it, the first
+   thing that should pop up should be the HOW TO PLAY". This screen already
+   existed and was good; it was only ever reachable from a button, so a new
+   player never saw it. Show it once per device, then never again unless they
+   tap How. Flag is set at open, so a player who backs out still counts as told. */
+(function(){
+  var K='meadow_weave_how_seen';
+  try{ if(localStorage.getItem(K)==='1') return; }catch(e){}
+  setTimeout(function(){
+    try{ localStorage.setItem(K,'1'); }catch(e){}
+    try{ show('how'); }catch(e){}
+  }, 80);
+})(); tap('how-back',function(){ show('title'); });
 tap('b-set',function(){ sfx('ui'); show('set'); }); tap('set-back',function(){ saveSet(); show('title'); });
 tap('b-ward',function(){ sfx('ui'); renderWard(); show('ward'); }); tap('ward-back',function(){ show('title'); });
 tap('b-pouch',function(){ sfx('ui'); renderPouch(); show('pouch'); }); tap('pouch-back',function(){ show('title'); });
