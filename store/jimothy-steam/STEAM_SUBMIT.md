@@ -45,13 +45,13 @@ more than a better first draft.
 SteamPipe config, the upload. The credit can only be activated by the Steam
 account that paid, so it has to be you. It takes about two minutes:
 partner.steamgames.com → your dashboard → the unused app credit → name it
-`Jimothy the Jumping Nugget`. Send me the number.
+`Jumping Jimothy`. Send me the number.
 
 ## The build is packaged and ready
 
 `dist/win-unpacked/` is the folder Steam wants. Built and verified Jul 30:
 
-- `Jimothy the Jumping Nugget.exe` plus the Electron runtime, 493 MB
+- `Jumping Jimothy.exe` plus the Electron runtime, 493 MB
 - the whole game inside `resources/app.asar`, 239 MB, nearly all costumes
 - proven to boot and play a real Adventure level **with the network switched
   off** (see VENDORED.md)
@@ -84,7 +84,7 @@ in the Steamworks SDK.
 
 Then in Steamworks: **Builds** → set the build live on the *default* branch →
 **Installation → General** → add a launch option, executable
-`Jimothy the Jumping Nugget.exe`, OS Windows → back to the build checklist and
+`Jumping Jimothy.exe`, OS Windows → back to the build checklist and
 mark it ready for review.
 
 ## The store page

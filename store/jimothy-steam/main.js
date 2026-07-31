@@ -1,4 +1,4 @@
-/* Jimothy the Jumping Nugget — Steam desktop shell.
+/* Jumping Jimothy — Steam desktop shell.
    The game is a portrait phone game, so the window is portrait and the canvas
    letterboxes inside it rather than stretching. Everything loads from disk:
    a Steam build must never need our host to be up. */
@@ -25,7 +25,7 @@ function createWindow() {
     minHeight: 640,
     center: true,
     backgroundColor: '#0b0f0b',
-    title: 'Jimothy the Jumping Nugget',
+    title: 'Jumping Jimothy',
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,

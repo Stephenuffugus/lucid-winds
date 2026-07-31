@@ -46,7 +46,7 @@ jimothy
 
 **Short description / tagline**
 ```
-Jimothy the Jumping Nugget. Hop Seattle's roundest raccoon home to the feast.
+Jumping Jimothy. Hop Seattle's roundest raccoon home to the feast.
 ```
 
 **Pricing:** choose **"$0 or donate"**, tick **Allow donations**, suggested amount **$3**.
@@ -66,7 +66,7 @@ Put this button FIRST, at the very top:
 
 Then the body:
 ```
-Jimothy the Jumping Nugget
+Jumping Jimothy
 
 Meet Jimothy: Seattle's roundest, most beloved raccoon. Hop him across the rainy city — dodging traffic, riding dumpster lids and kayaks down the canal — home to the greatest dumpster feast in town.
 

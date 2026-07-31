@@ -11,7 +11,7 @@ by someone else — steer clear of it)._
 - **Project URL:** `jimothy` → `sky-wolf-studios.itch.io/jimothy`
   (make the account `sky-wolf-studios` if it does not exist yet — keeps the SWS branding)
 - **Short tagline / "Short description":**
-  `Jimothy the Jumping Nugget. Hop Seattle's roundest raccoon home to the feast.`
+  `Jumping Jimothy. Hop Seattle's roundest raccoon home to the feast.`
 - **Classification:** Games
 - **Kind of project:** for Tier 1 (link) → **"Downloadable" is wrong; use the
   external-link banner** — actually simplest is set it to **HTML** later; for the link-only
@@ -49,7 +49,7 @@ Fresh, current-build shots are in `store-listing/itch-shots/`:
 
 ## Description (paste this into the itch rich-text editor)
 
-> ### Jimothy the Jumping Nugget
+> ### Jumping Jimothy
 >
 > Meet Jimothy: Seattle's roundest, most beloved raccoon. Hop him across the rainy city
 > — dodging traffic, riding dumpster lids and kayaks down the canal — home to the

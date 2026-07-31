@@ -1,11 +1,11 @@
-# Jimothy the Jumping Nugget — Steam store kit (paste-ready)
+# Jumping Jimothy — Steam store kit (paste-ready)
 
 Prepared Jul 30 2026 while Stephen fought the partner portal. Everything below is
 paste-ready for the Steamworks store page editor the moment the app exists.
 House voice: warm, no dashes in player-facing copy, honest AI statement.
 
 ## App name
-Jimothy the Jumping Nugget
+Jumping Jimothy
 
 ## Short description (Steam cap 300 chars; this is 209)
 Hop Seattle's roundest and most beloved raccoon across rainy streets, rooftops,
@@ -13,7 +13,7 @@ and the canal. Grab every bottlecap, dodge the ferries and the gulls, and lead
 Jimothy to the greatest dumpster feast in town.
 
 ## About This Game
-Meet Jimothy the Jumping Nugget, a real Seattle legend with a short spine and a
+Meet Jumping Jimothy, a real Seattle legend with a short spine and a
 big appetite.
 
 Hop lane by lane through a hand built city. Every clean hop forward grows your

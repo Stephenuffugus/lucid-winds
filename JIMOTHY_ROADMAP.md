@@ -37,7 +37,7 @@ $100 Steam Direct fee **paid Jul 30**, so earliest release **Aug 29**, target
 ⛔ **One thing blocks every technical step: the App ID.** Only the Steam account
 that paid can activate the app credit, so it has to be Stephen —
 partner.steamgames.com → dashboard → the unused app credit → name it
-`Jimothy the Jumping Nugget` → send me the number. Two minutes. Depot id,
+`Jumping Jimothy` → send me the number. Two minutes. Depot id,
 SteamPipe config and upload all key off it.
 
 The build is verified as of today, re-vendored from v8.2 and A/B proven against

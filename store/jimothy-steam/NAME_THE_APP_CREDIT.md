@@ -36,7 +36,7 @@ Steam page instead of the partner site, sign out fully and go back to that URL.
 3. **Type the name.** Enter exactly:
 
    ```
-   Jimothy the Jumping Nugget
+   Jumping Jimothy
    ```
 
    This is the store name. It is editable later, so do not agonise over it — but

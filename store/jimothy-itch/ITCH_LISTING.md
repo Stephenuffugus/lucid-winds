@@ -57,14 +57,14 @@ a few megabytes. Nothing was compressed or resized, because the art is yours.
 
 ## Page copy
 
-**Title:** Jimothy the Jumping Nugget
+**Title:** Jumping Jimothy
 
 **Short description (itch shows this in listings):**
 Hop Seattle's roundest raccoon across rainy streets, rooftops, and the canal.
 
 **About:**
 
-Meet Jimothy the Jumping Nugget, a real Seattle legend with a short spine and a
+Meet Jumping Jimothy, a real Seattle legend with a short spine and a
 big appetite.
 
 Hop lane by lane through a hand built city. Every clean hop forward grows your
