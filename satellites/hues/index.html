@@ -290,7 +290,7 @@
   <section class="screen on" id="menu">
     <button class="soundtog" id="menuSound">🔊</button>
     <button class="rulestog" id="menuRules" aria-label="How to play">❓</button>
-    <div class="coins-pill" id="menuCoins">🪙 0</div>
+    <div class="coins-pill" id="menuCoins"><svg viewBox="0 0 16 16" aria-hidden="true" style="width:1em;height:1em;vertical-align:-.12em"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d='M8 3.8v8.4M5.8 5.8h4a1.5 1.5 0 0 1 0 3H6.2a1.5 1.5 0 0 0 0 3h4' fill='none' stroke='#1a1206' stroke-width='1.5' stroke-linecap='round'/></svg> 0</div>
     <div class="wordmark"><span class="l1">HUES</span></div>
     <div class="tag">match the color · beat the clock</div>
     <div class="swatch-row" id="menuSwatches"></div>
@@ -373,7 +373,7 @@
 
   <!-- SHOP -->
   <section class="screen" id="shop">
-    <div class="shop-top"><button class="back" id="shopBack">← Back</button><h2>Shop</h2><div class="coins-pill" id="shopCoins">🪙 0</div></div>
+    <div class="shop-top"><button class="back" id="shopBack">← Back</button><h2>Shop</h2><div class="coins-pill" id="shopCoins"><svg viewBox="0 0 16 16" aria-hidden="true" style="width:1em;height:1em;vertical-align:-.12em"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d='M8 3.8v8.4M5.8 5.8h4a1.5 1.5 0 0 1 0 3H6.2a1.5 1.5 0 0 0 0 3h4' fill='none' stroke='#1a1206' stroke-width='1.5' stroke-linecap='round'/></svg> 0</div></div>
     <div class="shop-note">Cosmetic frames for the match arena. Earn coins from every round, win or lose.</div>
     <div class="grid" id="shopGrid"></div>
   </section>
@@ -455,6 +455,7 @@ const CONFIG={
   timer:{warnAt:0.5,badAt:0.22,dangerAt:0.33}
 };
 
+const COIN_SVG=`<svg viewBox="0 0 16 16" aria-hidden="true" style="width:1em;height:1em;vertical-align:-.12em"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d='M8 3.8v8.4M5.8 5.8h4a1.5 1.5 0 0 1 0 3H6.2a1.5 1.5 0 0 0 0 3h4' fill='none' stroke='#1a1206' stroke-width='1.5' stroke-linecap='round'/></svg>`;
 const Store=(()=>{let mem={},ok=false;try{localStorage.setItem("__hm","1");localStorage.removeItem("__hm");ok=true;}catch(e){}
   return{g(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
          s(k,v){try{ok?localStorage.setItem(k,String(v)):(mem[k]=String(v));}catch(e){mem[k]=String(v);}}};})();
@@ -524,6 +525,10 @@ const BORDERS=[
   {id:"clay_gecko",name:"Wall Gecko",ds:"Sky-blue rails, clinging gecko",img:"borders/pack/s01_5.png",price:2000},
   {id:"clay_blobs",name:"Blob Buddies",ds:"Squished blob crew, all smiles",img:"borders/pack/s01_6.png",price:2400},
   {id:"clay_chomp",name:"Chomp Frame",ds:"Plum monster mouth, stalk eyes",img:"borders/pack/s01_7.png",price:5000},
+  /* ⛔ s01_8 and s02_8 were finished art sitting on disk wired to NOTHING.
+     Two frames Stephen made that no player could ever see. Found by diffing
+     the art folder against the borders that reference it. */
+  {id:"clay_bigchomp",name:"Bigger Chomp",ds:"Heavy lidded plum monster, more teeth",img:"borders/pack/s01_8.png",price:6000},
   /* == CRAYON BOX == */
   {id:"crayon_scribble",name:"Scribble Loop",ds:"One looping crayon scribble",img:"borders/pack/s02_1.png",price:250},
   {id:"crayon_paper",name:"Torn Paper",ds:"Torn construction-paper strips",img:"borders/pack/s02_2.png",price:300},
@@ -532,6 +537,7 @@ const BORDERS=[
   {id:"crayon_dots",name:"Dot Dot Dot",ds:"Fat bingo-dauber dots",img:"borders/pack/s02_5.png",price:1000},
   {id:"crayon_chalk",name:"Sidewalk Chalk",ds:"Dusty pastel chalk rails",img:"borders/pack/s02_6.png",price:1800},
   {id:"crayon_wax",name:"Melty Rainbow",ds:"Crayon tips mid-melt",img:"borders/pack/s02_7.png",price:4500},
+  {id:"crayon_full",name:"Full Melt",ds:"Every crayon in the box, mid drip",img:"borders/pack/s02_8.png",price:5500},
   /* == STICKER + PRESSED GARDEN == */
   {id:"sticker_fruit",name:"Fruit Salad",ds:"Die-cut fruit stickers",img:"borders/pack/s03_1.png",price:400},
   {id:"sticker_space",name:"Space Case",ds:"Rocket + planet stickers",img:"borders/pack/s03_2.png",price:900},
@@ -675,12 +681,12 @@ function getMissions(){let m=null;try{const r=Store.g(K.miss);m=r?JSON.parse(r):
 function missionEvent(track,val){const m=getMissions();let ch=false;
   m.items.forEach(it=>{if(it.done)return;const def=MISSION_POOL.find(p=>p.id===it.id);if(!def||def.track!==track)return;
     if(MAXTRACK.has(track))it.prog=Math.max(it.prog,val);else it.prog+=val;
-    if(it.prog>=it.target){it.done=true;addCoins(it.reward);toast("Goal complete · +"+it.reward+" 🪙");beep(660,0.09,0.06);beep(990,0.13,0.06);}ch=true;});
+    if(it.prog>=it.target){it.done=true;addCoins(it.reward);toast("Goal complete · +"+it.reward+" coins");beep(660,0.09,0.06);beep(990,0.13,0.06);}ch=true;});
   if(ch)Store.s(K.miss,JSON.stringify(m));}
 function renderMissions(){const m=getMissions(),el=$("missionList");el.innerHTML="";
   m.items.forEach(it=>{const def=MISSION_POOL.find(p=>p.id===it.id),pct=Math.min(100,Math.round(it.prog/it.target*100));
     const row=document.createElement("div");row.className="mrow"+(it.done?" done":"");
-    row.innerHTML=`<div class="mtop"><span>${def.text}</span><span class="mrew">${it.done?"✓ done":"+"+it.reward+" 🪙"}</span></div><div class="mbar"><div style="width:${pct}%"></div></div>`;
+    row.innerHTML=`<div class="mtop"><span>${def.text}</span><span class="mrew">${it.done?"✓ done":"+"+it.reward+" "+COIN_SVG}</span></div><div class="mbar"><div style="width:${pct}%"></div></div>`;
     el.appendChild(row);});}
 
 /* ===== audio + haptics ===== */
@@ -806,7 +812,7 @@ function showBreakdown(){const r=G.lastRound;
   if(r.spdB)rows.push(["Speed bonus",r.spdB]);
   if(r.timeout)rows.push(["Ran out of time","−30%"]);
   $("shPoints").innerHTML=rows.map(x=>`<div class="prow"><span>${x[0]}</span><span>${typeof x[1]==="number"?"+"+x[1].toLocaleString():x[1]}</span></div>`).join("");
-  $("shStage").innerHTML=r.stageInfo?`<div class="sh-stage-in">★ Stage ${r.stageInfo.stg} cleared · +${r.stageInfo.bonus} 🪙 · +1 life</div>`:"";
+  $("shStage").innerHTML=r.stageInfo?`<div class="sh-stage-in">★ Stage ${r.stageInfo.stg} cleared · +${r.stageInfo.bonus} ${COIN_SVG} · +1 life</div>`:"";
   $("shTotal").textContent="+"+r.total.toLocaleString();
   $("shRunHdr").textContent="This run · "+G.history.length+(G.history.length===1?" round":" rounds");
   renderRunList();
@@ -839,7 +845,7 @@ function endlessResult(){const best=parseInt(Store.g(K.hi)||"0",10),isNew=G.scor
   payout();missionEvent("endlessScore",G.score);missionEvent("endlessLevel",G.idx);
   $("resKicker").textContent="ENDLESS";$("resTitle").className="";$("resTitle").textContent=isNew?"New best":"Run over";
   $("resScore").textContent=G.score.toLocaleString();$("resSub").textContent="reached level "+G.idx+" · best "+Math.max(best,G.score).toLocaleString();
-  $("resCoins").textContent="+ "+G.coinsRun+" 🪙";$("resSquares").textContent="";$("resVs").innerHTML="";$("resStreak").textContent="";renderRoundChips();
+  $("resCoins").innerHTML="+ "+G.coinsRun+" "+COIN_SVG;$("resSquares").textContent="";$("resVs").innerHTML="";$("resStreak").textContent="";renderRoundChips();
   setActions([{label:"Play again",cls:"btn-fill",fn:()=>startGame("endless")},{label:"Shop",cls:"btn-ghost",fn:openShop},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
 /* Rounded-rect path (module-level so paintShareBorder can use it) */
@@ -975,7 +981,7 @@ function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==toda
   $("resKicker").textContent="DAILY #"+dailyNumber();$("resTitle").className="italic";$("resTitle").textContent=firstToday?"Locked in":"Practice";
   $("resScore").textContent=G.score.toLocaleString();
   $("resSub").textContent=firstToday?"come back tomorrow for #"+(dailyNumber()+1):"already counted today";
-  $("resCoins").textContent=firstToday?("+ "+(G.coinsRun+bonus)+" 🪙  (incl. "+bonus+" daily bonus)"):"practice, coins from rounds only";
+  $("resCoins").textContent=firstToday?("+ "+(G.coinsRun+bonus)+" "+COIN_SVG+"  (incl. "+bonus+" daily bonus)"):"practice, coins from rounds only";
   $("resSquares").textContent=sq;$("resVs").innerHTML="";$("resStreak").textContent=streak>0?("🔥 "+streak+" day streak"):"";renderRoundChips();
   const shareText="HUES #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"")+"\n\nCan you beat my score?";
   setActions([{label:"Share result",cls:"btn-fill",fn:()=>shareDailyCard(shareText,"https://lucidwinds.com/satellites/hues/",streak)},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
@@ -999,12 +1005,12 @@ function openShop(){renderShop();show("shop");}
 function buildPreview(id){const b=borderById(id);
   const cls=b.img?"frame bd-img":"frame bd-"+id,st=b.img?`style="--bimg:url(${b.img})"`:"";
   return`<div class="prev"><div class="${cls}" ${st}><div class="swatch" style="background:linear-gradient(90deg,hsl(265,70%,55%) 0 50%,hsl(28,85%,55%) 50% 100%)"></div></div></div>`;}
-function renderShop(){$("shopCoins").textContent="🪙 "+coins().toLocaleString();const grid=$("shopGrid");grid.innerHTML="";const eq=equipped();
+function renderShop(){$("shopCoins").innerHTML=COIN_SVG+" "+coins().toLocaleString();const grid=$("shopGrid");grid.innerHTML="";const eq=equipped();
   BORDERS.forEach(b=>{const own=isOwned(b.id),isEq=eq===b.id;let btn;
     if(isEq)btn=`<div class="buy equipped">Equipped</div>`;
     else if(own)btn=`<div class="buy owned" data-equip="${b.id}">Equip</div>`;
-    else if(coins()>=b.price)btn=`<div class="buy locked" data-buy="${b.id}">🪙 ${b.price}</div>`;
-    else btn=`<div class="buy cant">🪙 ${b.price}</div>`;
+    else if(coins()>=b.price)btn=`<div class="buy locked" data-buy="${b.id}">${COIN_SVG} ${b.price}</div>`;
+    else btn=`<div class="buy cant">${COIN_SVG} ${b.price}</div>`;
     const tile=document.createElement("div");tile.className="tile";
     tile.innerHTML=buildPreview(b.id)+`<div class="nm">${b.name}</div><div class="ds">${b.ds}</div>${btn}`;grid.appendChild(tile);});
   grid.querySelectorAll("[data-buy]").forEach(el=>el.onclick=()=>{const id=el.dataset.buy,b=BORDERS.find(x=>x.id===id);
@@ -1033,7 +1039,7 @@ function setSoundIcon(){$("menuSound").textContent=soundOn?"🔊":"🔇";}
 $("menuSound").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");setSoundIcon();if(soundOn){ac();beep(660,0.08,0.06);}};
 
 function refreshMenu(){
-  $("menuCoins").textContent="🪙 "+coins().toLocaleString();
+  $("menuCoins").innerHTML=COIN_SVG+" "+coins().toLocaleString();
   const b=parseInt(Store.g(K.hi)||"0",10);$("endlessMeta").textContent=b>0?("BEST "+b.toLocaleString()):"";
   const done=Store.g(K.dDone)===todayStr(),streak=parseInt(Store.g(K.dStreak)||"0",10);
   $("dailyMeta").innerHTML="#"+dailyNumber()+(streak>0?`<br><span class="streak-flag">🔥 ${streak}</span>`:"");

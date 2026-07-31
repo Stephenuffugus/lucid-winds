@@ -352,9 +352,25 @@ items are marked here so nobody re-does them.
   in one screenshot.
 
 ### 🌈 Hues — featured elsewhere, Stephen wants the shop built out
-- [ ] **Shop build-out** — "a ton more unlockables, balanced economy, work for them
-  but fun." Borders with critters in the corners. Claymation + crayon styles plus
-  new directions.
+- [~] **Shop build-out — mostly DONE and audited 2026-07-31.** The shop already
+  carries **120 borders** across clay, crayon, sticker, pressed garden and the
+  rest, with 112 art files, and every single `img:` path resolves (checked file
+  by file, zero missing). So "a ton more unlockables" landed with the art pack.
+  Two real finds this pass: **s01_8 and s02_8 were finished frames sitting on
+  disk wired to nothing** (a second plum monster and a full melting rainbow
+  crayon frame), now shipped as Bigger Chomp and Full Melt; and the coin glyph
+  was the 🪙 emoji in eleven places, which draws as an empty box wherever the
+  font is missing, on the one game Jessie singled out for readability. Replaced
+  with an inline SVG coin.
+  ⛔ Doing that swap taught something worth keeping: the eleven usages were NOT
+  interchangeable. Two were markup, several were innerHTML, and several were
+  `textContent` where markup prints as literal characters. Worse, the two coin
+  pills are REWRITTEN at runtime, so fixing the HTML alone changed nothing on
+  screen. Fixed per site and verified in a browser: 119 price buttons draw the
+  glyph, both pills draw it, no literal placeholders, no console errors.
+  Still open and genuinely his: **the balanced economy** ("work for them but
+  fun"). Prices run 250 to 12000 against a 120-points-per-coin earn rate, and
+  nobody has measured a real session against that ladder yet.
 - [x] **Asset sheet list doc DELIVERED + verified in 012Assets** (doc id
   1skxzJqR3G7TDwLVE4OUWw4ML6kyM5nDqYa2Qi03LZaI): 15 sheets, ~86 new borders in 10
   styles incl. claymation + crayon waves, an earned Trophy Grove lane, win bursts,
