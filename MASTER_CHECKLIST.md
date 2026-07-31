@@ -769,6 +769,57 @@ spelling than the code. [[reference_display_name_slug_map]] again.
 
 ---
 
+## 🖤 BLACK SCREENS + HOW TO PLAY (Stephen 2026-07-31)
+
+- [x] **Black screens ROOT-CAUSED and FIXED across all 14 service workers
+  (commit 47cd7f60).** Never reproduced in a clean browser because it needs a
+  worker installed. Two defects that combine: (1) **no timeout** — fetch() only
+  REJECTS on a hard failure, so a hung request left respondWith's promise
+  unsettled and the browser painted nothing, forever; in the root worker the 5s
+  fallback called `done(undefined)` on a cache miss and `done()` ignores falsy,
+  so that path never settled either. (2) **origin-wide cache deletion** —
+  `caches.keys()` is scoped to the ORIGIN not the worker scope, so the common
+  `k === CACHE ? null : delete(k)` wiped every OTHER worker's cache; four
+  workers were deleting each other on every deploy, which is exactly why the
+  cache fallback in (1) was usually empty. Now: every fetch raced against a
+  timeout, respondWith never handed undefined, deletions scoped to each
+  worker's own prefix, and a readable "that did not load" page with Try again
+  plus a way back to the arcade instead of a black rectangle. Verified by
+  driving all 14 workers through the real scenario (network hangs, cache
+  empty): 14/14 settle, 0 delete another worker's caches
+  (`scratchpad/sw_fleet.js`). SW registrations and cache names bumped so
+  installed phones actually pick the new workers up.
+- [x] **Info circle copy: all 170 game descriptions are one sentence (commit
+  47cd7f60, verified by re-extracting all 170 from the live portal DOM).** 33 were
+  longer, every one of them in the classics table the earlier sweep never
+  reached. Rewritten; 0 multi-sentence, 0 dashes, 0 uses of "AI" remain.
+- [x] **HOW TO PLAY auto-opens: all 66 shell games verified.** Every one has a
+  real DIRECTIONS entry in `play/shell.js` (goal, how it plays, controls), and
+  `maybeShowDirections()` fires it before the first play. Confirmed on screen
+  for 15 Puzzle both standalone and inside the portal frame.
+- [x] **Abduct a Chameleon + Abduct a Chameleon 3D — Stephen's two named games,
+  FIXED upstream** (`Stephenuffugus/abduct_a_chameleon` b382a25). 2D had a good
+  help screen that only ever sat behind a button, so a new player never saw it;
+  it now opens itself once per device, on a NEW flag rather than `tutorialSeen`
+  (which is already true for anyone who ever pressed PLAY, so reusing it would
+  have shipped to nobody). 3D had none at all; added objective, how a round
+  works, and every control for phone and keyboard, read off the real key
+  handlers and touch buttons. Verified: first open shows it, reload does not,
+  ? reopens it.
+- [ ] **17 satellites still have no rules page before play.** Verified by
+  RUNNING them, not grepping: they open on a title screen with a one line
+  concept and mode buttons, which is a tagline, not an objective plus rules plus
+  controls. The list: The Attic, Doodle Pad, Blooming Words, Vine Runner,
+  Dragon Philosophy, Petal Plunge, Meadow Weave, Silt, Tempo Grove, Root Weave,
+  Sled Vine, Bramble Court, Nova Bloom, Orb Orchard, Frost Watch, Lamplighter,
+  Tinker Loft. (Petal Plunge and Dragon Philosophy have a How to Play reachable
+  from the title; the other 15 need one written.) The other 72 satellites do
+  carry rules text and still need the same run-it check.
+- [ ] **Vine Runner 404:** `art/run-2.png` is missing. The game renders fine
+  (everything is canvas) but a request fails on every load.
+
+---
+
 ## 🔴 BLOCKED ON STEPHEN — nothing moves until he acts
 
 These are not "waiting for a decision I could make." Each needs his art, his intent, or
