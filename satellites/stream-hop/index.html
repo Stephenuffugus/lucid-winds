@@ -986,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.0';
+var BUILD='v8.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1720,7 +1720,7 @@ function newGame(mode, startLevel){
       cr:{ r:startRow, x:VW/2, w:42 }, hop:null, buf:null, camY:0, camYt:0, phase:'play', conf:[],
       score:0, best:PROG.best[mode]||0, combo:0, trail:[], flowers:0, longest:0, crossings:0, coins:0,
       chaseR:startRow-6, chaseSpd: (mode==='zen'||mode==='rush')?0:(mode==='adventure'?Math.min(0.28,0.11+(advL-1)*0.011):0.28), clock: mode==='rush'?60:0, t:0, parts:[], floats:[], fx:[], ride:null, coyote:0,
-      shake:0, flash:0, slowmo:1, near:{}, chr:curChar(), started:false,
+      shake:0, flash:0, slowmo:1, near:{}, chr:borrowedChr(mode,advL), started:false,
       shield:false, dashT:0, magnetT:0, powsGot:0, zone:(mode==='adventure'?advZoneIdx(advL):0), zoneBanner:null,
       level:advL, lvFlowers:0, lvCoins:0, lvHops:0, lvT:0, streak:0, deadCause:null, 
       /* what each Adventure level actually CONTAINS, tallied as the road is built.
@@ -1737,7 +1737,15 @@ function newGame(mode, startLevel){
   // camera init
   G.camY = G.cr.r*TILE - VH*0.40; G.camYt=G.camY;
   genUpTo(startRow+20);
-  if(mode==='adventure') G.levelBanner={ n:advL, name:advChapterName(advL), t:2.8 };
+  if(mode==='adventure'){
+    G.levelBanner={ n:advL, name:advChapterName(advL), t:2.8 };
+    /* Borrowed Whiskers has to announce itself, or the player just thinks their
+       costume broke. The banner carries the lent critter's name. */
+    /* ⛔ the banner renders SPNAME[sp], a KEY lookup, so a raw string draws
+       nothing at all. Register the label and pass the key. */
+    var _bw=borrowedFor(advL);
+    if(_bw){ SPNAME._bw='BORROWED WHISKERS \u00b7 '+(_bw.name||'a stranger'); G.levelBanner.sp='_bw'; }
+  }
   show('s-play');
 }
 
@@ -1808,6 +1816,25 @@ function decadeZone(n){
 
 var ADV_LEN=16, ADV_CHAP=DEC_LEN;   // a chapter IS a decade now
 function advLevelOfRow(r){ return Math.floor(Math.max(0,r)/ADV_LEN)+1; }
+/* ===== BORROWED WHISKERS (plan section 4) =====
+   Every 25th adventure level is played AS a critter you do NOT own: try before
+   you buy, using art that already exists, and a nudge toward the Prize Bin.
+   ⛔ Deterministic from the level number, so the same level always lends you the
+   same animal and nobody re-rolls it by restarting. Nothing is granted: the
+   costume goes back in the bin when the level ends. */
+function borrowedFor(n){
+  if(!(n>0 && n%25===0)) return null;
+  var pool=[],i,c;
+  for(i=0;i<CHARS.length;i++){ c=CHARS[i];
+    if(c.rar==='starter'||c.secret||c.via||charOwned(c.id)) continue;
+    pool.push(c); }
+  if(!pool.length) return null;
+  return pool[(levelSeed(n)>>>3) % pool.length];
+}
+function borrowedChr(mode, lvl){
+  if(mode==='adventure'){ var b=borrowedFor(lvl); if(b) return b; }
+  return curChar();
+}
 function advZoneIdx(n){ return advDecade(n).zone; }
 function advChapterName(n){ return advDecade(n).name; }
 /* ⛔ THE CURVE IS A LONG CLIMB, NOT A RAMP TO A WALL (Stephen 2026-07-30:
@@ -1833,6 +1860,47 @@ function advEase(rlv){ return rlv?Math.max(0, 1-(rlv-1)*0.025):0; } // 1 at lvl1
    are different lengths, so the full pattern only repeats every 60 levels. */
 var SP10=['railyard','storm','sound','blackout'];   // landmarks, every 10th
 var SP5 =['rushhour','steamnight','gullswarm'];     // lighter twists, the other 5s
+/* ===== PLAN SECTION 3: things to work toward (Stephen's Jul 30 course-v2 plan)
+   Ten decades needed a reason to finish each one, not just a harder road.
+   ⛔ Every reward is paid ONCE, keyed on the level number in PROG.decRew, so
+   replaying a capstone for stars can never farm it. Extracted into a function so
+   the reward path is the SAME code a harness can call without playing. ===== */
+function grantDecadeRewards(done){
+  if(!PROG.decRew) PROG.decRew={};
+  if(isCapstone(done) && !PROG.decRew['c'+done]){
+    PROG.decRew['c'+done]=1;
+    /* the further out the neighbourhood, the bigger the haul */
+    var _dbonus=20*(advDecadeIdx(done)+1);
+    PROG.caps=(PROG.caps||0)+_dbonus;
+    G.decadeClear={ name:advChapterName(done), caps:_dbonus, n:done };
+    saveProg();
+  }
+  /* Halfway. A free pull out of the Prize Bin, which is a critter you do not
+     own yet and never a duplicate. Uses art that already exists, and does not
+     quietly remove a critter from the bin the way an "exclusive" would. */
+  if(done===50 && !PROG.decRew.half){
+    PROG.decRew.half=1; saveProg();
+    var _pool=binPool();
+    if(_pool.length){
+      var _W={common:6,rare:3,epic:1}, _tot=0, _i;
+      for(_i=0;_i<_pool.length;_i++) _tot+=(_W[_pool[_i].rar]||1);
+      var _roll=Math.random()*_tot, _pick=_pool[_pool.length-1];
+      for(_i=0;_i<_pool.length;_i++){ _roll-=(_W[_pool[_i].rar]||1); if(_roll<=0){ _pick=_pool[_i]; break; } }
+      PROG.chars[_pick.id]=1; PROG.pulls=(PROG.pulls||0)+1; saveProg();
+      G.secretFound=_pick.id;
+    }
+  }
+  /* THE GREATEST DUMPSTER FEAST IN TOWN. The title screen has promised this
+     since the first build; level 100 is where it is finally kept. Sunbeams go
+     through the studio daily cap like every other payout. */
+  if(done===100 && !PROG.decRew.feast){
+    PROG.decRew.feast=1;
+    PROG.caps=(PROG.caps||0)+500; saveProg();
+    var _sb=0; try{ if(window._sbCapEarn) _sb=window._sbCapEarn(20,'streamhop:feast')||0; }catch(e){}
+    G.feast={ caps:500, sun:_sb };
+  }
+}
+
 function advSpecial(n){
   if(n<5 || n%5!==0) return null;
   /* Every 10th is that decade's named capstone (the plan's showcase list), every
@@ -2436,6 +2504,7 @@ function advLevelUp(newLevel){
        under confetti. */
     if(advSpecial(done)==='blackout' && !charOwned('mothman')){ PROG.chars.mothman=1; saveProg(); G.secretFound='mothman'; }
     if(done>=25 && !charOwned('trashking')){ PROG.chars.trashking=1; saveProg(); G.secretFound='trashking'; }
+    grantDecadeRewards(done);
   }
   // capture the cleared level's story BEFORE counters reset
   G.streak=(G.streak||0)+1;
@@ -2504,6 +2573,23 @@ function showLevelClear(){
       if(pr<1 && curScreen==='s-clear') requestAnimationFrame(roll); };
     setTimeout(function(){ if(curScreen==='s-clear') requestAnimationFrame(roll); }, 850); }
   $('cl-streak').textContent='STREAK '+pc.streak+((PROG.bestStreak||0)>pc.streak?('  ·  best '+PROG.bestStreak):(pc.streak>=2?'  ·  new best':''));
+  /* ⛔ The decade and feast payouts were being GRANTED and never SHOWN, which is
+     the same class of miss as art that is wired but never seen. Say it out loud
+     on the clear screen, under the streak line, where the eye already is. */
+  (function(){
+    var host=$('cl-streak'); if(!host) return;
+    var old=$('cl-reward'); if(old && old.parentNode) old.parentNode.removeChild(old);
+    var msg='';
+    if(G.feast) msg='THE GREATEST DUMPSTER FEAST IN TOWN  ·  +'+G.feast.caps+' bottlecaps'
+      + (G.feast.sun? ('  ·  +'+G.feast.sun+' \u2600'):'');
+    else if(G.decadeClear) msg=G.decadeClear.name.toUpperCase()+' CLEARED  ·  +'+G.decadeClear.caps+' bottlecaps';
+    if(!msg) return;
+    var d=document.createElement('div'); d.id='cl-reward';
+    d.style.cssText='margin-top:8px;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:#f0d878;text-align:center';
+    d.textContent=msg;
+    host.parentNode.insertBefore(d, host.nextSibling);
+    G.feast=null; G.decadeClear=null;
+  })();
   achCheck();
   show('s-clear');
   if(G.secretFound){ var sid=G.secretFound; G.secretFound=null;      // the card lands after the numbers
@@ -2513,10 +2599,14 @@ function resumeNextLevel(){
   var v=$('fadeveil'); if(v)v.classList.add('on'); sfx('ui');
   setTimeout(function(){
     if(G){ G.pendingClear=null; G.celeb=0;
-      G.levelBanner={ n:G.level, name:advChapterName(G.level), t:2.6, sp:advSpecial(G.level) };
+      var _bw2=borrowedFor(G.level);
+      if(_bw2) SPNAME._bw='BORROWED WHISKERS \u00b7 '+(_bw2.name||'a stranger');
+      G.levelBanner={ n:G.level, name:advChapterName(G.level), t:2.6, sp:(_bw2?'_bw':advSpecial(G.level)) };
+      /* the lent critter changes at the level boundary too, not just on entry */
+      G.chr=borrowedChr('adventure', G.level);
       var nz=advZoneIdx(G.level);
       if(nz!==G.zone){ G.zone=nz; warmZoneTex(ZONES[nz]);
-        G.zoneBanner={ name:ZONES[nz].name, bg:ZONES[nz].bg, t:2.9 }; G.levelBanner=null; }
+        G.zoneBanner={ name:advChapterName(G.level), bg:ZONES[nz].bg, t:2.9 }; G.levelBanner=null; }
       var rsp=advSpecial(G.level);
       if(rsp==='storm' && G.weather){ G.weather.type='rain'; G.weather.t=0; }
       if(rsp==='blackout' && G.weather){ G.weather.type='fog'; G.weather.t=0; G.weather.dur=18; }
@@ -4753,7 +4843,7 @@ function boot(){
      bumps while the registered URL never changed. Survivable only because the
      no-cache header rule covers every ?v= URL (verified BYPASS at the edge); do
      not rely on that twice. */
-  var SWV='72';
+  var SWV='73';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5253,6 +5343,10 @@ if(/[?&]shtest=1/.test(location.search)){
     decades:DECADES, decadeIdx:advDecadeIdx, decade:advDecade, decadeZone:decadeZone,
     chapterName:advChapterName, isCapstone:isCapstone, isSummit:isSummit, laneAt:laneAt,
     renderLevels:renderLevels, show:show,
+    /* course v2 rewards: the harness calls the SAME granting code the game does */
+    borrowedFor:borrowedFor, borrowedChr:borrowedChr, owned:charOwned, binPool:binPool,
+    clearLevel:function(n){ if(!G) newGame('adventure', n); grantDecadeRewards(n); return PROG.decRew; },
+    resetRewards:function(){ PROG.decRew={}; saveProg(); return PROG.decRew; },
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
