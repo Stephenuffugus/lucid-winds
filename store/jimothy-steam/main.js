@@ -2,15 +2,28 @@
    The game is a portrait phone game, so the window is portrait and the canvas
    letterboxes inside it rather than stretching. Everything loads from disk:
    a Steam build must never need our host to be up. */
-const { app, BrowserWindow, shell, Menu } = require('electron');
+const { app, BrowserWindow, shell, Menu, screen } = require('electron');
 const path = require('path');
 
+const ASPECT = 640 / 1136;   // the game's portrait shape, one source of truth
+
 function createWindow() {
+  /* ⛔ FIT THE SCREEN IT ACTUALLY LANDS ON (2026-07-31). The window was a fixed
+     640x1136, which is TALLER THAN A 1366x768 LAPTOP — the single most common
+     cheap-laptop resolution on Steam's own hardware survey. The OS would shove
+     it off-screen or crop it, and the player's first frame would be a window
+     with its bottom missing. Size off the work area (which already excludes the
+     taskbar) and keep the portrait shape. */
+  const work = screen.getPrimaryDisplay().workAreaSize;
+  const height = Math.max(640, Math.min(1136, work.height - 60));
+  const width = Math.round(height * ASPECT);
+
   const win = new BrowserWindow({
-    width: 640,
-    height: 1136,
+    width,
+    height,
     minWidth: 360,
     minHeight: 640,
+    center: true,
     backgroundColor: '#0b0f0b',
     title: 'Jimothy the Jumping Nugget',
     autoHideMenuBar: true,
@@ -20,6 +33,12 @@ function createWindow() {
       backgroundThrottling: false
     }
   });
+
+  /* Dragging a corner keeps the phone shape instead of stranding the game in a
+     letterboxed strip with 650px of black either side. Maximise and fullscreen
+     still letterbox — that is unavoidable for a portrait game on a 16:9 screen,
+     and the game centres itself cleanly when it happens. */
+  try { win.setAspectRatio(ASPECT); } catch (e) {}
 
   Menu.setApplicationMenu(null);
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
