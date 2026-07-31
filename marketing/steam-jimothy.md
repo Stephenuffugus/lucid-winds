@@ -68,7 +68,9 @@ All from existing Jimothy key art style; TEXT-SAFE margins; game logo legible at
   claiming otherwise is the one lie this audience punishes hardest.
 
 ## Launch plan notes
-- Price: $2.99 recommended (Stephen ratify), 10 percent launch discount
+- Price: **$2.99 USD - RATIFIED by Stephen 2026-07-31**, 10 percent launch discount
+  (⛔ a launch discount must be configured BEFORE release; it cannot be added later)
+- Content survey answers: `store/jimothy-steam/CONTENT_RATING.md`
 - Coming Soon page up as soon as the app exists; wishlists accrue while the
   wrapper is built
 - Steam keys: request a batch for press, friends, and pet roster owners

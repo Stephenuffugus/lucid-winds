@@ -132,7 +132,13 @@
      but when every reopen dies the only good boot comes from clearing browser
      data, which erases the evidence. This runs the moment HTML parses, so a
      dead boot's successor reports it even if that successor dies too. */
+  /* ⛔ A STOREFRONT BUILD TRANSMITS NOTHING (2026-07-31). These diagnostics exist to
+     debug service workers and PWA installs, neither of which can happen inside the
+     desktop wrapper, and a game that phones home has to declare data collection on
+     its store page and carry a privacy policy. Checked against the raw flag because
+     STORE_BUILD is not defined this early. */
   try{
+    if(window.__STEAM_BUILD||window.__ITCH_BUILD) throw 0;
     var dead0=JSON.parse(localStorage.getItem('sh_bootdead')||'[]');
     if(dead0.length){
       var last0=+(localStorage.getItem('sh_bootdead_sent')||0);
@@ -3422,6 +3428,7 @@ function deviceTag(){
   return t;
 }
 function pingCode(code, gave){
+  if(STORE_BUILD) return;                 // storefront builds transmit nothing
   try{
     var who='';
     try{ var sn=window.Sunbeam&&Sunbeam._snapshot?Sunbeam._snapshot():null;
@@ -5288,6 +5295,13 @@ var SUP=(function(){
        and on Steam this is the last surface that pointed anywhere off the machine.
        Kept on itch, where the game sits in a page and the cross promo belongs. */
     var ex=$('b-exit'); if(STEAM_BUILD&&ex)ex.style.display='none';
+    /* ⛔ The in-game bug form POSTs the player's message and user-agent to our cloud
+       function. On a storefront build that is data collection, which drags a privacy
+       policy and a disclosure onto the store page for a channel Steam already
+       provides better: the game's own Discussions hub, where Stephen gets notified.
+       Hide the doors rather than ship buttons that would transmit. */
+    if(STORE_BUILD){ var fbb=$('b-feedback'); if(fbb)fbb.style.display='none';
+      var fbg=$('go-feedback'); if(fbg)fbg.style.display='none'; }
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
     var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';
@@ -5572,6 +5586,7 @@ setTimeout(function(){ try{ cloudPull(true); paintAccount(); }catch(e){} }, 1200
    game is up and the network can be trusted for one small POST. 6h cooldown; the
    endpoint also dedupes and budget-caps its Discord pings. */
 setTimeout(function(){ try{
+  if(STORE_BUILD) return;                 // storefront builds transmit nothing
   var dead=JSON.parse(localStorage.getItem('sh_bootdead')||'[]');
   if(!dead.length) return;
   var last=+(localStorage.getItem('sh_bootdead_sent')||0);
