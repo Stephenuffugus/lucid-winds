@@ -53,7 +53,7 @@ function page(w,h,mode){
  </style></head><body><div class="cap">
    <div class="bg"></div><div class="vig"></div>
    ${mode==='bg'?'':`<img class="roon" src="${roon}">`}
-   ${mode==='bg'?'':`<div class="type">
+   ${(mode==='bg'||mode==='hero')?'':`<div class="type">
      <div class="l1">Jumping</div>
      <div class="l2">Jimothy</div>
      ${(mode==='wide'||mode==='tall')?'<div class="tag">The Little Nugget</div>':''}

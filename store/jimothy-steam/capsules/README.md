@@ -26,9 +26,17 @@ and is what the committed set uses.
 | page_background | 1438x810 | behind the store page itself |
 | screenshots/ | 1920x1080 x5 | the store page gallery |
 
-The library_logo (1280x720 transparent PNG) is the one piece NOT generated here —
-it is a wordmark on transparency and wants a real design pass rather than a
-screenshot.
+    node store/jimothy-steam/capsules/logo.js      # library_logo, transparent
+
+`library_logo` ships in two variants: wordmark only (the safe, standard choice,
+since the hero already has Jimothy in it) and `_with-jimothy` if you want him in
+the lockup too. Both are true RGBA.
+
+⛔ **library_hero must NOT contain the wordmark.** Steam lays `library_logo` on
+top of it, so baking the name in renders it twice — the first pass literally read
+"JUMPING JUMPING / JiJimothy" and it was only caught by compositing the two for
+real instead of looking at them side by side. `hero` mode now draws backdrop and
+raccoon only. If you ever add type back to that image, this returns.
 
 ## The screenshot rule
 The game is portrait and Valve wants 16:9, so each shot is the **real game frame at
