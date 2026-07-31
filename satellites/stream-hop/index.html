@@ -1800,7 +1800,9 @@ function newGame(mode, startLevel){
 }
 
 /* ===== lane generation (sequential, deterministic per run) ===== */
-/* ===== ADVENTURE campaign — never-ending, level after level (classic Frogger feel).
+/* ===== ADVENTURE campaign — never-ending, level after level (classic road-hopper feel).
+   ⛔ Do not name the 1981 arcade game in here. Konami own it, this file ships inside
+   the Steam binary, and the costume was already renamed Froggery for the same reason.
    Levels are fixed 16-row stretches; each is one of 5 Seattle neighborhoods (a
    chapter = 6 levels). Difficulty ramps by level. Each level scores up to 3 stars:
    clear it / bank its flower goal / grab its coin goal. Clearing the furthest level
@@ -2002,7 +2004,7 @@ function diffAt(r){ if(G&&G.mode==='adventure') return advDiff(advLevelOfRow(r))
      it is hard as hell." He was right and the reason is measurable: Zen only ever divided
      the SPEEDS by ~0.58 and then ran the exact Endless difficulty curve for everything
      else. Measured at rows 221-320 it reached 51% water, 13% safe rows, ten-row unbroken
-     hazard runs and NINE trains. Slowing a Frogger down does not make it easier past a
+     hazard runs and NINE trains. Slowing a hopper down does not make it easier past a
      point — density and water fraction do, and slow pads just mean longer waits inside a
      ten-row gauntlet. Zen now has its own curve that tops out at 3.2 and never moves
      again, which also keeps it permanently under the d>3.5 train gate. */

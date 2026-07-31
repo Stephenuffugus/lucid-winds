@@ -41,6 +41,23 @@ s = re.sub(r'navigator\.serviceWorker\.register\([^)]*\)', 'Promise.resolve({sco
 #     flow and the tag only produces a missing-file error, so it goes.
 s = re.sub(r'<link rel="manifest"[^>]*>\s*', '', s)
 
+# 3b) SEO metadata is dead weight in a desktop app - no crawler will ever read it -
+#     and it drags two other companies' trademarks (Frogger, Crossy Road) plus the
+#     retired name into a binary that goes to Valve for review. Strip the lot: they
+#     exist for the web page, not for Steam.
+s = re.sub(r'<meta name="keywords"[^>]*>\s*', '', s)
+s = re.sub(r'<meta name="description"[^>]*>\s*', '', s)
+s = re.sub(r'<meta (?:property|name)="(?:og|twitter):[^"]*"[^>]*>\s*', '', s)
+s = re.sub(r'<link rel="canonical"[^>]*>\s*', '', s)
+s = re.sub(r'<script type="application/ld\+json">[\s\S]*?</script>\s*', '', s)
+assert 'application/ld+json' not in s, 'structured data survived the strip'
+# ⛔ word boundary, not substring: "Froggery" is OUR costume and legitimately
+# contains the other name. A naive `'Frogger' in s` flags our own art forever.
+assert not re.search(r'\bFrogger\b', s), 'a third-party trademark is still in the Steam build'
+assert not re.search(r'\bCrossy Road\b', s), 'a third-party trademark is still in the Steam build'
+assert 'Jimothy the Jumping Nugget' not in s, 'the retired name is still in the Steam build'
+print('  stripped web-only SEO metadata from the desktop build')
+
 # 4) fonts: drop the three Google Fonts tags for one local stylesheet
 s = re.sub(r'<link rel="preconnect" href="https://fonts\.[^>]*>\s*', '', s)
 s = re.sub(r'<link href="https://fonts\.googleapis\.com[^>]*>',
