@@ -769,6 +769,18 @@ spelling than the code. [[reference_display_name_slug_map]] again.
 
 ---
 
+## 👽 THE ABDUCTION FILES
+
+- [x] **160 of 1000 pages, bank 3 written AND LOADED (upstream fe6b692).** Pages
+  101 to 160 in the four threads, all passing `tools/validate_pages.mjs` (40 to
+  90 words, unique numbers, unique openings, no dashes, headings under 40).
+  Thread balance FR 40 · SF 43 · HW 39 · IW 38. ⛔ `index.html` now pulls
+  `pages/files-3.js` alongside the first two, verified in a browser at 160 pages
+  present with 160 unique numbers and no console errors: a page file nothing
+  loads is a page nobody reads. Next batch is writing only, no new plumbing.
+
+---
+
 ## 🖤 BLACK SCREENS + HOW TO PLAY (Stephen 2026-07-31)
 
 - [x] **Black screens ROOT-CAUSED and FIXED across all 14 service workers
@@ -850,9 +862,27 @@ spelling than the code. [[reference_display_name_slug_map]] again.
   **shared Daily course silently changed for every player**. Nothing looked
   wrong in game; only a byte-diff of the Daily against the previous build caught
   it. Always diff the Daily after touching makeLane.
-- [ ] **Still owed from the plan:** decade rewards (capstone caps bonus, the
-  level-50 exclusive costume), the level-100 feast cutscene, and BORROWED
-  WHISKERS every 25.
+- [x] **The REST of the plan shipped (commit d66380f9, BUILD v8.1).** Capstone
+  caps scale by decade (20 at Pike Place to 200 at Downtown at Dusk, paid once,
+  replay-proof via PROG.decRew). Level 50 hands a free Prize Bin pull, always a
+  critter you do not own. Level 100 is THE GREATEST DUMPSTER FEAST IN TOWN, 500
+  caps plus sunbeams through the daily cap. BORROWED WHISKERS every 25: you play
+  as a critter you do not own, chosen deterministically from the level number so
+  it cannot be re-rolled by restarting, announced in the level banner, and
+  granted to nobody. Rewards are named on the clear screen, because granting
+  without showing is the same miss as art wired but never seen. The granting
+  code is one extracted function, which is what the harness calls.
+  ⚖️ **Deliberate deviation, Stephen's to overrule:** the plan's "level-50
+  exclusive costume, promote one of the 45" was NOT done that way. Every costume
+  already has a route to it, so promoting one would have quietly removed a
+  critter from the Prize Bin and made a pull worse. The free pull gives the same
+  earned moment without robbing the bin. A genuinely new sheet is still his call.
+  Also deliberate: the every-5 beat stays the existing named twists (RUSH HOUR,
+  STEAM NIGHT, GULL SWARM) rather than being replaced by BOTTLECAP RUSH, because
+  the variety is already there and working. Verified: Borrowed Whiskers fires
+  only on 25s and is stable, capstone pays 20 at decade 1 and 180 at decade 9
+  and zero on replay, the feast pays once, the halfway pull adds exactly one
+  critter, and the shared Daily is still byte-identical.
 
 ---
 
