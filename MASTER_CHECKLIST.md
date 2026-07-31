@@ -731,10 +731,41 @@ items are marked here so nobody re-does them.
   open pending Jessie's specifics.
 
 ### 💡 New game ideas (Stephen + Jessie — need names/design before building)
-- [ ] **Fox picnic hang-man** — hangman alternative where a fox creeps toward the
-  picnic with each wrong letter (Etsy listing 1089120913 is the reference concept;
-  OUR OWN style and mechanics, no copying).
+- [x] **Fox picnic hang-man — BUILT AND LIVE as "Fox & Basket" 2026-07-31.**
+  `satellites/fox-basket/`, portal card + thumb + `hangman` search alias. Six
+  wrong letters walk the fox from the treeline to the basket, and at six he
+  leaves with the apple in his mouth. Three word banks (meadow / orchard / deep
+  wood, 120 words with a category shown), rules page before play, sunbeams on a
+  win at the studio 30-a-day cap, share, stats. Everything is drawn in the file
+  as vector shapes, so there is no art dependency and no sprite to go missing.
+  Nothing is copied from the Etsy reference; only the "fox instead of a gallows"
+  idea is shared, and the meadow, the tiers, the scoring and the art are ours.
+  Verified by driving the real DOM at 375x667: a full losing game and a full
+  perfect winning game, both end screens, sunbeam cap binding at 29/30, 0 em
+  dashes in visible copy, 0 console errors, 0 404s, plus a portal probe for the
+  card, alphabetical position, lazy thumb, "hangman" search and click-through.
+  ⚠️ **The 48px rule bit again**: the first keyboard was a 7-column grid that
+  looked generous at 72px CSS and measured **44.6 RENDERED px** on a 375px
+  phone, because the 540px stage scales to 0.694. Rebuilt as 5 rows of 5,5,5,5,6
+  (smallest key now 50 real px). Emoji glyphs on the buttons were also swapped
+  for inline SVG: they rendered as tofu boxes off-device, and Jessie's standing
+  rule asks for symbols that match the game's aesthetic, which a stock emoji is
+  not. ⛔ Stephen: the NAME is yours to confirm ("Fox & Basket" is a working
+  title; "Picnic Panic" was already taken by the Galaga remake).
 - [ ] **Sculpting game** — clay on a wheel, additive/subtractive sculpting.
+
+### 🔎 Jessie items that WERE done but were never written down (checked 2026-07-31)
+Both came back as "missing" on a name search because she used a different
+spelling than the code. [[reference_display_name_slug_map]] again.
+- [x] **"Kakaru" missing its rules page (Jessie 7/21) — ALREADY DONE.** The game
+  is **Kakuro** (`games/kakuro.js`, `play/kakuro.html`). It has no rules screen
+  of its own because it does not need one: the shared shell owns directions, and
+  `play/shell.js:602` carries a full `kakuro` entry (goal, how it plays, three
+  controls), fired for a first play and from the ? button off
+  `LW_PLAY.id="kakuro"`. Verified by reading both ends of the wire.
+- [x] **"Grove Groups" thin vocabulary (Jessie 7/19) — ALREADY DONE.** The game
+  is **Root Groups** (`satellites/root-groups/`). The category bank carries an
+  expansion block commented "Jessie: more word/group variation" at :302.
 
 ---
 

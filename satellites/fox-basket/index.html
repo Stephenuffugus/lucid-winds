@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d100c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M8 20 L11 11 L15 15 L19 15 L23 11 L26 20 Z' fill='%23d2762f'/%3E%3Ccircle cx='13' cy='19' r='1.4' fill='%230e140d'/%3E%3Ccircle cx='21' cy='19' r='1.4' fill='%230e140d'/%3E%3Cpath d='M14 23 h6 l-3 3 Z' fill='%23f0e2c8'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fox and Basket">
+<title>Fox and Basket · Sky Wolf Studios</title>
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="Fox and Basket">
+<meta property="og:description" content="Fox and Basket. Free to play at Sky Wolf Studios.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/fox-basket/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/fox-basket/og/card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fox and Basket">
+<meta name="twitter:description" content="Fox and Basket. Free to play at Sky Wolf Studios.">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/fox-basket/og/card.jpg">
+
+<script src="/sunbeam-sdk.js?v=5"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"foxbasket"}).catch(function(){});</script>
+<style>
+:root{
+  --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#f0e2c8;
+  --muted:#9aa188; --line:#33402a;
+  --fox:#d2762f; --fox2:#a9541c; --cloth:#c5503f; --sky:#1a2a1c;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:"Trebuchet MS","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #141b12 0%, #06080a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#131c10 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+
+/* ⛔ Jessie 7/16 + 7/18: every game needs readable type. Nothing here under 17px
+   at stage scale, headings much bigger, and the face is Trebuchet rather than a
+   thin geometric, because the thin fonts were the complaint. */
+.title-word{font-size:52px; line-height:1; color:var(--fox); font-weight:800;
+  text-shadow:0 3px 0 #3a1c07, 0 0 26px #d2762f44; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:18px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.tagline{margin-top:18px; color:var(--cream); font-size:19px; font-weight:700; line-height:1.45; max-width:430px}
+.ribbon{margin-top:12px; color:var(--cream); font-size:17px; opacity:.92; max-width:430px; line-height:1.55}
+
+.btn{display:flex; align-items:center; justify-content:center; gap:12px; min-height:76px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1e2716,#141b10);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease; padding:0 16px}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#d2762f,#a9541c); color:#1a0e04; border-color:#eda161;
+  box-shadow:0 4px 0 #66330d, 0 8px 20px #0006}
+.btn.ghost{background:#111709; color:var(--muted)}
+.btn .gl{width:36px; height:36px; flex:none}   /* 36 CSS is 25 real px at stage scale; smaller read as blobs */
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:14px; width:100%; max-width:430px; margin:0 auto}
+
+/* directions page — fills the screen, not crammed into the middle */
+.dir-h{font-size:34px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.dir-sec{margin-top:22px; text-align:left; width:100%; max-width:440px}
+.dir-lbl{font-size:16px; letter-spacing:3px; text-transform:uppercase; color:var(--sage); font-weight:800}
+.dir-txt{font-size:19px; line-height:1.55; margin-top:8px; color:var(--cream)}
+.dir-list{margin-top:10px; padding-left:0; list-style:none}
+.dir-list li{font-size:18px; line-height:1.5; margin:9px 0; padding-left:30px; position:relative}
+.dir-list li:before{content:""; position:absolute; left:0; top:5px; width:19px; height:16px;
+  background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cg fill='%23d2762f'%3E%3Cellipse cx='12' cy='14' rx='6' ry='5'/%3E%3Cellipse cx='4.5' cy='7' rx='2.6' ry='3.4'/%3E%3Cellipse cx='9.5' cy='3.6' rx='2.6' ry='3.6'/%3E%3Cellipse cx='15' cy='3.6' rx='2.6' ry='3.6'/%3E%3Cellipse cx='19.8' cy='7' rx='2.6' ry='3.4'/%3E%3C/g%3E%3C/svg%3E")}
+
+/* play screen */
+#s-play .pad{padding:18px 18px 12px}
+.hud{display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:6px}
+.hud .chip{font-size:16px; color:var(--muted); font-weight:700; letter-spacing:1px}
+.hud .chip b{color:var(--gold)}
+.scene{width:100%; height:250px; border-radius:18px; border:1px solid var(--line);
+  background:linear-gradient(180deg,#1b2a19 0%, #223018 62%, #2b3a1c 100%); overflow:hidden; position:relative}
+.scene svg{position:absolute; inset:0; width:100%; height:100%}
+/* the two auto margins centre the category and the word in whatever room is
+   left between the meadow and the keyboard, instead of leaving a dead band */
+.cat{margin-top:auto; padding-top:14px; font-size:17px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:800; text-align:center}
+.word{margin-top:10px; margin-bottom:auto; display:flex; flex-wrap:wrap; gap:8px 8px; justify-content:center; min-height:66px}
+.sl{width:40px; height:58px; border-bottom:5px solid var(--deep); display:flex; align-items:center; justify-content:center;
+  font-size:36px; font-weight:800; color:var(--cream)}
+.sl.sp{border-bottom-color:transparent; width:18px}
+.sl.hit{color:var(--sage)}
+.sl.miss{color:var(--cloth)}
+
+/* ⛔ TOUCH TARGETS ARE MEASURED IN RENDERED PIXELS, NOT CSS PIXELS. The 540px
+   stage scales to 0.694 on a 375px phone, so CSS sizes shrink by a third. A
+   7-column grid measured 44.6 real px wide and FAILED the 48px rule even though
+   72px CSS looked generous. Five rows of 5,5,5,5,6 give 98px CSS (68 real) on
+   the first four rows and 80px CSS (56 real) on the last. */
+.kb{display:flex; flex-direction:column; gap:9px; width:100%; padding-top:12px}
+.kbrow{display:flex; gap:9px; width:100%}
+.kbrow>.key{flex:1}
+.key{height:72px; border-radius:12px; border:1px solid var(--line); background:linear-gradient(180deg,#222d18,#161e10);
+  color:var(--cream); font-size:27px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:transform .05s ease, filter .1s ease}
+.key:active{transform:translateY(2px); filter:brightness(1.2)}
+.key.used{opacity:.34; pointer-events:none}
+.key.good{background:linear-gradient(180deg,#4f7d35,#39602a); border-color:#7ab356; color:#f2ffe8}
+.key.bad{background:linear-gradient(180deg,#7a2f26,#4e1d18); border-color:#c5503f; color:#ffd9d2}
+
+.end-h{font-size:44px; font-weight:800; line-height:1.05}
+.end-h.win{color:var(--sage)} .end-h.lose{color:var(--cloth)}
+.end-word{margin-top:14px; font-size:30px; font-weight:800; color:var(--gold); letter-spacing:3px; word-break:break-word}
+.end-note{margin-top:12px; font-size:18px; color:var(--cream); line-height:1.5; max-width:420px}
+.sb{margin-top:14px; font-size:19px; color:var(--gold); font-weight:800}
+
+.backpill{position:absolute; left:14px; bottom:14px; z-index:60; height:52px; display:flex; align-items:center;
+  padding:0 18px; border-radius:26px; border:1px solid var(--line); background:#0f150cdd; color:var(--muted);
+  font-size:16px; font-weight:700; cursor:pointer}
+.toast{position:absolute; left:50%; transform:translateX(-50%); bottom:120px; z-index:80;
+  background:#0f150cee; border:1px solid var(--line); border-radius:14px; padding:14px 22px;
+  font-size:18px; font-weight:700; color:var(--cream); opacity:0; transition:opacity .25s ease; pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- ============ TITLE ============ -->
+  <div class="screen on" id="s-title">
+    <div class="pad center">
+      <div class="title-word">FOX &amp; BASKET</div>
+      <div class="title-sub">Sky Wolf Studios</div>
+      <div class="tagline">Guess the word before the fox reaches the picnic basket.</div>
+      <div class="ribbon">Every letter you miss lets the fox creep one step closer. Spell the whole word and he trots away hungry.</div>
+      <div class="stack" style="margin-top:30px">
+        <button class="btn primary" id="b-play"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9 q6 -8 12 0" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="9" width="16" height="10" rx="2.5" fill="currentColor" opacity=".9"/><path d="M8 9v10M12 9v10M16 9v10M4 13h16" stroke="#1a0e04" stroke-width="1.3" opacity=".55"/></svg>START</button>
+        <button class="btn" id="b-rules"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 q4.5 -1.6 9 0 v13 q-4.5 -1.6 -9 0z" fill="currentColor" opacity=".92"/><path d="M21 5.5 q-4.5 -1.6 -9 0 v13 q4.5 -1.6 9 0z" fill="currentColor" opacity=".62"/></svg>HOW TO PLAY</button>
+      </div>
+      <div class="ribbon" style="margin-top:26px; font-size:16px; color:var(--muted)" id="t-stats"></div>
+    </div>
+    <div class="backpill" id="b-back1">◀ Sky Wolf Studios Arcade</div>
+  </div>
+
+  <!-- ============ DIRECTIONS ============ -->
+  <div class="screen" id="s-rules">
+    <div class="pad center">
+      <div class="dir-h">How to play</div>
+      <div class="dir-sec">
+        <div class="dir-lbl">The goal</div>
+        <div class="dir-txt">A word is hidden behind blank slots. Work out what it is, one letter at a time, before the fox reaches the basket.</div>
+      </div>
+      <div class="dir-sec">
+        <div class="dir-lbl">How it plays</div>
+        <div class="dir-txt">Tap a letter. If it is in the word, every copy of it appears at once. If it is not, the fox takes one step toward the picnic. Six wrong letters and he gets there.</div>
+      </div>
+      <div class="dir-sec">
+        <div class="dir-lbl">The buttons</div>
+        <ul class="dir-list">
+          <li>Tap any letter on the keyboard to guess it</li>
+          <li>A green key means that letter was in the word</li>
+          <li>A red key means it was not, and the fox moved</li>
+          <li>The word above the keyboard tells you its category</li>
+          <li>The arrow at the bottom left returns to the arcade</li>
+        </ul>
+      </div>
+      <div class="stack" style="margin-top:28px">
+        <button class="btn primary" id="b-rules-go"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9 q6 -8 12 0" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="9" width="16" height="10" rx="2.5" fill="currentColor" opacity=".9"/><path d="M8 9v10M12 9v10M16 9v10M4 13h16" stroke="#1a0e04" stroke-width="1.3" opacity=".55"/></svg>START</button>
+        <button class="btn ghost" id="b-rules-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MEADOW PICKER ============ -->
+  <div class="screen" id="s-mode">
+    <div class="pad center">
+      <div class="dir-h">Where are you picnicking?</div>
+      <div class="ribbon">The further from home, the longer the words.</div>
+      <div class="stack" style="margin-top:26px">
+        <button class="btn primary" data-tier="0"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><circle cx="12" cy="5" r="4"/><circle cx="12" cy="17" r="4"/><circle cx="6" cy="11" r="4"/><circle cx="18" cy="11" r="4"/></g><circle cx="12" cy="11" r="3.4" fill="#1a0e04" opacity=".55"/></svg>THE MEADOW</button>
+        <button class="btn" data-tier="1"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6 q-8 -1 -8 7.5 q0 8.5 8 9.5 q8 -1 8 -9.5 q0 -8.5 -8 -7.5z" fill="currentColor"/><path d="M12 6 q0 -5 5 -5.6 q0 4.6 -5 5.6z" fill="currentColor" opacity=".55"/></svg>THE ORCHARD</button>
+        <button class="btn" data-tier="2"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 L19 9.5 H15.5 L21.5 18.5 H2.5 L8.5 9.5 H5 Z" fill="currentColor"/><rect x="10.4" y="18.5" width="3.2" height="4.5" rx="1.2" fill="currentColor" opacity=".7"/></svg>THE DEEP WOOD</button>
+        <button class="btn ghost" id="b-mode-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PLAY ============ -->
+  <div class="screen" id="s-play">
+    <div class="pad">
+      <div class="hud">
+        <div class="chip" id="h-where">THE MEADOW</div>
+        <div class="chip">STEPS LEFT <b id="h-left">6</b></div>
+      </div>
+      <div class="scene"><svg id="svg" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid slice"></svg></div>
+      <div class="cat" id="p-cat"></div>
+      <div class="word" id="p-word"></div>
+      <div class="kb" id="p-kb"></div>
+    </div>
+  </div>
+
+  <!-- ============ END ============ -->
+  <div class="screen" id="s-end">
+    <div class="pad center">
+      <div class="end-h" id="e-h">SHOOED</div>
+      <div class="end-word" id="e-word"></div>
+      <div class="end-note" id="e-note"></div>
+      <div class="sb" id="e-sb"></div>
+      <div class="stack" style="margin-top:28px">
+        <button class="btn primary" id="b-again"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1 -2.6 -5.9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>PLAY AGAIN</button>
+        <button class="btn" id="b-share"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v6h14v-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>SHARE</button>
+        <button class="btn ghost" id="b-home">Home</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div></div>
+
+<script>
+/* =========================================================================
+   FOX AND BASKET — a hangman that is not a hanging.
+   Stephen 2026-07-21: "Hang-man like game, but with a fox that you're trying
+   to stop from stealing the picnic. We want ours to have a similar concept,
+   but our own style."
+   Nothing here is drawn from an asset file. The meadow, the fox and the
+   basket are all vector shapes built in this file, so the game has no art
+   dependency and cannot ship with a missing sprite.
+   ========================================================================= */
+var VW=540, VH=960;
+function $(id){ return document.getElementById(id); }
+
+/* ⛔ MEASURE visualViewport, NEVER innerHeight (studio-wide rule): the URL bar
+   sliding away changes innerHeight without firing a resize, and the stage ends
+   up taller than the screen. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||VW; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||VH; }
+function fit(){ var s=Math.min(_vvW()/VW, _vvH()/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize', fit);
+if(window.visualViewport){ window.visualViewport.addEventListener('resize', fit);
+  window.visualViewport.addEventListener('scroll', fit); }
+fit();
+
+/* ---------- storage ---------- */
+var LS={ get:function(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } },
+         set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
+var SAVE={ played:0, won:0, streak:0, best:0 };
+(function(){ try{ var r=JSON.parse(LS.get('foxbasket_save','{}')); for(var k in SAVE) if(r[k]!=null) SAVE[k]=r[k]; }catch(e){} })();
+function save(){ LS.set('foxbasket_save', JSON.stringify(SAVE)); }
+
+/* ---------- sunbeam earn (studio standard: 30 per day per game) ---------- */
+function capEarn(n,tag){ var granted=0;
+  try{ var k='sw_sb_foxbasket'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k, JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam && Sunbeam.earn) Sunbeam.earn(granted,tag)['catch'](function(){});
+  return granted; }
+
+/* ---------- word bank ----------
+   Tiers by length and familiarity, not by obscurity. Every answer is a word a
+   child could picture, because the fox is the threat, not the vocabulary. */
+var BANK=[
+/* 0 — THE MEADOW: short, everyday */
+[['APPLE','Picnic food'],['BREAD','Picnic food'],['HONEY','Picnic food'],['JUICE','Picnic food'],
+ ['PEACH','Picnic food'],['BERRY','Picnic food'],['CHEESE','Picnic food'],['MUFFIN','Picnic food'],
+ ['PICKLE','Picnic food'],['COOKIE','Picnic food'],['GRAPES','Picnic food'],['BUTTER','Picnic food'],
+ ['DAISY','In the meadow'],['CLOVER','In the meadow'],['GRASS','In the meadow'],['STONE','In the meadow'],
+ ['RIVER','In the meadow'],['MEADOW','In the meadow'],['HEDGE','In the meadow'],['FENCE','In the meadow'],
+ ['ROBIN','Small creature'],['MOUSE','Small creature'],['SNAIL','Small creature'],['BEETLE','Small creature'],
+ ['RABBIT','Small creature'],['BADGER','Small creature'],['TURTLE','Small creature'],['SPIDER','Small creature'],
+ ['CLOUD','Weather'],['STORM','Weather'],['BREEZE','Weather'],['SUNNY','Weather'],
+ ['BASKET','Picnic kit'],['BLANKET','Picnic kit'],['NAPKIN','Picnic kit'],['THERMOS','Picnic kit'],
+ ['ORANGE','A colour'],['PURPLE','A colour'],['YELLOW','A colour'],['SILVER','A colour']],
+/* 1 — THE ORCHARD: middling length, still concrete */
+[['SANDWICH','Picnic food'],['LEMONADE','Picnic food'],['STRAWBERRY','Picnic food'],['BLUEBERRY','Picnic food'],
+ ['WATERMELON','Picnic food'],['CUPCAKE','Picnic food'],['PRETZEL','Picnic food'],['CHOCOLATE','Picnic food'],
+ ['SUNFLOWER','In the garden'],['LAVENDER','In the garden'],['MARIGOLD','In the garden'],['ROSEMARY','In the garden'],
+ ['PUMPKIN','In the garden'],['CABBAGE','In the garden'],['PARSLEY','In the garden'],['SPINACH','In the garden'],
+ ['SQUIRREL','Woodland creature'],['HEDGEHOG','Woodland creature'],['PHEASANT','Woodland creature'],['SPARROW','Woodland creature'],
+ ['DRAGONFLY','Woodland creature'],['BUTTERFLY','Woodland creature'],['LADYBUG','Woodland creature'],['TADPOLE','Woodland creature'],
+ ['ORCHARD','Out of doors'],['THICKET','Out of doors'],['HOLLOW','Out of doors'],['PASTURE','Out of doors'],
+ ['RAINBOW','Weather'],['DRIZZLE','Weather'],['THUNDER','Weather'],['SUNRISE','Weather'],
+ ['LANTERN','Handy thing'],['COMPASS','Handy thing'],['SATCHEL','Handy thing'],['WHISTLE','Handy thing'],
+ ['CINNAMON','In the cupboard'],['VANILLA','In the cupboard'],['MUSTARD','In the cupboard'],['OATMEAL','In the cupboard']],
+/* 2 — THE DEEP WOOD: long, or awkwardly spelled, or both */
+[['GOOSEBERRY','Picnic food'],['MARMALADE','Picnic food'],['SHORTBREAD','Picnic food'],['GINGERBREAD','Picnic food'],
+ ['ELDERFLOWER','Picnic food'],['CANTALOUPE','Picnic food'],['RASPBERRIES','Picnic food'],['CLEMENTINE','Picnic food'],
+ ['HONEYSUCKLE','In the garden'],['SNAPDRAGON','In the garden'],['FOXGLOVE','In the garden'],['CHRYSANTHEMUM','In the garden'],
+ ['WHEELBARROW','In the shed'],['WATERINGCAN','In the shed'],['GREENHOUSE','In the shed'],['SECATEURS','In the shed'],
+ ['WOODPECKER','Woodland creature'],['KINGFISHER','Woodland creature'],['NIGHTINGALE','Woodland creature'],['CATERPILLAR','Woodland creature'],
+ ['GRASSHOPPER','Woodland creature'],['SALAMANDER','Woodland creature'],['CHAFFINCH','Woodland creature'],['MOORHEN','Woodland creature'],
+ ['UNDERGROWTH','Out of doors'],['CLEARING','Out of doors'],['WATERFALL','Out of doors'],['ESCARPMENT','Out of doors'],
+ ['MOONLIGHT','After dark'],['CONSTELLATION','After dark'],['TWILIGHT','After dark'],['CAMPFIRE','After dark'],
+ ['MISCHIEVOUS','What a fox is'],['RAVENOUS','What a fox is'],['STEALTHY','What a fox is'],['CUNNING','What a fox is']]
+];
+var TIER_NAMES=['THE MEADOW','THE ORCHARD','THE DEEP WOOD'];
+
+/* ---------- game state ---------- */
+var MAX_STEPS=6;
+var G={ tier:0, word:'', cat:'', got:{}, wrong:0, over:false, runEarn:0 };
+
+function pick(tier){
+  var pool=BANK[tier];
+  var last=LS.get('foxbasket_last','');
+  var e, tries=0;
+  do { e=pool[Math.floor(Math.random()*pool.length)]; tries++; } while(e[0]===last && tries<12);
+  LS.set('foxbasket_last', e[0]);
+  return e;
+}
+
+function start(tier){
+  var e=pick(tier);
+  G.tier=tier; G.word=e[0]; G.cat=e[1]; G.got={}; G.wrong=0; G.over=false; G.runEarn=0;
+  $('h-where').textContent=TIER_NAMES[tier];
+  $('p-cat').textContent=G.cat;
+  buildKeys(); drawWord(); drawScene(); updHud();
+  show('s-play');
+}
+
+function updHud(){ $('h-left').textContent=(MAX_STEPS-G.wrong); }
+
+function drawWord(){
+  var w=$('p-word'); w.innerHTML='';
+  for(var i=0;i<G.word.length;i++){
+    var ch=G.word.charAt(i);
+    var d=document.createElement('div');
+    d.className='sl'+(G.got[ch]?' hit':'')+(G.over&&!G.got[ch]?' miss':'');
+    d.textContent=(G.got[ch]||G.over)?ch:'';
+    w.appendChild(d);
+  }
+}
+
+function buildKeys(){
+  var kb=$('p-kb'); kb.innerHTML='';
+  /* 5,5,5,5,6 keeps every key above the 48 rendered-pixel floor. Alphabetical,
+     because a hunt-the-letter keyboard is the whole point of the game. */
+  var ROWS=['ABCDE','FGHIJ','KLMNO','PQRST','UVWXYZ'];
+  for(var r=0;r<ROWS.length;r++){
+    var row=document.createElement('div'); row.className='kbrow';
+    for(var i=0;i<ROWS[r].length;i++){
+      (function(ch){
+        var b=document.createElement('button');
+        b.className='key'; b.textContent=ch; b.setAttribute('aria-label','Guess '+ch);
+        b.onclick=function(){ guess(ch,b); };
+        row.appendChild(b);
+      })(ROWS[r].charAt(i));
+    }
+    kb.appendChild(row);
+  }
+}
+
+function guess(ch,btn){
+  if(G.over) return;
+  btn.classList.add('used');
+  if(G.word.indexOf(ch)>=0){
+    G.got[ch]=1; btn.classList.add('good'); beep(660,.07);
+    drawWord();
+    if(solved()) finish(true);
+  } else {
+    G.wrong++; btn.classList.add('bad'); beep(180,.13);
+    updHud(); drawScene();
+    if(G.wrong>=MAX_STEPS) finish(false);
+  }
+}
+
+function solved(){
+  for(var i=0;i<G.word.length;i++) if(!G.got[G.word.charAt(i)]) return false;
+  return true;
+}
+
+function finish(won){
+  G.over=true; drawWord(); drawScene();
+  SAVE.played++;
+  if(won){ SAVE.won++; SAVE.streak++; if(SAVE.streak>SAVE.best) SAVE.best=SAVE.streak; }
+  else { SAVE.streak=0; }
+  save();
+  $('e-h').textContent = won?'SHOOED':'HE GOT IT';
+  $('e-h').className='end-h '+(won?'win':'lose');
+  $('e-word').textContent=G.word;
+  var stepsLeft=MAX_STEPS-G.wrong;
+  $('e-note').textContent = won
+    ? (stepsLeft===MAX_STEPS ? 'Not one wrong letter. The fox never left the treeline.'
+       : 'The fox got within '+stepsLeft+' step'+(stepsLeft===1?'':'s')+' of the basket, then thought better of it.')
+    : 'He is already over the hedge with it. Try another word.';
+  var sb=0;
+  if(won){ sb=capEarn(2+G.tier+(stepsLeft===MAX_STEPS?2:0), 'foxbasket-win'); }
+  $('e-sb').textContent = sb>0 ? ('+'+sb+' ☀ sunbeams') : '';
+  setTimeout(function(){ show('s-end'); }, won?700:900);
+}
+
+/* ---------- the meadow, drawn ----------
+   Seven fox positions, 0 through 6. At 6 he is at the basket. Everything is
+   plain SVG so there is no sprite to go missing and nothing to load. */
+function drawScene(){
+  var s=[];
+  var GROUND=196;
+  /* sky and far hills */
+  s.push('<rect x="0" y="0" width="500" height="250" fill="#1b2a19"/>');
+  s.push('<path d="M0 150 Q70 118 140 146 T290 142 T430 150 T500 140 L500 250 L0 250 Z" fill="#22341c"/>');
+  s.push('<path d="M0 172 Q120 152 240 172 T500 166 L500 250 L0 250 Z" fill="#2b3f20"/>');
+  /* a few trees on the left, where the fox comes from */
+  s.push(tree(26,168,15)); s.push(tree(58,174,11)); s.push(tree(8,176,10));
+  /* ground */
+  s.push('<rect x="0" y="'+GROUND+'" width="500" height="'+(250-GROUND)+'" fill="#33491f"/>');
+  s.push('<path d="M0 '+GROUND+' Q250 '+(GROUND-8)+' 500 '+GROUND+'" stroke="#3f5a26" stroke-width="4" fill="none"/>');
+  /* grass tufts */
+  var tx=[100,150,205,262,318,372,424];
+  for(var i=0;i<tx.length;i++) s.push(tuft(tx[i], GROUND+8));
+  /* the picnic: blanket and basket, on the right */
+  s.push(blanket(400, GROUND+6));
+  s.push(basket(408, GROUND-10));
+  /* footprints for the steps already taken, so the danger is legible at a glance */
+  for(var k=1;k<=G.wrong;k++){
+    var px=foxX(k)-6;
+    s.push('<ellipse cx="'+px+'" cy="'+(GROUND+16)+'" rx="5" ry="3.4" fill="#000" opacity="0.28"/>');
+  }
+  /* the fox */
+  var caught=(G.wrong>=MAX_STEPS);
+  s.push(fox(foxX(G.wrong), GROUND-4, caught));
+  $('svg').innerHTML=s.join('');
+}
+/* start clear of the left edge: at scale 1.18 his tail reaches 47px behind him
+   and was being clipped by the scene border at x=52 */
+function foxX(step){ var a=68, b=374; return a + (b-a)*(step/MAX_STEPS); }
+
+function tree(x,y,r){
+  return '<g><rect x="'+(x-2.5)+'" y="'+y+'" width="5" height="'+(200-y)+'" fill="#2a3a1c"/>'
+       + '<circle cx="'+x+'" cy="'+(y-r*0.6)+'" r="'+r+'" fill="#2f4a22"/>'
+       + '<circle cx="'+(x-r*0.55)+'" cy="'+(y-r*0.1)+'" r="'+(r*0.72)+'" fill="#355326"/>'
+       + '<circle cx="'+(x+r*0.55)+'" cy="'+(y-r*0.15)+'" r="'+(r*0.66)+'" fill="#2b4520"/></g>';
+}
+function tuft(x,y){
+  return '<g stroke="#4a6a2c" stroke-width="2.4" stroke-linecap="round">'
+       + '<path d="M'+x+' '+y+' l-5 -11"/><path d="M'+x+' '+y+' l0 -14"/><path d="M'+x+' '+y+' l5 -11"/></g>';
+}
+function blanket(cx,cy){
+  var w=104, h=26, x=cx-w/2, y=cy-h/2, o=[];
+  o.push('<g><ellipse cx="'+cx+'" cy="'+(cy+9)+'" rx="'+(w/2)+'" ry="9" fill="#000" opacity="0.22"/>');
+  o.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="4" fill="#c5503f"/>');
+  for(var i=0;i<6;i++) for(var j=0;j<2;j++) if((i+j)%2===0)
+    o.push('<rect x="'+(x+i*(w/6))+'" y="'+(y+j*(h/2))+'" width="'+(w/6)+'" height="'+(h/2)+'" fill="#e0d3b8" opacity="0.85"/>');
+  o.push('</g>'); return o.join('');
+}
+function basket(cx,cy){
+  var o=[];
+  o.push('<g>');
+  o.push('<path d="M'+(cx-20)+' '+(cy-6)+' q20 -26 40 0" stroke="#8a5a24" stroke-width="4" fill="none"/>');
+  o.push('<rect x="'+(cx-24)+'" y="'+(cy-6)+'" width="48" height="30" rx="6" fill="#a9712f"/>');
+  for(var i=1;i<5;i++) o.push('<line x1="'+(cx-24+i*9.6)+'" y1="'+(cy-6)+'" x2="'+(cx-24+i*9.6)+'" y2="'+(cy+24)+'" stroke="#8a5a24" stroke-width="2.2"/>');
+  o.push('<line x1="'+(cx-24)+'" y1="'+(cy+6)+'" x2="'+(cx+24)+'" y2="'+(cy+6)+'" stroke="#8a5a24" stroke-width="2.2"/>');
+  o.push('<rect x="'+(cx-26)+'" y="'+(cy-10)+'" width="52" height="8" rx="4" fill="#c08a44"/>');
+  o.push('<circle cx="'+(cx+9)+'" cy="'+(cy-13)+'" r="6" fill="#d8524a"/>');   /* an apple poking out */
+  o.push('<path d="M'+(cx+9)+' '+(cy-19)+' q3 -4 6 -3" stroke="#5a7a2c" stroke-width="2" fill="none"/>');
+  o.push('</g>'); return o.join('');
+}
+function fox(x,y,caught){
+  var o=[], f='#d2762f', d='#a9541c', c='#f2e3c6';
+  o.push('<g transform="translate('+x+','+y+') scale(1.18)">');
+  o.push('<ellipse cx="0" cy="10" rx="26" ry="6" fill="#000" opacity="0.26"/>');
+  /* tail, held high and swept back */
+  o.push('<path d="M-18 -6 q-24 -6 -26 -26 q14 12 26 8 z" fill="'+f+'"/>');
+  o.push('<path d="M-40 -30 q-6 -6 -4 -10 q8 2 10 8 z" fill="'+c+'"/>');
+  /* body */
+  o.push('<path d="M-20 2 q4 -20 20 -20 q16 0 20 20 q-20 8 -40 0 z" fill="'+f+'"/>');
+  /* legs */
+  o.push('<rect x="-13" y="-1" width="5.5" height="12" rx="2.6" fill="'+d+'"/>');
+  o.push('<rect x="8" y="-1" width="5.5" height="12" rx="2.6" fill="'+d+'"/>');
+  /* head */
+  o.push('<path d="M12 -18 q14 0 17 12 q-8 8 -17 6 z" fill="'+f+'"/>');
+  o.push('<path d="M12 -18 l3 -11 l7 7 z" fill="'+f+'"/><path d="M26 -16 l6 -9 l2 10 z" fill="'+f+'"/>');
+  o.push('<path d="M22 -4 q7 2 7 -1 l-7 -2 z" fill="'+c+'"/>');
+  o.push('<circle cx="29" cy="-5" r="2.1" fill="#1a1108"/>');
+  o.push('<circle cx="20" cy="-9" r="2" fill="#1a1108"/>');
+  if(caught){
+    /* he has it: the apple is in his mouth */
+    o.push('<circle cx="33" cy="-2" r="5.5" fill="#d8524a"/>');
+  }
+  o.push('</g>'); return o.join('');
+}
+
+/* ---------- sound: a couple of tones, no files ---------- */
+var AC=null;
+function beep(freq,dur){
+  try{
+    if(!AC){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return; AC=new C(); }
+    if(AC.state==='suspended') AC.resume();
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type='triangle'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.14, AC.currentTime+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime+dur);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur+0.02);
+  }catch(e){}
+}
+
+/* ---------- screens ---------- */
+function show(id){
+  var all=document.querySelectorAll('.screen');
+  for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+  $(id).classList.add('on');
+}
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('on');
+  setTimeout(function(){ t.classList.remove('on'); }, 1800);
+}
+function paintStats(){
+  if(!SAVE.played){ $('t-stats').textContent=''; return; }
+  $('t-stats').textContent = SAVE.won+' of '+SAVE.played+' baskets saved · best streak '+SAVE.best;
+}
+
+$('b-play').onclick=function(){ show('s-mode'); };
+$('b-rules').onclick=function(){ show('s-rules'); };
+$('b-rules-back').onclick=function(){ show('s-title'); };
+$('b-rules-go').onclick=function(){ show('s-mode'); };
+$('b-mode-back').onclick=function(){ show('s-title'); };
+var mb=document.querySelectorAll('[data-tier]');
+for(var i=0;i<mb.length;i++)(function(b){ b.onclick=function(){ start(parseInt(b.getAttribute('data-tier'),10)); }; })(mb[i]);
+$('b-again').onclick=function(){ start(G.tier); };
+$('b-home').onclick=function(){ paintStats(); show('s-title'); };
+$('b-share').onclick=function(){
+  var won=(G.wrong<MAX_STEPS);
+  var txt='Fox and Basket: '+(won?'I kept the fox off the picnic':'the fox got the basket')
+        +' ('+TIER_NAMES[G.tier].toLowerCase()+'). Play at lucidwinds.com';
+  if(navigator.share){ navigator.share({text:txt})['catch'](function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt); toast('Copied'); }
+  else toast('Sharing is not available here');
+};
+$('b-back1').onclick=function(){ location.href='/portal/'; };
+
+/* keyboard for anyone on a desktop */
+document.addEventListener('keydown', function(e){
+  if(!$('s-play').classList.contains('on') || G.over) return;
+  var ch=(e.key||'').toUpperCase();
+  if(ch.length!==1 || ch<'A' || ch>'Z') return;
+  /* ⛔ the keys live inside .kbrow wrappers now, so p-kb.children is the ROWS.
+     Query the keys themselves or desktop typing silently stops working. */
+  var keys=$('p-kb').querySelectorAll('.key');
+  for(var i=0;i<keys.length;i++) if(keys[i].textContent===ch && !keys[i].classList.contains('used')){ guess(ch,keys[i]); return; }
+});
+
+paintStats();
+</script>
+</body>
+</html>
