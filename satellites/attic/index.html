@@ -5,7 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
-<title>THE ATTIC (working title) - hashblock demo</title>
+<title>The Attic · Sky Wolf Studios</title>
+<meta name="theme-color" content="#141110">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="The Attic">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="The Attic">
+<meta property="og:description" content="Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/attic/">
+<meta property="og:image" content="https://lucidwinds.com/portal-assets/thumbs/the-attic.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; }
@@ -139,20 +151,64 @@
     width:100%; min-height:48px; background:#1c1610; border:1px solid #3a2e1e; border-radius:8px;
     color:#c4b294; font-family:ui-monospace, monospace; font-size:0.7rem; padding:0 12px;
   }
+
+/* ── DUST OFF: the second ticket source (plan section B2) ────────────────── */
+#dustSheet{ position:fixed; inset:0; z-index:60; display:none; background:#0d0b0ae8;
+  align-items:center; justify-content:center; padding:16px }
+#dustSheet.on{ display:flex }
+.dustcard{ width:100%; max-width:460px; background:#191513; border:1px solid #3a322c; border-radius:14px;
+  padding:16px; box-shadow:0 20px 60px #000a }
+.dusthead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+.dusthead b{ color:#e0c68a; font-size:.95rem; letter-spacing:.12em }
+.dusthead .t{ font-family:ui-monospace,monospace; color:#c4b294; font-size:.9rem }
+#dustGrid{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px; touch-action:none; user-select:none }
+.dcell{ position:relative; aspect-ratio:1; border-radius:6px; background:#4a423a;
+  box-shadow:inset 0 0 0 1px #5b5148; overflow:hidden }
+.dcell.wiped{ background:#201c19; box-shadow:inset 0 0 0 1px #2c2622 }
+.dcell .stub{ position:absolute; inset:12%; border-radius:4px; background:#e0c68a; opacity:0;
+  display:flex; align-items:center; justify-content:center; color:#241d12; font-size:.5rem; font-weight:800;
+  transition:opacity .18s ease }
+.dcell.wiped .stub{ opacity:1 }
+.dustfoot{ margin-top:12px; display:flex; gap:10px; align-items:center }
+.dustfoot .msg{ flex:1; color:#c4b294; font-size:.78rem; line-height:1.35 }
+.dustbtn{ min-height:56px; padding:0 20px; border-radius:11px; border:1px solid #6a5a3a;
+  background:#2a231a; color:#e0c68a; font-size:.9rem; font-weight:800; letter-spacing:.08em; cursor:pointer }
+.dustbtn.go{ background:#e0c68a; color:#241d12; border-color:#f0dcae }
+#dustBtn{ margin-left:8px }
+
+/* ── rules, shown once per device before the first dig ───────────────────── */
+#howSheet{ position:fixed; inset:0; z-index:70; display:none; background:#0d0b0af5; overflow-y:auto; padding:22px 16px }
+#howSheet.on{ display:block }
+.howcard{ max-width:470px; margin:0 auto }
+.howcard h2{ color:#e0c68a; font-size:1.3rem; margin:0 0 2px }
+.howcard .kick{ color:#8d7f6d; font-size:.7rem; letter-spacing:.22em; font-weight:800 }
+.howcard h3{ color:#a8946f; font-size:.72rem; letter-spacing:.16em; margin:18px 0 6px; text-transform:uppercase }
+.howcard p{ color:#d8cbb4; font-size:.92rem; line-height:1.55; margin:0 0 8px }
+.howcard ul{ margin:0; padding-left:0; list-style:none }
+.howcard li{ color:#d8cbb4; font-size:.88rem; line-height:1.5; margin:7px 0; padding-left:16px; position:relative }
+.howcard li:before{ content:"·"; position:absolute; left:2px; color:#e0c68a; font-weight:800 }
 </style>
-<script src="/dev-gate.js"></script>
+<!-- ⛔⛔ SWS EMBED PROTOCOL: announce ready on EVERY framed page, three times.
+     The portal arms a black screen watchdog when it opens a game and rescues
+     anything that never announces, so a silent page gets yanked mid play. -->
+<script>
+if (window.parent !== window) {
+  var swsHi = function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} };
+  swsHi(); window.addEventListener('load', swsHi); setTimeout(swsHi, 700);
+}
+</script>
 </head>
 <body>
 <div class="wrap">
-  <h1>THE ATTIC<small>WORKING TITLE &middot; HASHBLOCK DEMO &middot; DEV ONLY</small></h1>
-  <p class="demo-note">Every pull is one SHA-256 hash. The hash picks the object class, era, name, wear, and story. Same hash, same object, forever. All five classes render their object: record sleeves, VHS clamshells, carded toys, board game lids, and cereal boxes.</p>
+  <h1>THE ATTIC<small>Sky Wolf Studios</small></h1>
+  <p class="demo-note">Every rummage turns up one object that has never existed before and never will again. Records, tapes, carded toys, board games, and cereal boxes, each with its own era, its own wear, and its own story.</p>
 
   <div class="topbar">
     <span class="tix"><b id="tixN">0</b> tickets</span>
     <button class="wantbtn" id="wantOpen">WANT LIST <b id="wantN">0/8</b></button>
   </div>
 
-  <div class="btnRow"><button class="rummage" id="go">RUMMAGE &middot; 1 TICKET</button></div>
+  <div class="btnRow"><button class="rummage" id="go">RUMMAGE &middot; 1 TICKET</button><button class="dustbtn" id="dustBtn">DUST OFF</button></div>
   <div class="brokenote" id="brokenote"></div>
 
   <div class="card" id="card"></div>
@@ -162,7 +218,7 @@
     <div class="shelfRow" id="shelf"></div>
   </div>
 
-  <div class="hashRow">
+  <div class="hashRow" id="hashRow" style="display:none">
     <label for="hashIn">OR PASTE A 64-CHAR HASH (DETERMINISM CHECK)</label>
     <input id="hashIn" placeholder="e.g. 8f3c9a..." spellcheck="false" autocomplete="off">
   </div>
@@ -176,6 +232,32 @@
     <button class="closebtn" id="wantClose">CLOSE</button>
   </div>
 </div>
+
+<div id="dustSheet"><div class="dustcard">
+  <div class="dusthead"><b>DUST OFF</b><span class="t"><span id="dustT">90</span>s &middot; <span id="dustFound">0</span> stubs</span></div>
+  <div id="dustGrid"></div>
+  <div class="dustfoot">
+    <div class="msg" id="dustMsg">Drag across the grime. Ticket stubs are buried in it.</div>
+    <button class="dustbtn" id="dustDone">DONE</button>
+  </div>
+</div></div>
+
+<div id="howSheet"><div class="howcard">
+  <div class="kick">HOW TO PLAY</div>
+  <h2>The Attic</h2>
+  <h3>The goal</h3>
+  <p>Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed. Everything you keep goes on the shelf, and eight grails on your Want List are yours alone.</p>
+  <h3>How it plays</h3>
+  <p>A rummage costs one ticket, so a dig is a decision rather than a button you hold down. Five tickets arrive every day. A find in FINE or better pays one back, anything on your Want List pays three, and you can always scrap something off the shelf for one more. When the tickets run dry, DUST OFF the old boxes and find some stubs.</p>
+  <h3>The controls</h3>
+  <ul>
+    <li>RUMMAGE digs, and the condition is revealed last</li>
+    <li>DUST OFF opens the grime panel: drag across it to wipe</li>
+    <li>Tap anything on the shelf to look at it again, or to scrap it</li>
+    <li>WANT LIST shows the eight things you are hunting</li>
+  </ul>
+  <button class="dustbtn go" id="howGo" style="width:100%;margin-top:20px">START DIGGING</button>
+</div></div>
 <div id="toast"></div>
 
 <script src="attic-engine.js"></script>
@@ -460,6 +542,107 @@
                   : (DAILY + ' fresh tickets for today.'));
     }, 500);
   })();
+
+
+  /* ── DUST OFF ────────────────────────────────────────────────────────────
+     The second ticket source (plan section B2). Ninety seconds of wiping grime
+     off a panel of old boxes; ticket stubs are buried in it. Deliberately low
+     skill and low stress, because it exists to keep a dry wallet from ending
+     the session, not to be the game. Capped per day like every other earn in
+     the studio, so it can never replace the daily five. */
+  var DUST_KEY = 'attic_dust_v1', DUST_CAP = 6, DUST_SECS = 90, DUST_PER = 2;
+  function dustState() {
+    var st = { d: -1, n: 0 };
+    try { var r = JSON.parse(localStorage.getItem(DUST_KEY) || 'null'); if (r) st = r; } catch (e) {}
+    if (st.d !== dayIndex()) st = { d: dayIndex(), n: 0 };
+    return st;
+  }
+  function dustLeft() { return Math.max(0, DUST_CAP - (dustState().n || 0)); }
+  function dustBank(n) {
+    var st = dustState(), give = Math.min(n, Math.max(0, DUST_CAP - (st.n || 0)));
+    if (give <= 0) return 0;
+    st.n = (st.n || 0) + give;
+    try { localStorage.setItem(DUST_KEY, JSON.stringify(st)); } catch (e) {}
+    WAL.tix += give; saveWallet(); paintWallet();
+    return give;
+  }
+
+  var DUST = null;
+  function dustOpen() {
+    if (dustLeft() <= 0) { toast('You have dusted off everything worth dusting today.'); return; }
+    var cells = 48, hidden = 10, i;
+    var marks = {};
+    while (Object.keys(marks).length < hidden) marks[Math.floor(Math.random() * cells)] = 1;
+    DUST = { t: DUST_SECS, found: 0, over: false, marks: marks, wiped: {} };
+    var g = document.getElementById('dustGrid'); g.innerHTML = '';
+    for (i = 0; i < cells; i++) {
+      var d = document.createElement('div'); d.className = 'dcell'; d.setAttribute('data-i', i);
+      if (marks[i]) d.innerHTML = '<span class="stub">STUB</span>';
+      g.appendChild(d);
+    }
+    document.getElementById('dustT').textContent = DUST_SECS;
+    document.getElementById('dustFound').textContent = '0';
+    document.getElementById('dustMsg').textContent =
+      'Drag across the grime. ' + dustLeft() + ' more tickets are worth finding today.';
+    document.getElementById('dustSheet').className = 'on';
+    DUST.timer = setInterval(function () {
+      if (!DUST || DUST.over) return;
+      DUST.t--; document.getElementById('dustT').textContent = DUST.t;
+      if (DUST.t <= 0) dustEnd();
+    }, 1000);
+  }
+  function dustWipe(el) {
+    if (!DUST || DUST.over || !el || el.className.indexOf('dcell') < 0) return;
+    var i = el.getAttribute('data-i');
+    if (DUST.wiped[i]) return;
+    DUST.wiped[i] = 1; el.className = 'dcell wiped';
+    if (DUST.marks[i]) {
+      DUST.found++;
+      document.getElementById('dustFound').textContent = DUST.found;
+    }
+  }
+  function dustEnd() {
+    if (!DUST || DUST.over) return;
+    DUST.over = true; if (DUST.timer) clearInterval(DUST.timer);
+    var earned = dustBank(Math.floor(DUST.found / DUST_PER));
+    document.getElementById('dustSheet').className = '';
+    toast(earned > 0
+      ? ('Dusted off ' + DUST.found + ' stubs. That is ' + earned + ' ticket' + (earned === 1 ? '' : 's') + '.')
+      : ('Dusted off ' + DUST.found + ' stubs, which is not quite a ticket. ' + DUST_PER + ' stubs make one.'), 3600);
+    DUST = null;
+  }
+  (function wireDust() {
+    var g = document.getElementById('dustGrid'), down = false;
+    function at(x, y) { return document.elementFromPoint(x, y); }
+    g.addEventListener('pointerdown', function (e) { down = true; dustWipe(at(e.clientX, e.clientY)); e.preventDefault(); });
+    g.addEventListener('pointermove', function (e) { if (down) dustWipe(at(e.clientX, e.clientY)); });
+    addEventListener('pointerup', function () { down = false; });
+    document.getElementById('dustBtn').onclick = dustOpen;
+    document.getElementById('dustDone').onclick = dustEnd;
+  })();
+
+  /* ── the rules, once per device, before the first dig ─────────────────── */
+  (function firstRun() {
+    var K = 'attic_how_v1';
+    try { if (localStorage.getItem(K) === '1') return; } catch (e) {}
+    document.getElementById('howSheet').className = 'on';
+    document.getElementById('howGo').onclick = function () {
+      try { localStorage.setItem(K, '1'); } catch (e) {}
+      document.getElementById('howSheet').className = '';
+    };
+  })();
+
+  /* headless hook */
+  if (/[?&]attictest=1/.test(location.search)) {
+    window.ATTIC_DEV = {
+      wallet: function () { return WAL; }, dustLeft: dustLeft, dustBank: dustBank,
+      dustOpen: dustOpen, dustEnd: dustEnd, dustState: function () { return DUST; },
+      grade: function (h) { return ATTIC._grade ? ATTIC._grade(h) : null; },
+      item: function (h) { return ATTIC.hashToItem(h); },
+      setTix: function (n) { WAL.tix = n; saveWallet(); paintWallet(); return WAL.tix; },
+      grails: function () { return GRAILS; }, dayIndex: dayIndex
+    };
+  }
 
   renderShelf(); /* returning visitor sees their collection before the first pull */
   paintWants();
