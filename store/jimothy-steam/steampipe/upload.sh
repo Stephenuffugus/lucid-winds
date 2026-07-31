@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Upload the packaged Jimothy build to Steam.
 #
-#   LW_STEAM_APPID=1234567 LW_STEAM_USER=stephenuffugus ./steampipe/upload.sh
+#   LW_STEAM_USER=<steamworks login> ./steampipe/upload.sh
+#   (app id defaults to 5043360, Jumping Jimothy)
 #
 # The depot id is appid+1, which is what Steamworks hands you by default when
 # you create the app. If your depot id differs, set LW_STEAM_DEPOTID too.
@@ -12,7 +13,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 HERE="$(pwd)"
 
-: "${LW_STEAM_APPID:?set LW_STEAM_APPID to the app id Steamworks gave you}"
+# Jumping Jimothy's real app id, activated by Stephen 2026-07-31. Overridable for
+# a test app, but defaulted so nobody has to remember it or fat-finger it.
+LW_STEAM_APPID="${LW_STEAM_APPID:-5043360}"
 : "${LW_STEAM_USER:?set LW_STEAM_USER to your Steamworks builder account}"
 DEPOTID="${LW_STEAM_DEPOTID:-$((LW_STEAM_APPID + 1))}"
 DESC="${LW_STEAM_DESC:-Jimothy $(node -p "require('$HERE/package.json').version")}"

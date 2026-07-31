@@ -34,11 +34,14 @@ $100 Steam Direct fee **paid Jul 30**, so earliest release **Aug 29**, target
 **Tue Sep 1**. Full schedule and the two Valve clocks in
 `store/jimothy-steam/STEAM_SUBMIT.md`.
 
-⛔ **One thing blocks every technical step: the App ID.** Only the Steam account
-that paid can activate the app credit, so it has to be Stephen —
-partner.steamgames.com → dashboard → the unused app credit → name it
-`Jumping Jimothy` → send me the number. Two minutes. Depot id,
-SteamPipe config and upload all key off it.
+✅ **The App ID exists: `Jumping Jimothy` is app `5043360`** (default depot
+`5043361`). Activated 2026-07-31. `steampipe/upload.sh` defaults to it, so the
+upload is `LW_STEAM_USER=<login> ./steampipe/upload.sh`.
+
+⛔ **Nothing technical is blocked now.** What is left is the store page ART
+(capsules + 5 screenshots) and the tax/bank identity verification Valve is
+still processing. Copy for every store field is written in
+`marketing/steam-jimothy.md`.
 
 The build is verified as of today, re-vendored from v8.2 and A/B proven against
 the same bundle with the flag off:

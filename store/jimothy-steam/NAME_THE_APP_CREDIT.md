@@ -1,5 +1,8 @@
 # Naming the Steam app credit — the click-by-click
 
+> ✅ **DONE 2026-07-31. The app is `Jumping Jimothy`, app id `5043360`.**
+> Kept for the record and for the next title that spends a credit.
+
 You paid the $100 Steam Direct fee on Jul 30. That fee bought **one app credit**,
 which is the thing you spend to create an App ID. Naming it is the whole task and
 it takes about two minutes. Nothing here costs more money.

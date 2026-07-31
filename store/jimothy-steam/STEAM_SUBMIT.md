@@ -39,13 +39,21 @@ Wishlists are the reason to get the Coming Soon page up early rather than
 perfect. It can be edited after approval. Two extra weeks of wishlists is worth
 more than a better first draft.
 
-## What blocks me right now
+## ✅ The App ID exists (2026-07-31)
 
-**The App ID.** Everything on the technical side keys off it: the depot id, the
-SteamPipe config, the upload. The credit can only be activated by the Steam
-account that paid, so it has to be you. It takes about two minutes:
-partner.steamgames.com → your dashboard → the unused app credit → name it
-`Jumping Jimothy`. Send me the number.
+    Jumping Jimothy      app 5043360
+    default depot        5043361   (appid + 1, what Steamworks hands you)
+
+Activated by Stephen the day the name was settled. `steampipe/upload.sh` now
+defaults to this app id, so the upload command is just:
+
+    LW_STEAM_USER=<steamworks login> ./steampipe/upload.sh
+
+⛔ If Steamworks shows a different depot id on the app's Depots page, pass
+`LW_STEAM_DEPOTID=<that number>` — the +1 is a convention, not a guarantee.
+
+Nothing technical is blocked any more. What remains is the store page art and
+the tax/bank verification, both below.
 
 ## The build is packaged and ready
 
