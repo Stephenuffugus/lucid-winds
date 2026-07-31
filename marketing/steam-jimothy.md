@@ -60,9 +60,12 @@ All from existing Jimothy key art style; TEXT-SAFE margins; game logo legible at
 - library_hero 3840x1240 (Jimothy small and centered, city skyline wide)
 - library_logo 1280x720 transparent PNG
 - page_background 1438x810 (subtle, dark, rain)
-- 5+ screenshots 1920x1080: frame the portrait game on a painted rainy-Seattle
+- 5+ screenshots 1920x1080: frame the portrait game on the rainy-Seattle
   backdrop, never stretch. Shots: mid hop rush hour, ferry crossing, Daily
   share card, Prize Bin, a costume moment.
+  ⛔ Never describe the art as hand painted/drawn anywhere on this page. It is
+  generated and then curated, which the AI disclosure above states honestly;
+  claiming otherwise is the one lie this audience punishes hardest.
 
 ## Launch plan notes
 - Price: $2.99 recommended (Stephen ratify), 10 percent launch discount

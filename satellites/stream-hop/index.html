@@ -375,7 +375,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* ⛔⛔ NO BIG GREEN SLABS. Stephen, twice: "its like green screen green and its shitty",
    then "why is the games button still that ugly bright green on the home screen". The
    hue was never the whole problem. Every other card in this game is a DARK fill with a
-   coloured border and a glowing medallion, so the painted street shows through and they
+   coloured border and a glowing medallion, so the street art shows through and they
    look expensive. A filled .btn.primary rectangle sits ON TOP of that art and looks like
    a web button, and no amount of picking a nicer green fixes that.
    GAMES and ADVENTURE are the same card in sage. They are the two doors into the game,
@@ -1034,7 +1034,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.2';
+var BUILD='v8.3';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1170,9 +1170,9 @@ var CHARS=[
    body:'#e6e6e2', belly:'#ffffff', eye:'#171512', bio:'The doctor will see you now. He is a raccoon.'},
   /* --- FULL PACKS: every costume AND every critter below now carries full:1 and its own
      19-pose pack (skin sheets 1-29, cut from a/b pages into assets/{skins,chars}/<id>/).
-     run-l is a real left sprint only where a leftrun page was painted (market sheet 2c,
+     run-l is a real left sprint only where a leftrun page exists (market sheet 2c,
      scout sheet 4c); everywhere else run-l is a placeholder copy of leap until Stephen
-     paints the left sprint (never mirror it — packs/straps/clasps swap sides). --- */
+     supplies the left sprint (never mirror it — packs/straps/clasps swap sides). --- */
   {id:'deckhand', name:'Deckhand Jimothy', rar:'common', sheet:'skins/deckhand', art:1, full:1,
    body:'#5d6472', belly:'#c3bda8', eye:'#171512', bio:'Ties the ferry up. Unties it again.'},
   {id:'market',   name:'Market Day Jimothy', rar:'common', sheet:'skins/market', art:1, full:1,
@@ -1263,9 +1263,9 @@ function charById(id){ for(var i=0;i<CHARS.length;i++) if(CHARS[i].id===id)retur
 function curChar(){ return charById(PROG.char||'jimothy'); }
 /* ===== WHAT THE SUPPORTER PACK CONTAINS — A FIXED LIST, NOT A RULE =====
    ⛔ This used to be "any costume whose sheet starts with skins/", which quietly meant
-   every costume Stephen paints from here on would fall into a $3 pack people already
+   every costume added from here on would fall into a $3 pack people already
    bought, forever. Stephen's call (2026-07-23): the pack is the costumes that were
-   already wired when it went on sale, and nothing else. Costumes painted from now on
+   already wired when it went on sale, and nothing else. Costumes added from now on
    are EARNED on the weekly streak (see REWARD_SKINS), so the pack keeps its promise
    and new art still has somewhere to live.
    ⛔ Never add an id here without Stephen saying so, and never turn it back into a
@@ -1302,7 +1302,7 @@ var POWER_META={
 /* ===== zones (a run crosses named neighborhoods; palettes + hazard mix shift).
    Names lean Seattle for Stephen's Jimothy reskin — trivially editable here.
    wBias scales water frequency, xBias scales express (fast) lanes. ===== */
-/* Six real Seattle neighbourhoods, each with its own painted backdrop (sheet 16).
+/* Six real Seattle neighbourhoods, each with its own backdrop (sheet 16).
    Palettes stay dark and desaturated on purpose: the sprites have to read on top. */
 var ZONES=[
   {name:'The Waterfront', bg:'zonecard/waterfront', tex:'waterfront', wtex:'water-deep', safe:['#132a1a','#16301e'], road:['#243021','#28351f'], water:['#15414f','#103642'], wBias:1.25, xBias:0.7},
@@ -1344,12 +1344,12 @@ function spr(name){ return IMG('assets/'+name+(SPR_JPG[name]?'.jpg':'.png')); }
 function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
 
 /* ===== FINISHES — the Curio Shelf =====
-   Every critter in the bin is one of Stephen's paintings. A FINISH re-casts that same
-   painting in a material: gold leaf, old bronze, jade, river ice, a night sky. It is a
+   Every critter in the bin is one of Stephen's characters. A FINISH re-casts that same
+   character in a material: gold leaf, old bronze, jade, river ice, a night sky. It is a
    second, orthogonal wardrobe slot, so one purchase re-skins every critter you own.
 
    How: the sprite's own luminance is mapped onto a two-stop ramp (shadow -> highlight),
-   which keeps every brush stroke, fur fleck and knitted stitch he painted and only
+   which keeps every fur fleck and knitted stitch of the source art and only
    changes what the thing is made OF. Deliberately NOT a hue rotate — a hue slider over
    this art looks like a hue slider. Materials read as intentional.
    Cost: one getImageData pass per (frame, finish), baked ONCE into an offscreen canvas
@@ -1364,7 +1364,7 @@ function imgReady(im){ return im && im._st===1 && im.naturalWidth>0; }
    He is right, and the reason is worth writing down: finishes were built when 29
    characters WAS the wardrobe and it needed multiplying. There are 44 characters now, so the problem they solved does not exist any more — and a luminance
    ramp, however carefully built, always flattens the palette the artist chose. A grid of
-   bronze raccoons reads as one muddy colour instead of 44 different paintings.
+   bronze raccoons reads as one muddy colour instead of 44 different characters.
 
    The machinery is left INTACT and dormant behind FIN_ON rather than deleted: bakeFinish
    is good code, it is proven on iOS, and turning it back on is one line. Anyone who
@@ -1429,7 +1429,7 @@ var FINISHES=[
   }catch(e){}
 })();
 function finById(id){ for(var i=0;i<FINISHES.length;i++) if(FINISHES[i].id===id)return FINISHES[i]; return null; }
-/* the finish currently worn. '' / missing = his own painted colours, always free, always default */
+/* the finish currently worn. '' / missing = his own default colours, always free, always default */
 function curFin(){ return (FIN_ON&&PROG&&PROG.fin)?finById(PROG.fin):null; }
 function finOwned(id){ return FIN_ON && !!(PROG&&PROG.fins&&PROG.fins[id]); }
 function finCount(){ var n=0,i; for(i=0;i<FINISHES.length;i++) if(finOwned(FINISHES[i].id))n++; return n; }
@@ -1570,7 +1570,7 @@ var TEX_A=1;   /* lane texture strength: 0 turns the strips off entirely, 1 = as
                   Back to full now that sheet 20 gives every neighbourhood its own
                   purpose-drawn pavement, road and water surface. */
 /* A street shrub that blocks a sidewalk cell. The old version was two flat circles,
-   which read as programmer art next to the painted lanes. This one is layered: contact
+   which read as programmer art next to the lane art. This one is layered: contact
    shadow, dark under-mass, three shaded lobes with per-shrub jitter (seeded by row and
    column so it never pops between frames), speckled leaf ticks and a moon-side rim. */
 function drawShrub(bx, y, r){
@@ -1809,7 +1809,7 @@ function newGame(mode, startLevel){
    decades of ten levels each, ending at the feast the title screen has always
    promised. Past 100 the last three decades cycle and the speed keeps creeping.
 
-   ⛔ There are SIX painted zone backdrops and TEN decades, so four decades reuse
+   ⛔ There are SIX zone backdrops and TEN decades, so four decades reuse
    a backdrop with a palette tint. Per the plan this shifts ground and water hues
    ONLY. No sprite is touched and no new art is required. ===== */
 var DECADES=[
@@ -2763,7 +2763,7 @@ function stepWeather(dt){
   var rT=(w.type==='rain')?1:0, fT=(w.type==='fog')?1:0, k=Math.min(1,dt*0.6);
   w.rainA += (rT-w.rainA)*k; w.fog += (fT-w.fog)*k; w.mul = 1 + w.rainA*0.16;
 }
-/* a painted overlay tiled down the screen, scrolling. Falls back to nothing, so the
+/* an art overlay tiled down the screen, scrolling. Falls back to nothing, so the
    procedural weather underneath still carries the run if the art has not loaded. */
 function drawWxLayer(name, alpha, speed, drift){
   if(!ART_ON||alpha<=0.01) return false;
@@ -3189,7 +3189,7 @@ function confirmRevive(){
    week restarts at day 1, but rewardTargetId() is always the first skin you do not
    own, so the thing you were walking toward is still sitting there when you come
    back. Earn it and the board rolls to the next one, and the ladder keeps growing as
-   Stephen paints. Nobody is ever punished for having a life.
+   new ones are added. Nobody is ever punished for having a life.
 
    ⛔ The weekly skins are EARNED and are deliberately NOT in PACK_COSTUMES — that is
    the whole point of the split. If a player already owns everything on the board
@@ -3200,12 +3200,12 @@ function confirmRevive(){
 var REWARD_CAPS=[15,25,40,55,70,90,120];   // bottlecaps for cycle-day 1..7
 var REWARD_TOKEN_DAY=4;                    // the mid-week gift that is not more caps
 /* The ladder, in the order they are given away. Thirteen rungs is thirteen weeks of
-   somebody coming back tomorrow. Append to the END as Stephen paints; never insert in
+   somebody coming back tomorrow. Append to the END as new ones are added; never insert in
    the middle, or a player two days from a costume watches it change into another. */
 var REWARD_SKINS=['froggery','dino','knight','hazmat','pirate'];
 /* ⛔ Every id here MUST carry via:'weekly' in CHARS, or the costume you are walking
    toward is quietly on sale in the next tab for one day's bottlecaps. Append to the END
-   as Stephen paints; never insert in the middle, or somebody two days from a costume
+   as new ones are added; never insert in the middle, or somebody two days from a costume
    watches it turn into a different one. The old eight (soggy, market, deckhand, summer,
    nordic, barista, scout, hardhat) came OFF this ladder on 2026-07-24: they are in the
    $3 pack, so they could never have been "the one you cannot buy". */
@@ -3265,7 +3265,7 @@ function openDailyReward(){
     +'<div style="color:#e8dcc8;font:700 18px Nunito,system-ui;margin-bottom:16px">Today: '+line+'</div>'
     +'<button id="reward-claim" class="btn primary" style="width:100%">Claim</button></div>';
   if(tgt){ var gcv=_rewardEl.querySelector('#reward-goal-cv');
-    drawSkinPreview(gcv, tgt, 0.85, '');            // the prize as painted, not as you happen to be dressed
+    drawSkinPreview(gcv, tgt, 0.85, '');            // the prize in its own art, not as you happen to be dressed
     if(tgt.art && tgt.sheet){ var gim=spr(tgt.sheet+'/idle');
       if(!imgReady(gim)) gim.addEventListener('load', function(){ drawSkinPreview(gcv, tgt, 0.85, ''); }); } }
   _rewardEl.querySelector('#reward-claim').onclick=function(){ claimReward(streak, caps, skin, token); };
@@ -4023,10 +4023,10 @@ function drawCritter(){
        Only Jimothy has the full pose pack. Everyone else has four hop frames, so the
        engine used to fold "you just died" and "you just cleared a level" onto their
        LANDING frame and hold the camera on it for a second and a half. Until the real
-       paintings land (ART-BIBLE-ANIMATION.md), fake the moment out of what we do have:
+       art lands (ART-BIBLE-ANIMATION.md), fake the moment out of what we do have:
        tip them over for a knockout, wobble them when they are dizzy, sink them when they
-       drown, bounce them when they cheer — and composite the FX art Stephen has ALREADY
-       painted on top. Costs nothing, and every one of these is overridden the instant a
+       drown, bounce them when they cheer — and composite the FX art that ALREADY
+       exists on top. Costs nothing, and every one of these is overridden the instant a
        real frame with that name appears in the character's folder. */
     var fb = G._folded ? (G._pose||'') : '', fbY=0, fbA=1, fbX=0;
     if(fb==='ko'){ srot += 1.45; fbY = TILE*0.34; }                       // tipped over, down on the road
@@ -4059,7 +4059,7 @@ function drawCritter(){
   ctx.restore();
 }
 
-/* Composited on top of a stand-in pose, out of art Stephen has already painted
+/* Composited on top of a stand-in pose, out of art that already exists
    (fx/star-pop, fx/splash-water, fx/burst-gold, powers/power_umbrella, sprites/coin-cap).
    Every one of these disappears the moment the character gets its real frame — the
    stand-in only runs when heroPose had to fold the pose it actually wanted. */
@@ -4283,7 +4283,7 @@ function renderWeekly(){
   var tgt=rewardTarget(), st=rewardStand();
   if(!tgt){ host.innerHTML='<div class="wk"><div><div class="wk-lab">WEEKLY PRIZE</div>'
       +'<div class="wk-name">Every weekly skin is yours</div>'
-      +'<div class="wk-sub">Day seven pays double bottlecaps until Stephen paints the next one.</div></div></div>';
+      +'<div class="wk-sub">Day seven pays double bottlecaps until there are more costumes.</div></div></div>';
     return; }
   var sub = st.claimed
     ? (st.left===0 ? 'Claimed. The next one is on the board tomorrow.'
@@ -4297,7 +4297,7 @@ function renderWeekly(){
   // an unclaimed gift is claimable from right here — never make someone go and find it
   var tapEl=$('wk-tap'); if(tapEl) tapEl.addEventListener('click', function(){ sfx('ui'); openDailyReward(); });
   var cv=$('wk-cv'); if(!cv)return;
-  drawSkinPreview(cv, tgt, 0.9, '');                 // ditto: a prize is shown as painted
+  drawSkinPreview(cv, tgt, 0.9, '');                 // ditto: a prize is shown in its own art
   if(tgt.art && tgt.sheet){ var im=spr(tgt.sheet+'/idle');
     if(!imgReady(im)) im.addEventListener('load', function(){ drawSkinPreview(cv, tgt, 0.9, ''); }); }
 }
@@ -4833,7 +4833,7 @@ function boot(){
   wireToggle('tg-udL', function(){ return SET.udLeft; }, function(v){ SET.udLeft=v; applyPadLayout(); });
   wireToggle('tg-udR', function(){ return SET.udRight; }, function(v){ SET.udRight=v; applyPadLayout(); });
   $('buildstamp').textContent='Jimothy '+BUILD+' · best '+(PROG.best.endless||0)+' rows';
-  // painted UI glyphs (sheet 5, recut) — srcs set here so the art cache-buster applies
+  // UI glyphs (sheet 5, recut) — srcs set here so the art cache-buster applies
   [['ic-endless','glyph-endless'],['ic-rush','glyph-rush'],['ic-zen','glyph-zen'],
    ['ic-daily','glyph-daily'],['ic-skins','glyph-raccoon'],['ic-set','glyph-settings'],
    ['ic-share','glyph-share'],['ic-share2','glyph-share'],['ic-adventure','glyph-adventure'],
@@ -5256,6 +5256,11 @@ var SUP=(function(){
        button there is a door with no room behind it. Hide it rather than ship a
        button that fails. Everything on Steam lives on the machine. */
     if(STEAM_BUILD&&ac)ac.style.display='none';
+    /* ⛔ Same reasoning for the back-link (Stephen's call, 2026-07-31). Valve allows
+       outbound links, but a bought desktop game sending you to a browser reads odd,
+       and on Steam this is the last surface that pointed anywhere off the machine.
+       Kept on itch, where the game sits in a page and the cross promo belongs. */
+    var ex=$('b-exit'); if(STEAM_BUILD&&ex)ex.style.display='none';
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; }
     var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';
