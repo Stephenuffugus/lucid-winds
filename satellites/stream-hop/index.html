@@ -879,12 +879,12 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="skinrow" id="find-row"></div>
 
       <div class="sec-h">The Bin <span class="sec-n" id="bin-n"></span></div>
-      <div class="sec-sub">A surprise critter for 40 caps. Always one you do not own yet, never a duplicate. The cheapest way in.</div>
+      <div class="sec-sub">A surprise critter, starting at 40 caps. Always one you do not own yet, never a duplicate. The cheapest way in, and the price climbs as the bin empties.</div>
       <button class="btn primary" id="bin-pull" style="max-width:400px;margin:8px auto 0">Open the bin</button>
       <div class="bin-note" id="bin-note">Every cap you grab out there goes in the bin. It never gives you the same critter twice.</div>
 
       <div class="sec-h">Pick One Out <span class="sec-n" id="pick-n"></span></div>
-      <div class="sec-sub">Skip the surprise and choose exactly who you want, for 110 caps.</div>
+      <div class="sec-sub">Skip the surprise and choose exactly who you want. The rarer the critter, the dearer it is.</div>
       <div class="skinrow" id="pick-row"></div>
 
       <div class="sec-h">Colours <span class="sec-n" id="shelf-n"></span></div>
@@ -1034,7 +1034,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.3';
+var BUILD='v8.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -3094,8 +3094,8 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
       if(gp<1 && curScreen==='s-go') requestAnimationFrame(groll); };
     setTimeout(function(){ if(curScreen==='s-go') requestAnimationFrame(groll); }, 420); }
   var capsLine=G.coins+(G._dailyBonus?(' +'+G._dailyBonus+' daily'):'')+'  (bank '+(PROG.caps||0)+')';
-  if(binPool().length){ capsLine += ((PROG.caps||0)>=PULL_COST) ? '  · bin ready'
-      : ('  · '+(PULL_COST-(PROG.caps||0))+' to next critter'); }
+  if(binPool().length){ var _pc=pullCost(); capsLine += ((PROG.caps||0)>=_pc) ? '  · bin ready'
+      : ('  · '+(_pc-(PROG.caps||0))+' to next critter'); }
   $('go-caps').textContent=capsLine; G._dailyBonus=0;
   $('go-sun').innerHTML='<img src="assets/ui/glyph-sunbeam.png?a='+ARTV+'" style="width:22px;height:22px;vertical-align:-4px" alt="">'+
     (granted>0?(' +'+granted+' sunbeam'+(granted>1?'s':'')):' daily sun gathered');
@@ -4151,7 +4151,24 @@ function drawSkinPreview(cv,sk,sc,fk){ var c=cv.getContext('2d'); sc=sc||1;
 }
 /* ===== PRIZE BIN — bottlecaps you grab on the road buy pulls, a pull is always a
    critter you do not own yet, so the collection can never stall on a duplicate. ===== */
-var PULL_COST=40;
+/* ⛔ THE BIN CLIMBS (2026-07-31, Stephen's call). It used to be a flat 40 forever,
+   which meant the twelve buyable critters cost 480 caps TOTAL while the campaign
+   alone pays 1,600 in capstones and the level-100 feast — so finishing the game
+   bought the whole collection three times over and the bin stopped being a goal
+   before the player was halfway. The old comment below even admitted the bin
+   emptied in 30-45 minutes.
+   The first pull stays 40, so nothing changes for a new player and the bin is
+   still the cheapest, most exciting button in the shop. Each pull after it costs
+   PULL_STEP more, so the LAST critters are the expensive ones without any of it
+   being hidden — the button always shows the real price.
+   Twelve pulls now total 2,130 caps against the campaign's 1,600, so the campaign
+   gets you most of the way and the dailies and other modes finish it.
+   Retune with these two numbers alone; nothing else needs touching. */
+var PULL_COST=40, PULL_STEP=25, PULL_MAX=400;
+function pullCost(){
+  var n=PROG.pulls||0;
+  return Math.min(PULL_COST + PULL_STEP*n, PULL_MAX);
+}
 function binPool(){ var o=[],i,c; for(i=0;i<CHARS.length;i++){ c=CHARS[i];
   if(c.rar==='starter'||c.secret||c.via||charOwned(c.id))continue; o.push(c); } return o; }
 function binNote(t){ var n=$('bin-note'); if(n)n.textContent=t; }
@@ -4183,7 +4200,7 @@ function renderBin(){
     +((PROG.tokens||0)>0?('  ·  ▶ '+PROG.tokens+' free continue'+(PROG.tokens>1?'s':'')):'');
   var pb=$('bin-pull');
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
-  else { pb.textContent='Open the bin · '+PULL_COST+' caps'; pb.classList.add('primary'); pb.classList.remove('ghost'); }
+  else { pb.textContent='Open the bin · '+pullCost()+' caps'; pb.classList.add('primary'); pb.classList.remove('ghost'); }
   /* THE COLLECTION IS SORTED THE WAY A PERSON THINKS ABOUT IT: costumes (Jimothy in an
      outfit), critters (a different animal), secrets (found, never sold). Everything you
      do not own yet is a price tag and lives in the Shop tab, except the secrets, which
@@ -4317,13 +4334,18 @@ function renderWeekly(){
    run banks ~70 grinding / ~130 while progressing, and a casual two-runs-a-day player
    banks ~150-165 including the daily 15. So: common = one run, rare = about a day,
    epic = a couple of days, legend = most of a week. The full shelf is ~3,460 caps,
-   which is weeks rather than the 30-45 minutes it takes to empty the 40-cap bin.
+   which is weeks rather than the single sitting the flat-40 bin used to take.
    ⛔ Nothing is ever priced under 60 — the bin pull must stay the cheapest and most
    exciting thing you can buy, which is the whole reason it survives untouched. */
+/* ⛔ PICKING NOW COSTS WHAT THE CRITTER IS WORTH (2026-07-31). Every critter used
+   to cost a flat 110 to choose, so an Orca and a City Pigeon were priced the same
+   and there was no such thing as an expensive skin. Common holds the old price so
+   nothing a new player wants got dearer; rare and epic are what actually moved. */
 var PICK_COST=110;
+var CHAR_COST={ common:110, rare:220, epic:400, legend:600 };
 var FIN_COST={ common:60, rare:150, epic:320, legend:700 };
 function finPrice(f){ return FIN_COST[f.rar]||120; }
-function charPrice(){ return PICK_COST; }
+function charPrice(c){ return (c && CHAR_COST[c.rar]) || PICK_COST; }
 function dayIndex(){ return Math.floor(Date.now()/864e5); }
 
 /* the whole shop as one stable, ordered list — the daily pick indexes into THIS, so
@@ -4332,7 +4354,7 @@ function shopStock(){
   var out=[], i;
   for(i=0;i<CHARS.length;i++){ var c=CHARS[i];
     if(c.rar==='starter'||c.secret||c.via) continue;   // weekly + code costumes are never for sale
-    out.push({kind:'char', id:c.id, o:c, price:charPrice(), owned:charOwned(c.id)}); }
+    out.push({kind:'char', id:c.id, o:c, price:charPrice(c), owned:charOwned(c.id)}); }
   for(i=0;i<FINISHES.length;i++){ var f=FINISHES[i];
     out.push({kind:'fin', id:f.id, o:f, price:finPrice(f), owned:finOwned(f.id)}); }
   return out;
@@ -4390,18 +4412,18 @@ function renderPick(){
   var host=$('pick-row'); if(!host)return; host.innerHTML='';
   var pool=binPool(), tgt=rewardTargetId();
   var bn=$('bin-n'); if(bn)bn.textContent=pool.length?(pool.length+' left'):'empty';
-  var pn=$('pick-n'); if(pn)pn.textContent=pool.length?('110 caps each'):'';
+  var pn=$('pick-n'); if(pn)pn.textContent=pool.length?('by rarity'):'';
   if(!pool.length){ host.innerHTML='<div class="sec-sub">Every critter is out of the bin already.</div>'; return; }
   pool.forEach(function(s){
-    var afford=(PROG.caps||0)>=PICK_COST;
+    var _p=charPrice(s), afford=(PROG.caps||0)>=_p;
     host.appendChild(shopCard({
       /* if this is the one the streak is walking them toward, say so — nobody should
-         spend 110 caps on a costume that was going to be free in three days */
-      name:cardName(s), sub:(s.id===tgt)?'free on day 7':(afford?'tap to buy':((PICK_COST-(PROG.caps||0))+' more caps')),
-      price:PICK_COST, rar:s.rar, cant:!afford,
+         spend caps on a costume that was going to be free in three days */
+      name:cardName(s), sub:(s.id===tgt)?'free on day 7':(afford?'tap to buy':((_p-(PROG.caps||0))+' more caps')),
+      price:_p, rar:s.rar, cant:!afford,
       paint:function(cv){ drawSkinPreview(cv,s,1,PROG.fin);
         if(s.art&&s.sheet){ var im=spr(s.sheet+'/idle'); if(!imgReady(im)) im.addEventListener('load',function(){ drawSkinPreview(cv,s,1,PROG.fin); }); } },
-      onTap:function(){ buyChar(s, PICK_COST); }
+      onTap:function(){ buyChar(s, _p); }
     }));
   });
 }
@@ -4506,8 +4528,9 @@ function shopTab(which,quiet){
 function binPull(){
   var pool=binPool();
   if(!pool.length){ binNote('You have pulled every critter out of the bin. Jimothy is proud of you.'); sfx('ui'); return; }
-  if((PROG.caps||0)<PULL_COST){ binNote('You need '+(PULL_COST-(PROG.caps||0))+' more bottlecaps. Back out to the street.'); sfx('phew'); return; }
-  PROG.caps-=PULL_COST; PROG.pulls=(PROG.pulls||0)+1;
+  var _cost=pullCost();
+  if((PROG.caps||0)<_cost){ binNote('You need '+(_cost-(PROG.caps||0))+' more bottlecaps. Back out to the street.'); sfx('phew'); return; }
+  PROG.caps-=_cost; PROG.pulls=(PROG.pulls||0)+1;
   var W={common:6,rare:3,epic:1}, tot=0, i;
   for(i=0;i<pool.length;i++) tot+=(W[pool[i].rar]||1);
   var roll=Math.random()*tot, pick=pool[pool.length-1];
