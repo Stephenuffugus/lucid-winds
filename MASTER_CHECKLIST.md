@@ -771,22 +771,23 @@ spelling than the code. [[reference_display_name_slug_map]] again.
 
 ## 👽 THE ABDUCTION FILES
 
-- [x] **480 of 1000 pages written AND LOADED** (banks 3 to 7: upstream
-  `fe6b692`, `5cd4c3e`, `26e93ab`, `cb1997f`, `4dd190d`). Pages 101 to 480, all
-  four threads, all passing `tools/validate_pages.mjs` (40 to 90 words, unique
-  numbers, unique 34-char openings, no dashes of any shape, headings under 40).
-  Balance FR 120 · SF 123 · HW 119 · IW 118, word range 45 to 73.
-  The story now moves rather than circling: a second valley opens, the thirty
-  year cataloguer hands over and the voice changes with him, the third survey
-  quietly stops filing and his successor decides not to report it, and at home
-  the archivist's copy of one ship's MARGINS gets published and does more for the
-  fleet's standing than four centuries of columns, including the first funding
-  rise in ninety years carried by a joke about a kettle.
+- [x] **640 of 1000 pages written AND LOADED** (banks 3 to 9, upstream through
+  `d8d7f0b`). Pages 101 to 640, all four threads, all passing
+  `tools/validate_pages.mjs`. Balance FR 160 · SF 163 · HW 159 · IW 158.
+  The story has a spine now: a second valley opens, the thirty year cataloguer
+  hands over, the third survey breaks eleven years of silence and sends its
+  margins, extraction drops from thirty a year to nine because the form finally
+  demands a written reason, a mark comparison programme reveals the archive was
+  always a record of INDIVIDUALS filed as a record of events, four scientists
+  from a full spectrum world come aboard and ask in their first hour why nobody
+  ever put something down there and waited, and the fleet places a warm stone on
+  open ground and a creature looks at it for two minutes and leaves.
   ⛔ Each bank is WIRED into `index.html` in the same commit and verified in a
-  browser by page COUNT (480 present, 480 unique, no console errors): a page file
-  nothing loads is a page nobody reads.
-  ⚠️ The 40-character heading limit has now bitten on four banks out of five. The
-  validator catches it every time. Write headings short.
+  browser by page COUNT and by zero non integer page numbers.
+  ⛔ **Validator hardened** (`d8d7f0b`): a drafting placeholder numbered 564.5
+  would have passed the old gate (unique, in range) and rendered as PAGE 564.5
+  OF 1000. Now rejected, and the check was proven to fire by planting one.
+  ⚠️ The 40-character heading limit has bitten on most banks. Write them short.
 
 ---
 
