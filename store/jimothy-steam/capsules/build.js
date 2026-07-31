@@ -1,0 +1,77 @@
+/* Steam capsule builder for Jumping Jimothy.
+   Composes the STORE art out of assets that already exist - the city backdrops,
+   the hero poses, the game's own fonts and palette. Nothing new is generated;
+   this is layout, at Valve's exact pixel sizes.
+   Run:  node store/jimothy-steam/capsules/build.js     (needs a static server on 8942) */
+const puppeteer=require('/workspaces/lucid-winds/node_modules/puppeteer');
+const BASE='http://localhost:8942';
+const OUT=__dirname+'/out';
+require('fs').mkdirSync(OUT,{recursive:true});
+
+const SIZES=[
+ {f:'small_capsule',      w:231,  h:87,   mode:'mark'},
+ {f:'header_capsule',     w:460,  h:215,  mode:'wide'},
+ {f:'main_capsule',       w:616,  h:353,  mode:'wide'},
+ {f:'vertical_capsule',   w:374,  h:448,  mode:'tall'},
+ {f:'library_capsule',    w:600,  h:900,  mode:'tall'},
+ {f:'library_hero',       w:3840, h:1240, mode:'hero'},
+ {f:'page_background',    w:1438, h:810,  mode:'bg'},
+];
+
+function page(w,h,mode){
+ const bg=BASE+'/satellites/stream-hop/assets/bg/zone-skyline.jpg';
+ const POSE=process.env.POSE||'idle';
+ const roon=BASE+'/satellites/stream-hop/assets/hero/'+POSE+'.png';
+ // type scales off the capsule height so every size reads the same
+ const big=mode==='mark'?Math.round(h*0.235):mode==='tall'?Math.round(h*0.105):Math.round(h*0.175);
+ const small=Math.round(big*0.46);
+ const tall=(mode==='tall');
+ return `<!doctype html><html><head><meta charset="utf-8">
+ <link href="${BASE}/store/jimothy-steam/fonts/fonts.css" rel="stylesheet">
+ <style>
+ *{margin:0;padding:0;box-sizing:border-box}
+ html,body{width:${w}px;height:${h}px;overflow:hidden;background:#0b0f0b}
+ .cap{position:relative;width:${w}px;height:${h}px;overflow:hidden}
+ .bg{position:absolute;inset:0;background:url('${bg}') center 22% / cover no-repeat;
+     filter:brightness(.62) saturate(1.05)}
+ .vig{position:absolute;inset:0;background:
+   radial-gradient(120% 90% at ${tall?'50% 30%':'72% 55%'}, rgba(0,0,0,0) 0%, rgba(6,9,5,.55) 60%, rgba(6,9,5,.9) 100%),
+   linear-gradient(${tall?'180deg':'90deg'}, rgba(6,9,5,.92) 0%, rgba(6,9,5,.55) 45%, rgba(6,9,5,.1) 75%)}
+ .roon{position:absolute;${tall?`left:50%;transform:translateX(-50%);bottom:${Math.round(h*0.06)}px;height:${Math.round(h*(mode==='mark'?0.72:0.46))}px`
+        :`right:${Math.round(w*(mode==='mark'?0.02:0.045))}px;bottom:${Math.round(h*-0.02)}px;height:${Math.round(h*(mode==='mark'?1.0:0.92))}px`};
+   filter:drop-shadow(0 ${Math.round(h*0.02)}px ${Math.round(h*0.05)}px rgba(0,0,0,.75))}
+ .type{position:absolute;${tall?`left:0;right:0;top:${Math.round(h*0.07)}px;text-align:center`
+        :`left:${Math.round(w*0.055)}px;top:50%;transform:translateY(-50%);text-align:left`};
+   font-family:'Fredoka','Nunito',system-ui,sans-serif;line-height:.98}
+ .l1{font-size:${small}px;font-weight:700;letter-spacing:${Math.max(1,Math.round(small*0.10))}px;
+     color:#c8a84b;text-transform:uppercase;text-shadow:0 2px 0 #14200f,0 2px 12px rgba(0,0,0,.9)}
+ .l2{font-size:${big}px;font-weight:800;color:#8ec964;letter-spacing:${Math.round(big*0.01)}px;
+     text-shadow:0 ${Math.round(big*0.055)}px 0 #14200f, 0 0 ${Math.round(big*0.5)}px rgba(122,179,86,.38), 0 3px 16px rgba(0,0,0,.9)}
+ .tag{margin-top:${Math.round(h*0.035)}px;font-family:'Nunito',system-ui,sans-serif;font-weight:700;
+      font-size:${Math.round(small*0.72)}px;color:#e8dcc8;opacity:.9;letter-spacing:.4px;
+      text-shadow:0 2px 8px rgba(0,0,0,.95)}
+ </style></head><body><div class="cap">
+   <div class="bg"></div><div class="vig"></div>
+   ${mode==='bg'?'':`<img class="roon" src="${roon}">`}
+   ${mode==='bg'?'':`<div class="type">
+     <div class="l1">Jumping</div>
+     <div class="l2">Jimothy</div>
+     ${(mode==='wide'||mode==='tall')?'<div class="tag">The Little Nugget</div>':''}
+   </div>`}
+ </div></body></html>`;
+}
+
+(async()=>{
+ const b=await puppeteer.launch({headless:'new',args:['--no-sandbox','--disable-setuid-sandbox']});
+ for(const s of SIZES){
+  const p=await b.newPage();
+  await p.setViewport({width:s.w,height:s.h,deviceScaleFactor:1});
+  await p.setContent(page(s.w,s.h,s.mode),{waitUntil:'networkidle0',timeout:60000});
+  await new Promise(r=>setTimeout(r,900));
+  const tag=process.env.POSE?('_'+process.env.POSE):'';
+  await p.screenshot({path:`${OUT}/${s.f}_${s.w}x${s.h}${tag}.png`});
+  console.log('  wrote '+s.f+'  '+s.w+'x'+s.h);
+  await p.close();
+ }
+ await b.close();
+})();
