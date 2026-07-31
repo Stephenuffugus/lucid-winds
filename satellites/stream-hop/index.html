@@ -986,7 +986,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v7.9';
+var BUILD='v8.0';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1266,7 +1266,11 @@ var ZONES=[
 ];
 var ZONE_LEN=26;
 function zoneIdx(r){ if(G&&G.mode==='adventure') return advZoneIdx(advLevelOfRow(r)); return Math.floor(Math.max(0,r)/ZONE_LEN) % ZONES.length; }
-function zoneAt(r){ return ZONES[zoneIdx(r)]; }
+function zoneAt(r){
+  /* Adventure reads its palette through the DECADE so the tinted reuses of a
+     backdrop actually look different. Every other mode is unchanged. */
+  if(G&&G.mode==='adventure') return decadeZone(advLevelOfRow(r));
+  return ZONES[zoneIdx(r)]; }
 
 /* ===== sprite images — Jimothy art pack. EVERY draw keeps a procedural fallback,
    so the game runs identically if art is missing. Lazy-load + warm at boot. ===== */
@@ -1743,10 +1747,69 @@ function newGame(mode, startLevel){
    chapter = 6 levels). Difficulty ramps by level. Each level scores up to 3 stars:
    clear it / bank its flower goal / grab its coin goal. Clearing the furthest level
    unlocks the next. Dying retries the CURRENT level (keep your unlocked progress). ===== */
-var ADV_LEN=16, ADV_CHAP=6;
+/* ===== TEN DECADES — Stephen's Jul 30 course-v2 plan, section 2 =====
+   "a ton of levels ... ramp gradually to really hard with things to work toward
+   ... special level every 5 or 10". Adventure now runs as ten named Seattle
+   decades of ten levels each, ending at the feast the title screen has always
+   promised. Past 100 the last three decades cycle and the speed keeps creeping.
+
+   ⛔ There are SIX painted zone backdrops and TEN decades, so four decades reuse
+   a backdrop with a palette tint. Per the plan this shifts ground and water hues
+   ONLY. No sprite is touched and no new art is required. ===== */
+var DECADES=[
+  {name:'Pike Place',       zone:1, cap:'gullswarm', tint:null},
+  {name:'West Seattle',     zone:0, cap:'sound',     tint:null},
+  {name:'SoDo',             zone:4, cap:'railyard',  tint:null},
+  {name:'Fremont',          zone:2, cap:'storm',     tint:null},
+  {name:'Ballard',          zone:5, cap:'sound',     tint:null},
+  {name:'Capitol Hill',     zone:3, cap:'rushhour',  tint:null},
+  {name:'U District',       zone:1, cap:'gullswarm', tint:{h: 14, s:0.92, l:0.96}},
+  {name:'Queen Anne',       zone:2, cap:'storm',     tint:{h:-16, s:0.88, l:0.92}},
+  {name:'Georgetown',       zone:4, cap:'railyard',  tint:{h: 22, s:1.06, l:0.88}},
+  {name:'Downtown at Dusk', zone:3, cap:'blackout',  tint:{h:-26, s:1.10, l:0.82}}
+];
+var DEC_LEN=10;
+function advDecadeIdx(n){
+  var d=Math.floor((Math.max(1,n)-1)/DEC_LEN);
+  /* past level 100 the deep end repeats: decades 8, 9, 10 forever, so the
+     scenery keeps changing while advDiff keeps climbing. */
+  return d < DECADES.length ? d : (DECADES.length-3) + (d-(DECADES.length-3)) % 3;
+}
+function advDecade(n){ return DECADES[advDecadeIdx(n)]; }
+function isCapstone(n){ return n>0 && n%DEC_LEN===0; }
+function isSummit(n){ return n===100; }
+
+/* Palette tinting for the reused backdrops. Memoised: this runs per row. */
+function _hex2hsl(h){ var r=parseInt(h.substr(1,2),16)/255,g=parseInt(h.substr(3,2),16)/255,b=parseInt(h.substr(5,2),16)/255;
+  var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,L=(mx+mn)/2,H=0,S=0;
+  if(d){ S=L>0.5?d/(2-mx-mn):d/(mx+mn);
+    H=(mx===r)?((g-b)/d+(g<b?6:0)):(mx===g)?((b-r)/d+2):((r-g)/d+4); H*=60; }
+  return [H,S,L]; }
+function _hsl2hex(H,S,L){ H=((H%360)+360)%360; S=Math.max(0,Math.min(1,S)); L=Math.max(0,Math.min(1,L));
+  var C=(1-Math.abs(2*L-1))*S, X=C*(1-Math.abs((H/60)%2-1)), m=L-C/2, r=0,g=0,b=0;
+  if(H<60){r=C;g=X;} else if(H<120){r=X;g=C;} else if(H<180){g=C;b=X;}
+  else if(H<240){g=X;b=C;} else if(H<300){r=X;b=C;} else {r=C;b=X;}
+  function q(v){ var t=Math.round((v+m)*255); t=t<0?0:t>255?255:t; return (t<16?'0':'')+t.toString(16); }
+  return '#'+q(r)+q(g)+q(b); }
+function _tintList(list,t){ var o=[],i; for(i=0;i<list.length;i++){ var c=_hex2hsl(list[i]);
+  o.push(_hsl2hex(c[0]+t.h, c[1]*t.s, c[2]*t.l)); } return o; }
+var _decZoneCache={};
+function decadeZone(n){
+  var di=advDecadeIdx(n), d=DECADES[di];
+  if(_decZoneCache[di]) return _decZoneCache[di];
+  var base=ZONES[d.zone];
+  var z=base;
+  if(d.tint){
+    z={}; for(var k in base) z[k]=base[k];
+    z.safe=_tintList(base.safe,d.tint); z.road=_tintList(base.road,d.tint); z.water=_tintList(base.water,d.tint);
+  }
+  _decZoneCache[di]=z; return z;
+}
+
+var ADV_LEN=16, ADV_CHAP=DEC_LEN;   // a chapter IS a decade now
 function advLevelOfRow(r){ return Math.floor(Math.max(0,r)/ADV_LEN)+1; }
-function advZoneIdx(n){ return Math.floor((n-1)/ADV_CHAP) % ZONES.length; }
-function advChapterName(n){ return ZONES[advZoneIdx(n)].name; }
+function advZoneIdx(n){ return advDecade(n).zone; }
+function advChapterName(n){ return advDecade(n).name; }
 /* ⛔ THE CURVE IS A LONG CLIMB, NOT A RAMP TO A WALL (Stephen 2026-07-30:
    "i literally spent a couple days stuck on level 23... i want the game to get
    really hard but lets give them something to work towards and not just rocket
@@ -1772,7 +1835,10 @@ var SP10=['railyard','storm','sound','blackout'];   // landmarks, every 10th
 var SP5 =['rushhour','steamnight','gullswarm'];     // lighter twists, the other 5s
 function advSpecial(n){
   if(n<5 || n%5!==0) return null;
-  if(n%10===0) return SP10[(n/10-1)%SP10.length];
+  /* Every 10th is that decade's named capstone (the plan's showcase list), every
+     other 5th is a lighter twist. Two different cycle lengths on purpose, so the
+     pattern does not repeat for a long time. */
+  if(n%10===0) return advDecade(n).cap;
   return SP5[((n-5)/10)%SP5.length]; }
 var SPNAME={ storm:'STORM WATCH', sound:'FERRY CROSSING', railyard:'RAIL YARD',
   rushhour:'RUSH HOUR', steamnight:'STEAM NIGHT', blackout:'BLACKOUT', gullswarm:'GULL SWARM' };
@@ -1928,6 +1994,36 @@ function makeLane(r){
       var cwBelow=(r>0&&G.lanes[r-1]&&G.lanes[r-1].type==='safe'&&G.lanes[r-1].blocked)?G.lanes[r-1].blocked:null;
       var cwG=0; while((L.blocked[kc]||(cwBelow&&cwBelow[kc]))&&cwG++<COLS)kc=(kc+1)%COLS;
       if(cwG<=COLS)L.coin=(0.5+kc)*TILE; }
+    /* PLAN SECTION 3: one guaranteed landmark on every decade capstone, so the
+       eight hidden Seattle objects are a visible ladder instead of loose luck.
+       ⛔⛔ THIS MUST STAY BELOW THE WHOLE if/else-if CHAIN ABOVE. Sitting in the
+       middle of it, this plain `if` STOLE the chain: the coin branch's `else if`
+       bound to THIS condition instead of the power/stash/egg one, so on every
+       non-adventure mode the coin roll started firing when it previously could
+       not. It silently changed the shared DAILY course for every player in the
+       world, and only a byte-comparison against the previous build caught it.
+       ⛔ A SEPARATE `if`, never an `else if`: as a branch of the chain above it was
+       pre-empted by the power-up and stash rolls and only landed on 2 capstones
+       in 8. It also cannot demand a particular row number, because that row is
+       usually a road or a river; it takes the first SAFE row past the halfway
+       mark instead.
+       ⛔ It consumes NO rng draws. A draw here would shift the whole course and
+       every existing level would change underneath players mid-promotion. */
+    if(G.mode==='adventure' && !L.egg){
+      var _lvE=advLevelOfRow(r);
+      if(isCapstone(_lvE) && _lvE<=80){
+        if(!G.capEgg) G.capEgg={};
+        var _start=(_lvE-1)*ADV_LEN;
+        if(!G.capEgg[_lvE] && r >= _start+5){
+          var _sd=levelSeed(_lvE), _ec=(_sd>>>5)%COLS, _guard=0;
+          while(L.blocked[_ec] && _guard++<COLS) _ec=(_ec+1)%COLS;
+          if(!L.blocked[_ec]){
+            L.egg={ x:(_ec+0.5)*TILE, kind:pickEgg(rng, false) };
+            G.capEgg[_lvE]=1;
+          }
+        }
+      }
+    }
     return L;
   }
   // hazard: road or water. bias to road early, more water as d rises. never water on the very first hazard row after a bank.
@@ -2441,8 +2537,15 @@ function renderLevels(){
   var st=$('lv-stars'); if(st) st.textContent=advTotalStars()+' ★';
   var maxLv=PROG.adv.maxLevel||1, maxShow=Math.max(30, maxLv+5), chapters=Math.ceil(maxShow/ADV_CHAP), curCell=null, gi=0;
   for(var c=0;c<chapters;c++){
-    var zi=c%ZONES.length, loop=Math.floor(c/ZONES.length);
-    var hdr=document.createElement('div'); hdr.className='lv-chap'; hdr.textContent=ZONES[zi].name+(loop>0?(' '+(loop+1)):''); host.appendChild(hdr);
+    /* ⛔ The map used to name its own groups off the ZONES cycle, so it kept
+       showing six zone names in blocks of six while the game itself had moved to
+       ten named decades of ten. Read the name from the decade the way every
+       other surface does, and mark the repeats past level 100. */
+    var _first=c*ADV_CHAP+1, _loop=Math.floor(c/DECADES.length);
+    var hdr=document.createElement('div'); hdr.className='lv-chap';
+    hdr.textContent=advChapterName(_first)+(_loop>0?(' '+(_loop+1)):'')
+      +(isSummit(_first+ADV_CHAP-1)?'  ·  THE FEAST':'');
+    host.appendChild(hdr);
     var grid=document.createElement('div'); grid.className='lv-grid';
     for(var i=0;i<ADV_CHAP;i++){ var n=c*ADV_CHAP+i+1; if(n>maxShow)break;
       var unlocked=n<=maxLv;
@@ -4650,7 +4753,7 @@ function boot(){
      bumps while the registered URL never changed. Survivable only because the
      no-cache header rule covers every ?v= URL (verified BYPASS at the edge); do
      not rely on that twice. */
-  var SWV='71';
+  var SWV='72';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5146,6 +5249,10 @@ if(/[?&]shtest=1/.test(location.search)){
     padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
     advDiff:advDiff, advEase:advEase, diffAt:diffAt, lane:function(r){ return G.lanes[r]; },
     special:advSpecial, levelSeed:levelSeed, spNames:SPNAME,
+    /* course v2: the decade ladder, so a harness measures the real thing */
+    decades:DECADES, decadeIdx:advDecadeIdx, decade:advDecade, decadeZone:decadeZone,
+    chapterName:advChapterName, isCapstone:isCapstone, isSummit:isSummit, laneAt:laneAt,
+    renderLevels:renderLevels, show:show,
     gen:function(n){ genUpTo(n||60); return G.maxGen; },
     daily:function(){ return { no:dailyNo(), done:dailyDone(), left:dailyLeft(),
       official:!!(G&&G.dailyOfficial), rec:JSON.parse(JSON.stringify(PROG.daily)) }; },
