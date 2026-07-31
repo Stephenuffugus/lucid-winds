@@ -806,17 +806,53 @@ spelling than the code. [[reference_display_name_slug_map]] again.
   works, and every control for phone and keyboard, read off the real key
   handlers and touch buttons. Verified: first open shows it, reload does not,
   ? reopens it.
-- [ ] **17 satellites still have no rules page before play.** Verified by
-  RUNNING them, not grepping: they open on a title screen with a one line
-  concept and mode buttons, which is a tagline, not an objective plus rules plus
-  controls. The list: The Attic, Doodle Pad, Blooming Words, Vine Runner,
-  Dragon Philosophy, Petal Plunge, Meadow Weave, Silt, Tempo Grove, Root Weave,
-  Sled Vine, Bramble Court, Nova Bloom, Orb Orchard, Frost Watch, Lamplighter,
-  Tinker Loft. (Petal Plunge and Dragon Philosophy have a How to Play reachable
-  from the title; the other 15 need one written.) The other 72 satellites do
-  carry rules text and still need the same run-it check.
+- [x] **The 17 satellites CLOSED (commits 28a298e8 + the Vine Runner commit).**
+  The premise turned out to be wrong in the best way: **eleven of them already
+  HAD a proper how-to screen** with mechanics and controls, written well. It was
+  only ever reachable from a How button on the title, so a new player never saw
+  it. Those eleven now open it by themselves the first time, once per device,
+  with the button still reopening it, and each gained an explicit objective line
+  at the top (their own approved one-sentence description, nothing invented):
+  root-weave, sled-vine, tempo-grove, silt, bramble-court, nova-bloom,
+  frost-watch, lamplighter, tinker-loft, orb-orchard, meadow-weave. **Vine
+  Runner** was the only one with no rules surface at all and got a new overlay
+  (canvas game, so DOM). **Blooming Words** already auto-opened an intro and now
+  leads with the objective. Left alone because they were already right: **Doodle
+  Pad** opens its How to use panel by itself, **Petal Plunge** shows its
+  tutorial on Play (the screen Jessie praised), **Dragon Philosophy** carries its
+  objective and rules on the title screen. **The Attic** is a dev prototype
+  behind the tester wall, not a shipped game. Verified in a browser for all of
+  them: rules on screen on a first visit, quiet on the second after dismissing,
+  no console errors.
+- [ ] **The other 72 satellites carry rules text per grep and still need the
+  run-it check** (grep proves the words exist, not that a player sees them).
 - [ ] **Vine Runner 404:** `art/run-2.png` is missing. The game renders fine
   (everything is canvas) but a request fails on every load.
+
+---
+
+## 🦝 JIMOTHY COURSE V2 — audited against the plan (2026-07-31)
+
+- [x] **Ten Seattle decades SHIPPED (commit 008c7293, BUILD v8.0).** The plan was
+  only PART done: the seed determinism, the curve, the pickup glow and the
+  special cadence shipped Jul 30; the decade ladder had not. Adventure now runs
+  ten named decades of ten (Pike Place to Downtown at Dusk, feast at 100), with
+  palette tints so the four decades reusing one of the six painted backdrops
+  look different, per-decade capstone specials, a GUARANTEED landmark on every
+  capstone 10-80, and a level map that reads decade names instead of the old
+  six-zone cycle. Verified against the real engine: Daily byte-identical to the
+  previous build, same level generates identically twice (5/23/47/60),
+  difficulty monotonic across 150, cadence 10 capstones + 10 twists per hundred,
+  all 8 capstones carry a landmark and ordinary levels do not.
+  ⛔⛔ **THE NEAR MISS**: the landmark block was first a plain `if` in the MIDDLE
+  of the existing if/else-if chain, and it STOLE the chain — the coin branch's
+  `else if` bound to it, so every non-adventure mode's coin roll changed and the
+  **shared Daily course silently changed for every player**. Nothing looked
+  wrong in game; only a byte-diff of the Daily against the previous build caught
+  it. Always diff the Daily after touching makeLane.
+- [ ] **Still owed from the plan:** decade rewards (capstone caps bonus, the
+  level-50 exclusive costume), the level-100 feast cutscene, and BORROWED
+  WHISKERS every 25.
 
 ---
 
