@@ -219,7 +219,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.6";
+var BUILD="v5.7";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -385,7 +385,17 @@ var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
    (Midnight Katana 6.50, Starforge 6.05, Wolf Fang 6.65), so a hard constant
    let those three tips bite half a unit into the rock before contact fired.
    Measuring means any future skin, at any length, is safe by construction. */
-var KLEN=6.0, KHH=1.3;
+/* ⛔ KLEN and KHH are WORLD units, NOT the numbers in the skin recipes. The
+   knife GROUP is drawn at KSCALE (see buildKnife), so Classic Chef's meshes
+   span 5.70 either side of centre but only reach 3.14 on screen. The 7/30 pass
+   measured the raw recipe and handed it straight to kReachX, so every wall
+   test carried 2.57 units of phantom blade and the knife stuck with a visible
+   gap still showing (Stephen 8/01: "the blade sticks into the wall when it is
+   still like inches away and completely ruins the game"). measureKnife bakes
+   KSCALE in now, so contact fires exactly where the knife is DRAWN — which is
+   also the frame the stick poses (wallX-2.3, SW-2.8) were authored against. */
+var KSCALE=0.55;                 // knife group scale; the drawn size IS the hit size
+var KLEN=6.0*KSCALE, KHH=1.3*KSCALE;
 function kReachX(ang){ return KLEN*Math.abs(Math.cos(ang))+KHH*Math.abs(Math.sin(ang)); }
 function measureKnife(meshes){
   var lo=0, hi=0, ho=0, i, m, g, w, h;
@@ -397,9 +407,11 @@ function measureKnife(meshes){
     if(Math.abs(m.position.y)+h/2>ho) ho=Math.abs(m.position.y)+h/2;
   }
   /* one conservative half-length: whichever end sticks out furthest bounds
-     both walls, so nothing can ever bury whichever way the knife is spinning */
-  KLEN=Math.max(4.0, Math.abs(lo), hi);
-  KHH=Math.max(0.8, ho);
+     both walls, so nothing can ever bury whichever way the knife is spinning.
+     Scaled into world units on the way out — the recipe is authored at 1.0 but
+     the knife is drawn at KSCALE. */
+  KLEN=Math.max(4.0, Math.abs(lo), hi)*KSCALE;
+  KHH=Math.max(0.8, ho)*KSCALE;
 }
 // Wall Climb spin control (Stephen: slow it so you can time the blade). Tap gives a
 // slower, readable flip; HOLD brakes the spin and eases the blade to face the wall.
@@ -496,10 +508,11 @@ var SKINS={
     return [ bladeMesh(7.2,1.6,0.5,km(0xe8edf5,0x2a3a5a)), kbox(7.2,0.34,0.58,km(0x6ab0ff,0x1a4a8a),-1.9,-0.75), kbox(1.5,1.5,0.5,km(0xffffff,0x3a5a9a),-5.9,0.1,Math.PI/4), kbox(0.7,2.9,1.0,km(0x6ab0ff,0x1a4a8a),1.7,0) ].concat([ kbox(3.7,1.5,0.85,km(0x20242c),3.9,0), kbox(0.34,1.6,0.9,km(0x0e1014),3.0,0), kbox(0.34,1.6,0.9,km(0x0e1014),4.7,0) ]); }},
   /* ── the second shelf (Stephen 2026-07-30: "there needs to be a whole bunch
      more things to unlock and cut with. a lot of stuff") ──────────────────
-     ⛔ GEOMETRY LAW: wall contact tests kReachX, which assumes the knife spans
-     no more than KLEN=6.0 either side of centre. Every recipe here stays inside
-     +/-5.8. If a future skin needs to be longer, bump KLEN and re-run the wall
-     probe, or the handle starts burying again. */
+     ⛔ GEOMETRY LAW: wall contact tests kReachX, and measureKnife reads these
+     recipes at paint time, so any length is safe by construction — but the
+     numbers here are RECIPE units and get multiplied by KSCALE (0.55) before
+     they ever touch a wall test. A blade of 6.0 here reaches 3.3 on screen.
+     Never hand a raw recipe number to a collision test. */
   bamboo:{name:'Bamboo Splitter',tier:'common',price:200,icon:{b:'#9ad46a',h:'#7a5a2e',a:'#d8c07a'},make:function(){
     return [ bladeMesh(6.2,1.5,0.5,km(0x9ad46a)), kbox(0.3,1.7,0.56,km(0x6ea83e),-3.2,0), kbox(0.3,1.7,0.56,km(0x6ea83e),-0.6,0), kbox(1.0,1.0,0.5,km(0xbfe89a),-4.9,-0.1,Math.PI/4) ].concat(stdGrip(0x7a5a2e,0x5c421e,0xd8c07a)); }},
   trowel:{name:'Garden Trowel',tier:'common',price:280,icon:{b:'#b8bcc4',h:'#b5613a',a:'#e8c65a'},make:function(){
@@ -557,7 +570,7 @@ function buildKnife(){
   paintKnife(SKN.equip);
   trail=new THREE.Mesh(new THREE.BoxGeometry(8.2,0.24,0.22), new THREE.MeshBasicMaterial({color:0xdfe9ff, transparent:true, opacity:0}));
   trail.position.set(-1.4,-1.05,0); knife.add(trail);
-  knife.scale.set(0.55,0.55,0.55); // knife reads ~3.5 units long in world space
+  knife.scale.set(KSCALE,KSCALE,KSCALE); // knife reads ~3.5 units long in world space; measureKnife matches
   scene.add(knife);
   // landing shadow — the platforming readability anchor
   kshadow=new THREE.Mesh(new THREE.CircleGeometry(1.6,18), new THREE.MeshBasicMaterial({color:0x0a140a, transparent:true, opacity:0.35}));
@@ -1655,8 +1668,11 @@ function ffWall(x,y,dir){
   var bladeIntoWall = dir<0 ? (bladeX < -0.35) : (bladeX > 0.35);
   var away = -dir; // +1 = push right off the left wall, -1 = push left off the right wall
   if(bladeIntoWall){
-    // FAIL: the blade bites into the wall, the knife sticks and the dive ends
-    // (tip embedded ~3 units, body + handle proud — same look as the score wall)
+    // FAIL: the blade bites into the wall, the knife sticks and the dive ends.
+    // 2.8 is a WORLD offset, so the tip ends ~0.3 past the rock face with the
+    // body and handle proud — the same bite as the score wall. (The old note
+    // here claimed ~3 units of embed; that read the recipe units by mistake,
+    // the same slip that made contact fire early.)
     G.x = dir<0 ? -SW+2.8 : SW-2.8;
     G.stickA = dir<0 ? 0 : Math.PI; // blade buried into the wall
     G.ang=G.stickA; G.vx=0; G.vy=0; G.w=0;
