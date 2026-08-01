@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.27.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.08.01.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -961,6 +961,45 @@
       if (_piApplied || _polls > 16) clearInterval(_id);
     }, 500);
   })();
+
+  /* ── PAYMENT RAIL (2026-08-01) — separate from the layout class above ──
+     `body.pi-browser` drives the NAV LIFT and nothing else should ride on it.
+     It is user-agent-only, and it misfired on Pixel Chrome twice (see the two
+     dated comments above), which is exactly why it must not be the thing
+     deciding whether dollars are allowed on screen.
+
+     Pi's Mainnet listing rules disqualify an app that shows fiat or non-Pi
+     crypto payment options inside Pi Browser, and on 2026-05-12 Pi removed two
+     dApps for non-compliance. Sniffing the browser is the wrong gate for that,
+     because a false negative is a delisting. So the rail is DECLARED, not
+     guessed: register the Pi app URL as https://lucidwinds.com/?pi=1 and the
+     rail is deterministic for the listed app. Once seen, it is remembered, so
+     deep links and reloads inside the app stay on the Pi rail.
+     UA / Pi-host / the manual flag stay as secondary catches. Default is web,
+     so the open-web store is untouched. */
+  (function(){
+    var isPi = false;
+    try {
+      var qs = location.search || '';
+      if (/[?&]pi=1\b/.test(qs)) { localStorage.setItem('lw_rail_pi','1'); }
+      if (localStorage.getItem('lw_rail_pi') === '1') isPi = true;
+      if (localStorage.getItem('lw_force_pi_browser') === '1') isPi = true;
+      if (/[?&]pi=0\b/.test(qs)) { localStorage.removeItem('lw_rail_pi'); isPi = false; }
+    } catch(e){}
+    try { if (/PiBrowser|MinePi/i.test(navigator.userAgent || '')) isPi = true; } catch(e){}
+    try {
+      var anc = Array.prototype.slice.call(location.ancestorOrigins || []);
+      if (/minepi\.com|pinet\.com/i.test(anc.join(' '))) isPi = true;
+    } catch(e){}
+    try { if (/(^|\.)minepi\.com$|(^|\.)pinet\.com$/i.test(location.hostname)) isPi = true; } catch(e){}
+    window.LW_RAIL = isPi ? 'pi' : 'web';
+    function _mark(){
+      if (!document.body) { return setTimeout(_mark, 50); }
+      document.body.classList.add(isPi ? 'pi-rail' : 'web-rail');
+    }
+    _mark();
+  })();
+
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2327,6 +2366,16 @@
        variant remains hidden inside Pi Browser. */
     body.pi-browser .lw-non-pi-tips{ display:none !important; }
     body.pi-browser .lw-tip-cta-multi{ display:none !important; }
+    /* 2026-08-01: the comment above claims belt-and-suspenders, but both rules
+       key off the SAME body.pi-browser class the JS sets, so there was no
+       second signal at all - one failed user-agent match and BTC/ETH/SOL rows
+       plus the Stripe CTA render inside Pi Browser. Pi delists for that.
+       Inverted to fail CLOSED: non-Pi money is hidden by default and only
+       revealed once the rail is positively known to be web. */
+    .lw-non-pi-tips, .lw-tip-cta-multi, .lw-web-only{ display:none !important; }
+    body.web-rail .lw-non-pi-tips,
+    body.web-rail .lw-tip-cta-multi,
+    body.web-rail .lw-web-only{ display:revert !important; }
     /* Pi Browser compass: 2026-05-11 — GPS-based heading wired in JS,
        so the compass CAN work while the user is walking. Removed the
        blanket hide. The JS graceful-degrade (after 3s with no events)
@@ -7576,7 +7625,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       <div class="settings-group">
         <div class="settings-group-label">SUPPORT</div>
         <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.55;">Lucid Winds is a one-person studio. I keep it ad-free, no popups, no tracking-for-sale. Tips and unlocks keep it that way.</div>
-        <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openBloomStore)_openBloomStore();">Unlock Upgrades</button>
+        <button class="settings-big-btn lw-web-only" onclick="toggleSettingsMenu();if(window._openBloomStore)_openBloomStore();">Unlock Upgrades</button>
         <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab('about');},250);}">Tip Jar and About</button>
       </div>
 
@@ -41542,6 +41591,19 @@ document.addEventListener('keydown', function(e) {
     var el = document.getElementById('bloom-store'); if (el) el.remove();
   };
   window._openBloomStore = function(){
+    /* 2026-08-01: bloom bundles are a WEB-RAIL product — LW_Pi.buyBloom itself
+       refuses unless LW_WebPay.shouldHandle(), so inside Pi Browser this panel
+       printed "$1 / $5 / $10", said "pay in any crypto?", and then dead-ended
+       into a toast telling the player to go pay at lucidwinds.com. That is
+       three separate Pi violations at once: fiat pricing, a non-Pi payment
+       offer, and funnelling out to an external platform. There is no Pi price
+       for these bundles, so on the Pi rail the honest answer is not to show
+       the store at all. Entry points carry .lw-web-only; this is the guard
+       behind them. */
+    if (window.LW_WebPay && !LW_WebPay.onWebRail()) {
+      if (window._toast) window._toast('Upgrades are not available in Pi Browser.');
+      return;
+    }
     window._closeBloomStore();
     var st = window._lwBloomState || {};
     var fullPrice = (window.LW_WebPay && LW_WebPay.priceStr('full_bloom')) || '$10';
@@ -41570,6 +41632,11 @@ document.addEventListener('keydown', function(e) {
     document.body.appendChild(wrap);
   };
   window._lwBuyBloom = function(kind){
+    // same rail guard as the store — this is reachable directly from markup
+    if (window.LW_WebPay && !LW_WebPay.onWebRail()) {
+      if (window._toast) window._toast('Upgrades are not available in Pi Browser.');
+      return;
+    }
     var label = kind === 'full_bloom' ? 'Full Bloom' : 'Half Bloom';
     var price = (window.LW_WebPay && LW_WebPay.priceStr(kind)) || (kind === 'full_bloom' ? '$10' : '$5');
     _lwConfirm({
@@ -77160,15 +77227,25 @@ window.LW_WEBPAY_ENABLED = (function(){
   } catch(e){}
   return true;   // WEB RAIL LIVE 2026-07-03 — functions deployed, secrets set, rules published
 })();
+/* 2026-08-01: every money gate below used to be "NOT pi-browser", which grants
+   dollars whenever detection fails - the wrong default when the penalty is
+   delisting. They now require a POSITIVE web rail (see the rail block near the
+   top of the file). Uncertain resolves to Pi, i.e. to showing no dollars. */
+function _wpWebRail(){
+  try { return window.LW_RAIL ? window.LW_RAIL === 'web'
+    : !!(document.body && document.body.classList.contains('web-rail')); }
+  catch(e){ return false; }
+}
 var LW_WebPay = {
   // True when this rail should intercept a buy (enabled, web context, SDK ready).
-  shouldHandle: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
-  available: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
+  shouldHandle: function(){ return window.LW_WEBPAY_ENABLED && _wpWebRail() && _wpFnsReady(); },
+  available: function(){ return window.LW_WEBPAY_ENABLED && _wpWebRail() && _wpFnsReady(); },
   active: function(){ return this.available(); },
   // Label rails (no SDK requirement — the USD catalog is static). Pi branding
   // must only ever appear inside Pi Browser; every web surface shows USD.
-  inPiBrowser: function(){ return _wpInPiBrowser(); },
-  showUsd: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser(); },
+  inPiBrowser: function(){ return !_wpWebRail(); },
+  onWebRail: function(){ return _wpWebRail(); },
+  showUsd: function(){ return window.LW_WEBPAY_ENABLED && _wpWebRail(); },
   // Display-only USD catalog (server functions/fulfill.js is the source of
   // truth; this only drives button labels). Keep in lockstep with LW_WEB_PRICES.
   _usd: {
@@ -77184,6 +77261,11 @@ var LW_WebPay = {
   // Short USD string for a product on the active rail, e.g. "$2" / "$1.50".
   // Returns null if the product isn't web-sellable / opts don't resolve.
   priceStr: function(type, opts){
+    /* THE load-bearing line. Without it this happily returned '$10' inside Pi
+       Browser and the bloom store printed it straight onto a button, which is
+       fiat pricing inside a Pi app however good the browser detection is.
+       Callers must treat null as "no dollar price exists here". */
+    if (!_wpWebRail()) return null;
     opts = opts || {};
     var s = this._usd[type]; if(!s) return null;
     var c = s.bundle ? s.cents : s.tiers ? s.tiers[opts.tier] : s.perSlot ? s.perSlot[opts.slot] : s.cents;
@@ -89450,8 +89532,10 @@ function _bosAboutContent() {
   }
 
   // Cross-link to the unlock store — supporting and unlocking live together
-  h += '<button onclick="if(window._openBloomStore)_openBloomStore();" style="display:block;width:100%;min-height:52px;margin:0.9rem 0 0;padding:12px 14px;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.5);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;cursor:pointer;">GROW YOUR GARDEN · UNLOCK UPGRADES</button>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:0.4rem;line-height:1.5;">Permanent expansions: slots, pouches, and the one-of-one Founder\'s Bloom.</div>';
+  // .lw-web-only: the bundles behind this button are web-rail only and their
+  // prices are in dollars, so the whole cross-link stays out of Pi Browser.
+  h += '<button class="lw-web-only" onclick="if(window._openBloomStore)_openBloomStore();" style="display:block;width:100%;min-height:52px;margin:0.9rem 0 0;padding:12px 14px;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.5);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;cursor:pointer;">GROW YOUR GARDEN · UNLOCK UPGRADES</button>';
+  h += '<div class="lw-web-only" style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:0.4rem;line-height:1.5;">Permanent expansions: slots, pouches, and the one-of-one Founder\'s Bloom.</div>';
 
   // Closing
   h += '<div style="margin-top:1rem;padding:0.8rem;text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);line-height:1.6;">A garden tended by attention.<br>Thank you for tending mine.</div>';
