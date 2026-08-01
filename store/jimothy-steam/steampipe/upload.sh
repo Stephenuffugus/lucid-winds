@@ -24,7 +24,17 @@ DESC="${LW_STEAM_DESC:-Jimothy $(node -p "require('$HERE/package.json').version"
 npm run dist:win
 
 CONTENT="$HERE/dist/win-unpacked"
-[ -f "$CONTENT/Jimothy the Jumping Nugget.exe" ] || { echo "no exe in $CONTENT"; exit 1; }
+# ⛔ THE EXE IS NAMED BY package.json build.productName, AND IT WAS RENAMED.
+# This guard used to hard-code "Jimothy the Jumping Nugget.exe", which is what
+# the LAST build (Jul 30, pre-rename) produced. `npm run dist:win` above now
+# emits "Jumping Jimothy.exe", so the old guard would have aborted the very
+# first real upload with a misleading "no exe" error. Read the name from the
+# same file electron-builder reads, so it can never drift again, and stale
+# artefacts from before a rename get swept so the depot cannot ship two exes.
+EXE="$(node -p "require('$HERE/package.json').build.productName").exe"
+find "$CONTENT" -maxdepth 1 -name '*.exe' ! -name "$EXE" -delete 2>/dev/null || true
+[ -f "$CONTENT/$EXE" ] || { echo "no \"$EXE\" in $CONTENT (check build.productName)"; exit 1; }
+echo "launch option must be: $EXE"
 
 OUT="$HERE/steampipe/generated"
 mkdir -p "$OUT/output"

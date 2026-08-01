@@ -8,7 +8,23 @@ const BASE='http://localhost:8942';
 const OUT=__dirname+'/out';
 require('fs').mkdirSync(OUT,{recursive:true});
 
+/* ⛔⛔ TWO SETS, AND THE BIG ONES ARE THE ONES YOU UPLOAD (2026-08-01).
+   Valve's Store Assets page moved to double-resolution capsules years ago. The
+   four store capsules below ship at the CURRENT required sizes; the legacy
+   half-size versions are kept only because preflight.js and a lot of old notes
+   still name them, and because they are free to produce. If Steamworks ever
+   shows you a different number, Steamworks wins.
+     small  462x174   (was 231x87)
+     header 920x430   (was 460x215)
+     main   1232x706  (was 616x353)
+     vertical 748x896 (was 374x448)
+   Library assets (600x900 / 3840x1240 / 1280x720 logo) and the page background
+   have not changed. */
 const SIZES=[
+ {f:'small_capsule',      w:462,  h:174,  mode:'mark'},
+ {f:'header_capsule',     w:920,  h:430,  mode:'wide'},
+ {f:'main_capsule',       w:1232, h:706,  mode:'wide'},
+ {f:'vertical_capsule',   w:748,  h:896,  mode:'tall'},
  {f:'small_capsule',      w:231,  h:87,   mode:'mark'},
  {f:'header_capsule',     w:460,  h:215,  mode:'wide'},
  {f:'main_capsule',       w:616,  h:353,  mode:'wide'},
