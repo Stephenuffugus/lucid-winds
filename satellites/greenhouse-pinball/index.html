@@ -111,12 +111,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Hold to charge</b> the plunger, release to fire the eyeball up the lane. More charge, harder shot. A monster lights up as you launch, hit that <b class="hl">lit monster first</b> for a skill-shot bonus. (Keyboard: hold <b>Space</b>.)</div></div>
-    <div class="helprow"><div class="hi">2</div><div>Tap the <b>left half</b> of the screen for the left claw, the <b>right half</b> for the right. Keep the eyeball alive. (Keyboard: ← and →.)</div></div>
+    <div class="helprow"><div class="hi">2</div><div>Tap the <b>left half</b> of the screen for the left claw, the <b>right half</b> for the right. Hold <b class="hl">both at once</b> if you want, that never tilts the table. Keep the eyeball alive. (Keyboard: ← and →.)</div></div>
     <div class="helprow"><div class="hi">3</div><div>Bounce the eyeball off the <b class="hl">monster bumpers</b> to score, and rip the gold <b class="hl">gear</b> to wind things up.</div></div>
     <div class="helprow"><div class="hi">4</div><div>Hit the five pink <b class="hl">S·L·I·M·E</b> letter tiles to light the <b class="hl">specimen jar</b>. Then feed the glowing ramp to lock an eyeball. Three locks start <b class="hl">GOO MULTIBALL</b>.</div></div>
     <div class="helprow"><div class="hi">5</div><div>Feed the big <b class="hl">monster mouth</b> (the scoop) to start a <b>quest</b>, it tells you which shots to make. Finish all six quests to light <b class="hl">MEGA MASH</b>, the big finale.</div></div>
     <div class="helprow"><div class="hi">6</div><div><b class="hl">CHAIN MULTIBALL:</b> rip the gear until "CHAIN LIT" flashes, then shoot any ramp to start with <b>two balls</b>. Every ramp after that adds another ball, all the way up to <b>seven</b>.</div></div>
-    <div class="helprow"><div class="hi">7</div><div>Roll through the top <b class="hl">Z·A·P</b> lanes to build your bonus, and <b class="hl">nudge</b> the table (two-finger tap) to save a doomed ball. Nudge too much and it <b>TILTS</b>, the claws freeze.</div></div>
+    <div class="helprow"><div class="hi">7</div><div>Roll through the top <b class="hl">Z·A·P</b> lanes to build your bonus, and <b class="hl">nudge</b> the table (three-finger tap) to save a doomed ball. Nudge too much and it <b>TILTS</b>, the claws freeze.</div></div>
     <div class="helprow"><div class="hi">8</div><div>A stretchy <b class="hl">goo net</b> catches your very first drain, so nothing feels cheap. Have fun, mash the lab.</div></div>
     <div class="helprow"><div class="hi">💫</div><div>The <b class="hl">Heartvine ramp</b> changes its exit after every pass (watch the gold flag), a quick double on the Fern ramp <b class="hl">crosses over</b>, and a charged <b class="hl">Taproot</b> kicks a doomed bead back up the left outlane. Roll both inlane gates to recharge it.</div></div>
     <div class="helprow"><div class="hi">🌿</div><div>The <b class="hl">moss net</b> glows across the drain and bounces a doomed bead back, once per ball, and always on your last ball.</div></div>
@@ -366,7 +366,9 @@ function newGame(mode){
   var rng;
   if(mode==='daily'){ var d=new Date(); rng=mkRng((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0); }
   else rng=mkRng((Date.now()>>>0)^(Math.floor(Math.random()*1e9)));
-  // reset flippers
+  // reset flippers (releaseAll also clears any pointer left over from the last screen,
+  // otherwise a finger that lifted off the play canvas would phantom-hold a claw)
+  releaseAll();
   LFLIP.a=LFLIP.pa=LFLIP.restA; LFLIP.up=false; RFLIP.a=RFLIP.pa=RFLIP.restA; RFLIP.up=false;
   for(var i=0;i<BUMPERS.length;i++)BUMPERS[i].lit=0; for(i=0;i<SLINGS.length;i++)SLINGS[i].lit=0;
   buildShots();
@@ -1172,15 +1174,37 @@ function shareIt(){ var url="https://lucidwinds.com/satellites/greenhouse-pinbal
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
 
-/* ===== input: left/right screen halves = flippers; tap launches ===== */
+/* ===== input: left/right screen halves = flippers; tap launches =====
+   Per-POINTER state, one entry per live finger. The old model kept a single finger
+   COUNT (`_ptrs`), and that broke real pinball two ways: the second finger never
+   reached a flipper at all (it fired nudge() and returned), and ANY finger lifting
+   called releaseAll(), which dropped BOTH blades. So holding one claw while stabbing
+   the other was impossible, and worse, every time the second thumb landed it spiked
+   the tilt meter +40 — three quick alternations and the table tilted on you for
+   playing normally. Flipper input must NEVER feed tilt. Only a deliberate nudge does,
+   and body-english is now the THIRD simultaneous finger, since two thumbs are two
+   claws. Keyboard was already per-side and stays that way. */
 function evX(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return (t.clientX-r.left)*VW/r.width; }
-var _ptrs=0;
-function press(x){ if(!G||G.phase!=='play')return; if(G.awaitLaunch){ G.plungeHold=true; return; } if(x<VW/2)LFLIP.up=true; else RFLIP.up=true; }
-function releaseAll(){ LFLIP.up=false; RFLIP.up=false; if(G&&G.awaitLaunch&&G.plungeHold){ launch(); } }
-function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); _ptrs++;
-  if(_ptrs>=2){ nudge('up'); return; }              // second finger = nudge up (mobile body-english)
-  press(evX(e)); }
-function onUp(e){ if(curScreen!=='s-play')return; e.preventDefault(); if(_ptrs>0)_ptrs--; releaseAll(); }
+var _ptr={};                                                     // pointerId -> 'L' | 'R' | 'plunge' | 'nudge' | 'idle'
+// hasOwnProperty guards: two third-party scripts load on this page (sunbeam-sdk, feedback),
+// and an inherited key here would either fake a third finger or stick a blade up forever
+function _ptrCount(){ var n=0,k; for(k in _ptr){ if(_ptr.hasOwnProperty(k))n++; } return n; }  // counted from the map, never tracked, so a swallowed pointerup cannot drift it
+function _sideHeld(s){ var k; for(k in _ptr){ if(_ptr.hasOwnProperty(k)&&_ptr[k]===s)return true; } return false; }
+function releaseAll(){ _ptr={}; LFLIP.up=false; RFLIP.up=false; }
+function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
+  var id=(e.pointerId==null?'k':e.pointerId); if(_ptr[id]!==undefined)return;   // duplicate down for a live id
+  if(!G||G.phase!=='play'){ _ptr[id]='idle'; return; }
+  if(G.awaitLaunch){ _ptr[id]='plunge'; G.plungeHold=true; return; }
+  if(_ptrCount()>=2){ _ptr[id]='nudge'; nudge('up'); return; }    // third finger = nudge up (mobile body-english)
+  var side=(evX(e)<VW/2)?'L':'R'; _ptr[id]=side;
+  if(side==='L')LFLIP.up=true; else RFLIP.up=true; }
+function onUp(e,cancelled){ if(curScreen!=='s-play')return; e.preventDefault();
+  var id=(e.pointerId==null?'k':e.pointerId), role=_ptr[id]; if(role===undefined)return;
+  delete _ptr[id];
+  if(role==='plunge'){ if(!cancelled&&G&&G.awaitLaunch&&G.plungeHold)launch(); else if(G)G.plungeHold=false; return; }
+  // drop ONLY the blade this finger was holding, and only if no other finger is still on that side
+  if(role==='L'&&!_sideHeld('L'))LFLIP.up=false;
+  else if(role==='R'&&!_sideHeld('R'))RFLIP.up=false; }
 function onKey(e,down){ if(curScreen!=='s-play')return; var k=e.key;
   if(k==='ArrowLeft'||k==='z'||k==='Z'){ if(!G.awaitLaunch)LFLIP.up=down; e.preventDefault(); }
   else if(k==='ArrowRight'||k==='/'||k==='.'){ if(!G.awaitLaunch)RFLIP.up=down; e.preventDefault(); }
@@ -1194,10 +1218,13 @@ function boot(){
   cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
+  // pointer state now LIVES between events, so a cancelled finger (system gesture, call, palm)
+  // has to be cleaned up or its blade stays up forever
+  window.addEventListener('pointercancel',function(e){ onUp(e,true); },{passive:false});
   window.addEventListener('keydown',function(e){ onKey(e,true); }); window.addEventListener('keyup',function(e){ onKey(e,false); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){running=false; releaseAll();} else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
   tap('b-classic', function(){ goFS(); newGame('classic'); });
   tap('b-daily', function(){ goFS(); newGame('daily'); });
   tap('b-zen', function(){ goFS(); newGame('zen'); });
