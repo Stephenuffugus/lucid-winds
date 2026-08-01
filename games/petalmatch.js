@@ -1012,13 +1012,27 @@ window._gameFns.petalmatch = function PM(a){
     } else if(o.kind==='dew'){
       html+='Dew <strong style="color:#9cc4e8;">'+s.dewRemaining+'</strong>/'+dewTotal(o)+(o.doubleLayer?' ×2':'');
     } else if(o.kind==='gather'){
+      /* ⛔ This chip used to print a ● tinted from the GEMS table, and GEMS is
+         the PROCEDURAL FALLBACK's palette — nobody ever matched it to the
+         painted sheet. base-1 is orange where GEMS calls it a cream daisy,
+         base-3 is red where GEMS calls it a blue forget-me-not, base-5 is blue
+         where GEMS calls it a pink cherry. So the goal asked for one flower and
+         the board handed you another, which is a brutal thing to do to a level
+         whose whole ask is "find THIS one". Show the piece's own sprite instead,
+         keyed through PM_ART.pieceKey so the chip and the board read the same
+         table forever. The dot stays as the fallback for the moment before the
+         art has warmed, same as every other draw site. */
       var parts=[];
       for(var t in s.gatherTargets){
         var got=s.gatherGot[t]||0,need=s.gatherTargets[t];
-        var flower=GEMS[t].name,color=GEMS[t].color;
-        parts.push('<span style="color:'+color+';">●</span> '+Math.min(got,need)+'/'+need);
+        var pk=PM_ART.pieceKey(+t);
+        var swatch=PM_ART.has(pk)
+          ? '<img src="'+PM_ART.url(pk)+'" alt="" style="width:20px;height:20px;object-fit:contain;'+
+            'vertical-align:middle;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">'
+          : '<span style="color:'+GEMS[t].color+';">●</span>';
+        parts.push(swatch+' '+Math.min(got,need)+'/'+need);
       }
-      html+=parts.join(' ');
+      html+=parts.join('&nbsp; ');
     } else if(o.kind==='thorns'){
       html+='Thorns <strong style="color:#c47a50;">'+s.thornRemaining+'</strong>/'+o.thorns+(o.hits>1?' ×'+o.hits:'');
     } else if(o.kind==='mix'){
@@ -2228,7 +2242,7 @@ window._gameFns.petalmatch = function PM(a){
   var _TEACH={
     dew:'Dew sits UNDER the flowers. Clear a flower on top of it to wipe it.',
     thorns:'Thorns will not swap. Match flowers right beside one to break it.',
-    gather:'Gather: only the flower named in the goal counts. Go hunting.',
+    gather:'Gather: only the flowers shown in the goal count. Go hunting.',
     mix:'Finale. Score, dew and thorns, all out of one move budget.'
   };
   function teachFor(o){
@@ -2851,10 +2865,17 @@ window._gameFns.petalmatch = function PM(a){
       ctx.drawImage(im, cx-w/2, cy-h/2, w, h);
       return true;
     }
+    /* The ONE place that says which sprite a plain flower of this type wears.
+       draw() uses it for the board and renderObjective() uses it for the goal
+       chips, so the goal can never again show a different flower than the one
+       the board deals. Keeping this in two places is exactly how the ● dot bug
+       happened. */
+    function pieceKey(type){ return 'base-' + (type % 6); }
     return {
       count:function(){ return loaded; },
       has:function(k){ return !!imgs[k]; },
       url:function(k){ return base + k + '.png?v=' + PM_AV; },
+      pieceKey:pieceKey,
       onWarm:function(cb){ warmCbs.push(cb); },
       /* Stretch to an explicit box, ignoring aspect. The line-clear beams are
          the only thing that wants this: a row beam must span the whole board
@@ -2922,7 +2943,7 @@ window._gameFns.petalmatch = function PM(a){
         } else if(cell.special === 'burst'){
           k = 'spec-burst';
         } else if(cell.type >= 0){
-          k = 'base-' + (cell.type % 6);
+          k = pieceKey(cell.type);
         }
         if(!k) return false;
         return put(k, cx, cy, box);
