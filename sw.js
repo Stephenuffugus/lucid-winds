@@ -56,7 +56,7 @@ var PRECACHE = [
   '/shared.css?v=20260718',
   '/play/shell.css?v=12',
   '/play/shell.js?v=25',
-  '/sunbeam-sdk.js?v=5'
+  '/sunbeam-sdk.js?v=6'
 ];
 
 // ── INSTALL: precache critical assets ──

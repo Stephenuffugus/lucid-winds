@@ -56,7 +56,7 @@
 (function(global){
   'use strict';
 
-  var VERSION = '2.0.0';
+  var VERSION = '2.1.0';   // 2.1.0 (2026-08-01) adds the shared share card
 
   // ── Bundled Firebase config (public; only identifies the project) ──
   var FIREBASE_CONFIG = {
@@ -598,6 +598,208 @@
     return _auth.signOut();
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+   * SHARE CARD (2026-08-01)
+   *
+   * WHY IT LIVES HERE
+   *   Stephen: "make sure the share card for each game is representative of the
+   *   game itself. It either uses something from the win or the thumbnail for
+   *   the game." Nearly every game already had a share button, and about 45 of
+   *   them called navigator.share({text,url}) — a sentence and a link, no
+   *   picture. On a phone that posts as a grey line of text, so a win the player
+   *   was proud of looks like nothing at all.
+   *
+   *   Sharing is not a per-game problem. 152 pages already load THIS file (86
+   *   satellites + 66 /play/ shells + the portal), so the picture gets attached
+   *   here, once, by wrapping navigator.share — instead of editing 152 games.
+   *
+   * WHERE THE PICTURE COMES FROM, in order
+   *   1. files the caller already passed  — a game that built its own card wins,
+   *      untouched (Hues, Sproing, Flipbook, Doodle Pad, Stop Motion).
+   *   2. Sunbeam.setShareImage(canvas) or window.SWS_SHARE_IMAGE — "something
+   *      from the win". A game sets it on its win screen and the share becomes
+   *      that frame.
+   *   3. the page's own og:image — the per-game 1200x630 card that
+   *      scripts/make_og_cards.py built out of that game's thumbnail art.
+   *   4. window.LW_PLAY.id -> /play/og/<id>.jpg, for the portal jukebox srcdoc
+   *      frame, which is assembled in JS and carries no meta tags.
+   *
+   *   Reading og:image beats keeping a slug table here: it is already right for
+   *   the odd ones out (Hues, The Attic and Jimothy all point somewhere custom)
+   *   and any new game that copies the house <head> gets a share card free.
+   *
+   * WHY EVERYTHING AT SHARE TIME IS SYNCHRONOUS
+   *   navigator.share needs transient user activation. Awaiting a fetch inside
+   *   the click spends it and Safari throws NotAllowedError, so the card is
+   *   fetched ahead of the click (first pointerdown, at idle) and a canvas is
+   *   encoded down the synchronous toDataURL path, never toBlob.
+   *
+   * SAFE BY DESIGN
+   *   Any failure anywhere falls through to the exact payload the game passed,
+   *   so this can never make sharing worse than it already was. Desktop, where
+   *   no browser can share a file, never even downloads the card.
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  var _shareWinBlob = null;    // "something from the win", set by the game
+  var _shareCardBlob = null;   // the game's own card, warmed before the click
+  var _shareArmed = false;
+  var _shareCanFiles = null;
+  var _nativeShare = null;
+
+  function _canShareFiles(){
+    if (_shareCanFiles !== null) return _shareCanFiles;
+    _shareCanFiles = false;
+    try {
+      if (!global.File || !global.Blob || !global.navigator || !navigator.canShare) return false;
+      var probe = new File([new Blob(['x'], { type: 'image/jpeg' })], 'card.jpg', { type: 'image/jpeg' });
+      _shareCanFiles = !!navigator.canShare({ files: [probe] });
+    } catch(e){ _shareCanFiles = false; }
+    return _shareCanFiles;
+  }
+
+  function _shareCardUrl(){
+    try {
+      var m = document.querySelector('meta[property="og:image"]')
+           || document.querySelector('meta[name="twitter:image"]');
+      var c = m && m.getAttribute('content');
+      if (c) return c;
+      // Jukebox srcdoc frame: no meta tags, but the shell always declares LW_PLAY.
+      if (global.LW_PLAY && LW_PLAY.id) return '/play/og/' + LW_PLAY.id + '.jpg';
+    } catch(e){}
+    return null;
+  }
+
+  function _dataUrlToBlob(u){
+    var comma = u.indexOf(',');
+    if (comma < 0) return null;
+    var head = u.slice(0, comma), body = u.slice(comma + 1);
+    var type = (head.match(/data:([^;,]+)/) || [])[1] || 'image/jpeg';
+    if (head.indexOf('base64') < 0) return new Blob([decodeURIComponent(body)], { type: type });
+    var bin = atob(body), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: type });
+  }
+
+  // Canvas / data URL / Blob only. Anything needing the network is refused here:
+  // it would cost the click its user activation and the share would never open.
+  function _shareBlobSync(src){
+    try {
+      if (!src) return null;
+      if (global.Blob && src instanceof Blob) return src;              // Blob or File
+      if (typeof src === 'string' && src.slice(0, 5) === 'data:') return _dataUrlToBlob(src);
+      if (src.tagName && String(src.tagName).toLowerCase() === 'canvas') {
+        return _dataUrlToBlob(src.toDataURL('image/jpeg', 0.9));       // throws if tainted
+      }
+    } catch(e){}
+    return null;
+  }
+
+  function _warmShareCard(){
+    if (_shareCardBlob || !global.fetch) return;
+    var u = _shareCardUrl();
+    if (!u) return;
+    try {
+      fetch(u, { mode: 'cors', credentials: 'omit' }).then(function(r){
+        return (r && r.ok) ? r.blob() : null;
+      }).then(function(b){
+        // The og cards are ~70 KB. A multi-megabyte hit means we grabbed the
+        // wrong thing, and share sheets choke on those anyway.
+        if (b && b.size && b.size < 5000000 && /^image\//.test(b.type || '')) _shareCardBlob = b;
+      })['catch'](function(){});
+    } catch(e){}
+  }
+
+  function _armShareCard(){
+    if (_shareArmed) return;
+    _shareArmed = true;
+    if (!_canShareFiles()) return;   // desktop never pays for a download it cannot use
+    var fire = function(){
+      global.removeEventListener('pointerdown', fire, true);
+      global.removeEventListener('keydown', fire, true);
+      var go = function(){ _warmShareCard(); };
+      // At idle, so the card never competes with the game's own first frames.
+      if (global.requestIdleCallback) global.requestIdleCallback(go, { timeout: 5000 });
+      else setTimeout(go, 1500);
+    };
+    global.addEventListener('pointerdown', fire, true);
+    global.addEventListener('keydown', fire, true);
+  }
+
+  function _shareFileName(blob){
+    var t = (blob && blob.type) || 'image/jpeg';
+    var ext = t.indexOf('png') > -1 ? 'png' : (t.indexOf('webp') > -1 ? 'webp' : 'jpg');
+    var raw = _gameId || (global.LW_PLAY && LW_PLAY.id) || (document.title || '').split('·')[0] || 'card';
+    var slug = String(raw).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return (slug || 'card') + '.' + ext;
+  }
+
+  function _installShareCard(){
+    try {
+      if (!global.navigator || !navigator.share || navigator.share.__sws) return;
+      _nativeShare = navigator.share.bind(navigator);
+      var wrapped = function(data){
+        var payload = data;
+        try {
+          var d = data || {};
+          if (!(d.files && d.files.length) && _canShareFiles()) {
+            var blob = _shareWinBlob || _shareBlobSync(global.SWS_SHARE_IMAGE) || _shareCardBlob;
+            if (blob) {
+              var next = { files: [ new File([blob], _shareFileName(blob), { type: blob.type || 'image/jpeg' }) ] };
+              // Several share targets reject url alongside files, and Android's
+              // sheet quietly drops one of them, so the link rides in the text.
+              var txt = d.text || '';
+              if (d.url && txt.indexOf(d.url) < 0) txt = txt ? (txt + '\n' + d.url) : d.url;
+              if (d.title) next.title = d.title;
+              if (txt) next.text = txt;
+              if (navigator.canShare(next)) payload = next;
+            }
+          }
+        } catch(e){ payload = data; }
+        return _nativeShare(payload);
+      };
+      wrapped.__sws = 1;
+      navigator.share = wrapped;
+    } catch(e){}
+  }
+
+  // ── Public: setShareImage — "something from the win" ──
+  // Hand it the canvas you drew the win screen on (or a Blob/File/data URL) and
+  // every share from this page carries that picture instead of the game's card.
+  // Pass null to go back to the card. Encodes immediately, on purpose: doing it
+  // here keeps the later share click synchronous.
+  function setShareImage(src){
+    _shareWinBlob = src ? _shareBlobSync(src) : null;
+    return !!_shareWinBlob;
+  }
+
+  // ── Public: shareCard — the whole share in one call ──
+  // Falls back to the clipboard where there is no share sheet, so a desktop
+  // tester still gets something they can paste.
+  function shareCard(opts){
+    var o = opts || {};
+    if (o.image) setShareImage(o.image);
+    var text = o.text || '';
+    var url = o.url || (global.location ? location.href : '');
+    var payload = {};
+    if (o.title) payload.title = o.title;
+    if (text) payload.text = text;
+    if (url) payload.url = url;
+    try {
+      if (navigator.share) {
+        return Promise.resolve(navigator.share(payload)).then(function(){ return true; }, function(){ return false; });
+      }
+    } catch(e){}
+    try {
+      if (navigator.clipboard) {
+        return navigator.clipboard.writeText(text + (url ? '\n' + url : '')).then(function(){ return true; }, function(){ return false; });
+      }
+    } catch(e){}
+    return Promise.resolve(false);
+  }
+
+  _installShareCard();
+  _armShareCard();
+
   // ── Export ──
   global.Sunbeam = {
     VERSION: VERSION,
@@ -612,6 +814,9 @@
     signInWithEmail: signInWithEmail,
     createAccount: createAccount,
     signOut: signOut,
+    // Share card
+    shareCard: shareCard,
+    setShareImage: setShareImage,
     // Read-only diagnostic
     _snapshot: _snapshotSync,
     _getAnonId: _getOrCreateAnonId
