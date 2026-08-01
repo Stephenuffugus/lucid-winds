@@ -144,6 +144,23 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+/* ---- result screen: it EASES in, one row at a time. It is the tail of the
+   canvas outro, not a page swap. Stephen 8/01: the summary used to arrive
+   complete and instant, which is most of why the whole thing read like a
+   calculator spitting out an answer. ---- */
+@keyframes goIn{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none} }
+@keyframes goPop{ from{opacity:0; transform:scale(.86)} to{opacity:1; transform:scale(1)} }
+/* pointer-events is held off until the buttons are actually VISIBLE, so a
+   player still tapping to skip cannot fat-finger Next through a clear button */
+@keyframes goBtns{ from{opacity:0; transform:translateY(16px); pointer-events:none}
+  70%{pointer-events:none} to{opacity:1; transform:none; pointer-events:auto} }
+#s-go.on{animation:goIn .38s cubic-bezier(.2,.8,.3,1) both}
+#s-go.on #go-portrait, #s-go.on #go-emoji{animation:goIn .40s .06s ease-out both}
+#s-go.on .go-plate{animation:goPop .46s .16s cubic-bezier(.2,1.5,.4,1) both}
+#s-go.on #go-lab{animation:goIn .38s .26s ease-out both}
+#s-go.on #go-line{animation:goIn .42s .36s ease-out both}
+#s-go.on #go-reward{animation:goPop .46s .52s cubic-bezier(.2,1.6,.4,1) both}
+#s-go.on .stack{animation:goBtns .46s .48s ease-out both}
 /* campaign ladder */
 #ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
 .foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:72px}
@@ -282,7 +299,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
     <div style="flex:1"></div>
     <img id="go-portrait" alt="" style="display:none; max-width:220px; max-height:240px; margin:0 auto; filter:drop-shadow(0 6px 22px rgba(0,0,0,0.6))">
     <div style="font-size:46px" id="go-emoji">🌱</div>
-    <div style="position:relative; display:inline-block; margin:0 auto">
+    <div class="go-plate" style="position:relative; display:inline-block; margin:0 auto">
       <img id="go-banner" alt="" style="display:none; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:250px; max-width:92vw; z-index:0; pointer-events:none">
       <div class="go-score" id="go-title" style="position:relative; z-index:1; padding:0 14px">Win</div>
     </div>
@@ -558,20 +575,62 @@ function pestChooseMove(f){ if(!f.cur)return {col:SPAWN_COL,rot:0};
 /* =====================================================================
    CAMPAIGN ROSTER  (design: "Keeper's Stand"). q=think-quality, react=ms,
    startChaff=rows pre-dropped on player, hcap=AI outgoing multiplier.
+
+   ---- 2026-08-01 ramp reflatten (Stephen: "we need to balance the difficulty.
+   Just the third level alone moved super fast and the AI was really hard to
+   beat"). Four defects in the old curve, fixed per-stage, NOT by scaling
+   everything down:
+
+   1. `fall` ramped hardest at the START (x1.44, x1.31, x1.35 over stages 1-4)
+      and softest at the END (x1.12). Backwards. `fall` sets the PLAYER's
+      gravity as well as the pest's, and the pest always hard-drops on `react`
+      long before gravity bites, so `fall` is in practice the player's clock
+      alone - it IS the "moved super fast" knob. Now a near-even ~x1.2 geometric
+      ramp: 0.8 .95 1.15 1.4 1.8 2.3 2.9 3.6 4.5 5.5 6.6 7.8 9.2 10.5.
+      Stage 3 goes 1.7 -> 1.15 cells/sec (588ms -> 870ms per row), i.e. stage 3
+      now falls slower than the OLD stage 2. Stages 13-14 are untouched.
+
+   2. `react` had a cliff at 4->5: 1200ms -> 660ms, the pest's piece rate
+      nearly doubling in one step. That is the wall people hit. Rebuilt as a
+      clean ~x0.82 geometric decay ANCHORED at the top so the boss and the
+      secret duel keep their exact tempo (12/13/14 unchanged at 310/260/230):
+      2800 2350 1950 1600 1300 1060 860 700 570 460 375 310 260 230.
+      All of the relief lands on 3-8, tapering to zero by stage 11.
+
+   3. `q` had the same cliff (0.34 -> 0.56) AND a monotonicity break at 6->7
+      (0.63 -> 0.57 - stage 7 was literally a worse player than stage 6). Now
+      a straight ladder, top three anchors kept: .08 .15 .22 .30 .38 .46 .54
+      .62 .70 .77 .84 .91 .97 1.00.
+
+   4. `hcap` reached FULL garbage by stage 4 (0.12/0.45/0.65/1.00). Chaff is
+      what actually kills you and it is the last thing a new player learns to
+      read, so it now ramps to full only at stage 8 and 9-14 are untouched:
+      .10 .25 .40 .55 .70 .85 .95 1.00 then the old values.
+
+   Deliberately NOT touched: AI_TUNE (blunderFloor/Max/Exp). Raising blunderMax
+   would have weakened the early pests too, but it is a GLOBAL lever that also
+   moves 8-12, which Stephen did not complain about - and the three per-stage
+   curves above already put the relief exactly where he asked for it. Also
+   untouched: `colors` (4 through stage 8, 5 after), `scatter`, `startChaff`.
+
+   The CW_DEV.sweep win-rate table has NOT been re-measured against this curve
+   (needs headless Chrome). Re-run it before treating any number here as final:
+   node scripts/satellite_probe.js chaff-wars CW_DEV cwdev \
+     "sweep([1,2,3,4,5,6,7,8,9,10],{cadence:430,pBlunder:0.15,maxMs:80000})"
    ===================================================================== */
 var ROSTER=[
- {id:'aphid-swarm',    nm:'The Aphid Swarm',      em:'🐛', ac:'#39ff14', colors:4, fall:0.9, q:0.10, react:2600, startChaff:0, hcap:0.12, taunt:"We tagged your whole block before you even woke up, homie.", lose:"Squished but not sorry."},
- {id:'gnat-king-cole', nm:'Gnat King Cole',       em:'🦟', ac:'#2e8bff', colors:4, fall:1.3, q:0.18, react:2000, startChaff:0, hcap:0.45, taunt:"Care to bust a move before you wilt, playa?", lose:"That was a flat note."},
- {id:'cabbage-moth',   nm:'Mabel Cabbagewing',    em:'🦋', ac:'#22e0e0', colors:4, fall:1.7, q:0.26, react:1550, startChaff:0, hcap:0.65, taunt:"I already laid my throwies in your good dirt, sucka.", lose:"Back to the porch light I go."},
- {id:'slug-slugmore',  nm:'Sir Reginald Slugmore',em:'🐌', ac:'#b06fe0', colors:4, fall:2.3, q:0.34, react:1200, startChaff:0, hcap:1.00, taunt:"I shall glide over here eventually, and you shall lose.", lose:"How dreadfully slippery of me."},
- {id:'cutworm',        nm:'Chompers the Cutworm',  em:'🪱', ac:'#ff7a18', colors:4, fall:2.8, q:0.56, react:660, startChaff:0, hcap:1.10, taunt:"Timber, little sprout, I am cuttin you down.", lose:"I bit off more than I could chew."},
- {id:'june-beetle',    nm:'Baron von Beetle',      em:'🪲', ac:'#1fc7b0', colors:4, fall:3.4, q:0.63, react:610, startChaff:0, hcap:1.08, taunt:"Nothin dents this shell, so quit frontin.", lose:"Flipped on my back again."},
- {id:'garden-snail',   nm:'Escargeddon',           em:'🐌', ac:'#e07b3a', colors:4, fall:4.0, q:0.57, react:600, startChaff:0, hcap:1.00, scatter:5, taunt:"Eat my slime trail, this yard is crew territory now.", lose:"Slow and steady lost the race."},
- {id:'crow-cawlin',    nm:'Cawlin the Crow',       em:'🐦', ac:'#2ff0e0', colors:4, fall:4.7, q:0.64, react:540, startChaff:0, hcap:1.05, taunt:"Caw caw, and that means I just served you, kid.", lose:"Fine, you keep your silly corn."},
- {id:'gopher-gustavo', nm:'Gustavo the Gopher',    em:'🦫', ac:'#e0a03a', colors:5, fall:5.5, q:0.71, react:480, startChaff:0, hcap:1.05, scatter:7, taunt:"I am already under your garden, so relax and take the L.", lose:"Back down the hole for me."},
- {id:'deer-duchess',   nm:'Duchess Dapple',        em:'🦌', ac:'#ff5c8a', colors:5, fall:6.4, q:0.78, react:420, startChaff:0, hcap:1.10, taunt:"Your tulips looked delicious, and so does this win.", lose:"I hear the neighbor grows hostas."},
- {id:'bindweed-lady',  nm:'Lady Bindweed',         em:'🌿', ac:'#ff3bc0', colors:5, fall:7.3, q:0.85, react:370, startChaff:0, hcap:1.15, scatter:9, taunt:"Come get one big tight hug, then you are done, homie.", lose:"Prune me and I grow back twice."},
- {id:'powdery-mildew', nm:'Miss Mildew',           em:'🍄', ac:'#b8a6c8', colors:5, fall:8.2, q:0.92, react:310, startChaff:1, hcap:1.10, taunt:"You already look a little grey to me, playa.", lose:"Wiped clean, for now."},
+ {id:'aphid-swarm',    nm:'The Aphid Swarm',      em:'🐛', ac:'#39ff14', colors:4, fall:0.80, q:0.08, react:2800, startChaff:0, hcap:0.10, taunt:"We tagged your whole block before you even woke up, homie.", lose:"Squished but not sorry."},
+ {id:'gnat-king-cole', nm:'Gnat King Cole',       em:'🦟', ac:'#2e8bff', colors:4, fall:0.95, q:0.15, react:2350, startChaff:0, hcap:0.25, taunt:"Care to bust a move before you wilt, playa?", lose:"That was a flat note."},
+ {id:'cabbage-moth',   nm:'Mabel Cabbagewing',    em:'🦋', ac:'#22e0e0', colors:4, fall:1.15, q:0.22, react:1950, startChaff:0, hcap:0.40, taunt:"I already laid my throwies in your good dirt, sucka.", lose:"Back to the porch light I go."},
+ {id:'slug-slugmore',  nm:'Sir Reginald Slugmore',em:'🐌', ac:'#b06fe0', colors:4, fall:1.40, q:0.30, react:1600, startChaff:0, hcap:0.55, taunt:"I shall glide over here eventually, and you shall lose.", lose:"How dreadfully slippery of me."},
+ {id:'cutworm',        nm:'Chompers the Cutworm',  em:'🪱', ac:'#ff7a18', colors:4, fall:1.80, q:0.38, react:1300, startChaff:0, hcap:0.70, taunt:"Timber, little sprout, I am cuttin you down.", lose:"I bit off more than I could chew."},
+ {id:'june-beetle',    nm:'Baron von Beetle',      em:'🪲', ac:'#1fc7b0', colors:4, fall:2.30, q:0.46, react:1060, startChaff:0, hcap:0.85, taunt:"Nothin dents this shell, so quit frontin.", lose:"Flipped on my back again."},
+ {id:'garden-snail',   nm:'Escargeddon',           em:'🐌', ac:'#e07b3a', colors:4, fall:2.90, q:0.54, react:860, startChaff:0, hcap:0.95, scatter:5, taunt:"Eat my slime trail, this yard is crew territory now.", lose:"Slow and steady lost the race."},
+ {id:'crow-cawlin',    nm:'Cawlin the Crow',       em:'🐦', ac:'#2ff0e0', colors:4, fall:3.60, q:0.62, react:700, startChaff:0, hcap:1.00, taunt:"Caw caw, and that means I just served you, kid.", lose:"Fine, you keep your silly corn."},
+ {id:'gopher-gustavo', nm:'Gustavo the Gopher',    em:'🦫', ac:'#e0a03a', colors:5, fall:4.50, q:0.70, react:570, startChaff:0, hcap:1.05, scatter:7, taunt:"I am already under your garden, so relax and take the L.", lose:"Back down the hole for me."},
+ {id:'deer-duchess',   nm:'Duchess Dapple',        em:'🦌', ac:'#ff5c8a', colors:5, fall:5.50, q:0.77, react:460, startChaff:0, hcap:1.10, taunt:"Your tulips looked delicious, and so does this win.", lose:"I hear the neighbor grows hostas."},
+ {id:'bindweed-lady',  nm:'Lady Bindweed',         em:'🌿', ac:'#ff3bc0', colors:5, fall:6.60, q:0.84, react:375, startChaff:0, hcap:1.15, scatter:9, taunt:"Come get one big tight hug, then you are done, homie.", lose:"Prune me and I grow back twice."},
+ {id:'powdery-mildew', nm:'Miss Mildew',           em:'🍄', ac:'#b8a6c8', colors:5, fall:7.80, q:0.91, react:310, startChaff:1, hcap:1.10, taunt:"You already look a little grey to me, playa.", lose:"Wiped clean, for now."},
  {id:'baron-greymould',nm:'Baron Greymould',       em:'👑', ac:'#7bff2a', colors:5, fall:9.2, q:0.97, react:260, startChaff:1, hcap:1.12, taunt:"Soon this whole valley gets buffed grey and stays real quiet.", lose:"Impossible, my beautiful rot.", boss:true},
  {id:'ronin-hare',     nm:'The Ronin Hare',        em:'🐰', ac:'#e0433f', colors:5, fall:10.5,q:1.00, react:230, startChaff:1, hcap:1.20, taunt:"One garden, one blade, one lesson, kid.", lose:"A worthy harvest, Keeper.", secret:true}
 ];
@@ -734,7 +793,7 @@ function ghostY(f){ if(!f.cur)return f.cur; var y=f.cur.r; while(true){ var n={r
 /* =====================================================================
    MATCH  — real-time versus. Both fields tick every frame.
    ===================================================================== */
-var MATCH={ pf:null, of:null, phase:'none', t:0, stage:-1, mode:'campaign', count:0, result:null };
+var MATCH={ pf:null, of:null, phase:'none', t:0, stage:-1, mode:'campaign', count:0, result:null, out:null };
 var SERIES=null;   /* best-of-3 state for boss + secret duels: {stage, me, them} */
 
 function preDropChaff(f,rows){ var i,c; for(i=0;i<rows;i++)for(c=0;c<COLS;c++){ var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t>=0)f.grid[t][c]=CHAFF; } }
@@ -763,12 +822,87 @@ function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=s
   show('s-play'); running=true;
 }
 
-function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result; running=false;
+/* =====================================================================
+   THE OUTRO — the end of a match gets a beat.
+
+   Stephen 8/01: "when [I win] or lose in Pop and Lock I want a much slower
+   longer celebration. Everything seems to just skip and resolve real fast.
+   Like a calculator doing a math problem." It WAS exactly that: one sound,
+   then running=false froze every animation dead, then 800ms of a still frame,
+   then the whole summary screen snapping in at once. Nothing landed.
+
+   So the result is staged now, and every stage has something MOVING in it.
+   Slow is only worth anything if there is something to watch:
+
+     HIT   460ms   the blow lands. Hitstop shake, the loser's board flashes.
+     DRAIN 1300ms  the boards empty. The loser's floor gives way row by row;
+                   the winner's stack bursts off the TOP on a rising arpeggio.
+                   Two different motions, so a win and a loss never read alike.
+     STAMP 560ms   the reveal. The verdict punches in from 1.7x with the fanfare
+                   (the fanfare fires HERE, not at the kill, so it lands on it).
+     HOLD  1600ms  the look. The banner breathes, the pest reacts and says its
+                   piece, and on a win the yard rains pods.
+
+   3920ms total, was 800. Tap the board to skip: the first tap finishes the
+   drain and jumps to the reveal (you never lose the banner), the second hands
+   off to the summary screen.
+   ===================================================================== */
+var OUT={ hit:460, drain:1300, stamp:560, hold:1600, step:95 };
+function outTotal(){ return OUT.hit+OUT.drain+OUT.stamp+OUT.hold; }
+function outLoser(){ return MATCH.result==='win'?MATCH.of:MATCH.pf; }
+function outWinner(){ return MATCH.result==='win'?MATCH.pf:MATCH.of; }
+/* one drain tick. Uses the engine's own applyGravityMoves + setFall so the
+   sinking pods animate with the exact same fall tween the game already uses. */
+function outStepDrain(){ var O=MATCH.out; if(!O)return false; var moved=false;
+  var lo=outLoser(), wi=outWinner(), r, c, found=-1;
+  if(lo){ for(r=ROWS-1;r>=0&&found<0;r--){ for(c=0;c<COLS;c++){ if(lo.grid[r][c]!==0){ found=r; break; } } }
+    if(found>=0){ for(c=0;c<COLS;c++)lo.grid[found][c]=0;
+      setFall(lo, applyGravityMoves(lo.grid)); moved=true;
+      if(!O.quiet){ SFX.chaff(); if(lo===MATCH.pf)shake(3,110); } } }
+  if(wi){ var top=-1; for(r=0;r<ROWS&&top<0;r++){ for(c=0;c<COLS;c++){ if(wi.grid[r][c]!==0){ top=r; break; } } }
+    if(top>=0){ for(c=0;c<COLS;c++)wi.grid[top][c]=0; moved=true;
+      if(!O.quiet)SFX.pop(Math.min(9,O.burst++)); } }
+  return moved; }
+function outUpdate(dt){ var O=MATCH.out; if(!O)return; O.t+=dt;
+  /* both boards keep breathing: falling pods land, chain floats finish rising.
+     state==='over' means tickField skips the play/resolve branches, so this is
+     purely the decay animations. */
+  if(MATCH.pf)tickField(MATCH.pf,dt,false);
+  if(MATCH.of)tickField(MATCH.of,dt,true);
+  var stampAt=OUT.hit+OUT.drain;
+  if(!O.drained && O.t>=OUT.hit && O.t<stampAt){ O.dr+=dt;
+    while(O.dr>=OUT.step){ O.dr-=OUT.step; if(!outStepDrain()){ O.drained=true; break; } } }
+  if(!O.stamped && O.t>=stampAt){ O.stamped=true;
+    if(MATCH.result==='win'){ SFX.win(); shake(9,340); hap(40); }
+    else { SFX.lose(); shake(5,260); hap(20); } }
+  /* pod rain on a win: the hold is a celebration, not a pause */
+  if(O.stamped && MATCH.result==='win'){ O.cf+=dt;
+    while(O.cf>=64 && O.conf.length<70){ O.cf-=64;
+      O.conf.push({ x:10+Math.random()*(VW-52), y:-30, vy:0.10+Math.random()*0.12,
+        vx:(Math.random()-0.5)*0.06, s:15+Math.random()*17, ci:(Math.random()*5)|0 }); } }
+  var i; for(i=O.conf.length-1;i>=0;i--){ var p=O.conf[i];
+    p.y+=p.vy*dt; p.x+=p.vx*dt; if(p.y>VH+40)O.conf.splice(i,1); }
+  if(O.t>=outTotal()){ running=false; MATCH.out=null; _outHandoff(); }
+}
+function outSkip(){ var O=MATCH.out; if(!O)return; var stampAt=OUT.hit+OUT.drain;
+  if(O.t<stampAt){ /* first tap: finish the collapse silently, keep the reveal */
+    O.quiet=true; var g=0; while(outStepDrain()&&g++<40){} O.quiet=false;
+    O.drained=true; O.t=stampAt; O.dr=0; return; }
+  running=false; MATCH.out=null; _outHandoff(); }
+function _outHandoff(){ if(MATCH.mode==='versus'){ versusResult(MATCH.result); return; }
+  if(MATCH.mode==='solo'){ soloResult(); return; }
+  matchResult(MATCH.result); }
+
+function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result;
   if(MATCH.pf)MATCH.pf.state='over'; if(MATCH.of)MATCH.of.state='over';
-  if(MATCH.mode==='versus'){ _mpPub(true); if(result==='win')SFX.win(); else SFX.lose(); setTimeout(function(){ versusResult(result); },800); return; }
-  if(MATCH.mode==='solo'){ if(MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); } setTimeout(function(){ soloResult(); },700); return; }
-  if(result==='win')SFX.win(); else SFX.lose();
-  setTimeout(function(){ matchResult(result); },800);
+  if(MATCH.mode==='versus')_mpPub(true);
+  if(MATCH.mode==='solo' && MATCH.pf && MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); }
+  /* the headless sweep (and any end that happens off the play screen) skips the
+     theatre entirely and hands off instantly, exactly like the old code did. */
+  if(_devSweep || curScreen!=='s-play'){ running=false; MATCH.out=null; _outHandoff(); return; }
+  MATCH.out={ t:0, dr:0, cf:0, burst:0, conf:[], stamped:false, quiet:false, drained:false };
+  SFX.shatter(); shake(13,OUT.hit); hap(30);
+  running=true;   /* the outro is ANIMATED, so the loop has to keep updating */
 }
 
 /* ---- share your victory (Jessie 7/26): navigator.share, clipboard fallback ---- */
@@ -848,6 +982,7 @@ var PF={x:16,y:112,cell:58}, OF={x:398,y:352,cell:21};
 var running=false, lastT=0, _devLost=false;
 
 function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
+  if(MATCH.phase==='done'){ if(MATCH.out)outUpdate(dt); return; }
   if(MATCH.phase==='intro'){ MATCH.t+=dt; if(MATCH.t>=1700){ MATCH.t=0; MATCH.phase='count'; SFX.count(); } return; }
   if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
   if(MATCH.phase!=='fight')return;
@@ -1162,6 +1297,44 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, 22);
     ctx.fillStyle='#6a6152'; ctx.font='600 12px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+196);
     ctx.textAlign='left'; }
+  /* ---- outro overlay: the reveal you are meant to sit in (see THE OUTRO).
+     The control bar eats the bottom ~130px of the 960 stage, so everything
+     here lives above y=810 or it hides behind the DROP button. ---- */
+  if(MATCH.phase==='done' && MATCH.out){ var O=MATCH.out, gwin=(MATCH.result==='win');
+    var stampAt=OUT.hit+OUT.drain, oi, op;
+    /* the blow lands: the loser's board takes a white flash under the shake */
+    if(O.t<OUT.hit){ var LF=gwin?OF:PF;
+      if(outLoser()){ ctx.globalAlpha=0.55*(1-O.t/OUT.hit); ctx.fillStyle='#fff8dc';
+        ctx.fillRect(LF.x-4, LF.y-4, COLS*LF.cell+8, VISROWS*LF.cell+8); ctx.globalAlpha=1; } }
+    /* the yard only dims at the END of the collapse - dim it any earlier and
+       you cannot see the boards drain, which is the part worth watching */
+    var dim=Math.min(1,Math.max(0,(O.t-(stampAt-260))/500));
+    if(dim>0){ ctx.fillStyle='rgba(8,6,4,'+(0.78*dim).toFixed(3)+')'; ctx.fillRect(0,0,VW,VH); }
+    for(oi=0;oi<O.conf.length;oi++){ op=O.conf[oi]; drawPod(op.x,op.y,op.s,op.ci,{x:0,y:0.3},1,0.92); }
+    if(O.t>=stampAt){
+      var sp=Math.min(1,(O.t-stampAt)/OUT.stamp);          /* 0..1 punch-in     */
+      var sc=1+0.7*(1-sp)*(1-sp);                          /* 1.7x settling to 1 */
+      var al=Math.min(1,sp*2.2);
+      var br=1+Math.sin((O.t-stampAt)/300)*0.018;          /* it never sits still */
+      ctx.save(); ctx.translate(VW/2,326); ctx.scale(sc*br,sc*br);
+      cwFit('ui/banner-'+(gwin?'win':'lose'), 0, 0, 430, 210, al);
+      ctx.textAlign='center'; ctx.globalAlpha=al;
+      ctx.font='italic 800 62px system-ui'; ctx.lineWidth=11; ctx.strokeStyle='#0c0a06';
+      ctx.strokeText(gwin?'VICTORY':'DEFEAT', 0, 22);
+      ctx.fillStyle=gwin?'#39ff14':'#9a9078'; ctx.fillText(gwin?'VICTORY':'DEFEAT', 0, 22);
+      ctx.globalAlpha=1; ctx.restore();
+      /* the pest reacts and says its piece once the banner has settled */
+      if(MATCH.mode==='campaign' && MATCH.stage>=0){ var gst=ROSTER[MATCH.stage];
+        var ga=Math.min(1,Math.max(0,(O.t-stampAt-OUT.stamp*0.6)/420));
+        if(ga>0){ ctx.textAlign='center';
+          if(!cwPortrait(gst.id, gwin?'lose':'win', VW/2, 566, 250, 210, ga)){
+            ctx.globalAlpha=ga; ctx.font='84px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(gst.em, VW/2, 590); ctx.globalAlpha=1; }
+          ctx.globalAlpha=ga; ctx.fillStyle='#f0e9d8'; ctx.font='italic 17px system-ui';
+          wrapText('"'+(gwin?gst.lose:gst.taunt)+'"', VW/2, 706, 400, 23); ctx.globalAlpha=1; } }
+      /* skip hint, but only after you have had the moment */
+      if(O.t>stampAt+OUT.stamp+500){ ctx.textAlign='center'; ctx.fillStyle='#6a6152';
+        ctx.font='600 12px system-ui'; ctx.fillText('tap to continue', VW/2, 800); }
+      ctx.textAlign='left'; } }
   ctx.restore();
 }
 function floatColor(t){ if(t.indexOf('ALL')>=0)return '#ffd21a'; if(t.indexOf('DENIED')>=0)return '#2ff0e0';
@@ -1203,6 +1376,9 @@ tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });
 var dragSt=null;
 cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play')return;
   if(MATCH.phase==='intro'){ e.preventDefault(); MATCH.t=0; MATCH.phase='count'; SFX.count(); return; }
+  /* outro: first tap finishes the collapse and jumps to the reveal, second tap
+     hands off to the summary. Nobody gets held hostage by the celebration. */
+  if(MATCH.phase==='done'){ if(MATCH.out){ e.preventDefault(); outSkip(); } return; }
   if(MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW);
   if(x<PF.x+COLS*PF.cell+8 && playable()){ e.preventDefault(); ac();
     dragSt={x0:e.clientX,y0:e.clientY,t0:Date.now(),cells:0,soft:false,pid:e.pointerId,
@@ -1268,7 +1444,7 @@ tap('b-power',function(){ firePower(pf()); });
 tap('how-back',function(){ SFX.ui(); show(curReturn()); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
 tap('sel-back',function(){ SFX.ui(); show('s-title'); });
-tap('b-home',function(){ SFX.ui(); running=false; MATCH.phase='none'; SERIES=null;
+tap('b-home',function(){ SFX.ui(); running=false; MATCH.phase='none'; MATCH.out=null; SERIES=null;
   if(MATCH.mode==='versus'){ _mpLeave(); MATCH.mode='campaign'; show('s-title'); return; }
   show(MATCH.mode==='solo'?'s-title':'s-select'); if(MATCH.mode==='campaign')buildLadder(); });
 tap('go-home',function(){ SFX.ui(); SERIES=null; if(MATCH.mode==='versus'){ _mpLeave(); MATCH.mode='campaign'; } show('s-title'); });
@@ -1395,7 +1571,9 @@ function _mpSend(payload){
   else if(MP.mode==='fs'&&MP.db){ try{ MP.db.collection('cwRooms').doc(MP.code).collection('inputs').doc(MP.uid).set(payload)['catch'](function(){}); }catch(e){} } }
 
 function _mpOnOpp(s){ if(!s||MATCH.mode!=='versus')return; MP.oppLastT=Date.now();
-  if(s.g&&MATCH.of)MATCH.of.grid=_mpDecGrid(s.g);
+  /* once the match is over the outro OWNS the rival board (it is draining it
+     row by row), so a late snapshot must not repaint it back to full mid-collapse */
+  if(s.g&&MATCH.of&&MATCH.phase!=='done')MATCH.of.grid=_mpDecGrid(s.g);
   if(MATCH.of && (s.s||0)>MATCH.of.score && MATCH.phase==='fight'){ MATCH.of.chainGlow=1; SFX.popRival(2); }
   if(MATCH.of){ MATCH.of.score=s.s||0; MATCH.of.pending=s.p||0; }
   var evts=s.e||[],i; for(i=0;i<evts.length;i++){ if(evts[i]&&evts[i].i>MP.lastEvtIn){ MP.lastEvtIn=evts[i].i; if(MATCH.pf&&MATCH.phase==='fight'){ MATCH.pf.pending+=(+evts[i].n||0); SFX.warn(); } } }

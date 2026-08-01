@@ -70,6 +70,14 @@ target OR is blocked — the **stuck-guard** on `f.aiStep`, added to fix a freez
   on player for late pests), `hcap` (outgoing chaff multiplier). Tune INDIVIDUAL
   pests by editing these (that's how Cutworm/June Beetle were smoothed + secret eased).
 
+### ⚠️ STALE as of 2026-08-01 — the ramp below predates the reflatten
+Stephen 8/01: "just the third level alone moved super fast and the AI was really
+hard to beat". `fall`, `q`, `react` and `hcap` were re-curved per-stage (see the
+long comment above `var ROSTER` in index.html for every before/after number and
+why). Stages 12-14 were deliberately left alone, so the TOP of the ladder should
+still measure roughly as below; stages 1-8 are now materially easier. **Re-run
+`sweep()` before quoting any of these numbers.** `AI_TUNE` was NOT changed.
+
 ### Measured ramp (competent player, 20-seed sweep, 2026-07-19)
 ~90% early (pests 1-4) → ~60% mid (5-9) → ~33% late (10-12) → ~20-35% boss →
 ~15-20% secret. Roughly monotonic. ±~15% natural run-to-run variance because AI
