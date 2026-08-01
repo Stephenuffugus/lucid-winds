@@ -56,6 +56,38 @@
 (function(global){
   'use strict';
 
+  /* ⛔⛔ TYPING GUARD — 2026-08-02.
+     A player could not type "s" or a space into the feedback form, and could not
+     enter their own email address. Games bind a GLOBAL key handler and
+     preventDefault() their controls without asking whether the player is typing:
+     vinewinder does it for Space and W/A/S/D, and 39 of the 42 games in the
+     fleet that listen for keys do the same. Every text field on those pages was
+     affected, not only the feedback form — name entry, code redemption, search.
+     This guard sits on DOCUMENT in the BUBBLE phase. Key events go
+     target → ... → document → window, so it always runs BEFORE a window-level
+     game handler no matter which script registered first, and stopPropagation
+     here keeps the game from ever seeing the keystroke. It never calls
+     preventDefault, so the character still types normally. Verified: zero
+     capture-phase key listeners exist in the fleet, which is the only thing that
+     could out-run this. Eight games listen on document itself; those registered
+     before this SDK still fire, which is why feedback.js ALSO guards its own
+     panel at the target phase. Belt and braces, because the cost of getting it
+     wrong is losing every bug report a player ever tries to send. */
+  (function(){
+    if (!global.document || global.__swsTypingGuard) return;
+    global.__swsTypingGuard = true;
+    var editable = function (t) {
+      if (!t) return false;
+      var tag = (t.tagName || '').toUpperCase();
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable === true;
+    };
+    ['keydown', 'keyup', 'keypress'].forEach(function (evt) {
+      global.document.addEventListener(evt, function (e) {
+        if (editable(e.target)) e.stopPropagation();
+      });
+    });
+  })();
+
   var VERSION = '2.1.0';   // 2.1.0 (2026-08-01) adds the shared share card
 
   // ── Bundled Firebase config (public; only identifies the project) ──

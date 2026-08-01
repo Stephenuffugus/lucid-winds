@@ -4,7 +4,7 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v33';
+var CACHE_VERSION = 'lw-v34';
 var ASSET_CACHE = 'lw-assets-v19';
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
@@ -56,7 +56,7 @@ var PRECACHE = [
   '/shared.css?v=20260718',
   '/play/shell.css?v=12',
   '/play/shell.js?v=25',
-  '/sunbeam-sdk.js?v=6'
+  '/sunbeam-sdk.js?v=7'
 ];
 
 // ── INSTALL: precache critical assets ──

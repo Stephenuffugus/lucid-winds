@@ -144,6 +144,34 @@
 
     document.body.appendChild(bg);
 
+    /* ⛔⛔ 2026-08-02 — THE FORM COULD NOT BE TYPED IN, AND IT COST US REPORTS.
+       A player: "i am not able to type 's' space bar doesnt work ... this
+       feedback was first typed on notepad and then pasted on this form! I am not
+       even able to type my email address" — their address contains s, a and d.
+       Cause: games bind a GLOBAL key handler and preventDefault() their controls
+       without checking whether the player is typing. vinewinder:642 does exactly
+       that for Space and W/A/S/D. Measured across the fleet: 39 of the 42 games
+       that listen for keys are unguarded, so this form was broken on most of the
+       arcade — and a broken feedback form silently costs you every OTHER bug
+       report. This player only got through by pasting from Notepad; nearly
+       everyone else would just leave.
+       The fix lives HERE rather than in 39 games: a listener on the panel itself
+       runs in the TARGET phase, before any window or document handler, so
+       stopPropagation() keeps the keystroke from ever reaching the game. It does
+       NOT preventDefault, so the character still types normally. Verified there
+       are zero capture-phase key listeners in the fleet, which is the only thing
+       that could out-run this. */
+    ['keydown', 'keyup', 'keypress'].forEach(function (evt) {
+      bg.addEventListener(evt, function (e) {
+        var t = e.target;
+        if (!t) return;
+        var tag = (t.tagName || '').toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable) {
+          e.stopPropagation();
+        }
+      });
+    });
+
     var seg = document.getElementById('lwfb-seg');
     var dlab = document.getElementById('lwfb-dlab');
     seg.addEventListener('click', function (e) {
