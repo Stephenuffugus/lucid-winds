@@ -127,7 +127,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word" id="title-word">
-      <img id="title-logo" alt="Petalvex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.setAttribute('data-err','1');this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
+      <img id="title-logo" alt="OriVex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.setAttribute('data-err','1');this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
       <span id="title-fallback" style="display:none">OriVex</span>
     </div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -151,7 +151,12 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Bigger beds, more petals to match.</div>
     <div class="stack" id="mode-list" style="max-width:440px"></div>
     <div style="height:16px"></div>
-    <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Back</button>
+    <!-- the how-to only auto-opens on the very first run, so the rules need a door on the screen
+         every player passes through on the way into a bed -->
+    <div class="row" style="max-width:440px;margin:0 auto">
+      <button class="btn ghost sm" id="modes-back">◄ Back</button>
+      <button class="btn ghost sm" id="modes-how">How to play</button>
+    </div>
   </div></div>
 
   <!-- HOW -->
@@ -214,7 +219,14 @@ function $(id){ return document.getElementById(id); }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.2';
+var BUILD='v1.3';
+
+/* Local calendar day stamp (YYYYMMDD). The daily used to key off Math.floor(Date.now()/864e5),
+   which is a UTC day index, so the bed flipped over mid-evening for anyone west of Greenwich.
+   Everyone on the same calendar date still gets the same bed, which is what
+   "same for everyone today" means. */
+function dayStamp(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function dailyClaimed(n){ return LS.get(K.dly+n)===String(dayStamp()); }
 
 /* storage (private-mode safe) */
 var LS=(function(){ var ok=true, mem={};
@@ -274,6 +286,7 @@ var VINK=['#f3e6cf','#0d1a06','#241c07','#2a0f14','#04181f','#160726','#231005',
 /* ============================ game state ================================= */
 var cv, ctx, VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
 var curScreen='s-title';
+var _howFrom='s-title';   // which screen "Got it" returns to
 var P=null;          // current puzzle
 var drag=null;       // active drag {tile, ox, oy, x, y, from}
 var parts=[];        // win particles
@@ -673,10 +686,16 @@ function winPuzzle(){
   // celebratory bursts across the board
   var n=P.n;
   for(var i=0;i<n*n;i++){ var R=cellRect(i); (function(R,i){ setTimeout(function(){ if(P&&P.solved) burst(R.x+R.s/2,R.y+R.s/2, VCOL[i%10], 8); },i*22); })(R,i);}
-  // best time (only for non-daily; daily tracked separately but we still record)
   var hadSkin=skinUnlocked();
+  // Daily claim gate runs FIRST because it now gates the best time too: the daily bed is the
+  // same seed all day, so a re-solve is a solve of a puzzle you already know the answer to.
+  // Rewarding that with either sunbeams OR a record time makes the daily a free score.
+  var dailyDone=false;
+  if(P.mode.daily){ var today=String(P.day||dayStamp()); var dk=K.dly+P.n;  /* per-size daily claim */
+    if(LS.get(dk)===today){ dailyDone=true; } else { LS.set(dk, today); } }
+  // best time (hint-free solves only; daily replays excluded, see above)
   var best=loadBest(), bk=bestKey(P.mode), prev=best[bk], isBest=false;
-  if(P.hints===0){ if(prev==null || P.t<prev){ best[bk]=P.t; isBest=true; LS.set(K.best, JSON.stringify(best)); } }
+  if(P.hints===0 && !dailyDone){ if(prev==null || P.t<prev){ best[bk]=P.t; isBest=true; LS.set(K.best, JSON.stringify(best)); } }
   // sunbeam reward
   var base={3:3,4:5,5:8,6:12}[n]||3;
   if(P.mode.daily) base+=4;
@@ -684,19 +703,18 @@ function winPuzzle(){
   var secs=P.t/1000, parSec=n*n*4;
   var speed=secs<parSec?Math.round(clamp((parSec-secs)/parSec*4,0,4)):0;
   var hintPenalty=P.hints>0?0.5:1;
-  var total=Math.max(1, Math.round((base+speed)*hintPenalty));
-  // daily bed rewards only the FIRST solve of the day — otherwise it can be re-solved for sunbeams
-  var dailyDone=false;
-  if(P.mode.daily){ var today=String(Math.floor(Date.now()/864e5)); var dk=K.dly+P.n;  /* per-size daily claim */
-    if(LS.get(dk)===today){ dailyDone=true; total=0; } else { LS.set(dk, today); } }
+  var total=dailyDone?0:Math.max(1, Math.round((base+speed)*hintPenalty));
   var granted=0; if(total>0){ try{ if(window._sbCapEarn) granted=window._sbCapEarn(total,'petalvex:solve')||0; }catch(e){} }
   // fill win screen
   $('win-size').textContent=n+' × '+n;
   $('win-time').textContent=fmtTime(P.t);
   $('win-hints').textContent=''+P.hints;
-  var bshow=best[bk]!=null?fmtTime(best[bk]):'';
+  var bshow=best[bk]!=null?fmtTime(best[bk]):'none yet';   // was blank when the solve used a nudge
   $('win-best').textContent=bshow+(isBest?'  ★ new!':'');
   $('win-title').textContent=isBest?'New best time!':(P.mode.daily?'Daily bed solved!':'Bed in bloom!');
+  /* Name what the button will actually deal. After a daily it is a random bed of the same size,
+     not the daily again — the daily is one bed a day and it is finished. */
+  var wa=$('win-again'); if(wa) wa.textContent = P.mode.daily ? ('↻ New '+n+' × '+n+' bed') : '↻ New bed';
   $('win-sun').textContent = granted>0 ? ('☀ +'+granted+' sunbeam'+(granted>1?'s':''))
     : dailyDone ? '☀ already gathered today, back tomorrow'
     : '☀ daily sunbeam cap reached';
@@ -723,14 +741,29 @@ function sharePetalvex(){
 /* ============================ flow ================================= */
 function startMode(key){
   var mode=modeByKey(key);
-  var seed=null;
-  if(mode.daily){ seed=Math.floor(Date.now()/864e5)*11 + mode.n; }  /* per-day AND per-size: each difficulty is its own shared daily */
+  var seed=null, day=0;
+  if(mode.daily){ day=dayStamp(); seed=day*11 + mode.n; }  /* per-day AND per-size: each difficulty is its own shared daily */
   P=genPuzzle(mode, seed);
+  /* stamp the day the bed was DEALT: a daily started at 23:59 and finished at 00:01 should
+     claim the day it belongs to, not hand out a second claim on the new day */
+  P.day=day;
   P.themeIdx = mode.daily ? (((seed%8)+8)%8) : (_pvThemeN++ % 8);
   parts=[]; drag=null;
   show(null); // canvas gameplay (no DOM screen)
   computeLayout(); render();
   startClock();
+}
+/* "New bed" after a DAILY must not re-deal the same seed — the daily is deterministic per day,
+   so restarting it hands the player the exact bed they just finished. Roll them into the ordinary
+   random bed of the SAME size instead. Same-size random is the better fit here because the win
+   screen already has a separate "Choose bed" button for the size picker; making both buttons open
+   the picker would leave two controls doing one job, and "New bed" already means "deal me another
+   one like that" for the four ordinary modes. */
+function freshKey(mode){
+  if(!mode) return 's4';
+  if(!mode.daily) return mode.key;
+  for(var i=0;i<MODES.length;i++) if(!MODES[i].daily && MODES[i].n===mode.n) return MODES[i].key;
+  return 's4';
 }
 function startClock(){ stopClock(); clockTimer=setInterval(function(){ if(P&&!P.solved&&curScreen===null) render(); },1000); }
 function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=0; } }
@@ -746,7 +779,9 @@ function buildModeList(){
     var ico=(SKIN==='enamel'&&MODE_UI[m.key])
       ? '<div class="mc-ico" style="width:56px;height:56px;font-size:30px;line-height:56px"><img src="assets/ui/'+MODE_UI[m.key]+'.png?v='+PV_ASSET_V+'" alt="" style="width:56px;height:56px;object-fit:contain;display:block;border-radius:12px" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+m.ico+'\'"></div>'
       : '<div class="mc-ico">'+m.ico+'</div>';
-    b.innerHTML=ico+'<div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+(m.daily?'today':bstr)+'</div>';
+    // a daily you already gathered says so, so nobody re-opens it expecting a fresh bed or sunbeams
+    var tag=m.daily?(dailyClaimed(m.n)?'✓ done':'today'):bstr;
+    b.innerHTML=ico+'<div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+tag+'</div>';
     b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startMode(m.key); });
     host.appendChild(b);
   })(MODES[i]); }
@@ -876,7 +911,7 @@ function boot(){
 
   buildControlBar();
   tap('b-play', function(){ toModes(); });
-  tap('b-how', function(){ show('s-how'); });
+  tap('b-how', function(){ _howFrom='s-title'; show('s-how'); });
   tap('b-set', function(){ buildSkinRow(); show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   // ---- add to home screen (button stays useful even if beforeinstallprompt never fires) ----
@@ -890,9 +925,17 @@ function boot(){
       alert(ios?'To add OriVex to your Home Screen:\n\nTap the Share button, then Add to Home Screen. It opens full screen like an app.':'To add OriVex to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.'); });
   })();
   tap('modes-back', function(){ show('s-title'); });
-  tap('how-back', function(){ show(P?null:'s-title'); if(P) updateCtrlVisibility(); });
+  tap('modes-how', function(){ _howFrom='s-modes'; show('s-how'); });
+  /* "Got it" has to know where it came from. The old line was show(P?null:'s-title'), which
+     drops you onto the bare canvas whenever a puzzle object exists — including a SOLVED one,
+     where the control bar is hidden and the win screen is gone. That is a dead end with no
+     buttons. Only return to the canvas when there is a bed still in play. */
+  tap('how-back', function(){
+    if(P&&!P.solved){ show(null); updateCtrlVisibility(); return; }
+    show(_howFrom||'s-title');
+  });
   tap('set-back', function(){ show(P&&!P.solved?null:'s-title'); if(P&&!P.solved) updateCtrlVisibility(); });
-  tap('win-again', function(){ startMode(P?P.mode.key:'s4'); });
+  tap('win-again', function(){ startMode(freshKey(P&&P.mode)); });
   tap('win-share', function(){ sharePetalvex(); });
   tap('win-modes', function(){ toModes(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
