@@ -327,6 +327,18 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   color:var(--faint)}
 .sw input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;
   background:var(--panel-2);padding:3px;cursor:pointer}
+.nudges{display:grid;gap:7px}
+.npair{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.chip2.wide{width:100%;text-align:center}
+.silgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.sil{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+  padding:6px 4px 7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;
+  gap:3px;min-height:96px;justify-content:flex-end}
+.sil canvas{width:100%;height:auto;display:block}
+.sil span{font-family:var(--mono);font-size:7.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--faint);text-align:center;line-height:1.2}
+.sil[aria-pressed=true]{border-color:var(--amber);background:rgba(255,178,63,.12)}
+.sil[aria-pressed=true] span{color:var(--amber)}
 .sliders{display:grid;gap:10px}
 .sl{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:10px}
 .sl span{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
@@ -457,14 +469,24 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <canvas id="tunePrev" width="520" height="300"></canvas>
       <p class="tunerNote">The unit read this off the photograph. It is often
         close and sometimes confidently wrong, and it cannot see a small patch
-        of white at all, so it leaves that to you. Slide WHITE up and it
-        appears in the order cats actually get it: chest, then toes, then
-        belly, then face. You are the authority.</p>
-      <div class="tuneRow"><b>Pattern</b><div class="chips" id="tunePattern"></div></div>
-      <div class="tuneRow"><b>Start from</b><div class="chips" id="tuneWhite"></div></div>
+        of white at all. You have met her. It has not.</p>
+
+      <div class="tuneRow"><b>Is this her?</b><div class="nudges" id="tuneNudge"></div></div>
+      <div class="tuneRow"><b>Her shape</b><div class="silgrid" id="tuneSil"></div></div>
+      <div class="tuneRow"><b>Kitten face or grown</b><div class="sliders" id="tuneAge"></div></div>
+      <div class="tuneRow"><b>How much white</b><div class="sliders" id="tuneWhiteAmt"></div></div>
+      <div class="tuneRow"><b>Her paws</b><div class="chips" id="tunePaws"></div></div>
+      <div class="tuneRow"><b>Her coat</b><div class="chips" id="tunePattern"></div></div>
       <div class="tuneRow"><b>Colours</b><div class="swatches" id="tuneColors"></div></div>
-      <div class="tuneRow"><b>Build</b><div class="sliders" id="tuneSliders"></div></div>
-      <div class="row"><button class="ghost" id="tuneReset">Read it off the photo again</button></div>
+
+      <button class="tunerHd" id="advToggle" type="button" aria-expanded="false">
+        <span>More</span><span class="chev" id="advChev">+</span>
+      </button>
+      <div class="hidden" id="advBody">
+        <div class="tuneRow"><b>Start from</b><div class="chips" id="tuneWhite"></div></div>
+        <div class="tuneRow"><b>Everything else</b><div class="sliders" id="tuneSliders"></div></div>
+        <div class="row"><button class="ghost" id="tuneReset">Read it off the photo again</button></div>
+      </div>
     </div>
   </div>
   <div class="nopet hidden" id="noPet">
@@ -1479,7 +1501,17 @@ function defaultDNA(){
            nose:'#E09AA6', tail:0.6, faceMask:0,
            /* skull, which is where breeds actually differ */
            headRound:0.55, cheek:0.45, muzzle:0.45, earSet:0.60, earTuft:0.20,
-           eyeSize:0.55, eyeGap:0.50 };
+           eyeSize:0.55, eyeGap:0.50,
+           /* SKELETON, SOFT TISSUE and COAT are three separate layers. A fluffy
+              cat and a sleek cat have the identical body underneath and differ
+              only at the edge; conflating floof with body shape is why nothing
+              used to read as fluffy. */
+           frame:0, legLen:0.5, posture:0, warmth:0, socks:null,
+           ruff:0.15, britches:0.15, tailPlume:0.2,
+           /* one number for neoteny: eye size, eye height, eye gap and muzzle
+              move together, because an owner judges "kitten or grown" instantly
+              and will never understand eyeRound */
+           age:0.55 };
 }
 
 /* Archetypes, offered in the tuner as STARTING POINTS only. These are not a
@@ -1488,16 +1520,16 @@ function defaultDNA(){
    app. "Start from British Shorthair and adjust" is customisation. "Your cat
    is a British Shorthair" is a lie. */
 const BUILDS = {
-  'Moggy':            { headRound:0.55, cheek:0.45, muzzle:0.45, earSet:0.60, earTuft:0.15, eyeSize:0.55, eyeGap:0.50, eyeRound:0.45, ear:0.50, floof:0.30, chonk:0.50, tail:0.60 },
-  'British Shorthair':{ headRound:0.95, cheek:0.95, muzzle:0.22, earSet:0.42, earTuft:0.05, eyeSize:0.78, eyeGap:0.62, eyeRound:0.92, ear:0.30, floof:0.28, chonk:0.86, tail:0.44 },
-  'Maine Coon':       { headRound:0.42, cheek:0.55, muzzle:0.86, earSet:0.82, earTuft:0.95, eyeSize:0.62, eyeGap:0.52, eyeRound:0.40, ear:0.88, floof:0.92, chonk:0.70, tail:0.95 },
-  'Siamese':          { headRound:0.06, cheek:0.10, muzzle:0.82, earSet:0.70, earTuft:0.00, eyeSize:0.58, eyeGap:0.44, eyeRound:0.06, ear:0.95, floof:0.06, chonk:0.16, tail:0.90 },
-  'Persian':          { headRound:1.00, cheek:0.88, muzzle:0.00, earSet:0.30, earTuft:0.30, eyeSize:0.88, eyeGap:0.70, eyeRound:1.00, ear:0.22, floof:1.00, chonk:0.74, tail:0.52 },
-  'Ragdoll':          { headRound:0.78, cheek:0.62, muzzle:0.42, earSet:0.52, earTuft:0.45, eyeSize:0.90, eyeGap:0.58, eyeRound:0.80, ear:0.55, floof:0.82, chonk:0.72, tail:0.86 },
-  'Devon Rex':        { headRound:0.30, cheek:0.20, muzzle:0.30, earSet:0.04, earTuft:0.00, eyeSize:0.95, eyeGap:0.40, eyeRound:0.62, ear:1.00, floof:0.10, chonk:0.22, tail:0.62 },
-  'Abyssinian':       { headRound:0.24, cheek:0.24, muzzle:0.62, earSet:0.92, earTuft:0.18, eyeSize:0.70, eyeGap:0.46, eyeRound:0.20, ear:0.86, floof:0.10, chonk:0.30, tail:0.78 },
-  'Russian Blue':     { headRound:0.28, cheek:0.26, muzzle:0.58, earSet:0.86, earTuft:0.00, eyeSize:0.72, eyeGap:0.48, eyeRound:0.34, ear:0.84, floof:0.22, chonk:0.34, tail:0.76 },
-  'Sphynx':           { headRound:0.22, cheek:0.16, muzzle:0.52, earSet:0.30, earTuft:0.00, eyeSize:0.92, eyeGap:0.42, eyeRound:0.44, ear:1.00, floof:0.00, chonk:0.28, tail:0.70 }
+  'Moggy':            { frame:0.00, legLen:0.50, posture:0.0, ruff:0.15, britches:0.15, tailPlume:0.20, age:0.60,  headRound:0.55, cheek:0.45, muzzle:0.45, earSet:0.60, earTuft:0.15, eyeSize:0.55, eyeGap:0.50, eyeRound:0.45, ear:0.50, floof:0.30, chonk:0.50, tail:0.60 },
+  'British Shorthair':{ frame:0.95, legLen:0.28, posture:0.1, ruff:0.30, britches:0.25, tailPlume:0.30, age:0.75,  headRound:0.95, cheek:0.95, muzzle:0.22, earSet:0.42, earTuft:0.05, eyeSize:0.78, eyeGap:0.62, eyeRound:0.92, ear:0.30, floof:0.28, chonk:0.86, tail:0.44 },
+  'Maine Coon':       { frame:0.45, legLen:0.62, posture:0.2, ruff:0.95, britches:0.90, tailPlume:1.00, age:0.80,  headRound:0.42, cheek:0.55, muzzle:0.86, earSet:0.82, earTuft:0.95, eyeSize:0.62, eyeGap:0.52, eyeRound:0.40, ear:0.88, floof:0.92, chonk:0.70, tail:0.95 },
+  'Siamese':          { frame:-0.95, legLen:0.92, posture:0.3, ruff:0.02, britches:0.02, tailPlume:0.05, age:0.85,  headRound:0.06, cheek:0.10, muzzle:0.82, earSet:0.70, earTuft:0.00, eyeSize:0.58, eyeGap:0.44, eyeRound:0.06, ear:0.95, floof:0.06, chonk:0.16, tail:0.90 },
+  'Persian':          { frame:0.80, legLen:0.18, posture:0.0, ruff:1.00, britches:0.85, tailPlume:0.85, age:0.35,  headRound:1.00, cheek:0.88, muzzle:0.00, earSet:0.30, earTuft:0.30, eyeSize:0.88, eyeGap:0.70, eyeRound:1.00, ear:0.22, floof:1.00, chonk:0.74, tail:0.52 },
+  'Ragdoll':          { frame:0.40, legLen:0.55, posture:0.0, ruff:0.75, britches:0.70, tailPlume:0.80, age:0.30,  headRound:0.78, cheek:0.62, muzzle:0.42, earSet:0.52, earTuft:0.45, eyeSize:0.90, eyeGap:0.58, eyeRound:0.80, ear:0.55, floof:0.82, chonk:0.72, tail:0.86 },
+  'Devon Rex':        { frame:-0.60, legLen:0.70, posture:0.2, ruff:0.05, britches:0.05, tailPlume:0.05, age:0.20,  headRound:0.30, cheek:0.20, muzzle:0.30, earSet:0.04, earTuft:0.00, eyeSize:0.95, eyeGap:0.40, eyeRound:0.62, ear:1.00, floof:0.10, chonk:0.22, tail:0.62 },
+  'Abyssinian':       { frame:-0.70, legLen:0.85, posture:0.4, ruff:0.05, britches:0.08, tailPlume:0.10, age:0.80,  headRound:0.24, cheek:0.24, muzzle:0.62, earSet:0.92, earTuft:0.18, eyeSize:0.70, eyeGap:0.46, eyeRound:0.20, ear:0.86, floof:0.10, chonk:0.30, tail:0.78 },
+  'Russian Blue':     { frame:-0.55, legLen:0.78, posture:0.3, ruff:0.10, britches:0.10, tailPlume:0.15, age:0.75,  headRound:0.28, cheek:0.26, muzzle:0.58, earSet:0.86, earTuft:0.00, eyeSize:0.72, eyeGap:0.48, eyeRound:0.34, ear:0.84, floof:0.22, chonk:0.34, tail:0.76 },
+  'Sphynx':           { frame:-0.55, legLen:0.72, posture:0.2, ruff:0.00, britches:0.00, tailPlume:0.00, age:0.55,  headRound:0.22, cheek:0.16, muzzle:0.52, earSet:0.30, earTuft:0.00, eyeSize:0.92, eyeGap:0.42, eyeRound:0.44, ear:1.00, floof:0.00, chonk:0.28, tail:0.70 }
 };
 
 /* ── the renderer ───────────────────────────────────────────────────────────
@@ -1765,16 +1797,22 @@ const CatArt = (() => {
 
   /* Resolve a ring for this cat. frame: -1 sleek oriental to +1 cobby. */
   function ring(pose, d){
+    void 0;
     const src = RINGS[pose] || RINGS.sit;
     const r = src.map(p => [p[0], p[1]]);
-    const frame = (d.chonk - 0.5) * 1.4;          /* build follows chonk for now */
-    const chonk = d.chonk;
-    const post  = 0;
+    const frame = d.frame == null ? 0 : d.frame;      /* skeleton  */
+    const chonk = d.chonk;                             /* soft tissue */
+    const post  = d.posture == null ? 0 : d.posture;
 
-    r[RI.backMid][0]    -= 0.10*frame;            /* shorter back when cobby */
-    r[RI.rumpTop][0]    -= 0.08*frame;
-    r[RI.chestFront][0] += 0.06*frame;            /* deeper brisket */
-    r[RI.throat][1]     -= 0.05*frame;            /* shorter neck */
+    r[RI.backMid][0]    -= 0.13*frame;            /* shorter back when cobby */
+    r[RI.rumpTop][0]    -= 0.11*frame;
+    r[RI.rumpBack][0]   -= 0.09*frame;
+    r[RI.chestFront][0] += 0.09*frame;            /* deeper brisket */
+    r[RI.chestLow][0]   += 0.06*frame;
+    r[RI.throat][1]     -= 0.08*frame;            /* shorter neck */
+    r[RI.throatLow][1]  -= 0.05*frame;
+    r[RI.withers][1]    -= 0.04*frame;            /* a cobby cat is not tall */
+    r[RI.nape][1]       -= 0.05*frame;
 
     /* Push chonk to 1 and the belly line drops well below the elbow, which is
        precisely the visual signature of a fat cat, and it falls out for free. */
@@ -1785,6 +1823,15 @@ const CatArt = (() => {
 
     r[RI.withers][1]    += 0.10*post;
     r[RI.backUpper][0]  += 0.06*post;
+    r[RI.nape][1]       += 0.06*post;
+
+    /* leg length lifts the whole barrel clear of the floor when standing */
+    if (pose === 'stand'){
+      const lift = (d.legLen == null ? 0.5 : d.legLen) - 0.5;
+      [RI.throat,RI.nape,RI.withers,RI.backUpper,RI.backMid,RI.rumpTop,
+       RI.rumpBack,RI.tailRoot,RI.hindHeel,RI.hindToe,RI.bellyLow,
+       RI.chestLow,RI.chestFront,RI.throatLow].forEach(i => { r[i][1] += 0.34*lift; });
+    }
     return r;
   }
 
@@ -1828,11 +1875,27 @@ const CatArt = (() => {
 
     /* chest ruff, the biggest longhair tell. It is PIGMENT, so it belongs
        here and not after the white, or it paints a grey oval over the bib. */
-    if ((d.floof || 0) > 0.45){
+    const ruffA = (d.ruff == null ? 0.15 : d.ruff) + (d.floof || 0) * 0.5;
+    if (ruffA > 0.22){
+      const p = [r[RI.throatLow][0]*HL, -r[RI.throatLow][1]*HL];
       cx.fillStyle = PAL.underLight;
-      cx.globalAlpha = 0.30 + (d.floof - 0.45) * 0.55;
+      cx.globalAlpha = Math.min(0.62, 0.18 + ruffA * 0.5);
       cx.beginPath();
-      cx.ellipse(bx + bw*0.44, by + bh*0.34, bw*0.34*d.floof + bw*0.12, bh*0.5, -0.2, 0, 7);
+      cx.ellipse(p[0] - HL*0.06, p[1] + HL*0.16, HL*(0.16 + ruffA*0.26),
+                 HL*(0.22 + ruffA*0.30), -0.2, 0, 7);
+      cx.fill();
+      cx.globalAlpha = 1;
+    }
+    /* britches: the feathering on the back of the thigh, a longhair tell that
+       reads from across the room and costs one ellipse */
+    const brit = (d.britches == null ? 0.15 : d.britches) + (d.floof || 0) * 0.4;
+    if (brit > 0.28){
+      const p = [r[RI.rumpBack][0]*HL, -r[RI.rumpBack][1]*HL];
+      cx.fillStyle = PAL.underShade;
+      cx.globalAlpha = Math.min(0.5, 0.14 + brit * 0.4);
+      cx.beginPath();
+      cx.ellipse(p[0] + HL*0.10, p[1] + HL*0.10, HL*(0.14 + brit*0.22),
+                 HL*(0.18 + brit*0.26), 0.3, 0, 7);
       cx.fill();
       cx.globalAlpha = 1;
     }
@@ -2065,7 +2128,8 @@ const CatArt = (() => {
     const tl = 0.34 + d.tail * 0.52;
     const sway = Math.sin(t * 2.2) * s * 0.10 * (0.4 + d.tail);
     cx.strokeStyle = d.pattern === 'point' ? d.marking : dark(d.base, 0.12);
-    const tW = HL * (0.15 + fl * 0.11);
+    const plume = d.tailPlume == null ? 0.2 : d.tailPlume;
+    const tW = HL * (0.13 + fl*0.05) * (1 + plume*0.85);
     cx.lineWidth = tW; cx.lineCap = 'round';
     const trX = r[RI.tailRoot][0]*HL, trY = -r[RI.tailRoot][1]*HL;
     const tipX = trX - HL*(0.30 + tl*0.62), tipY = trY - HL*(0.30 + tl*0.70) + sway;
@@ -2100,7 +2164,9 @@ const CatArt = (() => {
       cx.lineWidth = wdt; cx.lineCap = 'round';
       cx.beginPath(); cx.moveTo(lx, topY); cx.lineTo(lx + paw, botY); cx.stroke();
       /* bracelets, unless a white sock has already claimed the leg */
-      const sock = F['toe' + idx] || 0;
+      /* An explicit tap always beats the field. The owner has met the cat. */
+      const ov = d.socks && d.socks[idx];
+      const sock = ov != null ? ov : (F['toe' + idx] || 0);
       if (d.pattern === 'mackerel' || d.pattern === 'classic'){
         cx.strokeStyle = P.patternCore; cx.lineWidth = wdt * 0.30;
         cx.globalAlpha = 0.7;
@@ -2159,11 +2225,16 @@ const CatArt = (() => {
 
     const round  = d.headRound == null ? 0.55 : d.headRound;   /* wedge -> round */
     const cheek  = d.cheek     == null ? 0.45 : d.cheek;
-    const muzz   = d.muzzle    == null ? 0.45 : d.muzzle;      /* flat -> long   */
+    const muzz   = (d.muzzle == null ? 0.45 : d.muzzle) * (0.66 + (d.age == null ? 0.55 : d.age)*0.62);
     const earSet = d.earSet    == null ? 0.60 : d.earSet;      /* low/flared -> high/upright */
     const tuft   = d.earTuft   == null ? 0.20 : d.earTuft;
-    const eSize  = d.eyeSize   == null ? 0.55 : d.eyeSize;
-    const eGap   = d.eyeGap    == null ? 0.50 : d.eyeGap;
+    /* Neoteny is one judgement, not four numbers. age 0 = kitten, 1 = grown:
+       eyes shrink as a fraction of the skull, sit higher, move further apart,
+       and the muzzle grows. An owner reads this instantly. */
+    const age    = d.age == null ? 0.55 : d.age;
+    const eSize  = (d.eyeSize == null ? 0.55 : d.eyeSize) * (1.24 - age*0.42);
+    const eGap   = (d.eyeGap  == null ? 0.50 : d.eyeGap)  * (0.82 + age*0.36);
+    const eHigh  = 0.10 - age*0.14;                /* eye centreline up the skull */
 
     const HW = hr * (0.80 + round*0.20 + cheek*0.22 + fl*0.12);   /* half width at the cheeks */
     const HH = hr * (0.92 + round*0.10);
@@ -2295,7 +2366,7 @@ const CatArt = (() => {
     /* Eyes. Almost all of the appeal in stylised animal art lives here, so
        they get size, spacing, shape, a lid line and a real catchlight. */
     const eyR  = hr * (0.15 + eSize*0.13);
-    const ey   = cy2 - HH*(0.06 + (1-muzz)*0.06);
+    const ey   = cy2 - HH*(0.06 + (1-muzz)*0.06 + eHigh);
     const ex   = HW * (0.30 + eGap*0.20);
     const open = o.blink ? 0.10 : 1;
     const alm  = 1 - d.eyeRound;                     /* 0 round, 1 almond */
@@ -3447,13 +3518,55 @@ $('save').onclick = async () => {
 const Tuner = (() => {
   let card = null, prev = null, pcx = null, t = 0, raf = 0;
 
+  /* Advanced only. Nothing here is named after a parameter in the primary UI. */
   const SLIDERS = [
-    ['whiteGrade', 'White', 10],   /* 0 to 10, the spotting grade */
-    ['whiteEdge',  'Edge'],
-    ['floof', 'Floof'], ['chonk', 'Chonk'], ['ear', 'Ears'], ['tail', 'Tail'],
-    ['headRound','Round'], ['cheek','Cheeks'], ['muzzle','Muzzle'],
-    ['earSet','Ear set'], ['earTuft','Tufts'], ['eyeSize','Eye size']
+    ['whiteEdge','Neat or scruffy edges'], ['floof','Floof'], ['ear','Ear size'],
+    ['earSet','Ear set'], ['earTuft','Ear tufts'], ['tail','Tail length'],
+    ['tailPlume','Tail plume'], ['ruff','Ruff'], ['britches','Britches'],
+    ['headRound','Round face'], ['cheek','Cheeks'], ['muzzle','Muzzle'],
+    ['eyeSize','Eye size'], ['eyeGap','Eye spacing'], ['legLen','Leg length']
   ];
+
+  /* Nudge pairs. Each tap moves one derived quantity by a fixed step. An owner
+     can always answer "warmer or cooler"; they can never answer "0.34". */
+  const NUDGES = [
+    ['Warmer', 'Cooler',  d => d.warmth = clamp1(( d.warmth||0) + 0.18, -1, 1),
+                          d => d.warmth = clamp1(( d.warmth||0) - 0.18, -1, 1)],
+    ['Bolder', 'Softer',  d => d.marking = OK.adj(d.marking, { dL:-0.07 }),
+                          d => d.marking = OK.adj(d.marking, { dL: 0.07 })],
+    ['Fluffier','Sleeker',d => { d.floof = clamp1((d.floof||0)+0.14,0,1);
+                                 d.ruff = clamp1((d.ruff||0)+0.14,0,1);
+                                 d.britches = clamp1((d.britches||0)+0.14,0,1);
+                                 d.tailPlume = clamp1((d.tailPlume||0)+0.14,0,1); },
+                          d => { d.floof = clamp1((d.floof||0)-0.14,0,1);
+                                 d.ruff = clamp1((d.ruff||0)-0.14,0,1);
+                                 d.britches = clamp1((d.britches||0)-0.14,0,1);
+                                 d.tailPlume = clamp1((d.tailPlume||0)-0.14,0,1); }],
+    ['Rounder','Slimmer', d => d.chonk = clamp1((d.chonk==null?0.5:d.chonk)+0.13,0,1),
+                          d => d.chonk = clamp1((d.chonk==null?0.5:d.chonk)-0.13,0,1)]
+  ];
+  const clamp1 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* Nine body shapes, drawn live in flat black from the renderer itself. Tap
+     the closest. Fifteen seconds, and it fills frame, legLen and posture,
+     none of which an owner could ever have set directly. */
+  const SHAPES9 = [
+    { n:'Sleek and long',  frame:-0.9, legLen:0.85, posture:0.25 },
+    { n:'Sleek and short', frame:-0.7, legLen:0.42, posture:0.10 },
+    { n:'Long',            frame:-0.35,legLen:0.70, posture:0.15 },
+    { n:'Moderate',        frame: 0.0, legLen:0.50, posture:0.0  },
+    { n:'Sturdy',          frame: 0.45,legLen:0.48, posture:0.0  },
+    { n:'Cobby',           frame: 0.9, legLen:0.34, posture:0.05 },
+    { n:'Round and short', frame: 0.8, legLen:0.20, posture:0.0  },
+    { n:'Long legged',     frame:-0.2, legLen:1.0,  posture:0.35 },
+    { n:'Low slung',       frame: 0.3, legLen:0.08, posture:-0.2 }
+  ];
+
+  /* Four paws, tapped. This is what makes a tuxedo recognisable, and it is
+     four seconds of work for the owner. */
+  const PAWS = [['FL','Front left'], ['FR','Front right'],
+                ['HL','Back left'],  ['HR','Back right']];
+  const PAWSTEP = ['none','toes','sock','boot'];
   const COLOURS = [
     ['base', 'Coat'], ['marking', 'Markings'], ['white', 'White'], ['eye', 'Eyes']
   ];
@@ -3480,6 +3593,79 @@ const Tuner = (() => {
 
   function build(){
     const d = card.dna;
+
+    /* nudge pairs */
+    const nb = $('tuneNudge'); nb.innerHTML = '';
+    NUDGES.forEach(([a, b, fa, fb]) => {
+      const pair = document.createElement('div'); pair.className = 'npair';
+      [[a, fa], [b, fb]].forEach(([label, fn]) => {
+        const btn = document.createElement('button');
+        btn.className = 'chip2'; btn.type = 'button'; btn.textContent = label;
+        btn.onclick = () => { fn(card.dna); commit(); };
+        pair.appendChild(btn);
+      });
+      nb.appendChild(pair);
+    });
+    const sh = document.createElement('button');
+    sh.className = 'chip2 wide'; sh.type = 'button';
+    sh.textContent = 'Shuffle the little things';
+    sh.onclick = () => {
+      /* reseeds every asymmetry: ear tilt, whisker fan, white boundaries,
+         which paw goes white. Owners love it and it costs nothing. */
+      card.dna.seed = (Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+      commit();
+    };
+    nb.appendChild(sh);
+
+    /* nine silhouettes, drawn live in flat black by the renderer itself */
+    const sg = $('tuneSil'); sg.innerHTML = '';
+    SHAPES9.forEach((sp, i) => {
+      const b = document.createElement('button');
+      b.className = 'sil'; b.type = 'button';
+      b.title = sp.n;
+      const near = Math.abs((d.frame||0) - sp.frame) < 0.22 &&
+                   Math.abs((d.legLen==null?0.5:d.legLen) - sp.legLen) < 0.18;
+      b.setAttribute('aria-pressed', String(near));
+      const c = document.createElement('canvas');
+      c.width = 132; c.height = 108;
+      const x = c.getContext('2d');
+      CatArt.draw(x, Object.assign({}, d, sp, {
+        base:'#0F0B14', marking:'#0F0B14', white:'#0F0B14',
+        pattern:'solid', whiteGrade:0, eye:'#0F0B14'
+      }), { x:66, y:100, s:74, pose:'stand', t:0, face:1 });
+      b.appendChild(c);
+      const lab = document.createElement('span'); lab.textContent = sp.n;
+      b.appendChild(lab);
+      b.onclick = () => {
+        card.dna.frame = sp.frame; card.dna.legLen = sp.legLen;
+        card.dna.posture = sp.posture;
+        commit(); build();
+      };
+      sg.appendChild(b);
+    });
+
+    /* the one composite slider that is worth its screen space */
+    mkSliders($('tuneAge'), [['age', 'Kitten face  to  grown']], d);
+    mkSliders($('tuneWhiteAmt'), [['whiteGrade', 'None  to  mostly white', 10]], d);
+
+    /* four paws, tapped */
+    const pw = $('tunePaws'); pw.innerHTML = '';
+    d.socks = d.socks || {};
+    PAWS.forEach(([k, label]) => {
+      const cur = d.socks[k] == null ? -1 : d.socks[k];
+      const idx = cur < 0 ? 0 : Math.min(3, Math.round(cur * 3) + 1);
+      const b = document.createElement('button');
+      b.className = 'chip2'; b.type = 'button';
+      b.setAttribute('aria-pressed', String(idx > 0));
+      b.textContent = label + (idx ? ' · ' + PAWSTEP[idx] : '');
+      b.onclick = () => {
+        const nx = (idx + 1) % 4;
+        if (nx === 0) delete card.dna.socks[k];
+        else card.dna.socks[k] = (nx - 1) / 3 * 0.55 + 0.12;
+        commit(); build();
+      };
+      pw.appendChild(b);
+    });
 
     const pat = $('tunePattern'); pat.innerHTML = '';
     PATTERNS.forEach(p => {
@@ -3510,16 +3696,21 @@ const Tuner = (() => {
       w.append(l, i); col.appendChild(w);
     });
 
-    const sl = $('tuneSliders'); sl.innerHTML = '';
-    SLIDERS.forEach(([k, label, top]) => {
+    mkSliders($('tuneSliders'), SLIDERS, d);
+  }
+
+  function mkSliders(host, list, d){
+    host.innerHTML = '';
+    list.forEach(([k, label, top]) => {
       const max = top || 1;
-      const r = document.createElement('div'); r.className = 'sl';
-      const s = document.createElement('span'); s.textContent = label;
+      const row = document.createElement('div'); row.className = 'sl';
+      const sp = document.createElement('span'); sp.textContent = label;
       const i = document.createElement('input');
       i.type = 'range'; i.min = '0'; i.max = '100';
       i.value = String(Math.round((d[k] == null ? max*0.5 : d[k]) / max * 100));
+      /* No numeric readouts anywhere. A number invites a wrong answer. */
       i.oninput = () => { card.dna[k] = (i.value / 100) * max; commit(); };
-      r.append(s, i); sl.appendChild(r);
+      row.append(sp, i); host.appendChild(row);
     });
   }
 
@@ -3552,6 +3743,12 @@ const Tuner = (() => {
   return { open, close, get card(){ return card; } };
 })();
 
+$('advToggle').onclick = () => {
+  const b = $('advBody'), open = b.classList.contains('hidden');
+  b.classList.toggle('hidden', !open);
+  $('advToggle').setAttribute('aria-expanded', String(open));
+  $('advChev').textContent = open ? '−' : '+';
+};
 $('tunerToggle').onclick = () => {
   const body = $('tunerBody'), openNow = body.classList.contains('hidden');
   body.classList.toggle('hidden', !openNow);
