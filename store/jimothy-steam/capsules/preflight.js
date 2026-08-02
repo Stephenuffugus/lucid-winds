@@ -63,9 +63,29 @@ const kit=fs.readFileSync(ROOT+'/marketing/steam-jimothy.md','utf8');
 if(!/\bTBD\b|\bTODO\b|Lorem/i.test(kit)) ok('no placeholder text in the store kit');
 if(/Jimothy the Jumping Nugget/.test(kit)) bad('store kit still uses the OLD name');
 else ok('store kit uses the new name throughout');
-if(/hand[- ]?(painted|drawn|made)/i.test(kit.replace(/Never describe[\s\S]*?punishes hardest\./,'')))
-  bad('store kit claims hand-made art');
-else ok('no hand-made art claim in store copy');
+/* ⛔ THIS GUARD WAS TOO NARROW AND LET TWO LIVE CLAIMS THROUGH. It matched only
+   painted|drawn|made, read only the Steam kit, and no glob anywhere covered
+   *.webmanifest - so "A whole pinball table hand-sculpted in clay" shipped in a
+   PWA manifest and "Hop lane by lane through a hand built city" sat in the itch
+   listing, a sentence this very repo had already ruled a lie for Steam. Widen
+   the words AND the files, or it recurs and passes green. */
+const HANDCLAIM = /hand[- ]?(painted|drawn|made|sculpted|crafted|illustrated|animated)/i;
+const STRIP = /Never describe[\s\S]*?punishes hardest\.|Nothing here is presented[^\n]*|hand curated/g;
+const COPY_FILES = ['/marketing/steam-jimothy.md', '/store/jimothy-steam/STORE_PAGE_FILL.md',
+                    '/store/jimothy-itch/ITCH_LISTING.md'];
+let handHits = [];
+for(const rel of COPY_FILES){
+  let t; try{ t = fs.readFileSync(ROOT+rel,'utf8'); }catch(_){ continue; }
+  if(HANDCLAIM.test(t.replace(STRIP,''))) handHits.push(rel);
+}
+/* every shipped PWA manifest, because a description reaches players */
+for(const d of fs.readdirSync(ROOT+'/satellites')){
+  const f = ROOT+'/satellites/'+d+'/manifest.webmanifest';
+  if(!fs.existsSync(f)) continue;
+  if(HANDCLAIM.test(fs.readFileSync(f,'utf8'))) handHits.push('/satellites/'+d+'/manifest.webmanifest');
+}
+if(handHits.length) bad('hand-made art claim in player-facing copy: ' + handHits.join(', '));
+else ok('no hand-made art claim in store copy, listings or any PWA manifest');
 if(/pre generated with AI|AI tools/i.test(kit)) ok('AI disclosure present (Valve requires the form too)');
 else bad('NO AI DISCLOSURE in the store kit - Valve requires this and will bounce the page');
 

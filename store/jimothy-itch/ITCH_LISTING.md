@@ -67,7 +67,7 @@ Hop Seattle's roundest raccoon across rainy streets, rooftops, and the canal.
 Meet Jumping Jimothy, a real Seattle legend with a short spine and a
 big appetite.
 
-Hop lane by lane through a hand built city. Every clean hop forward grows your
+Hop lane by lane through a rain-soaked city. Every clean hop forward grows your
 Feast Trail, and reaching a safe curb banks it for a big score. One bad hop and
 the trail is gone.
 
