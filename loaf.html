@@ -1457,10 +1457,31 @@ const WHITE_LABEL = { none:'No white', bib:'White bib', socks:'Socks',
 
 function defaultDNA(){
   return { base:'#9A7248', marking:'#4A3320', white:'#F2E9D8',
-           pattern:'mackerel', whiteStyle:'bib', whiteAmt:0.22,
+           pattern:'mackerel', whiteStyle:'none', whiteAmt:0,
            floof:0.35, chonk:0.5, ear:0.5, eye:'#C8D94A', eyeRound:0.4,
-           nose:'#E09AA6', tail:0.6, faceMask:0 };
+           nose:'#E09AA6', tail:0.6, faceMask:0,
+           /* skull, which is where breeds actually differ */
+           headRound:0.55, cheek:0.45, muzzle:0.45, earSet:0.60, earTuft:0.20,
+           eyeSize:0.55, eyeGap:0.50 };
 }
+
+/* Archetypes, offered in the tuner as STARTING POINTS only. These are not a
+   claim about anybody's cat: around 90 percent of cats are not a breed at all,
+   and breed guessing is the most complained-about feature in every competing
+   app. "Start from British Shorthair and adjust" is customisation. "Your cat
+   is a British Shorthair" is a lie. */
+const BUILDS = {
+  'Moggy':            { headRound:0.55, cheek:0.45, muzzle:0.45, earSet:0.60, earTuft:0.15, eyeSize:0.55, eyeGap:0.50, eyeRound:0.45, ear:0.50, floof:0.30, chonk:0.50, tail:0.60 },
+  'British Shorthair':{ headRound:0.95, cheek:0.95, muzzle:0.22, earSet:0.42, earTuft:0.05, eyeSize:0.78, eyeGap:0.62, eyeRound:0.92, ear:0.30, floof:0.28, chonk:0.86, tail:0.44 },
+  'Maine Coon':       { headRound:0.42, cheek:0.55, muzzle:0.86, earSet:0.82, earTuft:0.95, eyeSize:0.62, eyeGap:0.52, eyeRound:0.40, ear:0.88, floof:0.92, chonk:0.70, tail:0.95 },
+  'Siamese':          { headRound:0.06, cheek:0.10, muzzle:0.82, earSet:0.70, earTuft:0.00, eyeSize:0.58, eyeGap:0.44, eyeRound:0.06, ear:0.95, floof:0.06, chonk:0.16, tail:0.90 },
+  'Persian':          { headRound:1.00, cheek:0.88, muzzle:0.00, earSet:0.30, earTuft:0.30, eyeSize:0.88, eyeGap:0.70, eyeRound:1.00, ear:0.22, floof:1.00, chonk:0.74, tail:0.52 },
+  'Ragdoll':          { headRound:0.78, cheek:0.62, muzzle:0.42, earSet:0.52, earTuft:0.45, eyeSize:0.90, eyeGap:0.58, eyeRound:0.80, ear:0.55, floof:0.82, chonk:0.72, tail:0.86 },
+  'Devon Rex':        { headRound:0.30, cheek:0.20, muzzle:0.30, earSet:0.04, earTuft:0.00, eyeSize:0.95, eyeGap:0.40, eyeRound:0.62, ear:1.00, floof:0.10, chonk:0.22, tail:0.62 },
+  'Abyssinian':       { headRound:0.24, cheek:0.24, muzzle:0.62, earSet:0.92, earTuft:0.18, eyeSize:0.70, eyeGap:0.46, eyeRound:0.20, ear:0.86, floof:0.10, chonk:0.30, tail:0.78 },
+  'Russian Blue':     { headRound:0.28, cheek:0.26, muzzle:0.58, earSet:0.86, earTuft:0.00, eyeSize:0.72, eyeGap:0.48, eyeRound:0.34, ear:0.84, floof:0.22, chonk:0.34, tail:0.76 },
+  'Sphynx':           { headRound:0.22, cheek:0.16, muzzle:0.52, earSet:0.30, earTuft:0.00, eyeSize:0.92, eyeGap:0.42, eyeRound:0.44, ear:1.00, floof:0.00, chonk:0.28, tail:0.70 }
+};
 
 /* ── the renderer ───────────────────────────────────────────────────────────
    draw(cx, dna, {x, y, s, pose, t, face}) where s is roughly the shoulder
@@ -1611,9 +1632,17 @@ const CatArt = (() => {
         cx.ellipse(bx - bw*0.05, by + bh*0.62, bw*(0.75 + a*0.5), bh*(0.85 + a*0.4), 0, 0, 7);
         cx.fill();
       } else {
-        /* bib: a chest patch under the chin */
+        /* A bib is not an oval. Three overlapping lobes of uneven size break
+           the silhouette so it reads as fur rather than as an apron. */
+        const w = bw*(0.20 + a*0.34), hh = bh*(0.40 + a*0.34);
         cx.beginPath();
-        cx.ellipse(bx + bw*0.42, by + bh*0.20, bw*(0.30 + a*0.5), bh*(0.55 + a*0.4), -0.3, 0, 7);
+        cx.ellipse(bx + bw*0.44, by + bh*0.16, w,        hh,        -0.28, 0, 7);
+        cx.fill();
+        cx.beginPath();
+        cx.ellipse(bx + bw*0.30, by + bh*0.46, w*0.78,   hh*0.66,   -0.10, 0, 7);
+        cx.fill();
+        cx.beginPath();
+        cx.ellipse(bx + bw*0.54, by - bh*0.10, w*0.54,   hh*0.48,   -0.44, 0, 7);
         cx.fill();
       }
     }
@@ -1729,47 +1758,111 @@ const CatArt = (() => {
       });
     }
 
-    /* head */
-    const hr = s * (0.40 + fl * 0.07);
+    /* ── the head ────────────────────────────────────────────────────────
+       Breeds differ far more in the head than in the coat. A Persian and a
+       Devon Rex are the same colour problem and completely different animals,
+       and the difference is entirely skull shape, muzzle projection and where
+       the ears sit. So the head is built from a path, not an ellipse. */
+    const hr = s * (0.40 + fl * 0.06);
     const hx = bw * (pose === 'loaf' ? 0.52 : 0.60);
     const hy = by - bh * (pose === 'loaf' ? 0.72 : 0.86);
     const bob = Math.sin(t * 1.6) * s * 0.012;
+    const cy2 = hy + bob;
 
-    /* ears */
-    const er = hr * (0.52 + d.ear * 0.42);
-    cx.fillStyle = d.pattern === 'point' ? d.marking : dark(d.base, 0.10);
-    [-1, 1].forEach(k => {
+    const round  = d.headRound == null ? 0.55 : d.headRound;   /* wedge -> round */
+    const cheek  = d.cheek     == null ? 0.45 : d.cheek;
+    const muzz   = d.muzzle    == null ? 0.45 : d.muzzle;      /* flat -> long   */
+    const earSet = d.earSet    == null ? 0.60 : d.earSet;      /* low/flared -> high/upright */
+    const tuft   = d.earTuft   == null ? 0.20 : d.earTuft;
+    const eSize  = d.eyeSize   == null ? 0.55 : d.eyeSize;
+    const eGap   = d.eyeGap    == null ? 0.50 : d.eyeGap;
+
+    const HW = hr * (0.80 + round*0.20 + cheek*0.22 + fl*0.12);   /* half width at the cheeks */
+    const HH = hr * (0.92 + round*0.10);
+    const chin = HW * (0.28 + round*0.46);
+
+    function headPath(){
       cx.beginPath();
-      cx.moveTo(hx + k*hr*0.52, hy + bob - hr*0.52);
-      cx.lineTo(hx + k*hr*(0.30 + d.ear*0.5), hy + bob - hr - er*0.9);
-      cx.lineTo(hx + k*hr*0.94, hy + bob - hr*0.16);
-      cx.closePath(); cx.fill();
-    });
-    cx.fillStyle = mix(d.nose, '#000000', 0.25);
+      cx.moveTo(hx, cy2 - HH);
+      cx.bezierCurveTo(hx + HW*0.92, cy2 - HH*0.86,
+                       hx + HW,      cy2 - HH*0.02,
+                       hx + HW*0.90, cy2 + HH*0.32);
+      cx.bezierCurveTo(hx + HW*0.74, cy2 + HH*(0.74 + round*0.10),
+                       hx + chin,    cy2 + HH*0.98,
+                       hx,           cy2 + HH*0.98);
+      cx.bezierCurveTo(hx - chin,    cy2 + HH*0.98,
+                       hx - HW*0.74, cy2 + HH*(0.74 + round*0.10),
+                       hx - HW*0.90, cy2 + HH*0.32);
+      cx.bezierCurveTo(hx - HW,      cy2 - HH*0.02,
+                       hx - HW*0.92, cy2 - HH*0.86,
+                       hx,           cy2 - HH);
+      cx.closePath();
+    }
+
+    /* ears. Size, and crucially SET: high and upright reads Abyssinian,
+       low and flared reads Devon Rex, and it changes the animal completely. */
+    const er   = hr * (0.46 + d.ear * 0.52);
+    const eBaseY = cy2 - HH*(0.36 + earSet*0.34);
+    const flare  = (1 - earSet) * 0.55;
+    const earCol = d.pattern === 'point' ? d.marking : dark(d.base, 0.10);
     [-1, 1].forEach(k => {
+      const bx1 = hx + k*HW*(0.30 + earSet*0.16);
+      const bx2 = hx + k*HW*(0.86 + flare*0.30);
+      const tipX = hx + k*(HW*(0.58 + flare*0.72));
+      const tipY = eBaseY - er*(1.05 - flare*0.35);
+      cx.fillStyle = earCol;
       cx.beginPath();
-      cx.moveTo(hx + k*hr*0.52, hy + bob - hr*0.56);
-      cx.lineTo(hx + k*hr*(0.32 + d.ear*0.4), hy + bob - hr - er*0.55);
-      cx.lineTo(hx + k*hr*0.80, hy + bob - hr*0.26);
+      cx.moveTo(bx1, eBaseY);
+      cx.quadraticCurveTo(tipX - k*er*0.10, tipY - er*0.10, tipX, tipY);
+      cx.quadraticCurveTo(bx2 + k*er*0.06, eBaseY - er*0.18, bx2, eBaseY + HH*0.14);
       cx.closePath(); cx.fill();
+      /* inner ear */
+      cx.fillStyle = mix(d.nose, '#000000', 0.28);
+      cx.beginPath();
+      cx.moveTo(bx1 + k*er*0.16, eBaseY - er*0.02);
+      cx.quadraticCurveTo(tipX - k*er*0.16, tipY + er*0.22, tipX - k*er*0.06, tipY + er*0.30);
+      cx.quadraticCurveTo(bx2 - k*er*0.18, eBaseY - er*0.10, bx2 - k*er*0.22, eBaseY + HH*0.06);
+      cx.closePath(); cx.fill();
+      /* furnishings and lynx tips, the Maine Coon and Siberian tell */
+      if (tuft > 0.05){
+        cx.strokeStyle = light(d.base, 0.35);
+        cx.lineWidth = Math.max(1, hr*0.035);
+        cx.lineCap = 'round';
+        for (let i = 0; i < 4; i++){
+          const f = i/3;
+          const sx = bx1 + (tipX - bx1)*f, sy = eBaseY + (tipY - eBaseY)*f;
+          cx.beginPath();
+          cx.moveTo(sx, sy);
+          cx.lineTo(sx - k*hr*0.10*tuft*(1-f*0.4), sy - hr*(0.16 + 0.20*f)*tuft);
+          cx.stroke();
+        }
+      }
     });
 
-    /* head shape, with cheek floof */
+    /* cheek floof, drawn behind the face so it reads as coat not as jowls */
+    if (fl > 0.35){
+      cx.fillStyle = light(d.base, 0.05);
+      cx.globalAlpha = 0.5 + fl*0.4;
+      [-1, 1].forEach(k => {
+        cx.beginPath();
+        cx.ellipse(hx + k*HW*0.82, cy2 + HH*0.22, HW*0.34*fl, HH*0.52*fl, k*0.35, 0, 7);
+        cx.fill();
+      });
+      cx.globalAlpha = 1;
+    }
+
+    /* head */
     cx.fillStyle = d.base;
-    cx.beginPath();
-    cx.ellipse(hx, hy + bob, hr*(1.02 + fl*0.16), hr*(0.94 + fl*0.05), 0, 0, 7);
-    cx.fill();
+    headPath(); cx.fill();
     if (d.pattern === 'point'){
-      const g = cx.createRadialGradient(hx + hr*0.2, hy + bob + hr*0.25, hr*0.1,
-                                        hx + hr*0.2, hy + bob + hr*0.25, hr*1.3);
+      const g = cx.createRadialGradient(hx, cy2 + HH*0.30, hr*0.1,
+                                        hx, cy2 + HH*0.30, hr*1.3);
       g.addColorStop(0, d.marking); g.addColorStop(1, 'rgba(0,0,0,0)');
-      cx.save(); cx.beginPath();
-      cx.ellipse(hx, hy + bob, hr*1.02, hr*0.94, 0, 0, 7); cx.clip();
-      cx.fillStyle = g; cx.fillRect(hx-hr*1.4, hy+bob-hr*1.4, hr*2.8, hr*2.8); cx.restore();
+      cx.save(); headPath(); cx.clip();
+      cx.fillStyle = g; cx.fillRect(hx-hr*1.6, cy2-hr*1.6, hr*3.2, hr*3.2); cx.restore();
     } else if (d.pattern !== 'solid'){
       /* the forehead M every tabby wears */
-      cx.save(); cx.beginPath();
-      cx.ellipse(hx, hy + bob, hr*1.02, hr*0.94, 0, 0, 7); cx.clip();
+      cx.save(); headPath(); cx.clip();
       cx.strokeStyle = d.marking; cx.lineCap = 'round';
       /* forehead M */
       cx.lineWidth = hr*0.085;
@@ -1800,51 +1893,91 @@ const CatArt = (() => {
       cx.restore();
     }
 
-    /* muzzle */
-    cx.fillStyle = light(d.base, d.whiteStyle === 'none' ? 0.16 : 0.4);
+    /* Muzzle. Projection is the difference between a Persian and a Maine
+       Coon and it is the most under-rated parameter in a stylised cat. */
+    const mzY = cy2 + HH*(0.30 + muzz*0.26);
+    const mzW = HW*(0.40 + muzz*0.16 + round*0.06);
+    const mzH = HH*(0.20 + muzz*0.20);
+    cx.fillStyle = light(d.base, d.whiteStyle === 'none' ? 0.14 : 0.34);
     cx.beginPath();
-    cx.ellipse(hx + hr*0.10, hy + bob + hr*0.36, hr*0.46, hr*0.30, 0, 0, 7); cx.fill();
+    cx.ellipse(hx - mzW*0.44, mzY, mzW*0.62, mzH, 0, 0, 7);
+    cx.ellipse(hx + mzW*0.44, mzY, mzW*0.62, mzH, 0, 0, 7);
+    cx.fill();
 
-    /* eyes */
-    const ey = hy + bob - hr*0.06, ex = hr*0.36;
-    const open = o.blink ? 0.16 : 1;
+    /* Eyes. Almost all of the appeal in stylised animal art lives here, so
+       they get size, spacing, shape, a lid line and a real catchlight. */
+    const eyR  = hr * (0.15 + eSize*0.13);
+    const ey   = cy2 - HH*(0.06 + (1-muzz)*0.06);
+    const ex   = HW * (0.30 + eGap*0.20);
+    const open = o.blink ? 0.10 : 1;
+    const alm  = 1 - d.eyeRound;                     /* 0 round, 1 almond */
     [-1, 1].forEach(k => {
-      cx.fillStyle = d.eye;
+      cx.save();
+      cx.translate(hx + k*ex, ey);
+      cx.rotate(k * alm * 0.20);
+      /* socket shadow gives the eye a seat in the skull */
+      cx.fillStyle = 'rgba(0,0,0,.16)';
+      cx.beginPath(); cx.ellipse(0, eyR*0.10, eyR*1.24, eyR*1.06*open, 0, 0, 7); cx.fill();
+      /* iris */
+      const ig = cx.createRadialGradient(0, -eyR*0.22, eyR*0.10, 0, 0, eyR*1.05);
+      ig.addColorStop(0, light(d.eye, 0.34));
+      ig.addColorStop(0.62, d.eye);
+      ig.addColorStop(1, dark(d.eye, 0.34));
+      cx.fillStyle = ig;
       cx.beginPath();
-      cx.ellipse(hx + k*ex, ey, hr*(0.20 + d.eyeRound*0.05), hr*0.21*open, 0, 0, 7);
+      cx.ellipse(0, 0, eyR*(1.02 - alm*0.06), eyR*(1.0 - alm*0.20)*open, 0, 0, 7);
       cx.fill();
       if (open > 0.5){
-        cx.fillStyle = '#140E18';
+        cx.fillStyle = '#120C16';
         cx.beginPath();
-        cx.ellipse(hx + k*ex, ey, hr*(0.045 + (1-d.eyeRound)*0.05), hr*0.17, 0, 0, 7);
-        cx.fill();
-        cx.fillStyle = 'rgba(255,255,255,.8)';
-        cx.beginPath(); cx.ellipse(hx + k*ex - hr*0.06, ey - hr*0.07, hr*0.045, hr*0.035, 0, 0, 7);
-        cx.fill();
+        cx.ellipse(0, 0, eyR*(0.20 + d.eyeRound*0.30), eyR*0.82, 0, 0, 7); cx.fill();
+        /* catchlight, up and toward the light */
+        cx.fillStyle = 'rgba(255,255,255,.88)';
+        cx.beginPath(); cx.ellipse(-eyR*0.34, -eyR*0.36, eyR*0.24, eyR*0.19, -0.4, 0, 7); cx.fill();
+        cx.fillStyle = 'rgba(255,255,255,.42)';
+        cx.beginPath(); cx.ellipse(eyR*0.28, eyR*0.32, eyR*0.12, eyR*0.09, 0, 0, 7); cx.fill();
       }
+      /* upper lid line, which is what stops an eye reading as a bead */
+      cx.strokeStyle = 'rgba(0,0,0,.42)';
+      cx.lineWidth = Math.max(1, eyR*0.17);
+      cx.beginPath();
+      cx.ellipse(0, 0, eyR*(1.02 - alm*0.06), eyR*(1.0 - alm*0.20)*open,
+                 0, Math.PI*1.06, Math.PI*1.94);
+      cx.stroke();
+      cx.restore();
     });
 
     /* nose and mouth */
+    const nY = mzY - mzH*0.62, nW = mzW*0.30;
     cx.fillStyle = d.nose;
     cx.beginPath();
-    cx.moveTo(hx + hr*0.10, hy + bob + hr*0.20);
-    cx.lineTo(hx + hr*0.22, hy + bob + hr*0.20);
-    cx.lineTo(hx + hr*0.16, hy + bob + hr*0.30);
+    cx.moveTo(hx - nW*0.5, nY);
+    cx.lineTo(hx + nW*0.5, nY);
+    cx.quadraticCurveTo(hx, nY + nW*0.86, hx, nY + nW*0.92);
+    cx.quadraticCurveTo(hx, nY + nW*0.86, hx - nW*0.5, nY);
     cx.closePath(); cx.fill();
-    cx.strokeStyle = 'rgba(0,0,0,.30)'; cx.lineWidth = Math.max(1, hr*0.035);
+    cx.strokeStyle = 'rgba(0,0,0,.34)'; cx.lineWidth = Math.max(1, hr*0.030);
     cx.beginPath();
-    cx.moveTo(hx + hr*0.16, hy + bob + hr*0.31);
-    cx.lineTo(hx + hr*0.16, hy + bob + hr*0.40);
+    cx.moveTo(hx, nY + nW*0.92);
+    cx.lineTo(hx, mzY + mzH*0.10);
     cx.stroke();
-
-    /* whiskers */
-    cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = Math.max(1, hr*0.028);
     [-1, 1].forEach(k => {
-      [-0.10, 0.06, 0.20].forEach((dy, i) => {
+      cx.beginPath();
+      cx.moveTo(hx, mzY + mzH*0.10);
+      cx.quadraticCurveTo(hx + k*mzW*0.34, mzY + mzH*0.44,
+                          hx + k*mzW*0.62, mzY + mzH*0.14);
+      cx.stroke();
+    });
+
+    /* whiskers, from the whisker pads rather than from the middle of the face */
+    cx.strokeStyle = 'rgba(255,255,255,.6)'; cx.lineWidth = Math.max(1, hr*0.026);
+    cx.lineCap = 'round';
+    [-1, 1].forEach(k => {
+      [-0.34, 0, 0.30].forEach((dy, i) => {
         cx.beginPath();
-        cx.moveTo(hx + k*hr*0.30, hy + bob + hr*(0.30 + dy*0.4));
-        cx.quadraticCurveTo(hx + k*hr*0.95, hy + bob + hr*(0.22 + dy),
-                            hx + k*hr*(1.30 + i*0.06), hy + bob + hr*(0.14 + dy*1.3));
+        cx.moveTo(hx + k*mzW*0.62, mzY + mzH*dy*0.7);
+        cx.quadraticCurveTo(hx + k*HW*1.05, mzY + mzH*dy - HH*0.10,
+                            hx + k*HW*(1.42 + i*0.05), mzY + mzH*dy*1.8 - HH*(0.16 - i*0.08));
         cx.stroke();
       });
     });
@@ -3030,7 +3163,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* exposed for testing and for the studio harness */
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
-                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room };
+                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room, BUILDS };
 </script>
 </body>
 </html>
