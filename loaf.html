@@ -46,6 +46,10 @@ body{
 .mast h1 span{display:block;color:var(--amber)}
 .mast p{font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--dim);
   margin:14px 0 0;max-width:34ch}
+.mast.compact{margin:14px 0 0}
+.mast.compact h1{font-size:clamp(26px,8vw,34px)}
+.mast.compact h1 span{display:inline;margin-left:.28em}
+.mast.compact p{display:none}
 
 /* ── the example card: the payoff, shown before we ask for a photo ───────── */
 .demo{margin-top:24px;position:relative}
@@ -289,7 +293,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   cursor:pointer;color:var(--bone);font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;
   text-transform:uppercase;min-height:60px;display:flex;flex-direction:column;align-items:center;
   gap:5px;justify-content:center;transition:border-color .15s}
-.tool em{font-style:normal;font-size:19px;line-height:1}
+.tool svg{display:block;width:26px;height:26px}
 .tool[aria-pressed=true]{border-color:var(--amber);background:rgba(255,178,63,.14)}
 .tool:disabled{opacity:.4;cursor:not-allowed}
 .roomnote{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;
@@ -1234,7 +1238,7 @@ function paint(card, isNew){
   });
 
   const ab = abilityFor(card);
-  $('abilityName').textContent = ab.icon + '  ' + ab.name;
+  $('abilityName').textContent = ab.name;
   $('abilityDesc').textContent = ab.desc;
   $('cardPower').textContent = 'PWR ' + powerOf(card);
 
@@ -1387,18 +1391,12 @@ function drawIndex(){
    ability is a consequence of the animal rather than a roll. Usable once a day.
    ========================================================================== */
 const ABILITIES = {
-  chonk:   { name:'Immovable Object', icon:'🪨',
-             desc:'Settles. For thirty seconds nothing you throw can shift her, and everything that bounces off pays double.' },
-  loaf:    { name:'Perfect Form',     icon:'🍞',
-             desc:'Folds into a flawless loaf. Earns kibble on her own for the rest of the day, which is the most work she has ever done.' },
-  void:    { name:'Vanish',           icon:'🕳️',
-             desc:'Leaves the room entirely and returns holding something that was not previously yours.' },
-  menace:  { name:'The Swat',         icon:'🐾',
-             desc:'Puts one paw on the nearest object and looks directly at you while removing it from the shelf. Pays out immediately.' },
-  zoomies: { name:'3AM Sprint',       icon:'💨',
-             desc:'Twenty seconds at a speed no one asked for. Every toy in the room is dealt with.' },
-  floof:   { name:'Full Fluff',       icon:'🧨',
-             desc:'Doubles in volume without gaining a gram. Purely cosmetic. Utterly worth it.' }
+  chonk:   { name:'Immovable Object', desc:'Settles. For thirty seconds nothing you throw can shift her, and everything that bounces off pays double.' },
+  loaf:    { name:'Perfect Form',     desc:'Folds into a flawless loaf. Earns kibble on her own for the rest of the day, which is the most work she has ever done.' },
+  void:    { name:'Vanish',           desc:'Leaves the room entirely and returns holding something that was not previously yours.' },
+  menace:  { name:'The Swat',         desc:'Puts one paw on the nearest object and looks directly at you while removing it from the shelf. Pays out immediately.' },
+  zoomies: { name:'3AM Sprint',       desc:'Twenty seconds at a speed no one asked for. Every toy in the room is dealt with.' },
+  floof:   { name:'Full Fluff',       desc:'Doubles in volume without gaining a gram. Purely cosmetic. Utterly worth it.' }
 };
 function leadStat(card){
   return STAT_KEYS.reduce((a, k) => (card.stats[k] > card.stats[a] ? k : a), STAT_KEYS[0]);
@@ -1469,13 +1467,39 @@ function savePet(card){
    A canvas scene. Her photograph is her face, on a drawn body, in a room tinted
    to her own coat. You throw things. She decides whether that was interesting.
    ========================================================================== */
+/* Emoji are not assets. They render as tofu boxes on devices without the
+   glyph, which this studio has already shipped once. Every icon here is drawn. */
+function toyIcon(k, size){
+  const paths = {
+    yarn:   '<circle cx="16" cy="17" r="10.5" fill="#E0637F"/>'
+          + '<path d="M7 13 q9 4 18 0 M7 20 q9 -5 18 0 M12 7.5 q-3 9 1 18 M20 7.5 q3 9 -1 18"'
+          + ' stroke="#8E3550" stroke-width="1.5" fill="none"/>'
+          + '<path d="M26 12 q6 -3 4 -8" stroke="#E0637F" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    crinkle:'<circle cx="16" cy="17" r="10" fill="#6FE3C4"/>'
+          + '<path d="M9.5 14.5 l5 2.5 -4.5 3 6 2" stroke="#1C6B58" stroke-width="1.6" fill="none" stroke-linejoin="round"/>'
+          + '<path d="M18 9 l3 5 -4 2.5 5 2" stroke="#1C6B58" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+    feather:'<path d="M23 6 q-13 5 -14 17 q10 3 15 -6 q4 -7 -1 -11 z" fill="#9FD1FF"/>'
+          + '<path d="M23 6 q-9 8 -14 17" stroke="#3F6E9E" stroke-width="1.6" fill="none"/>'
+          + '<path d="M8 23 q-2 3 -3 5" stroke="#3F6E9E" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    box:    '<path d="M6 13 h20 v13 h-20 z" fill="#8E6942"/>'
+          + '<path d="M6 13 l4 -5 h12 l4 5 z" fill="#A67E4F"/>'
+          + '<path d="M16 8 v18" stroke="#6B4E30" stroke-width="1.4"/>',
+    treat:  '<path d="M6 17 q7 -8 14 0 q-7 8 -14 0 z" fill="#F0A26B"/>'
+          + '<path d="M20 17 l6 -4 v8 z" fill="#F0A26B"/>'
+          + '<circle cx="10" cy="16" r="1.4" fill="#7A3F18"/>',
+    spark:  '<path d="M16 4 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" fill="#FFB23F"/>'
+  };
+  return '<svg viewBox="0 0 32 32" width="' + size + '" height="' + size
+       + '" aria-hidden="true">' + (paths[k] || paths.spark) + '</svg>';
+}
+
 const Room = (() => {
   const TOYS = [
-    { k:'yarn',   n:'Yarn',   icon:'🧶', cost:0, appeal:1.0 },
-    { k:'crinkle',n:'Crinkle',icon:'🎾', cost:0, appeal:1.25 },
-    { k:'feather',n:'Feather',icon:'🪶', cost:0, appeal:1.5, float:true },
-    { k:'box',    n:'Box',    icon:'📦', cost:2, appeal:1.8 },
-    { k:'treat',  n:'Treat',  icon:'🍤', cost:3, appeal:0, food:true }
+    { k:'yarn',   n:'Yarn',   cost:0, appeal:1.0 },
+    { k:'crinkle',n:'Crinkle',cost:0, appeal:1.25 },
+    { k:'feather',n:'Feather',cost:0, appeal:1.5, float:true },
+    { k:'box',    n:'Box',    cost:2, appeal:1.8 },
+    { k:'treat',  n:'Treat',  cost:3, appeal:0, food:true }
   ];
 
   let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
@@ -1542,10 +1566,10 @@ const Room = (() => {
     if (t.cost > pet.kibble) return;
     if (t.cost){ pet.kibble -= t.cost; }
     const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
-    if (t.food) dropFood(d.x, d.y);
-    else toys.push({ k:t.k, icon:t.icon, appeal:t.appeal, float:!!t.float,
+    if (t.food) dropFood();
+    else toys.push({ k:t.k, appeal:t.appeal, float:!!t.float,
                      x:d.x, y:d.y, vx:vx || (Math.random()*4-2), vy:vy - 3,
-                     r:16, life:600, settled:false });
+                     r:16, life:600, settled:false, spin:0 });
     savePet(card); drawHud();
   }
 
@@ -1559,18 +1583,21 @@ const Room = (() => {
     setNote(up ? 'Scooped. Level ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
     savePet(card); drawNeeds(); drawHud();
   }
-  function dropFood(x){
-    pet.kibble -= 0;                      /* cost already taken on release */
-    crumbs.push({ x:Math.max(60, Math.min(W-60, x)), y:floorY, n:14 });
+  function dropFood(){
+    crumbs.push({ n:16 });
     pet.fed = Math.min(100, pet.fed + 30);
     const up = grantXP(card, 8);
     setNote(up ? 'Fed. Level ' + pet.level + '.' : 'Fed. She inspected it first.');
-    cat.state = 'eat'; cat.t = 0; cat.tx = crumbs[crumbs.length-1].x;
+    /* she goes to the bowl, in her own time */
+    cat.state = 'walk'; cat.tx = W*0.80;
     savePet(card); drawNeeds(); drawHud();
   }
+  /* Near the tray, never in it. This is accurate. */
   function addPoop(){
-    poops.push({ x:70 + Math.random()*(750-140), y:floorY + 8 + Math.random()*40,
-                 r:14, s:Math.random()*0.4 + 0.85 });
+    const tray = 750 * 0.24;
+    poops.push({ x:Math.max(50, Math.min(700, tray + (Math.random()*2-1) * 190)),
+                 y:floorY + 40 + Math.random()*46,
+                 r:14, s:Math.random()*0.35 + 0.9 });
   }
 
   /* ── the ability ───────────────────────────────────────────────────────── */
@@ -1591,7 +1618,7 @@ const Room = (() => {
     else if (k === 'chonk'){ boost = 30; }
     else if (k === 'loaf'){ pet.kibble += 6; cat.state = 'loaf'; }
     grantXP(card, 14);
-    setNote(a.icon + '  ' + a.name.toUpperCase());
+    setNote(a.name.toUpperCase() + ' USED.');
     savePet(card); drawHud(); drawTools();
   }
 
@@ -1624,7 +1651,7 @@ const Room = (() => {
     toys.forEach(t => {
       if (!t.settled){
         t.vy += (t.float ? 8 : 26) * dt * 2.2;
-        t.x += t.vx; t.y += t.vy;
+        t.x += t.vx; t.y += t.vy; t.spin += t.vx * 0.012;
         if (t.float){ t.vx *= 0.985; t.x += Math.sin(cat.t*4 + t.y*0.05) * 0.6; }
         if (t.y > floorY){ t.y = floorY; t.vy *= -0.48; t.vx *= 0.72;
           if (Math.abs(t.vy) < 1.2){ t.vy = 0; t.settled = true; } }
@@ -1692,8 +1719,11 @@ const Room = (() => {
     if (Math.random() < 0.00055 && poops.length < 4){ addPoop(); pet.poops = poops.length;
       pet.clean = Math.max(8, pet.clean - 12); drawNeeds(); }
 
-    crumbs.forEach(c => { if (Math.abs(cat.x - c.x) < 40 && c.n > 0) c.n -= dt * 9; });
-    crumbs = crumbs.filter(c => c.n > 0);
+    if (crumbs.length && Math.abs(cat.x - W*0.80) < 70){
+      cat.state = 'eat';
+      crumbs.forEach(c => { c.n -= dt * 7; });
+      crumbs = crumbs.filter(c => c.n > 0);
+    }
 
     fx.forEach(f => { f.vy += 0.35; f.x += f.vx; f.y += f.vy; f.life -= dt * 1.5; });
     fx = fx.filter(f => f.life > 0);
@@ -1702,23 +1732,19 @@ const Room = (() => {
   /* ── render ────────────────────────────────────────────────────────────── */
   function render(){
     if (!cx) return;
-    /* room, tinted to her own coat */
-    const g = cx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, shade(coat, -0.62)); g.addColorStop(1, shade(coat, -0.78));
-    cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-    cx.fillStyle = shade(coat, -0.45); cx.fillRect(0, floorY, W, H - floorY);
-    cx.fillStyle = 'rgba(255,255,255,.05)'; cx.fillRect(0, floorY, W, 3);
+    drawRoomShell();
 
-    /* a window, because a cat will always find the one patch of sun */
-    cx.fillStyle = 'rgba(255,178,63,.09)';
-    cx.beginPath(); cx.moveTo(W*0.60, 0); cx.lineTo(W*0.94, 0);
-    cx.lineTo(W*0.80, floorY); cx.lineTo(W*0.44, floorY); cx.closePath(); cx.fill();
-
+    /* the bowl she eats from */
+    const bx = W*0.80;
+    cx.fillStyle = shade(coat, -0.24);
+    cx.beginPath(); cx.ellipse(bx, floorY + 26, 62, 20, 0, 0, 7); cx.fill();
+    cx.fillStyle = '#2A1F2E';
+    cx.beginPath(); cx.ellipse(bx, floorY + 22, 52, 15, 0, 0, 7); cx.fill();
     crumbs.forEach(c => {
-      cx.fillStyle = '#C98A3E';
+      cx.fillStyle = '#D89A47';
       for (let i = 0; i < Math.ceil(c.n); i++){
         cx.beginPath();
-        cx.arc(c.x - 22 + (i*7) % 44, floorY + 12 + ((i*5) % 9), 3.2, 0, 7); cx.fill();
+        cx.arc(bx - 32 + (i*9) % 64, floorY + 20 + ((i*5) % 10), 4.4, 0, 7); cx.fill();
       }
     });
 
@@ -1737,10 +1763,8 @@ const Room = (() => {
     });
 
     toys.forEach(t => {
-      cx.save(); cx.translate(t.x, t.y);
-      cx.rotate(t.settled ? 0 : t.x * 0.02);
-      cx.font = '30px system-ui,sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-      cx.fillText(t.icon, 0, 0); cx.restore();
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.spin);
+      drawToy(t.k); cx.restore();
     });
 
     if (cat.hidden <= 0) drawCat();
@@ -1757,8 +1781,59 @@ const Room = (() => {
     }
   }
 
+  /* A room with nothing in it reads as unfinished, and a cat needs things to
+     be on, behind and next to. Everything here is also a functional target. */
+  function drawRoomShell(){
+    const g = cx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, shade(coat, -0.66)); g.addColorStop(1, shade(coat, -0.80));
+    cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+
+    /* window and the one patch of sun she will inevitably occupy */
+    cx.fillStyle = shade(coat, -0.50);
+    cx.fillRect(W*0.58, H*0.06, W*0.30, floorY - H*0.30);
+    cx.fillStyle = 'rgba(255,205,120,.16)';
+    cx.fillRect(W*0.60, H*0.08, W*0.26, floorY - H*0.34);
+    cx.fillStyle = shade(coat, -0.56);
+    cx.fillRect(W*0.72, H*0.06, 6, floorY - H*0.30);
+    cx.fillStyle = 'rgba(255,178,63,.10)';
+    cx.beginPath(); cx.moveTo(W*0.60, H*0.08); cx.lineTo(W*0.86, H*0.08);
+    cx.lineTo(W*0.98, floorY); cx.lineTo(W*0.40, floorY); cx.closePath(); cx.fill();
+
+    /* a shelf, because everything on it is provisional */
+    cx.fillStyle = shade(coat, -0.40);
+    cx.fillRect(W*0.04, H*0.30, W*0.30, 12);
+    cx.fillStyle = shade(coat, -0.28);
+    cx.fillRect(W*0.09, H*0.30 - 26, 22, 26);
+    cx.fillRect(W*0.15, H*0.30 - 34, 18, 34);
+
+    /* floor */
+    cx.fillStyle = shade(coat, -0.44); cx.fillRect(0, floorY, W, H - floorY);
+    cx.fillStyle = 'rgba(255,255,255,.06)'; cx.fillRect(0, floorY, W, 3);
+
+    /* rug */
+    cx.fillStyle = shade(coat, -0.30);
+    cx.beginPath(); cx.ellipse(W*0.5, floorY + 66, W*0.40, 46, 0, 0, 7); cx.fill();
+    cx.fillStyle = shade(coat, -0.36);
+    cx.beginPath(); cx.ellipse(W*0.5, floorY + 66, W*0.31, 34, 0, 0, 7); cx.fill();
+
+    /* the cardboard box. Non-negotiable. */
+    cx.fillStyle = '#7A5733';
+    cx.fillRect(W*0.06, floorY - 46, 120, 46);
+    cx.fillStyle = '#8E6942';
+    cx.beginPath(); cx.moveTo(W*0.06, floorY - 46); cx.lineTo(W*0.06 + 120, floorY - 46);
+    cx.lineTo(W*0.06 + 104, floorY - 62); cx.lineTo(W*0.06 + 16, floorY - 62); cx.closePath(); cx.fill();
+    cx.fillStyle = 'rgba(0,0,0,.28)';
+    cx.beginPath(); cx.ellipse(W*0.06 + 60, floorY - 46, 44, 8, 0, 0, 7); cx.fill();
+
+    /* the litter tray, and the fact that she misses it */
+    cx.fillStyle = '#3B3350';
+    cx.beginPath(); cx.ellipse(W*0.24, floorY + 78, 92, 30, 0, 0, 7); cx.fill();
+    cx.fillStyle = '#565073';
+    cx.beginPath(); cx.ellipse(W*0.24, floorY + 74, 80, 24, 0, 0, 7); cx.fill();
+  }
+
   function drawCat(){
-    const s = cat.big, bw = 74*s, bh = 52*s*cat.squash;
+    const s = cat.big, bw = 118*s, bh = 82*s*cat.squash;
     const bx = cat.x, by = floorY - bh*0.55;
     const isLoaf = cat.state === 'loaf';
 
@@ -1791,14 +1866,18 @@ const Room = (() => {
     }
 
     /* the head is her actual face */
-    const hr = 40*s, hx = bx + cat.face*bw*0.42, hy = by - bh*0.72;
+    const hr = 60*s, hx = bx + cat.face*bw*0.40, hy = by - bh*0.66;
     cx.save();
     cx.beginPath(); cx.arc(hx, hy, hr, 0, 7); cx.closePath();
     cx.fillStyle = shade(coat, 0.06); cx.fill();
     if (photo){
       cx.save(); cx.clip();
-      const ps = Math.max((hr*2) / photo.width, (hr*2) / photo.height) * 1.25;
-      cx.drawImage(photo, hx - photo.width*ps/2, hy - photo.height*ps/2,
+      const ps = Math.max((hr*2) / photo.width, (hr*2) / photo.height) * 1.06;
+      /* Bias the crop UPWARD. Centring on the middle of a full-body cat photo
+         frames the torso, not the face, which is how you end up with a head
+         made of shoulder. 0.34 lands on the upper third, where cats keep
+         their faces in almost every photograph anyone takes of them. */
+      cx.drawImage(photo, hx - photo.width*ps*0.5, hy - photo.height*ps*0.34,
                    photo.width*ps, photo.height*ps);
       cx.restore();
     }
@@ -1827,6 +1906,46 @@ const Room = (() => {
     }
   }
 
+  /* Toys drawn, not typed. Same shapes as the button icons. */
+  function drawToy(k){
+    if (k === 'yarn'){
+      cx.fillStyle = '#E0637F'; cx.beginPath(); cx.arc(0, 0, 17, 0, 7); cx.fill();
+      cx.strokeStyle = '#8E3550'; cx.lineWidth = 2.4;
+      cx.beginPath(); cx.moveTo(-15,-6); cx.quadraticCurveTo(0,2,15,-6); cx.stroke();
+      cx.beginPath(); cx.moveTo(-15,6);  cx.quadraticCurveTo(0,-2,15,6); cx.stroke();
+      cx.beginPath(); cx.moveTo(-6,-15); cx.quadraticCurveTo(2,0,-6,15); cx.stroke();
+      return;
+    }
+    if (k === 'crinkle'){
+      cx.fillStyle = '#6FE3C4'; cx.beginPath(); cx.arc(0, 0, 16, 0, 7); cx.fill();
+      cx.strokeStyle = '#1C6B58'; cx.lineWidth = 2.6; cx.lineJoin = 'round';
+      cx.beginPath(); cx.moveTo(-10,-4); cx.lineTo(-1,1); cx.lineTo(-8,6); cx.lineTo(3,9); cx.stroke();
+      cx.beginPath(); cx.moveTo(3,-12); cx.lineTo(9,-4); cx.lineTo(2,0); cx.lineTo(11,4); cx.stroke();
+      return;
+    }
+    if (k === 'feather'){
+      cx.fillStyle = '#9FD1FF';
+      cx.beginPath(); cx.moveTo(13,-15); cx.quadraticCurveTo(-11,-4,-14,12);
+      cx.quadraticCurveTo(3,16,10,3); cx.quadraticCurveTo(17,-8,13,-15); cx.fill();
+      cx.strokeStyle = '#3F6E9E'; cx.lineWidth = 2.2; cx.lineCap = 'round';
+      cx.beginPath(); cx.moveTo(13,-15); cx.quadraticCurveTo(-5,-2,-16,17); cx.stroke();
+      return;
+    }
+    if (k === 'box'){
+      cx.fillStyle = '#8E6942'; cx.fillRect(-17, -6, 34, 22);
+      cx.fillStyle = '#A67E4F';
+      cx.beginPath(); cx.moveTo(-17,-6); cx.lineTo(17,-6); cx.lineTo(11,-17);
+      cx.lineTo(-11,-17); cx.closePath(); cx.fill();
+      cx.strokeStyle = '#6B4E30'; cx.lineWidth = 2;
+      cx.beginPath(); cx.moveTo(0,-17); cx.lineTo(0,16); cx.stroke();
+      return;
+    }
+    cx.fillStyle = '#F0A26B';
+    cx.beginPath(); cx.moveTo(-14,0); cx.quadraticCurveTo(0,-12,12,0);
+    cx.quadraticCurveTo(0,12,-14,0); cx.fill();
+    cx.beginPath(); cx.moveTo(12,0); cx.lineTo(19,-7); cx.lineTo(19,7); cx.fill();
+  }
+
   function shade(hex, amt){
     const h = hex.replace('#','');
     const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
@@ -1842,16 +1961,15 @@ const Room = (() => {
       const b = document.createElement('button');
       b.className = 'tool'; b.type = 'button';
       b.setAttribute('aria-pressed', String(tool === t.k));
-      b.innerHTML = '<em>' + t.icon + '</em>' + t.n + (t.cost ? ' ◍' + t.cost : '');
+      b.innerHTML = toyIcon(t.k, 26) + t.n + (t.cost ? ' ◍' + t.cost : '');
       b.onclick = () => { tool = t.k; drawTools(); };
       box.appendChild(b);
     });
     const a = document.createElement('button');
     a.className = 'tool'; a.type = 'button';
-    const ab = card ? abilityFor(card) : null;
     const ready = card && (Date.now() - (pet.lastAbility || 0) >= DAY);
     a.disabled = !ready;
-    a.innerHTML = '<em>' + (ab ? ab.icon : '✦') + '</em>' + (ready ? 'Ability' : 'Used');
+    a.innerHTML = toyIcon('spark', 26) + (ready ? 'Ability' : 'Used');
     a.onclick = useAbility;
     box.appendChild(a);
   }
@@ -2039,6 +2157,8 @@ function setTab(next){
   $('tabScan').setAttribute('aria-selected', String(next === 'scan'));
   $('tabRoom').setAttribute('aria-selected', String(next === 'room'));
   $('view-room').classList.toggle('hidden', next !== 'room');
+  /* The masthead sells the scanner. In the room it is just scroll. */
+  document.querySelector('.mast').classList.toggle('compact', next === 'room');
   ['index','coll'].forEach(c => {
     const el = document.querySelector('.' + c);
     if (el) el.classList.toggle('hidden', next !== 'scan');
@@ -2048,11 +2168,11 @@ function setTab(next){
     $('demoCard').classList.add('hidden');
     const all = Store.read();
     const c = current || all[0];
-    if (!c){
-      $('view-room').innerHTML = '<div class="nopet">No specimen on file yet.<br>'
-        + 'Scan a cat and she will be waiting in here.</div>';
-      return;
-    }
+    /* Toggle, never replace. Rewriting innerHTML here destroys the canvas and
+       it never comes back once a cat exists. */
+    $('roomLive').classList.toggle('hidden', !c);
+    $('noPet').classList.toggle('hidden', !!c);
+    if (!c) return;
     Room.open(c);
   } else {
     Room.stop();
