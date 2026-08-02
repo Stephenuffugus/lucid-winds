@@ -1,0 +1,18 @@
+{
+  "name": "Sky Wolf Studios",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+  // Reconstitutes the whole workspace on a fresh codespace: clones the sibling
+  // repos beside this one and restores the memory directory from sws-memory.
+  // Fetches only. It never merges and never touches local work.
+  "postCreateCommand": "bash .devcontainer/bootstrap.sh",
+
+  // Every time the codespace is (re)started, show what is dirty or unpushed.
+  "postStartCommand": "bash workspace.sh || true",
+
+  "customizations": {
+    "vscode": {
+      "settings": { "files.trimTrailingWhitespace": false }
+    }
+  }
+}
