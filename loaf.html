@@ -456,9 +456,12 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="tunerBody hidden" id="tunerBody">
       <canvas id="tunePrev" width="520" height="300"></canvas>
       <p class="tunerNote">The unit read this off the photograph. It is often
-        close and sometimes confidently wrong. You are the authority.</p>
+        close and sometimes confidently wrong, and it cannot see a small patch
+        of white at all, so it leaves that to you. Slide WHITE up and it
+        appears in the order cats actually get it: chest, then toes, then
+        belly, then face. You are the authority.</p>
       <div class="tuneRow"><b>Pattern</b><div class="chips" id="tunePattern"></div></div>
-      <div class="tuneRow"><b>White</b><div class="chips" id="tuneWhite"></div></div>
+      <div class="tuneRow"><b>Start from</b><div class="chips" id="tuneWhite"></div></div>
       <div class="tuneRow"><b>Colours</b><div class="swatches" id="tuneColors"></div></div>
       <div class="tuneRow"><b>Build</b><div class="sliders" id="tuneSliders"></div></div>
       <div class="row"><button class="ghost" id="tuneReset">Read it off the photo again</button></div>
@@ -1455,9 +1458,23 @@ const WHITE_STYLES = ['none','bib','socks','bicolour','van'];
 const WHITE_LABEL = { none:'No white', bib:'White bib', socks:'Socks',
                       bicolour:'Bicolour', van:'Mostly white' };
 
+/* Cards minted before the graded field existed carry a preset. Map it once so
+   nothing already on a player's phone renders as a bald cat. */
+const WHITE_STYLE_GRADE = { none:0, bib:1.6, socks:2.6, bicolour:5.2, van:8.6 };
+function migrateDNA(d){
+  if (!d) return d;
+  if (d.whiteGrade == null)
+    d.whiteGrade = WHITE_STYLE_GRADE[d.whiteStyle] != null
+      ? WHITE_STYLE_GRADE[d.whiteStyle] : (d.whiteAmt || 0) * 9;
+  if (d.whiteEdge == null) d.whiteEdge = 0.5;
+  if (d.seed == null) d.seed = 0x9E3779B9;
+  return d;
+}
+
 function defaultDNA(){
   return { base:'#9A7248', marking:'#4A3320', white:'#F2E9D8',
            pattern:'mackerel', whiteStyle:'none', whiteAmt:0,
+           whiteGrade:0, whiteEdge:0.5, seed:0x9E3779B9,
            floof:0.35, chonk:0.5, ear:0.5, eye:'#C8D94A', eyeRound:0.4,
            nose:'#E09AA6', tail:0.6, faceMask:0,
            /* skull, which is where breeds actually differ */
@@ -1578,6 +1595,117 @@ const CatArt = (() => {
     return palCache;
   }
 
+  /* ── white spotting as a graded field ──────────────────────────────────────
+     White is not a shape and not a percentage. Melanocytes migrate outward and
+     downward from the dorsal neural crest, so the last places they reach are
+     the first to go white, and the ORDER is repeatable: toes and chest, then
+     belly, then tail tip and muzzle, then blaze, then flank, shoulder, back,
+     cap. One grade drives all of it.
+
+     Three things fall out for free that a preset can never reach: three white
+     paws and not the fourth (each paw jitters independently), the two sides
+     never matching, and a grade-0 cat being STRUCTURALLY unable to render
+     white, which is the correct fix for inventing a bib on a cat that has none.
+     ------------------------------------------------------------------------ */
+  const WSEEDS = [
+    { k:'chestBib', on:0.40, span:2.4, r:0.42, asym:0.0 },
+    { k:'chin',     on:1.30, span:1.2, r:0.20, asym:0.0 },
+    { k:'toeFL',    on:1.70, span:3.0, r:0.55, asym:1.4 },
+    { k:'toeFR',    on:1.70, span:3.0, r:0.55, asym:1.4 },
+    { k:'toeHL',    on:2.20, span:3.0, r:0.50, asym:1.4 },
+    { k:'toeHR',    on:2.20, span:3.0, r:0.50, asym:1.4 },
+    { k:'belly',    on:2.80, span:2.4, r:0.50, asym:0.3 },
+    { k:'tailTip',  on:4.40, span:2.0, r:0.28, asym:0.0 },
+    { k:'muzzle',   on:4.80, span:1.6, r:0.28, asym:0.0 },
+    { k:'blaze',    on:5.60, span:2.0, r:0.26, asym:0.0 },
+    { k:'flank',    on:6.80, span:2.0, r:0.44, asym:0.5 },
+    { k:'shoulder', on:7.60, span:1.8, r:0.44, asym:0.5 },
+    { k:'back',     on:8.60, span:1.6, r:0.52, asym:0.5 },
+    { k:'cap',      on:9.20, span:1.2, r:0.55, asym:0.0 }
+  ];
+  const smooth = t => t*t*(3 - 2*t);
+
+  /* radius 0..1 for every seed at this grade, or 0 if it has not switched on */
+  function whiteField(d, seed){
+    const g = d.whiteGrade == null ? 0 : d.whiteGrade;
+    const out = {};
+    WSEEDS.forEach((w, i) => {
+      const on = w.on + jit(seed, 200 + i, w.asym);
+      const t = Math.max(0, Math.min(1, (g - on) / w.span));
+      out[w.k] = t <= 0 ? 0 : smooth(t) * w.r;
+    });
+    return out;
+  }
+
+  /* fbm, for boundaries that wobble like fur rather than like a bezier */
+  function fbm(seed, i, t){
+    let v = 0, a = 0.5, f = 1;
+    for (let o = 0; o < 3; o++){
+      const x = t * f;
+      const x0 = Math.floor(x), fr = x - x0;
+      const s = fr*fr*(3-2*fr);
+      const a0 = rnd(seed, i*977 + o*131 + (x0 & 255));
+      const a1 = rnd(seed, i*977 + o*131 + ((x0+1) & 255));
+      v += (a0 + (a1-a0)*s - 0.5) * a;
+      a *= 0.5; f *= 2.1;
+    }
+    return v;
+  }
+
+  /* A white region: a blob whose outline is displaced by fbm, then a band of
+     individual hairs interdigitating BOTH WAYS across the boundary. That band
+     is the cheapest thing in the whole document and it converts "decal" to
+     "animal" instantly. */
+  function whiteBlob(cx, seed, idx, cxp, cyp, rx, ry, edge, coatCol, whiteCol, rot){
+    const N = 36;
+    /* Amplitude is in PIXELS, derived from the region's own diameter. Treating
+       it as a fraction of the radius makes the hairs about ten times too long
+       and the animal reads as a sea urchin. */
+    const diam = rx + ry;
+    const ampPx = (0.018 + 0.052*edge) * diam;
+    const amp = ampPx / Math.max(1, Math.min(rx, ry));   /* fractional wobble */
+    const pts = [];
+    for (let i = 0; i < N; i++){
+      const a = i/N * Math.PI*2;
+      const k = 1 + fbm(seed, idx, i/N * (6 + 6*edge)) * amp * 2.2;
+      pts.push([cxp + Math.cos(a+rot)*rx*k, cyp + Math.sin(a+rot)*ry*k]);
+    }
+    cx.beginPath();
+    cx.moveTo((pts[0][0]+pts[N-1][0])/2, (pts[0][1]+pts[N-1][1])/2);
+    for (let i = 0; i < N; i++){
+      const p = pts[i], q = pts[(i+1)%N];
+      cx.quadraticCurveTo(p[0], p[1], (p[0]+q[0])/2, (p[1]+q[1])/2);
+    }
+    cx.closePath();
+    cx.fillStyle = whiteCol; cx.fill();
+
+    /* The interdigitation band: individual hairs crossing the boundary in BOTH
+       directions, white pushing out into the coat and coat pushing in into the
+       white. Short. It is a band roughly a tenth of the region's width, not a
+       halo of quills. */
+    const hairs = Math.round(14 + 34*edge);
+    cx.lineCap = 'round';
+    for (let i = 0; i < hairs; i++){
+      const f = i/hairs;
+      const a = f * Math.PI*2 + rot;
+      const k = 1 + fbm(seed, idx, f * (6 + 6*edge)) * amp * 2.2;
+      const px = cxp + Math.cos(a)*rx*k, py = cyp + Math.sin(a)*ry*k;
+      const out = (i % 2) === 0;
+      const len = (1.2 + rnd(seed, idx*31 + i) * 2.2) * ampPx;
+      const ang = a + jit(seed, idx*57 + i, 0.45);
+      cx.strokeStyle = out ? whiteCol : coatCol;
+      cx.globalAlpha = 0.5 + rnd(seed, idx*13 + i) * 0.3;
+      cx.lineWidth = Math.max(0.6, ampPx * 0.22);
+      cx.beginPath();
+      cx.moveTo(px - Math.cos(ang)*len*(out ? 0.25 : 1),
+                py - Math.sin(ang)*len*(out ? 0.25 : 1));
+      cx.lineTo(px + Math.cos(ang)*len*(out ? 1 : 0.25),
+                py + Math.sin(ang)*len*(out ? 1 : 0.25));
+      cx.stroke();
+    }
+    cx.globalAlpha = 1;
+  }
+
   /* Deterministic per-cat jitter. Perfect bilateral symmetry is the strongest
      clip-art signal there is, so nothing paired may ever be mirrored. */
   function rnd(seed, i){
@@ -1624,37 +1752,95 @@ const CatArt = (() => {
 
   /* The pattern, painted inside the clipped body. This is what makes a
      tabby a tabby rather than a brown blob. */
-  function paintPattern(cx, d, P){
+  /* LAW: PIGMENT, THEN LIGHT. All coat colour, all pattern and all white go
+     down first; every gradient, occlusion and rim goes on top of all of it, at
+     once. Painting shade and then laying stripes over it is exactly why stripes
+     read as tape stuck onto a shape rather than as fur growing out of an
+     animal. White beats every pigment layer absolutely, but white still
+     RECEIVES light, or it reads as a sticker. */
+  function paintPattern(cx, d, P, PAL, seed){
     const { bx, by, bw, bh } = P;
-    const m = d.marking;
+    const m = PAL.patternCore;
     cx.save();
     bodyPath(cx, P); cx.clip();
+
+    /* B4. undercoat mass, drawn BEFORE the pattern so stripes fade into it */
+    if (d.pattern !== 'solid'){
+      const ug = cx.createRadialGradient(bx + bw*0.36, by + bh*0.52, bw*0.04,
+                                         bx + bw*0.36, by + bh*0.52, bw*0.95);
+      ug.addColorStop(0, PAL.under);
+      ug.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = ug; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+    }
+
+    /* chest ruff, the biggest longhair tell. It is PIGMENT, so it belongs
+       here and not after the white, or it paints a grey oval over the bib. */
+    if ((d.floof || 0) > 0.45){
+      cx.fillStyle = PAL.underLight;
+      cx.globalAlpha = 0.30 + (d.floof - 0.45) * 0.55;
+      cx.beginPath();
+      cx.ellipse(bx + bw*0.44, by + bh*0.34, bw*0.34*d.floof + bw*0.12, bh*0.5, -0.2, 0, 7);
+      cx.fill();
+      cx.globalAlpha = 1;
+    }
+
+    /* B5. the spine line. Real mackerel springs off this; free-floating
+       parallel bars never look like a cat. */
+    if (d.pattern === 'mackerel' || d.pattern === 'classic'){
+      cx.strokeStyle = m; cx.globalAlpha = 0.7;
+      cx.lineWidth = bw*0.075; cx.lineCap = 'round';
+      cx.beginPath();
+      cx.moveTo(bx - bw*0.86, by - bh*0.52);
+      cx.quadraticCurveTo(bx, by - bh*1.02, bx + bw*0.66, by - bh*0.74);
+      cx.stroke();
+      cx.globalAlpha = 1;
+    }
 
     if (d.pattern === 'mackerel'){
       /* Fine and irregular. Nine thick even bars read as a deck chair; a real
          mackerel is many narrow stripes of uneven width that fade out over
          the chest and belly. */
-      cx.strokeStyle = m; cx.lineCap = 'round';
+      /* Bars SPRING OFF THE SPINE, taper as they descend, break into dashes
+         low on the flank, and stop before the belly instead of crossing it.
+         Each is stroked twice: a wide soft agouti halo under a narrow core. */
+      cx.lineCap = 'round';
       for (let i = -8; i <= 7; i++){
-        const jitter = ((i * 2654435761) % 100) / 100;        /* stable per stripe */
-        const ox = bx + i * bw*0.155 + (jitter - 0.5) * bw*0.05;
-        /* thinner toward the chest, where a tabby's striping breaks up */
+        const jr  = rnd(seed, 300 + i);
+        const ox  = bx + i * bw*0.150 + (jr - 0.5) * bw*0.055;
         const front = Math.max(0, Math.min(1, (i + 8) / 15));
-        cx.globalAlpha = 0.55 + 0.45 * (1 - front);
-        cx.lineWidth = bw * (0.055 + jitter * 0.035) * (1 - front * 0.45);
-        cx.beginPath();
-        cx.moveTo(ox, by - bh*1.05);
-        cx.quadraticCurveTo(ox + bw*0.09, by - bh*0.1,
-                            ox - bw*0.03, by + bh*(1.05 - front*0.5));
-        cx.stroke();
+        /* where on the spine this bar is born, and how far down it reaches */
+        const topY  = by - bh*(0.86 + jr*0.10);
+        const botY  = by + bh*(0.92 - front*0.46 - jr*0.18);
+        const lean  = bw*(0.06 + jr*0.06);
+        const w     = bw * (0.050 + jr*0.030) * (1 - front*0.40);
+        const segs  = jr > 0.62 ? 2 : 1;            /* some bars break in two */
+
+        for (let sgi = 0; sgi < segs; sgi++){
+          const a0 = sgi === 0 ? 0 : 0.58 + jr*0.10;
+          const a1 = sgi === 0 ? (segs === 1 ? 1 : 0.44 + jr*0.08) : 1;
+          const y0 = topY + (botY - topY)*a0, y1 = topY + (botY - topY)*a1;
+          const x0 = ox + lean*a0, x1 = ox + lean*a1 - bw*0.03;
+          [[PAL.patternHalo, w*1.9, 0.26], [m, w, 0.86]].forEach(([col, lw, al]) => {
+            cx.strokeStyle = col; cx.lineWidth = lw;
+            cx.globalAlpha = al * (0.62 + 0.38*(1 - front));
+            cx.beginPath();
+            cx.moveTo(x0, y0);
+            cx.quadraticCurveTo(ox + lean*1.5, (y0+y1)/2, x1, y1);
+            cx.stroke();
+          });
+        }
       }
       cx.globalAlpha = 1;
-      /* paler chest and belly, which every tabby has */
-      const bg2 = cx.createRadialGradient(bx + bw*0.42, by + bh*0.42, bw*0.05,
-                                          bx + bw*0.42, by + bh*0.42, bw*0.95);
-      bg2.addColorStop(0, light(d.base, 0.30));
-      bg2.addColorStop(1, 'rgba(0,0,0,0)');
-      cx.fillStyle = bg2; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+      /* Punch the belly out of the pattern rather than painting a pale blob
+         over it. A radial highlight reads as a bubble; this reads as fur. */
+      const punch = cx.createRadialGradient(bx + bw*0.34, by + bh*0.60, bw*0.03,
+                                            bx + bw*0.34, by + bh*0.60, bw*0.86);
+      punch.addColorStop(0, 'rgba(0,0,0,1)');
+      punch.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.save();
+      cx.globalCompositeOperation = 'destination-out';
+      cx.fillStyle = punch; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+      cx.restore();
     } else if (d.pattern === 'classic'){
       /* The flank bullseye, as OPEN arcs. Closed ellipses read as a typeset
          glyph rather than as a marking, which is how you end up with a cat
@@ -1718,45 +1904,45 @@ const CatArt = (() => {
       cx.fillStyle = g; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
     }
 
-    /* white, painted last because white spotting sits over everything */
-    if (d.whiteStyle !== 'none' && d.whiteAmt > 0.02){
-      cx.fillStyle = d.white;
-      const a = d.whiteAmt;
-      if (d.whiteStyle === 'van'){
-        cx.globalAlpha = 1;
-        cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
-      } else if (d.whiteStyle === 'bicolour'){
-        cx.beginPath();
-        cx.ellipse(bx - bw*0.05, by + bh*0.62, bw*(0.75 + a*0.5), bh*(0.85 + a*0.4), 0, 0, 7);
-        cx.fill();
-      } else {
-        /* A bib is not an oval. Three overlapping lobes of uneven size break
-           the silhouette so it reads as fur rather than as an apron. */
-        const w = bw*(0.20 + a*0.34), hh = bh*(0.40 + a*0.34);
-        cx.beginPath();
-        cx.ellipse(bx + bw*0.44, by + bh*0.16, w,        hh,        -0.28, 0, 7);
-        cx.fill();
-        cx.beginPath();
-        cx.ellipse(bx + bw*0.30, by + bh*0.46, w*0.78,   hh*0.66,   -0.10, 0, 7);
-        cx.fill();
-        cx.beginPath();
-        cx.ellipse(bx + bw*0.54, by - bh*0.10, w*0.54,   hh*0.48,   -0.44, 0, 7);
-        cx.fill();
-      }
+    /* B10. WHITE. It beats every pigment layer absolutely, so it goes down
+       after all of them and nothing pigment-related is drawn over it. */
+    const F = whiteField(d, seed);
+    const wc = PAL.white, ed = d.whiteEdge == null ? 0.5 : d.whiteEdge;
+    if (F.back > 0)
+      whiteBlob(cx, seed, 1, bx - bw*0.25, by - bh*0.62, bw*F.back*2.0, bh*F.back*1.5, ed, PAL.coatMid, wc, 0.2);
+    if (F.shoulder > 0)
+      whiteBlob(cx, seed, 2, bx + bw*0.30, by - bh*0.30, bw*F.shoulder*1.7, bh*F.shoulder*1.6, ed, PAL.coatMid, wc, 0.5);
+    if (F.flank > 0)
+      whiteBlob(cx, seed, 3, bx - bw*0.34, by + bh*0.16, bw*F.flank*1.8, bh*F.flank*1.7, ed, PAL.coatMid, wc, 1.1);
+    if (F.belly > 0)
+      whiteBlob(cx, seed, 4, bx + bw*0.10, by + bh*0.74, bw*F.belly*2.1, bh*F.belly*1.3, ed, PAL.coatMid, wc, 0);
+    if (F.chestBib > 0){
+      /* the bib: a tall lobe at the brisket plus a smaller one below, so it
+         reads as a run of fur down the chest rather than as a badge */
+      whiteBlob(cx, seed, 5, bx + bw*0.50, by + bh*0.22,
+                bw*F.chestBib*0.95, bh*F.chestBib*1.9, ed, PAL.coatMid, wc, -0.25);
+      whiteBlob(cx, seed, 6, bx + bw*0.34, by + bh*0.66,
+                bw*F.chestBib*0.62, bh*F.chestBib*0.9, ed, PAL.coatMid, wc, 0.4);
     }
 
     /* Form. On a pale patterned cat the markings do this work, but a black cat
        has no markings to read, so ALL of its shape has to come from the light.
        The rim scales with how dark the coat is, which is the difference
        between a black cat and a black blob. */
-    const lumBase = (() => { const p = hex(d.base); return (0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2]) / 255; })();
+    const lumBase = OK.lum(PAL.coatMid);
     const rim = 0.16 + (1 - lumBase) * 0.42;
 
-    const sg = cx.createLinearGradient(0, by - bh*1.1, 0, by + bh);
-    sg.addColorStop(0, 'rgba(255,255,255,' + (0.06 + (1-lumBase)*0.10).toFixed(3) + ')');
-    sg.addColorStop(0.55, 'rgba(0,0,0,0)');
-    sg.addColorStop(1, 'rgba(0,0,0,.26)');
-    cx.fillStyle = sg; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+    /* B11. THE LIGHT. One LINEAR gradient along the key axis across the whole
+       body, over every pigment layer including the white. Linear, not radial:
+       a radial reads as a bubble, which is exactly what a pale belly smudge
+       looks like. */
+    const kx = -0.62, ky = -0.78;
+    const sg = cx.createLinearGradient(bx - kx*bw*1.3, by - ky*bh*1.5,
+                                       bx + kx*bw*1.3, by + ky*bh*1.5);
+    sg.addColorStop(0,    'rgba(255,247,224,' + (0.30 + (1-lumBase)*0.16).toFixed(3) + ')');
+    sg.addColorStop(0.42, 'rgba(0,0,0,0)');
+    sg.addColorStop(1,    'rgba(24,14,32,.30)');
+    cx.fillStyle = sg; cx.fillRect(bx - bw*1.3, by - bh*1.5, bw*2.6, bh*3.0);
 
     /* Rim light along the TOP AND BACK ONLY. Light comes from one direction;
        rimming the whole silhouette puts a grey shelf under the animal and
@@ -1781,7 +1967,7 @@ const CatArt = (() => {
   }
 
   function draw(cx, dna, o){
-    const d = Object.assign(defaultDNA(), dna || {});
+    const d = Object.assign(defaultDNA(), migrateDNA(dna) || {});
     const P = palette(d);
     const seed = (d.seed >>> 0) || 0x9E3779B9;
     const s = o.s || 60, pose = o.pose || 'sit', t = o.t || 0, face = o.face || 1;
@@ -1838,17 +2024,7 @@ const CatArt = (() => {
     /* body */
     cx.fillStyle = P.coatMid;
     bodyPath(cx, G); cx.fill();
-    paintPattern(cx, d, G);
-
-    /* fluffy chest ruff, the single biggest longhair tell */
-    if (fl > 0.45){
-      cx.fillStyle = light(d.whiteStyle === 'none' ? d.base : d.white, 0.06);
-      cx.globalAlpha = 0.55 + fl * 0.4;
-      cx.beginPath();
-      cx.ellipse(bw*0.44, by + bh*0.34, bw*0.34*fl + bw*0.12, bh*0.5, -0.2, 0, 7);
-      cx.fill();
-      cx.globalAlpha = 1;
-    }
+    paintPattern(cx, d, G, P, seed);
 
     /* front paws (stand draws its own four, so it opts out here) */
     if (pose !== 'stand'){
@@ -1933,7 +2109,7 @@ const CatArt = (() => {
           const sx = bx1 + (tipX - bx1)*f, sy = eBaseY + (tipY - eBaseY)*f;
           cx.beginPath();
           cx.moveTo(sx, sy);
-          cx.lineTo(sx - k*hr*0.10*tuft*(1-f*0.4), sy - hr*(0.16 + 0.20*f)*tuft);
+          cx.lineTo(sx - k*hr*0.05*tuft*(1-f*0.4), sy - hr*(0.06 + 0.09*f)*tuft);
           cx.stroke();
         }
       }
@@ -1998,7 +2174,7 @@ const CatArt = (() => {
     const mzY = cy2 + HH*(0.30 + muzz*0.26);
     const mzW = HW*(0.40 + muzz*0.16 + round*0.06);
     const mzH = HH*(0.20 + muzz*0.20);
-    cx.fillStyle = light(d.base, d.whiteStyle === 'none' ? 0.14 : 0.34);
+    cx.fillStyle = OK.adj(P.coatMid, { dL: 0.05 + OK.lum(P.coatMid) * 0.22, dH: 6 });
     cx.beginPath();
     cx.ellipse(hx - mzW*0.44, mzY, mzW*0.62, mzH, 0, 0, 7);
     cx.ellipse(hx + mzW*0.44, mzY, mzW*0.62, mzH, 0, 0, 7);
@@ -2281,10 +2457,31 @@ function readCatFromPhoto(canvas){
   const base    = avg(pix.slice(Math.floor(q*0.30), Math.floor(q*0.78)));
   const bright  = avg(pix.slice(Math.floor(q*0.90)));
 
-  /* how much of her is actually near-white */
-  const whiteN = pix.filter(p => lum(p) > 186 &&
-                    Math.max(p[0],p[1],p[2]) - Math.min(p[0],p[1],p[2]) < 40).length;
-  const whiteAmt = whiteN / q;
+  /* White spotting forms a CONNECTED PATCH. A tabby's pale muzzle, chin and
+     chest ticking is undercoat, not spotting, and it is diffuse: it lights up
+     a comparable number of pale pixels but never joins into one region. So
+     count the largest connected white blob, not the total. Without this, every
+     tabby is reported as wearing a bib she does not have. */
+  const baseL = lum(hexRGB(base));
+  const wm = new Uint8Array(N*N);
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++){
+      if (!mask[y*N + x]) continue;
+      const p = at(x, y);
+      const mx2 = Math.max(p[0],p[1],p[2]), mn2 = Math.min(p[0],p[1],p[2]);
+      const sat = mx2 ? (mx2 - mn2) / mx2 : 0;
+      if (sat < 0.20 && lum(p) > Math.max(178, baseL + 58)) wm[y*N + x] = 1;
+    }
+  const wBlob = largestBlob(morph(morph(wm, N, 0), N, 1), N);
+  let wCount = 0, wSy = 0, mnY = N, mxY = 0;
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++){
+      if (mask[y*N + x]){ if (y < mnY) mnY = y; if (y > mxY) mxY = y; }
+      if (wBlob[y*N + x]){ wCount++; wSy += y; }
+    }
+  /* Where the patch sits, as a fraction down the animal's own bounding box. */
+  const wY = wCount ? ((wSy / wCount) - mnY) / Math.max(1, mxY - mnY) : 0;
+  const whiteAmt = wCount / q;
 
   /* pattern: count luminance sign changes along rows through the subject.
      A tabby oscillates. A bicolour steps once. A solid barely moves. */
@@ -2360,9 +2557,30 @@ function readCatFromPhoto(canvas){
   const raggedness = area ? perim / Math.sqrt(area) : 4;
   const floof = Math.max(0, Math.min(1, (raggedness - 3.6) / 4.2));
 
-  const whiteStyle = whiteAmt > 0.55 ? 'van'
-                   : whiteAmt > 0.28 ? 'bicolour'
-                   : whiteAmt > 0.14 ? 'bib' : 'none';
+  /* Grade, not percentage. A bib is a small fraction of a lying cat's pixels,
+     so a percentage threshold can never find one: 3 percent of the tuxedo IS
+     his bib. Anything above a low floor means white exists, and how much there
+     is decides how far up the migration order it got. */
+  /* Measured on two real cats: a brown tabby with NO white and a tuxedo with a
+     clear bib read 4 percent and 3 percent respectively, and their patch
+     positions were 0.47 and 0.28 down the body. Neither amount nor position
+     separates them. From one downscaled photograph, a pale tabby undercoat and
+     a small white bib are the same measurement.
+
+     So the floor is deliberately high. A large white area is detectable and
+     gets graded; a small one is left at zero for the owner to set with one
+     slider. Inventing white on a cat that has none is the app asserting
+     something untrue about the animal, which is worse than being conservative
+     and letting the owner say so. */
+  const wf = whiteAmt;
+  const whiteGrade = wf < 0.075 ? 0
+                   : wf < 0.15  ? 3.0
+                   : wf < 0.30  ? 4.4
+                   : wf < 0.46  ? 6.0
+                   : wf < 0.66  ? 7.6 : 9.0;
+  const whiteStyle = whiteGrade === 0 ? 'none'
+                   : whiteGrade < 3 ? 'bib'
+                   : whiteGrade < 6 ? 'bicolour' : 'van';
 
   /* Eyes. Small, but the most saturated thing on a cat by a distance. Hues
      are restricted to the ones cats actually have (yellow through green to
@@ -2398,12 +2616,15 @@ function readCatFromPhoto(canvas){
   }
 
   return Object.assign(defaultDNA(), {
-    base, marking, white: whiteAmt > 0.05 ? bright : '#F2E9D8', eye,
-    pattern, whiteStyle, whiteAmt: Math.min(0.9, whiteAmt),
+    base, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
+    pattern, whiteStyle, whiteGrade, whiteEdge: Math.min(1, 0.3 + floof*0.6),
+    seed: (hashStr(base + marking + String(Math.round(whiteAmt*1000)))) >>> 0,
+    whiteAmt: Math.min(0.9, whiteAmt),
     floof, chonk:0.5, ear:0.5, tail:0.6,
     _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
              raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100),
-             eyeConf: eyeConf, twoTone: Math.round(twoTone) }
+             eyeConf: eyeConf, twoTone: Math.round(twoTone),
+             whiteY: +wY.toFixed(2) }
   });
 }
 
@@ -2541,7 +2762,7 @@ const Room = (() => {
   function open(c){
     card = c;
     if (!card){ stop(); return; }
-    if (!card.dna) card.dna = defaultDNA();
+    card.dna = migrateDNA(card.dna) || defaultDNA();
     pet = settleNeeds(card);
     coat = (card.dna && card.dna.base) || (card.meter && card.meter.coat) || '#7A6A55';
     W = cv.width; H = cv.height; floorY = H * 0.74;
@@ -3115,7 +3336,11 @@ const Tuner = (() => {
   let card = null, prev = null, pcx = null, t = 0, raf = 0;
 
   const SLIDERS = [
-    ['floof', 'Floof'], ['chonk', 'Chonk'], ['ear', 'Ears'], ['tail', 'Tail']
+    ['whiteGrade', 'White', 10],   /* 0 to 10, the spotting grade */
+    ['whiteEdge',  'Edge'],
+    ['floof', 'Floof'], ['chonk', 'Chonk'], ['ear', 'Ears'], ['tail', 'Tail'],
+    ['headRound','Round'], ['cheek','Cheeks'], ['muzzle','Muzzle'],
+    ['earSet','Ear set'], ['earTuft','Tufts'], ['eyeSize','Eye size']
   ];
   const COLOURS = [
     ['base', 'Coat'], ['marking', 'Markings'], ['white', 'White'], ['eye', 'Eyes']
@@ -3155,16 +3380,11 @@ const Tuner = (() => {
     });
 
     const wh = $('tuneWhite'); wh.innerHTML = '';
-    WHITE_STYLES.forEach(w => {
+    Object.keys(BUILDS).forEach(n => {
       const b = document.createElement('button');
       b.className = 'chip2'; b.type = 'button';
-      b.setAttribute('aria-pressed', String(d.whiteStyle === w));
-      b.textContent = WHITE_LABEL[w];
-      b.onclick = () => {
-        card.dna.whiteStyle = w;
-        if (w !== 'none' && card.dna.whiteAmt < 0.12) card.dna.whiteAmt = 0.28;
-        commit(); build();
-      };
+      b.textContent = n;
+      b.onclick = () => { Object.assign(card.dna, BUILDS[n]); commit(); build(); };
       wh.appendChild(b);
     });
 
@@ -3179,13 +3399,14 @@ const Tuner = (() => {
     });
 
     const sl = $('tuneSliders'); sl.innerHTML = '';
-    SLIDERS.forEach(([k, label]) => {
+    SLIDERS.forEach(([k, label, top]) => {
+      const max = top || 1;
       const r = document.createElement('div'); r.className = 'sl';
       const s = document.createElement('span'); s.textContent = label;
       const i = document.createElement('input');
       i.type = 'range'; i.min = '0'; i.max = '100';
-      i.value = String(Math.round((d[k] == null ? 0.5 : d[k]) * 100));
-      i.oninput = () => { card.dna[k] = i.value / 100; commit(); };
+      i.value = String(Math.round((d[k] == null ? max*0.5 : d[k]) / max * 100));
+      i.oninput = () => { card.dna[k] = (i.value / 100) * max; commit(); };
       r.append(s, i); sl.appendChild(r);
     });
   }
