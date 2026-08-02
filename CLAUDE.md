@@ -748,6 +748,32 @@ Each class has a companion family. Holding any plant with matching companion unl
 
 ---
 
+## LOOKING IS PART OF THE JOB (added 2026-08-02, Stephen's call)
+
+A visual change is NOT done until you have LOOKED at it.
+
+1. **SHOOT IT** — a screenshot from where the **player** stands, not a debug camera. Then a wide shot.
+2. **READ THE IMAGE.** Name three things wrong in it before Stephen does.
+3. **Shoot the WORST angle you can find, on purpose** — under the floor, the edge of the map, into water, into the sun.
+4. **Report what you SAW**, not what you wired.
+
+A green test is not a look. If you did not open the image, say so.
+
+**Why this rule exists:** on 2026-08-02 twelve automated gates went green on the 3D chameleon
+build while the floor was see-through, the water flared to white and the map ended in empty
+void. Not one gate opens its eyes. Stephen found all three in minutes of actually playing.
+This was already written down in memory as *"wiring art is not seeing art — shoot it"* in July
+and it still did not happen, so it is now a project rule and not a note.
+
+**Corollary — "sloppy" is a real report.** When he says a world looks random or sloppy, that is
+a judgment about composition, not a vague mood. Ask what "good" would look like, or name the bar
+yourself and check it: do two buildings in one frame share a silhouette, do props sit in
+motivated groups (a bench facing a path, bins clustered at a corner), does every terrain meet
+another through a transition instead of a hard edge, is anything visible from under the floor,
+is the horizon ever empty.
+
+---
+
 ## COMMON PITFALLS (LEARN FROM THESE)
 1. **IIFE scoping:** Block 7 functions invisible to Block 8/12 unless on window. This caused silent failures across the entire app.
 2. **Syntax errors kill blocks:** Calendly dead code had stray `);` that killed all 11,000 lines of the main IIFE. switchTab, renderGreenhouse, everything undefined. ALWAYS verify syntax.
