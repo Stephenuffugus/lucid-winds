@@ -1731,23 +1731,76 @@ const CatArt = (() => {
   function dark(h, amt){ return mix(h, '#000000', amt); }
   function light(h, amt){ return mix(h, '#FFFFFF', amt); }
 
-  /* Body outline as a path, so markings can be clipped to the animal. */
+  /* ── the body, as an authored anchor ring ──────────────────────────────────
+     Three ellipses gave every cat on earth the same silhouette. These are
+     fourteen named anatomical anchors per pose, in head-length units with the
+     origin on the ground and +y UP, displaced by the build numbers. A sleek
+     oriental and a cobby british shorthair now differ before any colour is
+     applied, which is the actual test: two cats must be different animals in
+     flat black.
+     ------------------------------------------------------------------------ */
+  const RINGS = {
+    /* throat, napeDip, withers, backUpper, backMid, rumpTop, rumpBack,
+       tailRoot, hindHeel, hindToe, bellyLow, chestLow, chestFront, throatLow */
+    sit: [[0.50,1.44],[0.36,1.52],[0.20,1.58],[-0.16,1.44],[-0.42,1.10],[-0.60,0.78],
+          [-0.68,0.44],[-0.62,0.22],[-0.40,0.04],[0.34,0.02],[0.34,0.40],[0.52,0.62],
+          [0.62,0.94],[0.58,1.24]],
+    /* LOAF: withers MUST be the highest point in the ring, above rumpTop. That
+       scapular shelf IS the loaf. Legs fold to nothing, the chin drops, the
+       top line goes flat and the front tucks vertical. */
+    loaf:[[0.46,0.90],[0.34,1.00],[0.14,1.06],[-0.16,1.00],[-0.44,0.86],[-0.62,0.66],
+          [-0.70,0.38],[-0.64,0.16],[-0.40,0.03],[0.30,0.02],[0.44,0.10],[0.52,0.26],
+          [0.56,0.56],[0.52,0.76]],
+    /* STAND: the barrel lifts clear of the floor so the legs are real parts
+       and the space under the animal is real space. */
+    stand:[[0.52,1.30],[0.38,1.38],[0.20,1.42],[-0.14,1.40],[-0.42,1.34],[-0.62,1.26],
+           [-0.70,1.02],[-0.66,0.86],[-0.52,0.72],[-0.30,0.70],[0.10,0.70],[0.40,0.74],
+           [0.58,0.94],[0.56,1.14]]
+  };
+  /* head origin per pose, same HL units, +y up from the ground */
+  const HEADAT = { sit:[0.46, 1.86], loaf:[0.42, 1.26], stand:[0.52, 1.70] };
+  const RI = { throat:0, nape:1, withers:2, backUpper:3, backMid:4, rumpTop:5,
+               rumpBack:6, tailRoot:7, hindHeel:8, hindToe:9, bellyLow:10,
+               chestLow:11, chestFront:12, throatLow:13 };
+
+  /* Resolve a ring for this cat. frame: -1 sleek oriental to +1 cobby. */
+  function ring(pose, d){
+    const src = RINGS[pose] || RINGS.sit;
+    const r = src.map(p => [p[0], p[1]]);
+    const frame = (d.chonk - 0.5) * 1.4;          /* build follows chonk for now */
+    const chonk = d.chonk;
+    const post  = 0;
+
+    r[RI.backMid][0]    -= 0.10*frame;            /* shorter back when cobby */
+    r[RI.rumpTop][0]    -= 0.08*frame;
+    r[RI.chestFront][0] += 0.06*frame;            /* deeper brisket */
+    r[RI.throat][1]     -= 0.05*frame;            /* shorter neck */
+
+    /* Push chonk to 1 and the belly line drops well below the elbow, which is
+       precisely the visual signature of a fat cat, and it falls out for free. */
+    r[RI.bellyLow][1]   -= 0.26*chonk;
+    r[RI.chestLow][0]   += 0.10*chonk;
+    r[RI.throatLow][0]  += 0.09*chonk;            /* the visible neck collapses */
+    r[RI.backMid][1]    += 0.05*chonk;
+
+    r[RI.withers][1]    += 0.10*post;
+    r[RI.backUpper][0]  += 0.06*post;
+    return r;
+  }
+
+  /* Walk the ring through midpoints so it stays smooth but never mechanical. */
   function bodyPath(cx, P){
-    const { bx, by, bw, bh, pose } = P;
+    const { HL, r } = P;
+    const pt = i => [r[i][0]*HL, -r[i][1]*HL];
+    const n = r.length;
     cx.beginPath();
-    if (pose === 'loaf'){
-      cx.moveTo(bx - bw, by + bh*0.9);
-      cx.bezierCurveTo(bx - bw*1.05, by - bh*0.5, bx - bw*0.5, by - bh, bx, by - bh);
-      cx.bezierCurveTo(bx + bw*0.6, by - bh, bx + bw*1.05, by - bh*0.4, bx + bw, by + bh*0.9);
-      cx.closePath();
-    } else if (pose === 'stand'){
-      cx.ellipse(bx, by, bw, bh*0.78, 0, 0, 7);
-    } else {
-      cx.moveTo(bx - bw*0.86, by + bh);
-      cx.bezierCurveTo(bx - bw*1.0, by - bh*0.3, bx - bw*0.7, by - bh*0.95, bx - bw*0.1, by - bh*0.98);
-      cx.bezierCurveTo(bx + bw*0.66, by - bh*1.0, bx + bw*1.0, by - bh*0.2, bx + bw*0.9, by + bh);
-      cx.closePath();
+    let a = pt(n-1), b = pt(0);
+    cx.moveTo((a[0]+b[0])/2, (a[1]+b[1])/2);
+    for (let i = 0; i < n; i++){
+      const c = pt(i), e = pt((i+1) % n);
+      cx.quadraticCurveTo(c[0], c[1], (c[0]+e[0])/2, (c[1]+e[1])/2);
     }
+    cx.closePath();
   }
 
   /* The pattern, painted inside the clipped body. This is what makes a
@@ -1759,7 +1812,7 @@ const CatArt = (() => {
      animal. White beats every pigment layer absolutely, but white still
      RECEIVES light, or it reads as a sticker. */
   function paintPattern(cx, d, P, PAL, seed){
-    const { bx, by, bw, bh } = P;
+    const { bx, by, bw, bh, HL, r } = P;
     const m = PAL.patternCore;
     cx.save();
     bodyPath(cx, P); cx.clip();
@@ -1908,21 +1961,37 @@ const CatArt = (() => {
        after all of them and nothing pigment-related is drawn over it. */
     const F = whiteField(d, seed);
     const wc = PAL.white, ed = d.whiteEdge == null ? 0.5 : d.whiteEdge;
-    if (F.back > 0)
-      whiteBlob(cx, seed, 1, bx - bw*0.25, by - bh*0.62, bw*F.back*2.0, bh*F.back*1.5, ed, PAL.coatMid, wc, 0.2);
-    if (F.shoulder > 0)
-      whiteBlob(cx, seed, 2, bx + bw*0.30, by - bh*0.30, bw*F.shoulder*1.7, bh*F.shoulder*1.6, ed, PAL.coatMid, wc, 0.5);
-    if (F.flank > 0)
-      whiteBlob(cx, seed, 3, bx - bw*0.34, by + bh*0.16, bw*F.flank*1.8, bh*F.flank*1.7, ed, PAL.coatMid, wc, 1.1);
-    if (F.belly > 0)
-      whiteBlob(cx, seed, 4, bx + bw*0.10, by + bh*0.74, bw*F.belly*2.1, bh*F.belly*1.3, ed, PAL.coatMid, wc, 0);
+    const A = i => [r[i][0]*HL, -r[i][1]*HL];
+    if (F.back > 0){
+      const p = A(RI.backMid);
+      whiteBlob(cx, seed, 1, p[0], p[1] + HL*0.10, HL*F.back*1.5, HL*F.back*1.1, ed, PAL.coatMid, wc, 0.2);
+    }
+    if (F.shoulder > 0){
+      const p = A(RI.withers);
+      whiteBlob(cx, seed, 2, p[0] + HL*0.06, p[1] + HL*0.22, HL*F.shoulder*1.2, HL*F.shoulder*1.1, ed, PAL.coatMid, wc, 0.5);
+    }
+    if (F.flank > 0){
+      const p = A(RI.rumpTop);
+      whiteBlob(cx, seed, 3, p[0] + HL*0.14, p[1] + HL*0.26, HL*F.flank*1.3, HL*F.flank*1.2, ed, PAL.coatMid, wc, 1.1);
+    }
+    if (F.belly > 0){
+      const p = A(RI.bellyLow);
+      whiteBlob(cx, seed, 4, p[0] - HL*0.12, p[1] - HL*0.04, HL*F.belly*1.5, HL*F.belly*0.85, ed, PAL.coatMid, wc, 0);
+    }
     if (F.chestBib > 0){
-      /* the bib: a tall lobe at the brisket plus a smaller one below, so it
-         reads as a run of fur down the chest rather than as a badge */
-      whiteBlob(cx, seed, 5, bx + bw*0.50, by + bh*0.22,
-                bw*F.chestBib*0.95, bh*F.chestBib*1.9, ed, PAL.coatMid, wc, -0.25);
-      whiteBlob(cx, seed, 6, bx + bw*0.34, by + bh*0.66,
-                bw*F.chestBib*0.62, bh*F.chestBib*0.9, ed, PAL.coatMid, wc, 0.4);
+      /* A bib is a teardrop: widest at the throat, tapering down the chest.
+         Anchored to the throat and brisket anchors rather than to a bounding
+         box, so it stays on the chest when the pose changes. */
+      const HLu = P.HL, R = r2 => r2;
+      const tX = r[RI.throatLow][0]*HLu, tY = -r[RI.throatLow][1]*HLu;
+      const cX = r[RI.chestFront][0]*HLu, cY = -r[RI.chestFront][1]*HLu;
+      const lX = r[RI.chestLow][0]*HLu,  lY = -r[RI.chestLow][1]*HLu;
+      const g = F.chestBib;
+      void R;
+      whiteBlob(cx, seed, 5, (tX + cX)/2 - HLu*0.04, (tY + cY)/2,
+                HLu*g*0.62, HLu*g*0.66, ed, PAL.coatMid, wc, -0.2);
+      whiteBlob(cx, seed, 6, (cX + lX)/2 - HLu*0.07, (cY + lY)/2 + HLu*g*0.28,
+                HLu*g*0.46, HLu*g*0.52, ed, PAL.coatMid, wc, 0.3);
     }
 
     /* Form. On a pale patterned cat the markings do this work, but a black cat
@@ -1978,12 +2047,14 @@ const CatArt = (() => {
     cx.translate(o.x, o.y);
     cx.scale(face, 1);
 
-    const bw = s * 0.78 * chonk, bh = s * (pose === 'loaf' ? 0.46 : 0.62);
-    /* standing lifts the body clear of the floor so the legs have somewhere
-       to be. Without this, stand and sit are the same picture. */
-    const legLen = pose === 'stand' ? s * 0.30 : 0;
-    const by = -bh * (pose === 'loaf' ? 0.6 : 0.85) - legLen;
-    const G = { bx:0, by, bw, bh, pose };
+    const HL = s * 0.72;
+    const r  = ring(pose, d);
+    let x0 = 9e9, x1 = -9e9, y0 = 9e9, y1 = -9e9;
+    r.forEach(p => { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]);
+                     y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+    const bw = (x1 - x0) / 2 * HL, bh = (y1 - y0) / 2 * HL;
+    const bx = (x0 + x1) / 2 * HL, by = -(y0 + y1) / 2 * HL;
+    const G = { bx, by, bw, bh, pose, HL, r };
 
     /* shadow */
     cx.fillStyle = 'rgba(0,0,0,.30)';
@@ -1994,31 +2065,78 @@ const CatArt = (() => {
     const tl = 0.34 + d.tail * 0.52;
     const sway = Math.sin(t * 2.2) * s * 0.10 * (0.4 + d.tail);
     cx.strokeStyle = d.pattern === 'point' ? d.marking : dark(d.base, 0.12);
-    cx.lineWidth = s * (0.15 + fl * 0.13); cx.lineCap = 'round';
+    const tW = HL * (0.15 + fl * 0.11);
+    cx.lineWidth = tW; cx.lineCap = 'round';
+    const trX = r[RI.tailRoot][0]*HL, trY = -r[RI.tailRoot][1]*HL;
+    const tipX = trX - HL*(0.30 + tl*0.62), tipY = trY - HL*(0.30 + tl*0.70) + sway;
     cx.beginPath();
-    cx.moveTo(-bw*0.70, by + bh*0.52);
-    cx.quadraticCurveTo(-bw*(0.98 + tl*0.5), by + bh*0.34 + sway,
-                        -bw*(0.86 + tl*0.7), by - bh*(0.10 + tl*0.5) + sway);
+    cx.moveTo(trX, trY);
+    cx.quadraticCurveTo(trX - HL*(0.52 + tl*0.4), trY + HL*0.06 + sway, tipX, tipY);
     cx.stroke();
-
-    /* four legs when she is up on them */
-    if (pose === 'stand'){
-      cx.strokeStyle = dark(d.base, 0.10);
-      cx.lineWidth = s * 0.13; cx.lineCap = 'round';
-      [-0.58, -0.34, 0.36, 0.60].forEach((ox, i) => {
-        const step = Math.sin(t*3 + i*1.6) * s * 0.02;
+    /* tail rings, because a striped cat's tail is not plain */
+    if (d.pattern === 'mackerel' || d.pattern === 'classic'){
+      cx.strokeStyle = P.patternCore;
+      cx.lineWidth = tW * 0.34;
+      cx.globalAlpha = 0.75;
+      [0.34, 0.56, 0.78].forEach(f => {
+        const mx2 = trX + (tipX - trX)*f, my2 = trY + (tipY - trY)*f;
+        const ang = Math.atan2(tipY - trY, tipX - trX) + Math.PI/2;
+        const hw = tW * 0.5;
         cx.beginPath();
-        cx.moveTo(bw*ox, by + bh*0.62);
-        cx.lineTo(bw*ox + step, -s*0.03);
+        cx.moveTo(mx2 - Math.cos(ang)*hw, my2 - Math.sin(ang)*hw);
+        cx.lineTo(mx2 + Math.cos(ang)*hw, my2 + Math.sin(ang)*hw);
         cx.stroke();
       });
-      cx.fillStyle = (d.whiteStyle === 'socks' || d.whiteStyle === 'van') ? d.white : dark(d.base, 0.04);
-      [-0.58, -0.34, 0.36, 0.60].forEach(ox => {
-        cx.beginPath(); cx.ellipse(bw*ox, -s*0.02, bw*0.13, s*0.055, 0, 0, 7); cx.fill();
+      cx.globalAlpha = 1;
+    }
+
+    /* Legs are separate parts bridging the body down to the floor, so the
+       space under a sitting cat is REAL space. The old sit had zero interior
+       negative space, which is why it read as a bread bun. And a striped cat
+       with plain legs is anatomically impossible, so they carry the pattern. */
+    const F = whiteField(d, seed);
+    function leg(lx, topY, botY, wdt, paw, idx){
+      cx.strokeStyle = OK.adj(P.coatMid, { dL:-0.05 });
+      cx.lineWidth = wdt; cx.lineCap = 'round';
+      cx.beginPath(); cx.moveTo(lx, topY); cx.lineTo(lx + paw, botY); cx.stroke();
+      /* bracelets, unless a white sock has already claimed the leg */
+      const sock = F['toe' + idx] || 0;
+      if (d.pattern === 'mackerel' || d.pattern === 'classic'){
+        cx.strokeStyle = P.patternCore; cx.lineWidth = wdt * 0.30;
+        cx.globalAlpha = 0.7;
+        [0.30, 0.55].forEach(f => {
+          if (f > 1 - sock*1.6) return;             /* white beats pigment */
+          const yy = topY + (botY - topY) * f, xx = lx + paw * f;
+          cx.beginPath();
+          cx.moveTo(xx - wdt*0.42, yy); cx.lineTo(xx + wdt*0.42, yy); cx.stroke();
+        });
+        cx.globalAlpha = 1;
+      }
+      /* the paw, white if the spotting field reached this foot */
+      cx.fillStyle = sock > 0.05 ? P.white : OK.adj(P.coatMid, { dL:-0.03 });
+      cx.beginPath();
+      cx.ellipse(lx + paw, botY, wdt*0.62, wdt*0.42, 0, 0, 7); cx.fill();
+      if (sock > 0.05){
+        cx.strokeStyle = P.white; cx.lineWidth = wdt*(0.5 + sock*0.8);
+        cx.beginPath();
+        cx.moveTo(lx + paw*0.9, botY);
+        cx.lineTo(lx + paw*(1 - sock*0.7), botY - (botY - topY)*sock*0.7);
+        cx.stroke();
+      }
+    }
+
+    const gy = -s*0.03;
+    if (pose === 'stand'){
+      const sw = HL*0.115;
+      [['HL', -0.50, 0], ['HR', -0.30, 1], ['FL', 0.30, 2], ['FR', 0.50, 3]].forEach(([k, ox, i]) => {
+        const step = Math.sin(t*3 + i*1.6) * s * 0.018;
+        leg(ox*HL, -0.70*HL, gy, sw, step, k);
       });
-    } else if (pose !== 'loaf'){
-      cx.fillStyle = dark(d.base, 0.06);
-      cx.beginPath(); cx.ellipse(-bw*0.52, -s*0.09, bw*0.30, s*0.16, 0, 0, 7); cx.fill();
+    } else if (pose === 'sit'){
+      /* forelegs bridge down from the brisket and leave a triangle of daylight */
+      const sw = HL*0.125;
+      leg(0.30*HL, -0.60*HL, gy, sw,  0.03*HL, 'FL');
+      leg(0.50*HL, -0.62*HL, gy, sw, -0.02*HL, 'FR');
     }
 
     /* body */
@@ -2026,22 +2144,16 @@ const CatArt = (() => {
     bodyPath(cx, G); cx.fill();
     paintPattern(cx, d, G, P, seed);
 
-    /* front paws (stand draws its own four, so it opts out here) */
-    if (pose !== 'stand'){
-      cx.fillStyle = (d.whiteStyle === 'socks' || d.whiteStyle === 'van') ? d.white : dark(d.base, 0.04);
-      [0.30, 0.62].forEach(ox => {
-        cx.beginPath(); cx.ellipse(bw*ox, -s*0.05, bw*0.17, s*0.10, 0, 0, 7); cx.fill();
-      });
-    }
 
     /* ── the head ────────────────────────────────────────────────────────
        Breeds differ far more in the head than in the coat. A Persian and a
        Devon Rex are the same colour problem and completely different animals,
        and the difference is entirely skull shape, muzzle projection and where
        the ears sit. So the head is built from a path, not an ellipse. */
-    const hr = s * (0.40 + fl * 0.06);
-    const hx = bw * (pose === 'loaf' ? 0.52 : 0.60);
-    const hy = by - bh * (pose === 'loaf' ? 0.72 : 0.86);
+    const hr = HL * (0.44 + fl * 0.05);
+    const HA = HEADAT[pose] || HEADAT.sit;
+    const hx = HA[0] * HL;
+    const hy = -HA[1] * HL;
     const bob = Math.sin(t * 1.6) * s * 0.012;
     const cy2 = hy + bob;
 
