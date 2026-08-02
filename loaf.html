@@ -1487,7 +1487,105 @@ const BUILDS = {
    draw(cx, dna, {x, y, s, pose, t, face}) where s is roughly the shoulder
    height in pixels. Poses: sit, loaf, stand.
    -------------------------------------------------------------------------- */
+/* ── colour, in OKLCH ───────────────────────────────────────────────────────
+   No sampled photo colour ever reaches a fill call. Everything passes through
+   here first. HSL is not a substitute: its lightness is badly wrong for
+   exactly the browns and near-blacks cats are made of. The chroma clamp on
+   the iris is the single line that kills the neon lime eye.
+   -------------------------------------------------------------------------- */
+const OK = (() => {
+  const s2l = c => c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+  const l2s = c => c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(c, 1/2.4) - 0.055;
+
+  function toLab(hex){
+    let t = String(hex).replace('#','');
+    if (t.length === 3) t = t.split('').map(c => c+c).join('');
+    const n = parseInt(t, 16) || 0;
+    const R = s2l(((n>>16)&255)/255), G = s2l(((n>>8)&255)/255), B = s2l((n&255)/255);
+    const l = Math.cbrt(0.4122214708*R + 0.5363325363*G + 0.0514459929*B);
+    const m = Math.cbrt(0.2119034982*R + 0.6806995451*G + 0.1073969566*B);
+    const s = Math.cbrt(0.0883024619*R + 0.2817188376*G + 0.6299787005*B);
+    return [0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+            1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+            0.0259040371*l + 0.7827717662*m - 0.8086757660*s];
+  }
+  function toHex(L, a, b){
+    const l_ = L + 0.3963377774*a + 0.2158037573*b;
+    const m_ = L - 0.1055613458*a - 0.0638541728*b;
+    const s_ = L - 0.0894841775*a - 1.2914855480*b;
+    const l = l_*l_*l_, m = m_*m_*m_, s = s_*s_*s_;
+    const v = [ 4.0767416621*l - 3.3077115913*m + 0.2309699292*s,
+               -1.2684380046*l + 2.6097574011*m - 0.3413193965*s,
+               -0.0041960863*l - 0.7034186147*m + 1.7076147010*s];
+    return '#' + v.map(x => Math.max(0, Math.min(255, Math.round(l2s(x)*255)))
+                            .toString(16).padStart(2,'0')).join('');
+  }
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* dL lightness, dC chroma, dH hue in degrees; cl/cc clamp ranges */
+  function adj(hex, o){
+    o = o || {};
+    const [L, a, b] = toLab(hex);
+    let C = Math.hypot(a, b), H = Math.atan2(b, a);
+    let L2 = L + (o.dL || 0);
+    C += (o.dC || 0);
+    H += (o.dH || 0) * Math.PI / 180;
+    if (o.cl) L2 = clamp(L2, o.cl[0], o.cl[1]);
+    if (o.cc) C  = clamp(C,  o.cc[0], o.cc[1]);
+    L2 = clamp(L2, 0, 1);
+    C = Math.max(0, C);
+    return toHex(L2, Math.cos(H)*C, Math.sin(H)*C);
+  }
+  const lum = hex => toLab(hex)[0];
+  return { adj, lum, toLab, toHex };
+})();
+
 const CatArt = (() => {
+
+  /* Sixteen working colours from six anchors. Cached: recomputed only when the
+     DNA changes, never per frame. */
+  let palCache = null, palKey = '';
+  function palette(d){
+    const key = [d.base, d.marking, d.white, d.eye, d.nose, d.warmth||0].join('|');
+    if (palKey === key && palCache) return palCache;
+    const W = (d.warmth || 0) * 14;
+    /* Anchors are clamped before anything derives from them. */
+    const coatMid  = OK.adj(d.base,    { cl:[0.20, 0.86], cc:[0.02, 0.14], dH:W });
+    const coatDark = OK.adj(d.marking, { cl:[0.14, 0.70], cc:[0.02, 0.16], dH:W });
+    const under    = OK.adj(d.base,    { dL: 0.16, dC:-0.010, dH: 8 + W, cl:[0.30, 0.92] });
+    const white    = OK.adj(d.white || '#F2EADF', { cl:[0.86, 0.955], cc:[0, 0.035] });
+    const iris     = OK.adj(d.eye,     { cc:[0.03, 0.11], cl:[0.34, 0.88] });
+
+    palCache = {
+      coatMid, coatDark, under, white, iris,
+      /* light warms and brightens; shadow goes COOL and violet, never grey */
+      coatLight:  OK.adj(coatMid,  { dL: 0.09, dC: 0.010, dH:  10 }),
+      coatShadow: OK.adj(coatMid,  { dL:-0.15, dC: 0.025, dH: -16 }),
+      coatOcc:    OK.adj(coatMid,  { dL:-0.26, dC: 0.030, dH: -22 }),
+      patternCore: OK.adj(coatDark,{ cl:[0.14, 0.70] }),
+      patternHalo: OK.adj(coatDark,{ dL: 0.13, dC: 0.010, dH:  8 }),
+      underLight: OK.adj(under,    { dL: 0.06, dH:   8 }),
+      underShade: OK.adj(under,    { dL:-0.11, dC: 0.02, dH: -14 }),
+      whiteLit:   OK.adj(white,    { dL: 0.05, cl:[0, 0.97] }),
+      whiteShade: OK.adj(white,    { dL:-0.13, dC: 0.035, dH: -20 }),
+      irisInner:  OK.adj(iris,     { dL: 0.14, dC: 0.010, dH:  8 }),
+      irisRim:    OK.adj(iris,     { dL:-0.30, dC: 0.020, dH: -12 }),
+      lidLine:    OK.adj(coatDark, { dL:-0.10, dC: 0.02, dH: -18 }),
+      noseLine:   OK.adj(d.nose || '#B0736E', { dL:-0.28, dC: 0.02 }),
+      rim:        OK.adj(coatMid,  { dL: 0.30, dC:-0.020, dH:  40, cl:[0.5, 0.95] })
+    };
+    palKey = key;
+    return palCache;
+  }
+
+  /* Deterministic per-cat jitter. Perfect bilateral symmetry is the strongest
+     clip-art signal there is, so nothing paired may ever be mirrored. */
+  function rnd(seed, i){
+    let h = (seed ^ (i * 2654435761)) >>> 0;
+    h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0;
+    return h / 4294967295;
+  }
+  function jit(seed, i, amt){ return (rnd(seed, i) - 0.5) * 2 * amt; }
 
   function mix(a, b, t){
     const pa = hex(a), pb = hex(b);
@@ -1684,6 +1782,8 @@ const CatArt = (() => {
 
   function draw(cx, dna, o){
     const d = Object.assign(defaultDNA(), dna || {});
+    const P = palette(d);
+    const seed = (d.seed >>> 0) || 0x9E3779B9;
     const s = o.s || 60, pose = o.pose || 'sit', t = o.t || 0, face = o.face || 1;
     const chonk = 0.78 + d.chonk * 0.52;
     const fl = d.floof;
@@ -1697,7 +1797,7 @@ const CatArt = (() => {
        to be. Without this, stand and sit are the same picture. */
     const legLen = pose === 'stand' ? s * 0.30 : 0;
     const by = -bh * (pose === 'loaf' ? 0.6 : 0.85) - legLen;
-    const P = { bx:0, by, bw, bh, pose };
+    const G = { bx:0, by, bw, bh, pose };
 
     /* shadow */
     cx.fillStyle = 'rgba(0,0,0,.30)';
@@ -1736,9 +1836,9 @@ const CatArt = (() => {
     }
 
     /* body */
-    cx.fillStyle = d.base;
-    bodyPath(cx, P); cx.fill();
-    paintPattern(cx, d, P);
+    cx.fillStyle = P.coatMid;
+    bodyPath(cx, G); cx.fill();
+    paintPattern(cx, d, G);
 
     /* fluffy chest ruff, the single biggest longhair tell */
     if (fl > 0.45){
@@ -1852,7 +1952,7 @@ const CatArt = (() => {
     }
 
     /* head */
-    cx.fillStyle = d.base;
+    cx.fillStyle = P.coatMid;
     headPath(); cx.fill();
     if (d.pattern === 'point'){
       const g = cx.createRadialGradient(hx, cy2 + HH*0.30, hr*0.1,
@@ -1911,39 +2011,90 @@ const CatArt = (() => {
     const ex   = HW * (0.30 + eGap*0.20);
     const open = o.blink ? 0.10 : 1;
     const alm  = 1 - d.eyeRound;                     /* 0 round, 1 almond */
-    [-1, 1].forEach(k => {
+    [-1, 1].forEach((k, side) => {
+      /* Every paired landmark is jittered. Nothing on a face is mirrored. */
+      const jx = jit(seed, 40 + side, eyR*0.06), jy = jit(seed, 60 + side, eyR*0.05);
+      const jr = 1 + jit(seed, 80 + side, 0.05);
+      const rx = eyR*(1.02 - alm*0.06)*jr, ry = eyR*(1.0 - alm*0.20)*open*jr;
       cx.save();
-      cx.translate(hx + k*ex, ey);
-      cx.rotate(k * alm * 0.20);
-      /* socket shadow gives the eye a seat in the skull */
-      cx.fillStyle = 'rgba(0,0,0,.16)';
-      cx.beginPath(); cx.ellipse(0, eyR*0.10, eyR*1.24, eyR*1.06*open, 0, 0, 7); cx.fill();
-      /* iris */
-      const ig = cx.createRadialGradient(0, -eyR*0.22, eyR*0.10, 0, 0, eyR*1.05);
-      ig.addColorStop(0, light(d.eye, 0.34));
-      ig.addColorStop(0.62, d.eye);
-      ig.addColorStop(1, dark(d.eye, 0.34));
+      cx.translate(hx + k*ex + jx, ey + jy);
+      cx.rotate(k * alm * 0.20 + jit(seed, 100 + side, 0.05));
+
+      /* 1. socket. Skipping this is exactly why eyes look glued on. */
+      cx.globalAlpha = 0.16; cx.fillStyle = P.coatOcc;
+      cx.beginPath(); cx.ellipse(0, eyR*0.10, eyR*1.30, eyR*1.10*open, 0, 0, 7); cx.fill();
+      cx.globalAlpha = 1;
+
+      cx.save();
+      /* 3. the aperture IS the eye. Cats show almost no sclera, so never draw
+         an eyeball: draw the opening and fill it with iris. */
+      cx.beginPath(); cx.ellipse(0, 0, rx, ry, 0, 0, 7); cx.clip();
+
+      /* 4+5. iris, bright and warm at the pupil, darker and cooler at the rim */
+      const ig = cx.createRadialGradient(0, -eyR*0.12, eyR*0.05, 0, 0, eyR*0.58);
+      ig.addColorStop(0, P.irisInner);
+      ig.addColorStop(0.62, P.iris);
+      ig.addColorStop(1, P.irisRim);
       cx.fillStyle = ig;
-      cx.beginPath();
-      cx.ellipse(0, 0, eyR*(1.02 - alm*0.06), eyR*(1.0 - alm*0.20)*open, 0, 0, 7);
-      cx.fill();
+      cx.fillRect(-rx, -ry, rx*2, ry*2);
+
+      /* 6. LID CAST SHADOW. Measured on the real cat, the upper iris reads
+         olive under the lid while the lower arc reads pale. This is doing more
+         visible work than the radial gradient. If you build one, build this. */
+      const ls = cx.createLinearGradient(0, -ry, 0, ry*0.30);
+      ls.addColorStop(0, 'rgba(0,0,0,.34)');
+      ls.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = ls; cx.fillRect(-rx, -ry, rx*2, ry*1.4);
+
       if (open > 0.5){
-        cx.fillStyle = '#120C16';
+        /* 8. pupil. Never pure black: pure black at this size reads as a
+           punched hole rather than as an eye. */
+        cx.fillStyle = '#0E0B0A';
         cx.beginPath();
-        cx.ellipse(0, 0, eyR*(0.20 + d.eyeRound*0.30), eyR*0.82, 0, 0, 7); cx.fill();
-        /* catchlight, up and toward the light */
-        cx.fillStyle = 'rgba(255,255,255,.88)';
-        cx.beginPath(); cx.ellipse(-eyR*0.34, -eyR*0.36, eyR*0.24, eyR*0.19, -0.4, 0, 7); cx.fill();
-        cx.fillStyle = 'rgba(255,255,255,.42)';
-        cx.beginPath(); cx.ellipse(eyR*0.28, eyR*0.32, eyR*0.12, eyR*0.09, 0, 0, 7); cx.fill();
+        cx.ellipse(0, 0, eyR*(0.10 + d.eyeRound*0.72), eyR*0.94, 0, 0, 7); cx.fill();
+
+        /* 9. catchlight, straddling the pupil edge, deliberately oversized.
+           THE SAME OFFSET IN BOTH EYES. The light is at infinity; mirroring it
+           is the commonest mistake in the genre and it reads as cross-eyed. */
+        cx.fillStyle = 'rgba(255,252,244,.92)';
+        cx.beginPath(); cx.arc(-eyR*0.34, -eyR*0.32, eyR*0.30, 0, 7); cx.fill();
+
+        /* 10. bounce. Two lights read as a sphere, one reads as a disc. */
+        cx.fillStyle = 'rgba(230,240,255,.34)';
+        cx.beginPath(); cx.arc(eyR*0.30, eyR*0.32, eyR*0.14, 0, 7); cx.fill();
       }
-      /* upper lid line, which is what stops an eye reading as a bead */
-      cx.strokeStyle = 'rgba(0,0,0,.42)';
-      cx.lineWidth = Math.max(1, eyR*0.17);
+      cx.restore();
+
+      /* 7. limbal ring, the cheapest big win in the rig */
+      cx.strokeStyle = P.irisRim; cx.globalAlpha = 0.8;
+      cx.lineWidth = Math.max(1, eyR*0.11);
+      cx.beginPath(); cx.ellipse(0, 0, rx, ry, 0, 0, 7); cx.stroke();
+      cx.globalAlpha = 1;
+
+      /* 12. upper lid line, tapering outer to inner. Near zero on black cats,
+         where the irises genuinely float with no visible rim. */
+      const lidA = 0.30 + OK.lum(P.coatMid) * 0.45;
+      cx.strokeStyle = P.lidLine; cx.globalAlpha = lidA;
+      cx.lineWidth = Math.max(1, eyR*0.20);
       cx.beginPath();
-      cx.ellipse(0, 0, eyR*(1.02 - alm*0.06), eyR*(1.0 - alm*0.20)*open,
-                 0, Math.PI*1.06, Math.PI*1.94);
+      cx.ellipse(0, 0, rx, ry, 0, Math.PI*1.04, Math.PI*1.96);
       cx.stroke();
+
+      /* 13. lower lid catches light, which seats the eye in flesh */
+      cx.globalAlpha = 0.30; cx.strokeStyle = 'rgb(255,242,224)';
+      cx.lineWidth = Math.max(1, eyR*0.09);
+      cx.beginPath();
+      cx.ellipse(0, 0, rx*0.94, ry*0.96, 0, Math.PI*0.16, Math.PI*0.84);
+      cx.stroke();
+
+      /* 14. lash tick. Enormous elegance per pixel. */
+      cx.globalAlpha = lidA; cx.strokeStyle = P.lidLine;
+      cx.lineWidth = Math.max(1, eyR*0.15); cx.lineCap = 'round';
+      cx.beginPath();
+      cx.moveTo(k*rx*0.86, -ry*0.42);
+      cx.lineTo(k*rx*1.24, -ry*0.72);
+      cx.stroke();
+      cx.globalAlpha = 1;
       cx.restore();
     });
 
