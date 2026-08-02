@@ -1591,6 +1591,29 @@ const OK = (() => {
 
 const CatArt = (() => {
 
+  /* One 128x128 noise tile, generated once at module load and reused as a
+     pattern under soft-light at very low alpha. This is the cheapest thing in
+     the whole renderer and it kills the flat-plastic look instantly. */
+  let noisePat = null;
+  function noise(cx){
+    if (noisePat) return noisePat;
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const im = g.createImageData(128, 128);
+    let h = 0x2545F491;
+    for (let i = 0; i < im.data.length; i += 4){
+      h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0;
+      const v = 110 + (h % 36);
+      im.data[i] = im.data[i+1] = im.data[i+2] = v;
+      im.data[i+3] = 255;
+    }
+    g.putImageData(im, 0, 0);
+    noisePat = cx.createPattern(c, 'repeat');
+    return noisePat;
+  }
+
+
   /* Sixteen working colours from six anchors. Cached: recomputed only when the
      DNA changes, never per frame. */
   let palCache = null, palKey = '';
@@ -2090,6 +2113,18 @@ const CatArt = (() => {
     bodyPath(cx, P); cx.stroke();
     cx.restore();
 
+    /* B14. texture. One tile, soft-light, barely there. Without it every
+       fill is a flat plastic shape no matter how good the gradients are. */
+    const np = noise(cx);
+    if (np){
+      cx.save();
+      cx.globalCompositeOperation = 'soft-light';
+      cx.globalAlpha = 0.09;
+      cx.fillStyle = np;
+      cx.fillRect(bx - bw*1.3, by - bh*1.5, bw*2.6, bh*3.0);
+      cx.restore();
+    }
+
     /* contact occlusion where she meets the floor */
     const ao = cx.createLinearGradient(0, by + bh*0.35, 0, by + bh*1.15);
     ao.addColorStop(0, 'rgba(0,0,0,0)');
@@ -2205,10 +2240,52 @@ const CatArt = (() => {
       leg(0.50*HL, -0.62*HL, gy, sw, -0.02*HL, 'FR');
     }
 
+    /* B1. HALO. The resolved ring scaled slightly and filled behind the
+       animal in a colour part-way to the room. One extra fill, and it is the
+       entire shorthair versus semi-longhair difference. */
+    if (fl > 0.06){
+      cx.save();
+      const k = 1 + 0.02 + 0.06*fl;
+      cx.translate(G.bx, G.by); cx.scale(k, k); cx.translate(-G.bx, -G.by);
+      cx.fillStyle = OK.adj(P.coatMid, { dL: 0.05 + fl*0.06, dC:-0.02 });
+      cx.globalAlpha = 0.30 + fl*0.35;
+      bodyPath(cx, G); cx.fill();
+      cx.restore();
+    }
+
     /* body */
     cx.fillStyle = P.coatMid;
     bodyPath(cx, G); cx.fill();
     paintPattern(cx, d, G, P, seed);
+
+    /* B16. Individual hairs crossing the outline outward, in the fur zones
+       only. The skull top and the face front stay smooth or the head stops
+       reading as a head. */
+    if (fl > 0.10){
+      const hairs = Math.round(18 + 46*fl);
+      cx.lineCap = 'round';
+      for (let i = 0; i < hairs; i++){
+        const t2 = i / hairs;
+        const seg = t2 * (G.r.length);
+        const i0 = Math.floor(seg) % G.r.length, i1 = (i0 + 1) % G.r.length;
+        const f = seg - Math.floor(seg);
+        const ax = (G.r[i0][0] + (G.r[i1][0]-G.r[i0][0])*f) * HL;
+        const ay = -(G.r[i0][1] + (G.r[i1][1]-G.r[i0][1])*f) * HL;
+        /* outward normal, approximated from the ring centre */
+        const nx = ax - G.bx, ny = ay - G.by;
+        const nl = Math.hypot(nx, ny) || 1;
+        const len = HL * (0.018 + rnd(seed, 900+i) * 0.050) * (0.4 + fl);
+        const jj = jit(seed, 950+i, 0.5);
+        cx.strokeStyle = OK.adj(P.coatMid, { dL: 0.10 });
+        cx.globalAlpha = 0.20 + rnd(seed, 980+i) * 0.30;
+        cx.lineWidth = Math.max(0.6, HL*0.012);
+        cx.beginPath();
+        cx.moveTo(ax, ay);
+        cx.lineTo(ax + (nx/nl)*len + jj*len, ay + (ny/nl)*len + jj*len*0.5);
+        cx.stroke();
+      }
+      cx.globalAlpha = 1;
+    }
 
 
     /* ── the head ────────────────────────────────────────────────────────
