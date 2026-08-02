@@ -35,9 +35,10 @@ warn(){ printf "  ${C_WARN}note${C_OFF}  %s\n" "$*"; }
 bad(){  printf "  ${C_BAD}RISK${C_OFF}  %s\n" "$*"; }
 dim(){  printf "        ${C_DIM}%s${C_OFF}\n" "$*"; }
 
-# Cross-repo pushes need the ambient tokens out of the way or git picks the
-# wrong credential and fails with a confusing 403.
-gitpush(){ env -u GITHUB_TOKEN -u GH_TOKEN git "$@"; }
+# EVERY remote operation strips the ambient tokens first. The codespace token
+# does not carry access to the private sws-memory repo, so with it set, clone,
+# fetch and ls-remote all 403 and the status check cries wolf every morning.
+gitnet(){ env -u GITHUB_TOKEN -u GH_TOKEN git "$@"; }
 
 repo_report(){
   local d="$1" name; name="$(basename "$d")"
@@ -80,12 +81,15 @@ cmd_status(){
 }
 
 clone_one(){
-  local name="$1" dest="$WS/$name"
+  # Split, do not chain. `local a=$1 b=$WS/$a` expands EVERY argument before it
+  # performs ANY assignment, so $a is still unset and `set -u` kills the run.
+  local name dest
+  name="$1"; dest="$WS/$name"
   if [ -d "$dest/.git" ]; then
-    git -C "$dest" fetch --all --quiet 2>/dev/null && ok "$name fetched" || warn "$name fetch failed"
+    gitnet -C "$dest" fetch --all --quiet 2>/dev/null && ok "$name fetched" || warn "$name fetch failed"
   else
     printf "  cloning %s ...\n" "$name"
-    if git clone --quiet "https://github.com/$OWNER/$name.git" "$dest" 2>/dev/null; then
+    if gitnet clone --quiet "https://github.com/$OWNER/$name.git" "$dest" 2>/dev/null; then
       ok "$name cloned"
     else
       bad "$name could not be cloned"
@@ -104,10 +108,10 @@ cmd_pull(){
 
   printf "\n%s\n" "── memory"
   if [ -d "$MEMDIR/.git" ]; then
-    git -C "$MEMDIR" fetch --quiet 2>/dev/null && ok "memory fetched"
+    gitnet -C "$MEMDIR" fetch --quiet 2>/dev/null && ok "memory fetched"
   else
     mkdir -p "$(dirname "$MEMDIR")"
-    if git clone --quiet "https://github.com/$OWNER/sws-memory.git" "$MEMDIR" 2>/dev/null; then
+    if gitnet clone --quiet "https://github.com/$OWNER/sws-memory.git" "$MEMDIR" 2>/dev/null; then
       ok "memory restored from sws-memory"
     else
       bad "memory could not be restored. It is a PRIVATE repo; check auth."
@@ -135,10 +139,10 @@ Untidy on purpose: the point is that it survives." && ok "committed"
   while read -r b up; do
     [ -z "$b" ] && continue
     if [ -z "$up" ]; then
-      gitpush -C "$d" push -q -u origin "$b" 2>/dev/null \
+      gitnet -C "$d" push -q -u origin "$b" 2>/dev/null \
         && ok "branch '$b' adopted by origin" || bad "branch '$b' FAILED to push"
     else
-      gitpush -C "$d" push -q origin "$b" 2>/dev/null \
+      gitnet -C "$d" push -q origin "$b" 2>/dev/null \
         && ok "branch '$b' pushed" || warn "branch '$b' nothing to push or push failed"
     fi
   done < <(git -C "$d" for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads)
