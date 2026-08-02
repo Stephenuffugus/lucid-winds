@@ -1618,12 +1618,38 @@ const CatArt = (() => {
       }
     }
 
-    /* soft shading so it is not flat */
-    const sg = cx.createLinearGradient(0, by - bh, 0, by + bh);
-    sg.addColorStop(0, 'rgba(255,255,255,.10)');
-    sg.addColorStop(0.6, 'rgba(0,0,0,0)');
-    sg.addColorStop(1, 'rgba(0,0,0,.24)');
+    /* Form. On a pale patterned cat the markings do this work, but a black cat
+       has no markings to read, so ALL of its shape has to come from the light.
+       The rim scales with how dark the coat is, which is the difference
+       between a black cat and a black blob. */
+    const lumBase = (() => { const p = hex(d.base); return (0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2]) / 255; })();
+    const rim = 0.16 + (1 - lumBase) * 0.42;
+
+    const sg = cx.createLinearGradient(0, by - bh*1.1, 0, by + bh);
+    sg.addColorStop(0, 'rgba(255,255,255,' + (0.06 + (1-lumBase)*0.10).toFixed(3) + ')');
+    sg.addColorStop(0.55, 'rgba(0,0,0,0)');
+    sg.addColorStop(1, 'rgba(0,0,0,.26)');
     cx.fillStyle = sg; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+
+    /* Rim light along the TOP AND BACK ONLY. Light comes from one direction;
+       rimming the whole silhouette puts a grey shelf under the animal and
+       reads as an outlining mistake rather than as light. */
+    cx.save();
+    cx.beginPath();
+    cx.rect(bx - bw*1.3, by - bh*1.4, bw*1.35, bh*2.0);   /* back half */
+    cx.rect(bx - bw*1.3, by - bh*1.4, bw*2.6, bh*1.15);   /* upper band  */
+    cx.clip();
+    cx.translate(-bw*0.03, -bh*0.05);
+    cx.strokeStyle = 'rgba(255,246,228,' + rim.toFixed(3) + ')';
+    cx.lineWidth = Math.max(2, bw*0.085);
+    bodyPath(cx, P); cx.stroke();
+    cx.restore();
+
+    /* contact occlusion where she meets the floor */
+    const ao = cx.createLinearGradient(0, by + bh*0.35, 0, by + bh*1.15);
+    ao.addColorStop(0, 'rgba(0,0,0,0)');
+    ao.addColorStop(1, 'rgba(0,0,0,.34)');
+    cx.fillStyle = ao; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
     cx.restore();
   }
 
@@ -1835,6 +1861,13 @@ const CatArt = (() => {
    how ragged the silhouette is (longhair), and whether luminance oscillates
    along the body (tabby) or sits in two big blocks (bicolour).
    -------------------------------------------------------------------------- */
+function hexRGB(h){
+  let t = String(h).replace('#','');
+  if (t.length === 3) t = t.split('').map(c => c + c).join('');
+  const n = parseInt(t, 16);
+  return Number.isFinite(n) ? [(n>>16)&255, (n>>8)&255, n&255] : [128,128,128];
+}
+
 /* 3x3 erode (mode 0) / dilate (mode 1) */
 function morph(src, N, mode){
   const out = new Uint8Array(N*N);
@@ -2009,10 +2042,21 @@ function readCatFromPhoto(canvas){
   const flipRate = subjectPx ? (flips / subjectPx) * 100 : 0;
   const contrast = rows ? spread / rows : 0;
 
+  /* If the dark cluster and the mid cluster are the same colour then there is
+     no second tone on this animal, so there are no markings to have a pattern
+     with. A black cat's row contrast comes from the light falling on her fur,
+     not from stripes, and without this check she reads as a classic tabby. */
+  const tone = (a, b) => {
+    const pa = hexRGB(a), pb = hexRGB(b);
+    return Math.hypot(pa[0]-pb[0], pa[1]-pb[1], pa[2]-pb[2]);
+  };
+  const twoTone = tone(base, marking);
+
   let pattern = 'solid';
+  if (twoTone < 42) pattern = 'solid';
   /* Nothing to read at all: a flat animal is a solid animal, whatever the
      wiggle count says. */
-  if (contrast < 52) pattern = 'solid';
+  else if (contrast < 52) pattern = 'solid';
   else if (flipRate >= 3.0) pattern = 'mackerel';
   else if (flipRate >= 1.6) pattern = 'classic';
   else if (contrast > 74)   pattern = 'ticked';
@@ -2075,7 +2119,7 @@ function readCatFromPhoto(canvas){
     floof, chonk:0.5, ear:0.5, tail:0.6,
     _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
              raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100),
-             eyeConf: eyeConf }
+             eyeConf: eyeConf, twoTone: Math.round(twoTone) }
   });
 }
 
