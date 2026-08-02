@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#150E1D">
+<meta name="description" content="Scan your cat. Get one graded trading card.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Cat Scanner — Field Unit 01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#150E1D; --panel:#221733; --panel-2:#2E2044; --line:#3D2C58;
+  --amber:#FFB23F; --jade:#6FE3C4; --bone:#EFE4D2; --dim:#9A88B3; --faint:#6C5A85;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
+  --mx:50%; --my:50%; --tiltx:0deg; --tilty:0deg; --foil:0;
+  --pupil-x:0px; --pupil-w:7px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:radial-gradient(120% 80% at 50% -10%,#2A1B3D 0%,transparent 60%),var(--ink);
+  color:var(--bone);font-family:var(--display);min-height:100svh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+.wrap{width:100%;max-width:460px}
+.hidden{display:none!important}
+
+.bar{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);padding:18px 2px 0}
+.bar b{color:var(--amber);font-weight:500}
+
+.mast{margin:22px 0 8px;padding:0 2px}
+.mast h1{font-size:clamp(38px,13vw,58px);line-height:.86;letter-spacing:-.045em;
+  font-weight:800;margin:0;text-transform:uppercase}
+.mast h1 span{display:block;color:var(--amber)}
+.mast p{font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--dim);
+  margin:14px 0 0;max-width:34ch}
+
+.slot{margin-top:26px;border:1px dashed var(--line);border-radius:20px;
+  background:linear-gradient(180deg,rgba(46,32,68,.55),rgba(34,23,51,.25));
+  padding:30px 22px;text-align:center;position:relative;overflow:hidden}
+.slot::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 40% at 50% 0%,rgba(255,178,63,.09),transparent 70%)}
+.eyes{display:flex;gap:16px;justify-content:center;margin-bottom:18px}
+.eye{width:36px;height:36px;border-radius:50%;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 50% 50%,var(--amber) 0 44%,#8A5A12 45% 100%);
+  box-shadow:0 0 26px rgba(255,178,63,.32)}
+.pupil{position:absolute;left:50%;top:6%;height:88%;border-radius:50%;background:var(--ink);
+  width:var(--pupil-w);
+  transform:translateX(calc(-50% + var(--pupil-x)));
+  transition:width .28s ease}
+.slot h2{font-size:20px;letter-spacing:-.02em;margin:0 0 6px}
+.slot .sub{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 20px}
+
+.btn{font-family:var(--display);font-weight:700;font-size:15px;border:0;border-radius:999px;
+  padding:15px 26px;cursor:pointer;background:var(--amber);color:#241300;width:100%;
+  display:block;text-align:center;transition:transform .12s ease}
+.btn:active{transform:scale(.97)}
+.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;border-radius:999px;padding:13px 20px;
+  cursor:pointer;width:100%;display:block;text-align:center}
+.danger{color:#FF7B7B;border-color:#5A2B39}
+:focus-visible{outline:2px solid var(--jade);outline-offset:3px}
+.field{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--bone);
+  font-family:var(--mono);font-size:14px;border-radius:12px;padding:14px 16px}
+.field::placeholder{color:var(--faint)}
+.field:focus{outline:none;border-color:var(--amber)}
+.row{display:flex;gap:10px;margin-top:12px}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+.scanwrap{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.scanwrap img{width:100%;display:block;filter:saturate(.25) contrast(1.1) brightness(.8)}
+.beam{position:absolute;left:0;right:0;height:36%;
+  background:linear-gradient(180deg,transparent,rgba(111,227,196,.28),transparent);
+  border-top:1px solid rgba(111,227,196,.85);animation:beam 1.5s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes beam{from{top:-36%}to{top:100%}}
+.steps{font-family:var(--mono);font-size:11px;color:var(--jade);letter-spacing:.14em;
+  text-transform:uppercase;margin-top:14px;text-align:center;min-height:16px}
+
+.stage{margin-top:26px;perspective:1400px}
+.card{position:relative;border-radius:22px;overflow:hidden;background:var(--panel);
+  border:1px solid var(--line);box-shadow:0 30px 60px -24px #000;
+  transform:rotateX(var(--tiltx)) rotateY(var(--tilty));transition:transform .18s ease-out;
+  animation:slam .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes slam{from{opacity:0;transform:scale(.86) rotateX(14deg)}to{opacity:1;transform:none}}
+.card .foil{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:var(--foil);
+  background:
+    radial-gradient(38% 38% at var(--mx) var(--my),rgba(255,255,255,.5),transparent 65%),
+    conic-gradient(from 0deg at var(--mx) var(--my),#FF5FA2,#FFD84D,#6FE3C4,#7A9BFF,#FF5FA2);
+  mix-blend-mode:color-dodge}
+.photo{position:relative;aspect-ratio:1/1;overflow:hidden;background:#0E0914}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 45%,rgba(21,14,29,.92))}
+.rarity{position:absolute;top:12px;left:12px;z-index:2;font-family:var(--mono);font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;padding:6px 11px;border-radius:999px;
+  background:rgba(21,14,29,.72);border:1px solid currentColor}
+.nameplate{position:absolute;left:16px;right:16px;bottom:12px;z-index:2}
+.nameplate h3{font-size:clamp(28px,8vw,38px);line-height:.9;margin:0;font-weight:800;
+  letter-spacing:-.04em;text-transform:uppercase;word-break:break-word}
+.nameplate .title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber);
+  margin-top:7px;text-transform:uppercase}
+.stats{padding:18px 16px 6px;display:grid;gap:11px}
+.stat{display:grid;grid-template-columns:70px 1fr 30px;align-items:center;gap:10px}
+.stat b{font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.14em;color:var(--dim)}
+.track{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--jade),var(--amber));
+  width:0;transition:width .8s cubic-bezier(.2,.9,.3,1)}
+.stat i{font-family:var(--mono);font-style:normal;font-size:11px;text-align:right}
+.flavor{padding:12px 16px 20px;font-family:var(--mono);font-size:12px;line-height:1.6;
+  color:var(--dim);border-top:1px solid var(--line);margin-top:12px}
+.meta{display:flex;justify-content:space-between;gap:12px;padding:0 16px 16px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+
+.coll{margin-top:34px}
+.coll h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);font-weight:400;margin:0 0 12px;display:flex;justify-content:space-between}
+.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.chip{flex:0 0 78px;border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:var(--panel);cursor:pointer;padding:0;text-align:left}
+.chip img{width:78px;height:78px;object-fit:cover;display:block}
+.chip span{display:block;font-family:var(--mono);font-size:9px;padding:5px 4px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip[aria-current=true]{border-color:var(--amber)}
+
+.note{font-family:var(--mono);font-size:12px;margin-top:14px;text-align:center;line-height:1.5}
+.note.bad{color:#FF7B7B}
+.note.ok{color:var(--jade)}
+.empty{font-family:var(--mono);font-size:11px;color:var(--faint)}
+footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;letter-spacing:.1em}
+
+/* naming sheet */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(10,6,15,.72);padding:16px}
+.sheet .inner{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);
+  border-radius:22px;padding:22px;animation:rise .28s cubic-bezier(.2,.9,.3,1) both}
+@keyframes rise{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
+.sheet p{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 16px}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .card{transform:none!important}
+  .beam{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap bar"><span>Cat Scanner</span><span>Field Unit <b>01</b></span></div>
+
+<header class="wrap mast">
+  <h1>Scan<br><span>your cat</span></h1>
+  <p>Point the lens at the animal. The unit reads coat, posture and general menace, then issues one graded card.</p>
+</header>
+
+<section class="wrap slot" id="view-slot">
+  <div class="eyes" id="eyes" aria-hidden="true">
+    <div class="eye"><div class="pupil"></div></div>
+    <div class="eye"><div class="pupil"></div></div>
+  </div>
+  <h2>Specimen slot empty</h2>
+  <p class="sub">One cat per scan. Whole body reads best.</p>
+  <label for="file" class="btn" id="pick">Scan a cat</label>
+  <input type="file" id="file" accept="image/*">
+</section>
+
+<section class="wrap hidden" id="view-scan">
+  <div class="scanwrap"><img id="preview" alt=""><div class="beam"></div></div>
+  <div class="steps" id="steps">Reading specimen</div>
+</section>
+
+<section class="wrap stage hidden" id="view-card">
+  <article class="card" id="card">
+    <div class="foil"></div>
+    <div class="photo">
+      <span class="rarity" id="rarity">—</span>
+      <img id="cardimg" alt="Scanned cat">
+      <div class="nameplate">
+        <h3 id="cname">—</h3>
+        <div class="title" id="ctitle">—</div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="flavor" id="flavor"></div>
+    <div class="meta"><span id="coat">—</span><span id="serial">—</span></div>
+  </article>
+  <div class="row"><button class="btn" id="save">Save card as image</button></div>
+  <div class="row">
+    <button class="ghost" id="rename">Rename</button>
+    <button class="ghost" id="again">Scan another</button>
+  </div>
+  <div class="row"><button class="ghost danger hidden" id="remove">Remove from collection</button></div>
+  <div class="note" id="cardNote"></div>
+</section>
+
+<div class="wrap note bad" id="err"></div>
+
+<section class="wrap coll">
+  <h4><span>Collection</span><span id="count">0 cards</span></h4>
+  <div class="strip" id="strip"><span class="empty">No cats logged yet.</span></div>
+</section>
+
+<footer>LUCID WINDS · SKY WALK STUDIO</footer>
+
+<div class="sheet hidden" id="sheet">
+  <div class="inner">
+    <h3>Name this cat</h3>
+    <p>Goes on the card. You can change it later.</p>
+    <input id="nameField" class="field" maxlength="18" placeholder="Mochi" autocomplete="off">
+    <div class="row"><button class="btn" id="nameSave">Set name</button></div>
+    <div class="row"><button class="ghost" id="nameSkip">Skip</button></div>
+  </div>
+</div>
+
+<canvas id="ex" width="1080" height="1350" class="hidden"></canvas>
+
+<script>
+"use strict";
+/* ============================================================================
+   CAT SCANNER v1.0 — single-file vanilla PWA, no build step.
+   Read HANDOFF.md before extending. Search [TODO] for open seams.
+   ========================================================================== */
+
+const CONFIG = {
+  /* [TODO] On lucidwinds.com point this at a Cloud Function proxy holding the
+     API key server-side. Direct browser calls only work inside the preview. */
+  ENDPOINT: 'https://api.anthropic.com/v1/messages',
+  MODEL: 'claude-sonnet-4-6',
+  MAX_TOKENS: 1000,
+  MAX_UPLOAD_PX: 1024,
+  JPEG_QUALITY: 0.85,
+  MAX_NAME: 18,
+  RETRY_ON_BAD_JSON: true
+};
+
+const STAT_KEYS = ['chonk','loaf','void','menace','zoomies','floof'];
+const RARITIES = ['ALLEY','HOUSE','SHOW','FOIL','MYTHIC'];
+const RARITY_COLOR = { ALLEY:'#9A88B3', HOUSE:'#6FE3C4', SHOW:'#7A9BFF', FOIL:'#FFB23F', MYTHIC:'#FF5FA2' };
+const FOIL_STRENGTH = { ALLEY:0, HOUSE:.06, SHOW:.12, FOIL:.24, MYTHIC:.38 };
+/* [TODO] Portfolio economy. Mint server-side only. */
+const SUNBEAMS_BY_RARITY = { ALLEY:5, HOUSE:10, SHOW:25, FOIL:60, MYTHIC:150 };
+
+/* ----------------------------------------------------------------------------
+   STORAGE ADAPTER — in-memory so this runs in a sandboxed preview.
+   [TODO] On deploy swap the two bodies:
+     read():   try{ return JSON.parse(localStorage.getItem('catscan.v1')||'[]') }catch{ return [] }
+     write(v): try{ localStorage.setItem('catscan.v1', JSON.stringify(v)) }catch{}
+   Records are already Firestore-shaped: one doc per card at users/{uid}/cats/{id}.
+   Photos are data URLs. localStorage caps near 5MB — cap the collection or move
+   photos to Firebase Storage before this grows.
+   -------------------------------------------------------------------------- */
+let _mem = [];
+const Store = {
+  read(){ return _mem.slice(); },
+  write(v){ _mem = v.slice(); }
+};
+
+/* ----------------------------------------------------------------------------
+   HOOKS — intentionally empty. Where the rest of the studio plugs in.
+   -------------------------------------------------------------------------- */
+const Hooks = {
+  onCardMinted(card){
+    /* [TODO] Award SUNBEAMS_BY_RARITY[card.rarity] via Cloud Function.
+       Anti-cheat: the function must rate-limit per uid and ideally re-grade,
+       or a scripted client mints MYTHICs forever. */
+    console.info('[hook] minted', card.id, card.rarity);
+  },
+  onCardExported(card){
+    /* [TODO] Analytics. Export rate is the growth metric that matters most. */
+    console.info('[hook] exported', card.id);
+  },
+  onCollectionChanged(all){
+    /* [TODO] Friend-graph sync. Friends-only reads. Never expose to strangers. */
+    console.info('[hook] collection', all.length);
+  }
+};
+
+const $ = id => document.getElementById(id);
+const VIEWS = { slot:'view-slot', scan:'view-scan', card:'view-card' };
+function show(name){
+  Object.entries(VIEWS).forEach(([k,id]) => $(id).classList.toggle('hidden', k !== name));
+}
+function say(msg, kind){
+  const el = $('err');
+  el.textContent = msg || '';
+  el.className = 'wrap note ' + (kind || 'bad');
+}
+
+/* ----------------------------------------------------------------------------
+   THE EYES — idle left-right sweep, pointer tracking, dilation on intent
+   -------------------------------------------------------------------------- */
+const Eyes = (() => {
+  const root = document.documentElement;
+  const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let idle = true, t = 0, settle = 0;
+
+  const look = x => root.style.setProperty('--pupil-x', Math.max(-9, Math.min(9, x)) + 'px');
+  const dilate = on => root.style.setProperty('--pupil-w', on ? '22px' : '7px');
+
+  function loop(){
+    if(idle){
+      t += 0.014;
+      /* eased sweep: lingers at each side like a cat tracking something */
+      const p = Math.sin(t);
+      look(Math.sign(p) * Math.pow(Math.abs(p), 0.6) * 9);
+    }
+    requestAnimationFrame(loop);
+  }
+  if(!reduced) requestAnimationFrame(loop);
+
+  window.addEventListener('pointermove', e => {
+    if(reduced) return;
+    const box = $('eyes').getBoundingClientRect();
+    if(!box.width) return;
+    idle = false;
+    look(((e.clientX - (box.left + box.width/2)) / (window.innerWidth/2)) * 9);
+    clearTimeout(settle);
+    settle = setTimeout(() => { idle = true; }, 1800);
+  }, { passive:true });
+
+  const pick = $('pick');
+  ['pointerenter','focus','touchstart'].forEach(ev => pick.addEventListener(ev, () => dilate(true), {passive:true}));
+  ['pointerleave','blur'].forEach(ev => pick.addEventListener(ev, () => dilate(false)));
+  return { dilate };
+})();
+
+/* ----------------------------------------------------------------------------
+   IMAGE PREP
+   -------------------------------------------------------------------------- */
+function shrink(file, max = CONFIG.MAX_UPLOAD_PX){
+  return new Promise((res, rej) => {
+    if(!file.type.startsWith('image/')) return rej(new Error('not-image'));
+    const reader = new FileReader();
+    reader.onerror = () => rej(new Error('read'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('decode'));
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const url = c.toDataURL('image/jpeg', CONFIG.JPEG_QUALITY);
+        res({ url, b64: url.split(',')[1] });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   GRADING
+   -------------------------------------------------------------------------- */
+const PROMPT = `You are the grading unit inside a cat trading-card app. Grade the cat in this photo.
+
+Return ONLY a JSON object, no markdown, no preamble:
+{
+ "is_cat": true or false,
+ "breed": "best guess, 2-3 words, hedge if unsure",
+ "coat": "short coat descriptor, max 3 words",
+ "title": "an epithet for this specific cat, 2-4 words, funny and affectionate, e.g. 'Certified Void Merchant'",
+ "rarity": "ALLEY" | "HOUSE" | "SHOW" | "FOIL" | "MYTHIC",
+ "stats": { "chonk":0-100, "loaf":0-100, "void":0-100, "menace":0-100, "zoomies":0-100, "floof":0-100 },
+ "flavor": "one sentence about what this cat is clearly like to live with, under 110 characters, warm and funny, never mean about the animal"
+}
+
+Grade from what you can actually see: build, coat length, colour, posture, expression, eye contact.
+VOID is how dark and shadow-shaped it is. LOAF is how well it tucks. MENACE is mischief in the face, never aggression.
+Use the full 0-100 range. Do not cluster values near 50. Every cat should be genuinely bad at at least one stat and near-maxed on at least one.
+Rarity should feel like a real pack: most cats are ALLEY or HOUSE, SHOW is uncommon, FOIL is rare, MYTHIC is for a genuinely striking animal only.
+If the image is not a cat, set is_cat false and omit everything else.`;
+
+async function callGrader(b64){
+  const res = await fetch(CONFIG.ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: CONFIG.MODEL,
+      max_tokens: CONFIG.MAX_TOKENS,
+      messages: [{ role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } },
+        { type:'text', text: PROMPT }
+      ]}]
+    })
+  });
+  if(!res.ok){ const e = new Error('http'); e.status = res.status; throw e; }
+  const data = await res.json();
+  const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+/* Never trust model output straight into the DOM. Clamp everything. */
+function validate(raw){
+  const out = { is_cat: raw.is_cat === true };
+  if(!out.is_cat) return out;
+  const str = (v, fb, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : fb);
+  out.breed  = str(raw.breed,  'Unknown mix', 40);
+  out.coat   = str(raw.coat,   'Unrecorded', 30);
+  out.title  = str(raw.title,  'Household Operative', 40);
+  out.flavor = str(raw.flavor, 'Refused to comment.', 140);
+  out.rarity = RARITIES.includes(raw.rarity) ? raw.rarity : 'HOUSE';
+  out.stats = {};
+  STAT_KEYS.forEach(k => {
+    const n = Number(raw.stats && raw.stats[k]);
+    out.stats[k] = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 50;
+  });
+  return out;
+}
+
+async function grade(b64){
+  try { return validate(await callGrader(b64)); }
+  catch(e){
+    if(e instanceof SyntaxError && CONFIG.RETRY_ON_BAD_JSON) return validate(await callGrader(b64));
+    throw e;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   SCAN FLOW
+   -------------------------------------------------------------------------- */
+const BEATS = ['Reading specimen','Measuring loaf density','Assessing menace','Checking void levels','Grading'];
+let busy = false;
+
+$('file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';                    // lets the same file be picked twice
+  if(f) run(f);
+});
+
+async function run(file){
+  if(busy) return;
+  busy = true;
+  say('');
+  Eyes.dilate(false);
+
+  let shot;
+  try { shot = await shrink(file); }
+  catch { busy = false; return say('That image would not open. Try a JPG or PNG.'); }
+
+  $('preview').src = shot.url;
+  show('scan');
+  let i = 0;
+  $('steps').textContent = BEATS[0];
+  const beat = setInterval(() => { i = (i + 1) % BEATS.length; $('steps').textContent = BEATS[i]; }, 900);
+
+  try {
+    const g = await grade(shot.b64);
+    clearInterval(beat);
+    if(!g.is_cat){ show('slot'); return say('No cat detected. The unit only grades cats.'); }
+    mint(g, shot.url);
+  } catch(e){
+    clearInterval(beat);
+    show('slot');
+    if(e.status === 429) say('Scanner is busy. Wait a moment and scan again.');
+    else if(e.status === 401 || e.status === 403) say('Scanner is not authorised. Check the proxy key.');
+    else if(e instanceof SyntaxError) say('The grader returned nonsense. Scan again.');
+    else say('Scan failed. Check your connection and scan again.');
+  } finally { busy = false; }
+}
+
+/* ----------------------------------------------------------------------------
+   CARDS
+   -------------------------------------------------------------------------- */
+let current = null;
+
+const newId = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,8));
+
+function mint(g, url){
+  const all = Store.read();
+  const card = {
+    id: newId(),
+    name: 'Unnamed',
+    serial: all.length + 1,
+    scannedAt: Date.now(),
+    photo: url,
+    rarity: g.rarity, breed: g.breed, coat: g.coat,
+    title: g.title, flavor: g.flavor, stats: g.stats
+  };
+  all.unshift(card);
+  Store.write(all);
+  Hooks.onCardMinted(card);
+  Hooks.onCollectionChanged(all);
+  paint(card, true);
+  openSheet(card);
+}
+
+function paint(card, isNew){
+  current = card;
+  $('cardimg').src = card.photo;
+  $('cname').textContent = (card.name || 'Unnamed').toUpperCase();
+  $('ctitle').textContent = card.title;
+  $('coat').textContent = [card.coat, card.breed].filter(Boolean).join(' · ');
+  $('serial').textContent = '№' + String(card.serial).padStart(3,'0');
+  $('flavor').textContent = card.flavor;
+
+  const tag = $('rarity');
+  tag.textContent = card.rarity;
+  tag.style.color = RARITY_COLOR[card.rarity];
+  $('card').style.setProperty('--foil', FOIL_STRENGTH[card.rarity]);
+
+  const box = $('stats');
+  box.innerHTML = '';
+  STAT_KEYS.forEach((k, idx) => {
+    const v = card.stats[k];
+    const row = document.createElement('div');
+    row.className = 'stat';
+    const b = document.createElement('b'); b.textContent = k.toUpperCase();
+    const track = document.createElement('div'); track.className = 'track';
+    const fill = document.createElement('div'); fill.className = 'fill';
+    track.appendChild(fill);
+    const num = document.createElement('i'); num.textContent = v;
+    row.append(b, track, num);
+    box.appendChild(row);
+    setTimeout(() => { fill.style.width = v + '%'; }, 120 + idx * 90);
+  });
+
+  $('remove').classList.toggle('hidden', !!isNew);
+  $('cardNote').textContent = '';
+  show('card');
+  $('view-card').scrollIntoView({ behavior:'smooth', block:'center' });
+  drawStrip();
+}
+
+/* naming sheet ------------------------------------------------------------- */
+let naming = null;
+function openSheet(card){
+  naming = card;
+  $('nameField').value = card.name === 'Unnamed' ? '' : card.name;
+  $('sheet').classList.remove('hidden');
+  setTimeout(() => $('nameField').focus(), 120);
+}
+function closeSheet(){ $('sheet').classList.add('hidden'); naming = null; }
+$('nameSkip').onclick = closeSheet;
+$('nameSave').onclick = () => {
+  const v = $('nameField').value.trim().slice(0, CONFIG.MAX_NAME);
+  if(v && naming) setName(naming.id, v);
+  closeSheet();
+};
+$('nameField').addEventListener('keydown', e => { if(e.key === 'Enter') $('nameSave').click(); });
+
+function setName(id, name){
+  const all = Store.read();
+  const c = all.find(x => x.id === id);
+  if(!c) return;
+  c.name = name;
+  Store.write(all);
+  if(current && current.id === id) $('cname').textContent = name.toUpperCase();
+  Hooks.onCollectionChanged(all);
+  drawStrip();
+}
+
+$('again').onclick = () => { show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
+$('rename').onclick = () => { if(current) openSheet(current); };
+$('remove').onclick = () => {
+  if(!current) return;
+  const all = Store.read().filter(c => c.id !== current.id);
+  Store.write(all);
+  Hooks.onCollectionChanged(all);
+  current = null;
+  drawStrip();
+  show('slot');
+  say('Card removed.', 'ok');
+};
+
+/* ----------------------------------------------------------------------------
+   COLLECTION
+   -------------------------------------------------------------------------- */
+function drawStrip(){
+  const all = Store.read();
+  const strip = $('strip');
+  $('count').textContent = all.length + (all.length === 1 ? ' card' : ' cards');
+  strip.innerHTML = '';
+  if(!all.length){
+    const e = document.createElement('span');
+    e.className = 'empty';
+    e.textContent = 'No cats logged yet.';
+    strip.appendChild(e);
+    return;
+  }
+  all.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.setAttribute('aria-current', String(!!current && current.id === c.id));
+    const img = document.createElement('img'); img.src = c.photo; img.alt = '';
+    const s = document.createElement('span'); s.textContent = c.name;
+    b.append(img, s);
+    b.onclick = () => paint(c, false);
+    strip.appendChild(b);
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   HOLO TILT
+   -------------------------------------------------------------------------- */
+(() => {
+  const card = $('card');
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  card.addEventListener('pointermove', e => {
+    const b = card.getBoundingClientRect();
+    const x = (e.clientX - b.left) / b.width, y = (e.clientY - b.top) / b.height;
+    card.style.setProperty('--mx', x * 100 + '%');
+    card.style.setProperty('--my', y * 100 + '%');
+    card.style.setProperty('--tilty', (x - .5) * 12 + 'deg');
+    card.style.setProperty('--tiltx', (.5 - y) * 12 + 'deg');
+  });
+  card.addEventListener('pointerleave', () => {
+    card.style.setProperty('--tiltx','0deg');
+    card.style.setProperty('--tilty','0deg');
+  });
+  /* [TODO] iOS 13+ needs DeviceOrientationEvent.requestPermission() on a user
+     gesture. Add a "tilt to shine" button that requests it, then enables this. */
+  window.addEventListener('deviceorientation', e => {
+    if(e.gamma == null) return;
+    const x = Math.max(-1, Math.min(1, e.gamma / 35));
+    const y = Math.max(-1, Math.min(1, (e.beta - 45) / 35));
+    card.style.setProperty('--mx', 50 + x * 45 + '%');
+    card.style.setProperty('--my', 50 + y * 45 + '%');
+  });
+})();
+
+/* ----------------------------------------------------------------------------
+   PNG EXPORT — hand-drawn to canvas, no dependencies, 1080x1350 for socials
+   -------------------------------------------------------------------------- */
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+$('save').onclick = () => {
+  if(!current) return;
+  const card = current;
+  const cv = $('ex'), c = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const img = new Image();
+  img.onerror = () => say('Could not build the image. Try again.');
+  img.onload = () => {
+    c.fillStyle = '#150E1D'; c.fillRect(0,0,W,H);
+
+    const PS = 60, PW = W - PS*2, PH = PW;
+    c.save(); roundRect(c, PS, PS, PW, PH, 40); c.clip();
+    const s = Math.max(PW / img.width, PH / img.height);
+    c.drawImage(img, PS + PW/2 - img.width*s/2, PS + PH/2 - img.height*s/2, img.width*s, img.height*s);
+    const grad = c.createLinearGradient(0, PS + PH*.45, 0, PS + PH);
+    grad.addColorStop(0,'rgba(21,14,29,0)'); grad.addColorStop(1,'rgba(21,14,29,.95)');
+    c.fillStyle = grad; c.fillRect(PS, PS, PW, PH);
+    c.restore();
+
+    c.font = '500 26px "DM Mono",monospace';
+    const rw = c.measureText(card.rarity).width + 46;
+    c.fillStyle = 'rgba(21,14,29,.75)'; roundRect(c, PS+28, PS+28, rw, 54, 27); c.fill();
+    c.strokeStyle = RARITY_COLOR[card.rarity]; c.lineWidth = 2; c.stroke();
+    c.fillStyle = RARITY_COLOR[card.rarity];
+    c.textBaseline = 'middle'; c.fillText(card.rarity, PS+51, PS+56);
+    c.textBaseline = 'alphabetic';
+
+    const name = (card.name || 'Unnamed').toUpperCase();
+    c.fillStyle = '#EFE4D2';
+    let fs = 88;
+    do { c.font = '800 ' + fs + 'px "Bricolage Grotesque",sans-serif'; fs -= 3; }
+    while(c.measureText(name).width > PW - 70 && fs > 34);
+    c.fillText(name, PS+35, PS+PH-78);
+    c.fillStyle = '#FFB23F'; c.font = '400 26px "DM Mono",monospace';
+    c.fillText(String(card.title).toUpperCase(), PS+35, PS+PH-36);
+
+    let y = PS + PH + 72;
+    STAT_KEYS.forEach(k => {
+      const v = card.stats[k];
+      c.fillStyle = '#9A88B3'; c.font = '400 24px "DM Mono",monospace';
+      c.fillText(k.toUpperCase(), PS, y);
+      const bx = PS + 200, bw = PW - 260;
+      c.fillStyle = '#2E2044'; roundRect(c, bx, y-16, bw, 16, 8); c.fill();
+      const g2 = c.createLinearGradient(bx, 0, bx + bw, 0);
+      g2.addColorStop(0,'#6FE3C4'); g2.addColorStop(1,'#FFB23F');
+      c.fillStyle = g2; roundRect(c, bx, y-16, Math.max(16, bw*v/100), 16, 8); c.fill();
+      c.fillStyle = '#EFE4D2'; c.textAlign = 'right'; c.fillText(v, PS+PW, y); c.textAlign = 'left';
+      y += 52;
+    });
+
+    c.strokeStyle = '#3D2C58'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(PS, y+6); c.lineTo(PS+PW, y+6); c.stroke();
+    c.fillStyle = '#9A88B3'; c.font = '400 26px "DM Mono",monospace';
+    let line = '', ly = y + 56;
+    String(card.flavor).split(' ').forEach(w => {
+      if(c.measureText(line + w + ' ').width > PW){ c.fillText(line, PS, ly); line = w + ' '; ly += 38; }
+      else line += w + ' ';
+    });
+    c.fillText(line, PS, ly);
+
+    c.fillStyle = '#5A4A72'; c.font = '400 22px "DM Mono",monospace';
+    c.fillText('CAT SCANNER · LUCIDWINDS.COM', PS, H-52);
+
+    cv.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-card.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      Hooks.onCardExported(card);
+      const n = $('cardNote');
+      n.textContent = 'Saved. Post it anywhere.';
+      n.className = 'note ok';
+    }, 'image/png');
+  };
+  img.src = card.photo;
+};
+
+drawStrip();
+</script>
+</body>
+</html>
