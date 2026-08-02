@@ -1182,6 +1182,9 @@ async function intake(file){
   const meter = LightMeter.analyse(big.canvas);
   /* Read what she actually looks like, on this device, with no model. */
   const dna = readCatFromPhoto(big.canvas) || defaultDNA();
+  /* A modal colour is always won by the flattest thing in frame, which is the
+     background, never the striped animal. Report what the reader found. */
+  if (dna.base) meter.coat = dna.base;
   pending = { url: small.url, b64: big.url.split(',')[1], meter, dna };
 
   $('mimg').src = small.url;
@@ -1796,6 +1799,48 @@ const CatArt = (() => {
    how ragged the silhouette is (longhair), and whether luminance oscillates
    along the body (tabby) or sits in two big blocks (bicolour).
    -------------------------------------------------------------------------- */
+/* 3x3 erode (mode 0) / dilate (mode 1) */
+function morph(src, N, mode){
+  const out = new Uint8Array(N*N);
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++){
+      let hit = mode ? 0 : 1;
+      for (let dy = -1; dy <= 1 && (mode ? !hit : hit); dy++)
+        for (let dx = -1; dx <= 1; dx++){
+          const nx = x+dx, ny = y+dy;
+          const v = (nx < 0 || ny < 0 || nx >= N || ny >= N) ? 0 : src[ny*N + nx];
+          if (mode){ if (v) { hit = 1; break; } }
+          else if (!v){ hit = 0; break; }
+        }
+      out[y*N + x] = hit;
+    }
+  return out;
+}
+
+/* Keep the biggest connected region, which is the animal. */
+function largestBlob(src, N){
+  const seen = new Uint8Array(N*N);
+  const out = new Uint8Array(N*N);
+  let best = null, bestN = 0;
+  const stack = [];
+  for (let i = 0; i < N*N; i++){
+    if (!src[i] || seen[i]) continue;
+    const blob = [];
+    stack.length = 0; stack.push(i); seen[i] = 1;
+    while (stack.length){
+      const q = stack.pop(); blob.push(q);
+      const qx = q % N, qy = (q / N) | 0;
+      if (qx > 0   && src[q-1] && !seen[q-1]) { seen[q-1] = 1; stack.push(q-1); }
+      if (qx < N-1 && src[q+1] && !seen[q+1]) { seen[q+1] = 1; stack.push(q+1); }
+      if (qy > 0   && src[q-N] && !seen[q-N]) { seen[q-N] = 1; stack.push(q-N); }
+      if (qy < N-1 && src[q+N] && !seen[q+N]) { seen[q+N] = 1; stack.push(q+N); }
+    }
+    if (blob.length > bestN){ bestN = blob.length; best = blob; }
+  }
+  if (best) best.forEach(i => { out[i] = 1; });
+  return out;
+}
+
 function readCatFromPhoto(canvas){
   const N = 128;
   const c = document.createElement('canvas');
@@ -1807,26 +1852,65 @@ function readCatFromPhoto(canvas){
   const at = (x, y) => { const i = (y*N + x)*4; return [d[i], d[i+1], d[i+2]]; };
   const lum = p => 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
 
-  /* border palette, so we can tell room from animal */
-  let br = 0, bg = 0, bb = 0, bn = 0;
-  for (let x = 0; x < N; x++)
-    [0, 1, 2, N-3, N-2, N-1].forEach(y => {
-      const p = at(x, y); br += p[0]; bg += p[1]; bb += p[2]; bn++;
-      const q = at(y, x); br += q[0]; bg += q[1]; bb += q[2]; bn++;
-    });
-  const bord = [br/bn, bg/bn, bb/bn];
-
-  /* subject mask: centre-weighted, and different from the border */
-  const mask = new Uint8Array(N*N);
-  const pix = [];
+  /* Background as a SET of colour buckets, not one average. A real photo's
+     border is often three different things (a blue sheet, a peach arm, a mint
+     blanket) and averaging them lands on a muddy mid-grey that is almost
+     exactly the colour of a brown tabby, so the mask leaks everywhere. */
+  const key = p => (p[0]>>4) + ',' + (p[1]>>4) + ',' + (p[2]>>4);
+  const counts = {};
+  let bn = 0;
+  const edge = Math.max(3, Math.round(N*0.055));
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++){
-      const p = at(x, y);
-      const dc = Math.hypot(p[0]-bord[0], p[1]-bord[1], p[2]-bord[2]);
-      const cxr = (x - N/2) / (N/2), cyr = (y - N/2) / (N/2);
-      const central = Math.hypot(cxr, cyr) < 0.86;
-      if (dc > 30 && central){ mask[y*N + x] = 1; pix.push(p); }
+      if (x > edge && x < N-edge && y > edge && y < N-edge) continue;
+      counts[key(at(x, y))] = (counts[key(at(x, y))] || 0) + 1; bn++;
     }
+  /* Only colours with real mass on the border count as background. One stray
+     pixel must not blacklist a colour the cat is wearing. */
+  const floor = Math.max(2, bn * 0.004);
+  const bgSet = {};
+  Object.keys(counts).forEach(k => { if (counts[k] >= floor) bgSet[k] = 1; });
+
+  const centreMask = () => {
+    const m = new Uint8Array(N*N);
+    for (let y = 0; y < N; y++)
+      for (let x = 0; x < N; x++){
+        const cxr = (x - N/2) / (N*0.42), cyr = (y - N/2) / (N*0.46);
+        if (cxr*cxr + cyr*cyr <= 1) m[y*N + x] = 1;
+      }
+    return m;
+  };
+
+  let mask = new Uint8Array(N*N);
+  let kept = 0;
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++){
+      const cxr = (x - N/2) / (N/2), cyr = (y - N/2) / (N/2);
+      if (Math.hypot(cxr, cyr) > 0.96) continue;
+      if (!bgSet[key(at(x, y))]) { mask[y*N + x] = 1; kept++; }
+    }
+
+  /* Morphological open, then keep only the largest connected blob. Without
+     this the mask is confetti, and perimeter over root area stops being a
+     shape measurement and becomes a noise measurement. */
+  if (kept > N*N*0.04){
+    mask = morph(mask, N, 0);   /* erode */
+    mask = morph(mask, N, 1);   /* dilate */
+    const blob = largestBlob(mask, N);
+    let bc = 0;
+    for (let i = 0; i < blob.length; i++) bc += blob[i];
+    /* If separating by colour did not leave a believable animal, assume she is
+       in the middle of the frame, which she is in essentially every photograph
+       anyone has ever taken of their cat. */
+    mask = bc > N*N*0.05 ? blob : centreMask();
+  } else {
+    mask = centreMask();
+  }
+
+  const pix = [];
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++)
+      if (mask[y*N + x]) pix.push(at(x, y));
   if (pix.length < 260) return null;
 
   /* three clusters by luminance, which for a cat is very close to
@@ -1851,31 +1935,55 @@ function readCatFromPhoto(canvas){
 
   /* pattern: count luminance sign changes along rows through the subject.
      A tabby oscillates. A bicolour steps once. A solid barely moves. */
-  let flips = 0, rows = 0, spread = 0;
-  for (let y = Math.floor(N*0.30); y < N*0.80; y += 2){
-    let prev = null, up = null, f = 0, mn = 999, mx = -1, n = 0;
-    for (let x = 0; x < N; x++){
-      if (!mask[y*N + x]) continue;
-      const L = lum(at(x, y)); n++;
-      mn = Math.min(mn, L); mx = Math.max(mx, L);
-      if (prev != null){
-        const dir = L > prev + 7 ? 1 : (L < prev - 7 ? -1 : up);
-        if (up != null && dir != null && dir !== up) f++;
-        up = dir;
-      }
-      prev = L;
+  let flips = 0, rows = 0, spread = 0, subjectPx = 0;
+  for (let y = Math.floor(N*0.22); y < N*0.86; y += 2){
+    /* Collect the row, then SMOOTH it. Raw fur texture produces dozens of
+       tiny flips per row, which swamps the actual striping and makes the
+       measure meaningless. A 5-tap box filter leaves the stripes and kills
+       the fluff. */
+    const raw = [];
+    for (let x = 0; x < N; x++) if (mask[y*N + x]) raw.push(lum(at(x, y)));
+    if (raw.length < 16) continue;
+    const sm = raw.map((_, i) => {
+      let t = 0, c = 0;
+      for (let k = -1; k <= 1; k++){ const j = i+k; if (j >= 0 && j < raw.length){ t += raw[j]; c++; } }
+      return t / c;
+    });
+    const mn = Math.min.apply(null, sm), mx = Math.max.apply(null, sm);
+    /* Count TURNING POINTS by prominence, not by adjacent-sample deltas. A
+       stripe edge is spread over several pixels, so no single step ever
+       clears an amplitude-sized threshold; what identifies a stripe is that
+       the signal reverses by a meaningful fraction of the row's own range.
+       The floor is ABSOLUTE and load-bearing: a purely relative threshold
+       shrinks as the image flattens, so a featureless blur keeps scoring the
+       same wiggle count as a real tabby. A stripe is a real luminance step. */
+    const prom = Math.max(18, (mx - mn) * 0.22);
+    let mnRun = sm[0], mxRun = sm[0], dir = 0, f = 0;
+    for (let i = 1; i < sm.length; i++){
+      const L = sm[i];
+      if (L > mxRun) mxRun = L;
+      if (L < mnRun) mnRun = L;
+      if (dir >= 0 && mxRun - L > prom){ f++; dir = -1; mnRun = mxRun = L; }
+      else if (dir <= 0 && L - mnRun > prom){ f++; dir = 1; mnRun = mxRun = L; }
     }
-    if (n > 12){ flips += f; rows++; spread += (mx - mn); }
+    flips += f; rows++; spread += (mx - mn); subjectPx += raw.length;
   }
-  const flipRate = rows ? flips / rows : 0;
+  /* Flips per 100 subject pixels, so a big cat in frame does not out-score a
+     small one purely by being wider. */
+  const flipRate = subjectPx ? (flips / subjectPx) * 100 : 0;
   const contrast = rows ? spread / rows : 0;
 
   let pattern = 'solid';
-  if (contrast > 96 && flipRate < 3.2 && whiteAmt > 0.16) pattern = 'tortie';
-  else if (flipRate >= 3.4) pattern = 'mackerel';
-  else if (flipRate >= 2.0) pattern = 'classic';
-  else if (contrast > 62)   pattern = 'ticked';
-  if (pattern !== 'solid' && whiteAmt > 0.30 && contrast > 96) pattern = 'calico';
+  /* Nothing to read at all: a flat animal is a solid animal, whatever the
+     wiggle count says. */
+  if (contrast < 52) pattern = 'solid';
+  else if (flipRate >= 3.0) pattern = 'mackerel';
+  else if (flipRate >= 1.6) pattern = 'classic';
+  else if (contrast > 74)   pattern = 'ticked';
+  /* Two-tone blotching without regular striping is a tortie, and a tortie
+     wearing a lot of white is a calico. */
+  if (contrast > 104 && flipRate < 1.6 && whiteAmt > 0.14)
+    pattern = whiteAmt > 0.30 ? 'calico' : 'tortie';
 
   /* floof: a longhair has a much longer edge for the same area */
   let perim = 0, area = 0;
@@ -1890,14 +1998,48 @@ function readCatFromPhoto(canvas){
 
   const whiteStyle = whiteAmt > 0.55 ? 'van'
                    : whiteAmt > 0.28 ? 'bicolour'
-                   : whiteAmt > 0.10 ? 'bib' : 'none';
+                   : whiteAmt > 0.14 ? 'bib' : 'none';
+
+  /* Eyes. Small, but the most saturated thing on a cat by a distance. Hues
+     are restricted to the ones cats actually have (yellow through green to
+     blue) so the pink nose, which is just as saturated, cannot win. */
+  const eyeCands = [];
+  for (let y = 0; y < N*0.66; y++)
+    for (let x = 0; x < N; x++){
+      if (!mask[y*N + x]) continue;
+      const p = at(x, y);
+      const mx = Math.max(p[0],p[1],p[2]), mn = Math.min(p[0],p[1],p[2]);
+      if (!mx) continue;
+      const sat = (mx - mn) / mx, L = lum(p);
+      if (sat < 0.21 || L < 48 || L > 246) continue;
+      let h;
+      if (mx === p[0]) h = ((p[1]-p[2])/(mx-mn)) % 6;
+      else if (mx === p[1]) h = (p[2]-p[0])/(mx-mn) + 2;
+      else h = (p[0]-p[1])/(mx-mn) + 4;
+      h = (h * 60 + 360) % 360;
+      if (h < 38 || h > 250) continue;          /* drop pinks, reds, magentas */
+      eyeCands.push({ p, sat });
+    }
+  /* Eyes are a few dozen pixels at this scale. Taking a PERCENTAGE of the
+     candidates drowns them in whatever large mildly-saturated thing is also
+     in frame, which is how you end up reporting the bedsheet. Take a small
+     absolute number of the most saturated pixels, and if they are not
+     convincingly saturated, decline rather than guess. */
+  let eye = '#C8D94A', eyeConf = false;
+  if (eyeCands.length >= 10){
+    eyeCands.sort((a, b) => b.sat - a.sat);
+    const top = eyeCands.slice(0, 24);
+    const meanSat = top.reduce((t, e) => t + e.sat, 0) / top.length;
+    if (meanSat >= 0.34){ eye = avg(top.map(e => e.p)); eyeConf = true; }
+  }
 
   return Object.assign(defaultDNA(), {
-    base, marking, white: whiteAmt > 0.05 ? bright : '#F2E9D8',
+    base, marking, white: whiteAmt > 0.05 ? bright : '#F2E9D8', eye,
     pattern, whiteStyle, whiteAmt: Math.min(0.9, whiteAmt),
     floof, chonk:0.5, ear:0.5, tail:0.6,
     _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
-             raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100) }
+             raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100),
+             eyeConf: eyeConf }
   });
 }
 
@@ -2037,7 +2179,7 @@ const Room = (() => {
     if (!card){ stop(); return; }
     if (!card.dna) card.dna = defaultDNA();
     pet = settleNeeds(card);
-    coat = (card.meter && card.meter.coat) || '#7A6A55';
+    coat = (card.dna && card.dna.base) || (card.meter && card.meter.coat) || '#7A6A55';
     W = cv.width; H = cv.height; floorY = H * 0.74;
 
     cat = { x:W*0.52, y:floorY, vx:0, tx:W*0.52, state:'idle', t:0, blink:0,
