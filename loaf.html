@@ -301,6 +301,38 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 .nopet{padding:36px 22px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim);
   line-height:1.7}
 
+/* ── the tuner ───────────────────────────────────────────────────────────── */
+.tuner{margin-top:12px;border:1px solid var(--line);border-radius:18px;background:var(--panel);
+  overflow:hidden}
+.tunerHd{width:100%;background:none;border:0;color:var(--bone);font-family:var(--mono);
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:16px 16px;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;min-height:52px}
+.tunerHd .chev{color:var(--amber);font-size:16px;line-height:1}
+.tunerBody{padding:0 14px 16px}
+#tunePrev{display:block;width:100%;border-radius:14px;background:var(--panel-2);
+  border:1px solid var(--line)}
+.tunerNote{font-family:var(--mono);font-size:10.5px;line-height:1.6;color:var(--faint);
+  margin:10px 2px 14px}
+.tuneRow{margin-bottom:14px}
+.tuneRow > b{display:block;font-family:var(--mono);font-weight:400;font-size:9px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip2{background:var(--panel-2);border:1px solid var(--line);border-radius:99px;
+  color:var(--dim);font-family:var(--mono);font-size:10px;padding:10px 13px;cursor:pointer;
+  min-height:40px}
+.chip2[aria-pressed=true]{border-color:var(--amber);color:var(--amber);background:rgba(255,178,63,.12)}
+.swatches{display:flex;gap:10px}
+.sw{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sw label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint)}
+.sw input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel-2);padding:3px;cursor:pointer}
+.sliders{display:grid;gap:10px}
+.sl{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:10px}
+.sl span{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint)}
+.sl input[type=range]{width:100%;height:36px;accent-color:var(--amber);background:none}
+
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important}
   .card{transform:none!important}
@@ -416,6 +448,21 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="needs" id="needs"></div>
     <div class="tools" id="tools"></div>
     <div class="roomnote" id="roomNote">Drag anywhere to throw. She decides whether that was interesting.</div>
+  </div>
+  <div class="tuner" id="tuner">
+    <button class="tunerHd" id="tunerToggle" type="button" aria-expanded="false">
+      <span>Tune her</span><span class="chev" id="tunerChev">+</span>
+    </button>
+    <div class="tunerBody hidden" id="tunerBody">
+      <canvas id="tunePrev" width="520" height="300"></canvas>
+      <p class="tunerNote">The unit read this off the photograph. It is often
+        close and sometimes confidently wrong. You are the authority.</p>
+      <div class="tuneRow"><b>Pattern</b><div class="chips" id="tunePattern"></div></div>
+      <div class="tuneRow"><b>White</b><div class="chips" id="tuneWhite"></div></div>
+      <div class="tuneRow"><b>Colours</b><div class="swatches" id="tuneColors"></div></div>
+      <div class="tuneRow"><b>Build</b><div class="sliders" id="tuneSliders"></div></div>
+      <div class="row"><button class="ghost" id="tuneReset">Read it off the photo again</button></div>
+    </div>
   </div>
   <div class="nopet hidden" id="noPet">
     No specimen on file yet.<br>Scan a cat and she will be waiting in here.
@@ -1133,7 +1180,9 @@ async function intake(file){
   if (img.close) img.close();
 
   const meter = LightMeter.analyse(big.canvas);
-  pending = { url: small.url, b64: big.url.split(',')[1], meter };
+  /* Read what she actually looks like, on this device, with no model. */
+  const dna = readCatFromPhoto(big.canvas) || defaultDNA();
+  pending = { url: small.url, b64: big.url.split(',')[1], meter, dna };
 
   $('mimg').src = small.url;
   paintMeter(meter);
@@ -1161,7 +1210,7 @@ async function runScan(shot){
     const g = await grade(shot.b64, shot.meter);
     clearInterval(beat);
     if (!g.is_cat){ show('slot'); return say('No cat detected. The unit only grades cats.'); }
-    mint(g, shot.url, shot.meter);
+    mint(g, shot.url, shot.meter, shot.dna);
   } catch(e){
     clearInterval(beat);
     show('slot');
@@ -1181,7 +1230,7 @@ let current = null;
 const newId = () => (crypto.randomUUID ? crypto.randomUUID()
   : 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,8));
 
-function mint(g, url, meter){
+function mint(g, url, meter, dna){
   const card = {
     id: newId(),
     name: 'Unnamed',
@@ -1191,6 +1240,7 @@ function mint(g, url, meter){
     rarity: g.rarity, breed: g.breed, coat: g.coat,
     title: g.title, flavor: g.flavor, stats: g.stats,
     posture: null,
+    dna: dna || defaultDNA(),
     demo: !CONFIG.ENDPOINT,
     meter: meter ? { light:+meter.light.toFixed(3), focus:+meter.focus.toFixed(3), fill:+meter.fill.toFixed(3), coat:meter.coat } : null
   };
@@ -1386,6 +1436,472 @@ function drawIndex(){
 }
 
 /* ============================================================================
+   THE CAT ITSELF
+   Sixteen numbers and a renderer. Nothing here generates a cat; it DRAWS one
+   from measurements, the same way the botanical game draws a plant from a
+   hash. That is why it needs no model and no network: the hard problem is
+   not making a picture, it is deciding what the cat looks like, and three
+   different things can answer that (pixels, the grader, or the owner).
+   ========================================================================== */
+const PATTERNS = ['solid','mackerel','classic','spotted','ticked','tortie','calico','point'];
+const PATTERN_LABEL = {
+  solid:'Solid', mackerel:'Mackerel tabby', classic:'Classic tabby', spotted:'Spotted',
+  ticked:'Ticked', tortie:'Tortoiseshell', calico:'Calico', point:'Colourpoint'
+};
+const WHITE_STYLES = ['none','bib','socks','bicolour','van'];
+const WHITE_LABEL = { none:'No white', bib:'White bib', socks:'Socks',
+                      bicolour:'Bicolour', van:'Mostly white' };
+
+function defaultDNA(){
+  return { base:'#9A7248', marking:'#4A3320', white:'#F2E9D8',
+           pattern:'mackerel', whiteStyle:'bib', whiteAmt:0.22,
+           floof:0.35, chonk:0.5, ear:0.5, eye:'#C8D94A', eyeRound:0.4,
+           nose:'#E09AA6', tail:0.6, faceMask:0 };
+}
+
+/* ── the renderer ───────────────────────────────────────────────────────────
+   draw(cx, dna, {x, y, s, pose, t, face}) where s is roughly the shoulder
+   height in pixels. Poses: sit, loaf, stand.
+   -------------------------------------------------------------------------- */
+const CatArt = (() => {
+
+  function mix(a, b, t){
+    const pa = hex(a), pb = hex(b);
+    return 'rgb(' + Math.round(pa[0]+(pb[0]-pa[0])*t) + ','
+                  + Math.round(pa[1]+(pb[1]-pa[1])*t) + ','
+                  + Math.round(pa[2]+(pb[2]-pa[2])*t) + ')';
+  }
+  function hex(h){
+    if (h[0] !== '#') { const m = h.match(/\d+/g); return m ? m.map(Number) : [128,128,128]; }
+    let s = h.slice(1);
+    if (s.length === 3) s = s.split('').map(c => c + c).join('');
+    const n = parseInt(s, 16);
+    return [(n>>16)&255, (n>>8)&255, n&255];
+  }
+  function dark(h, amt){ return mix(h, '#000000', amt); }
+  function light(h, amt){ return mix(h, '#FFFFFF', amt); }
+
+  /* Body outline as a path, so markings can be clipped to the animal. */
+  function bodyPath(cx, P){
+    const { bx, by, bw, bh, pose } = P;
+    cx.beginPath();
+    if (pose === 'loaf'){
+      cx.moveTo(bx - bw, by + bh*0.9);
+      cx.bezierCurveTo(bx - bw*1.05, by - bh*0.5, bx - bw*0.5, by - bh, bx, by - bh);
+      cx.bezierCurveTo(bx + bw*0.6, by - bh, bx + bw*1.05, by - bh*0.4, bx + bw, by + bh*0.9);
+      cx.closePath();
+    } else if (pose === 'stand'){
+      cx.ellipse(bx, by, bw, bh*0.78, 0, 0, 7);
+    } else {
+      cx.moveTo(bx - bw*0.86, by + bh);
+      cx.bezierCurveTo(bx - bw*1.0, by - bh*0.3, bx - bw*0.7, by - bh*0.95, bx - bw*0.1, by - bh*0.98);
+      cx.bezierCurveTo(bx + bw*0.66, by - bh*1.0, bx + bw*1.0, by - bh*0.2, bx + bw*0.9, by + bh);
+      cx.closePath();
+    }
+  }
+
+  /* The pattern, painted inside the clipped body. This is what makes a
+     tabby a tabby rather than a brown blob. */
+  function paintPattern(cx, d, P){
+    const { bx, by, bw, bh } = P;
+    const m = d.marking;
+    cx.save();
+    bodyPath(cx, P); cx.clip();
+
+    if (d.pattern === 'mackerel'){
+      cx.strokeStyle = m; cx.lineWidth = bw*0.13; cx.lineCap = 'round';
+      for (let i = -4; i <= 4; i++){
+        const ox = bx + i * bw*0.24;
+        cx.beginPath();
+        cx.moveTo(ox, by - bh*1.05);
+        cx.quadraticCurveTo(ox + bw*0.10, by, ox - bw*0.04, by + bh*1.1);
+        cx.stroke();
+      }
+    } else if (d.pattern === 'classic'){
+      /* The flank bullseye, as OPEN arcs. Closed ellipses read as a typeset
+         glyph rather than as a marking, which is how you end up with a cat
+         wearing the letter alpha. */
+      cx.strokeStyle = m; cx.lineWidth = bw*0.15; cx.lineCap = 'round';
+      const fx = bx - bw*0.18, fy = by + bh*0.14;
+      [0.30, 0.56, 0.82].forEach((r, i) => {
+        cx.beginPath();
+        cx.ellipse(fx, fy, bw*r*0.78, bh*r, 0.22, 0.7 + i*0.12, 5.7 - i*0.1);
+        cx.stroke();
+      });
+      /* shoulder butterfly, two open sweeps rather than a ring */
+      [-1, 1].forEach(k => {
+        cx.beginPath();
+        cx.moveTo(bx + bw*0.34, by - bh*(0.94 - k*0.06));
+        cx.quadraticCurveTo(bx + bw*0.70, by - bh*(0.5 + k*0.18), bx + bw*0.52, by - bh*0.10);
+        cx.stroke();
+      });
+      /* haunch bars */
+      cx.lineWidth = bw*0.11;
+      [-0.72, -0.52].forEach(o => {
+        cx.beginPath();
+        cx.moveTo(bx + bw*o, by - bh*0.62);
+        cx.quadraticCurveTo(bx + bw*(o-0.06), by, bx + bw*o, by + bh*0.72);
+        cx.stroke();
+      });
+    } else if (d.pattern === 'spotted'){
+      cx.fillStyle = m;
+      for (let r = 0; r < 5; r++)
+        for (let c2 = 0; c2 < 6; c2++){
+          const px = bx - bw + c2*bw*0.38 + (r%2)*bw*0.18;
+          const py = by - bh*0.9 + r*bh*0.46;
+          cx.beginPath(); cx.ellipse(px, py, bw*0.10, bh*0.11, 0.3, 0, 7); cx.fill();
+        }
+    } else if (d.pattern === 'ticked'){
+      cx.strokeStyle = m; cx.lineWidth = Math.max(1, bw*0.035); cx.globalAlpha = 0.5;
+      for (let i = 0; i < 70; i++){
+        const px = bx - bw + (i*37 % (bw*2));
+        const py = by - bh + ((i*61) % (bh*2));
+        cx.beginPath(); cx.moveTo(px, py); cx.lineTo(px + bw*0.07, py + bh*0.08); cx.stroke();
+      }
+      cx.globalAlpha = 1;
+    } else if (d.pattern === 'tortie' || d.pattern === 'calico'){
+      /* Brindled, not blocked. Big blobs merge into one black mass and the cat
+         stops reading as tortoiseshell and starts reading as a shadow. */
+      cx.fillStyle = m;
+      const blobs = [
+        [-0.62,-0.42,0.26,0.30],[-0.28,-0.66,0.20,0.24],[ 0.16,-0.52,0.24,0.27],
+        [ 0.54,-0.20,0.22,0.26],[ 0.30, 0.28,0.26,0.29],[-0.10, 0.52,0.22,0.25],
+        [-0.54, 0.30,0.24,0.27],[ 0.66, 0.42,0.18,0.21],[-0.02,-0.10,0.19,0.22]
+      ];
+      blobs.forEach((b, i) => {
+        cx.beginPath();
+        cx.ellipse(bx + bw*b[0], by + bh*b[1], bw*b[2], bh*b[3], i*0.9, 0, 7);
+        cx.fill();
+      });
+    } else if (d.pattern === 'point'){
+      const g = cx.createRadialGradient(bx + bw*0.55, by - bh*0.55, bw*0.1,
+                                        bx + bw*0.55, by - bh*0.55, bw*1.5);
+      g.addColorStop(0, m); g.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = g; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+    }
+
+    /* white, painted last because white spotting sits over everything */
+    if (d.whiteStyle !== 'none' && d.whiteAmt > 0.02){
+      cx.fillStyle = d.white;
+      const a = d.whiteAmt;
+      if (d.whiteStyle === 'van'){
+        cx.globalAlpha = 1;
+        cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+      } else if (d.whiteStyle === 'bicolour'){
+        cx.beginPath();
+        cx.ellipse(bx - bw*0.05, by + bh*0.62, bw*(0.75 + a*0.5), bh*(0.85 + a*0.4), 0, 0, 7);
+        cx.fill();
+      } else {
+        /* bib: a chest patch under the chin */
+        cx.beginPath();
+        cx.ellipse(bx + bw*0.42, by + bh*0.20, bw*(0.30 + a*0.5), bh*(0.55 + a*0.4), -0.3, 0, 7);
+        cx.fill();
+      }
+    }
+
+    /* soft shading so it is not flat */
+    const sg = cx.createLinearGradient(0, by - bh, 0, by + bh);
+    sg.addColorStop(0, 'rgba(255,255,255,.10)');
+    sg.addColorStop(0.6, 'rgba(0,0,0,0)');
+    sg.addColorStop(1, 'rgba(0,0,0,.24)');
+    cx.fillStyle = sg; cx.fillRect(bx - bw*1.2, by - bh*1.3, bw*2.4, bh*2.6);
+    cx.restore();
+  }
+
+  function draw(cx, dna, o){
+    const d = Object.assign(defaultDNA(), dna || {});
+    const s = o.s || 60, pose = o.pose || 'sit', t = o.t || 0, face = o.face || 1;
+    const chonk = 0.78 + d.chonk * 0.52;
+    const fl = d.floof;
+
+    cx.save();
+    cx.translate(o.x, o.y);
+    cx.scale(face, 1);
+
+    const bw = s * 0.78 * chonk, bh = s * (pose === 'loaf' ? 0.46 : 0.62);
+    /* standing lifts the body clear of the floor so the legs have somewhere
+       to be. Without this, stand and sit are the same picture. */
+    const legLen = pose === 'stand' ? s * 0.30 : 0;
+    const by = -bh * (pose === 'loaf' ? 0.6 : 0.85) - legLen;
+    const P = { bx:0, by, bw, bh, pose };
+
+    /* shadow */
+    cx.fillStyle = 'rgba(0,0,0,.30)';
+    cx.beginPath(); cx.ellipse(0, 4, bw*1.0, s*0.10, 0, 0, 7); cx.fill();
+
+    /* tail. Short and thick reads as attached; long and thin reads as a
+       separate object floating behind the animal. */
+    const tl = 0.34 + d.tail * 0.52;
+    const sway = Math.sin(t * 2.2) * s * 0.10 * (0.4 + d.tail);
+    cx.strokeStyle = d.pattern === 'point' ? d.marking : dark(d.base, 0.12);
+    cx.lineWidth = s * (0.15 + fl * 0.13); cx.lineCap = 'round';
+    cx.beginPath();
+    cx.moveTo(-bw*0.70, by + bh*0.52);
+    cx.quadraticCurveTo(-bw*(0.98 + tl*0.5), by + bh*0.34 + sway,
+                        -bw*(0.86 + tl*0.7), by - bh*(0.10 + tl*0.5) + sway);
+    cx.stroke();
+
+    /* four legs when she is up on them */
+    if (pose === 'stand'){
+      cx.strokeStyle = dark(d.base, 0.10);
+      cx.lineWidth = s * 0.13; cx.lineCap = 'round';
+      [-0.58, -0.34, 0.36, 0.60].forEach((ox, i) => {
+        const step = Math.sin(t*3 + i*1.6) * s * 0.02;
+        cx.beginPath();
+        cx.moveTo(bw*ox, by + bh*0.62);
+        cx.lineTo(bw*ox + step, -s*0.03);
+        cx.stroke();
+      });
+      cx.fillStyle = (d.whiteStyle === 'socks' || d.whiteStyle === 'van') ? d.white : dark(d.base, 0.04);
+      [-0.58, -0.34, 0.36, 0.60].forEach(ox => {
+        cx.beginPath(); cx.ellipse(bw*ox, -s*0.02, bw*0.13, s*0.055, 0, 0, 7); cx.fill();
+      });
+    } else if (pose !== 'loaf'){
+      cx.fillStyle = dark(d.base, 0.06);
+      cx.beginPath(); cx.ellipse(-bw*0.52, -s*0.09, bw*0.30, s*0.16, 0, 0, 7); cx.fill();
+    }
+
+    /* body */
+    cx.fillStyle = d.base;
+    bodyPath(cx, P); cx.fill();
+    paintPattern(cx, d, P);
+
+    /* fluffy chest ruff, the single biggest longhair tell */
+    if (fl > 0.45){
+      cx.fillStyle = light(d.whiteStyle === 'none' ? d.base : d.white, 0.06);
+      cx.globalAlpha = 0.55 + fl * 0.4;
+      cx.beginPath();
+      cx.ellipse(bw*0.44, by + bh*0.34, bw*0.34*fl + bw*0.12, bh*0.5, -0.2, 0, 7);
+      cx.fill();
+      cx.globalAlpha = 1;
+    }
+
+    /* front paws (stand draws its own four, so it opts out here) */
+    if (pose !== 'stand'){
+      cx.fillStyle = (d.whiteStyle === 'socks' || d.whiteStyle === 'van') ? d.white : dark(d.base, 0.04);
+      [0.30, 0.62].forEach(ox => {
+        cx.beginPath(); cx.ellipse(bw*ox, -s*0.05, bw*0.17, s*0.10, 0, 0, 7); cx.fill();
+      });
+    }
+
+    /* head */
+    const hr = s * (0.40 + fl * 0.07);
+    const hx = bw * (pose === 'loaf' ? 0.52 : 0.60);
+    const hy = by - bh * (pose === 'loaf' ? 0.72 : 0.86);
+    const bob = Math.sin(t * 1.6) * s * 0.012;
+
+    /* ears */
+    const er = hr * (0.52 + d.ear * 0.42);
+    cx.fillStyle = d.pattern === 'point' ? d.marking : dark(d.base, 0.10);
+    [-1, 1].forEach(k => {
+      cx.beginPath();
+      cx.moveTo(hx + k*hr*0.52, hy + bob - hr*0.52);
+      cx.lineTo(hx + k*hr*(0.30 + d.ear*0.5), hy + bob - hr - er*0.9);
+      cx.lineTo(hx + k*hr*0.94, hy + bob - hr*0.16);
+      cx.closePath(); cx.fill();
+    });
+    cx.fillStyle = mix(d.nose, '#000000', 0.25);
+    [-1, 1].forEach(k => {
+      cx.beginPath();
+      cx.moveTo(hx + k*hr*0.52, hy + bob - hr*0.56);
+      cx.lineTo(hx + k*hr*(0.32 + d.ear*0.4), hy + bob - hr - er*0.55);
+      cx.lineTo(hx + k*hr*0.80, hy + bob - hr*0.26);
+      cx.closePath(); cx.fill();
+    });
+
+    /* head shape, with cheek floof */
+    cx.fillStyle = d.base;
+    cx.beginPath();
+    cx.ellipse(hx, hy + bob, hr*(1.02 + fl*0.16), hr*(0.94 + fl*0.05), 0, 0, 7);
+    cx.fill();
+    if (d.pattern === 'point'){
+      const g = cx.createRadialGradient(hx + hr*0.2, hy + bob + hr*0.25, hr*0.1,
+                                        hx + hr*0.2, hy + bob + hr*0.25, hr*1.3);
+      g.addColorStop(0, d.marking); g.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.save(); cx.beginPath();
+      cx.ellipse(hx, hy + bob, hr*1.02, hr*0.94, 0, 0, 7); cx.clip();
+      cx.fillStyle = g; cx.fillRect(hx-hr*1.4, hy+bob-hr*1.4, hr*2.8, hr*2.8); cx.restore();
+    } else if (d.pattern !== 'solid'){
+      /* the forehead M every tabby wears */
+      cx.save(); cx.beginPath();
+      cx.ellipse(hx, hy + bob, hr*1.02, hr*0.94, 0, 0, 7); cx.clip();
+      cx.strokeStyle = d.marking; cx.lineWidth = hr*0.10; cx.lineCap = 'round';
+      [-0.34, 0, 0.34].forEach(k => {
+        cx.beginPath();
+        cx.moveTo(hx + hr*k, hy + bob - hr*0.86);
+        cx.lineTo(hx + hr*k*1.5, hy + bob - hr*0.30);
+        cx.stroke();
+      });
+      cx.restore();
+    }
+
+    /* muzzle */
+    cx.fillStyle = light(d.base, d.whiteStyle === 'none' ? 0.16 : 0.4);
+    cx.beginPath();
+    cx.ellipse(hx + hr*0.10, hy + bob + hr*0.36, hr*0.46, hr*0.30, 0, 0, 7); cx.fill();
+
+    /* eyes */
+    const ey = hy + bob - hr*0.06, ex = hr*0.36;
+    const open = o.blink ? 0.16 : 1;
+    [-1, 1].forEach(k => {
+      cx.fillStyle = d.eye;
+      cx.beginPath();
+      cx.ellipse(hx + k*ex, ey, hr*(0.20 + d.eyeRound*0.05), hr*0.21*open, 0, 0, 7);
+      cx.fill();
+      if (open > 0.5){
+        cx.fillStyle = '#140E18';
+        cx.beginPath();
+        cx.ellipse(hx + k*ex, ey, hr*(0.045 + (1-d.eyeRound)*0.05), hr*0.17, 0, 0, 7);
+        cx.fill();
+        cx.fillStyle = 'rgba(255,255,255,.8)';
+        cx.beginPath(); cx.ellipse(hx + k*ex - hr*0.06, ey - hr*0.07, hr*0.045, hr*0.035, 0, 0, 7);
+        cx.fill();
+      }
+    });
+
+    /* nose and mouth */
+    cx.fillStyle = d.nose;
+    cx.beginPath();
+    cx.moveTo(hx + hr*0.10, hy + bob + hr*0.20);
+    cx.lineTo(hx + hr*0.22, hy + bob + hr*0.20);
+    cx.lineTo(hx + hr*0.16, hy + bob + hr*0.30);
+    cx.closePath(); cx.fill();
+    cx.strokeStyle = 'rgba(0,0,0,.30)'; cx.lineWidth = Math.max(1, hr*0.035);
+    cx.beginPath();
+    cx.moveTo(hx + hr*0.16, hy + bob + hr*0.31);
+    cx.lineTo(hx + hr*0.16, hy + bob + hr*0.40);
+    cx.stroke();
+
+    /* whiskers */
+    cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = Math.max(1, hr*0.028);
+    [-1, 1].forEach(k => {
+      [-0.10, 0.06, 0.20].forEach((dy, i) => {
+        cx.beginPath();
+        cx.moveTo(hx + k*hr*0.30, hy + bob + hr*(0.30 + dy*0.4));
+        cx.quadraticCurveTo(hx + k*hr*0.95, hy + bob + hr*(0.22 + dy),
+                            hx + k*hr*(1.30 + i*0.06), hy + bob + hr*(0.14 + dy*1.3));
+        cx.stroke();
+      });
+    });
+
+    cx.restore();
+  }
+
+  return { draw, defaultDNA, mix };
+})();
+
+/* ── reading the cat off the photograph, on device ──────────────────────────
+   No model. Median-cut the subject into three colours, then measure a few
+   things that genuinely survive being measured: how much near-white there is,
+   how ragged the silhouette is (longhair), and whether luminance oscillates
+   along the body (tabby) or sits in two big blocks (bicolour).
+   -------------------------------------------------------------------------- */
+function readCatFromPhoto(canvas){
+  const N = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const cx = c.getContext('2d', { willReadFrequently:true });
+  cx.drawImage(canvas, 0, 0, N, N);
+  const d = cx.getImageData(0, 0, N, N).data;
+
+  const at = (x, y) => { const i = (y*N + x)*4; return [d[i], d[i+1], d[i+2]]; };
+  const lum = p => 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
+
+  /* border palette, so we can tell room from animal */
+  let br = 0, bg = 0, bb = 0, bn = 0;
+  for (let x = 0; x < N; x++)
+    [0, 1, 2, N-3, N-2, N-1].forEach(y => {
+      const p = at(x, y); br += p[0]; bg += p[1]; bb += p[2]; bn++;
+      const q = at(y, x); br += q[0]; bg += q[1]; bb += q[2]; bn++;
+    });
+  const bord = [br/bn, bg/bn, bb/bn];
+
+  /* subject mask: centre-weighted, and different from the border */
+  const mask = new Uint8Array(N*N);
+  const pix = [];
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++){
+      const p = at(x, y);
+      const dc = Math.hypot(p[0]-bord[0], p[1]-bord[1], p[2]-bord[2]);
+      const cxr = (x - N/2) / (N/2), cyr = (y - N/2) / (N/2);
+      const central = Math.hypot(cxr, cyr) < 0.86;
+      if (dc > 30 && central){ mask[y*N + x] = 1; pix.push(p); }
+    }
+  if (pix.length < 260) return null;
+
+  /* three clusters by luminance, which for a cat is very close to
+     marking / base / white and needs no k-means */
+  pix.sort((a, b) => lum(a) - lum(b));
+  const avg = arr => {
+    let r = 0, g = 0, b = 0;
+    arr.forEach(p => { r += p[0]; g += p[1]; b += p[2]; });
+    const n = Math.max(1, arr.length);
+    return '#' + [r/n, g/n, b/n].map(v =>
+      Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0')).join('');
+  };
+  const q = pix.length;
+  const marking = avg(pix.slice(0, Math.floor(q*0.22)));
+  const base    = avg(pix.slice(Math.floor(q*0.30), Math.floor(q*0.78)));
+  const bright  = avg(pix.slice(Math.floor(q*0.90)));
+
+  /* how much of her is actually near-white */
+  const whiteN = pix.filter(p => lum(p) > 186 &&
+                    Math.max(p[0],p[1],p[2]) - Math.min(p[0],p[1],p[2]) < 40).length;
+  const whiteAmt = whiteN / q;
+
+  /* pattern: count luminance sign changes along rows through the subject.
+     A tabby oscillates. A bicolour steps once. A solid barely moves. */
+  let flips = 0, rows = 0, spread = 0;
+  for (let y = Math.floor(N*0.30); y < N*0.80; y += 2){
+    let prev = null, up = null, f = 0, mn = 999, mx = -1, n = 0;
+    for (let x = 0; x < N; x++){
+      if (!mask[y*N + x]) continue;
+      const L = lum(at(x, y)); n++;
+      mn = Math.min(mn, L); mx = Math.max(mx, L);
+      if (prev != null){
+        const dir = L > prev + 7 ? 1 : (L < prev - 7 ? -1 : up);
+        if (up != null && dir != null && dir !== up) f++;
+        up = dir;
+      }
+      prev = L;
+    }
+    if (n > 12){ flips += f; rows++; spread += (mx - mn); }
+  }
+  const flipRate = rows ? flips / rows : 0;
+  const contrast = rows ? spread / rows : 0;
+
+  let pattern = 'solid';
+  if (contrast > 96 && flipRate < 3.2 && whiteAmt > 0.16) pattern = 'tortie';
+  else if (flipRate >= 3.4) pattern = 'mackerel';
+  else if (flipRate >= 2.0) pattern = 'classic';
+  else if (contrast > 62)   pattern = 'ticked';
+  if (pattern !== 'solid' && whiteAmt > 0.30 && contrast > 96) pattern = 'calico';
+
+  /* floof: a longhair has a much longer edge for the same area */
+  let perim = 0, area = 0;
+  for (let y = 1; y < N-1; y++)
+    for (let x = 1; x < N-1; x++){
+      if (!mask[y*N + x]) continue;
+      area++;
+      if (!mask[y*N + x-1] || !mask[y*N + x+1] || !mask[(y-1)*N + x] || !mask[(y+1)*N + x]) perim++;
+    }
+  const raggedness = area ? perim / Math.sqrt(area) : 4;
+  const floof = Math.max(0, Math.min(1, (raggedness - 3.6) / 4.2));
+
+  const whiteStyle = whiteAmt > 0.55 ? 'van'
+                   : whiteAmt > 0.28 ? 'bicolour'
+                   : whiteAmt > 0.10 ? 'bib' : 'none';
+
+  return Object.assign(defaultDNA(), {
+    base, marking, white: whiteAmt > 0.05 ? bright : '#F2E9D8',
+    pattern, whiteStyle, whiteAmt: Math.min(0.9, whiteAmt),
+    floof, chonk:0.5, ear:0.5, tail:0.6,
+    _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
+             raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100) }
+  });
+}
+
+/* ============================================================================
    THE ABILITY
    Every card carries one, decided by whichever stat the cat leads on, so the
    ability is a consequence of the animal rather than a roll. Usable once a day.
@@ -1464,8 +1980,8 @@ function savePet(card){
 
 /* ============================================================================
    THE ROOM
-   A canvas scene. Her photograph is her face, on a drawn body, in a room tinted
-   to her own coat. You throw things. She decides whether that was interesting.
+   A canvas scene. She is DRAWN from her own DNA, in a room tinted to her own
+   coat. You throw things. She decides whether that was interesting.
    ========================================================================== */
 /* Emoji are not assets. They render as tofu boxes on devices without the
    glyph, which this studio has already shipped once. Every icon here is drawn. */
@@ -1503,7 +2019,7 @@ const Room = (() => {
   ];
 
   let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
-  let card = null, pet = null, photo = null, coat = '#7A6A55';
+  let card = null, pet = null, coat = '#7A6A55';
   let tool = 'yarn';
   let cat, toys = [], poops = [], crumbs = [], fx = [];
   let drag = null, note = '', noteT = 0, boost = 0, sprint = 0;
@@ -1519,6 +2035,7 @@ const Room = (() => {
   function open(c){
     card = c;
     if (!card){ stop(); return; }
+    if (!card.dna) card.dna = defaultDNA();
     pet = settleNeeds(card);
     coat = (card.meter && card.meter.coat) || '#7A6A55';
     W = cv.width; H = cv.height; floorY = H * 0.74;
@@ -1528,12 +2045,6 @@ const Room = (() => {
     toys = []; poops = []; crumbs = []; fx = [];
     for (let i = 0; i < (pet.poops || 0); i++) addPoop();
 
-    photo = null;
-    if (card.photo){
-      const im = new Image();
-      im.onload = () => { photo = im; };
-      im.src = card.photo;
-    }
     drawTools(); drawNeeds(); drawHud();
     start();
   }
@@ -1832,77 +2343,18 @@ const Room = (() => {
     cx.beginPath(); cx.ellipse(W*0.24, floorY + 74, 80, 24, 0, 0, 7); cx.fill();
   }
 
+  /* She is drawn now, not photographed. The DNA came off her photo, or off
+     the grader, or off the owner in the tuner: the renderer does not care. */
   function drawCat(){
-    const s = cat.big, bw = 118*s, bh = 82*s*cat.squash;
-    const bx = cat.x, by = floorY - bh*0.55;
-    const isLoaf = cat.state === 'loaf';
-
-    /* shadow */
-    cx.fillStyle = 'rgba(0,0,0,.34)';
-    cx.beginPath(); cx.ellipse(bx, floorY + 6, bw*0.72, 10, 0, 0, 7); cx.fill();
-
-    /* tail */
-    cx.strokeStyle = shade(coat, -0.18); cx.lineWidth = 13*s; cx.lineCap = 'round';
-    const tw = Math.sin(cat.tail) * (cat.state === 'chase' ? 34 : 16);
-    cx.beginPath();
-    cx.moveTo(bx - cat.face*bw*0.62, by + bh*0.35);
-    cx.quadraticCurveTo(bx - cat.face*(bw*1.1), by + bh*0.1 + tw,
-                        bx - cat.face*(bw*1.15), by - bh*0.35 + tw);
-    cx.stroke();
-
-    /* body */
-    cx.fillStyle = shade(coat, -0.05);
-    cx.beginPath();
-    cx.ellipse(bx, by + (isLoaf ? bh*0.22 : 0), bw*0.9, isLoaf ? bh*0.72 : bh, 0, 0, 7);
-    cx.fill();
-
-    /* legs, only when she is not folded away */
-    if (!isLoaf){
-      cx.fillStyle = shade(coat, -0.14);
-      [-0.42, 0.34].forEach(o => {
-        cx.beginPath();
-        cx.ellipse(bx + bw*o, floorY - 8*s, 13*s, 10*s, 0, 0, 7); cx.fill();
-      });
-    }
-
-    /* the head is her actual face */
-    const hr = 60*s, hx = bx + cat.face*bw*0.40, hy = by - bh*0.66;
-    cx.save();
-    cx.beginPath(); cx.arc(hx, hy, hr, 0, 7); cx.closePath();
-    cx.fillStyle = shade(coat, 0.06); cx.fill();
-    if (photo){
-      cx.save(); cx.clip();
-      const ps = Math.max((hr*2) / photo.width, (hr*2) / photo.height) * 1.06;
-      /* Bias the crop UPWARD. Centring on the middle of a full-body cat photo
-         frames the torso, not the face, which is how you end up with a head
-         made of shoulder. 0.34 lands on the upper third, where cats keep
-         their faces in almost every photograph anyone takes of them. */
-      cx.drawImage(photo, hx - photo.width*ps*0.5, hy - photo.height*ps*0.34,
-                   photo.width*ps, photo.height*ps);
-      cx.restore();
-    }
-    cx.restore();
-
-    /* ears on top, so a photograph of a face reads as a cat */
-    cx.fillStyle = shade(coat, -0.1);
-    [-1, 1].forEach(d => {
-      cx.beginPath();
-      cx.moveTo(hx + d*hr*0.52, hy - hr*0.66);
-      cx.lineTo(hx + d*hr*0.78, hy - hr*1.44);
-      cx.lineTo(hx + d*hr*0.06, hy - hr*0.98);
-      cx.closePath(); cx.fill();
+    const pose = cat.state === 'loaf' ? 'loaf'
+               : (cat.state === 'chase' || cat.state === 'walk') ? 'stand' : 'sit';
+    CatArt.draw(cx, card.dna, {
+      x: cat.x, y: floorY + 6, s: 120 * cat.big, pose,
+      t: cat.t, face: cat.face || 1, blink: cat.blink > 0
     });
-    /* rim so the photo does not float free of the body */
-    cx.strokeStyle = shade(coat, -0.3); cx.lineWidth = 3;
-    cx.beginPath(); cx.arc(hx, hy, hr, 0, 7); cx.stroke();
-
-    if (cat.blink > 0){
-      cx.fillStyle = shade(coat, 0.02);
-      cx.beginPath(); cx.ellipse(hx, hy - hr*0.1, hr*0.95, hr*0.5, 0, 0, 7); cx.fill();
-    }
     if (boost > 0){
       cx.strokeStyle = 'rgba(255,178,63,.55)'; cx.lineWidth = 3;
-      cx.beginPath(); cx.arc(bx, by, bw*1.05, 0, 7); cx.stroke();
+      cx.beginPath(); cx.arc(cat.x, floorY - 70, 110, 0, 7); cx.stroke();
     }
   }
 
@@ -2147,6 +2599,150 @@ $('save').onclick = async () => {
 /* ----------------------------------------------------------------------------
    BOOT
    -------------------------------------------------------------------------- */
+/* ============================================================================
+   THE TUNER
+   The estimator is often close and sometimes confidently wrong, and the owner
+   is the only one in this transaction who has actually met the cat. So every
+   number it guessed is editable, and the preview updates as you go.
+   ========================================================================== */
+const Tuner = (() => {
+  let card = null, prev = null, pcx = null, t = 0, raf = 0;
+
+  const SLIDERS = [
+    ['floof', 'Floof'], ['chonk', 'Chonk'], ['ear', 'Ears'], ['tail', 'Tail']
+  ];
+  const COLOURS = [
+    ['base', 'Coat'], ['marking', 'Markings'], ['white', 'White'], ['eye', 'Eyes']
+  ];
+
+  function open(c){
+    card = c;
+    prev = $('tunePrev'); if (!prev) return;
+    pcx = prev.getContext('2d');
+    build();
+    loop();
+  }
+  function close(){ if (raf) cancelAnimationFrame(raf); raf = 0; }
+
+  function commit(){
+    Store.update(list => {
+      const c = list.find(x => x.id === card.id);
+      if (c) c.dna = card.dna;
+      return list;
+    });
+    if (Room.card && Room.card.id === card.id) Room.card.dna = card.dna;
+  }
+
+  function set(k, v){ card.dna[k] = v; commit(); build(); }
+
+  function build(){
+    const d = card.dna;
+
+    const pat = $('tunePattern'); pat.innerHTML = '';
+    PATTERNS.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'chip2'; b.type = 'button';
+      b.setAttribute('aria-pressed', String(d.pattern === p));
+      b.textContent = PATTERN_LABEL[p];
+      b.onclick = () => set('pattern', p);
+      pat.appendChild(b);
+    });
+
+    const wh = $('tuneWhite'); wh.innerHTML = '';
+    WHITE_STYLES.forEach(w => {
+      const b = document.createElement('button');
+      b.className = 'chip2'; b.type = 'button';
+      b.setAttribute('aria-pressed', String(d.whiteStyle === w));
+      b.textContent = WHITE_LABEL[w];
+      b.onclick = () => {
+        card.dna.whiteStyle = w;
+        if (w !== 'none' && card.dna.whiteAmt < 0.12) card.dna.whiteAmt = 0.28;
+        commit(); build();
+      };
+      wh.appendChild(b);
+    });
+
+    const col = $('tuneColors'); col.innerHTML = '';
+    COLOURS.forEach(([k, label]) => {
+      const w = document.createElement('div'); w.className = 'sw';
+      const l = document.createElement('label'); l.textContent = label;
+      const i = document.createElement('input');
+      i.type = 'color'; i.value = toHex(d[k]);
+      i.oninput = () => { card.dna[k] = i.value; commit(); };
+      w.append(l, i); col.appendChild(w);
+    });
+
+    const sl = $('tuneSliders'); sl.innerHTML = '';
+    SLIDERS.forEach(([k, label]) => {
+      const r = document.createElement('div'); r.className = 'sl';
+      const s = document.createElement('span'); s.textContent = label;
+      const i = document.createElement('input');
+      i.type = 'range'; i.min = '0'; i.max = '100';
+      i.value = String(Math.round((d[k] == null ? 0.5 : d[k]) * 100));
+      i.oninput = () => { card.dna[k] = i.value / 100; commit(); };
+      r.append(s, i); sl.appendChild(r);
+    });
+  }
+
+  function toHex(v){
+    if (typeof v === 'string' && v[0] === '#'){
+      return v.length === 4 ? '#' + v.slice(1).split('').map(c => c + c).join('') : v.slice(0, 7);
+    }
+    const m = String(v).match(/\d+/g);
+    if (!m) return '#888888';
+    return '#' + m.slice(0, 3).map(n =>
+      Math.max(0, Math.min(255, +n)).toString(16).padStart(2, '0')).join('');
+  }
+
+  function loop(){
+    if (!pcx || !card) return;
+    t += 0.016;
+    const W = prev.width, H = prev.height;
+    pcx.clearRect(0, 0, W, H);
+    const g = pcx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2E2044'); g.addColorStop(1, '#1B1327');
+    pcx.fillStyle = g; pcx.fillRect(0, 0, W, H);
+    pcx.fillStyle = 'rgba(255,255,255,.05)'; pcx.fillRect(0, H - 46, W, 2);
+    ['sit', 'loaf', 'stand'].forEach((pose, i) => {
+      CatArt.draw(pcx, card.dna, { x: W*0.20 + i*W*0.30, y: H - 42, s: 86,
+                                   pose, t: t + i, face: 1 });
+    });
+    raf = requestAnimationFrame(loop);
+  }
+
+  return { open, close, get card(){ return card; } };
+})();
+
+$('tunerToggle').onclick = () => {
+  const body = $('tunerBody'), openNow = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !openNow);
+  $('tunerToggle').setAttribute('aria-expanded', String(openNow));
+  $('tunerChev').textContent = openNow ? '−' : '+';
+  if (openNow){ const c = current || Store.read()[0]; if (c) Tuner.open(c); }
+  else Tuner.close();
+};
+$('tuneReset').onclick = () => {
+  const c = Tuner.card;
+  if (!c || !c.photo) return;
+  /* Re-read from the photograph we still hold on this device. */
+  const im = new Image();
+  im.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = im.width; cv.height = im.height;
+    cv.getContext('2d').drawImage(im, 0, 0);
+    c.dna = readCatFromPhoto(cv) || defaultDNA();
+    Store.update(list => {
+      const x = list.find(y => y.id === c.id);
+      if (x) x.dna = c.dna;
+      return list;
+    });
+    if (Room.card && Room.card.id === c.id) Room.card.dna = c.dna;
+    Tuner.open(c);
+  };
+  im.onerror = () => say('That photograph would not re-open.', 'bad');
+  im.src = c.photo;
+};
+
 /* ----------------------------------------------------------------------------
    TABS
    -------------------------------------------------------------------------- */
@@ -2171,11 +2767,14 @@ function setTab(next){
     /* Toggle, never replace. Rewriting innerHTML here destroys the canvas and
        it never comes back once a cat exists. */
     $('roomLive').classList.toggle('hidden', !c);
+    $('tuner').classList.toggle('hidden', !c);
     $('noPet').classList.toggle('hidden', !!c);
     if (!c) return;
     Room.open(c);
+    if (!$('tunerBody').classList.contains('hidden')) Tuner.open(c);
   } else {
     Room.stop();
+    Tuner.close();
     show(current ? 'card' : 'slot');
   }
 }
@@ -2208,7 +2807,8 @@ document.addEventListener('visibilitychange', () => {
 })();
 
 /* exposed for testing and for the studio harness */
-window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate };
+window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
+                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room };
 </script>
 </body>
 </html>
