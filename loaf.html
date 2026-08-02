@@ -245,6 +245,58 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 .sheet h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
 .sheet p{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 16px}
 
+/* ── nav ─────────────────────────────────────────────────────────────────── */
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--panel);
+  border:1px solid var(--line);border-radius:999px;padding:5px;margin-top:18px}
+.nav button{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;padding:12px 8px;border-radius:999px;
+  cursor:pointer;min-height:44px}
+.nav button[aria-selected=true]{background:var(--amber);color:#241300}
+
+/* ── the ability, on the card ────────────────────────────────────────────── */
+.ability{margin:0 16px 16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,178,63,.10),rgba(255,178,63,.02))}
+.ability .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:11px 13px 3px;font-family:var(--mono);font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--faint)}
+.ability .nm{padding:0 13px;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--amber);
+  text-transform:uppercase}
+.ability .ds{padding:5px 13px 12px;font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--dim)}
+.pw{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.1em}
+
+/* ── the room ────────────────────────────────────────────────────────────── */
+.roomwrap{margin-top:16px;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+  background:var(--panel);position:relative}
+#room{display:block;width:100%;touch-action:none;cursor:grab}
+#room:active{cursor:grabbing}
+.hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;
+  gap:8px;padding:10px 12px;pointer-events:none;font-family:var(--mono);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase}
+.hud .lv{background:rgba(21,14,29,.8);border:1px solid var(--line);border-radius:99px;
+  padding:5px 10px;color:var(--bone)}
+.hud .kb{background:rgba(21,14,29,.8);border:1px solid var(--line);border-radius:99px;
+  padding:5px 10px;color:var(--amber)}
+.needs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.need{display:flex;flex-direction:column;gap:5px}
+.need b{font-family:var(--mono);font-weight:400;font-size:8.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.need .tk{height:5px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.need .fl{height:100%;border-radius:99px;transition:width .5s ease}
+.xpbar{height:4px;background:var(--panel-2);border-radius:99px;overflow:hidden;margin:0 12px 12px}
+.xpbar i{display:block;height:100%;background:var(--jade);border-radius:99px;transition:width .5s ease}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px;padding:0 12px 12px}
+.tool{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:9px 4px;
+  cursor:pointer;color:var(--bone);font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;
+  text-transform:uppercase;min-height:60px;display:flex;flex-direction:column;align-items:center;
+  gap:5px;justify-content:center;transition:border-color .15s}
+.tool em{font-style:normal;font-size:19px;line-height:1}
+.tool[aria-pressed=true]{border-color:var(--amber);background:rgba(255,178,63,.14)}
+.tool:disabled{opacity:.4;cursor:not-allowed}
+.roomnote{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;
+  padding:0 12px 14px;min-height:18px;line-height:1.5}
+.nopet{padding:36px 22px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim);
+  line-height:1.7}
+
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important}
   .card{transform:none!important}
@@ -259,6 +311,10 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 <header class="wrap mast">
   <h1>Scan<br><span>your cat</span></h1>
   <p>Point the lens at the animal. The unit reads the light, the coat and the general menace, then issues one graded card.</p>
+  <div class="nav" role="tablist">
+    <button id="tabScan" role="tab" aria-selected="true">The card</button>
+    <button id="tabRoom" role="tab" aria-selected="false">The room</button>
+  </div>
 </header>
 
 <!-- The payoff, before we ask for anything -->
@@ -317,6 +373,11 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="stats" id="stats"></div>
     <div class="shape hidden" id="cardshape"></div>
     <div class="flavor" id="flavor"></div>
+    <div class="ability" id="abilityBox">
+      <div class="hd"><span>Daily ability</span><span class="pw" id="cardPower">PWR —</span></div>
+      <div class="nm" id="abilityName">—</div>
+      <div class="ds" id="abilityDesc">—</div>
+    </div>
     <div class="meta"><span id="coat">—</span><span id="serial">—</span></div>
   </article>
 
@@ -336,6 +397,26 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 </section>
 
 <div class="wrap note bad" id="err"></div>
+
+<!-- THE ROOM. Your cat, off the card and on the floor. -->
+<section class="wrap hidden" id="view-room">
+  <div id="roomLive">
+    <div class="roomwrap">
+      <canvas id="room" width="750" height="620"></canvas>
+      <div class="hud">
+        <span class="lv" id="hudLv">LV 1</span>
+        <span class="kb" id="hudKb">◍ 0</span>
+      </div>
+    </div>
+    <div class="xpbar"><i id="xpFill"></i></div>
+    <div class="needs" id="needs"></div>
+    <div class="tools" id="tools"></div>
+    <div class="roomnote" id="roomNote">Drag anywhere to throw. She decides whether that was interesting.</div>
+  </div>
+  <div class="nopet hidden" id="noPet">
+    No specimen on file yet.<br>Scan a cat and she will be waiting in here.
+  </div>
+</section>
 
 <section class="wrap index">
   <h4><span>The index</span><span id="idxCount">0 of 15 shapes</span></h4>
@@ -1152,6 +1233,11 @@ function paint(card, isNew){
     setTimeout(() => { fill.style.width = Math.max(2.5, v) + '%'; }, 120 + idx * 90);
   });
 
+  const ab = abilityFor(card);
+  $('abilityName').textContent = ab.icon + '  ' + ab.name;
+  $('abilityDesc').textContent = ab.desc;
+  $('cardPower').textContent = 'PWR ' + powerOf(card);
+
   paintPosture(card);
   $('remove').classList.toggle('hidden', !!isNew);
   $('cardNote').textContent = '';
@@ -1294,6 +1380,503 @@ function drawIndex(){
     shelf.appendChild(d);
   });
 }
+
+/* ============================================================================
+   THE ABILITY
+   Every card carries one, decided by whichever stat the cat leads on, so the
+   ability is a consequence of the animal rather than a roll. Usable once a day.
+   ========================================================================== */
+const ABILITIES = {
+  chonk:   { name:'Immovable Object', icon:'🪨',
+             desc:'Settles. For thirty seconds nothing you throw can shift her, and everything that bounces off pays double.' },
+  loaf:    { name:'Perfect Form',     icon:'🍞',
+             desc:'Folds into a flawless loaf. Earns kibble on her own for the rest of the day, which is the most work she has ever done.' },
+  void:    { name:'Vanish',           icon:'🕳️',
+             desc:'Leaves the room entirely and returns holding something that was not previously yours.' },
+  menace:  { name:'The Swat',         icon:'🐾',
+             desc:'Puts one paw on the nearest object and looks directly at you while removing it from the shelf. Pays out immediately.' },
+  zoomies: { name:'3AM Sprint',       icon:'💨',
+             desc:'Twenty seconds at a speed no one asked for. Every toy in the room is dealt with.' },
+  floof:   { name:'Full Fluff',       icon:'🧨',
+             desc:'Doubles in volume without gaining a gram. Purely cosmetic. Utterly worth it.' }
+};
+function leadStat(card){
+  return STAT_KEYS.reduce((a, k) => (card.stats[k] > card.stats[a] ? k : a), STAT_KEYS[0]);
+}
+function abilityFor(card){ return ABILITIES[leadStat(card)]; }
+/* One number so a card can be compared to a card, the way a playing card is. */
+function powerOf(card){
+  const s = STAT_KEYS.reduce((t, k) => t + card.stats[k], 0);
+  const bonus = { ALLEY:0, HOUSE:20, SHOW:45, FOIL:80, MYTHIC:140 }[card.rarity] || 0;
+  return Math.round(s + bonus);
+}
+
+/* ============================================================================
+   THE PET
+   The card is the character sheet. This is the animal it describes.
+
+   HARD LINE, and it is not negotiable: nothing here can die, get sick, run
+   away, or be lost. Tamagotchi's hook was irreversible death; it worked once,
+   in 1996, and the genre has moved on. Neko Atsume 2 added item durability in
+   2024 and it is the single most criticised change in the sequel. Needs in
+   LOAF create a reason to DO something, never a penalty for having been away.
+   Chores are rewarding to do and free to skip.
+   ========================================================================== */
+const DAY = 86400000;
+const NEEDS = [
+  ['fed',    'Fed',     0.9],   /* points recovered per real minute away */
+  ['played', 'Played',  1.4],
+  ['clean',  'Litter',  0.7]
+];
+function petOf(card){
+  if (!card.pet) card.pet = { level:1, xp:0, kibble:12, fed:70, played:60, clean:85,
+                              lastTick:Date.now(), lastAbility:0, poops:0 };
+  return card.pet;
+}
+function xpNeeded(level){ return 40 + level * 26; }
+function settleNeeds(card){
+  const p = petOf(card);
+  const now = Date.now();
+  const mins = Math.max(0, (now - (p.lastTick || now)) / 60000);
+  p.lastTick = now;
+  NEEDS.forEach(([k, , rate]) => {
+    /* Needs drift down while you are away, and stop at a floor. They gate
+       rewards, never the animal. */
+    p[k] = Math.max(8, Math.min(100, (p[k] == null ? 70 : p[k]) - mins * rate));
+  });
+  /* A cat that has been left a while has been busy. */
+  const due = Math.floor(mins / 90);
+  if (due > 0) p.poops = Math.min(4, (p.poops || 0) + due);
+  return p;
+}
+function grantXP(card, n){
+  const p = petOf(card);
+  p.xp += n;
+  let up = false;
+  while (p.xp >= xpNeeded(p.level)){ p.xp -= xpNeeded(p.level); p.level++; up = true; }
+  return up;
+}
+function savePet(card){
+  Store.update(list => {
+    const c = list.find(x => x.id === card.id);
+    if (c) c.pet = card.pet;
+    return list;
+  });
+}
+
+/* ============================================================================
+   THE ROOM
+   A canvas scene. Her photograph is her face, on a drawn body, in a room tinted
+   to her own coat. You throw things. She decides whether that was interesting.
+   ========================================================================== */
+const Room = (() => {
+  const TOYS = [
+    { k:'yarn',   n:'Yarn',   icon:'🧶', cost:0, appeal:1.0 },
+    { k:'crinkle',n:'Crinkle',icon:'🎾', cost:0, appeal:1.25 },
+    { k:'feather',n:'Feather',icon:'🪶', cost:0, appeal:1.5, float:true },
+    { k:'box',    n:'Box',    icon:'📦', cost:2, appeal:1.8 },
+    { k:'treat',  n:'Treat',  icon:'🍤', cost:3, appeal:0, food:true }
+  ];
+
+  let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
+  let card = null, pet = null, photo = null, coat = '#7A6A55';
+  let tool = 'yarn';
+  let cat, toys = [], poops = [], crumbs = [], fx = [];
+  let drag = null, note = '', noteT = 0, boost = 0, sprint = 0;
+
+  function init(){
+    cv = $('room'); if (!cv) return;
+    cx = cv.getContext('2d');
+    cv.addEventListener('pointerdown', onDown);
+    cv.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function open(c){
+    card = c;
+    if (!card){ stop(); return; }
+    pet = settleNeeds(card);
+    coat = (card.meter && card.meter.coat) || '#7A6A55';
+    W = cv.width; H = cv.height; floorY = H * 0.74;
+
+    cat = { x:W*0.52, y:floorY, vx:0, tx:W*0.52, state:'idle', t:0, blink:0,
+            face:0, squash:1, tail:0, big:1, hidden:0 };
+    toys = []; poops = []; crumbs = []; fx = [];
+    for (let i = 0; i < (pet.poops || 0); i++) addPoop();
+
+    photo = null;
+    if (card.photo){
+      const im = new Image();
+      im.onload = () => { photo = im; };
+      im.src = card.photo;
+    }
+    drawTools(); drawNeeds(); drawHud();
+    start();
+  }
+
+  function start(){ if (running) return; running = true; lastT = 0; raf = requestAnimationFrame(tick); }
+  function stop(){ running = false; if (raf) cancelAnimationFrame(raf); raf = 0; }
+
+  /* ── input ─────────────────────────────────────────────────────────────── */
+  function pos(e){
+    const r = cv.getBoundingClientRect();
+    return { x:(e.clientX - r.left) * (cv.width / r.width),
+             y:(e.clientY - r.top)  * (cv.height / r.height) };
+  }
+  function onDown(e){
+    if (!card) return;
+    const p = pos(e);
+    /* Scooping comes first: a tap on a poop is always a scoop, never a throw. */
+    const hit = poops.findIndex(q => Math.hypot(q.x - p.x, q.y - p.y) < 42);
+    if (hit >= 0){ scoop(hit); return; }
+    const t = TOYS.find(x => x.k === tool);
+    if (t && t.cost > pet.kibble){ setNote('Not enough kibble for that.'); return; }
+    drag = { x0:p.x, y0:p.y, x:p.x, y:p.y };
+    cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+  }
+  function onMove(e){ if (drag) { const p = pos(e); drag.x = p.x; drag.y = p.y; } }
+  function onUp(){
+    if (!drag || !card) return;
+    const d = drag; drag = null;
+    const t = TOYS.find(x => x.k === tool) || TOYS[0];
+    if (t.cost > pet.kibble) return;
+    if (t.cost){ pet.kibble -= t.cost; }
+    const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
+    if (t.food) dropFood(d.x, d.y);
+    else toys.push({ k:t.k, icon:t.icon, appeal:t.appeal, float:!!t.float,
+                     x:d.x, y:d.y, vx:vx || (Math.random()*4-2), vy:vy - 3,
+                     r:16, life:600, settled:false });
+    savePet(card); drawHud();
+  }
+
+  function scoop(i){
+    poops.splice(i, 1);
+    pet.poops = poops.length;
+    pet.clean = Math.min(100, pet.clean + 26);
+    pet.kibble += 2;
+    const up = grantXP(card, 6);
+    burst(cx ? W*0.5 : 0, floorY, '#6FE3C4');
+    setNote(up ? 'Scooped. Level ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
+    savePet(card); drawNeeds(); drawHud();
+  }
+  function dropFood(x){
+    pet.kibble -= 0;                      /* cost already taken on release */
+    crumbs.push({ x:Math.max(60, Math.min(W-60, x)), y:floorY, n:14 });
+    pet.fed = Math.min(100, pet.fed + 30);
+    const up = grantXP(card, 8);
+    setNote(up ? 'Fed. Level ' + pet.level + '.' : 'Fed. She inspected it first.');
+    cat.state = 'eat'; cat.t = 0; cat.tx = crumbs[crumbs.length-1].x;
+    savePet(card); drawNeeds(); drawHud();
+  }
+  function addPoop(){
+    poops.push({ x:70 + Math.random()*(750-140), y:floorY + 8 + Math.random()*40,
+                 r:14, s:Math.random()*0.4 + 0.85 });
+  }
+
+  /* ── the ability ───────────────────────────────────────────────────────── */
+  function useAbility(){
+    if (!card) return;
+    const now = Date.now();
+    if (now - (pet.lastAbility || 0) < DAY){
+      const h = Math.ceil((DAY - (now - pet.lastAbility)) / 3600000);
+      setNote('Already used today. Back in ' + h + 'h.');
+      return;
+    }
+    pet.lastAbility = now;
+    const k = leadStat(card), a = ABILITIES[k];
+    if (k === 'zoomies'){ sprint = 20; cat.state = 'chase'; }
+    else if (k === 'floof'){ cat.big = 1.55; }
+    else if (k === 'void'){ cat.hidden = 2.2; pet.kibble += 9; }
+    else if (k === 'menace'){ pet.kibble += 7; for (let i=0;i<3;i++) burst(W*0.3+i*90, floorY-40, '#FF7B9C'); }
+    else if (k === 'chonk'){ boost = 30; }
+    else if (k === 'loaf'){ pet.kibble += 6; cat.state = 'loaf'; }
+    grantXP(card, 14);
+    setNote(a.icon + '  ' + a.name.toUpperCase());
+    savePet(card); drawHud(); drawTools();
+  }
+
+  function setNote(s){ note = s; noteT = 3.4; $('roomNote').textContent = s; }
+  function burst(x, y, col){
+    for (let i = 0; i < 14; i++)
+      fx.push({ x, y, vx:(Math.random()-.5)*7, vy:-Math.random()*6-1, life:1, col });
+  }
+
+  /* ── simulation ────────────────────────────────────────────────────────── */
+  function tick(ts){
+    if (!running) return;
+    const dt = lastT ? Math.min(0.05, (ts - lastT) / 1000) : 0.016;
+    lastT = ts;
+    step(dt); render();
+    raf = requestAnimationFrame(tick);
+  }
+
+  function step(dt){
+    if (!card) return;
+    cat.t += dt;
+    if (boost > 0) boost -= dt;
+    if (sprint > 0) sprint -= dt;
+    if (cat.hidden > 0) cat.hidden -= dt;
+    if (cat.big > 1) cat.big = Math.max(1, cat.big - dt * 0.18);
+    if (noteT > 0){ noteT -= dt; if (noteT <= 0) $('roomNote').textContent =
+      'Drag anywhere to throw. She decides whether that was interesting.'; }
+
+    /* toys */
+    toys.forEach(t => {
+      if (!t.settled){
+        t.vy += (t.float ? 8 : 26) * dt * 2.2;
+        t.x += t.vx; t.y += t.vy;
+        if (t.float){ t.vx *= 0.985; t.x += Math.sin(cat.t*4 + t.y*0.05) * 0.6; }
+        if (t.y > floorY){ t.y = floorY; t.vy *= -0.48; t.vx *= 0.72;
+          if (Math.abs(t.vy) < 1.2){ t.vy = 0; t.settled = true; } }
+        if (t.x < 22){ t.x = 22; t.vx *= -0.6; }
+        if (t.x > W - 22){ t.x = W - 22; t.vx *= -0.6; }
+      }
+      t.life -= dt * 60;
+    });
+    toys = toys.filter(t => t.life > 0);
+
+    /* what is she looking at */
+    const interest = toys.reduce((best, t) => {
+      const w = t.appeal * (t.settled ? 0.45 : 1.4);
+      return (!best || w > best.w) ? { t, w } : best;
+    }, null);
+
+    const zoom = card.stats.zoomies / 100, loafy = card.stats.loaf / 100;
+    const speed = (60 + zoom * 240) * (sprint > 0 ? 2.1 : 1);
+
+    if (cat.state === 'eat'){
+      if (cat.t > 2.6) cat.state = 'idle';
+    } else if (cat.hidden > 0){
+      /* off doing something unaccounted for */
+    } else if (interest && (boost <= 0)){
+      const wantsIt = interest.w > (0.5 + loafy * 0.9) || sprint > 0;
+      if (wantsIt){
+        cat.state = 'chase';
+        cat.tx = interest.t.x;
+        if (Math.abs(cat.x - interest.t.x) < 34){
+          /* caught it */
+          const gain = Math.round(3 + interest.t.appeal * 3 + (boost > 0 ? 4 : 0));
+          pet.played = Math.min(100, pet.played + 7);
+          pet.kibble += 1;
+          if (grantXP(card, gain)) setNote('Level ' + pet.level + '.');
+          burst(interest.t.x, interest.t.y, '#FFB23F');
+          toys = toys.filter(x => x !== interest.t);
+          savePet(card); drawNeeds(); drawHud();
+        }
+      } else if (cat.state !== 'loaf') cat.state = 'watch';
+    } else if (cat.state === 'chase') cat.state = 'idle';
+
+    /* movement */
+    if (cat.state === 'chase'){
+      const d = cat.tx - cat.x;
+      cat.vx = Math.max(-speed, Math.min(speed, d * 2.6));
+      cat.face = d < 0 ? -1 : 1;
+    } else {
+      cat.vx *= 0.86;
+      if (cat.state === 'idle' && Math.random() < 0.004){
+        cat.tx = 90 + Math.random() * (W - 180);
+        cat.state = Math.random() < loafy ? 'loaf' : 'walk';
+      }
+      if (cat.state === 'walk'){
+        const d = cat.tx - cat.x;
+        if (Math.abs(d) < 6) cat.state = 'idle';
+        else { cat.vx = Math.max(-70, Math.min(70, d * 1.4)); cat.face = d < 0 ? -1 : 1; }
+      }
+    }
+    cat.x = Math.max(72, Math.min(W - 72, cat.x + cat.vx * dt));
+    cat.squash = 1 + Math.sin(cat.t * (cat.state === 'chase' ? 15 : 2.1)) * (cat.state === 'chase' ? 0.07 : 0.022);
+    cat.tail += dt * (cat.state === 'chase' ? 11 : 2.4);
+    cat.blink = (cat.blink - dt) > 0 ? cat.blink - dt : (Math.random() < 0.006 ? 0.18 : 0);
+
+    /* she is a working animal */
+    if (Math.random() < 0.00055 && poops.length < 4){ addPoop(); pet.poops = poops.length;
+      pet.clean = Math.max(8, pet.clean - 12); drawNeeds(); }
+
+    crumbs.forEach(c => { if (Math.abs(cat.x - c.x) < 40 && c.n > 0) c.n -= dt * 9; });
+    crumbs = crumbs.filter(c => c.n > 0);
+
+    fx.forEach(f => { f.vy += 0.35; f.x += f.vx; f.y += f.vy; f.life -= dt * 1.5; });
+    fx = fx.filter(f => f.life > 0);
+  }
+
+  /* ── render ────────────────────────────────────────────────────────────── */
+  function render(){
+    if (!cx) return;
+    /* room, tinted to her own coat */
+    const g = cx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, shade(coat, -0.62)); g.addColorStop(1, shade(coat, -0.78));
+    cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+    cx.fillStyle = shade(coat, -0.45); cx.fillRect(0, floorY, W, H - floorY);
+    cx.fillStyle = 'rgba(255,255,255,.05)'; cx.fillRect(0, floorY, W, 3);
+
+    /* a window, because a cat will always find the one patch of sun */
+    cx.fillStyle = 'rgba(255,178,63,.09)';
+    cx.beginPath(); cx.moveTo(W*0.60, 0); cx.lineTo(W*0.94, 0);
+    cx.lineTo(W*0.80, floorY); cx.lineTo(W*0.44, floorY); cx.closePath(); cx.fill();
+
+    crumbs.forEach(c => {
+      cx.fillStyle = '#C98A3E';
+      for (let i = 0; i < Math.ceil(c.n); i++){
+        cx.beginPath();
+        cx.arc(c.x - 22 + (i*7) % 44, floorY + 12 + ((i*5) % 9), 3.2, 0, 7); cx.fill();
+      }
+    });
+
+    poops.forEach(p => {
+      cx.save(); cx.translate(p.x, p.y); cx.scale(p.s, p.s);
+      cx.fillStyle = '#4A3524';
+      cx.beginPath(); cx.ellipse(0, 6, 15, 8, 0, 0, 7); cx.fill();
+      cx.beginPath(); cx.ellipse(-1, -2, 11, 7, 0, 0, 7); cx.fill();
+      cx.beginPath(); cx.ellipse(1, -9, 7, 5, 0, 0, 7); cx.fill();
+      cx.fillStyle = 'rgba(255,255,255,.13)';
+      cx.beginPath(); cx.ellipse(-4, -10, 2.6, 1.8, 0, 0, 7); cx.fill();
+      cx.restore();
+      /* it is tappable, so it says so */
+      cx.strokeStyle = 'rgba(111,227,196,.35)'; cx.lineWidth = 1.5;
+      cx.beginPath(); cx.arc(p.x, p.y - 2, 28, 0, 7); cx.stroke();
+    });
+
+    toys.forEach(t => {
+      cx.save(); cx.translate(t.x, t.y);
+      cx.rotate(t.settled ? 0 : t.x * 0.02);
+      cx.font = '30px system-ui,sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText(t.icon, 0, 0); cx.restore();
+    });
+
+    if (cat.hidden <= 0) drawCat();
+
+    fx.forEach(f => {
+      cx.globalAlpha = Math.max(0, f.life); cx.fillStyle = f.col;
+      cx.beginPath(); cx.arc(f.x, f.y, 4, 0, 7); cx.fill(); cx.globalAlpha = 1;
+    });
+
+    if (drag){
+      cx.strokeStyle = 'rgba(239,228,210,.45)'; cx.lineWidth = 2; cx.setLineDash([6,6]);
+      cx.beginPath(); cx.moveTo(drag.x0, drag.y0); cx.lineTo(drag.x, drag.y); cx.stroke();
+      cx.setLineDash([]);
+    }
+  }
+
+  function drawCat(){
+    const s = cat.big, bw = 74*s, bh = 52*s*cat.squash;
+    const bx = cat.x, by = floorY - bh*0.55;
+    const isLoaf = cat.state === 'loaf';
+
+    /* shadow */
+    cx.fillStyle = 'rgba(0,0,0,.34)';
+    cx.beginPath(); cx.ellipse(bx, floorY + 6, bw*0.72, 10, 0, 0, 7); cx.fill();
+
+    /* tail */
+    cx.strokeStyle = shade(coat, -0.18); cx.lineWidth = 13*s; cx.lineCap = 'round';
+    const tw = Math.sin(cat.tail) * (cat.state === 'chase' ? 34 : 16);
+    cx.beginPath();
+    cx.moveTo(bx - cat.face*bw*0.62, by + bh*0.35);
+    cx.quadraticCurveTo(bx - cat.face*(bw*1.1), by + bh*0.1 + tw,
+                        bx - cat.face*(bw*1.15), by - bh*0.35 + tw);
+    cx.stroke();
+
+    /* body */
+    cx.fillStyle = shade(coat, -0.05);
+    cx.beginPath();
+    cx.ellipse(bx, by + (isLoaf ? bh*0.22 : 0), bw*0.9, isLoaf ? bh*0.72 : bh, 0, 0, 7);
+    cx.fill();
+
+    /* legs, only when she is not folded away */
+    if (!isLoaf){
+      cx.fillStyle = shade(coat, -0.14);
+      [-0.42, 0.34].forEach(o => {
+        cx.beginPath();
+        cx.ellipse(bx + bw*o, floorY - 8*s, 13*s, 10*s, 0, 0, 7); cx.fill();
+      });
+    }
+
+    /* the head is her actual face */
+    const hr = 40*s, hx = bx + cat.face*bw*0.42, hy = by - bh*0.72;
+    cx.save();
+    cx.beginPath(); cx.arc(hx, hy, hr, 0, 7); cx.closePath();
+    cx.fillStyle = shade(coat, 0.06); cx.fill();
+    if (photo){
+      cx.save(); cx.clip();
+      const ps = Math.max((hr*2) / photo.width, (hr*2) / photo.height) * 1.25;
+      cx.drawImage(photo, hx - photo.width*ps/2, hy - photo.height*ps/2,
+                   photo.width*ps, photo.height*ps);
+      cx.restore();
+    }
+    cx.restore();
+
+    /* ears on top, so a photograph of a face reads as a cat */
+    cx.fillStyle = shade(coat, -0.1);
+    [-1, 1].forEach(d => {
+      cx.beginPath();
+      cx.moveTo(hx + d*hr*0.52, hy - hr*0.66);
+      cx.lineTo(hx + d*hr*0.78, hy - hr*1.44);
+      cx.lineTo(hx + d*hr*0.06, hy - hr*0.98);
+      cx.closePath(); cx.fill();
+    });
+    /* rim so the photo does not float free of the body */
+    cx.strokeStyle = shade(coat, -0.3); cx.lineWidth = 3;
+    cx.beginPath(); cx.arc(hx, hy, hr, 0, 7); cx.stroke();
+
+    if (cat.blink > 0){
+      cx.fillStyle = shade(coat, 0.02);
+      cx.beginPath(); cx.ellipse(hx, hy - hr*0.1, hr*0.95, hr*0.5, 0, 0, 7); cx.fill();
+    }
+    if (boost > 0){
+      cx.strokeStyle = 'rgba(255,178,63,.55)'; cx.lineWidth = 3;
+      cx.beginPath(); cx.arc(bx, by, bw*1.05, 0, 7); cx.stroke();
+    }
+  }
+
+  function shade(hex, amt){
+    const h = hex.replace('#','');
+    const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
+    let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    const f = v => Math.max(0, Math.min(255, Math.round(amt >= 0 ? v + (255-v)*amt : v * (1+amt))));
+    return 'rgb(' + f(r) + ',' + f(g) + ',' + f(b) + ')';
+  }
+
+  /* ── chrome ────────────────────────────────────────────────────────────── */
+  function drawTools(){
+    const box = $('tools'); box.innerHTML = '';
+    TOYS.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'tool'; b.type = 'button';
+      b.setAttribute('aria-pressed', String(tool === t.k));
+      b.innerHTML = '<em>' + t.icon + '</em>' + t.n + (t.cost ? ' ◍' + t.cost : '');
+      b.onclick = () => { tool = t.k; drawTools(); };
+      box.appendChild(b);
+    });
+    const a = document.createElement('button');
+    a.className = 'tool'; a.type = 'button';
+    const ab = card ? abilityFor(card) : null;
+    const ready = card && (Date.now() - (pet.lastAbility || 0) >= DAY);
+    a.disabled = !ready;
+    a.innerHTML = '<em>' + (ab ? ab.icon : '✦') + '</em>' + (ready ? 'Ability' : 'Used');
+    a.onclick = useAbility;
+    box.appendChild(a);
+  }
+  function drawNeeds(){
+    const box = $('needs'); box.innerHTML = '';
+    NEEDS.forEach(([k, label]) => {
+      const v = Math.round(pet[k]);
+      const d = document.createElement('div'); d.className = 'need';
+      const b = document.createElement('b'); b.textContent = label;
+      const tk = document.createElement('div'); tk.className = 'tk';
+      const fl = document.createElement('div'); fl.className = 'fl';
+      fl.style.width = v + '%';
+      fl.style.background = v >= 60 ? 'var(--jade)' : (v >= 30 ? 'var(--amber)' : '#FF9E9E');
+      tk.appendChild(fl); d.append(b, tk); box.appendChild(d);
+    });
+  }
+  function drawHud(){
+    if (!pet) return;
+    $('hudLv').textContent = 'LV ' + pet.level;
+    $('hudKb').textContent = '◍ ' + pet.kibble;
+    $('xpFill').style.width = Math.round(pet.xp / xpNeeded(pet.level) * 100) + '%';
+  }
+
+  return { init, open, stop, start, get card(){ return card; } };
+})();
 
 /* ----------------------------------------------------------------------------
    HOLO TILT
@@ -1446,7 +2029,47 @@ $('save').onclick = async () => {
 /* ----------------------------------------------------------------------------
    BOOT
    -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------
+   TABS
+   -------------------------------------------------------------------------- */
+const SCAN_VIEWS = ['view-slot','view-meter','view-scan','view-card'];
+let tab = 'scan';
+function setTab(next){
+  tab = next;
+  $('tabScan').setAttribute('aria-selected', String(next === 'scan'));
+  $('tabRoom').setAttribute('aria-selected', String(next === 'room'));
+  $('view-room').classList.toggle('hidden', next !== 'room');
+  ['index','coll'].forEach(c => {
+    const el = document.querySelector('.' + c);
+    if (el) el.classList.toggle('hidden', next !== 'scan');
+  });
+  if (next === 'room'){
+    SCAN_VIEWS.forEach(id => $(id).classList.add('hidden'));
+    $('demoCard').classList.add('hidden');
+    const all = Store.read();
+    const c = current || all[0];
+    if (!c){
+      $('view-room').innerHTML = '<div class="nopet">No specimen on file yet.<br>'
+        + 'Scan a cat and she will be waiting in here.</div>';
+      return;
+    }
+    Room.open(c);
+  } else {
+    Room.stop();
+    show(current ? 'card' : 'slot');
+  }
+}
+$('tabScan').onclick = () => setTab('scan');
+$('tabRoom').onclick = () => setTab('room');
+/* A backgrounded tab should not run a physics loop. */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) Room.stop();
+  else if (tab === 'room' && Room.card) Room.start();
+});
+
 (function boot(){
+  Room.init();
+
   /* the example card on the landing screen */
   $('demoArt').insertAdjacentHTML('beforeend',
     '<div style="width:100%;height:100%;background:linear-gradient(150deg,#6E5638,#2A1F16);display:grid;place-items:center">'
