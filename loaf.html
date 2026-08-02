@@ -2390,6 +2390,12 @@ const CatArt = (() => {
     /* head */
     cx.fillStyle = P.coatMid;
     headPath(); cx.fill();
+
+    /* Muzzle geometry is needed by the face markings below, so it is resolved
+       here even though the muzzle itself is painted after them. */
+    const mzY = cy2 + HH*(0.30 + muzz*0.26);
+    const mzW = HW*(0.40 + muzz*0.16 + round*0.06);
+    const mzH = HH*(0.20 + muzz*0.20);
     if (d.pattern === 'point'){
       const g = cx.createRadialGradient(hx, cy2 + HH*0.30, hr*0.1,
                                         hx, cy2 + HH*0.30, hr*1.3);
@@ -2401,13 +2407,37 @@ const CatArt = (() => {
       cx.save(); headPath(); cx.clip();
       cx.strokeStyle = d.marking; cx.lineCap = 'round';
       /* forehead M */
-      cx.lineWidth = hr*0.085;
-      [-0.34, 0, 0.34].forEach(k => {
+      cx.lineWidth = hr*0.075;
+      [-0.46, -0.22, 0, 0.22, 0.46].forEach((k, i) => {
+        const j1 = jit(seed, 780 + i, 0.06), j2 = jit(seed, 800 + i, 0.05);
         cx.beginPath();
-        cx.moveTo(hx + hr*k, hy + bob - hr*0.90);
-        cx.lineTo(hx + hr*k*1.5, hy + bob - hr*0.34);
+        cx.moveTo(hx + hr*(k + j1), cy2 - hr*(0.92 + j2));
+        cx.lineTo(hx + hr*(k*1.55 + j1), cy2 - hr*(0.32 + j2*0.5));
         cx.stroke();
       });
+      /* Whisker dots at the roots, so they line up with the live whiskers. */
+      cx.fillStyle = P.patternCore; cx.globalAlpha = 0.5;
+      [-1, 1].forEach((k, side) => {
+        for (let i = 0; i < 9; i++){
+          const cxx = hx + k*mzW*(0.16 + (i % 3)*0.20) + jit(seed, 820+side*20+i, mzW*0.05);
+          const cyy = mzY + mzH*(-0.34 + Math.floor(i/3)*0.30) + jit(seed, 860+side*20+i, mzH*0.07);
+          cx.beginPath(); cx.arc(cxx, cyy, Math.max(0.6, hr*0.016), 0, 7); cx.fill();
+        }
+      });
+      cx.globalAlpha = 1;
+      cx.strokeStyle = d.marking;
+
+      /* cheek comma: a curved hook below and behind the outer eye corner,
+         jittered independently per side */
+      [-1, 1].forEach((k, side) => {
+        cx.lineWidth = hr*0.055;
+        cx.beginPath();
+        cx.moveTo(hx + k*hr*(0.60 + jit(seed, 880+side, 0.05)), cy2 + hr*0.16);
+        cx.quadraticCurveTo(hx + k*hr*0.92, cy2 + hr*0.40,
+                            hx + k*hr*0.68, cy2 + hr*0.56);
+        cx.stroke();
+      });
+
       /* cheek stripes and the mascara line back from the eye, which is most
          of what makes a tabby face read as a tabby face */
       cx.lineWidth = hr*0.06;
@@ -2431,9 +2461,6 @@ const CatArt = (() => {
 
     /* Muzzle. Projection is the difference between a Persian and a Maine
        Coon and it is the most under-rated parameter in a stylised cat. */
-    const mzY = cy2 + HH*(0.30 + muzz*0.26);
-    const mzW = HW*(0.40 + muzz*0.16 + round*0.06);
-    const mzH = HH*(0.20 + muzz*0.20);
     cx.fillStyle = OK.adj(P.coatMid, { dL: 0.05 + OK.lum(P.coatMid) * 0.22, dH: 6 });
     cx.beginPath();
     cx.ellipse(hx - mzW*0.44, mzY, mzW*0.62, mzH, 0, 0, 7);
@@ -2534,39 +2561,86 @@ const CatArt = (() => {
       cx.restore();
     });
 
-    /* nose and mouth */
-    const nY = mzY - mzH*0.62, nW = mzW*0.30;
-    cx.fillStyle = d.nose;
+    /* THE NOSE. Not a triangle: a rounded trapezoid, flat-ish on top, sides
+       bowed out, coming to a point that becomes the philtrum. Measured on the
+       real cat, the leather is BRIGHTEST on the upper dome and darkest at the
+       lower rim, which is the opposite of the obvious guess and is what an
+       overhead key light predicts. */
+    const nY = mzY - mzH*0.66, nW = mzW*0.34, nH = nW*0.78;
+    const ng = cx.createLinearGradient(0, nY - nH*0.4, 0, nY + nH);
+    ng.addColorStop(0, OK.adj(d.nose, { dL: 0.10 }));
+    ng.addColorStop(1, OK.adj(d.nose, { dL:-0.22, dC: 0.02 }));
+    cx.fillStyle = ng;
     cx.beginPath();
-    cx.moveTo(hx - nW*0.5, nY);
-    cx.lineTo(hx + nW*0.5, nY);
-    cx.quadraticCurveTo(hx, nY + nW*0.86, hx, nY + nW*0.92);
-    cx.quadraticCurveTo(hx, nY + nW*0.86, hx - nW*0.5, nY);
+    cx.moveTo(hx - nW*0.46, nY - nH*0.30);
+    cx.quadraticCurveTo(hx, nY - nH*0.46, hx + nW*0.46, nY - nH*0.30);
+    cx.quadraticCurveTo(hx + nW*0.58, nY + nH*0.24, hx, nY + nH*0.74);
+    cx.quadraticCurveTo(hx - nW*0.58, nY + nH*0.24, hx - nW*0.46, nY - nH*0.30);
     cx.closePath(); cx.fill();
-    cx.strokeStyle = 'rgba(0,0,0,.34)'; cx.lineWidth = Math.max(1, hr*0.030);
-    cx.beginPath();
-    cx.moveTo(hx, nY + nW*0.92);
-    cx.lineTo(hx, mzY + mzH*0.10);
+    /* liner, heaviest along the bottom. It is why a nose reads as a nose and
+       not as a sticker. */
+    cx.strokeStyle = P.noseLine; cx.lineWidth = Math.max(0.8, hr*0.022);
     cx.stroke();
+    /* nostrils, measured near black */
+    cx.fillStyle = 'rgba(6,3,6,.72)';
     [-1, 1].forEach(k => {
       cx.beginPath();
-      cx.moveTo(hx, mzY + mzH*0.10);
-      cx.quadraticCurveTo(hx + k*mzW*0.34, mzY + mzH*0.44,
-                          hx + k*mzW*0.62, mzY + mzH*0.14);
+      cx.ellipse(hx + k*nW*0.26, nY + nH*0.16, nW*0.13, nH*0.16, k*0.5, 0, 7);
+      cx.fill();
+    });
+    cx.fillStyle = 'rgba(255,255,255,.42)';
+    cx.beginPath(); cx.ellipse(hx - nW*0.20, nY - nH*0.18, nW*0.11, nH*0.09, -0.4, 0, 7); cx.fill();
+
+    /* philtrum, then the mouth as a shallow omega. Never a smile: cats do not
+       smile, and a smiling cat reads as a cartoon dog. */
+    cx.strokeStyle = 'rgba(0,0,0,.34)'; cx.lineWidth = Math.max(1, hr*0.026);
+    cx.beginPath();
+    cx.moveTo(hx, nY + nH*0.74); cx.lineTo(hx, mzY + mzH*0.12);
+    cx.stroke();
+    cx.globalAlpha = 0.35;
+    [-1, 1].forEach(k => {
+      cx.beginPath();
+      cx.moveTo(hx, mzY + mzH*0.12);
+      cx.quadraticCurveTo(hx + k*mzW*0.36, mzY + mzH*0.50,
+                          hx + k*mzW*0.64, mzY + mzH*0.20);
       cx.stroke();
     });
+    cx.globalAlpha = 1;
 
-    /* whiskers, from the whisker pads rather than from the middle of the face */
-    cx.strokeStyle = 'rgba(255,255,255,.6)'; cx.lineWidth = Math.max(1, hr*0.026);
+    /* WHISKERS. The real cat has twelve or more per side in four rows, varied
+       in length and curvature, bending down at the tips, plus prominent brow
+       whiskers. Three straight hairlines was most of why the face read as
+       clip art. Each is stroked twice for taper: wide and faint, then narrow
+       and bright on the same path. */
     cx.lineCap = 'round';
-    [-1, 1].forEach(k => {
-      [-0.34, 0, 0.30].forEach((dy, i) => {
+    [-1, 1].forEach((k, side) => {
+      for (let i = 0; i < 7; i++){
+        const row = i % 4;
+        const dy  = (-0.42 + row*0.28) + jit(seed, 400 + side*40 + i, 0.06);
+        const len = 0.78 + rnd(seed, 500 + side*40 + i) * 0.34;
+        const drop = 0.10 + rnd(seed, 600 + side*40 + i) * 0.26;
+        const ox = hx + k*mzW*(0.56 + rnd(seed, 700+side*40+i)*0.14);
+        const oy = mzY + mzH*dy*0.72;
+        const ex = hx + k*HW*len*1.30, ey = mzY + mzH*dy*1.5 + HH*drop*0.8;
+        [[Math.max(0.9, hr*0.030), 0.16], [Math.max(0.6, hr*0.014), 0.62]].forEach(([w, a]) => {
+          cx.strokeStyle = 'rgba(255,252,244,' + a + ')';
+          cx.lineWidth = w;
+          cx.beginPath();
+          cx.moveTo(ox, oy);
+          cx.quadraticCurveTo(hx + k*HW*0.80, oy - HH*0.08, ex, ey);
+          cx.stroke();
+        });
+      }
+      /* brow whiskers, which almost nothing draws and which cost two lines */
+      for (let i = 0; i < 2; i++){
+        cx.strokeStyle = 'rgba(255,252,244,.42)';
+        cx.lineWidth = Math.max(0.6, hr*0.015);
         cx.beginPath();
-        cx.moveTo(hx + k*mzW*0.62, mzY + mzH*dy*0.7);
-        cx.quadraticCurveTo(hx + k*HW*1.05, mzY + mzH*dy - HH*0.10,
-                            hx + k*HW*(1.42 + i*0.05), mzY + mzH*dy*1.8 - HH*(0.16 - i*0.08));
+        cx.moveTo(hx + k*hr*0.30, cy2 - HH*0.34);
+        cx.quadraticCurveTo(hx + k*hr*(0.62 + i*0.08), cy2 - HH*(0.60 + i*0.06),
+                            hx + k*hr*(0.86 + i*0.10), cy2 - HH*(0.62 + i*0.08));
         cx.stroke();
-      });
+      }
     });
 
     cx.restore();
