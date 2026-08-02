@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#150E1D">
+<meta name="description" content="LOAF. Scan your cat. Get one graded card.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>LOAF — Cat Field Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#150E1D; --panel:#221733; --panel-2:#2E2044; --line:#3D2C58;
+  --amber:#FFB23F; --jade:#6FE3C4; --bone:#EFE4D2; --dim:#9A88B3; --faint:#6C5A85;
+  --seal:#D93A4B;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
+  --jp:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic','Noto Sans CJK JP','Noto Sans JP','Meiryo',sans-serif;
+  --mx:50%; --my:50%; --tiltx:0deg; --tilty:0deg; --foil:0;
+  --pupil-x:0px; --pupil-w:7px;
+  --coat:#7A6A55;              /* live coat tint, set by the light meter */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:radial-gradient(120% 80% at 50% -10%,#2A1B3D 0%,transparent 60%),var(--ink);
+  color:var(--bone);font-family:var(--display);min-height:100svh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+.wrap{width:100%;max-width:460px}
+.hidden{display:none!important}
+
+.bar{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);padding:18px 2px 0}
+.bar b{color:var(--amber);font-weight:500}
+
+.mast{margin:22px 0 8px;padding:0 2px}
+.mast h1{font-size:clamp(38px,13vw,58px);line-height:.86;letter-spacing:-.045em;
+  font-weight:800;margin:0;text-transform:uppercase}
+.mast h1 span{display:block;color:var(--amber)}
+.mast p{font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--dim);
+  margin:14px 0 0;max-width:34ch}
+
+/* ── the example card: the payoff, shown before we ask for a photo ───────── */
+.demo{margin-top:24px;position:relative}
+.demo .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--faint);
+  text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between}
+.demo .mini{display:flex;gap:12px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(180deg,rgba(46,32,68,.5),rgba(34,23,51,.3));padding:12px;align-items:stretch}
+.demo .art{width:96px;flex:0 0 96px;border-radius:11px;overflow:hidden;background:#0E0914;
+  position:relative;display:grid;place-items:center}
+.demo .art svg{width:100%;height:100%;display:block}
+.demo .art .rr{position:absolute;top:6px;left:6px;font-family:var(--mono);font-size:8px;
+  letter-spacing:.14em;padding:3px 6px;border-radius:99px;background:rgba(21,14,29,.8);
+  border:1px solid var(--amber);color:var(--amber)}
+.demo .info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.demo .info h3{margin:0;font-size:23px;line-height:.92;letter-spacing:-.035em;font-weight:800;
+  text-transform:uppercase}
+.demo .info .ep{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--amber);
+  text-transform:uppercase}
+.demo .info .po{font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+.demo .info .po i{font-style:normal;font-family:var(--jp)}
+.demo .rows{display:grid;gap:5px;margin-top:2px}
+.demo .rw{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:8px}
+.demo .rw b{font-family:var(--mono);font-weight:400;font-size:8.5px;letter-spacing:.12em;color:var(--faint)}
+.demo .rw i{height:5px;border-radius:99px;display:block}
+
+.slot{margin-top:22px;border:1px dashed var(--line);border-radius:20px;
+  background:linear-gradient(180deg,rgba(46,32,68,.55),rgba(34,23,51,.25));
+  padding:26px 22px 30px;text-align:center;position:relative;overflow:hidden}
+.slot::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 40% at 50% 0%,rgba(255,178,63,.09),transparent 70%)}
+.eyes{display:flex;gap:16px;justify-content:center;margin-bottom:18px}
+/* The iris now fills the eye. The pupil rides on amber at every sweep position. */
+.eye{width:38px;height:38px;border-radius:50%;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 50% 38%,#FFE0A8 0%,var(--amber) 34%,#C67F16 78%,#7C4B0D 100%);
+  box-shadow:0 0 26px rgba(255,178,63,.3),inset 0 -3px 6px rgba(90,50,5,.5)}
+.pupil{position:absolute;left:50%;top:7%;height:86%;border-radius:50%;background:#120A16;
+  width:var(--pupil-w);
+  transform:translateX(calc(-50% + var(--pupil-x)));
+  transition:width .28s ease;
+  box-shadow:0 0 5px rgba(18,10,22,.9)}
+.glint{position:absolute;left:26%;top:20%;width:22%;height:16%;border-radius:50%;
+  background:rgba(255,255,255,.75);pointer-events:none}
+.slot h2{font-size:20px;letter-spacing:-.02em;margin:0 0 6px}
+.slot .sub{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 20px}
+
+.btn{font-family:var(--display);font-weight:700;font-size:15px;border:0;border-radius:999px;
+  padding:16px 26px;cursor:pointer;background:var(--amber);color:#241300;width:100%;
+  display:block;text-align:center;transition:transform .12s ease;min-height:52px}
+.btn:active{transform:scale(.97)}
+.btn.sec{background:var(--jade);color:#06241D}
+.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;border-radius:999px;padding:15px 20px;
+  cursor:pointer;width:100%;display:block;text-align:center;min-height:48px}
+.danger{color:#FF7B7B;border-color:#5A2B39}
+:focus-visible{outline:2px solid var(--jade);outline-offset:3px}
+.field{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--bone);
+  font-family:var(--mono);font-size:16px;border-radius:12px;padding:14px 16px}
+.field::placeholder{color:var(--faint)}
+.field:focus{outline:none;border-color:var(--amber)}
+.row{display:flex;gap:10px;margin-top:12px}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+/* ── light meter ─────────────────────────────────────────────────────────── */
+.mwrap{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.mwrap img{width:100%;display:block}
+.mwrap .grid{position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to right,transparent 33.3%,rgba(111,227,196,.16) 33.3%,rgba(111,227,196,.16) 33.5%,transparent 33.5%,transparent 66.6%,rgba(111,227,196,.16) 66.6%,rgba(111,227,196,.16) 66.8%,transparent 66.8%),
+    linear-gradient(to bottom,transparent 33.3%,rgba(111,227,196,.16) 33.3%,rgba(111,227,196,.16) 33.5%,transparent 33.5%,transparent 66.6%,rgba(111,227,196,.16) 66.6%,rgba(111,227,196,.16) 66.8%,transparent 66.8%)}
+.reads{display:grid;gap:9px;margin-top:14px}
+.read{display:grid;grid-template-columns:64px 1fr 34px;align-items:center;gap:10px}
+.read b{font-family:var(--mono);font-weight:400;font-size:9.5px;letter-spacing:.14em;color:var(--dim)}
+.read .tk{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.read .fl{height:100%;border-radius:99px;width:0;transition:width .5s cubic-bezier(.2,.9,.3,1)}
+.read i{font-family:var(--mono);font-style:normal;font-size:10px;text-align:right;color:var(--dim)}
+.verdict{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  margin-top:16px;padding:12px 14px;border-radius:12px;border:1px solid;text-align:center}
+.v-hold{color:var(--jade);border-color:rgba(111,227,196,.45);background:rgba(111,227,196,.07)}
+.v-marg{color:var(--amber);border-color:rgba(255,178,63,.4);background:rgba(255,178,63,.06)}
+.v-fail{color:#FF9E9E;border-color:#5A2B39;background:rgba(255,123,123,.06)}
+.hint{font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--dim);text-align:center;
+  margin-top:9px}
+.hint:empty{display:none}
+.coatchip{display:flex;align-items:center;gap:9px;margin-top:12px;font-family:var(--mono);
+  font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.coatchip span{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
+  background:var(--coat);flex:0 0 auto}
+
+.scanwrap{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.scanwrap img{width:100%;display:block;filter:saturate(.25) contrast(1.1) brightness(.8)}
+.beam{position:absolute;left:0;right:0;height:36%;
+  background:linear-gradient(180deg,transparent,rgba(111,227,196,.28),transparent);
+  border-top:1px solid rgba(111,227,196,.85);animation:beam 1.5s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes beam{from{top:-36%}to{top:100%}}
+.steps{font-family:var(--mono);font-size:11px;color:var(--jade);letter-spacing:.14em;
+  text-transform:uppercase;margin-top:14px;text-align:center;min-height:16px}
+
+/* ── the card ────────────────────────────────────────────────────────────── */
+.stage{margin-top:26px;perspective:1400px}
+.card{position:relative;border-radius:22px;overflow:hidden;background:var(--panel);
+  border:1px solid var(--line);box-shadow:0 30px 60px -24px #000;
+  transform:rotateX(var(--tiltx)) rotateY(var(--tilty));transition:transform .18s ease-out;
+  animation:slam .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes slam{from{opacity:0;transform:scale(.86) rotateX(14deg)}to{opacity:1;transform:none}}
+.photo{position:relative;aspect-ratio:1/1;overflow:hidden;background:#0E0914}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo::after{content:"";position:absolute;inset:0;z-index:2;
+  background:linear-gradient(180deg,transparent 45%,rgba(21,14,29,.92))}
+/* Foil sits on the ART WINDOW ONLY. It never touches the stats or the flavour.
+   overlay, not color-dodge: dodge divides by the inverse of the blend, so a
+   bright rainbow over a dark cat blows the photograph out completely. overlay
+   preserves the darks, which is the whole point on a black cat. */
+.photo .foil{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:var(--foil);
+  background:
+    radial-gradient(46% 46% at var(--mx) var(--my),rgba(255,255,255,.42),transparent 66%),
+    conic-gradient(from 0deg at var(--mx) var(--my),#FF5FA2,#FFD84D,#6FE3C4,#7A9BFF,#FF5FA2);
+  mix-blend-mode:overlay}
+.rarity{position:absolute;top:12px;left:12px;z-index:4;font-family:var(--mono);font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;padding:6px 11px;border-radius:999px;
+  background:rgba(21,14,29,.86);border:1px solid currentColor}
+.postbadge{position:absolute;top:12px;right:12px;z-index:4;font-family:var(--mono);font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;padding:5px 9px;border-radius:999px;
+  background:rgba(21,14,29,.86);border:1px solid var(--line);color:var(--dim);
+  display:flex;align-items:center;gap:6px}
+.postbadge svg{width:16px;height:16px;display:block}
+.nameplate{position:absolute;left:16px;right:16px;bottom:12px;z-index:4}
+.nameplate h3{font-size:clamp(28px,8vw,38px);line-height:.9;margin:0;font-weight:800;
+  letter-spacing:-.04em;text-transform:uppercase;word-break:break-word}
+.nameplate .title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber);
+  margin-top:7px;text-transform:uppercase}
+.stats{padding:18px 16px 6px;display:grid;gap:11px}
+.stat{display:grid;grid-template-columns:70px 1fr 30px;align-items:center;gap:10px}
+.stat b{font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.14em;color:var(--dim)}
+.track{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden;position:relative}
+.track::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:99px;
+  background:var(--panel-2)}
+.fill{height:100%;border-radius:99px;width:0;transition:width .8s cubic-bezier(.2,.9,.3,1)}
+.stat i{font-family:var(--mono);font-style:normal;font-size:11px;text-align:right}
+.stat.zero i{color:var(--faint)}
+.shape{padding:2px 16px 0;font-family:var(--mono);font-size:11px;color:var(--dim);
+  display:flex;align-items:center;gap:9px}
+.shape svg{width:22px;height:22px;flex:0 0 auto}
+.shape em{font-style:normal;font-family:var(--jp);color:var(--faint)}
+.flavor{padding:12px 16px 20px;font-family:var(--mono);font-size:12px;line-height:1.6;
+  color:var(--dim);border-top:1px solid var(--line);margin-top:12px}
+.meta{display:flex;justify-content:space-between;gap:12px;padding:0 16px 16px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+
+/* ── the shape prompt, after the reveal ──────────────────────────────────── */
+.shapeask{margin-top:18px;border:1px solid var(--line);border-radius:18px;background:var(--panel);
+  padding:16px}
+.shapeask h4{margin:0 0 3px;font-size:16px;letter-spacing:-.01em}
+.shapeask p{font-family:var(--mono);font-size:11px;color:var(--dim);margin:0 0 14px}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:9px}
+.sh{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:10px 6px 9px;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:108px;
+  justify-content:center;color:var(--bone);font-family:var(--display);transition:border-color .15s}
+.sh svg{width:56px;height:56px;display:block}
+.sh span{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  text-align:center;line-height:1.3;color:var(--dim)}
+.sh:hover,.sh:focus-visible{border-color:var(--amber)}
+.sh[aria-pressed=true]{border-color:var(--amber);background:rgba(255,178,63,.12)}
+.sh.got span{color:var(--bone)}
+
+/* ── the index ───────────────────────────────────────────────────────────── */
+.coll,.index{margin-top:34px}
+.coll h4,.index h4{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);font-weight:400;margin:0 0 12px;display:flex;justify-content:space-between;gap:10px}
+.index .sh{cursor:default}
+.index .sh:hover{border-color:var(--line)}
+.index .sh.locked svg{opacity:.2}
+.index .sh.locked span{color:var(--faint)}
+.index .sh.got{border-color:rgba(255,178,63,.5)}
+.index .cnt{position:absolute}
+
+.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.chip{flex:0 0 78px;border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:var(--panel);cursor:pointer;padding:0;text-align:left}
+.chip img{width:78px;height:78px;object-fit:cover;display:block}
+.chip span{display:block;font-family:var(--mono);font-size:9px;padding:5px 4px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip[aria-current=true]{border-color:var(--amber)}
+
+.note{font-family:var(--mono);font-size:12px;margin-top:14px;text-align:center;line-height:1.5}
+.note.bad{color:#FF7B7B}
+.note.ok{color:var(--jade)}
+.empty{font-family:var(--mono);font-size:11px;color:var(--faint)}
+footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;letter-spacing:.1em;
+  text-align:center;line-height:1.7}
+
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(10,6,15,.72);padding:16px}
+.sheet .inner{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);
+  border-radius:22px;padding:22px;animation:rise .28s cubic-bezier(.2,.9,.3,1) both}
+@keyframes rise{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
+.sheet p{font-family:var(--mono);font-size:12px;color:var(--dim);margin:0 0 16px}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .card{transform:none!important}
+  .beam{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap bar"><span>LOAF</span><span>Field Unit <b>01</b></span></div>
+
+<header class="wrap mast">
+  <h1>Scan<br><span>your cat</span></h1>
+  <p>Point the lens at the animal. The unit reads the light, the coat and the general menace, then issues one graded card.</p>
+</header>
+
+<!-- The payoff, before we ask for anything -->
+<section class="wrap demo" id="demoCard">
+  <div class="lab"><span>Specimen card</span><span>Example</span></div>
+  <div class="mini">
+    <div class="art" id="demoArt"><span class="rr">FOIL</span></div>
+    <div class="info">
+      <h3>Mugi</h3>
+      <div class="ep">Certified Void Merchant</div>
+      <div class="po">THE LOAF <i>香箱座り</i></div>
+      <div class="rows" id="demoRows"></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap slot" id="view-slot">
+  <div class="eyes" id="eyes" aria-hidden="true">
+    <div class="eye"><div class="pupil"></div><div class="glint"></div></div>
+    <div class="eye"><div class="pupil"></div><div class="glint"></div></div>
+  </div>
+  <h2>Specimen slot empty</h2>
+  <p class="sub">One cat per scan. Whole body reads best.</p>
+  <label for="file" class="btn" id="pick">Scan a cat</label>
+  <input type="file" id="file" accept="image/*">
+</section>
+
+<!-- Light meter: runs on this device, before anything is sent anywhere -->
+<section class="wrap hidden" id="view-meter">
+  <div class="mwrap"><img id="mimg" alt=""><div class="grid"></div></div>
+  <div class="reads" id="reads"></div>
+  <div class="coatchip"><span id="coatSw"></span><em id="coatTxt" style="font-style:normal">Reading coat</em></div>
+  <div class="verdict" id="verdict">Reading</div>
+  <div class="hint" id="hint"></div>
+  <div class="row"><button class="btn" id="goScan">Print the card</button></div>
+  <div class="row"><button class="ghost" id="reshoot">Try a different photo</button></div>
+</section>
+
+<section class="wrap hidden" id="view-scan">
+  <div class="scanwrap"><img id="preview" alt=""><div class="beam"></div></div>
+  <div class="steps" id="steps">Reading specimen</div>
+</section>
+
+<section class="wrap stage hidden" id="view-card">
+  <article class="card" id="card">
+    <div class="photo">
+      <div class="foil"></div>
+      <span class="rarity" id="rarity">—</span>
+      <span class="postbadge hidden" id="postbadge"></span>
+      <img id="cardimg" alt="Scanned cat">
+      <div class="nameplate">
+        <h3 id="cname">—</h3>
+        <div class="title" id="ctitle">—</div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="shape hidden" id="cardshape"></div>
+    <div class="flavor" id="flavor"></div>
+    <div class="meta"><span id="coat">—</span><span id="serial">—</span></div>
+  </article>
+
+  <div class="shapeask hidden" id="shapeask">
+    <h4>What shape is she in?</h4>
+    <p>The unit does not guess. You know. One tap, and it prints on the card.</p>
+    <div class="shelf" id="shapeshelf"></div>
+  </div>
+
+  <div class="row"><button class="btn" id="save">Save card as image</button></div>
+  <div class="row">
+    <button class="ghost" id="rename">Rename</button>
+    <button class="ghost" id="again">Scan another</button>
+  </div>
+  <div class="row"><button class="ghost danger hidden" id="remove">Remove from collection</button></div>
+  <div class="note" id="cardNote"></div>
+</section>
+
+<div class="wrap note bad" id="err"></div>
+
+<section class="wrap index">
+  <h4><span>The index</span><span id="idxCount">0 of 15 shapes</span></h4>
+  <div class="shelf" id="indexShelf"></div>
+</section>
+
+<section class="wrap coll">
+  <h4><span>Collection</span><span id="count">0 cards</span></h4>
+  <div class="strip" id="strip"><span class="empty">No cats logged yet.</span></div>
+</section>
+
+<footer>
+  LOAF · LUCID WINDS · SKY WOLF STUDIOS<br>
+  <span id="fmode"></span>
+</footer>
+
+<div class="sheet hidden" id="sheet">
+  <div class="inner">
+    <h3>Name this cat</h3>
+    <p>Goes on the card. You can change it later.</p>
+    <input id="nameField" class="field" maxlength="18" placeholder="Mugi" autocomplete="off">
+    <div class="row"><button class="btn" id="nameSave">Set name</button></div>
+    <div class="row"><button class="ghost" id="nameSkip">Skip</button></div>
+  </div>
+</div>
+
+<canvas id="ex" width="1080" height="1350" class="hidden"></canvas>
+
+<script>
+"use strict";
+/* ============================================================================
+   LOAF v1.1 — single-file vanilla, no build step, no framework.
+
+   Named for 香箱座り (kobako-zuwari), the loaf: a cat folded into the shape of
+   a lidded incense box. It is the first shape in the index and the reason the
+   app is called what it is.
+
+   Reference: design-briefs/cat-app/KOBAKO_DESIGN_DOC.md
+   ========================================================================== */
+
+const CONFIG = {
+  /* [TODO Slice 2] Point at the server proxy. Direct browser calls carry no key
+     and only work inside a preview that injects one. Until an endpoint is set,
+     the unit runs in DEMO mode and grades on device. */
+  ENDPOINT: '',
+  MODEL: 'claude-haiku-4-5',
+  MAX_TOKENS: 1000,
+  MAX_UPLOAD_PX: 1024,
+  STORE_PX: 720,          // what we keep on this device
+  JPEG_QUALITY: 0.85,
+  STORE_QUALITY: 0.72,
+  MAX_NAME: 18,
+  MAX_CARDS: 40,          // localStorage is ~5MB and a photo is ~60KB
+  RETRY_ON_BAD_JSON: true
+};
+
+const STAT_KEYS = ['chonk','loaf','void','menace','zoomies','floof'];
+/* Each stat now owns a hue, so the bar carries information on its own. */
+const STAT_COLOR = {
+  chonk:  '#FFB23F',
+  loaf:   '#E8C15F',
+  void:   '#8E7BD8',
+  menace: '#FF7B9C',
+  zoomies:'#6FE3C4',
+  floof:  '#9FD1FF'
+};
+const RARITIES = ['ALLEY','HOUSE','SHOW','FOIL','MYTHIC'];
+const RARITY_COLOR = { ALLEY:'#9A88B3', HOUSE:'#6FE3C4', SHOW:'#7A9BFF', FOIL:'#FFB23F', MYTHIC:'#FF5FA2' };
+/* Confined to the art window, and blended with overlay rather than dodge, so
+   these can run higher without eating the photograph. */
+const FOIL_STRENGTH = { ALLEY:0, HOUSE:.12, SHOW:.22, FOIL:.34, MYTHIC:.46 };
+
+/* ----------------------------------------------------------------------------
+   THE FIFTEEN SHAPES
+   Everyday Japanese posture vocabulary. English name leads, Japanese is the
+   reward for filling the slot. Sources in the design doc.
+   -------------------------------------------------------------------------- */
+const POSTURES = [
+  { k:'loaf',    en:'The Loaf',        jp:'香箱座り',      ro:'kobako-zuwari' },
+  { k:'sphinx',  en:'The Sphinx',      jp:'スフィンクス座り', ro:'sphinx-zuwari' },
+  { k:'egypt',   en:'The Egyptian',    jp:'エジプト座り',   ro:'egypt-zuwari' },
+  { k:'wrap',    en:'Tail Wrap',       jp:'尻尾巻き座り',   ro:'shippo-maki-zuwari' },
+  { k:'scottish',en:'The Scottish Sit',jp:'スコ座り',      ro:'suko-zuwari' },
+  { k:'side',    en:'The Side Lean',   jp:'横座り',        ro:'yoko-zuwari' },
+  { k:'oldman',  en:'The Old Man',     jp:'おじさん座り',   ro:'ojisan-zuwari' },
+  { k:'ammonite',en:'The Ammonite',    jp:'アンモニャイト', ro:'ammonyaito' },
+  { k:'navel',   en:'Navel to the Sky',jp:'へそ天',        ro:'heso-ten' },
+  { k:'apology', en:'The Apology',     jp:'ごめん寝',      ro:'gomen-ne' },
+  { k:'bright',  en:'Too Bright',      jp:'まぶしい寝',    ro:'mabushii-ne' },
+  { k:'hidden',  en:'Hands Hidden',    jp:'おててないない', ro:'otete-nai-nai' },
+  { k:'tsuchi',  en:'The Tsuchinoko',  jp:'ツチノコ',      ro:'tsuchinoko' },
+  { k:'meerkat', en:'The Meerkat',     jp:'ミーアキャット', ro:'miakyatto' },
+  { k:'hotpot',  en:'The Hotpot',      jp:'猫鍋',          ro:'neko-nabe' }
+];
+const POSTURE_BY_KEY = {};
+POSTURES.forEach(p => { POSTURE_BY_KEY[p.k] = p; });
+
+/* ----------------------------------------------------------------------------
+   SILHOUETTES
+   One generator, fifteen configurations, so every shape is drawn in the same
+   hand. Primitives: an optional vessel arc, a tail curve, a body ellipse, a
+   head circle, two ears, and optional paws.
+   -------------------------------------------------------------------------- */
+const GROUND = 88;
+const SHAPES = {
+  /* Each shape gets ONE signature drawn boldly, because at index size a pose
+     that is merely accurate is indistinguishable from its neighbour.
+       body:[cx,cy,rx,ry,rot]   head:[cx,cy,r]   headTilt:deg
+       neck:[...]  tail:{d,w}   paws:[[cx,cy,rx,ry,rot],...]
+       vessel:path  floor:bool  tailOnTop:bool                              */
+
+  /* signature: tightly folded, forepaws just peeking under the chest */
+  loaf:     { body:[55,66,26,14,0],  head:[29,52,13], floor:true,
+              paws:[[26,79,11,4]], tail:{d:'M79 72 q13 3 7 -11', w:7} },
+
+  /* signature: two long forelegs stretched straight out in front */
+  sphinx:   { body:[58,71,27,11,0],  head:[28,56,13], floor:true,
+              paws:[[17,80,17,4.5],[19,86,16,4]], tail:{d:'M84 76 q12 -1 8 -11', w:7} },
+
+  /* signature: tall and vertical, tail laid straight out behind */
+  egypt:    { body:[54,72,17,15,0],  head:[50,32,12], neck:[52,53,9,18,0], floor:true,
+              paws:[[44,85,10,4]], tail:{d:'M70 85 q16 1 20 -6', w:7} },
+
+  /* signature: the tail sweeps ACROSS the front of the paws */
+  wrap:     { body:[54,72,17,15,0],  head:[50,32,12], neck:[52,53,9,18,0], floor:true,
+              tail:{d:'M71 84 q8 8 -13 8 q-22 0 -25 -7', w:9}, tailOnTop:true },
+
+  /* signature: sat back on the rump, both hind legs thrown forward */
+  scottish: { body:[54,64,20,22,0],  head:[52,29,12], floor:true,
+              paws:[[32,85,17,5],[56,87,16,4.5]], tail:{d:'M74 82 q14 1 10 -10', w:7} },
+
+  /* signature: fully horizontal, head resting ON the floor */
+  side:     { body:[56,76,29,11,-4], head:[23,78,12], floor:true,
+              paws:[[66,86,13,4],[80,85,11,4]], tail:{d:'M84 78 q13 5 6 -8', w:7} },
+
+  /* signature: slumped and asymmetric, one leg out sideways */
+  oldman:   { body:[52,68,23,19,6],  head:[54,32,12], headTilt:-12, floor:true,
+              paws:[[26,84,15,5],[62,87,17,4.5]], tail:{d:'M74 84 q14 0 11 -10', w:7} },
+
+  /* signature: a closed spiral. The head has to sit ON the edge of the curl,
+     not inside it, or the whole thing reads as a plain blob. */
+  ammonite: { body:[55,56,24,23,0],  head:[33,74,12], headTilt:140, floor:true,
+              tail:{d:'M78 60 q7 24 -19 26 q-16 1 -24 -6', w:9}, tailOnTop:true },
+
+  /* signature: on the back. Head upside down, four legs pointing UP. */
+  navel:    { body:[54,72,28,14,0],  head:[22,72,12], headTilt:180, floor:true,
+              paws:[[40,52,5,12],[54,48,5,13],[68,49,5,13],[80,56,5,11]],
+              tail:{d:'M83 80 q12 1 7 -11', w:7} },
+
+  /* signature: a hard diagonal. Rump in the air, forehead on the floor. */
+  apology:  { body:[60,64,24,15,-26], head:[29,78,12], headTilt:-34, floor:true,
+              tail:{d:'M80 50 q15 -3 10 -14', w:7} },
+
+  /* signature: a foreleg draped straight across the eyes */
+  bright:   { body:[57,74,27,12,0],  head:[27,58,13], floor:true,
+              paws:[[26,53,16,4.5,-12]], tail:{d:'M84 79 q12 1 7 -11', w:7} },
+
+  /* signature: a smooth dome. No paws at all, nothing showing. */
+  hidden:   { body:[52,70,27,18,0],  head:[28,54,13], floor:true,
+              tail:{d:'M77 78 q13 3 7 -11', w:7} },
+
+  /* signature: absurdly long and thick through the middle, flat out */
+  tsuchi:   { body:[52,76,35,12,0],  head:[15,71,10], floor:true,
+              tail:{d:'M85 79 q12 -2 8 -11', w:6} },
+
+  /* signature: bolt upright on the hind legs, forepaws at the chest */
+  meerkat:  { body:[52,74,14,17,0],  head:[52,27,12], neck:[52,50,10,20,0], floor:true,
+              paws:[[43,56,6,8],[61,56,6,8]], tail:{d:'M64 86 q18 1 13 -16', w:7} },
+
+  /* signature: the bowl. Only the top of the cat clears the rim. */
+  hotpot:   { body:[50,60,22,15,0],  head:[33,47,12],
+              vessel:'M14 58 q1 33 36 33 q35 0 36 -33' }
+};
+
+function silhouette(key, size, color){
+  const s = SHAPES[key];
+  if (!s) return '';
+  const c = color || 'currentColor';
+  const tail = s.tail
+    ? '<path d="' + s.tail.d + '" fill="none" stroke="' + c + '" stroke-width="' + s.tail.w
+      + '" stroke-linecap="round"/>'
+    : '';
+  let g = '';
+
+  if (s.floor) g += '<rect x="8" y="' + GROUND + '" width="84" height="2.4" rx="1.2" fill="'
+                  + c + '" opacity=".28"/>';
+  if (s.vessel) g += '<path d="' + s.vessel + '" fill="none" stroke="' + c
+                   + '" stroke-width="5" stroke-linecap="round" opacity=".55"/>';
+  if (!s.tailOnTop) g += tail;
+  if (s.neck) g += ell(s.neck, c);
+  if (s.paws) s.paws.forEach(p => {
+    g += '<ellipse cx="'+p[0]+'" cy="'+p[1]+'" rx="'+p[2]+'" ry="'+p[3]+'" fill="'+c+'"'
+       + (p[4] ? ' transform="rotate('+p[4]+' '+p[0]+' '+p[1]+')"' : '') + '/>';
+  });
+  g += ell(s.body, c);
+
+  const h = s.head, tilt = s.headTilt || 0;
+  const e1 = tri(h[0] - h[2]*0.62, h[1] - h[2]*0.55, h[2]*0.64);
+  const e2 = tri(h[0] + h[2]*0.62, h[1] - h[2]*0.55, h[2]*0.64);
+  g += '<g transform="rotate(' + tilt + ' ' + h[0] + ' ' + h[1] + ')">'
+    + '<path d="' + e1 + '" fill="' + c + '"/><path d="' + e2 + '" fill="' + c + '"/>'
+    + '<circle cx="' + h[0] + '" cy="' + h[1] + '" r="' + h[2] + '" fill="' + c + '"/></g>';
+
+  /* A tail that wraps in FRONT of the animal has to be drawn after it. */
+  if (s.tailOnTop) g += tail;
+
+  return '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size + '" aria-hidden="true">'
+       + g + '</svg>';
+}
+function ell(a, c){
+  return '<ellipse cx="'+a[0]+'" cy="'+a[1]+'" rx="'+a[2]+'" ry="'+a[3]+'" fill="'+c+'"'
+       + (a[4] ? ' transform="rotate('+a[4]+' '+a[0]+' '+a[1]+')"' : '') + '/>';
+}
+function tri(x, y, r){
+  return 'M' + (x - r*0.75) + ' ' + (y + r*0.35)
+       + ' L' + x + ' ' + (y - r*1.15)
+       + ' L' + (x + r*0.75) + ' ' + (y + r*0.35) + ' Z';
+}
+
+/* ----------------------------------------------------------------------------
+   STORAGE
+   localStorage, read-modify-write on every save. Two tabs must never clobber
+   each other: we re-read immediately before writing and merge by id, and we
+   listen for the storage event so the other tab refreshes instead of
+   overwriting from a stale in-memory copy.
+   -------------------------------------------------------------------------- */
+const KEY = 'loaf.v1';
+const Store = {
+  read(){
+    try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }
+    catch { return []; }
+  },
+  /* mutate(list) receives the CURRENT on-disk list and returns the new one. */
+  update(mutate){
+    const next = mutate(Store.read()).slice(0, CONFIG.MAX_CARDS);
+    try { localStorage.setItem(KEY, JSON.stringify(next)); }
+    catch (e) {
+      /* Quota. Drop the oldest photo payloads rather than losing the record. */
+      for (let i = next.length - 1; i >= 0 && i > 4; i--){
+        delete next[i].photo;
+        try { localStorage.setItem(KEY, JSON.stringify(next)); return next; } catch {}
+      }
+      say('Storage is full. Older photos were dropped to keep the records.', 'bad');
+    }
+    return next;
+  }
+};
+window.addEventListener('storage', e => {
+  if (e.key !== KEY) return;
+  drawStrip(); drawIndex();
+});
+
+const Hooks = {
+  onCardMinted(card){ console.info('[hook] minted', card.id, card.rarity); },
+  onCardExported(card){ console.info('[hook] exported', card.id); },
+  onCollectionChanged(all){ console.info('[hook] collection', all.length); }
+};
+
+const $ = id => document.getElementById(id);
+const VIEWS = { slot:'view-slot', meter:'view-meter', scan:'view-scan', card:'view-card' };
+function show(name){
+  Object.entries(VIEWS).forEach(([k,id]) => $(id).classList.toggle('hidden', k !== name));
+  $('demoCard').classList.toggle('hidden', name !== 'slot');
+}
+function say(msg, kind){
+  const el = $('err');
+  el.textContent = msg || '';
+  el.className = 'wrap note ' + (kind || 'bad');
+}
+
+/* ----------------------------------------------------------------------------
+   THE EYES
+   Idle sweep, pointer tracking, dilation on intent. The pupil is clamped so it
+   always rides on the iris rather than wandering off into the rim.
+   -------------------------------------------------------------------------- */
+const Eyes = (() => {
+  const root = document.documentElement;
+  const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let idle = true, t = 0, settle = 0;
+
+  const look = x => root.style.setProperty('--pupil-x', Math.max(-7, Math.min(7, x)) + 'px');
+  const dilate = on => root.style.setProperty('--pupil-w', on ? '21px' : '7px');
+
+  function loop(){
+    if (idle){
+      t += 0.014;
+      const p = Math.sin(t);
+      look(Math.sign(p) * Math.pow(Math.abs(p), 0.6) * 7);
+    }
+    requestAnimationFrame(loop);
+  }
+  if (!reduced) requestAnimationFrame(loop);
+
+  window.addEventListener('pointermove', e => {
+    if (reduced) return;
+    const box = $('eyes').getBoundingClientRect();
+    if (!box.width) return;
+    idle = false;
+    look(((e.clientX - (box.left + box.width/2)) / (window.innerWidth/2)) * 7);
+    clearTimeout(settle);
+    settle = setTimeout(() => { idle = true; }, 1800);
+  }, { passive:true });
+
+  const pick = $('pick');
+  ['pointerenter','focus','touchstart'].forEach(ev => pick.addEventListener(ev, () => dilate(true), {passive:true}));
+  ['pointerleave','blur'].forEach(ev => pick.addEventListener(ev, () => dilate(false)));
+  return { dilate };
+})();
+
+/* ----------------------------------------------------------------------------
+   IMAGE PREP
+   -------------------------------------------------------------------------- */
+function drawTo(img, max, quality){
+  const s = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width  = Math.max(1, Math.round(img.width  * s));
+  c.height = Math.max(1, Math.round(img.height * s));
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return { canvas:c, url:c.toDataURL('image/jpeg', quality) };
+}
+
+function loadImage(file){
+  return new Promise((res, rej) => {
+    if (!file.type.startsWith('image/')) return rej(new Error('not-image'));
+    /* createImageBitmap applies EXIF orientation for us where supported, which
+       is the difference between a portrait cat and a cat lying on its side. */
+    if (self.createImageBitmap){
+      createImageBitmap(file, { imageOrientation:'from-image' })
+        .then(res)
+        .catch(() => fallback());
+    } else fallback();
+
+    function fallback(){
+      const reader = new FileReader();
+      reader.onerror = () => rej(new Error('read'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => rej(new Error('decode'));
+        img.onload = () => res(img);
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   THE LIGHT METER
+   Runs entirely on this device before anything is sent anywhere. Three honest
+   readings we can actually compute, plus the dominant coat colour.
+   -------------------------------------------------------------------------- */
+const LightMeter = (() => {
+  const N = 96;
+
+  function analyse(canvas){
+    const c = document.createElement('canvas');
+    c.width = c.height = N;
+    const cx = c.getContext('2d', { willReadFrequently:true });
+    cx.drawImage(canvas, 0, 0, N, N);
+    const d = cx.getImageData(0, 0, N, N).data;
+
+    const lum = new Float32Array(N*N);
+    let sum = 0;
+    for (let i = 0, p = 0; i < d.length; i += 4, p++){
+      const L = 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
+      lum[p] = L; sum += L;
+    }
+    const mean = sum / (N*N);
+
+    /* LIGHT — asymmetric on purpose. Cats live indoors in poor light and a
+       dark coat is not a fault, so darkness is forgiven further than a blown
+       highlight, which destroys detail that cannot be recovered. */
+    const light = Math.min(
+      clamp01(1 - Math.max(0, 92 - mean) / 112),
+      clamp01(1 - Math.max(0, mean - 188) / 66)
+    );
+
+    /* FILL — does the middle of the frame differ from the border? A cat that
+       fills the frame reads high. An empty room reads low. */
+    const centre = meanRGB(d, N*0.28, N*0.28, N*0.72, N*0.72);
+    const border = borderRGB(d, N);
+    const fill = clamp01(dist(centre, border) / 58);
+
+    /* FOCUS is measured separately, at native resolution. See focusOf(). */
+    const focus = focusOf(canvas);
+
+    const score = (light*0.36 + focus*0.34 + fill*0.30);
+    return {
+      light, focus, fill, score,
+      coat: dominant(d, N),
+      hint: hintFor(light, focus, fill),
+      verdict: score >= 0.58 ? 'hold' : (score >= 0.34 ? 'marginal' : 'fail')
+    };
+  }
+
+  /* Blur is a high-frequency phenomenon and downscaling is itself a low-pass
+     filter, so focus CANNOT be read off the 96px thumbnail above: the resize
+     destroys the very thing we are trying to measure. Take a centre crop at
+     1:1 instead and use variance of the Laplacian, which is the standard
+     no-reference sharpness estimate. */
+  function focusOf(canvas){
+    const CROP = Math.min(320, canvas.width, canvas.height);
+    if (CROP < 24) return 0.5;
+    const c = document.createElement('canvas');
+    c.width = c.height = CROP;
+    const cx = c.getContext('2d', { willReadFrequently:true });
+    cx.drawImage(canvas,
+      Math.round((canvas.width  - CROP) / 2), Math.round((canvas.height - CROP) / 2),
+      CROP, CROP, 0, 0, CROP, CROP);
+    const d = cx.getImageData(0, 0, CROP, CROP).data;
+
+    const L = new Float32Array(CROP*CROP);
+    for (let i = 0, p = 0; i < d.length; i += 4, p++)
+      L[p] = 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
+
+    let sum = 0, sum2 = 0, n = 0;
+    for (let y = 1; y < CROP - 1; y++){
+      for (let x = 1; x < CROP - 1; x++){
+        const p = y*CROP + x;
+        const lap = L[p-1] + L[p+1] + L[p-CROP] + L[p+CROP] - 4*L[p];
+        sum += lap; sum2 += lap*lap; n++;
+      }
+    }
+    if (!n) return 0.5;
+    const varLap = (sum2 / n) - (sum / n) ** 2;
+    /* Sharp photographs land in the hundreds, blurred ones in the low tens.
+       Log scale, because the range spans orders of magnitude. */
+    return clamp01(Math.log10(1 + varLap) / Math.log10(1 + 900));
+  }
+
+  /* A verdict on its own is a judgement. A verdict with the fix attached is a
+     craft instruction, and it never blames the animal. */
+  function hintFor(light, focus, fill){
+    const worst = Math.min(light, focus, fill);
+    if (worst > 0.55) return '';
+    if (worst === focus) return 'Hold steadier, or tap the subject to focus.';
+    if (worst === fill)  return 'Move closer. The frame is mostly room.';
+    return 'More light on the subject. A window will do.';
+  }
+
+  function meanRGB(d, x0, y0, x1, y1){
+    let r=0,g=0,b=0,n=0;
+    for (let y = Math.floor(y0); y < y1; y++)
+      for (let x = Math.floor(x0); x < x1; x++){
+        const i = (y*N + x) * 4;
+        r += d[i]; g += d[i+1]; b += d[i+2]; n++;
+      }
+    return n ? [r/n, g/n, b/n] : [0,0,0];
+  }
+  function borderRGB(d, n){
+    let r=0,g=0,b=0,c=0;
+    const edge = Math.max(2, Math.round(n*0.09));
+    for (let y = 0; y < n; y++)
+      for (let x = 0; x < n; x++){
+        if (x > edge && x < n-edge && y > edge && y < n-edge) continue;
+        const i = (y*n + x) * 4;
+        r += d[i]; g += d[i+1]; b += d[i+2]; c++;
+      }
+    return c ? [r/c, g/c, b/c] : [0,0,0];
+  }
+  function dist(a, b){
+    return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2);
+  }
+  /* Modal colour of the middle of the frame, in 4-bit-per-channel buckets,
+     ignoring near-black and near-white so a bright window or a dark rug does
+     not win. If a cat is genuinely black we still want a dark chip, so the
+     floor is low rather than zero. */
+  function dominant(d, n){
+    const bins = {};
+    let best = null, bestN = 0;
+    for (let y = Math.floor(n*0.24); y < n*0.76; y++)
+      for (let x = Math.floor(n*0.24); x < n*0.76; x++){
+        const i = (y*n + x) * 4;
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const L = 0.2126*r + 0.7152*g + 0.0722*b;
+        if (L < 14 || L > 244) continue;
+        const k = (r>>4) + ',' + (g>>4) + ',' + (b>>4);
+        const e = bins[k] || (bins[k] = { r:0, g:0, b:0, n:0 });
+        e.r += r; e.g += g; e.b += b; e.n++;
+        if (e.n > bestN){ bestN = e.n; best = e; }
+      }
+    if (!best) return '#7A6A55';
+    return rgbHex(best.r/best.n, best.g/best.n, best.b/best.n);
+  }
+  function rgbHex(r,g,b){
+    const h = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0');
+    return '#' + h(r) + h(g) + h(b);
+  }
+  function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+  return { analyse };
+})();
+
+const READ_LABELS = [
+  ['light', 'Light',  'Exposure sits where a plate can hold it.'],
+  ['focus', 'Focus',  'Edge detail. A blurred subject grades badly.'],
+  ['fill',  'Fill',   'How much of the frame the subject occupies.']
+];
+
+function paintMeter(m){
+  const box = $('reads');
+  box.innerHTML = '';
+  READ_LABELS.forEach(([k, label], idx) => {
+    const v = Math.round(m[k] * 100);
+    const row = document.createElement('div');
+    row.className = 'read';
+    const b = document.createElement('b'); b.textContent = label.toUpperCase();
+    const tk = document.createElement('div'); tk.className = 'tk';
+    const fl = document.createElement('div'); fl.className = 'fl';
+    fl.style.background = v >= 60 ? 'var(--jade)' : (v >= 34 ? 'var(--amber)' : '#FF7B7B');
+    tk.appendChild(fl);
+    const num = document.createElement('i'); num.textContent = v;
+    row.append(b, tk, num);
+    box.appendChild(row);
+    setTimeout(() => { fl.style.width = Math.max(3, v) + '%'; }, 90 + idx * 90);
+  });
+
+  document.documentElement.style.setProperty('--coat', m.coat);
+  $('coatSw').style.background = m.coat;
+  $('coatTxt').textContent = 'Coat reads ' + m.coat.toUpperCase();
+
+  const v = $('verdict');
+  if (m.verdict === 'hold'){
+    v.className = 'verdict v-hold'; v.textContent = 'Plate will hold';
+  } else if (m.verdict === 'marginal'){
+    v.className = 'verdict v-marg'; v.textContent = 'Marginal. It will still print.';
+  } else {
+    v.className = 'verdict v-fail'; v.textContent = 'Plate will not hold. Print anyway if you like.';
+  }
+  /* The reading is about the photograph. It is never about the cat. */
+  $('hint').textContent = m.hint || '';
+}
+
+/* ----------------------------------------------------------------------------
+   GRADING
+   -------------------------------------------------------------------------- */
+const PROMPT = `You are the grading unit inside a cat trading-card app. Grade the cat in this photo.
+
+Return ONLY a JSON object, no markdown, no preamble:
+{
+ "is_cat": true or false,
+ "breed": "best guess, 2-3 words, hedge if unsure",
+ "coat": "short coat descriptor, max 3 words",
+ "title": "an epithet for this specific cat, 2-4 words, funny and affectionate, e.g. 'Certified Void Merchant'",
+ "rarity": "ALLEY" | "HOUSE" | "SHOW" | "FOIL" | "MYTHIC",
+ "stats": { "chonk":0-100, "loaf":0-100, "void":0-100, "menace":0-100, "zoomies":0-100, "floof":0-100 },
+ "flavor": "one sentence about what this cat is clearly like to live with, under 110 characters, warm and funny, never mean about the animal"
+}
+
+Grade from what you can actually see: build, coat length, colour, posture, expression, eye contact.
+VOID is how dark and shadow-shaped it is. LOAF is how well it tucks. MENACE is mischief in the face, never aggression.
+CHONK is how much of the frame the animal commands. It is never a comment on the animal's weight or health.
+Use the full 0-100 range. Do not cluster values near 50. Every cat should be genuinely bad at at least one stat and near-maxed on at least one.
+Rarity should feel like a real pack: most cats are ALLEY or HOUSE, SHOW is uncommon, FOIL is rare, MYTHIC is for a genuinely striking animal only.
+Never comment on the animal's weight, health, pain, or whether it looks tired, sad or unwell.
+If the image is not a cat, set is_cat false and omit everything else.`;
+
+async function callGrader(b64){
+  const res = await fetch(CONFIG.ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: CONFIG.MODEL,
+      max_tokens: CONFIG.MAX_TOKENS,
+      messages: [{ role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } },
+        { type:'text', text: PROMPT }
+      ]}]
+    })
+  });
+  /* fetch does not reject on 4xx or 5xx. Check it explicitly. */
+  if (!res.ok){ const e = new Error('http'); e.status = res.status; throw e; }
+  const data = await res.json();
+  /* A policy refusal returns HTTP 200 with stop_reason 'refusal' and no text. */
+  if (data.stop_reason === 'refusal'){ const e = new Error('refusal'); e.refusal = true; throw e; }
+  const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+/* Never trust model output straight into the DOM. Clamp everything. */
+function validate(raw){
+  const out = { is_cat: raw.is_cat === true };
+  if (!out.is_cat) return out;
+  const str = (v, fb, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : fb);
+  out.breed  = str(raw.breed,  'Unknown mix', 40);
+  out.coat   = str(raw.coat,   'Unrecorded', 30);
+  out.title  = str(raw.title,  'Household Operative', 40);
+  out.flavor = str(raw.flavor, 'Refused to comment.', 140);
+  out.rarity = RARITIES.includes(raw.rarity) ? raw.rarity : 'HOUSE';
+  out.stats = {};
+  STAT_KEYS.forEach(k => {
+    const n = Number(raw.stats && raw.stats[k]);
+    out.stats[k] = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 50;
+  });
+  return out;
+}
+
+/* ----------------------------------------------------------------------------
+   DEMO GRADER
+   With no endpoint configured the unit grades on device, deterministically from
+   the photograph itself, so the same picture always produces the same card. It
+   reads the real light meter values, so the card responds to the actual photo.
+   Cards minted this way are stamped DEMO and say so.
+   -------------------------------------------------------------------------- */
+const D_TITLES = ['Certified Void Merchant','Undisputed Hallway Champion','Senior Windowsill Officer',
+  'Keeper Of The Warm Laundry','Chief Of Unprovoked Sprinting','Registered Lap Occupier',
+  'Nocturnal Percussion Section','Head Of Door Supervision','Professional Sunbeam Locator',
+  'Inspector Of Full Bowls','Commissioner Of The Top Shelf','Unlicensed Ankle Consultant'];
+const D_FLAVOUR = ['Will sit on the one warm laptop you were using.',
+  'Screams at 4am with the confidence of a creature that has never been wrong.',
+  'Has opinions about the door and shares them freely.',
+  'Occupies exactly the square of floor you were walking toward.',
+  'Treats the top of the fridge as a diplomatic posting.',
+  'Considers a closed drawer a personal insult.',
+  'Sleeps eighteen hours and acts exhausted by it.',
+  'Supervises all cooking from a distance of one paw.',
+  'Arrives the instant a bag touches the floor.',
+  'Believes the bathroom door should never be shut.'];
+const D_COATS = ['Brown tabby','Solid black','Ginger tabby','Grey and white','Tortoiseshell',
+  'Silver tabby','Black and white','Cream point','Calico','Smoke grey'];
+const D_BREEDS = ['Domestic shorthair','Domestic longhair','Tabby mix','Unknown mix',
+  'Shorthair, possibly some Siamese','Longhair mix'];
+
+function hashStr(s){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function demoGrade(b64, m){
+  /* Sample the payload rather than hashing megabytes of it. */
+  let sample = '';
+  const step = Math.max(1, Math.floor(b64.length / 512));
+  for (let i = 0; i < b64.length; i += step) sample += b64[i];
+  const h = hashStr(sample);
+  const at = (shift, mod) => ((h >>> shift) ^ (h >>> (shift + 7))) % mod;
+
+  /* Stats lean on the real readings, so a dark photo really is high VOID and a
+     tightly framed cat really is high CHONK. */
+  const jitter = (seed, base, spread) => Math.max(0, Math.min(100,
+    Math.round(base + (((h >>> seed) % 1000) / 1000 - 0.5) * spread)));
+
+  const stats = {
+    chonk:   jitter(2,  28 + m.fill * 62,          26),
+    loaf:    jitter(5,  30 + (1 - m.focus) * 46,   40),
+    void:    jitter(8,  92 - m.light * 78,         22),
+    menace:  jitter(11, 34 + m.focus * 48,         44),
+    zoomies: jitter(14, 20 + (1 - m.focus) * 66,   38),
+    floof:   jitter(17, 30 + m.fill * 44,          42)
+  };
+  /* Every cat is genuinely bad at one thing and near-maxed at another. */
+  const keys = STAT_KEYS.slice();
+  const hi = keys[at(3, 6)];
+  let lo = keys[at(19, 6)];
+  if (lo === hi) lo = keys[(keys.indexOf(hi) + 3) % 6];
+  stats[hi] = Math.max(stats[hi], 84 + at(23, 15));
+  stats[lo] = Math.min(stats[lo], 4 + at(27, 20));
+
+  const r = at(21, 1000);
+  const rarity = r < 380 ? 'ALLEY' : r < 700 ? 'HOUSE' : r < 880 ? 'SHOW' : r < 972 ? 'FOIL' : 'MYTHIC';
+
+  return {
+    is_cat: true,
+    breed:  D_BREEDS[at(6, D_BREEDS.length)],
+    coat:   D_COATS[at(9, D_COATS.length)],
+    title:  D_TITLES[at(12, D_TITLES.length)],
+    flavor: D_FLAVOUR[at(15, D_FLAVOUR.length)],
+    rarity,
+    stats,
+    demo: true
+  };
+}
+
+async function grade(b64, meter){
+  if (!CONFIG.ENDPOINT) {
+    await new Promise(r => setTimeout(r, 1500));   // let the beam actually read
+    return validate(demoGrade(b64, meter));
+  }
+  try { return validate(await callGrader(b64)); }
+  catch(e){
+    if (e instanceof SyntaxError && CONFIG.RETRY_ON_BAD_JSON) return validate(await callGrader(b64));
+    throw e;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   SCAN FLOW
+   -------------------------------------------------------------------------- */
+const BEATS = ['Reading specimen','Measuring loaf density','Assessing menace','Checking void levels','Grading'];
+let busy = false;
+let pending = null;   // { url, b64, meter }
+
+$('file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';                    // lets the same file be picked twice
+  if (f) intake(f);
+});
+
+async function intake(file){
+  if (busy) return;
+  busy = true;
+  say('');
+  Eyes.dilate(false);
+
+  let img;
+  try { img = await loadImage(file); }
+  catch { busy = false; return say('That image would not open. Try a JPG or PNG.'); }
+
+  const big   = drawTo(img, CONFIG.MAX_UPLOAD_PX, CONFIG.JPEG_QUALITY);
+  const small = drawTo(img, CONFIG.STORE_PX, CONFIG.STORE_QUALITY);
+  if (img.close) img.close();
+
+  const meter = LightMeter.analyse(big.canvas);
+  pending = { url: small.url, b64: big.url.split(',')[1], meter };
+
+  $('mimg').src = small.url;
+  paintMeter(meter);
+  show('meter');
+  $('view-meter').scrollIntoView({ behavior:'smooth', block:'center' });
+  busy = false;
+}
+
+$('reshoot').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({top:0,behavior:'smooth'}); };
+$('goScan').onclick  = () => { if (pending) runScan(pending); };
+
+async function runScan(shot){
+  if (busy) return;
+  busy = true;
+
+  $('preview').src = shot.url;
+  show('scan');
+  $('view-scan').scrollIntoView({ behavior:'smooth', block:'center' });
+
+  let i = 0;
+  $('steps').textContent = BEATS[0];
+  const beat = setInterval(() => { i = (i + 1) % BEATS.length; $('steps').textContent = BEATS[i]; }, 900);
+
+  try {
+    const g = await grade(shot.b64, shot.meter);
+    clearInterval(beat);
+    if (!g.is_cat){ show('slot'); return say('No cat detected. The unit only grades cats.'); }
+    mint(g, shot.url, shot.meter);
+  } catch(e){
+    clearInterval(beat);
+    show('slot');
+    if (e.refusal) say('The unit declined to grade that one. Try another photo.');
+    else if (e.status === 429) say('Scanner is busy. Wait a moment and scan again.');
+    else if (e.status === 401 || e.status === 403) say('Scanner is not authorised. Check the proxy key.');
+    else if (e instanceof SyntaxError) say('The grader returned nonsense. Scan again.');
+    else say('Scan failed. Check your connection and scan again.');
+  } finally { busy = false; }
+}
+
+/* ----------------------------------------------------------------------------
+   CARDS
+   -------------------------------------------------------------------------- */
+let current = null;
+
+const newId = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,8));
+
+function mint(g, url, meter){
+  const card = {
+    id: newId(),
+    name: 'Unnamed',
+    serial: 0,
+    scannedAt: Date.now(),
+    photo: url,
+    rarity: g.rarity, breed: g.breed, coat: g.coat,
+    title: g.title, flavor: g.flavor, stats: g.stats,
+    posture: null,
+    demo: !CONFIG.ENDPOINT,
+    meter: meter ? { light:+meter.light.toFixed(3), focus:+meter.focus.toFixed(3), fill:+meter.fill.toFixed(3), coat:meter.coat } : null
+  };
+  const all = Store.update(list => {
+    card.serial = list.length + 1;
+    return [card].concat(list);
+  });
+  Hooks.onCardMinted(card);
+  Hooks.onCollectionChanged(all);
+  paint(card, true);
+  openSheet(card);
+}
+
+function paint(card, isNew){
+  current = card;
+  $('cardimg').src = card.photo || '';
+  $('cname').textContent = (card.name || 'Unnamed').toUpperCase();
+  $('ctitle').textContent = card.title;
+  $('coat').textContent = [card.coat, card.breed].filter(Boolean).join(' · ');
+  $('serial').textContent = '№' + String(card.serial).padStart(3,'0') + (card.demo ? ' · DEMO' : '');
+  $('flavor').textContent = card.flavor;
+
+  const tag = $('rarity');
+  tag.textContent = card.rarity;
+  tag.style.color = RARITY_COLOR[card.rarity];
+  $('card').style.setProperty('--foil', FOIL_STRENGTH[card.rarity]);
+
+  const box = $('stats');
+  box.innerHTML = '';
+  STAT_KEYS.forEach((k, idx) => {
+    const v = card.stats[k];
+    const row = document.createElement('div');
+    row.className = 'stat' + (v === 0 ? ' zero' : '');
+    const b = document.createElement('b'); b.textContent = k.toUpperCase();
+    const track = document.createElement('div'); track.className = 'track';
+    const fill = document.createElement('div'); fill.className = 'fill';
+    fill.style.background = STAT_COLOR[k];
+    track.appendChild(fill);
+    const num = document.createElement('i'); num.textContent = v;
+    num.style.color = v === 0 ? '' : STAT_COLOR[k];
+    row.append(b, track, num);
+    box.appendChild(row);
+    /* A zero keeps a visible nub so an empty track never reads as "loading". */
+    setTimeout(() => { fill.style.width = Math.max(2.5, v) + '%'; }, 120 + idx * 90);
+  });
+
+  paintPosture(card);
+  $('remove').classList.toggle('hidden', !!isNew);
+  $('cardNote').textContent = '';
+  show('card');
+  $('view-card').scrollIntoView({ behavior:'smooth', block:'center' });
+  drawStrip();
+  drawIndex();
+}
+
+/* ── the shape, asked after the reveal so it is a bonus and not a toll ────── */
+function paintPosture(card){
+  const badge = $('postbadge'), line = $('cardshape'), ask = $('shapeask');
+  const p = card.posture ? POSTURE_BY_KEY[card.posture] : null;
+
+  badge.classList.toggle('hidden', !p);
+  line.classList.toggle('hidden', !p);
+  if (p){
+    badge.innerHTML = silhouette(p.k, 16, 'currentColor') + '<span>' + p.en.replace(/^The /,'') + '</span>';
+    line.innerHTML = silhouette(p.k, 22, 'var(--amber)')
+      + '<span>' + p.en.toUpperCase() + '</span><em>' + p.jp + '</em>';
+  }
+
+  ask.classList.toggle('hidden', !!p);
+  if (!p){
+    const shelf = $('shapeshelf');
+    shelf.innerHTML = '';
+    POSTURES.forEach(q => {
+      const b = document.createElement('button');
+      b.className = 'sh';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = silhouette(q.k, 56, 'var(--bone)') + '<span>' + q.en + '</span>';
+      b.onclick = () => setPosture(card.id, q.k);
+      shelf.appendChild(b);
+    });
+  }
+}
+
+function setPosture(id, key){
+  const all = Store.update(list => {
+    const c = list.find(x => x.id === id);
+    if (c) c.posture = key;
+    return list;
+  });
+  if (current && current.id === id) current.posture = key;
+  Hooks.onCollectionChanged(all);
+  paintPosture(current);
+  drawIndex();
+  if (navigator.vibrate) navigator.vibrate(12);
+}
+
+/* naming sheet ------------------------------------------------------------- */
+let naming = null;
+function openSheet(card){
+  naming = card;
+  $('nameField').value = card.name === 'Unnamed' ? '' : card.name;
+  $('sheet').classList.remove('hidden');
+  setTimeout(() => $('nameField').focus(), 120);
+}
+function closeSheet(){ $('sheet').classList.add('hidden'); naming = null; }
+$('nameSkip').onclick = closeSheet;
+$('nameSave').onclick = () => {
+  const v = $('nameField').value.trim().slice(0, CONFIG.MAX_NAME);
+  if (v && naming) setName(naming.id, v);
+  closeSheet();
+};
+$('nameField').addEventListener('keydown', e => { if (e.key === 'Enter') $('nameSave').click(); });
+
+function setName(id, name){
+  const all = Store.update(list => {
+    const c = list.find(x => x.id === id);
+    if (c) c.name = name;
+    return list;
+  });
+  if (current && current.id === id){ current.name = name; $('cname').textContent = name.toUpperCase(); }
+  Hooks.onCollectionChanged(all);
+  drawStrip();
+}
+
+$('again').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
+$('rename').onclick = () => { if (current) openSheet(current); };
+$('remove').onclick = () => {
+  if (!current) return;
+  const id = current.id;
+  const all = Store.update(list => list.filter(c => c.id !== id));
+  Hooks.onCollectionChanged(all);
+  current = null;
+  drawStrip();
+  drawIndex();
+  show('slot');
+  say('Card removed.', 'ok');
+};
+
+/* ----------------------------------------------------------------------------
+   COLLECTION AND INDEX
+   -------------------------------------------------------------------------- */
+function drawStrip(){
+  const all = Store.read();
+  const strip = $('strip');
+  $('count').textContent = all.length + (all.length === 1 ? ' card' : ' cards');
+  strip.innerHTML = '';
+  if (!all.length){
+    const e = document.createElement('span');
+    e.className = 'empty';
+    e.textContent = 'No cats logged yet.';
+    strip.appendChild(e);
+    return;
+  }
+  all.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.setAttribute('aria-current', String(!!current && current.id === c.id));
+    const img = document.createElement('img');
+    img.src = c.photo || '';
+    img.alt = '';
+    const s = document.createElement('span'); s.textContent = c.name;
+    b.append(img, s);
+    b.onclick = () => paint(c, false);
+    strip.appendChild(b);
+  });
+}
+
+function drawIndex(){
+  const all = Store.read();
+  const got = {};
+  all.forEach(c => { if (c.posture) got[c.posture] = (got[c.posture] || 0) + 1; });
+  const n = Object.keys(got).length;
+  $('idxCount').textContent = n + ' of ' + POSTURES.length + ' shapes';
+
+  const shelf = $('indexShelf');
+  shelf.innerHTML = '';
+  POSTURES.forEach(p => {
+    const have = !!got[p.k];
+    const d = document.createElement('div');
+    d.className = 'sh ' + (have ? 'got' : 'locked');
+    d.innerHTML = silhouette(p.k, 56, have ? 'var(--amber)' : 'var(--bone)')
+      + '<span>' + p.en + (have ? '<br>' + p.jp : '') + '</span>';
+    d.title = p.en + ' · ' + p.jp + ' · ' + p.ro;
+    shelf.appendChild(d);
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   HOLO TILT
+   -------------------------------------------------------------------------- */
+(() => {
+  const card = $('card');
+  if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  card.addEventListener('pointermove', e => {
+    const b = card.getBoundingClientRect();
+    const x = (e.clientX - b.left) / b.width, y = (e.clientY - b.top) / b.height;
+    card.style.setProperty('--mx', x * 100 + '%');
+    card.style.setProperty('--my', y * 100 + '%');
+    card.style.setProperty('--tilty', (x - .5) * 12 + 'deg');
+    card.style.setProperty('--tiltx', (.5 - y) * 12 + 'deg');
+  });
+  card.addEventListener('pointerleave', () => {
+    card.style.setProperty('--tiltx','0deg');
+    card.style.setProperty('--tilty','0deg');
+  });
+  /* [TODO] iOS 13+ needs DeviceOrientationEvent.requestPermission() on a user
+     gesture. Add a "tilt to shine" button that requests it, then enables this. */
+  window.addEventListener('deviceorientation', e => {
+    if (e.gamma == null) return;
+    const x = Math.max(-1, Math.min(1, e.gamma / 35));
+    const y = Math.max(-1, Math.min(1, (e.beta - 45) / 35));
+    card.style.setProperty('--mx', 50 + x * 45 + '%');
+    card.style.setProperty('--my', 50 + y * 45 + '%');
+  });
+})();
+
+/* ----------------------------------------------------------------------------
+   PNG EXPORT — 1080x1350, hand drawn to canvas, no dependencies
+   -------------------------------------------------------------------------- */
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+/* document.fonts.ready only waits for faces the LAYOUT engine decided to load.
+   Canvas text never participates in layout, so each weight must be requested
+   explicitly or the export silently falls back to a system font. */
+async function fontsForExport(){
+  if (!document.fonts || !document.fonts.load) return;
+  const wanted = [
+    '800 100px "Bricolage Grotesque"',
+    '700 100px "Bricolage Grotesque"',
+    '500 26px "DM Mono"',
+    '400 26px "DM Mono"'
+  ];
+  try { await Promise.all(wanted.map(f => document.fonts.load(f))); } catch {}
+}
+
+$('save').onclick = async () => {
+  if (!current) return;
+  const card = current;
+  await fontsForExport();
+
+  const cv = $('ex'), c = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const img = new Image();
+  img.onerror = () => say('Could not build the image. Try again.');
+  img.onload = () => {
+    c.clearRect(0,0,W,H);
+    c.fillStyle = '#150E1D'; c.fillRect(0,0,W,H);
+
+    const PS = 60, PW = W - PS*2, PH = PW;
+    c.save(); roundRect(c, PS, PS, PW, PH, 40); c.clip();
+    const s = Math.max(PW / img.width, PH / img.height);
+    c.drawImage(img, PS + PW/2 - img.width*s/2, PS + PH/2 - img.height*s/2, img.width*s, img.height*s);
+    const grad = c.createLinearGradient(0, PS + PH*.45, 0, PS + PH);
+    grad.addColorStop(0,'rgba(21,14,29,0)'); grad.addColorStop(1,'rgba(21,14,29,.95)');
+    c.fillStyle = grad; c.fillRect(PS, PS, PW, PH);
+    c.restore();
+
+    c.font = '500 26px "DM Mono",monospace';
+    const rw = c.measureText(card.rarity).width + 46;
+    c.fillStyle = 'rgba(21,14,29,.75)'; roundRect(c, PS+28, PS+28, rw, 54, 27); c.fill();
+    c.strokeStyle = RARITY_COLOR[card.rarity]; c.lineWidth = 2; c.stroke();
+    c.fillStyle = RARITY_COLOR[card.rarity];
+    c.textBaseline = 'middle'; c.fillText(card.rarity, PS+51, PS+56);
+    c.textBaseline = 'alphabetic';
+
+    const name = (card.name || 'Unnamed').toUpperCase();
+    c.fillStyle = '#EFE4D2';
+    let fs = 88;
+    do { c.font = '800 ' + fs + 'px "Bricolage Grotesque",sans-serif'; fs -= 3; }
+    while(c.measureText(name).width > PW - 70 && fs > 34);
+    c.fillText(name, PS+35, PS+PH-78);
+    c.fillStyle = '#FFB23F'; c.font = '400 26px "DM Mono",monospace';
+    c.fillText(String(card.title).toUpperCase(), PS+35, PS+PH-36);
+
+    let y = PS + PH + 72;
+    STAT_KEYS.forEach(k => {
+      const v = card.stats[k];
+      c.fillStyle = '#9A88B3'; c.font = '400 24px "DM Mono",monospace';
+      c.fillText(k.toUpperCase(), PS, y);
+      const bx = PS + 200, bw = PW - 260;
+      c.fillStyle = '#2E2044'; roundRect(c, bx, y-16, bw, 16, 8); c.fill();
+      c.fillStyle = STAT_COLOR[k];
+      roundRect(c, bx, y-16, Math.max(16, bw*v/100), 16, 8); c.fill();
+      c.fillStyle = '#EFE4D2'; c.textAlign = 'right'; c.fillText(v, PS+PW, y); c.textAlign = 'left';
+      y += 52;
+    });
+
+    /* the shape, if it has been filed */
+    const p = card.posture ? POSTURE_BY_KEY[card.posture] : null;
+    if (p){
+      c.fillStyle = '#FFB23F'; c.font = '400 24px "DM Mono",monospace';
+      c.fillText(p.en.toUpperCase(), PS, y + 6);
+      c.fillStyle = '#6C5A85';
+      c.textAlign = 'right'; c.fillText(p.jp, PS + PW, y + 6); c.textAlign = 'left';
+      y += 46;
+    }
+
+    c.strokeStyle = '#3D2C58'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(PS, y+6); c.lineTo(PS+PW, y+6); c.stroke();
+    c.fillStyle = '#9A88B3'; c.font = '400 26px "DM Mono",monospace';
+    let line = '', ly = y + 56;
+    String(card.flavor).split(' ').forEach(w => {
+      if (c.measureText(line + w + ' ').width > PW){ c.fillText(line, PS, ly); line = w + ' '; ly += 38; }
+      else line += w + ' ';
+    });
+    c.fillText(line, PS, ly);
+
+    c.fillStyle = '#5A4A72'; c.font = '400 22px "DM Mono",monospace';
+    c.fillText('LOAF · LUCIDWINDS.COM', PS, H-52);
+    if (card.demo){
+      c.textAlign = 'right';
+      c.fillText('DEMO GRADE', PS+PW, H-52);
+      c.textAlign = 'left';
+    }
+
+    cv.toBlob(blob => {
+      if (!blob) return say('Could not build the image. Try again.');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-loaf.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      Hooks.onCardExported(card);
+      const n = $('cardNote');
+      n.textContent = 'Saved. Post it anywhere.';
+      n.className = 'note ok';
+    }, 'image/png');
+  };
+  img.src = card.photo;
+};
+
+/* ----------------------------------------------------------------------------
+   BOOT
+   -------------------------------------------------------------------------- */
+(function boot(){
+  /* the example card on the landing screen */
+  $('demoArt').insertAdjacentHTML('beforeend',
+    '<div style="width:100%;height:100%;background:linear-gradient(150deg,#6E5638,#2A1F16);display:grid;place-items:center">'
+    + silhouette('loaf', 78, '#120C08') + '</div>');
+  const rows = [['chonk',71],['void',97],['zoomies',22]];
+  $('demoRows').innerHTML = rows.map(([k,v]) =>
+    '<div class="rw"><b>' + k.toUpperCase() + '</b>'
+    + '<i style="width:' + v + '%;background:' + STAT_COLOR[k] + '"></i></div>').join('');
+
+  $('fmode').textContent = CONFIG.ENDPOINT
+    ? 'Field unit online.'
+    : 'Demo mode. Grading on this device until the proxy is wired.';
+
+  drawStrip();
+  drawIndex();
+})();
+
+/* exposed for testing and for the studio harness */
+window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate };
+</script>
+</body>
+</html>
