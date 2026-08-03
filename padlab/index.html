@@ -168,6 +168,34 @@
   .rec-btn .svgic{width:21px;height:21px;display:inline-block;vertical-align:-5px;margin-right:8px;}
   @media (max-width:390px){ #midiName{display:none;} .midi-pill{padding:0;width:48px;justify-content:center;flex:none;} }
 
+  /* MPK map sheet */
+  .mk-unit{background:#14161c;border:1px solid var(--line);border-radius:14px;padding:12px;}
+  .mk-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+  .mk-joy{width:64px;flex:none;text-align:center;}
+  .mk-joy-pad{width:44px;height:44px;border-radius:50%;background:var(--inset);border:1px solid var(--line2);margin:0 auto;position:relative;}
+  #mkJoyDot{position:absolute;left:50%;top:50%;width:12px;height:12px;border-radius:50%;background:var(--teal);transform:translate(-50%,-50%);transition:transform .06s;}
+  .mk-cap{font-family:var(--mono);font-size:9px;color:var(--dim2);margin-top:4px;letter-spacing:.5px;}
+  .mk-knobs{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .mk-knob{min-height:48px;padding:4px 2px;border-radius:10px;text-align:center;border:1px solid transparent;cursor:pointer;}
+  .mk-knob:active{background:var(--raise);}
+  .mk-dial{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#2a2e37,#191c22);border:1px solid var(--line2);margin:0 auto;position:relative;}
+  .mk-ptr{position:absolute;left:50%;top:3px;width:2px;height:12px;border-radius:1px;background:var(--amber);transform-origin:1px 14px;transform:translateX(-50%) rotate(-135deg);transition:transform .06s;}
+  .mk-klabel{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;letter-spacing:.3px;}
+  .mk-mid{display:flex;gap:10px;margin-bottom:10px;}
+  .mk-btns{display:flex;flex-direction:column;gap:4px;width:64px;flex:none;}
+  .mk-b{font-family:var(--mono);font-size:8.5px;color:var(--dim2);border:1px solid var(--line);border-radius:6px;padding:3px 2px;text-align:center;}
+  .mk-pads{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex:1;}
+  .mk-pad{min-height:48px;border-radius:10px;background:var(--raise);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:box-shadow .12s,background .12s;}
+  .mk-pad.hit{background:var(--amber);box-shadow:0 0 14px rgba(245,166,35,.5);}
+  .mk-pad.hit .n,.mk-pad.hit .nm{color:#241700;}
+  .mk-pad .n{font-family:var(--mono);font-size:9px;color:var(--dim2);}
+  .mk-pad .nm{font-size:10px;font-weight:600;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px;}
+  .mk-keys{height:44px;border-radius:8px;overflow:hidden;position:relative;cursor:pointer;
+    background:repeating-linear-gradient(90deg,#dfddd6 0 23px,#454851 23px 24px);}
+  .mk-keys::before{content:"";position:absolute;top:0;left:14px;right:0;height:55%;
+    background:repeating-linear-gradient(90deg,#16181d 0 12px,transparent 12px 24px);}
+  #mkKeysGlow{position:absolute;inset:0;background:rgba(245,166,35,.30);opacity:0;transition:opacity .15s;}
+
   /* instruments */
   .inst-filter{display:flex;gap:6px;margin:2px 0 2px;flex-wrap:wrap;}
   .inst-scroll{display:flex;gap:9px;overflow-x:auto;padding:6px 2px 10px;-webkit-overflow-scrolling:touch;}
@@ -420,6 +448,8 @@
   <h3>Settings<button class="close" data-close>✕</button></h3>
   <div class="set-row"><div><div class="s-label">MIDI controller</div><div class="s-desc">your MPK Mini shows up here</div></div>
     <div class="s-right"><select class="selectlike" id="midiSelect" style="max-width:190px;"><option>Scanning…</option></select></div></div>
+  <div class="set-row"><div><div class="s-label">Your MPK map</div><div class="s-desc">what every knob, pad and key does</div></div>
+    <div class="s-right"><button class="chip" id="mpkMapBtn">Open</button></div></div>
   <div class="set-row"><div><div class="s-label">Volume</div><div class="s-desc">master output</div></div>
     <div class="s-right"><input type="range" id="masterVol" min="0" max="100" value="82" style="width:150px;" /></div></div>
   <div class="set-row"><div><div class="s-label">Metronome</div><div class="s-desc">click on the beat</div></div>
@@ -470,6 +500,25 @@
   <div id="padSetBody"></div>
 </div></div>
 
+<!-- MPK MAP -->
+<div class="sheet-bg" id="mpkSheet"><div class="sheet">
+  <h3>Your MPK Mini<button class="close" data-close>✕</button></h3>
+  <p class="steps" style="margin:0 0 10px;">Tap a <b>knob</b> to change what it controls. Tap a <b>pad</b> to change its sound. It all lights up as you play.</p>
+  <div class="mk-unit">
+    <div class="mk-top">
+      <div class="mk-joy"><div class="mk-joy-pad"><div id="mkJoyDot"></div></div><div class="mk-cap">JOY · BEND</div></div>
+      <div class="mk-knobs" id="mkKnobs"></div>
+    </div>
+    <div class="mk-mid">
+      <div class="mk-btns"><span class="mk-b">ARP</span><span class="mk-b">TAP</span><span class="mk-b">OCT −/+</span><span class="mk-b">BANK A/B</span></div>
+      <div class="mk-pads" id="mkPads"></div>
+    </div>
+    <div class="mk-keys" id="mkKeys"><div id="mkKeysGlow"></div></div>
+  </div>
+  <div id="mkAssign" style="display:none;"></div>
+  <p class="steps" style="margin-top:10px;">The MPK's own <b>ARP</b> and <b>TAP</b> buttons work already — they play through whatever sound is chosen. <b>Bank B</b> (8 more pads) is next on the build list. If a knob does nothing, tap it here, choose <b>Twist to re-bind</b>, then turn that hardware knob once.</p>
+</div></div>
+
 <!-- RECORDINGS -->
 <div class="sheet-bg" id="recSheet"><div class="sheet">
   <h3>Recordings<button class="close" data-close>✕</button></h3>
@@ -490,7 +539,7 @@
 let AC=null, master, comp, instrBus, drumBus, toneFilter, reverbSend, convolver, delaySend, delayNode, delayFB, analyser, streamDest;
 let masterVol=0.82;
 function initAudio(){
-  AC=new (window.AudioContext||window.webkitAudioContext)();
+  AC=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
   master=AC.createGain(); master.gain.value=masterVol;
   comp=AC.createDynamicsCompressor();
   comp.threshold.value=-4; comp.ratio.value=8; comp.attack.value=.003; comp.release.value=.12;
@@ -500,7 +549,11 @@ function initAudio(){
   // busses
   drumBus=AC.createGain(); drumBus.connect(master);
   toneFilter=AC.createBiquadFilter(); toneFilter.type="lowpass"; toneFilter.frequency.value=20000; toneFilter.Q.value=.5;
-  instrBus=AC.createGain(); instrBus.connect(toneFilter); toneFilter.connect(master);
+  // drive: waveshaper on the instrument chain only (drums stay clean).
+  // null curve = pass-through, so drive 0 costs nothing.
+  shaper=AC.createWaveShaper(); shaper.oversample="2x";
+  instrBus=AC.createGain(); instrBus.connect(toneFilter); toneFilter.connect(shaper); shaper.connect(master);
+  setDrive(driveAmt);
   // reverb
   convolver=AC.createConvolver(); convolver.buffer=makeIR(2.4,2.5); convolver.connect(master);
   reverbSend=AC.createGain(); reverbSend.gain.value=0.18; instrBus.connect(reverbSend); reverbSend.connect(convolver);
@@ -517,6 +570,20 @@ function makeIR(dur,decay){
   return buf;
 }
 function ensureAudio(){ if(!AC) initAudio(); if(AC.state==="suspended") AC.resume(); }
+/* mp3 anchors ship with encoder padding — a fixed chunk of silence in front of
+   the hit. On keys that reads as LAG (drums are synthesized, so they land on
+   time and the difference is audible). Trim to first audible sample, keep a
+   1ms pre-roll so attacks don't click. Scan capped at 120ms. */
+function trimOnset(buf){ try{
+  const thr=.002, cap=Math.min(buf.length,Math.floor(buf.sampleRate*.12));
+  let i=0; const d=buf.getChannelData(0);
+  while(i<cap && Math.abs(d[i])<thr) i++;
+  if(i>=cap) i=0;
+  const off=Math.max(0,i-Math.floor(buf.sampleRate*.001));
+  if(off<64) return buf;
+  const out=AC.createBuffer(buf.numberOfChannels,buf.length-off,buf.sampleRate);
+  for(let ch=0;ch<buf.numberOfChannels;ch++) out.getChannelData(ch).set(buf.getChannelData(ch).subarray(off));
+  return out; }catch(e){ return buf; } }
 function ct(){ return AC?AC.currentTime:0; }
 let delayMult=0.5;
 function updateDelayTime(){ if(delayNode) delayNode.delayTime.setTargetAtTime((60/tempo)*delayMult,ct(),.05); }
@@ -569,7 +636,50 @@ function drum(id,t,v){ v=v==null?1:v; const e=AC, out=drumBus, K=DRUMKITS[drumKi
 const PAD_COLORS=["var(--ember)","var(--amber)","var(--magenta)","var(--teal)","var(--lime)","var(--violet)","var(--blue)","var(--pink)"];
 const PAD_DEFAULTS=[["Kick","kick"],["Snare","snare"],["Clap","clap"],["Hat","hat"],["Open Hat","openhat"],["Tom","tom"],["Rim","rim"],["Cowbell","cowbell"]];
 let pads=PAD_DEFAULTS.map(d=>({name:d[0],kind:"drum",drum:d[1]}));
-let padNotes=[36,38,39,42,46,41,37,56];
+/* Contiguous 36-43 = MPK Mini factory pads (bank A), pad n → app pad n.
+   The old GM-style default [36,38,39,42,46,41,37,56] left pads 5/6/8 falling
+   through to the melodic keys — "the notes are on my pad". */
+let padNotes=[36,37,38,39,40,41,42,43];
+
+/* ---- knobs: K1-K8 (MPK Mini mk3 factory CCs 70-77) drive the FX rack ---- */
+let knobCCs=[70,71,72,73,74,75,76,77];
+let knobTargets=["tone","reverb","delay","feedback","drive","delayTime","swing","volume"];
+let knobVals=[1,.18,.10,.5,0,.4,0,.82];
+let knobLearn=-1, driveAmt=0, shaper=null;
+const DELAY_STEPS=[[0.25,"1/16"],[0.375,"1/16."],[0.5,"1/8"],[0.75,"1/8."],[1,"1/4"]];
+const KNOB_TARGETS={
+  tone:{name:"Tone",fmt:v=>Math.round(20+v*80),apply(v){ const hz=200*Math.pow(20000/200,v); if(toneFilter) toneFilter.frequency.setTargetAtTime(hz,ct(),.03);
+    const el=document.getElementById("fxTone"); if(el){ el.value=Math.round(20+v*80); document.getElementById("fxToneV").textContent=Math.round(20+v*80); } }},
+  reverb:{name:"Reverb",fmt:v=>Math.round(v*100)+"%",apply(v){ if(reverbSend) reverbSend.gain.setTargetAtTime(v,ct(),.03);
+    const el=document.getElementById("fxReverb"); if(el){ el.value=Math.round(v*100); document.getElementById("fxReverbV").textContent=Math.round(v*100); } }},
+  delay:{name:"Delay",fmt:v=>Math.round(v*100)+"%",apply(v){ if(delaySend) delaySend.gain.setTargetAtTime(v,ct(),.03);
+    const el=document.getElementById("fxDelay"); if(el){ el.value=Math.round(v*100); document.getElementById("fxDelayV").textContent=Math.round(v*100); } }},
+  feedback:{name:"Echo Tail",fmt:v=>Math.round(v*100)+"%",apply(v){ if(delayFB) delayFB.gain.setTargetAtTime(v*.72,ct(),.03); }},
+  drive:{name:"Drive",fmt:v=>Math.round(v*100)+"%",apply(v){ setDrive(v); }},
+  delayTime:{name:"Delay Time",fmt:v=>DELAY_STEPS[Math.min(4,Math.floor(v*5))][1],apply(v){ delayMult=DELAY_STEPS[Math.min(4,Math.floor(v*5))][0]; updateDelayTime();
+    const el=document.getElementById("fxDelayTime"); if(el) el.value=String(delayMult); }},
+  swing:{name:"Swing",fmt:v=>Math.round(v*60)+"%",apply(v){ swing=Math.round(v*60);
+    const el=document.getElementById("swing"); if(el){ el.value=swing; document.getElementById("swingVal").textContent=swing+"%"; } }},
+  volume:{name:"Volume",fmt:v=>Math.round(v*100)+"%",apply(v){ masterVol=v; if(master) master.gain.setTargetAtTime(v,ct(),.03);
+    const el=document.getElementById("masterVol"); if(el) el.value=Math.round(v*100); }}
+};
+function makeDriveCurve(v){ const k=v*v*40+v*3, n=257, c=new Float32Array(n);
+  for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; c[i]=(1+k)*x/(1+k*Math.abs(x)); } return c; }
+function setDrive(v){ driveAmt=v; if(!shaper) return; shaper.curve=(v<=.01)?null:makeDriveCurve(v); }
+let _hudEl=null,_hudTimer=null;
+function knobHud(ki,v){ if(!_hudEl){ _hudEl=document.createElement("div");
+  _hudEl.style.cssText="position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;background:rgba(15,17,21,.92);border:1px solid var(--line2);border-radius:10px;padding:8px 16px;font-family:var(--mono);font-size:13px;color:var(--amber);pointer-events:none;transition:opacity .25s;";
+  document.body.appendChild(_hudEl); }
+  const t=KNOB_TARGETS[knobTargets[ki]];
+  _hudEl.textContent="K"+(ki+1)+" · "+t.name+"  "+t.fmt(v);
+  _hudEl.style.opacity="1"; clearTimeout(_hudTimer); _hudTimer=setTimeout(()=>{ _hudEl.style.opacity="0"; },900); }
+function applyKnob(ki,v){ ensureAudio(); knobVals[ki]=v; KNOB_TARGETS[knobTargets[ki]].apply(v); knobHud(ki,v);
+  if(typeof mpkKnobUI==="function") mpkKnobUI(ki,v); saveSoon(); }
+function onCC(cc,val){
+  if(cc===64){ sustainOn=val>=64; const ch=document.getElementById("sustainChip"); if(ch) ch.classList.toggle("on",sustainOn); if(!sustainOn) releaseSustain(); return; }
+  if(knobLearn>=0){ knobCCs[knobLearn]=cc; toast("K"+(knobLearn+1)+" bound to that knob"); knobLearn=-1; if(typeof renderMPK==="function") renderMPK(); saveSoon(); return; }
+  const ki=knobCCs.indexOf(cc); if(ki>=0) applyKnob(ki,val/127);
+}
 let learnPadIndex=-1;
 const PAD_KEYS=["1","2","3","4","5","6","7","8"];
 function triggerPadAt(i,t,v){ const p=pads[i]; if(!p) return; const vol=(p.vol==null?1:p.vol);
@@ -596,7 +706,7 @@ function renderPads(){ const wrap=document.getElementById("pads"); wrap.innerHTM
 function resetPad(i){ pads[i]={name:PAD_DEFAULTS[i][0],kind:"drum",drum:PAD_DEFAULTS[i][1]}; renderPads(); saveSoon(); persistPadSample(i,null); toast("Pad "+(i+1)+" reset"); }
 let padTargetForFile=-1;
 let rollOn=false, rollRate="1/16"; const heldPads=new Set();
-function padDown(i,v){ hitPad(i,v); if(rollOn){ heldPads.add(i); ensureClock(); } }
+function padDown(i,v){ hitPad(i,v); if(typeof mpkFlash==="function") mpkFlash(i); if(rollOn){ heldPads.add(i); ensureClock(); } }
 function padUp(i){ if(heldPads.delete(i)) ensureClock(); }
 
 /* -------------------- instruments -------------------- */
@@ -637,10 +747,10 @@ let instFilterMode="all";
 
 async function fetchNote(inst,note){
   const key="pack:"+inst.id+":"+note;
-  try{ const stored=await idbGet(key); if(stored){ return await AC.decodeAudioData(stored.slice(0)); } }catch(e){}
+  try{ const stored=await idbGet(key); if(stored){ return trimOnset(await AC.decodeAudioData(stored.slice(0))); } }catch(e){}
   const res=await fetch(CDN+inst.dir+"/"+note+".mp3"); const arr=await res.arrayBuffer();
   if(offlinePacks.has(inst.id)){ try{ await idbSet(key,arr.slice(0)); }catch(e){} }
-  return await AC.decodeAudioData(arr.slice(0));
+  return trimOnset(await AC.decodeAudioData(arr.slice(0)));
 }
 async function loadSampler(inst){
   if(sampleCache[inst.id]) return sampleCache[inst.id];
@@ -703,7 +813,9 @@ function playSampled(inst,midi,v,when,gate){
   if(gate!=null){ const rt=t+gate; g.gain.setTargetAtTime(.0001,rt,.08); try{s.stop(rt+.4);}catch(e){} }
   s.onended=()=>{try{g.disconnect();}catch(e){}};
   let stopped=false;
-  return {stop(){ if(stopped)return; stopped=true; const tt=ct(); g.gain.cancelScheduledValues(tt); g.gain.setValueAtTime(Math.max(.0001,g.gain.value),tt); g.gain.setTargetAtTime(.0001,tt,.08); try{s.stop(tt+.4);}catch(e){} }};
+  // osc:s — AudioBufferSourceNode has a detune AudioParam too, so the pitch
+  // bend handler works on sampled voices exactly like synth oscillators.
+  return {osc:s, stop(){ if(stopped)return; stopped=true; const tt=ct(); g.gain.cancelScheduledValues(tt); g.gain.setValueAtTime(Math.max(.0001,g.gain.value),tt); g.gain.setTargetAtTime(.0001,tt,.08); try{s.stop(tt+.4);}catch(e){} }};
 }
 function playUserSample(u,midi,v,when,gate){
   const t=when!=null?when:ct(); const s=AC.createBufferSource(); s.buffer=u.buffer; s.playbackRate.value=Math.pow(2,(midi-u.root)/12);
@@ -713,7 +825,7 @@ function playUserSample(u,midi,v,when,gate){
   if(gate!=null){ try{s.stop(t+gate+.05);}catch(e){} }
   s.onended=()=>{try{g.disconnect();}catch(e){}};
   let stopped=false;
-  return {stop(){ if(stopped)return; stopped=true; const tt=ct(); g.gain.cancelScheduledValues(tt); g.gain.setValueAtTime(Math.max(.0001,g.gain.value),tt); g.gain.setTargetAtTime(.0001,tt,.06); try{s.stop(tt+.3);}catch(e){} }};
+  return {osc:s, stop(){ if(stopped)return; stopped=true; const tt=ct(); g.gain.cancelScheduledValues(tt); g.gain.setValueAtTime(Math.max(.0001,g.gain.value),tt); g.gain.setTargetAtTime(.0001,tt,.06); try{s.stop(tt+.3);}catch(e){} }};
 }
 function voiceFor(midi,v,when,gate){ if(userSampleInst) return playUserSample(userSampleInst,midi,v,when,gate);
   const inst=ALL_INST.find(x=>x.id===currentInstId); return inst.kind==="synth"?playSynth(inst,midi,v,when,gate):playSampled(inst,midi,v,when,gate); }
@@ -728,6 +840,7 @@ const arpNotes=new Set(), arpHeld=new Set(), arpHeldGroups=new Map();
 let arpIndex=0, arpDir=1;
 
 function noteOn(midi,vel){ const m=snap(midi);
+  if(typeof mpkKeysFlash==="function") mpkKeysFlash();
   if(arpOn){ arpNoteOn(m); lightKeyByMidi(m,true); return; }
   soundOn(m,vel==null?.9:vel);
 }
@@ -820,10 +933,10 @@ const DRUMPACKS=[
 let packOffline=new Set(), packReady=new Set(), currentPack="";
 async function fetchPackFile(pack,f){
   const key="drumpack:"+pack.id+":"+f;
-  try{ const stored=await idbGet(key); if(stored) return await AC.decodeAudioData(stored.slice(0)); }catch(e){}
+  try{ const stored=await idbGet(key); if(stored) return trimOnset(await AC.decodeAudioData(stored.slice(0))); }catch(e){}
   const res=await fetch(PACK_CDN+pack.dir+"/"+f+".mp3"); const arr=await res.arrayBuffer();
   if(packOffline.has(pack.id)){ try{ await idbSet(key,arr.slice(0)); }catch(e){} }
-  return await AC.decodeAudioData(arr.slice(0));
+  return trimOnset(await AC.decodeAudioData(arr.slice(0)));
 }
 async function loadPack(pack){
   ensureAudio(); const card=document.querySelector('.pack[data-pk="'+pack.id+'"]'); if(card) card.classList.add("loading");
@@ -1014,6 +1127,35 @@ function inspire(){ ensureAudio(); const gi=Math.floor(Math.random()*GROOVES.len
 function riff(){ if(allowedMidis.length===0) rebuildScale(); const pool=allowedMidis.filter(m=>m>=57&&m<=76); if(pool.length===0) return; const n=5+Math.floor(Math.random()*3);
   for(let i=0;i<n;i++){ const m=pool[Math.floor(Math.random()*pool.length)]; setTimeout(()=>{ const h=voiceFor(m,.8); lightKeyByMidi(snap(m),true); setTimeout(()=>{h.stop();lightKeyByMidi(snap(m),false);},260); }, i*180); } }
 
+/* -------------------- MPK map sheet -------------------- */
+function mpkOpen(){ return document.getElementById("mpkSheet").classList.contains("on"); }
+function renderMPK(){
+  const kw=document.getElementById("mkKnobs"); if(!kw) return;
+  document.getElementById("mkAssign").style.display="none";
+  kw.innerHTML="";
+  for(let i=0;i<8;i++){ const t=KNOB_TARGETS[knobTargets[i]]; const d=document.createElement("div"); d.className="mk-knob";
+    d.innerHTML='<div class="mk-dial"><div class="mk-ptr" id="mkPtr'+i+'"></div></div><div class="mk-klabel">K'+(i+1)+' · '+t.name.toUpperCase()+'</div>';
+    d.onclick=()=>openKnobAssign(i); kw.appendChild(d); mpkKnobUI(i,knobVals[i]); }
+  const pw=document.getElementById("mkPads"); pw.innerHTML="";
+  [4,5,6,7,0,1,2,3].forEach(i=>{ const d=document.createElement("div"); d.className="mk-pad"; d.id="mkPad"+i;
+    d.innerHTML='<span class="n">PAD '+(i+1)+'</span><span class="nm">'+(pads[i]?pads[i].name:"—")+'</span>';
+    d.onclick=()=>openPadSettings(i); pw.appendChild(d); });
+  document.getElementById("mkKeys").onclick=()=>{ closeSheets(); document.querySelector('.tab[data-view="keys"]').click(); };
+}
+function mpkKnobUI(i,v){ if(!mpkOpen()) return; const p=document.getElementById("mkPtr"+i); if(p) p.style.transform="translateX(-50%) rotate("+(-135+v*270)+"deg)"; }
+function mpkFlash(i){ if(!mpkOpen()) return; const el=document.getElementById("mkPad"+i); if(!el) return; el.classList.add("hit"); setTimeout(()=>el.classList.remove("hit"),140); }
+function mpkKeysFlash(){ if(!mpkOpen()) return; const g=document.getElementById("mkKeysGlow"); if(!g) return; g.style.opacity="1"; clearTimeout(g._t); g._t=setTimeout(()=>{g.style.opacity="0";},150); }
+function mpkJoy(x){ if(!mpkOpen()) return; const d=document.getElementById("mkJoyDot"); if(d) d.style.transform="translate(calc(-50% + "+Math.round(x*13)+"px),-50%)"; }
+function openKnobAssign(ki){ const box=document.getElementById("mkAssign"); box.style.display="block";
+  let h='<div class="s-label" style="margin:10px 0 6px;">K'+(ki+1)+' controls</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  Object.keys(KNOB_TARGETS).forEach(id=>{ h+='<button class="chip small'+(knobTargets[ki]===id?" on":"")+'" data-t="'+id+'">'+KNOB_TARGETS[id].name+'</button>'; });
+  h+='<button class="chip small" data-t="__learn">Twist to re-bind</button></div>';
+  box.innerHTML=h;
+  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{ const t=b.dataset.t;
+    if(t==="__learn"){ knobLearn=ki; toast("Now turn the hardware knob you want as K"+(ki+1)); return; }
+    knobTargets[ki]=t; saveSoon(); renderMPK(); openKnobAssign(ki); });
+}
+
 /* -------------------- MIDI -------------------- */
 let midiAccess=null, currentInput=null;
 async function initMIDI(){ if(!navigator.requestMIDIAccess){ setMidi("warn","no Web MIDI"); return; }
@@ -1024,11 +1166,21 @@ function refreshMIDI(){ const sel=document.getElementById("midiSelect"); const i
   const pick=ins.find(i=>/mpk|mini|akai/i.test(i.name))||ins[0]; sel.value=pick.id; connectMIDI(pick.id); }
 function connectMIDI(id){ if(currentInput) currentInput.onmidimessage=null; currentInput=[...midiAccess.inputs.values()].find(i=>i.id===id); if(!currentInput){ setMidi("warn","—"); return; } currentInput.onmidimessage=onMIDI; setMidi("ok",currentInput.name.replace(/\s*\d+$/,"")); }
 function setMidi(state,name){ document.getElementById("midiLed").className="led "+(state==="ok"?"ok":"warn"); document.getElementById("midiName").textContent=name||"—"; }
-function onMIDI(msg){ const [st,d1,d2]=msg.data; const cmd=st&0xf0;
-  if(cmd===0x90&&d2>0){ if(learnPadIndex>=0){ padNotes[learnPadIndex]=d1; learnPadIndex++; if(learnPadIndex>=8){ learnPadIndex=-1; toast("Pads mapped ✓"); renderPads(); document.getElementById("learnPadsBtn").textContent="Start"; saveSoon(); } else toast("Now hit pad "+(learnPadIndex+1)); return; }
-    const pi=padNotes.indexOf(d1); if(pi>=0) padDown(pi,d2/127); else noteOn(d1,d2/127); }
-  else if(cmd===0x80||(cmd===0x90&&d2===0)){ const pi=padNotes.indexOf(d1); if(pi<0) noteOff(d1); else padUp(pi); }
-  else if(cmd===0xE0){ const bend=((d2<<7)|d1)-8192; activeVoices.forEach(h=>{ if(h.osc){ try{h.osc.detune.setValueAtTime(bend/8192*200,ct());}catch(e){} } }); }
+/* Pads are routed by CHANNEL first: MPK factory pads transmit on ch 10
+   (0-indexed 9) with notes 36-43 bank A / 44-51 bank B. Note-table lookup
+   alone mis-routed any pad whose note wasn't in padNotes into the melodic
+   keys. Keys (any other channel) stay keys even in the 36-51 range. */
+function midiPadIndex(note,mch){ let pi=padNotes.indexOf(note);
+  if(pi<0 && mch===9 && note>=36 && note<=51) pi=(note-36)%8;
+  return pi; }
+function onMIDI(msg){ const [st,d1,d2]=msg.data; const cmd=st&0xf0, mch=st&0x0f;
+  if(cmd===0x90&&d2>0){ ensureAudio();
+    if(learnPadIndex>=0){ padNotes[learnPadIndex]=d1; learnPadIndex++; if(learnPadIndex>=8){ learnPadIndex=-1; toast("Pads mapped ✓"); renderPads(); document.getElementById("learnPadsBtn").textContent="Start"; saveSoon(); } else toast("Now hit pad "+(learnPadIndex+1)); return; }
+    const pi=midiPadIndex(d1,mch); if(pi>=0) padDown(pi,d2/127); else noteOn(d1,d2/127); }
+  else if(cmd===0x80||(cmd===0x90&&d2===0)){ const pi=midiPadIndex(d1,mch); if(pi<0) noteOff(d1); else padUp(pi); }
+  else if(cmd===0xB0){ onCC(d1,d2); }
+  else if(cmd===0xE0){ const bend=((d2<<7)|d1)-8192; mpkJoy(bend/8192); activeVoices.forEach(h=>{ if(h.osc){ try{h.osc.detune.setValueAtTime(bend/8192*200,ct());}catch(e){} } });
+    voiceGroups.forEach(hs=>hs.forEach(h=>{ if(h.osc){ try{h.osc.detune.setValueAtTime(bend/8192*200,ct());}catch(e){} } })); }
 }
 
 /* -------------------- PWA / install -------------------- */
@@ -1046,7 +1198,7 @@ async function setupPWA(){ const i192=makeIcon(192), i512=makeIcon(512);
     const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"}); const ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml); }
   // Versioned registration, bumped in lockstep with SHELL_VERSION in sw.js —
   // this host edge-pins bare sw.js URLs for 7 days, so a bare URL never updates.
-  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=5"); }catch(e){} }
+  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=6"); }catch(e){} }
 }
 let deferredPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; });
@@ -1101,6 +1253,7 @@ function collectState(){ return { v:3, tempo,swing,keyRoot,scaleName,scaleLock,c
     chordMode,arpOn,arpMode,arpRate,arpLatch,sustainOn,metroOn,countIn,
     fx:{reverb:reverbSend?reverbSend.gain.value:.18,delay:delaySend?delaySend.gain.value:.1,delayMult,tone:toneFilter?toneFilter.frequency.value:20000},
     padNotes, offlinePacks:[...offlinePacks], songMode, songChain, drumKit,
+    knobCCs, knobTargets, knobVals, driveAmt,
     packOffline:[...packOffline], currentPack, rollOn, rollRate,
     padsMeta:pads.map(p=>({name:p.name,kind:p.kind,drum:p.drum,hasSample:p.kind==="sample",vol:p.vol,tune:p.tune,rev:p.rev})),
     patterns:patterns.map(p=>({tracks:p.tracks,mutes:p.mutes})), currentGroove }; }
@@ -1108,7 +1261,12 @@ function applyStateVars(s){
   tempo=s.tempo||90; swing=s.swing||0; keyRoot=s.keyRoot||0; scaleName=s.scaleName||"Major Pentatonic"; scaleLock=s.scaleLock!==false;
   currentInstId=s.currentInstId||"piano"; curSlot=s.curSlot||0; octaveShift=s.octaveShift||0; pianoView=!!s.pianoView;
   chordMode=!!s.chordMode; arpOn=false; arpMode=s.arpMode||"up"; arpRate=s.arpRate||"1/8"; arpLatch=!!s.arpLatch; sustainOn=!!s.sustainOn; metroOn=!!s.metroOn; countIn=!!s.countIn;
-  if(s.padNotes) padNotes=s.padNotes; if(s.offlinePacks) offlinePacks=new Set(s.offlinePacks);
+  if(s.padNotes){ padNotes = s.padNotes.join(",")==="36,38,39,42,46,41,37,56" ? [36,37,38,39,40,41,42,43] : s.padNotes; }
+  if(s.offlinePacks) offlinePacks=new Set(s.offlinePacks);
+  if(Array.isArray(s.knobCCs)&&s.knobCCs.length===8) knobCCs=s.knobCCs.slice();
+  if(Array.isArray(s.knobTargets)&&s.knobTargets.length===8&&s.knobTargets.every(t=>KNOB_TARGETS[t])) knobTargets=s.knobTargets.slice();
+  if(Array.isArray(s.knobVals)&&s.knobVals.length===8) knobVals=s.knobVals.slice();
+  driveAmt=s.driveAmt||0;
   songMode=!!s.songMode; songChain=Array.isArray(s.songChain)?s.songChain.slice():[]; drumKit=s.drumKit||"classic";
   if(s.packOffline) packOffline=new Set(s.packOffline); currentPack=s.currentPack||""; rollOn=!!s.rollOn; rollRate=s.rollRate||"1/16";
   if(s.patterns){ patterns=s.patterns.map(p=>({tracks:p.tracks.map(r=>r.slice()),mutes:p.mutes.slice()})); }
@@ -1141,7 +1299,7 @@ async function importProject(file){ ensureAudio(); let st; try{ st=JSON.parse(aw
 
 /* -------------------- UI plumbing -------------------- */
 function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove("show"),2200); }
-function openSheet(id){ document.getElementById(id).classList.add("on"); if(id==="recSheet") renderRecordings(); }
+function openSheet(id){ document.getElementById(id).classList.add("on"); if(id==="recSheet") renderRecordings(); if(id==="mpkSheet") renderMPK(); }
 function closeSheets(){ document.querySelectorAll(".sheet-bg").forEach(s=>s.classList.remove("on")); }
 function syncScaleUI(){ document.getElementById("keyRoot").value=String(keyRoot); document.getElementById("scaleSel").value=scaleName; document.getElementById("scaleLockChip").classList.toggle("on",scaleLock); }
 function updateOct(){ document.getElementById("octLabel").textContent="Octave "+(octaveShift>0?"+"+octaveShift:octaveShift); renderKeyboard(); saveSoon(); }
@@ -1152,7 +1310,8 @@ function applyRestoredFx(){ const fx=window._restoreFx; if(!fx) return;
   if(reverbSend){ reverbSend.gain.value=fx.reverb; document.getElementById("fxReverb").value=Math.round(fx.reverb*100); document.getElementById("fxReverbV").textContent=Math.round(fx.reverb*100); }
   if(delaySend){ delaySend.gain.value=fx.delay; document.getElementById("fxDelay").value=Math.round(fx.delay*100); document.getElementById("fxDelayV").textContent=Math.round(fx.delay*100); }
   if(toneFilter){ toneFilter.frequency.value=fx.tone; const pct=Math.round((Math.log(fx.tone/200)/Math.log(20000/200))*80+20); document.getElementById("fxTone").value=Math.max(20,Math.min(100,pct)); document.getElementById("fxToneV").textContent=Math.max(20,Math.min(100,pct)); }
-  document.getElementById("fxDelayTime").value=String(delayMult); }
+  document.getElementById("fxDelayTime").value=String(delayMult);
+  setDrive(driveAmt); }
 
 function wire(){
   document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); t.classList.add("active");
@@ -1164,7 +1323,8 @@ function wire(){
   document.getElementById("fxBtn").onclick=()=>openSheet("fxSheet");
   document.getElementById("settingsBtn").onclick=()=>openSheet("settingsSheet");
   document.getElementById("installBtn").onclick=openInstall;
-  document.getElementById("midiPill").onclick=()=>openSheet("settingsSheet");
+  document.getElementById("midiPill").onclick=()=>openSheet("mpkSheet");
+  document.getElementById("mpkMapBtn").onclick=()=>{ closeSheets(); openSheet("mpkSheet"); };
   // slots + swing + seq
   document.querySelectorAll(".slot").forEach(s=>s.addEventListener("click",()=>{ curSlot=+s.dataset.slot; document.querySelectorAll(".slot").forEach(x=>x.classList.toggle("active",x===s)); currentGroove=-1; document.querySelectorAll(".groove").forEach(el=>el.classList.remove("playing")); renderSeq(); saveSoon(); }));
   document.getElementById("swing").oninput=e=>{ swing=parseInt(e.target.value); document.getElementById("swingVal").textContent=swing+"%"; saveSoon(); };

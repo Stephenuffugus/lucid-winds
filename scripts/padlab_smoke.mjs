@@ -73,6 +73,28 @@ await page.mouse.click(sb.x + sb.width / 2, sb.y + sb.height / 2);
 await new Promise(r => setTimeout(r, 700));
 await page.screenshot({ path: `${SHOTS}/padlab-5-sample.png` });
 
+// MPK map sheet: opens from the MIDI pill, renders 8 knobs + 8 pads
+const pill = await page.$("#midiPill");
+const pb = await pill.boundingBox();
+await page.mouse.click(pb.x + pb.width / 2, pb.y + pb.height / 2);
+await new Promise(r => setTimeout(r, 500));
+const mpk = await page.evaluate(() => ({
+  open: document.getElementById("mpkSheet").classList.contains("on"),
+  knobs: document.querySelectorAll("#mkKnobs .mk-knob").length,
+  pads: document.querySelectorAll("#mkPads .mk-pad").length
+}));
+t("MPK map opens with 8 knobs + 8 pads", mpk.open && mpk.knobs === 8 && mpk.pads === 8, JSON.stringify(mpk));
+await page.screenshot({ path: `${SHOTS}/padlab-6-mpkmap.png` });
+// tap first knob -> assign chips appear
+const knob = await page.$("#mkKnobs .mk-knob");
+const kb2 = await knob.boundingBox();
+await page.mouse.click(kb2.x + kb2.width / 2, kb2.y + kb2.height / 2);
+await new Promise(r => setTimeout(r, 300));
+const chips = await page.evaluate(() => document.querySelectorAll("#mkAssign [data-t]").length);
+t("knob assignment chips render", chips === 9, chips + " chips");
+await page.screenshot({ path: `${SHOTS}/padlab-7-knob-assign.png` });
+await page.evaluate(() => document.querySelectorAll(".sheet-bg").forEach(s => s.classList.remove("on")));
+
 // service worker registered? (only meaningful when served over http)
 const swState = await page.evaluate(async () => {
   if (!("serviceWorker" in navigator)) return "unsupported";
