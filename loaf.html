@@ -437,7 +437,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="shelf" id="shapeshelf"></div>
   </div>
 
-  <div class="row"><button class="btn" id="save">Save card as image</button></div>
+  <div class="row"><button class="btn" id="save">Share or save the card</button></div>
   <div class="row">
     <button class="ghost" id="rename">Rename</button>
     <button class="ghost" id="again">Scan another</button>
@@ -1036,8 +1036,7 @@ const PROMPT = `You are the grading unit inside a cat trading-card app. Grade th
 Return ONLY a JSON object, no markdown, no preamble:
 {
  "is_cat": true or false,
- "breed": "best guess, 2-3 words, hedge if unsure",
- "coat": "short coat descriptor, max 3 words",
+ "coat": "short coat descriptor, max 3 words. COAT ONLY, never a breed name - most cats have no meaningful breed and guessing one is the most complained-about mistake in this category",
  "title": "an epithet for this specific cat, 2-4 words, funny and affectionate, e.g. 'Certified Void Merchant'",
  "rarity": "ALLEY" | "HOUSE" | "SHOW" | "FOIL" | "MYTHIC",
  "stats": { "chonk":0-100, "loaf":0-100, "void":0-100, "menace":0-100, "zoomies":0-100, "floof":0-100 },
@@ -1079,7 +1078,6 @@ function validate(raw){
   const out = { is_cat: raw.is_cat === true };
   if (!out.is_cat) return out;
   const str = (v, fb, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : fb);
-  out.breed  = str(raw.breed,  'Unknown mix', 40);
   out.coat   = str(raw.coat,   'Unrecorded', 30);
   out.title  = str(raw.title,  'Household Operative', 40);
   out.flavor = str(raw.flavor, 'Refused to comment.', 140);
@@ -1123,6 +1121,28 @@ function hashStr(s){
   for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
   return h >>> 0;
 }
+/* hex → coat words. Coat, never breed (the category's most-repeated 1-star
+   review is "tortoiseshell isn't a breed"). Buckets are deliberately broad. */
+function coatFromHex(hex){
+  const n = parseInt(String(hex).replace('#',''), 16);
+  if (!Number.isFinite(n)) return 'Unrecorded';
+  const r = (n>>16&255)/255, g = (n>>8&255)/255, b = (n&255)/255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), l = (mx+mn)/2;
+  const d = mx - mn;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2*l - 1));
+  let h = 0;
+  if (d !== 0){
+    if (mx === r) h = ((g-b)/d) % 6; else if (mx === g) h = (b-r)/d + 2; else h = (r-g)/d + 4;
+    h = (h*60 + 360) % 360;
+  }
+  if (l < .16) return 'Void black';
+  if (l > .84 && s < .25) return 'Snow white';
+  if (s < .14) return l < .45 ? 'Storm grey' : 'Silver grey';
+  if (h < 15 || h > 340) return 'Rosy brown';
+  if (h < 48) return l > .62 ? 'Cream' : (s > .42 ? 'Ginger tabby' : 'Brown tabby');
+  if (h < 75) return 'Sandy brown';
+  return 'Unusual coat';
+}
 function demoGrade(b64, m){
   /* Sample the payload rather than hashing megabytes of it. */
   let sample = '';
@@ -1155,10 +1175,13 @@ function demoGrade(b64, m){
   const r = at(21, 1000);
   const rarity = r < 380 ? 'ALLEY' : r < 700 ? 'HOUSE' : r < 880 ? 'SHOW' : r < 972 ? 'FOIL' : 'MYTHIC';
 
+  /* the coat comes from the MEASUREMENT, not a dice roll — the reader already
+     found the modal fur colour on-device, and a card that calls an orange
+     tabby "black and white" reads as broken to the one person who knows
+     this cat best */
   return {
     is_cat: true,
-    breed:  D_BREEDS[at(6, D_BREEDS.length)],
-    coat:   D_COATS[at(9, D_COATS.length)],
+    coat:   (m && m.coat) ? coatFromHex(m.coat) : D_COATS[at(9, D_COATS.length)],
     title:  D_TITLES[at(12, D_TITLES.length)],
     flavor: D_FLAVOUR[at(15, D_FLAVOUR.length)],
     rarity,
@@ -1217,7 +1240,14 @@ async function intake(file){
   $('mimg').src = small.url;
   paintMeter(meter);
   show('meter');
-  $('view-meter').scrollIntoView({ behavior:'smooth', block:'center' });
+  /* scroll so the VERDICT AND THE PRINT BUTTON are on screen, not the top of
+     the photo. Centering the whole section left the primary button at y=820
+     on a 667px phone (elementFromPoint: NULL). And the scroll must wait for
+     the photo to DECODE — scrolling first, then letting the image get its
+     height, shoved the button right back below the fold. */
+  const _mi = $('mimg');
+  const _go = () => $('goScan').scrollIntoView({ behavior:'smooth', block:'end' });
+  (_mi.decode ? _mi.decode().catch(()=>{}) : Promise.resolve()).then(_go);
   busy = false;
 }
 
@@ -1267,7 +1297,7 @@ function mint(g, url, meter, dna){
     serial: 0,
     scannedAt: Date.now(),
     photo: url,
-    rarity: g.rarity, breed: g.breed, coat: g.coat,
+    rarity: g.rarity, coat: g.coat,
     title: g.title, flavor: g.flavor, stats: g.stats,
     posture: null,
     dna: dna || defaultDNA(),
@@ -1289,7 +1319,8 @@ function paint(card, isNew){
   $('cardimg').src = card.photo || '';
   $('cname').textContent = (card.name || 'Unnamed').toUpperCase();
   $('ctitle').textContent = card.title;
-  $('coat').textContent = [card.coat, card.breed].filter(Boolean).join(' · ');
+  /* coat only — never a breed, even on old saved cards that carry one */
+  $('coat').textContent = card.coat || 'Unrecorded';
   $('serial').textContent = '№' + String(card.serial).padStart(3,'0') + (card.demo ? ' · DEMO' : '');
   $('flavor').textContent = card.flavor;
 
@@ -3569,14 +3600,26 @@ $('save').onclick = async () => {
   await fontsForExport();
 
   const cv = $('ex'), c = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
+  /* ⛔ the canvas was a fixed 1080x1350 while the content is not fixed at
+     all — six stat rows plus a posture plus a wrapped flavor line overran
+     it, so the footer printed ACROSS the ZOOMIES bar and FLOOF fell off the
+     edge (seen on the first real export). Measure the flavor wrap FIRST,
+     then size the canvas to what the card actually needs. */
+  const W = 1080, PS = 60, PW = W - PS*2, PH = PW;
+  c.font = '400 26px "DM Mono",monospace';
+  let _fl = 1, _fline = '';
+  String(card.flavor).split(' ').forEach(w => {
+    if (c.measureText(_fline + w + ' ').width > PW){ _fl++; _fline = w + ' '; }
+    else _fline += w + ' ';
+  });
+  const _hasP = !!(card.posture && POSTURE_BY_KEY[card.posture]);
+  const H = PS + PH + 72 + 52*STAT_KEYS.length + (_hasP ? 46 : 0) + 56 + (_fl-1)*38 + 96;
+  cv.width = W; cv.height = H;
   const img = new Image();
   img.onerror = () => say('Could not build the image. Try again.');
   img.onload = () => {
     c.clearRect(0,0,W,H);
     c.fillStyle = '#150E1D'; c.fillRect(0,0,W,H);
-
-    const PS = 60, PW = W - PS*2, PH = PW;
     c.save(); roundRect(c, PS, PS, PW, PH, 40); c.clip();
     const s = Math.max(PW / img.width, PH / img.height);
     c.drawImage(img, PS + PW/2 - img.width*s/2, PS + PH/2 - img.height*s/2, img.width*s, img.height*s);
@@ -3643,15 +3686,28 @@ $('save').onclick = async () => {
       c.textAlign = 'left';
     }
 
-    cv.toBlob(blob => {
+    cv.toBlob(async blob => {
       if (!blob) return say('Could not build the image. Try again.');
+      const fname = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-loaf.png';
+      const n = $('cardNote');
+      /* phones get the native share sheet — a card's whole job is reaching
+         the group chat. Download stays as the desktop / fallback path. */
+      const file = new File([blob], fname, { type:'image/png' });
+      if (navigator.canShare && navigator.canShare({ files:[file] })){
+        try {
+          await navigator.share({ files:[file], title: name + ' — LOAF',
+                                  text: name + ' · ' + card.title });
+          Hooks.onCardExported(card);
+          n.textContent = 'Shared.'; n.className = 'note ok';
+          return;
+        } catch(e){ if (e && e.name === 'AbortError') return; }
+      }
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-loaf.png';
+      a.download = fname;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       Hooks.onCardExported(card);
-      const n = $('cardNote');
       n.textContent = 'Saved. Post it anywhere.';
       n.className = 'note ok';
     }, 'image/png');
