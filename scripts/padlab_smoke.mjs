@@ -19,6 +19,9 @@ await page.setViewport({
   deviceScaleFactor: 2
 });
 
+// pre-unlock the shared wolfden dev gate so smoke tests exercise the app itself
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem("sws_dev_ok", "1"); } catch (e) {} });
+
 const errors = [];
 page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
 page.on("pageerror", e => errors.push("PAGEERROR: " + e.message));
