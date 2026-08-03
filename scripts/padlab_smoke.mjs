@@ -90,10 +90,29 @@ const knob = await page.$("#mkKnobs .mk-knob");
 const kb2 = await knob.boundingBox();
 await page.mouse.click(kb2.x + kb2.width / 2, kb2.y + kb2.height / 2);
 await new Promise(r => setTimeout(r, 300));
-const chips = await page.evaluate(() => document.querySelectorAll("#mkAssign [data-t]").length);
-t("knob assignment chips render", chips === 9, chips + " chips");
+const chips = await page.evaluate(() => ({
+  got: document.querySelectorAll("#mkAssign [data-t]").length,
+  want: Object.keys(KNOB_TARGETS).length + 1
+}));
+t("knob assignment chips render", chips.got === chips.want, JSON.stringify(chips));
 await page.screenshot({ path: `${SHOTS}/padlab-7-knob-assign.png` });
 await page.evaluate(() => document.querySelectorAll(".sheet-bg").forEach(s => s.classList.remove("on")));
+
+// simulated hardware: drive the real MIDI path headless (top-level fns are on window)
+const midi = await page.evaluate(() => {
+  const r = {};
+  r.padOnCh10 = midiPadIndex(38, 9);          // MPK pad, ch10 → pad index 2
+  r.bankBOnCh10 = midiPadIndex(45, 9);        // bank B note → pad index 1
+  r.keysStayKeys = midiPadIndex(48, 0);       // keys channel → -1 (melodic)
+  onMIDI({ data: [0xB0, 70, 96] });           // twist K1 (CC70)
+  r.k1Applied = Math.abs(knobVals[0] - 96 / 127) < 0.01;
+  r.flangerBuilt = !!flangerWet;
+  r.monitor = document.getElementById("mkMon").textContent;
+  return r;
+});
+t("ch10 notes route to pads, keys stay melodic",
+  midi.padOnCh10 === 2 && midi.bankBOnCh10 === 1 && midi.keysStayKeys === -1, JSON.stringify(midi));
+t("CC70 drives K1 and flanger chain exists", midi.k1Applied && midi.flangerBuilt);
 
 // service worker registered? (only meaningful when served over http)
 const swState = await page.evaluate(async () => {

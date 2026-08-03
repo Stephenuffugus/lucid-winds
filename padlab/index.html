@@ -478,7 +478,8 @@
   <div class="fx-row"><span class="fx-name">Delay</span><input type="range" id="fxDelay" min="0" max="100" value="10" /><span class="fx-val" id="fxDelayV">10</span></div>
   <div class="fx-row"><span class="fx-name">Delay time</span><select class="selectlike" id="fxDelayTime" style="flex:1;"><option value="0.5">1/8</option><option value="0.75">dotted 1/8</option><option value="0.25">1/16</option><option value="1">1/4</option></select></div>
   <div class="fx-row"><span class="fx-name">Tone</span><input type="range" id="fxTone" min="20" max="100" value="100" /><span class="fx-val" id="fxToneV">100</span></div>
-  <p class="steps" style="margin-top:12px;">Reverb &amp; delay add space to the <b>keys</b> and melodic sounds. Tone rolls off the highs for a warmer, lo-fi feel.</p>
+  <div class="fx-row"><span class="fx-name">Flanger</span><input type="range" id="fxFlanger" min="0" max="100" value="0" /><span class="fx-val" id="fxFlangerV">0</span></div>
+  <p class="steps" style="margin-top:12px;">Reverb &amp; delay add space to the <b>keys</b> and melodic sounds. Tone rolls off the highs for a warmer, lo-fi feel. Flanger is the jet-plane swirl.</p>
 </div></div>
 
 <!-- INSTALL -->
@@ -504,6 +505,10 @@
 <div class="sheet-bg" id="mpkSheet"><div class="sheet">
   <h3>Your MPK Mini<button class="close" data-close>✕</button></h3>
   <p class="steps" style="margin:0 0 10px;">Tap a <b>knob</b> to change what it controls. Tap a <b>pad</b> to change its sound. It all lights up as you play.</p>
+  <div style="display:flex;gap:8px;margin:0 0 10px;">
+    <button class="chip" id="mkMatchPads" style="flex:1;justify-content:center;">Match my pads</button>
+    <button class="chip" id="mkMatchKnobs" style="flex:1;justify-content:center;">Match my knobs</button>
+  </div>
   <div class="mk-unit">
     <div class="mk-top">
       <div class="mk-joy"><div class="mk-joy-pad"><div id="mkJoyDot"></div></div><div class="mk-cap">JOY · BEND</div></div>
@@ -515,6 +520,7 @@
     </div>
     <div class="mk-keys" id="mkKeys"><div id="mkKeysGlow"></div></div>
   </div>
+  <div class="mk-cap" id="mkMon" style="margin-top:8px;text-align:left;">MIDI in: — (play something and watch this line)</div>
   <div id="mkAssign" style="display:none;"></div>
   <p class="steps" style="margin-top:10px;">The MPK's own <b>ARP</b> and <b>TAP</b> buttons work already — they play through whatever sound is chosen. <b>Bank B</b> (8 more pads) is next on the build list. If a knob does nothing, tap it here, choose <b>Twist to re-bind</b>, then turn that hardware knob once.</p>
 </div></div>
@@ -561,6 +567,14 @@ function initAudio(){
   delayNode=AC.createDelay(1.5); delayFB=AC.createGain(); delayFB.gain.value=0.35;
   delayNode.connect(delayFB); delayFB.connect(delayNode); delayNode.connect(master);
   delaySend=AC.createGain(); delaySend.gain.value=0.10; instrBus.connect(delaySend); delaySend.connect(delayNode);
+  // flanger: short LFO-modulated delay, instrument chain only, silent at wet=0
+  flangerDelay=AC.createDelay(0.05); flangerDelay.delayTime.value=.0035;
+  flangerLFO=AC.createOscillator(); flangerLFO.frequency.value=.35;
+  flangerDepth=AC.createGain(); flangerDepth.gain.value=.0022;
+  flangerLFO.connect(flangerDepth); flangerDepth.connect(flangerDelay.delayTime); flangerLFO.start();
+  flangerFB=AC.createGain(); flangerFB.gain.value=.2; flangerDelay.connect(flangerFB); flangerFB.connect(flangerDelay);
+  flangerWet=AC.createGain(); flangerWet.gain.value=0;
+  instrBus.connect(flangerDelay); flangerDelay.connect(flangerWet); flangerWet.connect(master);
   updateDelayTime();
 }
 function makeIR(dur,decay){
@@ -643,9 +657,13 @@ let padNotes=[36,37,38,39,40,41,42,43];
 
 /* ---- knobs: K1-K8 (MPK Mini mk3 factory CCs 70-77) drive the FX rack ---- */
 let knobCCs=[70,71,72,73,74,75,76,77];
-let knobTargets=["tone","reverb","delay","feedback","drive","delayTime","swing","volume"];
-let knobVals=[1,.18,.10,.5,0,.4,0,.82];
+let knobTargets=["tone","reverb","delay","feedback","drive","flanger","delayTime","volume"];
+let knobVals=[1,.18,.10,.5,0,0,.4,.82];
 let knobLearn=-1, driveAmt=0, shaper=null;
+let flangerDelay=null, flangerLFO=null, flangerDepth=null, flangerFB=null, flangerWet=null;
+/* guided "match my knobs": turn K1..K8 once each; a turning knob streams the
+   same CC, so we advance only on a CC we haven't bound this run */
+let knobMatch=null; // {idx, bound:Set}
 const DELAY_STEPS=[[0.25,"1/16"],[0.375,"1/16."],[0.5,"1/8"],[0.75,"1/8."],[1,"1/4"]];
 const KNOB_TARGETS={
   tone:{name:"Tone",fmt:v=>Math.round(20+v*80),apply(v){ const hz=200*Math.pow(20000/200,v); if(toneFilter) toneFilter.frequency.setTargetAtTime(hz,ct(),.03);
@@ -656,6 +674,8 @@ const KNOB_TARGETS={
     const el=document.getElementById("fxDelay"); if(el){ el.value=Math.round(v*100); document.getElementById("fxDelayV").textContent=Math.round(v*100); } }},
   feedback:{name:"Echo Tail",fmt:v=>Math.round(v*100)+"%",apply(v){ if(delayFB) delayFB.gain.setTargetAtTime(v*.72,ct(),.03); }},
   drive:{name:"Drive",fmt:v=>Math.round(v*100)+"%",apply(v){ setDrive(v); }},
+  flanger:{name:"Flanger",fmt:v=>Math.round(v*100)+"%",apply(v){ if(flangerWet) flangerWet.gain.setTargetAtTime(v*.9,ct(),.03); if(flangerFB) flangerFB.gain.setTargetAtTime(.2+v*.5,ct(),.03);
+    const el=document.getElementById("fxFlanger"); if(el){ el.value=Math.round(v*100); document.getElementById("fxFlangerV").textContent=Math.round(v*100); } }},
   delayTime:{name:"Delay Time",fmt:v=>DELAY_STEPS[Math.min(4,Math.floor(v*5))][1],apply(v){ delayMult=DELAY_STEPS[Math.min(4,Math.floor(v*5))][0]; updateDelayTime();
     const el=document.getElementById("fxDelayTime"); if(el) el.value=String(delayMult); }},
   swing:{name:"Swing",fmt:v=>Math.round(v*60)+"%",apply(v){ swing=Math.round(v*60);
@@ -677,6 +697,9 @@ function applyKnob(ki,v){ ensureAudio(); knobVals[ki]=v; KNOB_TARGETS[knobTarget
   if(typeof mpkKnobUI==="function") mpkKnobUI(ki,v); saveSoon(); }
 function onCC(cc,val){
   if(cc===64){ sustainOn=val>=64; const ch=document.getElementById("sustainChip"); if(ch) ch.classList.toggle("on",sustainOn); if(!sustainOn) releaseSustain(); return; }
+  if(knobMatch){ if(!knobMatch.bound.has(cc)){ knobCCs[knobMatch.idx]=cc; knobMatch.bound.add(cc); knobMatch.idx++;
+    if(knobMatch.idx>=8){ knobMatch=null; toast("All 8 knobs matched — turn them!"); if(typeof renderMPK==="function") renderMPK(); saveSoon(); }
+    else toast("K"+knobMatch.idx+" ✓ — now turn K"+(knobMatch.idx+1)); } return; }
   if(knobLearn>=0){ knobCCs[knobLearn]=cc; toast("K"+(knobLearn+1)+" bound to that knob"); knobLearn=-1; if(typeof renderMPK==="function") renderMPK(); saveSoon(); return; }
   const ki=knobCCs.indexOf(cc); if(ki>=0) applyKnob(ki,val/127);
 }
@@ -1173,7 +1196,17 @@ function setMidi(state,name){ document.getElementById("midiLed").className="led 
 function midiPadIndex(note,mch){ let pi=padNotes.indexOf(note);
   if(pi<0 && mch===9 && note>=36 && note<=51) pi=(note-36)%8;
   return pi; }
+function mpkMon(st,d1,d2){ if(!mpkOpen()) return; const el=document.getElementById("mkMon"); if(!el) return;
+  const cmd=st&0xf0, ch=(st&0x0f)+1; let s;
+  if(cmd===0x90&&d2>0) s="NOTE "+d1+" · vel "+d2;
+  else if(cmd===0x80||(cmd===0x90&&d2===0)) s="NOTE "+d1+" off";
+  else if(cmd===0xB0) s="CC "+d1+" · "+d2;
+  else if(cmd===0xE0) s="PITCH BEND";
+  else if(cmd===0xC0) s="PROG "+d1;
+  else s="cmd 0x"+cmd.toString(16);
+  el.textContent="MIDI in: ch"+ch+" · "+s; }
 function onMIDI(msg){ const [st,d1,d2]=msg.data; const cmd=st&0xf0, mch=st&0x0f;
+  mpkMon(st,d1,d2);
   if(cmd===0x90&&d2>0){ ensureAudio();
     if(learnPadIndex>=0){ padNotes[learnPadIndex]=d1; learnPadIndex++; if(learnPadIndex>=8){ learnPadIndex=-1; toast("Pads mapped ✓"); renderPads(); document.getElementById("learnPadsBtn").textContent="Start"; saveSoon(); } else toast("Now hit pad "+(learnPadIndex+1)); return; }
     const pi=midiPadIndex(d1,mch); if(pi>=0) padDown(pi,d2/127); else noteOn(d1,d2/127); }
@@ -1198,7 +1231,7 @@ async function setupPWA(){ const i192=makeIcon(192), i512=makeIcon(512);
     const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"}); const ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml); }
   // Versioned registration, bumped in lockstep with SHELL_VERSION in sw.js —
   // this host edge-pins bare sw.js URLs for 7 days, so a bare URL never updates.
-  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=6"); }catch(e){} }
+  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=7"); }catch(e){} }
 }
 let deferredPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; });
@@ -1251,7 +1284,7 @@ let saveTimer=null;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveProject,600); }
 function collectState(){ return { v:3, tempo,swing,keyRoot,scaleName,scaleLock,currentInstId,curSlot,octaveShift,pianoView,
     chordMode,arpOn,arpMode,arpRate,arpLatch,sustainOn,metroOn,countIn,
-    fx:{reverb:reverbSend?reverbSend.gain.value:.18,delay:delaySend?delaySend.gain.value:.1,delayMult,tone:toneFilter?toneFilter.frequency.value:20000},
+    fx:{reverb:reverbSend?reverbSend.gain.value:.18,delay:delaySend?delaySend.gain.value:.1,delayMult,tone:toneFilter?toneFilter.frequency.value:20000,flanger:flangerWet?flangerWet.gain.value/.9:0},
     padNotes, offlinePacks:[...offlinePacks], songMode, songChain, drumKit,
     knobCCs, knobTargets, knobVals, driveAmt,
     packOffline:[...packOffline], currentPack, rollOn, rollRate,
@@ -1264,7 +1297,10 @@ function applyStateVars(s){
   if(s.padNotes){ padNotes = s.padNotes.join(",")==="36,38,39,42,46,41,37,56" ? [36,37,38,39,40,41,42,43] : s.padNotes; }
   if(s.offlinePacks) offlinePacks=new Set(s.offlinePacks);
   if(Array.isArray(s.knobCCs)&&s.knobCCs.length===8) knobCCs=s.knobCCs.slice();
-  if(Array.isArray(s.knobTargets)&&s.knobTargets.length===8&&s.knobTargets.every(t=>KNOB_TARGETS[t])) knobTargets=s.knobTargets.slice();
+  if(Array.isArray(s.knobTargets)&&s.knobTargets.length===8&&s.knobTargets.every(t=>KNOB_TARGETS[t])){
+    knobTargets = s.knobTargets.join(",")==="tone,reverb,delay,feedback,drive,delayTime,swing,volume"
+      ? ["tone","reverb","delay","feedback","drive","flanger","delayTime","volume"]   // v6 default → flanger default
+      : s.knobTargets.slice(); }
   if(Array.isArray(s.knobVals)&&s.knobVals.length===8) knobVals=s.knobVals.slice();
   driveAmt=s.driveAmt||0;
   songMode=!!s.songMode; songChain=Array.isArray(s.songChain)?s.songChain.slice():[]; drumKit=s.drumKit||"classic";
@@ -1310,6 +1346,7 @@ function applyRestoredFx(){ const fx=window._restoreFx; if(!fx) return;
   if(reverbSend){ reverbSend.gain.value=fx.reverb; document.getElementById("fxReverb").value=Math.round(fx.reverb*100); document.getElementById("fxReverbV").textContent=Math.round(fx.reverb*100); }
   if(delaySend){ delaySend.gain.value=fx.delay; document.getElementById("fxDelay").value=Math.round(fx.delay*100); document.getElementById("fxDelayV").textContent=Math.round(fx.delay*100); }
   if(toneFilter){ toneFilter.frequency.value=fx.tone; const pct=Math.round((Math.log(fx.tone/200)/Math.log(20000/200))*80+20); document.getElementById("fxTone").value=Math.max(20,Math.min(100,pct)); document.getElementById("fxToneV").textContent=Math.max(20,Math.min(100,pct)); }
+  if(flangerWet&&fx.flanger){ KNOB_TARGETS.flanger.apply(fx.flanger); }
   document.getElementById("fxDelayTime").value=String(delayMult);
   setDrive(driveAmt); }
 
@@ -1325,6 +1362,9 @@ function wire(){
   document.getElementById("installBtn").onclick=openInstall;
   document.getElementById("midiPill").onclick=()=>openSheet("mpkSheet");
   document.getElementById("mpkMapBtn").onclick=()=>{ closeSheets(); openSheet("mpkSheet"); };
+  document.getElementById("mkMatchPads").onclick=()=>{ ensureAudio(); learnPadIndex=0; document.getElementById("learnPadsBtn").textContent="Hit pad 1"; toast("Hit pad 1 on your MPK…"); };
+  document.getElementById("mkMatchKnobs").onclick=()=>{ ensureAudio(); knobMatch={idx:0,bound:new Set()}; toast("Turn knob K1 on your MPK…"); };
+  document.getElementById("fxFlanger").oninput=e=>{ const v=+e.target.value/100; ensureAudio(); if(flangerWet) flangerWet.gain.setTargetAtTime(v*.9,ct(),.02); if(flangerFB) flangerFB.gain.setTargetAtTime(.2+v*.5,ct(),.02); document.getElementById("fxFlangerV").textContent=Math.round(v*100); saveSoon(); };
   // slots + swing + seq
   document.querySelectorAll(".slot").forEach(s=>s.addEventListener("click",()=>{ curSlot=+s.dataset.slot; document.querySelectorAll(".slot").forEach(x=>x.classList.toggle("active",x===s)); currentGroove=-1; document.querySelectorAll(".groove").forEach(el=>el.classList.remove("playing")); renderSeq(); saveSoon(); }));
   document.getElementById("swing").oninput=e=>{ swing=parseInt(e.target.value); document.getElementById("swingVal").textContent=swing+"%"; saveSoon(); };

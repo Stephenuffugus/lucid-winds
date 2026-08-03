@@ -12,7 +12,7 @@
    - Navigations refetch with cache:'no-cache' — plain fetch(req) consults the
      HTTP cache, and this host's stale-while-revalidate serves day-old HTML. */
 
-const SHELL_VERSION = "padlab-shell-v6";
+const SHELL_VERSION = "padlab-shell-v7";
 const AUDIO_CACHE   = "padlab-audio-v1";
 const NAV_TIMEOUT_MS = 8000;
 
