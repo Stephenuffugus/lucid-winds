@@ -114,6 +114,20 @@ t("ch10 notes route to pads, keys stay melodic",
   midi.padOnCh10 === 2 && midi.bankBOnCh10 === 1 && midi.keysStayKeys === -1, JSON.stringify(midi));
 t("CC70 drives K1 and flanger chain exists", midi.k1Applied && midi.flangerBuilt);
 
+// pad match end-to-end: an unknown unit (pads on notes 44-51, keys channel)
+await page.evaluate(() => startPadMatch());
+const barShown = await page.evaluate(() => document.getElementById("padSetupBar").classList.contains("on"));
+await page.screenshot({ path: `${SHOTS}/padlab-8-padmatch.png` });
+const match = await page.evaluate(() => {
+  for (let n = 44; n <= 51; n++) onMIDI({ data: [0x90, n, 100] });
+  return { padNotes: padNotes.join(","), confirmed: padMapConfirmed,
+    hidden: !document.getElementById("padSetupBar").classList.contains("on"),
+    routed: midiPadIndex(44, 0) };
+});
+t("pad match binds any unit's notes in 8 hits",
+  barShown && match.padNotes === "44,45,46,47,48,49,50,51" && match.confirmed && match.hidden && match.routed === 0,
+  JSON.stringify(match));
+
 // service worker registered? (only meaningful when served over http)
 const swState = await page.evaluate(async () => {
   if (!("serviceWorker" in navigator)) return "unsupported";
