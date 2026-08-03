@@ -15,13 +15,17 @@ OUT = sys.argv[sys.argv.index('--') + 1] if '--' in sys.argv else 'assets/loaf'
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------- proportions (the cuteness dials) ----------------
-BODY_C   = (0, -0.15, 0.60)
-HEAD_C   = (0, 1.02, 1.16)
-HEAD_R   = 0.74            # big head = cute
-EAR_R, EAR_H = 0.30, 0.34
-# the tail hugs the floor and wraps around the right flank - classic loaf
-TAIL_PTS = [(0.42, -1.10, 0.28), (0.72, -0.85, 0.24), (0.86, -0.40, 0.22),
-            (0.90, 0.05, 0.22), (0.86, 0.45, 0.24)]
+# v4: a STANDING cat. Real legs, smooth rising tail. "Loaf" is now an
+# ANIMATION (legs tuck, body settles), because a loaf-shaped mesh cannot walk.
+BODY_C   = (0, -0.10, 0.98)
+HEAD_C   = (0, 1.00, 1.78)
+HEAD_R   = 0.62
+EAR_R, EAR_H = 0.26, 0.30
+# smooth rising S-curve behind - sampled densely so the remesh fuses a TUBE
+TAIL_PTS = [(0, -1.02, 1.02), (0.06, -1.38, 1.18), (0.10, -1.58, 1.52),
+            (0.05, -1.50, 1.94), (0.00, -1.44, 2.18)]
+LEG_X_F, LEG_Y_F = 0.30, 0.68
+LEG_X_B, LEG_Y_B = 0.36, -0.78
 VOXEL    = 0.05
 
 def sphere(loc, r, scale=(1, 1, 1)):
@@ -36,34 +40,50 @@ bpy.ops.object.delete()
 
 # ---------------- the body blob ----------------
 parts = []
-parts.append(sphere(BODY_C, 1.0, (0.86, 1.18, 0.64)))          # loaf mass
-parts.append(sphere((0, 0.55, 0.70), 0.62, (0.80, 0.85, 0.74))) # chest
-parts.append(sphere((0, -0.92, 0.58), 0.68, (0.9, 0.8, 0.78)))  # haunches
-parts.append(sphere(HEAD_C, HEAD_R, (1.0, 0.94, 0.92)))          # head, slightly wide
-parts.append(sphere((-0.30, 1.56, 0.98), 0.17))                  # muzzle pouch L
-parts.append(sphere(( 0.30, 1.56, 0.98), 0.17))                  # muzzle pouch R
-parts.append(sphere((0, 1.58, 0.90), 0.15))                      # chin
+parts.append(sphere(BODY_C, 0.78, (0.82, 1.30, 0.72)))          # torso
+parts.append(sphere((0, 0.62, 1.06), 0.56, (0.80, 0.80, 0.76))) # chest
+parts.append(sphere((0, 0.82, 1.42), 0.34, (0.8, 0.8, 1.0)))     # neck
+parts.append(sphere((0, -0.80, 1.00), 0.60, (0.92, 0.80, 0.86))) # haunches
+parts.append(sphere(HEAD_C, HEAD_R, (1.0, 0.94, 0.92)))          # head
+parts.append(sphere((-0.24, 1.48, 1.56), 0.15))                  # muzzle pouch L
+parts.append(sphere(( 0.24, 1.48, 1.56), 0.15))                  # muzzle pouch R
+parts.append(sphere((0, 1.50, 1.48), 0.13))                      # chin
 # ears: squashed cones
 for sx in (-1, 1):
-    bpy.ops.mesh.primitive_cone_add(radius1=EAR_R, depth=EAR_H, vertices=10,
-        location=(sx * 0.42, 0.94, 1.98))
+    bpy.ops.mesh.primitive_cone_add(radius1=0.29, depth=0.52, vertices=12,
+        location=(sx * 0.33, 0.94, 2.38))
     e = bpy.context.object
-    e.rotation_euler = (math.radians(-8), math.radians(sx * 22), 0)
-    e.scale = (0.85, 0.45, 1.25)
+    e.rotation_euler = (math.radians(-6), math.radians(sx * 18), 0)
+    e.scale = (0.95, 0.55, 1.15)
     parts.append(e)
 # tail: chain of blobs
-# overlapping beads so the remesh fuses one continuous tail
+# beads at <=0.07 spacing with a GRADUAL taper fuse into one smooth tube -
+# 0.11 spacing was the ball-of-dough look
 import mathutils as _mu
+_total = sum((_mu.Vector(TAIL_PTS[i + 1]) - _mu.Vector(TAIL_PTS[i])).length
+             for i in range(len(TAIL_PTS) - 1))
+_done = 0.0
 for i in range(len(TAIL_PTS) - 1):
     a2, b2 = _mu.Vector(TAIL_PTS[i]), _mu.Vector(TAIL_PTS[i + 1])
-    steps = max(2, int((b2 - a2).length / 0.11))
+    seg = (b2 - a2).length
+    steps = max(3, int(seg / 0.06))
     for k in range(steps):
         q = a2.lerp(b2, k / steps)
-        parts.append(sphere(tuple(q), 0.19 - 0.012 * i))
-# stubby legs / paws
+        frac = (_done + seg * k / steps) / _total
+        parts.append(sphere(tuple(q), 0.150 - 0.075 * frac))
+    _done += seg
+# REAL legs: columns of overlapping beads from shoulder/hip to paw
+def leg(x, y, top_z, top_r):
+    z = top_z
+    while z > 0.16:
+        rr = top_r - (top_z - z) * 0.05
+        parts.append(sphere((x, y, z), max(0.115, rr)))
+        z -= 0.10
+    parts.append(sphere((x, y + 0.06, 0.13), 0.155, (1, 1.35, 0.75)))   # paw
 for sx in (-1, 1):
-    parts.append(sphere((sx * 0.34, 0.98, 0.16), 0.17, (1, 1.35, 0.9)))  # front paws peeking
-    parts.append(sphere((sx * 0.52, -0.80, 0.18), 0.20, (1, 1.25, 1)))    # haunch paws
+    leg(sx * LEG_X_F, LEG_Y_F, 0.95, 0.17)
+    parts.append(sphere((sx * 0.42, LEG_Y_B, 0.95), 0.30, (0.9, 1.0, 1.1)))  # thigh mass
+    leg(sx * LEG_X_B, LEG_Y_B, 0.80, 0.16)
 
 for o in parts:
     o.select_set(True)
@@ -101,10 +121,10 @@ eyemat = glossy('Eye', (0.03, 0.03, 0.035), 0.08)
 nosemat = glossy('Nose', (0.75, 0.35, 0.42), 0.4)
 extras = []
 for sx in (-1, 1):
-    e = sphere((sx * 0.23, 1.64, 1.28), 0.155)   # big glossy eyes on the face front
+    e = sphere((sx * 0.22, 1.50, 1.90), 0.145)   # big glossy eyes on the face front
     e.data.materials.append(eyemat)
     extras.append(e)
-n = sphere((0, 1.74, 1.04), 0.055, (1, 0.7, 0.8))
+n = sphere((0, 1.63, 1.62), 0.05, (1, 0.7, 0.8))
 n.data.materials.append(nosemat)
 extras.append(n)
 for o in extras:
@@ -120,11 +140,11 @@ chonk = body.shape_key_add(name='chonk', from_mix=False)
 bx, by, bz = BODY_C
 for i, v in enumerate(body.data.vertices):
     co = v.co
-    d = math.sqrt((co.x - bx) ** 2 + ((co.y - by) / 1.4) ** 2 + (co.z - bz) ** 2)
-    w = max(0.0, 1.0 - d / 1.15)
-    if w > 0 and co.z < 1.1:                           # belly and flanks, not the face
+    d = math.sqrt((co.x - bx) ** 2 + ((co.y - by) / 1.5) ** 2 + ((co.z - bz) / 0.9) ** 2)
+    w = max(0.0, 1.0 - d / 0.95)
+    if w > 0 and co.z < 1.45:                          # belly and flanks, not the face
         k = chonk.data[i]
-        k.co = (co.x * (1 + 0.28 * w), co.y, co.z + (0.04 * w if co.z > bz else -0.10 * w))
+        k.co = (co.x * (1 + 0.30 * w), co.y, co.z - 0.12 * w)
 
 # ---------------- armature ----------------
 bpy.ops.object.armature_add(location=(0, 0, 0))
@@ -133,25 +153,28 @@ arm.name = 'CatRig'
 bpy.ops.object.mode_set(mode='EDIT')
 eb = arm.data.edit_bones
 root = eb[0]; root.name = 'root'
-root.head = (0, -0.6, 0.62); root.tail = (0, -0.2, 0.66)
+root.head = (0, -0.5, 0.98); root.tail = (0, -0.1, 1.0)
 
 def bone(name, head, tail, parent):
     b2 = eb.new(name)
     b2.head = head; b2.tail = tail; b2.parent = parent
     return b2
 
-spine  = bone('spine', (0, -0.2, 0.66), (0, 0.35, 0.72), root)
-neck   = bone('neck',  (0, 0.35, 0.72), (0, 0.75, 0.95), spine)
-head_b = bone('head',  (0, 0.75, 0.95), (0, 1.35, 1.15), neck)
-bone('earL', (-0.34, 0.86, 1.35), (-0.42, 0.86, 1.72), head_b)
-bone('earR', ( 0.34, 0.86, 1.35), ( 0.42, 0.86, 1.72), head_b)
-tp = (0.2, -1.0, 0.5)
+spine  = bone('spine', (0, -0.1, 1.0), (0, 0.45, 1.05), root)
+neck   = bone('neck',  (0, 0.45, 1.05), (0, 0.85, 1.50), spine)
+head_b = bone('head',  (0, 0.85, 1.50), (0, 1.35, 1.85), neck)
+bone('earL', (-0.30, 0.92, 2.05), (-0.36, 0.92, 2.42), head_b)
+bone('earR', ( 0.30, 0.92, 2.05), ( 0.36, 0.92, 2.42), head_b)
+tp = (0, -0.95, 1.0)
 tprev = root
-for i, p in enumerate(TAIL_PTS):
+for i, p in enumerate(TAIL_PTS[1:]):
     tprev = bone('tail%d' % (i + 1), tp, p, tprev)
     tp = p
-for nm, sx, y in (('legFL', -1, 0.55), ('legFR', 1, 0.55), ('legBL', -1, -0.85), ('legBR', 1, -0.85)):
-    bone(nm, (sx * 0.44, y, 0.5), (sx * 0.44, y, 0.06), spine if y > 0 else root)
+# two-segment legs: upper (shoulder/hip -> knee) and lower (knee -> paw)
+for nm, sx, x, y, topz in (('FL', -1, LEG_X_F, LEG_Y_F, 0.95), ('FR', 1, LEG_X_F, LEG_Y_F, 0.95),
+                            ('BL', -1, LEG_X_B, LEG_Y_B, 0.90), ('BR', 1, LEG_X_B, LEG_Y_B, 0.90)):
+    up = bone('leg%s_up' % nm, (sx * x, y, topz), (sx * x, y, 0.48), spine if y > 0 else root)
+    bone('leg%s_lo' % nm, (sx * x, y, 0.48), (sx * x, y + 0.06, 0.08), up)
 bpy.ops.object.mode_set(mode='OBJECT')
 
 body.select_set(True)
@@ -174,6 +197,7 @@ def clip(name, length, poser):
         for pb in arm.pose.bones:
             pb.keyframe_insert('rotation_quaternion', frame=f)
             pb.keyframe_insert('scale', frame=f)
+            pb.keyframe_insert('location', frame=f)
     track = arm.animation_data.nla_tracks.new()
     track.strips.new(act.name, 1, act)
     arm.animation_data.action = None
@@ -184,29 +208,58 @@ def reset_pose():
     for pb in arm.pose.bones:
         pb.rotation_quaternion = (1, 0, 0, 0)
         pb.scale = (1, 1, 1)
+        pb.location = (0, 0, 0)
+
+def E(x=0, y=0, z=0):
+    return mathutils.Euler((math.radians(x), math.radians(y), math.radians(z))).to_quaternion()
 
 def idle(t, f):
     reset_pose()
     br = 1 + 0.03 * math.sin(t * 2 * math.pi)
     arm.pose.bones['spine'].scale = (br, 1, br)
-    arm.pose.bones['head'].rotation_quaternion = mathutils.Euler(
-        (math.radians(3 * math.sin(t * 2 * math.pi)), 0,
-         math.radians(2 * math.sin(t * 4 * math.pi)))).to_quaternion()
+    arm.pose.bones['head'].rotation_quaternion = E(3 * math.sin(t * 2 * math.pi), 0,
+                                                    2 * math.sin(t * 4 * math.pi))
     if 0.55 < t < 0.7:   # ear twitch
-        arm.pose.bones['earL'].rotation_quaternion = mathutils.Euler(
-            (0, math.radians(-18 * math.sin((t - 0.55) / 0.15 * math.pi)), 0)).to_quaternion()
+        arm.pose.bones['earL'].rotation_quaternion = E(0, -18 * math.sin((t - 0.55) / 0.15 * math.pi), 0)
     for i in range(1, 5):
-        arm.pose.bones['tail%d' % i].rotation_quaternion = mathutils.Euler(
-            (0, 0, math.radians(6 * math.sin(t * 2 * math.pi + i * 0.9)))).to_quaternion()
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 6 * math.sin(t * 2 * math.pi + i * 0.9))
+
+def walk(t, f):
+    reset_pose()
+    ph = t * 2 * math.pi
+    # diagonal gait: FL+BR vs FR+BL
+    for nm, off in (('FL', 0), ('BR', 0), ('FR', math.pi), ('BL', math.pi)):
+        sw = 26 * math.sin(ph + off)
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(sw, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(max(0, -0.9 * sw), 0, 0)
+    arm.pose.bones['spine'].rotation_quaternion = E(0, 0, 3 * math.sin(ph))
+    arm.pose.bones['head'].rotation_quaternion = E(2 * math.sin(ph * 2), 0, 0)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 9 * math.sin(ph + i * 0.7))
+
+def loafsettle(t, f):
+    # one-shot: stand -> loaf. Legs fold under, body drops, tail wraps.
+    reset_pose()
+    k = min(1.0, t * 1.25)                 # settle by 80%, hold after
+    e2 = k * k * (3 - 2 * k)               # smoothstep
+    for nm in ('FL', 'FR', 'BL', 'BR'):
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(85 * e2, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-125 * e2, 0, 0)
+    arm.pose.bones['root'].location = (0, 0, -0.52 * e2)
+    arm.pose.bones['neck'].rotation_quaternion = E(14 * e2, 0, 0)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, (18 + 10 * i) * e2)
 
 def tailplay(t, f):
     reset_pose()
     for i in range(1, 5):
-        arm.pose.bones['tail%d' % i].rotation_quaternion = mathutils.Euler(
-            (math.radians(10 * math.sin(t * 4 * math.pi + i * 1.2)), 0,
-             math.radians(22 * math.sin(t * 2 * math.pi + i * 0.8)))).to_quaternion()
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(
+            10 * math.sin(t * 4 * math.pi + i * 1.2), 0,
+            22 * math.sin(t * 2 * math.pi + i * 0.8))
 
 clip('Idle', 48, idle)
+clip('Walk', 32, walk)
+clip('LoafSettle', 40, loafsettle)
 clip('TailPlay', 60, tailplay)
 reset_pose()
 
@@ -241,8 +294,8 @@ sc.camera = cam
 bpy.context.scene.frame_set(12)
 for i, ang in enumerate((160, 205, 90, 340)):
     a = math.radians(ang)
-    cam.location = (4.3 * math.sin(a), -4.3 * math.cos(a), 1.7)
-    d = mathutils.Vector((0, 0.35, 0.85)) - cam.location
+    cam.location = (4.6 * math.sin(a), -4.6 * math.cos(a), 1.9)
+    d = mathutils.Vector((0, 0.3, 1.1)) - cam.location
     cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
     sc.render.filepath = os.path.join(OUT, 'turntable-%d.png' % i)
     bpy.ops.render.render(write_still=True)

@@ -311,6 +311,13 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   display:flex;justify-content:space-between;align-items:center;min-height:52px}
 .tunerHd .chev{color:var(--amber);font-size:16px;line-height:1}
 .tunerBody{padding:0 14px 16px}
+#stage3d{height:320px;border-radius:14px;background:radial-gradient(120% 90% at 50% 20%, #2E2044, var(--panel-2));touch-action:none;overflow:hidden}
+#stage3d canvas{display:block;border-radius:14px}
+#stageClips{margin:10px 0 2px;display:flex;gap:8px}
+#stageClips button{font-family:var(--mono);font-size:12px;letter-spacing:.08em;padding:10px 16px;
+  min-height:44px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);
+  color:var(--dim);cursor:pointer}
+#stageClips button.on{background:var(--amber);border-color:var(--amber);color:#3A2405;font-weight:700}
 #tunePrev{display:block;width:100%;border-radius:14px;background:var(--panel-2);
   border:1px solid var(--line)}
 .tunerNote{font-family:var(--mono);font-size:10.5px;line-height:1.6;color:var(--faint);
@@ -468,6 +475,10 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <span>Tune her</span><span class="chev" id="tunerChev">+</span>
     </button>
     <div class="tunerBody hidden" id="tunerBody">
+      <!-- the 3D cat replaces the flat drawing when WebGL is available;
+           the canvas below stays as the fallback. Sibling, never innerHTML. -->
+      <div id="stage3d" class="hidden"></div>
+      <div class="chips hidden" id="stageClips"></div>
       <canvas id="tunePrev" width="520" height="300"></canvas>
       <p class="tunerNote">The unit read this off the photograph. It is often
         close and sometimes confidently wrong, and it cannot see a small patch
@@ -1235,6 +1246,7 @@ async function intake(file){
   /* A modal colour is always won by the flattest thing in frame, which is the
      background, never the striped animal. Report what the reader found. */
   if (dna.base) meter.coat = dna.base;
+  if (dna.base && window.LoafCat3D) LoafCat3D.setCoat(dna.base);
   pending = { url: small.url, b64: big.url.split(',')[1], meter, dna };
 
   $('mimg').src = small.url;
@@ -4054,6 +4066,128 @@ document.addEventListener('visibilitychange', () => {
 /* exposed for testing and for the studio harness */
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
                 CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room, BUILDS };
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
+</script>
+<script type="module">
+/* THE CAT, LIVE. Loads the rigged GLB our Blender pipeline authors
+   (tools/loaf_cat.py), plays Idle, and swaps in for the flat tuner drawing.
+   Fails silently back to the 2D canvas when WebGL is unavailable. */
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const stage = document.getElementById('stage3d');
+const chipsEl = document.getElementById('stageClips');
+const flat = document.getElementById('tunePrev');
+if (stage) (async () => {
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
+  catch (e) { return; }                             // no WebGL: keep the drawing
+
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
+  scene.add(new THREE.HemisphereLight(0xEFE4FF, 0x2A1B3D, 1.15));
+  const sun = new THREE.DirectionalLight(0xFFE8C8, 2.2);
+  sun.position.set(3, 6, 4); scene.add(sun);
+  const rim = new THREE.DirectionalLight(0x8FB8FF, 0.7);
+  rim.position.set(-4, 3, -3); scene.add(rim);
+
+  let gltf;
+  try { gltf = await new GLTFLoader().loadAsync('assets/loaf/cat.glb?v=1'); }
+  catch (e) { return; }
+
+  const rig = new THREE.Group();
+  rig.add(gltf.scene); scene.add(rig);
+  rig.rotation.y = Math.PI - 0.62;      // face the camera, three-quarter - the
+                                        // first render greeted us with her butt
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const ctr = box.getCenter(new THREE.Vector3());
+  gltf.scene.position.sub(ctr);                     // spin around her middle
+  /* frame HER, whatever her size: distance from the bounding sphere and the
+     stage's real aspect - the fixed 4.4 put a kaiju head in the lens */
+  const sph = box.getBoundingSphere(new THREE.Sphere());
+  function frame(){
+    const a = cam.aspect || 1;
+    const vFit = sph.radius / Math.tan((cam.fov * Math.PI / 180) / 2);
+    const hFit = vFit / a;
+    cam.position.set(0, sph.radius * 0.22, Math.max(vFit, hFit) * 1.30);
+    cam.lookAt(0, -sph.radius * 0.06, 0);
+  }
+  frame();
+
+  let coatMat = null, catMesh = null;
+  gltf.scene.traverse(o => {
+    if (o.isMesh){ catMesh = o;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of ms) if (m.name === 'Coat') coatMat = m;
+    }
+  });
+
+  const mixer = new THREE.AnimationMixer(gltf.scene);
+  const clips = {};
+  for (const c of gltf.animations) clips[c.name] = mixer.clipAction(c);
+  let active = null;
+  function play(name, once){
+    const a = clips[name]; if (!a) return;
+    if (once){ a.reset().setLoop(THREE.LoopOnce); a.clampWhenFinished = true; }
+    else a.setLoop(THREE.LoopRepeat, Infinity);
+    if (active && active !== a){ a.reset().play(); active.crossFadeTo(a, 0.35, false); }
+    else a.play();
+    active = a;
+    for (const b of chipsEl.querySelectorAll('button'))
+      b.classList.toggle('on', b.dataset.clip === name);
+  }
+
+  /* clip chips: the proof that she is a creature, not a picture */
+  for (const [label, clipName] of [['Idle','Idle'],['Walk','Walk'],['Loaf','LoafSettle'],['Play','TailPlay']]){
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; b.dataset.clip = clipName;
+    b.addEventListener('click', () => play(clipName, clipName === 'LoafSettle'));
+    chipsEl.appendChild(b);
+  }
+
+  /* drag to turn her, tap for a tail flick */
+  let px = 0, moved = 0, down = false;
+  stage.addEventListener('pointerdown', e => { down = true; moved = 0; px = e.clientX; stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if (!down) return;
+    const dx = e.clientX - px; px = e.clientX; moved += Math.abs(dx);
+    rig.rotation.y += dx * 0.012; });
+  stage.addEventListener('pointerup', () => { if (down && moved < 6){
+    const prev = active === clips.LoafSettle ? 'LoafSettle' : 'Idle';
+    play('TailPlay', true);
+    setTimeout(() => play(prev, prev === 'LoafSettle'), 2600);
+  } down = false; });
+
+  window.LoafCat3D = {
+    setCoat(hex){ if (coatMat) coatMat.color.set(hex); },
+    setChonk(v){ if (catMesh && catMesh.morphTargetDictionary && 'chonk' in catMesh.morphTargetDictionary)
+      catMesh.morphTargetInfluences[catMesh.morphTargetDictionary.chonk] = Math.max(0, Math.min(1, v)); },
+    play
+  };
+
+  function size(){
+    const w = stage.clientWidth || 520, h = stage.clientHeight || 320;
+    renderer.setSize(w, h); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+    frame();
+  }
+  stage.appendChild(renderer.domElement);
+  new ResizeObserver(size).observe(stage);
+  stage.classList.remove('hidden'); chipsEl.classList.remove('hidden');
+  if (flat) flat.classList.add('hidden');
+  size();
+  play('Idle');
+
+  const clock = new THREE.Clock();
+  (function tick(){
+    requestAnimationFrame(tick);
+    if (document.hidden) return;                    // no battery burn in a pocket
+    mixer.update(clock.getDelta());
+    renderer.render(scene, cam);
+  })();
+})();
 </script>
 </body>
 </html>
