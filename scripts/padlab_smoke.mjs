@@ -58,6 +58,21 @@ if (g) {
   await page.screenshot({ path: `${SHOTS}/padlab-3-groove-playing.png` });
 }
 
+// tour advanced by the groove tap + FX rack present
+const tour = await page.evaluate(() => ({
+  on: document.getElementById("tourBar").classList.contains("on"),
+  txt: document.getElementById("tourTxt").textContent
+}));
+t("tour is live and advanced to the pad step", tour.on && /pad/i.test(tour.txt), tour.txt);
+const rack = await page.evaluate(() => document.querySelectorAll("#fxRack .fxr-cell").length);
+t("FX rack renders 8 dials on the beats page", rack === 8, rack + " cells");
+const dial = await page.evaluate(() => { applyKnob(4, .6); return document.getElementById("fxrVal4").textContent; });
+t("rack dial mirrors knob values", dial === "60%", dial);
+await page.evaluate(() => document.getElementById("fxRack").scrollIntoView({ block: "center" }));
+await new Promise(r => setTimeout(r, 400));
+await page.screenshot({ path: `${SHOTS}/padlab-9-fxrack.png` });
+await page.evaluate(() => { const v = document.querySelector(".view.on"); if (v) v.scrollTop = 0; window.scrollTo(0, 0); });
+
 // keys view
 const keysTab = await page.$('.tab[data-view="keys"]');
 const kb = await keysTab.boundingBox();
@@ -121,12 +136,20 @@ await page.screenshot({ path: `${SHOTS}/padlab-8-padmatch.png` });
 const match = await page.evaluate(() => {
   for (let n = 44; n <= 51; n++) onMIDI({ data: [0x90, n, 100] });
   return { padNotes: padNotes.join(","), confirmed: padMapConfirmed,
-    hidden: !document.getElementById("padSetupBar").classList.contains("on"),
+    chained: document.getElementById("padSetupBar").classList.contains("on") &&
+             /knob/i.test(document.getElementById("padSetupTxt").textContent),
     routed: midiPadIndex(44, 0) };
 });
-t("pad match binds any unit's notes in 8 hits",
-  barShown && match.padNotes === "44,45,46,47,48,49,50,51" && match.confirmed && match.hidden && match.routed === 0,
+t("pad match binds any unit's notes and chains into knobs",
+  barShown && match.padNotes === "44,45,46,47,48,49,50,51" && match.confirmed && match.chained && match.routed === 0,
   JSON.stringify(match));
+const knobs = await page.evaluate(() => {
+  for (let cc = 20; cc <= 27; cc++) onMIDI({ data: [0xB0, cc, 64] });
+  return { ccs: knobCCs.join(","), done: knobSetupDone,
+    hidden: !document.getElementById("padSetupBar").classList.contains("on") };
+});
+t("knob match binds 8 CCs and finishes the setup",
+  knobs.ccs === "20,21,22,23,24,25,26,27" && knobs.done && knobs.hidden, JSON.stringify(knobs));
 
 // service worker registered? (only meaningful when served over http)
 const swState = await page.evaluate(async () => {
