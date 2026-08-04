@@ -288,6 +288,21 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   padding:5px 10px;color:var(--bone)}
 .hud .kb{background:rgba(21,14,29,.8);border:1px solid var(--line);border-radius:99px;
   padding:5px 10px;color:var(--amber)}
+.ritual{margin:0 12px 4px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);
+  padding:8px 10px}
+.ritHead{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--faint);padding:2px 2px 8px}
+.ritHead .ritDone{color:var(--jade)}
+.ritRow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rit{min-height:48px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  color:var(--bone);font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;
+  text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;gap:3px;
+  align-items:center;justify-content:center;padding:4px 2px;transition:border-color .15s}
+.rit i{font-style:normal;font-size:12px;line-height:1;color:var(--faint)}
+.rit.done{border-color:var(--jade);color:var(--jade)}
+.rit.done i{color:var(--jade)}
+.ritShapes{display:grid;grid-auto-flow:column;grid-auto-columns:84px;overflow-x:auto;
+  gap:6px;padding-top:8px}
 .needs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
 .need{display:flex;flex-direction:column;gap:5px}
 .need b{font-family:var(--mono);font-weight:400;font-size:8.5px;letter-spacing:.16em;
@@ -471,11 +486,12 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="roomwrap">
       <canvas id="room" width="750" height="620"></canvas>
       <div class="hud">
-        <span class="lv" id="hudLv">LV 1</span>
+        <span class="lv" id="hudLv">BOND 1</span>
         <span class="kb" id="hudKb">◍ 0</span>
       </div>
     </div>
     <div class="xpbar"><i id="xpFill"></i></div>
+    <div class="ritual" id="ritual"></div>
     <div class="needs" id="needs"></div>
     <div class="tools" id="tools"></div>
     <div class="roomnote" id="roomNote">Drag anywhere to throw. She decides whether that was interesting.</div>
@@ -1606,7 +1622,11 @@ function drawStrip(){
 function drawIndex(){
   const all = Store.read();
   const got = {};
-  all.forEach(c => { if (c.posture) got[c.posture] = (got[c.posture] || 0) + 1; });
+  all.forEach(c => {
+    if (c.posture) got[c.posture] = (got[c.posture] || 0) + 1;
+    /* daily ritual filings count toward the compendium too */
+    if (c.shapeTally) for (const k in c.shapeTally) got[k] = (got[k] || 0) + c.shapeTally[k];
+  });
   const n = Object.keys(got).length;
   $('idxCount').textContent = n + ' of ' + POSTURES.length + ' shapes';
 
@@ -3393,7 +3413,7 @@ const Room = (() => {
             face:0, squash:1, tail:0, big:1, hidden:0 };
     toys = []; poops = []; crumbs = []; fx = [];
 
-    drawTools(); drawNeeds(); drawHud();
+    drawTools(); drawNeeds(); drawHud(); ritualTick();
 
     /* Room v2: when the 3D cat exists SHE is the room - this module keeps
        the ledger (needs, kibble, XP, tools) and hands her the body */
@@ -3411,21 +3431,24 @@ const Room = (() => {
         fed(){
           pet.fed = Math.min(100, pet.fed + 30);
           const up = grantXP(card, 8);
-          setNote(up ? 'Fed. Level ' + pet.level + '.' : 'Fed. She inspected it first.');
+          setNote(up ? 'Fed. Bond ' + pet.level + '.' : 'Fed. She inspected it first.');
           savePet(card); drawNeeds(); drawHud();
+          ritualStep('tend');
         },
         scooped(){
           pet.poops = Math.max(0, (pet.poops || 0) - 1);
           pet.clean = Math.min(100, pet.clean + 26);
           pet.kibble += 2;
           const up = grantXP(card, 6);
-          setNote(up ? 'Scooped. Level ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
+          setNote(up ? 'Scooped. Bond ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
           savePet(card); drawNeeds(); drawHud();
+          ritualStep('tend');
         },
         played(){
           const up = grantXP(card, 5);
-          if (up) setNote('Level ' + pet.level + '.');
+          if (up) setNote('Bond ' + pet.level + '.');
           savePet(card); drawHud();
+          ritualStep('play');
         },
         solicited(){ setNote('She brought it back. She is asking.'); },
         fishRoll,
@@ -3444,28 +3467,42 @@ const Room = (() => {
           } else {
             pet.kibble += 2;
             setNote((f ? f[1].toUpperCase() : 'A FISH') + '. ' +
-              (n === 1 ? 'First of its kind.' : 'Number ' + n + '.'));
+              (n === 1 ? 'First of its kind.' : 'Number ' + n + '.') + moodTag('pond'));
           }
-          grantXP(card, 9);
+          grantXP(card, moodXP('pond', 9));
           savePet(card); drawHud();
+          ritualStep('play');
           if (!$('fishbookBody').classList.contains('hidden')) FishBook.open(card);
         },
         fishMiss(msg){ setNote(msg); },
-        beansNote(){ setNote('She presents the beans. This is a privilege.'); },
+        beansNote(){
+          let s = 'She presents the beans. This is a privilege.';
+          const r = pet.ritual;
+          if (r && r.moodK === 'affectionate' && !r.beansXP){
+            r.beansXP = 1;
+            grantXP(card, 8);
+            s += ' She is feeling affectionate. +8 bond.';
+          }
+          setNote(s);
+          savePet(card); drawHud();
+          ritualStep('play');
+        },
         yarnDone(){
           pet.kibble += 3;
-          grantXP(card, 12);
-          setNote('THE TANGLE IS COMPLETE. She regrets nothing.');
+          grantXP(card, moodXP('yarn', 12));
+          setNote('THE TANGLE IS COMPLETE. She regrets nothing.' + moodTag('yarn'));
           savePet(card); drawNeeds(); drawHud();
+          ritualStep('play');
         },
         laserDone(q, catches){
-          const xp = 4 + Math.round(q * 10);
+          const xp = moodXP('laser', 4 + Math.round(q * 10));
           grantXP(card, xp);
           setNote(catches
-            ? (q > 0.6 ? 'She had a GREAT time. +' + xp + 'xp'
-                       : 'Good session. She caught it ' + catches + (catches > 1 ? ' times.' : ' time.'))
+            ? (q > 0.6 ? 'She had a GREAT time. +' + xp + ' bond.' + moodTag('laser')
+                       : 'Good session. She caught it ' + catches + (catches > 1 ? ' times.' : ' time.') + moodTag('laser'))
             : 'The dot got away. She has opinions.');
           savePet(card); drawNeeds(); drawHud();
+          ritualStep('play');
         }
       });
       return;                                    /* the 2D loop stays parked */
@@ -3521,14 +3558,16 @@ const Room = (() => {
     pet.kibble += 2;
     const up = grantXP(card, 6);
     burst(cx ? W*0.5 : 0, floorY, '#6FE3C4');
-    setNote(up ? 'Scooped. Level ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
+    setNote(up ? 'Scooped. Bond ' + pet.level + '.' : 'Scooped. Nobody thanked you.');
     savePet(card); drawNeeds(); drawHud();
+    ritualStep('tend');
   }
   function dropFood(){
     crumbs.push({ n:16 });
     pet.fed = Math.min(100, pet.fed + 30);
     const up = grantXP(card, 8);
-    setNote(up ? 'Fed. Level ' + pet.level + '.' : 'Fed. She inspected it first.');
+    setNote(up ? 'Fed. Bond ' + pet.level + '.' : 'Fed. She inspected it first.');
+    ritualStep('tend');
     /* she goes to the bowl, in her own time */
     cat.state = 'walk'; cat.tx = W*0.80;
     savePet(card); drawNeeds(); drawHud();
@@ -3626,10 +3665,11 @@ const Room = (() => {
           const gain = Math.round(3 + interest.t.appeal * 3 + (boost > 0 ? 4 : 0));
           pet.played = Math.min(100, pet.played + 7);
           pet.kibble += 1;
-          if (grantXP(card, gain)) setNote('Level ' + pet.level + '.');
+          if (grantXP(card, gain)) setNote('Bond ' + pet.level + '.');
           burst(interest.t.x, interest.t.y, '#FFB23F');
           toys = toys.filter(x => x !== interest.t);
           savePet(card); drawNeeds(); drawHud();
+          ritualStep('play');
         }
       } else if (cat.state !== 'loaf') cat.state = 'watch';
     } else if (cat.state === 'chase') cat.state = 'idle';
@@ -3837,6 +3877,161 @@ const Room = (() => {
   }
 
   /* ── chrome ────────────────────────────────────────────────────────────── */
+  /* ── THE DAILY RITUAL ──────────────────────────────────────────────────────
+     Five small beats, ~2 minutes, all carrot: greet, tend, mood, shape, play.
+     No streaks, no expiry, no penalty. Skip a day and tomorrow is simply a
+     fresh ritual; "days together" only ever counts up. Completing all five
+     pays a daily bond bonus. */
+  const MOODS = {
+    playful:      { n:'PLAYFUL',      game:'laser', line:'The dot is in danger today. Laser pays extra bond.' },
+    sleepy:       { n:'SLEEPY',       game:'pond',  line:'Slow blinks and soft water. Fishing pays extra bond.' },
+    chaotic:      { n:'CHAOTIC',      game:'yarn',  line:'Nothing on a shelf is safe. Yarn pays extra bond.' },
+    affectionate: { n:'AFFECTIONATE', game:'beans', line:'She wants to be near you. The beans pay extra bond.' }
+  };
+  function today(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+         + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function ritualOf(){
+    const day = today();
+    if (!pet.ritual || pet.ritual.day !== day)
+      pet.ritual = { day, greet:0, tend:0, mood:0, shape:0, play:0, done:0 };
+    return pet.ritual;
+  }
+  function ritualTick(){
+    if (!card || !pet) return;
+    const r = ritualOf();
+    const fresh = !r.greet;
+    ritualStep('greet');
+    if (fresh) setNote('She noticed you arrive.');
+    applyMood();
+    drawRitual();
+  }
+  function applyMood(){
+    if (!pet) return;
+    const r = pet.ritual;
+    if (window.LoafCat3D && LoafCat3D.setMood) LoafCat3D.setMood((r && r.moodK) || null);
+  }
+  function ritualStep(k){
+    if (!card || !pet) return;
+    const r = ritualOf();
+    if (r[k]) return;
+    r[k] = 1;
+    if (!r.done && r.greet && r.tend && r.mood && r.shape && r.play){
+      r.done = 1;
+      pet.kibble += 5;
+      grantXP(card, 20);
+      setNote('THE RITUAL IS COMPLETE. +20 bond, +5 kibble. See you tomorrow.');
+      if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+    }
+    savePet(card); drawRitual(); drawHud();
+  }
+  function rollMood(){
+    const p = (card && card.persona) || { bold:.5, curious:.5, sass:.5, chaos:.5, velcro:.5 };
+    const w = {
+      playful:      0.7 + p.bold * 0.5 + p.curious * 0.5,
+      sleepy:       0.7 + (1 - p.chaos) * 0.5 + (1 - p.curious) * 0.3,
+      chaotic:      0.4 + p.chaos * 1.2,
+      affectionate: 0.5 + p.velcro * 1.1
+    };
+    let sum = 0; for (const k in w) sum += w[k];
+    let r = Math.random() * sum;
+    for (const k in w){ r -= w[k]; if (r <= 0) return k; }
+    return 'playful';
+  }
+  function revealMood(){
+    const r = ritualOf();
+    if (!r.moodK) r.moodK = rollMood();
+    applyMood();
+    const m = MOODS[r.moodK];
+    setNote('Today she is ' + m.n + '. ' + m.line);
+    if (window.LoafCat3D && LoafCat3D.meow)
+      LoafCat3D.meow(r.moodK === 'affectionate' ? 'trill' : 'meow');
+    ritualStep('mood');
+  }
+  /* Mood bonus: the matching game pays half again. */
+  function moodXP(game, xp){
+    const r = pet && pet.ritual;
+    if (r && r.moodK && MOODS[r.moodK].game === game) return Math.round(xp * 1.5);
+    return xp;
+  }
+  function moodTag(game){
+    const r = pet && pet.ritual;
+    return (r && r.moodK && MOODS[r.moodK].game === game) ? ' Mood bonus.' : '';
+  }
+  function fileShape(k){
+    if (!card) return;
+    card.posture = k;
+    card.shapeTally = card.shapeTally || {};
+    card.shapeTally[k] = (card.shapeTally[k] || 0) + 1;
+    Store.update(list => {
+      const c = list.find(x => x.id === card.id);
+      if (c){ c.posture = k; c.shapeTally = card.shapeTally; }
+      return list;
+    });
+    if (typeof current !== 'undefined' && current && current.id === card.id)
+      current.posture = k;
+    drawIndex();
+    const p = POSTURE_BY_KEY[k];
+    setNote('Filed: ' + p.en.toUpperCase() + ' · ' + p.jp + '. Go look at the real one.');
+    grantXP(card, 4);
+    ritualStep('shape');
+  }
+  function drawRitual(){
+    const box = $('ritual'); if (!box) return;
+    box.innerHTML = '';
+    if (!card || !pet) return;
+    const r = ritualOf();
+    const days = Math.max(1, Math.floor((Date.now() - (card.scannedAt || Date.now())) / DAY) + 1);
+    const hd = document.createElement('div'); hd.className = 'ritHead';
+    const t1 = document.createElement('span');
+    t1.textContent = r.done ? 'THE RITUAL IS DONE' : 'THE DAILY RITUAL';
+    if (r.done) t1.className = 'ritDone';
+    const t2 = document.createElement('span');
+    t2.textContent = 'DAY ' + days + ' TOGETHER';
+    hd.append(t1, t2);
+    const row = document.createElement('div'); row.className = 'ritRow';
+    const m = r.moodK ? MOODS[r.moodK] : null;
+    const steps = [
+      ['greet', 'Greet', () => setNote('Open the room. She will notice.')],
+      ['tend',  'Tend',  () => setNote('Feed her or scoop the litter. Anything counts.')],
+      ['mood',  m ? m.n : 'Mood', revealMood],
+      ['shape', 'Shape', toggleShapes],
+      ['play',  'Play',  () => setNote('Any game counts. She is not picky.')]
+    ];
+    steps.forEach(([k, label, fn]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rit' + (r[k] ? ' done' : '');
+      const i = document.createElement('i'); i.textContent = r[k] ? '✓' : '·';
+      const s = document.createElement('span'); s.textContent = label;
+      b.append(i, s);
+      b.onclick = (k === 'mood' && r.mood) ? () => { const mm = MOODS[r.moodK]; setNote('Today she is ' + mm.n + '. ' + mm.line); }
+               : (k === 'shape') ? toggleShapes
+               : fn;
+      row.appendChild(b);
+    });
+    box.append(hd, row);
+    if (shapesOpen){
+      const sr = document.createElement('div'); sr.className = 'ritShapes';
+      POSTURES.forEach(q => {
+        const b = document.createElement('button');
+        b.className = 'sh'; b.type = 'button';
+        b.innerHTML = silhouette(q.k, 44, 'var(--bone)') + '<span>' + q.en + '</span>';
+        b.onclick = () => { shapesOpen = false; fileShape(q.k); };
+        sr.appendChild(b);
+      });
+      box.appendChild(sr);
+    }
+  }
+  let shapesOpen = false;
+  function toggleShapes(){
+    shapesOpen = !shapesOpen;
+    if (shapesOpen) setNote('What shape is she right now? Look at the real one.');
+    drawRitual();
+  }
+
   function drawTools(){
     const box = $('tools'); box.innerHTML = '';
     TOYS.forEach(t => {
@@ -3870,7 +4065,7 @@ const Room = (() => {
   }
   function drawHud(){
     if (!pet) return;
-    $('hudLv').textContent = 'LV ' + pet.level;
+    $('hudLv').textContent = 'BOND ' + pet.level;
     $('hudKb').textContent = '◍ ' + pet.kibble;
     $('xpFill').style.width = Math.round(pet.xp / xpNeeded(pet.level) * 100) + '%';
   }
@@ -5105,6 +5300,10 @@ if (stage) (async () => {
   function setPersona(p2){
     persona = Object.assign({ bold: 0.5, curious: 0.5, sass: 0.5, chaos: 0.5, velcro: 0.5 }, p2 || {});
   }
+  /* Mood of the day, from the ritual. A temporary lean on top of who she is:
+     the persona is the climate, the mood is the weather. */
+  let mood = null;
+  function setMood(k){ mood = k || null; }
 
   /* ══ THE VOICE ══════════════════════════════════════════════════════════
      A synthesized meow pitched to HER body: kittens ring high, a chonk
@@ -6010,7 +6209,7 @@ if (stage) (async () => {
           if (room.batCount <= 2 && room.bridge) room.bridge.played();
         }
         if (room.stateT <= 0)
-          setState(room.batCount >= (persona.velcro > 0.6 ? 2 : 3) ? 'fetch' : 'chase');
+          setState(room.batCount >= (persona.velcro > 0.6 || mood === 'playful' ? 2 : 3) ? 'fetch' : 'chase');
         break;
       case 'fetch': {
         if (!B){ setState('idle', 2); break; }
@@ -6079,9 +6278,12 @@ if (stage) (async () => {
         if (B && !B.settled && !room.carrying){ setState('chase'); break; }
         if (room.stateT <= 0){
           const r3 = Math.random();
-          const zoomP = 0.06 + persona.chaos * 0.22;
-          const wanderP = 0.34 + (persona.bold + persona.curious) * 0.14;
-          const settleP = 0.22 * (1.3 - persona.curious * 0.8);
+          let zoomP = 0.06 + persona.chaos * 0.22;
+          let wanderP = 0.34 + (persona.bold + persona.curious) * 0.14;
+          let settleP = 0.22 * (1.3 - persona.curious * 0.8);
+          if (mood === 'chaotic'){ zoomP += 0.14; }
+          else if (mood === 'sleepy'){ settleP *= 1.8; wanderP *= 0.7; }
+          else if (mood === 'playful'){ zoomP += 0.05; wanderP += 0.10; }
           if (r3 < zoomP){
             const a4 = Math.random() * Math.PI * 2;
             room.tx = Math.cos(a4) * (RUG - 0.5); room.tz = Math.sin(a4) * (RUG - 0.5);
@@ -6090,12 +6292,12 @@ if (stage) (async () => {
           } else if (r3 < zoomP + wanderP){
             const a3 = Math.random() * Math.PI * 2, rr = 0.6 + Math.random() * (RUG - 0.9);
             room.tx = Math.cos(a3) * rr; room.tz = Math.sin(a3) * rr;
-            if (Math.random() < persona.velcro * 0.5){   /* she drifts toward YOU */
+            if (Math.random() < persona.velcro * 0.5 + (mood === 'affectionate' ? 0.3 : 0)){   /* she drifts toward YOU */
               room.tx *= 0.4; room.tz = 1.3 + Math.random() * 0.9;
             }
             setState('wander');
           } else if (r3 < zoomP + wanderP + settleP){
-            setState('settle', 7 + Math.random() * 6);
+            setState('settle', (7 + Math.random() * 6) * (mood === 'sleepy' ? 1.6 : 1));
           } else setState('idle', 2.5 + Math.random() * 4);
         }
     }
@@ -6115,6 +6317,7 @@ if (stage) (async () => {
   window.LoafCat3D = {
     setDNA,
     setPersona,
+    setMood,
     meow,
     roomOpen(card, bridge){
       if (bridge) room.bridge = bridge;
@@ -6142,7 +6345,7 @@ if (stage) (async () => {
       syncPoops();
       if (card && card.dna) setDNA(card.dna);
       mountTo(d);
-      if (persona.velcro > 0.4) setTimeout(() => meow('trill'), 600);
+      if (persona.velcro > 0.4 || mood === 'affectionate') setTimeout(() => meow('trill'), 600);
     },
     roomClose(){
       if (!room.on) return;
@@ -6161,6 +6364,7 @@ if (stage) (async () => {
     },
     roomEvent,
     _room: room,                                 /* harness peephole */
+    get _mood(){ return mood; },
     _project(x, z){
       _v3.set(x, groundY, z).project(cam);
       return { x: _v3.x, y: _v3.y };
