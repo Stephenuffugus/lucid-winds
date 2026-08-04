@@ -17,7 +17,8 @@ const srv = createServer((req, res) => {
 
 /* clip name -> [duration seconds, shot count] (24fps authoring) */
 const CLIPS = [ ['Walk', 40 / 24, 4], ['Gallop', 22 / 24, 4],
-                ['Pounce', 44 / 24, 6], ['Wiggle', 32 / 24, 3] ];
+                ['Pounce', 44 / 24, 6], ['Wiggle', 32 / 24, 3],
+                ['BellyUp', 36 / 24, 2] ];
 
 const b = await puppeteer.launch({ headless: 'new', args: [
   '--no-sandbox', '--disable-setuid-sandbox', '--enable-unsafe-swiftshader',

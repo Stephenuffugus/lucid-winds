@@ -3337,6 +3337,11 @@ function toyIcon(k, size){
           + '<path d="M20 17 l6 -4 v8 z" fill="#F0A26B"/>'
           + '<circle cx="10" cy="16" r="1.4" fill="#7A3F18"/>',
     spark:  '<path d="M16 4 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" fill="#FFB23F"/>',
+    beans:  '<ellipse cx="16" cy="19" rx="8.5" ry="7" fill="#8A6E58"/>'
+          + '<ellipse cx="16" cy="20.5" rx="4.6" ry="3.6" fill="#E8A0B4"/>'
+          + '<ellipse cx="9.5" cy="12" rx="2.6" ry="3.2" fill="#E8A0B4"/>'
+          + '<ellipse cx="16" cy="10.5" rx="2.6" ry="3.2" fill="#E8A0B4"/>'
+          + '<ellipse cx="22.5" cy="12" rx="2.6" ry="3.2" fill="#E8A0B4"/>',
     pond:   '<ellipse cx="16" cy="18" rx="12" ry="8" fill="#1E4D5C"/>'
           + '<path d="M9 17 q3 -2 6 0 q3 2 6 0" stroke="#7FD4E8" stroke-width="1.4" fill="none" stroke-linecap="round"/>'
           + '<path d="M13 21 q2.4 -1.6 5 0" stroke="#7FD4E8" stroke-width="1.2" fill="none" stroke-linecap="round"/>'
@@ -3358,7 +3363,8 @@ const Room = (() => {
     { k:'box',    n:'Box',    cost:2, appeal:1.8 },
     { k:'treat',  n:'Treat',  cost:3, appeal:0, food:true },
     { k:'laser',  n:'Laser',  cost:0, appeal:0, laser:true },
-    { k:'pond',   n:'Pond',   cost:0, appeal:0, pond:true }
+    { k:'pond',   n:'Pond',   cost:0, appeal:0, pond:true },
+    { k:'beans',  n:'Beans',  cost:0, appeal:0, beans:true }
   ];
 
   let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
@@ -3445,6 +3451,7 @@ const Room = (() => {
           if (!$('fishbookBody').classList.contains('hidden')) FishBook.open(card);
         },
         fishMiss(msg){ setNote(msg); },
+        beansNote(){ setNote('She presents the beans. This is a privilege.'); },
         yarnDone(){
           pet.kibble += 3;
           grantXP(card, 12);
@@ -3496,7 +3503,7 @@ const Room = (() => {
     if (!drag || !card) return;
     const d = drag; drag = null;
     const t = TOYS.find(x => x.k === tool) || TOYS[0];
-    if (t.laser || t.pond) return;           /* those live in the 3D room */
+    if (t.laser || t.pond || t.beans) return;  /* those live in the 3D room */
     if (t.cost > pet.kibble) return;
     if (t.cost){ pet.kibble -= t.cost; }
     const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
@@ -4672,6 +4679,7 @@ if (stage) (async () => {
              sprintW: 0, bore: 0, catches: 0, t0: 0, hide: 0, offAt: -9 },
     yarn: { active: false, dots: 0, hue: 0, lx: 0, lz: 0, target: 90,
             wrapT: 0, done: false },
+    beans: { on: false, pulse: 0, paw: null, held: 0, knead: 0 },
     fish: { on: false, tension: 0, interestT: 0,
             lure: { on: false, x: 0, z: 0, lx: 0, lz: 0, sp: 0 },
             school: [], scareT: 0, respawnT: 0, splash: [] } };
@@ -5212,8 +5220,10 @@ if (stage) (async () => {
 
   /* clip chips: the proof that she is a creature, not a picture */
   const ONESHOT = { LoafSettle: 1, Pounce: 1 };
+  ONESHOT.BellyUp = 1;
   for (const [label, clipName] of [['Idle','Idle'],['Walk','Walk'],['Run','Gallop'],
-      ['Pounce','Pounce'],['Wiggle','Wiggle'],['Loaf','LoafSettle'],['Play','TailPlay']]){
+      ['Pounce','Pounce'],['Wiggle','Wiggle'],['Belly','BellyUp'],
+      ['Loaf','LoafSettle'],['Play','TailPlay']]){
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = label; b.dataset.clip = clipName;
     b.addEventListener('click', () => play(clipName, !!ONESHOT[clipName]));
@@ -5305,6 +5315,10 @@ if (stage) (async () => {
         return;
       }
     }
+    if (room.beans.on && room.state === 'beans'){
+      if (beansPress(e)) return;
+      return;                                  /* misses do nothing; it is calm here */
+    }
     petting = onHer(e);
     if (petting){
       if (persona.velcro > 0.45 && clock.elapsedTime > (life.petBlock || 0)) meow('trill');
@@ -5350,6 +5364,11 @@ if (stage) (async () => {
     }
   });
   cnv.addEventListener('pointerup', e => {
+    if (room.beans.on && room.beans.held > 0){
+      room.beans.held = 0;
+      setTimeout(() => { if (!room.beans.held) purr(false); }, 700);
+      down = false; return;
+    }
     if (room.fish.lure.on){
       resolveStrike(false);
       room.fish.lure.on = false;
@@ -5799,6 +5818,77 @@ if (stage) (async () => {
       resolveStrike(true);
   }
 
+  /* ── THE BEAN PRESS ─────────────────────────────────────────────────────
+     The calm dessert. She rolls belly-up front and centre, the camera
+     leans in, and every painted pad is pressable: paw curl, purr, a slow
+     blink. Hold, and she makes biscuits. No score. No timer. No failure.
+     This is the toy you open after a bad day. */
+  function beansStart(){
+    room.beans.on = true; room.beans.held = 0; room.beans.pulse = 0;
+    setState('beansgo');
+    if (room.bridge && room.bridge.beansNote) room.bridge.beansNote();
+  }
+  function beansEnd(){
+    room.beans.on = false;
+    purr(false);
+    playIf('Idle');
+    setState('idle', 1.5);
+    frame();                                   /* camera returns to its seat */
+  }
+  function beansBrain(dt, t){
+    const BN = room.beans;
+    if (room.state === 'beansgo'){
+      const d = moveToward(0, 1.35, 1.2, dt);
+      playIf('Walk');
+      if (d < 0.12){
+        faceToward(1, 0.15, 1);                /* side-on: all four paws readable */
+        playIf('BellyUp', true);
+        setState('beans');
+      }
+      return;
+    }
+    /* the camera leans in while she is down */
+    cam.position.lerp(_v3.set(0.4, 1.8, 5.4), Math.min(1, dt * 1.6));
+    cam.lookAt(0, -0.7, 1.35);
+    if (BN.pulse > 0) BN.pulse -= dt;
+    if (petting || down){} else BN.held = 0;
+    if (BN.held > 0) BN.held += dt;
+    /* kneading: held past the threshold, her front paws make biscuits */
+    if (BN.held > 1.1){
+      BN.knead = (BN.knead + dt * 4.6) % (Math.PI * 2);
+      addRot(bones.legFL_up, 0.28 * Math.sin(BN.knead), 0, 0);
+      addRot(bones.legFL_lo, -0.34 * Math.sin(BN.knead), 0, 0);
+      addRot(bones.legFR_up, 0.28 * Math.sin(BN.knead + Math.PI), 0, 0);
+      addRot(bones.legFR_lo, -0.34 * Math.sin(BN.knead + Math.PI), 0, 0);
+    }
+    /* the pressed paw flexes */
+    if (BN.pulse > 0 && BN.paw && bones['leg' + BN.paw + '_lo']){
+      const k2 = Math.sin((0.5 - BN.pulse) / 0.5 * Math.PI);
+      addRot(bones['leg' + BN.paw + '_up'], 0.22 * k2, 0, 0);
+      addRot(bones['leg' + BN.paw + '_lo'], -0.45 * k2, 0, 0);
+    }
+  }
+  function beansPress(e){
+    const BN = room.beans;
+    ray.setFromCamera(toNdc(e), cam);
+    const hit = ray.intersectObject(catMesh, false);
+    if (!hit.length) return false;
+    const hp = hit[0].point;
+    let best = null, bd = 1e9;
+    for (const nm of ['FL', 'FR', 'BL', 'BR']){
+      const bn = bones['leg' + nm + '_lo'];
+      if (!bn) continue;
+      bn.getWorldPosition(_v3);
+      const d = _v3.distanceTo(hp);
+      if (d < bd){ bd = d; best = nm; }
+    }
+    BN.paw = best; BN.pulse = 0.5; BN.held = 0.01;
+    purr(true);
+    if (navigator.vibrate) navigator.vibrate([25, 30, 25]);
+    life.slowBlink = 1.5;                      /* the trust blink */
+    return true;
+  }
+
   function setState(st, t2){
     room.state = st; room.stateT = t2 == null ? 0 : t2;
     room.batHit = false;
@@ -5890,6 +5980,9 @@ if (stage) (async () => {
     const pondSel = !!(toolNow && toolNow.pond);
     if (pondSel !== room.fish.on){ if (pondSel) fishStart(); else fishEnd(); }
     if (room.fish.on && !petting){ fishBrain(dt, t); return; }
+    const beansSel = !!(toolNow && toolNow.beans);
+    if (beansSel !== room.beans.on){ if (beansSel) beansStart(); else beansEnd(); }
+    if (room.beans.on){ beansBrain(dt, t); return; }
     if (petting){ playIf('Idle'); return; }        /* she stops for the hand */
     room.stateT -= dt;
     if (room.soliT > 0) room.soliT -= dt;
@@ -6185,7 +6278,12 @@ if (stage) (async () => {
       life.blinkAt = t + (Math.random() < 0.18 ? 0.28 : 2.4 + Math.random() * 4.2);
     }
     life.blinkP = Math.min(1, life.blinkP + dt / 0.13);
-    const lid = 0.12 + 0.88 * Math.abs(life.blinkP * 2 - 1);
+    let lid = 0.12 + 0.88 * Math.abs(life.blinkP * 2 - 1);
+    if (life.slowBlink > 0){                     /* the trust blink: long, soft */
+      life.slowBlink -= dt;
+      const sb = 1 - life.slowBlink / 1.5;
+      lid = 0.1 + 0.9 * Math.abs(sb * 2 - 1);
+    }
     if (bones.eyeL) bones.eyeL.scale.y = life.esCur * lid;
     if (bones.eyeR) bones.eyeR.scale.y = life.esCur * lid;
 

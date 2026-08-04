@@ -438,7 +438,23 @@ def tailplay(t, f):
             10 * math.sin(t * 4 * math.pi + i * 1.2), 0,
             22 * math.sin(t * 2 * math.pi + i * 0.8))
 
+def bellyup(t, f):
+    # one-shot: roll onto the back, paws loosely up, held for bean access.
+    # Root Y is the roll axis (the bone runs along her body).
+    reset_pose()
+    k = min(1.0, t * 1.6); e2 = k * k * (3 - 2 * k)
+    arm.pose.bones['root'].rotation_quaternion = E(0, 168 * e2, 0)
+    arm.pose.bones['root'].location = (0, 0, -0.34 * e2)
+    for nm in ('FL', 'FR', 'BL', 'BR'):
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(38 * e2, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-55 * e2, 0, 0)
+    arm.pose.bones['neck'].rotation_quaternion = E(-10 * e2, 0, 0)
+    arm.pose.bones['head'].rotation_quaternion = E(-16 * e2, 0, 3 * e2)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, (10 + 7 * i) * e2)
+
 clip('Idle', 48, idle)
+clip('BellyUp', 36, bellyup)
 clip('Walk', 40, walk)
 clip('Trot', 24, trot)
 clip('Gallop', 22, gallop)
