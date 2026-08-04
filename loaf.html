@@ -431,7 +431,8 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   <div class="verdict" id="verdict">Reading</div>
   <div class="hint" id="hint"></div>
   <div class="row"><button class="btn" id="goScan">Print the card</button></div>
-  <div class="row"><button class="ghost" id="reshoot">Try a different photo</button></div>
+  <div class="row"><button class="ghost" id="addShot">Add another photo of her</button></div>
+  <div class="row"><button class="ghost" id="reshoot">Start over with a different photo</button></div>
 </section>
 
 <section class="wrap hidden" id="view-scan">
@@ -1316,14 +1317,59 @@ async function grade(b64, meter){
 const BEATS = ['Reading specimen','Measuring loaf density','Assessing menace','Checking void levels','Grading'];
 let busy = false;
 let pending = null;   // { url, b64, meter }
+let shots = [];       // up to 3 read photos; the first is the card's hero
+let addShotMode = false;
 
 $('file').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';                    // lets the same file be picked twice
-  if (f) intake(f);
+  const additive = addShotMode; addShotMode = false;
+  if (f) intake(f, additive);
 });
+$('addShot').onclick = () => { addShotMode = true; $('file').click(); };
 
-async function intake(file){
+/* ── multi-shot merge ────────────────────────────────────────────────────────
+   One photo lies in one specific way: a garden crouch hides the bib, a couch
+   twist reads as stripes, backlight invents a van. Two or three photos rarely
+   lie the SAME way, so each field takes the read least able to be wrong:
+   white takes the MAX any shot saw (absence is the failure mode, not excess),
+   pattern takes the majority vote, colours take the median-lit shot, eyes
+   take the first confident read, floof takes the max (the seg edge is smooth
+   and only ever underreads). */
+function mergeReads(list){
+  if (list.length === 1) return list[0];
+  const L = h => { const p = hexRGB(h); return 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2]; };
+  const trusted = list.filter(d => d._read && d._read.seg);
+  const pool = trusted.length ? trusted : list;
+  const votes = {};
+  pool.forEach(d => { votes[d.pattern] = (votes[d.pattern] || 0) + 1; });
+  let pattern = pool[0].pattern, best = 0;
+  for (const k in votes) if (votes[k] > best){ best = votes[k]; pattern = k; }
+  const byL = pool.slice().sort((a, b) => L(a.base) - L(b.base));
+  const mid = byL[Math.floor(byL.length / 2)];
+  const w = list.slice().sort((a, b) => b.whiteGrade - a.whiteGrade)[0];
+  const e = list.find(d => d._read && d._read.eyeConf) || mid;
+  const floof = Math.max.apply(null, list.map(d => d.floof || 0));
+  return Object.assign({}, mid, {
+    pattern,
+    white: w.white, whiteGrade: w.whiteGrade, whiteStyle: w.whiteStyle,
+    whiteAmt: w.whiteAmt, whiteEdge: w.whiteEdge,
+    eye: e.eye, floof,
+    seed: (hashStr(mid.base + mid.marking + String(Math.round(w.whiteAmt * 1000)))) >>> 0,
+    _read: Object.assign({}, mid._read,
+      { shots: list.length, eyeConf: !!(e._read && e._read.eyeConf) })
+  });
+}
+function drawShotCount(){
+  const b = $('addShot');
+  if (shots.length >= 3){ b.classList.add('hidden'); return; }
+  b.classList.remove('hidden');
+  b.textContent = shots.length > 1
+    ? 'Add another photo (' + shots.length + ' of 3 read)'
+    : 'Add another photo of her';
+}
+
+async function intake(file, additive){
   if (busy) return;
   busy = true;
   say('');
@@ -1344,17 +1390,23 @@ async function intake(file){
   try { segMask = await segmentCat(big.canvas); } catch (e) {}
   /* Read what she actually looks like, on this device. */
   const dna = readCatFromPhoto(big.canvas, segMask) || defaultDNA();
+  const shot = { url: small.url, b64: big.url.split(',')[1], meter, dna };
+  if (additive && pending && shots.length && shots.length < 3) shots.push(shot);
+  else shots = [shot];
+  const merged = mergeReads(shots.map(s => s.dna));
   /* A modal colour is always won by the flattest thing in frame, which is the
      background, never the striped animal. Report what the reader found. */
-  if (dna.base) meter.coat = dna.base;
-  if (dna && window.LoafCat3D){
-    if (LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(dna));
-    else if (dna.base) LoafCat3D.setCoat(dna.base);
+  const hero = shots[0];
+  if (merged.base) hero.meter.coat = merged.base;
+  if (merged && window.LoafCat3D){
+    if (LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(merged));
+    else if (merged.base) LoafCat3D.setCoat(merged.base);
   }
-  pending = { url: small.url, b64: big.url.split(',')[1], meter, dna };
+  pending = { url: hero.url, b64: hero.b64, meter: hero.meter, dna: merged };
 
-  $('mimg').src = small.url;
-  paintMeter(meter);
+  $('mimg').src = hero.url;
+  paintMeter(hero.meter);
+  drawShotCount();
   show('meter');
   /* scroll so the VERDICT AND THE PRINT BUTTON are on screen, not the top of
      the photo. Centering the whole section left the primary button at y=820
@@ -1367,7 +1419,7 @@ async function intake(file){
   busy = false;
 }
 
-$('reshoot').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({top:0,behavior:'smooth'}); };
+$('reshoot').onclick = () => { pending = null; shots = []; show('slot'); say(''); window.scrollTo({top:0,behavior:'smooth'}); };
 $('goScan').onclick  = () => { if (pending) runScan(pending); };
 
 async function runScan(shot){
@@ -1554,7 +1606,7 @@ function setName(id, name){
   drawStrip();
 }
 
-$('again').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
+$('again').onclick = () => { pending = null; shots = []; show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
 $('rename').onclick = () => { if (current) openSheet(current); };
 $('faceflip').onclick = async () => {
   const c = current;
@@ -4843,7 +4895,9 @@ document.addEventListener('visibilitychange', () => {
 window.Room = Room;
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
                 CatArt, readCatFromPhoto, segmentCat, defaultDNA, PATTERNS, WHITE_STYLES,
-                Room, BUILDS, OK, migrateDNA };
+                Room, BUILDS, OK, migrateDNA,
+                /* harness peephole into the multi-shot intake */
+                _scan(){ return { shots: shots.length, dna: pending && pending.dna }; } };
 </script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
