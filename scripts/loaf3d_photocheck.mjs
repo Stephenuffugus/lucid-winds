@@ -31,20 +31,25 @@ await page.evaluate(() => {
 });
 await new Promise(r => setTimeout(r, 600));
 
-for (const f of readdirSync(join(ROOT, DIR)).filter(f => /\.(jpe?g|png)$/i.test(f))) {
+for (const f of readdirSync(join(ROOT, DIR)).filter(f => /\.(jpe?g|png)$/i.test(f) && !/-3d\./.test(f))) {
   const dna = await page.evaluate(async url => {
     const im = new Image();
     await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = url; });
     const cv = document.createElement('canvas');
     cv.width = im.width; cv.height = im.height;
     cv.getContext('2d').drawImage(im, 0, 0);
-    const d = window.LOAF.readCatFromPhoto(cv);
+    /* the real scan order: segment, then read with the mask */
+    let m = null;
+    try { m = await window.LOAF.segmentCat(cv); } catch (e) {}
+    const d = window.LOAF.readCatFromPhoto(cv, m);
     if (d) window.LoafCat3D.setDNA(window.LOAF.migrateDNA(d));
     return d;
   }, '/' + DIR + '/' + f);
-  console.log(f, '->', dna ? JSON.stringify({ pattern: dna.pattern, base: dna.base,
-    marking: dna.marking, whiteStyle: dna.whiteStyle, whiteGrade: dna.whiteGrade,
-    floof: dna.floof, eye: dna.eye }) : 'READER RETURNED NULL');
+  console.log(f, '->', dna ? JSON.stringify({ seg: dna._read && dna._read.seg,
+    pattern: dna.pattern, base: dna.base, marking: dna.marking,
+    whiteStyle: dna.whiteStyle, whiteGrade: dna.whiteGrade,
+    whitePct: dna._read && dna._read.whitePct,
+    floof: +(+dna.floof).toFixed(2), eye: dna.eye }) : 'READER RETURNED NULL');
   if (!dna) continue;
   await new Promise(r => setTimeout(r, 900));
   const el = await page.$('#stage3d');

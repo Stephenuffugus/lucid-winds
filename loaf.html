@@ -1241,8 +1241,12 @@ async function intake(file){
   if (img.close) img.close();
 
   const meter = LightMeter.analyse(big.canvas);
-  /* Read what she actually looks like, on this device, with no model. */
-  const dna = readCatFromPhoto(big.canvas) || defaultDNA();
+  /* Isolate the cat from the room first — the lawn reading as the coat is
+     how a tuxedo got graded as a brown tabby. Fails soft to no mask. */
+  let segMask = null;
+  try { segMask = await segmentCat(big.canvas); } catch (e) {}
+  /* Read what she actually looks like, on this device. */
+  const dna = readCatFromPhoto(big.canvas, segMask) || defaultDNA();
   /* A modal colour is always won by the flattest thing in frame, which is the
      background, never the striped animal. Report what the reader found. */
   if (dna.base) meter.coat = dna.base;
@@ -2752,7 +2756,44 @@ function largestBlob(src, N){
   return out;
 }
 
-function readCatFromPhoto(canvas){
+/* ── the segmenter ──────────────────────────────────────────────────────────
+   MediaPipe DeepLab-v3, lazy-loaded from CDN on the first scan. It has an
+   actual `cat` class (8; dog 12 accepted too — pets blur across the two).
+   Returns { data, w, h }, a full-frame binary pet mask, or null on ANY
+   failure — the reader then falls back to its border-colour heuristic, so a
+   scan is never worse than it was before segmentation existed. */
+const SEG = { p: null };
+function segmentCat(canvas){
+  if (!SEG.p) SEG.p = (async () => {
+    const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+    const mp = await import(CDN + '/vision_bundle.mjs');
+    const files = await mp.FilesetResolver.forVisionTasks(CDN + '/wasm');
+    const make = dl => mp.ImageSegmenter.createFromOptions(files, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite',
+        delegate: dl
+      },
+      outputCategoryMask: true, runningMode: 'IMAGE'
+    });
+    /* headless SwiftShader and some phones refuse the GPU delegate */
+    return make('GPU').catch(() => make('CPU'));
+  })();
+  return SEG.p.then(seg => new Promise(res => {
+    seg.segment(canvas, r => {
+      const cm = r.categoryMask;
+      const w = cm.width, h = cm.height, src = cm.getAsUint8Array();
+      const data = new Uint8Array(w * h);
+      let on = 0;
+      for (let i = 0; i < src.length; i++)
+        if (src[i] === 8 || src[i] === 12){ data[i] = 1; on++; }
+      cm.close();
+      const cov = on / (w * h);
+      res(cov > 0.03 && cov < 0.9 ? { data, w, h } : null);
+    });
+  }));
+}
+
+function readCatFromPhoto(canvas, extMask){
   const N = 128;
   const c = document.createElement('canvas');
   c.width = c.height = N;
@@ -2792,30 +2833,51 @@ function readCatFromPhoto(canvas){
     return m;
   };
 
-  let mask = new Uint8Array(N*N);
-  let kept = 0;
-  for (let y = 0; y < N; y++)
-    for (let x = 0; x < N; x++){
-      const cxr = (x - N/2) / (N/2), cyr = (y - N/2) / (N/2);
-      if (Math.hypot(cxr, cyr) > 0.96) continue;
-      if (!bgSet[key(at(x, y))]) { mask[y*N + x] = 1; kept++; }
+  /* A segmentation mask, when one arrives, replaces the colour heuristic
+     entirely AND flips the reader into trusted mode: thresholds that had to
+     stay conservative when the mask might be lying can finally commit. */
+  let mask = null, kept = 0, trusted = false;
+  if (extMask && extMask.data){
+    mask = new Uint8Array(N*N);
+    for (let y = 0; y < N; y++)
+      for (let x = 0; x < N; x++){
+        const sx2 = Math.min(extMask.w - 1, (x * extMask.w / N) | 0);
+        const sy2 = Math.min(extMask.h - 1, (y * extMask.h / N) | 0);
+        if (extMask.data[sy2 * extMask.w + sx2]){ mask[y*N + x] = 1; kept++; }
+      }
+    if (kept >= N*N*0.03){
+      trusted = true;
+      /* the model's mask is coarse at 257px - one erode keeps the couch out
+         of the palette without costing more than a boundary pixel */
+      mask = morph(mask, N, 0);
     }
+    else { mask = null; kept = 0; }
+  }
+  if (!mask){
+    mask = new Uint8Array(N*N);
+    for (let y = 0; y < N; y++)
+      for (let x = 0; x < N; x++){
+        const cxr = (x - N/2) / (N/2), cyr = (y - N/2) / (N/2);
+        if (Math.hypot(cxr, cyr) > 0.96) continue;
+        if (!bgSet[key(at(x, y))]) { mask[y*N + x] = 1; kept++; }
+      }
 
-  /* Morphological open, then keep only the largest connected blob. Without
-     this the mask is confetti, and perimeter over root area stops being a
-     shape measurement and becomes a noise measurement. */
-  if (kept > N*N*0.04){
-    mask = morph(mask, N, 0);   /* erode */
-    mask = morph(mask, N, 1);   /* dilate */
-    const blob = largestBlob(mask, N);
-    let bc = 0;
-    for (let i = 0; i < blob.length; i++) bc += blob[i];
-    /* If separating by colour did not leave a believable animal, assume she is
-       in the middle of the frame, which she is in essentially every photograph
-       anyone has ever taken of their cat. */
-    mask = bc > N*N*0.05 ? blob : centreMask();
-  } else {
-    mask = centreMask();
+    /* Morphological open, then keep only the largest connected blob. Without
+       this the mask is confetti, and perimeter over root area stops being a
+       shape measurement and becomes a noise measurement. */
+    if (kept > N*N*0.04){
+      mask = morph(mask, N, 0);   /* erode */
+      mask = morph(mask, N, 1);   /* dilate */
+      const blob = largestBlob(mask, N);
+      let bc = 0;
+      for (let i = 0; i < blob.length; i++) bc += blob[i];
+      /* If separating by colour did not leave a believable animal, assume she
+         is in the middle of the frame, which she is in essentially every
+         photograph anyone has ever taken of their cat. */
+      mask = bc > N*N*0.05 ? blob : centreMask();
+    } else {
+      mask = centreMask();
+    }
   }
 
   const pix = [];
@@ -2852,9 +2914,35 @@ function readCatFromPhoto(canvas){
       const p = at(x, y);
       const mx2 = Math.max(p[0],p[1],p[2]), mn2 = Math.min(p[0],p[1],p[2]);
       const sat = mx2 ? (mx2 - mn2) / mx2 : 0;
-      if (sat < 0.20 && lum(p) > Math.max(178, baseL + 58)) wm[y*N + x] = 1;
+      /* Trusted mask: every pixel is genuinely ON the animal, so a bright
+         low-saturation region can be believed at a lower absolute level —
+         a tuxedo bib in room shade lives around 150-175. Known limit: a
+         backlit face close-up where a tabby's pale chest fills the frame
+         still overcalls (oreo-sleep reads van) — cool light desaturates
+         cream, so no sat gate separates it; the multi-photo median and the
+         grader are the designed answer, not a tighter pixel rule that costs
+         a tuxedo his toes. */
+      if (sat < (trusted ? 0.24 : 0.20)
+          && lum(p) > Math.max(trusted ? 152 : 178, baseL + (trusted ? 46 : 58)))
+        wm[y*N + x] = 1;
     }
-  const wBlob = largestBlob(morph(morph(wm, N, 0), N, 1), N);
+  /* Trusted: COUNT ALL surviving patches. A tuxedo's bib, belly and four
+     toes are separate blobs by definition; largest-only sees just the bib.
+     And the erode-dilate open is TOO strong here - a toe is 2-3px at this
+     scale and the erode deletes it wholesale - so trusted mode only drops
+     ISOLATED white pixels (the diffuse undercoat speckle) and keeps every
+     pixel with a white neighbour. */
+  let wBlob;
+  if (trusted){
+    wBlob = new Uint8Array(N*N);
+    for (let y = 1; y < N-1; y++)
+      for (let x = 1; x < N-1; x++){
+        const i = y*N + x;
+        if (wm[i] && (wm[i-1] || wm[i+1] || wm[i-N] || wm[i+N])) wBlob[i] = 1;
+      }
+  } else {
+    wBlob = largestBlob(morph(morph(wm, N, 0), N, 1), N);
+  }
   let wCount = 0, wSy = 0, mnY = N, mxY = 0;
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++){
@@ -2874,7 +2962,13 @@ function readCatFromPhoto(canvas){
        measure meaningless. A 5-tap box filter leaves the stripes and kills
        the fluff. */
     const raw = [];
-    for (let x = 0; x < N; x++) if (mask[y*N + x]) raw.push(lum(at(x, y)));
+    /* White is not a stripe. A tuxedo's bib edge flips a row's luminance as
+       hard as any tabby bar, and WHISKERS across a black chest flip it a
+       dozen times - so pattern rows skip every bright low-sat pixel (the raw
+       wm, which still holds the 1px whiskers the patch mask dropped) and
+       measure only coat that could actually be striped. */
+    for (let x = 0; x < N; x++)
+      if (mask[y*N + x] && !wm[y*N + x]) raw.push(lum(at(x, y)));
     if (raw.length < 16) continue;
     const sm = raw.map((_, i) => {
       let t = 0, c = 0;
@@ -2917,6 +3011,12 @@ function readCatFromPhoto(canvas){
 
   let pattern = 'solid';
   if (twoTone < 42) pattern = 'solid';
+  /* Glossy BLACK fur oscillates too - sheen against shadow flips a row as
+     rhythmically as any stripe, and it read every black cat as a mackerel.
+     On a genuinely dark coat, demand real chroma distance before believing
+     in markings. (A black smoke tabby will read solid; the owner has a
+     slider, and that error is honest.) */
+  else if (trusted && baseL < 55 && twoTone < 70) pattern = 'solid';
   /* Nothing to read at all: a flat animal is a solid animal, whatever the
      wiggle count says. */
   else if (contrast < 52) pattern = 'solid';
@@ -2924,8 +3024,14 @@ function readCatFromPhoto(canvas){
   else if (flipRate >= 1.6) pattern = 'classic';
   else if (contrast > 74)   pattern = 'ticked';
   /* Two-tone blotching without regular striping is a tortie, and a tortie
-     wearing a lot of white is a calico. */
-  if (contrast > 104 && flipRate < 1.6 && whiteAmt > 0.14)
+     wearing a lot of white is a calico. But a tortie's light patches are
+     GINGER — saturated. A black cat in a white tuxedo has exactly this
+     contrast signature with a near-grey bright cluster, and he is a
+     bicolour, not a calico. */
+  const bp = hexRGB(bright);
+  const bMx = Math.max(bp[0], bp[1], bp[2]);
+  const brightSat = bMx ? (bMx - Math.min(bp[0], bp[1], bp[2])) / bMx : 0;
+  if (contrast > 104 && flipRate < 1.6 && whiteAmt > 0.14 && brightSat >= 0.2)
     pattern = whiteAmt > 0.30 ? 'calico' : 'tortie';
 
   /* floof: a longhair has a much longer edge for the same area */
@@ -2955,11 +3061,21 @@ function readCatFromPhoto(canvas){
      something untrue about the animal, which is worse than being conservative
      and letting the owner say so. */
   const wf = whiteAmt;
-  const whiteGrade = wf < 0.075 ? 0
-                   : wf < 0.15  ? 3.0
-                   : wf < 0.30  ? 4.4
-                   : wf < 0.46  ? 6.0
-                   : wf < 0.66  ? 7.6 : 9.0;
+  /* With a trusted mask the deliberately-high floor comes DOWN: 3 percent of
+     a tuxedo IS his bib, and now we can believe it. Without one, the old
+     conservative bands hold — inventing white is still worse than missing it. */
+  const whiteGrade = trusted
+    ? (wf < 0.022 ? 0
+      : wf < 0.055 ? 2.2
+      : wf < 0.11  ? 3.4
+      : wf < 0.22  ? 4.6
+      : wf < 0.40  ? 6.0
+      : wf < 0.60  ? 7.6 : 9.0)
+    : (wf < 0.075 ? 0
+      : wf < 0.15  ? 3.0
+      : wf < 0.30  ? 4.4
+      : wf < 0.46  ? 6.0
+      : wf < 0.66  ? 7.6 : 9.0);
   const whiteStyle = whiteGrade === 0 ? 'none'
                    : whiteGrade < 3 ? 'bib'
                    : whiteGrade < 6 ? 'bicolour' : 'van';
@@ -3006,7 +3122,7 @@ function readCatFromPhoto(canvas){
     _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
              raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100),
              eyeConf: eyeConf, twoTone: Math.round(twoTone),
-             whiteY: +wY.toFixed(2) }
+             whiteY: +wY.toFixed(2), seg: trusted }
   });
 }
 
@@ -3988,11 +4104,13 @@ $('tuneReset').onclick = () => {
   if (!c || !c.photo) return;
   /* Re-read from the photograph we still hold on this device. */
   const im = new Image();
-  im.onload = () => {
+  im.onload = async () => {
     const cv = document.createElement('canvas');
     cv.width = im.width; cv.height = im.height;
     cv.getContext('2d').drawImage(im, 0, 0);
-    c.dna = readCatFromPhoto(cv) || defaultDNA();
+    let m = null;
+    try { m = await segmentCat(cv); } catch (e) {}
+    c.dna = readCatFromPhoto(cv, m) || defaultDNA();
     Store.update(list => {
       const x = list.find(y => y.id === c.id);
       if (x) x.dna = c.dna;
@@ -4070,8 +4188,8 @@ document.addEventListener('visibilitychange', () => {
 
 /* exposed for testing and for the studio harness */
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
-                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room, BUILDS,
-                OK, migrateDNA };
+                CatArt, readCatFromPhoto, segmentCat, defaultDNA, PATTERNS, WHITE_STYLES,
+                Room, BUILDS, OK, migrateDNA };
 </script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
