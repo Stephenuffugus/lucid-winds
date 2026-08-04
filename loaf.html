@@ -512,6 +512,16 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       </div>
     </div>
   </div>
+  <div class="tuner" id="persona">
+    <button class="tunerHd" id="personaToggle" type="button" aria-expanded="false">
+      <span>Who is she?</span><span class="chev" id="personaChev">+</span>
+    </button>
+    <div class="tunerBody hidden" id="personaBody">
+      <p class="tunerNote">Ten small situations. Answer for HER, not for the
+        cat you wish you had. It changes how she behaves in the room.</p>
+      <div id="pzQuiz"></div>
+    </div>
+  </div>
   <div class="nopet hidden" id="noPet">
     No specimen on file yet.<br>Scan a cat and she will be waiting in here.
   </div>
@@ -3368,6 +3378,7 @@ const Room = (() => {
        the ledger (needs, kibble, XP, tools) and hands her the body */
     if (window.LoafCat3D && LoafCat3D.roomOpen){
       cv.classList.add('hidden');
+      if (LoafCat3D.setPersona) LoafCat3D.setPersona(card.persona || null);
       LoafCat3D.roomOpen(card, {
         toy: () => TOYS.find(x => x.k === tool),
         poops: () => pet.poops || 0,
@@ -4257,6 +4268,135 @@ $('tunerToggle').onclick = () => {
     if (tab === 'room' && window.LoafCat3D && LoafCat3D.roomRemount) LoafCat3D.roomRemount();
   }
 };
+/* ── WHO IS SHE? ─────────────────────────────────────────────────────────────
+   The Feline Five, in LOAF's voice: BOLDNESS, CURIOSITY, SASS, CHAOS, VELCRO.
+   Ten concrete situations, two per axis. The owner answers for the animal,
+   and the answers change how she behaves in the room - a personality that
+   moves nothing is dead weight, so every axis drives the brain. */
+const PQ = [
+  { t:'The doorbell rings.', a:'bold', o:[
+    ['Gone. Under the bed.', -1],
+    ['Watches from the hallway.', 0],
+    ['Must inspect the visitor personally.', 1]] },
+  { t:'A vacuum cleaner enters the room.', a:'bold', o:[
+    ['She left the county.', -1],
+    ['High ground, monitoring.', 0],
+    ['Stands her ground. It swerves first.', 1]] },
+  { t:'You open a cardboard box.', a:'curious', o:[
+    ['Boxes are beneath her.', -1],
+    ['Supervises from the couch.', 0],
+    ['She is already in it.', 1]] },
+  { t:'A drawer she has never seen opens.', a:'curious', o:[
+    ['No interest whatsoever.', -1],
+    ['One exploratory paw.', 0],
+    ['Full spelunking expedition.', 1]] },
+  { t:'Dinner is nine minutes late.', a:'sass', o:[
+    ['Waits in dignified silence.', -1],
+    ['Meaningful staring.', 0],
+    ['A formal complaint. Loudly. Repeatedly.', 1]] },
+  { t:'There is a pen on the table.', a:'sass', o:[
+    ['The pen is safe.', -1],
+    ['It gets batted once, for science.', 0],
+    ['It belongs to the floor now. So does the next one.', 1]] },
+  { t:'3:00 AM.', a:'chaos', o:[
+    ['Asleep, respectably.', -1],
+    ['Awake. Plotting quietly.', 0],
+    ['THE HALLWAY IS A RACETRACK.', 1]] },
+  { t:'Mid-groom, she suddenly...', a:'chaos', o:[
+    ['...finishes grooming, like a professional.', -1],
+    ['...freezes, leg up, for a full minute.', 0],
+    ['...sprints into another room at full speed.', 1]] },
+  { t:'You sit down. Anywhere.', a:'velcro', o:[
+    ['She has her own schedule.', -1],
+    ['Settles nearby, within eyeshot.', 0],
+    ['She is already on your lap. It was never in question.', 1]] },
+  { t:'You come home.', a:'velcro', o:[
+    ['You will be received later. Maybe.', -1],
+    ['One slow blink from the windowsill.', 0],
+    ['Waiting at the door with loud hellos.', 1]] }
+];
+const P_LABEL = { bold:'BOLDNESS', curious:'CURIOSITY', sass:'SASS', chaos:'CHAOS', velcro:'VELCRO' };
+
+const Persona = (() => {
+  let card = null, qi = 0, tally = null;
+
+  function open(c){ card = c; render(); }
+
+  function render(){
+    const host = $('pzQuiz'); if (!host || !card) return;
+    host.innerHTML = '';
+    if (card.persona && tally === null){ renderBars(host); return; }
+    if (tally === null){ tally = {}; qi = 0; }
+    if (qi >= PQ.length){ finish(host); return; }
+    const q = PQ[qi];
+    const head = document.createElement('p');
+    head.className = 'tunerNote';
+    head.textContent = (qi + 1) + ' / ' + PQ.length + ' — ' + q.t;
+    host.appendChild(head);
+    q.o.forEach(([label, w]) => {
+      const b = document.createElement('button');
+      b.className = 'chip2 pz-opt'; b.type = 'button';
+      b.style.cssText = 'display:block;width:100%;text-align:left;margin:8px 0;min-height:48px';
+      b.textContent = label;
+      b.onclick = () => {
+        tally[q.a] = (tally[q.a] || 0) + w;
+        qi++;
+        render();
+      };
+      host.appendChild(b);
+    });
+  }
+
+  function finish(host){
+    const p2 = {};
+    Object.keys(P_LABEL).forEach(k => {
+      p2[k] = Math.max(0, Math.min(1, 0.5 + (tally[k] || 0) * 0.25));
+    });
+    card.persona = p2;
+    tally = null;
+    Store.update(list => {
+      const c = list.find(x => x.id === card.id);
+      if (c) c.persona = p2;
+      return list;
+    });
+    if (window.LoafCat3D && LoafCat3D.setPersona) LoafCat3D.setPersona(p2);
+    render();
+  }
+
+  function renderBars(host){
+    const p2 = card.persona;
+    Object.keys(P_LABEL).forEach(k => {
+      const row = document.createElement('div');
+      row.className = 'need';
+      const b = document.createElement('b'); b.textContent = P_LABEL[k];
+      const tk = document.createElement('div'); tk.className = 'tk';
+      const fl = document.createElement('div'); fl.className = 'fl';
+      fl.style.width = Math.round(p2[k] * 100) + '%';
+      fl.style.background = 'var(--gold,#FFB23F)';
+      tk.appendChild(fl); row.append(b, tk); host.appendChild(row);
+    });
+    const re = document.createElement('button');
+    re.className = 'ghost'; re.type = 'button';
+    re.style.cssText = 'margin-top:12px;min-height:48px';
+    re.textContent = 'Ask her again';
+    re.onclick = () => { tally = {}; qi = 0; render(); };
+    host.appendChild(re);
+  }
+
+  return { open };
+})();
+
+$('personaToggle').onclick = () => {
+  const body = $('personaBody'), openNow = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !openNow);
+  $('personaToggle').setAttribute('aria-expanded', String(openNow));
+  $('personaChev').textContent = openNow ? '−' : '+';
+  if (openNow){
+    const c = (window.Room && Room.card) || Store.read()[0];
+    if (c) Persona.open(c);
+  }
+};
+
 $('tuneReset').onclick = () => {
   const c = Tuner.card;
   if (!c || !c.photo) return;
@@ -4345,6 +4485,7 @@ document.addEventListener('visibilitychange', () => {
 })();
 
 /* exposed for testing and for the studio harness */
+window.Room = Room;
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
                 CatArt, readCatFromPhoto, segmentCat, defaultDNA, PATTERNS, WHITE_STYLES,
                 Room, BUILDS, OK, migrateDNA };
@@ -4840,6 +4981,66 @@ if (stage) (async () => {
     bones.head.userData.cross = g3;
   };
 
+  /* ══ PERSONALITY ════════════════════════════════════════════════════════
+     Five dials from the quiz. Every one drives something the owner can SEE:
+     boldness shortens the laser stalk, curiosity fights boredom, sass runs
+     the mouth, chaos runs the 3AM legs, velcro runs toward you. */
+  let persona = { bold: 0.5, curious: 0.5, sass: 0.5, chaos: 0.5, velcro: 0.5 };
+  function setPersona(p2){
+    persona = Object.assign({ bold: 0.5, curious: 0.5, sass: 0.5, chaos: 0.5, velcro: 0.5 }, p2 || {});
+  }
+
+  /* ══ THE VOICE ══════════════════════════════════════════════════════════
+     A synthesized meow pitched to HER body: kittens ring high, a chonk
+     rumbles. Sawtooth through a sweeping bandpass is a cartoon meow, which
+     is exactly the register this cat lives in. */
+  function voicePitch(){
+    const d = liveDNA || {};
+    let k = 1;
+    k += Math.max(0, 0.55 - (d.age == null ? 0.55 : d.age)) * 0.8;   /* kitten high */
+    k -= ((d.chonk == null ? 0.5 : d.chonk) - 0.5) * 0.45;           /* chonk low  */
+    k -= (d.frame || 0) * 0.12;                                       /* cobby low  */
+    return Math.max(0.7, Math.min(1.55, k));
+  }
+  function meow(kind){
+    try {
+      if (!purrCtx) purrCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (purrCtx.resume) purrCtx.resume().catch(() => {});
+      const t0 = purrCtx.currentTime + 0.02;
+      const pk = voicePitch();
+      const o = purrCtx.createOscillator(); o.type = 'sawtooth';
+      const bp = purrCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.4;
+      const bp2 = purrCtx.createBiquadFilter(); bp2.type = 'bandpass'; bp2.Q.value = 3;
+      const g = purrCtx.createGain(); g.gain.value = 0.0001;
+      const g2 = purrCtx.createGain(); g2.gain.value = 0.06;
+      o.connect(bp); bp.connect(g);
+      o.connect(bp2); bp2.connect(g2); g2.connect(g);
+      g.connect(purrCtx.destination);
+      const dur = kind === 'trill' ? 0.3 : kind === 'huff' ? 0.24
+                : 0.5 + persona.sass * 0.28;
+      const f0 = (kind === 'trill' ? 560 : 440) * pk;
+      const fp = (kind === 'ask' ? 860 : kind === 'huff' ? 520 : 720) * pk;
+      o.frequency.setValueAtTime(f0, t0);
+      o.frequency.linearRampToValueAtTime(fp, t0 + dur * 0.35);
+      o.frequency.linearRampToValueAtTime(f0 * 0.7, t0 + dur);
+      bp.frequency.setValueAtTime(1050 * pk, t0);
+      bp.frequency.linearRampToValueAtTime(2100 * pk, t0 + dur * 0.4);
+      bp.frequency.linearRampToValueAtTime(880 * pk, t0 + dur);
+      bp2.frequency.value = 2900 * pk;
+      if (kind === 'trill'){
+        const lfo = purrCtx.createOscillator(), lg = purrCtx.createGain();
+        lfo.frequency.value = 27; lg.gain.value = 46 * pk;
+        lfo.connect(lg); lg.connect(o.frequency);
+        lfo.start(t0); lfo.stop(t0 + dur);
+      }
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(kind === 'ask' ? 0.22 : 0.15, t0 + dur * 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+      return true;
+    } catch (e) { return false; }
+  }
+
   /* ══ THE SCULPTOR ═══════════════════════════════════════════════════════
      Body proportions as runtime BONE SCALES - possible because the clips no
      longer keyframe scale on any bone but the breathing spine, so these
@@ -4984,7 +5185,10 @@ if (stage) (async () => {
       }
     }
     petting = onHer(e);
-    if (petting){ purr(true); return; }
+    if (petting){
+      if (persona.velcro > 0.45 && clock.elapsedTime > (life.petBlock || 0)) meow('trill');
+      purr(true); return;
+    }
     if (room.on){
       /* a tap on a poop is always a scoop, never a throw */
       ray.setFromCamera(toNdc(e), cam);
@@ -5142,8 +5346,10 @@ if (stage) (async () => {
     if (!L.on) return;
     L.on = false; L.offAt = clock.elapsedTime;
     if (dotMesh){ dotMesh.visible = false; dotGlow.visible = false; }
-    if (clock.elapsedTime - L.t0 > 6 && room.bridge && room.bridge.laserDone)
+    if (clock.elapsedTime - L.t0 > 6 && room.bridge && room.bridge.laserDone){
       room.bridge.laserDone(Math.max(0, Math.min(1, (L.meter - 20) / 70)), L.catches);
+      if (!L.catches && persona.sass > 0.55) meow('meow');   /* a formal complaint */
+    }
     L.catches = 0; L.meter = 30; L.bore = 0; L.stillW = 0; L.sprintW = 0;
     setState('idle', 1.5);
     playIf('Idle');
@@ -5162,7 +5368,7 @@ if (stage) (async () => {
     L.sprintW = Math.max(0, L.sprintW - dt); if (sp > 3.0) L.sprintW = 3;
     if (sp > 0.6 && sp < 2.4 && !L.stillW && !L.sprintW) L.bore += dt; else L.bore = 0;
     L.meter += ((L.stillW > 0 && L.sprintW > 0) ? 5.5 * dt : 0)
-             - (L.bore > 2.5 ? 3 * dt : 0) - 0.7 * dt;
+             - (L.bore > 2.5 ? (3.6 - persona.curious * 1.6) * dt : 0) - 0.7 * dt;
     L.meter = Math.max(5, Math.min(100, L.meter));
     if (laserBar){
       laserBar.style.opacity = '1';
@@ -5197,9 +5403,9 @@ if (stage) (async () => {
       if (room.stateT <= 0){ setState('lpounce', 44 / 24); playIf('Pounce', true); }
       return;
     }
-    if (L.meter < 12){ playIf('Idle'); return; }      /* she got bored */
+    if (L.meter < 17 - persona.curious * 9){ playIf('Idle'); return; }  /* bored */
     if (sp < 0.4){
-      if (d < 1.6 && d > 0.3 && L.stillW > 0){ setState('lwig', 0.75); return; }
+      if (d < 1.1 + persona.bold * 0.9 && d > 0.3 && L.stillW > 0){ setState('lwig', 0.75); return; }
       if (d > 0.3){ moveToward(L.x, L.z, 0.6, dt); playIf('Walk'); }  /* the STALK */
       else playIf('Idle');
     } else {
@@ -5285,7 +5491,7 @@ if (stage) (async () => {
           if (room.batCount <= 2 && room.bridge) room.bridge.played();
         }
         if (room.stateT <= 0)
-          setState(room.batCount >= 3 ? 'fetch' : 'chase');
+          setState(room.batCount >= (persona.velcro > 0.6 ? 2 : 3) ? 'fetch' : 'chase');
         break;
       case 'fetch': {
         if (!B){ setState('idle', 2); break; }
@@ -5305,6 +5511,7 @@ if (stage) (async () => {
           playIf('Wiggle');
           life.lookT.set(0, 0.35);
           room.soliT = 16;
+          meow('ask');
           if (room.bridge) room.bridge.solicited();
           setState('await', 5);
         }
@@ -5334,16 +5541,38 @@ if (stage) (async () => {
         if (d < 0.1) setState('idle', 1.5 + Math.random() * 3.5);
         break;
       }
+      case 'zoom': {
+        const d = moveToward(room.tx, room.tz, 3.3, dt);
+        playIf('Gallop');
+        if (d < 0.15 || room.stateT <= 0){
+          if (Math.random() < 0.5 && room.stateT > 0){
+            const a4 = Math.random() * Math.PI * 2;      /* carom off a thought */
+            room.tx = Math.cos(a4) * (RUG - 0.5); room.tz = Math.sin(a4) * (RUG - 0.5);
+          } else setState('idle', 2 + Math.random() * 3);
+        }
+        break;
+      }
       default: /* idle */
         playIf('Idle');
         if (B && !B.settled && !room.carrying){ setState('chase'); break; }
         if (room.stateT <= 0){
           const r3 = Math.random();
-          if (r3 < 0.5){
+          const zoomP = 0.06 + persona.chaos * 0.22;
+          const wanderP = 0.34 + (persona.bold + persona.curious) * 0.14;
+          const settleP = 0.22 * (1.3 - persona.curious * 0.8);
+          if (r3 < zoomP){
+            const a4 = Math.random() * Math.PI * 2;
+            room.tx = Math.cos(a4) * (RUG - 0.5); room.tz = Math.sin(a4) * (RUG - 0.5);
+            setState('zoom', 2.4);
+            if (persona.sass > 0.6 && Math.random() < 0.4) meow('meow');
+          } else if (r3 < zoomP + wanderP){
             const a3 = Math.random() * Math.PI * 2, rr = 0.6 + Math.random() * (RUG - 0.9);
             room.tx = Math.cos(a3) * rr; room.tz = Math.sin(a3) * rr;
+            if (Math.random() < persona.velcro * 0.5){   /* she drifts toward YOU */
+              room.tx *= 0.4; room.tz = 1.3 + Math.random() * 0.9;
+            }
             setState('wander');
-          } else if (r3 < 0.68){
+          } else if (r3 < zoomP + wanderP + settleP){
             setState('settle', 7 + Math.random() * 6);
           } else setState('idle', 2.5 + Math.random() * 4);
         }
@@ -5363,6 +5592,8 @@ if (stage) (async () => {
 
   window.LoafCat3D = {
     setDNA,
+    setPersona,
+    meow,
     roomOpen(card, bridge){
       if (bridge) room.bridge = bridge;
       room.card = card;
@@ -5389,6 +5620,7 @@ if (stage) (async () => {
       syncPoops();
       if (card && card.dna) setDNA(card.dna);
       mountTo(d);
+      if (persona.velcro > 0.4) setTimeout(() => meow('trill'), 600);
     },
     roomClose(){
       if (!room.on) return;
@@ -5503,7 +5735,7 @@ if (stage) (async () => {
     // 1. she watches: finger nearby, or an idle glance at the camera
     if (t > life.idleGlanceAt){
       life.lookT.set((Math.random() - 0.5) * 0.7, 0.15 + Math.random() * 0.3);
-      life.idleGlanceAt = t + 2.5 + Math.random() * 4.5;
+      life.idleGlanceAt = t + (2.5 + Math.random() * 4.5) * (1.3 - persona.curious * 0.6);
     }
     life.look.lerp(life.lookT, Math.min(1, dt * 6));
     /* axes read off the axis probe, not off assumptions: x nods (+ is up),
@@ -5528,7 +5760,7 @@ if (stage) (async () => {
     if (t > life.earAt){
       life.earP = 0;
       life.earSide = Math.random() < 0.5 ? 'earL' : 'earR';
-      life.earAt = t + 3.5 + Math.random() * 6;
+      life.earAt = t + (3.5 + Math.random() * 6) * (1.3 - persona.chaos * 0.7);
     }
     life.earP = Math.min(1, life.earP + dt / 0.24);
     if (life.earP < 1)
@@ -5542,10 +5774,22 @@ if (stage) (async () => {
     for (let i = 1; i <= 4; i++)
       addRot(bones['tail' + i], 0, 0, life.tailX * (0.35 + i * 0.28));
 
-    // 5. petting: she leans into the hand, then settles
+    // 5. petting: velcro leans in hard; low velcro runs out of patience
     const since = t - life.petAt;
-    if (since < 1.6 && life.pet > 0){
-      const ease = life.pet * Math.max(0, 1 - since / 1.6);
+    if (petting && t > (life.petBlock || 0)){
+      life.petTime = (life.petTime || 0) + dt;
+      if (persona.velcro < 0.35 && life.petTime > 4.5){
+        life.petBlock = t + 6;                     /* that will be all, thank you */
+        life.petTime = 0; life.pet = 0;
+        purr(false);
+        meow('huff');
+        play('TailPlay', true);
+        setTimeout(() => play('Idle'), 2600);
+      }
+    } else if (!petting) life.petTime = 0;
+    if (since < 1.6 && life.pet > 0 && t > (life.petBlock || 0)){
+      const lean = 0.6 + persona.velcro * 0.8;
+      const ease = life.pet * Math.max(0, 1 - since / 1.6) * lean;
       addRot(bones.spine, 0.06 * ease, 0, life.petSide * 0.16 * ease);
       addRot(bones.head, 0.12 * ease, 0, life.petSide * 0.22 * ease);
       if (since > 0.4) life.pet = Math.max(0, life.pet - dt * 0.5);
