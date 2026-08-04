@@ -295,17 +295,120 @@ def idle(t, f):
         arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 6 * math.sin(t * 2 * math.pi + i * 0.9))
 
 def walk(t, f):
+    # TRUE walk: 4-beat lateral sequence (Muybridge plate 717 shows the trot;
+    # the walk order is LH, LF, RH, RF at quarter-phase offsets). Each leg
+    # swings 30% of the cycle and sweeps back the other 70%.
     reset_pose()
     ph = t * 2 * math.pi
-    # diagonal gait: FL+BR vs FR+BL
+    for nm, off in (('BL', 0.0), ('FL', 0.25), ('BR', 0.5), ('FR', 0.75)):
+        lt = (t - off) % 1.0
+        if lt < 0.3:                                   # swing: lift + reach
+            k = lt / 0.3
+            up = 20 - 34 * k
+            lo = -42 * math.sin(k * math.pi)
+        else:                                          # stance: sweep back
+            k = (lt - 0.3) / 0.7
+            up = -14 + 34 * k
+            lo = -4
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(up, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(lo, 0, 0)
+    arm.pose.bones['root'].location = (0, 0, 0.025 * math.sin(2 * ph))
+    arm.pose.bones['spine'].rotation_quaternion = E(1.5 * math.sin(2 * ph), 3 * math.sin(ph), 2 * math.sin(ph))
+    arm.pose.bones['head'].rotation_quaternion = E(2 * math.sin(ph * 2), 0, 0)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 9 * math.sin(ph + i * 0.7))
+
+def trot(t, f):
+    # diagonal pairs - what plate 717 actually documents. The old "walk".
+    reset_pose()
+    ph = t * 2 * math.pi
     for nm, off in (('FL', 0), ('BR', 0), ('FR', math.pi), ('BL', math.pi)):
         sw = 26 * math.sin(ph + off)
         arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(sw, 0, 0)
         arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(max(0, -0.9 * sw), 0, 0)
+    arm.pose.bones['root'].location = (0, 0, 0.05 * abs(math.sin(ph)))
     arm.pose.bones['spine'].rotation_quaternion = E(0, 0, 3 * math.sin(ph))
     arm.pose.bones['head'].rotation_quaternion = E(2 * math.sin(ph * 2), 0, 0)
     for i in range(1, 5):
         arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 9 * math.sin(ph + i * 0.7))
+
+def gallop(t, f):
+    # rotary gallop from Muybridge plate 720: spine arch on the gather,
+    # full-stretch flight, fronts land ~0.45 after the hinds, hinds overtake.
+    # The SPINE oscillation is the signature - legs alone read as a toy.
+    reset_pose()
+    tp = 2 * math.pi * t
+    spineX = 5 + 19 * math.cos(tp)                     # +20 gather, -12 flight
+    arm.pose.bones['spine'].rotation_quaternion = E(spineX, 0, 0)
+    arm.pose.bones['neck'].rotation_quaternion = E(-0.55 * spineX, 0, 0)
+    arm.pose.bones['head'].rotation_quaternion = E(-0.25 * spineX, 0, 0)
+    arm.pose.bones['root'].location = (0, 0, -0.02 + 0.20 * math.cos(2 * math.pi * (t - 0.35)))
+    for nm, off in (('BL', 0.0), ('BR', 0.08), ('FL', 0.45), ('FR', 0.53)):
+        lt = t - off
+        up = 42 * math.sin(2 * math.pi * (lt + 0.1))
+        lo = -60 * max(0.0, math.sin(2 * math.pi * (lt - 0.5)))
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(up, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(lo, 0, 0)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(
+            8 * math.cos(tp) - 4 * i, 0, 4 * math.sin(tp + i * 0.5))
+
+def pounce(t, f):
+    # one-shot: coil deep, explode up and forward, land soft. The launch
+    # phase borrows plate 720's frames 11-15 (extension out of the gather).
+    reset_pose()
+    if t < 0.35:                                       # coil
+        k = t / 0.35; k = k * k * (3 - 2 * k)
+        arm.pose.bones['root'].location = (0, 0, -0.44 * k)
+        arm.pose.bones['spine'].rotation_quaternion = E(22 * k, 0, 0)
+        for nm in ('BL', 'BR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(65 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-105 * k, 0, 0)
+        for nm in ('FL', 'FR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(28 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-40 * k, 0, 0)
+        arm.pose.bones['head'].rotation_quaternion = E(-16 * k, 0, 0)
+        for i in range(1, 5):
+            arm.pose.bones['tail%d' % i].rotation_quaternion = E(0, 0, 14 * k * math.sin(i + t * 30))
+    elif t < 0.6:                                      # launch + flight
+        k = (t - 0.35) / 0.25; k = k * k * (3 - 2 * k)
+        arm.pose.bones['root'].location = (0, 0, -0.44 + 0.85 * k)
+        arm.pose.bones['spine'].rotation_quaternion = E(22 - 40 * k, 0, 0)
+        for nm in ('BL', 'BR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(65 - 108 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-105 + 98 * k, 0, 0)
+        for nm in ('FL', 'FR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(28 - 66 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-40 + 22 * k, 0, 0)
+        arm.pose.bones['neck'].rotation_quaternion = E(8 * k, 0, 0)
+    else:                                              # land + settle
+        k = (t - 0.6) / 0.4; k = k * k * (3 - 2 * k)
+        arm.pose.bones['root'].location = (0, 0, 0.41 - 0.47 * k + 0.10 * math.sin(k * math.pi))
+        arm.pose.bones['spine'].rotation_quaternion = E(-18 + 18 * k, 0, 0)
+        for nm in ('FL', 'FR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(-38 + 38 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-18 + 18 * k, 0, 0)
+        for nm in ('BL', 'BR'):
+            arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(-43 + 43 * k, 0, 0)
+            arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-7 + 7 * k, 0, 0)
+
+def wiggle(t, f):
+    # the pre-pounce butt wiggle: crouched front, hips sway, tail high.
+    reset_pose()
+    sway = math.sin(t * 3 * 2 * math.pi)
+    arm.pose.bones['root'].location = (0, 0, -0.16)
+    arm.pose.bones['root'].rotation_quaternion = E(0, 10 * sway, 0)
+    arm.pose.bones['spine'].rotation_quaternion = E(6, -9 * sway, 0)
+    for nm in ('FL', 'FR'):
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(22, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-30, 0, 0)
+    for nm in ('BL', 'BR'):
+        arm.pose.bones['leg%s_up' % nm].rotation_quaternion = E(30, 0, 0)
+        arm.pose.bones['leg%s_lo' % nm].rotation_quaternion = E(-42, 0, 0)
+    arm.pose.bones['head'].rotation_quaternion = E(-8, 0, 2 * sway)
+    for i in range(1, 5):
+        arm.pose.bones['tail%d' % i].rotation_quaternion = E(
+            10 + 6 * i * 0.5, 0, 18 * math.sin(t * 6 * math.pi + i * 0.9))
 
 def loafsettle(t, f):
     # one-shot: stand -> loaf. Legs fold under, body drops, tail wraps.
@@ -328,7 +431,11 @@ def tailplay(t, f):
             22 * math.sin(t * 2 * math.pi + i * 0.8))
 
 clip('Idle', 48, idle)
-clip('Walk', 32, walk)
+clip('Walk', 40, walk)
+clip('Trot', 24, trot)
+clip('Gallop', 22, gallop)
+clip('Pounce', 44, pounce)
+clip('Wiggle', 32, wiggle)
 clip('LoafSettle', 40, loafsettle)
 clip('TailPlay', 60, tailplay)
 reset_pose()

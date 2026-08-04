@@ -4444,10 +4444,12 @@ if (stage) (async () => {
   }
 
   /* clip chips: the proof that she is a creature, not a picture */
-  for (const [label, clipName] of [['Idle','Idle'],['Walk','Walk'],['Loaf','LoafSettle'],['Play','TailPlay']]){
+  const ONESHOT = { LoafSettle: 1, Pounce: 1 };
+  for (const [label, clipName] of [['Idle','Idle'],['Walk','Walk'],['Run','Gallop'],
+      ['Pounce','Pounce'],['Wiggle','Wiggle'],['Loaf','LoafSettle'],['Play','TailPlay']]){
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = label; b.dataset.clip = clipName;
-    b.addEventListener('click', () => play(clipName, clipName === 'LoafSettle'));
+    b.addEventListener('click', () => play(clipName, !!ONESHOT[clipName]));
     chipsEl.appendChild(b);
   }
 
