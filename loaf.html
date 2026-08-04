@@ -3445,6 +3445,12 @@ const Room = (() => {
           if (!$('fishbookBody').classList.contains('hidden')) FishBook.open(card);
         },
         fishMiss(msg){ setNote(msg); },
+        yarnDone(){
+          pet.kibble += 3;
+          grantXP(card, 12);
+          setNote('THE TANGLE IS COMPLETE. She regrets nothing.');
+          savePet(card); drawNeeds(); drawHud();
+        },
         laserDone(q, catches){
           const xp = 4 + Math.round(q * 10);
           grantXP(card, xp);
@@ -4664,6 +4670,8 @@ if (stage) (async () => {
     bowlT: 0, eating: 0, poopM: [], aim: null, soliT: 0,
     laser: { on: false, x: 0, z: 0, lx: 0, lz: 0, meter: 30, stillW: 0,
              sprintW: 0, bore: 0, catches: 0, t0: 0, hide: 0, offAt: -9 },
+    yarn: { active: false, dots: 0, hue: 0, lx: 0, lz: 0, target: 90,
+            wrapT: 0, done: false },
     fish: { on: false, tension: 0, interestT: 0,
             lure: { on: false, x: 0, z: 0, lx: 0, lz: 0, sp: 0 },
             school: [], scareT: 0, respawnT: 0, splash: [] } };
@@ -5372,6 +5380,8 @@ if (stage) (async () => {
   const FSPOT = { x: -0.38, z: 0.18 };             /* her seat at the water's edge */
   let ballMesh = null, bowlMesh = null, dotMesh = null, dotGlow = null, laserBar = null;
   let pondMesh = null, lureMesh = null, fishMeshes = [], splashPool = [];
+  let trailMesh = null, trailN = 0, wrapRings = [], yarnBar = null;
+  const TRAIL_MAX = 120;
   function ensureRoomProps(){
     if (ballMesh) return;
     ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14),
@@ -5415,6 +5425,56 @@ if (stage) (async () => {
         new THREE.MeshBasicMaterial({ color: 0xCFE9F2, transparent: true, opacity: 0.9 }));
       sp2.visible = false; scene.add(sp2); splashPool.push(sp2);
     }
+    /* the unravelled yarn: one instanced mesh, a rainbow laid down dot by dot */
+    trailMesh = new THREE.InstancedMesh(new THREE.CircleGeometry(0.08, 10),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, depthWrite: false }),
+      TRAIL_MAX);
+    trailMesh.count = 0;
+    trailMesh.visible = false;
+    scene.add(trailMesh);
+    for (let i = 0; i < 3; i++){
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.86 - i * 0.09, 0.06, 8, 22),
+        new THREE.MeshStandardMaterial({ color: [0xFF7B9C, 0x7FD4E8, 0xFFB23F][i],
+          roughness: 0.6, transparent: true }));
+      ring.visible = false; scene.add(ring); wrapRings.push(ring);
+    }
+  }
+  const _m4 = new THREE.Matrix4(), _q2 = new THREE.Quaternion()
+    .setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)), _sc1 = new THREE.Vector3(1, 1, 1);
+  function trailDot(x, z){
+    const Y = room.yarn;
+    if (trailN >= TRAIL_MAX) return;
+    _m4.compose(new THREE.Vector3(x, groundY + 0.008 + trailN * 0.00012, z), _q2, _sc1);
+    trailMesh.setMatrixAt(trailN, _m4);
+    trailMesh.setColorAt(trailN, new THREE.Color().setHSL((Y.hue % 360) / 360, 0.72, 0.62));
+    Y.hue += 11;
+    trailN++;
+    trailMesh.count = trailN;
+    trailMesh.visible = true;
+    trailMesh.instanceMatrix.needsUpdate = true;
+    if (trailMesh.instanceColor) trailMesh.instanceColor.needsUpdate = true;
+    Y.dots = trailN;
+  }
+  function yarnReset(){
+    const Y = room.yarn;
+    Y.active = false; Y.dots = 0; Y.hue = 0; Y.wrapT = 0; Y.done = false;
+    trailN = 0;
+    if (trailMesh){ trailMesh.count = 0; trailMesh.visible = false; }
+    if (wrapRings) wrapRings.forEach(r2 => r2.visible = false);
+    if (yarnBar) yarnBar.style.opacity = '0';
+  }
+  function ensureYarnBar(){
+    if (yarnBar || !room.div) return;
+    yarnBar = document.createElement('div');
+    yarnBar.style.cssText = 'position:absolute;left:12px;right:12px;top:10px;height:7px;'
+      + 'border-radius:99px;background:rgba(10,6,18,0.62);overflow:hidden;'
+      + 'pointer-events:none;opacity:0;transition:opacity 0.4s';
+    const f = document.createElement('div');
+    f.style.cssText = 'height:100%;width:0%;border-radius:99px;transition:width 0.3s;'
+      + 'background:linear-gradient(90deg,#FF7B9C,#FFB23F,#6FE3C4,#7F9CFF,#C77BFF)';
+    yarnBar.appendChild(f);
+    room.div.style.position = 'relative';
+    room.div.appendChild(yarnBar);
   }
   function syncPoops(){
     const want = room.bridge ? Math.min(3, room.bridge.poops()) : 0;
@@ -5447,6 +5507,11 @@ if (stage) (async () => {
     ballMesh.material.color.set(TOYCOL[t.k] || 0xFF7B9C);
     ballMesh.scale.setScalar(t.k === 'box' ? 1.5 : 1);
     ballMesh.visible = true;
+    if (t.k === 'yarn'){
+      ensureYarnBar();
+      room.yarn.active = true;
+      room.yarn.done = false;
+    }
     room.ball = {
       x: 0, y: 1.1, z: 3.1,
       vx: Math.max(-4, Math.min(4, dxPx * 0.02)),
@@ -5776,6 +5841,43 @@ if (stage) (async () => {
       if (B.y === fy){ B.vx *= (1 - 1.6 * dt); B.vz *= (1 - 1.6 * dt); }
       B.settled = B.y === fy && Math.hypot(B.vx, B.vz) < 0.15;
       ballMesh.position.set(B.x, B.y, B.z);
+      /* yarn unravels while it rolls: a rainbow, dot by dot */
+      const Y = room.yarn;
+      if (Y.active && !Y.done && B.y === fy && Math.hypot(B.vx, B.vz) > 0.2){
+        if (Math.hypot(B.x - Y.lx, B.z - Y.lz) > 0.17){
+          Y.lx = B.x; Y.lz = B.z;
+          trailDot(B.x, B.z);
+          if (yarnBar){
+            yarnBar.style.opacity = '1';
+            yarnBar.firstChild.style.width =
+              Math.min(100, Math.round(Y.dots / Y.target * 100)) + '%';
+          }
+          if (Y.dots >= Y.target){
+            Y.done = true; Y.wrapT = 9;
+            room.ball = null; ballMesh.visible = false;
+            room.carrying = false;
+            playIf('Wiggle', true);
+            setTimeout(() => playIf('LoafSettle', true), 1400);
+            meow('trill');
+            if (room.bridge && room.bridge.yarnDone) room.bridge.yarnDone();
+            setState('wrapped', 9);
+          }
+        }
+      }
+    }
+    /* the wrap: three hoops of yarn ride her while she regrets nothing */
+    if (room.yarn.wrapT > 0){
+      room.yarn.wrapT -= dt;
+      if (bones.spine){
+        bones.spine.getWorldPosition(_v3);
+        wrapRings.forEach((r2, i) => {
+          r2.visible = true;
+          r2.position.set(_v3.x, _v3.y - 0.18 + i * 0.22, _v3.z);
+          r2.rotation.set(Math.PI / 2 + (i - 1) * 0.22, t * (0.2 + i * 0.13), 0);
+          r2.material.opacity = Math.min(1, room.yarn.wrapT / 2);
+        });
+      }
+      if (room.yarn.wrapT <= 0) yarnReset();
     }
     if (room.carrying && B && bones.head){
       bones.head.getWorldPosition(_v3);
@@ -5855,6 +5957,9 @@ if (stage) (async () => {
         }
         break;
       }
+      case 'wrapped':
+        if (room.stateT <= 0){ playIf('Idle'); setState('idle', 2); }
+        break;
       case 'settle':
         playIf('LoafSettle', true);
         if (room.stateT <= 0){ playIf('Idle'); setState('idle', 2 + Math.random() * 3); }
