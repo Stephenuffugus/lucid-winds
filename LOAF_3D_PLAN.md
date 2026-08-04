@@ -1,5 +1,9 @@
 # LOAF 3D — the cat becomes a creature, not a drawing
 
+> This is the 3D TECH layer. The full product plan (essence engine,
+> personality, games, engagement, ship path) is **LOAF_PLAN.md** — read
+> that first; it is the product SSOT as of 2026-08-04.
+
 > 2026-08-03, Stephen's direction: the flat procedural cat is dead. The pet
 > must be 3D, animatable without limit, interactive on screen, and above all
 > it must capture the essence of the actual cat that was scanned. This doc is
