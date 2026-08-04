@@ -44,17 +44,19 @@ parts.append(sphere(BODY_C, 0.78, (0.82, 1.30, 0.72)))          # torso
 parts.append(sphere((0, 0.62, 1.06), 0.56, (0.80, 0.80, 0.76))) # chest
 parts.append(sphere((0, 0.82, 1.42), 0.34, (0.8, 0.8, 1.0)))     # neck
 parts.append(sphere((0, -0.80, 1.00), 0.60, (0.92, 0.80, 0.86))) # haunches
-parts.append(sphere(HEAD_C, HEAD_R, (1.0, 0.94, 0.92)))          # head
-parts.append(sphere((-0.24, 1.48, 1.56), 0.15))                  # muzzle pouch L
-parts.append(sphere(( 0.24, 1.48, 1.56), 0.15))                  # muzzle pouch R
-parts.append(sphere((0, 1.50, 1.48), 0.13))                      # chin
+parts.append(sphere(HEAD_C, HEAD_R, (1.08, 0.90, 0.86)))         # skull: wide, flat-front
+parts.append(sphere((-0.33, 1.22, 1.64), 0.20, (1.1, 0.9, 0.95)))# cheek L
+parts.append(sphere(( 0.33, 1.22, 1.64), 0.20, (1.1, 0.9, 0.95)))# cheek R
+parts.append(sphere((-0.13, 1.50, 1.58), 0.145))                 # muzzle pouch L
+parts.append(sphere(( 0.13, 1.50, 1.58), 0.145))                 # muzzle pouch R
+parts.append(sphere((0, 1.52, 1.47), 0.12))                      # chin
 # ears: squashed cones
 for sx in (-1, 1):
-    bpy.ops.mesh.primitive_cone_add(radius1=0.29, depth=0.52, vertices=12,
-        location=(sx * 0.33, 0.94, 2.38))
+    bpy.ops.mesh.primitive_cone_add(radius1=0.32, depth=0.50, vertices=12,
+        location=(sx * 0.36, 0.96, 2.32))
     e = bpy.context.object
-    e.rotation_euler = (math.radians(-6), math.radians(sx * 18), 0)
-    e.scale = (0.95, 0.55, 1.15)
+    e.rotation_euler = (math.radians(-8), math.radians(sx * 22), 0)
+    e.scale = (1.0, 0.52, 1.02)
     parts.append(e)
 # tail: chain of blobs
 # beads at <=0.07 spacing with a GRADUAL taper fuse into one smooth tube -
@@ -131,16 +133,16 @@ def glossy(name, rgb, rough=0.15):
     n.inputs['Roughness'].default_value = rough
     return m
 
-eyemat = glossy('Eye', (0.03, 0.03, 0.035), 0.08)
+eyemat = glossy('Eye', (0.85, 0.85, 0.85), 0.12)
 nosemat = glossy('Nose', (0.75, 0.35, 0.42), 0.4)
 # Eyes and nose stay SEPARATE meshes (v5): the runtime sets iris colour on the
 # Eye material without touching the coat texture, and Phase 2 look-at needs
 # eye bones that rotate pupils without dragging face skin.
-eyeL = sphere((-0.22, 1.50, 1.90), 0.145); eyeL.name = 'EyeL'
+eyeL = sphere((-0.205, 1.445, 1.87), 0.105); eyeL.name = 'EyeL'
 eyeL.data.materials.append(eyemat)
-eyeR = sphere(( 0.22, 1.50, 1.90), 0.145); eyeR.name = 'EyeR'
+eyeR = sphere(( 0.205, 1.445, 1.87), 0.105); eyeR.name = 'EyeR'
 eyeR.data.materials.append(eyemat)
-noseO = sphere((0, 1.63, 1.62), 0.05, (1, 0.7, 0.8)); noseO.name = 'Nose'
+noseO = sphere((0, 1.655, 1.635), 0.042, (1, 0.62, 0.72)); noseO.name = 'Nose'
 noseO.data.materials.append(nosemat)
 bpy.ops.object.select_all(action='DESELECT')
 for o in (eyeL, eyeR, noseO):
@@ -179,7 +181,7 @@ for sx in (-1, 1):
 # sockets (eyes at z1.90 are separate meshes that do not ride morphs - at
 # r0.46 the cheeks swallowed them whole)
 muzK = body.shape_key_add(name='muzzle', from_mix=False)
-mc = mathutils.Vector((0, 1.55, 1.55))
+mc = mathutils.Vector((0, 1.56, 1.56))
 for i, v in enumerate(body.data.vertices):
     if v.co.z > 1.76: continue                        # never touch the eye line
     d = (v.co - mc).length
@@ -220,8 +222,8 @@ head_b = bone('head',  (0, 0.85, 1.50), (0, 1.35, 1.85), neck)
 bone('earL', (-0.30, 0.92, 2.05), (-0.36, 0.92, 2.42), head_b)
 bone('earR', ( 0.30, 0.92, 2.05), ( 0.36, 0.92, 2.42), head_b)
 # eye bones: Phase 2 look-at rotates these; the eye MESHES bind to them 1.0
-bone('eyeL', (-0.22, 1.50, 1.90), (-0.22, 1.64, 1.90), head_b)
-bone('eyeR', ( 0.22, 1.50, 1.90), ( 0.22, 1.64, 1.90), head_b)
+bone('eyeL', (-0.205, 1.445, 1.87), (-0.205, 1.585, 1.87), head_b)
+bone('eyeR', ( 0.205, 1.445, 1.87), ( 0.205, 1.585, 1.87), head_b)
 tp = (0, -0.95, 1.0)
 tprev = root
 for i, p in enumerate(TAIL_PTS[1:]):

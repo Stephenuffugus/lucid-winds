@@ -4724,6 +4724,22 @@ if (stage) (async () => {
           }
         }
       }
+      /* the face: philtrum + mouth line + inner-ear pink. Painted, not
+         modelled - the muzzle is body-space geometry like everything else */
+      const nzg = MAPS.nrm[mi + 2] * (MAPS.float ? 2 : 2 / 255) - 1;
+      const nFwd = -nzg;
+      if (f > 1.45 && h > 1.40 && h < 1.70 && nFwd > 0.1){
+        if (Math.abs(s) < 0.013 && h > 1.545 && h < 1.63)
+          c = mix3(c, [16, 13, 15], 0.4);
+        const hT = 1.545 - 0.05 * Math.pow(Math.min(1, Math.abs(s) / 0.14), 1.6);
+        if (Math.abs(s) < 0.14 && Math.abs(h - hT) < 0.011)
+          c = mix3(c, [16, 13, 15], 0.34);
+      }
+      if (h > 2.05 && nFwd > 0.3){
+        const de = Math.min(Math.hypot(s - 0.36, f - 0.96, h - 2.36),
+                            Math.hypot(s + 0.36, f - 0.96, h - 2.36));
+        if (de < 0.22) c = mix3(c, P.pad, 0.42 * (1 - de / 0.22));
+      }
       /* toe beans: paw undersides take the nose colour — pad genetics */
       if (h < 0.14 && ny < -0.35) c = mix3(c, P.pad, 0.9);
       px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; px[o + 3] = 255;
@@ -4739,6 +4755,90 @@ if (stage) (async () => {
       coatMat.needsUpdate = true;
     } else coatTex.needsUpdate = true;
   }
+
+  /* ══ THE FACE ═══════════════════════════════════════════════════════════
+     Cat eyes are IRIS, wall to wall, with a vertical slit - the giant black
+     orb read as an alien. The iris paints onto the eyeball spheres at the
+     forward point of their UV wrap; the slit and catchlight ride it. */
+  let eyeTex = null;
+  const eyeCanvas = document.createElement('canvas');
+  const EYE_U = 0.75;                    /* forward longitude - probe-tuned */
+  function paintEyes(d){
+    if (!eyeMat || !window.LOAF || !window.LOAF.OK) return;
+    const S2 = 128;
+    eyeCanvas.width = eyeCanvas.height = S2;
+    const g = eyeCanvas.getContext('2d');
+    const A = window.LOAF.OK.adj;
+    const iris = A(d.eye || '#C8D94A', { cc: [0.05, 0.13], cl: [0.40, 0.70] });
+    g.fillStyle = A(iris, { dL: -0.20 });
+    g.fillRect(0, 0, S2, S2);
+    const u0 = EYE_U * S2;
+    const grad = g.createRadialGradient(u0, S2 / 2, 2, u0, S2 / 2, S2 * 0.36);
+    grad.addColorStop(0, A(iris, { dL: 0.12 }));
+    grad.addColorStop(0.7, iris);
+    grad.addColorStop(1, A(iris, { dL: -0.20 }));
+    g.fillStyle = grad;
+    g.fillRect(0, 0, S2, S2);
+    g.fillStyle = '#0B0A0E';
+    g.beginPath();
+    g.ellipse(u0, S2 / 2, S2 * 0.055, S2 * 0.21, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.beginPath();
+    g.ellipse(u0 - S2 * 0.055, S2 / 2 - S2 * 0.075, S2 * 0.026, S2 * 0.038, 0, 0, Math.PI * 2);
+    g.fill();
+    if (!eyeTex){
+      eyeTex = new THREE.CanvasTexture(eyeCanvas);
+      eyeTex.colorSpace = THREE.SRGBColorSpace;
+      eyeTex.wrapS = THREE.RepeatWrapping;
+      eyeMat.map = eyeTex;
+      eyeMat.color.set('#FFFFFF');
+      eyeMat.roughness = 0.14;
+      eyeMat.needsUpdate = true;
+    } else eyeTex.needsUpdate = true;
+  }
+
+  /* Whiskers: eight drooping lines off the muzzle. Half of what makes a
+     face read CAT. Parented to the head bone so they ride every nod. */
+  function addWhiskers(){
+    if (!bones.head) return null;
+    const g2 = new THREE.Group();
+    const mat2 = new THREE.LineBasicMaterial({ color: 0xF4F1E8, transparent: true, opacity: 0.6 });
+    /* head-bone local frame (read off the axis cross, not guessed):
+       +Y out the face, +Z up-back, X lateral. Muzzle sits at (±0.13, 0.58,
+       -0.31); whiskers fan outward and droop down-front (-Z). */
+    for (const sx of [-1, 1])
+      for (let i = 0; i < 4; i++){
+        const pts = [];
+        for (let k = 0; k <= 2; k++){
+          const t2 = k / 2;
+          pts.push(new THREE.Vector3(
+            sx * (0.13 + 0.66 * t2),
+            0.55 + t2 * (0.10 + (i - 1.5) * 0.07),
+            (-0.22 - i * 0.03) - t2 * t2 * 0.20));
+        }
+        g2.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat2));
+      }
+    bones.head.add(g2);
+    return g2;
+  }
+  const whiskers = addWhiskers();
+  window.__loafWhisk = whiskers;         /* probe peephole */
+  /* head-bone axis cross for the probe: X red, Y green, Z blue */
+  window.__loafAxisCross = on => {
+    if (!bones.head) return;
+    if (bones.head.userData.cross){ bones.head.remove(bones.head.userData.cross); bones.head.userData.cross = null; }
+    catMesh.visible = !!window.__loafKeepBody || !on;
+    if (!on) return;
+    const g3 = new THREE.Group();
+    [[1,0,0,0xFF3333],[0,1,0,0x33FF33],[0,0,1,0x3388FF]].forEach(a => {
+      g3.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(0,0,0), new THREE.Vector3(a[0],a[1],a[2]).multiplyScalar(2.0)]),
+        new THREE.LineBasicMaterial({ color: a[3], depthTest: false })));
+    });
+    bones.head.add(g3);
+    bones.head.userData.cross = g3;
+  };
 
   /* ══ THE SCULPTOR ═══════════════════════════════════════════════════════
      Body proportions as runtime BONE SCALES - possible because the clips no
@@ -4773,14 +4873,7 @@ if (stage) (async () => {
       put('muzzle',  liveDNA.muzzle != null ? liveDNA.muzzle : 0.45);
       put('floof',   liveDNA.floof  != null ? liveDNA.floof  : 0.35);
     }
-    if (eyeMat && window.LOAF && window.LOAF.OK){
-      /* the big dark anime eye stays — the iris arrives as a deep jewel
-         tint, never a flat matcha orb */
-      eyeMat.color.set(window.LOAF.OK.adj(liveDNA.eye || '#C8D94A', { cc: [0.04, 0.12], cl: [0.22, 0.38] }))
-        .multiplyScalar(0.55);
-      eyeMat.roughness = 0.06;
-      eyeMat.metalness = 0.2;
-    }
+    paintEyes(liveDNA);
     if (noseMat && liveDNA.nose) noseMat.color.set(liveDNA.nose);
     try { sculpt(liveDNA); } catch (e) {}
     const now = performance.now();
