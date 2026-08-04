@@ -3316,7 +3316,11 @@ function toyIcon(k, size){
     treat:  '<path d="M6 17 q7 -8 14 0 q-7 8 -14 0 z" fill="#F0A26B"/>'
           + '<path d="M20 17 l6 -4 v8 z" fill="#F0A26B"/>'
           + '<circle cx="10" cy="16" r="1.4" fill="#7A3F18"/>',
-    spark:  '<path d="M16 4 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" fill="#FFB23F"/>'
+    spark:  '<path d="M16 4 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" fill="#FFB23F"/>',
+    laser:  '<rect x="5" y="6" width="12" height="6" rx="3" fill="#8A8FA8"/>'
+          + '<circle cx="24" cy="23" r="4.5" fill="#FF4D5E"/>'
+          + '<circle cx="24" cy="23" r="7.5" fill="none" stroke="#FF4D5E" stroke-width="1.2" opacity="0.5"/>'
+          + '<path d="M16 10 l6 9" stroke="#FF9DA6" stroke-width="1.3" stroke-dasharray="2 2"/>'
   };
   return '<svg viewBox="0 0 32 32" width="' + size + '" height="' + size
        + '" aria-hidden="true">' + (paths[k] || paths.spark) + '</svg>';
@@ -3328,7 +3332,8 @@ const Room = (() => {
     { k:'crinkle',n:'Crinkle',cost:0, appeal:1.25 },
     { k:'feather',n:'Feather',cost:0, appeal:1.5, float:true },
     { k:'box',    n:'Box',    cost:2, appeal:1.8 },
-    { k:'treat',  n:'Treat',  cost:3, appeal:0, food:true }
+    { k:'treat',  n:'Treat',  cost:3, appeal:0, food:true },
+    { k:'laser',  n:'Laser',  cost:0, appeal:0, laser:true }
   ];
 
   let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
@@ -3390,7 +3395,16 @@ const Room = (() => {
           if (up) setNote('Level ' + pet.level + '.');
           savePet(card); drawHud();
         },
-        solicited(){ setNote('She brought it back. She is asking.'); }
+        solicited(){ setNote('She brought it back. She is asking.'); },
+        laserDone(q, catches){
+          const xp = 4 + Math.round(q * 10);
+          grantXP(card, xp);
+          setNote(catches
+            ? (q > 0.6 ? 'She had a GREAT time. +' + xp + 'xp'
+                       : 'Good session. She caught it ' + catches + (catches > 1 ? ' times.' : ' time.'))
+            : 'The dot got away. She has opinions.');
+          savePet(card); drawNeeds(); drawHud();
+        }
       });
       return;                                    /* the 2D loop stays parked */
     }
@@ -3427,6 +3441,7 @@ const Room = (() => {
     if (!drag || !card) return;
     const d = drag; drag = null;
     const t = TOYS.find(x => x.k === tool) || TOYS[0];
+    if (t.laser) return;                     /* the dot lives in the 3D room */
     if (t.cost > pet.kibble) return;
     if (t.cost){ pet.kibble -= t.cost; }
     const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
@@ -4417,7 +4432,9 @@ if (stage) (async () => {
   const room = { on: false, div: null, bridge: null, card: null,
     state: 'idle', stateT: 2, tx: 0, tz: 0,
     ball: null, batCount: 0, batHit: false, carrying: false,
-    bowlT: 0, eating: 0, poopM: [], aim: null, soliT: 0 };
+    bowlT: 0, eating: 0, poopM: [], aim: null, soliT: 0,
+    laser: { on: false, x: 0, z: 0, lx: 0, lz: 0, meter: 30, stillW: 0,
+             sprintW: 0, bore: 0, catches: 0, t0: 0, hide: 0, offAt: -9 } };
   const RUG = 2.6;
 
   /* frame HER from the body geometry's own box — Box3.setFromObject reported
@@ -4862,6 +4879,17 @@ if (stage) (async () => {
   cnv.addEventListener('pointerdown', e => {
     down = true; moved = 0; px = e.clientX; py = e.clientY;
     cnv.setPointerCapture(e.pointerId);
+    if (room.on && room.bridge){
+      const t2 = room.bridge.toy();
+      if (t2 && t2.laser){
+        room.laser.on = true;
+        room.laser.t0 = clock.elapsedTime;
+        room.laser.meter = 30;
+        laserDot(e);
+        room.laser.lx = room.laser.x; room.laser.lz = room.laser.z;
+        return;
+      }
+    }
     petting = onHer(e);
     if (petting){ purr(true); return; }
     if (room.on){
@@ -4877,6 +4905,7 @@ if (stage) (async () => {
     life.lookT.set(Math.max(-1, Math.min(1, p.x)), Math.max(-1, Math.min(1, p.y)));
     life.idleGlanceAt = clock.elapsedTime + 5;
     if (!down) return;
+    if (room.laser.on){ laserDot(e); return; }
     const dx = e.clientX - px; px = e.clientX; py = e.clientY; moved += Math.abs(dx);
     if (petting){
       life.pet = Math.min(1, life.pet + Math.abs(dx) * 0.012);
@@ -4888,6 +4917,7 @@ if (stage) (async () => {
     }
   });
   cnv.addEventListener('pointerup', e => {
+    if (room.laser.on){ laserEnd(); down = false; return; }
     if (down && petting){ purr(false); }
     else if (down && room.on && room.aim){
       const dx = e.clientX - room.aim.x0, dy = e.clientY - room.aim.y0;
@@ -4908,7 +4938,7 @@ if (stage) (async () => {
      brain that rests, stalks, pounces... and then brings the toy BACK and
      asks. The cat inviting the player is the whole hook. */
   const TOYCOL = { yarn: 0xFF7B9C, crinkle: 0xC9D2E8, feather: 0xF2EFE2, box: 0xB98A5A };
-  let ballMesh = null, bowlMesh = null;
+  let ballMesh = null, bowlMesh = null, dotMesh = null, dotGlow = null, laserBar = null;
   function ensureRoomProps(){
     if (ballMesh) return;
     ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14),
@@ -4918,6 +4948,16 @@ if (stage) (async () => {
       new THREE.MeshStandardMaterial({ color: 0x6FA8C9, roughness: 0.5 }));
     bowlMesh.position.set(1.55, groundY + 0.07, 0.65);
     bowlMesh.visible = false; scene.add(bowlMesh);
+    /* a sphere, not a flat circle - the room camera grazes the floor and a
+       disc thins to an invisible sliver */
+    dotMesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10),
+      new THREE.MeshBasicMaterial({ color: 0xFF5A66 }));
+    dotMesh.visible = false; scene.add(dotMesh);
+    dotGlow = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20),
+      new THREE.MeshBasicMaterial({ color: 0xFF4D5E, transparent: true,
+        opacity: 0.28, depthWrite: false }));
+    dotGlow.rotation.x = -Math.PI / 2;
+    dotGlow.visible = false; scene.add(dotGlow);
   }
   function syncPoops(){
     const want = room.bridge ? Math.min(3, room.bridge.poops()) : 0;
@@ -4961,6 +5001,120 @@ if (stage) (async () => {
     setState('react', 0.3);
     if (room.soliT > 0){ room.bridge.played(); room.soliT = 0; }
   }
+  /* ── THE LASER GAME ─────────────────────────────────────────────────────
+     Your finger IS the dot, and the meter is a quiet lesson in playing
+     like a good cat owner: stop-and-sprint keeps her hunting, a lazy
+     constant swirl bores her, and letting her CATCH it sometimes is the
+     whole point. Sessions are scored on her fun, not your aim. */
+  function laserDot(e){
+    ray.setFromCamera(toNdc(e), cam);
+    const o = ray.ray.origin, dir = ray.ray.direction;
+    if (Math.abs(dir.y) < 1e-4) return;
+    const k = (groundY - o.y) / dir.y;
+    if (k <= 0) return;
+    let x = o.x + dir.x * k, z = o.z + dir.z * k;
+    const r2 = Math.hypot(x, z);
+    if (r2 > RUG + 0.4){ x *= (RUG + 0.4) / r2; z *= (RUG + 0.4) / r2; }
+    room.laser.x = x; room.laser.z = z;
+  }
+  function chirp(){
+    try {
+      if (!purrCtx) purrCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const t2 = purrCtx.currentTime;
+      const o = purrCtx.createOscillator(), g = purrCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(880, t2);
+      o.frequency.exponentialRampToValueAtTime(1520, t2 + 0.09);
+      g.gain.setValueAtTime(0.14, t2);
+      g.gain.exponentialRampToValueAtTime(0.001, t2 + 0.16);
+      o.connect(g); g.connect(purrCtx.destination);
+      o.start(t2); o.stop(t2 + 0.17);
+    } catch (e) {}
+  }
+  function ensureLaserBar(){
+    if (laserBar || !room.div) return;
+    laserBar = document.createElement('div');
+    laserBar.style.cssText = 'position:absolute;left:12px;right:12px;bottom:10px;height:7px;'
+      + 'border-radius:99px;background:rgba(10,6,18,0.62);overflow:hidden;'
+      + 'pointer-events:none;opacity:0;transition:opacity 0.4s';
+    const f = document.createElement('div');
+    f.style.cssText = 'height:100%;width:30%;border-radius:99px;'
+      + 'background:linear-gradient(90deg,#FF4D5E,#FFB23F);transition:width 0.25s';
+    laserBar.appendChild(f);
+    room.div.style.position = 'relative';
+    room.div.appendChild(laserBar);
+  }
+  function laserEnd(){
+    const L = room.laser;
+    if (!L.on) return;
+    L.on = false; L.offAt = clock.elapsedTime;
+    if (dotMesh){ dotMesh.visible = false; dotGlow.visible = false; }
+    if (clock.elapsedTime - L.t0 > 6 && room.bridge && room.bridge.laserDone)
+      room.bridge.laserDone(Math.max(0, Math.min(1, (L.meter - 20) / 70)), L.catches);
+    L.catches = 0; L.meter = 30; L.bore = 0; L.stillW = 0; L.sprintW = 0;
+    setState('idle', 1.5);
+    playIf('Idle');
+  }
+  function laserBrain(dt, t){
+    const L = room.laser;
+    ensureLaserBar();
+    if (L.hide > 0) L.hide -= dt;
+    dotMesh.visible = dotGlow.visible = L.hide <= 0;
+    dotMesh.position.set(L.x, groundY + 0.07, L.z);
+    dotGlow.position.set(L.x, groundY + 0.018, L.z);
+    const sp = dt > 0 ? Math.hypot(L.x - L.lx, L.z - L.lz) / dt : 0;
+    L.lx = L.x; L.lz = L.z;
+    /* good play = stillness AND sprints inside the same short window */
+    L.stillW = Math.max(0, L.stillW - dt); if (sp < 0.35) L.stillW = 3;
+    L.sprintW = Math.max(0, L.sprintW - dt); if (sp > 3.0) L.sprintW = 3;
+    if (sp > 0.6 && sp < 2.4 && !L.stillW && !L.sprintW) L.bore += dt; else L.bore = 0;
+    L.meter += ((L.stillW > 0 && L.sprintW > 0) ? 5.5 * dt : 0)
+             - (L.bore > 2.5 ? 3 * dt : 0) - 0.7 * dt;
+    L.meter = Math.max(5, Math.min(100, L.meter));
+    if (laserBar){
+      laserBar.style.opacity = '1';
+      laserBar.firstChild.style.width = Math.round(L.meter) + '%';
+    }
+    /* she looks AT the dot */
+    _v3.set(L.x, groundY, L.z).project(cam);
+    life.lookT.set(Math.max(-1, Math.min(1, _v3.x)), Math.max(-1, Math.min(1, _v3.y)));
+    life.idleGlanceAt = t + 5;
+    const dx = L.x - rig.position.x, dz = L.z - rig.position.z;
+    const d = Math.hypot(dx, dz);
+    if (room.state === 'lpounce'){
+      moveToward(L.x, L.z, 3.4, dt);
+      if (!room.batHit && room.stateT < 1.05){
+        room.batHit = true;
+        if (d < 0.55 && sp < 0.6 && L.hide <= 0){
+          L.catches++; L.meter = Math.min(100, L.meter + 22); L.hide = 0.8;
+          chirp();
+          if (room.bridge){ room.bridge.played(); }
+        } else {
+          L.meter = Math.min(100, L.meter + 6);       /* a whiff is still fun */
+        }
+      }
+      room.stateT -= dt;
+      if (room.stateT <= 0) setState('lchase');
+      return;
+    }
+    if (room.state === 'lwig'){
+      faceToward(dx, dz, dt);
+      playIf('Wiggle');
+      room.stateT -= dt;
+      if (room.stateT <= 0){ setState('lpounce', 44 / 24); playIf('Pounce', true); }
+      return;
+    }
+    if (L.meter < 12){ playIf('Idle'); return; }      /* she got bored */
+    if (sp < 0.4){
+      if (d < 1.6 && d > 0.3 && L.stillW > 0){ setState('lwig', 0.75); return; }
+      if (d > 0.3){ moveToward(L.x, L.z, 0.6, dt); playIf('Walk'); }  /* the STALK */
+      else playIf('Idle');
+    } else {
+      moveToward(L.x, L.z, d > 2 ? 2.9 : 1.5, dt);
+      playIf(d > 2 ? 'Gallop' : 'Walk');
+    }
+  }
+
   function setState(st, t2){
     room.state = st; room.stateT = t2 == null ? 0 : t2;
     room.batHit = false;
@@ -5009,6 +5163,8 @@ if (stage) (async () => {
       ballMesh.position.set(_v3.x + Math.sin(rig.rotation.y) * 0.5,
         _v3.y - 0.25, _v3.z + Math.cos(rig.rotation.y) * 0.5);
     }
+    if (room.laser.on){ laserBrain(dt, t); return; }  /* the dot owns her */
+    if (laserBar && clock.elapsedTime - room.laser.offAt > 1.4) laserBar.style.opacity = '0';
     if (petting){ playIf('Idle'); return; }        /* she stops for the hand */
     room.stateT -= dt;
     if (room.soliT > 0) room.soliT -= dt;
