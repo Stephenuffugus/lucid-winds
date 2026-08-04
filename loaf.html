@@ -393,7 +393,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 
 <header class="wrap mast">
   <h1>Scan<br><span>your cat</span></h1>
-  <p>Point the lens at the animal. The unit reads the light, the coat and the general menace, then issues one graded card.</p>
+  <p>Point the lens at the animal. The unit reads the light, the coat and the general mischief, then issues one graded card.</p>
   <div class="nav" role="tablist">
     <button id="tabScan" role="tab" aria-selected="true">The card</button>
     <button id="tabRoom" role="tab" aria-selected="false">The room</button>
@@ -616,16 +616,28 @@ const CONFIG = {
   RETRY_ON_BAD_JSON: true
 };
 
-const STAT_KEYS = ['chonk','loaf','void','menace','zoomies','floof'];
+/* Stat set per Stephen 2026-08-04: catchy words that make people smile.
+   CHARM replaced LOAF, MISCHIEF replaced MENACE; VOID stays as the wildcard
+   sixth (cat internet's favorite word) until he picks a different one.
+   Old saved cards migrate in migrateStats(). */
+const STAT_KEYS = ['chonk','mischief','zoomies','floof','charm','void'];
 /* Each stat now owns a hue, so the bar carries information on its own. */
 const STAT_COLOR = {
-  chonk:  '#FFB23F',
-  loaf:   '#E8C15F',
-  void:   '#8E7BD8',
-  menace: '#FF7B9C',
-  zoomies:'#6FE3C4',
-  floof:  '#9FD1FF'
+  chonk:   '#FFB23F',
+  mischief:'#FF7B9C',
+  zoomies: '#6FE3C4',
+  floof:   '#9FD1FF',
+  charm:   '#E8C15F',
+  void:    '#8E7BD8'
 };
+function migrateStats(card){
+  const s = card && card.stats;
+  if (!s) return card;
+  if (s.menace != null && s.mischief == null) s.mischief = s.menace;
+  if (s.loaf != null && s.charm == null) s.charm = s.loaf;
+  STAT_KEYS.forEach(k => { if (s[k] == null) s[k] = 0; });
+  return card;
+}
 const RARITIES = ['ALLEY','HOUSE','SHOW','FOIL','MYTHIC'];
 const RARITY_COLOR = { ALLEY:'#9A88B3', HOUSE:'#6FE3C4', SHOW:'#7A9BFF', FOIL:'#FFB23F', MYTHIC:'#FF5FA2' };
 /* Confined to the art window, and blended with overlay rather than dodge, so
@@ -1104,7 +1116,7 @@ Return ONLY a JSON object, no markdown, no preamble:
  "coat": "short coat descriptor, max 3 words. COAT ONLY, never a breed name - most cats have no meaningful breed and guessing one is the most complained-about mistake in this category",
  "title": "an epithet for this specific cat, 2-4 words, funny and affectionate, e.g. 'Certified Void Merchant'",
  "rarity": "ALLEY" | "HOUSE" | "SHOW" | "FOIL" | "MYTHIC",
- "stats": { "chonk":0-100, "loaf":0-100, "void":0-100, "menace":0-100, "zoomies":0-100, "floof":0-100 },
+ "stats": { "chonk":0-100, "mischief":0-100, "zoomies":0-100, "floof":0-100, "charm":0-100, "void":0-100 },
  "flavor": "one sentence about what this cat is clearly like to live with, under 110 characters, warm and funny, never mean about the animal",
  "body": {
   "pattern": "solid" | "mackerel" | "classic" | "spotted" | "ticked" | "tortie" | "calico" | "point",
@@ -1331,7 +1343,7 @@ const LOAF_POEMS = {
     ['Not lost, just unseen.', 'Check the darkest shelf you own.', 'Arrive with a treat.'],
     ['House brand of deep space:', 'all black, two slow gold planets,', 'one pink nebula.']
   ],
-  menace: [
+  mischief: [
     ['The glass reached the edge', 'because it deserved the edge.', 'She regrets nothing.'],
     ['One paw, slow as law,', 'moves the pen onto the floor.', 'Court is adjourned now.'],
     ['She knows your ankles.', 'She has made her arrangements.', 'Walk softly at dusk.'],
@@ -1429,6 +1441,8 @@ const LOAF_POEMS = {
   ]
 };
 function poemFor(card){
+  /* charm (and any future stat without its own bank) draws from the serene
+     loaf bank - a beloved calm cat wears those poems fine */
   const bank = LOAF_POEMS[leadStat(card)] || LOAF_POEMS.loaf;
   return bank[hashStr(String(card.id)) % bank.length];
 }
@@ -1477,9 +1491,9 @@ function demoGrade(b64, m){
 
   const stats = {
     chonk:   jitter(2,  28 + m.fill * 62,          26),
-    loaf:    jitter(5,  30 + (1 - m.focus) * 46,   40),
+    charm:   jitter(5,  32 + m.light * 44,         40),
     void:    jitter(8,  92 - m.light * 78,         22),
-    menace:  jitter(11, 34 + m.focus * 48,         44),
+    mischief:jitter(11, 34 + m.focus * 48,         44),
     zoomies: jitter(14, 20 + (1 - m.focus) * 66,   38),
     floof:   jitter(17, 30 + m.fill * 44,          42)
   };
@@ -1524,7 +1538,7 @@ async function grade(b64, meter){
 /* ----------------------------------------------------------------------------
    SCAN FLOW
    -------------------------------------------------------------------------- */
-const BEATS = ['Reading specimen','Measuring loaf density','Assessing menace','Checking void levels','Grading'];
+const BEATS = ['Reading specimen','Measuring loaf density','Assessing mischief','Checking void levels','Grading'];
 let busy = false;
 let pending = null;   // { url, b64, meter }
 let shots = [];       // up to 3 read photos; the first is the card's hero
@@ -1698,6 +1712,7 @@ function mint(g, url, meter, dna){
 }
 
 function paint(card, isNew){
+  migrateStats(card);
   current = card;
   $('cardimg').src = card.photo || '';
   $('cardimg').dataset.face = 'photo';
@@ -3535,11 +3550,11 @@ function readCatFromPhoto(canvas, extMask){
    ========================================================================== */
 const ABILITIES = {
   chonk:   { name:'Immovable Object', desc:'Settles. For thirty seconds nothing you throw can shift her, and everything that bounces off pays double.' },
-  loaf:    { name:'Perfect Form',     desc:'Folds into a flawless loaf. Earns kibble on her own for the rest of the day, which is the most work she has ever done.' },
-  void:    { name:'Vanish',           desc:'Leaves the room entirely and returns holding something that was not previously yours.' },
-  menace:  { name:'The Swat',         desc:'Puts one paw on the nearest object and looks directly at you while removing it from the shelf. Pays out immediately.' },
+  mischief:{ name:'The Swat',         desc:'Puts one paw on the nearest object and looks directly at you while removing it from the shelf. Pays out immediately.' },
   zoomies: { name:'3AM Sprint',       desc:'Twenty seconds at a speed no one asked for. Every toy in the room is dealt with.' },
-  floof:   { name:'Full Fluff',       desc:'Doubles in volume without gaining a gram. Purely cosmetic. Utterly worth it.' }
+  floof:   { name:'Full Fluff',       desc:'Doubles in volume without gaining a gram. Purely cosmetic. Utterly worth it.' },
+  charm:   { name:'The Slow Blink',   desc:'Finds you across the room and closes both eyes at you, slowly. Repairs one entire bad day. Also pays kibble.' },
+  void:    { name:'Vanish',           desc:'Leaves the room entirely and returns holding something that was not previously yours.' }
 };
 function leadStat(card){
   return STAT_KEYS.reduce((a, k) => (card.stats[k] > card.stats[a] ? k : a), STAT_KEYS[0]);
@@ -3680,6 +3695,7 @@ const Room = (() => {
   function open(c){
     card = c;
     if (!card){ stop(); return; }
+    migrateStats(card);
     card.dna = migrateDNA(card.dna) || defaultDNA();
     pet = settleNeeds(card);
     coat = (card.dna && card.dna.base) || (card.meter && card.meter.coat) || '#7A6A55';
@@ -3871,9 +3887,9 @@ const Room = (() => {
     if (k === 'zoomies'){ sprint = 20; cat.state = 'chase'; }
     else if (k === 'floof'){ cat.big = 1.55; }
     else if (k === 'void'){ cat.hidden = 2.2; pet.kibble += 9; }
-    else if (k === 'menace'){ pet.kibble += 7; for (let i=0;i<3;i++) burst(W*0.3+i*90, floorY-40, '#FF7B9C'); }
+    else if (k === 'mischief'){ pet.kibble += 7; for (let i=0;i<3;i++) burst(W*0.3+i*90, floorY-40, '#FF7B9C'); }
     else if (k === 'chonk'){ boost = 30; }
-    else if (k === 'loaf'){ pet.kibble += 6; cat.state = 'loaf'; }
+    else if (k === 'charm'){ pet.kibble += 6; cat.state = 'loaf'; burst(W*0.5, floorY-60, '#E8C15F'); }
     grantXP(card, 14);
     setNote(a.name.toUpperCase() + ' USED.');
     savePet(card); drawHud(); drawTools();
@@ -3925,7 +3941,8 @@ const Room = (() => {
       return (!best || w > best.w) ? { t, w } : best;
     }, null);
 
-    const zoom = card.stats.zoomies / 100, loafy = card.stats.loaf / 100;
+    /* the 2D fallback's settle tendency now reads charm (the calm stat) */
+    const zoom = card.stats.zoomies / 100, loafy = (card.stats.charm || 0) / 100;
     const speed = (60 + zoom * 240) * (sprint > 0 ? 2.1 : 1);
 
     if (cat.state === 'eat'){
@@ -5180,7 +5197,7 @@ if (stage) (async () => {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);       /* gltfpack -noq: meshopt
       streams, positions stay FLOAT — the coat painter reads them raw */
-    gltf = await loader.loadAsync('assets/loaf/cat.pack.glb?v=4');
+    gltf = await loader.loadAsync('assets/loaf/cat.pack.glb?v=5');
   }
   catch (e) { return; }
 
@@ -6785,6 +6802,10 @@ if (stage) (async () => {
       }
       return o;
     },
+    _boneQ(nm){                                  /* harness: drift checks */
+      const bn = bones[nm];
+      return bn ? bn.quaternion.toArray() : null;
+    },
     _setToe(nm, v){                              /* harness A/B only */
       const ix = catMesh && catMesh.morphTargetDictionary
         && catMesh.morphTargetDictionary['toes' + nm];
@@ -6872,11 +6893,24 @@ if (stage) (async () => {
   size();
   play('Idle');
 
-  const _eu = new THREE.Euler(), _q = new THREE.Quaternion(), _v3 = new THREE.Vector3();
+  const _eu = new THREE.Euler(), _q = new THREE.Quaternion(), _qUndo = new THREE.Quaternion(),
+        _v3 = new THREE.Vector3();
+  /* ⛔ THE HEAD-SPIN LESSON: additive multiplies are only safe if the mixer
+     rewrites the bone every frame — and gltfpack prunes CONSTANT rotation
+     tracks, so clips that never move the head (Walk, Gallop) leave it
+     unwritten and the look-at accumulated into a slow 360. Every additive
+     is now recorded and exactly un-applied at the top of the next tick:
+     if the mixer rewrites the bone the un-apply is harmlessly overwritten,
+     and if the track was pruned it restores the true base pose. */
+  const _applied = new Map();          /* bone -> quaternion applied last frame */
   const addRot = (bone, x, y, z) => {
     if (!bone) return;
     _eu.set(x, y, z);
-    bone.quaternion.multiply(_q.setFromEuler(_eu));
+    _q.setFromEuler(_eu);
+    bone.quaternion.multiply(_q);
+    let acc = _applied.get(bone);
+    if (!acc){ acc = new THREE.Quaternion(); _applied.set(bone, acc); }
+    acc.multiply(_q);
   };
   let restH = null;
   (function tick(){
@@ -6884,6 +6918,10 @@ if (stage) (async () => {
     if (document.hidden) return;                    // no battery burn in a pocket
     const dt = Math.min(0.1, clock.getDelta());
     const t = clock.elapsedTime;
+    _applied.forEach((q, bone) => {
+      bone.quaternion.multiply(_qUndo.copy(q).invert());
+      q.identity();
+    });
     mixer.update(dt);
 
     /* ── the life layer, applied AFTER the mixer owns the base pose ── */
