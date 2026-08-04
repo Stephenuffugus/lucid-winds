@@ -66,6 +66,20 @@ if (await pg.evaluate(() => !document.getElementById('sheet').classList.contains
 await new Promise(r => setTimeout(r, 600));
 await pg.screenshot({ path: join(OUT, '2-card.png') });
 
+/* 4b. the alternate face: photo -> 3D avatar -> photo */
+await tap('#faceflip', 'SEE HER IN 3D');
+const flipped = await pg.waitForFunction(
+  () => document.getElementById('cardimg').dataset.face === '3d'
+     && document.getElementById('cardimg').src.startsWith('data:'),
+  { timeout: 15000 }).catch(() => null);
+if (!flipped){ console.log('FAIL: card never showed the 3D face'); process.exit(1); }
+await new Promise(r => setTimeout(r, 400));
+await pg.evaluate(() => document.querySelector('.card').scrollIntoView({ block: 'start' }));
+await new Promise(r => setTimeout(r, 300));
+await pg.screenshot({ path: join(OUT, '2b-card-3dface.png') });
+await tap('#faceflip', 'SEE THE PHOTO');
+console.log('face flip ok');
+
 /* 5. the bridge: Meet her in 3D */
 await tap('#makeAvatar', 'Meet her in 3D');
 await new Promise(r => setTimeout(r, 1500));

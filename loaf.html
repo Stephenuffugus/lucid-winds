@@ -177,6 +177,12 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
   background:rgba(21,14,29,.86);border:1px solid var(--line);color:var(--dim);
   display:flex;align-items:center;gap:6px}
 .postbadge svg{width:16px;height:16px;display:block}
+/* the card face toggle: photo stays the hero; the avatar is one tap away.
+   Sits above the nameplate's reach, 48px touch height. */
+.faceflip{position:absolute;right:12px;bottom:86px;z-index:5;font-family:var(--mono);
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;min-height:48px;
+  padding:8px 14px;border-radius:999px;background:rgba(21,14,29,.86);
+  border:1px solid var(--gold,#FFB23F);color:var(--gold,#FFB23F);cursor:pointer}
 .nameplate{position:absolute;left:16px;right:16px;bottom:12px;z-index:4}
 .nameplate h3{font-size:clamp(28px,8vw,38px);line-height:.9;margin:0;font-weight:800;
   letter-spacing:-.04em;text-transform:uppercase;word-break:break-word}
@@ -421,6 +427,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div class="foil"></div>
       <span class="rarity" id="rarity">—</span>
       <span class="postbadge hidden" id="postbadge"></span>
+      <button class="faceflip hidden" id="faceflip" type="button">SEE HER IN 3D</button>
       <img id="cardimg" alt="Scanned cat">
       <div class="nameplate">
         <h3 id="cname">—</h3>
@@ -1054,8 +1061,20 @@ Return ONLY a JSON object, no markdown, no preamble:
  "title": "an epithet for this specific cat, 2-4 words, funny and affectionate, e.g. 'Certified Void Merchant'",
  "rarity": "ALLEY" | "HOUSE" | "SHOW" | "FOIL" | "MYTHIC",
  "stats": { "chonk":0-100, "loaf":0-100, "void":0-100, "menace":0-100, "zoomies":0-100, "floof":0-100 },
- "flavor": "one sentence about what this cat is clearly like to live with, under 110 characters, warm and funny, never mean about the animal"
+ "flavor": "one sentence about what this cat is clearly like to live with, under 110 characters, warm and funny, never mean about the animal",
+ "body": {
+  "pattern": "solid" | "mackerel" | "classic" | "spotted" | "ticked" | "tortie" | "calico" | "point",
+  "whiteGrade": 0-9 where 0 is no white at all, 2-4 is chin/bib/toes tuxedo territory, 9 is a mostly-white cat,
+  "eyeHex": "#RRGGBB average iris colour",
+  "noseHex": "#RRGGBB nose leather colour",
+  "furLength": 0 to 1 where 0 is sleek shorthair and 1 is a full longhair,
+  "earSize": 0 to 1, "muzzle": 0 to 1 for muzzle length,
+  "build": -1 to 1 where -1 is slender and 1 is cobby,
+  "legLen": 0 to 1,
+  "beanColor": "pink" | "black" | "chocolate" | "mixed" - ONLY if paw pads are actually visible, else omit
+ }
 }
+The "body" object drives a 3D avatar of this exact cat, so read it carefully off the animal. Omit any body field you cannot actually see.
 
 Grade from what you can actually see: build, coat length, colour, posture, expression, eye contact.
 VOID is how dark and shadow-shaped it is. LOAF is how well it tucks. MENACE is mischief in the face, never aggression.
@@ -1101,7 +1120,42 @@ function validate(raw){
     const n = Number(raw.stats && raw.stats[k]);
     out.stats[k] = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 50;
   });
+  if (raw.body && typeof raw.body === 'object'){
+    const b = raw.body, o = {};
+    const num = (v, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : null; };
+    const hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v.trim()) ? v.trim() : null;
+    if (PATTERNS.includes(b.pattern)) o.pattern = b.pattern;
+    if (num(b.whiteGrade, 0, 9) != null) o.whiteGrade = num(b.whiteGrade, 0, 9);
+    if (hex(b.eyeHex)) o.eyeHex = hex(b.eyeHex);
+    if (hex(b.noseHex)) o.noseHex = hex(b.noseHex);
+    ['furLength', 'earSize', 'muzzle', 'legLen'].forEach(k => {
+      if (num(b[k], 0, 1) != null) o[k] = num(b[k], 0, 1);
+    });
+    if (num(b.build, -1, 1) != null) o.build = num(b.build, -1, 1);
+    if (['pink', 'black', 'chocolate', 'mixed'].includes(b.beanColor)) o.beanColor = b.beanColor;
+    if (Object.keys(o).length) out.body = o;
+  }
   return out;
+}
+
+/* The merge policy, in one place. The READER measured pixels, so it owns the
+   coat hexes. The GRADER can see what pixels cannot (tortie vs tabby, a
+   longhair, an eye behind glare), so it owns classification. The OWNER, in
+   the tuner, outranks both - this only ever runs at scan time. */
+function mergeGraderBody(dna, b){
+  if (!b) return dna;
+  if (b.pattern) dna.pattern = b.pattern;
+  if (b.whiteGrade != null && Math.abs((dna.whiteGrade || 0) - b.whiteGrade) > 1)
+    dna.whiteGrade = Math.max(dna.whiteGrade || 0, b.whiteGrade);
+  if (b.eyeHex && !(dna._read && dna._read.eyeConf)) dna.eye = b.eyeHex;
+  if (b.noseHex) dna.nose = b.noseHex;
+  if (b.furLength != null) dna.floof = b.furLength;
+  if (b.earSize != null) dna.ear = b.earSize;
+  if (b.muzzle != null) dna.muzzle = b.muzzle;
+  if (b.legLen != null) dna.legLen = b.legLen;
+  if (b.build != null) dna.frame = b.build;
+  if (b.beanColor) dna.bean = b.beanColor;
+  return dna;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1292,6 +1346,9 @@ async function runScan(shot){
     const g = await grade(shot.b64, shot.meter);
     clearInterval(beat);
     if (!g.is_cat){ show('slot'); return say('No cat detected. The unit only grades cats.'); }
+    /* a real grader's body reading refines the on-device one; the demo
+       grader returns no body, so demo scans keep the reader's word */
+    if (g.body) mergeGraderBody(shot.dna, g.body);
     mint(g, shot.url, shot.meter, shot.dna);
   } catch(e){
     clearInterval(beat);
@@ -1339,6 +1396,9 @@ function mint(g, url, meter, dna){
 function paint(card, isNew){
   current = card;
   $('cardimg').src = card.photo || '';
+  $('cardimg').dataset.face = 'photo';
+  $('faceflip').textContent = 'SEE HER IN 3D';
+  $('faceflip').classList.toggle('hidden', !(window.LoafCat3D && LoafCat3D.snapshot));
   $('cname').textContent = (card.name || 'Unnamed').toUpperCase();
   $('ctitle').textContent = card.title;
   /* coat only — never a breed, even on old saved cards that carry one */
@@ -1456,6 +1516,22 @@ function setName(id, name){
 
 $('again').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
 $('rename').onclick = () => { if (current) openSheet(current); };
+$('faceflip').onclick = async () => {
+  const c = current;
+  if (!c || !window.LoafCat3D || !LoafCat3D.snapshot) return;
+  const img = $('cardimg'), b = $('faceflip');
+  if (img.dataset.face === '3d'){
+    img.src = c.photo || '';
+    img.dataset.face = 'photo';
+    b.textContent = 'SEE HER IN 3D';
+    return;
+  }
+  b.textContent = 'RENDERING…';
+  /* fresh every flip - she may have been sculpted since the last look */
+  const url = await LoafCat3D.snapshot(migrateDNA(c.dna));
+  if (url){ img.src = url; img.dataset.face = '3d'; b.textContent = 'SEE THE PHOTO'; }
+  else b.textContent = 'SEE HER IN 3D';
+};
 $('makeAvatar').onclick = () => {
   /* the post-scan beat this whole design leans on: she is CLOSE - now the
      owner sculpts the last 10 percent, and that is when she becomes theirs */
@@ -4660,6 +4736,26 @@ if (stage) (async () => {
     },
     setChonk(v){ if (catMesh && catMesh.morphTargetDictionary && 'chonk' in catMesh.morphTargetDictionary)
       catMesh.morphTargetInfluences[catMesh.morphTargetDictionary.chonk] = Math.max(0, Math.min(1, v)); },
+    /* a clean square portrait of the CURRENT avatar for the card face.
+       Renders synchronously then reads the canvas in the same task, so
+       preserveDrawingBuffer can stay off. */
+    async snapshot(dna){
+      try {
+        if (dna){ setDNA(dna); await new Promise(r => setTimeout(r, 380)); }
+        const el = renderer.domElement;
+        const ow = el.width, oh = el.height;
+        const bg = scene.background;
+        scene.background = new THREE.Color(0x241B36);
+        renderer.setSize(640, 640, false);
+        cam.aspect = 1; cam.updateProjectionMatrix(); frame();
+        renderer.render(scene, cam);
+        const url = el.toDataURL('image/png');
+        scene.background = bg;
+        renderer.setSize(ow, oh, false);
+        size();
+        return url;
+      } catch (e) { return null; }
+    },
     play,
     _dbg(){
       let coatPx = null;
