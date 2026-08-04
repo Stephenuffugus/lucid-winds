@@ -4316,6 +4316,27 @@ if (stage) (async () => {
   const rim = new THREE.DirectionalLight(0x8FB8FF, 0.7);
   rim.position.set(-4, 3, -3); scene.add(rim);
 
+  /* ground + a soft blob shadow. Without a shadow nothing ever reads
+     airborne - the pounce looked like levitation in every still. */
+  function discTex(inner, outer){
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+    gr.addColorStop(0, inner); gr.addColorStop(1, outer);
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(3.4, 40),
+    new THREE.MeshBasicMaterial({ map: discTex('rgba(58,44,86,0.55)', 'rgba(58,44,86,0)'),
+      transparent: true, depthWrite: false }));
+  floor.rotation.x = -Math.PI / 2;
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(1.35, 32),
+    new THREE.MeshBasicMaterial({ map: discTex('rgba(8,5,14,0.62)', 'rgba(8,5,14,0)'),
+      transparent: true, depthWrite: false }));
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.012;
+
   let gltf;
   try {
     const loader = new GLTFLoader();
@@ -4355,6 +4376,10 @@ if (stage) (async () => {
   const ctr = gb.getCenter(new THREE.Vector3());
   gltf.scene.position.sub(ctr);                     // spin around her middle
   const baseY = gltf.scene.position.y;              // sculpt() offsets from here
+  const groundY = gb.min.y - ctr.y;                 // her paws rest here
+  floor.position.y = groundY + 0.002;
+  shadow.position.y = groundY + 0.014;
+  rig.add(floor); rig.add(shadow);                  // turn WITH her
   const hSpan = gb.max.y - gb.min.y;
   const wSpan = Math.max(gb.max.x - gb.min.x, gb.max.z - gb.min.z);
   function frame(){
@@ -4651,6 +4676,7 @@ if (stage) (async () => {
     const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
     if (bones.head) bones.head.scale.setScalar(1 + kitten * 0.30);
     const es = (0.84 + 0.44 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+    life.esCur = es;                               /* the blink squashes from here */
     if (bones.eyeL) bones.eyeL.scale.setScalar(es);
     if (bones.eyeR) bones.eyeR.scale.setScalar(es);
     rig.scale.x = 1 + 0.10 * Math.max(-1, Math.min(1, v(d.frame, 0)));
@@ -4713,17 +4739,93 @@ if (stage) (async () => {
     chipsEl.appendChild(b);
   }
 
-  /* drag to turn her, tap for a tail flick */
-  let px = 0, moved = 0, down = false;
-  stage.addEventListener('pointerdown', e => { down = true; moved = 0; px = e.clientX; stage.setPointerCapture(e.pointerId); });
-  stage.addEventListener('pointermove', e => { if (!down) return;
+  /* ══ THE LIFE LAYER ═════════════════════════════════════════════════════
+     Runs ON TOP of whatever clip plays: she watches your finger, blinks,
+     twitches an ear, her tail carries momentum - and if you touch HER
+     rather than the room, that is petting: she leans into it and purrs.
+     This is the hook. A viewer shows you a cat; this one notices you. */
+  const clock = new THREE.Clock();
+  const life = {
+    look: new THREE.Vector2(0, 0), lookT: new THREE.Vector2(0, 0),
+    blinkAt: 2.5, blinkP: 1, earAt: 5, earP: 1, earSide: 'earL',
+    tailX: 0, tailV: 0, lastYaw: rig.rotation.y,
+    esCur: 1, pet: 0, petSide: 0, petAt: -9, idleGlanceAt: 4
+  };
+  window.__loafLife = life;                       /* harness peephole */
+
+  /* purr: synthesized brown noise, 24Hz amplitude flutter - and the phone
+     itself rumbles where the platform allows it */
+  let purrCtx = null, purrGain = null;
+  function purr(on){
+    try {
+      if (on && !purrCtx){
+        purrCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const n = purrCtx.sampleRate * 2;
+        const buf = purrCtx.createBuffer(1, n, purrCtx.sampleRate);
+        const ch = buf.getChannelData(0);
+        let acc = 0;
+        for (let i = 0; i < n; i++){ acc = (acc + 0.02 * (Math.random() * 2 - 1)) / 1.02; ch[i] = acc * 3.5; }
+        const src = purrCtx.createBufferSource(); src.buffer = buf; src.loop = true;
+        const lp = purrCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 150;
+        const am = purrCtx.createGain(); am.gain.value = 0.55;
+        const lfo = purrCtx.createOscillator(); lfo.frequency.value = 24;
+        const lfoG = purrCtx.createGain(); lfoG.gain.value = 0.45;
+        lfo.connect(lfoG); lfoG.connect(am.gain);
+        purrGain = purrCtx.createGain(); purrGain.gain.value = 0;
+        src.connect(lp); lp.connect(am); am.connect(purrGain); purrGain.connect(purrCtx.destination);
+        src.start(); lfo.start();
+      }
+      if (!purrCtx) return;
+      if (purrCtx.resume) purrCtx.resume();
+      purrGain.gain.cancelScheduledValues(purrCtx.currentTime);
+      purrGain.gain.setTargetAtTime(on ? 0.5 : 0, purrCtx.currentTime, on ? 0.12 : 0.3);
+      if (navigator.vibrate) navigator.vibrate(on ? [40, 55, 40, 55, 40, 55, 40, 55, 40, 55] : 0);
+    } catch (e) {}
+  }
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function toNdc(e){
+    const r = stage.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1,
+            -((e.clientY - r.top) / r.height) * 2 + 1);
+    return ndc;
+  }
+  function onHer(e){
+    ray.setFromCamera(toNdc(e), cam);
+    return ray.intersectObject(catMesh, false).length > 0;
+  }
+
+  let px = 0, moved = 0, down = false, petting = false;
+  stage.addEventListener('pointerdown', e => {
+    down = true; moved = 0; px = e.clientX;
+    stage.setPointerCapture(e.pointerId);
+    petting = onHer(e);
+    if (petting) purr(true);
+  });
+  stage.addEventListener('pointermove', e => {
+    const p = toNdc(e);
+    life.lookT.set(Math.max(-1, Math.min(1, p.x)), Math.max(-1, Math.min(1, p.y)));
+    life.idleGlanceAt = clock.elapsedTime + 5;
+    if (!down) return;
     const dx = e.clientX - px; px = e.clientX; moved += Math.abs(dx);
-    rig.rotation.y += dx * 0.012; });
-  stage.addEventListener('pointerup', () => { if (down && moved < 6){
-    const prev = active === clips.LoafSettle ? 'LoafSettle' : 'Idle';
-    play('TailPlay', true);
-    setTimeout(() => play(prev, prev === 'LoafSettle'), 2600);
-  } down = false; });
+    if (petting){
+      life.pet = Math.min(1, life.pet + Math.abs(dx) * 0.012);
+      if (dx) life.petSide = life.petSide * 0.8 + Math.sign(dx) * 0.2;
+      life.petAt = clock.elapsedTime;
+      life.tailV += dx * 0.0011;                 /* a happy tail rides the stroke */
+    } else {
+      rig.rotation.y += dx * 0.012;
+    }
+  });
+  stage.addEventListener('pointerup', () => {
+    if (down && petting){ purr(false); }
+    else if (down && moved < 6){
+      const prev = active === clips.LoafSettle ? 'LoafSettle' : 'Idle';
+      play('TailPlay', true);
+      setTimeout(() => play(prev, prev === 'LoafSettle'), 2600);
+    }
+    down = false; petting = false;
+  });
 
   window.LoafCat3D = {
     setDNA,
@@ -4748,6 +4850,10 @@ if (stage) (async () => {
         scene.background = new THREE.Color(0x241B36);
         renderer.setSize(640, 640, false);
         cam.aspect = 1; cam.updateProjectionMatrix(); frame();
+        /* no mid-blink card faces */
+        life.blinkP = 1; life.blinkAt = clock.elapsedTime + 3;
+        if (bones.eyeL) bones.eyeL.scale.y = life.esCur;
+        if (bones.eyeR) bones.eyeR.scale.y = life.esCur;
         renderer.render(scene, cam);
         const url = el.toDataURL('image/png');
         scene.background = bg;
@@ -4795,11 +4901,82 @@ if (stage) (async () => {
   size();
   play('Idle');
 
-  const clock = new THREE.Clock();
+  const _eu = new THREE.Euler(), _q = new THREE.Quaternion(), _v3 = new THREE.Vector3();
+  const addRot = (bone, x, y, z) => {
+    if (!bone) return;
+    _eu.set(x, y, z);
+    bone.quaternion.multiply(_q.setFromEuler(_eu));
+  };
+  let restH = null;
   (function tick(){
     requestAnimationFrame(tick);
     if (document.hidden) return;                    // no battery burn in a pocket
-    mixer.update(clock.getDelta());
+    const dt = Math.min(0.1, clock.getDelta());
+    const t = clock.elapsedTime;
+    mixer.update(dt);
+
+    /* ── the life layer, applied AFTER the mixer owns the base pose ── */
+    // 1. she watches: finger nearby, or an idle glance at the camera
+    if (t > life.idleGlanceAt){
+      life.lookT.set((Math.random() - 0.5) * 0.7, 0.15 + Math.random() * 0.3);
+      life.idleGlanceAt = t + 2.5 + Math.random() * 4.5;
+    }
+    life.look.lerp(life.lookT, Math.min(1, dt * 6));
+    /* axes read off the axis probe, not off assumptions: x nods (+ is up),
+       y turns the face left-right on this rig. The bone's yaw axis leans
+       forward, so a side-look drags the chin up - the |x| pitch term
+       cancels the coupling. */
+    const lkx = life.look.x, lky = life.look.y;
+    addRot(bones.head, lky * 0.30 - Math.abs(lkx) * 0.14, -lkx * 0.38, 0);
+    addRot(bones.neck, lky * 0.10 - Math.abs(lkx) * 0.05, -lkx * 0.15, 0);
+
+    // 2. blinks: quick, occasionally double
+    if (t > life.blinkAt){
+      life.blinkP = 0;
+      life.blinkAt = t + (Math.random() < 0.18 ? 0.28 : 2.4 + Math.random() * 4.2);
+    }
+    life.blinkP = Math.min(1, life.blinkP + dt / 0.13);
+    const lid = 0.12 + 0.88 * Math.abs(life.blinkP * 2 - 1);
+    if (bones.eyeL) bones.eyeL.scale.y = life.esCur * lid;
+    if (bones.eyeR) bones.eyeR.scale.y = life.esCur * lid;
+
+    // 3. an ear flicks now and then
+    if (t > life.earAt){
+      life.earP = 0;
+      life.earSide = Math.random() < 0.5 ? 'earL' : 'earR';
+      life.earAt = t + 3.5 + Math.random() * 6;
+    }
+    life.earP = Math.min(1, life.earP + dt / 0.24);
+    if (life.earP < 1)
+      addRot(bones[life.earSide], 0, -0.5 * Math.sin(life.earP * Math.PI), 0);
+
+    // 4. the tail carries momentum from turns and strokes
+    const yawVel = rig.rotation.y - life.lastYaw;
+    life.lastYaw = rig.rotation.y;
+    life.tailV += (-70 * life.tailX - 7 * life.tailV) * dt + yawVel * 2.2;
+    life.tailX += life.tailV * dt;
+    for (let i = 1; i <= 4; i++)
+      addRot(bones['tail' + i], 0, 0, life.tailX * (0.35 + i * 0.28));
+
+    // 5. petting: she leans into the hand, then settles
+    const since = t - life.petAt;
+    if (since < 1.6 && life.pet > 0){
+      const ease = life.pet * Math.max(0, 1 - since / 1.6);
+      addRot(bones.spine, 0.06 * ease, 0, life.petSide * 0.16 * ease);
+      addRot(bones.head, 0.12 * ease, 0, life.petSide * 0.22 * ease);
+      if (since > 0.4) life.pet = Math.max(0, life.pet - dt * 0.5);
+    }
+
+    // 6. the shadow believes her height
+    if (bones.spine){
+      bones.spine.getWorldPosition(_v3);
+      if (restH === null) restH = _v3.y;
+      const lift = Math.max(0, _v3.y - restH);
+      shadow.material.opacity = Math.max(0.14, 0.62 - lift * 0.9);
+      const ss = 1 + lift * 0.55;
+      shadow.scale.set(ss, ss, 1);
+    }
+
     renderer.render(scene, cam);
   })();
 })();
