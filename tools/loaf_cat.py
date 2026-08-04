@@ -266,8 +266,14 @@ def clip(name, length, poser):
         poser(t, f)
         for pb in arm.pose.bones:
             pb.keyframe_insert('rotation_quaternion', frame=f)
-            pb.keyframe_insert('scale', frame=f)
-            pb.keyframe_insert('location', frame=f)
+            # scale and location channels stay UNKEYED except where a clip
+            # truly uses them (spine breath, root drops) - every other bone's
+            # scale belongs to the RUNTIME SCULPTOR: leg length, tail length,
+            # eye size and kitten-head are bone scales the mixer must not own
+            if pb.name == 'spine':
+                pb.keyframe_insert('scale', frame=f)
+            if pb.name == 'root':
+                pb.keyframe_insert('location', frame=f)
     track = arm.animation_data.nla_tracks.new()
     track.strips.new(act.name, 1, act)
     arm.animation_data.action = None

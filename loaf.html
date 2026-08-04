@@ -3872,12 +3872,19 @@ const Tuner = (() => {
 
   /* Advanced only. Nothing here is named after a parameter in the primary UI. */
   const SLIDERS = [
-    ['whiteEdge','Neat or scruffy edges'], ['floof','Floof'], ['ear','Ear size'],
+    ['patAmp','Marking strength'], ['whiteEdge','Neat or scruffy edges'],
+    ['floof','Floof'], ['ear','Ear size'],
     ['earSet','Ear set'], ['earTuft','Ear tufts'], ['tail','Tail length'],
     ['tailPlume','Tail plume'], ['ruff','Ruff'], ['britches','Britches'],
     ['headRound','Round face'], ['cheek','Cheeks'], ['muzzle','Muzzle'],
     ['eyeSize','Eye size'], ['eyeGap','Eye spacing'], ['legLen','Leg length']
   ];
+  /* Sliders that so far move only the flat card drawing. When the 3D cat is
+     the surface being edited, a control that visibly does nothing teaches
+     the owner to stop touching controls - so these hide until each earns a
+     morph. */
+  const DEAD3D = { earSet:1, earTuft:1, tailPlume:1, ruff:1, britches:1,
+                   headRound:1, cheek:1, eyeGap:1 };
 
   /* Nudge pairs. Each tap moves one derived quantity by a fixed step. An owner
      can always answer "warmer or cooler"; they can never answer "0.34". */
@@ -3920,7 +3927,8 @@ const Tuner = (() => {
                 ['HL','Back left'],  ['HR','Back right']];
   const PAWSTEP = ['none','toes','sock','boot'];
   const COLOURS = [
-    ['base', 'Coat'], ['marking', 'Markings'], ['white', 'White'], ['eye', 'Eyes']
+    ['base', 'Coat'], ['marking', 'Markings'], ['white', 'White'],
+    ['eye', 'Eyes'], ['nose', 'Nose']
   ];
 
   function open(c){
@@ -4050,7 +4058,8 @@ const Tuner = (() => {
       w.append(l, i); col.appendChild(w);
     });
 
-    mkSliders($('tuneSliders'), SLIDERS, d);
+    mkSliders($('tuneSliders'),
+      SLIDERS.filter(([k]) => !(window.LoafCat3D && DEAD3D[k])), d);
   }
 
   function mkSliders(host, list, d){
@@ -4258,6 +4267,8 @@ if (stage) (async () => {
     }
   });
   if (!catMesh) return;
+  const bones = {};
+  gltf.scene.traverse(o => { if (o.isBone) bones[o.name] = o; });
 
   /* frame HER from the body geometry's own box — Box3.setFromObject reported
      a sphere half her real size (r 0.98 vs 2.5) and the v5 cat lost her head
@@ -4267,6 +4278,7 @@ if (stage) (async () => {
   const gb = catMesh.geometry.boundingBox;
   const ctr = gb.getCenter(new THREE.Vector3());
   gltf.scene.position.sub(ctr);                     // spin around her middle
+  const baseY = gltf.scene.position.y;              // sculpt() offsets from here
   const hSpan = gb.max.y - gb.min.y;
   const wSpan = Math.max(gb.max.x - gb.min.x, gb.max.z - gb.min.z);
   function frame(){
@@ -4372,10 +4384,10 @@ if (stage) (async () => {
   const WSEED3 = [
     { p: [ 0.00,  0.85, 1.15], on: 0.40, span: 2.4, r: 0.55 },
     { p: [ 0.00,  1.52, 1.42], on: 1.30, span: 1.2, r: 0.26 },
-    { p: [-0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4 },
-    { p: [ 0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4 },
-    { p: [-0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4 },
-    { p: [ 0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4 },
+    { p: [-0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4, toe: 1 },
+    { p: [ 0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4, toe: 1 },
+    { p: [-0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4, toe: 1 },
+    { p: [ 0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4, toe: 1 },
     { p: [ 0.00, -0.05, 0.42], on: 2.80, span: 2.4, r: 0.60, j: 0.3 },
     { p: [ 0.00, -1.44, 2.18], on: 4.40, span: 2.0, r: 0.30 },
     { p: [ 0.00,  1.58, 1.58], on: 4.80, span: 1.6, r: 0.30 },
@@ -4445,10 +4457,17 @@ if (stage) (async () => {
     for (let i = 0; i < WSEED3.length; i++){
       const w = WSEED3[i];
       if (grade <= w.on) continue;
+      if (w.toe && d.socks && Object.keys(d.socks).length) continue;
       const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
     const pat = d.pattern || 'solid';
+    /* marking strength: 0.65 is the neutral point that preserves the look
+       every cat had before the slider existed */
+    const pAmp = 0.30 + 1.08 * (d.patAmp == null ? 0.65 : d.patAmp);
+    /* owner-tapped paws override the grade's toe guesses entirely */
+    const PAWAT = { FL: [-0.30, 0.74], FR: [0.30, 0.74], HL: [-0.36, -0.72], HR: [0.36, -0.72] };
+    const socks = d.socks && Object.keys(d.socks).length ? d.socks : null;
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++){
       const mi = ((y * step | 0) * M + (x * step | 0)) * 4;
       const o = (y * size + x) * 4;
@@ -4468,7 +4487,7 @@ if (stage) (async () => {
          unwashed; the forehead M is painted deliberately, below */
       const inBody = h > 0.2 && f > -1.35 && f < 1.15 && !(f > 0.85 && h > 1.35);
       if (pat === 'solid'){
-        c = mix3(c, P.core, Math.max(0, (N.fbm(s * 3, f * 3, h * 3) - 0.5) * 0.16 + 0.05));
+        c = mix3(c, P.core, Math.max(0, (N.fbm(s * 3, f * 3, h * 3) - 0.5) * 0.16 + 0.05) * pAmp);
       } else if (pat === 'mackerel'){
         let m = 0;
         /* stripes live on the flanks AND meet over the spine; the belly and
@@ -4483,24 +4502,24 @@ if (stage) (async () => {
           m = Math.max(m, sm(0.55, 0.8, Math.abs((((h * 5 + f * 2) % 1) + 1) % 1 - 0.5) * 2));
         if (f > 1.25 && h > 1.95)
           m = Math.max(m, sm(0.55, 0.8, Math.abs(((s * 9 % 1) + 1) % 1 - 0.5) * 2) * 0.9);
-        c = mix3(c, P.core, Math.min(1, m));
+        c = mix3(c, P.core, Math.min(1, m * pAmp));
       } else if (pat === 'classic'){
         const v = N.fbm(s * 0.9 + 31, f * 0.6, h * 0.7);
-        c = mix3(c, P.core, sm(0.35, 0.52, Math.abs(Math.sin(v * 9 + f * 1.5))) * (inBody ? 1 : 0.4));
+        c = mix3(c, P.core, Math.min(1, sm(0.35, 0.52, Math.abs(Math.sin(v * 9 + f * 1.5))) * (inBody ? 1 : 0.4) * pAmp));
       } else if (pat === 'spotted'){
-        c = mix3(c, P.core, sm(0.60, 0.70, N.fbm(s * 3.4, f * 2.6, h * 3.4)) * (inBody ? 1 : 0.5));
+        c = mix3(c, P.core, Math.min(1, sm(0.60, 0.70, N.fbm(s * 3.4, f * 2.6, h * 3.4)) * (inBody ? 1 : 0.5) * pAmp));
       } else if (pat === 'ticked'){
-        c = mix3(c, P.core, Math.max(0, Math.min(1, (N.vn(s * 26, f * 26, h * 26) - 0.5) * 0.55 + 0.18)) * 0.6);
+        c = mix3(c, P.core, Math.max(0, Math.min(1, (N.vn(s * 26, f * 26, h * 26) - 0.5) * 0.55 + 0.18)) * 0.6 * pAmp);
       } else if (pat === 'tortie' || pat === 'calico'){
         const t = N.fbm(s * 1.5 + 5, f * 1.05, h * 1.05) + (N.vn(s * 9, f * 9, h * 9) - 0.5) * 0.22;
-        c = mix3(c, P.core, sm(0.47, 0.55, t));
+        c = mix3(c, P.core, Math.min(1, sm(0.47, 0.55, t) * pAmp));
       } else if (pat === 'point'){
         let ext = 0;
         ext = Math.max(ext, 1 - Math.hypot(s, f - 1.55, h - 1.62) / 0.62);
         ext = Math.max(ext, 1 - Math.hypot(Math.abs(s) - 0.33, f - 0.94, h - 2.42) / 0.55);
         if (h < 0.6 && Math.abs(f) < 1.15) ext = Math.max(ext, (0.6 - h) / 0.6);
         if (f < -0.95) ext = Math.max(ext, Math.min(1, (-f - 0.95) / 0.45));
-        c = mix3(P.cream, P.core, sm(0.12, 0.75, ext));
+        c = mix3(P.cream, P.core, Math.min(1, sm(0.12, 0.75, ext) * pAmp));
       }
       if (seeds.length){
         let w = 0;
@@ -4510,6 +4529,20 @@ if (stage) (async () => {
           w = Math.max(w, sm(sd.r, sd.r * 0.72, dd));
         }
         c = mix3(c, P.white, Math.min(1, w));
+      }
+      if (socks){
+        /* a tapped paw is a fact: paint the sock as a clean vertical dip
+           with a softly jittered cuff at the owner's chosen height */
+        for (const k2 in PAWAT){
+          const sv = socks[k2];
+          if (sv == null) continue;
+          const H = sv * 1.15;
+          const pw2 = PAWAT[k2];
+          if (h < H + 0.06 && Math.hypot(s - pw2[0], f - pw2[1]) < 0.32){
+            const cuff = H * (1 + (N.fbm(s * 6 + 9, f * 6, h * 6) - 0.5) * 0.22);
+            c = mix3(c, P.white, sm(cuff, cuff - 0.06, h));
+          }
+        }
       }
       /* toe beans: paw undersides take the nose colour — pad genetics */
       if (h < 0.14 && ny < -0.35) c = mix3(c, P.pad, 0.9);
@@ -4525,6 +4558,26 @@ if (stage) (async () => {
       coatMat.color.set('#FFFFFF');
       coatMat.needsUpdate = true;
     } else coatTex.needsUpdate = true;
+  }
+
+  /* ══ THE SCULPTOR ═══════════════════════════════════════════════════════
+     Body proportions as runtime BONE SCALES - possible because the clips no
+     longer keyframe scale on any bone but the breathing spine, so these
+     channels belong to the owner, not the mixer. Leg scale would float or
+     bury her, so the rig compensates vertically. */
+  function sculpt(d){
+    const v = (x, dflt) => x == null ? dflt : x;
+    const lf = 0.82 + 0.36 * v(d.legLen, 0.5);
+    for (const nm of ['FL', 'FR', 'BL', 'BR'])
+      if (bones['leg' + nm + '_up']) bones['leg' + nm + '_up'].scale.y = lf;
+    gltf.scene.position.y = baseY - (lf - 1) * 0.92;
+    if (bones.tail1) bones.tail1.scale.y = 0.75 + 0.5 * v(d.tail, 0.6);
+    const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
+    if (bones.head) bones.head.scale.setScalar(1 + kitten * 0.30);
+    const es = (0.84 + 0.44 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+    if (bones.eyeL) bones.eyeL.scale.setScalar(es);
+    if (bones.eyeR) bones.eyeR.scale.setScalar(es);
+    rig.scale.x = 1 + 0.10 * Math.max(-1, Math.min(1, v(d.frame, 0)));
   }
 
   let paintT = 0, lastQuick = 0, liveDNA = null;
@@ -4548,6 +4601,7 @@ if (stage) (async () => {
       eyeMat.metalness = 0.2;
     }
     if (noseMat && liveDNA.nose) noseMat.color.set(liveDNA.nose);
+    try { sculpt(liveDNA); } catch (e) {}
     const now = performance.now();
     if (now - lastQuick > 120){
       lastQuick = now;

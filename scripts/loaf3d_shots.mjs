@@ -42,7 +42,23 @@ const CATS = [
   ['morphs-min', { base: '#9A7248', marking: '#4A3320', white: '#F2EADF', eye: '#C8D94A',
     nose: '#E09AA6', pattern: 'solid', whiteGrade: 0, seed: 1, chonk: 0, ear: 0, muzzle: 0, floof: 0 }],
   ['morphs-max', { base: '#9A7248', marking: '#4A3320', white: '#F2EADF', eye: '#C8D94A',
-    nose: '#E09AA6', pattern: 'solid', whiteGrade: 0, seed: 1, chonk: 1, ear: 1, muzzle: 1, floof: 1 }]
+    nose: '#E09AA6', pattern: 'solid', whiteGrade: 0, seed: 1, chonk: 1, ear: 1, muzzle: 1, floof: 1 }],
+  /* the sculptor: bone-scale proportions must read instantly */
+  ['sculpt-long', { base: '#B8A88E', marking: '#4A3320', white: '#F2EADF', eye: '#7AA8E8',
+    nose: '#C4756A', pattern: 'solid', whiteGrade: 0, seed: 3, chonk: 0.2, ear: 0.7, muzzle: 0.6,
+    floof: 0.1, legLen: 1, tail: 1, eyeSize: 0.9, age: 0.9, frame: -0.9 }],
+  ['sculpt-kitten', { base: '#8C8C94', marking: '#3D3D46', white: '#F2EFE9', eye: '#B8D24A',
+    nose: '#E09AA6', pattern: 'mackerel', whiteGrade: 0, seed: 4, chonk: 0.55, ear: 0.6, muzzle: 0.2,
+    floof: 0.5, legLen: 0.2, tail: 0.35, eyeSize: 0.8, age: 0.05, frame: 0.5 }],
+  /* owner-tapped paws: toes, sock, boot, one bare */
+  ['socks-tapped', { base: '#17141A', marking: '#0A0808', white: '#F2EFE8', eye: '#AEB94A',
+    nose: '#2A2428', pattern: 'solid', whiteGrade: 2.2, whiteEdge: 0.45, seed: 5, chonk: 0.6,
+    floof: 0.5, socks: { FL: 0.12, FR: 0.303, HL: 0.487 } }],
+  /* marking strength: same cat, whisper vs shout */
+  ['stripes-faint', { base: '#8A7156', marking: '#241C14', white: '#F2EFE8', eye: '#A8B860',
+    nose: '#C4756A', pattern: 'mackerel', whiteGrade: 1.5, seed: 6, chonk: 0.6, patAmp: 0.12 }],
+  ['stripes-loud', { base: '#8A7156', marking: '#241C14', white: '#F2EFE8', eye: '#A8B860',
+    nose: '#C4756A', pattern: 'mackerel', whiteGrade: 1.5, seed: 6, chonk: 0.6, patAmp: 1.0 }]
 ];
 
 const browser = await puppeteer.launch({ headless: 'new', args: [
@@ -69,6 +85,10 @@ await new Promise(r => setTimeout(r, 900));
 for (const [name, dna] of CATS) {
   if (dna) await page.evaluate(d => window.LoafCat3D.setDNA(d), dna);
   await new Promise(r => setTimeout(r, 900));          /* 512px repaint lands at ~260ms */
+  /* SwiftShader frames are SLOW - a wall-clock nap can screenshot a frame
+     rendered before the texture upload. Wait for real presented frames. */
+  await page.evaluate(() => new Promise(r =>
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
   const el = await page.$('#stage3d');
   await el.screenshot({ path: join(ROOT, OUT, name + '.png') });
   console.log('shot', name);
