@@ -321,6 +321,9 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 .tool:disabled{opacity:.4;cursor:not-allowed}
 .roomnote{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;
   padding:0 12px 14px;min-height:18px;line-height:1.5}
+.clipShare{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  padding:0 12px 14px;font-family:var(--mono);font-size:11px;color:var(--bone)}
+.clipShare.hidden{display:none}
 .nopet{padding:36px 22px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim);
   line-height:1.7}
 
@@ -495,6 +498,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="needs" id="needs"></div>
     <div class="tools" id="tools"></div>
     <div class="roomnote" id="roomNote">Drag anywhere to throw. She decides whether that was interesting.</div>
+    <div class="clipShare hidden" id="clipShare"></div>
   </div>
   <div class="tuner" id="tuner">
     <button class="tunerHd" id="tunerToggle" type="button" aria-expanded="false">
@@ -3366,6 +3370,8 @@ function toyIcon(k, size){
           + '<path d="M9 17 q3 -2 6 0 q3 2 6 0" stroke="#7FD4E8" stroke-width="1.4" fill="none" stroke-linecap="round"/>'
           + '<path d="M13 21 q2.4 -1.6 5 0" stroke="#7FD4E8" stroke-width="1.2" fill="none" stroke-linecap="round"/>'
           + '<path d="M20 13 q3 -1 2.6 -4 q-3 0.4 -4 2.6" fill="#F0A26B"/>',
+    clip:   '<circle cx="16" cy="16" r="10.5" fill="none" stroke="#FF6B6B" stroke-width="2"/>'
+          + '<circle cx="16" cy="16" r="5.5" fill="#FF6B6B"/>',
     laser:  '<rect x="5" y="6" width="12" height="6" rx="3" fill="#8A8FA8"/>'
           + '<circle cx="24" cy="23" r="4.5" fill="#FF4D5E"/>'
           + '<circle cx="24" cy="23" r="7.5" fill="none" stroke="#FF4D5E" stroke-width="1.2" opacity="0.5"/>'
@@ -3451,6 +3457,7 @@ const Room = (() => {
           ritualStep('play');
         },
         solicited(){ setNote('She brought it back. She is asking.'); },
+        clipped(bl, label){ offerClip(bl, label); setNote('Clip captured. That one is worth showing someone.'); },
         fishRoll,
         fishCaught(k){
           card.fishBook = card.fishBook || {};
@@ -4032,6 +4039,50 @@ const Room = (() => {
     drawRitual();
   }
 
+  /* ── CLIPS ─────────────────────────────────────────────────────────────────
+     Six seconds of YOUR cat's avatar, straight off the canvas. A video of her
+     doing the biscuits is the single most shareable thing this app makes. */
+  let lastClip = null;
+  function clipsPossible(){
+    return !!(window.LoafCat3D && LoafCat3D.clipStart && window.MediaRecorder
+      && HTMLCanvasElement.prototype.captureStream);
+  }
+  function startClip(){
+    if (!clipsPossible()) return;
+    setNote('Recording 6 seconds. Do something together.');
+    LoafCat3D.clipStart(6)
+      .then(bl => offerClip(bl, 'THE ROOM'))
+      .catch(() => setNote('The recorder is already running.'));
+  }
+  function offerClip(bl, label){
+    if (!bl || !bl.size) return;
+    lastClip = { blob: bl, label };
+    const box = $('clipShare');
+    box.innerHTML = '';
+    const s = document.createElement('span');
+    s.textContent = 'Clip captured: ' + label + '.';
+    const btn = document.createElement('button');
+    btn.className = 'ghost'; btn.type = 'button'; btn.id = 'clipShareBtn';
+    btn.textContent = 'Share the clip';
+    btn.onclick = shareClip;
+    box.append(s, btn);
+    box.classList.remove('hidden');
+  }
+  async function shareClip(){
+    if (!lastClip) return;
+    const ext = lastClip.blob.type.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+    const nm = ((card && card.name !== 'Unnamed' && card.name) || 'loaf')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-clip.' + ext;
+    const file = new File([lastClip.blob], nm, { type: lastClip.blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      try { await navigator.share({ files: [file], title: 'LOAF' }); return; }
+      catch (e){ /* user closed the sheet; fall through to download */ }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(lastClip.blob); a.download = nm;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
   function drawTools(){
     const box = $('tools'); box.innerHTML = '';
     TOYS.forEach(t => {
@@ -4049,6 +4100,13 @@ const Room = (() => {
     a.innerHTML = toyIcon('spark', 26) + (ready ? 'Ability' : 'Used');
     a.onclick = useAbility;
     box.appendChild(a);
+    if (clipsPossible()){
+      const c = document.createElement('button');
+      c.className = 'tool'; c.type = 'button'; c.id = 'clipBtn';
+      c.innerHTML = toyIcon('clip', 26) + 'Clip';
+      c.onclick = startClip;
+      box.appendChild(c);
+    }
   }
   function drawNeeds(){
     const box = $('needs'); box.innerHTML = '';
@@ -4070,7 +4128,8 @@ const Room = (() => {
     $('xpFill').style.width = Math.round(pet.xp / xpNeeded(pet.level) * 100) + '%';
   }
 
-  return { init, open, stop, start, get card(){ return card; } };
+  return { init, open, stop, start, get card(){ return card; },
+           get _clip(){ return lastClip; } };          /* harness peephole */
 })();
 
 /* ----------------------------------------------------------------------------
@@ -6148,6 +6207,11 @@ if (stage) (async () => {
             playIf('Wiggle', true);
             setTimeout(() => playIf('LoafSettle', true), 1400);
             meow('trill');
+            /* the wrap ceremony records itself: the app hands you the clip */
+            if (window.MediaRecorder && room.bridge && room.bridge.clipped){
+              clipStart(6).then(bl => room.bridge.clipped(bl, 'THE WRAP'))
+                .catch(() => {});
+            }
             if (room.bridge && room.bridge.yarnDone) room.bridge.yarnDone();
             setState('wrapped', 9);
           }
@@ -6314,10 +6378,55 @@ if (stage) (async () => {
     }
   }
 
+  /* ── CLIP RECORDER ────────────────────────────────────────────────────────
+     captureStream() records the canvas as it presents each rAF, so this works
+     with preserveDrawingBuffer off. mp4 where the browser can (Safari),
+     webm elsewhere. Video only for now; the purr lives in WebAudio and would
+     need a MediaStreamAudioDestination mix to ride along. */
+  let clipRec = null;
+  function clipStart(secs){
+    return new Promise((resolve, reject) => {
+      if (clipRec){ reject(new Error('busy')); return; }
+      try {
+        const stream = renderer.domElement.captureStream(30);
+        const mime = ['video/mp4;codecs=avc1', 'video/mp4',
+                      'video/webm;codecs=vp9', 'video/webm']
+          .find(tp => window.MediaRecorder && MediaRecorder.isTypeSupported(tp)) || '';
+        const r = new MediaRecorder(stream, mime
+          ? { mimeType: mime, videoBitsPerSecond: 5e6 }
+          : { videoBitsPerSecond: 5e6 });
+        /* the room's gradient is CSS behind a transparent canvas; recorded
+           raw, that encodes as dead black. Paint a matching backdrop into
+           the scene for the take, then put it back. */
+        const prevBG = scene.background;
+        scene.background = new THREE.Color('#1B1230');
+        const chunks = [];
+        r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        r.onstop = () => {
+          clipRec = null;
+          scene.background = prevBG;
+          stream.getTracks().forEach(tk => tk.stop());
+          resolve(new Blob(chunks, { type: mime || 'video/webm' }));
+        };
+        r.onerror = e => {
+          clipRec = null;
+          scene.background = prevBG;
+          reject(e.error || new Error('recorder failed'));
+        };
+        clipRec = r;
+        r.start(250);
+        setTimeout(() => { if (clipRec === r && r.state !== 'inactive') r.stop(); },
+          (secs || 6) * 1000);
+      } catch (e){ clipRec = null; reject(e); }
+    });
+  }
+
   window.LoafCat3D = {
     setDNA,
     setPersona,
     setMood,
+    clipStart,
+    get _rec(){ return !!clipRec; },
     meow,
     roomOpen(card, bridge){
       if (bridge) room.bridge = bridge;
