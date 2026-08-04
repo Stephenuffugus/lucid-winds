@@ -48,8 +48,8 @@ schedule.
 | Date | Day | What happens | Who |
 |---|---|---|---|
 | Aug 1 | Sat | Store copy finished, capsules rebuilt at Valve's current sizes (this document) | done |
-| Aug 2 | Sun | Capture 8 screenshots off the **vendored Steam build**, not the web build | Stephen + me |
-| Aug 3 | Mon | **Start tax questionnaire and bank verification.** It has its own 2 to 7 business day clock and it gates the Release button, not the store page | ⛔ Stephen only |
+| Aug 2 | Sun | ✅ DONE (`060618ab`) — five gameplay screenshots off the vendored Steam build live in `capsules/out/screenshots/` | done |
+| Aug 3 | Mon | ✅ **DONE. Bank + tax verification is COMPLETE — Stephen has confirmed this repeatedly. Never list it as a blocker again.** | done |
 | Aug 3 | Mon | Paste every field below, upload assets, set $2.99 and the launch discount | Stephen, prepped here |
 | **Aug 4** | **Tue** | ⭐ **Submit store page for review.** This is the date that buys a rejection round | Stephen |
 | Aug 5 to 11 | | Valve store review | Valve |
@@ -581,7 +581,7 @@ All paths are relative to `/workspaces/lucid-winds/store/jimothy-steam/capsules/
 | Library capsule | 600 x 900 | ✅ exists | `library_capsule_600x900.png` |
 | Library hero | 3840 x 1240 | ✅ exists | `library_hero_3840x1240.png` |
 | Library logo | 1280 x 720, **RGBA** | ✅ exists, real alpha | `library_logo_1280x720.png` |
-| **Screenshots (min 5)** | 1920 x 1080 | ⛔ **must be recaptured** | see 3.3 |
+| **Screenshots (min 5)** | 1920 x 1080 | ✅ **done** (`060618ab`, five gameplay shots in `out/screenshots/`) | 3.3 is history |
 | Trailer | 1920 x 1080 MP4 | ⛔ **missing** | see Part 4 |
 | Trailer poster frame | 1920 x 1080 | ⛔ **missing** | one still from the trailer |
 | Microtrailer (optional) | 1920 x 1080, 6 sec | ⛔ missing | see Part 4 |
@@ -811,9 +811,9 @@ story.
 
 | Due | Item | Notes |
 |---|---|---|
-| **Mon Aug 3** | **Start tax questionnaire and bank verification** | Its own 2 to 7 business day clock, and it blocks the **Release** button, not the store page. Started Aug 3 it clears around Aug 12. Started Aug 20 it puts Sep 1 at risk for a reason that has nothing to do with the game. This is the least interesting item on this list and the most likely to sink the date. |
+| ~~Mon Aug 3~~ | ✅ **Tax + bank verification: DONE.** Stephen has confirmed this four times. It is not a blocker, do not ask about it, do not resurface it. | done |
 | **Mon Aug 3** | **Ratify $2.99 and the 10% / 7 day launch discount** | Already ratified 2026-07-31 per `CONTENT_RATING.md`. Confirm the discount specifically. It cannot be added after release. |
-| **Sun Aug 2 to Sun Aug 9** | **Capture 8 screenshots** off the vendored Steam build, per Part 4.1 | The three usable existing shots are references, not finals. |
+| ~~Sun Aug 2 to Sun Aug 9~~ | ✅ **Screenshots: DONE** (`060618ab`) | Five gameplay shots at 1920x1080 across five zones, captured off the Steam build with `__STEAM_BUILD` on. Upload the five in `capsules/out/screenshots/`. Three extras from Part 4.2 remain optional. |
 | **Mon Aug 3** | **Submit the Content Survey and age rating** | Legal attestation, must be under the owning account. Answers ready in 1.11. |
 | **Mon Aug 3** | **Submit the AI Content Disclosure form** | Text ready in 1.12. |
 | **Tue Aug 4** | **Press "Mark as ready for review" on the store page** | The date that buys one rejection round. |
@@ -829,31 +829,32 @@ story.
 | Aug 1 | Capsules at Valve's **current** sizes (462x174 / 920x430 / 1232x706 / 748x896) | ✅ **done today** |
 | Aug 1 | Fix `upload.sh` guarding on the retired exe name | ✅ **done today**, see below |
 | Aug 1 | Full store page copy, every field | ✅ **this document** |
-| Aug 2 | `./vendor.sh` and confirm the app boots for the screenshot session | pending |
-| Aug 3 | Rewrite `marketing/steam-jimothy.md` to point at this file so there is one source of truth instead of two drifting ones | pending |
+| Aug 2 | `./vendor.sh` and confirm the app boots | ✅ done Aug 4 — permanent gate `scripts/steam_bootprobe.mjs` boots it past the splash, asserts the gated surfaces + zero external requests, and A/B proves the gate against the web build |
+| Aug 3 | Rewrite `marketing/steam-jimothy.md` to point at this file so there is one source of truth instead of two drifting ones | ✅ done |
 | Aug 5 | Two extra About images (`five-modes-616.png`, `the-cast-616.png`) | pending, optional |
 | Aug 5 | Strengthen `preflight.js` check 4 to read the **actual exe on disk** and the **upload.sh guard**, not just the docs. Today it passes while `upload.sh` names a file that no longer exists | pending |
-| Aug 5 | Fix the How to play screen: it calls the street sweeper "**the wilt**", an internal name left over from the engine's plant game ancestry. Every other player facing string calls it the street sweeper | pending, cosmetic |
+| Aug 5 | Fix the How to play screen: it called the street sweeper "**the wilt**" | ✅ done Aug 4, re-vendored |
 | Aug 18 | `./steampipe/upload.sh`, set the build live, add the launch option | pending |
 | post-launch | Steam Achievements mapped onto the existing 26 badges, as a 1.1 update | parked, deliberately |
 
-## The top five things blocking release, ranked
+## What actually blocks, ranked (rewritten 2026-08-04 — the deadline day)
 
-1. **Bank and tax verification has not been started.** 2 to 7 business days, it
-   gates the Release button, and it is entirely outside anyone's control once
-   submitted. Start it Monday.
-2. **The store page has to be submitted Aug 4, and today is Aug 1.** Sep 1 minus
-   14 days minus a 3 to 5 business day review minus one rejection round leaves a
-   two day window that opens Monday.
-3. **There are no usable screenshots.** Two of the five in the repo advertise
-   surfaces that do not exist in the Steam build, one is an unrendered menu
-   showing a retired feature and a `$3` button, and all five are 70% empty canvas.
-4. **There is no trailer.** Not required for approval, so it does not block Aug 4,
-   but a $2.99 game with no video on the page converts at a fraction of one with.
-5. **The build in `dist/` is stale.** It is the pre-rename Jul 30 build and still
-   carries `Jimothy the Jumping Nugget.exe`. `upload.sh` rebuilds before every
-   upload so this is self healing, but nobody should look at that folder and
-   believe it is what ships.
+1. **The store page must go in TODAY, Tue Aug 4.** Everything it needs exists:
+   copy in this file, capsules + five screenshots in `capsules/out/`, AI
+   disclosure text in 1.12, survey answers in 1.11. This is ~40 minutes of
+   pasting in Steamworks and pressing "Mark as ready for review". Nothing
+   else on this list matters until that button is pressed.
+2. **There is no trailer.** Not required for approval, so it does not block
+   today, but a $2.99 game with no video converts at a fraction. Slot: during
+   the review window (Aug 5 to 17), added to the live page after approval.
+3. **The build upload** (`LW_STEAM_USER=<login> ./steampipe/upload.sh`) can
+   run any day before Aug 18 — build review runs parallel to store review.
+   The stale `dist/` folder is self-healing; upload.sh rebuilds first.
+
+Resolved since the first draft of this list: ✅ bank + tax (done, confirmed
+repeatedly), ✅ screenshots (`060618ab`), ✅ current-size capsules, ✅ boot
+gate `scripts/steam_bootprobe.mjs` (flag on, web surfaces hidden, zero
+external requests, A/B against the web build holds).
 
 ---
 
