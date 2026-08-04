@@ -201,6 +201,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
   display:flex;align-items:center;gap:9px}
 .shape svg{width:22px;height:22px;flex:0 0 auto}
 .shape em{font-style:normal;font-family:var(--jp);color:var(--faint)}
+.poem{padding:2px 16px 18px;font-family:var(--mono);font-size:11.5px;line-height:1.75;
+  font-style:italic;text-align:center;color:var(--dim);letter-spacing:.02em}
 .flavor{padding:12px 16px 20px;font-family:var(--mono);font-size:12px;line-height:1.6;
   color:var(--dim);border-top:1px solid var(--line);margin-top:12px}
 .meta{display:flex;justify-content:space-between;gap:12px;padding:0 16px 16px;
@@ -456,6 +458,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="stats" id="stats"></div>
     <div class="shape hidden" id="cardshape"></div>
     <div class="flavor" id="flavor"></div>
+    <div class="poem" id="poem"></div>
     <div class="ability" id="abilityBox">
       <div class="hd"><span>Daily ability</span><span class="pw" id="cardPower">PWR —</span></div>
       <div class="nm" id="abilityName">—</div>
@@ -1222,6 +1225,75 @@ const D_FLAVOUR = ['Will sit on the one warm laptop you were using.',
   'Believes the bathroom door should never be shut.'];
 const D_COATS = ['Brown tabby','Solid black','Ginger tabby','Grey and white','Tortoiseshell',
   'Silver tabby','Black and white','Cream point','Calico','Smoke grey'];
+
+/* ----------------------------------------------------------------------------
+   THE POEM BANK — LOAF's own, by ruling. Entirely separate from the Lucid
+   Winds haiku engine; no shared banks, no shared lines. Pre-composed whole
+   poems only (assembling independent lines makes word salad; that lesson was
+   already paid for once). 5-7-5, every line hand-counted. Themed by the stat
+   the cat leads on, so a void cat gets a void poem. Nothing in here dies,
+   sickens, or leaves.
+   -------------------------------------------------------------------------- */
+const LOAF_POEMS = {
+  chonk: [
+    ['She fills the whole chair', 'and the chair agrees to it.', 'Nobody complains.'],
+    ['Warm loaf on the couch,', 'the cushion long since given.', 'Winter fears her now.'],
+    ['Stairs are a request', 'she has decided to leave', 'for a lighter cat.'],
+    ['The vet says gently,', 'a little less at dinner.', 'She has heard worse threats.'],
+    ['Sun through the window', 'finds the widest patch of fur', 'it has ever warmed.'],
+    ['One more bowl, she says,', 'with her face, with her whole self.', 'The bowl is empty.'],
+    ['Lap achieved at last.', 'Legs numb by the second hour.', 'A fair arrangement.']
+  ],
+  loaf: [
+    ['Paws tucked out of sight,', 'a perfect bread of morning.', 'The kettle can wait.'],
+    ['On the warm router', 'she has folded her whole self.', 'The internet slows.'],
+    ['Stillness with whiskers.', 'Somewhere inside, four small feet', 'wait for a reason.'],
+    ['The stair gets a loaf.', 'The banister, one slow blink.', 'Morning is managed.'],
+    ['Rain against the glass.', 'She tucks the last paw away.', 'Nothing else to do.'],
+    ['Fresh warm laundry pile,', 'occupied before folding.', 'She was always here.'],
+    ['Sphinx of the hallway,', 'guarding nothing at all now', 'with her whole body.']
+  ],
+  void: [
+    ['Two eyes in the dark,', 'the rest of her a rumor.', 'The night looks back, blinks.'],
+    ['A shadow sat up,', 'stretched, and asked for its dinner.', 'The house is haunted.'],
+    ['Step over nothing.', 'The nothing makes a small sound', 'and leaves, offended.'],
+    ['Black fur, black sofa.', 'You will learn to check by hand.', 'She counts on this now.'],
+    ['Midnight, somewhere close,', 'a soft thing crosses the hall', 'on important work.'],
+    ['The camera sees', 'one cushion and two gold coins.', 'She photographs poor.'],
+    ['Closet door ajar.', 'Inside, a darker darkness', 'purring to itself.']
+  ],
+  menace: [
+    ['The glass reached the edge', 'because it deserved the edge.', 'She regrets nothing.'],
+    ['One paw, slow as law,', 'moves the pen onto the floor.', 'Court is adjourned now.'],
+    ['She knows your ankles.', 'She has made her arrangements.', 'Walk softly at dusk.'],
+    ['The curtain moved once.', 'The curtain says nothing more.', 'Nobody saw her.'],
+    ['Eye contact held while', 'the succulent leaves its shelf.', 'A lesson for all.'],
+    ['Under the sofa,', 'a paw waits like a comma', 'for a passing sock.'],
+    ['The dog knows the rules.', 'The rules are posted daily', 'with a level stare.']
+  ],
+  zoomies: [
+    ['Three in the morning.', 'The hallway is a racetrack.', 'She is every horse.'],
+    ['Nothing was chasing.', 'Something had to be outrun', 'anyway, at speed.'],
+    ['From full loaf to launch', 'in under a heartbeat flat.', 'Physics files a claim.'],
+    ['Around the corner,', 'the sound of applause: her feet,', 'applauding themselves.'],
+    ['The rug has been moved', 'a full foot by a small ghost', 'with visible feet.'],
+    ['Wall, floor, chair, wall, bed.', 'The route inspection complete,', 'she sleeps where she stopped.'],
+    ['Half past four, a drum', 'of sudden distant thunder.', 'It has little feet.']
+  ],
+  floof: [
+    ['Brush her for one hour:', 'enough spare cat for the birds', 'to line every nest.'],
+    ['Mostly made of cloud.', 'Somewhere in there is a cat', 'the size of a fist.'],
+    ['The black coat again.', 'You own no clothing without', 'a signature now.'],
+    ['One slow tail, raised high,', 'a banner over the house', 'announcing herself.'],
+    ['After the slow blink,', 'she doubles in size for you.', 'An honor, of sorts.'],
+    ['Static in the dark:', 'small green sparks along her back', 'when the blanket lifts.'],
+    ['Sunlight through her ears,', 'two small pink lanterns glowing', 'over breakfast time.']
+  ]
+};
+function poemFor(card){
+  const bank = LOAF_POEMS[leadStat(card)] || LOAF_POEMS.loaf;
+  return bank[hashStr(String(card.id)) % bank.length];
+}
 const D_BREEDS = ['Domestic shorthair','Domestic longhair','Tabby mix','Unknown mix',
   'Shorthair, possibly some Siamese','Longhair mix'];
 
@@ -1475,6 +1547,8 @@ function mint(g, url, meter, dna){
     demo: !CONFIG.ENDPOINT,
     meter: meter ? { light:+meter.light.toFixed(3), focus:+meter.focus.toFixed(3), fill:+meter.fill.toFixed(3), coat:meter.coat } : null
   };
+  /* her poem, fixed at mint so the card never changes under her owner */
+  card.poem = poemFor(card);
   const all = Store.update(list => {
     card.serial = list.length + 1;
     return [card].concat(list);
@@ -1497,6 +1571,12 @@ function paint(card, isNew){
   $('coat').textContent = card.coat || 'Unrecorded';
   $('serial').textContent = '№' + String(card.serial).padStart(3,'0') + (card.demo ? ' · DEMO' : '');
   $('flavor').textContent = card.flavor;
+  /* older cards minted before the bank get theirs on first view */
+  const pm = card.poem || poemFor(card);
+  const pv = $('poem'); pv.innerHTML = '';
+  pm.forEach(l => {
+    const d = document.createElement('div'); d.textContent = l; pv.appendChild(d);
+  });
 
   const tag = $('rarity');
   tag.textContent = card.rarity;
@@ -4255,7 +4335,9 @@ $('save').onclick = async () => {
     else _fline += w + ' ';
   });
   const _hasP = !!(card.posture && POSTURE_BY_KEY[card.posture]);
-  const H = PS + PH + 72 + 52*STAT_KEYS.length + (_hasP ? 46 : 0) + 56 + (_fl-1)*38 + 96;
+  const _poem = card.poem || poemFor(card);
+  const H = PS + PH + 72 + 52*STAT_KEYS.length + (_hasP ? 46 : 0) + 56 + (_fl-1)*38
+          + 40 + _poem.length*36 + 96;
   cv.width = W; cv.height = H;
   const img = new Image();
   img.onerror = () => say('Could not build the image. Try again.');
@@ -4319,6 +4401,13 @@ $('save').onclick = async () => {
       else line += w + ' ';
     });
     c.fillText(line, PS, ly);
+
+    /* her poem, centered, in a quieter ink */
+    c.fillStyle = '#6C5A85'; c.font = 'italic 400 25px "DM Mono",monospace';
+    c.textAlign = 'center';
+    let py = ly + 58;
+    _poem.forEach(pl => { c.fillText(pl, W/2, py); py += 36; });
+    c.textAlign = 'left';
 
     c.fillStyle = '#5A4A72'; c.font = '400 22px "DM Mono",monospace';
     c.fillText('LOAF · LUCIDWINDS.COM', PS, H-52);
