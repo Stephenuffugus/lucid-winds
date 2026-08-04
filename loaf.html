@@ -444,6 +444,9 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
     <div class="shelf" id="shapeshelf"></div>
   </div>
 
+  <!-- The scan is the FOUNDATION; the owner is the finish. This is the
+       bridge: card in hand, now go sculpt her until she is yours. -->
+  <div class="row"><button class="btn" id="makeAvatar">Meet her in 3D</button></div>
   <div class="row"><button class="btn" id="save">Share or save the card</button></div>
   <div class="row">
     <button class="ghost" id="rename">Rename</button>
@@ -481,8 +484,8 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div class="chips hidden" id="stageClips"></div>
       <canvas id="tunePrev" width="520" height="300"></canvas>
       <p class="tunerNote">The unit read this off the photograph. It is often
-        close and sometimes confidently wrong, and it cannot see a small patch
-        of white at all. You have met her. It has not.</p>
+        close and sometimes confidently wrong — a shadow can read as stripes,
+        a sunlit chest as snow. You have met her. It has not.</p>
 
       <div class="tuneRow"><b>Is this her?</b><div class="nudges" id="tuneNudge"></div></div>
       <div class="tuneRow"><b>Her shape</b><div class="silgrid" id="tuneSil"></div></div>
@@ -1453,6 +1456,15 @@ function setName(id, name){
 
 $('again').onclick = () => { pending = null; show('slot'); say(''); window.scrollTo({ top:0, behavior:'smooth' }); };
 $('rename').onclick = () => { if (current) openSheet(current); };
+$('makeAvatar').onclick = () => {
+  /* the post-scan beat this whole design leans on: she is CLOSE - now the
+     owner sculpts the last 10 percent, and that is when she becomes theirs */
+  setTab('room');
+  const c = current || Store.read()[0];
+  if ($('tunerBody').classList.contains('hidden')) $('tunerToggle').click();
+  else if (c) Tuner.open(c);
+  $('tuner').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 $('remove').onclick = () => {
   if (!current) return;
   const id = current.id;
