@@ -202,6 +202,26 @@ for i, v in enumerate(body.data.vertices):
     if amt > 0:
         flK.data[i].co = v.co + v.normal * amt
 
+# toe splay: one key per paw for the bean press. Radial spread in the paw
+# plane plus a small forward fan; belly-up, the pressed paw visibly opens.
+# Keys are NEVER keyframed by clips - the runtime owns them, like the rest
+# of the sculpting handles.
+for _nm, _px, _py in (('FL', -LEG_X_F, LEG_Y_F + 0.06), ('FR', LEG_X_F, LEG_Y_F + 0.06),
+                      ('BL', -LEG_X_B, LEG_Y_B + 0.06), ('BR', LEG_X_B, LEG_Y_B + 0.06)):
+    tk = body.shape_key_add(name='toes' + _nm, from_mix=False)
+    pc = mathutils.Vector((_px, _py, 0.11))
+    for i, v in enumerate(body.data.vertices):
+        if v.co.z > 0.34:
+            continue                                   # paw zone only
+        d = (v.co - pc).length
+        w = max(0.0, 1.0 - d / 0.30)
+        if w <= 0:
+            continue
+        out = mathutils.Vector((v.co.x - pc.x, v.co.y - pc.y, 0))
+        if out.length > 1e-4:
+            out.normalize()
+        tk.data[i].co = v.co + out * (0.075 * w) + mathutils.Vector((0, 0.05 * w, 0.015 * w))
+
 # ---------------- armature ----------------
 bpy.ops.object.armature_add(location=(0, 0, 0))
 arm = bpy.context.object

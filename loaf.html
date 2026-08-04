@@ -5042,7 +5042,7 @@ if (stage) (async () => {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);       /* gltfpack -noq: meshopt
       streams, positions stay FLOAT — the coat painter reads them raw */
-    gltf = await loader.loadAsync('assets/loaf/cat.pack.glb?v=3');
+    gltf = await loader.loadAsync('assets/loaf/cat.pack.glb?v=4');
   }
   catch (e) { return; }
 
@@ -6232,6 +6232,13 @@ if (stage) (async () => {
   function beansEnd(){
     room.beans.on = false;
     purr(false);
+    /* she stands up with her toes closed */
+    if (catMesh && catMesh.morphTargetDictionary){
+      for (const nm of ['FL', 'FR', 'BL', 'BR']){
+        const ix = catMesh.morphTargetDictionary['toes' + nm];
+        if (ix != null) catMesh.morphTargetInfluences[ix] = 0;
+      }
+    }
     playIf('Idle');
     setState('idle', 1.5);
     frame();                                   /* camera returns to its seat */
@@ -6267,6 +6274,20 @@ if (stage) (async () => {
       const k2 = Math.sin((0.5 - BN.pulse) / 0.5 * Math.PI);
       addRot(bones['leg' + BN.paw + '_up'], 0.22 * k2, 0, 0);
       addRot(bones['leg' + BN.paw + '_lo'], -0.45 * k2, 0, 0);
+    }
+    /* toe splay rides the press: the touched paw's key opens, eases shut.
+       Kneading opens the front paws in alternation with the biscuits. */
+    if (catMesh && catMesh.morphTargetDictionary){
+      const dict = catMesh.morphTargetDictionary, inf = catMesh.morphTargetInfluences;
+      for (const nm of ['FL', 'FR', 'BL', 'BR']){
+        const ix = dict['toes' + nm];
+        if (ix == null) continue;
+        let tgt = 0;
+        if (BN.paw === nm && (BN.pulse > 0 || BN.held > 0)) tgt = 1;
+        if (BN.held > 1.1 && (nm === 'FL' || nm === 'FR'))
+          tgt = Math.max(tgt, 0.5 + 0.5 * Math.sin(BN.knead + (nm === 'FR' ? Math.PI : 0)));
+        inf[ix] += (tgt - inf[ix]) * Math.min(1, dt * 9);
+      }
     }
   }
   function beansPress(e){
@@ -6617,6 +6638,20 @@ if (stage) (async () => {
     roomEvent,
     _room: room,                                 /* harness peephole */
     get _mood(){ return mood; },
+    _toes(){
+      if (!catMesh || !catMesh.morphTargetDictionary) return null;
+      const o = {};
+      for (const nm of ['FL', 'FR', 'BL', 'BR']){
+        const ix = catMesh.morphTargetDictionary['toes' + nm];
+        o[nm] = ix == null ? -1 : +catMesh.morphTargetInfluences[ix].toFixed(2);
+      }
+      return o;
+    },
+    _setToe(nm, v){                              /* harness A/B only */
+      const ix = catMesh && catMesh.morphTargetDictionary
+        && catMesh.morphTargetDictionary['toes' + nm];
+      if (ix != null) catMesh.morphTargetInfluences[ix] = v;
+    },
     _project(x, z){
       _v3.set(x, groundY, z).project(cam);
       return { x: _v3.x, y: _v3.y };

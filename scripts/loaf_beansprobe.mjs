@@ -65,6 +65,17 @@ const press = await pg.evaluate(() => ({
 console.log('press:', JSON.stringify(press));
 if (!(press.pulse > 0) || !press.paw){ console.log('FAIL: press registered nothing'); process.exit(1); }
 
+/* the pressed paw's TOES must splay (morph rides the press) */
+const toes = await pg.evaluate(() => window.LoafCat3D._toes && window.LoafCat3D._toes());
+console.log('toes:', JSON.stringify(toes));
+if (!toes){ console.log('FAIL: no toe morphs in the GLB'); process.exit(1); }
+if (toes[press.paw] < 0.5){
+  console.log('FAIL: pressed paw ' + press.paw + ' toes never opened (' + toes[press.paw] + ')');
+  process.exit(1);
+}
+await pg.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+await d3.screenshot({ path: join(OUT, 'beans-splay.png') });
+
 /* hold: biscuits */
 await new Promise(r => setTimeout(r, 2000));
 const held = await pg.evaluate(() => window.LoafCat3D._room.beans.held);
@@ -73,6 +84,15 @@ await pg.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnim
 await d3.screenshot({ path: join(OUT, 'beans-knead.png') });
 console.log('kneading at held', held.toFixed(2));
 await pg.mouse.up();
+
+/* release: toes ease shut, and switching away hard-zeroes them */
+await new Promise(r => setTimeout(r, 1400));
+const after = await pg.evaluate(() => window.LoafCat3D._toes());
+if (after[press.paw] > 0.25){
+  console.log('FAIL: toes stayed open after release: ' + JSON.stringify(after));
+  process.exit(1);
+}
+console.log('toes eased shut:', JSON.stringify(after));
 
 /* switching away stands her up and returns the camera */
 await pg.evaluate(() => {
