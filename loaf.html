@@ -1246,7 +1246,10 @@ async function intake(file){
   /* A modal colour is always won by the flattest thing in frame, which is the
      background, never the striped animal. Report what the reader found. */
   if (dna.base) meter.coat = dna.base;
-  if (dna.base && window.LoafCat3D) LoafCat3D.setCoat(dna.base);
+  if (dna && window.LoafCat3D){
+    if (LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(dna));
+    else if (dna.base) LoafCat3D.setCoat(dna.base);
+  }
   pending = { url: small.url, b64: big.url.split(',')[1], meter, dna };
 
   $('mimg').src = small.url;
@@ -3796,6 +3799,7 @@ const Tuner = (() => {
     card = c;
     prev = $('tunePrev'); if (!prev) return;
     pcx = prev.getContext('2d');
+    if (window.LoafCat3D && LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(card.dna));
     build();
     loop();
   }
@@ -3808,6 +3812,7 @@ const Tuner = (() => {
       return list;
     });
     if (Room.card && Room.card.id === card.id) Room.card.dna = card.dna;
+    if (window.LoafCat3D && LoafCat3D.setDNA) LoafCat3D.setDNA(card.dna);
   }
 
   function set(k, v){ card.dna[k] = v; commit(); build(); }
@@ -4065,7 +4070,8 @@ document.addEventListener('visibilitychange', () => {
 
 /* exposed for testing and for the studio harness */
 window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, validate,
-                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room, BUILDS };
+                CatArt, readCatFromPhoto, defaultDNA, PATTERNS, WHITE_STYLES, Room, BUILDS,
+                OK, migrateDNA };
 </script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
@@ -4077,6 +4083,7 @@ window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, vali
    Fails silently back to the 2D canvas when WebGL is unavailable. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const stage = document.getElementById('stage3d');
 const chipsEl = document.getElementById('stageClips');
@@ -4095,35 +4102,331 @@ if (stage) (async () => {
   rim.position.set(-4, 3, -3); scene.add(rim);
 
   let gltf;
-  try { gltf = await new GLTFLoader().loadAsync('assets/loaf/cat.glb?v=1'); }
+  try {
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);       /* gltfpack -noq: meshopt
+      streams, positions stay FLOAT — the coat painter reads them raw */
+    gltf = await loader.loadAsync('assets/loaf/cat.pack.glb?v=3');
+  }
   catch (e) { return; }
 
   const rig = new THREE.Group();
   rig.add(gltf.scene); scene.add(rig);
   rig.rotation.y = Math.PI - 0.62;      // face the camera, three-quarter - the
                                         // first render greeted us with her butt
-  const box = new THREE.Box3().setFromObject(gltf.scene);
-  const ctr = box.getCenter(new THREE.Vector3());
+  let coatMat = null, catMesh = null, eyeMat = null, noseMat = null;
+  gltf.scene.traverse(o => {
+    if (o.isMesh){
+      /* the body is the mesh that morphs; eyes and nose are separate now */
+      if (o.morphTargetDictionary && 'chonk' in o.morphTargetDictionary) catMesh = o;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of ms){
+        if (m.name === 'Coat') coatMat = m;
+        if (m.name === 'Eye') eyeMat = m;
+        if (m.name === 'Nose') noseMat = m;
+      }
+    }
+  });
+  if (!catMesh) return;
+
+  /* frame HER from the body geometry's own box — Box3.setFromObject reported
+     a sphere half her real size (r 0.98 vs 2.5) and the v5 cat lost her head
+     to it. Geometry is y-up armature space; the rig only ever Y-rotates, so
+     spans survive rotation. */
+  catMesh.geometry.computeBoundingBox();
+  const gb = catMesh.geometry.boundingBox;
+  const ctr = gb.getCenter(new THREE.Vector3());
   gltf.scene.position.sub(ctr);                     // spin around her middle
-  /* frame HER, whatever her size: distance from the bounding sphere and the
-     stage's real aspect - the fixed 4.4 put a kaiju head in the lens */
-  const sph = box.getBoundingSphere(new THREE.Sphere());
+  const hSpan = gb.max.y - gb.min.y;
+  const wSpan = Math.max(gb.max.x - gb.min.x, gb.max.z - gb.min.z);
   function frame(){
-    const a = cam.aspect || 1;
-    const vFit = sph.radius / Math.tan((cam.fov * Math.PI / 180) / 2);
-    const hFit = vFit / a;
-    cam.position.set(0, sph.radius * 0.22, Math.max(vFit, hFit) * 1.30);
-    cam.lookAt(0, -sph.radius * 0.06, 0);
+    const a = cam.aspect || 1, t = Math.tan(cam.fov * Math.PI / 360);
+    const dV = (hSpan * 0.62) / t;
+    const dH = (wSpan * 0.42) / (t * a);
+    cam.position.set(0, hSpan * 0.08, Math.max(dV, dH) + 0.9);
+    cam.lookAt(0, 0, 0);
   }
   frame();
 
-  let coatMat = null, catMesh = null;
-  gltf.scene.traverse(o => {
-    if (o.isMesh){ catMesh = o;
-      const ms = Array.isArray(o.material) ? o.material : [o.material];
-      for (const m of ms) if (m.name === 'Coat') coatMat = m;
+  /* ══ THE COAT PAINTER ═══════════════════════════════════════════════════
+     Patterns are computed in BODY SPACE — stripes along the spine, socks by
+     height on the leg, points by distance from the core — so UV islands can
+     never show a seam. One UV-space render pass bakes per-texel position and
+     normal; the painter then walks a canvas and writes the coat, and the
+     canvas becomes the material's texture. Zero shipped texture bytes. */
+  const MAPS = { size: 512, pos: null, nrm: null, min: null, ext: null };
+  function bakeMaps(){
+    const g = catMesh.geometry;
+    g.computeBoundingBox();
+    const mn = g.boundingBox.min.clone();
+    const ext = g.boundingBox.max.clone().sub(mn);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { bmin: { value: mn }, bext: { value: ext }, mode: { value: 0 } },
+      vertexShader:
+        'varying vec3 vP; varying vec3 vN;\n' +
+        'void main(){ vP = position; vN = normal;\n' +
+        '  gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0); }',
+      fragmentShader:
+        'varying vec3 vP; varying vec3 vN;\n' +
+        'uniform vec3 bmin; uniform vec3 bext; uniform float mode;\n' +
+        'void main(){ if (mode < 0.5) gl_FragColor = vec4((vP - bmin) / bext, 1.0);\n' +
+        '  else gl_FragColor = vec4(normalize(vN) * 0.5 + 0.5, 1.0); }',
+      side: THREE.DoubleSide, depthTest: false, depthWrite: false
+    });
+    const sc = new THREE.Scene();
+    sc.add(new THREE.Mesh(g, mat));
+    const cam2 = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    /* FLOAT target: 8-bit positions quantise into visible staircase blocks
+       at pattern edges. WebGL2 float render targets are universal enough;
+       the byte path stays as the fallback. */
+    let rt, floatOK = true;
+    try {
+      rt = new THREE.WebGLRenderTarget(MAPS.size, MAPS.size,
+        { depthBuffer: false, type: THREE.FloatType });
+    } catch (e) { floatOK = false; }
+    const read = m => {
+      mat.uniforms.mode.value = m;
+      renderer.setRenderTarget(rt);
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear();
+      renderer.render(sc, cam2);
+      const buf = floatOK ? new Float32Array(MAPS.size * MAPS.size * 4)
+                          : new Uint8Array(MAPS.size * MAPS.size * 4);
+      renderer.readRenderTargetPixels(rt, 0, 0, MAPS.size, MAPS.size, buf);
+      return buf;
+    };
+    if (!floatOK) rt = new THREE.WebGLRenderTarget(MAPS.size, MAPS.size, { depthBuffer: false });
+    try { MAPS.pos = read(0); }
+    catch (e) {                                  /* float readback refused */
+      floatOK = false;
+      rt.dispose();
+      rt = new THREE.WebGLRenderTarget(MAPS.size, MAPS.size, { depthBuffer: false });
+      MAPS.pos = read(0);
     }
-  });
+    MAPS.nrm = read(1);
+    MAPS.float = floatOK;
+    MAPS.min = mn; MAPS.ext = ext;
+    renderer.setRenderTarget(null);
+    rt.dispose(); mat.dispose();
+  }
+
+  /* seeded 3D value noise — deterministic per cat, Math.imul keeps the hash
+     in honest 32-bit land */
+  function mkNoise(seed){
+    function hash(x, y, z){
+      let n = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 1274126177) ^ seed;
+      n = Math.imul(n ^ (n >>> 13), 972663749);
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+    }
+    const S = t => t * t * (3 - 2 * t);
+    const L = (a, b, t) => a + (b - a) * t;
+    function vn(x, y, z){
+      const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+      const u = S(x - xi), v = S(y - yi), w = S(z - zi);
+      return L(
+        L(L(hash(xi, yi, zi),     hash(xi + 1, yi, zi),     u),
+          L(hash(xi, yi + 1, zi), hash(xi + 1, yi + 1, zi), u), v),
+        L(L(hash(xi, yi, zi + 1),     hash(xi + 1, yi, zi + 1),     u),
+          L(hash(xi, yi + 1, zi + 1), hash(xi + 1, yi + 1, zi + 1), u), v),
+        w);
+    }
+    const fbm = (x, y, z) =>
+      0.55 * vn(x, y, z) + 0.30 * vn(x * 2.3 + 7, y * 2.3 + 3, z * 2.3 + 5)
+      + 0.15 * vn(x * 5.1 + 13, y * 5.1 + 9, z * 5.1 + 2);
+    return { vn, fbm, hash };
+  }
+
+  /* the 2D card's melanocyte-migration white order, relocated to 3D anchors.
+     p = [side, forward, up] in the Blender body frame. Toes jitter
+     independently, so three white paws and not the fourth falls out free. */
+  const WSEED3 = [
+    { p: [ 0.00,  0.85, 1.15], on: 0.40, span: 2.4, r: 0.55 },
+    { p: [ 0.00,  1.52, 1.42], on: 1.30, span: 1.2, r: 0.26 },
+    { p: [-0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4 },
+    { p: [ 0.30,  0.74, 0.14], on: 1.70, span: 3.0, r: 0.30, j: 1.4 },
+    { p: [-0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4 },
+    { p: [ 0.36, -0.72, 0.14], on: 2.20, span: 3.0, r: 0.28, j: 1.4 },
+    { p: [ 0.00, -0.05, 0.42], on: 2.80, span: 2.4, r: 0.60, j: 0.3 },
+    { p: [ 0.00, -1.44, 2.18], on: 4.40, span: 2.0, r: 0.30 },
+    { p: [ 0.00,  1.58, 1.58], on: 4.80, span: 1.6, r: 0.30 },
+    { p: [ 0.00,  1.50, 1.95], on: 5.60, span: 2.0, r: 0.24 },
+    { p: [-0.70, -0.10, 1.00], on: 6.80, span: 2.0, r: 0.55, j: 0.5 },
+    { p: [ 0.70, -0.10, 1.00], on: 6.80, span: 2.0, r: 0.55, j: 0.5 },
+    { p: [ 0.00,  0.30, 1.60], on: 7.60, span: 1.8, r: 0.55, j: 0.5 },
+    { p: [ 0.00, -0.60, 1.65], on: 8.60, span: 1.6, r: 0.62, j: 0.5 },
+    { p: [ 0.00,  1.00, 2.30], on: 9.20, span: 1.2, r: 0.60 }
+  ];
+  const GRADES = { none: 0, bib: 1.6, socks: 2.6, bicolour: 5.2, van: 8.6 };
+
+  function hexN(hx){
+    let t = String(hx).replace('#', '');
+    if (t.length === 3) t = t.split('').map(c => c + c).join('');
+    const n = parseInt(t, 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+  /* same OKLCH anchor recipe as the card palette — clamped BEFORE deriving */
+  function pal3D(d){
+    const A = window.LOAF.OK.adj, W = (d.warmth || 0) * 14;
+    const coatDark = A(d.marking || '#4A3320', { cl: [0.14, 0.70], cc: [0.02, 0.16], dH: W });
+    return {
+      mid:   hexN(A(d.base || '#9A7248', { cl: [0.20, 0.86], cc: [0.02, 0.14], dH: W })),
+      core:  hexN(coatDark),
+      under: hexN(A(d.base || '#9A7248', { dL: 0.16, dC: -0.010, dH: 8 + W, cl: [0.30, 0.92] })),
+      white: hexN(A(d.white || '#F2EADF', { cl: [0.86, 0.955], cc: [0, 0.035] })),
+      cream: hexN(A(d.base || '#9A7248', { dL: 0.30, dC: -0.03, cl: [0.60, 0.93] })),
+      pad:   hexN(A(d.nose || '#B0736E', { dL: -0.02, cc: [0.02, 0.10] }))
+    };
+  }
+
+  function dilate(px, size, passes){
+    /* bleed island edges outward so bilinear sampling never grabs void */
+    for (let p = 0; p < passes; p++){
+      const src = px.slice();
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++){
+        const o = (y * size + x) * 4;
+        if (src[o + 3]) continue;
+        for (let k = 0; k < 4; k++){
+          const x2 = x + [1, -1, 0, 0][k], y2 = y + [0, 0, 1, -1][k];
+          if (x2 < 0 || y2 < 0 || x2 >= size || y2 >= size) continue;
+          const q = (y2 * size + x2) * 4;
+          if (src[q + 3]){ px[o] = src[q]; px[o + 1] = src[q + 1]; px[o + 2] = src[q + 2]; px[o + 3] = 255; break; }
+        }
+      }
+    }
+  }
+
+  const coatCanvas = document.createElement('canvas');
+  let coatTex = null;
+  function paintCoat(d, size){
+    if (!MAPS.pos || !coatMat || !window.LOAF || !window.LOAF.OK) return;
+    const M = MAPS.size, step = M / size;
+    coatCanvas.width = coatCanvas.height = size;
+    const ctx = coatCanvas.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    const px = img.data;
+    const N = mkNoise((d.seed >>> 0) || 0x9E3779B9);
+    const P = pal3D(d);
+    const sm = (a, b, t) => { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const mix3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    const g0 = d.whiteGrade != null ? d.whiteGrade : (GRADES[d.whiteStyle] || 0);
+    const grade = d.pattern === 'calico' ? Math.max(g0, 5.2) : g0;
+    const edge = d.whiteEdge == null ? 0.5 : d.whiteEdge;
+    const seeds = [];
+    for (let i = 0; i < WSEED3.length; i++){
+      const w = WSEED3[i];
+      if (grade <= w.on) continue;
+      const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
+      seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
+    }
+    const pat = d.pattern || 'solid';
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++){
+      const mi = ((y * step | 0) * M + (x * step | 0)) * 4;
+      const o = (y * size + x) * 4;
+      const q = MAPS.float ? 1 : 1 / 255;
+      if ((MAPS.float ? MAPS.pos[mi + 3] : MAPS.pos[mi + 3] / 255) < 0.03){ px[o + 3] = 0; continue; }
+      /* glTF is y-up, -z-forward; back into the body frame: s side, f fwd, h up */
+      const s = MAPS.min.x + MAPS.pos[mi] * q * MAPS.ext.x;
+      const h = MAPS.min.y + MAPS.pos[mi + 1] * q * MAPS.ext.y;
+      const f = -(MAPS.min.z + MAPS.pos[mi + 2] * q * MAPS.ext.z);
+      const nx = MAPS.nrm[mi] * (MAPS.float ? 2 : 2 / 255) - 1,
+            ny = MAPS.nrm[mi + 1] * (MAPS.float ? 2 : 2 / 255) - 1;
+      /* countershading — real fur is lighter underneath; this is anatomy,
+         not baked lighting */
+      const underAmt = Math.max(0, -ny) * (h < 1.35 ? 1 : 0.35);
+      let c = mix3(P.mid, P.under, Math.min(0.75, underAmt * 0.8));
+      /* the head is NOT body-band territory - cheek stripes made her look
+         unwashed; the forehead M is painted deliberately, below */
+      const inBody = h > 0.2 && f > -1.35 && f < 1.15 && !(f > 0.85 && h > 1.35);
+      if (pat === 'solid'){
+        c = mix3(c, P.core, Math.max(0, (N.fbm(s * 3, f * 3, h * 3) - 0.5) * 0.16 + 0.05));
+      } else if (pat === 'mackerel'){
+        let m = 0;
+        /* stripes live on the flanks AND meet over the spine; the belly and
+           chest stay clear (ny<0 kills both) */
+        const flank = Math.min(1, Math.abs(nx) * 1.3 + Math.max(0, ny) * 0.7);
+        const phase = f * 5.2 + (N.fbm(s * 2.2, f * 1.3, h * 2.2) - 0.5) * 1.2;
+        const b = Math.abs(((phase % 1) + 1) % 1 - 0.5) * 2;
+        if (inBody && h > 0.55) m = sm(0.50, 0.74, b) * flank;
+        if (h <= 0.85 && Math.abs(f) < 1.15)
+          m = Math.max(m, sm(0.58, 0.82, Math.abs(((h * 5 % 1) + 1) % 1 - 0.5) * 2) * 0.5);
+        if (f < -1.0)
+          m = Math.max(m, sm(0.55, 0.8, Math.abs((((h * 5 + f * 2) % 1) + 1) % 1 - 0.5) * 2));
+        if (f > 1.25 && h > 1.95)
+          m = Math.max(m, sm(0.55, 0.8, Math.abs(((s * 9 % 1) + 1) % 1 - 0.5) * 2) * 0.9);
+        c = mix3(c, P.core, Math.min(1, m));
+      } else if (pat === 'classic'){
+        const v = N.fbm(s * 0.9 + 31, f * 0.6, h * 0.7);
+        c = mix3(c, P.core, sm(0.35, 0.52, Math.abs(Math.sin(v * 9 + f * 1.5))) * (inBody ? 1 : 0.4));
+      } else if (pat === 'spotted'){
+        c = mix3(c, P.core, sm(0.60, 0.70, N.fbm(s * 3.4, f * 2.6, h * 3.4)) * (inBody ? 1 : 0.5));
+      } else if (pat === 'ticked'){
+        c = mix3(c, P.core, Math.max(0, Math.min(1, (N.vn(s * 26, f * 26, h * 26) - 0.5) * 0.55 + 0.18)) * 0.6);
+      } else if (pat === 'tortie' || pat === 'calico'){
+        const t = N.fbm(s * 1.5 + 5, f * 1.05, h * 1.05) + (N.vn(s * 9, f * 9, h * 9) - 0.5) * 0.22;
+        c = mix3(c, P.core, sm(0.47, 0.55, t));
+      } else if (pat === 'point'){
+        let ext = 0;
+        ext = Math.max(ext, 1 - Math.hypot(s, f - 1.55, h - 1.62) / 0.62);
+        ext = Math.max(ext, 1 - Math.hypot(Math.abs(s) - 0.33, f - 0.94, h - 2.42) / 0.55);
+        if (h < 0.6 && Math.abs(f) < 1.15) ext = Math.max(ext, (0.6 - h) / 0.6);
+        if (f < -0.95) ext = Math.max(ext, Math.min(1, (-f - 0.95) / 0.45));
+        c = mix3(P.cream, P.core, sm(0.12, 0.75, ext));
+      }
+      if (seeds.length){
+        let w = 0;
+        for (const sd of seeds){
+          const dd = Math.hypot(s - sd.p[0], f - sd.p[1], h - sd.p[2])
+            * (1 + (N.fbm(s * 5 + 47, f * 5, h * 5) - 0.5) * (0.35 + edge * 0.5));
+          w = Math.max(w, sm(sd.r, sd.r * 0.72, dd));
+        }
+        c = mix3(c, P.white, Math.min(1, w));
+      }
+      /* toe beans: paw undersides take the nose colour — pad genetics */
+      if (h < 0.14 && ny < -0.35) c = mix3(c, P.pad, 0.9);
+      px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; px[o + 3] = 255;
+    }
+    dilate(px, size, 6);
+    ctx.putImageData(img, 0, 0);
+    if (!coatTex){
+      coatTex = new THREE.CanvasTexture(coatCanvas);
+      coatTex.flipY = false;                       /* glTF UVs: v=0 is the TOP */
+      coatTex.colorSpace = THREE.SRGBColorSpace;
+      coatMat.map = coatTex;
+      coatMat.color.set('#FFFFFF');
+      coatMat.needsUpdate = true;
+    } else coatTex.needsUpdate = true;
+  }
+
+  let paintT = 0, lastQuick = 0, liveDNA = null;
+  function setDNA(dna){
+    if (!dna) return;
+    liveDNA = JSON.parse(JSON.stringify(dna));
+    if (catMesh && catMesh.morphTargetDictionary){
+      const dict = catMesh.morphTargetDictionary, inf = catMesh.morphTargetInfluences;
+      const put = (k, v) => { if (k in dict) inf[dict[k]] = Math.max(0, Math.min(1, v)); };
+      put('chonk',   liveDNA.chonk  != null ? liveDNA.chonk  : 0.5);
+      put('earSize', liveDNA.ear    != null ? liveDNA.ear    : 0.5);
+      put('muzzle',  liveDNA.muzzle != null ? liveDNA.muzzle : 0.45);
+      put('floof',   liveDNA.floof  != null ? liveDNA.floof  : 0.35);
+    }
+    if (eyeMat && window.LOAF && window.LOAF.OK){
+      /* the big dark anime eye stays — the iris arrives as a deep jewel
+         tint, never a flat matcha orb */
+      eyeMat.color.set(window.LOAF.OK.adj(liveDNA.eye || '#C8D94A', { cc: [0.04, 0.12], cl: [0.22, 0.38] }))
+        .multiplyScalar(0.55);
+      eyeMat.roughness = 0.06;
+      eyeMat.metalness = 0.2;
+    }
+    if (noseMat && liveDNA.nose) noseMat.color.set(liveDNA.nose);
+    const now = performance.now();
+    if (now - lastQuick > 120){
+      lastQuick = now;
+      try { paintCoat(liveDNA, 192); } catch (e) {}
+    }
+    clearTimeout(paintT);
+    paintT = setTimeout(() => { try { paintCoat(liveDNA, 512); } catch (e) {} }, 260);
+  }
+  try { bakeMaps(); } catch (e) {}
 
   const mixer = new THREE.AnimationMixer(gltf.scene);
   const clips = {};
@@ -4161,11 +4464,41 @@ if (stage) (async () => {
   } down = false; });
 
   window.LoafCat3D = {
-    setCoat(hex){ if (coatMat) coatMat.color.set(hex); },
+    setDNA,
+    setCoat(hex){                              /* legacy tint path, kept alive */
+      if (liveDNA){ liveDNA.base = hex; setDNA(liveDNA); }
+      else if (coatMat && !coatTex) coatMat.color.set(hex);
+      else if (liveDNA === null && window.LOAF && window.LOAF.defaultDNA){
+        const d = window.LOAF.defaultDNA(); d.base = hex; setDNA(d);
+      }
+    },
     setChonk(v){ if (catMesh && catMesh.morphTargetDictionary && 'chonk' in catMesh.morphTargetDictionary)
       catMesh.morphTargetInfluences[catMesh.morphTargetDictionary.chonk] = Math.max(0, Math.min(1, v)); },
-    play
+    play,
+    _dbg(){
+      let coatPx = null;
+      try { coatPx = Array.from(coatCanvas.getContext('2d').getImageData(
+        coatCanvas.width >> 1, coatCanvas.height >> 1, 1, 1).data); } catch (e) {}
+      let coatStats = null, coatURL = null;
+      try {
+        const w = coatCanvas.width, im = coatCanvas.getContext('2d').getImageData(0, 0, w, w).data;
+        let cov = 0, r = 0, g2 = 0, bl = 0;
+        for (let i = 0; i < im.length; i += 4)
+          if (im[i + 3]){ cov++; r += im[i]; g2 += im[i + 1]; bl += im[i + 2]; }
+        coatStats = { cov: cov / (w * w), avg: cov ? [r / cov | 0, g2 / cov | 0, bl / cov | 0] : null };
+        coatURL = coatCanvas.toDataURL();
+      } catch (e) {}
+      return { hSpan, wSpan, cam: cam.position.toArray(), aspect: cam.aspect,
+        stage: [stage.clientWidth, stage.clientHeight], float: MAPS.float,
+        dna: liveDNA, coatPx, coatSize: coatCanvas.width, coatStats, coatURL,
+        pal: liveDNA ? pal3D(liveDNA) : null,
+        matColor: coatMat ? coatMat.color.getHexString() : null,
+        hasMap: !!(coatMat && coatMat.map) };
+    }
   };
+  /* first light: a full default coat, so the stage never shows the bare
+     material while a scan or the tuner decides who she is */
+  if (window.LOAF && window.LOAF.defaultDNA) setDNA(window.LOAF.defaultDNA());
 
   function size(){
     const w = stage.clientWidth || 520, h = stage.clientHeight || 320;

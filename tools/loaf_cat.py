@@ -9,7 +9,7 @@ exports cat.glb, and renders a 4-angle turntable for the LOOK pass.
 Every proportion is a parameter: this script IS the asset.
 +Y is forward. Units are metres-ish; the cat is ~2.4 long.
 """
-import bpy, math, os, sys
+import bpy, math, os, sys, mathutils
 
 OUT = sys.argv[sys.argv.index('--') + 1] if '--' in sys.argv else 'assets/loaf'
 os.makedirs(OUT, exist_ok=True)
@@ -99,7 +99,21 @@ sm = body.modifiers.new('Smooth', 'SMOOTH')
 sm.factor = 0.9
 sm.iterations = 12
 bpy.ops.object.modifier_apply(modifier='Smooth')
+
+# phone budget: the remesh emits ~50k quads; collapse toward ~9.5k tris.
+# Must happen BEFORE any shape key exists - modifiers cannot apply over keys.
+dec = body.modifiers.new('Dec', 'DECIMATE')
+dec.ratio = min(1.0, 4800.0 / max(1, len(body.data.polygons)))
+bpy.ops.object.modifier_apply(modifier='Dec')
 bpy.ops.object.shade_smooth()
+
+# UVs for the runtime coat painter. Patterns are computed in BODY SPACE from a
+# position map baked in the viewer, so islands never need to be pretty - they
+# only need to not overlap. Smart project guarantees that.
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.03)
+bpy.ops.object.mode_set(mode='OBJECT')
 
 mat = bpy.data.materials.new('Coat')
 mat.use_nodes = True
@@ -119,22 +133,25 @@ def glossy(name, rgb, rough=0.15):
 
 eyemat = glossy('Eye', (0.03, 0.03, 0.035), 0.08)
 nosemat = glossy('Nose', (0.75, 0.35, 0.42), 0.4)
-extras = []
-for sx in (-1, 1):
-    e = sphere((sx * 0.22, 1.50, 1.90), 0.145)   # big glossy eyes on the face front
-    e.data.materials.append(eyemat)
-    extras.append(e)
-n = sphere((0, 1.63, 1.62), 0.05, (1, 0.7, 0.8))
-n.data.materials.append(nosemat)
-extras.append(n)
-for o in extras:
+# Eyes and nose stay SEPARATE meshes (v5): the runtime sets iris colour on the
+# Eye material without touching the coat texture, and Phase 2 look-at needs
+# eye bones that rotate pupils without dragging face skin.
+eyeL = sphere((-0.22, 1.50, 1.90), 0.145); eyeL.name = 'EyeL'
+eyeL.data.materials.append(eyemat)
+eyeR = sphere(( 0.22, 1.50, 1.90), 0.145); eyeR.name = 'EyeR'
+eyeR.data.materials.append(eyemat)
+noseO = sphere((0, 1.63, 1.62), 0.05, (1, 0.7, 0.8)); noseO.name = 'Nose'
+noseO.data.materials.append(nosemat)
+bpy.ops.object.select_all(action='DESELECT')
+for o in (eyeL, eyeR, noseO):
     o.select_set(True)
-body.select_set(True)
-bpy.context.view_layer.objects.active = body
-bpy.ops.object.join()
+bpy.context.view_layer.objects.active = eyeL
 bpy.ops.object.shade_smooth()
 
-# ---------------- CHONK shape key ----------------
+# ---------------- shape keys (the tuner's sculpting handles) ----------------
+bpy.ops.object.select_all(action='DESELECT')
+body.select_set(True)
+bpy.context.view_layer.objects.active = body
 bpy.ops.object.shape_key_add(from_mix=False)          # Basis
 chonk = body.shape_key_add(name='chonk', from_mix=False)
 bx, by, bz = BODY_C
@@ -145,6 +162,43 @@ for i, v in enumerate(body.data.vertices):
     if w > 0 and co.z < 1.45:                          # belly and flanks, not the face
         k = chonk.data[i]
         k.co = (co.x * (1 + 0.30 * w), co.y, co.z - 0.12 * w)
+
+# earSize: scale each ear about its own centroid + a gentle lift
+earK = body.shape_key_add(name='earSize', from_mix=False)
+for sx in (-1, 1):
+    ec = mathutils.Vector((sx * 0.33, 0.94, 2.42))
+    for i, v in enumerate(body.data.vertices):
+        d = (v.co - ec).length
+        w = max(0.0, 1.0 - d / 0.48)
+        if w > 0:
+            k = earK.data[i]
+            k.co = ec + (v.co - ec) * (1 + 0.55 * w)
+            k.co.z += 0.10 * w
+
+# muzzleLength: push the muzzle/chin zone forward. Radius kept BELOW the eye
+# sockets (eyes at z1.90 are separate meshes that do not ride morphs - at
+# r0.46 the cheeks swallowed them whole)
+muzK = body.shape_key_add(name='muzzle', from_mix=False)
+mc = mathutils.Vector((0, 1.55, 1.55))
+for i, v in enumerate(body.data.vertices):
+    if v.co.z > 1.76: continue                        # never touch the eye line
+    d = (v.co - mc).length
+    w = max(0.0, 1.0 - d / 0.36)
+    if w > 0:
+        muzK.data[i].co = v.co + mathutils.Vector((0, 0.30 * w * w, 0.02 * w))
+
+# floof: inflate along the normal - silhouette puff. The face is spared HARD
+# (inflation near the eye line sank the separate eye meshes), paws stay
+# grounded, and the amount is gentle enough not to crease the spine.
+flK = body.shape_key_add(name='floof', from_mix=False)
+fc = mathutils.Vector((0, 1.52, 1.78))
+for i, v in enumerate(body.data.vertices):
+    if v.co.z < 0.25: continue
+    face = max(0.0, 1.0 - (v.co - fc).length / 0.75)
+    amt = 0.07 * max(0.0, 1.0 - face * 1.8)
+    if v.co.y < -1.0: amt += 0.05                     # tail plume
+    if amt > 0:
+        flK.data[i].co = v.co + v.normal * amt
 
 # ---------------- armature ----------------
 bpy.ops.object.armature_add(location=(0, 0, 0))
@@ -165,6 +219,9 @@ neck   = bone('neck',  (0, 0.45, 1.05), (0, 0.85, 1.50), spine)
 head_b = bone('head',  (0, 0.85, 1.50), (0, 1.35, 1.85), neck)
 bone('earL', (-0.30, 0.92, 2.05), (-0.36, 0.92, 2.42), head_b)
 bone('earR', ( 0.30, 0.92, 2.05), ( 0.36, 0.92, 2.42), head_b)
+# eye bones: Phase 2 look-at rotates these; the eye MESHES bind to them 1.0
+bone('eyeL', (-0.22, 1.50, 1.90), (-0.22, 1.64, 1.90), head_b)
+bone('eyeR', ( 0.22, 1.50, 1.90), ( 0.22, 1.64, 1.90), head_b)
 tp = (0, -0.95, 1.0)
 tprev = root
 for i, p in enumerate(TAIL_PTS[1:]):
@@ -177,10 +234,23 @@ for nm, sx, x, y, topz in (('FL', -1, LEG_X_F, LEG_Y_F, 0.95), ('FR', 1, LEG_X_F
     bone('leg%s_lo' % nm, (sx * x, y, 0.48), (sx * x, y + 0.06, 0.08), up)
 bpy.ops.object.mode_set(mode='OBJECT')
 
+bpy.ops.object.select_all(action='DESELECT')
 body.select_set(True)
 arm.select_set(True)
 bpy.context.view_layer.objects.active = arm
 bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+# auto-weights spread face skin onto the eye bones - strip those groups so a
+# Phase 2 eye look-at moves pupils, never cheeks
+for gname in ('eyeL', 'eyeR'):
+    vg = body.vertex_groups.get(gname)
+    if vg: body.vertex_groups.remove(vg)
+# eyes and nose ride their bones rigidly: explicit single-group binding
+for ob, bn in ((eyeL, 'eyeL'), (eyeR, 'eyeR'), (noseO, 'head')):
+    vg = ob.vertex_groups.new(name=bn)
+    vg.add(list(range(len(ob.data.vertices))), 1.0, 'REPLACE')
+    mod = ob.modifiers.new('Arm', 'ARMATURE')
+    mod.object = arm
+    ob.parent = arm
 
 # ---------------- animation clips ----------------
 FPS = 24
