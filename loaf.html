@@ -522,6 +522,16 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div id="pzQuiz"></div>
     </div>
   </div>
+  <div class="tuner" id="fishbook">
+    <button class="tunerHd" id="fishbookToggle" type="button" aria-expanded="false">
+      <span>The Fish Book</span><span class="chev" id="fishbookChev">+</span>
+    </button>
+    <div class="tunerBody hidden" id="fishbookBody">
+      <p class="tunerNote">Everything she has pulled out of the pond.
+        Select the Pond tool and hold your finger on the water.</p>
+      <div id="fbList"></div>
+    </div>
+  </div>
   <div class="nopet hidden" id="noPet">
     No specimen on file yet.<br>Scan a cat and she will be waiting in here.
   </div>
@@ -3327,6 +3337,10 @@ function toyIcon(k, size){
           + '<path d="M20 17 l6 -4 v8 z" fill="#F0A26B"/>'
           + '<circle cx="10" cy="16" r="1.4" fill="#7A3F18"/>',
     spark:  '<path d="M16 4 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" fill="#FFB23F"/>',
+    pond:   '<ellipse cx="16" cy="18" rx="12" ry="8" fill="#1E4D5C"/>'
+          + '<path d="M9 17 q3 -2 6 0 q3 2 6 0" stroke="#7FD4E8" stroke-width="1.4" fill="none" stroke-linecap="round"/>'
+          + '<path d="M13 21 q2.4 -1.6 5 0" stroke="#7FD4E8" stroke-width="1.2" fill="none" stroke-linecap="round"/>'
+          + '<path d="M20 13 q3 -1 2.6 -4 q-3 0.4 -4 2.6" fill="#F0A26B"/>',
     laser:  '<rect x="5" y="6" width="12" height="6" rx="3" fill="#8A8FA8"/>'
           + '<circle cx="24" cy="23" r="4.5" fill="#FF4D5E"/>'
           + '<circle cx="24" cy="23" r="7.5" fill="none" stroke="#FF4D5E" stroke-width="1.2" opacity="0.5"/>'
@@ -3343,7 +3357,8 @@ const Room = (() => {
     { k:'feather',n:'Feather',cost:0, appeal:1.5, float:true },
     { k:'box',    n:'Box',    cost:2, appeal:1.8 },
     { k:'treat',  n:'Treat',  cost:3, appeal:0, food:true },
-    { k:'laser',  n:'Laser',  cost:0, appeal:0, laser:true }
+    { k:'laser',  n:'Laser',  cost:0, appeal:0, laser:true },
+    { k:'pond',   n:'Pond',   cost:0, appeal:0, pond:true }
   ];
 
   let cv, cx, W, H, floorY, running = false, raf = 0, lastT = 0;
@@ -3407,6 +3422,29 @@ const Room = (() => {
           savePet(card); drawHud();
         },
         solicited(){ setNote('She brought it back. She is asking.'); },
+        fishRoll,
+        fishCaught(k){
+          card.fishBook = card.fishBook || {};
+          card.fishBook[k] = (card.fishBook[k] || 0) + 1;
+          Store.update(list => {
+            const c2 = list.find(x => x.id === card.id);
+            if (c2) c2.fishBook = card.fishBook;
+            return list;
+          });
+          const f = FISH.find(x => x[0] === k);
+          const n = card.fishBook[k];
+          if (k === 'boot'){
+            setNote('AN OLD BOOT. She is thrilled. Nobody else is.');
+          } else {
+            pet.kibble += 2;
+            setNote((f ? f[1].toUpperCase() : 'A FISH') + '. ' +
+              (n === 1 ? 'First of its kind.' : 'Number ' + n + '.'));
+          }
+          grantXP(card, 9);
+          savePet(card); drawHud();
+          if (!$('fishbookBody').classList.contains('hidden')) FishBook.open(card);
+        },
+        fishMiss(msg){ setNote(msg); },
         laserDone(q, catches){
           const xp = 4 + Math.round(q * 10);
           grantXP(card, xp);
@@ -3452,7 +3490,7 @@ const Room = (() => {
     if (!drag || !card) return;
     const d = drag; drag = null;
     const t = TOYS.find(x => x.k === tool) || TOYS[0];
-    if (t.laser) return;                     /* the dot lives in the 3D room */
+    if (t.laser || t.pond) return;           /* those live in the 3D room */
     if (t.cost > pet.kibble) return;
     if (t.cost){ pet.kibble -= t.cost; }
     const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
@@ -4268,6 +4306,56 @@ $('tunerToggle').onclick = () => {
     if (tab === 'room' && window.LoafCat3D && LoafCat3D.roomRemount) LoafCat3D.roomRemount();
   }
 };
+/* ── THE FISH BOOK ──────────────────────────────────────────────────────────
+   What the pond holds. Weights are the odds; the Boot is canon. */
+const FISH = [
+  ['minnow',  'Brook Minnow',    30],
+  ['dace',    'Silver Dace',     22],
+  ['perch',   'Moon Perch',      16],
+  ['frog',    'A Frog, Somehow', 10],
+  ['koi_o',   'Marmalade Koi',    9],
+  ['koi_g',   'Ghost Koi',        6],
+  ['shub',    'Blue Shubunkin',   4],
+  ['golden',  'The Golden One',   2],
+  ['boot',    'An Old Boot',      1]
+];
+function fishRoll(){
+  let t = 0;
+  FISH.forEach(f => t += f[2]);
+  let r = Math.random() * t;
+  for (const f of FISH){ r -= f[2]; if (r <= 0) return f[0]; }
+  return 'minnow';
+}
+const FishBook = (() => {
+  function open(c){
+    const host = $('fbList'); if (!host || !c) return;
+    host.innerHTML = '';
+    const bk = c.fishBook || {};
+    FISH.forEach(([k, name]) => {
+      const n = bk[k] || 0;
+      const row = document.createElement('div'); row.className = 'need';
+      const b = document.createElement('b');
+      b.textContent = n ? name : '·····';
+      b.style.opacity = n ? '1' : '0.35';
+      const ct = document.createElement('span');
+      ct.textContent = n ? '×' + n : '';
+      ct.style.cssText = 'font-family:var(--mono);color:var(--gold,#FFB23F)';
+      row.append(b, ct); host.appendChild(row);
+    });
+  }
+  return { open };
+})();
+$('fishbookToggle').onclick = () => {
+  const body = $('fishbookBody'), openNow = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !openNow);
+  $('fishbookToggle').setAttribute('aria-expanded', String(openNow));
+  $('fishbookChev').textContent = openNow ? '−' : '+';
+  if (openNow){
+    const c = (window.Room && Room.card) || Store.read()[0];
+    if (c) FishBook.open(c);
+  }
+};
+
 /* ── WHO IS SHE? ─────────────────────────────────────────────────────────────
    The Feline Five, in LOAF's voice: BOLDNESS, CURIOSITY, SASS, CHAOS, VELCRO.
    Ten concrete situations, two per axis. The owner answers for the animal,
@@ -4575,7 +4663,10 @@ if (stage) (async () => {
     ball: null, batCount: 0, batHit: false, carrying: false,
     bowlT: 0, eating: 0, poopM: [], aim: null, soliT: 0,
     laser: { on: false, x: 0, z: 0, lx: 0, lz: 0, meter: 30, stillW: 0,
-             sprintW: 0, bore: 0, catches: 0, t0: 0, hide: 0, offAt: -9 } };
+             sprintW: 0, bore: 0, catches: 0, t0: 0, hide: 0, offAt: -9 },
+    fish: { on: false, tension: 0, interestT: 0,
+            lure: { on: false, x: 0, z: 0, lx: 0, lz: 0, sp: 0 },
+            school: [], scareT: 0, respawnT: 0, splash: [] } };
   const RUG = 2.6;
 
   /* frame HER from the body geometry's own box — Box3.setFromObject reported
@@ -4901,7 +4992,7 @@ if (stage) (async () => {
      Cat eyes are IRIS, wall to wall, with a vertical slit - the giant black
      orb read as an alien. The iris paints onto the eyeball spheres at the
      forward point of their UV wrap; the slit and catchlight ride it. */
-  let eyeTex = null;
+  let eyeTex = null, eyeDil = 0;
   const eyeCanvas = document.createElement('canvas');
   const EYE_U = 0.75;                    /* forward longitude - probe-tuned */
   function paintEyes(d){
@@ -4922,7 +5013,9 @@ if (stage) (async () => {
     g.fillRect(0, 0, S2, S2);
     g.fillStyle = '#0B0A0E';
     g.beginPath();
-    g.ellipse(u0, S2 / 2, S2 * 0.055, S2 * 0.21, 0, 0, Math.PI * 2);
+    /* the pupil dilates with excitement - slit at rest, near-round when a
+       fish is about to make a terrible mistake */
+    g.ellipse(u0, S2 / 2, S2 * (0.055 + 0.10 * eyeDil), S2 * (0.21 + 0.03 * eyeDil), 0, 0, Math.PI * 2);
     g.fill();
     g.fillStyle = 'rgba(255,255,255,0.9)';
     g.beginPath();
@@ -4937,6 +5030,13 @@ if (stage) (async () => {
       eyeMat.roughness = 0.14;
       eyeMat.needsUpdate = true;
     } else eyeTex.needsUpdate = true;
+  }
+
+  function eyeDilate(x){
+    const q = Math.round(Math.max(0, Math.min(1, x)) * 4) / 4;
+    if (q === eyeDil) return;
+    eyeDil = q;
+    if (liveDNA) paintEyes(liveDNA);
   }
 
   /* Whiskers: eight drooping lines off the muzzle. Half of what makes a
@@ -5175,6 +5275,19 @@ if (stage) (async () => {
     cnv.setPointerCapture(e.pointerId);
     if (room.on && room.bridge){
       const t2 = room.bridge.toy();
+      if (t2 && t2.pond && room.fish.on){
+        ray.setFromCamera(toNdc(e), cam);
+        const o2 = ray.ray.origin, dir2 = ray.ray.direction;
+        if (Math.abs(dir2.y) > 1e-4){
+          const k2 = (groundY - o2.y) / dir2.y;
+          const wx = o2.x + dir2.x * k2, wz = o2.z + dir2.z * k2;
+          if (Math.hypot(wx - POND.x, wz - POND.z) < POND.r * 1.12){
+            const L2 = room.fish.lure;
+            L2.on = true; L2.x = L2.lx = wx; L2.z = L2.lz = wz;
+            return;
+          }
+        }
+      }
       if (t2 && t2.laser){
         room.laser.on = true;
         room.laser.t0 = clock.elapsedTime;
@@ -5202,6 +5315,21 @@ if (stage) (async () => {
     life.lookT.set(Math.max(-1, Math.min(1, p.x)), Math.max(-1, Math.min(1, p.y)));
     life.idleGlanceAt = clock.elapsedTime + 5;
     if (!down) return;
+    if (room.fish.lure.on){
+      ray.setFromCamera(toNdc(e), cam);
+      const o2 = ray.ray.origin, dir2 = ray.ray.direction;
+      if (Math.abs(dir2.y) > 1e-4){
+        const k2 = (groundY - o2.y) / dir2.y;
+        let wx = o2.x + dir2.x * k2, wz = o2.z + dir2.z * k2;
+        const rr = Math.hypot(wx - POND.x, wz - POND.z);
+        if (rr > POND.r * 1.05){
+          wx = POND.x + (wx - POND.x) / rr * POND.r * 1.05;
+          wz = POND.z + (wz - POND.z) / rr * POND.r * 1.05;
+        }
+        room.fish.lure.x = wx; room.fish.lure.z = wz;
+      }
+      return;
+    }
     if (room.laser.on){ laserDot(e); return; }
     const dx = e.clientX - px; px = e.clientX; py = e.clientY; moved += Math.abs(dx);
     if (petting){
@@ -5214,6 +5342,11 @@ if (stage) (async () => {
     }
   });
   cnv.addEventListener('pointerup', e => {
+    if (room.fish.lure.on){
+      resolveStrike(false);
+      room.fish.lure.on = false;
+      down = false; return;
+    }
     if (room.laser.on){ laserEnd(); down = false; return; }
     if (down && petting){ purr(false); }
     else if (down && room.on && room.aim){
@@ -5235,7 +5368,10 @@ if (stage) (async () => {
      brain that rests, stalks, pounces... and then brings the toy BACK and
      asks. The cat inviting the player is the whole hook. */
   const TOYCOL = { yarn: 0xFF7B9C, crinkle: 0xC9D2E8, feather: 0xF2EFE2, box: 0xB98A5A };
+  const POND = { x: -1.55, z: 0.75, r: 0.95 };
+  const FSPOT = { x: -0.38, z: 0.18 };             /* her seat at the water's edge */
   let ballMesh = null, bowlMesh = null, dotMesh = null, dotGlow = null, laserBar = null;
+  let pondMesh = null, lureMesh = null, fishMeshes = [], splashPool = [];
   function ensureRoomProps(){
     if (ballMesh) return;
     ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14),
@@ -5255,6 +5391,30 @@ if (stage) (async () => {
         opacity: 0.28, depthWrite: false }));
     dotGlow.rotation.x = -Math.PI / 2;
     dotGlow.visible = false; scene.add(dotGlow);
+    /* the pond: fish swim under a translucent surface */
+    pondMesh = new THREE.Mesh(new THREE.CircleGeometry(POND.r, 36),
+      new THREE.MeshStandardMaterial({ color: 0x17414F, transparent: true,
+        opacity: 0.78, roughness: 0.25, depthWrite: false }));
+    pondMesh.rotation.x = -Math.PI / 2;
+    pondMesh.position.set(POND.x, groundY + 0.05, POND.z);
+    pondMesh.visible = false; scene.add(pondMesh);
+    for (let i = 0; i < 3; i++){
+      const fm = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0x0A161B }));
+      fm.scale.set(1.5, 0.16, 0.55);
+      fm.position.y = groundY + 0.02;
+      fm.visible = false; scene.add(fm); fishMeshes.push(fm);
+    }
+    lureMesh = new THREE.Mesh(new THREE.RingGeometry(0.045, 0.075, 20),
+      new THREE.MeshBasicMaterial({ color: 0xBFE8F5, transparent: true, opacity: 0.85,
+        side: THREE.DoubleSide, depthWrite: false }));
+    lureMesh.rotation.x = -Math.PI / 2;
+    lureMesh.visible = false; scene.add(lureMesh);
+    for (let i = 0; i < 10; i++){
+      const sp2 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5),
+        new THREE.MeshBasicMaterial({ color: 0xCFE9F2, transparent: true, opacity: 0.9 }));
+      sp2.visible = false; scene.add(sp2); splashPool.push(sp2);
+    }
   }
   function syncPoops(){
     const want = room.bridge ? Math.min(3, room.bridge.poops()) : 0;
@@ -5414,6 +5574,166 @@ if (stage) (async () => {
     }
   }
 
+  /* ── THE FISHING GAME ───────────────────────────────────────────────────
+     Hold your finger on the water: that is the lure. Small twitches call a
+     fish in; a hard yank scares the pond empty. As a fish closes on a CALM
+     lure her tension climbs and her PUPILS DILATE - that is the tell.
+     Release at the top and she strikes. */
+  function fishStart(){
+    const F = room.fish;
+    F.on = true; F.tension = 0; F.scareT = 0;
+    ensureRoomProps();
+    pondMesh.visible = true;
+    F.school = [];
+    for (let i = 0; i < 3; i++){
+      const a2 = Math.random() * Math.PI * 2, rr = Math.random() * POND.r * 0.6;
+      F.school.push({ x: POND.x + Math.cos(a2) * rr, z: POND.z + Math.sin(a2) * rr,
+        tx: POND.x, tz: POND.z, sp: 0.22 + Math.random() * 0.2, gone: 0 });
+    }
+    setState('fishgo');
+  }
+  function fishEnd(){
+    const F = room.fish;
+    F.on = false; F.lure.on = false;
+    if (pondMesh){ pondMesh.visible = false; lureMesh.visible = false;
+      fishMeshes.forEach(m => m.visible = false); }
+    eyeDilate(0);
+    setState('idle', 1.5);
+  }
+  function splashAt(x, z){
+    let n = 0;
+    for (const m of splashPool){
+      if (n >= 8) break;
+      n++;
+      m.visible = true;
+      m.position.set(x, groundY + 0.08, z);
+      m.userData.v = { x: (Math.random() - 0.5) * 1.6, y: 1.4 + Math.random() * 1.6,
+        z: (Math.random() - 0.5) * 1.6, life: 0.7 };
+    }
+  }
+  function fishNearest(){
+    const F = room.fish;
+    let best = null, bd = 1e9;
+    for (const f of F.school){
+      if (f.gone > 0) continue;
+      const d = Math.hypot(f.x - F.lure.x, f.z - F.lure.z);
+      if (d < bd){ bd = d; best = f; }
+    }
+    return { f: best, d: bd };
+  }
+  function resolveStrike(early){
+    const F = room.fish;
+    const near = fishNearest();
+    playIf('Pounce', true);
+    splashAt(F.lure.on ? F.lure.x : POND.x, F.lure.on ? F.lure.z : POND.z);
+    const hit = !early && F.tension > 0.55 && near.f && near.d < 0.45;
+    if (hit){
+      chirp();
+      near.f.gone = 5 + Math.random() * 3;         /* she took that one */
+      if (room.bridge && room.bridge.fishRoll && room.bridge.fishCaught)
+        room.bridge.fishCaught(room.bridge.fishRoll());
+    } else {
+      F.scareT = 3;
+      for (const f of F.school){
+        f.tx = POND.x + (f.x - POND.x) * 2;        /* dart for the far edge */
+        f.tz = POND.z + (f.z - POND.z) * 2;
+      }
+      if (room.bridge && room.bridge.fishMiss)
+        room.bridge.fishMiss(early ? 'She could not wait. The pond disagrees.'
+                                   : 'They saw her shadow. Gone.');
+    }
+    F.tension = 0;
+    eyeDilate(0);
+  }
+  function fishBrain(dt, t){
+    const F = room.fish;
+    /* water life runs even while she walks over */
+    if (F.scareT > 0) F.scareT -= dt;
+    F.school.forEach((f, i) => {
+      if (f.gone > 0){
+        f.gone -= dt;
+        fishMeshes[i].visible = false;
+        if (f.gone <= 0){
+          const a2 = Math.random() * Math.PI * 2;
+          f.x = POND.x + Math.cos(a2) * POND.r * 0.85;
+          f.z = POND.z + Math.sin(a2) * POND.r * 0.85;
+        }
+        return;
+      }
+      const dd = Math.hypot(f.tx - f.x, f.tz - f.z);
+      if (dd < 0.1){
+        const a2 = Math.random() * Math.PI * 2, rr = Math.random() * POND.r * 0.7;
+        f.tx = POND.x + Math.cos(a2) * rr; f.tz = POND.z + Math.sin(a2) * rr;
+      }
+      const spd = f.sp * (F.scareT > 0 ? 4 : 1);
+      f.x += (f.tx - f.x) / Math.max(0.05, dd) * spd * dt;
+      f.z += (f.tz - f.z) / Math.max(0.05, dd) * spd * dt;
+      const r2 = Math.hypot(f.x - POND.x, f.z - POND.z);
+      if (r2 > POND.r * 0.9){
+        f.x = POND.x + (f.x - POND.x) / r2 * POND.r * 0.9;
+        f.z = POND.z + (f.z - POND.z) / r2 * POND.r * 0.9;
+      }
+      const m = fishMeshes[i];
+      m.visible = true;
+      m.position.x = f.x; m.position.z = f.z;
+      m.rotation.y = Math.atan2(f.tx - f.x, f.tz - f.z) + Math.PI / 2;
+    });
+    /* splash particles */
+    for (const m of splashPool){
+      const v = m.userData.v;
+      if (!m.visible || !v) continue;
+      v.life -= dt;
+      if (v.life <= 0){ m.visible = false; continue; }
+      v.y -= 6.5 * dt;
+      m.position.x += v.x * dt; m.position.y += v.y * dt; m.position.z += v.z * dt;
+      m.material.opacity = Math.max(0, v.life / 0.7);
+    }
+    /* the lure */
+    const L = F.lure;
+    if (L.on){
+      lureMesh.visible = true;
+      lureMesh.position.set(L.x, groundY + 0.06, L.z);
+      const pu = 1 + 0.2 * Math.sin(t * 7);
+      lureMesh.scale.set(pu, pu, 1);
+      L.sp = dt > 0 ? Math.hypot(L.x - L.lx, L.z - L.lz) / dt : 0;
+      L.lx = L.x; L.lz = L.z;
+      if (L.sp > 2.4 && F.scareT <= 0){            /* a yank empties the pond */
+        F.scareT = 3; F.tension = 0; F.interestT = 0;
+        if (room.bridge && room.bridge.fishMiss)
+          room.bridge.fishMiss('Too hard. The water remembers.');
+      }
+      /* interest is STICKY: one decent twitch hooks a fish for a while,
+         and more twitching keeps her sold - fingers on phones are jumpy
+         and per-frame speed is a terrible judge of intent */
+      if (F.scareT <= 0 && L.sp > 0.02 && L.sp < 1.8) F.interestT = 4.5;
+      if (F.scareT <= 0 && F.interestT > 0){
+        F.interestT -= dt;
+        const near = fishNearest();
+        if (near.f){ near.f.tx = L.x; near.f.tz = L.z; }
+      }
+    } else lureMesh.visible = false;
+    /* her side of it */
+    if (room.state === 'fishgo'){
+      const d = moveToward(FSPOT.x, FSPOT.z, 1.2, dt);
+      playIf('Walk');
+      if (d < 0.12) setState('fish');
+      return;
+    }
+    faceToward(POND.x - rig.position.x, POND.z - rig.position.z, dt);
+    const near = fishNearest();
+    if (L.on && near.f && near.d < 0.5 && L.sp < 0.4 && F.scareT <= 0)
+      F.tension = Math.min(1, F.tension + 0.5 * dt);
+    else
+      F.tension = Math.max(0, F.tension - 0.4 * dt);
+    eyeDilate(F.tension);
+    if (F.tension > 0.4 && Math.random() < dt * 3)
+      life.tailV += (Math.random() - 0.5) * (0.3 + F.tension * 0.5);
+    playIf(F.tension > 0.45 ? 'Wiggle' : 'Idle');
+    /* a chaos cat cannot always hold the coil */
+    if (F.tension > 0.78 && Math.random() < persona.chaos * 0.10 * dt * 60 / 60)
+      resolveStrike(true);
+  }
+
   function setState(st, t2){
     room.state = st; room.stateT = t2 == null ? 0 : t2;
     room.batHit = false;
@@ -5464,6 +5784,10 @@ if (stage) (async () => {
     }
     if (room.laser.on){ laserBrain(dt, t); return; }  /* the dot owns her */
     if (laserBar && clock.elapsedTime - room.laser.offAt > 1.4) laserBar.style.opacity = '0';
+    const toolNow = room.bridge && room.bridge.toy ? room.bridge.toy() : null;
+    const pondSel = !!(toolNow && toolNow.pond);
+    if (pondSel !== room.fish.on){ if (pondSel) fishStart(); else fishEnd(); }
+    if (room.fish.on && !petting){ fishBrain(dt, t); return; }
     if (petting){ playIf('Idle'); return; }        /* she stops for the hand */
     room.stateT -= dt;
     if (room.soliT > 0) room.soliT -= dt;
@@ -5639,6 +5963,10 @@ if (stage) (async () => {
     },
     roomEvent,
     _room: room,                                 /* harness peephole */
+    _project(x, z){
+      _v3.set(x, groundY, z).project(cam);
+      return { x: _v3.x, y: _v3.y };
+    },
     setCoat(hex){                              /* legacy tint path, kept alive */
       if (liveDNA){ liveDNA.base = hex; setDNA(liveDNA); }
       else if (coatMat && !coatTex) coatMat.color.set(hex);
