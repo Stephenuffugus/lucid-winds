@@ -50,13 +50,38 @@ const picked = await pg.evaluate(() => {
 if (!picked){ console.log('FAIL: no Laser tool button'); process.exit(1); }
 console.log('laser tool selected');
 
+/* the app promises to LAND you on the room (and re-asserts against the
+   card view's in-flight smooth scroll) - hold it to that before measuring */
+await pg.waitForFunction(
+  () => document.getElementById('room3d').getBoundingClientRect().y >= 0,
+  { timeout: 4000, polling: 100 });
 /* press the dot in and play well: sprints, then stillness near the centre */
 const d3 = await pg.$('#room3d');
 const box = await d3.boundingBox();
 const cx = box.x + box.width / 2, cy = box.y + box.height * 0.62;
+/* engagement diagnostics: if the press misses, we must know WHERE it went */
+const under = await pg.evaluate((x, y) => {
+  const el = document.elementFromPoint(x, y);
+  return el ? el.tagName + '#' + (el.id || '(no id)') : 'NOTHING (off-viewport?)';
+}, cx, cy);
+console.log('press at', Math.round(cx) + ',' + Math.round(cy),
+  'box.y=' + Math.round(box.y), 'under:', under);
 await pg.mouse.move(cx, cy);
 await pg.mouse.down();
-await pg.waitForFunction(() => window.LoafCat3D._room.laser.on, { timeout: 5000 });
+const engaged = await pg.waitForFunction(() => window.LoafCat3D._room.laser.on,
+  { timeout: 5000 }).catch(() => null);
+if (!engaged){
+  const diag = await pg.evaluate((x, y) => ({
+    at: (() => { const el = document.elementFromPoint(x, y);
+      return el ? el.tagName + '#' + (el.id || '') : 'NOTHING'; })(),
+    scrollY: window.scrollY,
+    boxY: document.getElementById('room3d').getBoundingClientRect().y,
+    state: window.LoafCat3D._room.state,
+    toy: window.LoafCat3D._room.bridge && window.LoafCat3D._room.bridge.toy()
+  }), cx, cy);
+  console.log('FAIL: laser never engaged. diag:', JSON.stringify(diag));
+  process.exit(1);
+}
 for (let lap = 0; lap < 3; lap++){                    /* sprint bursts */
   for (let i = 0; i < 10; i++){
     await pg.mouse.move(cx + Math.sin(i * 1.1 + lap) * 120, cy + Math.cos(i * 0.9) * 60);

@@ -556,6 +556,17 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div id="fbList"></div>
     </div>
   </div>
+  <div class="tuner" id="tricks">
+    <button class="tunerHd" id="tricksToggle" type="button" aria-expanded="false">
+      <span>Tricks</span><span class="chev" id="tricksChev">+</span>
+    </button>
+    <div class="tunerBody hidden" id="tricksBody">
+      <p class="tunerNote">Clicker training, the real method: she tries the
+        trick, and the instant she lands it you CLICK. Three clean sessions
+        and she knows it for life. One session a day. She sets the pace.</p>
+      <div id="tkList"></div>
+    </div>
+  </div>
   <div class="nopet hidden" id="noPet">
     No specimen on file yet.<br>Scan a cat and she will be waiting in here.
   </div>
@@ -3666,6 +3677,23 @@ function toyIcon(k, size){
        + '" aria-hidden="true">' + (paths[k] || paths.spark) + '</svg>';
 }
 
+/* local-date key shared by the ritual and the trick ledger */
+function today(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+       + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+/* ── TRICKS ──────────────────────────────────────────────────────────────────
+   Clicker training. Three sessions to learn, one session a day, and then she
+   knows it FOREVER. No forgetting, no rust: floors, never decay. */
+const TRICKS_DEF = [
+  { k:'spin',  n:'Spin',      d:'One full turn, on request.' },
+  { k:'five',  n:'High Five', d:'She raises a paw. Meet it.' },
+  { k:'speak', n:'Speak',     d:'One meow, on the record.' },
+  { k:'flop',  n:'Flop',      d:'The full dramatic collapse.' }
+];
+
 const Room = (() => {
   const TOYS = [
     { k:'yarn',   n:'Yarn',   cost:0, appeal:1.0 },
@@ -3796,6 +3824,45 @@ const Room = (() => {
             : 'The dot got away. She has opinions.');
           savePet(card); drawNeeds(); drawHud();
           ritualStep('play');
+        },
+        trickDone(key, marks, reps){
+          const def = TRICKS_DEF.find(x => x.k === key) || { n: key };
+          const tk = trickOf(key);
+          if (tk.last === today()){
+            setNote('She has trained today. It settles overnight.');
+            return;
+          }
+          tk.last = today();
+          tk.s = Math.min(3, tk.s + 1);
+          let xp = 6 + marks * 2;
+          if (tk.s >= 3 && !tk.knownAt){
+            tk.knownAt = today();
+            xp += 10;
+            setNote('SHE KNOWS ' + def.n.toUpperCase() + ' NOW. Ask her any time.');
+          } else {
+            setNote(marks >= reps
+              ? 'Three clean marks. Session ' + tk.s + ' of 3. She is getting it.'
+              : 'Session ' + tk.s + ' of 3 logged. The treats were the point anyway.');
+          }
+          saveTricks();
+          grantXP(card, xp);
+          savePet(card); drawHud();
+          ritualStep('play');
+          if (!$('tricksBody').classList.contains('hidden')) Tricks.open(card);
+        },
+        trickShown(key){
+          const tk = trickOf(key);
+          const lines = { spin: 'A full rotation. Immaculate.',
+                          five: 'The paw was offered and met.',
+                          speak: 'She said it. It is on the record.',
+                          flop: 'A ten point collapse. The judges agree.' };
+          if (tk.perf !== today()){
+            tk.perf = today();
+            saveTricks();
+            grantXP(card, 2);
+            savePet(card); drawHud();
+          }
+          setNote(lines[key] || 'Done. She accepts applause.');
         }
       });
       return;                                    /* the 2D loop stays parked */
@@ -4182,11 +4249,6 @@ const Room = (() => {
     chaotic:      { n:'CHAOTIC',      game:'yarn',  line:'Nothing on a shelf is safe. Yarn pays extra bond.' },
     affectionate: { n:'AFFECTIONATE', game:'beans', line:'She wants to be near you. The beans pay extra bond.' }
   };
-  function today(){
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
-         + '-' + String(d.getDate()).padStart(2, '0');
-  }
   function ritualOf(){
     const day = today();
     if (!pet.ritual || pet.ritual.day !== day)
@@ -4254,6 +4316,21 @@ const Room = (() => {
     const r = pet && pet.ritual;
     return (r && r.moodK && MOODS[r.moodK].game === game) ? ' Mood bonus.' : '';
   }
+  /* the trick ledger lives on the card: sessions, the day of the last one,
+     the day she performed, the day she learned. Only ever fills up. */
+  function trickOf(k){
+    card.tricks = card.tricks || {};
+    card.tricks[k] = card.tricks[k] || { s: 0, last: '', perf: '', knownAt: '' };
+    return card.tricks[k];
+  }
+  function saveTricks(){
+    Store.update(list => {
+      const c = list.find(x => x.id === card.id);
+      if (c) c.tricks = card.tricks;
+      return list;
+    });
+  }
+
   function fileShape(k){
     if (!card) return;
     card.posture = k;
@@ -4919,6 +4996,76 @@ $('fishbookToggle').onclick = () => {
   }
 };
 
+/* ── THE TRICKS PANEL ────────────────────────────────────────────────────────
+   Progress paws, a TRAIN button while she is learning, ASK once she knows.
+   Training itself happens up in the room, where she is. */
+const Tricks = (() => {
+  function open(c){
+    const host = $('tkList'); if (!host || !c) return;
+    host.innerHTML = '';
+    if (!window.LoafCat3D || !LoafCat3D.trickStart){
+      const p = document.createElement('p');
+      p.className = 'tunerNote';
+      p.textContent = 'Training happens in the 3D room. This device draws '
+        + 'her flat, and she is keeping her secrets.';
+      host.appendChild(p);
+      return;
+    }
+    const bank = c.tricks || {};
+    TRICKS_DEF.forEach(def => {
+      const tk = bank[def.k] || { s: 0, last: '', perf: '' };
+      const row = document.createElement('div');
+      row.className = 'need';
+      row.style.alignItems = 'center';
+      const b = document.createElement('b');
+      b.textContent = def.n;
+      const dots = document.createElement('span');
+      dots.style.cssText = 'font-family:var(--mono);letter-spacing:3px;'
+        + 'color:var(--gold,#FFB23F);white-space:nowrap';
+      dots.textContent = '●'.repeat(Math.min(3, tk.s)) + '○'.repeat(Math.max(0, 3 - tk.s));
+      const btn = document.createElement('button');
+      btn.className = 'chip2'; btn.type = 'button';
+      btn.dataset.trick = def.k;
+      btn.style.cssText = 'min-height:48px;min-width:104px';
+      if (tk.s >= 3){
+        btn.textContent = 'ASK';
+        btn.onclick = () => start(def.k, false);
+      } else if (tk.last === today()){
+        btn.textContent = 'TOMORROW';
+        btn.disabled = true;
+      } else {
+        btn.textContent = 'TRAIN';
+        btn.onclick = () => start(def.k, true);
+      }
+      row.append(b, dots, btn);
+      host.appendChild(row);
+      const dd = document.createElement('p');
+      dd.className = 'tunerNote';
+      dd.style.margin = '2px 0 10px';
+      dd.textContent = def.d;
+      host.appendChild(dd);
+    });
+  }
+  function start(k, train){
+    if (!window.Room || !Room.card) return;
+    const live = $('roomLive');
+    if (live) live.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!LoafCat3D.trickStart(k, train))
+      $('roomNote').textContent = 'She is in the middle of something. Put the other game away first.';
+  }
+  return { open };
+})();
+$('tricksToggle').onclick = () => {
+  const body = $('tricksBody'), openNow = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !openNow);
+  $('tricksToggle').setAttribute('aria-expanded', String(openNow));
+  $('tricksChev').textContent = openNow ? '−' : '+';
+  if (openNow){
+    const c = (window.Room && Room.card) || Store.read()[0];
+    if (c) Tricks.open(c);
+  }
+};
+
 /* ── WHO IS SHE? ─────────────────────────────────────────────────────────────
    The Feline Five, in LOAF's voice: BOLDNESS, CURIOSITY, SASS, CHAOS, VELCRO.
    Ten concrete situations, two per axis. The owner answers for the animal,
@@ -5100,6 +5247,19 @@ function setTab(next){
     $('noPet').classList.toggle('hidden', !!c);
     if (!c) return;
     Room.open(c);
+    /* land ON the room. Arriving scrolled past her (the scan tab's scroll
+       position survives the switch) left the cat above the fold - the laser
+       and pond both read as dead because every touch missed the canvas.
+       And land TWICE MORE: the card view's smooth scrollIntoView can still
+       be animating across the tab switch (on slow frames it may not even
+       have ticked yet) and it steals the viewport right back - seen as
+       scrollY 441 with the room at y -233. Re-assert after the pipeline
+       has ticked; both re-asserts check we are still in the room. */
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (tab === 'room') window.scrollTo(0, 0);
+    }));
+    setTimeout(() => { if (tab === 'room') window.scrollTo(0, 0); }, 450);
     if (!$('tunerBody').classList.contains('hidden')) Tuner.open(c);
   } else {
     Room.stop();
@@ -5232,6 +5392,8 @@ if (stage) (async () => {
     yarn: { active: false, dots: 0, hue: 0, lx: 0, lz: 0, target: 90,
             wrapT: 0, done: false },
     beans: { on: false, pulse: 0, paw: null, held: 0, knead: 0 },
+    trick: { on: false, key: null, train: false, rep: 0, reps: 3,
+             phase: '', pT: 0, winT: 0, marks: 0, clicked: false },
     fish: { on: false, tension: 0, interestT: 0,
             lure: { on: false, x: 0, z: 0, lx: 0, lz: 0, sp: 0 },
             school: [], scareT: 0, respawnT: 0, splash: [] } };
@@ -5875,6 +6037,11 @@ if (stage) (async () => {
       if (beansPress(e)) return;
       return;                                  /* misses do nothing; it is calm here */
     }
+    /* a high five is for meeting: tap the offered paw */
+    if (room.trick.on && room.trick.key === 'five'
+        && room.trick.phase === 'hold' && onHer(e)){
+      trickBoop(); return;
+    }
     petting = onHer(e);
     if (petting){
       if (persona.velcro > 0.45 && clock.elapsedTime > (life.petBlock || 0)) meow('trill');
@@ -6205,7 +6372,13 @@ if (stage) (async () => {
     }
     if (L.meter < 17 - persona.curious * 9){ playIf('Idle'); return; }  /* bored */
     if (sp < 0.4){
-      if (d < 1.1 + persona.bold * 0.9 && d > 0.3 && L.stillW > 0){ setState('lwig', 0.75); return; }
+      /* no distance floor on the wiggle (0.02 only guards a degenerate
+         zero-length facing): a dot she is STANDING ON gets pinned. The old
+         0.3 floor deadlocked converged play - she idled on the dot forever
+         - and a whiffed pounce parks her exactly there. Re-pins on a held
+         dot pace at ~3s, the meter caps, and catches never multiply the
+         payout, so pinning is a cat winning, not a farm. */
+      if (d < 1.1 + persona.bold * 0.9 && d > 0.02 && L.stillW > 0){ setState('lwig', 0.75); return; }
       if (d > 0.3){ moveToward(L.x, L.z, 0.6, dt); playIf('Walk'); }  /* the STALK */
       else playIf('Idle');
     } else {
@@ -6466,6 +6639,174 @@ if (stage) (async () => {
     return true;
   }
 
+  /* ══ TRICKS ═════════════════════════════════════════════════════════════
+     Clicker training on the real model: she does the thing, and the CLICK
+     lands in the moment she completes it. Marks are flavor, sessions are
+     the ledger, and a learned trick is hers for life. Perform mode plays
+     the trick once, on request, no button. */
+  const TRICK_ACT = { spin: 1.5, five: 1.05, speak: 0.9, flop: 2.3 };
+  const HOLD_S = 2.6;              /* how long the offered paw waits for you */
+  /* paw-raise dials: signs + strength read off axis-probe screenshots
+     (4 sign combos, then 2 strengths), never off assumptions - this rig
+     has burned that guess before. +up lifts the limb, +lo turns the pad
+     to the camera; 1.35/0.95 presents the bean at bib height. */
+  let FIVE_UP = 1.35, FIVE_LO = 0.95;
+  let clickBtn = null;
+  function ensureClickBtn(){
+    if (clickBtn || !room.div) return;
+    clickBtn = document.createElement('button');
+    clickBtn.type = 'button'; clickBtn.id = 'trickClick';
+    clickBtn.textContent = 'CLICK';
+    clickBtn.style.cssText = 'position:absolute;left:50%;bottom:14px;'
+      + 'transform:translateX(-50%);width:76px;height:76px;border-radius:50%;'
+      + 'border:2px solid #FFB23F;background:rgba(20,12,34,0.78);color:#FFB23F;'
+      + 'font:700 13px var(--mono,monospace);letter-spacing:1px;display:none;'
+      + 'transition:box-shadow 0.12s,background 0.12s;cursor:pointer';
+    clickBtn.addEventListener('pointerdown', e => {
+      e.stopPropagation(); e.preventDefault();
+      trickClick();
+    });
+    room.div.style.position = 'relative';
+    room.div.appendChild(clickBtn);
+  }
+  function trickToesTick(dt, tgt){
+    if (!catMesh || !catMesh.morphTargetDictionary) return;
+    const ix = catMesh.morphTargetDictionary.toesFR;
+    if (ix == null) return;
+    const inf = catMesh.morphTargetInfluences;
+    inf[ix] += (tgt - inf[ix]) * Math.min(1, dt * 9);
+  }
+  function trickStart(key, train){
+    if (!room.on || room.laser.on || room.fish.on || room.beans.on) return false;
+    if (!TRICK_ACT[key]) return false;
+    const T = room.trick;
+    if (T.on) return false;
+    T.on = true; T.key = key; T.train = !!train;
+    T.rep = 0; T.reps = train ? 3 : 1; T.marks = 0;
+    T.phase = 'go'; T.pT = 0; T.winT = 0; T.clicked = false;
+    room.carrying = false;
+    ensureClickBtn();
+    if (clickBtn) clickBtn.style.display = train ? 'block' : 'none';
+    return true;
+  }
+  function trickEnd(done){
+    const T = room.trick;
+    if (!T.on) return;
+    T.on = false; T.winT = 0;
+    if (clickBtn){ clickBtn.style.display = 'none'; clickBtn.style.boxShadow = 'none'; }
+    if (catMesh && catMesh.morphTargetDictionary
+        && catMesh.morphTargetDictionary.toesFR != null)
+      catMesh.morphTargetInfluences[catMesh.morphTargetDictionary.toesFR] = 0;
+    playIf('Idle');
+    setState('idle', 2);
+    frame();                       /* in case the high five leaned the camera */
+    if (done && room.bridge){
+      if (T.train && room.bridge.trickDone) room.bridge.trickDone(T.key, T.marks, T.reps);
+      if (!T.train && room.bridge.trickShown) room.bridge.trickShown(T.key);
+    }
+  }
+  function trickClick(){
+    const T = room.trick;
+    if (!T.on || !T.train) return 'off';
+    if (T.phase === 'mark' && !T.clicked){
+      T.clicked = true; T.marks++;
+      T.winT = 0;
+      chirp();
+      life.slowBlink = 1.2;
+      if (navigator.vibrate) navigator.vibrate(25);
+      if (clickBtn) clickBtn.style.background = 'rgba(255,178,63,0.35)';
+      setTimeout(() => { if (clickBtn) clickBtn.style.background = 'rgba(20,12,34,0.78)'; }, 220);
+      trickPhase('gap');
+      return 'good';
+    }
+    return 'early';                /* no penalty. She would not click you either. */
+  }
+  function trickBoop(){
+    chirp(); purr(true);
+    life.slowBlink = 1.5;
+    if (navigator.vibrate) navigator.vibrate([25, 30, 25]);
+    setTimeout(() => { if (!petting) purr(false); }, 900);
+    /* met: she keeps it up one more beat, then the moment completes */
+    const T = room.trick;
+    if (T.phase === 'hold') T.pT = Math.max(T.pT, HOLD_S - 0.35);
+  }
+  function trickPhase(p){ room.trick.phase = p; room.trick.pT = 0; }
+  function trickBrain(dt, t){
+    const T = room.trick;
+    if (room.laser.on || room.fish.on || room.beans.on){ trickEnd(false); return; }
+    T.pT += dt;
+    if (T.winT > 0){
+      T.winT -= dt;
+      if (clickBtn) clickBtn.style.boxShadow = '0 0 0 7px rgba(255,178,63,0.4)';
+      if (T.winT <= 0){ trickPhase('gap'); if (clickBtn) clickBtn.style.boxShadow = 'none'; }
+    }
+    /* one envelope raises and lowers the paw: no snapping between reps */
+    if (T.key === 'five'){
+      const up = (T.phase === 'act' || T.phase === 'mark' || T.phase === 'hold') ? 1 : 0;
+      T.fiveK = (T.fiveK || 0) + (up - (T.fiveK || 0)) * Math.min(1, dt * 7);
+      if (T.fiveK > 0.01){
+        addRot(bones.legFR_up, FIVE_UP * T.fiveK, 0, 0);
+        addRot(bones.legFR_lo, FIVE_LO * T.fiveK, 0, 0);
+      }
+      trickToesTick(dt, up);
+    }
+    switch (T.phase){
+      case 'go': {
+        const d = moveToward(0, 1.55, 1.35, dt);
+        playIf('Walk');
+        if (d < 0.14){
+          faceToward(0.01, 5, 1);
+          life.lookT.set(0, 0.3);
+          trickPhase('wind');
+        }
+        break;
+      }
+      case 'wind':
+        playIf('Idle');
+        if (T.pT > 0.55){
+          trickPhase('act');
+          if (T.key === 'speak'){ meow('meow'); life.lookT.set(0, 0.35); }
+          if (T.key === 'flop') playIf('BellyUp', true);
+        }
+        break;
+      case 'act': {
+        if (T.key === 'spin'){
+          playIf('Walk');
+          rig.rotation.y += dt * (Math.PI * 2) / TRICK_ACT.spin;
+        } else if (T.key === 'five'){
+          playIf('Idle');            /* the envelope above lifts the paw */
+        }
+        if (T.pT >= TRICK_ACT[T.key]){
+          T.rep++;
+          if (T.train){
+            T.winT = 0.9; T.clicked = false;
+            trickPhase('mark');
+          } else if (T.key === 'five'){
+            trickPhase('hold');
+          } else trickPhase('gap');
+        }
+        break;
+      }
+      case 'mark':
+        /* the window is open; she holds the finish and waits for the click */
+        if (T.key === 'spin' || T.key === 'speak') playIf('Idle');
+        break;
+      case 'hold':
+        /* perform-mode high five: the paw stays offered. Meet it. */
+        cam.position.lerp(_v3.set(0.35, 1.9, 6.7), Math.min(1, dt * 1.4));
+        cam.lookAt(0, -0.05, 1.55);
+        if (T.pT > HOLD_S) trickPhase('gap');
+        break;
+      case 'gap':
+        if (T.key !== 'flop') playIf('Idle');
+        if (T.pT > 0.8){
+          if (T.rep >= T.reps) trickEnd(true);
+          else trickPhase('wind');
+        }
+        break;
+    }
+  }
+
   function setState(st, t2){
     room.state = st; room.stateT = t2 == null ? 0 : t2;
     room.batHit = false;
@@ -6556,8 +6897,12 @@ if (stage) (async () => {
       ballMesh.position.set(_v3.x + Math.sin(rig.rotation.y) * 0.5,
         _v3.y - 0.25, _v3.z + Math.cos(rig.rotation.y) * 0.5);
     }
+    /* the shadow follows her in EVERY mode, not just free play */
+    shadow.position.x = rig.position.x;
+    shadow.position.z = rig.position.z;
     if (room.laser.on){ laserBrain(dt, t); return; }  /* the dot owns her */
     if (laserBar && clock.elapsedTime - room.laser.offAt > 1.4) laserBar.style.opacity = '0';
+    if (room.trick.on){ trickBrain(dt, t); return; }  /* class is in session */
     const toolNow = room.bridge && room.bridge.toy ? room.bridge.toy() : null;
     const pondSel = !!(toolNow && toolNow.pond);
     if (pondSel !== room.fish.on){ if (pondSel) fishStart(); else fishEnd(); }
@@ -6659,6 +7004,7 @@ if (stage) (async () => {
       default: /* idle */
         playIf('Idle');
         if (B && !B.settled && !room.carrying){ setState('chase'); break; }
+        /* (shadow already updated at the top of the brain) */
         if (room.stateT <= 0){
           const r3 = Math.random();
           let zoomP = 0.06 + persona.chaos * 0.22;
@@ -6684,9 +7030,6 @@ if (stage) (async () => {
           } else setState('idle', 2.5 + Math.random() * 4);
         }
     }
-    /* the shadow follows her around the rug */
-    shadow.position.x = rig.position.x;
-    shadow.position.z = rig.position.z;
   }
   function roomEvent(type){
     if (type === 'feed'){
@@ -6777,6 +7120,7 @@ if (stage) (async () => {
     },
     roomClose(){
       if (!room.on) return;
+      trickEnd(false);
       room.on = false;
       floor.scale.setScalar(1);
       rig.position.set(0, 0, 0);
@@ -6791,6 +7135,10 @@ if (stage) (async () => {
       if (room.card && room.bridge) window.LoafCat3D.roomOpen(room.card, room.bridge);
     },
     roomEvent,
+    trickStart,
+    trickClick,                                  /* also wired to the button */
+    _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
+    _rig(){ return rig.position.toArray(); },       /* harness peephole */
     _room: room,                                 /* harness peephole */
     get _mood(){ return mood; },
     _toes(){

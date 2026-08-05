@@ -50,6 +50,11 @@ const seated = await pg.waitForFunction(() => window.LoafCat3D._room.state === '
 if (!seated){ console.log('FAIL: she never took her seat at the pond'); process.exit(1); }
 console.log('at the water');
 
+/* the app promises to LAND you on the room - hold it to that (a stale
+   smooth scroll from the scan flow once stole the viewport back) */
+await pg.waitForFunction(
+  () => document.getElementById('room3d').getBoundingClientRect().y >= 0,
+  { timeout: 4000, polling: 100 });
 const d3 = await pg.$('#room3d');
 const box = await d3.boundingBox();
 const toPx = ndc => ({ x: box.x + (ndc.x + 1) / 2 * box.width,
