@@ -3980,6 +3980,13 @@ const Room = (() => {
             savePet(card); drawHud();
           }
           setNote(lines[key] || 'Done. She accepts applause.');
+        },
+        boxSat(small){
+          grantXP(card, 4);
+          setNote(small
+            ? 'The box is too small. She has decided it is not. OVERFLOW LOAF.'
+            : 'She is in the box. Everything is as it should be.');
+          savePet(card); drawHud();
         }
       });
       return;                                    /* the 2D loop stays parked */
@@ -5373,10 +5380,22 @@ function setTab(next){
        scrollY 441 with the room at y -233. Re-assert after the pipeline
        has ticked; both re-asserts check we are still in the room. */
     window.scrollTo(0, 0);
+    /* the re-asserts stand down the moment the OWNER touches anything:
+       correcting a stale animation is a service, yanking a person who
+       already started scrolling is not */
+    let touched = false;
+    const armUndo = ['wheel', 'touchstart', 'pointerdown'].map(ev => {
+      const fn = () => { touched = true; };
+      window.addEventListener(ev, fn, { once: true, capture: true, passive: true });
+      return [ev, fn];
+    });
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (tab === 'room') window.scrollTo(0, 0);
+      if (tab === 'room' && !touched) window.scrollTo(0, 0);
     }));
-    setTimeout(() => { if (tab === 'room') window.scrollTo(0, 0); }, 450);
+    setTimeout(() => {
+      if (tab === 'room' && !touched) window.scrollTo(0, 0);
+      armUndo.forEach(([ev, fn]) => window.removeEventListener(ev, fn, { capture: true }));
+    }, 450);
     if (!$('tunerBody').classList.contains('hidden')) Tuner.open(c);
   } else {
     Room.stop();
@@ -5511,6 +5530,7 @@ if (stage) (async () => {
     beans: { on: false, pulse: 0, paw: null, held: 0, knead: 0 },
     trick: { on: false, key: null, train: false, rep: 0, reps: 3,
              phase: '', pT: 0, winT: 0, marks: 0, clicked: false },
+    box: null, pendingBox: false, boxSmallNext: null,
     fish: { on: false, tension: 0, interestT: 0,
             lure: { on: false, x: 0, z: 0, lx: 0, lz: 0, sp: 0 },
             school: [], scareT: 0, respawnT: 0, splash: [] } };
@@ -6143,6 +6163,7 @@ if (stage) (async () => {
       }
       if (t2 && t2.laser){
         room.laser.on = true;
+        frame();                     /* back to the seat if the box leaned in */
         room.laser.t0 = clock.elapsedTime;
         room.laser.meter = 30;
         laserDot(e);
@@ -6354,6 +6375,58 @@ if (stage) (async () => {
     if (i >= 0){ scene.remove(mesh); room.poopM.splice(i, 1); }
     if (room.bridge) room.bridge.scooped();
   }
+  /* ── THE BOX LAW ────────────────────────────────────────────────────────
+     Place a cardboard box and she MUST eventually sit in it. Too small a
+     box changes nothing about that decision: overflow loaf. This is a
+     shareable moment, not a game, so the sit records its own clip. */
+  let boxGroup = null;
+  const BOX_FORCE_SNIFF = 25;      /* the law: "eventually" has a deadline */
+  function buildBox(inner, wallH){
+    const g = new THREE.Group();
+    /* bright enough cardboard to survive the room's dim light */
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xC49A66, roughness: 0.88 });
+    const inMat = new THREE.MeshStandardMaterial({ color: 0x7A5A38, roughness: 0.95 });
+    const th = 0.045;
+    const floor2 = new THREE.Mesh(new THREE.BoxGeometry(inner, th, inner), inMat);
+    floor2.position.y = th / 2;
+    g.add(floor2);
+    for (let i = 0; i < 4; i++){
+      const w = new THREE.Mesh(new THREE.BoxGeometry(inner + th * 2, wallH, th), wallMat);
+      w.position.y = wallH / 2;
+      const a2 = i * Math.PI / 2;
+      w.position.x = Math.sin(a2) * (inner / 2 + th / 2);
+      w.position.z = Math.cos(a2) * (inner / 2 + th / 2);
+      w.rotation.y = a2;
+      g.add(w);
+    }
+    return g;
+  }
+  function placeBox(x, z){
+    if (boxGroup){ scene.remove(boxGroup); boxGroup = null; }
+    /* not in the pond, not in the bowl, on the rug */
+    const r2 = Math.hypot(x, z);
+    if (r2 > RUG - 0.7){ x *= (RUG - 0.7) / r2; z *= (RUG - 0.7) / r2; }
+    const pd = Math.hypot(x - POND.x, z - POND.z);
+    if (pd < POND.r + 0.75){
+      x = POND.x + (x - POND.x) / (pd || 1) * (POND.r + 0.75);
+      z = POND.z + (z - POND.z) / (pd || 1) * (POND.r + 0.75);
+    }
+    const small = room.boxSmallNext != null ? !!room.boxSmallNext : Math.random() < 0.3;
+    room.boxSmallNext = null;
+    /* walls tall enough to read past her flanks, or the sit looks like a
+       cat on a doormat - the box must be SEEN to be believed. The small
+       box is 0.8, not smaller: any tighter and she eclipses it entirely,
+       and an invisible box is a levitating cat, not a joke */
+    boxGroup = buildBox(small ? 0.80 : 1.12, small ? 0.42 : 0.48);
+    boxGroup.position.set(x, groundY, z);
+    scene.add(boxGroup);
+    room.box = { x, z, small, at: clock.elapsedTime, visited: false };
+  }
+  function boxRemove(){
+    if (boxGroup){ scene.remove(boxGroup); boxGroup = null; }
+    room.box = null; room.pendingBox = false;
+  }
+
   function roomThrow(dxPx, dyPx){
     const t = room.bridge && room.bridge.toy();
     if (!t || !room.bridge.trySpend(t)) return;
@@ -6363,6 +6436,7 @@ if (stage) (async () => {
       return;
     }
     ensureRoomProps();
+    room.pendingBox = t.k === 'box';
     ballMesh.material.color.set(TOYCOL[t.k] || 0xFF7B9C);
     ballMesh.scale.setScalar(t.k === 'box' ? 1.5 : 1);
     ballMesh.visible = true;
@@ -6512,6 +6586,7 @@ if (stage) (async () => {
   function fishStart(){
     const F = room.fish;
     F.on = true; F.tension = 0; F.scareT = 0;
+    frame();                         /* back to the seat if the box leaned in */
     ensureRoomProps();
     pondMesh.visible = true;
     F.school = [];
@@ -6802,6 +6877,7 @@ if (stage) (async () => {
     T.rep = 0; T.reps = train ? 3 : 1; T.marks = 0;
     T.phase = 'go'; T.pT = 0; T.winT = 0; T.clicked = false;
     room.carrying = false;
+    frame();                         /* back to the seat if the box leaned in */
     ensureClickBtn();
     if (clickBtn) clickBtn.style.display = train ? 'block' : 'none';
     return true;
@@ -6966,6 +7042,13 @@ if (stage) (async () => {
       if (B.y === fy){ B.vx *= (1 - 1.6 * dt); B.vz *= (1 - 1.6 * dt); }
       B.settled = B.y === fy && Math.hypot(B.vx, B.vz) < 0.15;
       ballMesh.position.set(B.x, B.y, B.z);
+      /* a thrown BOX stops being a toy the moment it lands: it is furniture */
+      if (B.settled && room.pendingBox){
+        room.pendingBox = false;
+        room.ball = null;
+        ballMesh.visible = false;
+        placeBox(B.x, B.z);
+      }
       /* yarn unravels while it rolls: a rainbow, dot by dot */
       const Y = room.yarn;
       if (Y.active && !Y.done && B.y === fy && Math.hypot(B.vx, B.vz) > 0.2){
@@ -7017,6 +7100,10 @@ if (stage) (async () => {
     /* the shadow follows her in EVERY mode, not just free play */
     shadow.position.x = rig.position.x;
     shadow.position.z = rig.position.z;
+    /* the overflow-loaf lift belongs to the box alone: anything that pulls
+       her out of a boxsit (laser, pond, tricks) must not keep her floating */
+    if (rig.position.y !== 0 && room.state !== 'boxsit' && room.state !== 'boxin')
+      rig.position.y = 0;
     if (room.laser.on){ laserBrain(dt, t); return; }  /* the dot owns her */
     if (laserBar && clock.elapsedTime - room.laser.offAt > 1.4) laserBar.style.opacity = '0';
     if (room.trick.on){ trickBrain(dt, t); return; }  /* class is in session */
@@ -7027,7 +7114,10 @@ if (stage) (async () => {
     const beansSel = !!(toolNow && toolNow.beans);
     if (beansSel !== room.beans.on){ if (beansSel) beansStart(); else beansEnd(); }
     if (room.beans.on){ beansBrain(dt, t); return; }
-    if (petting){ playIf('Idle'); return; }        /* she stops for the hand */
+    if (petting){                                  /* she stops for the hand */
+      if (room.state !== 'boxsit') playIf('Idle'); /* boxed cats stay boxed */
+      return;
+    }
     room.stateT -= dt;
     if (room.soliT > 0) room.soliT -= dt;
     switch (room.state){
@@ -7097,6 +7187,68 @@ if (stage) (async () => {
       case 'wrapped':
         if (room.stateT <= 0){ playIf('Idle'); setState('idle', 2); }
         break;
+      case 'boxsniff': {
+        const bx = room.box;
+        if (!bx){ setState('idle', 2); break; }
+        const d = moveToward(bx.x, bx.z + 1.05, 1.0, dt);
+        playIf('Walk');
+        if (d < 0.12){
+          playIf('Idle');
+          faceToward(bx.x - rig.position.x, bx.z - rig.position.z, 1);
+          life.lookT.set(0, -0.55);               /* what IS this */
+          setState('boxin', 0.9);
+        }
+        break;
+      }
+      case 'boxin': {
+        const bx = room.box;
+        if (!bx){ setState('idle', 2); break; }
+        if (room.stateT > 0) break;               /* the sniff pause */
+        const d = moveToward(bx.x, bx.z, 0.9, dt);
+        playIf('Walk');
+        if (d < 0.1){
+          faceToward(0.01, 5, 1);                 /* the moment plays TO the room */
+          playIf('LoafSettle', true);
+          if (bx.small) rig.position.y = 0.22;    /* overflow: she rides the rim */
+          bx.visited = true;
+          /* first sit only: the clip and the ledger. Re-sits are just life. */
+          if (!bx.sat){
+            if (window.MediaRecorder && room.bridge && room.bridge.clipped){
+              clipStart(6).then(bl => room.bridge.clipped(bl, 'THE BOX')).catch(() => {});
+            }
+            if (room.bridge && room.bridge.boxSat) room.bridge.boxSat(bx.small);
+          }
+          bx.sat = (bx.sat || 0) + 1;
+          setState('boxsit', 14 + Math.random() * 8 * (mood === 'sleepy' ? 1.6 : 1));
+        }
+        break;
+      }
+      case 'boxsit': {
+        /* the camera leans in: this moment records itself, so the framing
+           IS the feature (same trick as the bean press) */
+        const bx = room.box;
+        if (bx){
+          /* the small box needs the wider shot: too close and the joke
+             (a cat overflowing a box) crops the box out of its own gag */
+          const d2 = bx.small ? 5.6 : 4.8, ly = bx.small ? -0.6 : -0.35;
+          cam.position.lerp(_v3.set(bx.x * 0.55, bx.small ? 2.0 : 2.3, bx.z + d2),
+            Math.min(1, dt * 1.2));
+          cam.lookAt(bx.x, ly, bx.z);
+        }
+        if (room.stateT <= 0){
+          rig.position.y = 0;
+          playIf('Walk');
+          setState('boxout');
+        }
+        break;
+      }
+      case 'boxout': {
+        const bx = room.box || { x: rig.position.x, z: rig.position.z - 1.4 };
+        const d = moveToward(bx.x, bx.z + 1.4, 0.9, dt);
+        playIf('Walk');
+        if (d < 0.12){ playIf('Idle'); frame(); setState('idle', 2 + Math.random() * 3); }
+        break;
+      }
       case 'settle':
         playIf('LoafSettle', true);
         if (room.stateT <= 0){ playIf('Idle'); setState('idle', 2 + Math.random() * 3); }
@@ -7121,6 +7273,21 @@ if (stage) (async () => {
       default: /* idle */
         playIf('Idle');
         if (B && !B.settled && !room.carrying){ setState('chase'); break; }
+        /* the box law: she ignores it, she circles it, and then she MUST
+           sit in it - the deadline guarantees "eventually" means it */
+        if (room.box && !room.box.visited
+            && (t - room.box.at > BOX_FORCE_SNIFF
+                || (room.stateT <= 0 && Math.random() < 0.10 + persona.curious * 0.08))){
+          setState('boxsniff');
+          break;
+        }
+        /* a visited box still calls to her now and then */
+        if (room.box && room.box.visited && room.stateT <= 0
+            && Math.random() < 0.03 + persona.curious * 0.03){
+          room.box.visited = false;               /* she forgot she checked */
+          setState('boxsniff');
+          break;
+        }
         /* (shadow already updated at the top of the brain) */
         if (room.stateT <= 0){
           const r3 = Math.random();
@@ -7238,6 +7405,7 @@ if (stage) (async () => {
     roomClose(){
       if (!room.on) return;
       trickEnd(false);
+      boxRemove();
       room.on = false;
       floor.scale.setScalar(1);
       rig.position.set(0, 0, 0);
@@ -7256,6 +7424,7 @@ if (stage) (async () => {
     trickClick,                                  /* also wired to the button */
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
+    _boxSmall(v){ room.boxSmallNext = v; },         /* harness: force box size */
     _room: room,                                 /* harness peephole */
     get _mood(){ return mood; },
     _toes(){

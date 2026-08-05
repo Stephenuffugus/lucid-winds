@@ -66,6 +66,8 @@ await pg.evaluate(() => {
 await pg.evaluate(() => document.getElementById('tabRoom').click());
 await pg.waitForFunction(() => window.LoafCat3D && window.LoafCat3D._room
   && window.LoafCat3D._room.on, { timeout: 20000 });
+/* let the room-landing re-asserts spend themselves before the first tap */
+await new Promise(r => setTimeout(r, 750));
 console.log('room on');
 
 /* 2. the accordion: four fresh tricks, all TRAIN */
