@@ -103,8 +103,17 @@ console.log('state:', await pg.evaluate(() => window.LoafCat3D._room.state),
 const caught = await pg.waitForFunction(() => window.LoafCat3D._room.laser.catches > 0,
   { timeout: 60000, polling: 400 }).catch(() => null);
 if (!caught){
-  console.log('FAIL: she never caught the dot (state=' +
-    await pg.evaluate(() => window.LoafCat3D._room.state) + ')');
+  /* dump the live numbers: WHICH catch condition is starving? */
+  const diag = await pg.evaluate(() => {
+    const r = window.LoafCat3D._room, p = window.LoafCat3D._rig();
+    return { state: r.state, stateT: +r.stateT.toFixed(2),
+      d: +Math.hypot(r.laser.x - p[0], r.laser.z - p[2]).toFixed(3),
+      dot: [+r.laser.x.toFixed(2), +r.laser.z.toFixed(2)],
+      her: [+p[0].toFixed(2), +p[2].toFixed(2)],
+      stillW: +r.laser.stillW.toFixed(2), meter: Math.round(r.laser.meter),
+      hide: +r.laser.hide.toFixed(2), batHit: r.batHit };
+  });
+  console.log('FAIL: she never caught the dot. diag: ' + JSON.stringify(diag));
   process.exit(1);
 }
 console.log('CAUGHT IT. catches:', await pg.evaluate(() => window.LoafCat3D._room.laser.catches));

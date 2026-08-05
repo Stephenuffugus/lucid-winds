@@ -5449,6 +5449,7 @@ window.LOAF = { Store, POSTURES, silhouette, LightMeter, CONFIG, demoGrade, vali
    Fails silently back to the 2D canvas when WebGL is unavailable. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const stage = document.getElementById('stage3d');
@@ -6563,13 +6564,15 @@ if (stage) (async () => {
     }
     if (L.meter < 17 - persona.curious * 9){ playIf('Idle'); return; }  /* bored */
     if (sp < 0.4){
-      /* no distance floor on the wiggle (0.02 only guards a degenerate
-         zero-length facing): a dot she is STANDING ON gets pinned. The old
-         0.3 floor deadlocked converged play - she idled on the dot forever
-         - and a whiffed pounce parks her exactly there. Re-pins on a held
-         dot pace at ~3s, the meter caps, and catches never multiply the
-         payout, so pinning is a cat winning, not a farm. */
-      if (d < 1.1 + persona.bold * 0.9 && d > 0.02 && L.stillW > 0){ setState('lwig', 0.75); return; }
+      /* NO distance floor on the wiggle, none at all: pounce steps are
+         min(d, speed*dt) so she lands EXACTLY on the dot (d === 0), and
+         every floor tried so far (0.3, 0.12, 0.02) turned that into her
+         idling on the dot forever. faceToward guards its own degenerate
+         zero internally. A dot she is standing on gets pinned: the test
+         reads d 0 < 0.55, still dot, catch under her paw. Re-pins pace
+         ~3s, the meter caps, catches never multiply the payout - a cat
+         winning, not a farm. */
+      if (d < 1.1 + persona.bold * 0.9 && L.stillW > 0){ setState('lwig', 0.75); return; }
       if (d > 0.3){ moveToward(L.x, L.z, 0.6, dt); playIf('Walk'); }  /* the STALK */
       else playIf('Idle');
     } else {
@@ -7324,6 +7327,148 @@ if (stage) (async () => {
     }
   }
 
+  /* ══ THE VISITOR ══════════════════════════════════════════════════════
+     Multi-cat v1: households are FREE, so when the collection holds a
+     second cat she VISITS the room - her own body, her own coat, her own
+     unhurried mind. Parallel play; interaction later. Nothing in here may
+     take the room down: every entry point is guarded, and failure means
+     "no visitor today", never a broken room.
+     ⛔ plain clone() shares the skeleton - SkeletonUtils.clone or nothing. */
+  let vis = null;
+  function visitorSnap(dna){
+    /* borrow the shared painter for one frame of HER, photograph the
+       canvases, then hand the brushes back exactly as found */
+    if (!MAPS.pos || !coatMat || !liveDNA) return null;
+    const keep = liveDNA;
+    try {
+      paintCoat(dna, 512);
+      const c2 = document.createElement('canvas');
+      c2.width = coatCanvas.width; c2.height = coatCanvas.height;
+      c2.getContext('2d').drawImage(coatCanvas, 0, 0);
+      paintEyes(dna);
+      const e2 = document.createElement('canvas');
+      e2.width = eyeCanvas.width; e2.height = eyeCanvas.height;
+      e2.getContext('2d').drawImage(eyeCanvas, 0, 0);
+      return { coat: c2, eye: e2 };
+    } finally {
+      try { paintCoat(keep, 512); paintEyes(keep); } catch (e) {}
+    }
+  }
+  function visitorSpawn(card2){
+    if (vis || !card2 || !card2.dna) return;
+    try {
+      const dna2 = (window.LOAF && window.LOAF.migrateDNA && window.LOAF.migrateDNA(card2.dna)) || card2.dna;
+      const snaps = visitorSnap(dna2);
+      if (!snaps) return;
+      const root = SkeletonUtils.clone(gltf.scene);
+      const coatT = new THREE.CanvasTexture(snaps.coat);
+      coatT.flipY = false; coatT.colorSpace = THREE.SRGBColorSpace;
+      const eyeT = new THREE.CanvasTexture(snaps.eye);
+      eyeT.colorSpace = THREE.SRGBColorSpace;
+      const junk = [coatT, eyeT];
+      let mesh2 = null;
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        if (o.morphTargetDictionary && 'chonk' in o.morphTargetDictionary) mesh2 = o;
+        const remap = m => {
+          let n = m;
+          if (m.name === 'Coat'){ n = m.clone(); n.map = coatT; n.color.set('#FFFFFF'); }
+          else if (m.name === 'Eye'){ n = m.clone(); n.map = eyeT; n.color.set('#FFFFFF'); }
+          else if (m.name === 'Nose'){ n = m.clone(); if (dna2.nose) n.color.set(dna2.nose); }
+          if (n !== m) junk.push(n);
+          return n;
+        };
+        o.material = Array.isArray(o.material) ? o.material.map(remap) : remap(o.material);
+      });
+      if (mesh2 && mesh2.morphTargetDictionary){
+        const put = (k, v) => {
+          if (k in mesh2.morphTargetDictionary)
+            mesh2.morphTargetInfluences[mesh2.morphTargetDictionary[k]] =
+              Math.max(0, Math.min(1, v));
+        };
+        put('chonk',   dna2.chonk  != null ? dna2.chonk  : 0.5);
+        put('earSize', dna2.ear    != null ? dna2.ear    : 0.5);
+        put('muzzle',  dna2.muzzle != null ? dna2.muzzle : 0.45);
+        put('floof',   dna2.floof  != null ? dna2.floof  : 0.35);
+      }
+      const rig2 = new THREE.Group();
+      rig2.add(root); scene.add(rig2);
+      rig2.position.set(1.9, 0, -1.1);
+      rig2.rotation.y = Math.PI + 0.55;
+      const mx = new THREE.AnimationMixer(root);
+      const act = {};
+      for (const c of gltf.animations) act[c.name] = mx.clipAction(c);
+      const sh2 = shadow.clone();
+      sh2.material = shadow.material.clone();     /* her lift is not his lift */
+      scene.add(sh2);
+      vis = { rig: rig2, mixer: mx, act, cur: null, shadow: sh2, junk,
+              state: 'idle', stateT: 2 + Math.random() * 3, tx: 1.9, tz: -1.1 };
+      visPlay('Idle');
+    } catch (e){ vis = null; }
+  }
+  function visitorRemove(){
+    if (!vis) return;
+    try {
+      scene.remove(vis.rig); scene.remove(vis.shadow);
+      vis.junk.forEach(x => { try { x.dispose(); } catch (e) {} });
+      try { vis.shadow.material.dispose(); } catch (e) {}
+    } catch (e) {}
+    vis = null;
+  }
+  function visPlay(name, once){
+    if (!vis) return;
+    const a = vis.act[name]; if (!a || vis.cur === a) return;
+    if (once){ a.reset().setLoop(THREE.LoopOnce); a.clampWhenFinished = true; }
+    else a.setLoop(THREE.LoopRepeat, Infinity);
+    if (vis.cur){ a.reset().play(); vis.cur.crossFadeTo(a, 0.35, false); }
+    else a.play();
+    vis.cur = a;
+  }
+  function visitorBrain(dt){
+    if (!vis) return;
+    vis.mixer.update(dt);
+    vis.shadow.position.x = vis.rig.position.x;
+    vis.shadow.position.z = vis.rig.position.z;
+    vis.stateT -= dt;
+    if (vis.state === 'wander'){
+      const dx = vis.tx - vis.rig.position.x, dz = vis.tz - vis.rig.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 0.01){
+        const want = Math.atan2(dx, dz) + Math.PI;
+        let diff = want - vis.rig.rotation.y;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        vis.rig.rotation.y += diff * Math.min(1, dt * 6);
+      }
+      if (d < 0.1){ visPlay('Idle'); vis.state = 'idle'; vis.stateT = 2 + Math.random() * 4; }
+      else {
+        const st = Math.min(d, 0.9 * dt);
+        vis.rig.position.x += dx / d * st;
+        vis.rig.position.z += dz / d * st;
+      }
+    } else if (vis.state === 'settle'){
+      if (vis.stateT <= 0){ visPlay('Idle'); vis.state = 'idle'; vis.stateT = 2; }
+    } else {
+      if (vis.stateT <= 0){
+        const r = Math.random();
+        if (r < 0.30){
+          /* somewhere calm: the outer rug, never the pond, and the
+             front-centre stage belongs to the resident */
+          for (let tries = 0; tries < 8; tries++){
+            const a2 = Math.random() * Math.PI * 2, rr = 1.2 + Math.random() * (RUG - 1.4);
+            const x = Math.cos(a2) * rr, z = Math.sin(a2) * rr;
+            if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.5) continue;
+            if (z > 1.2 && Math.abs(x) < 1.2) continue;
+            vis.tx = x; vis.tz = z; break;
+          }
+          visPlay('Walk'); vis.state = 'wander';
+        } else if (r < 0.5){
+          visPlay('LoafSettle', true); vis.state = 'settle'; vis.stateT = 8 + Math.random() * 8;
+        } else vis.stateT = 2 + Math.random() * 4;
+      }
+    }
+  }
+
   /* ── CLIP RECORDER ────────────────────────────────────────────────────────
      captureStream() records the canvas as it presents each rAF, so this works
      with preserveDrawingBuffer off. mp4 where the browser can (Safari),
@@ -7400,12 +7545,19 @@ if (stage) (async () => {
       syncPoops();
       if (card && card.dna) setDNA(card.dna);
       mountTo(d);
+      /* multi-cat: the second cat on file visits, free, always */
+      try {
+        const all = (window.LOAF && window.LOAF.Store) ? window.LOAF.Store.read() : [];
+        const other = all.find(c => card && c.id !== card.id && c.dna);
+        if (other) visitorSpawn(other);
+      } catch (e) {}
       if (persona.velcro > 0.4 || mood === 'affectionate') setTimeout(() => meow('trill'), 600);
     },
     roomClose(){
       if (!room.on) return;
       trickEnd(false);
       boxRemove();
+      visitorRemove();
       room.on = false;
       floor.scale.setScalar(1);
       rig.position.set(0, 0, 0);
@@ -7425,6 +7577,7 @@ if (stage) (async () => {
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
     _boxSmall(v){ room.boxSmallNext = v; },         /* harness: force box size */
+    get _vis(){ return vis && { state: vis.state, pos: vis.rig.position.toArray() }; },
     _room: room,                                 /* harness peephole */
     get _mood(){ return mood; },
     _toes(){
@@ -7627,8 +7780,9 @@ if (stage) (async () => {
       if (since > 0.4) life.pet = Math.max(0, life.pet - dt * 0.5);
     }
 
-    // 6. the Room brain, when she is home
+    // 6. the Room brain, when she is home - and the visitor's smaller one
     if (room.on) roomBrain(dt, t);
+    if (room.on && vis){ try { visitorBrain(dt); } catch (e) { visitorRemove(); } }
 
     // 7. the shadow believes her height
     if (bones.spine){
