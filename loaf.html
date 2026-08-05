@@ -207,6 +207,49 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
   color:var(--dim);border-top:1px solid var(--line);margin-top:12px}
 .meta{display:flex;justify-content:space-between;gap:12px;padding:0 16px 16px;
   font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+/* ── the card BACK ────────────────────────────────────────────────────────
+   Two independent faces, each hiding its own backface - no preserve-3d, so
+   it survives the card's overflow:hidden and iOS Safari alike. The tilt
+   lives on .card (outer) and composes with the flip untouched. */
+#cardFront{backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  transition:transform .55s cubic-bezier(.3,.9,.35,1)}
+#cardBack{position:absolute;inset:0;z-index:6;backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;transform:rotateY(180deg);cursor:pointer;
+  transition:transform .55s cubic-bezier(.3,.9,.35,1);overflow:auto;
+  background:
+    radial-gradient(120% 60% at 50% -10%,rgba(255,178,63,.05),transparent 75%),
+    var(--panel);
+  display:flex;flex-direction:column;padding:22px 18px 16px;gap:10px}
+.card.flipped #cardFront{transform:rotateY(-180deg)}
+.card.flipped #cardBack{transform:rotateY(0)}
+#cardBack .bk-hd{font-family:var(--mono);font-size:11px;letter-spacing:.24em;
+  color:var(--faint);text-transform:uppercase;text-align:center}
+#cardBack .bk-name{font-size:clamp(22px,6vw,30px);font-weight:800;line-height:.95;
+  letter-spacing:-.03em;text-transform:uppercase;text-align:center;margin:2px 0 0}
+#cardBack .bk-days{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  color:var(--amber);text-transform:uppercase;text-align:center;margin-bottom:6px}
+#cardBack .bk-sec{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+  color:var(--dim);text-transform:uppercase;border-top:1px solid var(--line);
+  padding-top:12px;margin-top:4px}
+#cardBack .bk-bars{display:grid;gap:9px}
+#cardBack .bk-bar{display:grid;grid-template-columns:86px 1fr;align-items:center;gap:10px}
+#cardBack .bk-bar b{font-family:var(--mono);font-weight:400;font-size:11px;
+  letter-spacing:.14em;color:var(--dim);text-align:right}
+#cardBack .bk-bar .tk{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+#cardBack .bk-bar .fl{height:100%;border-radius:99px;background:var(--gold,#FFB23F);
+  transition:width .7s cubic-bezier(.2,.9,.3,1)}
+/* bk-ghost, NOT ghost: .ghost is the global pill BUTTON class, and on this
+   container it drew a giant pill border that read as a mystery ellipse */
+#cardBack .bk-bars.bk-ghost .fl{background:var(--panel-2)}
+#cardBack .bk-list{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--bone)}
+#cardBack .bk-list .none{color:var(--faint)}
+#cardBack .bk-row{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+/* the tall card leaves the lower back open: her own filed shape holds it,
+   a watermark, not a hole */
+#cardBack .bk-mark{flex:1;display:grid;place-items:center;opacity:.16;min-height:60px}
+#cardBack .bk-note{font-family:var(--mono);font-size:11px;line-height:1.6;
+  color:var(--faint);text-align:center;font-style:italic}
 
 /* ── the shape prompt, after the reveal ──────────────────────────────────── */
 .shapeask{margin-top:18px;border:1px solid var(--line);border-radius:18px;background:var(--panel);
@@ -444,6 +487,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 
 <section class="wrap stage hidden" id="view-card">
   <article class="card" id="card">
+    <div id="cardFront">
     <div class="photo">
       <div class="foil"></div>
       <span class="rarity" id="rarity">—</span>
@@ -465,6 +509,22 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div class="ds" id="abilityDesc">—</div>
     </div>
     <div class="meta"><span id="coat">—</span><span id="serial">—</span></div>
+    </div>
+    <!-- the back: who she IS. Tap anywhere on it to turn her over again. -->
+    <div id="cardBack">
+      <div class="bk-hd">Who she is</div>
+      <div class="bk-name" id="bkName">—</div>
+      <div class="bk-days" id="bkDays">—</div>
+      <div class="bk-sec">Temperament</div>
+      <div class="bk-bars" id="bkBars"></div>
+      <div class="bk-sec">Tricks she knows</div>
+      <div class="bk-list" id="bkTricks">—</div>
+      <div class="bk-sec">The ledgers</div>
+      <div class="bk-row"><span>Fish book</span><span id="bkFish">—</span></div>
+      <div class="bk-row"><span>Shapes filed</span><span id="bkShapes">—</span></div>
+      <div class="bk-mark" id="bkMark"></div>
+      <div class="bk-note" id="bkNote"></div>
+    </div>
   </article>
 
   <div class="shapeask hidden" id="shapeask">
@@ -476,6 +536,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   <!-- The scan is the FOUNDATION; the owner is the finish. This is the
        bridge: card in hand, now go sculpt her until she is yours. -->
   <div class="row"><button class="btn" id="makeAvatar">Meet her in 3D</button></div>
+  <div class="row"><button class="ghost" id="flipcard">Turn the card over</button></div>
   <div class="row"><button class="btn" id="save">Share or save the card</button></div>
   <div class="row">
     <button class="ghost" id="rename">Rename</button>
@@ -1772,6 +1833,9 @@ function paint(card, isNew){
   $('cardPower').textContent = 'PWR ' + powerOf(card);
 
   paintPosture(card);
+  paintBack(card);
+  $('card').classList.remove('flipped');       /* a fresh card leads face up */
+  $('flipcard').textContent = 'Turn the card over';
   $('remove').classList.toggle('hidden', !!isNew);
   $('cardNote').textContent = '';
   show('card');
@@ -1779,6 +1843,59 @@ function paint(card, isNew){
   drawStrip();
   drawIndex();
 }
+
+/* ── the card BACK: who she IS ──────────────────────────────────────────────
+   The temperament chart made shareable - hold two cats' backs side by side
+   and the quiz answers become a comparison. Everything on it only ever
+   fills up: bars from the owner's answers, tricks learned for life,
+   ledgers that count upward. */
+function paintBack(card){
+  $('bkName').textContent = (card.name || 'Unnamed').toUpperCase();
+  const days = Math.max(1, Math.floor((Date.now() - (card.scannedAt || Date.now())) / DAY) + 1);
+  $('bkDays').textContent = 'Day ' + days + ' together';
+
+  const bars = $('bkBars');
+  bars.innerHTML = '';
+  const p = card.persona;
+  bars.classList.toggle('bk-ghost', !p);
+  Object.keys(P_LABEL).forEach(k => {
+    const row = document.createElement('div'); row.className = 'bk-bar';
+    const b = document.createElement('b'); b.textContent = P_LABEL[k];
+    const tk = document.createElement('div'); tk.className = 'tk';
+    const fl = document.createElement('div'); fl.className = 'fl';
+    fl.style.width = p ? Math.round(p[k] * 100) + '%' : '0%';
+    tk.appendChild(fl); row.append(b, tk); bars.appendChild(row);
+  });
+
+  const known = TRICKS_DEF.filter(d => card.tricks && card.tricks[d.k]
+    && card.tricks[d.k].s >= 3).map(d => d.n);
+  $('bkTricks').innerHTML = known.length
+    ? known.join(' · ')
+    : '<span class="none">None yet. The room teaches.</span>';
+
+  const fishN = Object.keys(card.fishBook || {}).length;
+  $('bkFish').textContent = fishN + ' of ' + FISH.length + ' species';
+  const shapeN = Object.keys(card.shapeTally || {}).length;
+  $('bkShapes').textContent = shapeN + ' of ' + POSTURES.length + ' shapes';
+
+  $('bkNote').textContent = p
+    ? 'Answered by the one who knows her.'
+    : 'Answer "Who is she?" in the room and the bars fill in.';
+
+  /* her filed shape, watermarked into the open lower half */
+  $('bkMark').innerHTML = silhouette(card.posture || 'loaf', 150, 'var(--bone)');
+}
+$('flipcard').onclick = () => {
+  const c = $('card'), toBack = !c.classList.contains('flipped');
+  if (toBack && current) paintBack(current);   /* fresh ledgers every turn */
+  c.classList.toggle('flipped', toBack);
+  $('flipcard').textContent = toBack ? 'Turn it back' : 'Turn the card over';
+};
+/* the whole back is a control: tap anywhere on it to turn her over again */
+$('cardBack').onclick = () => {
+  $('card').classList.remove('flipped');
+  $('flipcard').textContent = 'Turn the card over';
+};
 
 /* ── the shape, asked after the reveal so it is a bonus and not a toll ────── */
 function paintPosture(card){
