@@ -120,16 +120,18 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
    with a third of the screen empty above and below it */
 #o-choice{justify-content:space-between; padding:92px 26px 68px}
 .ch-top,.ch-mid{display:flex; flex-direction:column; align-items:center; width:100%}
-.ch-fly{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#5a6350; margin-bottom:22px}
+.ch-fly{font-size:12.5px; letter-spacing:4px; text-transform:uppercase; color:#8a917c; margin-bottom:22px}
 .pot-unit{font-size:12px; letter-spacing:5px; text-transform:uppercase; color:var(--muted); margin-top:8px}
 /* the risk, drawn: the band you just hit over the band you would face next.
    Bars shrink toward their own centre, the way the band itself narrows. */
 .bandviz{width:100%; max-width:330px; margin:18px 0 2px}
 .bv-row{display:flex; align-items:center; gap:12px; margin:8px 0}
-.bv-lab{flex:none; width:96px; text-align:right; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--muted)}
-.bv-track{flex:1; height:10px; border-radius:5px; background:#10141f; border:1px solid #232d44; position:relative}
-.bv-track i{position:absolute; top:1px; bottom:1px; left:50%; transform:translateX(-50%); border-radius:4px;
-  background:linear-gradient(90deg, #c8a84b 0%, #fff4d6 42%, #fff4d6 58%, #c8a84b 100%); transition:width .35s ease}
+.bv-lab{flex:none; width:96px; text-align:right; font-size:12px; letter-spacing:1.6px; text-transform:uppercase; color:var(--muted)}
+.bv-track{flex:1; height:18px; border-radius:9px; background:#10141f; border:1px solid #2b3752; position:relative}
+.bv-track i{position:absolute; top:2px; bottom:2px; left:50%; transform:translateX(-50%); border-radius:7px;
+  background:linear-gradient(90deg, #c8a84b 0%, #fff4d6 42%, #fff4d6 58%, #c8a84b 100%);
+  box-shadow:0 0 12px rgba(255,215,122,.35); transition:width .35s ease}
+.bv-num{flex:none; width:38px; text-align:left; font-size:13px; font-weight:700; color:var(--warm); font-variant-numeric:tabular-nums}
 .pot-lab{font-size:12px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
 .pot-num{font-size:86px; line-height:1; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums;
   text-shadow:0 0 42px rgba(255,215,122,.34)}
@@ -267,8 +269,8 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
     <div class="ch-mid">
       <div class="choice-line" id="ch-line">Round 2 pays 15, heart pays 45.</div>
       <div class="bandviz">
-        <div class="bv-row"><span class="bv-lab">band now</span><span class="bv-track"><i id="bv-now"></i></span></div>
-        <div class="bv-row"><span class="bv-lab">next round</span><span class="bv-track"><i id="bv-next"></i></span></div>
+        <div class="bv-row"><span class="bv-lab">band now</span><span class="bv-track"><i id="bv-now"></i></span><span class="bv-num" id="bv-now-n"></span></div>
+        <div class="bv-row"><span class="bv-lab">next round</span><span class="bv-track"><i id="bv-next"></i></span><span class="bv-num" id="bv-next-n"></span></div>
       </div>
       <div class="choice-warn" id="ch-warn">miss and all 10 is gone</div>
     </div>
@@ -655,9 +657,13 @@ function openChoice(){
   $('ch-pot').textContent=G.pot;
   $('ch-lab').textContent = (G.hit==='heart') ? 'heart. you are holding' : 'you are holding';
   $('ch-line').textContent='Round '+next+' pays '+roundValue(next)+', heart pays '+(roundValue(next)*3)+'.';
-  /* the risk at a glance: both bars on one scale, 66 degrees = full width */
+  /* the risk at a glance: both bars on one scale, 66 degrees = full width.
+     The degree number sits beside each bar because a few-pixel width delta
+     between consecutive rounds is honest but illegible on a phone. */
   $('bv-now').style.width  = Math.round(clamp(bandDeg(G.chainRound)/66,0,1)*100)+'%';
   $('bv-next').style.width = Math.round(clamp(bandDeg(next)/66,0,1)*100)+'%';
+  $('bv-now-n').textContent  = Math.round(bandDeg(G.chainRound))+'°';
+  $('bv-next-n').textContent = Math.round(bandDeg(next))+'°';
   $('ch-warn').textContent='miss and all '+G.pot+' is gone';
   $('ch-bank').firstChild.nodeValue='Bank '+G.pot;
   $('ch-bank-sub').textContent = (G.fireflies>1) ? 'keep it, then firefly '+(G.fly+1)+' of 3' : 'keep it, last firefly of the run';
@@ -1063,10 +1069,13 @@ function drawRing(t){
   var dim = playing?1:0.82;
   var bandC=G.bandC, bandW=G.bandW, heartW=G.heartW, lightTh=G.theta;
   if(!playing){
-    /* closed form so it eases and swells but can never jump or reverse */
+    /* closed form so it eases and swells but can never jump or reverse.
+       The band centre SWINGS in the upper-right arc instead of circling,
+       so it never parks at 12 o'clock where the heart petals collide with
+       the title glow on the menu. */
     var w=0.40*TAU*t;
     AT.th = norm(w + 0.40*Math.sin(2*w));
-    AT.c  = norm(0.9 - t*0.055);
+    AT.c  = norm(0.95 + 0.5*Math.sin(t*0.11));
     bandC=AT.c; bandW=AT.w; heartW=AT.h; lightTh=AT.th;
   }
   var bStart=bandC-bandW/2, bEnd=bandC+bandW/2;
@@ -1124,11 +1133,14 @@ function drawRing(t){
       ctx.strokeStyle='rgba(255,215,122,.75)'; ctx.lineWidth=3*RSC; ctx.lineCap='round';
       ctx.beginPath();
       ctx.arc(RCX,RCY,rr*RSC, ca(sgn>0?a0:a1), ca(sgn>0?a1:a0), false); ctx.stroke();
+      /* the head is a chevron lying ALONG the rail at the same radius, so it
+         can never poke radially into the petal tips the way the old floating
+         triangle did when the band crossed the sprig side */
       var hp=px(a1,rr);
       ctx.save(); ctx.translate(hp[0],hp[1]); ctx.rotate(a1 + (sgn>0?0:Math.PI));
-      ctx.fillStyle='rgba(255,215,122,.95)';
-      ctx.beginPath(); ctx.moveTo(0,-8*RSC); ctx.lineTo(6*RSC,5*RSC); ctx.lineTo(-6*RSC,5*RSC);
-      ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.strokeStyle='rgba(255,215,122,.95)'; ctx.lineWidth=3*RSC; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-5*RSC,-6*RSC); ctx.lineTo(0,0); ctx.lineTo(-5*RSC,6*RSC); ctx.stroke();
+      ctx.restore();
     }
   }
   ctx.restore();

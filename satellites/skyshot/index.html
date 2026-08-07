@@ -780,9 +780,13 @@ function drawBg(t){
     ctx.fillStyle='rgba(232,220,200,'+a.toFixed(3)+')';
     ctx.beginPath(); ctx.arc(sx,s.y,s.r,0,6.283); ctx.fill();
   }
-  /* moon, small and clear of both the retry button above and the hint pill below */
-  ctx.fillStyle='rgba(240,228,200,0.92)'; ctx.beginPath(); ctx.arc(MOONX,MOONY,MOONR,0,6.283); ctx.fill();
-  ctx.fillStyle='rgba(13,19,33,0.94)'; ctx.beginPath(); ctx.arc(MOONX-9,MOONY-6,MOONR-1,0,6.283); ctx.fill();
+  /* moon, small and clear of both the retry button above and the hint pill below.
+     The shadow disc matches the sky at that height instead of running darker,
+     which is what made the old one read as an eclipse hole; the lit sliver is
+     brighter and a touch thicker so it reads as a crescent at 375 wide. */
+  ctx.fillStyle='rgba(255,244,214,0.55)'; ctx.beginPath(); ctx.arc(MOONX,MOONY,MOONR+3,0,6.283); ctx.fill();
+  ctx.fillStyle='#fff0c4'; ctx.beginPath(); ctx.arc(MOONX,MOONY,MOONR,0,6.283); ctx.fill();
+  ctx.fillStyle='#101a2e'; ctx.beginPath(); ctx.arc(MOONX-8,MOONY-5,MOONR-0.5,0,6.283); ctx.fill();
   /* fireflies: warm, few, and blinking on their own slow clocks */
   for(i=0;i<FLIES.length;i++){
     var m=FLIES[i];
@@ -837,10 +841,11 @@ function drawSling(S,t){
   /* the fork arms flex in toward the pull */
   var flex=loaded?vp*5:0;
   var lx=AX-33+flex, ly=AY-20+flex*0.8, rx=AX+33-flex, ry=AY-20+flex*0.8;
-  /* a warm pool of light so the sling reads as the player's own corner */
-  var gl=ctx.createRadialGradient(AX,AY+8,4,AX,AY+8,120);
-  gl.addColorStop(0,'rgba(255,215,122,0.14)'); gl.addColorStop(1,'rgba(255,215,122,0)');
-  ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(AX,AY+8,120,0,6.283); ctx.fill();
+  /* a warm pool of light so the sling reads as the player's own corner;
+     it swells with the pull so the stretch is visible in silhouette too */
+  var gl=ctx.createRadialGradient(AX,AY+8,4,AX,AY+8,120+40*vp);
+  gl.addColorStop(0,'rgba(255,215,122,'+(0.14+0.12*vp).toFixed(3)+')'); gl.addColorStop(1,'rgba(255,215,122,0)');
+  ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(AX,AY+8,120+40*vp,0,6.283); ctx.fill();
   ctx.lineCap='round';
   /* band behind the pouch, thinning as it tightens */
   ctx.strokeStyle='#7d5f34'; ctx.lineWidth=6-vp*1.8;
@@ -866,8 +871,14 @@ function drawSling(S,t){
   ctx.strokeStyle='#2c4a24'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(lx-28,ly+18); ctx.lineTo(lx,ly+10); ctx.stroke();
   /* band in front, then the leaf pouch and the loaded seed */
-  ctx.strokeStyle=vp>0.66?'#b8934f':'#a07f47'; ctx.lineWidth=6-vp*1.8;
+  ctx.strokeStyle=vp>0.66?'#d8b45c':'#a07f47'; ctx.lineWidth=6-vp*1.2;
   ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(px,py); ctx.stroke();
+  /* a taut gold core over both bands, growing with the pull, so the stretch
+     itself is the brightest line on screen mid-drag */
+  if(loaded&&vp>0.04){
+    ctx.strokeStyle='rgba(255,224,150,'+(0.22+0.5*vp).toFixed(3)+')'; ctx.lineWidth=2.2;
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(px,py); ctx.moveTo(rx,ry); ctx.lineTo(px,py); ctx.stroke();
+  }
   if(loaded){
     ctx.save(); ctx.translate(px,py); ctx.rotate(Math.atan2(-diry,-dirx)+PI/2);
     ctx.fillStyle='#2f4a24';
