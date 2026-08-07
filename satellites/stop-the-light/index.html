@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stop the Light">
+<title>Stop the Light · Sky Wolf Studios</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23070a10'/%3E%3Ccircle cx='16' cy='16' r='9.5' fill='none' stroke='%232a3550' stroke-width='3'/%3E%3Cpath d='M16 6.5a9.5 9.5 0 0 1 8.2 4.7' fill='none' stroke='%23c8a84b' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='6.5' r='3.4' fill='%23ffe6a8'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Wolf Studios">
+<meta property="og:title" content="Stop the Light">
+<meta property="og:description" content="A firefly circles a ring of petals. Tap once to stop it, then choose: bank what you hold, or go again for more.">
+<meta property="og:image" content="thumb.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stop the Light">
+<meta name="twitter:description" content="A firefly circles a ring of petals. Tap once to stop it, then choose: bank what you hold, or go again for more.">
+<meta name="twitter:image" content="thumb.png">
+<style>
+:root{
+  --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
+  --sage:#7ab356; --gold:#c8a84b; --warm:#ffd77a; --hot:#fff4d0;
+  --cream:#e8dcc8; --muted:#8a9178; --ember:#e08a4a; --plum:#241b33;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #0d1420 0%, #05070a 65%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#05070a; overflow:hidden; box-shadow:0 0 70px #000c}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+
+/* screens */
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20}
+.screen.on{display:flex}
+/* OPAQUE, not near-opaque. The canvas is a sibling of every screen and never
+   stops drawing, so at .955 the live ring bled through the rules and the
+   summary as a visible ghost flower. Alpha on a near-black field is not
+   subtle: a gold petal at 4.5% still reads. Same gradient, no alpha. */
+.screen.solid{background:linear-gradient(180deg, #0b1018 0%, #05070a 55%, #04060a 100%)}
+/* the menu has no scrim at all: the canvas night IS its background, and the
+   live ring is parked in #flowerwin where no text ever sits */
+.screen.veil{background:transparent}
+#flowerwin{flex:1; min-height:230px; max-height:330px; width:100%}
+.screen.clear{background:transparent; pointer-events:none}
+.screen.clear .hit{pointer-events:auto}
+.pad{padding:26px 24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+
+/* type */
+.title-word{font-size:46px; line-height:1.0; color:var(--warm); font-weight:800; letter-spacing:.5px;
+  text-shadow:0 0 30px rgba(255,215,122,.28), 0 3px 0 #2a2010}
+.title-sub{color:var(--gold); font-size:12px; letter-spacing:5px; margin-top:10px; text-transform:uppercase}
+.ribbon{color:var(--cream); font-size:15px; opacity:.92; max-width:390px; line-height:1.5; margin-top:4px}
+h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
+.sub{color:var(--muted); font-size:13px; line-height:1.5}
+.hl{color:var(--warm); font-weight:800}
+.hl2{color:var(--sage); font-weight:800}
+
+/* buttons: 74px min so rendered height at 375x667 (scale .694) is 51px, above the 48px floor */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:74px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#141c2a,#0d1420);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease; padding:10px 14px; text-align:center}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
+.btn.primary{background:linear-gradient(180deg,#e8c063,#c08f34); color:#20180a; border-color:#ffe3a0;
+  box-shadow:0 4px 0 #7a5a1c, 0 8px 22px #0008; font-weight:800}
+.btn.risk{background:linear-gradient(180deg,#2a1a10,#170f09); color:#f2c495; border-color:#7a4a22;
+  box-shadow:0 0 22px rgba(224,138,74,.14) inset}
+.btn.ghost{background:#0a0f17; color:var(--muted)}
+.btn[disabled]{opacity:.42; pointer-events:none}
+.btn.col{flex-direction:column; gap:0}
+.btn .sm2{display:block; font-size:12px; font-weight:600; letter-spacing:.6px; opacity:.82; margin-top:4px; line-height:1.3}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
+.foot{margin-top:auto; padding-top:18px; text-align:center; color:#4b5568; font-size:11px; letter-spacing:1px}
+
+/* rules rows */
+.helprow{display:flex; gap:13px; align-items:flex-start; margin:13px 0; font-size:14.5px; line-height:1.5}
+.helprow .hi{width:30px; flex:none; text-align:center; font-size:20px; line-height:1.2}
+.rule-note{margin:14px 0 4px; padding:13px 15px; border:1px solid var(--line); border-radius:13px;
+  background:#0a0f18; font-size:13.5px; line-height:1.5; color:#c9c0ad}
+
+/* settings */
+/* the whole row is the switch. The 36px pill measures 25 RENDERED px once the
+   540 wide stage is scaled onto a 375 wide screen, which is half the 48px
+   floor, so the pill is decoration and the 74px row takes the tap. */
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
+  margin:0 auto 12px; padding:14px 16px; min-height:74px; border:1px solid var(--line); border-radius:14px; background:#0a0f17;
+  cursor:pointer; -webkit-tap-highlight-color:transparent}
+.settingline:active{filter:brightness(1.25)}
+.toggle{width:64px; height:36px; border-radius:20px; background:#1b2434; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:#6d5a24}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:#8a9178; transition:left .15s, background .15s}
+.toggle.on b{left:31px; background:var(--warm)}
+
+/* HUD (play screen) */
+#pausebtn{position:absolute; top:14px; right:14px; width:74px; height:74px; border-radius:18px;
+  border:1px solid var(--line); background:rgba(10,15,23,.72); color:var(--cream); font-size:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center}
+#pausebtn:active{filter:brightness(1.3)}
+
+/* overlays */
+.ov{position:absolute; inset:0; display:none; z-index:40; flex-direction:column; align-items:center; justify-content:center; padding:24px}
+.ov.on{display:flex}
+/* SOLID, not near-solid. At .975 the live HUD still read straight through the
+   choice: at 375x667 you could make out the ring petals and the round label
+   under the drift note and under the pause card. Near-opaque is not opaque.
+   Same warm centre, zero alpha. */
+.ov-scrim{background:radial-gradient(85% 55% at 50% 40%, #1a1205 0%, #05070a 55%, #03040a 100%)}
+.pot-lab{font-size:12px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
+.pot-num{font-size:86px; line-height:1; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums;
+  text-shadow:0 0 42px rgba(255,215,122,.34)}
+.pot-num.puls{animation:potp 1.6s ease-in-out infinite}
+@keyframes potp{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.choice-line{font-size:14px; color:#cfc6b2; line-height:1.55; margin-top:14px; max-width:380px; text-align:center}
+.choice-warn{font-size:13px; color:var(--ember); margin-top:9px}
+.bigbtn{min-height:112px; font-size:22px; font-weight:800; letter-spacing:.6px}
+.note-card{max-width:400px; text-align:center; border:1px solid var(--line); border-radius:18px; background:#0a1018; padding:26px 22px}
+
+/* summary */
+.sumrow{width:100%; max-width:400px; margin:0 auto 9px; padding:12px 15px 11px;
+  border:1px solid var(--line); border-radius:13px; background:#0a0f17; font-size:14px}
+.sumrow .top{display:flex; align-items:center; gap:10px}
+.sumrow .who{color:var(--muted); font-size:12px; letter-spacing:1.4px; text-transform:uppercase; flex:none; width:78px; text-align:left}
+.sumrow .what{flex:1; text-align:left; color:#cfc6b2; font-size:13.5px}
+.sumrow .val{font-weight:800; font-variant-numeric:tabular-nums; color:var(--warm); flex:none}
+.sumrow.lost .val{color:#6a5a4a}
+.sumrow.unused{opacity:.42}
+/* how deep that firefly went, at a glance */
+.pips{display:flex; gap:4px; margin-top:8px}
+.pips i{flex:1; height:5px; border-radius:3px; background:#1b2434}
+.pips i.f{background:#7a6222}
+.sumrow:not(.lost) .pips i.f{background:var(--gold)}
+.pips i.last{background:var(--warm)}
+.sumrow.lost .pips i.last{background:var(--ember)}
+.pips b{flex:none; font-size:10px; color:var(--warm); line-height:5px; margin-left:2px}
+.totline{font-size:13px; color:var(--muted); letter-spacing:3px; text-transform:uppercase}
+.tot{font-size:70px; font-weight:800; color:var(--warm); line-height:1.02; font-variant-numeric:tabular-nums}
+.totunit{font-size:12px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin-top:2px}
+.badge{display:inline-block; margin-top:12px; padding:7px 16px; border-radius:20px; background:#3a2f10;
+  border:1px solid #7a6222; color:var(--warm); font-weight:800; font-size:13px; letter-spacing:1.5px}
+.deep{margin-top:10px; color:var(--gold); font-size:13.5px}
+
+@media (prefers-reduced-motion: reduce){ .pot-num.puls{animation:none} }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- ============ TITLE / MENU ============ -->
+  <div class="screen veil center on" id="s-title"><div class="pad center" style="justify-content:flex-start">
+    <div class="title-word">Stop<br>the Light</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div id="flowerwin"></div>
+    <div class="ribbon">Tap once to stop the firefly. Then choose: bank it, or go again for more.</div>
+    <div class="stack" style="margin-top:18px">
+      <button class="btn primary col" id="b-play">Play a run<span class="sm2" id="b-play-sub">three fireflies</span></button>
+      <button class="btn col" id="b-daily">Tonight's ring<span class="sm2" id="b-daily-sub">one run, same rhythm for everyone</span></button>
+      <div class="row">
+        <button class="btn" id="b-how">How to play</button>
+        <button class="btn" id="b-set">Settings</button>
+      </div>
+      <button class="btn ghost" id="b-exit">&#9664; All Sky Wolf games</button>
+    </div>
+    <div class="foot" id="foot-best">best 0</div>
+  </div></div>
+
+  <!-- ============ RULES / PRE-RUN BRIEFING ============ -->
+  <div class="screen solid" id="s-how"><div class="pad">
+    <h2 class="sc-h" id="how-h">How to play</h2>
+    <div class="sub" id="how-sub">Read this, then release the firefly.</div>
+    <div class="helprow"><div class="hi">&#10022;</div><div>A firefly runs the ring. <b class="hl">Tap anywhere</b> to stop it. One tap, that is the whole control.</div></div>
+    <div class="helprow"><div class="hi">&#9679;</div><div>Stop it inside the <b class="hl">gold band</b> and you keep going. Stop it in the <b class="hl">pale heart</b> at the middle of the band and that stop pays triple.</div></div>
+    <div class="helprow"><div class="hi">&#9878;</div><div>After every good stop you choose. <b class="hl">Bank</b> keeps the sparks you are holding. <b class="hl">Go again</b> grows the pot and narrows the band.</div></div>
+    <div class="helprow"><div class="hi">&#10006;</div><div>Miss the band and the whole unbanked pot is gone. That is the only way to lose it.</div></div>
+    <div class="helprow"><div class="hi">&#9788;</div><div>You get <b class="hl">three fireflies</b> a run. Each one is one chain. Banking ends that chain and keeps the sparks, so spend your fireflies well.</div></div>
+    <div class="helprow"><div class="hi">&#8767;</div><div>The ring does not run at one speed. It swells and eases in the same pattern all run. <b class="hl">Read the rhythm</b> rather than counting.</div></div>
+    <div class="helprow"><div class="hi">&#8635;</div><div>From round five the band <b class="hl">drifts</b> as well, so you are stopping a moving light on a moving gap.</div></div>
+    <div class="rule-note">The firefly tires after four laps. If you never tap, that counts as a miss.</div>
+    <div style="height:20px"></div>
+    <div class="stack">
+      <button class="btn primary" id="how-go">Release the firefly</button>
+      <button class="btn ghost" id="how-back">&#9664; Menu</button>
+    </div>
+    <div style="height:10px"></div>
+  </div></div>
+
+  <!-- ============ PLAY (transparent HUD layer over canvas) ============ -->
+  <div class="screen clear" id="s-play">
+    <button id="pausebtn" class="hit" aria-label="Pause">&#10073;&#10073;</button>
+  </div>
+
+  <!-- ============ RUN SUMMARY ============ -->
+  <div class="screen solid center" id="s-sum"><div class="pad center" style="justify-content:space-between">
+    <div>
+      <h2 class="sc-h" id="sum-h">Run over</h2>
+      <div class="sub" id="sum-sub">three fireflies spent</div>
+      <div id="sum-badge"></div>
+    </div>
+    <div style="width:100%; flex:1; display:flex; flex-direction:column; justify-content:center">
+      <div class="totline">banked</div>
+      <div class="tot" id="sum-tot">0</div>
+      <div class="totunit">sparks</div>
+      <div style="height:20px"></div>
+      <div id="sum-rows" style="width:100%"></div>
+      <div class="deep" id="sum-deep"></div>
+      <div class="sub" id="sum-best" style="margin-top:6px">best 0</div>
+    </div>
+    <div class="stack">
+      <button class="btn primary" id="sum-again">Play again</button>
+      <button class="btn" id="sum-daily">Tonight's ring</button>
+      <button class="btn ghost" id="sum-menu">&#9664; Menu</button>
+    </div>
+  </div></div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen solid" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div class="sub" style="margin-bottom:16px">Nothing here changes how the ring is scored.</div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Extra motion</span><div class="toggle on" id="tg-motion"><b></b></div></div>
+    <div class="settingline"><span>High contrast band</span><div class="toggle" id="tg-contrast"><b></b></div></div>
+    <div style="height:6px"></div>
+    <div class="sub" id="set-stats" style="text-align:center"></div>
+    <div style="height:16px"></div>
+    <div class="stack">
+      <button class="btn ghost" id="set-reset">Clear my scores</button>
+      <button class="btn ghost" id="set-back">&#9664; Menu</button>
+    </div>
+  </div></div>
+
+  <!-- ============ OVERLAY: THE CHOICE ============ -->
+  <div class="ov ov-scrim" id="o-choice">
+    <div class="pot-lab" id="ch-lab">you are holding</div>
+    <div class="pot-num puls" id="ch-pot">0</div>
+    <div class="choice-line" id="ch-line">Round 2 pays 15, heart pays 45.</div>
+    <div class="choice-warn" id="ch-warn">miss and all 10 is gone</div>
+    <div style="height:26px"></div>
+    <div class="stack">
+      <button class="btn primary bigbtn col" id="ch-bank">Bank 0<span class="sm2" id="ch-bank-sub">keep it, end this firefly</span></button>
+      <button class="btn risk bigbtn col" id="ch-again">Go again<span class="sm2" id="ch-again-sub">round 2, narrower band</span></button>
+    </div>
+  </div>
+
+  <!-- ============ OVERLAY: PAUSE ============ -->
+  <div class="ov ov-scrim" id="o-pause">
+    <h2 class="sc-h">Paused</h2>
+    <div class="sub" id="pz-sub" style="margin-bottom:22px; text-align:center">the ring is holding still</div>
+    <div class="stack">
+      <button class="btn primary" id="pz-resume">Resume</button>
+      <button class="btn" id="pz-rules">How to play</button>
+      <button class="btn ghost" id="pz-quit">End the run</button>
+    </div>
+  </div>
+
+  <!-- ============ OVERLAY: ONE TIME NOTE ============ -->
+  <div class="ov ov-scrim" id="o-note">
+    <div class="note-card">
+      <div style="font-size:38px; line-height:1; margin-bottom:14px" id="note-ico">&#8635;</div>
+      <h2 class="sc-h" id="note-h">The petals drift</h2>
+      <div class="sub" id="note-b" style="font-size:14.5px; line-height:1.6">From here the gold band slides around the ring while the firefly runs. You are stopping a moving light on a moving gap. Watch the band before you tap.</div>
+    </div>
+    <div style="height:22px"></div>
+    <div class="stack"><button class="btn primary" id="note-ok">Ready</button></div>
+  </div>
+
+</div></div>
+
+<script>
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+var BUILD='v1.0';
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(!el) return;
+  el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fn(e); }); }
+
+/* ---------------------------------------------------------------- storage */
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return v||d; }catch(e){ return d; } }
+function jSet(k,v){ lsSet(k, JSON.stringify(v)); }
+
+var K_BEST='stl_best', K_STATS='stl_stats', K_DAILY='stl_daily',
+    K_DAILYBEST='stl_daily_best', K_MOM='stl_moments', K_SET='stl_set', K_SEEN='stl_seen';
+
+var SET = jGet(K_SET, null);
+if(!SET){
+  var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  SET = { sound:1, motion: prefersReduced?0:1, contrast:0 };
+}
+function saveSet(){ jSet(K_SET, SET); }
+
+var STATS = jGet(K_STATS, { runs:0, banks:0, deepest:0, totalBanked:0, hearts:0 });
+var MOM   = jGet(K_MOM,   { first_bank:0, deep_run:0, pb_date:'', daily_date:'' });
+var SEEN  = jGet(K_SEEN,  { drift:0 });
+var BEST  = parseInt(lsGet(K_BEST,'0'),10)||0;
+var DAILYBEST = parseInt(lsGet(K_DAILYBEST,'0'),10)||0;
+
+function dayKey(){ var d=new Date();
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function daySeed(){ var d=new Date();
+  return ((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())*2654435761)>>>0; }
+function dailyState(){ var s=jGet(K_DAILY,null); if(!s||s.date!==dayKey()) return null; return s; }
+
+/* ------------------------------------------------------------ the wallet */
+/* ONE place where this game's internal currency (sparks) moves. The host
+   prices the announced moments itself; nothing here can set an amount. */
+var Wallet = {
+  sparks: 0,
+  earn: function(n, reason){
+    if(!(n>0)) return 0;
+    Wallet.sparks += n;
+    STATS.totalBanked += n;
+    return n;
+  },
+  moment: function(name, detail){
+    if(window.SWS_EMBED && parent!==window){
+      try{ parent.postMessage({sws:'earn', moment:name, detail:detail||{}}, '*'); }catch(e){}
+    }
+  }
+};
+/* first-time-only / daily-capped gates so replays never re-fire a moment */
+function fireFirstBank(round, pot){
+  if(MOM.first_bank) return;
+  MOM.first_bank=1; jSet(K_MOM,MOM); Wallet.moment('first_bank',{round:round, pot:pot});
+}
+function fireDeepRun(round, pot){
+  if(MOM.deep_run) return;
+  MOM.deep_run=1; jSet(K_MOM,MOM); Wallet.moment('deep_run',{round:round, pot:pot});
+}
+function fireDailyDone(score){
+  if(MOM.daily_date===dayKey()) return;
+  MOM.daily_date=dayKey(); jSet(K_MOM,MOM); Wallet.moment('daily_done',{score:score, date:dayKey()});
+}
+function firePersonalBest(score, prev){
+  if(MOM.pb_date===dayKey()) return;
+  MOM.pb_date=dayKey(); jSet(K_MOM,MOM); Wallet.moment('personal_best',{score:score, previous:prev});
+}
+
+/* ------------------------------------------------------------------ math */
+var TAU=Math.PI*2, D2R=Math.PI/180, R2D=180/Math.PI;
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
+function norm(a){ a=a%TAU; if(a<0)a+=TAU; return a; }
+function angDiff(a,b){ var d=norm(a-b); if(d>Math.PI) d-=TAU; return d; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+/* ----------------------------------------------------------------- audio */
+var AC=null;
+function actx(){ if(AC===null){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }
+  catch(e){ AC=false; } } return AC||null; }
+function tone(freq, dur, type, gain, slide){
+  if(!SET.sound) return; var c=actx(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,slide), c.currentTime+dur);
+    g.gain.setValueAtTime(0.0001,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(gain||0.11, c.currentTime+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur+0.03);
+  }catch(e){}
+}
+function sfx(n){
+  if(n==='glow'){ tone(660,0.16,'triangle',0.10); tone(990,0.20,'sine',0.05); }
+  else if(n==='heart'){ tone(784,0.10,'triangle',0.11); setTimeout(function(){tone(1046,0.10,'triangle',0.11);},80);
+                        setTimeout(function(){tone(1318,0.30,'sine',0.10);},160); }
+  else if(n==='miss'){ tone(150,0.42,'sawtooth',0.09,70); }
+  else if(n==='bank'){ tone(392,0.30,'sine',0.10); setTimeout(function(){tone(587,0.42,'sine',0.09);},90); }
+  else if(n==='go'){ tone(300,0.16,'square',0.05,420); }
+  else if(n==='ready'){ tone(520,0.10,'sine',0.05); }
+  else if(n==='tap'){ tone(880,0.05,'sine',0.05); }
+  else if(n==='wait'){ tone(190,0.08,'sine',0.06); }
+}
+
+/* -------------------------------------------------------------- round def */
+/* Deliberate pacing. Round 6 is the bloom round: a wide, slow, well paid
+   breather so the run is not one flat climb of tension. */
+function roundValue(r){
+  var V=[0,10,15,25,40,60,90,130,190,270,400];
+  if(r<V.length) return V[r];
+  var v=400; for(var i=11;i<=r;i++){ v=Math.round(v*1.45/5)*5; }
+  return v;
+}
+function bandDeg(r){
+  var W=[0,66,58,50,44,38,50,34,30,26,22];
+  if(r<W.length) return W[r];
+  return Math.max(13, 22-(r-10)*1.2);
+}
+function lapSec(r){
+  var t=Math.max(1.15, 2.45-(r-1)*0.13);
+  if(r===6) t+=0.28;
+  return t;
+}
+function ampFor(r){
+  var a=Math.min(0.50, 0.18+(r-1)*0.035);
+  if(r===6) a=Math.max(0.14, a-0.08);
+  return a;
+}
+function driftsOn(r){ return r>=5 && r!==6; }
+
+/* ------------------------------------------------------------- game state */
+var G = {
+  mode:'free', rng:Math.random, rhythmK:2, rhythmPhase:0,
+  fireflies:3, fly:1, chainRound:1, pot:0, runTotal:0, chains:[], deepest:0,
+  phase:'idle',            /* idle ready run stop fail choice paused */
+  theta:0, base:0.5, amp:0.2,
+  bandC:0, bandW:0, heartW:0, drift:0,
+  armAt:0, tStart:0, lastT:0, revs:0,
+  hit:'', flash:0, shake:0, trail:[], resultAt:0, resultFn:null,
+  frozen:false, roundVal:0
+};
+
+function speedAt(th){ /* revolutions per second at ring angle th */
+  return G.base * (1 + G.amp*Math.sin(G.rhythmK*th + G.rhythmPhase));
+}
+/* How many milliseconds the light actually spends inside a half width of the
+   band, integrated forward from the round's own start state.
+   This exists because the algebra cannot answer it. The band has to be sized
+   where the light MEETS it, not where it starts: with amp up to .5 the ring
+   runs three times faster at the crest of a swell than in the trough, and the
+   band drifts under the light for the whole approach. Sizing off
+   speedAt(bandCentreAtStart) shipped a 41ms band and a 20ms heart at round 12,
+   both well under the floor this game promises. */
+function windowMs(th0, c0, dr, half){
+  var th=th0, bc=c0, t=0, h=0.001, tin=-1, d;
+  while(t<12){
+    th += speedAt(th)*TAU*h;
+    bc += dr*TAU*h;
+    t  += h;
+    d = Math.abs(angDiff(th, bc));
+    if(d<=half){ if(tin<0) tin=t; }
+    else if(tin>=0) return (t-tin)*1000;
+  }
+  return tin<0 ? 9999 : (12-tin)*1000;
+}
+function advance(th, dt){
+  var n=Math.max(1, Math.ceil(dt/0.004)), h=dt/n, i;
+  for(i=0;i<n;i++){ th += speedAt(th)*TAU*h; }
+  return th;
+}
+
+function newRun(mode){
+  G.mode=mode;
+  var seed = (mode==='daily') ? daySeed() : (Math.random()*4294967295)>>>0;
+  G.rng = mulberry32(seed);
+  /* one rhythm for the whole run: the player learns tonight's flower */
+  G.rhythmK = 2 + Math.floor(G.rng()*2);        /* 2 or 3 swells a lap */
+  G.rhythmPhase = G.rng()*TAU;
+  G.fireflies=3; G.fly=1; G.runTotal=0; G.chains=[]; G.deepest=0; G.pot=0;
+  Wallet.sparks=0;
+  STATS.runs++; jSet(K_STATS,STATS);
+  startChain();
+}
+function startChain(){ G.chainRound=1; G.pot=0; startRound(); }
+
+function startRound(){
+  var r=G.chainRound;
+  G.roundVal = roundValue(r);
+  G.amp  = ampFor(r);
+  G.base = 1/(lapSec(r)*Math.sqrt(1-G.amp*G.amp));   /* exact mean lap time */
+
+  var wDeg=bandDeg(r), hDeg=Math.max(9, wDeg*0.34);
+  var c = G.rng()*TAU;
+
+  /* drift: alternates with the light on odd rounds, against it on even ones,
+     and is capped below the light's slowest speed so it can never outrun it. */
+  var dr=0;
+  if(driftsOn(r)){
+    dr = Math.min(0.42, 0.10+(r-5)*0.05);
+    dr = Math.min(dr, G.base*(1-G.amp)*0.6);
+    dr *= (r%2===1) ? 1 : -1;
+  }
+
+  /* the light always starts at least 100 degrees of travel short of the band.
+     Drawn HERE, before the widening loop, so widening the band never rerolls
+     it and the daily seed consumes rng in the same order it always did. */
+  var off = (100 + G.rng()*130)*D2R;
+
+  /* fairness floor: widen until the MEASURED window clears 62ms band /
+     40ms heart. Measured, not estimated: see windowMs. A player who misses
+     should be able to see why, never be asked for a window no hand can hit. */
+  var guard, bMs, hMs, th0;
+  for(guard=0; guard<40; guard++){
+    th0 = norm(c - wDeg*D2R/2 - off);
+    bMs = windowMs(th0, c, dr, wDeg*D2R/2);
+    hMs = windowMs(th0, c, dr, hDeg*D2R/2);
+    if(bMs>=62 && hMs>=40) break;
+    if(bMs<62) wDeg = wDeg*Math.min(1.30, Math.max(1.04, 62/Math.max(1,bMs)));
+    if(hMs<40) hDeg = hDeg*Math.min(1.30, Math.max(1.04, 40/Math.max(1,hMs)));
+    if(hDeg>wDeg*0.5) wDeg=hDeg*2;
+    if(wDeg>=96){ wDeg=96; if(hDeg>48) hDeg=48; break; }
+  }
+  if(hDeg>wDeg*0.5) hDeg=wDeg*0.5;
+
+  G.bandC=c; G.bandW=wDeg*D2R; G.heartW=hDeg*D2R; G.drift=dr;
+  G.theta = norm(c - G.bandW/2 - off);
+
+  G.trail.length=0; G.revs=0; G.hit=''; G.flash=0; G.frozen=false;
+  G.phase='ready';
+  G.tStart=now();
+  G.armAt=G.tStart+0.62;
+  sfx('ready');
+}
+
+/* ------------------------------------------------------------------ input */
+function stopLight(evTime){
+  if(G.phase!=='run') return;
+  var dt=0;
+  if(typeof evTime==='number' && isFinite(evTime)){
+    /* same clock base as now(): the tap is placed between frames, so the
+       stop is honest to the millisecond instead of snapped to a frame. */
+    var e=(evTime-T0)/1000;
+    /* capped at one dropped frame's worth: on a stuttering device the player
+       can only ever be judged on light they actually saw */
+    if(e>G.lastT) dt=Math.min(e-G.lastT, 0.05);
+  }
+  if(dt>0){ G.theta=advance(G.theta,dt); G.bandC=norm(G.bandC+G.drift*TAU*dt); }
+
+  G.frozen=true;
+  var d=Math.abs(angDiff(G.theta,G.bandC));
+  if(d<=G.heartW/2){
+    G.hit='heart'; G.pot+=G.roundVal*3; G.flash=1; G.shake=SET.motion?7:0;
+    STATS.hearts++; sfx('heart');
+  } else if(d<=G.bandW/2){
+    G.hit='glow'; G.pot+=G.roundVal; G.flash=.7; G.shake=SET.motion?3:0; sfx('glow');
+  } else {
+    G.hit='miss'; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
+  }
+  if(G.chainRound>G.deepest) G.deepest=G.chainRound;
+  if(G.chainRound>STATS.deepest){ STATS.deepest=G.chainRound; jSet(K_STATS,STATS); }
+
+  if(G.hit==='miss'){ G.phase='fail'; after(1.15, loseChain); }
+  else { G.phase='stop'; after(G.hit==='heart'?0.95:0.72, openChoice); }
+}
+function after(sec, fn){ G.resultAt=now()+sec; G.resultFn=fn; }
+
+function tireOut(){
+  G.frozen=true; G.hit='miss'; G.flash=.4; G.shake=SET.motion?6:0;
+  sfx('miss'); G.phase='fail'; after(1.15, loseChain);
+}
+
+/* -------------------------------------------------------------- decisions */
+function openChoice(){
+  G.phase='choice';
+  var next=G.chainRound+1;
+  $('ch-pot').textContent=G.pot;
+  $('ch-lab').textContent = (G.hit==='heart') ? 'heart. you are holding' : 'you are holding';
+  $('ch-line').textContent='Round '+next+' pays '+roundValue(next)+', heart pays '+(roundValue(next)*3)+'.';
+  $('ch-warn').textContent='miss and all '+G.pot+' is gone';
+  $('ch-bank').firstChild.nodeValue='Bank '+G.pot;
+  $('ch-bank-sub').textContent = (G.fireflies>1) ? 'keep it, then firefly '+(G.fly+1)+' of 3' : 'keep it, last firefly of the run';
+  var narrower = bandDeg(next) < bandDeg(G.chainRound);
+  /* one short line: a two line sub label made this button taller than Bank
+     and broke the parity of the two options */
+  $('ch-again-sub').textContent =
+    (driftsOn(next) && !driftsOn(G.chainRound)) ? 'risk all '+G.pot+', the band drifts now'
+    : (narrower ? 'risk all '+G.pot+' on a tighter band'
+                : 'risk all '+G.pot+' on a kinder band');
+  showOv('o-choice');
+}
+function doBank(){
+  hideOv('o-choice');
+  var r=G.chainRound, pot=G.pot;
+  Wallet.earn(pot,'bank');
+  G.runTotal+=pot;
+  G.chains.push({fly:G.fly, round:r, pot:pot, banked:true});
+  STATS.banks++; jSet(K_STATS,STATS);
+  sfx('bank');
+  fireFirstBank(r,pot);
+  if(r>=8) fireDeepRun(r,pot);
+  nextFirefly();
+}
+function doAgain(){
+  hideOv('o-choice');
+  G.chainRound++;
+  sfx('go');
+  if(G.chainRound===5 && driftsOn(5) && !SEEN.drift){
+    SEEN.drift=1; jSet(K_SEEN,SEEN);
+    G.phase='paused';
+    showNote('&#8635;','The petals drift',
+      'From here the gold band slides around the ring while the firefly runs. You are stopping a moving light on a moving gap. Watch the band before you tap.',
+      startRound);
+    return;
+  }
+  startRound();
+}
+function loseChain(){
+  G.chains.push({fly:G.fly, round:G.chainRound, pot:G.pot, banked:false});
+  G.pot=0;
+  nextFirefly();
+}
+function nextFirefly(){
+  G.fireflies--;
+  if(G.fireflies>0){ G.fly++; startChain(); }
+  else endRun();
+}
+function quitRun(){
+  /* the unbanked pot is forfeit, everything already banked stands */
+  if(G.phase!=='idle' && G.pot>0 && (G.phase==='choice'||G.phase==='run'||G.phase==='ready'||G.phase==='stop'||G.phase==='paused')){
+    G.chains.push({fly:G.fly, round:G.chainRound, pot:G.pot, banked:false});
+    G.pot=0; G.fireflies--;
+  }
+  endRun();
+}
+
+/* ------------------------------------------------------------ run summary */
+function endRun(){
+  G.phase='idle'; G.frozen=true;
+  var total=G.runTotal, isNew=false, prev;
+  if(G.mode==='daily'){
+    jSet(K_DAILY,{date:dayKey(), score:total, deepest:G.deepest});
+    if(total>DAILYBEST){ DAILYBEST=total; lsSet(K_DAILYBEST,String(total)); }
+    fireDailyDone(total);
+  } else {
+    prev=BEST;
+    if(total>BEST){ BEST=total; lsSet(K_BEST,String(total)); isNew=true; firePersonalBest(total,prev); }
+  }
+  jSet(K_STATS,STATS);
+
+  $('sum-h').textContent = isNew ? 'Your best run yet' : ((G.mode==='daily') ? "Tonight's ring" : 'Run over');
+  $('sum-sub').textContent = (G.mode==='daily') ? 'come back tomorrow for a new rhythm'
+    : (isNew ? 'the ring gave up more than it ever has' : 'three fireflies spent');
+  var rows='', i, c, used={};
+  function pipbar(depth){
+    var s='<div class="pips">', n, cap=Math.min(depth,10);
+    for(n=1;n<=10;n++) s+='<i class="'+(n<cap?'f':(n===cap?'f last':''))+'"></i>';
+    /* rounds do not stop at ten, so past ten the bar says so instead of
+       pretending the run had a ceiling */
+    if(depth>10) s+='<b>+'+(depth-10)+'</b>';
+    return s+'</div>';
+  }
+  for(i=0;i<G.chains.length;i++){
+    c=G.chains[i]; used[c.fly]=1;
+    rows+='<div class="sumrow'+(c.banked?'':' lost')+'"><div class="top">'+
+      '<div class="who">firefly '+c.fly+'</div>'+
+      '<div class="what">'+(c.banked?('banked at round '+c.round):('lost at round '+c.round))+'</div>'+
+      '<div class="val">'+(c.banked?('+'+c.pot):'0')+'</div></div>'+pipbar(c.round)+'</div>';
+  }
+  for(i=1;i<=3;i++){ if(!used[i]) rows+='<div class="sumrow unused"><div class="top"><div class="who">firefly '+i+'</div>'+
+      '<div class="what">not used</div><div class="val">0</div></div>'+pipbar(0)+'</div>'; }
+  $('sum-rows').innerHTML=rows;
+  $('sum-tot').textContent=total;
+  $('sum-badge').innerHTML = isNew ? '<span class="badge">NEW BEST</span>' : '';
+  $('sum-deep').textContent = G.deepest>=8 ? ('you reached round '+G.deepest+', that is a long way out') :
+                              (G.deepest>0 ? ('you reached round '+G.deepest) : '');
+  $('sum-best').textContent = (G.mode==='daily') ? ('best nightly ring '+DAILYBEST) : ('best '+BEST);
+  $('sum-daily').disabled = !!dailyState();
+  if(dailyState()) $('sum-daily').textContent="Ring done";
+  else $('sum-daily').textContent="Tonight's ring";
+  show('s-sum');
+  refreshMenu();
+}
+
+/* ------------------------------------------------------------------ views */
+var SCREENS=['s-title','s-how','s-play','s-sum','s-set'];
+var OVERLAYS=['o-choice','o-pause','o-note'];
+var cur='s-title', inputLock=0;
+
+function closeAllOverlays(){
+  for(var i=0;i<OVERLAYS.length;i++){ var el=$(OVERLAYS[i]); if(el) el.classList.remove('on'); }
+}
+function showOv(id){ $(id).classList.add('on'); inputLock=now()+0.28; }
+function hideOv(id){ $(id).classList.remove('on'); inputLock=now()+0.28; }
+/* every back / close routes through here, so no screen can be left painted on
+   top of another. This is the Skitterlings bug and it does not ship again. */
+function show(id){
+  closeAllOverlays();
+  for(var i=0;i<SCREENS.length;i++){ var el=$(SCREENS[i]); if(el) el.classList.remove('on'); }
+  $(id).classList.add('on');
+  cur=id; inputLock=now()+0.28;
+  if(id==='s-title' && typeof measureFlower==='function') measureFlower();
+}
+
+var pendingMode='free', rulesBack='s-title';
+function refreshMenu(){
+  $('foot-best').textContent = 'best '+BEST+(DAILYBEST?('  ·  nightly best '+DAILYBEST):'')+'  ·  '+BUILD;
+  var ds=dailyState();
+  if(ds){ $('b-daily').disabled=true; $('b-daily-sub').textContent='done today, you banked '+ds.score; }
+  else  { $('b-daily').disabled=false; $('b-daily-sub').textContent='one run, same rhythm for everyone'; }
+  $('set-stats').innerHTML='runs '+STATS.runs+' · banks '+STATS.banks+' · hearts '+STATS.hearts+
+    '<br>deepest round ever '+STATS.deepest+' · sparks banked '+STATS.totalBanked;
+}
+function openRules(mode, back){
+  rulesBack = back || 's-title';
+  if(mode!==null) pendingMode=mode;
+  $('how-h').textContent = (mode==='daily') ? "Tonight's ring" : 'How to play';
+  $('how-sub').textContent = mode===null ? 'the ring, in seven lines' :
+    (mode==='daily' ? 'one run only, the same rhythm for everyone today' : 'read this, then release the firefly');
+  $('how-go').style.display = mode===null ? 'none' : 'flex';
+  $('how-back').innerHTML = (rulesBack==='pause') ? '&#9664; Back to the run' : '&#9664; Menu';
+  show('s-how');
+}
+function launch(){
+  show('s-play');
+  newRun(pendingMode);
+}
+
+/* ------------------------------------------------------------------ notes */
+var noteFn=null;
+function showNote(ico,h,b,fn){
+  $('note-ico').innerHTML=ico; $('note-h').textContent=h; $('note-b').textContent=b;
+  noteFn=fn||null; showOv('o-note');
+}
+
+/* ------------------------------------------------------------------ wiring */
+tap('b-play', function(){ openRules('free'); });
+tap('b-daily', function(){ if(dailyState()) return; openRules('daily'); });
+tap('b-how', function(){ openRules(null); });
+tap('b-set', function(){ refreshMenu(); show('s-set'); });
+tap('b-exit', function(){ if(window.SWS_EXIT) window.SWS_EXIT(); });
+
+tap('how-go', function(){ launch(); });
+tap('how-back', function(){
+  if(rulesBack==='pause'){ show('s-play'); showOv('o-pause'); return; }
+  show('s-title'); refreshMenu();
+});
+
+tap('set-back', function(){ resetArmed=0; $('set-reset').textContent='Clear my scores'; show('s-title'); refreshMenu(); });
+/* two taps, because one tap used to wipe every best a player owns with no
+   warning and no way back */
+var resetArmed=0;
+tap('set-reset', function(){
+  var btn=$('set-reset');
+  if(!resetArmed){ resetArmed=1; btn.textContent='Tap again to clear'; sfx('tap');
+    setTimeout(function(){ if(resetArmed){ resetArmed=0; btn.textContent='Clear my scores'; } }, 4000);
+    return; }
+  resetArmed=0; btn.textContent='Scores cleared';
+  setTimeout(function(){ btn.textContent='Clear my scores'; }, 1600);
+  lsDel(K_BEST); lsDel(K_STATS); lsDel(K_DAILY); lsDel(K_DAILYBEST); lsDel(K_SEEN);
+  BEST=0; DAILYBEST=0; STATS={runs:0,banks:0,deepest:0,totalBanked:0,hearts:0}; SEEN={drift:0};
+  refreshMenu();
+});
+function bindToggle(id,key){
+  var el=$(id); if(!el) return;
+  /* bind the ROW, not the pill: the pill is 25 rendered px tall at 375x667 */
+  var row=el.parentNode && el.parentNode.className==='settingline' ? el.parentNode : el;
+  function paint(){
+    if(SET[key]) el.classList.add('on'); else el.classList.remove('on');
+    row.setAttribute('aria-checked', SET[key]?'true':'false');
+  }
+  row.setAttribute('role','switch'); row.setAttribute('tabindex','0');
+  paint();
+  function flip(e){ if(e&&e.preventDefault) e.preventDefault();
+    SET[key]=SET[key]?0:1; saveSet(); paint(); sfx('tap'); }
+  row.addEventListener('click', flip);
+  row.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter') flip(e); });
+}
+bindToggle('tg-sound','sound'); bindToggle('tg-motion','motion'); bindToggle('tg-contrast','contrast');
+
+tap('ch-bank', doBank);
+tap('ch-again', doAgain);
+
+tap('pausebtn', function(){ if(G.phase==='choice'||G.phase==='idle') return; openPause(); });
+function openPause(){
+  if(G.phase==='paused') return;
+  G.prevPhase=G.phase; G.phase='paused';
+  $('pz-sub').textContent = (G.mode==='daily') ? 'tonight\'s ring is one run only'
+    : (G.pot>0 ? ('holding '+G.pot+' sparks on round '+G.chainRound) : 'the ring is holding still');
+  showOv('o-pause');
+}
+tap('pz-resume', function(){
+  hideOv('o-pause');
+  G.phase = G.prevPhase||'ready';
+  if(G.phase==='run'){ G.phase='ready'; G.armAt=now()+0.55; }   /* fresh look before arming */
+});
+tap('pz-rules', function(){ openRules(null,'pause'); });
+tap('pz-quit',  function(){ closeAllOverlays(); quitRun(); });
+
+tap('note-ok', function(){ hideOv('o-note'); var f=noteFn; noteFn=null; if(f) f(); });
+
+tap('sum-again', function(){ openRules('free'); });
+tap('sum-daily', function(){ if(dailyState()) return; openRules('daily'); });
+tap('sum-menu', function(){ show('s-title'); refreshMenu(); });
+
+/* canvas tap: the whole play field is the button */
+var cv=$('game'), ctx=cv.getContext('2d');
+function onDown(e){
+  if(cur!=='s-play') return;
+  if(now()<inputLock) return;
+  if(G.phase==='ready'){ G.waitShake=now(); sfx('wait'); return; }
+  if(G.phase!=='run') return;
+  if(e && e.preventDefault) e.preventDefault();
+  var ts=(e && typeof e.timeStamp==='number' && e.timeStamp>0) ? e.timeStamp : performance.now();
+  if(Math.abs(ts-performance.now())>3000) ts=performance.now();
+  stopLight(ts);
+}
+cv.addEventListener('pointerdown', onDown, {passive:false});
+cv.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+document.addEventListener('keydown', function(e){
+  if(e.key===' '||e.key==='Enter'){
+    if(cur==='s-play' && (G.phase==='run'||G.phase==='ready')){ e.preventDefault(); onDown(null); }
+  } else if(e.key==='Escape'){
+    if(cur==='s-play' && G.phase!=='choice' && G.phase!=='idle'){ e.preventDefault(); openPause(); }
+  }
+});
+
+/* ---------------------------------------------------------------- the loop */
+var T0=performance.now();
+function now(){ return (performance.now()-T0)/1000; }
+G.lastT=now();
+
+var VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
+cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR);
+ctx.setTransform(DPR,0,0,DPR,0,0);
+
+var CX=270, CY=452, RT=150, RI=170, RO=214, NPET=48;
+/* the ring is drawn through these, so the menu can park a smaller copy of the
+   same image inside #flowerwin without a second renderer */
+var RCX=CX, RCY=CY, RSC=1;
+var MENU={ cy:352, sc:0.70 };
+function measureFlower(){
+  var el=$('flowerwin'), st=$('stage'); if(!el||!st) return;
+  var sr=st.getBoundingClientRect(), r=el.getBoundingClientRect();
+  var s=sr.width/VW; if(!(s>0)) return;
+  var top=(r.top-sr.top)/s, h=r.height/s;
+  if(!(h>40)) return;
+  MENU.cy = top + h/2;
+  MENU.sc = Math.max(0.4, Math.min(0.86, (h/2-8)/RO));
+}
+var motes=[]; (function(){ for(var i=0;i<26;i++) motes.push({
+  x:Math.random()*VW, y:Math.random()*VH, r:0.7+Math.random()*1.5,
+  s:4+Math.random()*10, p:Math.random()*TAU }); })();
+
+function px(th,r){ var rr=r*RSC; return [RCX+rr*Math.sin(th), RCY-rr*Math.cos(th)]; }
+function ca(th){ return th-Math.PI/2; }
+
+function frame(){
+  var t=now(), dt=Math.min(0.05, t-G.lastT); G.lastT=t;
+
+  if(cur==='s-play' && (G.phase==='ready'||G.phase==='run') && !G.frozen){
+    var before=G.theta;
+    G.theta=advance(G.theta,dt);
+    G.bandC=norm(G.bandC+G.drift*TAU*dt);
+    G.revs += (G.theta-before)/TAU;
+    G.theta=norm(G.theta);
+    if(G.phase==='ready' && t>=G.armAt){ G.phase='run'; }
+    if(G.phase==='run' && G.revs>=4){ tireOut(); }
+    G.trail.push(G.theta);
+    var maxTrail = SET.motion?11:5;
+    while(G.trail.length>maxTrail) G.trail.shift();
+  }
+  if(G.resultFn && t>=G.resultAt){ var f=G.resultFn; G.resultFn=null; f(); }
+  if(G.flash>0) G.flash=Math.max(0, G.flash-dt*1.6);
+  if(G.shake>0) G.shake=Math.max(0, G.shake-dt*22);
+
+  draw(t);
+  requestAnimationFrame(frame);
+}
+
+function draw(t){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  var sh=G.shake>0.15?G.shake:0;
+  if(sh) ctx.translate((Math.random()-0.5)*sh, (Math.random()-0.5)*sh);
+
+  /* night */
+  var g=ctx.createLinearGradient(0,0,0,VH);
+  g.addColorStop(0,'#0c1420'); g.addColorStop(0.5,'#080c14'); g.addColorStop(1,'#04060a');
+  ctx.fillStyle=g; ctx.fillRect(-20,-20,VW+40,VH+40);
+  /* the ring position drives everything else so the two layouts stay in sync */
+  var onPlay=(cur==='s-play');
+  RCX=CX; RCY = onPlay ? CY : MENU.cy; RSC = onPlay ? 1 : MENU.sc;
+  var rg=ctx.createRadialGradient(RCX,RCY,20,RCX,RCY,410*RSC+90);
+  rg.addColorStop(0,'rgba(46,36,72,.42)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=rg; ctx.fillRect(0,0,VW,VH);
+
+  /* motes */
+  if(SET.motion){
+    for(var i=0;i<motes.length;i++){ var m=motes[i];
+      var y=(m.y - t*m.s)%(VH+40); if(y<-20)y+=VH+40;
+      var a=0.10+0.10*Math.sin(t*0.7+m.p);
+      ctx.fillStyle='rgba(200,168,75,'+a.toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(m.x+Math.sin(t*0.4+m.p)*7, y, m.r, 0, TAU); ctx.fill();
+    }
+  }
+
+  /* the neck is play-only: on the menu the flower window is tight and the
+     leaves landed on top of the ribbon copy */
+  if(onPlay) drawStem();
+  drawRing(t);
+  drawHud(t);
+
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
+/* a short neck under the flower head, never a full stalk: the old full-height
+   stem ran straight through the round text and the word TAP */
+function drawStem(){
+  /* the top starts INSIDE the petal ring, not just past its outer edge: at
+     RO-4 the neck ended in a blunt round cap floating in the gap between two
+     petals and read as a green sticker rather than as a stalk the flower
+     grows on. drawStem runs before drawRing, so the ring paints over it. */
+  var top=RCY+(RI-6)*RSC, bot=RCY+RO*RSC+Math.max(30,54*RSC), len=bot-top;
+  ctx.save();
+  ctx.strokeStyle='#3f6b34'; ctx.lineWidth=Math.max(5,9*RSC); ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(RCX+3,bot);
+  ctx.quadraticCurveTo(RCX-5, top+len*0.45, RCX, top); ctx.stroke();
+  /* both leaves sweep out and DOWN. At -0.62 and 2.52 they pointed at each
+     other across the stalk and the three strokes together drew an X. */
+  ctx.fillStyle='#2f5730';
+  leaf(RCX-2, bot-len*0.16,  2.74, 42*RSC, 15*RSC);
+  leaf(RCX+2, bot-len*0.30,  0.42, 38*RSC, 14*RSC);
+  ctx.restore();
+}
+function leaf(x,y,rot,L,W){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  ctx.beginPath(); ctx.moveTo(0,0);
+  ctx.quadraticCurveTo(L*0.5,-W, L,0); ctx.quadraticCurveTo(L*0.5,W, 0,0);
+  ctx.fill();
+  ctx.strokeStyle='rgba(140,190,120,.22)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(2,0); ctx.lineTo(L-4,0); ctx.stroke();
+  ctx.restore();
+}
+
+/* the menu keeps the same image turning, quietly, so the card art of this
+   game is the game itself and not a still */
+var AT={ th:0, c:0.9, w:52*Math.PI/180, h:17*Math.PI/180 };
+function drawRing(t){
+  var playing = (cur==='s-play');
+  var dim = playing?1:0.82;
+  var bandC=G.bandC, bandW=G.bandW, heartW=G.heartW, lightTh=G.theta;
+  if(!playing){
+    /* closed form so it eases and swells but can never jump or reverse */
+    var w=0.40*TAU*t;
+    AT.th = norm(w + 0.40*Math.sin(2*w));
+    AT.c  = norm(0.9 - t*0.055);
+    bandC=AT.c; bandW=AT.w; heartW=AT.h; lightTh=AT.th;
+  }
+  var bStart=bandC-bandW/2, bEnd=bandC+bandW/2;
+  var hStart=bandC-heartW/2, hEnd=bandC+heartW/2;
+  var hi = SET.contrast;
+  var lit = playing || cur==='s-title';
+  var alph = playing ? 1 : 0.88;
+
+  /* petals */
+  var i,a,inB,inH;
+  for(i=0;i<NPET;i++){
+    a=(i/NPET)*TAU;
+    var d=Math.abs(angDiff(a,bandC));
+    inB = lit && d<=bandW/2;
+    inH = lit && d<=heartW/2;
+    var col = inH ? (hi?'#ffffff':'#fff4d6') : inB ? (hi?'#ffd23c':'#dcae4e') : '#37456a';
+    var al  = inH ? 1 : inB ? 0.95 : (0.62*dim+0.16);
+    /* lit petals keep the same LENGTH as the rest: scaling them up bit a
+       chunk out of the flower's silhouette */
+    petal(a, col, al, 1);
+  }
+
+  var LW=16*RSC, rt=RT*RSC;
+  /* the track the light runs */
+  ctx.save();
+  ctx.lineCap='butt';
+  ctx.strokeStyle='rgba(24,32,50,.95)'; ctx.lineWidth=LW;
+  ctx.beginPath(); ctx.arc(RCX,RCY,rt,0,TAU); ctx.stroke();
+  ctx.strokeStyle='rgba(64,80,116,.55)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(RCX,RCY,rt-LW*0.54,0,TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(RCX,RCY,rt+LW*0.54,0,TAU); ctx.stroke();
+
+  if(lit){
+    ctx.globalAlpha=alph;
+    /* band on the track */
+    ctx.lineCap='butt';
+    ctx.strokeStyle = hi?'#ffcf2e':'rgba(224,174,66,.98)'; ctx.lineWidth=LW;
+    ctx.shadowColor='rgba(255,200,90,.8)'; ctx.shadowBlur=SET.motion?22:0;
+    ctx.beginPath(); ctx.arc(RCX,RCY,rt,ca(bStart),ca(bEnd),false); ctx.stroke();
+    ctx.shadowBlur=0;
+    /* the heart */
+    ctx.strokeStyle = hi?'#ffffff':'#fff6dd'; ctx.lineWidth=LW;
+    ctx.beginPath(); ctx.arc(RCX,RCY,rt,ca(hStart),ca(hEnd),false); ctx.stroke();
+    /* edge ticks sit clear of the arc: drawn ON it they read as scoring
+       divisions chopping the band into four, which is the opposite of the job */
+    ctx.strokeStyle='rgba(255,228,158,.95)'; ctx.lineWidth=2.6*RSC; ctx.lineCap='round';
+    tick(bStart,RT-13,RT-32); tick(bEnd,RT-13,RT-32);
+    ctx.globalAlpha=1;
+    /* drift rail: a bar riding just outside the band, pointing the way the
+       band is sliding. A loose arrowhead floating off the ring read as an
+       artifact, so this one is welded to the band it describes. */
+    if(playing && G.drift!==0){
+      var sgn=G.drift>0?1:-1, rr=(RT+LW/RSC*0.95);
+      var a0=G.bandC - sgn*bandW*0.42, a1=G.bandC + sgn*(bandW*0.42+0.20);
+      ctx.strokeStyle='rgba(255,215,122,.75)'; ctx.lineWidth=3*RSC; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.arc(RCX,RCY,rr*RSC, ca(sgn>0?a0:a1), ca(sgn>0?a1:a0), false); ctx.stroke();
+      var hp=px(a1,rr);
+      ctx.save(); ctx.translate(hp[0],hp[1]); ctx.rotate(a1 + (sgn>0?0:Math.PI));
+      ctx.fillStyle='rgba(255,215,122,.95)';
+      ctx.beginPath(); ctx.moveTo(0,-8*RSC); ctx.lineTo(6*RSC,5*RSC); ctx.lineTo(-6*RSC,5*RSC);
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+  }
+  ctx.restore();
+
+  /* the firefly tires after four laps. It only appears once the player has
+     let a lap and a half go by, so round one is never cluttered by a meter
+     that has nothing to say yet, and it is never sage green (which in this
+     palette means good) for a thing that is running out. */
+  if(playing && (G.phase==='ready'||G.phase==='run') && G.revs>1.2){
+    var left=clamp(1-G.revs/4,0,1);
+    var fade=clamp((G.revs-1.2)/0.7,0,1);
+    ctx.save();
+    ctx.globalAlpha=fade;
+    ctx.strokeStyle= left<0.35 ? 'rgba(224,138,74,.95)' : 'rgba(180,176,158,.42)';
+    ctx.lineWidth=3.5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(RCX,RCY,RO*RSC+13, ca(-Math.PI*0.985), ca(-Math.PI*0.985+TAU*left), false); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* the firefly */
+  if(lit){
+    ctx.globalAlpha=alph;
+    var lp=px(lightTh,RT);
+    if(playing && SET.motion && G.trail.length>1){
+      /* additive: painted normally over the dark blue ring this came out as a
+         brown smear that looked like dirt rather than a firefly's wake */
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      for(var k=0;k<G.trail.length;k++){
+        var tp=px(G.trail[k],RT), f=k/G.trail.length;
+        /* cubed so the tail dies fast: a long even ramp drew a string of
+           separate beads round half the ring instead of a wake */
+        ctx.fillStyle='rgba(168,112,24,'+(0.02+0.62*f*f*f).toFixed(3)+')';
+        ctx.beginPath(); ctx.arc(tp[0],tp[1], (1.5+8.5*f*f)*RSC, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+    var missed = playing && G.hit==='miss';
+    var tired = playing && (G.phase==='run'||G.phase==='ready') && G.revs>3;
+    var glow = missed ? 0.35 : (tired?0.55:1);
+    var GR=34*RSC;
+    var gg=ctx.createRadialGradient(lp[0],lp[1],1,lp[0],lp[1],GR);
+    gg.addColorStop(0,'rgba(255,244,208,'+(0.85*glow)+')');
+    gg.addColorStop(0.35,'rgba(255,206,110,'+(0.35*glow)+')');
+    gg.addColorStop(1,'rgba(255,180,60,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(lp[0],lp[1],GR,0,TAU); ctx.fill();
+    ctx.fillStyle = missed ? '#6d5f4a' : '#fff8e2';
+    ctx.beginPath(); ctx.arc(lp[0],lp[1], ((playing&&G.frozen)?9.5:8)*RSC, 0, TAU); ctx.fill();
+    if(playing && G.frozen && !missed){
+      ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(lp[0],lp[1], 15+ (1-G.flash)*26, 0, TAU);
+      ctx.globalAlpha=Math.max(0,G.flash); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  /* the pot, in the middle of the flower */
+  if(playing){
+    ctx.textAlign='center';
+    ctx.fillStyle='rgba(150,158,132,.95)'; ctx.font='600 12px system-ui,sans-serif';
+    ctx.fillText('HOLDING', CX, CY-48);
+    ctx.fillStyle='#ffd77a'; ctx.font='800 64px system-ui,sans-serif';
+    ctx.fillText(String(G.pot), CX, CY+16);
+    ctx.fillStyle='rgba(150,158,132,.9)'; ctx.font='600 12px system-ui,sans-serif';
+    ctx.fillText('SPARKS', CX, CY+38);
+    /* fireflies left: lit halo for a firefly still in hand, hollow ring for
+       one that has been spent */
+    ctx.fillStyle='rgba(150,158,132,.7)'; ctx.font='600 10px system-ui,sans-serif';
+    ctx.fillText('FIREFLIES', CX, CY+88);
+    for(var n=0;n<3;n++){
+      var fx=CX-24+n*24, fy=CY+66, on=(n<G.fireflies);
+      if(on){
+        var fg=ctx.createRadialGradient(fx,fy,0,fx,fy,11);
+        fg.addColorStop(0,'rgba(255,244,208,.95)'); fg.addColorStop(0.4,'rgba(255,206,110,.45)');
+        fg.addColorStop(1,'rgba(255,180,60,0)');
+        ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(fx,fy,11,0,TAU); ctx.fill();
+        ctx.fillStyle='#fff8e2'; ctx.beginPath(); ctx.arc(fx,fy,4,0,TAU); ctx.fill();
+      } else {
+        ctx.strokeStyle='rgba(96,106,132,.6)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(fx,fy,4.5,0,TAU); ctx.stroke();
+      }
+    }
+  }
+}
+function petal(a, col, al, scale){
+  var ri=RI, ro=RI+(RO-RI)*scale, hw=(TAU/NPET)*0.42;
+  var p0=px(a,ri), tp=px(a,ro), c1=px(a-hw,(ri+ro)/2), c2=px(a+hw,(ri+ro)/2);
+  ctx.save(); ctx.globalAlpha=al; ctx.fillStyle=col;
+  ctx.beginPath(); ctx.moveTo(p0[0],p0[1]);
+  ctx.quadraticCurveTo(c1[0],c1[1],tp[0],tp[1]);
+  ctx.quadraticCurveTo(c2[0],c2[1],p0[0],p0[1]);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function tick(a,r1,r2){ var p1=px(a,r1),p2=px(a,r2);
+  ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.stroke(); }
+
+function drawHud(t){
+  if(cur!=='s-play') return;
+  ctx.textAlign='left';
+  ctx.fillStyle='rgba(138,145,120,.9)'; ctx.font='600 12px system-ui,sans-serif';
+  ctx.fillText('BANKED THIS RUN', 24, 40);
+  ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui,sans-serif';
+  ctx.fillText(String(G.runTotal), 24, 72);
+  ctx.fillStyle='rgba(138,145,120,.75)'; ctx.font='600 12px system-ui,sans-serif';
+  ctx.fillText((G.mode==='daily'?'nightly best ':'best ')+(G.mode==='daily'?DAILYBEST:BEST), 24, 94);
+
+  /* round line under the ring */
+  ctx.textAlign='center';
+  ctx.fillStyle='#c8a84b'; ctx.font='800 19px system-ui,sans-serif';
+  ctx.fillText('ROUND '+G.chainRound, CX, 742);
+  ctx.fillStyle='rgba(206,198,176,.9)'; ctx.font='600 14px system-ui,sans-serif';
+  ctx.fillText('band pays '+G.roundVal+'   ·   heart pays '+(G.roundVal*3), CX, 768);
+  if(G.drift!==0){
+    ctx.fillStyle='rgba(224,138,74,.95)'; ctx.font='700 13px system-ui,sans-serif';
+    ctx.fillText('the band is drifting', CX, 792);
+  }
+
+  /* the call to act */
+  var msg='', col='#8a9178', size=40;
+  if(G.phase==='ready'){ msg='WATCH'; col='rgba(138,145,120,.85)'; size=30; }
+  else if(G.phase==='run'){ msg='TAP'; col='#ffd77a'; size=46; }
+  else if(G.phase==='stop'||G.phase==='choice'){
+    msg = G.hit==='heart' ? 'HEART' : 'GOOD'; col = G.hit==='heart' ? '#fff3d2' : '#a8d47e'; size=42; }
+  else if(G.phase==='fail'){ msg='MISSED'; col='#e08a4a'; size=42; }
+  else if(G.phase==='paused'){ msg='PAUSED'; col='#8a9178'; size=30; }
+  if(msg){
+    var puls = (G.phase==='run'&&SET.motion) ? 1+0.05*Math.sin(t*7) : 1;
+    var jitter = (G.waitShake && t-G.waitShake<0.3) ? Math.sin((t-G.waitShake)*70)*5 : 0;
+    ctx.save(); ctx.translate(CX+jitter, 866); ctx.scale(puls,puls);
+    ctx.fillStyle=col; ctx.font='800 '+size+'px system-ui,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(msg, 0, 0); ctx.restore();
+  }
+  ctx.fillStyle='rgba(150,158,132,.7)'; ctx.font='600 12px system-ui,sans-serif';
+  ctx.fillText(G.phase==='ready' ? 'read the rhythm' : (G.phase==='run'?'tap anywhere to stop it':''), CX, 902);
+}
+
+/* ------------------------------------------------------------------- fit */
+/* measure visualViewport, never innerHeight: innerHeight includes the strip
+   behind a collapsing URL bar, which scales the stage past the screen. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
+function fit(){
+  var s=Math.min(_vvW()/VW, _vvH()/VH);
+  $('stage').style.transform='translateZ(0) scale('+s+')';
+  measureFlower();
+}
+fit();
+window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', function(){ setTimeout(fit,220); });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', fit);
+  window.visualViewport.addEventListener('scroll', fit);
+}
+
+/* pause the run when the tab goes away */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    if(cur==='s-play' && G.phase!=='idle' && G.phase!=='choice' && G.phase!=='paused') openPause();
+  } else {
+    G.lastT=now();
+  }
+});
+
+/* no service worker while embedded, and none shipped here at all */
+if(!window.SWS_EMBED && 'serviceWorker' in navigator){ /* intentionally none */ }
+
+refreshMenu();
+requestAnimationFrame(frame);
+
+/* A hook so a headless harness can drive a deterministic round. It is NOT
+   harmless in production: aim('heart') is a one line guaranteed perfect stop,
+   state is the live mutable G, and a chain driven that way still writes the
+   personal best and still posts the deep_run earn moment to the host. So it
+   only attaches when it is asked for:  ?stl_test=1  (or localStorage
+   stl_test=1 for a harness that navigates around). */
+if(/[?&]stl_test=1(&|$)/.test(location.search) || lsGet('stl_test','')==='1'){
+  window.STL={ state:G, settings:SET, show:show, launch:function(m){ pendingMode=m||'free'; launch(); },
+    stopNow:function(){ if(G.phase==='ready'){G.phase='run';} if(G.phase==='run') stopLight(performance.now()); },
+    aim:function(kind){
+      if(G.phase==='ready'){ G.phase='run'; }
+      if(G.phase!=='run') return false;
+      G.theta = (kind==='heart') ? G.bandC :
+                (kind==='band' ? G.bandC + (G.heartW/2 + G.bandW/2)/2 : G.bandC + Math.PI);
+      stopLight(); return true;
+    }};
+}
+})();
+</script>
+</body>
+</html>
