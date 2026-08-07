@@ -10,6 +10,20 @@
 <link rel="stylesheet" href="shell/shell.css">
 </head>
 <body>
+<script>
+/* ===== Sky Wolf Studios embed protocol =====
+   The portal frames this page; posting ready keeps its black-screen
+   watchdog quiet, and the portal's own back control posts close. */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
 <div class="screen on" id="ps-lobby">
   <div class="ps-title">WHACK BOX</div>
   <div class="ps-sub">Sky Wolf Studios party night</div>
