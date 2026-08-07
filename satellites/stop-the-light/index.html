@@ -114,6 +114,21 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
    under the drift note and under the pause card. Near-opaque is not opaque.
    Same warm centre, zero alpha. */
 .ov-scrim{background:radial-gradient(85% 55% at 50% 40%, #1a1205 0%, #05070a 55%, #03040a 100%)}
+/* the choice owns the screen: pot at the top, risk in the middle, answers at
+   the bottom, with deliberate space between the three, not a floating cluster
+   with a third of the screen empty above and below it */
+#o-choice{justify-content:space-between; padding:92px 26px 68px}
+.ch-top,.ch-mid{display:flex; flex-direction:column; align-items:center; width:100%}
+.ch-fly{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#5a6350; margin-bottom:22px}
+.pot-unit{font-size:12px; letter-spacing:5px; text-transform:uppercase; color:var(--muted); margin-top:8px}
+/* the risk, drawn: the band you just hit over the band you would face next.
+   Bars shrink toward their own centre, the way the band itself narrows. */
+.bandviz{width:100%; max-width:330px; margin:18px 0 2px}
+.bv-row{display:flex; align-items:center; gap:12px; margin:8px 0}
+.bv-lab{flex:none; width:96px; text-align:right; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--muted)}
+.bv-track{flex:1; height:10px; border-radius:5px; background:#10141f; border:1px solid #232d44; position:relative}
+.bv-track i{position:absolute; top:1px; bottom:1px; left:50%; transform:translateX(-50%); border-radius:4px;
+  background:linear-gradient(90deg, #c8a84b 0%, #fff4d6 42%, #fff4d6 58%, #c8a84b 100%); transition:width .35s ease}
 .pot-lab{font-size:12px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
 .pot-num{font-size:86px; line-height:1; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums;
   text-shadow:0 0 42px rgba(255,215,122,.34)}
@@ -237,13 +252,25 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
     </div>
   </div></div>
 
-  <!-- ============ OVERLAY: THE CHOICE ============ -->
+  <!-- ============ OVERLAY: THE CHOICE ============
+       This choice IS the game, so it owns the whole screen: the pot on top,
+       the risk readable in the middle (the band you just hit against the band
+       you would face), the two answers at the bottom. No floating cluster. -->
   <div class="ov ov-scrim" id="o-choice">
-    <div class="pot-lab" id="ch-lab">you are holding</div>
-    <div class="pot-num puls" id="ch-pot">0</div>
-    <div class="choice-line" id="ch-line">Round 2 pays 15, heart pays 45.</div>
-    <div class="choice-warn" id="ch-warn">miss and all 10 is gone</div>
-    <div style="height:26px"></div>
+    <div class="ch-top">
+      <div class="ch-fly" id="ch-fly">firefly 1 of 3</div>
+      <div class="pot-lab" id="ch-lab">you are holding</div>
+      <div class="pot-num puls" id="ch-pot">0</div>
+      <div class="pot-unit">unbanked sparks</div>
+    </div>
+    <div class="ch-mid">
+      <div class="choice-line" id="ch-line">Round 2 pays 15, heart pays 45.</div>
+      <div class="bandviz">
+        <div class="bv-row"><span class="bv-lab">band now</span><span class="bv-track"><i id="bv-now"></i></span></div>
+        <div class="bv-row"><span class="bv-lab">next round</span><span class="bv-track"><i id="bv-next"></i></span></div>
+      </div>
+      <div class="choice-warn" id="ch-warn">miss and all 10 is gone</div>
+    </div>
     <div class="stack">
       <button class="btn primary bigbtn col" id="ch-bank">Bank 0<span class="sm2" id="ch-bank-sub">keep it, end this firefly</span></button>
       <button class="btn risk bigbtn col" id="ch-again">Go again<span class="sm2" id="ch-again-sub">round 2, narrower band</span></button>
@@ -281,7 +308,10 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
   window.SWS_EMBED=SWS_EMBED;
   window.SWS_EXIT=function(){
     if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-    location.href='https://lucidwinds.com/portal/';
+    /* fleet pattern (hues): back into the portal when it framed us as a page,
+       replace otherwise so the game never stacks a history entry */
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}
+    else{location.replace('https://lucidwinds.com/portal/');}
   };
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
@@ -290,7 +320,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 <script>
 (function(){
 "use strict";
-var BUILD='v1.0';
+var BUILD='v1.1';
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(!el) return;
   el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fn(e); }); }
@@ -341,22 +371,30 @@ var Wallet = {
     }
   }
 };
-/* first-time-only / daily-capped gates so replays never re-fire a moment */
+/* first-time-only / daily-capped gates so replays never re-fire a moment.
+   Sunbeams ride the same gates: _sbCapEarn (fleet standard, defined in its own
+   block below the game) enforces the 30/day cap, so these amounts only shape
+   how fast a session reaches it. The sws:earn postMessages stay as they were:
+   harmless, forward-compatible, host-priced. */
 function fireFirstBank(round, pot){
   if(MOM.first_bank) return;
   MOM.first_bank=1; jSet(K_MOM,MOM); Wallet.moment('first_bank',{round:round, pot:pot});
+  window._sbCapEarn && window._sbCapEarn(3,'stop-the-light:first_bank');
 }
 function fireDeepRun(round, pot){
   if(MOM.deep_run) return;
   MOM.deep_run=1; jSet(K_MOM,MOM); Wallet.moment('deep_run',{round:round, pot:pot});
+  window._sbCapEarn && window._sbCapEarn(5,'stop-the-light:deep_run');
 }
 function fireDailyDone(score){
   if(MOM.daily_date===dayKey()) return;
   MOM.daily_date=dayKey(); jSet(K_MOM,MOM); Wallet.moment('daily_done',{score:score, date:dayKey()});
+  window._sbCapEarn && window._sbCapEarn(6,'stop-the-light:daily');
 }
 function firePersonalBest(score, prev){
   if(MOM.pb_date===dayKey()) return;
   MOM.pb_date=dayKey(); jSet(K_MOM,MOM); Wallet.moment('personal_best',{score:score, previous:prev});
+  window._sbCapEarn && window._sbCapEarn(4,'stop-the-light:best');
 }
 
 /* ------------------------------------------------------------------ math */
@@ -395,6 +433,7 @@ function sfx(n){
   else if(n==='ready'){ tone(520,0.10,'sine',0.05); }
   else if(n==='tap'){ tone(880,0.05,'sine',0.05); }
   else if(n==='wait'){ tone(190,0.08,'sine',0.06); }
+  else if(n==='lap'){ tone(540,0.035,'sine',0.03); }   /* a soft tick each lap, a metronome you can lean on */
 }
 
 /* -------------------------------------------------------------- round def */
@@ -432,7 +471,12 @@ var G = {
   bandC:0, bandW:0, heartW:0, drift:0,
   armAt:0, tStart:0, lastT:0, revs:0,
   hit:'', flash:0, shake:0, trail:[], resultAt:0, resultFn:null,
-  frozen:false, roundVal:0
+  frozen:false, roundVal:0,
+  /* the stop beat: a hit freezes everything for a breath, THEN the payoff
+     lands (flash, sound, sparks, +N). paid flips at payoffAt. */
+  gain:0, paid:true, payoffAt:0, paidAt:0, burst:[],
+  /* drift telegraph: before flyAt the band moves but the firefly is held */
+  flyAt:0, teleDrift:false, lapTick:0
 };
 
 function speedAt(th){ /* revolutions per second at ring angle th */
@@ -521,9 +565,20 @@ function startRound(){
   G.theta = norm(c - G.bandW/2 - off);
 
   G.trail.length=0; G.revs=0; G.hit=''; G.flash=0; G.frozen=false;
+  G.gain=0; G.paid=true; G.burst.length=0; G.lapTick=0;
   G.phase='ready';
   G.tStart=now();
-  G.armAt=G.tStart+0.62;
+  /* the drift's first ever appearance gets a telegraphed moment: the firefly
+     is held at its perch for two seconds while the band visibly slides, so
+     the player SEES the gap move before the light is released onto it. */
+  if(G.teleDrift && dr!==0){
+    G.teleDrift=false;
+    G.flyAt=G.tStart+2.0;
+    G.armAt=G.tStart+2.62;
+  } else {
+    G.flyAt=G.tStart;
+    G.armAt=G.tStart+0.62;
+  }
   sfx('ready');
 }
 
@@ -544,18 +599,45 @@ function stopLight(evTime){
   G.frozen=true;
   var d=Math.abs(angDiff(G.theta,G.bandC));
   if(d<=G.heartW/2){
-    G.hit='heart'; G.pot+=G.roundVal*3; G.flash=1; G.shake=SET.motion?7:0;
-    STATS.hearts++; sfx('heart');
+    G.hit='heart'; G.gain=G.roundVal*3; G.pot+=G.gain;
+    STATS.hearts++;
   } else if(d<=G.bandW/2){
-    G.hit='glow'; G.pot+=G.roundVal; G.flash=.7; G.shake=SET.motion?3:0; sfx('glow');
+    G.hit='glow'; G.gain=G.roundVal; G.pot+=G.gain;
   } else {
-    G.hit='miss'; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
+    G.hit='miss'; G.gain=0; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
   }
   if(G.chainRound>G.deepest) G.deepest=G.chainRound;
   if(G.chainRound>STATS.deepest){ STATS.deepest=G.chainRound; jSet(K_STATS,STATS); }
 
   if(G.hit==='miss'){ G.phase='fail'; after(1.15, loseChain); }
-  else { G.phase='stop'; after(G.hit==='heart'?0.95:0.72, openChoice); }
+  else {
+    /* a beat of stillness, then the payoff. The world stops dead with the
+       firefly for 0.24s, silent, then flash + chime + sparks land together.
+       Hearts get a visibly bigger landing than band hits: contrast is the fun. */
+    G.phase='stop'; G.paid=false; G.payoffAt=now()+0.24;
+    after(G.hit==='heart'?1.35:0.98, openChoice);
+  }
+}
+function payoff(){
+  G.paid=true; G.paidAt=now();
+  var lp=px(G.theta,RT), i, n, a, sp;
+  if(G.hit==='heart'){
+    G.flash=1; G.shake=SET.motion?7:0; sfx('heart');
+    if(SET.motion) for(i=0;i<30;i++){
+      a=Math.random()*TAU; sp=60+Math.random()*220;
+      G.burst.push({x:lp[0],y:lp[1],vx:Math.sin(a)*sp,vy:-Math.cos(a)*sp,
+        life:0.55+Math.random()*0.55, age:0, r:1.4+Math.random()*2.6,
+        col:(i%3===0)?'255,244,208':'255,215,122'});
+    }
+  } else {
+    G.flash=.7; G.shake=SET.motion?3:0; sfx('glow');
+    if(SET.motion) for(i=0;i<9;i++){
+      a=Math.random()*TAU; sp=40+Math.random()*90;
+      G.burst.push({x:lp[0],y:lp[1],vx:Math.sin(a)*sp,vy:-Math.cos(a)*sp,
+        life:0.35+Math.random()*0.3, age:0, r:1+Math.random()*1.6,
+        col:'224,174,66'});
+    }
+  }
 }
 function after(sec, fn){ G.resultAt=now()+sec; G.resultFn=fn; }
 
@@ -568,9 +650,13 @@ function tireOut(){
 function openChoice(){
   G.phase='choice';
   var next=G.chainRound+1;
+  $('ch-fly').textContent='firefly '+G.fly+' of 3';
   $('ch-pot').textContent=G.pot;
   $('ch-lab').textContent = (G.hit==='heart') ? 'heart. you are holding' : 'you are holding';
   $('ch-line').textContent='Round '+next+' pays '+roundValue(next)+', heart pays '+(roundValue(next)*3)+'.';
+  /* the risk at a glance: both bars on one scale, 66 degrees = full width */
+  $('bv-now').style.width  = Math.round(clamp(bandDeg(G.chainRound)/66,0,1)*100)+'%';
+  $('bv-next').style.width = Math.round(clamp(bandDeg(next)/66,0,1)*100)+'%';
   $('ch-warn').textContent='miss and all '+G.pot+' is gone';
   $('ch-bank').firstChild.nodeValue='Bank '+G.pot;
   $('ch-bank-sub').textContent = (G.fireflies>1) ? 'keep it, then firefly '+(G.fly+1)+' of 3' : 'keep it, last firefly of the run';
@@ -591,6 +677,11 @@ function doBank(){
   G.chains.push({fly:G.fly, round:r, pot:pot, banked:true});
   STATS.banks++; jSet(K_STATS,STATS);
   sfx('bank');
+  /* the bank is the moment this game announces (first_bank / deep_run post
+     from here), so sunbeams pay per bank too, scaled by how deep the chain
+     went: round 1 pays 2, round 7+ pays the per-bank ceiling of 8. Three
+     solid banks a run reach the 30/day cap in about two runs. */
+  window._sbCapEarn && window._sbCapEarn(Math.min(8, r+1),'stop-the-light:bank');
   fireFirstBank(r,pot);
   if(r>=8) fireDeepRun(r,pot);
   nextFirefly();
@@ -602,6 +693,7 @@ function doAgain(){
   if(G.chainRound===5 && driftsOn(5) && !SEEN.drift){
     SEEN.drift=1; jSet(K_SEEN,SEEN);
     G.phase='paused';
+    G.teleDrift=true;   /* startRound holds the firefly while the band slides */
     showNote('&#8635;','The petals drift',
       'From here the gold band slides around the ring while the firefly runs. You are stopping a moving light on a moving gap. Watch the band before you tap.',
       startRound);
@@ -668,7 +760,8 @@ function endRun(){
   $('sum-badge').innerHTML = isNew ? '<span class="badge">NEW BEST</span>' : '';
   $('sum-deep').textContent = G.deepest>=8 ? ('you reached round '+G.deepest+', that is a long way out') :
                               (G.deepest>0 ? ('you reached round '+G.deepest) : '');
-  $('sum-best').textContent = (G.mode==='daily') ? ('best nightly ring '+DAILYBEST) : ('best '+BEST);
+  var sb = (G.mode==='daily') ? DAILYBEST : BEST;
+  $('sum-best').textContent = sb>0 ? ((G.mode==='daily') ? ('best nightly ring '+sb) : ('best '+sb)) : '';
   $('sum-daily').disabled = !!dailyState();
   if(dailyState()) $('sum-daily').textContent="Ring done";
   else $('sum-daily').textContent="Tonight's ring";
@@ -698,7 +791,9 @@ function show(id){
 
 var pendingMode='free', rulesBack='s-title';
 function refreshMenu(){
-  $('foot-best').textContent = 'best '+BEST+(DAILYBEST?('  ·  nightly best '+DAILYBEST):'')+'  ·  '+BUILD;
+  /* no "best 0" before a best exists */
+  $('foot-best').textContent = (BEST>0?('best '+BEST+'  ·  '):'')+
+    (DAILYBEST?('nightly best '+DAILYBEST+'  ·  '):'')+BUILD;
   var ds=dailyState();
   if(ds){ $('b-daily').disabled=true; $('b-daily-sub').textContent='done today, you banked '+ds.score; }
   else  { $('b-daily').disabled=false; $('b-daily-sub').textContent='one run, same rhythm for everyone'; }
@@ -853,20 +948,32 @@ function frame(){
   var t=now(), dt=Math.min(0.05, t-G.lastT); G.lastT=t;
 
   if(cur==='s-play' && (G.phase==='ready'||G.phase==='run') && !G.frozen){
+    var held = (G.phase==='ready' && t<G.flyAt);   /* drift telegraph: band moves, firefly waits */
     var before=G.theta;
-    G.theta=advance(G.theta,dt);
+    if(!held) G.theta=advance(G.theta,dt);
     G.bandC=norm(G.bandC+G.drift*TAU*dt);
     G.revs += (G.theta-before)/TAU;
     G.theta=norm(G.theta);
     if(G.phase==='ready' && t>=G.armAt){ G.phase='run'; }
-    if(G.phase==='run' && G.revs>=4){ tireOut(); }
-    G.trail.push(G.theta);
+    if(G.phase==='run'){
+      var lap=Math.floor(G.revs);
+      if(lap>G.lapTick){ G.lapTick=lap; sfx('lap'); }
+      if(G.revs>=4){ tireOut(); }
+    }
+    if(!held){ G.trail.push(G.theta); }
     var maxTrail = SET.motion?11:5;
     while(G.trail.length>maxTrail) G.trail.shift();
   }
+  if(G.phase==='stop' && !G.paid && t>=G.payoffAt){ payoff(); }
   if(G.resultFn && t>=G.resultAt){ var f=G.resultFn; G.resultFn=null; f(); }
   if(G.flash>0) G.flash=Math.max(0, G.flash-dt*1.6);
   if(G.shake>0) G.shake=Math.max(0, G.shake-dt*22);
+  if(G.burst.length){
+    for(var bi=G.burst.length-1; bi>=0; bi--){ var b=G.burst[bi];
+      b.age+=dt; if(b.age>=b.life){ G.burst.splice(bi,1); continue; }
+      b.x+=b.vx*dt; b.y+=b.vy*dt; b.vx*=(1-dt*2.2); b.vy=b.vy*(1-dt*2.2)+30*dt;
+    }
+  }
 
   draw(t);
   requestAnimationFrame(frame);
@@ -916,12 +1023,16 @@ function drawStem(){
      grows on. drawStem runs before drawRing, so the ring paints over it. */
   var top=RCY+(RI-6)*RSC, bot=RCY+RO*RSC+Math.max(30,54*RSC), len=bot-top;
   ctx.save();
-  ctx.strokeStyle='#3f6b34'; ctx.lineWidth=Math.max(5,9*RSC); ctx.lineCap='round';
+  /* palette discipline: the old sprig was flat grass green, the one element
+     outside the night navy / gold / cream family and the second brightest
+     thing on the whole screen. Deep sage pulled toward navy, with the gold
+     only on the midribs, so it reads as the same night as the petals. */
+  ctx.strokeStyle='#2c3a30'; ctx.lineWidth=Math.max(5,9*RSC); ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(RCX+3,bot);
   ctx.quadraticCurveTo(RCX-5, top+len*0.45, RCX, top); ctx.stroke();
   /* both leaves sweep out and DOWN. At -0.62 and 2.52 they pointed at each
      other across the stalk and the three strokes together drew an X. */
-  ctx.fillStyle='#2f5730';
+  ctx.fillStyle='#26332c';
   leaf(RCX-2, bot-len*0.16,  2.74, 42*RSC, 15*RSC);
   leaf(RCX+2, bot-len*0.30,  0.42, 38*RSC, 14*RSC);
   ctx.restore();
@@ -931,7 +1042,7 @@ function leaf(x,y,rot,L,W){
   ctx.beginPath(); ctx.moveTo(0,0);
   ctx.quadraticCurveTo(L*0.5,-W, L,0); ctx.quadraticCurveTo(L*0.5,W, 0,0);
   ctx.fill();
-  ctx.strokeStyle='rgba(140,190,120,.22)'; ctx.lineWidth=1.4;
+  ctx.strokeStyle='rgba(200,168,75,.28)'; ctx.lineWidth=1.4;
   ctx.beginPath(); ctx.moveTo(2,0); ctx.lineTo(L-4,0); ctx.stroke();
   ctx.restore();
 }
@@ -1065,15 +1176,42 @@ function drawRing(t){
     ctx.globalAlpha=1;
   }
 
-  /* the pot, in the middle of the flower */
+  /* payoff sparks (heart hits throw a real burst, band hits a handful) */
+  if(playing && G.burst.length){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for(var pb=0; pb<G.burst.length; pb++){ var bp=G.burst[pb];
+      var bl=1-bp.age/bp.life;
+      ctx.fillStyle='rgba('+bp.col+','+(0.9*bl*bl).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(bp.x,bp.y,bp.r*(0.5+bl*0.5)*RSC,0,TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* the pot, in the middle of the flower. Only once it holds something: a
+     giant HOLDING 0 was the largest number on the round one screen and it
+     meant nothing. During the stop's beat of stillness the pot shows what
+     it held BEFORE the hit, then the payoff lands with the flash. */
   if(playing){
     ctx.textAlign='center';
-    ctx.fillStyle='rgba(150,158,132,.95)'; ctx.font='600 12px system-ui,sans-serif';
-    ctx.fillText('HOLDING', CX, CY-48);
-    ctx.fillStyle='#ffd77a'; ctx.font='800 64px system-ui,sans-serif';
-    ctx.fillText(String(G.pot), CX, CY+16);
-    ctx.fillStyle='rgba(150,158,132,.9)'; ctx.font='600 12px system-ui,sans-serif';
-    ctx.fillText('SPARKS', CX, CY+38);
+    var shownPot = (G.phase==='stop' && !G.paid) ? G.pot - G.gain : G.pot;
+    if(shownPot>0){
+      ctx.fillStyle='rgba(150,158,132,.95)'; ctx.font='600 12px system-ui,sans-serif';
+      ctx.fillText('HOLDING', CX, CY-48);
+      ctx.fillStyle='#ffd77a'; ctx.font='800 64px system-ui,sans-serif';
+      ctx.fillText(String(shownPot), CX, CY+16);
+      ctx.fillStyle='rgba(150,158,132,.9)'; ctx.font='600 12px system-ui,sans-serif';
+      ctx.fillText('SPARKS', CX, CY+38);
+    }
+    /* the payoff: +N rises from the centre once the stillness breaks */
+    if((G.phase==='stop'||G.phase==='choice') && G.paid && G.gain>0){
+      var pf=clamp((now()-G.paidAt)/0.9,0,1);
+      ctx.save(); ctx.globalAlpha=1-pf*pf;
+      var heart=(G.hit==='heart');
+      ctx.fillStyle= heart ? '#fff4d6' : '#e8c063';
+      ctx.font='800 '+(heart?34:24)+'px system-ui,sans-serif';
+      ctx.fillText('+'+G.gain, CX, CY-74 - pf*34);
+      ctx.restore();
+    }
     /* fireflies left: lit halo for a firefly still in hand, hollow ring for
        one that has been spent */
     ctx.fillStyle='rgba(150,158,132,.7)'; ctx.font='600 10px system-ui,sans-serif';
@@ -1107,13 +1245,23 @@ function tick(a,r1,r2){ var p1=px(a,r1),p2=px(a,r2);
 
 function drawHud(t){
   if(cur!=='s-play') return;
+  /* zeros are noise, not information. Nothing here prints until it has a
+     value: no BANKED THIS RUN 0, no best 0. Round one is a quiet night. */
+  var bestNow = (G.mode==='daily') ? DAILYBEST : BEST;
   ctx.textAlign='left';
-  ctx.fillStyle='rgba(138,145,120,.9)'; ctx.font='600 12px system-ui,sans-serif';
-  ctx.fillText('BANKED THIS RUN', 24, 40);
-  ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui,sans-serif';
-  ctx.fillText(String(G.runTotal), 24, 72);
-  ctx.fillStyle='rgba(138,145,120,.75)'; ctx.font='600 12px system-ui,sans-serif';
-  ctx.fillText((G.mode==='daily'?'nightly best ':'best ')+(G.mode==='daily'?DAILYBEST:BEST), 24, 94);
+  if(G.runTotal>0){
+    ctx.fillStyle='rgba(138,145,120,.9)'; ctx.font='600 12px system-ui,sans-serif';
+    ctx.fillText('BANKED THIS RUN', 24, 40);
+    ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui,sans-serif';
+    ctx.fillText(String(G.runTotal), 24, 72);
+    if(bestNow>0){
+      ctx.fillStyle='rgba(138,145,120,.75)'; ctx.font='600 12px system-ui,sans-serif';
+      ctx.fillText((G.mode==='daily'?'nightly best ':'best ')+bestNow, 24, 94);
+    }
+  } else if(bestNow>0){
+    ctx.fillStyle='rgba(138,145,120,.75)'; ctx.font='600 12px system-ui,sans-serif';
+    ctx.fillText((G.mode==='daily'?'nightly best ':'best ')+bestNow, 24, 40);
+  }
 
   /* round line under the ring */
   ctx.textAlign='center';
@@ -1126,23 +1274,36 @@ function drawHud(t){
     ctx.fillText('the band is drifting', CX, 792);
   }
 
-  /* the call to act */
-  var msg='', col='#8a9178', size=40;
-  if(G.phase==='ready'){ msg='WATCH'; col='rgba(138,145,120,.85)'; size=30; }
-  else if(G.phase==='run'){ msg='TAP'; col='#ffd77a'; size=46; }
+  /* One line, sized by importance. The control (TAP TO STOP) is the biggest
+     thing on the screen; the waiting state is a whisper, not a headline.
+     The old build shouted WATCH at 30px, an instruction to do nothing, then
+     said tap twice more in two sizes below it. */
+  var msg='', col='#8a9178', size=40, wt=800;
+  if(G.phase==='ready'){
+    msg = (G.flyAt && t<G.flyAt) ? 'watch the band move' : 'watch the rhythm';
+    col = (G.flyAt && t<G.flyAt) ? 'rgba(224,138,74,.9)' : 'rgba(138,145,120,.8)';
+    size=20; wt=600;
+  }
+  else if(G.phase==='run'){ msg='TAP TO STOP'; col='#ffd77a'; size=44; }
   else if(G.phase==='stop'||G.phase==='choice'){
-    msg = G.hit==='heart' ? 'HEART' : 'GOOD'; col = G.hit==='heart' ? '#fff3d2' : '#a8d47e'; size=42; }
+    msg = G.hit==='heart' ? 'HEART' : 'GOOD';
+    col = G.hit==='heart' ? '#fff3d2' : '#a8d47e';
+    size = G.hit==='heart' ? 58 : 36;
+    if(G.phase==='stop' && !G.paid){ msg=''; }        /* the beat of stillness */
+  }
   else if(G.phase==='fail'){ msg='MISSED'; col='#e08a4a'; size=42; }
   else if(G.phase==='paused'){ msg='PAUSED'; col='#8a9178'; size=30; }
   if(msg){
     var puls = (G.phase==='run'&&SET.motion) ? 1+0.05*Math.sin(t*7) : 1;
+    if(G.phase==='stop'&&G.hit==='heart'&&SET.motion){ puls = 1+0.12*Math.max(0,G.flash); }
     var jitter = (G.waitShake && t-G.waitShake<0.3) ? Math.sin((t-G.waitShake)*70)*5 : 0;
     ctx.save(); ctx.translate(CX+jitter, 866); ctx.scale(puls,puls);
-    ctx.fillStyle=col; ctx.font='800 '+size+'px system-ui,sans-serif'; ctx.textAlign='center';
+    if(G.hit==='heart'&&(G.phase==='stop'||G.phase==='choice')){
+      ctx.shadowColor='rgba(255,240,200,.55)'; ctx.shadowBlur=26;
+    }
+    ctx.fillStyle=col; ctx.font=wt+' '+size+'px system-ui,sans-serif'; ctx.textAlign='center';
     ctx.fillText(msg, 0, 0); ctx.restore();
   }
-  ctx.fillStyle='rgba(150,158,132,.7)'; ctx.font='600 12px system-ui,sans-serif';
-  ctx.fillText(G.phase==='ready' ? 'read the rhythm' : (G.phase==='run'?'tap anywhere to stop it':''), CX, 902);
 }
 
 /* ------------------------------------------------------------------- fit */
@@ -1196,6 +1357,18 @@ if(/[?&]stl_test=1(&|$)/.test(location.search) || lsGet('stl_test','')==='1'){
     }};
 }
 })();
+</script>
+<script>
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+  }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+};
 </script>
 </body>
 </html>

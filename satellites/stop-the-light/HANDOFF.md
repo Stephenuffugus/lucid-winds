@@ -1,7 +1,14 @@
 # Stop the Light — handoff
 
 Slug: `stop-the-light`
-Built: 2026-08-07. Build stamp in game: `v1.0` (bottom of the menu).
+Built: 2026-08-07. Build stamp in game: `v1.1` (bottom of the menu).
+v1.1 (same day, second pass): fleet sunbeam earn (`_sbCapEarn`, 30/day cap) +
+fleet exit pattern; sprig recolored into the night palette; all meaningless
+zeros hidden; play-screen hierarchy reworked to one label one control; the
+bank-or-go-again choice recomposed to own the screen with a band-width risk
+readout; stop beat (stillness then payoff, hearts celebrate bigger); first
+drift round telegraphs the moving band before the firefly is released; lap
+tick added to the synth set.
 
 ---
 
@@ -62,9 +69,25 @@ deduped in localStorage so replays cannot re-fire them.
 | `personal_best` | `{score, previous}` | **once per calendar day**, and only on a genuinely higher free-run total | 1 to 3 on a player's first day, then it decays hard. Day one a player may set 2 or 3 bests in a session; after a week it is maybe one every few days. |
 
 Casual solid session estimate: **2 to 3 moments** (`daily_done` + usually one
-`personal_best`, plus the one-time pair on the first ever session). That lands
-in the 20 to 40 sunbeam band if the host prices moments at roughly 10 each and
-gives `deep_run` / `first_bank` a bigger one-time bump.
+`personal_best`, plus the one-time pair on the first ever session).
+
+**Sunbeams (v1.1, the fleet standard that actually pays):** the portal does not
+implement `sws:earn`, so the game also earns through `window._sbCapEarn(n, tag)`
+(defined in its own script block, copied from hues, null-guarded at every call
+site, 30/day cap in `localStorage.sw_sb_stop-the-light`). Rates:
+
+| moment | sunbeams |
+|---|---|
+| every bank, scaled by depth | `min(8, round+1)` (round 1 pays 2, round 7+ pays 8) |
+| `first_bank` (once ever) | +3 |
+| `deep_run` (once ever) | +5 |
+| `daily_done` (once per day) | +6 |
+| `personal_best` (once per day) | +4 |
+
+Two solid runs (about three banks each at rounds 3 to 5) reach the 30/day cap.
+Verified headless: three banks at rounds 3, 2, 1 on a first session wrote
+`{"n":16}` (4+3+2 banks, +3 first_bank, +4 personal_best). The `sws:earn`
+postMessages above still post unchanged, forward-compatible.
 
 The game's own currency is **sparks**. It is internal only, stored nowhere the
 host reads, and never converted. All of it flows through one object:
@@ -123,10 +146,14 @@ s-set   (SETTINGS)
   < Menu ............... -> s-title
 ```
 
-**Embed snippet:** pasted verbatim, unmodified, in its own `<script>` before the
-game script. `SWS_EXIT()` is wired to `#b-exit` on the menu and nowhere else.
-Confirmed in a real iframe with `?embed=1`: `{sws:'ready'}` posts on load, the
-exit button posts `{sws:'close'}`, and the iframe URL never changes.
+**Embed snippet:** in its own `<script>` before the game script. `SWS_EXIT()`
+is wired to `#b-exit` on the menu and nowhere else. Confirmed in a real iframe
+with `?embed=1`: `{sws:'ready'}` posts on load, the exit button posts
+`{sws:'close'}`, and the iframe URL never changes. **v1.1:** the standalone
+branch now uses the fleet pattern (hues): referrer contains `/portal` and
+history has depth → `history.back()`, otherwise
+`location.replace('https://lucidwinds.com/portal/')`. Verified with a real
+navigation from a `/portal` page: the exit went back to it.
 
 **The Skitterlings bug:** every screen change goes through one `show(id)` which
 calls `closeAllOverlays()` first, so no back or X can leave a translucent layer
@@ -156,6 +183,7 @@ game rather than throwing.
 | `stl_moments` | `{first_bank:0|1, deep_run:0|1, pb_date:"", daily_date:""}` | the earn-moment dedupe gates |
 | `stl_seen` | `{drift:0|1}` | whether the one-time drift telegraph has been shown |
 | `stl_set` | `{sound:0|1, motion:0|1, contrast:0|1}` | settings. `motion` defaults to 0 when the browser reports `prefers-reduced-motion: reduce`. |
+| `sw_sb_stop-the-light` | `{d:<day>, n:<earned>}` | the fleet sunbeam day-cap ledger (v1.1). Key derives from the URL path, so serve the game at its directory URL, not `/index.html`. |
 
 "Clear my scores" in settings removes `stl_best`, `stl_stats`, `stl_daily`,
 `stl_daily_best` and `stl_seen`. It deliberately leaves `stl_moments` alone so
@@ -272,9 +300,9 @@ moment at the host.
 
 ## 10. Known weak spots
 
-- The top of the play screen has an empty band of night above the ring, roughly
-  140 px, holding only the small run total. It is quiet rather than broken, but
-  a designer might want something there.
+- The top of the play screen is deliberately empty night on round one (v1.1
+  hides every zero, so nothing prints there until something is banked). Quiet
+  by design now, but a designer might still want something there.
 - The rules screen's bullet glyphs are system font symbols and render at
   inconsistent weights across platforms. Only tested in headless Chromium.
 - The synthesised audio has not been heard on a real device. It is short
