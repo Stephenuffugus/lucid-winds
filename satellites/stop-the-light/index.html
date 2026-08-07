@@ -723,6 +723,7 @@ function quitRun(){
 /* ------------------------------------------------------------ run summary */
 function endRun(){
   G.phase='idle'; G.frozen=true;
+  G.resultFn=null;   /* a quit from pause must kill the held fail/choice timer */
   var total=G.runTotal, isNew=false, prev;
   if(G.mode==='daily'){
     jSet(K_DAILY,{date:dayKey(), score:total, deepest:G.deepest});
@@ -965,7 +966,13 @@ function frame(){
     while(G.trail.length>maxTrail) G.trail.shift();
   }
   if(G.phase==='stop' && !G.paid && t>=G.payoffAt){ payoff(); }
-  if(G.resultFn && t>=G.resultAt){ var f=G.resultFn; G.resultFn=null; f(); }
+  /* the result timer HOLDS while paused. Without this guard, pausing inside
+     the 1.15s miss beat let loseChain fire behind the pause card, the next
+     firefly launched unseen, and Resume clobbered the phase back to 'fail'
+     with no timer left: a dead run no tap could wake. Reproduced with a real
+     pause tap at 375x667; the same race stacked the choice under the pause
+     card after a good stop. Held here, everything fires on resume instead. */
+  if(G.resultFn && t>=G.resultAt && G.phase!=='paused'){ var f=G.resultFn; G.resultFn=null; f(); }
   if(G.flash>0) G.flash=Math.max(0, G.flash-dt*1.6);
   if(G.shake>0) G.shake=Math.max(0, G.shake-dt*22);
   if(G.burst.length){
