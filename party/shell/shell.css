@@ -1,0 +1,35 @@
+/* Party shell chrome: lobby, join form, room code. House palette per brief. */
+:root{ --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
+  --sage:#7ab356; --gold:#c8a84b; --warm:#ffd77a; --hot:#fff4d0;
+  --cream:#e8dcc8; --muted:#8a9178; --ember:#e08a4a; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
+  color:var(--cream); font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  overflow:hidden; user-select:none; -webkit-user-select:none}
+.screen{position:fixed; inset:0; display:none; flex-direction:column;
+  align-items:center; justify-content:center; padding:24px; text-align:center}
+.screen.on{display:flex}
+.ps-title{font-size:44px; color:var(--warm); text-shadow:0 0 34px rgba(255,215,122,.3); letter-spacing:1px}
+.ps-sub{font-size:15px; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin:6px 0 20px}
+.ps-codebox{border:1px solid var(--gold); border-radius:20px; background:var(--panel);
+  padding:18px 42px; margin:10px 0 6px}
+#ps-code{font-size:88px; font-weight:800; letter-spacing:14px; color:var(--hot);
+  text-shadow:0 0 40px rgba(255,215,122,.35); font-variant-numeric:tabular-nums}
+.ps-joinline{font-size:26px; color:var(--cream); margin:8px 0 22px}
+.ps-joinline b{color:var(--warm)}
+#ps-roster{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:700px; margin-bottom:26px}
+.ps-prow{border:1px solid var(--line); border-radius:12px; background:var(--night);
+  padding:12px 20px; font-size:26px}
+.ps-prow.off{opacity:.4}
+.ps-prow.dim{color:var(--muted)}
+.ps-btn{min-height:56px; min-width:240px; border:none; border-radius:14px; cursor:pointer;
+  background:linear-gradient(#e8c063,#c08f34); color:#241c06; font-size:22px; font-weight:800;
+  box-shadow:0 6px 0 #6b4e16; padding:0 30px}
+.ps-btn:disabled{opacity:.45; box-shadow:none; cursor:default}
+.ps-btn:active:not(:disabled){transform:translateY(2px)}
+.ps-input{min-height:56px; width:100%; max-width:300px; border:1px solid var(--line);
+  border-radius:12px; background:var(--night); color:var(--cream); font-size:26px;
+  text-align:center; letter-spacing:4px; margin:8px 0}
+.ps-err{color:var(--ember); font-size:16px; min-height:22px; margin-top:8px}
+.ps-note{color:var(--muted); font-size:14px; max-width:420px; line-height:1.5; margin-top:18px}

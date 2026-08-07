@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#05070a">
+<script src="/dev-gate.js?v=2"></script>
+<meta name="robots" content="noindex">
+<title>Whack Box</title>
+<link rel="stylesheet" href="shell/shell.css">
+</head>
+<body>
+<div class="screen on" id="ps-lobby">
+  <div class="ps-title">WHACK BOX</div>
+  <div class="ps-sub">Sky Wolf Studios party night</div>
+  <div class="ps-codebox"><div id="ps-code">....</div></div>
+  <div class="ps-joinline">Phones: open <b id="ps-join-url"></b> and enter the code</div>
+  <div id="ps-roster"></div>
+  <button class="ps-btn" id="ps-start" disabled>Start</button>
+  <div class="ps-note" id="ps-transport-note">Practice room: every player joins from a tab in this same
+  browser. Cloud rooms for real phones arrive with the server switch-on.</div>
+</div>
+<div id="game-root"></div>
+<script src="shell/transport.js"></script>
+<script src="shell/host.js"></script>
+<script>
+(function(){
+  var slug=(location.search.match(/[?&]game=([a-z0-9-]+)/)||[])[1]||'mothlight';
+  var css=document.createElement('link'); css.rel='stylesheet'; css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+  var s1=document.createElement('script'); s1.src='games/'+slug+'/content.js';
+  var s2=document.createElement('script'); s2.src='games/'+slug+'/host.js';
+  s1.onload=function(){ document.body.appendChild(s2); };
+  document.body.appendChild(s1);
+  PartyShell.createRoom(slug);
+})();
+</script>
+</body>
+</html>

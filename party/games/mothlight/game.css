@@ -1,0 +1,49 @@
+/* Mothlight, both screens. Ten-foot readable on the host: nothing under 28px. */
+.ml-screen{position:fixed; inset:0; display:none; flex-direction:column;
+  align-items:center; padding:28px; text-align:center; background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%)}
+.ml-screen.on{display:flex}
+.ml-qnum{font-size:28px; letter-spacing:5px; text-transform:uppercase; color:var(--muted); margin-top:8px}
+.ml-timer{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:74px}
+.ml-timer.low{color:var(--ember)}
+.ml-fact{font-size:56px; line-height:1.25; color:var(--cream); max-width:1100px; margin:22px auto 30px; flex:none}
+.ml-lanterns{display:flex; gap:6vw; justify-content:center; align-items:flex-start; width:100%; flex:1}
+.ml-lant{flex:1; max-width:420px; transition:opacity .4s}
+.ml-lant.dimmed{opacity:.4}
+.ml-lamp{width:150px; height:150px; margin:0 auto; border-radius:50%;
+  border:3px solid var(--gold); background:radial-gradient(circle at 40% 35%, #fff4d0 0%, #c8a84b 55%, #7a6222 100%);
+  box-shadow:0 0 60px rgba(255,215,122,.35)}
+.ml-lant.shade .ml-lamp{background:radial-gradient(circle at 40% 35%, #26314a 0%, #101724 60%, #05070a 100%);
+  box-shadow:0 0 40px rgba(60,80,140,.25)}
+.ml-lant.winner .ml-lamp{box-shadow:0 0 110px rgba(255,215,122,.75)}
+.ml-lab{font-size:48px; font-weight:800; color:var(--gold); letter-spacing:3px; margin-top:12px}
+.ml-moths{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; min-height:120px}
+.ml-moth{font-size:28px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
+  border-radius:999px; padding:8px 18px; position:relative}
+.ml-moth::before{content:'\2726'; color:var(--warm); margin-right:8px}
+.ml-moth .pts{color:var(--sage); font-weight:800; margin-left:8px}
+.ml-moth .pts.lone{color:var(--warm)}
+@media (prefers-reduced-motion:no-preference){ .ml-moth{transition:transform .4s} }
+.ml-source{font-size:32px; color:var(--muted); margin:14px 0}
+.ml-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center;
+  padding:12px; background:rgba(5,7,10,.92); border-top:1px solid var(--line); font-size:28px}
+.ml-strip b{color:var(--warm); font-variant-numeric:tabular-nums}
+.ml-rules{font-size:56px; line-height:1.5; color:var(--cream); max-width:1000px; white-space:pre-line}
+.ml-standrow{display:flex; gap:26px; align-items:baseline; font-size:40px; margin:10px 0}
+.ml-standrow b{color:var(--warm); font-variant-numeric:tabular-nums}
+.ml-standrow .place{color:var(--muted); font-size:30px; width:50px}
+.ml-podium .ml-standrow:first-of-type{font-size:56px}
+.ml-podium .ml-standrow:first-of-type b{text-shadow:0 0 30px rgba(255,215,122,.5)}
+/* phone side */
+.mlp-wait{font-size:32px; color:var(--cream); max-width:320px; line-height:1.5}
+.mlp-fact{font-size:22px; color:var(--cream); line-height:1.4; margin:8px 0 14px; max-width:340px}
+.mlp-qnum{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.mlp-timer{font-size:40px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:48px}
+.mlp-timer.low{color:var(--ember)}
+.mlp-btns{display:flex; flex-direction:column; gap:14px; width:100%; max-width:360px; flex:1; padding-bottom:14px}
+.mlp-btn{flex:1; min-height:120px; border-radius:18px; border:3px solid var(--line); cursor:pointer;
+  background:var(--panel); color:var(--cream); font-size:28px; font-weight:800; letter-spacing:2px}
+.mlp-btn.true{background:linear-gradient(180deg,#1c2410,#141b0c); }
+.mlp-btn.false{background:linear-gradient(180deg,#101724,#0b1018); }
+.mlp-btn.sel{border-color:var(--warm); box-shadow:0 0 22px rgba(255,215,122,.35)}
+.mlp-result{font-size:40px; font-weight:800; line-height:1.4}
+.mlp-result.right{color:var(--sage)} .mlp-result.lone{color:var(--warm)} .mlp-result.miss{color:var(--muted)}
