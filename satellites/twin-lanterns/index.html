@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070a">
+<script src="/dev-gate.js?v=2"></script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Twin Lanterns">
+<meta name="robots" content="noindex">
+<title>Twin Lanterns</title>
+<style>
+:root{
+  --bg:#05070a; --panel:#0a0f17; --line:#1d2637; --gold:#c8a84b; --warm:#ffd97a;
+  --cream:#e8dcc8; --muted:#8a917c; --ember:#e08a4a; --night:#101a2e;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
+  color:var(--cream); font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  overflow:hidden; user-select:none; -webkit-user-select:none}
+.screen{position:fixed; inset:0; display:none; flex-direction:column; align-items:center;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));
+  overflow-y:auto}
+.screen.on{display:flex}
+h1{font-size:34px; letter-spacing:1px; color:var(--warm); text-shadow:0 0 30px rgba(255,215,122,.3); margin-top:26px}
+.sub{color:var(--muted); letter-spacing:3px; font-size:12px; text-transform:uppercase; margin:4px 0 20px}
+.btn{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  width:100%; max-width:320px; min-height:56px; margin:7px 0; border-radius:14px;
+  border:1px solid var(--line); background:#0d1420; color:var(--cream);
+  font-size:17px; font-weight:700; letter-spacing:.4px; cursor:pointer}
+.btn .sm{font-size:12px; font-weight:400; color:var(--muted)}
+.btn.gold{background:linear-gradient(180deg,#e3c25e,#b8933f); color:#241c06; border:none;
+  box-shadow:0 6px 22px rgba(200,168,75,.25)}
+.btn.gold .sm{color:#4a3b12}
+.btn:active{transform:translateY(1px)}
+.helpwrap{max-width:360px; text-align:left; margin-top:10px}
+.helprow{display:flex; gap:12px; margin:13px 0; font-size:15px; line-height:1.5; color:#cfc6b2}
+.helprow .hi{flex:none; width:26px; text-align:center; font-size:18px}
+.hl{color:var(--warm)}
+.note{max-width:340px; border:1px solid var(--line); border-radius:14px; background:var(--panel);
+  padding:14px 16px; font-size:13.5px; line-height:1.5; color:#b8b09a; text-align:center; margin-top:14px}
+.who{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:24px}
+.bigname{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 2px}
+.task{font-size:15px; color:#cfc6b2; text-align:center; max-width:330px; line-height:1.5; margin:10px 0 4px}
+#grid{display:grid; gap:7px; margin:16px 0 8px; touch-action:manipulation}
+.cell{width:56px; height:56px; border-radius:12px; border:1px solid #202b40; background:var(--night);
+  display:flex; align-items:center; justify-content:center; font-size:22px; position:relative; cursor:pointer}
+.cell.mine{background:#131f33}
+.cell.stone{background:#2b2a18; border-color:#6a5a22;
+  box-shadow:inset 0 0 14px rgba(255,215,122,.35)}
+.cell.stone::after{content:'\2726'; color:var(--warm); text-shadow:0 0 10px rgba(255,217,122,.8)}
+.cell.gift{border-color:var(--warm); box-shadow:0 0 12px rgba(255,215,122,.5)}
+.cell.mark::after{content:'\2726'; color:#9fb4d8; opacity:.9}
+.cell.pickable{border-color:#3a4a68}
+.cell.lantern{background:#241c06; border-color:var(--gold);
+  /* drawn lantern, never an emoji: emoji lanterns render as tofu boxes on
+     some devices and in headless Chrome (the Fox and Basket lesson) */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3h6M11 3v2h2V3' stroke='%23c8a84b' stroke-width='1.6' fill='none'/%3E%3Crect x='7' y='5' width='10' height='13' rx='3' fill='%23180f04' stroke='%23c8a84b' stroke-width='1.6'/%3E%3Cellipse cx='12' cy='11.5' rx='3' ry='4' fill='%23ffd97a'/%3E%3Cpath d='M9 21h6' stroke='%23c8a84b' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:center; background-size:32px 32px}
+.cell.dim{opacity:.38}
+.cell.right::after{color:var(--warm)}
+.cell.wrong{background:#33201a; border-color:#8a4a34}
+.cell.wrong::after{content:'\2717'; color:var(--ember)}
+.cell.missed{border-color:#8a917c; border-style:dashed}
+.rowtag{position:absolute; left:-16px; top:50%; transform:translateY(-50%); font-size:10px; color:#4a5670}
+.legend{display:flex; gap:16px; font-size:12px; color:var(--muted); margin-top:2px}
+.legend b{color:var(--warm); font-weight:400}
+.streakline{font-size:13px; color:var(--muted); margin-top:16px}
+.streakline b{color:var(--warm)}
+.result-big{font-size:30px; font-weight:800; margin-top:18px}
+.result-big.lit{color:var(--warm); text-shadow:0 0 26px rgba(255,215,122,.4)}
+.result-big.smoke{color:var(--ember)}
+.foot{margin-top:auto; padding-top:14px; font-size:11.5px; color:#4a5266; letter-spacing:1px}
+input.name{width:132px; min-height:48px; background:#0a0f17; border:1px solid var(--line); border-radius:10px;
+  color:var(--cream); font-size:16px; text-align:center; padding:8px}
+.pairrow{display:flex; gap:12px; align-items:center; margin:14px 0}
+.pairrow span{color:var(--muted); font-size:18px}
+@media (prefers-reduced-motion:no-preference){
+  .cell.stone{animation:glow 2.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:inset 0 0 10px rgba(255,215,122,.25)}50%{box-shadow:inset 0 0 18px rgba(255,215,122,.5)}}
+}
+</style>
+</head>
+<body>
+
+<script>
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
+<script>
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+  }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+};
+</script>
+
+<div class="screen on" id="s-title">
+  <h1>Twin Lanterns</h1>
+  <div class="sub">Sky Wolf Studios</div>
+  <div class="note">Two lanterns, one path. You each see half the garden, and neither of you can light the way alone.</div>
+  <button class="btn gold" id="b-play">Tonight's path<span class="sm" id="b-play-sub">one puzzle, same for every pair</span></button>
+  <button class="btn" id="b-how">How to play</button>
+  <button class="btn" id="b-pair">Our lanterns</button>
+  <button class="btn" id="b-exit">&#9666; All Sky Wolf games</button>
+  <div class="streakline" id="t-streak"></div>
+  <div class="foot" id="buildstamp">v0.1 couch edition</div>
+</div>
+
+<div class="screen" id="s-how">
+  <h1 style="font-size:26px">How to play</h1>
+  <div class="sub">read this together</div>
+  <div class="helpwrap">
+    <div class="helprow"><div class="hi">&#127982;</div><div>A path of glowing stones crosses the night garden between your two lanterns. <b class="hl">Your lantern lights only your rows.</b> Your partner's lights the rest.</div></div>
+    <div class="helprow"><div class="hi">&#10022;</div><div>First, each of you <b class="hl">gifts one stone</b>: pick one glowing cell from your rows to show your partner. Choosing which one to give away is the whole art.</div></div>
+    <div class="helprow"><div class="hi">&#128173;</div><div>Then each of you <b class="hl">marks where you believe</b> the path runs through the rows you cannot see. The path never breaks and never moves diagonally.</div></div>
+    <div class="helprow"><div class="hi">&#127794;</div><div>Hand the phone over when the screen says so, and no peeking at your partner's half.</div></div>
+    <div class="helprow"><div class="hi">&#128293;</div><div>Two or fewer wrong lanterns and the path lights: <b class="hl">your streak grows.</b> Zero wrong is a perfect night. The streak belongs to the pair, so come back tomorrow, together.</div></div>
+  </div>
+  <button class="btn gold" id="how-go">We are ready</button>
+  <button class="btn" id="how-back">&#9666; Menu</button>
+</div>
+
+<div class="screen" id="s-pair">
+  <h1 style="font-size:26px">Our lanterns</h1>
+  <div class="sub">name the pair once</div>
+  <div class="pairrow">
+    <input class="name" id="n-a" maxlength="10" placeholder="lantern one" autocomplete="off">
+    <span>&amp;</span>
+    <input class="name" id="n-b" maxlength="10" placeholder="lantern two" autocomplete="off">
+  </div>
+  <div class="note">These names only live on this phone. They are how the game knows whose turn it is when you pass it back and forth.</div>
+  <button class="btn gold" id="pair-save">Save</button>
+  <button class="btn" id="pair-back">&#9666; Menu</button>
+</div>
+
+<div class="screen" id="s-hand">
+  <div class="who">hand the phone to</div>
+  <div class="bigname" id="hand-name"></div>
+  <div class="note" id="hand-note"></div>
+  <button class="btn gold" id="hand-go">I have it, and the other lantern looked away</button>
+</div>
+
+<div class="screen" id="s-play">
+  <div class="who" id="p-who"></div>
+  <div class="task" id="p-task"></div>
+  <div id="grid"></div>
+  <div class="legend" id="p-legend"></div>
+  <button class="btn gold" id="p-done" style="margin-top:10px">Done</button>
+</div>
+
+<div class="screen" id="s-result">
+  <div class="result-big" id="r-big"></div>
+  <div class="task" id="r-line"></div>
+  <div id="rgrid" style="display:grid;gap:7px;margin:14px 0 4px"></div>
+  <div class="legend"><span><b>&#10022;</b> path</span><span style="color:#e08a4a">&#10007; wrong</span><span style="color:#8a917c">&#9634; missed</span></div>
+  <div class="streakline" id="r-streak"></div>
+  <button class="btn gold" id="r-share">Copy tonight's card</button>
+  <button class="btn" id="r-menu">&#9666; Menu</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+function $(id){return document.getElementById(id);}
+var RM=false;
+try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+/* ---------- state + storage ---------- */
+var KEY='tl_state';
+var ST={names:null, streak:0, best:0, lastDay:0, lastResult:null, earned:{}};
+try{var raw=localStorage.getItem(KEY); if(raw) ST=JSON.parse(raw);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(ST));}catch(e){}}
+
+/* ---------- daily puzzle, two independent PRNG streams ---------- */
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function dayNum(){var d=new Date();return d.getFullYear()*372+(d.getMonth())*31+(d.getDate()-1);}
+/* hand-authored curve: weekends are wider gardens with longer paths */
+function shape(day){
+  var dow=new Date().getDay();
+  if(dow===0||dow===6) return {W:6,H:6,steps:13};
+  if(dow===3)          return {W:6,H:5,steps:11};
+  return {W:5,H:5,steps:9};
+}
+function genPuzzle(day){
+  var sh=shape(day), W=sh.W, H=sh.H;
+  var rPath=mulberry32(day*2654435761>>>0);       /* stream 1: the path walk  */
+  var rMisc=mulberry32((day^0x9E3779B9)>>>0);     /* stream 2: everything else */
+  /* random 4-dir walk left to right, no revisits, bounded tries */
+  for(var attempt=0;attempt<400;attempt++){
+    var sy=Math.floor(rPath()*H), cells=[[0,sy]], seen={};
+    seen['0,'+sy]=1; var x=0,y=sy,ok=false;
+    while(cells.length<sh.steps+8){
+      var moves=[];
+      [[1,0],[0,1],[0,-1],[-1,0]].forEach(function(m){
+        var nx=x+m[0],ny=y+m[1];
+        if(nx<0||ny<0||nx>=W||ny>=H)return;
+        if(seen[nx+','+ny])return;
+        moves.push([nx,ny, m[0]===1?3:1]);       /* bias rightward */
+      });
+      if(!moves.length)break;
+      var tot=0;moves.forEach(function(m){tot+=m[2];});
+      var pick=rPath()*tot, mv=moves[0];
+      for(var i=0;i<moves.length;i++){pick-=moves[i][2];if(pick<=0){mv=moves[i];break;}}
+      x=mv[0];y=mv[1];cells.push([x,y]);seen[x+','+y]=1;
+      if(x===W-1&&cells.length>=sh.steps-2){ok=true;break;}
+    }
+    if(ok&&cells.length<=sh.steps+3) return {W:W,H:H,path:cells,start:cells[0],end:cells[cells.length-1],misc:rMisc};
+  }
+  /* fallback: straight walk with one bend, still a real puzzle */
+  var midY=Math.floor(H/2), p=[];
+  for(var fx=0;fx<W;fx++)p.push([fx,midY]);
+  return {W:W,H:H,path:p,start:p[0],end:p[p.length-1],misc:rMisc};
+}
+
+/* ---------- round flow ---------- */
+/* halves: player 0 owns even rows, player 1 owns odd rows */
+var PZ=null, R=null;
+function ownerOf(yy){return yy%2===0?0:1;}
+function newRound(){
+  PZ=genPuzzle(dayNum());
+  R={phase:0, gifts:[null,null], marks:[{},{}], player:0};
+  /* phase order: 0 = P0 gift, 1 = P1 gift+mark, 2 = P0 mark, 3 = reveal */
+}
+function pathSet(){var s={};PZ.path.forEach(function(c){s[c[0]+','+c[1]]=1;});return s;}
+
+/* ---------- screens ---------- */
+var CUR='s-title';
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');});
+  $(id).classList.add('on'); CUR=id;
+}
+function names(){return ST.names||['Lantern one','Lantern two'];}
+
+function refreshTitle(){
+  var done=ST.lastDay===dayNum();
+  $('b-play-sub').textContent=done?'tonight is already lit, come back tomorrow':'one puzzle, same for every pair';
+  $('t-streak').innerHTML=ST.streak>0?('pair streak <b>'+ST.streak+'</b> night'+(ST.streak===1?'':'s')+' &middot; best <b>'+ST.best+'</b>'):'';
+}
+
+/* ---------- grid rendering ---------- */
+function buildGrid(el,cols){
+  el.innerHTML=''; el.style.gridTemplateColumns='repeat('+cols+',56px)';
+}
+function renderPlay(){
+  var me=R.player, my=names()[me];
+  $('p-who').textContent=my+"'s lantern";
+  var giftPhase=(R.phase===0)||(R.phase===1&&!R._p1Marking);
+  var g=$('grid'); buildGrid(g,PZ.W);
+  var ps=pathSet();
+  for(var yy=0;yy<PZ.H;yy++)for(var xx=0;xx<PZ.W;xx++){
+    (function(xx,yy){
+      var c=document.createElement('div'); c.className='cell';
+      var mine=ownerOf(yy)===me, onPath=!!ps[xx+','+yy];
+      var isStart=(xx===PZ.start[0]&&yy===PZ.start[1]), isEnd=(xx===PZ.end[0]&&yy===PZ.end[1]);
+      if(isStart||isEnd){c.classList.add('lantern');}
+      else if(mine){
+        c.classList.add('mine');
+        if(onPath)c.classList.add('stone');
+      }else{
+        var giftFromPartner=R.gifts[1-me];
+        if(giftFromPartner&&giftFromPartner[0]===xx&&giftFromPartner[1]===yy){c.classList.add('stone','gift');}
+        else if(R.marks[me][xx+','+yy])c.classList.add('mark');
+      }
+      if(giftPhase){
+        if(mine&&onPath&&!isStart&&!isEnd){
+          c.classList.add('pickable');
+          if(R.gifts[me]&&R.gifts[me][0]===xx&&R.gifts[me][1]===yy)c.classList.add('gift');
+          c.addEventListener('click',function(){R.gifts[me]=[xx,yy];renderPlay();});
+        } else if(!mine){c.classList.add('dim');}
+      }else{
+        if(!mine&&!isStart&&!isEnd){
+          var pg=R.gifts[1-me];
+          if(!(pg&&pg[0]===xx&&pg[1]===yy)){
+            c.addEventListener('click',function(){
+              var k=xx+','+yy;
+              if(R.marks[me][k])delete R.marks[me][k];else R.marks[me][k]=1;
+              renderPlay();
+            });
+          }
+        } else if(mine&&!onPath){c.classList.add('dim');}
+      }
+      g.appendChild(c);
+    })(xx,yy);
+  }
+  if(giftPhase){
+    $('p-task').innerHTML='Pick <b class="hl">one</b> of your glowing stones to gift. Your partner will see only that one.';
+    $('p-legend').innerHTML='<span><b>&#10022;</b> your stones</span><span>tap one to gift it</span>';
+    $('p-done').textContent=R.gifts[me]?'Gift this stone':'Pick a stone first';
+  }else{
+    var n=Object.keys(R.marks[me]).length;
+    $('p-task').innerHTML='Now mark where you believe the path crosses <b class="hl">the dark rows</b>. It never breaks, never moves diagonally.';
+    $('p-legend').innerHTML='<span><b>&#10022;</b> known</span><span style="color:#9fb4d8">&#10022; your guess</span>';
+    $('p-done').textContent=n>0?'My half is marked':'Mark the dark rows';
+  }
+}
+
+function handOff(toPlayer,note){
+  $('hand-name').textContent=names()[toPlayer];
+  $('hand-note').textContent=note;
+  show('s-hand');
+}
+
+/* ---------- result ---------- */
+function giftKey(i){return R.gifts[i]?(R.gifts[i][0]+','+R.gifts[i][1]):'';}
+function scoreRound(){
+  var ps=pathSet(), wrong=0, missed=0;
+  var g0=giftKey(0), g1=giftKey(1);
+  for(var yy=0;yy<PZ.H;yy++)for(var xx=0;xx<PZ.W;xx++){
+    var k=xx+','+yy, owner=ownerOf(yy);
+    var isEndpoint=(xx===PZ.start[0]&&yy===PZ.start[1])||(xx===PZ.end[0]&&yy===PZ.end[1]);
+    if(isEndpoint)continue;
+    if(k===g0||k===g1)continue;          /* a gifted stone is revealed knowledge, never a miss */
+    var guessedBy=R.marks[1-owner][k];   /* only the partner guesses this row */
+    if(ps[k]&&!guessedBy)missed++;
+    if(!ps[k]&&guessedBy)wrong++;
+  }
+  return {wrong:wrong,missed:missed,errors:wrong+missed};
+}
+function renderResult(sc){
+  var lit=sc.errors<=2;
+  $('r-big').textContent=lit?(sc.errors===0?'A perfect night':'The path lights'):'The path smokes out';
+  $('r-big').className='result-big '+(lit?'lit':'smoke');
+  $('r-line').textContent=lit
+    ? (sc.errors===0?'Every lantern true. Not one stone out of place.':'Lit with '+sc.errors+' stray lantern'+(sc.errors===1?'':'s')+'. Two or fewer keeps the flame.')
+    : sc.errors+' lanterns astray. Three or more and the night wins, but the pair walks again tomorrow.';
+  var g=$('rgrid'); buildGrid(g,PZ.W);
+  var ps=pathSet();
+  for(var yy=0;yy<PZ.H;yy++)for(var xx=0;xx<PZ.W;xx++){
+    var c=document.createElement('div'); c.className='cell'; c.style.width='44px'; c.style.height='44px';
+    var k=xx+','+yy, owner=ownerOf(yy);
+    var isEndpoint=(xx===PZ.start[0]&&yy===PZ.start[1])||(xx===PZ.end[0]&&yy===PZ.end[1]);
+    var guessed=!!R.marks[1-owner][k]||k===giftKey(0)||k===giftKey(1);
+    if(isEndpoint)c.classList.add('lantern');
+    else if(ps[k]&&guessed)c.classList.add('stone');       /* found or gifted  */
+    else if(ps[k]&&!guessed)c.classList.add('missed');     /* path, unguessed  */
+    else if(!ps[k]&&guessed)c.classList.add('wrong');      /* lit a wrong cell */
+    g.appendChild(c);
+  }
+  $('r-streak').innerHTML='pair streak <b>'+ST.streak+'</b> &middot; best <b>'+ST.best+'</b>';
+  show('s-result');
+}
+function finishRound(){
+  var sc=scoreRound(), lit=sc.errors<=2, day=dayNum();
+  if(ST.lastDay!==day){
+    ST.lastDay=day;
+    if(lit){ST.streak++; if(ST.streak>ST.best)ST.best=ST.streak;
+      window._sbCapEarn&&window._sbCapEarn(4,'twin-lanterns:daily');
+      if(sc.errors===0)window._sbCapEarn&&window._sbCapEarn(2,'twin-lanterns:perfect');
+      if(window.SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'earn',moment:'daily_done',detail:{perfect:sc.errors===0}},'*');}catch(e){}}
+    }else{ST.streak=0;}
+    ST.lastResult={day:day,errors:sc.errors,lit:lit};
+    save();
+  }
+  renderResult(sc);
+}
+
+/* ---------- share card ---------- */
+function shareCard(){
+  var ps=pathSet(), sc=ST.lastResult||{errors:0,lit:true};
+  var lines=['\u{1F3EE} Twin Lanterns ✦ night '+ST.streak];
+  for(var yy=0;yy<PZ.H;yy++){
+    var row='';
+    for(var xx=0;xx<PZ.W;xx++){
+      var k=xx+','+yy, owner=ownerOf(yy);
+      var guessed=R.marks[1-owner][k]||k===giftKey(0)||k===giftKey(1);
+      var isL=(xx===PZ.start[0]&&yy===PZ.start[1])||(xx===PZ.end[0]&&yy===PZ.end[1]);
+      if(isL)row+='\u{1F3EE}';
+      else if(ps[k]&&guessed)row+='✦';
+      else if(!ps[k]&&guessed)row+='✗';
+      else if(ps[k]&&!guessed)row+='▫';
+      else row+='·';
+    }
+    lines.push(row);
+  }
+  lines.push(sc.lit?(sc.errors===0?'a perfect night':'lit, '+sc.errors+' astray'):'smoked out');
+  lines.push('lucidwinds.com/portal/');
+  var txt=lines.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){$('r-share').firstChild&&($('r-share').textContent='Copied');});
+  }
+}
+
+/* ---------- wiring ---------- */
+$('b-exit').addEventListener('click',function(){window.SWS_EXIT();});
+$('b-how').addEventListener('click',function(){show('s-how');});
+$('how-back').addEventListener('click',function(){show('s-title');});
+$('b-pair').addEventListener('click',function(){
+  var n=names(); $('n-a').value=ST.names?n[0]:''; $('n-b').value=ST.names?n[1]:'';
+  show('s-pair');
+});
+$('pair-back').addEventListener('click',function(){show('s-title');});
+$('pair-save').addEventListener('click',function(){
+  var a=($('n-a').value||'').trim()||'Lantern one';
+  var b=($('n-b').value||'').trim()||'Lantern two';
+  ST.names=[a,b]; save(); show('s-title'); refreshTitle();
+});
+$('b-play').addEventListener('click',function(){
+  if(ST.lastDay===dayNum()&&ST.lastResult){ refreshTitle(); return; }
+  if(!ST.names){show('s-pair');return;}
+  show('s-how');
+});
+$('how-go').addEventListener('click',function(){
+  if(!ST.names){show('s-pair');return;}
+  if(ST.lastDay===dayNum()){show('s-title');refreshTitle();return;}
+  newRound();
+  handOff(0,'Only '+names()[0]+' looks at this half. Pick one stone to gift.');
+});
+$('hand-go').addEventListener('click',function(){show('s-play');renderPlay();});
+/* phase 1 is two taps of Done: gift first, then mark; R._p1Marking tracks which */
+$('p-done').addEventListener('click',function(){
+  if(R.phase===0){
+    if(!R.gifts[0])return;
+    R.phase=1; R.player=1; R._p1Marking=false;
+    handOff(1,'Only '+names()[1]+' looks now. Gift a stone, then mark the dark rows.');
+  } else if(R.phase===1&&!R._p1Marking){
+    if(!R.gifts[1])return;
+    R._p1Marking=true; renderPlay();
+  } else if(R.phase===1&&R._p1Marking){
+    if(!Object.keys(R.marks[1]).length)return;
+    R.phase=2; R.player=0;
+    handOff(0,names()[0]+' again. You have '+names()[1]+"'s gift now. Mark the dark rows.");
+  } else if(R.phase===2){
+    if(!Object.keys(R.marks[0]).length)return;
+    R.phase=3; finishRound();
+  }
+});
+$('r-share').addEventListener('click',shareCard);
+$('r-menu').addEventListener('click',function(){show('s-title');refreshTitle();});
+document.addEventListener('visibilitychange',function(){ /* nothing running in background; state is tap-driven */ });
+
+/* test hook, gated exactly like Stop the Light's: absent on a plain load */
+try{
+  if(/[?&]tl_test=1(&|$)/.test(location.search)||localStorage.getItem('tl_test')==='1'){
+    window.TL={puzzle:function(){return PZ;},round:function(){return R;},state:function(){return ST;}};
+  }
+}catch(e){}
+
+refreshTitle();
+})();
+</script>
+</body>
+</html>
