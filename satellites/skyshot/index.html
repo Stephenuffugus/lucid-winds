@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0d100c">
+<meta name="theme-color" content="#05070a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Skyshot">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230d100c'/%3E%3Cpath d='M9 27 L13 17 M23 27 L19 17' stroke='%234a3b2a' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M13 17 Q16 21 19 17' stroke='%23c8a84b' stroke-width='2' fill='none'/%3E%3Ccircle cx='16' cy='8' r='4.2' fill='%237ab356'/%3E%3Ccircle cx='16' cy='8' r='1.6' fill='%23e8dcc8'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%2305070a'/%3E%3Cpath d='M9 27 L13 17 M23 27 L19 17' stroke='%234a3b2a' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M13 17 Q16 21 19 17' stroke='%23c8a84b' stroke-width='2' fill='none'/%3E%3Ccircle cx='16' cy='8' r='4.2' fill='%23ffd77a'/%3E%3Ccircle cx='16' cy='8' r='1.6' fill='%23fff4d0'/%3E%3C/svg%3E">
 <title>Skyshot · Sky Wolf Studios</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studios">
@@ -23,34 +23,35 @@
 <meta name="twitter:description" content="Skyshot. Free to play at Sky Wolf Studios.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/skyshot/og/card.jpg">
 <style>
-:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
-  --muted:#8a9178; --line:#2a331f; --bark:#4a3b2a; --rose:#e58fa0; }
+:root{ --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
+  --sage:#7ab356; --gold:#c8a84b; --warm:#ffd77a; --hot:#fff4d0;
+  --cream:#e8dcc8; --muted:#8a9382; --bark:#4a3b2a; --rose:#e58fa0; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--cream); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+  background:radial-gradient(120% 80% at 50% 0%, #0d1420 0%, #05070a 65%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
-  background:#0a0d0b; overflow:hidden; box-shadow:0 0 60px #000a}
+  background:#05070a; overflow:hidden; box-shadow:0 0 70px #000c}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 
 /* every full screen and every overlay carries .screen, so show() can clear the lot */
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
-  background:linear-gradient(180deg,#101711 0%, #0a0d0b 100%)}
+  background:linear-gradient(180deg,#0b1018 0%, #05070a 100%)}
 .screen.on{display:flex}
-.screen.veil{background:rgba(6,9,7,.86)}
+.screen.veil{background:rgba(5,8,13,.86)}
 /* the menu sits on the live garden, so it is a scrim rather than a slab */
-#s-title{background:linear-gradient(180deg, rgba(9,13,10,.40) 0%, rgba(9,13,10,.52) 34%, rgba(9,13,10,.90) 62%, rgba(9,13,10,.97) 100%)}
-.plate{background:rgba(11,16,11,.93); border:1px solid var(--line); border-radius:22px;
+#s-title{background:linear-gradient(180deg, rgba(7,10,16,.40) 0%, rgba(7,10,16,.52) 34%, rgba(6,9,14,.90) 62%, rgba(5,7,11,.97) 100%)}
+.plate{background:rgba(10,15,23,.93); border:1px solid var(--line); border-radius:22px;
   padding:24px 26px 26px; width:100%; max-width:420px; box-shadow:0 12px 44px #0009}
 /* width:100% is load bearing: .screen.center sets align-items:center, which
    makes an auto width .pad shrink to its widest child and squeezes the buttons */
 .pad{padding:26px; flex:1; width:100%; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 
-.title-word{font-size:62px; line-height:1; color:var(--sage); font-weight:800;
-  text-shadow:0 3px 0 #14210f, 0 0 30px #7ab35633; letter-spacing:2px}
+.title-word{font-size:62px; line-height:1; color:#e8c063; font-weight:800;
+  text-shadow:0 3px 0 #241a08, 0 0 34px #ffd77a3d; letter-spacing:2px}
 .title-sub{color:var(--gold); font-size:13px; letter-spacing:5px; margin-top:10px; text-transform:uppercase}
 .ribbon{margin-top:16px; color:var(--cream); font-size:15px; opacity:.92; max-width:400px; line-height:1.55}
 .hl{color:var(--gold); font-weight:800}
@@ -58,57 +59,66 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 /* 82px, not 76: the stage scales down with the viewport, so a 76px control is
    45 rendered px on a 320 wide phone. 82 * (320/540) = 48.6. */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:82px; width:100%;
-  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#141c2a,#0d1420);
   color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
   transition:transform .06s ease, filter .12s ease; font-family:inherit}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.14)}
-.btn.primary{background:linear-gradient(180deg,#7ab356,#4c7d36); color:#0b1408; border-color:#a6d488;
-  box-shadow:0 4px 0 #2f5622, 0 8px 20px #0006}
+.btn.primary{background:linear-gradient(180deg,#e8c063,#c08f34); color:#20180a; border-color:#ffe3a0;
+  box-shadow:0 4px 0 #7a5a1c, 0 8px 22px #0008; font-weight:800}
 .btn.sm{min-height:82px; font-size:16px}
-.btn.ghost{background:#0f150c; color:var(--muted); font-size:15px}
+.btn.ghost{background:#0a0f17; color:var(--muted); font-size:15px}
 .btn.warn{background:linear-gradient(180deg,#4a2418,#2a1610); border-color:#8a4a30; color:#f0c9b4}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
-h2.sc-h{font-size:26px; color:var(--sage); font-weight:800; margin-bottom:6px}
+h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
 .sc-note{color:var(--muted); font-size:13px; margin-bottom:14px; line-height:1.5}
 .helprow{display:flex; gap:14px; align-items:flex-start; margin:13px 0; font-size:14.5px; line-height:1.5}
 .helprow .hi{width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center}
 .helprow .hi svg{width:30px; height:30px; display:block}
 .howdiag{display:block; width:100%; max-width:420px; margin:16px auto 0; height:auto}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px;
-  margin:0 auto 12px; padding:14px 18px; min-height:82px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+  margin:0 auto 12px; padding:14px 18px; min-height:82px; border:1px solid var(--line); border-radius:14px; background:#0a0f17}
 .settingline b{font-size:16px; font-weight:700}
 .settingline span{display:block; font-size:12px; color:var(--muted); margin-top:3px}
-.toggle{width:68px; height:38px; border-radius:20px; background:#26301c; position:relative; cursor:pointer;
+.toggle{width:68px; height:38px; border-radius:20px; background:#1a2233; position:relative; cursor:pointer;
   border:1px solid var(--line); flex:none}
-.toggle.on{background:var(--deep)}
+.toggle.on{background:#8a6a26}
 .toggle b{position:absolute; top:3px; left:3px; width:30px; height:30px; border-radius:50%; background:var(--cream); transition:left .15s}
-.toggle.on b{left:33px; background:#eafbd6}
+.toggle.on b{left:33px; background:#fff4d0}
 
 .tophead{flex:none; display:flex; align-items:center; gap:10px; padding:14px 16px 6px;
-  border-bottom:1px solid var(--line); background:#0e150d}
-.th-title{flex:1; text-align:center; font-size:22px; font-weight:800; color:var(--sage)}
+  border-bottom:1px solid var(--line); background:#0a0f17}
+.th-title{flex:1; text-align:center; font-size:22px; font-weight:800; color:#e8c063}
 .th-pad{width:72px; flex:none}
 .worldlab{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold);
   margin:16px 0 10px; text-align:center}
 .grid{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:352px; margin:0 auto}
-.lvlcard{width:108px; height:108px; border:1px solid var(--line); border-radius:16px; background:#0f150c;
-  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px}
-.lvlcard.wide{width:100%; height:96px; background:#111c0d; border-color:#33452a}
+/* tile faces stay visible even when locked: a dimmed face, never a hole in the grid */
+.lvlcard{width:108px; height:108px; border:1px solid var(--line); border-radius:16px; background:#101625;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px;
+  box-shadow:0 3px 10px #0006}
+.lvlcard.wide{width:100%; height:96px; background:#121a2c; border-color:#33415e}
 .lvlcard .ls .lk{width:22px; height:22px; display:block; margin:0 auto}
-.lvlcard.locked{opacity:.26; cursor:default}
-.lvlcard.done{border-color:var(--deep); background:#111a0d}
-.lvlcard.next{border-color:var(--sage); background:#152012; box-shadow:0 0 0 1px #7ab35633, 0 6px 18px #0006}
-.lvlcard.next .ln{color:var(--sage)}
-.lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums; line-height:1}
+.lvlcard.locked{cursor:default; background:#0a0e17; border-color:#1a2233; box-shadow:none}
+.lvlcard.locked .ln{color:#4a5468}
+.lvlcard.locked .lnm{color:#3e4658}
+.lvlcard.done{border-color:#5a4a22; background:#131a29}
+.lvlcard.done .ln{color:var(--warm)}
+.lvlcard.next{border-color:#e8c063; background:#18202f; box-shadow:0 0 0 1px #ffd77a33, 0 6px 18px #0006}
+.lvlcard.next .ln{color:#ffe3a0}
+.lvlcard .ln{font-size:24px; font-weight:800; color:#e8c063; font-variant-numeric:tabular-nums; line-height:1}
 .lvlcard .ls{font-size:15px; letter-spacing:2px; color:var(--gold); height:18px; line-height:18px}
 .lvlcard .lnm{font-size:10px; color:var(--muted); line-height:1.15; text-align:center; max-width:96px}
 
 .foot{margin-top:auto; padding-top:18px; text-align:center; color:var(--muted); font-size:11px}
-.go-big{font-size:32px; font-weight:800; color:var(--sage); line-height:1.1}
+.go-big{font-size:32px; font-weight:800; color:#e8c063; line-height:1.1}
 .go-big.miss{color:var(--rose)}
 .go-stars{font-size:46px; letter-spacing:8px; margin:8px 0 2px; height:56px; color:var(--gold)}
+/* the three star moment: a brief shine, skipped for reduced motion */
+.go-stars.three{color:#ffe3a0; text-shadow:0 0 22px #ffd77a66; animation:starShine .7s ease-out}
+@keyframes starShine{ 0%{transform:scale(.6); opacity:0} 55%{transform:scale(1.12); opacity:1} 100%{transform:scale(1)} }
+@media (prefers-reduced-motion: reduce){ .go-stars.three{animation:none} }
 .go-plot{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:8px}
 .go-lab{font-size:13px; letter-spacing:2px; text-transform:uppercase; color:#a8b096}
 .go-score{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
@@ -118,9 +128,9 @@ h2.sc-h{font-size:26px; color:var(--sage); font-weight:800; margin-bottom:6px}
    band of the play field. Only the two buttons take taps. */
 #hud{position:absolute; left:0; top:0; width:540px; height:96px; display:none; z-index:10;
   align-items:center; gap:10px; padding:6px 10px; pointer-events:none;
-  background:linear-gradient(180deg,rgba(8,11,9,.86) 0%, rgba(8,11,9,.42) 62%, rgba(8,11,9,0) 100%)}
+  background:linear-gradient(180deg,rgba(6,9,14,.86) 0%, rgba(6,9,14,.42) 62%, rgba(6,9,14,0) 100%)}
 .hbtn{width:82px; height:82px; flex:none; border:1px solid var(--line); border-radius:14px; pointer-events:auto;
-  background:#111a0d; color:var(--cream); font-size:22px; cursor:pointer; font-family:inherit}
+  background:rgba(12,17,25,.85); color:var(--cream); font-size:22px; cursor:pointer; font-family:inherit}
 .hbtn:active{filter:brightness(1.2)}
 .hinfo{flex:1; text-align:center; min-width:0}
 #h-name{font-size:17px; font-weight:800; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -164,16 +174,16 @@ h2.sc-h{font-size:26px; color:var(--sage); font-weight:800; margin-bottom:6px}
     <div class="sc-note">Skyshot fires up the screen, not across it.</div>
     <!-- icons are inline svg on purpose: emoji falls back to tofu boxes on
          devices with no emoji font, and it did exactly that in testing -->
-    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><path d="M12 3v11" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M8 11l4 5 4-5" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="19.5" r="3" fill="#7ab356"/></svg></div><div>Press anywhere and <b>drag down</b> to pull the sling back. Drag further for more power, drag sideways to lean the shot.</div></div>
+    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><path d="M12 3v11" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M8 11l4 5 4-5" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="19.5" r="3" fill="#ffd77a"/></svg></div><div>Press anywhere and <b>drag down</b> to pull the sling back. Drag further for more power, drag sideways to lean the shot.</div></div>
     <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><circle cx="4" cy="20" r="2" fill="#e8dcc8"/><circle cx="8.5" cy="14.5" r="1.8" fill="#e8dcc8" opacity=".8"/><circle cx="13" cy="10.5" r="1.6" fill="#e8dcc8" opacity=".6"/><circle cx="17.5" cy="8" r="1.4" fill="#e8dcc8" opacity=".4"/><circle cx="21.5" cy="7" r="1.2" fill="#e8dcc8" opacity=".22"/></svg></div><div>The dotted guide shows the <b>start of the arc</b> only. The rest is yours to judge.</div></div>
-    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><g fill="#4c7d36"><ellipse cx="12" cy="5.5" rx="3" ry="4.6"/><ellipse cx="12" cy="18.5" rx="3" ry="4.6"/><ellipse cx="5.5" cy="12" rx="4.6" ry="3"/><ellipse cx="18.5" cy="12" rx="4.6" ry="3"/></g><circle cx="12" cy="12" r="4.2" fill="#c8a84b"/></svg></div><div>Pop every <b class="hl">moonbud</b> to clear the level. Buds walk, circle and swing, so aim where the bud is going.</div></div>
-    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><path d="M3 17L21 7" stroke="#4a3b2a" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M3 17L21 7" stroke="#6b5540" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M8 14.5l-2 3M13 12l2-3M18 9.2l-2 3" stroke="#7a6248" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg></div><div>Brambles turn and gates breathe open and shut. <b>Wait for the gap</b>, the clock never stops.</div></div>
+    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><g fill="#d8b45c"><ellipse cx="12" cy="5.5" rx="3" ry="4.6"/><ellipse cx="12" cy="18.5" rx="3" ry="4.6"/><ellipse cx="5.5" cy="12" rx="4.6" ry="3"/><ellipse cx="18.5" cy="12" rx="4.6" ry="3"/></g><circle cx="12" cy="12" r="4.2" fill="#fff4d0"/></svg></div><div>Pop every <b class="hl">moonbud</b> to clear the level. Buds walk, circle and swing, so aim where the bud is going.</div></div>
+    <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><path d="M3 17L21 7" stroke="#332f42" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M3 17L21 7" stroke="#4c465e" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M8 14.5l-2 3M13 12l2-3M18 9.2l-2 3" stroke="#575070" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg></div><div>Brambles turn and gates breathe open and shut. <b>Wait for the gap</b>, the clock never stops.</div></div>
     <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="3.2" fill="#d8c98a"/><circle cx="13" cy="18" r="3.2" fill="#d8c98a"/><circle cx="20" cy="18" r="3.2" fill="#d8c98a" opacity=".35"/><path d="M12 2l1.9 3.9 4.3.6-3.1 3 .7 4.3-3.8-2-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="#c8a84b"/></svg></div><div>Seeds are limited. Clear the level <b class="hl">at or under par</b> for three stars. Run out of seeds and the level is lost.</div></div>
     <div class="helprow"><div class="hi"><svg viewBox="0 0 24 24"><rect x="1.5" y="6" width="21" height="12" rx="2.5" fill="none" stroke="#8a9178" stroke-width="1.8"/><g fill="#8a9178"><rect x="4.5" y="9" width="2.4" height="2.2" rx="0.6"/><rect x="8.6" y="9" width="2.4" height="2.2" rx="0.6"/><rect x="12.7" y="9" width="2.4" height="2.2" rx="0.6"/><rect x="16.8" y="9" width="2.6" height="2.2" rx="0.6"/><rect x="6.5" y="13" width="11" height="2.2" rx="0.9"/></g></svg></div><div>On a keyboard: left and right to aim, up and down for power, space to fire.</div></div>
     <!-- the shot, drawn once, so the gap above the button teaches instead of sitting empty -->
     <svg class="howdiag" viewBox="0 0 420 236" aria-hidden="true">
-      <path d="M6 220 H414" stroke="#1d2a17" stroke-width="3"/>
-      <g stroke="#26351c" stroke-width="2">
+      <path d="M6 220 H414" stroke="#22304a" stroke-width="3"/>
+      <g stroke="#2c3d26" stroke-width="2">
         <path d="M40 220 q3-9 8-12"/><path d="M96 220 q3-9 8-12"/><path d="M330 220 q3-9 8-12"/><path d="M386 220 q3-9 8-12"/>
       </g>
       <g stroke="#4a3b2a" stroke-width="9" stroke-linecap="round" fill="none">
@@ -186,18 +196,18 @@ h2.sc-h{font-size:26px; color:var(--sage); font-weight:800; margin-bottom:6px}
         <circle cx="222" cy="168" r="4.6" opacity=".85"/><circle cx="236" cy="142" r="4" opacity=".62"/>
         <circle cx="252" cy="118" r="3.4" opacity=".42"/><circle cx="270" cy="98" r="2.8" opacity=".24"/>
       </g>
-      <g stroke="#4a3b2a" stroke-width="11" stroke-linecap="round">
+      <g stroke="#332f42" stroke-width="11" stroke-linecap="round">
         <path d="M96 148 L198 124"/><path d="M292 100 L392 78"/>
       </g>
-      <g stroke="#7a6248" stroke-width="2.5" stroke-linecap="round">
+      <g stroke="#575070" stroke-width="2.5" stroke-linecap="round">
         <path d="M124 142 l-5 9"/><path d="M158 134 l5-9"/><path d="M320 94 l-5 9"/><path d="M356 86 l5-9"/>
       </g>
       <g transform="translate(316,54)">
-        <g fill="#4c7d36">
+        <g fill="#d8b45c">
           <ellipse cx="0" cy="-15" rx="7" ry="12"/><ellipse cx="0" cy="15" rx="7" ry="12"/>
           <ellipse cx="-15" cy="0" rx="12" ry="7"/><ellipse cx="15" cy="0" rx="12" ry="7"/>
         </g>
-        <circle cx="0" cy="0" r="10" fill="#c8a84b"/>
+        <circle cx="0" cy="0" r="10" fill="#fff4d0"/>
       </g>
       <g stroke="#8a9178" stroke-width="2" fill="none" stroke-dasharray="5 6">
         <path d="M250 54 H286"/>
@@ -278,10 +288,23 @@ h2.sc-h{font-size:26px; color:var(--sage); font-weight:800; margin-bottom:6px}
   window.SWS_EMBED=SWS_EMBED;
   window.SWS_EXIT=function(){
     if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-    location.href='https://lucidwinds.com/portal/';
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
   };
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
+</script>
+
+<script>
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+  }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+};
 </script>
 
 <script>
@@ -365,13 +388,17 @@ var PENTA=[523,587,659,784,880,1046,1175];
 function sfx(k,n){ switch(k){
   case 'ui': beep(430,0.05,'sine',0.045); break;
   case 'pull': beep(180,0.07,'triangle',0.03,240); break;
-  case 'fire': beep(300,0.09,'sawtooth',0.05,120); break;
-  case 'pop': beep(PENTA[Math.min(n||0,PENTA.length-1)],0.11,'triangle',0.07); break;
+  case 'fire': beep(300,0.09,'sawtooth',0.05,120); beep(1100,0.035,'triangle',0.03,600); break;
+  case 'pop': beep(PENTA[Math.min(n||0,PENTA.length-1)],0.11,'triangle',0.07);
+              beep(PENTA[Math.min(n||0,PENTA.length-1)]*2,0.07,'sine',0.03); break;
   case 'husk': beep(210,0.09,'square',0.04,150); break;
   case 'clink': beep(150,0.06,'sine',0.035,110); break;
   case 'land': beep(120,0.12,'sine',0.04,70); break;
   case 'win': beep(659,0.1,'triangle',0.08); setTimeout(function(){beep(880,0.1,'triangle',0.08);},90);
               setTimeout(function(){beep(1175,0.2,'sine',0.08);},185); break;
+  case 'win3': beep(659,0.1,'triangle',0.08); setTimeout(function(){beep(880,0.1,'triangle',0.08);},90);
+               setTimeout(function(){beep(1175,0.14,'sine',0.08);},185);
+               setTimeout(function(){beep(1568,0.26,'sine',0.07);},300); break;
   case 'lose': beep(300,0.18,'triangle',0.06,150); setTimeout(function(){beep(170,0.24,'sine',0.055,110);},130); break;
 } }
 function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(ms||8); }catch(e){} }
@@ -501,8 +528,8 @@ function segsOf(ob,T){
 function buildState(def,mode,idx){
   var S={ def:def, mode:mode, idx:idx, T:0, phase:'play', shots:0,
     ammo:(def.par||1)+2, pods:[], obs:[], ball:null, reload:0, endT:0,
-    parts:[], shake:0, hintT:5.5, stars:0, score:0, popped:0,
-    aim:{a:0,p:0.62}, dragging:false, live:0 };
+    parts:[], rings:[], shake:0, hintT:5.5, stars:0, score:0, popped:0,
+    aim:{a:0,p:0.62}, vis:{a:0,p:0.62}, recoil:0, creakQ:0, dragging:false, live:0 };
   var i,k;
   for(i=0;i<def.pods.length;i++){
     var d=def.pods[i];
@@ -527,6 +554,10 @@ function fireFrom(S){
   var v=launchVec(S.aim);
   S.ball={ x:AX, y:AY, vx:v.vx, vy:v.vy, t:0, trail:[], hits:0 };
   S.ammo--; S.shots++; S.hintT=0;
+  if(!S.headless){
+    S.recoil=0.22; S.creakQ=0;
+    if(SET.shake&&!RM) S.shake=Math.min(S.shake+2.5,3);  /* a tiny settle, not a kick */
+  }
   return true;
 }
 function addPart(S,x,y,vx,vy,life,col,r){
@@ -544,12 +575,13 @@ function hitPod(S,pd){
   pd.hp--; pd.cool=0.22; pd.flash=0.3;
   if(pd.hp<=0){
     pd.dead=true; S.popped++;
-    burst(S,pd.cx,pd.cy,16,['#c8a84b','#7ab356','#e8dcc8','#e58fa0']);
+    burst(S,pd.cx,pd.cy,18,['#ffd77a','#fff4d0','#c8a84b','#e8dcc8']);
+    if(!RM) S.rings.push({x:pd.cx,y:pd.cy,t:0});
     S.score+=120;
     if(!S.headless){ sfx('pop',S.popped-1); haptic(12); if(SET.shake&&!RM) S.shake=Math.min(9,S.shake+6); }
     return true;
   }
-  burst(S,pd.cx,pd.cy,7,['#8a9178','#c8a84b']);
+  burst(S,pd.cx,pd.cy,7,['#8a94a8','#c8a84b']);
   if(!S.headless){ sfx('husk'); haptic(6); }
   return false;
 }
@@ -560,7 +592,7 @@ function bounce(S,b,nx,ny,pen,rest){
     var tx=b.vx-vn*nx, ty=b.vy-vn*ny;
     b.vx=tx*TANG-(rest)*vn*nx; b.vy=ty*TANG-(rest)*vn*ny;
     b.hits++;
-    if(!S.headless){ sfx('clink'); if(!RM) addPart(S,b.x,b.y,nx*70,ny*70,0.3,'#8a9178',2.4); }
+    if(!S.headless){ sfx('clink'); if(!RM) addPart(S,b.x,b.y,nx*70,ny*70,0.3,'#8a94a8',2.4); }
   }
 }
 function allDead(S){ for(var i=0;i<S.pods.length;i++) if(!S.pods[i].dead) return false; return true; }
@@ -638,7 +670,7 @@ function step(S,dt){
     }
     /* end of the shot */
     if(S.ball&&b.y>GROUND-BALL_R){
-      if(!S.headless){ sfx('land'); for(k=0;k<(RM?3:8);k++) addPart(S,b.x,GROUND-4,(Math.random()-0.5)*140,-40-Math.random()*90,0.4,'#3b3327',2.6); }
+      if(!S.headless){ sfx('land'); for(k=0;k<(RM?3:8);k++) addPart(S,b.x,GROUND-4,(Math.random()-0.5)*140,-40-Math.random()*90,0.4,'#3e3a4c',2.6); }
       S.ball=null;
     } else if(S.ball&&(b.t>MAXFLIGHT||b.y>VH+80)){ S.ball=null; }
     if(!S.ball) endShot(S);
@@ -655,6 +687,17 @@ function step(S,dt){
     if(pt.life<=0){ S.parts.splice(i,1); continue; }
     pt.vy+=520*dt; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vx*=0.985; pt.rot+=pt.vr*dt;
   }
+  /* bloom rings */
+  for(i=S.rings.length-1;i>=0;i--){
+    S.rings[i].t+=dt;
+    if(S.rings[i].t>0.5) S.rings.splice(i,1);
+  }
+  /* the pouch trails the finger with a little weight; snapped, not eased, under
+     reduced motion so the aim is never behind the finger there */
+  if(RM){ S.vis.a=S.aim.a; S.vis.p=S.aim.p; }
+  else { var ke=Math.min(1,dt*16);
+    S.vis.a+=(S.aim.a-S.vis.a)*ke; S.vis.p+=(S.aim.p-S.vis.p)*ke; }
+  if(S.recoil>0){ S.recoil-=dt; if(S.recoil<0) S.recoil=0; }
 }
 function endShot(S){
   if(S.phase!=='play') return;
@@ -713,73 +756,93 @@ function solve(def){
    RENDER
    ========================================================================= */
 var cv, ctx, G=null, running=false, looping=false, lastTs=0, acc=0, curScreen='s-title';
+/* two star layers, the deep one drifting slower: quiet parallax, not weather */
 var STARS=[];
-(function(){ var r=mkRng(4711); for(var i=0;i<70;i++) STARS.push({x:r()*VW,y:r()*760,r:0.5+r()*1.3,a:0.15+r()*0.5,tw:r()*6.28}); })();
-var MOTES=[];
-(function(){ var r=mkRng(99); for(var i=0;i<18;i++) MOTES.push({x:r()*VW,y:r()*VH,r:1+r()*2,sp:6+r()*14,ph:r()*6.28}); })();
+(function(){ var r=mkRng(4711); for(var i=0;i<70;i++) STARS.push({x:r()*VW,y:r()*760,r:0.5+r()*1.3,a:0.15+r()*0.5,tw:r()*6.28,d:(i%2)?0.45:1}); })();
+/* fireflies live in the empty midfield band; they blink, they never carry meaning */
+var FLIES=[];
+(function(){ var r=mkRng(99); for(var i=0;i<11;i++) FLIES.push({x:40+r()*(VW-80),y:250+r()*470,ax:26+r()*40,ay:14+r()*24,w:0.22+r()*0.3,w2:0.17+r()*0.26,ph:r()*6.28,ph2:r()*6.28,bw:0.5+r()*0.8,bph:r()*6.28}); })();
+var MOONX=494, MOONY=128, MOONR=17;
 
 function drawBg(t){
   var g=ctx.createLinearGradient(0,0,0,VH);
-  g.addColorStop(0,'#121d18'); g.addColorStop(0.45,'#0c1210'); g.addColorStop(1,'#080b09');
+  g.addColorStop(0,'#101a2e'); g.addColorStop(0.45,'#0a101e'); g.addColorStop(1,'#04060a');
   ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
-  var rg=ctx.createRadialGradient(476,112,10,476,112,300);
-  rg.addColorStop(0,'rgba(200,168,75,0.17)'); rg.addColorStop(1,'rgba(200,168,75,0)');
+  var rg=ctx.createRadialGradient(MOONX,MOONY,8,MOONX,MOONY,260);
+  rg.addColorStop(0,'rgba(255,215,122,0.15)'); rg.addColorStop(1,'rgba(255,215,122,0)');
   ctx.fillStyle=rg; ctx.fillRect(0,0,VW,VH);
   var i;
   for(i=0;i<STARS.length;i++){
     var s=STARS[i];
     var a=s.a*(RM?1:(0.65+0.35*Math.sin(t*1.4+s.tw)));
+    var sx=RM?s.x:((s.x-t*2.0*s.d)%VW); if(sx<0) sx+=VW;
     ctx.fillStyle='rgba(232,220,200,'+a.toFixed(3)+')';
-    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx,s.y,s.r,0,6.283); ctx.fill();
   }
-  /* moon, tucked into the corner so the hint pill never sits on it */
-  ctx.fillStyle='rgba(232,220,200,0.90)'; ctx.beginPath(); ctx.arc(476,112,24,0,6.283); ctx.fill();
-  ctx.fillStyle='rgba(18,29,24,0.94)'; ctx.beginPath(); ctx.arc(464,104,23,0,6.283); ctx.fill();
-  /* drifting motes */
-  if(!RM){
-    for(i=0;i<MOTES.length;i++){
-      var m=MOTES[i];
-      var my=(m.y-t*m.sp)%VH; if(my<0) my+=VH;
-      ctx.fillStyle='rgba(122,179,86,0.16)';
-      ctx.beginPath(); ctx.arc(m.x+Math.sin(t*0.6+m.ph)*14,my,m.r,0,6.283); ctx.fill();
-    }
+  /* moon, small and clear of both the retry button above and the hint pill below */
+  ctx.fillStyle='rgba(240,228,200,0.92)'; ctx.beginPath(); ctx.arc(MOONX,MOONY,MOONR,0,6.283); ctx.fill();
+  ctx.fillStyle='rgba(13,19,33,0.94)'; ctx.beginPath(); ctx.arc(MOONX-9,MOONY-6,MOONR-1,0,6.283); ctx.fill();
+  /* fireflies: warm, few, and blinking on their own slow clocks */
+  for(i=0;i<FLIES.length;i++){
+    var m=FLIES[i];
+    var fx=RM?m.x:(m.x+Math.sin(t*m.w+m.ph)*m.ax);
+    var fy=RM?m.y:(m.y+Math.cos(t*m.w2+m.ph2)*m.ay);
+    var bl=RM?0.16:(0.05+0.42*Math.pow(Math.max(0,Math.sin(t*m.bw+m.bph)),3));
+    if(bl<0.05) continue;
+    ctx.fillStyle='rgba(255,215,122,'+(bl*0.28).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(fx,fy,6.5,0,6.283); ctx.fill();
+    ctx.fillStyle='rgba(255,236,170,'+bl.toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(fx,fy,1.9,0,6.283); ctx.fill();
   }
   /* ceiling mist so a deflected seed reads as bouncing off something */
   var cg=ctx.createLinearGradient(0,CEIL-26,0,CEIL+6);
-  cg.addColorStop(0,'rgba(122,179,86,0)'); cg.addColorStop(1,'rgba(122,179,86,0.10)');
+  cg.addColorStop(0,'rgba(232,220,200,0)'); cg.addColorStop(1,'rgba(232,220,200,0.10)');
   ctx.fillStyle=cg; ctx.fillRect(0,CEIL-26,VW,32);
-  /* far hills */
-  ctx.fillStyle='#0b120c';
-  ctx.beginPath(); ctx.moveTo(0,832);
-  ctx.quadraticCurveTo(140,762,300,818); ctx.quadraticCurveTo(430,858,540,806);
+  /* three hill bands, far ones lifted by haze, near ones sinking into the dark */
+  ctx.fillStyle='#0d1526';
+  ctx.beginPath(); ctx.moveTo(0,742);
+  ctx.quadraticCurveTo(120,700,260,730); ctx.quadraticCurveTo(400,758,540,712);
   ctx.lineTo(540,960); ctx.lineTo(0,960); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#080d09';
-  ctx.beginPath(); ctx.moveTo(0,868);
-  ctx.quadraticCurveTo(180,822,340,866); ctx.quadraticCurveTo(460,896,540,860);
+  ctx.fillStyle='#0a101d';
+  ctx.beginPath(); ctx.moveTo(0,812);
+  ctx.quadraticCurveTo(140,758,300,800); ctx.quadraticCurveTo(430,836,540,792);
+  ctx.lineTo(540,960); ctx.lineTo(0,960); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#070b14';
+  ctx.beginPath(); ctx.moveTo(0,862);
+  ctx.quadraticCurveTo(180,820,340,860); ctx.quadraticCurveTo(460,890,540,854);
   ctx.lineTo(540,960); ctx.lineTo(0,960); ctx.closePath(); ctx.fill();
   /* soil */
-  ctx.fillStyle='#0a0f0a'; ctx.fillRect(0,GROUND,VW,VH-GROUND);
-  ctx.strokeStyle='#1d2a17'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(VW,GROUND); ctx.stroke();
-  ctx.strokeStyle='#26351c'; ctx.lineWidth=2;
+  ctx.fillStyle='#05080e'; ctx.fillRect(0,GROUND,VW,VH-GROUND);
+  ctx.strokeStyle='#22304a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(VW,GROUND); ctx.stroke();
+  ctx.strokeStyle='#2c3d26'; ctx.lineWidth=2;
   for(i=0;i<26;i++){
     var gx=10+i*21, h=6+((i*37)%11);
     ctx.beginPath(); ctx.moveTo(gx,GROUND); ctx.quadraticCurveTo(gx+3,GROUND-h,gx+7,GROUND-h-3); ctx.stroke();
   }
 }
 function drawSling(S,t){
-  var pull=0, dirx=0, diry=-1;
-  if(S){ var v=launchVec(S.aim), sp=hyp(v.vx,v.vy); dirx=v.vx/sp; diry=v.vy/sp;
-         pull=9+23*clamp(S.aim.p,0,1); }
+  /* the drawn pull is S.vis, a hair behind the finger, so the pouch has weight.
+     The FIRED shot is S.aim exactly: feel is visual, never physics. */
+  var pull=0, dirx=0, diry=-1, vp=0;
+  if(S){ var v=launchVec(S.vis||S.aim), sp=hyp(v.vx,v.vy); dirx=v.vx/sp; diry=v.vy/sp;
+         vp=clamp((S.vis||S.aim).p,0,1); pull=8+30*vp; }
   var loaded=!!(S&&!S.ball&&S.phase==='play');
   var px=AX-dirx*(loaded?pull:0), py=AY-diry*(loaded?pull:0);
-  var lx=AX-33, ly=AY-20, rx=AX+33, ry=AY-20;
+  /* a beat of recoil after the snap */
+  if(S&&!loaded&&S.recoil>0&&!RM){
+    var rf=S.recoil/0.22;
+    py+= -Math.sin((0.22-S.recoil)*46)*9*rf;
+  }
+  /* the fork arms flex in toward the pull */
+  var flex=loaded?vp*5:0;
+  var lx=AX-33+flex, ly=AY-20+flex*0.8, rx=AX+33-flex, ry=AY-20+flex*0.8;
   /* a warm pool of light so the sling reads as the player's own corner */
   var gl=ctx.createRadialGradient(AX,AY+8,4,AX,AY+8,120);
-  gl.addColorStop(0,'rgba(200,168,75,0.13)'); gl.addColorStop(1,'rgba(200,168,75,0)');
+  gl.addColorStop(0,'rgba(255,215,122,0.14)'); gl.addColorStop(1,'rgba(255,215,122,0)');
   ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(AX,AY+8,120,0,6.283); ctx.fill();
   ctx.lineCap='round';
-  /* band behind the pouch */
-  ctx.strokeStyle='#7d5f34'; ctx.lineWidth=6;
+  /* band behind the pouch, thinning as it tightens */
+  ctx.strokeStyle='#7d5f34'; ctx.lineWidth=6-vp*1.8;
   ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(px,py); ctx.stroke();
   /* forked branch, rooted below the soil line */
   ctx.strokeStyle='#3a2e21'; ctx.lineWidth=17;
@@ -802,7 +865,7 @@ function drawSling(S,t){
   ctx.strokeStyle='#2c4a24'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(lx-28,ly+18); ctx.lineTo(lx,ly+10); ctx.stroke();
   /* band in front, then the leaf pouch and the loaded seed */
-  ctx.strokeStyle='#a07f47'; ctx.lineWidth=6;
+  ctx.strokeStyle=vp>0.66?'#b8934f':'#a07f47'; ctx.lineWidth=6-vp*1.8;
   ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(px,py); ctx.stroke();
   if(loaded){
     ctx.save(); ctx.translate(px,py); ctx.rotate(Math.atan2(-diry,-dirx)+PI/2);
@@ -818,23 +881,25 @@ function drawSling(S,t){
 function drawPod(pd,t){
   var x=pd.cx, y=pd.cy, r=pd.r;
   var pulse=RM?1:(1+0.06*Math.sin(t*2.2+pd.seed));
-  /* halo */
-  var hg=ctx.createRadialGradient(x,y,r*0.4,x,y,r*2.5*pulse);
-  hg.addColorStop(0,'rgba(122,179,86,0.30)'); hg.addColorStop(1,'rgba(122,179,86,0)');
-  ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(x,y,r*2.5*pulse,0,6.283); ctx.fill();
-  /* petals */
+  /* warm halo: the target is the brightest, warmest thing in the sky */
+  var hg=ctx.createRadialGradient(x,y,r*0.4,x,y,r*2.8*pulse);
+  hg.addColorStop(0,'rgba(255,215,122,0.36)'); hg.addColorStop(0.55,'rgba(255,215,122,0.13)'); hg.addColorStop(1,'rgba(255,215,122,0)');
+  ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(x,y,r*2.8*pulse,0,6.283); ctx.fill();
+  /* petals in gold and cream */
   var i;
   ctx.save(); ctx.translate(x,y); ctx.rotate(RM?0:(t*0.35+pd.seed));
   for(i=0;i<5;i++){
     ctx.save(); ctx.rotate(i*1.2566);
-    ctx.fillStyle=i%2?'#4c7d36':'#5f9440';
+    ctx.fillStyle=i%2?'#d8b45c':'#efd792';
     ctx.beginPath(); ctx.ellipse(0,-r*0.86,r*0.42,r*0.82,0,0,6.283); ctx.fill();
+    ctx.strokeStyle='rgba(122,90,28,0.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(0,-r*0.86,r*0.42,r*0.82,0,0,6.283); ctx.stroke();
     ctx.restore();
   }
   ctx.restore();
-  /* core */
+  /* hot core */
   var cg=ctx.createRadialGradient(x-r*0.3,y-r*0.3,1,x,y,r);
-  cg.addColorStop(0,'#f4e7bd'); cg.addColorStop(0.55,'#c8a84b'); cg.addColorStop(1,'#8a6f28');
+  cg.addColorStop(0,'#fff8de'); cg.addColorStop(0.55,'#ffd77a'); cg.addColorStop(1,'#b98c30');
   ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(x,y,r*0.72,0,6.283); ctx.fill();
   if(pd.flash>0){ ctx.fillStyle='rgba(255,255,255,'+(pd.flash*2).toFixed(2)+')';
     ctx.beginPath(); ctx.arc(x,y,r*0.9,0,6.283); ctx.fill(); }
@@ -853,10 +918,10 @@ function drawObs(S,t){
     if(ob.t==='rock'){
       var x=ob.cx, y=ob.cy, r=ob.r;
       var g=ctx.createRadialGradient(x-r*0.35,y-r*0.4,2,x,y,r);
-      g.addColorStop(0,'#77806f'); g.addColorStop(0.6,'#525c4c'); g.addColorStop(1,'#333b30');
+      g.addColorStop(0,'#4e5668'); g.addColorStop(0.6,'#383f52'); g.addColorStop(1,'#232838');
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,6.283); ctx.fill();
-      ctx.strokeStyle='#2a3226'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,r-1,0,6.283); ctx.stroke();
-      ctx.strokeStyle='rgba(232,220,200,0.13)'; ctx.lineWidth=2;
+      ctx.strokeStyle='#222839'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,r-1,0,6.283); ctx.stroke();
+      ctx.strokeStyle='rgba(232,220,200,0.12)'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(x,y,r*0.62,3.6,5.1); ctx.stroke();
       continue;
     }
@@ -867,14 +932,14 @@ function drawObs(S,t){
         /* a folding leaf, not a highlighter bar. Dark body, ribs, and one
            gold lip on the moving edge so the gap is the readable thing. */
         var inner=(j===0)?s[2]:s[0], outer=(j===0)?s[0]:s[2], yy=s[1];
-        ctx.strokeStyle='#1a2712'; ctx.lineWidth=th*2+4; ctx.lineCap='round';
+        ctx.strokeStyle='#151d2c'; ctx.lineWidth=th*2+4; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(outer,yy); ctx.lineTo(inner,yy); ctx.stroke();
-        ctx.strokeStyle='#1f3017'; ctx.lineWidth=th*2-2;
+        ctx.strokeStyle='#232d40'; ctx.lineWidth=th*2-2;
         ctx.beginPath(); ctx.moveTo(outer,yy); ctx.lineTo(inner,yy); ctx.stroke();
-        ctx.strokeStyle='rgba(122,179,86,0.22)'; ctx.lineWidth=1.5;
+        ctx.strokeStyle='rgba(150,165,200,0.30)'; ctx.lineWidth=1.5;
         ctx.beginPath(); ctx.moveTo(outer,yy); ctx.lineTo(inner,yy); ctx.stroke();
         var dir=(inner>outer)?1:-1, kk;
-        ctx.strokeStyle='rgba(122,179,86,0.13)'; ctx.lineWidth=1.4;
+        ctx.strokeStyle='rgba(150,165,200,0.14)'; ctx.lineWidth=1.4;
         for(kk=14;kk<Math.abs(inner-outer)-8;kk+=22){
           var vx2=outer+dir*kk;
           ctx.beginPath(); ctx.moveTo(vx2,yy-th+2); ctx.lineTo(vx2+dir*7,yy+th-2); ctx.stroke();
@@ -882,15 +947,15 @@ function drawObs(S,t){
         ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(inner,yy,5,0,6.283); ctx.fill();
         ctx.fillStyle='rgba(200,168,75,0.22)'; ctx.beginPath(); ctx.arc(inner,yy,11,0,6.283); ctx.fill();
       } else {
-        ctx.strokeStyle='#241c13'; ctx.lineWidth=th*2+3; ctx.lineCap='round';
+        ctx.strokeStyle='#141220'; ctx.lineWidth=th*2+3; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke();
-        ctx.strokeStyle='#4a3b2a'; ctx.lineWidth=th*2-2;
+        ctx.strokeStyle='#332f42'; ctx.lineWidth=th*2-2;
         ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke();
-        ctx.strokeStyle='#6b5540'; ctx.lineWidth=2;
+        ctx.strokeStyle='#4c465e'; ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke();
         /* thorns */
         var dx=s[2]-s[0], dy=s[3]-s[1], L=hyp(dx,dy)||1, ux=dx/L, uy=dy/L, k;
-        ctx.strokeStyle='#7a6248'; ctx.lineWidth=2.5;
+        ctx.strokeStyle='#575070'; ctx.lineWidth=2.5;
         for(k=16;k<L-8;k+=26){
           var bx=s[0]+ux*k, by=s[1]+uy*k, side=(k%52===16)?1:-1;
           ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx-uy*side*9-ux*4,by+ux*side*9-uy*4); ctx.stroke();
@@ -898,7 +963,7 @@ function drawObs(S,t){
       }
       ctx.lineCap='butt';
     }
-    if(ob.t==='bar'){ ctx.fillStyle='#7a6248'; ctx.beginPath(); ctx.arc(ob.x,ob.y,5,0,6.283); ctx.fill(); }
+    if(ob.t==='bar'){ ctx.fillStyle='#575070'; ctx.beginPath(); ctx.arc(ob.x,ob.y,5,0,6.283); ctx.fill(); }
   }
 }
 function drawPendulumStems(S){
@@ -906,7 +971,7 @@ function drawPendulumStems(S){
   /* orbit rings, dashed and dim: a track to read, not a drawn line */
   ctx.save();
   if(ctx.setLineDash) ctx.setLineDash([5,11]);
-  ctx.strokeStyle='rgba(122,179,86,0.16)'; ctx.lineWidth=1.4;
+  ctx.strokeStyle='rgba(150,165,200,0.15)'; ctx.lineWidth=1.4;
   for(i=0;i<S.pods.length;i++){
     var p2=S.pods[i];
     if(p2.m!=='orbit'||p2.dead) continue;
@@ -933,8 +998,8 @@ function drawBall(S){
     var n=b.trail.length/2;
     for(i=0;i<n-1;i++){
       var f=i/n;
-      ctx.fillStyle='rgba(200,168,75,'+(0.34*f*f).toFixed(3)+')';
-      ctx.beginPath(); ctx.arc(b.trail[i*2],b.trail[i*2+1],1.2+2.4*f,0,6.283); ctx.fill();
+      ctx.fillStyle='rgba(255,215,122,'+(0.42*f*f).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(b.trail[i*2],b.trail[i*2+1],1.2+2.6*f,0,6.283); ctx.fill();
     }
   }
   var g=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,BALL_R+2);
@@ -945,10 +1010,13 @@ function drawBall(S){
 function drawAim(S){
   if(!SET.guide||S.ball||S.phase!=='play'||S.reload>0) return;
   var pts=previewPts(S.aim), i, n=pts.length/2;
+  /* luminous, not dusty: each dot is a warm point with its own soft glow */
   for(i=0;i<n;i++){
-    var f=i/n, a=0.85*(1-f)*(1-f);
-    ctx.fillStyle='rgba(232,220,200,'+a.toFixed(3)+')';
-    ctx.beginPath(); ctx.arc(pts[i*2],pts[i*2+1],5.2-3.6*f,0,6.283); ctx.fill();
+    var f=i/n, a=0.95*(1-f)*(1-f), rr=5.2-3.6*f;
+    ctx.fillStyle='rgba(255,215,122,'+(a*0.30).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(pts[i*2],pts[i*2+1],rr*2.1,0,6.283); ctx.fill();
+    ctx.fillStyle='rgba(255,236,176,'+a.toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(pts[i*2],pts[i*2+1],rr,0,6.283); ctx.fill();
   }
 }
 /* seeds in hand, drawn as a little row in the soil. The counts also live in
@@ -969,7 +1037,7 @@ function drawHint(S){
   ctx.font='600 16px -apple-system,system-ui,sans-serif'; ctx.textAlign='center';
   var w=ctx.measureText(S.def.hint).width+40;
   if(w>470){ ctx.font='600 14px -apple-system,system-ui,sans-serif'; w=ctx.measureText(S.def.hint).width+36; }
-  ctx.fillStyle='rgba(8,12,9,'+(a*0.82).toFixed(3)+')';
+  ctx.fillStyle='rgba(6,9,14,'+(a*0.82).toFixed(3)+')';
   ctx.beginPath();
   var x=(VW-w)/2, y=152, h=44, r=22;
   ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
@@ -980,6 +1048,13 @@ function drawHint(S){
 }
 function drawParts(S){
   var i;
+  /* bloom rings: one warm circle breathing out of every pop */
+  for(i=0;i<S.rings.length;i++){
+    var rg2=S.rings[i], f2=rg2.t/0.5;
+    ctx.strokeStyle='rgba(255,215,122,'+(0.5*(1-f2)).toFixed(3)+')';
+    ctx.lineWidth=2.5*(1-f2)+0.5;
+    ctx.beginPath(); ctx.arc(rg2.x,rg2.y,10+f2*52,0,6.283); ctx.stroke();
+  }
   for(i=0;i<S.parts.length;i++){
     var p=S.parts[i], a=clamp(p.life/p.max,0,1);
     ctx.save(); ctx.globalAlpha=a; ctx.translate(p.x,p.y); ctx.rotate(p.rot);
@@ -1081,22 +1156,31 @@ function finish(){
     var bonus=G.ammo*90+st*140;
     G.score+=bonus;
     Wallet.earn(G.score,'level_clear');
+    /* sunbeams ride the same first-time moments the host is told about:
+       announce() returns true exactly once per key, so replays earn nothing.
+       Rates: clear 4, three-star 3, world 6, daily 5. A solid first session
+       is 4-6 clears and 2-4 perfects, which caps out the 30/day. */
     if(G.mode==='daily'){
       var dk=todayKey();
       if(!PROG.daily[dk]||PROG.daily[dk]<st){ PROG.daily[dk]=st; saveProg(); }
-      announce('daily_done',dk,{stars:st});
+      if(announce('daily_done',dk,{stars:st}))
+        window._sbCapEarn&&window._sbCapEarn(5,'skyshot:daily');
     } else {
       var prev=PROG.stars[G.idx]||0;
       if(st>prev){ PROG.stars[G.idx]=st; saveProg(); }
-      announce('level_clear',G.idx,{level:G.idx+1,shots:G.shots,par:G.def.par});
-      if(st===3) announce('three_star',G.idx,{level:G.idx+1});
+      if(announce('level_clear',G.idx,{level:G.idx+1,shots:G.shots,par:G.def.par}))
+        window._sbCapEarn&&window._sbCapEarn(4,'skyshot:clear');
+      if(st===3 && announce('three_star',G.idx,{level:G.idx+1}))
+        window._sbCapEarn&&window._sbCapEarn(3,'skyshot:threestar');
       var w=Math.floor(G.idx/6), done=true, i;
       for(i=w*6;i<w*6+6;i++) if(!PROG.stars[i]) done=false;
-      if(done) announce('world_clear',w,{world:w+1,name:WORLDS[w]});
+      if(done && announce('world_clear',w,{world:w+1,name:WORLDS[w]}))
+        window._sbCapEarn&&window._sbCapEarn(6,'skyshot:world');
     }
-    sfx('win');
+    sfx(st===3?'win3':'win');
     $('go-title').textContent='Cleared'; $('go-title').className='go-big';
     $('go-stars').textContent=stars(st);
+    $('go-stars').className='go-stars'+(st===3?' three':'');
     $('go-lab').textContent=G.shots+' seed'+(G.shots===1?'':'s')+' used · par '+G.def.par;
     $('go-score').textContent='+'+G.score+' pollen';
     $('go-next').style.display=(G.mode==='daily'||G.idx>=LEVELS.length-1)?'none':'flex';
@@ -1105,6 +1189,7 @@ function finish(){
     sfx('lose');
     $('go-title').textContent='Out of seeds'; $('go-title').className='go-big miss';
     $('go-stars').textContent='☆☆☆';
+    $('go-stars').className='go-stars';
     var l2=0,j;
     for(j=0;j<G.pods.length;j++) if(!G.pods[j].dead) l2++;
     $('go-lab').textContent=l2+' bud'+(l2===1?'':'s')+' still up there';
@@ -1130,6 +1215,9 @@ function aimFromDrag(){
   var a=Math.atan2(dx,-dy);                       /* 0 is straight up, positive leans right */
   G.aim.a=clamp(a,-MAXLEAN,MAXLEAN);
   G.dragging=true;
+  /* the band creaks as it comes back, one soft step per quarter of the pull */
+  var q=1+Math.floor(G.aim.p*3.999);
+  if(q>G.creakQ){ G.creakQ=q; sfx('pull'); haptic(4); }
 }
 function onDown(e){
   if(curScreen!=='s-play'||!G) return;
@@ -1137,6 +1225,7 @@ function onDown(e){
   ac();
   var p=pt(e);
   drag={x0:p.x,y0:p.y,x:p.x,y:p.y};
+  G.creakQ=0;
   e.preventDefault();
 }
 function onMove(e){
@@ -1197,7 +1286,7 @@ function loop(ts){
 }
 
 /* ---- level select ---- */
-var LOCK='<svg class="lk" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.4" fill="#6d7563"/><path d="M8.4 10.5V8a3.6 3.6 0 0 1 7.2 0v2.5" fill="none" stroke="#6d7563" stroke-width="2.2"/><circle cx="12" cy="15.2" r="1.7" fill="#0f150c"/></svg>';
+var LOCK='<svg class="lk" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.4" fill="#4a5468"/><path d="M8.4 10.5V8a3.6 3.6 0 0 1 7.2 0v2.5" fill="none" stroke="#4a5468" stroke-width="2.2"/><circle cx="12" cy="15.2" r="1.7" fill="#0a0e17"/></svg>';
 function renderLevels(){
   var host=$('lvl-wrap'); host.innerHTML='';
   var w,i;

@@ -48,6 +48,14 @@ embedded**, and only the first time ever for that key. The dedupe key lives in
 `skyshot_prog.moments`, so replays, retries and star farming send nothing. No
 message ever carries an amount.
 
+**Sunbeams (fleet standard) ride the same moments.** `window._sbCapEarn(n, tag)`
+is the hues implementation verbatim: a 30/day/game cap in localStorage
+`sw_sb_skyshot`, then `Sunbeam.earn` if the SDK is present. It fires only when
+`announce()` returns true (first time ever for that key), null-guarded, so
+replays earn nothing. Rates: level clear 4, three-star 3, world clear 6, daily 5.
+A solid first session is 20-30 and caps out; the `sws:earn` postMessages still
+post unchanged for forward compatibility.
+
 | Moment | Fires when | Dedupe key | Casual session estimate |
 |---|---|---|---|
 | `level_clear` | first time a campaign plot is cleared | plot index | 3 to 6 in an early session, 1 to 2 late, 0 once all 24 are done |
@@ -115,9 +123,10 @@ var Wallet = { total, earn(n, reason), spend(n, reason) };
 ```
 
 The internal currency is **pollen** and it is cosmetic: a running total shown on
-the menu build stamp. There is no sunbeam code, no Firebase, no SDK, no network
-call of any kind. `announce(moment, key, detail)` is the only thing that talks
-to the host, and it cannot set an amount.
+the menu build stamp. No Firebase, no network call of any kind. Sunbeams flow
+only through `_sbCapEarn` (see section 4), which no-ops without the portal SDK.
+`announce(moment, key, detail)` is the only thing that talks to the host, and it
+cannot set an amount.
 
 ## 8. How to add content later
 
