@@ -1,0 +1,65 @@
+# Jumping Jimothy: beatability evidence
+
+Generated 2026-08-07 by `scripts/jimothy_beatability.mjs`, which drives the
+REAL generator (headless Chrome, a probe shim injected at serve time; the
+game file on disk is untouched) and regenerates every course structurally.
+Raw flags: `BEATABILITY_EVIDENCE.json` beside this file.
+
+## What was checked
+
+Every Adventure level 1 through 100 (each level's course is fixed by its
+own seed, so this is the same course every player gets), plus 5 random
+runs x 300 rows each of Endless and Rush and Zen, plus today's Daily.
+Four structural ways a course can be unwinnable:
+
+1. SEALED: breadth-first search over every walkable cell from the level
+   start to its feast-gate row, treating bushes and gate walls as walls.
+   A level with no path is the "had to die to continue" class.
+2. BUSHED ALCOVE: a bush directly above an open feast gate. This exact
+   bug shipped once (8.97 percent of level clears) and was fixed; this
+   check proves it stays fixed for all 100 levels.
+3. UNCROSSABLE ROAD: for every traffic lane, the standing time window
+   between kill zones, using the game's real collision model
+   (HIT_ROAD 0.72 of summed half widths, and the hopper is invulnerable
+   mid hop, so standing time is the binding constraint). Flag under 0.30s.
+4. BARE WATER: pad coverage per water lane. Flag under 18 percent.
+
+## Verdict: ZERO flags
+
+- No level is sealed. All 100 feast-gate rows are reachable.
+- No bushed alcoves anywhere.
+- Worst road standing window in the entire game: 0.38 seconds
+  (deep 90s levels). With mid-hop invulnerability and the input buffer
+  that is a tight rhythm read, not a wall.
+- Worst water pad coverage: 45 percent. Never thin.
+- Zen is the calmest of all modes, as designed. Rush and Endless clean
+  across 5 random seeds each.
+
+## What this does NOT prove
+
+Structural beatability is not fun. The fun judgment is Stephen's play
+pass; the checklist below is what to feel for, informed by the data.
+
+## Fun-notes checklist for the Director's play pass
+
+The numbers say these are the places worth feeling out:
+
+- [ ] Levels 43, 52-53, 60-70: the first stretch where road windows dip
+      under half a second. Does it read as thrilling or as unfair?
+- [ ] Levels 80-98: the densest tight-lane stretch (2-3 tight lanes per
+      level). Is there still breathing room between set pieces?
+- [ ] A finale moat every level whose number is not divisible by 5 or
+      ending in 2: do the generous finale pads (1.22x width) still feel
+      like a finale after level 50?
+- [ ] Express lanes in rush-hour zones: the 1.45x speed spike is the
+      sharpest single difficulty step in the game. Fair warning visible?
+- [ ] Steam alleys (rhythm crossings): do they land as a fresh read or a
+      stall in pace?
+- [ ] The chase speed ramp (0.11 + 0.011 per level, capped 0.28): does
+      the sweeper ever feel like it forces errors on tight lanes?
+- [ ] One full Daily on the phone, one on desktop: does the shared
+      course feel identical (it is byte-identical by design)?
+
+Known separate concern, not beatability: difficulty past level 21 wobbles
+rather than climbs (COURSE-PLAN.md measured it; the 50-level pattern
+course remains an unbuilt proposal awaiting a yes).
