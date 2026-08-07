@@ -109,8 +109,9 @@ def build(src_dir, target, game_id):
     html = open(idx, encoding='utf-8').read()
     n0 = len(html)
 
-    # 1. sunbeam economy out
-    html = re.sub(r'<script src="/sunbeam-sdk\.js[^"]*"></script>\n?', '', html)
+    # 1. sunbeam economy out (some satellites load the SDK by absolute URL so
+    #    the same file works from the github.io mirror - strip both forms)
+    html = re.sub(r'<script src="(?:https://lucidwinds\.com)?/sunbeam-sdk\.js[^"]*"></script>\n?', '', html)
     html = re.sub(r'<script>window\.Sunbeam&&Sunbeam\.init[^<]*</script>\n?', '', html)
 
     # 2. no exits to our portal — brace-BALANCED replace; the body nests
@@ -125,13 +126,29 @@ def build(src_dir, target, game_id):
             i += 1
         html = html[:m.start()] + 'window.SWS_EXIT=function(){}' + html[i:]
 
+    # 2a2. the studio shell never ships to a publisher: no feedback fab (posts to
+    #      our endpoint), no static jukebox tags. Dynamic music loads are satisfied
+    #      by the stubs injected below, so nothing 404s.
+    html = re.sub(r"<script>(?:(?!</script>).)*feedback\.js(?:(?!</script>).)*</script>\n?", '', html, flags=re.S)
+    html = re.sub(r'<script src="[^"]*(?:music-tracks|music-player|engagement|dev-gate|arcade-exit)\.js[^"]*"></script>\n?', '', html)
+
+    # 2b. no PWA surface in a publisher build: the sw.js and manifest files are
+    #     excluded from the copy, so the references must go too or the console
+    #     fills with 404s during review
+    html = re.sub(r'<link rel="manifest"[^>]*/?>\n?', '', html)
+    html = re.sub(r"navigator\.serviceWorker\.register\(", "window.__pubNoSW(", html)
+
     # 3. no canonical/og/twitter pointers at our hosting
     html = re.sub(r'<link rel="canonical"[^>]*/?>\n?', '', html)
     html = re.sub(r'<meta (?:property|name)="(?:og:url|og:image|twitter:image|twitter:url)"[^>]*/?>\n?', '', html)
 
     # 4. SDK + exit-hider, injected right after <head>
     sdk = (GM_SDK if target == 'gm' else GD_SDK).replace('%GAME_ID%', game_id)
-    html = html.replace('<head>', '<head>' + HIDE_EXIT_CSS + sdk, 1)
+    nosw = ('<script>window.__pubNoSW=function(){var p={then:function(){return p},"catch":function(){return p}};return p};'
+            'window.LW_TRACKS=window.LW_TRACKS||[];window.SWSPlayer=window.SWSPlayer||{init:function(){}};'
+            'window.LW_Feedback=window.LW_Feedback||{mountFab:function(){}};</script>'
+            '<style>#musicLink,#installLink,#music-link,#install-link{display:none!important}</style>')
+    html = html.replace('<head>', '<head>' + nosw + HIDE_EXIT_CSS + sdk, 1)
 
     # 5. ad break at the win screen
     hooked = False
@@ -142,7 +159,23 @@ def build(src_dir, target, game_id):
             hooked = True
             break
     if not hooked:
+        # fleet fallback: every satellite announces its round end by earning
+        # sunbeams, so the guarded _sbCapEarn call sites ARE the win moments.
+        # __pubAd throttles itself (180s), so hooking every site is safe.
+        n_hooks = len(re.findall(r'window\._sbCapEarn&&window\._sbCapEarn\(', html))
+        if n_hooks:
+            html = html.replace('window._sbCapEarn&&window._sbCapEarn(',
+                'window.__pubAd&&window.__pubAd(),window._sbCapEarn&&window._sbCapEarn(')
+            hooked = True
+            print(f'midroll hooked at {n_hooks} _sbCapEarn earn site(s)')
+    if not hooked:
         print('!! no round-end function found - SDK loads (preroll works) but no midroll hook')
+
+    # 6. networks forbid links or branding pointing at our own portal: neutralize
+    #    any remaining our-domain URL inside JS/HTML string literals (share links,
+    #    canvas watermarks). Structured tags were stripped above; this is the sweep.
+    html = re.sub(r'https?://(?:www\.)?(?:lucidwinds\.com|stephenuffugus\.github\.io)[^"\'\s)]*', '', html)
+    html = re.sub(r'(["\'])(?:www\.)?lucidwinds\.com[^"\']*(["\'])', r'\1\2', html)
 
     open(idx, 'w', encoding='utf-8').write(html)
     print(f'index.html {n0} -> {len(html)} bytes; midroll hook: {hooked}')

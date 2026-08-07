@@ -48,7 +48,13 @@ loads the game fine but serves no ads and may fail review.
 
 ## Queue after the pilot clears
 
-1. **Hues** — 8 MB, needs the same pass (16 our-domain refs, music shelf).
+1. **Hues** — DONE 2026-08-07: `publish/dist/hues-{gd,gm}.zip` (7.9 MB,
+   placeholder ID). Builder upgraded for the whole fleet: absolute-URL SDK
+   strip, our-domain string sweep, feedback fab + jukebox + PWA refs out
+   (stubs injected so nothing 404s), midroll auto-hooks `_sbCapEarn` earn
+   sites when no named round-end function exists. Verified booted + played
+   an Endless round headless, zero own-404s. ⛔ Rebuild with the real
+   gameId before upload, same as the pilot.
 2. **Jimothy (stream-hop)** — 404 MB as-is; needs a DIET build (trim skins,
    music, unused decades art) before any network will take the ZIP.
 3. Then the catalog, best-first, one per week per network.
