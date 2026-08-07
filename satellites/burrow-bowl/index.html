@@ -15,11 +15,11 @@
 <meta property="og:site_name" content="Sky Wolf Studios">
 <meta property="og:title" content="Burrow Bowl">
 <meta property="og:description" content="Night garden skee ball. Flick the dewball up the wooden lane and drop it home in the burrow rings. The corner hundreds are waiting.">
-<meta property="og:image" content="thumb.png">
+<meta property="og:image" content="https://lucidwinds.com/satellites/burrow-bowl/thumb.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Burrow Bowl">
 <meta name="twitter:description" content="Night garden skee ball. Flick the dewball up the wooden lane and drop it home in the burrow rings. The corner hundreds are waiting.">
-<meta name="twitter:image" content="thumb.png">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/burrow-bowl/thumb.png">
 <style>
 :root{
   --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
@@ -479,7 +479,10 @@ var PH={ h:1/240, acc:0 };
 
 function newRound(mode){
   G.mode=mode;
-  if(mode==='daily'){ var c=dailyCond(); G.wind=c.wind; G.wax=c.wax; G.condLabel=c.label; }
+  if(mode==='daily'){ var c=dailyCond(); G.wind=c.wind; G.wax=c.wax; G.condLabel=c.label;
+    /* the lane is spent the moment it is racked: reloading mid round must not
+       hand the same daily back for a retry (verify pass, 2026-08-07) */
+    jSet(K_DAILY,{date:dayKey(), score:0, started:true}); }
   else { G.wind=0; G.wax=1; G.condLabel=''; }
   G.ball=1; G.ballsLeft=9; G.score=0; G.shots=[]; G.hundreds=0;
   G.pops.length=0; G.burst.length=0; G.flash=0; G.shake=0; G.hintT=0;
@@ -576,7 +579,7 @@ function scoreBall(){
     addBurst(lx,ly,36,true);
     /* the big line lands on the LANE, never across the rings it is praising */
     addPop(270,540,'ONE HUNDRED',46,'#fff4d0',1.5);
-    addPop(lx,ly+52,'+100',30,'#ffd97a',1.3);
+    addPop(lx+(lx<VW/2?46:-46),ly+40,'+100',30,'#ffd97a',1.3);
     sfx('sink100');
     fireFirstHundred();
     G.beat=1.8;
@@ -1257,7 +1260,7 @@ function drawHud(t){
   }
 
   /* dewballs left, at the rack */
-  var i,n=G.ballsLeft - ((G.phase!=='aim'&&G.phase!=='idle'&&G.phase!=='paused')||((G.phase==='paused')&&G.prevPhase!=='aim')?1:0);
+  var i,n=G.ballsLeft - ((G.phase!=='aim'&&G.phase!=='idle'&&G.phase!=='paused'&&G.phase!=='beat')||((G.phase==='paused')&&G.prevPhase!=='aim')?1:0);
   ctx.textAlign='center';
   ctx.fillStyle='rgba(138,145,120,.7)'; ctx.font='600 10px system-ui,sans-serif';
   ctx.fillText('DEWBALLS',270,952);
@@ -1335,7 +1338,7 @@ if(/[?&]bb_test=1(&|$)/.test(location.search) || lsGet('bb_test','')==='1'){
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
-  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}).pop())||'game');
     var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
     n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;

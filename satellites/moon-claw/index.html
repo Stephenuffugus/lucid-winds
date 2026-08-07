@@ -15,11 +15,11 @@
 <meta property="og:site_name" content="Sky Wolf Studios">
 <meta property="og:title" content="Moon Claw">
 <meta property="og:description" content="An honest claw machine. Read the pile, glide the claw, and what it grips it keeps. Somewhere down there is a golden koi.">
-<meta property="og:image" content="thumb.png">
+<meta property="og:image" content="https://lucidwinds.com/satellites/moon-claw/thumb.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Moon Claw">
 <meta name="twitter:description" content="An honest claw machine. Read the pile, glide the claw, and what it grips it keeps. Somewhere down there is a golden koi.">
-<meta name="twitter:image" content="thumb.png">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/moon-claw/thumb.png">
 <style>
 :root{
   --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
@@ -445,12 +445,14 @@ function wakePile(){ for(var i=0;i<PILE.length;i++) PILE[i].still=0; }
 function stepBody(b,dt){
   b.vy+=PGRAV*dt;
   b.x+=b.vx*dt; b.y+=b.vy*dt; b.rot+=b.vr*dt;
-  var lx = (b.zone==='bin') ? IN.lx : DIV.x+DIV.w;
+  /* the divider only exists below its top edge: a pile body carried fully
+     above DIV.top can cross leftward, which is the documented lucky shed
+     (the old unconditional clamp made that branch unreachable) */
+  var lx = (b.zone==='bin') ? IN.lx : ((b.y+b.r>DIV.top) ? DIV.x+DIV.w : IN.lx);
   var rx = (b.zone==='bin') ? DIV.x-DIV.w : IN.rx;
   if(b.x-b.r<lx){ b.x=lx+b.r; b.vx*=-0.3; }
   if(b.x+b.r>rx){ b.x=rx-b.r; b.vx*=-0.3; }
-  /* the divider has a top: a pile body thrown high enough can cross it,
-     which is exactly the lucky shed into the chute */
+  /* straddling the wall top: settle to a side; left of centre becomes a shed */
   if(b.zone==='pile' && b.x-b.r<DIV.x+DIV.w && b.y+b.r>DIV.top){
     if(b.x<DIV.x){ b.zone='bin'; }
     else { b.x=DIV.x+DIV.w+b.r; b.vx=Math.abs(b.vx)*0.3; }
@@ -584,6 +586,10 @@ function setMsg(m,col,big){ G.msg=m; G.msgCol=col||'#8a9178'; G.msgT=now(); G.ms
 function newRound(mode){
   G.mode=mode;
   var seed=(mode==='daily') ? daySeed() : (Math.random()*4294967295)>>>0;
+  if(mode==='daily'){
+    /* the cabinet is spent the moment the lights come on: reloading mid round
+       must not hand tonight's pile back for a rehearsal (verify pass, 2026-08-07) */
+    jSet(K_DAILY,{date:dayKey(), haul:0, prizes:0, started:true}); }
   genCabinet(seed);
   G.phase='aim'; G.phT=0;
   G.credits=5; G.haul=0; G.prizes=0; G.dropN=0; G.drops=[];
@@ -1654,7 +1660,7 @@ if(/[?&]mc_test=1(&|$)/.test(location.search) || lsGet('mc_test','')==='1'){
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
-  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}).pop())||'game');
     var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
     n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;

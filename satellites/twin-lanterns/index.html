@@ -100,7 +100,7 @@ input.name{width:132px; min-height:48px; background:#0a0f17; border:1px solid va
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
-  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}).pop())||'game');
     var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
     n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
