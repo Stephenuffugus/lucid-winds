@@ -104,6 +104,48 @@ Firefly Futures spicy tier (keeper, conditional, see above). Burr in the Hem and
 
 ---
 
+## BUILD STATUS (updated 2026-08-08)
+
+| title | slug | state |
+|---|---|---|
+| Twin Lanterns | (satellite) | v0.1 live, dev gated, separate from the party shell |
+| Mothlight | `mothlight` | BUILT and driven to podium. Fact bank 240 and growing. |
+| Firefly Futures | `firefly` | BUILT 2026-08-08. 120 prompt launch bank. Spicy tier CUT. |
+| Lifting Fog | `liftingfog` | BUILT 2026-08-08. 20 question launch bank of 4 ordered clues. |
+| First Frost | `firstfrost` | BUILT 2026-08-08. 40 question launch bank. Frost console with 3 powers. |
+| Same Soil | | not started. Art bound, roughly 720 illustrations, so the art pipeline is the critical path and it should not start until that pipeline does. |
+| Moongraft | | not started. Needs the phone drawing canvas. |
+| Hoodwink the Owl | | not started, prototype gated on HUNCH. |
+
+The shell now serves the whole catalogue rather than one title:
+- `catalogue.js` is the single list. Adding a title is one entry plus a
+  `games/<slug>/` folder.
+- `host.html` opens on a TV picker. `?game=<slug>` still deep links for tests.
+- The host announces its slug on join and on every phase, so `play.html` loads
+  the right phone module. It used to hardcode Mothlight, which meant no second
+  title could ever have worked on a phone.
+- Per title minimum player counts come from the catalogue.
+- `PartyShell.backToPicker()` carries the room code, so switching games between
+  rounds does not make everybody retype anything.
+
+⛔ **Fixed the same day, and it was load bearing:** the transport kept ONE
+player identity per browser in localStorage. Practice mode is explicitly "every
+player joins from a tab in this same browser", so three practice phones all
+reported the same id and registered as a single player. The identity is now per
+TAB (marker in sessionStorage so a reload still rejoins as the same person, id
+in localStorage keyed by that marker).
+
+`party/test/drive.js <slug> [players]` drives any module start to podium with
+real phones in real tabs, taps at each control's centre with a real mouse,
+reloads a phone mid game to prove rejoin, screenshots every phase, and fails on
+any console error or any control under 48 rendered pixels.
+
+⚖ STILL BLOCKED ON STEPHEN: cloud rooms. Everything above runs on the local
+BroadcastChannel transport, which means one browser only. Real phones need the
+five minute console switch on in PARTY_CLOUD_SETUP.md.
+
+---
+
 ## BUILD ORDER (cheapest-proves-the-shell first)
 
 1. **Twin Lanterns daily duo.** Procedural content, exactly 2 phones, and it proves join, rejoin, presence, and pairing before any party format exists. The spec's own ruling: build the co-op daily FIRST so the netcode is battle-tested before the big swing.
