@@ -51,6 +51,7 @@ root.innerHTML=
 function show(id){ var s=root.querySelectorAll('.ff-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var BANK=window.FIREFLY_BANK||[], QS=[], ri=0, ROUNDS=10;
 var scores={}, names={}, polls={}, bets={}, order=[];
 var FAST=/[?&]ff_fast=1(&|$)/.test(location.search);
@@ -95,11 +96,11 @@ PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='poll'&&msg.r===ri+1&&$('ff-poll').classList.contains('on')){
     polls[ri]=polls[ri]||{}; polls[ri][pid]=!!msg.v;
-    inCount('ff-pin',Object.keys(polls[ri]).length,'answered');
+    inCount('ff-pin',Object.keys(polls[ri]).length,'answered'); snd('pip');
   } else if(msg.t==='bet'&&msg.r===ri+1&&$('ff-mkt').classList.contains('on')){
     var v=msg.v|0; if(v<0||v>order.length) return;
     bets[ri]=bets[ri]||{}; bets[ri][pid]=v;
-    inCount('ff-min',Object.keys(bets[ri]).length,'have bet');
+    inCount('ff-min',Object.keys(bets[ri]).length,'have bet'); snd('pip');
   }
 });
 
@@ -164,6 +165,7 @@ function phaseReveal(){
   }
 
   show('ff-rev');
+  snd('reveal', exact.length>0);
   $('ff-vn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('ff-vline').innerHTML=esc(q.text)+'<br><b>'+yes+' of '+order.length+' said yes</b>';
   lanternRow('ff-vlant',null,yes,betsByNum);
@@ -195,6 +197,7 @@ function phaseStandings(){
 }
 
 function phasePodium(){
+  snd('fanfare');
   show('ff-pod');
   var ids=rows('ff-podrows'), results={};
   for(var i=0;i<ids.length;i++) results[ids[i]]={score:scores[ids[i]]||0,place:i+1};

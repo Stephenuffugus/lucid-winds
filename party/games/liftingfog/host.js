@@ -51,6 +51,7 @@ root.innerHTML=
 function show(id){ var s=root.querySelectorAll('.lf-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var BANK=window.LIFTINGFOG_BANK||[], QS=[], qi=0, ROUNDS=8;
 var scores={}, names={}, answers={}, order=[], shuffled=[], curTier=0;
 var PTS=[100,75,50,25];
@@ -102,6 +103,7 @@ PartyShell.onPlayerMessage(function(pid,msg){
   var idx=msg.v|0; if(idx<0||idx>3) return;
   answers[qi][pid]={pick:shuffled[qi][idx],tier:curTier};
   $('lf-qin').textContent=Object.keys(answers[qi]).length+' of '+order.length+' locked in';
+  snd('pip');
   PartyShell.sendToPlayer(pid,{t:'locked'});
   if(Object.keys(answers[qi]).length>=order.length){ PartyShell.stopTimer(); phaseReveal(); }
 });
@@ -138,6 +140,7 @@ function phaseQuestion(){
     var tier=Math.floor((T_Q-s)/STEP); if(tier>3) tier=3; if(tier<0) tier=0;
     if(tier!==curTier){
       curTier=tier; renderClues(tier);
+      snd('chime');  /* the fog just lifted and the answer is worth less */
       /* a phone that rejoins mid question needs the clue AND the current worth,
          so every tier change is its own full phase payload */
       PartyShell.setPhase('question',{num:qi+1,total:ROUNDS,options:shuffled[qi],
@@ -164,6 +167,7 @@ function phaseReveal(){
     html+='<span class="lf-sc">'+esc(scored[j].n)+' <b>+'+scored[j].p+'</b></span>';
   $('lf-vscored').innerHTML=html||'<span class="lf-none">Nobody found it that time.</span>';
   show('lf-rev');
+  snd('reveal', scored.length>0);
   $('lf-vn').textContent='QUESTION '+(qi+1)+' OF '+ROUNDS;
   $('lf-vans').textContent=q.options[0];
   strip('lf-strip2');
@@ -193,6 +197,7 @@ function phaseStandings(){
 }
 
 function phasePodium(){
+  snd('fanfare');
   show('lf-pod');
   var ids=rows('lf-podrows'), results={};
   for(var i=0;i<ids.length;i++) results[ids[i]]={score:scores[ids[i]]||0,place:i+1};

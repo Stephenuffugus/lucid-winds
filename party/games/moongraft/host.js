@@ -24,6 +24,7 @@
 function $(id){return document.getElementById(id);}
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var LAYERS=window.MOONGRAFT_LAYERS||[], PAL=window.MOONGRAFT_PALETTE||['#e8dcc8'],
     WID=window.MOONGRAFT_WIDTHS||[3,7,14];
 var CARD_W=900, CARD_H=1200, ROUNDS=3;
@@ -253,10 +254,12 @@ function phaseGrow(){
   function grow(){
     step++;
     paintPlant(ctx,set,CARD_W,CARD_H,step);
+    snd('pip');  /* one more layer of somebody else's secret */
     if(step<sorted.length) setTimeout(grow,RM?0:per);
     else plate();
   }
   function plate(){
+    snd('chime');  /* it has a name now */
     var lines='';
     if(hk) lines='<div class="mg-haiku">'+esc(hk.line1)+'<br>'+esc(hk.line2)+'<br>'+esc(hk.line3)+'</div>';
     var by=[]; for(var i=0;i<set.length;i++) by.push(set[i].by);
@@ -274,6 +277,7 @@ function phaseGrow(){
 }
 
 function phaseGallery(){
+  snd('fanfare');
   show('mg-gal');
   var html='';
   for(var i=0;i<plants.length;i++)

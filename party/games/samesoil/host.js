@@ -55,6 +55,7 @@ root.innerHTML=
 function show(id){ var s=root.querySelectorAll('.ss-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var BANK=window.SAMESOIL_BANK||[], QS=[], ri=0, ROUNDS=10;
 var scores={}, names={}, order=[], subject=null, subjectPick=null, guesses={};
 var FAST=/[?&]ss_fast=1(&|$)/.test(location.search);
@@ -101,7 +102,7 @@ PartyShell.onPlayerMessage(function(pid,msg){
   else if(msg.t==='guess'&&msg.r===ri+1&&pid!==subject&&$('ss-guess').classList.contains('on')){
     guesses[pid]=(msg.v==='a')?'a':'b';
     var n=0,k; for(k in guesses) n++;
-    $('ss-gin').textContent=n+' of '+(order.length-1)+' have guessed';
+    $('ss-gin').textContent=n+' of '+(order.length-1)+' have guessed'; snd('pip');
     if(n>=order.length-1){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
@@ -163,6 +164,7 @@ function phaseReveal(){
   res[subject]={got:'subject',pts:subjPts,knew:knew};
 
   show('ss-rev');
+  snd('reveal', knew>0);
   $('ss-vn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('ss-vsaid').innerHTML='<b>'+esc(names[subject])+'</b> said';
   $('ss-vpair').innerHTML=pairHTML(q,subjectPick,counts);
@@ -176,6 +178,7 @@ function phaseReveal(){
 }
 
 function phasePodium(){
+  snd('fanfare');
   show('ss-pod');
   var ids=order.slice(); ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
   var html='', results={};

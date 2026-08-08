@@ -66,6 +66,7 @@ var POWERS=[
 ];
 var MARKS_OUT=3, MAX_Q=12, WIN_BONUS=300, RIGHT=100, FROST_PAY=40;
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var BANK=window.FIRSTFROST_BANK||[], QS=[], qi=0;
 var scores={}, names={}, marks={}, frozen={}, order=[], shuffled=[];
 var votes={}, power=null, answered={}, veiled=false;
@@ -123,6 +124,7 @@ PartyShell.onPlayerMessage(function(pid,msg){
     var idx=msg.v|0; if(idx<0||idx>3) return;
     answered[pid]=shuffled[qi][idx];
     $('fr-qin').textContent=Object.keys(answered).length+' of '+living().length+' answered';
+    snd('pip');
     PartyShell.sendToPlayer(pid,{t:'locked'});
     if(Object.keys(answered).length>=living().length){ PartyShell.stopTimer(); phaseReveal(); }
   }
@@ -242,6 +244,9 @@ function phaseReveal(){
   for(var h=0;h<gh.length;h++) if(!res[gh[h]]) res[gh[h]]={got:'frost',pts:0};
 
   show('fr-rev');
+  snd('reveal', took.length<live.length);
+  /* somebody joined the Frost: the room should feel that, not just read it */
+  if(newlyFrozen.length) setTimeout(function(){ snd('thud'); },700);
   $('fr-ans').textContent=correct;
   var line='';
   if(took.length) line+='<div class="fr-tookline">The frost reached '+esc(took.join(', '))+'.</div>';
@@ -257,6 +262,7 @@ function phaseReveal(){
 }
 
 function phasePodium(){
+  snd('fanfare');
   show('fr-pod');
   var live=living(), results={}, winner=null;
   if(live.length===1){ winner=live[0]; scores[winner]=(scores[winner]||0)+WIN_BONUS; }

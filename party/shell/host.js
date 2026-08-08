@@ -103,6 +103,9 @@ window.PartyShell={
     timer=setInterval(function(){ left--;
       T.send({t:'timer',to:'*',s:Math.max(0,left)});
       if(onTick)onTick(Math.max(0,left));
+      /* the last five seconds are the same in every title, so the shell owns
+         them; a module that forgot would be the only silent one in the pack */
+      if(window.PartySound && left>0 && left<=5) PartySound.tick(left);
       if(left<=0){ clearInterval(timer); timer=null; if(onDone)onDone(); }
     },1000);
   },

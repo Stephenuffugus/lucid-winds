@@ -40,6 +40,9 @@
   <div class="ps-note" id="ps-transport-note">Practice room: every player joins from a tab in this same
   browser. Cloud rooms for real phones arrive with the server switch-on.</div>
 </div>
+<!-- shell owned. Somebody will be playing this at eleven at night with a baby
+     upstairs, so muting is a real control and the choice persists. -->
+<button class="ps-mute" id="ps-mute" type="button" aria-label="Sound on or off"></button>
 <div id="game-root"></div>
 <!-- shell owned: a transport that cannot connect says so here. Silence would
      look identical to "nobody has joined yet", which is the wrong story. -->
@@ -51,6 +54,7 @@ document.addEventListener('party-transport-error',function(e){
 });
 </script>
 <script src="catalogue.js"></script>
+<script src="shell/audio.js"></script>
 <script src="shell/firebase-config.js"></script>
 <script src="shell/transport.js"></script>
 <script src="shell/host.js"></script>
@@ -58,6 +62,20 @@ document.addEventListener('party-transport-error',function(e){
 (function(){
   function $(id){return document.getElementById(id);}
   var CAT=window.WHACKBOX_CATALOGUE||[];
+
+  /* audio cannot start without a gesture, so the first real click on the page
+     is what wakes it: picking a game, or pressing start */
+  function paintMute(){
+    var b=$('ps-mute'); if(!b) return;
+    var on=window.PartySound?PartySound.isOn():false;
+    b.textContent=on?'\u266A':'\u2715';
+    b.classList.toggle('off',!on);
+    b.title=on?'Sound on':'Sound off';
+  }
+  document.addEventListener('click',function(){ if(window.PartySound) PartySound.wake(); },{once:true});
+  var mb=$('ps-mute');
+  if(mb) mb.addEventListener('click',function(){ if(window.PartySound){ PartySound.toggle(); paintMute(); } });
+  paintMute();
   function entry(slug){ for(var i=0;i<CAT.length;i++) if(CAT[i].slug===slug) return CAT[i]; return null; }
 
   function launch(slug){

@@ -25,6 +25,7 @@ root.innerHTML=
 function show(id){ var s=document.querySelectorAll('.ml-screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); $(id).classList.add('on'); }
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 
+function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 var BANK=window.MOTHLIGHT_BANK||[], QS=[], qi=0, scores={}, answers={}, names={}, RM=false;
 try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 /* test hook, ?ml_fast=1 only: shrinks every timer so a full game runs in
@@ -68,6 +69,7 @@ function renderMoths(){
 PartyShell.onPlayerMessage(function(pid,msg){
   if(msg.t==='answer'&&msg.q===qi+1&&$('ml-q').classList.contains('on')){
     answers[qi]=answers[qi]||{}; answers[qi][pid]=!!msg.v; renderMoths();
+    snd('pip');  /* a moth just landed, and the room hears the count rise */
   }
 });
 
@@ -102,6 +104,7 @@ function phaseReveal(){
     var pts = got==='lone'?150:got==='right'?100:0;
     scores[k]=(scores[k]||0)+pts; res[k]={got:got,pts:pts};
   }
+  snd('reveal', correctIds.length>0);
   var winEl=q.answer?$('ml-true'):$('ml-false'), loseEl=q.answer?$('ml-false'):$('ml-true');
   winEl.classList.add('winner'); loseEl.classList.add('dimmed');
   var moths=document.querySelectorAll('.ml-moth');
@@ -125,6 +128,7 @@ function phaseStandings(){
   PartyShell.startTimer(T_STAND,null,phaseQuestion);
 }
 function phasePodium(){
+  snd('fanfare');
   show('ml-pod');
   var ids=Object.keys(names); ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
   var rows='', results={};
