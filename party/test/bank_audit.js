@@ -78,6 +78,12 @@ const banks = [];
     checkText('firefly', e.id, e.text, 80);
     if (!/\?$/.test(e.text)) flag('firefly', e.id, 'is not a question', e.text);
     if (!/^(Have|Do|Can|Did|Would)\b/.test(e.text)) flag('firefly', e.id, 'does not open Have/Do/Can/Did/Would', e.text);
+    /* ⛔ A FORCED CHOICE CANNOT BE ANSWERED YES OR NO, and this game only has a
+       YES and a NO button. "Do you like your toast barely warm or properly
+       dark?" shipped and no button on the phone answers it. Machines cannot
+       reliably tell an inclusive "a whale or a dolphin" from a forced choice,
+       so every "or" is listed for a person to judge rather than failed. */
+    if (/ or /.test(e.text)) soft('firefly', e.id, 'has an "or": check it still answers yes or no', e.text);
   });
   banks.push(['firefly', b.length, 'prompts']);
 }

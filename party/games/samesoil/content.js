@@ -27,7 +27,7 @@
    AUDIT RULE: for each pair ask whether either side could embarrass the person
    who picks it. If yes, cut it. This game only works because answering is safe.
 
-   Launch bank 2026-08-08: 96 pairs. */
+   Launch bank 2026-08-08: 98 pairs. */
 window.SAMESOIL_BANK = [
   {id:'ss-0001', a:'Mountains',        b:'The sea',            category:'places'},
   {id:'ss-0002', a:'Sunrise',          b:'Sunset',             category:'time'},
@@ -124,5 +124,9 @@ window.SAMESOIL_BANK = [
   {id:'ss-0093', a:'Do it now',        b:'Save it for later',  category:'time'},
   {id:'ss-0094', a:'A big mug',        b:'A small cup',        category:'comfort'},
   {id:'ss-0095', a:'A stone path',     b:'A grass path',       category:'places'},
-  {id:'ss-0096', a:'A long story',     b:'A short one',        category:'comfort'}
+  {id:'ss-0096', a:'A long story',     b:'A short one',        category:'comfort'},
+  /* these two arrived as Firefly prompts and could not be answered yes or no.
+     A forced choice is not a bug here, it is the entire format. */
+  {id:'ss-0097', a:'Barely warm toast', b:'Properly dark toast', category:'food'},
+  {id:'ss-0098', a:'Eat the cone',      b:'Leave the cone',      category:'food'}
 ];
