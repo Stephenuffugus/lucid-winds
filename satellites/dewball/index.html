@@ -550,6 +550,89 @@
   function pp(t,a,c,x,y,z,rx,ry,rz){ return {t:t,a:a,c:c,p:[x||0,y||0,z||0],r:[rx||0,ry||0,rz||0]}; }
 
   // =====================================================================
+  //  LANDMARK MOTIFS — 2026-08-08, Stephen: "when we get to the larger sizes
+  //  it's not just a bunch of redundant same little things... we need like
+  //  large structures that are completely unique now."
+  //
+  //  He is right and it measured worse than it sounds. Counting only props big
+  //  enough for the closing minutes: Starfall Bay ends on EIGHT kinds (62 beach
+  //  huts, 34 fish shacks, 34 houseboats, 34 sailboats) and Night Garden has a
+  //  HUNDRED AND FOUR identical wheelbarrows with nothing unique at all. The
+  //  late game is the most repetitive part of every world, and it gets worse
+  //  the bigger the world gets.
+  //
+  //  ⭐ WHY IT HAPPENED, which decides the fix: every big thing in this game is
+  //  five to seven primitives (riad is 7, boathouse is 6), because enormous
+  //  props are the expensive ones to author, so the worlds repeat a handful of
+  //  big kinds forty times each. The scenes layer arranges EXISTING props, so it
+  //  adds composition and never a new silhouette. There has never been a class
+  //  of large one-of-a-kind prop. That is the hole.
+  //
+  //  ⭐ A COMPOSER, NOT FORTY HAND WRITTEN PROPS. Ten structures at thirty parts
+  //  each is three hundred lines of raw coordinates nobody could safely edit
+  //  later. These motifs are to landmarks what _row and _ring are to scenes: a
+  //  landmark becomes a dozen readable lines that yield thirty odd parts, and
+  //  the eleventh one is then an afternoon rather than a week.
+  // =====================================================================
+  function _lmStack(w,d,h,n,c1,c2,y0,taper){
+    // a tapering stack of storeys. The taper is what stops a tower reading as
+    // an extruded box, which is what every current big prop looks like.
+    var a=[],i,y=y0||0,tw=w,td=d,t=(taper===undefined)?0.86:taper;
+    for(i=0;i<n;i++){
+      a.push(pp("box",[tw,h,td],(i%2)?c2:c1,0,y+h/2,0,0,i*0.04,0));
+      y+=h; tw*=t; td*=t;
+    }
+    a._top=y; return a;
+  }
+  function _lmCols(n,rad,colH,colR,c,y0,capC){
+    // a colonnade. Rings of pillars carry a silhouette at distance far better
+    // than a solid wall does, and they cost one primitive each.
+    var a=[],i,y=y0||0;
+    for(i=0;i<n;i++){ var t=6.283*i/n, x=Math.cos(t)*rad, z=Math.sin(t)*rad;
+      a.push(pp("cyl",[colR,colR*1.15,colH,6],c,x,y+colH/2,z));
+      if(capC) a.push(pp("box",[colR*2.8,colH*0.09,colR*2.8],capC,x,y+colH,z));
+    }
+    return a;
+  }
+  function _lmWin(cols,rows,faceW,faceH,z,c,y0,wr){
+    // a grid of lit panes. Windows are the cheapest way to say "this is a
+    // building somebody lives in" rather than "this is a box".
+    var a=[],i,j,ww=faceW/(cols*2.1),wh=faceH/(rows*2.4);
+    for(i=0;i<cols;i++) for(j=0;j<rows;j++){
+      var x=-faceW/2+faceW*(i+0.5)/cols, y=(y0||0)+faceH*(j+0.5)/rows;
+      a.push(pp("card",[ww,wh],c,wr?z:x,y,wr?x:z,0,wr?1.5708:0,0));
+    }
+    return a;
+  }
+  function _lmRoof(w,d,h,c,y0,seg){
+    var a=[]; a.push(pp("cone",[Math.max(w,d)*0.72,h,seg||4],c,0,(y0||0)+h/2,0,0,0.785,0));
+    return a;
+  }
+  function _lmSpire(h,r,c,y0,capC){
+    var a=[],y=y0||0;
+    a.push(pp("cyl",[r*0.35,r,h*0.72,6],c,0,y+h*0.36,0));
+    a.push(pp("cone",[r*0.45,h*0.34,6],c,0,y+h*0.86,0));
+    if(capC) a.push(pp("sph",[r*0.4,6,5],capC,0,y+h*1.04,0));
+    return a;
+  }
+  function _lmSteps(w,d,n,rise,c,y0){
+    var a=[],i,y=y0||0;
+    for(i=0;i<n;i++) a.push(pp("box",[w-i*(w*0.11),rise,d-i*(d*0.16)],c,0,y+rise/2+i*rise,0));
+    return a;
+  }
+  function _lmArch(n,span,h,thick,c,y0){
+    // a run of arches: two legs and a lintel each. Reads as a viaduct, a
+    // cloister or a market front depending only on what sits on top of it.
+    var a=[],i,y=y0||0,step=span/n;
+    for(i=0;i<n;i++){ var x=-span/2+step*(i+0.5);
+      a.push(pp("box",[thick,h,thick*1.2],c,x-step*0.34,y+h/2,0));
+      a.push(pp("box",[thick,h,thick*1.2],c,x+step*0.34,y+h/2,0));
+      a.push(pp("box",[step*0.92,h*0.17,thick*1.25],c,x,y+h+h*0.085,0));
+    }
+    return a;
+  }
+
+  // =====================================================================
   //  PROP BANK — id, display name, size (cm, pickup diameter), parts.
   //  Geometry authored in cm with the base resting at y=0.
   //  opt: {mover:{kind,sp}} for critters, {glow:1} for emissive-ish tint.
@@ -834,6 +917,139 @@
   K("dovecote","Garden Dovecote",260,[ pp("cyl",[52,68,190,8],0xe8e0d0,0,95,0), pp("cone",[72,60,8],0x8a6a44,0,220,0), pp("card",[24,30],0x3a332e,0,150,55), pp("card",[20,24],0x3a332e,40,110,38,0,0.8,0), pp("box",[80,8,80],0x9a8278,0,4,0) ],{fixed:1,volF:0.3});
   K("riad","Riad House",520,[ pp("box",[420,300,300],0xc8a878,0,150,0), pp("box",[430,40,310],0xb08a58,0,320,0), pp("box",[160,220,180],0xd0b088,140,410,0), pp("box",[70,120,12],0x6a4a2e,0,60,152), pp("card",[60,80],0x3f6e8a,-120,180,151), pp("card",[60,80],0x3f6e8a,120,180,151), pp("box",[90,10,90],0xb08a58,140,525,0) ],{fixed:1,volF:0.3});
   K("boathouse","Boathouse",700,[ pp("box",[560,320,420],0x8a6a48,0,160,0), pp("cone",[420,240,4],0x5a7a8e,0,440,0,0,0.785,0), pp("box",[240,260,14],0x4a3a2e,0,130,213), pp("card",[120,90],0xbfe6e0,-180,240,212), pp("cyl",[14,18,180,5],0x6a5030,-300,90,240,0,0,0.3), pp("box",[180,20,60],0xd85a3a,250,330,120,0,0.4,0) ],{fixed:1,volF:0.3});
+
+  // ---- LANDMARKS · one or two in a whole world, and the moment of the run ----
+  // ⚖ LAWS THESE OBEY, all of them learned the hard way already:
+  //   ladder cap    size stays inside goalD*2.9 or it is scenery, not food
+  //   volF economy  fixed props at full volume once detonated the ladder (the
+  //                 bot three starred a world in sixty seconds), so these take
+  //                 the same 0.3 the buildings take
+  //   separation    placed n:1 through ordinary scatter, which already keeps
+  //                 structures apart; nothing new can seal a court
+  // ⭐ Each is twenty five to forty five primitives against the five to seven
+  //   every other big prop has. That difference IS the fix: a silhouette you
+  //   steer toward for a minute has to survive being looked at.
+
+  // w2 Toybox Peaks (goal 70) ------------------------------------------------
+  K("lmDollHouse","The Doll's House",186,_cat(
+    _lmSteps(150,90,3,7,0xb9a48a,0),
+    [ pp("box",[140,86,96],0xe8d8c0,0,64,0), pp("box",[144,7,100],0xd8c0a0,0,110,0) ],
+    _lmWin(3,2,120,70,49,0xffe9a8,26),
+    _lmRoof(150,105,54,0xc2503a,113,4),
+    [ pp("box",[26,40,14],0x8a5a3a,0,41,49), pp("sph",[4,6,5],0xf0d080,9,58,50),
+      pp("cyl",[9,11,30,6],0xa8523a,44,140,0), pp("box",[150,5,5],0xd8c0a0,0,21,50) ]
+  ),{fixed:1,volF:0.3});
+  K("lmCarousel","The Music Box Carousel",152,_cat(
+    [ pp("cyl",[74,80,12,14],0xd8b070,0,6,0) ],
+    _lmCols(8,58,72,6,0xe8dcc8,12),
+    [ pp("cyl",[11,11,104,8],0xc8a84b,0,58,0),
+      pp("cone",[86,44,14],0xc23a4a,0,106,0), pp("cone",[62,26,14],0xe8dcc8,0,128,0),
+      pp("sph",[9,7,6],0xc8a84b,0,146,0) ],
+    _lmCols(4,40,26,7,0xb3688e,20),
+    _lmCols(4,40,20,5,0x4a7ab3,54)
+  ),{fixed:1,volF:0.3});
+
+  // w3 Night Garden (goal 170) ----------------------------------------------
+  K("lmGlasshouse","The Glasshouse",430,_cat(
+    [ pp("box",[380,26,220],0x8a8378,0,13,0) ],
+    _lmCols(10,150,190,9,0xe8ede8,26),
+    [ pp("box",[370,10,210],0xdfe8e4,0,220,0) ],
+    _lmWin(5,3,360,180,106,0xbfe6e0,30),
+    _lmWin(5,3,360,180,-106,0xbfe6e0,30),
+    _lmRoof(390,235,120,0xcfe0dc,228,4),
+    [ pp("cyl",[8,10,60,6],0x8a8378,0,348,0) ]
+  ),{fixed:1,volF:0.3});
+  K("lmSundial","The Moon Sundial",316,_cat(
+    _lmSteps(300,300,4,17,0x9a9ea6,0),
+    [ pp("cyl",[112,120,16,16],0xd8dce0,0,76,0) ],
+    _lmCols(12,96,26,7,0xb8bcc4,84),
+    [ pp("box",[10,150,110],0x6a6e76,0,84,0,0,0,-0.5),
+      pp("sph",[16,8,6],0xf0e0a0,0,196,-44) ]
+  ),{fixed:1,volF:0.3});
+
+  // w4 Bazaar Lane (goal 340) -----------------------------------------------
+  K("lmCaravanGate","The Caravanserai Gate",820,_cat(
+    [ pp("box",[200,520,190],0xc8a878,-300,260,0), pp("box",[200,520,190],0xc8a878,300,260,0),
+      pp("box",[820,150,200],0xd0b088,0,595,0), pp("box",[840,44,215],0xb08a58,0,690,0) ],
+    _lmWin(2,3,150,330,96,0x3f6e8a,140,0),
+    [ pp("cyl",[92,100,120,10],0xd0b088,-300,580,0), pp("cyl",[92,100,120,10],0xd0b088,300,580,0) ],
+    _lmSpire(210,52,0xc8a878,640,0xc8a84b),
+    [ pp("box",[100,300,26],0x6a4a2e,0,150,100), pp("card",[70,70],0x2f8a7a,-300,300,98),
+      pp("card",[70,70],0x2f8a7a,300,300,98), pp("box",[860,16,16],0xb08a58,0,712,0) ]
+  ),{fixed:1,volF:0.3});
+  K("lmSpiceHall","The Spice Exchange",690,_cat(
+    _lmSteps(600,320,3,26,0xb9a48a,0),
+    _lmArch(5,600,230,54,0xd0b088,78),
+    [ pp("box",[620,120,330],0xc8a878,0,368,0) ],
+    _lmWin(6,1,580,90,168,0xffd77a,300,0),
+    [ pp("box",[640,40,350],0xb08a58,0,448,0) ],
+    _lmCols(5,150,90,26,0xd8c0a0,468),
+    [ pp("cone",[210,150,12],0x2f8a7a,0,633,0), pp("sph",[26,7,6],0xc8a84b,0,716,0) ]
+  ),{fixed:1,volF:0.3});
+
+  // w5 Starfall Bay (goal 1600) ---------------------------------------------
+  K("lmPierPavilion","The Pier Pavilion",2650,_cat(
+    _lmCols(14,900,420,58,0x6a5030,0),
+    [ pp("box",[2100,70,1400],0x9a8a70,0,455,0) ],
+    _lmCols(12,640,300,44,0xe8dcc8,490,0xd8dce0),
+    [ pp("box",[1500,140,1000],0xdfe8e4,0,860,0) ],
+    _lmWin(6,2,1450,220,505,0xffe9a8,540),
+    _lmRoof(1700,1150,520,0x3a6e8a,930,8),
+    _lmSpire(420,80,0xe8dcc8,1430,0xc8a84b),
+    [ pp("box",[2100,26,26],0xd8dce0,0,500,700), pp("box",[2100,26,26],0xd8dce0,0,500,-700) ]
+  ),{fixed:1,volF:0.3});
+  K("lmDryDock","The Dry Dock",2280,_cat(
+    [ pp("box",[1900,240,1250],0x8a929a,0,120,0), pp("box",[1500,120,900],0x6a727a,0,300,0) ],
+    _lmCols(8,760,150,70,0x7a828a,240),
+    [ pp("box",[1400,760,420],0x9a7a52,0,660,0,0,0.06,0),
+      pp("box",[1150,300,360],0xa88a5e,0,1180,0,0,0.06,0),
+      pp("cyl",[36,44,900,8],0x6a5030,-260,1300,0), pp("cyl",[30,38,720,8],0x6a5030,300,1200,0),
+      pp("card",[420,540],0xe8dcc8,-260,1560,0), pp("card",[330,430],0xe8dcc8,300,1400,0) ],
+    _lmCols(6,540,260,40,0x8a929a,360),
+    [ pp("box",[1950,50,50],0xc23a4a,0,380,640), pp("box",[1950,50,50],0xc23a4a,0,380,-640) ]
+  ),{fixed:1,volF:0.3});
+  K("lmCannery","The Old Cannery",1940,_cat(
+    [ pp("box",[1500,700,900],0xa8794a,0,350,0) ],
+    _lmWin(7,3,1450,600,455,0xffd77a,80),
+    [ pp("box",[1560,90,960],0x8a5f38,0,745,0) ],
+    _lmRoof(1500,920,300,0x6a4a34,790,4),
+    [ pp("cyl",[100,120,760,10],0xb85a3a,-520,1130,0), pp("cyl",[92,92,60,10],0x8a3f28,-520,1530,0),
+      pp("cyl",[70,84,520,10],0xb85a3a,540,1010,0), pp("cyl",[64,64,44,10],0x8a3f28,540,1290,0),
+      pp("box",[300,220,30],0x4a3a2e,0,240,455) ],
+    _lmCols(5,600,220,34,0x8a6a48,0)
+  ),{fixed:1,volF:0.3});
+
+  // w7 The Whole World (goal 2200) ------------------------------------------
+  K("lmCathedral","The Cathedral",3700,_cat(
+    _lmSteps(1900,900,4,60,0x9a9ea6,0),
+    _lmArch(6,1900,700,150,0xd8dce0,240),
+    [ pp("box",[1750,900,1100],0xe0e4e8,0,1370,0) ],
+    _lmWin(6,2,1700,760,560,0xbfa0e0,960),
+    [ pp("box",[1820,120,1180],0xc8ccd4,0,1880,0) ],
+    _lmRoof(1800,1200,620,0x4a6e7a,1940,4),
+    _lmSpire(1000,190,0xe0e4e8,2540,0xc8a84b),
+    [ pp("cyl",[210,230,1500,8],0xe0e4e8,-820,750,-420), pp("cone",[250,420,8],0x4a6e7a,-820,1700,-420),
+      pp("cyl",[210,230,1500,8],0xe0e4e8,820,750,-420), pp("cone",[250,420,8],0x4a6e7a,820,1700,-420),
+      pp("tor",[260,40,8,16],0xc8a84b,0,1500,570,1.5708,0,0) ]
+  ),{fixed:1,volF:0.3});
+  K("lmAqueduct","The Aqueduct",3100,_cat(
+    _lmArch(4,2900,900,210,0xb9a48a,0),
+    _lmArch(7,2900,520,130,0xc8bca8,1080),
+    [ pp("box",[3000,150,330],0xa8988a,0,1690,0), pp("box",[2900,60,200],0x6a9ea8,0,1780,0) ],
+    _lmCols(4,1200,180,60,0xb9a48a,1770),
+    [ pp("box",[380,300,380],0xc8bca8,-1350,150,0), pp("box",[380,300,380],0xc8bca8,1350,150,0),
+      pp("sph",[70,7,6],0x6a9ea8,0,1830,0) ]
+  ),{fixed:1,volF:0.3});
+  K("lmObservatory","The Observatory",2680,_cat(
+    _lmSteps(1500,1500,5,70,0x8a8e96,0),
+    [ pp("cyl",[560,640,900,16],0xdfe4ea,0,800,0) ],
+    _lmWin(8,2,1100,700,0,0xffe9a8,420,1),
+    _lmCols(16,600,120,44,0xb8bcc4,1250),
+    [ pp("sph",[600,18,12],0xc8d4e0,0,1420,0), pp("box",[240,700,620],0x2a3340,0,1560,180,0,0,0.12),
+      pp("cyl",[110,150,900,10],0x6a727a,60,1620,120,0.5,0,0.2),
+      pp("cyl",[160,160,120,10],0x3a4450,240,2000,300,0.5,0,0.2) ],
+    _lmCols(6,900,90,36,0x8a8e96,350)
+  ),{fixed:1,volF:0.3});
   // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
   K("butterfly","Meadow Butterfly",4.5,[ pp("card",[2.6,2.2],0xe8a0bf,-1.2,4,0,0,0.6,0), pp("card",[2.6,2.2],0xd4a843,1.2,4,0,0,-0.6,0), pp("sph",[0.5,4,3],0x3a2a28,0,4,0) ],{mover:{kind:"dart",sp:2.6}});
   K("dragonflyS","Blue Dragonfly",5,[ pp("cyl",[0.35,0.2,3.6,4],0x4a7ab3,0,4.4,0,0,0,1.57), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,-0.8,0,0.5,0), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,0.8,0,-0.5,0) ],{mover:{kind:"dart",sp:3.4}});
@@ -1121,7 +1337,8 @@
     towns:[{zone:"r:z2",b:["booktower","shoebox"],n:2},
            {zone:"r:z3",b:["booktower","shoebox"],n:2,rows:3,cols:2}],
     scatter:[
-      {k:"marble",n:136,zone:"spawn"},
+       {k:"lmDollHouse",n:1,zone:"far"},{k:"lmCarousel",n:1,zone:"mid"},
+             {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
       {k:"dominoK",n:52,zone:"r:mat"},{k:"puzzlepiece",n:40,zone:"r:mat"},{k:"yoyo",n:22,zone:"r:mat"},
       {k:"paperplane",n:18,zone:"r:mat"},
@@ -1236,7 +1453,8 @@
     towns:[{zone:"r:z2",b:["gardenshed","dovecote"],n:2},
            {zone:"r:z3",b:["greenhouse","gardenshed","dovecote"],n:2,rows:3,cols:2}],
     scatter:[
-      {k:"dewdrop",n:103,zone:"spawn"},
+       {k:"lmGlasshouse",n:1,zone:"far"},{k:"lmSundial",n:1,zone:"mid"},
+             {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
       {k:"tulip",n:115,zone:"r:z1"},{k:"mushroom",n:56,zone:"r:z1"},{k:"flowerpot",n:96,zone:"r:z1"},
       {k:"wateringcan",n:52,zone:"r:z1"},{k:"fernG",n:86,zone:"r:z1"},{k:"slab",n:62,zone:"r:z1"},
@@ -1361,7 +1579,8 @@
     towns:[{zone:"r:z2",b:["riad","teahouse"],n:2},
            {zone:"r:z3",b:["riad","teahouse","doorarch"],n:3,rows:3,cols:2}],
     scatter:[
-      {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
+       {k:"lmCaravanGate",n:1,zone:"r:z3"},{k:"lmSpiceHall",n:1,zone:"r:z2"},
+             {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
       {k:"lemon",n:64,zone:"r:stand"},{k:"apple",n:46,zone:"r:stand"},{k:"pome",n:64,zone:"r:stand"},
       {k:"bread",n:64,zone:"r:stand"},
       {k:"bread",n:85,zone:"r:z1"},{k:"jug",n:95,zone:"r:z1"},{k:"brasslamp",n:64,zone:"r:z1"},
@@ -1481,7 +1700,8 @@
     towns:[{zone:"r:z2",b:["fishshack","houseboat"],n:2},
            {zone:"r:z3",b:["boathouse","beachhut","fishshack"],n:2,rows:3,cols:2}],
     scatter:[
-      {k:"shell",n:106,zone:"spawn"},
+       {k:"lmPierPavilion",n:1,zone:"r:z3"},{k:"lmDryDock",n:1,zone:"r:z3"},{k:"lmCannery",n:1,zone:"r:z2"},
+             {k:"shell",n:106,zone:"spawn"},
       {k:"shell",n:116,zone:"r:tide"},{k:"starfish",n:74,zone:"r:tide"},{k:"bucket",n:59,zone:"r:tide"},
       {k:"seagrass",n:64,zone:"r:tide"},{k:"sandcastle",n:21,zone:"r:tide"},
       {k:"lobsterpot",n:85,zone:"r:z1"},{k:"buoy",n:64,zone:"r:z1"},{k:"netbale",n:55,zone:"r:z1"},
@@ -1606,7 +1826,8 @@
     towns:[{zone:"r:z2",b:["cottage","chapel"],n:3},
            {zone:"r:z3",b:["cottage","windmill","watertower"],n:3,rows:3,cols:2}],
     scatter:[
-      {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
+       {k:"lmCathedral",n:1,zone:"r:z3"},{k:"lmAqueduct",n:1,zone:"r:z3"},{k:"lmObservatory",n:1,zone:"r:z2"},
+             {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
       {k:"pebble",n:198,zone:"r:meadow"},{k:"dewdrop",n:158,zone:"r:meadow"},{k:"mushroom",n:127,zone:"r:meadow"},
       {k:"tulip",n:105,zone:"r:meadow"},{k:"apple",n:88,zone:"r:meadow"},{k:"lemon",n:88,zone:"r:meadow"},
       {k:"shell",n:88,zone:"r:meadow"},{k:"melon",n:57,zone:"r:meadow"},{k:"gnome",n:43,zone:"r:meadow"},
