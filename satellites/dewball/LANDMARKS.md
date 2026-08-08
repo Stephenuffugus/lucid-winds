@@ -221,3 +221,57 @@ the complaint. But it is now comfortable rather than tight: margin went from ~24
 to ~82s. If you want the old tension back, w5's clock goes 195 -> about 170 and
 the near bot still clears it. Your call; I did not want to change a tuned clock
 without you.
+
+---
+
+# ⛔ VERIFICATION OWED (2026-08-08) — read this before believing the tier is done
+
+Eleven structures were added or rebuilt today. The economy is measured and the
+code is checked, but **seven of them have never been looked at**, and on this
+project that means they are not finished. Do not let a green suite stand in for it:
+every real defect found today was found by opening an image, and none by a gate.
+
+## Confirmed placed (world builds, landmark present)
+| level | landmarks | new ones confirmed |
+|---|---|---|
+| w1 Crumb Country | 3 | Longcase Clock |
+| w2 Toybox Peaks | 5 | Jack-in-the-Box |
+| w3 Night Garden | 6 | Armillary Sphere, Moon Bridge |
+| w5 Starfall Bay | 8 | Helter Skelter, Broken Keel, Moored Balloon |
+| w7 Whole World | 6 | (Long Span + Green Bowl rebuilt) |
+| zen Dream Meadow | 8 | — |
+| **w4 Bazaar Lane** | **unconfirmed** | **Great Water Wheel, Silk Pavilion** |
+
+## Looked at, and passed
+Gramophone · Longcase Clock (top clipped in frame — has an `off` override now) ·
+Leaning Library (leans correctly after the rotY fix) · Bay Wheel · Grand Hotel.
+
+## NEVER LOOKED AT — the actual debt
+Jack-in-the-Box (rebuilt coil, unshot) · Topiary Stag (rebuilt in white blossom,
+unshot) · Armillary Sphere · Moon Bridge · Great Water Wheel · Silk Pavilion ·
+Helter Skelter · Broken Keel · Moored Balloon. Also the Green Bowl and Long Span
+were only ever shot with the broken framing that grew the ball to 80-95% of the
+subject, so neither has actually been seen either.
+
+## Why it stopped, and what to run
+This codespace ran out of memory: 128MB free of 7.9GB, with the VS Code server
+holding about 6GB across its node processes. The shot probe cannot build a world
+without the renderer being killed, and `balance.js` over all seven worlds dies with
+`TargetCloseError: Target closed`. Nothing to reap — those are the editor's own
+processes, not orphaned browsers. **Reload the codespace window or restart it to
+reclaim a couple of gigabytes, then:**
+
+    cd satellites/dewball
+    NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js /tmp/lm 4
+    NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js /tmp/lm 5
+    NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js /tmp/lm 3
+    NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js /tmp/lm 6
+    NODE_PATH=/workspaces/lucid-winds/node_modules node variety_audit.js
+    NODE_PATH=/workspaces/lucid-winds/node_modules node balance.js 1 12345 near
+
+⭐ The probe takes a level number as its second argument now, precisely so one
+world can be iterated without a seven-world run that this box cannot survive.
+
+⚖️ And w4 needs its own A/B before it is trusted: two structures at 900 and 820cm
+in a world whose goal is 340cm is proportionally a bigger food injection than the
+three that moved w5 by 58 seconds.
