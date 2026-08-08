@@ -39,7 +39,7 @@ const PLAYERS = parseInt(process.argv[3] || '3', 10);
 const SHOTS = process.env.SHOTS || path.join('/tmp', 'wb-shots', SLUG);
 const puppeteer = require(path.join(ROOT, 'node_modules', 'puppeteer'));
 
-const FAST = { mothlight:'ml_fast=1', firefly:'ff_fast=1', liftingfog:'lf_fast=1', firstfrost:'fr_fast=1' };
+const FAST = { mothlight:'ml_fast=1', firefly:'ff_fast=1', liftingfog:'lf_fast=1', firstfrost:'fr_fast=1', moongraft:'mg_fast=1' };
 const NAMES = ['Ada','Bo','Cy','Del','Eve','Fin','Gus','Hal'];
 const MIME = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png',
   '.jpg':'image/jpeg','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};
@@ -70,7 +70,7 @@ function watch(page, tag) {
 
 function autopilot() {
   try { localStorage.setItem('sws_dev_ok','1'); } catch(e) {}
-  window.__auto = { taps:0, blocked:[], phases:{} };
+  window.__auto = { taps:0, drew:0, blocked:[], phases:{} };
   function hitTap(el){
     var r = el.getBoundingClientRect();
     if (!r.width || !r.height) return 'nosize';
@@ -84,10 +84,45 @@ function autopilot() {
     at.dispatchEvent(new MouseEvent('click', o));
     return reaches ? null : 'covered by ' + (at.id || at.className || at.tagName);
   }
+  /* ⛔ A DRAWING GAME NEEDS THE HARNESS TO DRAW. Tapping buttons alone would
+     have driven Moongraft to a gallery full of blank canvases and reported it
+     proven. This scribbles a real pointer stroke across any live canvas, which
+     is the actual input path a player uses. */
+  function scribble(cv){
+    var r = cv.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    var at = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+    if (!(at === cv || cv.contains(at))) return false;
+    var n = 6 + Math.floor(Math.random()*8);
+    var x = r.left + r.width*(0.15 + Math.random()*0.2);
+    var y = r.top + r.height*(0.15 + Math.random()*0.2);
+    function ev(type, cx, cy){
+      var e;
+      try { e = new PointerEvent(type, {bubbles:true, cancelable:true, clientX:cx, clientY:cy, pointerId:1, isPrimary:true}); }
+      catch(err) { e = new MouseEvent(type.replace('pointer','mouse'), {bubbles:true, cancelable:true, clientX:cx, clientY:cy}); }
+      cv.dispatchEvent(e);
+    }
+    ev('pointerdown', x, y);
+    for (var i=0;i<n;i++){
+      x += (Math.random()-0.35) * r.width * 0.13;
+      y += (Math.random()-0.3) * r.height * 0.13;
+      x = Math.max(r.left+2, Math.min(r.right-2, x));
+      y = Math.max(r.top+2, Math.min(r.bottom-2, y));
+      ev('pointermove', x, y);
+    }
+    try { window.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, clientX:x, clientY:y, pointerId:1, isPrimary:true})); }
+    catch(err) { window.dispatchEvent(new MouseEvent('mouseup', {bubbles:true, clientX:x, clientY:y})); }
+    return true;
+  }
+
   setInterval(function(){
     if (window.__auto.pause) return;
     var on = document.querySelector('#game-root .screen.on');
     if (on && on.id) window.__auto.phases[on.id] = (window.__auto.phases[on.id]||0) + 1;
+
+    var cv = document.querySelector('#game-root .screen.on canvas');
+    if (cv && scribble(cv)) { window.__auto.drew = (window.__auto.drew||0) + 1; }
+
     var btns = document.querySelectorAll('#game-root .screen.on button:not([disabled])');
     if (!btns.length) return;
     var why = hitTap(btns[Math.floor(Math.random()*btns.length)]);
@@ -213,7 +248,7 @@ async function joinPhone(page, base, code, name) {
 
     /* host side NEXT only; the podium's other controls are destructive */
     await host.evaluate(() => {
-      ['ml-next','ff-next','lf-next','fr-next'].forEach(function(id){
+      ['ml-next','ff-next','lf-next','fr-next','mg-next'].forEach(function(id){
         var b = document.getElementById(id);
         if (!b) return;
         var r = b.getBoundingClientRect();
@@ -243,32 +278,31 @@ async function joinPhone(page, base, code, name) {
       if (!back) throw new Error('rejoin failed');
     }
 
-    if (phase.indexOf('pod') >= 0) { log.push('podium reached, ' + ticks + ' polls'); break; }
+    const done = await host.evaluate(() => window.PartyShell.completed());
+    if (done && done.n > 0) { log.push('game completed, ' + ticks + ' polls, final screen ' + phase); break; }
     await sleep(1100);
   }
 
-  const finalPhase = await host.evaluate(() => {
-    const on = [...document.querySelectorAll('#game-root .on')].find(e => e.id);
-    return on ? on.id : 'none';
-  });
-  if (finalPhase.indexOf('pod') < 0) throw new Error('never reached podium, stuck at ' + finalPhase);
+  /* THE CONTRACT, asserted directly instead of inferred from the DOM:
+     gameComplete fires exactly once, and carries every player who was in the
+     room at the start, so the server mints for all of them. */
+  const done = await host.evaluate(() => window.PartyShell.completed());
+  if (!done || done.n === 0) throw new Error('gameComplete never fired');
+  if (done.n !== 1) throw new Error('gameComplete fired ' + done.n + ' times, must be exactly once');
+  const paid = Object.keys(done.results || {}).length;
+  log.push('gameComplete: once, ' + paid + ' participants in the results');
+  if (paid !== PLAYERS) throw new Error('gameComplete carried ' + paid + ' of ' + PLAYERS + ' players');
 
-  /* match a CLASS TOKEN, not the whole className: a frozen player's row is
-     "fr-row out" and testing the full string counted only the survivor */
-  const podRows = await host.$$eval('#game-root .on div', els =>
-    els.filter(e => [...e.classList].some(c => /-(row|standrow)$/.test(c))).length);
-  log.push('podium rows: ' + podRows);
-  if (podRows < PLAYERS) throw new Error('podium listed ' + podRows + ' of ' + PLAYERS + ' players');
-
-  let totalTaps = 0; const blocked = []; const phasesSeen = new Set();
+  let totalTaps = 0, totalDrew = 0; const blocked = []; const phasesSeen = new Set();
   for (let i = 0; i < phones.length; i++) {
     const a = await phones[i].evaluate(() => window.__auto).catch(() => null);
     if (!a) continue;
-    totalTaps += a.taps;
+    totalTaps += a.taps; totalDrew += (a.drew||0);
     a.blocked.forEach(b => blocked.push('phone' + (i+1) + ': ' + b));
     Object.keys(a.phases).forEach(p => phasesSeen.add(p));
   }
   log.push('phone taps that reached their control: ' + totalTaps);
+  if (totalDrew) log.push('real pointer strokes drawn on canvases: ' + totalDrew);
   log.push(blocked.length ? 'BLOCKED TAPS: ' + [...new Set(blocked)].join(' | ')
                           : 'no tap was ever blocked by an overlay');
 

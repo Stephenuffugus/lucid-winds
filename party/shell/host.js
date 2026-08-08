@@ -5,6 +5,7 @@
 var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=null,
     curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3;
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+var completedCount=0, lastResults=null;
 
 function mkCode(){ var c=''; for(var i=0;i<4;i++) c+=ALPHA[Math.floor(Math.random()*ALPHA.length)]; return c; }
 function roster(){ var out=[],k; for(k in PLAYERS) out.push({id:k,name:PLAYERS[k].name,connected:PLAYERS[k].alive>0}); return out; }
@@ -69,7 +70,8 @@ window.PartyShell={
       $('ps-lobby').classList.add('on');
       $('ps-start').addEventListener('click',function(){
         if(roster().length<MIN_PLAYERS) return;
-        started=true; $('ps-lobby').classList.remove('on');
+        started=true; completedCount=0; lastResults=null;
+        $('ps-lobby').classList.remove('on');
         document.dispatchEvent(new CustomEvent('party-started',{detail:{players:roster()}}));
       });
       res({code:CODE});
@@ -93,7 +95,13 @@ window.PartyShell={
     },1000);
   },
   stopTimer:function(){ if(timer){clearInterval(timer);timer=null;} T.send({t:'timer',to:'*',s:null}); },
+  /* the end of a game is "gameComplete fired", not "a screen id contains pod".
+     Moongraft ends on a gallery and the id heuristic called a finished game
+     stuck. This also lets a harness assert the real contract: exactly once,
+     with every participant present. */
+  completed:function(){ return {n:completedCount, results:lastResults}; },
   gameComplete:function(results){
+    completedCount++; lastResults=results;
     /* Server-authoritative minting happens here once the cloud transport is
        switched on (Cloud Function mints for EVERY participant; amounts are
        never client-decided). On the local practice transport there is no

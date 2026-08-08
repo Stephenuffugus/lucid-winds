@@ -21,5 +21,8 @@ window.WHACKBOX_CATALOGUE = [
     min:3, max:8, mins:9 },
   { slug:'firstfrost', name:'First Frost',     glyph:'❄',
     blurb:'Trivia knockout where the players you lose become the weather against you.',
-    min:4, max:8, mins:10 }
+    min:4, max:8, mins:10 },
+  { slug:'moongraft',  name:'Moongraft',       glyph:'❀',
+    blurb:'Everyone secretly draws one piece of the same plant. No scores, and you all keep the card.',
+    min:3, max:8, mins:9 }
 ];
