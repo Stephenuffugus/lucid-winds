@@ -632,6 +632,53 @@
     return a;
   }
 
+  function _lmRingWall(n,rad,h,thick,c,y0,lean){
+    // a CONTINUOUS ring: each box is tangent and overlaps its neighbour, so the
+    // silhouette is a bowl rather than a row of teeth.
+    // ⛔ I built the stadium out of _lmCols first and from orbit it read as a
+    // red cog. Spaced pillars are a colonnade; a bowl needs an unbroken wall.
+    var a=[],i,y=y0||0,ch=2*rad*Math.sin(Math.PI/n)*1.15;
+    for(i=0;i<n;i++){ var t=6.283*i/n, x=Math.cos(t)*rad, z=Math.sin(t)*rad;
+      a.push(pp("box",[ch,h,thick],c,x,y+h/2,z,lean?lean:0,-t,0)); }
+    return a;
+  }
+  function _lmWheel(n,rad,thick,c,carC,y0){
+    // a wheel standing in the vertical plane: rim, spokes and cars.
+    // ⭐ THE BEST SILHOUETTE IN THE GAME FOR THE PART COUNT. A circle against
+    // the sky is legible from anywhere on a round planet, which is the entire
+    // job of a landmark. Twenty parts buy a shape nothing else here has.
+    var a=[],i,y=y0||0,ch=2*rad*Math.sin(Math.PI/n);
+    for(i=0;i<n;i++){ var t=6.283*i/n, x=Math.cos(t)*rad, yy=Math.sin(t)*rad;
+      a.push(pp("box",[ch*1.08,thick,thick*1.4],c,x,y+yy,0,0,0,t+1.5708));
+      a.push(pp("box",[rad,thick*0.55,thick*0.55],c,x/2,y+yy/2,0,0,0,t));
+      if(i%2===0) a.push(pp("box",[thick*3.6,thick*2.8,thick*3.2],carC,x*0.94,y+yy*0.94-thick*2.2,0));
+    }
+    return a;
+  }
+  function _lmCable(x0,y0,x1,y1,sag,n,c,th,z){
+    // a slack line as short straight segments. Cheap, and a curve in the air is
+    // something no other prop in this game has.
+    var a=[],i;
+    for(i=0;i<n;i++){
+      var t0=i/n,t1=(i+1)/n;
+      var ax=x0+(x1-x0)*t0, ay=y0+(y1-y0)*t0-sag*Math.sin(Math.PI*t0);
+      var bx=x0+(x1-x0)*t1, by=y0+(y1-y0)*t1-sag*Math.sin(Math.PI*t1);
+      var dx=bx-ax,dy=by-ay,L=Math.sqrt(dx*dx+dy*dy);
+      a.push(pp("box",[L*1.05,th,th],c,(ax+bx)/2,(ay+by)/2,z||0,0,0,Math.atan2(dy,dx)));
+    }
+    return a;
+  }
+  function _lmTiers(n,w,d,h,gap,cRoof,cWall,y0){
+    // stacked pagoda storeys: wall, overhanging roof, shrink, repeat.
+    var a=[],i,y=y0||0,ww=w,dd=d;
+    for(i=0;i<n;i++){
+      a.push(pp("box",[ww,h,dd],cWall,0,y+h/2,0));
+      a.push(pp("cone",[Math.max(ww,dd)*0.92,h*gap,4],cRoof,0,y+h+h*gap/2,0,0,0.785,0));
+      y+=h+h*gap*0.62; ww*=0.82; dd*=0.82;
+    }
+    a._top=y; return a;
+  }
+
   // =====================================================================
   //  PROP BANK — id, display name, size (cm, pickup diameter), parts.
   //  Geometry authored in cm with the base resting at y=0.
@@ -1050,6 +1097,254 @@
       pp("cyl",[160,160,120,10],0x3a4450,240,2000,300,0.5,0,0.2) ],
     _lmCols(6,900,90,36,0x8a8e96,350)
   ),{fixed:1,volF:0.3});
+
+  // =====================================================================
+  //  LANDMARKS, SECOND WAVE (2026-08-08)
+  //
+  //  ⭐⭐ WHAT LOOKING AT THE FIRST TWELVE TAUGHT ME, and it is the only reason
+  //  this wave looks different from that one. I rendered the first set in world
+  //  at gameplay scale and opened the images, and two things were obvious that
+  //  no test had said:
+  //
+  //    1. DETAIL THAT ONLY READS UP CLOSE IS WASTED ON A LANDMARK. You steer at
+  //       one of these for a minute before you reach it. What has to survive that
+  //       minute is the OUTLINE. Fine trim, window grids and carved caps do
+  //       nothing until you are already there and the decision is made.
+  //    2. PALE STONE DISAPPEARS. The Observatory sat in a skyline of grey slabs
+  //       and white cone trees and read as one more of them. Every prop this game
+  //       already owns is either vivid or grey, and a pale landmark files itself
+  //       under grey.
+  //
+  //  So the law for this wave: ONE SATURATED SIGNATURE COLOUR ON THE LARGEST
+  //  FACES, never on the trim, and height bought at the expense of footprint.
+  //  A wheel, a suspension span and a five tier pagoda are here because their
+  //  shapes are unlike anything else on the planet, not because they are ornate.
+  // =====================================================================
+
+  // w1 Crumb Country (goal 24) ---------------------------------------------
+  K("lmCakeStand","The Fondant Tower",52,_cat(
+    [ pp("cyl",[22,25,3,14],0xe8dcc8,0,1.5,0) ],
+    [ pp("cyl",[19,19,9,14],0xe86a9e,0,7,0), pp("cyl",[21,21,2,14],0xfff2f6,0,12,0),
+      pp("cyl",[14,14,9,14],0xe86a9e,0,17,0), pp("cyl",[16,16,2,14],0xfff2f6,0,22,0),
+      pp("cyl",[9.5,9.5,9,14],0xe86a9e,0,27,0), pp("cyl",[11,11,2,14],0xfff2f6,0,32,0),
+      pp("cyl",[6,6,8,12],0xe86a9e,0,37,0) ],
+    _lmCols(8,13,4,1.1,0xfff2f6,12),
+    _lmCols(6,9,4,1.1,0xfff2f6,22),
+    [ pp("sph",[4.4,8,7],0xc23a4a,0,44,0), pp("cyl",[0.7,0.7,5,5],0x4a7a3a,0,48,0,0.3,0,0.2) ]
+  ),{fixed:1,volF:0.3});
+
+  K("lmTeapotHill","The Great Teapot",58,_cat(
+    [ pp("cyl",[24,27,4,14],0x8a8378,0,2,0) ],
+    [ pp("sph",[22,16,12],0x2f8f8a,0,24,0), pp("cyl",[23,23,3,16],0xf0e8d8,0,26,0) ],
+    [ pp("cyl",[3.2,5.2,20,8],0x2f8f8a,20,26,0,0,0,-0.7),
+      pp("cyl",[2.6,2.6,15,8],0x2f8f8a,-21,30,0,0,0,0.9),
+      pp("cyl",[2.6,2.6,13,8],0x2f8f8a,-25,20,0,0,0,-0.4) ],
+    [ pp("cyl",[13,15,5,14],0x2f8f8a,0,40,0), pp("sph",[4.6,8,6],0xf0c44a,0,45,0) ],
+    _lmCols(7,17,3,1.3,0xf0e8d8,26)
+  ),{fixed:1,volF:0.3});
+
+  K("lmBookTower","The Leaning Library",62,_cat(
+    [ pp("box",[30,3,22],0x6a5a44,0,1.5,0) ],
+    [ pp("box",[26,6,19],0xc23a4a,0,6,0,0,0.05,0), pp("box",[25,5,18],0x2f6f9e,0,11.5,0,0,-0.12,0),
+      pp("box",[24,7,18],0xd8843a,0,17.5,0,0,0.19,0), pp("box",[23,5,17],0x4a8a3a,0,23.5,0,0,-0.05,0),
+      pp("box",[22,6,16],0xb3688e,0,29,0,0,0.26,0), pp("box",[21,5,16],0xf0c44a,0,34.5,0,0,-0.18,0),
+      pp("box",[20,7,15],0x2f8f8a,0,40.5,0,0,0.33,0), pp("box",[18,5,14],0xc23a4a,0,46.5,0,0,-0.28,0),
+      pp("box",[16,5,13],0x2f6f9e,0,51.5,0,0,0.41,0) ],
+    [ pp("card",[24,17],0xf0e8d8,0,6,0,1.5708,0,0.05), pp("card",[22,15],0xf0e8d8,0,17.5,0,1.5708,0,0.19) ],
+    [ pp("cyl",[1,1,10,6],0x8a8378,7,57,4,0.2,0,0.15), pp("sph",[3,7,6],0xf0c44a,8,62,5) ]
+  ),{fixed:1,volF:0.3});
+
+  // w2 Toybox Peaks (goal 70) ------------------------------------------------
+  K("lmBlockFort","The Block Fort",178,_cat(
+    _lmStack(96,96,24,4,0xc23a4a,0x2f6f9e,0,0.9),
+    [ pp("box",[104,14,104],0xf0c44a,0,110,0) ],
+    _lmCols(4,42,34,11,0x4a8a3a,124),
+    [ pp("box",[26,26,26],0xc23a4a,-42,172,-42), pp("box",[26,26,26],0x2f6f9e,42,172,-42),
+      pp("box",[26,26,26],0xf0c44a,-42,172,42), pp("box",[26,26,26],0x4a8a3a,42,172,42) ],
+    [ pp("box",[30,44,10],0x6a4a2a,0,22,50), pp("cyl",[2,2,44,6],0xe8dcc8,0,196,0),
+      pp("card",[26,17],0xc23a4a,13,190,0,0,1.5708,0) ]
+  ),{fixed:1,volF:0.3});
+
+  K("lmToyTrain","The Clockwork Express",190,_cat(
+    [ pp("cyl",[86,86,7,20],0x6a4a2a,0,3.5,0), pp("cyl",[70,70,4,20],0x4a8a3a,0,8,0) ],
+    [ pp("box",[62,17,25],0x2f9e4a,-20,22,0), pp("cyl",[13,13,54,12],0x2f9e4a,-24,33,0,0,0,1.5708),
+      pp("cyl",[10,13,20,10],0x2f9e4a,-52,40,0), pp("box",[24,26,24],0x1a1a24,4,44,0),
+      pp("cyl",[9,9,5,10],0xf0c44a,-52,52,0), pp("sph",[6,8,6],0xc23a4a,-52,57,0) ],
+    [ pp("cyl",[11,11,5,10],0x1a1a24,-40,11,14,0,0,1.5708), pp("cyl",[11,11,5,10],0x1a1a24,-40,11,-14,0,0,1.5708),
+      pp("cyl",[15,15,5,10],0x1a1a24,-8,15,14,0,0,1.5708), pp("cyl",[15,15,5,10],0x1a1a24,-8,15,-14,0,0,1.5708) ],
+    [ pp("box",[40,22,24],0xc23a4a,40,25,0), pp("box",[42,4,26],0xf0c44a,40,38,0),
+      pp("box",[40,22,24],0x2f6f9e,84,25,0), pp("box",[42,4,26],0xf0c44a,84,38,0) ],
+    _lmCols(12,78,10,3,0xd8b070,8)
+  ),{fixed:1,volF:0.3});
+
+  K("lmRocketStand","The Backyard Rocket",166,_cat(
+    [ pp("cyl",[40,46,8,14],0x8a8378,0,4,0) ],
+    _lmCols(4,30,58,7,0x6a6e76,8),
+    [ pp("cyl",[20,22,88,14],0xf0e8d8,0,58,0), pp("cyl",[20.4,20.4,14,14],0xc23a4a,0,44,0),
+      pp("cyl",[20.4,20.4,14,14],0xc23a4a,0,80,0), pp("cone",[22,38,14],0xc23a4a,0,121,0),
+      pp("sph",[5,8,6],0x2f6f9e,0,142,0) ],
+    [ pp("box",[4,34,22],0xc23a4a,0,26,20,0,0,0), pp("box",[4,34,22],0xc23a4a,0,26,-20,0,0,0),
+      pp("box",[22,34,4],0xc23a4a,20,26,0), pp("box",[22,34,4],0xc23a4a,-20,26,0) ],
+    [ pp("card",[16,11],0x4a7ab3,0,72,20.4), pp("cone",[13,20,10],0xf0c44a,0,10,0,3.1416,0,0) ]
+  ),{fixed:1,volF:0.3});
+
+  // w3 Night Garden (goal 170) ----------------------------------------------
+  K("lmDovecote","The Dovecote",372,_cat(
+    _lmSteps(150,150,3,14,0x8a8378,0),
+    [ pp("cyl",[52,66,190,12],0xf0e8d8,0,137,0) ],
+    _lmWin(6,4,300,150,0,0x3a4a9e,80,1),
+    [ pp("cyl",[76,76,16,12],0x3a4a9e,0,240,0) ],
+    _lmRoof(150,150,84,0x3a4a9e,248,12),
+    [ pp("cyl",[6,6,34,6],0xc8a84b,0,340,0), pp("sph",[9,8,6],0xf0c44a,0,360,0),
+      pp("card",[26,18],0xf0e8d8,0,300,0,0,0.4,0) ],
+    _lmCols(6,90,40,11,0xf0e8d8,42)
+  ),{fixed:1,volF:0.3});
+
+  K("lmGazeboPond","The Copper Gazebo",408,_cat(
+    [ pp("cyl",[150,162,12,16],0x6a7a5a,0,6,0), pp("cyl",[132,132,4,16],0x2f6f8a,0,13,0) ],
+    _lmSteps(96,96,3,13,0xb9a48a,12),
+    [ pp("cyl",[80,86,10,16],0xe8dcc8,0,56,0) ],
+    _lmCols(10,72,120,11,0xf0e8d8,61,0xb8642a),
+    [ pp("cyl",[86,86,9,16],0xb8642a,0,186,0) ],
+    _lmRoof(168,168,112,0xb8642a,190,16),
+    [ pp("cyl",[7,7,44,6],0xb8642a,0,310,0), pp("sph",[13,9,7],0xf0c44a,0,336,0) ],
+    _lmCols(6,140,26,9,0x6a7a5a,12)
+  ),{fixed:1,volF:0.3});
+
+  // w4 Bazaar Lane (goal 340) -----------------------------------------------
+  K("lmClockTower","The Saffron Clock",790,_cat(
+    _lmSteps(300,300,4,34,0xb9a48a,0),
+    _lmStack(200,200,120,4,0xc2542a,0xa8442a,136,0.93),
+    _lmWin(3,4,190,380,0,0xffe9a8,170,0),
+    _lmWin(3,4,190,380,0,0xffe9a8,170,1),
+    [ pp("cyl",[128,128,26,16],0xf0c44a,0,630,0) ],
+    [ pp("cyl",[72,72,14,20],0xf0e8d8,0,690,101,1.5708,0,0),
+      pp("cyl",[72,72,14,20],0xf0e8d8,0,690,-101,1.5708,0,0),
+      pp("cyl",[72,72,14,20],0xf0e8d8,101,690,0,1.5708,0,1.5708),
+      pp("box",[6,52,4],0x2a2018,0,704,108), pp("box",[38,5,4],0x2a2018,15,690,108,0,0,0.5) ],
+    [ pp("box",[196,140,196],0xc2542a,0,690,0) ],
+    _lmCols(8,86,44,15,0xf0c44a,760),
+    _lmRoof(210,210,150,0x2f8f8a,806,8),
+    [ pp("cyl",[9,9,60,6],0xf0c44a,0,950,0), pp("sph",[17,9,7],0xf0c44a,0,986,0) ]
+  ),{fixed:1,volF:0.3});
+
+  K("lmBathHouse","The Turquoise Baths",672,_cat(
+    [ pp("box",[420,120,300],0xe0d0b0,0,60,0) ],
+    _lmArch(5,400,150,34,0xe8dcc8,120),
+    _lmWin(6,2,380,120,0,0xffe9a8,150,0),
+    [ pp("box",[430,26,310],0x1fa89e,0,308,0) ],
+    [ pp("sph",[112,18,10],0x1fa89e,-110,330,0), pp("sph",[72,16,9],0x1fa89e,90,330,-60),
+      pp("sph",[72,16,9],0x1fa89e,90,330,60), pp("sph",[54,14,8],0x1fa89e,0,330,0) ],
+    [ pp("cyl",[10,10,52,6],0xf0c44a,-110,470,0), pp("sph",[16,8,6],0xf0c44a,-110,500,0),
+      pp("cyl",[7,7,32,6],0xf0c44a,90,398,-60), pp("cyl",[7,7,32,6],0xf0c44a,90,398,60) ],
+    [ pp("cyl",[36,40,220,10],0xe8dcc8,-236,110,-170), pp("cone",[42,60,10],0x1fa89e,-236,250,-170),
+      pp("cyl",[36,40,220,10],0xe8dcc8,236,110,-170), pp("cone",[42,60,10],0x1fa89e,236,250,-170) ],
+    _lmSteps(280,140,4,26,0xb9a48a,0)
+  ),{fixed:1,volF:0.3});
+
+  // w5 Starfall Bay (goal 1600) ---------------------------------------------
+  K("lmFerrisWheel","The Bay Wheel",3400,_cat(
+    [ pp("box",[900,120,700],0x5a6470,0,60,0) ],
+    [ pp("box",[150,1500,150],0x6a7480,-420,870,0,0,0,0.22),
+      pp("box",[150,1500,150],0x6a7480,420,870,0,0,0,-0.22),
+      pp("box",[150,1400,150],0x6a7480,-380,820,-300,0.2,0,0.2),
+      pp("box",[150,1400,150],0x6a7480,380,820,-300,0.2,0,-0.2) ],
+    _lmWheel(16,1100,90,0xc23a4a,0xf0e8d8,1620),
+    [ pp("cyl",[160,160,240,14],0xf0c44a,0,1620,0,1.5708,0,0),
+      pp("sph",[130,12,9],0xf0c44a,0,1620,140) ],
+    [ pp("box",[600,180,400],0xc23a4a,0,210,420), pp("box",[640,26,440],0xf0c44a,0,312,420),
+      pp("cyl",[9,9,120,6],0xf0e8d8,0,380,420) ],
+    _lmCols(8,760,110,34,0xf0c44a,0)
+  ),{fixed:1,volF:0.3});
+
+  K("lmGrandHotel","The Grand Hotel",2980,_cat(
+    _lmSteps(1100,600,4,80,0xb9a48a,0),
+    _lmStack(1300,760,300,4,0xd8843a,0xc2742a,320,0.94),
+    _lmWin(9,4,1240,1080,0,0xffe9a8,380,0),
+    _lmWin(6,4,700,1080,0,0xffe9a8,380,1),
+    [ pp("box",[1360,50,820],0xf0e8d8,0,300,0), pp("box",[1180,44,700],0xf0e8d8,0,1560,0) ],
+    _lmRoof(1180,700,340,0x2f5a8e,1580,8),
+    [ pp("cyl",[80,96,420,12],0xd8843a,-520,1700,-260), pp("cone",[100,180,10],0x2f5a8e,-520,2000,-260),
+      pp("cyl",[80,96,420,12],0xd8843a,520,1700,-260), pp("cone",[100,180,10],0x2f5a8e,520,2000,-260) ],
+    _lmSpire(560,110,0xf0e8d8,1900,0xf0c44a),
+    [ pp("box",[560,180,300],0xf0c44a,0,400,470), pp("card",[420,90],0xc23a4a,0,560,472) ],
+    _lmCols(6,420,260,52,0xf0e8d8,320)
+  ),{fixed:1,volF:0.3});
+
+  // w6 Dream Meadow (zen, everything at once) -------------------------------
+  K("lmMoonGate","The Moon Gate",540,_cat(
+    [ pp("cyl",[230,250,26,20],0x4a4270,0,13,0) ],
+    _lmWheel(18,200,34,0xb37ad8,0xe8c8f0,240),
+    [ pp("box",[70,240,70],0x6a5a9e,-206,120,0), pp("box",[70,240,70],0x6a5a9e,206,120,0),
+      pp("sph",[44,12,9],0xf0e0a0,0,240,0) ],
+    _lmCols(8,160,60,13,0xe8c8f0,26),
+    [ pp("card",[120,120],0xf0e0a0,0,240,-6) ]
+  ),{fixed:1,volF:0.3});
+
+  K("lmPagoda","The Sleeping Pagoda",880,_cat(
+    _lmSteps(400,400,4,36,0x6a5a9e,0),
+    _lmTiers(5,300,300,110,0.62,0xd23a2a,0xf0e8d8,144),
+    _lmCols(8,168,120,22,0xd23a2a,144),
+    [ pp("cyl",[13,13,150,8],0xf0c44a,0,700,0), pp("sph",[28,9,7],0xf0c44a,0,790,0),
+      pp("sph",[17,8,6],0xf0e0a0,0,826,0) ],
+    _lmWin(3,1,280,90,0,0xffe9a8,180,0),
+    _lmWin(3,1,280,90,0,0xffe9a8,180,1)
+  ),{fixed:1,volF:0.3});
+
+  K("lmStoneCircle","The Dreaming Stones",760,_cat(
+    [ pp("cyl",[330,350,20,22],0x4a4270,0,10,0) ],
+    _lmCols(9,270,300,46,0x8a84a8,20),
+    _lmArch(3,520,300,54,0x8a84a8,20),
+    [ pp("sph",[54,10,8],0xb37ad8,0,360,0,0,0,0), pp("cyl",[60,64,40,16],0x6a5a9e,0,40,0) ],
+    _lmCols(5,150,90,26,0x6a5a9e,20),
+    [ pp("card",[180,180],0xf0e0a0,0,200,0,1.5708,0,0) ]
+  ),{fixed:1,volF:0.3});
+
+  // w7 The Whole World (goal 2200) ------------------------------------------
+  K("lmSuspBridge","The Long Span",5200,_cat(
+    [ pp("box",[4600,110,520],0xa8442a,0,760,0) ],
+    [ pp("box",[4600,40,60],0xd8542a,0,830,250), pp("box",[4600,40,60],0xd8542a,0,830,-250) ],
+    [ pp("box",[300,1900,300],0xc23a4a,-1500,950,0), pp("box",[300,1900,300],0xc23a4a,1500,950,0),
+      pp("box",[420,80,420],0xc23a4a,-1500,1880,0), pp("box",[420,80,420],0xc23a4a,1500,1880,0),
+      pp("box",[400,70,400],0xc23a4a,-1500,1420,0), pp("box",[400,70,400],0xc23a4a,1500,1420,0) ],
+    _lmCable(-1500,1880,1500,1880,900,10,0xd8542a,52,250),
+    _lmCable(-1500,1880,1500,1880,900,10,0xd8542a,52,-250),
+    _lmCable(-2300,760,-1500,1880,120,4,0xd8542a,44,250),
+    _lmCable(1500,1880,2300,760,120,4,0xd8542a,44,250),
+    [ pp("box",[220,300,600],0x8a8e96,-2300,150,0), pp("box",[220,300,600],0x8a8e96,2300,150,0) ],
+    _lmCols(6,1200,700,80,0x8a8e96,0)
+  ),{fixed:1,volF:0.3});
+
+  K("lmStadium","The Green Bowl",4600,_cat(
+    [ pp("cyl",[1500,1500,40,24],0x2f9e4a,0,20,0) ],
+    [ pp("box",[1400,20,900],0x3aae56,0,44,0), pp("box",[8,22,880],0xf0e8d8,0,48,0),
+      pp("box",[900,22,8],0xf0e8d8,0,48,-440), pp("box",[900,22,8],0xf0e8d8,0,48,440) ],
+    _lmRingWall(26,1700,520,180,0xe0d8c4,40,-0.16),
+    _lmRingWall(26,1880,300,160,0xc2542a,540,0),
+    [ pp("cyl",[2050,2050,90,32],0xf0e8d8,0,880,0), pp("cyl",[1820,1820,50,32],0x2a3340,0,860,0) ],
+    _lmRingWall(26,1980,80,120,0xc2542a,880,0),
+    [ pp("cyl",[80,80,1300,8],0x8a8e96,-1500,650,1500), pp("box",[420,150,70],0xffe9a8,-1500,1330,1500),
+      pp("cyl",[80,80,1300,8],0x8a8e96,1500,650,1500), pp("box",[420,150,70],0xffe9a8,1500,1330,1500),
+      pp("cyl",[80,80,1300,8],0x8a8e96,-1500,650,-1500), pp("box",[420,150,70],0xffe9a8,-1500,1330,-1500),
+      pp("cyl",[80,80,1300,8],0x8a8e96,1500,650,-1500), pp("box",[420,150,70],0xffe9a8,1500,1330,-1500) ],
+    [ pp("box",[520,420,220],0xc2542a,0,210,1900), pp("box",[560,60,260],0xf0c44a,0,440,1900) ]
+  ),{fixed:1,volF:0.28});
+
+  K("lmPalace","The Gilded Palace",3900,_cat(
+    _lmSteps(2000,1100,5,90,0xe0d0b0,0),
+    [ pp("box",[2200,700,1200],0xf0e8d8,0,800,0) ],
+    _lmWin(11,3,2100,560,0,0xffe9a8,520,0),
+    _lmArch(7,2000,420,90,0xe8dcc8,450),
+    [ pp("box",[2300,70,1300],0xf0c44a,0,1180,0) ],
+    [ pp("sph",[420,20,12],0xf0c44a,0,1300,0), pp("sph",[240,16,10],0xf0c44a,-760,1260,0),
+      pp("sph",[240,16,10],0xf0c44a,760,1260,0) ],
+    [ pp("cyl",[26,26,240,8],0xf0e8d8,0,1740,0), pp("sph",[52,9,7],0xf0e8d8,0,1880,0),
+      pp("cyl",[18,18,150,8],0xf0e8d8,-760,1560,0), pp("cyl",[18,18,150,8],0xf0e8d8,760,1560,0) ],
+    [ pp("cyl",[110,130,1500,12],0xf0e8d8,-1180,750,-520), pp("sph",[130,14,9],0xf0c44a,-1180,1560,-520),
+      pp("cyl",[110,130,1500,12],0xf0e8d8,1180,750,-520), pp("sph",[130,14,9],0xf0c44a,1180,1560,-520) ],
+    _lmCols(8,700,300,80,0xf0c44a,450)
+  ),{fixed:1,volF:0.3});
+
   // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
   K("butterfly","Meadow Butterfly",4.5,[ pp("card",[2.6,2.2],0xe8a0bf,-1.2,4,0,0,0.6,0), pp("card",[2.6,2.2],0xd4a843,1.2,4,0,0,-0.6,0), pp("sph",[0.5,4,3],0x3a2a28,0,4,0) ],{mover:{kind:"dart",sp:2.6}});
   K("dragonflyS","Blue Dragonfly",5,[ pp("cyl",[0.35,0.2,3.6,4],0x4a7ab3,0,4.4,0,0,0,1.57), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,-0.8,0,0.5,0), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,0.8,0,-0.5,0) ],{mover:{kind:"dart",sp:3.4}});
@@ -1228,6 +1523,7 @@
       {k:"sugarbowl",n:55,zone:"mid"},{k:"candle",n:46,zone:"mid"},{k:"fork",n:57,zone:"mid"},
       {k:"plateK",n:51,zone:"mid"},{k:"jamjar",n:57,zone:"mid"},
       {k:"teacup",n:88,zone:"far"},{k:"juicebox",n:88,zone:"far"},{k:"sandwich",n:99,zone:"far"},
+      {k:"lmCakeStand",n:1,zone:"far"},{k:"lmTeapotHill",n:1,zone:"far"},{k:"lmBookTower",n:1,zone:"mid"},
       {k:"banana",n:99,zone:"far"},{k:"teapot",n:51,zone:"far"},{k:"thermos",n:51,zone:"far"},
       {k:"melon",n:68,zone:"far"},{k:"basket",n:37,zone:"far"},{k:"thermchair",n:15,zone:"far"},
       {k:"pie",n:37,zone:"far"},{k:"winebottle",n:51,zone:"far"},{k:"radio",n:18,zone:"far"},
@@ -1338,6 +1634,7 @@
            {zone:"r:z3",b:["booktower","shoebox"],n:2,rows:3,cols:2}],
     scatter:[
        {k:"lmDollHouse",n:1,zone:"far"},{k:"lmCarousel",n:1,zone:"mid"},
+      {k:"lmBlockFort",n:1,zone:"far"},{k:"lmToyTrain",n:1,zone:"far"},{k:"lmRocketStand",n:1,zone:"mid"},
              {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
       {k:"dominoK",n:52,zone:"r:mat"},{k:"puzzlepiece",n:40,zone:"r:mat"},{k:"yoyo",n:22,zone:"r:mat"},
@@ -1454,6 +1751,7 @@
            {zone:"r:z3",b:["greenhouse","gardenshed","dovecote"],n:2,rows:3,cols:2}],
     scatter:[
        {k:"lmGlasshouse",n:1,zone:"far"},{k:"lmSundial",n:1,zone:"mid"},
+      {k:"lmDovecote",n:1,zone:"r:z3"},{k:"lmGazeboPond",n:1,zone:"r:z2"},
              {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
       {k:"tulip",n:115,zone:"r:z1"},{k:"mushroom",n:56,zone:"r:z1"},{k:"flowerpot",n:96,zone:"r:z1"},
@@ -1580,6 +1878,7 @@
            {zone:"r:z3",b:["riad","teahouse","doorarch"],n:3,rows:3,cols:2}],
     scatter:[
        {k:"lmCaravanGate",n:1,zone:"r:z3"},{k:"lmSpiceHall",n:1,zone:"r:z2"},
+      {k:"lmClockTower",n:1,zone:"r:z3"},{k:"lmBathHouse",n:1,zone:"r:z2"},
              {k:"lemon",n:94,zone:"spawn"},{k:"apple",n:56,zone:"spawn"},
       {k:"lemon",n:64,zone:"r:stand"},{k:"apple",n:46,zone:"r:stand"},{k:"pome",n:64,zone:"r:stand"},
       {k:"bread",n:64,zone:"r:stand"},
@@ -1701,6 +2000,7 @@
            {zone:"r:z3",b:["boathouse","beachhut","fishshack"],n:2,rows:3,cols:2}],
     scatter:[
        {k:"lmPierPavilion",n:1,zone:"r:z3"},{k:"lmDryDock",n:1,zone:"r:z3"},{k:"lmCannery",n:1,zone:"r:z2"},
+      {k:"lmFerrisWheel",n:1,zone:"r:z3"},{k:"lmGrandHotel",n:1,zone:"r:z3"},
              {k:"shell",n:106,zone:"spawn"},
       {k:"shell",n:116,zone:"r:tide"},{k:"starfish",n:74,zone:"r:tide"},{k:"bucket",n:59,zone:"r:tide"},
       {k:"seagrass",n:64,zone:"r:tide"},{k:"sandcastle",n:21,zone:"r:tide"},
@@ -1827,6 +2127,7 @@
            {zone:"r:z3",b:["cottage","windmill","watertower"],n:3,rows:3,cols:2}],
     scatter:[
        {k:"lmCathedral",n:1,zone:"r:z3"},{k:"lmAqueduct",n:1,zone:"r:z3"},{k:"lmObservatory",n:1,zone:"r:z2"},
+      {k:"lmSuspBridge",n:1,zone:"r:z4"},{k:"lmStadium",n:1,zone:"r:z4"},{k:"lmPalace",n:1,zone:"r:z3"},
              {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
       {k:"pebble",n:198,zone:"r:meadow"},{k:"dewdrop",n:158,zone:"r:meadow"},{k:"mushroom",n:127,zone:"r:meadow"},
       {k:"tulip",n:105,zone:"r:meadow"},{k:"apple",n:88,zone:"r:meadow"},{k:"lemon",n:88,zone:"r:meadow"},
@@ -1956,6 +2257,9 @@
       {k:"apple",n:52,zone:"mid"},{k:"duck",n:36,zone:"mid"},{k:"tulip",n:57,zone:"mid"},
       {k:"dreamgrass",n:81,zone:"mid"},{k:"teacup",n:32,zone:"mid"},{k:"sandwich",n:28,zone:"mid"},
       {k:"lantern",n:21,zone:"far"},{k:"jug",n:25,zone:"far"},{k:"teddy",n:13,zone:"far"},
+      {k:"lmMoonGate",n:1,zone:"mid"},{k:"lmPagoda",n:1,zone:"far"},{k:"lmStoneCircle",n:1,zone:"far"},
+      {k:"lmCarousel",n:1,zone:"near"},{k:"lmGazeboPond",n:1,zone:"mid"},{k:"lmDovecote",n:1,zone:"far"},
+      {k:"lmClockTower",n:1,zone:"far"},{k:"lmBookTower",n:1,zone:"near"},
       {k:"wheelbarrow",n:15,zone:"mid"},{k:"driftwood",n:13,zone:"far"},{k:"anchor",n:10,zone:"far"},{k:"bicycle",n:10,zone:"far"},
       {k:"moonstone",n:28,zone:"far"},{k:"gnome",n:13,zone:"far"},{k:"barrel",n:13,zone:"far"},
       {k:"birdbath",n:10,zone:"far"},{k:"cloudpuff",n:21,zone:"far"},{k:"benchG",n:4,zone:"far"},
@@ -2242,11 +2546,47 @@
       return false;
     }
     var _kseed=0;
+    // ⛔⛔ COURT MOUTHS ARE NO-GO FOR BIG FIXED PROPS. A hand-placed structure
+    // that declares court: has ONE doorway, and a landmark is a wall until you
+    // outgrow it, so a landmark that lands on the doorway seals the loot inside.
+    // This is not hypothetical: adding the second landmark wave sealed w3's
+    // court 145 and w7's court 1900 on the first run.
+    //
+    // ⭐ AND THE REAL LESSON IS WHY IT HAPPENED. Scatter draws from ONE seeded
+    // stream, so ADDING ANY ENTRY SHIFTS EVERY LATER PLACEMENT IN THAT WORLD.
+    // The seal was not caused by the prop that plugged the door, it was caused
+    // by a content edit two hundred lines earlier. So the fix has to be a rule
+    // the placer enforces, never "nudge that one landmark": otherwise the next
+    // person to add a teacup re-seals a court and cannot possibly guess why.
+    var NOGO=[];
+    if(W.sets) for(var ng=0;ng<W.sets.length;ng++){ var sg=W.sets[ng];
+      if(!sg.court) continue;
+      var gex=0;
+      for(var gj=0;gj<sg.items.length;gj++){ var git=sg.items[gj];
+        var ger=Math.sqrt(git[1]*git[1]+git[2]*git[2])+PROPS[git[0]].s*(git[4]||1);
+        if(ger>gex) gex=ger; }
+      NOGO.push({x:sg.x,z:sg.z,r:gex+sg.court*0.8}); }
+    function clearOfCourts(x,z,sz){
+      for(var q=0;q<NOGO.length;q++){ var n=NOGO[q];
+        var dx=wrapD(x-n.x), dz=wrapD(z-n.z);
+        if(dx*dx+dz*dz < (n.r+sz*0.75)*(n.r+sz*0.75)) return false; }
+      return true;
+    }
+    function spotClear(zone,sz){
+      var q,pp2;
+      for(q=0;q<10;q++){ pp2=placeInZone(W,zone,rng);
+        if(clearOfCourts(pp2[0],pp2[1],sz)) return pp2; }
+      return pp2;
+    }
     for(i=0;i<W.scatter.length;i++){ e=W.scatter[i];
       if(!byKind[e.k]) byKind[e.k]=[];
       var k0=PROPS[e.k];
       if(e.keep){ var pk=placeInZone(W,e.zone,rng);
         byKind[e.k].push({x:pk[0],z:pk[1],rot:rng()*6.283,sc:1,keep:k0.nm}); continue; }
+      if(k0.fixed){                                    // walls and landmarks only
+        for(var fj=0;fj<e.n;fj++){ var fs=spotClear(e.zone,k0.s);
+          byKind[e.k].push({x:fs[0],z:fs[1],rot:rng()*6.283,sc:1,keep:null}); }
+        continue; }
       var A=zoneAnchors(e.zone), nA=A.length;
       var kn=Math.max(1,Math.min(6,Math.ceil(e.n/9)));       // this kind lives on 1-4 anchors
       var base=(_kseed++)%nA;

@@ -15,11 +15,17 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
 var OUT = process.argv[2] || '/tmp/dewball-landmarks';
 
 var PLAN = [
-  { w:2, kinds:['lmDollHouse','lmCarousel'] },
-  { w:3, kinds:['lmGlasshouse','lmSundial'] },
-  { w:4, kinds:['lmCaravanGate','lmSpiceHall'] },
-  { w:5, kinds:['lmPierPavilion','lmDryDock','lmCannery'] },
-  { w:6, kinds:['lmCathedral','lmAqueduct','lmObservatory'] }   // w7 is index 6
+  // ⛔ w HERE IS A 1-BASED LEVEL NUMBER, not an array index: DB_DEV.start does
+  // idx=n-1. And the ARRAY runs w1..w5, w7, w6, so level 6 is THE WHOLE WORLD
+  // and level 7 is Dream Meadow. Get this wrong and the probe cheerfully shoots
+  // the wrong planet and reports success.
+  { w:1, kinds:['lmCakeStand','lmTeapotHill','lmBookTower'] },
+  { w:2, kinds:['lmBlockFort','lmToyTrain','lmRocketStand'] },
+  { w:3, kinds:['lmDovecote','lmGazeboPond'] },
+  { w:4, kinds:['lmClockTower','lmBathHouse'] },
+  { w:5, kinds:['lmFerrisWheel','lmGrandHotel'] },
+  { w:6, kinds:['lmSuspBridge','lmStadium','lmPalace'] },
+  { w:7, kinds:['lmMoonGate','lmPagoda','lmStoneCircle'] }
 ];
 
 (async function(){
@@ -56,26 +62,42 @@ var PLAN = [
 
       if (!found){ report.push(kind+': NOT PLACED in world '+plan.w); continue; }
 
-      /* ⛔ POSITIONING IS NOT AIMING. The camera trails the ball along its
-         HEADING, so parking the ball near a landmark leaves the landmark behind
-         the camera about half the time, and the first pass of this shot showed
-         a lovely empty beach. Park back along one axis, then roll TOWARD the
-         landmark and let the camera swing in behind. */
-      await page.evaluate(function(a){
-        var D = window.DB_DEV;
-        D.setD(Math.max(4, a.s*0.62));
-        var off = a.s*2.2;
-        D.setPos(a.x - off, a.z - off);
-        D.roll(0.75, 0.75);                 /* head toward it */
-        for (var i=0;i<150;i++) D.step(0.016);
-        D.roll(0,0);
-        for (var j=0;j<20;j++) D.step(0.016);
-      }, found);
-      await new Promise(function(r){ setTimeout(r, 350); });
+      /* ⛔⛔ POSITIONING IS NOT AIMING, AND AIMING BY DRIVING OVERSHOOTS. The
+         camera trails the ball along its HEADING, so parking next to a landmark
+         leaves it behind the camera half the time. The first fix was to roll
+         toward it, which aimed correctly and then drove straight past: 150 steps
+         is 2.4 seconds of travel and the Block Fort shot came back as an empty
+         playroom floor with the fort somewhere off camera.
+         So: roll a SHORT burst to establish heading, re-park at the framing
+         distance without touching the heading, then coast. */
+      async function shoot(a, dscale, offscale, suffix){
+        await page.evaluate(function(o){
+          var D = window.DB_DEV, a = o.a;
+          D.setD(Math.max(4, a.s*o.d));
+          var off = a.s*o.off, k = 0.7071;              /* park on the diagonal */
+          D.setPos(a.x - off*k, a.z - off*k);
+          D.roll(0.75, 0.75);
+          for (var i=0;i<24;i++) D.step(0.016);          /* just enough to turn */
+          D.roll(0,0);
+          D.setPos(a.x - off*k, a.z - off*k);            /* undo the drift */
+          for (var j=0;j<26;j++) D.step(0.016);          /* let the camera settle */
+        }, { a:a, d:dscale, off:offscale });
+        await new Promise(function(r){ setTimeout(r, 700); });
+        await page.evaluate(function(){ if(window.DB_DEV.render) window.DB_DEV.render(); });
+        await page.screenshot({ path: path.join(OUT, kind+suffix+'.png') });
+      }
       /* let the world intro card fade, or it sits over the shot */
-      await new Promise(function(r){ setTimeout(r, 1400); });
-      await page.evaluate(function(){ if(window.DB_DEV.render) window.DB_DEV.render(); });
-      await page.screenshot({ path: path.join(OUT, kind+'.png') });
+      await new Promise(function(r){ setTimeout(r, 1500); });
+      /* ⭐ TWO SHOTS, per the project rule. The first is where the PLAYER stands
+         when they meet it. The second is the wide one, because a landmark that
+         only works in close-up is not doing the job a landmark is for. */
+      await shoot(found, 0.42, 1.9, '');
+      /* ⛔ THE WIDE SHOT MUST NOT GROW THE BALL. Camera distance is tied to ball
+         size here, so my first "wide" set the ball to 1.3x the landmark, and it
+         simply ATE it: the frame came back as a 60m ball on a stripped planet
+         with a x16 combo counter. Wide means standing further back at the same
+         size, which is also what the player actually experiences. */
+      await shoot(found, 0.42, 6.0, '-wide');
       report.push(kind+': placed at '+Math.round(found.x)+','+Math.round(found.z)+'  size '+Math.round(found.s)+'cm');
     }
   }
