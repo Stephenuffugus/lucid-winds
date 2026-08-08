@@ -92,3 +92,86 @@ to look photographic rather than built from blocks. Then it is worth exporting a
 handful of GLBs for the marquee few, because at one instance each the cost is
 affordable and the payoff is visible. Doing it first would be building a pipeline
 to answer a question nobody has asked yet.
+
+---
+
+# Wave two, looked at (2026-08-08)
+
+Both gates are green: `SMOKE_PASS` (ladder intact, every court flood-fills
+reachable) and `BALANCE_PASS` near-bot seed 12345 — w5 `t190` 173.3s against a
+195s clock, which is *more* margin than the 16s recorded at v4.5, and w7 79.2s
+against 300s. All 30 landmark sizes clear the `goalD * 2.9` cap. The economy
+survived 35 new fixed props.
+
+**Then I opened the 36 images, and found nine things no gate had said.** Listed
+worst first. This is the third time on this project that looking has beaten a
+green suite, so it goes in the doc rather than in a commit message.
+
+## 1. ⛔⛔ Two of w1's three landmarks duplicate a silhouette w1 already scatters
+
+| landmark | size | the prop it duplicates | that prop's size | how many |
+|---|---|---|---|---|
+| `lmCakeStand` The Fondant Tower | 52cm | `cakestand` Cake Stand | **62cm** | 4 |
+| `lmTeapotHill` The Great Teapot | 58cm | `teapot` Tea Pot | 22cm | **77** |
+
+The Fondant Tower is **smaller than the ordinary prop it echoes**. The Great
+Teapot is the seventy-eighth teapot in Crumb Country, 2.6x scaled. This is
+precisely the complaint the tier was built to answer — a bigger teapot among 77
+teapots is still a redundant same thing. ⚖️ **LAW: a landmark's silhouette must
+not exist anywhere in its own world's scatter.** Check the scatter list before
+choosing a shape, not after.
+
+## 2. ⛔ `lmStadium` is pale cream on its largest faces
+
+`_lmRingWall(26, 1700, 520, 180, 0xe0d8c4, ...)` — 26 segments 520 tall is the
+biggest surface in the model, and `0xe0d8c4` is pale stone. The saturated orange
+sits only on the second ring and the trim. This is the Observatory mistake from
+wave one, repeated in the same commit that wrote the law against it (see the
+wave-two header comment). Pale reads as one more grey slab in w7's skyline.
+
+## 3. ⛔ Globe curvature splays ring motifs into debris
+
+On w7 the stadium does not read as a bowl. Each `_lmRingWall` segment is seated
+on its own surface normal, so a flat ring of radius 1700-1980 on a sphere becomes
+a splayed crown of slabs leaning every direction. ⚖️ **Ring and wide-flat-footprint
+motifs (`_lmRingWall`, `_lmWheel` laid flat, big `_lmSteps`) are for planar worlds.**
+The globe needs motifs that stack along one normal.
+
+## 4. ⛔ Wide-and-low landmarks are invisible on the globe
+
+`lmSuspBridge` is a 4600cm deck about 1900cm tall. From where the player stands
+on w7 it is over the horizon and reads as a small red smudge. **You cannot steer
+for a minute toward something the curvature hides.** The premise in the design
+section above — "the thing you steer toward for a minute" — silently does not
+hold on a sphere. ⚖️ Globe landmarks buy **height**, not span.
+
+## 5. `lmSuspBridge` and `lmStadium` sit in `zone:"r:z4"`
+
+The v4.5 finding says globe z4 is too thin for sprawling finales (band minus
+fence margins goes negative at 2m prop sizes) and finales belong in z3. These are
+5200cm and 4600cm props in z4.
+
+## 6. `lmBookTower`'s lean alternates instead of accumulating
+
+Rotations run +0.05, −0.12, +0.19, −0.05, +0.26, −0.18, +0.33, −0.28, +0.41. That
+is a wobble, not a lean, so "The Leaning Library" stands up straight and jitters.
+Its finial is also detached: the pole starts at y=57 while the top book ends near
+y=54, and it is offset x=7 on a book 16 wide, so it reads as a floating dot.
+
+## 7. `lmTeapotHill`'s equator band reads as a z-fighting seam
+
+`cyl [23,23,3]` at y=26 through a `sph [22,...]` at y=24 looks like the sphere has
+been sliced, not banded. Spout and handle also vanish into the body at approach
+angles — the two features that make a teapot legible as a teapot.
+
+## 8. `lmCakeStand`'s inter-tier columns read as broken toothpicks
+
+`_lmCols(8,13,4,1.1,...)` at y0=12 and 22: 4 tall, radius 1.1, tucked under plate
+overhangs of radius 16-21. They are invisible as columns and present as chipped
+stubs — the exact wasted close-up detail the wave-two law warns about.
+
+## 9. The shot probe cannot frame a tall landmark
+
+`setD(max(4, size*0.42))` puts the camera 1428cm from a 3400cm Ferris wheel, so
+the wheel leaves frame at the top; the Grand Hotel came back clipped at the frame
+edge. Framing distance has to derive from the model's **height**, not its `size`.
