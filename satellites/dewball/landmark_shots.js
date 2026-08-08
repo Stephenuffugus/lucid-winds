@@ -8,11 +8,17 @@
  * ⛔ This is not a gate and it must never become one. A green assertion cannot
  * see a silhouette. The output is the images, and somebody has to open them.
  *
- * Run: NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js [outDir]
+ * Run: NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js [outDir] [levelN]
+ *
+ * ⭐ levelN shoots ONE world. A full run is seven world builds and ~40 software
+ *    -rendered screenshots, which on a 2-core box with ~1.7GB free is enough to
+ *    get the renderer OOM-killed mid-gallery. Iterate on one world, then do the
+ *    full pass when you actually need the whole set.
  */
 var puppeteer = require('puppeteer'), path = require('path'), fs = require('fs');
 var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
 var OUT = process.argv[2] || '/tmp/dewball-landmarks';
+var ONLY = +(process.argv[3] || 0) || 0;
 
 var PLAN = [
   // ⛔ w HERE IS A 1-BASED LEVEL NUMBER, not an array index: DB_DEV.start does
@@ -29,8 +35,10 @@ var PLAN = [
   // Tall-for-their-size kinds therefore carry an `off`, never a `d`.
   { w:1, kinds:[{k:'lmLongClock',off:2.6},'lmGramophone','lmBookTower'] },
   { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
-  { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond'] },
-  { w:4, kinds:['lmClockTower','lmBathHouse'] },
+  { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond',
+                {k:'lmArmillary',off:2.8},{k:'lmMoonBridge',off:2.4}] },
+  { w:4, kinds:['lmClockTower','lmBathHouse',
+                {k:'lmNoria',off:2.6},{k:'lmSilkPavilion',off:2.6}] },
   { w:5, kinds:[{k:'lmFerrisWheel',off:3.2},{k:'lmGrandHotel',off:2.6},
                 {k:'lmHelterSkelter',off:3.4},{k:'lmBrokenKeel',off:2.6},
                 {k:'lmMooredBalloon',off:3.0}] },
@@ -62,6 +70,7 @@ var PLAN = [
   var report = [];
   for (var pi=0; pi<PLAN.length; pi++){
     var plan = PLAN[pi];
+    if (ONLY && plan.w !== ONLY) continue;
     /* ⛔ one world's stall must not cost the other six. A gallery is worth having
        partially; losing every image because level 2 was slow is not. */
     try {
