@@ -99,6 +99,9 @@ window.PartyShell={
   onPhase:function(cb){ phaseCb=cb; },
   startTimer:function(seconds,onTick,onDone){
     this.stopTimer(); var left=seconds;
+    /* a quiet pulse under anything long enough to read, so the room is not in
+       silence while people think. Short phases (a reveal) stay clean. */
+    if(window.PartySound) PartySound.bed(seconds>8);
     T.send({t:'timer',to:'*',s:left}); if(onTick)onTick(left);
     timer=setInterval(function(){ left--;
       T.send({t:'timer',to:'*',s:Math.max(0,left)});
@@ -106,10 +109,14 @@ window.PartyShell={
       /* the last five seconds are the same in every title, so the shell owns
          them; a module that forgot would be the only silent one in the pack */
       if(window.PartySound && left>0 && left<=5) PartySound.tick(left);
-      if(left<=0){ clearInterval(timer); timer=null; if(onDone)onDone(); }
+      if(left<=0){ clearInterval(timer); timer=null;
+        if(window.PartySound) PartySound.bed(false);
+        if(onDone)onDone(); }
     },1000);
   },
-  stopTimer:function(){ if(timer){clearInterval(timer);timer=null;} T.send({t:'timer',to:'*',s:null}); },
+  stopTimer:function(){ if(timer){clearInterval(timer);timer=null;}
+    if(window.PartySound) PartySound.bed(false);
+    T.send({t:'timer',to:'*',s:null}); },
   /* the end of a game is "gameComplete fired", not "a screen id contains pod".
      Moongraft ends on a gallery and the id heuristic called a finished game
      stuck. This also lets a harness assert the real contract: exactly once,

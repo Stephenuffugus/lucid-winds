@@ -33,6 +33,11 @@ if timeout 150 node test/audio.js > "$LOG/audio.log" 2>&1; then
 else
   echo "  audio            FAIL  ($LOG/audio.log)"; FAIL=1
 fi
+if timeout 200 node test/leak.js > "$LOG/leak.log" 2>&1; then
+  echo "  interval leak    PASS"
+else
+  echo "  interval leak    FAIL  ($LOG/leak.log)"; FAIL=1
+fi
 
 echo "== titles, start to gameComplete =="
 for pair in $GAMES; do

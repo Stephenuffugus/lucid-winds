@@ -89,9 +89,17 @@ function claimSunbeams(results){
   }catch(e){}
 }
 
+/* ⭐ PHONES GET A BUZZ, NOT A CHIME. Sound belongs to the television: eight
+   phones chiming milliseconds apart is the noise a room blames the game for. A
+   haptic is private to the hand holding it, so it can confirm a tap landed
+   without adding anything to the room. Silently absent on hardware that has no
+   vibration, which is most laptops and every practice tab. */
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||18); }catch(e){} }
+
 window.PartyShell={
   playerId:window.PartyTransport.selfId,
   gameSlug:null,
+  buzz:buzz,
   joinRoom:function(code,name){
     myName=name; myCode=code;
     return new Promise(function(res,rej){
@@ -109,7 +117,7 @@ window.PartyShell={
   },
   onPhase:function(cb){ phaseCb=cb; if(lastPhase) cb(lastPhase,lastData); },
   onMessage:function(cb){ msgCb=cb; },
-  sendToHost:function(msg){ if(T) T.send({t:'intent',msg:msg}); },
+  sendToHost:function(msg){ if(T){ buzz(); T.send({t:'intent',msg:msg}); } },
   onTimer:function(cb){ timerCb=cb; }
 };
 })();
