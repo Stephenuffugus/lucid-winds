@@ -20,16 +20,19 @@ var PLAN = [
   // and level 7 is Dream Meadow. Get this wrong and the probe cheerfully shoots
   // the wrong planet and reports success.
   //
-  // ⛔ FRAMING IS TIED TO `size`, WHICH IS A FOOTPRINT, NOT A HEIGHT. At the
-  // default 0.42 the camera sat 1428cm from a 3400cm Ferris wheel and the wheel
-  // left frame through the top; the Grand Hotel came back clipped at the edge.
-  // So a kind may be given its own {k,d,off} when it is tall for its size.
+  // ⛔⛔ `d` IS THE BALL'S DIAMETER, NOT THE CAMERA DISTANCE. setD sizes the ball
+  // and the camera merely trails it, so raising `d` to "fit a tall landmark in
+  // frame" instead GROWS THE BALL until it eats the thing being photographed. I
+  // did exactly that: d=0.8 on the stadium produced a 41.5m ball chewing a 46m
+  // stadium at x53 combo, which is a lovely picture of nothing.
+  // To stand further back, raise `off` — the park distance — and leave `d` alone.
+  // Tall-for-their-size kinds therefore carry an `off`, never a `d`.
   { w:1, kinds:['lmCardHouse','lmGramophone','lmBookTower'] },
-  { w:2, kinds:['lmJackBox','lmBlockFort','lmToyTrain','lmRocketStand'] },
-  { w:3, kinds:['lmTopiaryStag','lmDovecote','lmGazeboPond'] },
+  { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
+  { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond'] },
   { w:4, kinds:['lmClockTower','lmBathHouse'] },
-  { w:5, kinds:[{k:'lmFerrisWheel',d:0.95,off:2.6},{k:'lmGrandHotel',d:0.7,off:2.3}] },
-  { w:6, kinds:[{k:'lmSuspBridge',d:0.9,off:2.6},{k:'lmStadium',d:0.8,off:2.4},'lmPalace'] },
+  { w:5, kinds:[{k:'lmFerrisWheel',off:3.2},{k:'lmGrandHotel',off:2.6}] },
+  { w:6, kinds:[{k:'lmSuspBridge',off:3.4},{k:'lmStadium',off:3.0},'lmPalace'] },
   { w:7, kinds:['lmMoonGate','lmPagoda','lmStoneCircle'] }
 ];
 
