@@ -75,8 +75,12 @@ function autopilot() {
     var r = el.getBoundingClientRect();
     if (!r.width || !r.height) return 'nosize';
     var x = r.left + r.width/2, y = r.top + r.height/2;
+    var vw = (window.visualViewport&&window.visualViewport.width)||window.innerWidth;
+    var vh = (window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+    if (x < 0 || y < 0 || x > vw || y > vh)
+      return 'BELOW OR OFF THE FOLD: ' + (el.id||el.className) + ' centre at ' + Math.round(x) + ',' + Math.round(y) + ' in a ' + Math.round(vw) + 'x' + Math.round(vh) + ' view';
     var at = document.elementFromPoint(x, y);
-    if (!at) return 'nothing at point';
+    if (!at) return 'nothing at point for ' + (el.id||el.className);
     var reaches = (at === el) || el.contains(at) || at.contains(el);
     var o = { bubbles:true, cancelable:true, clientX:x, clientY:y };
     at.dispatchEvent(new MouseEvent('mousedown', o));

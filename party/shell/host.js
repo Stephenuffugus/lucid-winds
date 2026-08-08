@@ -68,6 +68,11 @@ window.PartyShell={
       $('ps-code').textContent=CODE;
       $('ps-join-url').textContent=location.host+'/party/play.html';
       $('ps-lobby').classList.add('on');
+      /* HEARTBEAT. Without it a phone cannot tell "the host is thinking" from
+         "the host is gone", so it sits on a dead screen forever and the party
+         quietly ends with nobody being told. */
+      setInterval(function(){ try{ T.send({t:'hb',to:'*'}); }catch(e){} },2000);
+      T.send({t:'hb',to:'*'});
       $('ps-start').addEventListener('click',function(){
         if(roster().length<MIN_PLAYERS) return;
         started=true; completedCount=0; lastResults=null;

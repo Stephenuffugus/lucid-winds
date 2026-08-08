@@ -51,9 +51,27 @@ var can=$('mgp-can'), ctx=can.getContext('2d');
 var MAX_STROKES=220, MAX_PTS=260;
 
 function sizeCanvas(aspect){
-  /* the surface is the layer's own rectangle, so proportions carry through */
-  var wrap=can.parentNode;
-  var maxW=Math.min(340,wrap.clientWidth||340), maxH=372;
+  /* The surface is the layer's own rectangle, so proportions carry through.
+
+     ⛔ THE HEIGHT IS MEASURED, NEVER GUESSED. A fixed cap pushed the brush and
+     undo buttons BELOW THE FOLD on a 375x667 phone, where elementFromPoint
+     returns nothing at all and a control simply does not exist for the player.
+     The end to end driver caught it as "nothing at point". Measure what is
+     actually left after everything else on the screen, and use visualViewport,
+     never innerHeight, because the phone browser chrome is part of the answer. */
+  var wrap=can.parentNode, screenEl=document.getElementById('mgp-draw');
+  var vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight||667;
+  var used=0, kids=screenEl.children;
+  for(var i=0;i<kids.length;i++){
+    if(kids[i]===wrap) continue;
+    var r=kids[i].getBoundingClientRect();
+    var cs=getComputedStyle(kids[i]);
+    used+=r.height+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+  }
+  var pad=parseFloat(getComputedStyle(screenEl).paddingTop||0)+
+          parseFloat(getComputedStyle(screenEl).paddingBottom||0);
+  var maxH=Math.max(150,Math.floor(vh-used-pad-18));
+  var maxW=Math.min(340,wrap.clientWidth||340);
   var w=maxW, h=Math.round(w/(aspect||0.75));
   if(h>maxH){ h=maxH; w=Math.round(h*(aspect||0.75)); }
   can.style.width=w+'px'; can.style.height=h+'px';
@@ -175,8 +193,10 @@ PartyShell.onMessage(function(msg){
   $('mgp-brief').textContent=msg.brief;
   $('mgp-hint').textContent=msg.hint;
   /* draw TO these edges: somebody else's piece is waiting on the other side */
-  $('mgp-above').textContent=msg.above?('the '+msg.above+' meets this edge'):'';
-  $('mgp-below').textContent=msg.below?('the '+msg.below+' meets this edge'):'';
+  /* the subject is "your piece", implied, so the verb agrees whatever the
+     layer is called. "the leaves meets this edge" was wrong for half the bank */
+  $('mgp-above').textContent=msg.above?('meets the '+msg.above+' here'):'';
+  $('mgp-below').textContent=msg.below?('meets the '+msg.below+' here'):'';
   renderPalette();
   show('mgp-draw');
   sizeCanvas(msg.aspect);
