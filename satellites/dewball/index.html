@@ -1145,13 +1145,24 @@
 
   K("lmBookTower","The Leaning Library",62,_cat(
     [ pp("box",[30,3,22],0x6a5a44,0,1.5,0) ],
-    [ pp("box",[26,6,19],0xc23a4a,0,6,0,0,0.05,0), pp("box",[25,5,18],0x2f6f9e,0,11.5,0,0,-0.12,0),
-      pp("box",[24,7,18],0xd8843a,0,17.5,0,0,0.19,0), pp("box",[23,5,17],0x4a8a3a,0,23.5,0,0,-0.05,0),
-      pp("box",[22,6,16],0xb3688e,0,29,0,0,0.26,0), pp("box",[21,5,16],0xf0c44a,0,34.5,0,0,-0.18,0),
-      pp("box",[20,7,15],0x2f8f8a,0,40.5,0,0,0.33,0), pp("box",[18,5,14],0xc23a4a,0,46.5,0,0,-0.28,0),
-      pp("box",[16,5,13],0x2f6f9e,0,51.5,0,0,0.41,0) ],
-    [ pp("card",[24,17],0xf0e8d8,0,6,0,1.5708,0,0.05), pp("card",[22,15],0xf0e8d8,0,17.5,0,1.5708,0,0.19) ],
-    [ pp("cyl",[1,1,10,6],0x8a8378,7,57,4,0.2,0,0.15), pp("sph",[3,7,6],0xf0c44a,8,62,5) ]
+    /* ⛔⛔ THIS DID NOT LEAN. Those numbers were in the SEVENTH pp argument, which
+       is rotY — so every book was twisted in plan view and the tower stood dead
+       straight while jittering, in a landmark called The Leaning Library. rotZ is
+       the ninth argument. A tilt needs BOTH: the angle, and an x offset that
+       accumulates with height, or the stack shears instead of leaning.
+       x = 0.13 * y throughout, which is the same 7.4 degrees all the way up.
+       ⭐ Side benefit: the w2 town building `booktower` is also a stack of yawed
+       books, so this is now a different silhouette from it as well as an honest
+       name. */
+    [ pp("box",[26,6,19],0xc23a4a,0.8,6,0,0,0.05,0.13), pp("box",[25,5,18],0x2f6f9e,1.5,11.5,0,0,-0.09,0.13),
+      pp("box",[24,7,18],0xd8843a,2.3,17.5,0,0,0.12,0.13), pp("box",[23,5,17],0x4a8a3a,3.1,23.5,0,0,-0.04,0.13),
+      pp("box",[22,6,16],0xb3688e,3.8,29,0,0,0.15,0.13), pp("box",[21,5,16],0xf0c44a,4.5,34.5,0,0,-0.11,0.13),
+      pp("box",[20,7,15],0x2f8f8a,5.3,40.5,0,0,0.18,0.13), pp("box",[18,5,14],0xc23a4a,6.0,46.5,0,0,-0.14,0.13),
+      pp("box",[16,5,13],0x2f6f9e,6.7,51.5,0,0,0.21,0.13) ],
+    [ pp("card",[24,17],0xf0e8d8,0.8,6,0,1.5708,0,0.13), pp("card",[22,15],0xf0e8d8,2.3,17.5,0,1.5708,0,0.13) ],
+    /* the finial sat at y=57 while the top book ended at 54, so it floated as a
+       detached dot. Seated on the top face now, and on the leaning axis. */
+    [ pp("cyl",[1,1,10,6],0x8a8378,7.4,59,0,0,0,0.13), pp("sph",[3,7,6],0xf0c44a,8.1,65,0) ]
   ),{fixed:1,volF:0.3});
 
   // w2 Toybox Peaks (goal 70) ------------------------------------------------
@@ -1304,13 +1315,20 @@
   K("lmSuspBridge","The Long Span",5200,_cat(
     [ pp("box",[4600,110,520],0xa8442a,0,760,0) ],
     [ pp("box",[4600,40,60],0xd8542a,0,830,250), pp("box",[4600,40,60],0xd8542a,0,830,-250) ],
-    [ pp("box",[300,1900,300],0xc23a4a,-1500,950,0), pp("box",[300,1900,300],0xc23a4a,1500,950,0),
-      pp("box",[420,80,420],0xc23a4a,-1500,1880,0), pp("box",[420,80,420],0xc23a4a,1500,1880,0),
-      pp("box",[400,70,400],0xc23a4a,-1500,1420,0), pp("box",[400,70,400],0xc23a4a,1500,1420,0) ],
-    _lmCable(-1500,1880,1500,1880,900,10,0xd8542a,52,250),
-    _lmCable(-1500,1880,1500,1880,900,10,0xd8542a,52,-250),
-    _lmCable(-2300,760,-1500,1880,120,4,0xd8542a,44,250),
-    _lmCable(1500,1880,2300,760,120,4,0xd8542a,44,250),
+    /* ⛔⛔ HEIGHT, NOT SPAN — the towers were 1900 against a 4600 deck and on a
+       SPHERE that reads as nothing. w7's horizon is close because you are stood
+       on a ball, so a wide flat thing lies below it and the player never sees the
+       landmark they are supposed to steer a minute toward. _lmWheel's own comment
+       already knew this: a shape against the SKY is legible from anywhere on a
+       round planet. So the towers go to 2600 and the cables ride up with them. */
+    [ pp("box",[300,2600,300],0xc23a4a,-1500,1300,0), pp("box",[300,2600,300],0xc23a4a,1500,1300,0),
+      pp("box",[420,80,420],0xc23a4a,-1500,2600,0), pp("box",[420,80,420],0xc23a4a,1500,2600,0),
+      pp("box",[400,70,400],0xc23a4a,-1500,1900,0), pp("box",[400,70,400],0xc23a4a,1500,1900,0),
+      pp("box",[360,60,360],0xf0c44a,-1500,2680,0), pp("box",[360,60,360],0xf0c44a,1500,2680,0) ],
+    _lmCable(-1500,2600,1500,2600,1300,10,0xd8542a,52,250),
+    _lmCable(-1500,2600,1500,2600,1300,10,0xd8542a,52,-250),
+    _lmCable(-2300,760,-1500,2600,150,4,0xd8542a,44,250),
+    _lmCable(1500,2600,2300,760,150,4,0xd8542a,44,250),
     [ pp("box",[220,300,600],0x8a8e96,-2300,150,0), pp("box",[220,300,600],0x8a8e96,2300,150,0) ],
     _lmCols(6,1200,700,80,0x8a8e96,0)
   ),{fixed:1,volF:0.3});
@@ -1319,10 +1337,20 @@
     [ pp("cyl",[1500,1500,40,24],0x2f9e4a,0,20,0) ],
     [ pp("box",[1400,20,900],0x3aae56,0,44,0), pp("box",[8,22,880],0xf0e8d8,0,48,0),
       pp("box",[900,22,8],0xf0e8d8,0,48,-440), pp("box",[900,22,8],0xf0e8d8,0,48,440) ],
-    _lmRingWall(26,1700,520,180,0xe0d8c4,40,-0.16),
-    _lmRingWall(26,1880,300,160,0xc2542a,540,0),
-    [ pp("cyl",[2050,2050,90,32],0xf0e8d8,0,880,0), pp("cyl",[1820,1820,50,32],0x2a3340,0,860,0) ],
-    _lmRingWall(26,1980,80,120,0xc2542a,880,0),
+    /* ⛔⛔ THIS RING WAS PALE CREAM (0xe0d8c4) AND IT DISAPPEARED. It is the
+       biggest surface in the model, so it decides whether the landmark exists at
+       all, and pale stone files itself under the grey slabs w7 is already full
+       of — the exact Observatory lesson from wave two, repeated in the same
+       commit that wrote the law against it.
+       ⛔ And "The Green Bowl" cannot be green: w7's ground IS bright green, so a
+       green stand ring on a green planet is the same mistake in another hue. The
+       pitch stays green because it is small and mostly hidden inside; the STANDS
+       go saturated red with a gold rim, which is the one thing a green world
+       cannot swallow. */
+    _lmRingWall(26,1700,520,180,0xc23a4a,40,-0.16),
+    _lmRingWall(26,1880,300,160,0xa82a3a,540,0),
+    [ pp("cyl",[2050,2050,90,32],0xf0c44a,0,880,0), pp("cyl",[1820,1820,50,32],0x2a3340,0,860,0) ],
+    _lmRingWall(26,1980,80,120,0xf0c44a,880,0),
     [ pp("cyl",[80,80,1300,8],0x8a8e96,-1500,650,1500), pp("box",[420,150,70],0xffe9a8,-1500,1330,1500),
       pp("cyl",[80,80,1300,8],0x8a8e96,1500,650,1500), pp("box",[420,150,70],0xffe9a8,1500,1330,1500),
       pp("cyl",[80,80,1300,8],0x8a8e96,-1500,650,-1500), pp("box",[420,150,70],0xffe9a8,-1500,1330,-1500),
@@ -1343,6 +1371,130 @@
     [ pp("cyl",[110,130,1500,12],0xf0e8d8,-1180,750,-520), pp("sph",[130,14,9],0xf0c44a,-1180,1560,-520),
       pp("cyl",[110,130,1500,12],0xf0e8d8,1180,750,-520), pp("sph",[130,14,9],0xf0c44a,1180,1560,-520) ],
     _lmCols(8,700,300,80,0xf0c44a,450)
+  ),{fixed:1,volF:0.3});
+
+  // =====================================================================
+  //  LANDMARKS, THIRD WAVE — THE COLLISION FIXES (2026-08-08)
+  //
+  //  ⛔⛔ THE DEFECT THESE EXIST TO FIX, because it is the one the whole tier was
+  //  built to prevent and it shipped inside the fix for it. variety_audit.js
+  //  measured six landmarks whose silhouette ALREADY EXISTS in their own world:
+  //
+  //      lmCakeStand   52cm   vs  cakestand   77cm  x8    <- landmark SMALLER
+  //      lmTeapotHill  58cm   vs  teapot      31cm  x81
+  //      lmDollHouse  186cm   vs  dollhouse  243cm  x15   <- landmark SMALLER
+  //      lmSundial    316cm   vs  sundial    111cm  x33
+  //      lmDovecote   372cm   vs  dovecote   254cm  x1    (base count 1 — mild)
+  //      lmRocketStand 166cm  vs  kTinRocket  32cm  x2    (5.2x — reads as "the big one")
+  //
+  //  A bigger teapot among eighty-one teapots is still a redundant same thing,
+  //  which is precisely what Stephen called dumb. And the two marked SMALLER
+  //  cannot be fixed by growing them: w1's ladder cap is 69.6cm while cakestand
+  //  instances already reach 77cm, and w2's is 203cm against a 243cm dollhouse.
+  //  The shape has to change, so these four replace them.
+  //
+  //  ⚖️ LAW: pick the shape AGAINST the world's own kind list, not after.
+  //     `node variety_audit.js` prints that list per world and fails you loudly.
+  //  ⚖️ Cards, horns, coil springs and antlers are here because no prop in this
+  //     game owns those outlines. Novelty of SILHOUETTE is the whole product.
+  // =====================================================================
+
+  // w1 Crumb Country (goal 24, cap 69.6) — replaces lmCakeStand ---------------
+  //  ⛔ Built from thin BOXES, not `card` primitives. A card is a single plane
+  //  and this is a freestanding structure seen from every side, so cards would
+  //  vanish from behind. _lmWin can use cards because a window always sits on a
+  //  face you are outside of.
+  K("lmCardHouse","The House of Cards",66,_cat(
+    [ pp("box",[48,2,36],0x6a5a44,0,1,0) ],
+    /* tier 1 — three A-frames, two rows deep */
+    [ pp("box",[14,26,1.3],0xc23a4a,-15,15,-9,0,0,0.40), pp("box",[14,26,1.3],0xfff2f6,-8,15,-9,0,0,-0.40),
+      pp("box",[14,26,1.3],0x2f6f9e, 0,15,-9,0,0,0.40), pp("box",[14,26,1.3],0xfff2f6,  7,15,-9,0,0,-0.40),
+      pp("box",[14,26,1.3],0xc23a4a,-15,15, 9,0,0,0.40), pp("box",[14,26,1.3],0xfff2f6,-8,15, 9,0,0,-0.40),
+      pp("box",[14,26,1.3],0x2f6f9e, 0,15, 9,0,0,0.40), pp("box",[14,26,1.3],0xfff2f6,  7,15, 9,0,0,-0.40) ],
+    /* floor between tiers — flat cards laid down */
+    [ pp("box",[40,1.3,26],0xf0c44a,-4,28,0) ],
+    /* tier 2 — two A-frames, pulled in */
+    [ pp("box",[13,23,1.3],0x2f6f9e,-10,40,-5,0,0,0.40), pp("box",[13,23,1.3],0xfff2f6,-4,40,-5,0,0,-0.40),
+      pp("box",[13,23,1.3],0xc23a4a,  2,40,5,0,0,0.40), pp("box",[13,23,1.3],0xfff2f6,  8,40,5,0,0,-0.40) ],
+    [ pp("box",[28,1.3,20],0xf0c44a,-1,51,0) ],
+    /* tier 3 — the single crowning pair, and one card that has already slipped */
+    [ pp("box",[12,21,1.3],0xc23a4a,-4,61,0,0,0,0.40), pp("box",[12,21,1.3],0x2f6f9e,2,61,0,0,0,-0.40),
+      pp("box",[13,1.3,10],0xfff2f6,17,2.6,13,0,0.5,0.08) ]
+  ),{fixed:1,volF:0.3});
+
+  // w1 Crumb Country — replaces lmTeapotHill ---------------------------------
+  K("lmGramophone","The Gramophone",64,_cat(
+    [ pp("box",[30,16,26],0x6a4a2a,0,8,0), pp("box",[32,3,28],0x8a5a32,0,17,0) ],
+    _lmCols(4,13,7,2.2,0x4a3320,0),
+    /* the record, which is the only true black in Crumb Country */
+    [ pp("cyl",[11,11,1.4,16],0x1a1a24,0,19,0), pp("cyl",[2.2,2.2,1.8,10],0xc23a4a,0,19.6,0) ],
+    /* ⭐ THE HORN IS THE WHOLE LANDMARK. A flared cone opening sideways is an
+       outline nothing else in this world has, so it gets the saturated brass and
+       every other part stays dark wood. */
+    [ pp("cyl",[2.2,2.6,15,8],0xf0c44a,4,30,0,0,0,-0.55),
+      pp("cyl",[3.4,7.5,17,12],0xf0c44a,13,42,0,0,0,-0.72),
+      pp("cone",[15,20,14],0xf0c44a,24,54,0,0,0,2.44),
+      pp("cyl",[15.2,15.2,1.2,14],0xffe9a8,26,57,0,0,0,-0.72) ],
+    /* tone arm and crank */
+    [ pp("cyl",[0.8,0.8,14,6],0x8a8e96,-6,24,4,0.35,0,0.9),
+      pp("sph",[1.8,7,6],0x2f6f9e,-11,20,6),
+      pp("cyl",[0.9,0.9,9,6],0x8a8e96,-17,10,0,0,0,1.5708),
+      pp("sph",[2.4,8,6],0xc23a4a,-22,10,0) ]
+  ),{fixed:1,volF:0.3});
+
+  // w2 Toybox Peaks (goal 70, cap 203) — replaces lmDollHouse ----------------
+  K("lmJackBox","The Jack-in-the-Box",196,_cat(
+    [ pp("box",[92,84,92],0xc23a4a,0,42,0) ],
+    /* panel trim: the box reads as a toy, not a crate */
+    [ pp("box",[94,7,94],0xf0c44a,0,4,0), pp("box",[94,7,94],0xf0c44a,0,82,0),
+      pp("card",[54,42],0x2f6f9e,0,44,46.5), pp("card",[54,42],0x2f6f9e,46.5,44,0,0,1.5708,0) ],
+    /* the lid, hinged open at the back */
+    [ pp("box",[94,8,94],0x2f6f9e,-16,116,-52,0,0,-0.95),
+      pp("box",[96,4,96],0xf0c44a,-18,120,-52,0,0,-0.95) ],
+    /* ⭐ the coil. Spheres up a helix read as a spring from any angle, and a
+       spring is an outline this game has never had. */
+    [ pp("sph",[13,9,7],0xf0e8d8,  0, 96,0), pp("sph",[13,9,7],0xf0e8d8, 12,108,6),
+      pp("sph",[13,9,7],0xf0e8d8,  4,120,-11), pp("sph",[13,9,7],0xf0e8d8,-11,132,4),
+      pp("sph",[13,9,7],0xf0e8d8,  2,144,10), pp("sph",[13,9,7],0xf0e8d8, 10,156,-6) ],
+    /* the jack himself */
+    [ pp("sph",[27,12,9],0xffe0c4,0,178,0),
+      pp("cone",[24,30,10],0x4a8a3a,0,200,0), pp("sph",[7,8,6],0xf0c44a,0,214,0),
+      pp("card",[6,8],0x1a1a24,-9,182,26), pp("card",[6,8],0x1a1a24,9,182,26),
+      pp("card",[16,5],0xc23a4a,0,171,26),
+      pp("sph",[6,8,6],0xc23a4a,-25,176,8), pp("sph",[6,8,6],0xc23a4a,25,176,8) ]
+  ),{fixed:1,volF:0.3});
+
+  // w3 Night Garden (goal 170, cap 493) — replaces lmSundial ------------------
+  //  ⛔ A GREEN TOPIARY IN A GREEN GARDEN WOULD DISAPPEAR, which is the pale-stone
+  //  lesson wearing a different colour. So the hedge stays deliberately dark and
+  //  the SIGNATURE is a gold antler rack against the night sky, plus blossom.
+  K("lmTopiaryStag","The Topiary Stag",430,_cat(
+    [ pp("cyl",[130,142,22,18],0x6a6258,0,11,0), pp("cyl",[112,112,8,18],0x3a4432,0,26,0) ],
+    /* legs */
+    [ pp("cyl",[15,17,96,8],0x1f5a2a,-52,78,-30), pp("cyl",[15,17,96,8],0x1f5a2a,-52,78,30),
+      pp("cyl",[15,17,96,8],0x1f5a2a,50,78,-30), pp("cyl",[15,17,96,8],0x1f5a2a,50,78,30) ],
+    /* body as three overlapping masses — spheres here are round, so the loaf has
+       to be built rather than scaled */
+    [ pp("sph",[62,12,9],0x1f5a2a,-40,168,0), pp("sph",[66,12,9],0x1f5a2a,4,174,0),
+      pp("sph",[56,12,9],0x1f5a2a,46,166,0), pp("sph",[40,10,8],0x1f5a2a,74,150,0) ],
+    /* neck and head, carried high so the outline clears the hedgerows */
+    [ pp("cyl",[26,34,104,8],0x1f5a2a,-72,232,0,0,0,0.42),
+      pp("sph",[38,12,9],0x1f5a2a,-104,296,0),
+      pp("cone",[22,44,8],0x1f5a2a,-132,300,0,0,0,-1.2),
+      pp("card",[22,26],0x143f1e,-96,318,0,0,0.5,0), pp("card",[22,26],0x143f1e,-96,318,0,0,-0.5,0) ],
+    /* ⭐ the antlers: the whole landmark at a distance */
+    [ pp("cyl",[5,6,90,6],0xf0c44a,-112,352,-22,0.30,0,0.34),
+      pp("cyl",[5,6,90,6],0xf0c44a,-112,352,22,-0.30,0,0.34),
+      pp("cyl",[4,4.6,54,6],0xf0c44a,-134,392,-40,0.5,0,0.9),
+      pp("cyl",[4,4.6,54,6],0xf0c44a,-134,392,40,-0.5,0,0.9),
+      pp("cyl",[4,4.6,48,6],0xf0c44a,-108,402,-30,0.2,0,-0.5),
+      pp("cyl",[4,4.6,48,6],0xf0c44a,-108,402,30,-0.2,0,-0.5),
+      pp("cyl",[3.4,3.8,40,6],0xf0c44a,-146,424,-16,0.3,0,0.5),
+      pp("cyl",[3.4,3.8,40,6],0xf0c44a,-146,424,16,-0.3,0,0.5) ],
+    /* blossom, so the mass itself carries some colour too */
+    [ pp("sph",[13,8,6],0xe8a0bf,-14,222,44), pp("sph",[11,8,6],0xe8a0bf,32,206,-46),
+      pp("sph",[12,8,6],0xe8a0bf,-58,206,-40), pp("sph",[10,8,6],0xfff2f6,58,194,38),
+      pp("sph",[11,8,6],0xe8a0bf,-96,258,26) ]
   ),{fixed:1,volF:0.3});
 
   // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
@@ -1523,7 +1675,7 @@
       {k:"sugarbowl",n:55,zone:"mid"},{k:"candle",n:46,zone:"mid"},{k:"fork",n:57,zone:"mid"},
       {k:"plateK",n:51,zone:"mid"},{k:"jamjar",n:57,zone:"mid"},
       {k:"teacup",n:88,zone:"far"},{k:"juicebox",n:88,zone:"far"},{k:"sandwich",n:99,zone:"far"},
-      {k:"lmCakeStand",n:1,zone:"far"},{k:"lmTeapotHill",n:1,zone:"far"},{k:"lmBookTower",n:1,zone:"mid"},
+      {k:"lmCardHouse",n:1,zone:"far"},{k:"lmGramophone",n:1,zone:"mid"},{k:"lmBookTower",n:1,zone:"mid"},
       {k:"banana",n:99,zone:"far"},{k:"teapot",n:51,zone:"far"},{k:"thermos",n:51,zone:"far"},
       {k:"melon",n:68,zone:"far"},{k:"basket",n:37,zone:"far"},{k:"thermchair",n:15,zone:"far"},
       {k:"pie",n:37,zone:"far"},{k:"winebottle",n:51,zone:"far"},{k:"radio",n:18,zone:"far"},
@@ -1633,7 +1785,7 @@
     towns:[{zone:"r:z2",b:["booktower","shoebox"],n:2},
            {zone:"r:z3",b:["booktower","shoebox"],n:2,rows:3,cols:2}],
     scatter:[
-       {k:"lmDollHouse",n:1,zone:"far"},{k:"lmCarousel",n:1,zone:"mid"},
+       {k:"lmJackBox",n:1,zone:"far"},{k:"lmCarousel",n:1,zone:"mid"},
       {k:"lmBlockFort",n:1,zone:"far"},{k:"lmToyTrain",n:1,zone:"far"},{k:"lmRocketStand",n:1,zone:"mid"},
              {k:"marble",n:136,zone:"spawn"},
       {k:"marble",n:111,zone:"r:mat"},{k:"jack",n:56,zone:"r:mat"},{k:"die",n:62,zone:"r:mat"},
@@ -1750,7 +1902,7 @@
     towns:[{zone:"r:z2",b:["gardenshed","dovecote"],n:2},
            {zone:"r:z3",b:["greenhouse","gardenshed","dovecote"],n:2,rows:3,cols:2}],
     scatter:[
-       {k:"lmGlasshouse",n:1,zone:"far"},{k:"lmSundial",n:1,zone:"mid"},
+       {k:"lmGlasshouse",n:1,zone:"far"},{k:"lmTopiaryStag",n:1,zone:"mid"},
       {k:"lmDovecote",n:1,zone:"r:z3"},{k:"lmGazeboPond",n:1,zone:"r:z2"},
              {k:"dewdrop",n:103,zone:"spawn"},
       {k:"pebble",n:86,zone:"r:moss"},{k:"dewdrop",n:62,zone:"r:moss"},{k:"mushroom",n:44,zone:"r:moss"},
@@ -2127,7 +2279,10 @@
            {zone:"r:z3",b:["cottage","windmill","watertower"],n:3,rows:3,cols:2}],
     scatter:[
        {k:"lmCathedral",n:1,zone:"r:z3"},{k:"lmAqueduct",n:1,zone:"r:z3"},{k:"lmObservatory",n:1,zone:"r:z2"},
-      {k:"lmSuspBridge",n:1,zone:"r:z4"},{k:"lmStadium",n:1,zone:"r:z4"},{k:"lmPalace",n:1,zone:"r:z3"},
+      /* ⛔ z3, not z4: the v4.5 finding is that globe z4 is too thin for sprawling
+         finales — band minus fence margins goes negative at 2m prop sizes — and
+         these are 5200cm and 4600cm. */
+      {k:"lmSuspBridge",n:1,zone:"r:z3"},{k:"lmStadium",n:1,zone:"r:z3"},{k:"lmPalace",n:1,zone:"r:z3"},
              {k:"pebble",n:148,zone:"spawn"},{k:"dewdrop",n:105,zone:"spawn"},{k:"mushroom",n:56,zone:"spawn"},
       {k:"pebble",n:198,zone:"r:meadow"},{k:"dewdrop",n:158,zone:"r:meadow"},{k:"mushroom",n:127,zone:"r:meadow"},
       {k:"tulip",n:105,zone:"r:meadow"},{k:"apple",n:88,zone:"r:meadow"},{k:"lemon",n:88,zone:"r:meadow"},

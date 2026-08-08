@@ -19,12 +19,17 @@ var PLAN = [
   // idx=n-1. And the ARRAY runs w1..w5, w7, w6, so level 6 is THE WHOLE WORLD
   // and level 7 is Dream Meadow. Get this wrong and the probe cheerfully shoots
   // the wrong planet and reports success.
-  { w:1, kinds:['lmCakeStand','lmTeapotHill','lmBookTower'] },
-  { w:2, kinds:['lmBlockFort','lmToyTrain','lmRocketStand'] },
-  { w:3, kinds:['lmDovecote','lmGazeboPond'] },
+  //
+  // ⛔ FRAMING IS TIED TO `size`, WHICH IS A FOOTPRINT, NOT A HEIGHT. At the
+  // default 0.42 the camera sat 1428cm from a 3400cm Ferris wheel and the wheel
+  // left frame through the top; the Grand Hotel came back clipped at the edge.
+  // So a kind may be given its own {k,d,off} when it is tall for its size.
+  { w:1, kinds:['lmCardHouse','lmGramophone','lmBookTower'] },
+  { w:2, kinds:['lmJackBox','lmBlockFort','lmToyTrain','lmRocketStand'] },
+  { w:3, kinds:['lmTopiaryStag','lmDovecote','lmGazeboPond'] },
   { w:4, kinds:['lmClockTower','lmBathHouse'] },
-  { w:5, kinds:['lmFerrisWheel','lmGrandHotel'] },
-  { w:6, kinds:['lmSuspBridge','lmStadium','lmPalace'] },
+  { w:5, kinds:[{k:'lmFerrisWheel',d:0.95,off:2.6},{k:'lmGrandHotel',d:0.7,off:2.3}] },
+  { w:6, kinds:[{k:'lmSuspBridge',d:0.9,off:2.6},{k:'lmStadium',d:0.8,off:2.4},'lmPalace'] },
   { w:7, kinds:['lmMoonGate','lmPagoda','lmStoneCircle'] }
 ];
 
@@ -52,7 +57,10 @@ var PLAN = [
     await new Promise(function(r){ setTimeout(r, 500); });
 
     for (var ki=0; ki<plan.kinds.length; ki++){
-      var kind = plan.kinds[ki];
+      var spec = plan.kinds[ki];
+      var kind     = (typeof spec === 'string') ? spec : spec.k;
+      var dScale   = (typeof spec === 'string' || !spec.d)   ? 0.42 : spec.d;
+      var offScale = (typeof spec === 'string' || !spec.off) ? 1.9  : spec.off;
       var found = await page.evaluate(function(k){
         var st = window.DB_DEV.state();
         for (var i=0;i<st.objects.length;i++) if (st.objects[i].k===k)
@@ -91,13 +99,13 @@ var PLAN = [
       /* ⭐ TWO SHOTS, per the project rule. The first is where the PLAYER stands
          when they meet it. The second is the wide one, because a landmark that
          only works in close-up is not doing the job a landmark is for. */
-      await shoot(found, 0.42, 1.9, '');
+      await shoot(found, dScale, offScale, '');
       /* ⛔ THE WIDE SHOT MUST NOT GROW THE BALL. Camera distance is tied to ball
          size here, so my first "wide" set the ball to 1.3x the landmark, and it
          simply ATE it: the frame came back as a 60m ball on a stripped planet
          with a x16 combo counter. Wide means standing further back at the same
          size, which is also what the player actually experiences. */
-      await shoot(found, 0.42, 6.0, '-wide');
+      await shoot(found, dScale, offScale * 3.16, '-wide');
       report.push(kind+': placed at '+Math.round(found.x)+','+Math.round(found.z)+'  size '+Math.round(found.s)+'cm');
     }
   }
