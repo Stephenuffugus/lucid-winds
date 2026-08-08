@@ -97,7 +97,12 @@ function renderMarks(which){
   for(var i=0;i<order.length;i++){
     var pid=order[i], m=marks[pid]||0;
     var pips='';
-    for(var j=0;j<MARKS_OUT;j++) pips+='<span class="fr-pip'+(j<m?' on':'')+'"></span>';
+    /* ⛔ the state class here is "lit", never "on". The shell, the driver and
+       every module treat a bare .on as THE ACTIVE SCREEN, so a pip carrying it
+       made document.querySelector('#game-root .on') return a mark dot instead
+       of the podium, and the end to end run reported a game that had actually
+       finished as stuck. */
+    for(var j=0;j<MARKS_OUT;j++) pips+='<span class="fr-pip'+(j<m?' lit':'')+'"></span>';
     html+='<div class="fr-mrow'+(frozen[pid]?' out':'')+'">'+esc(names[pid])+
       '<span class="fr-pips">'+(frozen[pid]?'FROST':pips)+'</span>'+
       '<b>'+(scores[pid]||0)+'</b></div>';
@@ -205,7 +210,7 @@ function phaseQuestion(){
 function phaseReveal(){
   var q=QS[qi], correct=q.options[0];
   var cost=(power==='freeze')?2:1;
-  var res={}, took=[], newlyFrozen=[], inflicted=0;
+  var res={}, took=[], newlyFrozen=[], froze={}, inflicted=0;
 
   var live=living();
   for(var i=0;i<live.length;i++){
@@ -217,14 +222,19 @@ function phaseReveal(){
       marks[pid]=(marks[pid]||0)+cost; inflicted+=cost;
       res[pid]={got:answered.hasOwnProperty(pid)?'wrong':'none',pts:0,marks:marks[pid]};
       took.push(names[pid]);
-      if(marks[pid]>=MARKS_OUT&&!frozen[pid]){ frozen[pid]=true; newlyFrozen.push(names[pid]); }
+      if(marks[pid]>=MARKS_OUT&&!frozen[pid]){
+        frozen[pid]=true; froze[pid]=1; newlyFrozen.push(names[pid]);
+      }
     }
   }
-  /* the Frost are paid for the damage their power helped land */
+  /* the Frost are paid for the damage their power helped land.
+     ⛔ Keyed by PLAYER ID, never by name: the shell does not stop two people
+     calling themselves Sam, and a name match here would have quietly skipped
+     paying an innocent ghost while paying the one who just froze. */
   var gh=ghosts();
   if(power&&inflicted>0){
     for(var g=0;g<gh.length;g++){
-      if(newlyFrozen.indexOf(names[gh[g]])>=0) continue;   /* not for your own freezing round */
+      if(froze[gh[g]]) continue;                 /* not for your own freezing round */
       scores[gh[g]]=(scores[gh[g]]||0)+FROST_PAY*inflicted;
       res[gh[g]]={got:'frost',pts:FROST_PAY*inflicted};
     }
@@ -279,6 +289,12 @@ function phasePodium(){
   $('fr-other').onclick=function(){ PartyShell.backToPicker(); };
   $('fr-end').onclick=function(){ PartyShell.closeRoom(); };
 }
+
+/* read only state hook for the end to end driver. Costs nothing, cannot change
+   the game, and is the difference between reading a stall and guessing at it. */
+window.__frState=function(){ return {qi:qi,qs:QS.length,living:living().length,
+  ghosts:ghosts().length,frozen:frozen,marks:marks,power:power,
+  answered:Object.keys(answered).length}; };
 
 document.addEventListener('party-started',function(ev){ startGame(ev.detail.players); });
 })();

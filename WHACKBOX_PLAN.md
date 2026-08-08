@@ -109,10 +109,10 @@ Firefly Futures spicy tier (keeper, conditional, see above). Burr in the Hem and
 | title | slug | state |
 |---|---|---|
 | Twin Lanterns | (satellite) | v0.1 live, dev gated, separate from the party shell |
-| Mothlight | `mothlight` | BUILT and driven to podium. Fact bank 240 and growing. |
-| Firefly Futures | `firefly` | BUILT 2026-08-08. 120 prompt launch bank. Spicy tier CUT. |
-| Lifting Fog | `liftingfog` | BUILT 2026-08-08. 20 question launch bank of 4 ordered clues. |
-| First Frost | `firstfrost` | BUILT 2026-08-08. 40 question launch bank. Frost console with 3 powers. |
+| Mothlight | `mothlight` | BUILT, driven to podium. Fact bank 240 to **659**. |
+| Firefly Futures | `firefly` | BUILT 2026-08-08, driven to podium. **284** prompts. Spicy tier CUT. |
+| Lifting Fog | `liftingfog` | BUILT 2026-08-08, driven to podium. **76** four clue questions. |
+| First Frost | `firstfrost` | BUILT 2026-08-08, driven to podium. **189** questions. Frost console, 3 powers. |
 | Same Soil | | not started. Art bound, roughly 720 illustrations, so the art pipeline is the critical path and it should not start until that pipeline does. |
 | Moongraft | | not started. Needs the phone drawing canvas. |
 | Hoodwink the Owl | | not started, prototype gated on HUNCH. |

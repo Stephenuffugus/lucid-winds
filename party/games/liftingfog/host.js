@@ -28,6 +28,7 @@ root.innerHTML=
  '<div class="lf-num" id="lf-qn"></div><div class="lf-worth" id="lf-worth"></div>'+
  '<div class="lf-timer" id="lf-qt"></div></div>'+
  '<div class="lf-clues" id="lf-clues"></div>'+
+ '<div class="lf-opts" id="lf-qopts"></div>'+
  '<div class="lf-fog" id="lf-fog"></div>'+
  '<div class="lf-in" id="lf-qin"></div><div class="lf-strip" id="lf-strip1"></div></div>'+
 
@@ -126,6 +127,9 @@ function phaseQuestion(){
   curTier=0;
   $('lf-qn').textContent='QUESTION '+(qi+1)+' OF '+ROUNDS;
   $('lf-qin').textContent='0 of '+order.length+' locked in';
+  var oh='';
+  for(var oi=0;oi<shuffled[qi].length;oi++) oh+='<div class="lf-opt">'+esc(shuffled[qi][oi])+'</div>';
+  $('lf-qopts').innerHTML=oh;
   renderClues(0);
   PartyShell.setPhase('question',{num:qi+1,total:ROUNDS,options:shuffled[qi],
     clue:q.clues[0],tier:0,worth:PTS[0]});

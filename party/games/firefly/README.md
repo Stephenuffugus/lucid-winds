@@ -5,7 +5,7 @@ Answer a question about yourself, then bet on what the rest of the room said.
 ## Files
 | file | what it is |
 |---|---|
-| `content.js` | `window.FIREFLY_BANK`, 120 yes or no prompts. Generator prompt in the header. |
+| `content.js` | `window.FIREFLY_BANK`, 284 yes or no prompts. Generator prompt in the header. |
 | `host.js` | host screen, all game logic and scoring |
 | `player.js` | phone screen, renders from phase payloads only |
 | `game.css` | both screens |

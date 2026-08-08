@@ -6,7 +6,7 @@ less every time the fog lifts.
 ## Files
 | file | what it is |
 |---|---|
-| `content.js` | `window.LIFTINGFOG_BANK`, 20 questions of 4 ordered clues. Generator prompt in the header. |
+| `content.js` | `window.LIFTINGFOG_BANK`, 76 questions of 4 ordered clues. Generator prompt in the header. |
 | `host.js` | host screen, all game logic and scoring |
 | `player.js` | phone screen, renders from phase payloads only |
 | `game.css` | both screens |

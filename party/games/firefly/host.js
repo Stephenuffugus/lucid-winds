@@ -75,7 +75,7 @@ function strip(which){
   var el=$(which); if(el) el.innerHTML=rows;
 }
 /* how many have acted, never what they chose */
-function inCount(el,done){ $(el).textContent=done+' of '+order.length+' in'; }
+function inCount(el,done,what){ $(el).textContent=done+' of '+order.length+' '+what; }
 
 function lanternRow(target,counts,trueCount,betsByNum){
   /* one lantern per possible answer 0..N. counts/betsByNum are optional. */
@@ -95,11 +95,11 @@ PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='poll'&&msg.r===ri+1&&$('ff-poll').classList.contains('on')){
     polls[ri]=polls[ri]||{}; polls[ri][pid]=!!msg.v;
-    inCount('ff-pin',Object.keys(polls[ri]).length);
+    inCount('ff-pin',Object.keys(polls[ri]).length,'answered');
   } else if(msg.t==='bet'&&msg.r===ri+1&&$('ff-mkt').classList.contains('on')){
     var v=msg.v|0; if(v<0||v>order.length) return;
     bets[ri]=bets[ri]||{}; bets[ri][pid]=v;
-    inCount('ff-min',Object.keys(bets[ri]).length);
+    inCount('ff-min',Object.keys(bets[ri]).length,'have bet');
   }
 });
 
@@ -123,7 +123,7 @@ function phasePoll(){
   show('ff-poll'); strip('ff-strip1');
   $('ff-pn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('ff-pp').textContent=q.text;
-  inCount('ff-pin',0);
+  inCount('ff-pin',0,'answered');
   PartyShell.setPhase('poll',{num:ri+1,total:ROUNDS,text:q.text});
   PartyShell.startTimer(T_POLL,function(s){ var t=$('ff-pt'); t.textContent=s; t.classList.toggle('low',s<=5); },phaseMarket);
 }
@@ -134,7 +134,7 @@ function phaseMarket(){
   $('ff-mn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('ff-mp').textContent=q.text;
   $('ff-ask').textContent='How many of the '+order.length+' said yes?';
-  inCount('ff-min',0);
+  inCount('ff-min',0,'have bet');
   lanternRow('ff-lant',null,null,null);
   PartyShell.setPhase('market',{num:ri+1,total:ROUNDS,text:q.text,n:order.length});
   PartyShell.startTimer(T_MKT,function(s){ var t=$('ff-mt'); t.textContent=s; t.classList.toggle('low',s<=5); },phaseReveal);

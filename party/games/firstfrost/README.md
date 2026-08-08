@@ -13,7 +13,7 @@ podium. If this ever reads as a trivia game with a gimmick, it has drifted.
 ## Files
 | file | what it is |
 |---|---|
-| `content.js` | `window.FIRSTFROST_BANK`, 40 multiple choice questions. Generator prompt in the header. |
+| `content.js` | `window.FIRSTFROST_BANK`, 189 multiple choice questions. Generator prompt in the header. |
 | `host.js` | host screen, all game logic and scoring |
 | `player.js` | phone screen, TWO consoles in one module |
 | `game.css` | both screens |
