@@ -175,3 +175,49 @@ stubs — the exact wasted close-up detail the wave-two law warns about.
 `setD(max(4, size*0.42))` puts the camera 1428cm from a 3400cm Ferris wheel, so
 the wheel leaves frame at the top; the Grand Hotel came back clipped at the frame
 edge. Framing distance has to derive from the model's **height**, not its `size`.
+
+---
+
+# w5 Starfall Bay: three more structures, and what they cost (2026-08-08)
+
+`variety_audit.js` put w5 at **19 distinct late kinds** against 42 in w1 and 44 in
+w7 — the thinnest endgame in the game, closing on seawall x220, rowboat x93,
+beachhut x62, boardwalkstand x57, sailboat x39. Added The Helter Skelter, The
+Broken Keel and The Moored Balloon, taking it from 5 landmarks to 8.
+
+## ⚖️ A LANDMARK IS WORTH A LOT OF FOOD, and here is the measurement
+
+A/B under identical RNG (`balance.js 1 12345 5 near` on both commits, since
+`onlyWorldN` changes the seeded stream and its numbers are **not** comparable to a
+full-suite run):
+
+| w5, near-bot, seed 12345 | 5 landmarks | 8 landmarks | change |
+|---|---|---|---|
+| t100 | 123.9s | 85.0s | −38.9s |
+| t140 | 168.6s | 106.8s | −61.8s |
+| **t190** | **171.4s** | **113.4s** | **−58.0s** |
+| ceiling | 5917.9 (3.70x) | 6090.5 (3.81x) | +2.9% |
+| absorbs | 1556 | 2483 | +59.6% |
+| s3ok / leftovers | true / 0 | true / 0 | — |
+
+**Three props moved the tightest world's time-to-190% by a third of the clock.**
+The ladder is intact — the ceiling barely moved, and the v4.0 detonation was
+ceilings at 13x goal — because three objects are small against a whole world's
+food. What they change is the MIDDLE game: at 2600-3200cm each they are worth more
+growth than dozens of beachhuts, so the ball reaches every threshold sooner and
+then has 82 spare seconds to keep eating, which is where the +60% absorbs comes
+from.
+
+⚖️ **So: budget landmarks as food, not as scenery.** Three per world is a
+difficulty change in the tightest worlds, and the check is a same-RNG A/B, not a
+single after-reading.
+
+## ⚖️ OPEN FOR STEPHEN — w5's clock
+
+Left at 195s deliberately. w5 was the world where the near bot (the first-time
+human model) only *just* finished, and a player who runs out of clock never sees
+the endgame that this whole tier exists to improve — so more room is aligned with
+the complaint. But it is now comfortable rather than tight: margin went from ~24s
+to ~82s. If you want the old tension back, w5's clock goes 195 -> about 170 and
+the near bot still clears it. Your call; I did not want to change a tuned clock
+without you.

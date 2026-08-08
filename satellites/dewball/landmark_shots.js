@@ -27,7 +27,7 @@ var PLAN = [
   // stadium at x53 combo, which is a lovely picture of nothing.
   // To stand further back, raise `off` — the park distance — and leave `d` alone.
   // Tall-for-their-size kinds therefore carry an `off`, never a `d`.
-  { w:1, kinds:['lmLongClock','lmGramophone','lmBookTower'] },
+  { w:1, kinds:[{k:'lmLongClock',off:2.6},'lmGramophone','lmBookTower'] },
   { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
   { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond'] },
   { w:4, kinds:['lmClockTower','lmBathHouse'] },
