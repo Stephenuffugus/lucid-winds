@@ -178,6 +178,12 @@ Rules of the contract:
 9. **General audience.** Nothing spicy, nothing edgy, nothing that needs an
    age gate. When a fact or prompt feels borderline, it is out.
 10. Respect `prefers-reduced-motion`: no ambient animation when set.
+11. **Give your module a voice, on the host only.** `window.PartySound` is
+    already loaded: `pip()` when somebody commits, `chime()` when something
+    opens, `reveal(good)` when it lands, `thud()` when something is lost,
+    `fanfare()` at the end. The shell already plays the last five seconds for
+    you. Phones stay silent, because eight of them chiming a few milliseconds
+    apart is the noise a room blames the game for.
 
 ## Definition of done (self-verify every line before handing off)
 
@@ -189,9 +195,12 @@ Run all of this yourself. A line you did not run is not checked.
    fine).
 3. **The harness already exists. Do not write your own.**
    ```
-   node party/test/drive.js <slug> [players]   # start to gameComplete, with proof
+   bash party/test/all.sh                       # everything, one at a time
+   node party/test/drive.js <slug> [players]    # start to gameComplete, with proof
    node party/test/hostdrop.js <slug> [players] # kill the big screen, survive it
    node party/test/picker.js                    # the front door still works
+   node party/test/bank_audit.js                # every mechanical content rule
+   node party/test/audio.js                     # the sound is real and mutable
    ```
    `drive.js` opens a host and real phone tabs, joins them, starts the game, and
    plays it to the end while the phones tap and draw for themselves. It asserts
