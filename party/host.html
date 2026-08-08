@@ -32,7 +32,7 @@
 </div>
 <div class="screen" id="ps-lobby">
   <div class="ps-title">WHACK BOX</div>
-  <div class="ps-sub">Sky Wolf Studios party night</div>
+  <div class="ps-sub" id="ps-lobby-sub">Sky Wolf Studios party night</div>
   <div class="ps-codebox"><div id="ps-code">....</div></div>
   <div class="ps-joinline">Phones: open <b id="ps-join-url"></b> and enter the code</div>
   <div id="ps-roster"></div>
@@ -63,6 +63,14 @@ document.addEventListener('party-transport-error',function(e){
   function launch(slug){
     var e=entry(slug);
     $('ps-pick').classList.remove('on');
+    /* the lobby said "Sky Wolf Studios party night" whatever you had picked, so
+       anybody wandering over had no idea what they were about to play, and the
+       person who picked had no confirmation they had picked the right thing */
+    if(e){
+      var sub=$('ps-lobby-sub');
+      if(sub) sub.innerHTML='<span class="ps-lobby-game">'+e.glyph+' '+e.name+'</span>'+
+        '<span class="ps-lobby-blurb">'+e.blurb+'</span>';
+    }
     if(e&&e.min) PartyShell.setMinPlayers(e.min);
     var css=document.createElement('link'); css.rel='stylesheet'; css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
     var s1=document.createElement('script'); s1.src='games/'+slug+'/content.js';
