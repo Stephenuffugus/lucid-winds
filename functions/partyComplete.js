@@ -46,10 +46,23 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 
-/* ⚖ PROPOSAL, not approved economy. One block, one edit. */
-const PLAY_AWARD = 12          // everybody who was in the room at the end
-const PLACE_BONUS = [6, 4, 2]  // 1st, 2nd, 3rd, on top of PLAY_AWARD
-const MAX_PARTY_PER_DAY = 60   // ceiling across ALL party titles in one day
+/* ⚖ Sized to SUNBEAM_EARN_POLICY.md rather than invented, because the studio
+   already has a standard and a party game is not exempt from it:
+     per run cap  12   so one session can never be worth more than a good run
+     daily cap    30   which is exactly one plant, the 30-per-plant anchor
+     floor        never "played and got nothing"
+   8 for being there plus 4/2/1 for the top three tops out at exactly 12 for a
+   winner, and 8 is a comfortable floor for last place.
+
+   ⭐ THE WHOLE PACK SHARES ONE DAILY CAP, not one per title. Six titles at 30
+   each would be six plants a day out of a party night, which is not what the
+   anchor means. Roughly three party games a day reaches the cap, which matches
+   the policy's own "3+ good runs = a plant".
+
+   ⚖ Still Stephen's call. One block, one edit. */
+const PLAY_AWARD = 8           // everybody who was in the room at the end
+const PLACE_BONUS = [4, 2, 1]  // 1st, 2nd, 3rd, on top of PLAY_AWARD
+const MAX_PARTY_PER_DAY = 30   // ceiling across ALL party titles in one day
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /* The shipped catalogue. Kept here deliberately rather than trusted from the

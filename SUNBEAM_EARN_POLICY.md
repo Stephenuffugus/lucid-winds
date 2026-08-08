@@ -47,6 +47,35 @@ milestone/progress/combo 1; Tally uses a moments table). This is the intended
 exception to the 30/game rule — it's an architecture constraint, not a different
 philosophy.
 
+## Party games (Whack Box)
+
+Party titles are same-origin (`lucidwinds.com/party/`) but they do **not** get
+30/day each. Six titles at 30 would be six plants out of one party night, which
+is not what the 30-per-plant anchor means. So:
+
+| Rule | Value |
+|---|---|
+| **Daily cap** | **30 across ALL party titles combined** (= 1 plant/day) |
+| **Per session** | **12** for the winner, which is the standard per-run cap |
+| **Everybody** | **8** for being in the room at the end, winner and last alike |
+| **Placing** | +4 / +2 / +1 for 1st, 2nd, 3rd on top of the 8 |
+
+Roughly three party games in a day reaches the cap, which is the same shape as
+the policy's "3+ good runs = a plant".
+
+⭐ **Everyone is paid, including last place.** This is a social product and a
+player who gets nothing for an evening does not come back. It is stated in
+WHACKBOX_PLAN.md as a product rule, not a tuning knob.
+
+Server side in `functions/partyComplete.js`. **Each player's own phone claims for
+itself**: the host screen is just another browser, so it reports PLACE and the
+server decides the AMOUNT. The claim document id is room code plus game slug, so
+a replayed call collides instead of paying twice.
+
+⛔ Dormant until cloud rooms are switched on (`PARTY_CLOUD_SETUP.md`). On the
+local practice transport nothing mints, which is honest rather than a fake
+number on screen.
+
 ## Server backstop
 
 The Sunbeam SDK / `earnHashes` cloud function enforces global caps
