@@ -109,11 +109,11 @@ Firefly Futures spicy tier (keeper, conditional, see above). Burr in the Hem and
 | title | slug | state |
 |---|---|---|
 | Twin Lanterns | (satellite) | v0.1 live, dev gated, separate from the party shell |
-| Mothlight | `mothlight` | BUILT, driven to podium. Fact bank 240 to **659**. |
+| Mothlight | `mothlight` | BUILT, driven to podium. **659** facts. |
 | Firefly Futures | `firefly` | BUILT 2026-08-08, driven to podium. **284** prompts. Spicy tier CUT. |
-| Lifting Fog | `liftingfog` | BUILT 2026-08-08, driven to podium. **76** four clue questions. |
-| First Frost | `firstfrost` | BUILT 2026-08-08, driven to podium. **189** questions. Frost console, 3 powers. |
-| Same Soil | `samesoil` | BUILT 2026-08-08, driven to podium at 3 AND at 2 players. 96 authored word pairs; ⚖ the 720 illustrations are an upgrade, not a blocker, see its README. |
+| Lifting Fog | `liftingfog` | BUILT 2026-08-08, driven to podium. **140** four clue questions. |
+| First Frost | `firstfrost` | BUILT 2026-08-08, driven to podium. **307** questions. Frost console, 3 powers. |
+| Same Soil | `samesoil` | BUILT 2026-08-08, driven to podium at 3 AND at 2 players. **206** word pairs; ⚖ the 720 illustrations are an upgrade, not a blocker, see its README. |
 | Twin Lanterns party mode | | not started, and the doc's own rule says the standalone daily ships first. Do not invert that. |
 | Moongraft | `moongraft` | BUILT 2026-08-08, driven to gallery. Real name and haiku from word-banks.js. No scores by design. |
 | Hoodwink the Owl | | not started, prototype gated on HUNCH. |
