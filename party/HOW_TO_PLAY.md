@@ -45,6 +45,12 @@ Fog for people who like being clever.
 - **Everyone earns sunbeams**, winner and last alike. That is deliberate: a party
   game where losing pays nothing is a party game people stop joining.
 - **Nothing needs an account** to play, and guests install nothing.
+- **The big screen holds itself awake** while a room is open. Nobody touches the
+  host during a party, which is exactly why it is the screen most likely to dim
+  and sleep, so it asks the browser to keep it lit.
+- **There is a sound toggle** in the top right of the host screen, and it
+  remembers. Phones make no sound at all on purpose: they buzz instead, which
+  only the person holding one can feel.
 
 ## If something is wrong
 

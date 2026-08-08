@@ -73,6 +73,26 @@ document.addEventListener('party-transport-error',function(e){
     b.title=on?'Sound on':'Sound off';
   }
   document.addEventListener('click',function(){ if(window.PartySound) PartySound.wake(); },{once:true});
+
+  /* ⛔ KEEP THE BIG SCREEN AWAKE. A laptop plugged into a television dims and
+     then sleeps after a few minutes of nobody touching it, and nobody touches
+     the host: the whole point is that the phones are the controllers. So the
+     screen everybody is looking at is the one most likely to go dark mid round.
+     Re-requested on visibility change because the lock is dropped whenever the
+     tab is hidden, and it never comes back on its own. */
+  (function(){
+    var lock=null;
+    function hold(){
+      if(!navigator.wakeLock||document.visibilityState!=='visible') return;
+      navigator.wakeLock.request('screen').then(function(l){
+        lock=l;
+        l.addEventListener('release',function(){ lock=null; });
+      })['catch'](function(){ /* refused or unsupported; the party still runs */ });
+    }
+    document.addEventListener('visibilitychange',function(){ if(!lock) hold(); });
+    document.addEventListener('click',hold,{once:true});
+    hold();
+  })();
   var mb=$('ps-mute');
   if(mb) mb.addEventListener('click',function(){ if(window.PartySound){ PartySound.toggle(); paintMute(); } });
   paintMute();
