@@ -668,6 +668,32 @@
     }
     return a;
   }
+  function _lmHelix(n,rad0,rad1,y0,y1,segW,th,c,turns){
+    // a spiral ramp winding up a tower. ⭐ This is the one outline in this game
+    // you cannot fake with a stack, a ring or a wheel, and it costs one primitive
+    // per step. A helter skelter is legible from across a bay for exactly the
+    // reason _lmWheel's circle is: nothing else on the planet has that shape.
+    var a=[],i,T=(turns===undefined)?2.25:turns;
+    for(i=0;i<n;i++){
+      var t=(n>1)?i/(n-1):0, ang=6.283*T*t;
+      var r=rad0+(rad1-rad0)*t, y=y0+(y1-y0)*t;
+      a.push(pp("box",[segW,th,r*0.55],c,Math.cos(ang)*r,y,Math.sin(ang)*r,0,-ang+1.5708,0.16));
+    }
+    return a;
+  }
+  function _lmRibs(n,len,hMax,spread,th,c,y0,lean){
+    // the ribs of a broken hull, fanning along a keel. Curved timber is another
+    // silhouette this game has never owned, and a wreck only reads as a wreck if
+    // you can see through it.
+    var a=[],i;
+    for(i=0;i<n;i++){
+      var t=(n>1)?i/(n-1):0, x=-len/2+len*t;
+      var h=hMax*(0.45+0.55*Math.sin(Math.PI*t));      /* tall amidships */
+      a.push(pp("box",[th,h,th*1.2],c,x,(y0||0)+h/2, spread*0.5,0,0,(lean||0.22)));
+      a.push(pp("box",[th,h,th*1.2],c,x,(y0||0)+h/2,-spread*0.5,0,0,-(lean||0.22)));
+    }
+    return a;
+  }
   function _lmTiers(n,w,d,h,gap,cRoof,cWall,y0){
     // stacked pagoda storeys: wall, overhanging roof, shrink, repeat.
     var a=[],i,y=y0||0,ww=w,dd=d;
@@ -1529,6 +1555,96 @@
       pp("sph",[13,8,6],0xfff2f6,10,232,40), pp("sph",[12,8,6],0xfff2f6,-48,228,-8) ]
   ),{fixed:1,volF:0.3});
 
+  // =====================================================================
+  //  w5 STARFALL BAY — THE THIN WORLD (2026-08-08)
+  //
+  //  ⛔ variety_audit.js: w5 closes on NINETEEN distinct kinds, against 42 in w1
+  //  and 44 in w7, and its five worst late repeats are seawall x220, rowboat x93,
+  //  beachhut x62, boardwalkstand x57, sailboat x39. It is the thinnest endgame in
+  //  the game and it always was — LANDMARKS.md measured 8 kinds here before the
+  //  tier existed. A 1600cm goal means only genuinely enormous things count as
+  //  late food, and enormous things are the expensive ones to author, so the world
+  //  did the affordable thing and repeated four kinds forty times.
+  //
+  //  ⚖️ COLOUR LAW, w5 EDITION: this world is a warm peach dusk. Cream and white
+  //  go to peach and dissolve into the sand — the grey town boxes beside the Grand
+  //  Hotel are mush in the shots. What holds is SATURATED RED, DEEP TEAL and DARK
+  //  TIMBER. The Bay Wheel reads from across the bay because it is red.
+  //
+  //  ⚖️ And these three add food rather than removing it, which in this world is
+  //  the safe direction: w5's near-bot reaches 190% of goal at 173.3s against a
+  //  195s clock, so more food shortens that. The danger to watch is the opposite
+  //  one — the v4.0 lesson where too much food let the bot three-star in 60s.
+  // =====================================================================
+
+  K("lmHelterSkelter","The Helter Skelter",3200,_cat(
+    [ pp("cyl",[980,1040,140,20],0x3a3a44,0,70,0), pp("cyl",[900,900,40,20],0x8a5a42,0,160,0) ],
+    /* the tower, banded so the height itself is legible */
+    [ pp("cyl",[430,390,720,16],0xc23a4a,0,500,0),
+      pp("cyl",[390,340,700,16],0x1a6a7a,0,1210,0),
+      pp("cyl",[340,285,680,16],0xc23a4a,0,1900,0),
+      pp("cyl",[285,225,560,16],0x1a6a7a,0,2520,0) ],
+    /* ⭐ the slide is the landmark. Gold on a red tower, and a spiral is a shape
+       nothing else in this game has at any size. */
+    _lmHelix(18,660,300,300,2680,320,64,0xf0c44a,2.35),
+    [ pp("cone",[340,430,16],0xc23a4a,0,3015,0),
+      pp("cyl",[26,26,220,8],0xf0e8d8,0,3320,0), pp("card",[240,150],0xf0c44a,120,3360,0,0,1.5708,0) ],
+    /* the entry, so it reads as something people queue for */
+    [ pp("box",[520,420,300],0x1a6a7a,0,210,780), pp("box",[560,70,340],0xf0c44a,0,450,780),
+      pp("card",[360,150],0xf0e8d8,0,300,935) ],
+    _lmCols(8,880,220,52,0xf0c44a,160)
+  ),{fixed:1,volF:0.3});
+
+  K("lmBrokenKeel","The Broken Keel",2600,_cat(
+    /* the keel, run aground and tilted */
+    [ pp("box",[2300,130,240],0x4a3320,0,150,0,0,0,0.09),
+      pp("box",[2100,60,300],0x3a2618,0,240,0,0,0,0.09) ],
+    /* ⭐ ribs, not a hull. A wreck only reads as a wreck if you can see the sky
+       through it, and curved timber fanning off a keel is an outline this game has
+       never owned. */
+    _lmRibs(9,2000,980,640,95,0x4a3320,230,0.27),
+    /* the strakes still clinging to the ribs */
+    [ pp("box",[1900,70,60],0x5a4028,0,560,300,0,0,0.09), pp("box",[1900,70,60],0x5a4028,0,560,-300,0,0,0.09),
+      pp("box",[1500,60,55],0x5a4028,-100,880,240,0,0,0.09), pp("box",[1500,60,55],0x5a4028,-100,880,-240,0,0,0.09) ],
+    /* stem post at the bow, and the mast still up */
+    [ pp("box",[170,880,220],0x3a2618,-1080,560,0,0,0,0.30),
+      pp("cyl",[80,95,1700,10],0x4a3320,240,1050,0,0,0,0.34),
+      pp("cyl",[40,40,760,8],0x4a3320,140,1560,0,0,0,1.5708) ],
+    /* what is left of the sail, and the bell it was named for */
+    [ pp("card",[700,900],0xc23a4a,470,1420,0,0,0,0.34),
+      pp("card",[420,520],0xa82a3a,700,980,0,0,0,0.34),
+      pp("cone",[130,180,12],0xf0c44a,-1080,1030,0,3.1416,0,0),
+      pp("sph",[46,9,7],0xf0c44a,-1080,900,0) ],
+    /* spilled cargo, because a wreck without wreckage is a sculpture */
+    [ pp("box",[300,240,300],0x6a4a2a,-1500,120,520,0,0.5,0.1),
+      pp("box",[260,210,260],0x6a4a2a,1450,105,-460,0,0.9,0.06),
+      pp("cyl",[130,130,300,12],0x5a4028,1250,150,560,1.5708,0,0.4) ]
+  ),{fixed:1,volF:0.3});
+
+  K("lmMooredBalloon","The Moored Balloon",3000,_cat(
+    [ pp("cyl",[520,560,50,18],0x8a5a42,0,25,0) ],
+    /* the basket and its burner frame */
+    [ pp("box",[430,320,430],0x6a4a2a,0,210,0), pp("box",[450,60,450],0x8a6a3a,0,380,0),
+      pp("cyl",[22,22,300,6],0x8a8e96,-180,530,-180), pp("cyl",[22,22,300,6],0x8a8e96,180,530,-180),
+      pp("cyl",[22,22,300,6],0x8a8e96,-180,530,180), pp("cyl",[22,22,300,6],0x8a8e96,180,530,180),
+      pp("box",[200,90,200],0xf0c44a,0,700,0) ],
+    /* ⭐ THE CIRCLE IS THE POINT — the same reason _lmWheel works. A sphere against
+       a dusk sky is legible from anywhere in the bay, and it is moored on the sand
+       rather than floating, so the thing you can see is the thing you can reach. */
+    [ pp("cone",[330,300,14],0xc23a4a,0,860,0,3.1416,0,0),
+      pp("sph",[830,18,13],0xc23a4a,0,1720,0) ],
+    /* bands, which is how a sphere reads as fabric rather than a ball */
+    [ pp("cyl",[840,840,170,22],0x1a6a7a,0,1720,0),
+      pp("cyl",[700,700,150,22],0x1a6a7a,0,2160,0),
+      pp("cyl",[440,440,130,22],0x1a6a7a,0,2440,0),
+      pp("cyl",[150,150,90,16],0xf0c44a,0,2560,0) ],
+    /* mooring lines and the sandbags holding her down */
+    _lmCable(-1500,90,-260,1180,140,5,0x8a8378,34,0),
+    _lmCable(1500,90,260,1180,140,5,0x8a8378,34,0),
+    [ pp("sph",[150,9,7],0x6a6258,-1520,120,0), pp("sph",[150,9,7],0x6a6258,1520,120,0),
+      pp("sph",[130,9,7],0x6a6258,-1400,110,320), pp("sph",[130,9,7],0x6a6258,1400,110,-320) ]
+  ),{fixed:1,volF:0.3});
+
   // ambient critters (v4.4) — tiny, quick, instantly edible: pure life
   K("butterfly","Meadow Butterfly",4.5,[ pp("card",[2.6,2.2],0xe8a0bf,-1.2,4,0,0,0.6,0), pp("card",[2.6,2.2],0xd4a843,1.2,4,0,0,-0.6,0), pp("sph",[0.5,4,3],0x3a2a28,0,4,0) ],{mover:{kind:"dart",sp:2.6}});
   K("dragonflyS","Blue Dragonfly",5,[ pp("cyl",[0.35,0.2,3.6,4],0x4a7ab3,0,4.4,0,0,0,1.57), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,-0.8,0,0.5,0), pp("card",[3.2,0.9],0xbfe6e0,0,4.6,0.8,0,-0.5,0) ],{mover:{kind:"dart",sp:3.4}});
@@ -2185,6 +2301,10 @@
     scatter:[
        {k:"lmPierPavilion",n:1,zone:"r:z3"},{k:"lmDryDock",n:1,zone:"r:z3"},{k:"lmCannery",n:1,zone:"r:z2"},
       {k:"lmFerrisWheel",n:1,zone:"r:z3"},{k:"lmGrandHotel",n:1,zone:"r:z3"},
+      /* the thin-world batch: 5 landmarks was not enough for a 19-kind endgame.
+         Spread across z2/z3 so the separation law does not starve them. */
+      {k:"lmHelterSkelter",n:1,zone:"r:z3"},{k:"lmBrokenKeel",n:1,zone:"r:z2"},
+      {k:"lmMooredBalloon",n:1,zone:"r:z2"},
              {k:"shell",n:106,zone:"spawn"},
       {k:"shell",n:116,zone:"r:tide"},{k:"starfish",n:74,zone:"r:tide"},{k:"bucket",n:59,zone:"r:tide"},
       {k:"seagrass",n:64,zone:"r:tide"},{k:"sandcastle",n:21,zone:"r:tide"},

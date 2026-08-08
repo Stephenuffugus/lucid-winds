@@ -31,7 +31,9 @@ var PLAN = [
   { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
   { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond'] },
   { w:4, kinds:['lmClockTower','lmBathHouse'] },
-  { w:5, kinds:[{k:'lmFerrisWheel',off:3.2},{k:'lmGrandHotel',off:2.6}] },
+  { w:5, kinds:[{k:'lmFerrisWheel',off:3.2},{k:'lmGrandHotel',off:2.6},
+                {k:'lmHelterSkelter',off:3.4},{k:'lmBrokenKeel',off:2.6},
+                {k:'lmMooredBalloon',off:3.0}] },
   { w:6, kinds:[{k:'lmSuspBridge',off:3.4},{k:'lmStadium',off:3.0},'lmPalace'] },
   { w:7, kinds:['lmMoonGate','lmPagoda','lmStoneCircle'] }
 ];
