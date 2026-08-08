@@ -26,10 +26,13 @@ party/
   shell/                 SHELL-OWNED. Never edit anything in here.
     host.js              window.PartyShell, host side
     player.js            window.PartyShell, player side
-    firebase-config.js   transport config
-    shell.css            room chrome, lobby, join form, reconnect toasts
-  host.html              shell-owned router, loads your module via ?game=<slug>
+    transport.js         local practice + cloud room transports
+    firebase-config.js   cloud room config
+    shell.css            room chrome, picker, lobby, join form, lost-host notice
+  catalogue.js           SHELL-OWNED. The list every title appears in.
+  host.html              shell-owned. Opens on the TV picker; ?game=<slug> deep links.
   play.html              shell-owned phone entry (code + name), loads your player module
+  test/                  SHELL-OWNED harnesses, see Definition of done.
   games/
     <slug>/              YOURS. Everything you write lives here and only here.
       host.js            host-screen logic and rendering for your game
@@ -38,6 +41,22 @@ party/
       game.css           your game's styles, both screens
       README.md          your handoff notes
 ```
+
+**Adding a title is one entry in `catalogue.js` plus a `games/<slug>/` folder.**
+The entry carries the display name, a one line blurb, min and max players and a
+rough length; the shell enforces the minimum at the lobby and the picker renders
+from it.
+
+⛔ **`content.js` is loaded on the HOST ONLY.** The phone gets a module and a
+stylesheet, never a bank. Anything a phone needs to render must arrive in a phase
+payload or a `sendToPlayer` message. This is not an oversight, it is what keeps
+answers off the device that could read them.
+
+⛔ **The class `on` is RESERVED for the active screen.** The shell, the phone page
+and every harness read `.on` to mean "this is the screen showing now". First Frost
+gave its frost mark pips a state class of `on` and a finished game started
+reporting as stuck, because a query for the live screen returned a mark dot.
+Module state classes need their own word: `lit`, `sel`, `won`, anything but `on`.
 
 Your module is vanilla JS, no frameworks, no build step, no imports of
 anything outside your folder except the shell API. Screens are
@@ -83,7 +102,18 @@ PartyShell.gameComplete(resultsByPlayerId) // {playerId:{score, place}}; the she
                                            // sunbeams for EVERY participant. You
                                            // never pass amounts. Call exactly once.
 PartyShell.closeRoom()
+PartyShell.setMinPlayers(n)                // normally the catalogue does this for you
+PartyShell.backToPicker()                  // podium control: keep the room and its
+                                           // code, go and pick another title
+PartyShell.players()                       // current roster
+PartyShell.code()                          // the room code
+PartyShell.completed()                     // {n, results}; how the harness knows a
+                                           // game ended. Do not call it yourself.
 ```
+
+**Your podium should offer three things**: PLAY AGAIN, ANOTHER GAME
+(`backToPicker`), END NIGHT (`closeRoom`). A party that has to reload a page to
+change games is a party that stops.
 
 **Player side (used by games/<slug>/player.js):**
 
@@ -95,8 +125,18 @@ PartyShell.onPhase(cb)            // cb(name, data); ALSO fires immediately with
 PartyShell.onMessage(cb)          // messages addressed to this phone
 PartyShell.sendToHost(msg)
 PartyShell.onTimer(cb)            // cb(secondsRemaining), mirrored from host
-PartyShell.playerId               // stable across rejoin (token in localStorage)
+PartyShell.playerId               // stable across rejoin, and unique PER TAB, so
+                                  // practice mode with several tabs is several
+                                  // players rather than one
+PartyShell.gameSlug               // which module this phone is running; the shell
+                                  // loads and swaps it for you
 ```
+
+The shell also owns **host drop**: if the big screen goes away the phone says so,
+keeps knocking, and slides back into the live phase when it returns, without the
+player retyping anything. Your module does not need to handle it, but do make sure
+every phase payload can rebuild your screen from nothing, because that is the
+moment it will be asked to.
 
 Rules of the contract:
 
@@ -147,13 +187,37 @@ Run all of this yourself. A line you did not run is not checked.
    Zero errors.
 2. Serve the `party/` folder locally over HTTP (`python3 -m http.server` is
    fine).
-3. Write a Puppeteer script that: opens host.html with your slug, creates a
-   room, reads the code off the DOM, opens 3 more pages as phones, joins all
-   3 with names, starts the game, and plays a COMPLETE game start to podium
-   with the phones tapping valid inputs. It must finish without hanging.
+3. **The harness already exists. Do not write your own.**
+   ```
+   node party/test/drive.js <slug> [players]   # start to gameComplete, with proof
+   node party/test/hostdrop.js <slug> [players] # kill the big screen, survive it
+   node party/test/picker.js                    # the front door still works
+   ```
+   `drive.js` opens a host and real phone tabs, joins them, starts the game, and
+   plays it to the end while the phones tap and draw for themselves. It asserts
+   the phone loaded YOUR slug, that `gameComplete` fired exactly once carrying
+   every participant, that no tap was blocked or off the fold, and that no live
+   control is under 48 rendered pixels. If your module needs a new kind of input,
+   teach the autopilot that input rather than lowering the bar: it learned to
+   draw for Moongraft, because tapping buttons alone would have driven a drawing
+   game to a gallery of blank canvases and called it proven.
+
+   Add your slug to the `FAST` map in `drive.js` and give your module a
+   `?<xx>_fast=1` switch that shrinks every timer, so a full game fits in a gate.
 4. Screenshot the host screen in EVERY phase, and one phone in every phase
    that has phone UI. Then OPEN the screenshots and look at them. Name what
    is wrong before anyone else does. A green script run is not a look.
+
+   ⛔ Use `node party/test/shots.js <slug> [players] [seconds]` for the pictures.
+   It runs the REAL clocks and names each file from the phase read AFTER the
+   capture returns. The fast-clock driver takes shots too, but under load a two
+   second reveal is over before the capture lands, and a screenshot labelled with
+   a phase it does not show is worse than no screenshot at all.
+
+   ⛔ This step is not a formality and it is not covered by step 3. The TV picker
+   passed every automated check while its title, blurb and player count ran
+   together into one unreadable paragraph. Six checks, all green, and the front
+   door was broken. Open the images.
 5. Zero console errors on all four pages across the entire run. Capture the
    consoles in the script and assert on it.
 6. Rejoin test: during a mid-game phase, reload one phone page. Within 5
