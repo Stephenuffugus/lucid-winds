@@ -59,6 +59,7 @@ function handle(m){
   if(HOST_MSG[m.t]) heard();
   if(m.t==='hb') return;
   if(m.t==='joined'){ joined=true; setSlug(m.game);
+    if(m.color){ window.PartyShell.color=m.color; paintMyColour(m.color); }
     document.dispatchEvent(new CustomEvent('party-joined')); }
   else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; setSlug(m.game);
     if(phaseCb) phaseCb(m.name,m.data); }
@@ -96,9 +97,17 @@ function claimSunbeams(results){
    vibration, which is most laptops and every practice tab. */
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||18); }catch(e){} }
 
+/* a bar of your own colour along the top of the phone, so a player can look up
+   and find themselves on the television without being told which chip is theirs */
+function paintMyColour(c){
+  var el=document.getElementById('ps-mycolour');
+  if(el){ el.style.background=c; el.classList.add('on'); }
+}
+
 window.PartyShell={
   playerId:window.PartyTransport.selfId,
   gameSlug:null,
+  color:null,
   buzz:buzz,
   joinRoom:function(code,name){
     myName=name; myCode=code;

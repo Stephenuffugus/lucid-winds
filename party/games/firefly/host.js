@@ -52,6 +52,7 @@ function show(id){ var s=root.querySelectorAll('.ff-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var BANK=window.FIREFLY_BANK||[], QS=[], ri=0, ROUNDS=10;
 var scores={}, names={}, polls={}, bets={}, order=[];
 var FAST=/[?&]ff_fast=1(&|$)/.test(location.search);
@@ -72,7 +73,8 @@ function pickPrompts(){
 function strip(which){
   var ids=order.slice(), rows='';
   ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
-  for(var i=0;i<ids.length;i++) rows+='<span>'+esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
+  for(var i=0;i<ids.length;i++) rows+='<span><i style="background:'+pcol(ids[i])+'"></i>'+
+    esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
   var el=$(which); if(el) el.innerHTML=rows;
 }
 /* how many have acted, never what they chose */
@@ -85,7 +87,8 @@ function lanternRow(target,counts,trueCount,betsByNum){
     var lit=(trueCount!==null&&trueCount!==undefined&&v===trueCount);
     var chips='';
     if(betsByNum&&betsByNum[v]) for(var c=0;c<betsByNum[v].length;c++)
-      chips+='<span class="ff-chip">'+esc(betsByNum[v][c])+'</span>';
+      chips+='<span class="ff-chip" style="border-color:'+betsByNum[v][c].col+'"><i style="background:'+
+        betsByNum[v][c].col+'"></i>'+esc(betsByNum[v][c].n)+'</span>';
     html+='<div class="ff-l'+(lit?' lit':'')+'"><div class="ff-bulb"></div>'+
           '<div class="ff-lnum">'+v+'</div><div class="ff-chips">'+chips+'</div></div>';
   }
@@ -158,7 +161,7 @@ function phaseReveal(){
       else if(d===1){ got='close'; pts=40; }
       else { got='miss'; pts=0; }
       betsByNum[b[pid]]=betsByNum[b[pid]]||[];
-      betsByNum[b[pid]].push(names[pid]);
+      betsByNum[b[pid]].push({n:names[pid],col:pcol(pid)});
     }
     scores[pid]=(scores[pid]||0)+pts;
     res[pid]={got:got,pts:pts,bet:b.hasOwnProperty(pid)?b[pid]:null};

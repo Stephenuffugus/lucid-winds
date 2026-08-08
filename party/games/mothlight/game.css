@@ -16,7 +16,10 @@
   box-shadow:0 0 40px rgba(60,80,140,.25)}
 .ml-lant.winner .ml-lamp{box-shadow:0 0 110px rgba(255,215,122,.75)}
 .ml-lab{font-size:48px; font-weight:800; color:var(--gold); letter-spacing:3px; margin-top:12px}
-.ml-moths{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; min-height:120px}
+/* ⛔ align-items defaults to stretch, so every moth grew to the full 120px of
+   this row and a pill shaped name chip rendered as a tall oval. */
+.ml-moths{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+  align-items:flex-start; align-content:flex-start; margin-top:16px; min-height:120px}
 .ml-moth{font-size:28px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
   border-radius:999px; padding:8px 18px; position:relative}
 .ml-moth::before{content:'\2726'; color:var(--warm); margin-right:8px}
@@ -47,3 +50,14 @@
 .mlp-btn.sel{border-color:var(--warm); box-shadow:0 0 22px rgba(255,215,122,.35)}
 .mlp-result{font-size:40px; font-weight:800; line-height:1.4}
 .mlp-result.right{color:var(--sage)} .mlp-result.lone{color:var(--warm)} .mlp-result.miss{color:var(--muted)}
+
+/* The shell gives every player a colour; a dot beside a name is instantly
+   readable at ten feet where four names in the same cream are not.
+
+   ⛔ TWO BUGS LIVED IN THIS ONE RULE. Written as ".ml-moth, ... i" a comma
+   splits the selector list, so the dot styling landed on the CHIP and turned
+   every name into a small circle with its text spilling out. And a templating
+   slip left a literal "50%%", which is not a length, so the dots were squares.
+   Both shipped past a green gate and both were obvious in one screenshot. */
+.ml-moth i, .ml-strip span i{display:inline-block; width:16px; height:16px; border-radius:50%;
+  margin-right:8px; vertical-align:middle; flex:0 0 auto}

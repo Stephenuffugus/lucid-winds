@@ -25,6 +25,7 @@ function $(id){return document.getElementById(id);}
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var LAYERS=window.MOONGRAFT_LAYERS||[], PAL=window.MOONGRAFT_PALETTE||['#e8dcc8'],
     WID=window.MOONGRAFT_WIDTHS||[3,7,14];
 var CARD_W=900, CARD_H=1200, ROUNDS=3;
@@ -211,7 +212,8 @@ function phaseDraw(){
   /* the room sees WHO is drawing, never WHAT: the blindness is the game */
   var html='';
   for(var i=0;i<order.length;i++)
-    html+='<span class="mg-chip">'+esc(names[order[i]])+'</span>';
+    html+='<span class="mg-chip" style="border-color:'+pcol(order[i])+'"><i style="background:'+
+      pcol(order[i])+'"></i>'+esc(names[order[i]])+'</span>';
   $('mg-assign').innerHTML=html;
 
   for(var k=0;k<order.length;k++){

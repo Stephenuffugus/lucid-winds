@@ -7,8 +7,27 @@ var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=nul
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 var completedCount=0, lastResults=null;
 
+/* ⭐ EVERY PLAYER GETS A COLOUR, AND IT IS THE SHELL'S JOB. At ten feet, four
+   names in the same cream text are four identical shapes: reading the room
+   means reading, and reading is slow. A colour is instant, and because the
+   shell owns it every title gets the same one for the same person, so "I am the
+   blue one" holds all night and across games.
+
+   Chosen to be distinct on a dark screen and to stay clear of the gold that
+   every score in the pack is already printed in. */
+var PCOLS=['#8fd0f0','#7ab356','#e08a4a','#c98fb8',
+           '#f0d264','#6fd4c0','#b0a0f0','#e88a8a'];
+var colorOf={}, colorNext=0;
+function assignColor(id){
+  if(!colorOf[id]){ colorOf[id]=PCOLS[colorNext%PCOLS.length]; colorNext++; }
+  return colorOf[id];
+}
+
 function mkCode(){ var c=''; for(var i=0;i<4;i++) c+=ALPHA[Math.floor(Math.random()*ALPHA.length)]; return c; }
-function roster(){ var out=[],k; for(k in PLAYERS) out.push({id:k,name:PLAYERS[k].name,connected:PLAYERS[k].alive>0}); return out; }
+function roster(){ var out=[],k;
+  for(k in PLAYERS) out.push({id:k,name:PLAYERS[k].name,
+    connected:PLAYERS[k].alive>0, color:assignColor(k)});
+  return out; }
 function pushPlayers(){ if(playerCb) playerCb(roster()); renderLobby(); }
 
 /* presence: phones ping every 3s; 8s of silence reads as disconnected
@@ -25,7 +44,9 @@ function handle(m){
     if(!isNew||!started){ /* fine either way */ }
     /* the phone learns WHICH game module to load from the host, so one shell
        page serves the whole catalogue (it used to hardcode mothlight) */
-    T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG});
+    /* the phone is told its own colour so a player can find themselves on the
+       big screen, which is the entire point of having one */
+    T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG,color:assignColor(m.from)});
     /* rejoin lands in the live phase: re-send current phase to that phone */
     if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG});
     pushPlayers();
@@ -39,7 +60,9 @@ function renderLobby(){
   var el=$('ps-lobby'); if(!el||started) return;
   var r=roster(), rows='';
   for(var i=0;i<r.length;i++)
-    rows+='<div class="ps-prow'+(r[i].connected?'':' off')+'">'+esc(r[i].name)+(r[i].connected?'':' (away)')+'</div>';
+    rows+='<div class="ps-prow'+(r[i].connected?'':' off')+'">'+
+      '<span class="ps-dot" style="background:'+r[i].color+'"></span>'+
+      esc(r[i].name)+(r[i].connected?'':' (away)')+'</div>';
   $('ps-roster').innerHTML=rows||'<div class="ps-prow dim">nobody yet</div>';
   var n=r.length, btn=$('ps-start');
   btn.disabled=n<MIN_PLAYERS;
@@ -132,6 +155,7 @@ window.PartyShell={
   },
   closeRoom:function(){ if(T){ if(T.destroy) T.destroy(); T.close(); } },
   players:roster,
+  colorFor:function(id){ return colorOf[id]||'#e8dcc8'; },
   code:function(){ return CODE; }
 };
 })();

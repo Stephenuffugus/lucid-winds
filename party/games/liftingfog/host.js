@@ -52,6 +52,7 @@ function show(id){ var s=root.querySelectorAll('.lf-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var BANK=window.LIFTINGFOG_BANK||[], QS=[], qi=0, ROUNDS=8;
 var scores={}, names={}, answers={}, order=[], shuffled=[], curTier=0;
 var PTS=[100,75,50,25];
@@ -81,7 +82,8 @@ function pickQuestions(){
 function strip(which){
   var ids=order.slice(), rows='';
   ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
-  for(var i=0;i<ids.length;i++) rows+='<span>'+esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
+  for(var i=0;i<ids.length;i++) rows+='<span><i style="background:'+pcol(ids[i])+'"></i>'+
+    esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
   var el=$(which); if(el) el.innerHTML=rows;
 }
 
@@ -159,12 +161,13 @@ function phaseReveal(){
     }
     scores[pid]=(scores[pid]||0)+pts;
     res[pid]={got:got,pts:pts};
-    if(pts>0) scored.push({n:names[pid],p:pts});
+    if(pts>0) scored.push({n:names[pid],p:pts,col:pcol(pid)});
   }
   scored.sort(function(x,y){return y.p-x.p;});
   var html='';
   for(var j=0;j<scored.length;j++)
-    html+='<span class="lf-sc">'+esc(scored[j].n)+' <b>+'+scored[j].p+'</b></span>';
+    html+='<span class="lf-sc" style="border-color:'+scored[j].col+'"><i style="background:'+
+      scored[j].col+'"></i>'+esc(scored[j].n)+' <b>+'+scored[j].p+'</b></span>';
   $('lf-vscored').innerHTML=html||'<span class="lf-none">Nobody found it that time.</span>';
   show('lf-rev');
   snd('reveal', scored.length>0);

@@ -56,6 +56,7 @@ function show(id){ var s=root.querySelectorAll('.ss-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var BANK=window.SAMESOIL_BANK||[], QS=[], ri=0, ROUNDS=10;
 var scores={}, names={}, order=[], subject=null, subjectPick=null, guesses={};
 var FAST=/[?&]ss_fast=1(&|$)/.test(location.search);
@@ -76,14 +77,16 @@ function pickPairs(){
 function strip(which){
   var ids=order.slice(), rows='';
   ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
-  for(var i=0;i<ids.length;i++) rows+='<span>'+esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
+  for(var i=0;i<ids.length;i++) rows+='<span><i style="background:'+pcol(ids[i])+'"></i>'+
+    esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
   var el=$(which); if(el) el.innerHTML=rows;
 }
 function pairHTML(q,chosen,counts){
   function side(key,label){
     var chips='';
     if(counts&&counts[key]) for(var i=0;i<counts[key].length;i++)
-      chips+='<span class="ss-chip">'+esc(counts[key][i])+'</span>';
+      chips+='<span class="ss-chip" style="border-color:'+counts[key][i].col+'"><i style="background:'+
+        counts[key][i].col+'"></i>'+esc(counts[key][i].n)+'</span>';
     return '<div class="ss-side'+(chosen===key?' won':(chosen?' lost':''))+'">'+
       '<div class="ss-word">'+esc(label)+'</div><div class="ss-chips">'+chips+'</div></div>';
   }
@@ -154,7 +157,7 @@ function phaseReveal(){
     var pid=order[i];
     if(pid===subject){ res[pid]={got:'subject',pts:0}; continue; }
     if(guesses.hasOwnProperty(pid)){
-      counts[guesses[pid]].push(names[pid]);
+      counts[guesses[pid]].push({n:names[pid],col:pcol(pid)});
       if(guesses[pid]===subjectPick){ scores[pid]=(scores[pid]||0)+100; knew++; res[pid]={got:'right',pts:100}; }
       else res[pid]={got:'wrong',pts:0};
     } else res[pid]={got:'none',pts:0};

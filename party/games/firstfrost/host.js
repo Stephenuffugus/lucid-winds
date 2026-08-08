@@ -67,6 +67,7 @@ var POWERS=[
 var MARKS_OUT=3, MAX_Q=12, WIN_BONUS=300, RIGHT=100, FROST_PAY=40;
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var BANK=window.FIRSTFROST_BANK||[], QS=[], qi=0;
 var scores={}, names={}, marks={}, frozen={}, order=[], shuffled=[];
 var votes={}, power=null, answered={}, veiled=false;
@@ -104,7 +105,8 @@ function renderMarks(which){
        of the podium, and the end to end run reported a game that had actually
        finished as stuck. */
     for(var j=0;j<MARKS_OUT;j++) pips+='<span class="fr-pip'+(j<m?' lit':'')+'"></span>';
-    html+='<div class="fr-mrow'+(frozen[pid]?' out':'')+'">'+esc(names[pid])+
+    html+='<div class="fr-mrow'+(frozen[pid]?' out':'')+'">'+
+      '<i style="background:'+pcol(pid)+'"></i>'+esc(names[pid])+
       '<span class="fr-pips">'+(frozen[pid]?'FROST':pips)+'</span>'+
       '<b>'+(scores[pid]||0)+'</b></div>';
   }

@@ -26,6 +26,7 @@ function show(id){ var s=document.querySelectorAll('.ml-screen'); for(var i=0;i<
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
+function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
 var BANK=window.MOTHLIGHT_BANK||[], QS=[], qi=0, scores={}, answers={}, names={}, RM=false;
 try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 /* test hook, ?ml_fast=1 only: shrinks every timer so a full game runs in
@@ -54,13 +55,15 @@ function pickQuestions(){
 function strip(){
   var ids=Object.keys(names), rows='';
   ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});
-  for(var i=0;i<ids.length;i++) rows+='<span>'+esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
+  for(var i=0;i<ids.length;i++) rows+='<span><i style="background:'+pcol(ids[i])+'"></i>'+
+    esc(names[ids[i]])+' <b>'+(scores[ids[i]]||0)+'</b></span>';
   $('ml-strip').innerHTML=rows;
 }
 function renderMoths(){
   var t='',f='',k;
   for(k in answers[qi]||{}){
-    var chip='<div class="ml-moth" data-p="'+k+'">'+esc(names[k]||'?')+'</div>';
+    var chip='<div class="ml-moth" data-p="'+k+'" style="border-color:'+pcol(k)+'">'+
+      '<i style="background:'+pcol(k)+'"></i>'+esc(names[k]||'?')+'</div>';
     if(answers[qi][k]) t+=chip; else f+=chip;
   }
   $('ml-mt').innerHTML=t; $('ml-mf').innerHTML=f;

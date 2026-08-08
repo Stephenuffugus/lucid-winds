@@ -57,3 +57,14 @@
 .ssp-result{font-size:36px; font-weight:800; line-height:1.35; max-width:330px}
 .ssp-result.right{color:var(--sage)} .ssp-result.subject{color:var(--warm)}
 .ssp-result.miss{color:var(--muted)}
+
+/* The shell gives every player a colour; a dot beside a name is instantly
+   readable at ten feet where four names in the same cream are not.
+
+   ⛔ TWO BUGS LIVED IN THIS ONE RULE. Written as ".ss-chip, ... i" a comma
+   splits the selector list, so the dot styling landed on the CHIP and turned
+   every name into a small circle with its text spilling out. And a templating
+   slip left a literal "50%%", which is not a length, so the dots were squares.
+   Both shipped past a green gate and both were obvious in one screenshot. */
+.ss-chip i, .ss-strip span i{display:inline-block; width:15px; height:15px; border-radius:50%;
+  margin-right:8px; vertical-align:middle; flex:0 0 auto}
