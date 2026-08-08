@@ -5,7 +5,59 @@ dump, Jessie's Jul 19 queue, the Jul 20 handoff, and everything raised since. Wh
 Stephen brings a new list, MERGE IT INTO THIS FILE rather than starting a fifth one.
 
 Marks: `[ ]` not started · `[~]` in progress · `[x]` done + deployed · `[?]` blocked on Stephen
-Last updated: 2026-07-26
+Last updated: 2026-08-08
+
+---
+
+## 🎪 WHACK BOX PARTY PACK — 2026-08-08 overnight
+
+Stephen: *"I want to build out whackbox games out like crazy... you could spend
+hours writing and researching all the questions... build and plan the whole time
+I'm sleeping."*
+
+- [x] **Six titles built, each driven start to gameComplete.** Mothlight (pre
+  existing), plus Firefly Futures, Lifting Fog, First Frost, Moongraft and Same
+  Soil. Each is a complete module: host screen, phone screen, content bank, css,
+  README. EVIDENCE: `bash party/test/all.sh` runs the front door, all six titles
+  (seven configurations including Same Soil at two players) and two host drop
+  tests. All green, commits through `main`, live probed on lucidwinds.com.
+- [x] **1,208+ content entries, generated then adversarially fact checked.**
+  Mothlight 240 to 659, Firefly 120 to 284, Lifting Fog 20 to 76, First Frost 40
+  to 189, Same Soil 96 new pairs. Every batch was checked by a DIFFERENT agent
+  told to assume each entry wrong until sure and to drop anything it could not
+  confirm. `party/test/merge_banks.js` re-enforces every house rule in code on
+  the way in, because a rule that only lives in a prompt eventually ships broken.
+- [x] **The shell serves a catalogue instead of one title.** `catalogue.js`, a TV
+  picker, per title minimum players, and the phone loads the module the host
+  announces. `play.html` used to hardcode Mothlight, so no second title could
+  ever have worked on a phone.
+- [x] **One player identity per TAB, not per browser.** Practice mode is
+  explicitly several tabs of one browser, and they all reported the same id, so
+  three phones registered as one player and the lobby never reached its minimum.
+- [x] **Host drop recovery** (the plan's stated MUST). The big screen dying no
+  longer ends the party silently: phones notice, say so, keep knocking, and slide
+  back into the live phase when it returns with no retyping. EVIDENCE:
+  `party/test/hostdrop.js` closes the host tab for real.
+- [x] **Party sunbeams sized to SUNBEAM_EARN_POLICY.md**, not invented: 8 for
+  everybody plus 4/2/1 for the top three, capping a winner at the studio per-run
+  cap of 12, under ONE 30/day ceiling shared by all party titles.
+- [?] **BLOCKED ON STEPHEN: cloud rooms.** Every room is one browser only until
+  the five minute console switch on in `PARTY_CLOUD_SETUP.md` (create the
+  Realtime Database, enable anonymous auth, paste the rules). The whole code side
+  is written and deployed and dormant: CloudTransport, firebase-config, and the
+  `partyComplete` Cloud Function. ⚠ None of the cloud path has run against a real
+  database, because there is not one. Treat the first real room as the test.
+- [?] **Names.** Whack Box and all six titles are working names. Stephen names
+  things.
+- [ ] Not started, and deliberately: Hoodwink the Owl is prototype gated on HUNCH
+  accuracy, and Twin Lanterns party mode waits on the standalone daily, which is
+  the doc's own ordering rule.
+
+⭐ The lesson of the night, written where it will be read: **the TV picker passed
+six automated checks while its title, blurb and player count ran together into
+one unreadable paragraph.** Cards present, all hit testable, picking one opened a
+room, console clean. None of that can see a wall of run together text. Open the
+screenshots.
 
 ---
 
