@@ -40,10 +40,43 @@ Realtime Database -> Rules tab -> replace with:
 }
 ```
 
-Then tell me the database URL from step 1 and I wire
-`party/shell/firebase-config.js`, finish the CloudTransport adapter in
-`party/shell/transport.js` (the interface is already in place), and add a
-TTL cleanup so codes recycle.
+## 4. Nothing else. It is already built.
+
+Since this document was written, all of the code side is done and waiting:
+
+- `party/shell/firebase-config.js` exists with the project config and the SDK
+  list. ⚖ The one line to check is `databaseURL`: it is the default shape for a
+  us-central1 database on this project, but no database existed to confirm it
+  against. If the console shows a different URL in step 1, change that line and
+  nothing else.
+- `party/shell/transport.js` has the complete CloudTransport: anonymous sign in,
+  push based messaging, and no history replay (a phone joining a room that has
+  been running ten minutes must not receive ten minutes of timer ticks in one
+  burst, so it anchors on the last existing key and listens forward).
+- A room that cannot connect SAYS SO on screen and points back at this file,
+  rather than looking like a room nobody has joined.
+- `functions/partyComplete.js` mints sunbeams for every participant. Each
+  player's own phone claims for itself: the host screen is just another browser,
+  so it reports PLACE and the server decides the AMOUNT. Deploy it with
+  `firebase deploy --only functions`.
+
+⚖ **The amounts are yours to set** and are a proposal, not an approved economy:
+12 sunbeams for playing, plus 6/4/2 for the top three, capped at 60 a day across
+all party titles. They are in one block at the top of `partyComplete.js`.
+
+## 5. Turning it on
+
+Add `?cloud=1` to the host address. The TV then shows a join address that
+already carries the flag, so phones just type the code:
+
+    lucidwinds.com/party/host.html?cloud=1
+
+Without the flag everything stays on the local practice transport, so a practice
+night still needs no network at all.
+
+⚠ **The cloud path has never run against a real database, because there is not
+one yet.** Treat the first real room as the test. The local practice path is
+gated on every commit and is unaffected by any of this.
 
 ## What stays server side later
 Sunbeam minting for party games goes through a Cloud Function

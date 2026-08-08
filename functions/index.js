@@ -9,6 +9,7 @@
  *   - claimPending     (v2 onCall)    — Atomic claim of pendingRewards into hashLedger
  *   - nowCreateInvoice (v2 onCall)    — Web rail: create a USD-priced NOWPayments invoice
  *   - nowIpn           (v2 onRequest) — Web rail: HMAC-verified payment webhook → fulfillment
+ *   - partyComplete    (v2 onCall)    — Whack Box: sunbeams for every participant
  *
  * Pi and web rails share entitlement logic via ./fulfill.js (applyFulfillment).
  *
@@ -36,3 +37,4 @@ export { nowIpn } from './nowIpn.js'
 export { swFeedback } from './swFeedback.js'
 export { stripeCreateCheckout } from './stripeCreateCheckout.js'
 export { stripeWebhook } from './stripeWebhook.js'
+export { partyComplete } from './partyComplete.js'

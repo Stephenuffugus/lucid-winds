@@ -66,7 +66,14 @@ window.PartyShell={
       T=window.PartyTransport.open(CODE);
       T.onMessage(handle);
       $('ps-code').textContent=CODE;
-      $('ps-join-url').textContent=location.host+'/party/play.html';
+      /* a cloud room's phones must open a cloud page, so the flag rides on the
+         address the TV is showing rather than being something to remember */
+      var cloud=/[?&]cloud=1(&|$)/.test(location.search);
+      $('ps-join-url').textContent=location.host+'/party/play.html'+(cloud?'?cloud=1':'');
+      var note=$('ps-transport-note');
+      if(note) note.textContent=cloud
+        ? 'Cloud room: phones anywhere can join with that address and this code.'
+        : 'Practice room: every player joins from a tab in this same browser. Cloud rooms for real phones arrive with the server switch-on.';
       $('ps-lobby').classList.add('on');
       /* HEARTBEAT. Without it a phone cannot tell "the host is thinking" from
          "the host is gone", so it sits on a dead screen forever and the party
@@ -113,7 +120,7 @@ window.PartyShell={
        server, so nothing mints and that is honest. */
     T.send({t:'over',to:'*',results:results});
   },
-  closeRoom:function(){ if(T)T.close(); },
+  closeRoom:function(){ if(T){ if(T.destroy) T.destroy(); T.close(); } },
   players:roster,
   code:function(){ return CODE; }
 };

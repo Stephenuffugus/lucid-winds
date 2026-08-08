@@ -64,7 +64,29 @@ function handle(m){
     if(phaseCb) phaseCb(m.name,m.data); }
   else if(m.t==='game'){ if(msgCb) msgCb(m.msg); }
   else if(m.t==='timer'){ if(timerCb) timerCb(m.s); }
-  else if(m.t==='over'){ if(phaseCb) phaseCb('over',m.results||{}); }
+  else if(m.t==='over'){
+    claimSunbeams(m.results||{});
+    if(phaseCb) phaseCb('over',m.results||{});
+  }
+}
+
+/* ⭐ EACH PHONE CLAIMS FOR ITSELF, and only ever for itself. The host screen is
+   just another browser, so letting it report everyone's earnings would mean
+   anybody with a host page could mint for anyone. The host reports PLACE, the
+   server decides the AMOUNT, and the claim doc id makes a replay collide
+   instead of paying twice.
+   ⛔ Dormant with cloud rooms: on the practice transport there is no server and
+   nothing mints, which is honest rather than a fake number. */
+function claimSunbeams(results){
+  var mine=results[window.PartyTransport.selfId];
+  if(!mine) return;
+  if(!window.firebase||!firebase.functions||!firebase.apps||!firebase.apps.length) return;
+  try{
+    firebase.functions().httpsCallable('partyComplete')({
+      code:myCode, game:slug, place:mine.place,
+      players:Object.keys(results).length
+    })['catch'](function(){ /* the game is over either way; never block on this */ });
+  }catch(e){}
 }
 
 window.PartyShell={

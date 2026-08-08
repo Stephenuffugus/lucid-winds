@@ -41,7 +41,17 @@
   browser. Cloud rooms for real phones arrive with the server switch-on.</div>
 </div>
 <div id="game-root"></div>
+<!-- shell owned: a transport that cannot connect says so here. Silence would
+     look identical to "nobody has joined yet", which is the wrong story. -->
+<div class="ps-tx-err" id="ps-tx-err"></div>
+<script>
+document.addEventListener('party-transport-error',function(e){
+  var el=document.getElementById('ps-tx-err');
+  if(el){ el.textContent=(e.detail&&e.detail.message)||'The room could not connect.'; el.classList.add('on'); }
+});
+</script>
 <script src="catalogue.js"></script>
+<script src="shell/firebase-config.js"></script>
 <script src="shell/transport.js"></script>
 <script src="shell/host.js"></script>
 <script>
