@@ -113,9 +113,14 @@ Firefly Futures spicy tier (keeper, conditional, see above). Burr in the Hem and
 | Firefly Futures | `firefly` | BUILT 2026-08-08, driven to podium. **284** prompts. Spicy tier CUT. |
 | Lifting Fog | `liftingfog` | BUILT 2026-08-08, driven to podium. **76** four clue questions. |
 | First Frost | `firstfrost` | BUILT 2026-08-08, driven to podium. **189** questions. Frost console, 3 powers. |
-| Same Soil | | not started. Art bound, roughly 720 illustrations, so the art pipeline is the critical path and it should not start until that pipeline does. |
-| Moongraft | | not started. Needs the phone drawing canvas. |
+| Same Soil | `samesoil` | BUILT 2026-08-08, driven to podium at 3 AND at 2 players. 96 authored word pairs; ⚖ the 720 illustrations are an upgrade, not a blocker, see its README. |
+| Twin Lanterns party mode | | not started, and the doc's own rule says the standalone daily ships first. Do not invert that. |
+| Moongraft | `moongraft` | BUILT 2026-08-08, driven to gallery. Real name and haiku from word-banks.js. No scores by design. |
 | Hoodwink the Owl | | not started, prototype gated on HUNCH. |
+
+⭐ **The pack now has range, not just quantity.** Six titles: four are guess and
+answer, Moongraft is the one where nobody competes, and Same Soil is the one
+that plays at two. A real party pack needs all three temperatures.
 
 The shell now serves the whole catalogue rather than one title:
 - `catalogue.js` is the single list. Adding a title is one entry plus a
@@ -134,6 +139,11 @@ player joins from a tab in this same browser", so three practice phones all
 reported the same id and registered as a single player. The identity is now per
 TAB (marker in sessionStorage so a reload still rejoins as the same person, id
 in localStorage keyed by that marker).
+
+`PartyShell.completed()` records that `gameComplete` fired, and the driver
+asserts the real contract (exactly once, every participant present) instead of
+inferring the end of a game from a screen id. Moongraft ends on a gallery, and
+the old id heuristic reported a finished game as stuck.
 
 `party/test/drive.js <slug> [players]` drives any module start to podium with
 real phones in real tabs, taps at each control's centre with a real mouse,

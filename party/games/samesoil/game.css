@@ -1,0 +1,59 @@
+/* Same Soil, both screens. Ten foot readable on the host: nothing under 28px. */
+.ss-screen{position:fixed; inset:0; display:none; flex-direction:column;
+  align-items:center; justify-content:center; padding:26px 28px 74px; text-align:center;
+  background:radial-gradient(120% 90% at 50% 0%, #191426 0%, var(--bg) 64%)}
+.ss-screen.on{display:flex}
+.ss-num{font-size:28px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
+.ss-timer{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:74px}
+.ss-timer.low{color:var(--ember)}
+.ss-rules{font-size:50px; line-height:1.5; color:var(--cream); max-width:1080px; white-space:pre-line; margin-top:10px}
+.ss-subject{font-size:46px; color:var(--cream); margin:14px 0 6px}
+.ss-subject b{color:var(--warm)}
+.ss-said{font-size:40px; color:var(--muted); margin:12px 0 4px}
+.ss-said b{color:var(--warm); font-size:52px}
+
+/* the two sides */
+.ss-pair{display:flex; align-items:flex-start; justify-content:center; gap:2vw;
+  width:100%; max-width:1400px; margin-top:20px}
+.ss-side{flex:1; max-width:520px; border:1px solid var(--line); border-radius:24px;
+  background:linear-gradient(160deg,#141024,#0a0c14); padding:30px 22px; transition:opacity .4s}
+.ss-side.won{border-color:var(--gold); box-shadow:0 0 70px rgba(255,215,122,.28)}
+.ss-side.lost{opacity:.42}
+.ss-word{font-size:56px; line-height:1.15; color:var(--cream)}
+.ss-side.won .ss-word{color:var(--warm)}
+.ss-or{font-size:32px; color:var(--muted); align-self:center; letter-spacing:4px; text-transform:uppercase}
+.ss-chips{display:flex; flex-direction:column; gap:8px; align-items:center; margin-top:16px}
+.ss-chip{font-size:26px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
+  border-radius:999px; padding:6px 18px}
+.ss-side.won .ss-chip{border-color:var(--gold); color:var(--hot)}
+.ss-in{font-size:30px; color:var(--sage); margin-top:22px}
+.ss-knew{font-size:34px; color:var(--cream); margin-top:22px}
+
+.ss-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center;
+  padding:12px; background:rgba(5,7,10,.92); border-top:1px solid var(--line); font-size:28px}
+.ss-strip b{color:var(--warm); font-variant-numeric:tabular-nums}
+.ss-rows{margin-top:18px}
+.ss-row{display:flex; gap:26px; align-items:baseline; font-size:40px; margin:10px 0}
+.ss-row b{color:var(--warm); font-variant-numeric:tabular-nums}
+.ss-row .place{color:var(--muted); font-size:30px; width:50px}
+.ss-podium .ss-row:first-of-type{font-size:56px}
+.ss-earn{font-size:32px; color:var(--sage); margin-top:20px}
+.ss-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:24px}
+
+/* ---- phone ---- */
+.ssp-wait{font-size:30px; color:var(--cream); max-width:330px; line-height:1.5}
+.ssp-sub{font-size:18px; color:var(--muted); margin-top:14px; max-width:320px; line-height:1.45}
+.screen.ssp-play{justify-content:flex-start; padding-top:max(14px,env(safe-area-inset-top))}
+.ssp-timer{font-size:38px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:44px}
+.ssp-timer.low{color:var(--ember)}
+.ssp-num{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted)}
+.ssp-ask{font-size:22px; color:var(--cream); line-height:1.35; margin:12px 0 16px; max-width:340px}
+.ssp-btns{display:flex; flex-direction:column; gap:14px; width:100%; max-width:360px; flex:1; padding-bottom:10px}
+.ssp-big{flex:1; min-height:118px; border-radius:18px; border:3px solid var(--line); cursor:pointer;
+  background:linear-gradient(180deg,#151129,#0c0e18); color:var(--cream);
+  font-size:26px; font-weight:800; padding:10px 14px; line-height:1.25}
+.ssp-big.sel{border-color:var(--warm); box-shadow:0 0 22px rgba(255,215,122,.35)}
+.ssp-note{font-size:15px; color:var(--muted); margin-top:12px; max-width:320px; line-height:1.4}
+.ssp-result{font-size:36px; font-weight:800; line-height:1.35; max-width:330px}
+.ssp-result.right{color:var(--sage)} .ssp-result.subject{color:var(--warm)}
+.ssp-result.miss{color:var(--muted)}

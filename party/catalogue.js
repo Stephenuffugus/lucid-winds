@@ -24,5 +24,8 @@ window.WHACKBOX_CATALOGUE = [
     min:4, max:8, mins:10 },
   { slug:'moongraft',  name:'Moongraft',       glyph:'❀',
     blurb:'Everyone secretly draws one piece of the same plant. No scores, and you all keep the card.',
-    min:3, max:8, mins:9 }
+    min:3, max:8, mins:9 },
+  { slug:'samesoil',   name:'Same Soil',       glyph:'❖',
+    blurb:'One of you picks which of two things is more them. Everyone else guesses. Works with just two.',
+    min:2, max:8, mins:8 }
 ];
