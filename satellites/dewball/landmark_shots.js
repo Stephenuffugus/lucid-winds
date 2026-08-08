@@ -27,7 +27,7 @@ var PLAN = [
   // stadium at x53 combo, which is a lovely picture of nothing.
   // To stand further back, raise `off` — the park distance — and leave `d` alone.
   // Tall-for-their-size kinds therefore carry an `off`, never a `d`.
-  { w:1, kinds:['lmCardHouse','lmGramophone','lmBookTower'] },
+  { w:1, kinds:['lmLongClock','lmGramophone','lmBookTower'] },
   { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
   { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond'] },
   { w:4, kinds:['lmClockTower','lmBathHouse'] },
@@ -43,7 +43,11 @@ var PLAN = [
      every screenshot comes back empty. The first pass of this probe reported
      twelve landmarks placed with no page errors and produced twelve black
      images. A green run is not a look, and this is what that costs. */
-  var browser = await puppeteer.launch({ headless:'new', args:[
+  /* ⛔ protocolTimeout, and it is not optional on a 2-core box. The default 30s
+     killed a whole run at world 2 with "Runtime.callFunctionOn timed out" and
+     threw away thirty already-good images, because building a heavy world inside
+     one evaluate() can outlast it under load. */
+  var browser = await puppeteer.launch({ headless:'new', protocolTimeout: 240000, args:[
     '--no-sandbox','--disable-setuid-sandbox','--enable-unsafe-swiftshader',
     '--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist' ] });
   var page = await browser.newPage();
@@ -56,7 +60,14 @@ var PLAN = [
   var report = [];
   for (var pi=0; pi<PLAN.length; pi++){
     var plan = PLAN[pi];
-    await page.evaluate(function(n){ window.DB_DEV.start('level', n); }, plan.w);
+    /* ⛔ one world's stall must not cost the other six. A gallery is worth having
+       partially; losing every image because level 2 was slow is not. */
+    try {
+      await page.evaluate(function(n){ window.DB_DEV.start('level', n); }, plan.w);
+    } catch (e) {
+      report.push('WORLD '+plan.w+' FAILED TO START: '+e.message);
+      continue;
+    }
     await new Promise(function(r){ setTimeout(r, 500); });
 
     for (var ki=0; ki<plan.kinds.length; ki++){
@@ -102,6 +113,7 @@ var PLAN = [
       /* ⭐ TWO SHOTS, per the project rule. The first is where the PLAYER stands
          when they meet it. The second is the wide one, because a landmark that
          only works in close-up is not doing the job a landmark is for. */
+      try {
       await shoot(found, dScale, offScale, '');
       /* ⛔ THE WIDE SHOT MUST NOT GROW THE BALL. Camera distance is tied to ball
          size here, so my first "wide" set the ball to 1.3x the landmark, and it
@@ -109,6 +121,10 @@ var PLAN = [
          with a x16 combo counter. Wide means standing further back at the same
          size, which is also what the player actually experiences. */
       await shoot(found, dScale, offScale * 3.16, '-wide');
+      } catch (e) {
+        report.push(kind+': SHOT FAILED — '+e.message);
+        continue;
+      }
       report.push(kind+': placed at '+Math.round(found.x)+','+Math.round(found.z)+'  size '+Math.round(found.s)+'cm');
     }
   }

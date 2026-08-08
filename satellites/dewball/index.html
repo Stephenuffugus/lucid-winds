@@ -1400,32 +1400,41 @@
   // =====================================================================
 
   // w1 Crumb Country (goal 24, cap 69.6) — replaces lmCakeStand ---------------
-  //  ⛔ Built from thin BOXES, not `card` primitives. A card is a single plane
-  //  and this is a freestanding structure seen from every side, so cards would
-  //  vanish from behind. _lmWin can use cards because a window always sits on a
-  //  face you are outside of.
-  K("lmCardHouse","The House of Cards",66,_cat(
-    [ pp("box",[54,2,42],0x6a5a44,0,1,0) ],
-    /* ⛔⛔ THE PAIR SPACING IS NOT FREE, and getting it wrong is why the first
-       pass read as dark slabs on yellow trays instead of a house of cards. A card
-       of height h tilted by t swings its top end by (h/2)*sin(t), so a pair that
-       is meant to MEET at the apex must have its bases 2*(h/2)*sin(t) apart.
-       h=34, t=0.38 -> 12.6cm. I used 7, so every pair crossed low and splayed.
-       ⭐ Also: FEWER, BIGGER cards. Thin ones are exactly the close-up detail the
-       wave-two law says dies on the approach — the triangle is the landmark. */
-    [ pp("box",[20,34,2.2],0xfff2f6,-17,19,-10,0,0,0.38), pp("box",[20,34,2.2],0xc23a4a,-4.4,19,-10,0,0,-0.38),
-      pp("box",[20,34,2.2],0xfff2f6,  4,19,-10,0,0,0.38), pp("box",[20,34,2.2],0x2f6f9e,16.6,19,-10,0,0,-0.38),
-      pp("box",[20,34,2.2],0xc23a4a,-17,19, 10,0,0,0.38), pp("box",[20,34,2.2],0xfff2f6,-4.4,19, 10,0,0,-0.38),
-      pp("box",[20,34,2.2],0x2f6f9e,  4,19, 10,0,0,0.38), pp("box",[20,34,2.2],0xfff2f6,16.6,19, 10,0,0,-0.38) ],
-    /* bridging cards laid flat across both apexes */
-    [ pp("box",[48,2.2,17],0xf0c44a,0,37,-10), pp("box",[48,2.2,17],0xf0c44a,0,37,10) ],
-    /* storey two — one crowning A-frame */
-    /* ⛔ tilt is the NINTH argument (rotZ). The eighth is rotY and would twist the
-       card flat in plan instead of leaning it — the same slip that left The
-       Leaning Library standing dead straight. */
-    [ pp("box",[18,30,2.2],0xfff2f6,-5.6,53,0,0,0,0.38), pp("box",[18,30,2.2],0xc23a4a,5.6,53,0,0,0,-0.38) ],
-    /* and the one card that has already slipped, on the table */
-    [ pp("box",[18,2.2,14],0x2f6f9e,23,2.3,14,0,0.6,0.06) ]
+  //
+  //  ⛔⛔ A HOUSE OF CARDS WAS HERE AND IT FAILED TWICE. Recording why, because the
+  //  second failure was not the bug in the first and the lesson is about the
+  //  WORLD, not the model:
+  //    pass 1  pair bases 7cm apart when the geometry needs 2*(h/2)*sin(t) = 12.6,
+  //            so every pair crossed low and splayed. My arithmetic, not the art.
+  //    pass 2  spacing correct, triangles formed — and it STILL read as a muddle
+  //            of orange slabs, because Crumb Country's light is warm. Cream
+  //            (0xfff2f6) renders salmon here, so cream-and-red cards collapse
+  //            into one red-orange mass and the dark blue goes near black.
+  //  ⚖️ LAW: the signature colour has to survive the WORLD'S LIGHT, not just
+  //     differ from the world's props. Warm-lit w1 kills pale; dark and cool
+  //     separate from it — the Gramophone works because of its dark walnut
+  //     cabinet and black record, not despite them.
+  //  ⚖️ And a landmark built from thin elements has no outline to survive the
+  //     approach. Cards were the wrong class of object for a landmark at all.
+  //  So: a bold, dark, vertical mass instead. Nothing in this world owns a
+  //  longcase silhouette, and dark walnut against a cream floor cannot wash out.
+  K("lmLongClock","The Longcase Clock",66,_cat(
+    [ pp("box",[28,5,22],0x3a2a1a,0,2.5,0), pp("box",[24,3,19],0x4a3320,0,6.5,0) ],
+    /* the case: one tall narrow mass, which is the whole silhouette */
+    [ pp("box",[22,42,16],0x4a3320,0,29,0), pp("box",[23,3,17],0x6a4a2a,0,50,0) ],
+    /* the trunk door, and the pendulum swinging behind it */
+    [ pp("card",[13,26],0x1a1a24,0,28,8.2), pp("cyl",[0.7,0.7,20,6],0xc8a84b,0,28,7.6),
+      pp("cyl",[5,5,1.2,14],0xf0c44a,0,19,7.6) ],
+    /* the hood and the dial — cream ONLY here, where it is a small bright accent
+       against dark wood rather than a large face competing with the ground */
+    [ pp("box",[26,14,19],0x4a3320,0,58,0),
+      pp("cyl",[8.5,8.5,1.6,18],0xf0e8d8,0,58,9.6,1.5708,0,0),
+      pp("cyl",[9.4,9.4,1,18],0xc8a84b,0,58,9.2,1.5708,0,0),
+      pp("box",[1.1,6,0.8],0x1a1a24,0,60,10.5), pp("box",[4.6,1,0.8],0x1a1a24,1.6,58,10.5,0,0,0.6) ],
+    /* broken-arch pediment and brass finials: the bit that says clock at range */
+    [ pp("box",[27,3,20],0x6a4a2a,0,66,0),
+      pp("sph",[3.2,8,6],0xf0c44a,-9,69,0), pp("sph",[3.2,8,6],0xf0c44a,9,69,0),
+      pp("cyl",[1.1,1.1,7,6],0xc8a84b,0,70,0), pp("sph",[2.6,8,6],0xf0c44a,0,74.5,0) ]
   ),{fixed:1,volF:0.3});
 
   // w1 Crumb Country — replaces lmTeapotHill ---------------------------------
@@ -1698,7 +1707,7 @@
       {k:"sugarbowl",n:55,zone:"mid"},{k:"candle",n:46,zone:"mid"},{k:"fork",n:57,zone:"mid"},
       {k:"plateK",n:51,zone:"mid"},{k:"jamjar",n:57,zone:"mid"},
       {k:"teacup",n:88,zone:"far"},{k:"juicebox",n:88,zone:"far"},{k:"sandwich",n:99,zone:"far"},
-      {k:"lmCardHouse",n:1,zone:"far"},{k:"lmGramophone",n:1,zone:"mid"},{k:"lmBookTower",n:1,zone:"mid"},
+      {k:"lmLongClock",n:1,zone:"far"},{k:"lmGramophone",n:1,zone:"mid"},{k:"lmBookTower",n:1,zone:"mid"},
       {k:"banana",n:99,zone:"far"},{k:"teapot",n:51,zone:"far"},{k:"thermos",n:51,zone:"far"},
       {k:"melon",n:68,zone:"far"},{k:"basket",n:37,zone:"far"},{k:"thermchair",n:15,zone:"far"},
       {k:"pie",n:37,zone:"far"},{k:"winebottle",n:51,zone:"far"},{k:"radio",n:18,zone:"far"},
