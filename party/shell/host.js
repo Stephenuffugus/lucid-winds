@@ -2,7 +2,7 @@
    intents, the host decides, the host sets phase. See PARTY_GAME_BRIEF.md. */
 (function(){
 'use strict';
-var T=null, CODE='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=null,
+var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=null,
     curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3;
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -22,9 +22,11 @@ function handle(m){
     var isNew=!PLAYERS[m.from];
     PLAYERS[m.from]={name:String(m.name||'a moth').slice(0,12),alive:8};
     if(!isNew||!started){ /* fine either way */ }
-    T.send({t:'joined',to:m.from,ok:true,started:started});
+    /* the phone learns WHICH game module to load from the host, so one shell
+       page serves the whole catalogue (it used to hardcode mothlight) */
+    T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG});
     /* rejoin lands in the live phase: re-send current phase to that phone */
-    if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData});
+    if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG});
     pushPlayers();
   } else if(m.t==='ping'){ if(PLAYERS[m.from]){ var was=PLAYERS[m.from].alive<=0; PLAYERS[m.from].alive=8; if(was)pushPlayers(); } }
   else if(m.t==='intent'){ if(msgCb&&started) msgCb(m.from,m.msg); }
@@ -45,9 +47,22 @@ function renderLobby(){
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 
 window.PartyShell={
+  setMinPlayers:function(n){ MIN_PLAYERS=Math.max(2,n|0); renderLobby(); },
+  /* podium control: keep the room and its code, go back and pick another title.
+     The shell owns the pages, so a shell navigation here is legal where a module
+     navigating would not be. */
+  backToPicker:function(){
+    location.href='host.html?code='+encodeURIComponent(CODE)+
+      (/[?&]embed=1(&|$)/.test(location.search)?'&embed=1':'');
+  },
   createRoom:function(gameSlug){
     return new Promise(function(res){
-      CODE=mkCode(); T=window.PartyTransport.open(CODE);
+      SLUG=gameSlug||'';
+      /* a code can be handed in on the URL so switching games from the podium
+         keeps the room alive and phones never retype anything */
+      var carried=(location.search.match(/[?&]code=([A-Za-z0-9]{4})/)||[])[1];
+      CODE=carried?carried.toUpperCase():mkCode();
+      T=window.PartyTransport.open(CODE);
       T.onMessage(handle);
       $('ps-code').textContent=CODE;
       $('ps-join-url').textContent=location.host+'/party/play.html';
@@ -65,7 +80,7 @@ window.PartyShell={
   sendToPlayer:function(pid,msg){ T.send({t:'game',to:pid,msg:msg}); },
   broadcast:function(msg){ T.send({t:'game',to:'*',msg:msg}); },
   setPhase:function(name,data){ curPhase=name; curData=data||{};
-    T.send({t:'phase',to:'*',name:name,data:curData});
+    T.send({t:'phase',to:'*',name:name,data:curData,game:SLUG});
     if(phaseCb) phaseCb(name,curData); },
   onPhase:function(cb){ phaseCb=cb; },
   startTimer:function(seconds,onTick,onDone){
@@ -86,6 +101,7 @@ window.PartyShell={
     T.send({t:'over',to:'*',results:results});
   },
   closeRoom:function(){ if(T)T.close(); },
-  players:roster
+  players:roster,
+  code:function(){ return CODE; }
 };
 })();

@@ -33,3 +33,27 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
   text-align:center; letter-spacing:4px; margin:8px 0}
 .ps-err{color:var(--ember); font-size:16px; min-height:22px; margin-top:8px}
 .ps-note{color:var(--muted); font-size:14px; max-width:420px; line-height:1.5; margin-top:18px}
+
+/* ---- game picker (the TV menu; ten foot readable) ---- */
+#ps-pick{justify-content:flex-start; padding-top:6vh; overflow-y:auto}
+.ps-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+  gap:20px; width:100%; max-width:1180px; margin-top:26px}
+.ps-card{display:flex; align-items:center; gap:20px; text-align:left; cursor:pointer;
+  min-height:150px; padding:24px 26px; border:1px solid var(--line); border-radius:20px;
+  background:linear-gradient(160deg,#101826,#0a0e16); color:var(--cream);
+  font-family:inherit; width:100%}
+.ps-card:hover,.ps-card:focus-visible{border-color:var(--gold); outline:none}
+.ps-card .g{flex:0 0 auto; width:78px; height:78px; border-radius:20px; display:grid;
+  place-items:center; font-size:40px; color:var(--warm);
+  background:radial-gradient(circle at 34% 28%, rgba(255,215,122,.22), rgba(0,0,0,.45));
+  border:1px solid rgba(200,168,75,.4)}
+.ps-card .nm{font-size:38px; color:var(--warm); line-height:1.15}
+.ps-card .bl{font-size:22px; color:var(--cream); opacity:.86; margin-top:8px; line-height:1.35}
+.ps-card .mt{font-size:17px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); margin-top:10px}
+@media (max-width:760px){
+  .ps-grid{grid-template-columns:1fr}
+  .ps-card{min-height:96px; padding:16px 18px; gap:14px}
+  .ps-card .g{width:56px; height:56px; font-size:28px}
+  .ps-card .nm{font-size:26px} .ps-card .bl{font-size:16px} .ps-card .mt{font-size:13px}
+}

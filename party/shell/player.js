@@ -4,12 +4,23 @@
 (function(){
 'use strict';
 var T=null, phaseCb=null, msgCb=null, timerCb=null, joined=false,
-    lastPhase=null, lastData=null;
+    lastPhase=null, lastData=null, slug=null;
+
+/* Which game module this phone should be running. The host announces it on
+   every joined and every phase, so one phone page serves the whole catalogue
+   and a room that switches games pulls the new module without a retype. */
+function setSlug(s){
+  if(!s || s===slug) return;
+  slug=s; window.PartyShell.gameSlug=s;
+  document.dispatchEvent(new CustomEvent('party-game',{detail:{slug:s}}));
+}
 
 function handle(m){
   if(m.to && m.to!=='*' && m.to!==window.PartyTransport.selfId) return;
-  if(m.t==='joined'){ joined=true; document.dispatchEvent(new CustomEvent('party-joined')); }
-  else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; if(phaseCb) phaseCb(m.name,m.data); }
+  if(m.t==='joined'){ joined=true; setSlug(m.game);
+    document.dispatchEvent(new CustomEvent('party-joined')); }
+  else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; setSlug(m.game);
+    if(phaseCb) phaseCb(m.name,m.data); }
   else if(m.t==='game'){ if(msgCb) msgCb(m.msg); }
   else if(m.t==='timer'){ if(timerCb) timerCb(m.s); }
   else if(m.t==='over'){ if(phaseCb) phaseCb('over',m.results||{}); }
@@ -17,6 +28,7 @@ function handle(m){
 
 window.PartyShell={
   playerId:window.PartyTransport.selfId,
+  gameSlug:null,
   joinRoom:function(code,name){
     return new Promise(function(res,rej){
       T=window.PartyTransport.open(code.toUpperCase());

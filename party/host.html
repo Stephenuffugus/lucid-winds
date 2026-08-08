@@ -24,7 +24,13 @@
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
 </script>
-<div class="screen on" id="ps-lobby">
+<!-- The TV menu. Skipped when a slug is already on the URL (tests, deep links). -->
+<div class="screen on" id="ps-pick">
+  <div class="ps-title">WHACK BOX</div>
+  <div class="ps-sub">pick tonight's game</div>
+  <div class="ps-grid" id="ps-pick-grid"></div>
+</div>
+<div class="screen" id="ps-lobby">
   <div class="ps-title">WHACK BOX</div>
   <div class="ps-sub">Sky Wolf Studios party night</div>
   <div class="ps-codebox"><div id="ps-code">....</div></div>
@@ -35,17 +41,44 @@
   browser. Cloud rooms for real phones arrive with the server switch-on.</div>
 </div>
 <div id="game-root"></div>
+<script src="catalogue.js"></script>
 <script src="shell/transport.js"></script>
 <script src="shell/host.js"></script>
 <script>
 (function(){
-  var slug=(location.search.match(/[?&]game=([a-z0-9-]+)/)||[])[1]||'mothlight';
-  var css=document.createElement('link'); css.rel='stylesheet'; css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
-  var s1=document.createElement('script'); s1.src='games/'+slug+'/content.js';
-  var s2=document.createElement('script'); s2.src='games/'+slug+'/host.js';
-  s1.onload=function(){ document.body.appendChild(s2); };
-  document.body.appendChild(s1);
-  PartyShell.createRoom(slug);
+  function $(id){return document.getElementById(id);}
+  var CAT=window.WHACKBOX_CATALOGUE||[];
+  function entry(slug){ for(var i=0;i<CAT.length;i++) if(CAT[i].slug===slug) return CAT[i]; return null; }
+
+  function launch(slug){
+    var e=entry(slug);
+    $('ps-pick').classList.remove('on');
+    if(e&&e.min) PartyShell.setMinPlayers(e.min);
+    var css=document.createElement('link'); css.rel='stylesheet'; css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+    var s1=document.createElement('script'); s1.src='games/'+slug+'/content.js';
+    var s2=document.createElement('script'); s2.src='games/'+slug+'/host.js';
+    s1.onload=function(){ document.body.appendChild(s2); };
+    /* a module with no bank must still boot, so a missing content.js is not fatal */
+    s1.onerror=function(){ document.body.appendChild(s2); };
+    document.body.appendChild(s1);
+    PartyShell.createRoom(slug);
+  }
+
+  function renderPicker(){
+    var g=$('ps-pick-grid'), html='';
+    for(var i=0;i<CAT.length;i++){ var c=CAT[i];
+      html+='<button class="ps-card" data-slug="'+c.slug+'">'+
+        '<span class="g">'+c.glyph+'</span><span><span class="nm">'+c.name+'</span>'+
+        '<span class="bl">'+c.blurb+'</span>'+
+        '<span class="mt">'+c.min+' to '+c.max+' players &middot; about '+c.mins+' minutes</span></span></button>';
+    }
+    g.innerHTML=html;
+    var btns=g.querySelectorAll('.ps-card');
+    for(var j=0;j<btns.length;j++) btns[j].addEventListener('click',function(){ launch(this.getAttribute('data-slug')); });
+  }
+
+  var slug=(location.search.match(/[?&]game=([a-z0-9-]+)/)||[])[1];
+  if(slug) launch(slug); else renderPicker();
 })();
 </script>
 </body>

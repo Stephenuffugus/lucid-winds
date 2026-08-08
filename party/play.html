@@ -23,6 +23,23 @@
 <script>
 (function(){
   function $(id){return document.getElementById(id);}
+
+  /* ONE PHONE PAGE, WHOLE CATALOGUE. The host announces its slug on join and on
+     every phase; this loads that module and swaps if the room changes games.
+     A module is an IIFE that owns #game-root and registers the shell callbacks,
+     so loading a second one takes over the DOM and the handlers cleanly. */
+  var loaded={};
+  function loadGame(slug){
+    if(!slug||loaded[slug]) return;
+    loaded[slug]=1;
+    var root=$('game-root'); if(root) root.innerHTML='';
+    var css=document.createElement('link'); css.rel='stylesheet';
+    css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+    var s=document.createElement('script'); s.src='games/'+slug+'/player.js';
+    document.body.appendChild(s);
+  }
+  document.addEventListener('party-game',function(ev){ loadGame(ev.detail.slug); });
+
   var qCode=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
   if(qCode) $('pj-code').value=qCode.toUpperCase();
   try{ var last=localStorage.getItem('party_name'); if(last) $('pj-name').value=last; }catch(e){}
@@ -35,10 +52,7 @@
     $('pj-go').disabled=true; $('pj-err').textContent='';
     PartyShell.joinRoom(code,name).then(function(){
       $('ps-join').classList.remove('on');
-      /* the game slug rides in on the first phase payload; until then load the
-         default module, which every phone in v1 shares */
-      var css=document.createElement('link'); css.rel='stylesheet'; css.href='games/mothlight/game.css'; document.head.appendChild(css);
-      var s=document.createElement('script'); s.src='games/mothlight/player.js'; document.body.appendChild(s);
+      loadGame(PartyShell.gameSlug||'mothlight');
     })['catch'](function(err){
       $('pj-go').disabled=false;
       $('pj-err').textContent='No room answered to '+code+'. Same wifi, same browser for practice rooms.';
