@@ -33,5 +33,8 @@ window.WHACKBOX_CATALOGUE = [
     min:2, max:8, mins:9 },
   { slug:'bearing',    name:'Bearing',         glyph:'✧',
     blurb:'One of you can see the target and says a single word out loud. Everyone else points.',
-    min:3, max:8, mins:9 }
+    min:3, max:8, mins:9 },
+  { slug:'understudy', name:'The Understudy',  glyph:'❦',
+    blurb:'A role appears and the room decides which of you it belongs to. Warm ones only.',
+    min:3, max:8, mins:8 }
 ];

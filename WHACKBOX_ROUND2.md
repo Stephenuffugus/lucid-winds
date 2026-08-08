@@ -122,7 +122,11 @@ good ideas are going to come from.
 2. ~~**Bearing**~~ **BUILT 2026-08-08** and driven to podium. Slug `bearing`,
    90 spectrum pairs. The spoken clue works exactly as argued: nothing is typed,
    sent, stored or displayed anywhere in it.
-3. **The Understudy** — only if the warm role list survives its own audit.
+3. ~~**The Understudy**~~ **BUILT 2026-08-08** and driven to podium. Slug
+   `understudy`. The warm role list survived its own audit at 104 entries, and
+   the audit rule is written into the file so the next person applies it too:
+   imagine the quietest person at the table being chosen for the role in front
+   of everyone, and cut it if they would be embarrassed.
 4. **The Long Way Round** — after the first two, and only with real design time.
 
 Every one of these is text and a dial. No art is on the critical path for any of

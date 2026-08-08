@@ -168,6 +168,19 @@ const banks = [];
   banks.push(['bearing', b.length, 'spectrums']);
 }
 
+/* understudy: roles. ⚖ The mechanical checks here cannot see the thing that
+   matters most, which is whether a role would embarrass the quietest person at
+   the table. That is a human read, and content.js says so. */
+{
+  const b = load('understudy', 'UNDERSTUDY_BANK');
+  b.forEach(e => {
+    checkText('understudy', e.id, e.text, 70);
+    if (!/^The one who/.test(e.text)) flag('understudy', e.id, 'does not open "The one who"', e.text);
+    if (/\?$/.test(e.text)) flag('understudy', e.id, 'is a question, not a role', e.text);
+  });
+  banks.push(['understudy', b.length, 'roles']);
+}
+
 /* moongraft: layer briefs */
 {
   const b = load('moongraft', 'MOONGRAFT_LAYERS');

@@ -113,8 +113,9 @@ Firefly Futures spicy tier (keeper, conditional, see above). Burr in the Hem and
 | Firefly Futures | `firefly` | BUILT 2026-08-08, driven to podium. **284** prompts. Spicy tier CUT. |
 | Lifting Fog | `liftingfog` | BUILT 2026-08-08, driven to podium. **140** four clue questions. |
 | First Frost | `firstfrost` | BUILT 2026-08-08, driven to podium. **307** questions. Frost console, 3 powers. |
+| The Understudy | `understudy` | BUILT 2026-08-08, driven to podium. 104 roles. ⚖ Shipped with a condition, and the condition is in its content.js: charming quirks only, never virtues or failings. |
 | Bearing | `bearing` | BUILT 2026-08-08, driven to podium. ⭐ Proves the spoken clue: nothing typed, so the whole no free text genre reopens. 90 spectrum pairs. |
-| Wide Margin | `widemargin` | BUILT 2026-08-08, driven to podium. The percentage guesser Stephen asked for. ⛔ Real sourced figures only, we never invent a number. See WHACKBOX_ROUND2.md for the rest of that wave. |
+| Wide Margin | `widemargin` | BUILT 2026-08-08, driven to podium. The percentage guesser Stephen asked for. **136** figures. ⛔ Real sourced numbers only, we never invent one. See WHACKBOX_ROUND2.md. |
 | Same Soil | `samesoil` | BUILT 2026-08-08, driven to podium at 3 AND at 2 players. **206** word pairs; ⚖ the 720 illustrations are an upgrade, not a blocker, see its README. |
 | Twin Lanterns party mode | | not started, and the doc's own rule says the standalone daily ships first. Do not invert that. |
 | Moongraft | `moongraft` | BUILT 2026-08-08, driven to gallery. Real name and haiku from word-banks.js. No scores by design. |
