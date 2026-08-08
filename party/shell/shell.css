@@ -47,9 +47,9 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
 
 /* ---- game picker (the TV menu; ten foot readable) ---- */
 #ps-pick{justify-content:flex-start; padding-top:6vh; overflow-y:auto}
-.ps-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
-  gap:20px; width:100%; max-width:1180px; margin-top:26px}
-.ps-card{display:flex; align-items:center; gap:20px; text-align:left; cursor:pointer;
+.ps-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(470px,1fr));
+  gap:20px; width:100%; max-width:1360px; margin-top:26px}
+.ps-card{display:flex; align-items:flex-start; gap:22px; text-align:left; cursor:pointer;
   min-height:150px; padding:24px 26px; border:1px solid var(--line); border-radius:20px;
   background:linear-gradient(160deg,#101826,#0a0e16); color:var(--cream);
   font-family:inherit; width:100%}
@@ -58,10 +58,17 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
   place-items:center; font-size:40px; color:var(--warm);
   background:radial-gradient(circle at 34% 28%, rgba(255,215,122,.22), rgba(0,0,0,.45));
   border:1px solid rgba(200,168,75,.4)}
-.ps-card .nm{font-size:38px; color:var(--warm); line-height:1.15}
-.ps-card .bl{font-size:22px; color:var(--cream); opacity:.86; margin-top:8px; line-height:1.35}
-.ps-card .mt{font-size:17px; letter-spacing:3px; text-transform:uppercase;
-  color:var(--muted); margin-top:10px}
+/* ⛔ These are SPANS, and a span is inline, so without this the title, the blurb
+   and the player count ran together into one unreadable paragraph:
+   "MothlightTrue or false, and the whole room watches your answer land.3 TO 8".
+   Every automated check passed while the front door looked like that, which is
+   the whole reason somebody has to open the screenshot. */
+.ps-card .txt{display:block; flex:1; min-width:0}
+.ps-card .nm{display:block; font-size:36px; color:var(--warm); line-height:1.15}
+.ps-card .bl{display:block; font-size:21px; color:var(--cream); opacity:.86;
+  margin-top:10px; line-height:1.4}
+.ps-card .mt{display:block; font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); margin-top:12px}
 @media (max-width:760px){
   .ps-grid{grid-template-columns:1fr}
   .ps-card{min-height:96px; padding:16px 18px; gap:14px}
