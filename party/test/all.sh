@@ -8,7 +8,7 @@
 # Usage: bash test/all.sh   (from party/)
 set -u
 cd "$(dirname "$0")/.."
-GAMES="mothlight:3 firefly:3 liftingfog:3 firstfrost:4 moongraft:4 samesoil:3 samesoil:2 widemargin:4"
+GAMES="mothlight:3 firefly:3 liftingfog:3 firstfrost:4 moongraft:4 samesoil:3 samesoil:2 widemargin:4 bearing:4"
 FAIL=0
 LOG=${LOG:-/tmp/wb-suite}
 mkdir -p "$LOG"

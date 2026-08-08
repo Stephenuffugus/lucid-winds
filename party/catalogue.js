@@ -30,5 +30,8 @@ window.WHACKBOX_CATALOGUE = [
     min:2, max:8, mins:8 },
   { slug:'widemargin', name:'Wide Margin',     glyph:'◐',
     blurb:'Everybody guesses a percentage at once. The truth slides in and nobody is ever completely wrong.',
-    min:2, max:8, mins:9 }
+    min:2, max:8, mins:9 },
+  { slug:'bearing',    name:'Bearing',         glyph:'✧',
+    blurb:'One of you can see the target and says a single word out loud. Everyone else points.',
+    min:3, max:8, mins:9 }
 ];

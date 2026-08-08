@@ -153,6 +153,21 @@ const banks = [];
   banks.push(['widemargin', b.length, 'percentages']);
 }
 
+/* bearing: spectrum pairs. Nothing is typed in this game, so the only content
+   is the two ends of a line. */
+{
+  const b = load('bearing', 'BEARING_BANK');
+  b.forEach(e => {
+    checkText('bearing', e.id, e.a, 20);
+    checkText('bearing', e.id, e.b, 20);
+    if (String(e.a).toLowerCase() === String(e.b).toLowerCase())
+      flag('bearing', e.id, 'both ends are the same', e.a);
+    if (String(e.a).split(' ').length > 4 || String(e.b).split(' ').length > 4)
+      flag('bearing', e.id, 'too many words on one end', e.a + ' / ' + e.b);
+  });
+  banks.push(['bearing', b.length, 'spectrums']);
+}
+
 /* moongraft: layer briefs */
 {
   const b = load('moongraft', 'MOONGRAFT_LAYERS');

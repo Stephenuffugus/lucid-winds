@@ -116,10 +116,12 @@ good ideas are going to come from.
 
 ## ORDER, and what it costs
 
-1. **Wide Margin** — the one you asked for, the best display in the pack, and a
-   content pipeline we have already run three times.
-2. **Bearing** — cheapest content of anything we have built, and it unlocks the
-   spoken clue genre.
+1. ~~**Wide Margin**~~ **BUILT 2026-08-08** and driven to podium. Slug
+   `widemargin`. Bank started at 34 hand checked figures with a verification
+   workflow expanding it.
+2. ~~**Bearing**~~ **BUILT 2026-08-08** and driven to podium. Slug `bearing`,
+   90 spectrum pairs. The spoken clue works exactly as argued: nothing is typed,
+   sent, stored or displayed anywhere in it.
 3. **The Understudy** — only if the warm role list survives its own audit.
 4. **The Long Way Round** — after the first two, and only with real design time.
 
