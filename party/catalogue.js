@@ -27,5 +27,8 @@ window.WHACKBOX_CATALOGUE = [
     min:3, max:8, mins:9 },
   { slug:'samesoil',   name:'Same Soil',       glyph:'❖',
     blurb:'One of you picks which of two things is more them. Everyone else guesses. Works with just two.',
-    min:2, max:8, mins:8 }
+    min:2, max:8, mins:8 },
+  { slug:'widemargin', name:'Wide Margin',     glyph:'◐',
+    blurb:'Everybody guesses a percentage at once. The truth slides in and nobody is ever completely wrong.',
+    min:2, max:8, mins:9 }
 ];

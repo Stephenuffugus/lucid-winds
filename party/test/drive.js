@@ -39,7 +39,7 @@ const PLAYERS = parseInt(process.argv[3] || '3', 10);
 const SHOTS = process.env.SHOTS || path.join('/tmp', 'wb-shots', SLUG);
 const puppeteer = require(path.join(ROOT, 'node_modules', 'puppeteer'));
 
-const FAST = { mothlight:'ml_fast=1', firefly:'ff_fast=1', liftingfog:'lf_fast=1', firstfrost:'fr_fast=1', moongraft:'mg_fast=1', samesoil:'ss_fast=1' };
+const FAST = { mothlight:'ml_fast=1', firefly:'ff_fast=1', liftingfog:'lf_fast=1', firstfrost:'fr_fast=1', moongraft:'mg_fast=1', samesoil:'ss_fast=1', widemargin:'wm_fast=1' };
 const NAMES = ['Ada','Bo','Cy','Del','Eve','Fin','Gus','Hal'];
 const MIME = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png',
   '.jpg':'image/jpeg','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};
@@ -252,7 +252,7 @@ async function joinPhone(page, base, code, name) {
 
     /* host side NEXT only; the podium's other controls are destructive */
     await host.evaluate(() => {
-      ['ml-next','ff-next','lf-next','fr-next','mg-next','ss-next'].forEach(function(id){
+      ['ml-next','ff-next','lf-next','fr-next','mg-next','ss-next','wm-next'].forEach(function(id){
         var b = document.getElementById(id);
         if (!b) return;
         var r = b.getBoundingClientRect();

@@ -138,6 +138,21 @@ const banks = [];
   banks.push(['samesoil', b.length, 'pairs']);
 }
 
+/* widemargin: real percentages, and the only bank where a wrong number is
+   indistinguishable from a right one to the player */
+{
+  const b = load('widemargin', 'WIDEMARGIN_BANK');
+  b.forEach(e => {
+    checkText('widemargin', e.id, e.q, 105);
+    if (!/^What percentage of/.test(e.q)) flag('widemargin', e.id, 'does not open "What percentage of"', e.q);
+    if (!/\?$/.test(e.q)) flag('widemargin', e.id, 'is not a question', e.q);
+    if (!Number.isInteger(e.answer) || e.answer < 0 || e.answer > 100)
+      flag('widemargin', e.id, 'answer is not a whole number 0 to 100', String(e.answer));
+    if (!e.source) flag('widemargin', e.id, 'no source, and this bank is nothing but numbers', e.q);
+  });
+  banks.push(['widemargin', b.length, 'percentages']);
+}
+
 /* moongraft: layer briefs */
 {
   const b = load('moongraft', 'MOONGRAFT_LAYERS');
