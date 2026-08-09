@@ -22,7 +22,7 @@
    players to a stale build and we would be debugging ghosts. The cache here is a
    pure offline fallback: we always try the network, and only reach for the cache
    when the network fails. Bump CACHE on any shipped change to evict the old shell. */
-var CACHE = "dewball-v7";
+var CACHE = "dewball-v8";
 
 /* Never let a hung request hang the page. fetch() only rejects on a hard
    failure; a half-connected phone leaves it pending forever, and a pending

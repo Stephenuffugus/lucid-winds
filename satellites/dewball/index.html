@@ -584,11 +584,30 @@
     }
     a._top=y; return a;
   }
-  function _lmCols(n,rad,colH,colR,c,y0,capC){
+  function _lmCols(n,rad,colH,colR,c,y0,capC,rough){
     // a colonnade. Rings of pillars carry a silhouette at distance far better
     // than a solid wall does, and they cost one primitive each.
+    // ⭐ rough>0 turns the ring into MENHIRS instead: same call, but hewn slabs at
+    //   uneven heights, leaning, one of them fallen. Opt-in, because a colonnade
+    //   under a pavilion roof must stay a colonnade — it is only a stone circle
+    //   that wants the irregularity, and nine identical cylinders read as a
+    //   colonnade of pipes, which is the Broken Keel's picket-fence lesson in a
+    //   different world.
     var a=[],i,y=y0||0;
     for(i=0;i<n;i++){ var t=6.283*i/n, x=Math.cos(t)*rad, z=Math.sin(t)*rad;
+      if(rough){
+        /* deterministic, never rng — a world must build identically from a seed */
+        var f=Math.sin((i+1)*12.9898)*43758.5453; f-=Math.floor(f);
+        var g=Math.sin((i+1)*78.233)*43758.5453;  g-=Math.floor(g);
+        var rr=rad*(1+(f-0.5)*0.10), hh=colH*(0.60+0.66*f);
+        var sx=Math.cos(t)*rr, sz=Math.sin(t)*rr;
+        if(f<0.15){ /* one has fallen, which is what makes the others look standing */
+          a.push(pp("box",[hh*0.85,colR*1.5,colR*2.4],c,sx,y+colR*0.8,sz,0,-t+(g-0.5)*0.6,1.4));
+        } else {
+          a.push(pp("box",[colR*(1.6+0.9*g),hh,colR*(1.05+0.7*f)],c,sx,y+hh/2,sz,
+                     (f-0.5)*0.16,-t+(g-0.5)*0.45,(g-0.5)*0.20));
+        }
+        continue; }
       a.push(pp("cyl",[colR,colR*1.15,colH,6],c,x,y+colH/2,z));
       if(capC) a.push(pp("box",[colR*2.8,colH*0.09,colR*2.8],capC,x,y+colH,z));
     }
@@ -1356,7 +1375,7 @@
 
   K("lmStoneCircle","The Dreaming Stones",760,_cat(
     [ pp("cyl",[330,350,20,22],0x4a4270,0,10,0) ],
-    _lmCols(9,270,300,46,0x8a84a8,20),
+    _lmCols(9,270,300,46,0x8a84a8,20,0,1),
     _lmArch(3,520,300,54,0x8a84a8,20),
     [ pp("sph",[54,10,8],0xb37ad8,0,360,0,0,0,0), pp("cyl",[60,64,40,16],0x6a5a9e,0,40,0) ],
     _lmCols(5,150,90,26,0x6a5a9e,20),
@@ -1558,9 +1577,14 @@
   //  the SIGNATURE is a gold antler rack against the night sky, plus blossom.
   K("lmTopiaryStag","The Topiary Stag",430,_cat(
     [ pp("cyl",[130,142,22,18],0x6a6258,0,11,0), pp("cyl",[112,112,8,18],0x3a4432,0,26,0) ],
-    /* legs */
-    [ pp("cyl",[15,17,96,8],0x1f5a2a,-52,78,-30), pp("cyl",[15,17,96,8],0x1f5a2a,-52,78,30),
-      pp("cyl",[15,17,96,8],0x1f5a2a,50,78,-30), pp("cyl",[15,17,96,8],0x1f5a2a,50,78,30) ],
+    /* legs.
+       ⛔ FOUR IDENTICAL POSTS BUNCHED UNDER THE MIDDLE IS A TABLE, NOT AN ANIMAL.
+       They sat at x=-52 and x=+50 under a body running -102 to +114, so the
+       silhouette was a slab on a pedestal of legs. Corners, and raked — fore legs
+       forward, hind legs back — which is the whole difference between furniture
+       and something standing. */
+    [ pp("cyl",[15,17,96,8],0x1f5a2a,-80,78,-34,0.05,0,-0.07), pp("cyl",[15,17,96,8],0x1f5a2a,-80,78,34,-0.05,0,-0.07),
+      pp("cyl",[15,17,96,8],0x1f5a2a,84,78,-34,0.04,0,0.07), pp("cyl",[15,17,96,8],0x1f5a2a,84,78,34,-0.04,0,0.07) ],
     /* body as three overlapping masses — spheres here are round, so the loaf has
        to be built rather than scaled */
     [ pp("sph",[62,12,9],0x1f5a2a,-40,168,0), pp("sph",[66,12,9],0x1f5a2a,4,174,0),
@@ -1588,14 +1612,37 @@
        more on-theme here than stone would be, because Night Garden already owns
        moonflowers. So the mass is smothered in bloom until the SHAPE is pale, and
        the gold rack sits on top of a body you can now actually see. */
-    [ pp("sph",[19,9,7],0xfff2f6,-14,214,46), pp("sph",[17,9,7],0xfff2f6,30,200,-46),
-      pp("sph",[18,9,7],0xfff2f6,-58,202,-42), pp("sph",[16,9,7],0xfff2f6,58,190,38),
-      pp("sph",[17,9,7],0xfff2f6,-92,252,24), pp("sph",[18,9,7],0xf6f0e0,4,212,-48),
-      pp("sph",[16,9,7],0xfff2f6,-36,196,-30), pp("sph",[17,9,7],0xfff2f6,44,212,26),
-      pp("sph",[15,9,7],0xf6f0e0,72,178,-24), pp("sph",[16,9,7],0xfff2f6,-70,222,34),
-      pp("sph",[14,8,6],0xfff2f6,-104,282,-20), pp("sph",[15,8,6],0xf6f0e0,-110,306,22),
-      pp("sph",[13,8,6],0xe8a0bf,-20,236,10), pp("sph",[12,8,6],0xe8a0bf,36,224,0),
-      pp("sph",[13,8,6],0xfff2f6,10,232,40), pp("sph",[12,8,6],0xfff2f6,-48,228,-8) ]
+    /* ⛔ AND THE THIRD PASS UNDER-DELIVERED ITS OWN INTENT. The note above says the
+       mass is "smothered in bloom until the SHAPE is pale" — it was sixteen
+       spheres of r12-19 scattered over a body of r56-66, which is dots on a dark
+       lump, not a pale shape, and at gameplay scale it still photographed as a
+       dark slab with gold antlers floating over it. Blossom now covers: bigger
+       heads, more of them, following the loaf's top and shoulders, so the
+       SILHOUETTE goes pale the way the hedge runs and the stonewalls do. */
+    [ pp("sph",[30,10,8],0xfff2f6,-58,214,0), pp("sph",[31,10,8],0xfff2f6,-16,222,4),
+      pp("sph",[29,10,8],0xfff2f6,26,216,-4), pp("sph",[26,10,8],0xf6f0e0,64,198,0),
+      pp("sph",[27,10,8],0xfff2f6,-38,196,42), pp("sph",[27,10,8],0xfff2f6,-38,196,-42),
+      pp("sph",[26,10,8],0xf6f0e0,6,200,46), pp("sph",[26,10,8],0xfff2f6,6,200,-46),
+      pp("sph",[24,9,7],0xfff2f6,46,190,38), pp("sph",[24,9,7],0xf6f0e0,46,190,-38),
+      pp("sph",[25,9,7],0xfff2f6,-86,196,26), pp("sph",[25,9,7],0xfff2f6,-86,196,-26),
+      pp("sph",[22,9,7],0xf6f0e0,86,172,22), pp("sph",[22,9,7],0xfff2f6,86,172,-22),
+      pp("sph",[23,9,7],0xe8a0bf,-20,244,26), pp("sph",[21,9,7],0xe8a0bf,34,238,-18),
+      pp("sph",[22,9,7],0xfff2f6,-64,246,-22), pp("sph",[20,9,7],0xfff2f6,62,224,8),
+      /* ⛔ AND ON THE FLANKS, not just the ridge. First go at this put every head
+         on the TOP surface, which from the side is a row of pom-poms sitting on a
+         dark loaf — the mass below them stayed exactly as dark as before. What
+         needs to go pale is the SILHOUETTE, and at ball height you see the flank,
+         not the back. */
+      pp("sph",[25,9,7],0xfff2f6,-62,158,56), pp("sph",[25,9,7],0xfff2f6,-62,158,-56),
+      pp("sph",[26,9,7],0xf6f0e0,-20,164,60), pp("sph",[26,9,7],0xfff2f6,-20,164,-60),
+      pp("sph",[25,9,7],0xfff2f6,22,160,58), pp("sph",[25,9,7],0xf6f0e0,22,160,-58),
+      pp("sph",[22,9,7],0xfff2f6,60,150,48), pp("sph",[22,9,7],0xfff2f6,60,150,-48),
+      pp("sph",[23,9,7],0xe8a0bf,-94,168,40), pp("sph",[23,9,7],0xfff2f6,-94,168,-40),
+      pp("sph",[20,9,7],0xf6f0e0,88,142,34), pp("sph",[20,9,7],0xfff2f6,88,142,-34),
+      /* up the neck, so the pale carries all the way to the rack */
+      pp("sph",[22,9,7],0xfff2f6,-84,254,20), pp("sph",[21,9,7],0xf6f0e0,-92,282,-18),
+      pp("sph",[19,8,6],0xfff2f6,-104,300,26), pp("sph",[18,8,6],0xfff2f6,-112,318,-16),
+      pp("sph",[17,8,6],0xe8a0bf,-100,268,0), pp("sph",[16,8,6],0xf6f0e0,-120,296,6) ]
   ),{fixed:1,volF:0.3});
 
   // =====================================================================
@@ -3593,12 +3640,23 @@
            fence. They are the biggest, darkest thing in every globe frame, and
            both "never really looked at" globe landmarks were photographed behind
            them. Warm wood, like every other daylit fence in the game. */
-        var pg=mergeParts([ pp("cyl",[gd.need*0.055,gd.need*0.075,gd.need*1.15,5],W.night?0x4a3a5a:0x8a6a44,0,gd.need*0.575,0),
-                            pp("sph",[gd.need*0.085,6,5],0xc8a84b,0,gd.need*1.16,0) ]);
+        /* ⛔ A RING OF POLES IS NOT A FENCE. The planar branch below hangs two
+           torus rails through its posts; the globe branch had none, so w7's gates
+           read as a crown of loose spikes and you cannot tell a barrier from
+           scenery. A torus cannot follow a sphere, so each post carries its own
+           pair of bars reaching the NEXT post, and the ring chains itself.
+           ⭐ Which only works because the bars can be AIMED — see globeSync. */
+        var pspan=6.283*gd.r/np;
+        var railC=W.night?0x3a2e48:0x6f5436, postC=W.night?0x4a3a5a:0x8a6a44;
+        var pg=mergeParts([ pp("cyl",[gd.need*0.055,gd.need*0.075,gd.need*1.15,5],postC,0,gd.need*0.575,0),
+                            pp("sph",[gd.need*0.085,6,5],0xc8a84b,0,gd.need*1.16,0),
+                            pp("box",[pspan*1.02,gd.need*0.05,gd.need*0.05],railC,pspan*0.5,gd.need*0.42,0),
+                            pp("box",[pspan*1.02,gd.need*0.05,gd.need*0.05],railC,pspan*0.5,gd.need*0.95,0) ]);
         var posts=[];
         var pim=new THREE.InstancedMesh(pg,sharedMat,np); pim.frustumCulled=false;
         for(j=0;j<np;j++){ var ga=6.283*j/np;
-          posts.push({cx:wrapC(gd.x+Math.cos(ga)*gd.r),cz:wrapC(gd.z+Math.sin(ga)*gd.r)}); }
+          /* ga is kept: it is what lets globeSync cancel the ball-relative basis */
+          posts.push({cx:wrapC(gd.x+Math.cos(ga)*gd.r),cz:wrapC(gd.z+Math.sin(ga)*gd.r),ga:ga}); }
         scene.add(pim);
         GATES.push({def:gd,open:false,sinkY:0,mesh:null,posts:posts,postIM:pim,hintT:0});
       } else {
@@ -4214,7 +4272,19 @@
       if(g.sign) _gsPlaceMesh(g.def.x,g.def.z,0,g.sign.sprite,g.def.need*2.1);
       if(!g.postIM) continue;
       for(j=0;j<g.posts.length;j++){ var p=g.posts[j];
-        if(_gsMat(p.cx,p.cz,0,1,g.sinkY)) g.postIM.setMatrixAt(j,_gsM);
+        /* ⚖️ CANCEL THE BALL-RELATIVE BASIS. _gsMat builds a post's local frame
+           from the bearing to the BALL, so anything baked into that frame swings
+           as the player moves — which is why a rail could not simply be modelled
+           in. Derivation: at yaw θ the local +X lands on chart heading (α−θ−90°),
+           where α is the chart angle from ball to post. A rail wants the RING's
+           tangent, heading (ga+90°). Setting them equal gives θ = α − ga − 180°,
+           and a bar is symmetric under a half turn, so θ = α − ga does it.
+           ⭐ The half-turn symmetry also absorbs the cos(phi) sign flip that the
+           polar tangent takes past the horizon, so posts over the curve stay
+           right instead of snapping around. */
+        var pyaw=0;
+        if(p.ga!==undefined) pyaw=Math.atan2(wrapD(p.cz-R.z),wrapD(p.cx-R.x))-p.ga;
+        if(_gsMat(p.cx,p.cz,pyaw,1,g.sinkY)) g.postIM.setMatrixAt(j,_gsM);
         else { _gsM.makeScale(0,0,0); g.postIM.setMatrixAt(j,_gsM); } }
       g.postIM.instanceMatrix.needsUpdate=true; }
   }
@@ -4491,7 +4561,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=7")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=8")["catch"](function(){});
     });
   }
   var deferredPrompt=null;

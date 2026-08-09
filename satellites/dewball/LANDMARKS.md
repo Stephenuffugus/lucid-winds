@@ -315,7 +315,12 @@ rewritten every world and made every prior measurement worthless.
    circle of radius 9 — a circle narrower than the beads on it — in the same
    cream as the jack's face. Now a steel `_lmHelix`, and it has a crank, which is
    the one part of a jack-in-the-box everybody can name.
-8. **⛔ THE ENDGAME PLANET WAS RINGED WITH OBSIDIAN SPIKES.** Not a landmark
+8. **The Dreaming Stones were a colonnade of pipes.** Nine identical cylinders in
+   a ring — the Broken Keel's picket-fence lesson in another world. `_lmCols` now
+   takes an opt-in `rough` flag that makes hewn slabs at uneven heights, leaning,
+   with one fallen flat. ⚖️ Opt-in and not global, because a colonnade under a
+   pavilion roof must stay a colonnade; only a stone circle wants the noise.
+9. **⛔ THE ENDGAME PLANET WAS RINGED WITH OBSIDIAN SPIKES.** Not a landmark
    defect at all, found while looking at them: the globe gate branch hard-codes
    the NIGHT post colour, and the only globe world is w7 The Whole World, a
    bright day planet with a blue sky. On a sphere every post stands on its own
@@ -324,24 +329,54 @@ rewritten every world and made every prior measurement worthless.
    thing in every globe frame. The planar branch six lines below gets this right
    (`W.night?…:…`). Now warm wood.
 
-## Still open, deliberately
+## ✅ Solved after all: the globe gates now have rails
 
-- **The globe gates have no rails.** The planar branch adds two torus rails so a
-  gate reads as a fence; the globe branch is posts only, so it is a ring of
-  poles. Baking a rail into the post geometry is not safe: `_gsMat`'s yaw basis
-  is built from the bearing to the BALL, so a baked rail would swing as the
-  player moves. Wants a real fix, not a guess. **Stephen's call.**
-- **The Topiary Stag still does not read as a stag.** Opened at gameplay scale:
-  a dark rounded slab on four identical evenly-spaced vertical legs (a table
-  stance, not an animal one), a straight diagonal neck, a small featureless head,
-  and the gold rack reading as though it floats free of it. The blossom pass did
-  not deliver its own stated intent — the comment says the mass is "smothered in
-  bloom until the SHAPE is pale", but it is 16 spheres of r12-19 scattered over a
-  body of r56-66, which reads as dots on a dark lump, not as pale shape. This is
-  the third pass on this one prop and two of them missed, so I am not taking a
-  fourth swing blind. **Stephen's call** on whether it wants smothering properly,
-  restaging, or replacing.
+Listed below as "wants a real fix, not a guess" — so here is the derivation
+rather than a guess. `_gsMat` builds every prop's local frame from the bearing to
+the **ball**, which is why a rail modelled into the post swings as the player
+moves. But that basis can be cancelled:
+
+> At yaw θ the post's local **+X** lands on chart heading **(α − θ − 90°)**, where
+> α is the chart angle from ball to post. A rail wants the RING's tangent,
+> heading **(ga + 90°)**, where ga is the post's angle around the gate centre.
+> Equate: **θ = α − ga − 180°** — and a bar is symmetric under a half turn, so
+> **θ = α − ga** does it.
+
+⭐ That half-turn symmetry also absorbs the `cos(phi)` sign flip the polar tangent
+takes past the horizon, so posts over the curve stay right instead of snapping
+around. Each post now carries two bars reaching the next post, and the ring
+chains itself; a torus cannot follow a sphere, but a chain of chords can.
+
+**Verified by looking, not by algebra:** the same gate shot from three ball
+positions around its ring (`/tmp/fence-0..2.png`) shows the rails staying
+horizontal and tangent, reading as a continuous post-and-rail fence following the
+horizon curve. Gate collision is a pure ring-distance test against `def.r`, so
+this is appearance only — no physics, no balance.
+
+⚖️ w7's gates were the one thing the world says out loud ("a ring gate is a wall
+around your whole known world") and they were reading as a crown of loose spikes.
+
+## Still open, deliberately
+- **The Topiary Stag: its two stated intents are now delivered, and it still does
+  not read as a stag.** Fixed today, both verified by opening the image: the legs
+  sat at x=-52/+50 under a body running -102 to +114, i.e. four identical posts
+  bunched under the middle, which is a table — they are at the corners and raked
+  now. And the blossom finally covers: it was 16 spheres of r12-19 on a body of
+  r56-66 ("smothered in bloom until the SHAPE is pale" was the claim; it was dots
+  on a dark lump), then my first correction put every head on the TOP ridge,
+  which from ball height is a row of pom-poms on a dark loaf. With the flanks
+  covered the silhouette does go pale at night, as intended all along.
+  **What remains is not colour, it is proportion**: a rounded blob body with no
+  chest or haunch, a straight tube neck at 45°, a head that vanishes into the
+  bloom, no tail. The gold rack is doing all the work of saying "deer".
+  ⚖️ **Stephen's call.** My read is that the honest options are to model the body
+  properly (chest/barrel/haunch as three masses, an arched neck, a bigger head)
+  or to accept it as "a blossoming topiary with a gold rack" and rename it. What
+  I would not do is a fifth colour pass; that lever is finished.
 - **The Long Span crosses nothing** — a suspension bridge over grass fields.
+- **The Dreaming Stones' floating orb.** A 54cm sphere hangs 360cm over the altar
+  with nothing connecting it. Defensible in a dream world, but it reads as a
+  detached ball rather than a moon. Left alone on purpose.
 - **Wide-and-low landmarks stay weak on the globe.** The Gilded Palace fills only
   22% of frame from as close as the ball can stand without touching it, because
   its 3900cm `size` is 1932cm of actual height. Height buys presence on a sphere;
