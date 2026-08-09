@@ -677,7 +677,19 @@
     for(i=0;i<n;i++){
       var t=(n>1)?i/(n-1):0, ang=6.283*T*t;
       var r=rad0+(rad1-rad0)*t, y=y0+(y1-y0)*t;
-      a.push(pp("box",[segW,th,r*0.55],c,Math.cos(ang)*r,y,Math.sin(ang)*r,0,-ang+1.5708,0.16));
+      /* ⛔ A SPIRAL WITH GAPS IN IT IS NOT A SLIDE, it is a row of shelf brackets.
+         The Helter Skelter shipped as 18 segments 320 wide spaced 573 apart along
+         the arc — 44% air — and the photograph showed yellow tabs stuck to a
+         tower, not a chute. So the segment spans the gap it has to span: measure
+         the step to the next one and be at least that long. Callers keep passing
+         a segW and it still acts as the minimum. */
+      var w=segW;
+      if(n>1){ var t2=(i<n-1)?(i+1)/(n-1):(i-1)/(n-1), ang2=6.283*T*t2,
+               r2=rad0+(rad1-rad0)*t2, y2=y0+(y1-y0)*t2;
+        var cdx=Math.cos(ang2)*r2-Math.cos(ang)*r, cdz=Math.sin(ang2)*r2-Math.sin(ang)*r;
+        var chord=Math.sqrt(cdx*cdx+cdz*cdz+(y2-y)*(y2-y));
+        if(chord*1.15>w) w=chord*1.15; }
+      a.push(pp("box",[w,th,r*0.55],c,Math.cos(ang)*r,y,Math.sin(ang)*r,0,-ang+1.5708,0.16));
     }
     return a;
   }
@@ -689,8 +701,20 @@
     for(i=0;i<n;i++){
       var t=(n>1)?i/(n-1):0, x=-len/2+len*t;
       var h=hMax*(0.45+0.55*Math.sin(Math.PI*t));      /* tall amidships */
-      a.push(pp("box",[th,h,th*1.2],c,x,(y0||0)+h/2, spread*0.5,0,0,(lean||0.22)));
-      a.push(pp("box",[th,h,th*1.2],c,x,(y0||0)+h/2,-spread*0.5,0,0,-(lean||0.22)));
+      /* ⛔ BROKEN IS THE WHOLE NOUN. Nine identical ribs on a smooth arch read as
+         a picket fence, which is exactly what the first photograph of the Broken
+         Keel came back as. A wreck is irregular: some ribs snapped short, some
+         gone entirely, none leaning quite the same.
+         ⭐ Deterministic hash, never rng — a world must build identically on
+         every device and from the same seed, and this runs at kind-build time
+         where the seeded stream is not even in scope. */
+      var f=Math.sin((i+1)*12.9898)*43758.5453; f-=Math.floor(f);
+      var g=Math.sin((i+1)*78.233)*43758.5453; g-=Math.floor(g);
+      var ln=(lean||0.22)*(0.55+0.9*g);
+      if(f<0.14) continue;                             /* this one is simply gone */
+      h*=0.40+0.60*f;                                  /* the rest snapped unevenly */
+      a.push(pp("box",[th,h,th*1.2],c,x,(y0||0)+h/2, spread*0.5,0,0, ln));
+      if(g>=0.12) a.push(pp("box",[th,h*(0.55+0.45*g),th*1.2],c,x,(y0||0)+h*(0.55+0.45*g)/2,-spread*0.5,0,0,-ln));
     }
     return a;
   }
@@ -1586,7 +1610,12 @@
       pp("cyl",[285,225,560,16],0x1a6a7a,0,2520,0) ],
     /* ⭐ the slide is the landmark. Gold on a red tower, and a spiral is a shape
        nothing else in this game has at any size. */
-    _lmHelix(18,660,300,300,2680,320,64,0xf0c44a,2.35),
+    /* ⛔ 18 segments over 2.35 turns is 47° of arc each, and a straight plank
+       spanning 47° of a circle is a notch, not a ribbon — widening them only made
+       fatter slats. A chute needs enough steps that the polygon reads as a curve:
+       40 segments is 21° each. One instance in the world, so the primitive count
+       is affordable exactly here and nowhere else. */
+    _lmHelix(40,660,300,300,2680,300,92,0xf0c44a,2.35),
     [ pp("cone",[340,430,16],0xc23a4a,0,3015,0),
       pp("cyl",[26,26,220,8],0xf0e8d8,0,3320,0), pp("card",[240,150],0xf0c44a,120,3360,0,0,1.5708,0) ],
     /* the entry, so it reads as something people queue for */
@@ -1623,11 +1652,19 @@
 
   K("lmMooredBalloon","The Moored Balloon",3000,_cat(
     [ pp("cyl",[520,560,50,18],0x8a5a42,0,25,0) ],
-    /* the basket and its burner frame */
-    [ pp("box",[430,320,430],0x6a4a2a,0,210,0), pp("box",[450,60,450],0x8a6a3a,0,380,0),
-      pp("cyl",[22,22,300,6],0x8a8e96,-180,530,-180), pp("cyl",[22,22,300,6],0x8a8e96,180,530,-180),
-      pp("cyl",[22,22,300,6],0x8a8e96,-180,530,180), pp("cyl",[22,22,300,6],0x8a8e96,180,530,180),
-      pp("box",[200,90,200],0xf0c44a,0,700,0) ],
+    /* the basket and its burner frame.
+       ⛔ AT LANDMARK SCALE, DETAIL THINNER THAN ABOUT 1/40 OF THE MODEL VANISHES.
+       This is 2635cm tall and shipped with 44cm burner poles and 34cm mooring
+       lines — 1.3% of the height — so the photograph came back as a striped ball
+       hanging in mid-air over a beach with nothing under it and nothing holding
+       it. "Moored" was invisible, which made the name a lie and the silhouette a
+       floating beach ball. Same law that killed the Fondant Tower's toothpick
+       columns in wave two; it wants applying to every landmark, not re-learning
+       once per model. */
+    [ pp("box",[620,380,620],0x6a4a2a,0,210,0), pp("box",[660,80,660],0x8a6a3a,0,420,0),
+      pp("cyl",[48,48,300,8],0x8a8e96,-200,560,-200), pp("cyl",[48,48,300,8],0x8a8e96,200,560,-200),
+      pp("cyl",[48,48,300,8],0x8a8e96,-200,560,200), pp("cyl",[48,48,300,8],0x8a8e96,200,560,200),
+      pp("box",[300,120,300],0xf0c44a,0,730,0) ],
     /* ⭐ THE CIRCLE IS THE POINT — the same reason _lmWheel works. A sphere against
        a dusk sky is legible from anywhere in the bay, and it is moored on the sand
        rather than floating, so the thing you can see is the thing you can reach. */
@@ -1639,10 +1676,10 @@
       pp("cyl",[440,440,130,22],0x1a6a7a,0,2440,0),
       pp("cyl",[150,150,90,16],0xf0c44a,0,2560,0) ],
     /* mooring lines and the sandbags holding her down */
-    _lmCable(-1500,90,-260,1180,140,5,0x8a8378,34,0),
-    _lmCable(1500,90,260,1180,140,5,0x8a8378,34,0),
-    [ pp("sph",[150,9,7],0x6a6258,-1520,120,0), pp("sph",[150,9,7],0x6a6258,1520,120,0),
-      pp("sph",[130,9,7],0x6a6258,-1400,110,320), pp("sph",[130,9,7],0x6a6258,1400,110,-320) ]
+    _lmCable(-1500,90,-260,1180,140,5,0x8a8378,90,0),
+    _lmCable(1500,90,260,1180,140,5,0x8a8378,90,0),
+    [ pp("sph",[180,9,7],0x6a6258,-1520,140,0), pp("sph",[180,9,7],0x6a6258,1520,140,0),
+      pp("sph",[160,9,7],0x6a6258,-1400,130,320), pp("sph",[160,9,7],0x6a6258,1400,130,-320) ]
   ),{fixed:1,volF:0.3});
 
   // =====================================================================
@@ -3374,7 +3411,66 @@
             hx:sp.x+si[1],hz:sp.z+si[2],ph:(i*7+j)%6});
           continue; }
         if(!byKind[si[0]]) byKind[si[0]]=[];
-        byKind[si[0]].push({x:sp.x+si[1],z:sp.z+si[2],rot:si[3]||0,sc:si[4]||1,keep:null}); } } }
+        byKind[si[0]].push({x:sp.x+si[1],z:sp.z+si[2],rot:si[3]||0,sc:si[4]||1,keep:null,inSet:1}); } } }
+
+    // ---- LANDMARK CLEARANCE (v4.6) -----------------------------------------
+    // ⛔ A LANDMARK IS THE ONE THING IN A WORLD YOU AIM AT, and nothing knew it
+    // was there. Scatter, walls, lamps and towns are each placed from their own
+    // rules, and a landmark is just another n:1 scatter entry — which even gets
+    // CLUMPED onto a cluster anchor 62% of the time, i.e. deliberately dropped in
+    // the middle of somebody's crate yard. Measured across all seven worlds:
+    // the Armillary Sphere arrived with a topiary ball welded into it 70cm off
+    // its axis (which is what you actually see — a lumpy hedge on a plinth, no
+    // rings), the Helter Skelter with fifteen beach huts inside its footprint,
+    // the Great Water Wheel behind four brick walls, and the zen world put the
+    // Pagoda and the Stone Circle through each other. So each landmark now
+    // reserves a ring the width of its own footprint and everything else steps
+    // out of it.
+    // ⭐ NUDGE, NEVER RE-ROLL. Pushing a prop out along the radius consumes no
+    // random numbers, so the seeded stream stays bit-identical and a balance A/B
+    // across this change still compares like with like. Re-rolling would have
+    // rewritten every world and made the measurement meaningless.
+    // ⛔ Set pieces are exempt: a set is a COMPOSITION (a bench facing a path, a
+    // boathouse and its court) and shoving one member out of it is how you seal
+    // a court. Sets carry inSet for exactly this.
+    var _lmRing=[], _lmK, _lx, _lp, _lit, _lks;
+    function _lmPush(px,pz,ps){
+      for(var pass=0; pass<3; pass++){
+        var moved=false;
+        for(var li=0;li<_lmRing.length;li++){ var L=_lmRing[li];
+          var ldx=wrapD(px-L.x), ldz=wrapD(pz-L.z);
+          var ld=Math.sqrt(ldx*ldx+ldz*ldz), need=L.r+ps*0.5;
+          if(ld>=need) continue;
+          if(ld<1e-3){ ldx=1; ldz=0; ld=1; }        /* dead centre: any bearing will do */
+          px=wrapC(L.x+ldx/ld*need); pz=wrapC(L.z+ldz/ld*need); moved=true;
+          if(!W.wrap){ var b9=W.bound*0.985;
+            px=Math.max(-b9,Math.min(b9,px)); pz=Math.max(-b9,Math.min(b9,pz)); } }
+        if(!moved) break; }                          /* rings can hand a prop back and forth */
+      return [px,pz];
+    }
+    /* A set is a composed scene, so the landmark is the thing that moves: the
+       globe had a cathedral standing inside somebody's village with a cottage
+       through its transept. Seed the rings with the set extents for the landmark
+       pass only, then drop them again — ordinary props must NOT be shoved out of
+       the sets they are members of. */
+    var _setN=setExt.length;
+    for(_lx=0;_lx<_setN;_lx++) _lmRing.push({x:setExt[_lx].x,z:setExt[_lx].z,r:setExt[_lx].r});
+    /* landmarks first, so they clear EACH OTHER, then everything else clears them */
+    for(_lmK in byKind){ if(!byKind.hasOwnProperty(_lmK)) continue;
+      if(_lmK.indexOf("lm")!==0||!PROPS[_lmK].fixed) continue;
+      _lit=byKind[_lmK]; _lks=PROPS[_lmK].s;
+      for(_lx=0;_lx<_lit.length;_lx++){
+        _lp=_lmPush(_lit[_lx].x,_lit[_lx].z,_lks*_lit[_lx].sc);
+        _lit[_lx].x=_lp[0]; _lit[_lx].z=_lp[1];
+        _lmRing.push({x:_lp[0],z:_lp[1],r:_lks*_lit[_lx].sc*0.5}); } }
+    _lmRing.splice(0,_setN);                        /* set rings were for landmarks only */
+    for(_lmK in byKind){ if(!byKind.hasOwnProperty(_lmK)) continue;
+      if(_lmK.indexOf("lm")===0&&PROPS[_lmK].fixed) continue;
+      _lit=byKind[_lmK]; _lks=PROPS[_lmK].s;
+      for(_lx=0;_lx<_lit.length;_lx++){ if(_lit[_lx].inSet) continue;
+        _lp=_lmPush(_lit[_lx].x,_lit[_lx].z,_lks*_lit[_lx].sc);
+        _lit[_lx].x=_lp[0]; _lit[_lx].z=_lp[1]; } }
+
     var m4=new THREE.Matrix4(), q=new THREE.Quaternion(), eu=new THREE.Euler(), v3=new THREE.Vector3(), s3=new THREE.Vector3();
     for(var kid in byKind){ if(!byKind.hasOwnProperty(kid)) continue;
       var items=byKind[kid], k=PROPS[kid], geo=kindGeo(kid); geo._shared=true;
@@ -4389,6 +4485,14 @@
 
   // ---------- headless test hook ----------
   if(TEST){
+    /* name whatever a ray ran into, so "blocked" can be argued with */
+    function _occlName(ob){
+      if(!ob) return "?";
+      var i; for(i=0;i<INST.length;i++) if(INST[i].mesh===ob) return INST[i].kid;
+      for(i=0;i<MOVERS.length;i++) if(MOVERS[i].mesh===ob) return MOVERS[i].kid;
+      if(GLOBE&&GLOBE.mesh===ob) return "globe";
+      return ob.name||ob.type||"?";
+    }
     window.DB_DEV={
       start:function(mode,n){ var idx;
         if(mode==="zen"){ idx=0; for(var zi=0;zi<WORLDS.length;zi++) if(WORLDS[zi].zen){ idx=zi; break; } }
@@ -4408,9 +4512,114 @@
       camY:function(){ return camera?camera.position.y:0; },
       setInvertY:function(v){ save.invertY=!!v; },
       step:function(dt){ tick(dt||0.016); },
+      /* run the camera's own smoothing to convergence without advancing the world:
+         updateCamera lerps by 1-exp(-dt*8), so one call at dt=1 lands within 0.03%
+         of the target. Framing can then be measured and corrected for nothing,
+         instead of forty physics ticks per adjustment. */
+      camSettle:function(){ if(R&&camera) updateCamera(1); },
       size:function(){ return R?R.D:0; },
       setD:function(d){ R.vol=ballVolFromD(d); R.D=d; },
       setPos:function(x,z){ R.x=x; R.z=z; R.vx=0; R.vz=0; },
+      /* ⛔⛔ THE CAMERA NEVER TURNS IN TEST MODE, so a headless shot cannot be
+         aimed by driving. readInput's camera assist — the thing that swings the
+         view around to face travel — sits BELOW the `if(TEST) ... return`, so
+         camYaw stays wherever startWorld left it, which is zero. Every headless
+         frame therefore looks down +z no matter where the ball rolls.
+         landmark_shots.js spent its whole life "establishing a heading" with a
+         roll burst that aimed nothing and merely drifted the ball, and parking a
+         subject on the 45 degree diagonal put it outside a 43.2 degree half FOV
+         (62 vertical at 1280x820). That is why Bazaar Lane came back as four
+         pictures of dirt with the subject in the top left corner or gone, under
+         a report that said "placed" and "no page errors". Aim explicitly. */
+      setCam:function(yaw,pitch){
+        if(yaw!==null&&yaw!==undefined){ camYaw=yaw; camYawT=yaw; }
+        if(pitch!==null&&pitch!==undefined) camPitch=Math.max(0.22,Math.min(1.12,pitch));
+        return { yaw:camYaw, pitch:camPitch }; },
+      /* point the camera so the ball sits between it and (x,z). wrapD is a no-op
+         off the wrapping worlds, and on the globe it is what makes the bearing
+         the SHORT way round instead of three quarters of a planet the wrong way. */
+      aimAt:function(x,z,pitch){
+        return window.DB_DEV.setCam(Math.atan2(wrapD(x-R.x),wrapD(z-R.z)),pitch); },
+      /* Where a kind actually lands ON SCREEN: the instance matrix that was handed
+         to the renderer, the geometry's own bounds, the live camera. Returns the
+         subject's box in frame fractions — cx/cy are its centre (0,0 = middle of
+         frame), w/h its size as a share of the frame, vis the share of it that is
+         not cut off by an edge.
+         ⛔ THIS IS A FRAMING CHECK AND NOTHING ELSE. It can prove the subject is
+         off-screen or six pixels tall. It cannot see that a model is pale, or
+         inside out, or the seventy-eighth teapot in a world with 77 teapots.
+         Every real defect on this tier was found by opening an image. */
+      frame:function(kind){
+        var i,j,st=null,ii=-1;
+        for(i=0;i<INST.length&&!st;i++){ if(INST[i].kid!==kind) continue;
+          for(j=0;j<INST[i].n;j++) if(INST[i].alive[j]){ st=INST[i]; ii=j; break; } }
+        if(!st) return null;
+        if(GLOBE&&scene) globeSync();          /* matrices as the renderer would have them */
+        var g=st.mesh.geometry; if(!g.boundingBox) g.computeBoundingBox();
+        var bb=g.boundingBox, m=new THREE.Matrix4(); st.mesh.getMatrixAt(ii,m);
+        camera.updateMatrixWorld();
+        var mvi=new THREE.Matrix4().copy(camera.matrixWorld).invert();
+        var pm=camera.projectionMatrix, v=new THREE.Vector3();
+        var xs=[bb.min.x,bb.max.x], ys=[bb.min.y,bb.max.y], zs=[bb.min.z,bb.max.z];
+        var x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,behind=0,near=1e9,a,b,c;
+        for(a=0;a<2;a++)for(b=0;b<2;b++)for(c=0;c<2;c++){
+          v.set(xs[a],ys[b],zs[c]).applyMatrix4(m).applyMatrix4(mvi);
+          if(-v.z<near) near=-v.z;
+          /* a corner behind the lens projects to nonsense with a negative w, so it
+             is counted, never averaged into the box */
+          if(v.z>-1){ behind++; continue; }
+          v.applyMatrix4(pm);
+          if(v.x<x0)x0=v.x; if(v.x>x1)x1=v.x; if(v.y<y0)y0=v.y; if(v.y>y1)y1=v.y; }
+        if(behind===8) return { behind:8, cx:0, cy:0, w:0, h:0, vis:0, dist:near,
+                                hgt:(bb.max.y-bb.min.y)*m.getMaxScaleOnAxis() };
+        var sx0=Math.max(-1,x0), sx1=Math.min(1,x1), sy0=Math.max(-1,y0), sy1=Math.min(1,y1);
+        var full=(x1-x0)*(y1-y0), seen=Math.max(0,sx1-sx0)*Math.max(0,sy1-sy0);
+        return { behind:behind, cx:(x0+x1)/2, cy:(y0+y1)/2,
+                 w:(x1-x0)/2, h:(y1-y0)/2, vis: full>0?seen/full:0, dist:near,
+                 hgt:(bb.max.y-bb.min.y)*m.getMaxScaleOnAxis() }; },
+      /* ⛔ IN FRAME IS NOT THE SAME AS VISIBLE. frame() proved the Great Water
+         Wheel was dead centre of a shot in which a row of market stalls stood in
+         front of it, because a projection cannot see what is between the lens and
+         the subject. So: fire rays at the subject and count how many arrive.
+         Returns the share of the model that has clear line of sight, which lets
+         the probe walk around a landmark and photograph it from the side that is
+         not behind a building instead of trusting one hand-picked angle. */
+      occl:function(kind,detail){
+        var st=null,ii=-1,i,j;
+        for(i=0;i<INST.length&&!st;i++){ if(INST[i].kid!==kind) continue;
+          for(j=0;j<INST[i].n;j++) if(INST[i].alive[j]){ st=INST[i]; ii=j; break; } }
+        if(!st) return 0;
+        if(GLOBE&&scene) globeSync();
+        var g=st.mesh.geometry; if(!g.boundingBox) g.computeBoundingBox();
+        var bb=g.boundingBox, m=new THREE.Matrix4(); st.mesh.getMatrixAt(ii,m);
+        camera.updateMatrixWorld();
+        /* ⛔ AIM AT THE MODEL, NOT AT ITS BOUNDING BOX. The first version fired at
+           the box centre and its corners, and a landmark is mostly air: on the
+           Great Water Wheel four of nine rays sailed through the spokes and hit
+           nothing, which scored as "blocked" and reported 11% on a wheel you can
+           see perfectly well. Sample the geometry's own vertices instead — then
+           every ray has something to arrive at, and the question becomes the one
+           that actually matters: is the subject the FIRST thing the lens meets
+           along this line? Self-occlusion answers yes, which is correct — a
+           model hiding its own back is not a blocked shot. */
+        var pos=g.attributes.position, nv=pos.count, N=Math.min(28,nv), pts=[], t;
+        for(i=0;i<N;i++){ t=Math.floor(i*(nv-1)/(N-1||1));
+          pts.push(new THREE.Vector3(pos.getX(t),pos.getY(t),pos.getZ(t))); }
+        var rc=new THREE.Raycaster(), o=camera.position, seen=0, dir=new THREE.Vector3(), why=[], n=pts.length;
+        /* ⛔ rc.camera is NOT optional here. The gate signs are Sprites, and
+           Sprite.raycast reads raycaster.camera.matrixWorld — leave it null and
+           every ray dies with "Cannot read properties of null". */
+        rc.camera=camera;
+        for(i=0;i<pts.length;i++){
+          var p=pts[i].applyMatrix4(m);
+          dir.copy(p).sub(o); var len=dir.length(); if(len<1e-3) continue; dir.normalize();
+          rc.set(o,dir); rc.near=0; rc.far=len*1.02;
+          var hits=rc.intersectObjects(scene.children,false);
+          if(!hits.length){ n--; continue; }              /* grazed everything: no evidence */
+          if(hits[0].object===st.mesh) seen++;
+          else if(detail) why.push(_occlName(hits[0].object)); }
+        var clear=n>0?seen/n:0;
+        return detail?{clear:clear,rays:n,by:why}:clear; },
       finish:function(){ if(R&&!W.zen){ R.timer=0.001; } },
       state:function(){
         var objs=[], i, j;

@@ -3,10 +3,17 @@
  * A landmark is a thing you steer toward for a minute. If it does not survive
  * being looked at, it is not a landmark, it is a bigger box. So this parks the
  * real ball next to each one at the size a player would be when they meet it,
- * steps the real render loop, and shoots it.
+ * frames it with the real camera, and shoots it.
  *
  * ⛔ This is not a gate and it must never become one. A green assertion cannot
  * see a silhouette. The output is the images, and somebody has to open them.
+ *
+ * ⛔⛔ BUT IT MUST BE ABLE TO FAIL. The first version of this file reported
+ * "lmNoria: placed at -17021,6271 size 900cm" and "no page errors" for a
+ * photograph of empty ground with no water wheel anywhere in it. An unaimed
+ * probe that cannot tell you it missed is worse than no probe, because the
+ * looking that follows it is spent on pictures of dirt. Every shot now carries
+ * the subject's measured position in frame, and a shot that missed says MISSED.
  *
  * Run: NODE_PATH=/workspaces/lucid-winds/node_modules node landmark_shots.js [outDir] [levelN]
  *
@@ -26,25 +33,30 @@ var PLAN = [
   // and level 7 is Dream Meadow. Get this wrong and the probe cheerfully shoots
   // the wrong planet and reports success.
   //
-  // ⛔⛔ `d` IS THE BALL'S DIAMETER, NOT THE CAMERA DISTANCE. setD sizes the ball
-  // and the camera merely trails it, so raising `d` to "fit a tall landmark in
-  // frame" instead GROWS THE BALL until it eats the thing being photographed. I
-  // did exactly that: d=0.8 on the stadium produced a 41.5m ball chewing a 46m
-  // stadium at x53 combo, which is a lovely picture of nothing.
-  // To stand further back, raise `off` — the park distance — and leave `d` alone.
-  // Tall-for-their-size kinds therefore carry an `off`, never a `d`.
-  { w:1, kinds:[{k:'lmLongClock',off:2.6},'lmGramophone','lmBookTower'] },
-  { w:2, kinds:[{k:'lmJackBox',off:2.7},'lmBlockFort','lmToyTrain','lmRocketStand'] },
-  { w:3, kinds:[{k:'lmTopiaryStag',off:2.8},'lmDovecote','lmGazeboPond',
-                {k:'lmArmillary',off:2.8},{k:'lmMoonBridge',off:2.4}] },
-  { w:4, kinds:['lmClockTower','lmBathHouse',
-                {k:'lmNoria',off:2.6},{k:'lmSilkPavilion',off:2.6}] },
-  { w:5, kinds:[{k:'lmFerrisWheel',off:3.2},{k:'lmGrandHotel',off:2.6},
-                {k:'lmHelterSkelter',off:3.4},{k:'lmBrokenKeel',off:2.6},
-                {k:'lmMooredBalloon',off:3.0}] },
-  { w:6, kinds:[{k:'lmSuspBridge',off:3.4},{k:'lmStadium',off:3.0},'lmPalace'] },
+  // ⭐ No per-kind `off` overrides any more. Framing distance used to be hand
+  // tuned per landmark off the kind's declared `size`, which is a FOOTPRINT: the
+  // 3400cm Ferris wheel left the top of frame and the 4600cm Long Span was a
+  // smudge, because span and height are different numbers. The probe now
+  // measures the subject's real projected box and moves until it fits.
+  { w:1, kinds:['lmLongClock','lmGramophone','lmBookTower'] },
+  { w:2, kinds:['lmJackBox','lmBlockFort','lmToyTrain','lmRocketStand'] },
+  { w:3, kinds:['lmTopiaryStag','lmDovecote','lmGazeboPond','lmArmillary','lmMoonBridge'] },
+  { w:4, kinds:['lmClockTower','lmBathHouse','lmNoria','lmSilkPavilion'] },
+  { w:5, kinds:['lmFerrisWheel','lmGrandHotel','lmHelterSkelter','lmBrokenKeel','lmMooredBalloon'] },
+  { w:6, kinds:['lmSuspBridge','lmStadium','lmPalace'] },
   { w:7, kinds:['lmMoonGate','lmPagoda','lmStoneCircle'] }
 ];
+
+/* Composition targets, in frame fractions (1 = the whole frame).
+ * ⛔ THE BALL IS ALWAYS DEAD CENTRE. updateCamera does lookAt(ball), so there is
+ * no such thing as a shot with the ball off to one side. A subject centred in
+ * frame is therefore a subject standing BEHIND the ball, which at these ball
+ * sizes means largely hidden by it. So the subject is deliberately placed to one
+ * side, just clear of the ball's edge, and the ball reads as the scale reference
+ * it is meant to be. */
+var CLOSE_H = 0.48;   /* subject fills about half the frame height when met */
+var WIDE_H  = 0.17;   /* and about a sixth of it from back where you first see it */
+var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail distance */
 
 (async function(){
   fs.mkdirSync(OUT, { recursive:true });
@@ -65,9 +77,9 @@ var PLAN = [
   page.on('pageerror', function(e){ errs.push(String(e)); });
   await page.setViewport({ width:1280, height:820, deviceScaleFactor:1 });
   await page.goto(url, { waitUntil:'networkidle0' });
-  await page.waitForFunction('window.DB_DEV && window.DB_DEV.start', { timeout:8000 });
+  await page.waitForFunction('window.DB_DEV && window.DB_DEV.frame', { timeout:8000 });
 
-  var report = [];
+  var report = [], bad = 0;
   for (var pi=0; pi<PLAN.length; pi++){
     var plan = PLAN[pi];
     if (ONLY && plan.w !== ONLY) continue;
@@ -80,12 +92,22 @@ var PLAN = [
       continue;
     }
     await new Promise(function(r){ setTimeout(r, 500); });
+    /* ⛔ SETTLE THE WORLD BEFORE FRAMING IT, NOT AFTER. The probe used to park the
+       ball, frame the shot, then run a dozen ticks "to let the world breathe" —
+       and those were the world's FIRST ticks, because wall-clock waiting does not
+       advance a sim that only moves on step(). The opening ticks shift the ball
+       12.9 METRES, so every shot was composed at one place and taken from
+       another; the Grand Hotel measured a clean fit and came back cropped, and
+       correcting the fit could never work because the correction was measured
+       before the move. Run the opening here, once per world, then nothing after
+       the framing is settled. */
+    await page.evaluate(function(){
+      for (var i=0;i<40;i++) window.DB_DEV.step(0.016); });
 
     for (var ki=0; ki<plan.kinds.length; ki++){
       var spec = plan.kinds[ki];
-      var kind     = (typeof spec === 'string') ? spec : spec.k;
-      var dScale   = (typeof spec === 'string' || !spec.d)   ? 0.42 : spec.d;
-      var offScale = (typeof spec === 'string' || !spec.off) ? 1.9  : spec.off;
+      var kind   = (typeof spec === 'string') ? spec : spec.k;
+      var dScale = (typeof spec === 'string' || !spec.d) ? 0.42 : spec.d;
       var found = await page.evaluate(function(k){
         var st = window.DB_DEV.state();
         for (var i=0;i<st.objects.length;i++) if (st.objects[i].k===k)
@@ -93,55 +115,157 @@ var PLAN = [
         return null;
       }, kind);
 
-      if (!found){ report.push(kind+': NOT PLACED in world '+plan.w); continue; }
+      if (!found){ report.push(kind+': ⛔ NOT PLACED in world '+plan.w); bad++; continue; }
 
-      /* ⛔⛔ POSITIONING IS NOT AIMING, AND AIMING BY DRIVING OVERSHOOTS. The
-         camera trails the ball along its HEADING, so parking next to a landmark
-         leaves it behind the camera half the time. The first fix was to roll
-         toward it, which aimed correctly and then drove straight past: 150 steps
-         is 2.4 seconds of travel and the Block Fort shot came back as an empty
-         playroom floor with the fort somewhere off camera.
-         So: roll a SHORT burst to establish heading, re-park at the framing
-         distance without touching the heading, then coast. */
-      async function shoot(a, dscale, offscale, suffix){
-        await page.evaluate(function(o){
-          var D = window.DB_DEV, a = o.a;
-          D.setD(Math.max(4, a.s*o.d));
-          var off = a.s*o.off, k = 0.7071;              /* park on the diagonal */
-          D.setPos(a.x - off*k, a.z - off*k);
-          D.roll(0.75, 0.75);
-          for (var i=0;i<24;i++) D.step(0.016);          /* just enough to turn */
-          D.roll(0,0);
-          D.setPos(a.x - off*k, a.z - off*k);            /* undo the drift */
-          for (var j=0;j<26;j++) D.step(0.016);          /* let the camera settle */
-        }, { a:a, d:dscale, off:offscale });
-        await new Promise(function(r){ setTimeout(r, 700); });
+      /* Park, aim, MEASURE, correct, repeat. Three knobs, each measured rather
+         than assumed: park distance sets how big the subject is, camera yaw sets
+         where it sits left to right, camera pitch sets it up and down. They
+         interact (pitch changes the camera's ground distance), so the cycle runs
+         a few times and the last measurement is the one reported.
+         ⛔ The old version tried to aim by ROLLING THE BALL toward the subject.
+         That never worked and could never have worked: the camera assist that
+         turns the view toward travel sits below the TEST early-return in
+         readInput, so camYaw is pinned at zero and every headless frame looks
+         down +z. Parking on the 45 degree diagonal then put the subject just
+         outside a 43.2 degree half-FOV, which is the whole reason w4 came back
+         as pictures of dirt. */
+      async function frameShot(a, hTarget, suffix){
+        var fit = await page.evaluate(function(o){
+          var D = window.DB_DEV, a = o.a, bear = Math.PI/4;
+          /* ⛔⛔ THE WORLD CLAMPS A BALL PARKED OUTSIDE ITS BOUNDS, and it does it
+             on the very next tick no matter how small that tick is: at Starfall
+             Bay a park 2120cm beyond the edge came back 1287cm away from where it
+             was asked for, from a 2ms step. So the tick happens HERE, before the
+             camera is aimed — otherwise every number is measured at a spot the
+             ball is about to leave, which is how the Grand Hotel could be framed
+             perfectly and photographed cropped, twice, with the correction loop
+             working on numbers that no longer applied. */
+          function place(off, yawOff, pitch){
+            var wx = a.x - off*Math.sin(bear), wz = a.z - off*Math.cos(bear);
+            D.setPos(wx, wz);
+            D.step(0.002);                      /* let the clamp land, and sync the
+                                                   ball mesh + HUD, which only ever
+                                                   update inside tick() */
+            var s = D.state();
+            var c = D.aimAt(a.x, a.z);          /* bearing from where it ACTUALLY is */
+            D.setCam(c.yaw + yawOff, pitch);
+            D.camSettle();
+            var f = D.frame(o.k);
+            if (f){ var sx = s.ballX - wx, sz = s.ballY - wz;
+                    f.slip = Math.sqrt(sx*sx + sz*sz); }
+            return f;
+          }
+          function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+          var off = a.s * 2.4, yawOff = 0, pitch = 0.62, f, g, slope, want, r, i;
+          D.setD(Math.max(4, a.s * o.d));
+          f = place(off, yawOff, pitch);
+          if (!f) return null;
+          /* ⭐ WALK AROUND IT FIRST. A landmark stands in a built world, and the
+             approach the probe happened to hard-code was as likely as not to be
+             the one with a row of market stalls in it — the first corrected w4
+             shot framed the Great Water Wheel perfectly and behind a wall. Try
+             every approach, keep the one you can actually see it from. */
+          /* ⭐ and a bearing whose park lands outside the world is no bearing at
+             all — the clamp drags the ball somewhere else entirely, so the shot
+             is composed for a spot nobody is standing in. Score those last. */
+          var best = bear, bestC = (f.slip < off*0.2) ? D.occl(o.k) : -1;
+          for (i=1;i<8;i++){
+            bear = Math.PI/4 + i*Math.PI/4;
+            g = place(off, 0, pitch);
+            var cl = (g && g.slip < off*0.2) ? D.occl(o.k) : -1;
+            if (cl > bestC + 0.01){ bestC = cl; best = bear; }
+            if (bestC >= 0.999) break;
+          }
+          bear = best;
+          f = place(off, yawOff, pitch);
+          for (var pass=0; pass<3; pass++){
+            /* size: projected height goes as 1/distance, so the ratio IS the move */
+            if (f.h > 0.004){ r = clamp(f.h / o.hT, 0.4, 2.6); off = clamp(off*r, a.s*0.8, a.s*60); }
+            f = place(off, yawOff, pitch);
+            /* left-right: secant, so the sign of the mapping is learned, not assumed */
+            want = -Math.min(o.BALL + f.w, 0.95 - f.w);
+            g = place(off, yawOff + 0.12, pitch);
+            slope = (g.cx - f.cx) / 0.12;
+            if (Math.abs(slope) > 0.05) yawOff = clamp(yawOff + (want - f.cx)/slope, -1.2, 1.2);
+            f = place(off, yawOff, pitch);
+            /* up-down: same trick on pitch, which the engine clamps to 0.22..1.12 */
+            g = place(off, yawOff, clamp(pitch + 0.08, 0.22, 1.12));
+            slope = (g.cy - f.cy) / 0.08;
+            if (Math.abs(slope) > 0.05) pitch = clamp(pitch + (0 - f.cy)/slope, 0.22, 1.12);
+            f = place(off, yawOff, pitch);
+          }
+          /* ⛔ AND THEN MAKE SURE IT ACTUALLY FITS. The three-knob cycle converges
+             on the targets it can reach, but pitch clamps at 0.22 and a tall
+             subject pinned against the clamp stays too big for the frame: the
+             Grand Hotel came back 66% tall with 13% of it out of shot. Standing
+             further back always works, so back off until nothing is cut. */
+          for (i=0; i<5 && f && (f.vis<0.995 || f.h>o.hT*1.35); i++){
+            off *= 1.16; f = place(off, yawOff, pitch);
+          }
+          /* ⛔ NOTHING BETWEEN THE LAST place() AND THE SHUTTER. place() has
+             already ticked, clamped, aimed and settled; another tick here would
+             re-compose the picture that was just measured, and a run with no tick
+             at all leaves the ball at the spawn at its start size — that pass
+             produced beautifully framed landmarks with NO BALL IN THE PICTURE and
+             a HUD reading 60cm beside a 34m tower. */
+          f.off = off; f.pitch = pitch; f.ballD = D.size();
+          f.clear = D.occl(o.k); f.bear = Math.round(bear*180/Math.PI);
+          return f;
+        }, { a:a, d:dScale, k:kind, hT:hTarget, BALL:BALL_HALF_NDC });
+
+        await new Promise(function(r){ setTimeout(r, 400); });
         await page.evaluate(function(){ if(window.DB_DEV.render) window.DB_DEV.render(); });
         await page.screenshot({ path: path.join(OUT, kind+suffix+'.png') });
+        return fit;
       }
+
       /* let the world intro card fade, or it sits over the shot */
       await new Promise(function(r){ setTimeout(r, 1500); });
       /* ⭐ TWO SHOTS, per the project rule. The first is where the PLAYER stands
          when they meet it. The second is the wide one, because a landmark that
          only works in close-up is not doing the job a landmark is for. */
+      var fc, fw;
       try {
-      await shoot(found, dScale, offScale, '');
-      /* ⛔ THE WIDE SHOT MUST NOT GROW THE BALL. Camera distance is tied to ball
-         size here, so my first "wide" set the ball to 1.3x the landmark, and it
-         simply ATE it: the frame came back as a 60m ball on a stripped planet
-         with a x16 combo counter. Wide means standing further back at the same
-         size, which is also what the player actually experiences. */
-      await shoot(found, dScale, offScale * 3.16, '-wide');
+        fc = await frameShot(found, CLOSE_H, '');
+        fw = await frameShot(found, WIDE_H, '-wide');
       } catch (e) {
-        report.push(kind+': SHOT FAILED — '+e.message);
+        report.push(kind+': ⛔ SHOT FAILED — '+e.message); bad++;
         continue;
       }
-      report.push(kind+': placed at '+Math.round(found.x)+','+Math.round(found.z)+'  size '+Math.round(found.s)+'cm');
+
+      /* the verdict. Anything here that is not "ok" means the image on disk is
+         not a picture of the landmark, and looking at it proves nothing. */
+      var line = kind+': '+Math.round(found.s)+'cm at '+Math.round(found.x)+','+Math.round(found.z);
+      var flags = [];
+      if (!fc) flags.push('NO GEOMETRY');
+      else {
+        line += '  | close: fills '+(fc.h*100).toFixed(0)+'% of frame height'+
+                ', centre '+fc.cx.toFixed(2)+','+fc.cy.toFixed(2)+
+                ', '+(fc.vis*100).toFixed(0)+'% inside frame, '+(fc.clear*100).toFixed(0)+'% unblocked'+
+                ' from '+fc.bear+'°, model '+Math.round(fc.hgt)+'cm tall'+
+                '  [stood '+Math.round(fc.off)+'cm back, pitch '+fc.pitch.toFixed(2)+
+                ', ball '+Math.round(fc.ballD)+'cm]';
+        if (fc.behind === 8) flags.push('MISSED — subject entirely behind the camera');
+        else if (fc.vis < 0.9) flags.push('CROPPED — '+((1-fc.vis)*100).toFixed(0)+'% of it is off the edge');
+        if (fc.clear < 0.5) flags.push('BLOCKED — only '+(fc.clear*100).toFixed(0)+
+                                       '% of it has line of sight from the best of 8 approaches');
+        if (fc.slip > fc.off*0.2) flags.push('PARKED OUT OF BOUNDS — the world pulled the ball '+
+                                       Math.round(fc.slip)+'cm back before the shot');
+        if (fc.h < 0.12) flags.push('TINY — fills only '+(fc.h*100).toFixed(0)+'% of frame height');
+        /* a landmark that is wide and low disappears over a globe's horizon: the
+           close shot is fine and the wide shot is a smudge. That is a real defect
+           in the LANDMARK, not in the probe, so it is reported, not corrected. */
+        if (fw && fw.h < 0.05) flags.push('VANISHES WIDE — only '+(fw.h*100).toFixed(1)+'% of frame from back');
+      }
+      if (flags.length){ line += '\n    ⛔ ' + flags.join('; '); bad++; }
+      report.push(line);
     }
   }
 
   await browser.close();
   console.log(report.join('\n'));
   console.log(errs.length ? ('PAGE ERRORS: '+errs.join(' | ')) : 'no page errors');
+  console.log(bad ? ('⛔ '+bad+' shot(s) flagged above — those images are not evidence')
+                  : 'framing ok on every shot');
   console.log('images in '+OUT+'  — now OPEN them');
 })().catch(function(e){ console.error('SHOTS FAILED: '+e.message); process.exit(1); });
