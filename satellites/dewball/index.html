@@ -374,6 +374,25 @@
   function fmtTime(s){ s=Math.max(0,Math.ceil(s)); var m=Math.floor(s/60); var ss=s%60; return m+":"+(ss<10?"0":"")+ss; }
   // star bars: [1★,2★,3★] diameters. Worlds may pin ABSOLUTE s2/s3 (deep worlds need
   // bars placed by design, not multipliers); default is the classic 1.4x / 1.9x.
+  /* ⛔⛔ THE STARS WERE ALL DECIDED IN THE FIRST MINUTE. This used to fall back to
+     goalD*1.4 and goalD*1.9 for every world, a fixed multiple of the OBJECTIVE
+     with no relation to how much food a world actually holds — and the two are
+     nothing like proportional. Measured near-bot over four seeds, 3 stars sat at
+     14% (w1), 22% (w3), 26% (w4), 29% (w2), 35% (w7) and 52% (w5) of what a
+     full-clock run reaches. Night Garden banked 3 stars 1220cm below where the
+     run actually ends, at 76s of a 205s level, and then had two thirds of its
+     clock with nothing left to aim at — which is exactly what Stephen felt
+     playing it (2026-08-09: "concerned the objective for the level was too easy
+     to actually beat").
+     ⭐ So s2/s3 are now MEASURED PER WORLD, not derived: 58% and 85% of what the
+     vision-limited "first-time human" bot reaches by the end of the clock. The
+     whole clock is the star chase now.
+     ⚖️ ONE STAR IS STILL THE GOAL and is untouched, which is what keeps this
+     safe: unlockedWorld() and worldsCleared() both test `stars>0`, so no player
+     can be locked out of a world or of zen by a harder 2nd or 3rd star. Nothing
+     here touches props, food, the ladder or the economy — it is scoring only.
+     The multipliers below remain only as a fallback for a NEW world that has not
+     been measured yet. Measure it. */
   function starBars(w){ return [w.goalD, w.s2||Math.round(w.goalD*1.4), w.s3||Math.round(w.goalD*1.9)]; }
   // little size facts — fired once each as the ball crosses them (smiles + scale insight)
   var SIZE_FACTS=[
@@ -2025,7 +2044,7 @@
   // =====================================================================
   var WORLDS=[
   { id:"w1", nm:"Crumb Country", emoji:"🧺", sub:"a giant picnic blanket",
-    startD:4, goalD:24, time:165, bound:3587, seed:101,
+    startD:4, goalD:24, s2:185, s3:270, time:165, bound:3587, seed:101,
     sky:["#f2d0a0","#e8955a","#6e4468"], fog:{c:0xdf9a68,d:0.000244},
     ground:{style:"checks",c1:"#b8483e",c2:"#e2d6c0"}, rim:0x8a4436,
     gates:[{x:1850,z:-1340,r:1021,need:14,label:"Dessert Corner"},
@@ -2135,7 +2154,7 @@
     movers:[{k:"ant",n:31},{k:"ladybird",n:29},{k:"butterfly",n:10}] },
 
   { id:"w2", nm:"Toybox Peaks", emoji:"🧸", sub:"the playroom floor",
-    startD:8, goalD:70, time:200, bound:9007, seed:202,
+    startD:8, goalD:70, s2:265, s3:390, time:200, bound:9007, seed:202,
     sky:["#a8d0e8","#e8b8d0","#5a5a8e"], fog:{c:0xb8a8c8,d:0.000112},
     ground:{style:"wood",c1:"#a8763e",c2:"#8a5e30"}, rim:0x6a4828,
     /* the room this floor is the floor OF. Scenery only — see "THE ROOM" in the
@@ -2271,7 +2290,7 @@
     movers:[{k:"toycar",n:9,zone:"r:z1"},{k:"train",n:4,zone:"r:z2"}] },
 
   { id:"w3", nm:"Night Garden", emoji:"🌙", sub:"the Lucid Winds garden",
-    startD:15, goalD:170, time:205, bound:12609, seed:303,
+    startD:15, goalD:170, s2:835, s3:1220, time:205, bound:12609, seed:303,
     sky:["#0d1626","#243254","#0a0e1a"], fog:{c:0x1c2840,d:0.000065},
     ground:{style:"grass",c1:"#2c4a2e",c2:"#3e6844"}, rim:0x16281e, night:1,
     // concentric ascending zones, SPARSE — the hunt is the pacing
@@ -2398,7 +2417,7 @@
     movers:[{k:"snailG",n:17,zone:"r:z1"},{k:"firefly",n:25,zone:"r:z1"},{k:"butterfly",n:12,zone:"r:z1"},{k:"toadG",n:15,zone:"r:z2"},{k:"hedgehog",n:18,zone:"r:z2"}] },
 
   { id:"w4", nm:"Bazaar Lane", emoji:"🏮", sub:"a tiny town market street",
-    startD:30, goalD:340, time:210, bound:20138, seed:404,
+    startD:30, goalD:340, s2:1465, s3:2150, time:210, bound:20138, seed:404,
     sky:["#f0c890","#e08a5a","#4a3a5e"], fog:{c:0xd89a6a,d:0.000047},
     ground:{style:"cobble",c1:"#b09a78",c2:"#8e7a5c"}, rim:0x6a5a42,
     // concentric ascending zones, SPARSE — the hunt is the pacing
@@ -2521,7 +2540,7 @@
     movers:[{k:"chicken",n:21,zone:"r:z1"},{k:"catB",n:2,zone:"r:z1"},{k:"dogB",n:14,zone:"r:z2"},{k:"camel",n:14,zone:"r:z2"}] },
 
   { id:"w5", nm:"Starfall Bay", emoji:"🌊", sub:"dusk beach and harbor",
-    startD:60, goalD:1600, time:195, bound:26970, seed:505,
+    startD:60, goalD:1600, s2:3385, s3:4960, time:195, bound:26970, seed:505,
     sky:["#2a3a6e","#c86a8e","#e8b06a"], fog:{c:0x5a4a7e,d:0.000031},
     ground:{style:"sand",c1:"#d8c098",c2:"#c0a880"}, rim:0x1e3a5e,
     // concentric ascending zones: tideline -> the dunes -> the boardwalk -> the harbor
@@ -2646,7 +2665,7 @@
     movers:[{k:"crabS",n:18,zone:"r:z1"},{k:"dragonflyS",n:10,zone:"r:tide"},{k:"gull",n:16,zone:"r:z2"}] },
 
   { id:"w7", nm:"The Whole World", emoji:"🌍", sub:"a little planet, rolled entire",
-    startD:45, goalD:2200, s2:3200, s3:4400, time:300, bound:40455, seed:707, globe:1, wrap:1,
+    startD:45, goalD:2200, s2:7355, s3:10775, time:300, bound:40455, seed:707, globe:1, wrap:1,
     sky:["#5a9ed4","#cfe3ee","#3f6e9a"], fog:{c:0xc8dce8,d:0.000006},
     ground:{style:"fields",c1:"#4a7c46",c2:"#79a852"}, rim:0x1e3020,
     // CONCENTRIC ASCENDING ZONES: each ring gate is a wall around your whole known
@@ -4644,7 +4663,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=10")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=11")["catch"](function(){});
     });
   }
   var deferredPrompt=null;

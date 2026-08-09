@@ -26,8 +26,33 @@ environments, we can."
   then you eat them. Revenge is the loop's dopamine.
 - Size readout in cm → m, milestone chimes each time the diameter doubles.
 - Reaching goal ≠ end: celebration fires and you keep rolling until the clock dies. Stars
-  come from final size (goal=★, 1.4×=★★, 1.9×=★★★ — retuned from 1.5/2.2 after volume-budget
-  math showed 2.2× unreachable on several worlds).
+  come from final size. ★ = the goal. ⛔ **★★ and ★★★ are MEASURED PER WORLD, never a
+  multiple of the goal** (they were 1.4× / 1.9× for everything, and before that 1.5 / 2.2).
+  A fixed multiple of the OBJECTIVE has no relation to how much food a world holds, and the
+  two are nowhere near proportional: measured over four seeds, the old ★★★ sat at **14%**
+  (w1), 22% (w3), 26% (w4), 29% (w2), 35% (w7) and 52% (w5) of what a full-clock run
+  actually reaches. Night Garden banked all three stars by 76s of a 205s level and then had
+  two thirds of its clock with nothing left to aim at — Stephen, 2026-08-09, playing it:
+  *"concerned the objective for the level was too easy to actually beat."*
+
+  | world | ★ (goal) | ★★ | ★★★ |
+  |---|---|---|---|
+  | w1 Crumb Country | 24 | 185 | 270 |
+  | w2 Toybox Peaks | 70 | 265 | 390 |
+  | w3 Night Garden | 170 | 835 | 1220 |
+  | w4 Bazaar Lane | 340 | 1465 | 2150 |
+  | w5 Starfall Bay | 1600 | 3385 | 4960 |
+  | w7 The Whole World | 2200 | 7355 | 10775 |
+
+  ★★ = 58% and ★★★ = 85% of what the vision-limited "first-time human" bot reaches by the
+  end of the clock (`balance.js 1 <seed> near`, averaged over 4 seeds; the bot lands within
+  ±1% run to run). ⚖️ **85%, not 100%** — the bot clears 96-100% of w1, w5 and w7, so a
+  100% bar would demand a near-perfect sweep and one missed cluster would cost the star.
+  That is brittle, not hard.
+  ⚖️ **★ STAYS AT THE GOAL and that is what keeps this safe**: `unlockedWorld()` and
+  `worldsCleared()` both test `stars>0`, so no harder 2nd/3rd star can lock a player out of
+  a world or of zen. Scoring only — no props, food, ladder or economy move.
+  ⛔ A NEW world falls back to the old 1.4/1.9 multipliers. Measure it instead.
 - Camera: follow cam whose distance/height scale with ball size.
 
 ## Controls (dual analog, Stephen's spec — v2.2 feel pass after device feedback "wonky")
