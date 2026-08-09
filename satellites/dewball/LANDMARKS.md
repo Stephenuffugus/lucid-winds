@@ -348,6 +348,36 @@ rewritten every world and made every prior measurement worthless.
   span does not.
 - **w5's clock** (see above) is still 195s and now has ~91s of margin.
 
+## ⚖️ w4's A/B, which this doc said was owed — and it is the biggest one yet
+
+Same seed, same command (`balance.js 1 12345 4 near`), two code states: with and
+without the Great Water Wheel and the Silk Pavilion.
+
+| w4 Bazaar Lane, near-bot, seed 12345 | 4 landmarks | 6 landmarks | change |
+|---|---|---|---|
+| t100 | 129.0s | **110.2s** | −18.8s |
+| t140 | 146.8s | **113.8s** | −33.0s |
+| **t190** | **184.8s** | **120.9s** | **−63.9s** |
+| ceiling | 2805.9 (8.25x) | 2804.3 (8.25x) | −0.06% |
+| absorbs | 655 | 1623 | **+148%** |
+| s3ok / leftovers | true / 0 | true / 0 | — |
+
+**Two props moved this world's time-to-190% by 64 seconds — 30% of its 210s
+clock — and it is the difference between a near bot finishing on fumes and
+finishing comfortably.** Without them t190 is 184.8s against 210s: 25 seconds of
+margin. With them, 89 seconds. The prediction in the w5 note was right; two
+structures at 900 and 820cm in a 340cm-goal world are proportionally a bigger
+injection than three at 2600-3200cm in a 1600cm one.
+
+The ceiling is flat to 0.06%, so the ladder is untouched — as with w5, what
+changes is the MIDDLE game. A 900cm object is worth more growth than dozens of
+jugs, so every threshold arrives sooner and the spare clock goes on eating,
+which is where +148% absorbs comes from.
+
+⚖️ So the w5 rule generalises and is now measured twice: **budget landmarks as
+food, not as scenery, and check with a same-seed A/B — never a single after
+reading.** Two or three of them is a difficulty change in any world.
+
 ## Gates after all of it
 `SMOKE_PASS` — every court still flood-fills reachable.
 `BALANCE_PASS` seed 12345 near-bot, all six worlds `s3ok`, zero leftovers:
