@@ -1384,6 +1384,16 @@
 
   // w7 The Whole World (goal 2200) ------------------------------------------
   K("lmSuspBridge","The Long Span",5200,_cat(
+    /* ⛔ A SUSPENSION BRIDGE OVER GRASS IS NOT A BRIDGE, it is scaffolding. The
+       Long Span crossed NOTHING — 4600cm of deck and two 2600cm towers standing
+       in a field of sheep — and the eye reads the absence immediately even when
+       it cannot name it. The Moon Bridge in w3 already knew the answer: it
+       carries its own pond. So this carries its own river, running ACROSS the
+       deck's axis and out past both banks, because a river that stops where the
+       model stops is a puddle. */
+    [ pp("box",[2900,60,5200],0x2f6f8a,0,18,0),
+      pp("box",[420,150,5200],0x6a5a3a,-1660,52,0), pp("box",[420,150,5200],0x6a5a3a,1660,52,0),
+      pp("box",[300,70,5200],0x7a6a46,-1900,30,0), pp("box",[300,70,5200],0x7a6a46,1900,30,0) ],
     [ pp("box",[4600,110,520],0xa8442a,0,760,0) ],
     [ pp("box",[4600,40,60],0xd8542a,0,830,250), pp("box",[4600,40,60],0xd8542a,0,830,-250) ],
     /* ⛔⛔ HEIGHT, NOT SPAN — the towers were 1900 against a 4600 deck and on a
@@ -4561,7 +4571,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=8")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=9")["catch"](function(){});
     });
   }
   var deferredPrompt=null;

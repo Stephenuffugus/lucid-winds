@@ -103,6 +103,11 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
        the framing is settled. */
     await page.evaluate(function(){
       for (var i=0;i<40;i++) window.DB_DEV.step(0.016); });
+    /* the world's own numbers: a park outside the bound gets dragged back, and
+       predicting that beats provoking it with a tick that eats the scenery */
+    var wInfo = await page.evaluate(function(n){
+      var w = window.DB_DEV.worlds()[n-1];
+      return { bound:w.bound, wrap:!!w.wrap }; }, plan.w);
 
     for (var ki=0; ki<plan.kinds.length; ki++){
       var spec = plan.kinds[ki];
@@ -140,14 +145,26 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
              ball is about to leave, which is how the Grand Hotel could be framed
              perfectly and photographed cropped, twice, with the correction loop
              working on numbers that no longer applied. */
-          function place(off, yawOff, pitch){
+          /* ⛔⛔ AND A TICK IS NOT FREE: IT EATS THE WORLD. This is a katamari, so a
+             parked ball absorbs whatever it is touching on the very next tick,
+             instantly, regardless of dt. Ticking inside the sweep meant twenty-odd
+             re-parks of a 22-metre ball across a landmark's neighbourhood — the
+             wide shot of The Long Span came back at 33.6m with a x97 combo over a
+             STRIPPED PLANET. Every wide shot was a photograph of a world the probe
+             had just devoured, which is the opposite of what it is for.
+             ⭐ So: no ticks while framing. The clamp was the only reason one was
+             needed, and a clamp can be predicted instead of provoked — park inside
+             the bound in the first place. One tick at the end syncs mesh and HUD. */
+          function place(off, yawOff, pitch, doTick){
             var wx = a.x - off*Math.sin(bear), wz = a.z - off*Math.cos(bear);
+            if (!o.wrap){                        /* discs clamp; wrapping charts don't */
+              var pr = Math.sqrt(wx*wx + wz*wz), lim = o.bound*0.95;
+              if (pr > lim){ wx = wx/pr*lim; wz = wz/pr*lim; }
+            }
             D.setPos(wx, wz);
-            D.step(0.002);                      /* let the clamp land, and sync the
-                                                   ball mesh + HUD, which only ever
-                                                   update inside tick() */
+            if (doTick) D.step(0.002);
             var s = D.state();
-            var c = D.aimAt(a.x, a.z);          /* bearing from where it ACTUALLY is */
+            var c = D.aimAt(a.x, a.z);
             D.setCam(c.yaw + yawOff, pitch);
             D.camSettle();
             var f = D.frame(o.k);
@@ -162,6 +179,15 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
           if (!f) return null;
           function converge(){
           for (var pass=0; pass<3; pass++){
+            /* ⛔ AND IF IT IS GONE, COME BACK. The size step is guarded on h>0.004,
+               so once an overshoot pushed the subject over a globe's horizon the
+               loop measured h=0, skipped its own correction, and sat there — the
+               Long Span reported VANISHES WIDE from a distance it is in fact
+               perfectly visible at. I nearly wrote that up as a law about
+               curvature. It was the guard eating its own recovery. */
+            for (var back=0; back<6 && f && f.h <= 0.004; back++){
+              off = Math.max(a.s*0.8, off*0.55); f = place(off, yawOff, pitch);
+            }
             /* size: projected height goes as 1/distance, so the ratio IS the move */
             if (f.h > 0.004){ r = clamp(f.h / o.hT, 0.4, 2.6); off = clamp(off*r, a.s*0.8, a.s*60); }
             f = place(off, yawOff, pitch);
@@ -225,10 +251,14 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
              at all leaves the ball at the spawn at its start size — that pass
              produced beautifully framed landmarks with NO BALL IN THE PICTURE and
              a HUD reading 60cm beside a 34m tower. */
+          /* the ONLY tick of the whole shot: the ball's mesh and the HUD are synced
+             nowhere else, and without it the frame has no ball in it */
+          f = place(off, yawOff, pitch, true);
           f.off = off; f.pitch = pitch; f.ballD = D.size();
           f.clear = D.occl(o.k); f.bear = Math.round(bear*180/Math.PI);
           return f;
-        }, { a:a, d:dScale, k:kind, hT:hTarget, BALL:BALL_HALF_NDC });
+        }, { a:a, d:dScale, k:kind, hT:hTarget, BALL:BALL_HALF_NDC,
+             bound:wInfo.bound, wrap:!!wInfo.wrap });
 
         await new Promise(function(r){ setTimeout(r, 400); });
         await page.evaluate(function(){ if(window.DB_DEV.render) window.DB_DEV.render(); });

@@ -356,6 +356,48 @@ this is appearance only — no physics, no balance.
 ⚖️ w7's gates were the one thing the world says out loud ("a ring gate is a wall
 around your whole known world") and they were reading as a crown of loose spikes.
 
+## ✅ The Long Span crosses something now
+
+A suspension bridge over grass is not a bridge, it is scaffolding — 4600cm of
+deck and two 2600cm towers standing in a field of sheep, and the eye reads that
+absence immediately even when it cannot name it. The Moon Bridge in w3 already
+knew the answer: it carries its own pond. The Long Span now carries its own
+river, running ACROSS the deck's axis and out past both banks, because a river
+that stops where the model stops is a puddle.
+
+## ⚖️ Two more probe faults, and a law I nearly wrote down that was false
+
+**A TICK IS NOT FREE: IT EATS THE WORLD.** This is a katamari — a parked ball
+absorbs whatever it touches on the very next tick, instantly, whatever the dt.
+Ticking inside the bearing sweep meant twenty-odd re-parks of a 22-metre ball
+across a landmark's neighbourhood, and the wide shot of The Long Span came back
+at **33.6m with a ×97 combo over a stripped planet**. Every wide shot was a
+photograph of a world the probe had just devoured. The clamp was the only reason
+a tick was needed there, and a clamp can be PREDICTED (park inside the bound)
+instead of provoked. One tick at the end, to sync the ball mesh and HUD.
+
+**AND THE RECOVERY GUARD ATE ITSELF.** The size step was guarded on `h > 0.004`,
+so once an overshoot pushed a subject over the globe's horizon the loop measured
+zero, skipped its own correction, and sat there reporting `VANISHES WIDE`. I was
+one commit away from writing "you cannot take a wide shot on a sphere" into this
+file as a law about curvature. It was a guard, not a planet.
+
+⚖️ **Measured instead of assumed** (`/tmp/horizon.js`) — w7 is a planet of radius
+12,877cm and circumference 80,910cm, and its landmarks stay visible a long way:
+
+| landmark | size | model height | visible out to |
+|---|---|---|---|
+| The Long Span | 5200cm | 2733cm | 34,597cm (43% of the way round) |
+| The Gilded Palace | 3900cm | 1932cm | 30,618cm |
+| The Observatory | 2680cm | — | 29,296cm |
+| The Cathedral | 3700cm | — | 29,048cm |
+| **The Green Bowl** | 4600cm | **1405cm** | **25,936cm — the shortest** |
+
+⚖️ Visibility tracks **HEIGHT, not size**, exactly as the wave-two law said: the
+Long Span is the tallest and carries furthest; the Green Bowl is the widest of
+them and the flattest, and disappears soonest. Two landmarks more than ~26,000cm
+apart are never co-visible on this planet.
+
 ## Still open, deliberately
 - **The Topiary Stag: its two stated intents are now delivered, and it still does
   not read as a stag.** Fixed today, both verified by opening the image: the legs
@@ -373,7 +415,6 @@ around your whole known world") and they were reading as a crown of loose spikes
   properly (chest/barrel/haunch as three masses, an arched neck, a bigger head)
   or to accept it as "a blossoming topiary with a gold rack" and rename it. What
   I would not do is a fifth colour pass; that lever is finished.
-- **The Long Span crosses nothing** — a suspension bridge over grass fields.
 - **The Dreaming Stones' floating orb.** A 54cm sphere hangs 360cm over the altar
   with nothing connecting it. Defensible in a dream world, but it reads as a
   detached ball rather than a moon. Left alone on purpose.
@@ -412,6 +453,21 @@ which is where +148% absorbs comes from.
 ⚖️ So the w5 rule generalises and is now measured twice: **budget landmarks as
 food, not as scenery, and check with a same-seed A/B — never a single after
 reading.** Two or three of them is a difficulty change in any world.
+
+### ⚖️ And on trusting these numbers, because I checked
+
+A **single-world** run is deterministic: `balance.js 1 12345 4 near` twice in a
+row returns t100 110.2 / t190 120.9 / ceiling 2804.3 / absorbs 1623, identical to
+the last digit, and identical to the A/B figures above. That is the method to
+use, and it is why the A/B is trustworthy.
+
+⛔ A **full-suite** run's per-world timings are NOT stable across code states in
+the way you would hope: w4's t190 read 108.0 in one full run and 136.7 in
+another, with nothing in w4 changed between them (the edits were in w3, zen and
+w7). I did not isolate the cause and am not going to claim one. What IS invariant
+in every run of both kinds is the **ceiling** — every world's, to the decimal —
+which is the number that says the economy has not moved. Read full-suite output
+for `s3ok`, `leftovers` and `ceiling`; read single-world output for timings.
 
 ## Gates after all of it
 `SMOKE_PASS` — every court still flood-fills reachable.
