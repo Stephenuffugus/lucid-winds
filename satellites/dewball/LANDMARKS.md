@@ -468,6 +468,37 @@ returns **`goal`, not `goalD`** (feeding `goalD` in gives `setD(NaN)`, a NaN cam
 and seven black frames that look exactly like a broken world), and the zen world
 has no goal at all, so it needs a fallback or you get a zero-size ball.
 
+## What today's geometry actually cost
+
+Same probe, same worlds, two builds: `bc5ecf41` (yesterday's HEAD) against today,
+with an identical `perf` hook injected into each so the comparison is like for
+like.
+
+| world | draw calls | triangles | scene children |
+|---|---|---|---|
+| w1 | 62 → 62 | 495,542 → 495,542 (**+0**) | 161 → 161 |
+| w2 | 57 → **58** | 383,516 → 386,968 (+3,452, **+0.90%**) | 89 → **90** |
+| w3 | 58 → 58 | 564,402 → 568,006 (+3,604, +0.64%) | 174 → 174 |
+| w4 | 59 → 59 | 496,707 → 496,731 (+24, +0.00%) | 142 → 142 |
+| w5 | 69 → 69 | 477,643 → 477,903 (+260, +0.05%) | 136 → 136 |
+| w7 | 136 → 136 | 909,804 → 920,352 (+10,548, **+1.16%**) | 229 → 229 |
+| zen | 57 → 57 | 264,855 → 264,747 (**−108**) | 115 → 115 |
+
+**One extra draw call in the entire game**, and it is the playroom's walls. ⭐ The
+globe's gate rails cost **zero** extra draw calls and zero scene objects, because
+they are baked into the post geometry that was already instanced — which is the
+whole reason it was worth deriving the yaw instead of adding a second mesh. The
+worst triangle change anywhere is w7 at +1.16%.
+
+⛔ **The ms/frame numbers from this run are NOT reportable and I am not going to
+dress them up.** Under software rendering on a contended 2-core box they moved in
+*both* directions — w7 read 8.17→11.38 but w4 read 2.63→1.80 and zen 1.75→1.07,
+which added geometry cannot cause. The noise floor is far above a 1% change, so
+the structural counts above are the answer and the clock is not.
+
+⛔ **Still not measured on a real device.** CLAUDE.md calls Pixel 9 testing
+non-negotiable and this is not it.
+
 ## Still open, deliberately
 - **The Topiary Stag: its two stated intents are now delivered, and it still does
   not read as a stag.** Fixed today, both verified by opening the image: the legs
@@ -531,13 +562,38 @@ row returns t100 110.2 / t190 120.9 / ceiling 2804.3 / absorbs 1623, identical t
 the last digit, and identical to the A/B figures above. That is the method to
 use, and it is why the A/B is trustworthy.
 
-⛔ A **full-suite** run's per-world timings are NOT stable across code states in
-the way you would hope: w4's t190 read 108.0 in one full run and 136.7 in
-another, with nothing in w4 changed between them (the edits were in w3, zen and
-w7). I did not isolate the cause and am not going to claim one. What IS invariant
-in every run of both kinds is the **ceiling** — every world's, to the decimal —
-which is the number that says the economy has not moved. Read full-suite output
-for `s3ok`, `leftovers` and `ceiling`; read single-world output for timings.
+⛔ A **full-suite** run's per-world timings move when you edit a *different*
+world: w4's t190 read 108.0, then 136.7, then 123.7 across today, with nothing in
+w4 changed — one of those shifts came from editing w2's walls. I first wrote that
+up as "not stable, cause not isolated". **That was wrong on both counts**, and the
+real answer is worth knowing because it decides which numbers you are allowed to
+compare.
+
+### ⚖️ There are TWO random streams, and they have different scopes
+
+| stream | seeded | scope | what it drives |
+|---|---|---|---|
+| `rng = mulberry32(W.seed)` (index.html:3031) | **per world**, from the world's own `seed:` | isolated | the WORLD: prop placement, layout, total food |
+| `Math.random = mulberry32(seed)` (index.html:2868) | **once per page load**, from `?dbseed=` | shared by every world in the run, in order | the BOT: it draws a fresh search heading whenever it loses the scent (balance.js:179) |
+
+So the **world** is immune to run order — which is exactly why every world's
+ceiling is identical to the decimal no matter what else changed. But the **bot**
+walks one continuous stream across the whole suite, so anything that changes how
+many searches an EARLIER world's bot performs shifts every LATER world's bot.
+Editing w2 legitimately moves w4's t190 without w4 changing at all.
+
+**Proved, not reasoned:** two full-suite runs on identical code are
+**byte-identical output files**. It is perfectly deterministic. It is just
+*coupled*.
+
+⚖️ **What you may compare:**
+- **Across code states → `ceiling`, `s3ok`, `leftovers` only.** Those are
+  layout-derived and immune.
+- **Timings → single-world runs only** (`balance.js 1 12345 <n> near`), which
+  confine the bot's stream to that one world. That is the method the w4 A/B used,
+  which is why those numbers stand.
+- ⛔ Never compare a single-world timing against a full-suite timing for the same
+  world — w4 reads 120.9 alone and 123.7 in the suite, and both are correct.
 
 ## Gates after all of it
 `SMOKE_PASS` — every court still flood-fills reachable.
