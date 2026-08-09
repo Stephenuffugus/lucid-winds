@@ -2138,6 +2138,22 @@
     startD:8, goalD:70, time:200, bound:9007, seed:202,
     sky:["#a8d0e8","#e8b8d0","#5a5a8e"], fog:{c:0xb8a8c8,d:0.000112},
     ground:{style:"wood",c1:"#a8763e",c2:"#8a5e30"}, rim:0x6a4828,
+    /* the room this floor is the floor OF. Scenery only — see "THE ROOM" in the
+       world builder. Mint over cream because the floor is saturated orange and
+       the sky is pink: a warm wall would melt into one or the other. */
+    /* ⛔ r AND h ARE THE WHOLE DESIGN AND I GOT THEM WRONG FIRST TRY. At r=1.22
+       the wall is only 2000 from a player at the rim, so 1300 of height subtends
+       33 degrees — past the top of a frame whose upward reach is 18 degrees. The
+       result was a CLIFF with no sky in it, which trades one bad horizon for
+       another. Out at 1.5 and down to 1150 it subtends 14 degrees: a room edge
+       with sky above it.
+       ⛔ And mint came out GREY-BROWN. The scene is lit by a HemisphereLight of
+       pink (sky[1]) over orange (ground.c1), so a cool wall is desaturated to mud
+       — the colour you choose is not the colour that lands. Warm cream is what
+       that light flatters, and it still separates from the saturated orange floor
+       by being far lighter and far less saturated. */
+    room:{ r:1.5, h:1150, wall:0xdcc9a6, wall2:0xcdb894, skirt:0xf5efe2,
+           rail:0x8a5e30, door:0x9a6a3a, win:0xcfe6f5, doorA:0.35, winA:2.5 },
     // concentric ascending zones: play mat -> blocks -> the shelf -> the toy chest
     regions:{ mat:{x:0,z:0,r:976},
               z1:{x:0,z:0,r:2814,r0:976},
@@ -3038,6 +3054,63 @@
       scene.add(gmesh);
       var rgeo=new THREE.RingGeometry(W.bound*1.02,W.bound*4.2,48); rgeo.rotateX(-Math.PI/2);
       var rim=new THREE.Mesh(rgeo,new THREE.MeshLambertMaterial({color:W.rim})); rim.position.y=-1.5; scene.add(rim);
+      /* ---- THE ROOM (v4.7) -------------------------------------------------
+         ⛔ AN EMPTY HORIZON. The rim ring is a flat band in W.rim, which is all a
+         beach (sea) or a picnic (table) needs — but not a world called THE
+         PLAYROOM FLOOR. Shot from its own edge, w2's floorboards ran to a hard
+         straight line and then nothing: no wall, no skirting, no room. It was the
+         only world in the game that failed "is the horizon ever empty".
+         ⚖️ WALLS ARE SCENERY, NEVER PROPS. One merged mesh added straight to the
+         scene, so it is not in INST: it cannot be absorbed, has no collision, and
+         cannot touch the ladder or the economy. Nothing about balance moves.
+         ⭐ The RADIUS is chosen against the FOG, not by eye. FogExp2 at w2's
+         0.000112 erases everything past ~20000 — which is precisely why the
+         horizon read as empty haze in the first place. At 1.22*bound the walls
+         are ~5% fogged seen from the rim (solid, a real room edge) and ~78%
+         fogged from the middle of the floor (a hazy suggestion of a room beyond
+         the toys). That is the right way round, and it is why a wall parked out
+         at 2.2*bound — which is where I first put it — would have been invisible.
+         ⛔ And it must clear the CAMERA, not just the ball: the ball is clamped at
+         the bound but the camera trails it by r*6.1+30, so it sits slightly
+         OUTSIDE the play disc at the rim. 1.22 leaves that alone.
+         ⭐ No ceiling, deliberately. From a crumb's eye a playroom ceiling is far
+         out of sight, and roofing the world would throw away the sky gradient
+         that carries every wide shot. */
+      if(W.room){
+        var rm=W.room, RR=W.bound*rm.r, RN=96, rp=[], ri, ra, rnx, rnz, rtx, rtz;
+        var rw=2*RR*Math.sin(Math.PI/RN)*1.03;      /* chords overlap, or you get seams */
+        for(ri=0;ri<RN;ri++){
+          ra=6.283*ri/RN; rnx=Math.cos(ra); rnz=Math.sin(ra);
+          /* ⭐ low-contrast alternating tones: at this radius one segment is ~700
+             wide and subtends 20 degrees from the rim, so HIGH contrast would read
+             as a circus tent rather than a papered wall */
+          rp.push(pp("box",[rw,rm.h,60],(ri%2)?rm.wall2:rm.wall,
+                     rnx*RR,rm.h*0.5,rnz*RR,0,-ra+1.5708,0));
+          rp.push(pp("box",[rw,rm.h*0.075,120],rm.skirt,
+                     rnx*RR,rm.h*0.0375,rnz*RR,0,-ra+1.5708,0));
+          rp.push(pp("box",[rw,rm.h*0.030,105],rm.rail,
+                     rnx*RR,rm.h*0.80,rnz*RR,0,-ra+1.5708,0));
+        }
+        /* a door and a window, because a plain ring is a cylinder and a room is a
+           place — and they give the horizon two things to be found at */
+        /* ⛔ a door that reaches the ceiling line is a doorway, not a door — the
+           first pass put an 1090 leaf in an 1150 wall and left no wall above it */
+        ra=rm.doorA||0; rnx=Math.cos(ra); rnz=Math.sin(ra); rtx=-Math.sin(ra); rtz=Math.cos(ra);
+        rp.push(pp("box",[1130,900,26],rm.rail,rnx*(RR-22),450,rnz*(RR-22),0,-ra+1.5708,0));
+        rp.push(pp("box",[1000,820,40],rm.door,rnx*(RR-48),410,rnz*(RR-48),0,-ra+1.5708,0));
+        rp.push(pp("sph",[34,8,6],0xf0c44a,rnx*(RR-72)+rtx*340,410,rnz*(RR-72)+rtz*340));
+        /* ⛔⛔ AND THE PALE-ON-PALE MISTAKE, A THIRD TIME, IN A NEW PLACE. The first
+           pane was 0xffeec4 on a 0xefe2c6 wall — a cream window on a cream wall,
+           which renders as a picture frame, not a window. A window has to be the
+           brightest and the COOLEST thing on the wall: value contrast alone loses
+           to a warm hemisphere light, hue contrast survives it. */
+        ra=rm.winA||2.2; rnx=Math.cos(ra); rnz=Math.sin(ra); rtx=-Math.sin(ra); rtz=Math.cos(ra);
+        rp.push(pp("box",[1100,700,26],rm.rail,rnx*(RR-22),rm.h*0.61,rnz*(RR-22),0,-ra+1.5708,0));
+        rp.push(pp("box",[960,570,20],rm.win,rnx*(RR-46),rm.h*0.61,rnz*(RR-46),0,-ra+1.5708,0));
+        rp.push(pp("box",[44,570,24],rm.rail,rnx*(RR-60),rm.h*0.61,rnz*(RR-60),0,-ra+1.5708,0));
+        rp.push(pp("box",[960,44,24],rm.rail,rnx*(RR-60),rm.h*0.61,rnz*(RR-60),0,-ra+1.5708,0));
+        scene.add(new THREE.Mesh(mergeParts(rp),sharedMat));
+      }
     }
     // art-pack hook: assets/ground-<worldId>.jpg overrides the procedural tile
     (function(){ var im=new Image(); im.onload=function(){ var t=new THREE.CanvasTexture(im);
@@ -4571,7 +4644,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=9")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=10")["catch"](function(){});
     });
   }
   var deferredPrompt=null;

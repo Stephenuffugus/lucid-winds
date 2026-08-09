@@ -415,13 +415,53 @@ out. Parked at `bound*0.93`, facing outward, camera at its lowest pitch
 | w7 The Whole World | wraps; no edge exists | fine |
 | zen Dream Meadow | ground → horizon glow → purple sky | fine |
 
-**No world shows the bright-void failure.** But ⛔ **w2's horizon is empty**: the
-playroom floor runs to a hard straight line and then nothing — no wall, no
-skirting board, no toybox, no room — in a world whose subtitle is literally "the
-playroom floor". It is the thinnest edge in the game and the only one that fails
-the "is the horizon ever empty" check. Fixing it means deciding whether the
-playroom gets walls, which changes the world's read and possibly its ladder, so
-it is **Stephen's call**, not a landmark-tier change.
+**No world shows the bright-void failure.** ⛔ w2's horizon WAS empty — floorboards
+to a hard line and then nothing, in a world subtitled "the playroom floor" — and
+Stephen called it: **give the playroom walls.** ✅ Done, see below.
+
+## ✅ The playroom got its room (w2, v4.7)
+
+A papered wall ring with a skirting board, a picture rail, a door and a window,
+driven by a `room:{}` block on the world def so any world can have one.
+
+⚖️ **WALLS ARE SCENERY, NEVER PROPS.** One merged mesh added straight to the
+scene, so it is not in `INST`: it cannot be absorbed, has no collision, and
+cannot touch the ladder. **Proof, not assertion:** every world's ceiling after
+the change is identical to the decimal — 13.56x / 9.68x / 9.45x / 8.25x / 3.81x /
+5.76x — with `SMOKE_PASS` and every court still reachable.
+
+Three things had to be got right, and I got two of them wrong first:
+
+- ⛔ **Radius is chosen against the FOG, not by eye.** w2's `FogExp2` at 0.000112
+  erases anything past ~20,000 — which is *why* the horizon read as empty in the
+  first place; the rim band was there, just fogged to nothing. At `1.5*bound` the
+  wall is ~22% fogged from the rim (solid, a real room edge) and ~90% from the
+  middle of the floor (a hazy suggestion of a room beyond the toys). A wall out
+  at `2.2*bound`, where I first reached for, would have been invisible.
+- ⛔ **It has to clear the CAMERA, not just the ball.** The ball is clamped at the
+  bound but the camera trails it by `r*6.1+30`, so at the rim it sits slightly
+  outside the play disc.
+- ⛔ **At `1.22*bound` with h=1300 I built a CLIFF.** 1300 of height 2000 away
+  subtends 33°, past the 18° a frame reaches upward — no sky at all. That trades
+  one bad horizon for another. 1.5 and 1150 gives 14°: a room edge with sky over
+  it.
+
+⚖️ **And the colour you choose is not the colour that lands.** The scene is lit by
+a HemisphereLight of pink over orange, so the mint wall I specified rendered as
+grey-brown mud; warm cream is what that light flatters. Then I put a cream
+windowpane on a cream wall — **the pale-on-pale mistake for the third time on
+this project, in a brand new place** — and it read as a picture frame. A window
+must be the brightest AND the coolest thing on the wall, because value contrast
+loses to a warm light and hue contrast survives it.
+
+⭐ At fogged distance it is the **geometry** that reads, not the tone: the window
+says "window" because of its mullions, not its glass.
+
+**Still not perfect, named honestly:** the fog owns the far colour, so the wall
+photographs dusty mauve rather than the cream in the source; the wall's top is a
+hard line all the way round (deliberate — no ceiling, because roofing the world
+throws away the sky gradient every wide shot depends on); and the skirting reads
+a touch bright.
 
 ⛔ Two notes for whoever runs that script next, because both bit me: `DB_DEV.worlds()`
 returns **`goal`, not `goalD`** (feeding `goalD` in gives `setD(NaN)`, a NaN camera
