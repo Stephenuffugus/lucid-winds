@@ -668,7 +668,7 @@
     }
     return a;
   }
-  function _lmHelix(n,rad0,rad1,y0,y1,segW,th,c,turns){
+  function _lmHelix(n,rad0,rad1,y0,y1,segW,th,c,turns,depth){
     // a spiral ramp winding up a tower. ⭐ This is the one outline in this game
     // you cannot fake with a stack, a ring or a wheel, and it costs one primitive
     // per step. A helter skelter is legible from across a bay for exactly the
@@ -689,7 +689,9 @@
         var cdx=Math.cos(ang2)*r2-Math.cos(ang)*r, cdz=Math.sin(ang2)*r2-Math.sin(ang)*r;
         var chord=Math.sqrt(cdx*cdx+cdz*cdz+(y2-y)*(y2-y));
         if(chord*1.15>w) w=chord*1.15; }
-      a.push(pp("box",[w,th,r*0.55],c,Math.cos(ang)*r,y,Math.sin(ang)*r,0,-ang+1.5708,0.16));
+      /* depth defaults to a slide's tread. A SPRING wants wire, not ramp, so the
+         jack-in-the-box passes its own. */
+      a.push(pp("box",[w,th,depth||r*0.55],c,Math.cos(ang)*r,y,Math.sin(ang)*r,0,-ang+1.5708,0.16));
     }
     return a;
   }
@@ -1399,7 +1401,16 @@
        cannot swallow. */
     _lmRingWall(26,1700,520,180,0xc23a4a,40,-0.16),
     _lmRingWall(26,1880,300,160,0xa82a3a,540,0),
-    [ pp("cyl",[2050,2050,90,32],0xf0c44a,0,880,0), pp("cyl",[1820,1820,50,32],0x2a3340,0,860,0) ],
+    /* ⛔⛔ THIS "RIM" WAS A SOLID GOLD DISC 41 METRES ACROSS, LAID OVER THE TOP.
+       A cyl is not a ring. From anywhere above ball height — which on a globe is
+       most of the time, because you are looking down at a sphere — the Green Bowl
+       was a flat yellow ellipse with a red skirt: no pitch, no stands, no bowl,
+       and nothing green in it. The comment right above says "the pitch stays
+       green because it is small and mostly hidden inside"; it was not hidden, it
+       was roofed over. A torus is hollow, so the bowl is a bowl and you can see
+       down into it. */
+    [ pp("tor",[2000,50,4,48],0xf0c44a,0,880,0,1.5708,0,0),
+      pp("tor",[1830,26,4,44],0x2a3340,0,862,0,1.5708,0,0) ],
     _lmRingWall(26,1980,80,120,0xf0c44a,880,0),
     [ pp("cyl",[80,80,1300,8],0x8a8e96,-1500,650,1500), pp("box",[420,150,70],0xffe9a8,-1500,1330,1500),
       pp("cyl",[80,80,1300,8],0x8a8e96,1500,650,1500), pp("box",[420,150,70],0xffe9a8,1500,1330,1500),
@@ -1515,16 +1526,24 @@
     /* panel trim: the box reads as a toy, not a crate */
     [ pp("box",[116,8,116],0xf0c44a,0,4,0), pp("box",[116,8,116],0xf0c44a,0,94,0),
       pp("card",[64,50],0x2f6f9e,0,50,56.5), pp("card",[64,50],0x2f6f9e,56.5,50,0,0,1.5708,0) ],
+    /* ⭐ the crank. It is the one part of a jack-in-the-box everybody can name and
+       the model had none, so from the side it was simply a red crate with a face
+       over it. Three primitives buy the whole noun. */
+    [ pp("cyl",[6,6,18,10],0xc8a84b,64,52,0,0,0,1.5708),
+      pp("box",[9,34,9],0xc8a84b,72,66,0),
+      pp("cyl",[5,5,20,8],0xc23a4a,80,80,0,0,0,1.5708) ],
     /* the lid, hinged open at the back */
     [ pp("box",[116,9,116],0x2f6f9e,-22,132,-58,0,0,-1.05),
       pp("box",[118,4,118],0xf0c44a,-25,136,-58,0,0,-1.05) ],
-    /* ⭐ THE COIL HAS TO RISE, NOT WANDER. First pass stepped x and z about freely
-       and it read as a string of pale blobs flinging the head off sideways. A
-       spring is a tight circle in plan and a steady climb in y — same part count,
-       completely different reading. */
-    [ pp("sph",[15,9,7],0xf0e8d8,  9,108, 0), pp("sph",[15,9,7],0xf0e8d8, 0,120, 9),
-      pp("sph",[15,9,7],0xf0e8d8, -9,132, 0), pp("sph",[15,9,7],0xf0e8d8, 0,144,-9),
-      pp("sph",[15,9,7],0xf0e8d8,  9,156, 0), pp("sph",[15,9,7],0xf0e8d8, 0,167, 6) ],
+    /* ⭐ THE COIL HAS TO RISE, NOT WANDER — and it has to be a COIL. Pass one
+       stepped x and z freely and read as blobs flinging the head off sideways.
+       Pass two put six spheres of radius 15 on a circle of radius 9, which is a
+       circle narrower than the beads on it: they merged into one lumpy column the
+       same cream as the jack's face, so the photograph showed a snowman standing
+       behind a box. A spring is a continuous wire, which is exactly what _lmHelix
+       makes now that it bridges its own gaps — and in steel, so the head reads as
+       a separate object rather than the top of the pile. */
+    _lmHelix(34,26,21,104,172,8,8,0x9aa2aa,2.8,10),
     /* the jack himself */
     [ pp("sph",[30,12,9],0xffe0c4,0,190,0),
       pp("cone",[26,32,10],0x4a8a3a,0,214,0), pp("sph",[8,8,6],0xf0c44a,0,230,0),
@@ -1704,14 +1723,22 @@
   K("lmArmillary","The Armillary Sphere",460,_cat(
     _lmSteps(230,230,3,26,0xb9a48a,0),
     [ pp("cyl",[46,58,120,12],0xd8d0c0,0,138,0), pp("cyl",[70,70,16,14],0xc8a84b,0,204,0) ],
-    _lmWheel(18,190,24,0xf0c44a,0xf0c44a,262),
-    /* the tilted equator band, so it reads as a sphere of rings not a hoop */
-    [ pp("cyl",[168,168,22,20],0xc8a84b,0,262,0,0.42,0,0.24),
-      pp("cyl",[120,120,18,18],0xc8a84b,0,262,0,1.1,0,0) ],
-    /* the earth at the centre, and the pointer */
-    [ pp("sph",[44,12,9],0x2f6f9e,0,262,0), pp("sph",[13,8,6],0xfff2f6,0,262,44),
-      pp("cyl",[7,7,470,8],0xd8d0c0,0,262,0,0.42,0,0.24),
-      pp("sph",[16,8,6],0xfff2f6,0,470,0) ],
+    /* ⛔ THE RINGS ARE THE WHOLE OBJECT, and this was built out of _lmWheel — the
+       PADDLE-WHEEL motif. Eighteen gold paddles on a hub, plus two solid gold
+       discs for "bands", photographed at night as a lumpy yellow-green hedge
+       sitting on a stone plinth; you could not find a ring in it. It also handed
+       Night Garden the same silhouette the Bay Wheel and the Great Water Wheel
+       already own, which is the exact law wave two wrote down.
+       An armillary is thin hoops with sky between them. Torus, not wheel, and
+       solid discs are not rings. */
+    [ pp("tor",[190,10,6,40],0xc8a84b,0,268,0),                 /* meridian */
+      pp("tor",[190,10,6,40],0xc8a84b,0,268,0,0,1.5708,0),      /* its colure */
+      pp("tor",[186,13,6,40],0xf0c44a,0,268,0,1.1608,0,0),      /* equator, tilted 23.4° */
+      pp("tor",[138,8,6,32],0xc8a84b,0,268,0,1.5708,0,0.42) ],  /* a tropic */
+    /* the earth at the centre, and the polar axis it turns on */
+    [ pp("sph",[44,12,9],0x2f6f9e,0,268,0), pp("sph",[13,8,6],0xfff2f6,0,268,44),
+      pp("cyl",[8,8,470,8],0xd8d0c0,0,268,0,0.41,0,0),
+      pp("sph",[16,8,6],0xfff2f6,0,476,0) ],
     _lmCols(6,200,70,15,0xd8d0c0,26)
   ),{fixed:1,volF:0.3});
 
@@ -1751,10 +1778,21 @@
     _lmWheel(16,380,44,0x1a6a7a,0xf0c44a,430),
     [ pp("cyl",[70,70,560,14],0x4a3320,0,430,0,1.5708,0,0),
       pp("cyl",[44,44,90,10],0xc8a84b,0,430,290,1.5708,0,0) ],
-    /* the trestle and the aqueduct stub it feeds */
+    /* the trestle and the aqueduct that feeds it.
+       ⛔ THE AQUEDUCT WAS TWO PALE SAND SLABS IN A PALE SAND WORLD — the same
+       "pale on the largest faces" mistake the Observatory made in wave one and
+       the Stadium repeated in wave two — and worse, they walled the wheel off:
+       from the far side the slabs are the whole object and the teal circle is
+       hidden behind them. The probe picks the approach it can SEE the model
+       from, and the clearest of eight approaches to the Great Water Wheel came
+       back as a picture of cream boxes with a sliver of teal above them.
+       An aqueduct is a channel ON ARCHES. Arches let the landmark's own circle
+       show through from behind, and terracotta puts it in the world's palette
+       instead of the world's ground. */
     _lmCols(4,300,420,58,0x4a3320,90),
-    [ pp("box",[300,120,260],0xd8c8a8,520,560,0), pp("box",[260,40,180],0x2f6f8a,520,610,0),
-      pp("box",[120,300,200],0xd8c8a8,660,300,0) ],
+    [ pp("box",[90,470,180],0xb3785a,470,235,0), pp("box",[90,470,180],0xb3785a,690,235,0),
+      pp("box",[280,60,190],0xb3785a,580,500,0),
+      pp("box",[320,110,220],0xb3785a,560,585,0), pp("box",[270,40,145],0x2f6f8a,560,632,0) ],
     [ pp("cyl",[26,26,300,8],0xf0c44a,-380,720,0), pp("card",[220,140],0x1a6a7a,-300,820,0,0,1.5708,0) ]
   ),{fixed:1,volF:0.3});
 
@@ -3448,6 +3486,24 @@
         if(!moved) break; }                          /* rings can hand a prop back and forth */
       return [px,pz];
     }
+    /* ⚖️ FENCE MARGINS — the law LANDMARKS.md wrote down ("a giant finale prop
+       needs a radial window on each side; compute it before choosing an origin")
+       and which placement never actually got. A landmark dropped on a gate ring
+       is photographed through a fence: Bazaar Lane's Silk Pavilion had a post in
+       front of its door and a rail across its waist from every approach, and
+       Starfall Bay's balloon the same. Slide it clear of the band, ON THE SIDE IT
+       IS ALREADY ON, so which gate you have to open to reach it never changes. */
+    function _lmFence(px,pz,ps){
+      if(!W.gates) return [px,pz];
+      for(var gi=0;gi<W.gates.length;gi++){ var gg=W.gates[gi];
+        var dx=wrapD(px-gg.x), dz=wrapD(pz-gg.z), d=Math.sqrt(dx*dx+dz*dz);
+        var need=gg.need*0.7+ps*0.6;
+        if(Math.abs(d-gg.r)>=need) continue;
+        if(d<1e-3){ dx=1; dz=0; d=1; }
+        var tgt=(d>=gg.r)? gg.r+need : Math.max(need*0.5, gg.r-need);
+        px=wrapC(gg.x+dx/d*tgt); pz=wrapC(gg.z+dz/d*tgt); }
+      return [px,pz];
+    }
     /* A set is a composed scene, so the landmark is the thing that moves: the
        globe had a cathedral standing inside somebody's village with a cottage
        through its transept. Seed the rings with the set extents for the landmark
@@ -3460,7 +3516,8 @@
       if(_lmK.indexOf("lm")!==0||!PROPS[_lmK].fixed) continue;
       _lit=byKind[_lmK]; _lks=PROPS[_lmK].s;
       for(_lx=0;_lx<_lit.length;_lx++){
-        _lp=_lmPush(_lit[_lx].x,_lit[_lx].z,_lks*_lit[_lx].sc);
+        _lp=_lmFence(_lit[_lx].x,_lit[_lx].z,_lks*_lit[_lx].sc);
+        _lp=_lmPush(_lp[0],_lp[1],_lks*_lit[_lx].sc);
         _lit[_lx].x=_lp[0]; _lit[_lx].z=_lp[1];
         _lmRing.push({x:_lp[0],z:_lp[1],r:_lks*_lit[_lx].sc*0.5}); } }
     _lmRing.splice(0,_setN);                        /* set rings were for landmarks only */
@@ -3526,7 +3583,17 @@
       if(W.globe){
         // globe gates: one InstancedMesh of posts per gate, so each post hugs the
         // sphere (globeSync places them) at ONE draw call per gate
-        var pg=mergeParts([ pp("cyl",[gd.need*0.055,gd.need*0.075,gd.need*1.15,5],0x4a3a5a,0,gd.need*0.575,0),
+        /* ⛔ THE GLOBE BRANCH HARD-CODED THE NIGHT COLOUR. The planar branch six
+           lines down picks W.night?0x4a3a5a:0x8a6a44, and this one just took the
+           dark purple — but the only globe world is w7 The Whole World, which is
+           a BRIGHT DAY planet with a blue sky. So the endgame world was ringed
+           with obsidian spikes: on a sphere every post stands on its own normal,
+           so a gate ring radiates outward like a crown of thorns, and in night
+           purple on sunlit green they read as alien monoliths rather than a
+           fence. They are the biggest, darkest thing in every globe frame, and
+           both "never really looked at" globe landmarks were photographed behind
+           them. Warm wood, like every other daylit fence in the game. */
+        var pg=mergeParts([ pp("cyl",[gd.need*0.055,gd.need*0.075,gd.need*1.15,5],W.night?0x4a3a5a:0x8a6a44,0,gd.need*0.575,0),
                             pp("sph",[gd.need*0.085,6,5],0xc8a84b,0,gd.need*1.16,0) ]);
         var posts=[];
         var pim=new THREE.InstancedMesh(pg,sharedMat,np); pim.frustumCulled=false;

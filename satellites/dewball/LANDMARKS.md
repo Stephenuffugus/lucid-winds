@@ -224,7 +224,146 @@ without you.
 
 ---
 
-# ⛔ VERIFICATION OWED (2026-08-08) — read this before believing the tier is done
+# Wave three: the debt is paid, and looking cost the tier eight defects (2026-08-09)
+
+Every structure listed as owed below has now been shot and opened. The short
+version: **the probe had been photographing dirt**, so the four "green" runs
+behind wave two were worth nothing, and once it could actually see, six of the
+eleven new structures had something wrong with them.
+
+## ⛔⛔ The probe could not aim, and said nothing
+
+`lmNoria: placed at -17021,6271 size 900cm` / `no page errors` was printed over a
+photograph of empty sand with no water wheel anywhere in it. Four faults, each
+of which hid the next:
+
+| what | why it never showed up |
+|---|---|
+| **The camera never turns in TEST mode** | `readInput`'s camera assist sits BELOW the `if(TEST) … return`, so `camYaw` is pinned at 0 and every headless frame looks down +z. The "roll a burst to establish heading" trick aimed nothing for its entire life. Parking on the 45° diagonal then sat the subject outside a 43.2° half-FOV. |
+| **In frame ≠ visible** | The first corrected shot framed the wheel perfectly, behind a wall. A projection cannot see occluders. |
+| **The world's first ticks move the ball 12.9 m** | Wall-clock waiting does not advance a sim that only moves on `step()`. Shots were composed at one place and taken from another. |
+| **The world clamps a ball parked out of bounds** | On the next tick, whatever the dt. Starfall Bay dragged a park 2120cm past the edge back by 1287cm. |
+
+⚖️ **LAW: a probe that cannot fail is not evidence.** The gallery now measures
+the subject's real projected box (`DB_DEV.frame`), fires rays at the model's own
+vertices to see what is in front of it (`DB_DEV.occl`), walks eight approaches
+and keeps the best, and prints `MISSED` / `CROPPED` / `BLOCKED` / `PARKED OUT OF
+BOUNDS` when the image on disk is not a picture of the landmark.
+
+⚖️ **Framing distance derives from the MODEL, not from `size`.** The per-kind
+`off` overrides are gone. `size` is a footprint: it is why a 3400cm Ferris wheel
+left the top of frame and a 4600cm bridge was a smudge.
+
+⚖️ **Score an approach by `unblocked × projected area`.** Unblocked alone picked
+the view straight down the Water Wheel's axle — 100% clear, and a flat wheel is a
+line from there.
+
+## ⛔⛔ Landmarks were being dropped inside the clutter
+
+A landmark was just another `n:1` scatter entry, and scatter **clumps 62% of
+props onto cluster anchors** — so the tier whose whole purpose is "the thing you
+steer toward for a minute" was being deliberately dropped in crate yards.
+Measured across all seven worlds:
+
+| world | what was standing in the landmark |
+|---|---|
+| w3 | a **topiary ball 70cm off the Armillary Sphere's axis** — the photograph was a lumpy hedge on a plinth |
+| w5 | **fifteen beach huts** inside the Helter Skelter; ten seawalls and crate stacks through the Moored Balloon |
+| w4 | **four brick walls** across the Great Water Wheel |
+| w7 | 17-20 props per landmark; a cottage through the Cathedral |
+| zen | **the Pagoda and the Stone Circle through each other** |
+
+Each landmark now reserves a ring of its own footprint, steps out of composed
+sets, and clears the gate fence bands (the "fence margins" law this doc wrote
+down and placement never got). Set members are exempt so no court is sealed.
+
+⚖️ **NUDGE, NEVER RE-ROLL.** Pushing a prop out along the radius consumes no
+random numbers, so the seeded stream stays bit-identical. Proof: w5's ceiling is
+**6090.5 (3.81x) before and after, to the decimal**. A re-roll would have
+rewritten every world and made every prior measurement worthless.
+
+## What opening the images found in the models
+
+1. **The Helter Skelter had no slide.** 18 segments spaced 573 apart along the
+   arc and 320 wide: 44% air, photographing as shelf brackets bolted to a tower.
+   Segments now span their own gap, and there are 40 — a straight plank across
+   47° of a circle is a notch, not a ribbon.
+2. **The Moored Balloon was not moored.** 44cm burner poles and 34cm cables on a
+   2635cm model — 1.3% of its height — so it read as a striped ball hanging in
+   mid-air with nothing under it and nothing holding it. ⚖️ **LAW: detail thinner
+   than about 1/40 of a landmark does not exist at the distance you meet one.**
+   Third time this has been learned (the Fondant Tower's toothpick columns, the
+   Cake Stand's stubs, now this) — it is a law, not a note.
+3. **The Armillary Sphere was built out of `_lmWheel`** — the paddle-wheel motif.
+   Eighteen gold paddles on a hub plus two solid gold discs for "bands": a lumpy
+   yellow-green hedge at night, no ring findable in it, and the same silhouette
+   the Bay Wheel and the Water Wheel already own. Rebuilt from tori. ⚖️ **A solid
+   disc is not a ring, and a wheel is not a sphere of hoops.**
+4. **The Green Bowl's gold "rim" was a solid disc 41 metres across, laid over the
+   top.** `cyl` is not a ring. From anywhere above ball height — which on a globe
+   is most of the time — the stadium was a flat yellow ellipse with a red skirt:
+   no pitch, no stands, no bowl, nothing green. The comment directly above it
+   claimed "the pitch stays green because it is small and mostly hidden inside";
+   it was not hidden, it was roofed over. Now a torus, and it reads as a bowl.
+5. **The Great Water Wheel's aqueduct was two pale sand slabs in a pale sand
+   world** — the Observatory mistake for the third time — and they walled the
+   wheel off from behind entirely. Rebuilt as a channel on arches in terracotta.
+6. **The Broken Keel was a picket fence.** Nine identical ribs on a smooth arch.
+   They now snap unevenly and some are gone, deterministically (never rng — a
+   world must build identically from the same seed).
+7. **The Jack-in-the-Box's spring was a snowman.** Six spheres of radius 15 on a
+   circle of radius 9 — a circle narrower than the beads on it — in the same
+   cream as the jack's face. Now a steel `_lmHelix`, and it has a crank, which is
+   the one part of a jack-in-the-box everybody can name.
+8. **⛔ THE ENDGAME PLANET WAS RINGED WITH OBSIDIAN SPIKES.** Not a landmark
+   defect at all, found while looking at them: the globe gate branch hard-codes
+   the NIGHT post colour, and the only globe world is w7 The Whole World, a
+   bright day planet with a blue sky. On a sphere every post stands on its own
+   normal, so a gate ring radiates like a crown of thorns — in night purple on
+   sunlit green they read as alien monoliths, and they are the biggest darkest
+   thing in every globe frame. The planar branch six lines below gets this right
+   (`W.night?…:…`). Now warm wood.
+
+## Still open, deliberately
+
+- **The globe gates have no rails.** The planar branch adds two torus rails so a
+  gate reads as a fence; the globe branch is posts only, so it is a ring of
+  poles. Baking a rail into the post geometry is not safe: `_gsMat`'s yaw basis
+  is built from the bearing to the BALL, so a baked rail would swing as the
+  player moves. Wants a real fix, not a guess. **Stephen's call.**
+- **The Topiary Stag still does not read as a stag.** Opened at gameplay scale:
+  a dark rounded slab on four identical evenly-spaced vertical legs (a table
+  stance, not an animal one), a straight diagonal neck, a small featureless head,
+  and the gold rack reading as though it floats free of it. The blossom pass did
+  not deliver its own stated intent — the comment says the mass is "smothered in
+  bloom until the SHAPE is pale", but it is 16 spheres of r12-19 scattered over a
+  body of r56-66, which reads as dots on a dark lump, not as pale shape. This is
+  the third pass on this one prop and two of them missed, so I am not taking a
+  fourth swing blind. **Stephen's call** on whether it wants smothering properly,
+  restaging, or replacing.
+- **The Long Span crosses nothing** — a suspension bridge over grass fields.
+- **Wide-and-low landmarks stay weak on the globe.** The Gilded Palace fills only
+  22% of frame from as close as the ball can stand without touching it, because
+  its 3900cm `size` is 1932cm of actual height. Height buys presence on a sphere;
+  span does not.
+- **w5's clock** (see above) is still 195s and now has ~91s of margin.
+
+## Gates after all of it
+`SMOKE_PASS` — every court still flood-fills reachable.
+`BALANCE_PASS` seed 12345 near-bot, all six worlds `s3ok`, zero leftovers:
+
+| world | goal | clock | t190 | ceiling |
+|---|---|---|---|---|
+| w1 | 24 | 165 | 53.5 | 325.4 (13.56x) |
+| w2 | 70 | 200 | 105.7 | 677.5 (9.68x) |
+| w3 | 170 | 205 | 76.5 | 1607.0 (9.45x) |
+| w4 | 340 | 210 | 108.0 | 2804.3 (8.25x) |
+| w5 | 1600 | 195 | 104.0 | 6090.5 (3.81x) |
+| w7 | 2200 | 300 | 113.4 | 12677.3 (5.76x) |
+
+---
+
+# ⛔ VERIFICATION OWED (2026-08-08) — PAID 2026-08-09, kept for the record
 
 Eleven structures were added or rebuilt today. The economy is measured and the
 code is checked, but **seven of them have never been looked at**, and on this
@@ -246,12 +385,20 @@ every real defect found today was found by opening an image, and none by a gate.
 Gramophone · Longcase Clock (top clipped in frame — has an `off` override now) ·
 Leaning Library (leans correctly after the rotY fix) · Bay Wheel · Grand Hotel.
 
-## NEVER LOOKED AT — the actual debt
+## NEVER LOOKED AT — the actual debt ✅ PAID 2026-08-09
 Jack-in-the-Box (rebuilt coil, unshot) · Topiary Stag (rebuilt in white blossom,
 unshot) · Armillary Sphere · Moon Bridge · Great Water Wheel · Silk Pavilion ·
 Helter Skelter · Broken Keel · Moored Balloon. Also the Green Bowl and Long Span
 were only ever shot with the broken framing that grew the ball to 80-95% of the
 subject, so neither has actually been seen either.
+
+**All eleven are now shot and opened — see "Wave three" at the top of this file.**
+w4 Bazaar Lane is confirmed placed (all four landmarks present). Six of them had
+something wrong; the Armillary, the Green Bowl, the Helter Skelter, the Moored
+Balloon, the Water Wheel's aqueduct, the Broken Keel and the Jack's spring were
+rebuilt and re-opened. The Moon Bridge, the Silk Pavilion, the Grand Hotel, the
+Ferris Wheel and the Long Span passed. The Topiary Stag did not, and is listed
+under "still open".
 
 ## Why it stopped, and what to run
 This codespace ran out of memory: 128MB free of 7.9GB, with the VS Code server

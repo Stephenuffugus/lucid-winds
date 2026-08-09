@@ -160,24 +160,7 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
           D.setD(Math.max(4, a.s * o.d));
           f = place(off, yawOff, pitch);
           if (!f) return null;
-          /* ⭐ WALK AROUND IT FIRST. A landmark stands in a built world, and the
-             approach the probe happened to hard-code was as likely as not to be
-             the one with a row of market stalls in it — the first corrected w4
-             shot framed the Great Water Wheel perfectly and behind a wall. Try
-             every approach, keep the one you can actually see it from. */
-          /* ⭐ and a bearing whose park lands outside the world is no bearing at
-             all — the clamp drags the ball somewhere else entirely, so the shot
-             is composed for a spot nobody is standing in. Score those last. */
-          var best = bear, bestC = (f.slip < off*0.2) ? D.occl(o.k) : -1;
-          for (i=1;i<8;i++){
-            bear = Math.PI/4 + i*Math.PI/4;
-            g = place(off, 0, pitch);
-            var cl = (g && g.slip < off*0.2) ? D.occl(o.k) : -1;
-            if (cl > bestC + 0.01){ bestC = cl; best = bear; }
-            if (bestC >= 0.999) break;
-          }
-          bear = best;
-          f = place(off, yawOff, pitch);
+          function converge(){
           for (var pass=0; pass<3; pass++){
             /* size: projected height goes as 1/distance, so the ratio IS the move */
             if (f.h > 0.004){ r = clamp(f.h / o.hT, 0.4, 2.6); off = clamp(off*r, a.s*0.8, a.s*60); }
@@ -193,7 +176,41 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
             slope = (g.cy - f.cy) / 0.08;
             if (Math.abs(slope) > 0.05) pitch = clamp(pitch + (0 - f.cy)/slope, 0.22, 1.12);
             f = place(off, yawOff, pitch);
+          } }
+
+          /* ⭐ WALK AROUND IT — AT THE PITCH THE SHOT WILL ACTUALLY USE. A landmark
+             stands in a built world and the approach the probe used to hard-code
+             was as likely as not the one with a row of market stalls in it: the
+             first corrected w4 shot framed the Great Water Wheel perfectly, behind
+             a wall. But sweeping at the DEFAULT pitch and then dropping the camera
+             to frame is how Bazaar Lane still came back shot through a fence — at
+             pitch 0.62 the sight line clears the rail, at 0.22 it does not, and
+             the same bearing scores 96% and then 67%. So: converge first, sweep at
+             that pitch, converge again.
+             ⛔ A bearing whose park lands outside the world is no bearing at all —
+             the clamp drags the ball somewhere else, so the shot is composed for a
+             spot nobody stands in. Those score last. */
+          /* ⭐ score = how much of it you can see × how much of it it SHOWS YOU.
+             Unblocked alone is not composition: the Great Water Wheel scored 100%
+             clear from straight down its axle, where a flat wheel presents as a
+             line and the aqueduct is the whole picture. Projected area separates
+             face-on from edge-on for nothing, since park distance is fixed across
+             the sweep. */
+          converge();
+          function score(fr){
+            if (!fr || fr.slip > off*0.2) return -1;
+            return D.occl(o.k) * Math.max(0.0001, fr.w * fr.h);
           }
+          var best = bear, bestS = score(f);
+          for (i=1;i<8;i++){
+            bear = Math.PI/4 + i*Math.PI/4;
+            g = place(off, yawOff, pitch);
+            var sc = score(g);
+            if (sc > bestS){ bestS = sc; best = bear; }
+          }
+          bear = best;
+          f = place(off, yawOff, pitch);
+          converge();
           /* ⛔ AND THEN MAKE SURE IT ACTUALLY FITS. The three-knob cycle converges
              on the targets it can reach, but pitch clamps at 0.22 and a tall
              subject pinned against the clamp stays too big for the frame: the
