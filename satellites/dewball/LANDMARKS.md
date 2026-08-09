@@ -398,6 +398,36 @@ Long Span is the tallest and carries furthest; the Green Bowl is the widest of
 them and the flattest, and disappears soonest. Two landmarks more than ~26,000cm
 apart are never co-visible on this planet.
 
+## The worst angle, on purpose: every world shot from its own edge
+
+Project rule, and the specific failure it hunts is the one Stephen found in the
+chameleon build — a world that ends in void when you stand at its rim and look
+out. Parked at `bound*0.93`, facing outward, camera at its lowest pitch
+(`/tmp/worstangle.js`).
+
+| world | what is past the edge | verdict |
+|---|---|---|
+| w1 Crumb Country | blanket → table band → warm haze | fine |
+| **w2 Toybox Peaks** | floorboards → **hard line → empty pink sky** | ⛔ see below |
+| w3 Night Garden | grass → dark treeline band → night sky + stars | fine |
+| w4 Bazaar Lane | sand → distant town → dusk haze | fine |
+| w5 Starfall Bay | sand → sea → dusk sky | fine |
+| w7 The Whole World | wraps; no edge exists | fine |
+| zen Dream Meadow | ground → horizon glow → purple sky | fine |
+
+**No world shows the bright-void failure.** But ⛔ **w2's horizon is empty**: the
+playroom floor runs to a hard straight line and then nothing — no wall, no
+skirting board, no toybox, no room — in a world whose subtitle is literally "the
+playroom floor". It is the thinnest edge in the game and the only one that fails
+the "is the horizon ever empty" check. Fixing it means deciding whether the
+playroom gets walls, which changes the world's read and possibly its ladder, so
+it is **Stephen's call**, not a landmark-tier change.
+
+⛔ Two notes for whoever runs that script next, because both bit me: `DB_DEV.worlds()`
+returns **`goal`, not `goalD`** (feeding `goalD` in gives `setD(NaN)`, a NaN camera
+and seven black frames that look exactly like a broken world), and the zen world
+has no goal at all, so it needs a fallback or you get a zero-size ball.
+
 ## Still open, deliberately
 - **The Topiary Stag: its two stated intents are now delivered, and it still does
   not read as a stag.** Fixed today, both verified by opening the image: the legs
