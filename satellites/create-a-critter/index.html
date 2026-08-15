@@ -344,14 +344,18 @@ function beep(freq,dur,type,vol,when){
   g.gain.setValueAtTime(vol||0.07,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   o.connect(g); g.connect(masterG); o.start(t); o.stop(t+dur+0.02);
 }
+/* VOICE scales the buddy's own sounds by its measured size: a grand critter
+   rumbles low, a teeny one squeaks high. Set when a critter loads. */
+var VOICE=1;
+function vb(f,d,t,v,w){ beep(f*VOICE,d,t,v,w); }
 var SFX={
   tap:    function(){ beep(660,.08,'sine',.06); },
   hatch:  function(){ beep(523,.12,'sine',.07); beep(659,.14,'sine',.07,.09); beep(784,.2,'sine',.07,.18); beep(1047,.3,'sine',.06,.28); },
-  chirp:  function(){ beep(880,.07,'sine',.06); beep(1175,.1,'sine',.05,.07); },
-  munch:  function(){ beep(220,.06,'square',.05); beep(180,.06,'square',.05,.09); beep(240,.06,'square',.05,.18); },
-  happy:  function(){ beep(659,.1,'triangle',.07); beep(784,.1,'triangle',.07,.1); beep(988,.16,'triangle',.07,.2); },
-  spin:   function(){ for(var i=0;i<8;i++) beep(500+i*90,.05,'sine',.04,i*.04); },
-  sleep:  function(){ beep(392,.3,'sine',.04); beep(330,.4,'sine',.04,.3); },
+  chirp:  function(){ vb(880,.07,'sine',.06); vb(1175,.1,'sine',.05,.07); },
+  munch:  function(){ vb(220,.06,'square',.05); vb(180,.06,'square',.05,.09); vb(240,.06,'square',.05,.18); },
+  happy:  function(){ vb(659,.1,'triangle',.07); vb(784,.1,'triangle',.07,.1); vb(988,.16,'triangle',.07,.2); },
+  spin:   function(){ for(var i=0;i<8;i++) vb(500+i*90,.05,'sine',.04,i*.04); },
+  sleep:  function(){ vb(392,.3,'sine',.04); vb(330,.4,'sine',.04,.3); },
   oops:   function(){ beep(330,.12,'sine',.05); beep(294,.16,'sine',.05,.12); }
 };
 function setSound(on){ SET.sound=on?1:0; jSet(K_SET,SET); if(masterG) masterG.gain.value=on?1:0;
@@ -915,6 +919,12 @@ function tick(){
       else if(roll<0.004){ setState('happy'); SFX.chirp(); }
     }
   }
+  for(var fi=0;fi<friends.length;fi++){
+    var fr=friends[fi];
+    fr.g.position.y=Math.abs(Math.sin(t*1.1+fr.ph))*0.03;
+    fr.g.rotation.z=Math.sin(t*0.7+fr.ph)*0.04;
+    fr.g.scale.y=0.62*(1+Math.sin(t*2.2+fr.ph)*0.02);
+  }
   if(critter&&shadowBlob){
     shadowBlob.position.x=critter.position.x;
     shadowBlob.position.z=critter.position.z;
@@ -933,6 +943,44 @@ function tick(){
    ════════════════════════════════════════════════════════════════════ */
 var CUR=null;      /* {id,name,profile,drawing(dataURL),care,sil} */
 var NEST=jGet(K_NEST,[]);
+
+/* ------------------------------------------------- meadow friends -------
+   Other nursery critters wander out to keep the current buddy company, so
+   the meadow fills up with everything the kid has made. */
+var friends=[];
+var FRIEND_SPOTS=[ {x:-1.95,z:-1.3,ry:0.55}, {x:2.0,z:-1.75,ry:-0.6} ];
+function clearFriends(){
+  friends.forEach(function(f){ scene.remove(f.g); scene.remove(f.sh); });
+  friends=[];
+}
+function spawnFriends(){
+  if(!renderer||!CUR) return;
+  clearFriends();
+  var others=NEST.filter(function(r){ return r.id!==CUR.id; }).slice(-2);
+  others.forEach(function(rec,ix){
+    var img=new Image();
+    img.onload=function(){
+      if(!CUR||friends.length>=2) return;
+      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+      var cx=cv.getContext('2d');
+      cx.fillStyle='#fff'; cx.fillRect(0,0,PAPER,PAPER);
+      cx.drawImage(img,0,0,PAPER,PAPER);
+      var sil=readSilhouette(cv);
+      if(!sil) return;
+      var g=buildCritterMesh(cv,sil);
+      var spot=FRIEND_SPOTS[friends.length];
+      g.scale.set(0.62,0.62,0.62);
+      g.position.set(spot.x,0,spot.z);
+      g.rotation.y=spot.ry;
+      var sh=new THREE.Mesh(new THREE.CircleGeometry(0.45,24),
+        new THREE.MeshBasicMaterial({ color:0x3a4630, transparent:true, opacity:0.13 }));
+      sh.rotation.x=-Math.PI/2; sh.position.set(spot.x,0.011,spot.z);
+      scene.add(g); scene.add(sh);
+      friends.push({ g:g, sh:sh, ph:ix*2.1+1.3 });
+    };
+    img.src=rec.drawing;
+  });
+}
 
 function buildCritterMesh(drawCanvas,sil){
   var geo=buildPillowGeometry(sil);
@@ -999,10 +1047,12 @@ function showResult(){
     fr.appendChild(b);
   });
   renderCare();
+  VOICE = CUR.sil.features.coverage>0.3 ? 0.72 : CUR.sil.features.coverage<0.13 ? 1.35 : 1;
   switchScreen('result');
   sizeStage();
   setState('idle'); anim.lastTouch=Date.now();
   say(CUR.profile.sound+' Hello!');
+  setTimeout(spawnFriends,1100);
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -1027,6 +1077,8 @@ function bringToLife(){
     critter=group; orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     persistCur();
+    /* the drawing became a critter; next visit to the easel starts fresh */
+    clearPaper(); undoStack.length=0; drawnAnything=false;
     SFX.hatch();
     if(!MOM.first){ MOM.first=1; jSet(K_MOM,MOM);
       window._sbCapEarn&&window._sbCapEarn(6,'create-a-critter:first_critter'); momentMsg('first_critter'); }
