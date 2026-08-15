@@ -70,6 +70,25 @@ animation clips.
   munch, grins on happy/spin, and relaxes in sleep. Meadow friends get
   their faces too. Undo snapshots include the feature list.
 
+## Aug 15 sticker book round (v=20260815e)
+- **STICKER BOOK**: 36 hand-drawn canvas stickers in 4 flyout groups (Face:
+  4 eye styles / smile / lips / grin / fangs / shark teeth / noses / 3 ear
+  kinds / antenna / freckles / wrinkles · Extras: top hat, cap, glasses,
+  monocle, flower, ascot, pocket square · Parts: wing, tail, unicorn horn,
+  curved horns, centipede legs, spikes · Shapes: spot, star, heart, moon,
+  bolt, ring). Previews self-render from the same draw fns; tintable
+  stickers take the selected color (white falls back to a per-sticker
+  default); asymmetric stickers auto-mirror by canvas side. The flyout
+  closes when anything else is tapped, incl. stamping. Pen-size click
+  deselects stickers/textures. Fill icon is a paint drop (SVG). Zoom out
+  button always visible.
+- Live features grew: eyeIris carries its color into a real 3D IRIS.
+  ⛔ Anything added inside the eye group must PROTRUDE past the ball
+  (offset + radius > r3) or the white sphere swallows it. Eyes/mouth
+  lookAt a viewer-ish point so sloped head placement can't hide pupils.
+  Erase-patch color = average of BRIGHT ring samples only (a dark outline
+  sample used to smear ink over the patch).
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts

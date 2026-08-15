@@ -74,7 +74,16 @@
   #paper{ position:absolute; left:0; top:0; transform-origin:0 0; touch-action:none; }
   #zoomLbl{ position:absolute; right:8px; top:8px; background:rgba(74,63,92,.7); color:#fff;
     border-radius:999px; padding:3px 10px; font-size:.8rem; font-weight:800; display:none; pointer-events:none; }
-  #tools{ padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:6px; }
+  #tools{ position:relative; padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:6px; }
+  #fly{ position:absolute; bottom:100%; left:6px; right:6px; margin-bottom:6px; display:none;
+    background:var(--panel); border:2px solid var(--line); border-radius:18px; padding:10px;
+    box-shadow:0 -8px 30px rgba(74,63,92,.25); z-index:8;
+    grid-template-columns:repeat(auto-fill,minmax(54px,1fr)); gap:6px; max-height:220px; overflow-y:auto; }
+  #fly.on{ display:grid; }
+  .flybtn{ min-height:54px; border-radius:14px; background:#fff; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; }
+  .flybtn.sel{ border-color:var(--coral); background:#fff1e9; }
+  .flybtn canvas{ width:40px; height:40px; }
   .toolrow{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
   .strip{ display:flex; gap:6px; overflow-x:auto; padding:2px; flex-wrap:nowrap;
     -webkit-overflow-scrolling:touch; scrollbar-width:none; }
@@ -230,24 +239,24 @@
       <div id="pinned">
         <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
         <button class="chipbtn" id="zoomIn" title="zoom in">🔍</button>
-        <button class="chipbtn" id="zoomOut" title="zoom out" style="display:none">↩🔍</button>
+        <button class="chipbtn" id="zoomOut" title="zoom out">➖🔍</button>
       </div>
       <div class="strip" id="toolStrip">
         <button class="chipbtn sel" id="toolSize" title="line size"><span class="sizedot" style="width:16px;height:16px"></span></button>
-        <button class="chipbtn" id="toolFill" title="fill bucket">🪣</button>
+        <button class="chipbtn" id="toolFill" title="paint fill"><svg viewBox="0 0 24 24" width="27" height="27"><path d="M12 2.4c3.2 4.8 6.2 8.2 6.2 11.6a6.2 6.2 0 1 1-12.4 0C5.8 10.6 8.8 7.2 12 2.4z" fill="#4a90d9" stroke="#3d2f55" stroke-width="1.5"/><circle cx="10" cy="14" r="1.7" fill="#cfe6ff"/></svg></button>
         <button class="chipbtn" id="toolRainbow" title="rainbow crayon">🌈</button>
         <button class="chipbtn" id="toolErase" title="eraser">🩹</button>
-        <button class="chipbtn" data-stamp="eye" title="living eye stamp">👁️</button>
-        <button class="chipbtn" data-stamp="mouth" title="living mouth stamp">😊</button>
-        <button class="chipbtn" data-stamp="star" title="star stamp">⭐</button>
-        <button class="chipbtn" data-stamp="heart" title="heart stamp">❤️</button>
-        <button class="chipbtn" data-stamp="spot" title="spot stamp">🟤</button>
+        <button class="chipbtn" data-group="face" title="face stickers">👁️</button>
+        <button class="chipbtn" data-group="extras" title="accessory stickers">🎩</button>
+        <button class="chipbtn" data-group="parts" title="animal part stickers">🦋</button>
+        <button class="chipbtn" data-group="shapes" title="shape stickers">⭐</button>
         <button class="chipbtn" data-tex="fluffy" title="fluffy texture"><span class="tex-ic">☁️</span></button>
         <button class="chipbtn" data-tex="furry" title="furry texture"><span class="tex-ic">🦔</span></button>
         <button class="chipbtn" data-tex="shiny" title="shiny texture"><span class="tex-ic">✨</span></button>
         <button class="chipbtn" data-tex="sparkly" title="sparkly texture"><span class="tex-ic">🌟</span></button>
       </div>
     </div>
+    <div id="fly"></div>
     <div id="goRow"><button class="bigbtn green" id="btnLife">✨ Bring it to life! ✨</button></div>
   </div>
 </div>
@@ -765,7 +774,7 @@ function applyView(){
   var z=$('zoomLbl');
   if(view.scale>1.02){ z.style.display='block'; z.textContent='×'+view.scale.toFixed(1); }
   else z.style.display='none';
-  $('zoomOut').style.display = view.scale>1.02?'flex':'none';
+
 }
 function zoomAt(cx,cy,f){
   var ns=Math.max(1,Math.min(4,view.scale*f));
@@ -777,47 +786,210 @@ function zoomAt(cx,cy,f){
 }
 function clearToolSel(){
   ['toolErase','toolFill','toolRainbow'].forEach(function(id){ $(id).classList.remove('sel'); });
-  document.querySelectorAll('[data-stamp],[data-tex]').forEach(function(b){ b.classList.remove('sel'); });
+  document.querySelectorAll('[data-group],[data-tex]').forEach(function(b){ b.classList.remove('sel'); });
+  closeFly();
 }
+var flyOpenGroup=null;
+function closeFly(){ $('fly').classList.remove('on'); flyOpenGroup=null; }
 /* stamps: one tap places a whole shape, so wobbly little hands get crisp
    googly eyes, stars, hearts and spots */
+/* ═══════════════════════════ STICKER BOOK ═══════════════════════════
+   Every sticker is drawn in code so it tints with the chosen color and
+   previews itself in the flyout. draw(c, s, col, f): ctx translated to
+   the tap point, s = base size, col = effective color, f = ±1 mirror
+   (asymmetric stickers face inward automatically). `feat` stickers are
+   tracked and become LIVING 3D features. */
+var INK='#3d2f55';
+function ln(c,w){ c.strokeStyle=INK; c.lineWidth=w; c.lineCap='round'; c.lineJoin='round'; }
+function eyeBase(c,s){
+  c.fillStyle='#fff'; ln(c,Math.max(3,s*0.12));
+  c.beginPath(); c.arc(0,0,s,0,Math.PI*2); c.fill(); c.stroke();
+}
+var STICKERS={
+  /* ---- eyes (live) ---- */
+  eyeGoogly:{feat:'eye',draw:function(c,s){ eyeBase(c,s);
+    c.fillStyle=INK; c.beginPath(); c.arc(s*0.22,s*0.12,s*0.42,0,Math.PI*2); c.fill();
+    c.fillStyle='#fff'; c.beginPath(); c.arc(s*0.08,-s*0.02,s*0.14,0,Math.PI*2); c.fill(); }},
+  eyeIris:{feat:'eye',tint:1,draw:function(c,s,col){ eyeBase(c,s);
+    c.fillStyle=col; c.beginPath(); c.arc(0,s*0.05,s*0.55,0,Math.PI*2); c.fill();
+    c.fillStyle=INK; c.beginPath(); c.arc(0,s*0.05,s*0.26,0,Math.PI*2); c.fill();
+    c.fillStyle='#fff'; c.beginPath(); c.arc(-s*0.16,-s*0.12,s*0.14,0,Math.PI*2); c.fill(); }},
+  eyeSleepy:{feat:'eye',draw:function(c,s){ eyeBase(c,s);
+    c.fillStyle=INK; c.beginPath(); c.arc(0,s*0.28,s*0.3,0,Math.PI*2); c.fill();
+    c.fillStyle='#fdf0e4'; ln(c,Math.max(3,s*0.12));
+    c.beginPath(); c.arc(0,-s*0.55,s*1.05,Math.PI*0.15,Math.PI*0.85); c.lineTo(-s,-s*0.2); c.closePath(); c.fill();
+    c.beginPath(); c.arc(0,-s*0.55,s*1.05,Math.PI*0.15,Math.PI*0.85); c.stroke(); }},
+  eyeCutie:{feat:'eye',draw:function(c,s){ c.fillStyle=INK;
+    c.beginPath(); c.arc(0,0,s*0.85,0,Math.PI*2); c.fill();
+    c.fillStyle='#fff'; c.beginPath(); c.arc(-s*0.28,-s*0.28,s*0.3,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(s*0.2,s*0.25,s*0.13,0,Math.PI*2); c.fill();
+    ln(c,Math.max(3,s*0.1));
+    [[-0.6,-1.0],[0,-1.15],[0.6,-1.0]].forEach(function(l){
+      c.beginPath(); c.moveTo(l[0]*s*0.7,l[1]*s*0.62); c.lineTo(l[0]*s,l[1]*s); c.stroke(); }); }},
+  /* ---- mouths ---- */
+  smile:{feat:'mouth',draw:function(c,s){ ln(c,Math.max(4,s*0.2));
+    c.beginPath(); c.arc(0,-s*0.25,s*0.85,Math.PI*0.2,Math.PI*0.8); c.stroke(); }},
+  lips:{feat:'mouth',tint:1,dflt:'#e64a3c',draw:function(c,s,col){
+    c.fillStyle=col; ln(c,Math.max(2,s*0.08));
+    c.beginPath(); c.moveTo(-s,0);
+    c.bezierCurveTo(-s*0.5,-s*0.75, -s*0.1,-s*0.55, 0,-s*0.3);
+    c.bezierCurveTo(s*0.1,-s*0.55, s*0.5,-s*0.75, s,0);
+    c.bezierCurveTo(s*0.5,s*0.7, -s*0.5,s*0.7, -s,0);
+    c.closePath(); c.fill(); c.stroke();
+    ln(c,Math.max(2,s*0.06)); c.beginPath(); c.moveTo(-s*0.85,0); c.lineTo(s*0.85,0); c.stroke(); }},
+  grin:{draw:function(c,s){ c.fillStyle='#fff'; ln(c,Math.max(3,s*0.12));
+    c.beginPath(); c.arc(0,-s*0.3,s,Math.PI*0.12,Math.PI*0.88); c.closePath(); c.fill(); c.stroke();
+    ln(c,Math.max(2,s*0.07));
+    for(var i=-2;i<=2;i++){ c.beginPath(); c.moveTo(i*s*0.32,-s*0.05); c.lineTo(i*s*0.32,s*0.42-Math.abs(i)*s*0.1); c.stroke(); } }},
+  fangs:{draw:function(c,s){ ln(c,Math.max(4,s*0.18));
+    c.beginPath(); c.arc(0,-s*0.35,s*0.9,Math.PI*0.15,Math.PI*0.85); c.stroke();
+    c.fillStyle='#fff'; ln(c,Math.max(2,s*0.07));
+    [-0.55,0.55].forEach(function(x){
+      c.beginPath(); c.moveTo(x*s-s*0.16,s*0.12); c.lineTo(x*s,s*0.75); c.lineTo(x*s+s*0.16,s*0.18); c.closePath(); c.fill(); c.stroke(); }); }},
+  sharkTeeth:{draw:function(c,s){ c.fillStyle=INK;
+    c.beginPath(); c.ellipse(0,0,s,s*0.55,0,0,Math.PI*2); c.fill();
+    c.fillStyle='#fff';
+    for(var i=0;i<5;i++){ var x=-s*0.8+i*s*0.4;
+      c.beginPath(); c.moveTo(x,-s*0.3); c.lineTo(x+s*0.2,s*0.25); c.lineTo(x+s*0.4,-s*0.3); c.closePath(); c.fill(); } }},
+  /* ---- nose & ears & more ---- */
+  nose:{tint:1,dflt:'#e8a87a',draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.09));
+    c.beginPath(); c.ellipse(0,0,s*0.5,s*0.62,0,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle='rgba(255,255,255,.5)'; c.beginPath(); c.arc(-s*0.15,-s*0.18,s*0.13,0,Math.PI*2); c.fill(); }},
+  snout:{draw:function(c,s){ c.fillStyle='#f2a8b8'; ln(c,Math.max(2,s*0.09));
+    c.beginPath(); c.ellipse(0,0,s*0.9,s*0.62,0,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle=INK;
+    c.beginPath(); c.ellipse(-s*0.3,0,s*0.12,s*0.2,0,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse(s*0.3,0,s*0.12,s*0.2,0,0,Math.PI*2); c.fill(); }},
+  earRound:{tint:1,dflt:'#e8a87a',flip:1,draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.1));
+    c.beginPath(); c.arc(0,0,s*0.9,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle='#f2b8c6'; c.beginPath(); c.arc(0,0,s*0.5,0,Math.PI*2); c.fill(); }},
+  earCat:{tint:1,dflt:'#8a5a34',flip:1,draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.1));
+    c.beginPath(); c.moveTo(-s*0.85,s*0.7); c.lineTo(0,-s); c.lineTo(s*0.85,s*0.7); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle='#f2b8c6'; c.beginPath(); c.moveTo(-s*0.4,s*0.45); c.lineTo(0,-s*0.4); c.lineTo(s*0.4,s*0.45); c.closePath(); c.fill(); }},
+  earBunny:{tint:1,dflt:'#d9c2ad',flip:1,draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.1));
+    c.beginPath(); c.ellipse(0,0,s*0.42,s*1.15,0,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle='#f2b8c6'; c.beginPath(); c.ellipse(0,s*0.1,s*0.2,s*0.75,0,0,Math.PI*2); c.fill(); }},
+  antenna:{flip:1,draw:function(c,s,col,f){ ln(c,Math.max(3,s*0.14));
+    c.beginPath(); c.moveTo(0,s); c.quadraticCurveTo(f*s*0.5,-s*0.2,f*s*0.15,-s*0.9); c.stroke();
+    c.fillStyle=col==='#ffffff'?'#f7cf46':col; c.beginPath(); c.arc(f*s*0.15,-s*1.05,s*0.28,0,Math.PI*2); c.fill(); }},
+  freckles:{tint:1,dflt:'#b5825a',draw:function(c,s,col){ c.fillStyle=col; c.globalAlpha=0.85;
+    [[-0.6,0],[-0.2,-0.3],[0.25,-0.05],[0.6,-0.35],[0,0.35],[0.55,0.3]].forEach(function(p){
+      c.beginPath(); c.arc(p[0]*s,p[1]*s,s*0.11,0,Math.PI*2); c.fill(); }); }},
+  wrinkles:{draw:function(c,s){ ln(c,Math.max(2,s*0.1)); c.globalAlpha=0.7;
+    for(var i=0;i<3;i++){ c.beginPath(); c.arc(0,s*(i*0.42-0.4)+s*0.65,s*0.75,Math.PI*1.25,Math.PI*1.75); c.stroke(); } }},
+  /* ---- accessories ---- */
+  topHat:{draw:function(c,s){ c.fillStyle=INK;
+    c.fillRect(-s*0.55,-s*1.1,s*1.1,s*1.05);
+    c.beginPath(); c.ellipse(0,-s*0.02,s*0.95,s*0.22,0,0,Math.PI*2); c.fill();
+    c.fillStyle='#e64a3c'; c.fillRect(-s*0.55,-s*0.35,s*1.1,s*0.24); }},
+  cap:{tint:1,dflt:'#4a90d9',flip:1,draw:function(c,s,col,f){ c.fillStyle=col; ln(c,Math.max(2,s*0.09));
+    c.beginPath(); c.arc(0,0,s*0.85,Math.PI,0); c.closePath(); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(f*s*0.75,s*0.02,s*0.55,s*0.14,0,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle='#fff'; c.beginPath(); c.arc(0,-s*0.35,s*0.16,0,Math.PI*2); c.fill(); }},
+  glasses:{draw:function(c,s){ ln(c,Math.max(3,s*0.11));
+    c.beginPath(); c.arc(-s*0.55,0,s*0.42,0,Math.PI*2); c.stroke();
+    c.beginPath(); c.arc(s*0.55,0,s*0.42,0,Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(-s*0.13,0); c.lineTo(s*0.13,0); c.stroke();
+    c.beginPath(); c.moveTo(-s*0.97,0); c.lineTo(-s*1.2,-s*0.15); c.stroke();
+    c.beginPath(); c.moveTo(s*0.97,0); c.lineTo(s*1.2,-s*0.15); c.stroke(); }},
+  monocle:{flip:1,draw:function(c,s,col,f){ ln(c,Math.max(3,s*0.12));
+    c.beginPath(); c.arc(0,-s*0.2,s*0.5,0,Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(f*s*0.35,s*0.15); c.quadraticCurveTo(f*s*0.55,s*0.7,f*s*0.3,s*1.05); c.stroke();
+    c.fillStyle='rgba(207,230,255,.4)'; c.beginPath(); c.arc(0,-s*0.2,s*0.44,0,Math.PI*2); c.fill(); }},
+  flowerAcc:{tint:1,dflt:'#e86fa8',draw:function(c,s,col){
+    c.fillStyle=col;
+    for(var i=0;i<6;i++){ var a=i/6*Math.PI*2;
+      c.beginPath(); c.ellipse(Math.cos(a)*s*0.5,Math.sin(a)*s*0.5,s*0.32,s*0.2,a,0,Math.PI*2); c.fill(); }
+    c.fillStyle='#f7cf46'; ln(c,Math.max(2,s*0.07));
+    c.beginPath(); c.arc(0,0,s*0.3,0,Math.PI*2); c.fill(); c.stroke(); }},
+  ascot:{tint:1,dflt:'#7a5fd0',draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.08));
+    c.beginPath(); c.moveTo(-s*0.8,-s*0.5); c.quadraticCurveTo(0,-s*0.15,s*0.8,-s*0.5);
+    c.lineTo(s*0.35,s*0.15); c.lineTo(-s*0.35,s*0.15); c.closePath(); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(-s*0.35,s*0.1); c.lineTo(0,s*1.0); c.lineTo(s*0.35,s*0.1); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle='rgba(255,255,255,.35)'; c.beginPath(); c.arc(0,-s*0.15,s*0.14,0,Math.PI*2); c.fill(); }},
+  pocketSq:{tint:1,dflt:'#e64a3c',draw:function(c,s,col){ ln(c,Math.max(3,s*0.1));
+    c.fillStyle=col;
+    c.beginPath(); c.moveTo(-s*0.55,0); c.lineTo(-s*0.2,-s*0.55); c.lineTo(s*0.1,-s*0.1);
+    c.lineTo(s*0.4,-s*0.5); c.lineTo(s*0.6,0); c.closePath(); c.fill();
+    c.strokeStyle=INK; c.beginPath(); c.moveTo(-s*0.8,0); c.lineTo(s*0.8,0);
+    c.lineTo(s*0.7,s*0.7); c.lineTo(-s*0.7,s*0.7); c.closePath(); c.stroke();
+    c.fillStyle='#fdf7ee'; c.beginPath(); c.moveTo(-s*0.78,s*0.03); c.lineTo(s*0.78,s*0.03);
+    c.lineTo(s*0.69,s*0.68); c.lineTo(-s*0.69,s*0.68); c.closePath(); c.fill(); ln(c,Math.max(3,s*0.1));
+    c.beginPath(); c.moveTo(-s*0.8,0); c.lineTo(s*0.8,0); c.lineTo(s*0.7,s*0.7); c.lineTo(-s*0.7,s*0.7); c.closePath(); c.stroke(); }},
+  /* ---- animal parts ---- */
+  wing:{flip:1,draw:function(c,s,col,f){ c.fillStyle='#fff'; ln(c,Math.max(2,s*0.09));
+    c.beginPath(); c.moveTo(0,s*0.6);
+    c.quadraticCurveTo(f*s*1.4,s*0.4,f*s*1.5,-s*0.6);
+    c.quadraticCurveTo(f*s*0.7,-s*0.5,f*s*0.55,-s*0.05);
+    c.quadraticCurveTo(f*s*0.3,s*0.2,0,s*0.6); c.closePath(); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(f*s*0.35,s*0.3); c.quadraticCurveTo(f*s*0.9,s*0.05,f*s*1.1,-s*0.35); c.stroke(); }},
+  tail:{tint:1,dflt:'#8a5a34',flip:1,draw:function(c,s,col,f){
+    c.strokeStyle=col; c.lineWidth=Math.max(6,s*0.34); c.lineCap='round';
+    c.beginPath(); c.moveTo(0,0); c.quadraticCurveTo(f*s*1.1,s*0.2,f*s*1.3,-s*0.7);
+    c.quadraticCurveTo(f*s*1.4,-s*1.2,f*s*0.9,-s*1.3); c.stroke();
+    c.fillStyle=col; c.beginPath(); c.arc(f*s*0.9,-s*1.3,s*0.3,0,Math.PI*2); c.fill(); }},
+  uniHorn:{draw:function(c,s){ c.fillStyle='#f7cf46'; ln(c,Math.max(2,s*0.08));
+    c.beginPath(); c.moveTo(-s*0.4,s*0.7); c.lineTo(0,-s*1.1); c.lineTo(s*0.4,s*0.7); c.closePath(); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(-s*0.3,s*0.25); c.lineTo(s*0.28,s*0.05); c.stroke();
+    c.beginPath(); c.moveTo(-s*0.2,-s*0.25); c.lineTo(s*0.17,-s*0.42); c.stroke(); }},
+  curvedHorns:{tint:1,dflt:'#d9c2ad',draw:function(c,s,col){ c.strokeStyle=col;
+    c.lineWidth=Math.max(6,s*0.3); c.lineCap='round';
+    c.beginPath(); c.moveTo(-s*0.35,s*0.6); c.quadraticCurveTo(-s*1.15,-s*0.1,-s*0.7,-s*0.9); c.stroke();
+    c.beginPath(); c.moveTo(s*0.35,s*0.6); c.quadraticCurveTo(s*1.15,-s*0.1,s*0.7,-s*0.9); c.stroke(); }},
+  centiLegs:{tint:1,dflt:'#3d2f55',draw:function(c,s,col){
+    c.strokeStyle=col; c.lineWidth=Math.max(4,s*0.16); c.lineCap='round';
+    for(var i=0;i<6;i++){ var x=-s*1.05+i*s*0.42;
+      c.beginPath(); c.moveTo(x,-s*0.3); c.quadraticCurveTo(x+s*0.12,s*0.3,x-s*0.08,s*0.75); c.stroke(); } }},
+  spikes:{tint:1,dflt:'#69b45a',draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.08));
+    for(var i=0;i<3;i++){ var x=-s*0.8+i*s*0.8;
+      c.beginPath(); c.moveTo(x-s*0.35,s*0.5); c.lineTo(x,-s*0.7); c.lineTo(x+s*0.35,s*0.5); c.closePath(); c.fill(); c.stroke(); } }},
+  /* ---- shapes ---- */
+  spot:{tint:1,draw:function(c,s,col){ c.fillStyle=col; c.globalAlpha=0.9;
+    c.beginPath(); c.arc(0,0,s*0.8,0,Math.PI*2); c.fill(); }},
+  star:{tint:1,dflt:'#f7cf46',draw:function(c,s,col){ c.fillStyle=col;
+    c.beginPath();
+    for(var i=0;i<10;i++){ var r=i%2?s*0.45:s, a=Math.PI*i/5-Math.PI/2;
+      c[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r); }
+    c.closePath(); c.fill(); }},
+  heart:{tint:1,dflt:'#e86fa8',draw:function(c,s,col){ c.fillStyle=col;
+    c.beginPath(); c.moveTo(0,s*0.35);
+    c.bezierCurveTo(-s*1.1,-s*0.45,-s*0.45,-s*1.05,0,-s*0.35);
+    c.bezierCurveTo(s*0.45,-s*1.05,s*1.1,-s*0.45,0,s*0.35);
+    c.closePath(); c.fill(); }},
+  moon:{tint:1,dflt:'#f7cf46',draw:function(c,s,col){ c.fillStyle=col;
+    c.beginPath(); c.arc(0,0,s*0.85,Math.PI*0.35,Math.PI*1.65);
+    c.arc(s*0.45,0,s*0.62,Math.PI*1.5,Math.PI*0.5,true); c.closePath(); c.fill(); }},
+  bolt:{tint:1,dflt:'#f7cf46',draw:function(c,s,col){ c.fillStyle=col; ln(c,Math.max(2,s*0.08));
+    c.beginPath(); c.moveTo(s*0.15,-s); c.lineTo(-s*0.5,s*0.15); c.lineTo(-s*0.05,s*0.15);
+    c.lineTo(-s*0.15,s); c.lineTo(s*0.5,-s*0.15); c.lineTo(s*0.05,-s*0.15); c.closePath(); c.fill(); c.stroke(); }},
+  ring:{tint:1,draw:function(c,s,col){ c.strokeStyle=col; c.lineWidth=Math.max(6,s*0.35);
+    c.beginPath(); c.arc(0,0,s*0.65,0,Math.PI*2); c.stroke(); }}
+};
+var STICKER_GROUPS=[
+  {id:'face',   items:['eyeGoogly','eyeIris','eyeSleepy','eyeCutie','smile','lips','grin','fangs','sharkTeeth','nose','snout','earRound','earCat','earBunny','antenna','freckles','wrinkles']},
+  {id:'extras', items:['topHat','cap','glasses','monocle','flowerAcc','ascot','pocketSq']},
+  {id:'parts',  items:['wing','tail','uniHorn','curvedHorns','centiLegs','spikes','antenna']},
+  {id:'shapes', items:['spot','star','heart','moon','bolt','ring']}
+];
+function stickerColor(def){
+  if(!def.tint) return brush.color;
+  if(brush.color==='#ffffff'&&def.dflt) return def.dflt;
+  return def.tint?brush.color:brush.color;
+}
 function drawStamp(pt){
-  var s=brush.size*2.4;
-  if(brush.stamp==='eye'||brush.stamp==='mouth'){
-    FEATS.push({ t:brush.stamp, x:pt.x/PAPER, y:pt.y/PAPER, s:s/PAPER });
-    if(FEATS.length>6) FEATS.shift();
+  var def=STICKERS[brush.stamp];
+  if(!def) return;
+  /* stickers land close to the size the preview promises; the pen size
+     button makes them smaller or bigger */
+  var s=brush.size*4.6;
+  var col=def.tint?(brush.color==='#ffffff'&&def.dflt?def.dflt:brush.color):(def.dflt||brush.color);
+  var f=def.flip?(pt.x<PAPER/2?-1:1):1;
+  if(def.feat){
+    FEATS.push({ t:def.feat, x:pt.x/PAPER, y:pt.y/PAPER, s:s/PAPER, c:col, style:brush.stamp });
+    if(FEATS.length>8) FEATS.shift();
   }
   pctx.save(); pctx.translate(pt.x,pt.y);
-  if(brush.stamp==='mouth'){
-    pctx.strokeStyle='#3d2f55'; pctx.lineWidth=Math.max(4,s*0.2); pctx.lineCap='round';
-    pctx.beginPath(); pctx.arc(0,-s*0.25,s*0.85,Math.PI*0.2,Math.PI*0.8); pctx.stroke();
-  } else if(brush.stamp==='eye'){
-    pctx.fillStyle='#ffffff'; pctx.strokeStyle='#3d2f55'; pctx.lineWidth=Math.max(3,s*0.12);
-    pctx.beginPath(); pctx.arc(0,0,s,0,Math.PI*2); pctx.fill(); pctx.stroke();
-    pctx.fillStyle='#3d2f55';
-    pctx.beginPath(); pctx.arc(s*0.22,s*0.12,s*0.42,0,Math.PI*2); pctx.fill();
-    pctx.fillStyle='#ffffff';
-    pctx.beginPath(); pctx.arc(s*0.08,s*-0.02,s*0.14,0,Math.PI*2); pctx.fill();
-  } else if(brush.stamp==='star'){
-    pctx.fillStyle=brush.color==='#ffffff'?'#f7cf46':brush.color;
-    pctx.beginPath();
-    for(var i=0;i<10;i++){
-      var r=i%2?s*0.45:s, a=Math.PI*i/5-Math.PI/2;
-      pctx[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r);
-    }
-    pctx.closePath(); pctx.fill();
-  } else if(brush.stamp==='heart'){
-    pctx.fillStyle=brush.color==='#ffffff'?'#e86fa8':brush.color;
-    pctx.beginPath();
-    pctx.moveTo(0,s*0.35);
-    pctx.bezierCurveTo(-s*1.1,-s*0.45, -s*0.45,-s*1.05, 0,-s*0.35);
-    pctx.bezierCurveTo(s*0.45,-s*1.05, s*1.1,-s*0.45, 0,s*0.35);
-    pctx.closePath(); pctx.fill();
-  } else if(brush.stamp==='spot'){
-    pctx.fillStyle=brush.color;
-    pctx.globalAlpha=0.9;
-    pctx.beginPath(); pctx.arc(0,0,s*0.8,0,Math.PI*2); pctx.fill();
-  }
+  def.draw(pctx,s,col,f);
   pctx.restore();
 }
 
@@ -905,6 +1077,7 @@ buildPalette();
 
 var SIZES=[6,14,30], sizeIx=1;
 $('toolSize').addEventListener('click',function(){
+  if(brush.stamp||brush.tex){ clearToolSel(); brush.stamp=null; brush.tex=null; brush.tool='pen'; }
   sizeIx=(sizeIx+1)%SIZES.length;
   brush.size=SIZES[sizeIx];
   var d=$('toolSize').querySelector('.sizedot');
@@ -945,13 +1118,45 @@ $('toolRainbow').addEventListener('click',function(){
   brush.rainbow = on;
   $('toolRainbow').classList.toggle('sel',on); SFX.tap();
 });
-document.querySelectorAll('[data-stamp]').forEach(function(b){
+/* sticker group buttons open a flyout of previews; picking one arms the
+   stamp; tapping anything else closes the flyout */
+function stickerPreview(id){
+  var cv=document.createElement('canvas'); cv.width=cv.height=80;
+  var c=cv.getContext('2d'); c.translate(40,40);
+  var def=STICKERS[id];
+  def.draw(c,17,def.dflt||(def.tint?'#e64a3c':'#3d2f55'),1);
+  return cv;
+}
+function openFly(groupId){
+  var g=null; STICKER_GROUPS.forEach(function(x){ if(x.id===groupId)g=x; });
+  if(!g) return;
+  var fly=$('fly'); fly.innerHTML='';
+  g.items.forEach(function(id){
+    var b=document.createElement('button');
+    b.className='flybtn'+(brush.stamp===id?' sel':'');
+    b.appendChild(stickerPreview(id));
+    b.addEventListener('click',function(){
+      clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
+      brush.stamp=id;
+      var gb=document.querySelector('[data-group="'+groupId+'"]');
+      if(gb) gb.classList.add('sel');
+      SFX.tap();
+    });
+    fly.appendChild(b);
+  });
+  fly.classList.add('on');
+  flyOpenGroup=groupId;
+}
+document.querySelectorAll('[data-group]').forEach(function(b){
   b.addEventListener('click',function(){
-    var key=b.getAttribute('data-stamp');
-    var on = brush.stamp!==key;
+    var gid=b.getAttribute('data-group');
+    var wasOpen = flyOpenGroup===gid;
+    var hadSel = brush.stamp && b.classList.contains('sel');
     clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
-    brush.stamp = on?key:null;
-    b.classList.toggle('sel',on); SFX.tap();
+    if(wasOpen){ if(hadSel){ b.classList.add('sel'); } SFX.tap(); return; }
+    brush.stamp = hadSel?brush.stamp:null;
+    if(hadSel) b.classList.add('sel');
+    openFly(gid); SFX.tap();
   });
 });
 $('toolUndo').addEventListener('click',doUndo);
@@ -991,6 +1196,7 @@ vp.addEventListener('pointerdown',function(e){
     brush.tool='pen'; $('toolFill').classList.remove('sel');
     return;
   }
+  closeFly();
   if(brush.stamp){ pushUndo(); drawStamp(pt); drawnAnything=true; SFX.tap(); return; }
   pushUndo();
   if(brush.tex) texStrokeStart();
@@ -1567,24 +1773,51 @@ function buildCritterMesh(drawCanvas,sil,feats){
   /* living face: each stamped eye/mouth that lands on the body gets erased
      from the skin (patched with nearby body color) and replaced by a real
      3D feature that blinks, looks around, and munches */
+  function bodyColorAround(px,py,pr){
+    /* average the bright ring samples; a dark outline sample would smear
+       ink over the patch */
+    var acc=[0,0,0], n=0;
+    [[pr*1.7,0],[-pr*1.7,0],[0,pr*1.7],[0,-pr*1.7],[pr*1.2,pr*1.2],[-pr*1.2,-pr*1.2]].forEach(function(o){
+      var sx=Math.max(0,Math.min(511,Math.round(px+o[0])));
+      var sy=Math.max(0,Math.min(511,Math.round(py+o[1])));
+      var d=tctx.getImageData(sx,sy,1,1).data;
+      var lum=0.299*d[0]+0.587*d[1]+0.114*d[2];
+      if(lum>70){ acc[0]+=d[0]; acc[1]+=d[1]; acc[2]+=d[2]; n++; }
+    });
+    if(!n) return null;
+    return 'rgb('+Math.round(acc[0]/n)+','+Math.round(acc[1]/n)+','+Math.round(acc[2]/n)+')';
+  }
   (feats||[]).forEach(function(f){
     var p=built.project(f.x,f.y);
     if(!p) return;
     var px=f.x*512, py=f.y*512, pr=f.s*512;
-    var ring=tctx.getImageData(Math.max(0,px-pr*1.8),Math.max(0,py-pr*1.8),4,4).data;
-    var fill='rgb('+ring[0]+','+ring[1]+','+ring[2]+')';
-    tctx.fillStyle=fill;
-    tctx.beginPath(); tctx.arc(px,py,pr*(f.t==='eye'?1.35:1.25),0,Math.PI*2); tctx.fill();
-    var r3=Math.max(0.06, f.s*PAPER/1024*sil.gw*p.unit*2.6);
+    var fill=bodyColorAround(px,py,pr);
+    if(fill){
+      tctx.fillStyle=fill;
+      tctx.beginPath(); tctx.arc(px,py,pr*(f.t==='eye'?1.35:1.25),0,Math.PI*2); tctx.fill();
+    }
+    /* canvas fraction -> grid units -> world units; no fudge factor */
+    var r3=Math.max(0.05, f.s*sil.gw*p.unit);
     if(f.t==='eye'){
       var eg=new THREE.Group();
       var ball=new THREE.Mesh(new THREE.SphereGeometry(r3,14,12),
         new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.25}));
+      /* iris and pupil must PROTRUDE past the ball's surface (offset +
+         radius > r3) or the white sphere swallows them whole */
+      if(f.style==='eyeIris'&&f.c){
+        var iris=new THREE.Mesh(new THREE.SphereGeometry(r3*0.55,12,10),
+          new THREE.MeshStandardMaterial({color:new THREE.Color(f.c),roughness:0.3}));
+        iris.position.z=r3*0.82; iris.scale.z=0.45; eg.add(iris);
+      }
       var pupil=new THREE.Mesh(new THREE.SphereGeometry(r3*0.45,10,8),
         new THREE.MeshStandardMaterial({color:0x3d2f55,roughness:0.3}));
-      pupil.position.z=r3*0.62;
+      pupil.position.z=r3*(f.style==='eyeIris'?0.98:0.75);
+      if(f.style==='eyeIris') pupil.scale.set(0.7,0.7,0.55);
       eg.add(ball); eg.add(pupil);
       eg.position.set(p.x,p.y,p.z);
+      /* face the viewer-ish so pupils never hide behind the ball on a
+         sloping bit of head */
+      eg.lookAt(new THREE.Vector3(p.x*0.6, p.y+0.9, 9));
       group.add(eg);
       face.eyes.push({g:eg,pupil:pupil,r:r3});
     } else if(f.t==='mouth'&&!face.mouth){
@@ -1592,7 +1825,7 @@ function buildCritterMesh(drawCanvas,sil,feats){
         new THREE.MeshStandardMaterial({color:0x241b38,roughness:0.35}));
       mm.scale.set(1.35,0.3,0.45);
       mm.position.set(p.x,p.y,p.z);
-      group.add(mm);
+      mm.lookAt(new THREE.Vector3(p.x*0.6, p.y+0.9, 9));
       face.mouth={m:mm,r:r3};
     }
   });
