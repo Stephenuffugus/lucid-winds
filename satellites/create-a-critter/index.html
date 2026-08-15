@@ -114,6 +114,7 @@
   #result.sky-night #critName{ color:#f2ecff; }
   #result.sky-night #critSpecies{ color:#b8b2d8; }
   #result.sky-night #stageHint{ color:#9c96c0; }
+  #result.room-mode{ background:linear-gradient(180deg,#efe2cf 0%, #ead9bf 60%, #e2cfae 100%) !important; }
   #result.sky-night .meter{ color:#ece6fb; }
   #result.sky-night .meter .bar{ background:rgba(255,255,255,.18); }
   #stars{ position:absolute; inset:0; pointer-events:none; display:none; }
@@ -190,7 +191,9 @@
   @media print{
     body{ position:static; overflow:visible; }
     body > *{ display:none !important; }
-    #printCard{ display:block !important; font-family:Georgia,serif; color:#333; padding:24px; }
+    body.print-color #printColor{ display:block !important; font-family:Georgia,serif; color:#333; padding:24px; text-align:center; }
+    body.print-color #printCard{ display:none !important; }
+    body:not(.print-color) #printCard{ display:block !important; font-family:Georgia,serif; color:#333; padding:24px; }
     #printCard .pc-head{ text-align:center; font-size:26px; font-weight:bold; margin-bottom:4px; }
     #printCard .pc-sub{ text-align:center; color:#777; margin-bottom:14px; font-style:italic; }
     #printCard .pc-imgs{ display:flex; justify-content:center; gap:18px; margin-bottom:14px; }
@@ -282,6 +285,7 @@
   <div id="stageWrap">
     <div id="stage"></div>
     <div id="stars"></div>
+    <div id="seasonFx" style="position:absolute; inset:0; pointer-events:none; overflow:hidden"></div>
     <div id="bubble"></div>
     <div id="stageHint">Tap your buddy for a trick! Drag to spin around.</div>
     <button id="visitorBadge" style="display:none; position:absolute; right:10px; bottom:44px; z-index:6; background:#fffdf8; border-radius:999px; padding:9px 14px; font:800 0.95rem ui-rounded,sans-serif; color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.2)">🐾 Visitor!</button>
@@ -313,6 +317,7 @@
       <button class="actbtn mini" id="actFace">👀 Face</button>
       <button class="actbtn mini" id="actStitch">🪡 Stitches</button>
       <button class="actbtn mini" id="actTuck" style="display:none">🌙 Tuck in</button>
+      <button class="actbtn mini" id="actRoom">🛋️ Room</button>
       <button class="actbtn mini" id="actPhoto">📸</button>
       <button class="actbtn mini" id="actPrint">🖨️</button>
       <button class="actbtn mini" id="actSound">🔊</button>
@@ -333,6 +338,33 @@
     <div class="gline"><b>Home:</b> <span id="gHab"></span></div>
     <div class="gline"><b>Fun facts:</b><span id="gFacts"></span></div>
     <button class="bigbtn" id="guideOk" style="margin-top:12px">Done reading</button>
+  </div>
+</div>
+
+<!-- ═══════════════ ROOM MENU + BED ═══════════════ -->
+<div class="overlay" id="roomMenu">
+  <div class="card">
+    <h2>🛋️ The room</h2>
+    <button class="bigbtn" id="rmToggle" style="margin-top:8px"></button>
+    <button class="bigbtn ghost" id="rmRedraw" style="margin-top:10px">🖌️ Redraw the room</button>
+    <button class="bigbtn ghost" id="rmCancel" style="margin-top:8px">Never mind</button>
+  </div>
+</div>
+<div class="overlay" id="bedOverlay">
+  <div class="card">
+    <h2>🛏️ Where is the bed?</h2>
+    <div class="sub" style="text-align:center">Tap the cozy spot so your critter knows where to sleep.</div>
+    <img id="bedImg" style="width:min(300px,80vw); border-radius:16px; background:#fff; display:block; margin:8px auto" alt="the room">
+    <button class="bigbtn ghost" id="bedSkip" style="margin-top:8px">No bed, it sleeps anywhere!</button>
+  </div>
+</div>
+
+<!-- ═══════════════ MYSTERY EGG ═══════════════ -->
+<div class="overlay" id="eggDlg">
+  <div class="card">
+    <h2>🥚 A mystery egg!</h2>
+    <div class="gline" style="text-align:center">Something tiny is wiggling inside. It must have loved watching you play!</div>
+    <button class="bigbtn green" id="eggHatch" style="margin-top:12px">✨ Hatch it!</button>
   </div>
 </div>
 
@@ -439,6 +471,21 @@
   <div id="nGrid"></div>
 </div>
 
+<!-- ═══════════════ PRINT MENU + COLORING PAGE ═══════════════ -->
+<div class="overlay" id="printMenu">
+  <div class="card">
+    <h2>🖨️ Print what?</h2>
+    <button class="bigbtn" id="pmCard" style="margin-top:8px">🪪 Keepsake card</button>
+    <button class="bigbtn green" id="pmColor" style="margin-top:10px">🖍️ Coloring page<br><small style="font-weight:600;font-size:.8rem">Just the outlines, ready to color in!</small></button>
+    <button class="bigbtn ghost" id="pmCancel" style="margin-top:10px">Never mind</button>
+  </div>
+</div>
+<div id="printColor" style="display:none">
+  <div class="pc-head" id="colName"></div>
+  <div class="pc-sub">Color me in!</div>
+  <img id="colImg" style="width:90%; max-width:640px; display:block; margin:10px auto" alt="coloring page">
+</div>
+
 <!-- ═══════════════ PRINT CARD ═══════════════ -->
 <div id="printCard">
   <div class="pc-head" id="pcName"></div>
@@ -498,7 +545,7 @@ var $=function(id){ return document.getElementById(id); };
    redeploy day leaves players one version behind. The page checks its own
    source for a newer BUILD and refreshes itself (silently on the home
    screen, with a tap-pill if the player is mid-anything). */
-var BUILD='l1';
+var BUILD='m1';
 setTimeout(function(){
   try{
     fetch(location.pathname+'?probe='+Date.now(),{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(txt){
@@ -1212,7 +1259,7 @@ function drawStamp(pt){
   var s=brush.size*4.6;
   var col=def.tint?(brush.color==='#ffffff'&&def.dflt?def.dflt:brush.color):(def.dflt||brush.color);
   var f=def.flip?(pt.x<PAPER/2?-1:1):1;
-  if(def.feat){
+  if(def.feat&&!roomEdit){
     FEATS.push({ t:def.feat, x:pt.x/PAPER, y:pt.y/PAPER, s:s/PAPER, c:col, style:brush.stamp });
     if(FEATS.length>8) FEATS.shift();
   }
@@ -1469,6 +1516,7 @@ function startGuide(){
 }
 $('wizNext').addEventListener('click',function(){
   SFX.tap();
+  if(roomEdit){ finishRoomEdit(); return; }
   if(guide.step===0){
     if(!drawnAnything){ SFX.oops(); wiggle($('vp')); return; }
     guide.step=1;
@@ -1885,6 +1933,14 @@ function tick(){
     }
     if(Math.random()<0.004) confetti($('stageWrap'),12);
   }
+  if(bugG&&critter&&!toss.on&&!parade.on&&!playdate.on){
+    var bt=critter.position;
+    bugG.position.x+=((bt.x+0.85)-bugG.position.x)*Math.min(1,fdt*3);
+    bugG.position.z+=((bt.z+0.35)-bugG.position.z)*Math.min(1,fdt*3);
+    bugG.position.y=0.55+Math.sin(t*3.1)*0.12+bt.y*0.5;
+    bugG.rotation.z=Math.sin(t*5)*0.12;
+    bugG.rotation.y=Math.sin(t*0.7)*0.4;
+  }
   if(visitorG&&!inGame()){
     visitorG.position.y=Math.abs(Math.sin(t*1.25))*0.03;
     visitorG.rotation.z=Math.sin(t*0.85)*0.04;
@@ -1965,7 +2021,7 @@ function clearFriends(){
   friends=[];
 }
 function spawnFriends(){
-  if(!renderer||!CUR||toss.on||parade.on) return;
+  if(!renderer||!CUR||toss.on||parade.on||inRoomNow()) return;
   clearFriends();
   var others=NEST.filter(function(r){ return r.id!==CUR.id; }).slice(-2);
   others.forEach(function(rec,ix){
@@ -2061,17 +2117,64 @@ function applySky(){
       stars.appendChild(f);
     }
   }
-  stars.style.display = night?'block':'none';
+  stars.style.display = (night&&!inRoomNow())?'block':'none';
   var tuckBtn=$('actTuck');
   if(tuckBtn) tuckBtn.style.display=(skyNow==='night'||skyNow==='dusk')?'':'none';
   if(hemiLight){
     hemiLight.intensity = night?0.55:0.85;
     hemiLight.color.set(night?0xcdd4ff:0xfff6e8);
     sunLight.intensity = night?0.35:0.75;
-    groundMat.color.set(night?0x5f7a58:0x93b878);
+    if(!inRoomNow()) seasonTint();
   }
 }
 setInterval(applySky, 5*60*1000);
+
+/* ------------------------------------------------ seasonal meadow ------
+   The meadow follows the real calendar: petals drift in spring, dandelion
+   fluff floats in summer, leaves tumble in autumn, snow falls (and the
+   ground whitens) in winter. Pure DOM particles, paused during games. */
+function seasonNow(){
+  var m=new Date().getMonth();
+  return m<2||m===11 ? 'winter' : m<5 ? 'spring' : m<8 ? 'summer' : 'autumn';
+}
+var seasonTimer=null;
+function seasonTint(){
+  if(!groundMat) return;
+  var night=skyNow==='night';
+  if(seasonNow()==='winter') groundMat.color.set(night?0x9aa8b5:0xdfe6ea);
+  else groundMat.color.set(night?0x5f7a58:0x93b878);
+}
+function spawnSeasonBit(){
+  if(!$('result').classList.contains('on')||berry.on||toss.on||inRoomNow()) return;
+  var fx=$('seasonFx');
+  if(fx.childElementCount>13) return;
+  var sn=seasonNow(), el=document.createElement('div');
+  var x=Math.random()*100, dur=6+Math.random()*5, sway=(Math.random()-0.5)*80;
+  if(sn==='spring'){
+    el.style.cssText='position:absolute;width:9px;height:7px;border-radius:60% 40% 60% 40%;background:#f6b8cf;opacity:.85;';
+  } else if(sn==='summer'){
+    if(skyNow==='night') return; /* fireflies own the summer night */
+    el.style.cssText='position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 0 4px rgba(255,255,255,.6);';
+    dur=9+Math.random()*6;
+  } else if(sn==='autumn'){
+    var lc=['#d4842a','#c8642a','#d9a441'][Math.floor(Math.random()*3)];
+    el.style.cssText='position:absolute;width:11px;height:8px;border-radius:70% 30% 70% 30%;background:'+lc+';opacity:.9;';
+  } else {
+    el.style.cssText='position:absolute;width:'+(4+Math.random()*4)+'px;height:'+(4+Math.random()*4)+'px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 0 3px rgba(255,255,255,.5);';
+    dur=7+Math.random()*5;
+  }
+  el.style.left=x+'%';
+  el.style.top='-4%';
+  el.style.transition='top '+dur+'s linear, transform '+dur+'s ease-in-out, opacity 1s';
+  el.style.transform='translateX(0) rotate(0deg)';
+  fx.appendChild(el);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    el.style.top='104%';
+    el.style.transform='translateX('+sway+'px) rotate('+(Math.random()*360-180)+'deg)';
+  });});
+  setTimeout(function(){ el.remove(); }, dur*1000+1200);
+}
+seasonTimer=setInterval(spawnSeasonBit, 850);
 
 /* ---------------------------------------------------- dress up ---------
    Little 3D accessories perch on the buddy's highest point and ride every
@@ -2213,6 +2316,7 @@ function endBerry(){
   critter.position.set(0,0,0);
   critter.scale.set(1,1,1);
   setState('happy');
+  maybeEgg(berry.score,10);
 }
 function berryTick(dt,t){
   berry.t-=dt;
@@ -2295,6 +2399,7 @@ function endToss(){
   window._sbCapEarn&&window._sbCapEarn(2,'create-a-critter:snack_toss');
   critter.position.set(0,0,0); critter.scale.set(1,1,1);
   setState('happy');
+  maybeEgg(toss.score,7);
   setTimeout(spawnFriends,1200);
 }
 function abortToss(){
@@ -2376,7 +2481,10 @@ function startParade(){
   $('careBox').style.display='none';
   $('paradeExit').style.display='block';
   switchScreen('result');
-  sizeStage(); applySky();
+  sizeStage();
+  $('result').classList.remove('room-mode');
+  if(roomWall){ scene.remove(roomWall); roomWall=null; }
+  applySky();
   if(shadowBlob) shadowBlob.visible=false;
   orbit.yaw=0; orbit.pitch=0.4; orbit.dist=6.6;
   startDanceMusic();
@@ -2443,7 +2551,10 @@ function startPlaydate(recA,recB){
   $('paradeExit').style.display='block';
   $('paradeExit').textContent='🤝 End the playdate';
   switchScreen('result');
-  sizeStage(); applySky();
+  sizeStage();
+  $('result').classList.remove('room-mode');
+  if(roomWall){ scene.remove(roomWall); roomWall=null; }
+  applySky();
   if(shadowBlob) shadowBlob.visible=false;
   orbit.yaw=0; orbit.pitch=0.38; orbit.dist=6.2;
   [recA,recB].forEach(function(rec,ix){
@@ -2743,7 +2854,8 @@ function persistCur(){
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
             care:CUR.care, created:CUR.created, acc:CUR.acc||null,
             feats:CUR.feats||[], limbs:CUR.limbs||[],
-            habitDays:CUR.habitDays||[], habitDance:!!CUR.habitDance };
+            habitDays:CUR.habitDays||[], habitDance:!!CUR.habitDance,
+            bugSeed:CUR.bugSeed||null };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
   jSet(K_NEST,NEST);
 }
@@ -2776,6 +2888,7 @@ function showResult(){
   renderCare();
   VOICE = CUR.sil.features.coverage>0.3 ? 0.72 : CUR.sil.features.coverage<0.13 ? 1.35 : 1;
   applySky();
+  applyScene();
   if(CUR.acc) applyAcc(CUR.acc);
   renderDressRow();
   $('berryEnd').style.display='none'; $('berryHud').style.display='none';
@@ -2787,6 +2900,7 @@ function showResult(){
   welcomeMoment();
   setTimeout(spawnFriends,1100);
   setTimeout(spawnVisitor,1600);
+  setTimeout(spawnBug,700);
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -2875,7 +2989,8 @@ function openFromNursery(rec){
     CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
           created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null,
           feats:rec.feats||[], limbs:rec.limbs||[],
-          habitDays:rec.habitDays||[], habitDance:!!rec.habitDance };
+          habitDays:rec.habitDays||[], habitDance:!!rec.habitDance,
+          bugSeed:rec.bugSeed||null };
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
@@ -2954,7 +3069,7 @@ function genVisitorCanvas(seed){
   return {cv:cv, feats:feats, limbs:limbs};
 }
 function spawnVisitor(){
-  if(!renderer||parade.on||playdate.on||toss.on||berry.on) return;
+  if(!renderer||parade.on||playdate.on||toss.on||berry.on||inRoomNow()) return;
   ensureVisitor();
   if(visitorG){ scene.remove(visitorG); visitorG=null; }
   visitorGen=genVisitorCanvas(VIS.seed);
@@ -3033,6 +3148,177 @@ $('visAdopt').addEventListener('click',function(){
   window._sbCapEarn&&window._sbCapEarn(3,'create-a-critter:adopted_visitor');
 });
 
+/* --------------------------------------------------- the room ----------
+   A second drawing: wallpaper, windows, a cozy bed — and the critter
+   LIVES in it. The room is a textured back wall, the floor tints itself
+   from the drawing's bottom edge, and tuck-in happens at the marked bed. */
+var ROOM={ url:lsGet('cac_room',''), bed:jGet('cac_roomBed',null), mode:lsGet('cac_roomMode','meadow') };
+var roomWall=null, roomEdit=false, savedPaper=null, savedFeats=null;
+function inRoomNow(){ return ROOM.mode==='room'&&!!ROOM.url; }
+function applyScene(){
+  var inRoom=inRoomNow();
+  $('result').classList.toggle('room-mode',inRoom);
+  if(!renderer) return;
+  if(inRoom){
+    if(!roomWall){
+      roomWall=new THREE.Mesh(new THREE.PlaneGeometry(7.8,7.8),
+        new THREE.MeshBasicMaterial({color:0xffffff}));
+      roomWall.position.set(0,3.1,-2.8);
+      scene.add(roomWall);
+    }
+    var img=new Image();
+    img.onload=function(){
+      if(!roomWall) return;
+      var cv=document.createElement('canvas'); cv.width=cv.height=768;
+      var c2=cv.getContext('2d');
+      c2.drawImage(img,0,0,768,768);
+      var tx=new THREE.CanvasTexture(cv);
+      tx.encoding=THREE.sRGBEncoding;
+      roomWall.material.map=tx;
+      roomWall.material.needsUpdate=true;
+      var d=c2.getImageData(0,690,768,70).data;
+      var r=0,g=0,b2=0,n=0;
+      for(var i=0;i<d.length;i+=48){ r+=d[i]; g+=d[i+1]; b2+=d[i+2]; n++; }
+      groundMat.color.setRGB(r/n/255*0.82,g/n/255*0.82,b2/n/255*0.82);
+    };
+    img.src=ROOM.url;
+    $('stars').style.display='none';
+    $('seasonFx').style.display='none';
+    hideVisitor(); clearFriends();
+    if(hemiLight){ hemiLight.intensity=0.95; hemiLight.color.set(0xfff2df); sunLight.intensity=0.5; }
+  } else {
+    if(roomWall){ scene.remove(roomWall); roomWall=null; }
+    $('seasonFx').style.display='';
+    applySky();
+  }
+}
+function startRoomEdit(){
+  roomEdit=true;
+  try{ savedPaper=pctx.getImageData(0,0,PAPER,PAPER); }catch(e){ savedPaper=null; }
+  savedFeats=FEATS.slice();
+  undoStack.length=0; redoStack.length=0;
+  clearPaper();
+  if(ROOM.url){ var im=new Image(); im.onload=function(){ if(roomEdit) pctx.drawImage(im,0,0,PAPER,PAPER); }; im.src=ROOM.url; }
+  guide.on=false;
+  $('wizBar').style.display='flex';
+  $('wizStep').textContent='🛋️ Draw the room!';
+  $('wizHint').textContent='Wallpaper, a window, pictures on the wall, and a cozy bed.';
+  $('wizNext').textContent='🛋️ Done!';
+  $('goRow').style.display='none';
+  switchScreen('draw');
+}
+function finishRoomEdit(){
+  var cv=document.createElement('canvas'); cv.width=cv.height=768;
+  cv.getContext('2d').drawImage(paper,0,0,768,768);
+  ROOM.url=cv.toDataURL('image/png');
+  lsSet('cac_room',ROOM.url);
+  if(savedPaper){ pctx.putImageData(savedPaper,0,0); savedPaper=null; }
+  else clearPaper();
+  FEATS=savedFeats||[]; savedFeats=null;
+  undoStack.length=0; redoStack.length=0;
+  roomEdit=false;
+  $('goRow').style.display='';
+  $('wizBar').style.display='none';
+  $('bedImg').src=ROOM.url;
+  $('bedOverlay').classList.add('on');
+}
+$('bedImg').addEventListener('click',function(e){
+  var r=$('bedImg').getBoundingClientRect();
+  ROOM.bed={ x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height };
+  jSet('cac_roomBed',ROOM.bed);
+  $('bedOverlay').classList.remove('on');
+  ROOM.mode='room'; lsSet('cac_roomMode','room');
+  switchScreen('result'); applyScene();
+  SFX.chirp(); say('Home sweet home!');
+});
+$('bedSkip').addEventListener('click',function(){
+  ROOM.bed=null; jSet('cac_roomBed',null);
+  $('bedOverlay').classList.remove('on');
+  ROOM.mode='room'; lsSet('cac_roomMode','room');
+  switchScreen('result'); applyScene();
+  SFX.chirp(); say('Home sweet home!');
+});
+$('actRoom').addEventListener('click',function(){
+  if(inGame()) return;
+  SFX.tap();
+  if(!ROOM.url){ startRoomEdit(); return; }
+  $('rmToggle').textContent = ROOM.mode==='room' ? '🌳 Go play outside' : '🛋️ Go inside';
+  $('roomMenu').classList.add('on');
+});
+$('rmCancel').addEventListener('click',function(){ $('roomMenu').classList.remove('on'); SFX.tap(); });
+$('rmToggle').addEventListener('click',function(){
+  $('roomMenu').classList.remove('on');
+  ROOM.mode = ROOM.mode==='room' ? 'meadow' : 'room';
+  lsSet('cac_roomMode',ROOM.mode);
+  applyScene(); SFX.chirp();
+  say(ROOM.mode==='room'?'Cozy!':'Fresh air!');
+  if(ROOM.mode==='meadow'){ setTimeout(spawnFriends,700); setTimeout(spawnVisitor,1100); }
+});
+$('rmRedraw').addEventListener('click',function(){ $('roomMenu').classList.remove('on'); SFX.tap(); startRoomEdit(); });
+
+/* ---------------------------------------------- companion bugs ---------
+   Great game rounds sometimes leave behind a mystery egg. Inside: a tiny
+   generated bug buddy that follows this critter forever. One per critter,
+   stored as a seed. */
+var bugG=null;
+function genBugCanvas(seed){
+  var rng=mulberry32(seed);
+  var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+  var c=cv.getContext('2d');
+  c.fillStyle='#fff'; c.fillRect(0,0,PAPER,PAPER);
+  var cx0=512, cy0=520, r=120+rng()*60;
+  c.beginPath();
+  for(var a=0;a<=Math.PI*2+0.01;a+=0.22){
+    var rr=1+Math.sin(a*3+rng()*6)*0.1;
+    var x=cx0+Math.cos(a)*r*rr, y=cy0+Math.sin(a)*r*0.85*rr;
+    if(a===0)c.moveTo(x,y); else c.lineTo(x,y);
+  }
+  c.closePath();
+  c.fillStyle=['#f7cf46','#e86fa8','#8fd0e8','#b5e88f','#d9a8f2'][Math.floor(rng()*5)];
+  c.fill();
+  c.lineWidth=12; c.strokeStyle='#3d2f55'; c.stroke();
+  /* little wings */
+  if(rng()<0.75){
+    c.globalAlpha=0.65; c.fillStyle='#ffffff';
+    c.beginPath(); c.ellipse(cx0-r*0.9,cy0-r*0.5,r*0.55,r*0.3,-0.5,0,7); c.fill();
+    c.beginPath(); c.ellipse(cx0+r*0.9,cy0-r*0.5,r*0.55,r*0.3,0.5,0,7); c.fill();
+    c.globalAlpha=1;
+  }
+  var es=20+rng()*8;
+  [[-0.32,0],[0.32,0]].forEach(function(off){
+    c.save(); c.translate(cx0+off[0]*r,cy0-r*0.25);
+    STICKERS.eyeGoogly.draw(c,es,'#3d2f55',1); c.restore();
+  });
+  c.save(); c.translate(cx0,cy0+r*0.22);
+  STICKERS.smile.draw(c,es*0.9,'#3d2f55',1); c.restore();
+  return cv;
+}
+function spawnBug(){
+  if(bugG){ scene.remove(bugG); bugG=null; }
+  if(!CUR||!CUR.bugSeed||!renderer) return;
+  var cv=genBugCanvas(CUR.bugSeed);
+  var sil=readSilhouette(cv);
+  if(!sil) return;
+  bugG=buildCritterMesh(cv,sil,[],[]);
+  bugG.scale.set(0.16,0.16,0.16);
+  bugG.position.set(0.9,0.5,0.5);
+  scene.add(bugG);
+}
+function maybeEgg(score,threshold){
+  if(!CUR||CUR.bugSeed||score<threshold) return;
+  if(Math.random()>0.5) return;
+  setTimeout(function(){ $('eggDlg').classList.add('on'); SFX.crack(); },1400);
+}
+$('eggHatch').addEventListener('click',function(){
+  $('eggDlg').classList.remove('on');
+  if(!CUR) return;
+  CUR.bugSeed=(Math.floor(Math.random()*4294967296))>>>0;
+  persistCur();
+  spawnBug();
+  confetti($('stageWrap'),22); SFX.tada();
+  say('A tiny bug buddy! It loves you already!');
+});
+
 /* -------------------------------------------------- daily rituals ------
    The heartbeat: days together only count UP, coming back is always a
    celebration, mornings start with a yawn, nights end with a tuck-in,
@@ -3067,6 +3353,10 @@ function tuckIn(){
   if(!critter||tucked||inGame()) return;
   tucked=true;
   danceOff();
+  if(inRoomNow()&&ROOM.bed){
+    critter.position.x=Math.max(-1.6,Math.min(1.6,(ROOM.bed.x*2-1)*2.0));
+    critter.position.z=0.2;
+  }
   setState('sleep');
   blanketMesh=new THREE.Mesh(new THREE.SphereGeometry(1.05,18,14,0,Math.PI*2,0,Math.PI/2),
     new THREE.MeshStandardMaterial({color:0x8fa8d9,roughness:0.9}));
@@ -3521,7 +3811,40 @@ $('actWalk').addEventListener('click',function(){
 });
 $('actGuide').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openGuide(); anim.lastTouch=Date.now(); });
 $('guideOk').addEventListener('click',function(){ $('guideOverlay').classList.remove('on'); SFX.tap(); });
-$('actPrint').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); printCard(); });
+$('actPrint').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); $('printMenu').classList.add('on'); });
+$('pmCancel').addEventListener('click',function(){ $('printMenu').classList.remove('on'); SFX.tap(); });
+$('pmCard').addEventListener('click',function(){
+  $('printMenu').classList.remove('on');
+  document.body.classList.remove('print-color');
+  printCard();
+});
+$('pmColor').addEventListener('click',function(){
+  $('printMenu').classList.remove('on');
+  if(!CUR) return;
+  var img=new Image();
+  img.onload=function(){
+    var cv=document.createElement('canvas'); cv.width=cv.height=1024;
+    var c2=cv.getContext('2d');
+    c2.fillStyle='#fff'; c2.fillRect(0,0,1024,1024);
+    c2.drawImage(img,0,0,1024,1024);
+    var d2=c2.getImageData(0,0,1024,1024);
+    /* keep the dark ink as clean black outlines, drop every fill to white */
+    for(var pi=0;pi<d2.data.length;pi+=4){
+      var lum2=0.299*d2.data[pi]+0.587*d2.data[pi+1]+0.114*d2.data[pi+2];
+      var v=lum2<125?0:255;
+      d2.data[pi]=d2.data[pi+1]=d2.data[pi+2]=v; d2.data[pi+3]=255;
+    }
+    c2.putImageData(d2,0,0);
+    $('colName').textContent=CUR.profile.name;
+    $('colImg').src=cv.toDataURL('image/png');
+    document.body.classList.add('print-color');
+    setTimeout(function(){ window.print();
+      setTimeout(function(){ document.body.classList.remove('print-color'); },500);
+    },150);
+  };
+  img.src=CUR.drawing;
+  SFX.tap();
+});
 $('actSound').addEventListener('click',function(){ setSound(!SET.sound); });
 $('actHome').addEventListener('click',function(){
   SFX.tap(); abortBerry(); abortToss(); danceOff();

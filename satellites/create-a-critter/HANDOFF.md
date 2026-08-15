@@ -199,6 +199,26 @@ seams the aesthetic.
   nuzzle with hearts, play chase, and dance together to the groove.
 - Home screen shows "a wild critter is visiting" when unfed today.
 
+## Aug 15 world round (v=20260815m, BUILD m1)
+- **Seasonal meadow**: real calendar drives DOM particles — spring petals,
+  summer dandelion fluff (daytime; fireflies own the night), autumn
+  leaves, winter snow with a whitened ground. Paused during games and
+  indoors.
+- **Mystery eggs → companion bugs**: strong Berry Picnic (≥10) or Snack
+  Toss (≥7) rounds have a 50% chance of leaving an egg (once per
+  critter). Hatches a tiny generated bug buddy (seed persisted as
+  rec.bugSeed) that hovers beside the critter forever.
+- **Coloring page**: 🖨️ now opens a menu — keepsake card or a
+  black-and-white outline extraction of the drawing ("Color me in!"),
+  print-ready.
+- **THE ROOM** (🛋️): a second full-easel drawing becomes the critter's
+  home — textured back wall, floor auto-tinted from the drawing's
+  bottom edge, warm indoor light, cozy CSS backdrop. Bed marking makes
+  tuck-in happen at the bed. Toggle inside/outside, redraw anytime.
+  Friends/visitor/seasons stay outdoors; the bug buddy comes inside.
+  Room edit saves/restores the easel and never creates living-face
+  records.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
