@@ -33,6 +33,25 @@ animation clips.
 - Print keepsake card (`#printCard` + @media print), WebAudio chirps with mute,
   rename via tap on the name.
 
+## Aug 15 buildout (v=20260815c)
+- **Berry Picnic** mini-game: buddy scampers under falling berries (drag to
+  aim), 45s, no fail state (misses just poof), celebration + confetti + best
+  score (`cac_berry_best`). Lane width is computed from the camera frustum at
+  the buddy's depth minus its half-width so it can never leave the frame.
+  Earns +2/game via _sbCapEarn.
+- **Dress up**: party hat / crown / bow / flower as three.js primitives perched
+  on the top-band CENTROID of the mesh (single-highest-vertex put the crown on
+  a mane wisp). Saved per critter (`acc`).
+- **Hatch moment**: wiggle → crack → confetti → "It's… NAME!" reveal.
+- **Easel**: rainbow crayon (hue cycles along the stroke) + stamps (googly eye,
+  star, heart, spot — star/heart/spot tint from the selected color).
+- **Real-time sky**: dawn/day/dusk/night gradients by actual hour; night gets
+  stars + fireflies, darker lights and ground, easier naps, and light-colored
+  meter text. `applySky` re-checks every 5 min.
+- **Photo button**: downloads a PNG snapshot of the buddy.
+- Meadow friends (up to 2 nursery critters visit), size-pitched voice, easel
+  clears after each birth.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts

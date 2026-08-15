@@ -91,6 +91,33 @@
 
   /* ---------- result ---------- */
   #result{ background:linear-gradient(180deg,var(--sky) 0%, #f6ecd9 60%, #fdf7ee 100%); }
+  #result.sky-dawn{ background:linear-gradient(180deg,#ffd9b8 0%, #ffe9d2 40%, #f6ecd9 70%, #fdf7ee 100%); }
+  #result.sky-dusk{ background:linear-gradient(180deg,#f8b48c 0%, #f5cfae 40%, #ecdcc4 70%, #fdf7ee 100%); }
+  #result.sky-night{ background:linear-gradient(180deg,#232a4d 0%, #2e3760 45%, #3a4468 70%, #4a4f66 100%); }
+  #result.sky-night #critName{ color:#f2ecff; }
+  #result.sky-night #critSpecies{ color:#b8b2d8; }
+  #result.sky-night #stageHint{ color:#9c96c0; }
+  #result.sky-night .meter{ color:#ece6fb; }
+  #result.sky-night .meter .bar{ background:rgba(255,255,255,.18); }
+  #stars{ position:absolute; inset:0; pointer-events:none; display:none; }
+  #stars i{ position:absolute; width:3px; height:3px; border-radius:50%; background:#fff;
+    opacity:.8; animation:twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{opacity:.25} 50%{opacity:.9} }
+  .firefly{ position:absolute; width:6px; height:6px; border-radius:50%; background:#ffe98a;
+    box-shadow:0 0 8px 3px rgba(255,233,138,.65); pointer-events:none; animation:drift 7s ease-in-out infinite; }
+  @keyframes drift{ 0%,100%{transform:translate(0,0)} 25%{transform:translate(26px,-20px)}
+    55%{transform:translate(-18px,-34px)} 80%{transform:translate(12px,-8px)} }
+  .confetti{ position:absolute; width:10px; height:14px; border-radius:3px; pointer-events:none;
+    transition:transform 1.6s cubic-bezier(.2,.6,.4,1), opacity 1.6s; z-index:50; }
+  /* ---------- berry catch ---------- */
+  #berryHud{ position:absolute; top:8px; left:0; width:100%; display:none; justify-content:center;
+    gap:14px; z-index:6; pointer-events:none; }
+  #berryHud span{ background:rgba(255,253,248,.92); border-radius:999px; padding:8px 18px;
+    font-weight:900; font-size:1.15rem; color:var(--ink); box-shadow:0 3px 10px rgba(0,0,0,.15); }
+  #berryEnd{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:20; }
+  #berryEnd .card{ text-align:center; }
+  #berryEnd .bigscore{ font-size:2.6rem; font-weight:900; color:var(--coral-deep); margin:6px 0; }
+  .actbtn.mini{ min-height:48px; padding:6px 12px; font-size:.95rem; }
   #stageWrap{ position:relative; flex:1; min-height:0; }
   #stage{ position:absolute; inset:0; touch-action:none; }
   #nameRow{ text-align:center; padding:10px 14px 0; }
@@ -196,8 +223,15 @@
       <button class="chipbtn sel" data-size="14" title="medium line"><span class="sizedot" style="width:16px;height:16px"></span></button>
       <button class="chipbtn" data-size="30" title="thick line"><span class="sizedot" style="width:26px;height:26px"></span></button>
       <button class="chipbtn" id="toolFill" title="fill bucket">🪣</button>
+      <button class="chipbtn" id="toolRainbow" title="rainbow crayon">🌈</button>
       <button class="chipbtn" id="toolErase" title="eraser">🩹</button>
       <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
+    </div>
+    <div class="toolrow">
+      <button class="chipbtn" data-stamp="eye" title="googly eye stamp">👁️</button>
+      <button class="chipbtn" data-stamp="star" title="star stamp">⭐</button>
+      <button class="chipbtn" data-stamp="heart" title="heart stamp">❤️</button>
+      <button class="chipbtn" data-stamp="spot" title="spot stamp">🟤</button>
     </div>
     <div id="goRow"><button class="bigbtn green" id="btnLife">✨ Bring it to life! ✨</button></div>
   </div>
@@ -217,21 +251,36 @@
   </div>
   <div id="stageWrap">
     <div id="stage"></div>
+    <div id="stars"></div>
     <div id="bubble"></div>
     <div id="stageHint">Tap your buddy for a trick! Drag to spin around.</div>
+    <div id="berryHud"><span id="berryScore">🍓 0</span><span id="berryTime">⏱ 0:45</span></div>
+    <div id="berryEnd"><div class="card">
+      <h2>🎉 Berry Picnic!</h2>
+      <div class="bigscore" id="berryFinal"></div>
+      <div class="sub" id="berryBestLine" style="color:var(--soft); margin-bottom:10px"></div>
+      <button class="bigbtn" id="berryAgain">🍓 Play again</button>
+      <button class="bigbtn ghost" id="berryDone" style="margin-top:10px">Done</button>
+    </div></div>
   </div>
   <div id="careBox">
     <div class="meter"><span>🍓 Tummy</span><div class="bar"><div class="fill" id="mFull"></div></div><span id="mFullN"></span></div>
     <div class="meter pink"><span>💗 Happy</span><div class="bar"><div class="fill" id="mHap"></div></div><span id="mHapN"></span></div>
     <div id="foodRow"></div>
+    <div id="dressRow" style="display:none; gap:8px; justify-content:center; flex-wrap:wrap"></div>
     <div id="actRow">
       <button class="actbtn" id="actFeed">🍽️ Feed</button>
+      <button class="actbtn" id="actPlay">🍓 Play</button>
       <button class="actbtn" id="actPet">🤗 Cuddle</button>
-      <button class="actbtn" id="actWalk">🚶 Walk</button>
-      <button class="actbtn" id="actGuide">📖 Guide</button>
-      <button class="actbtn" id="actPrint">🖨️</button>
-      <button class="actbtn" id="actSound">🔊</button>
-      <button class="actbtn" id="actHome">🏠</button>
+    </div>
+    <div id="actRow2" style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
+      <button class="actbtn mini" id="actWalk">🚶 Walk</button>
+      <button class="actbtn mini" id="actGuide">📖 Guide</button>
+      <button class="actbtn mini" id="actDress">🎩 Dress Up</button>
+      <button class="actbtn mini" id="actPhoto">📸</button>
+      <button class="actbtn mini" id="actPrint">🖨️</button>
+      <button class="actbtn mini" id="actSound">🔊</button>
+      <button class="actbtn mini" id="actHome">🏠</button>
     </div>
   </div>
 </div>
@@ -356,8 +405,34 @@ var SFX={
   happy:  function(){ vb(659,.1,'triangle',.07); vb(784,.1,'triangle',.07,.1); vb(988,.16,'triangle',.07,.2); },
   spin:   function(){ for(var i=0;i<8;i++) vb(500+i*90,.05,'sine',.04,i*.04); },
   sleep:  function(){ vb(392,.3,'sine',.04); vb(330,.4,'sine',.04,.3); },
-  oops:   function(){ beep(330,.12,'sine',.05); beep(294,.16,'sine',.05,.12); }
+  oops:   function(){ beep(330,.12,'sine',.05); beep(294,.16,'sine',.05,.12); },
+  crack:  function(){ beep(180,.05,'square',.07); beep(160,.05,'square',.06,.08); beep(140,.07,'square',.06,.15); },
+  tada:   function(){ [523,659,784,1047].forEach(function(f,i){ beep(f,.35,'triangle',.07,i*.09); });
+           beep(1319,.5,'sine',.05,.4); },
+  pop:    function(n){ beep(700+(n%8)*70,.07,'sine',.07); beep(1050+(n%8)*70,.09,'sine',.05,.05); },
+  jingle: function(){ [659,784,880,1047,880,1319].forEach(function(f,i){ beep(f,.18,'triangle',.06,i*.11); }); }
 };
+/* confetti burst inside a container */
+function confetti(container,n){
+  var colors=['#ff8f6b','#f7cf46','#69b45a','#4a90d9','#e86fa8','#a86bff'];
+  var w=container.clientWidth||300, h=container.clientHeight||300;
+  for(var i=0;i<n;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.background=colors[i%colors.length];
+    d.style.left=(w*0.5+(Math.random()-0.5)*w*0.4)+'px';
+    d.style.top=(h*0.35)+'px';
+    d.style.transform='translate(0,0) rotate(0deg)';
+    container.appendChild(d);
+    (function(el){
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        el.style.transform='translate('+((Math.random()-0.5)*w*0.9)+'px,'+(h*0.55+Math.random()*h*0.2)+'px) rotate('+(Math.random()*720-360)+'deg)';
+        el.style.opacity='0';
+      });});
+      setTimeout(function(){ el.remove(); },1800);
+    })(d);
+  }
+}
 function setSound(on){ SET.sound=on?1:0; jSet(K_SET,SET); if(masterG) masterG.gain.value=on?1:0;
   $('actSound').textContent=on?'🔊':'🔇'; }
 
@@ -647,8 +722,47 @@ var PAPER=1024;
 var paper=$('paper'); paper.width=PAPER; paper.height=PAPER;
 var pctx=paper.getContext('2d');
 var PALETTE=['#3d2f55','#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8','#8a5a34','#9aa2ad','#ffffff'];
-var brush={ color:PALETTE[0], size:14, tool:'pen' };
+var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null };
+var rainbowHue=0;
 var undoStack=[], drawnAnything=false;
+function clearToolSel(){
+  ['toolErase','toolFill','toolRainbow'].forEach(function(id){ $(id).classList.remove('sel'); });
+  document.querySelectorAll('[data-stamp]').forEach(function(b){ b.classList.remove('sel'); });
+}
+/* stamps: one tap places a whole shape, so wobbly little hands get crisp
+   googly eyes, stars, hearts and spots */
+function drawStamp(pt){
+  var s=brush.size*2.4;
+  pctx.save(); pctx.translate(pt.x,pt.y);
+  if(brush.stamp==='eye'){
+    pctx.fillStyle='#ffffff'; pctx.strokeStyle='#3d2f55'; pctx.lineWidth=Math.max(3,s*0.12);
+    pctx.beginPath(); pctx.arc(0,0,s,0,Math.PI*2); pctx.fill(); pctx.stroke();
+    pctx.fillStyle='#3d2f55';
+    pctx.beginPath(); pctx.arc(s*0.22,s*0.12,s*0.42,0,Math.PI*2); pctx.fill();
+    pctx.fillStyle='#ffffff';
+    pctx.beginPath(); pctx.arc(s*0.08,s*-0.02,s*0.14,0,Math.PI*2); pctx.fill();
+  } else if(brush.stamp==='star'){
+    pctx.fillStyle=brush.color==='#ffffff'?'#f7cf46':brush.color;
+    pctx.beginPath();
+    for(var i=0;i<10;i++){
+      var r=i%2?s*0.45:s, a=Math.PI*i/5-Math.PI/2;
+      pctx[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r);
+    }
+    pctx.closePath(); pctx.fill();
+  } else if(brush.stamp==='heart'){
+    pctx.fillStyle=brush.color==='#ffffff'?'#e86fa8':brush.color;
+    pctx.beginPath();
+    pctx.moveTo(0,s*0.35);
+    pctx.bezierCurveTo(-s*1.1,-s*0.45, -s*0.45,-s*1.05, 0,-s*0.35);
+    pctx.bezierCurveTo(s*0.45,-s*1.05, s*1.1,-s*0.45, 0,s*0.35);
+    pctx.closePath(); pctx.fill();
+  } else if(brush.stamp==='spot'){
+    pctx.fillStyle=brush.color;
+    pctx.globalAlpha=0.9;
+    pctx.beginPath(); pctx.arc(0,0,s*0.8,0,Math.PI*2); pctx.fill();
+  }
+  pctx.restore();
+}
 
 function clearPaper(){ pctx.fillStyle='#ffffff'; pctx.fillRect(0,0,PAPER,PAPER); }
 function pushUndo(){
@@ -668,9 +782,12 @@ function buildPalette(){
     if(c==='#ffffff') b.style.boxShadow='0 0 0 2px #ccc';
     b.setAttribute('aria-label','color '+c);
     b.addEventListener('click',function(){
-      brush.color=c; brush.tool='pen';
+      brush.color=c; brush.tool='pen'; brush.rainbow=false;
       document.querySelectorAll('.swatch').forEach(function(s){s.classList.remove('sel');});
-      b.classList.add('sel'); $('toolErase').classList.remove('sel'); $('toolFill').classList.remove('sel');
+      var keepStamp=brush.stamp;              /* picking a color re-tints stamps */
+      clearToolSel();
+      if(keepStamp){ var sb=document.querySelector('[data-stamp="'+keepStamp+'"]'); if(sb) sb.classList.add('sel'); }
+      b.classList.add('sel');
       SFX.tap();
     });
     row.appendChild(b);
@@ -686,14 +803,31 @@ document.querySelectorAll('[data-size]').forEach(function(b){
   });
 });
 $('toolErase').addEventListener('click',function(){
-  brush.tool = brush.tool==='erase'?'pen':'erase';
-  $('toolErase').classList.toggle('sel',brush.tool==='erase');
-  $('toolFill').classList.remove('sel'); SFX.tap();
+  var on = brush.tool!=='erase';
+  clearToolSel(); brush.stamp=null; brush.rainbow=false;
+  brush.tool = on?'erase':'pen';
+  $('toolErase').classList.toggle('sel',on); SFX.tap();
 });
 $('toolFill').addEventListener('click',function(){
-  brush.tool = brush.tool==='fill'?'pen':'fill';
-  $('toolFill').classList.toggle('sel',brush.tool==='fill');
-  $('toolErase').classList.remove('sel'); SFX.tap();
+  var on = brush.tool!=='fill';
+  clearToolSel(); brush.stamp=null; brush.rainbow=false;
+  brush.tool = on?'fill':'pen';
+  $('toolFill').classList.toggle('sel',on); SFX.tap();
+});
+$('toolRainbow').addEventListener('click',function(){
+  var on = !brush.rainbow;
+  clearToolSel(); brush.stamp=null; brush.tool='pen';
+  brush.rainbow = on;
+  $('toolRainbow').classList.toggle('sel',on); SFX.tap();
+});
+document.querySelectorAll('[data-stamp]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var key=b.getAttribute('data-stamp');
+    var on = brush.stamp!==key;
+    clearToolSel(); brush.rainbow=false; brush.tool='pen';
+    brush.stamp = on?key:null;
+    b.classList.toggle('sel',on); SFX.tap();
+  });
 });
 $('toolUndo').addEventListener('click',doUndo);
 $('drawClear').addEventListener('click',function(){
@@ -709,6 +843,7 @@ paper.addEventListener('pointerdown',function(e){
   e.preventDefault(); ac();
   var pt=paperPoint(e);
   if(brush.tool==='fill'){ pushUndo(); floodFill(Math.round(pt.x),Math.round(pt.y), brush.color); drawnAnything=true; SFX.tap(); return; }
+  if(brush.stamp){ pushUndo(); drawStamp(pt); drawnAnything=true; SFX.tap(); return; }
   pushUndo();
   stroking=true; last=pt; drawnAnything=true;
   try{ paper.setPointerCapture(e.pointerId); }catch(err){}
@@ -718,7 +853,12 @@ paper.addEventListener('pointermove',function(e){
   if(!stroking) return;
   e.preventDefault();
   var pt=paperPoint(e);
-  pctx.strokeStyle = brush.tool==='erase' ? '#ffffff' : brush.color;
+  if(brush.rainbow && brush.tool==='pen'){
+    rainbowHue=(rainbowHue+Math.hypot(pt.x-last.x,pt.y-last.y)*0.6)%360;
+    pctx.strokeStyle='hsl('+Math.round(rainbowHue)+',85%,55%)';
+  } else {
+    pctx.strokeStyle = brush.tool==='erase' ? '#ffffff' : brush.color;
+  }
   pctx.lineWidth = brush.tool==='erase' ? brush.size*2.4 : brush.size;
   pctx.lineCap='round'; pctx.lineJoin='round';
   pctx.beginPath(); pctx.moveTo(last.x,last.y); pctx.lineTo(pt.x,pt.y); pctx.stroke();
@@ -768,6 +908,7 @@ if(window.visualViewport) visualViewport.addEventListener('resize',sizePaper);
    3D STAGE
    ════════════════════════════════════════════════════════════════════ */
 var renderer=null, scene=null, camera=null, critter=null, groundMat=null, shadowBlob=null;
+var hemiLight=null, sunLight=null;
 var orbit={ yaw:0.5, pitch:0.42, dist:5.0, dragging:false, lx:0, ly:0, pinch:0 };
 function initStage(){
   if(renderer) return;
@@ -781,8 +922,8 @@ function initStage(){
   stage.appendChild(renderer.domElement);
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(38,1,0.1,60);
-  scene.add(new THREE.HemisphereLight(0xfff6e8,0xb9d1a8,0.85));
-  var sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,5,3); scene.add(sun);
+  hemiLight=new THREE.HemisphereLight(0xfff6e8,0xb9d1a8,0.85); scene.add(hemiLight);
+  sunLight=new THREE.DirectionalLight(0xffffff,0.75); sunLight.position.set(2.5,5,3); scene.add(sunLight);
   var ground=new THREE.Mesh(
     new THREE.CircleGeometry(4.6,48),
     groundMat=new THREE.MeshStandardMaterial({ color:0x93b878, roughness:1 }));
@@ -795,11 +936,18 @@ function initStage(){
     new THREE.MeshBasicMaterial({ color:0x3a4630, transparent:true, opacity:0.16 }));
   shadowBlob.rotation.x=-Math.PI/2; shadowBlob.position.y=0.012; scene.add(shadowBlob);
 
+  function berryAim(e){
+    var r=stage.getBoundingClientRect();
+    var lw=berry.laneW||1.2;
+    berry.targetX=Math.max(-lw,Math.min(lw,((e.clientX-r.left)/r.width*2-1)*(lw+0.3)));
+  }
   stage.addEventListener('pointerdown',function(e){
+    if(berry.on){ berryAim(e); try{ stage.setPointerCapture(e.pointerId); }catch(err){} return; }
     orbit.dragging=true; orbit.lx=e.clientX; orbit.ly=e.clientY; orbit.moved=0;
     try{ stage.setPointerCapture(e.pointerId); }catch(err){}
   });
   stage.addEventListener('pointermove',function(e){
+    if(berry.on){ if(e.buttons||e.pointerType==='touch') berryAim(e); return; }
     if(!orbit.dragging) return;
     var dx=e.clientX-orbit.lx, dy=e.clientY-orbit.ly;
     orbit.moved=(orbit.moved||0)+Math.abs(dx)+Math.abs(dy);
@@ -807,6 +955,7 @@ function initStage(){
     orbit.lx=e.clientX; orbit.ly=e.clientY;
   });
   stage.addEventListener('pointerup',function(){
+    if(berry.on) return;
     if(orbit.dragging&&(orbit.moved||0)<10) tapBuddy();
     orbit.dragging=false;
   });
@@ -820,6 +969,7 @@ function initStage(){
   function pinchD(e){ var a=e.touches[0],b=e.touches[1];
     return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1; }
   sizeStage();
+  applySky();
   requestAnimationFrame(tick);
 }
 function sizeStage(){
@@ -851,7 +1001,7 @@ function spawnZzz(){
   setTimeout(function(){ el.remove(); var ix=anim.zzz.indexOf(el); if(ix>=0)anim.zzz.splice(ix,1); },2700);
 }
 function tapBuddy(){
-  if(!critter) return;
+  if(!critter||berry.on) return;
   anim.lastTouch=Date.now();
   if(anim.state==='sleep'){ setState('idle'); say(CUR.profile.sound+' Good morning!'); SFX.chirp(); careBump(0,4); return; }
   if(anim.state==='idle'||anim.state==='walk'){ setState('spin'); SFX.spin(); careBump(0,3); say(CUR.profile.sound); }
@@ -860,7 +1010,10 @@ function tick(){
   requestAnimationFrame(tick);
   if(!renderer||!$('result').classList.contains('on')) return;
   var t=performance.now()/1000, dt=t-(anim.t0||t);
-  if(critter){
+  var fdt=Math.min(0.1, t-(tick._lt||t)); tick._lt=t;
+  if(critter&&berry.on){
+    berryTick(fdt,t);
+  } else if(critter){
     var g=critter;
     g.rotation.x=0; g.rotation.z=0; g.scale.set(1,1,1);
     var baseY=0;
@@ -910,13 +1063,15 @@ function tick(){
       if(anim.state!=='sleep') g.rotation.y=orbit.baseRotY||0;
       if(anim.state!=='walk'){ g.position.x*=0.92; g.position.z*=0.92; }
     }
-    /* idle brain: left alone the buddy lives its own little life */
+    /* idle brain: left alone the buddy lives its own little life
+       (after dark the meadow is sleepy and naps come easier) */
     var idleFor=(Date.now()-anim.lastTouch)/1000;
     if(anim.state==='idle'&&idleFor>18){
       var roll=Math.random();
-      if(idleFor>50&&roll<0.004){ setState('sleep'); SFX.sleep(); }
+      var napAt = skyNow==='night' ? 0.009 : 0.004;
+      if(idleFor>(skyNow==='night'?30:50)&&roll<napAt){ setState('sleep'); SFX.sleep(); }
       else if(roll<0.0025){ setState('walk'); setTimeout(function(){ if(anim.state==='walk')setState('idle'); },6000+Math.random()*5000); }
-      else if(roll<0.004){ setState('happy'); SFX.chirp(); }
+      else if(roll<napAt){ setState('happy'); SFX.chirp(); }
     }
   }
   for(var fi=0;fi<friends.length;fi++){
@@ -982,6 +1137,215 @@ function spawnFriends(){
   });
 }
 
+/* ---------------------------------------------------- real-time sky -----
+   The meadow matches the actual time of day: peach dawns, blue days, warm
+   dusks, and a starry night with fireflies (naps come easier after dark). */
+var skyNow='day';
+function applySky(){
+  var h=new Date().getHours();
+  skyNow = (h>=20||h<5)?'night' : h<8?'dawn' : h<17?'day' : 'dusk';
+  ['dawn','day','dusk','night'].forEach(function(c){
+    $('result').classList.toggle('sky-'+c, c===skyNow);
+  });
+  var night = skyNow==='night';
+  var stars=$('stars');
+  if(night && !stars.childElementCount){
+    for(var i=0;i<36;i++){
+      var s=document.createElement('i');
+      s.style.left=(Math.random()*100)+'%';
+      s.style.top=(Math.random()*40)+'%';
+      s.style.animationDelay=(Math.random()*3)+'s';
+      stars.appendChild(s);
+    }
+    for(var j=0;j<3;j++){
+      var f=document.createElement('div');
+      f.className='firefly';
+      f.style.left=(15+Math.random()*70)+'%';
+      f.style.top=(45+Math.random()*20)+'%';
+      f.style.animationDelay=(Math.random()*7)+'s';
+      stars.appendChild(f);
+    }
+  }
+  stars.style.display = night?'block':'none';
+  if(hemiLight){
+    hemiLight.intensity = night?0.55:0.85;
+    hemiLight.color.set(night?0xcdd4ff:0xfff6e8);
+    sunLight.intensity = night?0.35:0.75;
+    groundMat.color.set(night?0x5f7a58:0x93b878);
+  }
+}
+setInterval(applySky, 5*60*1000);
+
+/* ---------------------------------------------------- dress up ---------
+   Little 3D accessories perch on the buddy's highest point and ride every
+   hop and waddle. Saved per critter. */
+var ACC_DEFS={
+  none:  { n:'No hat',    e:'🚫' },
+  party: { n:'Party Hat', e:'🎉' },
+  crown: { n:'Crown',     e:'👑' },
+  bow:   { n:'Bow',       e:'🎀' },
+  flower:{ n:'Flower',    e:'🌼' }
+};
+function buildAccMesh(key){
+  var g=new THREE.Group();
+  function m(geo,color){ var mm=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:color,roughness:0.6})); g.add(mm); return mm; }
+  if(key==='party'){
+    var cone=m(new THREE.ConeGeometry(0.26,0.52,20),0xe64a3c); cone.position.y=0.26;
+    var pom=m(new THREE.SphereGeometry(0.09,12,10),0xffffff); pom.position.y=0.55;
+  } else if(key==='crown'){
+    var band=m(new THREE.CylinderGeometry(0.24,0.27,0.16,16),0xf2b53a); band.position.y=0.08;
+    for(var i=0;i<5;i++){
+      var a=i/5*Math.PI*2;
+      var spike=m(new THREE.ConeGeometry(0.055,0.16,8),0xf2b53a);
+      spike.position.set(Math.cos(a)*0.24,0.22,Math.sin(a)*0.24);
+    }
+  } else if(key==='bow'){
+    var l=m(new THREE.ConeGeometry(0.16,0.3,10),0xe86fa8);
+    l.rotation.z=Math.PI/2; l.position.x=-0.17; l.scale.z=0.55;
+    var r=m(new THREE.ConeGeometry(0.16,0.3,10),0xe86fa8);
+    r.rotation.z=-Math.PI/2; r.position.x=0.17; r.scale.z=0.55;
+    m(new THREE.SphereGeometry(0.08,10,8),0xd4508a);
+  } else if(key==='flower'){
+    var c=m(new THREE.SphereGeometry(0.09,10,8),0x8a5a34);
+    for(var k2=0;k2<6;k2++){
+      var a2=k2/6*Math.PI*2;
+      var p=m(new THREE.SphereGeometry(0.085,10,8),0xf7cf46);
+      p.position.set(Math.cos(a2)*0.15,0,Math.sin(a2)*0.15);
+      p.scale.y=0.5;
+    }
+  } else return null;
+  return g;
+}
+function topOfCritter(group){
+  /* centroid of the top band, not the single highest vertex — a stray
+     mane wisp or antenna would otherwise wear the hat */
+  var mesh=group.children[0];
+  var pos=mesh.geometry.getAttribute('position');
+  var maxY=-1e9, i;
+  for(i=0;i<pos.count;i++) if(pos.getY(i)>maxY) maxY=pos.getY(i);
+  var sx=0, sz=0, n=0;
+  for(i=0;i<pos.count;i++){
+    if(pos.getY(i)>maxY-0.3){ sx+=pos.getX(i); sz+=pos.getZ(i); n++; }
+  }
+  return { x:n?sx/n:0, y:maxY, z:n?sz/n:0 };
+}
+function applyAcc(key){
+  if(!critter) return;
+  if(critter.userData.accMesh){ critter.remove(critter.userData.accMesh); critter.userData.accMesh=null; }
+  CUR.acc = key==='none'?null:key;
+  var g=buildAccMesh(key);
+  if(g){
+    var top=critter.userData.top || (critter.userData.top=topOfCritter(critter));
+    g.position.set(top.x, top.y-0.04, top.z);
+    g.rotation.z=-0.08;
+    critter.add(g);
+    critter.userData.accMesh=g;
+  }
+  persistCur();
+}
+function renderDressRow(){
+  var row=$('dressRow'); row.innerHTML='';
+  Object.keys(ACC_DEFS).forEach(function(key){
+    var b=document.createElement('button');
+    b.className='foodbtn';
+    b.textContent=ACC_DEFS[key].e+' '+ACC_DEFS[key].n;
+    b.addEventListener('click',function(){
+      applyAcc(key); SFX.chirp();
+      if(key!=='none') say('So fancy!');
+      row.style.display='none';
+    });
+    row.appendChild(b);
+  });
+}
+
+/* ---------------------------------------------------- berry catch ------
+   The buddy scampers under falling berries. Nothing bad can happen: missed
+   berries just poof, the round always ends in a picnic. */
+var berry={ on:false, t:0, score:0, items:[], targetX:0, spawnAt:0,
+            best:parseInt(lsGet('cac_berry_best','0'),10)||0 };
+var BERRY_COLORS=[0xe64a3c,0x4a6fd9,0x9a4ad9,0xe8873a];
+function startBerry(){
+  if(!critter||berry.on) return;
+  if(anim.state==='walk'){ $('actWalk').textContent='🚶 Walk'; }
+  setState('idle');
+  berry.on=true; berry.score=0; berry.t=45; berry.items=[]; berry.targetX=0; berry.spawnAt=0;
+  $('foodRow').classList.remove('on'); $('dressRow').style.display='none';
+  $('berryHud').style.display='flex'; $('berryEnd').style.display='none';
+  orbit.yaw=0; orbit.pitch=0.34; orbit.dist=6.1;
+  /* the lane matches what the camera can actually see at the buddy's depth,
+     minus the buddy's own half-width, so it never scampers off-screen */
+  var halfW=Math.tan(camera.fov*Math.PI/360)*(orbit.dist-0.7)*camera.aspect;
+  berry.laneW=Math.max(0.7, halfW-1.05);
+  critter.position.set(0,0,0.7); critter.rotation.y=0;
+  $('bubble').classList.remove('on');
+  SFX.jingle();
+  berryHudPaint();
+}
+function berryHudPaint(){
+  $('berryScore').textContent='🍓 '+berry.score;
+  var s=Math.max(0,Math.ceil(berry.t));
+  $('berryTime').textContent='⏱ 0:'+String(s).padStart(2,'0');
+}
+function endBerry(){
+  berry.on=false;
+  berry.items.forEach(function(it){ scene.remove(it.m); });
+  berry.items=[];
+  $('berryHud').style.display='none';
+  var newBest = berry.score>berry.best;
+  if(newBest){ berry.best=berry.score; lsSet('cac_berry_best',String(berry.best)); }
+  $('berryFinal').textContent='🍓 '+berry.score+' berries!';
+  $('berryBestLine').textContent = newBest?'A new best! Amazing!':'Your best picnic so far: '+berry.best;
+  $('berryEnd').style.display='flex';
+  confetti($('stageWrap'), Math.min(40, 10+berry.score*2));
+  SFX.tada();
+  careBump(Math.min(20,berry.score), 10);
+  window._sbCapEarn&&window._sbCapEarn(2,'create-a-critter:berry_picnic');
+  critter.position.set(0,0,0);
+  setState('happy');
+}
+function berryTick(dt,t){
+  berry.t-=dt;
+  if(berry.t<=0){ endBerry(); return; }
+  /* buddy scampers toward the finger */
+  var g=critter;
+  g.position.x += (berry.targetX-g.position.x)*Math.min(1,dt*9);
+  g.position.z = 0.7;
+  g.rotation.z = Math.sin(t*9)*0.08;
+  g.position.y = Math.abs(Math.sin(t*9))*0.05;
+  g.rotation.y = (berry.targetX-g.position.x)*-0.4;
+  g.scale.set(1,1,1);
+  /* spawn */
+  berry.spawnAt-=dt;
+  if(berry.spawnAt<=0){
+    berry.spawnAt = 0.55 + Math.random()*0.45 - (45-berry.t)*0.004;
+    var mesh=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,10),
+      new THREE.MeshStandardMaterial({color:BERRY_COLORS[Math.floor(Math.random()*BERRY_COLORS.length)],roughness:0.5}));
+    var stem=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.1,6),
+      new THREE.MeshStandardMaterial({color:0x69b45a}));
+    stem.position.y=0.18; mesh.add(stem);
+    mesh.position.set((Math.random()*2-1)*(berry.laneW||1.2), 5.4, 0.7);
+    scene.add(mesh);
+    berry.items.push({m:mesh, vy:1.7+(45-berry.t)*0.028});
+  }
+  /* fall + catch */
+  for(var i=berry.items.length-1;i>=0;i--){
+    var it=berry.items[i];
+    it.m.position.y-=it.vy*dt;
+    it.m.rotation.z+=dt*2;
+    var caught = it.m.position.y<1.15 && Math.abs(it.m.position.x-g.position.x)<0.62;
+    if(caught){
+      scene.remove(it.m); berry.items.splice(i,1);
+      berry.score++; SFX.pop(berry.score);
+      g.scale.set(1.12,0.9,1.12);
+    } else if(it.m.position.y<0.12){
+      it.m.material.transparent=true;
+      it.m.material.opacity=Math.max(0,(it.m.position.y+0.3)/0.42);
+      if(it.m.position.y<-0.3){ scene.remove(it.m); berry.items.splice(i,1); }
+    }
+  }
+  berryHudPaint();
+}
+
 function buildCritterMesh(drawCanvas,sil){
   var geo=buildPillowGeometry(sil);
   var texCanvas=document.createElement('canvas');
@@ -1026,7 +1390,7 @@ function persistCur(){
   var ix=-1,i;
   for(i=0;i<NEST.length;i++) if(NEST[i].id===CUR.id){ ix=i; break; }
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
-            care:CUR.care, created:CUR.created };
+            care:CUR.care, created:CUR.created, acc:CUR.acc||null };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
   while(NEST.length>NEST_CAP) NEST.shift();
   jSet(K_NEST,NEST);
@@ -1048,6 +1412,10 @@ function showResult(){
   });
   renderCare();
   VOICE = CUR.sil.features.coverage>0.3 ? 0.72 : CUR.sil.features.coverage<0.13 ? 1.35 : 1;
+  applySky();
+  if(CUR.acc) applyAcc(CUR.acc);
+  renderDressRow();
+  $('berryEnd').style.display='none'; $('berryHud').style.display='none';
   switchScreen('result');
   sizeStage();
   setState('idle'); anim.lastTouch=Date.now();
@@ -1062,6 +1430,7 @@ function bringToLife(){
   var sil=readSilhouette(paper);
   if(!sil){ SFX.oops(); wiggle($('paper')); toastHatch('Draw a bit more of your creature first!'); return; }
   switchScreen('hatch');
+  $('hatchEgg').textContent='🥚';
   $('hatchMsg').textContent='Your creature is puffing up…';
   /* let the hatch screen paint before the heavy lifting */
   setTimeout(function(){
@@ -1079,11 +1448,19 @@ function bringToLife(){
     persistCur();
     /* the drawing became a critter; next visit to the easel starts fresh */
     clearPaper(); undoStack.length=0; drawnAnything=false;
-    SFX.hatch();
     if(!MOM.first){ MOM.first=1; jSet(K_MOM,MOM);
       window._sbCapEarn&&window._sbCapEarn(6,'create-a-critter:first_critter'); momentMsg('first_critter'); }
     window._sbCapEarn&&window._sbCapEarn(4,'create-a-critter:brought_to_life'); momentMsg('brought_to_life');
-    setTimeout(showResult,650);
+    /* the hatch moment: wiggle, crack, confetti, name reveal */
+    setTimeout(function(){ SFX.crack(); $('hatchEgg').textContent='🐣';
+      $('hatchMsg').textContent='It is hatching!'; },900);
+    setTimeout(function(){
+      SFX.tada();
+      $('hatchEgg').textContent='✨';
+      $('hatchMsg').innerHTML='It’s… <span style="font-size:1.6rem;color:var(--coral-deep)">'+escapeHtml(profile.name)+'!</span>';
+      confetti($('hatch'),34);
+    },1700);
+    setTimeout(function(){ SFX.hatch(); showResult(); },3100);
   },60);
 }
 function momentMsg(name){
@@ -1106,6 +1483,7 @@ function toastHatch(msg){ say._n=say._n||0; var b=$('bubble'); /* reuse result b
 
 function openFromNursery(rec){
   switchScreen('hatch');
+  $('hatchEgg').textContent='🪺';
   $('hatchMsg').textContent=rec.name+' is waking up…';
   var img=new Image();
   img.onload=function(){
@@ -1120,7 +1498,7 @@ function openFromNursery(rec){
     critter=buildCritterMesh(cv,sil); orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
-          created:rec.created, care:decayCare(rec.care||{}) };
+          created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null };
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
@@ -1221,22 +1599,55 @@ $('nBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home');
 $('nDraw').addEventListener('click',function(){ SFX.tap(); switchScreen('draw'); });
 $('drawBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
 $('btnLife').addEventListener('click',bringToLife);
-$('actFeed').addEventListener('click',function(){ SFX.tap(); $('foodRow').classList.toggle('on'); anim.lastTouch=Date.now(); });
+function abortBerry(){
+  if(!berry.on) return;
+  berry.on=false;
+  berry.items.forEach(function(it){ scene.remove(it.m); });
+  berry.items=[];
+  $('berryHud').style.display='none';
+  if(critter) critter.position.set(0,0,0);
+}
+$('actFeed').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); $('foodRow').classList.toggle('on'); $('dressRow').style.display='none'; anim.lastTouch=Date.now(); });
+$('actPlay').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); startBerry(); anim.lastTouch=Date.now(); });
+$('berryAgain').addEventListener('click',function(){ $('berryEnd').style.display='none'; startBerry(); });
+$('berryDone').addEventListener('click',function(){ $('berryEnd').style.display='none'; SFX.tap(); anim.lastTouch=Date.now(); });
+$('actDress').addEventListener('click',function(){
+  if(berry.on) return; SFX.tap();
+  var row=$('dressRow');
+  row.style.display = row.style.display==='none'?'flex':'none';
+  $('foodRow').classList.remove('on');
+  anim.lastTouch=Date.now();
+});
+$('actPhoto').addEventListener('click',function(){
+  if(!renderer||!CUR) return;
+  SFX.tap();
+  renderer.render(scene,camera);
+  try{
+    var url=renderer.domElement.toDataURL('image/png');
+    var a=document.createElement('a');
+    a.download=(CUR.profile.name||'critter').replace(/[^\w-]+/g,'_')+'.png';
+    a.href=url; document.body.appendChild(a); a.click(); a.remove();
+    say('📸 Got the picture!'); careBump(0,2);
+  }catch(e){ say('Hmm, the camera hiccuped.'); }
+});
 $('actPet').addEventListener('click',function(){
+  if(berry.on) return;
   SFX.happy(); setState('happy'); careBump(0,12); anim.lastTouch=Date.now();
   say(pick(mulberry32(Date.now()>>>0),['So cozy!','Hee hee!','Best friend!',CUR?CUR.profile.sound:'Yay!']));
 });
 $('actWalk').addEventListener('click',function(){
+  if(berry.on) return;
   anim.lastTouch=Date.now();
   if(anim.state==='walk'){ setState('idle'); $('actWalk').textContent='🚶 Walk'; }
   else{ setState('walk'); $('actWalk').textContent='🛑 Stop'; SFX.chirp(); careBump(0,6); }
 });
-$('actGuide').addEventListener('click',function(){ SFX.tap(); openGuide(); anim.lastTouch=Date.now(); });
+$('actGuide').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); openGuide(); anim.lastTouch=Date.now(); });
 $('guideOk').addEventListener('click',function(){ $('guideOverlay').classList.remove('on'); SFX.tap(); });
-$('actPrint').addEventListener('click',function(){ SFX.tap(); printCard(); });
+$('actPrint').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); printCard(); });
 $('actSound').addEventListener('click',function(){ setSound(!SET.sound); });
 $('actHome').addEventListener('click',function(){
-  SFX.tap(); if(anim.state==='walk'){ setState('idle'); $('actWalk').textContent='🚶 Walk'; }
+  SFX.tap(); abortBerry();
+  if(anim.state==='walk'){ setState('idle'); $('actWalk').textContent='🚶 Walk'; }
   switchScreen('home');
 });
 setSound(!!SET.sound);
