@@ -145,6 +145,27 @@ animation clips.
   Legacy nurseries over 10 are grandfathered (blocked from new mints
   until they free below cap, nothing evicted).
 
+## Aug 15 stitch pivot (v=20260815j) — ⛔ THE AUTO-RIG IS RETIRED
+Stephen's verdict on the automatic lobe rig: it warped detailed drawings
+badly (weights aliased across cells, everything swayed at idle, and the
+group-anchored eyes sat still while the mesh deformed under them). The
+pivot, per Stephen + Jesse: STOP GUESSING, hold their hand, make the
+seams the aesthetic.
+- **No limbs marked = no skinning.** A plain plush that breathes and hops
+  always looks right.
+- **🪡 Stitch Studio**: drag along each limb (attachment → tip), name it
+  (leg / wing-arm / tail / ear), and a sewing needle stitches every seam
+  with thread sounds before the critter is rebuilt. Limbs persist
+  (rec.limbs), friends and parade members use them.
+- **Capsule weights**: smooth falloff around the marked segment, limb
+  influence faded to zero at the attachment (the body side of a seam
+  NEVER moves), two adjacency-diffusion passes, top-3 influences kept.
+  Stitch seams (dashed thread + cross stitches) are drawn onto the skin
+  at every attachment — the plushie look is now intentional.
+- Idle is calm: legs planted, tails wag, ears flick occasionally, wings
+  barely breathe. Hatch gained a "Stitching it together…" beat.
+- buildRigData (the old guesser) is dead code kept for reference.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts

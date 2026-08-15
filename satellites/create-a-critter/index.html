@@ -301,6 +301,7 @@
       <button class="actbtn mini" id="actGuide">📖 Guide</button>
       <button class="actbtn mini" id="actDress">🎩 Dress Up</button>
       <button class="actbtn mini" id="actFace">👀 Face</button>
+      <button class="actbtn mini" id="actStitch">🪡 Stitches</button>
       <button class="actbtn mini" id="actPhoto">📸</button>
       <button class="actbtn mini" id="actPrint">🖨️</button>
       <button class="actbtn mini" id="actSound">🔊</button>
@@ -321,6 +322,27 @@
     <div class="gline"><b>Home:</b> <span id="gHab"></span></div>
     <div class="gline"><b>Fun facts:</b><span id="gFacts"></span></div>
     <button class="bigbtn" id="guideOk" style="margin-top:12px">Done reading</button>
+  </div>
+</div>
+
+<!-- ═══════════════ STITCH STUDIO ═══════════════ -->
+<div class="overlay" id="stitchOverlay">
+  <div class="card">
+    <h2>🪡 Stitch Studio</h2>
+    <div class="sub" id="stitchMsg" style="text-align:center">Drag along a limb: start where it joins the body, end at its tip.</div>
+    <div style="position:relative; margin:8px auto; width:min(300px,80vw)">
+      <img id="stitchImg" style="width:100%; border-radius:16px; background:#fff; display:block; touch-action:none" alt="your drawing">
+      <canvas id="stitchLines" width="600" height="600" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none"></canvas>
+      <div id="stitchNeedle" style="position:absolute; font-size:26px; display:none; pointer-events:none; transform:translate(-50%,-50%)">🪡</div>
+    </div>
+    <div id="stitchChips" style="display:none; gap:8px; justify-content:center; flex-wrap:wrap">
+      <button class="foodbtn" data-limb="leg">🦵 Leg</button>
+      <button class="foodbtn" data-limb="wing">🪽 Wing or Arm</button>
+      <button class="foodbtn" data-limb="tail">🐈 Tail</button>
+      <button class="foodbtn" data-limb="ear">👂 Ear</button>
+    </div>
+    <button class="bigbtn green" id="stitchDone" style="margin-top:10px">🪡 Sew it together!</button>
+    <button class="bigbtn ghost" id="stitchCancel" style="margin-top:8px">Cancel</button>
   </div>
 </div>
 
@@ -1783,7 +1805,7 @@ function spawnFriends(){
       cx.drawImage(img,0,0,PAPER,PAPER);
       var sil=readSilhouette(cv);
       if(!sil) return;
-      var g=buildCritterMesh(cv,sil,rec.feats||[]);
+      var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
       var spot=FRIEND_SPOTS[friends.length];
       g.scale.set(0.62,0.62,0.62);
       g.position.set(spot.x,0,spot.z);
@@ -1803,27 +1825,32 @@ function animateRig(rg, mode, t){
   for(var li=0;li<rg.lobes.length;li++){
     var L3=rg.lobes[li];
     var z1=0,z2=0,x1=0;
+    var cls=L3.cls;
     if(mode==='walk'||mode==='walk-fast'){
       var sp3=mode==='walk-fast'?11:7.5;
-      if(L3.cls==='leg'){ z1=Math.sin(t*sp3+L3.ph)*0.42; z2=Math.sin(t*sp3+L3.ph+0.7)*0.26; }
-      else if(L3.cls==='side'){ z1=L3.sign*Math.sin(t*sp3*0.5+L3.ph)*0.14; }
-      else { z1=Math.sin(t*sp3*0.5)*0.07; }
+      if(cls==='leg'){ z1=Math.sin(t*sp3+L3.ph)*0.42; z2=Math.sin(t*sp3+L3.ph+0.7)*0.26; }
+      else if(cls==='wing'){ x1=Math.sin(t*sp3+L3.ph)*0.3; }
+      else if(cls==='tail'){ z1=Math.sin(t*sp3*0.55+L3.ph)*0.28; z2=Math.sin(t*sp3*0.55+L3.ph+0.7)*0.2; }
+      else if(cls==='ear'){ z1=Math.sin(t*sp3+L3.ph)*0.1; }
     } else if(mode==='happy'||mode==='spin'){
-      if(L3.cls==='leg'){ z1=L3.sign*0.45; z2=L3.sign*0.18; }
-      else if(L3.cls==='side'){ x1=Math.sin(t*16+L3.ph)*0.55; }
-      else { z1=Math.sin(t*10+L3.ph)*0.12; }
+      if(cls==='leg'){ z1=L3.sign*0.45; z2=L3.sign*0.18; }
+      else if(cls==='wing'){ x1=Math.sin(t*16+L3.ph)*0.6; }
+      else if(cls==='tail'){ z1=Math.sin(t*11+L3.ph)*0.4; }
+      else if(cls==='ear'){ z1=Math.sin(t*13+L3.ph)*0.18; }
     } else if(mode==='dance'){
-      if(L3.cls==='leg'){ z1=Math.sin(t*14.3+L3.ph)*0.5; z2=Math.sin(t*14.3+L3.ph+0.6)*0.3; }
-      else if(L3.cls==='side'){ x1=Math.sin(t*14.3+L3.ph)*0.7; z1=Math.sin(t*7.15+L3.ph)*0.2; }
-      else { z1=Math.sin(t*7.15+L3.ph)*0.18; }
+      if(cls==='leg'){ z1=Math.sin(t*14.3+L3.ph)*0.5; z2=Math.sin(t*14.3+L3.ph+0.6)*0.3; }
+      else if(cls==='wing'){ x1=Math.sin(t*14.3+L3.ph)*0.7; }
+      else if(cls==='tail'){ z1=Math.sin(t*7.15+L3.ph)*0.4; z2=Math.sin(t*7.15+L3.ph+0.6)*0.25; }
+      else if(cls==='ear'){ z1=Math.sin(t*14.3+L3.ph)*0.2; }
     } else if(mode==='sleep'){
-      z1=L3.sign*0.13; z2=L3.sign*0.08;
+      z1=L3.sign*0.1; z2=L3.sign*0.06;
     } else if(mode==='munch'){
-      if(L3.cls==='top'){ z1=Math.sin(t*9)*0.12; }
-    } else {
-      if(L3.cls==='leg'){ z1=Math.sin(t*1.1+L3.ph)*0.035; }
-      else if(L3.cls==='side'){ z1=Math.sin(t*1.3+L3.ph)*0.13; z2=Math.sin(t*1.3+L3.ph+0.8)*0.1; }
-      else { z1=Math.sin(t*0.9+L3.ph)*0.06; }
+      if(cls==='ear'){ z1=Math.sin(t*9+L3.ph)*0.1; }
+      else if(cls==='tail'){ z1=Math.sin(t*4+L3.ph)*0.18; }
+    } else { /* idle: legs stay planted, tails wag, ears flick now and then */
+      if(cls==='tail'){ z1=Math.sin(t*2.1+L3.ph)*0.22; z2=Math.sin(t*2.1+L3.ph+0.7)*0.14; }
+      else if(cls==='ear'){ z1=Math.max(0,Math.sin(t*0.9+L3.ph)-0.92)*2.5; }
+      else if(cls==='wing'){ x1=Math.sin(t*1.4+L3.ph)*0.08; }
     }
     L3.b1.rotation.z=z1; L3.b1.rotation.x=x1; L3.b2.rotation.z=z2;
   }
@@ -2188,7 +2215,7 @@ function startParade(){
       c2.drawImage(img,0,0,PAPER,PAPER);
       var sil=readSilhouette(cv);
       if(!sil) return;
-      var g=buildCritterMesh(cv,sil,rec.feats||[]);
+      var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
       var walker=ix%2===0;
       var sc=walker?0.55:0.5;
       g.scale.set(sc,sc,sc);
@@ -2214,7 +2241,7 @@ function stopParade(){
   switchScreen('nursery');
 }
 
-function buildCritterMesh(drawCanvas,sil,feats){
+function buildCritterMesh(drawCanvas,sil,feats,limbs){
   var built=buildPillowGeometry(sil);
   var texCanvas=document.createElement('canvas');
   texCanvas.width=texCanvas.height=512;
@@ -2306,65 +2333,139 @@ function buildCritterMesh(drawCanvas,sil,feats){
   var tex=new THREE.CanvasTexture(texCanvas);
   tex.encoding=THREE.sRGBEncoding;
   var mat=new THREE.MeshStandardMaterial({ map:tex, roughness:0.75, side:THREE.DoubleSide });
-  /* ---- the bone machine: skeleton + procedural weights ---- */
+  /* ---- explicit limbs only (2026-08-15 pivot): the automatic lobe
+     rig warped detailed drawings badly, so bones now come ONLY from
+     limbs the player marks in the Stitch Studio. Weights are smooth
+     capsule falloffs around each marked segment plus two diffusion
+     passes — no cell aliasing, no tearing. No limbs = calm unrigged
+     plush, which always looks right. ---- */
   var mesh=null;
-  var rig=buildRigData(built);
-  if(rig&&rig.lobes.length){
+  if(limbs&&limbs.length){
     var g2=built.geo;
     var posA=g2.getAttribute('position');
     var n=posA.count;
-    var si=new Uint16Array(n*4), sw=new Float32Array(n*4);
+    var xf=built.xform;
+    function toWorld(nx,ny){ return { x:(nx*built.gw+xf.tx)*xf.s, y:((1-ny)*built.gh+xf.ty)*xf.s }; }
     var bones=[], root=new THREE.Bone();
-    root.position.set(rig.coreC.x, rig.coreC.y, 0);
+    root.position.set(0,0.8,0);
     bones.push(root);
-    rig.lobes.forEach(function(L){
-      var a=rig.toWorld(L.attach), m2=rig.toWorld(L.mid);
-      var b1=new THREE.Bone(); b1.position.set(a.x-rig.coreC.x, a.y-rig.coreC.y, 0);
-      var b2=new THREE.Bone(); b2.position.set(m2.x-a.x, m2.y-a.y, 0);
+    var L2=[];
+    limbs.slice(0,6).forEach(function(Ld,ix){
+      var A=toWorld(Ld.ax,Ld.ay), B=toWorld(Ld.tx,Ld.ty);
+      var len=Math.hypot(B.x-A.x,B.y-A.y);
+      if(len<0.15) return;
+      var b1=new THREE.Bone(); b1.position.set(A.x-root.position.x,A.y-root.position.y,0);
+      var b2=new THREE.Bone(); b2.position.set((B.x-A.x)/2,(B.y-A.y)/2,0);
       root.add(b1); b1.add(b2);
-      L.b1i=bones.length; bones.push(b1);
-      L.b2i=bones.length; bones.push(b2);
+      L2.push({ A:A,B:B,len:len,R:Math.max(0.14,len*0.3),
+        b1i:bones.length, b2i:bones.length+1,
+        cls:Ld.type, sign:(A.x<0?-1:1), ph:ix*1.7 });
+      bones.push(b1); bones.push(b2);
     });
-    var xf=rig.xform;
-    for(var vi=0;vi<n;vi++){
-      var gi2=Math.max(0,Math.min(built.gw-1,Math.floor(posA.getX(vi)/xf.s-xf.tx)));
-      var gj2=Math.max(0,Math.min(built.gh-1,Math.floor(posA.getY(vi)/xf.s-xf.ty)));
-      var lid2=rig.lobeId[gj2*built.gw+gi2];
-      var L2=null;
-      if(lid2>=0) rig.lobes.forEach(function(LL){ if(LL.id===lid2) L2=LL; });
-      var o=vi*4;
-      if(!L2){ si[o]=0; sw[o]=1; }
-      else{
-        var cell=gj2*built.gw+gi2;
-        var t2=(L2.bd[cell]!==undefined?L2.bd[cell]:0)/L2.tipD;
-        var wRoot=Math.max(0,(0.22-t2)/0.22)*0.7;
-        var w2b=Math.max(0,Math.min(1,(t2-0.38)/0.5));
-        var w1b=Math.max(0,1-wRoot-w2b);
-        var tot=(wRoot+w1b+w2b)||1;
-        si[o]=0;      sw[o]=wRoot/tot;
-        si[o+1]=L2.b1i; sw[o+1]=w1b/tot;
-        si[o+2]=L2.b2i; sw[o+2]=w2b/tot;
+    if(L2.length){
+      /* raw capsule weights */
+      var wRoot=new Float32Array(n), wL=[];
+      L2.forEach(function(){ wL.push({a:new Float32Array(n),b:new Float32Array(n)}); });
+      for(var vi=0;vi<n;vi++){
+        var vx2=posA.getX(vi), vy2=posA.getY(vi);
+        var total=0;
+        for(var li2=0;li2<L2.length;li2++){
+          var LB=L2[li2];
+          var abx=LB.B.x-LB.A.x, aby=LB.B.y-LB.A.y;
+          var t3=((vx2-LB.A.x)*abx+(vy2-LB.A.y)*aby)/(LB.len*LB.len);
+          var tc=Math.max(0,Math.min(1,t3));
+          var dx2=vx2-(LB.A.x+abx*tc), dy2=vy2-(LB.A.y+aby*tc);
+          var d3=Math.sqrt(dx2*dx2+dy2*dy2);
+          var w=Math.max(0,1-d3/LB.R);
+          w=w*w*(3-2*w);
+          /* fade limb influence to zero at the attachment so the body
+             side of the seam never moves */
+          w*=Math.min(1,Math.max(0,t3+0.15)/0.35);
+          if(w>0){
+            var b2s=Math.max(0,Math.min(1,(tc-0.35)/0.5));
+            wL[li2].a[vi]=w*(1-b2s);
+            wL[li2].b[vi]=w*b2s;
+            total+=w;
+          }
+        }
+        wRoot[vi]=Math.max(0,1-total);
       }
+      /* two diffusion passes over mesh adjacency smooth any hard edges */
+      var idxA=g2.getIndex().array;
+      var nb=new Array(n); for(var q2=0;q2<n;q2++) nb[q2]=[];
+      for(var q3=0;q3<idxA.length;q3+=3){
+        var a4=idxA[q3],b4=idxA[q3+1],c4=idxA[q3+2];
+        nb[a4].push(b4,c4); nb[b4].push(a4,c4); nb[c4].push(a4,b4);
+      }
+      function diffuse(arr){
+        var out=new Float32Array(n);
+        for(var v2=0;v2<n;v2++){
+          var acc=arr[v2], m2=1;
+          var ns2=nb[v2];
+          for(var k2=0;k2<ns2.length;k2++){ acc+=arr[ns2[k2]]; m2++; }
+          out[v2]=acc/m2;
+        }
+        return out;
+      }
+      for(var pass=0;pass<2;pass++){
+        wRoot=diffuse(wRoot);
+        wL.forEach(function(w5){ w5.a=diffuse(w5.a); w5.b=diffuse(w5.b); });
+      }
+      var si=new Uint16Array(n*4), sw=new Float32Array(n*4);
+      for(var v3=0;v3<n;v3++){
+        /* keep the 3 strongest influences */
+        var cand=[[0,wRoot[v3]]];
+        for(var l4=0;l4<L2.length;l4++){
+          cand.push([L2[l4].b1i,wL[l4].a[v3]]);
+          cand.push([L2[l4].b2i,wL[l4].b[v3]]);
+        }
+        cand.sort(function(x2,y3){ return y3[1]-x2[1]; });
+        var tot2=0, o2=v3*4, sl;
+        for(sl=0;sl<4;sl++){ tot2+=(cand[sl]?cand[sl][1]:0); }
+        if(tot2<=0){ si[o2]=0; sw[o2]=1; continue; }
+        for(sl=0;sl<4;sl++){
+          si[o2+sl]=cand[sl]?cand[sl][0]:0;
+          sw[o2+sl]=cand[sl]?cand[sl][1]/tot2:0;
+        }
+      }
+      g2.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si,4));
+      g2.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw,4));
+      /* stitch seams: dashed thread + cross stitches across each attachment */
+      L2.forEach(function(LB,li3){
+        var Ld=limbs[li3]; if(!Ld) return;
+        var ax2=Ld.ax*512, ay2=Ld.ay*512;
+        var ang=Math.atan2(Ld.ty-Ld.ay,Ld.tx-Ld.ax)+Math.PI/2;
+        var sr=LB.R/(built.gw*xf.s)*512*0.9;
+        tctx.save();
+        tctx.translate(ax2,ay2); tctx.rotate(ang);
+        tctx.strokeStyle='rgba(61,47,85,0.75)'; tctx.lineWidth=3; tctx.setLineDash([7,6]);
+        tctx.beginPath(); tctx.moveTo(-sr,0); tctx.lineTo(sr,0); tctx.stroke();
+        tctx.setLineDash([]);
+        for(var st2=-1;st2<=1;st2++){
+          var sx2=st2*sr*0.55;
+          tctx.beginPath();
+          tctx.moveTo(sx2-5,-5); tctx.lineTo(sx2+5,5);
+          tctx.moveTo(sx2+5,-5); tctx.lineTo(sx2-5,5);
+          tctx.stroke();
+        }
+        tctx.restore();
+      });
+      mesh=new THREE.SkinnedMesh(g2,mat);
+      mesh.frustumCulled=false;
+      mesh.add(root);
+      mesh.updateMatrixWorld(true);
+      mesh.bind(new THREE.Skeleton(bones));
+      var rigOut={ lobes:[] };
+      L2.forEach(function(LB){
+        rigOut.lobes.push({cls:LB.cls, sign:LB.sign, b1:bones[LB.b1i], b2:bones[LB.b2i], ph:LB.ph});
+      });
+      var legs2=rigOut.lobes.filter(function(L5){ return L5.cls==='leg'; });
+      legs2.sort(function(a5,b5){ return a5.b1.position.x-b5.b1.position.x; });
+      legs2.forEach(function(L6,ix2){ L6.ph=ix2*Math.PI; });
+      group.userData.rig=rigOut;
     }
-    g2.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si,4));
-    g2.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw,4));
-    mesh=new THREE.SkinnedMesh(g2,mat);
-    mesh.frustumCulled=false;
-    mesh.add(root);
-    mesh.updateMatrixWorld(true);
-    mesh.bind(new THREE.Skeleton(bones));
-    var rigOut={ lobes:[] };
-    rig.lobes.forEach(function(L,ix){
-      rigOut.lobes.push({cls:L.cls, sign:L.sign, b1:bones[L.b1i], b2:bones[L.b2i], ph:ix*1.7});
-    });
-    /* alternate leg phases left-to-right so walks read as steps */
-    var legs=rigOut.lobes.filter(function(L){ return L.cls==='leg'; });
-    legs.sort(function(a,b){ return a.b1.position.x-b.b1.position.x; });
-    legs.forEach(function(L,ix){ L.ph=ix*Math.PI; });
-    group.userData.rig=rigOut;
-  } else {
-    mesh=new THREE.Mesh(built.geo,mat);
   }
+  if(!mesh) mesh=new THREE.Mesh(built.geo,mat);
   group.add(mesh);
   group.userData.face=face;
   return group;
@@ -2401,7 +2502,8 @@ function persistCur(){
   var ix=-1,i;
   for(i=0;i<NEST.length;i++) if(NEST[i].id===CUR.id){ ix=i; break; }
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
-            care:CUR.care, created:CUR.created, acc:CUR.acc||null, feats:CUR.feats||[] };
+            care:CUR.care, created:CUR.created, acc:CUR.acc||null,
+            feats:CUR.feats||[], limbs:CUR.limbs||[] };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
   jSet(K_NEST,NEST);
 }
@@ -2461,13 +2563,13 @@ function bringToLife(){
     initStage();
     if(critter){ scene.remove(critter); critter=null; }
     var featsNow=FEATS.slice();
-    var group=buildCritterMesh(paper,sil,featsNow);
+    var group=buildCritterMesh(paper,sil,featsNow,[]);
     var thumb=document.createElement('canvas'); thumb.width=thumb.height=512;
     thumb.getContext('2d').drawImage(paper,0,0,512,512);
     var profile=makeProfile(sil,null);
     CUR={ id:'c'+Date.now().toString(36), profile:profile, sil:sil,
           drawing:thumb.toDataURL('image/png'), created:Date.now(),
-          care:{ f:80, h:88, t:Date.now() }, feats:featsNow };
+          care:{ f:80, h:88, t:Date.now() }, feats:featsNow, limbs:[] };
     critter=group; orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     persistCur();
@@ -2479,13 +2581,16 @@ function bringToLife(){
     /* the hatch moment: wiggle, crack, confetti, name reveal */
     setTimeout(function(){ SFX.crack(); $('hatchEgg').textContent='🐣';
       $('hatchMsg').textContent='It is hatching!'; },900);
+    setTimeout(function(){ $('hatchEgg').textContent='🪡';
+      $('hatchMsg').textContent='Stitching it together…';
+      for(var sb=0;sb<6;sb++) beep(1150+sb*70,.03,'square',.03,sb*0.12); },1500);
     setTimeout(function(){
       SFX.tada();
       $('hatchEgg').textContent='✨';
       $('hatchMsg').innerHTML='It’s… <span style="font-size:1.6rem;color:var(--coral-deep)">'+escapeHtml(profile.name)+'!</span>';
       confetti($('hatch'),34);
-    },1700);
-    setTimeout(function(){ SFX.hatch(); showResult(); },3100);
+    },2400);
+    setTimeout(function(){ SFX.hatch(); showResult(); },3800);
   },60);
 }
 function momentMsg(name){
@@ -2520,17 +2625,127 @@ function openFromNursery(rec){
     if(!sil){ switchScreen('nursery'); return; }
     initStage();
     if(critter){ scene.remove(critter); critter=null; }
-    critter=buildCritterMesh(cv,sil,rec.feats||[]); orbit.baseRotY=0; scene.add(critter);
+    critter=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]); orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
           created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null,
-          feats:rec.feats||[] };
+          feats:rec.feats||[], limbs:rec.limbs||[] };
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
   };
   img.src=rec.drawing;
 }
+
+/* ------------------------------------------------- stitch studio -------
+   Guided limbs, Jesse's plushie aesthetic: the player DRAGS along each
+   limb (attachment to tip), names it, and a sewing needle stitches it on
+   before it comes alive. No guessing, no warping. */
+var stitchLimbs=[], stitchDrag=null, pendingLimb=null;
+var LIMB_COLORS={leg:'#69b45a',wing:'#4a90d9',tail:'#e8873a',ear:'#e86fa8'};
+function openStitch(){
+  if(!CUR) return;
+  stitchLimbs=(CUR.limbs||[]).slice();
+  pendingLimb=null;
+  $('stitchImg').src=CUR.drawing;
+  $('stitchMsg').textContent='Drag along a limb: start where it joins the body, end at its tip.';
+  $('stitchChips').style.display='none';
+  drawStitchLines();
+  $('stitchOverlay').classList.add('on');
+}
+function drawStitchLines(){
+  var c=$('stitchLines').getContext('2d');
+  c.clearRect(0,0,600,600);
+  stitchLimbs.concat(pendingLimb?[pendingLimb]:[]).forEach(function(L){
+    c.strokeStyle=LIMB_COLORS[L.type]||'#8b7fa8';
+    c.lineWidth=5; c.lineCap='round'; c.setLineDash([10,8]);
+    c.beginPath(); c.moveTo(L.ax*600,L.ay*600); c.lineTo(L.tx*600,L.ty*600); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle=c.strokeStyle;
+    c.beginPath(); c.arc(L.ax*600,L.ay*600,8,0,Math.PI*2); c.fill();
+  });
+}
+(function(){
+  var img=$('stitchImg');
+  function pt(e){ var r=img.getBoundingClientRect();
+    return { x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),
+             y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)) }; }
+  img.addEventListener('pointerdown',function(e){
+    if(pendingLimb||stitchLimbs.length>=6) return;
+    e.preventDefault();
+    var p2=pt(e); stitchDrag={ax:p2.x,ay:p2.y,tx:p2.x,ty:p2.y};
+    try{ img.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  img.addEventListener('pointermove',function(e){
+    if(!stitchDrag) return;
+    e.preventDefault();
+    var p2=pt(e); stitchDrag.tx=p2.x; stitchDrag.ty=p2.y;
+    pendingLimb=null;
+    var c=$('stitchLines').getContext('2d');
+    c.clearRect(0,0,600,600); drawStitchLines();
+    c.strokeStyle='#8b7fa8'; c.lineWidth=5; c.lineCap='round'; c.setLineDash([10,8]);
+    c.beginPath(); c.moveTo(stitchDrag.ax*600,stitchDrag.ay*600);
+    c.lineTo(stitchDrag.tx*600,stitchDrag.ty*600); c.stroke(); c.setLineDash([]);
+  });
+  img.addEventListener('pointerup',function(){
+    if(!stitchDrag) return;
+    var d=Math.hypot(stitchDrag.tx-stitchDrag.ax,stitchDrag.ty-stitchDrag.ay);
+    if(d<0.06){ stitchDrag=null; drawStitchLines(); return; }
+    pendingLimb={ax:stitchDrag.ax,ay:stitchDrag.ay,tx:stitchDrag.tx,ty:stitchDrag.ty,type:null};
+    stitchDrag=null;
+    $('stitchMsg').textContent='What is it?';
+    $('stitchChips').style.display='flex';
+    drawStitchLines();
+    SFX.tap();
+  });
+})();
+document.querySelectorAll('[data-limb]').forEach(function(b){
+  b.addEventListener('click',function(){
+    if(!pendingLimb) return;
+    pendingLimb.type=b.getAttribute('data-limb');
+    stitchLimbs.push(pendingLimb);
+    pendingLimb=null;
+    $('stitchChips').style.display='none';
+    $('stitchMsg').textContent=stitchLimbs.length>=6?'Six limbs is a full plushie! Tap Sew.'
+      :'Lovely! Drag another limb, or tap Sew.';
+    drawStitchLines();
+    SFX.chirp();
+  });
+});
+$('stitchCancel').addEventListener('click',function(){
+  $('stitchOverlay').classList.remove('on'); pendingLimb=null; SFX.tap();
+});
+$('stitchDone').addEventListener('click',function(){
+  if(pendingLimb){ pendingLimb=null; drawStitchLines(); }
+  if(!stitchLimbs.length){ $('stitchOverlay').classList.remove('on'); SFX.tap(); return; }
+  /* the sewing moment: the needle runs each seam, dashes appear behind it */
+  $('stitchMsg').textContent='🪡 Stitching '+CUR.profile.name+' together…';
+  $('stitchChips').style.display='none';
+  var needle=$('stitchNeedle'), imgR=$('stitchImg');
+  needle.style.display='block';
+  var li=0;
+  function sewNext(){
+    if(li>=stitchLimbs.length){
+      needle.style.display='none';
+      $('stitchOverlay').classList.remove('on');
+      CUR.limbs=stitchLimbs.slice();
+      rebuildCurrent('All stitched up! Watch me move!');
+      return;
+    }
+    var L=stitchLimbs[li], steps=10, st3=0;
+    var iv=setInterval(function(){
+      st3++;
+      var t4=st3/steps;
+      var x=(L.ax+(L.tx-L.ax)*t4)*100, y=(L.ay+(L.ty-L.ay)*t4)*100;
+      needle.style.left=x+'%';
+      needle.style.top=(y+Math.sin(t4*Math.PI*6)*1.6)+'%';
+      if(st3%2===0) beep(1200+st3*40,.03,'square',.03);
+      if(st3>=steps){ clearInterval(iv); SFX.chirp(); li++; setTimeout(sewNext,140); }
+    },60);
+  }
+  sewNext();
+});
+$('actStitch').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openStitch(); anim.lastTouch=Date.now(); });
 
 /* ------------------------------------------------- mark your own face --
    For faces the kid DREW instead of stamped: tap where the eyes and mouth
@@ -2572,7 +2787,7 @@ $('markDone').addEventListener('click',function(){
   rebuildCurrent();
   SFX.chirp();
 });
-function rebuildCurrent(){
+function rebuildCurrent(msg){
   if(!CUR) return;
   var keepAcc=CUR.acc;
   var img=new Image();
@@ -2584,13 +2799,13 @@ function rebuildCurrent(){
     var sil=readSilhouette(cv);
     if(!sil) return;
     if(critter){ scene.remove(critter); critter=null; }
-    critter=buildCritterMesh(cv,sil,CUR.feats||[]);
+    critter=buildCritterMesh(cv,sil,CUR.feats||[],CUR.limbs||[]);
     orbit.baseRotY=0; scene.add(critter);
     CUR.sil=sil;
     if(keepAcc) applyAcc(keepAcc);
     persistCur();
     setState('happy');
-    say('I can see you now!');
+    say(msg||'I can see you now!');
   };
   img.src=CUR.drawing;
 }
