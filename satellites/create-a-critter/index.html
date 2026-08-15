@@ -324,6 +324,25 @@
   </div>
 </div>
 
+<!-- ═══════════════ NURSERY FULL / SET FREE ═══════════════ -->
+<div class="overlay" id="fullOverlay">
+  <div class="card">
+    <h2>🪺 The nursery is full!</h2>
+    <div class="gline" style="text-align:center">Every nest has a critter in it. Set one free on a balloon adventure to make room for a new friend.</div>
+    <div class="sub" style="text-align:center;color:var(--soft);font-size:.85rem;margin-top:6px">More nests are coming to the Sky Wolf shop soon.</div>
+    <button class="bigbtn" id="fullGo" style="margin-top:12px">🪺 Go to the Nursery</button>
+    <button class="bigbtn ghost" id="fullLater" style="margin-top:8px">Maybe later</button>
+  </div>
+</div>
+<div class="overlay" id="freeOverlay">
+  <div class="card">
+    <h2>🎈 Set <span id="freeName"></span> free?</h2>
+    <div class="gline" style="text-align:center">It will wave goodbye and float off on a big balloon adventure. Freed critters are happy explorers, but they cannot come back.</div>
+    <button class="bigbtn" id="freeGo" style="margin-top:12px">🎈 Bon voyage!</button>
+    <button class="bigbtn ghost" id="freeCancel" style="margin-top:8px">Stay with me</button>
+  </div>
+</div>
+
 <!-- ═══════════════ GAME MENU ═══════════════ -->
 <div class="overlay" id="gameMenu">
   <div class="card">
@@ -352,7 +371,7 @@
 <div class="screen" id="nursery">
   <div class="topbar">
     <button class="chipbtn" id="nBack" style="font-size:1.2rem">←</button>
-    <div class="title">🪺 My Nursery</div>
+    <div class="title" id="nTitle">🪺 My Nursery</div>
     <button class="chipbtn" id="nParade" title="critter parade">🎪</button>
     <button class="chipbtn" id="nDraw">✏️</button>
   </div>
@@ -422,7 +441,11 @@ function jSet(k,v){ lsSet(k,JSON.stringify(v)); }
 var K_NEST='cac_nursery', K_SET='cac_settings', K_MOM='cac_moments';
 var SET = jGet(K_SET,{sound:1,seenHow:0});
 var MOM = jGet(K_MOM,{first:0});
-var NEST_CAP = 30;
+/* 10 free nests (mirrors the greenhouse's 10 starting slots). Extra nests
+   will be a Pi purchase once the studio Pi rail lands — cac_extra_slots is
+   where that purchase will credit. Legacy nurseries over the cap are
+   grandfathered: nothing is ever silently deleted. */
+function slotCap(){ return 10 + (parseInt(lsGet('cac_extra_slots','0'),10)||0); }
 
 /* ---------------------------------------------------------------- audio */
 var AC=null, masterG=null;
@@ -2380,7 +2403,6 @@ function persistCur(){
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
             care:CUR.care, created:CUR.created, acc:CUR.acc||null, feats:CUR.feats||[] };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
-  while(NEST.length>NEST_CAP) NEST.shift();
   jSet(K_NEST,NEST);
 }
 
@@ -2426,6 +2448,9 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){
 
 function bringToLife(){
   if(!drawnAnything){ SFX.oops(); wiggle($('paper')); return; }
+  if(NEST.length>=slotCap()){
+    $('fullOverlay').classList.add('on'); SFX.oops(); return;
+  }
   var sil=readSilhouette(paper);
   if(!sil){ SFX.oops(); wiggle($('paper')); toastHatch('Draw a bit more of your creature first!'); return; }
   switchScreen('hatch');
@@ -2624,6 +2649,7 @@ function printCard(){
 
 /* ---------------------------------------------------------------- nursery */
 function renderNursery(){
+  $('nTitle').textContent='🪺 My Nursery · '+NEST.length+'/'+slotCap();
   var grid=$('nGrid'); grid.innerHTML='';
   if(!NEST.length){
     var e=document.createElement('div'); e.id='nEmpty';
@@ -2632,14 +2658,58 @@ function renderNursery(){
   }
   NEST.slice().reverse().forEach(function(rec){
     var c=document.createElement('button'); c.className='ncard';
+    c.style.position='relative';
     var im=document.createElement('img'); im.src=rec.drawing; im.alt=rec.name;
     var nm=document.createElement('div'); nm.className='nm'; nm.textContent=rec.name;
     var sp=document.createElement('div'); sp.className='sp'; sp.textContent=rec.profile.personality;
-    c.appendChild(im); c.appendChild(nm); c.appendChild(sp);
+    var fr2=document.createElement('span');
+    fr2.textContent='🎈';
+    fr2.style.cssText='position:absolute;top:4px;right:6px;font-size:1.15rem;padding:6px;';
+    fr2.setAttribute('role','button');
+    fr2.setAttribute('aria-label','set '+rec.name+' free');
+    fr2.addEventListener('click',function(ev){ ev.stopPropagation(); SFX.tap(); askFree(rec,c); });
+    c.appendChild(im); c.appendChild(nm); c.appendChild(sp); c.appendChild(fr2);
     c.addEventListener('click',function(){ SFX.tap(); openFromNursery(rec); });
     grid.appendChild(c);
   });
 }
+
+/* ---------------------------------------------- balloon send-off -------
+   Scrapping a critter is a HAPPY event: it waves goodbye and floats off
+   on a balloon adventure. Nothing in this app is ever deleted sadly. */
+var freeTarget=null;
+function askFree(rec,card){
+  freeTarget={rec:rec,card:card};
+  $('freeName').textContent=rec.name;
+  $('freeOverlay').classList.add('on');
+}
+$('freeCancel').addEventListener('click',function(){ $('freeOverlay').classList.remove('on'); freeTarget=null; SFX.tap(); });
+$('freeGo').addEventListener('click',function(){
+  $('freeOverlay').classList.remove('on');
+  if(!freeTarget) return;
+  var rec=freeTarget.rec, card=freeTarget.card;
+  freeTarget=null;
+  var bl=document.createElement('div');
+  bl.textContent='🎈';
+  bl.style.cssText='position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-size:30px;';
+  card.style.position='relative';
+  card.appendChild(bl);
+  card.style.transition='transform 2.1s ease-in, opacity 2.1s ease-in';
+  card.style.zIndex='5';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    card.style.transform='translateY(-130vh) rotate('+(Math.random()<0.5?-8:8)+'deg)';
+    card.style.opacity='0';
+  });});
+  SFX.happy(); SFX.spin();
+  setTimeout(function(){
+    NEST=NEST.filter(function(r){ return r.id!==rec.id; });
+    jSet(K_NEST,NEST);
+    if(CUR&&CUR.id===rec.id){ CUR=null; if(critter){ scene.remove(critter); critter=null; } }
+    renderNursery();
+  },2100);
+});
+$('fullGo').addEventListener('click',function(){ $('fullOverlay').classList.remove('on'); SFX.tap(); renderNursery(); switchScreen('nursery'); });
+$('fullLater').addEventListener('click',function(){ $('fullOverlay').classList.remove('on'); SFX.tap(); });
 
 /* ---------------------------------------------------------------- screens */
 function switchScreen(id){

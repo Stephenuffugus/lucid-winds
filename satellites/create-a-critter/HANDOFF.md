@@ -129,6 +129,22 @@ animation clips.
   (facing the crowd — edge-on a pillow vanishes) and dance to the groove.
 - Critter Pal rail shipped: see GAMES-PLAN.md.
 
+## Aug 15 nests round (v=20260815i)
+- **10 free nests** (mirrors the greenhouse's 10 starting slots). Nursery
+  title shows n/cap. At cap, Bring to Life is blocked by a friendly
+  full-nursery overlay — the old silent oldest-critter eviction is DEAD
+  (silently deleting a kid's creation was a bug, not a cap).
+- **Set free = balloon send-off** (🎈 on every nursery card): confirm
+  card is honest ("cannot come back") but joyful; the card floats off on
+  a balloon. Never sad, never the word delete.
+- **Monetization (recorded, not wired)**: extra nests are the natural Pi
+  purchase, mirroring greenhouse slot expansion (1 Pi/slot). The
+  purchase credits `cac_extra_slots`; `slotCap()` already reads it. DO
+  NOT wire a buy button until the studio-wide Pi SDK rail exists — the
+  full overlay says "coming to the Sky Wolf shop soon" and nothing more.
+  Legacy nurseries over 10 are grandfathered (blocked from new mints
+  until they free below cap, nothing evicted).
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
