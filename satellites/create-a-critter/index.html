@@ -211,6 +211,7 @@
     <button class="bigbtn green" id="btnNursery">🪺 My Nursery</button>
     <button class="bigbtn ghost" id="btnHow">❓ How it works</button>
     <button class="bigbtn ghost" id="btnExit" style="display:none">← Back to Sky Wolf</button>
+    <div id="homeVisitor" style="display:none; color:var(--soft); font-weight:800; font-size:.95rem">🐾 A wild critter is visiting the meadow!</div>
   </div>
 </div>
 
@@ -276,12 +277,14 @@
   <div id="nameRow">
     <div id="critName">Critter <span class="pencil">✏️</span></div>
     <div id="critSpecies"></div>
+    <div id="bondLine" style="color:var(--gold,#c8a84b); font-size:.82rem; font-weight:800"></div>
   </div>
   <div id="stageWrap">
     <div id="stage"></div>
     <div id="stars"></div>
     <div id="bubble"></div>
     <div id="stageHint">Tap your buddy for a trick! Drag to spin around.</div>
+    <button id="visitorBadge" style="display:none; position:absolute; right:10px; bottom:44px; z-index:6; background:#fffdf8; border-radius:999px; padding:9px 14px; font:800 0.95rem ui-rounded,sans-serif; color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.2)">🐾 Visitor!</button>
     <button id="paradeExit" class="bigbtn ghost" style="display:none; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:auto; padding:10px 26px; min-height:52px; z-index:9">🎪 End the parade</button>
     <div id="berryHud"><span id="berryScore">🍓 0</span><span id="berryTime">⏱ 0:45</span><button id="berryQuit" style="pointer-events:auto; background:rgba(255,253,248,.92); border-radius:999px; width:40px; height:40px; font-weight:900; font-size:1.05rem; box-shadow:0 3px 10px rgba(0,0,0,.15); color:var(--ink)">✖</button></div>
     <div id="berryEnd"><div class="card">
@@ -309,6 +312,7 @@
       <button class="actbtn mini" id="actDress">🎩 Dress Up</button>
       <button class="actbtn mini" id="actFace">👀 Face</button>
       <button class="actbtn mini" id="actStitch">🪡 Stitches</button>
+      <button class="actbtn mini" id="actTuck" style="display:none">🌙 Tuck in</button>
       <button class="actbtn mini" id="actPhoto">📸</button>
       <button class="actbtn mini" id="actPrint">🖨️</button>
       <button class="actbtn mini" id="actSound">🔊</button>
@@ -329,6 +333,18 @@
     <div class="gline"><b>Home:</b> <span id="gHab"></span></div>
     <div class="gline"><b>Fun facts:</b><span id="gFacts"></span></div>
     <button class="bigbtn" id="guideOk" style="margin-top:12px">Done reading</button>
+  </div>
+</div>
+
+<!-- ═══════════════ WILD VISITOR ═══════════════ -->
+<div class="overlay" id="visitorDlg">
+  <div class="card">
+    <h2 id="visTitle">🐾 A wild critter!</h2>
+    <img id="visThumb" style="width:130px; height:130px; object-fit:contain; background:#fff; border-radius:16px; margin:6px auto; display:block" alt="the wild visitor">
+    <div class="gline" id="visText" style="text-align:center"></div>
+    <button class="bigbtn" id="visFeed" style="margin-top:10px">🍓 Share a snack</button>
+    <button class="bigbtn green" id="visAdopt" style="margin-top:8px; display:none">🪺 Adopt it!</button>
+    <button class="bigbtn ghost" id="visLater" style="margin-top:8px">Wave goodbye for now</button>
   </div>
 </div>
 
@@ -416,6 +432,7 @@
   <div class="topbar">
     <button class="chipbtn" id="nBack" style="font-size:1.2rem">←</button>
     <div class="title" id="nTitle">🪺 My Nursery</div>
+    <button class="chipbtn" id="nDate" title="playdate">🤝</button>
     <button class="chipbtn" id="nParade" title="critter parade">🎪</button>
     <button class="chipbtn" id="nDraw">✏️</button>
   </div>
@@ -481,7 +498,7 @@ var $=function(id){ return document.getElementById(id); };
    redeploy day leaves players one version behind. The page checks its own
    source for a newer BUILD and refreshes itself (silently on the home
    screen, with a tap-pill if the player is mid-anything). */
-var BUILD='k1';
+var BUILD='l1';
 setTimeout(function(){
   try{
     fetch(location.pathname+'?probe='+Date.now(),{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(txt){
@@ -1868,6 +1885,57 @@ function tick(){
     }
     if(Math.random()<0.004) confetti($('stageWrap'),12);
   }
+  if(visitorG&&!inGame()){
+    visitorG.position.y=Math.abs(Math.sin(t*1.25))*0.03;
+    visitorG.rotation.z=Math.sin(t*0.85)*0.04;
+    if(visitorG.userData.rig) animateRig(visitorG.userData.rig,'idle',t+2.3);
+  }
+  if(playdate.on&&playdate.members.length===2){
+    playdate.phaseT+=fdt;
+    var PH=DATE_PHASES[playdate.phase%DATE_PHASES.length];
+    var dur=PH==='approach'?3.2:PH==='dance'?8:6;
+    if(playdate.phaseT>dur){
+      playdate.phaseT=0; playdate.phase++;
+      if(playdate.phase===1){ floatUp('💕',46,0); floatUp('💗',52,300); }
+      var nph=DATE_PHASES[playdate.phase%DATE_PHASES.length];
+      if(nph==='dance') startDanceMusic(); else stopDanceMusic();
+      if(nph==='approach') playdate.phase++; /* only approach once */
+    }
+    for(var di=0;di<2;di++){
+      var DM=playdate.members[di], g5=DM.g;
+      if(PH==='approach'){
+        var tx5=DM.side*-0.62;
+        g5.position.x+=((DM.side*2.2*(1-playdate.phaseT/3.2))+tx5*(playdate.phaseT/3.2)-g5.position.x)*0.2;
+        g5.position.x=DM.side*Math.max(0.62,2.2-playdate.phaseT*0.55);
+        g5.rotation.y=DM.side*-0.5;
+        g5.position.y=Math.abs(Math.sin(t*7+DM.ph))*0.05;
+        if(g5.userData.rig) animateRig(g5.userData.rig,'walk-fast',t+DM.ph);
+      } else if(PH==='nuzzle'){
+        g5.position.x=DM.side*0.62;
+        g5.rotation.y=DM.side*-0.5;
+        g5.rotation.z=DM.side*-(0.12+Math.sin(t*2.2)*0.06);
+        g5.position.y=Math.sin(t*1.6+DM.ph)*0.02;
+        if(g5.userData.rig) animateRig(g5.userData.rig,'idle',t+DM.ph);
+        if(Math.random()<0.008) floatUp(Math.random()<0.5?'💕':'💗',44+Math.random()*12,0);
+      } else if(PH==='chase'){
+        var ca=t*1.4+(di===0?0:0.85);
+        g5.position.x=Math.cos(ca)*1.5;
+        g5.position.z=-0.5+Math.sin(ca)*0.8;
+        g5.rotation.y=-ca+Math.PI;
+        g5.rotation.z=Math.sin(t*8+DM.ph)*0.07;
+        g5.position.y=Math.abs(Math.sin(t*8+DM.ph))*0.06;
+        if(g5.userData.rig) animateRig(g5.userData.rig,'walk-fast',t+DM.ph);
+      } else { /* dance */
+        g5.position.x=DM.side*0.9;
+        g5.position.z=-0.5;
+        var db3=t*7.15+DM.ph;
+        g5.position.y=Math.abs(Math.sin(db3))*0.16;
+        g5.rotation.y=Math.sin(db3*0.5)*0.6;
+        g5.rotation.z=Math.sin(db3)*0.1;
+        if(g5.userData.rig) animateRig(g5.userData.rig,'dance',t+DM.ph);
+      }
+    }
+  }
   if(critter&&shadowBlob){
     shadowBlob.position.x=critter.position.x;
     shadowBlob.position.z=critter.position.z;
@@ -1994,6 +2062,8 @@ function applySky(){
     }
   }
   stars.style.display = night?'block':'none';
+  var tuckBtn=$('actTuck');
+  if(tuckBtn) tuckBtn.style.display=(skyNow==='night'||skyNow==='dusk')?'':'none';
   if(hemiLight){
     hemiLight.intensity = night?0.55:0.85;
     hemiLight.color.set(night?0xcdd4ff:0xfff6e8);
@@ -2098,7 +2168,7 @@ function renderDressRow(){
 /* ---------------------------------------------------- berry catch ------
    The buddy scampers under falling berries. Nothing bad can happen: missed
    berries just poof, the round always ends in a picnic. */
-function inGame(){ return berry.on||toss.on||parade.on; }
+function inGame(){ return berry.on||toss.on||parade.on||playdate.on; }
 var berry={ on:false, t:0, score:0, items:[], targetX:0, spawnAt:0,
             best:parseInt(lsGet('cac_berry_best','0'),10)||0 };
 var BERRY_COLORS=[0xe64a3c,0x4a6fd9,0x9a4ad9,0xe8873a];
@@ -2194,7 +2264,7 @@ function berryTick(dt,t){
 function startToss(){
   if(!critter||toss.on||berry.on) return;
   danceOff(); setState('idle');
-  clearFriends();
+  clearFriends(); hideVisitor();
   toss.on=true; toss.score=0; toss.left=12; toss.items=[]; toss.streak=0; toss.golden=false;
   $('foodRow').classList.remove('on'); $('dressRow').style.display='none';
   $('berryHud').style.display='flex'; $('berryEnd').style.display='none';
@@ -2300,7 +2370,7 @@ function startParade(){
   initStage();
   parade.on=true; parade.members=[];
   if(critter){ scene.remove(critter); }
-  clearFriends();
+  clearFriends(); hideVisitor();
   $('critName').innerHTML='🎪 Critter Parade!';
   $('critSpecies').textContent='Everyone you ever made, on the march.';
   $('careBox').style.display='none';
@@ -2343,6 +2413,70 @@ function stopParade(){
   $('careBox').style.display='';
   $('paradeExit').style.display='none';
   if(critter) scene.add(critter);
+  switchScreen('nursery');
+}
+
+/* ---------------------------------------------------- playdate ---------
+   Two critters from the nursery hang out: they run to each other, nuzzle
+   with little hearts, play chase, and dance together. */
+var playdate={ on:false, members:[], phase:0, phaseT:0, selecting:false, picked:[] };
+var DATE_PHASES=['approach','nuzzle','chase','dance'];
+function startDateSelect(){
+  playdate.selecting=true; playdate.picked=[];
+  $('nTitle').textContent='🤝 Pick two critters!';
+  renderNursery();
+}
+function cancelDateSelect(){
+  playdate.selecting=false; playdate.picked=[];
+  renderNursery();
+}
+function startPlaydate(recA,recB){
+  playdate.selecting=false; playdate.picked=[];
+  initStage();
+  playdate.on=true; playdate.members=[]; playdate.phase=0; playdate.phaseT=0;
+  if(critter){ scene.remove(critter); }
+  clearFriends(); hideVisitor();
+  $('critName').innerHTML='🤝 '+escapeHtml(recA.name)+' & '+escapeHtml(recB.name);
+  $('critSpecies').textContent='Best friends on a meadow adventure.';
+  $('bondLine').textContent='';
+  $('careBox').style.display='none';
+  $('paradeExit').style.display='block';
+  $('paradeExit').textContent='🤝 End the playdate';
+  switchScreen('result');
+  sizeStage(); applySky();
+  if(shadowBlob) shadowBlob.visible=false;
+  orbit.yaw=0; orbit.pitch=0.38; orbit.dist=6.2;
+  [recA,recB].forEach(function(rec,ix){
+    var img=new Image();
+    img.onload=function(){
+      if(!playdate.on) return;
+      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+      var c2=cv.getContext('2d');
+      c2.fillStyle='#fff'; c2.fillRect(0,0,PAPER,PAPER);
+      c2.drawImage(img,0,0,PAPER,PAPER);
+      var sil=readSilhouette(cv);
+      if(!sil) return;
+      var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
+      g.scale.set(0.62,0.62,0.62);
+      g.position.set(ix===0?-2.2:2.2, 0, -0.5);
+      scene.add(g);
+      playdate.members.push({ g:g, side:ix===0?-1:1, ph:ix*1.6 });
+    };
+    img.src=rec.drawing;
+  });
+}
+function stopPlaydate(){
+  if(!playdate.on) return;
+  playdate.on=false;
+  playdate.members.forEach(function(m){ scene.remove(m.g); });
+  playdate.members=[];
+  stopDanceMusic();
+  if(shadowBlob) shadowBlob.visible=true;
+  $('careBox').style.display='';
+  $('paradeExit').style.display='none';
+  $('paradeExit').textContent='🎪 End the parade';
+  if(critter) scene.add(critter);
+  bondPaint();
   switchScreen('nursery');
 }
 
@@ -2608,7 +2742,8 @@ function persistCur(){
   for(i=0;i<NEST.length;i++) if(NEST[i].id===CUR.id){ ix=i; break; }
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
             care:CUR.care, created:CUR.created, acc:CUR.acc||null,
-            feats:CUR.feats||[], limbs:CUR.limbs||[] };
+            feats:CUR.feats||[], limbs:CUR.limbs||[],
+            habitDays:CUR.habitDays||[], habitDance:!!CUR.habitDance };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
   jSet(K_NEST,NEST);
 }
@@ -2647,8 +2782,11 @@ function showResult(){
   switchScreen('result');
   sizeStage();
   setState('idle'); anim.lastTouch=Date.now();
+  if(tucked){ tucked=false; blanketMesh=null; $('actTuck').textContent='🌙 Tuck in'; }
   say(CUR.profile.sound+' Hello!');
+  welcomeMoment();
   setTimeout(spawnFriends,1100);
+  setTimeout(spawnVisitor,1600);
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -2736,13 +2874,222 @@ function openFromNursery(rec){
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
           created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null,
-          feats:rec.feats||[], limbs:rec.limbs||[] };
+          feats:rec.feats||[], limbs:rec.limbs||[],
+          habitDays:rec.habitDays||[], habitDance:!!rec.habitDance };
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
   };
   img.src=rec.drawing;
 }
+
+/* ------------------------------------------------ daily wild visitor ---
+   Once in a while a strange little wild critter wanders in — generated by
+   running a seeded scribble through our own pipeline, so it costs nothing
+   and no two are alike. Feed it on three different days and it asks to
+   stay, which needs a free nest. */
+var VIS=jGet('cac_visitor',null);
+var visitorG=null, visitorCanvas=null, visitorSil=null, visitorGen=null;
+function ensureVisitor(){
+  if(!VIS||!VIS.seed){ VIS={seed:(Math.floor(Math.random()*4294967296))>>>0, fed:[]}; jSet('cac_visitor',VIS); }
+}
+function genVisitorCanvas(seed){
+  var rng=mulberry32(seed);
+  var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+  var c=cv.getContext('2d');
+  c.fillStyle='#fff'; c.fillRect(0,0,PAPER,PAPER);
+  var cx0=512, cy0=460, rx=170+rng()*90, ry=140+rng()*80;
+  var wob=2+Math.floor(rng()*3), wph=rng()*6;
+  c.beginPath();
+  for(var a=0;a<=Math.PI*2+0.01;a+=0.16){
+    var rr=1+Math.sin(a*wob+wph)*0.12;
+    var x=cx0+Math.cos(a)*rx*rr, y=cy0+Math.sin(a)*ry*rr;
+    if(a===0)c.moveTo(x,y); else c.lineTo(x,y);
+  }
+  c.closePath();
+  c.fillStyle=['#e64a3c','#f2903a','#f7cf46','#69b45a','#4a90d9','#7a5fd0','#e86fa8'][Math.floor(rng()*7)];
+  c.fill();
+  c.lineWidth=14; c.strokeStyle='#3d2f55'; c.lineJoin='round'; c.stroke();
+  var feats=[], limbs=[];
+  var nl=2+Math.floor(rng()*3);
+  for(var i=0;i<nl;i++){
+    var lx=cx0-rx*0.6+(i+0.5)*(rx*1.2/nl);
+    var ly=cy0+ry*0.78;
+    var ex=lx+(rng()-0.5)*50, ey=ly+120+rng()*90;
+    c.lineWidth=26; c.lineCap='round';
+    c.beginPath(); c.moveTo(lx,ly); c.lineTo(ex,ey); c.stroke();
+    limbs.push({ax:lx/PAPER,ay:ly/PAPER,tx:ex/PAPER,ty:ey/PAPER,type:'leg'});
+  }
+  if(rng()<0.7){
+    var tx0=cx0-rx*0.92, ty0=cy0-ry*0.15, tx1=tx0-110-rng()*80, ty1=ty0-90-rng()*70;
+    c.lineWidth=24;
+    c.beginPath(); c.moveTo(tx0,ty0); c.quadraticCurveTo(tx0-80,ty0-20,tx1,ty1); c.stroke();
+    limbs.push({ax:tx0/PAPER,ay:ty0/PAPER,tx:tx1/PAPER,ty:ty1/PAPER,type:'tail'});
+  }
+  if(rng()<0.5){
+    var ex0=cx0+(rng()<0.5?-1:1)*rx*0.5, ey0=cy0-ry*0.85;
+    var ex1=ex0+(rng()-0.5)*60, ey1=ey0-90-rng()*60;
+    c.lineWidth=22;
+    c.beginPath(); c.moveTo(ex0,ey0); c.lineTo(ex1,ey1); c.stroke();
+    limbs.push({ax:ex0/PAPER,ay:ey0/PAPER,tx:ex1/PAPER,ty:ey1/PAPER,type:'ear'});
+  }
+  var es=26+rng()*14;
+  [[-0.35,0],[0.35,0]].forEach(function(off){
+    var ex2=cx0+off[0]*rx*0.75, ey2=cy0-ry*0.32;
+    c.save(); c.translate(ex2,ey2);
+    STICKERS.eyeGoogly.draw(c,es,'#3d2f55',1);
+    c.restore();
+    feats.push({t:'eye',x:ex2/PAPER,y:ey2/PAPER,s:es/PAPER,c:'#3d2f55',style:'eyeGoogly'});
+  });
+  c.save(); c.translate(cx0,cy0+ry*0.05);
+  STICKERS.smile.draw(c,es*1.1,'#3d2f55',1); c.restore();
+  feats.push({t:'mouth',x:cx0/PAPER,y:(cy0+ry*0.05)/PAPER,s:es*1.1/PAPER,c:'#3d2f55',style:'smile'});
+  if(rng()<0.6){
+    c.globalAlpha=0.5; c.fillStyle='#3d2f55';
+    for(var sp=0;sp<4;sp++){
+      c.beginPath(); c.arc(cx0+(rng()-0.5)*rx*1.1, cy0+(rng()-0.2)*ry*0.7, 13+rng()*13, 0, 7); c.fill();
+    }
+    c.globalAlpha=1;
+  }
+  return {cv:cv, feats:feats, limbs:limbs};
+}
+function spawnVisitor(){
+  if(!renderer||parade.on||playdate.on||toss.on||berry.on) return;
+  ensureVisitor();
+  if(visitorG){ scene.remove(visitorG); visitorG=null; }
+  visitorGen=genVisitorCanvas(VIS.seed);
+  visitorCanvas=visitorGen.cv;
+  var sil=readSilhouette(visitorGen.cv);
+  if(!sil) return;
+  visitorSil=sil;
+  visitorG=buildCritterMesh(visitorGen.cv,sil,visitorGen.feats,visitorGen.limbs);
+  visitorG.scale.set(0.45,0.45,0.45);
+  visitorG.position.set(1.3,0,-0.95);
+  visitorG.rotation.y=-0.35;
+  scene.add(visitorG);
+  $('visitorBadge').style.display='block';
+}
+function hideVisitor(){
+  if(visitorG){ scene.remove(visitorG); visitorG=null; }
+  $('visitorBadge').style.display='none';
+}
+function visitorPaint(){
+  var fedToday=VIS.fed.indexOf(dayKey())>=0;
+  var days=VIS.fed.length;
+  $('visThumb').src=(function(){ var t2=document.createElement('canvas'); t2.width=t2.height=160;
+    t2.getContext('2d').drawImage(visitorCanvas,0,0,160,160); return t2.toDataURL(); })();
+  if(days>=3){
+    $('visTitle').textContent='🐾 It wants to stay!';
+    $('visText').textContent='You fed it '+days+' days in a row and it trusts you completely. Would you like it to live in your nursery?';
+    $('visAdopt').style.display='block';
+    $('visFeed').style.display='none';
+  } else {
+    $('visTitle').textContent='🐾 A wild critter!';
+    $('visText').textContent = fedToday
+      ? 'It munched happily today. Feed it on '+(3-days)+' more day'+(3-days>1?'s':'')+' and it might want to stay!'
+      : (days===0 ? 'A shy wild critter wandered into the meadow. It looks a little hungry.'
+                  : 'It remembers you! That makes '+days+' of 3 days of snacks.');
+    $('visAdopt').style.display='none';
+    $('visFeed').style.display=fedToday?'none':'block';
+  }
+}
+$('visitorBadge').addEventListener('click',function(){
+  if(!visitorG) return;
+  SFX.tap(); visitorPaint();
+  $('visitorDlg').classList.add('on');
+});
+$('visLater').addEventListener('click',function(){ $('visitorDlg').classList.remove('on'); SFX.tap(); });
+$('visFeed').addEventListener('click',function(){
+  var dk2=dayKey();
+  if(VIS.fed.indexOf(dk2)<0){ VIS.fed.push(dk2); jSet('cac_visitor',VIS); }
+  $('visitorDlg').classList.remove('on');
+  SFX.munch();
+  if(visitorG){
+    visitorG.scale.set(0.5,0.38,0.5);
+    setTimeout(function(){ if(visitorG) visitorG.scale.set(0.45,0.45,0.45); },350);
+  }
+  floatUp('💕',80,0);
+  say('The visitor loved that!');
+});
+$('visAdopt').addEventListener('click',function(){
+  if(NEST.length>=slotCap()){
+    $('visitorDlg').classList.remove('on');
+    $('fullOverlay').classList.add('on'); SFX.oops(); return;
+  }
+  var prof=makeProfile(visitorSil,null);
+  var thumb=document.createElement('canvas'); thumb.width=thumb.height=512;
+  thumb.getContext('2d').drawImage(visitorCanvas,0,0,512,512);
+  NEST.push({ id:'v'+VIS.seed, name:prof.name, profile:prof,
+    drawing:thumb.toDataURL('image/png'),
+    care:{f:80,h:92,t:Date.now()}, created:Date.now(),
+    feats:visitorGen.feats, limbs:visitorGen.limbs, acc:null });
+  jSet(K_NEST,NEST);
+  $('visitorDlg').classList.remove('on');
+  hideVisitor();
+  VIS={seed:(Math.floor(Math.random()*4294967296))>>>0, fed:[]};
+  jSet('cac_visitor',VIS);
+  confetti($('stageWrap'),30); SFX.tada();
+  say(prof.name+' moved into your nursery!');
+  window._sbCapEarn&&window._sbCapEarn(3,'create-a-critter:adopted_visitor');
+});
+
+/* -------------------------------------------------- daily rituals ------
+   The heartbeat: days together only count UP, coming back is always a
+   celebration, mornings start with a yawn, nights end with a tuck-in,
+   and things a kid does often are visibly LEARNED by the critter. */
+function dayKey(){ var d=new Date();
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+var BOND=jGet('cac_bond',{n:0,last:''});
+var tucked=false, blanketMesh=null;
+function bondPaint(){
+  $('bondLine').textContent = BOND.n>1 ? '💛 '+BOND.n+' days together' : '';
+}
+function welcomeMoment(){
+  var today=dayKey();
+  var isNewDay = BOND.last!==today;
+  if(isNewDay){
+    BOND.n++; BOND.last=today; jSet('cac_bond',BOND);
+    var h=new Date().getHours();
+    setTimeout(function(){
+      if(h>=5&&h<11){ say('Yaaawn… good morning!'); SFX.sleep(); setTimeout(function(){ setState('happy'); SFX.chirp(); },900); }
+      else { setState('happy'); SFX.happy(); say('You came back! I missed you!'); }
+      /* learned habit: if the kid taught it to dance, it shows off */
+      if(CUR&&CUR.habitDance){
+        setTimeout(function(){ if(anim.state!=='dance'&&!inGame()){ setState('dance');
+          say('Look what you taught me!');
+          setTimeout(function(){ if(anim.state==='dance') setState('idle'); },3800); } },2600);
+      }
+    },1400);
+  }
+  bondPaint();
+}
+function tuckIn(){
+  if(!critter||tucked||inGame()) return;
+  tucked=true;
+  danceOff();
+  setState('sleep');
+  blanketMesh=new THREE.Mesh(new THREE.SphereGeometry(1.05,18,14,0,Math.PI*2,0,Math.PI/2),
+    new THREE.MeshStandardMaterial({color:0x8fa8d9,roughness:0.9}));
+  blanketMesh.scale.set(1.15,0.55,1.0);
+  blanketMesh.position.set(0,0.32,0);
+  critter.add(blanketMesh);
+  [392,330,294].forEach(function(f,i){ beep(f,.5,'sine',.05,i*0.55); });
+  say('Night night… 💤');
+  $('actTuck').textContent='☀️ Wake up';
+}
+function wakeUp(){
+  if(!tucked) return;
+  tucked=false;
+  if(blanketMesh&&critter){ critter.remove(blanketMesh); blanketMesh=null; }
+  setState('happy'); SFX.chirp();
+  say('Yaaawn… hello again!');
+  $('actTuck').textContent='🌙 Tuck in';
+}
+$('actTuck').addEventListener('click',function(){
+  if(inGame()) return; SFX.tap();
+  if(tucked) wakeUp(); else tuckIn();
+  anim.lastTouch=Date.now();
+});
 
 /* ------------------------------------------------- stitch studio -------
    Guided limbs, Jesse's plushie aesthetic: the player DRAGS along each
@@ -2971,7 +3318,7 @@ function printCard(){
 
 /* ---------------------------------------------------------------- nursery */
 function renderNursery(){
-  $('nTitle').textContent='🪺 My Nursery · '+NEST.length+'/'+slotCap();
+  if(!playdate.selecting) $('nTitle').textContent='🪺 My Nursery · '+NEST.length+'/'+slotCap();
   var grid=$('nGrid'); grid.innerHTML='';
   if(!NEST.length){
     var e=document.createElement('div'); e.id='nEmpty';
@@ -2991,7 +3338,23 @@ function renderNursery(){
     fr2.setAttribute('aria-label','set '+rec.name+' free');
     fr2.addEventListener('click',function(ev){ ev.stopPropagation(); SFX.tap(); askFree(rec,c); });
     c.appendChild(im); c.appendChild(nm); c.appendChild(sp); c.appendChild(fr2);
-    c.addEventListener('click',function(){ SFX.tap(); openFromNursery(rec); });
+    c.addEventListener('click',function(){
+      SFX.tap();
+      if(playdate.selecting){
+        var ix2=playdate.picked.indexOf(rec.id);
+        if(ix2>=0){ playdate.picked.splice(ix2,1); c.style.outline=''; }
+        else{
+          playdate.picked.push(rec.id); c.style.outline='3px solid var(--coral)';
+          if(playdate.picked.length===2){
+            var ra=null,rb=null;
+            NEST.forEach(function(r){ if(r.id===playdate.picked[0])ra=r; if(r.id===playdate.picked[1])rb=r; });
+            if(ra&&rb) startPlaydate(ra,rb);
+          }
+        }
+        return;
+      }
+      openFromNursery(rec);
+    });
     grid.appendChild(c);
   });
 }
@@ -3037,6 +3400,10 @@ $('fullLater').addEventListener('click',function(){ $('fullOverlay').classList.r
 function switchScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
   $(id).classList.add('on');
+  if(id==='home'){
+    var fedToday=VIS&&VIS.fed&&VIS.fed.indexOf(dayKey())>=0;
+    $('homeVisitor').style.display=(NEST.length&&(!VIS||!fedToday))?'block':'none';
+  }
   if(id==='draw') requestAnimationFrame(sizePaper);
   if(id==='result') requestAnimationFrame(sizeStage);
 }
@@ -3057,7 +3424,7 @@ $('howOk').addEventListener('click',function(){
 });
 $('btnHow').addEventListener('click',function(){ SET.seenHow=1; jSet(K_SET,SET); $('howOverlay').classList.add('on'); SFX.tap(); });
 $('btnNursery').addEventListener('click',function(){ SFX.tap(); renderNursery(); switchScreen('nursery'); });
-$('nBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
+$('nBack').addEventListener('click',function(){ SFX.tap(); cancelDateSelect(); switchScreen('home'); });
 $('nDraw').addEventListener('click',function(){ SFX.tap(); startGuide(); switchScreen('draw'); });
 $('drawBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
 $('btnLife').addEventListener('click',bringToLife);
@@ -3077,8 +3444,14 @@ $('berryAgain').addEventListener('click',function(){ $('berryEnd').style.display
 $('gmBerry').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); lastGame='berry'; startBerry(); });
 $('gmToss').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); lastGame='toss'; startToss(); });
 $('gmCancel').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); SFX.tap(); });
-$('nParade').addEventListener('click',function(){ SFX.tap(); startParade(); });
-$('paradeExit').addEventListener('click',function(){ SFX.tap(); stopParade(); });
+$('nParade').addEventListener('click',function(){ SFX.tap(); cancelDateSelect(); startParade(); });
+$('nDate').addEventListener('click',function(){
+  SFX.tap();
+  if(NEST.length<2){ toastHatch('Make two critters first, then they can play!'); return; }
+  if(playdate.selecting) cancelDateSelect(); else startDateSelect();
+});
+$('paradeExit').addEventListener('click',function(){ SFX.tap();
+  if(playdate.on) stopPlaydate(); else stopParade(); });
 $('berryQuit').addEventListener('click',function(){ if(berry.on) endBerry(); else if(toss.on) endToss(); });
 $('berryDone').addEventListener('click',function(){ $('berryEnd').style.display='none'; SFX.tap(); anim.lastTouch=Date.now(); });
 $('actDress').addEventListener('click',function(){
@@ -3128,6 +3501,16 @@ $('actDance').addEventListener('click',function(){
   ac(); setState('dance'); startDanceMusic();
   $('actDance').textContent='⏹ Stop';
   careBump(0,8);
+  if(CUR){
+    CUR.habitDays=CUR.habitDays||[];
+    var dk=dayKey();
+    if(CUR.habitDays.indexOf(dk)<0){ CUR.habitDays.push(dk); if(CUR.habitDays.length>5) CUR.habitDays.shift(); }
+    if(!CUR.habitDance&&CUR.habitDays.length>=3){
+      CUR.habitDance=true;
+      setTimeout(function(){ say(CUR.profile.name+' learned to dance from you!'); confetti($('stageWrap'),18); },1600);
+    }
+    persistCur();
+  }
   say(CUR?CUR.profile.sound+' Let\u2019s boogie!':'Boogie!');
 });
 $('actWalk').addEventListener('click',function(){

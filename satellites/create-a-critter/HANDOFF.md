@@ -182,6 +182,23 @@ seams the aesthetic.
   become jointed and get sewn at hatch. Trash can restarts the wizard.
   Awkwardly built walkers are a feature, not a bug.
 
+## Aug 15 engagement suite (v=20260815l, BUILD l1)
+- **Daily rituals**: `cac_bond` days-together (only counts UP, gold line
+  under the name), welcome-back celebration on a new day, morning yawn
+  before 11am, 🌙 Tuck in at dusk/night (blanket mesh + lullaby, wake
+  button), and LEARNED HABITS: dance on 3 different days and the critter
+  learns it and shows off on arrival (per-critter, persisted).
+- **Daily wild visitor**: a seeded scribble is generated through our own
+  pipeline (wobbly body, legs/tail/ear limbs, googly eyes — all fed to
+  buildCritterMesh so it is fully alive) and peeks in from the meadow
+  edge with a 🐾 Visitor! badge. Feed it on 3 different days → it asks
+  to stay → adoption needs a free nest (drives the nest economy). New
+  visitor after each adoption. Zero network, zero storage beyond one
+  seed + fed-days list.
+- **Playdate** (nursery 🤝): pick two critters; they run to each other,
+  nuzzle with hearts, play chase, and dance together to the groove.
+- Home screen shows "a wild critter is visiting" when unfed today.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
