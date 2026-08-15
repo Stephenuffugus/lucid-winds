@@ -63,14 +63,22 @@ instantly, without labels.
 The pipeline that makes it THEIR cat. Six stages; owner confirmation is the
 last word at every step.
 
-### 2.1 Guided intake (2 photos + 1 optional)
+### 2.1 Guided intake (2 photos + 2 optional)
 - **Face shot** (framing guide overlay: "eyes about here") → eye color, ear
   set, muzzle, face markings.
 - **Side body shot** → coat pattern, white distribution, build, tail, floof.
+- **Back shot (optional — Stephen, Aug 15: multi-view capture)** → spine
+  stripe, back markings, tail pattern; feeds the body-space painter's dorsal
+  region directly. Sold as "get her back stripes right."
 - **Toe beans (optional, sold as a bonus)** → bean color chart. Cat lovers
   will do this one for fun alone.
 - Existing quality gates run per shot. Keep the single-photo path working —
   extra shots refine, never block.
+- ⛔ Multi-view stays MEASUREMENT, never photogrammetry: three phone shots
+  meshed into geometry lands in the uncanny valley; three shots feeding the
+  parametric cat's texture + morphs stays cute and stays THEIRS. (Decision
+  recorded Aug 15; proven same day by the critter satellite's
+  measure-the-input approach.)
 
 ### 2.2 Segmentation (new — isolate the cat from the room)
 Today's reader samples the whole frame; a cat on a busy sofa pollutes the
@@ -127,6 +135,22 @@ striping, points) becomes a **runtime UV texture painter**:
   islands don't matter, which frees us to Smart-UV the voxel-remeshed body.
 - Tuner drags repaint at 256px throttled, finalize at 512px. One-time cost,
   a few ms — phone-cheap.
+
+### 2.65 "Make It Yours" editor (Stephen, Aug 15 — customization is first-class)
+The tuner is the fix-it tool at confirmation; this is its grown-up sibling,
+available any time after: the owner goes in and sculpts until it is HER cat.
+- **Morph sliders**: chonk, earSize, muzzleLength, tailLength, legLength,
+  floof (the 2.7 shape keys, exposed with cat-lover labels).
+- **Palette tuning**: the existing Lab-space palette nudges.
+- **Markings painter**: paint white spots / patches / a chin blaze directly
+  on the live 3D cat. Tech is ALREADY section 2.6's body-space painter — a
+  brush is just a spherical falloff written into a markings layer of the
+  same canvas (position-map lookup per texel). No new pipeline.
+- UI pattern (swatches, brush sizes, undo stack) lifts straight from
+  `satellites/create-a-critter/` which shipped Aug 15 and is the proven
+  kid-simple version of exactly this toolbar.
+- Slots into **Phase 1** (it is the confirm-screen tuner, extended) with the
+  markings painter allowed to slip to Phase 4 if Phase 1 scope creeps.
 
 ### 2.7 Body morphs + eyes
 - Shape keys (Blender script additions): `chonk` (exists) + `earSize`,
@@ -398,6 +422,24 @@ fees, anything that makes the cat worse.
 One phase at a time, single-variable, per the house rules. Phases 1-2 are
 where "massive among cat lovers" is won or lost; everything after is
 compounding.
+
+### Phase 6 — BISCUIT (the dog, Stephen Aug 15) — ⛔ gated on cat v1
+Stephen's call: "we should probably make a dog version too." Recorded here so
+it shapes architecture NOW but starts NO code until the cat passes the
+Two-Cat Test and ships through Phase 5:
+- **Same app, species toggle** — not a second app. Everything species-shaped
+  becomes a profile: `tools/loaf_cat.py`'s proportions become parameters of a
+  species config (skeleton ratios, ear/muzzle/tail ranges, posture set), the
+  coat engine transfers nearly whole (mixed-breed dogs are ALSO classified by
+  coat color, and "what breed is my mutt" has the same wrong-answer problem
+  the cat research found), and the Room/games/bond stack is species-blind.
+- New per-species content: posture shelf (play-bow, sploot, head-tilt...),
+  personality vocabulary, bark/boof audio set, dog games (fetch replaces
+  laser as the anchor).
+- Naming: LOAF stays the app; the dog is a resident, not a rebrand.
+- Why the gate: the moat is essence capture, and splitting focus before one
+  species nails the Two-Cat Test risks shipping two mediocre pets instead of
+  one uncanny one.
 
 ---
 
