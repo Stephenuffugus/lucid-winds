@@ -233,6 +233,13 @@
     <div class="title">Draw your creature!</div>
     <button class="chipbtn" id="drawClear">🗑️</button>
   </div>
+  <div id="wizBar" style="display:none; margin:0 10px 4px; background:var(--panel); border:2px solid var(--line); border-radius:16px; padding:8px 12px; align-items:center; gap:10px">
+    <div style="flex:1">
+      <div id="wizStep" style="font-weight:900; font-size:.95rem"></div>
+      <div id="wizHint" style="color:var(--soft); font-size:.8rem"></div>
+    </div>
+    <button class="bigbtn green" id="wizNext" style="width:auto; min-height:48px; padding:8px 18px; font-size:1rem">Next ➜</button>
+  </div>
   <div id="cwrap"><div id="vp"><canvas id="paper"></canvas><div id="zoomLbl"></div></div></div>
   <div id="tools">
     <div class="strip" id="palRow"></div>
@@ -322,6 +329,21 @@
     <div class="gline"><b>Home:</b> <span id="gHab"></span></div>
     <div class="gline"><b>Fun facts:</b><span id="gFacts"></span></div>
     <button class="bigbtn" id="guideOk" style="margin-top:12px">Done reading</button>
+  </div>
+</div>
+
+<!-- ═══════════════ WHAT DID YOU ADD (guided limbs) ═══════════════ -->
+<div class="overlay" id="limbAsk">
+  <div class="card">
+    <h2>What did you just add?</h2>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
+      <button class="foodbtn" data-glimb="leg">🦵 Leg</button>
+      <button class="foodbtn" data-glimb="wing">🪽 Wing or Arm</button>
+      <button class="foodbtn" data-glimb="tail">🐈 Tail</button>
+      <button class="foodbtn" data-glimb="ear">👂 Ear</button>
+      <button class="foodbtn" data-glimb="deco">🎨 Just drawing</button>
+    </div>
+    <div class="sub" style="text-align:center; color:var(--soft); font-size:.82rem; margin-top:8px">Limbs get a joint and will really move!</div>
   </div>
 </div>
 
@@ -455,6 +477,26 @@ window._sbCapEarn=function(n,tag){
    ════════════════════════════════════════════════════════════════════ */
 
 var $=function(id){ return document.getElementById(id); };
+/* build sentinel: the host serves stale-while-revalidate=86400, so a fast
+   redeploy day leaves players one version behind. The page checks its own
+   source for a newer BUILD and refreshes itself (silently on the home
+   screen, with a tap-pill if the player is mid-anything). */
+var BUILD='k1';
+setTimeout(function(){
+  try{
+    fetch(location.pathname+'?probe='+Date.now(),{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(txt){
+      var m=txt.match(/var BUILD='([^']+)'/);
+      if(!m||m[1]===BUILD) return;
+      var fresh=location.pathname+'?v=b'+m[1];
+      if($('home').classList.contains('on')&&!drawnAnything){ location.replace(fresh); return; }
+      var pill=document.createElement('button');
+      pill.textContent='✨ A new version is ready — tap to update';
+      pill.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483000;background:#69b45a;color:#fff;font:800 13px ui-rounded,sans-serif;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3);';
+      pill.addEventListener('click',function(){ location.replace(fresh); });
+      document.body.appendChild(pill);
+    }).catch(function(){});
+  }catch(e){}
+},2500);
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return (v===null||v===undefined)?d:v; }catch(e){ return d; } }
@@ -1386,6 +1428,61 @@ function paperPoint(e){
   var r=paper.getBoundingClientRect();
   return { x:(e.clientX-r.left)*PAPER/r.width, y:(e.clientY-r.top)*PAPER/r.height };
 }
+/* ------------------------------------------------ guided builder -------
+   Hold their hand: body, then face, then limbs drawn ONE STROKE each and
+   named, so every limb gets a joint. A caterpillar, a blobby guy, a
+   detailed dinosaur — same three steps. Free draw stays one tap away. */
+var guide={ on:false, step:0, limbs:[], strokeStart:null, strokeEnd:null };
+var WIZ=[
+  { s:'Step 1 of 3 · Draw the body', h:'Any shape at all. Fill it with color!' },
+  { s:'Step 2 of 3 · Give it a face', h:'Stamp eyes and a mouth, or draw your own.' },
+  { s:'Step 3 of 3 · Add legs, wings, a tail', h:'Draw each one in a SINGLE stroke starting on the body. They get joints!' }
+];
+function wizPaint(){
+  var w=$('wizBar');
+  if(!guide.on){ w.style.display='none'; return; }
+  w.style.display='flex';
+  $('wizStep').textContent=WIZ[guide.step].s;
+  $('wizHint').textContent=WIZ[guide.step].h;
+  $('wizNext').textContent = guide.step===2 ? '🪡 Sew it! ➜' : 'Next ➜';
+}
+function startGuide(){
+  guide.on=true; guide.step=0; guide.limbs=[];
+  wizPaint();
+}
+$('wizNext').addEventListener('click',function(){
+  SFX.tap();
+  if(guide.step===0){
+    if(!drawnAnything){ SFX.oops(); wiggle($('vp')); return; }
+    guide.step=1;
+    /* hand them the eye stamp */
+    clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
+    brush.stamp='eyeGoogly';
+    var gb=document.querySelector('[data-group="face"]'); if(gb) gb.classList.add('sel');
+    wizPaint();
+  } else if(guide.step===1){
+    guide.step=2;
+    clearToolSel(); brush.stamp=null; brush.tool='pen';
+    wizPaint();
+  } else {
+    bringToLife();
+  }
+});
+document.querySelectorAll('[data-glimb]').forEach(function(b){
+  b.addEventListener('click',function(){
+    $('limbAsk').classList.remove('on');
+    var ty=b.getAttribute('data-glimb');
+    if(ty!=='deco'&&guide.strokeStart&&guide.strokeEnd){
+      guide.limbs.push({ ax:guide.strokeStart.x/PAPER, ay:guide.strokeStart.y/PAPER,
+                         tx:guide.strokeEnd.x/PAPER, ty:guide.strokeEnd.y/PAPER, type:ty });
+      if(guide.limbs.length>=6) $('wizHint').textContent='Six moving parts is a full plushie! Tap Sew.';
+      else $('wizHint').textContent='It will move! Draw another, or tap Sew.';
+      SFX.chirp();
+    } else SFX.tap();
+    guide.strokeStart=null; guide.strokeEnd=null;
+  });
+});
+
 /* All pointers go through the viewport: one finger draws, two fingers
    pinch-zoom and pan (an in-progress stroke is undone first, so a landing
    palm never leaves a mark). */
@@ -1419,6 +1516,7 @@ vp.addEventListener('pointerdown',function(e){
   pushUndo();
   if(brush.tex) texStrokeStart();
   stroking=true; last=pt; drawnAnything=true;
+  if(guide.on&&guide.step===2&&brush.tool==='pen'&&!brush.tex) guide.strokeStart={x:pt.x,y:pt.y};
   if(!brush.tex) dot(pt);
 });
 vp.addEventListener('pointermove',function(e){
@@ -1461,7 +1559,14 @@ function doUndoSilent(){ var u=undoStack.pop(); if(u){ pctx.putImageData(u.img,0
 function endStroke(e){
   if(e&&ptrs[e.pointerId]!==undefined) delete ptrs[e.pointerId];
   if(ptrCount()<2) pinch0=null;
-  if(ptrCount()===0){ stroking=false; last=null; texSnap=null; }
+  if(ptrCount()===0){
+    if(stroking&&guide.on&&guide.step===2&&guide.strokeStart&&last&&guide.limbs.length<6){
+      var gl=Math.hypot(last.x-guide.strokeStart.x,last.y-guide.strokeStart.y);
+      if(gl>70){ guide.strokeEnd={x:last.x,y:last.y}; $('limbAsk').classList.add('on'); }
+      else guide.strokeStart=null;
+    }
+    stroking=false; last=null; texSnap=null;
+  }
 }
 vp.addEventListener('pointerup',endStroke);
 vp.addEventListener('pointercancel',endStroke);
@@ -2563,18 +2668,20 @@ function bringToLife(){
     initStage();
     if(critter){ scene.remove(critter); critter=null; }
     var featsNow=FEATS.slice();
-    var group=buildCritterMesh(paper,sil,featsNow,[]);
+    var limbsNow=guide.on?guide.limbs.slice():[];
+    var group=buildCritterMesh(paper,sil,featsNow,limbsNow);
     var thumb=document.createElement('canvas'); thumb.width=thumb.height=512;
     thumb.getContext('2d').drawImage(paper,0,0,512,512);
     var profile=makeProfile(sil,null);
     CUR={ id:'c'+Date.now().toString(36), profile:profile, sil:sil,
           drawing:thumb.toDataURL('image/png'), created:Date.now(),
-          care:{ f:80, h:88, t:Date.now() }, feats:featsNow, limbs:[] };
+          care:{ f:80, h:88, t:Date.now() }, feats:featsNow, limbs:limbsNow };
     critter=group; orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     persistCur();
     /* the drawing became a critter; next visit to the easel starts fresh */
     clearPaper(); undoStack.length=0; drawnAnything=false;
+    guide.on=false; guide.limbs=[]; wizPaint();
     if(!MOM.first){ MOM.first=1; jSet(K_MOM,MOM);
       window._sbCapEarn&&window._sbCapEarn(6,'create-a-critter:first_critter'); momentMsg('first_critter'); }
     window._sbCapEarn&&window._sbCapEarn(4,'create-a-critter:brought_to_life'); momentMsg('brought_to_life');
@@ -2936,7 +3043,12 @@ function switchScreen(id){
 $('btnDraw').addEventListener('click',function(){
   ac(); SFX.tap();
   if(!SET.seenHow){ $('howOverlay').classList.add('on'); return; }
+  startGuide();
   switchScreen('draw');
+});
+/* the trash can doubles as "start over": re-enters step 1 */
+$('drawClear').addEventListener('click',function(){
+  if(guide.on){ guide.step=0; guide.limbs=[]; wizPaint(); }
 });
 $('howOk').addEventListener('click',function(){
   $('howOverlay').classList.remove('on');
@@ -2946,7 +3058,7 @@ $('howOk').addEventListener('click',function(){
 $('btnHow').addEventListener('click',function(){ SET.seenHow=1; jSet(K_SET,SET); $('howOverlay').classList.add('on'); SFX.tap(); });
 $('btnNursery').addEventListener('click',function(){ SFX.tap(); renderNursery(); switchScreen('nursery'); });
 $('nBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
-$('nDraw').addEventListener('click',function(){ SFX.tap(); switchScreen('draw'); });
+$('nDraw').addEventListener('click',function(){ SFX.tap(); startGuide(); switchScreen('draw'); });
 $('drawBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
 $('btnLife').addEventListener('click',bringToLife);
 function abortBerry(){

@@ -166,6 +166,22 @@ seams the aesthetic.
   barely breathe. Hatch gained a "Stitching it together…" beat.
 - buildRigData (the old guesser) is dead code kept for reference.
 
+## Aug 15 guided builder + freshness (v=20260815k, BUILD k1)
+- **⛔ STALENESS ROOT CAUSE FOUND**: the host serves
+  `cache-control: max-age=300, stale-while-revalidate=86400`, so on a
+  rapid-deploy day players get yesterday's page instantly while the
+  refresh happens in the background — Stephen tested three versions
+  behind and concluded features were missing. The page now carries a
+  BUILD sentinel: it fetches its own source (no-store) after load,
+  compares BUILD, silently reloads on the home screen or shows an
+  update pill mid-play. Keep BUILD in sync with the card ?v=.
+- **Guided builder** (default for every Draw): Step 1 draw the body →
+  Step 2 give it a face (eye stamp auto-armed) → Step 3 draw each limb
+  in a SINGLE stroke starting on the body, then answer "What did you
+  just add?" (leg / wing-arm / tail / ear / just drawing). Named limbs
+  become jointed and get sewn at hatch. Trash can restarts the wizard.
+  Awkwardly built walkers are a feature, not a bug.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
