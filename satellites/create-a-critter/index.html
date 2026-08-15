@@ -275,9 +275,10 @@
     <div id="stars"></div>
     <div id="bubble"></div>
     <div id="stageHint">Tap your buddy for a trick! Drag to spin around.</div>
+    <button id="paradeExit" class="bigbtn ghost" style="display:none; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:auto; padding:10px 26px; min-height:52px; z-index:9">🎪 End the parade</button>
     <div id="berryHud"><span id="berryScore">🍓 0</span><span id="berryTime">⏱ 0:45</span><button id="berryQuit" style="pointer-events:auto; background:rgba(255,253,248,.92); border-radius:999px; width:40px; height:40px; font-weight:900; font-size:1.05rem; box-shadow:0 3px 10px rgba(0,0,0,.15); color:var(--ink)">✖</button></div>
     <div id="berryEnd"><div class="card">
-      <h2>🎉 Berry Picnic!</h2>
+      <h2 id="berryEndTitle">🎉 Berry Picnic!</h2>
       <div class="bigscore" id="berryFinal"></div>
       <div class="sub" id="berryBestLine" style="color:var(--soft); margin-bottom:10px"></div>
       <button class="bigbtn" id="berryAgain">🍓 Play again</button>
@@ -323,6 +324,16 @@
   </div>
 </div>
 
+<!-- ═══════════════ GAME MENU ═══════════════ -->
+<div class="overlay" id="gameMenu">
+  <div class="card">
+    <h2>🎮 Pick a game!</h2>
+    <button class="bigbtn" id="gmBerry" style="margin-top:8px">🍓 Berry Picnic<br><small style="font-weight:600; font-size:.8rem">Catch the falling berries</small></button>
+    <button class="bigbtn green" id="gmToss" style="margin-top:10px">🍯 Snack Toss<br><small style="font-weight:600; font-size:.8rem">Flick snacks into its mouth</small></button>
+    <button class="bigbtn ghost" id="gmCancel" style="margin-top:10px">Not now</button>
+  </div>
+</div>
+
 <!-- ═══════════════ MARK THE FACE ═══════════════ -->
 <div class="overlay" id="markOverlay">
   <div class="card">
@@ -342,6 +353,7 @@
   <div class="topbar">
     <button class="chipbtn" id="nBack" style="font-size:1.2rem">←</button>
     <div class="title">🪺 My Nursery</div>
+    <button class="chipbtn" id="nParade" title="critter parade">🎪</button>
     <button class="chipbtn" id="nDraw">✏️</button>
   </div>
   <div id="nGrid"></div>
@@ -1486,11 +1498,14 @@ function initStage(){
     berry.targetX=Math.max(-lw,Math.min(lw,((e.clientX-r.left)/r.width*2-1)*(lw+0.3)));
   }
   stage.addEventListener('pointerdown',function(e){
+    if(toss.on){ flick={x:e.clientX,y:e.clientY,t:performance.now()}; return; }
+    if(parade.on) return;
     if(berry.on){ berryAim(e); try{ stage.setPointerCapture(e.pointerId); }catch(err){} return; }
     orbit.dragging=true; orbit.lx=e.clientX; orbit.ly=e.clientY; orbit.moved=0;
     try{ stage.setPointerCapture(e.pointerId); }catch(err){}
   });
   stage.addEventListener('pointermove',function(e){
+    if(toss.on||parade.on) return;
     if(berry.on){ if(e.buttons||e.pointerType==='touch') berryAim(e); return; }
     if(!orbit.dragging) return;
     var dx=e.clientX-orbit.lx, dy=e.clientY-orbit.ly;
@@ -1498,7 +1513,15 @@ function initStage(){
     orbit.yaw+=dx*0.008; orbit.pitch=Math.max(0.1,Math.min(0.9,orbit.pitch+dy*0.005));
     orbit.lx=e.clientX; orbit.ly=e.clientY;
   });
-  stage.addEventListener('pointerup',function(){
+  stage.addEventListener('pointerup',function(e){
+    if(toss.on){
+      if(flick){ var dx=e.clientX-flick.x, dy=e.clientY-flick.y;
+        var r2=stage.getBoundingClientRect();
+        if(dy<-24) tossFlick((flick.x-r2.left)/r2.width,dx,dy,(performance.now()-flick.t)/1000);
+        flick=null; }
+      return;
+    }
+    if(parade.on) return;
     if(berry.on) return;
     if(orbit.dragging&&(orbit.moved||0)<10) tapBuddy();
     orbit.dragging=false;
@@ -1545,7 +1568,7 @@ function spawnZzz(){
   setTimeout(function(){ el.remove(); var ix=anim.zzz.indexOf(el); if(ix>=0)anim.zzz.splice(ix,1); },2700);
 }
 function tapBuddy(){
-  if(!critter||berry.on) return;
+  if(!critter||inGame()) return;
   anim.lastTouch=Date.now();
   if(anim.state==='sleep'){ setState('idle'); say(CUR.profile.sound+' Good morning!'); SFX.chirp(); careBump(0,4); return; }
   if(anim.state==='idle'||anim.state==='walk'){ setState('spin'); SFX.spin(); careBump(0,3); say(CUR.profile.sound); }
@@ -1557,7 +1580,9 @@ function tick(){
   var fdt=Math.min(0.1, t-(tick._lt||t)); tick._lt=t;
   if(critter&&berry.on){
     berryTick(fdt,t);
-  } else if(critter){
+  } else if(critter&&toss.on){
+    tossTick(fdt,t);
+  } else if(critter&&!parade.on){
     var g=critter;
     g.rotation.x=0; g.rotation.z=0; g.scale.set(1,1,1);
     var baseY=0;
@@ -1669,34 +1694,29 @@ function tick(){
   /* the gait driver: real joints swing by state — legs step, tails wag,
      wings flutter, everything droops in sleep */
   if(critter&&critter.userData.rig){
-    var rg=critter.userData.rig, st2=anim.state;
-    for(var li=0;li<rg.lobes.length;li++){
-      var L3=rg.lobes[li];
-      var z1=0,z2=0,x1=0;
-      if(berry.on||st2==='walk'){
-        var sp3=berry.on?11:7.5;
-        if(L3.cls==='leg'){ z1=Math.sin(t*sp3+L3.ph)*0.42; z2=Math.sin(t*sp3+L3.ph+0.7)*0.26; }
-        else if(L3.cls==='side'){ z1=L3.sign*Math.sin(t*sp3*0.5+L3.ph)*0.14; }
-        else { z1=Math.sin(t*sp3*0.5)*0.07; }
-      } else if(st2==='happy'||st2==='spin'){
-        if(L3.cls==='leg'){ z1=L3.sign*0.45; z2=L3.sign*0.18; }
-        else if(L3.cls==='side'){ x1=Math.sin(t*16+L3.ph)*0.55; }
-        else { z1=Math.sin(t*10+L3.ph)*0.12; }
-      } else if(st2==='dance'){
-        if(L3.cls==='leg'){ z1=Math.sin(t*14.3+L3.ph)*0.5; z2=Math.sin(t*14.3+L3.ph+0.6)*0.3; }
-        else if(L3.cls==='side'){ x1=Math.sin(t*14.3+L3.ph)*0.7; z1=Math.sin(t*7.15+L3.ph)*0.2; }
-        else { z1=Math.sin(t*7.15+L3.ph)*0.18; }
-      } else if(st2==='sleep'){
-        z1=L3.sign*0.13; z2=L3.sign*0.08;
-      } else if(st2==='munch'){
-        if(L3.cls==='top'){ z1=Math.sin(t*9)*0.12; }
+    animateRig(critter.userData.rig, (berry.on||toss.on)?'walk-fast':anim.state, t);
+  }
+  if(parade.on){
+    for(var pi=0;pi<parade.members.length;pi++){
+      var PM=parade.members[pi];
+      if(PM.mode==='walk'){
+        PM.g.position.x+=PM.speed*fdt;
+        if(PM.g.position.x>3.4) PM.g.position.x=-3.4;
+        /* face the crowd, lean into the direction of travel — edge-on a
+           pillow critter disappears */
+        PM.g.rotation.y=0.45;
+        PM.g.position.y=Math.abs(Math.sin(t*7+PM.ph))*0.06;
+        PM.g.rotation.z=Math.sin(t*7+PM.ph)*0.06;
+        if(PM.g.userData.rig) animateRig(PM.g.userData.rig,'walk-fast',t+PM.ph);
       } else {
-        if(L3.cls==='leg'){ z1=Math.sin(t*1.1+L3.ph)*0.035; }
-        else if(L3.cls==='side'){ z1=Math.sin(t*1.3+L3.ph)*0.13; z2=Math.sin(t*1.3+L3.ph+0.8)*0.1; }
-        else { z1=Math.sin(t*0.9+L3.ph)*0.06; }
+        var db2=t*7.15+PM.ph;
+        PM.g.position.y=Math.abs(Math.sin(db2))*0.18;
+        PM.g.rotation.y=Math.sin(db2*0.5)*0.7;
+        PM.g.rotation.z=Math.sin(db2)*0.1;
+        if(PM.g.userData.rig) animateRig(PM.g.userData.rig,'dance',t+PM.ph);
       }
-      L3.b1.rotation.z=z1; L3.b1.rotation.x=x1; L3.b2.rotation.z=z2;
     }
+    if(Math.random()<0.004) confetti($('stageWrap'),12);
   }
   if(critter&&shadowBlob){
     shadowBlob.position.x=critter.position.x;
@@ -1727,7 +1747,7 @@ function clearFriends(){
   friends=[];
 }
 function spawnFriends(){
-  if(!renderer||!CUR) return;
+  if(!renderer||!CUR||toss.on||parade.on) return;
   clearFriends();
   var others=NEST.filter(function(r){ return r.id!==CUR.id; }).slice(-2);
   others.forEach(function(rec,ix){
@@ -1754,6 +1774,40 @@ function spawnFriends(){
     img.src=rec.drawing;
   });
 }
+
+/* -------------------------------------------- reusable rig animator ----- */
+function animateRig(rg, mode, t){
+  for(var li=0;li<rg.lobes.length;li++){
+    var L3=rg.lobes[li];
+    var z1=0,z2=0,x1=0;
+    if(mode==='walk'||mode==='walk-fast'){
+      var sp3=mode==='walk-fast'?11:7.5;
+      if(L3.cls==='leg'){ z1=Math.sin(t*sp3+L3.ph)*0.42; z2=Math.sin(t*sp3+L3.ph+0.7)*0.26; }
+      else if(L3.cls==='side'){ z1=L3.sign*Math.sin(t*sp3*0.5+L3.ph)*0.14; }
+      else { z1=Math.sin(t*sp3*0.5)*0.07; }
+    } else if(mode==='happy'||mode==='spin'){
+      if(L3.cls==='leg'){ z1=L3.sign*0.45; z2=L3.sign*0.18; }
+      else if(L3.cls==='side'){ x1=Math.sin(t*16+L3.ph)*0.55; }
+      else { z1=Math.sin(t*10+L3.ph)*0.12; }
+    } else if(mode==='dance'){
+      if(L3.cls==='leg'){ z1=Math.sin(t*14.3+L3.ph)*0.5; z2=Math.sin(t*14.3+L3.ph+0.6)*0.3; }
+      else if(L3.cls==='side'){ x1=Math.sin(t*14.3+L3.ph)*0.7; z1=Math.sin(t*7.15+L3.ph)*0.2; }
+      else { z1=Math.sin(t*7.15+L3.ph)*0.18; }
+    } else if(mode==='sleep'){
+      z1=L3.sign*0.13; z2=L3.sign*0.08;
+    } else if(mode==='munch'){
+      if(L3.cls==='top'){ z1=Math.sin(t*9)*0.12; }
+    } else {
+      if(L3.cls==='leg'){ z1=Math.sin(t*1.1+L3.ph)*0.035; }
+      else if(L3.cls==='side'){ z1=Math.sin(t*1.3+L3.ph)*0.13; z2=Math.sin(t*1.3+L3.ph+0.8)*0.1; }
+      else { z1=Math.sin(t*0.9+L3.ph)*0.06; }
+    }
+    L3.b1.rotation.z=z1; L3.b1.rotation.x=x1; L3.b2.rotation.z=z2;
+  }
+}
+var toss={ on:false, score:0, left:0, items:[], streak:0, golden:false,
+           best:parseInt(lsGet('cac_toss_best','0'),10)||0 };
+var parade={ on:false, members:[] };
 
 /* ---------------------------------------------------- real-time sky -----
    The meadow matches the actual time of day: peach dawns, blue days, warm
@@ -1889,6 +1943,7 @@ function renderDressRow(){
 /* ---------------------------------------------------- berry catch ------
    The buddy scampers under falling berries. Nothing bad can happen: missed
    berries just poof, the round always ends in a picnic. */
+function inGame(){ return berry.on||toss.on||parade.on; }
 var berry={ on:false, t:0, score:0, items:[], targetX:0, spawnAt:0,
             best:parseInt(lsGet('cac_berry_best','0'),10)||0 };
 var BERRY_COLORS=[0xe64a3c,0x4a6fd9,0x9a4ad9,0xe8873a];
@@ -1922,6 +1977,7 @@ function endBerry(){
   $('berryHud').style.display='none';
   var newBest = berry.score>berry.best;
   if(newBest){ berry.best=berry.score; lsSet('cac_berry_best',String(berry.best)); }
+  $('berryEndTitle').textContent='🎉 Berry Picnic!';
   $('berryFinal').textContent='🍓 '+berry.score+' berries!';
   $('berryBestLine').textContent = newBest?'A new best! Amazing!':'Your best picnic so far: '+berry.best;
   $('berryEnd').style.display='flex';
@@ -1974,6 +2030,165 @@ function berryTick(dt,t){
     }
   }
   berryHudPaint();
+}
+
+/* ---------------------------------------------------- snack toss -------
+   Flick snacks from the bottom of the screen into your critter's mouth at
+   the back of the meadow. Limited snacks instead of a clock; streaks turn
+   the next snack golden and worth three. Misses just bounce and fade. */
+function startToss(){
+  if(!critter||toss.on||berry.on) return;
+  danceOff(); setState('idle');
+  clearFriends();
+  toss.on=true; toss.score=0; toss.left=12; toss.items=[]; toss.streak=0; toss.golden=false;
+  $('foodRow').classList.remove('on'); $('dressRow').style.display='none';
+  $('berryHud').style.display='flex'; $('berryEnd').style.display='none';
+  orbit.yaw=0; orbit.pitch=0.3; orbit.dist=6.6;
+  critter.position.set(0,0,-1.55); critter.rotation.y=0; critter.scale.set(0.85,0.85,0.85);
+  $('bubble').classList.remove('on');
+  SFX.jingle();
+  tossHudPaint();
+}
+function tossHudPaint(){
+  $('berryScore').textContent='🍯 '+toss.score;
+  $('berryTime').textContent='🎯 '+toss.left+(toss.golden?' ✨':'');
+}
+function endToss(){
+  toss.on=false;
+  toss.items.forEach(function(it){ scene.remove(it.m); });
+  toss.items=[];
+  $('berryHud').style.display='none';
+  var newBest=toss.score>toss.best;
+  if(newBest){ toss.best=toss.score; lsSet('cac_toss_best',String(toss.best)); }
+  $('berryEndTitle').textContent='🍯 Snack Toss!';
+  $('berryFinal').textContent='🍯 '+toss.score+' points!';
+  $('berryBestLine').textContent=newBest?'A new best! Amazing!':'Your best so far: '+toss.best;
+  $('berryEnd').style.display='flex';
+  confetti($('stageWrap'),Math.min(40,10+toss.score*2));
+  SFX.tada();
+  careBump(Math.min(20,toss.score*2),8);
+  window._sbCapEarn&&window._sbCapEarn(2,'create-a-critter:snack_toss');
+  critter.position.set(0,0,0); critter.scale.set(1,1,1);
+  setState('happy');
+  setTimeout(spawnFriends,1200);
+}
+function abortToss(){
+  if(!toss.on) return;
+  toss.on=false;
+  toss.items.forEach(function(it){ scene.remove(it.m); });
+  toss.items=[];
+  $('berryHud').style.display='none';
+  if(critter){ critter.position.set(0,0,0); critter.scale.set(1,1,1); }
+}
+var flick=null;
+function tossFlick(startXfrac,dx,dy,dt){
+  if(toss.left<=0) return;
+  var u=Math.max(0.25,Math.min(1.1,-dy/260));
+  var col=toss.golden?0xf2b53a:[0xe64a3c,0x8a5a34,0xe86fa8,0x4a90d9][Math.floor(Math.random()*4)];
+  var m=new THREE.Mesh(new THREE.SphereGeometry(toss.golden?0.17:0.14,12,10),
+    new THREE.MeshStandardMaterial({color:col,roughness:0.4,metalness:toss.golden?0.5:0}));
+  /* launch from under the finger; the flick's sideways drift steers */
+  m.position.set((startXfrac*2-1)*1.6,0.25,2.1);
+  scene.add(m);
+  toss.items.push({ m:m, vx:Math.max(-2.2,Math.min(2.2,dx*0.006)),
+                    vy:2.2*u+1.3, vz:-(3.0+u*2.4), bounced:0, gold:toss.golden });
+  toss.golden=false;
+  toss.left--;
+  SFX.tap();
+  tossHudPaint();
+}
+function tossTick(dt,t){
+  var g=critter;
+  /* the critter wanders side to side, mouth open when food is flying */
+  g.position.x=Math.sin(t*0.55)*1.15;
+  g.position.z=-1.55;
+  g.rotation.z=Math.sin(t*2.2)*0.04;
+  g.scale.set(0.85,0.85,0.85);
+  g.position.y=0;
+  var airborne=toss.items.length>0;
+  var face=g.userData.face;
+  if(face&&face.mouth&&!face.mouth.cut){ face.mouth.m.scale.y=airborne?0.9:0.35; }
+  var mouth={ x:g.position.x, y:0.75, z:-1.35 };
+  for(var i=toss.items.length-1;i>=0;i--){
+    var it=toss.items[i];
+    it.m.position.x+=it.vx*dt;
+    it.m.position.y+=it.vy*dt;
+    it.m.position.z+=it.vz*dt;
+    it.vy-=7.2*dt;
+    it.m.rotation.x+=dt*6;
+    var d=Math.sqrt(Math.pow(it.m.position.x-mouth.x,2)+Math.pow(it.m.position.y-mouth.y,2)+Math.pow(it.m.position.z-mouth.z,2));
+    if(d<0.62){
+      scene.remove(it.m); toss.items.splice(i,1);
+      var pts=it.gold?3:1;
+      toss.score+=pts; toss.streak++;
+      if(it.gold){ SFX.tada(); confetti($('stageWrap'),14); } else SFX.pop(toss.score);
+      if(toss.streak>0&&toss.streak%3===0){ toss.golden=true; }
+      setState('munch'); anim.t0=performance.now()/1000;
+      tossHudPaint();
+      continue;
+    }
+    if(it.m.position.y<0.1&&it.vy<0){
+      if(it.bounced<2){ it.vy=-it.vy*0.42; it.vx*=0.7; it.vz*=0.6; it.bounced++; }
+      else { it.m.material.transparent=true; it.m.material.opacity=Math.max(0,(it.m.material.opacity||1)-dt*2.4);
+        if(it.m.material.opacity<=0){ scene.remove(it.m); toss.items.splice(i,1); } }
+    }
+    if(it.m.position.z<-4){ scene.remove(it.m); toss.items.splice(i,1); }
+  }
+  if(toss.left<=0&&!toss.items.length){ endToss(); return; }
+}
+
+/* ---------------------------------------------------- critter parade ---- */
+function startParade(){
+  if(parade.on) return;
+  var recs=NEST.slice(-6);
+  if(!recs.length) return;
+  initStage();
+  parade.on=true; parade.members=[];
+  if(critter){ scene.remove(critter); }
+  clearFriends();
+  $('critName').innerHTML='🎪 Critter Parade!';
+  $('critSpecies').textContent='Everyone you ever made, on the march.';
+  $('careBox').style.display='none';
+  $('paradeExit').style.display='block';
+  switchScreen('result');
+  sizeStage(); applySky();
+  if(shadowBlob) shadowBlob.visible=false;
+  orbit.yaw=0; orbit.pitch=0.4; orbit.dist=6.6;
+  startDanceMusic();
+  recs.forEach(function(rec,ix){
+    var img=new Image();
+    img.onload=function(){
+      if(!parade.on||parade.members.length>=6) return;
+      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+      var c2=cv.getContext('2d');
+      c2.fillStyle='#fff'; c2.fillRect(0,0,PAPER,PAPER);
+      c2.drawImage(img,0,0,PAPER,PAPER);
+      var sil=readSilhouette(cv);
+      if(!sil) return;
+      var g=buildCritterMesh(cv,sil,rec.feats||[]);
+      var walker=ix%2===0;
+      var sc=walker?0.55:0.5;
+      g.scale.set(sc,sc,sc);
+      if(walker){ g.position.set(-2.4+ix*1.1, 0, -0.3-(ix%3)*0.5); }
+      else { g.position.set(-0.9+ix*0.65, 0, -1.7); }
+      scene.add(g);
+      parade.members.push({ g:g, mode:walker?'walk':'dance', speed:0.75+(ix%3)*0.18, ph:ix*1.4 });
+    };
+    img.src=rec.drawing;
+  });
+  confetti($('stageWrap'),24);
+}
+function stopParade(){
+  if(!parade.on) return;
+  parade.on=false;
+  parade.members.forEach(function(m){ scene.remove(m.g); });
+  parade.members=[];
+  stopDanceMusic();
+  if(shadowBlob) shadowBlob.visible=true;
+  $('careBox').style.display='';
+  $('paradeExit').style.display='none';
+  if(critter) scene.add(critter);
+  switchScreen('nursery');
 }
 
 function buildCritterMesh(drawCanvas,sil,feats){
@@ -2354,7 +2569,7 @@ function rebuildCurrent(){
   };
   img.src=CUR.drawing;
 }
-$('actFace').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); openMark(); anim.lastTouch=Date.now(); });
+$('actFace').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openMark(); anim.lastTouch=Date.now(); });
 
 /* ---------------------------------------------------------------- rename */
 $('critName').addEventListener('click',function(){
@@ -2457,13 +2672,20 @@ function abortBerry(){
   $('berryHud').style.display='none';
   if(critter){ critter.position.set(0,0,0); critter.scale.set(1,1,1); }
 }
-$('actFeed').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); $('foodRow').classList.toggle('on'); $('dressRow').style.display='none'; anim.lastTouch=Date.now(); });
-$('actPlay').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); danceOff(); startBerry(); anim.lastTouch=Date.now(); });
-$('berryAgain').addEventListener('click',function(){ $('berryEnd').style.display='none'; startBerry(); });
-$('berryQuit').addEventListener('click',function(){ if(berry.on) endBerry(); });
+$('actFeed').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); $('foodRow').classList.toggle('on'); $('dressRow').style.display='none'; anim.lastTouch=Date.now(); });
+$('actPlay').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); danceOff(); $('gameMenu').classList.add('on'); anim.lastTouch=Date.now(); });
+var lastGame='berry';
+$('berryAgain').addEventListener('click',function(){ $('berryEnd').style.display='none';
+  if(lastGame==='toss') startToss(); else startBerry(); });
+$('gmBerry').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); lastGame='berry'; startBerry(); });
+$('gmToss').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); lastGame='toss'; startToss(); });
+$('gmCancel').addEventListener('click',function(){ $('gameMenu').classList.remove('on'); SFX.tap(); });
+$('nParade').addEventListener('click',function(){ SFX.tap(); startParade(); });
+$('paradeExit').addEventListener('click',function(){ SFX.tap(); stopParade(); });
+$('berryQuit').addEventListener('click',function(){ if(berry.on) endBerry(); else if(toss.on) endToss(); });
 $('berryDone').addEventListener('click',function(){ $('berryEnd').style.display='none'; SFX.tap(); anim.lastTouch=Date.now(); });
 $('actDress').addEventListener('click',function(){
-  if(berry.on) return; SFX.tap();
+  if(inGame()) return; SFX.tap();
   var row=$('dressRow');
   row.style.display = row.style.display==='none'?'flex':'none';
   $('foodRow').classList.remove('on');
@@ -2493,7 +2715,7 @@ function floatUp(emoji,x,delay){
   setTimeout(function(){ el.remove(); },2200+(delay||0));
 }
 $('actPet').addEventListener('click',function(){
-  if(berry.on) return;
+  if(inGame()) return;
   SFX.happy(); setState('happy'); careBump(0,12); anim.lastTouch=Date.now();
   floatUp('💕',44,0); floatUp('💗',54,220); floatUp('💕',48,460);
   say(pick(mulberry32(Date.now()>>>0),['So cozy!','Hee hee!','Best friend!',CUR?CUR.profile.sound:'Yay!']));
@@ -2502,7 +2724,7 @@ function danceOff(){
   if(anim.state==='dance'){ setState('idle'); stopDanceMusic(); $('actDance').textContent='🕺 Dance'; }
 }
 $('actDance').addEventListener('click',function(){
-  if(berry.on) return;
+  if(inGame()) return;
   anim.lastTouch=Date.now();
   if(anim.state==='dance'){ danceOff(); SFX.tap(); return; }
   if(anim.state==='walk'){ $('actWalk').textContent='🚶 Walk'; }
@@ -2512,17 +2734,17 @@ $('actDance').addEventListener('click',function(){
   say(CUR?CUR.profile.sound+' Let\u2019s boogie!':'Boogie!');
 });
 $('actWalk').addEventListener('click',function(){
-  if(berry.on) return;
+  if(inGame()) return;
   anim.lastTouch=Date.now();
   if(anim.state==='walk'){ setState('idle'); $('actWalk').textContent='🚶 Walk'; }
   else{ setState('walk'); $('actWalk').textContent='🛑 Stop'; SFX.chirp(); careBump(0,6); }
 });
-$('actGuide').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); openGuide(); anim.lastTouch=Date.now(); });
+$('actGuide').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openGuide(); anim.lastTouch=Date.now(); });
 $('guideOk').addEventListener('click',function(){ $('guideOverlay').classList.remove('on'); SFX.tap(); });
-$('actPrint').addEventListener('click',function(){ if(berry.on) return; SFX.tap(); printCard(); });
+$('actPrint').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); printCard(); });
 $('actSound').addEventListener('click',function(){ setSound(!SET.sound); });
 $('actHome').addEventListener('click',function(){
-  SFX.tap(); abortBerry(); danceOff();
+  SFX.tap(); abortBerry(); abortToss(); danceOff();
   if(anim.state==='walk'){ setState('idle'); $('actWalk').textContent='🚶 Walk'; }
   switchScreen('home');
 });

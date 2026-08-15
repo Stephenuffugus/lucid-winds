@@ -708,7 +708,7 @@ var FEATURED = [
   // only, nothing uploaded anywhere, no API costs. Same-origin satellite,
   // earns via _sbCapEarn. The FastAPI+Blender repo stays the deluxe/kiosk
   // build (real rigged clips) for arcade events.
-  {nm:"Create A Critter", ds:"Draw any creature and watch it puff up into a living 3D buddy you can feed, cuddle, and keep.", url:"/satellites/create-a-critter/?v=20260815g", ic:"🪺", thumb:"/portal-assets/thumbs/create-a-critter.png"},
+  {nm:"Create A Critter", ds:"Draw any creature and watch it puff up into a living 3D buddy you can feed, cuddle, and keep.", url:"/satellites/create-a-critter/?v=20260815h", ic:"🪺", thumb:"/portal-assets/thumbs/create-a-critter.png"},
   // ⛔ 2026-07-28: this card said "Brawl · Multiplayer mayhem · 🍺" and was a dead
   // COMING SOON button. The URL it points at is live and is now a DIFFERENT game —
   // it titles itself WILD WARDENS (tame the wild, tend your grove, walk the real
@@ -1964,6 +1964,18 @@ document.addEventListener('click', function(e){
       // own soundtrack when the player is on studio music (and unmutes when
       // they hand audio back to the game).
       if(curOwnMusic) sendHostMusic(hostMusicOn);
+      // Critter Pal rail: pass the player's newest Create A Critter creation
+      // to any game that wants a cheering companion (cross-origin games can't
+      // read this origin's localStorage, so the portal hands it over). Zero
+      // network, zero Firestore — one postMessage per game open.
+      try{
+        var cn = JSON.parse(localStorage.getItem('cac_nursery')||'[]');
+        if(cn.length && fr.contentWindow){
+          var cr = cn[cn.length-1];
+          if(cr && cr.drawing) fr.contentWindow.postMessage({sws:'critterPal',
+            pal:{ name:cr.name||'Your critter', drawing:cr.drawing }}, '*');
+        }
+      }catch(_e){}
     }
     if(e.data.sws === 'close'){ requestClose(); }
     // A cooperating self-music game reports the player turned ITS music on —

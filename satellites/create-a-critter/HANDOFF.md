@@ -121,6 +121,14 @@ animation clips.
   whatever you caught — never a fail), and the critter plays at 0.55
   scale with a tighter catch window so it is a real game.
 
+## Aug 15 games round (v=20260815h)
+- Play button opens a GAME MENU: Berry Picnic + Snack Toss (flick snacks
+  into the wandering critter's mouth, 12 snacks, streak-of-3 = golden ×3,
+  launch from under the finger). Shared HUD/celebration, both quittable.
+- 🎪 Critter Parade from the nursery: up to 6 of your critters march
+  (facing the crowd — edge-on a pillow vanishes) and dance to the groove.
+- Critter Pal rail shipped: see GAMES-PLAN.md.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
