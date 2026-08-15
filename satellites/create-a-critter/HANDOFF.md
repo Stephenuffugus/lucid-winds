@@ -106,6 +106,21 @@ animation clips.
   when munching. Replaces stamped features; persists like them.
 - Inflation plumped (PLUMP 0.85 → 1.0) so bodies read rounder.
 
+## Aug 15 Jesse round (v=20260815g)
+- Toolbar is TWO fully-visible rows (nothing hidden in scroll): undo /
+  REDO (new) / zoom in / zoom out / fill / rainbow / eraser, then size +
+  the five flyout groups incl. the new 🎨 texture menu with drawn
+  swatch previews (textures were undiscoverable at the end of a scroll
+  strip — Jesse never found them).
+- 🕺 Dance: toggle state with its own WebAudio groove (140ms step
+  scheduler), body twist + hop choreography and a rig routine (legs
+  kick, side lobes flap); button flips to ⏹ Stop.
+- Feeding shows the picked food flying to the mouth before the munch;
+  cuddling floats hearts.
+- Berry Picnic: ✖ quit button in the HUD (ends with the celebration and
+  whatever you caught — never a fail), and the critter plays at 0.55
+  scale with a tighter catch window so it is a real game.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
