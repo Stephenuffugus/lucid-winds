@@ -89,6 +89,23 @@ animation clips.
   Erase-patch color = average of BRIGHT ring samples only (a dark outline
   sample used to smear ink over the patch).
 
+## Aug 15 bone machine round (v=20260815f)
+- **THE BONE MACHINE** (`buildRigData`): real joints, no API. The fattest
+  chamfer region is the torso core; every remaining mask component is a
+  limb lobe; each lobe gets a two-bone chain (attachment → BFS midpoint →
+  tip), classified leg / top / side by direction from the core. Vertices
+  are weighted procedurally by BFS-distance along their lobe (root blend
+  near the attachment) into a THREE.SkinnedMesh — no bone-heat solver,
+  nothing to fail; blob drawings with no lobes fall back to the unrigged
+  mesh. The gait driver swings legs alternately (phase by x-order) in
+  walk/berry, tucks them in hops, flaps side lobes (rotation.x) when
+  happy, droops everything in sleep, sways tails and ears at idle.
+- **Mark-your-own face** (👀 Face button): tap your drawn eyes and mouth
+  on the drawing; that exact art is lifted off the skin as circular
+  cutout meshes (skin patched underneath) that blink, wobble, and open
+  when munching. Replaces stamped features; persists like them.
+- Inflation plumped (PLUMP 0.85 → 1.0) so bodies read rounder.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts
