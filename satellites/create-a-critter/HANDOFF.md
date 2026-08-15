@@ -52,6 +52,24 @@ animation clips.
 - Meadow friends (up to 2 nursery critters visit), size-pitched voice, easel
   clears after each birth.
 
+## Aug 15 playtest round (Penny + Jessie feedback, v=20260815d)
+- **Big pad + zoom**: tools compressed to two scroll strips (undo + zoom
+  pinned, always visible), the canvas takes every remaining pixel. Pinch to
+  zoom/pan or tap 🔍 (steps to x4); a second finger landing mid-stroke undoes
+  that stroke so palms never scribble. Drawing math is transform-proof
+  (getBoundingClientRect on the scaled canvas).
+- **Fill deselects itself** after one pour.
+- **Texture brushes** (fluffy/furry/shiny/sparkly): low-alpha patterned dabs
+  that ONLY land on already-painted pixels (checked against a stroke-start
+  snapshot) so texture can never grow the silhouette or speckle the paper.
+- **LIVING FACES**: stamped eyes/mouths are tracked (`FEATS`, persisted per
+  critter as `feats`), erased from the skin at build time (patched with
+  nearby body color) and replaced with real 3D features projected onto the
+  front surface via the pillow geometry's projector: eyes blink on a
+  scheduler and their pupils wander; the mouth smiles, opens wide during
+  munch, grins on happy/spin, and relaxes in sleep. Meadow friends get
+  their faces too. Undo snapshots include the feature list.
+
 ## Studio wiring
 
 - sws bridge: `{sws:'ready'}` at parse + load when framed, exit posts

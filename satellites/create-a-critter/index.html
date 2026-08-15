@@ -66,21 +66,29 @@
 
   /* ---------- draw ---------- */
   #draw{ background:#efe7f7; }
-  .topbar{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
-  .topbar .title{ font-weight:900; font-size:1.1rem; flex:1; text-align:center; }
-  #cwrap{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0; padding:0 10px; }
-  #paper{
-    background:#fff; border-radius:20px; box-shadow:0 8px 26px rgba(74,63,92,.18);
-    touch-action:none; max-width:100%; max-height:100%;
-  }
-  #tools{ padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:8px; }
-  .toolrow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
-  .swatch{ width:44px; height:44px; min-width:44px; border-radius:50%; border:3px solid #fff;
-    box-shadow:0 0 0 2px var(--line); }
-  .swatch.sel{ box-shadow:0 0 0 3px var(--coral); transform:scale(1.12); }
+  .topbar{ display:flex; align-items:center; gap:10px; padding:6px 12px; }
+  .topbar .title{ font-weight:900; font-size:1.05rem; flex:1; text-align:center; }
+  #cwrap{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0; padding:0 8px; }
+  #vp{ position:relative; overflow:hidden; border-radius:18px; background:#fff;
+    box-shadow:0 8px 26px rgba(74,63,92,.18); touch-action:none; }
+  #paper{ position:absolute; left:0; top:0; transform-origin:0 0; touch-action:none; }
+  #zoomLbl{ position:absolute; right:8px; top:8px; background:rgba(74,63,92,.7); color:#fff;
+    border-radius:999px; padding:3px 10px; font-size:.8rem; font-weight:800; display:none; pointer-events:none; }
+  #tools{ padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:6px; }
+  .toolrow{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+  .strip{ display:flex; gap:6px; overflow-x:auto; padding:2px; flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .strip::-webkit-scrollbar{ display:none; }
+  #row2{ display:flex; gap:6px; align-items:center; }
+  #pinned{ display:flex; gap:6px; flex:none; }
+  .chipbtn{ min-width:48px; min-height:48px; width:48px; height:48px; font-size:1.25rem; flex:none; }
+  .swatch{ width:42px; height:42px; min-width:42px; border-radius:50%; border:3px solid #fff;
+    box-shadow:0 0 0 2px var(--line); flex:none; }
+  .swatch.sel{ box-shadow:0 0 0 3px var(--coral); transform:scale(1.1); }
   .sizedot{ border-radius:50%; background:var(--ink); display:inline-block; }
+  .tex-ic{ font-size:1.05rem; }
   #goRow{ display:flex; gap:10px; padding:0 2px; }
-  #goRow .bigbtn{ flex:1; }
+  #goRow .bigbtn{ flex:1; min-height:56px; }
 
   /* ---------- hatch ---------- */
   #hatch{ align-items:center; justify-content:center; gap:18px;
@@ -200,10 +208,10 @@
 <div class="overlay" id="howOverlay">
   <div class="card">
     <h2>How it works</h2>
-    <div class="howstep"><span class="n">✏️</span><div><b>1. Draw your creature</b><small>Any animal you can imagine. Fill it with color!</small></div></div>
-    <div class="howstep"><span class="n">✨</span><div><b>2. Bring it to life</b><small>Your drawing puffs up into a real 3D buddy.</small></div></div>
-    <div class="howstep"><span class="n">🍓</span><div><b>3. Feed it and play</b><small>Pet it, feed it, take it for walks, and read its field guide.</small></div></div>
-    <div class="howstep"><span class="n">🪺</span><div><b>4. Visit the Nursery</b><small>Every critter you make lives there, waiting for you.</small></div></div>
+    <div class="howstep"><span class="n">✏️</span><div><b>1. Draw your creature</b><small>Any animal you can imagine. Pinch or tap 🔍 to zoom in close so your lines connect for the bucket.</small></div></div>
+    <div class="howstep"><span class="n">👁️</span><div><b>2. Stamp on a face</b><small>Stamped eyes and mouths come ALIVE: they blink, look around, and munch. Brush on fluffy, shiny, or sparkly texture too.</small></div></div>
+    <div class="howstep"><span class="n">✨</span><div><b>3. Bring it to life</b><small>Your drawing puffs up into a real 3D buddy.</small></div></div>
+    <div class="howstep"><span class="n">🍓</span><div><b>4. Feed it and play</b><small>Cuddle it, play Berry Picnic, dress it up, and read its field guide.</small></div></div>
     <button class="bigbtn" id="howOk" style="margin-top:10px">Let's go!</button>
   </div>
 </div>
@@ -215,23 +223,30 @@
     <div class="title">Draw your creature!</div>
     <button class="chipbtn" id="drawClear">🗑️</button>
   </div>
-  <div id="cwrap"><canvas id="paper"></canvas></div>
+  <div id="cwrap"><div id="vp"><canvas id="paper"></canvas><div id="zoomLbl"></div></div></div>
   <div id="tools">
-    <div class="toolrow" id="palRow"></div>
-    <div class="toolrow">
-      <button class="chipbtn" data-size="6" title="thin line"><span class="sizedot" style="width:8px;height:8px"></span></button>
-      <button class="chipbtn sel" data-size="14" title="medium line"><span class="sizedot" style="width:16px;height:16px"></span></button>
-      <button class="chipbtn" data-size="30" title="thick line"><span class="sizedot" style="width:26px;height:26px"></span></button>
-      <button class="chipbtn" id="toolFill" title="fill bucket">🪣</button>
-      <button class="chipbtn" id="toolRainbow" title="rainbow crayon">🌈</button>
-      <button class="chipbtn" id="toolErase" title="eraser">🩹</button>
-      <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
-    </div>
-    <div class="toolrow">
-      <button class="chipbtn" data-stamp="eye" title="googly eye stamp">👁️</button>
-      <button class="chipbtn" data-stamp="star" title="star stamp">⭐</button>
-      <button class="chipbtn" data-stamp="heart" title="heart stamp">❤️</button>
-      <button class="chipbtn" data-stamp="spot" title="spot stamp">🟤</button>
+    <div class="strip" id="palRow"></div>
+    <div id="row2">
+      <div id="pinned">
+        <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
+        <button class="chipbtn" id="zoomIn" title="zoom in">🔍</button>
+        <button class="chipbtn" id="zoomOut" title="zoom out" style="display:none">↩🔍</button>
+      </div>
+      <div class="strip" id="toolStrip">
+        <button class="chipbtn sel" id="toolSize" title="line size"><span class="sizedot" style="width:16px;height:16px"></span></button>
+        <button class="chipbtn" id="toolFill" title="fill bucket">🪣</button>
+        <button class="chipbtn" id="toolRainbow" title="rainbow crayon">🌈</button>
+        <button class="chipbtn" id="toolErase" title="eraser">🩹</button>
+        <button class="chipbtn" data-stamp="eye" title="living eye stamp">👁️</button>
+        <button class="chipbtn" data-stamp="mouth" title="living mouth stamp">😊</button>
+        <button class="chipbtn" data-stamp="star" title="star stamp">⭐</button>
+        <button class="chipbtn" data-stamp="heart" title="heart stamp">❤️</button>
+        <button class="chipbtn" data-stamp="spot" title="spot stamp">🟤</button>
+        <button class="chipbtn" data-tex="fluffy" title="fluffy texture"><span class="tex-ic">☁️</span></button>
+        <button class="chipbtn" data-tex="furry" title="furry texture"><span class="tex-ic">🦔</span></button>
+        <button class="chipbtn" data-tex="shiny" title="shiny texture"><span class="tex-ic">✨</span></button>
+        <button class="chipbtn" data-tex="sparkly" title="sparkly texture"><span class="tex-ic">🌟</span></button>
+      </div>
     </div>
     <div id="goRow"><button class="bigbtn green" id="btnLife">✨ Bring it to life! ✨</button></div>
   </div>
@@ -632,9 +647,19 @@ function buildPillowGeometry(sil){
   geo.computeBoundingBox();
   var bb=geo.boundingBox, sz=new THREE.Vector3(); bb.getSize(sz);
   var s=2/Math.max(sz.x,sz.y,sz.z);
-  geo.translate(-(bb.min.x+bb.max.x)/2, -bb.min.y, -(bb.min.z+bb.max.z)/2);
+  var tx=-(bb.min.x+bb.max.x)/2, ty=-bb.min.y, tz=-(bb.min.z+bb.max.z)/2;
+  geo.translate(tx,ty,tz);
   geo.scale(s,s,s);
-  return geo;
+  /* project a drawing point (normalized 0..1, y down) onto the FRONT surface
+     in final world units — how stamped eyes and mouths find their seat */
+  function project(xn,yn){
+    var gi=Math.max(0,Math.min(gw-1,Math.floor(xn*gw)));
+    var gj=Math.max(0,Math.min(gh-1,Math.floor((1-yn)*gh)));
+    if(!mask[gj*gw+gi]) return null;
+    var dc=dist[gj*gw+gi];
+    return { x:(xn*gw+tx)*s, y:((1-yn)*gh+ty)*s, z:(depth(dc)*0.9+tz)*s, unit:s };
+  }
+  return { geo:geo, project:project };
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -722,19 +747,51 @@ var PAPER=1024;
 var paper=$('paper'); paper.width=PAPER; paper.height=PAPER;
 var pctx=paper.getContext('2d');
 var PALETTE=['#3d2f55','#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8','#8a5a34','#9aa2ad','#ffffff'];
-var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null };
+var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null, tex:null };
 var rainbowHue=0;
 var undoStack=[], drawnAnything=false;
+/* living-face features: stamped eyes/mouths remembered by position so the
+   3D buddy can blink and munch with them */
+var FEATS=[];
+/* zoomable view: the canvas transforms inside the #vp window; drawing math
+   is untouched because getBoundingClientRect reports the transformed rect */
+var view={ scale:1, ox:0, oy:0, side:300 };
+function applyView(){
+  view.scale=Math.max(1,Math.min(4,view.scale));
+  var m=view.side*(1-view.scale);
+  view.ox=Math.max(m,Math.min(0,view.ox));
+  view.oy=Math.max(m,Math.min(0,view.oy));
+  paper.style.transform='translate('+view.ox+'px,'+view.oy+'px) scale('+view.scale+')';
+  var z=$('zoomLbl');
+  if(view.scale>1.02){ z.style.display='block'; z.textContent='×'+view.scale.toFixed(1); }
+  else z.style.display='none';
+  $('zoomOut').style.display = view.scale>1.02?'flex':'none';
+}
+function zoomAt(cx,cy,f){
+  var ns=Math.max(1,Math.min(4,view.scale*f));
+  var real=ns/view.scale;
+  view.ox=cx-(cx-view.ox)*real;
+  view.oy=cy-(cy-view.oy)*real;
+  view.scale=ns;
+  applyView();
+}
 function clearToolSel(){
   ['toolErase','toolFill','toolRainbow'].forEach(function(id){ $(id).classList.remove('sel'); });
-  document.querySelectorAll('[data-stamp]').forEach(function(b){ b.classList.remove('sel'); });
+  document.querySelectorAll('[data-stamp],[data-tex]').forEach(function(b){ b.classList.remove('sel'); });
 }
 /* stamps: one tap places a whole shape, so wobbly little hands get crisp
    googly eyes, stars, hearts and spots */
 function drawStamp(pt){
   var s=brush.size*2.4;
+  if(brush.stamp==='eye'||brush.stamp==='mouth'){
+    FEATS.push({ t:brush.stamp, x:pt.x/PAPER, y:pt.y/PAPER, s:s/PAPER });
+    if(FEATS.length>6) FEATS.shift();
+  }
   pctx.save(); pctx.translate(pt.x,pt.y);
-  if(brush.stamp==='eye'){
+  if(brush.stamp==='mouth'){
+    pctx.strokeStyle='#3d2f55'; pctx.lineWidth=Math.max(4,s*0.2); pctx.lineCap='round';
+    pctx.beginPath(); pctx.arc(0,-s*0.25,s*0.85,Math.PI*0.2,Math.PI*0.8); pctx.stroke();
+  } else if(brush.stamp==='eye'){
     pctx.fillStyle='#ffffff'; pctx.strokeStyle='#3d2f55'; pctx.lineWidth=Math.max(3,s*0.12);
     pctx.beginPath(); pctx.arc(0,0,s,0,Math.PI*2); pctx.fill(); pctx.stroke();
     pctx.fillStyle='#3d2f55';
@@ -764,13 +821,64 @@ function drawStamp(pt){
   pctx.restore();
 }
 
-function clearPaper(){ pctx.fillStyle='#ffffff'; pctx.fillRect(0,0,PAPER,PAPER); }
+/* ------------------------------------------------ texture brushes -------
+   Gentle overlays for glossing a body with fluff, fur, shine or sparkle.
+   Dabs only land on ALREADY-PAINTED pixels (checked against a snapshot from
+   stroke start) so texture can never grow the silhouette or leave confetti
+   on the white paper. */
+var texSnap=null;
+function texStrokeStart(){ try{ texSnap=pctx.getImageData(0,0,PAPER,PAPER).data; }catch(e){ texSnap=null; } }
+function texOnBody(x,y){
+  if(!texSnap) return true;
+  var xi=Math.max(0,Math.min(PAPER-1,Math.round(x))), yi=Math.max(0,Math.min(PAPER-1,Math.round(y)));
+  var p=(yi*PAPER+xi)*4, r=texSnap[p], g=texSnap[p+1], b=texSnap[p+2];
+  var lum=0.299*r+0.587*g+0.114*b, spread=Math.max(r,g,b)-Math.min(r,g,b);
+  return lum<235||spread>30;
+}
+function texDab(pt,dir){
+  if(!texOnBody(pt.x,pt.y)) return;
+  var s=brush.size*1.6;
+  pctx.save(); pctx.translate(pt.x,pt.y);
+  if(brush.tex==='fluffy'){
+    pctx.globalAlpha=0.10; pctx.fillStyle=brush.color==='#ffffff'?'#f2ecff':'#ffffff';
+    for(var i=0;i<3;i++){
+      pctx.beginPath();
+      pctx.arc((Math.random()-0.5)*s*1.6,(Math.random()-0.5)*s*1.6,s*(0.5+Math.random()*0.5),0,Math.PI*2);
+      pctx.fill();
+    }
+  } else if(brush.tex==='furry'){
+    pctx.globalAlpha=0.28; pctx.strokeStyle=brush.color; pctx.lineWidth=Math.max(2,s*0.09); pctx.lineCap='round';
+    for(var j=0;j<3;j++){
+      var a=dir+(Math.random()-0.5)*0.9, L=s*(0.7+Math.random()*0.7);
+      var ox=(Math.random()-0.5)*s, oy=(Math.random()-0.5)*s;
+      pctx.beginPath(); pctx.moveTo(ox,oy); pctx.lineTo(ox+Math.cos(a)*L,oy+Math.sin(a)*L); pctx.stroke();
+    }
+  } else if(brush.tex==='shiny'){
+    pctx.globalAlpha=0.16; pctx.strokeStyle='#ffffff'; pctx.lineWidth=s*0.4; pctx.lineCap='round';
+    pctx.beginPath(); pctx.moveTo(-s*0.8,s*0.5); pctx.quadraticCurveTo(0,-s*0.6,s*0.8,s*0.2); pctx.stroke();
+  } else if(brush.tex==='sparkly'){
+    if(Math.random()<0.55){
+      pctx.globalAlpha=0.7; pctx.fillStyle=Math.random()<0.5?'#ffffff':'#ffe98a';
+      var r2=s*0.28;
+      pctx.beginPath();
+      pctx.moveTo(0,-r2); pctx.quadraticCurveTo(r2*0.18,-r2*0.18,r2,0);
+      pctx.quadraticCurveTo(r2*0.18,r2*0.18,0,r2);
+      pctx.quadraticCurveTo(-r2*0.18,r2*0.18,-r2,0);
+      pctx.quadraticCurveTo(-r2*0.18,-r2*0.18,0,-r2);
+      pctx.fill();
+    }
+  }
+  pctx.restore();
+}
+
+function clearPaper(){ pctx.fillStyle='#ffffff'; pctx.fillRect(0,0,PAPER,PAPER); FEATS=[]; }
 function pushUndo(){
-  try{ undoStack.push(pctx.getImageData(0,0,PAPER,PAPER)); if(undoStack.length>12) undoStack.shift(); }catch(e){}
+  try{ undoStack.push({ img:pctx.getImageData(0,0,PAPER,PAPER), feats:FEATS.slice() });
+    if(undoStack.length>14) undoStack.shift(); }catch(e){}
 }
 function doUndo(){
-  var im=undoStack.pop();
-  if(im){ pctx.putImageData(im,0,0); SFX.tap(); } else SFX.oops();
+  var u=undoStack.pop();
+  if(u){ pctx.putImageData(u.img,0,0); FEATS=u.feats; SFX.tap(); } else SFX.oops();
 }
 clearPaper();
 
@@ -795,28 +903,45 @@ function buildPalette(){
 }
 buildPalette();
 
-document.querySelectorAll('[data-size]').forEach(function(b){
+var SIZES=[6,14,30], sizeIx=1;
+$('toolSize').addEventListener('click',function(){
+  sizeIx=(sizeIx+1)%SIZES.length;
+  brush.size=SIZES[sizeIx];
+  var d=$('toolSize').querySelector('.sizedot');
+  var px=[9,16,26][sizeIx];
+  d.style.width=px+'px'; d.style.height=px+'px';
+  SFX.tap();
+});
+document.querySelectorAll('[data-tex]').forEach(function(b){
   b.addEventListener('click',function(){
-    brush.size=parseInt(b.getAttribute('data-size'),10);
-    document.querySelectorAll('[data-size]').forEach(function(x){x.classList.remove('sel');});
-    b.classList.add('sel'); SFX.tap();
+    var key=b.getAttribute('data-tex');
+    var on = brush.tex!==key;
+    clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tool='pen'; brush.tex=null;
+    if(on){ brush.tex=key; b.classList.add('sel'); }
+    SFX.tap();
   });
+});
+$('zoomIn').addEventListener('click',function(){ zoomAt(view.side/2,view.side/2,1.6); SFX.tap(); });
+$('zoomOut').addEventListener('click',function(){
+  if(view.scale<=1.65){ view.scale=1; view.ox=0; view.oy=0; applyView(); }
+  else zoomAt(view.side/2,view.side/2,1/1.6);
+  SFX.tap();
 });
 $('toolErase').addEventListener('click',function(){
   var on = brush.tool!=='erase';
-  clearToolSel(); brush.stamp=null; brush.rainbow=false;
+  clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'erase':'pen';
   $('toolErase').classList.toggle('sel',on); SFX.tap();
 });
 $('toolFill').addEventListener('click',function(){
   var on = brush.tool!=='fill';
-  clearToolSel(); brush.stamp=null; brush.rainbow=false;
+  clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'fill':'pen';
   $('toolFill').classList.toggle('sel',on); SFX.tap();
 });
 $('toolRainbow').addEventListener('click',function(){
   var on = !brush.rainbow;
-  clearToolSel(); brush.stamp=null; brush.tool='pen';
+  clearToolSel(); brush.stamp=null; brush.tex=null; brush.tool='pen';
   brush.rainbow = on;
   $('toolRainbow').classList.toggle('sel',on); SFX.tap();
 });
@@ -824,7 +949,7 @@ document.querySelectorAll('[data-stamp]').forEach(function(b){
   b.addEventListener('click',function(){
     var key=b.getAttribute('data-stamp');
     var on = brush.stamp!==key;
-    clearToolSel(); brush.rainbow=false; brush.tool='pen';
+    clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
     brush.stamp = on?key:null;
     b.classList.toggle('sel',on); SFX.tap();
   });
@@ -838,21 +963,65 @@ function paperPoint(e){
   var r=paper.getBoundingClientRect();
   return { x:(e.clientX-r.left)*PAPER/r.width, y:(e.clientY-r.top)*PAPER/r.height };
 }
-var stroking=false, last=null;
-paper.addEventListener('pointerdown',function(e){
+/* All pointers go through the viewport: one finger draws, two fingers
+   pinch-zoom and pan (an in-progress stroke is undone first, so a landing
+   palm never leaves a mark). */
+var vp=$('vp');
+var stroking=false, last=null, ptrs={};
+function ptrCount(){ var n=0,k; for(k in ptrs)n++; return n; }
+var pinch0=null;
+function vpPoint(e){ var r=vp.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+vp.addEventListener('pointerdown',function(e){
   e.preventDefault(); ac();
+  ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  try{ vp.setPointerCapture(e.pointerId); }catch(err){}
+  if(ptrCount()===2){
+    if(stroking){ doUndoSilent(); stroking=false; last=null; }
+    var ks=Object.keys(ptrs), a=ptrs[ks[0]], b2=ptrs[ks[1]];
+    pinch0={ d:Math.hypot(a.x-b2.x,a.y-b2.y)||1, scale:view.scale,
+             mx:(a.x+b2.x)/2, my:(a.y+b2.y)/2, ox:view.ox, oy:view.oy };
+    return;
+  }
+  if(ptrCount()>2) return;
   var pt=paperPoint(e);
-  if(brush.tool==='fill'){ pushUndo(); floodFill(Math.round(pt.x),Math.round(pt.y), brush.color); drawnAnything=true; SFX.tap(); return; }
+  if(brush.tool==='fill'){
+    pushUndo(); floodFill(Math.round(pt.x),Math.round(pt.y), brush.color);
+    drawnAnything=true; SFX.tap();
+    /* one fill, then the bucket puts itself away (Penny + Jessie note) */
+    brush.tool='pen'; $('toolFill').classList.remove('sel');
+    return;
+  }
   if(brush.stamp){ pushUndo(); drawStamp(pt); drawnAnything=true; SFX.tap(); return; }
   pushUndo();
+  if(brush.tex) texStrokeStart();
   stroking=true; last=pt; drawnAnything=true;
-  try{ paper.setPointerCapture(e.pointerId); }catch(err){}
-  dot(pt);
+  if(!brush.tex) dot(pt);
 });
-paper.addEventListener('pointermove',function(e){
+vp.addEventListener('pointermove',function(e){
+  if(ptrs[e.pointerId]) ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(pinch0&&ptrCount()>=2){
+    e.preventDefault();
+    var ks=Object.keys(ptrs), a=ptrs[ks[0]], b2=ptrs[ks[1]];
+    var d=Math.hypot(a.x-b2.x,a.y-b2.y)||1;
+    var r=vp.getBoundingClientRect();
+    var mx=(a.x+b2.x)/2-r.left, my=(a.y+b2.y)/2-r.top;
+    var ns=Math.max(1,Math.min(4,pinch0.scale*d/pinch0.d));
+    var f=ns/pinch0.scale;
+    view.scale=ns;
+    view.ox=mx-((pinch0.mx-r.left)-pinch0.ox)*f;
+    view.oy=my-((pinch0.my-r.top)-pinch0.oy)*f;
+    applyView();
+    return;
+  }
   if(!stroking) return;
   e.preventDefault();
   var pt=paperPoint(e);
+  if(brush.tex){
+    var dir=Math.atan2(pt.y-last.y,pt.x-last.x);
+    texDab(pt,dir);
+    last=pt;
+    return;
+  }
   if(brush.rainbow && brush.tool==='pen'){
     rainbowHue=(rainbowHue+Math.hypot(pt.x-last.x,pt.y-last.y)*0.6)%360;
     pctx.strokeStyle='hsl('+Math.round(rainbowHue)+',85%,55%)';
@@ -864,9 +1033,14 @@ paper.addEventListener('pointermove',function(e){
   pctx.beginPath(); pctx.moveTo(last.x,last.y); pctx.lineTo(pt.x,pt.y); pctx.stroke();
   last=pt;
 });
-function endStroke(){ stroking=false; last=null; }
-paper.addEventListener('pointerup',endStroke);
-paper.addEventListener('pointercancel',endStroke);
+function doUndoSilent(){ var u=undoStack.pop(); if(u){ pctx.putImageData(u.img,0,0); FEATS=u.feats; } }
+function endStroke(e){
+  if(e&&ptrs[e.pointerId]!==undefined) delete ptrs[e.pointerId];
+  if(ptrCount()<2) pinch0=null;
+  if(ptrCount()===0){ stroking=false; last=null; texSnap=null; }
+}
+vp.addEventListener('pointerup',endStroke);
+vp.addEventListener('pointercancel',endStroke);
 function dot(pt){
   pctx.fillStyle = brush.tool==='erase' ? '#ffffff' : brush.color;
   pctx.beginPath();
@@ -898,8 +1072,11 @@ function sizePaper(){
   var wrap=$('cwrap');
   var vw=(window.visualViewport?visualViewport.width:window.innerWidth);
   var availH=wrap.clientHeight||300;
-  var side=Math.floor(Math.min(vw-24, availH-8));
+  var side=Math.floor(Math.min(vw-16, availH-4));
+  view.side=side;
+  vp.style.width=side+'px'; vp.style.height=side+'px';
   paper.style.width=side+'px'; paper.style.height=side+'px';
+  applyView();
 }
 window.addEventListener('resize',sizePaper);
 if(window.visualViewport) visualViewport.addEventListener('resize',sizePaper);
@@ -1080,6 +1257,29 @@ function tick(){
     fr.g.rotation.z=Math.sin(t*0.7+fr.ph)*0.04;
     fr.g.scale.y=0.62*(1+Math.sin(t*2.2+fr.ph)*0.02);
   }
+  /* living face: blink, wandering pupils, a mouth that matches the mood */
+  if(critter&&critter.userData.face){
+    var face=critter.userData.face;
+    face.nextBlink-=fdt;
+    if(face.nextBlink<=0){ face.blinkT=0.13; face.nextBlink=2.5+Math.random()*3.5; }
+    if(face.blinkT>0) face.blinkT-=fdt;
+    var lid = anim.state==='sleep' ? 0.1 : (face.blinkT>0 ? 0.12 : 1);
+    var wx=Math.sin(t*0.6)*0.16, wy=Math.cos(t*0.83)*0.1;
+    for(var ei=0;ei<face.eyes.length;ei++){
+      var E2=face.eyes[ei];
+      E2.g.scale.y=lid;
+      E2.pupil.position.x=E2.r*wx;
+      E2.pupil.position.y=E2.r*wy;
+    }
+    if(face.mouth){
+      var M=face.mouth.m;
+      if(anim.state==='munch'){ M.scale.y=0.3+Math.abs(Math.sin((t-anim.t0)*6))*0.95; M.scale.x=1.1; }
+      else if(anim.state==='happy'||anim.state==='spin'){ M.scale.y=0.46; M.scale.x=1.55; }
+      else if(anim.state==='sleep'){ M.scale.y=0.16; M.scale.x=1.1; }
+      else if(berry.on){ M.scale.y=0.5; M.scale.x=1.2; }
+      else { M.scale.y=0.3; M.scale.x=1.35; }
+    }
+  }
   if(critter&&shadowBlob){
     shadowBlob.position.x=critter.position.x;
     shadowBlob.position.z=critter.position.z;
@@ -1122,7 +1322,7 @@ function spawnFriends(){
       cx.drawImage(img,0,0,PAPER,PAPER);
       var sil=readSilhouette(cv);
       if(!sil) return;
-      var g=buildCritterMesh(cv,sil);
+      var g=buildCritterMesh(cv,sil,rec.feats||[]);
       var spot=FRIEND_SPOTS[friends.length];
       g.scale.set(0.62,0.62,0.62);
       g.position.set(spot.x,0,spot.z);
@@ -1216,10 +1416,20 @@ function buildAccMesh(key){
   } else return null;
   return g;
 }
+function bodyMeshOf(group){
+  var best=null, bestN=0;
+  group.children.forEach(function(c){
+    if(c.isMesh&&c.geometry&&c.geometry.getAttribute){
+      var a=c.geometry.getAttribute('position');
+      if(a&&a.count>bestN){ bestN=a.count; best=c; }
+    }
+  });
+  return best;
+}
 function topOfCritter(group){
   /* centroid of the top band, not the single highest vertex — a stray
      mane wisp or antenna would otherwise wear the hat */
-  var mesh=group.children[0];
+  var mesh=bodyMeshOf(group);
   var pos=mesh.geometry.getAttribute('position');
   var maxY=-1e9, i;
   for(i=0;i<pos.count;i++) if(pos.getY(i)>maxY) maxY=pos.getY(i);
@@ -1346,16 +1556,52 @@ function berryTick(dt,t){
   berryHudPaint();
 }
 
-function buildCritterMesh(drawCanvas,sil){
-  var geo=buildPillowGeometry(sil);
+function buildCritterMesh(drawCanvas,sil,feats){
+  var built=buildPillowGeometry(sil);
   var texCanvas=document.createElement('canvas');
   texCanvas.width=texCanvas.height=512;
-  texCanvas.getContext('2d').drawImage(drawCanvas,0,0,512,512);
+  var tctx=texCanvas.getContext('2d');
+  tctx.drawImage(drawCanvas,0,0,512,512);
+  var group=new THREE.Group();
+  var face={ eyes:[], mouth:null, nextBlink:2+Math.random()*3, blinkT:0 };
+  /* living face: each stamped eye/mouth that lands on the body gets erased
+     from the skin (patched with nearby body color) and replaced by a real
+     3D feature that blinks, looks around, and munches */
+  (feats||[]).forEach(function(f){
+    var p=built.project(f.x,f.y);
+    if(!p) return;
+    var px=f.x*512, py=f.y*512, pr=f.s*512;
+    var ring=tctx.getImageData(Math.max(0,px-pr*1.8),Math.max(0,py-pr*1.8),4,4).data;
+    var fill='rgb('+ring[0]+','+ring[1]+','+ring[2]+')';
+    tctx.fillStyle=fill;
+    tctx.beginPath(); tctx.arc(px,py,pr*(f.t==='eye'?1.35:1.25),0,Math.PI*2); tctx.fill();
+    var r3=Math.max(0.06, f.s*PAPER/1024*sil.gw*p.unit*2.6);
+    if(f.t==='eye'){
+      var eg=new THREE.Group();
+      var ball=new THREE.Mesh(new THREE.SphereGeometry(r3,14,12),
+        new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.25}));
+      var pupil=new THREE.Mesh(new THREE.SphereGeometry(r3*0.45,10,8),
+        new THREE.MeshStandardMaterial({color:0x3d2f55,roughness:0.3}));
+      pupil.position.z=r3*0.62;
+      eg.add(ball); eg.add(pupil);
+      eg.position.set(p.x,p.y,p.z);
+      group.add(eg);
+      face.eyes.push({g:eg,pupil:pupil,r:r3});
+    } else if(f.t==='mouth'&&!face.mouth){
+      var mm=new THREE.Mesh(new THREE.SphereGeometry(r3,14,10),
+        new THREE.MeshStandardMaterial({color:0x241b38,roughness:0.35}));
+      mm.scale.set(1.35,0.3,0.45);
+      mm.position.set(p.x,p.y,p.z);
+      group.add(mm);
+      face.mouth={m:mm,r:r3};
+    }
+  });
   var tex=new THREE.CanvasTexture(texCanvas);
   tex.encoding=THREE.sRGBEncoding;
   var mat=new THREE.MeshStandardMaterial({ map:tex, roughness:0.75, side:THREE.DoubleSide });
-  var mesh=new THREE.Mesh(geo,mat);
-  var group=new THREE.Group(); group.add(mesh);
+  var mesh=new THREE.Mesh(built.geo,mat);
+  group.add(mesh);
+  group.userData.face=face;
   return group;
 }
 
@@ -1390,7 +1636,7 @@ function persistCur(){
   var ix=-1,i;
   for(i=0;i<NEST.length;i++) if(NEST[i].id===CUR.id){ ix=i; break; }
   var rec={ id:CUR.id, name:CUR.profile.name, profile:CUR.profile, drawing:CUR.drawing,
-            care:CUR.care, created:CUR.created, acc:CUR.acc||null };
+            care:CUR.care, created:CUR.created, acc:CUR.acc||null, feats:CUR.feats||[] };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
   while(NEST.length>NEST_CAP) NEST.shift();
   jSet(K_NEST,NEST);
@@ -1436,13 +1682,14 @@ function bringToLife(){
   setTimeout(function(){
     initStage();
     if(critter){ scene.remove(critter); critter=null; }
-    var group=buildCritterMesh(paper,sil);
+    var featsNow=FEATS.slice();
+    var group=buildCritterMesh(paper,sil,featsNow);
     var thumb=document.createElement('canvas'); thumb.width=thumb.height=512;
     thumb.getContext('2d').drawImage(paper,0,0,512,512);
     var profile=makeProfile(sil,null);
     CUR={ id:'c'+Date.now().toString(36), profile:profile, sil:sil,
           drawing:thumb.toDataURL('image/png'), created:Date.now(),
-          care:{ f:80, h:88, t:Date.now() } };
+          care:{ f:80, h:88, t:Date.now() }, feats:featsNow };
     critter=group; orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     persistCur();
@@ -1495,10 +1742,11 @@ function openFromNursery(rec){
     if(!sil){ switchScreen('nursery'); return; }
     initStage();
     if(critter){ scene.remove(critter); critter=null; }
-    critter=buildCritterMesh(cv,sil); orbit.baseRotY=0; scene.add(critter);
+    critter=buildCritterMesh(cv,sil,rec.feats||[]); orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
     CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
-          created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null };
+          created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null,
+          feats:rec.feats||[] };
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
