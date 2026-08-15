@@ -246,7 +246,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 <!-- MENU -->
 <section class="screen on" id="menu">
   <div class="lens"></div>
-  <div class="tag">Sky Walk Studio presents</div>
+  <div class="tag">Sky Wolf Studios presents</div>
   <h1>FLOCK<br>THE <em>WORLD</em></h1>
   <p class="sub">You play the parasite: the vendor class that farms ordinary people for data, fines and fear —
   buying the media, arming the police, writing its own oversight. The civilians in this game are innocent.
@@ -518,6 +518,7 @@ function checkCombos(s){
       recompute(s);
       pushNews(s,`SYNERGY \u2014 ${c.n}: ${c.d}`,'good');
       goldBanner(`${c.n} \u2014 ${c.d}`);
+      if(s.hq)s.pings.push({x:s.hq[0],y:s.hq[1],t:0,kind:'syn'});
     }
   }
 }
@@ -662,7 +663,7 @@ function newState(modeKey,diffKey,startId,seed,hqName){
   const mode=MODES[modeKey], diff=DIFFS[diffKey];
   const s={
     mode, diff, modeKey, diffKey, day:0, cash:mode.cash*diff.cash, inf:mode.inf, oversight:0, speed:1,
-    owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], newsQ:[], newsIdx:0,
+    owned:new Set(), combos:new Set(), regions:{}, log:[], bubbles:[], pulses:[], dots:[], pk:[], pings:[], hqGlow:0, newsQ:[], newsIdx:0,
     warHeat:0, doctrine:null, over:false, won:false, milestones:new Set(), wmiles:new Set(), unread:0, avgRes:0,
     sheet:null, lostCount:0, avgSus:0, avgMil:0, subj:0, activeCount:0, events:EV(),
     has(id){return this.owned.has(id)}
@@ -781,6 +782,7 @@ function tick(){
         if(r.resist>=cm.th&&Math.random()<0.025){
           r.counters.add(cm.id);
           pushNews(s,cm.t(r.name),'res');
+          {const[cx2,cy2]=anchorOf(id);s.pings.push({x:cx2,y:cy2,t:0,kind:'cm'});}
         }
       }
     }
@@ -806,6 +808,22 @@ function tick(){
     r.pstate=ns;
     if(ns!==prev&&H[ns]&&(ns!=='calm'||prev==='peaceful'||prev==='violent'))
       pushNews(s,H[ns](r.name),ns==='uprising'?'crit':ns==='violent'?'crit':ns==='peaceful'?'bad':'');
+    if(ns!==prev&&ns!=='calm'){const[ppx,ppy]=anchorOf(id);
+      s.pings.push({x:ppx,y:ppy,t:0,kind:ns==='uprising'?'u':ns==='violent'?'v':'p'});}
+    /* the living map: harvested data streams home, routes hum with traffic */
+    if(r.active&&r.coverage>0.02&&s.pk.length<90&&Math.random()<0.12+r.coverage*0.35){
+      const[kx,ky]=anchorOf(id);
+      s.pk.push({x:kx+(Math.random()-0.5)*26,y:ky+(Math.random()-0.5)*16,t:0,
+        sp:0.005+Math.random()*0.005,lift:18+Math.random()*26});
+    }
+    if(r.active&&s.dots.length<40){
+      ROUTES.forEach(([ra,rb,rt])=>{
+        if(ra!==id)return;
+        const o=s.regions[rb];
+        if(o&&o.active&&Math.random()<0.02*(r.coverage+o.coverage))
+          s.dots.push({a:ra,b:rb,t:0,type:rt});
+      });
+    }
 
     if(ns==='murmur'){r.suspicion=clamp(r.suspicion+0.02,0,100);}
     else if(ns==='peaceful'){s.oversight+=0.011*D.over;r.suspicion=clamp(r.suspicion+0.04,0,100);}
@@ -819,6 +837,7 @@ function tick(){
       r.control=Math.max(0,r.control-0.004);
       if(r.coverage<0.02){
         r.active=false;r.lost=true;r.pstate='calm';r.unrest=55;s.lostCount++;
+        {const[xx2,xy2]=anchorOf(id);s.pings.push({x:xx2,y:xy2,t:0,kind:'x'});}
         pushNews(s,H.lost(r.name),'crit');
       }
     }
@@ -1202,6 +1221,45 @@ function drawFx(){
     ctx.beginPath();ctx.arc(ax,ay,p.t*46,0,7);
     ctx.strokeStyle=`rgba(255,162,41,${(1-p.t)*0.8})`;ctx.lineWidth=2/wz*gv.fitZ+0.4;ctx.stroke();
     return true;});
+  S.pings=S.pings||[];S.pk=S.pk||[];
+  /* event pings: protests violet, crackdowns red, countermeasure sparks,
+     expulsion shockwaves, synergy gold at HQ */
+  S.pings=S.pings.filter(p=>{
+    p.t+=(p.kind==='x'||p.kind==='u')?0.011:0.02;if(p.t>1)return false;
+    const col=p.kind==='v'?'255,107,107':p.kind==='syn'?'255,208,138':'177,140,255';
+    const big=p.kind==='u'||p.kind==='x';
+    const rr=p.t*(big?85:40);
+    ctx.strokeStyle=`rgba(${col},${(1-p.t)*0.85})`;
+    ctx.lineWidth=(big?2.6:1.8)/wz*gv.fitZ+0.4;
+    ctx.beginPath();ctx.arc(p.x,p.y,rr,0,7);ctx.stroke();
+    if(big){ctx.beginPath();ctx.arc(p.x,p.y,rr*0.62,0,7);ctx.stroke();}
+    if(p.kind==='cm'){for(let sk=0;sk<6;sk++){const sa=sk/6*Math.PI*2+p.t*2;
+      ctx.beginPath();ctx.moveTo(p.x+Math.cos(sa)*rr*0.5,p.y+Math.sin(sa)*rr*0.5);
+      ctx.lineTo(p.x+Math.cos(sa)*rr,p.y+Math.sin(sa)*rr);ctx.stroke();}}
+    return true;});
+  /* the harvest flowing home: gold packets from every watched market to HQ */
+  if(S.hq){
+    ctx.globalCompositeOperation='lighter';
+    S.pk=S.pk.filter(k=>{
+      if(S.speed>0)k.t+=k.sp*(S.speed===3?2.2:S.speed===2?1.5:1);
+      if(k.t>=1){S.hqGlow=Math.min(1,(S.hqGlow||0)+0.07);return false;}
+      const u=k.t,hx=S.hq[0],hy=S.hq[1];
+      const mx=(k.x+hx)/2,my=(k.y+hy)/2-k.lift;
+      const x=(1-u)*(1-u)*k.x+2*(1-u)*u*mx+u*u*hx,
+            y=(1-u)*(1-u)*k.y+2*(1-u)*u*my+u*u*hy+Math.sin(u*18+k.lift)*1.2;
+      ctx.beginPath();ctx.arc(x,y,1.9,0,7);
+      ctx.fillStyle=`rgba(255,196,90,${0.5+0.4*u})`;ctx.fill();
+      return true;});
+    if((S.hqGlow||0)>0.02){
+      const hx=S.hq[0],hy=S.hq[1];
+      const g2=ctx.createRadialGradient(hx,hy,0,hx,hy,20+S.hqGlow*18);
+      g2.addColorStop(0,`rgba(255,196,90,${0.30*S.hqGlow})`);
+      g2.addColorStop(1,'rgba(255,196,90,0)');
+      ctx.fillStyle=g2;ctx.fillRect(hx-42,hy-42,84,84);
+      S.hqGlow*=0.985;
+    }
+    ctx.globalCompositeOperation='source-over';
+  }
   S.dots=S.dots.filter(d=>{
     d.t+=d.type==='air'?0.008:0.004;if(d.t>1)return false;
     const[ax,ay]=anchorOf(d.a),[bx,by]=anchorOf(d.b);
@@ -1404,6 +1462,7 @@ function doAction(act,rid){
     }
   }
   else if(act==='crack'&&s.has('charter')&&s.cash>=120&&r.unrest>=30){
+    {const[kx2,ky2]=anchorOf(rid);s.pings.push({x:kx2,y:ky2,t:0,kind:'v'});}
     s.cash-=120;r.cd=25;
     const backRisk=(s.doctrine==='fist'?CFG.crackBackfire/2:CFG.crackBackfire)
       +(r._cBack||0)+r.media*r.resist/100*0.20;

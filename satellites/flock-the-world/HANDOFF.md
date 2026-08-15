@@ -1,5 +1,28 @@
 # FLOCK THE WORLD (FTW) — HANDOFF
 
+## Aug 15 studio adoption round (?v=20260815b)
+- Branding typo fixed: "Sky Walk Studio presents" → "Sky Wolf Studios
+  presents" (Stephen confirmed typo).
+- **The living map** (the Plague-Inc juice, inverted): FTW's signature
+  is that the flow goes BOTH ways —
+  - **Data packets stream HOME**: gold 2px packets arc from every watched
+    region to HQ (rate scales with coverage, cap 90, additive blend,
+    speed-scaled), and HQ carries a soft gold ingest glow that brightens
+    with arrivals and decays. Watching the harvest thicken IS the
+    progress bar.
+  - **Ambient route traffic**: active↔active regions exchange plane/ship
+    dots along ROUTES continuously (rate ∝ coverage, cap 40), on top of
+    the existing spread/adoption dots.
+  - **Event pings on the map**: protest transitions (violet ring),
+    violent turns + crackdowns (red ring), countermeasure unlocks
+    (violet 6-ray spark), expulsions/uprisings (big double shockwave),
+    synergy discoveries (gold ring at HQ). All drawn in drawFx beside
+    the existing pulses.
+- sws studio bridge + menu "Back to Sky Wolf" added; beta portal card.
+- mkgeo.js was NOT in the drop (Stephen doesn't have it) — if map data
+  ever needs regeneration, rewrite it from the spec in this handoff.
+
+
 Plague Inc-style satire sim: you're the surveillance vendor subjugating Earth via contracts, narrative capture, and manufactured crises. Win = 97% subjugation before Oversight hits 100. Single-file vanilla HTML/CSS/JS PWA, no build step, mobile-first. Lucid Winds stack.
 
 **Files:** `flock-the-world.html` (the game, ~188KB with embedded geometry) · `sim.js` (headless balance harness, needs `game.js` extracted — see Testing) · `mkgeo.js` (regenerates the embedded country data).
