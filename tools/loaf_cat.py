@@ -93,6 +93,13 @@ bpy.context.view_layer.objects.active = parts[0]
 bpy.ops.object.join()
 body = bpy.context.object
 body.name = 'CatBody'
+# The join keeps parts[0]'s transform, so vertex coords were LOCAL to the
+# torso (offset by BODY_C) while every shape-key constant below is written
+# in construction coords. Caught 2026-08-15 by rendering each morph: all
+# four sculpt keys landed in the wrong place (chonk/earSize/muzzle did
+# nothing visible, floof ballooned the head). Applying the transform makes
+# local == construction space, permanently.
+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
 # fuse into one organic volume, then relax
 body.data.remesh_voxel_size = VOXEL
@@ -201,6 +208,34 @@ for i, v in enumerate(body.data.vertices):
     if v.co.y < -1.0: amt += 0.05                     # tail plume
     if amt > 0:
         flK.data[i].co = v.co + v.normal * amt
+
+# tailLength: extend the plume along the base->tip direction, eased toward
+# the tip so the base stays anchored. Tail verts are found by distance to
+# the TAIL_PTS polyline (a y-cutoff also caught the haunches).
+def _dtail(p):
+    best = 1e9
+    for _i in range(len(TAIL_PTS) - 1):
+        a4 = mathutils.Vector(TAIL_PTS[_i]); b4 = mathutils.Vector(TAIL_PTS[_i + 1])
+        ab = b4 - a4
+        t4 = max(0.0, min(1.0, (p - a4).dot(ab) / ab.length_squared))
+        best = min(best, (p - (a4 + ab * t4)).length)
+    return best
+tlK = body.shape_key_add(name='tailLength', from_mix=False)
+_tb = mathutils.Vector(TAIL_PTS[0]); _tip = mathutils.Vector(TAIL_PTS[-1])
+_tdir = (_tip - _tb).normalized()
+for i, v in enumerate(body.data.vertices):
+    if _dtail(v.co) > 0.30: continue
+    along = min(1.0, (v.co - _tb).length / 1.35)
+    tlK.data[i].co = v.co + _tdir * (0.45 * along * along)
+
+# legLength, shipped as legStubby: +1 = munchkin. Lengthening would push the
+# paws through the floor, and stubby is the cute direction. The RUNTIME pairs
+# this key with a whole-cat drop of value * 0.31 (see morphs.json) so the
+# paws stay planted while the body rides lower.
+lsK = body.shape_key_add(name='legStubby', from_mix=False)
+for i, v in enumerate(body.data.vertices):
+    if v.co.z >= 0.95: continue
+    lsK.data[i].co = (v.co.x, v.co.y, 0.95 - (0.95 - v.co.z) * 0.62)
 
 # toe splay: one key per paw for the bean press. Radial spread in the paw
 # plane plus a small forward fan; belly-up, the pressed paw visibly opens.
@@ -521,3 +556,86 @@ for i, ang in enumerate((160, 205, 90, 340)):
     sc.render.filepath = os.path.join(OUT, 'turntable-%d.png' % i)
     bpy.ops.render.render(write_still=True)
     print('rendered', sc.render.filepath)
+
+# ---------------- baked maps for the runtime coat painter (LOAF_PLAN 2.6) ----
+# POSITION map (object-space XYZ normalized by the bounds written to
+# morphs.json), REGION-ID map (geometric zones as flat R values, id/8),
+# AO map. Baked LAST so the export and turntables keep the clean material.
+import json
+bpy.ops.object.select_all(action='DESELECT')
+body.select_set(True)
+bpy.context.view_layer.objects.active = body
+bpy.context.scene.frame_set(0)
+if arm.animation_data:
+    for _tr in arm.animation_data.nla_tracks:
+        _tr.mute = True          # bake the REST pose, not whatever clip frame 0 holds
+reset_pose()
+
+REGION_IDS = {'torso': 1, 'belly': 2, 'legs': 3, 'paws': 4,
+              'head': 5, 'ears': 6, 'muzzle': 7, 'tail': 8}
+_LEGS = [(-LEG_X_F, LEG_Y_F), (LEG_X_F, LEG_Y_F), (-LEG_X_B, LEG_Y_B), (LEG_X_B, LEG_Y_B)]
+def region_of(co):
+    if co.z > 2.05: return 6
+    if _dtail(co) < 0.30: return 8
+    if co.y > 1.30 and co.z < 1.72: return 7
+    if co.z > 1.40 and co.y > 0.45: return 5
+    if co.z < 0.30: return 4
+    if co.z < 0.92 and min(math.hypot(co.x - lx, co.y - ly) for lx, ly in _LEGS) < 0.34: return 3
+    if co.z < 0.78: return 2
+    return 1
+attr = body.data.color_attributes.new('region', 'FLOAT_COLOR', 'POINT')
+for i, v in enumerate(body.data.vertices):
+    attr.data[i].color = (region_of(v.co) / 8.0, 0, 0, 1)
+
+xs = [v.co.x for v in body.data.vertices]
+ys = [v.co.y for v in body.data.vertices]
+zs = [v.co.z for v in body.data.vertices]
+PMIN = (min(xs), min(ys), min(zs))
+PSIZE = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+
+nt = mat.node_tree
+outn = nt.nodes['Material Output']
+emi = nt.nodes.new('ShaderNodeEmission')
+geo = nt.nodes.new('ShaderNodeNewGeometry')
+sub = nt.nodes.new('ShaderNodeVectorMath'); sub.operation = 'SUBTRACT'
+sub.inputs[1].default_value = PMIN
+div = nt.nodes.new('ShaderNodeVectorMath'); div.operation = 'DIVIDE'
+div.inputs[1].default_value = PSIZE
+nt.links.new(geo.outputs['Position'], sub.inputs[0])
+nt.links.new(sub.outputs[0], div.inputs[0])
+att = nt.nodes.new('ShaderNodeAttribute'); att.attribute_name = 'region'
+tex = nt.nodes.new('ShaderNodeTexImage')
+nt.nodes.active = tex
+
+def bake_map(name, source_socket, bake_type, samples):
+    img = bpy.data.images.new(name, 512, 512)
+    img.colorspace_settings.name = 'Non-Color'
+    tex.image = img
+    if source_socket is not None:
+        nt.links.new(source_socket, emi.inputs['Color'])
+        nt.links.new(emi.outputs['Emission'], outn.inputs['Surface'])
+    sc.cycles.samples = samples
+    bpy.ops.object.bake(type=bake_type)
+    img.filepath_raw = os.path.join(OUT, name + '.png')
+    img.file_format = 'PNG'
+    img.save()
+    print('baked', img.filepath_raw)
+
+bake_map('map_position', div.outputs[0], 'EMIT', 1)
+bake_map('map_region', att.outputs['Color'], 'EMIT', 1)
+bake_map('map_ao', None, 'AO', 24)
+
+with open(os.path.join(OUT, 'morphs.json'), 'w') as f:
+    json.dump({
+        'positionMap': {'min': PMIN, 'size': PSIZE,
+                        'note': 'texel RGB * size + min = object-space XYZ (+Y forward, Z up)'},
+        'regions': REGION_IDS,
+        'regionEncoding': 'R channel = id/8; round(R*8) at runtime, margin bleeds between islands',
+        'morphs': {
+            'legStubby': {'pairedDrop': 0.31,
+                          'note': 'runtime lowers the whole cat by value*pairedDrop so paws stay planted'},
+            'tailLength': {}, 'chonk': {}, 'earSize': {}, 'muzzle': {}, 'floof': {},
+            'toesFL': {}, 'toesFR': {}, 'toesBL': {}, 'toesBR': {}
+        }
+    }, f, indent=1)
+print('wrote', os.path.join(OUT, 'morphs.json'))
