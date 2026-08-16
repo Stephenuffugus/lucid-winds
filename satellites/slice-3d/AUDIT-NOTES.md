@@ -151,7 +151,7 @@ its depth, which are both accurate there.
 Knife Forge, line 180: "Unlock knives and swords - each is pure style". Rewritten as two
 sentences rather than swapping the character, per the house rule.
 
-### 6. LOW — the feedback fab has to hide on the title screen. NOT FIXED, deliberate
+### 7. LOW — the feedback fab has to hide on the title screen. NOT FIXED, deliberate
 
 The fab lands at x 315..363, y 521..571 at 375x667. The How / Forge / Music row occupies
 x 42..333, y 522..572, so they overlap, and `feedback.js` correctly fades itself out
@@ -162,7 +162,7 @@ Left alone on purpose: the fix belongs in the row's geometry or in `feedback.js`
 `feedback.js` is outside this audit's sandbox. Narrowing the button row to clear the corner
 would shrink three 48px-plus targets to buy back one, which is the wrong trade.
 
-### 7. NOT A DEFECT — the drawn-scale/tested-scale mismatch is genuinely fixed
+### 8. NOT A DEFECT — the drawn-scale/tested-scale mismatch is genuinely fixed
 
 Project memory flags this game for "drawn scale did not match tested scale", so it was
 re-verified rather than assumed. Both halves now hold:
@@ -178,7 +178,7 @@ re-verified rather than assumed. Both halves now hold:
   The injected exit button gets this right too: `arcade-exit.js` measures the stage's real
   scale and raises its own `minHeight` in stage units, landing at 50 rendered.
 
-### 8. NOT A DEFECT — the exit works, and something calls it
+### 9. NOT A DEFECT — the exit works, and something calls it
 
 `/arcade-exit.js` finds `#s-title`, injects "◄ All Sky Wolf games", and defines
 `window.SWS_EXIT`. Measured live: the button renders at 277.8 x 50 px, visible, on the title

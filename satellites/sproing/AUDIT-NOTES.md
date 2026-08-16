@@ -172,6 +172,14 @@ Beyond those two this pass is deliberately conservative. The spring is locked, t
 complete, the economy ladders sensibly, and the failure modes worth spending minutes on
 were all in persistence rather than in play.
 
+## SUITE
+
+`node satellites/sproing/audit-check.mjs` (repo root served on :8777). Six phases:
+26 corrupt-save poisonings that each prove a *button still works* rather than that a page
+still renders, sane-value fallbacks, the two-tab merge driven through a real shop purchase,
+the core loop including onboarding escape, the standing defect classes, the in-run HUD
+touch targets, and the portal ready handshake in a real iframe with no `?embed=1`.
+
 ## THE FIRST THIRTY SECONDS — looked at, one reservation
 
 Screenshotted the onboarding studio at 375x667 rather than reasoning about it. A brand new
