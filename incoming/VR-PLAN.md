@@ -90,11 +90,37 @@ so much stuff that nobody uses.* A storefront listing does more for that in a we
 single VR title does in a month.
 
 - [ ] Meta developer account under SWS Strategic Media LLC (developers.meta.com/horizon)
-- [ ] Verify the arcade manifest satisfies Bubblewrap: `name`, `short_name`, `start_url`, `display: standalone`
+- [x] ~~Verify the arcade manifest satisfies Bubblewrap~~ — it already does. `portal/manifest.webmanifest` has `name`, `short_name`, `start_url`, `id`, `display: standalone`, and 192 plus 512 icons in both `any` and `maskable`. `scope` is `/`, which correctly keeps every game inside the app window. Its description said 140+ games and now says 180+.
+- [ ] **Deal with the 13 off-origin games first.** See below.
 - [ ] Package 2D, landscape, unique Android package id, signed
 - [ ] Store assets: icon set, hero, 3+ screenshots, 30-60s capture recorded on the Quest itself
 - [ ] IARC questionnaire, target Everyone or E10+
 - [ ] Submit for VRC review
+
+#### The one real blocker in Phase 1: 13 games live on someone else's origin
+
+A store app is a Trusted Web Activity. URLs inside `scope` open in the app window;
+anything outside it opens in a browser overlay, and in a headset that means the player
+gets ejected from the app and has to find their way back. Of 119 satellite cards, 105 are
+same origin and fine. **13 are not**, and the list includes a flagship and the handoff's
+own surviving VR candidate:
+
+```
+  12 on stephenuffugus.github.io   Tomato Man · Abduct a Chameleon · Abduct a Chameleon 3D ·
+                                   Glyph Forge · Litter Bug · Sweet Spot · Tarot Run ·
+                                   Sixfold · Letter Launch · Skitterlings · Wild Wardens · Tally
+   1 on hunch-mauve.vercel.app     HUNCH
+```
+
+(Lucid Winds itself is written as an absolute `lucidwinds.com` URL but that is the app's
+own origin, so it stays in scope.)
+
+The fix is the one already used for Aura Farm: **vendor them same origin** into
+`satellites/<name>/`. That also removes their dependence on GitHub Pages staying up and
+makes them cacheable by the arcade's own service worker. Twelve of the thirteen are repos
+we control. It is a day of unglamorous copying and it should happen before packaging, not
+after, because a store reviewer opening Litter Bug and getting bounced to a browser is a
+VRC finding waiting to happen.
 
 **The risk to name honestly:** a free app on the Horizon Store gets very little organic
 traffic unless it is featured. This is a lottery ticket that costs almost nothing, not a
