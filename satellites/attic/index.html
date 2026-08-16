@@ -50,6 +50,16 @@
   .wantbtn b { color:#d9a94e; }
   .wantbtn:active { background:#2a2016; }
 
+  /* the way out. The portal opens this game as a TOP LEVEL navigation, never a
+     frame, so there is no portal chrome around it and the browser back button
+     was the only road home. Sits above the sign, left aligned, on its own row so
+     it can never crowd the ticket count or the WANT LIST button. */
+  .backrow { width:100%; display:flex; justify-content:flex-start; margin:0 0 10px; }
+  .backchip { display:inline-flex; align-items:center; gap:8px; min-height:48px; padding:0 16px;
+    background:#1c1610; border:1px solid #4a3b26; border-radius:24px; color:#a8906a;
+    font-family:ui-monospace, monospace; font-size:0.62rem; letter-spacing:0.16em; cursor:pointer; }
+  .backchip:active { background:#2a2016; color:#d9a94e; }
+
   .rummage[disabled] { opacity:0.45; filter:grayscale(0.6); }
   .brokenote { font-size:0.68rem; color:#a8906a; text-align:center; margin-top:8px; line-height:1.5; }
 
@@ -190,16 +200,35 @@
 </style>
 <!-- ⛔⛔ SWS EMBED PROTOCOL: announce ready on EVERY framed page, three times.
      The portal arms a black screen watchdog when it opens a game and rescues
-     anything that never announces, so a silent page gets yanked mid play. -->
+     anything that never announces, so a silent page gets yanked mid play.
+     ⛔⛔ AND: the portal only FRAMES /play/*.html and github.io urls. This card
+     is a relative /satellites/ url, so it arrives here as a TOP LEVEL
+     navigation with no portal chrome at all. The exit therefore cannot key off
+     window.parent alone, it has to fall back to the referrer. -->
 <script>
-if (window.parent !== window) {
-  var swsHi = function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} };
-  swsHi(); window.addEventListener('load', swsHi); setTimeout(swsHi, 700);
-}
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(framed){
+    var swsHi=function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} };
+    swsHi(); window.addEventListener('load',swsHi); setTimeout(swsHi,700);
+  }
+  function wire(){
+    var b=document.getElementById('swsBack');
+    if(b && !b._swsWired){ b._swsWired=1; b.addEventListener('click',function(){ window.SWS_EXIT(); }); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
+})();
 </script>
 </head>
 <body>
 <div class="wrap">
+  <div class="backrow"><button class="backchip" id="swsBack" type="button" aria-label="Back to the arcade">&#8249; BACK TO THE ARCADE</button></div>
   <h1>THE ATTIC<small>Sky Wolf Studios</small></h1>
   <p class="demo-note">Every rummage turns up one object that has never existed before and never will again. Records, tapes, carded toys, board games, and cereal boxes, each with its own era, its own wear, and its own story.</p>
 

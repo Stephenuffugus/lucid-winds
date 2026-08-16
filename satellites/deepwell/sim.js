@@ -33,7 +33,7 @@ var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'runOver', 'visibleNodes', 'currentReveal', 'sessionSeconds', 'capsFor', 'emptyUpg',
   'cargoValue', 'cargoWeight', 'upgradeCost', 'fullClearCost', 'shopBuy', 'defaultSave', 'migrate',
   'loadSave', 'commitSave', 'memStorage', 'POLICIES', 'playRun', 'airCum', 'lampCum',
-  'shrineAcceptable', 'spillSet', 'shrineText', 'DEEPS', 'deepsAt', 'resolveDeeps', 'heaviestIndex', 'richnessAt', 'tierChanceAt', 'pickTier', 'TEST'];
+  'shrineAcceptable', 'spillSet', 'shrineText', 'migrateRun', 'DEEPS', 'deepsAt', 'resolveDeeps', 'heaviestIndex', 'richnessAt', 'tierChanceAt', 'pickTier', 'TEST'];
 
 /* Build a SIM against an overridden CONFIG. The override is a SOURCE level
    substitution of the numeric literal, not a mutation, because CONFIG is frozen

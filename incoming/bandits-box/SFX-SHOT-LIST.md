@@ -75,6 +75,25 @@ Spec: 4-8 s loops, seamless (record 10 s, we crossfade the seam in software),
 same mic distance for both of a pair. This needs an engine change
 (`FrictionSampled`), so record whenever — the one-shots above ship first.
 
+## Seven more, added 2026-08-16 with the audit pass
+
+Three of these are toys that could never take a recording until now (chocolate,
+bubble wrap and edamame were missed when the switch wall was fixed), and four
+belong to the two new toys, the rain stick and the coin.
+
+| name | what it is in-app | what to record |
+|---|---|---|
+| `crack` | chocolate bar breaking, the first fracture | a real bar bent slowly until it goes, three thicknesses, close mic |
+| `burst` | bubble wrap bubble giving way | a single large bubble, held near the mic, not a sheet |
+| `bean` | edamame pod squeezed, bean leaves the pod | a pod actually popped, plus a thumbnail run down a wet pea pod |
+| `unbean` | the pod relaxing back | the empty pod flexed back, soft and papery |
+| `rattle` | rain stick, beads passing a pin | a real rain stick tipped slowly, then quickly, at least twelve seconds |
+| `ring` | coin spinning down to rest | a coin spun on a hard table, recorded until it settles, do not cut the tail |
+| `land` | coin coming to a stop flat | the last half second of the same take, isolated |
+
+The rain stick wants length over polish: the toy answers slowly on purpose, and
+a short loop will read as a shaker instead of a stick.
+
 ## Surprise gags (optional, pure joy)
 
 The every-~100th-pop surprises are synth sketches: door chime, small dog,

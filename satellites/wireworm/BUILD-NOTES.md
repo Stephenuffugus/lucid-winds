@@ -4,10 +4,19 @@
 Game id `wireworm` · accent electric lime `#a3e635` · 20x20 grid · portal `cat:"action"` · icon 🐛.
 
 ```
-node sim.js --test        PASSED 205 / FAILED 0   (205 assertions)   exit 0
-node sim.js --runs=20000  balance sweep, three agents, table below
-node sim.js --watch=SEED  ASCII board frames  [--every=N] [--agent=greedy|randomsafe|random]
+node sim.js --test        PASSED 252 / FAILED 0   (252 assertions)   exit 0
+node sim.js --runs=20000  balance sweep, FOUR agents, table below
+node sim.js --bands       the two missed balance bands, tested not inherited
+node sim.js --watch=SEED  ASCII frames [--every=N] [--agent=greedy|randomsafe|random|filler] [--mode=daily]
 ```
+
+> **Deepening pass, second session.** 205 assertions in, 252 out. Nothing was
+> rewritten. What changed: the board filler agent that §6.5's second win
+> condition was missing, the two missed bands tested rather than argued, a
+> tightening combo window so the ladder stops pinning, the CREEP hazard, and a
+> daily that is a different game from endless instead of a different seed.
+> Sections 12 to 16 are this pass; sections 1 to 11 are the first build and are
+> still true except where a number is restated.
 
 `sim.js` extracts the SIM, SAVE and TEST blocks out of `index.html` between marker
 comments, so node runs the same code the phone runs. There is no second copy of
@@ -322,3 +331,69 @@ assertions did not. Root causes:
    verification only from this side, plus the main loop's screenshots.
 6. Icons are referenced but not created here (`icon-192.png`, `icon-512.png`,
    `icon-maskable-512.png`); the main loop renders all five games' icons.
+
+*(Gaps 1, 3 and 4 above were the brief for the second pass. Sections 12 to 16
+are what happened to them. Gap 5 still stands: no browser was run from this side
+either, eight agents on two cores.)*
+
+---
+---
+
+# SECOND PASS — the deepening
+
+## 12. The board filler: the overload playstyle now has an agent
+
+The first build's own verdict was that half of §6.5 was unmeasured, because
+nothing in the sweep ever steered for the breaker and every median read
+`overloads 0`. It now has an agent, `agentFiller`, and the answer is not the one
+the gap note assumed.
+
+**How it plays.** Charge on any terminal, then deliberately take the LONG way
+round: BFS to the free reachable cell furthest from the matching terminal, grow
+the uncommitted slice, and only close the circuit once the slice would add
+`FILL_TARGET` cells to the load meter. It steers on `pendingNew`, not on slice
+length, because re walking wire that is already live scores again but moves the
+breaker not at all. It refuses to route over the discharge pickup: a board
+filler standing on the relief valve is throwing away its own wall. Survival is
+the same `survivalTurn` tail the greedy agent uses, extracted verbatim and
+**proved bit identical over 600 seeds** before anything else was measured
+(`ww_refactor_check.js`, run once, not shipped).
+
+**FILL_TARGET was swept, not guessed** (500 runs per cell, before the creep and
+combo changes landed):
+
+| FILL_TARGET | median ticks | median score | median peak load | runs that trip the breaker |
+|---|---|---|---|---|
+| 25 | 248 | 268 | 150 | 5.4% |
+| 40 | 307 | 317 | 174 | 17.0% |
+| 55 | 536 | 407 | 169 | 32.3% |
+| 70 | 639 | 459 | 180 | 37.8% |
+| **90 (shipped)** | **995** | **1616** | **207** | **51.0%** |
+| 110 | 1045 | 1387 | 133 | 46.8% |
+
+Monotone up to 90 and then it turns over: at 110 the agent is so busy detouring
+that it stops closing circuits at all and its median peak load collapses from
+207 to 133. 90 is the top of the curve, not a taste.
+
+### The verdict, in one line
+
+**Board filling is not decorative and it is not strictly worse. It is a
+different bet with the same expected shape and a much fatter tail.** At
+FILL_TARGET 90 the filler medians 1616 score against greedy's 681, with a p90 of
+5429 against 1165 and a max of 16876 against 3993, and it trips the breaker in
+half its runs where greedy trips one in fifty.
+
+The honest asterisk is the rate. Score per 100 ticks: **greedy 237, filler
+162**. The combo chaser scores FASTER, the board filler scores MORE PER RUN. In
+an endless run, where the clock is free, the filler wins. That is why the daily
+now has a clock (section 16): with 600 ticks on the board the two strategies
+trade places, and the mode difference is a genuine strategic fork rather than a
+different seed.
+
+The two styles are mutually exclusive in practice and the ASCII frames show why:
+a filler circuit takes 100 to 130 ticks, so **the filler holds x1 combo for its
+entire run**. Combo chasing forfeits the breaker, board filling forfeits the
+ladder. That was the design's claim in §6.5 and it is now a measurement.
+
+Three sweep gates were added and all three were watched go red (break 6:
+`agentFiller` aliased to `agentGreedy`).

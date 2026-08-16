@@ -3427,7 +3427,12 @@ function startRoomEdit(){
   savedFeats=FEATS.slice();
   undoStack.length=0; redoStack.length=0;
   clearPaper();
-  if(ROOM.url){ var im=new Image(); im.onload=function(){ if(roomEdit) pctx.drawImage(im,0,0,PAPER,PAPER); }; im.src=ROOM.url; }
+  if(ROOM.url){
+    var im=new Image();
+    im.onload=function(){ if(roomEdit) pctx.drawImage(im,0,0,PAPER,PAPER); };
+    im.onerror=function(){ if(roomEdit) toastHatch('Your old room could not be opened, so here is a fresh page.'); };
+    im.src=ROOM.url;
+  }
   guide.on=false;
   $('wizBar').style.display='flex';
   $('wizStep').textContent='🛋️ Draw the room!';

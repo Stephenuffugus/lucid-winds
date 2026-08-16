@@ -224,7 +224,7 @@ var TIERS = {
   }),
   long: Object.freeze({
     key: "long", name: "Long case", brief: "A long night. More people, more talk.",
-    proof: "long", actions: 25, lo: 10, hi: 17, target: 13, noiseLo: 6, noiseHi: 12, reach: 16,
+    proof: "long", actions: 25, lo: 10, hi: 17, target: 17, noiseLo: 6, noiseHi: 12, reach: 16,
     press: 2, exact: false, roomSlots: 3,
     liar: Object.freeze({ actions: 28, lo: 15, hi: 24, target: 20, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
@@ -1209,7 +1209,7 @@ function makeLie(W, rng) {
         var rooms = [], k;
         for (k = 0; k < 6; k++) if (k !== T.r) rooms.push(k);
         var rr = rooms[rng.int(rooms.length)];
-        return { ty: 1, p: { s: T.c, t: T.t, r: T.r }, ref: [T.c], speaker: T.c };
+        return { ty: 1, p: { s: T.c, t: T.t, r: rr }, ref: [T.c], speaker: T.c };
       }
       case 1: {
         // somebody vouches for the culprit's character

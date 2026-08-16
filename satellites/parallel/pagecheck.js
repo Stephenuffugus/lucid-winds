@@ -304,7 +304,10 @@ var sky = D.getElementById('sky');
 var hits = (sky.innerHTML.match(/class="starhit"/g) || []).length;
 eq('the sky draws one hit target per level', hits, 100);
 var rs = sky.innerHTML.match(/r="(\d+)" fill="transparent"/g) || [];
-ok('every hit target is the full radius', rs.length === 100, rs.length + ' full radius targets');
+var minR = 999, rm;
+for (i = 0; i < rs.length; i++){ rm = parseInt(rs[i].match(/\d+/)[0], 10); if (rm < minR) minR = rm; }
+ok('every hit target is at least 48px across, smallest ' + (minR * 2) + 'px',
+   rs.length === 100 && minR * 2 >= 48, rs.length + ' targets, min radius ' + minR);
 ok('the sky is sized in pixels so a unit is a pixel', /px$/.test(sky.style.width), sky.style.width);
 var vb = sky.attrs['viewBox'] || '';
 eq('the viewBox matches the drawn width', vb.split(' ')[2] + 'px', sky.style.width);

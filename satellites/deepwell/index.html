@@ -1270,6 +1270,31 @@ function defaultSave() {
     run: null
   };
 }
+/* DEEPWELL is live, so there are runs sitting in localStorage that were saved
+   by a build with no `deeps` list, no free descents and no vein sense. Resume
+   has to fill those in or the first landmark below 200m reads a field that is
+   not there. Anything unrecognisable is thrown away rather than resumed. */
+function migrateRun(run) {
+  if (!run || typeof run !== 'object') return null;
+  if (typeof run.depth !== 'number' || !isFinite(run.depth) || run.depth < 0) return null;
+  if (!run.col || !Array.isArray(run.col.nodes) || !Array.isArray(run.cargo)) return null;
+  if (!run.caps || typeof run.caps.pack !== 'number') return null;
+  if (!Array.isArray(run.deeps)) run.deeps = [];
+  if (!run.flags || typeof run.flags !== 'object') run.flags = {};
+  var f = run.flags;
+  if (typeof f.hazBonus !== 'number') f.hazBonus = 0;
+  if (typeof f.oreWeightBonus !== 'number') f.oreWeightBonus = 0;
+  if (typeof f.emptyVeins !== 'number') f.emptyVeins = 0;
+  if (typeof f.revealUntil !== 'number') f.revealUntil = -1;
+  if (typeof f.freeDescents !== 'number') f.freeDescents = 0;
+  if (typeof f.veinSense !== 'boolean') f.veinSense = !!f.veinSense;
+  if (typeof f.nullifyHazard !== 'boolean') f.nullifyHazard = !!f.nullifyHazard;
+  if (typeof f.doubleVein !== 'boolean') f.doubleVein = !!f.doubleVein;
+  if (!Array.isArray(run.log)) run.log = [];
+  if (!Array.isArray(run.inputs)) run.inputs = [];
+  return run;
+}
+
 function migrate(save) {
   if (!save || typeof save !== 'object') return defaultSave();
   var d = defaultSave(), k;
@@ -1280,6 +1305,7 @@ function migrate(save) {
   if (typeof save.cash !== 'number' || !isFinite(save.cash) || save.cash < 0) save.cash = 0;
   if (!save.best || typeof save.best !== 'object') save.best = d.best;
   if (!Array.isArray(save.history)) save.history = [];
+  save.run = migrateRun(save.run);
   save.v = CONFIG.SAVE_V; save.gameId = CONFIG.GAME_ID;
   return save;
 }
@@ -2136,6 +2162,30 @@ function suiteDeepening(T) {
     poor += pickTier(makeRNG(i * 7 + 1), bandAt(22), 22);
   }
   T.assert('measured over four thousand rolls, deep shale really is richer', rich > poor * 1.2, rich + ' vs ' + poor);
+
+  /* A RUN SAVED BY THE BUILD BEFORE THIS ONE MUST RESUME */
+  var oldRun = playRun(4711, { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 }, 'cautious');
+  var mid = newRun(makeRNG(4711), { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 }, null);
+  step(mid, 'descend'); step(mid, 'descend');
+  var legacy = JSON.parse(JSON.stringify(mid));
+  delete legacy.deeps;
+  delete legacy.flags.freeDescents;
+  delete legacy.flags.veinSense;
+  var sv = defaultSave(); sv.run = legacy;
+  var back = migrate(sv);
+  T.assert('a run saved before the deepening still resumes', !!back.run);
+  T.assert('and gets a landmark list', Array.isArray(back.run.deeps) && back.run.deeps.length === 0);
+  T.eq('and gets free descents at zero', back.run.flags.freeDescents, 0);
+  T.eq('and gets vein sense off', back.run.flags.veinSense, false);
+  var evz = [];
+  back.run.depth = 205;
+  T.ok('a landmark fires on a resumed legacy run without throwing', function () { resolveDeeps(back.run, evz); });
+  T.eq('and the legacy run records it', back.run.deeps.length, 1);
+  var junk = defaultSave(); junk.run = { depth: 5 };
+  T.eq('a run with no column is thrown away rather than resumed', migrate(junk).run, null);
+  var junk2 = defaultSave(); junk2.run = 'not a run';
+  T.eq('garbage in the run slot is thrown away', migrate(junk2).run, null);
+  T.assert('a healthy finished run is untouched by the run migration', oldRun.over !== null);
 
   /* THE DEEP HAS TO BE REACHABLE. Six landmarks nobody can stand in is six
      pieces of content that do not exist. Measured against the depth run
