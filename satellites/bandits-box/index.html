@@ -3855,16 +3855,22 @@ if(shakeSvg){
   requestAnimationFrame(shakeTick);
   var here=(curToy==='shake');
   var i,g,moving=0,flow=0,hits=0;
-  var grav=Math.cos(shAng)*0.00042;      // upright means straight down the tube
+  /* Tuned by simulating it, since there is no phone in this lane. The first
+     numbers ran the whole tube out in a second flat with the bed pinned at
+     full gain the entire time, so a nudge and a full turn sounded identical.
+     Terminal speed is now about 0.003 of the tube per frame: three to five
+     seconds end to end, which is what a real stick does, and the gain has
+     somewhere to go. */
+  var grav=Math.cos(shAng)*0.000045;     // upright means straight down the tube
   for(i=0;i<SH_N;i++){
     g=shGrains[i];
-    g.v=(g.v+grav)*0.986;
-    if(Math.abs(g.v)>0.00004) g.v+=(Math.random()-0.5)*0.00022;   // pins scatter them
+    g.v=(g.v+grav)*0.988;
+    if(Math.abs(g.v)>0.00002) g.v+=(Math.random()-0.5)*0.00004;   // pins scatter them
     g.p+=g.v;
     var lo=g.rest*0.5, hi=1-g.rest*0.5;
-    if(g.p>hi){ g.p=hi; if(g.v>0.0016) hits++; g.v=-g.v*0.22; }
-    if(g.p<lo){ g.p=lo; if(g.v<-0.0016) hits++; g.v=-g.v*0.22; }
-    if(Math.abs(g.v)>0.0004){ moving++; flow+=Math.abs(g.v); }
+    if(g.p>hi){ g.p=hi; if(g.v>0.0009) hits++; g.v=-g.v*0.22; }
+    if(g.p<lo){ g.p=lo; if(g.v<-0.0009) hits++; g.v=-g.v*0.22; }
+    if(Math.abs(g.v)>0.00012){ moving++; flow+=Math.abs(g.v); }
   }
   if(!here){
     // the grains keep settling while you are away, in silence
@@ -3877,7 +3883,7 @@ if(shakeSvg){
   if(!shVoice&&moving>2&&audioOK)
     shVoice=Friction({lo:1100,hi:6200,Q:0.6,gain:0.24,body:760,bodyMix:0.28,keep:true});
   if(shVoice){
-    shVoice.set(clamp(flow*90,0,1), clamp(0.15+moving/28,0.15,1), Math.sin(shAng)*0.6);
+    shVoice.set(clamp(flow*4.5,0,1), clamp(0.15+moving/40,0.15,1), Math.sin(shAng)*0.6);
     if(moving===0&&!shDown){ shVoice.stop(); shVoice=null; }
   }
   shLanded+=hits;
@@ -3911,7 +3917,14 @@ var cnSpin=0, cnOmega=0, cnTilt=0, cnWob=0, cnState='rest', cnFace=0,
 function coinDraw(){
   if(!coinFace) return;
   var up=cnTilt;                                  // 1 on edge, 0 lying flat
-  var spinW=Math.abs(Math.cos(cnSpin));           // how much face you can see
+  /* A coin turning at half a radian a frame would show face, edge, face, edge
+     on consecutive frames: a strobe, which this app is not allowed to do to
+     anybody. Real eyes see a fast coin as a blurred disc, so the faster it
+     goes the more the width floor takes over and the flicker never happens.
+     Calm motion holds it at the blur the whole way. */
+  var blur=clamp(Math.abs(cnOmega)/0.016,0,1);
+  if(S.calm) blur=Math.max(blur,0.85);
+  var spinW=Math.max(Math.abs(Math.cos(cnSpin)),blur);
   var rx=COIN_R*(up>0.5?Math.max(0.06,spinW):1);
   var ry=COIN_R*(0.30+0.70*up);
   var cy=120+(1-up)*34;                           // it comes down as it lies over
@@ -3943,7 +3956,7 @@ function coinMarkFor(f){
 }
 coinMarkFor(0);
 function coinFlick(vx){
-  cnOmega=clamp(vx,-0.055,0.055);
+  cnOmega=clamp(vx,-0.04,0.04);
   if(Math.abs(cnOmega)<0.006) cnOmega=(cnOmega<0?-1:1)*0.006;
   cnState='spin'; cnTilt=1; cnWob=0;
   if(cnVoice&&cnVoice.dead) cnVoice=null;
@@ -3990,18 +4003,22 @@ if(coinSvg){
   var dt=16;
   if(cnState==='spin'){
     cnSpin+=cnOmega*dt;
-    cnOmega*=0.9955;
+    cnOmega*=0.993;
     cnWob+=0.05;
     if(Math.abs(cnOmega)<0.0075){ cnState='fall'; cnWob=0; cnLastTick=0; }
   }else if(cnState==='fall'){
     /* Euler's disk: as the tilt collapses the contact point circles faster.
        The rate blows up as tilt approaches zero, which is exactly why a
-       dropped coin ends in that rush of clicks. */
-    var rate=0.055+0.20/(cnTilt+0.10);
+       dropped coin ends in that rush of clicks. Simulated before it was
+       believed: the first numbers gave seven evenly spaced ticks every single
+       time, which is a metronome, not a coin. Now it is about thirty over two
+       and a half seconds, opening near a quarter second apart and closing to
+       nearly touching. */
+    var rate=0.20+0.26/(cnTilt+0.05);
     cnWob+=rate;
     cnSpin+=cnOmega*dt;
     cnOmega*=0.988;
-    cnTilt-=0.0042+0.010*(1-cnTilt);
+    cnTilt-=0.0028+0.009*(1-cnTilt);
     var tick=Math.floor(cnWob/(Math.PI*2));
     if(tick!==cnLastTick){
       cnLastTick=tick;

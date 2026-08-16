@@ -1060,11 +1060,11 @@ function makeProfile(sil,forcedName){
   } else { rng(); rng(); rng(); }
   var colorWord=COLOR_WORDS[f.color]||'colorful';
   var shapeWord = f.tall>1.5?'tall and proud' : f.tall<0.62?'long and low' : 'round and huggable';
-  var legWord = f.legs>=4?('a proud '+(f.legs>=5?'many':'four')+'-legged explorer')
-              : f.legs===3?'a wobbly three-legged wanderer'
-              : f.legs===2?'a bouncy two-legged hopper':'a happy little floater';
+  var legWord = f.legs>=4?('a proud explorer on '+(f.legs>=5?'many legs':'four legs'))
+              : f.legs===3?'a wobbly wanderer on three legs'
+              : f.legs===2?'a bouncy hopper on two legs':'a happy little floater';
   var spikyWord = f.spiky>5?'wonderfully wiggly around the edges':f.spiky>3.2?'delightfully bumpy around the edges':'smooth as a river stone';
-  var sizeWord = f.coverage>0.34?'grand':f.coverage<0.12?'teeny-tiny':'just-right';
+  var sizeWord = f.coverage>0.34?'grand':f.coverage<0.12?'teeny tiny':'just right';
   var nameOrigins=[
     name+' got its name from being so wonderfully '+colorWord+'.',
     name+' earned its name the day it first went "'+'" and made everybody laugh.',
@@ -3205,15 +3205,16 @@ function visitorPaint(){
     t2.getContext('2d').drawImage(visitorCanvas,0,0,160,160); return t2.toDataURL(); })();
   if(days>=3){
     $('visTitle').textContent='🐾 It wants to stay!';
-    $('visText').textContent='You fed it '+days+' days in a row and it trusts you completely. Would you like it to live in your nursery?';
+    /* the code counts DISTINCT days, so the copy says distinct days */
+    $('visText').textContent='You have shared snacks on '+days+' different days and it trusts you completely. Would you like it to live in your nursery?';
     $('visAdopt').style.display='block';
     $('visFeed').style.display='none';
   } else {
     $('visTitle').textContent='🐾 A wild critter!';
     $('visText').textContent = fedToday
-      ? 'It munched happily today. Feed it on '+(3-days)+' more day'+(3-days>1?'s':'')+' and it might want to stay!'
+      ? 'It munched happily today. Share a snack on '+(3-days)+' more day'+(3-days>1?'s':'')+' and it might want to stay!'
       : (days===0 ? 'A shy wild critter wandered into the meadow. It looks a little hungry.'
-                  : 'It remembers you! That makes '+days+' of 3 days of snacks.');
+                  : 'It remembers you! That makes snacks on '+days+' different days out of 3.');
     $('visAdopt').style.display='none';
     $('visFeed').style.display=fedToday?'none':'block';
   }
@@ -3792,7 +3793,11 @@ function printCard(){
   $('pcName').textContent=p.name;
   $('pcSpecies').textContent=p.species;
   $('pcDrawing').src=CUR.drawing;
-  try{ renderer.render(scene,camera); $('pcModel').src=renderer.domElement.toDataURL('image/png'); }catch(e){}
+  /* if the 3D shot cannot be taken, print the card without an empty broken
+     picture box in the middle of it */
+  $('pcModel').style.display='';
+  try{ renderer.render(scene,camera); $('pcModel').src=renderer.domElement.toDataURL('image/png'); }
+  catch(e){ $('pcModel').removeAttribute('src'); $('pcModel').style.display='none'; }
   $('pcOrigin').textContent=p.nameOrigin;
   $('pcDesc').textContent=p.description;
   $('pcDiet').textContent=p.diet;

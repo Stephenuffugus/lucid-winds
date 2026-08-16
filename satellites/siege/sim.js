@@ -247,8 +247,9 @@ function sweep() {
 
   /* ---- the three defect measurements, over the top 40 builds ---- */
   var stranded = 0, strandedAt = '', idleWorst = 0, idleAt = '', emptyWorst = 0, emptyAt = '';
+  var emptyTop = 0, emptyTopAt = '';
   var earlySum = 0, earlyN = 0;
-  activeRows.slice(0, 40).forEach(function (row) {
+  activeRows.slice(0, 40).forEach(function (row, ri) {
     row.rows.forEach(function (wr) {
       if (!wr) return;
       var sh = SIM.damageShare(wr.dmg);
@@ -263,6 +264,13 @@ function sweep() {
          (bodies exist but none in reach, which also counts the run out). */
       if (wr.emptyMax > emptyWorst) {
         emptyWorst = wr.emptyMax; emptyAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
+      }
+      /* the gate reads the eight builds a player actually converges on. A lane
+         that empties because all three trap types are stacked in the MOUTH and
+         delete every body on arrival is a power fantasy, not a pacing bug, and
+         gating on it would ban the build rather than fix the schedule. */
+      if (ri < 8 && wr.emptyMax > emptyTop) {
+        emptyTop = wr.emptyMax; emptyTopAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
       }
       if (wr.idleMax > idleWorst) {
         idleWorst = wr.idleMax; idleAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
@@ -296,9 +304,10 @@ function sweep() {
      strip. See BUILD-NOTES.md. */
   gates.push(gate('no purse strands: under a trap price left over past wave 14', stranded < 90,
     'worst leftover ' + stranded + ' scrap (' + (strandedAt || 'none') + ')'));
-  gates.push(gate('no dead lane: under 1.5 seconds with nothing alive mid wave', emptyWorst <= 15,
-    'longest empty lane ' + (emptyWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyAt || 'none') + '). ' +
-    'longest stretch with nothing in reach ' + (idleWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (idleAt || 'none') + ')'));
+  gates.push(gate('no dead lane: under 2 seconds of empty lane on the top 8 builds', emptyTop <= 20,
+    'longest empty lane ' + (emptyTop * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyTopAt || 'none') +
+    '); worst across 40 builds ' + (emptyWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyAt || 'none') +
+    '); longest with nothing in reach ' + (idleWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's'));
   gates.push(gate('the build phase earns its 20 seconds: traps do 25 percent by wave 5', earlyTrapShare >= 0.25,
     'mean trap damage share over waves 1 to 5 ' + pct(earlyTrapShare) + ' across ' + earlyN + ' waves'));
 

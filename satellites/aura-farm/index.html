@@ -834,11 +834,11 @@ function awardRelic(){
 
 /* ---------------- daily setup ---------------- */
 function rollDay(){
-  run.weather = run.day===1 ? 'clear' : WEATHERS[Math.floor(Math.random()*WEATHERS.length)].id;
+  run.weather = run.day===1 ? 'clear' : pick(WEATHERS).id;
   run.event = null;
   const pool = VENUE_EVENTS.filter(e=>run.unlocked[e.venue]);
-  if (run.day>1 && pool.length && Math.random()<0.6) {
-    const ev = pool[Math.floor(Math.random()*pool.length)];
+  if (run.day>1 && pool.length && chance(0.6)) {
+    const ev = pick(pool);
     run.event = { venue:ev.venue, group:ev.group, n:ev.n, d:ev.d };
     for (const m of groupMembers(ev.group)) { const n = run.npcs[m.id];
       if (n.state==='idle'){ n.v = clamp(n.v + ev.v, -1, 1); n.i = clamp(Math.max(n.i, Math.abs(ev.i)), 0, 1); } }
@@ -1227,7 +1227,7 @@ function updateMara(dt){
     const n = m.target && run.npcs[m.target], d = m.target && npcDef(m.target);
     if (!n || n.state!=='idle' || d.venue!==run.venue) { m.deep = 0; m.target = null; return; }
     m.deep -= dt;
-    if (Math.random() < dt*5) siphonWisp(n.x, n.y-14, m.x, m.y-10);
+    if (chance(dt*5)) siphonWisp(n.x, n.y-14, m.x, m.y-10);
     if (m.deep <= 0) {
       n.state='husk'; n.i = 0; n.peak = 0;
       run.maraDeepUsed = true; m.target = null; m.cd = 10;
@@ -1275,10 +1275,10 @@ function updateMara(dt){
           run.jointF += take*50;
           if (run.jointF >= 1) { const whole = Math.floor(run.jointF); run.jointF -= whole; run.essence += whole; }
         }
-        if (Math.random() < dt*2.5) siphonWisp(n.x, n.y-14, m.x, m.y-10);
+        if (chance(dt*2.5)) siphonWisp(n.x, n.y-14, m.x, m.y-10);
       }
       if (n.i <= 0.1) {
-        if (Math.random()<0.5) toast('🩶 Mara drinks '+npcDef(m.target).name+'’s aura down to embers.');
+        if (chance(0.5)) toast('🩶 Mara drinks '+npcDef(m.target).name+'’s aura down to embers.');
         m.target = null; m.cd = Math.max(4, 8-run.day*0.3); m.siphonT = 0;
       }
     }
@@ -1515,7 +1515,7 @@ function composeLetter(prev){
     body = 'A courtesy, before you hear it from the crowds: I employ another harvester. Mara works the same fields you do, and she does not knock. What ripens unpicked, she drinks. Consider her a lesson in punctuality — or flare your aura at her and see how she takes it.';
   } else if (d===LAST_DAY) {
     body = 'The last dusk comes tonight. Fourteen days of feelings pass through my ledgers because of you. Whatever you are by now — luminary, reaper, or something conveniently gray — finish loudly. The trade remembers endings, nothing else.';
-  } else if (prev.husked.length && Math.random()<0.55) {
+  } else if (prev.husked.length && chance(0.55)) {
     const name = prev.husked[0];
     const g = ROSTER.find(x=>x.name===name);
     from = g ? g.group : 'Unsigned';
@@ -1529,7 +1529,7 @@ function composeLetter(prev){
     from = 'Mara';
     body = 'Twice yesterday you flared that little light of yours at me. Cute. The Broker pays me by the drop, same as you, and there are only so many drops in a day. Keep your fields picked, and I will have no reason to visit them. Leave them ripening, and I will keep my thermos full.';
     sig = '— M.';
-  } else if (prev.bli===0 && prev.rad>300 && Math.random()<0.5) {
+  } else if (prev.bli===0 && prev.rad>300 && chance(0.5)) {
     const recovered = ROSTER.filter(x=>{ const s = run.npcs[x.id].state; return s!=='husk' && s!=='taken'; });
     from = recovered.length ? pick(recovered).name : 'A stranger';
     body = 'I do not know what you did to me yesterday, exactly. I only know I went home lighter than I have in years, and slept without dreaming, and woke up wanting to be somewhere. Whoever you are — thank you. Come back any time.';
@@ -1564,7 +1564,7 @@ function composeLetter(prev){
   }
   // Mara's bargains ride along from day 5
   let bargain = null;
-  if (d>=5 && Math.random()<0.45) {
+  if (d>=5 && chance(0.45)) {
     const tp = tributePrice();
     const ttxt = tp===90 ? 'Pay ✦90 and Mara rests today. A professional courtesy, one harvester of the dark to another.'
                : tp===150 ? 'Pay ✦150 and Mara rests today. The price is higher for you. She knows what the light pays.'
@@ -2430,16 +2430,16 @@ function updateAmbient(vd, dp){
   const dt = dtGlobal;
   if (ambientP.length < 40) {
     if (vd.id==='park') {
-      if (dp>0.4 && Math.random()<dt*4) ambientP.push({ x:rnd(0,W), y:rnd(playTop(),playBot()), vx:rnd(-8,8), vy:rnd(-6,6), life:rnd(3,6), t:0, r:1.7, c:'#d8ffa0', fly:true });
-      if (Math.random()<dt*1.2) ambientP.push({ x:rnd(0,W), y:-8, vx:rnd(-14,10), vy:rnd(14,26), life:rnd(5,8), t:0, r:2.3, c:'#ffc0d8', sway:true });
+      if (dp>0.4 && chance(dt*4)) ambientP.push({ x:rnd(0,W), y:rnd(playTop(),playBot()), vx:rnd(-8,8), vy:rnd(-6,6), life:rnd(3,6), t:0, r:1.7, c:'#d8ffa0', fly:true });
+      if (chance(dt*1.2)) ambientP.push({ x:rnd(0,W), y:-8, vx:rnd(-14,10), vy:rnd(14,26), life:rnd(5,8), t:0, r:2.3, c:'#ffc0d8', sway:true });
     } else if (vd.id==='market') {
-      if (Math.random()<dt*3) ambientP.push({ x:rnd(W*0.1,W*0.9), y:playBot()-20, vx:rnd(-6,6), vy:rnd(-30,-16), life:rnd(1.5,3), t:0, r:1.6, c:'#ffb060', fly:true });
+      if (chance(dt*3)) ambientP.push({ x:rnd(W*0.1,W*0.9), y:playBot()-20, vx:rnd(-6,6), vy:rnd(-30,-16), life:rnd(1.5,3), t:0, r:1.6, c:'#ffb060', fly:true });
     } else if (vd.id==='chapel') {
-      if (Math.random()<dt*2.5) ambientP.push({ x:rnd(W*0.15,W*0.85), y:rnd(80,playBot()), vx:rnd(-3,3), vy:rnd(2,7), life:rnd(4,8), t:0, r:1.3, c:'#e8dcff', mote:true });
+      if (chance(dt*2.5)) ambientP.push({ x:rnd(W*0.15,W*0.85), y:rnd(80,playBot()), vx:rnd(-3,3), vy:rnd(2,7), life:rnd(4,8), t:0, r:1.3, c:'#e8dcff', mote:true });
     } else if (vd.id==='club') {
-      if (Math.random()<dt*2) ambientP.push({ x:rnd(0,W), y:-6, vx:rnd(-10,10), vy:rnd(30,60), life:rnd(2,4), t:0, r:2, c:pick(['#ff6b90','#8effc1','#ffd75e','#6bb8ff']), sway:true });
+      if (chance(dt*2)) ambientP.push({ x:rnd(0,W), y:-6, vx:rnd(-10,10), vy:rnd(30,60), life:rnd(2,4), t:0, r:2, c:pick(['#ff6b90','#8effc1','#ffd75e','#6bb8ff']), sway:true });
     } else if (vd.id==='rooftop') {
-      if (Math.random()<dt*1.2) ambientP.push({ x:-10, y:rnd(60,playTop()+40), vx:rnd(14,26), vy:rnd(-2,2), life:rnd(6,10), t:0, r:1.5, c:'#cfe0ff', fly:true });
+      if (chance(dt*1.2)) ambientP.push({ x:-10, y:rnd(60,playTop()+40), vx:rnd(14,26), vy:rnd(-2,2), life:rnd(6,10), t:0, r:1.5, c:'#cfe0ff', fly:true });
     }
   }
   for (let i=ambientP.length-1;i>=0;i--){
@@ -2682,7 +2682,7 @@ function drawMara(m, t){
   else if (m.target) { ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#b9a9e8'; ctx.fillText('🩶 Mara', 0, -36); }
   ctx.restore();
   // ambient smoke
-  if (Math.random()<dtGlobal*4) particles.push({ x:m.x+rnd(-8,8), y:m.y+rnd(0,16), vx:rnd(-6,6), vy:rnd(-18,-8), life:rnd(.6,1.2), t:0, color:'rgba(140,130,170,.5)', r:rnd(2,3.6) });
+  if (chance(dtGlobal*4)) particles.push({ x:m.x+rnd(-8,8), y:m.y+rnd(0,16), vx:rnd(-6,6), vy:rnd(-18,-8), life:rnd(.6,1.2), t:0, color:'rgba(140,130,170,.5)', r:rnd(2,3.6) });
 }
 function drawTether(t){
   const m = run.mara, n = run.npcs[m.target];

@@ -440,7 +440,8 @@ function run(src, workerSrc) {
 
   // preset volume surprise
   const applyPresetSrc = grabFn(src, "applyPreset");
-  ok(/heldVol/.test(applyPresetSrc),
+  ok(/if \(heldVol !== null\)\s*S\.vol = heldVol;/.test(applyPresetSrc) &&
+     /const heldVol = playing \? S\.vol : null;/.test(applyPresetSrc),
     "changing sound while playing keeps the volume the person already set");
   ok(box.PRESETS.every(p => p.d.vol === undefined || (p.d.vol >= 0 && p.d.vol <= 100)),
     "no preset carries an out of range volume");
@@ -601,8 +602,14 @@ const MUTATIONS = [
   ["interrupted contexts stop being resumed",
     s => s.replace("function resumeAudio()", "function resumeAudio_disabled()")
           .replace("ctx.onstatechange = () => { if (playing && ctx.state !== \"running\") resumeAudio(); };", "")],
+  /* Two sounds currently claim good evidence and the ceiling is three, so one
+     promotion is legal and the mutation has to break the actual rule: it takes
+     the count to four. If everything were labelled well evidenced the labels
+     would carry no information, which is the whole point of the tiers. */
   ["a fourth sound claims good evidence",
-    s => s.replace(/tier:2,/, "tier:1,")]
+    s => s.replace("womb: { tier:2,", "womb: { tier:1,")
+          .replace("shush: { tier:2,", "shush: { tier:1,")
+          .replace("rain: { tier:2,", "rain: { tier:1,")]
 ];
 const WORKER_MUTATIONS = [
   ["worker deletes every cache on the origin",

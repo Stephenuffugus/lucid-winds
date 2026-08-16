@@ -2211,7 +2211,7 @@ function reduced() { return settings.motion === 'on' ? true : (settings.motion =
 
 var st = null, queue = makeQueue(CONFIG.QUEUE_CAP);
 var running = false, acc = 0, lastT = 0, phase = 0;
-var spark = null, shake = 0, flash = 0, inputLog = [], replay = null;
+var spark = null, shake = 0, flash = 0, inputLog = [], replay = null, creepFx = [];
 var cell = 18, boardPx = 360, dpr = 1;
 var scoreShown = 0;
 var mode = 'free', curSeed = 1, todayStr = '';
@@ -2616,6 +2616,16 @@ function doTick() {
     }
     else if (e.t === 'overload') { chordOverload(); flash = 1; shake = 1; haptic(25); }
     else if (e.t === 'discharged' && e.cells > 0) { pluck(deg2freq(1), 0.3, 'sine', 0.14); haptic(10); }
+    else if (e.t === 'creep') {
+      /* a low third below the root: in key, and the only sound in the game that
+         is not something the player did */
+      creepFx.push({ cell: e.cell, t0: phase });
+      if (creepFx.length > 6) creepFx.shift();
+      pluck(deg2freq(-3), 0.22, 'triangle', 0.10);
+    }
+    /* a dropped combo stays silent on purpose: the missing music IS the
+       feedback (CRAFT section on the combo ring). The ring going dark is the
+       only tell, and that is the intent. */
     else if (e.t === 'died') { onDeath(e.cause); }
   }
 }
@@ -2661,7 +2671,7 @@ function startRun(seed, m) {
   queue.clear();
   inputLog = [];
   replay = null;
-  spark = null; flash = 0; shake = 0; scoreShown = 0;
+  spark = null; flash = 0; shake = 0; scoreShown = 0; creepFx.length = 0;
   acc = 0; running = true;
   $('sheetOver').className = 'sheet';
   $('sheetOpt').className = 'sheet';
