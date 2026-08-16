@@ -270,6 +270,11 @@ function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("bridgevine_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding `null`
+     or `5` parses fine and the next line threw "Cannot create property 'trials'
+     on number". loadSave() runs at module scope, so that killed the whole script
+     block during boot. Check the shape, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.trials=s.trials||{}; s.grove=s.grove||[]; s.bestH=s.bestH||0; s.dewSpent=s.dewSpent||0;
   s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.pod=s.pod||"sprout"; s.strut=s.strut||"vine";
   s.sky=s.sky||"meadow"; s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }

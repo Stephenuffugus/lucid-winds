@@ -600,7 +600,16 @@ function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }c
 /* lsSet REPORTS. A save that quietly fails is how a kid loses a critter and
    never finds out, so every caller that matters checks the answer. */
 function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
-function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return (v===null||v===undefined)?d:v; }catch(e){ return d; } }
+/* ⛔ This used to return anything that merely PARSED. A settings save holding
+   `5` came straight back as a number and the caller then threw "Cannot create
+   property 'sound' on number '5'" during boot. The try/catch never saw it,
+   because 5 is valid JSON. A stored value has to match the SHAPE of the default
+   it is standing in for, or the default wins. */
+function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null'));
+  if(v===null||v===undefined) return d;
+  if(typeof v!==typeof d) return d;
+  if(typeof d==='object'&&Array.isArray(d)!==Array.isArray(v)) return d;
+  return v; }catch(e){ return d; } }
 function jSet(k,v){ return lsSet(k,JSON.stringify(v)); }
 /* bests: MAX against what is stored right now, never against a snapshot taken
    at page load (another tab may have beaten it since) */

@@ -404,6 +404,13 @@ var RIVALS=[
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("bramblecourt_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch is not validation. It only covers text that FAILS to parse;
+     a save holding `null` or `5` parses fine and then the very next line threw
+     "Cannot read properties of null (reading 'col')". loadSave() is called at
+     module scope by `var PROG=loadSave()`, so that took the whole script block
+     down during boot and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so the shape has to be checked, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.col=s.col||{0:1,3:1,6:1,9:1,13:1,15:1,11:1,5:1};
   s.deck=(s.deck&&s.deck.length===5)?s.deck:[0,3,6,9,13];
   s.beat=s.beat||{}; s.claimed=s.claimed||{};
