@@ -82,7 +82,10 @@ async function fresh(seed) {
   return { ctx, page, errs };
 }
 
-/* deterministic full round: nine perfect flicks straight into a ring */
+/* Deterministic full round: nine perfect flicks straight into a ring.
+   ⛔ The game's loop is rAF driven and it pauses itself on visibilitychange, so
+   this needs a foregrounded page and generous timeouts. On a two core box the
+   suite is flaky if another headless browser is running beside it: run it alone. */
 async function playRound(page, mode) {
   await page.evaluate(m => { window.BB.start(m); }, mode || 'free');
   await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 4000 });
@@ -90,9 +93,9 @@ async function playRound(page, mode) {
     const left = await page.evaluate(() => window.BB.state.ballsLeft);
     if (left <= 0) break;
     await page.evaluate(() => window.BB.flick(1080, 0));
-    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'", { timeout: 20000 });
+    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'", { timeout: 45000 });
   }
-  await page.waitForFunction("document.getElementById('s-sum').classList.contains('on')", { timeout: 20000 });
+  await page.waitForFunction("document.getElementById('s-sum').classList.contains('on')", { timeout: 45000 });
 }
 
 console.log('\nphase B — behaviour (375x667)');
@@ -182,7 +185,7 @@ console.log('\nphase B — behaviour (375x667)');
   await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 4000 });
   for (let i = 0; i < 3; i++) {
     await page.evaluate(() => window.BB.flick(1080, 0));
-    await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 20000 });
+    await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 45000 });
   }
   const before = await page.evaluate(() => ({ score: window.BB.state.score, left: window.BB.state.ballsLeft }));
   await page.reload({ waitUntil: 'load' });

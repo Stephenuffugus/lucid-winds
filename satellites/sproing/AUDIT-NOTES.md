@@ -137,14 +137,30 @@ All measured rather than assumed:
 
 ## IMPROVEMENTS MADE (and why they buy the most per minute played)
 
-The two-tab merge in defect 3 is the improvement with the best return here, and it is not
-cosmetic. This game's whole meta layer is the wallet: hats, themes, trails, five upgrade
-tracks and 300 levels of stars all hang off `coins` and `levelProg`. A player who leaves a
-tab open on their phone and opens the game again on the same browser was, until now,
-silently rolling back their own shop. Everything downstream of the wallet gets more
+### A. The two-tab merge (defect 3) — best return per minute of the lot
+
+Not cosmetic. This game's whole meta layer is the wallet: hats, themes, trails, five
+upgrade tracks and 300 levels of stars all hang off `coins` and `levelProg`. A player who
+leaves a tab open on their phone and opens the game again in the same browser was, until
+now, silently rolling back their own shop. Everything downstream of the wallet gets more
 trustworthy for one merge function.
 
-Beyond that this pass is deliberately conservative. The spring is locked, the loop is
+### B. A `?dev=1` test hook, so this game is auditable at all
+
+The only structural gap this audit hit. Sproing exposed nothing, so every check had to be
+driven through real clicks and real wall-clock time — which is why the deep assertions a
+300 level game most needs (a full 1200m clear, the Dandelion Save path, whether the three
+star thresholds are actually reachable) could not be verified headlessly at all. They are
+still not verified. Nobody has proven this game is completable past the levels a bot can
+stumble into.
+
+Added `window._SP` behind `?dev=1`, matching Slice 3D's pattern: read-only accessors for
+screen, run state, level progress, wallet, stats and settings, plus `launch`, `pause`,
+`resume`, a hand-driven `step(n)` over the fixed timestep, and `input(dir)`. It changes
+nothing about how the game plays and is absent from a normal session. It is what makes the
+next audit of this game cost hours instead of days.
+
+Beyond those two this pass is deliberately conservative. The spring is locked, the loop is
 complete, the economy ladders sensibly, and the failure modes worth spending minutes on
 were all in persistence rather than in play.
 
@@ -171,10 +187,12 @@ targets in Slice 3D during this same session. Flagging it beats churning it.
   checked. They are safe today only because `accDef`/`themeDef`/`trailDef` all fall back
   to element zero on an unknown id. That is luck rather than design, and a future lookup
   written without the fallback would inherit a corrupt-save crash.
-- **No dev/test hook.** Everything here had to be driven through real clicks and real
-  time, which makes the suite slow and makes deep-run assertions (a full 1200m level
-  clear, the Dandelion Save path, the star thresholds) impractical to verify headlessly.
-  Slice 3D's `?dev=1` hook is the pattern; Sproing would benefit from the same.
+- **Nobody has proven this game is completable.** 300 levels, and the deepest thing
+  verified here is that a run starts, scores, pauses and ends. The `?dev=1` hook added in
+  improvement B is the tool for it, but the proof itself has not been written: no assertion
+  covers a real 1200m clear, the three star thresholds, or the Dandelion Save. This project
+  has already had a completability proof sit red for six weeks because replaying it needed
+  a browser nobody ran — treat this as the same debt, not as covered.
 - **`dayStr()` uses local time with no zero padding** (`2026-8-16`, not `2026-08-16`).
   It is only ever compared to itself so it works, but the streak, the free Dandelion Save
   and the Morning Dew bonus all key off it, and a player crossing a timezone can collect
