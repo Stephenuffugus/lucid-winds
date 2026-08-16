@@ -91,3 +91,38 @@ including a 1-day grace on the streak and a real weekly goal.
   free.
 - The pause button only appears during the `play` phase, so there is no way to pause during the
   guess. That is arguably correct, but it means a phone call during the guess costs the run.
+
+
+## Verification
+
+`node satellites/shell-shuffle/audit_check.mjs` from the repo root. 45 assertions, real headless
+Chrome at 375x667, serving the repo root so `/feedback.js`, `/arcade-exit.js` and
+`/sunbeam-sdk.js` resolve the way they do in production. Fresh browser CONTEXT per case, so a
+service worker or a leftover `localStorage` from one case cannot make the next one pass for the
+wrong reason.
+
+Plus a syntax gate: the inline script blocks are parsed with `vm.Script`, and that gate was
+watched fail on a deliberately broken copy before it was trusted.
+
+**Every headline assertion was watched FAIL on purpose.** The fixes above were reverted in place
+and the suite re-run: 15 assertions went red, including `state.owned.includes is not a function`, the Start button landing a real click and producing zero cups, the Daily sheet hijacking the boot, and the flat-difficulty proof (levels 9, 11, 20 and 30 all returning shuffles 27 / duration 115ms / double-swap chance 0). Three probes were caught passing VACUOUSLY during that pass and
+were rewritten rather than accepted:
+
+- the two-tab assertions passed while `save()` never ran at all, because the seeded "other tab"
+  value was simply still sitting there. They now also assert that this tab's own write landed.
+- the in-play touch-target check multiplied a hardcoded `70` by the stage scale, so it could
+  not have noticed the constant changing. It now reads the real declaration out of the served
+  page.
+- the feedback-fab check flagged controls under the fab's default geometry even when the fab had
+  already faded to `opacity:0; pointer-events:none`. It now measures the fab's actual rect and
+  fails only when an INTERACTIVE fab is painted on top of a control, which is the real defect.
+
+## A fleet observation, not a defect in this game
+
+The root `feedback.js` FAB YIELD pass resolves the bottom-right collision on three of the four
+games I audited by fading the chip to `opacity:0; pointer-events:none` — it never finds a free
+spot on its ring, because these games fill the bottom band with controls. Nothing is eaten, so
+the standing defect is genuinely gone. But the practical effect is that the feedback button is
+invisible on those games, and feedback is the point of it. `feedback.js` is outside this audit's
+sandbox so I have not touched it; flagging it because "the fab yields correctly" and "a player
+can send feedback" are not the same claim.

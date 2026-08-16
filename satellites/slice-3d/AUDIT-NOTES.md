@@ -201,6 +201,13 @@ no combo, nothing to beat. It now shows the same "sliced / best combo" line the 
 show, so a failed run still ends on a number, which is the thing that makes you tap Try
 Again. Cheap, and it uses data the run already had.
 
+## SUITE RESULT
+
+`node satellites/slice-3d/audit-check.mjs` (repo root served on :8777) — **44 passed,
+0 failed**, exit 0. Covers 14 corrupt-save poisonings, all four modes to their end panel,
+the failed-run save path, the four two-tab merge properties, the eight standing defect
+classes, and the drawn-versus-tested scale.
+
 ## WHAT STILL WORRIES ME
 
 - **Wall Climb advances on any stick.** `PROG.climbLevel` increments whenever a climb

@@ -87,41 +87,77 @@ treated as a misfire rather than eating a token.
 
 ## Fixes applied
 
-* **D1** — added `_shape()` validation between `JSON.parse` and use: every saved
-  object is now checked for the type it must be (array for the shelf, plain
-  object with numeric fields for stats/settings/moments) and a value that fails
-  is replaced with the default AND rewritten to storage, so a bad value cannot
-  brick a second boot. Plus a belt-and-braces `try/catch` around the body of
-  `frame()` that reports once and keeps the rAF chain alive, because a frozen
-  claw machine is the worst possible failure for this game.
-* **D2** — `STATS` writes now read-modify-write and ADD; `BEST`/`DAILYBEST` MAX
-  against the stored value at write time; `SHELF` writes re-read storage and
-  union by `(type, day, mode, index)` so a prize won in another tab survives.
-* **D3** — the daily is now marked started only on the FIRST token, not on
-  entering the cabinet, and the menu says plainly that tonight's cabinet has been
-  opened. Backing out of the rules screen no longer costs the day.
-* **D4** — ready is posted whenever the page is genuinely framed, and again on
-  `load`, per `incoming/PORTAL-CONTRACT.md`.
+* **D1** — added shape validation between `JSON.parse` and use (`jSafe` + per
+  key `fix` functions). Every saved object is checked for the type it must be
+  (array of known prizes for the shelf, plain object of finite non-negative
+  numbers for stats, booleans for settings, strings for the moment dates) and a
+  value that fails is replaced AND rewritten to storage, so a bad value cannot
+  bite a second boot. Plus the rAF chain is now rescheduled in a path that a
+  throw cannot skip, with a run of three failures bailing the round out
+  cleanly, because a claw machine that stops moving is this game's worst
+  failure.
+* **D2** — `bumpStats` reads storage at write time and ADDs; `saveBest` MAXes;
+  `shelfAdd` gives every prize a row id and unions against whatever another tab
+  wrote. Nothing is written from a boot snapshot any more.
+* **D3** — the daily is marked started by the FIRST TOKEN (`startDrop`), not by
+  entering the cabinet. Reading the rules and backing out no longer costs the
+  day. Verified in a browser: `mc_daily` is still null after opening the rules
+  AND after launching the cabinet, and only written once a token is spent.
+* **D4** — `framed` is measured (`window.parent!==window`), ready is posted at
+  parse time and again on `load`.
 * **D5** — `/feedback.js` fab mounted.
+* **NEW, found by the test, not by reading** — the fab covered the right edge
+  of the Prize shelf button on the menu. The fab is hard right at stage
+  x 453..523 and the button stack was 400 stage px wide, so it reached to 470.
+  Stack and setting rows narrowed to 356. The browser suite now walks every
+  screen plus the play HUD and fails if any control intersects the fab.
 
-## Improvement (where a minute of work buys the most play)
+## Improvement (where a minute of work buys the most per minute of play)
 
-**The pile is now readable before you spend a token.** The single biggest thing
-Moon Claw asks the player to do is "read the pile", and it gave them nothing to
-read it with: a buried prize and a loose one look identical from above. Added a
-drop shadow trace under the trolley showing which body the jaws will meet and
-whether it is centred, pinned or an edge clip, drawn only while the player is
-holding. It teaches the grip model in one drop instead of five, and it costs
-nothing in fairness, because the claw was always honest and this only shows what
-it was already going to do.
+**The pile is now readable before you spend a token.** The one thing Moon Claw
+asks the player to do is "read the pile", and from directly above, a plump body
+and a limb sticking out of one look identical, so the read was impossible and
+every drop was a guess. While the player holds, the claw now draws a plumb line
+to the body the jaws would actually meet and rings it: a solid green ring for a
+body hit, a dashed gold ring for an edge, grey for a glance, orange plus a
+second dashed ring around the neighbour when the prize is wedged. It uses the
+same thresholds `resolveGrip()` uses, read from the live pile, so the preview
+can never promise something the drop does not deliver, and it stays honest
+because the trolley never stops moving: knowing the grip does not give you the
+timing. One new rules line explains the colours.
+
+I shot it and read the image. The green solid ring and the gold dashed ring are
+both legible at 375 wide. The first pass distinguished them by colour alone,
+which is not good enough, so the dash was added after looking.
+
+## Still worries me
+
+* The daily cabinet is still one attempt per day with no confirm before the
+  first token. That is the design, but a player who taps once on the wrong
+  screen still loses tonight's pile.
+* The fab's dismiss badge draws as a second dark circle over the lower right
+  glass of the cabinet. It is root owned (`/feedback.js`), covers no control,
+  and reads as a machine part rather than a bug, so it is a note, not a fix.
 
 ## Verification
 
-`test/check.mjs` (node, no browser) parses every script block with `vm` and
-asserts the storage validator's behaviour against 14 malformed values.
-`test/play.mjs` (puppeteer, one browser) boots the real page, unlocks the dev
-gate, plays a full five token cabinet through the test hook, asserts the summary
-appears with five rows, then reloads with each malformed save in turn and asserts
-the game still boots and still animates. Both were watched RED first: `check.mjs`
-against the unfixed validator, `play.mjs` against a deliberately broken
-`mc_shelf`.
+```
+node satellites/moon-claw/test/check.mjs     # node only, 33 assertions
+node satellites/moon-claw/test/play.mjs      # one headless browser, 62 assertions
+```
+
+`check.mjs` parses every inline block with `vm` (not a brace counter), then
+lifts the save validators out of `index.html` by name and runs them against 16
+malformed values. It self tests every run by feeding the same assertions a
+do-nothing validator and exits 2 if that passes.
+
+`play.mjs` serves the repo itself, boots the real page, unlocks the dev gate,
+plays a full five token cabinet through the test hook and asserts the summary
+appears with five rows, then repeats the whole cabinet under ten different
+malformed saves, then walks every screen measuring the feedback fab against
+every control, then proves the daily is not spent until the first token.
+
+Both were watched RED first. `check.mjs` fails against the unfixed validators.
+`play.mjs` against the pre-audit `index.html` and `mc_shelf='{}'` reported
+`stuck in celebrate, summary never shown` with `SHELF.unshift is not a
+function`, which is the freeze this audit started from.

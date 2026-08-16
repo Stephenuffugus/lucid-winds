@@ -147,7 +147,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="width:100%;max-width:300px;margin-top:14px">
       <div class="go-stat"><span>Balls played</span><b id="go-balls">0</b></div>
       <div class="go-stat"><span>Best combo</span><b id="go-combo">0</b></div>
-      <div class="go-stat"><span>MEGA MASHes</span><b id="go-blooms">0</b></div>
+      <div class="go-stat"><span>Bloom Rushes</span><b id="go-blooms">0</b></div>
+      <div class="go-stat"><span>MEGA MASHes</span><b id="go-mega">0</b></div>
     </div>
     <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
@@ -176,8 +177,29 @@ var SET={ sound:true, shake:true };
 (function(){ try{ var s=JSON.parse(LS.get('gp_set')||'{}'); ['sound','shake'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('gp_set', JSON.stringify(SET)); }
 var PROG={ best:{classic:0,daily:0,zen:0}, blooms:0 };
-(function(){ try{ var p=JSON.parse(LS.get('gp_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.blooms==='number')PROG.blooms=p.blooms; }catch(e){} })();
-function saveProg(){ LS.set('gp_prog', JSON.stringify(PROG)); }
+// gp_set and gp_skins both type-check what they read; gp_prog did not, so a
+// stored {"best":{"classic":{}}} put an object where a score goes. It never
+// crashed (comparing > against an object is just false), it just printed
+// "best [object Object]" and silently stopped every skin unlock working.
+function _score(v){ return (typeof v==='number'&&isFinite(v)&&v>=0)?Math.floor(v):0; }
+function readProg(){ var out={best:{classic:0,daily:0,zen:0},blooms:0}, p=null;
+  try{ p=JSON.parse(LS.get('gp_prog')||'{}'); }catch(e){}
+  if(p&&typeof p==='object'&&!Array.isArray(p)){
+    if(p.best&&typeof p.best==='object') for(var k in out.best) out.best[k]=_score(p.best[k]);
+    out.blooms=_score(p.blooms);
+  }
+  return out; }
+(function(){ var r=readProg(); PROG.best=r.best; PROG.blooms=r.blooms; })();
+var _progBase={best:{classic:PROG.best.classic,daily:PROG.best.daily,zen:PROG.best.zen},blooms:PROG.blooms};
+// Two-tabs law: bests MAX, the Bloom Rush count ADDs its delta. A wholesale
+// write from a boot snapshot erases whatever the other tab just earned.
+function saveProg(){
+  var d=readProg(), k;
+  for(k in PROG.best) PROG.best[k]=Math.max(_score(PROG.best[k]), d.best[k]||0);
+  PROG.blooms=Math.max(0,(d.blooms||0)+(_score(PROG.blooms)-(_progBase.blooms||0)));
+  LS.set('gp_prog', JSON.stringify(PROG));
+  _progBase={best:{classic:PROG.best.classic,daily:PROG.best.daily,zen:PROG.best.zen},blooms:PROG.blooms};
+}
 
 /* ===== audio ===== */
 var AC=null; function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
@@ -380,6 +402,7 @@ function newGame(mode){
       locked:0, pollenMB:false, mbCount:0, mbLevel:1, jpLadder:1, jpCount:0, superLit:false, superCount:0, mbSave:0, mbAdded:false, mbRelease:0, mbRelT:0,
       chainLit:false, chainMB:false, chainN:0, spinTotal:0, chainSave:0,
       lastRail:null, lastRailT:0, rush:0,
+      mega:0,   // MEGA MASH (the wizard). G.blooms is BLOOM RUSH; they are different things and used to share one counter and the wrong label.
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
       netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], scoreShown:0, callout:null, t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
@@ -441,14 +464,27 @@ function stepFlipper(F,h){
   else { var sgn=d>0?1:-1; F.a+=sgn*w*h; F.w=sgn*w; }
 }
 function physics(dt){
-  var SUB=8, h=(dt*G.slow)/SUB, i, s, b;
+  // Substeps have to be derived from the FASTEST live bead, not fixed at 8.
+  // Collision is a static circle-vs-segment test after the move, so the sampling
+  // gap must stay under the ball radius. A tip flip exits at roughly
+  // FLIP_W_UP*L*(1+e) ~ 3500 px/s; at the loop's dt cap of 0.05 a fixed SUB=8
+  // moved the bead 22px per substep against an 11px radius, which punches
+  // straight through a wall. Even at the 3200 clamp the old margin was 1px.
+  var vmax=0,_i;
+  for(_i=0;_i<G.balls.length;_i++){ var _b=G.balls[_i]; if(_b.inLane||_b.captured||_b.onRail)continue;
+    var _v=Math.sqrt(_b.vx*_b.vx+_b.vy*_b.vy); if(_v>vmax)vmax=_v; }
+  var SUB=Math.max(8, Math.ceil(vmax*dt*G.slow/(BALLR*0.6))), h=(dt*G.slow)/SUB, i, s, b;
+  if(SUB>200)SUB=200;
   for(s=0;s<SUB;s++){
     stepFlipper(LFLIP,h); stepFlipper(RFLIP,h);
     for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail){ continue; } // held: pre-launch, scooped, or on a ramp
       // time-scaled losses (per-substep constants were framerate-dependent and ~960x/s
       // strong — they froze slow balls dead and bled every shot mid-flight)
-      b.vy+=GRAV*h; var drg=Math.pow(0.90,h); b.vx*=drg; b.vy*=drg; b.x+=b.vx*h; b.y+=b.vy*h;
+      b.vy+=GRAV*h; var drg=Math.pow(0.90,h); b.vx*=drg; b.vy*=drg;
+      // clamp BEFORE the move: clamping afterwards meant every substep still
+      // integrated at whatever speed the last collision produced
       var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>3200){ b.vx*=3200/sp; b.vy*=3200/sp; }
+      b.x+=b.vx*h; b.y+=b.vy*h;
       if(sp<300){ var rf=Math.pow(0.60,h); b.vx*=rf; b.vy*=rf; }   // gentle rolling friction
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
       for(var po=0;po<POSTS.length;po++) circHit(b,POSTS[po],0.5,0);
@@ -723,7 +759,7 @@ function startPollenMB(){
 function endPollenMB(){ G.pollenMB=false; G.multiball=false; G.superLit=false; G.scoopLit=false; G.locked=0; G.mbSave=0; G.mbRelease=0;
   float(265,300,'MULTIBALL OVER'); sfx('drain'); }
 function jackpotValue(){ return Math.round(250000*G.mbLevel)*G.jpLadder; }
-function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true); playAnim('mega_mash_erupt',8,247,556,VW/2,VH*0.44,240,13,{once:true});  // one-way story: erupt then buried in prizes
+function startWizard(){ G.wizard=true; G.mega=(G.mega||0)+1; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12); callout('FULL BLOOM','#f2d98a',true); playAnim('mega_mash_erupt',8,247,556,VW/2,VH*0.44,240,13,{once:true});  // one-way story: erupt then buried in prizes
   G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
   G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
   G.wizSave=12; float(265,300,'🌸 FULL BLOOM! 🌸'); float(265,334,'every shot = 1,000,000'); sfx('bloom'); haptic(40); }
@@ -848,7 +884,7 @@ function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false
   $('go-score').textContent=G.score;
   $('go-lab').textContent=(G.mode==='daily'?"today's table":'nectar');
   $('go-best').textContent='Best '+(PROG.best[G.mode]!=null?PROG.best[G.mode]:G.score);
-  $('go-blooms').textContent=G.blooms; $('go-combo').textContent=G.bestCombo;
+  $('go-blooms').textContent=G.blooms; $('go-mega').textContent=G.mega||0; $('go-combo').textContent=G.bestCombo;
   $('go-balls').textContent=G.ball;
   $('go-emoji').innerHTML='<img src="art/'+(isBest?'eyeball_lit':'eyeball_core')+'.png?v='+PIN_ART.VER+'" style="width:56px;height:56px;object-fit:contain" onerror="this.parentNode.textContent=\''+(isBest?'★':'◎')+'\'">';
   $('go-lab').textContent=isBest?'NEW BEST':'final score';
@@ -1284,7 +1320,9 @@ function boot(){
       if(cat==='claw')return 'art/'+(id?'skin_claw_'+id+'_rest':'flipper_rest')+v;
       return id?('art/buddy_'+id+v):''; }
     function unlk(req){ if(!req)return true; var have=req[0]==='s'?skinBestAll():(PROG.blooms||0); return have>=req[1]; }
-    function reqT(req){ return req[0]==='s'?('Best '+req[1].toLocaleString()):(req[1]+' MEGA MASH'+(req[1]>1?'es':'')); }
+    // gated on Bloom Rushes, which is what PROG.blooms has always counted and
+    // what these numbers were tuned against. It used to SAY "MEGA MASHes".
+    function reqT(req){ return req[0]==='s'?('Best '+req[1].toLocaleString()):(req[1]+' Bloom Rush'+(req[1]>1?'es':'')); }
     var css='#s-skins .pad{padding:20px}.sk-tabs{display:flex;gap:6px;margin:6px 0 12px}'
      +'.sk-tab{flex:1;min-height:72px;border:1px solid var(--line);background:#0f150c;color:var(--muted);border-radius:10px;font-weight:700;font-size:13px;cursor:pointer}'
      +'.sk-tab.on{background:#1a2415;color:var(--cream);border-color:var(--sage)}'
@@ -1295,8 +1333,11 @@ function boot(){
      +'.sk-opt .rq{font-size:9.5px;color:var(--gold);line-height:1.1}.sk-opt .eq{position:absolute;top:3px;right:5px;font-size:9px;color:var(--sage);font-weight:800}';
     var st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
     var scr=document.createElement('div'); scr.className='screen'; scr.id='s-skins';
-    scr.innerHTML='<div class="pad"><h2 class="sc-h">Skins</h2><div style="color:var(--muted);font-size:12.5px;margin-bottom:6px">Unlock by triggering MEGA MASH and beating your best. All free, pure looks.</div><div class="sk-tabs" id="sk-tabs"></div><div class="sk-grid" id="sk-grid"></div><div style="height:16px"></div><button class="btn ghost sm" id="sk-back" style="max-width:400px;margin:0 auto">Back</button></div>';
-    document.body.appendChild(scr);
+    scr.innerHTML='<div class="pad"><h2 class="sc-h">Skins</h2><div style="color:var(--muted);font-size:12.5px;margin-bottom:6px">Unlock by triggering BLOOM RUSH and beating your best. All free, pure looks.</div><div class="sk-tabs" id="sk-tabs"></div><div class="sk-grid" id="sk-grid"></div><div style="height:16px"></div><button class="btn ghost sm" id="sk-back" style="max-width:400px;margin:0 auto">Back</button></div>';
+    // into #stage, not body: every other .screen resolves inset:0 against the
+    // 540x960 stage box, which is CSS-transform scaled to fit. Appended to body
+    // this one screen rendered at a different scale and ignored the letterbox.
+    ($('stage')||document.body).appendChild(scr);
     function tabs(){ var h='',i; for(i=0;i<ORDER.length;i++)h+='<button class="sk-tab'+(cur===ORDER[i]?' on':'')+'" data-c="'+ORDER[i]+'">'+LAB[ORDER[i]]+'</button>'; $('sk-tabs').innerHTML=h; }
     function grid(){ var list=CAT[cur],h='',i; for(i=0;i<list.length;i++){ var id=list[i][0],nm=list[i][1],req=list[i][2],un=unlk(req),eq=(SKINS[cur]===id),s=src(cur,id);
       h+='<div class="sk-opt'+(eq?' on':'')+(un?'':' lk')+'" data-id="'+id+'" data-un="'+(un?1:0)+'">'+(eq?'<span class="eq">ON</span>':'')
@@ -1315,10 +1356,17 @@ function boot(){
 }
 
 /* ===== embed + sunbeam ===== */
-var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+/* Canonical embed block (incoming/PORTAL-CONTRACT.md). "?embed=1 is in the url"
+   is not the same question as "am I in a frame": framed WITHOUT the param the
+   exit would have loaded the portal INSIDE the frame, and {sws:'ready'} was
+   posted neither on load nor at all. */
+var SWS_EMBED=false; try{ SWS_EMBED = window.parent!==window; }catch(e){ SWS_EMBED=true; }
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window.SWS_EXIT=function(){ if(SWS_EMBED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_EMBED){
+  try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+}
 window._sbCapEarn=function(n,tag){ var granted=0;
   try{ var k='sw_sb_greenhousepinball'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;

@@ -1430,9 +1430,14 @@ function drawCabinet(t,onPlay){
     ctx.setLineDash([]);
     if(pb2){
       /* a ring around the body that is actually in play, plus a tick at its
-         centre so "how far off centre am I" is a distance you can see */
+         centre so "how far off centre am I" is a distance you can see.
+         The ring is SOLID for a body hit and DASHED for anything less, so the
+         read survives colour blindness: looked at it at 375 wide and the green
+         and the gold were the only difference, which is not good enough. */
       ctx.strokeStyle=readCol; ctx.lineWidth=2;
+      if(dxn2>0.45) ctx.setLineDash([5,5]);
       ctx.beginPath(); ctx.arc(pb2.x, pb2.y, pb2.r+4, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
       ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.moveTo(pb2.x, pb2.y-pb2.r-11); ctx.lineTo(pb2.x, pb2.y-pb2.r-3); ctx.stroke();
       if(wedged){
