@@ -438,6 +438,71 @@ function layoutGate() {
   });
   chk('the longest landmark name is known and handled', longest > 11 && css.indexOf('#strataName.long') >= 0, 'longest ' + longest);
 
+  /* THE METER TILES MUST FIT, AND THE PAIR MUST MATCH.
+     A LOOKING pass caught "LAMP100 of 100" wrapping to two lines while its AIR
+     neighbour stayed on one, after the gutter narrowed the column. Two causes:
+     justify-content:space-between guarantees no gap at all once content fills
+     the box, and letter-spacing INHERITS, so .16em on the row was padding a ten
+     character number by about 21px. Both are checked here, and so is the actual
+     arithmetic at three widths.
+
+     The advance width model below is conservative and stated so it is arguable:
+     uppercase 0.62em, tabular digit 0.60em, space 0.28em, slash 0.31em, o 0.55,
+     f 0.34. It was calibrated against the real defect: with inherited letter
+     spacing included it predicted the 390 overflow to within about 5 percent,
+     so everything is checked against a 1.15 safety factor on top. */
+  function textW(str, px, ls) {
+    var t = 0, i, c, e;
+    for (i = 0; i < str.length; i++) {
+      c = str.charAt(i);
+      e = /[0-9]/.test(c) ? 0.60 : c === ' ' ? 0.28 : c === '/' ? 0.31 :
+          c === 'o' ? 0.55 : c === 'f' ? 0.34 : 0.62;
+      t += e * px + ls * px;
+    }
+    return t;
+  }
+  var labR = rule('.meter .lab'), valR = rule('.meter .lab b'), lblR = rule('.meter .lab span');
+  chk('the meter row declares a real gap', !!labR && /gap:\s*(\d+)px/.test(labR) && parseInt(/gap:\s*(\d+)px/.exec(labR)[1], 10) >= 6, labR || '');
+  chk('the meter row pins both tiles to one height', !!labR && /min-height:\s*\d+px/.test(labR), labR || '');
+  chk('the meter value never wraps', !!valR && /white-space:\s*nowrap/.test(valR), valR || '');
+  chk('the meter value never shrinks, it is the information', !!valR && /flex:\s*0 0 auto/.test(valR), valR || '');
+  chk('the meter value drops the inherited letter spacing', !!valR && /letter-spacing:\s*0/.test(valR), valR || '');
+  chk('the meter label absorbs any shortfall instead of the value',
+      !!lblR && /flex:\s*1 1 auto/.test(lblR) && /text-overflow:\s*ellipsis/.test(lblR) && /white-space:\s*nowrap/.test(lblR), lblR || '');
+  chk('a narrow screen drops the cap, never the live number', /max-width:\s*36\d px\)?\s*\{\s*\.meter \.cap\{display:none\}/.test(css.replace(/\s+/g, ' ').replace(/max-width:(\d+)px/g, 'max-width:$1 px')) || /\.meter \.cap\{display:none\}/.test(css), 'no narrow rule');
+
+  var labPx = /font-size:\s*([0-9.]+)px/.exec(labR || ''), labLs = /letter-spacing:\s*([0-9.]+)em/.exec(labR || '');
+  var valPx = /font-size:\s*([0-9.]+)px/.exec(valR || '');
+  var gapPx = /gap:\s*(\d+)px/.exec(labR || '');
+  /* the arithmetic below must NEVER quietly skip: a check that opts out when it
+     cannot read the CSS is not a check. If the row cannot be measured that is
+     itself a failure. */
+  chk('the meter row is measurable, so the fit arithmetic can run',
+      !!(labPx && valPx && gapPx), 'label ' + !!labPx + ' value ' + !!valPx + ' gap ' + !!gapPx);
+  if (labPx && valPx && gapPx) {
+    var LP = parseFloat(labPx[1]), LS = labLs ? parseFloat(labLs[1]) : 0, VP = parseFloat(valPx[1]), G = parseInt(gapPx[1], 10);
+    /* the cap hiding breakpoint is READ from the CSS, never assumed, so deleting
+       that media query makes the arithmetic itself go red rather than only the
+       rule that looks for it */
+    var capBp = 0, mq = /@media \(max-width:\s*(\d+)px\)\s*\{[^}]*\.meter \.cap\{display:none\}/.exec(css);
+    if (mq) capBp = parseInt(mq[1], 10);
+    var GUTS = { 320: 68, 360: 68, 390: 68 };
+    var capHidden = { 320: capBp >= 320, 360: capBp >= 360, 390: capBp >= 390 };
+    /* worst case strings at max upgrades: air 180, lamp 200, pack 90, braces 6 */
+    var tiles = [['AIR', '180', '/180'], ['LAMP', '200', '/200'], ['PACK', '90', '/90'], ['BRACES', '6', '']];
+    var over = [];
+    [320, 360, 390].forEach(function (W) {
+      var gut = GUTS[W], box = W - (gut + 10) - 12, tile = (box - 7) / 2, content = tile - 18;
+      tiles.forEach(function (t) {
+        var val = t[1] + (capHidden[W] ? '' : t[2]);
+        var need = (textW(t[0], LP, LS) + G + textW(val, VP, 0)) * 1.15;
+        if (need > content) over.push(W + 'px ' + t[0] + ' "' + val + '" needs ' + need.toFixed(0) + ' has ' + content.toFixed(0));
+      });
+    });
+    chk('every meter tile fits at 320, 360 and 390 with a 1.15 safety factor', over.length === 0,
+        'cap breakpoint read as ' + capBp + ' :: ' + over.join(' | '));
+  }
+
   /* touch targets are still declared at 48 or more */
   var small = [];
   css.split('}').forEach(function (r) {

@@ -153,8 +153,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 /* ---------- meters ---------- */
 #meters{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 12px 0 var(--gutpad)}
 .meter{background:#171a22;border:1px solid var(--line);border-radius:12px;padding:7px 9px}
-.meter .lab{font-size:11px;letter-spacing:.16em;color:var(--muted);display:flex;justify-content:space-between}
-.meter .lab b{color:var(--cream);font-size:13px}
+/* THE METER ROW. It used to be justify-content:space-between with no gap, which
+   guarantees exactly nothing: the instant the label and the value together fill
+   the tile they touch, and then the value wraps and the tile grows taller than
+   its pair. That is what "LAMP100 of 100" over two lines was.
+   Three things now make that impossible at ANY width rather than at the widths
+   somebody happened to check:
+     1. a real gap, declared, not implied by justification
+     2. the VALUE never wraps and never shrinks: it is the information
+     3. the LABEL absorbs any shortfall and ellipsises, so the failure mode is a
+        clipped word, never a broken tile or a mismatched pair
+   min-height pins both tiles of a row to the same height regardless. */
+.meter .lab{font-size:10.5px;letter-spacing:.10em;color:var(--muted);
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-height:16px}
+.meter .lab span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* letter-spacing INHERITS. At .16em it was adding about 21px to a ten character
+   number for no reason at all, and that was most of the overflow. */
+.meter .lab b{flex:0 0 auto;color:var(--cream);font-size:13px;letter-spacing:0;white-space:nowrap}
+.meter .cap{font-style:normal;color:var(--muted);font-weight:600}
+/* below 365 a half width tile holds a label and ONE number and nothing else.
+   The caps are static for the whole run and the bar under them already shows
+   the fraction, so the cap is what gives way, never the live number. */
+@media (max-width:365px){ .meter .cap{display:none} }
 .bar{height:7px;border-radius:5px;background:#0e1016;overflow:hidden;margin-top:5px}
 .bar i{display:block;height:100%;transition:width 180ms ease-out}
 .air i{background:linear-gradient(90deg,#6fb1d6,#9fd8ee)}
@@ -350,9 +370,9 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
     </div>
 
     <div id="meters">
-      <div class="meter air"><div class="lab"><span>AIR</span><b id="mAir">100</b></div><div class="bar"><i id="fAir"></i></div></div>
-      <div class="meter lamp"><div class="lab"><span>LAMP</span><b id="mLamp">100</b></div><div class="bar"><i id="fLamp"></i></div></div>
-      <div class="meter pack"><div class="lab"><span>PACK</span><b id="mPack">0 of 40</b></div><div class="bar"><i id="fPack"></i></div></div>
+      <div class="meter air"><div class="lab"><span>AIR</span><b id="mAir">100<em class="cap" id="cAir">/100</em></b></div><div class="bar"><i id="fAir"></i></div></div>
+      <div class="meter lamp"><div class="lab"><span>LAMP</span><b id="mLamp">100<em class="cap" id="cLamp">/100</em></b></div><div class="bar"><i id="fLamp"></i></div></div>
+      <div class="meter pack"><div class="lab"><span>PACK</span><b id="mPack">0<em class="cap" id="cPack">/40</em></b></div><div class="bar"><i id="fPack"></i></div></div>
       <div class="meter"><div class="lab"><span>BRACES</span><b id="mInt">3</b></div><div class="pips" id="pips"></div></div>
     </div>
 
@@ -2691,6 +2711,18 @@ function nodeCardHTML() {
   return { k: 'EMPTY ROCK', t: 'Nothing here', b: 'Just the cost of getting here.' };
 }
 
+/* writes "100" into the value and "/140" into the cap, leaving the cap element
+   in place so CSS alone decides whether a narrow screen shows it */
+function setMeterText(valId, capId, cur, cap) {
+  var v = $(valId), c = $(capId);
+  if (v) {
+    var t = v.firstChild;
+    if (t && t.nodeType === 3) t.nodeValue = String(cur);
+    else v.insertBefore(document.createTextNode(String(cur)), v.firstChild);
+  }
+  if (c) c.textContent = '/' + cap;
+}
+
 function render() {
   var st = G.run, s = G.save;
   if (!st) return;
@@ -2718,11 +2750,13 @@ function render() {
   else if (margin < 0) { note.textContent = 'YOU CANNOT AFFORD THE WAY OUT'; note.className = 'bad'; }
   else if (margin < 0.15) { note.textContent = 'CUTTING IT FINE'; note.className = 'warn'; }
   else note.textContent = 'The climb costs ' + (cost.perDepth).toFixed(2) + ' air a meter at this weight';
-  $('mAir').textContent = Math.floor(st.air) + ' of ' + st.caps.air;
+  /* the live number and its cap are separate nodes so the cap can be dropped on
+     a narrow screen without touching the number */
+  setMeterText('mAir', 'cAir', Math.floor(st.air), st.caps.air);
   $('fAir').style.width = (100 * st.air / st.caps.air) + '%';
-  $('mLamp').textContent = Math.floor(st.lamp) + ' of ' + st.caps.lamp;
+  setMeterText('mLamp', 'cLamp', Math.floor(st.lamp), st.caps.lamp);
   $('fLamp').style.width = (100 * st.lamp / st.caps.lamp) + '%';
-  $('mPack').textContent = Math.round(st.weight) + ' of ' + st.caps.pack;
+  setMeterText('mPack', 'cPack', Math.round(st.weight), st.caps.pack);
   $('fPack').style.width = (100 * st.weight / st.caps.pack) + '%';
   $('mInt').textContent = st.integrity;
   var pips = '', i;

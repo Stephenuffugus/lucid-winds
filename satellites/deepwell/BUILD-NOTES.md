@@ -17,7 +17,7 @@ Exits 1 on any failure, exits 3 if the assertion total ever drops under the floo
 this pass raised from 80 to 229 (the count it inherited), so the suite can only ever grow.
 
 ```
-node sim.js --layout   LAYOUT GATE GREEN: 35 checks
+node sim.js --layout   LAYOUT GATE GREEN: 44 checks
 ```
 
 A second, separate gate on the run screen layout, added after the coordinator's LOOKING pass
@@ -543,10 +543,83 @@ opaque and goes visibly OFF instead: a darker plate, a dimmer rule, a label at `
 reason line at `#7d8493`, which is legible because that reason ("nothing to work", "you are at
 the top") is the entire point of the button in that state.
 
-### 11.4 What the layout gate holds
+### 11.4 The meter tiles, found by the second LOOKING pass
 
-35 checks, in three groups: the column is clipped to the gutter and every named UI block is inset
-past it; no prose selector or emitter survives in the art layer; the scroll pane may shrink and
-the bar may not; a disabled button is opaque; the two lanes clear each other at every gutter
-width; the HUD line cannot overflow. Watched red four ways: against the whole pre fix file, with
-one card's inset removed, with the bar made shrinkable again, and with the gutter shrunk to 40px.
+**What was wrong.** After the gutter narrowed the column, the LAMP tile read `LAMP100 of 100`
+with no space and wrapped to two lines, while its AIR neighbour stayed on one. Two tiles meant
+to be a matched pair were different heights and one was missing a space.
+
+**Two causes, and the second is the one worth remembering.**
+
+1. `.meter .lab` used `justify-content:space-between` with **no gap**. Justification is not a
+   gap: it guarantees exactly nothing once the content fills the box. The instant label plus
+   value reached the tile width they touched, and then the value, which contains spaces, wrapped.
+2. **`letter-spacing` inherits.** The row set `.16em` for the label and the `<b>` holding the
+   number inherited it, padding a ten character string like `100 of 100` by roughly **21px** for
+   no reason at all. That was most of the overflow, and it is why LAMP broke while AIR, one
+   character shorter in its label, did not.
+
+**The fix is structural, so it cannot come back at a width nobody checked.**
+
+- a real declared `gap:8px`
+- the VALUE is `flex:0 0 auto` and `white-space:nowrap`: it never shrinks and never wraps,
+  because it is the information
+- the LABEL is `flex:1 1 auto` with `min-width:0` and an ellipsis: it absorbs any shortfall, so
+  the worst possible failure on some unknown device is a clipped word, never a broken tile
+- `min-height:16px` pins both tiles of a row to the same height regardless
+- `letter-spacing:0` on the value
+- label trimmed to 10.5px / .10em
+
+**And the arithmetic, because at 320 the fix alone is not enough.** Measured with the model in
+the gate: at 320 a half width tile has about 93px of content, and `LAMP` plus `200/200` needs
+about 102px even after all of the above. So below 365px the **cap** gives way, never the live
+number: `.meter .cap` is its own element that the media query hides, leaving `LAMP 200`. The cap
+is static for the whole run and the bar underneath already shows the fraction, so it is the
+right thing to drop. The hero AIR TO SURFACE readout still says `of` in full; only the compact
+chips use the slash.
+
+| width | tile content | LAMP worst case | needs (x1.15) | verdict |
+|---|---|---|---|---|
+| 320 | 93px | `LAMP 200` | 73px | fits |
+| 360 | 114px | `LAMP 200` | 73px | fits |
+| 390 | 129px | `LAMP 200/200` | 104px | fits |
+
+PACK and BRACES were checked the same way and both fit at all three widths.
+
+**The gate now carries a stated advance width model** (uppercase 0.62em, tabular digit 0.60em,
+space 0.28em, slash 0.31em) calibrated against this very defect: with inherited letter spacing
+included it predicted the 390 overflow to within about 5 percent, so every tile is checked
+against a **1.15 safety factor** on top, at 320, 360 and 390.
+
+Two things about that check are deliberate, because a check that opts out is not a check:
+
+- **It cannot silently skip.** If the row's font size, letter spacing or gap cannot be read out
+  of the CSS, that is itself a failure, not a reason to pass. The first version skipped exactly
+  that way on the defective build and I only noticed because the arithmetic stayed green while
+  seven other checks went red.
+- **The cap breakpoint is READ from the CSS, never assumed.** The first version hardcoded which
+  widths hide the cap, so deleting the media query failed only the rule that looked for it while
+  the arithmetic carried on agreeing with itself. Now deleting it makes the arithmetic go red
+  too: `320px LAMP "200/200" needs 102 has 94`.
+
+Watched red four ways: against the whole defective file (7 checks), with the inherited letter
+spacing restored, with the gap removed, and with the cap rule deleted. One attempted break, a
+fatter label, correctly did **not** fail, because with the cap hidden at 320 a fatter label
+genuinely does still fit. That one is recorded as a non break rather than dressed up as a pass.
+
+### 11.5 What the layout gate holds
+
+44 checks: the column is clipped to the gutter and every named UI block is inset past it; no
+prose selector or emitter survives in the art layer; the scroll pane may shrink and the bar may
+not; a disabled button is opaque; the two gutter lanes clear each other at every defined gutter
+width; the HUD line cannot overflow; and the meter row has a real gap, an unwrappable value, no
+inherited letter spacing, and tiles that fit at 320, 360 and 390 under a stated safety factor.
+
+Watched red seven ways in total: the whole pre fix file, one card's inset removed, the bar made
+shrinkable, the gutter shrunk to 40px, the inherited letter spacing restored, the meter gap
+removed, and the cap breakpoint deleted.
+
+**The gutter width is settled at 68px** on the coordinator's LOOKING pass: ruler numbers legible,
+markers clear of them, odometer still dominant. Do not shrink it. **Still unjudged:** the ore
+dots, because at the shaft mouth everything nearby is unrevealed and renders as question marks.
+That needs a shot from further down, with a lamp and some Assay.
