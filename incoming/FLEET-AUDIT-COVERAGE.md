@@ -27,9 +27,16 @@ root-weave · silt · sled-vine · spore-drift · tempo-grove · tinker-loft · 
 
 hues · dragon-philosophy
 
-## WAVE 4 (notes landed, verification in progress)
+## WAVE 4 — AUDITED (notes landed; main loop verification still owed on most)
 
-bubblenaut · budburst · burr-blast · burrow-bowl · flipbook · moon-claw · petal-plunge · pollen-panic · pong · rule-root · seed-flutter · shell-shuffle · skyshot · slice-3d · sproing
+bubblenaut · budburst · burr-blast · burrow-bowl · flipbook · garden-td · greenhouse-pinball ·
+moon-claw · petal-plunge · pollen-panic · pong · rule-root · seed-flutter · shell-shuffle ·
+skyshot · slice-3d · sproing
+
+⛔ **A broken `/feedback.js` silently removes the feedback chip from every page in the fleet.**
+It was unparseable for part of 2026-08-16 (unterminated comment). Both `node --check feedback.js`
+and `node feedback_check.mjs` were proven to catch it, so run one of them after ANY edit to a
+shared root file. Verified clean locally and on production at the time of writing.
 
 ## NOT YET TOUCHED — 43 carded satellites, largest first
 
