@@ -52,14 +52,30 @@ function setSlug(s){
    counting "any traffic" meant three phones kept each other convinced the big
    screen was alive and NOBODY ever noticed it had died. Caught by the host drop
    test, which is exactly the failure it was written to catch. */
-var HOST_MSG={hb:1,joined:1,phase:1,timer:1,game:1,over:1};
+var HOST_MSG={hb:1,joined:1,phase:1,timer:1,game:1,over:1,seat:1,bye:1};
+
+/* shell owned screens that sit ON TOP of whatever the game module is showing.
+   A module never knows about these and never has to. */
+function overlay(id,on){
+  var el=document.getElementById(id);
+  if(el) el.classList.toggle('on',!!on);
+}
 
 function handle(m){
   if(m.to && m.to!=='*' && m.to!==window.PartyTransport.selfId) return;
   if(HOST_MSG[m.t]) heard();
   if(m.t==='hb') return;
+  if(m.t==='bye'){
+    /* the room was closed on purpose. Stop the drop watcher before it turns a
+       deliberate ending into "waiting for it to come back" forever. */
+    joined=false; lostShown=false;
+    overlay('ps-lost',false); overlay('ps-seat',false); overlay('ps-bye',true);
+    return;
+  }
+  if(m.t==='seat'){ overlay('ps-seat',m.seat==='next'); return; }
   if(m.t==='joined'){ joined=true; setSlug(m.game);
     if(m.color){ window.PartyShell.color=m.color; paintMyColour(m.color); }
+    overlay('ps-seat',m.seat==='next');
     document.dispatchEvent(new CustomEvent('party-joined')); }
   else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; setSlug(m.game);
     if(phaseCb) phaseCb(m.name,m.data); }

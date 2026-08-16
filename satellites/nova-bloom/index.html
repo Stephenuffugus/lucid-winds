@@ -129,6 +129,22 @@ h1.logo b{color:var(--pink); text-shadow:0 0 22px #e58fa088}
 .howtxt{color:var(--muted); font-size:.8rem; line-height:1.65; max-width:410px; text-align:left}
 .howtxt b{color:var(--cream)}
 .cat-label{color:var(--gold); font-size:.75rem; letter-spacing:.12em; margin-top:6px}
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   No header band needed here: this .screen is justify-content:center and the
+   title stack is ~670 of 960 stage px, so it starts around y 146 and the chip
+   sits in empty sky above it. */
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid var(--line);
+  border-radius:14px; background:#101710e6; color:var(--muted); font-family:inherit;
+  font-size:.9rem; font-weight:700; letter-spacing:.08em; cursor:pointer}
+#lw-home:active{transform:scale(.97)}
 </style>
 </head>
 <body>
@@ -146,6 +162,7 @@ h1.logo b{color:var(--pink); text-shadow:0 0 22px #e58fa088}
   <button id="bomb-btn"><span class="fill"></span><span>BLOOM</span><span id="bomb-pct">0%</span></button>
 
   <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button>
     <h1 class="logo">NOVA <b>BLOOM</b></h1>
     <div class="tag">A neon garden arena. Fly with your left thumb, fire with your right, and every enemy you clear leaves a flower behind. Fly back over the blooms to charge the Bloom Bomb.</div>
     <button class="btn" id="b-arena">🌌 Arena <span class="subtle">endless waves</span></button>

@@ -82,12 +82,24 @@
          anywhere, or tap the x to hide it for the rest of the day. Own class
          (NOT .lwfb-x — that is the form's close button; sharing the class made
          the two rule sets fight and broke both). 48px tap zone hung off the
-         fab's top-left corner, small visible dot inside it. */
-      '.lwfb-fab-x{position:absolute;top:-34px;left:-34px;width:48px;height:48px;' +
+         fab's top-left corner, small visible dot inside it.
+
+         ⛔ 2026-08-16 — THE CHIP WAS BIGGER THAN IT LOOKED. A 48px tap zone
+         hung at -34/-30 put its far corner 34px up and left of a fab that
+         reads as a 48px circle: real footprint 82x82 (mini 78x78) behind a
+         24px dot. That invisible reach is what landed on Vine Runner's RUN
+         button and Sprout Dice's "All Sky Wolf games". The tap zone stays 48px
+         (project rule: 48px minimum touch targets, measured rendered), but the
+         offset is pulled in to -26 so the zone overlaps the fab's own corner
+         instead of hanging free, and the visible dot grows 24->28px. Footprint
+         74x74, phantom reach beyond the dot halved (30px -> 14px). One rule for
+         both variants now — the mini override is gone, so what the scanner
+         below measures is what every surface ships. */
+      '.lwfb-fab-x{position:absolute;top:-26px;left:-26px;width:48px;height:48px;' +
         'display:flex;align-items:center;justify-content:center;background:transparent;cursor:pointer;}' +
-      '.lwfb-fab-x span{display:block;width:24px;height:24px;border-radius:50%;' +
+      '.lwfb-fab-x span{display:block;width:28px;height:28px;border-radius:50%;' +
         'background:rgba(13,16,12,.95);border:1px solid rgba(200,168,75,.5);color:#8a9178;' +
-        'font-size:13px;line-height:22px;text-align:center;font-family:sans-serif;}' +
+        'font-size:15px;line-height:26px;text-align:center;font-family:sans-serif;}' +
       /* Mini fab for satellites (2026-07-27 QA sweep): the labeled pill sat on
          top of game controls in 7 of 11 games (Inkbound's move arrow, Pop N
          Lock's rotate, shop rows). Satellites get a small translucent circle
@@ -96,7 +108,10 @@
         'font-size:1.15rem;line-height:48px;text-align:center;opacity:.72;' +
         'bottom:calc(96px + env(safe-area-inset-bottom,0px));}' +
       '.lwfb-fab.lwfb-mini:active{opacity:1;}' +
-      '.lwfb-fab.lwfb-mini .lwfb-fab-x{top:-30px;left:-30px;}';
+      /* yielding: a soft fade rather than a pop, so a player who is watching
+         the corner sees it step aside instead of blinking out */
+      '.lwfb-fab{transition:opacity .18s ease,left .18s ease,top .18s ease;}' +
+      '.lwfb-fab[data-lwfb-yield="1"]{opacity:0;pointer-events:none;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 

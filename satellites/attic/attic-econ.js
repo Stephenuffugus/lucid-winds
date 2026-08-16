@@ -1,0 +1,193 @@
+/* ════════════════════════════════════════════════════════════════════
+   THE ATTIC — economy and save layer. ES5, node + browser, no DOM.
+   Lifted out of index.html on 2026-08-16 so it can be asserted in node
+   (test/attic-check.js sections E and F). Three things live here and
+   nowhere else: what a ticket is worth, what a corrupt save turns into,
+   and how two tabs share one wallet.
+
+   ⛔ THE LOOP MUST BE LOSSY. As shipped, a rummage cost 1 ticket and
+   scrapping the pull handed 1 straight back, so a player could dig
+   forever and the tickets were decoration. Net expectation per dig is
+   now -1 (dig) + 0.34 (keeper refund) + 0.5 (scrap) = -0.16. If you
+   retune any of the three numbers, re-run the solvency assertion: it
+   demands the greediest possible strategy still runs the wallet dry.
+
+   ⛔ READ MODIFY WRITE. The wallet is a counter, and counters ADD. Every
+   write re-reads what is on disk and applies this tab's DELTA, so a
+   second tab cannot refund the first tab's spending. Bests take the MAX,
+   want list ticks take the UNION.
+   ════════════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  var DAILY = 5;              // tickets granted once per day
+  var RUMMAGE_COST = 1;       // what a dig costs
+  var GRAIL_PAY = 3;          // crossing something off the want list
+  var PAY_AT = 'FINE';        // a find this good or better refunds the dig
+  var KEEPER_PAY = 1;
+  var SCRAP_PER = 2;          // two scrapped finds make one ticket
+  var DUST_CAP = 6;           // tickets the dust panel can pay per day
+  var DUST_PER = 2;           // stubs per ticket
+  var TIX_MAX = 99999;        // a corrupt save cannot mint infinity
+  var SHELF_MAX = 400;        // hashes kept, newest first
+
+  var GRADE_ORDER = ['TRASHED', 'PLAYED', 'GOOD', 'FINE', 'NEAR MINT', 'MINT', 'FACTORY SEALED'];
+  function gIdx(g) { var i = GRADE_ORDER.indexOf(g); return i < 0 ? 2 : i; }
+
+  function clampTix(n) {
+    n = Number(n);
+    if (!isFinite(n)) n = 0;
+    n = Math.floor(n);
+    if (n < 0) n = 0;
+    if (n > TIX_MAX) n = TIX_MAX;
+    return n;
+  }
+  function isObj(o) { return !!o && typeof o === 'object' && !(o instanceof Array); }
+
+  function baseWallet() {
+    return { tix: 0, day: -1, wants: {}, finds: 0, best: 0, scrapCredit: 0, dustDay: -1, dustN: 0 };
+  }
+  function newWallet() { var w = baseWallet(); w._base = snap(w); return w; }
+  function snap(w) { return { tix: w.tix, finds: w.finds, best: w.best }; }
+
+  /* Anything at all can be on disk: null, a truncated string, an array, a
+     number, a negative ticket count, a day index in the year 4000. Every
+     one of those has to load into a wallet the player can play with, and
+     in particular a future day must not lock the daily allowance out
+     forever. Silent repair, never a thrown boot. */
+  function readWallet(raw, today) {
+    var w = baseWallet(), p = null;
+    try { p = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e) { p = null; }
+    if (isObj(p)) {
+      w.tix = clampTix(p.tix);
+      w.day = (typeof p.day === 'number' && isFinite(p.day)) ? Math.floor(p.day) : -1;
+      w.wants = isObj(p.wants) ? p.wants : {};
+      w.finds = clampTix(p.finds);
+      w.best = clampTix(p.best);
+      w.scrapCredit = Math.max(0, Math.min(SCRAP_PER - 1, clampTix(p.scrapCredit)));
+      w.dustDay = (typeof p.dustDay === 'number' && isFinite(p.dustDay)) ? Math.floor(p.dustDay) : -1;
+      w.dustN = Math.max(0, Math.min(DUST_CAP, clampTix(p.dustN)));
+    }
+    /* a day stamped in the future would otherwise mean "no tickets, ever" */
+    if (typeof today === 'number' && w.day > today) w.day = -1;
+    if (typeof today === 'number' && w.dustDay > today) { w.dustDay = -1; w.dustN = 0; }
+    w._base = snap(w);
+    return w;
+  }
+
+  function writable(w) {
+    return { tix: w.tix, day: w.day, wants: w.wants, finds: w.finds, best: w.best,
+      scrapCredit: w.scrapCredit, dustDay: w.dustDay, dustN: w.dustN };
+  }
+
+  /* THE TWO TAB RULE. `w` may be minutes stale. Re-read the disk, apply
+     only what this tab changed, hand back the string to store. The caller
+     must then keep using `w`, which is rebased onto the merged truth. */
+  function mergeToDisk(diskRaw, w) {
+    var d = readWallet(diskRaw);
+    var base = w._base || snap(w);
+    d.tix = clampTix(d.tix + (w.tix - base.tix));            // counters ADD
+    d.finds = clampTix(d.finds + (w.finds - base.finds));    // counters ADD
+    d.best = Math.max(d.best, w.best);                       // bests MAX
+    d.day = Math.max(d.day, w.day);
+    d.scrapCredit = w.scrapCredit;
+    if (w.dustDay > d.dustDay) { d.dustDay = w.dustDay; d.dustN = w.dustN; }
+    else if (w.dustDay === d.dustDay) d.dustN = Math.max(d.dustN, w.dustN);
+    var k;
+    for (k in w.wants) if (w.wants.hasOwnProperty(k) && w.wants[k]) d.wants[k] = 1;   // union
+    /* rebase this tab onto the merged truth so the delta is not re-applied */
+    w.tix = d.tix; w.finds = d.finds; w.best = d.best; w.day = d.day;
+    w.wants = d.wants; w.dustDay = d.dustDay; w.dustN = d.dustN;
+    w._base = snap(w);
+    return JSON.stringify(writable(d));
+  }
+
+  function grantDaily(w, today) {
+    if (w.day === today) return 0;
+    w.day = today;
+    var before = w.tix;
+    w.tix = clampTix(w.tix + DAILY);
+    return w.tix - before;
+  }
+
+  function spend(w, n) {
+    n = Math.max(0, n | 0);
+    if (w.tix < n) return false;
+    w.tix = clampTix(w.tix - n);
+    return true;
+  }
+
+  /* the moment of truth. A keeper hands the dig back, junk does not. */
+  function payReveal(w, item) {
+    var pay = gIdx(item && item.grade) >= gIdx(PAY_AT) ? KEEPER_PAY : 0;
+    if (pay) { w.tix = clampTix(w.tix + pay); w.finds = clampTix(w.finds + 1); }
+    else w.finds = clampTix(w.finds + 1);
+    return pay;
+  }
+
+  /* scrapping is a partial refund, not a full one, or the dig is free */
+  function payScrap(w) {
+    w.scrapCredit = (w.scrapCredit | 0) + 1;
+    if (w.scrapCredit < SCRAP_PER) return 0;
+    w.scrapCredit = 0;
+    w.tix = clampTix(w.tix + 1);
+    return 1;
+  }
+
+  function payGrails(w, n) {
+    n = Math.max(0, n | 0);
+    if (!n) return 0;
+    w.tix = clampTix(w.tix + GRAIL_PAY * n);
+    return GRAIL_PAY * n;
+  }
+
+  function dustLeft(w, today) {
+    if (w.dustDay !== today) return DUST_CAP;
+    return Math.max(0, DUST_CAP - (w.dustN | 0));
+  }
+
+  function bankDust(w, stubs, today) {
+    if (w.dustDay !== today) { w.dustDay = today; w.dustN = 0; }
+    var give = Math.min(Math.floor(Math.max(0, stubs | 0) / DUST_PER), dustLeft(w, today));
+    if (give <= 0) return 0;
+    w.dustN = (w.dustN | 0) + give;
+    w.tix = clampTix(w.tix + give);
+    return give;
+  }
+
+  /* the shelf is 64 bytes a find and re-derives every object from its hash,
+     but it still cannot grow without a bound or a long player fills the
+     origin's storage quota and every write starts failing silently. */
+  function readShelf(raw) {
+    var out = [], seen = {}, p = null, i;
+    try { p = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e) { p = null; }
+    if (!(p instanceof Array)) return out;
+    for (i = 0; i < p.length && out.length < SHELF_MAX; i++) {
+      if (typeof p[i] === 'string' && /^[0-9a-f]{64}$/.test(p[i]) && !seen[p[i]]) {
+        seen[p[i]] = 1; out.push(p[i]);
+      }
+    }
+    return out;
+  }
+
+  /* the shelf is written newest first, so a merge from a stale tab keeps
+     both tabs' finds without either losing one */
+  function mergeShelfToDisk(diskRaw, mine) {
+    var disk = readShelf(diskRaw), out = [], seen = {}, i;
+    for (i = 0; i < mine.length; i++) if (!seen[mine[i]]) { seen[mine[i]] = 1; out.push(mine[i]); }
+    for (i = 0; i < disk.length; i++) if (!seen[disk[i]]) { seen[disk[i]] = 1; out.push(disk[i]); }
+    return out.slice(0, SHELF_MAX);
+  }
+
+  var API = {
+    DAILY: DAILY, RUMMAGE_COST: RUMMAGE_COST, GRAIL_PAY: GRAIL_PAY, PAY_AT: PAY_AT,
+    SCRAP_PER: SCRAP_PER, DUST_CAP: DUST_CAP, DUST_PER: DUST_PER,
+    TIX_MAX: TIX_MAX, SHELF_MAX: SHELF_MAX, GRADE_ORDER: GRADE_ORDER, gIdx: gIdx,
+    newWallet: newWallet, readWallet: readWallet, mergeToDisk: mergeToDisk, writable: writable,
+    grantDaily: grantDaily, spend: spend, payReveal: payReveal, payScrap: payScrap,
+    payGrails: payGrails, dustLeft: dustLeft, bankDust: bankDust,
+    readShelf: readShelf, mergeShelfToDisk: mergeShelfToDisk
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.ATTIC_ECON = API;
+})(this);

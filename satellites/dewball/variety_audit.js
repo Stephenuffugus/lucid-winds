@@ -83,13 +83,29 @@ function tokens(id, nm){
   var out={}, k; for(k in t){ out[k.replace(/s$/,'')]=1; }
   return out;
 }
+function headNoun(id, nm){
+  var w = String(nm||id).toLowerCase().split(/[^a-z0-9]+/).filter(function(x){ return x && !STOP[x]; });
+  if (!w.length) return null;
+  return w[w.length-1].replace(/s$/,'');
+}
+/* Returns null, or { on:<word>, hard:true|false }.
+   HARD = the two things are the same object: either their base ids contain one
+   another, or their display names end on the same noun. That is a collision and
+   the tier exists to prevent it.
+   SOFT = they merely share a word ("Moon Bridge" next to "Moon Mushroom", "Toy
+   Train" next to "Toy Drum"). Worth a human glance, never a defect on its own —
+   grading those as defects is how a report becomes noise nobody reads.
+   ⛔ the id containment needs 5+ characters: "jackbox" contains "jack", and a
+   jack-in-the-box looks nothing like a six-pointed metal jack. */
 function shareShape(a, b){
+  var sa = String(a.k).replace(/^lm/,'').replace(/^k(?=[A-Z])/,'').toLowerCase();
+  var sb = String(b.k).replace(/^k(?=[A-Z])/,'').toLowerCase();
+  if (sa.length >= 5 && sb.length >= 5 && (sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0))
+    return { on:(sa.length<sb.length?sa:sb), hard:true };
+  var ha = headNoun(a.k, a.nm), hb = headNoun(b.k, b.nm);
+  if (ha && ha === hb && ha.length >= 4) return { on:ha, hard:true };
   var ta = tokens(a.k, a.nm), tb = tokens(b.k, b.nm), k;
-  for (k in ta) if (tb[k]) return k;
-  /* whole-word containment catches "booktower" vs "lmBookTower" style joins
-     that the camelCase splitter cannot see on the base kind */
-  var sa = String(a.k).replace(/^lm/,'').toLowerCase(), sb = String(b.k).toLowerCase();
-  if (sa.length > 4 && (sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0)) return sa;
+  for (k in ta) if (tb[k]) return { on:k, hard:false };
   return null;
 }
 
@@ -108,18 +124,22 @@ function selfTest(){
     [{k:'lmBookTower', nm:'The Leaning Library'},{k:'booktower',nm:'Book Tower'}],
     [{k:'lmClockTower',nm:'The Saffron Clock'}, {k:'clocktower',nm:'Clock Tower'}]
   ];
-  for (var i=0;i<pairs.length;i++)
-    if (!shareShape(pairs[i][0], pairs[i][1]))
-      fails.push('collision detector MISSED ' + pairs[i][0].k + ' vs ' + pairs[i][1].k);
-  /* 2. and it must not fire on things that genuinely look nothing alike */
+  for (var i=0;i<pairs.length;i++){ var g = shareShape(pairs[i][0], pairs[i][1]);
+    if (!g || !g.hard)
+      fails.push('collision detector MISSED ' + pairs[i][0].k + ' vs ' + pairs[i][1].k); }
+  /* 2. and it must not GRADE AS A COLLISION things that look nothing alike.
+        The last two are live pairs in the shipped worlds that share a word and
+        nothing else — if either is ever graded hard, the report is noise. */
   var apart = [
     [{k:'lmGramophone',nm:'The Gramophone'}, {k:'teapot',nm:'Tea Pot'}],
     [{k:'lmHelterSkelter',nm:'The Helter Skelter'}, {k:'rowboat',nm:'Rowing Boat'}],
-    [{k:'lmLongClock',nm:'The Longcase Clock'}, {k:'cracker',nm:'Cream Cracker'}]
+    [{k:'lmLongClock',nm:'The Longcase Clock'}, {k:'cracker',nm:'Cream Cracker'}],
+    [{k:'lmJackBox',nm:'The Jack-in-the-Box'}, {k:'jack',nm:'Toy Jack'}],
+    [{k:'lmMoonBridge',nm:'The Moon Bridge'}, {k:'mushroom',nm:'Moon Mushroom'}]
   ];
   for (i=0;i<apart.length;i++){ var f = shareShape(apart[i][0], apart[i][1]);
-    if (f) fails.push('collision detector FALSE POSITIVE ' + apart[i][0].k + ' vs ' +
-                      apart[i][1].k + ' on "' + f + '"'); }
+    if (f && f.hard) fails.push('collision detector FALSE POSITIVE ' + apart[i][0].k + ' vs ' +
+                      apart[i][1].k + ' on "' + f.on + '"'); }
   /* 3. the ladder solver must invert the game's own rule */
   var probes = [4, 24, 170, 900, 2200, 5200];
   for (i=0;i<probes.length;i++){ var D = eatAt(probes[i]);
@@ -210,22 +230,45 @@ out.forEach(function(r){
 });
 
 /* --- collisions ----------------------------------------------------------- */
-console.log('\nSILHOUETTE COLLISIONS  (landmark duplicating a shape in its own world)');
-var nColl = 0;
+console.log('\n⛔ SILHOUETTE COLLISIONS  (landmark duplicating a shape in its OWN world)');
+var hard = [], soft = [];
 out.forEach(function(r){
   var lms = r.kinds.filter(function(k){ return /^lm/.test(k.k); });
   var base = r.kinds.filter(function(k){ return !/^lm/.test(k.k); });
   lms.forEach(function(L){
     base.forEach(function(Bk){
-      var on = shareShape(L, Bk); if (!on) return;
-      nColl++;
-      console.log('  ' + r.W.id + '  "' + on + '":  ' + L.k + ' ' + L.nm + ' ' +
+      var g = shareShape(L, Bk); if (!g) return;
+      var line = '  ' + r.W.id + '  "' + g.on + '":  ' + L.k + ' ' + L.nm + ' ' +
         Math.round(L.s) + 'cm x' + L.n + '   vs   ' + Bk.k + ' ' + Bk.nm + ' ' +
-        Math.round(Bk.s) + 'cm x' + Bk.n + (Bk.s >= L.s ? '   ⛔ LANDMARK IS NOT THE BIGGER ONE' : ''));
+        Math.round(Bk.s) + 'cm x' + Bk.n + (Bk.s >= L.s ? '   ⛔ LANDMARK IS NOT THE BIGGER ONE' : '');
+      (g.hard ? hard : soft).push(line);
     });
   });
 });
-if (!nColl) console.log('  none  (detector self-tested against 6 known collisions this run)');
+if (!hard.length) console.log('  none  (detector self-tested against 6 known collisions this run)');
+hard.forEach(function(l){ console.log(l); });
+console.log('\n   shared naming only (look at the shapes, then ignore or rename):');
+soft.forEach(function(l){ console.log('  ' + l); });
+
+/* --- ⭐ THE TOP OF THE LADDER -------------------------------------------
+   The variety question has a second half that counting kinds cannot see: is
+   there anything up there AT ALL? Every object is dated by the ball diameter
+   that can first eat it, so the world can be asked directly whether growing
+   past the two- and three-star bars ever unlocks a new meal. If it does not,
+   the closing stretch is by definition hoovering leftovers you could already
+   eat — which is the complaint, stated at the ladder instead of the prop list. */
+console.log('\nTOP OF THE LADDER  (does growing past a star bar unlock anything?)');
+var lh = 'world  ★★      ★★★     ceiling  biggest prop            needs ball  objs>=★★  objs>=★★★';
+console.log(lh); console.log('-'.repeat(lh.length));
+out.forEach(function(r){
+  var B = r._bars, mx = null, n2 = 0, n3 = 0;
+  r.kinds.forEach(function(k){ if (!mx || k.s > mx.s) mx = k; });
+  r.kinds.forEach(function(k){ var d = eatAt(k.s); if (d >= B.s2) n2 += k.n; if (d >= B.s3) n3 += k.n; });
+  console.log(String(r.W.id).padEnd(7) + String(B.s2).padEnd(8) + String(B.s3).padEnd(8) +
+    String(Math.round(r.ceil)).padEnd(9) + String(mx.nm + ' ' + Math.round(mx.s) + 'cm').padEnd(24) +
+    String(Math.round(eatAt(mx.s))).padEnd(12) + String(n2).padEnd(10) + n3 +
+    (n3 === 0 ? '   ⛔ nothing in this world needs a 3-star ball' : ''));
+});
 
 /* --- the anti-wheelbarrow count ------------------------------------------- */
 console.log('\nWORST CLOSING REPEATS  (one kind eaten over and over is the complaint)');

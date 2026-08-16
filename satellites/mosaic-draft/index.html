@@ -114,6 +114,23 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 #buildstamp{position:absolute; bottom:0; left:0; width:100%; text-align:center; color:#8a917855;
   font-size:.7rem; z-index:31; pointer-events:none; padding:7px 0 5px;
   background:linear-gradient(180deg,#0a070600,#0a0706 60%)}
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   #s-title gains a header band; MOSAIC DRAFT's centred box starts around x 122
+   and would otherwise touch the chip. #buildstamp is z-index 31 over a z-index
+   30 screen, but it sits at the BOTTOM, so it cannot print over this. */
+#s-title{padding-top:104px}
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid #ffffff26;
+  border-radius:14px; background:#141009e6; color:var(--muted); font-family:inherit;
+  font-size:.95rem; font-weight:700; letter-spacing:.08em; cursor:pointer}
+#lw-home:active{transform:scale(.985)}
 </style>
 </head>
 <body>
@@ -128,6 +145,7 @@ h1 .a{color:var(--blue)} h1 .b{color:var(--gold)}
 </div>
 
 <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button>
   <h1><span class="a">MOSAIC</span> <span class="b">DRAFT</span></h1>
   <div class="tag">A ceramic tile duel. Draft colored clay shards, line them up in rows, then fire them onto your wall to build the highest-scoring mosaic. Chase the glowing glazed shard for double points.</div>
   <button class="btn gold" id="b-duel"><span class="bl">🏺 Duel Ladder<small id="sub-duel"></small></span></button>

@@ -80,6 +80,18 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+/* Way back to the arcade. This card loads TOP LEVEL (the portal frames only
+   /play/*.html and github.io), so a framed-only affordance never renders once, and
+   an installed PWA has no browser back button — without this there is no exit.
+   TOP of the title pad, LEFT aligned with the stack. Read off this screen: the
+   title's last row (How / Wardrobe / Keepsakes / ⚙) already sits in the fleet
+   feedback fab's band — the fab (/feedback.js) holds roughly x=W-90..W-12,
+   y=H-174..H-96 at z-index 2147482000, unstackable, and this 540x960 stage fills a
+   phone viewport. Nothing new goes bottom right. .pad.center is
+   justify-content:center, so a first child rides up with the block, not off it.
+   Reuses .btn.ghost so it is this game's own button, sized to its label. */
+.xrow{display:flex; justify-content:flex-start; width:100%; max-width:420px; margin:0 auto 16px}
+.xrow .btn{width:auto; min-width:152px; padding:0 26px; font-size:17px}
 h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
@@ -145,6 +157,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <div class="screen on" id="s-title">
     <div class="pad center">
+      <div class="xrow"><button class="btn ghost" id="b-arcade">◀ Arcade</button></div>
       <div class="title-word">ROOT WEAVE</div>
       <div class="title-sub">untangle the living roots</div>
       <div class="ribbon">Drag the root bulbs until no two roots cross. Every root you free turns from gnarl to living vine, and a finished weave blooms.</div>
@@ -907,6 +920,7 @@ window.addEventListener("resize",fit); fit();
 
 /* ---------- wire buttons ---------- */
 function tap(id,fn){ $(id).addEventListener("click",fn); }
+tap("b-arcade",function(){ window.SWS_EXIT(); });
 tap("b-grove",function(){ renderLevels(); show("s-levels"); });
 tap("levels-back",function(){ show("s-title"); stamp(); });
 tap("b-daily",function(){ startMode("daily"); });
@@ -954,8 +968,14 @@ stamp();
 /* ---------- SWS embed/exit + sunbeams ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ The framed branch used to be gated on ?embed=1 — a flag the portal never
+   sets for a relative /satellites/ url, and that url is not framed at all, it
+   navigates TOP LEVEL. So the flag decided nothing here, and would decide the
+   WRONG thing the day this card moves to a framed url. Detect the frame itself. */
+var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 window._sbCapEarn=function(n,tag){ var granted=0;
   try{ var k='sw_sb_rootweave'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;

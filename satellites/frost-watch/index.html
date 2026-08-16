@@ -90,6 +90,24 @@ h1 .a{color:var(--ice)} h1 .b{color:var(--warm)}
 .btn.blue{ background:url('assets/ui/plaque_blue.png?v=fw1') center/100% 100% no-repeat, linear-gradient(180deg,#14202b,#0b1219); border-color:#5b9bd533; }
 #hud .chip,#hud .hbtn{ background:url('assets/ui/chip_plain.png?v=fw1') center/100% 100% no-repeat, #0a0e18b8; }
 #overstats .chip{ background:url('assets/ui/chip_plain.png?v=fw1') center/100% 100% no-repeat, #10182a; }
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   Only +44 of header band here: this title screen also carries the emblem art
+   and a three chip stats row, so it is the tallest of the family (~845 stage px)
+   and a full 104px band would push it against the fold. The emblem is centred
+   (x 196..344), so it never meets a chip that ends around x 150. */
+#s-title{padding-top:88px}
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid #ffffff26;
+  border-radius:14px; background:#0e141fe6; color:var(--muted); font-family:inherit;
+  font-size:.95rem; font-weight:700; letter-spacing:.08em; cursor:pointer}
+#lw-home:active{transform:scale(.985)}
 </style>
 </head>
 <body>
@@ -105,6 +123,7 @@ h1 .a{color:var(--ice)} h1 .b{color:var(--warm)}
 </div>
 
 <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button>
   <img class="emblem" src="assets/ui/emblem.png?v=fw1" onerror="this.style.display='none'" alt="">
   <h1><span class="a">FROST</span> <span class="b">WATCH</span></h1>
   <div class="tag">the shards are falling · send warmth · let the meadow thaw</div>

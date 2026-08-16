@@ -56,6 +56,21 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
 
 /* ---- host drop notice (phones only) ---- */
 #ps-lost{background:rgba(5,7,10,.97); z-index:900}
+/* the room was closed on purpose, and a late arrival waiting for the next game.
+   Both sit above the game module, which never knows they exist. */
+#ps-bye{background:rgba(5,7,10,.98); z-index:920}
+#ps-seat{background:rgba(5,7,10,.97); z-index:910}
+#ps-seat .ps-lost-t{color:var(--warm)}
+/* ⛔ SHELL OWNED, AND IT WAS ONLY IN ONE GAME'S CSS. Eight of the nine podiums
+   use .ps-btn.ghost for "Another game" and "End night" and only firefly/game.css
+   ever defined it, so on the other eight all three podium buttons rendered as
+   identical gold slabs with no hierarchy at all: the destructive one looked
+   exactly like the one you press every round. A ghost reads as secondary
+   without becoming another slab of paint over the art. */
+.ps-btn.ghost{background:transparent; color:var(--cream); box-shadow:none;
+  border:1px solid var(--line); font-weight:600; min-width:200px; font-size:19px}
+.ps-btn.ghost:hover,.ps-btn.ghost:focus-visible{border-color:var(--gold); color:var(--warm)}
+#ps-lobby-back{margin-top:14px}
 .ps-lost-mark{font-size:44px; letter-spacing:10px; color:var(--gold); margin-bottom:18px}
 .ps-lost-t{font-size:26px; color:var(--cream); margin-bottom:12px}
 .ps-lost-s{font-size:16px; color:var(--muted); max-width:290px; line-height:1.5}

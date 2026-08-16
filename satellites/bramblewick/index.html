@@ -65,6 +65,23 @@
   .how b{ color:var(--gold); }
   /* level-up draft cards are drawn on canvas; menus only for meta screens */
   #dev{ position:absolute; left:6px; top:6px; z-index:9; font:11px/1.3 monospace; color:#9fd; background:rgba(0,0,0,0.5); padding:4px 6px; border-radius:6px; display:none; white-space:pre; pointer-events:none; }
+  /* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+     Unlike the rest of the fleet this game has NO scaled 540x960 stage: the
+     canvas fills the viewport and menus are HTML panels sized in real CSS px,
+     so 48px here really is 48 rendered px.
+     It lives at the TOP of the menu panel, left aligned, rather than floating
+     in a corner. The panel is width:min(88vw,420px) and CENTRED, so a chip
+     pinned to the viewport's top left would sit on the panel's rounded corner
+     and on the left edge of the logo image at phone widths. The panel scrolls
+     from the top, so first child = always on screen without scrolling.
+     Not bottom right, ever: the fleet feedback fab (/feedback.js) owns roughly
+     x=W-90..W-12, y=H-174..H-96 at z-index 2147482000 and no game out-stacks it. */
+  .homerow{ text-align:left; margin:0 0 6px; }
+  #lw-home{ pointer-events:auto; display:inline-flex; align-items:center; gap:8px;
+    min-height:48px; padding:10px 18px; border-radius:12px; cursor:pointer;
+    font-family:inherit; font-size:0.9rem; font-weight:600; letter-spacing:0.04em;
+    border:1px solid rgba(200,168,75,0.32); background:rgba(13,16,12,0.72); color:var(--muted); }
+  #lw-home:active{ transform:translateY(1px); }
 </style>
 <!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
      postMessage, but nothing on the portal side ever listened, so it paid nothing.
@@ -79,6 +96,7 @@
 <!-- MENU -->
 <div class="layer on" id="menu">
   <div class="panel">
+    <div class="homerow"><button id="lw-home" type="button" aria-label="Back to the arcade">← Arcade</button></div>
     <h1 class="logo"><img src="assets/logo.png?v=2026-07-06.art" alt="BRAMBLEWICK" style="display:block;width:100%;max-width:360px;height:auto;margin:0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,0.55))" onerror="this.parentNode.textContent='🌿 BRAMBLEWICK'"></h1>
     <p class="tag">Wake the garden. Its chemistry does the killing.</p>
     <div class="lbl">Ground</div>

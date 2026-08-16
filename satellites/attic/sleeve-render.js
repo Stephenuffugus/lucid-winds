@@ -25,8 +25,21 @@
   // 0.72em average glyph width for bold caps; avail = pixels the line may span
   function fit(text, max, avail) { return Math.min(max, (avail || 260) / (Math.max(6, text.length) * 0.72)); }
 
+  /* the unrevealed sleeve: grime over the whole 300x300, no ring wear, no
+     price sticker, no shrink gloss. A sealed record and a trashed one have
+     to look the same until the player wipes. */
+  function grimeLayer(h) {
+    var w = '<rect width="300" height="300" fill="#6b5f4c" opacity="0.62"/>', i;
+    for (i = 0; i < 9; i++) {
+      w += '<circle cx="' + (10 + hb(h, 20 + (i % 6)) % 280) + '" cy="' + (10 + hb(h, 21 + (i % 5)) % 280)
+        + '" r="' + (16 + hb(h, 22 + (i % 4)) % 30) + '" fill="#8a7c64" opacity="0.22"/>';
+    }
+    return w + '<text x="150" y="156" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" letter-spacing="5" fill="#efe3c8" opacity="0.72">UNWIPED</text>';
+  }
+
   function wearLayer(h, grade) {
     var w = '';
+    if (grade === '?') return grimeLayer(h);
     var heavy = grade === 'TRASHED', mid = grade === 'PLAYED' || grade === 'GOOD';
     if (heavy || mid) {
       // ring wear: the record's circle pressed through the cardboard
@@ -51,9 +64,10 @@
     return w;
   }
 
-  function renderSleeve(h, size) {
+  function renderSleeve(h, size, opts) {
     var it = A.hashToItem(h);
     if (it.cls !== 'RECORD') return null;
+    h = it.hash;   // normalised, so a junk paste still renders
     var look = ERA_LOOK[it.era], c = look.c;
     var band = it.name, album = it.sub.split('"')[1] || '';
     var layout = hb(h, 16) % 4;
@@ -82,7 +96,7 @@
     // label logo chip + era year, always
     g += '<rect x="16" y="272" width="12" height="12" fill="' + c[2] + '"/>'
       + '<text x="34" y="282" font-family="ui-monospace, monospace" font-size="9" fill="' + c[3] + '" opacity="0.85">' + esc(it.sub.split('·')[1] || '') + ' · ' + it.year + '</text>';
-    g += wearLayer(h, it.grade);
+    g += wearLayer(h, (opts && opts.dusty) ? '?' : it.grade);
     return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
   }
 

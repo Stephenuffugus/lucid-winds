@@ -96,18 +96,38 @@ function renderClues(tier){
   $('lf-worth').textContent='WORTH '+PTS[tier];
 }
 
+/* ⭐ WAIT FOR THE ROOM, NOT FOR THE ROSTER TAKEN AT KICK OFF. Ending the question
+   the moment everybody has answered is what keeps this fast, and it was measured
+   against the list of players captured when the game started. One person walking
+   out with their phone meant the whole room then sat out the full 24 seconds on
+   every remaining question. Count who is actually here. */
+function here(){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined) out.push(p[i]);
+  return out;
+}
+function allIn(store){
+  var h=here(), got=0;
+  for(var i=0;i<h.length;i++) if(store.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
+
 PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t!=='guess'||msg.q!==qi+1) return;
   if(!$('lf-q').classList.contains('on')) return;
   answers[qi]=answers[qi]||{};
-  if(answers[qi].hasOwnProperty(pid)) return;   /* one answer only, ever */
+  /* ⛔ ONE ANSWER ONLY, EVER, and TELL THE PHONE SO. A phone that locked and
+     rejoined has forgotten it already answered, so it will happily let its owner
+     tap a second option. The host was right to ignore it and silent about it,
+     which looked to the player exactly like a broken button. */
+  if(answers[qi].hasOwnProperty(pid)){ PartyShell.sendToPlayer(pid,{t:'locked'}); return; }
   var idx=msg.v|0; if(idx<0||idx>3) return;
   answers[qi][pid]={pick:shuffled[qi][idx],tier:curTier};
-  $('lf-qin').textContent=Object.keys(answers[qi]).length+' of '+order.length+' locked in';
+  $('lf-qin').textContent=Object.keys(answers[qi]).length+' of '+here().length+' locked in';
   snd('pip');
   PartyShell.sendToPlayer(pid,{t:'locked'});
-  if(Object.keys(answers[qi]).length>=order.length){ PartyShell.stopTimer(); phaseReveal(); }
+  if(allIn(answers[qi])){ PartyShell.stopTimer(); phaseReveal(); }
 });
 
 function startGame(players){
@@ -130,7 +150,7 @@ function phaseQuestion(){
   show('lf-q'); strip('lf-strip1');
   curTier=0;
   $('lf-qn').textContent='QUESTION '+(qi+1)+' OF '+ROUNDS;
-  $('lf-qin').textContent='0 of '+order.length+' locked in';
+  $('lf-qin').textContent='0 of '+here().length+' locked in';
   var oh='';
   for(var oi=0;oi<shuffled[qi].length;oi++) oh+='<div class="lf-opt">'+esc(shuffled[qi][oi])+'</div>';
   $('lf-qopts').innerHTML=oh;

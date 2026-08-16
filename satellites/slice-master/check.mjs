@@ -173,7 +173,7 @@ function staticChecks(src) {
         is deliberately narrow so it cannot be satisfied by deleting comments. */
   const stripped = src
     .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '')
+    .replace(/(^|[^:"'\w])\/\/[^\n]*/g, '$1')
     .replace(/<!--[\s\S]*?-->/g, '');
   const dashes = [...stripped.matchAll(/[–—][^\n]{0,60}/g)].map(m => m[0].trim());
   ok('copy: no en/em dashes in player facing text', dashes.length === 0, dashes.join(' | '));
@@ -307,7 +307,7 @@ function saveChecks() {
 function selftest() {
   const mutations = [
     ['exit unwired', s => s.replace(/tap\('b-exit', _exitToArcade\);/, '').replace(/tap\('go-exit', _exitToArcade\);/, ''), /exit:/],
-    ['exit gated on framing', s => s.replace(/if\(document\.referrer/, 'if(false&&document.referrer'), /exit: falls back/],
+    ['exit gated on framing', s => s.replace("if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}", 'return;'), /exit: falls back/],
     ['sw version drift', s => s.replace("register('sw.js?v=7')", "register('sw.js?v=9')"), /lockstep/],
     ['a dash in player copy', s => s.replace('>Got it<', '>Got it — back<'), /no en\/em dashes/],
     ['tiny touch target', s => s.replace('.btn.sm{min-height:72px', '.btn.sm{min-height:40px'), /\.btn\.sm >= 48/],
@@ -346,6 +346,12 @@ function selftest() {
         }
       } catch (e) { ok('save: survives a corrupt save (mutant boot)', false, e.message); }
     } catch (e) { ok('save: survives a corrupt save (mutant boot)', false, e.message); }
+    /* the corrupt-save assertion only means anything if a bad blob is fed in */
+    try {
+      const cc = makeSandbox(mutated, { search: '?sltest=1', storage: { sl2_prog: '{', sl_set: '{' } });
+      runInContext(gameScript(mutated), cc, { filename: 'mutant-corrupt' });
+      ok('save: survives a corrupt save (truncated json)', true);
+    } catch (e) { ok('save: survives a corrupt save (truncated json)', false, e.message); }
     const caught = fails.some(f => want.test(f));
     console.log((caught ? '  RED  ' : '  MISS ') + name + (caught ? '' : '   <-- assertion did not fire, it is decoration'));
     if (caught) red++;

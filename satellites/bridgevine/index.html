@@ -116,6 +116,19 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
 #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid var(--line);
+  border-radius:14px; background:#0f150cdd; color:var(--muted); font-family:inherit;
+  font-size:16px; font-weight:700; letter-spacing:.5px; cursor:pointer}
+#lw-home:active{transform:translateY(2px); filter:brightness(1.15)}
 </style>
 </head>
 <body>
@@ -134,6 +147,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div id="goalchip"></div>
 
   <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← Arcade</button>
     <div class="pad center">
       <div class="title-word">BRIDGEVINE</div>
       <div class="title-sub">grow the span</div>

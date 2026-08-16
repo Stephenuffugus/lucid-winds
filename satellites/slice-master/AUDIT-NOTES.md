@@ -26,6 +26,22 @@ not "the exit is gated on `window.parent !== window` and never renders", but
 Home button that only reaches the game's own title screen, and a title screen
 with no way out.
 
+### P0 — the game's own completability proof had been red for six weeks
+`PROOFS` (index.html) is a baked list of tap ticks that, replayed through the
+live engine, proves each of the 30 levels can be finished. It was machine solved
+on 2026-07-17. On 2026-07-30 ground friction went `0.986` to `0.90` per tick
+(Stephen: "the blade slides on the ground, it needs to be more crisp"). Every hop
+now carries less distance, so **19 of the 30 baked tap lists stop short of the
+wall**: L1 ends at kx 2191 of 2241, L12 at 1707 of 3777, L26 at 2107 of 4303.
+Nobody noticed because replaying the proof needed a browser and nothing in CI
+had one.
+
+Re-solved all 30 through the live engine (`SL_DEV.solve`, 400 seeds each):
+**every level is still completable** — only the proof was stale, not the game.
+Proofs re-baked and now replay green from `node check.mjs` in about a second,
+so this can never rot silently again. Comment in the file tells the next person
+to re-bake whenever GRAV / TAPVY / RUNVX / friction move.
+
 ### P1 — `go-retry` could run on a null `G`
 `tap('go-retry', ...)` reads `G.daily` through a guard but `newRun(G&&G.daily?0:...)`
 is only reached from the result screen, which is only reachable after a run, so

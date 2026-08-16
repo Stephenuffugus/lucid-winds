@@ -1,7 +1,9 @@
 /* minimal DOM shim: proves the VIEW boots, renders and drives a full wave
    through the scorecard and the loss sheet without a browser. */
 var fs=require('fs'), path=require('path');
-var DIR=process.argv[2]||'/workspaces/lucid-winds/satellites/siege';
+/* default to THIS folder, never a hardcoded path: a copy in a scratch dir
+   must test itself, or a break test silently reads the shipped file. */
+var DIR=process.argv[2]||__dirname;
 var SRC=fs.readFileSync(path.join(DIR,'index.html'),'utf8');
 var head=SRC.slice(0,SRC.indexOf('<script>'));
 var ids=[], startCls={};

@@ -56,7 +56,7 @@ var BANK=window.UNDERSTUDY_BANK||[], QS=[], ri=0, ROUNDS=10;
 var scores={}, names={}, order=[], votes={};
 var FAST=/[?&]us_fast=1(&|$)/.test(location.search);
 var T_RULES=FAST?3:20, T_VOTE=FAST?4:20, T_REV=FAST?3:9;
-var VOTED_WITH_ROOM=100, CHOSEN=80;
+var VOTED_WITH_ROOM=100, CHOSEN=80, SPLIT_ROOM=20;
 
 function pickRoles(){
   var used={}; try{used=JSON.parse(localStorage.getItem('us_used')||'{}');}catch(e){}
@@ -78,6 +78,19 @@ function strip(which){
   var el=$(which); if(el) el.innerHTML=rows;
 }
 
+/* wait for the room, not for the roster taken at kick off: one person leaving
+   must not make everybody else sit out the full clock every round */
+function here(){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined) out.push(p[i]);
+  return out;
+}
+function allIn(store){
+  var h=here(), got=0;
+  for(var i=0;i<h.length;i++) if(store.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
+
 PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='vote'&&msg.r===ri+1&&$('us-vote').classList.contains('on')){
@@ -86,9 +99,9 @@ PartyShell.onPlayerMessage(function(pid,msg){
     var isNew=!votes.hasOwnProperty(pid);
     votes[pid]=msg.v;
     var n=0,k; for(k in votes) n++;
-    $('us-vin').textContent=n+' of '+order.length+' have voted';
+    $('us-vin').textContent=n+' of '+here().length+' have voted';
     if(isNew) snd('pip');
-    if(n>=order.length){ PartyShell.stopTimer(); phaseReveal(); }
+    if(allIn(votes)){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
 
@@ -125,12 +138,28 @@ function phaseReveal(){
   var top=0; for(k in tally) if(tally[k]>top) top=tally[k];
   var winners=[]; for(k in tally) if(tally[k]===top) winners.push(k);
 
+  /* ⛔ AGREEMENT HAS TO EXIST BEFORE IT CAN BE REWARDED. Three voters who all
+     pick somebody different give every tally a 1, so "your pick got the top
+     count" was true for everybody and every candidate was a winner: three people
+     scoring 180 each, and a screen printing three big names joined by "and" as
+     though the room had decided something. Total agreement and total
+     disagreement produced the identical result, which is the flattest a party
+     game can get. A round nobody agreed on is now its own outcome: it is called
+     what it is, everybody who voted still takes something home for playing, and
+     the scoreboard keeps its shape. */
+  var agreed=top>1;
+  if(!agreed) winners=[];
+
   var res={};
   for(var i=0;i<order.length;i++){
     var pid=order[i], pts=0, got='none';
-    if(votes.hasOwnProperty(pid)&&tally[votes[pid]]===top&&top>0){ pts+=VOTED_WITH_ROOM; got='withroom'; }
-    else if(votes.hasOwnProperty(pid)) got='alone';
-    if(winners.indexOf(pid)>=0&&top>0){ pts+=CHOSEN; got=(got==='withroom')?'both':'chosen'; }
+    if(!agreed){
+      if(votes.hasOwnProperty(pid)){ pts=SPLIT_ROOM; got='split'; }
+    } else {
+      if(votes.hasOwnProperty(pid)&&tally[votes[pid]]===top){ pts+=VOTED_WITH_ROOM; got='withroom'; }
+      else if(votes.hasOwnProperty(pid)) got='alone';
+      if(winners.indexOf(pid)>=0){ pts+=CHOSEN; got=(got==='withroom')?'both':'chosen'; }
+    }
     scores[pid]=(scores[pid]||0)+pts;
     res[pid]={got:got,pts:pts,votes:tally[pid]||0};
   }

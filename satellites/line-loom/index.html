@@ -129,6 +129,24 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .gcell canvas{width:88px; height:88px; display:block; margin:0 auto}
 .gcell .gd{font-size:10px; color:var(--muted); margin-top:4px}
 @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   The title stack here is nearly a full screen tall (~780 of 960 stage px), so
+   the pad is pinned to the top and given a header band instead of being
+   vertically centred. Centred, the 54px LINE LOOM wordmark came within 5px of
+   this chip and overlapped it horizontally. */
+#s-title .pad{justify-content:flex-start; padding-top:104px}
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid var(--line);
+  border-radius:14px; background:#0f150cdd; color:var(--muted); font-family:inherit;
+  font-size:16px; font-weight:700; letter-spacing:1px; cursor:pointer}
+#lw-home:active{transform:translateY(2px); filter:brightness(1.15)}
 </style>
 </head>
 <body>
@@ -173,7 +191,8 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div>
   <div id="toast"></div>
 
-  <div class="screen on" id="s-title"><div class="pad center">
+  <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button><div class="pad center">
     <div class="title-word">LINE LOOM</div>
     <div class="title-sub">weave every thread home</div>
     <p class="ribbon">The shapes are stations, and every traveler wants to reach a station with a matching shape. Draw colored lines between stations, let the shuttles carry everyone home, and do not let any station overflow.</p>

@@ -121,6 +121,22 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
 .howp{max-width:420px; color:var(--cream); font-size:1.12rem; line-height:1.55; margin:10px 0; font-weight:500}
 .howp b{color:var(--gold)}
 .howp .qd{color:var(--pink)} .howp .qn{color:var(--gold)} .howp .qk{color:var(--ember)} .howp .qt{color:var(--blue)}
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   #s-title gains a header band so the centred LOOP WARDEN wordmark cannot run
+   under the chip. */
+#s-title{padding-top:104px}
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid #ffffff26;
+  border-radius:14px; background:#0f1116e6; color:var(--muted); font-family:inherit;
+  font-size:.95rem; font-weight:700; letter-spacing:.08em; cursor:pointer}
+#lw-home:active{transform:scale(.985)}
 </style>
 </head>
 <body>
@@ -146,6 +162,7 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--blue)}
 </div>
 
 <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button>
   <h1><span class="a">LOOP</span> <span class="b">WARDEN</span></h1>
   <div class="tag">the loop is a clock · place the land, bend the hours, bank the haul</div>
   <button class="btn gold" id="b-exped">Expedition</button>

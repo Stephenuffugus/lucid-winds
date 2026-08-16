@@ -96,6 +96,22 @@ h1 .a{color:var(--warm)} h1 .b{color:var(--cream)}
 .wcard.locked{opacity:.4} .wcard.sel{border-color:#c8a84b88; background:#1b1a10}
 .howp{max-width:360px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
 .howp b{color:var(--gold)}
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A top-left control cannot meet it at any
+   viewport size, and it needs no layout height on a title screen that already
+   scrolls on a short phone.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+   #s-title gains a header band: LAMPLIGHTER is 11 caps at 2.1rem and its
+   centred box starts around x 130, which would have grazed the chip. */
+#s-title{padding-top:104px}
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid #ffffff26;
+  border-radius:14px; background:#131024e6; color:var(--muted); font-family:inherit;
+  font-size:.95rem; font-weight:700; letter-spacing:.08em; cursor:pointer}
+#lw-home:active{transform:scale(.985)}
 </style>
 </head>
 <body>
@@ -115,6 +131,7 @@ h1 .a{color:var(--warm)} h1 .b{color:var(--cream)}
 </div>
 
 <div class="screen on" id="s-title">
+<button id="lw-home" type="button" aria-label="Back to the arcade">← ARCADE</button>
   <h1><span class="a">LAMP</span><span class="b">LIGHTER</span></h1>
   <div class="tag">dusk has settled on the town square · every window waits for your lamps</div>
   <button class="btn gold" id="b-walk">🏮 Lantern Walk</button>

@@ -25,11 +25,30 @@
     '1990s': { c: ['#d8d4c8', '#3a3a38', '#8a2b20', '#191917'], f: 'ui-monospace, monospace' }
   };
 
+  /* GRIME: the unrevealed state. Everything the player sees before they wipe
+     the dust has to be identical whether the box under it is TRASHED or
+     FACTORY SEALED, or the reveal button is decoration. Grade is not passed
+     in here at all, which is the point. Deterministic off the hash. */
+  function grime(h, bx, by, bw, bh) {
+    var w = '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="#6b5f4c" opacity="0.62"/>', i, cx, cy, rr;
+    for (i = 0; i < 9; i++) {
+      cx = bx + 6 + hb(h, 20 + (i % 6)) % Math.max(1, bw - 12);
+      cy = by + 6 + hb(h, 21 + (i % 5)) % Math.max(1, bh - 12);
+      rr = 14 + (hb(h, 22 + (i % 4)) % 26);
+      w += '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="#8a7c64" opacity="0.22"/>';
+    }
+    w += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="#3a3226" stroke-width="2" opacity="0.5"/>'
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + bh / 2 + 4) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" letter-spacing="4" fill="#efe3c8" opacity="0.72">UNWIPED</text>';
+    return w;
+  }
+
   /* wear shared by boxy objects: corner scuffs, a price sticker, shrink
      gloss on FACTORY SEALED, a proud tape repair on TRASHED. Coordinates
-     are the object's bounding box so wear lands ON the thing. */
+     are the object's bounding box so wear lands ON the thing.
+     grade === '?' means unrevealed: no condition marks at all, grime instead. */
   function wear(h, grade, bx, by, bw, bh) {
     var w = '';
+    if (grade === '?') return grime(h, bx, by, bw, bh);
     var heavy = grade === 'TRASHED', mid = grade === 'PLAYED' || grade === 'GOOD';
     if (heavy || mid) {
       w += '<path d="M' + bx + ' ' + by + ' l20 0 l-20 20 Z" fill="#ffffff" opacity="0.2"/>'
@@ -57,7 +76,7 @@
   }
 
   // ── VHS: black clamshell, era cover art, title band, rental label ──
-  function drawVHS(h, it, look) {
+  function drawVHS(h, it, look, gr) {
     var c = look.c, bx = 62, by = 12, bw = 176, bh = 272;
     var g = shadow(bx, by, bw, bh)
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="6" fill="#14120e"/>'
@@ -88,21 +107,21 @@
         + '<text x="102" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" font-weight="700" fill="#3a3010">BE KIND</text>'
         + '<text x="102" y="67" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" font-weight="700" fill="#3a3010">REWIND</text></g>';
     }
-    return g + wear(h, it.grade, bx, by, bw, bh);
+    return g + wear(h, gr, bx, by, bw, bh);
   }
 
   // ── TOY: carded blister pack ──────────────────────────────────────
-  function drawToy(h, it, look) {
+  function drawToy(h, it, look, gr) {
     var c = look.c, bx = 56, by = 10, bw = 188, bh = 278;
     var g = shadow(bx, by, bw, bh)
       + '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="8" fill="' + c[2] + '"/>'
       + '<rect x="' + (bx + 8) + '" y="' + (by + 8) + '" width="' + (bw - 16) + '" height="' + (bh - 16) + '" rx="5" fill="' + c[0] + '"/>'
       + '<ellipse cx="' + (bx + bw / 2) + '" cy="' + (by + 16) + '" rx="14" ry="6" fill="#ffffff" opacity="0.9"/>';   // hang hole
     g += '<rect x="' + (bx + 8) + '" y="' + (by + 26) + '" width="' + (bw - 16) + '" height="52" fill="' + c[1] + '"/>'
-      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 16, bw - 28) + '" fill="' + c[0] + '">' + esc(it.name.replace(' (MINT ON CARD)', '')) + '</text>'
+      + '<text x="' + (bx + bw / 2) + '" y="' + (by + 50) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="' + fit(it.name, 16, bw - 28) + '" fill="' + c[0] + '">' + esc(it.name) + '</text>'
       + '<text x="' + (bx + bw / 2) + '" y="' + (by + 68) + '" text-anchor="middle" font-family="' + look.f + '" font-size="8.5" fill="' + c[0] + '" opacity="0.9">' + esc(String(it.sub).slice(0, 38)) + '</text>';
     // the bubble + figure
-    var cxm = bx + bw / 2, cym = by + 172, crushed = it.grade === 'TRASHED' || it.grade === 'PLAYED';
+    var cxm = bx + bw / 2, cym = by + 172, crushed = gr === 'TRASHED' || gr === 'PLAYED';
     var R = 4 + hb(h, 17) % 5;
     var skin = ['#e8b06a', '#8ac46a', '#6a9ce8', '#e86a6a', '#c9c9c9', '#b98ae0'][hb(h, 18) % 6];
     var suit = c[(hb(h, 19) % 3) + 1];
@@ -126,11 +145,11 @@
       + '<text x="' + (bx + bw - 34) + '" y="' + (by + 101) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="8" fill="' + c[0] + '">COLLECT</text>'
       + '<text x="' + (bx + bw - 34) + '" y="' + (by + 111) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="8" fill="' + c[0] + '">ALL ' + (3 + hb(h, 28) % 7) + '</text></g>';
     g += '<text x="' + (bx + bw / 2) + '" y="' + (by + bh - 14) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="' + c[3] + '" opacity="0.8">AGES ' + (3 + hb(h, 29) % 6) + ' AND UP &middot; ' + it.year + '</text>';
-    return g + wear(h, it.grade, bx, by, bw, bh);
+    return g + wear(h, gr, bx, by, bw, bh);
   }
 
   // ── BOARD GAME: box lid, landscape ───────────────────────────────
-  function drawGame(h, it, look) {
+  function drawGame(h, it, look, gr) {
     var c = look.c, bx = 12, by = 62, bw = 276, bh = 180;
     var g = shadow(bx, by, bw, bh)
       + '<rect x="' + bx + '" y="' + (by + 6) + '" width="' + bw + '" height="' + (bh - 6) + '" rx="4" fill="' + c[3] + '"/>'
@@ -156,11 +175,11 @@
     g += '<rect x="' + (bx + bw - 108) + '" y="' + (by + bh - 44) + '" width="94" height="24" rx="12" fill="' + c[0] + '"/>'
       + '<text x="' + (bx + bw - 61) + '" y="' + (by + bh - 28) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="700" font-size="10" fill="' + c[3] + '">' + esc(players ? players[0] : 'family fun') + '</text>';
     g += '<text x="' + (bx + bw - 16) + '" y="' + (by + 24) + '" text-anchor="end" font-family="ui-monospace, monospace" font-size="9" fill="' + c[0] + '" opacity="0.8">' + it.year + '</text>';
-    return g + wear(h, it.grade, bx, by, bw, bh);
+    return g + wear(h, gr, bx, by, bw, bh);
   }
 
   // ── CEREAL: tall box front ───────────────────────────────────────
-  function drawCereal(h, it, look) {
+  function drawCereal(h, it, look, gr) {
     var c = look.c, bx = 66, by = 8, bw = 168, bh = 282;
     var pop = c[2], deep = c[3];
     var g = shadow(bx, by, bw, bh)
@@ -192,19 +211,25 @@
       + '<text x="' + (bx + 30) + '" y="' + (by + 93) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">FREE PRIZE</text>'
       + '<text x="' + (bx + 30) + '" y="' + (by + 102) + '" text-anchor="middle" font-family="' + look.f + '" font-weight="800" font-size="7.5" fill="' + deep + '">INSIDE*</text></g>';
     g += '<text x="' + (bx + bw / 2) + '" y="' + (by + bh - 12) + '" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" fill="' + deep + '" opacity="0.9">NET WT ' + (10 + hb(h, 26) % 14) + ' OZ &middot; ' + it.year + '</text>';
-    return g + wear(h, it.grade, bx, by, bw, bh);
+    return g + wear(h, gr, bx, by, bw, bh);
   }
 
   // ── dispatch ─────────────────────────────────────────────────────
-  function renderItem(h, size) {
+  /* opts.dusty renders the UNREVEALED object: the thing itself, under
+     grime, with every condition mark withheld. Two objects of the same
+     class and era must be indistinguishable while dusty or the wipe is
+     a formality. test/attic-check.js section C measures exactly that. */
+  function renderItem(h, size, opts) {
     var it = A.hashToItem(h);
-    if (it.cls === 'RECORD') return S.renderSleeve(h, size);
+    h = it.hash;   // normalised, so a junk paste still renders
+    var dusty = !!(opts && opts.dusty);
+    if (it.cls === 'RECORD') return S.renderSleeve(h, size, opts);
     var look = ERA_LOOK[it.era] || ERA_LOOK['1970s'];
-    var g;
-    if (it.cls === 'VHS') g = drawVHS(h, it, look);
-    else if (it.cls === 'TOY') g = drawToy(h, it, look);
-    else if (it.cls === 'GAME') g = drawGame(h, it, look);
-    else g = drawCereal(h, it, look);
+    var gr = dusty ? '?' : it.grade, g;
+    if (it.cls === 'VHS') g = drawVHS(h, it, look, gr);
+    else if (it.cls === 'TOY') g = drawToy(h, it, look, gr);
+    else if (it.cls === 'GAME') g = drawGame(h, it, look, gr);
+    else g = drawCereal(h, it, look, gr);
     return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="' + size + '" height="' + size + '">' + g + '</svg>', item: it };
   }
 

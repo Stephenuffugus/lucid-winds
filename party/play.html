@@ -35,6 +35,22 @@ document.addEventListener('party-transport-error',function(e){
   <div class="ps-lost-t">Lost the big screen</div>
   <div class="ps-lost-s">Waiting for it to come back. You do not need to do anything, and you will not lose your place.</div>
 </div>
+<!-- shell owned: the big screen said goodbye. Without this the phone reads the
+     silence after End night as a drop and waits for a room that is gone. -->
+<div class="screen" id="ps-bye">
+  <div class="ps-lost-mark">.</div>
+  <div class="ps-lost-t">The night is over</div>
+  <div class="ps-lost-s">The big screen closed the room. Thanks for playing.</div>
+  <button class="ps-btn" id="ps-bye-go" style="margin-top:22px">Join another room</button>
+</div>
+<!-- shell owned: you walked in halfway through. Every game module ignores a
+     player it does not know, so a live question screen with dead buttons is the
+     worst possible thing to show somebody who just arrived. -->
+<div class="screen" id="ps-seat">
+  <div class="ps-lost-mark">.</div>
+  <div class="ps-lost-t">You are in for the next one</div>
+  <div class="ps-lost-s">A game is already running. You will join automatically when it finishes, and there is nothing to tap until then.</div>
+</div>
 <script src="shell/firebase-config.js"></script>
 <script src="shell/transport.js"></script>
 <script src="shell/player.js"></script>
@@ -45,18 +61,32 @@ document.addEventListener('party-transport-error',function(e){
   /* ONE PHONE PAGE, WHOLE CATALOGUE. The host announces its slug on join and on
      every phase; this loads that module and swaps if the room changes games.
      A module is an IIFE that owns #game-root and registers the shell callbacks,
-     so loading a second one takes over the DOM and the handlers cleanly. */
-  var loaded={};
+     so loading a second one takes over the DOM and the handlers cleanly.
+
+     ⛔ TRACK THE CURRENT SLUG, NOT A SET OF SLUGS EVER LOADED. This used to keep
+     a loaded map and skip any title it had seen before, so Mothlight then
+     Firefly then Mothlight again, which is an ordinary party night, left the
+     phone showing Firefly's screen with Firefly's handlers already overwritten:
+     every tap did nothing for the whole game while the television looked
+     perfect. Re-appending a script tag re-runs the module, which rebuilds
+     #game-root and re-registers every callback, so replaying a title is just a
+     reload of that module. The stylesheet is deduped because that part really
+     is idempotent. */
+  var current=null, cssDone={};
   function loadGame(slug){
-    if(!slug||loaded[slug]) return;
-    loaded[slug]=1;
+    if(!slug||slug===current) return;
+    current=slug;
     var root=$('game-root'); if(root) root.innerHTML='';
-    var css=document.createElement('link'); css.rel='stylesheet';
-    css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+    if(!cssDone[slug]){
+      cssDone[slug]=1;
+      var css=document.createElement('link'); css.rel='stylesheet';
+      css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+    }
     var s=document.createElement('script'); s.src='games/'+slug+'/player.js';
     document.body.appendChild(s);
   }
   document.addEventListener('party-game',function(ev){ loadGame(ev.detail.slug); });
+  $('ps-bye-go').addEventListener('click',function(){ location.href='play.html'; });
 
   var qCode=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
   if(qCode) $('pj-code').value=qCode.toUpperCase();
