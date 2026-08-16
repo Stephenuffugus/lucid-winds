@@ -277,6 +277,7 @@ var CONFIG = {
   SCRAP_FLAT: 40,           /* scrap = 40 + 12 x wave, fixed by the spec */
   SCRAP_PER_WAVE: 12,
   PLAYER_START_CELL: 5,
+  STARTER_CELL: 16,         /* the spike strip the last watch left in the ground */
   PLAYER_MOVE_TICKS: 2,
   PLAYER_ATK_CD: 8,
   PLAYER_DMG: 20,
@@ -287,6 +288,12 @@ var CONFIG = {
   HEAL_GROWTH: 1.18,
   BREACH_MARKS: [8, 5, 3],  /* alarm rings when the front rank crosses these */
   MAX_WAVE_TICKS: 4000,     /* safety valve for headless runs */
+  ENGAGE_CELLS: 8,          /* past this the lane reads as empty from where you stand */
+  REINFORCE_MAX: 3,         /* a trap can be built up twice past the one you paid for */
+  REPAIR_COST: 0.5,         /* a maxed trap still takes scrap to patch back up */
+  ENDLESS_MUT_EVERY: 8,     /* one more modifier every this many endless waves */
+  ENDLESS_MUT_MAX: 3,
+  ENDLESS_BOSS_EVERY: 5,    /* a Marshal joins every fifth endless wave */
   ZONES: [[1, 6], [7, 12], [13, 18], [19, 23], [24, 28]],
   ZONE_NAMES: ['GATE', 'INNER', 'MID', 'OUTER', 'MOUTH']
 };
@@ -375,9 +382,31 @@ var ENEMIES = {
   sapper:   { key: 'sapper',   name: 'Sapper',   hp: 26,  spd: 2, saps: true, glyph: 's' },
   healer:   { key: 'healer',   name: 'Healer',   hp: 30,  spd: 3, heal: 3, healRange: 2, glyph: 'h' },
   swarm:    { key: 'swarm',    name: 'Swarm',    hp: 8,   spd: 2, group: 5, glyph: 'x' },
-  warden:   { key: 'warden',   name: 'Warden',   hp: 420, spd: 6, wallSmash: true, boss: true, glyph: 'W' }
+  warden:   { key: 'warden',   name: 'Warden',   hp: 420, spd: 6, wallSmash: true, boss: true, glyph: 'W' },
+  /* The second Warden variant. The Warden is a wall you have to chew through;
+     the Marshal is the opposite problem. It is quick, it cannot be held, and
+     every body inside three cells of it moves at double time. You kill it
+     first or you fight the whole wave at a runner's pace. Endless only, so the
+     authored twenty are untouched. */
+  marshal:  { key: 'marshal',  name: 'Marshal',  hp: 300, spd: 3, rally: 3, unsnareable: true, boss: true, glyph: 'M' }
 };
+/* The eight the spec names. The Marshal is a boss variant, not a ninth type,
+   and it never appears inside the authored twenty. */
 var ENEMY_ORDER = ['runner', 'brute', 'shielded', 'flyer', 'sapper', 'healer', 'swarm', 'warden'];
+var BOSS_ORDER = ['warden', 'marshal'];
+
+/* Endless modifiers. From wave 21 the curve alone is not escalation, it is the
+   same wave with bigger numbers, so each endless wave draws named modifiers
+   deterministically from (seed, wave) and stacks another one every eight waves. */
+var MUTATORS = [
+  { key: 'tide',  name: 'THE TIDE',      blurb: 'They come in tighter. A third less air between bodies.' },
+  { key: 'iron',  name: 'IRONHIDE',      blurb: 'Every body shrugs off the first blow that lands on it.' },
+  { key: 'crow',  name: 'CROWBARS',      blurb: 'Every runner carries a crowbar and eats a trap.' },
+  { key: 'march', name: 'NIGHT MARCH',   blurb: 'They walk a full step quicker than they should.' },
+  { key: 'choir', name: 'THE CHOIR',     blurb: 'The healers sing twice as loud.' },
+  { key: 'stone', name: 'STONEBREAKERS', blurb: 'Brutes go through walls instead of around them.' }
+];
+var MUT_ORDER = ['tide', 'iron', 'crow', 'march', 'choir', 'stone'];
 
 /* 20 authored waves. Each group is [type, count, ticksBetweenSpawns].
    Cadence stays inside the 10 to 20 tick band from the plan. */
@@ -404,15 +433,46 @@ var WAVES = [
   [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 1, 20]]
 ];
 
-var DATA = { TRAPS: TRAPS, TRAP_ORDER: TRAP_ORDER, ENEMIES: ENEMIES, ENEMY_ORDER: ENEMY_ORDER, WAVES: WAVES };
+var DATA = {
+  TRAPS: TRAPS, TRAP_ORDER: TRAP_ORDER, ENEMIES: ENEMIES, ENEMY_ORDER: ENEMY_ORDER,
+  BOSS_ORDER: BOSS_ORDER, MUTATORS: MUTATORS, MUT_ORDER: MUT_ORDER, WAVES: WAVES
+};
 
 /* ============================ 4. GEN ============================ */
 
+/* How many modifiers an endless wave carries. One from 21, another every
+   ENDLESS_MUT_EVERY waves after that, capped. */
+function mutCount(wave) {
+  if (wave <= CONFIG.WAVES) return 0;
+  var n = 1 + Math.floor((wave - CONFIG.WAVES - 1) / CONFIG.ENDLESS_MUT_EVERY);
+  return Math.min(CONFIG.ENDLESS_MUT_MAX, n);
+}
+
+/* Deterministic from (seed, wave). No Math.random anywhere in this layer. */
+function mutatorsFor(wave, seed) {
+  var n = mutCount(wave);
+  if (!n) return [];
+  var r = makeRNG((((seed >>> 0) + wave * 104729) >>> 0));
+  var pool = r.shuffle(MUT_ORDER), out = [], i;
+  for (i = 0; i < n && i < pool.length; i++) out.push(pool[i]);
+  out.sort();
+  return out;
+}
+
+function hasMutKey(wave, seed, key) {
+  return mutatorsFor(wave, seed).indexOf(key) >= 0;
+}
+
 /* Wave table for any wave number. Past 20 (endless) the table cycles while the
-   hp curve keeps climbing, which is what makes endless end. */
+   hp curve keeps climbing, and every fifth wave a Marshal joins the march. */
 function waveTable(wave) {
   var idx = (wave - 1) % WAVES.length;
-  return WAVES[idx];
+  var tbl = WAVES[idx];
+  if (wave > CONFIG.WAVES && wave % CONFIG.ENDLESS_BOSS_EVERY === 0) {
+    var n = 1 + Math.floor((wave - CONFIG.WAVES - 1) / 20);
+    tbl = [['marshal', n, 20]].concat(tbl);
+  }
+  return tbl;
 }
 
 /* Daily mode shuffles the ORDER of the authored groups inside a wave. The
@@ -423,11 +483,25 @@ function schedule(wave, mode, seed) {
     var rng = makeRNG((seed >>> 0) + wave * 7919);
     groups = rng.shuffle(groups);
   }
-  var out = [], t = 0, gi, i, g;
+  /* A boss walks at a third of a runner's pace. Scheduled last, it spends the
+     back half of the wave crossing an empty lane while you stand and watch:
+     that is dead air, not drama. Boss groups always spawn FIRST, so the trash
+     overtakes the boss on the way in and the fight is continuous. The daily
+     shuffle cannot move them either. */
+  var bosses = [], rest = [], gi;
+  for (gi = 0; gi < groups.length; gi++) {
+    if (ENEMIES[groups[gi][0]] && ENEMIES[groups[gi][0]].boss) bosses.push(groups[gi]);
+    else rest.push(groups[gi]);
+  }
+  groups = bosses.concat(rest);
+  var cad = 1;
+  if (hasMutKey(wave, seed, 'tide')) cad = 0.67;   /* endless: they come in tighter */
+  var out = [], t = 0, i, g, gap;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
-    for (i = 0; i < g[1]; i++) { out.push({ tick: t, type: g[0] }); t += g[2]; }
-    t += CONFIG.GROUP_PAUSE;
+    gap = Math.max(6, Math.round(g[2] * cad));
+    for (i = 0; i < g[1]; i++) { out.push({ tick: t, type: g[0] }); t += gap; }
+    t += Math.max(4, Math.round(CONFIG.GROUP_PAUSE * cad));
   }
   return out;
 }
@@ -442,14 +516,25 @@ function verifySchedule(wave, mode, seed) {
   for (i = 0; i < sc.length; i++) counts[sc[i].type] = (counts[sc[i].type] || 0) + 1;
   for (var k in want) if (counts[k] !== want[k]) return false;
   for (k in counts) if (!want[k]) return false;
+  var minGap = hasMutKey(wave, seed, 'tide') ? 6 : 9;
   for (i = 1; i < sc.length; i++) {
     gap = sc[i].tick - sc[i - 1].tick;
-    if (gap < 9 || gap > 20 + CONFIG.GROUP_PAUSE) return false;
+    if (gap < minGap || gap > 20 + CONFIG.GROUP_PAUSE) return false;
   }
+  /* a boss never brings up the rear */
+  var lastBoss = -1, firstMob = 1e9;
+  for (i = 0; i < sc.length; i++) {
+    if (ENEMIES[sc[i].type].boss) lastBoss = Math.max(lastBoss, i);
+    else firstMob = Math.min(firstMob, i);
+  }
+  if (lastBoss >= 0 && firstMob < 1e9 && lastBoss > firstMob) return false;
   return sc.length > 0;
 }
 
-var GEN = { waveTable: waveTable, schedule: schedule, verifySchedule: verifySchedule };
+var GEN = {
+  waveTable: waveTable, schedule: schedule, verifySchedule: verifySchedule,
+  mutatorsFor: mutatorsFor, mutCount: mutCount, hasMutKey: hasMutKey
+};
 
 /* ============================ 5. SIM ============================ */
 
@@ -491,13 +576,31 @@ function blankDamage() {
 function blankWaveStats(wave) {
   return {
     wave: wave, dmg: blankDamage(), held: { wall: 0, snare: 0, pit: 0 },
-    kills: 0, deepest: CONFIG.LANE, ticks: 0, overkill: 0, scrapSpent: 0, trapsLost: 0
+    kills: 0, deepest: CONFIG.LANE, ticks: 0, overkill: 0, scrapSpent: 0, trapsLost: 0,
+    idle: 0, idleRun: 0, idleMax: 0, muts: []
   };
+}
+
+/* ONE definition of damage share, used by the scorecard the player reads and by
+   the sweep that gates the build. If these two ever disagree the standout
+   feature is a lie, so there is only one of them. */
+function damageShare(dmg) {
+  var total = 0, k, out = { total: 0, player: 0, traps: 0, rows: [] };
+  for (k in dmg) total += dmg[k];
+  out.total = total;
+  for (k in dmg) {
+    if (!dmg[k]) continue;
+    out.rows.push({ src: k, amount: dmg[k], share: total ? dmg[k] / total : 0 });
+  }
+  out.rows.sort(function (a, b) { return b.amount - a.amount || (a.src < b.src ? -1 : 1); });
+  out.player = total ? dmg.player / total : 0;
+  out.traps = total ? (total - dmg.player) / total : 0;
+  return out;
 }
 
 function makeTrap(type) {
   var def = TRAPS[type];
-  var t = { type: type, cell: -1 };
+  var t = { type: type, cell: -1, lvl: 1, paid: def.cost };
   if (type === 'spike') t.charges = def.charges;
   if (type === 'ballista') t.cd = 0;
   if (type === 'wall') t.hits = def.hits;
@@ -524,7 +627,8 @@ function newGame(seed, opts) {
     player: { cell: CONFIG.PLAYER_START_CELL, moveT: 0, atkCd: 0, dir: 1, hitFlash: 0 },
     waveStats: blankWaveStats(1),
     lastWaveStats: null,
-    run: { kills: 0, deepest: CONFIG.LANE, wavesCleared: 0, dmg: blankDamage(), ticks: 0, trapsBuilt: 0, trapsLost: 0 },
+    run: { kills: 0, deepest: CONFIG.LANE, wavesCleared: 0, dmg: blankDamage(), ticks: 0, trapsBuilt: 0, trapsLost: 0, reinforced: 0, idleTicks: 0 },
+    muts: [],
     marks: [],
     lastBuild: null,
     over: false,
@@ -537,9 +641,22 @@ function newGame(seed, opts) {
   var i;
   for (i = 0; i < CONFIG.LANE; i++) s.traps.push(null);
   s.scrap = scrapForWave(1);
+  s.muts = mutatorsFor(1, s.seed);
   s.spawns = schedule(1, s.mode, s.seed);
+  s.waveStats.muts = s.muts.slice();
+  /* The watch before you left one strip of spikes in the ground. Wave one's
+     purse buys exactly one trap, and one trap plus one blade is not a lesson
+     about traps, it is a lesson about the blade. */
+  if (!opts.bare) {
+    var seedTrap = makeTrap('spike');
+    seedTrap.cell = CONFIG.STARTER_CELL;
+    seedTrap.paid = 0;
+    s.traps[CONFIG.STARTER_CELL] = seedTrap;
+  }
   return s;
 }
+
+function hasMut(s, key) { return s.muts.indexOf(key) >= 0; }
 
 function emit(s, type, a, b) { s.ev.push({ t: type, a: a, b: b }); }
 
@@ -572,10 +689,57 @@ function sellTrap(s, cell) {
   if (s.phase !== 'build' || s.over) return false;
   var t = s.traps[cell];
   if (!t) return false;
-  s.scrap += trapCost(t.type);      /* full refund, ruled in the plan */
-  s.waveStats.scrapSpent -= trapCost(t.type);
+  s.scrap += t.paid;                /* full refund of everything sunk into it */
+  s.waveStats.scrapSpent -= t.paid;
   s.traps[cell] = null;
   emit(s, 'sell', t.type, cell);
+  return true;
+}
+
+/* ---- the late game scrap sink ----
+   Twenty eight cells is a hard ceiling and scrap income is quadratic in the
+   wave number, so from about wave 14 the purse outruns the board and the
+   currency stops meaning anything. REINFORCE gives the coins somewhere to go:
+   pay the trap's price again to build it a level higher, up to three, which
+   also patches it back to full. Past level three the same cell still takes
+   scrap as a straight repair at half price, so a purse can never strand. */
+
+function trapNeedsRepair(s, cell) {
+  var t = s.traps[cell];
+  if (!t) return false;
+  if (t.type === 'spike') return t.charges < TRAPS.spike.charges;
+  if (t.type === 'wall') return t.hits < TRAPS.wall.hits * t.lvl;
+  if (t.type === 'snare') return !!t.used;
+  return false;
+}
+
+function reinforceCost(s, cell) {
+  var t = s.traps[cell];
+  if (!t) return 0;
+  var base = trapCost(t.type);
+  return (t.lvl >= CONFIG.REINFORCE_MAX) ? Math.ceil(base * CONFIG.REPAIR_COST) : base;
+}
+
+function canReinforce(s, cell) {
+  if (s.phase !== 'build' || s.over) return false;
+  var t = s.traps[cell];
+  if (!t) return false;
+  if (t.lvl >= CONFIG.REINFORCE_MAX && !trapNeedsRepair(s, cell)) return false;
+  return s.scrap >= reinforceCost(s, cell);
+}
+
+function reinforceTrap(s, cell) {
+  if (!canReinforce(s, cell)) return false;
+  var t = s.traps[cell], def = TRAPS[t.type], paid = reinforceCost(s, cell);
+  s.scrap -= paid;
+  t.paid += paid;
+  s.waveStats.scrapSpent += paid;
+  if (t.lvl < CONFIG.REINFORCE_MAX) t.lvl++;
+  if (t.type === 'spike') t.charges = def.charges;
+  if (t.type === 'wall') t.hits = def.hits * t.lvl;
+  if (t.type === 'snare') t.used = false;
+  s.run.reinforced++;
+  emit(s, 'reinforce', t.type, cell);
   return true;
 }
 
@@ -602,7 +766,9 @@ function startWave(s) {
   s.phaseTick = 0;
   s.spawnIdx = 0;
   s.marks = [];
+  s.muts = mutatorsFor(s.wave, s.seed);
   s.waveStats = blankWaveStats(s.wave);
+  s.waveStats.muts = s.muts.slice();
   s.player.atkCd = 0;
   s.player.moveT = 0;
   emit(s, 'wavestart', s.wave);
@@ -659,6 +825,8 @@ function dealDamage(s, e, amount, source) {
 function spawnOne(s, type) {
   var def = ENEMIES[type];
   var n = def.group || 1, i, e;
+  var spd = def.spd;
+  if (hasMut(s, 'march')) spd = Math.max(1, spd - 1);
   for (i = 0; i < n; i++) {
     e = {
       id: s.nextId++,
@@ -666,14 +834,16 @@ function spawnOne(s, type) {
       cell: CONFIG.SPAWN_CELL,
       hp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
       maxHp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
-      spd: def.spd,
-      moveT: def.spd - 1 + i,       /* stagger a group so they file in */
+      spd: spd,
+      moveT: spd - 1 + i,           /* stagger a group so they file in */
       flying: !!def.flying,
-      shield: def.shield || 0,
-      saps: !!def.saps,
+      shield: (def.shield || 0) + (hasMut(s, 'iron') ? 1 : 0),
+      saps: !!def.saps || (hasMut(s, 'crow') && type === 'runner'),
       sapped: false,
       heal: def.heal || 0,
-      wallSmash: !!def.wallSmash,
+      wallSmash: !!def.wallSmash || (hasMut(s, 'stone') && type === 'brute'),
+      rally: def.rally || 0,
+      unsnareable: !!def.unsnareable,
       boss: !!def.boss,
       burns: [],
       holdT: 0,
@@ -702,23 +872,36 @@ function enterCell(s, e, cell) {
   }
   if (e.flying && TRAPS[t.type].ground) return;
   if (t.type === 'pit') {
-    dealDamage(s, e, TRAPS.pit.dmg, 'pit');
+    dealDamage(s, e, TRAPS.pit.dmg * t.lvl, 'pit');
     emit(s, 'pit', cell);
   } else if (t.type === 'brazier') {
+    /* the burn carries the brazier's level with it, so a reinforced brazier
+       keeps burning harder after the body has walked off the cell */
     if (e.burns.length < TRAPS.brazier.maxStacks) {
-      e.burns.push(TRAPS.brazier.burnTicks);
+      e.burns.push({ t: TRAPS.brazier.burnTicks, lvl: t.lvl });
     } else {
       var lo = 0, i;
-      for (i = 1; i < e.burns.length; i++) if (e.burns[i] < e.burns[lo]) lo = i;
-      e.burns[lo] = TRAPS.brazier.burnTicks;
+      for (i = 1; i < e.burns.length; i++) if (e.burns[i].t < e.burns[lo].t) lo = i;
+      e.burns[lo] = { t: TRAPS.brazier.burnTicks, lvl: t.lvl };
     }
     emit(s, 'brazier', cell);
-  } else if (t.type === 'snare' && !t.used) {
+  } else if (t.type === 'snare' && !t.used && !e.unsnareable) {
     t.used = true;
-    e.holdT = TRAPS.snare.hold;
+    e.holdT = TRAPS.snare.hold * t.lvl;
     s.traps[cell] = null;
     emit(s, 'snare', cell);
   }
+}
+
+/* A Marshal drags everything inside its rally range along at double time. */
+function rallied(s, e) {
+  var i, h;
+  for (i = 0; i < s.enemies.length; i++) {
+    h = s.enemies[i];
+    if (h.dead || !h.rally || h.id === e.id) continue;
+    if (Math.abs(h.cell - e.cell) <= h.rally) return true;
+  }
+  return false;
 }
 
 function playerTick(s, intent) {
@@ -790,6 +973,7 @@ function enemyMoveTick(s) {
     if (e.cell < s.waveStats.deepest) s.waveStats.deepest = e.cell;
     if (e.cell < s.run.deepest) s.run.deepest = e.cell;
     var base = moveInterval(s, e.spd, e.cell, e.flying);
+    if (rallied(s, e)) base = Math.max(1, Math.round(base / 2));
     if (base > e.spd) s.waveStats.held.pit += (base - e.spd);
     e.moveT = base - 1;
     enterCell(s, e, e.cell);
@@ -810,9 +994,9 @@ function trapTick(s) {
     e = s.enemies[i];
     if (e.dead || !e.burns.length) continue;
     for (j = e.burns.length - 1; j >= 0; j--) {
-      dealDamage(s, e, TRAPS.brazier.dmg, 'brazier');
-      e.burns[j]--;
-      if (e.burns[j] <= 0) e.burns.splice(j, 1);
+      dealDamage(s, e, TRAPS.brazier.dmg * e.burns[j].lvl, 'brazier');
+      e.burns[j].t--;
+      if (e.burns[j].t <= 0) e.burns.splice(j, 1);
       if (e.dead) break;
     }
   }
@@ -823,7 +1007,7 @@ function trapTick(s) {
     for (i = 0; i < s.enemies.length && t.charges > 0; i++) {
       e = s.enemies[i];
       if (e.dead || e.flying || e.cell !== k) continue;
-      dealDamage(s, e, TRAPS.spike.dmg, 'spike');
+      dealDamage(s, e, TRAPS.spike.dmg * t.lvl, 'spike');
       t.charges--;
       emit(s, 'spike', k);
     }
@@ -836,7 +1020,7 @@ function trapTick(s) {
     if (t.cd > 0) { t.cd--; continue; }
     best = ballistaTarget(s, k);
     if (!best) continue;
-    dealDamage(s, best, TRAPS.ballista.dmg, 'ballista');
+    dealDamage(s, best, TRAPS.ballista.dmg * t.lvl, 'ballista');
     t.cd = TRAPS.ballista.cd - 1;
     emit(s, 'bolt', k, best.cell);
   }
@@ -862,7 +1046,7 @@ function ballistaTarget(s, cell) {
 }
 
 function healTick(s) {
-  var amount = healAmount(s.wave), i, j, h, e, healed;
+  var amount = healAmount(s.wave) * (hasMut(s, 'choir') ? 2 : 1), i, j, h, e, healed;
   for (i = 0; i < s.enemies.length; i++) {
     h = s.enemies[i];
     if (h.dead || !h.heal) continue;
@@ -926,10 +1110,12 @@ function waveEndCheck(s) {
   s.phase = 'build';
   s.phaseTick = 0;
   s.scrap += scrapForWave(s.wave);
+  s.muts = mutatorsFor(s.wave, s.seed);
   s.spawns = schedule(s.wave, s.mode, s.seed);
   s.spawnIdx = 0;
   s.marks = [];
   s.waveStats = blankWaveStats(s.wave);
+  s.waveStats.muts = s.muts.slice();
   return true;
 }
 
@@ -950,9 +1136,28 @@ function step(s, intent) {
   trapTick(s);
   healTick(s);
   reap(s);
+  idleTick(s);
   if (breachCheck(s)) return s;
   waveEndCheck(s);
   return s;
+}
+
+/* Dead air, measured from where the player is standing rather than from the
+   spawn table. A tick counts as empty lane when nothing living is inside
+   ENGAGE_CELLS of you. The longest unbroken stretch is what the gate reads:
+   a boss crossing an empty field is the pacing bug this catches. */
+function idleTick(s) {
+  var i, e, busy = false;
+  for (i = 0; i < s.enemies.length; i++) {
+    e = s.enemies[i];
+    if (e.dead) continue;
+    if (Math.abs(e.cell - s.player.cell) <= CONFIG.ENGAGE_CELLS) { busy = true; break; }
+  }
+  if (busy) { s.waveStats.idleRun = 0; return; }
+  s.waveStats.idle++;
+  s.run.idleTicks++;
+  s.waveStats.idleRun++;
+  if (s.waveStats.idleRun > s.waveStats.idleMax) s.waveStats.idleMax = s.waveStats.idleRun;
 }
 
 /* ---- save codec (pure, so the harness can test it headless) ---- */
@@ -1099,6 +1304,27 @@ function botBuild(s, loadout) {
     }
     if (!placed) break;
   }
+  botReinforce(s, loadout);
+}
+
+/* Once the lane is full the only thing left to buy is depth. The bot pours
+   leftovers into the shallowest trap it owns, and patches anything spent. */
+function botReinforce(s, loadout) {
+  var owns = {}, i, guard = 0, c, t, best, bestScore, score;
+  for (i = 0; i < loadout.length; i++) owns[loadout[i].type] = 1;
+  while (guard++ < 600) {
+    best = -1; bestScore = 1e9;
+    for (c = CONFIG.BUILD_MIN_CELL; c <= CONFIG.BUILD_MAX_CELL; c++) {
+      t = s.traps[c];
+      if (!t || !owns[t.type]) continue;
+      if (!canReinforce(s, c)) continue;
+      /* patch what is spent first, then deepen the shallowest */
+      score = (trapNeedsRepair(s, c) ? 0 : 1000) + t.lvl * 100 + reinforceCost(s, c);
+      if (score < bestScore) { bestScore = score; best = c; }
+    }
+    if (best < 0) break;
+    if (!reinforceTrap(s, best)) break;
+  }
 }
 
 /* Runs a whole campaign headless. Returns the reached wave and per wave rows. */
@@ -1133,6 +1359,9 @@ function runCampaign(opts) {
 
 var SIM = {
   newGame: newGame, step: step, placeTrap: placeTrap, sellTrap: sellTrap, canPlace: canPlace,
+  reinforceTrap: reinforceTrap, canReinforce: canReinforce, reinforceCost: reinforceCost,
+  trapNeedsRepair: trapNeedsRepair, damageShare: damageShare, botReinforce: botReinforce,
+  mutatorsFor: mutatorsFor, mutCount: mutCount, hasMut: hasMut,
   startWave: startWave, snapshotBuild: snapshotBuild, applyBuild: applyBuild,
   scrapForWave: scrapForWave, scrapThroughWave: scrapThroughWave, hpMult: hpMult,
   enemyHP: enemyHP, playerDamage: playerDamage, healAmount: healAmount, waveTotalHP: waveTotalHP,
@@ -1747,6 +1976,7 @@ var TEST = {
 
 function tGame(opts) {
   opts = opts || {};
+  opts.bare = (opts.bare === undefined) ? true : opts.bare;   /* micro tests get an empty lane */
   var s = newGame(opts.seed || 1, opts);
   s.wave = opts.wave || 1;
   s.scrap = opts.scrap === undefined ? 100000 : opts.scrap;

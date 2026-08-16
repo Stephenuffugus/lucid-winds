@@ -30,10 +30,16 @@ body{
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .hd{display:flex;align-items:center;gap:6px;padding:6px var(--pad);border-bottom:1px solid var(--line);
   background:linear-gradient(180deg,#111319,#0c0e13)}
-.hd .ttl{flex:1;text-align:center;font-size:14px;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--warm);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ghost{min-height:48px;min-width:48px;padding:0 10px;font-size:11px;letter-spacing:.09em;
-  color:var(--dim);text-transform:uppercase;border-radius:8px}
+/* The case title is the most identity carrying string in the game, so it wraps
+   and shrinks instead of truncating. Tiers are picked by titleTier() in SIM and
+   gated in node against every title the generator can produce. */
+.hd .ttl{flex:1;min-width:0;text-align:center;font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--warm);font-weight:700;line-height:1.14;white-space:normal;overflow-wrap:break-word}
+.hd .ttl.t1{font-size:12.5px;letter-spacing:.03em}
+.hd .ttl.t2{font-size:11px;letter-spacing:.01em}
+.hd .sub{display:block;font-size:9.5px;letter-spacing:.12em;font-weight:700;color:var(--accent);opacity:.85}
+.ghost{min-height:48px;min-width:48px;padding:0 8px;font-size:10px;letter-spacing:.09em;
+  color:var(--dim);text-transform:uppercase;border-radius:8px;flex:0 0 auto}
 .ghost:active{background:#1c2029}
 .watchbar{display:flex;align-items:center;gap:10px;padding:8px var(--pad);border-bottom:1px solid var(--line);background:#0c0e13}
 .watch{width:52px;height:52px;flex:0 0 52px}
@@ -73,14 +79,18 @@ h2:first-child{margin-top:2px}
 .tabs button{flex:1;min-height:48px;border:1px solid var(--line);border-radius:9px;background:var(--panel);
   font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .tabs button.on{color:#06222a;background:var(--accent);border-color:var(--accent);font-weight:700}
-.gridwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
-.grid{display:grid;grid-template-columns:64px repeat(6,minmax(46px,1fr));min-width:340px}
-.grid .hc{height:34px;display:flex;align-items:center;justify-content:center;font-size:10.5px;
+/* The board is full bleed so a 52px cell has room to be 52px on a 375px phone
+   instead of the 48.2px it used to squeeze into. sim.js --layout reads these
+   numbers straight out of this stylesheet and fails under 50px. */
+.gridwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+  margin-left:calc(var(--pad) * -1);margin-right:calc(var(--pad) * -1)}
+.grid{display:grid;grid-template-columns:56px repeat(6,minmax(52px,1fr));min-width:368px}
+.grid .hc{height:36px;display:flex;align-items:center;justify-content:center;font-size:10.5px;
   letter-spacing:.05em;color:var(--dim);border-bottom:1px solid var(--line);text-align:center;padding:0 2px;
   overflow:hidden}
-.grid .rh{height:48px;display:flex;align-items:center;padding-left:8px;font-size:12.5px;color:#aeb6c4;
+.grid .rh{height:52px;display:flex;align-items:center;padding-left:6px;font-size:12px;color:#aeb6c4;
   border-top:1px solid #1e222c}
-.cell{height:48px;min-width:46px;border-top:1px solid #1e222c;border-left:1px solid #1e222c;
+.cell{height:52px;min-width:52px;border-top:1px solid #1e222c;border-left:1px solid #1e222c;
   display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:var(--dim)}
 .cell.y{color:var(--accent)}
 .cell.n{color:#6b7382}
@@ -183,6 +193,45 @@ var CONFIG = Object.freeze({
     wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
   })
 });
+
+/* ---------------------------- difficulty ladder ----------------------------
+   Three lengths of case. The knob is the CLUE MIX, not a multiplier: a short
+   case gets strong clues (the stopped clock is allowed back in, more direct
+   exclusions) so the proof collapses to five or so steps, and a long case gets
+   the weak ones (alibis and sightings cut 30 and 18 tuples of 1296) so the
+   proof spreads out. Action budget, noise and the reach bound follow the size
+   of the proof. Every tier is swept and gated separately. */
+var TIERS = {
+  short: Object.freeze({
+    key: "short", name: "Quick case", brief: "A short one. Fewer steps, fewer hours.",
+    actions: 13, lo: 5, hi: 9, target: 7, noiseLo: 4, noiseHi: 8, reach: 10,
+    press: 1, exact: true, liarActions: 4,
+    pool: Object.freeze({
+      alibi: 6, own: 5, access: 2, sight: 3, trace: 2, timeline: 3,
+      wtrace: 3, motive: 2, pair: 1, negative: 3, sequence: 1, object: 6
+    })
+  }),
+  standard: Object.freeze({
+    key: "standard", name: "Standard case", brief: "The usual evening.",
+    actions: 20, lo: 8, hi: 14, target: 11, noiseLo: 6, noiseHi: 12, reach: 16,
+    press: 2, exact: false, liarActions: 4,
+    pool: Object.freeze({
+      alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
+      wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
+    })
+  }),
+  long: Object.freeze({
+    key: "long", name: "Long case", brief: "A long night. More people, more talk.",
+    actions: 26, lo: 13, hi: 19, target: 16, noiseLo: 6, noiseHi: 12, reach: 20,
+    press: 2, exact: false, liarActions: 4,
+    pool: Object.freeze({
+      alibi: 18, own: 6, access: 2, sight: 14, trace: 2, timeline: 3,
+      wtrace: 2, motive: 4, pair: 4, negative: 3, sequence: 1, object: 2
+    })
+  })
+};
+var TIER_KEYS = ["short", "standard", "long"];
+function tierOf(key) { return TIERS[key] || TIERS.standard; }
 
 /* ============================ 2. RNG ============================ */
 
@@ -684,9 +733,10 @@ function addClue(list, seen, ty, p, ref, rng) {
   return cl;
 }
 
-function genCluePool(W, rng, seenOut) {
+function genCluePool(W, rng, seenOut, tier) {
   var T = W.truth, list = [], seen = seenOut || {}, i, k, s, tt, rr;
-  var P = CONFIG.POOL;
+  tier = tier || TIERS.standard;
+  var P = tier.pool || CONFIG.POOL;
 
   // 1 alibi. The police always ask every person about the murder hour, so those
   // six always exist. They pin the culprit to room relation at t without pinning
@@ -742,9 +792,12 @@ function genCluePool(W, rng, seenOut) {
   }
   // 6 timeline
   for (k = 0; k < P.timeline; k++) {
-    // no "exact" mode: one clue that hands over the whole time axis collapses
-    // minimal set size, and the 4.8 histogram is the thing that notices.
-    var m = rng.weighted([["not", 45], ["before", 27], ["after", 28]]);
+    // "exact" hands over the whole time axis in one clue, which collapses
+    // minimal set size. That is exactly wrong for a standard case and exactly
+    // right for a short one, so the tier decides.
+    var m = tier.exact
+      ? rng.weighted([["not", 30], ["before", 20], ["after", 20], ["exact", 30]])
+      : rng.weighted([["not", 45], ["before", 27], ["after", 28]]);
     if (m === "before" && T.t >= 5) m = "not";
     if (m === "after" && T.t <= 0) m = "not";
     if (m === "not") {
@@ -942,17 +995,253 @@ function isMotiveOnly(clues) {
   return true;
 }
 
+/* ============ unreliable narrators (HANDOFF 4.7) ============
+   Exactly one suspect says exactly one false thing. Physical evidence never
+   lies, which is the fairness rule that makes the mode solvable: the player
+   knows lies come out of mouths, not out of floorboards.
+
+   The solver requirement changes to the spec's wording:
+     a) exactly one tuple is consistent with ALL BUT ONE clue, and it is the truth
+     b) NO tuple is consistent with all clues
+   (b) is what keeps the lie load bearing. Without it the lie could be dropped
+   from the proof and the case would quietly be a v1 case again.
+
+   "Consistent with all but one" is computed with prefix and suffix
+   intersections rather than 1296 per tuple violation counts, which is the
+   difference between a sweep that takes two minutes and one that takes an
+   hour: for clue i the set that ignores only clue i is pre[i] AND suf[i+1],
+   and the union over i is exactly the at most one violation set. */
+var _FULLREF = null;
+function fullRef() { if (!_FULLREF) _FULLREF = bitsFull(); return _FULLREF; }
+var _PRE = [], _SUF = [];
+function _scr(bank, i) { if (!bank[i]) bank[i] = new Uint32Array(WORDS); return bank[i]; }
+
+function liarMask(clues, masks) {
+  var n = clues.length, i, j, a, b, m, full = fullRef();
+  if (!n) return bitsFull();
+  a = _scr(_PRE, 0); for (j = 0; j < WORDS; j++) a[j] = full[j];
+  for (i = 0; i < n; i++) {
+    a = _PRE[i]; b = _scr(_PRE, i + 1); m = masks[clues[i].id];
+    for (j = 0; j < WORDS; j++) b[j] = a[j] & m[j];
+  }
+  a = _scr(_SUF, n); for (j = 0; j < WORDS; j++) a[j] = full[j];
+  for (i = n - 1; i >= 0; i--) {
+    a = _SUF[i + 1]; b = _scr(_SUF, i); m = masks[clues[i].id];
+    for (j = 0; j < WORDS; j++) b[j] = a[j] & m[j];
+  }
+  var out = new Uint32Array(WORDS);
+  for (i = 0; i < n; i++) {
+    a = _PRE[i]; b = _SUF[i + 1];
+    for (j = 0; j < WORDS; j++) out[j] |= (a[j] & b[j]);
+  }
+  return out;
+}
+/* the whole liar property in one call, so the gate and the generator agree */
+function liarProved(clues, masks, truthIdx) {
+  var lm = liarMask(clues, masks);
+  if (bitsCount(lm) !== 1 || bitsFirst(lm) !== truthIdx) return false;
+  return bitsCount(solveMask(clues, masks)) === 0;
+}
+function falseClueIds(clues, T) {
+  var out = [], i;
+  for (i = 0; i < clues.length; i++) if (!clueTrueOf(clues[i], T)) out.push(clues[i].id);
+  return out;
+}
+
+/* The five shapes a person can lie in. Physical clue types are never candidates.
+   Each returns {ty, p, ref, speaker} and is asserted false of the truth before
+   it is used, so a factory that stops lying cannot slip through. */
+function makeLie(W, rng) {
+  var T = W.truth, tries = 0, s, a, i;
+  while (tries++ < 24) {
+    switch (rng.int(5)) {
+      case 0: {
+        // the culprit's own alibi: the only alibi shape that can be false
+        var rooms = [], k;
+        for (k = 0; k < 6; k++) if (k !== T.r) rooms.push(k);
+        var rr = rooms[rng.int(rooms.length)];
+        return { ty: 1, p: { s: T.c, t: T.t, r: rr }, ref: [T.c], speaker: T.c };
+      }
+      case 1: {
+        // somebody vouches for the culprit's character
+        var others = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) others.push(k);
+        s = others[rng.int(others.length)];
+        return { ty: 8, p: { k: "none", s: T.c }, ref: [T.c], speaker: s };
+      }
+      case 2: {
+        // a false company claim that covers the culprit
+        var mates = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) mates.push(k);
+        s = mates[rng.int(mates.length)];
+        var at = rng() < 0.5 ? -1 : T.t;
+        return { ty: 9, p: { a: T.c, b: s, t: at }, ref: [T.c, s], speaker: s };
+      }
+      case 3: {
+        // the weapon is claimed by the wrong hand and the wrong room
+        var owners = [], rms = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) owners.push(k);
+        for (k = 0; k < 6; k++) if (k !== T.r) rms.push(k);
+        s = owners[rng.int(owners.length)];
+        return { ty: 2, p: { w: T.w, s: s, r: rms[rng.int(rms.length)] }, ref: [s], speaker: s };
+      }
+      default: {
+        // a false sighting at the scene, describing somebody the culprit is not
+        a = ATTRS[rng.int(3)];
+        var wit = [];
+        for (k = 0; k < 6; k++) if (k !== T.c) wit.push(k);
+        s = wit[rng.int(wit.length)];
+        return { ty: 4, p: { r: T.r, t: T.t, a: a, v: !SUSPECTS[T.c][a] }, ref: [], speaker: s };
+      }
+    }
+  }
+  return null;
+}
+
+/* true clue candidates drawn from the same twelve factories, used to push every
+   other tuple to two violations without handing the player a row of bare
+   eliminators. Everything is checked true of the truth before it is offered. */
+function trueClueCandidates(W, rng, n) {
+  var T = W.truth, out = [], k, s, tt, rr, i;
+  for (i = 0; i < n; i++) {
+    switch (rng.int(9)) {
+      case 0:
+        s = rng.int(6); tt = rng.int(6);
+        out.push({ ty: 1, p: { s: s, t: tt, r: W.loc[s][tt] }, ref: [s] }); break;
+      case 1:
+        k = rng.int(6);
+        out.push({ ty: 2, p: { w: k, s: W.owner[k], r: W.start[k] }, ref: [W.owner[k]] }); break;
+      case 2: {
+        rr = rng.int(6); tt = rng.int(6);
+        var occ = [];
+        for (s = 0; s < 6; s++) if (W.loc[s][tt] === rr) occ.push(s);
+        if (!occ.length) break;
+        var who = occ[rng.int(occ.length)], a = ATTRS[rng.int(3)];
+        out.push({ ty: 4, p: { r: rr, t: tt, a: a, v: SUSPECTS[who][a] }, ref: [] }); break;
+      }
+      case 3: {
+        var near = [T.r].concat(ROOMS[T.r].adj);
+        out.push({ ty: 5, p: { r: near[rng.int(near.length)], near: true }, ref: [] }); break;
+      }
+      case 4:
+        tt = rng.int(6); if (tt === T.t) break;
+        out.push({ ty: 6, p: { t: tt, m: "not" }, ref: [] }); break;
+      case 5:
+        rr = rng.int(6); if (rr === T.r) break;
+        out.push({ ty: 12, p: { k: "room", r: rr }, ref: [] }); break;
+      case 6:
+        k = rng.int(6); if (k === T.w) break;
+        out.push({ ty: 12, p: { k: "weapon", w: k }, ref: [] }); break;
+      case 7: {
+        var cls = {}, kk;
+        for (k = 0; k < 6; k++) cls[WEAPONS[k].cls] = 1;
+        delete cls[WEAPONS[T.w].cls];
+        kk = Object.keys(cls);
+        if (!kk.length) break;
+        out.push({ ty: 7, p: { cls: kk[rng.int(kk.length)], no: true }, ref: [] }); break;
+      }
+      default: {
+        rr = rng.int(6);
+        if (rr === T.r) {
+          if (rng() < 0.5) { if (T.t >= 5) break; out.push({ ty: 10, p: { r: rr, t: rng.range(T.t, 5), d: "after" }, ref: [] }); }
+          else { if (T.t <= 0) break; out.push({ ty: 10, p: { r: rr, t: rng.range(0, T.t), d: "before" }, ref: [] }); }
+        } else {
+          out.push({ ty: 10, p: { r: rr, t: rng.int(6), d: rng() < 0.5 ? "after" : "before" }, ref: [] });
+        }
+        break;
+      }
+    }
+  }
+  var keep = [];
+  for (i = 0; i < out.length; i++) if (clueTrueOf(out[i], T)) keep.push(out[i]);
+  return keep;
+}
+
+/* a guaranteed eliminator for one surviving tuple, so the loop always terminates */
+function eliminatorFor(W, U) {
+  var T = W.truth, i, a;
+  if (U.r !== T.r) return { ty: 12, p: { k: "room", r: U.r }, ref: [] };
+  if (U.w !== T.w) return { ty: 12, p: { k: "weapon", w: U.w }, ref: [] };
+  if (U.t !== T.t) return { ty: 6, p: { t: U.t, m: "not" }, ref: [] };
+  for (i = 0; i < 3; i++) {
+    a = ATTRS[i];
+    if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) return { ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] };
+  }
+  return null;
+}
+
+function liarReinforce(W, list, seen, masks, rng, cap) {
+  var truthIdx = tupleIndex(W.truth), guard = 0, i, j;
+  while (guard++ < 48 && list.length < cap) {
+    var lm = liarMask(list, masks);
+    if (bitsCount(lm) === 1 && bitsFirst(lm) === truthIdx) return true;
+    var surv = bitsList(lm), cands = trueClueCandidates(W, rng, 12);
+    var best = null, bestMask = null, bestYield = 0;
+    for (i = 0; i < cands.length; i++) {
+      var m = clueMask(cands[i]), y = 0;
+      for (j = 0; j < surv.length; j++) {
+        if (surv[j] === truthIdx) continue;
+        if (!bitsGet(m, surv[j])) y++;
+      }
+      if (y > bestYield) { bestYield = y; best = cands[i]; bestMask = m; }
+    }
+    if (!best) {
+      for (j = 0; j < surv.length && !best; j++) {
+        if (surv[j] === truthIdx) continue;
+        best = eliminatorFor(W, tupleFromIndex(surv[j]));
+        if (best) bestMask = clueMask(best);
+      }
+    }
+    if (!best) return false;
+    var cl = addClue(list, seen, best.ty, best.p, best.ref, rng);
+    if (!cl) {
+      // that exact clue is already in the pool, so it cannot be the fix
+      var U = null;
+      for (j = 0; j < surv.length && !U; j++) if (surv[j] !== truthIdx) U = tupleFromIndex(surv[j]);
+      if (!U) return false;
+      var e = eliminatorFor(W, U);
+      if (!e) return false;
+      cl = addClue(list, seen, e.ty, e.p, e.ref, rng);
+      if (!cl) return false;
+      bestMask = clueMask(cl);
+    }
+    masks[cl.id] = bestMask;
+  }
+  return bitsCount(liarMask(list, masks)) === 1 && bitsFirst(liarMask(list, masks)) === truthIdx;
+}
+
+function minimizeLiar(pool, masks, rng, truthIdx) {
+  var keep = [], order = [], i;
+  for (i = 0; i < pool.length; i++) { keep.push(true); order.push(i); }
+  order = rng.shuffle(order);
+  for (i = 0; i < order.length; i++) {
+    var idx = order[i];
+    keep[idx] = false;
+    var sub = [], j;
+    for (j = 0; j < pool.length; j++) if (keep[j]) sub.push(pool[j]);
+    if (!liarProved(sub, masks, truthIdx)) keep[idx] = true;
+  }
+  var out = [];
+  for (i = 0; i < pool.length; i++) if (keep[i]) out.push(pool[i]);
+  return out;
+}
+
 /* ---- placement ---- */
 var PHYSICAL_TYPES = [3, 5, 6, 7, 10, 12];
 function isPhysical(cl) { return PHYSICAL_TYPES.indexOf(cl.ty) >= 0; }
 
-function placeClues(W, pool, minimal, rng) {
+function placeClues(W, pool, minimal, rng, tier, lie) {
   var rooms = [[], [], [], [], [], []];
   var ints = [null, null, null, null, null, null];
   var press = [null, null, null, null, null, null];
   var used = {}, i, s;
   var minIds = {};
+  tier = tier || TIERS.standard;
   for (i = 0; i < minimal.length; i++) minIds[minimal[i].id] = 1;
+  /* the lie is a thing a person said, so it goes in that person's mouth and
+     nowhere else. A lie found under a floorboard would break the only rule the
+     player has to lean on. */
+  if (lie) { ints[lie.speaker] = lie.id; used[lie.id] = 1; }
 
   function freeRoom() {
     var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
@@ -1076,6 +1365,79 @@ function caseTitle(rng, T) {
   var noun = TITLE_NOUNS[rng.int(TITLE_NOUNS.length)];
   if (rng() < 0.5) return "The " + ROOMS[T.r].n + " " + noun;
   return "The " + TITLE_TIMEWORDS[rng.int(TITLE_TIMEWORDS.length)] + " " + noun;
+}
+
+/* ---- header fit ----------------------------------------------------------
+   The generated title is the most identity carrying string in the game and it
+   used to render as "THE EVENING BUSINE..." on a 390px phone. It now wraps to
+   two lines and steps down a size when it has to. These are uppercase advance
+   widths as a fraction of the font size for a bold system sans, rounded up, so
+   the estimate never flatters the layout. Everything here is pure arithmetic,
+   which means node can prove that EVERY title the generator can produce fits,
+   instead of a human eyeballing an average one. */
+var GLYPH_W = {
+  A: 0.73, B: 0.73, C: 0.73, D: 0.73, E: 0.68, F: 0.62, G: 0.79, H: 0.73, I: 0.30,
+  J: 0.57, K: 0.73, L: 0.62, M: 0.84, N: 0.73, O: 0.79, P: 0.68, Q: 0.79, R: 0.73,
+  S: 0.68, T: 0.62, U: 0.73, V: 0.68, W: 0.95, X: 0.68, Y: 0.68, Z: 0.62, " ": 0.29
+};
+function glyphW(ch) {
+  var v = GLYPH_W[ch.toUpperCase()];
+  return v === undefined ? 0.79 : v;
+}
+/* CSS letter spacing lands after every character, the last one included. */
+function textWidth(s, size, lsEm) {
+  var sum = 0, i;
+  for (i = 0; i < s.length; i++) sum += glyphW(s[i]);
+  return (sum + s.length * lsEm) * size;
+}
+/* greedy wrap, the same rule a browser uses for plain words */
+function wrapText(s, box, size, lsEm) {
+  var words = s.split(" "), lines = [], cur = "", widest = 0, i, tryLine, w;
+  for (i = 0; i < words.length; i++) {
+    tryLine = cur ? cur + " " + words[i] : words[i];
+    if (cur && textWidth(tryLine, size, lsEm) > box) {
+      w = textWidth(cur, size, lsEm); if (w > widest) widest = w;
+      lines.push(cur); cur = words[i];
+    } else cur = tryLine;
+  }
+  if (cur) { lines.push(cur); w = textWidth(cur, size, lsEm); if (w > widest) widest = w; }
+  return { lines: lines.length, widest: widest };
+}
+var TITLE_TIERS = [
+  { cls: "", size: 14, ls: 0.06 },
+  { cls: "t1", size: 12.5, ls: 0.03 },
+  { cls: "t2", size: 11, ls: 0.01 }
+];
+var TITLE_MAX_LINES = 2;
+/* the biggest tier that fits in two lines. Returns an index into TITLE_TIERS. */
+function titleTier(title, box) {
+  var i, m;
+  for (i = 0; i < TITLE_TIERS.length; i++) {
+    m = wrapText(title, box, TITLE_TIERS[i].size, TITLE_TIERS[i].ls);
+    if (m.lines <= TITLE_MAX_LINES && m.widest <= box) return i;
+  }
+  return TITLE_TIERS.length - 1;
+}
+function titleFits(title, box) {
+  var t = TITLE_TIERS[titleTier(title, box)];
+  var m = wrapText(title, box, t.size, t.ls);
+  return m.lines <= TITLE_MAX_LINES && m.widest <= box;
+}
+/* what the header actually leaves for the title: the two ghost buttons at their
+   real label widths, the gaps and the page padding. */
+function headerTitleBox(clientWidth, leftLabel, rightLabel) {
+  var btn = function (s) { return Math.max(48, textWidth(s, 10, 0.09) + 16); };
+  var chrome = btn(leftLabel) + btn(rightLabel) + 12 + 20;
+  return Math.max(96, clientWidth - chrome);
+}
+/* every title the generator can ever produce, for the fit gate */
+function allTitles() {
+  var out = [], i, j;
+  for (i = 0; i < TITLE_NOUNS.length; i++) {
+    for (j = 0; j < ROOMS.length; j++) out.push("The " + ROOMS[j].n + " " + TITLE_NOUNS[i]);
+    for (j = 0; j < TITLE_TIMEWORDS.length; j++) out.push("The " + TITLE_TIMEWORDS[j] + " " + TITLE_NOUNS[i]);
+  }
+  return out;
 }
 
 function generateCase(seed) {
@@ -2318,7 +2680,11 @@ function render() {
 
   var hd = el("div", "hd");
   var bx = el("button", "ghost", UI.exit); bx.onclick = function () { SWS_EXIT(); };
-  var ttl = el("div", "ttl", APP.cs ? APP.cs.title : "Blackout");
+  var titleText = APP.cs ? APP.cs.title : "Blackout";
+  var cw = document.documentElement.clientWidth || 390;
+  var ttl = el("div", ("ttl " + TITLE_TIERS[titleTier(titleText, headerTitleBox(cw, UI.exit, UI.options))].cls).replace(/\s+$/, ""), titleText);
+  var sub = modeLabel(APP.cs);
+  if (sub) ttl.appendChild(el("span", "sub", sub));
   var bo = el("button", "ghost", UI.options); bo.onclick = openOptions;
   hd.appendChild(bx); hd.appendChild(ttl); hd.appendChild(bo);
   app.appendChild(hd);

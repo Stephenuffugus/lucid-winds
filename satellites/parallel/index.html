@@ -233,7 +233,7 @@ var CONFIG = {
   SAVE_KEY: 'lw_parallel_v1',
   SAVE_V: 1,
   MASTER_SEED: 0x50415241,
-  LEVEL_COUNT: 60,
+  LEVEL_COUNT: 100,
   MAX_KEYS: 3,
   MAX_CRUMB: 5,
   BFS_GEN_CAP: 260000,
@@ -295,12 +295,76 @@ var TIERS = [
   { t:4, lo:36, hi:48, w:12, h:12, min:20, max:36, dens:[0.20,0.36], platMax:6,
     spikes:[2,6], keys:[0,2], crumb:[1,3], oneway:[1,3], ice:[0,0], minTries:10 },
   { t:5, lo:49, hi:60, w:12, h:12, min:30, max:55, dens:[0.22,0.38], platMax:6,
-    spikes:[2,6], keys:[0,2], crumb:[0,3], oneway:[0,2], ice:[2,5], minTries:6 }
+    spikes:[2,6], keys:[0,2], crumb:[0,3], oneway:[0,2], ice:[2,5], minTries:6 },
+  /* Tiers 6 and 7 were appended after the first sixty shipped. They start at
+     level 61, so the generator's single RNG chain hands levels 1 to 60 exactly
+     the same draws it always did and those sixty stay byte identical. Par is
+     one base62 character, so no band may ever ask for more than 61 moves. */
+  { t:6, lo:61, hi:80, w:12, h:12, min:34, max:58, dens:[0.22,0.38], platMax:6,
+    spikes:[2,6], keys:[1,2], crumb:[1,3], oneway:[1,3], ice:[2,5], minTries:6 },
+  { t:7, lo:81, hi:100, w:12, h:12, min:40, max:61, dens:[0.24,0.40], platMax:6,
+    spikes:[2,6], keys:[2,3], crumb:[2,4], oneway:[1,3], ice:[3,6], minTries:5 }
 ];
+var PAR_MAX = 61;
 function tierOf(n){
   var i;
   for (i = 0; i < TIERS.length; i++){ if (n >= TIERS[i].lo && n <= TIERS[i].hi) return TIERS[i]; }
   return TIERS[TIERS.length - 1];
+}
+
+/* ---- LEVEL SELECT LAYOUT ----
+   The sky is laid out here, in pure code, in CSS pixels, so the touch target
+   law is a node assertion instead of a hope. The view hands in the measured
+   element width and sets the SVG viewBox to the returned box, so one unit out
+   of here is one rendered pixel on the device.
+
+   The guarantee: stars in a row are at least COL_GAP apart, rows are at least
+   ROW_GAP apart, and the jitter that makes it look like a sky rather than a
+   spreadsheet is bounded to half the slack, so no two hit circles of radius
+   HIT_R can ever overlap. The first sixty shipped with stars 33 to 40px apart
+   and 54px hit circles, which meant the higher level number quietly won a tap
+   in the overlap. That is the defect this function exists to kill. */
+var SKY = { padL:30, padR:22, padT:30, padB:34, rowGap:52, tierGap:26,
+            colGap:52, hitR:24, minSep:48, jitX:2, jitY:2, phase:4 };
+function skyLayout(count, widthPx, seedIn){
+  var W = Math.max(300, Math.min(560, Math.round(widthPx || 360)));
+  var rng = makeRNG((seedIn || 0xC0FFEE) >>> 0);
+  var usable = W - SKY.padL - SKY.padR;
+  var perRow = Math.max(2, Math.floor(usable / SKY.colGap) + 1);
+  var pitch = usable / (perRow - 1);
+  var pts = [], labels = [];
+  var y = SKY.padT, ti, r, i2;
+  for (ti = 0; ti < TIERS.length; ti++){
+    var spec = TIERS[ti];
+    if (spec.lo > count) break;
+    var hi = Math.min(spec.hi, count), cnt = hi - spec.lo + 1;
+    var rows = Math.ceil(cnt / perRow), placed = 0;
+    labels.push({ t:spec.t, x:SKY.padL - 22, y:y - 20, count:cnt, lo:spec.lo, hi:hi });
+    for (r = 0; r < rows; r++){
+      var k = Math.floor(cnt / rows) + (r < (cnt % rows) ? 1 : 0);
+      var x0 = SKY.padL + (usable - (k - 1) * pitch) / 2 + (rng() * 2 - 1) * SKY.phase;
+      for (i2 = 0; i2 < k; i2++){
+        pts.push({ n:spec.lo + placed, t:spec.t,
+                   x:x0 + i2 * pitch + (rng() * 2 - 1) * SKY.jitX,
+                   y:y + (rng() * 2 - 1) * SKY.jitY });
+        placed++;
+      }
+      y += SKY.rowGap;
+    }
+    y += SKY.tierGap;
+  }
+  return { w:W, h:Math.round(y + SKY.padB), perRow:perRow, r:SKY.hitR, pts:pts, labels:labels };
+}
+function skyMinSep(layout){
+  var i, j, best = Infinity, p = layout.pts;
+  for (i = 0; i < p.length; i++){
+    for (j = i + 1; j < p.length; j++){
+      var dx = p[i].x - p[j].x, dy = p[i].y - p[j].y;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d < best) best = d;
+    }
+  }
+  return p.length < 2 ? Infinity : best;
 }
 
 /* Hand authored fixture levels. These ARE the movement semantics contract:
@@ -726,6 +790,23 @@ function replay(lv, sol){
 }
 function hasDesync(lv, sol){ return replay(lv, sol).desync; }
 
+/* MIRROR DRIFT — how far out of mirror the pair has drifted, in cells.
+   A mirrored horizontal move leaves (ax + bx) untouched: one goes down by a
+   cell, the other up by a cell. A shared jump or a shared fall leaves
+   (ay - by) untouched. So both quantities are invariant while the twins move
+   as one, and each blocked step or lone fall knocks them off by exactly one.
+   The desync flag says a split HAPPENED; this says how far apart the pair has
+   been pushed and stayed. The audio bends on this, so what you hear is the
+   real state of the mirror and not a per move blip. */
+function mirrorDrift(lv, s){
+  if (typeof lv._mx !== 'number'){
+    var s0 = initState(lv);
+    lv._mx = s0.ax + s0.bx;
+    lv._my = s0.ay - s0.by;
+  }
+  return Math.abs((s.ax + s.bx) - lv._mx) + Math.abs((s.ay - s.by) - lv._my);
+}
+
 function manhattan(x, y, tx, ty){ return Math.abs(x - tx) + Math.abs(y - ty); }
 
 /* Greedy agent: always reduce A's distance to exit A, ties LEFT RIGHT UP WAIT.
@@ -895,17 +976,36 @@ function minimizeWalls(lv, spec, rng){
   return lv;
 }
 
-/* Runtime generation is used for the daily level ONLY, and only after the same
-   BFS has verified it. The sixty campaign levels are always the embedded ones. */
-function genDaily(seed){
-  var spec = TIERS[CONFIG.DAILY_TIER - 1], salt = 0;
+/* Runtime generation is used for the daily and for shared seed links ONLY, and
+   only after the same BFS has verified the level. The hundred campaign levels
+   are always the embedded ones, identical for every player.
+   A seeded level is generated, solved, checked for a desync moment and checked
+   against the greedy agent before it is handed back, exactly like the embedded
+   hundred. If it cannot be made, the caller is told and nothing is shown. */
+function genSeeded(seed, tier){
+  var t = Math.max(1, Math.min(TIERS.length, tier || CONFIG.DAILY_TIER));
+  var spec = TIERS[t - 1], salt = 0;
   while (salt < 8){
     var rng = makeRNG((seed + salt * 0x9e3779b1) >>> 0);
     var lv = genLevel(rng, spec, Math.ceil(CONFIG.DAILY_TRIES / 4), null);
-    if (lv) return lv;
+    if (lv){ lv.seed = seed >>> 0; return lv; }
     salt++;
   }
   return null;
+}
+function genDaily(seed){ return genSeeded(seed, CONFIG.DAILY_TIER); }
+/* Day number for the share line: whole days since the epoch, from an ISO date.
+   Time is a parameter, so the caller supplies the date string and this does the
+   arithmetic itself rather than reading any clock. */
+function dayNumber(iso){
+  var y = parseInt(iso.slice(0,4), 10), m = parseInt(iso.slice(5,7), 10), d = parseInt(iso.slice(8,10), 10);
+  if (!(y > 0) || !(m > 0) || !(d > 0)) return 0;
+  y -= (m <= 2) ? 1 : 0;
+  var era = Math.floor(y / 400);
+  var yoe = y - era * 400;
+  var doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
+  var doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+  return era * 146097 + doe - 719468;
 }
 
 /* ---- SAVE CODEC (pure, so the harness can test it in node) ---- */

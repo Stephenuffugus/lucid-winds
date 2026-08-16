@@ -6,6 +6,11 @@
      node sim.js --test              full assertion harness, exits nonzero on a failure
      node sim.js --runs=20000        three policy balance sweep plus the economy sweep
      node sim.js --watch=1234        ascii frame dump of one run so a human can see it
+     node sim.js --grid=6000         the tuning grid: PACK_BASE x COST_EXP x cache scale
+     node sim.js --runs=6000 --over=PACK_BASE=30,COST_EXP=1.7
+                                     any sweep run against an overridden CONFIG,
+                                     without editing the game, so a tuning pass is
+                                     one command and the shipped numbers stay shipped
 */
 'use strict';
 var fs = require('fs');
@@ -28,11 +33,36 @@ var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'runOver', 'visibleNodes', 'currentReveal', 'sessionSeconds', 'capsFor', 'emptyUpg',
   'cargoValue', 'cargoWeight', 'upgradeCost', 'fullClearCost', 'shopBuy', 'defaultSave', 'migrate',
   'loadSave', 'commitSave', 'memStorage', 'POLICIES', 'playRun', 'airCum', 'lampCum',
-  'shrineAcceptable', 'spillSet', 'shrineText', 'TEST'];
+  'shrineAcceptable', 'spillSet', 'shrineText', 'richnessAt', 'tierChanceAt', 'pickTier', 'TEST'];
 
-var factory = new Function(SIM_SRC + '\n' + TEST_SRC + '\nreturn {' +
-  EXPORTS.map(function (n) { return n + ':typeof ' + n + '!=="undefined"?' + n + ':undefined'; }).join(',') + '};');
-var S = factory();
+/* Build a SIM against an overridden CONFIG. The override is a SOURCE level
+   substitution of the numeric literal, not a mutation, because CONFIG is frozen
+   on purpose and a tuning pass must never be able to leak into a shipped run.
+   Keys are matched as `KEY: <number>` so `CONFIG.PACK_BASE` references cannot
+   be hit by accident. Throws on a key it did not find, so a typo in a sweep
+   command can never silently measure the shipped numbers and call them tuned. */
+function build(over) {
+  var src = SIM_SRC, k;
+  if (over) for (k in over) {
+    var re = new RegExp('(\\b' + k + '\\s*:\\s*)(-?[0-9]*\\.?[0-9]+)', 'g');
+    if (!re.test(src)) throw new Error('override key not found in CONFIG: ' + k);
+    re.lastIndex = 0;
+    src = src.replace(re, '$1' + over[k]);
+  }
+  var f = new Function(src + '\n' + TEST_SRC + '\nreturn {' +
+    EXPORTS.map(function (n) { return n + ':typeof ' + n + '!=="undefined"?' + n + ':undefined'; }).join(',') + '};');
+  return f();
+}
+function parseOver(s) {
+  if (!s || s === true) return null;
+  var out = {}, parts = String(s).split(','), i, kv;
+  for (i = 0; i < parts.length; i++) {
+    kv = parts[i].split('=');
+    if (kv.length === 2) out[kv[0].trim()] = parseFloat(kv[1]);
+  }
+  return out;
+}
+var S = build(null);
 
 /* ------------------------------------------------------------------ tests */
 function runTests() {
@@ -66,7 +96,7 @@ function pad(s, n, right) {
 var MID = { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 };
 var FULL = { tank: 5, lamp: 5, pack: 5, brace: 3, drill: 5, assay: 5 };
 
-function sweep(runs, seed0) {
+function sweep(runs, seed0, S) {
   var policies = ['greedy', 'cautious', 'optimal'];
   var rows = {}, i, p;
   for (p = 0; p < policies.length; p++) {
@@ -126,7 +156,7 @@ function sweep(runs, seed0) {
   out.push('median session, optimal: ' + (rows.optimal.sec50 / 60).toFixed(1) + ' minutes   (bound 4 to 8)');
 
   /* economy: how many runs does a median player need to clear the shop */
-  var econ = economy(seed0, 400);
+  var econ = economy(seed0, 600, S);
   out.push('');
   out.push('ECONOMY   full clear costs ' + S.fullClearCost() + ' cash');
   out.push('runs to full clear, cautious player: ' + econ.cautious + '   (target about 25)');
@@ -134,7 +164,7 @@ function sweep(runs, seed0) {
   return { text: out.join('\n'), rows: rows, fullReach: pct(fullReach, diveN), bareReach: pct(bareReach, diveN), econ: econ, cWins: pct(wins, runs) };
 }
 
-function economy(seed0, cap) {
+function economy(seed0, cap, S) {
   var res = {};
   ['cautious', 'optimal'].forEach(function (pol) {
     var save = S.defaultSave(), runs = 0, i;
@@ -164,7 +194,7 @@ function economy(seed0, cap) {
 }
 
 /* ------------------------------------------------------------------ watch */
-function watch(seed, polName) {
+function watch(seed, polName, S) {
   var pol = S.POLICIES[polName || 'optimal'];
   var st = S.newRun(S.makeRNG(seed), MID, null);
   var frames = [], guard = 400;
@@ -216,6 +246,51 @@ function watch(seed, polName) {
   if (st.log.length) console.log('LOG: ' + st.log.map(function (l) { return l.s; }).join(' | '));
 }
 
+/* -------------------------------------------------------------------- grid */
+/* the tuning grid the deepening pass was asked for. One line per CONFIG point,
+   so the two missed bounds can be read off against the levers that move them. */
+function grid(runs, seed0) {
+  var packs = [40, 36, 32, 30, 28, 26, 24];
+  var exps = [2.1, 1.9, 1.7, 1.62, 1.5];
+  var caches = [1, 1.6, 2.2];
+  var lines = [], i, j, k;
+  lines.push('DEEPWELL TUNING GRID   runs=' + runs + ' per policy per point   seed0=' + seed0);
+  lines.push('bounds: ratio 35 to 50, clear about 25 runs, greedy loss 55 to 70, cautious loss under 8');
+  lines.push('');
+  lines.push(pad('PACK', 6, true) + pad('COSTEXP', 9) + pad('CACHEx', 8) + pad('RATIO', 8) +
+             pad('CLEAR', 8) + pad('GLOSS', 8) + pad('CLOSS', 8) + pad('OMEAN', 8) +
+             pad('CMEAN', 8) + pad('FCLEAR', 9) + pad('CWIN', 7) + '  VERDICT');
+  lines.push(new Array(104).join('-'));
+  for (i = 0; i < packs.length; i++) for (j = 0; j < exps.length; j++) for (k = 0; k < caches.length; k++) {
+    var over = { PACK_BASE: packs[i], COST_EXP: exps[j],
+                 cacheBase: Math.round(26 * caches[k]), cachePerDepth: +(1.35 * caches[k]).toFixed(3) };
+    var G = build(over);
+    var r = quick(G, runs, seed0);
+    var hits = (r.ratio >= 35 && r.ratio <= 50 ? 1 : 0) + (r.clear <= 32 && r.clear >= 18 ? 1 : 0) +
+               (r.gLoss >= 55 && r.gLoss <= 70 ? 1 : 0) + (r.cLoss < 8 ? 1 : 0) + (r.cWin > 0 ? 1 : 0);
+    lines.push(pad(packs[i], 6, true) + pad(exps[j], 9) + pad(caches[k], 8) +
+      pad(r.ratio.toFixed(1), 8) + pad(r.clear, 8) + pad(r.gLoss.toFixed(1), 8) + pad(r.cLoss.toFixed(1), 8) +
+      pad(r.oMean.toFixed(0), 8) + pad(r.cMean.toFixed(0), 8) + pad(G.fullClearCost(), 9) +
+      pad(r.cWin.toFixed(1), 7) + '  ' + hits + ' of 5');
+  }
+  return lines.join('\n');
+}
+function quick(G, runs, seed0) {
+  var i, gLost = 0, cLost = 0, cSum = 0, oSum = 0, cWin = 0;
+  for (i = 0; i < runs; i++) {
+    var a = G.playRun(seed0 + i, MID, 'greedy');
+    var b = G.playRun(seed0 + i, MID, 'cautious');
+    var c = G.playRun(seed0 + i, MID, 'optimal');
+    if (a.over.reason !== 'surfaced') gLost++;
+    if (b.over.reason !== 'surfaced') cLost++;
+    cSum += b.over.banked; oSum += c.over.banked;
+    if (b.over.banked > c.over.banked) cWin++;
+  }
+  var econ = economy(seed0, 900, G);
+  return { ratio: 100 * cSum / oSum, clear: econ.cautious, gLoss: pct(gLost, runs), cLoss: pct(cLost, runs),
+           cMean: cSum / runs, oMean: oSum / runs, cWin: pct(cWin, runs) };
+}
+
 /* ------------------------------------------------------------------- main */
 var args = process.argv.slice(2);
 var opt = {};
@@ -223,9 +298,12 @@ args.forEach(function (a) {
   var m = /^--([^=]+)(?:=(.*))?$/.exec(a);
   if (m) opt[m[1]] = m[2] === undefined ? true : m[2];
 });
+var OVER = parseOver(opt.over);
+if (OVER) { S = build(OVER); console.log('CONFIG OVERRIDE: ' + JSON.stringify(OVER)); }
 if (opt.test) runTests();
-else if (opt.watch) watch(parseInt(opt.watch, 10) || 1, opt.policy);
-else if (opt.runs) console.log(sweep(parseInt(opt.runs, 10) || 1000, parseInt(opt.seed, 10) || 1).text);
+else if (opt.watch) watch(parseInt(opt.watch, 10) || 1, opt.policy, S);
+else if (opt.grid) console.log(grid(parseInt(opt.grid, 10) || 2000, parseInt(opt.seed, 10) || 1));
+else if (opt.runs) console.log(sweep(parseInt(opt.runs, 10) || 1000, parseInt(opt.seed, 10) || 1, S).text);
 else {
   console.log('usage: node sim.js --test | --runs=N [--seed=S] | --watch=SEED [--policy=greedy]');
   process.exit(2);

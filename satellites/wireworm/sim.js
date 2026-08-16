@@ -36,6 +36,7 @@ const EXPORTS = [
   'maxDistPair', 'spawnPair', 'spawnPickup', 'newGame', 'step', 'hashState',
   'loadPct', 'makeQueue', 'safeTurns', 'agentRandom', 'agentGreedy', 'bfsTurn',
   'boardAscii', 'agentRandomSafe', 'turnSurvives', 'rescueCheck', 'dischargeOldest', 'completeCircuit', 'touchPickup', 'touchTerminal', 'fireOverload',
+  'agentFiller', 'pendingLen', 'pendingNew', 'fillWaypoint', 'survivalTurn',
   'loadSave', 'writeSave', 'defaultSave', 'migrateSave', 'updateSave',
   'recordRun', 'recordDaily', 'encodeLog', 'decodeLog',
   'TEST', 'runAllTests', 'playAgent', 'invariants'
@@ -134,26 +135,37 @@ function pad(s, n, right) {
   return right ? (' '.repeat(Math.max(0, n - s.length)) + s) : (s + ' '.repeat(Math.max(0, n - s.length)));
 }
 
-function sweepAgent(agent, runs, baseSeed, cap) {
-  const ticks = [], scores = [], circuits = [], overloads = [], causes = { wall: 0, live: 0, cap: 0 };
-  let peakLoad = 0;
+function sweepAgent(agent, runs, baseSeed, cap, opts) {
+  opts = opts || {};
+  const ticks = [], scores = [], circuits = [], overloads = [], loads = [];
+  const causes = { wall: 0, live: 0, clock: 0, cap: 0 };
+  let peakLoad = 0, anyOverload = 0, bonusTotal = 0, scoreTotal = 0;
   for (let i = 0; i < runs; i++) {
     const seed = (baseSeed + i * 2654435761) >>> 0;
-    const st = G.newGame(seed);
+    const st = G.newGame(seed, opts.mode ? { mode: opts.mode } : undefined);
     const rng = G.makeRNG((seed ^ 0x9e3779b9) >>> 0);
-    let n = 0;
+    let n = 0, peakRun = 0;
     while (st.alive && n < cap) {
       G.step(st, agent(st, rng));
       n++;
-      if (st.energized > peakLoad) peakLoad = st.energized;
+      if (st.energized > peakRun) peakRun = st.energized;
     }
+    if (peakRun > peakLoad) peakLoad = peakRun;
+    loads.push(peakRun);
     ticks.push(st.tick);
     scores.push(st.score);
     circuits.push(st.circuitsCompleted);
     overloads.push(st.overloads);
+    if (st.overloads > 0) anyOverload++;
+    bonusTotal += st.overloadBonus || 0;
+    scoreTotal += st.score;
     if (!st.alive) causes[st.cause]++; else causes.cap++;
   }
-  return { ticks: stats(ticks), scores: stats(scores), circuits: stats(circuits), overloads: stats(overloads), causes, peakLoad };
+  return {
+    ticks: stats(ticks), scores: stats(scores), circuits: stats(circuits),
+    overloads: stats(overloads), loads: stats(loads), causes, peakLoad,
+    anyOverload, runs, bonusShare: scoreTotal ? bonusTotal / scoreTotal : 0
+  };
 }
 
 function printRow(label, s) {
@@ -175,7 +187,10 @@ function cmdSweep(runs) {
     G.CONFIG.TICK_START_MS + 'ms minus ' + G.CONFIG.TICK_STEP_MS + 'ms per circuit, floor ' + G.CONFIG.TICK_FLOOR_MS + 'ms');
   console.log('');
 
-  const agents = [['random', G.agentRandom], ['randomsafe', G.agentRandomSafe], ['greedy', G.agentGreedy]];
+  const only = args.agent ? String(args.agent).split(',') : null;
+  const agents = [['random', G.agentRandom], ['randomsafe', G.agentRandomSafe],
+                  ['greedy', G.agentGreedy], ['filler', G.agentFiller]]
+    .filter(a => !only || only.indexOf(a[0]) >= 0);
   const out = {};
   for (const [name, fn] of agents) {
     const t0 = Date.now();
@@ -187,10 +202,15 @@ function cmdSweep(runs) {
     printRow('score', r.scores);
     printRow('circuits', r.circuits);
     printRow('overloads', r.overloads);
-    console.log('  deaths: wall ' + r.causes.wall + '   live wire ' + r.causes.live + '   hit tick cap ' + r.causes.cap +
-      '   peak energized ' + r.peakLoad + '/' + G.CONFIG.CELLS);
+    printRow('peak load', r.loads);
+    console.log('  deaths: wall ' + r.causes.wall + '   live wire ' + r.causes.live + '   clock ' + r.causes.clock +
+      '   hit tick cap ' + r.causes.cap + '   peak energized ' + r.peakLoad + '/' + G.CONFIG.CELLS);
+    console.log('  runs that tripped the breaker: ' + r.anyOverload + '/' + r.runs +
+      ' (' + (100 * r.anyOverload / r.runs).toFixed(1) + '%)   overload bonus is ' +
+      (100 * r.bonusShare).toFixed(1) + '% of all score earned');
     console.log('');
   }
+  if (!out.greedy || !out.random) { process.exitCode = 0; return; }
 
   /* gates from HANDOFF-11 section 6.6 */
   const rm = out.random.ticks.med, sm = out.randomsafe.ticks.med, gm = out.greedy.ticks.med;
@@ -207,6 +227,15 @@ function cmdSweep(runs) {
     ['under 2 percent of greedy runs reach the tick cap', out.greedy.causes.cap / runs < 0.02, (100 * out.greedy.causes.cap / runs).toFixed(2) + '%'],
     ['no plain random run reached the tick cap', out.random.causes.cap === 0, out.random.causes.cap]
   ];
+  if (out.filler) {
+    const f = out.filler;
+    gates.push(['the board filler trips the breaker in over half its runs',
+      f.anyOverload / f.runs > 0.5, (100 * f.anyOverload / f.runs).toFixed(1) + '%']);
+    gates.push(['the second win condition is not decorative (filler median score within 2x of greedy)',
+      f.scores.med * 2 >= out.greedy.scores.med, f.scores.med + ' vs ' + out.greedy.scores.med]);
+    gates.push(['the board filler really does fill the board (median peak load over 40 percent)',
+      f.loads.med >= G.CONFIG.CELLS * 0.4, f.loads.med + '/' + G.CONFIG.CELLS]);
+  }
   let bad = 0;
   console.log('GATES');
   gates.forEach(g => { if (!g[1]) bad++; console.log('  ' + (g[1] ? 'PASS  ' : 'FAIL  ') + g[0] + '   [' + g[2] + ']'); });

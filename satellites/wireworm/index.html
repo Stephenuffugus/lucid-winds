@@ -198,7 +198,8 @@ var CONFIG = Object.freeze({
   PAIRS: 2,                 // terminal pairs live on the board
   GREEN_MAX_DIST: 6,        // green pairs spawn within this manhattan distance
   RED_MIN_DIST: 20,         // red pairs must land at least this far apart
-  QUEUE_CAP: 2              // input queue slots
+  QUEUE_CAP: 2,             // input queue slots
+  FILL_TARGET: 40           // sweep agent only: cells the board filler grows a slice to
 });
 
 /* cell codes */
@@ -486,6 +487,7 @@ function newGame(seed) {
     comboPeak: 1,
     longest: 0,
     overloads: 0,
+    overloadBonus: 0,
     discharges: 0,
     rescues: 0,
     stallTicks: 0,
@@ -512,6 +514,7 @@ function fireOverload(st, ev) {
   var n = st.energized, i;
   var bonus = n * CONFIG.OVERLOAD_BONUS_PER_CELL;
   st.score += bonus;
+  st.overloadBonus += bonus;
   for (i = 0; i < CONFIG.CELLS; i++) {
     if (st.cell[i] === WIRE) { st.cell[i] = EMPTY; st.ccol[i] = 0; }
     st.cover[i] = 0;
@@ -750,11 +753,14 @@ function agentRandomSafe(st, rng) {
 }
 
 /* BFS over (cell, heading) so the path respects the no reverse rule, avoiding
-   energized cells and the edge. Returns the first turn or null. */
-function bfsTurn(st, targets) {
+   energized cells and the edge. Returns the first turn or null.
+   `avoid` is an optional cell the search refuses to route through, which is how
+   the board filler declines to walk over the discharge pickup. */
+function bfsTurn(st, targets, avoid) {
   var G = CONFIG.GRID, N = CONFIG.CELLS;
   var tgt = new Uint8Array(N), i;
   for (i = 0; i < targets.length; i++) if (targets[i] >= 0) tgt[targets[i]] = 1;
+  var block = (avoid === undefined || avoid === null) ? -1 : avoid;
   var seen = new Uint8Array(N * 4);
   var qs = new Int32Array(N * 4), qf = new Int8Array(N * 4);
   var qh = 0, qt = 0;
@@ -769,6 +775,7 @@ function bfsTurn(st, targets) {
       if (x < 0 || y < 0 || x >= G || y >= G) continue;
       ni = y * G + x;
       if (st.cover[ni] > 0) continue;
+      if (ni === block && !tgt[ni]) continue;
       ns = ni * 4 + nh;
       if (seen[ns]) continue;
       seen[ns] = 1;
@@ -778,6 +785,33 @@ function bfsTurn(st, targets) {
     }
   }
   return null;
+}
+
+/* Shared tail for the thinking agents: honour the plan's turn if it survives a
+   ply, otherwise take the safe move with the most open neighbours so the worm
+   does not paint itself into a pocket. Extracted verbatim out of agentGreedy so
+   both agents fail the same way. */
+function survivalTurn(st, rng, t) {
+  if (t !== null && turnSurvives(st, t)) return t;
+  var safe = safeTurns(st);
+  if (!safe.length) return -1;
+  var pool = [], k;
+  for (k = 0; k < safe.length; k++) if (turnSurvives(st, safe[k])) pool.push(safe[k]);
+  if (!pool.length) pool = safe;
+  if (t !== null && pool.indexOf(t) >= 0) return t;
+  var best = pool[0], bestScore = -1, h, x, y, d, nx, ny, open;
+  for (k = 0; k < pool.length; k++) {
+    h = (st.heading + pool[k] + 4) & 3;
+    x = cx(st.head) + DX[h]; y = cy(st.head) + DY[h];
+    open = 0;
+    for (d = 0; d < 4; d++) {
+      nx = x + DX[d]; ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+      if (st.cover[ny * CONFIG.GRID + nx] === 0) open++;
+    }
+    if (open > bestScore || (open === bestScore && rng() < 0.34)) { bestScore = open; best = pool[k]; }
+  }
+  return best;
 }
 
 /* Competent play, not perfect play. BFS to the objective avoiding energized
@@ -803,30 +837,83 @@ function agentGreedy(st, rng) {
      forever: seed 9027 ran to the tick cap doing exactly that. */
   if (t === null && all.length) t = bfsTurn(st, all);
   if (t === null && st.pickup >= 0) t = bfsTurn(st, [st.pickup]);
-  if (t !== null && turnSurvives(st, t)) return t;
+  return survivalTurn(st, rng, t);
+}
 
-  var safe = safeTurns(st);
-  if (!safe.length) return -1;
-  var pool = [], k;
-  for (k = 0; k < safe.length; k++) if (turnSurvives(st, safe[k])) pool.push(safe[k]);
-  if (!pool.length) pool = safe;
-  if (t !== null && pool.indexOf(t) >= 0) return t;
+/* ---- the board filler, the second playstyle section 6.5 promises ----
+   The greedy agent chases combo: shortest legal path to the match, cash out,
+   repeat. Nothing in it ever steers for the breaker, so before this agent
+   existed every median in the sweep read 0 overloads and half of the design
+   was unmeasured. This agent plays the other half on purpose: charge, then
+   deliberately take the LONG way round to grow the uncommitted slice, and only
+   close the circuit once the slice is big enough to move the load meter. It
+   refuses to walk over the discharge pickup, because a board filler standing on
+   the relief valve is throwing away its own wall. */
 
-  /* Take the safe move with the most open neighbours so the worm does not
-     paint itself into a pocket. */
-  var best = pool[0], bestScore = -1, h, x, y, d, nx, ny, open;
-  for (k = 0; k < pool.length; k++) {
-    h = (st.heading + pool[k] + 4) & 3;
-    x = cx(st.head) + DX[h]; y = cy(st.head) + DY[h];
-    open = 0;
-    for (d = 0; d < 4; d++) {
-      nx = x + DX[d]; ny = y + DY[d];
-      if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
-      if (st.cover[ny * CONFIG.GRID + nx] === 0) open++;
-    }
-    if (open > bestScore || (open === bestScore && rng() < 0.34)) { bestScore = open; best = pool[k]; }
+/* unique cells in the uncommitted slice. Stamped scratch, no per tick alloc. */
+var _plScratch = new Int32Array(CONFIG.CELLS), _plGen = 0;
+function pendingLen(st) {
+  if (!st.charge) return 0;
+  _plGen++;
+  var n = 0, i, c;
+  for (i = st.charge.sliceStart; i < st.trail.length; i++) {
+    c = st.trail[i];
+    if (_plScratch[c] !== _plGen) { _plScratch[c] = _plGen; n++; }
+  }
+  return n;
+}
+/* the cells this circuit would ADD to the load meter, which is not the same
+   number: re walking wire that is already live scores again but moves the
+   breaker not at all. The filler steers on this one. */
+function pendingNew(st) {
+  if (!st.charge) return 0;
+  _plGen++;
+  var n = 0, i, c;
+  for (i = st.charge.sliceStart; i < st.trail.length; i++) {
+    c = st.trail[i];
+    if (_plScratch[c] !== _plGen) { _plScratch[c] = _plGen; if (st.cover[c] === 0) n++; }
+  }
+  return n;
+}
+
+/* The free reachable cell furthest from the terminal we are heading for.
+   Walking there and back is what makes the circuit long. Deterministic from the
+   board, so it does not oscillate between two waypoints. */
+function fillWaypoint(st, from) {
+  var reach = reachMask(st), best = -1, bd = -1, i, d;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== EMPTY || !reach[i] || i === st.pickup) continue;
+    d = manhattan(i, from);
+    if (d > bd) { bd = d; best = i; }
   }
   return best;
+}
+
+function agentFiller(st, rng) {
+  var i, j, p, all = [], match = [];
+  for (i = 0; i < st.pairs.length; i++) {
+    p = st.pairs[i];
+    for (j = 0; j < p.active.length; j++) {
+      all.push(p.active[j]);
+      if (st.charge && p.id === st.charge.pairId) match.push(p.active[j]);
+    }
+  }
+  var t = null, pick = st.pickup >= 0 ? st.pickup : null;
+  if (!st.charge || !match.length) {
+    t = bfsTurn(st, all, pick);
+  } else {
+    /* stop detouring as the meter closes on the breaker: the last circuit
+       before an overload should be cashed, not extended past it */
+    var room = CONFIG.OVERLOAD_CELLS - st.energized + 2;
+    var want = Math.min(CONFIG.FILL_TARGET, room);
+    if (pendingNew(st) < want) {
+      var wp = fillWaypoint(st, match[0]);
+      if (wp >= 0 && wp !== st.head) t = bfsTurn(st, [wp], pick);
+    }
+    if (t === null) t = bfsTurn(st, match, pick);
+    if (t === null) t = bfsTurn(st, all, pick);
+  }
+  return survivalTurn(st, rng, t);
 }
 
 function boardAscii(st) {

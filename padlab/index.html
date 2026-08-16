@@ -1158,10 +1158,13 @@ function renderSeq(){ /* the ghost marbles mirror this pattern, so they are rebu
     row.appendChild(lab);
     const cells=document.createElement("div"); cells.className="seq-cells";
     for(let s=0;s<16;s++){ const c=document.createElement("div"); c.className="cell"+(s%4===0&&s>0?" g4":"")+(p.tracks[r][s]?" on":""); c.style.setProperty("--ce",PAD_COLORS[r]); c.dataset.r=r; c.dataset.s=s;
-      c.addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); p.tracks[r][s]=p.tracks[r][s]?0:1; c.classList.toggle("on",!!p.tracks[r][s]); if(p.tracks[r][s]) triggerPadAt(r,ct()+.001,1); currentGroove=-1; document.querySelectorAll(".groove").forEach(el=>el.classList.remove("playing")); saveSoon(); });
+      /* a cell edit changes the pattern the ghost marbles are a picture of, so
+         the ghosts have to be rebuilt here too. renderSeq alone is not enough:
+         toggling a cell never redraws the grid. */
+      c.addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); p.tracks[r][s]=p.tracks[r][s]?0:1; c.classList.toggle("on",!!p.tracks[r][s]); if(p.tracks[r][s]) triggerPadAt(r,ct()+.001,1); currentGroove=-1; document.querySelectorAll(".groove").forEach(el=>el.classList.remove("playing")); mbRebuildGhosts(); saveSoon(); });
       cells.appendChild(c); }
     row.appendChild(cells); seq.appendChild(row); }
-  seq.querySelectorAll("[data-mu]").forEach(b=>b.addEventListener("click",()=>{ const r=+b.dataset.mu; p.mutes[r]=!p.mutes[r]; b.classList.toggle("on",p.mutes[r]); saveSoon(); }));
+  seq.querySelectorAll("[data-mu]").forEach(b=>b.addEventListener("click",()=>{ const r=+b.dataset.mu; p.mutes[r]=!p.mutes[r]; b.classList.toggle("on",p.mutes[r]); mbRebuildGhosts(); saveSoon(); }));
 }
 function highlightStep(s){ document.querySelectorAll(".cell.play").forEach(c=>c.classList.remove("play"));
   document.querySelectorAll('.cell[data-s="'+s+'"]').forEach(c=>c.classList.add("play")); }
@@ -1673,17 +1676,31 @@ const MB_NOTES=[
 const MB_SHELF_H=[42,78,122,174,234];
 const MB_PLATE_W=16, MB_PLATE_H=16, MB_PLATE_GAP=3, MB_MAX_PLATES=6;
 const MB_PX_PER_BEAT_DRAG=110, MB_PHASE_SNAP=0.25;
+/* Six surfaces. Four came over from Marblebeat; Bell and Wood were added on
+   the audit pass, one pitched and one percussive, because four marbles is a
+   short vocabulary for a plate that holds eighty. A pitched type colours
+   itself by the note it sounds, so its swatch is a rainbow and its entry has
+   no fixed colour. Adding a type here is the whole job: chips, colours,
+   saving and loading all read this table. */
 const MB_INSTR={
   bass:{label:"Bass",color:"#5a6cff",dark:"#232a66",r:10},
   snare:{label:"Snare",color:"#e6e9f2",dark:"#6a7080",r:8},
   hat:{label:"Hat",color:"#e8b04b",dark:"#6e5320",r:6},
-  melody:{label:"Melody",color:null,r:8}};
+  wood:{label:"Wood",color:"#c88a4a",dark:"#4d2f13",r:7},
+  melody:{label:"Melody",color:null,r:8,pitched:true,sat:85},
+  bell:{label:"Bell",color:null,r:6,pitched:true,sat:45}};
+function mbPitched(t){ return !!(MB_INSTR[t]&&MB_INSTR[t].pitched); }
 
 let mbPlates=[{x0:0,y0:0,w:MB_PLATE_W,h:MB_PLATE_H}];
 let mbMarbles=[];
 let mbSel={type:"bass",shelf:2,deg:0};
 let mbSelected=null, mbShowBeat=false, mbGhosts=[];
 let mbNoise=null;
+/* A plate holds 256 cells per plate and six plates are allowed, so without a
+   cap a child holding a finger down can queue hundreds of voices on one
+   sixteenth and take the audio thread out. Eighty is far past any real plate
+   and still safe; the per-tick guard is the last line if they all land at once. */
+const MB_MAX_MARBLES=80, MB_MAX_HITS_PER_TICK=24;
 
 /* ---- pitch: a marble stores a scale DEGREE, not a fixed semitone, so
    changing the studio's key or scale re-keys every marble on the plate ---- */
@@ -1697,7 +1714,8 @@ function mbMidiOf(deg){
 }
 function mbHue(m){ const n=mbMidiOf(m.deg); return (((n%12)+12)%12)*30; }
 function mbColors(m){
-  if(m.type==="melody"){ const h=mbHue(m); return ["hsl("+h+" 85% 62%)","hsl("+h+" 85% 26%)"]; }
+  if(mbPitched(m.type)){ const h=mbHue(m), s=MB_INSTR[m.type].sat;
+    return ["hsl("+h+" "+s+"% 62%)","hsl("+h+" "+s+"% 26%)"]; }
   return [MB_INSTR[m.type].color,MB_INSTR[m.type].dark];
 }
 function mbNoteName(m){
@@ -1720,7 +1738,7 @@ function mbNoiseBuf(){
 function mbPlayHit(m,t){
   if(!AC) return;
   try{
-    const drums=m.type!=="melody";
+    const drums=!mbPitched(m.type);
     const g=AC.createGain(); g.connect(drums?drumBus:instrBus);
     if(m.type==="bass"){
       const o=AC.createOscillator(); o.type="sine";
@@ -1748,6 +1766,32 @@ function mbPlayHit(m,t){
       g.gain.setValueAtTime(0.3,t);
       g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
       s.start(t); s.stop(t+0.06);
+    }else if(m.type==="wood"){
+      /* woodblock: a bandpassed noise tick for the knock, a short square ping
+         for the pitch of the block. Percussive, so it stays on the drum bus. */
+      const s=AC.createBufferSource(); s.buffer=mbNoiseBuf();
+      const bp=AC.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1900; bp.Q.value=2.4;
+      s.connect(bp); bp.connect(g);
+      g.gain.setValueAtTime(0.34,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.055);
+      s.start(t); s.stop(t+0.07);
+      const o=AC.createOscillator(); o.type="square"; o.frequency.value=940;
+      const g2=AC.createGain(); g2.gain.setValueAtTime(0.16,t);
+      g2.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+      o.connect(g2); g2.connect(drumBus); o.start(t); o.stop(t+0.06);
+    }else if(m.type==="bell"){
+      /* bell: an inharmonic partial over the fundamental and a long tail, so
+         it rings under the melody instead of doubling it. Pitched, so it takes
+         the reverb and delay on the instrument bus. */
+      const f=440*Math.pow(2,(mbMidiOf(m.deg)-69)/12);
+      const o=AC.createOscillator(); o.type="sine"; o.frequency.value=f*2;
+      const o2=AC.createOscillator(); o2.type="sine"; o2.frequency.value=f*5.42;
+      const g2=AC.createGain(); g2.gain.setValueAtTime(0.16,t);
+      g2.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+      g.gain.setValueAtTime(0.3,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+1.5);
+      o.connect(g); o2.connect(g2); g2.connect(g);
+      o.start(t); o.stop(t+1.55); o2.start(t); o2.stop(t+0.5);
     }else{
       const f=440*Math.pow(2,(mbMidiOf(m.deg)-69)/12);
       const o=AC.createOscillator(); o.type="triangle"; o.frequency.value=f;
@@ -1772,11 +1816,15 @@ function mbPeriod16(m){ return Math.max(1,Math.round(MB_NOTES[m.shelf].beats*4))
    purpose: the renderer works out how high a marble is from where it is
    between its last hit and its next one, so it needs to know the future. ---- */
 function marbleTick(g,t,six){
+  let fired=0;
   for(let i=0;i<mbMarbles.length;i++){
     const m=mbMarbles[i], p16=mbPeriod16(m);
     const off=((Math.round((m.phase||0)*p16)%p16)+p16)%p16;
     if(g%p16===off){
-      mbPlayHit(m,t);
+      /* every marble still bounces; past the guard they stop sounding, which
+         is the only humane failure when a plate is stacked deep enough that
+         playing them all would stall the audio thread */
+      if(fired++<MB_MAX_HITS_PER_TICK) mbPlayHit(m,t);
       m.lastHit=t; m.next=t+p16*six;
     }
   }
@@ -1790,13 +1838,25 @@ function marbleTick(g,t,six){
 let mbYaw=0, mbTilt=0.5, mbZoom=1, mbPanX=0, mbPanY=0, mbCamDirty=true;
 const MB_TILT_MIN=0.18, MB_TILT_MAX=0.92, MB_ZMIN=0.3, MB_ZMAX=2.4, MB_TILE=64;
 let mbCv=null, mbCtx=null, mbW=0, mbH=0, mbDPR=1, mbCache=null, mbCctx=null, mbRaf=null;
+let mbFont="10px 'Chakra Petch',system-ui,sans-serif";
 
-function mbWorldCenter(){
+/* The plate cache projects every visible cell and the marbles project once each
+   per frame, so this used to run thousands of times a second over a list that
+   changes about once a session. Cached, and cleared by mbPlatesChanged(). */
+let mbWC=null;
+function mbBounds(){
   let a=1e9,b=1e9,c=-1e9,d=-1e9;
   for(const p of mbPlates){ a=Math.min(a,p.x0); b=Math.min(b,p.y0);
     c=Math.max(c,p.x0+p.w); d=Math.max(d,p.y0+p.h); }
-  return [(a+c)/2,(b+d)/2];
+  return [a,b,c,d];
 }
+function mbWorldCenter(){
+  if(mbWC) return mbWC;
+  const q=mbBounds();
+  mbWC=[(q[0]+q[2])/2,(q[1]+q[3])/2];
+  return mbWC;
+}
+function mbPlatesChanged(){ mbWC=null; mbCamDirty=true; }
 function mbResize(){
   if(!mbCv) return;
   mbDPR=Math.min(devicePixelRatio||1,2);
@@ -1809,21 +1869,25 @@ function mbResize(){
   mbCctx.setTransform(mbDPR,0,0,mbDPR,0,0);
   mbCamDirty=true;
 }
-/* Fit the view the first time the tab is opened, and not again after that:
-   the canvas has no size until the view is visible, so this cannot happen at
-   boot, and refitting later would throw away wherever the player had panned
-   and zoomed to. */
+/* Fit the view the first time the tab is opened: the canvas has no size until
+   the view is visible, so this cannot happen at boot, and refitting on every
+   visit would throw away wherever the player had panned and zoomed to. After
+   that the Fit button is the way back, and it is also fired when a plate is
+   added, because a new plate lands outside the frame and a child who taps
+   "+ Plate" and sees nothing appear has been told the button is broken. */
 let mbFitted=false;
 function mbFitOnce(){ if(mbFitted||mbW<2) return; mbFitted=true; mbFit(); }
 function mbFit(){
-  const p=mbPlates[0], span=(p.w+p.h)*MB_TILE/2;
-  /* Fit BOTH ways. Fitting to width alone is right on a phone and wrong on a
-     desktop: there the width test clamps the zoom at 1 and the plate is then
-     taller than the box it sits in, so its near and far corners hang out of
-     the frame. Height gets the smaller share because marbles stand well above
-     the plate and need somewhere to be. */
+  if(mbW<2) return;
+  /* Fit to ALL the plates, not just the first. Fit BOTH ways too: fitting to
+     width alone is right on a phone and wrong on a desktop, where the width
+     test clamps the zoom at 1 and the plate is then taller than the box it
+     sits in, so its near and far corners hang out of the frame. Height gets
+     the smaller share because marbles stand well above the plate. */
+  const q=mbBounds(), span=((q[2]-q[0])+(q[3]-q[1]))*MB_TILE/2;
+  mbYaw=0; mbTilt=0.5;
   const zx=(mbW*0.92)/span;
-  const zy=(mbH*0.66)/(span*mbTilt);
+  const zy=(mbH*0.62)/(span*mbTilt);
   mbZoom=Math.max(MB_ZMIN,Math.min(1,zx,zy));
   mbPanX=0; mbPanY=0; mbCamDirty=true;
 }
@@ -1848,14 +1912,18 @@ function mbUnproj(px,py){
 function mbScreen(m,now){
   const six=60/tempo/4;
   const T=mbPeriod16(m)*six;
-  const h=MB_SHELF_H[m.shelf];
+  /* A ghost repeats once a bar, so its physics shelf has to be the bar, but a
+     plate of bar-high ghosts is a picket fence you cannot see the beat
+     through. Height and size are overridden for ghosts only; the timing is
+     untouched. */
+  const h=m.ghost?110:MB_SHELF_H[m.shelf];
   let z=h;
   if(isPlaying&&m.next!==undefined){
     const u=1-Math.max(0,Math.min(1,(m.next-now)/T));
     z=h*(1-u*u);
   }
   const p=mbIso(m.gx+0.5,m.gy+0.5,0);
-  const r=Math.max(3,MB_INSTR[m.type].r*mbZoom);
+  const r=Math.max(3,MB_INSTR[m.type].r*mbZoom*(m.ghost?0.72:1));
   return {cx:p[0],cy:p[1],my:p[1]-z*mbZs()-r*0.4,z:z,h:h,r:r};
 }
 function mbDrawPlates(){
@@ -1926,26 +1994,31 @@ function mbDraw(){
   mbCtx.clearRect(0,0,mbW,mbH);
   mbCtx.drawImage(mbCache,0,0,mbW,mbH);
   const now=ct();
-  mbCtx.font="10px "+getComputedStyle(document.body).fontFamily;
-  mbCtx.textAlign="left";
+  mbCtx.font=mbFont; mbCtx.textAlign="left";
   const yBase=mbH*0.55+mbPanY;
   /* Zoomed out, the five shelves sit close enough together that their labels
      print on top of each other. Draw every line, but only label the ones with
-     room, and always label the one in hand. */
-  let lastLabelY=Infinity;
+     room, and always label the one in hand. The loop walks from the tallest
+     shelf down, so screen y GROWS as it goes: the room test has to look
+     downward. It used to look upward, which silently printed one label. */
+  let lastLabelY=-Infinity;
   for(let s=MB_SHELF_H.length-1;s>=0;s--){
     const y=yBase-MB_SHELF_H[s]*mbZs();
     const hot=s===mbSel.shelf||(mbSelected&&mbSelected.shelf===s);
     mbCtx.strokeStyle=hot?"rgba(245,166,35,.5)":"rgba(124,131,141,.16)";
     mbCtx.beginPath(); mbCtx.moveTo(8,y); mbCtx.lineTo(48,y); mbCtx.stroke();
-    if(hot||y<lastLabelY-12){
+    if(hot||y>lastLabelY+12){
       mbCtx.fillStyle=hot?"#F5A623":"rgba(124,131,141,.55)";
       mbCtx.fillText(MB_NOTES[s].label,8,y-3);
       lastLabelY=y;
     }
   }
-  const all=mbGhosts.concat(mbMarbles).slice().sort((a,b)=>
-    mbIso(a.gx+0.5,a.gy+0.5,0)[1]-mbIso(b.gx+0.5,b.gy+0.5,0)[1]);
+  /* One projection per marble per frame, not two per comparison: the sort used
+     to call mbIso inside the comparator, which is O(n log n) projections on a
+     plate that can hold eighty. */
+  const all=mbGhosts.concat(mbMarbles);
+  for(let i=0;i<all.length;i++) all[i]._sy=mbIso(all[i].gx+0.5,all[i].gy+0.5,0)[1];
+  all.sort((a,b)=>a._sy-b._sy);
   for(const m of all) mbDrawOne(m,now,m.ghost===true);
 }
 function mbStartRaf(){ if(!mbRaf) mbDraw(); }
@@ -1961,6 +2034,7 @@ function mbRebuildGhosts(){
   if(!mbShowBeat) return;
   const p=pat(); if(!p) return;
   for(let i=0;i<8;i++){
+    if(p.mutes[i]) continue;   // a muted track is not being played, so it has no ghost
     for(let st=0;st<16;st++){
       if(!p.tracks[i][st]) continue;
       mbGhosts.push({ghost:true,gx:st,gy:i*2,type:MB_TRACK_TYPE[i],shelf:4,
@@ -1970,6 +2044,21 @@ function mbRebuildGhosts(){
 }
 
 /* ---- input ---- */
+/* One step of undo, which is all a plate needs: it covers the three buttons
+   that can wipe work in a single tap (Clear, Remove, Demo). There is no undo
+   anywhere else in the studio, and a child who taps Clear next to Demo and
+   loses a morning has been failed by the app, not by their aim. */
+let mbUndoSnap=null;
+function mbPushUndo(){
+  mbUndoSnap=mbMarbles.map(m=>({gx:m.gx,gy:m.gy,type:m.type,shelf:m.shelf,
+    deg:m.deg,phase:m.phase,lastHit:-9}));
+  const b=document.getElementById("mb-undo"); if(b) b.style.display="inline-flex";
+}
+function mbUndo(){
+  if(!mbUndoSnap) return;
+  const back=mbUndoSnap; mbPushUndo();      // undo is its own undo
+  mbMarbles=back; mbSelect(null); saveSoon();
+}
 function mbSelect(m,silent){
   mbSelected=m;
   const rm=document.getElementById("mb-remove"), si=document.getElementById("mb-selinfo");
@@ -2089,18 +2178,27 @@ function mbWire(){
     if(!inPlate){ mbSelect(null); return; }
     const occ=mbMarbles.find(m=>m.gx===gx&&m.gy===gy);
     if(occ){ mbSelect(occ); return; }
+    if(mbMarbles.length>=MB_MAX_MARBLES){ toast("The plate is full. Take one off first"); return; }
     const m={gx:gx,gy:gy,type:mbSel.type,shelf:mbSel.shelf,deg:mbSel.deg,phase:0,lastHit:-9};
     mbMarbles.push(m);
     mbAudition(m);
-    mbSelect(null);
+    /* keep the new marble in hand: dropping one and then wanting it gone used
+       to cost a second tap to find it again before Remove would appear */
+    mbSelect(m,true);
     saveSoon();
   }
 
   document.getElementById("mb-zin").onclick=()=>{ mbZoom=Math.min(MB_ZMAX,mbZoom*1.2); mbCamDirty=true; };
   document.getElementById("mb-zout").onclick=()=>{ mbZoom=Math.max(MB_ZMIN,mbZoom/1.2); mbCamDirty=true; };
-  document.getElementById("mb-clear").onclick=()=>{ mbMarbles=[]; mbSelect(null); saveSoon(); };
+  document.getElementById("mb-fit").onclick=()=>{ mbResize(); mbFit(); };
+  document.getElementById("mb-undo").onclick=mbUndo;
+  document.getElementById("mb-clear").onclick=()=>{
+    if(!mbMarbles.length) return;
+    mbPushUndo(); mbMarbles=[]; mbSelect(null); saveSoon(); toast("Plate cleared. Undo is next to it");
+  };
   document.getElementById("mb-remove").onclick=()=>{
     if(!mbSelected) return;
+    mbPushUndo();
     mbMarbles=mbMarbles.filter(m=>m!==mbSelected);
     mbSelect(null); saveSoon();
   };
@@ -2108,18 +2206,21 @@ function mbWire(){
     if(mbPlates.length>=MB_MAX_PLATES){ toast("Six plates is the limit"); return; }
     const last=mbPlates[mbPlates.length-1];
     mbPlates.push({x0:last.x0+last.w+MB_PLATE_GAP,y0:last.y0,w:MB_PLATE_W,h:MB_PLATE_H});
-    mbCamDirty=true; saveSoon();
+    mbPlatesChanged(); mbFit(); saveSoon();
   };
   document.getElementById("mb-demo").onclick=()=>{
+    mbPushUndo();
     mbMarbles=[
       {gx:1,gy:14,type:"bass",  shelf:3,deg:0,phase:0},
       {gx:3,gy:12,type:"snare", shelf:3,deg:0,phase:0.5},
       {gx:5,gy:10,type:"hat",   shelf:1,deg:0,phase:0},
       {gx:6,gy:10,type:"hat",   shelf:1,deg:0,phase:0.5},
+      {gx:8,gy:12,type:"wood",  shelf:2,deg:0,phase:0.25},
       {gx:9,gy:5, type:"melody",shelf:2,deg:0,phase:0},
       {gx:11,gy:4,type:"melody",shelf:2,deg:2,phase:0.5},
       {gx:13,gy:3,type:"melody",shelf:3,deg:4,phase:0.25},
-      {gx:12,gy:7,type:"melody",shelf:4,deg:3,phase:0.75}
+      {gx:12,gy:7,type:"melody",shelf:4,deg:3,phase:0.75},
+      {gx:14,gy:6,type:"bell",  shelf:4,deg:6,phase:0.5}
     ].map(m=>Object.assign(m,{lastHit:-9}));
     mbSelect(null); saveSoon();
     if(!isPlaying) startBeat();
@@ -2154,10 +2255,10 @@ function mbBuildChips(){
       '"></span>'+MB_INSTR[k].label
   })),()=>mbSel.type,v=>{
     mbSel.type=v;
-    document.getElementById("mb-pitchrow").style.display=v==="melody"?"flex":"none";
+    document.getElementById("mb-pitchrow").style.display=mbPitched(v)?"flex":"none";
     if(mbSelected){ mbSelected.type=v; mbSelInfo(); mbAudition(mbSelected); saveSoon(); }
   });
-  document.getElementById("mb-pitchrow").style.display=mbSel.type==="melody"?"flex":"none";
+  document.getElementById("mb-pitchrow").style.display=mbPitched(mbSel.type)?"flex":"none";
 
   mbChips("mb-noterow",MB_NOTES.map((n,i)=>({value:i,html:n.label})).reverse(),
     ()=>mbSel.shelf,v=>{

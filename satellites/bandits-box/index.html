@@ -1083,6 +1083,11 @@ function Friction(cfg){
   }catch(e){ ok=false; }
   var v={
     keep: !!cfg.keep,
+    /* Readable from outside, because a voice can be stopped by the watchdog or
+       by a toy switch while the toy that made it still holds the reference.
+       A toy that keeps calling set() on a stopped voice is silent and has no
+       way to know why — see the spinner. */
+    dead:false,
     set:function(speed,press,pan){
       if(!ok||dead) return;
       try{
@@ -1102,7 +1107,7 @@ function Friction(cfg){
       }catch(e){}
     },
     stop:function(){
-      if(dead) return; dead=true; dropLive(v);
+      if(dead) return; dead=true; v.dead=true; dropLive(v);
       if(!ok) return; ok=false;
       try{
         var t=AC.currentTime;
@@ -1140,7 +1145,7 @@ function Stretch(cfg){
     osc.start(); nsrc.start(); ok=true;
   }catch(e){ ok=false; }
   var v={
-    keep:false,
+    keep:false, dead:false,
     set:function(tension,pan){
       if(!ok||dead) return;
       try{
@@ -1159,7 +1164,7 @@ function Stretch(cfg){
       }catch(e){}
     },
     stop:function(){
-      if(dead) return; dead=true; dropLive(v);
+      if(dead) return; dead=true; v.dead=true; dropLive(v);
       if(!ok) return; ok=false;
       try{
         var t=AC.currentTime;
@@ -1227,6 +1232,30 @@ var V = {
   clack:function(pan,semi,row){ row=row||0;
     noiseHit({dur:.014,type:'bandpass',freq:1900-row*70,Q:10,gain:.26,pan:pan});
     tone({f0:420-row*18,f1:230,dur:.04,gain:.11,wave:'square',pan:pan}); },
+  /* Chocolate. Its own voice rather than borrowing snap, because the snap bank
+     is press studs and a recorded chocolate bar would then fire on the popper
+     studs and the toggles as well. freq and gain come from the flavour, so the
+     three bars keep their different timbres, and semi pitches a recording. */
+  crack:function(pan,semi,f,g){
+    noiseHit({dur:.03,type:'bandpass',freq:f||2100,Q:9,gain:g||.26,pan:pan});
+    tone({f0:420,f1:150,bend:.05,dur:.09,gain:.18,wave:'square',pan:pan});
+    setTimeout(function(){ noiseHit({dur:.08,type:'lowpass',freq:600,gain:.13,pan:pan}); },40);
+    for(var k=0;k<5;k++)(function(k){ setTimeout(function(){
+      V.grain(pan,900+Math.random()*1600,0.035); },60+k*35); })(k); },
+  /* Bubble wrap. Drier and higher than the pop-it on purpose: more click, less
+     boing. Different bubble, different bank. */
+  burst:function(pan,semi,press){
+    var f=430*Math.pow(2,(semi||0)/12);
+    tone({f0:f,f1:f*3.1,bend:0.028,dur:0.045,gain:0.26,pan:pan});
+    noiseHit({dur:.02,type:'bandpass',freq:2600+Math.random()*900,Q:6,
+              gain:0.13+0.1*clamp(press==null?0.5:press,0,1),pan:pan}); },
+  /* Edamame: a bean shoved out of the pod, and pushed back in. */
+  bean:function(pan,semi){ var f=300*Math.pow(2,(semi||0)/12);
+    V.squish(pan);
+    tone({f0:f,f1:f*2.1,bend:.05,dur:.09,gain:.24,pan:pan}); },
+  unbean:function(pan,semi){ var f=420*Math.pow(2,(semi||0)/12);
+    tone({f0:f,f1:f*.48,bend:.06,dur:.1,gain:.16,pan:pan});
+    noiseHit({dur:.07,type:'lowpass',freq:700,gain:.13,pan:pan}); },
   /* release of a stretched thing: the snap-back */
   boing:function(pan,tension){ var t=clamp(tension||.5,0,1);
     tone({f0:120+t*260,f1:60+t*90,bend:.16,dur:.26,gain:.1+t*.2,wave:'triangle',pan:pan});
@@ -1398,9 +1427,15 @@ var RIPCOLOR={pop:'#9FD6C0',unpop:'#7FB8A4',tap:'#F2B79E',crinkle:'#C3B0E0',grai
   hinge:'#A8C8E8',boing:'#C3B0E0',zip:'#EFD9A0',airout:'#A8C8E8',
   /* the two switch directions keep the colours the wall always used:
      green going on, blue going off */
-  click:'#9FD6C0',clack:'#A8C8E8'};
+  click:'#9FD6C0',clack:'#A8C8E8',
+  /* toys that used to draw their own ripple inline and so could never take a
+     recording: chocolate, bubble wrap, edamame */
+  crack:'#EFD9A0',burst:'#A8C8E8',bean:'#B6CE7E',unbean:'#7FA85C',
+  /* new toys */
+  rattle:'#D8C39A',ring:'#EFD9A0',land:'#B6AEC4'};
 var BUZZ_MS={pop:9,tap:7,thunk:26,squish:16,squeak:12,bell:8,latch:14,snap:13,rib:5,plink:6,
-  rip:20,boing:18,zip:14,airout:10,click:10,clack:10};
+  rip:20,boing:18,zip:14,airout:10,click:10,clack:10,
+  crack:18,burst:8,bean:11,unbean:9,rattle:6,ring:5,land:14};
 var CAN_BUZZ=(typeof navigator.vibrate==='function');
 
 function feel(name,x,y){
@@ -2267,19 +2302,31 @@ $$('.weights button').forEach(function(btn){
     if(Math.abs(spinOmega)<0.00003) spinOmega=0;
   }
   var sp=clamp(Math.abs(spinOmega)/0.03,0,1);
+  var here=(curToy==='spin');
   if(spinGrp){
     var deg=spinAng*180/Math.PI;
     spinGrp.setAttribute('transform','rotate('+deg.toFixed(2)+' 100 100)');
     spinGrp.style.filter = sp>0.06 ? ('blur('+(sp*cfg.blur/44).toFixed(2)+'px)') : '';
   }
+  /* Switching toys force stops every voice including this one, and the spinner
+     keeps its momentum while you are away. Coming back to one still turning
+     used to be SILENT for the rest of the spin, because spinVoice still held a
+     stopped object and set() on a stopped voice does nothing. Let go of a dead
+     voice and build a fresh one. */
+  if(spinVoice&&spinVoice.dead) spinVoice=null;
+  if(!spinVoice&&here&&sp>0.02&&audioOK)
+    spinVoice=Friction({lo:cfg.whirLo,hi:cfg.whirHi,Q:5.5,gain:0.15,
+                        body:220,bodyMix:0.5,keep:true});
   if(spinVoice){
-    spinVoice.set(sp,0.75,0);
-    if(sp<0.01&&!spinDown){ spinVoice.stop(); spinVoice=null; }
+    spinVoice.set(here?sp:0,0.75,0);
+    if((sp<0.01&&!spinDown)||!here){ spinVoice.stop(); spinVoice=null; }
   }
   // one tick per lobe passing the top
   var lobe=Math.floor(spinAng/(2*Math.PI/3));
   if(lobe!==spinLobe){
-    if(sp>0.02 && now-spinTickT>42){
+    // never from off screen: a spinner left turning used to tick away over
+    // whatever toy you moved on to
+    if(here && sp>0.02 && now-spinTickT>42){
       spinTickT=now;
       V.rib(0, cfg.tickF+Math.random()*160, cfg.tickG*(0.35+0.65*sp));
     }
@@ -2916,6 +2963,9 @@ cradleSvg.addEventListener('pointercancel',safe(cradleUp));
   drawCradle();
 })();
 function clack(v){
+  // A cradle left swinging keeps its physics while you are on another toy, and
+  // it used to keep CLACKING there too. Motion travels, sound does not.
+  if(curToy!=='cradle') return;
   var amt=clamp(v/0.03,0.05,1);
   V.rib(0,900+amt*700,0.06+amt*0.22);
   tone({f0:300+amt*260,f1:180,dur:0.06,gain:0.05+amt*0.12,wave:'triangle',pan:0});
@@ -3524,9 +3574,19 @@ function blnLetGo(x,y){
 }
 function blnTick(){
   requestAnimationFrame(blnTick);
+  /* A finger can vanish without a pointerup: the app going to the background
+     mid hold, or a toy switch. The balloon used to stay held by nobody, filling
+     itself in silence with a stopped voice and no release coming. If nothing is
+     touching the screen, nothing is holding the balloon. */
+  if(blnHold&&pointersDownCount()===0){
+    blnHold=false;
+    if(blnVoice){ blnVoice.stop(); blnVoice=null; }
+  }
   if(curToy!=='bln'){ if(blnFade&&!blnHold){ blnFade=0; } return; }
   if(blnFade<1&&!blnFly) blnFade=Math.min(1,blnFade+0.06);
   if(blnHold){
+    if(blnVoice&&blnVoice.dead) blnVoice=null;      // stopped from outside
+    if(!blnVoice&&audioOK) blnVoice=Stretch({f0:74,rise:2.4,gain:0.16});
     blnR=Math.min(BLN_MAX,blnR+(S.calm?0.55:0.85));
     if(blnVoice) blnVoice.set((blnR-BLN_MIN)/(BLN_MAX-BLN_MIN),blnPan);
   }else if(blnFly){
@@ -3901,9 +3961,17 @@ function pointerDrop(e){
 window.addEventListener('pointerdown',pointerAdd,true);
 window.addEventListener('pointerup',pointerDrop,true);
 window.addEventListener('pointercancel',pointerDrop,true);
-// touchscreens fire pointerout for the same finger as well — harmless now
+/* A finger that is still pressed has NOT left. This listener used to drop any
+   touch pointer that fired pointerout, and it was not harmless: calling
+   setPointerCapture retargets the pointer, so the browser fires pointerout at
+   the element the gesture STARTED on, one move into the stroke. The register
+   emptied while the finger was still down, the 600 ms watchdog then decided
+   nothing was being touched, and every friction bed died mid rub. Desktop
+   never showed it — the guard below only ever let touch through, and a mouse
+   does not take this path. Checking buttons keeps the real lift (buttons 0,
+   fired after pointerup) and ignores the retarget (buttons 1). */
 window.addEventListener('pointerout',function(e){
-  if(e.pointerType==='touch') pointerDrop(e);
+  if(e.pointerType==='touch' && !e.buttons) pointerDrop(e);
 },true);
 
 /* leaving the app for ANY reason kills everything and suspends

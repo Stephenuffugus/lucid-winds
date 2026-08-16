@@ -409,6 +409,18 @@ var CONFIG = Object.freeze({
   NODE_W: Object.freeze({ vein: 45, pocket: 15, shrine: 8, cache: 7, empty: 25 }),
   VEIN_COUNT_W: Object.freeze([[1, 20], [2, 35], [3, 45]]),
 
+  /* Seam richness. HANDOFF 3.4 gives each band a tier RANGE and the first build
+     rolled it flat, which meant a meter of extra descent inside a band bought
+     you nothing. Every policy in the sweep turns around inside SHALE, so a flat
+     roll made a careful digger and a perfect digger mine identical rock and the
+     3.8 "cautious banks 35 to 50 percent of optimal" bound could not be reached
+     by any amount of pack or air tuning. This biases the roll toward the rich
+     end of the band by how deep into the band the seam sits: 0 reproduces the
+     old flat roll, 1 means the roof of a band is all bottom tier and the floor
+     of it all top tier. Band ranges, ore table and every other specced number
+     are untouched. See BUILD-NOTES.md section 3. */
+  TIER_DEPTH_BIAS: 0.92,
+
   /* TUNE block. Starting points came from HANDOFF section 3.6 (pocket 25 to 40);
      every value here was moved by the sweep, see BUILD-NOTES.md. */
   TUNE: Object.freeze({
@@ -431,6 +443,14 @@ var CONFIG = Object.freeze({
   SEC_PER_DEPTH_TRAVELLED: 0.15,
   SEC_SHOP_VISIT: 18,
   RUNS_PER_SESSION: 4,
+
+  /* the shop ladder exponent. HANDOFF 3.7 writes "base x 2.1^level" AND
+     "full clear approximately 11,400 cash" and those two cannot both be true:
+     2.1 sums to 15,253 over the six specced tracks. 1.9 sums to 11,273, which
+     is the spec's own stated total, so the exponent is the number that was
+     wrong. Swept further down to land the 3.7 runs to full clear target, see
+     BUILD-NOTES.md section 3. */
+  COST_EXP: 1.62,
 
   SHOP: Object.freeze({
     tank:  { name: 'TANK',  base: 60,  levels: 5, blurb: 'AIR PLUS 16' },
@@ -526,6 +546,23 @@ function hazardRateAt(depth, bonus) {
   if (base > CONFIG.HAZARD_RATE_CAP) base = CONFIG.HAZARD_RATE_CAP;
   return base;
 }
+/* how rich this exact meter of a band is, 0 at its roof and 1 at its floor.
+   Also read straight out by the VIEW so the player can see the seam thicken. */
+function richnessAt(depth) {
+  var band = bandAt(depth);
+  var span = (isFinite(band.to) ? band.to : band.from + 100) - band.from;
+  var pos = span > 0 ? (depth - band.from) / span : 1;
+  return pos < 0 ? 0 : (pos > 1 ? 1 : pos);
+}
+function tierChanceAt(depth) {
+  return (1 - CONFIG.TIER_DEPTH_BIAS) * 0.5 + CONFIG.TIER_DEPTH_BIAS * richnessAt(depth);
+}
+function pickTier(r, band, depth) {
+  var lo = band.tiers[0], hi = band.tiers[1], k, t = lo, p = tierChanceAt(depth);
+  for (k = lo; k < hi; k++) if (r() < p) t++;
+  return t;
+}
+
 var HAZARDS = Object.freeze([
   { key: 'gas',      name: 'GAS POCKET',  line: 'Something sour bleeds out of the wall.' },
   { key: 'collapse', name: 'COLLAPSE',    line: 'The roof lets go behind you.' },
@@ -579,7 +616,7 @@ function genNode(seed, i, prevDepth, heartPlaced) {
       var count = r.weighted(CONFIG.VEIN_COUNT_W.slice());
       var k;
       for (k = 0; k < count; k++) {
-        var tier = r.range(band.tiers[0], band.tiers[1]);
+        var tier = pickTier(r, band, depth);
         n.ore.push(r.pick(ORES_BY_TIER[tier]));
       }
     }
@@ -1033,7 +1070,7 @@ function upgradeCost(track, level) {
   var t = CONFIG.SHOP[track];
   if (!t) return Infinity;
   if (level >= t.levels) return Infinity;
-  return Math.round(t.base * Math.pow(2.1, level));
+  return Math.round(t.base * Math.pow(CONFIG.COST_EXP, level));
 }
 function fullClearCost() {
   var total = 0, k, i;
@@ -1696,7 +1733,15 @@ function suiteSave(T) {
   T.eq('buying raises the level', sv.upg.tank, 1);
   shopBuy(sv, 'tank');
   T.eq('buying with no cash changes nothing', sv.upg.tank, 1);
-  T.eq('the second tank level costs one hundred and twenty six', upgradeCost('tank', 1), 126);
+  T.eq('the second tank level walks up the cost ladder', upgradeCost('tank', 1), Math.round(60 * CONFIG.COST_EXP));
+  T.assert('every track gets dearer every level', (function () {
+    var k, l, ok = true;
+    for (k in CONFIG.SHOP) for (l = 1; l < CONFIG.SHOP[k].levels; l++) if (upgradeCost(k, l) <= upgradeCost(k, l - 1)) ok = false;
+    return ok;
+  })());
+  T.assert('the last level of a track costs more than the first three together', (function () {
+    return upgradeCost('tank', 4) > upgradeCost('tank', 0) + upgradeCost('tank', 1) + upgradeCost('tank', 2) - 1;
+  })(), 'exp ' + CONFIG.COST_EXP);
   T.eq('brace stops at three levels', upgradeCost('brace', 3), Infinity);
   sv.cash = 999999; sv.upg.brace = 3;
   shopBuy(sv, 'brace');
