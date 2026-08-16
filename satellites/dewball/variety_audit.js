@@ -4,14 +4,16 @@
  * redundant same little things you're picking up finishing your last minute on
  * the level. it's dumb and not fun."
  *
- * LANDMARKS.md measured that complaint ONCE, by hand, before the landmark tier
- * existed. Measuring it by hand again after every batch is how a number quietly
- * stops being true, so this is the instrument. It reports, per world:
+ * This is the instrument for that complaint. It reports, per world:
  *
- *   - late kinds     distinct kinds at >= goal/3, i.e. what the ball is big
- *                    enough to eat in the closing minutes. This is THE number.
- *   - one-offs       late kinds placed exactly once — the anti-wheelbarrow count.
- *   - worst repeats  the kinds you eat over and over at the end.
+ *   - late kinds     distinct kinds at >= goal/3, the historical yardstick that
+ *                    LANDMARKS.md's tables are written in. Kept for continuity.
+ *   - CLOSING MENU   ⭐ THE HONEST NUMBER. Every object is dated: the ball
+ *                    diameter at which the pickup ladder first lets you eat it.
+ *                    The closing menu is everything you can only eat AT OR AFTER
+ *                    the two-star bar, which is what "the last minutes" actually
+ *                    means. goal/3 was always a proxy; this is the thing itself.
+ *   - one-offs       closing kinds placed exactly once — the anti-wheelbarrow count.
  *   - COLLISIONS     a landmark whose silhouette already exists in its OWN
  *                    world's scatter. A bigger teapot among 77 teapots is still
  *                    a redundant same thing, so this is a defect, not a note.
@@ -19,124 +21,220 @@
  * ⛔ Not a gate. It prints numbers a human has to judge. Run it after every
  *    scene or landmark batch, and re-check the tightest world's clock too.
  *
- * Run: NODE_PATH=/workspaces/lucid-winds/node_modules node variety_audit.js
+ * Run:  node variety_audit.js            (no browser, ~6 seconds)
+ *       node variety_audit.js --selftest (just prove the instrument still bites)
+ *
+ * ------------------------------------------------------------------------
+ * 2026-08-16 AUDIT — two things were wrong with the previous version and both
+ * of them are the same failure mode this project keeps re-learning.
+ *
+ * ⛔⛔ THE COLLISION CHECK COULD NOT FAIL. It compared kinds against a hand
+ *     written FAMILY table listing lmCakeStand, lmTeapotHill, lmDollHouse,
+ *     lmSundial and lmRocketStand — five landmarks that were DELETED in the
+ *     same commit that fixed the collisions they found. So the table's landmark
+ *     half referenced kinds no world places any more, every family came back
+ *     with one member, and the audit had printed a confident "none" ever since.
+ *     A hand-maintained list of the defects you already fixed cannot find the
+ *     next one. Families are DERIVED now, from the kind ids and display names of
+ *     whatever the world actually contains, and the derivation is self-tested
+ *     below against a fixture that must produce a hit.
+ *
+ * ⛔ IT NEEDED CHROMIUM. Nothing in it renders, so it never did. It now boots
+ *    the real game in plain node through node_harness.js. Proof the harness is
+ *    the same engine and not a model of it: every world's absorbAll ceiling comes
+ *    back identical to the decimal to the figures LANDMARKS.md recorded from the
+ *    browser (325.4 / 677.5 / 1607.0 / 2804.3 / 6090.5 / 12677.3).
  */
-var puppeteer = require('puppeteer'), path = require('path');
-var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
+var H = require('./node_harness.js');
 
-/* Silhouette families. Two kinds in the same family read as THE SAME THING at a
-   distance, which is the only thing that matters for this complaint — a landmark
-   is a shape you have not seen before. Keyed by the base kind so a landmark can
-   declare which family it joins. */
-var FAMILY = {
-  teapot:'teapot', lmTeapotHill:'teapot',
-  cakestand:'cake', lmCakeStand:'cake',
-  dovecote:'dovecote', lmDovecote:'dovecote',
-  booktower:'bookstack', lmBookTower:'bookstack',
-  dollhouse:'house', lmDollHouse:'house',
-  sundial:'sundial', lmSundial:'sundial',
-  kTinRocket:'rocket', lmRocketStand:'rocket',
-  clocktower:'clocktower', lmClockTower:'clocktower'
-};
+/* --- the pickup ladder, mirrored from index.html (prRatio) ----------------
+   ⛔ this is the ONE thing this file mirrors, because the ladder decides what
+   "late" means. If PICKUP_RATIO/PICKUP_RAMP ever move, move them here too —
+   ladderSelfTest below will not catch a silent retune, only a broken solver. */
+function prRatio(D){ var t=Math.log(D/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1;
+  return 0.55+0.17*t; }
+/* smallest ball diameter that can eat an object of size s (f(D)=D*prRatio(D)
+   is strictly increasing, so bisect) */
+function eatAt(s){
+  var lo=0.01, hi=Math.max(4, s*4), i;
+  while (hi*prRatio(hi) < s) hi *= 2;
+  for (i=0;i<60;i++){ var m=(lo+hi)/2; if (m*prRatio(m) < s) lo=m; else hi=m; }
+  return hi;
+}
 
-(async function(){
-  var browser = await puppeteer.launch({ headless:'new', args:[
-    '--no-sandbox','--disable-setuid-sandbox','--enable-unsafe-swiftshader',
-    '--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist' ] });
-  var page = await browser.newPage();
-  var errs = [];
-  page.on('pageerror', function(e){ errs.push(String(e)); });
-  await page.goto(url, { waitUntil:'networkidle0' });
-  await page.waitForFunction('window.DB_DEV && window.DB_DEV.start', { timeout:8000 });
+/* --- silhouette families, DERIVED ----------------------------------------
+   Two kinds read as the same thing at a distance when they are the same object.
+   The game already says so, twice, in the only two places a human ever writes it
+   down: the kind id and the display name. "lmDovecote" against "dovecote",
+   "The Great Teapot" against "Tea Pot". So tokenize both and look for a shared
+   noun. This finds pairs nobody remembered to enumerate, which is the entire
+   point — the old hand table only knew the six collisions that had already been
+   found and fixed. */
+var STOP = { the:1, of:1, a:1, and:1, old:1, great:1, little:1, big:1, grand:1,
+             tall:1, small:1, giant:1, new:1, house:0 };
+function tokens(id, nm){
+  var t = {}, i, w;
+  var idw = String(id).replace(/^lm/, '').replace(/^k([A-Z])/, '$1')
+              .replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase().split(/[^a-z0-9]+/);
+  var nmw = String(nm||'').toLowerCase().split(/[^a-z0-9]+/);
+  for (i=0;i<idw.length;i++){ w=idw[i]; if(w.length>2&&!STOP[w]) t[w]=1; }
+  for (i=0;i<nmw.length;i++){ w=nmw[i]; if(w.length>2&&!STOP[w]) t[w]=1; }
+  /* crude but effective de-pluralising: "stones" and "stone" are one shape */
+  var out={}, k; for(k in t){ out[k.replace(/s$/,'')]=1; }
+  return out;
+}
+function shareShape(a, b){
+  var ta = tokens(a.k, a.nm), tb = tokens(b.k, b.nm), k;
+  for (k in ta) if (tb[k]) return k;
+  /* whole-word containment catches "booktower" vs "lmBookTower" style joins
+     that the camelCase splitter cannot see on the base kind */
+  var sa = String(a.k).replace(/^lm/,'').toLowerCase(), sb = String(b.k).toLowerCase();
+  if (sa.length > 4 && (sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0)) return sa;
+  return null;
+}
 
-  /* ⛔ worlds() does not carry a display name, and the array order is
-     w1..w5, w7, w6 — so level 6 is The Whole World and level 7 is Dream Meadow.
-     Map by LEVEL number, never by array index. */
-  var NAME = { 1:'w1 Crumb Country', 2:'w2 Toybox Peaks', 3:'w3 Night Garden',
-               4:'w4 Bazaar Lane', 5:'w5 Starfall Bay', 6:'w7 Whole World',
-               7:'zen Dream Meadow' };
-  var worlds = await page.evaluate(function(){
-    return window.DB_DEV.worlds().map(function(w){
-      return { n:w.n, goal:w.goal, zen:!!w.zen };
-    });
-  });
-  worlds.forEach(function(w){ w.w = NAME[w.n] || ('lvl'+w.n); });
+/* --- ⚖️ THE INSTRUMENT HAS TO BITE, so prove it every run -----------------
+   A probe that cannot fail is not evidence. These fixtures are the exact
+   defects this file exists to find; if it stops finding them it exits 2 rather
+   than printing a clean report. */
+function selfTest(){
+  var fails = [];
+  /* 1. the historical collisions must still be detectable */
+  var pairs = [
+    [{k:'lmTeapotHill',nm:'The Great Teapot'}, {k:'teapot',nm:'Tea Pot'}],
+    [{k:'lmCakeStand', nm:'The Fondant Tower'},{k:'cakestand',nm:'Cake Stand'}],
+    [{k:'lmDollHouse', nm:"The Doll's House"}, {k:'dollhouse',nm:"Doll's House"}],
+    [{k:'lmSundial',   nm:'The Moon Sundial'}, {k:'sundial',nm:'Sundial'}],
+    [{k:'lmBookTower', nm:'The Leaning Library'},{k:'booktower',nm:'Book Tower'}],
+    [{k:'lmClockTower',nm:'The Saffron Clock'}, {k:'clocktower',nm:'Clock Tower'}]
+  ];
+  for (var i=0;i<pairs.length;i++)
+    if (!shareShape(pairs[i][0], pairs[i][1]))
+      fails.push('collision detector MISSED ' + pairs[i][0].k + ' vs ' + pairs[i][1].k);
+  /* 2. and it must not fire on things that genuinely look nothing alike */
+  var apart = [
+    [{k:'lmGramophone',nm:'The Gramophone'}, {k:'teapot',nm:'Tea Pot'}],
+    [{k:'lmHelterSkelter',nm:'The Helter Skelter'}, {k:'rowboat',nm:'Rowing Boat'}],
+    [{k:'lmLongClock',nm:'The Longcase Clock'}, {k:'cracker',nm:'Cream Cracker'}]
+  ];
+  for (i=0;i<apart.length;i++){ var f = shareShape(apart[i][0], apart[i][1]);
+    if (f) fails.push('collision detector FALSE POSITIVE ' + apart[i][0].k + ' vs ' +
+                      apart[i][1].k + ' on "' + f + '"'); }
+  /* 3. the ladder solver must invert the game's own rule */
+  var probes = [4, 24, 170, 900, 2200, 5200];
+  for (i=0;i<probes.length;i++){ var D = eatAt(probes[i]);
+    if (Math.abs(D*prRatio(D) - probes[i]) > probes[i]*0.001)
+      fails.push('eatAt(' + probes[i] + ') does not invert prRatio'); }
+  if (eatAt(100) <= eatAt(10)) fails.push('eatAt is not monotonic');
+  return fails;
+}
 
-  var out = [];
-  for (var i=0;i<worlds.length;i++){
-    var W = worlds[i];
-    await page.evaluate(function(n){ window.DB_DEV.start('level', n); }, W.n);
-    await new Promise(function(r){ setTimeout(r, 450); });
+var st = selfTest();
+if (st.length){
+  console.error('⛔ VARIETY AUDIT SELF-TEST FAILED — the instrument is broken, not the game:');
+  st.forEach(function(f){ console.error('   ' + f); });
+  process.exit(2);
+}
+if (process.argv.indexOf('--selftest') > 1){
+  console.log('variety_audit self-test OK (' + 6 + ' collision fixtures, 3 negatives, ladder solver)');
+  process.exit(0);
+}
 
-    var data = await page.evaluate(function(){
-      var st = window.DB_DEV.state(), by = {};
-      for (var j=0;j<st.objects.length;j++){
-        var o = st.objects[j];
-        if (!by[o.k]) by[o.k] = { k:o.k, n:0, s:o.s };
-        by[o.k].n++;
-        if (o.s > by[o.k].s) by[o.k].s = o.s;
-      }
-      return Object.keys(by).map(function(k){ return by[k]; });
-    });
-    out.push({ W:W, kinds:data });
+/* ------------------------------------------------------------------------ */
+var D = H.boot({ seed: +(process.argv[2] || 12345) || 12345 });
+var PROPS = D.props();
+function nameOf(k){ return (PROPS[k] && PROPS[k].nm) || k; }
+function volOf(k, s){ var f = (PROPS[k] && PROPS[k].volF) || 1;
+  return 0.75 * (Math.PI/6) * s*s*s * f; }
+
+var worlds = D.worlds(), out = [];
+worlds.forEach(function(W){
+  D.start('level', W.n);
+  var s = D.state(), by = {}, i, o, b;
+  for (i=0;i<s.objects.length;i++){
+    o = s.objects[i];
+    b = by[o.k] || (by[o.k] = { k:o.k, nm:nameOf(o.k), n:0, s:0, smin:1e18, fixed:!!o.f, mover:!!o.m, vol:0 });
+    b.n++; b.vol += volOf(o.k, o.s);
+    if (o.s > b.s) b.s = o.s;
+    if (o.s < b.smin) b.smin = o.s;
   }
-  await browser.close();
+  var ceil = D.absorbAll();
+  out.push({ W:W, kinds:Object.keys(by).map(function(k){ return by[k]; }), ceil:ceil });
+});
 
-  console.log('DEWBALL ENDGAME VARIETY  (late = size >= goal/3)\n');
-  var head = 'lvl  world  goal      total  kinds  late  one-offs  landmarks';
-  console.log(head); console.log('-'.repeat(head.length));
-  var collisions = [];
-  out.forEach(function(r){
-    var goal = r.W.goal, cut = goal/3;
-    var late = r.kinds.filter(function(k){ return k.s >= cut; });
-    var ones = late.filter(function(k){ return k.n === 1; });
-    var lms  = r.kinds.filter(function(k){ return /^lm/.test(k.k); });
-    console.log(
-      String(r.W.n).padEnd(5) + String(r.W.w).padEnd(7) +
-      String(goal+'cm').padEnd(10) +
-      String(r.kinds.reduce(function(a,k){return a+k.n;},0)).padEnd(7) +
-      String(r.kinds.length).padEnd(7) + String(late.length).padEnd(6) +
-      String(ones.length).padEnd(10) + lms.length);
+/* the zen world has no goal or star bars; date its closing stretch off its own
+   ceiling instead, or it silently reports its entire contents as "late" */
+function bars(r){
+  var W = r.W;
+  if (!W.zen) return { goal:W.goal, s2:W.s2, s3:W.s3 };
+  return { goal:Math.round(r.ceil*0.25), s2:Math.round(r.ceil*0.58), s3:Math.round(r.ceil*0.85) };
+}
 
-    /* silhouette collisions inside this world */
-    var fams = {};
-    r.kinds.forEach(function(k){
-      var f = FAMILY[k.k]; if (!f) return;
-      (fams[f] = fams[f] || []).push(k);
+console.log('DEWBALL ENDGAME VARIETY   (node harness, seed ' + (process.argv[2]||12345) + ')\n');
+var head = 'lvl  world               goal      total  kinds  late  CLOSING  one-offs  landmarks';
+console.log(head); console.log('-'.repeat(head.length));
+out.forEach(function(r){
+  var B = bars(r), cut = B.goal/3;
+  var late = r.kinds.filter(function(k){ return k.s >= cut; });
+  var close = r.kinds.filter(function(k){ return k.s >= B.s2 * prRatio(B.s2); });
+  var ones = close.filter(function(k){ return k.n === 1; });
+  var lms  = r.kinds.filter(function(k){ return /^lm/.test(k.k); });
+  r._late = late; r._close = close; r._bars = B;
+  console.log(
+    String(r.W.n).padEnd(5) + String(r.W.id + ' ' + r.W.nm).padEnd(20) +
+    String(B.goal + 'cm').padEnd(10) +
+    String(r.kinds.reduce(function(a,k){ return a+k.n; }, 0)).padEnd(7) +
+    String(r.kinds.length).padEnd(7) + String(late.length).padEnd(6) +
+    String(close.length).padEnd(9) + String(ones.length).padEnd(10) + lms.length);
+});
+
+console.log('\nTHE CLOSING MENU  (only edible at or after the ★★ bar — what the last minutes taste like)');
+console.log('   share = of everything eaten in that stretch, by COUNT / by VOLUME');
+out.forEach(function(r){
+  var tot = 0, vol = 0;
+  r._close.forEach(function(k){ tot += k.n; vol += k.vol; });
+  console.log('  ' + r.W.id + ' ' + r.W.nm + '   ★★ ' + r._bars.s2 + 'cm  ->  ceiling ' +
+              Math.round(r.ceil) + 'cm   (' + tot + ' objects across ' + r._close.length + ' kinds)');
+  r._close.slice().sort(function(a,b){ return b.n - a.n; }).slice(0,6).forEach(function(k){
+    console.log('      ' + String(k.n + 'x').padStart(6) + '  ' + String(k.nm).padEnd(24) +
+      String(Math.round(k.n/tot*100) + '%').padStart(5) + ' / ' +
+      String(Math.round(k.vol/vol*100) + '%').padStart(4) + '  ' + Math.round(k.s) + 'cm' +
+      (k.fixed ? '  [wall/structure]' : ''));
+  });
+});
+
+console.log('\nEVERY CLOSING KIND PER WORLD  (pick new landmark shapes against these)');
+out.forEach(function(r){
+  console.log('  ' + r.W.id + ' ' + r.W.nm + ':');
+  console.log('    ' + r._close.map(function(k){ return k.k; }).sort().join(' '));
+});
+
+/* --- collisions ----------------------------------------------------------- */
+console.log('\nSILHOUETTE COLLISIONS  (landmark duplicating a shape in its own world)');
+var nColl = 0;
+out.forEach(function(r){
+  var lms = r.kinds.filter(function(k){ return /^lm/.test(k.k); });
+  var base = r.kinds.filter(function(k){ return !/^lm/.test(k.k); });
+  lms.forEach(function(L){
+    base.forEach(function(Bk){
+      var on = shareShape(L, Bk); if (!on) return;
+      nColl++;
+      console.log('  ' + r.W.id + '  "' + on + '":  ' + L.k + ' ' + L.nm + ' ' +
+        Math.round(L.s) + 'cm x' + L.n + '   vs   ' + Bk.k + ' ' + Bk.nm + ' ' +
+        Math.round(Bk.s) + 'cm x' + Bk.n + (Bk.s >= L.s ? '   ⛔ LANDMARK IS NOT THE BIGGER ONE' : ''));
     });
-    Object.keys(fams).forEach(function(f){
-      var g = fams[f];
-      if (g.length < 2) return;
-      var lm = g.filter(function(x){ return /^lm/.test(x.k); });
-      if (!lm.length) return;
-      collisions.push({ w:r.W.w, fam:f, members:g });
-    });
   });
+});
+if (!nColl) console.log('  none  (detector self-tested against 6 known collisions this run)');
 
-  console.log('\nWORST LATE REPEATS  (what the closing minutes actually taste like)');
-  out.forEach(function(r){
-    var cut = r.W.goal/3;
-    var late = r.kinds.filter(function(k){ return k.s >= cut; })
-                      .sort(function(a,b){ return b.n - a.n; }).slice(0,5);
-    console.log('  ' + String(r.W.w).padEnd(6) +
-      late.map(function(k){ return k.k+' x'+k.n; }).join(', '));
-  });
-
-  console.log('\nEVERY LATE KIND PER WORLD  (pick new landmark shapes against these)');
-  out.forEach(function(r){
-    var cut = r.W.goal/3;
-    var late = r.kinds.filter(function(k){ return k.s >= cut; })
-                      .sort(function(a,b){ return a.k.localeCompare(b.k); });
-    console.log('  ' + r.W.w + '  (>=' + Math.round(cut) + 'cm):');
-    console.log('    ' + late.map(function(k){ return k.k; }).join(' '));
-  });
-
-  console.log('\nSILHOUETTE COLLISIONS  (landmark duplicating a shape in its own world)');
-  if (!collisions.length) console.log('  none');
-  collisions.forEach(function(c){
-    console.log('  ' + c.w + '  family "' + c.fam + '":  ' +
-      c.members.map(function(m){ return m.k+' '+Math.round(m.s)+'cm x'+m.n; }).join('   vs   '));
-  });
-
-  console.log('\n' + (errs.length ? ('PAGE ERRORS: '+errs.join(' | ')) : 'no page errors'));
-})().catch(function(e){ console.error('AUDIT FAILED: '+e.message); process.exit(1); });
+/* --- the anti-wheelbarrow count ------------------------------------------- */
+console.log('\nWORST CLOSING REPEATS  (one kind eaten over and over is the complaint)');
+out.forEach(function(r){
+  var tot = 0; r._close.forEach(function(k){ tot += k.n; });
+  var top = r._close.slice().sort(function(a,b){ return b.n - a.n; })[0];
+  if (!top) { console.log('  ' + r.W.id + '  (no closing stretch)'); return; }
+  var flag = (top.n/tot > 0.25) ? '  ⛔ over a quarter of the closing stretch is ONE kind' : '';
+  console.log('  ' + String(r.W.id).padEnd(4) + String(top.nm).padEnd(24) + 'x' +
+    String(top.n).padEnd(6) + Math.round(top.n/tot*100) + '% of closing pickups' + flag);
+});
+console.log('');

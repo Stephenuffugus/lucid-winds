@@ -38,11 +38,48 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #scrapv{color:var(--warm)}
 #wavev{color:var(--accent)}
 
+/* ---------- field: watch board on top, lane strip on the floor ---------- */
+#field{flex:1 1 auto;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+#board{flex:1 1 auto;min-height:0;overflow-y:auto;padding:6px 8px 2px;
+  display:grid;gap:6px;align-content:start;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+#board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
+#board .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:9px;letter-spacing:1.4px;color:var(--muted);margin-bottom:5px}
+#board .ph b{font-size:13px;letter-spacing:0;color:var(--cream);font-weight:800}
+#pshare .ph b{color:var(--accent)}
+.meter{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--gate);border-radius:5px;transition:width 120ms linear}
+.meter.boss{margin-top:5px;height:9px}
+.meter.boss i{background:linear-gradient(90deg,#d2a0a0,#c8563a)}
+#bbossname{font-size:9px;letter-spacing:1.2px;color:#d2a0a0;margin-top:3px;min-height:0}
+#pips{display:flex;flex-wrap:wrap;gap:5px}
+/* the roster is where the eight silhouettes are finally big enough to tell
+   apart. In the lane a cell is 13px; here a body is 30. */
+.pip{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--cream);
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 7px 3px 4px;min-height:38px}
+.pip svg{width:22px;height:30px;flex:0 0 auto}
+.pip.gone{opacity:.28}
+.pip.boss{border-color:#5a3a3a;background:#241a1c}
+.pip s{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.5px}
+#kit{display:flex;flex-wrap:wrap;gap:5px}
+.kitchip{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 7px;min-height:30px}
+.kitchip u{text-decoration:none;font-size:15px;color:var(--warm)}
+.kitchip s{text-decoration:none;font-size:9px;color:var(--accent);letter-spacing:.5px}
+.kitchip.none{color:var(--muted);font-weight:400}
+#livebars .barrow{margin-bottom:4px;font-size:11px}
+#livebars .barrow .lbl{width:64px}
+#livebars .barrow .track{height:8px}
+
 /* ---------- lane ---------- */
-#field{flex:1 1 auto;position:relative;overflow:hidden;
-  background:radial-gradient(120% 90% at 100% 50%,#171a22 0%,#0a0b0f 70%)}
+#lanebox{flex:0 0 auto;position:relative;overflow:hidden;
+  height:clamp(112px,17vh,190px);
+  border-top:1px solid var(--line);
+  background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
 #lane{position:absolute;left:0;right:0;top:0;bottom:0}
-.cell{position:absolute;top:0;bottom:0;border-right:1px solid rgba(255,255,255,.045)}
+.cell{position:absolute;top:34%;bottom:0;border-right:1px solid rgba(255,255,255,.05)}
 .cell.build{cursor:pointer}
 .cell.pick{background:rgba(232,112,58,.10)}
 .cell.mark{background:rgba(255,255,255,.03)}
@@ -50,13 +87,13 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
   border-right:2px solid var(--gate);pointer-events:none}
 #gateglow{position:absolute;left:0;top:0;bottom:0;width:34%;pointer-events:none;opacity:0;
   background:linear-gradient(90deg,rgba(200,86,58,.55),rgba(200,86,58,0));transition:opacity 160ms ease-out}
-#ground{position:absolute;left:0;right:0;height:2px;background:var(--line)}
+#ground{position:absolute;left:0;right:0;bottom:0;height:2px;background:#39414f;pointer-events:none}
 .ent{position:absolute;transform:translate(-50%,-100%);transition:transform 110ms linear;will-change:transform}
 .ent svg{display:block;overflow:visible}
-.hpbar{position:absolute;left:50%;transform:translateX(-50%);width:26px;height:3px;background:#33202a;border-radius:2px;overflow:hidden}
+.hpbar{position:absolute;left:50%;transform:translateX(-50%);width:30px;height:4px;background:#33202a;border-radius:2px;overflow:hidden}
 .hpbar i{display:block;height:100%;background:var(--gate)}
 .trap{position:absolute;bottom:0;transform:translateX(-50%);text-align:center;pointer-events:none}
-.trap .g{font-size:20px;line-height:1;display:block;filter:drop-shadow(0 0 5px rgba(0,0,0,.8))}
+.trap .g{font-size:24px;line-height:1;display:block;filter:drop-shadow(0 0 5px rgba(0,0,0,.9))}
 .trap small{display:block;font-size:9px;color:var(--muted)}
 .trap .lv{display:block;font-size:9px;line-height:1;color:var(--accent);letter-spacing:1px}
 #sight{position:absolute;height:2px;background:linear-gradient(90deg,rgba(245,199,126,.7),rgba(245,199,126,0));pointer-events:none}
@@ -100,7 +137,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #cdbar{position:absolute;left:0;bottom:0;height:3px;background:var(--warm)}
 
 /* ---------- pips ---------- */
-#pips{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end;max-height:82%;flex-wrap:wrap-reverse}
 .pip{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);background:rgba(10,11,15,.7);
   border:1px solid var(--line);border-radius:20px;padding:1px 6px 1px 3px}
 .pip svg{width:14px;height:14px}
@@ -124,7 +160,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 .split .half span{font-size:9px;letter-spacing:1px;color:var(--muted)}
 .split .half.you{border-color:var(--accent)}
 .split .half.you b{color:var(--accent)}
-#muts{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+#muts{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 .mut{font-size:9px;letter-spacing:.8px;color:var(--warm);border:1px solid #4a3a2a;border-radius:5px;padding:2px 5px;background:rgba(40,26,18,.7)}
 .kv{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0;border-top:1px solid var(--line)}
 .kv b{color:var(--cream);font-weight:700}
@@ -161,14 +197,47 @@ input[type=range]{width:130px;height:48px;accent-color:var(--accent)}
   </div>
 
   <div id="field">
-    <div id="shakewrap">
-      <div id="lane"></div>
-      <div id="gate"></div>
-      <div id="gateglow"></div>
-      <div id="sight" class="hidden"></div>
+
+    <!-- THE WATCH BOARD. The lane is 30 cells wide and a phone is 390px, so a
+         cell can never be more than 13px and the units can never be big. That
+         is a hard constraint, not a bug, and the answer is not to zoom: it is
+         to stop the rest of the screen being void. Everything here is computed
+         from the same wave stats the scorecard and the balance sweep read. -->
+    <div id="board">
+      <div class="panel" id="pwave">
+        <div class="ph"><span id="btitle">WAVE 1</span><b id="bhp">0 HP LEFT</b></div>
+        <div class="meter"><i id="bhpbar"></i></div>
+        <div class="meter boss hidden" id="bbosswrap"><i id="bbossbar"></i></div>
+        <div id="bbossname"></div>
+        <div id="muts"></div>
+      </div>
+
+      <div class="panel" id="proster">
+        <div class="ph"><span id="rtitle">STILL COMING</span><b id="rcount"></b></div>
+        <div id="pips"></div>
+      </div>
+
+      <div class="panel" id="pshare">
+        <div class="ph"><span id="stitle">WHO IS DOING THE WORK</span><b id="syou">0%</b></div>
+        <div id="livebars"></div>
+      </div>
+
+      <div class="panel" id="pkit">
+        <div class="ph"><span>YOUR LANE</span><b id="kcount"></b></div>
+        <div id="kit"></div>
+      </div>
     </div>
-    <div id="pips"></div>
-    <div id="muts"></div>
+
+    <!-- the lane strip itself: only as tall as the fight needs -->
+    <div id="lanebox">
+      <div id="shakewrap">
+        <div id="lane"></div>
+        <div id="gate"></div>
+        <div id="gateglow"></div>
+        <div id="sight" class="hidden"></div>
+      </div>
+      <div id="ground"></div>
+    </div>
   </div>
 
   <div id="buildbar">
@@ -1477,8 +1546,15 @@ function sil(type, w, h, colour) {
 }
 
 function laneMetrics() {
-  var f = EL.field;
-  return { w: f.clientWidth, h: f.clientHeight, cw: f.clientWidth / CONFIG.LANE };
+  var f = EL.lanebox;
+  var w = f.clientWidth || 390, h = f.clientHeight || 130;
+  var cw = w / CONFIG.LANE;
+  /* A body is drawn far wider than its cell on purpose. Thirty cells across a
+     390px phone is 13px a cell, so at one body per cell every silhouette is a
+     smudge. Overlapping ranks read as a crowd, which is what a siege looks
+     like, and the roster panel above carries the readable version. */
+  var us = Math.max(26, Math.min(52, cw * 2.6));
+  return { w: w, h: h, cw: cw, us: us, uh: us * 1.35 };
 }
 
 function buildLane() {
@@ -1518,7 +1594,7 @@ function drawTraps() {
 }
 
 function drawEntities() {
-  var m = laneMetrics(), seen = {}, i, e, node, size = Math.max(18, Math.min(30, m.cw * 1.5));
+  var m = laneMetrics(), seen = {}, i, e, node, size = m.us;
   for (i = 0; i < G.enemies.length; i++) {
     e = G.enemies[i];
     seen[e.id] = 1;
@@ -1526,14 +1602,14 @@ function drawEntities() {
     if (!node) {
       node = document.createElement('div');
       node.className = 'ent';
-      node.innerHTML = sil(e.type, size, size * 1.3, e.boss ? '#d2a0a0' : '#9aa6bd') +
+      node.innerHTML = sil(e.type, size, m.uh, e.boss ? '#d2a0a0' : '#9aa6bd') +
         '<span class="hpbar"><i></i></span>';
       EL.lane.appendChild(node);
       UI.nodes[e.id] = node;
     }
     node.style.transform = 'translate(' + ((e.cell + 0.5) * m.cw) + 'px,' + (m.h - 4) + 'px) translate(-50%,-100%)';
     var bar = node.querySelector('.hpbar');
-    bar.style.bottom = (size * 1.3 + 2) + 'px';
+    bar.style.bottom = (m.uh + 3) + 'px';
     bar.firstChild.style.width = Math.max(0, Math.round(e.hp / e.maxHp * 100)) + '%';
     if (e.shield > 0) bar.firstChild.style.background = '#7fb3d5';
     else if (e.burns.length) bar.firstChild.style.background = '#e8703a';
@@ -1547,7 +1623,7 @@ function drawEntities() {
     node = document.createElement('div');
     node.className = 'ent';
     node.style.zIndex = '5';
-    node.innerHTML = sil('player', size, size * 1.35, '#e8703a');
+    node.innerHTML = sil('player', size, m.uh * 1.04, '#e8703a');
     EL.lane.appendChild(node);
     UI.nodes.P = node;
   }
@@ -1555,18 +1631,128 @@ function drawEntities() {
     (G.player.hitFlash > 0 ? ' scale(1.14)' : '');
 }
 
-function drawPips() {
-  if (G.phase !== 'build') { EL.pips.innerHTML = ''; EL.muts.innerHTML = ''; return; }
-  var tbl = GEN.waveTable(G.wave), html = '', i, def;
+/* ------------------------------------------------------------------
+   THE WATCH BOARD. Four panels, all fed by the same numbers the scorecard
+   prints at the end of a wave and the sweep gates on. The point is that the
+   standout feature stops being a card you see once a wave and becomes the
+   screen you are looking at while you fight.
+   Panels rebuild only when their content signature changes, so the 10Hz tick
+   does not churn the DOM.
+   ------------------------------------------------------------------ */
+var SIG = {};
+function sigSet(k, v, el, html) {
+  if (SIG[k] === v) return false;
+  SIG[k] = v;
+  if (el) el.innerHTML = html;
+  return true;
+}
+
+function waveHPNow() {
+  var t = 0, i;
+  for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) t += G.enemies[i].hp;
+  return t;
+}
+
+function drawBoard() {
+  var build = (G.phase === 'build'), i, e, k;
+  var tbl = GEN.waveTable(G.wave);
+
+  /* --- wave and its health --- */
+  var totalHP = SIM.waveTotalHP(G.wave) * (G.hpBoost || 1);
+  var leftHP = build ? totalHP : waveHPNow();
+  var pending = 0, def;
+  if (!build) {
+    for (i = G.spawnIdx; i < G.spawns.length; i++) {
+      def = ENEMIES[G.spawns[i].type];
+      pending += SIM.enemyHP(G.spawns[i].type, G.wave) * (def.group || 1) * (G.hpBoost || 1);
+    }
+    leftHP += pending;
+  }
+  EL.btitle.textContent = (G.wave > CONFIG.WAVES ? 'ENDLESS WAVE ' : 'WAVE ') + G.wave;
+  EL.bhp.textContent = Math.round(leftHP) + (build ? ' HP INCOMING' : ' HP LEFT');
+  EL.bhpbar.style.width = Math.max(0, Math.min(100, leftHP / Math.max(1, totalHP) * 100)) + '%';
+
+  /* --- boss bar, because a Warden is the wave --- */
+  var boss = null;
+  for (i = 0; i < G.enemies.length; i++) if (G.enemies[i].boss && !G.enemies[i].dead) { boss = G.enemies[i]; break; }
+  EL.bbosswrap.classList.toggle('hidden', !boss);
+  if (boss) {
+    EL.bbossbar.style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
+    EL.bbossname.textContent = ENEMIES[boss.type].name.toUpperCase() + '  ' + Math.round(boss.hp) +
+      ' / ' + boss.maxHp + '  ·  CELL ' + boss.cell;
+  } else EL.bbossname.textContent = '';
+
+  /* --- the roster: what is still coming, by type --- */
+  var want = {}, alive = {}, order = [];
   for (i = 0; i < tbl.length; i++) {
     def = ENEMIES[tbl[i][0]];
-    html += '<span class="pip">' + sil(tbl[i][0], 14, 18, tbl[i][0] === 'marshal' || tbl[i][0] === 'warden' ? '#d2a0a0' : '#9aa6bd') +
-      (tbl[i][1] * (def.group || 1)) + '</span>';
+    if (want[tbl[i][0]] === undefined) { want[tbl[i][0]] = 0; order.push(tbl[i][0]); }
+    want[tbl[i][0]] += tbl[i][1] * (def.group || 1);
   }
-  EL.pips.innerHTML = html;
-  /* past wave 20 the curve alone is not escalation, so every endless wave
-     names what is different about it before you spend a coin */
-  var mhtml = '', m;
+  if (build) {
+    for (k in want) alive[k] = want[k];
+  } else {
+    for (k in want) alive[k] = 0;
+    for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) alive[G.enemies[i].type] = (alive[G.enemies[i].type] || 0) + 1;
+    for (i = G.spawnIdx; i < G.spawns.length; i++) {
+      def = ENEMIES[G.spawns[i].type];
+      alive[G.spawns[i].type] = (alive[G.spawns[i].type] || 0) + (def.group || 1);
+    }
+  }
+  var rhtml = '', left = 0, total = 0, n;
+  for (i = 0; i < order.length; i++) {
+    k = order[i]; n = alive[k] || 0; left += n; total += want[k];
+    rhtml += '<span class="pip' + (n ? '' : ' gone') + (ENEMIES[k].boss ? ' boss' : '') + '">' +
+      sil(k, 22, 30, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
+      n + '<s>/' + want[k] + '</s></span>';
+  }
+  sigSet('roster', G.wave + ':' + build + ':' + rhtml.length + ':' + left, EL.pips, rhtml);
+  EL.rtitle.textContent = build ? 'WHAT IS COMING' : 'STILL COMING';
+  EL.rcount.textContent = left + ' of ' + total;
+
+  /* --- live damage share: the sweep's own metric, while it is happening --- */
+  var ws = build ? (G.lastWaveStats || G.waveStats) : G.waveStats;
+  var sh = SIM.damageShare(ws.dmg);
+  EL.stitle.textContent = build ? (G.lastWaveStats ? 'LAST WAVE, WHO DID THE WORK' : 'WHO IS DOING THE WORK')
+    : 'WHO IS DOING THE WORK';
+  EL.syou.textContent = Math.round(sh.player * 100) + '%';
+  var bhtml = '';
+  if (!sh.rows.length) bhtml = '<div class="barrow"><span class="lbl">NOBODY YET</span><span class="track"></span><span class="val">0%</span></div>';
+  sh.rows.forEach(function (r) {
+    var w = r.share > 0 ? Math.max(2, r.share * 100) : 0;
+    bhtml += '<div class="barrow' + (r.src === 'player' ? ' you' : '') + '"><span class="lbl">' + SRC_LABEL[r.src] +
+      '</span><span class="track"><i style="width:' + w.toFixed(0) + '%;background:' + SRC_COLOUR[r.src] + '"></i></span>' +
+      '<span class="val">' + Math.round(r.share * 100) + '%</span></div>';
+  });
+  sigSet('share', bhtml, EL.livebars, bhtml);
+
+  /* --- your lane: what is standing and how deep --- */
+  var counts = {}, lv = {}, tn = 0, ls = 0, t;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    t = G.traps[i];
+    if (!t) continue;
+    counts[t.type] = (counts[t.type] || 0) + 1;
+    lv[t.type] = (lv[t.type] || 0) + t.lvl;
+    tn++; ls += t.lvl;
+  }
+  var khtml = '';
+  for (i = 0; i < TRAP_ORDER.length; i++) {
+    k = TRAP_ORDER[i];
+    if (!counts[k]) continue;
+    khtml += '<span class="kitchip"><u>' + TRAPS[k].glyph + '</u>' + counts[k] +
+      (lv[k] > counts[k] ? '<s>lv' + (lv[k] / counts[k]).toFixed(1) + '</s>' : '') + '</span>';
+  }
+  if (!khtml) khtml = '<span class="kitchip none">Nothing in the ground yet.</span>';
+  sigSet('kit', khtml, EL.kit, khtml);
+  EL.kcount.textContent = tn + ' traps  ·  ' + ls + ' levels';
+}
+
+/* the roster lives on the board in both phases now. This only handles the
+   endless modifier chips and the build phase hint. */
+function drawPips() {
+  SIG.roster = null;
+  drawBoard();
+  var mhtml = '', m, i;
   for (i = 0; i < G.muts.length; i++) {
     m = mutByKey(G.muts[i]);
     if (m) mhtml += '<span class="mut">' + m.name + '</span>';
@@ -1646,6 +1832,8 @@ function render() {
   if (UI.dirtyTraps) { drawTraps(); UI.dirtyTraps = false; }
   drawEntities();
   drawHUD();
+  /* the board is fed at the SIM's 10Hz, not at 60fps */
+  if (UI.boardDirty) { UI.boardDirty = false; drawBoard(); }
 }
 
 /* --- the wave scorecard: the sweep's own metric, handed to the player --- */
@@ -1882,7 +2070,7 @@ function toast(msg) {
 }
 
 function cellFromX(x) {
-  var r = EL.field.getBoundingClientRect(), m = laneMetrics();
+  var r = EL.lanebox.getBoundingClientRect(), m = laneMetrics();
   return Math.max(0, Math.min(CONFIG.LANE - 1, Math.floor((x - r.left) / m.cw)));
 }
 
@@ -1920,19 +2108,22 @@ function wireInput() {
   };
   pressHold($('left'), 'left'); pressHold($('right'), 'right'); pressHold($('atk'), 'attack');
 
-  EL.field.addEventListener('pointerdown', function (e) {
+  /* placement is a LANE gesture. The board above it scrolls and must not drop
+     traps into the ground when you flick it. */
+  EL.lanebox.addEventListener('pointerdown', function (e) {
     audioOn();
     if (G.phase === 'build') { var c = cellFromX(e.clientX); drawSight(c); }
-    else {
-      /* tap on the lane during combat swings toward it */
-      queued = 'attack';
-    }
   });
-  EL.field.addEventListener('pointermove', function (e) {
+  EL.lanebox.addEventListener('pointermove', function (e) {
     if (G.phase === 'build' && UI.sel === 'ballista' && e.pressure !== 0) drawSight(cellFromX(e.clientX));
   });
-  EL.field.addEventListener('pointerup', function (e) {
+  EL.lanebox.addEventListener('pointerup', function (e) {
     if (G.phase === 'build') { tapCell(cellFromX(e.clientX)); drawSight(-1); }
+  });
+  /* during combat a tap anywhere on the field swings, board included */
+  EL.field.addEventListener('pointerdown', function () {
+    audioOn();
+    if (G.phase !== 'build') queued = 'attack';
   });
 
   EL.shop.addEventListener('click', function (e) {
@@ -2040,7 +2231,7 @@ function newRun(mode) {
   EL.titlesheet.classList.add('hidden');
   EL.oversheet.classList.add('hidden');
   EL.scoresheet.classList.add('hidden');
-  buildLane(); drawShop(); drawPips(); render();
+  buildLane(); drawShop(); drawPips(); UI.boardDirty = true; render();
   writeSave({ stats: { runs: 1 } });
 }
 
@@ -2085,6 +2276,7 @@ function loop(now) {
       var wasWave = G.wave, wasPhase = G.phase;
       if (G.phase === 'build' && SAVE.settings.autoSkip) SIM.startWave(G);
       SIM.step(G, G.phase === 'combat' ? intentNow() : 'none');
+      UI.boardDirty = true;
       playEvents();
       if (wasPhase === 'combat' && G.phase === 'build') { showScorecard(G.lastWaveStats); drawShop(); drawPips(); UI.dirtyTraps = true; }
       if (wasPhase === 'build' && G.phase === 'combat') { drawPips(); EL.sight.classList.add('hidden'); }
@@ -2999,6 +3191,8 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
 (function () {
   ['field', 'lane', 'gate', 'gateglow', 'sight', 'pips', 'shop', 'buildbar', 'pad', 'toast',
    'shakewrap', 'wavev', 'scrapv', 'bladev', 'timernum', 'timerarc', 'cdbar', 'muts',
+   'board', 'lanebox', 'btitle', 'bhp', 'bhpbar', 'bbosswrap', 'bbossbar', 'bbossname',
+   'rtitle', 'rcount', 'stitle', 'syou', 'livebars', 'kit', 'kcount',
    'titlesheet', 'scoresheet', 'oversheet', 'optsheet', 'logsheet'].forEach(function (k) { EL[k] = $(k); });
 
   loadSave();

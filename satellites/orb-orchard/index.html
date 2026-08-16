@@ -73,6 +73,19 @@ h1 .a{color:var(--dew)} h1 .b{color:var(--gold)}
 .btn.blue{border-color:#5b9bd54d; background:linear-gradient(180deg,#14202b,#0b1219)}
 .btn.sm{min-height:72px; max-width:300px; font-size:.9rem}
 .btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
+/* Way back to the arcade. This card loads TOP LEVEL (the portal only frames
+   /play/*.html and github.io), so there is no frame chrome and, in an installed
+   PWA, no browser back button either — the only way out is the one drawn here.
+   TOP LEFT on purpose: the fleet feedback fab (/feedback.js) owns roughly
+   x=W-90..W-12, y=H-174..H-96 at z-index 2147482000, which nothing can outstack,
+   and the stage fills the viewport at phone sizes. A bottom row would have run
+   into it; the title stack's own bottom row sits right in that band.
+   72px is the STAGE unit floor: 540x960 scales ~0.69 at 375x667, so 72 -> 50 real px. */
+.xrow{display:flex; justify-content:flex-start; width:100%; max-width:360px; margin:0 0 4px}
+.xbtn{min-height:72px; min-width:136px; padding:0 22px; border-radius:16px; border:1px solid #ffffff26;
+  background:linear-gradient(180deg,#18231a,#0f1710); color:var(--cream); font-size:.95rem; letter-spacing:.05em;
+  display:flex; align-items:center; justify-content:center; gap:8px}
+.xbtn:active{transform:scale(.985)}
 #lvlgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:380px; margin-top:6px}
 .lvlcard{border:1px solid #ffffff22; border-radius:14px; background:#101a12; min-height:86px; padding:8px 6px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
@@ -118,6 +131,7 @@ h1 .a{color:var(--dew)} h1 .b{color:var(--gold)}
 </div>
 
 <div class="screen on" id="s-title">
+  <div class="xrow"><button class="xbtn" id="b-arcade">◀ Arcade</button></div>
   <h1><span class="a">ORB</span> <span class="b">ORCHARD</span></h1>
   <div class="tag">the orchard curves away beneath you · gather every dew orb</div>
   <button class="btn gold" id="b-orchard">🌳 The Orchard</button>
@@ -195,8 +209,14 @@ window.addEventListener("resize",fit); fit();
 /* ---------- embed / exit ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ The framed branch used to be gated on ?embed=1 — a flag the portal never
+   sets for a relative /satellites/ url, and that url is not framed at all, it
+   navigates TOP LEVEL. So the flag decided nothing here, and would decide the
+   WRONG thing the day this card moves to a framed url. Detect the frame itself. */
+var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 
 /* ---------- sunbeam earn ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
@@ -835,6 +855,7 @@ tap("jumpbtn",doJump);
   });
 })();
 tap("hud-back",function(){ stopToMenu(); });
+tap("b-arcade",function(){ window.SWS_EXIT(); });
 tap("b-orchard",function(){ selMode="orchard"; renderSelect(); show("s-select"); });
 tap("b-zen",function(){ selMode="zen"; renderSelect(); show("s-select"); });
 tap("b-blitz",function(){ selMode="blitz"; renderSelect(); show("s-select"); });

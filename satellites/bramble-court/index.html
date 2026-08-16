@@ -60,6 +60,21 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
 .btn.sm{min-height:72px; font-size:15px}
 .btn.ghost{background:#0f150c; color:var(--muted)}
+/* ---- Back to the arcade (fleet exit audit 2026-08-16) ----
+   TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
+   at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
+   game can out-stack two billion. A bottom-left or top-left control cannot meet
+   it at any viewport size.
+   Absolutely positioned so it adds no height to a title screen that already
+   scrolls on a short phone, and 72 STAGE px tall because this stage is scaled
+   (540x960 -> 375 wide = x0.694), so 72 stage px = 50 rendered px, over the
+   48px touch floor. The title stack is vertically centred and only ~515 stage
+   px tall, so the top-left corner is empty art. */
+#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+  gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid var(--line);
+  border-radius:14px; background:#0f150cdd; color:var(--muted); font-family:inherit;
+  font-size:15px; font-weight:700; letter-spacing:.5px; cursor:pointer}
+#lw-home:active{transform:translateY(2px); filter:brightness(1.15)}
 .row{display:flex; gap:10px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:11px; width:100%; max-width:420px; margin:0 auto}
@@ -163,6 +178,7 @@ h2.sc-h{font-size:23px; color:var(--gold); font-weight:800; margin-bottom:4px}
  <div id="stage">
 
   <div class="screen on" id="s-title">
+    <button id="lw-home" type="button" aria-label="Back to the arcade">← Arcade</button>
     <div class="pad center">
       <div class="title-word">BRAMBLE COURT</div>
       <div class="title-sub">a garden card duel</div>
@@ -1101,15 +1117,43 @@ window.addEventListener("resize",fit); fit();
 /* ---------- SWS embed/exit + sunbeams ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ FRAMING IS DETECTED DIRECTLY, NOT FROM ?embed=1 (fleet exit audit 2026-08-16).
+   The portal's click router frames only /play/<id>.html and github.io urls. A
+   relative /satellites/<id>/ url falls through it and NAVIGATES TOP LEVEL, so
+   this page never carries ?embed=1 and window.parent===window. Everything that
+   was gated on SWS_EMBED therefore never ran once in production: the ready post
+   never fired and the close branch was dead. The unframed referrer path below is
+   what actually runs, and #lw-home on the title screen is what calls it. */
+var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){
+  if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+  if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+  else{ location.replace('https://lucidwinds.com/portal/'); }
+};
+if(SWS_FRAMED){
+  try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+}
+(function(){
+  function wireHome(){
+    var b=document.getElementById('lw-home');
+    if(!b||b._lwWired) return; b._lwWired=1;
+    b.addEventListener('click',function(ev){ ev.preventDefault(); window.SWS_EXIT(); });
+  }
+  wireHome();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireHome);
+})();
 window._sbCapEarn=function(n,tag){ var granted=0;
   try{ var k='sw_sb_bramblecourt'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
     s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
   if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
-/* home button doubles as portal exit from the title screen via long-press?
-   Keep simple: duel-back goes home; title has no exit needed (portal frame handles). */
+/* ⛔ CORRECTED 2026-08-16. This used to read "title has no exit needed (portal
+   frame handles)". There is no portal frame: this card is a relative
+   /satellites/ url, so it navigates top level and the player had only the
+   browser back button, which an installed PWA does not have. duel-back (⌂)
+   goes to the TITLE, not to the arcade. #lw-home on the title screen is the
+   way out, and every other screen already has a Back to the title. */
 
 /* ============================================================
    HEADLESS TEST HOOK

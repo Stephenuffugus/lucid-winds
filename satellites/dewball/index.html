@@ -4746,6 +4746,12 @@
         a.push({n:wi+1,id:w.id,nm:w.nm,goal:w.goalD,s2:sb[1],s3:sb[2],time:w.time,bound:w.bound,
                 startD:w.startD,zen:!!w.zen,globe:!!w.globe,wrap:!!w.wrap,gates:w.gates.length,
                 courts:courts}); } return a; },
+      /* the kind registry, without the geometry. variety_audit.js needs display
+         names and volF to say WHAT the closing minutes taste like, and hand-
+         mirroring a 300-kind table into a probe is how a probe starts lying. */
+      props:function(){ var o={},q; for(q in PROPS) if(PROPS.hasOwnProperty(q)){
+          o[q]={ id:q, nm:PROPS[q].nm, s:PROPS[q].s, volF:PROPS[q].volF||1,
+                 fixed:!!PROPS[q].fixed, parts:(PROPS[q].parts||[]).length }; } return o; },
       roll:function(x,y){ testIn.x=x||0; testIn.y=y||0; },
       pitch:function(){ return camPitch; },
       camY:function(){ return camera?camera.position.y:0; },

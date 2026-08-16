@@ -130,6 +130,22 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
   border:9px solid transparent; border-top-color:#12060a; }
 .toon-bubble:before{ content:""; position:absolute; left:29px; bottom:-9px; width:0; height:0;
   border:6px solid transparent; border-top-color:#fff8ee; z-index:1; }
+/* Way back to the arcade. This card loads TOP LEVEL (the portal frames only
+   /play/*.html and github.io), so no frame chrome ever renders, and an installed
+   PWA has no browser back button — this control is the only way out.
+   TOP LEFT for two reasons, both from reading this screen: the fleet feedback fab
+   (/feedback.js) owns about x=W-90..W-12, y=H-174..H-96 at z-index 2147482000 and
+   cannot be outstacked, and this title's whole bottom right is already the squirrel
+   (.title-mascot, bottom:0 right:-14px, 232px wide) with its speech bubble above it.
+   Top left is the one empty corner. Styled comic like #s-title .btn so it belongs.
+   72px is the STAGE floor: the 540x960 stage scales ~0.69 at 375x667 -> 50 real px. */
+.xrow{display:flex; justify-content:flex-start; width:100%; max-width:360px; margin:0 0 2px; z-index:4}
+.xbtn{min-height:72px; min-width:140px; padding:0 22px; border-radius:16px;
+  border:2px solid #12060a; box-shadow:3px 3px 0 #12060ac0;
+  background:linear-gradient(180deg,#241a3a,#140e24); color:var(--cream);
+  font-size:.95rem; font-weight:800; letter-spacing:.05em;
+  display:flex; align-items:center; justify-content:center; gap:8px}
+.xbtn:active{ box-shadow:1px 1px 0 #12060ac0; transform:translate(2px,2px); }
 /* title mascot + greeting */
 .title-mascot{ position:absolute; right:-14px; bottom:0; width:232px; max-width:54%;
   filter:drop-shadow(0 8px 10px #000b); pointer-events:none; z-index:2; }
@@ -169,6 +185,7 @@ h1 .a{color:var(--teal)} h1 .b{color:var(--cream)}
 </div>
 
 <div class="screen on" id="s-title">
+  <div class="xrow"><button class="xbtn" id="b-arcade">◀ Arcade</button></div>
   <h1><span class="a">ACORN</span> <span class="b">DROP</span></h1>
   <div class="tag">angry squirrels stashing acorns · line up four of a kind to crack them away · clear every pest</div>
   <button class="btn teal" id="b-service">🌰 Stash Run</button>
@@ -243,8 +260,14 @@ window.addEventListener("resize",fit); fit();
 /* ---------- embed / exit ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ The framed branch used to be gated on ?embed=1 — a flag the portal never
+   sets for a relative /satellites/ url, and that url is not framed at all, it
+   navigates TOP LEVEL. So the flag decided nothing here, and would decide the
+   WRONG thing the day this card moves to a framed url. Detect the frame itself. */
+var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 
 /* ---------- sunbeam earn (30/day cap, studio standard) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
@@ -957,6 +980,7 @@ function renderShop(){
 /* ---------- input ---------- */
 function tap(id,fn){ $(id).addEventListener("click",fn); }
 tap("hud-back",function(){ stopToMenu(); });
+tap("b-arcade",function(){ window.SWS_EXIT(); });
 $("c-left").addEventListener("click",function(){ if(running)tryMove(-1); });
 $("c-right").addEventListener("click",function(){ if(running)tryMove(1); });
 $("c-rot").addEventListener("click",function(){ if(running)tryRotate(); });

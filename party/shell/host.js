@@ -6,6 +6,11 @@ var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=nul
     curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3;
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 var completedCount=0, lastResults=null;
+/* who is actually IN the game that is running. A phone that arrives mid round is
+   in the room but not in the round, and it has to be told that, because every
+   module drops messages from somebody it does not know and the player just sees
+   a live screen where nothing they press does anything. */
+var PARTICIPANTS={};
 
 /* ⭐ EVERY PLAYER GETS A COLOUR, AND IT IS THE SHELL'S JOB. At ten feet, four
    names in the same cream text are four identical shapes: reading the room
@@ -28,12 +33,31 @@ function roster(){ var out=[],k;
   for(k in PLAYERS) out.push({id:k,name:PLAYERS[k].name,
     connected:PLAYERS[k].alive>0, color:assignColor(k)});
   return out; }
+/* ⭐ THE ROOM IS WHO IS IN THE ROOM. Five of the nine titles end a round early
+   once everybody has acted, and that early end is the difference between a party
+   and a group of people watching a clock. Measured against the roster it is
+   measured against ghosts: one person leaves and the room waits out the full
+   timer on every round for the rest of the night. Modules ask for this, not for
+   roster(). */
+function present(){ var out=[],k;
+  for(k in PLAYERS) if(PLAYERS[k].alive>0) out.push(k);
+  return out; }
 function pushPlayers(){ if(playerCb) playerCb(roster()); renderLobby(); }
 
 /* presence: phones ping every 3s; 8s of silence reads as disconnected
    (phones lock every session; they come back through the same token) */
 setInterval(function(){ var changed=false,k;
-  for(k in PLAYERS){ if(PLAYERS[k].alive>0){ PLAYERS[k].alive--; if(PLAYERS[k].alive===0) changed=true; } }
+  for(k in PLAYERS){
+    PLAYERS[k].alive--;
+    if(PLAYERS[k].alive===0) changed=true;
+    /* ⛔ PRUNE IN THE LOBBY ONLY, NEVER MID GAME. A phone that locks during a
+       round must keep its seat, its name and its score, so a running game never
+       forgets anybody. But somebody who wandered off before Start must not hold
+       the room hostage: they count toward the minimum, they hold a slot on the
+       television, and a phone that leaves and comes back in a NEW TAB is a new
+       id, so three real people can quietly become a lobby of six. */
+    if(!started && PLAYERS[k].alive<=-25){ delete PLAYERS[k]; changed=true; }
+  }
   if(changed) pushPlayers();
 },1000);
 

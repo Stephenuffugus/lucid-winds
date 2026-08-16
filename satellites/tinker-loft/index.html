@@ -95,6 +95,20 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 .btn.blue{border-color:#5b9bd54d; background:linear-gradient(180deg,#14202b,#0b1219)}
 .btn.sm{min-height:72px; max-width:300px; font-size:1.05rem}
 .btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
+/* Way back to the arcade. This card loads TOP LEVEL (the portal frames only
+   /play/*.html and github.io), so there is no frame chrome, and an installed PWA
+   has no browser back button either — this is the only way out.
+   TOP LEFT on purpose: the fleet feedback fab (/feedback.js) sits at roughly
+   x=W-90..W-12, y=H-174..H-96 with z-index 2147482000, which no game can
+   outstack, and the 540x960 stage fills the viewport on a phone. The title's own
+   bottom row (Tinker Shop / How) lands inside that band, so nothing new goes there.
+   72px is the STAGE floor used everywhere in this file: the stage scales ~0.69 at
+   375x667, so 72 renders as 50 real px. Brass to match the loft's palette. */
+.xrow{display:flex; justify-content:flex-start; width:100%; max-width:360px; margin:0 0 4px}
+.xbtn{min-height:72px; min-width:140px; padding:0 22px; border-radius:16px; border:1px solid #ffffff26;
+  background:linear-gradient(180deg,#2a1e10,#171009); color:var(--cream); font-size:1rem; letter-spacing:.05em;
+  display:flex; align-items:center; justify-content:center; gap:9px}
+.xbtn:active{transform:scale(.985)}
 #lvlgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:390px; margin-top:6px}
 .lvlcard{border:1px solid #ffffff22; border-radius:14px; background:#221808; min-height:88px; padding:8px 6px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
@@ -142,6 +156,7 @@ h1 .a{color:var(--cream)} h1 .b{color:var(--brass)}
 </div>
 
 <div class="screen on" id="s-title">
+  <div class="xrow"><button class="xbtn" id="b-arcade">&#9664; Arcade</button></div>
   <h1><span class="a">TINKER</span> <span class="b">LOFT</span></h1>
   <div class="tag">a dusty attic of contraptions &middot; place the parts, press run, spend your one nudge</div>
   <button class="btn gold" id="b-workshop">&#9881; The Workshop</button>
@@ -217,8 +232,14 @@ fit();
 /* ---------- embed / exit ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ The framed branch used to be gated on ?embed=1 — a flag the portal never
+   sets for a relative /satellites/ url, and that url is not framed at all, it
+   navigates TOP LEVEL. So the flag decided nothing here, and would decide the
+   WRONG thing the day this card moves to a framed url. Detect the frame itself. */
+var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 
 /* ---------- sunbeam earn (capped 30/day) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
@@ -1225,6 +1246,7 @@ function openWard(){ var box=$("wardbox"); box.innerHTML="";
   show("s-ward"); }
 
 /* ---------- wiring ---------- */
+$("b-arcade").addEventListener("click",function(){ window.SWS_EXIT(); });
 $("b-workshop").addEventListener("click",function(){ openSelect("workshop"); });
 $("b-zen").addEventListener("click",function(){ openSelect("zen"); });
 $("b-daily").addEventListener("click",function(){ startDaily(); });

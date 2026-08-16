@@ -227,8 +227,32 @@ window.addEventListener("resize",fit); fit();
 /* ---------- embed / exit ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ FRAMING IS DETECTED DIRECTLY, NOT FROM ?embed=1 (fleet exit audit 2026-08-16).
+   The portal's click router frames only /play/<id>.html and github.io urls. A
+   relative /satellites/<id>/ url falls through it and NAVIGATES TOP LEVEL, so
+   this page never carries ?embed=1 and window.parent===window. Everything that
+   was gated on SWS_EMBED therefore never ran once in production: the ready post
+   never fired and the close branch was dead. The unframed referrer path below is
+   what actually runs, and #lw-home on the title screen is what calls it. */
+var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){
+  if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+  if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+  else{ location.replace('https://lucidwinds.com/portal/'); }
+};
+if(SWS_FRAMED){
+  try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+}
+(function(){
+  function wireHome(){
+    var b=document.getElementById('lw-home');
+    if(!b||b._lwWired) return; b._lwWired=1;
+    b.addEventListener('click',function(ev){ ev.preventDefault(); window.SWS_EXIT(); });
+  }
+  wireHome();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireHome);
+})();
 
 /* ---------- sunbeam earn ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
