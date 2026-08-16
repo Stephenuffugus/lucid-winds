@@ -2,7 +2,7 @@
 
 **Display names, because the folder names differ:** greenhouse-pinball ships as **Blobworks**,
 seed-flutter ships as **Cosmic Cadets**, stream-hop ships as **Jumping Jimothy**, garden-td
-ships as **Garden Guard**, slice-master ships as **Super Slice**.
+ships as **Garden Guard**, slice-master ships as **Super Slice**, pong ships as **Pong Arena**.
 
 Everything below is **live on lucidwinds.com**. The five new games and most audited ones are behind
 the tester gate, so unlock once with your passcode on any in development card and the whole
@@ -106,7 +106,9 @@ These are the ones worth testing hardest, because they shipped and nobody knew.
   loadout. Its trajectory line also drew straight through the fort and out the far side.
 - **Flipbook**: when a save failed it said older pages may not save. Storage is all or nothing,
   so **nothing** was saved, the warning erased itself after 3 seconds, and nothing was offered.
-- **Pong**: the campaign's own ending was a lie.
+- **Pong Arena**: the campaign's own ending was a lie, and its Sparks were earnable and
+  completely unspendable. There is a Skins shop to spend them in now, and the menu says plainly
+  "Currency is earned by playing and only spends here. No purchases, ever."
 - **Shell Shuffle**: promised each round "adds a cup, shuffles faster, pays more" while
   difficulty went **completely flat at level 11** and stayed flat forever.
 - **Sproing, Zen mode**: the HUD counted coins up and the pause panel printed a total, while
