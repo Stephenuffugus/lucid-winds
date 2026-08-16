@@ -487,8 +487,13 @@
   .join .free{color:var(--muted);font-size:.9rem}
 
   /* Install CTA pill (2026-08-08): the wolf mark IS the install button but
-     nobody knew it — a labelled pill next to it says so out loud. Hidden until
-     the page is actually installable, gone once running as the app. */
+     nobody knew it — a labelled pill next to it says so out loud.
+     ⛔ 2026-08-16 (Stephen): it used to be hidden until beforeinstallprompt
+     fired, which is Android and desktop Chrome ONLY. On iOS Safari, desktop
+     Safari, Firefox, and any Chrome that has already dismissed the prompt, the
+     event never arrives and the pill never appeared, so most visitors never saw
+     the offer at all. It now shows to anyone not already running the installed
+     app, and tapping it always explains how, per platform. */
   .install-cta{display:none;align-items:center;gap:9px;min-height:48px;padding:8px 14px;
     cursor:pointer;background:var(--panel);border:1px solid rgba(200,168,75,.5);border-radius:12px;
     color:var(--gold,#c8a84b);font-weight:700;font-size:.84rem;line-height:1.25;text-align:left;
@@ -496,6 +501,26 @@
   .install-cta.show{display:flex}
   .install-cta .ic{font-size:18px}
   .install-cta:hover,.install-cta:focus-visible{border-color:var(--gold,#c8a84b)}
+
+  /* Install instructions sheet. An alert() cannot show which button to tap and
+     looks like a browser error; this is the same words in the studio's voice. */
+  .inst-wrap{position:fixed;inset:0;z-index:2147480000;display:none;
+    align-items:center;justify-content:center;padding:18px;
+    background:rgba(4,7,4,.82);backdrop-filter:blur(6px)}
+  .inst-wrap.on{display:flex}
+  .inst{max-width:420px;width:100%;background:#12160f;border:1px solid rgba(200,168,75,.45);
+    border-radius:18px;padding:20px 20px 16px;color:var(--cream,#e8dcc8);
+    box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .inst h3{margin:0 0 4px;font-size:1.12rem;color:var(--gold,#c8a84b)}
+  .inst .lede{margin:0 0 14px;color:var(--muted,#8a9178);font-size:.9rem;line-height:1.5}
+  .inst ol{margin:0 0 14px;padding-left:20px;line-height:1.75;font-size:.95rem}
+  .inst ol b{color:var(--gold,#c8a84b)}
+  .inst .why{margin:0 0 16px;font-size:.85rem;color:var(--muted,#8a9178);line-height:1.5}
+  .inst .row{display:flex;gap:10px}
+  .inst button{flex:1;min-height:48px;border-radius:12px;font-family:inherit;font-weight:700;
+    font-size:.92rem;cursor:pointer;border:1px solid rgba(200,168,75,.45);
+    background:transparent;color:var(--cream,#e8dcc8)}
+  .inst button.go{background:var(--gold,#c8a84b);color:#12160f;border-color:transparent}
 
   /* Free apps shelf */
   .apps-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:10px 0 0}
@@ -559,6 +584,20 @@
     <button class="install-cta" id="install-cta" type="button">
       <span class="ic">📲</span><span>Add the Arcade to your home screen</span>
     </button>
+    <!-- Instructions sheet, filled per platform by the installer script below. -->
+    <div class="inst-wrap" id="inst-wrap" role="dialog" aria-modal="true" aria-labelledby="inst-h">
+      <div class="inst">
+        <h3 id="inst-h">Add the Arcade to your home screen</h3>
+        <p class="lede" id="inst-lede"></p>
+        <ol id="inst-steps"></ol>
+        <p class="why">It gets the wolf head icon and opens full screen with no browser bars,
+          separate from Lucid Winds. Everything still works offline once it is saved.</p>
+        <div class="row">
+          <button type="button" id="inst-close">Not now</button>
+          <button type="button" class="go" id="inst-go">Got it</button>
+        </div>
+      </div>
+    </div>
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
@@ -2393,12 +2432,48 @@ document.addEventListener('click', function(e){
     sub.className = '';
   }
 
-  // Android/desktop tell us when it is installable. iOS never does, so offer
-  // it there on sight rather than leaving the button looking dead.
+  // Android and desktop Chrome tell us when it is installable. Nobody else
+  // ever does. ⛔ Gating the offer on that event meant iOS Safari, desktop
+  // Safari, Firefox and any Chrome that had already dismissed the prompt never
+  // saw it, which is most visitors. Offer to everyone who is not already
+  // running the installed app; the sheet explains the route per platform.
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault(); deferred = e; offer();
   });
-  if (ios && !standalone) offer();
+  if (!standalone) offer();
+
+  /* Instructions sheet. An alert() cannot say which button to tap and reads
+     like a browser error, so this says it in the studio's own voice. */
+  var wrap = document.getElementById('inst-wrap');
+  var lede = document.getElementById('inst-lede');
+  var steps = document.getElementById('inst-steps');
+  var android = /Android/i.test(navigator.userAgent || '');
+  function fillSheet() {
+    if (!lede || !steps) return;
+    if (ios) {
+      lede.textContent = 'On an iPhone or iPad, Safari saves it from the Share menu.';
+      steps.innerHTML = '<li>Tap the <b>Share</b> button, the square with an arrow coming out of it.</li>'
+        + '<li>Scroll down and tap <b>Add to Home Screen</b>.</li>'
+        + '<li>Tap <b>Add</b> in the top right.</li>';
+    } else if (android) {
+      lede.textContent = 'On Android, Chrome saves it from the browser menu.';
+      steps.innerHTML = '<li>Tap the <b>three dots</b> in the top right of the browser.</li>'
+        + '<li>Tap <b>Install app</b>, or <b>Add to Home screen</b>.</li>'
+        + '<li>Confirm, and the wolf head appears with your other apps.</li>';
+    } else {
+      lede.textContent = 'On a computer, your browser saves it from the address bar or its menu.';
+      steps.innerHTML = '<li>Look for an <b>install icon</b> at the right of the address bar.</li>'
+        + '<li>If there is none, open the browser <b>menu</b> and look for <b>Install</b> or <b>Add to Home Screen</b>.</li>'
+        + '<li>Safari on a Mac keeps it under <b>File</b>, then <b>Add to Dock</b>.</li>';
+    }
+  }
+  function openSheet() { fillSheet(); if (wrap) wrap.classList.add('on'); }
+  function closeSheet() { if (wrap) wrap.classList.remove('on'); }
+  var ic = document.getElementById('inst-close'), ig = document.getElementById('inst-go');
+  if (ic) ic.onclick = closeSheet;
+  if (ig) ig.onclick = closeSheet;
+  if (wrap) wrap.addEventListener('click', function (e) { if (e.target === wrap) closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
 
   btn.onclick = function () {
     if (standalone) return;                      // running as the app already
@@ -2410,13 +2485,7 @@ document.addEventListener('click', function(e){
       })['catch'](function () {});
       return;
     }
-    alert(ios
-      ? 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\n'
-        + 'Tap the Share button, then Add to Home Screen.\n\n'
-        + 'It gets the wolf head icon and opens fullscreen, separate from Lucid Winds.'
-      : 'To add the Sky Wolf Studios Arcade to your Home Screen:\n\n'
-        + 'Open the browser menu, then Add to Home Screen or Install.\n\n'
-        + 'It gets the wolf head icon and opens fullscreen, separate from Lucid Winds.');
+    openSheet();
   };
 
   if (cta) cta.onclick = function () { btn.onclick(); };
