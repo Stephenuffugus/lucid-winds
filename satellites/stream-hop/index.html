@@ -150,7 +150,13 @@
         fetch('https://us-central1-focus-grove-fffa8.cloudfunctions.net/swFeedback',{method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({game:'jimothy', msg:msg0.slice(0,2000), meta:'bootlog-early'})})
-        .then(function(){ try{ localStorage.setItem('sh_bootdead_sent',String(Date.now()));
+        /* fetch does NOT reject on a 500, so a then() here counted a rejected
+           report as delivered and then deleted the breadcrumb: the crash
+           reports this whole system exists to collect were being thrown away
+           by the server having a bad day. Only clear the evidence once the
+           server has actually taken it; otherwise leave it for the next boot. */
+        .then(function(r){ if(!r||!r.ok) return;
+          try{ localStorage.setItem('sh_bootdead_sent',String(Date.now()));
           localStorage.removeItem('sh_bootdead'); }catch(e){} })['catch'](function(){});
       }
     }
