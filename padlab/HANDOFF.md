@@ -24,6 +24,7 @@ Feature surface as built:
 | FX | Convolution reverb, tempo-synced delay, tone (lowpass) — all on the instrument bus |
 | Output | Live meter, jam recording to downloadable file, project export/import (JSON), IndexedDB autosave |
 | Platform | PWA install, service worker offline, MIDI auto-connect + pad remap learn |
+| Marble | Marblebeat merged in 2026-08-16 as a fourth tab: an isometric plate you drop bouncing marbles onto, where height is note length and colour is pitch, plus a Show my beat toggle that projects the current pattern as ghost marbles |
 
 ---
 
@@ -241,6 +242,37 @@ Also confirm every `getElementById("x")` has a matching `id="x"` — a typo ther
 - Adding state without updating all three of `collectState` / `applyStateVars` / `refreshAllUI` silently breaks export-import
 
 ---
+
+## 8b. The Marble tab (added 2026-08-16)
+
+Marblebeat folded in from `incoming/marblebeat/`. Everything lives under the
+`mb` prefix, and the whole point of the merge was that it brought nothing of
+its own that the studio already had.
+
+- **No second clock.** `marbleTick(grid, tPlay, six)` is called from
+  `schedulerTick`, inside the playing branch, and is skipped during count in.
+  A shelf is 1, 2, 4, 8 or 16 sixteenths and phase snaps to sixteenths, so a
+  marble hits when `grid % period === offset`. Exact, and swing is inherited
+  because `tPlay` already carries it. **Do not give this its own transport.**
+- **No second graph.** `mbPlayHit` keeps Marblebeat's own synthesis, because
+  that plink and thud is the character of the toy, but drums connect to
+  `drumBus` and the melody to `instrBus`. The drums-bypass-FX rule in 4.1
+  applies here too, including the snare's second gain layer.
+- **No second scale.** A marble stores a scale DEGREE in `m.deg`, resolved
+  through `allowedMidis` at play time, so re-keying the studio re-keys the
+  plate. Hue comes from the sounding note, so C is the same colour in every key.
+- **The canvas is built inside a hidden view**, so it has no size until the tab
+  is first shown. `mbResize()` and `mbFitOnce()` run from the tab switcher, and
+  the animation only runs while the tab is on (`mbStartRaf` / `mbStopRaf`).
+- **State** is `v:4`. `collectState` writes `marble:{marbles,plates,showBeat}`
+  with runtime fields stripped; `applyStateVars` treats a missing key as an
+  empty plate so v3 projects still load; `refreshAllUI` rebuilds the chips and
+  ghosts. All three or none, as ever.
+- **Ghosts** (`Show my beat`) are rebuilt from `renderSeq`, are never
+  serialised, and never sound: the sequencer is already playing those notes.
+
+Gate: `node scripts/padlab_marble.mjs` (serve the repo root, not just
+`padlab/`, or `/dev-gate.js` 404s and the error assertion trips).
 
 ## 9. Roadmap
 
