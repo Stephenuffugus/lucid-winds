@@ -296,6 +296,41 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   ::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:#2c3038;border-radius:5px;}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+  /* ===== MARBLE ================================================
+     Marblebeat merged in as a fourth tab. The plate keeps its own
+     colours inside the canvas, since that iso look is the toy; the
+     chrome around it uses the studio's variables so the tab does not
+     read as a different app bolted on. */
+  #mb-stage{position:relative;flex:1 1 auto;min-height:300px;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:#0d1017;margin-bottom:10px}
+  #mb-cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+  #mb-zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+  #mb-zoom .mb-btn{width:48px;height:48px;padding:0;font-size:19px;line-height:1}
+  #mb-remove{position:absolute;right:8px;bottom:8px;display:none}
+  #mb-selinfo{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--text);
+    background:rgba(14,15,18,.82);border:1px solid var(--line2);padding:6px 10px;
+    border-radius:9px;display:none;font-family:var(--mono)}
+  .mb-btn{min-height:48px;padding:0 14px;background:var(--raise);border:1px solid var(--line2);
+    color:var(--text);border-radius:11px;font-family:var(--font);font-size:13px;
+    font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .mb-btn:active{background:var(--panel2)}
+  .mb-btn[aria-pressed="true"]{border-color:var(--amber);color:var(--amber-hot);
+    box-shadow:inset 0 0 0 1px var(--amber)}
+  .mb-danger{border-color:var(--ember);color:var(--ember)}
+  #mb-dock{display:flex;flex-direction:column;gap:7px}
+  .mb-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .mb-row::-webkit-scrollbar{display:none}
+  .mb-chip{flex:0 0 auto;display:flex;align-items:center;gap:6px;min-height:48px;
+    background:var(--panel2);border:1px solid var(--line2);border-radius:12px;
+    padding:0 12px;font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;
+    font-family:var(--font)}
+  .mb-chip.on{color:var(--text);border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+  .mb-dot{width:13px;height:13px;border-radius:50%;flex:0 0 auto}
+  #mb-hint{font-size:11px;color:var(--dim2);text-align:center;line-height:1.5}
+  #view-marble{display:none}
+  #view-marble.on{display:flex;flex-direction:column}
 </style>
 </head>
 <body>
@@ -351,6 +386,7 @@
     <button class="tab active" data-view="beats"><span class="ic"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="8" rx="7" ry="3"/><path d="M5 8v8c0 1.7 3.1 3 7 3s7-1.3 7-3V8M4 2l7 5M20 2l-7 5"/></svg></span>Beats</button>
     <button class="tab" data-view="keys"><span class="ic"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M9 5v14M15 5v14"/><path d="M9 5v6.5M15 5v6.5" stroke-width="3.4"/></svg></span>Keys</button>
     <button class="tab" data-view="sample"><span class="ic"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg></span>Sample</button>
+    <button class="tab" data-view="marble"><span class="ic"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17h8l5-5h5"/><circle cx="7" cy="13" r="2.6"/><circle cx="15" cy="8" r="2.2"/></svg></span>Marble</button>
   </div>
 
   <main>
@@ -465,6 +501,32 @@
       </div>
       <div class="section-title"><span class="label">Tip</span><span class="line"></span></div>
       <div class="steps" style="padding:0 2px;">Load a beat, trim to your favorite part, then <b>Chop into pads</b> — each slice lands on a pad so you can replay the chops live and even sequence them. Or <b>Play across keys</b> to turn any sound into a pitched instrument.</div>
+    </section>
+
+    <!-- MARBLE -->
+    <section class="view" id="view-marble">
+      <div class="section-title"><span class="label">Drop marbles, they bounce forever</span><span class="line"></span></div>
+      <div id="mb-stage">
+        <canvas id="mb-cv"></canvas>
+        <div id="mb-zoom">
+          <button class="mb-btn" id="mb-zin" aria-label="Zoom in">+</button>
+          <button class="mb-btn" id="mb-zout" aria-label="Zoom out">&minus;</button>
+        </div>
+        <div id="mb-selinfo"></div>
+        <button class="mb-btn mb-danger" id="mb-remove">Remove</button>
+      </div>
+      <div id="mb-dock">
+        <div class="mb-row" id="mb-toprow">
+          <button class="mb-btn" id="mb-plate">+ Plate</button>
+          <button class="mb-btn" id="mb-demo">Demo</button>
+          <button class="mb-btn" id="mb-clear">Clear</button>
+          <button class="mb-btn" id="mb-showbeat" aria-pressed="false">Show my beat</button>
+        </div>
+        <div class="mb-row" id="mb-instrow"></div>
+        <div class="mb-row" id="mb-noterow"></div>
+        <div class="mb-row" id="mb-pitchrow" style="display:none"></div>
+        <div id="mb-hint">Tap to drop or pick up &middot; drag a marble sideways to shift its beat &middot; drag to pan &middot; two fingers to orbit and zoom</div>
+      </div>
     </section>
   </main>
 </div>
@@ -1086,7 +1148,10 @@ function renderGrooves(){ const wrap=document.getElementById("grooves"); wrap.in
   GROOVES.forEach((g,i)=>{ const el=document.createElement("div"); el.className="groove"; el.style.setProperty("--gc",g.color);
     el.innerHTML='<div class="g-accent"></div><div class="g-name">'+g.name+'</div><div class="g-bpm">'+g.bpm+' BPM</div>';
     el.addEventListener("click",()=>{ if(currentGroove===i && isPlaying){ stopBeat(); el.classList.remove("playing"); document.getElementById("nbSub").textContent="paused"; } else loadGroove(i); }); wrap.appendChild(el); }); }
-function renderSeq(){ const seq=document.getElementById("seq"); seq.innerHTML=""; const p=pat();
+function renderSeq(){ /* the ghost marbles mirror this pattern, so they are rebuilt
+    wherever the grid is redrawn: edits, slot switches and song mode all land here */
+  if(typeof mbRebuildGhosts==="function") mbRebuildGhosts();
+  const seq=document.getElementById("seq"); seq.innerHTML=""; const p=pat();
   for(let r=0;r<8;r++){ const row=document.createElement("div"); row.className="seq-row";
     const lab=document.createElement("div"); lab.className="seq-lab";
     lab.innerHTML='<div class="dot" style="background:'+PAD_COLORS[r]+'"></div><div class="nm">'+pads[r].name+'</div><button class="mu'+(p.mutes[r]?" on":"")+'" data-mu="'+r+'">M</button>';
@@ -1130,6 +1195,7 @@ function schedulerTick(){ const spb=60/tempo, six=spb/4;
   while(nextTime<ct()+.12){ const s=grid%16; let tPlay=nextTime; if(s%2===1) tPlay+=six*(swing/100);
     if(isPlaying){ if(countinLeft>0){ if(s%4===0){ drum("click",tPlay,1); } (function(st){ uiQ.push({t:tPlay,fn:()=>{}}); })(s); }
       else { if(s===0 && songMode && songChain.length){ songPos=(songPos+1)%songChain.length; curSlot=songChain[songPos]; uiQ.push({t:tPlay,fn:songSlotUI}); } playSeqStep(s,tPlay); if(metroOn && s%4===0) drum("click",tPlay,s===0?1:.7); (function(st){ uiQ.push({t:tPlay,fn:()=>highlightStep(st)}); })(s); } }
+    if(isPlaying && countinLeft===0) marbleTick(grid,tPlay,six);
     if(arpOn) arpTick(grid,tPlay,six);
     if(rollOn && heldPads.size) rollTick(grid,tPlay,six);
     grid++; nextTime+=six;
@@ -1312,7 +1378,7 @@ async function setupPWA(){ const i192=makeIcon(192), i512=makeIcon(512);
     const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"}); const ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml); }
   // Versioned registration, bumped in lockstep with SHELL_VERSION in sw.js —
   // this host edge-pins bare sw.js URLs for 7 days, so a bare URL never updates.
-  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=9"); }catch(e){} }
+  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=10"); }catch(e){} }
 }
 let deferredPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; });
@@ -1363,7 +1429,9 @@ async function persistRecording(name,blob){ try{ await idbSet("rec:"+name,blob);
 
 let saveTimer=null;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveProject,600); }
-function collectState(){ return { v:3, tempo,swing,keyRoot,scaleName,scaleLock,currentInstId,curSlot,octaveShift,pianoView,
+function collectState(){ return { v:4, tempo,swing,keyRoot,scaleName,scaleLock,currentInstId,curSlot,octaveShift,pianoView,
+    marble:{ marbles:mbMarbles.map(m=>({gx:m.gx,gy:m.gy,type:m.type,shelf:m.shelf,deg:m.deg,phase:m.phase})),
+             plates:mbPlates.map(p=>({x0:p.x0,y0:p.y0,w:p.w,h:p.h})), showBeat:mbShowBeat },
     chordMode,arpOn,arpMode,arpRate,arpLatch,sustainOn,metroOn,countIn,
     fx:{reverb:reverbSend?reverbSend.gain.value:.18,delay:delaySend?delaySend.gain.value:.1,delayMult,tone:toneFilter?toneFilter.frequency.value:20000,flanger:flangerWet?flangerWet.gain.value/.9:0},
     padNotes, offlinePacks:[...offlinePacks], songMode, songChain, drumKit,
@@ -1390,6 +1458,17 @@ function applyStateVars(s){
   if(s.padsMeta){ pads=s.padsMeta.map((m,i)=>{ const base=m.kind==="sample"?{name:m.name,kind:"drum",drum:PAD_DEFAULTS[i][1]}:{name:m.name,kind:"drum",drum:m.drum};
     base.vol=m.vol==null?1:m.vol; base.tune=m.tune||0; base.rev=!!m.rev; return base; }); }
   currentGroove=s.currentGroove!=null?s.currentGroove:-1;
+  /* v3 projects predate the marble tab, so a missing key is normal and means
+     an empty plate rather than a broken load */
+  if(s.marble&&Array.isArray(s.marble.marbles)){
+    mbMarbles=s.marble.marbles.filter(m=>m&&MB_INSTR[m.type]&&m.shelf>=0&&m.shelf<MB_NOTES.length)
+      .map(m=>({gx:m.gx|0,gy:m.gy|0,type:m.type,shelf:m.shelf|0,
+                deg:m.deg|0,phase:Math.max(0,Math.min(0.9999,+m.phase||0)),lastHit:-9}));
+    if(Array.isArray(s.marble.plates)&&s.marble.plates.length)
+      mbPlates=s.marble.plates.slice(0,MB_MAX_PLATES).map(p=>({x0:p.x0|0,y0:p.y0|0,
+        w:Math.max(1,p.w|0),h:Math.max(1,p.h|0)}));
+    mbShowBeat=!!s.marble.showBeat;
+  } else { mbMarbles=[]; mbPlates=[{x0:0,y0:0,w:MB_PLATE_W,h:MB_PLATE_H}]; mbShowBeat=false; }
   if(s.fx){ delayMult=s.fx.delayMult||0.5; window._restoreFx=s.fx; }
 }
 async function saveProject(){ if(!idbOK) return; try{ await idbSet("project",collectState()); }catch(e){} }
@@ -1433,7 +1512,9 @@ function applyRestoredFx(){ const fx=window._restoreFx; if(!fx) return;
 
 function wire(){
   document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); t.classList.add("active");
-    document.querySelectorAll(".view").forEach(v=>v.classList.remove("on")); document.getElementById("view-"+t.dataset.view).classList.add("on"); if(t.dataset.view==="keys") renderKeyboard(); }));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("on")); document.getElementById("view-"+t.dataset.view).classList.add("on"); if(t.dataset.view==="keys") renderKeyboard();
+    if(t.dataset.view==="marble"){ mbResize(); mbFitOnce(); mbStartRaf(); }
+    else mbStopRaf(); }));
   document.getElementById("playBtn").onclick=()=>{ if(isPlaying) stopBeat(); else { if(currentGroove<0 && pat().tracks.every(r=>r.every(c=>!c))) loadGroove(0); else startBeat(); } };
   document.getElementById("recBtn").onclick=toggleRecord;
   document.getElementById("tempo").oninput=e=>{ tempo=parseInt(e.target.value); document.getElementById("tempoVal").textContent=tempo; updateDelayTime(); saveSoon(); };
@@ -1542,6 +1623,14 @@ document.addEventListener("visibilitychange",()=>{ if(document.hidden && recordi
 /* -------------------- boot -------------------- */
 function refreshAllUI(){
   rebuildScale(); syncScaleUI(); renderFxRack();
+  /* the marble tab is part of the project too: chips, ghosts and the plate
+     cache all have to follow a loaded state (collect, apply, refresh: all
+     three or none) */
+  if(typeof mbBuildChips==="function"){
+    mbBuildChips(); mbRebuildGhosts(); mbCamDirty=true;
+    const sb=document.getElementById("mb-showbeat");
+    if(sb) sb.setAttribute("aria-pressed",String(mbShowBeat));
+  }
   document.getElementById("tempo").value=tempo; document.getElementById("tempoVal").textContent=tempo; updateDelayTime();
   document.getElementById("swing").value=swing; document.getElementById("swingVal").textContent=swing+"%";
   document.querySelectorAll(".slot").forEach(s=>s.classList.toggle("active",+s.dataset.slot===curSlot));
@@ -1562,6 +1651,530 @@ function refreshAllUI(){
   if(currentGroove>=0){ const gc=document.querySelectorAll(".groove")[currentGroove]; if(gc) gc.classList.add("playing"); document.getElementById("nbName").textContent=GROOVES[currentGroove].name; document.getElementById("nbSub").textContent=tempo+" BPM · tap keys or pads to jam"; }
   applyRestoredFx();
 }
+/* ===================== MARBLE =====================
+   Marblebeat, folded in as a fourth tab.
+
+   The idea it is built on: a marble bounces forever, its HEIGHT is how long
+   its note is, and its COLOUR is the pitch. Give each one a phase offset and
+   the toy stops being a polyrhythm curiosity and becomes a sequencer you can
+   read at a glance: snare on 2 and 4 is a marble half a period out.
+
+   What changed on the way in. It used to own a transport, a tempo slider, a
+   scale picker and an audio graph of its own. All four are gone, because the
+   studio already has them and two clocks in one app is a bug waiting to
+   happen. Marbles now hit on the studio's own sixteenth note grid, which is
+   exact rather than approximate: a shelf is 1, 2, 4, 8 or 16 sixteenths and
+   phase snaps to sixteenths, so a marble sounds precisely when
+   grid % period === its offset. Swing comes free, because the scheduler has
+   already bent the time before we see it. */
+const MB_NOTES=[
+  {beats:0.25,label:"1/16"},{beats:0.5,label:"1/8"},{beats:1,label:"1/4"},
+  {beats:2,label:"1/2"},{beats:4,label:"1 bar"}];
+const MB_SHELF_H=[42,78,122,174,234];
+const MB_PLATE_W=16, MB_PLATE_H=16, MB_PLATE_GAP=3, MB_MAX_PLATES=6;
+const MB_PX_PER_BEAT_DRAG=110, MB_PHASE_SNAP=0.25;
+const MB_INSTR={
+  bass:{label:"Bass",color:"#5a6cff",dark:"#232a66",r:10},
+  snare:{label:"Snare",color:"#e6e9f2",dark:"#6a7080",r:8},
+  hat:{label:"Hat",color:"#e8b04b",dark:"#6e5320",r:6},
+  melody:{label:"Melody",color:null,r:8}};
+
+let mbPlates=[{x0:0,y0:0,w:MB_PLATE_W,h:MB_PLATE_H}];
+let mbMarbles=[];
+let mbSel={type:"bass",shelf:2,deg:0};
+let mbSelected=null, mbShowBeat=false, mbGhosts=[];
+let mbNoise=null;
+
+/* ---- pitch: a marble stores a scale DEGREE, not a fixed semitone, so
+   changing the studio's key or scale re-keys every marble on the plate ---- */
+function mbMidiOf(deg){
+  if(!allowedMidis.length) rebuildScale();
+  if(!allowedMidis.length) return 60+deg;
+  let i=allowedMidis.findIndex(m=>m>=60);
+  if(i<0) i=0;
+  const j=Math.max(0,Math.min(allowedMidis.length-1,i+deg));
+  return allowedMidis[j];
+}
+function mbHue(m){ const n=mbMidiOf(m.deg); return (((n%12)+12)%12)*30; }
+function mbColors(m){
+  if(m.type==="melody"){ const h=mbHue(m); return ["hsl("+h+" 85% 62%)","hsl("+h+" 85% 26%)"]; }
+  return [MB_INSTR[m.type].color,MB_INSTR[m.type].dark];
+}
+function mbNoteName(m){
+  const n=mbMidiOf(m.deg);
+  return ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][((n%12)+12)%12]+(Math.floor(n/12)-1);
+}
+
+/* ---- voices. Marblebeat's own synthesis, kept because that plink and thud
+   is the character of the toy, but reparented onto the studio's buses. Drums
+   go to drumBus, which bypasses the effects on purpose: cranking the reverb
+   should never turn the beat to mush. The melody goes through instrBus so it
+   does get the reverb, delay and tone. ---- */
+function mbNoiseBuf(){
+  if(mbNoise) return mbNoise;
+  const b=AC.createBuffer(1,Math.floor(AC.sampleRate*0.3),AC.sampleRate);
+  const d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  mbNoise=b; return b;
+}
+function mbPlayHit(m,t){
+  if(!AC) return;
+  try{
+    const drums=m.type!=="melody";
+    const g=AC.createGain(); g.connect(drums?drumBus:instrBus);
+    if(m.type==="bass"){
+      const o=AC.createOscillator(); o.type="sine";
+      o.frequency.setValueAtTime(120,t);
+      o.frequency.exponentialRampToValueAtTime(42,t+0.14);
+      g.gain.setValueAtTime(0.9,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.32);
+      o.connect(g); o.start(t); o.stop(t+0.34);
+    }else if(m.type==="snare"){
+      const s=AC.createBufferSource(); s.buffer=mbNoiseBuf();
+      const hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=1400;
+      s.connect(hp); hp.connect(g);
+      g.gain.setValueAtTime(0.5,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+      s.start(t); s.stop(t+0.18);
+      const o=AC.createOscillator(); o.type="triangle"; o.frequency.value=185;
+      const g2=AC.createGain(); g2.gain.setValueAtTime(0.35,t);
+      g2.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+      // the snare's second layer belongs on the drum bus too, not the master
+      o.connect(g2); g2.connect(drumBus); o.start(t); o.stop(t+0.12);
+    }else if(m.type==="hat"){
+      const s=AC.createBufferSource(); s.buffer=mbNoiseBuf();
+      const hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=7500;
+      s.connect(hp); hp.connect(g);
+      g.gain.setValueAtTime(0.3,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+      s.start(t); s.stop(t+0.06);
+    }else{
+      const f=440*Math.pow(2,(mbMidiOf(m.deg)-69)/12);
+      const o=AC.createOscillator(); o.type="triangle"; o.frequency.value=f;
+      const o2=AC.createOscillator(); o2.type="sine"; o2.frequency.value=f*2;
+      const g2=AC.createGain(); g2.gain.value=0.25;
+      g.gain.setValueAtTime(0.42,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      o.connect(g); o2.connect(g2); g2.connect(g);
+      o.start(t); o.stop(t+0.52); o2.start(t); o2.stop(t+0.52);
+    }
+  }catch(e){}
+}
+function mbAudition(m){
+  if(!AC) return;
+  try{ ensureAudio(); mbPlayHit(m,ct()+0.01); m.lastHit=ct()+0.01;
+       m.next=m.lastHit+mbPeriod16(m)*(60/tempo/4); }catch(e){}
+}
+function mbPeriod16(m){ return Math.max(1,Math.round(MB_NOTES[m.shelf].beats*4)); }
+
+/* ---- the clock. Called from schedulerTick, so a marble is just another
+   thing the groove plays. lastHit and next are set here, ahead of time, on
+   purpose: the renderer works out how high a marble is from where it is
+   between its last hit and its next one, so it needs to know the future. ---- */
+function marbleTick(g,t,six){
+  for(let i=0;i<mbMarbles.length;i++){
+    const m=mbMarbles[i], p16=mbPeriod16(m);
+    const off=((Math.round((m.phase||0)*p16)%p16)+p16)%p16;
+    if(g%p16===off){
+      mbPlayHit(m,t);
+      m.lastHit=t; m.next=t+p16*six;
+    }
+  }
+  for(let i=0;i<mbGhosts.length;i++){
+    const gh=mbGhosts[i], p16=16;
+    if(g%p16===gh.step){ gh.lastHit=t; gh.next=t+p16*six; }
+  }
+}
+
+/* ---- camera ---- */
+let mbYaw=0, mbTilt=0.5, mbZoom=1, mbPanX=0, mbPanY=0, mbCamDirty=true;
+const MB_TILT_MIN=0.18, MB_TILT_MAX=0.92, MB_ZMIN=0.3, MB_ZMAX=2.4, MB_TILE=64;
+let mbCv=null, mbCtx=null, mbW=0, mbH=0, mbDPR=1, mbCache=null, mbCctx=null, mbRaf=null;
+
+function mbWorldCenter(){
+  let a=1e9,b=1e9,c=-1e9,d=-1e9;
+  for(const p of mbPlates){ a=Math.min(a,p.x0); b=Math.min(b,p.y0);
+    c=Math.max(c,p.x0+p.w); d=Math.max(d,p.y0+p.h); }
+  return [(a+c)/2,(b+d)/2];
+}
+function mbResize(){
+  if(!mbCv) return;
+  mbDPR=Math.min(devicePixelRatio||1,2);
+  const r=mbCv.parentElement.getBoundingClientRect();
+  mbW=r.width; mbH=r.height;
+  if(mbW<2||mbH<2) return;              // the view is hidden; sizing now gives 0x0
+  mbCv.width=mbW*mbDPR; mbCv.height=mbH*mbDPR;
+  mbCtx.setTransform(mbDPR,0,0,mbDPR,0,0);
+  mbCache.width=mbW*mbDPR; mbCache.height=mbH*mbDPR;
+  mbCctx.setTransform(mbDPR,0,0,mbDPR,0,0);
+  mbCamDirty=true;
+}
+/* Fit the view the first time the tab is opened, and not again after that:
+   the canvas has no size until the view is visible, so this cannot happen at
+   boot, and refitting later would throw away wherever the player had panned
+   and zoomed to. */
+let mbFitted=false;
+function mbFitOnce(){ if(mbFitted||mbW<2) return; mbFitted=true; mbFit(); }
+function mbFit(){
+  const p=mbPlates[0];
+  mbZoom=Math.max(MB_ZMIN,Math.min(1,(mbW*0.92)/((p.w+p.h)*MB_TILE/2)));
+  mbPanX=0; mbPanY=0; mbCamDirty=true;
+}
+function mbTw(){ return MB_TILE*mbZoom; }
+function mbTh(){ return mbTw()*mbTilt; }
+function mbZs(){ return Math.min(1,(mbH*0.5)/MB_SHELF_H[4])*(1.25-mbTilt)*mbZoom; }
+function mbIso(gx,gy,z){
+  const c=mbWorldCenter();
+  const dx=gx-c[0], dy=gy-c[1];
+  const s=Math.sin(mbYaw), co=Math.cos(mbYaw);
+  const rx=dx*co-dy*s, ry=dx*s+dy*co;
+  return [mbW/2+mbPanX+(rx-ry)*mbTw()/2, mbH*0.55+mbPanY+(rx+ry)*mbTh()/2-z*mbZs()];
+}
+function mbUnproj(px,py){
+  const a=2*(px-(mbW/2+mbPanX))/mbTw(), b=2*(py-(mbH*0.55+mbPanY))/mbTh();
+  const rx=(a+b)/2, ry=(b-a)/2;
+  const s=Math.sin(-mbYaw), co=Math.cos(-mbYaw), c=mbWorldCenter();
+  return [rx*co-ry*s+c[0], rx*s+ry*co+c[1]];
+}
+
+/* ---- render ---- */
+function mbScreen(m,now){
+  const six=60/tempo/4;
+  const T=mbPeriod16(m)*six;
+  const h=MB_SHELF_H[m.shelf];
+  let z=h;
+  if(isPlaying&&m.next!==undefined){
+    const u=1-Math.max(0,Math.min(1,(m.next-now)/T));
+    z=h*(1-u*u);
+  }
+  const p=mbIso(m.gx+0.5,m.gy+0.5,0);
+  const r=Math.max(3,MB_INSTR[m.type].r*mbZoom);
+  return {cx:p[0],cy:p[1],my:p[1]-z*mbZs()-r*0.4,z:z,h:h,r:r};
+}
+function mbDrawPlates(){
+  mbCctx.clearRect(0,0,mbW,mbH);
+  mbPlates.forEach((p,pi)=>{
+    const tA=pi%2?"#1e2634":"#1c2230", tB=pi%2?"#242e40":"#202839";
+    for(let gy=p.y0;gy<p.y0+p.h;gy++)for(let gx=p.x0;gx<p.x0+p.w;gx++){
+      const q=[mbIso(gx,gy,0),mbIso(gx+1,gy,0),mbIso(gx+1,gy+1,0),mbIso(gx,gy+1,0)];
+      if(Math.max(q[0][0],q[1][0],q[2][0],q[3][0])<-8) continue;
+      if(Math.min(q[0][0],q[1][0],q[2][0],q[3][0])>mbW+8) continue;
+      if(Math.max(q[0][1],q[1][1],q[2][1],q[3][1])<-8) continue;
+      if(Math.min(q[0][1],q[1][1],q[2][1],q[3][1])>mbH+8) continue;
+      mbCctx.beginPath(); mbCctx.moveTo(q[0][0],q[0][1]);
+      for(let i=1;i<4;i++) mbCctx.lineTo(q[i][0],q[i][1]);
+      mbCctx.closePath();
+      mbCctx.fillStyle=(gx+gy)%2?tA:tB; mbCctx.fill();
+      mbCctx.strokeStyle="#2c3547"; mbCctx.lineWidth=1; mbCctx.stroke();
+    }
+    const b=[mbIso(p.x0,p.y0,0),mbIso(p.x0+p.w,p.y0,0),mbIso(p.x0+p.w,p.y0+p.h,0),mbIso(p.x0,p.y0+p.h,0)];
+    mbCctx.beginPath(); mbCctx.moveTo(b[0][0],b[0][1]);
+    for(let i=1;i<4;i++) mbCctx.lineTo(b[i][0],b[i][1]);
+    mbCctx.closePath();
+    mbCctx.strokeStyle="rgba(245,166,35,.35)"; mbCctx.lineWidth=1.5; mbCctx.stroke();
+  });
+  mbCamDirty=false;
+}
+function mbDrawOne(m,now,ghost){
+  const s=mbScreen(m,now);
+  if(s.cx<-40||s.cx>mbW+40||s.my<-40||s.cy>mbH+40) return;
+  const c=mbColors(m), col=c[0], dark=c[1];
+  const A=ghost?0.55:1;
+  if(isPlaying&&m.lastHit!==undefined&&now-m.lastHit<0.3&&now>=m.lastHit){
+    const a=1-(now-m.lastHit)/0.3, rr=6+(1-a)*mbTw()*0.42;
+    mbCtx.strokeStyle=col; mbCtx.globalAlpha=a*0.8*A; mbCtx.lineWidth=2;
+    mbCtx.beginPath(); mbCtx.ellipse(s.cx,s.cy,rr,rr*mbTilt,0,0,Math.PI*2); mbCtx.stroke();
+    mbCtx.globalAlpha=1;
+  }
+  mbCtx.globalAlpha=A;
+  mbCtx.strokeStyle="rgba(124,131,141,.14)"; mbCtx.setLineDash([2,4]);
+  mbCtx.beginPath(); mbCtx.moveTo(s.cx,s.cy); mbCtx.lineTo(s.cx,s.cy-s.h*mbZs()); mbCtx.stroke();
+  mbCtx.setLineDash([]);
+  const shr=s.r*(0.55+0.45*(1-s.z/s.h));
+  mbCtx.fillStyle="rgba(0,0,0,.4)";
+  mbCtx.beginPath(); mbCtx.ellipse(s.cx,s.cy,shr,shr*mbTilt,0,0,Math.PI*2); mbCtx.fill();
+  const ph=m.phase||0;
+  if(!ghost&&(m===mbSelected||ph>0.0001)){
+    const topY=s.cy-s.h*mbZs(), dr=Math.max(6,8*mbZoom);
+    mbCtx.strokeStyle="rgba(124,131,141,.35)"; mbCtx.lineWidth=1.5;
+    mbCtx.beginPath(); mbCtx.arc(s.cx,topY,dr,0,Math.PI*2); mbCtx.stroke();
+    const a=-Math.PI/2+ph*Math.PI*2;
+    mbCtx.fillStyle="#F5A623";
+    mbCtx.beginPath(); mbCtx.arc(s.cx+Math.cos(a)*dr,topY+Math.sin(a)*dr,2.5,0,Math.PI*2); mbCtx.fill();
+  }
+  if(m===mbSelected){
+    mbCtx.strokeStyle="#F5A623"; mbCtx.lineWidth=2;
+    mbCtx.beginPath(); mbCtx.arc(s.cx,s.my,s.r+4,0,Math.PI*2); mbCtx.stroke();
+  }
+  const grad=mbCtx.createRadialGradient(s.cx-s.r*0.35,s.my-s.r*0.35,s.r*0.15,s.cx,s.my,s.r);
+  grad.addColorStop(0,"#ffffff"); grad.addColorStop(0.25,col); grad.addColorStop(1,dark);
+  mbCtx.fillStyle=grad;
+  mbCtx.beginPath(); mbCtx.arc(s.cx,s.my,s.r,0,Math.PI*2); mbCtx.fill();
+  mbCtx.globalAlpha=1;
+}
+function mbDraw(){
+  mbRaf=requestAnimationFrame(mbDraw);
+  if(!mbCv||mbW<2) return;
+  if(mbCamDirty) mbDrawPlates();
+  mbCtx.clearRect(0,0,mbW,mbH);
+  mbCtx.drawImage(mbCache,0,0,mbW,mbH);
+  const now=ct();
+  mbCtx.font="10px "+getComputedStyle(document.body).fontFamily;
+  mbCtx.textAlign="left";
+  const yBase=mbH*0.55+mbPanY;
+  /* Zoomed out, the five shelves sit close enough together that their labels
+     print on top of each other. Draw every line, but only label the ones with
+     room, and always label the one in hand. */
+  let lastLabelY=Infinity;
+  for(let s=MB_SHELF_H.length-1;s>=0;s--){
+    const y=yBase-MB_SHELF_H[s]*mbZs();
+    const hot=s===mbSel.shelf||(mbSelected&&mbSelected.shelf===s);
+    mbCtx.strokeStyle=hot?"rgba(245,166,35,.5)":"rgba(124,131,141,.16)";
+    mbCtx.beginPath(); mbCtx.moveTo(8,y); mbCtx.lineTo(48,y); mbCtx.stroke();
+    if(hot||y<lastLabelY-12){
+      mbCtx.fillStyle=hot?"#F5A623":"rgba(124,131,141,.55)";
+      mbCtx.fillText(MB_NOTES[s].label,8,y-3);
+      lastLabelY=y;
+    }
+  }
+  const all=mbGhosts.concat(mbMarbles).slice().sort((a,b)=>
+    mbIso(a.gx+0.5,a.gy+0.5,0)[1]-mbIso(b.gx+0.5,b.gy+0.5,0)[1]);
+  for(const m of all) mbDrawOne(m,now,m.ghost===true);
+}
+function mbStartRaf(){ if(!mbRaf) mbDraw(); }
+function mbStopRaf(){ if(mbRaf){ cancelAnimationFrame(mbRaf); mbRaf=null; } }
+
+/* ---- show my beat: the current pattern, as ghost marbles ----
+   Read only, not saved, and silent: the sequencer is already playing these,
+   so they only bounce. It is the same beat you programmed, seen from the
+   side, which is the whole reason the tab exists. */
+const MB_TRACK_TYPE=["bass","snare","hat","hat","melody","melody","melody","melody"];
+function mbRebuildGhosts(){
+  mbGhosts=[];
+  if(!mbShowBeat) return;
+  const p=pat(); if(!p) return;
+  for(let i=0;i<8;i++){
+    for(let st=0;st<16;st++){
+      if(!p.tracks[i][st]) continue;
+      mbGhosts.push({ghost:true,gx:st,gy:i*2,type:MB_TRACK_TYPE[i],shelf:4,
+        deg:i,phase:st/16,step:st,lastHit:-9});
+    }
+  }
+}
+
+/* ---- input ---- */
+function mbSelect(m,silent){
+  mbSelected=m;
+  const rm=document.getElementById("mb-remove"), si=document.getElementById("mb-selinfo");
+  rm.style.display=m?"inline-flex":"none";
+  si.style.display=m?"block":"none";
+  if(m){
+    if(!silent) mbAudition(m);
+    mbSel.type=m.type; mbSel.shelf=m.shelf;
+    if(m.type==="melody") mbSel.deg=m.deg;
+    mbBuildChips();
+    mbSelInfo();
+  }
+}
+function mbOffsetLabel(m){
+  const pb=MB_NOTES[m.shelf].beats, ob=(m.phase||0)*pb;
+  if(ob<0.001) return "";
+  const s=Math.round(ob/0.25);
+  return " · +"+(s%4===0?(s/4)+" beat"+(s>4?"s":""):s+"/16");
+}
+function mbSelInfo(){
+  if(!mbSelected) return;
+  const p=mbSelected.type==="melody"?" · "+mbNoteName(mbSelected):"";
+  document.getElementById("mb-selinfo").textContent=
+    MB_INSTR[mbSelected.type].label+" · "+MB_NOTES[mbSelected.shelf].label+p+mbOffsetLabel(mbSelected);
+}
+function mbWire(){
+  mbCv=document.getElementById("mb-cv");
+  if(!mbCv) return;
+  mbCtx=mbCv.getContext("2d");
+  mbCache=document.createElement("canvas");
+  mbCctx=mbCache.getContext("2d");
+  const ptrs=new Map(); let gest=null;
+
+  mbCv.addEventListener("contextmenu",e=>e.preventDefault());
+  mbCv.addEventListener("wheel",e=>{
+    e.preventDefault();
+    mbZoom=Math.max(MB_ZMIN,Math.min(MB_ZMAX,mbZoom*(e.deltaY<0?1.12:0.89)));
+    mbCamDirty=true;
+  },{passive:false});
+
+  mbCv.addEventListener("pointerdown",e=>{
+    try{ mbCv.setPointerCapture(e.pointerId); }catch(err){}
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ptrs.size===2){
+      const v=[...ptrs.values()], a=v[0], b=v[1];
+      gest={mode:"orbit",yaw0:mbYaw,tilt0:mbTilt,zoom0:mbZoom,
+        mx0:(a.x+b.x)/2,my0:(a.y+b.y)/2,d0:Math.hypot(a.x-b.x,a.y-b.y)};
+      return;
+    }
+    const r=mbCv.getBoundingClientRect();
+    const px=e.clientX-r.left, py=e.clientY-r.top, now=ct();
+    let best=null,bd=1e9;
+    for(const m of mbMarbles){
+      const s=mbScreen(m,now);
+      const d=Math.hypot(px-s.cx,py-s.my)-(s.r+12);
+      if(d<0&&d<bd){ bd=d; best=m; }
+    }
+    if(best) gest={mode:"phase",m:best,sx:e.clientX,sy:e.clientY,phase0:best.phase||0,moved:false};
+    else if(e.button===2||e.ctrlKey) gest={mode:"orbit1",sx:e.clientX,sy:e.clientY,yaw0:mbYaw,tilt0:mbTilt};
+    else gest={mode:"pan",sx:e.clientX,sy:e.clientY,px0:mbPanX,py0:mbPanY,moved:false};
+  });
+
+  mbCv.addEventListener("pointermove",e=>{
+    if(!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(!gest) return;
+    if(gest.mode==="orbit"&&ptrs.size===2){
+      const v=[...ptrs.values()], a=v[0], b=v[1];
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2, d=Math.hypot(a.x-b.x,a.y-b.y);
+      mbYaw=gest.yaw0+(mx-gest.mx0)*0.008;
+      mbTilt=Math.max(MB_TILT_MIN,Math.min(MB_TILT_MAX,gest.tilt0+(my-gest.my0)*0.0035));
+      mbZoom=Math.max(MB_ZMIN,Math.min(MB_ZMAX,gest.zoom0*d/gest.d0));
+      mbCamDirty=true; return;
+    }
+    if(gest.mode==="orbit1"){
+      mbYaw=gest.yaw0+(e.clientX-gest.sx)*0.008;
+      mbTilt=Math.max(MB_TILT_MIN,Math.min(MB_TILT_MAX,gest.tilt0+(e.clientY-gest.sy)*0.0035));
+      mbCamDirty=true; return;
+    }
+    if(gest.mode==="phase"){
+      const dx=e.clientX-gest.sx;
+      if(!gest.moved&&Math.abs(dx)<7&&Math.abs(e.clientY-gest.sy)<7) return;
+      gest.moved=true;
+      const m=gest.m, pb=MB_NOTES[m.shelf].beats;
+      let off=gest.phase0*pb+dx/MB_PX_PER_BEAT_DRAG;
+      off=Math.round(off/MB_PHASE_SNAP)*MB_PHASE_SNAP;
+      off=((off%pb)+pb)%pb;
+      const np=off/pb;
+      if(np!==m.phase){ m.phase=np; mbSelect(m,true); mbSelInfo(); saveSoon(); }
+      return;
+    }
+    if(gest.mode==="pan"){
+      const dx=e.clientX-gest.sx, dy=e.clientY-gest.sy;
+      if(!gest.moved&&Math.hypot(dx,dy)<7) return;
+      gest.moved=true;
+      mbPanX=gest.px0+dx; mbPanY=gest.py0+dy; mbCamDirty=true;
+    }
+  });
+
+  function endPtr(e){
+    const had=ptrs.has(e.pointerId);
+    ptrs.delete(e.pointerId);
+    if(!had||!gest) return;
+    if(ptrs.size>0) return;
+    const g=gest; gest=null;
+    if(g.mode==="phase"&&!g.moved){ mbSelect(g.m); return; }
+    if(g.mode==="pan"&&!g.moved) mbTap(e);
+  }
+  mbCv.addEventListener("pointerup",endPtr);
+  mbCv.addEventListener("pointercancel",e=>{ ptrs.delete(e.pointerId); gest=null; });
+
+  function mbTap(e){
+    const r=mbCv.getBoundingClientRect();
+    const f=mbUnproj(e.clientX-r.left,e.clientY-r.top);
+    const gx=Math.floor(f[0]), gy=Math.floor(f[1]);
+    const inPlate=mbPlates.some(p=>gx>=p.x0&&gy>=p.y0&&gx<p.x0+p.w&&gy<p.y0+p.h);
+    if(!inPlate){ mbSelect(null); return; }
+    const occ=mbMarbles.find(m=>m.gx===gx&&m.gy===gy);
+    if(occ){ mbSelect(occ); return; }
+    const m={gx:gx,gy:gy,type:mbSel.type,shelf:mbSel.shelf,deg:mbSel.deg,phase:0,lastHit:-9};
+    mbMarbles.push(m);
+    mbAudition(m);
+    mbSelect(null);
+    saveSoon();
+  }
+
+  document.getElementById("mb-zin").onclick=()=>{ mbZoom=Math.min(MB_ZMAX,mbZoom*1.2); mbCamDirty=true; };
+  document.getElementById("mb-zout").onclick=()=>{ mbZoom=Math.max(MB_ZMIN,mbZoom/1.2); mbCamDirty=true; };
+  document.getElementById("mb-clear").onclick=()=>{ mbMarbles=[]; mbSelect(null); saveSoon(); };
+  document.getElementById("mb-remove").onclick=()=>{
+    if(!mbSelected) return;
+    mbMarbles=mbMarbles.filter(m=>m!==mbSelected);
+    mbSelect(null); saveSoon();
+  };
+  document.getElementById("mb-plate").onclick=()=>{
+    if(mbPlates.length>=MB_MAX_PLATES){ toast("Six plates is the limit"); return; }
+    const last=mbPlates[mbPlates.length-1];
+    mbPlates.push({x0:last.x0+last.w+MB_PLATE_GAP,y0:last.y0,w:MB_PLATE_W,h:MB_PLATE_H});
+    mbCamDirty=true; saveSoon();
+  };
+  document.getElementById("mb-demo").onclick=()=>{
+    mbMarbles=[
+      {gx:1,gy:14,type:"bass",  shelf:3,deg:0,phase:0},
+      {gx:3,gy:12,type:"snare", shelf:3,deg:0,phase:0.5},
+      {gx:5,gy:10,type:"hat",   shelf:1,deg:0,phase:0},
+      {gx:6,gy:10,type:"hat",   shelf:1,deg:0,phase:0.5},
+      {gx:9,gy:5, type:"melody",shelf:2,deg:0,phase:0},
+      {gx:11,gy:4,type:"melody",shelf:2,deg:2,phase:0.5},
+      {gx:13,gy:3,type:"melody",shelf:3,deg:4,phase:0.25},
+      {gx:12,gy:7,type:"melody",shelf:4,deg:3,phase:0.75}
+    ].map(m=>Object.assign(m,{lastHit:-9}));
+    mbSelect(null); saveSoon();
+    if(!isPlaying) startBeat();
+  };
+  const sb=document.getElementById("mb-showbeat");
+  sb.onclick=()=>{
+    mbShowBeat=!mbShowBeat;
+    sb.setAttribute("aria-pressed",String(mbShowBeat));
+    mbRebuildGhosts(); saveSoon();
+  };
+  mbBuildChips();
+}
+function mbChips(rowId,items,get,set){
+  const row=document.getElementById(rowId);
+  if(!row) return;
+  row.innerHTML="";
+  items.forEach(it=>{
+    const c=document.createElement("button");
+    c.className="mb-chip"; c.type="button"; c.innerHTML=it.html;
+    if(get()===it.value) c.classList.add("on");
+    c.onclick=()=>{ set(it.value);
+      [...row.children].forEach(x=>x.classList.remove("on"));
+      c.classList.add("on"); };
+    row.appendChild(c);
+  });
+}
+function mbBuildChips(){
+  mbChips("mb-instrow",Object.keys(MB_INSTR).map(k=>({
+    value:k,
+    html:'<span class="mb-dot" style="background:'+(MB_INSTR[k].color||
+      "conic-gradient(hsl(0 85% 60%),hsl(60 85% 60%),hsl(120 85% 60%),hsl(200 85% 60%),hsl(280 85% 60%),hsl(0 85% 60%))")+
+      '"></span>'+MB_INSTR[k].label
+  })),()=>mbSel.type,v=>{
+    mbSel.type=v;
+    document.getElementById("mb-pitchrow").style.display=v==="melody"?"flex":"none";
+    if(mbSelected){ mbSelected.type=v; mbSelInfo(); mbAudition(mbSelected); saveSoon(); }
+  });
+  document.getElementById("mb-pitchrow").style.display=mbSel.type==="melody"?"flex":"none";
+
+  mbChips("mb-noterow",MB_NOTES.map((n,i)=>({value:i,html:n.label})).reverse(),
+    ()=>mbSel.shelf,v=>{
+      mbSel.shelf=v;
+      if(mbSelected){ mbSelected.shelf=v; mbSelInfo(); saveSoon(); }
+    });
+
+  /* pitches are scale degrees, so the row follows whatever key and scale the
+     studio is in and every marble moves with it */
+  if(!allowedMidis.length) rebuildScale();
+  const degs=[];
+  for(let d=0;d<8;d++) degs.push(d);
+  mbChips("mb-pitchrow",degs.map(d=>{
+    const fake={deg:d,type:"melody"};
+    return {value:d,
+      html:'<span class="mb-dot" style="background:hsl('+mbHue(fake)+' 85% 60%)"></span>'+mbNoteName(fake)};
+  }),()=>mbSel.deg,v=>{
+    mbSel.deg=v;
+    if(mbSelected&&mbSelected.type==="melody"){
+      mbSelected.deg=v; mbSelInfo(); mbAudition(mbSelected); saveSoon();
+    }
+  });
+}
+
 async function boot(){
   await openDB();
   await loadProject().catch(()=>{});
@@ -1572,7 +2185,7 @@ async function boot(){
 }
 document.getElementById("startBtn").addEventListener("click",async()=>{
   document.getElementById("splash").style.display="none"; document.getElementById("app").classList.add("on");
-  initAudio(); await boot(); await initMIDI();
+  initAudio(); mbWire(); await boot(); await initMIDI();
   const ok=await selectInstrument(currentInstId).catch(()=>false); if(ok===false){ await selectInstrument("lead").catch(()=>{}); renderKeyboard(); }
   toast("Ready — tap a beat and play");
   if(!tourDone) tourShow(0);
