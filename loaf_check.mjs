@@ -347,6 +347,7 @@ if (live){
   const vals = T.NEEDS.map(([k]) => settled[k]);
   ok('needs never go below the floor after a year away', vals.every(v => v >= 8 && Number.isFinite(v)), vals.join(','));
   ok('the floor is comfortable, not an accusation', vals.every(v => v >= 30), vals.join(','));
+  T.NEEDS.forEach(([k]) => { pet[k] = 100; });
   pet.lastTick = Date.now() - 1000 * 60 * 60;              // one hour, a normal gap
   const hour = T.settleNeeds(card);
   ok('an hour away does not empty her bars',
@@ -363,19 +364,24 @@ if (live){
     bridge.played();
     ok('playing with her raises the PLAYED need', card.pet.played > before,
        before + ' -> ' + card.pet.played);
+    card.pet.played = 40;
     const b2 = card.pet.played;
     bridge.laserDone(0.8, 3);
     ok('the laser raises the PLAYED need', card.pet.played > b2, b2 + ' -> ' + card.pet.played);
+    card.pet.played = 40;
     const b3 = card.pet.played;
     bridge.yarnDone();
     ok('the yarn raises the PLAYED need', card.pet.played > b3, b3 + ' -> ' + card.pet.played);
+    card.pet.played = 40;
     const b4 = card.pet.played;
     bridge.fishCaught('minnow');
     ok('the pond raises the PLAYED need', card.pet.played > b4, b4 + ' -> ' + card.pet.played);
+    card.pet.played = 40;
     const b5 = card.pet.played;
     bridge.beansNote();
     ok('the beans raise the PLAYED need', card.pet.played > b5, b5 + ' -> ' + card.pet.played);
-    ok('the played need is clamped at 100', card.pet.played <= 100, String(card.pet.played));
+    card.pet.played = 99; bridge.yarnDone();
+    ok('the played need is clamped at 100', card.pet.played === 100, String(card.pet.played));
 
     /* fed and scooped were already wired; guard them so they stay wired */
     card.pet.fed = 10; bridge.fed();

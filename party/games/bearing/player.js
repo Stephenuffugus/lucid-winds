@@ -38,7 +38,7 @@ root.innerHTML=
  '<button class="brp-step" id="brp-down">&minus;</button>'+
  '<button class="brp-step wide" id="brp-lock">Point here</button>'+
  '<button class="brp-step" id="brp-up">+</button></div>'+
- '<div class="brp-note" id="brp-note">Drag or nudge. You can move it until time is up.</div></div>'+
+ '<div class="brp-note" id="brp-note">Drag or nudge, then point when you are happy.</div></div>'+
 
  '<div class="screen" id="brp-r"><div class="brp-result" id="brp-rt"></div>'+
  '<div class="brp-sub" id="brp-rs"></div></div>';
@@ -46,17 +46,30 @@ root.innerHTML=
 function show(id){ var s=root.querySelectorAll('.screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
-var val=50, curR=0, dragging=false;
+var val=50, curR=0, dragging=false, locked=false, iAmLantern=false;
 function paint(){
   $('brp-val').textContent=val;
   $('brp-fill').style.width=val+'%';
   $('brp-knob').style.left=val+'%';
 }
-function setVal(v,send){
+/* the pointer keeps reporting so a slow thinker still scores at the timer, but
+   only Point here commits, and only commits end the round early */
+function setVal(v,send,lock){
   v=Math.max(0,Math.min(100,Math.round(v)));
   val=v; paint();
-  if(send!==false) PartyShell.sendToHost({t:'point',r:curR,v:val});
+  if(send!==false) PartyShell.sendToHost({t:'point',r:curR,v:val,lock:!!lock||locked});
 }
+/* the target is handed to this phone alone and never broadcast, so it has to be
+   asked for again if the phone locked and came back mid clue */
+function drawTarget(t){
+  $('brp-ltrack').innerHTML=
+    '<span class="brp-band" style="left:'+(t-12)+'%;width:24%"></span>'+
+    '<span class="brp-core" style="left:'+(t-5)+'%;width:10%"></span>'+
+    '<span class="brp-pin" style="left:'+t+'%"></span>';
+}
+PartyShell.onMessage(function(msg){
+  if(msg&&msg.t==='target'){ drawTarget(msg.v); }
+});
 function fromEvent(ev){
   var tr=$('brp-track').getBoundingClientRect();
   var t=(ev.touches&&ev.touches[0])||ev;
@@ -74,8 +87,10 @@ track.addEventListener('touchmove',move,{passive:false});
 window.addEventListener('touchend',up);
 $('brp-down').addEventListener('click',function(){ setVal(val-1,true); });
 $('brp-up').addEventListener('click',function(){ setVal(val+1,true); });
-$('brp-lock').addEventListener('click',function(){ setVal(val,true);
-  $('brp-note').textContent='Pointed at '+val+'. You can still move it.'; });
+$('brp-lock').addEventListener('click',function(){
+  locked=true; setVal(val,true,true);
+  $('brp-lock').textContent='Pointed at '+val;
+  $('brp-note').textContent='Pointed. Move it again if you change your mind.'; });
 $('brp-said').addEventListener('click',function(){
   this.disabled=true; this.textContent='Said';
   PartyShell.sendToHost({t:'spoken'});
@@ -97,13 +112,12 @@ PartyShell.onPhase(function(name,data){
     show('brp-wait');
   }
   else if(name==='clue'){
-    if(data.lantern===me){
+    iAmLantern=(data.lantern===me);
+    if(iAmLantern){
       $('brp-said').disabled=false; $('brp-said').textContent='I have said it';
       $('brp-lends').innerHTML='<span>'+esc(data.a)+'</span><span>'+esc(data.b)+'</span>';
-      $('brp-ltrack').innerHTML=
-        '<span class="brp-band" style="left:'+(data.target-12)+'%;width:24%"></span>'+
-        '<span class="brp-core" style="left:'+(data.target-5)+'%;width:10%"></span>'+
-        '<span class="brp-pin" style="left:'+data.target+'%"></span>';
+      /* the target arrives on its own private message, not in this payload */
+      PartyShell.sendToHost({t:'needtarget'});
       show('brp-lant');
     } else {
       $('brp-wait-t').textContent=data.lanternName+' is thinking of a word.';
@@ -117,8 +131,9 @@ PartyShell.onPhase(function(name,data){
       $('brp-wait-s').textContent='You score whatever the room scores, so hope they heard it the way you meant it.';
       show('brp-wait'); return;
     }
-    if(data.num!==curR){ curR=data.num; val=50; paint();
-      $('brp-note').textContent='Drag or nudge. You can move it until time is up.'; }
+    if(data.num!==curR){ curR=data.num; val=50; locked=false; paint();
+      $('brp-lock').textContent='Point here';
+      $('brp-note').textContent='Drag or nudge, then point when you are happy.'; }
     $('brp-grole').textContent='Where did they mean?';
     $('brp-gends').innerHTML='<span>'+esc(data.a)+'</span><span>'+esc(data.b)+'</span>';
     show('brp-guess');

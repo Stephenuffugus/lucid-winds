@@ -93,6 +93,21 @@ function pickQuestions(){
 
 function living(){ var out=[]; for(var i=0;i<order.length;i++) if(!frozen[order[i]]) out.push(order[i]); return out; }
 function ghosts(){ var out=[]; for(var i=0;i<order.length;i++) if(frozen[order[i]]) out.push(order[i]); return out; }
+/* ⭐ the living who are also IN THE ROOM. Ending the question when everybody has
+   answered is what keeps this moving, and measured against the roster taken at
+   kick off, one person leaving made the whole room wait out every clock for the
+   rest of the night. The frozen still take marks in absentia, which is fine and
+   is how a departed player leaves the board on their own. */
+function livingHere(){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined&&!frozen[p[i]]) out.push(p[i]);
+  return out;
+}
+function allAnswered(){
+  var h=livingHere(), got=0;
+  for(var i=0;i<h.length;i++) if(answered.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
 
 function renderMarks(which){
   var html='';
@@ -122,13 +137,15 @@ PartyShell.onPlayerMessage(function(pid,msg){
   }
   else if(msg.t==='answer'&&msg.q===qi+1&&$('fr-q').classList.contains('on')){
     if(frozen[pid]) return;                        /* the frozen do not answer */
-    if(answered.hasOwnProperty(pid)) return;       /* one answer only */
+    /* a rejoined phone has forgotten it already answered, so tell it rather than
+       leaving it tapping a button the host is right to ignore */
+    if(answered.hasOwnProperty(pid)){ PartyShell.sendToPlayer(pid,{t:'locked'}); return; }
     var idx=msg.v|0; if(idx<0||idx>3) return;
     answered[pid]=shuffled[qi][idx];
-    $('fr-qin').textContent=Object.keys(answered).length+' of '+living().length+' answered';
+    $('fr-qin').textContent=Object.keys(answered).length+' of '+livingHere().length+' answered';
     snd('pip');
     PartyShell.sendToPlayer(pid,{t:'locked'});
-    if(Object.keys(answered).length>=living().length){ PartyShell.stopTimer(); phaseReveal(); }
+    if(allAnswered()){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
 
@@ -266,8 +283,17 @@ function phaseReveal(){
 function phasePodium(){
   snd('fanfare');
   show('fr-pod');
+  /* ⛔ TWELVE QUESTIONS DOES NOT RELIABLY FREEZE FOUR COMPETENT PLAYERS, so the
+     ordinary end of a good round is several survivors and this used to print
+     "The frost took everyone." over four unfrozen names. Survivors share the
+     bonus and get named; the sole survivor still gets the whole thing, which is
+     what makes outlasting everybody worth wanting. */
   var live=living(), results={}, winner=null;
   if(live.length===1){ winner=live[0]; scores[winner]=(scores[winner]||0)+WIN_BONUS; }
+  else if(live.length>1){
+    var share=Math.round(WIN_BONUS/live.length);
+    for(var s=0;s<live.length;s++) scores[live[s]]=(scores[live[s]]||0)+share;
+  }
 
   var ids=order.slice();
   ids.sort(function(a,b){return (scores[b]||0)-(scores[a]||0);});

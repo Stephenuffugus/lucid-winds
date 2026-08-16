@@ -56,7 +56,7 @@ function show(id){ var s=root.querySelectorAll('.br-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
 var BANK=window.BEARING_BANK||[], QS=[], ri=0, ROUNDS=10;
-var scores={}, names={}, order=[], lantern=null, target=50, guesses={};
+var scores={}, names={}, order=[], lantern=null, target=50, guesses={}, locks={};
 var FAST=/[?&]br_fast=1(&|$)/.test(location.search);
 var T_RULES=FAST?3:20, T_CLUE=FAST?3:18, T_GUESS=FAST?4:22, T_REV=FAST?3:9;
 
@@ -123,20 +123,42 @@ function layout(list){
   return sorted;
 }
 
+/* wait for the room, not for the roster taken at kick off */
+function here(){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined&&p[i]!==lantern) out.push(p[i]);
+  return out;
+}
+function allLocked(){
+  var h=here(), got=0;
+  for(var i=0;i<h.length;i++) if(locks.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
+/* ⛔ THE TARGET IS THE GAME'S ONE SECRET AND IT USED TO RIDE ON A BROADCAST.
+   setPhase goes to every phone; only the Lantern's phone chose to draw it. It
+   now goes to one phone, by name, and is handed back on request so a Lantern
+   whose phone locked can still see what they are describing. */
+function tellLantern(){
+  if(lantern) PartyShell.sendToPlayer(lantern,{t:'target',r:ri+1,v:target});
+}
+
 PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
+  if(msg.t==='needtarget'&&pid===lantern&&$('br-clue').classList.contains('on')){ tellLantern(); return; }
   if(msg.t==='spoken'&&pid===lantern&&$('br-clue').classList.contains('on')){
     /* the Lantern says they have said their word. Nothing typed ever arrives. */
     PartyShell.stopTimer(); phaseGuess();
   }
   else if(msg.t==='point'&&msg.r===ri+1&&pid!==lantern&&$('br-guess').classList.contains('on')){
     var v=Math.max(0,Math.min(100,msg.v|0));
-    var isNew=!guesses.hasOwnProperty(pid);
     guesses[pid]=v;
-    var n=0,k; for(k in guesses) n++;
-    $('br-gin').textContent=n+' of '+(order.length-1)+' have pointed';
-    if(isNew) snd('pip');
-    if(n>=order.length-1){ PartyShell.stopTimer(); phaseReveal(); }
+    /* the first drag of a dial is not an answer, and the phone says so: only a
+       deliberate Point here ends the round early. An unlocked dial still counts
+       when the clock runs out, so nobody scores zero for thinking too long. */
+    if(msg.lock&&!locks.hasOwnProperty(pid)){ locks[pid]=1; snd('pip'); }
+    var n=0,k; for(k in locks) n++;
+    $('br-gin').textContent=n+' of '+here().length+' have pointed';
+    if(allLocked()){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
 
@@ -157,7 +179,7 @@ function phaseRules(){
 
 function phaseClue(){
   var q=QS[ri]; if(!q||ri>=ROUNDS){ phasePodium(); return; }
-  lantern=order[ri%order.length]; guesses={};
+  lantern=order[ri%order.length]; guesses={}; locks={};
   /* kept away from the very ends, where a clue is trivially easy */
   target=8+Math.floor(Math.random()*85);
   show('br-clue');
@@ -165,7 +187,8 @@ function phaseClue(){
   $('br-clant').innerHTML='<b style="color:'+pcol(lantern)+'">'+esc(names[lantern])+'</b> can see it';
   $('br-cspec').innerHTML=specHTML(q,null,false);
   PartyShell.setPhase('clue',{num:ri+1,total:ROUNDS,a:q.a,b:q.b,
-    lantern:lantern,lanternName:names[lantern],target:target});
+    lantern:lantern,lanternName:names[lantern]});
+  tellLantern();
   PartyShell.startTimer(T_CLUE,function(s){$('br-ct').textContent=s;},phaseGuess);
 }
 
@@ -175,7 +198,7 @@ function phaseGuess(){
   $('br-gn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('br-glant').innerHTML='<b style="color:'+pcol(lantern)+'">'+esc(names[lantern])+'</b> has spoken';
   $('br-gspec').innerHTML=specHTML(q,null,false);
-  $('br-gin').textContent='0 of '+(order.length-1)+' have pointed';
+  $('br-gin').textContent='0 of '+here().length+' have pointed';
   PartyShell.setPhase('guess',{num:ri+1,total:ROUNDS,a:q.a,b:q.b,
     lantern:lantern,lanternName:names[lantern]});
   PartyShell.startTimer(T_GUESS,function(s){ var t=$('br-gt'); t.textContent=s; t.classList.toggle('low',s<=5); },phaseReveal);

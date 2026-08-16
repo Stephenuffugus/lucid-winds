@@ -9,7 +9,7 @@
 <script src="/dev-gate.js?v=2"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>LOAF — Cat Field Unit</title>
+<title>LOAF · Cat Field Unit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   border:1px solid var(--line);border-radius:999px;padding:5px;margin-top:18px}
 .nav button{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:11px;
   letter-spacing:.16em;text-transform:uppercase;padding:12px 8px;border-radius:999px;
-  cursor:pointer;min-height:44px}
+  cursor:pointer;min-height:48px}
 .nav button[aria-selected=true]{background:var(--amber);color:#241300}
 
 /* ── the ability, on the card ────────────────────────────────────────────── */
@@ -384,7 +384,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 #stage3d canvas{display:block;border-radius:14px}
 #stageClips{margin:10px 0 2px;display:flex;gap:8px}
 #stageClips button{font-family:var(--mono);font-size:12px;letter-spacing:.08em;padding:10px 16px;
-  min-height:44px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);
+  min-height:48px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);
   color:var(--dim);cursor:pointer}
 #stageClips button.on{background:var(--amber);border-color:var(--amber);color:#3A2405;font-weight:700}
 #tunePrev{display:block;width:100%;border-radius:14px;background:var(--panel-2);
@@ -397,13 +397,13 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip2{background:var(--panel-2);border:1px solid var(--line);border-radius:99px;
   color:var(--dim);font-family:var(--mono);font-size:10px;padding:13px 14px;cursor:pointer;
-  min-height:46px}
+  min-height:48px}
 .chip2[aria-pressed=true]{border-color:var(--amber);color:var(--amber);background:rgba(255,178,63,.12)}
 .swatches{display:flex;gap:10px}
 .sw{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
 .sw label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--faint)}
-.sw input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;
+.sw input[type=color]{width:100%;height:48px;border:1px solid var(--line);border-radius:12px;
   background:var(--panel-2);padding:3px;cursor:pointer}
 .nudges{display:grid;gap:7px}
 .npair{display:grid;grid-template-columns:1fr 1fr;gap:7px}
@@ -576,7 +576,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
       <div class="chips hidden" id="stageClips"></div>
       <canvas id="tunePrev" width="520" height="300"></canvas>
       <p class="tunerNote">The unit read this off the photograph. It is often
-        close and sometimes confidently wrong — a shadow can read as stripes,
+        close and sometimes confidently wrong. A shadow can read as stripes,
         a sunlit chest as snow. You have met her. It has not.</p>
 
       <div class="tuneRow"><b>Is this her?</b><div class="nudges" id="tuneNudge"></div></div>
@@ -4855,7 +4855,7 @@ $('save').onclick = async () => {
       const file = new File([blob], fname, { type:'image/png' });
       if (navigator.canShare && navigator.canShare({ files:[file] })){
         try {
-          await navigator.share({ files:[file], title: name + ' — LOAF',
+          await navigator.share({ files:[file], title: name + ' · LOAF',
                                   text: name + ' · ' + card.title });
           Hooks.onCardExported(card);
           n.textContent = 'Shared.'; n.className = 'note ok';
@@ -5326,7 +5326,7 @@ const Persona = (() => {
     const q = PQ[qi];
     const head = document.createElement('p');
     head.className = 'tunerNote';
-    head.textContent = (qi + 1) + ' / ' + PQ.length + ' — ' + q.t;
+    head.textContent = (qi + 1) + ' / ' + PQ.length + '. ' + q.t;
     host.appendChild(head);
     q.o.forEach(([label, w]) => {
       const b = document.createElement('button');

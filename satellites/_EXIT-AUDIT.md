@@ -255,3 +255,143 @@ caller is not an exit.
 
 Off contract but working: `aura-farm, dewball, fox-basket, pollen-panic, pong,
 vinewinder` (aura-farm is another agent's, untouched here).
+
+---
+
+# BATCH 2 of the 21 stranded — 2026-08-16
+
+Ten games: `orb-orchard, pollinator-paths, root-weave, silt, sled-vine,
+slice-master, spore-drift, tempo-grove, tinker-loft, tonic-drop`.
+**Nine fixed. slice-master skipped** (see the last section).
+
+## What was actually wrong: one template, one flag, no caller
+
+All ten shipped the *same* protocol block, and it was wrong the same way:
+
+```js
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ ...close... } ...referrer... };
+if(SWS_EMBED&&parent!==window){ ...ready... }
+```
+
+The important finding is that **`SWS_EXIT` itself was never the bug**. Because
+these urls are never framed, `SWS_EMBED` is false and `parent===window`, so the
+function always fell through to the referrer path, which is correct. The block
+was defensible code that had **never once run**, because in all ten files
+nothing anywhere called `SWS_EXIT`. This is exactly the shape flagged for silt
+and tempo-grove in the batch 1 notes — it turned out to be *all ten*, not two.
+
+So the fix is a **control**, not a function, in every case. `SWS_EXIT` was
+edited anyway, for one reason:
+
+- The framed branch was gated on `?embed=1`, a flag the portal never sets. Today
+  the flag decides nothing. The day one of these cards moves to a `/play/` or
+  github.io url, it decides the **wrong** thing: the game would be framed,
+  `SWS_EMBED` still false, and the exit would call `history.back()` *inside the
+  frame* instead of posting `{sws:'close'}` — leaving the player in a dead iframe.
+  Replaced with `var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }
+  catch(e){ SWS_FRAMED=true; }`, per the contract block. The `{sws:'ready'}` post
+  now also fires on `load` as well as at parse, which the contract requires and
+  none of the ten did.
+
+`window.SWS_EMBED` is still exported unchanged in all nine — it is read by other
+code elsewhere on the fleet and removing it was not this task's business.
+
+## Where each control went, and why there
+
+All ten are the same chassis: a 540x960 `#stage` scaled by
+`min(vw/540, vh/960)`, which is **0.694 at 375x667**. So a control needs **72
+stage px to clear the 48px touch floor** (72 x 0.694 = 50 real px). Three of the
+files say so in their own CSS: *"72px minimums are STAGE px ... Do NOT
+'simplify' back to 48 — it renders ~35."* Every control below is 72 stage px tall
+and 136 to 152 wide, i.e. **50 x 94..106 real px**.
+
+**Every control went TOP LEFT of the title screen, and the bottom of these
+screens is why.** The stage fills a phone viewport almost exactly (540 x 0.694 =
+375, 960 x 0.694 = 666), so stage coordinates and viewport coordinates are the
+same thing here, and the feedback fab's band (x = W-90..W-12, y = H-174..H-96) maps
+onto the bottom of the stage. Worse, it is already occupied:
+
+> **Pre-existing defect found while placing, NOT introduced and NOT fixed here:**
+> in the six `.pad.center` games the title's own last button row (How / Wardrobe /
+> Grove / ⚙) computes to roughly y = 510..560 real px at 375x667, with its right
+> end at x ≈ 333. The fab band is y = 493..571, x = 285..363. **The ⚙ button on
+> those title screens sits partly under the feedback fab.** That is the same class
+> of defect batch 1 shot on Vine Runner, on six more screens, and it is the
+> arithmetic that ruled out putting anything new down there. It needs a screenshot
+> and a separate call — I did not move six shipped title screens on arithmetic I
+> cannot photograph.
+
+Per game, read off the layout:
+
+| Game | Where | Why there |
+|---|---|---|
+| **orb-orchard** | `.xrow` chip above the `h1`, left aligned to the 360px button column | `.screen` is `padding:44px 26px` / `align-items:center` / `justify-content:flex-start`, so a first child pins near the top: y = 31..81 real px. Its own `.btnrow` (Grove / Wardrobe / How) is the low row. |
+| **tinker-loft** | same, brass palette | Identical `.screen` geometry. Bottom row is Tinker Shop / How. |
+| **tonic-drop** | same, but styled comic (2px `#12060a` border, 3px hard shadow, matching `#s-title .btn`) | This title's **entire bottom right is the squirrel**: `.title-mascot` is `bottom:0; right:-14px; width:232px` with `.title-hi` bubble above it. Top left is the only empty corner on the screen, fab or no fab. |
+| **silt** | `.xrow` as first child of `.pad`, above the emblem image | `.pad.center` is `justify-content:center`, so the title block is vertically centred and a first child **rides up with the block** instead of being pushed off a busy screen. Lands ~y 87..137 real px. |
+| **tempo-grove** | same | Three button rows already; the third is in the fab band. |
+| **pollinator-paths** | same | Tallest title of the family (`title-word` wraps to two lines, plus `.whatis` *and* `.ribbon`), so its stack sits lowest. |
+| **root-weave**, **sled-vine**, **spore-drift** | same | Same chassis, same reasoning. |
+
+Six of the nine reuse the game's own `.btn.ghost` inside `.xrow` (`width:auto;
+min-width:152px; padding:0 26px`) so the exit *is* the game's button, only sized
+to its label. The label colour is lifted from `var(--muted)` back to
+`var(--cream)` with a one-step-brighter border: a ghost button is styled to
+recede, and an exit has to be readable at a glance while still reading as
+secondary to PLAY. The three `h1`-style games get a dedicated `.xbtn` painted in
+their own palette (sage, brass, comic) because they have no ghost variant.
+
+Copy is `◀ Arcade` everywhere. No dash characters in any player facing string;
+every em dash added by this batch is inside a `/* */` comment.
+
+Wiring uses each game's **own** idiom — `tap("b-arcade", …)` in the eight that
+have a `tap()` helper, `$("b-arcade").addEventListener(…)` in tinker-loft, which
+does not.
+
+## What I checked, and what I could not
+
+Verified mechanically:
+
+- `node satellites/_exit_audit.mjs <the ten>` — **watched all ten go FAIL first**,
+  then green one at a time as each was wired. The tool demonstrably reacts to this
+  batch. `--self-test` still clean afterwards. The tool was not modified.
+- Every `<script>` block in all nine re-parsed through `vm.Script` after editing
+  (3 of 3 per file). No duplicate `id`, exactly one `b-arcade` per file, no
+  pre-existing `.xrow`/`.xbtn` to collide with, `SWS_FRAMED` occurs 3x per file
+  (one declaration, two uses) and clashes with nothing.
+
+Not verified, and stated plainly:
+
+- **No screenshot. Nobody has looked at these nine screens.** Sizes and positions
+  above are arithmetic off the CSS and the 0.694 stage scale, not pixels off a
+  device. The one thing arithmetic is genuinely safe about is the hazard it was
+  used for: a top left control cannot meet a bottom right fab at any viewport size.
+- **Six of the nine auto-open their How screen on load** (orb-orchard, root-weave,
+  sled-vine, tempo-grove, silt, tinker-loft — Stephen's 2026-07-31 call). So on a
+  cold open the exit is **two taps away**, not one: Back on How, then Arcade. Both
+  taps are on visible labelled buttons and neither is hidden, so this is not a
+  stranding, but it is not one tap either. A second control on the How sheet would
+  fix it and would also be a second button on six screens; that is a judgement call
+  worth a look before anyone adds it.
+- In-game, the way out is `#hud-back` (home) to the title, then Arcade. Every one
+  of the nine has that home button already.
+
+## slice-master — SKIPPED, not mine
+
+`satellites/slice-master/AUDIT-NOTES.md` did **not** exist when this batch started
+and **did** exist an hour later, written by the Start Here shelf audit. It records
+the identical P0 (`SWS_EXIT` defined at index.html:774, nothing ever called it) and
+its own fix: `◄ Sky Wolf Studios Arcade` on the title stack plus a second exit on
+the result screen. Their file, their fix, untouched here — two agents editing one
+title stack is how you ship two exit buttons. It audits PASS on their work.
+
+## Batch result
+
+```
+9 fixed (orb-orchard, pollinator-paths, root-weave, silt, sled-vine,
+         spore-drift, tempo-grove, tinker-loft, tonic-drop)
+1 skipped (slice-master — owned by the Start Here audit)
+```
+
+Fleet after both batches: **100 audited, 68 PASS, 6 PARTIAL, 26 GRAFT, 0 STRANDED.**

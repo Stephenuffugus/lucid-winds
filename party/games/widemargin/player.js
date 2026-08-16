@@ -26,7 +26,7 @@ root.innerHTML=
  '<button class="wmp-step" id="wmp-down">&minus;</button>'+
  '<button class="wmp-step wide" id="wmp-lock">Lock it in</button>'+
  '<button class="wmp-step" id="wmp-up">+</button></div>'+
- '<div class="wmp-note" id="wmp-note">Drag the bar, or nudge it. You can change it until time is up.</div></div>'+
+ '<div class="wmp-note" id="wmp-note">Drag the bar, or nudge it. Lock it in when you are happy.</div></div>'+
 
  '<div class="screen" id="wmp-r"><div class="wmp-result" id="wmp-rt"></div>'+
  '<div class="wmp-sub" id="wmp-rs"></div></div>';

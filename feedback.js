@@ -711,6 +711,7 @@
       ev.stopPropagation(); ev.preventDefault();
       try { localStorage.setItem('lwfb_hidden_day', dayKey()); } catch (e) {}
       if (b.parentNode) b.parentNode.removeChild(b);
+      if (watch) { if (watch.timer) { try { clearTimeout(watch.timer); } catch (e2) {} } watch.off = true; watch.timer = null; }
     });
     b.appendChild(x);
     // drag anywhere: past a small slop the tap becomes a move; position is
@@ -756,5 +757,17 @@
     try { fyStartWatch(b, x); } catch (e) {}
   }
 
-  window.LW_Feedback = { open: open, button: button, mountFab: mountFab, close: close };
+  window.LW_Feedback = {
+    open: open, button: button, mountFab: mountFab, close: close,
+    /* Test surface for feedback_check.mjs. There is no browser on the build box
+       (ten agents, two cores), so the checker runs THIS logic against a stub
+       DOM rather than a mirror of it — the rarity-sim lesson: never hand-mirror
+       the thing you are verifying. Nothing in the app calls these. */
+    _fab: {
+      scan: fyScan, tick: fyTick, bump: fyBump, watcher: function () { return watch; },
+      state: function () { return watch ? (watch.off ? 'off:' + watch.state : watch.state) : 'unmounted'; },
+      blockedAt: fyBlockedAt, isControl: fyIsControl, visible: fyVisible,
+      measure: fyMeasure, goHome: fyGoHome, FY: FY, ANCHORS: FY_ANCHORS
+    }
+  };
 })();

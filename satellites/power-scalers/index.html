@@ -1473,13 +1473,25 @@ function screenHome(){
   const n=state.roster.length;
   const roster=n?`<div class="grid">${state.roster.map(o=>ocCard(o,{deletable:true})).join("")}</div>`
     :`<div class="empty"><div class="big">◈</div><div>No characters yet. Spin up your first OC to open the arena.</div></div>`;
+  /* A first-timer with one character could not Battle (needs two) and could not
+     enter a Tournament (needs four), so both hero buttons were dead ends and the
+     one mode they COULD play was an unlabelled nav icon. The hero now names the
+     next move, and the locked modes say what they are waiting for. */
+  const cleared=gauntletCleared();
+  const lead = n===0
+    ? `Spin a race, roll your stats, pick your powers. It takes about a minute, and then the Gauntlet is open.`
+    : cleared<0
+      ? `Send ${n===1?esc(state.roster[0].name):"a champion"} up the Gauntlet. Twelve authored foes, each one harder than the last, and every clear pays a level.`
+      : `${cleared+1} of ${ENEMIES.length} Gauntlet rungs cleared. Spend your Glory on the skill web, socket better gems, then climb again.`;
   return `${topbar()}
-    <div class="hero"><h1>Forge a fighter.<br><span class="glow">Master the web.</span></h1>
-      <p>Spin your race, roll your stats, then grow a Path-of-Exile-style skill web, socket support augments into your powers, and throw your originals into the arena. Tap any character to open its sheet.</p>
-      <div class="hero-actions"><button class="btn primary" data-act="startCreate">✦ Create OC</button>
+    <div class="hero"><h1>Forge a fighter.<br><span class="glow">Climb the Gauntlet.</span></h1>
+      <p>${lead}</p>
+      <div class="hero-actions"><button class="btn ${n===0?"primary":""}" data-act="startCreate">✦ Create OC</button>
+        ${n>=1?`<button class="btn primary" data-act="nav" data-k="gauntlet">🐉 ${cleared<0?"Start the Gauntlet":"Continue the Gauntlet"}</button>`:""}
         ${n>=2?`<button class="btn" data-act="nav" data-k="battle">⚔ Battle</button>`:""}
         ${n>=4?`<button class="btn" data-act="nav" data-k="tourney">♛ Tournament</button>`:""}
-        <button class="btn ghost" data-act="help" title="How to play" aria-label="How to play">? How to Play</button></div></div>
+        <button class="btn ghost" data-act="help" title="How to play" aria-label="How to play">? How to Play</button></div>
+      ${n>0&&n<4?`<div class="hint">${n<2?"Battle opens with two characters. Tournament needs four.":"Tournament opens with four characters."}</div>`:""}</div>
     <div class="section-h"><span class="n">01</span><h2>Your Roster</h2><span class="c">${n} character${n===1?"":"s"}</span></div>
     ${roster}`;
 }
