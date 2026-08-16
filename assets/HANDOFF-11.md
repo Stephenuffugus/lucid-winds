@@ -634,8 +634,14 @@ content marker rather than trusting a 200.
 
 - **No human has played any of these.** Verification is not playtesting; that is why all five
   shipped `beta:true` behind the tester gate.
-- BLACKOUT and SIEGE never got a LOOKING pass; the block ended first. Their automated checks are
-  green (8 of 8 and 7 of 8) but nobody has opened their screenshots.
+- BLACKOUT and SIEGE got their LOOKING pass in the last minutes of the block, phone and desktop.
+  Both hold up. BLACKOUT ships its generated case title, the pocket watch action dial, room access
+  hints on the room list, and procedural suspect silhouettes that carry the attributes the
+  sighting clues refer to. SIEGE opens on a clean title card with a findable BACK TO THE ARCADE.
+  **One defect found and not yet fixed: BLACKOUT truncates its generated case title in the
+  header** ("THE EVENING BUSINE..."), which is the most identity carrying string in the game.
+  It needs to wrap or shrink to fit. Left unfixed rather than making an unverified edit to a live
+  page with the block ending; it is cosmetic and the game is dev gated.
 - No builder ran a browser at all, by instruction, so every UI is node verified plus the main
   loop's own boot and tap probes.
 - WIREWORM's overload playstyle has no sweep coverage: no agent steers for the breaker, so half
