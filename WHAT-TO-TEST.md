@@ -4,6 +4,9 @@
 seed-flutter ships as **Cosmic Cadets**, stream-hop ships as **Jumping Jimothy**, garden-td
 ships as **Garden Guard**, slice-master ships as **Super Slice**, pong ships as **Pong Arena**.
 
+**FLEET STATE AT HANDOVER: 32 games carry an automated check, all 32 green, 0 red,
+2,209 assertions total.** Every count re-run by the main loop rather than taken on report.
+
 Everything below is **live on lucidwinds.com**. The five new games and most audited ones are behind
 the tester gate, so unlock once with your passcode on any in development card and the whole
 In Development tab opens.
