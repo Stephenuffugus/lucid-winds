@@ -48,7 +48,8 @@ var CONFIG = Object.freeze({
   NOISE_MIN: 6,
   NOISE_MAX: 12,
   MAX_ATTEMPTS: 60,
-  PRESS_BIAS: 0.20,
+  PRESS_BIAS: 0.16,
+  PRESS_FLOOR: 8,
   STAR3: 8,
   STAR2: 4,
   MIN_SET_LO: 8,
@@ -58,8 +59,8 @@ var CONFIG = Object.freeze({
      pool with those raises the uniqueness rate and the minimal set size at
      the same time, which is exactly what the 4.8 gates ask for. */
   POOL: Object.freeze({
-    alibi: 15, own: 6, access: 2, sight: 11, trace: 3, timeline: 4,
-    wtrace: 4, motive: 3, pair: 3, negative: 6, sequence: 2, object: 5
+    alibi: 18, own: 6, access: 2, sight: 12, trace: 2, timeline: 6,
+    wtrace: 4, motive: 3, pair: 4, negative: 5, sequence: 1, object: 6
   })
 });
 
@@ -567,10 +568,18 @@ function genCluePool(W, rng) {
   var T = W.truth, list = [], seen = {}, i, k, s, tt, rr;
   var P = CONFIG.POOL;
 
-  // 1 alibi
-  for (k = 0; k < P.alibi; k++) {
+  // 1 alibi. The police always ask every person about the murder hour, so those
+  // six always exist. They pin the culprit to room relation at t without pinning
+  // anything on their own, which is the shape the minimal set wants: many weak
+  // clues, no single shortcut.
+  var everyone = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  for (k = 0; k < 6; k++) {
+    s = everyone[k];
+    addClue(list, seen, 1, { s: s, t: T.t, r: W.loc[s][T.t] }, [s], rng);
+  }
+  for (k = 6; k < P.alibi; k++) {
     s = rng.int(6);
-    tt = rng() < 0.5 ? T.t : rng.int(6);
+    tt = rng.int(6);
     addClue(list, seen, 1, { s: s, t: tt, r: W.loc[s][tt] }, [s], rng);
   }
   // 2 weapon ownership
@@ -613,7 +622,9 @@ function genCluePool(W, rng) {
   }
   // 6 timeline
   for (k = 0; k < P.timeline; k++) {
-    var m = rng.weighted([["not", 35], ["before", 25], ["after", 25], ["exact", 15]]);
+    // no "exact" mode: one clue that hands over the whole time axis collapses
+    // minimal set size, and the 4.8 histogram is the thing that notices.
+    var m = rng.weighted([["not", 70], ["before", 15], ["after", 15]]);
     if (m === "before" && T.t >= 5) m = "not";
     if (m === "after" && T.t <= 0) m = "not";
     if (m === "not") {
@@ -644,7 +655,7 @@ function genCluePool(W, rng) {
   for (k = 0; k < zeroList.length && k < P.motive; k++) {
     addClue(list, seen, 8, { k: "none", s: zeroList[k] }, [zeroList[k]], rng);
   }
-  if (rng() < 0.5) {
+  if (rng() < 0.30) {
     var lvl = W.motive[T.c] >= 2 ? 2 : 1;
     var setL = [];
     for (s = 0; s < 6; s++) if (W.motive[s] >= lvl) setL.push(s);
@@ -653,7 +664,7 @@ function genCluePool(W, rng) {
     }
   }
   // 9 company
-  if (W.pairAB && rng() < 0.65) {
+  if (W.pairAB && rng() < 0.40) {
     addClue(list, seen, 9, { a: W.pairAB[0], b: W.pairAB[1], t: -1 }, W.pairAB.slice(), rng);
   }
   for (k = 0; k < P.pair; k++) {
@@ -1150,7 +1161,7 @@ function greedyAgent(cs, rng) {
     for (k = 0; k < 6; k++) if (st.interviewed.indexOf(k) < 0) basics.push({ k: "interview", s: k });
     for (k = 0; k < 6; k++) if (st.pressed.indexOf(k) < 0 && pressUnlocked(cs, st, k)) presses.push({ k: "press", s: k });
     var act = null;
-    if (presses.length && st.actionsLeft >= CONFIG.COST_PRESS && rng() < CONFIG.PRESS_BIAS) act = presses[rng.int(presses.length)];
+    if (presses.length && st.actionsLeft >= CONFIG.PRESS_FLOOR && rng() < CONFIG.PRESS_BIAS) act = presses[rng.int(presses.length)];
     else if (basics.length) act = basics[rng.int(basics.length)];
     else if (presses.length && st.actionsLeft >= CONFIG.COST_PRESS) act = presses[rng.int(presses.length)];
     if (!act) break;

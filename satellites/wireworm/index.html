@@ -185,6 +185,7 @@ var CONFIG = Object.freeze({
   WARN_PCT: 0.35,           // load readout appears past here
   DISCHARGE_INTERVAL: 90,   // ticks between pickup spawns
   STALL_CHECK: 24,          // ticks between "can the worm still reach anything" sweeps
+  STALL_LIMIT: 300,         // ticks of zero progress before the board comes to you
   PAIRS: 2,                 // terminal pairs live on the board
   GREEN_MAX_DIST: 6,        // green pairs spawn within this manhattan distance
   RED_MIN_DIST: 20,         // red pairs must land at least this far apart
@@ -478,6 +479,7 @@ function newGame(seed) {
     overloads: 0,
     discharges: 0,
     rescues: 0,
+    stallTicks: 0,
     alive: true,
     cause: null
   };
@@ -512,6 +514,7 @@ function fireOverload(st, ev) {
   /* An open circuit restarts from where the player stands. Without this the
      next completion would resurrect wire the breaker just cleared. */
   if (st.charge) st.charge.sliceStart = st.trail.length - 1;
+  st.stallTicks = 0;
   ev.push({ t: 'overload', bonus: bonus, cells: n });
 }
 
@@ -538,6 +541,7 @@ function completeCircuit(st, pair, ev) {
   st.charge = null;
   removePairCells(st, pair);
   dropPair(st, pair.id);
+  st.stallTicks = 0;
   ev.push({ t: 'completed', cells: cells, len: len, score: gained, combo: cm, ci: pair.ci, s: s, e: e });
   if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, ev);
   topUpPairs(st);
@@ -564,6 +568,7 @@ function touchTerminal(st, idx, ev) {
   }
   p.open = true;
   st.charge = { pairId: p.id, ci: p.ci, mult: p.mult, sliceStart: st.trail.length - 1 };
+  st.stallTicks = 0;
   ev.push({ t: 'charged', ci: p.ci, mult: p.mult });
   topUpPairs(st);
 }
@@ -581,6 +586,7 @@ function dischargeOldest(st, ev) {
       }
     }
   }
+  st.stallTicks = 0;
   ev.push({ t: 'discharged', cells: removed.length, removed: removed, circuit: c.id });
 }
 
@@ -604,7 +610,10 @@ function rescueCheck(st, ev) {
       if (reach[st.pairs[i].active[j]]) { any = true; break; }
     }
   }
-  if (any) return;
+  /* Reachable is not the same as reachable in time. A worm that has made no
+     progress at all for STALL_LIMIT ticks gets the objectives moved to it,
+     which is also the only thing that guarantees every run terminates. */
+  if (any && st.stallTicks < CONFIG.STALL_LIMIT) return;
   for (i = 0; i < st.pairs.length; i++) removePairCells(st, st.pairs[i]);
   st.pairs.length = 0;
   st.charge = null;
@@ -615,6 +624,7 @@ function rescueCheck(st, ev) {
     topUpPairs(st);
   }
   st.rescues++;
+  st.stallTicks = 0;
   ev.push({ t: 'rescue', pairs: st.pairs.length });
 }
 
@@ -652,6 +662,7 @@ function step(st, turn) {
     var p = spawnPickup(st);
     if (p >= 0) ev.push({ t: 'pickup', cell: p });
   }
+  st.stallTicks++;
   if (st.tick % CONFIG.STALL_CHECK === 0) rescueCheck(st, ev);
   return { state: st, events: ev };
 }
@@ -766,21 +777,22 @@ function bfsTurn(st, targets) {
    That last clause is what stopped this agent dying at 252 ticks while a
    blind random walker lived past a thousand. */
 function agentGreedy(st, rng) {
-  var targets = [], i, j, p;
-  if (st.charge) {
-    for (i = 0; i < st.pairs.length; i++) {
-      if (st.pairs[i].id === st.charge.pairId) targets = st.pairs[i].active.slice();
-    }
-  } else {
-    for (i = 0; i < st.pairs.length; i++) {
-      p = st.pairs[i];
-      for (j = 0; j < p.active.length; j++) targets.push(p.active[j]);
+  var targets = [], all = [], i, j, p;
+  for (i = 0; i < st.pairs.length; i++) {
+    p = st.pairs[i];
+    for (j = 0; j < p.active.length; j++) {
+      all.push(p.active[j]);
+      if (st.charge && p.id === st.charge.pairId) targets.push(p.active[j]);
     }
   }
+  if (!st.charge) targets = all;
   var t = null;
   var crowded = st.energized >= CONFIG.CELLS * 0.22;
   if (st.pickup >= 0 && crowded) t = bfsTurn(st, [st.pickup]);
   if (t === null && targets.length) t = bfsTurn(st, targets);
+  /* The pair it is holding may be walled off. Swap colour rather than orbit
+     forever: seed 9027 ran to the tick cap doing exactly that. */
+  if (t === null && all.length) t = bfsTurn(st, all);
   if (t === null && st.pickup >= 0) t = bfsTurn(st, [st.pickup]);
   if (t !== null && turnSurvives(st, t)) return t;
 
@@ -1192,9 +1204,13 @@ function suiteCircuitBattery() {
         if (ref.length > maxLen) maxLen = ref.length;
         /* the completion may have tripped the breaker in the same step, which
            legally clears every cell it just lit. Check the right thing. */
-        var blew = false;
-        for (k = 0; k < res.events.length; k++) if (res.events[k].t === 'overload') blew = true;
+        var blew = false, wiped = false;
+        for (k = 0; k < res.events.length; k++) {
+          if (res.events[k].t === 'overload') blew = true;
+          if (res.events[k].t === 'discharged' || res.events[k].t === 'rescue') wiped = true;
+        }
         if (blew) { blownChecked++; if (st.energized === 0) blownClean++; }
+        else if (wiped) { /* the same tick discharged wire, nothing to assert */ }
         else { for (k = 0; k < e.cells.length; k++) if (st.cover[e.cells[k]] === 0) { coverBad++; break; } }
       }
     }

@@ -210,7 +210,7 @@ function cmdWatch(seed) {
   notes.forEach(l => console.log('  ' + l));
   console.log('');
   console.log('final: ' + st.tick + ' ticks, ' + st.score + ' score, ' + st.circuitsCompleted + ' circuits, ' +
-    st.overloads + ' overloads, ' + st.discharges + ' discharges, died by ' + (st.cause || 'tick cap'));
+    st.overloads + ' overloads, ' + st.discharges + ' discharges, ' + st.rescues + ' rescues, died by ' + (st.cause || 'tick cap'));
 }
 
 /* ------------------------------------------------------------------ */

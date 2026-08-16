@@ -104,22 +104,22 @@ function seedFromString(str) {
 var TRAPS = {
   spike: {
     key: 'spike', name: 'Spike Strip', short: 'SPIKE', cost: 30, glyph: '▲',
-    dmg: 4, charges: 40, ground: true, kind: 'damage',
+    dmg: 7, charges: 60, ground: true, kind: 'damage',
     blurb: 'Bites every ground body that stands on it. Forty bites, then it is scrap.'
   },
   pit: {
     key: 'pit', name: 'Pit', short: 'PIT', cost: 45, glyph: '▽',
-    dmg: 10, slow: 2.5, ground: true, kind: 'control', permanent: true,
+    dmg: 26, slow: 2.5, ground: true, kind: 'control', permanent: true,
     blurb: 'Ten damage on the way in and a long climb out. You fall in it too.'
   },
   ballista: {
     key: 'ballista', name: 'Ballista', short: 'BALLISTA', cost: 90, glyph: '➤',
-    dmg: 9, cd: 14, kind: 'damage', permanent: true,
+    dmg: 22, cd: 14, kind: 'damage', permanent: true,
     blurb: 'Shoots the closest body it can see up the lane. A wall blinds it.'
   },
   brazier: {
     key: 'brazier', name: 'Brazier', short: 'BRAZIER', cost: 60, glyph: '✹',
-    dmg: 2, burnTicks: 30, maxStacks: 3, ground: true, kind: 'damage', permanent: true,
+    dmg: 5, burnTicks: 30, maxStacks: 3, ground: true, kind: 'damage', permanent: true,
     blurb: 'Sets them alight as they pass. Burns stack three deep.'
   },
   wall: {
@@ -838,8 +838,25 @@ function pickCell(s, zone) {
   return -1;
 }
 
+/* Each type gets an equal share of the purse first, then leftovers go round in
+   priority order. Without the equal share pass the first type in the list eats
+   every coin and a two type loadout is secretly a one type loadout. */
 function botBuild(s, loadout) {
-  var guard = 0, placed, i, cell;
+  if (!loadout.length) return;
+  var budget = Math.floor(s.scrap / loadout.length);
+  var i, cell, guard, spent, cost, placed;
+  for (i = 0; i < loadout.length; i++) {
+    cost = trapCost(loadout[i].type);
+    spent = 0;
+    guard = 0;
+    while (spent + cost <= budget && guard++ < 60) {
+      cell = pickCell(s, loadout[i].zone);
+      if (cell < 0) break;
+      if (!placeTrap(s, cell, loadout[i].type)) break;
+      spent += cost;
+    }
+  }
+  guard = 0;
   while (guard++ < 400) {
     placed = false;
     for (i = 0; i < loadout.length; i++) {
@@ -1005,6 +1022,29 @@ SUITES.push(function () {
   for (i2 = 0; i2 < TRAP_ORDER.length; i2++) costs += trapCost(TRAP_ORDER[i2]);
   TEST.eq('one of every trap costs 315', costs, 315);
   TEST.ok('a starting purse cannot buy a ballista', scrapForWave(1) < trapCost('ballista'));
+  /* Every tuned number is pinned here on purpose. Moving one of these is a
+     deliberate act that turns this suite red until the sweep agrees. */
+  TEST.eq('spike costs 30', TRAPS.spike.cost, 30);
+  TEST.eq('spike deals 7 a tick', TRAPS.spike.dmg, 7);
+  TEST.eq('spike carries 60 charges', TRAPS.spike.charges, 60);
+  TEST.eq('pit costs 45', TRAPS.pit.cost, 45);
+  TEST.eq('pit bites 26 on entry', TRAPS.pit.dmg, 26);
+  TEST.eq('pit slows to four tenths speed', TRAPS.pit.slow, 2.5);
+  TEST.eq('ballista costs 90', TRAPS.ballista.cost, 90);
+  TEST.eq('ballista deals 22 a bolt', TRAPS.ballista.dmg, 22);
+  TEST.eq('ballista reloads in 14 ticks', TRAPS.ballista.cd, 14);
+  TEST.eq('brazier costs 60', TRAPS.brazier.cost, 60);
+  TEST.eq('brazier burns 5 a tick a stack', TRAPS.brazier.dmg, 5);
+  TEST.eq('a burn lasts 30 ticks', TRAPS.brazier.burnTicks, 30);
+  TEST.eq('burns stack three deep', TRAPS.brazier.maxStacks, 3);
+  TEST.eq('wall costs 50', TRAPS.wall.cost, 50);
+  TEST.eq('a wall takes 3 hits', TRAPS.wall.hits, 3);
+  TEST.eq('snare costs 40', TRAPS.snare.cost, 40);
+  TEST.eq('a snare holds for 25 ticks', TRAPS.snare.hold, 25);
+  TEST.eq('the blade opens at 12', CONFIG.PLAYER_DMG, 12);
+  TEST.eq('the blade swings every 8 ticks', CONFIG.PLAYER_ATK_CD, 8);
+  TEST.eq('you walk a cell every 2 ticks', CONFIG.PLAYER_MOVE_TICKS, 2);
+  TEST.eq('your reach is one cell', CONFIG.PLAYER_RANGE, 1);
 });
 
 /* --- suite: generation --- */
@@ -1126,26 +1166,26 @@ SUITES.push(function () {
   t = tPut(s, 10, 'spike');
   e = tEnemy(s, 'brute', 10, 500);
   step(s, 'none');
-  TEST.eq('spike strip deals four a tick', e.hp, 496);
-  TEST.eq('spike strip spends a charge', t.charges, 39);
+  TEST.eq('spike strip deals its damage every tick', e.hp, 500 - TRAPS.spike.dmg);
+  TEST.eq('spike strip spends a charge', t.charges, TRAPS.spike.charges - 1);
   s = tGame({});
   t = tPut(s, 10, 'spike');
   e = tEnemy(s, 'flyer', 10, 500);
   tRun(s, 3, 'none');
   TEST.eq('a flyer sails over the spike strip', e.hp, 500);
-  TEST.eq('spike strip spends nothing on a flyer', t.charges, 40);
+  TEST.eq('spike strip spends nothing on a flyer', t.charges, TRAPS.spike.charges);
   s = tGame({});
   t = tPut(s, 10, 'spike');
   e = tEnemy(s, 'brute', 10, 99999, true);
-  tRun(s, 45, 'none');
-  TEST.eq('spike strip is scrap after forty bites', s.traps[10], null);
-  TEST.eq('spike strip total damage is one hundred sixty', 99999 - e.hp, 160);
+  tRun(s, TRAPS.spike.charges + 5, 'none');
+  TEST.eq('spike strip is scrap once its charges are spent', s.traps[10], null);
+  TEST.eq('spike strip lifetime damage is charges times damage', 99999 - e.hp, TRAPS.spike.charges * TRAPS.spike.dmg);
   /* pit */
   s = tGame({});
   tPut(s, 9, 'pit');
   e = tEnemy(s, 'brute', 10, 500);
   tRun(s, 6, 'none');
-  TEST.eq('pit bites ten on the way in', e.hp, 490);
+  TEST.eq('the pit bites on the way in', e.hp, 500 - TRAPS.pit.dmg);
   TEST.eq('body is in the pit', e.cell, 9);
   s = tGame({});
   tPut(s, 9, 'pit');
@@ -1157,11 +1197,11 @@ SUITES.push(function () {
   t = tPut(s, 4, 'ballista');
   e = tEnemy(s, 'brute', 12, 500);
   step(s, 'none');
-  TEST.eq('ballista opens fire at once', e.hp, 491);
-  tRun(s, 13, 'none');
-  TEST.eq('ballista reloads for fourteen ticks', e.hp, 491);
+  TEST.eq('ballista opens fire at once', e.hp, 500 - TRAPS.ballista.dmg);
+  tRun(s, TRAPS.ballista.cd - 1, 'none');
+  TEST.eq('ballista holds fire while it reloads', e.hp, 500 - TRAPS.ballista.dmg);
   step(s, 'none');
-  TEST.ok('ballista fires again on the fifteenth tick', e.hp < 491);
+  TEST.ok('ballista fires again the tick its reload ends', e.hp < 500 - TRAPS.ballista.dmg);
   s = tGame({});
   tPut(s, 4, 'ballista');
   e = tEnemy(s, 'flyer', 12, 500);
@@ -1193,16 +1233,16 @@ SUITES.push(function () {
   e = tEnemy(s, 'runner', 25, 99999);
   tRun(s, 2, 'none');
   TEST.eq('brazier lights the body on entry', e.burns.length, 1);
-  TEST.eq('burn deals two a tick', e.hp, 99997);
+  TEST.eq('burn deals its damage every tick', e.hp, 99999 - TRAPS.brazier.dmg);
   tRun(s, 40, 'none');
-  TEST.eq('one burn stack is sixty damage', 99999 - e.hp, 60);
+  TEST.eq('one burn stack is damage times duration', 99999 - e.hp, TRAPS.brazier.dmg * TRAPS.brazier.burnTicks);
   TEST.eq('burn burns out after thirty ticks', e.burns.length, 0);
   s = tGame({});
   tPut(s, 24, 'brazier'); tPut(s, 23, 'brazier'); tPut(s, 22, 'brazier'); tPut(s, 21, 'brazier');
   e = tEnemy(s, 'runner', 25, 99999);
   tRun(s, 12, 'none');
   TEST.eq('burn stacks cap at three', e.burns.length, 3);
-  TEST.eq('one stack then two then three ramps the burn', 99999 - e.hp, (2 * 2) + (4 * 2) + (6 * 7));
+  TEST.eq('one stack then two then three ramps the burn', 99999 - e.hp, TRAPS.brazier.dmg * (2 + 4 + 21));
   s = tGame({});
   tPut(s, 24, 'brazier');
   e = tEnemy(s, 'flyer', 25, 500);
@@ -1227,7 +1267,7 @@ SUITES.push(function () {
   TEST.eq('spike ticks count as three separate events', e.shield, 0);
   TEST.eq('three spike ticks cost the shield and nothing else', e.hp, 500);
   tRun(s, 1, 'none');
-  TEST.eq('the fourth spike tick is the first that hurts', e.hp, 496);
+  TEST.eq('the fourth spike tick is the first that hurts', e.hp, 500 - TRAPS.spike.dmg);
   /* sapper */
   s = tGame({});
   tPut(s, 9, 'snare');
@@ -1303,11 +1343,16 @@ SUITES.push(function () {
   TEST.eq('a healer out of range mends nothing', brute.hp, 100);
   s = tGame({});
   tPut(s, 10, 'spike');
-  h = tEnemy(s, 'healer', 11, 300);
-  brute = tEnemy(s, 'brute', 10, 200);
-  var before = brute.hp;
+  h = tEnemy(s, 'healer', 11, 300, true);
+  brute = tEnemy(s, 'brute', 10, 200, true);
   tRun(s, 6, 'none');
-  TEST.ok('a healer keeps a brute alive on a spike strip', brute.hp >= before - 6);
+  TEST.eq('a healer on a spike strip cancels part of every tick', brute.hp, 200 - 6 * (TRAPS.spike.dmg - healAmount(1)));
+  var noHealer = tGame({});
+  tPut(noHealer, 10, 'spike');
+  var alone = tEnemy(noHealer, 'brute', 10, 200, true);
+  tRun(noHealer, 6, 'none');
+  TEST.ok('a healer keeps a brute alive that would otherwise be lower', brute.hp > alone.hp);
+  TEST.eq('the same brute with nobody mending it takes the full bite', alone.hp, 200 - 6 * TRAPS.spike.dmg);
   /* swarm spawns five */
   s = tGame({});
   s.enemies = [];
