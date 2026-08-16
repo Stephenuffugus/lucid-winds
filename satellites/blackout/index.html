@@ -1194,7 +1194,7 @@ function textSanity(cs) {
     var cl = cs.pool[i], s = clueText(cl);
     if (!clueTrueOf(cl, cs.truth)) problems.push("clue " + i + " false of truth");
     if (s.indexOf("{") >= 0 || s.indexOf("}") >= 0) problems.push("clue " + i + " unfilled slot");
-    if (/[-‐‑‒–—]/.test(s)) problems.push("clue " + i + " dash in copy");
+    if (/[-‐-―]/.test(s)) problems.push("clue " + i + " dash in copy");
     if (s.length < 8) problems.push("clue " + i + " empty text");
     var must = clueSubjects(cl);
     for (var j = 0; j < must.length; j++) if (s.indexOf(must[j]) < 0) problems.push("clue " + i + " text drops " + must[j]);
@@ -1252,6 +1252,63 @@ function deserializeState(o, cs) {
   st.contraId = n(o.contraId, -1);
   st.stars = n(o.stars, 0);
   return st;
+}
+/* ---- save core: pure, storage free. The SAVE layer only supplies strings. ---- */
+var SAVE_KEY = "lw_" + CONFIG.GAME_ID + "_v1";
+
+function saveDefaults() {
+  return {
+    v: 1, gameId: CONFIG.GAME_ID,
+    stats: { cases: 0, solved: 0, lost: 0, stars: 0, bestStars: 0, dailyStreak: 0, lastDaily: "" },
+    unlocks: [],
+    best: { fewestActions: 0 },
+    settings: { sound: true, volume: 0.7, haptics: true, autoMark: false, typewriter: true, reduceMotion: false },
+    archive: [],
+    resume: null
+  };
+}
+function saveMigrate(s) {
+  if (!s || typeof s !== "object") return saveDefaults();
+  if (typeof s.v !== "number") s.v = 1;
+  return s;
+}
+function saveParse(raw) {
+  var d = saveDefaults();
+  if (typeof raw !== "string" || !raw) return d;
+  var o;
+  try { o = JSON.parse(raw); } catch (e) { return d; }
+  if (!o || typeof o !== "object" || o.constructor === Array) return d;
+  o = saveMigrate(o);
+  var out = saveDefaults(), k;
+  for (k in out.stats) if (typeof (o.stats || {})[k] === typeof out.stats[k]) out.stats[k] = o.stats[k];
+  for (k in out.settings) if (typeof (o.settings || {})[k] === typeof out.settings[k]) out.settings[k] = o.settings[k];
+  for (k in out.best) if (typeof (o.best || {})[k] === "number") out.best[k] = o.best[k];
+  if (o.archive && o.archive.constructor === Array) out.archive = o.archive.slice(0, 10);
+  if (o.resume && typeof o.resume === "object") out.resume = o.resume;
+  return out;
+}
+/* two tab law: counters ADD, bests MAX, never write a whole object you read once */
+function saveMerge(disk, patch) {
+  var out = saveParse(JSON.stringify(disk || {})), k;
+  if (patch.addStats) for (k in patch.addStats) out.stats[k] = (out.stats[k] || 0) + patch.addStats[k];
+  if (patch.maxStats) for (k in patch.maxStats) out.stats[k] = Math.max(out.stats[k] || 0, patch.maxStats[k]);
+  if (patch.setStats) for (k in patch.setStats) out.stats[k] = patch.setStats[k];
+  if (patch.settings) for (k in patch.settings) out.settings[k] = patch.settings[k];
+  if (patch.bestLow) for (k in patch.bestLow) {
+    out.best[k] = (!out.best[k]) ? patch.bestLow[k] : Math.min(out.best[k], patch.bestLow[k]);
+  }
+  if (patch.archive) out.archive = [patch.archive].concat(out.archive).slice(0, 10);
+  if (patch.resume !== undefined) out.resume = patch.resume;
+  return out;
+}
+function shareString(cs, st, isDaily, dayNo) {
+  var head = isDaily ? ("BLACKOUT day " + dayNo) : ("BLACKOUT case " + cs.seed);
+  if (st.status === "won") {
+    return head + " solved in " + actionsUsed(st) + " moves, " +
+      (st.stars === 3 ? "three stars" : st.stars === 2 ? "two stars" : "one star") +
+      ". Try it: ?seed=" + cs.seed;
+  }
+  return head + " beat me in " + actionsUsed(st) + " moves. Try it: ?seed=" + cs.seed;
 }
 // ---- SIM_EXPORT_END ----
 //@@PART2@@

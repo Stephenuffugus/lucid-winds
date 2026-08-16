@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>DEEPWELL</title>
+<meta name="description" content="Dig deep, carry too much, and decide when to turn around before the air decides for you.">
+<meta name="theme-color" content="#f0a742">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DEEPWELL">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+/*  DEEPWELL
+    game id: deepwell   accent amber #f0a742
+    seed policy: ?seed=<n> boots that shaft. daily mode uses
+    seedFromString(YYYY-MM-DD + 'deepwell') with a fixed loadout.
+    Balance table lives in the header comment of the script block below. */
+:root{
+  --bg:#0a0b0f; --panel:#14161d; --panel2:#1b1e27; --line:#2a2f3c;
+  --amber:#f0a742; --warm:#ffd9a0; --sage:#8fbf6a; --cream:#e8dcc8;
+  --muted:#8a9178; --danger:#e2574c; --ink:#05060a;
+  --safe:env(safe-area-inset-bottom,0px);
+  --safeT:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--cream);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;overscroll-behavior:none;touch-action:manipulation}
+body{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-variant-numeric:tabular-nums}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.hide{display:none !important}
+
+/* ---------- shaft background ---------- */
+#shaft{position:absolute;inset:0;overflow:hidden;z-index:0;
+  background:linear-gradient(180deg,#0a0b0f 0%,#0d0f14 40%,#08090d 100%)}
+#shaftBand{position:absolute;inset:0;opacity:.35;transition:background 600ms linear}
+#shaftWall{position:absolute;inset:0;opacity:.5}
+#shaftScroll{position:absolute;left:0;right:0;top:0;height:100%;will-change:transform}
+.rockrow{position:absolute;left:0;right:0;height:2px;background:rgba(255,255,255,.045)}
+#recLine{position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(240,167,66,.75);
+  display:flex;align-items:center;justify-content:flex-end}
+#recLine span{font-size:11px;letter-spacing:.14em;color:var(--amber);background:rgba(10,11,15,.85);
+  padding:2px 6px;border-radius:3px;transform:translateY(-9px)}
+#bandStamp{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:800;
+  letter-spacing:.22em;color:rgba(232,220,200,.0);pointer-events:none;z-index:2}
+#bandStamp.on{animation:stamp 2400ms ease-out forwards}
+@keyframes stamp{0%{color:rgba(232,220,200,0);transform:scale(1.18)}
+  18%{color:rgba(232,220,200,.85)}100%{color:rgba(232,220,200,0);transform:scale(1)}}
+
+/* ---------- hud / odometer ---------- */
+#hud{position:relative;z-index:3;padding:calc(var(--safeT) + 8px) 14px 4px;text-align:center}
+#topRow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
+.iconbtn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;border-radius:12px;color:var(--muted)}
+.iconbtn:active{background:rgba(255,255,255,.06)}
+#strataName{font-size:13px;letter-spacing:.24em;color:var(--muted);font-weight:700}
+.odo{display:flex;align-items:center;justify-content:center;gap:2px;line-height:1;margin:2px 0 0}
+.digit{height:.92em;overflow:hidden;width:.62em;position:relative}
+.digit i{display:block;font-style:normal;transition:transform 200ms cubic-bezier(.2,.8,.3,1)}
+.digit i b{display:block;height:.92em;font-weight:800;text-align:center}
+#odo{font-size:74px;font-weight:800;color:var(--cream);text-shadow:0 2px 0 rgba(0,0,0,.6)}
+#odoUnit{font-size:12px;letter-spacing:.34em;color:var(--muted);margin-top:2px}
+#recordRow{font-size:12px;letter-spacing:.1em;color:var(--muted);margin-top:3px}
+#recordRow b{color:var(--amber);font-weight:700}
+
+/* ---------- air to surface ---------- */
+#margin{position:relative;z-index:3;margin:8px 12px 0;padding:9px 12px 10px;
+  background:rgba(20,22,29,.86);border:1px solid var(--line);border-radius:14px}
+#marginLabel{font-size:11px;letter-spacing:.22em;color:var(--muted)}
+#marginVal{font-size:26px;font-weight:800;margin-top:1px}
+#ascNum{color:var(--warm)} #airNum{color:var(--cream)}
+#marginVal span{font-size:15px;color:var(--muted);font-weight:600}
+#marginBar{height:8px;border-radius:6px;background:#0e1016;overflow:hidden;margin-top:7px;border:1px solid var(--line)}
+#marginFill{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--sage),var(--amber));
+  transition:width 180ms ease-out,background 300ms linear}
+#marginNote{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px}
+#marginNote.warn{color:var(--warm)} #marginNote.bad{color:var(--danger)}
+
+/* ---------- meters ---------- */
+#meters{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 12px 0}
+.meter{background:rgba(20,22,29,.8);border:1px solid var(--line);border-radius:12px;padding:7px 9px}
+.meter .lab{font-size:11px;letter-spacing:.16em;color:var(--muted);display:flex;justify-content:space-between}
+.meter .lab b{color:var(--cream);font-size:13px}
+.bar{height:7px;border-radius:5px;background:#0e1016;overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;transition:width 180ms ease-out}
+.air i{background:linear-gradient(90deg,#6fb1d6,#9fd8ee)}
+.lamp i{background:linear-gradient(90deg,#c98a2a,#ffd9a0)}
+.pack i{background:linear-gradient(90deg,#8a7f6a,#d8c9a8)}
+.pips{display:flex;gap:5px;margin-top:6px}
+.pip{width:16px;height:16px;border-radius:4px;border:2px solid #4a5162;background:transparent}
+.pip.on{background:var(--sage);border-color:var(--sage)}
+.pip.off{background:transparent;border-color:#3a3f4d}
+
+/* ---------- node card ---------- */
+#nodecard{position:relative;z-index:3;margin:10px 12px 0;padding:12px 13px;min-height:96px;
+  background:linear-gradient(180deg,rgba(27,30,39,.95),rgba(17,19,26,.95));
+  border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:14px}
+#nodeKind{font-size:12px;letter-spacing:.2em;color:var(--amber);font-weight:700}
+#nodeTitle{font-size:20px;font-weight:800;margin-top:3px}
+#nodeBody{font-size:14px;color:#c9cbbd;margin-top:5px;line-height:1.45}
+.orerow{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:14px}
+.oredot{width:12px;height:12px;border-radius:3px;flex:none}
+.oreratio{margin-left:auto;color:var(--muted);font-size:12px}
+
+/* ---------- actions ---------- */
+#spacer{flex:1 1 auto;min-height:6px}
+#actions{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0}
+.big{min-height:60px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:transform 120ms ease-out,background 120ms ease-out}
+.big:active{transform:translateY(1px);background:#232733}
+.big b{font-size:17px;letter-spacing:.14em;font-weight:800}
+.big small{font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+.big[disabled]{opacity:.4}
+#btnDescend{grid-column:1 / span 2;background:linear-gradient(180deg,#1f2430,#171a23);border-color:#39404f}
+#btnDescend b{color:var(--warm)}
+#btnAscend b{color:var(--sage)}
+#btnMine b{color:var(--amber)}
+#btnCargo{position:relative;z-index:3;margin:8px 12px calc(10px + var(--safe));min-height:52px;
+  border-radius:14px;border:1px solid var(--line);background:rgba(20,22,29,.8);
+  display:flex;align-items:center;gap:10px;padding:0 14px;width:calc(100% - 24px)}
+#btnCargo .cw{font-size:15px;font-weight:800}
+#btnCargo .cv{margin-left:auto;color:var(--amber);font-weight:800;font-size:16px}
+#btnCargo .cl{font-size:11px;letter-spacing:.18em;color:var(--muted)}
+
+/* ---------- overlays ---------- */
+.ovl{position:absolute;inset:0;z-index:20;background:rgba(6,7,11,.93);
+  display:flex;flex-direction:column;padding:calc(var(--safeT) + 14px) 14px calc(14px + var(--safe));
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ovl h2{font-size:15px;letter-spacing:.24em;color:var(--muted);margin:0 0 10px;font-weight:700}
+.ovlhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ovlhead h2{flex:1;margin:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
+.row{display:flex;align-items:center;gap:10px}
+.row .grow{flex:1}
+.tiny{font-size:12px;color:var(--muted)}
+.btn{min-height:52px;border-radius:13px;border:1px solid var(--line);background:var(--panel2);
+  padding:0 16px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;letter-spacing:.1em}
+.btn.gold{background:linear-gradient(180deg,#f0a742,#c4832c);color:#191207;border-color:#f0a742}
+.btn.sage{color:var(--sage);border-color:#3d4f33}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.4}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+
+/* cargo drawer */
+#cargoOvl .item{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);
+  border-radius:12px;margin-bottom:7px;background:var(--panel)}
+#cargoOvl .item .nm{font-weight:700;font-size:15px}
+#cargoOvl .item .sub{font-size:11.5px;color:var(--muted)}
+#cargoOvl .drop{min-width:78px;min-height:48px;border-radius:11px;border:1px solid #4a3b34;color:#e6a79c;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;letter-spacing:.14em;font-weight:700}
+#cargoOvl .val{text-align:right;min-width:56px}
+#cargoOvl .val b{color:var(--amber);font-size:16px}
+.glint{position:fixed;pointer-events:none;z-index:60;width:10px;height:10px;border-radius:50%;
+  background:var(--warm);box-shadow:0 0 14px 6px rgba(255,217,160,.55);animation:glint 620ms ease-out forwards}
+@keyframes glint{0%{transform:scale(.4);opacity:0}25%{opacity:1}100%{transform:scale(2.6);opacity:0}}
+
+/* shrine card */
+#shrineOvl{background:radial-gradient(120% 80% at 50% 20%,#1a1206 0%,#08090d 70%)}
+#shrineOvl .plate{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:8px}
+#shrineName{font-size:12px;letter-spacing:.32em;color:var(--amber)}
+#shrineTitle{font-size:27px;font-weight:800;line-height:1.15}
+#shrineNums{font-size:17px;line-height:1.6;color:var(--cream);margin-top:6px}
+#shrineNums b{color:var(--warm);font-size:21px}
+#shrineWarn{color:var(--danger);font-size:13.5px;min-height:18px;letter-spacing:.06em}
+
+/* result screen */
+#resTitle{font-size:30px;font-weight:800;letter-spacing:.02em}
+#resSub{font-size:14px;color:var(--muted);margin-top:3px}
+#manifest .mline{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(42,47,60,.6);font-size:14.5px}
+#manifest .mline .v{margin-left:auto;font-weight:800}
+.lost .v{color:var(--danger)} .kept .v{color:var(--amber)}
+#resBig{font-size:44px;font-weight:800;color:var(--amber);letter-spacing:.02em}
+#resKnife{font-size:15px;color:var(--warm);line-height:1.5;margin-top:8px}
+
+/* shop */
+.track{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);
+  border-radius:13px;margin-bottom:8px;background:var(--panel)}
+.track .tn{font-weight:800;font-size:15px;letter-spacing:.08em}
+.track .td{font-size:12px;color:var(--muted);margin-top:2px}
+.track .lv{display:flex;gap:4px;margin-top:6px}
+.track .lv i{width:22px;height:6px;border-radius:3px;background:#2a2f3c}
+.track .lv i.on{background:var(--amber)}
+.buy{min-width:92px;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800}
+.buy small{font-size:10px;color:var(--muted);letter-spacing:.12em;font-weight:600}
+.buy.can{border-color:var(--amber);color:var(--amber)}
+.buy[disabled]{opacity:.45}
+#cashBig{font-size:38px;font-weight:800;color:var(--amber)}
+
+/* logbook */
+.logline{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:9px 4px;
+  border-bottom:1px solid rgba(42,47,60,.6);font-size:13.5px;align-items:center}
+.logline .d{color:var(--muted);font-size:11.5px;letter-spacing:.06em}
+.logline .b{text-align:right;font-weight:800}
+
+/* toast + test panel */
+#toast{position:fixed;left:50%;bottom:calc(84px + var(--safe));transform:translateX(-50%);z-index:70;
+  background:rgba(20,22,29,.96);border:1px solid var(--line);border-radius:12px;padding:10px 15px;
+  font-size:13.5px;opacity:0;transition:opacity 180ms ease-out;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:fixed;inset:0;z-index:99;background:#05060a;color:#cfe8bd;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;
+  padding:16px;overflow:auto;white-space:pre-wrap}
+#testPanel .f{color:#ff9a8f}
+.switch{min-width:70px;min-height:48px;border-radius:12px;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:.1em;font-size:13px}
+.switch.on{color:var(--sage);border-color:#3d4f33} .switch.off{color:var(--muted)}
+input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transparent}
+@media (prefers-reduced-motion:reduce){*{animation-duration:1ms !important;transition-duration:1ms !important}}
+@media (min-width:620px){
+  #app{max-width:520px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .ovl{max-width:520px;left:50%;transform:translateX(-50%)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section id="runScreen" class="screen">
+    <div id="shaft">
+      <div id="shaftBand"></div>
+      <div id="shaftScroll"></div>
+      <div id="bandStamp"></div>
+    </div>
+
+    <header id="hud">
+      <div id="topRow">
+        <button class="iconbtn" id="btnExit" aria-label="Leave the shaft">&#10005;</button>
+        <div>
+          <div id="strataName">TOPSOIL</div>
+        </div>
+        <button class="iconbtn" id="btnOpts" aria-label="Options">&#9881;</button>
+      </div>
+      <div class="odo" id="odo"></div>
+      <div id="odoUnit">METERS DOWN</div>
+      <div id="recordRow">DEEPEST EVER <b id="recDepth">0</b></div>
+    </header>
+
+    <div id="margin">
+      <div id="marginLabel">AIR TO SURFACE</div>
+      <div id="marginVal"><b id="ascNum">0</b><span> of </span><b id="airNum">100</b></div>
+      <div id="marginBar"><i id="marginFill"></i></div>
+      <div id="marginNote"></div>
+    </div>
+
+    <div id="meters">
+      <div class="meter air"><div class="lab"><span>AIR</span><b id="mAir">100</b></div><div class="bar"><i id="fAir"></i></div></div>
+      <div class="meter lamp"><div class="lab"><span>LAMP</span><b id="mLamp">100</b></div><div class="bar"><i id="fLamp"></i></div></div>
+      <div class="meter pack"><div class="lab"><span>PACK</span><b id="mPack">0 of 40</b></div><div class="bar"><i id="fPack"></i></div></div>
+      <div class="meter"><div class="lab"><span>BRACES</span><b id="mInt">3</b></div><div class="pips" id="pips"></div></div>
+    </div>
+
+    <div id="nodecard">
+      <div id="nodeKind">THE SHAFT MOUTH</div>
+      <div id="nodeTitle">Open air</div>
+      <div id="nodeBody">Everything above you is sky. Everything below you is worth more.</div>
+    </div>
+
+    <div id="spacer"></div>
+
+    <div id="actions">
+      <button id="btnDescend" class="big"><b>DESCEND</b><small></small></button>
+      <button id="btnMine" class="big"><b>MINE</b><small></small></button>
+      <button id="btnAscend" class="big"><b>ASCEND</b><small></small></button>
+    </div>
+    <button id="btnCargo"><span class="cl">CARGO</span><span class="cw" id="cargoW">0</span><span class="cv" id="cargoV">0</span></button>
+  </section>
+
+  <section id="shopScreen" class="screen hide">
+    <div class="ovlhead" style="padding:calc(var(--safeT) + 14px) 14px 0">
+      <button class="iconbtn" id="btnShopExit" aria-label="Leave">&#10005;</button>
+      <h2>THE SURFACE</h2>
+      <button class="iconbtn" id="btnLog" aria-label="Logbook">&#9776;</button>
+      <button class="iconbtn" id="btnOpts2" aria-label="Options">&#9881;</button>
+    </div>
+    <div style="padding:0 14px;overflow-y:auto;flex:1">
+      <div class="card" style="text-align:center">
+        <div class="tiny" style="letter-spacing:.2em">CASH ON HAND</div>
+        <div id="cashBig">0</div>
+        <div class="tiny" id="bestLine">no runs yet</div>
+      </div>
+      <div id="shopTracks"></div>
+      <div class="card" id="dailyCard"></div>
+      <div style="height:12px"></div>
+    </div>
+    <div style="padding:0 14px calc(14px + var(--safe))">
+      <button class="btn gold" id="btnDescendStart" style="width:100%">GO DOWN</button>
+      <div class="btnrow">
+        <button class="btn" id="btnLogbook">LOGBOOK</button>
+        <button class="btn" id="btnShare">SHARE</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="cargoOvl" class="ovl hide">
+    <div class="ovlhead"><h2>THE GREED LEDGER</h2><button class="iconbtn" id="cargoClose">&#10005;</button></div>
+    <div class="tiny" style="margin-bottom:9px">Sorted by value for every kilo. Drop the bottom of the list first.</div>
+    <div id="cargoList"></div>
+    <div class="card tiny" id="cargoFoot"></div>
+  </div>
+
+  <div id="shrineOvl" class="ovl hide">
+    <div class="plate">
+      <div id="shrineName">A SHRINE IN THE ROCK</div>
+      <div id="shrineTitle">THE LUNG</div>
+      <div id="shrineNums"></div>
+      <div id="shrineWarn"></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn sage" id="shrineNo">WALK AWAY</button>
+      <button class="btn gold" id="shrineYes">ACCEPT</button>
+    </div>
+  </div>
+
+  <div id="resOvl" class="ovl hide">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div id="resTitle">SURFACED</div>
+      <div id="resSub"></div>
+      <div id="resBig">0</div>
+      <div class="card" id="manifest"></div>
+      <div id="resKnife"></div>
+      <div class="tiny" id="resLog" style="margin-top:8px"></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="resShare">SHARE</button>
+      <button class="btn gold" id="resAgain">SURFACE</button>
+    </div>
+  </div>
+
+  <div id="logOvl" class="ovl hide">
+    <div class="ovlhead"><h2>COMPANY LOGBOOK</h2><button class="iconbtn" id="logClose">&#10005;</button></div>
+    <div id="logStats" class="card"></div>
+    <div id="logList"></div>
+    <button class="btn" id="btnReplay" style="margin-top:6px">WATCH THE RECORD RUN</button>
+  </div>
+
+  <div id="optOvl" class="ovl hide">
+    <div class="ovlhead"><h2>OPTIONS</h2><button class="iconbtn" id="optClose">&#10005;</button></div>
+    <div class="card">
+      <div class="row"><div class="grow">Sound</div><button class="switch on" id="optSound">ON</button></div>
+      <div style="margin-top:8px" class="tiny">Volume</div>
+      <input type="range" id="optVol" min="0" max="100" step="5" value="70">
+    </div>
+    <div class="card"><div class="row"><div class="grow">Haptics</div><button class="switch on" id="optHap">ON</button></div></div>
+    <div class="card"><div class="row"><div class="grow">Reduced motion</div><button class="switch off" id="optMotion">OFF</button></div></div>
+    <div class="card"><div class="row"><div class="grow">Air margin tone</div><button class="switch on" id="optTone">ON</button></div>
+      <div class="tiny" style="margin-top:6px">The sound that tightens as your way out gets expensive.</div></div>
+    <div class="card"><div class="row"><div class="grow">Confirm before ascending</div><button class="switch off" id="optConfirm">OFF</button></div></div>
+    <div class="card">
+      <div class="tiny">This shaft</div>
+      <div class="row" style="margin-top:4px"><div class="grow" id="optSeed" style="font-weight:800"></div>
+      <button class="btn" id="optCopySeed" style="min-width:110px">COPY LINK</button></div>
+    </div>
+    <button class="btn" id="optExit">LEAVE DEEPWELL</button>
+    <div class="tiny" style="margin-top:10px;text-align:center" id="optVer"></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+/* ============================================================================
+   DEEPWELL   game id: deepwell
+   Single file, no deps, no network. Layer order per HANDOFF-11 section 1.2:
+   CONFIG, RNG, DATA, GEN, SIM, VIEW, INPUT, SAVE, TEST, BOOT.
+
+   SEED POLICY
+     ?seed=<n> boots that exact shaft. Daily mode uses
+     seedFromString(YYYY-MM-DD + 'deepwell') with a fixed loadout so everyone
+     digs the same well. Every share string carries its seed.
+
+   BALANCE (sweep table pasted by sim.js, see BUILD-NOTES.md for the full run)
+     see the table printed by: node sim.js --runs=20000
+
+   KNOWN GAPS
+     see BUILD-NOTES.md
+   ========================================================================== */
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'deepwell',
+  SAVE_KEY: 'lw_deepwell_v1',
+  SAVE_V: 1,
+
+  AIR_BASE: 100, AIR_PER_LEVEL: 16,
+  LAMP_BASE: 100, LAMP_PER_LEVEL: 20,
+  PACK_BASE: 40, PACK_PER_LEVEL: 10,
+  INT_BASE: 3, INT_PER_LEVEL: 1,
+
+  AIR_PER_DEPTH: 1,
+  LAMP_PER_DEPTH: 1.5,
+  ASCENT_WEIGHT_DIV: 20,
+  URANITE_LAMP_PER_DEPTH: 3,
+
+  GAP_MIN: 3, GAP_MAX: 6,
+  ASSAY_NODES_PER_LEVEL: 2,
+  HEART_MIN_DEPTH: 141,
+  HAZARD_RATE_CAP: 0.85,
+
+  /* node type roll once a node is known not to be a hazard */
+  NODE_W: Object.freeze({ vein: 45, pocket: 15, shrine: 8, cache: 7, empty: 25 }),
+  VEIN_COUNT_W: Object.freeze([[1, 45], [2, 35], [3, 20]]),
+
+  /* TUNE block. Starting points came from HANDOFF section 3.6 (pocket 25 to 40);
+     every value here was moved by the sweep, see BUILD-NOTES.md. */
+  TUNE: Object.freeze({
+    pocketAirBase: 30, pocketAirPerDepth: 0.22,
+    pocketLampBase: 34, pocketLampPerDepth: 0.30,
+    cacheBase: 26, cachePerDepth: 1.35,
+    heartChance: 0.34
+  }),
+
+  /* time model for the session length estimate, stated so it is arguable */
+  SEC_PER_DECISION: 4.0,
+  SEC_PER_DEPTH_TRAVELLED: 0.15,
+
+  SHOP: Object.freeze({
+    tank:  { name: 'TANK',  base: 60,  levels: 5, blurb: 'AIR PLUS 16' },
+    lamp:  { name: 'LAMP',  base: 50,  levels: 5, blurb: 'LAMP PLUS 20' },
+    pack:  { name: 'PACK',  base: 80,  levels: 5, blurb: 'CARRY PLUS 10' },
+    brace: { name: 'BRACE', base: 150, levels: 3, blurb: 'ONE MORE BRACE' },
+    drill: { name: 'DRILL', base: 110, levels: 5, blurb: 'MINING COSTS ONE TICK LESS' },
+    assay: { name: 'ASSAY', base: 90,  levels: 5, blurb: 'SEE TWO MORE NODES AHEAD' }
+  }),
+  SHOP_ORDER: Object.freeze(['tank', 'lamp', 'pack', 'brace', 'drill', 'assay']),
+  DAILY_LOADOUT: Object.freeze({ tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 })
+});
+
+/* ========================= 2. RNG ========================= */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp; }
+    return a2;
+  };
+  r.weighted = function (pairs) {
+    var total = 0, i, x;
+    for (i = 0; i < pairs.length; i++) total += pairs[i][1];
+    x = r() * total;
+    for (i = 0; i < pairs.length; i++) { x -= pairs[i][1]; if (x <= 0) return pairs[i][0]; }
+    return pairs[pairs.length - 1][0];
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+/* stream splitter: node i of shaft S always rolls the same, whatever order we
+   generate in, and whatever the player did. */
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+
+/* ========================= 3. DATA ========================= */
+var ORES = Object.freeze([
+  { key: 'slag',      name: 'SLAG',      tier: 1, w: 3,  v: 4,   col: '#7c7466' },
+  { key: 'copper',    name: 'COPPER',    tier: 1, w: 4,  v: 9,   col: '#c2703c' },
+  { key: 'iron',      name: 'IRON',      tier: 2, w: 6,  v: 18,  col: '#9aa3ad' },
+  { key: 'silver',    name: 'SILVER',    tier: 2, w: 5,  v: 26,  col: '#d8dde6' },
+  { key: 'cobalt',    name: 'COBALT',    tier: 3, w: 7,  v: 42,  col: '#4a76c8' },
+  { key: 'gold',      name: 'GOLD',      tier: 3, w: 9,  v: 60,  col: '#f0c04a' },
+  { key: 'beryl',     name: 'BERYL',     tier: 4, w: 4,  v: 75,  col: '#5fd6b0' },
+  { key: 'uranite',   name: 'URANITE',   tier: 4, w: 8,  v: 95,  col: '#9ad64a' },
+  { key: 'voidglass', name: 'VOIDGLASS', tier: 5, w: 6,  v: 160, col: '#b98cf0' },
+  { key: 'heartstone',name: 'HEARTSTONE',tier: 5, w: 12, v: 300, col: '#ff7a6a' }
+]);
+var ORE_BY_KEY = (function () { var m = {}, i; for (i = 0; i < ORES.length; i++) m[ORES[i].key] = ORES[i]; return m; })();
+var ORES_BY_TIER = (function () {
+  var m = { 1: [], 2: [], 3: [], 4: [], 5: [] }, i;
+  for (i = 0; i < ORES.length; i++) if (ORES[i].key !== 'heartstone') m[ORES[i].tier].push(ORES[i].key);
+  return m;
+})();
+
+var STRATA = Object.freeze([
+  { key: 'topsoil', name: 'TOPSOIL',   from: 0,   to: 20,       tiers: [1, 1], haz: 0.05, airMul: 1,   lampMul: 1, dmg: 1, col: '#3a2f1e' },
+  { key: 'shale',   name: 'SHALE',     from: 21,  to: 50,       tiers: [1, 2], haz: 0.12, airMul: 1,   lampMul: 1, dmg: 1, col: '#2b2f38' },
+  { key: 'dark',    name: 'DARK SEAM', from: 51,  to: 90,       tiers: [2, 3], haz: 0.20, airMul: 1,   lampMul: 2, dmg: 1, col: '#14161d' },
+  { key: 'wet',     name: 'WET SHELF', from: 91,  to: 140,      tiers: [3, 4], haz: 0.25, airMul: 1.4, lampMul: 1, dmg: 1, col: '#14262c' },
+  { key: 'glass',   name: 'THE GLASS', from: 141, to: 200,      tiers: [4, 5], haz: 0.30, airMul: 1,   lampMul: 1, dmg: 2, col: '#231b33' },
+  { key: 'below',   name: 'BELOW',     from: 201, to: Infinity, tiers: [5, 5], haz: 0.35, airMul: 1.4, lampMul: 2, dmg: 2, col: '#2a0f14' }
+]);
+function bandAt(depth) {
+  var i;
+  for (i = 0; i < STRATA.length; i++) if (depth >= STRATA[i].from && depth <= STRATA[i].to) return STRATA[i];
+  return STRATA[STRATA.length - 1];
+}
+function hazardRateAt(depth, bonus) {
+  var b = bandAt(depth), base = b.haz;
+  if (b.key === 'below') base = 0.35 + 0.01 * Math.floor((depth - 200) / 10);
+  base += (bonus || 0);
+  if (base > CONFIG.HAZARD_RATE_CAP) base = CONFIG.HAZARD_RATE_CAP;
+  return base;
+}
+var HAZARDS = Object.freeze([
+  { key: 'gas',      name: 'GAS POCKET',  line: 'Something sour bleeds out of the wall.' },
+  { key: 'collapse', name: 'COLLAPSE',    line: 'The roof lets go behind you.' },
+  { key: 'flood',    name: 'FLOOD',       line: 'Cold water finds your boots first.' }
+]);
+
+/* twelve bargains, HANDOFF section 3.6, verbatim numbers.
+   risky flag is only used by the sim policies, never by the rules. */
+var SHRINES = Object.freeze([
+  { id: 1,  title: 'THE LUNG',        risky: true,  airCost: 0 },
+  { id: 2,  title: 'THE FAT SEAM',    risky: false, airCost: 0 },
+  { id: 3,  title: 'THE FENCE',       risky: false, airCost: 0 },
+  { id: 4,  title: 'THE OIL',         risky: false, airCost: 0 },
+  { id: 5,  title: 'THE LONG LOOK',   risky: false, airCost: 20 },
+  { id: 6,  title: 'THE SPILL',       risky: true,  airCost: 0 },
+  { id: 7,  title: 'THE CHARM',       risky: false, airCost: 0 },
+  { id: 8,  title: 'THE SPARE BRACE', risky: true,  airCost: 30 },
+  { id: 9,  title: 'THE COUGH',       risky: false, airCost: 0 },
+  { id: 10, title: 'THE TRANSMUTE',   risky: false, airCost: 0 },
+  { id: 11, title: 'THE ADVANCE',     risky: false, airCost: 0 },
+  { id: 12, title: 'THE BRIGHT DEAL', risky: true,  airCost: 0 }
+]);
+var SHRINE_BY_ID = (function () { var m = {}, i; for (i = 0; i < SHRINES.length; i++) m[SHRINES[i].id] = SHRINES[i]; return m; })();
+
+/* ========================= 4. GEN ========================= */
+/* A shaft is a list of nodes. Node i depends ONLY on the seed and i, never on
+   anything the player did, so the reveal bargain and Assay can look ahead and
+   be telling the truth. Hazard identity is decided at arrival because bargain
+   12 raises the rate for the rest of the run. */
+function newColumn(seed) { return { seed: seed >>> 0, nodes: [], heartPlaced: false }; }
+
+function genNode(seed, i, prevDepth, heartPlaced) {
+  var r = makeRNG(mixSeed(seed, i * 2654435761));
+  var gap = r.range(CONFIG.GAP_MIN, CONFIG.GAP_MAX);
+  var depth = prevDepth + gap;
+  var band = bandAt(depth);
+  var hazRoll = r();
+  var kindPairs = [['vein', CONFIG.NODE_W.vein], ['pocket', CONFIG.NODE_W.pocket],
+                   ['shrine', CONFIG.NODE_W.shrine], ['cache', CONFIG.NODE_W.cache],
+                   ['empty', CONFIG.NODE_W.empty]];
+  var kind = r.weighted(kindPairs);
+  var n = { i: i, depth: depth, gap: gap, kind: kind, hazRoll: hazRoll,
+            ore: [], shrineId: 0, pocketKind: 'air', cash: 0, heart: false,
+            hazKind: HAZARDS[r.int(HAZARDS.length)].key, mined: false, used: false };
+
+  if (kind === 'vein') {
+    var isHeart = (!heartPlaced && depth >= CONFIG.HEART_MIN_DEPTH && hazRoll >= 0.9 && r() < CONFIG.TUNE.heartChance);
+    if (isHeart) {
+      n.ore = ['heartstone']; n.heart = true;
+    } else {
+      var count = r.weighted(CONFIG.VEIN_COUNT_W.slice());
+      var k;
+      for (k = 0; k < count; k++) {
+        var tier = r.range(band.tiers[0], band.tiers[1]);
+        n.ore.push(r.pick(ORES_BY_TIER[tier]));
+      }
+    }
+  } else if (kind === 'pocket') {
+    n.pocketKind = r() < 0.5 ? 'air' : 'lamp';
+  } else if (kind === 'shrine') {
+    n.shrineId = SHRINES[r.int(SHRINES.length)].id;
+  } else if (kind === 'cache') {
+    n.cash = Math.round(CONFIG.TUNE.cacheBase + depth * CONFIG.TUNE.cachePerDepth * (0.7 + r() * 0.6));
+  }
+  return n;
+}
+function ensureNodes(col, upto) {
+  while (col.nodes.length <= upto) {
+    var i = col.nodes.length;
+    var prev = i === 0 ? 0 : col.nodes[i - 1].depth;
+    var n = genNode(col.seed, i, prev, col.heartPlaced);
+    if (n.heart) col.heartPlaced = true;
+    col.nodes.push(n);
+  }
+  return col;
+}
+function genColumn(seed, count) { var c = newColumn(seed); ensureNodes(c, count - 1); return c; }
+
+/* ========================= 5. SIM ========================= */
+function overlap(D, from, to) { var hi = Math.min(D, to); return Math.max(0, hi - from + 1); }
+/* air cost of walking the meters 1..D once, before weight */
+function airCum(D) {
+  if (D <= 0) return 0;
+  return D + 0.4 * overlap(D, 91, 140) + 0.4 * Math.max(0, D - 200);
+}
+function lampCum(D) {
+  if (D <= 0) return 0;
+  return CONFIG.LAMP_PER_DEPTH * (D + overlap(D, 51, 90) + Math.max(0, D - 200));
+}
+function countOre(cargo, key) { var i, n = 0; for (i = 0; i < cargo.length; i++) if (cargo[i].key === key) n++; return n; }
+function cargoWeight(cargo) { var i, w = 0; for (i = 0; i < cargo.length; i++) w += cargo[i].w; return w; }
+function cargoValue(cargo) { var i, v = 0; for (i = 0; i < cargo.length; i++) v += cargo[i].v; return v; }
+
+function capsFor(upg) {
+  return {
+    air: CONFIG.AIR_BASE + CONFIG.AIR_PER_LEVEL * (upg.tank || 0),
+    lamp: CONFIG.LAMP_BASE + CONFIG.LAMP_PER_LEVEL * (upg.lamp || 0),
+    pack: CONFIG.PACK_BASE + CONFIG.PACK_PER_LEVEL * (upg.pack || 0),
+    integrity: CONFIG.INT_BASE + CONFIG.INT_PER_LEVEL * (upg.brace || 0)
+  };
+}
+function emptyUpg() { return { tank: 0, lamp: 0, pack: 0, brace: 0, drill: 0, assay: 0 }; }
+
+function newRun(rng, upg, opts) {
+  var seed = (rng && typeof rng.seed === 'number') ? rng.seed : (rng | 0);
+  var u = { tank: 0, lamp: 0, pack: 0, brace: 0, drill: 0, assay: 0 }, k;
+  if (upg) for (k in u) if (typeof upg[k] === 'number') u[k] = upg[k];
+  var caps = capsFor(u);
+  var st = {
+    v: CONFIG.SAVE_V,
+    seed: seed >>> 0,
+    daily: !!(opts && opts.daily),
+    upg: u, caps: caps,
+    depth: 0, maxDepth: 0, at: -1,
+    air: caps.air, lamp: caps.lamp, integrity: caps.integrity,
+    weight: 0, cargo: [], cash: 0,
+    col: newColumn(seed),
+    phase: 'run', pending: 0,
+    steps: 0, travel: 0, mined: 0, hazardsHit: 0,
+    flags: { hazBonus: 0, nullifyHazard: false, doubleVein: false, oreWeightBonus: 0,
+             emptyVeins: 0, revealUntil: -1 },
+    log: [], inputs: [], over: null
+  };
+  ensureNodes(st.col, 3);
+  return st;
+}
+function cloneState(st) { return JSON.parse(JSON.stringify(st)); }
+
+function uraniteCount(st) { return countOre(st.cargo, 'uranite'); }
+
+/* the number on screen at all times */
+function ascentCost(st) {
+  var perDepth = 1 + st.weight / CONFIG.ASCENT_WEIGHT_DIV;
+  var air = perDepth * airCum(st.depth);
+  var lamp = lampCum(st.depth) + CONFIG.URANITE_LAMP_PER_DEPTH * uraniteCount(st) * st.depth;
+  return { air: air, perDepth: perDepth, lamp: lamp };
+}
+/* what the ascent would cost from another depth with the weight we hold now */
+function ascentCostAt(st, depth, extraWeight) {
+  var w = st.weight + (extraWeight || 0);
+  return (1 + w / CONFIG.ASCENT_WEIGHT_DIV) * airCum(depth);
+}
+function descendCost(st) {
+  var nd = nextNode(st);
+  if (!nd) return null;
+  var air = airCum(nd.depth) - airCum(st.depth);
+  var lamp = (lampCum(nd.depth) - lampCum(st.depth)) +
+             CONFIG.URANITE_LAMP_PER_DEPTH * uraniteCount(st) * nd.gap;
+  return { air: air, lamp: lamp, depth: nd.depth, gap: nd.gap };
+}
+function nextNode(st) {
+  if (st.over) return null;
+  ensureNodes(st.col, st.at + 1);
+  return st.col.nodes[st.at + 1];
+}
+function currentNode(st) { return st.at < 0 ? null : st.col.nodes[st.at]; }
+
+function nodeType(st, node) {
+  if (!node) return 'mouth';
+  var rate = hazardRateAt(node.depth, st.flags.hazBonus);
+  if (node.hazRoll < rate) return 'hazard';
+  return node.kind;
+}
+/* one tick of mining is one depth of descent at this rock */
+function tickCost(st) {
+  var b = bandAt(st.depth);
+  return { air: CONFIG.AIR_PER_DEPTH * b.airMul,
+           lamp: CONFIG.LAMP_PER_DEPTH * b.lampMul + CONFIG.URANITE_LAMP_PER_DEPTH * uraniteCount(st) };
+}
+function veinTier(node) {
+  var i, t = 1;
+  for (i = 0; i < node.ore.length; i++) t = Math.max(t, ORE_BY_KEY[node.ore[i]].tier);
+  return t;
+}
+function veinTicks(st, node) { return Math.max(1, veinTier(node) - (st.upg.drill || 0)); }
+
+/* what a vein would put in the bag right now, flags applied */
+function veinHaul(st, node) {
+  var out = [], i, o, w, v;
+  for (i = 0; i < node.ore.length; i++) {
+    o = ORE_BY_KEY[node.ore[i]];
+    w = o.w + (st.flags.oreWeightBonus || 0);
+    v = o.v;
+    if (st.flags.doubleVein) { v = o.v * 2; w = Math.round(w * 1.5); }
+    out.push({ key: o.key, name: o.name, tier: o.tier, w: w, v: v });
+  }
+  return out;
+}
+function mineBlockedReason(st) {
+  var n = currentNode(st);
+  if (!n || st.over || st.phase !== 'run') return 'nothing to work';
+  if (nodeType(st, n) !== 'vein' || n.mined) return 'nothing to work';
+  if (n.ore.length === 0) return 'the seam is dead rock';
+  var haul = veinHaul(st, n), i, w = 0;
+  for (i = 0; i < haul.length; i++) w += haul[i].w;
+  if (st.weight + w > st.caps.pack) return 'PACK IS FULL. NEEDS ' + Math.ceil(st.weight + w - st.caps.pack) + ' MORE SPACE';
+  return null;
+}
+function canMine(st) { return mineBlockedReason(st) === null; }
+
+function actions(st) {
+  if (st.over) return [];
+  var out = [], i;
+  if (st.phase === 'shrine') {
+    if (shrineAcceptable(st) === null) out.push('shrine:accept');
+    out.push('shrine:decline');
+    return out;
+  }
+  out.push('descend');
+  out.push('ascend');
+  if (canMine(st)) out.push('mine');
+  for (i = 0; i < st.cargo.length; i++) out.push('drop:' + i);
+  return out;
+}
+
+function stepRNG(st) { return makeRNG(mixSeed(st.seed ^ 0x5bf03635, st.steps * 2246822519 + 7)); }
+
+function endRun(st, reason, ev) {
+  var lost = reason === 'surfaced' ? [] : st.cargo.slice();
+  var lostValue = cargoValue(lost);
+  st.over = {
+    reason: reason,
+    depth: st.depth,
+    maxDepth: st.maxDepth,
+    lostCargo: lost,
+    lostValue: lostValue,
+    kept: reason === 'surfaced' ? cargoValue(st.cargo) : 0,
+    banked: st.cash + (reason === 'surfaced' ? cargoValue(st.cargo) : 0),
+    cashOnly: st.cash
+  };
+  st.phase = 'over';
+  ev.push({ t: 'over', reason: reason, over: st.over });
+  return st;
+}
+function runOver(st) { return st.over; }
+
+function spendAir(st, amount, ev) {
+  st.air -= amount;
+  if (st.air <= 0) { st.air = 0; return true; }
+  return false;
+}
+function spendLamp(st, amount) {
+  st.lamp -= amount;
+  if (st.lamp < 0) st.lamp = 0;
+}
+function hurt(st, dmg, ev) {
+  st.integrity -= dmg;
+  if (st.integrity < 0) st.integrity = 0;
+  ev.push({ t: 'hurt', dmg: dmg, left: st.integrity });
+  return st.integrity <= 0;
+}
+
+function resolveArrival(st, ev) {
+  var n = currentNode(st);
+  if (!n) return;
+  var kind = nodeType(st, n);
+  if (kind === 'hazard' && !n.used) {
+    n.used = true;
+    if (st.flags.nullifyHazard) {
+      st.flags.nullifyHazard = false;
+      ev.push({ t: 'hazardNull', kind: n.hazKind, depth: n.depth });
+      st.log.push({ d: n.depth, s: 'the charm ate a ' + n.hazKind + ' at ' + n.depth + 'm' });
+    } else {
+      var dmg = bandAt(n.depth).dmg;
+      st.hazardsHit++;
+      ev.push({ t: 'hazard', kind: n.hazKind, dmg: dmg, depth: n.depth });
+      st.log.push({ d: n.depth, s: 'a ' + n.hazKind + ' cost ' + dmg + ' at ' + n.depth + 'm' });
+      if (hurt(st, dmg, ev)) { endRun(st, 'collapse', ev); return; }
+    }
+  } else if (kind === 'pocket' && !n.used) {
+    n.used = true;
+    if (n.pocketKind === 'air') {
+      var amt = Math.round(CONFIG.TUNE.pocketAirBase + n.depth * CONFIG.TUNE.pocketAirPerDepth);
+      var before = st.air;
+      st.air = Math.min(st.caps.air, st.air + amt);
+      ev.push({ t: 'pocket', kind: 'air', amount: Math.round(st.air - before), depth: n.depth });
+    } else {
+      var amt2 = Math.round(CONFIG.TUNE.pocketLampBase + n.depth * CONFIG.TUNE.pocketLampPerDepth);
+      var before2 = st.lamp;
+      st.lamp = Math.min(st.caps.lamp, st.lamp + amt2);
+      ev.push({ t: 'pocket', kind: 'lamp', amount: Math.round(st.lamp - before2), depth: n.depth });
+    }
+  } else if (kind === 'cache' && !n.used) {
+    n.used = true;
+    st.cash += n.cash;
+    ev.push({ t: 'cache', amount: n.cash, depth: n.depth });
+    st.log.push({ d: n.depth, s: 'found ' + n.cash + ' cash at ' + n.depth + 'm' });
+  } else if (kind === 'shrine' && !n.used) {
+    st.phase = 'shrine';
+    st.pending = n.shrineId;
+    ev.push({ t: 'shrine', id: n.shrineId, depth: n.depth });
+  } else if (kind === 'vein' && !n.used && st.flags.emptyVeins > 0) {
+    n.used = true; n.ore = []; n.mined = true;
+    st.flags.emptyVeins--;
+    ev.push({ t: 'veinEmpty', depth: n.depth, left: st.flags.emptyVeins });
+  }
+}
+
+/* ---- the twelve bargains ---- */
+function shrineAcceptable(st) {
+  var id = st.pending, s = SHRINE_BY_ID[id];
+  if (!s) return 'no bargain here';
+  if (s.airCost > 0 && st.air <= s.airCost) return 'NOT ENOUGH AIR';
+  if (id === 3 && st.cargo.length === 0) return 'NOTHING IN THE PACK';
+  if (id === 6 && st.cargo.length === 0) return 'NOTHING IN THE PACK';
+  if (id === 9 && st.depth <= 1) return 'ALREADY AT THE TOP';
+  if (id === 10 && tierOneCount(st) === 0) return 'NO TIER ONE ORE';
+  return null;
+}
+function tierOneCount(st) { var i, n = 0; for (i = 0; i < st.cargo.length; i++) if (st.cargo[i].tier === 1) n++; return n; }
+function spillSet(st) {
+  /* bargain 6: the bottom of the bag spills until the pack is half as heavy */
+  var target = st.weight / 2, drop = [], w = st.weight, i;
+  for (i = 0; i < st.cargo.length && w > target; i++) { drop.push(i); w -= st.cargo[i].w; }
+  return drop;
+}
+function transmuteMap(key) { return key === 'slag' ? 'iron' : (key === 'copper' ? 'silver' : null); }
+
+function applyShrine(st, id, r, ev) {
+  var i, before, dropped, n;
+  if (id === 1) {
+    before = st.air; st.air = Math.min(st.caps.air, st.air + 40);
+    ev.push({ t: 'bargain', id: id, air: st.air - before });
+    if (hurt(st, 1, ev)) { endRun(st, 'collapse', ev); return; }
+  } else if (id === 2) {
+    st.flags.doubleVein = true;
+  } else if (id === 3) {
+    var gain = Math.round(cargoValue(st.cargo) * 0.6);
+    dropped = st.cargo.slice();
+    st.cargo = []; st.weight = 0; st.cash += gain;
+    ev.push({ t: 'bargain', id: id, cash: gain, dropped: dropped });
+  } else if (id === 4) {
+    st.lamp = Math.min(st.caps.lamp, st.lamp + 30);
+    st.flags.oreWeightBonus += 2;
+  } else if (id === 5) {
+    st.air -= 20; if (st.air < 0) st.air = 0;
+    st.flags.revealUntil = st.depth + 20;
+  } else if (id === 6) {
+    var idxs = spillSet(st), lostV = 0, keep = [], set = {};
+    for (i = 0; i < idxs.length; i++) { set[idxs[i]] = 1; lostV += st.cargo[idxs[i]].v; }
+    for (i = 0; i < st.cargo.length; i++) if (!set[i]) keep.push(st.cargo[i]);
+    st.cargo = keep; st.weight = cargoWeight(keep);
+    ev.push({ t: 'bargain', id: id, lostValue: lostV, count: idxs.length });
+  } else if (id === 7) {
+    st.flags.nullifyHazard = true;
+    st.lamp -= 25; if (st.lamp < 0) st.lamp = 0;
+  } else if (id === 8) {
+    st.integrity += 1;
+    st.air -= 30; if (st.air < 0) st.air = 0;
+    st.lamp -= 30; if (st.lamp < 0) st.lamp = 0;
+  } else if (id === 9) {
+    var target = Math.max(1, st.depth - 15);
+    while (st.at >= 0 && st.col.nodes[st.at].depth > target) st.at--;
+    st.travel += st.depth - (st.at < 0 ? 0 : st.col.nodes[st.at].depth);
+    st.depth = st.at < 0 ? 0 : st.col.nodes[st.at].depth;
+    if (st.cargo.length) {
+      var pick = r.int(st.cargo.length);
+      var lost = st.cargo.splice(pick, 1)[0];
+      st.weight = cargoWeight(st.cargo);
+      ev.push({ t: 'bargain', id: id, lostOre: lost });
+    }
+  } else if (id === 10) {
+    for (i = 0; i < st.cargo.length; i++) {
+      if (st.cargo[i].tier === 1) {
+        var nk = transmuteMap(st.cargo[i].key);
+        if (nk) {
+          var no = ORE_BY_KEY[nk];
+          st.cargo[i] = { key: no.key, name: no.name, tier: 2, w: st.cargo[i].w + 1, v: no.v };
+        }
+      }
+    }
+    st.weight = cargoWeight(st.cargo);
+  } else if (id === 11) {
+    st.cash += 100;
+    st.flags.emptyVeins += 3;
+  } else if (id === 12) {
+    st.lamp = st.caps.lamp;
+    st.flags.hazBonus += 0.10;
+  }
+  if (st.air <= 0 && !st.over) { st.air = 0; endRun(st, 'air', ev); }
+}
+
+function doAscend(st, ev) {
+  var cost = ascentCost(st);
+  st.travel += st.depth;
+  if (st.air + 1e-9 >= cost.air) {
+    st.air -= cost.air; if (st.air < 0) st.air = 0;
+    spendLamp(st, cost.lamp);
+    ev.push({ t: 'ascend', ok: true, from: st.depth, cost: cost.air });
+    st.depth = 0; st.at = -1;
+    endRun(st, 'surfaced', ev);
+  } else {
+    /* solve for the depth where the air ran out, for the loss screen */
+    var per = cost.perDepth, want = st.air / per, d = st.depth, guess = st.depth;
+    while (guess > 0 && airCum(st.depth) - airCum(st.depth - guess) < want) guess--;
+    var diedAt = Math.max(0, st.depth - guess);
+    st.air = 0;
+    ev.push({ t: 'ascend', ok: false, from: st.depth, cost: cost.air, diedAt: diedAt });
+    st.log.push({ d: st.depth, s: 'ran out of air at ' + diedAt + 'm on the way up' });
+    endRun(st, 'air', ev);
+    st.over.diedAt = diedAt;
+    st.over.from = d;
+  }
+}
+
+/* the ONLY mutator. mutates and returns the same object, by design: the sweep
+   runs millions of steps and a deep copy per step is the whole budget. */
+function step(st, action, rngIn) {
+  var ev = [];
+  if (st.over) return { state: st, events: ev };
+  var r = rngIn || stepRNG(st);
+  var legal = actions(st), ok = false, i;
+  for (i = 0; i < legal.length; i++) if (legal[i] === action) ok = true;
+  if (!ok) { ev.push({ t: 'illegal', action: action }); return { state: st, events: ev }; }
+
+  st.steps++;
+  st.inputs.push(action);
+
+  if (action === 'descend') {
+    var dc = descendCost(st);
+    var n = nextNode(st);
+    st.at++;
+    st.depth = n.depth;
+    st.travel += dc.gap;
+    if (st.depth > st.maxDepth) st.maxDepth = st.depth;
+    spendLamp(st, dc.lamp);
+    ev.push({ t: 'descend', gap: dc.gap, depth: st.depth, air: dc.air, lamp: dc.lamp });
+    if (spendAir(st, dc.air, ev)) { endRun(st, 'air', ev); return { state: st, events: ev }; }
+    resolveArrival(st, ev);
+    ensureNodes(st.col, st.at + 4);
+  } else if (action === 'ascend') {
+    doAscend(st, ev);
+  } else if (action === 'mine') {
+    var node = currentNode(st);
+    var haul = veinHaul(st, node);
+    var ticks = veinTicks(st, node), tc = tickCost(st);
+    node.mined = true; node.used = true;
+    st.flags.doubleVein = false;
+    for (i = 0; i < haul.length; i++) { st.cargo.push(haul[i]); }
+    st.weight = cargoWeight(st.cargo);
+    st.mined += haul.length;
+    spendLamp(st, tc.lamp * ticks);
+    ev.push({ t: 'mine', haul: haul, ticks: ticks, depth: st.depth, heart: node.heart });
+    if (node.heart) st.log.push({ d: st.depth, s: 'pulled a heartstone out of ' + st.depth + 'm' });
+    if (spendAir(st, tc.air * ticks, ev)) { endRun(st, 'air', ev); return { state: st, events: ev }; }
+  } else if (action.indexOf('drop:') === 0) {
+    var idx = parseInt(action.slice(5), 10);
+    if (idx >= 0 && idx < st.cargo.length) {
+      var gone = st.cargo.splice(idx, 1)[0];
+      st.weight = cargoWeight(st.cargo);
+      ev.push({ t: 'drop', ore: gone, depth: st.depth });
+    }
+  } else if (action === 'shrine:accept') {
+    var id = st.pending;
+    var cn = currentNode(st); if (cn) cn.used = true;
+    st.phase = 'run'; st.pending = 0;
+    st.log.push({ d: st.depth, s: 'took ' + SHRINE_BY_ID[id].title.toLowerCase() + ' at ' + st.depth + 'm' });
+    applyShrine(st, id, r, ev);
+    ev.push({ t: 'shrineDone', id: id, accepted: true });
+  } else if (action === 'shrine:decline') {
+    var cn2 = currentNode(st); if (cn2) cn2.used = true;
+    st.phase = 'run'; st.pending = 0;
+    ev.push({ t: 'shrineDone', id: 0, accepted: false });
+  }
+  return { state: st, events: ev };
+}
+
+function visibleNodes(st) {
+  var out = [], reveal = CONFIG.ASSAY_NODES_PER_LEVEL * (st.upg.assay || 0), i, n, lvl;
+  ensureNodes(st.col, st.at + 6);
+  for (i = st.at + 1; i <= st.at + 6 && i < st.col.nodes.length; i++) {
+    n = st.col.nodes[i];
+    var ahead = i - st.at;
+    if (st.flags.revealUntil >= n.depth) lvl = 'full';
+    else if (st.lamp <= 0) lvl = 'hidden';
+    else if (ahead <= reveal) lvl = 'full';
+    else if (ahead === 1) lvl = 'type';
+    else lvl = 'hidden';
+    out.push({ node: n, level: lvl, type: nodeType(st, n) });
+  }
+  return out;
+}
+function currentReveal(st) {
+  var n = currentNode(st);
+  if (!n) return 'full';
+  if (st.lamp <= 0 && !n.mined && !n.used) return 'hidden';
+  return 'full';
+}
+function sessionSeconds(st) {
+  return st.steps * CONFIG.SEC_PER_DECISION + st.travel * CONFIG.SEC_PER_DEPTH_TRAVELLED;
+}
+
+/* ---- shop ---- */
+function upgradeCost(track, level) {
+  var t = CONFIG.SHOP[track];
+  if (!t) return Infinity;
+  if (level >= t.levels) return Infinity;
+  return Math.round(t.base * Math.pow(2.1, level));
+}
+function fullClearCost() {
+  var total = 0, k, i;
+  for (k in CONFIG.SHOP) for (i = 0; i < CONFIG.SHOP[k].levels; i++) total += upgradeCost(k, i);
+  return total;
+}
+function shopBuy(save, track) {
+  var lvl = save.upg[track] || 0;
+  var cost = upgradeCost(track, lvl);
+  if (!isFinite(cost) || save.cash < cost) return save;
+  save.cash -= cost;
+  save.upg[track] = lvl + 1;
+  return save;
+}
+
+/* ---- save, pure over an injected storage object so it runs headless ---- */
+function defaultSave() {
+  return {
+    v: CONFIG.SAVE_V, gameId: CONFIG.GAME_ID,
+    cash: 0, upg: emptyUpg(),
+    stats: { runs: 0, surfaced: 0, lostCargo: 0, collapses: 0, banked: 0, lostValue: 0, deepest: 0, mined: 0 },
+    best: { depth: 0, banked: 0 },
+    settings: { sound: true, vol: 0.7, haptics: true, motion: 'auto', tone: true, confirm: false },
+    history: [], replay: null, daily: { date: '', best: 0, streak: 0, last: '' },
+    run: null
+  };
+}
+function migrate(save) {
+  if (!save || typeof save !== 'object') return defaultSave();
+  var d = defaultSave(), k;
+  for (k in d) if (!(k in save)) save[k] = d[k];
+  for (k in d.stats) if (typeof save.stats[k] !== 'number') save.stats[k] = d.stats[k];
+  for (k in d.settings) if (typeof save.settings[k] === 'undefined') save.settings[k] = d.settings[k];
+  for (k in d.upg) if (typeof save.upg[k] !== 'number') save.upg[k] = 0;
+  if (typeof save.cash !== 'number' || !isFinite(save.cash) || save.cash < 0) save.cash = 0;
+  if (!save.best || typeof save.best !== 'object') save.best = d.best;
+  if (!Array.isArray(save.history)) save.history = [];
+  save.v = CONFIG.SAVE_V; save.gameId = CONFIG.GAME_ID;
+  return save;
+}
+function loadSave(storage) {
+  try {
+    var raw = storage.getItem(CONFIG.SAVE_KEY);
+    if (!raw) return defaultSave();
+    var o = JSON.parse(raw);
+    return migrate(o);
+  } catch (e) { return defaultSave(); }
+}
+/* read modify write. two tabs must not clobber: counters ADD, bests MAX. */
+function commitSave(storage, mutate) {
+  var fresh = loadSave(storage);
+  mutate(fresh);
+  try { storage.setItem(CONFIG.SAVE_KEY, JSON.stringify(fresh)); } catch (e) {}
+  return fresh;
+}
+function memStorage() {
+  var m = {};
+  return {
+    getItem: function (k) { return Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null; },
+    setItem: function (k, v) { m[k] = String(v); },
+    removeItem: function (k) { delete m[k]; }
+  };
+}
+
+/* ---- policies. these are measuring instruments, not rules. ---- */
+function policyGreedy(st) {
+  if (st.phase === 'shrine') return actions(st).indexOf('shrine:accept') >= 0 ? 'shrine:accept' : 'shrine:decline';
+  if (canMine(st)) return 'mine';
+  var dc = descendCost(st);
+  if (dc && st.air - dc.air >= ascentCostAt(st, dc.depth, 0)) return 'descend';
+  return 'ascend';
+}
+function policyCautious(st) {
+  if (st.phase === 'shrine') {
+    var s = SHRINE_BY_ID[st.pending];
+    if (s && !s.risky && s.airCost === 0 && actions(st).indexOf('shrine:accept') >= 0) return 'shrine:accept';
+    return 'shrine:decline';
+  }
+  if (st.air <= 0.6 * st.caps.air) return 'ascend';
+  if (canMine(st)) {
+    var node = currentNode(st), haul = veinHaul(st, node), i, w = 0;
+    for (i = 0; i < haul.length; i++) w += haul[i].w;
+    var tc = tickCost(st), ticks = veinTicks(st, node);
+    if ((st.air - tc.air * ticks) >= ascentCostAt(st, st.depth, w) * 1.6) return 'mine';
+  }
+  var dc = descendCost(st);
+  if (dc && (st.air - dc.air) >= ascentCostAt(st, dc.depth, 0) * 1.6) return 'descend';
+  return 'ascend';
+}
+function policyOptimal(st) {
+  var BUF = 1.10;
+  if (st.phase === 'shrine') {
+    var s = SHRINE_BY_ID[st.pending];
+    if (!s || actions(st).indexOf('shrine:accept') < 0) return 'shrine:decline';
+    var margin = st.air - ascentCost(st).air;
+    if (!s.risky) return 'shrine:accept';
+    if (margin > 0.4 * st.caps.air) return 'shrine:accept';
+    return 'shrine:decline';
+  }
+  if (canMine(st)) {
+    var node = currentNode(st), haul = veinHaul(st, node), i, w = 0, v = 0;
+    for (i = 0; i < haul.length; i++) { w += haul[i].w; v += haul[i].v; }
+    var tc = tickCost(st), ticks = veinTicks(st, node);
+    if ((st.air - tc.air * ticks) >= ascentCostAt(st, st.depth, w) * BUF) return 'mine';
+  }
+  var dc = descendCost(st);
+  if (dc && (st.air - dc.air) >= ascentCostAt(st, dc.depth, 0) * BUF) return 'descend';
+  return 'ascend';
+}
+function policyDiver(st) {
+  if (st.phase === 'shrine') {
+    var id = st.pending;
+    if ((id === 1 || id === 12 || id === 4) && actions(st).indexOf('shrine:accept') >= 0) return 'shrine:accept';
+    return 'shrine:decline';
+  }
+  var dc = descendCost(st);
+  if (dc && st.air - dc.air > 0) return 'descend';
+  return 'ascend';
+}
+var POLICIES = { greedy: policyGreedy, cautious: policyCautious, optimal: policyOptimal, diver: policyDiver };
+
+function playRun(seed, upg, policy, maxSteps) {
+  var st = newRun(makeRNG(seed), upg, null);
+  var pol = typeof policy === 'function' ? policy : POLICIES[policy];
+  var guard = maxSteps || 4000;
+  while (!st.over && guard-- > 0) {
+    var a = pol(st);
+    var before = st.steps;
+    step(st, a);
+    if (st.steps === before) { step(st, 'ascend'); }
+  }
+  if (!st.over) endRun(st, 'air', []);
+  return st;
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 9. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  ok: function (name, fn) {
+    try { fn(); this.assert(name, true); }
+    catch (e) { this.assert(name, false, String(e && e.message || e)); }
+  },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); }
+    }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  run: function () {
+    this.results = [];
+    suiteRNG(this); suiteGeometry(this); suiteColumn(this); suiteHeartstone(this);
+    suiteStrata(this); suiteAscent(this); suiteWeight(this); suiteMining(this);
+    suiteShrines(this); suiteDeath(this); suiteSave(this); suiteDeterminism(this);
+    suiteRegressions(this); suiteBalance(this); suiteFuzz(this); suiteCopy(this);
+    return this.report();
+  }
+};
+function hasNaN(o, path, out) {
+  path = path || '$'; out = out || [];
+  if (typeof o === 'number') { if (!isFinite(o)) out.push(path); return out; }
+  if (o && typeof o === 'object') { var k; for (k in o) hasNaN(o[k], path + '.' + k, out); }
+  return out;
+}
+function suiteRNG(T) {
+  var a = makeRNG(12345), b = makeRNG(12345), i, same = true;
+  for (i = 0; i < 500; i++) if (a() !== b()) same = false;
+  T.assert('rng same seed same stream', same);
+  var c = makeRNG(12346), d1 = makeRNG(12345), diff = false;
+  for (i = 0; i < 50; i++) if (c() !== d1()) diff = true;
+  T.assert('rng different seed different stream', diff);
+  var r = makeRNG(7), inRange = true;
+  for (i = 0; i < 2000; i++) { var v = r(); if (v < 0 || v >= 1) inRange = false; }
+  T.assert('rng stays in zero to one', inRange);
+  var r2 = makeRNG(9), lo = 99, hi = -1;
+  for (i = 0; i < 2000; i++) { var x = r2.range(3, 6); lo = Math.min(lo, x); hi = Math.max(hi, x); }
+  T.eq('rng range low bound', lo, 3);
+  T.eq('rng range high bound', hi, 6);
+  T.eq('seedFromString is stable', seedFromString('deepwell'), seedFromString('deepwell'));
+  T.assert('seedFromString separates inputs', seedFromString('a2026') !== seedFromString('b2026'));
+  T.assert('mixSeed separates streams', mixSeed(5, 1) !== mixSeed(5, 2));
+  var w = makeRNG(3), counts = { a: 0, b: 0 };
+  for (i = 0; i < 4000; i++) counts[w.weighted([['a', 3], ['b', 1]])]++;
+  T.assert('weighted respects weights', counts.a > counts.b * 2 && counts.a < counts.b * 4);
+  T.eq('daily seed is date stable', dailySeedFor('2026-08-16'), dailySeedFor('2026-08-16'));
+  T.assert('daily seed moves with the date', dailySeedFor('2026-08-16') !== dailySeedFor('2026-08-17'));
+}
+function suiteGeometry(T) {
+  var brute = function (D) { var s = 0, m; for (m = 1; m <= D; m++) s += bandAt(m).airMul; return s; };
+  var bruteL = function (D) { var s = 0, m; for (m = 1; m <= D; m++) s += CONFIG.LAMP_PER_DEPTH * bandAt(m).lampMul; return s; };
+  var okA = true, okL = true, D;
+  for (D = 0; D <= 320; D++) {
+    if (Math.abs(airCum(D) - brute(D)) > 1e-9) okA = false;
+    if (Math.abs(lampCum(D) - bruteL(D)) > 1e-9) okL = false;
+  }
+  T.assert('air cumulative matches brute force for every depth to 320', okA);
+  T.assert('lamp cumulative matches brute force for every depth to 320', okL);
+  T.eq('topsoil band at 0', bandAt(0).key, 'topsoil');
+  T.eq('shale starts at 21', bandAt(21).key, 'shale');
+  T.eq('dark seam starts at 51', bandAt(51).key, 'dark');
+  T.eq('wet shelf starts at 91', bandAt(91).key, 'wet');
+  T.eq('the glass starts at 141', bandAt(141).key, 'glass');
+  T.eq('below starts at 201', bandAt(201).key, 'below');
+  T.eq('below is unbounded', bandAt(9999).key, 'below');
+  T.near('wet shelf costs 1.4 air a meter', airCum(140) - airCum(139), 1.4, 1e-9);
+  T.near('dark seam costs double lamp', lampCum(60) - lampCum(59), 3, 1e-9);
+  T.near('below costs 1.4 air a meter', airCum(250) - airCum(249), 1.4, 1e-9);
+  T.near('below costs double lamp', lampCum(250) - lampCum(249), 3, 1e-9);
+  T.near('the glass costs plain air', airCum(160) - airCum(159), 1, 1e-9);
+  T.eq('the glass hazards cost two braces', bandAt(160).dmg, 2);
+  T.eq('below hazards cost two braces', bandAt(260).dmg, 2);
+  T.eq('shale hazards cost one brace', bandAt(30).dmg, 1);
+  T.near('topsoil hazard rate', hazardRateAt(10, 0), 0.05, 1e-9);
+  T.near('shale hazard rate', hazardRateAt(30, 0), 0.12, 1e-9);
+  T.near('dark seam hazard rate', hazardRateAt(70, 0), 0.20, 1e-9);
+  T.near('wet shelf hazard rate', hazardRateAt(120, 0), 0.25, 1e-9);
+  T.near('the glass hazard rate', hazardRateAt(180, 0), 0.30, 1e-9);
+  T.near('below hazard rate at 201', hazardRateAt(201, 0), 0.35, 1e-9);
+  T.near('below hazard climbs one percent every ten meters', hazardRateAt(251, 0), 0.40, 1e-9);
+  T.near('bargain twelve adds ten percent', hazardRateAt(30, 0.10), 0.22, 1e-9);
+  T.assert('hazard rate is capped', hazardRateAt(9000, 0.10) <= CONFIG.HAZARD_RATE_CAP + 1e-9);
+}
+function suiteColumn(T) {
+  var c1 = genColumn(4242, 60), c2 = genColumn(4242, 60);
+  T.assert('same seed generates the same shaft', JSON.stringify(c1.nodes) === JSON.stringify(c2.nodes));
+  var c3 = genColumn(4243, 60);
+  T.assert('a different seed digs a different shaft', JSON.stringify(c1.nodes) !== JSON.stringify(c3.nodes));
+  var lazy = newColumn(4242);
+  ensureNodes(lazy, 9); ensureNodes(lazy, 59);
+  T.assert('lazy generation matches eager generation', JSON.stringify(lazy.nodes) === JSON.stringify(c1.nodes));
+  var gapsOk = true, monotonic = true, i;
+  for (i = 0; i < c1.nodes.length; i++) {
+    if (c1.nodes[i].gap < CONFIG.GAP_MIN || c1.nodes[i].gap > CONFIG.GAP_MAX) gapsOk = false;
+    if (i > 0 && c1.nodes[i].depth <= c1.nodes[i - 1].depth) monotonic = false;
+  }
+  T.assert('every gap is three to six meters', gapsOk);
+  T.assert('depth only ever increases', monotonic);
+  var kinds = {}, s, n2, j;
+  for (s = 0; s < 200; s++) { var c = genColumn(s + 1000, 40); for (j = 0; j < c.nodes.length; j++) kinds[c.nodes[j].kind] = (kinds[c.nodes[j].kind] || 0) + 1; }
+  T.assert('veins are the commonest node', kinds.vein > kinds.pocket && kinds.vein > kinds.cache);
+  T.assert('every node kind appears', kinds.vein && kinds.pocket && kinds.shrine && kinds.cache && kinds.empty);
+  var oreOk = true, tierOk = true;
+  for (s = 0; s < 120; s++) {
+    var col = genColumn(s + 77, 60);
+    for (j = 0; j < col.nodes.length; j++) {
+      var nd = col.nodes[j];
+      if (nd.kind !== 'vein') continue;
+      if (nd.ore.length < 1 || nd.ore.length > 3) oreOk = false;
+      var band = bandAt(nd.depth), k2;
+      for (k2 = 0; k2 < nd.ore.length; k2++) {
+        var t = ORE_BY_KEY[nd.ore[k2]].tier;
+        if (!nd.heart && (t < band.tiers[0] || t > band.tiers[1])) tierOk = false;
+      }
+    }
+  }
+  T.assert('a vein holds one to three ore', oreOk);
+  T.assert('vein ore tier respects its band', tierOk);
+  var sh = {}, cnt = 0;
+  for (s = 0; s < 600; s++) { var cc = genColumn(s + 5, 40); for (j = 0; j < cc.nodes.length; j++) if (cc.nodes[j].kind === 'shrine') { sh[cc.nodes[j].shrineId] = 1; cnt++; } }
+  var seen = 0, id; for (id in sh) seen++;
+  T.eq('all twelve bargains can spawn', seen, 12);
+  T.assert('shrines actually spawn', cnt > 100);
+}
+function suiteHeartstone(T) {
+  var doubles = 0, tooShallow = 0, found = 0, s, i;
+  for (s = 0; s < 10000; s++) {
+    var col = genColumn(s + 1, 70), n = 0;
+    for (i = 0; i < col.nodes.length; i++) {
+      if (col.nodes[i].heart) {
+        n++; found++;
+        if (col.nodes[i].depth < CONFIG.HEART_MIN_DEPTH) tooShallow++;
+        if (col.nodes[i].ore.length !== 1 || col.nodes[i].ore[0] !== 'heartstone') tooShallow++;
+      }
+    }
+    if (n > 1) doubles++;
+  }
+  T.eq('never two heartstones in one shaft over ten thousand shafts', doubles, 0);
+  T.eq('never a heartstone above one hundred and forty one meters', tooShallow, 0);
+  T.assert('heartstones do spawn at all', found > 200, 'found ' + found);
+  var solo = true;
+  for (s = 0; s < 400; s++) {
+    var c = genColumn(s + 900, 70);
+    for (i = 0; i < c.nodes.length; i++) if (c.nodes[i].heart && c.nodes[i].ore.length !== 1) solo = false;
+  }
+  T.assert('a heartstone is always alone in its vein', solo);
+  var hazFree = true;
+  for (s = 0; s < 400; s++) {
+    var c2 = genColumn(s + 33, 70);
+    for (i = 0; i < c2.nodes.length; i++) if (c2.nodes[i].heart && c2.nodes[i].hazRoll < CONFIG.HAZARD_RATE_CAP) hazFree = false;
+  }
+  T.assert('a heartstone node can never turn out to be a hazard', hazFree);
+}
+function suiteStrata(T) {
+  var st = newRun(makeRNG(1), emptyUpg(), null);
+  st.depth = 70;
+  T.near('mining a tick in the dark seam burns three lamp', tickCost(st).lamp, 3, 1e-9);
+  T.near('mining a tick in the dark seam burns one air', tickCost(st).air, 1, 1e-9);
+  st.depth = 120;
+  T.near('mining a tick on the wet shelf burns 1.4 air', tickCost(st).air, 1.4, 1e-9);
+  st.cargo = [{ key: 'uranite', name: 'URANITE', tier: 4, w: 8, v: 95 }];
+  T.near('uranite adds three lamp a tick', tickCost(st).lamp, 4.5 + 3, 1e-9);
+  st.depth = 100; st.weight = 0;
+  var c = ascentCost(st);
+  T.near('uranite drains lamp on the way up too', c.lamp, lampCum(100) + 300, 1e-9);
+  var st2 = newRun(makeRNG(1), emptyUpg(), null);
+  st2.cargo = [{ key: 'uranite', w: 8, v: 95, tier: 4, name: 'URANITE' }, { key: 'uranite', w: 8, v: 95, tier: 4, name: 'URANITE' }];
+  st2.depth = 50;
+  T.near('two uranite stack their lamp drain', ascentCost(st2).lamp - lampCum(50), 300, 1e-9);
+}
+function suiteAscent(T) {
+  var st = newRun(makeRNG(99), emptyUpg(), null);
+  st.depth = 0;
+  T.eq('ascent from the surface is free', ascentCost(st).air, 0);
+  st.depth = 50; st.weight = 0;
+  T.near('fifty meters empty handed costs fifty air', ascentCost(st).air, 50, 1e-9);
+  st.weight = 20;
+  T.near('twenty kilos doubles the per meter cost', ascentCost(st).perDepth, 2, 1e-9);
+  T.near('fifty meters with twenty kilos costs one hundred air', ascentCost(st).air, 100, 1e-9);
+  st.depth = 140; st.weight = 0;
+  T.near('the wet shelf is priced into the way out', ascentCost(st).air, 140 + 0.4 * 50, 1e-9);
+  /* brute force invariant over a real run */
+  var bad = 0, s, i;
+  for (s = 0; s < 60; s++) {
+    var run = newRun(makeRNG(s + 400), { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 }, null);
+    var guard = 300;
+    while (!run.over && guard-- > 0) {
+      var brute = 0, m;
+      for (m = 1; m <= run.depth; m++) brute += (1 + run.weight / CONFIG.ASCENT_WEIGHT_DIV) * bandAt(m).airMul;
+      if (Math.abs(brute - ascentCost(run).air) > 1e-6) bad++;
+      step(run, policyOptimal(run));
+    }
+  }
+  T.eq('ascent cost equals the brute force sum after every single step', bad, 0);
+  /* surfacing with exactly enough air works, one less air does not */
+  var t1 = newRun(makeRNG(5), emptyUpg(), null);
+  t1.depth = 40; t1.at = 5; t1.weight = 0; t1.air = 40;
+  step(t1, 'ascend');
+  T.eq('exactly enough air surfaces you', t1.over.reason, 'surfaced');
+  var t2 = newRun(makeRNG(5), emptyUpg(), null);
+  t2.depth = 40; t2.at = 5; t2.weight = 0; t2.air = 39.5;
+  step(t2, 'ascend');
+  T.eq('half an air short loses the cargo', t2.over.reason, 'air');
+  T.assert('a failed ascent reports where you stopped', t2.over.diedAt >= 0 && t2.over.diedAt < 40);
+  var t3 = newRun(makeRNG(5), emptyUpg(), null);
+  t3.depth = 30; t3.at = 4; t3.air = 60;
+  t3.cargo = [{ key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }]; t3.weight = 9;
+  step(t3, 'ascend');
+  T.eq('surfacing banks the cargo value', t3.over.banked, 60);
+  T.eq('the run ends when you surface', t3.phase, 'over');
+  T.eq('no actions are legal once the run is over', actions(t3).length, 0);
+}
+function suiteWeight(T) {
+  var st = newRun(makeRNG(11), emptyUpg(), null);
+  T.eq('the starting pack is forty', st.caps.pack, 40);
+  T.eq('five pack levels reach ninety', capsFor({ pack: 5 }).pack, 90);
+  T.eq('five tank levels reach one hundred and eighty', capsFor({ tank: 5 }).air, 180);
+  T.eq('five lamp levels reach two hundred', capsFor({ lamp: 5 }).lamp, 200);
+  T.eq('three brace levels reach six', capsFor({ brace: 3 }).integrity, 6);
+  /* mine everything a shaft offers and never break the cap */
+  var over = 0, s, i;
+  for (s = 0; s < 80; s++) {
+    var run = playRun(s + 20, { pack: 2 }, 'greedy');
+    if (run.weight > run.caps.pack + 1e-9) over++;
+  }
+  T.eq('greedy play never breaks the carry cap', over, 0);
+  /* a full pack blocks mining with a readable reason */
+  var st2 = newRun(makeRNG(3), emptyUpg(), null);
+  st2.at = 0; ensureNodes(st2.col, 3);
+  st2.col.nodes[0] = { i: 0, depth: 10, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['gold'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  st2.depth = 10;
+  st2.cargo = []; st2.weight = 38;
+  var reason = mineBlockedReason(st2);
+  T.assert('a full pack blocks mining', reason !== null);
+  T.assert('the block says how much space is missing', reason.indexOf('MORE SPACE') > 0, reason);
+  T.assert('mine is not offered when the pack is full', actions(st2).indexOf('mine') < 0);
+  st2.weight = 0;
+  T.eq('an empty pack can mine', mineBlockedReason(st2), null);
+  /* dropping is always legal and always frees exactly its weight */
+  var st3 = newRun(makeRNG(4), emptyUpg(), null);
+  st3.cargo = [{ key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }, { key: 'beryl', name: 'BERYL', tier: 4, w: 4, v: 75 }];
+  st3.weight = 13; st3.at = 0; st3.depth = 10;
+  T.assert('drop is offered for every item', actions(st3).indexOf('drop:0') >= 0 && actions(st3).indexOf('drop:1') >= 0);
+  step(st3, 'drop:0');
+  T.eq('dropping gold leaves the beryl', st3.cargo.length, 1);
+  T.eq('dropping recomputes the weight', st3.weight, 4);
+  T.eq('the dropped value leaves the ledger', cargoValue(st3.cargo), 75);
+  T.assert('beryl beats gold on value for weight', (75 / 4) > (60 / 9));
+}
+function suiteMining(T) {
+  var st = newRun(makeRNG(6), emptyUpg(), null);
+  st.at = 0; ensureNodes(st.col, 3);
+  st.col.nodes[0] = { i: 0, depth: 10, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['voidglass'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  st.depth = 10;
+  T.eq('a tier five vein costs five ticks', veinTicks(st, st.col.nodes[0]), 5);
+  st.upg.drill = 2;
+  T.eq('two drill levels take two ticks off', veinTicks(st, st.col.nodes[0]), 3);
+  st.upg.drill = 5;
+  T.eq('mining never costs less than one tick', veinTicks(st, st.col.nodes[0]), 1);
+  st.upg.drill = 0;
+  var airBefore = st.air;
+  step(st, 'mine');
+  T.near('five ticks of topsoil cost five air', airBefore - st.air, 5, 1e-9);
+  T.eq('the ore is in the pack', st.cargo.length, 1);
+  T.eq('the pack weighs what the ore weighs', st.weight, 6);
+  T.assert('a mined vein cannot be mined twice', actions(st).indexOf('mine') < 0);
+  var st2 = newRun(makeRNG(6), emptyUpg(), null);
+  st2.at = 0; ensureNodes(st2.col, 3);
+  st2.col.nodes[0] = { i: 0, depth: 10, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['slag'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  st2.depth = 10;
+  T.eq('a tier one vein costs one tick', veinTicks(st2, st2.col.nodes[0]), 1);
+  var lampBefore = st2.lamp;
+  step(st2, 'mine');
+  T.near('one tick of topsoil costs 1.5 lamp', lampBefore - st2.lamp, 1.5, 1e-9);
+  T.eq('slag is worth four', st2.cargo[0].v, 4);
+}
+function suiteShrines(T) {
+  function shrineState(id, setup) {
+    var st = newRun(makeRNG(21), { tank: 1 }, null);
+    ensureNodes(st.col, 5);
+    st.at = 0;
+    st.col.nodes[0] = { i: 0, depth: 60, gap: 5, kind: 'shrine', hazRoll: 0.99, ore: [], shrineId: id, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+    st.depth = 60; st.phase = 'shrine'; st.pending = id;
+    if (setup) setup(st);
+    return st;
+  }
+  var a = shrineState(1, function (s) { s.air = 50; s.integrity = 3; });
+  step(a, 'shrine:accept');
+  T.eq('bargain one gives forty air', a.air, 90);
+  T.eq('bargain one costs one brace', a.integrity, 2);
+  var a2 = shrineState(1, function (s) { s.air = 100; s.integrity = 1; });
+  step(a2, 'shrine:accept');
+  T.eq('bargain one at one brace ends the run', a2.over.reason, 'collapse');
+  var a3 = shrineState(1, function (s) { s.air = s.caps.air; });
+  step(a3, 'shrine:accept');
+  T.eq('bargain one cannot overfill the tank', a3.air, a3.caps.air);
+
+  var b = shrineState(2);
+  step(b, 'shrine:accept');
+  T.assert('bargain two arms the next vein', b.flags.doubleVein === true);
+  b.col.nodes[1] = { i: 1, depth: 65, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['gold'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  step(b, 'descend'); step(b, 'mine');
+  T.eq('bargain two doubles the value', b.cargo[0].v, 120);
+  T.eq('bargain two adds half the weight again', b.cargo[0].w, 14);
+  T.assert('bargain two only arms one vein', b.flags.doubleVein === false);
+
+  var c = shrineState(3, function (s) {
+    s.cargo = [{ key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }, { key: 'silver', name: 'SILVER', tier: 2, w: 5, v: 26 }];
+    s.weight = 14;
+  });
+  step(c, 'shrine:accept');
+  T.eq('bargain three pays sixty percent', c.cash, Math.round(86 * 0.6));
+  T.eq('bargain three empties the pack', c.cargo.length, 0);
+  T.eq('bargain three zeroes the weight', c.weight, 0);
+  var c2 = shrineState(3, function (s) { s.cargo = []; s.weight = 0; });
+  T.assert('bargain three is refused with an empty pack', shrineAcceptable(c2) !== null);
+  T.assert('an unacceptable bargain is not offered', actions(c2).indexOf('shrine:accept') < 0);
+  T.assert('walking away is always offered', actions(c2).indexOf('shrine:decline') >= 0);
+
+  var d = shrineState(4, function (s) { s.lamp = 50; });
+  step(d, 'shrine:accept');
+  T.eq('bargain four gives thirty lamp', d.lamp, 80);
+  T.eq('bargain four makes every ore two heavier', d.flags.oreWeightBonus, 2);
+  d.col.nodes[1] = { i: 1, depth: 65, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['silver'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  step(d, 'descend'); step(d, 'mine');
+  T.eq('the oil weighs on every ore mined after it', d.cargo[0].w, 7);
+
+  var e = shrineState(5, function (s) { s.air = 90; });
+  step(e, 'shrine:accept');
+  T.eq('bargain five costs twenty air', e.air, 70);
+  T.eq('bargain five reveals the next twenty meters', e.flags.revealUntil, 80);
+  var vis = visibleNodes(e), revealed = 0, i;
+  for (i = 0; i < vis.length; i++) if (vis[i].node.depth <= 80 && vis[i].level === 'full') revealed++;
+  T.assert('the reveal actually shows nodes', revealed > 0);
+  var e2 = shrineState(5, function (s) { s.air = 15; });
+  T.eq('bargain five is refused without the air', shrineAcceptable(e2), 'NOT ENOUGH AIR');
+
+  var f = shrineState(6, function (s) {
+    s.cargo = [{ key: 'slag', name: 'SLAG', tier: 1, w: 3, v: 4 }, { key: 'slag', name: 'SLAG', tier: 1, w: 3, v: 4 },
+               { key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }, { key: 'beryl', name: 'BERYL', tier: 4, w: 4, v: 75 }];
+    s.weight = 19;
+  });
+  step(f, 'shrine:accept');
+  T.assert('bargain six halves the weight', f.weight <= 19 / 2 + 1e-9, 'weight ' + f.weight);
+  T.eq('bargain six spills from the bottom of the bag', f.cargo[f.cargo.length - 1].key, 'beryl');
+  T.assert('bargain six leaves something behind', f.cargo.length < 4);
+
+  var g = shrineState(7, function (s) { s.lamp = 90; });
+  step(g, 'shrine:accept');
+  T.eq('bargain seven costs twenty five lamp', g.lamp, 65);
+  T.assert('bargain seven arms the charm', g.flags.nullifyHazard === true);
+  g.col.nodes[1] = { i: 1, depth: 65, gap: 5, kind: 'vein', hazRoll: 0.0, ore: ['gold'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  var intBefore = g.integrity;
+  step(g, 'descend');
+  T.eq('bargain seven eats the next hazard', g.integrity, intBefore);
+  T.assert('the charm is spent after one hazard', g.flags.nullifyHazard === false);
+
+  var h = shrineState(8, function (s) { s.air = 90; s.lamp = 90; s.integrity = 2; });
+  step(h, 'shrine:accept');
+  T.eq('bargain eight adds a brace', h.integrity, 3);
+  T.eq('bargain eight costs thirty air', h.air, 60);
+  T.eq('bargain eight costs thirty lamp', h.lamp, 60);
+  var h2 = shrineState(8, function (s) { s.air = 25; });
+  T.eq('bargain eight is refused under thirty air', shrineAcceptable(h2), 'NOT ENOUGH AIR');
+
+  var k = shrineState(9, function (s) {
+    s.cargo = [{ key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }];
+    s.weight = 9;
+    ensureNodes(s.col, 12);
+  });
+  var depthBefore = k.depth;
+  step(k, 'shrine:accept');
+  T.assert('bargain nine lifts you up the shaft', k.depth < depthBefore, k.depth + ' from ' + depthBefore);
+  T.assert('bargain nine lifts about fifteen meters', depthBefore - k.depth >= 10 && depthBefore - k.depth <= 20);
+  T.eq('bargain nine takes one ore', k.cargo.length, 0);
+  T.eq('bargain nine recomputes the weight', k.weight, 0);
+  T.assert('bargain nine never lifts you out of the shaft', k.depth >= 1);
+
+  var l = shrineState(10, function (s) {
+    s.cargo = [{ key: 'slag', name: 'SLAG', tier: 1, w: 3, v: 4 }, { key: 'copper', name: 'COPPER', tier: 1, w: 4, v: 9 },
+               { key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }];
+    s.weight = 16;
+  });
+  step(l, 'shrine:accept');
+  T.eq('bargain ten turns slag into iron', l.cargo[0].v, 18);
+  T.eq('bargain ten turns copper into silver', l.cargo[1].v, 26);
+  T.eq('bargain ten adds one weight to each', l.cargo[0].w, 4);
+  T.eq('bargain ten leaves higher tiers alone', l.cargo[2].v, 60);
+  T.eq('bargain ten reweighs the pack', l.weight, 18);
+
+  var m = shrineState(11);
+  step(m, 'shrine:accept');
+  T.eq('bargain eleven pays one hundred', m.cash, 100);
+  T.eq('bargain eleven empties three veins', m.flags.emptyVeins, 3);
+  m.col.nodes[1] = { i: 1, depth: 65, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['gold'], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  step(m, 'descend');
+  T.eq('the first vein after bargain eleven is dead', m.col.nodes[1].ore.length, 0);
+  T.eq('two dead veins are left', m.flags.emptyVeins, 2);
+
+  var n = shrineState(12, function (s) { s.lamp = 10; });
+  step(n, 'shrine:accept');
+  T.eq('bargain twelve fills the lamp', n.lamp, n.caps.lamp);
+  T.near('bargain twelve raises the hazard rate ten points', n.flags.hazBonus, 0.10, 1e-9);
+  T.near('the raised rate reaches the band', hazardRateAt(60, n.flags.hazBonus), 0.30, 1e-9);
+
+  var o = shrineState(4);
+  step(o, 'shrine:decline');
+  T.eq('walking away changes nothing', o.flags.oreWeightBonus, 0);
+  T.eq('walking away returns you to the run', o.phase, 'run');
+  T.assert('a spent shrine does not ask twice', nodeType(o, currentNode(o)) === 'shrine' && currentNode(o).used === true);
+  T.assert('only shrine answers are legal at a shrine', actions(shrineState(2)).join(',').indexOf('descend') < 0);
+}
+function suiteDeath(T) {
+  var st = newRun(makeRNG(31), emptyUpg(), null);
+  ensureNodes(st.col, 4);
+  st.at = 0; st.depth = 160; st.integrity = 2;
+  st.col.nodes[1] = { i: 1, depth: 165, gap: 5, kind: 'empty', hazRoll: 0.0, ore: [], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'collapse', mined: false, used: false };
+  step(st, 'descend');
+  T.eq('a hazard in the glass takes two braces', st.integrity, 0);
+  T.eq('no braces ends the run', st.over.reason, 'collapse');
+  T.assert('a collapse loses the cargo', st.over.lostCargo.length === 0 && st.over.kept === 0);
+  var st2 = newRun(makeRNG(32), emptyUpg(), null);
+  ensureNodes(st2.col, 4);
+  st2.at = 0; st2.depth = 60; st2.cash = 120;
+  st2.cargo = [{ key: 'gold', name: 'GOLD', tier: 3, w: 9, v: 60 }]; st2.weight = 9;
+  st2.air = 1;
+  st2.col.nodes[1] = { i: 1, depth: 65, gap: 5, kind: 'empty', hazRoll: 0.99, ore: [], shrineId: 0, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  step(st2, 'descend');
+  T.eq('running out of air underground ends the run', st2.over.reason, 'air');
+  T.eq('the loss screen itemises what was lost', st2.over.lostCargo.length, 1);
+  T.eq('the loss screen values what was lost', st2.over.lostValue, 60);
+  T.eq('cash found underground is kept', st2.over.banked, 120);
+  T.eq('air can never go negative', st2.air, 0);
+  var st3 = newRun(makeRNG(33), emptyUpg(), null);
+  st3.lamp = 1;
+  ensureNodes(st3.col, 4);
+  st3.at = 0; st3.depth = 20;
+  step(st3, 'descend');
+  T.eq('the lamp bottoms out at zero rather than going negative', st3.lamp, 0);
+  T.assert('a dead lamp does not end the run', st3.over === null);
+  var vis = visibleNodes(st3), allHidden = true, i;
+  for (i = 0; i < vis.length; i++) if (vis[i].level !== 'hidden') allHidden = false;
+  T.assert('a dead lamp hides what is ahead', allHidden);
+  T.eq('a dead lamp hides the node you stand on until you commit', currentReveal(st3), 'hidden');
+  T.assert('a dead lamp still lets you act', actions(st3).length > 0);
+}
+function suiteSave(T) {
+  var s = memStorage();
+  var d = loadSave(s);
+  T.eq('a fresh save starts with no cash', d.cash, 0);
+  T.eq('a fresh save has the version', d.v, CONFIG.SAVE_V);
+  commitSave(s, function (sv) { sv.cash = 250; sv.upg.tank = 2; sv.best.depth = 88; });
+  var back = loadSave(s);
+  T.eq('cash survives the round trip', back.cash, 250);
+  T.eq('upgrades survive the round trip', back.upg.tank, 2);
+  T.eq('bests survive the round trip', back.best.depth, 88);
+  s.setItem(CONFIG.SAVE_KEY, '{not json at all');
+  var rec = loadSave(s);
+  T.eq('a corrupt save recovers to a fresh one', rec.cash, 0);
+  T.assert('a corrupt save does not throw', true);
+  s.setItem(CONFIG.SAVE_KEY, 'null');
+  T.eq('a null save recovers', loadSave(s).cash, 0);
+  s.setItem(CONFIG.SAVE_KEY, '{"v":1,"cash":"lots"}');
+  T.eq('a save with the wrong types recovers', loadSave(s).cash, 0);
+  s.setItem(CONFIG.SAVE_KEY, '{"v":1,"cash":-500,"upg":{}}');
+  T.eq('a negative cash save is repaired', loadSave(s).cash, 0);
+  s.setItem(CONFIG.SAVE_KEY, '[]');
+  T.assert('an array save recovers to an object', typeof loadSave(s).stats === 'object');
+  T.ok('migrate on garbage does not throw', function () { migrate(42); migrate(null); migrate('x'); });
+  /* two tabs: counters add, bests max */
+  var s2 = memStorage();
+  commitSave(s2, function (sv) { sv.stats.runs = 3; sv.best.depth = 40; sv.cash = 100; });
+  var tabA = loadSave(s2), tabB = loadSave(s2);
+  commitSave(s2, function (sv) { sv.stats.runs += 1; sv.cash += 50; sv.best.depth = Math.max(sv.best.depth, 60); });
+  commitSave(s2, function (sv) { sv.stats.runs += 1; sv.cash += 20; sv.best.depth = Math.max(sv.best.depth, 45); });
+  var merged = loadSave(s2);
+  T.eq('two writers both count their runs', merged.stats.runs, 5);
+  T.eq('two writers both add their cash', merged.cash, 170);
+  T.eq('the best depth is the deeper of the two', merged.best.depth, 60);
+  /* mid run resume */
+  var s3 = memStorage();
+  var run = newRun(makeRNG(777), { tank: 1, drill: 1 }, null);
+  step(run, 'descend'); step(run, 'descend');
+  if (canMine(run)) step(run, 'mine');
+  commitSave(s3, function (sv) { sv.run = run; });
+  var resumed = loadSave(s3).run;
+  T.assert('a live run survives being written to storage', JSON.stringify(resumed) === JSON.stringify(run));
+  T.eq('a resumed run remembers its depth', resumed.depth, run.depth);
+  T.eq('a resumed run remembers its pack', resumed.weight, run.weight);
+  var a1 = actions(run).join(','), a2 = actions(resumed).join(',');
+  T.eq('a resumed run offers the same moves', a2, a1);
+  step(run, 'descend'); step(resumed, 'descend');
+  T.eq('a resumed run keeps playing identically', JSON.stringify(resumed), JSON.stringify(run));
+  /* shop */
+  var sv = defaultSave();
+  sv.cash = 60;
+  shopBuy(sv, 'tank');
+  T.eq('the first tank level costs sixty', sv.cash, 0);
+  T.eq('buying raises the level', sv.upg.tank, 1);
+  shopBuy(sv, 'tank');
+  T.eq('buying with no cash changes nothing', sv.upg.tank, 1);
+  T.eq('the second tank level costs one hundred and twenty six', upgradeCost('tank', 1), 126);
+  T.eq('brace stops at three levels', upgradeCost('brace', 3), Infinity);
+  sv.cash = 999999; sv.upg.brace = 3;
+  shopBuy(sv, 'brace');
+  T.eq('a maxed track cannot be bought again', sv.upg.brace, 3);
+  T.assert('the full clear price is known', fullClearCost() > 0);
+}
+function suiteDeterminism(T) {
+  var pol, names = ['greedy', 'cautious', 'optimal'], i, s;
+  for (i = 0; i < names.length; i++) {
+    pol = names[i];
+    var bad = 0;
+    for (s = 0; s < 40; s++) {
+      var a = playRun(s + 1234, { tank: 2, pack: 1, drill: 1, assay: 2 }, pol);
+      var b = playRun(s + 1234, { tank: 2, pack: 1, drill: 1, assay: 2 }, pol);
+      if (JSON.stringify(a) !== JSON.stringify(b)) bad++;
+    }
+    T.eq('the ' + pol + ' policy replays byte for byte', bad, 0);
+  }
+  /* replaying the recorded input log rebuilds the same state */
+  var run = playRun(20260816, { tank: 1, pack: 1 }, 'optimal');
+  var inputs = run.inputs.slice();
+  var re = newRun(makeRNG(20260816), { tank: 1, pack: 1 }, null);
+  for (i = 0; i < inputs.length; i++) step(re, inputs[i]);
+  T.eq('an input log replays into the same final state', JSON.stringify(re), JSON.stringify(run));
+  T.assert('the input log is small enough to store', inputs.length < 500);
+  /* different seeds really do diverge */
+  var x = playRun(1, emptyUpg(), 'optimal'), y = playRun(2, emptyUpg(), 'optimal');
+  T.assert('different seeds give different runs', JSON.stringify(x.inputs) !== JSON.stringify(y.inputs) || x.maxDepth !== y.maxDepth);
+  /* upgrades change outcomes */
+  var poor = playRun(555, emptyUpg(), 'optimal'), rich = playRun(555, { tank: 5, lamp: 5, pack: 5, brace: 3, drill: 5, assay: 5 }, 'optimal');
+  T.assert('a fully kitted digger gets deeper on the same shaft', rich.maxDepth > poor.maxDepth, rich.maxDepth + ' vs ' + poor.maxDepth);
+  /* the shaft ignores the player */
+  var c1 = genColumn(31337, 30);
+  var run2 = newRun(makeRNG(31337), emptyUpg(), null);
+  step(run2, 'descend'); step(run2, 'descend');
+  var same = true;
+  for (i = 0; i <= run2.at; i++) {
+    if (c1.nodes[i].depth !== run2.col.nodes[i].depth || c1.nodes[i].kind !== run2.col.nodes[i].kind) same = false;
+  }
+  T.assert('what is in the shaft never depends on what the player did', same);
+  /* a queued action is applied once, never twice */
+  var q = newRun(makeRNG(8), emptyUpg(), null);
+  var d0 = q.depth;
+  var res = step(q, 'descend');
+  T.eq('one input moves you exactly one node', q.at, 0);
+  T.assert('one input costs exactly one gap of depth', q.depth > d0);
+  var stepsBefore = q.steps;
+  step(q, 'shrine:accept');
+  T.eq('an illegal action is dropped, not applied', q.steps, stepsBefore);
+}
+function suiteRegressions(T) {
+  /* named regressions found by the fuzzer, kept forever */
+  var st = newRun(makeRNG(4242), emptyUpg(), null);
+  st.at = 0; ensureNodes(st.col, 4);
+  st.col.nodes[0] = { i: 0, depth: 6, gap: 6, kind: 'shrine', hazRoll: 0.99, ore: [], shrineId: 9, pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  st.depth = 6; st.phase = 'shrine'; st.pending = 9;
+  step(st, 'shrine:accept');
+  T.assert('regression: bargain nine near the surface leaves you in the shaft', st.depth >= 1 && st.at >= -1);
+  T.assert('regression: bargain nine never leaves a broken node pointer', st.at < st.col.nodes.length);
+  var st2 = newRun(makeRNG(4243), emptyUpg(), null);
+  st2.at = 0; ensureNodes(st2.col, 4); st2.depth = 10;
+  st2.cargo = []; st2.weight = 0;
+  st2.phase = 'shrine'; st2.pending = 6;
+  T.assert('regression: spilling an empty pack is refused', shrineAcceptable(st2) !== null);
+  var st3 = newRun(makeRNG(4244), emptyUpg(), null);
+  st3.air = 0.5; st3.at = 0; st3.depth = 12; ensureNodes(st3.col, 4);
+  step(st3, 'ascend');
+  T.assert('regression: an ascent with almost no air still ends cleanly', st3.over !== null);
+  T.eq('regression: a failed ascent never leaves negative air', st3.air, 0);
+  var st4 = newRun(makeRNG(4245), emptyUpg(), null);
+  st4.at = 0; ensureNodes(st4.col, 4); st4.depth = 10;
+  st4.phase = 'shrine'; st4.pending = 10; st4.cargo = []; st4.weight = 0;
+  T.assert('regression: transmuting an empty pack is refused', shrineAcceptable(st4) !== null);
+  var st5 = newRun(makeRNG(4246), emptyUpg(), null);
+  st5.at = 0; ensureNodes(st5.col, 6);
+  st5.col.nodes[0] = { i: 0, depth: 150, gap: 5, kind: 'vein', hazRoll: 0.99, ore: ['heartstone'], shrineId: 0, pocketKind: 'air', cash: 0, heart: true, hazKind: 'gas', mined: false, used: false };
+  st5.depth = 150;
+  T.assert('regression: a heartstone fits an empty starting pack', canMine(st5));
+  step(st5, 'mine');
+  T.eq('regression: the heartstone is worth three hundred', st5.cargo[0].v, 300);
+  T.eq('regression: the heartstone weighs twelve', st5.weight, 12);
+}
+function suiteBalance(T) {
+  var N = 400, i, g = 0, c = 0, o = 0, gLost = 0, cLost = 0, oBank = 0, cBank = 0, gBank = 0;
+  var mid = { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 };
+  for (i = 0; i < N; i++) {
+    var a = playRun(i + 90000, mid, 'greedy');
+    var b = playRun(i + 90000, mid, 'cautious');
+    var d = playRun(i + 90000, mid, 'optimal');
+    if (a.over.reason !== 'surfaced') gLost++;
+    if (b.over.reason !== 'surfaced') cLost++;
+    if (d.over.reason !== 'surfaced') oBank += 0;
+    gBank += a.over.banked; cBank += b.over.banked; oBank += d.over.banked;
+  }
+  T.assert('greed loses cargo far more often than caution', gLost > cLost * 3, gLost + ' vs ' + cLost);
+  T.assert('caution rarely loses its cargo', cLost / N < 0.10, (cLost / N).toFixed(3));
+  T.assert('greed loses cargo more than half the time', gLost / N > 0.4, (gLost / N).toFixed(3));
+  T.assert('playing well banks more than playing safe', oBank > cBank, oBank + ' vs ' + cBank);
+  T.assert('caution still banks a real share of the best play', cBank / oBank > 0.2, (cBank / oBank).toFixed(3));
+  var deep200 = 0, un200 = 0, full = { tank: 5, lamp: 5, pack: 5, brace: 3, drill: 5, assay: 5 };
+  for (i = 0; i < 200; i++) {
+    if (playRun(i + 4000, full, 'diver').maxDepth >= 200) deep200++;
+    if (playRun(i + 4000, emptyUpg(), 'diver').maxDepth >= 200) un200++;
+  }
+  T.assert('a fully kitted digger can reach two hundred meters', deep200 / 200 > 0.6, (deep200 / 200).toFixed(3));
+  T.assert('an unkitted digger almost never reaches two hundred', un200 / 200 < 0.03, (un200 / 200).toFixed(3));
+  var secs = 0;
+  for (i = 0; i < 200; i++) secs += sessionSeconds(playRun(i + 700, mid, 'optimal'));
+  var med = secs / 200 / 60;
+  T.assert('a run lands in the four to eight minute window', med > 2 && med < 12, med.toFixed(2) + ' minutes');
+}
+function suiteFuzz(T) {
+  var r = makeRNG(20260816), thrown = 0, negatives = 0, nans = 0, capBreaks = 0, inputs = 0, runs = 0;
+  var firstFail = null;
+  while (inputs < 5000) {
+    var seed = r.int(1000000);
+    var upg = { tank: r.int(6), lamp: r.int(6), pack: r.int(6), brace: r.int(4), drill: r.int(6), assay: r.int(6) };
+    var st;
+    try { st = newRun(makeRNG(seed), upg, null); } catch (e) { thrown++; if (!firstFail) firstFail = 'newRun ' + seed + ' ' + e; continue; }
+    runs++;
+    var guard = 200;
+    while (!st.over && guard-- > 0 && inputs < 5000) {
+      var acts = actions(st);
+      var pick = acts.length ? acts[r.int(acts.length)] : 'ascend';
+      /* a quarter of the time throw an action that is not even legal */
+      if (r() < 0.25) pick = r.pick(['descend', 'ascend', 'mine', 'drop:0', 'drop:9', 'drop:-1', 'shrine:accept', 'shrine:decline', 'nonsense', '']);
+      inputs++;
+      try { step(st, pick); } catch (e) { thrown++; if (!firstFail) firstFail = 'seed ' + seed + ' action ' + pick + ' ' + (e && e.message); break; }
+      if (st.air < 0 || st.lamp < 0 || st.weight < 0 || st.integrity < 0 || st.cash < 0) { negatives++; if (!firstFail) firstFail = 'negative on seed ' + seed; }
+      if (hasNaN(st).length) { nans++; if (!firstFail) firstFail = 'not a number on seed ' + seed + ' at ' + hasNaN(st)[0]; }
+      if (st.weight > st.caps.pack + 1e-9) { capBreaks++; if (!firstFail) firstFail = 'cap break on seed ' + seed; }
+    }
+  }
+  T.eq('five thousand fuzzed inputs throw nothing', thrown, 0, firstFail);
+  T.eq('five thousand fuzzed inputs never go negative', negatives, 0, firstFail);
+  T.eq('five thousand fuzzed inputs never make a not a number', nans, 0, firstFail);
+  T.eq('five thousand fuzzed inputs never break the carry cap', capBreaks, 0, firstFail);
+  T.assert('the fuzzer actually played whole runs', runs > 20, 'runs ' + runs);
+  T.assert('the fuzzer really pushed five thousand inputs', inputs === 5000, 'inputs ' + inputs);
+}
+function suiteCopy(T) {
+  /* studio law: no dash characters in anything a player reads */
+  var bad = [], i, k;
+  function checkStr(s, where) {
+    if (typeof s !== 'string') return;
+    if (s.indexOf('-') >= 0 || s.indexOf('–') >= 0 || s.indexOf('—') >= 0) bad.push(where + ': ' + s);
+  }
+  for (i = 0; i < ORES.length; i++) checkStr(ORES[i].name, 'ore');
+  for (i = 0; i < STRATA.length; i++) checkStr(STRATA[i].name, 'strata');
+  for (i = 0; i < SHRINES.length; i++) checkStr(SHRINES[i].title, 'shrine');
+  for (i = 0; i < HAZARDS.length; i++) { checkStr(HAZARDS[i].name, 'hazard'); checkStr(HAZARDS[i].line, 'hazard line'); }
+  for (k in CONFIG.SHOP) { checkStr(CONFIG.SHOP[k].name, 'shop'); checkStr(CONFIG.SHOP[k].blurb, 'shop blurb'); }
+  for (i = 1; i <= 12; i++) { checkStr(shrineText(i, newRun(makeRNG(1), emptyUpg(), null)).head, 'bargain head'); }
+  T.eq('no dash characters anywhere a player can read', bad.length, 0, bad.join(' | '));
+  T.eq('every ore has a name', ORES.length, 10);
+  T.eq('there are six bands of rock', STRATA.length, 6);
+  T.eq('there are twelve bargains', SHRINES.length, 12);
+  var st = newRun(makeRNG(1), emptyUpg(), null);
+  var all = true;
+  for (i = 1; i <= 12; i++) { st.pending = i; if (!shrineText(i, st).head) all = false; }
+  T.assert('every bargain has copy', all);
+}
+/* bargain copy lives beside the rules so the numbers on the card and the
+   numbers in the rules can never drift apart */
+function shrineText(id, st) {
+  var v = cargoValue(st.cargo), w = st.weight;
+  switch (id) {
+    case 1: return { head: 'AIR PLUS 40', sub: 'ONE BRACE CRACKS', body: 'Air ' + Math.round(st.air) + ' becomes ' + Math.round(Math.min(st.caps.air, st.air + 40)) + '. Braces ' + st.integrity + ' becomes ' + (st.integrity - 1) + '.' };
+    case 2: return { head: 'NEXT VEIN PAYS DOUBLE', sub: 'AND WEIGHS HALF AGAIN MORE', body: 'One vein only. The weight lands in your pack, the value lands at the surface.' };
+    case 3: return { head: 'SELL THE PACK WHERE YOU STAND', sub: '60 PERCENT, PAID NOW', body: 'Your ' + v + ' in ore becomes ' + Math.round(v * 0.6) + ' cash and ' + w + ' kilos of nothing.' };
+    case 4: return { head: 'LAMP PLUS 30', sub: 'EVERY ORE FROM HERE WEIGHS 2 MORE', body: 'Light now, weight later.' };
+    case 5: return { head: 'SEE THE NEXT 20 METERS', sub: 'COSTS 20 AIR', body: 'Every node down to ' + (st.depth + 20) + 'm, contents and all.' };
+    case 6: return { head: 'HALF THE WEIGHT GOES', sub: 'THE BOTTOM OF THE BAG SPILLS', body: (function () { var idx = spillSet(st), i, val = 0; for (i = 0; i < idx.length; i++) val += st.cargo[idx[i]].v; return idx.length + ' ore worth ' + val + ' hits the floor. Pack ' + w + ' becomes ' + (w - (function () { var s2 = 0, j; for (j = 0; j < idx.length; j++) s2 += st.cargo[idx[j]].w; return s2; })()) + '.'; })() };
+    case 7: return { head: 'THE NEXT HAZARD MISSES YOU', sub: 'COSTS 25 LAMP', body: 'One hazard, whichever comes first.' };
+    case 8: return { head: 'ONE MORE BRACE', sub: 'COSTS 30 AIR AND 30 LAMP', body: 'Braces ' + st.integrity + ' becomes ' + (st.integrity + 1) + '.' };
+    case 9: return { head: 'THE SHAFT COUGHS YOU UP 15 METERS', sub: 'IT KEEPS ONE ORE', body: st.cargo.length ? 'One of your ' + st.cargo.length + ' ore stays down here. You do not pick which.' : 'You are carrying nothing, so it takes nothing.' };
+    case 10: return { head: 'TIER ONE ORE BECOMES TIER TWO', sub: 'PLUS 1 WEIGHT EACH', body: tierOneCount(st) + ' ore in your pack changes. Slag becomes iron. Copper becomes silver.' };
+    case 11: return { head: '100 CASH NOW', sub: 'THE NEXT 3 VEINS ARE DEAD ROCK', body: 'Paid the moment you agree. Collected over the next three seams.' };
+    case 12: return { head: 'A FULL LAMP, FREE', sub: 'HAZARDS PLUS 10 PERCENT FOR THE REST OF THE RUN', body: 'Lamp ' + Math.round(st.lamp) + ' becomes ' + st.caps.lamp + '. This rock gets meaner and stays meaner.' };
+  }
+  return { head: '', sub: '', body: '' };
+}
+// ---- TEST_EXPORT_END ----

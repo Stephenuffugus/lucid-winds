@@ -379,9 +379,9 @@ function startWave(s) {
 
 /* ---- combat helpers ---- */
 
-function moveInterval(s, base, cell) {
+function moveInterval(s, base, cell, flying) {
   var t = s.traps[cell];
-  if (t && t.type === 'pit') return Math.max(1, Math.round(base * TRAPS.pit.slow));
+  if (!flying && t && t.type === 'pit') return Math.max(1, Math.round(base * TRAPS.pit.slow));
   return base;
 }
 
@@ -435,7 +435,7 @@ function spawnOne(s, type) {
       hp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
       maxHp: Math.max(1, Math.round(enemyHP(type, s.wave) * s.hpBoost)),
       spd: def.spd,
-      moveT: def.spd + i,           /* stagger a group so they file in */
+      moveT: def.spd - 1 + i,       /* stagger a group so they file in */
       flying: !!def.flying,
       shield: def.shield || 0,
       saps: !!def.saps,
@@ -520,7 +520,7 @@ function playerTick(s, intent) {
     if (want < 0 || want > CONFIG.LANE - 1) return;
     if (isWall(s, want)) { emit(s, 'blocked', want); return; }
     p.cell = want;
-    p.moveT = moveInterval(s, CONFIG.PLAYER_MOVE_TICKS, p.cell);
+    p.moveT = moveInterval(s, CONFIG.PLAYER_MOVE_TICKS, p.cell) - 1;
     emit(s, 'step', p.cell);
     return;
   }
@@ -543,7 +543,7 @@ function enemyMoveTick(s) {
       if (e.saps && !e.sapped) {
         e.sapped = true;
         removeTrap(s, ahead, 'sap');
-        e.moveT = 1;
+        e.moveT = 0;
         continue;
       }
       var hits = e.wallSmash ? wall.hits : 1;
@@ -551,15 +551,15 @@ function enemyMoveTick(s) {
       s.waveStats.held.wall += CONFIG.WALL_HIT_TICKS;
       emit(s, 'wallhit', ahead, e.wallSmash ? 'smash' : 'hit');
       if (wall.hits <= 0) { removeTrap(s, ahead, 'broken'); }
-      e.moveT = CONFIG.WALL_HIT_TICKS;
+      e.moveT = CONFIG.WALL_HIT_TICKS - 1;
       continue;
     }
     e.cell = ahead;
     if (e.cell < s.waveStats.deepest) s.waveStats.deepest = e.cell;
     if (e.cell < s.run.deepest) s.run.deepest = e.cell;
-    var base = moveInterval(s, e.spd, e.cell);
+    var base = moveInterval(s, e.spd, e.cell, e.flying);
     if (base > e.spd) s.waveStats.held.pit += (base - e.spd);
-    e.moveT = base;
+    e.moveT = base - 1;
     enterCell(s, e, e.cell);
     var mi;
     for (mi = 0; mi < CONFIG.BREACH_MARKS.length; mi++) {
@@ -605,7 +605,7 @@ function trapTick(s) {
     best = ballistaTarget(s, k);
     if (!best) continue;
     dealDamage(s, best, TRAPS.ballista.dmg, 'ballista');
-    t.cd = TRAPS.ballista.cd;
+    t.cd = TRAPS.ballista.cd - 1;
     emit(s, 'bolt', k, best.cell);
   }
 }
@@ -947,12 +947,14 @@ function tPut(s, cell, type) {
   return t;
 }
 
-function tEnemy(s, type, cell, hpOverride) {
+/* still:true pins a scripted body in place so a single trap can be measured
+   against it without the body wandering off the cell mid assertion. */
+function tEnemy(s, type, cell, hpOverride, still) {
   var def = ENEMIES[type];
   var e = {
     id: s.nextId++, type: type, cell: cell,
     hp: hpOverride || def.hp, maxHp: hpOverride || def.hp,
-    spd: def.spd, moveT: def.spd, flying: !!def.flying,
+    spd: def.spd, moveT: still ? 1e9 : def.spd - 1, flying: !!def.flying,
     shield: def.shield || 0, saps: !!def.saps, sapped: false,
     heal: def.heal || 0, healRange: def.healRange || 0,
     wallSmash: !!def.wallSmash, boss: !!def.boss,
@@ -1016,8 +1018,14 @@ SUITES.push(function () {
   TEST.eq('campaign schedules ignore the seed', JSON.stringify(a), JSON.stringify(b));
   var d1 = schedule(7, 'daily', 4242), d2 = schedule(7, 'daily', 4242);
   TEST.eq('daily schedules are deterministic', JSON.stringify(d1), JSON.stringify(d2));
-  var counts = function (sc) { var m = {}, i; for (i = 0; i < sc.length; i++) m[sc[i].type] = (m[sc[i].type] || 0) + 1; return m; };
-  TEST.eq('daily keeps the exact composition', JSON.stringify(counts(schedule(13, 'daily', 88))), JSON.stringify(counts(schedule(13, 'campaign', 88))));
+  var counts = function (sc) {
+    var m = {}, i, keys, out = [];
+    for (i = 0; i < sc.length; i++) m[sc[i].type] = (m[sc[i].type] || 0) + 1;
+    keys = Object.keys(m).sort();
+    for (i = 0; i < keys.length; i++) out.push(keys[i] + ':' + m[keys[i]]);
+    return out.join(',');
+  };
+  TEST.eq('daily keeps the exact composition', counts(schedule(13, 'daily', 88)), counts(schedule(13, 'campaign', 88)));
   var hasWarden = function (w2) { var sc = schedule(w2, 'campaign', 1), i; for (i = 0; i < sc.length; i++) if (sc[i].type === 'warden') return true; return false; };
   TEST.ok('warden appears on wave 10', hasWarden(10));
   TEST.ok('warden appears on wave 20', hasWarden(20));
@@ -1126,7 +1134,7 @@ SUITES.push(function () {
   TEST.eq('spike strip spends nothing on a flyer', t.charges, 40);
   s = tGame({});
   t = tPut(s, 10, 'spike');
-  e = tEnemy(s, 'brute', 10, 99999);
+  e = tEnemy(s, 'brute', 10, 99999, true);
   tRun(s, 45, 'none');
   TEST.eq('spike strip is scrap after forty bites', s.traps[10], null);
   TEST.eq('spike strip total damage is one hundred sixty', 99999 - e.hp, 160);
@@ -1176,24 +1184,26 @@ SUITES.push(function () {
   s = tGame({});
   tPut(s, 4, 'ballista');
   TEST.eq('clear sight runs to the mouth', ballistaSight(s, 4), 29);
-  /* brazier burn and stacking */
+  /* brazier burn and stacking. Bodies start at the mouth so a long burn has
+     room to run without anyone reaching the gate mid assertion. */
   s = tGame({});
-  tPut(s, 9, 'brazier');
-  e = tEnemy(s, 'brute', 10, 500);
+  tPut(s, 24, 'brazier');
+  e = tEnemy(s, 'runner', 25, 99999);
   tRun(s, 2, 'none');
   TEST.eq('brazier lights the body on entry', e.burns.length, 1);
-  TEST.eq('burn deals two a tick', e.hp, 498);
+  TEST.eq('burn deals two a tick', e.hp, 99997);
   tRun(s, 40, 'none');
-  TEST.eq('one burn stack is sixty damage', 500 - e.hp, 60);
+  TEST.eq('one burn stack is sixty damage', 99999 - e.hp, 60);
   TEST.eq('burn burns out after thirty ticks', e.burns.length, 0);
   s = tGame({});
-  tPut(s, 9, 'brazier'); tPut(s, 8, 'brazier'); tPut(s, 7, 'brazier'); tPut(s, 6, 'brazier');
-  e = tEnemy(s, 'brute', 10, 99999);
+  tPut(s, 24, 'brazier'); tPut(s, 23, 'brazier'); tPut(s, 22, 'brazier'); tPut(s, 21, 'brazier');
+  e = tEnemy(s, 'runner', 25, 99999);
   tRun(s, 12, 'none');
   TEST.eq('burn stacks cap at three', e.burns.length, 3);
+  TEST.eq('three stacks deal six a tick', 99999 - e.hp, 2 + 2 + 4 + 4 + 6 + 6 + 6 + 6 + 6);
   s = tGame({});
-  tPut(s, 9, 'brazier');
-  e = tEnemy(s, 'flyer', 10, 500);
+  tPut(s, 24, 'brazier');
+  e = tEnemy(s, 'flyer', 25, 500);
   tRun(s, 6, 'none');
   TEST.eq('a flyer never catches fire', e.burns.length, 0);
   /* shielded */

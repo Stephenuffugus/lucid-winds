@@ -1116,7 +1116,12 @@ function suiteCircuitBattery() {
         }
         if (outside) revisit++;
         if (ref.length > maxLen) maxLen = ref.length;
-        for (k = 0; k < e.cells.length; k++) if (st.cover[e.cells[k]] === 0) { coverBad++; break; }
+        /* the completion may have tripped the breaker in the same step, which
+           legally clears every cell it just lit. Check the right thing. */
+        var blew = false;
+        for (k = 0; k < res.events.length; k++) if (res.events[k].t === 'overload') blew = true;
+        if (blew) { blownChecked++; if (st.energized === 0) blownClean++; }
+        else { for (k = 0; k < e.cells.length; k++) if (st.cover[e.cells[k]] === 0) { coverBad++; break; } }
       }
     }
   }
@@ -1126,6 +1131,8 @@ function suiteCircuitBattery() {
   TEST.ge('the battery contains self crossing circuits', selfCross, 50);
   TEST.ge('the battery contains circuits over cells visited elsewhere', revisit, 50);
   TEST.eq('every slice cell is energized right after completion', coverBad, 0);
+  TEST.eq('a completion that trips the breaker leaves the board clear', blownChecked - blownClean, 0);
+  TEST.ge('the battery tripped the breaker at least once', blownChecked, 1);
   TEST.le('no slice can exceed the grid', maxLen, CONFIG.CELLS);
 }
 
