@@ -240,8 +240,15 @@ None of these were changed. They are taste or economy calls.
   real iOS are untested.
 - Emoji render as empty boxes in my screenshots. That is a missing font in the test container,
   not a defect in the apps.
-- 43 of 101 carded satellites have still never been audited. The tracker is
-  `incoming/FLEET-AUDIT-COVERAGE.md` and it recomputes itself from disk so it cannot drift.
+- **Every satellite has now been machine swept, but a sweep is not an audit.**
+  `scripts/defect_sweep.mjs` runs the mechanically checkable standing defect classes over all
+  100 and comes back clean on five of them: no game gates its exit on being framed, no image
+  lacks an `onerror`, no `fetch` treats a 404 as success, no player copy has a dash, and
+  **every game that promises Sunbeams can actually pay them.** That last one matters most,
+  because games built to a stale brief that earned nothing has been a real defect here before.
+  What a sweep still cannot see is whether a game is any *good*, whether its difficulty curve
+  works, or whether its own copy is true about anything other than earning. Roughly 40 have
+  had no such reading. Tracker: `incoming/FLEET-AUDIT-COVERAGE.md`.
 - Whack Box's cloud transport, iOS wake lock stage 2, and LOAF's synthesized voice have all
   never been exercised for real.
 
