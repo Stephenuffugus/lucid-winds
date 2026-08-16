@@ -28,19 +28,25 @@
    drawn on canvas, so the how-to is a DOM overlay, shown once per device with a
    ? button to bring it back. Copy is read off the game's own title screen and
    its real controls, not invented. */
-/* ⛔ The 190px of bottom padding is a CLEARANCE, not a style choice. The fleet
-   feedback fab (/feedback.js) is fixed bottom right at z-index 2147482000 —
-   billions above this overlay's 120 — so it floats over this sheet and no
-   z-index here can win. For satellites it renders as .lwfb-fab.lwfb-mini: a
-   48px circle sitting 96px off the bottom, plus a 48px dismiss badge hung 30px
-   up and left of it, so it occupies up to 174px above the bottom edge. Without
-   this padding it landed on the right hand end of the RUN button and on the
-   tail of the "Tap the ? in the corner" line: the two things a player needs on
-   this screen, both partly covered. Because the padding lives inside the scroll
-   container, the last line of content always ends 16px clear of the fab no
-   matter how tall the screen is or how long the copy gets. */
 #vrHow{position:fixed;inset:0;z-index:120;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  background:#08140b;padding:24px 18px calc(190px + env(safe-area-inset-bottom,0px));font-family:inherit;color:#e6f3d8}
+  background:#08140b;padding:24px 18px 40px;font-family:inherit;color:#e6f3d8}
+/* ⛔ A FLOATING FAB MUST NOT SIT ON A MODAL. The fleet feedback fab
+   (/feedback.js) is fixed bottom right at z-index 2147482000 — billions above
+   this sheet's 120 — so it floated over this opaque overlay and no z-index
+   here could ever win. For satellites it renders as .lwfb-fab.lwfb-mini: a 48px
+   circle parked 96px off the bottom, plus a 48px dismiss badge hung 30px up and
+   to its LEFT, so it owns the block from x = W-90 to W-12 and y = H-174 to
+   H-96. That landed on the right hand end of the RUN button and on the tail of
+   "Tap the ? in the corner to read this again any time" — the instruction and
+   the way to start, both partly covered.
+   Padding alone does NOT fix this: #vrHow is a block, so when the copy is
+   shorter than the screen the content sits at the top and the fab still floats
+   wherever it likes. The fab is therefore HIDDEN while the sheet is open and
+   returns the moment the player taps RUN, which is correct modal behaviour and
+   holds at any screen height. A CSS rule handles the mount order for free: the
+   sheet opens at parse time but the fab is only mounted on load, and the rule
+   applies whenever it appears. */
+body.vr-how-open .lwfb-fab{display:none!important}
 #vrHow .in{max-width:520px;margin:0 auto}
 #vrHow .kick{font-size:12px;letter-spacing:.22em;color:#9fe07a;font-weight:800}
 #vrHow h2{margin:6px 0 2px;font-size:26px;color:#f0d878}

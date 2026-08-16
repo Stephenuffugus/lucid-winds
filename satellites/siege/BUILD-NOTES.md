@@ -404,6 +404,29 @@ through wave 20), 6 traps, 8 enemies, one trap per cell, full price sell back.
 8. The sweep default is `--types=3`. `--types=2` is a strict subset and is not
    the canonical run; some gates read differently on it.
 
+### Deepening pass rulings
+
+9. **The table authors ARRIVALS, not departures.** The plan says spawn cadence
+   10 to 20 ticks apart; that band is now enforced on arrivals, which is where
+   the table writes it. Departures fall out of the solve and legitimately bunch
+   up when a slow group and a fast group are due at the same moment.
+   `verifySchedule` checks the band on arrivals and only checks that departures
+   are ordered and start at zero.
+10. **REINFORCE is deliberately bad value.** Level 3 costs three trap prices and
+    returns 2.2 traps. If it paid par it would be the optimal opening and the
+    build phase would stop being about the board.
+11. **The Marshal is a boss variant, not a ninth enemy.** `ENEMY_ORDER` still
+    holds exactly the eight the spec names and still asserts as eight. The
+    Marshal lives in `BOSS_ORDER` and only in endless.
+12. **Nothing dies on the spawn cell.** Ballistas stop one cell short of
+    `SPAWN_CELL`. Without it a reinforced ballista line deletes bodies the tick
+    they appear, which reads as an empty lane rather than as a kill.
+13. **Dead air has two readings and only one is gated.** Hard (nothing alive
+    while the wave still has bodies to send) is gated at 3s on the top 8 builds.
+    Soft (bodies exist but none in reach, which includes the run out to meet
+    them) is reported only, because gating it would ban mouth stacked builds
+    instead of fixing a schedule.
+
 ## Craft shipped
 
 - **G minor, martial.** Every pitched sound is quantised to a G minor scale table.
@@ -431,6 +454,17 @@ through wave 20), 6 traps, 8 enemies, one trap per cell, full price sell back.
   colour only doubles it (the healer also gets a green cross glyph).
 - **War log** of the last ten runs as terse dispatches generated from run events
   ("Fell on wave 14. A sapper ate the ballista at cell 9.").
+- **REINFORCE / DEEPEN**, the seventh build tool: tap a standing trap to build
+  it a level deeper and patch it to full. Levels render in the lane as accent
+  dots with a glow on the glyph, and reinforcing has its own square tick sound.
+- **Endless modifiers** named on the build phase as chips under the lane, with
+  the first one's blurb in the hint line so you read WHY before you spend.
+- **The Marshal**, the second boss, with its own faster ostinato a fifth up.
+- **Wave scorecard, deepened**: a YOU / YOUR LANE two tile split with a plain
+  sentence read, a 2% floor on bar width so small contributors stay visible, the
+  standing lane in traps and levels, traps lost, wave length, and the longest
+  quiet stretch when it is worth mentioning. All of it from `SIM.damageShare`,
+  the same function the sweep gates on.
 - Endless mode, `?seed=` links, daily mode (the daily seed shuffles group order
   inside a wave, never the composition, so difficulty bands are untouched),
   options panel (volume, sound, haptics, reduced motion, auto skip build phase),
@@ -445,7 +479,7 @@ All controls sit in the bottom third, thumb reachable.
 |---|---|
 | Move left / Move right | flex, **64px** tall, roughly 100px wide each at 375 |
 | Attack | flex 1.5, **64px** tall, roughly 150px wide |
-| Trap shop buttons (6) | **64 x 64** each, horizontally scrollable |
+| Trap shop buttons (6) plus DEEPEN | **64 x 64** each, horizontally scrollable. DEEPEN is the seventh and inherits `.shopbtn`, so it is 64x64 too. NOT LOOKED AT: whether seven of them still scroll cleanly at 320px. |
 | LAST BUILD / SEND THEM IN | **48px** tall, flex width |
 | Build timer with skip | **48 x 48** |
 | Options and exit in the top bar | **48 x 48** each |
