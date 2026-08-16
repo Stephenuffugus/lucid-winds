@@ -39,7 +39,8 @@ const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox",
 const page = await browser.newPage();
 await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await page.evaluateOnNewDocument(() => { try { localStorage.setItem("sws_dev_ok", "1"); } catch (e) {} });
-await page.goto(BASE + "/satellites/" + id + "/?probe=" + Math.floor(Math.random() * 1e9), { waitUntil: "domcontentloaded" });
+const TDIR = id.indexOf("/") >= 0 ? id.replace(/^\/+|\/+$/g, "") : ("satellites/" + id);
+await page.goto(BASE + "/" + TDIR + "/?probe=" + Math.floor(Math.random() * 1e9), { waitUntil: "domcontentloaded" });
 await sleep(1500);
 
 /* optional walk to the surface we actually want to measure */

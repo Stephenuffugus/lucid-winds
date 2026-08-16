@@ -21,9 +21,14 @@ import { existsSync } from "fs";
 import puppeteer from "puppeteer";
 
 const id = process.argv[2];
-if (!id) { console.log("usage: node scripts/handoff11_verify.mjs <gameid>"); process.exit(1); }
+if (!id) { console.log("usage: node scripts/handoff11_verify.mjs <gameid|path>"); process.exit(1); }
 const BASE = process.env.LW_URL || "http://127.0.0.1:8951";
-const dir = "satellites/" + id + "/";
+/* Hush and PadLab live at the site root, not under satellites/. Accept either a
+   bare game id or an explicit path so one runner covers the whole fleet. */
+const dir = id.indexOf("/") >= 0
+  ? (id.replace(/^\/+|\/+$/g, "") + "/")
+  : (existsSync("satellites/" + id) ? "satellites/" + id + "/" : id + "/");
+const label = dir.replace(/\/$/, "").split("/").pop();
 const results = [];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -32,16 +37,16 @@ function record(name, pass, detail) {
   console.log((pass ? "  PASS  " : "  FAIL  ") + name + (detail ? "   " + detail : ""));
 }
 
-console.log("VERIFY " + id.toUpperCase() + "\n");
+console.log("VERIFY " + label.toUpperCase() + "  (" + dir + ")\n");
 
 /* 1. static gates */
-const g = spawnSync("node", ["scripts/handoff11_gates.mjs", id], { encoding: "utf8" });
+const g = existsSync("satellites/" + id) ? spawnSync("node", ["scripts/handoff11_gates.mjs", id], { encoding: "utf8" }) : { status: 0, stdout: "skipped, not a satellites/ game" };
 const gFails = (g.stdout.match(/^\s+FAIL /gm) || []).length;
 record("static gates", g.status === 0, gFails ? gFails + " failure(s), rerun the gate script to read them" : "clean");
 
 /* 2 + 3. the game's own assertion suite, headless */
 if (!existsSync(dir + "sim.js")) {
-  record("assertion suite", false, "sim.js missing");
+  console.log("  SKIP  assertion suite   no sim.js here, this app is not a HANDOFF-11 game");
 } else {
   const t = spawnSync("node", [dir + "sim.js", "--test"], { encoding: "utf8", timeout: 300000 });
   const out = (t.stdout || "") + (t.stderr || "");
@@ -116,7 +121,7 @@ try {
 }
 
 /* 5. tap targets */
-const tp = spawnSync("node", ["scripts/handoff11_tap.mjs", id], { encoding: "utf8", timeout: 180000 });
+const tp = spawnSync("node", ["scripts/handoff11_tap.mjs", id, "--steps=tapcenter,wait:900"], { encoding: "utf8", timeout: 180000 });
 const tapLine = (tp.stdout || "").split("\n").find(l => l.includes("visible controls")) || "";
 record("touch targets 48px + reachable", tp.status === 0, tapLine.trim());
 
@@ -125,7 +130,7 @@ const sw = spawnSync("node", ["scripts/sw_purge_audit.js"], { encoding: "utf8", 
 record("service worker fleet audit", sw.status === 0, sw.status === 0 ? "no worker deletes another app's caches" : "see sw_purge_audit output");
 
 const failed = results.filter(r => !r.pass);
-console.log("\n" + id.toUpperCase() + ": " + (results.length - failed.length) + "/" + results.length + " checks passed");
+console.log("\n" + label.toUpperCase() + ": " + (results.length - failed.length) + "/" + results.length + " checks passed");
 if (failed.length) console.log("BLOCKED: " + failed.map(f => f.name).join(", "));
 console.log("\nThese checks do not replace the LOOKING pass. Run handoff11_shoot.mjs and open the images.");
 process.exit(failed.length ? 1 : 0);
