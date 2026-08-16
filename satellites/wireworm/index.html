@@ -2304,6 +2304,16 @@ function suiteLayout() {
   /* cells stay fractional: flooring throws away real size */
   TEST.assert('cell size is not rounded down to an integer', Math.abs(p.cell - Math.floor(p.cell)) > 0, 'cell ' + p.cell);
   TEST.ge('the pad height never collapses below a thumb', board(390, 400, 64, 64).padH, 64);
+  /* the share guard only binds on a genuinely short column (landscape, a small
+     window, a browser with a lot of chrome). Exercise it, or it is dead code. */
+  var shortH = 240;
+  var sm = layoutModel(390, shortH);
+  TEST.le('a short column caps the pads at 45 percent', sm.padH, Math.round(shortH * CHROME.PAD_MAX_SHARE));
+  TEST.assert('the share guard actually bound', sm.padH < CHROME.PAD_MIN, 'padH ' + sm.padH + ' vs min ' + CHROME.PAD_MIN);
+  TEST.assert('a short column still leaves the board the majority', sm.stageH > sm.padH, sm.stageH + ' vs ' + sm.padH);
+  var tiny = layoutModel(390, 120);
+  TEST.ge('an extremely short column keeps a usable pad', tiny.padH, 54);
+  TEST.assert('an extremely short column never gives the pads everything', tiny.stageH > 0, 'stage ' + tiny.stageH);
 }
 
 function runAllTests(opts) {
