@@ -50,3 +50,15 @@ Daily mode: one tier-4 level generated AT runtime from the daily seed (same gene
 - Generation yield at tiers 4–5 is the schedule risk: accepting only greedy-failing, band-length, desync-having levels may need hundreds of attempts per accepted level. That cost is paid OFFLINE in gen.js, so it's fine — but budget it (log attempts-per-accept; if tier 5 exceeds ~2,000 attempts/level, loosen wall density range, not the acceptance gates).
 - The airborne flag is the likeliest solver/game drift point — it is why the fixtures in phase 1 exist. Any change to movement semantics after levels are embedded REQUIRES regenerating and re-verifying all 60.
 - 12×12 grid at 390px width = 32px cells; fine for viewing, but never make cells themselves touch targets.
+
+## Signature craft
+
+- **Key: E minor. The audio IS the sync state (the standout):** two soft detuned voices, one per avatar, a fifth apart. While the pair moves in mirror they sound consonant; every desync moment (a move that affects exactly one avatar — the SIM already emits this event for the solver check) bends one voice a half step until they re-sync. Players will FEEL desync before they can articulate it. This is one oscillator pair and an event listener, and no other puzzle game on the portal sounds like it.
+- **Par scores from the solver (the other standout):** the BFS optimum is already computed for all 60 levels — embed it. Level complete shows "you 27, best possible 23"; matching par earns a star on the level-select map. Nobody shipping procedural puzzles shows provable par; we can because we wrote the solver. TEST-assert every embedded par equals a fresh BFS run in `sim.js --verify`.
+- **The mirror seam:** a faint vertical shimmer down the level's mirror axis. Avatar A in the accent violet, avatar B in the warm highlight, DIFFERENT SHAPES (circle vs diamond) with tiny A/B glyphs — colorblind law, and it matters double here because the whole game is telling twins apart.
+- **Death is a rewind, not a punishment:** 150ms desaturating smear back to start, deaths counter ticks up quietly, input stays live the entire time (<200ms law). Optional ghost: last attempt's paths as dotted trails (settings toggle, default on until first clear of the level, then off).
+- **Win moment:** both exits pulse once in phase, the two voices land on a unison, 25ms haptic. Sixty of these must not get old, so keep it under a second and never modal until the player taps next.
+- **Level select as a constellation:** five tier-clusters of stars, lines connecting cleared levels, par-stars glowing brighter. Progress reads as a sky filling in, on-brand for the studio, and it's just SVG dots and lines.
+- **Best-run replays** per level from the input log (CRAFT.md C): tap a cleared level's star to watch your best solution. The replay doubles as the "how did I do that" memory aid at tier 5.
+- **Daily share** includes the seed link; the shared level opens in daily mode for the recipient with your moves/deaths line shown as the bar to beat.
+- Cut-last order: sync audio > par stars > mirror seam and avatar shapes > rewind death > constellation select > ghosts > replays.

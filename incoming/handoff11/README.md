@@ -8,6 +8,7 @@
 - **BUILD, in this order:** 1 DEEPWELL → 2 BLACKOUT → 3 PARALLEL → 4 WIREWORM → 5 SIEGE OF ONE.
 - **PARKED:** LAST CALL (restaurant). Stephen does not care for it now, may revisit later. Do not build it, do not plan it further.
 - A finished game beats two half-games. If the block ends mid-game, finish and ship the current one rather than starting the next. Every game has its own plan file: `PLAN-1-DEEPWELL.md` … `PLAN-5-SIEGE.md`.
+- **`CRAFT.md` in this folder is mandatory reading before phase 5 (VIEW) of every game.** It carries the shared standout standards: feel/juice ledger, per-game musical keys and synth kit, seed links + input-log replays + stats/streaks (the deterministic SIM makes these nearly free — ship them), options panel bones, PWA/install polish, the dev tooling arsenal (`tools/shoot.mjs`, tap probe, grep gates, ASCII sim frames, fuzz-to-regression pipeline), performance budget, and copy voice. Each plan ends with a "Signature craft" section ranked cut-last — those features are IN scope, not stretch; they are the difference between a correct game and one that stands apart.
 
 ## Where each game lives
 
