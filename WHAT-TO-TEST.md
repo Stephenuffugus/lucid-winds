@@ -115,6 +115,25 @@ These are the ones worth testing hardest, because they shipped and nobody knew.
 - **Slice 3D, how to play**: promised "no ceiling, the bands keep going" while the ladder is
   34 authored bands topping out at x900, which the end panel then prints back at you.
 
+## Difficulty that was not difficulty
+- **Pong's Legend was not a rung.** Ace returned 95.8% of shots, Legend 95.6% — identical
+  inside the noise, with no better share of points. Four difficulties and the top two were the
+  same. Fixed, and Career 12 still clears.
+- **Shell Shuffle** went flat at level 11 forever while still promising more.
+- **Power Scalers' ladder was a cliff**: clear rates ran 100%, 99%, then 31%, 6%, 1%, 0%, and
+  the first two clears paid 159 XP while level 2 cost 170, so clearing two rungs did not level
+  you once. Now every race clears all 12 rungs.
+
+## Two things I found by looking that are NOT fixed ⚖
+Left as findings rather than silently restyled, because both are art or layout calls.
+- **Petal Plunge shows a keyboard hint on a phone.** "left right carve · down tuck · space =
+  trick · P = pause" renders across the middle of the slope at 375x667, telling a touch player
+  to press four keys their device does not have.
+- **Greenhouse Pinball draws its shot rails outside the table.** The ramp and orbit paths
+  render as bright outlined ribbons over the painted art, crossing above the rollovers onto the
+  slate, and at the bottom running off the playfield across the cabinet and the corner screws.
+  This is not a debug overlay; it is what a player sees.
+
 ## Things that lost your stuff
 - **Aura Farm**: the ending could be replayed **indefinitely**, re-paying 8 Sunbeams each time.
   A corrupt save was a permanent dead end with a button that did nothing forever.
