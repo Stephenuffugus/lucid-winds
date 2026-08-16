@@ -230,3 +230,48 @@ None of these were changed. They are taste or economy calls.
   `incoming/FLEET-AUDIT-COVERAGE.md` and it recomputes itself from disk so it cannot drift.
 - Whack Box's cloud transport, iOS wake lock stage 2, and LOAF's synthesized voice have all
   never been exercised for real.
+
+# PART 5 — ADDED AFTER THE VR HANDOFF
+
+## The arcade was undercounting itself in seven places
+
+**Try this:** open the arcade and read the sentence under "The Arcade". Then open
+`/support.html` and read the first paragraph.
+
+**Was:** the hero said **160+ free games**, the support page said **160+ games free**, and the
+browser tab title, the Google search description, the Facebook card, the Twitter card and the
+PWA manifest all said **140+**. The real number is **183**. All seven now say 180+.
+
+Two of those matter more than the rest. The title tag is the line Google shows in search
+results, and the support page is where somebody decides whether to send money. Both were
+selling the studio short by forty games.
+
+## The soundtrack bar orphaned itself on a big screen
+
+**Try this:** open the arcade on a laptop or a TV, not a phone, and look at the Studio
+Soundtrack button under the Jimothy card.
+
+**Was:** capped at 520px wide, so on anything wider than a phone it sat at half width with a
+big empty gap beside it, the only element on the page that did that. It now reaches the same
+edge as the shelves. **The phone layout is unchanged** and I verified that at 390px.
+
+## VR: everything already runs in a Quest browser ⚖
+
+I triaged all 183 titles for the things that stop a controller pointer working. **160 read
+clean, 7 want an eye on the device, none are blocked.** Full table in `QUEST-COMPAT.md`, plan
+in `incoming/VR-PLAN.md`.
+
+**The finding that changes the plan:** Meta accepts plain 2D PWAs on the Horizon Store, not
+just VR ones. **The whole arcade can be a store app with no VR work at all.** The manifest is
+already good enough. The handoff you were sent had the store at weeks four to six, after
+building VR titles; it should be first.
+
+**Try this, and it is the only thing I cannot do for you:** put the arcade on the Quest 2 and
+play it for fifteen minutes. Watch for text you have to lean in to read, buttons the ray
+skitters off, and anything that makes you want to take the headset off. Nothing in that table
+has been near a headset.
+
+**Two things in the handoff are dead and I did not build on them:** MARBLEBEAT was named its
+flagship VR candidate, and it stopped existing as a title last night when it shipped as
+PadLab's fourth tab. Cairn is not in the repo at all. The games that are actually 3D, and that
+it never mentioned, are Dewball, Super Slice 3D and Create A Critter. **Dewball is the pick.**
