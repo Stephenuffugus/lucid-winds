@@ -53,6 +53,13 @@
        buttons no longer sit underneath its tap zone */
     overflow-y:auto; overscroll-behavior:contain; z-index:10; background:radial-gradient(120% 80% at 50% -10%, rgba(28,40,20,.55), rgba(8,10,7,.92) 70%);
     -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);}
+  /* ⛔ This used to be ONLY `.scr.hidden`, which needs BOTH classes, so it never
+     matched #hud or #hint — they carry `hidden` on its own. show() and showGame()
+     have always toggled that class correctly; the CSS simply never listened, so
+     the HUD sat visible over the title, shop, settings, pause and game over
+     screens for the whole life of the game. A bare rule makes the markup mean
+     what it says. Keep both selectors: .scr.hidden is now redundant, not wrong. */
+  .hidden{display:none;}
   .scr.hidden{display:none;}
   .brand{font-family:'Instrument Serif',serif; letter-spacing:.5px; line-height:.96; text-align:center;}
   .title-1{font-size:clamp(38px,13vw,72px); color:var(--ink); margin-top:6vh;
