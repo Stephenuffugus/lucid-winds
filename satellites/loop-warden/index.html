@@ -308,6 +308,12 @@ function todayUTC(){ return new Date().toISOString().slice(0,10); }
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("loopwarden_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. loadSave() runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.supplies=s.supplies||0; s.camp=s.camp||{}; s.lifetimeBanked=s.lifetimeBanked||0; s.bestLap=s.bestLap||0;
   s.kills=s.kills||0; s.dailyStreak=s.dailyStreak||0; s.lastDaily=s.lastDaily||""; s.dailyWins=s.dailyWins||0;
   s.banks=s.banks||0; s.warden=s.warden||"warden"; s.pal=s.pal||"ember"; s.flame=s.flame||"amber";
