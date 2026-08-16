@@ -1,5 +1,9 @@
 # WHAT TO TEST — Sky Wolf fleet, 2026-08-16
 
+**Display names, because the folder names differ:** greenhouse-pinball ships as **Blobworks**,
+seed-flutter ships as **Cosmic Cadets**, stream-hop ships as **Jumping Jimothy**, garden-td
+ships as **Garden Guard**, slice-master ships as **Super Slice**.
+
 Everything below is **live on lucidwinds.com**. The five new games and most audited ones are behind
 the tester gate, so unlock once with your passcode on any in development card and the whole
 In Development tab opens.
@@ -129,7 +133,7 @@ Left as findings rather than silently restyled, because both are art or layout c
 - **Petal Plunge shows a keyboard hint on a phone.** "left right carve · down tuck · space =
   trick · P = pause" renders across the middle of the slope at 375x667, telling a touch player
   to press four keys their device does not have.
-- **Greenhouse Pinball draws its shot rails outside the table.** The ramp and orbit paths
+- **Blobworks (greenhouse-pinball) draws its shot rails outside the table.** The ramp and orbit paths
   render as bright outlined ribbons over the painted art, crossing above the rollovers onto the
   slate, and at the bottom running off the playfield across the cabinet and the corner screws.
   This is not a debug overlay; it is what a player sees.
