@@ -778,6 +778,7 @@ function renderTracks(){
 /* ---------- input ---------- */
 var softHeld=false, userGestured=false;
 function tap(id,fn){ $(id).addEventListener("click",function(e){ userGestured=true; fn(e); }); }
+tap("b-arcade",function(){ window.SWS_EXIT(); });
 tap("b-grove",function(){ startMode("grove"); });
 tap("b-daily",function(){ startMode("daily"); });
 tap("b-sprint",function(){ startMode("sprint"); });
@@ -895,8 +896,14 @@ window.addEventListener("resize",fit); fit();
 /* ---------- SWS embed + exit ---------- */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* ⛔ The framed branch used to be gated on ?embed=1 — a flag the portal never
+   sets for a relative /satellites/ url, and that url is not framed at all, it
+   navigates TOP LEVEL. So the flag decided nothing here, and would decide the
+   WRONG thing the day this card moves to a framed url. Detect the frame itself. */
+var SWS_FRAMED=false; try{ SWS_FRAMED=(window.parent!==window); }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 window._sbCapEarn=function(n,tag){ var granted=0;
   try{ var k='sw_sb_tempogrove'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;

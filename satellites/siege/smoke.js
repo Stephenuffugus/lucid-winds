@@ -75,6 +75,8 @@ try {
       cardText=nodes.scwave.textContent+' | '+nodes.schead.textContent+' | you '+nodes.scyou.textContent+' traps '+nodes.sctraps.textContent+' | bars '+(nodes.scbars.innerHTML.match(/barrow/g)||[]).length;
     }
     if(nodes.scoresheet.classList.contains('hidden')===false) nodes.scoresheet.classList.add('hidden');
+    if(!global.__boss && !nodes.bbosswrap.classList.contains('hidden'))
+      global.__boss='width '+nodes.bbossbar.style.width+'  |  '+nodes.bbossname.textContent;
   }
 } catch(e){ err=e; }
 console.log('first scorecard:', sawCard? cardText : 'NEVER RENDERED');
@@ -94,7 +96,7 @@ console.log('  roster      :', (nodes.pips.innerHTML.match(/class="pip/g)||[]).l
 console.log('  roster svg  :', (nodes.pips.innerHTML.match(/<svg/g)||[]).length, 'silhouettes at', /width="(\d+)" height="(\d+)"/.exec(nodes.pips.innerHTML||'')? RegExp.$1+'x'+RegExp.$2 : 'n/a');
 console.log('  live share  :', (nodes.livebars.innerHTML.match(/barrow/g)||[]).length, 'bars, YOU', nodes.syou.textContent, '|', nodes.stitle.textContent);
 console.log('  your lane   :', (nodes.kit.innerHTML.match(/kitchip/g)||[]).length, 'chips,', nodes.kcount.textContent);
-console.log('  boss bar    :', nodes.bbosswrap.classList.contains('hidden')? 'hidden (no boss alive)' : nodes.bbossname.textContent);
+console.log('  boss bar    :', global.__boss || (nodes.bbosswrap.classList.contains('hidden')? 'never seen (no boss in this run)' : nodes.bbossname.textContent));
 console.log('');
 console.log('--- GEOMETRY at 390x844 (arithmetic from the CSS, NOT a look) ---');
 console.log('  field height      :', FIELD_H+'px');

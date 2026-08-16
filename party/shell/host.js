@@ -102,6 +102,11 @@ function renderLobby(){
   btn.textContent=n<MIN_PLAYERS?('Start ('+n+' of '+MIN_PLAYERS+' needed)'):'Start with '+n+' players';
 }
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
+function seatEverybody(ids){
+  PARTICIPANTS={};
+  for(var i=0;i<ids.length;i++) PARTICIPANTS[ids[i]]=1;
+  try{ T.send({t:'seat',to:'*',seat:'in'}); }catch(e){}
+}
 
 window.PartyShell={
   setMinPlayers:function(n){ MIN_PLAYERS=Math.max(2,n|0); renderLobby(); },
@@ -168,6 +173,11 @@ window.PartyShell={
   sendToPlayer:function(pid,msg){ T.send({t:'game',to:pid,msg:msg}); },
   broadcast:function(msg){ T.send({t:'game',to:'*',msg:msg}); },
   setPhase:function(name,data){ curPhase=name; curData=data||{};
+    /* every title opens on 'rules', so that is where a new game begins as far as
+       the shell is concerned. Play again has to re-seat the room or somebody who
+       arrived during the last game stays stuck on "in for the next one" through
+       the next one as well. */
+    if(name==='rules') seatEverybody(present());
     T.send({t:'phase',to:'*',name:name,data:curData,game:SLUG});
     if(phaseCb) phaseCb(name,curData); },
   onPhase:function(cb){ phaseCb=cb; },
@@ -204,7 +214,17 @@ window.PartyShell={
        server, so nothing mints and that is honest. */
     T.send({t:'over',to:'*',results:results});
   },
-  closeRoom:function(){ if(T){ if(T.destroy) T.destroy(); T.close(); } },
+  /* ⛔ SAY GOODBYE BEFORE YOU GO. A phone reads seven seconds of host silence as
+     a DROP, so ending the night without a word left every phone in the room on
+     "Lost the big screen. Waiting for it to come back. You do not need to do
+     anything." forever, which is a comforting lie about a room that no longer
+     exists. The send needs a beat to actually leave before the channel closes. */
+  closeRoom:function(){
+    if(!T) return;
+    try{ T.send({t:'bye',to:'*'}); }catch(e){}
+    var t=T;
+    setTimeout(function(){ try{ if(t.destroy) t.destroy(); t.close(); }catch(e){} },500);
+  },
   players:roster,
   colorFor:function(id){ return colorOf[id]||'#e8dcc8'; },
   code:function(){ return CODE; }
