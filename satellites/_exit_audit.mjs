@@ -220,6 +220,47 @@ function callSites(src, name = 'SWS_EXIT') {
   return hits;
 }
 
+/* ---- advisory scan: the fab-over-a-modal hazard (--fab) -------------------
+   Found 2026-08-16 by LOOKING at Vine Runner's how to play screen: the fleet
+   feedback fab (/feedback.js) is fixed bottom right at z-index 2147482000 and
+   floats over ANY overlay a game owns, because no game's z-index can beat two
+   billion. On satellites it renders as .lwfb-fab.lwfb-mini — a 48px circle
+   parked 96px off the bottom, plus a 48px dismiss badge hung 30px up and left —
+   so it occupies roughly x = W-90..W-12, y = H-174..H-96, and lands on whatever
+   a full screen sheet puts near its bottom right. On Vine Runner that was the
+   RUN button and the "tap the ? in the corner" hint.
+
+   This flags CANDIDATES only. It cannot know where a sheet's controls actually
+   sit — that needs a screenshot. It is here because this is reportedly the most
+   common visual defect on this fleet, and a cheap list beats no list. */
+const FAB_Z = 2147482000;
+function fabHazard(src) {
+  if (!/feedback\.js|mountFab/.test(src)) return null;      // no fab, no hazard
+  const sheets = [];
+  // a full screen fixed overlay: position:fixed with inset:0 (or all four sides)
+  const re = /([#.][\w-]+)\s*\{([^}]*position\s*:\s*fixed[^}]*)\}/g;
+  let m;
+  while ((m = re.exec(src))) {
+    const body = m[2];
+    const full = /inset\s*:\s*0/.test(body) ||
+      (/top\s*:\s*0/.test(body) && /bottom\s*:\s*0/.test(body) && /left\s*:\s*0/.test(body));
+    if (!full) continue;
+    // ⛔ It must be a MODAL, not the game's root container. Requiring
+    // display:none in the same rule is what separates a sheet you open from
+    // #wrap, which every game has and which is never "covered by" anything.
+    // Without this the scan named 79 of 100 games and was pure noise — the same
+    // crying wolf the exit checks had to be cured of.
+    if (!/display\s*:\s*none/.test(body)) continue;
+    const z = /z-index\s*:\s*(\d+)/.exec(body);
+    const zi = z ? +z[1] : 0;
+    if (zi < FAB_Z) sheets.push({ sel: m[1], z: zi });
+  }
+  if (!sheets.length) return null;
+  const guarded = /\.lwfb-fab\s*\{[^}]*display\s*:\s*none/.test(src) ||
+                  /lwfb-fab[^{]*\{[^}]*display\s*:\s*none/.test(src);
+  return { sheets, guarded };
+}
+
 // Informational only: does it still announce itself for the day a card moves to
 // a framed url?
 function hasReady(src) {
@@ -347,6 +388,26 @@ if (argv.includes('--self-test')) {
   const bad = selfTest();
   console.log(bad ? `\n${bad} self test case(s) wrong. The audit is not trustworthy.` : '\nSelf test clean.');
   process.exit(bad ? 2 : 0);
+}
+
+if (argv.includes('--fab')) {
+  console.log('FAB OVER A MODAL — candidates, not confirmed defects.\n');
+  console.log('The feedback fab is fixed bottom right at z-index ' + FAB_Z + ' and floats');
+  console.log('over any overlay a game owns. It occupies about x = W-90..W-12,');
+  console.log('y = H-174..H-96. Anything a full screen sheet puts in that corner is');
+  console.log('covered. Confirm each with a screenshot; this list only narrows it.\n');
+  const ids0 = [...cardedSatellites().keys()].sort();
+  let n = 0;
+  for (const id of ids0) {
+    const parts = readSatellite(id);
+    if (!parts) continue;
+    const h = fabHazard(parts.map(p => p.src).join('\n'));
+    if (!h) continue;
+    n++;
+    console.log(`${h.guarded ? 'guarded' : 'AT RISK '}  ${id}  — ${h.sheets.map(s => `${s.sel} (z${s.z})`).join(', ')}`);
+  }
+  console.log(`\n${n} carded satellites mount the fab AND own a full screen sheet under it.`);
+  process.exit(0);
 }
 
 const carded = cardedSatellites();

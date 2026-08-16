@@ -50,7 +50,11 @@ body{overflow:hidden}
 .iconbtn:active{background:#1b1f28}
 
 /* ---- board ---- */
-#stage{flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:2px 0}
+/* flex-basis 0, not auto: with basis auto the stage sized itself to the canvas
+   while layout() sized the canvas from the stage, a circular measurement that
+   collapsed the board to nine pixels a cell. Basis 0 makes the stage purely
+   the leftover column and breaks the loop. */
+#stage{flex:1 1 0;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:2px 0}
 #board{display:block;border-radius:14px;background:#0c0f0b;touch-action:none}
 #zoneL,#zoneR{position:absolute;top:0;bottom:0;width:50%;z-index:5}
 #zoneL{left:0}#zoneR{right:0}
@@ -60,7 +64,7 @@ body{overflow:hidden}
 #zoneHint div{flex:1;display:flex;align-items:center;justify-content:center;font-size:34px;color:#ffffff22}
 
 /* ---- footer ---- */
-#pad{flex:1 1 auto;display:flex;gap:10px;padding:8px 12px 4px;min-height:64px}
+#pad{flex:0 0 auto;height:clamp(120px,17vh,160px);display:flex;gap:10px;padding:8px 12px 4px}
 .padbtn{flex:1 1 0;border:1px solid var(--line);border-radius:14px;background:#10140c;color:#6d7a5f;
   font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
   transition:background 120ms ease-out,color 120ms ease-out;user-select:none;touch-action:none}
@@ -2294,12 +2298,15 @@ var mode = 'free', curSeed = 1, todayStr = '';
 /* ---------- geometry ---------- */
 function layout() {
   var w = stage.clientWidth, h = stage.clientHeight;
-  var side = Math.max(180, Math.min(w, h) - 4);
-  cell = Math.max(8, Math.floor(side / CONFIG.GRID));
+  /* The board is the game. It takes the smaller of the leftover column and the
+     full width, and the cell size stays fractional: flooring 19.5 to 19 throws
+     away a fifth of a cell across the board for nothing. */
+  var side = Math.max(180, Math.min(w, h) - 2);
+  cell = Math.max(8, side / CONFIG.GRID);
   boardPx = cell * CONFIG.GRID;
   dpr = Math.min(2.5, window.devicePixelRatio || 1);
-  boardC.style.width = boardPx + 'px';
-  boardC.style.height = boardPx + 'px';
+  boardC.style.width = boardPx.toFixed(2) + 'px';
+  boardC.style.height = boardPx.toFixed(2) + 'px';
   boardC.width = Math.round(boardPx * dpr);
   boardC.height = Math.round(boardPx * dpr);
   bx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2339,7 +2346,7 @@ function drawWireCell(i, live, alphaOverride) {
   var x = (i % CONFIG.GRID) * cell, y = ((i / CONFIG.GRID) | 0) * cell;
   var cxp = x + cell / 2, cyp = y + cell / 2;
   var links = neighbourWire(i, live), d;
-  var w = live ? Math.max(3, cell * 0.42) : Math.max(2.5, cell * 0.26);
+  var w = live ? Math.max(3, cell * 0.42) : Math.max(3, cell * 0.28);
   bx.globalAlpha = alphaOverride === undefined ? 1 : alphaOverride;
   bx.lineCap = 'round';
   bx.lineWidth = w;
@@ -2351,8 +2358,8 @@ function drawWireCell(i, live, alphaOverride) {
     bx.stroke();
   }
   bx.beginPath();
-  bx.arc(cxp, cyp, w * 0.5, 0, 6.2832);
-  bx.fillStyle = live ? '#c6f04f' : '#5f7546';
+  bx.arc(cxp, cyp, live ? w * 0.5 : Math.max(2, w * 0.72), 0, 6.2832);
+  bx.fillStyle = live ? '#c6f04f' : '#6b8450';
   bx.fill();
   bx.globalAlpha = 1;
 }
@@ -2365,11 +2372,14 @@ function draw() {
   /* substrate */
   bx.fillStyle = '#0c1209';
   bx.fillRect(0, 0, boardPx, boardPx);
-  bx.strokeStyle = '#141b10';
+  /* Barely there texture. It used to sit close enough to dead wire that the two
+     were hard to separate, so the substrate got darker and the wire keeps the
+     bead at every node as its structural tell. */
+  bx.strokeStyle = '#10160b';
   bx.lineWidth = 1;
   for (i = 1; i < g; i++) {
-    bx.beginPath(); bx.moveTo(i * cell + 0.5, 0); bx.lineTo(i * cell + 0.5, boardPx); bx.stroke();
-    bx.beginPath(); bx.moveTo(0, i * cell + 0.5); bx.lineTo(boardPx, i * cell + 0.5); bx.stroke();
+    bx.beginPath(); bx.moveTo(i * cell, 0); bx.lineTo(i * cell, boardPx); bx.stroke();
+    bx.beginPath(); bx.moveTo(0, i * cell); bx.lineTo(boardPx, i * cell); bx.stroke();
   }
 
   /* overload warning: the edge warms as the breaker gets close */

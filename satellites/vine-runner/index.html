@@ -1439,8 +1439,10 @@ portalEvent("ready");
 <script>
 (function(){
   var ov=document.getElementById('vrHow'), btn=document.getElementById('vrHowBtn');
-  function open(){ ov.style.display='block'; ov.scrollTop=0; }
-  function close(){ ov.style.display='none'; try{ localStorage.setItem('vinerunner_how_seen','1'); }catch(e){} }
+  // the body class drives the rule that hides the feedback fab while this modal
+  // is up — see the #vrHow block in the stylesheet for why padding cannot do it
+  function open(){ ov.style.display='block'; ov.scrollTop=0; document.body.classList.add('vr-how-open'); }
+  function close(){ ov.style.display='none'; document.body.classList.remove('vr-how-open'); try{ localStorage.setItem('vinerunner_how_seen','1'); }catch(e){} }
   document.getElementById('vrHowGo').addEventListener('click', close);
   btn.addEventListener('click', open);
   var seen=null; try{ seen=localStorage.getItem('vinerunner_how_seen'); }catch(e){}
