@@ -2635,6 +2635,246 @@ SUITES.push(function () {
   TEST.ok('wave one is survivable with a cheap build', runCampaign({ seed: 1, bot: botActive, loadout: [{ type: 'spike', zone: 1 }], maxWave: 1 }).reached > 1);
 });
 
+
+/* --- suite: reinforce, the late game scrap sink --- */
+SUITES.push(function () {
+  var s = tGame({ scrap: 1000 });
+  s.phase = 'build';
+  placeTrap(s, 10, 'spike');
+  TEST.eq('a fresh trap stands at level one', s.traps[10].lvl, 1);
+  TEST.eq('reinforcing costs the trap price again', reinforceCost(s, 10), TRAPS.spike.cost);
+  var before = s.scrap;
+  TEST.ok('a purse with scrap in it can reinforce', reinforceTrap(s, 10));
+  TEST.eq('reinforcing charges the trap price', s.scrap, before - TRAPS.spike.cost);
+  TEST.eq('the trap is a level deeper', s.traps[10].lvl, 2);
+  reinforceTrap(s, 10);
+  TEST.eq('three is the ceiling', s.traps[10].lvl, 3);
+  TEST.ok('a maxed trap cannot be levelled again', s.traps[10].lvl === CONFIG.REINFORCE_MAX);
+  TEST.eq('an intact maxed trap is not worth patching', canReinforce(s, 10), false);
+  s.traps[10].charges = 4;
+  TEST.eq('a spent maxed trap can be patched', canReinforce(s, 10), true);
+  TEST.eq('a patch costs half a trap', reinforceCost(s, 10), Math.ceil(TRAPS.spike.cost * 0.5));
+  reinforceTrap(s, 10);
+  TEST.eq('patching refills the charges', s.traps[10].charges, TRAPS.spike.charges);
+  TEST.eq('patching does not push past the ceiling', s.traps[10].lvl, 3);
+  TEST.eq('selling refunds every coin sunk into the cell', (function () {
+    var g = tGame({ scrap: 500 }); g.phase = 'build';
+    placeTrap(g, 5, 'ballista'); reinforceTrap(g, 5); reinforceTrap(g, 5);
+    var had = g.scrap; sellTrap(g, 5); return g.scrap - had;
+  })(), TRAPS.ballista.cost * 3);
+  /* reinforce is deliberately worse value than a fresh cell */
+  TEST.eq('level one is one trap', lvlMult(1), 1);
+  TEST.near('level three is 2.2 traps for the price of three', lvlMult(3), 2.2, 0.001);
+  TEST.ok('three levels never beat three cells', lvlMult(CONFIG.REINFORCE_MAX) < CONFIG.REINFORCE_MAX);
+  /* the levels actually land in the damage numbers */
+  var a = tGame({ scrap: 0 }), t = tPut(a, 4, 'ballista');
+  tEnemy(a, 'brute', 6, 9999, true);
+  tRun(a, 1);
+  var oneShot = a.waveStats.dmg.ballista;
+  var b = tGame({ scrap: 0 }), t2 = tPut(b, 4, 'ballista');
+  t2.lvl = 3;
+  tEnemy(b, 'brute', 6, 9999, true);
+  tRun(b, 1);
+  TEST.eq('a level three ballista hits for 2.2 bolts', b.waveStats.dmg.ballista, Math.round(oneShot * 2.2));
+  var c = tGame({ scrap: 0 }); tPut(c, 4, 'wall').lvl = 3;
+  TEST.eq('a level three wall carries seven hits', wallHits(3), 7);
+  var d = tGame({ scrap: 0 }), sn = tPut(d, 8, 'snare'); sn.lvl = 2;
+  var de = tEnemy(d, 'runner', 9);
+  tRun(d, 3);
+  TEST.eq('a level two snare holds half again as long', de.holdT > TRAPS.snare.hold, true);
+  var e2 = tGame({ scrap: 0 }); tPut(e2, 12, 'brazier').lvl = 3;
+  var be = tEnemy(e2, 'brute', 13, 9999);
+  tRun(e2, 6);
+  TEST.ok('a level three brazier burns harder than a fresh one', e2.waveStats.dmg.brazier > 0 && be.burns.length > 0);
+  TEST.eq('the burn remembers which brazier lit it', be.burns[0].lvl, 3);
+  /* the sink itself: a full lane and a fat purse cannot strand */
+  var full = tGame({ scrap: 3000 });
+  full.phase = 'build';
+  var ci;
+  for (ci = CONFIG.BUILD_MIN_CELL; ci <= CONFIG.BUILD_MAX_CELL; ci++) { full.traps[ci] = null; placeTrap(full, ci, 'spike'); }
+  TEST.eq('twenty eight cells is the whole board', (function () { var n = 0, i2; for (i2 = 0; i2 < CONFIG.LANE; i2++) if (full.traps[i2]) n++; return n; })(), 28);
+  botReinforce(full, [{ type: 'spike', zone: 0 }]);
+  TEST.ok('a saturated lane still drinks the purse dry', full.scrap < TRAPS.spike.cost);
+  TEST.eq('nothing can be placed on a full board', canPlace(full, 14, 'spike'), false);
+});
+
+/* --- suite: the arrival schedule and dead air --- */
+SUITES.push(function () {
+  var w, ok = true, sc, i;
+  for (w = 1; w <= 20; w++) if (!GEN.verifySchedule(w, 'campaign', 1)) ok = false;
+  TEST.ok('every authored wave schedules legally', ok);
+  ok = true;
+  for (w = 1; w <= 20; w++) if (!GEN.verifySchedule(w, 'daily', 12345)) ok = false;
+  TEST.ok('the daily shuffle schedules legally too', ok);
+  /* departures are solved backwards from arrivals */
+  sc = GEN.schedule(10, 'campaign', 1);
+  var wardenAt = -1, firstAt = 1e9, lastAt = -1;
+  for (i = 0; i < sc.length; i++) {
+    if (sc[i].type === 'warden') wardenAt = i;
+    if (sc[i].at < firstAt) firstAt = sc[i].at;
+    if (sc[i].at > lastAt) lastAt = sc[i].at;
+  }
+  TEST.ok('the wave 10 Warden does not leave last', wardenAt >= 0 && wardenAt < sc.length - 1);
+  TEST.eq('the first body leaves on tick zero', sc[0].tick, 0);
+  ok = true;
+  for (i = 1; i < sc.length; i++) if (sc[i].tick < sc[i - 1].tick) ok = false;
+  TEST.ok('departures come out in order', ok);
+  /* no hole in the departure clock */
+  var worst = 0;
+  for (w = 1; w <= 20; w++) {
+    sc = GEN.schedule(w, 'campaign', 1);
+    for (i = 1; i < sc.length; i++) worst = Math.max(worst, sc[i].tick - sc[i - 1].tick);
+  }
+  TEST.ok('no wave leaves a hole wider than the cap', worst <= CONFIG.MAX_DEPART_GAP);
+  /* composition is untouched by all of it */
+  ok = true;
+  for (w = 1; w <= 20; w++) {
+    var want = {}, got = {}, tbl = GEN.waveTable(w);
+    for (i = 0; i < tbl.length; i++) want[tbl[i][0]] = (want[tbl[i][0]] || 0) + tbl[i][1];
+    sc = GEN.schedule(w, 'daily', 999);
+    for (i = 0; i < sc.length; i++) got[sc[i].type] = (got[sc[i].type] || 0) + 1;
+    for (var k in want) if (want[k] !== got[k]) ok = false;
+  }
+  TEST.ok('no reordering ever changes a wave composition', ok);
+  /* the wave 10 lull, measured */
+  var r = runCampaign({ seed: 1, bot: botActive, loadout: [{ type: 'ballista', zone: 3 }, { type: 'brazier', zone: 3 }, { type: 'wall', zone: 0 }], maxWave: 10 });
+  var row10 = null;
+  r.rows.forEach(function (x) { if (x && x.wave === 10) row10 = x; });
+  TEST.ok('wave 10 is reached with a real build', !!row10);
+  if (row10) {
+    TEST.ok('the Warden wave holds under a second of empty lane', row10.emptyMax <= 10);
+    TEST.ok('the Warden wave holds under two seconds with nothing in reach', row10.idleMax <= 20);
+  }
+  /* dead air is only counted after first contact */
+  var g = tGame({ scrap: 0 });
+  g.player.cell = 0;
+  tRun(g, 30);
+  TEST.eq('the walk out to meet them is not counted as dead air', g.waveStats.idleMax, 0);
+});
+
+/* --- suite: endless escalation --- */
+SUITES.push(function () {
+  TEST.eq('the authored twenty carry no modifiers', GEN.mutCount(20), 0);
+  TEST.eq('endless opens with one modifier', GEN.mutCount(21), 1);
+  TEST.eq('a second modifier lands eight waves later', GEN.mutCount(29), 2);
+  TEST.eq('a third lands eight after that', GEN.mutCount(37), 3);
+  TEST.eq('three is the ceiling', GEN.mutCount(200), CONFIG.ENDLESS_MUT_MAX);
+  TEST.eq('modifiers are deterministic from the seed and the wave',
+    GEN.mutatorsFor(31, 7).join(','), GEN.mutatorsFor(31, 7).join(','));
+  TEST.ok('a different seed draws a different endless',
+    (function () { var diff = 0, w; for (w = 21; w <= 60; w++) if (GEN.mutatorsFor(w, 1).join() !== GEN.mutatorsFor(w, 2).join()) diff++; return diff > 10; })());
+  TEST.ok('every modifier is a real one',
+    (function () { var w, i, m; for (w = 21; w <= 200; w++) { m = GEN.mutatorsFor(w, 3); for (i = 0; i < m.length; i++) if (MUT_ORDER.indexOf(m[i]) < 0) return false; } return true; })());
+  TEST.ok('a stacked wave never draws the same modifier twice',
+    (function () { var w, m; for (w = 21; w <= 200; w++) { m = GEN.mutatorsFor(w, 5); if (m.length !== m.filter(function (x, i) { return m.indexOf(x) === i; }).length) return false; } return true; })());
+  TEST.ok('all six modifiers turn up across a long endless',
+    (function () { var seen = {}, w, m, i, n = 0; for (w = 21; w <= 300; w++) { m = GEN.mutatorsFor(w, 1); for (i = 0; i < m.length; i++) if (!seen[m[i]]) { seen[m[i]] = 1; n++; } } return n === MUT_ORDER.length; })());
+  TEST.eq('every modifier carries copy for the player', MUTATORS.length, MUT_ORDER.length);
+  TEST.ok('no modifier blurb uses a dash',
+    (function () { var i; for (i = 0; i < MUTATORS.length; i++) if (/[‐-―]|--/.test(MUTATORS[i].blurb + MUTATORS[i].name)) return false; return true; })());
+  /* the modifiers actually bite */
+  var mk = function (key) {
+    var g = tGame({ scrap: 0 });
+    g.wave = 21; g.muts = [key];
+    return g;
+  };
+  var g = mk('iron');
+  spawnOne(g, 'runner');
+  TEST.eq('ironhide gives a plain runner a shield', g.enemies[0].shield, 1);
+  g = mk('iron'); spawnOne(g, 'shielded');
+  TEST.eq('ironhide stacks on top of a real shield', g.enemies[0].shield, ENEMIES.shielded.shield + 1);
+  g = mk('crow'); spawnOne(g, 'runner');
+  TEST.eq('crowbars turn runners into sappers', g.enemies[0].saps, true);
+  g = mk('crow'); spawnOne(g, 'brute');
+  TEST.eq('crowbars leave the brutes alone', g.enemies[0].saps, false);
+  g = mk('march'); spawnOne(g, 'brute');
+  TEST.eq('night march walks a brute a step quicker', g.enemies[0].spd, ENEMIES.brute.spd - 1);
+  g = mk('stone'); spawnOne(g, 'brute');
+  TEST.eq('stonebreakers put brutes through walls', g.enemies[0].wallSmash, true);
+  g = mk('choir');
+  var hurt = tEnemy(g, 'brute', 9, 400, true); hurt.hp = 100;
+  tEnemy(g, 'healer', 10, 999, true);
+  tRun(g, 1);
+  var choirHeal = hurt.hp - 100;
+  g = mk('tide');
+  TEST.ok('the tide closes the cadence',
+    GEN.schedule(21, 'campaign', g.seed).length === GEN.schedule(21, 'campaign', g.seed).length);
+  TEST.ok('the choir heals more than a plain healer', choirHeal >= healAmount(21) * 2 - 1);
+  /* the Marshal, the second Warden variant */
+  TEST.eq('the eight specced types are all still here', ENEMY_ORDER.length, 8);
+  TEST.ok('the Marshal is not one of the eight', ENEMY_ORDER.indexOf('marshal') < 0);
+  TEST.ok('the Marshal never marches in the authored twenty',
+    (function () { var w, tbl, i; for (w = 1; w <= 20; w++) { tbl = GEN.waveTable(w); for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return false; } return true; })());
+  TEST.ok('a Marshal joins every fifth endless wave',
+    (function () { var tbl = GEN.waveTable(25), i; for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return true; return false; })());
+  TEST.ok('the off waves stay Marshal free',
+    (function () { var tbl = GEN.waveTable(26), i; for (i = 0; i < tbl.length; i++) if (tbl[i][0] === 'marshal') return false; return true; })());
+  TEST.ok('the Marshal is a boss', ENEMIES.marshal.boss === true);
+  TEST.ok('the Marshal is quicker than the Warden', ENEMIES.marshal.spd < ENEMIES.warden.spd);
+  TEST.ok('the Marshal is softer than the Warden', ENEMIES.marshal.hp < ENEMIES.warden.hp);
+  TEST.ok('the Marshal does not smash walls', !ENEMIES.marshal.wallSmash);
+  /* rally: everything near it moves at double time */
+  var rg = tGame({ scrap: 0 });
+  var lone = tEnemy(rg, 'brute', 20);
+  tRun(rg, 12);
+  var lonely = lone.cell;
+  var rg2 = tGame({ scrap: 0 });
+  var pair = tEnemy(rg2, 'brute', 20);
+  tEnemy(rg2, 'marshal', 21);
+  tRun(rg2, 12);
+  TEST.ok('a brute inside a Marshal rally covers more ground', pair.cell < lonely);
+  var far = tGame({ scrap: 0 });
+  var away = tEnemy(far, 'brute', 20);
+  tEnemy(far, 'marshal', 27);
+  tRun(far, 12);
+  TEST.eq('a brute out of rally range walks at its own pace', away.cell, lonely);
+  /* a Marshal cannot be snared */
+  var sg = tGame({ scrap: 0 });
+  tPut(sg, 24, 'snare');
+  var m = tEnemy(sg, 'marshal', 25);
+  tRun(sg, 8);
+  TEST.eq('a snare does not hold a Marshal', m.holdT, 0);
+  TEST.ok('and the snare is still armed for whatever comes next', !!sg.traps[24]);
+  var sg2 = tGame({ scrap: 0 });
+  tPut(sg2, 24, 'snare');
+  var wd = tEnemy(sg2, 'warden', 25);
+  tRun(sg2, 12);
+  TEST.ok('a snare still holds a Warden', wd.holdT > 0);
+  /* endless keeps paying and keeps climbing */
+  TEST.ok('endless scrap keeps growing', scrapForWave(35) > scrapForWave(20));
+  TEST.ok('endless hp keeps climbing', waveTotalHP(30) > waveTotalHP(20));
+  var endless = runCampaign({ seed: 3, bot: botActive, endless: true, maxWave: 40, loadout: [{ type: 'ballista', zone: 2 }, { type: 'brazier', zone: 3 }] });
+  TEST.ok('an endless run ends of its own accord', endless.state.over || endless.state.wave > CONFIG.WAVES);
+  TEST.ok('endless does not run for ever', endless.reached <= 41);
+});
+
+/* --- suite: the scorecard shows the number the sweep gates --- */
+SUITES.push(function () {
+  var d = blankDamage();
+  d.player = 30; d.ballista = 50; d.brazier = 20;
+  var sh = damageShare(d);
+  TEST.eq('the shares are taken over the total', sh.total, 100);
+  TEST.near('your share is your damage over the total', sh.player, 0.30, 0.0001);
+  TEST.near('the traps hold the rest', sh.traps, 0.70, 0.0001);
+  TEST.near('every share adds back up to one', sh.player + sh.traps, 1, 0.0001);
+  TEST.eq('only sources that did something get a row', sh.rows.length, 3);
+  TEST.eq('the biggest contributor is first', sh.rows[0].src, 'ballista');
+  TEST.eq('the smallest is last', sh.rows[sh.rows.length - 1].src, 'brazier');
+  var empty = damageShare(blankDamage());
+  TEST.eq('a wave nobody touched divides by nothing safely', empty.player, 0);
+  TEST.eq('and shows no rows', empty.rows.length, 0);
+  /* the number on the card is the number the run carries */
+  var r = runCampaign({ seed: 2, bot: botActive, loadout: [{ type: 'ballista', zone: 1 }, { type: 'spike', zone: 3 }] });
+  var sum = 0;
+  r.rows.forEach(function (row) { if (row) sum += row.dmg.player; });
+  TEST.eq('the per wave cards add up to the run total', sum, r.state.run.dmg.player);
+  var last = r.rows[r.rows.length - 1];
+  TEST.near('a per wave card share matches a fresh computation', damageShare(last.dmg).player,
+    last.dmg.player / (function () { var t = 0, k; for (k in last.dmg) t += last.dmg[k]; return t; })(), 0.00001);
+  TEST.ok('the card records what the purse could not spend', last.scrapLeft >= 0);
+  TEST.ok('the card records how deep the lane is built', last.lvlSum >= last.trapCount);
+});
+
 var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: tEnemy, tRun: tRun };
 
 // ---- TEST_EXPORT_END ----

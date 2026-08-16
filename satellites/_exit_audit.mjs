@@ -126,7 +126,14 @@ function exitBodies(src) {
   for (const re of anchors) {
     let m;
     while ((m = re.exec(src))) {
-      out.push({ at: m.index, win: src.slice(Math.max(0, m.index - 900), m.index + 900) });
+      const start = Math.max(0, m.index - 900);
+      // ⛔ record where the anchor actually sits INSIDE the window. Deriving it
+      // from win.length/2 breaks whenever the window is truncated, which is
+      // exactly what happens when the exit is the last thing in the file — and
+      // it is, in most of these games. That bug made ownerName read the text
+      // BEFORE the exit and miss the enclosing function (Aura Farm, 4th false
+      // positive of the day).
+      out.push({ at: m.index, off: m.index - start, win: src.slice(start, m.index + 900) });
     }
   }
   return out;
@@ -134,20 +141,22 @@ function exitBodies(src) {
 
 // Name of the function that body lives in, so we can tell whether anything calls
 // it even when it is not called SWS_EXIT.
-function ownerName(win) {
+function ownerName(win, off) {
   const pats = [
-    /function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{[^]*$/,
-    /(?:window|self|globalThis)\s*\.\s*([A-Za-z_$][\w$]*)\s*=\s*function/,
-    /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:function|\([^)]*\)\s*=>)/,
+    /function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g,
+    /(?:window|self|globalThis)\s*\.\s*([A-Za-z_$][\w$]*)\s*=\s*function/g,
+    /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:function|\([^)]*\)\s*=>)/g,
   ];
-  const head = win.slice(0, Math.floor(win.length / 2) + 120);
-  const names = [];
+  const head = win.slice(0, off + 120);          // everything up to just past the anchor
+  let best = null, bestAt = -1;
   for (const p of pats) {
     const all = new RegExp(p.source, 'g');
     let m;
-    while ((m = all.exec(head))) names.push(m[1]);
+    while ((m = all.exec(head))) {
+      if (m.index > bestAt) { bestAt = m.index; best = m[1]; }   // closest declaration above the exit
+    }
   }
-  return names.length ? names[names.length - 1] : null;   // innermost / closest
+  return best;
 }
 
 // Does ANY exit body carry the full unframed fallback?
