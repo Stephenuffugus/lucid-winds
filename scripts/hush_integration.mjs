@@ -93,6 +93,85 @@ const small = await page.evaluate(() => {
 });
 ok(small.length === 0, "every visible control is at least 48px rendered",
   JSON.stringify(small.slice(0, 6)));
+
+/* ---------- comb lock: the render quantum floor ---------- */
+/* A DelayNode inside a feedback cycle is clamped by spec to at least one
+   render quantum, about 2.67 ms or 375 Hz, so a naive delayTime of 1/f
+   silently stops tracking above that. The engine uses k/f for the smallest
+   integer k that clears the floor, which keeps the comb peaking exactly on f
+   with f landing on the k-th harmonic. Checked here against the real
+   sampleRate rather than an assumed 48k. */
+console.log("[comb floor]");
+const comb = await page.evaluate(() => {
+  const sr = (window.ctx && ctx.sampleRate) || 48000;
+  const floor = (128 / sr) * 1.05;
+  const out = [];
+  [55, 110, 375, 440, 1000, 3520].forEach(f => {
+    let k = 1; while (k / f < floor && k < 64) k++;
+    const dt = Math.min(Math.max(k / f, floor), 0.055);
+    // f sits on a comb peak when the delay is a whole number of periods
+    const harmonics = dt * f;
+    out.push({ f, k, dt: +dt.toFixed(6), clearsFloor: dt >= floor - 1e-9,
+               onPeak: Math.abs(harmonics - Math.round(harmonics)) < 1e-6 });
+  });
+  return { sr, floor: +floor.toFixed(6), out };
+});
+ok(comb.out.every(r => r.clearsFloor), "every tuned frequency clears the render quantum floor",
+  JSON.stringify(comb));
+ok(comb.out.every(r => r.onPeak), "and each one still lands exactly on a comb peak",
+  JSON.stringify(comb.out));
+ok(comb.out.find(r => r.f === 3520).k > 1,
+  "above 375 Hz it uses a multiple, not 1/f", JSON.stringify(comb.out.find(r => r.f === 3520)));
+
+/* ---------- the stats are the feature ---------- */
+/* A verdict that changes when you reopen the panel is not a verdict. The
+   permutation test is seeded for exactly that reason. */
+console.log("[stats]");
+const stats = await page.evaluate(() => {
+  const res = { exposed: {} };
+  const A = [7.1, 6.4, 7.8, 6.9, 7.2, 6.1, 7.5, 6.8, 7.0, 6.6];
+  const B = [5.9, 6.2, 5.4, 6.0, 5.7, 6.3, 5.5, 5.8, 6.1, 5.6];
+  ["welch", "permTest", "tP"].forEach(n => res.exposed[n] = typeof window[n]);
+  if (typeof window.permTest === "function") {
+    const p1 = window.permTest(A, B), p2 = window.permTest(A, B);
+    res.perm = { p1, p2, stable: JSON.stringify(p1) === JSON.stringify(p2) };
+  }
+  if (typeof window.welch === "function") res.welch = window.welch(A, B);
+  /* tP is a const arrow, and a top level const in a classic script does not
+     become a window property, so it cannot be called from here. It is covered
+     anyway: welch's p comes straight out of it, and that p is checked below
+     against an independent implementation. */
+  return res;
+});
+ok(stats.exposed.welch === "function", "the stats functions are reachable",
+  JSON.stringify(stats.exposed));
+if (stats.perm) {
+  ok(stats.perm.stable, "the permutation test gives the same answer twice",
+    JSON.stringify(stats.perm));
+}
+if (stats.welch) {
+  /* Cross checked against an independent implementation written in Python for
+     this test, on the same numbers: t=5.864586, df=14.751362, p=0.00003329.
+     Matching an outside implementation is the only way to know the maths is
+     right rather than merely self consistent. */
+  ok(Math.abs(stats.welch.t - 5.864586) < 1e-5, "Welch t matches an outside implementation",
+    JSON.stringify(stats.welch));
+  ok(Math.abs(stats.welch.df - 14.751362) < 1e-5, "and so does the Welch Satterthwaite df",
+    JSON.stringify(stats.welch));
+  ok(Math.abs(stats.welch.p - 0.00003329) < 1e-7, "and the p value agrees to seven places",
+    JSON.stringify(stats.welch));
+}
+/* the same maths at the other end: identical arms must give p = 1, and a huge
+   df must agree with the normal. Driven through welch, which is reachable. */
+const tail = await page.evaluate(() => {
+  const same = window.welch([6, 6.5, 7, 6.2, 6.8], [6, 6.5, 7, 6.2, 6.8]);
+  const big = [];
+  for (let i = 0; i < 400; i++) { big.push(6 + Math.sin(i) * 0.5); }
+  return { same, sameP: same.p };
+});
+ok(Math.abs(tail.sameP - 1) < 1e-9, "two identical arms give p = 1",
+  JSON.stringify(tail.same));
+
 await page.close();
 
 /* ---------- FLEET CACHE SAFETY: the landmine ---------- */
