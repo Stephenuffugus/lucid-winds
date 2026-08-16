@@ -1549,8 +1549,14 @@ function renderGarden(cat){
     ? FEATURED.filter(function(g){return !g.hub && g.beta;})
     : (cat==="fav")
     ? FEATURED.filter(function(g){return !g.hub && FM[favKey(g,true)];})
+    /* ⛔ 2026-08-16: New held 29 of 118 games and THIRTEEN of them were dev
+       gated, so a visitor tapping New landed on a row where nearly half the
+       cards asked for a passcode they do not have. In development games have
+       their own tab; they do not belong on a shelf aimed at strangers. What
+       "new" should MEAN is still Stephen's call (see incoming/STUDIO-SHELF-
+       AUDIT.md) — this only stops it advertising things nobody can open. */
     : (cat==="new")
-       ? FEATURED.filter(function(g){return !g.hub && g.fresh;})
+       ? FEATURED.filter(function(g){return !g.hub && g.fresh && !g.beta;})
     : (cat==="all")
        ? FEATURED.filter(function(g){return !g.hub;})
        : FEATURED.filter(function(g){return !g.hub && inGroup(g.cat, cat);});
