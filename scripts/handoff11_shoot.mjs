@@ -67,9 +67,15 @@ for (const v of VIEWS) {
      hardcoded /satellites/ and happily shot a 404 page, reporting "no console
      errors" about it, which is exactly the kind of green that teaches you
      nothing. Accept a path or a bare id. */
-  const SDIR = id.indexOf("/") >= 0 ? id.replace(/^\/+|\/+$/g, "")
-    : (existsSync("satellites/" + id) ? "satellites/" + id : id);
-  const url = BASE + "/" + SDIR + "/?probe=" + Math.floor(Math.random() * 1e9) + (testMode ? "&test=1" : "");
+  /* Three shapes now: a bare game id under satellites/, a path, and a single
+     file app at the root such as loaf.html or party/host.html. A file must not
+     get a trailing slash or the server hands back a 404. */
+  const raw = id.replace(/^\/+/, "");
+  const isFile = /\.html?$/i.test(raw);
+  const SDIR = isFile ? raw
+    : (raw.indexOf("/") >= 0 ? raw.replace(/\/+$/, "")
+      : (existsSync("satellites/" + raw) ? "satellites/" + raw : raw));
+  const url = BASE + "/" + SDIR + (isFile ? "?probe=" : "/?probe=") + Math.floor(Math.random() * 1e9) + (testMode ? "&test=1" : "");
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
   await sleep(1400);   // never networkidle2: a game that keeps drawing never idles
 

@@ -15,6 +15,7 @@
   --bg:#0a0b0f; --panel:#14161d; --panel2:#1c1f28; --line:#2a2f3b;
   --accent:#e8703a; --warm:#f5c77e; --cream:#e8dcc8; --muted:#8b93a5;
   --gate:#c8563a; --safe:#7ab356;
+  --laneh:clamp(140px,22vh,260px);
   --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -50,7 +51,25 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
    where the board would otherwise be thin. */
 #board{flex:1 1 auto;min-height:0;overflow-y:auto;padding:8px 8px 4px;
   display:grid;gap:6px;align-content:space-between;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  scrollbar-width:thin}
+/* THE OVERFLOW RULE. align-content:space-between distributes NEGATIVE free
+   space as well as positive, so the moment the content is taller than the box
+   the browser pushes rows past the scroll origin and they are clipped instead
+   of scrollable. That is the whole defect: a sentence cut in half with no way
+   to reach the rest. So the instant the board measures itself as overflowing it
+   drops back to align-content:start, where overflow scrolls the way overflow is
+   supposed to, and a fade appears over the bottom edge to say so. Slack is
+   still spread when there IS slack. */
+#board.tight{align-content:start}
+#boardfade{position:absolute;left:0;right:0;bottom:var(--laneh);height:34px;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(10,11,15,0),rgba(10,11,15,.93));
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;
+  font-size:9px;letter-spacing:1.4px;color:var(--muted)}
+/* the briefing leads the column while it is the point of the screen, so if
+   anything falls past the fold it is a one chip panel and never a half
+   sentence of the tutorial */
+#board.teaching #pnotes{order:-1}
 #board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
 #board .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
   font-size:9px;letter-spacing:1.4px;color:var(--muted);margin-bottom:5px}
@@ -91,7 +110,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #pnotes .note svg{vertical-align:-9px;margin-right:5px}
 
 /* ---------- lane ---------- */
-#lanebox{flex:0 0 auto;position:relative;overflow:hidden;height:clamp(140px,22vh,260px);
+#lanebox{flex:0 0 auto;position:relative;overflow:hidden;height:var(--laneh);
   border-top:1px solid var(--line);
   background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
 /* a crenellated lip along the top edge so the air over the lane reads as the
@@ -259,6 +278,8 @@ input[type=range]{width:130px;height:48px;accent-color:var(--accent)}
     </div>
 
     <!-- the lane strip itself: only as tall as the fight needs -->
+    <div id="boardfade" class="hidden">MORE BELOW</div>
+
     <div id="lanebox">
       <div id="shakewrap">
         <div id="lane"></div>
@@ -550,9 +571,39 @@ var WAVES = [
   [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 1, 20]]
 ];
 
+/* ------------------------------------------------------------------
+   FIELD NOTES. The first wave a new player sees has one enemy type and one
+   trap, so the board has almost nothing to hold and the screen reads as empty
+   with headings on it. The honest fix is not to pad the panels, it is to have
+   something worth saying: every wave up to 10 introduces a body, and that is
+   exactly the run of waves where the board is thin. The panel retires itself
+   when there is nothing new, which is when the lane is busy enough to carry
+   the screen on its own.
+   ------------------------------------------------------------------ */
+var ENEMY_NOTE = {
+  runner:   'Quick and thin. It dies to almost anything, and there are always more of them.',
+  brute:    'Slow and heavy. It walks at a fifth of a runner pace, so a wall or a pit buys you a long time.',
+  swarm:    'Five bodies at once. Your blade swings at one of them, which is what a spike strip is for.',
+  shielded: 'It shrugs off the first three things that touch it, whatever they are. Burn stacks strip that in a tick.',
+  flyer:    'It goes over spikes, pits, braziers and snares. Only a ballista and your own blade can reach it.',
+  sapper:   'It eats the first trap it walks into and then behaves like a runner. Keep the ballista off the front.',
+  healer:   'It pours health into anything within two cells. Kill it first or nothing else in the wave will die.',
+  warden:   'It breaks a wall in one hit and it takes a long time to bring down. You will hear it arrive.',
+  marshal:  'Fast, and a snare will not hold it. Everything within three cells of it moves at double time.'
+};
+
+/* one line of teaching per early wave, in the order a player meets the idea */
+var WAVE_NOTE = {
+  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>{BLADE}</b> a swing and grows every wave.',
+  2: 'Scrap arrives every wave whether you spend it or not. Scrap in your hand is scrap doing nothing.',
+  3: 'Tap a trap in the lane during the build phase to sell it back for every coin you put in.',
+  11: 'A ballista cannot see past a wall, including your own. The sight line is drawn while you place one.'
+};
+
 var DATA = {
   TRAPS: TRAPS, TRAP_ORDER: TRAP_ORDER, ENEMIES: ENEMIES, ENEMY_ORDER: ENEMY_ORDER,
-  BOSS_ORDER: BOSS_ORDER, MUTATORS: MUTATORS, MUT_ORDER: MUT_ORDER, WAVES: WAVES
+  BOSS_ORDER: BOSS_ORDER, MUTATORS: MUTATORS, MUT_ORDER: MUT_ORDER, WAVES: WAVES,
+  ENEMY_NOTE: ENEMY_NOTE, WAVE_NOTE: WAVE_NOTE
 };
 
 /* ============================ 4. GEN ============================ */
@@ -672,8 +723,52 @@ function verifySchedule(wave, mode, seed) {
   return sc.length > 0;
 }
 
+/* the first authored wave a type appears in. The briefing keys off this, so it
+   can never announce a body on the wrong wave. */
+function firstWaveFor(type) {
+  var w, tbl, i;
+  for (w = 1; w <= CONFIG.WAVES; w++) {
+    tbl = waveTable(w);
+    for (i = 0; i < tbl.length; i++) if (tbl[i][0] === type) return w;
+  }
+  return -1;
+}
+
+/* Everything the briefing would print for a wave, as plain strings. Pure, so
+   the harness can measure it against the space the panel actually has instead
+   of waiting for an eye to catch a clipped sentence. */
+function briefingFor(wave, seed, opts) {
+  opts = opts || {};
+  var out = [], tbl = waveTable(wave), seen = {}, i, k, m;
+  for (i = 0; i < tbl.length; i++) {
+    k = tbl[i][0];
+    if (seen[k]) continue;
+    seen[k] = 1;
+    if (firstWaveFor(k) === wave || (wave > CONFIG.WAVES && ENEMIES[k].boss)) {
+      out.push({ kind: 'enemy', type: k, text: ENEMIES[k].name + '. ' + ENEMY_NOTE[k] + ' ' + enemyHP(k, wave) + ' HP at this wave.' });
+    }
+  }
+  var muts = mutatorsFor(wave, seed);
+  for (i = 0; i < muts.length; i++) {
+    m = null;
+    for (k = 0; k < MUTATORS.length; k++) if (MUTATORS[k].key === muts[i]) m = MUTATORS[k];
+    if (m) out.push({ kind: 'mut', text: m.name + '. ' + m.blurb });
+  }
+  if (opts.laneFull) out.push({ kind: 'deepen', text: 'The lane is full. DEEPEN pays a trap price again on a cell you already own: it stands a level deeper and comes back to full. That is where scrap goes from here.' });
+  if (WAVE_NOTE[wave]) out.push({ kind: 'wave', text: WAVE_NOTE[wave].replace('{BLADE}', playerDamage(wave)) });
+  if (wave === 1) out.push({ kind: 'starter', text: 'The watch left a spike strip at cell ' + CONFIG.STARTER_CELL + '. It bites anything on the ground standing on it. Your purse buys one more.' });
+  return out;
+}
+
+function briefingChars(wave, seed, opts) {
+  var b = briefingFor(wave, seed, opts), n = 0, i;
+  for (i = 0; i < b.length; i++) n += b[i].text.replace(/<[^>]+>/g, '').length;
+  return n;
+}
+
 var GEN = {
   waveTable: waveTable, schedule: schedule, verifySchedule: verifySchedule,
+  firstWaveFor: firstWaveFor, briefingFor: briefingFor, briefingChars: briefingChars,
   mutatorsFor: mutatorsFor, mutCount: mutCount, hasMutKey: hasMutKey
 };
 
@@ -1573,44 +1668,6 @@ var SIL = {
 function sil(type, w, h, colour) {
   var c = colour || '#9aa6bd';
   return SIL[type].replace(/W/, w).replace(/H/, h).replace(/C2/g, '#20242e').replace(/C/g, c);
-}
-
-/* ------------------------------------------------------------------
-   FIELD NOTES. The first wave a new player sees has one enemy type and one
-   trap, so the board has almost nothing to hold and the screen reads as empty
-   with headings on it. The honest fix is not to pad the panels, it is to have
-   something worth saying: every wave up to 10 introduces a body, and that is
-   exactly the run of waves where the board is thin. The panel retires itself
-   when there is nothing new, which is when the lane is busy enough to carry
-   the screen on its own.
-   ------------------------------------------------------------------ */
-var ENEMY_NOTE = {
-  runner:   'Quick and thin. It dies to almost anything, and there are always more of them.',
-  brute:    'Slow and heavy. It walks at a fifth of a runner pace, so a wall or a pit buys you a long time.',
-  swarm:    'Five bodies at once. Your blade swings at one of them, which is what a spike strip is for.',
-  shielded: 'It shrugs off the first three things that touch it, whatever they are. Burn stacks strip that in a tick.',
-  flyer:    'It goes over spikes, pits, braziers and snares. Only a ballista and your own blade can reach it.',
-  sapper:   'It eats the first trap it walks into and then behaves like a runner. Keep the ballista off the front.',
-  healer:   'It pours health into anything within two cells. Kill it first or nothing else in the wave will die.',
-  warden:   'It breaks a wall in one hit and it takes a long time to bring down. You will hear it arrive.',
-  marshal:  'Fast, and a snare will not hold it. Everything within three cells of it moves at double time.'
-};
-
-/* one line of teaching per early wave, in the order a player meets the idea */
-var WAVE_NOTE = {
-  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>{BLADE}</b> a swing and grows every wave.',
-  2: 'Scrap arrives every wave whether you spend it or not. Scrap in your hand is scrap doing nothing.',
-  3: 'Tap a trap in the lane during the build phase to sell it back for every coin you put in.',
-  11: 'A ballista cannot see past a wall, including your own. The sight line is drawn while you place one.'
-};
-
-function firstWaveFor(type) {
-  var w, tbl, i;
-  for (w = 1; w <= CONFIG.WAVES; w++) {
-    tbl = GEN.waveTable(w);
-    for (i = 0; i < tbl.length; i++) if (tbl[i][0] === type) return w;
-  }
-  return -1;
 }
 
 function laneMetrics() {

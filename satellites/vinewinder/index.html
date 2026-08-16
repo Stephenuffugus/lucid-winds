@@ -1299,6 +1299,35 @@
     if (running) requestAnimationFrame(loop);
   }
 
+  /* gated headless hook. Inert unless ?vwtest=1 AND a local origin, so it can
+     never be used to mint Petals or unlock cosmetics on the live domain. Added
+     2026-08-16: this game had no way to be exercised without a browser, which
+     is why nothing had ever verified that its walls leave a playable board. */
+  if(/[?&]vwtest=1/.test(location.search) &&
+     (location.protocol==='file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))){
+    window.VW_DEV={
+      MODES, LAYOUTS, LAYOUT_KEYS, COS, CONFIG,
+      save:()=>save,
+      state:()=>({mode:modeKey, score, alive, len:snake.length,
+                  head:{...snake[0]}, seed:seed?{x:seed.x,y:seed.y,golden:!!seed.golden}:null,
+                  walls:walls.length, thorns:thorns.length, stepMs:effStepMs(),
+                  dir:{...dir}, streak, runStats:runStats?{...runStats}:null}),
+      start:(m,layout)=>{ activeDaily=null; modeKey=m||'heirloom'; M=MODES[modeKey];
+                          activeLayoutKey = layout || ((modeKey==='grove') ? LAYOUT_KEYS[0] : null);
+                          reset(); running=true; return window.VW_DEV.state(); },
+      buildWalls:(m,layout)=>{ modeKey=m||'grove'; M=MODES[modeKey]; activeLayoutKey=layout||null; return buildWalls(); },
+      tick:(n)=>{ for(let i=0;i<(n||1)&&alive;i++) step(); return window.VW_DEV.state(); },
+      turn:(x,y)=>{ queueDir(x,y); return window.VW_DEV.state(); },
+      kill:(r)=>{ gameOver(r||'test'); return window.VW_DEV.state(); },
+      freeCell:()=>freeCell(),
+      daily:()=>dailyChallenge(),
+      missions:()=>{ ensureMissions(); return save.missions; },
+      petals:()=>computeRunPetals(),
+      fresh:()=>freshSave(),
+      nextUnlock:()=>nextUnlock()
+    };
+  }
+
   reset();
   draw(performance.now(),16,1);
   showMenu();
