@@ -280,39 +280,59 @@ PASS  the build phase earns its 20 seconds: traps do 28 percent on waves 1 and 2
 median run ending on wave 9 is about 5 minutes and a full 20 wave clear is about
 11 minutes. Still inside the handoff's window.
 
-## What I actually SAW in the ASCII lane frames
+## What I actually SAW in the ASCII lane frames (deepening pass)
 
-`node sim.js --watch=1 --wave=N --every=25`. I read waves 5, 10 and 18. The bot
-is not standing still and winning: it walks, it meets bodies out near the mouth,
-and it walks back.
+`node sim.js --watch=1 --wave=N --every=N`, same command the first builder used,
+same default loadout (ballista GATE, brazier INNER, spike MID) so the frames are
+comparable to his.
 
-**Wave 5** — the lane holds only 4 braziers (cells 8 to 11) and 4 spikes (14 to
-17). The `@` moves cell 19 to 21 to 24 to 17 to 19 to 21 to 20 across the frames:
-it is chasing the front rank out toward the mouth and retreating. Cleared in
-18.8s, deepest cell 15, **spike 21.9% / player 78.1%**. Honest read: at wave 5
-the traps are close to decorative because the purse has only bought eight of them.
+**Wave 10, the one that had the dead patch.**
 
-**Wave 10** — the lane is now full from cell 1 to 21. The Warden appears at tick
-150 at 2088 HP and walks steadily left; the player intercepts at tick 175 and
-whittles it from 2088 to 515 by tick 225, and it dies before 250. Deepest cell
-11. Player 44.5% / ballista 43% / spike 11.7%. This is the wave the design is
-about, and it reads correctly in text.
+```
+--- wave 10  scrap left 10  wave hp 3233  your blade 89
+   30 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲▲▲▲▲➤▲..@....r|  bodies  1  hp      94
+   60 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲▲▲▲▲➤▲..@.....|  bodies  0  hp       0
+   90 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲▲▲▲▲➤▲...S@...|  bodies  1  hp      46
+  120 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲▲▲▲▲➤▲....h@..|  bodies  2  hp    2166
+  150 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲▲▲▲▲➤W@.......|  bodies  1  hp    1773
+  180 |.▲➤➤➤▲▲➤✹✹✹✹▲▲▲▲W@▲▲➤▲........|  bodies  1  hp    1162
+  210 |.▲➤➤➤▲▲➤✹✹✹W@▲▲▲▲▲▲▲➤▲........|  bodies  1  hp     384
+    cleared in 22.8s  deepest cell 8  damage: spike 11.4% ballista 39.6% brazier 6.3% player 42.7%
+```
 
-**Wave 18** — 612 scrap left unspent, because the 28 buildable cells are all
-full of permanent traps and there is nothing to buy. Bodies stack up four at a
-time near the mouth. Player 58.5% / ballista 27.8% / brazier 11% / spike 2.6%.
+The Warden is now IN the lane at tick 120 arriving with the healer, not spawning
+at 100 and then walking an empty field. One empty frame at tick 60 and that is
+the whole lull. Compare the first builder's read: "frames at tick 100 and 125
+show zero bodies and zero HP". The `@` walks the Warden back down the lane from
+cell 21 to cell 11 while the brazier field eats it, which is the shape the wave
+was designed for.
 
-Three defects I can name from reading those frames, before anyone else does:
+**Wave 5** — `spike 30.7% / player 69.3%`, cleared in 16.2s. Was `21.9% / 78.1%`
+in 18.8s. Better, and this is the LEAST favourable build for the early trap
+question because its spikes sit in MID where the bot intercepts first. Across
+180 two type builds the wave 1 and 2 trap share is 38.9%.
 
-1. **Scrap piles up uselessly once the lane saturates** (612 unspent at wave 18).
-   After roughly wave 14 the only sink is rebuying consumables into cells that
-   traps have vacated. The economy has no late game sink.
-2. **Traps read as decorative in the early game.** At wave 5 the player does 78%
-   of the damage. The scrap curve, not trap strength, causes it: `40 + 12 x wave`
-   is locked by the spec, so the fix would be cheaper early traps, not more damage.
-3. **Wave 10 has a five second dead patch** (frames at tick 100 and 125 show zero
-   bodies and zero HP) while the schedule waits to spawn the Warden. It reads as
-   a lull before a boss, which is defensible, but it is empty lane time.
+**Wave 18** — this default loadout no longer reaches it. It now falls on wave 16
+to a flyer. The arrival schedule overlaps groups instead of queueing them, so
+every wave is denser than it was and this particular three zone spread cannot
+hold. 39 loadouts still clear all twenty and the median random loadout still
+falls on wave 9, so the difficulty moved rather than rose. Worth saying plainly
+rather than hiding: a build that used to reach 18 now reaches 16.
+
+Three things I can name from these frames before anyone else does:
+
+1. **The starter spike is a free gift, not a decision.** It fixes the wave 1
+   reading and it teaches placement by example, but the honest version of the
+   early game fix is cheaper starter traps so the player still chooses. Trap
+   costs are TUNE, not spec locked; that pass was not taken because it moves
+   every gate at once and this pass already moved four numbers.
+2. **Wave 21 is an anticlimax.** The endless table cycles back to wave 1's
+   composition, so the wave after the two Warden finale is four runners at
+   2328 HP. The modifier banner carries it, but the composition does not.
+3. **The soft lull metric still reads 14.4s somewhere in the sweep.** That is a
+   build that stacks everything at the MOUTH, kills at range and leaves the
+   player jogging. Not gated, deliberately, but it is a real player experience
+   and a smarter bot (or a real thumb) would stand further out.
 
 ## TUNE values resolved
 
@@ -334,6 +354,21 @@ Everything the plan marked TUNE, with the value the sweep settled on.
 | Spawn cadence | 10 to 20 ticks | authored per group inside that band, plus a 12 tick pause between groups | |
 | Wave 20 composition | not specified | 5 shielded, 5 flyer, 3 swarm, 6 brute, 2 healer, 1 Warden = 1290 base HP = 35337 at the curve | tuned twice, purely to land the margin gate in band |
 | Enemy base HP | Runner 18, Brute 70, Shielded 30, Flyer 24, Sapper 26, Healer 30, Swarm 5x8, Warden 420 | **unchanged** | the curve did the work; only the wave 20 headcount moved |
+
+### TUNE values the deepening pass resolved
+
+| Thing | Before | Now | Why |
+|---|---|---|---|
+| Group pause | 12 ticks | **18 ticks** | the arrival solve overlaps groups, so waves got 30% shorter and therefore harder; this bought the time back without reintroducing lulls |
+| Travel allowance | not modelled | **`TRAVEL_CELLS` 14** | the cells a body crosses before it is your problem. Departure = arrival minus `spd x 14` |
+| Departure hole cap | none | **`MAX_DEPART_GAP` 30 ticks** | closes the straggler hole (wave 9 ended on one healer 62 ticks behind the rank) |
+| Engagement radius | not modelled | **`ENGAGE_CELLS` 8** | how far away the lane starts reading as empty from where you stand |
+| Reinforce curve | none | **`1 + 0.6 x (lvl - 1)`** | at a flat `x lvl` a maxed ballista line deleted bodies on the spawn tick and the player's share at wave 12 hit 0% |
+| Reinforce ceiling / repair | none | **3 levels, then half price repairs** | the sink has to be unbounded or a big purse still strands |
+| Starter trap | none | **free spike at cell 21** | 52 scrap buys one trap and one trap is not a lesson about traps |
+| Ballista range | whole lane | **stops one short of `SPAWN_CELL`** | nothing dies standing in the mouth |
+| Wave 20 headcount | 1 Warden | tried 2, **kept 1** | with 2 the margin sat at 0% and nothing cleared; with 1 it lands at 17.5% |
+| Endless | table cycles, curve climbs | **+ 6 modifiers, + the Marshal every 5th** | the curve alone is not escalation |
 
 **Locked spec numbers that did not move:** 30 cells, 20 waves, 20 second build
 phase, `baseHP x 1.18^wave` (asserted exactly for all 8 enemy types across waves
@@ -423,29 +458,46 @@ Nothing renders under 48px in either dimension. The options toggle started at
 
 ## Known gaps
 
-1. **No browser has opened this page.** I verified in node only, by instruction.
-   I did smoke test the boot and render paths against a minimal DOM shim in node
-   (`boot ok`, no missing ids, 400 frames with no throw, a wave driven through
-   render plus the scorecard and loss sheet), which rules out a blank page and
-   missing wiring, but it is NOT a look. Nobody has seen a pixel. The VIEW layer
-   still needs the LOOKING pass at 390x844 and at desktop width before it ships.
-   Two of the August 16 production defects only appeared at desktop width.
+1. **No browser has opened this page.** Verified in node only, by instruction.
+   `node smoke.js` boots the real page against a minimal DOM shim, drives 6000
+   frames with a simulated thumb, renders 30 lane cells and 7 shop buttons, and
+   reads a real wave scorecard back out ("you 33% traps 67%"). That rules out a
+   blank page and dead wiring. **It is NOT a look. Nobody has seen a pixel.**
+   The VIEW layer still needs the LOOKING pass at 390x844 AND at desktop width;
+   two of the August 16 production defects only appeared at desktop width.
+   Specifically unlooked at: the DEEPEN button as the seventh item on a
+   scrolling shelf (does it fall off the edge at 375?), the trap level dots, the
+   new two tile scorecard split, and the endless modifier chips under the lane.
 2. **Zone bucketed placement in the sweep versus free placement in play.** A human
    can find cell exact placements the sweep never tested, so the real ceiling is
    above the measured one. Accepted for v1, flagged by the plan.
-3. **Late game scrap has no sink** once 28 cells are full (612 unspent at wave 18).
-4. **Early game traps read as decorative** (78% player share at wave 5).
-5. **No input log replay.** CRAFT lists it; the deterministic `step` makes it
-   nearly free, but it is not wired.
-6. **No install nudge after the first completed run**; `beforeinstallprompt` is
-   not captured.
-7. The margin gate band is 8% to 30% and the strongest build sits at 25.3%, above
-   the 15% target. A directly measured strong build is 15.2%. Tightening wave 20
-   twice moved the ratio very little, which suggests the top builds have surplus
-   throughput rather than a knife edge; worth another pass.
+3. **The dead lane gate fails by only 0.1s under its break** (3.1s against a 3.0s
+   bar). It is capable of failing and it was watched failing, but it is thin. The
+   per wave wave 10 read (3.1s -> 0.5s) is the stronger evidence and it is not
+   automated. A better gate would be the MEAN lull across the top builds.
+4. **The starter spike is a gift, not a choice** (see the lane frames section).
+   The principled version is cheaper starter traps.
+5. **Wave 21 is an anticlimax** after the wave 20 finale, because the endless
+   table cycles back to wave 1's composition.
+6. **No input log replay.** CRAFT lists it; `step` is deterministic and a JSON
+   round trip is asserted, so it is nearly free, but it is still not wired.
+7. **No install nudge after the first completed run**; `beforeinstallprompt` is
+   still not captured.
+8. **A fully maxed cheap board can still hold a residue.** 28 spikes at level 3
+   costs 2520 of the campaign's 3320 and after that only repairs take money. The
+   sweep's worst real case is 86 scrap, but the theoretical hole exists and an
+   assertion documents it rather than pretending it does not.
+9. **The soft lull (nothing in reach) still reads 14.4s** on mouth stacked
+   builds. Not gated, deliberately. See the lane frames section.
 
 ## The single next thing
 
 Open it in a browser at 390x844 and at desktop width, play three waves, and read
-the screenshots. The sim is proven; the skin is not. After that, the scrap sink
-for waves 14 to 20 is the most valuable design fix.
+the screenshots. The sim is proven twice over now; the skin has never been seen.
+Shoot the build phase with the DEEPEN tool selected, shoot a wave 15 lane full of
+level 3 traps, and shoot the scorecard. Then shoot the worst angle on purpose:
+the shop shelf at 320px wide, and an endless wave carrying three modifier chips.
+
+After that, the two design calls worth taking are cheaper starter traps (so the
+early game fix is a player decision instead of a gift) and a wave 21 that is not
+the wave 1 composition.
