@@ -172,6 +172,98 @@ const tail = await page.evaluate(() => {
 ok(Math.abs(tail.sameP - 1) < 1e-9, "two identical arms give p = 1",
   JSON.stringify(tail.same));
 
+/* ---------- share a sound ---------- */
+/* The link carries the sound. What matters most is everything it CANNOT
+   carry: a link someone sends you must not turn your volume up, take the cap
+   off a cot speaker, switch your microphone on, or drag you out of simple
+   mode. Each of those is tried here with a hand crafted link. */
+console.log("[share a sound]");
+
+const shareUrl = await page.evaluate(() => {
+  S.noise = "pink"; S.tilt = 22; S.mix = 40; S.pulse = "waves"; S.preset = "rain";
+  S.vol = 71; S.cap = false;              // personal, must not travel
+  return shareLink();
+});
+ok(/#p=[A-Za-z0-9\-_]+$/.test(shareUrl), "share produces a fragment link", shareUrl.slice(-40));
+
+const decoded = await page.evaluate(u => {
+  const m = u.match(/#p=(.+)$/);
+  const pad = m[1].replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(decodeURIComponent(escape(atob(pad + "=".repeat((4 - pad.length % 4) % 4)))));
+}, shareUrl);
+ok(decoded.noise === "pink" && decoded.tilt === 22 && decoded.mix === 40,
+  "the sound itself is in the link", JSON.stringify(decoded));
+const leaked = ["vol", "cap", "micOn", "mode", "timer", "cal", "sens", "lift",
+  "okWake", "sunrise", "wakeTime", "blinded", "lastUsed", "vizMode", "adapt", "fade"]
+  .filter(k => k in decoded);
+ok(leaked.length === 0, "nothing personal is in the link", JSON.stringify(leaked));
+
+/* open the link in a clean page and check what arrives */
+const p3 = await browser.newPage();
+await p3.setViewport({ width: 375, height: 667 });
+await p3.goto(shareUrl, { waitUntil: "networkidle2" });
+await sleep(1200);
+const arrived = await p3.evaluate(() => ({
+  noise: S.noise, tilt: S.tilt, mix: S.mix, pulse: S.pulse, preset: S.preset,
+  vol: S.vol, cap: S.cap, mode: S.mode, micOn: S.micOn,
+  note: (document.getElementById("sharedNote") || {}).textContent || "",
+  noteShown: document.getElementById("sharedNote") &&
+             getComputedStyle(document.getElementById("sharedNote")).display !== "none",
+  hash: location.hash
+}));
+ok(arrived.noise === "pink" && arrived.tilt === 22 && arrived.mix === 40 && arrived.pulse === "waves",
+  "the shared sound arrives intact", JSON.stringify(arrived));
+ok(arrived.cap === true, "the nursery cap is still on for the person opening it",
+  JSON.stringify(arrived));
+ok(arrived.vol === 18, "their own volume is untouched", JSON.stringify(arrived));
+ok(arrived.mode === "simple", "they are still in simple mode", JSON.stringify(arrived));
+ok(arrived.micOn === false, "the microphone stays off", JSON.stringify(arrived));
+ok(arrived.noteShown && /Shared sound loaded/.test(arrived.note),
+  "it says a shared sound was loaded", JSON.stringify(arrived.note));
+ok(/evidence|Traditional|pleasant/i.test(arrived.note),
+  "and carries the evidence tier with it", JSON.stringify(arrived.note));
+ok(arrived.hash === "", "the fragment is cleared so a reload is not a surprise",
+  JSON.stringify(arrived.hash));
+
+/* hostile links */
+const hostile = await p3.evaluate(() => {
+  const enc = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const before = { vol: S.vol, cap: S.cap, mode: S.mode, micOn: S.micOn, noise: S.noise };
+  const tries = [
+    { name: "uncaps the volume", payload: { cap: false, vol: 100 } },
+    { name: "turns the mic on", payload: { micOn: true, adapt: true } },
+    { name: "forces full mode", payload: { mode: "full" } },
+    { name: "out of range tilt", payload: { tilt: 99999 } },
+    { name: "wrong type", payload: { noise: 42, mix: "loud" } },
+    { name: "unknown keys", payload: { evil: 1, __proto__x: 2 } }
+  ];
+  const results = [];
+  tries.forEach(t => {
+    location.hash = "p=" + enc(t.payload);
+    readSharedLink();
+    results.push({ name: t.name, vol: S.vol, cap: S.cap, mode: S.mode, micOn: S.micOn,
+                   tilt: S.tilt, noise: S.noise, mix: S.mix });
+    location.hash = "";
+  });
+  // and plain rubbish
+  location.hash = "p=!!!not base64!!!"; readSharedLink();
+  const junk1 = { vol: S.vol, cap: S.cap, noise: S.noise };
+  location.hash = "p=" + btoa("not json at all"); readSharedLink();
+  const junk2 = { vol: S.vol, cap: S.cap, noise: S.noise };
+  location.hash = "";
+  return { before, results, junk1, junk2 };
+});
+hostile.results.forEach(r => {
+  const safe = r.vol === hostile.before.vol && r.cap === true && r.mode === "simple" &&
+               r.micOn === false && r.tilt >= -100 && r.tilt <= 100 &&
+               typeof r.noise === "string" && typeof r.mix === "number";
+  ok(safe, "a link that " + r.name + " changes nothing it should not", JSON.stringify(r));
+});
+ok(hostile.junk1.cap === true && hostile.junk2.cap === true,
+  "rubbish in the fragment is ignored without a word", JSON.stringify(hostile));
+await p3.close();
+
 await page.close();
 
 /* ---------- FLEET CACHE SAFETY: the landmine ---------- */

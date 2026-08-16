@@ -176,7 +176,8 @@ footer{padding:24px 2px 10px;font-size:11.5px;line-height:1.6;color:var(--faint)
 body.simple #simpleBox{display:block}
 body.simple .panel{display:none}
 body.simple #progRail,body.simple #rail,body.simple #voiceRail,
-body.simple #infoCard,body.simple .raillabel,body.simple #meterBtn{display:none}
+body.simple #infoCard,body.simple .raillabel,body.simple #meterBtn,
+body.simple #shareBtn{display:none}
 body.simple .actions{margin-bottom:14px}
 .modeBtn{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);
   border:1px solid var(--line);border-radius:999px;padding:6px 12px;
@@ -224,7 +225,9 @@ body.simple .actions{margin-bottom:14px}
   <div class="actions">
     <button id="vizBtn">Full screen</button>
     <button id="meterBtn">Check the room</button>
+    <button id="shareBtn">Share this sound</button>
   </div>
+  <p class="hint" id="sharedNote" style="display:none"></p>
 
   <div id="simpleBox">
     <div class="tonight">
@@ -2878,9 +2881,127 @@ $("vizBtn2").addEventListener("click", openViz);
 renderElse();
 setMode(S.mode || "simple");
 
+/* ---------------- share a sound ----------------
+   A link carries the SOUND and nothing else.
+
+   Only the keys that describe what you hear travel. Volume, the nursery cap,
+   timers, the microphone, calibration, wake alarms and which mode you like
+   are all left alone, because a link someone sends you must not be able to
+   turn your volume up, switch your microphone on, take the cap off a cot
+   speaker or throw you out of simple mode. Everything that does arrive is
+   pushed through the same limits the controls themselves use, so a hand
+   edited link cannot reach a value the app would not let you set.
+
+   The evidence tier travels with the sound in the confirmation line: if we
+   are honest about that everywhere else, we are honest about it here too. */
+const SHARE_KEYS = ["noise","tilt","freq","tuneMode","amt","q","phiStack","mix","rate",
+  "depth","fb","combLock","phiDrift","pulse","prate","pamt","swOn","swrate","swblock",
+  "swlvl","beatBand","carrier","beat","tlvl","iso","voice","vlvl","vdens","vbpm",
+  "vscale","preset"];
+const SHARE_ENUMS = {
+  noise: NOISES.map(x => x.id),
+  tuneMode: TUNE_MODES.map(x => x.id),
+  pulse: PULSES.map(x => x.id),
+  beatBand: BEATS.map(x => x.id),
+  vscale: Object.keys(SCALES),
+  voice: ["off"].concat(VOICE_PRESETS.map(v => v.voice)),
+  preset: PRESETS.map(p => p.id).concat(VOICE_PRESETS.map(p => p.id))
+};
+const SHARE_DEFAULTS = Object.assign({}, SOUND_DEFAULTS, {
+  swOn:false, swrate:80, swblock:20, swlvl:35,
+  voice:"off", vlvl:42, vdens:45, vbpm:50, vscale:"hirajoshi", preset:null });
+
+function b64urlEnc(str) {
+  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64urlDec(str) {
+  const pad = str.replace(/-/g,"+").replace(/_/g,"/");
+  return decodeURIComponent(escape(atob(pad + "=".repeat((4 - pad.length % 4) % 4))));
+}
+/* only what differs from the defaults, so the link stays short and readable */
+function shareEncode() {
+  const out = {};
+  SHARE_KEYS.forEach(k => {
+    const v = S[k], d = SHARE_DEFAULTS[k];
+    if (v !== undefined && v !== d) out[k] = v;
+  });
+  return b64urlEnc(JSON.stringify(out));
+}
+function shareLink() {
+  return location.origin + location.pathname + "#p=" + shareEncode();
+}
+/* Range comes from the control itself where there is one, so a shared value
+   can never land outside what the slider would allow. */
+function clampToControl(key, v) {
+  const el = document.getElementById(key);
+  if (el && el.type === "range") {
+    const lo = Number(el.min), hi = Number(el.max);
+    const n = Number(v);
+    if (!isFinite(n)) return null;
+    return Math.min(hi, Math.max(lo, n));
+  }
+  return v;
+}
+function applyShared(obj) {
+  let used = 0;
+  SHARE_KEYS.forEach(k => {
+    if (!(k in obj)) return;
+    let v = obj[k];
+    const def = SHARE_DEFAULTS[k];
+    if (SHARE_ENUMS[k]) { if (SHARE_ENUMS[k].indexOf(v) < 0) return; }
+    else if (typeof def === "boolean") { if (typeof v !== "boolean") return; }
+    else if (typeof def === "number") {
+      v = clampToControl(k, v);
+      if (v === null || typeof v !== "number" || !isFinite(v)) return;
+    } else if (def === null) {
+      if (v !== null && typeof v !== "string") return;
+    } else return;
+    S[k] = v; used++;
+  });
+  return used;
+}
+function readSharedLink() {
+  const m = (location.hash || "").match(/[#&]p=([A-Za-z0-9\-_]+)/);
+  if (!m) return;
+  let obj = null;
+  try { obj = JSON.parse(b64urlDec(m[1])); } catch { obj = null; }
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;   // junk: say nothing
+  const before = { vol: S.vol, cap: S.cap, mode: S.mode, micOn: S.micOn };
+  const used = applyShared(obj);
+  if (!used) return;
+  // belt and braces: nothing outside the whitelist can have moved
+  S.vol = before.vol; S.cap = before.cap; S.mode = before.mode; S.micOn = before.micOn;
+  save(); syncUI(); if (window.ctx) { loadNoise(S.noise); apply(); }
+  const id = S.preset;
+  const tier = id && INFO[id] ? TIERS[INFO[id].tier] : null;
+  const note = $("sharedNote");
+  if (note) {
+    note.textContent = id
+      ? "Shared sound loaded: " + nameOfSound(id) + (tier ? ". " + tier.label + "." : ".")
+      : "Shared sound loaded.";
+    note.style.display = "";
+  }
+  try { history.replaceState(null, "", location.pathname); } catch {}
+}
+async function shareThisSound() {
+  const url = shareLink();
+  const name = S.preset ? nameOfSound(S.preset) : "a sound";
+  try {
+    if (navigator.share) { await navigator.share({ title: "HUSH", text: name, url }); return; }
+  } catch { /* the person changed their mind, which is not an error */ }
+  try {
+    await navigator.clipboard.writeText(url);
+    const b = $("shareBtn"); if (b) { const t = b.textContent; b.textContent = "Link copied"; setTimeout(() => b.textContent = t, 1800); }
+  } catch {
+    const b = $("shareBtn"); if (b) b.textContent = "Could not copy";
+  }
+}
+if ($("shareBtn")) $("shareBtn").addEventListener("click", shareThisSound);
+
 /* ---------------- boot ---------------- */
 [...vb.children].forEach(c => c.setAttribute("aria-pressed", String(c.dataset.v === S.vizMode)));
 syncUI(); sizeCanvas(cv); paintTimer(); paintVizLeft(null);
+readSharedLink();
 setInterval(() => { const d = new Date(); $("vizClock").textContent = pad2(d.getHours())+":"+pad2(d.getMinutes()); }, 20000);
 </script>
 </body>
