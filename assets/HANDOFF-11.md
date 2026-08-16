@@ -575,6 +575,75 @@ One game per instance. Every instance reads Sections 1–3 (shared conventions) 
 
 ---
 
+## 9-RESULT. THE BLOCK REPORT (filled in 2026-08-16)
+
+**Five of six SHIPPED AND LIVE** at `lucidwinds.com/satellites/<id>/`, all five carded in the
+portal `FEATURED` array as `beta:true`. LAST CALL was parked by Stephen before the block began
+and was never started. Deploy commit `e8dfd0cd`, verified live by grepping production HTML for a
+content marker rather than trusting a 200.
+
+| Game | Status | Assertions | Balance verdict |
+|---|---|---|---|
+| DEEPWELL | SHIPPED | 229 / 0 failed | 5 of 7 bounds hit, 2 missed and reported |
+| BLACKOUT | SHIPPED | 253 / 0 failed | 10,000 cases, 100% unique, 0.01% retry |
+| PARALLEL | SHIPPED | 140 / 0 failed | 60 of 60 levels BFS verified, tier slope +6.54 |
+| WIREWORM | SHIPPED | 205 / 0 failed | 2 bands missed low, reported not tuned |
+| SIEGE OF ONE | SHIPPED | 193 / 0 failed | all 7 sweep gates green |
+| LAST CALL | NOT STARTED | n/a | parked by the Director |
+
+**1,020 assertions, zero failing.** Every suite runs headless: `node satellites/<id>/sim.js --test`.
+
+### Spec numbers that turned out wrong under simulation
+
+- **§3.7 full clear is 11,400. It is not.** The spec's own upgrade formula sums to **15,253**.
+  At that price a median player needs ~216 runs, not the stated ~25. DEEPWELL shipped the real
+  number. The root cause of both missed DEEPWELL bounds is one thing: the pack fills before the
+  air gets frightening, so a careful player and a perfect player play the same game. Next lever
+  is `PACK_BASE` 40 down to ~28.
+- **§3.6 hazards make depth 200 unreachable by construction.** 44 nodes of specced hazard rates
+  average 13.4 integrity of damage against a maximum of 6 braces. Resolved using §3.6's own
+  "unless prevented by gear" clause (`BRACE_SHRUG_PER_LEVEL 0.25`); no specced hazard rate or
+  damage value moved.
+- **§6.6's random-agent band of 60 to 200 ticks is grid geometry, not a tunable.** A uniform walk
+  hits the edge of a 20x20 in a median 55 ticks, and 19,392 of 20,000 runs die at a wall without
+  ever completing a circuit. WIREWORM reports the miss rather than inventing a fix.
+- **§3.5 mining "2 depth-ticks" contradicts the 5 level Drill upgrade** (it would dead end at
+  level 2). Cost now scales with ore tier, per the plan's ruling.
+- **§1.1's Blob URL service worker does not work.** Chrome rejects blob: registrations, so that
+  path silently ships no offline support. All five use real `sw.js` files with per game cache
+  prefixes.
+
+### What the verification actually caught (the case for building this way)
+
+- **WIREWORM had a genuine soft lock.** The worm could seal itself into a pocket where no
+  terminal was reachable and no discharge pickup could legally spawn, so the run could never end.
+  Found by its own "every run ends" assertion. Fixed in SIM, with the regression assertions
+  written *before* the fix.
+- **DEEPWELL's harness opened at 218 passed / 10 failed and four of those reds were real bugs**,
+  including a shrine bargain that could eject the player out of the shaft entirely.
+- **PARALLEL watched 17 gates fail on purpose and found 3 that could not fail at all**, then
+  fixed the gates rather than banking the free green. One was a missing assertion: its crumble
+  fixture could not tell "breaks when you leave" from "breaks instantly".
+- **The LOOKING pass found what 8 of 8 green checks could not:** PARALLEL's mirror seam was
+  painting *underneath* the opaque tile layer, so the defining feature of the game only showed
+  through gaps. WIREWORM's combo canvas kept its intrinsic 104px inside a 52px wrapper, so the
+  HUD rendered as `best ) 17 ticks`. DEEPWELL's AIR TO SURFACE bar read completely full when the
+  ascent cost was zero, teaching danger at the safest moment in the game.
+
+### Known gaps, honestly
+
+- **No human has played any of these.** Verification is not playtesting; that is why all five
+  shipped `beta:true` behind the tester gate.
+- BLACKOUT and SIEGE never got a LOOKING pass; the block ended first. Their automated checks are
+  green (8 of 8 and 7 of 8) but nobody has opened their screenshots.
+- No builder ran a browser at all, by instruction, so every UI is node verified plus the main
+  loop's own boot and tap probes.
+- WIREWORM's overload playstyle has no sweep coverage: no agent steers for the breaker, so half
+  of §6.5's design is unmeasured.
+- PARALLEL's level select stars are 54px but sit 33 to 40px apart, so neighbours overlap.
+
+---
+
 ## 9. WHAT TO REPORT BACK
 
 Update this file in place when the block ends. For each game attempted:
