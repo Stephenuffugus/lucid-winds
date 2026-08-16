@@ -5,8 +5,8 @@
    asserts against THEM — never a hand-mirrored copy (rarity_sim lesson).
 
    Usage: node scripts/hush_audit.js [path-to-html]
-   Default target: incoming/hush/index-51.html (switch to hush/index.html
-   after the port). Exit 0 = all green, 1 = any red.
+   Default target: hush/index.html (the shipped app; the original drop is still
+   at incoming/hush/index-51.html if you need to diff against it). Exit 0 = all green, 1 = any red.
 
    NOT covered here (needs headless Chrome, phase B of the build plan):
    comb-floor k/f delay check, simple-mode visible-control count, share-preset
@@ -15,7 +15,7 @@
 const fs = require("fs");
 const vm = require("vm");
 
-const path = process.argv[2] || "incoming/hush/index-51.html";
+const path = process.argv[2] || "hush/index.html";
 const src = fs.readFileSync(path, "utf8");
 
 let pass = 0, fail = 0;
