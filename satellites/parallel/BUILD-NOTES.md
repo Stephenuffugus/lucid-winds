@@ -1,16 +1,184 @@
 # PARALLEL — build notes
 
-**Status: SHIPPED.** 60 of 60 levels generated, embedded and solver verified.
-Game ID `parallel`, accent violet `#8b7cf6`, portal category `puzzle`, icon 🪞.
+**Status: SHIPPED, then deepened.** 100 of 100 levels generated, embedded and
+solver verified. Game ID `parallel`, accent violet `#8b7cf6`, portal category
+`puzzle`, icon 🪞.
 
 | Gate | Result |
 |---|---|
-| `node sim.js --test` | **PASSED 140 / FAILED 0** (140 assertions), exit 0 |
-| `node sim.js --verify` | **VERIFY PASSED**, all §5.5 gates over 60 levels, exit 0 |
-| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, script tags balanced, no dashes in copy) |
+| `node sim.js --test` | **PASSED 205 / FAILED 0** (205 assertions), exit 0 |
+| `node sim.js --verify` | **VERIFY PASSED**, all §5.5 gates over **100** levels, exit 0 |
+| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, tags balanced, no dashes in copy, **all 87 element lookups resolve**) |
+| `node pagecheck.js` | **PASSED 37 / FAILED 0** at 390x844, 375x667, 412x915, 360x640 and 1280x800 |
 | `node gen.js --check` | **REPRODUCIBLE** byte for byte from seed `0x50415241` |
-| Script block syntax | parses clean under `vm.createScript` (1712 lines) |
-| Service worker | `parallel-` prefixed, `node --check` clean, activate deletes only its own prefix |
+| Script block syntax | parses clean under `vm.createScript` |
+| Service worker | `parallel-` prefixed, `node --check` clean, shell bumped to `parallel-shell-v2` with `?v=2` in lockstep |
+
+---
+
+# DEEPENING PASS (second session)
+
+Levels 60 → **100**. Assertions 140 → **205**, plus a new 37 check page harness.
+Nothing in `stepWorld` was touched, so the first sixty levels regenerate byte
+for byte and every save from the shipped build still points at the same boards.
+
+## The two known defects, fixed
+
+1. **Level select stars overlapped.** 54px hit circles standing 33 to 40px
+   apart meant the higher level number won a tap in the overlap. The geometry
+   now comes from `skyLayout(count, widthPx, seed)` in the SIM: pure, in CSS
+   pixels, laid out in rows whose pitch and gap are both at least 48px, with
+   jitter bounded to half the slack so it still reads as a sky and cannot
+   overlap. The SVG is sized in px to match its own viewBox, so one unit is one
+   rendered pixel on the device. `suiteLayout` measures the true minimum
+   pairwise distance at nine widths from 300 to 560 and at 10, 100 and 200
+   levels. Worst case measured: **52.0px at 300px wide** against a 48px law.
+2. **Phone dead space.** Was ~214px of slack under the board at 390x844. Now
+   **71px**, and 18px at 375x667. The column is budgeted rather than measured
+   (measuring the pad we are about to resize is what makes a layout walk), and
+   the slack is spent in order: thumb pad, then the level ribbon, then the
+   level card, and the pad cap itself scales with viewport height because a
+   thumb on a 915px screen reaches further than one on a 667px screen.
+   Measured by `pagecheck.js` at five viewports.
+
+| Viewport | board | pad | ribbon | card | leftover |
+|---|---|---|---|---|---|
+| 390x844 | 360 | 157 | on | on | 71px |
+| 375x667 | 344 | 105 | on | off | 18px |
+| 412x915 | 384 | 170 | on | on | 105px |
+| 360x640 | 328 | 98 | on | off | 14px |
+| 1280x800 | 600 | 62 | off | off | 0px |
+
+The tall phone leftover is centring space around the board, not an empty
+trough: the alternative is a 250px tall button row, which is worse.
+
+## 40 more levels, two new tiers
+
+Tiers 6 and 7 start at level **61**, so the generator's single RNG chain hands
+levels 1 to 60 exactly the draws it always did. Verified: the regenerated
+array's first sixty entries are byte identical to the shipped ones.
+
+| Tier | Levels | Grid | Band | Attempts | Per accept | Seconds | Par min | Par max | Par mean |
+|---|---|---|---|---|---|---|---|---|---|
+| 6 | 61 to 80 | 12x12 | [34,58] | 1838 | **91.9** | 32.9 | 34 | 50 | 40.7 |
+| 7 | 81 to 100 | 12x12 | [40,61] | 6744 | **337.2** | 191.2 | 40 | 54 | 43.8 |
+
+Every acceptance gate held: solvable by BFS, inside the tier band, a desync
+moment on the solution path, greedy agent fails, then the wall minimize pass.
+No gate was loosened and no density range was touched. Total generation for all
+100 levels: 245s. Tier 7 is where the cost lives (BFS to depth 40 plus on a
+12x12 board with 3 keys, 4 crumble tiles and 6 ice tiles), still far under the
+2000 attempt budget the plan set as the alarm line.
+
+**Par is one base62 character**, so no tier band may ever ask for more than 61
+moves. A band of 72 would have encoded as an empty character and corrupted the
+level string in silence. That is now `PAR_MAX` with an assertion on the bands
+AND on every embedded par, and the deliberate break confirms it goes red.
+
+## Mirror drift: the audio now reads the real state
+
+The desync flag says a split *happened*. `mirrorDrift(lv, state)` says how far
+out of mirror the pair currently *is*, and it falls out of the geometry for
+free: a mirrored horizontal move leaves `ax + bx` untouched, and a shared jump
+or fall leaves `ay - by` untouched, so each quantity is invariant while the
+twins move as one and each lone step knocks it off by exactly one.
+
+- The amber voice now bends by the drift, a half step per cell, up to a tritone,
+  and lands back on the clean fifth the moment the pair is back in mirror. The
+  violet voice tightens a hair while split so the beating is audible on a phone
+  speaker. Win lands both voices on unison.
+- `#seam` was drawn down the middle of the board. That is only the mirror axis
+  if the pair happens to start symmetric about the centre. It now sits on the
+  pair's true invariant axis, and a second dashed amber line marks where their
+  midpoint has drifted to, so **the gap between the two lines is the drift,
+  drawn**. It hides itself at zero.
+- The hud carries `off mirror N`, so the signal survives sound off and
+  colourblindness both.
+
+Nine assertions cover it, including that drift is invariant under mirrored
+moves, rises by one on a blocked twin, closes when you walk the split back, and
+stays bounded under 400 random inputs.
+
+## Run history and the progress screen (was missing)
+
+`RUN LOG` sheet off the sky: cleared, par matched, deaths, moves, attempts and
+day streak; a bar per tier; and the last 12 runs newest first, each tappable
+back into its level. History lives in the save codec as a pure `pushRun` and
+`mergeHistory`, capped at 12, deduped by run key, merged newest first so two
+tabs keep both. That dedupe matters more than it looks: every save flush merges
+disk into memory, so without it one session's single run would multiply.
+
+## The daily, and seed links
+
+- The daily was already BFS verified before display. What was broken was the
+  *share*: it linked `?level=daily`, which opens a **different** level tomorrow.
+  It now links `?day=2026-08-16`, so the board survives being passed around.
+- `?seed=<n>` used to modulo into a campaign level. It now generates a tier 5
+  level from that seed and verifies it with the same BFS, desync check and
+  greedy check before anything is drawn. A stranger's link can never hand you
+  an unsolvable board.
+- `dayNumber(iso)` does the calendar arithmetic itself rather than reading a
+  clock, so time stays a parameter in the SIM. Asserted against the platform's
+  own `Date.parse` maths.
+
+## Other craft picked up
+
+- **Level card** under the board: tier name, what this board is made of (ice,
+  keys, thin floor, one way), your best, and a WATCH button that replays your
+  best run through the same `stepWorld`.
+- **Level ribbon**: the ten levels around this one, with their stars, tappable,
+  locked ones dim.
+- **Install nudge** (CRAFT E, was missing): captured `beforeinstallprompt`,
+  offered as one quiet line on the win card, only after a first clear.
+- Tier names in the sky and in the subtitle: FIRST LIGHT, THE SPIKES, LOCK AND
+  KEY, THIN FLOOR, BLACK ICE, THE DEEP END, THE LONG WAY.
+
+## pagecheck.js — the harness for a box with no browser
+
+I was told not to run puppeteer (eight agents, two cores). So `pagecheck.js`
+boots the real script out of `index.html` against a small DOM stub and drives
+the view: it plays level 1 with its own embedded answer and asserts the win
+card, taps every control, builds the sky and counts the hit targets and their
+radii, opens the run log, fills the ribbon, builds a daily and a seed level,
+shares, and fits the board at five viewports.
+
+**This is not a LOOKING pass and does not pretend to be.** It cannot see
+colour, contrast, overlap or a seam that reads wrong. What it can prove is that
+no button is wired to a dead id, nothing throws on the paths a player walks,
+and the layout maths lands where the table above says. The first thing it found
+was the 146px of slack still left under the board after my first fix, which is
+exactly the class of bug that green unit tests miss.
+
+`sim.js --grep` also grew an element wiring gate: every `$('id')`,
+`getElementById('id')` and `wire('id')` in the file must resolve to an id that
+exists somewhere in the file, and no static id may be declared twice.
+
+## Gates I watched FAIL first (this pass)
+
+23 deliberate breaks, all confirmed red, harnesses in the scratchpad:
+
+sky stars closer than the law · a shrunken hit radius · drift invariant swapped
+to a difference · history cap removed · history dedupe removed · day number off
+by one · a tier band past the par field · a seeded level handed over unverified
+· campaign counting swallowing dailies · **a level dropped from the array** ·
+**a corrupted level string** · a typo in an element id · a duplicate static id ·
+a wired button with no element · a dash in new copy · an unwired button · a pad
+squashed under 48px · the win card never opening · the ribbon left empty · the
+history never recorded · a share that says today instead of the day · a layout
+that walks on every fit.
+
+**Three breaks initially stayed GREEN and were fixed rather than accepted:**
+
+- The history dedupe break passed because the merge suite only ever merged two
+  saves with disjoint runs. Added: merging a save with itself, and three flushes
+  in a row, must not duplicate a run. That is the case the real flush path hits
+  every single save.
+- The dropped level break passed because I had broken the *assertion* rather
+  than the *data*. Rewritten to actually delete a level string and to corrupt
+  one, and both now go red in `--test` and `--verify`.
+- The layout walk break passed because the pad cap masked the jitter and because
+  the board is width bound, so nothing moved. Strengthened to watch the pad
+  height, not just the board, and to jitter the slack past the cap.
 
 ## The one rule
 

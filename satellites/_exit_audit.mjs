@@ -183,7 +183,7 @@ function hasReferrerFallback(src) {
     if (!referrer) missing.push('document.referrer');
     if (!back) missing.push('history.back()');
     if (!hard) missing.push('a hard location fallback');
-    const cand = { ok: referrer && back && hard, missing, via, owner: ownerName(win) };
+    const cand = { ok: referrer && back && hard, missing, via, owner: ownerName(win, b.off) };
     if (cand.ok) return cand;
     if (cand.missing.length < best.missing.length) best = cand;
   }
