@@ -1,6 +1,6 @@
 # BLACKOUT — build notes
 
-**Status: SHIPPABLE, deepened.** Generator proven, **342 assertions** green, six case
+**Status: SHIPPABLE, deepened.** Generator proven, **343 assertions** green, six case
 modes each swept and gated separately, playable loop end to end.
 Game id `blackout`, accent cold cyan `#5ad1e6`, portal category `puzzle`, icon 🕯️.
 
@@ -86,7 +86,7 @@ total assertions 342
 PASSED 342 / FAILED 0
 ```
 
-**342 assertions** (253 before this pass), floor was 80. Same suite runs in the page at `?test=1` and is
+**343 assertions** (253 before this pass), floor was 80. Same suite runs in the page at `?test=1` and is
 exposed as `window.__TEST__`. It lives between `// ---- TEST_EXPORT_START ----`
 markers so there is exactly one copy of it.
 
@@ -483,6 +483,26 @@ did it.
 The typewriter toggle itself was a switch wired to nothing before this pass. It now
 does what it says, and respects both the setting and `prefers-reduced-motion`.
 
+### What reading a case found that no gate could
+
+`sim.js --watch=8801 --liar` prints a whole case for a human, and the CRAFT rule says
+read three before trusting a sweep. Doing that turned up a defect 343 assertions had
+no way to see: clues whose phrasing opens with a substance printed **"floor wax on
+the sill."** in lowercase. Substances and figure descriptions are deliberately
+lowercase because they read right mid sentence ("mud from the garden", "a tall
+figure in spectacles"), but at the start of a line it just looks broken. It had been
+shipping in v1 too.
+
+`clueText` now returns sentence case. The subject gate had to become case
+insensitive to allow it, which is correct: the gate is about whether a clue names its
+own subject, not about capital letters. A new assertion says every rendered clue
+starts as a sentence.
+
+The same read is also what confirmed the mechanic actually tells a story: seed 8801
+is *Ellis says: "Not Renna. There is no thread there at all."* while Renna is the one
+who did it. That is a suspect covering for the killer, generated, and it is the
+reason the mode was worth building.
+
 ---
 
 ## 12. Gates watched fail in this pass
@@ -535,7 +555,7 @@ Every new gate was seen red before it was believed. Restored after each.
 ## 14. Commands
 
 ```
-node sim.js --test                    342 assertions + grep + layout + dom, exit 1 on any failure
+node sim.js --test                    343 assertions + grep + layout + dom, exit 1 on any failure
 node sim.js --cases=10000             the 4.8 sweep, standard honest
 node sim.js --tier=long --liar --cases=10000    one rung of the ladder
 node sim.js --all --cases=1200        all six modes, each gated separately

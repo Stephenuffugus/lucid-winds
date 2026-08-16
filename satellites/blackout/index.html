@@ -445,7 +445,7 @@ var TPL = {
     "The {sub} trail stops well short. The {r} and its neighbors are clear.",
     "Not a speck of {sub}. Cross off the {r} and everything next to it.",
     "You cannot leave the {r} without {sub} on you. There was none.",
-    "The {sub} never got there. The {r} and its neighbours are out.",
+    "The {sub} never got there. The {r} and its neighbors are out.",
     "No {sub} on the boards. Whatever happened, it kept clear of the {r}.",
     "The {r} marks everyone who walks it. Nothing here is marked.",
     "Clean as a plate, and the {r} is never clean. Not there, not beside it."
@@ -800,7 +800,12 @@ function clueText(cl) {
     case 11: d = { lo: TIMES[p.lo], hi: TIMES[p.hi], e1: EVENTS[p.e1], e2: EVENTS[p.e2] }; break;
     case 12: d = p.k === "weapon" ? { w: WEAPONS[p.w].n } : { r: ROOMS[p.r].n }; break;
   }
-  return fillTpl(s, d);
+  /* Sentence case. Substances and descriptions are lowercase by design because
+     they read right mid sentence ("mud from the garden"), but a phrasing that
+     opens with one used to print "floor wax on the sill." Found by reading a
+     generated case, not by a gate: no assertion in the suite can taste prose. */
+  s = fillTpl(s, d);
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 var TYPE_NAMES = ["", "Alibi", "Ownership", "Access", "Sighting", "Trace", "Timeline",
   "Wound", "Motive", "Company", "Empty room", "Sequence", "Object"];
@@ -2106,7 +2111,8 @@ function textSanity(cs) {
     if (/[-‐-―]/.test(s)) problems.push("clue " + i + " dash in copy");
     if (s.length < 8) problems.push("clue " + i + " empty text");
     var must = clueSubjects(cl);
-    for (var j = 0; j < must.length; j++) if (s.indexOf(must[j]) < 0) problems.push("clue " + i + " text drops " + must[j]);
+    var low = s.toLowerCase();
+    for (var j = 0; j < must.length; j++) if (low.indexOf(must[j].toLowerCase()) < 0) problems.push("clue " + i + " text drops " + must[j]);
   }
   if (lieId >= 0 && falses !== 1) problems.push("a liar case holds " + falses + " false clues, not one");
   if (lieId < 0 && falses !== 0) problems.push("an honest case holds " + falses + " false clues");
@@ -2730,7 +2736,7 @@ function suiteCopy(T, S) {
       if (/[{}]/.test(line)) faults += " ph" + ph + " slot";
       if (/[-]/.test(line)) faults += " ph" + ph + " dash";
       if (line.length < 12) faults += " ph" + ph + " stub";
-      for (q = 0; q < subs.length; q++) if (line.indexOf(subs[q]) < 0) faults += " ph" + ph + " drops " + subs[q];
+      for (q = 0; q < subs.length; q++) if (line.toLowerCase().indexOf(subs[q].toLowerCase()) < 0) faults += " ph" + ph + " drops " + subs[q];
     }
     T.eq("every phrasing of " + bn + " renders clean", faults, "", faults);
   }
@@ -2767,6 +2773,12 @@ function suiteCopy(T, S) {
     if (txt.length < 8) bad++;
   }
   T.eq("every rendered clue is clean", bad, 0);
+  var lower = 0, lc;
+  for (i = 0; i < cs.pool.length; i++) {
+    lc = S.clueText(cs.pool[i]).charAt(0);
+    if (lc !== lc.toUpperCase()) lower++;
+  }
+  T.eq("every clue reads as a sentence", lower, 0);
   T.eq("text sanity finds nothing wrong with a real case", S.textSanity(cs).length, 0);
 }
 

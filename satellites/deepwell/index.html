@@ -30,7 +30,7 @@
      if somebody later reshuffles the stacking order. Before this, the shaft was
      inset:0 behind z-index 3 cards and what reached the player was fragments
      leaking around the edges plus band names landing on the MINE button. */
-  --gut:64px;
+  --gut:68px;
   --gutpad:calc(var(--gut) + 10px);
 }
 @media (min-width:700px){ :root{ --gut:96px; } }
@@ -78,6 +78,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
    names what is next. The column's job is the shape and the ore colour. */
 .nmark{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;
   justify-content:center;gap:2px;min-width:26px;height:18px;padding:0 4px;border-radius:9px;
+  /* the marker can never grow into the ruler lane. RULER is 22 and the bore
+     keeps 4px off the right wall, so the widest a centred marker may be is
+     gut minus 26. This is why the two lanes cannot collide no matter how many
+     ore dots a vein holds. */
+  max-width:calc(var(--gut) - 26px);overflow:hidden;
   font-size:10px;line-height:1;white-space:nowrap;
   border:1px solid rgba(232,220,200,.20);background:rgba(8,9,13,.92);color:var(--cream)}
 .nmark.k-vein{border-color:rgba(240,167,66,.45)}
@@ -107,17 +112,22 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
    and where nothing else is drawn. */
 #strataName.stamped{animation:stamp 2400ms ease-out}
 @keyframes stamp{
-  0%{color:var(--warm);letter-spacing:.42em;transform:scale(1.16);text-shadow:0 0 18px rgba(255,217,160,.6)}
-  22%{color:var(--warm);letter-spacing:.34em;transform:scale(1.08)}
-  100%{color:var(--muted);letter-spacing:.24em;transform:scale(1);text-shadow:none}}
+  0%{color:var(--warm);transform:scale(1.14);text-shadow:0 0 18px rgba(255,217,160,.6)}
+  22%{color:var(--warm);transform:scale(1.06)}
+  100%{color:var(--muted);transform:scale(1);text-shadow:none}}
 
 /* ---------- hud / odometer ---------- */
 #hud{position:relative;z-index:3;padding:calc(var(--safeT) + 8px) 14px 4px var(--gutpad);text-align:center}
 #topRow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
+/* the middle of the top row now holds landmark names as long as THE OLD SEA
+   FLOOR, in a header the gutter made narrower. It shrinks, it never overflows. */
+#topRow > div{flex:1 1 auto;min-width:0;overflow:hidden}
 .iconbtn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
   font-size:19px;border-radius:12px;color:var(--muted)}
 .iconbtn:active{background:rgba(255,255,255,.06)}
-#strataName{font-size:13px;letter-spacing:.24em;color:var(--muted);font-weight:700}
+#strataName{font-size:13px;letter-spacing:.24em;color:var(--muted);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#strataName.long{font-size:10.5px;letter-spacing:.14em}
 .odo{display:flex;align-items:center;justify-content:center;gap:2px;line-height:1;margin:2px 0 0}
 .digit{height:.92em;overflow:hidden;width:.62em;position:relative}
 .digit i{display:block;font-style:normal;transition:transform 200ms cubic-bezier(.2,.8,.3,1)}
@@ -2405,7 +2415,7 @@ function shrineText(id, st) {
 /* ========================= 6. VIEW ========================= */
 var $ = function (id) { return document.getElementById(id); };
 var G = { save: null, run: null, replay: null, replayTimer: 0, replayT2: 0, replaying: false,
-          lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false, stampUntil: 0 };
+          lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false, stampUntil: 0, stampT: 0 };
 var REDUCED = false;
 try { REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -2568,7 +2578,7 @@ function renderShaft() {
   var y = function (d) { return (d - top) * pxPerM; };
   /* two lanes, measured, never overlapping. RULER is wide enough for a four
      figure depth at 9px; the bore takes the rest and its markers centre on it. */
-  var gw = sc.clientWidth || 64, RULER = 24;
+  var gw = sc.clientWidth || 68, RULER = 22;
   var boreL = RULER, boreR = 4, boreW = Math.max(18, gw - boreL - boreR);
   var boreMid = boreL + boreW / 2;
 
@@ -2645,7 +2655,14 @@ function stampBand(name) {
   var el = $('strataName');
   if (!el) return;
   el.textContent = name;
+  /* a landmark name is far longer than a band name and the header is narrower
+     than it was. Shrink rather than clip. */
+  el.classList[name.length > 11 ? 'add' : 'remove']('long');
   G.stampUntil = Date.now() + 2400;
+  /* put the band name back on its own, so a landmark does not sit in the HUD
+     until the player happens to press something */
+  clearTimeout(G.stampT);
+  G.stampT = setTimeout(function () { if (G.run && !G.run.over) render(); }, 2500);
   if (motionOff()) return;
   el.classList.remove('stamped');
   void el.offsetWidth;
@@ -2680,7 +2697,11 @@ function render() {
   var band = bandAt(st.depth), cost = ascentCost(st), dc = descendCost(st);
   setOdo($('odo'), st.depth, 1);
   /* a seam crossing or a landmark owns this line for 2.4 seconds */
-  if (!(G.stampUntil && Date.now() < G.stampUntil)) $('strataName').textContent = band.name;
+  if (!(G.stampUntil && Date.now() < G.stampUntil)) {
+    var sn = $('strataName');
+    sn.textContent = band.name;
+    sn.classList[band.name.length > 11 ? 'add' : 'remove']('long');
+  }
   $('recDepth').textContent = s.best.depth;
   $('ascNum').textContent = Math.ceil(cost.air);
   $('airNum').textContent = Math.floor(st.air);

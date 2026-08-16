@@ -316,12 +316,12 @@ function gateSweep(r) {
 /* ------------------------------------------------------------------ */
 /* watch a single case                                                 */
 /* ------------------------------------------------------------------ */
-function watch(seed) {
-  var cs = G.generateCase(seed >>> 0);
+function watch(seed, opts) {
+  var cs = G.generateCase(seed >>> 0, opts || {});
   if (!cs) { console.log("seed " + seed + " produced no case"); return; }
   var T = cs.truth;
   console.log("");
-  console.log(cs.title.toUpperCase() + "   seed " + cs.seed);
+  console.log(cs.title.toUpperCase() + "   seed " + cs.seed + "   [" + G.modeLabelOf(cs.tier, cs.liar) + ", " + cs.actions + " actions]");
   console.log("=".repeat(58));
   console.log("TRUTH   " + G.SUSPECTS[T.c].n + " / " + G.WEAPONS[T.w].n + " / " +
     G.ROOMS[T.r].n + " / " + G.TIMES[T.t]);
@@ -346,11 +346,16 @@ function watch(seed) {
   console.log("");
   var minSet = {};
   cs.minimal.forEach(function (id) { minSet[id] = 1; });
-  console.log("CLUE POOL (" + cs.pool.length + ")   * = minimal sufficient set");
+  if (cs.liar) {
+    console.log("THE LIE   " + G.SUSPECTS[cs.lie.speaker].n + " says: " + G.clueText(cs.pool[cs.lie.id]));
+    console.log("");
+  }
+  console.log("CLUE POOL (" + cs.pool.length + ")   * = minimal sufficient set, LIE = the false one");
   cs.pool.forEach(function (cl) {
     var mask = cs.masks[cl.id];
     var cut = G.CONFIG.TUPLES - G.bitsCount(mask);
     console.log("  " + (minSet[cl.id] ? "*" : " ") + String(cl.id).padStart(3) + "  " +
+      (cs.liar && cs.lie.id === cl.id ? "LIE " : "    ") +
       G.TYPE_NAMES[cl.ty].padEnd(11) + "cuts " + String(cut).padStart(4) + "  " + G.clueText(cl));
   });
   console.log("");
@@ -398,7 +403,7 @@ function arg(name, dflt) {
 }
 
 if (arg("watch", null) !== null && arg("watch", null) !== undefined && args.some(function (a) { return a.indexOf("--watch") === 0; })) {
-  watch(parseInt(arg("watch", "1"), 10) || 1);
+  watch(parseInt(arg("watch", "1"), 10) || 1, { tier: arg("tier", null), liar: args.some(function (a) { return a === "--liar"; }) });
   process.exit(0);
 }
 

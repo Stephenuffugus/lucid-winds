@@ -406,6 +406,38 @@ function layoutGate() {
   chk('a disabled action button gets its own plate', !!dis && /background:\s*#/.test(dis), dis || '');
   chk('its reason line stays legible', css.indexOf('.big[disabled] small') >= 0);
 
+  /* THE TWO LANES MAY NOT COLLIDE, at either gutter width. Computed from the
+     source rather than trusted: a three dot vein marker at 68px very nearly
+     reached into the ruler lane during this fix and was caught here. */
+  var rulerM = /RULER = (\d+)/.exec(html), markM = rule('.nmark');
+  var guts = [];
+  (css.match(/--gut:\s*(\d+)px/g) || []).forEach(function (g) { guts.push(parseInt(/(\d+)/.exec(g)[1], 10)); });
+  chk('the ruler lane width is declared in renderShaft', !!rulerM);
+  chk('more than one gutter width is defined, phone and desktop', guts.length >= 2, JSON.stringify(guts));
+  chk('the marker is capped so it cannot enter the ruler lane',
+      !!markM && /max-width:\s*calc\(var\(--gut\) - 26px\)/.test(markM), markM || '');
+  if (rulerM) {
+    var RULER = parseInt(rulerM[1], 10), bad = [];
+    guts.forEach(function (g) {
+      var boreW = g - RULER - 4, mid = RULER + boreW / 2, maxW = g - 26;
+      /* the widest allowed marker, centred, must start right of the ruler lane */
+      if (mid - maxW / 2 < RULER) bad.push('gut ' + g + ': marker reaches ' + (mid - maxW / 2) + ', ruler ends at ' + RULER);
+      if (boreW < 18) bad.push('gut ' + g + ': bore only ' + boreW + 'px');
+    });
+    chk('at every gutter width the widest marker clears the ruler', bad.length === 0, bad.join(' | '));
+    chk('the ruler lane fits a four figure depth at 9px', RULER >= 22, 'RULER ' + RULER);
+  }
+
+  /* the HUD line now carries landmark names in a narrower header */
+  var snR = rule('#strataName');
+  chk('the strata line cannot overflow the header', !!snR && /white-space:\s*nowrap/.test(snR) && /overflow:\s*hidden/.test(snR), snR || '');
+  chk('and shrinks for a long landmark name', css.indexOf('#strataName.long') >= 0);
+  var longest = 0;
+  (html.match(/name: '(THE [A-Z ]+)'/g) || []).forEach(function (m) {
+    var t = /'(.*)'/.exec(m)[1]; if (t.length > longest) longest = t.length;
+  });
+  chk('the longest landmark name is known and handled', longest > 11 && css.indexOf('#strataName.long') >= 0, 'longest ' + longest);
+
   /* touch targets are still declared at 48 or more */
   var small = [];
   css.split('}').forEach(function (r) {

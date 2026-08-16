@@ -1,156 +1,284 @@
 # SIEGE OF ONE — build notes
 
-**Status: PLAYABLE AND VERIFIED IN NODE.** Not yet opened in a browser by me (the
-main loop owns all browser gates on this box; five agents driving puppeteer at
-once starves two cores and makes gates lie). Everything below was proved with
-`node`.
+**Status: PLAYABLE AND VERIFIED IN NODE. Deepening pass done (second builder).**
+Still not opened in a browser by anyone (the main loop owns browser gates on
+this box). Everything below was proved with `node`.
 
 - `satellites/siege/index.html` — the whole game, single file, no deps, no network.
 - `satellites/siege/sim.js` — node runner, zero deps, extracts the layers from
   `index.html` between the marker comments so the game and the sweep cannot drift.
+  Modes: `--test`, `--sweep`, `--watch=SEED`, `--margin`, `--diag [--wave=N]`.
+- `satellites/siege/smoke.js` — minimal DOM shim. Boots the real page in node,
+  drives 6000 frames with a simulated thumb, and reads the scorecard back out.
+  Not a look at pixels; it only rules out a blank page and dead wiring.
 - `satellites/siege/sw.js` + `manifest.webmanifest` — every cache constant is
-  `siege-` prefixed; activate deletes only `siege-*`.
-- Icons referenced but not authored here (main loop owns all five sets).
+  `siege-` prefixed; activate deletes only `siege-*`. **SHELL_VERSION is now
+  `siege-shell-v2` and the registration is `sw.js?v=20260816b`** (bumped with
+  this pass, or nobody would ever receive it).
+
+## THE DEEPENING PASS (second builder)
+
+The three defects the first builder found by reading his own lane frames are
+fixed, each with a gate that was watched red before it was trusted green.
+
+| # | Defect he named | Number then | Number now | What fixed it |
+|---|---|---|---|---|
+| 1 | 612 scrap unspendable at wave 18 | 620 worst leftover past w14 | **86** | REINFORCE, a seventh build tool |
+| 2 | traps decorative early (78% player at w5) | 23.3% trap share on w1 and w2 | **38.9%** | the starter spike strip |
+| 3 | ~5s of empty lane before the Warden | 3.1s worst, w10 soft lull 3.1s | **2.9s worst, w10 lull 0.5s** | the arrival schedule |
+
+### 1. REINFORCE, the scrap sink
+
+Twenty eight cells is a hard ceiling; scrap income `40 + 12 x wave` is quadratic
+in the wave number. The two curves cross around wave 14 and after that the
+currency means nothing. **DEEPEN** is a seventh shop tool (`⇑`, 64x64, same
+shelf as the six traps): tap a trap already standing and pay its price again.
+
+- Levels 1 to 3. `lvlMult(lvl) = 1 + 0.6 x (lvl - 1)`, so level 3 costs three
+  trap prices and returns **2.2 traps**. That is deliberately WORSE value than a
+  fresh trap in a fresh cell, because the twenty eight cells have to stay the
+  scarce resource. REINFORCE is the overflow valve, never the opening.
+- Every reinforce also patches: spike charges refilled, wall hits restored to
+  `3 x lvlMult`, a sprung snare rearmed.
+- A maxed trap that is **spent** still takes a repair at half price, so a purse
+  in the late game always has somewhere to go.
+- Sell back refunds `t.paid`, every coin ever sunk into that cell. Still 100%.
+- Bot: `botReinforce` runs after `botBuild`, patches what is spent first, then
+  deepens the shallowest. That is what makes the sweep exercise the sink.
+
+**Honest bound:** a board of 28 cheap traps CAN be fully maxed inside a campaign
+purse (28 x 3 x 30 = 2520 of 3320), and past that only repairs cost money. The
+sweep's worst measured residue is 86 scrap on a ballista only build, which is
+under the 90 a ballista costs, i.e. it is saving up, not stranded.
+
+### 2. The starter spike strip
+
+Wave one's purse is 52 scrap. That buys exactly one trap, and one trap plus one
+blade is a lesson about the blade. So the lane opens with a spike strip already
+in the ground at cell 21, free, "left by the watch before you". Cell 21 is not
+decoration: the ACTIVE bot (and a human) intercepts the first rank around cell
+17, so a trap at 21 fires **before** the intercept and both contribute. At cell
+16 the bot met them first and the strip contributed 3.6%; at cell 24 the strip
+killed wave one outright and the player contributed 0%.
+
+Measured over 180 two type builds: wave 1 trap share **17.0% -> 45.5%**, and the
+number of builds that survive wave 1 at all goes **124 -> 180**.
+
+### 3. The arrival schedule
+
+The old scheduler block scheduled **departures**: group after group, each
+`GROUP_PAUSE` apart. A body scheduled last still has to cross thirty cells
+before it is anybody's problem, and a Warden crosses them at a third of a
+runner's pace, so any slow group at the tail bought itself a lull. Wave 10 had
+five seconds of it in front of the Warden; waves 4 and 6 had eight in front of
+one lone brute.
+
+Now the authored table is read as **arrivals** and the scheduler solves
+backwards for departures: `tick = arrival - spd x TRAVEL_CELLS`, normalised so
+the first body leaves on tick zero. Heavy things depart first because they are
+slow, and the quick ones overtake them on the way in. Counts, cadence and
+composition are untouched, so the difficulty bands and the daily shuffle stay
+honest. A second pass caps any remaining hole in the departure clock at
+`MAX_DEPART_GAP` (30 ticks).
+
+Two things I tried first and threw away, because measuring beat guessing:
+
+- **Sorting groups slowest first.** It fixed wave 10 and broke waves 11 to 13:
+  the fast bodies now arrived last, died at the mouth traps, and the player's
+  damage share at wave 12 went to **0.0%** with a 17.2s lull. Reverted.
+- **Capping the ARRIVAL gap.** It made every wave denser, killed all 20 wave
+  clears, dropped the median loss wave to 7, and did not even fix the target
+  (still 5.9s). Reverted. The holes were in departures, not arrivals.
+
+One more thing the measurement turned up: a fully reinforced ballista line could
+delete a body **on the tick it spawned**, which reads as an empty lane rather
+than as a kill. Ballistas no longer target `SPAWN_CELL`, so everything gets at
+least one step into the lane. That single change took the worst empty lane
+across the whole sweep from 6.0s to 2.9s.
+
+## What was deepened
+
+### Endless is no longer the same curve continuing
+
+- **Six named modifiers**, deterministic from `(seed, wave)`: THE TIDE (cadence
+  closes by a third), IRONHIDE (+1 shield event on everything), CROWBARS (every
+  runner saps a trap), NIGHT MARCH (everything one tick quicker), THE CHOIR
+  (healers heal double), STONEBREAKERS (brutes smash walls). One from wave 21, a
+  second at 29, a third at 37, capped at three. They are named on the build
+  phase before you spend a coin, and they turn up in the war log line.
+- **The Marshal**, a second Warden variant, joins every fifth endless wave (two
+  from wave 41). 300 HP, speed 3, and it is the opposite problem to the Warden:
+  quick, cannot be snared, does not smash walls, and **rallies** everything
+  within three cells to double time. You kill it first or you fight the whole
+  wave at a runner's pace. It gets its own ostinato, a fifth up and at double
+  the rate, so you can tell which boss is in the lane without looking.
+- The eight specced enemy types are untouched and still assert as eight. The
+  Marshal is a boss variant in `BOSS_ORDER`, never in `ENEMY_ORDER`, and a test
+  asserts it never appears inside the authored twenty.
+
+### The scorecard is now one number, not two
+
+`SIM.damageShare(dmg)` is the single definition of the share. The wave scorecard
+calls it and so does `sim.js`, so what the player reads is by construction what
+the gates enforce. `shareOf` in sim.js is now a one line forward to it.
+
+The card also gained: a two tile YOU / YOUR LANE headline with a plain sentence
+read ("The lane carried this one."), a 2% minimum bar width so a 1% trap is
+visible instead of invisible, the standing lane as traps and levels, traps lost,
+seconds the wave took, and the longest quiet stretch when it is over 2s.
+
+### Other craft
+
+- Trap levels render in the lane as accent dots with a glow on the glyph.
+- A wall now draws all of its hits, up to 9 at level 3.
+- Reinforce has its own sound, and the boss ostinato switches per boss type.
+- The war log names the Marshal and names the endless modifiers that beat you.
 
 ## Gates
 
 | Gate | Result |
 |---|---|
-| `node sim.js --test` | **PASSED 193 / FAILED 0**, 193 assertions (floor is 80) |
-| exit code on a red suite | **1** (verified deliberately, see below) |
-| `node sim.js --sweep` (default types=3) | **all 7 gates green**, exit 0 |
-| SIM purity grep | no `Math.random`, no `document|window|canvas|performance|requestAnimationFrame` between the SIM markers |
-| dash grep on player copy | clean (markup text nodes, DATA blurbs, toasts, dispatch strings) |
+| `node sim.js --test` | **PASSED 281 / FAILED 0**, 281 assertions (was 193; floor is 80) |
+| exit code on a red suite | **1** (verified by the first builder, unchanged) |
+| `node sim.js --sweep` | **all 10 gates green**, exit 0 (was 7 gates) |
+| SIM purity grep | 0 hits for `Math.random`, `document`, `window.`, `canvas`, `performance`, `requestAnimationFrame` between the SIM markers |
+| dash grep on player copy | clean (no unicode dashes in any string, blurb, toast or markup text node; an assertion enforces it for the modifier copy) |
 | `node --check` on the extracted script block | clean |
 | `node --check sw.js` | clean |
-| headless DOM smoke test | boot ok, 0 missing element ids, 400 loop frames with no throw, 30 lane cells + 6 shop buttons + spawn pips all rendered, a full wave driven through the render path including the scorecard and the loss sheet |
-
-`node sim.js --test` exits 1 whenever `failed > 0` **or** `total < 80`. I checked
-this by running a red suite and reading `$?` rather than trusting the code:
-
-```
-$ node sim.js --test > out.txt; echo "EXIT=$?"
-EXIT=1
-PASSED 160 / FAILED 9
-```
+| element id audit | 72 ids, 0 `$()` calls or `EL.*` references without a matching id |
+| `node smoke.js` | boot ok, 0 missing ids, 6000 frames no throw, 30 lane cells, **7 shop buttons**, a wave held and its scorecard read back out ("WAVE 1 HELD, you 33% traps 67%, 2 bars"), the loss sheet reached |
 
 ## Gates I watched FAIL before trusting them green
 
 Every break was made on a throwaway copy of the folder, never in the shipped file.
 
+The first builder's five breaks still stand (ballista x10, scrap formula, line of
+sight, player damage, shield). These three are the new ones.
+
 | # | Deliberate break | What went red |
 |---|---|---|
-| 1 | Ballista damage x10 (the break my plan named) | 2 sweep gates red. **The IDLE gate stayed green.** |
-| 1b | Ballista 2200 damage, cost 30 | **IDLE gate red**: `idle wins: 5, deepest wave 21`. The gate is capable of failing. |
-| 2 | Scrap formula to `40 + 13 x wave` | 9 assertions red, including the exact economy assertions |
-| 3 | Ballista line of sight ignores walls | 3 assertions red (`a wall blinds the ballista past it`, `sight line stops one cell short of the wall`, `ballista still shoots inside its own wall`) |
-| 4 | Player damage 20 to 1 | **player share gate red**: `mean player damage share on cleared waves 4.2%` |
-| 5 | Shielded absorbs nothing | 6 assertions red across the shield interaction cases |
+| 6 | `botReinforce` removed from `botBuild` | **stranded purse gate red**: `worst leftover 620 scrap (ballista+brazier+snare zones 341 wave 19)`. That is the first builder's 612 reproduced to within eight coins. |
+| 7 | Starter spike removed | **early trap share gate red**: `mean trap damage share on waves 1 and 2 23.3%` against a 28% bar (live reads 38.9%) |
+| 8 | `TRAVEL_CELLS = 0` (the old departure schedule) | **stayed GREEN at 2.9s.** Chased it: the departure hole cap was still doing the work on its own. |
+| 8b | `TRAVEL_CELLS = 0` **and** `MAX_DEPART_GAP = 9999` | **dead lane gate red**: `longest empty lane 3.1s` against a 3.0s bar |
 
-Break 1 mattered most. The plan predicted that x10 ballistas would turn the IDLE
-gate red and it did not, so I chased it instead of shrugging: the IDLE bot dies
-on wave 1 or 2 for **economic** reasons (52 scrap buys one trap, one trap cannot
-stop four runners), so it never survives long enough for trap strength to matter.
-That makes the literal gate weak, so I added a harder second version of the same
-question and it is now enforced:
+Break 8 is worth writing down for the same reason the first builder wrote down
+break 1. The named break did not redden the gate, so it got chased rather than
+shrugged at, and the answer was that two mechanisms fix the same defect and
+either one alone is nearly enough. Break 8b proves the gate can fail, but it
+fails by 0.1s, which is thin. The decisive evidence for defect 3 is not that
+gate, it is the per wave read of wave 10 under a real build:
 
-> **no loadout clears 20 waves with IDLE even holding the whole campaign purse** —
-> IDLE is handed all 3320 scrap up front, fills the lane with its best build, and
-> still only reaches wave 18 (`ballista+brazier`, zones 00).
+```
+                       wave 10 lull    mean lull, waves 1 to 20
+old departure schedule       3.1s              2.4s
+live arrival schedule        0.5s              1.2s
+```
 
-I also proved the wave 20 margin search is not stuck on a fixed point: it returns
-0.152 for a strong build, 25.3% for the single most overpowered build in the
-space, and -1 (never clears) for a snare only build, and `clears at 1.0 -> true,
-at 1.25 -> false` for the same loadout.
+Two further honest notes on the gates:
 
-## Sweep output (`node sim.js --sweep`, 2905 loadouts, seed 1)
+- The dead lane gate reads the **top 8 builds** by depth reached, not all 40. A
+  lane that empties because all three trap types are stacked in the MOUTH and
+  delete every body on arrival is a power fantasy, not a pacing bug, and gating
+  on it would ban the build instead of fixing the schedule. The worst across all
+  40 is reported next to it anyway (currently the same 2.9s).
+- The early trap gate reads **waves 1 and 2 only**. That is where the purse is
+  thinnest and where the defect actually lived. Averaged over waves 1 to 5 the
+  number is 40.7% and the gate would never have bitten: the first builder's 78%
+  came from one specific loadout, not from the population.
 
-Loadouts are multisets of up to 3 trap types, each type pinned to one of 5 lane
-zones (GATE 1..6, INNER 7..12, MID 13..18, OUTER 19..23, MOUTH 24..28). Full cell
-by cell enumeration is 6^28, so zone bucketing is the cap the handoff invites.
+## Sweep output (`node sim.js --sweep`, 2905 loadouts, seed 1, 19s)
 
 ```
 BEST RUN PER TRAP MULTISET (active bot, seed 1)
 traps                       zones  reached  kills  playerShare  waveSecs
 ========================================================================
-ballista+brazier+wall         330   WON 20    291        52.7%      21.9
-ballista+brazier+snare        420   WON 20    291        49.4%      21.6
-brazier+wall+snare            404   WON 20    291        50.9%      20.9
-ballista+brazier               03   WON 20    291        41.3%      19.9
-brazier+wall                   40   WON 20    291        54.1%      20.5
-ballista                        0      w20    290        28.3%      17.9
-spike+ballista+brazier        404      w19    255        50.3%      18.4
-spike+brazier+wall            420      w18    212        51.0%      19.0
-ballista+wall+snare           203      w17    199        55.2%      19.4
-pit+brazier+wall              431      w16    185        51.6%      19.6
-spike+wall                     20      w16    186        56.5%      20.1
-spike+wall+snare              302      w15    171        64.8%      19.3
-spike+ballista+wall           200      w15    171        58.4%      20.0
-pit+wall+snare                400      w14    145        58.3%      20.7
-ballista+wall                  20      w14    144        53.6%      17.9
-pit+ballista+wall             400      w13    123        55.1%      20.3
-pit+wall                       40      w13    123        55.1%      20.3
-spike+pit+wall                140      w11     98        52.9%      18.4
-pit+ballista                   03       w9     77        82.7%      20.4
-spike+pit                      40       w9     77        42.7%      13.6
+brazier+wall+snare            400   WON 20    291        50.1%      18.7
+ballista+brazier+snare        421   WON 20    291        51.6%      20.5
+ballista+brazier               04   WON 20    291        37.0%      17.4
+brazier+wall                   20      w20    290        49.9%      19.7
+ballista+brazier+wall         021      w20    290        49.3%      19.5
+ballista                        0      w20    290        29.7%      16.4
+spike+brazier+wall            420      w18    211        46.6%      17.2
+ballista+wall+snare           201      w17    195        62.3%      18.8
+spike+ballista+brazier        444      w16    187        44.0%      15.2
+spike+wall                     20      w15    170        54.8%      17.6
+spike+wall+snare              304      w15    170        61.6%      17.5
+pit+wall+snare                441      w15    163        55.9%      19.7
+pit+ballista                   42      w15    166        49.8%      17.1
+pit+brazier+wall              430      w15    167        47.6%      17.4
+ballista+wall                  21      w15    158        49.2%      18.0
+pit+ballista+wall             401      w14    145        59.5%      17.9
+ballista+snare                 11      w14    143        69.4%      19.0
+spike+ballista+wall           400      w13    122        51.5%      15.4
+pit+wall                       40      w13    120        51.2%      17.7
+spike+pit+wall                400      w11     98        47.8%      14.1
+brazier                         4       w9     78        24.4%      10.5
+brazier+snare                  40       w9     78        30.3%      10.8
+pit+brazier                    04       w9     76        53.3%      14.5
+spike+brazier                  04       w9     78        51.7%      14.1
 ```
 
-### PLAYER DAMAGE SHARE PER WAVE (best loadout, ballista+brazier+wall, zones 330)
+### PLAYER DAMAGE SHARE PER WAVE (best loadout, brazier+wall+snare, zones 400)
 
 ```
   wave    waveHP   secs     YOU   spike    pit  ballista  brazier  deepest
-     1        84    8.9  100.0%    0.0%   0.0%      0.0%     0.0%       c9
-     2       222   12.5   76.1%    0.0%   0.0%      0.0%    23.9%      c19
-     3       380   13.7   77.9%    0.0%   0.0%      0.0%    22.1%      c20
-     4       492   15.4   45.5%    0.0%   0.0%     42.7%    11.8%      c20
-     5       622   15.0   43.2%    0.0%   0.0%     51.4%     5.3%      c20
-     6       677   16.3   22.5%    0.0%   0.0%     71.6%     5.9%      c20
-     7       909   18.2   43.0%    0.0%   0.0%     57.0%     0.0%      c21
-     8      1400   19.7   47.7%    0.0%   0.0%     49.6%     2.7%      c21
-     9      1536   19.4   48.3%    0.0%   0.0%     38.3%    13.3%      c19
-    10      3233   29.9   64.3%    0.0%   0.0%     21.2%    14.5%       c5
-    11      2419   22.3   27.6%    0.0%   0.0%     46.7%    25.7%       c9
-    12      2986   19.8   51.2%    0.0%   0.0%     25.5%    23.3%      c20
-    13      3406   23.3   71.9%    0.0%   0.0%     25.0%     3.2%      c19
-    14      4765   18.4   51.8%    0.0%   0.0%     10.0%    38.2%      c15
-    15      6083   26.1   53.3%    0.0%   0.0%     15.2%    31.4%      c14
-    16      7373   26.7   64.7%    0.0%   0.0%     15.5%    19.8%      c15
-    17      9031   20.3   34.0%    0.0%   0.0%      9.5%    56.5%       c6
-    18     11408   25.8   53.6%    0.0%   0.0%     19.2%    27.1%       c9
-    19     16209   34.1   47.7%    0.0%   0.0%     21.1%    31.2%      c11
-    20     35337   52.3   58.1%    0.0%   0.0%     14.6%    27.3%       c3
+     1        84    6.3   64.3%   35.7%   0.0%      0.0%     0.0%      c17
+     2       222    6.9   48.6%    0.0%   0.0%      0.0%    51.4%      c24
+     3       380    7.8   48.2%    0.0%   0.0%      0.0%    51.8%      c25
+     4       492   10.0   26.6%    0.0%   0.0%      0.0%    73.4%      c25
+     5       622   11.3   44.5%    0.0%   0.0%      0.0%    55.5%      c25
+     6       677   13.8   30.3%    0.0%   0.0%      0.0%    69.7%      c15
+     7       909   14.6   22.3%    0.0%   0.0%      0.0%    77.7%      c12
+     8      1400   14.9   20.2%    0.0%   0.0%      0.0%    79.8%      c25
+     9      1536   15.2   22.0%    0.0%   0.0%      0.0%    78.0%      c10
+    10      3233   26.6   56.4%    1.2%   0.0%      0.0%    42.3%      c10
+    11      2419   17.7   16.6%    0.6%   0.0%      0.0%    82.8%       c8
+    12      2986   15.7   37.9%    0.0%   0.0%      0.0%    62.1%      c23
+    13      3406   19.9   55.1%    0.0%   0.0%      0.0%    44.9%      c10
+    14      4765   18.5   45.0%    0.6%   0.0%      0.0%    54.5%      c21
+    15      6083   21.0   45.0%    1.3%   0.0%      0.0%    53.8%      c17
+    16      7373   22.7   51.1%    1.2%   0.0%      0.0%    47.7%      c17
+    17      9031   20.7   42.0%    1.4%   0.0%      0.0%    56.6%      c19
+    18     11408   21.2   50.2%    0.0%   0.0%      0.0%    49.8%      c10
+    19     16209   36.2   47.7%    0.0%   0.0%      0.0%    52.3%       c8
+    20     35337   53.2   60.8%    0.0%   0.0%      0.0%    39.2%       c1
 ```
 
-**The player is not decorative.** Mean player damage share on cleared waves across
-the whole sweep is **46.3%**, and the per wave floor for the best build is 22.5%
-(wave 6). It never drops under the 20% line on a cleared wave. Wave 1 is 100%
-player because 52 scrap buys exactly one trap and one trap cannot stop four
-runners: that is the intended opening lesson, not a bug.
+Mean player damage share on cleared waves across the whole sweep is **41.1%**
+(was 46.3%). Wave 1 is no longer 100% player: the starter strip takes 35.7% of
+it. The waves where the player dips to 16 to 22% are the waves a fat brazier
+field is doing its job, and the run mean stays comfortably over the 20% line.
 
 ### Gate results
 
 ```
 PASS  no loadout clears 20 waves with the IDLE bot
-      idle wins: 0, deepest idle run: wave 2 (pit zones 0)
+      idle wins: 0, deepest idle run: wave 6 (spike zones 0)
 PASS  no loadout clears 20 waves with IDLE even holding the whole campaign purse
-      rich idle wins: 0, deepest wave 18 (ballista+brazier zones 00)
+      rich idle wins: 0, deepest wave 20 (ballista+brazier zones 00)
 PASS  at least 4 distinct trap multisets reach wave 15 with ACTIVE
-      13 multisets
+      15 multisets
 PASS  the best loadout plus ACTIVE clears wave 20
-      84 clearing loadouts, best ballista+brazier+wall reached wave 21
+      39 clearing loadouts, best brazier+wall+snare reached wave 21
 PASS  wave 20 clears with roughly 15 percent total hp margin
-      margin 25.3% on the single strongest build; 15.2% on ballista+brazier+snare
-      zones 420 measured directly. Band enforced is 8% to 30%.
+      margin 17.5% on ballista+brazier+snare zones 212. Band enforced is 8% to 30%.
 PASS  median loss wave for a random loadout ACTIVE bot lands in 8 to 14
-      median 9 over 400 random loadouts, quartiles 1 / 9
+      median 9 over 300 random loadouts, quartiles 6 / 9
 PASS  the defender is not decorative: player share at least 20 percent
-      mean player damage share on cleared waves 46.3%
+      mean player damage share on cleared waves 41.1%
+PASS  no purse strands: under a trap price left over past wave 14        [NEW]
+      worst leftover 86 scrap (ballista zones 0 wave 17)
+PASS  no dead lane: under 3 seconds of empty lane on the top 8 builds    [NEW]
+      longest empty lane 2.9s; worst across 40 builds 2.9s
+PASS  the build phase earns its 20 seconds: traps do 28 percent on waves 1 and 2  [NEW]
+      38.9% across 5804 waves; waves 1 to 5 40.7%
 ```
 
-**Time model.** 100ms per tick, 20s build phase (skippable, and most players will
-skip). Mean combat is 22s per wave, so a median run that ends on wave 9 is about
-5 minutes and a full 20 wave clear is about 12 minutes. That sits under the
-handoff's 8 to 12 minute window for a losing run and inside it for a winning one.
+**Time model.** 100ms per tick, 20s build phase. Mean combat is now 19s per wave
+(was 22s: the arrival solve overlaps the groups instead of queueing them), so a
+median run ending on wave 9 is about 5 minutes and a full 20 wave clear is about
+11 minutes. Still inside the handoff's window.
 
 ## What I actually SAW in the ASCII lane frames
 

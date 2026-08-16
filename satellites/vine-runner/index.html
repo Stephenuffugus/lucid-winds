@@ -28,8 +28,19 @@
    drawn on canvas, so the how-to is a DOM overlay, shown once per device with a
    ? button to bring it back. Copy is read off the game's own title screen and
    its real controls, not invented. */
+/* ⛔ The 190px of bottom padding is a CLEARANCE, not a style choice. The fleet
+   feedback fab (/feedback.js) is fixed bottom right at z-index 2147482000 —
+   billions above this overlay's 120 — so it floats over this sheet and no
+   z-index here can win. For satellites it renders as .lwfb-fab.lwfb-mini: a
+   48px circle sitting 96px off the bottom, plus a 48px dismiss badge hung 30px
+   up and left of it, so it occupies up to 174px above the bottom edge. Without
+   this padding it landed on the right hand end of the RUN button and on the
+   tail of the "Tap the ? in the corner" line: the two things a player needs on
+   this screen, both partly covered. Because the padding lives inside the scroll
+   container, the last line of content always ends 16px clear of the fab no
+   matter how tall the screen is or how long the copy gets. */
 #vrHow{position:fixed;inset:0;z-index:120;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  background:#08140b;padding:24px 18px 28px;font-family:inherit;color:#e6f3d8}
+  background:#08140b;padding:24px 18px calc(190px + env(safe-area-inset-bottom,0px));font-family:inherit;color:#e6f3d8}
 #vrHow .in{max-width:520px;margin:0 auto}
 #vrHow .kick{font-size:12px;letter-spacing:.22em;color:#9fe07a;font-weight:800}
 #vrHow h2{margin:6px 0 2px;font-size:26px;color:#f0d878}
@@ -231,11 +242,20 @@ function pauseLayout(){ return {
 function inRect(x,y,r){ return Math.abs(x-r.x)<=r.w/2 && Math.abs(y-r.y)<=r.h/2; }
 // Way out of the game, on the TITLE screen. The portal opens this card as a top
 // level navigation with no chrome around it, so without this the only exit was
-// buried behind "start a run, then pause". Sits low and centred, well under the
-// TAP TO GROW prompt (H*0.62) and the two control hint lines (H*0.66, H*0.71),
-// and the title screen has no other controls down there. 200x52 clears the 48px
-// touch floor on the narrowest phone.
-function titleExitBtn(){ return {x:W/2, y:H*0.87, w:200, h:52}; }
+// buried behind "start a run, then pause".
+//
+// ⛔ BOTTOM LEFT, ANCHORED TO THE BOTTOM EDGE, NOT A FRACTION OF H.
+// The first version sat centred at H*0.87 and came within 5px of the fleet
+// feedback fab at 390 wide — and would have collided outright at other sizes.
+// The fab (/feedback.js, .lwfb-fab.lwfb-mini) is fixed bottom RIGHT and is much
+// taller than it looks: 48px circle sitting 96px off the bottom, plus a 48px
+// dismiss badge hung 30px up and to its LEFT, so it owns roughly the block from
+// x = W-90 to W-12 and from y = H-174 to H-96. A canvas control has no layout
+// engine keeping it out of that, so it is kept out by arithmetic: bottom left
+// corner, bottom anchored, which cannot meet a bottom right fab at any size.
+// Also clears the TAP TO GROW prompt (H*0.62) and both hint lines (H*0.66,
+// H*0.71) at every height. 200x52 clears the 48px touch floor.
+function titleExitBtn(){ var w=200,h=52; return {x:12+w/2, y:H-30-h/2, w:w, h:h}; }
 function pauseTap(x,y){
   var L=pauseLayout();
   if(inRect(x,y,L.resume)){ state="play"; return true; }

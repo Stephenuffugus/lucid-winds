@@ -15,6 +15,14 @@ node sim.js --test     PASSED 229 / FAILED 0   (total 229 assertions)
 
 Exits 1 on any failure, exits 3 if the assertion total ever drops under the floor, which
 this pass raised from 80 to 229 (the count it inherited), so the suite can only ever grow.
+
+```
+node sim.js --layout   LAYOUT GATE GREEN: 35 checks
+```
+
+A second, separate gate on the run screen layout, added after the coordinator's LOOKING pass
+(section 11). It exits 1 on any failure and it is not decoration: run against the exact build
+the coordinator looked at, **26 of its 27 original checks go red**.
 `node sim.js --grid=N` runs the tuning grid and `--over=KEY=VAL,...` runs any sweep against
 an overridden CONFIG without editing the game (source level substitution, throws on a key it
 cannot find, so a typo can never quietly measure the shipped numbers and call them tuned).
@@ -281,7 +289,11 @@ recorded audio branch removed (every sound here is synthesised), navigations ref
 
 - **Still true:** nothing here has been LOOKED at by any builder. The main loop owns the
   screenshots. Two findings from its earlier LOOKING pass are already fixed (the AIR TO SURFACE
-  bar grows with the cost, the dead space under the node card is gone).
+  bar grows with the cost, the dead space under the node card is gone), and three more from its
+  pass on the deepened build are fixed in section 11.
+- **The layout fixes in section 11 have not been looked at either.** They are held by a static
+  gate that was watched red against the defective build, which is evidence for that class of
+  bug and nothing more. Somebody still has to shoot the screen.
 - ~~The install nudge is not wired.~~ **FIXED**, section 10.
 - ~~Replay auto declines shrines.~~ **FIXED**, section 10, with a regression that proves the
   old behaviour was a different run: on the seed the test finds, the force declined playback
@@ -451,3 +463,90 @@ with five assertions including two garbage shapes.
 - `sw.js` cache prefix is still `deepwell-` and it still only ever deletes its own keys
 - `SHELL_VERSION` and the registration `?v=` bumped together to `deepwell-shell-v2` /
   `20260816b`
+
+
+---
+
+## 11. Layout pass, after the coordinator's LOOKING report
+
+Three findings on the deepened build at 390x844 and 1280x800. All three fixed, all three held
+by `node sim.js --layout`, which was **watched red against the exact build that had them**: 26
+of its 27 original checks fail on that file and pass on this one.
+
+### 11.1 The shaft was fighting the UI, and losing (the important one)
+
+**What was wrong.** `#shaft` was `position:absolute; inset:0` at `z-index:0`, and every UI block
+sat on top of it at `z-index:3`. So the column was drawn across the whole screen and then almost
+entirely hidden, and what actually reached the player was the leftovers: ruler numbers down the
+far left, strata names bleeding out from behind panels, a node marker reading "37m ?" half
+behind the DESCEND button, and the band stamp landing "DARK SEAM" directly on top of the MINE
+button and its label. Two pieces of text in the same pixels. That is not atmosphere, it is
+artifacts, and it was my doing: I drew a full bleed column into a layer that was already full.
+
+**The direction taken: a dedicated band, enforced by layout rather than by z-index.** The
+column now owns a gutter down the left, `--gut` (68px phone, 96px above 700px), and every run
+screen block is inset past it with `--gutpad` on its left margin. A card **cannot** cross the
+shaft even if somebody later reshuffles the stacking order, because there is no stacking order
+involved. That is the whole point of choosing layout over z-index for this.
+
+What changed inside the art layer:
+
+- **No prose anywhere in it.** Node markers lost their depth text and their words ("VEIN",
+  "HEARTSTONE"); they are a glyph, or for a known vein, one dot per lump in the ore's own
+  colour, which is the part that was ever worth seeing from a distance. You can spot gold four
+  nodes down. The node card names where you stand and the DESCEND button names what is next, so
+  nothing was lost.
+- **Seam lines carry no name and the record line carries no label.** Both names already exist in
+  the HUD (`#strataName`, `#recordRow`), which is the coordinator's own suggestion: ruler and
+  seam names moved into the UI where they can be read.
+- **The band stamp is gone as a screen overlay.** `#bandStamp` was deleted, element and all.
+  Crossing a seam now flares the strata name already sitting in the HUD, which is where a band
+  name belongs and where nothing else is drawn. Deep landmarks use the same path.
+- **The full bleed wash dropped from 0.35 to 0.13 opacity.** It is pure colour with no text and
+  no objects, so it can only read as atmosphere, and it is the only thing left behind the cards.
+- **The cards went opaque.** `#margin`, `.meter`, `#nodecard` and `#btnCargo` were all `rgba(...,.8)`
+  to `.95`, which let the art show through them and was the other half of why the layers read as
+  mush. All four are now solid.
+
+**Two collisions I nearly created doing this, both caught before shipping:**
+
+1. Inside 64px, the ruler numbers and the node markers wanted the same pixels. The gutter is now
+   split into two lanes that never share one: the ruler owns the left 22px, the bore and its
+   markers own the rest, both computed in `renderShaft` from the measured gutter so the 700px
+   breakpoint cannot desynchronise them.
+2. A three dot vein marker at 64px still reached 4px into the ruler lane. Rather than picking a
+   number that happened to work, the marker is capped at `max-width: calc(var(--gut) - 26px)`,
+   which makes the clearance structural, and the gate recomputes the arithmetic at **every**
+   defined gutter width. Shrinking `--gut` to 40px turns it red.
+3. And a third: `THE OLD SEA FLOOR` is 17 characters going into a header the gutter just made
+   narrower. `#strataName` is `nowrap` + `ellipsis` and takes a `.long` class under 11 characters
+   so it shrinks instead of clipping.
+
+### 11.2 The surface bar was covering the daily card
+
+**Root cause, and it is not a z-index problem either.** The bar was a plain flex child of
+`#shopScreen`, so its `flex-shrink` was the default 1. On a tall shop the bar's BOX got squashed
+while its buttons kept their `min-height` and rendered straight out of it, over the daily card
+and its DIG IT button. **My install nudge made it worse** by adding roughly 56px to that block.
+
+Both ends of the column are now `flex:none` (`.ovlhead`, `.stickybar`) and only the middle is
+allowed to give (`.scrollpane`, `flex:1 1 auto` with `min-height:0`). The bar also got an opaque
+background and a top hairline so it reads as a bar rather than as something floating over the
+content, and the pane got bottom padding so the last card always clears it. The hand rolled
+`overflow-y:auto;flex:1` inline style is gone and the gate fails if it comes back.
+
+### 11.3 Disabled buttons were the same grey as the art behind them
+
+`.big[disabled]` was `opacity:.4`, which made the whole button translucent and let the shaft
+show through the very reason it was printing. Opacity is gone. A disabled button now stays fully
+opaque and goes visibly OFF instead: a darker plate, a dimmer rule, a label at `#5c6270` and a
+reason line at `#7d8493`, which is legible because that reason ("nothing to work", "you are at
+the top") is the entire point of the button in that state.
+
+### 11.4 What the layout gate holds
+
+35 checks, in three groups: the column is clipped to the gutter and every named UI block is inset
+past it; no prose selector or emitter survives in the art layer; the scroll pane may shrink and
+the bar may not; a disabled button is opaque; the two lanes clear each other at every gutter
+width; the HUD line cannot overflow. Watched red four ways: against the whole pre fix file, with
+one card's inset removed, with the bar made shrinkable again, and with the gutter shrunk to 40px.
