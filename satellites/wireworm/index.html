@@ -64,6 +64,7 @@ body{overflow:hidden}
 #zoneHint div{flex:1;display:flex;align-items:center;justify-content:center;font-size:34px;color:#ffffff22}
 
 /* ---- footer ---- */
+/* height is set from layoutModel at runtime; this is the pre script fallback */
 #pad{flex:0 0 auto;height:clamp(120px,17vh,160px);display:flex;gap:10px;padding:8px 12px 4px}
 .padbtn{flex:1 1 0;border:1px solid var(--line);border-radius:14px;background:#10140c;color:#6d7a5f;
   font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -802,6 +803,21 @@ function loadPct(st) { return st.energized / CONFIG.CELLS; }
 /* Input queue. Capacity two, so a fast double tap still turns twice instead of
    being swallowed. push returns false when it refuses, which is what lets the
    test prove nothing is silently dropped. */
+/* Layout policy. The board is the game, so it takes every pixel left after the
+   header, the footer and a thumb sized pair of turn pads. Pure arithmetic and
+   load bearing (VIEW applies exactly this), so the harness can prove the board
+   never ends up smaller than its own controls again.
+   availW / availH are the space left for the pads plus the board. */
+var CHROME = Object.freeze({ PAD_MIN: 120, PAD_MAX: 160, PAD_VH: 0.17, PAD_MAX_SHARE: 0.45, GAP: 2, SIDE_MIN: 160 });
+function layoutModel(availW, availH) {
+  var padH = Math.round(Math.min(CHROME.PAD_MAX, Math.max(CHROME.PAD_MIN, availH * CHROME.PAD_VH)));
+  /* on a short viewport a thumb sized pad would still swallow the board */
+  if (padH > availH * CHROME.PAD_MAX_SHARE) padH = Math.max(64, Math.round(availH * CHROME.PAD_MAX_SHARE));
+  var stageH = availH - padH;
+  var side = Math.max(CHROME.SIDE_MIN, Math.min(availW, stageH) - CHROME.GAP);
+  return { padH: padH, stageH: stageH, side: side, cell: side / CONFIG.GRID };
+}
+
 /* Where a floating notice may sit so it covers no control. Pure arithmetic on
    rects, kept here rather than in VIEW so the harness can prove the toast never
    lands on a button. rects are viewport space {top,bottom}; hudBottom marks the
@@ -2248,6 +2264,48 @@ function suiteToastPlacement() {
   TEST.assert('a taller toast moves further up', tall < top, tall + ' vs ' + top);
 }
 
+/* ---- suite: the board must be the biggest thing on the screen ---- */
+function suiteLayout() {
+  function board(vw, vh, hud, foot) {
+    var m = layoutModel(vw, vh - hud - foot);
+    return { cell: m.cell, side: m.side, padH: m.padH,
+             boardArea: m.side * m.side, padArea: vw * m.padH };
+  }
+  /* the phone the design targets */
+  var p = board(390, 844, 64, 64);
+  TEST.ge('390x844: cells are big enough to read', p.cell, 18);
+  TEST.assert('390x844: the board outweighs the turn pads', p.boardArea > p.padArea * 1.5,
+    'board ' + Math.round(p.boardArea) + ' vs pads ' + Math.round(p.padArea));
+  TEST.assert('390x844: the board is wider than it is tall constrained', p.side >= 380, 'side ' + p.side);
+  /* the small phone the touch rules are measured at */
+  var q = board(375, 667, 64, 64);
+  TEST.ge('375x667: cells stay readable', q.cell, 17);
+  TEST.assert('375x667: the board still outweighs the pads', q.boardArea > q.padArea, 'board ' + Math.round(q.boardArea) + ' vs pads ' + Math.round(q.padArea));
+  TEST.ge('375x667: the pads stay thumb sized', q.padH, 100);
+  TEST.le('375x667: the pads never take over', q.padH, CHROME.PAD_MAX);
+  /* a small old phone */
+  var r = board(320, 568, 64, 64);
+  TEST.ge('320x568: cells remain legible', r.cell, 13);
+  TEST.assert('320x568: the pads never take half the column', r.padH <= (568 - 128) * CHROME.PAD_MAX_SHARE + 1, 'pad ' + r.padH);
+  /* desktop: height bound, and it must not stretch */
+  var d = board(1280, 800, 64, 64);
+  TEST.ge('desktop: the board grows with the height it is given', d.cell, 20);
+  TEST.eq('desktop: the board stays square', d.side, d.side);
+  TEST.assert('desktop: the board is bounded by height not width', d.side < 1280, 'side ' + d.side);
+  /* the regression itself: the board must never be smaller than its controls */
+  var sizes = [[320, 568], [360, 640], [375, 667], [390, 844], [414, 896], [768, 1024], [1280, 800]];
+  var bad = [], i, b;
+  for (i = 0; i < sizes.length; i++) {
+    b = board(sizes[i][0], sizes[i][1], 64, 64);
+    if (b.boardArea <= b.padArea) bad.push(sizes[i].join('x'));
+    if (b.cell < 12) bad.push(sizes[i].join('x') + ' cell ' + b.cell.toFixed(1));
+  }
+  TEST.eq('the board is never smaller than its own controls', bad.join(','), '');
+  /* cells stay fractional: flooring throws away real size */
+  TEST.assert('cell size is not rounded down to an integer', Math.abs(p.cell - Math.floor(p.cell)) > 0, 'cell ' + p.cell);
+  TEST.ge('the pad height never collapses below a thumb', board(390, 400, 64, 64).padH, 64);
+}
+
 function runAllTests(opts) {
   opts = opts || {};
   TEST.reset();
@@ -2255,7 +2313,7 @@ function runAllTests(opts) {
     suiteConfig, suiteRNG, suiteNewGame, suiteMovement,
     suiteCircuitCases, suiteCombo, suiteOverload, suiteDischarge,
     suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy,
-    suiteToastPlacement,
+    suiteToastPlacement, suiteLayout,
     suiteRegressions, suiteCreep, suiteDaily, suiteFiller
   ];
   if (!opts.quick) { suites.push(suiteCircuitBattery); suites.push(suiteBalance); }
@@ -2297,12 +2355,15 @@ var mode = 'free', curSeed = 1, todayStr = '';
 
 /* ---------- geometry ---------- */
 function layout() {
-  var w = stage.clientWidth, h = stage.clientHeight;
-  /* The board is the game. It takes the smaller of the leftover column and the
-     full width, and the cell size stays fractional: flooring 19.5 to 19 throws
-     away a fifth of a cell across the board for nothing. */
-  var side = Math.max(180, Math.min(w, h) - 2);
-  cell = Math.max(8, side / CONFIG.GRID);
+  /* Measure only the chrome, then let the model decide. Sizing the board from
+     stage.clientHeight was circular and collapsed it to nine pixels a cell. */
+  var appEl = document.getElementById('app');
+  var availW = appEl.clientWidth - 0;
+  var availH = appEl.clientHeight - $('hud').offsetHeight - $('foot').offsetHeight;
+  if (!(availW > 0) || !(availH > 0)) { availW = 360; availH = 600; }
+  var m = layoutModel(availW, availH);
+  $('pad').style.height = m.padH + 'px';
+  cell = Math.max(8, m.cell);
   boardPx = cell * CONFIG.GRID;
   dpr = Math.min(2.5, window.devicePixelRatio || 1);
   boardC.style.width = boardPx.toFixed(2) + 'px';

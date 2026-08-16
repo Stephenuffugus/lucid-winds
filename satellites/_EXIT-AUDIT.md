@@ -129,8 +129,99 @@ stops `nm:"Bandit's Box"` truncating to "Bandit".
 ### What it cannot check
 
 Whether the control is **visible, large enough, or sitting on top of something**.
-There is no browser here. Placement above was done by reading each layout, and
-none of it has been looked at on a screen. That is the open risk on this task.
+There is no browser here. Placement was done by reading each layout. One screen
+has since been shot (below) and it found a real overlap, which is the argument
+for shooting the rest.
+
+## The Vine Runner how to play screen — shot at 390x844
+
+Reported: two floating controls stacked in the bottom right, over the right hand
+end of the yellow RUN button and the tail of the "Tap the ? in the corner" line.
+
+**Neither is an exit, and there is no double button.** Established from source:
+
+- Vine Runner **does not load `/arcade-exit.js` at all**, so the runtime injector
+  was never in play on this game. The bail-on-parse check I made applies to Pop N
+  Lock, Merge & Blast and Sunforge, and it stands for those three.
+- `#vrHow` is **fully opaque** (`background:#08140b`, `inset:0`, z-index 120), so
+  my canvas control cannot show through it. Mine is drawn on the canvas, on the
+  title state only.
+- `#vrHowBtn` (the `?`) is at **top** right, z-index 118, i.e. *under* the sheet.
+
+Both controls are the **fleet feedback fab** from `/feedback.js`:
+
+| Seen | Actually |
+|---|---|
+| "larger circular button carrying a glyph" | `.lwfb-fab.lwfb-mini`, `textContent = '🐞'`, 48px circle, `bottom:96px`, `right:12px`, **z-index 2147482000** |
+| "small round X chip, overlapping it" | `.lwfb-fab-x`, `dot.textContent = '×'`, a 48px tap zone hung at `top:-30px; left:-30px` off the fab |
+
+So the fab's real footprint is about **x = W-90 to W-12, y = H-174 to H-96** —
+far taller than it looks, and two billion z-index above anything a game owns. No
+game can out-stack it.
+
+### Two fixes, and why padding was not enough
+
+1. **The fab is hidden while the sheet is open** (`body.vr-how-open .lwfb-fab
+   {display:none}`, toggled in the sheet's existing open/close). Padding alone
+   does **not** work here: `#vrHow` is a block, so when the copy is shorter than
+   the screen the content sits at the top and the fab still floats wherever it
+   likes. Hiding a floating fab under a modal is correct modal behaviour and
+   holds at any height. A CSS rule also handles mount order for free — the sheet
+   opens at parse, the fab mounts on `load`.
+2. **My canvas control moved to the bottom left, anchored to the bottom edge.**
+   The first version sat centred at `H*0.87` and came within **5px** of the fab's
+   dismiss badge at 390 wide, and would have collided outright at other sizes.
+   It is now `{x:12+w/2, y:H-30-h/2}` — a bottom **left** control cannot meet a
+   bottom **right** fab at any size. This was the risk I named myself: a canvas
+   control has no layout engine keeping it out of another element's box, so it is
+   kept out by arithmetic instead.
+
+`/feedback.js` lives at the repo root, outside this task's sandbox, and was not
+edited.
+
+## The fab-over-a-modal hazard is fleet wide: `--fab`
+
+Since this is reportedly the fleet's most common visual defect, the scan is now
+part of the tool:
+
+```
+node satellites/_exit_audit.mjs --fab
+```
+
+It lists games that mount the fab **and** own a full screen modal underneath it.
+First cut named 79 of 100 — noise, because it was matching `#wrap`, every game's
+root container. Requiring `display:none` on the same rule (a sheet you *open*,
+not a container that is always there) cuts it to a credible list:
+
+```
+AT RISK  bloom-breaker (.screen)   budburst (.how-wrap)   burr-blast (#rotate, .screen, #worldCard)
+         dewball (#hud)            garden-td (.screen)    hues (#rulesOv)
+         pitbike-rally (#how-ov)   shell-shuffle (.paused-overlay, .shop)
+guarded  vine-runner (#vrHow)
+```
+
+These are **candidates, not confirmed defects** — the scan cannot know where a
+sheet puts its controls. Each needs a screenshot. Note how many are named
+`#rulesOv`, `#how-ov`, `.how-wrap`: how-to-play sheets with a primary button at
+the bottom are the exact shape that fails.
+
+## Two placements I could not verify without a screen
+
+Both are pre-existing buttons I adopted rather than placed, and both are
+**full width** in the fab's horizontal range, so only their height decides it:
+
+- **Sprout Dice** — `#b-exit` is the last button in a vertically centred title
+  stack, on a screen with `overflow:hidden`, so its position is static. My
+  arithmetic puts it around `H-212..H-152` at 390x844 against a fab band of
+  `H-174..H-96`: **an overlap of roughly 22px on its bottom right corner**. That
+  estimate depends on the logo image's height, which I cannot measure here.
+- **Picnic Panic** — `.lw-exit` is the last child of a scrollable, centred
+  `.overlay`. Because it scrolls, any overlap is transient rather than static,
+  which is true of any scrollable page under a fixed fab.
+
+I deliberately did **not** redesign either screen on arithmetic I cannot check;
+shifting a title screen up by ~95px on an unverified measurement is how you trade
+one visual defect for another. Both need a shot at 375x667 and 390x844.
 
 ## Fleet result
 
