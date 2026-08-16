@@ -1124,6 +1124,8 @@ function suiteFixtures(t){
   var c1 = runScript(c, 'R');
   t.eq('standing on crumble does not break it', c1.broken, 0);
   t.eq('crumble carries the avatar', c1.ax + ',' + c1.ay, '2,1');
+  var cW = runScript(c, 'RW');
+  t.eq('waiting on crumble still does not break it', cW.broken, 0);
   var c2 = runScript(c, 'RR');
   t.eq('crumble breaks once you leave it', c2.broken, 1);
   var c3 = runScript(c, 'RRL');
@@ -1364,6 +1366,545 @@ function suiteRegressions(t){
 }
 // ---- TEST_EXPORT_END ----
 
+/* ================= SAVE (storage binding, codec lives in SIM) ================= */
+var SAVE = freshSave();
+function loadSave(){
+  var raw = null;
+  try { raw = localStorage.getItem(CONFIG.SAVE_KEY); } catch (e){}
+  SAVE = parseSave(raw);
+  return SAVE;
+}
+/* Read modify write: another tab may have written since we loaded. */
+function flushSave(){
+  try {
+    var disk = parseSave(localStorage.getItem(CONFIG.SAVE_KEY));
+    SAVE = mergeSave(disk, SAVE);
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE));
+  } catch (e){}
+}
+
+/* ================= AUDIO ================= */
+/* Key of E minor. Two voices a fifth apart, one per avatar. In sync they are
+   consonant; on every desync moment the B voice bends a half step until the
+   pair moves together again. The SIM already emits that event for the solver. */
+var AU = { ctx:null, master:null, va:null, vb:null, ga:null, gb:null, on:false, bend:0 };
+var E2 = 82.41, ROOT = E2 * 2;                       /* E3 */
+var SCALE = [0, 2, 3, 5, 7, 8, 10, 12];              /* natural minor */
+function noteHz(deg){ return ROOT * Math.pow(2, SCALE[((deg % 8) + 8) % 8] / 12); }
+function audioReady(){
+  if (AU.ctx) return true;
+  try {
+    var C = self.AudioContext || self.webkitAudioContext;
+    if (!C) return false;
+    AU.ctx = new C();
+    AU.master = AU.ctx.createGain();
+    var comp = AU.ctx.createDynamicsCompressor();
+    AU.master.connect(comp); comp.connect(AU.ctx.destination);
+    AU.master.gain.value = 0;
+    AU.va = AU.ctx.createOscillator(); AU.ga = AU.ctx.createGain();
+    AU.vb = AU.ctx.createOscillator(); AU.gb = AU.ctx.createGain();
+    AU.va.type = 'triangle'; AU.vb.type = 'triangle';
+    AU.va.frequency.value = noteHz(0);
+    AU.vb.frequency.value = noteHz(4);
+    AU.ga.gain.value = 0; AU.gb.gain.value = 0;
+    AU.va.connect(AU.ga); AU.ga.connect(AU.master);
+    AU.vb.connect(AU.gb); AU.gb.connect(AU.master);
+    AU.va.start(); AU.vb.start();
+  } catch (e){ AU.ctx = null; return false; }
+  applyVolume();
+  return true;
+}
+function applyVolume(){
+  if (!AU.ctx) return;
+  var v = SAVE.settings.sound ? (SAVE.settings.vol / 100) * 0.5 : 0;
+  try { AU.master.gain.setTargetAtTime(v, AU.ctx.now || AU.ctx.currentTime, 0.02); } catch (e){}
+}
+function voices(desync){
+  if (!AU.ctx || !SAVE.settings.sound) return;
+  var t = AU.ctx.currentTime;
+  AU.bend = desync ? 1 : 0;
+  try {
+    AU.ga.gain.cancelScheduledValues(t);
+    AU.ga.gain.setValueAtTime(AU.ga.gain.value, t);
+    AU.ga.gain.linearRampToValueAtTime(0.16, t + 0.012);
+    AU.ga.gain.exponentialRampToValueAtTime(0.0008, t + 0.28);
+    AU.gb.gain.cancelScheduledValues(t);
+    AU.gb.gain.setValueAtTime(AU.gb.gain.value, t);
+    AU.gb.gain.linearRampToValueAtTime(0.16, t + 0.012);
+    AU.gb.gain.exponentialRampToValueAtTime(0.0008, t + 0.28);
+    /* the bend: the amber voice drops a half step while the pair is split */
+    AU.vb.frequency.setTargetAtTime(desync ? noteHz(4) * Math.pow(2, -1/12) : noteHz(4), t, 0.02);
+  } catch (e){}
+}
+function tone(freq, dur, type, vol){
+  if (!AU.ctx || !SAVE.settings.sound) return;
+  try {
+    var o = AU.ctx.createOscillator(), g = AU.ctx.createGain(), t = AU.ctx.currentTime;
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + dur + 0.05);
+  } catch (e){}
+}
+function sfxDeath(){ tone(noteHz(0) / 2, 0.32, 'sawtooth', 0.22); tone(noteHz(1) / 2, 0.30, 'square', 0.09); }
+function sfxWin(){
+  var i, degs = [0, 2, 4, 7];
+  for (i = 0; i < degs.length; i++) (function(d, k){
+    setTimeout(function(){ tone(noteHz(d), 0.42, 'triangle', 0.17); }, k * 70);
+  })(degs[i], i);
+}
+function haptic(ms){
+  if (!SAVE.settings.haptics) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e){}
+}
+
+/* ================= VIEW ================= */
+var $ = function(id){ return document.getElementById(id); };
+var elBoard = $('board'), elLayers = $('layers'), elSeam = $('seam');
+var G = {
+  lv:null, st:null, num:1, mode:'level', cell:32,
+  deaths:0, log:'', anim:null, reduce:false, daily:null, dailyId:0,
+  ghostA:[], ghostB:[], lastA:[], lastB:[], replaying:false, dead:false
+};
+
+function reduced(){
+  if (SAVE.settings.motion) return true;
+  try { return self.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e){ return false; }
+}
+
+function fitBoard(){
+  if (!G.lv) return;
+  var stage = $('stage');
+  var availW = stage.clientWidth - 4;
+  var availH = stage.clientHeight - 4;
+  var c = Math.floor(Math.min(availW / G.lv.w, availH / G.lv.h));
+  c = Math.max(14, Math.min(46, c));
+  G.cell = c;
+  elBoard.style.width = (c * G.lv.w) + 'px';
+  elBoard.style.height = (c * G.lv.h) + 'px';
+  elSeam.style.left = (c * G.lv.w / 2) + 'px';
+  drawStatic();
+  drawDynamic();
+}
+
+function box(el, x, y){
+  el.style.left = (x * G.cell) + 'px';
+  el.style.top = (y * G.cell) + 'px';
+  el.style.width = G.cell + 'px';
+  el.style.height = G.cell + 'px';
+}
+
+function drawStatic(){
+  var lv = G.lv, html = [], x, y;
+  for (y = 0; y < lv.h; y++){
+    for (x = 0; x < lv.w; x++){
+      var t = lv.tiles[y * lv.w + x];
+      if (t === T.EMPTY) continue;
+      var st = 'left:' + (x*G.cell) + 'px;top:' + (y*G.cell) + 'px;width:' + G.cell + 'px;height:' + G.cell + 'px;';
+      if (t === T.WALL) html.push('<div class="tile t-wall" style="' + st + '"></div>');
+      else if (t === T.ICE) html.push('<div class="tile t-ice" style="' + st + '"></div>');
+      else if (t === T.CRUMB) html.push('<div class="tile t-crumb" data-cr="' + lv.crumbIdx[y*lv.w+x] + '" style="' + st + '"></div>');
+      else if (t === T.SPIKE) html.push('<div class="spike" style="' + st + '"><i></i></div>');
+      else if (t === T.EXA) html.push('<div class="exit a" id="exA" style="' + st + '">A</div>');
+      else if (t === T.EXB) html.push('<div class="exit b" id="exB" style="' + st + '">B</div>');
+      else if (t === T.KEY0 || t === T.KEY1 || t === T.KEY2)
+        html.push('<div class="keyt" data-k="' + (t - T.KEY0) + '" style="' + st + '">⚷</div>');
+      else if (t === T.DOOR0 || t === T.DOOR1 || t === T.DOOR2)
+        html.push('<div class="tile t-door" data-d="' + (t - T.DOOR0) + '" style="' + st + '"></div>');
+      else if (t === T.OWL) html.push('<div class="tile t-ow" style="' + st + '">◀</div>');
+      else if (t === T.OWR) html.push('<div class="tile t-ow" style="' + st + '">▶</div>');
+      else if (t === T.OWD) html.push('<div class="tile t-ow" style="' + st + '">▼</div>');
+      else if (t === T.OWU) html.push('<div class="tile t-ow" style="' + st + '">▲</div>');
+    }
+  }
+  html.push('<div class="av a" id="avA"><div class="body"><span>A</span></div></div>');
+  html.push('<div class="av b" id="avB"><div class="body"><span>B</span></div></div>');
+  elLayers.innerHTML = html.join('');
+  var ga = $('avA'), gb = $('avB');
+  ga.style.width = G.cell + 'px'; ga.style.height = G.cell + 'px';
+  gb.style.width = G.cell + 'px'; gb.style.height = G.cell + 'px';
+  drawGhosts();
+}
+
+function drawGhosts(){
+  var old = elLayers.querySelectorAll('.ghost'), i;
+  for (i = 0; i < old.length; i++) old[i].remove();
+  if (!SAVE.settings.ghost || G.replaying) return;
+  var d = Math.max(3, Math.floor(G.cell / 5));
+  function put(list, cls){
+    var k;
+    for (k = 0; k < list.length; k++){
+      var g = document.createElement('div');
+      g.className = 'ghost ' + cls;
+      g.style.width = d + 'px'; g.style.height = d + 'px';
+      g.style.left = (list[k][0] * G.cell + G.cell/2 - d/2) + 'px';
+      g.style.top = (list[k][1] * G.cell + G.cell/2 - d/2) + 'px';
+      elLayers.appendChild(g);
+    }
+  }
+  put(G.ghostA, 'a'); put(G.ghostB, 'b');
+}
+
+function drawDynamic(){
+  var s = G.st, lv = G.lv;
+  var ga = $('avA'), gb = $('avB');
+  if (!ga || !gb) return;
+  var over = (s.ax === s.bx && s.ay === s.by);
+  ga.style.transform = 'translate(' + (s.ax*G.cell + (over ? -G.cell*0.16 : 0)) + 'px,' + (s.ay*G.cell) + 'px)';
+  gb.style.transform = 'translate(' + (s.bx*G.cell + (over ? G.cell*0.16 : 0)) + 'px,' + (s.by*G.cell) + 'px)';
+  ga.className = 'av a' + (s.dead ? ' dead' : '');
+  gb.className = 'av b' + (s.dead ? ' dead' : '');
+  var cr = elLayers.querySelectorAll('[data-cr]'), i;
+  for (i = 0; i < cr.length; i++){
+    var ci = parseInt(cr[i].getAttribute('data-cr'), 10);
+    cr[i].className = 'tile t-crumb' + (((s.broken >> ci) & 1) ? ' gone' : '');
+  }
+  var dr = elLayers.querySelectorAll('[data-d]');
+  for (i = 0; i < dr.length; i++){
+    var di = parseInt(dr[i].getAttribute('data-d'), 10);
+    dr[i].className = 'tile t-door' + (((s.keys >> di) & 1) ? ' open' : '');
+  }
+  var kt = elLayers.querySelectorAll('[data-k]');
+  for (i = 0; i < kt.length; i++){
+    var ki = parseInt(kt[i].getAttribute('data-k'), 10);
+    kt[i].className = 'keyt' + (((s.keys >> ki) & 1) ? ' got' : '');
+  }
+  $('hMoves').textContent = s.moves;
+  $('hDeaths').textContent = G.deaths;
+  $('hPar').textContent = lv.par;
+}
+
+function setMsg(txt){ $('msg').textContent = txt || ''; }
+function toast(txt){
+  var el = $('toast');
+  el.textContent = txt; el.className = 'on';
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.className = ''; }, 2100);
+}
+
+/* ================= GAME LOOP ================= */
+function levelKey(){ return G.mode === 'daily' ? 'd' + G.dailyId : String(G.num); }
+
+function startLevel(num, mode){
+  G.mode = mode || 'level';
+  if (G.mode === 'daily'){
+    if (!G.daily){ toast('Today is not ready yet.'); return; }
+    G.lv = G.daily;
+    $('subtitle').textContent = 'today  ' + G.dailyId;
+  } else {
+    G.num = Math.max(1, Math.min(LEVELS.length, num));
+    G.lv = decodeLevel(LEVELS[G.num - 1]);
+    $('subtitle').textContent = 'level ' + G.num + '  tier ' + G.lv.tier;
+  }
+  G.deaths = 0; G.log = ''; G.ghostA = []; G.ghostB = []; G.replaying = false;
+  var b = SAVE.best[levelKey()];
+  G.st = initState(G.lv);
+  G.lastA = [[G.st.ax, G.st.ay]]; G.lastB = [[G.st.bx, G.st.by]];
+  $('wincard').className = '';
+  setMsg(b ? ('your best ' + b.moves + '   par ' + G.lv.par) : 'both of you, both doors');
+  SAVE.stats.plays++;
+  fitBoard();
+  flushSave();
+}
+
+function restart(soft){
+  if (!G.lv) return;
+  G.ghostA = G.lastA.slice(); G.ghostB = G.lastB.slice();
+  G.st = initState(G.lv);
+  G.lastA = [[G.st.ax, G.st.ay]]; G.lastB = [[G.st.bx, G.st.by]];
+  G.log = '';
+  G.replaying = false;
+  $('wincard').className = '';
+  if (!soft) setMsg('');
+  drawStatic(); drawDynamic();
+}
+
+function doInput(inp){
+  if (!G.lv || G.replaying) return;
+  audioReady();
+  if (G.st.dead){ restart(true); return; }
+  if (G.st.won) return;
+  var ns = stepWorld(G.st, inp, G.lv);
+  if (ns.moves === G.st.moves) return;
+  G.st = ns;
+  G.log += IN_CHARS.charAt(inp);
+  G.lastA.push([ns.ax, ns.ay]); G.lastB.push([ns.bx, ns.by]);
+  SAVE.stats.moves++;
+  voices(ns.desync);
+  haptic(ns.desync ? 14 : 8);
+  drawDynamic();
+  if (ns.dead) onDeath();
+  else if (ns.won) onWin();
+}
+
+/* Death is a rewind, not a punishment. 150ms, input stays live the whole time. */
+function onDeath(){
+  G.deaths++;
+  SAVE.stats.deaths++;
+  sfxDeath(); haptic(30);
+  setMsg('again');
+  $('hDeaths').textContent = G.deaths;
+  var delay = reduced() ? 0 : 150;
+  setTimeout(function(){ if (G.st.dead) restart(true); }, delay);
+}
+
+function onWin(){
+  sfxWin(); haptic(25);
+  var k = levelKey(), best = SAVE.best[k];
+  var rec = { moves:G.st.moves, deaths:G.deaths, par:G.lv.par, log:G.log };
+  if (!best || rec.moves < best.moves) SAVE.best[k] = rec;
+  SAVE.stats.clears++;
+  if (G.mode === 'daily'){
+    var today = new Date().toISOString().slice(0, 10);
+    if (SAVE.daily.last !== today){
+      SAVE.daily.streak = (SAVE.daily.streak || 0) + 1;
+      SAVE.daily.last = today;
+    }
+  }
+  flushSave();
+  var par = G.st.moves <= G.lv.par;
+  var exA = $('exA'), exB = $('exB');
+  if (exA && !reduced()) exA.className = 'exit a lit';
+  if (exB && !reduced()) exB.className = 'exit b lit';
+  $('winTitle').textContent = par ? 'PERFECT' : 'BOTH DOORS';
+  $('winStats').textContent = 'you ' + G.st.moves + ', best possible ' + G.lv.par +
+    (par ? '   ★' : '') + '   deaths ' + G.deaths;
+  $('winNext').textContent = (G.mode === 'daily' || G.num >= LEVELS.length) ? 'SKY' : 'NEXT';
+  $('wincard').className = 'on';
+  setMsg('');
+}
+
+/* Best run replay, fed back through the SAME step function. */
+function playReplay(log){
+  if (!log){ toast('No run saved for this one yet.'); return; }
+  G.replaying = true;
+  $('wincard').className = '';
+  G.st = initState(G.lv);
+  drawStatic(); drawDynamic();
+  var i = 0;
+  clearInterval(G.anim);
+  G.anim = setInterval(function(){
+    if (i >= log.length){
+      clearInterval(G.anim); G.replaying = false;
+      setMsg('that was your best run'); return;
+    }
+    G.st = stepWorld(G.st, IN_CHARS.indexOf(log.charAt(i)), G.lv);
+    voices(G.st.desync);
+    drawDynamic();
+    i++;
+  }, 190);
+}
+
+/* ================= LEVEL SELECT (constellation) ================= */
+function buildSky(){
+  var svg = $('sky'), parts = [], n, i;
+  var W = 320, cx = W / 2;
+  var tierY = [0, 52, 130, 216, 310, 412];
+  var rng = makeRNG(0xC0FFEE);
+  var pts = [];
+  for (n = 1; n <= LEVELS.length; n++){
+    var spec = tierOf(n);
+    var idx = n - spec.lo, count = spec.hi - spec.lo + 1;
+    var ang = (idx / count) * Math.PI * 2 + spec.t * 0.7;
+    var rad = 34 + (spec.t * 5) + rng() * 16;
+    pts.push({ n:n, t:spec.t, x:cx + Math.cos(ang) * rad, y:tierY[spec.t] + Math.sin(ang) * (rad * 0.52) });
+  }
+  for (i = 0; i < pts.length - 1; i++){
+    var a = pts[i], b = pts[i+1];
+    if (SAVE.best[String(a.n)] && SAVE.best[String(b.n)]){
+      parts.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) +
+        '" y2="' + b.y.toFixed(1) + '" stroke="#8b7cf6" stroke-opacity=".38" stroke-width="1"/>');
+    }
+  }
+  for (i = 0; i < pts.length; i++){
+    var p = pts[i], best = SAVE.best[String(p.n)];
+    var star = best && best.moves <= best.par;
+    var open = p.n === 1 || SAVE.best[String(p.n - 1)];
+    var fill = star ? '#f3b562' : (best ? '#8b7cf6' : (open ? '#3b4058' : '#222634'));
+    var r = star ? 5.6 : (best ? 4.4 : 3.2);
+    parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+      '" r="' + r + '" fill="' + fill + '"/>');
+    parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+      '" r="13" fill="transparent"/>');
+    parts.push('<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 15).toFixed(1) + '" text-anchor="middle" ' +
+      'font-size="8" fill="#6f7590">' + p.n + '</text>');
+  }
+  for (i = 1; i <= 5; i++){
+    parts.push('<text x="10" y="' + (tierY[i] + 4) + '" font-size="10" fill="#6f7590">TIER ' + i + '</text>');
+  }
+  svg.innerHTML = parts.join('');
+  $('selfoot').textContent = clearedCount(SAVE) + ' of ' + LEVELS.length + ' cleared, ' +
+    starCount(SAVE) + ' matched the best possible' +
+    (SAVE.daily.streak ? ', daily streak ' + SAVE.daily.streak : '');
+}
+
+function openSheet(id){ $(id).className = 'sheet on'; }
+function closeSheet(id){ $(id).className = 'sheet'; }
+
+/* ================= INPUT ================= */
+/* One slot queue: an input that arrives during the death rewind is not dropped. */
+var pending = null;
+function press(inp){
+  if (G.replaying){ G.replaying = false; clearInterval(G.anim); restart(true); }
+  if (G.st && G.st.dead){ pending = inp; restart(true); if (pending !== null){ var q = pending; pending = null; doInput(q); } return; }
+  doInput(inp);
+}
+function wire(id, fn){
+  var el = $(id);
+  el.addEventListener('click', fn);
+  el.addEventListener('touchstart', function(e){ e.preventDefault(); fn(); }, { passive:false });
+}
+wire('kLeft', function(){ press(IN_LEFT); });
+wire('kRight', function(){ press(IN_RIGHT); });
+wire('kUp', function(){ press(IN_UP); });
+wire('kWait', function(){ press(IN_WAIT); });
+wire('btnRestart', function(){ restart(false); });
+
+document.addEventListener('keydown', function(e){
+  var k = e.key;
+  if (k === 'ArrowLeft' || k === 'a'){ e.preventDefault(); press(IN_LEFT); }
+  else if (k === 'ArrowRight' || k === 'd'){ e.preventDefault(); press(IN_RIGHT); }
+  else if (k === 'ArrowUp' || k === 'w' || k === ' '){ e.preventDefault(); press(IN_UP); }
+  else if (k === 'ArrowDown' || k === 's'){ e.preventDefault(); press(IN_WAIT); }
+  else if (k === 'r'){ restart(false); }
+});
+
+/* swipe anywhere on the board */
+var tsx = 0, tsy = 0, tst = 0;
+elBoard.addEventListener('touchstart', function(e){
+  tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; tst = Date.now();
+}, { passive:true });
+elBoard.addEventListener('touchend', function(e){
+  var dx = e.changedTouches[0].clientX - tsx, dy = e.changedTouches[0].clientY - tsy;
+  if (Date.now() - tst > 700) return;
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+  if (Math.abs(dx) > Math.abs(dy)) press(dx < 0 ? IN_LEFT : IN_RIGHT);
+  else press(dy < 0 ? IN_UP : IN_WAIT);
+}, { passive:true });
+
+wire('btnLevels', function(){ buildSky(); openSheet('shSel'); });
+wire('selClose', function(){ closeSheet('shSel'); });
+wire('btnOpts', function(){ syncOpts(); openSheet('shOpts'); });
+wire('optClose', function(){ closeSheet('shOpts'); });
+wire('oExit', function(){ SWS_EXIT(); });
+
+$('sky').addEventListener('click', function(e){
+  var n = e.target && e.target.getAttribute && e.target.getAttribute('data-n');
+  if (!n) return;
+  n = parseInt(n, 10);
+  var open = n === 1 || SAVE.best[String(n - 1)];
+  if (!open){ toast('Clear level ' + (n - 1) + ' first.'); return; }
+  closeSheet('shSel');
+  startLevel(n, 'level');
+});
+wire('selDaily', function(){
+  closeSheet('shSel');
+  if (!G.daily){ buildDaily(); }
+  startLevel(0, 'daily');
+});
+
+wire('winRetry', function(){ restart(false); });
+wire('winReplay', function(){
+  var b = SAVE.best[levelKey()];
+  playReplay(b ? b.log : G.log);
+});
+wire('winNext', function(){
+  if (G.mode === 'daily' || G.num >= LEVELS.length){ buildSky(); openSheet('shSel'); return; }
+  startLevel(G.num + 1, 'level');
+});
+
+function syncOpts(){
+  $('oSound').textContent = SAVE.settings.sound ? 'ON' : 'OFF';
+  $('oSound').className = 'tog' + (SAVE.settings.sound ? ' on' : '');
+  $('oHap').textContent = SAVE.settings.haptics ? 'ON' : 'OFF';
+  $('oHap').className = 'tog' + (SAVE.settings.haptics ? ' on' : '');
+  $('oMotion').textContent = SAVE.settings.motion ? 'ON' : 'OFF';
+  $('oMotion').className = 'tog' + (SAVE.settings.motion ? ' on' : '');
+  $('oGhost').textContent = SAVE.settings.ghost ? 'ON' : 'OFF';
+  $('oGhost').className = 'tog' + (SAVE.settings.ghost ? ' on' : '');
+  $('oVol').value = SAVE.settings.vol;
+}
+wire('oSound', function(){ SAVE.settings.sound = SAVE.settings.sound ? 0 : 1; applyVolume(); syncOpts(); flushSave(); });
+wire('oHap', function(){ SAVE.settings.haptics = SAVE.settings.haptics ? 0 : 1; syncOpts(); flushSave(); });
+wire('oMotion', function(){ SAVE.settings.motion = SAVE.settings.motion ? 0 : 1; syncOpts(); flushSave(); });
+wire('oGhost', function(){ SAVE.settings.ghost = SAVE.settings.ghost ? 0 : 1; syncOpts(); drawGhosts(); flushSave(); });
+$('oVol').addEventListener('input', function(){ SAVE.settings.vol = parseInt(this.value, 10) || 0; applyVolume(); });
+$('oVol').addEventListener('change', flushSave);
+wire('oWipe', function(){
+  SAVE = freshSave();
+  try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e){}
+  toast('Progress erased.');
+  startLevel(1, 'level');
+  closeSheet('shOpts');
+});
+wire('oShare', function(){
+  var link = location.origin + location.pathname + '?level=' + (G.mode === 'daily' ? 'daily' : G.num);
+  var b = SAVE.best[levelKey()];
+  var txt = (b ? shareLine(G.mode === 'daily' ? 'daily' : 'level',
+                           G.mode === 'daily' ? G.dailyId : G.num, b.moves, b.deaths)
+              : 'PARALLEL level ' + G.num) + '\n' + link;
+  if (navigator.share){ navigator.share({ text:txt }).catch(function(){}); }
+  else if (navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ toast('Copied.'); }, function(){}); }
+  else toast(link);
+});
+
+/* ================= DAILY ================= */
+function buildDaily(){
+  var iso = new Date().toISOString().slice(0, 10);
+  G.dailyId = Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
+  var lv = genDaily(seedFromString(dailyKey(iso)));
+  /* genDaily runs the same BFS before it hands anything back, so a level the
+     solver has not solved is never shown. If it cannot make one, say so. */
+  G.daily = lv;
+  if (!lv) toast('Today could not be built. The sixty are still here.');
+}
+
+/* ================= BOOT ================= */
+loadSave();
+G.reduce = reduced();
+
+var qs = (location.search || '').replace('?', '').split('&');
+var params = {}, qi;
+for (qi = 0; qi < qs.length; qi++){ var kv = qs[qi].split('='); if (kv[0]) params[kv[0]] = kv[1]; }
+
+if (params.test === '1'){
+  var rep = TEST.run(), lines = ['PARALLEL test harness', ''], fi;
+  for (fi = 0; fi < rep.failures.length; fi++) lines.push('FAIL  ' + rep.failures[fi].name + '  ' + rep.failures[fi].detail);
+  lines.push('');
+  lines.push('PASSED ' + rep.passed + ' / FAILED ' + rep.failed + '  (' + rep.total + ' assertions)');
+  $('testpanel').textContent = lines.join('\n');
+  $('testpanel').className = 'on';
+}
+
+var startAt = 1;
+try {
+  var highest = 1, hn;
+  for (hn = 1; hn <= LEVELS.length; hn++){ if (SAVE.best[String(hn)]) highest = Math.min(LEVELS.length, hn + 1); }
+  startAt = highest;
+} catch (e){}
+if (params.level && params.level !== 'daily') startAt = parseInt(params.level, 10) || 1;
+if (params.seed) startAt = ((parseInt(params.seed, 10) || 1) % LEVELS.length) + 1;
+
+if (params.level === 'daily'){ buildDaily(); startLevel(0, 'daily'); }
+else startLevel(startAt, 'level');
+setTimeout(buildDaily, 400);
+
+self.addEventListener('resize', fitBoard);
+self.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 120); });
+document.addEventListener('visibilitychange', function(){ if (document.hidden) flushSave(); });
+self.addEventListener('pagehide', flushSave);
+document.addEventListener('touchstart', function once(){ audioReady(); document.removeEventListener('touchstart', once); }, { passive:true });
+document.addEventListener('mousedown', function once2(){ audioReady(); document.removeEventListener('mousedown', once2); });
+
+try {
+  if ('serviceWorker' in navigator){
+    self.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js?v=1').catch(function(){});
+    });
+  }
+} catch (e){}
+
 /* ===== Sky Wolf Studios embed protocol ===== */
 var framed = false;
 try { framed = self.parent !== self; } catch (e){ framed = true; }
@@ -1379,7 +1920,7 @@ if (framed){
 }
 self.__TEST__ = TEST;
 self.__PARALLEL__ = { CONFIG:CONFIG, LEVELS:LEVELS, decodeLevel:decodeLevel, stepWorld:stepWorld,
-                      initState:initState, bfsSolve:bfsSolve, makeRNG:makeRNG };
+                      initState:initState, bfsSolve:bfsSolve, makeRNG:makeRNG, G:G };
 
 })();
 </script>

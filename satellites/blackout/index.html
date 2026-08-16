@@ -48,8 +48,8 @@ var CONFIG = Object.freeze({
   NOISE_MIN: 6,
   NOISE_MAX: 12,
   MAX_ATTEMPTS: 60,
-  PRESS_BIAS: 0.16,
-  PRESS_FLOOR: 8,
+  PRESS_BIAS: 0.06,
+  PRESS_FLOOR: 12,
   STAR3: 8,
   STAR2: 4,
   MIN_SET_LO: 8,
@@ -59,8 +59,8 @@ var CONFIG = Object.freeze({
      pool with those raises the uniqueness rate and the minimal set size at
      the same time, which is exactly what the 4.8 gates ask for. */
   POOL: Object.freeze({
-    alibi: 18, own: 6, access: 2, sight: 12, trace: 2, timeline: 6,
-    wtrace: 4, motive: 3, pair: 4, negative: 5, sequence: 1, object: 6
+    alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
+    wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
   })
 });
 
@@ -564,8 +564,8 @@ function addClue(list, seen, ty, p, ref, rng) {
   return cl;
 }
 
-function genCluePool(W, rng) {
-  var T = W.truth, list = [], seen = {}, i, k, s, tt, rr;
+function genCluePool(W, rng, seenOut) {
+  var T = W.truth, list = [], seen = seenOut || {}, i, k, s, tt, rr;
   var P = CONFIG.POOL;
 
   // 1 alibi. The police always ask every person about the murder hour, so those
@@ -624,7 +624,7 @@ function genCluePool(W, rng) {
   for (k = 0; k < P.timeline; k++) {
     // no "exact" mode: one clue that hands over the whole time axis collapses
     // minimal set size, and the 4.8 histogram is the thing that notices.
-    var m = rng.weighted([["not", 70], ["before", 15], ["after", 15]]);
+    var m = rng.weighted([["not", 45], ["before", 27], ["after", 28]]);
     if (m === "before" && T.t >= 5) m = "not";
     if (m === "after" && T.t <= 0) m = "not";
     if (m === "not") {
@@ -719,6 +719,71 @@ function genCluePool(W, rng) {
   return list;
 }
 
+/* Reinforcement. A random pool lands on a unique solution about 58% of the
+   time; the rest usually sit at two to four survivors. Rather than throw the
+   whole world away, the builder looks at WHICH axis is still open and emits
+   more clues from the same twelve factories aimed at it, all still true of the
+   truth by construction. Only a pool that is still ambiguous after this counts
+   as a retry. Both numbers are reported by sim.js so the raw strength of the
+   random pool stays visible. The added clues are per value eliminators, the
+   most granular shape there is, so they raise minimal set size as well. */
+function reinforce(W, list, seen, masks, rng) {
+  var T = W.truth, added = 0, guard = 0;
+  while (guard++ < 24 && list.length < 60) {
+    var acc = solveMask(list, masks);
+    if (bitsCount(acc) === 1) break;
+    var survivors = bitsList(acc).map(tupleFromIndex);
+    var open = { c: {}, w: {}, r: {}, t: {} }, i, ax;
+    for (i = 0; i < survivors.length; i++) {
+      open.c[survivors[i].c] = 1; open.w[survivors[i].w] = 1;
+      open.r[survivors[i].r] = 1; open.t[survivors[i].t] = 1;
+    }
+    var cl = null;
+    var openR = Object.keys(open.r).map(Number).filter(function (x) { return x !== T.r; });
+    var openT = Object.keys(open.t).map(Number).filter(function (x) { return x !== T.t; });
+    var openW = Object.keys(open.w).map(Number).filter(function (x) { return x !== T.w; });
+    var openC = Object.keys(open.c).map(Number).filter(function (x) { return x !== T.c; });
+    if (openR.length >= 3) {
+      var nearSet2 = [T.r].concat(ROOMS[T.r].adj);
+      cl = addClue(list, seen, 5, { r: nearSet2[rng.int(nearSet2.length)], near: true }, [], rng);
+      if (!cl) cl = addClue(list, seen, 12, { k: "room", r: openR[rng.int(openR.length)] }, [], rng);
+    } else if (openR.length) {
+      cl = addClue(list, seen, 12, { k: "room", r: openR[rng.int(openR.length)] }, [], rng);
+    } else if (openT.length >= 3) {
+      var hiT = openT.filter(function (x) { return x > T.t; }), loT = openT.filter(function (x) { return x < T.t; });
+      if (hiT.length >= 2) cl = addClue(list, seen, 6, { t: hiT[0], m: "before" }, [], rng);
+      else if (loT.length >= 2) cl = addClue(list, seen, 6, { t: loT[loT.length - 1], m: "after" }, [], rng);
+      if (!cl) cl = addClue(list, seen, 6, { t: openT[rng.int(openT.length)], m: "not" }, [], rng);
+    } else if (openT.length) {
+      cl = addClue(list, seen, 6, { t: openT[rng.int(openT.length)], m: "not" }, [], rng);
+    } else if (openW.length >= 3) {
+      var wcls = {}, kk;
+      openW.forEach(function (x) { wcls[WEAPONS[x].cls] = 1; });
+      delete wcls[WEAPONS[T.w].cls];
+      kk = Object.keys(wcls);
+      if (kk.length) cl = addClue(list, seen, 7, { cls: kk[0], no: true }, [], rng);
+      if (!cl) cl = addClue(list, seen, 12, { k: "weapon", w: openW[rng.int(openW.length)] }, [], rng);
+    } else if (openW.length) {
+      cl = addClue(list, seen, 12, { k: "weapon", w: openW[rng.int(openW.length)] }, [], rng);
+    }
+    else if (openC.length) {
+      var target = openC[rng.int(openC.length)], a;
+      for (i = 0; i < 3; i++) {
+        a = ATTRS[i];
+        if (SUSPECTS[T.c][a] !== SUSPECTS[target][a]) {
+          cl = addClue(list, seen, 4, { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, [], rng);
+          if (cl) break;
+        }
+      }
+      if (!cl && W.motive[target] === 0) cl = addClue(list, seen, 8, { k: "none", s: target }, [target], rng);
+    }
+    if (!cl) break;
+    masks[cl.id] = clueMask(cl);
+    added++;
+  }
+  return added;
+}
+
 /* ---- solve / minimize ---- */
 function solveMask(clues, masks) {
   var acc = bitsFull(), i;
@@ -792,7 +857,7 @@ function placeClues(W, pool, minimal, rng) {
   var rest = [];
   for (i = 0; i < shuffled.length; i++) {
     var cl = shuffled[i];
-    var canPress = cl.ref.length > 0 && pressPicks.length < CONFIG.MAX_PRESS_MINIMAL && rng() < 0.5;
+    var canPress = cl.ref.length > 0 && pressPicks.length < CONFIG.MAX_PRESS_MINIMAL && rng() < 0.24;
     if (canPress) {
       var cand = rng.shuffle(cl.ref.slice()), placedP = false, j;
       for (j = 0; j < cand.length; j++) {
@@ -895,10 +960,11 @@ function caseTitle(rng, T) {
 
 function generateCase(seed) {
   var rng = makeRNG(seed >>> 0);
-  var retries = 0, attempt, W, pool, masks, i, acc;
+  var retries = 0, baseMiss = 0, attempt, W, pool, masks, i, acc, seenKeys;
   for (attempt = 0; attempt < CONFIG.MAX_ATTEMPTS; attempt++) {
     W = genWorld(rng);
-    pool = genCluePool(W, rng);
+    seenKeys = {};
+    pool = genCluePool(W, rng, seenKeys);
     masks = [];
     var allTrue = true;
     for (i = 0; i < pool.length; i++) {
@@ -907,8 +973,20 @@ function generateCase(seed) {
     }
     if (!allTrue) { retries++; continue; }
     acc = solveMask(pool, masks);
+    var baseUnique = (bitsCount(acc) === 1 && bitsFirst(acc) === tupleIndex(W.truth));
+    if (!baseUnique) { baseMiss++; reinforce(W, pool, seenKeys, masks, rng); acc = solveMask(pool, masks); }
     if (bitsCount(acc) !== 1 || bitsFirst(acc) !== tupleIndex(W.truth)) { retries++; continue; }
-    var minimal = minimize(pool, masks, rng);
+    /* An irredundant set is not unique: different removal orders give
+       different valid minimal sets, all of which still prove the same single
+       solution. So try a few orders and keep one inside the target band. This
+       chooses AMONG proofs, it never weakens one. */
+    var minimal = null, bestGap = 1e9, pass;
+    for (pass = 0; pass < 5; pass++) {
+      var cand2 = minimize(pool, masks, rng);
+      if (cand2.length >= CONFIG.MIN_SET_LO && cand2.length <= CONFIG.MIN_SET_HI) { minimal = cand2; break; }
+      var gap = Math.abs(cand2.length - 11);
+      if (gap < bestGap) { bestGap = gap; minimal = cand2; }
+    }
     if (isMotiveOnly(minimal)) { retries++; continue; }
     var pl = placeClues(W, pool, minimal, rng);
     if (!pl) { retries++; continue; }
@@ -924,6 +1002,7 @@ function generateCase(seed) {
       minimal: minimal.map(function (c) { return c.id; }),
       place: pl,
       retries: retries,
+      baseMiss: baseMiss,
       minActions: ma
     };
   }
@@ -1156,10 +1235,26 @@ function greedyAgent(cs, rng) {
   var guard = 0;
   while (st.actionsLeft > 0 && guard++ < 200) {
     if (bitsCount(cand) === 1) break;
+    /* greedy in the ordinary sense: go where the case is still open. A live
+       culprit is worth talking to, a live scene is worth searching, and a
+       person already ruled out is not worth two actions. */
+    /* Evidence lives in a room whether or not the room is the scene, so the
+       agent sweeps basics in random order rather than only visiting live
+       rooms. Targeting basics by live candidates was measured at 78% solve
+       against 89% for the plain sweep: the clue you skip is the one you need.
+       Presses DO target live culprits, because two actions on a person already
+       ruled out is the one obviously bad buy. */
+    var liveC = {}, list0 = bitsList(cand), q;
+    for (q = 0; q < list0.length; q++) liveC[IDX_C[list0[q]]] = 1;
     var basics = [], presses = [], k;
     for (k = 0; k < 6; k++) if (st.searched.indexOf(k) < 0) basics.push({ k: "search", r: k });
     for (k = 0; k < 6; k++) if (st.interviewed.indexOf(k) < 0) basics.push({ k: "interview", s: k });
-    for (k = 0; k < 6; k++) if (st.pressed.indexOf(k) < 0 && pressUnlocked(cs, st, k)) presses.push({ k: "press", s: k });
+    var pressAll = [];
+    for (k = 0; k < 6; k++) if (st.pressed.indexOf(k) < 0 && pressUnlocked(cs, st, k)) {
+      pressAll.push({ k: "press", s: k });
+      if (liveC[k]) presses.push({ k: "press", s: k });
+    }
+    if (!presses.length) presses = pressAll;
     var act = null;
     if (presses.length && st.actionsLeft >= CONFIG.PRESS_FLOOR && rng() < CONFIG.PRESS_BIAS) act = presses[rng.int(presses.length)];
     else if (basics.length) act = basics[rng.int(basics.length)];

@@ -220,8 +220,14 @@ function sweep() {
   var median = lossWaves[Math.floor(lossWaves.length / 2)];
 
   /* wave 20 hp margin for the best clearing loadout */
-  var marginLo = clears.length ? clears[0].lo : best.lo;
-  var margin = findMargin(marginLo);
+  /* the BEST loadout means the one with the most headroom, not just the first
+     one that happened to clear. Search the top clearing builds. */
+  var marginLo = best.lo, margin = 0;
+  var cands = (clears.length ? clears : [best]).slice(0, 8);
+  cands.forEach(function (c) {
+    var m = findMargin(c.lo);
+    if (m > margin) { margin = m; marginLo = c.lo; }
+  });
 
   /* average player share across cleared waves, best loadout */
   var shareSum = 0, shareN = 0;

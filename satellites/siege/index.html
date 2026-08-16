@@ -11,10 +11,242 @@
 <meta name="apple-mobile-web-app-title" content="Siege">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<style>/*STYLE_PLACEHOLDER*/</style>
+<style>:root{
+  --bg:#0a0b0f; --panel:#14161d; --panel2:#1c1f28; --line:#2a2f3b;
+  --accent:#e8703a; --warm:#f5c77e; --cream:#e8dcc8; --muted:#8b93a5;
+  --gate:#c8563a; --safe:#7ab356;
+  --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--cream);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-variant-numeric:tabular-nums;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+body{font-size:15px;line-height:1.4}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:var(--st);padding-bottom:var(--sb)}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+#hud{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex:0 0 auto}
+.stat{display:flex;flex-direction:column;line-height:1.05}
+.stat b{font-size:19px;font-weight:800;letter-spacing:.5px}
+.stat i{font-size:11px;font-style:normal;color:var(--muted);letter-spacing:1.2px}
+#hud .grow{flex:1}
+.iconbtn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:18px}
+.iconbtn:active{background:#262b36}
+#scrapv{color:var(--warm)}
+#wavev{color:var(--accent)}
+
+/* ---------- lane ---------- */
+#field{flex:1 1 auto;position:relative;overflow:hidden;
+  background:radial-gradient(120% 90% at 100% 50%,#171a22 0%,#0a0b0f 70%)}
+#lane{position:absolute;left:0;right:0;top:0;bottom:0}
+.cell{position:absolute;top:0;bottom:0;border-right:1px solid rgba(255,255,255,.045)}
+.cell.build{cursor:pointer}
+.cell.pick{background:rgba(232,112,58,.10)}
+.cell.mark{background:rgba(255,255,255,.03)}
+#gate{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3a2019,rgba(58,32,25,0));
+  border-right:2px solid var(--gate);pointer-events:none}
+#gateglow{position:absolute;left:0;top:0;bottom:0;width:34%;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,rgba(200,86,58,.55),rgba(200,86,58,0));transition:opacity 160ms ease-out}
+#ground{position:absolute;left:0;right:0;height:2px;background:var(--line)}
+.ent{position:absolute;transform:translate(-50%,-100%);transition:transform 110ms linear;will-change:transform}
+.ent svg{display:block;overflow:visible}
+.hpbar{position:absolute;left:50%;transform:translateX(-50%);width:26px;height:3px;background:#33202a;border-radius:2px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:var(--gate)}
+.trap{position:absolute;bottom:0;transform:translateX(-50%);text-align:center;pointer-events:none}
+.trap .g{font-size:20px;line-height:1;display:block;filter:drop-shadow(0 0 5px rgba(0,0,0,.8))}
+.trap small{display:block;font-size:9px;color:var(--muted)}
+#sight{position:absolute;height:2px;background:linear-gradient(90deg,rgba(245,199,126,.7),rgba(245,199,126,0));pointer-events:none}
+.float{position:absolute;font-size:12px;font-weight:800;pointer-events:none;color:var(--warm);
+  animation:rise 700ms ease-out forwards}
+@keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-26px)}}
+#shakewrap{position:absolute;inset:0}
+.shake{animation:shk 120ms ease-out}
+@keyframes shk{0%{transform:translate(0,0)}30%{transform:translate(-3px,2px)}60%{transform:translate(3px,-2px)}100%{transform:translate(0,0)}}
+
+/* ---------- build bar ---------- */
+#buildbar{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);padding:6px 8px calc(6px + var(--sb))}
+#shop{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+#shop::-webkit-scrollbar{display:none}
+.shopbtn{flex:0 0 auto;min-width:64px;min-height:64px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 6px}
+.shopbtn .g{font-size:20px;line-height:1.1}
+.shopbtn .n{font-size:9px;letter-spacing:.6px;color:var(--muted)}
+.shopbtn .c{font-size:12px;font-weight:800;color:var(--warm)}
+.shopbtn.on{border-color:var(--accent);background:#2a1a13}
+.shopbtn.broke{opacity:.38}
+#buildrow{display:flex;gap:6px;align-items:center;margin-top:4px}
+.tbtn{min-height:48px;flex:1;border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+  font-size:12px;font-weight:700;letter-spacing:1px;padding:0 8px}
+.tbtn.go{background:var(--accent);color:#12070300;color:#150a04;border-color:var(--accent)}
+.tbtn:active{filter:brightness(1.2)}
+#timer{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;position:relative}
+#timer svg{position:absolute;inset:0}
+#timer b{font-size:14px;font-weight:800;position:relative}
+#hint{font-size:11px;color:var(--muted);padding:2px 2px 0;min-height:15px}
+
+/* ---------- combat controls ---------- */
+#pad{flex:0 0 auto;display:flex;gap:8px;padding:8px 8px calc(8px + var(--sb));background:var(--panel);border-top:1px solid var(--line)}
+.padbtn{flex:1;min-height:64px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);
+  font-size:24px;display:flex;align-items:center;justify-content:center}
+.padbtn:active,.padbtn.held{background:#2c323f}
+#atk{flex:1.5;background:#2a1a13;border-color:var(--accent);color:var(--accent);font-weight:800;font-size:26px}
+#atk:active,#atk.held{background:var(--accent);color:#150a04}
+#cdbar{position:absolute;left:0;bottom:0;height:3px;background:var(--warm)}
+
+/* ---------- pips ---------- */
+#pips{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end;max-height:82%;flex-wrap:wrap-reverse}
+.pip{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);background:rgba(10,11,15,.7);
+  border:1px solid var(--line);border-radius:20px;padding:1px 6px 1px 3px}
+.pip svg{width:14px;height:14px}
+
+/* ---------- overlays ---------- */
+.sheet{position:absolute;inset:0;background:rgba(6,7,10,.93);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:18px;z-index:40;overflow-y:auto}
+.card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{margin:0 0 2px;font-size:20px;letter-spacing:1px}
+.card h3{margin:0 0 10px;font-size:12px;letter-spacing:1.6px;color:var(--muted);font-weight:600}
+.bars{margin:10px 0 6px}
+.barrow{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.barrow .lbl{width:78px;flex:0 0 auto;color:var(--muted);letter-spacing:.6px}
+.barrow .track{flex:1;height:10px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.barrow .track i{display:block;height:100%;border-radius:6px}
+.barrow .val{width:44px;text-align:right;font-weight:800}
+.barrow.you .lbl{color:var(--accent)}
+.kv{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0;border-top:1px solid var(--line)}
+.kv b{color:var(--cream);font-weight:700}
+.bigbtn{width:100%;min-height:52px;margin-top:12px;border-radius:12px;background:var(--accent);color:#150a04;
+  font-weight:800;letter-spacing:1.4px;font-size:14px}
+.ghostbtn{width:100%;min-height:48px;margin-top:8px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel2);font-weight:700;letter-spacing:1.2px;font-size:12px}
+.row2{display:flex;gap:8px}
+.row2 .ghostbtn{margin-top:8px}
+.opt{display:flex;align-items:center;justify-content:space-between;min-height:48px;border-top:1px solid var(--line);font-size:13px}
+.opt .sw{min-width:64px;min-height:34px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);font-size:11px;letter-spacing:1px;font-weight:700}
+.opt .sw.on{background:var(--accent);color:#150a04;border-color:var(--accent)}
+input[type=range]{width:130px;accent-color:var(--accent)}
+.dispatch{font-size:12px;color:var(--muted);padding:5px 0;border-top:1px solid var(--line);line-height:1.35}
+.dispatch b{color:var(--cream)}
+#toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:var(--panel2);
+  border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:12px;z-index:60;opacity:0;
+  transition:opacity 160ms ease-out;pointer-events:none;max-width:88%;text-align:center}
+#toast.show{opacity:1}
+#tests{position:absolute;inset:0;background:#07080b;color:#cfd6e4;font:12px/1.45 ui-monospace,Menlo,monospace;
+  padding:14px;overflow:auto;z-index:99;white-space:pre-wrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
-<!--MARKUP_PLACEHOLDER-->
+<div id="app">
+  <div id="hud">
+    <div class="stat"><b id="wavev">1</b><i>WAVE</i></div>
+    <div class="stat"><b id="scrapv">52</b><i>SCRAP</i></div>
+    <div class="stat"><b id="bladev">20</b><i>BLADE</i></div>
+    <div class="grow"></div>
+    <button class="iconbtn" id="optbtn" aria-label="Options">&#9881;</button>
+    <button class="iconbtn" id="exitbtn" aria-label="Leave the siege">&#10005;</button>
+  </div>
+
+  <div id="field">
+    <div id="shakewrap">
+      <div id="lane"></div>
+      <div id="gate"></div>
+      <div id="gateglow"></div>
+      <div id="sight" class="hidden"></div>
+    </div>
+    <div id="pips"></div>
+  </div>
+
+  <div id="buildbar">
+    <div id="shop"></div>
+    <div id="buildrow">
+      <button class="tbtn" id="lastbuild">LAST BUILD</button>
+      <button class="tbtn go" id="skipbtn">SEND THEM IN</button>
+      <div id="timer"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="#2a2f3b" stroke-width="4"/><circle id="timerarc" cx="24" cy="24" r="20" fill="none" stroke="#e8703a" stroke-width="4" stroke-linecap="round" transform="rotate(-90 24 24)"/></svg><b id="timernum">20</b></div>
+    </div>
+    <div id="hint">Tap a trap, then tap a cell in the lane.</div>
+  </div>
+
+  <div id="pad" class="hidden">
+    <button class="padbtn" id="left" aria-label="Move toward the gate">&#9664;</button>
+    <button class="padbtn" id="atk" aria-label="Swing">&#9876;<span id="cdbar"></span></button>
+    <button class="padbtn" id="right" aria-label="Move toward the mouth">&#9654;</button>
+  </div>
+
+  <div class="sheet hidden" id="titlesheet">
+    <div class="card">
+      <h2>SIEGE OF ONE</h2>
+      <h3>ONE LANE. ONE DEFENDER. TWENTY WAVES.</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 4px">You are the whole army. Set the traps between waves, then get down in the lane and fight beside them.</p>
+      <div class="kv"><span>Best wave</span><b id="tbest">0</b></div>
+      <div class="kv"><span>Endless best</span><b id="tendless">0</b></div>
+      <button class="bigbtn" id="startbtn">HOLD THE GATE</button>
+      <div class="row2">
+        <button class="ghostbtn" id="dailybtn">TODAY'S SIEGE</button>
+        <button class="ghostbtn" id="logbtn">WAR LOG</button>
+      </div>
+      <button class="ghostbtn" id="titleexit">BACK TO THE ARCADE</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="scoresheet">
+    <div class="card">
+      <h2 id="scwave">WAVE 1 HELD</h2>
+      <h3>WHO DID THE WORK</h3>
+      <div class="bars" id="scbars"></div>
+      <div class="kv"><span>Scrap in hand</span><b id="scscrap">0</b></div>
+      <div class="kv"><span>Deepest they got</span><b id="scdeep">cell 0</b></div>
+      <div class="kv"><span>Bodies down</span><b id="sckills">0</b></div>
+      <button class="bigbtn" id="scnext">BUILD</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="oversheet">
+    <div class="card">
+      <h2 id="ovtitle">THE GATE FELL</h2>
+      <h3 id="ovsub">WAVE 1</h3>
+      <p class="dispatch" id="ovdispatch"></p>
+      <div class="kv"><span>Waves held</span><b id="ovwaves">0</b></div>
+      <div class="kv"><span>Bodies down</span><b id="ovkills">0</b></div>
+      <div class="kv"><span>Your share of the damage</span><b id="ovshare">0%</b></div>
+      <div class="kv"><span>Best wave</span><b id="ovbest">0</b></div>
+      <button class="bigbtn" id="ovagain">AGAIN</button>
+      <div class="row2">
+        <button class="ghostbtn" id="ovshare2">SHARE</button>
+        <button class="ghostbtn" id="ovendless">ENDLESS</button>
+      </div>
+      <button class="ghostbtn" id="ovmenu">TITLE</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="optsheet">
+    <div class="card">
+      <h2>OPTIONS</h2>
+      <h3>SIEGE OF ONE</h3>
+      <div class="opt"><span>Volume</span><input type="range" id="optvol" min="0" max="100" value="70"></div>
+      <div class="opt"><span>Sound</span><button class="sw on" id="optmute">ON</button></div>
+      <div class="opt"><span>Haptics</span><button class="sw on" id="opthap">ON</button></div>
+      <div class="opt"><span>Reduced motion</span><button class="sw" id="optred">OFF</button></div>
+      <div class="opt"><span>Auto skip build phase</span><button class="sw" id="optskip">OFF</button></div>
+      <button class="ghostbtn" id="optlog">WAR LOG</button>
+      <button class="bigbtn" id="optclose">BACK</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="logsheet">
+    <div class="card">
+      <h2>WAR LOG</h2>
+      <h3>THE LAST TEN SIEGES</h3>
+      <div id="logbody"></div>
+      <button class="bigbtn" id="logclose">BACK</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
 <script>
 /*
   SIEGE OF ONE  ·  gameId: siege  ·  Sky Wolf Studios
@@ -47,7 +279,7 @@ var CONFIG = {
   PLAYER_START_CELL: 5,
   PLAYER_MOVE_TICKS: 2,
   PLAYER_ATK_CD: 8,
-  PLAYER_DMG: 12,
+  PLAYER_DMG: 20,
   PLAYER_DMG_GROWTH: 1.18,  /* the blade keeps pace with the curve */
   PLAYER_RANGE: 1,
   WALL_HIT_TICKS: 8,        /* one hit landed on a blocking wall per 8 ticks */
@@ -169,7 +401,7 @@ var WAVES = [
   [['brute', 5, 14], ['healer', 2, 13], ['sapper', 2, 13], ['swarm', 2, 16]],
   [['flyer', 5, 11], ['shielded', 4, 12], ['brute', 4, 15], ['healer', 2, 13]],
   [['swarm', 3, 15], ['runner', 8, 9], ['sapper', 2, 13], ['flyer', 3, 11], ['brute', 4, 15], ['healer', 1, 13]],
-  [['shielded', 4, 12], ['flyer', 4, 11], ['swarm', 2, 15], ['brute', 4, 15], ['healer', 2, 13], ['warden', 1, 20]]
+  [['shielded', 4, 12], ['flyer', 4, 11], ['swarm', 2, 15], ['brute', 3, 15], ['healer', 2, 13], ['warden', 1, 20]]
 ];
 
 var DATA = { TRAPS: TRAPS, TRAP_ORDER: TRAP_ORDER, ENEMIES: ENEMIES, ENEMY_ORDER: ENEMY_ORDER, WAVES: WAVES };
@@ -1016,8 +1248,8 @@ SUITES.push(function () {
   TEST.eq('runner hp at wave 1', enemyHP('runner', 1), Math.round(18 * 1.18));
   TEST.eq('warden hp at wave 10', enemyHP('warden', 10), Math.round(420 * Math.pow(1.18, 10)));
   TEST.ok('wave 20 hp is heavier than wave 10', waveTotalHP(20) > waveTotalHP(10) * 2);
-  TEST.eq('player damage grows on the same curve', playerDamage(2), Math.round(12 * 1.18));
-  TEST.eq('player damage at wave 1 is the base', playerDamage(1), 12);
+  TEST.eq('player damage grows on the same curve', playerDamage(2), Math.round(CONFIG.PLAYER_DMG * 1.18));
+  TEST.eq('player damage at wave 1 is the base', playerDamage(1), CONFIG.PLAYER_DMG);
   var costs = 0, i2;
   for (i2 = 0; i2 < TRAP_ORDER.length; i2++) costs += trapCost(TRAP_ORDER[i2]);
   TEST.eq('one of every trap costs 315', costs, 315);
@@ -1041,7 +1273,7 @@ SUITES.push(function () {
   TEST.eq('a wall takes 3 hits', TRAPS.wall.hits, 3);
   TEST.eq('snare costs 40', TRAPS.snare.cost, 40);
   TEST.eq('a snare holds for 25 ticks', TRAPS.snare.hold, 25);
-  TEST.eq('the blade opens at 12', CONFIG.PLAYER_DMG, 12);
+  TEST.eq('the blade opens at 20', CONFIG.PLAYER_DMG, 20);
   TEST.eq('the blade swings every 8 ticks', CONFIG.PLAYER_ATK_CD, 8);
   TEST.eq('you walk a cell every 2 ticks', CONFIG.PLAYER_MOVE_TICKS, 2);
   TEST.eq('your reach is one cell', CONFIG.PLAYER_RANGE, 1);
