@@ -8,6 +8,14 @@ as the offline/missing-file fallback. Random pick per hit + pitch/gain jitter
 are applied automatically, which is why ~10 takes per sound matters — repeats
 never sound identical.
 
+**Status 2026-08-16:** the pipeline is wired, staged and tested end to end.
+`SFX_MANIFEST` in the app lists every name below, commented out. Drop files in
+`satellites/bandits-box/sfx/` and uncomment that one line. Verified by
+`scripts/banditsbox_foley.mjs`: recordings take over from the synth, repeats
+draw from different takes with pitch jitter, the switch wall pitches its takes
+down the rows, the settings screen reports the bank, and a missing file falls
+back to synth without a sound out of place.
+
 ## Recording spec (applies to everything)
 
 - WAV, 48 kHz, mono, 16 or 24 bit. Close mic (10-20 cm), quietest room you
@@ -30,7 +38,8 @@ never sound identical.
 | `snap` | chocolate bar snap | real chocolate bars, three thicknesses (the toy has three flavours with different timbres — thin/medium/thick bar) |
 | `rip` | PeriPeri package strip | cardboard box-tab rips + velcro at two speeds |
 | `latch` | latches locking | real latches, jar clasps, seatbelt buckle |
-| `click`* | switch wall | mechanical keyboard switches + light switches (*add to manifest if the wall uses tap/latch today — Opus will confirm the wall's voice name and alias it) |
+| `click` | switch wall, flicking a switch ON | mechanical keyboard switches, light switches, going up |
+| `clack` | switch wall, flicking a switch OFF | the same switches coming back down (they really do sound different, which is why there are two banks) |
 | `tap` | general finger taps | fingernail + fingertip on wood, plastic, glass |
 
 **Tier 2 — big wins, easy takes:**

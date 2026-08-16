@@ -141,6 +141,36 @@ const small = await page.evaluate(() => {
 ok(small.length === 0, "every touch target is at least 48px rendered",
   small.length ? JSON.stringify(small) : "");
 
+/* ---------------- the switch wall goes through feel() ---------------- */
+/* It used to call the synth directly, which meant it could never take a
+   recording and kept private copies of the ripple and buzz. Flipping a switch
+   must now produce a ripple like every other sound in the app. */
+console.log("[switch wall]");
+await page.evaluate(() => showToy("wall"));
+await sleep(500);
+const wallBefore = await page.evaluate(() => document.querySelectorAll("#fx .rip").length);
+const sw = await page.evaluate(() => {
+  const el = document.querySelector(".wsw");
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+           checked: el.getAttribute("aria-checked"),
+           hit: !!(top && (top === el || el.contains(top))) };
+});
+ok(sw && sw.hit, "a wall switch is reachable where it appears", JSON.stringify(sw));
+if (sw && sw.hit) {
+  await page.mouse.move(sw.x, sw.y); await page.mouse.down(); await page.mouse.up();
+  await sleep(200);
+  const after = await page.evaluate(() => ({
+    checked: document.querySelector(".wsw").getAttribute("aria-checked"),
+    rips: document.querySelectorAll("#fx .rip").length
+  }));
+  ok(after.checked === "true", "flipping a switch toggles it", JSON.stringify(after));
+  ok(after.rips > wallBefore, "flipping a switch makes a ripple, so it went through feel()",
+    JSON.stringify({ before: wallBefore, after: after.rips }));
+}
+
 /* ---------------- selected state is visible ---------------- */
 console.log("[visible state]");
 // the selected toy tab must be inside the strip's visible box, not parked

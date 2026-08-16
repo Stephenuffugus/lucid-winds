@@ -1199,6 +1199,16 @@ var V = {
   latch:function(pan){ noiseHit({dur:.02,type:'bandpass',freq:1900,Q:7,gain:.3,pan:pan});
     setTimeout(function(){ noiseHit({dur:.035,type:'bandpass',freq:1300,Q:5,gain:.26,pan:pan}); },48); },
   hinge:function(pan){ noiseHit({dur:.4,type:'bandpass',freq:600,sweepTo:1500,Q:4,gain:.09,attack:.05,pan:pan}); },
+  /* Wall switches. Two voices rather than one with a flag, because a real
+     switch does not sound the same going up as coming down, and because it
+     lets the two directions carry their own ripple colour and their own bank
+     of recordings. row detunes down the wall exactly as before. */
+  click:function(pan,semi,row){ row=row||0;
+    noiseHit({dur:.014,type:'bandpass',freq:2500-row*70,Q:10,gain:.26,pan:pan});
+    tone({f0:620-row*18,f1:230,dur:.04,gain:.11,wave:'square',pan:pan}); },
+  clack:function(pan,semi,row){ row=row||0;
+    noiseHit({dur:.014,type:'bandpass',freq:1900-row*70,Q:10,gain:.26,pan:pan});
+    tone({f0:420-row*18,f1:230,dur:.04,gain:.11,wave:'square',pan:pan}); },
   /* release of a stretched thing: the snap-back */
   boing:function(pan,tension){ var t=clamp(tension||.5,0,1);
     tone({f0:120+t*260,f1:60+t*90,bend:.16,dur:.26,gain:.1+t*.2,wave:'triangle',pan:pan});
@@ -1216,11 +1226,42 @@ var V = {
    the same jitter applied on top so repeats still vary. If they're
    missing nothing breaks — the synth just keeps doing the job. */
 var SAMPLES={};
+/* Every voice name the app can speak, staged and ready. Drop recordings into
+   ./sfx/ named <voice>-01.wav upward and uncomment that line: feel() prefers a
+   recording over the synth automatically, picks a take at random and jitters
+   pitch and gain on top, so repeats never sound stamped. A missing or broken
+   file changes nothing — the synth keeps doing the job.
+
+   SFX-SHOT-LIST.md (in incoming/bandits-box) is the recording guide: what to
+   record for each name, roughly ten takes each, trimmed tight.
+
+   Ordered by how much a real recording gains. Uncomment as banks arrive. */
 var SFX_MANIFEST={
-  /* example — uncomment once files exist:
-  pop:['pop-01.wav','pop-02.wav','pop-03.wav','pop-04.wav','pop-05.wav','pop-06.wav'],
-  tap:['tap-01.wav','tap-02.wav','tap-03.wav','tap-04.wav','tap-05.wav','tap-06.wav'],
-  */
+  /* --- tier 1: the signature touches --- */
+  // pop:['pop-01.wav','pop-02.wav','pop-03.wav','pop-04.wav','pop-05.wav','pop-06.wav'],
+  // unpop:['unpop-01.wav','unpop-02.wav','unpop-03.wav','unpop-04.wav'],
+  // crinkle:['crinkle-01.wav','crinkle-02.wav','crinkle-03.wav','crinkle-04.wav'],
+  // snap:['snap-01.wav','snap-02.wav','snap-03.wav','snap-04.wav','snap-05.wav'],
+  // rip:['rip-01.wav','rip-02.wav','rip-03.wav','rip-04.wav'],
+  // latch:['latch-01.wav','latch-02.wav','latch-03.wav','latch-04.wav'],
+  // click:['click-01.wav','click-02.wav','click-03.wav','click-04.wav','click-05.wav'],
+  // clack:['clack-01.wav','clack-02.wav','clack-03.wav','clack-04.wav','clack-05.wav'],
+  // tap:['tap-01.wav','tap-02.wav','tap-03.wav','tap-04.wav','tap-05.wav','tap-06.wav'],
+  /* --- tier 2: big wins, easy takes --- */
+  // peel:['peel-01.wav','peel-02.wav','peel-03.wav'],
+  // plink:['plink-01.wav','plink-02.wav','plink-03.wav','plink-04.wav'],
+  // squeak:['squeak-01.wav','squeak-02.wav','squeak-03.wav'],
+  // squish:['squish-01.wav','squish-02.wav','squish-03.wav','squish-04.wav'],
+  // thunk:['thunk-01.wav','thunk-02.wav','thunk-03.wav'],
+  // bell:['bell-01.wav','bell-02.wav','bell-03.wav'],
+  // zip:['zip-01.wav','zip-02.wav','zip-03.wav'],
+  // hinge:['hinge-01.wav','hinge-02.wav','hinge-03.wav'],
+  /* --- tier 3: the synth already does these well --- */
+  // grain:['grain-01.wav','grain-02.wav'],
+  // rib:['rib-01.wav','rib-02.wav'],
+  // boing:['boing-01.wav','boing-02.wav'],
+  // screech:['screech-01.wav','screech-02.wav'],
+  // airout:['airout-01.wav','airout-02.wav']
 };
 function loadSamples(base){
   if(!audioOK) return;
@@ -1336,9 +1377,12 @@ function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveS,900); }
 var RIPCOLOR={pop:'#9FD6C0',unpop:'#7FB8A4',tap:'#F2B79E',crinkle:'#C3B0E0',grain:'#C3B0E0',
   peel:'#C3B0E0',rip:'#EDA9B4',rib:'#EFD9A0',plink:'#A8C8E8',squeak:'#F2B79E',squish:'#EDA9B4',
   screech:'#F2B79E',bell:'#EFD9A0',thunk:'#A8C8E8',snap:'#F2B79E',latch:'#A8C8E8',
-  hinge:'#A8C8E8',boing:'#C3B0E0',zip:'#EFD9A0',airout:'#A8C8E8'};
+  hinge:'#A8C8E8',boing:'#C3B0E0',zip:'#EFD9A0',airout:'#A8C8E8',
+  /* the two switch directions keep the colours the wall always used:
+     green going on, blue going off */
+  click:'#9FD6C0',clack:'#A8C8E8'};
 var BUZZ_MS={pop:9,tap:7,thunk:26,squish:16,squeak:12,bell:8,latch:14,snap:13,rib:5,plink:6,
-  rip:20,boing:18,zip:14,airout:10};
+  rip:20,boing:18,zip:14,airout:10,click:10,clack:10};
 var CAN_BUZZ=(typeof navigator.vibrate==='function');
 
 function feel(name,x,y){
@@ -3272,11 +3316,14 @@ function flipWall(el,x,y){
   if(!el) return;
   var on=el.getAttribute('aria-checked')==='true';
   el.setAttribute('aria-checked',String(!on));
-  var row=+el.getAttribute('data-row'), pan=(x/Math.max(1,window.innerWidth))*2-1;
-  noiseHit({dur:.014,type:'bandpass',freq:(on?1900:2500)-row*70,Q:10,gain:.26,pan:pan});
-  tone({f0:(on?420:620)-row*18,f1:230,dur:.04,gain:.11,wave:'square',pan:pan});
-  ripple(x,y,on?'#A8C8E8':'#9FD6C0');
-  if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(10); }catch(e){} }
+  var row=+el.getAttribute('data-row');
+  /* Through feel(), like every other sound in here. It used to call the synth
+     straight, which meant the wall could never take a recording and kept its
+     own copy of the ripple and buzz. The semi argument is what pitches a
+     recorded sample down the rows; the synth branch uses row directly and
+     sounds exactly as it did before. */
+  var semi=-row*0.48;
+  feel(on?'clack':'click',x,y,semi,row);
 }
 wallGrid.addEventListener('pointerdown',safe(function(e){
   var el=e.target.closest?e.target.closest('.wsw'):null; if(!el) return;
