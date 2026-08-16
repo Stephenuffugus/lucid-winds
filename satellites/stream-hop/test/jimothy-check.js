@@ -30,7 +30,13 @@ sec('A  SYNTAX (a broken block still serves a 200)');
   /* ⛔ compile with vm, never with a brace counter. The stylesheet is full of
      inline SVG data URIs whose braces and parens defeat naive counting, and
      a `</script>` inside a string truncates a regex split. */
-  var blocks = page.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g) || [];
+  /* ⛔ skip <script type="application/ld+json"> and friends: they are DATA,
+     not JavaScript, and compiling them reports a syntax error in a fine page. */
+  var blocks = (page.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g) || [])
+    .filter(function (b) {
+      var t = b.match(/^<script[^>]*\btype\s*=\s*["']([^"']+)/);
+      return !t || /javascript|module|ecmascript/i.test(t[1]);
+    });
   var bad = [], i;
   for (i = 0; i < blocks.length; i++) {
     var body = blocks[i].replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '');
@@ -198,10 +204,10 @@ sec('G  CONTENT (CONTENT-MAP.md is the source of truth)');
   ok('CONTENT-MAP still documents five weekly costumes', mapWeekly === 5, mapWeekly + ' rows');
 
   /* ⛔ the 14 pack costumes were sold as fourteen and the list never grows */
-  var pack = page.match(/PACK_COSTUMES\s*=\s*\[([^\]]*)\]/);
-  ok('PACK_COSTUMES exists', !!pack);
+  var pack = page.match(/var\s+PACK_COSTUMES\s*=\s*\{([\s\S]*?)\}/);
+  ok('PACK_COSTUMES exists', !!pack, pack ? '' : 'not found');
   if (pack) {
-    var n = pack[1].split(',').filter(function (x) { return x.trim(); }).length;
+    var n = (pack[1].match(/\w+\s*:\s*1/g) || []).length;
     ok('the supporter pack is still exactly fourteen costumes', n === 14,
       n + ' ids; CONTENT-MAP: "Never add to this list"');
   }
@@ -222,15 +228,56 @@ sec('G  CONTENT (CONTENT-MAP.md is the source of truth)');
 /* ═══ H. COPY LAW ══════════════════════════════════════════════════ */
 sec('H  COPY LAW (no dash characters in player facing copy)');
 (function () {
-  var lines = page.split('\n'), hits = [], i;
-  for (i = 0; i < lines.length; i++) {
-    var L = lines[i];
-    if (!/[—–]/.test(L)) continue;
-    /* comments are allowed to use them; strings the player reads are not */
-    var strs = L.match(/'[^']*'|"[^"]*"/g) || [];
-    var j;
-    for (j = 0; j < strs.length; j++) if (/[—–]/.test(strs[j])) hits.push((i + 1) + ': ' + strs[j].slice(0, 60));
+  /* ⛔ STRIP COMMENTS BEFORE ANALYSING SOURCE, AND ONLY LOOK AT SOURCE.
+     Two traps here, both of which produced false reds first time out:
+     1. this file's comments are full of prose and apostrophes, so a naive
+        per line string scan desynchronises on the first "hero's" and then
+        reports the surrounding comment as player copy;
+     2. the page is not all JavaScript. Walking the WHOLE file with a JS
+        string scanner reads CSS declarations and HTML prose as string
+        literals. So: scan the inline JS blocks with a state machine, and
+        check the markup's visible text separately. */
+  var hits = [], i, b2;
+  var jsBlocks = (page.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g) || [])
+    .filter(function (blk) {
+      var t = blk.match(/^<script[^>]*\btype\s*=\s*["']([^"']+)/);
+      return !t || /javascript|module|ecmascript/i.test(t[1]);
+    })
+    .map(function (blk) { return blk.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''); });
+
+  for (b2 = 0; b2 < jsBlocks.length; b2++) {
+    var src = jsBlocks[b2], n = src.length;
+    var st = 0;   // 0 code, 1 line comment, 2 block comment, 3 single, 4 double, 5 template
+    var buf = '', startLine = 1, line = 1;
+    for (i = 0; i < n; i++) {
+      var ch = src.charAt(i), nx = src.charAt(i + 1);
+      if (ch === '\n') line++;
+      if (st === 0) {
+        if (ch === '/' && nx === '/') { st = 1; i++; }
+        else if (ch === '/' && nx === '*') { st = 2; i++; }
+        else if (ch === "'") { st = 3; buf = ''; startLine = line; }
+        else if (ch === '"') { st = 4; buf = ''; startLine = line; }
+        else if (ch === '`') { st = 5; buf = ''; startLine = line; }
+      } else if (st === 1) { if (ch === '\n') st = 0; }
+      else if (st === 2) { if (ch === '*' && nx === '/') { st = 0; i++; } }
+      else {
+        var q = st === 3 ? "'" : (st === 4 ? '"' : '`');
+        if (ch === '\\') { i++; continue; }
+        if (ch === q) { if (/[—–]/.test(buf)) hits.push('block ' + b2 + ' line ' + startLine + ': ' + buf.slice(0, 60)); st = 0; buf = ''; }
+        else buf += ch;
+      }
+    }
   }
+
+  /* and the markup's own visible text, which no JS scanner would ever see */
+  var body = page.slice(page.indexOf('<body'));
+  var visible = body.replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ');
+  var mkHits = visible.match(/[^\s]{0,24}[—–][^\s]{0,24}/g) || [];
+  ok('no em dash or en dash in the markup the player reads', mkHits.length === 0, mkHits.slice(0, 3).join(' | '));
+
   ok('no em dash or en dash inside a string literal', hits.length === 0, hits.slice(0, 4).join(' | '));
 })();
 

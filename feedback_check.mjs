@@ -133,9 +133,11 @@ function sourceChecks(R, src) {
     'repeated throws retire the watcher (degrades to the old behaviour)');
   R.ok('src.killSwitch', /window\.LW_FB_NO_YIELD === true/.test(src),
     'window.LW_FB_NO_YIELD turns the whole thing off');
-  R.ok('src.ceiling', /HIDDEN_MAX_MS/.test(src) &&
+  const ceilM = /HIDDEN_MAX_MS:\s*(\d+)/.exec(src);
+  R.ok('src.ceiling', !!ceilM && Number(ceilM[1]) <= 30000 &&
     /hiddenAt && \(Date\.now\(\) - w\.hiddenAt\) >= FY\.HIDDEN_MAX_MS[\s\S]{0,80}?fyGoHome\(w\)/.test(src),
-    'the invisible state has a hard ceiling that ends in fyGoHome');
+    `the invisible state has a hard ceiling that ends in fyGoHome (${ceilM ? ceilM[1] : '?'}ms, must be <= 30000 — ` +
+    'a ceiling nobody lives to see is not a ceiling)');
   R.ok('src.noDisplayNone', !/style\.display = 'none'/.test(src),
     'yielding never writes display:none (the box stays measurable, and if the ' +
     'stylesheet never landed the fab simply stays visible)');
@@ -152,7 +154,10 @@ function sourceChecks(R, src) {
     'and nothing but a scroll to notice');
   R.ok('src.pausesWhenHidden', /document\.hidden === true/.test(src),
     'a hidden tab is not scanned');
-  R.ok('src.pausesForOwnForm', /getElementById\('lwfb-bg'\)/.test(src),
+  // Specifically the scan's stand-down, not just any mention of the id —
+  // close() greps the same string, so a loose match here stayed green when the
+  // stand-down was deleted outright.
+  R.ok('src.pausesForOwnForm', /getElementById\('lwfb-bg'\)\) return \{ skip: 'form-open' \}/.test(src),
     'our own panel is never treated as a game overlay');
   try {
     new vm.Script(src, { filename: 'feedback.js' });
@@ -259,7 +264,13 @@ function makePage(g, opts = {}) {
         if (st.display === 'none' || st.visibility === 'hidden') return;
         for (const c of n.children) walk(c, depth + 1, zz);
       })(html, 0, 0);
-      hits.sort((a, b) => (b.z - a.z) || (b.depth - a.depth));
+      // Paint order, topmost first: higher z-index wins, and within the same z
+      // the LATER element in document order paints on top — which is also true
+      // of a child versus its parent, since pre-order numbering puts the child
+      // after. Sorting by depth instead (the first version of this file) makes
+      // two full-bleed siblings come back in the wrong order and had the
+      // detector reading a game wrapper as the thing on top of a settings list.
+      hits.sort((a, b) => (b.z - a.z) || (b.seq - a.seq));
       return hits.map(h => h.n);
     }
   };
@@ -467,6 +478,23 @@ function scenarioChecks(R, g, src = SRC) {
     R.ok('S4.stillThere', s.visible(), 'fab visible');
   }
 
+  /* S4c — a hidden modal with NO controls in it. S4 above cannot see the
+     visibility gate do its work: the stub refuses to hand over buttons inside a
+     display:none subtree (no browser does), so the sheet's own children never
+     reach the detector and S4 passes even with the gate ripped out. This one
+     puts the hidden element itself in the firing line — it is the only thing
+     that could block, so rejecting it has to be feedback.js's own decision. */
+  {
+    const p = pagePlain(g);
+    p.add(p.body, 'div', {
+      id: 'ghost', cs: { zIndex: '99', display: 'none' },
+      rect: { left: 0, top: 0, width: p.vw, height: p.vh }
+    });
+    const s = boot(p, src);
+    s.scan(); s.scan();
+    R.eq('S4c.hiddenModalIgnored', s.state(), 'home', 'display:none, no children — nothing to yield to');
+  }
+
   /* S4b — the hues/budburst shape: an inactive .screen that is still painted,
      at opacity 0 with pointer-events:none. Also not in the way. */
   {
@@ -478,6 +506,23 @@ function scenarioChecks(R, g, src = SRC) {
     const s = boot(p, src);
     s.scan(); s.scan();
     R.eq('S4b.inertScreenIgnored', s.state(), 'home', 'opacity:0 + pointer-events:none is inert');
+  }
+
+  /* S4d — a full-bleed HUD layer, pointer-events:none, fully opaque. Extremely
+     common (score/vignette layers sit over the canvas exactly like this) and it
+     is layered over real content, so the cover rule WOULD fire on it. It cannot
+     receive a tap, so the fab is not stealing anything and must stay put.
+     Separate from S4b because S4b's screen is inert two ways (opacity AND
+     pointer-events) and so cannot tell which gate is doing the work. */
+  {
+    const p = pagePlain(g);
+    p.add(p.body, 'div', {
+      id: 'hudlayer', cs: { zIndex: '40', pointerEvents: 'none' },
+      rect: { left: 0, top: 0, width: p.vw, height: p.vh }
+    });
+    const s = boot(p, src);
+    s.scan(); s.scan();
+    R.eq('S4d.untappableLayerIgnored', s.state(), 'home', 'pointer-events:none cannot take a tap from us');
   }
 
   /* S5 — Bramblewick. No overlay at all; a settings toggle scrolled under it. */
@@ -603,11 +648,18 @@ function scenarioChecks(R, g, src = SRC) {
      painted beneath it. Must not read as a modal. */
   {
     const p = makePage(g);
-    const wrap = p.add(p.body, 'div', { id: 'only', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
-    p.add(wrap, 'div', { className: 'hud', rect: { left: 8, top: 8, width: 100, height: 30 } });
+    // Nested full-bleed containers, which is how a game shell is actually
+    // built. The stack under the fab is [only, app, body, html] — every entry
+    // an ANCESTOR. If the layering test stopped excluding ancestors, this shape
+    // would read as a modal stacked over content and the fab would flee on
+    // every canvas game in the fleet, forever. That is the false positive this
+    // scenario exists to catch.
+    const app = p.add(p.body, 'div', { id: 'app', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    const only = p.add(app, 'div', { id: 'only', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    p.add(only, 'div', { className: 'hud', rect: { left: 8, top: 8, width: 100, height: 30 } });
     const s = boot(p, src);
     s.scan();
-    R.eq('S12.notAModal', s.state(), 'home', 'nothing beneath it -> it is the page, not a sheet');
+    R.eq('S12.notAModal', s.state(), 'home', 'only ancestors beneath it -> it is the page, not a sheet');
   }
 
   /* S13 — the kill switch. */
@@ -645,7 +697,12 @@ const MUTANTS = [
   {
     name: 'visibility gate removed (display:none reads as an overlay)',
     patch: s => s.replace("if (cs.display === 'none' || cs.visibility === 'hidden') return false;", ''),
-    mustFail: ['S4.ignored']
+    mustFail: ['S4c.hiddenModalIgnored']
+  },
+  {
+    name: 'inert-screen gate removed (opacity:0 / pointer-events:none)',
+    patch: s => s.replace("if (cs.pointerEvents === 'none') return false;", ''),
+    mustFail: ['S4b.inertScreenIgnored']
   },
   {
     name: 'layering test removed (every canvas game reads as a modal)',
@@ -653,8 +710,8 @@ const MUTANTS = [
     mustFail: ['S12.notAModal']
   },
   {
-    name: 'cursor:pointer size guard removed',
-    patch: s => s.replace('if (r && r.width <= vw * 0.9) return true;', 'if (r) return true;'),
+    name: 'cursor:pointer full-bleed guard removed',
+    patch: s => s.replace('if (r && !(r.width >= vw * 0.9 && r.height >= vh * 0.4)) return true;', 'if (r) return true;'),
     mustFail: ['S1b.fullBleedPointerIsNotAButton']
   },
   {
@@ -667,6 +724,18 @@ const MUTANTS = [
     patch: s => s.replace('.lwfb-fab-x{position:absolute;top:-26px;left:-26px;width:48px;height:48px;',
       '.lwfb-fab-x{position:absolute;top:-26px;left:-26px;width:30px;height:30px;'),
     mustFail: ['geom.badge48']
+  },
+  {
+    // the exact bug the checker caught mid-build, kept as a regression
+    name: 'control guard back to width-only (full-width list rows stop counting)',
+    patch: s => s.replace('if (r && !(r.width >= vw * 0.9 && r.height >= vh * 0.4)) return true;',
+      'if (r && r.width <= vw * 0.9) return true;'),
+    mustFail: ['S5.becauseControl']
+  },
+  {
+    name: 'cover rule no longer defers to visible controls (parks forever on a menu)',
+    patch: s => s.replace('if (cover && fyHasControls(cover, vw, vh)) cover = null;', ''),
+    mustFail: ['S5.returns']
   },
   {
     name: 'scan never stands down for our own form',
@@ -692,8 +761,17 @@ if (SELFTEST) {
   console.log('SELF-TEST — every check below is watched FAILING on a deliberately broken build.\n');
   let bad = 0;
   for (const m of MUTANTS) {
-    let R;
-    try { R = runAll(m.patch(SRC)); }
+    let R, mutated;
+    // A patch whose search string has drifted silently does nothing, the build
+    // stays healthy, and the mutant "passes" by testing the real file. That
+    // happened here once. Never again.
+    try { mutated = m.patch(SRC); } catch (e) { mutated = SRC; }
+    if (mutated === SRC) {
+      bad++;
+      console.log(`  ✗ ${m.name}: PATCH DID NOTHING — its search string no longer exists in feedback.js`);
+      continue;
+    }
+    try { R = runAll(mutated); }
     catch (e) { console.log(`  ✗ ${m.name}: mutant would not even run — ${e.message}`); bad++; continue; }
     const failed = new Set(R.failed().map(r => r.id));
     const missed = m.mustFail.filter(id => !failed.has(id));

@@ -16,6 +16,112 @@ this box). Everything below was proved with `node`.
   `siege-shell-v2` and the registration is `sw.js?v=20260816b`** (bumped with
   this pass, or nobody would ever receive it).
 
+## THE COMPOSITION FIX, ROUND TWO (the void moved, so it got closed properly)
+
+The first fix built the control room and the coordinator confirmed it works. It
+also moved the emptiness rather than closing it, and it moved it to the worst
+wave: **at wave 1 there was still roughly 500px of black between YOUR LANE and
+the lane strip.** His diagnosis was exactly right and structural: wave 1 has one
+enemy type, one trap, no modifiers and no boss, so four content sized panels in
+an `align-content:start` grid left all the slack in one hole. Wave 1 is the wave
+every new player sees, and it looked like the old empty screen with headings on.
+
+### The rule I settled on
+
+**Slack collected in one place is a void. Slack distributed as spacing is a
+layout.** So:
+
+- `#board` is `flex:1 1 auto` with **`align-content:space-between`**. Leftover
+  height is spread across the gaps BETWEEN panels instead of pooling. Stretching
+  the panels themselves was the other option on the table and it only puts the
+  same emptiness inside a box, which is what made the lonely chips read as
+  placeholders in the first place.
+- `#lanebox` is `flex:0 0 auto` at `clamp(140px, 22vh, 260px)`, **186px on a
+  phone, up from 143**. Fixed, so it cannot become a second void by absorbing
+  everything. I tried the inverse first (lane takes all leftover) and the height
+  model showed it producing a 327px lane with 57px bodies on busy waves, which
+  is just the void again with a gradient on it.
+- Bodies now scale with the strip as well as the cell: **42 x 57px**, up from
+  34 x 46, and 20 x 26 before any of this.
+
+### The briefing, which is the part worth having
+
+His third option was the right one and it is now the tutorial the game did not
+have. A fifth panel, **THE BRIEFING** on wave 1 and **NEW IN THIS WAVE** after,
+generated from the same tables the SIM runs on so it cannot drift:
+
+- The enemy types making their first appearance, each with a silhouette, what it
+  does, what beats it, and its actual HP at this wave.
+- A wave line where there is one to give (wave 1 the gate and the blade, wave 2
+  that unspent scrap is scrap doing nothing, wave 3 sell back, wave 11 that a
+  ballista cannot see past your own wall).
+- The starter spike explained on wave 1.
+- **The DEEPEN note fires when two or fewer cells are left**, which is the exact
+  moment the late game sink starts to matter.
+- Endless modifiers explain themselves in the same panel.
+
+It has content on precisely the waves where the board is thin, and it retires
+itself when the lane is busy enough to carry the screen:
+
+```
+wave | briefing fires with
+  1  | NEW: runner  +  wave note  +  starter spike note
+  2  | NEW: brute  +  wave note
+  3  | wave note
+  4  | NEW: swarm
+  5  | NEW: shielded
+  6  | NEW: flyer
+  7  | NEW: sapper
+  8  | NEW: healer
+  9  | panel hidden      <- board already holds 5 enemy types
+ 10  | NEW: warden
+ 11  | wave note
+ 12  | panel hidden
+```
+
+### The two smaller things
+
+- **Lonely chips read as placeholders.** At three or fewer types the roster and
+  the kit switch to a `roomy` class: silhouettes go 22x30 to **32x44**, chips to
+  52px tall, type larger. One chip now reads as a fact, not a stub.
+- **The boss row is reserved for the whole wave** if the wave table contains a
+  boss, not just while one is alive, so the layout does not shift a centimetre
+  when a Warden spawns. Before it arrives the row reads INBOUND, after it dies,
+  DOWN. `#livebars` has a `min-height` for the same reason.
+- The lane strip got a **crenellated top lip and a shadow** in pure CSS, so the
+  air over the lane reads as the inside of a wall rather than as leftover screen.
+
+### Height model, with its assumptions stated
+
+Panel chrome 35px (border, padding, header), gap 6px, field 696px at 390x844:
+
+```
+wave 1   content ~492px in a 510px box  ->  slack  18px over 4 gaps (5px each)
+wave 15  content ~419px in a 510px box  ->  slack  91px over 3 gaps (30px each)
+```
+
+That is a model, not a measurement. What IS guaranteed rather than modelled is
+the flex rule: with `space-between` there is no single hole for slack to collect
+in, whatever the content turns out to measure.
+
+### What the smoke reads back at wave 1
+
+```
+WAVE     : WAVE 1  |  84 HP INCOMING
+roster   : 1 chip (roomy), 4 of 4, silhouette 32x44
+your lane: 1 chip (roomy), 1 trap, 1 level
+briefing : THE BRIEFING [Runner] -> 3 lines
+  "Runner. Quick and thin. It dies to almost anything, and there are always
+   more of them. 21 HP at this wave. / The gate is cell 0, hard left. One body
+   reaching it ends the siege. Your blade does 20 a swing and grows every wave.
+   / The watch left a spike strip at cell 21. It bites anything on the ground
+   standing on it. Your purse buys one more."
+```
+
+**Still not a look.** Two rounds of this problem have now been found by a human
+eye and neither was found by a gate, which is the whole argument. Shell bumped
+to `siege-shell-v4` / `?v=20260816d`.
+
 ## THE COMPOSITION FIX (done last, after a LOOKING pass came back)
 
 The coordinator opened the combat screen at 390x844 and at desktop and reported
@@ -592,7 +698,8 @@ Nothing renders under 48px in either dimension. The options toggle started at
    blank page and dead wiring. **It is NOT a look. Nobody has seen a pixel.**
    The VIEW layer still needs the LOOKING pass at 390x844 AND at desktop width;
    two of the August 16 production defects only appeared at desktop width.
-   Specifically unlooked at: the whole watch board, the DEEPEN button as the
+   Specifically unlooked at: the briefing panel and the space-between spacing at
+   wave 1 and at wave 15, the roomy chips, the crenellated lane lip, the DEEPEN button as the
    seventh item on a scrolling shelf (does it fall off the edge at 375?), the
    trap level dots, the two tile scorecard split, whether 34px bodies overlapping
    across 13px cells reads as a crowd or as mush, and whether the board's
