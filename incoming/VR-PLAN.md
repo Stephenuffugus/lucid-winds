@@ -90,7 +90,7 @@ so much stuff that nobody uses.* A storefront listing does more for that in a we
 single VR title does in a month.
 
 - [ ] Meta developer account under SWS Strategic Media LLC (developers.meta.com/horizon)
-- [x] ~~Verify the arcade manifest satisfies Bubblewrap~~ — it already does. `portal/manifest.webmanifest` has `name`, `short_name`, `start_url`, `id`, `display: standalone`, and 192 plus 512 icons in both `any` and `maskable`. `scope` is `/`, which correctly keeps every game inside the app window. Its description said 140+ games and now says 180+.
+- [x] ~~Verify the arcade manifest satisfies Bubblewrap~~ — it already does. `portal/manifest.webmanifest` has `name`, `short_name`, `start_url`, `id`, `display: standalone`, and 192 plus 512 icons in both `any` and `maskable`. `scope` is `/`, which correctly keeps every game inside the app window. Its description said 140+ games and now says 160+, which is what a visitor can open (183 are carded, 22 are dev gated). That description becomes the store listing, so it is worth being exactly right: `scripts/advertised_count_check.mjs` now fails on a claim that is stale **or** larger than the openable count.
 - [ ] **Deal with the 13 off-origin games first.** See below.
 - [ ] Package 2D, landscape, unique Android package id, signed
 - [ ] Store assets: icon set, hero, 3+ screenshots, 30-60s capture recorded on the Quest itself
