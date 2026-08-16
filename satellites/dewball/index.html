@@ -2917,7 +2917,10 @@
       {k:"moonstone",n:28,zone:"far"},{k:"gnome",n:13,zone:"far"},{k:"barrel",n:13,zone:"far"},
       {k:"birdbath",n:10,zone:"far"},{k:"cloudpuff",n:21,zone:"far"},{k:"benchG",n:4,zone:"far"},
       {k:"cartB",n:3,zone:"far"},{k:"umbrella",n:10,zone:"far"},{k:"rowboat",n:3,zone:"far"},
-      {k:"streetlamp",n:11,zone:"far"},{k:"stall",n:3,zone:"far"},{k:"sailboat",n:1,zone:"far"},
+      {k:"streetlamp",n:11,zone:"far"},{k:"stall",n:3,zone:"far"},
+      /* sc:0.8 — at full size this one boat is above zen's own reachable ceiling
+         and is the only thing standing between Dream Meadow and a clean sweep */
+      {k:"sailboat",n:1,zone:"far",sc:0.8},
       {k:"moonflower",n:32,zone:"mid"},{k:"paperplane",n:25,zone:"near"},{k:"kite",n:11,zone:"far"},
       {k:"sandcastle",n:11,zone:"far"},{k:"drum",n:11,zone:"mid"} ],
     sets:[
@@ -3315,7 +3318,16 @@
           var ps=placeInZone(W,e.zone,rng); x9=ps[0]; z9=ps[1];
         }
         if(nearFence(x9,z9)){ var pf=placeInZone(W,e.zone,rng); x9=pf[0]; z9=pf[1]; }
-        byKind[e.k].push({x:x9,z:z9,rot:rng()*6.283,sc:0.84+rng()*0.42,keep:null});
+        /* ⚖️ `sc:` on a scatter entry scales that kind DOWN (or up) in this world
+           only. It multiplies the jitter, it does not replace it, so the same
+           number of rng draws happen in the same order and the seeded stream stays
+           bit-identical — NUDGE, NEVER RE-ROLL, applied to size instead of place.
+           Added 2026-08-16 for a real ladder miss: Dream Meadow's single 900cm
+           sailboat rolled to 971cm and needed a 1349cm ball, against a world
+           ceiling of 1317cm. It was permanently un-eatable, so zen's CLEAN SWEEP
+           crown was unreachable by 2.4% and nothing noticed, because smoke.js's
+           ladder assertion skips the zen world entirely. */
+        byKind[e.k].push({x:x9,z:z9,rot:rng()*6.283,sc:(0.84+rng()*0.42)*(e.sc||1),keep:null});
       } }
     // ---- STRUCTURES: the navigation layer (v4.0) ----
     // Walls turn zones into PLACES you have to navigate: YARDS enclose cluster

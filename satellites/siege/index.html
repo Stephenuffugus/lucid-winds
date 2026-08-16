@@ -3363,6 +3363,91 @@ SUITES.push(function () {
   TEST.ok('the card records how deep the lane is built', last.lvlSum >= last.trapCount);
 });
 
+
+/* --- suite: the briefing, and the space it has to fit in ---
+   This suite exists because the same defect was found by an eye three times and
+   by a gate zero times. It cannot measure pixels, so it does not pretend to: it
+   bounds the CONTENT so authoring cannot silently outgrow the panel, and it
+   pins the ORDER so that whatever does fall past the fold is the least
+   important line rather than half a sentence of the tutorial. The runtime
+   handles the rest by measuring itself (see fitBoard). */
+SUITES.push(function () {
+  var i, w, k, b;
+  /* every body the player can meet has something said about it */
+  var missing = [];
+  for (i = 0; i < ENEMY_ORDER.length; i++) if (!ENEMY_NOTE[ENEMY_ORDER[i]]) missing.push(ENEMY_ORDER[i]);
+  for (i = 0; i < BOSS_ORDER.length; i++) if (!ENEMY_NOTE[BOSS_ORDER[i]]) missing.push(BOSS_ORDER[i]);
+  TEST.eq('every enemy type has a briefing note', missing.join(','), '');
+  var dashes = [];
+  for (k in ENEMY_NOTE) if (/[‐-―−]|--/.test(ENEMY_NOTE[k])) dashes.push(k);
+  for (k in WAVE_NOTE) if (/[‐-―−]|--/.test(WAVE_NOTE[k])) dashes.push('w' + k);
+  TEST.eq('no briefing copy uses a dash', dashes.join(','), '');
+
+  /* the briefing announces a body on the wave it actually turns up */
+  TEST.eq('the runner is introduced on wave 1', firstWaveFor('runner'), 1);
+  TEST.eq('the swarm is introduced on wave 4', firstWaveFor('swarm'), 4);
+  TEST.eq('the healer is introduced on wave 8', firstWaveFor('healer'), 8);
+  TEST.eq('the Warden is introduced on wave 10', firstWaveFor('warden'), 10);
+  TEST.eq('the Marshal is never introduced inside the twenty', firstWaveFor('marshal'), -1);
+  var ok = true;
+  for (w = 1; w <= CONFIG.WAVES; w++) {
+    b = briefingFor(w, 1, {});
+    for (i = 0; i < b.length; i++) {
+      if (b[i].kind === 'enemy' && firstWaveFor(b[i].type) !== w) ok = false;
+    }
+  }
+  TEST.ok('no wave introduces a body that has already been seen', ok);
+  TEST.ok('a wave 1 player is told about the runner', (function () {
+    var bb = briefingFor(1, 1, {}), j;
+    for (j = 0; j < bb.length; j++) if (bb[j].kind === 'enemy' && bb[j].type === 'runner') return true;
+    return false;
+  })());
+  TEST.ok('the endless boss explains itself', (function () {
+    var bb = briefingFor(25, 1, {}), j;
+    for (j = 0; j < bb.length; j++) if (bb[j].kind === 'enemy' && bb[j].type === 'marshal') return true;
+    return false;
+  })());
+  TEST.eq('a quiet wave says nothing at all', briefingFor(9, 1, {}).length, 0);
+  TEST.eq('and wave 12 says nothing either', briefingFor(12, 1, {}).length, 0);
+
+  /* ORDER. Whatever falls past the fold has to be the least important thing on
+     the panel, so the bodies come first and the flavour comes last. */
+  var RANK = { enemy: 0, mut: 1, deepen: 2, wave: 3, starter: 4 };
+  ok = true;
+  for (w = 1; w <= 60; w++) {
+    b = briefingFor(w, 3, { laneFull: true });
+    for (i = 1; i < b.length; i++) if (RANK[b[i].kind] < RANK[b[i - 1].kind]) ok = false;
+  }
+  TEST.ok('the briefing is always ordered most important first', ok);
+  b = briefingFor(1, 1, {});
+  TEST.eq('wave 1 leads with the body you are about to meet', b[0].kind, 'enemy');
+  TEST.eq('and closes with the trap you were given', b[b.length - 1].kind, 'starter');
+
+  /* BUDGET. The panel is roughly 266px of a 510px board at 390x844 once the
+     other four panels have taken theirs, which is about 13 wrapped lines at
+     12px. These bounds sit under that with headroom, and they are what stops
+     the tutorial quietly growing past its own box again. */
+  var worstLines = 0, worstChars = 0, worstAt = '';
+  for (w = 1; w <= 80; w++) {
+    var seeds = (w > CONFIG.WAVES) ? 8 : 1, sd;
+    for (sd = 1; sd <= seeds; sd++) {
+      b = briefingFor(w, sd, { laneFull: true });
+      var c = briefingChars(w, sd, { laneFull: true });
+      if (b.length > worstLines) { worstLines = b.length; worstAt = 'wave ' + w; }
+      if (c > worstChars) worstChars = c;
+    }
+  }
+  TEST.between('no briefing ever runs past 6 paragraphs', worstLines, 0, 6);
+  TEST.between('no briefing ever runs past 640 characters', worstChars, 0, 640);
+  TEST.between('the wave 1 briefing fits its own panel budget', briefingChars(1, 1, {}), 1, 360);
+  TEST.between('the wave 1 briefing is at most 3 paragraphs', briefingFor(1, 1, {}).length, 1, 3);
+  TEST.ok('a first time player is never handed the DEEPEN note', briefingFor(1, 1, { laneFull: false }).length === 3);
+  /* the teaching waves are the sparse waves, which is the whole point */
+  var sparseWithNotes = 0;
+  for (w = 1; w <= 8; w++) if (briefingFor(w, 1, {}).length > 0) sparseWithNotes++;
+  TEST.eq('every one of the first eight waves has something to say', sparseWithNotes, 8);
+});
+
 var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: tEnemy, tRun: tRun };
 
 // ---- TEST_EXPORT_END ----

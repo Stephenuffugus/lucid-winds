@@ -62,6 +62,19 @@ var H = require('./node_harness.js');
             ladder.push({ w: WL[wi].id, ceil: Math.round(ceil), need: Math.round(WL[wi].s3*1.15),
                           wallsLeft: wallsLeft, ok: ceil >= WL[wi].s3*1.15 && wallsLeft === 0 });
           }
+          // ⛔⛔ THE ZEN WORLD WAS EXEMPT FROM EVERY LADDER CHECK, because it has no
+          // star bars — and CLEAN SWEEP is its only objective. One 971cm sailboat
+          // sat 32cm above its own reachable ceiling, so Dream Meadow's crown was
+          // impossible and nothing said so (found 2026-08-16 by variety_audit).
+          // Zen has no s3 to test, so test the thing that matters instead: after
+          // absorbAll, NOTHING may be left standing.
+          var ZW = D.worlds().filter(function(w){ return w.zen; });
+          for (var zi = 0; zi < ZW.length; zi++){
+            D.start('level', ZW[zi].n);
+            var zceil = D.absorbAll(), zleft = D.state().objects.length;
+            ladder.push({ w: ZW[zi].id, ceil: Math.round(zceil), need: 0,
+                          wallsLeft: zleft, ok: zleft === 0 });
+          }
           // MARQUEE COURT REACHABILITY: every hand-placed structure that declares a
           // court:{probe} must be enterable by its whole zone audience. A review
           // flood-fill caught the Hedge Maze sealed for every legal ball — this
