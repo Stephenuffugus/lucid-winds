@@ -243,10 +243,12 @@ function makePage(g, opts = {}) {
     elementsFromPoint(x, y) {
       hitCount++;
       const hits = [];
+      let order = 0;
       (function walk(n, depth, z) {
         const zz = zIndexOf(n, z);
+        const seq = order++;
         const r = rectOf(n);
-        if (r.width > 0 && r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hits.push({ n, depth, z: zz });
+        if (r.width > 0 && r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hits.push({ n, seq, z: zz });
         // Generous, but not dishonest: a hidden element is still handed to the
         // detector with its full rect (harsher than any browser, so the
         // detector's own visibility gate has to do the work) — but we do NOT

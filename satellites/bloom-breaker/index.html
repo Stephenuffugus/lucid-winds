@@ -155,6 +155,20 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .howto{ max-width:360px; color:var(--muted); font-size:13.5px; line-height:1.5; text-align:left; margin:4px 0 12px; }
 .howto b{ color:var(--cream); }
 .footer{ color:#5a624c; font-size:11px; margin-top:auto; padding-top:16px; text-align:center; }
+
+/* ⛔ THE FLEET FEEDBACK FAB LANDS ON THE LAUNCH BUTTON. /feedback.js parks the
+   satellite mini fab at right:12px, bottom:96px, 48x48, z-index 2147482000.
+   #actionBtn is 88x88 at right:16px, bottom:18px, so it spans 18..106 from the
+   bottom and 16..104 from the right. The fab spans 96..144 and 12..60. They
+   overlap in a 44x10 strip across the top left of LAUNCH, and the fab's z-index
+   is nine orders of magnitude higher, so the fab wins every tap there. The same
+   48x48 also sits inside the canvas, where a pointerdown starts a paddle drag.
+   feedback.js is fleet-wide and not this game's to edit, so the override lives
+   here: move the fab to the LEFT rail, clear of both the action button and the
+   right-handed thumb arc that drives the paddle. */
+.lwfb-fab.lwfb-mini{ right:auto !important; left:12px !important;
+  bottom:calc(18px + env(safe-area-inset-bottom,0px)) !important; }
+.lwfb-fab.lwfb-mini .lwfb-fab-x{ left:auto !important; right:-30px !important; }
 </style>
 <!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
      postMessage, but nothing on the portal side ever listened, so it paid nothing.
@@ -183,6 +197,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   </div>
   <button class="btn wide" id="btnPlay">PLAY</button>
   <div class="rowbtns">
+    <button class="btn ghost sm" id="btnLevels">🗺 Levels</button>
     <button class="btn ghost sm" id="btnShop">🛒 Shop</button>
     <button class="btn ghost sm" id="btnSettings">⚙ Settings</button>
     <button class="btn ghost sm" id="btnHow">? How to Play</button>
@@ -1470,7 +1485,13 @@ function el(id){ return document.getElementById(id); }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('show'); if(id) el(id).classList.add('show'); }
 var _toastT=0;
 function toast(m){ var t=el('toast'); t.textContent=m; t.classList.add('show'); if(_toastT) clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('show'); },1500); }
-function updateHUD(){ el('menuCoins').textContent=store.coins.toLocaleString(); el('menuBest').textContent=store.highScore.toLocaleString(); if(el('shopCoins')) el('shopCoins').textContent=store.coins.toLocaleString(); refreshControls(); }
+function updateHUD(){ el('menuCoins').textContent=store.coins.toLocaleString(); el('menuBest').textContent=store.highScore.toLocaleString(); if(el('shopCoins')) el('shopCoins').textContent=store.coins.toLocaleString();
+  /* one button, an honest label: a cold opener is told to PLAY, a returning
+     player is told which field they are going back to */
+  var pb=el('btnPlay');
+  if(pb){ var n=clamp((store.unlockedLevel|0),1,LEVELS.length);
+    pb.textContent=(n>1)?('CONTINUE  ·  LEVEL '+n):'PLAY'; }
+  refreshControls(); }
 function refreshControls(){
   var playing=(S.state==='PLAY'||S.state==='SERVE');
   el('pauseBtn').classList.toggle('show', playing);
@@ -1591,7 +1612,17 @@ window.addEventListener('keydown',function(e){
 window.addEventListener('keyup',function(e){ var k=e.key.toLowerCase(); if((k==='arrowleft'||k==='a')&&S.keyDir<0) S.keyDir=0; if((k==='arrowright'||k==='d')&&S.keyDir>0) S.keyDir=0; });
 
 /* ---------------- wire buttons ---------------- */
-el('btnPlay').onclick=function(){ audioInit(); audioResume(); S.state='DIFF'; show('scr-diff'); };
+/* ⛔ PLAY MEANS PLAY. This used to open CHOOSE PACE, which opened SELECT A
+   LEVEL, which opened the game: three screens and two decisions before a
+   stranger sees a ball move. Worse, the pace cards ask a question nobody can
+   answer yet ("the intended tuning" means nothing before you have played).
+   PLAY now drops straight into the next level at the pace you last used;
+   both pickers are still one tap away on the Levels button. */
+el('btnPlay').onclick=function(){ audioInit(); audioResume();
+  var diff=(DIFF[store.lastDiff]?store.lastDiff:'normal');
+  var idx=clamp((store.unlockedLevel|0)-1, 0, LEVELS.length-1);
+  pendingDiff=diff; startGame(diff, idx); };
+el('btnLevels').onclick=function(){ audioInit(); audioResume(); S.state='DIFF'; show('scr-diff'); };
 el('btnShop').onclick=function(){ S.state='SHOP'; buildShop(); show('scr-shop'); };
 el('btnSettings').onclick=function(){ settingsFromPause=false; S.state='SETTINGS'; refreshSettingsUI(); show('scr-settings'); };
 el('btnHow').onclick=function(){ S.state='HOW'; show('scr-how'); };
