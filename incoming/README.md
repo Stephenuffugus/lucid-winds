@@ -7,9 +7,43 @@ BUILD-PLAN.md with locked decisions, function-level specs, and gated phases.
 
 **Read `PORTAL-CONTRACT.md` (this folder) before wiring anything to the
 portal** — it is the integration contract verified against the LIVE portal
-code on 2026-08-16 (game cards are framed + need the sws:ready protocol;
-Free Apps shelf is direct links with no bridge). The old NEW_SATELLITE_BRIEF
-is stale; never build to it.
+code on 2026-08-16, and CORRECTED the same day by driving the running portal:
+only `/play/<id>.html` and github.io urls are framed, while a relative
+`/satellites/<id>/` url navigates TOP LEVEL, so an exit has to work off the
+referrer rather than a parent frame. `beta:true` also puts a card behind the
+tester dev gate. The old NEW_SATELLITE_BRIEF is stale; never build to it.
+
+## STATUS: ALL THREE BUILT, DEPLOYED AND VERIFIED LIVE (2026-08-16)
+
+Built by the Opus session the same night these plans were written, in the
+locked order, deployed to `main`, and each suite re-run against
+`https://lucidwinds.com` rather than only a local server.
+
+| Project | Where it lives | Live |
+|---|---|---|
+| Bandit's Box | `satellites/bandits-box/` | arcade grid, 🦝, IN DEVELOPMENT badge |
+| Hush | `hush/` | Free Apps shelf, 🌙, `lucidwinds.com/hush/` |
+| Marblebeat | merged into `padlab/` | fourth tab in PadLab |
+
+**Gate scripts** (all watched fail before being trusted):
+`banditsbox_smoke` 68 · `banditsbox_silence` 17 · `banditsbox_foley` 10 ·
+`banditsbox_portal_check` 12 · `hush_audit` 155 · `hush_integration` 54 ·
+`padlab_marble` 38 · `padlab_smoke` 16. Helpers: `banditsbox_icons`,
+`banditsbox_thumb`, `hush_icons`, `hush_shots`, `live_look`.
+
+**Deliberately not built, and why:**
+- *Bandit's Box phase F, sampled friction beds.* Gated on Stephen's paired
+  slow and fast recordings existing. They do not yet. The one shot pipeline
+  is wired and proven, so the shot list is the next move, not more code.
+- *Hush iOS stage 2, true lock screen playback.* Only half the shortlist can
+  be pre-rendered at all, since heartbeat and the generated instruments are
+  scheduled events rather than LFO beds, and none of it can be verified
+  without a physical iPhone. Stage 1 ships: the screen stays awake on iOS and
+  the app says plainly what happens and what to do instead.
+
+**Left for Stephen, not code:** foley recordings; a native reader for the
+Japanese instrument copy before any press push; whether Hush's recommendation
+card should sit above the fold rather than under the ring and volume.
 
 ## The rule of the night: ONE PROJECT AT A TIME
 
