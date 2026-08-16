@@ -115,22 +115,77 @@ function boot(src){
   var blocks=[], re2=/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g, mm;
   while((mm=re2.exec(src))) if(mm[1].trim()) blocks.push(mm[1]);
   var main=blocks[blocks.length-1];
+  /* test only hook: hand the closure's own functions out so the new data
+     safety code and the generator can be exercised for real, in node */
+  main=main.replace(/\n\}\)\(\);\s*$/,'\nwindow.__t={ gen:genVisitorCanvas, saveNest:saveNest, lsMax:lsMax,'
+    +' getNest:function(){return NEST;}, setNest:function(v){NEST=v;} };\n})();\n');
   var err=null;
   try{ vm.runInContext(main,sandbox,{filename:'main',timeout:20000}); }
   catch(e){ err=e; }
-  return { err:err, wired:wired, listeners:listeners };
+  return { err:err, wired:wired, listeners:listeners, t:win.__t, store:store };
+}
+
+/* the parts of this app that can lose a kid's work, run for real */
+function logicChecks(r){
+  var bad=[], t=r.t;
+  if(!t){ return ['test hook missing, the IIFE tail must have changed shape']; }
+
+  /* 1. two tabs must not clobber each other */
+  r.store['cac_nursery']=JSON.stringify([{id:'a',name:'A'},{id:'b',name:'B from the other tab'}]);
+  t.setNest([{id:'a',name:'A edited here'}]);
+  t.saveNest();
+  var after=JSON.parse(r.store['cac_nursery']);
+  if(after.length!==2) bad.push('saveNest lost a record: expected 2, got '+after.length);
+  if(!after.some(function(x){ return x.id==='b'; })) bad.push('saveNest dropped the other tab\'s critter');
+  if(!after.some(function(x){ return x.name==='A edited here'; })) bad.push('saveNest ignored this tab\'s edit');
+
+  /* 2. a removal still has to work */
+  t.setNest(t.getNest().filter(function(x){ return x.id!=='b'; }));
+  t.saveNest(['b']);
+  after=JSON.parse(r.store['cac_nursery']);
+  if(after.length!==1||after[0].id!=='a') bad.push('saveNest could not remove a freed critter');
+
+  /* 3. bests only ever go up */
+  r.store['cac_berry_best']='9';
+  if(t.lsMax('cac_berry_best',4)!==9||r.store['cac_berry_best']!=='9') bad.push('lsMax lowered a best score');
+  if(t.lsMax('cac_berry_best',12)!==12||r.store['cac_berry_best']!=='12') bad.push('lsMax refused a new best');
+
+  /* 4. the generator: 300 seeds, none may throw and all must be buildable */
+  var noLimbs=0, noFace=0;
+  for(var i=0;i<300;i++){
+    var g;
+    try{ g=t.gen((i*2654435761)>>>0); }
+    catch(e){ bad.push('generator threw on seed '+i+': '+e.message); break; }
+    if(!g||!g.cv) { bad.push('generator returned nothing on seed '+i); break; }
+    if(!g.limbs.length) noLimbs++;
+    if(g.feats.length<3) noFace++;
+    if(g.limbs.length>6) bad.push('generator made '+g.limbs.length+' limbs on seed '+i+', the rig keeps only 6');
+    g.limbs.forEach(function(L){
+      if(['leg','wing','tail','ear'].indexOf(L.type)<0) bad.push('generator made an unknown limb type '+L.type);
+      if(!(L.ax>=0&&L.ax<=1&&L.ay>=0&&L.ay<=1)) bad.push('generator limb attachment is off the paper on seed '+i);
+    });
+  }
+  if(noLimbs) bad.push(noLimbs+' of 300 rolls had no limbs at all');
+  if(noFace) bad.push(noFace+' of 300 rolls had no face');
+  return bad;
 }
 
 function report(src,quiet){
-  var r=boot(src), bad=[];
+  var r=boot(src), bad=[], logic=[];
   if(r.err) bad.push('boot threw: '+r.err.message);
   MUST_BE_WIRED.forEach(function(id){ if(!r.wired[id]) bad.push('no listener on #'+id+' after boot'); });
+  if(!bad.length){ try{ logic=logicChecks(r); }catch(e){ logic=['logic checks threw: '+e.message]; } }
   if(!quiet){
     if(!bad.length) console.log('green boot pass completed, '+r.listeners+' listeners registered, all '+MUST_BE_WIRED.length+' named controls wired');
     else { console.log('RED   boot pass'); bad.slice(0,10).forEach(function(b){ console.log('        '+b); });
       if(bad.length>10) console.log('        ...and '+(bad.length-10)+' more'); }
+    if(!bad.length){
+      if(!logic.length) console.log('green nursery merge, best scores and 300 generator rolls');
+      else { console.log('RED   nursery merge / best scores / generator');
+        logic.slice(0,10).forEach(function(b){ console.log('        '+b); }); }
+    }
   }
-  return bad.length;
+  return bad.length+logic.length;
 }
 
 var src=fs.readFileSync(FILE,'utf8');

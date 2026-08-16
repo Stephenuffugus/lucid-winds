@@ -213,10 +213,12 @@ silently, the critter is never sad, nothing leaves the device).
    guarded: a missing `THREE` or a refused WebGL context shows
    "This device cannot show the 3D meadow…" instead of freezing. No path can
    leave the player on the hatch screen any more.
-2. **S2, a save that fails is now visible.** `lsSet` reports success or
-   failure, `persistCur` verifies the write round tripped, and a failed save
-   raises a clear, calm overlay telling the player their critter could not be
-   kept and what to do about it (set one free to make room). It never pretends.
+2. **S2, a save that fails is now visible.** `lsSet` and `jSet` return whether
+   the write actually happened (browsers throw on a full quota), every caller
+   that can lose work checks the answer, and a failure raises a calm, honest
+   overlay: the critter is on screen but could not be kept, here is how to make
+   room. The wild visitor adoption also rolls itself back rather than showing a
+   nursery count that is not real.
 3. **C3, the room easel has a real exit.** Back and the nursery pencil now
    cancel room editing and restore the easel and the bring to life button.
    `roomEdit` can no longer leak into the critter flow.
@@ -236,7 +238,17 @@ silently, the critter is never sad, nothing leaves the device).
    what the code counts.
 9. **S7/S8 and the freshness URL.** `r.ok` is checked, the refresh URL keeps
    the existing query string, and a failed keepsake render hides the image box
-   instead of printing a broken one.
+   instead of printing a broken one. **BUILD is now `n1`: bump the portal
+   card's `?v=` to match when this deploys.**
+10. **Two bugs the node tests found while proving the new code.** The
+    generator could roll seven limbs (four legs, a tail, two ears) while
+    `buildCritterMesh` keeps six, so the seventh was drawn on the skin and
+    could never move; and the stitch seams were drawn by indexing `limbs[]`
+    with the bone chain's position, which put the seam on the wrong limb as
+    soon as any limb was too short to keep. Both fixed.
+11. **First timers got no wizard.** Coming through "How it works" landed on the
+    easel with the guided builder switched off, which is the one place a kid
+    most needs it.
 
 # What was improved (expressive range, judged per minute of work)
 

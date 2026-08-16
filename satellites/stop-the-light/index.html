@@ -604,16 +604,25 @@ function startRound(){
   /* fairness floor: widen until the MEASURED window clears 62ms band /
      40ms heart. Measured, not estimated: see windowMs. A player who misses
      should be able to see why, never be asked for a window no hand can hit. */
+  /* The clamp used to run AFTER the loop, which meant the heart that shipped
+     was not the heart that had been measured: a pass could exit at 41ms and
+     then be cut by the ratio clamp. Sampled headless it shipped 33 to 39ms
+     hearts, under the floor this game promises. The clamp now runs FIRST, so
+     what is measured is exactly what the player is asked to hit, and the 96
+     degree cap no longer breaks out with an unverified pair. */
   var guard, bMs, hMs, th0;
   for(guard=0; guard<40; guard++){
+    if(hDeg>wDeg*0.5) hDeg=wDeg*0.5;
     th0 = norm(c - wDeg*D2R/2 - off);
     bMs = windowMs(th0, c, dr, wDeg*D2R/2);
     hMs = windowMs(th0, c, dr, hDeg*D2R/2);
     if(bMs>=62 && hMs>=40) break;
     if(bMs<62) wDeg = wDeg*Math.min(1.30, Math.max(1.04, 62/Math.max(1,bMs)));
-    if(hMs<40) hDeg = hDeg*Math.min(1.30, Math.max(1.04, 40/Math.max(1,hMs)));
-    if(hDeg>wDeg*0.5) wDeg=hDeg*2;
-    if(wDeg>=96){ wDeg=96; if(hDeg>48) hDeg=48; break; }
+    if(hMs<40){
+      hDeg = hDeg*Math.min(1.30, Math.max(1.04, 40/Math.max(1,hMs)));
+      if(hDeg>wDeg*0.5) wDeg=hDeg*2;
+    }
+    if(wDeg>96){ wDeg=96; if(hDeg>48) hDeg=48; }
   }
   if(hDeg>wDeg*0.5) hDeg=wDeg*0.5;
 

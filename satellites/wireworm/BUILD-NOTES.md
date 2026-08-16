@@ -397,3 +397,208 @@ ladder. That was the design's claim in §6.5 and it is now a measurement.
 
 Three sweep gates were added and all three were watched go red (break 6:
 `agentFiller` aliased to `agentGreedy`).
+
+---
+
+## 13. The two missed bands, tested instead of inherited
+
+The first pass argued that the random band is grid geometry and that
+`DISCHARGE_INTERVAL` is a dead lever. Both claims are now experiments, in
+`node sim.js --bands`, which rebuilds the game from source with a CONFIG value
+patched so a frozen tunable can be swept without editing the shipped file.
+
+### Experiment 1: the random band is geometry, and it is now proved
+
+A plain random walk with **the entire game removed** — no terminals, no wire,
+no circuits, just a walker on an empty board of size N until it crosses the
+edge:
+
+```
+grid   median ticks to the wall
+  16       36
+  20       54   <- the spec grid
+  24       77
+  28      103
+  32      137
+  40      200
+the same walk INSIDE the fully running game on the spec grid: 54
+```
+
+**54 and 54.** The random agent's run length is identical with the whole game
+present and with the whole game deleted, to the tick. Nothing in CONFIG, no
+spawn rule, no relief valve, no hazard can move that number, because the random
+agent dies at the boundary before the game happens to it (2898 of 3000 runs die
+at the wall, median 0 circuits).
+
+And the band names its own grid. The 60 to 200 tick envelope in §6.6 is the
+envelope of a **22 to 40 cell board**. §6.2 fixes the board at 20.
+**The spec's verification band contradicts the spec's own grid**, and that is
+the whole finding. Confirmed value for HANDOFF §9: **a plain random walk on a
+20x20 board medians 54 ticks.** The band is not missed, it is inapplicable, and
+the honest fix is to correct the document rather than the game. The previous
+pass reached the same conclusion by reasoning; this is the measurement.
+
+### Experiment 2 and 3: the greedy band and the levers
+
+Greedy now medians **280 ticks** against a 300 to 900 band (it was 281 before
+this pass; the tightening combo window costs score, not lifetime). Two things
+changed for the better underneath that unchanged number:
+
+- **The tick cap runs are gone.** 0 of 3000 greedy runs reached the 8000 tick
+  cap, against 132 of 20000 (0.66%) before. The creep is what did it: an agent
+  that stalls now accumulates load until something gives. Known gap 2 from the
+  first pass is closed, not gated around.
+- **The safety filtered walker came down** from a median 1231 from 1424, and its
+  cap rate from 5.2% to 2.8%. Ambient pressure exists now.
+
+The lever sweeps are printed by `--bands` experiments 2 and 3 and are reproduced
+in section 17. The short version has not changed and is now measured twice:
+`DISCHARGE_INTERVAL` moves the greedy median by less than the run to run noise
+across a 12x range, because greedy dies to LOCAL entrapment at around 35 percent
+coverage while the pickup clears the OLDEST circuit, which is usually somewhere
+else on the board. **Buying the 300 floor by setting a spec value to a number
+that changes nothing about the game is a green light bought with a lie**, and it
+is still declined. 280 versus a floor of 300 is a 7 percent miss on a band whose
+sibling gate has just been shown to describe a different board size; the spec's
+real intent (over 2000 means too safe) is met by a factor of seven.
+
+---
+
+## 14. The combo ladder stops pinning: the window tightens as you climb
+
+The first pass reported the defect precisely: completions land every 5 to 25
+ticks against a flat 40 tick window, so combo pins at x4 inside about 50 ticks
+and drops roughly once per run. The top of the ladder was a warm up, not a
+decision.
+
+**Director default, implemented and recorded: the window is per rung and it
+tightens.**
+
+```
+COMBO_WINDOWS = [40, 40, 32, 26, 20]     indexed by the rung you are standing on
+COMBO_LADDER  = [ 1, 1.5,  2,  3,  4]    unchanged, spec
+```
+
+The three options on the table were a longer ladder, a decaying cap, and risk
+that scales with combo. The longer ladder is more of the same problem further
+along. A decaying cap needs a second number on screen. The tightening window
+needs **no new UI at all**: the combo ring already drains over the window, so it
+simply drains visibly faster at the top, and it goes gold at x3 and above so the
+change is legible without a readout. Spec's 40 ticks is preserved exactly where
+the spec talks about it, at the bottom of the ladder.
+
+What it buys, in the game's own terms: holding x4 costs a circuit every 20
+ticks, which is inside the time a long red circuit takes. **You can have the
+multiplier or you can have the length. Not both.** That is the same
+spatial economy decision §6.3 is built on, now applied to time.
+
+Six assertions cover it (each rung survives to the edge of its own window, each
+rung drops one tick past it, the windows never widen, the top costs at least a
+third less than the bottom, a drop falls all the way to x1). Break 4 flattened
+`COMBO_WINDOWS` back to all 40s and the ladder gate went red.
+
+---
+
+## 15. CREEP: the hazard that makes board space scarce
+
+**The problem, stated as a number.** The safety filtered random walker medians
+1231 ticks against a competent greedy 287. A careless player outliving a
+competent one is not a paradox, it is a diagnosis: the only lethal thing in this
+game was wire the player built themselves, so a player who simply refused to
+close circuits was safe more or less forever. Nothing on the board moved unless
+the player moved it. A game with no ambient pressure.
+
+**The hazard.** Current that has nowhere to go spreads. Every `CREEP_INTERVAL`
+= 45 ticks **without a completion**, one empty cell touching live wire lights up
+and joins the newest circuit, so a later discharge still clears it. The clock
+resets on every completion, so a player who is actually playing never sees it.
+
+It is deliberately the cheapest possible new element to read: a creep cell is
+drawn as ordinary energized wire. **No new visual vocabulary at 19px.** The only
+addition is a single expanding ring on the cell that just lit, so the one thing
+on this board that moves without the player reads as an event rather than a
+rendering glitch, plus a low third below the root in the pentatonic (the only
+sound in the game that is not something the player did). Reduced motion kills
+the ring, not the sound.
+
+**Fairness rules, all four unit tested against the candidate list itself:**
+
+- never a cell within one step of the worm's head (you always get to react)
+- never a cell inside the circuit you are currently drawing (your pending shape
+  is yours)
+- never a terminal and never the discharge pickup
+- reverted on the spot if that cell just cut the worm off from every terminal
+
+It can trip the breaker, and that is the point: sitting still near the threshold
+becomes a way to CASH the overload, not only a way to be punished. Watch seed 7
+with the filler and you can see it: `t492 creep`, `t537 creep`, ... `t722 circuit
+Red`, `t741 OVERLOAD cleared 227 cells for 1135`.
+
+**A gate that could not fail, caught and fixed.** The first version of the head
+adjacency assertion was statistical: play 40 boards, log every creep, assert none
+landed next to the head. It passed with the guard deleted. Head adjacent
+candidates are so rare in ordinary play that 320 sampled creeps never produced
+one. `creepCandidates` was split out of `creepStep` for exactly this reason and
+the fairness rules are now asserted against the candidate list on a board built
+so that the banned cells would otherwise qualify, with a companion assertion that
+the board still makes the test interesting. Breaks 1, 2 and 3 each delete one
+fairness rule and each goes red.
+
+---
+
+## 16. Endless and daily are now different games, not different seeds
+
+Daily was the daily seed and nothing else. It is now a **fixed shift: 600 ticks,
+one board, everyone the same**, and the run ends on the clock with its own death
+line ("The shift ended. Nothing killed you but the clock.").
+
+This is one field in SIM (`tickLimit`, set from `newGame(seed, {mode})`) and it
+changes the whole calculus, because of the rate measurement in section 12: the
+combo chaser scores 237 per 100 ticks and the board filler 162. **On an open
+clock the filler wins on total; on a 600 tick clock the chaser wins.** The mode
+choice is therefore a strategy choice, which is the only kind of mode difference
+worth shipping. It also makes the daily comparable between players in a way a
+survival run never is: same seed, same clock, only the play differs.
+
+The HUD swaps the tick counter for a countdown in daily and shows your daily
+best rather than your all time best. Nine assertions, including that endless and
+daily open on a bit identical board (`hashState` equal) so the clock is the only
+difference. Break 5 removed the clock and six gates went red.
+
+---
+
+## 18. Gates watched FAIL in this pass
+
+Same discipline as section 2. Every new gate was broken on purpose in a scratch
+copy of the directory and watched go red before it was trusted green.
+
+| break | what went red | exit |
+|---|---|---|
+| 1 creep ignores the head adjacency rule | `no creep candidate is next to the worm head` | 1 |
+| 2 creep may take the circuit you are drawing | `no creep candidate sits inside the circuit you are drawing` | 1 |
+| 3 creep may take a terminal or the pickup | `no creep candidate is a terminal or the relief valve` | 1 |
+| 4 `COMBO_WINDOWS` flattened back to all 40s | `holding the top rung costs at least a third less time than the bottom` | 1 |
+| 5 the daily loses its clock | 6 gates: the clock value, `the daily always ends`, `the daily never runs past its clock`, two named runs, `some daily runs end on the clock` | 1 |
+| 6 `agentFiller` aliased to `agentGreedy` | `the board filler trips the breaker`, `the board filler builds longer circuits than the combo chaser` | 1 |
+| 7 the `if (!st.circuits.length) return` guard removed from `creepStep` | **nothing** | 0 |
+| restored | PASSED 252 / FAILED 0 | 0 |
+
+**Break 7 is reported because it did not work.** With no circuits on the board
+there is no live wire for anything to touch, so `creepCandidates` returns an
+empty list and the early return is a pure no op. The guard stays in as defence
+against a future caller, but the honest statement is that it is not load bearing
+and no gate covers it. That is the same category as the first pass's finding
+that the plan's named break (zeroing the tick ramp) cannot fail this game.
+
+**A gate that could not fail was found and replaced.** The first version of the
+break 1 gate was statistical and passed with the guard deleted. See section 15.
+It was rewritten as a unit test of `creepCandidates` against a purpose built
+board, plus a companion assertion that the board still makes the test
+interesting, so the gate cannot quietly go vacuous if the fixture drifts.
+
+**The greedy refactor was proved, not assumed.** Extracting `survivalTurn` out
+of `agentGreedy` so the filler could share it is exactly the kind of "harmless"
+change that silently moves every balance number in the file. Before any new
+measurement was taken, the pre refactor agent was rebuilt from the exported
+primitives and compared run for run: identical final tick, score and state hash
+over 600 seeds.

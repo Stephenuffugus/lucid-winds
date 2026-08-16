@@ -168,18 +168,27 @@ if (H) {
     ok('round 6 is a real breather (wider band than round 5)', bd[5] > bd[4], bd[4] + ' -> ' + bd[5]);
     ok('the band never shrinks below the floor', Math.min.apply(null, bd) >= 13, bd.join(','));
 
-    /* --- the fairness floor, measured the way the game measures it --- */
-    let worstB = 1e9, worstH = 1e9, worstR = 0;
-    for (let r = 1; r <= 21; r++) {
-      STL.launch('free');
-      H.pump(0.1);
-      STL.setRound(r);
-      const m = STL.measure(), b = m.band, h = m.heart;
-      if (b < worstB) { worstB = b; worstR = r; }
-      if (h < worstH) worstH = h;
+    /* --- the fairness floor, measured the way the game measures it ---
+       Deterministic: the run rng is replaced with a fixed mulberry32 so the
+       same 12 seeds x 21 rounds are sampled every time. The first version of
+       this check used the live random seed and was flaky, which is how the
+       real bug surfaced: the heart clamp ran after the measurement. */
+    function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+      var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296; }; }
+    let worstB = 1e9, worstH = 1e9, worstAt = '';
+    for (let seed = 1; seed <= 12; seed++) {
+      STL.launch('free'); H.pump(0.1);
+      G.rng = mulberry32(seed * 7919);
+      for (let r = 1; r <= 21; r++) {
+        STL.setRound(r);
+        const m = STL.measure();
+        if (m.band < worstB) { worstB = m.band; worstAt = 'seed ' + seed + ' round ' + r; }
+        if (m.heart < worstH) worstH = m.heart;
+      }
     }
-    ok('every sampled round clears the 62ms band floor', worstB >= 62, 'worst ' + worstB.toFixed(0) + 'ms at round ' + worstR);
-    ok('every sampled round clears the 40ms heart floor', worstH >= 40, 'worst ' + worstH.toFixed(0) + 'ms');
+    ok('every sampled round clears the 62ms band floor', worstB >= 62, 'worst ' + worstB.toFixed(0) + 'ms at ' + worstAt);
+    ok('every sampled round clears the 40ms heart floor', worstH >= 40, 'worst ' + worstH.toFixed(1) + 'ms');
 
     /* --- a real chain: heart, bank, arithmetic --- */
     delete store.stl_stats; delete store.stl_best; delete store.stl_moments;
@@ -239,12 +248,21 @@ if (H) {
      overwrite them with whatever it happened to load at boot */
   const T = makeCtx({ storage: { stl_test: '1', stl_stats: JSON.stringify({ runs: 9, banks: 9, deepest: 12, totalBanked: 5000, hearts: 4 }), stl_best: '4321' } });
   T.ctx.STL.launch('free'); T.pump(0.8);
+  /* the other tab finishes a session WHILE this one is mid run: disk moves
+     under us. This tab's write must ADD its own delta on top, not replay the
+     snapshot it read at boot. (Without this line the check is vacuous: a
+     wholesale write produces the same numbers.) */
+  store.stl_stats = JSON.stringify({ runs: 20, banks: 20, deepest: 12, totalBanked: 9000, hearts: 9 });
+  store.stl_best = '4321';
   T.ctx.STL.aim('band'); T.pump(2.0); T.click('ch-bank'); T.pump(0.2);
   const st = JSON.parse(store.stl_stats || '{}');
-  ok('another tab cannot reset the run counter', st.runs >= 10, 'runs=' + st.runs);
-  ok('another tab cannot reset the bank counter', st.banks >= 10, 'banks=' + st.banks);
+  ok('a later write never rolls a counter back to this tab\'s snapshot', st.runs >= 20, 'runs=' + st.runs);
+  T.ctx.STL.launch('free'); T.pump(0.2);
+  ok('a run started after the other tab wrote ADDS to the live counter',
+     (JSON.parse(store.stl_stats || '{}').runs || 0) >= 21, 'runs=' + (JSON.parse(store.stl_stats || '{}').runs));
+  ok('another tab cannot reset the bank counter', st.banks >= 21, 'banks=' + st.banks);
   ok('another tab cannot lower the deepest round', st.deepest >= 12, 'deepest=' + st.deepest);
-  ok('another tab cannot lower the lifetime total', st.totalBanked >= 5000, 'totalBanked=' + st.totalBanked);
+  ok('another tab cannot lower the lifetime total', st.totalBanked >= 9000, 'totalBanked=' + st.totalBanked);
   T.ctx.STL.state.fireflies = 1;
   T.pump(0.8); T.ctx.STL.aim('miss'); T.pump(2.0);
   ok('a smaller run cannot lower the stored personal best', (parseInt(store.stl_best, 10) || 0) >= 4321, 'best=' + store.stl_best);

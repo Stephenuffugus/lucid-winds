@@ -250,7 +250,7 @@
   <div id="tools">
     <div style="display:flex; gap:6px; align-items:center">
       <button class="chipbtn" id="palSwap" title="swap the color set" style="font-size:.68rem; font-weight:900; letter-spacing:.3px">SOFT</button>
-      <div class="strip" id="palRow"></div>
+      <div class="strip" id="palRow" style="flex:1; min-width:0"></div>
     </div>
     <div class="toolrow">
       <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
@@ -2856,7 +2856,7 @@ function buildCritterMesh(drawCanvas,sil,feats,limbs){
       var b2=new THREE.Bone(); b2.position.set((B.x-A.x)/2,(B.y-A.y)/2,0);
       root.add(b1); b1.add(b2);
       L2.push({ A:A,B:B,len:len,R:Math.max(0.14,len*0.3),
-        b1i:bones.length, b2i:bones.length+1,
+        b1i:bones.length, b2i:bones.length+1, src:Ld,
         cls:Ld.type, sign:(A.x<0?-1:1), ph:ix*1.7 });
       bones.push(b1); bones.push(b2);
     });
@@ -2929,8 +2929,11 @@ function buildCritterMesh(drawCanvas,sil,feats,limbs){
       g2.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si,4));
       g2.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw,4));
       /* stitch seams: dashed thread + cross stitches across each attachment */
-      L2.forEach(function(LB,li3){
-        var Ld=limbs[li3]; if(!Ld) return;
+      L2.forEach(function(LB){
+        /* the seam belongs to the limb this bone chain came from. Indexing
+           limbs[] by L2 position drew the seam on the wrong limb as soon as
+           one limb was too short to keep. */
+        var Ld=LB.src; if(!Ld) return;
         var ax2=Ld.ax*512, ay2=Ld.ay*512;
         var ang=Math.atan2(Ld.ty-Ld.ay,Ld.tx-Ld.ax)+Math.PI/2;
         var sr=LB.R/(built.gw*xf.s)*512*0.9;
@@ -3231,9 +3234,10 @@ function genVisitorCanvas(seed){
     c.beginPath(); c.moveTo(tx0,ty0); c.quadraticCurveTo(tx0-80,ty0-20,tx1,ty1); c.stroke();
     limbs.push({ax:tx0/PAPER,ay:ty0/PAPER,tx:tx1/PAPER,ty:ty1/PAPER,type:'tail'});
   }
-  /* ears, one or a matching pair */
-  if(rng()<0.62){
-    var pair=rng()<0.55;
+  /* ears, one or a matching pair. The rig keeps the first six limbs, so the
+     roll never draws a seventh that would be visible but could never move. */
+  if(rng()<0.62&&limbs.length<6){
+    var pair=rng()<0.55&&limbs.length<5;
     var sides=pair?[-1,1]:[rng()<0.5?-1:1];
     var earLift=90+rng()*80;
     sides.forEach(function(sgn){

@@ -344,9 +344,14 @@ ok('the share copy has no dash', !shared || shared.split('\n')[0].indexOf('-') <
 
 /* a resize does not walk the layout */
 var b1 = parseFloat(D.getElementById('board').style.height);
+var p1 = D.documentElement.style.getPropertyValue('--padh');
 V.fitBoard(); V.fitBoard(); V.fitBoard();
 var b2 = parseFloat(D.getElementById('board').style.height);
+var p2 = D.documentElement.style.getPropertyValue('--padh');
 eq('three fits in a row do not move the board', b2, b1);
+/* the pad is the piece that would oscillate if it were measured rather than
+   budgeted, so it is the one to watch */
+eq('three fits in a row do not move the pad', p2, p1);
 
 /* ---------- report ---------- */
 var passed = 0, failed = 0;

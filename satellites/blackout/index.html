@@ -224,7 +224,7 @@ var TIERS = {
   }),
   long: Object.freeze({
     key: "long", name: "Long case", brief: "A long night. More people, more talk.",
-    proof: "long", actions: 25, lo: 10, hi: 17, target: 17, noiseLo: 6, noiseHi: 12, reach: 16,
+    proof: "long", actions: 25, lo: 10, hi: 17, target: 13, noiseLo: 6, noiseHi: 12, reach: 16,
     press: 2, exact: false, roomSlots: 3,
     liar: Object.freeze({ actions: 28, lo: 15, hi: 24, target: 20, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
@@ -3021,7 +3021,22 @@ var UI = {
   off: "Off",
   brief: "The house, the hour, the hand",
   teach: "The note that would have caught you",
-  worked: "The notes that did the work"
+  worked: "The notes that did the work",
+  pickCase: "Pick a case",
+  startCase: "Open the file",
+  liarOn: "Somebody is lying",
+  liarOff: "Everybody tells the truth",
+  liarBrief: "One person says one false thing. Anything you find in a room is true.",
+  says: " says",
+  foundIn: "In the ",
+  theLie: "The lie",
+  liarWas: " lied about it.",
+  liarStanding: "One of these is false.",
+  mode: "Case type",
+  copyLink: "Link",
+  linkCopied: "Case link copied.",
+  statements: "What people told you",
+  evidence: "What the house told you"
 };
 // ---- UICOPY_END ----
 
@@ -3174,14 +3189,25 @@ function todayIso() {
 }
 function dayNumber() { return Math.floor(Date.parse(todayIso() + "T00:00:00Z") / 86400000) - 20500; }
 
-function startCase(seed, isDaily, keepResume) {
-  var cs = generateCase(seed >>> 0);
-  if (!cs) { cs = generateCase(1); }
+/* the header subtitle: only says something when the case is not the default */
+function modeLabel(cs) {
+  if (!cs) return "";
+  if (cs.tier === "standard" && !cs.liar) return "";
+  return modeLabelOf(cs.tier, cs.liar).toUpperCase();
+}
+
+function startCase(seed, isDaily, keepResume, mode) {
+  mode = mode || { tier: "standard", liar: false };
+  var cs = generateCase(seed >>> 0, mode);
+  if (!cs) cs = generateCase(seed >>> 0, { tier: "standard", liar: false });
+  if (!cs) cs = generateCase(1);
   APP.cs = cs;
+  APP.mode = { tier: cs.tier, liar: !!cs.liar };
   APP.isDaily = !!isDaily;
   APP.st = newGame(cs);
   APP.selClue = -1;
-  if (keepResume && keepResume.seed === cs.seed) APP.st = deserializeState(keepResume, cs);
+  if (keepResume && keepResume.seed === cs.seed && (keepResume.tier || "standard") === cs.tier &&
+      !!keepResume.liar === !!cs.liar) APP.st = deserializeState(keepResume, cs);
   APP.counted = APP.st.status !== "play";
   render();
 }
@@ -3208,7 +3234,7 @@ function render() {
   app.appendChild(hd);
 
   var wb = el("div", "watchbar");
-  var wsvg = el("div"); wsvg.innerHTML = watchSvg(APP.st.actionsLeft, CONFIG.ACTIONS);
+  var wsvg = el("div"); wsvg.innerHTML = watchSvg(APP.st.actionsLeft, APP.st.total || CONFIG.ACTIONS);
   var wt = el("div", "wtx" + (APP.st.actionsLeft <= 4 ? " low" : ""));
   wt.appendChild(el("b", null, String(APP.st.actionsLeft)));
   wt.appendChild(el("span", null, UI.actionsLeft));
@@ -3234,8 +3260,9 @@ function render() {
 }
 
 function renderCase(main) {
-  var brief = el("div", "brief");
+  var brief = el("div", "brief" + (APP.cs.liar ? " lying" : ""));
   BRIEF.forEach(function (line) { brief.appendChild(el("div", null, line)); });
+  if (APP.cs.liar) brief.appendChild(el("div", "warn", UI.liarBrief));
   main.appendChild(el("h2", null, UI.brief));
   main.appendChild(brief);
 
@@ -3335,14 +3362,32 @@ function renderBoard(main) {
   main.appendChild(el("h2", null, UI.journal));
   if (!APP.st.found.length) { main.appendChild(el("div", "empty", UI.nothingYet)); return; }
   main.appendChild(el("div", "empty", UI.haloHint));
-  APP.st.found.forEach(function (id) {
-    var cl = APP.cs.pool[id];
-    var b = el("button", "clue" + (APP.selClue === id ? " sel" : ""));
-    b.appendChild(el("span", "tag", TYPE_NAMES[cl.ty]));
+  /* Statements and evidence are different kinds of fact in a liar case, so
+     they are different kinds of card. The player is never told which statement
+     is the lie, only that a statement is the only place a lie can live. */
+  var said = [], seenAt = [];
+  APP.st.found.forEach(function (id) { (clueSource(APP.cs, id) || {}).kind === "said" ? said.push(id) : seenAt.push(id); });
+  function card(id) {
+    var cl = APP.cs.pool[id], src = clueSource(APP.cs, id);
+    var b = el("button", "clue" + (APP.selClue === id ? " sel" : "") +
+      (APP.cs.liar && src && src.kind === "said" ? " said" : ""));
+    var tag = el("span", "tag");
+    if (src && src.kind === "said") tag.textContent = SUSPECTS[src.i].n + UI.says + "   " + TYPE_NAMES[cl.ty];
+    else if (src) tag.textContent = UI.foundIn + ROOMS[src.i].n + "   " + TYPE_NAMES[cl.ty];
+    else tag.textContent = TYPE_NAMES[cl.ty];
+    b.appendChild(tag);
     b.appendChild(el("span", "tx", clueText(cl)));
     b.onclick = function () { APP.selClue = (APP.selClue === id ? -1 : id); pluck(AMIN[3], 0.35); render(); };
     main.appendChild(b);
-  });
+  }
+  if (APP.cs.liar && said.length) {
+    main.appendChild(el("div", "empty", UI.liarStanding));
+    said.forEach(card);
+    if (seenAt.length) main.appendChild(el("h2", null, UI.evidence));
+    seenAt.forEach(card);
+  } else {
+    APP.st.found.forEach(card);
+  }
 }
 
 function renderFile(main) {
@@ -3382,21 +3427,67 @@ function renderFile(main) {
     var an = el("div", "an");
     an.appendChild(document.createTextNode(a.title || "Case"));
     an.appendChild(el("small", null, (a.won ? UI.solved : UI.failed) + "   " + a.moves + " moves   " +
-      (a.stars ? new Array(a.stars + 1).join("★") : "")));
+      (a.stars ? new Array(a.stars + 1).join("★") : "") + "   " + modeLabelOf(a.tier || "standard", a.liar)));
     row.appendChild(an);
+    var lb = el("button", "act");
+    lb.appendChild(el("span", null, UI.copyLink));
+    lb.onclick = function () { copyCaseLink(a.seed, a.tier || "standard", !!a.liar); };
+    row.appendChild(lb);
     var b = el("button", "act");
     b.appendChild(el("span", null, UI.replay));
-    b.onclick = function () { startCase(a.seed, false, null); APP.tab = "case"; APP.revealShown = false; render(); };
+    b.onclick = function () {
+      APP.revealShown = false;
+      startCase(a.seed, false, null, { tier: a.tier || "standard", liar: !!a.liar });
+      APP.tab = "case"; render();
+    };
     row.appendChild(b);
     main.appendChild(row);
   });
 
   var nb = el("button", "wide", UI.newCase);
-  nb.onclick = function () { newRandomCase(); };
+  nb.onclick = function () { openPicker(); };
   main.appendChild(nb);
   var db = el("button", "wide sec", UI.daily);
-  db.onclick = function () { APP.revealShown = false; startCase(dailySeed(todayIso()), true, null); };
+  db.onclick = function () { APP.revealShown = false; startCase(dailySeed(todayIso()), true, null, { tier: "standard", liar: false }); };
   main.appendChild(db);
+}
+
+/* The ladder, as a thing you choose before the evening starts. Every rung is
+   swept and gated separately, so none of these is a difficulty slider bolted
+   onto one case shape. */
+function openPicker() {
+  var sel = { tier: (APP.mode && APP.mode.tier) || "standard", liar: !!(APP.mode && APP.mode.liar) };
+  overlay(function (box, close) {
+    function draw() {
+      clear(box);
+      box.appendChild(el("h3", null, UI.pickCase));
+      TIER_KEYS.forEach(function (k) {
+        var t = tierOf(k);
+        var row = el("button", "optrow pickrow" + (sel.tier === k ? " on" : ""));
+        var nm = el("div", "nm");
+        nm.appendChild(el("b", null, t.name));
+        nm.appendChild(el("small", null, t.brief + "   " + modeOf(k, sel.liar).actions + " actions"));
+        row.appendChild(nm);
+        row.onclick = function () { sel.tier = k; tick(false); draw(); };
+        box.appendChild(row);
+      });
+      box.appendChild(el("h2", null, UI.mode));
+      var lr = el("div", "optrow");
+      lr.appendChild(el("span", null, sel.liar ? UI.liarOn : UI.liarOff));
+      var sw = el("button", "sw" + (sel.liar ? " on" : ""), sel.liar ? UI.on : UI.off);
+      sw.onclick = function () { sel.liar = !sel.liar; tick(false); draw(); };
+      lr.appendChild(sw);
+      box.appendChild(lr);
+      if (sel.liar) box.appendChild(el("div", "empty", UI.liarBrief));
+      var go = el("button", "wide", UI.startCase);
+      go.onclick = function () { close(); newRandomCase(sel); };
+      box.appendChild(go);
+      var cn = el("button", "wide sec", UI.cancel);
+      cn.onclick = close;
+      box.appendChild(cn);
+    }
+    draw();
+  });
 }
 
 /* ================== 7. INPUT ================== */
@@ -3487,7 +3578,8 @@ function recordResult() {
   var patch = {
     addStats: { cases: 1, solved: won ? 1 : 0, lost: won ? 0 : 1, stars: APP.st.stars },
     maxStats: { bestStars: APP.st.stars },
-    archive: { seed: APP.cs.seed, title: APP.cs.title, won: won, moves: moves, stars: APP.st.stars },
+    archive: { seed: APP.cs.seed, title: APP.cs.title, won: won, moves: moves, stars: APP.st.stars,
+      tier: APP.cs.tier, liar: !!APP.cs.liar },
     resume: null
   };
   if (won) patch.bestLow = { fewestActions: moves };
@@ -3510,6 +3602,7 @@ function openReveal() {
       box.appendChild(el("div", "beat", SUSPECTS[T.c].n + " did it."));
       box.appendChild(el("div", "beat", "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + "."));
       box.appendChild(el("div", "beat", "With the " + WEAPONS[T.w].n + "."));
+      revealLie(box);
       box.appendChild(el("h2", null, UI.worked));
       var mins = APP.cs.minimal.filter(function (id) { return hasFound(st, id); });
       mins.slice(0, 6).forEach(function (id) {
@@ -3522,6 +3615,7 @@ function openReveal() {
       box.appendChild(el("div", "beat", SUSPECTS[T.c].n + " did it."));
       box.appendChild(el("div", "beat", "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + "."));
       box.appendChild(el("div", "beat", "With the " + WEAPONS[T.w].n + "."));
+      revealLie(box);
       if (st.contraId >= 0) {
         box.appendChild(el("h2", null, UI.teach));
         var stamp = el("div", "stamp");
@@ -3543,9 +3637,20 @@ function openReveal() {
   });
 }
 
+/* the payoff of a liar case: who it was, and exactly what they said */
+function revealLie(box) {
+  if (!APP.cs.liar || !APP.cs.lie) return;
+  box.appendChild(el("h2", null, UI.theLie));
+  var who = APP.cs.lie.speaker;
+  var st = el("div", "stamp lie");
+  st.appendChild(el("div", null, SUSPECTS[who].n + UI.liarWas));
+  st.appendChild(el("div", null, clueText(APP.cs.pool[APP.cs.lie.id])));
+  box.appendChild(st);
+}
+
 function doShare() {
   var txt = shareString(APP.cs, APP.st, APP.isDaily, dayNumber());
-  var url = location.origin + location.pathname + "?seed=" + APP.cs.seed;
+  var url = caseUrl(APP.cs.seed, APP.cs.tier, APP.cs.liar);
   var full = txt.replace("?seed=" + APP.cs.seed, url);
   try {
     if (navigator.share) { navigator.share({ text: full }); return; }
@@ -3556,12 +3661,24 @@ function doShare() {
   toast(full);
 }
 
-function newRandomCase() {
+function newRandomCase(mode) {
   APP.revealShown = false;
   APP.sessionRng = APP.sessionRng || makeRNG((Date.now() ^ 0x5bd1e6) >>> 0);
-  startCase((APP.sessionRng.int(0x7ffffffe) + 1) >>> 0, false, null);
+  startCase((APP.sessionRng.int(0x7ffffffe) + 1) >>> 0, false, null, mode || APP.mode);
   APP.tab = "case";
   render();
+}
+
+function caseUrl(seed, tier, liar) {
+  var u = location.origin + location.pathname + "?seed=" + seed;
+  if (tier && tier !== "standard") u += "&tier=" + tier;
+  if (liar) u += "&liar=1";
+  return u;
+}
+function copyCaseLink(seed, tier, liar) {
+  var u = caseUrl(seed, tier, liar);
+  try { if (navigator.clipboard) { navigator.clipboard.writeText(u); toast(UI.linkCopied); return; } } catch (e) {}
+  toast(u);
 }
 
 function openOptions() {
@@ -3625,11 +3742,18 @@ function boot() {
     var p = kv.split("="); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || "");
   });
 
-  var seed, isDaily = false;
-  if (q.seed && /^\d+$/.test(q.seed)) seed = parseInt(q.seed, 10) >>> 0;
-  else { seed = dailySeed(todayIso()); isDaily = true; }
+  var seed, isDaily = false, mode = { tier: "standard", liar: false };
+  if (q.seed && /^\d+$/.test(q.seed)) {
+    seed = parseInt(q.seed, 10) >>> 0;
+    if (q.tier && TIERS[q.tier]) mode.tier = q.tier;
+    if (q.liar === "1") mode.liar = true;
+  } else if (save.resume && save.resume.seed) {
+    seed = save.resume.seed >>> 0;
+    mode.tier = TIERS[save.resume.tier] ? save.resume.tier : "standard";
+    mode.liar = !!save.resume.liar;
+  } else { seed = dailySeed(todayIso()); isDaily = true; }
 
-  startCase(seed, isDaily, save.resume && save.resume.seed === seed ? save.resume : null);
+  startCase(seed, isDaily, save.resume && save.resume.seed === seed ? save.resume : null, mode);
 
   document.addEventListener("visibilitychange", function () { if (document.hidden) persistResume(); });
   window.addEventListener("pagehide", persistResume);

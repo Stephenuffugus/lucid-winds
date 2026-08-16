@@ -116,6 +116,15 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
    the visible 48px chip stays. Home and power sit in opposite corners, safe. */
 .tbtn::after{content:""; position:absolute; left:-12px; right:-12px; top:-12px; bottom:-12px}
 #b-home{left:10px}
+/* the way home, on the TITLE screen only. The portal opens this card as a top
+   level navigation, so nothing outside the page offers a way back. Top left of
+   the title, which is empty art: the play chrome (#b-home, power, ctrlbar) all
+   lives on #s-play and can never collide with it. */
+.swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
+  min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
+  background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
+  letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
+.swsback:active{filter:brightness(1.35)}
 .vs-code{font-size:64px; font-weight:800; letter-spacing:14px; font-style:italic; color:#2ff0e0; text-indent:14px;
   text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 0 0 22px rgba(47,240,224,0.6)}
 .tbtn.pwr{right:10px; left:auto; width:58px; height:58px; font-size:27px; opacity:.5; border-color:#7ec850;
@@ -187,7 +196,9 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
   <canvas id="game" width="540" height="960"></canvas>
 
   <!-- TITLE -->
-  <div class="screen center on" id="s-title"><div class="pad center">
+  <div class="screen center on" id="s-title">
+    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade">&#8249; Back to the arcade</button>
+    <div class="pad center">
     <div style="flex:1"></div>
     <img class="pnl-logo" src="assets/logo/stacked.png?v=pnl1" alt="POP N LOCK" onload="var t=document.getElementById('pnl-title-txt');if(t)t.style.display='none';this.style.display='block';">
     <div class="title-word" id="pnl-title-txt">POP N<br><span class="w2">LOCK</span></div>
@@ -1482,8 +1493,26 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
   document.addEventListener('fullscreenchange',paint); document.addEventListener('webkitfullscreenchange',paint); paint();
 })();
 
-/* ---------- embedded-in-portal back handshake ---------- */
-(function(){ var EMB=/[?&]embed=1(&|$)/.test(location.search); if(EMB&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} } })();
+/* ---------- Sky Wolf Studios embed protocol ----------
+   ⛔ The portal FRAMES only /play/*.html and github.io urls. This game is carded
+   as a relative /satellites/ url, so it opens as a TOP LEVEL navigation with no
+   portal chrome around it. An exit gated on window.parent would never show, and
+   the browser back button was the only road home. So: post close when framed,
+   otherwise walk back through the referrer, and fall back to the portal url. */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var b=document.getElementById('sws-back');
+  if(b) b.addEventListener('click',function(){ window.SWS_EXIT(); });
+})();
 
 /* ---------- Sky Wolf sunbeam earn standard: 30/day/game cap ---------- */
 window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}

@@ -14,6 +14,9 @@ node sim.js --test     PASSED 229 / FAILED 0   (total 229 assertions)
 ```
 
 Exits 1 on any failure, exits 3 if the assertion total ever drops under the floor of 80.
+`node sim.js --grid=N` runs the tuning grid and `--over=KEY=VAL,...` runs any sweep against
+an overridden CONFIG without editing the game (source level substitution, throws on a key it
+cannot find, so a typo can never quietly measure the shipped numbers and call them tuned).
 Same suite runs in the page at `?test=1` and is exposed as `window.__TEST__`.
 
 Counted, not estimated: 229. Suites are RNG, geometry, column generation, heartstone,
@@ -64,43 +67,83 @@ A probe that cannot fail is not evidence. These were all watched red, then resto
    transmuting an empty pack, an ascent with almost no air, heartstone weight). Each was
    pasted in as a failing assertion **before** the fix.
 
-## 3. The sweep table (20,000 runs per policy, seed0=1)
+## 3. The sweep table (20,000 runs per policy, seed0=1) — DEEPENING PASS
 
 ```
-DEEPWELL BALANCE SWEEP   runs=20000 per policy   seed0=1
-loadout for the three policies: {"tank":2,"lamp":2,"pack":2,"brace":1,"drill":1,"assay":1} (a mid game digger)
-time model: 4s per decision plus 0.15s per meter travelled, stated so it is arguable
-
 POLICY      LOSTCARGO  COLLAPSE  BANK p10     p50     p90    MEAN  DEPTH p50    p90  MIN p50   200m
 ---------------------------------------------------------------------------------------------------
-greedy          62.1%      1.0%         0      59     156      67         39     52      1.1   0.0%
-cautious         0.0%      0.0%        17      57     111      62         25     28      0.7   0.0%
-optimal          1.2%      0.8%        43      93     167     100         37     50      1.0   0.0%
+greedy          66.5%      0.4%         0      48     197      71         34     46      1.0   0.0%
+cautious         0.0%      0.0%         4      30      81      38         17     19      0.5   0.0%
+optimal          0.7%      0.4%        30      62     200      92         32     46      0.9   0.0%
 
-cautious banks 61.4% of optimal   (bound 35 to 50)
-cautious beats optimal on 2.1% of identical shafts   (bound: above zero)
-greedy loses cargo 62.1%   (bound 55 to 70)
-cautious loses cargo 0.0%   (bound under 8)
-depth 200 reached by a full kit on a depth run: 63.8%   (bound over 60)
-depth 200 reached with no upgrades on a depth run: 0.0%   (bound under 3)
-median session, optimal: 1.0 minutes   (bound 4 to 8)
+cautious banks 40.8% of optimal   (bound 35 to 50)              HIT   was 61.4
+cautious beats optimal on 1.3% of identical shafts (above zero) HIT
+greedy loses cargo 66.5%   (bound 55 to 70)                     HIT
+cautious loses cargo 0.0%   (bound under 8)                     HIT
+depth 200, full kit, depth run: 64.9%   (bound over 60)         HIT
+depth 200, no upgrades, depth run: 0.0%   (bound under 3)       HIT
+median session, optimal: 0.9 min a run, 4.5 min a sitting       HIT under the stated model
 
-ECONOMY   full clear costs 15253 cash
-runs to full clear, cautious player: 216   (target about 25)
-runs to full clear, optimal player: 123
+ECONOMY   full clear costs 5859 cash   (was 15,253)
+runs to full clear, cautious: 131   (was 216, target about 25)   MISS, proof below
+runs to full clear, optimal:   44   (was 123)
 ```
 
-**Bounds hit: 5 of 7.**
+**Bounds hit: 6 of 7, up from 5 of 7.**
 
-| Section 3.8 bound | Result | Verdict |
-|---|---|---|
-| Greedy loses cargo 55 to 70 percent | 62.1 percent | HIT |
-| Cautious loses cargo under 8 percent | 0.0 percent | HIT |
-| Cautious banks 35 to 50 percent of Optimal | 61.4 percent | **MISS, too close** |
-| Optimal must not dominate every percentile | Cautious wins 2.1 percent of identical shafts | HIT |
-| Depth 200 by a full kit over 60 percent | 63.8 percent | HIT (see the depth run model below) |
-| Depth 200 unupgraded under 3 percent | 0.0 percent | HIT |
-| Median session 4 to 8 minutes | 5.0 minutes as a sitting, 1.0 minutes as one run | HIT under a stated model, see below |
+### 3.1 The previous builder's diagnosis was wrong, and the grid says so
+
+Section 8 of the first report said the two missed bounds shared one root cause, the pack
+filling before the air gets frightening, and that dropping `PACK_BASE` from 40 toward 28 would
+close them. `node sim.js --grid` walked 105 CONFIG points (PACK_BASE x COST_EXP x cache scale,
+1200 runs per policy per point). Shrinking the pack moves the ratio **the wrong way**:
+
+```
+PACK_BASE   40    36    32    30    28    26    24
+ratio     61.5  63.4  66.4  68.0  69.0  70.1  70.8      (bound 35 to 50)
+optimal    101   101   101   101   101   101   101      mean banked, unmoved
+cautious    62    64    67    69    70    71    72      mean banked, RISES
+```
+
+The pack was never the binding constraint for the optimal policy at all (its mean does not move
+by one cash across the whole sweep, because its break even gate on air binds first), and a
+smaller pack makes the CAUTIOUS policy richer, because the caution gate prices a hypothetical
+full pack and a smaller hypothetical lets it descend further. `PACK_BASE` stays at 40.
+
+Every other loosening lever also made it worse, which is the shape of the real answer:
+
+```
+lever                          ratio     note
+ASCENT_WEIGHT_DIV 45 (looser)   73.6     greedy loss falls to 46, out of band
+AIR_BASE 200 + LAMP 200         71.7
+GAP_MIN 1 GAP_MAX 3             80.5
+AIR_BASE 160                    67.0
+ASCENT_WEIGHT_DIV 30            68.6
+shipped before this pass        61.4
+seam richness bias 0 to 1       62.2 to 61.3   real but tiny on its own
+cache income x2.2               60.7
+AIR_BASE 80  (tighter)          58.8
+ASCENT_WEIGHT_DIV 12            49.0
+ASCENT_WEIGHT_DIV 8             39.8     greedy loss 75.3, out of band
+```
+
+The ratio is a function of how tight the game is, and **`ASCENT_WEIGHT_DIV` is the only lever
+that moves it far without dragging another bound out of band**. At 8 the greedy loss rate
+breaks its own bound; at 13 it breaks it the other way (70.4); 12 lands both.
+
+### 3.2 The three numbers that moved, and the final landing
+
+```
+ASCENT_WEIGHT_DIV   20 -> 12     the ratio lever. A full 60 kilo pack now costs 6 air a
+                                 meter to lift instead of 4, so the last 40 percent of a
+                                 tank is worth carrying ore through.
+cacheBase/PerDepth  26 + 1.35d -> 8 + 4.0d    a cache pays almost nothing in the topsoil
+                                 and a lot at depth, so the safe play still has to walk
+                                 down. Steepening this pulled the ratio 63.1 -> 56.7 on its
+                                 own and it is the income that offsets the tightening.
+COST_EXP            2.1 -> 1.5   see section 4 item 8.
+TIER_DEPTH_BIAS     new, 0.92    seam richness, section 9.
+```
 
 ## 4. Every CONFIG number that moved from spec, and why
 
@@ -135,41 +178,55 @@ costs are all **verbatim from HANDOFF section 3**. What moved:
    ascent that skips the entire cost of the game.
 7. **Bargain 1 and 8 clamp to the caps**, and a bargain whose air cost would zero you out is
    refused with the reason shown rather than quietly killing you.
-8. **Full clear costs 15,253 cash, not the "approximately 11,400" in section 3.7.** That is
-   simply what `base x 2.1^level` sums to over the six specced tracks. Nothing moved, the
-   spec's own arithmetic was off.
+8. **`COST_EXP` 2.1 to 1.5, full clear 15,253 to 5,859.** HANDOFF 3.7 states the exponent
+   (2.1), the total (about 11,400) and the pace (about 25 runs) and no two of those three can
+   be true at once. 2.1 sums to 15,253. 1.9 sums to 11,273, which is the spec's OWN stated
+   total, so the exponent is the number that was wrong, not the total. 1.5 is the floor that
+   still keeps the shop a ladder, and there is an assertion holding it there: *the last level
+   of a track costs more than the first three together*, which fails below about 1.47. That
+   assertion exists so nobody flattens the ladder chasing the 25 run target.
+9. **`ASCENT_WEIGHT_DIV` 20 to 12.** HANDOFF 3.3 writes the ascent drain as `1 + weight/20`
+   and 3.8 sets the cautious to optimal bound, and they cannot both hold. 3.8 says in its own
+   words "if any bound is missed, adjust CONFIG and re-run, do not adjust the bounds", so 3.8
+   is the authority on this question and 3.3's divisor is the CONFIG it is telling us to move.
+   See the grid in section 3.1 for why nothing else does the job.
+10. **`TIER_DEPTH_BIAS` 0.92 (new).** See section 9.
 
 ## 5. Honest misses
 
-1. **Cautious banks 61.4 percent of Optimal, not 35 to 50.** The reason is structural and
-   worth Stephen seeing: at the specced numbers **the pack, not the air, is the binding
-   constraint** for most of a run. A 40 to 60 kilo pack fills after three or four veins,
-   around 25 to 40 meters, and at that point both a careful player and a perfect player go
-   home with a full bag. Air only becomes the real master when the player starts dropping
-   ore to trade up, which is exactly the drop gold for beryl move the design is built
-   around. The gap widens as the pack grows. Closing it to 50 percent means either a
-   smaller pack cap or a steeper `weight/20` ascent term, both specced numbers, so I left
-   them and reported it.
-2. **Runs to full clear: 216 cautious, 123 optimal, against a target of about 25.** Also
-   structural. A mid kit run banks a mean of 100. To clear 15,253 in 25 runs a player must
-   bank 610 a run, and the ore table cannot produce that: the best possible 60 kilo pack is
-   beryl at 18.75 a kilo, about 1,100, and no real run mines a pure beryl pack. Getting to
-   25 runs means multiplying ore values by roughly six, which re prices every number in
-   section 3.5. I raised cache values as far as felt honest (a cache is meant to be the safe
-   play reward, not the income) and left it. **This is a Director call:** 120 to 200 runs is
-   a normal roguelite meta length, so the shipped number may simply be right and the spec's
-   estimate wrong.
-3. **A run is 1.0 minutes, not 4 to 8.** One run *cannot* be 4 to 8 minutes at the specced
-   air table: 180 air caps a round trip at about 90 meters, which is about 20 nodes and 25
-   decisions. So a SITTING is modelled as 4 runs plus the shop between them
-   (`RUNS_PER_SESSION 4`, `SEC_SHOP_VISIT 18`), which lands at 5.0 minutes, inside the
-   window. The model is printed with the table so it is arguable rather than hidden.
-4. **The depth 200 bound is measured with a dedicated Diver policy** (never mines, dives
-   until the air is gone). Greedy, Cautious and Optimal all reach 0.0 percent because they
-   carry weight, and a depth record run in this game is a suicide run by design (section
-   3.4 tracks depth and cash as two separate leaderboards). The sweep prints the depth 200
-   rate for all three policies as well, and they are all 0.0 percent, which is the honest
-   number for a cargo run.
+Only one bound is still missed, and it is now proved rather than argued. `node sim.js --runs=N`
+prints the whole proof under `ECONOMY PROOF`, measured, not asserted:
+
+1. **Runs to full clear: 131 cautious, 44 optimal, against a target of about 25.** The proof:
+   - A full clear buys 28 upgrade levels across the six specced tracks.
+   - The cheapest full clear ANY exponent can produce is a flat ladder (exponent 1.0) at
+     **2,400 cash**, and a flat ladder is not a ladder: level five would cost what level one
+     costs. The cheapest that keeps a real ladder is **5,859**.
+   - 25 runs therefore demands **96 banked every run from run one** at the arithmetic floor,
+     or **234** at the shipped ladder.
+   - A run one digger with no upgrades actually banks a mean of **36** cautious, **68** optimal.
+   - So the target needs **6.5x** what the ore table pays a cautious beginner at the shipped
+     ladder, or **2.7x** with the ladder deleted entirely.
+   - **The real finding, which is worse than the arithmetic:** a full kit earns a CAUTIOUS
+     digger **2 percent** more than no kit at all, and an OPTIMAL digger 87 percent more. The
+     spec's own definition of Cautious spends a fixed FRACTION of the tank (60 percent), and
+     the caution gate prices a full pack, so a bigger tank and a bigger pack cancel each other
+     out exactly. **A cautious digger cannot convert upgrades into income at all.** No repricing
+     of the ore table fixes "runs to full clear for a median player" while the median player is
+     Cautious, because the meter is measuring a policy that does not respond to the shop.
+   - **Director call.** Either the ore table gets repriced (which reprices every number in
+     HANDOFF 3.5), or the median player is redefined as something between Cautious and Optimal,
+     which would read about 44 to 90 runs and is a normal roguelite meta length. This build
+     ships 131 and 44, down from 216 and 123 without widening anything.
+2. **A run is 0.9 minutes, not 4 to 8.** Unchanged from the first report and for the same
+   reason: 180 air caps a round trip near 90 meters. A SITTING of four runs plus the shop
+   between them is 4.5 minutes, inside the window, and the model is printed with the table.
+3. **Cautious loses cargo 0.0 percent.** In bound (under 8) but at the floor, which means the
+   spec's Cautious has enormous slack. Left alone: it is the spec's own policy definition and
+   moving it would be moving a bound.
+4. **Nothing here has been LOOKED at.** Eight agents on a two core box, the main loop owns all
+   browser work. Every visual claim in section 9 is wiring, not seeing, and should be treated
+   that way until somebody shoots it.
 
 ## 6. What shipped
 
