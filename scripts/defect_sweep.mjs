@@ -41,6 +41,33 @@ const CLASSES = [
     test: c => /fetch\s*\(/.test(c) && !/\.ok\b|status\s*[<>=]/.test(c) }
 ];
 
+/* CLASS 9, the one that has paid out most: a stated promise that is not true.
+   The systemic version in this project is a game whose own copy promises the
+   player Sunbeams while nothing in it can ever award one, because it was built
+   to a brief that had gone stale. That is mechanically checkable: if the VISIBLE
+   copy says you earn, then the SDK has to load, init has to run, and something
+   has to actually call the earn path. Absence of any one is the finding. */
+function earnPromiseBroken(rawFull) {
+  const copy = rawFull.replace(/<script[\s\S]*?<\/script>/gi, " ")
+                      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+                      .replace(/<!--[\s\S]*?-->/g, " ");
+  const promises = /sunbeam/i.test(copy) && /\bearn|\bcollect|for your garden/i.test(copy);
+  if (!promises) return null;
+  /* ⛔ The SDK arrives two ways and this originally only knew one. A literal
+     <script src> tag, OR a dynamically injected one: `var sc=createElement
+     ('script'); sc.src='/sunbeam-sdk.js?v=7'`. Checking only for the tag called
+     garden-td and pong broken when both load it correctly and init on load. */
+  const loadsSdk = /<script[^>]+src="[^"]*sunbeam-sdk\.js/i.test(rawFull)
+                || /\.src\s*=\s*['"][^'"]*sunbeam-sdk\.js/i.test(rawFull);
+  const inits    = /Sunbeam\.init\s*\(/.test(rawFull);
+  const awards   = /_sbCapEarn\s*\(|Sunbeam\.earn\s*\(/.test(rawFull);
+  const missing = [];
+  if (!loadsSdk) missing.push("no sunbeam-sdk.js");
+  if (!inits)    missing.push("never calls Sunbeam.init");
+  if (!awards)   missing.push("never calls an earn path");
+  return missing.length ? missing.join(", ") : null;
+}
+
 /* dashes in player copy: class 7, a hard studio rule. Only VISIBLE text counts.
    ⛔ The first version scanned the whole file for text between > and <, which in
    a single-file game means it scanned the JavaScript too, because `a > b` and
@@ -82,6 +109,17 @@ if (process.argv.includes("--selftest")) {
       "a COMMENT describing the pattern is not the pattern");
   say(CLASSES[0].test(strip(`var s="window.parent !== window";`)) === false,
       "the pattern inside a STRING is not the pattern");
+  const promisesButCannot = `<p>Clear grounds to earn Sunbeams for your garden.</p>`;
+  const promisesAndDoes = promisesButCannot +
+    `<script src="/sunbeam-sdk.js?v=7"></script><script>Sunbeam.init({gameId:"x"});_sbCapEarn(3,"x:clear");</script>`;
+  say(earnPromiseBroken(promisesButCannot) !== null, "class 9 fires when copy promises Sunbeams and nothing awards");
+  say(earnPromiseBroken(promisesAndDoes) === null, "class 9 stays quiet when the SDK loads, inits and awards");
+  say(earnPromiseBroken(`<p>Just pop honey and relax.</p>`) === null, "class 9 ignores a game that promises nothing");
+  /* ⛔ regression guard: garden-td and pong inject the SDK instead of tagging it */
+  const injects = promisesButCannot +
+    `<script>var sc=document.createElement('script'); sc.src='/sunbeam-sdk.js?v=7';
+     sc.onload=function(){Sunbeam.init({gameId:'x'})}; _sbCapEarn(1,'x');</script>`;
+  say(earnPromiseBroken(injects) === null, "class 9 accepts a DYNAMICALLY injected SDK, not just a script tag");
   console.log(bad ? "\nSELFTEST FAILED: " + bad : "\nSELFTEST PASSED: every detector fires and can stay quiet");
   process.exit(bad ? 2 : 0);
 }
@@ -101,6 +139,8 @@ for (const d of dirs) {
   const hits = CLASSES.filter(c => c.test(code)).map(c => c.id);
   const dashes = dashesInCopy(raw);
   if (dashes.length) hits.push("dashes-in-copy(" + dashes.length + ")");
+  const broke = earnPromiseBroken(raw);
+  if (broke) hits.push("EARN-PROMISE-BROKEN: " + broke);
   if (hits.length) { rows.push({ d, hits, dashes, lines: raw.split("\n").length }); total += hits.length; }
 }
 
