@@ -196,7 +196,7 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   <button class="close" id="selClose" aria-label="Close">✕</button>
   <h2>THE SKY</h2>
   <p id="selBlurb">Sixty levels in five clusters. A filled star means cleared. A bright star means you matched the best possible answer.</p>
-  <div id="selwrap"><svg id="sky" viewBox="0 0 320 470" aria-label="Level map"></svg></div>
+  <div id="selwrap"><svg id="sky" viewBox="0 0 320 900" aria-label="Level map"></svg></div>
   <div id="selfoot"></div>
   <button class="big ghostb" id="selDaily">TODAY</button>
 </div>
@@ -1715,15 +1715,15 @@ function playReplay(log){
 function buildSky(){
   var svg = $('sky'), parts = [], n, i;
   var W = 320, cx = W / 2;
-  var tierY = [0, 52, 130, 216, 310, 412];
+  var tierY = [0, 82, 250, 415, 580, 752];
   var rng = makeRNG(0xC0FFEE);
   var pts = [];
   for (n = 1; n <= LEVELS.length; n++){
     var spec = tierOf(n);
     var idx = n - spec.lo, count = spec.hi - spec.lo + 1;
     var ang = (idx / count) * Math.PI * 2 + spec.t * 0.7;
-    var rad = 34 + (spec.t * 5) + rng() * 16;
-    pts.push({ n:n, t:spec.t, x:cx + Math.cos(ang) * rad, y:tierY[spec.t] + Math.sin(ang) * (rad * 0.52) });
+    var rad = 60 + (spec.t * 3) + rng() * 14;
+    pts.push({ n:n, t:spec.t, x:cx + Math.cos(ang) * rad, y:tierY[spec.t] + Math.sin(ang) * (rad * 0.62) });
   }
   for (i = 0; i < pts.length - 1; i++){
     var a = pts[i], b = pts[i+1];
@@ -1741,7 +1741,7 @@ function buildSky(){
     parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
       '" r="' + r + '" fill="' + fill + '"/>');
     parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
-      '" r="13" fill="transparent"/>');
+      '" r="24" fill="transparent"/>');
     parts.push('<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 15).toFixed(1) + '" text-anchor="middle" ' +
       'font-size="8" fill="#6f7590">' + p.n + '</text>');
   }

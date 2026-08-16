@@ -149,6 +149,7 @@ function sweep() {
   console.log('');
 
   var idleBest = 0, idleBestLo = null, idleWins = 0;
+  var richIdleWins = 0, richIdleBest = 0, richIdleLo = null;
   var activeRows = [];
   var i, r;
 
@@ -156,6 +157,11 @@ function sweep() {
     r = runLoadout(loadouts[i], SIM.BOTS.idle, 1);
     if (r.won) idleWins++;
     if (r.reached > idleBest) { idleBest = r.reached; idleBestLo = loadouts[i]; }
+    /* the harder version of the same question: hand the traps every coin the
+       whole campaign will ever pay, up front, and see if they can do it alone */
+    r = SIM.runCampaign({ seed: 1, bot: SIM.BOTS.idle, loadout: loadouts[i].list, grantScrap: SIM.scrapThroughWave(CONFIG.WAVES) });
+    if (r.won) richIdleWins++;
+    if (r.reached > richIdleBest) { richIdleBest = r.reached; richIdleLo = loadouts[i]; }
   }
 
   for (i = 0; i < loadouts.length; i++) {
@@ -245,6 +251,8 @@ function sweep() {
   var gates = [];
   gates.push(gate('no loadout clears 20 waves with the IDLE bot', idleWins === 0,
     'idle wins: ' + idleWins + ', deepest idle run: wave ' + idleBest + (idleBestLo ? ' (' + idleBestLo.key + ' zones ' + idleBestLo.zoneKey + ')' : '')));
+  gates.push(gate('no loadout clears 20 waves with IDLE even holding the whole campaign purse', richIdleWins === 0,
+    'rich idle wins: ' + richIdleWins + ', deepest wave ' + richIdleBest + (richIdleLo ? ' (' + richIdleLo.key + ' zones ' + richIdleLo.zoneKey + ')' : '')));
   gates.push(gate('at least 4 distinct trap multisets reach wave 15 with ACTIVE', reach15.length >= 4,
     reach15.length + ' multisets: ' + reach15.slice(0, 8).map(function (r2) { return r2.lo.key + '(w' + r2.reached + ')'; }).join(', ')));
   gates.push(gate('the best loadout plus ACTIVE clears wave 20', clears.length > 0,

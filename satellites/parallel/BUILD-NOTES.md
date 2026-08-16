@@ -172,9 +172,12 @@ Grid cells are never touch targets. Controls: the four pad buttons are
 `clamp(62px,13vh,118px)` tall and one quarter of the app width each
 (~86px at 375), so **86 x 86 minimum**. Header, restart, sheet close and toggle
 buttons are all `min-width:48px; min-height:48px`. Win card buttons `min-height:48px`.
-Level select stars carry a transparent 26px diameter hit circle on top of the
-visible 6 to 11px star; that is the one control **under 48px** and it is a known
-gap, listed below.
+Level select stars carry a transparent hit circle of **54px rendered** diameter
+on a 390 wide sheet (r=24 in a 320x900 viewBox), over the visible 6 to 11px
+star. The constellation was spread over a taller scrolling sky to make room.
+Neighbour spacing inside a cluster is 33 to 40px, so adjacent hit circles
+overlap and the later star in DOM order (the higher level number) wins a tap in
+the overlap. Target size law is met; mis tap risk between neighbours remains.
 
 ## Known gaps
 
@@ -182,8 +185,9 @@ gap, listed below.
    agents on a 2 core box). Everything above is node verified plus a desk check
    of the layout maths. The `?test=1` panel, the audio graph, touch handling and
    the constellation SVG have not been seen in a real browser by me.
-2. **Level select star hit area is 26px, not 48px.** Needs to become a 48px
-   invisible circle or a list fallback.
+2. **Level select stars now hit 54px but overlap their neighbours** (33 to 40px
+   apart). A numbered grid fallback beside the constellation would remove the
+   mis tap risk entirely.
 3. Phone vertical slack ~214px below the board, inherent to a square board in
    portrait at 390px. Would need a landscape layout or a non square board to fix.
 4. No install nudge after first clear (CRAFT E) and no last 10 runs history

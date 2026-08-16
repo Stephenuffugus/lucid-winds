@@ -1108,6 +1108,7 @@ function runCampaign(opts) {
   var loadout = opts.loadout || [];
   var maxWave = opts.maxWave || CONFIG.WAVES;
   var s = newGame(opts.seed === undefined ? 1 : opts.seed, { mode: opts.mode || 'campaign', endless: !!opts.endless });
+  if (opts.grantScrap) s.scrap += opts.grantScrap;
   var rows = [], guard;
   while (!s.over && s.wave <= maxWave) {
     if (opts.hpBoostFrom && s.wave >= opts.hpBoostFrom) s.hpBoost = opts.hpBoost || 1;

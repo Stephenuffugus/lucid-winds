@@ -290,6 +290,7 @@ function runTests() {
   TEST.run();
   var rep = TEST.report();
   rep.failures.forEach(function (f) { console.log("FAIL  " + f.name + "   " + (f.detail || "")); });
+  console.log("total assertions " + rep.total);
   console.log("PASSED " + rep.passed + " / FAILED " + rep.failed);
   return rep;
 }

@@ -101,16 +101,26 @@ const blocked = report.filter(r => !r.reachable);
    blocker once and do not fail the run on it: the player taps it away. */
 const byBlocker = {};
 for (const r of blocked) (byBlocker[r.blocker] = byBlocker[r.blocker] || []).push(r);
-const sharedOverlay = Object.keys(byBlocker).find(b => byBlocker[b].length >= 3 && byBlocker[b].length === blocked.length);
+/* A dominant blocker is a start screen, not N defects. It does not have to
+   account for every blocked control: siege had 9 behind #titlesheet plus one
+   whose centre sat below the fold, and an all-or-nothing rule called that ten
+   failures. Anything at or above 60 percent of the blocked set is the overlay. */
+const offscreen = blocked.filter(r => r.blocker === "nothing");
+const covered = blocked.filter(r => r.blocker !== "nothing");
+let sharedOverlay = null;
+for (const b of Object.keys(byBlocker)) {
+  if (b !== "nothing" && byBlocker[b].length >= 3 && byBlocker[b].length >= covered.length * 0.6) sharedOverlay = b;
+}
 
 for (const r of small) console.log("  FAIL  " + r.label + "  " + r.w + "x" + r.h + "  SMALL, needs " + MIN + "px");
 if (sharedOverlay) {
   console.log("  NOTE  " + sharedOverlay + " covers all " + blocked.length +
     " controls: that is a start screen, not a defect. Re run with --steps=tapcenter,wait:700 to measure behind it.");
 } else {
-  for (const r of blocked) console.log("  FAIL  " + r.label + "  " + r.w + "x" + r.h + "  BLOCKED by " + r.blocker);
+  for (const r of covered) console.log("  FAIL  " + r.label + "  " + r.w + "x" + r.h + "  BLOCKED by " + r.blocker);
 }
-const realBlocked = sharedOverlay ? 0 : blocked.length;
+for (const r of offscreen) console.log("  NOTE  " + r.label + " centre is outside the viewport, check it is reachable by scrolling");
+const realBlocked = sharedOverlay ? covered.length - byBlocker[sharedOverlay].length : covered.length;
 console.log("  " + report.length + " visible controls, " + small.length + " undersized, " + realBlocked + " unreachable" +
   (sharedOverlay ? " (" + blocked.length + " behind a dismissable overlay)" : ""));
 
