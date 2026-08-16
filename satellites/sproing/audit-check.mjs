@@ -184,12 +184,24 @@ console.log('\n[4] core loop: onboarding is escapable and a run starts');
     out.secondPlay = vis();                              // now it goes to modes, not back to the studio
     document.getElementById('m-endless').click(); await new Promise(r => setTimeout(r, 900));
     out.running = vis();
+    /* ⛔ launch() shows the first-run COACH modal and sets game.paused = true. A probe
+       that ignores it measures a paused game behind a full-screen overlay, then blames
+       the game when pauseRun() no-ops and when elementFromPoint returns the modal.
+       That cost three false failures on the first run of this suite. Dismiss it, and
+       assert it was there — a first-run tutorial that never appears is its own bug. */
+    out.coachShown = document.getElementById('modal').classList.contains('on');
+    out.coachText = (document.getElementById('modal-card').textContent || '').slice(0, 24);
+    const got = document.getElementById('mx1');
+    if (got) { got.click(); await new Promise(r => setTimeout(r, 400)); }
+    out.coachGone = !document.getElementById('modal').classList.contains('on');
     return out;
   });
   ok('a fresh install opens the studio', r.fresh === 's-studio', JSON.stringify(r));
   ok('the studio is escapable without drawing', r.escaped === 's-title' && r.bounceSet, JSON.stringify(r));
   ok('PLAY then goes to mode select, not back to the studio', r.secondPlay === 's-modes', JSON.stringify(r));
   ok('Endless actually starts a run', r.running === '(game)', JSON.stringify(r));
+  ok('the first run shows the coach', r.coachShown && /How to climb/.test(r.coachText), JSON.stringify(r));
+  ok('the coach can be dismissed', r.coachGone, JSON.stringify(r));
 
   await new Promise(r => setTimeout(r, 1500));
   for (let i = 0; i < 6; i++) {
@@ -269,6 +281,10 @@ console.log('\n[5] standing defect classes');
     if (fab) {
       const f = fab.getBoundingClientRect();
       document.querySelectorAll('button,.btn,.icobtn').forEach(el => {
+        /* the fab IS a <button class="lwfb-fab">, so an unfiltered scan finds it
+           overlapping ITSELF and reports a defect that does not exist. Exclude the
+           fab and its dismiss badge; we are asking what the GAME puts under it. */
+        if (el === fab || fab.contains(el) || el.closest('.lwfb-fab')) return;
         const c = getComputedStyle(el), q = el.getBoundingClientRect();
         if (c.display === 'none' || q.width < 1) return;
         if (q.right > f.left && q.left < f.right && q.bottom > f.top && q.top < f.bottom) out.underFab.push(el.id || el.className);
@@ -312,6 +328,10 @@ console.log('\n[5b] in-run HUD controls');
   await p.evaluate(async () => {
     document.getElementById('b-play').click(); await new Promise(r => setTimeout(r, 400));
     document.getElementById('m-endless').click(); await new Promise(r => setTimeout(r, 900));
+    /* dismiss the first-run coach: it is a deliberate full-screen modal and measuring
+       HUD hit areas through it reports the modal, not the buttons */
+    const got = document.getElementById('mx1'); if (got) got.click();
+    await new Promise(r => setTimeout(r, 500));
   });
   await new Promise(r => setTimeout(r, 1200));
   const r = await p.evaluate(() => {
