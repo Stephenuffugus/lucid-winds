@@ -354,14 +354,12 @@
     COVER_A:    0.55,    //   >=55% of the viewport's area
     UNDER_A:    0.25,    // "there is real content beneath it": >=25% of area
     STACK_MAX:    14,    // how far down a hit-test stack we bother to look
-    RING_STEPS:    5,    // 6 stops per edge, on two rings: 48 candidate spots
+    RING_STEPS:    5,    // 6 stops per edge of ONE ring: the viewport's rim
     MAX_VERIFY:   12,    // spots given the full 5-probe test (after a 1-probe sift)
     CLEAR_PAD:     8,    // breathing room tested around a candidate spot
     SURF_W:     0.50,    // "a big flat surface to sit on": >=50% of the viewport
-    SURF_H:     0.50,    //   in BOTH axes — a tall panel qualifies, a paragraph
-                         //   does not, which is the distinction that matters
-    INSET_X:    0.16,    // the inner ring, as a fraction of the viewport
-    INSET_Y:    0.10,
+    SURF_H:     0.50,    //   in BOTH axes — a panel qualifies, a paragraph does not
+    EDGE_BAND:  0.25,    // a park must sit within this fraction of some edge
     SETTLE_MS:   260     // > the 180ms move, then the stylesheet takes over
   };
 
@@ -405,18 +403,24 @@
     }
     return out;
   }
+  // The chip may only live on the viewport's rim. Corners and edges read as
+  // chrome; the centre reads as content, always.
+  function fyInEdgeBand(cx, cy, vw, vh) {
+    return cx <= vw * FY.EDGE_BAND || cx >= vw * (1 - FY.EDGE_BAND) ||
+           cy <= vh * FY.EDGE_BAND || cy >= vh * (1 - FY.EDGE_BAND);
+  }
   function fyCandidates(vw, vh, w, h) {
-    var out = [], seen = {};
-    // Outer ring: the viewport's edge band, where a floating chip belongs.
+    var out = [], seen = {}, keep = [], i;
+    // ONE ring, the viewport's rim. An inner ring was tried and removed the same
+    // day: it offered spots that scored just as well as the gutters and were
+    // NEARER to home, so the chip parked dead centre on a settings label. A spot
+    // that satisfies the rule and sits in the middle of the screen is worse than
+    // no spot at all.
     fyRing(out, seen, FY.MARGIN, FY.TOP_MARGIN, vw - w - FY.MARGIN, vh - h - FY.MARGIN);
-    // Inner ring: one step in. Needed because a centred panel's gutters are
-    // often NARROWER than the chip — Bramblewick's are ~60px against a 74px
-    // footprint — so "wholly outside the panel" is not always available. Wholly
-    // INSIDE it, up in its empty top corner, still reads as deliberate; half on
-    // and half off never does.
-    fyRing(out, seen, FY.MARGIN + Math.round(vw * FY.INSET_X), FY.TOP_MARGIN + Math.round(vh * FY.INSET_Y),
-           vw - w - FY.MARGIN - Math.round(vw * FY.INSET_X), vh - h - FY.MARGIN - Math.round(vh * FY.INSET_Y));
-    return out;
+    for (i = 0; i < out.length; i++) {
+      if (fyInEdgeBand(out[i].x + w / 2, out[i].y + h / 2, vw, vh)) keep.push(out[i]);
+    }
+    return keep;
   }
 
   /* What is under a candidate spot: 'blocked' | 'clear' | 'empty'.
