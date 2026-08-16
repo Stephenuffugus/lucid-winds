@@ -236,6 +236,7 @@
   <div class="topbar">
     <button class="chipbtn" id="drawBack" style="font-size:1.2rem">←</button>
     <div class="title">Draw your creature!</div>
+    <button class="chipbtn" id="drawDice" title="surprise me">🎲</button>
     <button class="chipbtn" id="drawClear">🗑️</button>
   </div>
   <div id="wizBar" style="display:none; margin:0 10px 4px; background:var(--panel); border:2px solid var(--line); border-radius:16px; padding:8px 12px; align-items:center; gap:10px">
@@ -247,7 +248,10 @@
   </div>
   <div id="cwrap"><div id="vp"><canvas id="paper"></canvas><div id="zoomLbl"></div></div></div>
   <div id="tools">
-    <div class="strip" id="palRow"></div>
+    <div style="display:flex; gap:6px; align-items:center">
+      <button class="chipbtn" id="palSwap" title="swap the color set" style="font-size:.68rem; font-weight:900; letter-spacing:.3px">SOFT</button>
+      <div class="strip" id="palRow"></div>
+    </div>
     <div class="toolrow">
       <button class="chipbtn" id="toolUndo" title="undo">↩️</button>
       <button class="chipbtn" id="toolRedo" title="redo">↪️</button>
@@ -1097,7 +1101,16 @@ function makeProfile(sil,forcedName){
 var PAPER=1024;
 var paper=$('paper'); paper.width=PAPER; paper.height=PAPER;
 var pctx=paper.getContext('2d');
-var PALETTE=['#3d2f55','#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8','#8a5a34','#9aa2ad','#ffffff'];
+/* Twice the colors, and none of them hidden at the end of a scroll strip
+   (Jesse never found the textures down there). One visible button swaps the
+   set, and color is the lever that multiplies every other tool here: stamps,
+   textures, the bucket and the rainbow all read brush.color. */
+var PALETTE_SETS=[
+  { n:'BRIGHT', c:['#3d2f55','#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8','#8a5a34','#9aa2ad','#ffffff'] },
+  { n:'SOFT',   c:['#6b5a86','#f2a6a0','#ffd0a3','#fff2b8','#bfe6a8','#8fd0c4','#a8d4f2','#c4b3f2','#f7c6de','#e8c9a0','#c99a6b','#5a4436'] }
+];
+var palSet=0;
+var PALETTE=PALETTE_SETS[0].c;
 var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null, stampGroup:null, tex:null };
 var rainbowHue=0;
 var undoStack=[], redoStack=[], drawnAnything=false;
@@ -1405,6 +1418,8 @@ clearPaper();
 
 function buildPalette(){
   var row=$('palRow');
+  row.innerHTML='';
+  $('palSwap').textContent=PALETTE_SETS[(palSet+1)%PALETTE_SETS.length].n;
   PALETTE.forEach(function(c,ix){
     var b=document.createElement('button');
     b.className='swatch'+(ix===0?' sel':''); b.style.background=c;
@@ -1426,8 +1441,33 @@ function buildPalette(){
     });
     row.appendChild(b);
   });
+  var sel=row.querySelector('.swatch');
+  if(sel&&!row.querySelector('.swatch.sel')) sel.classList.add('sel');
 }
 buildPalette();
+$('palSwap').addEventListener('click',function(){
+  palSet=(palSet+1)%PALETTE_SETS.length;
+  PALETTE=PALETTE_SETS[palSet].c;
+  buildPalette();
+  SFX.tap();
+});
+/* 🎲 rolls a whole creature onto the paper: body, labelled limbs and a marked
+   face, all through the same pipeline a hand drawing goes through. It is a
+   starting point to draw over, never the finished thing. */
+$('drawDice').addEventListener('click',function(){
+  if(roomEdit) return;
+  pushUndo();
+  var gen=genVisitorCanvas((Math.floor(Math.random()*4294967296))>>>0);
+  pctx.drawImage(gen.cv,0,0,PAPER,PAPER);
+  FEATS=gen.feats.slice();
+  drawnAnything=true;
+  if(!editing){
+    guide.on=true; guide.step=2; guide.limbs=gen.limbs.slice();
+    wizPaint();
+    $('wizHint').textContent='A wild one! Draw on top of it, add more legs, then tap Sew.';
+  }
+  SFX.chirp();
+});
 
 var SIZES=[6,14,30], sizeIx=1;
 $('toolSize').addEventListener('click',function(){
@@ -3118,64 +3158,129 @@ var visitorG=null, visitorCanvas=null, visitorSil=null, visitorGen=null;
 function ensureVisitor(){
   if(!VIS||!VIS.seed){ VIS={seed:(Math.floor(Math.random()*4294967296))>>>0, fed:[]}; jSet('cac_visitor',VIS); }
 }
+/* One seed, one whole creature: body family, pattern, limbs that are already
+   labelled (so they get joints), and a face that is already marked (so it
+   blinks). This drives BOTH the daily wild visitor and the 🎲 button on the
+   easel, so every roll of variety here pays out twice. */
+var GEN_BODY=['#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8',
+              '#8fd0e8','#b5e88f','#f2a6a0','#c99a6b','#d9a8f2','#ffd0a3','#8a5a34','#9aa2ad'];
+var GEN_EYES=['eyeGoogly','eyeGoogly','eyeCutie','eyeIris','eyeSleepy'];
 function genVisitorCanvas(seed){
   var rng=mulberry32(seed);
   var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
   var c=cv.getContext('2d');
   c.fillStyle='#fff'; c.fillRect(0,0,PAPER,PAPER);
-  var cx0=512, cy0=460, rx=170+rng()*90, ry=140+rng()*80;
-  var wob=2+Math.floor(rng()*3), wph=rng()*6;
-  c.beginPath();
-  for(var a=0;a<=Math.PI*2+0.01;a+=0.16){
-    var rr=1+Math.sin(a*wob+wph)*0.12;
-    var x=cx0+Math.cos(a)*rx*rr, y=cy0+Math.sin(a)*ry*rr;
-    if(a===0)c.moveTo(x,y); else c.lineTo(x,y);
+  /* body family: round, tall or long, so they are not all the same blob */
+  var fam=rng(), rx, ry, cx0=512, cy0=460;
+  if(fam<0.34){ rx=185+rng()*70; ry=165+rng()*60; }            /* round */
+  else if(fam<0.67){ rx=130+rng()*45; ry=215+rng()*70; cy0=430; } /* tall */
+  else { rx=250+rng()*60; ry=130+rng()*40; }                    /* long */
+  var wob=2+Math.floor(rng()*4), wph=rng()*6, lumps=0.08+rng()*0.13;
+  function trace(){
+    c.beginPath();
+    for(var a=0;a<=Math.PI*2+0.01;a+=0.14){
+      var rr=1+Math.sin(a*wob+wph)*lumps;
+      var x=cx0+Math.cos(a)*rx*rr, y=cy0+Math.sin(a)*ry*rr;
+      if(a===0)c.moveTo(x,y); else c.lineTo(x,y);
+    }
+    c.closePath();
   }
-  c.closePath();
-  c.fillStyle=['#e64a3c','#f2903a','#f7cf46','#69b45a','#4a90d9','#7a5fd0','#e86fa8'][Math.floor(rng()*7)];
-  c.fill();
-  c.lineWidth=14; c.strokeStyle='#3d2f55'; c.lineJoin='round'; c.stroke();
+  var body=GEN_BODY[Math.floor(rng()*GEN_BODY.length)];
+  var second=GEN_BODY[Math.floor(rng()*GEN_BODY.length)];
+  trace(); c.fillStyle=body; c.fill();
+  /* pattern, clipped to the body so it can never grow the silhouette */
+  var pat=rng();
+  c.save(); trace(); c.clip();
+  if(pat<0.28){                                   /* spots */
+    c.globalAlpha=0.65; c.fillStyle=second;
+    for(var sp=0;sp<5+Math.floor(rng()*4);sp++){
+      c.beginPath(); c.arc(cx0+(rng()-0.5)*rx*1.5, cy0+(rng()-0.5)*ry*1.5, 16+rng()*26, 0, 7); c.fill();
+    }
+  } else if(pat<0.5){                             /* stripes */
+    c.globalAlpha=0.5; c.strokeStyle=second; c.lineWidth=20+rng()*22; c.lineCap='round';
+    var tilt=(rng()-0.5)*0.8;
+    for(var st=-3;st<=3;st++){
+      c.beginPath();
+      c.moveTo(cx0+st*rx*0.36-ry*Math.sin(tilt), cy0-ry*1.2);
+      c.lineTo(cx0+st*rx*0.36+ry*Math.sin(tilt), cy0+ry*1.2);
+      c.stroke();
+    }
+  } else if(pat<0.66){                            /* a soft belly */
+    c.globalAlpha=0.55; c.fillStyle=second;
+    c.beginPath(); c.ellipse(cx0,cy0+ry*0.32,rx*0.6,ry*0.52,0,0,7); c.fill();
+  }
+  c.globalAlpha=1; c.restore();
+  c.lineWidth=14; c.strokeStyle='#3d2f55'; c.lineJoin='round'; trace(); c.stroke();
+
   var feats=[], limbs=[];
-  var nl=2+Math.floor(rng()*3);
-  for(var i=0;i<nl;i++){
+  c.strokeStyle='#3d2f55'; c.lineCap='round';
+  /* legs */
+  var nl=2+Math.floor(rng()*3), i;
+  for(i=0;i<nl;i++){
     var lx=cx0-rx*0.6+(i+0.5)*(rx*1.2/nl);
     var ly=cy0+ry*0.78;
-    var ex=lx+(rng()-0.5)*50, ey=ly+120+rng()*90;
-    c.lineWidth=26; c.lineCap='round';
+    var ex=lx+(rng()-0.5)*60, ey=ly+110+rng()*110;
+    c.lineWidth=26;
     c.beginPath(); c.moveTo(lx,ly); c.lineTo(ex,ey); c.stroke();
     limbs.push({ax:lx/PAPER,ay:ly/PAPER,tx:ex/PAPER,ty:ey/PAPER,type:'leg'});
   }
+  /* tail */
   if(rng()<0.7){
-    var tx0=cx0-rx*0.92, ty0=cy0-ry*0.15, tx1=tx0-110-rng()*80, ty1=ty0-90-rng()*70;
+    var tx0=cx0-rx*0.92, ty0=cy0-ry*0.15, tx1=tx0-110-rng()*90, ty1=ty0-90-rng()*80;
     c.lineWidth=24;
     c.beginPath(); c.moveTo(tx0,ty0); c.quadraticCurveTo(tx0-80,ty0-20,tx1,ty1); c.stroke();
     limbs.push({ax:tx0/PAPER,ay:ty0/PAPER,tx:tx1/PAPER,ty:ty1/PAPER,type:'tail'});
   }
-  if(rng()<0.5){
-    var ex0=cx0+(rng()<0.5?-1:1)*rx*0.5, ey0=cy0-ry*0.85;
-    var ex1=ex0+(rng()-0.5)*60, ey1=ey0-90-rng()*60;
-    c.lineWidth=22;
-    c.beginPath(); c.moveTo(ex0,ey0); c.lineTo(ex1,ey1); c.stroke();
-    limbs.push({ax:ex0/PAPER,ay:ey0/PAPER,tx:ex1/PAPER,ty:ey1/PAPER,type:'ear'});
+  /* ears, one or a matching pair */
+  if(rng()<0.62){
+    var pair=rng()<0.55;
+    var sides=pair?[-1,1]:[rng()<0.5?-1:1];
+    var earLift=90+rng()*80;
+    sides.forEach(function(sgn){
+      var ex0=cx0+sgn*rx*0.45, ey0=cy0-ry*0.82;
+      var ex1=ex0+sgn*(20+rng()*40), ey1=ey0-earLift;
+      c.lineWidth=22;
+      c.beginPath(); c.moveTo(ex0,ey0); c.lineTo(ex1,ey1); c.stroke();
+      limbs.push({ax:ex0/PAPER,ay:ey0/PAPER,tx:ex1/PAPER,ty:ey1/PAPER,type:'ear'});
+    });
   }
-  var es=26+rng()*14;
-  [[-0.35,0],[0.35,0]].forEach(function(off){
-    var ex2=cx0+off[0]*rx*0.75, ey2=cy0-ry*0.32;
+  /* wings or arms */
+  if(rng()<0.4&&limbs.length<6){
+    var wsg=rng()<0.5?-1:1;
+    var wx0=cx0+wsg*rx*0.85, wy0=cy0-ry*0.1;
+    var wx1=wx0+wsg*(120+rng()*90), wy1=wy0-(40+rng()*90);
+    c.lineWidth=28;
+    c.beginPath(); c.moveTo(wx0,wy0); c.lineTo(wx1,wy1); c.stroke();
+    limbs.push({ax:wx0/PAPER,ay:wy0/PAPER,tx:wx1/PAPER,ty:wy1/PAPER,type:'wing'});
+  }
+  /* a hat of horns, spikes or antennae, drawn with the sticker book */
+  var crown=rng();
+  if(crown<0.16){
+    c.save(); c.translate(cx0,cy0-ry*0.95); STICKERS.uniHorn.draw(c,40+rng()*22,'#f7cf46',1); c.restore();
+  } else if(crown<0.3){
+    c.save(); c.translate(cx0,cy0-ry*0.92); STICKERS.curvedHorns.draw(c,46+rng()*20,second,1); c.restore();
+  } else if(crown<0.42){
+    c.save(); c.translate(cx0,cy0-ry*0.98); STICKERS.spikes.draw(c,40+rng()*18,second,1); c.restore();
+  } else if(crown<0.52){
+    c.save(); c.translate(cx0,cy0-ry*0.9); STICKERS.antenna.draw(c,44+rng()*16,'#f7cf46',rng()<0.5?-1:1); c.restore();
+  }
+  /* the face, marked as it is drawn so it comes alive */
+  var es=26+rng()*16, eyeStyle=GEN_EYES[Math.floor(rng()*GEN_EYES.length)];
+  var eyeCol=GEN_BODY[Math.floor(rng()*GEN_BODY.length)];
+  var spread=0.3+rng()*0.22;
+  [[-spread,0],[spread,0]].forEach(function(off){
+    var ex2=cx0+off[0]*rx*1.05, ey2=cy0-ry*0.32;
     c.save(); c.translate(ex2,ey2);
-    STICKERS.eyeGoogly.draw(c,es,'#3d2f55',1);
+    STICKERS[eyeStyle].draw(c,es,eyeCol,1);
     c.restore();
-    feats.push({t:'eye',x:ex2/PAPER,y:ey2/PAPER,s:es/PAPER,c:'#3d2f55',style:'eyeGoogly'});
+    feats.push({t:'eye',x:ex2/PAPER,y:ey2/PAPER,s:es/PAPER,c:eyeCol,style:eyeStyle});
   });
-  c.save(); c.translate(cx0,cy0+ry*0.05);
-  STICKERS.smile.draw(c,es*1.1,'#3d2f55',1); c.restore();
-  feats.push({t:'mouth',x:cx0/PAPER,y:(cy0+ry*0.05)/PAPER,s:es*1.1/PAPER,c:'#3d2f55',style:'smile'});
-  if(rng()<0.6){
-    c.globalAlpha=0.5; c.fillStyle='#3d2f55';
-    for(var sp=0;sp<4;sp++){
-      c.beginPath(); c.arc(cx0+(rng()-0.5)*rx*1.1, cy0+(rng()-0.2)*ry*0.7, 13+rng()*13, 0, 7); c.fill();
-    }
-    c.globalAlpha=1;
-  }
+  var mouthStyle=rng()<0.78?'smile':'lips';
+  var my2=cy0+ry*0.12;
+  c.save(); c.translate(cx0,my2);
+  STICKERS[mouthStyle].draw(c,es*1.1,mouthStyle==='lips'?'#e64a3c':'#3d2f55',1); c.restore();
+  feats.push({t:'mouth',x:cx0/PAPER,y:my2/PAPER,s:es*1.1/PAPER,
+              c:mouthStyle==='lips'?'#e64a3c':'#3d2f55',style:mouthStyle});
   return {cv:cv, feats:feats, limbs:limbs};
 }
 function spawnVisitor(){

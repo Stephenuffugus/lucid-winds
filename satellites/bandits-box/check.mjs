@@ -201,6 +201,76 @@ for (const sel of CONTROLS) {
 if (/window\.storage/.test(jsCode)) note(fail, 'window.storage is back: settings will silently never persist');
 if (!/localStorage\.setItem\('bandit-set'/.test(jsCode)) note(fail, 'settings are not written to localStorage');
 
+/* ---------- 12. it boots ----------
+   The main block is one IIFE-shaped run of top level code: a single typo in an
+   element id gives null.addEventListener, which kills EVERY function below it
+   and the app is a dead screen. Nothing static catches that, so run the real
+   source against a DOM that knows exactly which ids and classes this HTML has
+   and returns null for anything else, exactly as a browser would.
+
+   AudioContext is deliberately absent, so this also walks house rule 1: the
+   screen must come up with no audio at all. */
+{
+  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+  const classes = new Set([...html.matchAll(/\sclass="([^"]+)"/g)].flatMap(m => m[1].split(/\s+/)));
+  const seen = new Set();
+  const node = () => {
+    const o = {
+      style: new Proxy({}, { get: () => '', set: () => true }),
+      classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+      children: [], firstChild: null, firstElementChild: null,
+      value: '', textContent: '', innerHTML: '', disabled: false, scrollLeft: 0,
+      clientWidth: 300, clientHeight: 300, scrollWidth: 300,
+      addEventListener() {}, removeEventListener() {}, setAttribute() {},
+      getAttribute: () => '0', removeAttribute() {}, appendChild() {}, insertBefore() {},
+      remove() {}, closest: () => null, setPointerCapture() {}, focus() {},
+      scrollIntoView() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 300, height: 400 }),
+      querySelector: sel => q(sel), querySelectorAll: () => [],
+      getContext: () => null, click() {},
+    };
+    return o;
+  };
+  const q = sel => {
+    if (!sel) return null;
+    seen.add(sel);
+    const id = sel.match(/^#([\w-]+)$/);
+    if (id) return ids.has(id[1]) ? node() : null;
+    const cls = sel.match(/^\.([\w-]+)$/);
+    if (cls) return classes.has(cls[1]) ? node() : null;
+    return node();                       // compound selectors: assume present
+  };
+  const sandbox = {
+    console: { warn() {}, log() {}, error() {} },
+    document: {
+      body: node(), head: node(), documentElement: node(), hidden: false,
+      querySelector: q, querySelectorAll: () => [],
+      getElementById: id => (ids.has(id) ? node() : null),
+      createElement: node, createElementNS: node,
+      addEventListener() {}, createDocumentFragment: node, referrer: '',
+    },
+    navigator: { vibrate: () => true, serviceWorker: { register() {} } },
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    performance: { now: () => 0 },
+    requestAnimationFrame: () => 0, cancelAnimationFrame() {},
+    setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
+    innerWidth: 375, innerHeight: 667, visualViewport: { height: 667 },
+    location: { protocol: 'https:', href: '', replace() {} },
+    history: { length: 1, back() {} }, parent: null,
+    btoa: s => Buffer.from(s, 'binary').toString('base64'),
+    Blob: function () {}, URL: { createObjectURL: () => 'blob:x' },
+    addEventListener() {}, Promise, Math, JSON, Object, Array, String, Number, Date,
+    isNaN, parseInt, parseFloat,
+  };
+  sandbox.window = sandbox;
+  sandbox.self = sandbox;
+  try {
+    vm.createContext(sandbox);
+    for (const src of blocks) new vm.Script(src).runInContext(sandbox, { timeout: 5000 });
+  } catch (e) {
+    note(fail, `the app throws while booting with no audio: ${e.message}`);
+  }
+}
+
 /* ---------- report ---------- */
 const toys = toyIds.length;
 if (fail.length) {

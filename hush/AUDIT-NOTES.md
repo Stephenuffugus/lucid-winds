@@ -207,10 +207,38 @@ worker prefix safety, which are exactly the classes the brief named.
 **Fix:** `hush/tests/hush_tests.mjs`, a self contained headless suite with no
 dependencies, run with `node hush/tests/hush_tests.mjs`. It extracts the real
 functions and tables out of the HTML and runs them, rather than restating them.
-Every assertion class was watched fail on purpose before being trusted; the
-mutation list is in the header of that file and can be re-run with
-`node hush/tests/hush_tests.mjs --selftest`, which breaks each invariant in a
-copy of the source and fails if the suite stays green.
+
+**119 assertions, all green. 22 mutations, all caught.**
+
+Every assertion class was watched fail on purpose before being trusted.
+`node hush/tests/hush_tests.mjs --selftest` re-runs that: it breaks each
+invariant in a copy of the source, runs the whole suite against each break, and
+fails if any break leaves the suite green. Three mutations survived the first
+run and every one of them was a real weakness rather than an acceptable pass:
+
+- the belt and braces `S.vol = before.vol` restore in `readSharedLink` is a
+  second line of defence behind the whitelist, so removing it alone changed
+  nothing observable. The mutation now removes the whitelist entry and the
+  restore together, which is the case the second line exists for.
+- the preset volume assertion grepped for `heldVol`, which still matched after
+  the assignment was deleted because the declaration remained. Tightened to the
+  assignment itself.
+- the evidence cap mutation promoted one sound to tier 1, taking the count from
+  two to three, which is legal. It now promotes three, taking it to four.
+
+Two thirds of the value of the suite came from the mutation run, not from
+writing the assertions.
+
+The worker test is worth calling out: it does not grep for the prefix filter,
+it runs `sw.js` in a sandboxed VM with a fake `caches` holding a fleet's worth
+of keys (`padlab-shell-v10`, `sws-portal-v4`, `bandits-box-v2`,
+`sw_sb_index.html`, `hush-shell-v0`, `hush-shell-v1`, `workbox-precache`),
+fires the real `activate` handler, and asserts that exactly one key was deleted
+and it was `hush-shell-v0`. The original fleet killing worker fails that in
+three places.
+
+`scripts/hush_audit.js` (155 assertions) is unaffected and still green. Between
+them that is 274 assertions on this app.
 
 ### S12 — dashes in player facing copy  (FIXED in prose)
 
@@ -238,6 +266,29 @@ in `−3 dB / octave` are mathematics, not punctuation, and stay.
   simple front door. Asserted at 15 or fewer.
 - **The evidence tier cap.** Still at most three sounds may claim good
   evidence. Asserted.
+
+---
+
+## How to check this work
+
+```
+node hush/tests/hush_tests.mjs              # 119 assertions
+node hush/tests/hush_tests.mjs --selftest   # 22 mutations, every one must go red
+node scripts/hush_audit.js hush/index.html  # the existing 155
+```
+
+Nothing here needs a browser, a server or a network. Syntax is checked by
+extracting the inline script block and running it through `vm.createScript`,
+never by counting braces: this file's prose and its inline SVG data URIs are
+full of brackets, and the repo's own regex plus vm block checker is on record
+for reporting a syntax error in a perfectly good file because a `</script>`
+appeared inside a string.
+
+**Nothing was deployed.** No git was run. The changes sit in the working tree
+of `add-sproing-jumper`, and work on that branch is not live until it is pushed
+to `main`.
+
+---
 
 ## Still open, and what it would take
 

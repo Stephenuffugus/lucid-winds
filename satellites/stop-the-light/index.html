@@ -306,17 +306,26 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 
 <script>
 /* ===== Sky Wolf Studios embed protocol ===== */
+/* Canonical block, matched to satellites/flock-the-world (the reference
+   implementation). It used to gate the whole handshake on ?embed=1 and post
+   ready ONCE, at parse time. Both were wrong: the portal frames a card by url
+   shape, not by query flag, and it arms a black screen recovery timer per
+   load, so a silent load gets auto closed with the player thrown back to the
+   arcade. Ready now posts at parse AND on load, whenever we are framed. */
 (function(){
-  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
-  window.SWS_EMBED=SWS_EMBED;
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED = framed || /[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-    /* fleet pattern (hues): back into the portal when it framed us as a page,
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    /* fleet pattern (hues): back into the portal when it linked us as a page,
        replace otherwise so the game never stacks a history entry */
-    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}
-    else{location.replace('https://lucidwinds.com/portal/');}
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
 })();
 </script>
 

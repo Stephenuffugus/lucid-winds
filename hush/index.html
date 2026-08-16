@@ -727,6 +727,13 @@ const S = {
 };
 const DEFAULTS = Object.assign({}, S);
 
+/* Declared up here rather than beside pickTonight, where its explanation
+   lives, because applyPreset and playAnything both write to it and both sit
+   hundreds of lines earlier in the file. A let is in the temporal dead zone
+   until its declaration is reached, and a ReferenceError anywhere in this
+   script block takes the whole app with it. */
+let sharedPick = null;
+
 /* Everything arriving from storage is guilty until proven innocent.
    The share link has a careful whitelist. The save path, which runs on every
    single launch, had nothing at all: a saved vol of 999 squares to 99.8, times
@@ -3047,8 +3054,8 @@ function nameOfSound(id) {
    night's, and the one big button called applyPreset and wiped every value the
    link had just delivered. The recipient heard the wrong sound and had no way
    to know. The override lives in renderTonight rather than in here, so that
-   pickTonight stays a pure answer to "what should tonight be". */
-let sharedPick = null;
+   pickTonight stays a pure answer to "what should tonight be". sharedPick
+   itself is declared at the top of the file, next to DEFAULTS. */
 function pickTonight() {
   // 1. what you used last, if it was recent enough to still be a habit
   if (S.lastUsed && S.lastUsed.id && (Date.now() - S.lastUsed.at) < 21*86400000) {

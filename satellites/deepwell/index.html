@@ -169,6 +169,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #btnCargo .cv{margin-left:auto;color:var(--amber);font-weight:800;font-size:16px}
 #btnCargo .cl{font-size:11px;letter-spacing:.18em;color:var(--muted)}
 
+/* ---------- logbook ---------- */
+.logsub{font-size:11px;line-height:1.5;color:var(--muted);padding:0 2px 8px;margin-top:-4px}
+.lgmark{display:inline-block;font-size:9px;letter-spacing:.14em;color:var(--sage);
+  border:1px solid rgba(122,179,86,.4);border-radius:4px;padding:1px 5px;margin-right:6px}
+.lgmark.gold{color:var(--amber);border-color:rgba(240,167,66,.45)}
+
+/* ---------- install nudge: one quiet line, never a banner ---------- */
+#installRow{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+#installRow.hide{display:none !important}
+#btnInstall{flex:1;min-height:48px;text-align:left;padding:0 12px;font-size:12px;letter-spacing:.06em;
+  color:var(--amber);background:rgba(240,167,66,.07);border:1px solid rgba(240,167,66,.28);border-radius:12px}
+#btnInstallNo{min-width:48px;min-height:48px;border-radius:12px;color:var(--muted);font-size:16px}
+
 /* ---------- overlays ---------- */
 .ovl{position:absolute;inset:0;z-index:20;background:rgba(6,7,11,.93);
   display:flex;flex-direction:column;padding:calc(var(--safeT) + 14px) 14px calc(14px + var(--safe));
@@ -330,6 +343,10 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
       <div style="height:12px"></div>
     </div>
     <div style="padding:0 14px calc(14px + var(--safe))">
+      <div id="installRow" class="hide">
+        <button id="btnInstall">Keep DEEPWELL on your home screen</button>
+        <button id="btnInstallNo" aria-label="Not now">&#10005;</button>
+      </div>
       <button class="btn gold" id="btnDescendStart" style="width:100%">GO DOWN</button>
       <div class="btnrow">
         <button class="btn" id="btnLogbook">LOGBOOK</button>
@@ -2410,8 +2427,10 @@ function revealOf(st, idx) {
   var n = st.col.nodes[idx];
   if (!n) return 'hidden';
   if (st.flags.revealUntil >= n.depth) return 'full';
-  if (st.lamp <= 0) return 'hidden';
   var ahead = idx - st.at;
+  /* the dowser marks ore in the wall for the rest of the run, lamp or no lamp */
+  if (st.flags.veinSense && nodeType(st, n) === 'vein') return 'full';
+  if (st.lamp <= 0) return 'hidden';
   if (ahead <= CONFIG.ASSAY_NODES_PER_LEVEL * (st.upg.assay || 0)) return 'full';
   if (ahead === 1) return 'type';
   return 'hidden';
@@ -2569,7 +2588,9 @@ function render() {
   if (dc) {
     var nextVis = visibleNodes(st)[0];
     var label = nextVis ? (nextVis.level === 'hidden' ? 'unknown ground' : (nextVis.level === 'full' ? nextVis.type : 'something')) : '';
-    bd.querySelector('small').textContent = Math.ceil(dc.air) + ' air, ' + Math.ceil(dc.lamp) + ' lamp, ' + dc.gap + 'm to ' + label;
+    bd.querySelector('small').textContent = dc.free
+      ? ('free fall, ' + dc.gap + 'm to ' + label + ', ' + st.flags.freeDescents + ' left')
+      : (Math.ceil(dc.air) + ' air, ' + Math.ceil(dc.lamp) + ' lamp, ' + dc.gap + 'm to ' + label);
   }
   bd.disabled = !!st.over;
   var mr = mineBlockedReason(st);
@@ -2655,7 +2676,49 @@ function openResult() {
 }
 
 /* ---- shop ---- */
+/* CRAFT section E: a quiet one line prompt AFTER the first completed run, and
+   never before. We hold the browser's own prompt until the player has finished
+   something, because asking a stranger to install a game they have not played
+   is the thing every other web game does and it is why nobody installs them.
+   Dismissed once, it never asks again. */
+var INSTALL = { evt: null, key: 'lw_deepwell_install' };
+(function () {
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    INSTALL.evt = e;
+    try { if (typeof renderInstallRow === 'function') renderInstallRow(); } catch (err) {}
+  });
+  window.addEventListener('appinstalled', function () {
+    INSTALL.evt = null;
+    try { localStorage.setItem(INSTALL.key, 'done'); } catch (e) {}
+    try { renderInstallRow(); } catch (e) {}
+  });
+})();
+function installDismissed() {
+  try { return localStorage.getItem(INSTALL.key) !== null; } catch (e) { return true; }
+}
+function renderInstallRow() {
+  var row = document.getElementById('installRow');
+  if (!row) return;
+  var earned = G.save && G.save.stats && G.save.stats.runs >= 1;
+  var show = !!INSTALL.evt && earned && !installDismissed();
+  row.classList[show ? 'remove' : 'add']('hide');
+}
+function doInstall() {
+  if (!INSTALL.evt) return;
+  var e = INSTALL.evt; INSTALL.evt = null;
+  try { localStorage.setItem(INSTALL.key, 'asked'); } catch (err) {}
+  renderInstallRow();
+  try { e.prompt(); } catch (err) {}
+}
+function dismissInstall() {
+  try { localStorage.setItem(INSTALL.key, 'no'); } catch (e) {}
+  INSTALL.evt = null;
+  renderInstallRow();
+}
+
 function renderShop() {
+  renderInstallRow();
   var s = G.save, html = '', i, k;
   $('cashBig').textContent = s.cash;
   $('bestLine').textContent = s.stats.runs ? (s.stats.runs + ' runs, deepest ' + s.best.depth + 'm, best haul ' + s.best.banked) : 'no runs yet';
@@ -2681,10 +2744,32 @@ function renderLog() {
     '<div class="grow"><div class="tiny">CARGO LOST</div><b>' + s.stats.lostCargo + '</b></div>' +
     '<div class="grow"><div class="tiny">BANKED</div><b>' + s.stats.banked + '</b></div>' +
     '<div class="grow"><div class="tiny">LEFT BELOW</div><b>' + s.stats.lostValue + '</b></div></div>';
+  /* the company logbook. A line nobody rereads is not a logbook, it is a list,
+     so every entry names the depth, the money, the thing you left behind and
+     the deals you shook on. Runs written by an older build have none of that
+     and simply print the short line they were saved with. */
+  var deepest = 0, richest = 0;
+  for (i = 0; i < s.history.length; i++) {
+    deepest = Math.max(deepest, s.history[i].depth || 0);
+    richest = Math.max(richest, s.history[i].banked || 0);
+  }
   for (i = s.history.length - 1; i >= 0; i--) {
-    var h = s.history[i];
-    html += '<div class="logline"><span class="d">' + h.date + '</span><span>' + h.note + '</span><span class="b" style="color:' +
+    var h = s.history[i], marks = [], sub = '';
+    if (h.depth === deepest && deepest > 0) marks.push('<span class="lgmark">DEEPEST OF THE TEN</span>');
+    if (h.banked === richest && richest > 0) marks.push('<span class="lgmark gold">RICHEST OF THE TEN</span>');
+    if (h.worst) sub += 'The ' + h.worst.name.toLowerCase() + ' is still down there, ' + h.worst.v + ' cash. ';
+    else if (h.lost > 0) sub += h.lost + ' in ore left below. ';
+    if (h.dropped) sub += 'Threw away ' + h.dropped + (h.dropped === 1 ? ' load' : ' loads') + ' on purpose. ';
+    if (h.deals) sub += 'Shook on ' + h.deals + (h.deals === 1 ? ' bargain' : ' bargains') + '. ';
+    if (h.deeps && h.deeps.length) {
+      var names = [], q;
+      for (q = 0; q < h.deeps.length; q++) if (DEEP_BY_KEY[h.deeps[q]]) names.push(DEEP_BY_KEY[h.deeps[q]].name);
+      if (names.length) sub += 'Stood in ' + names.join(' and ').toLowerCase() + '. ';
+    }
+    html += '<div class="logline"><span class="d">' + h.date + '</span><span>' + h.note +
+      (h.depth ? '' : '') + '</span><span class="b" style="color:' +
       (h.banked > 0 ? 'var(--amber)' : 'var(--muted)') + '">' + h.banked + '</span></div>';
+    if (sub || marks.length) html += '<div class="logsub">' + marks.join('') + sub + '</div>';
   }
   $('logList').innerHTML = html || '<div class="tiny">The book is empty. Go dig.</div>';
   $('btnReplay').style.display = s.replay ? 'flex' : 'none';
@@ -2730,6 +2815,16 @@ function handleEvent(e, beforeDepth) {
   else if (e.t === 'cache') { pluck(261.63, 0.3); pluck(329.63, 0.4); toast('A CACHE. ' + e.amount + ' CASH.'); }
   else if (e.t === 'drop') { blip(146.83); haptic(10); glint(); }
   else if (e.t === 'veinEmpty') { toast('DEAD ROCK. YOU WERE PAID FOR THIS.'); }
+  else if (e.t === 'deep') {
+    /* the deepest rock in the game finally has things in it. Each one stamps
+       its own name across the shaft the way a strata crossing does, then says
+       what it gave you, in numbers. */
+    stampBand(e.name);
+    pluck(73.42, 1.6, 'sine'); pluck(146.83, 1.2, 'sine'); haptic(25);
+    toast(e.gain);
+    G.deepLine = e.line;
+    setTimeout(function () { if (G.run && !G.run.over) toast(e.line); }, 2400);
+  }
   else if (e.t === 'ascend' && e.ok) { pluck(293.66, 0.6, 'sine'); }
 }
 function HAZARDS_BY_KEY(k) { var i; for (i = 0; i < HAZARDS.length; i++) if (HAZARDS[i].key === k) return HAZARDS[i]; return HAZARDS[0]; }
@@ -2787,7 +2882,23 @@ function finishRun() {
       sv.best.banked = o.banked;
       sv.replay = { seed: seed, upg: upg, inputs: inputs, banked: o.banked, depth: o.maxDepth };
     }
-    sv.history.push({ date: ds, note: note, banked: o.banked });
+    sv.history.push({
+      date: ds, note: note, banked: o.banked,
+      depth: o.maxDepth, reason: o.reason,
+      lost: o.lostValue,
+      /* the best thing you left down there, by name. This is the line people
+         reread: not what you banked, what you did not. */
+      worst: (function () {
+        var i, best = null;
+        for (i = 0; i < o.lostCargo.length; i++) if (!best || o.lostCargo[i].v > best.v) best = o.lostCargo[i];
+        return best ? { name: best.name, v: best.v } : null;
+      })(),
+      /* what you threw away on purpose, which is a different kind of story */
+      dropped: (function () { var i, n = 0; for (i = 0; i < inputs.length; i++) if (inputs[i].indexOf('drop:') === 0) n++; return n; })(),
+      /* which bargains you took, and how deep you stood */
+      deals: (function () { var i, n = 0; for (i = 0; i < inputs.length; i++) if (inputs[i] === 'shrine:accept') n++; return n; })(),
+      deeps: st.deeps ? st.deeps.slice() : []
+    });
     while (sv.history.length > 10) sv.history.shift();
     if (G.daily) {
       var prev = sv.daily.last;
@@ -2909,6 +3020,8 @@ function wire() {
   byId('resAgain', toSurface);
   byId('resShare', doShare);
   byId('btnShare', doShare);
+  byId('btnInstall', doInstall);
+  byId('btnInstallNo', dismissInstall);
   byId('btnDescendStart', function () { startRun(G.seedOverride !== null ? G.seedOverride : (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0, G.save.upg, false); });
   byId('btnLogbook', function () { renderLog(); $('logOvl').classList.remove('hide'); });
   byId('btnLog', function () { renderLog(); $('logOvl').classList.remove('hide'); });

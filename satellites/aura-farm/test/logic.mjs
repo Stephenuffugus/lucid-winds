@@ -298,7 +298,8 @@ check('counters ADD and bests MAX across tabs', () => {
   const ls = makeLocalStorage();
   const tabA = boot({ localStorage: ls });
   const tabB = boot({ localStorage: ls });
-  tabA.T._run('run = newRun(); run.mara = { stunT:0, deep:0, target:null, x:0, y:0 }; run.focus = 999; mode = "play"; shooMara(); shooMara();');
+  /* stunT must be cleared between flares or the second one is correctly refused */
+  tabA.T._run('run = newRun(); run.mara = { stunT:0, deep:0, target:null, x:0, y:0 }; run.focus = 999; mode = "play"; shooMara(); run.mara.stunT = 0; shooMara();');
   tabB.T._run('run = newRun(); run.mara = { stunT:0, deep:0, target:null, x:0, y:0 }; run.focus = 999; mode = "play"; shooMara();');
   const s = JSON.parse(ls.getItem('auraFarmMeta'));
   eq(s.maraShoos, 3, 'shoo counter did not ADD across tabs');

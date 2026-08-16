@@ -269,7 +269,71 @@ check("the marble canvas resizes with the window", (html) => {
   return errs;
 }, (html) => html.replace("  const mv=document.getElementById(\"view-marble\");\n  if(mv && mv.classList.contains(\"on\")) mbResize(); });", " });"));
 
-/* ---------- 13. the plate keeps time, at every tempo ---------- */
+/* ---------- 13. every header control says what it is ---------- */
+/* Found by looking, 2026-08-16: five glyphs in a row with no words. A child can
+   only learn an unlabelled icon by pressing it and seeing what happens. */
+check("every header control carries a visible label and an aria-label", (html) => {
+  const head = html.slice(html.indexOf("<header>"), html.indexOf("</header>"));
+  const errs = [];
+  for (const m of head.matchAll(/<button[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/button>/g)) {
+    const [, id, inner] = m;
+    if (!/aria-label="[^"]{3,}"/.test(m[0])) errs.push(`the ${id} button has no aria-label`);
+    if (!/<span class="hlab">[^<]{2,}<\/span>/.test(inner)) errs.push(`the ${id} button shows no visible label`);
+  }
+  const pill = head.match(/<div class="midi-pill"[\s\S]*?<\/div>/);
+  if (!pill) errs.push("the MIDI pill is gone");
+  else {
+    if (!/aria-label="[^"]{3,}"/.test(pill[0])) errs.push("the MIDI pill has no aria-label");
+    if (!/<span class="hlab">[^<]{2,}<\/span>/.test(pill[0])) errs.push("the MIDI pill shows no visible label when the device name is hidden");
+    // a div with role=button but no key handler promises focus it cannot honour,
+    // and a focused div eats the Space bar the document uses for play and stop
+    if (/role="button"/.test(pill[0]) && !/keydown/.test(stripComments(scriptOf(html))))
+      errs.push("the MIDI pill claims role=button with no keyboard handler behind it");
+  }
+  const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>")).replace(/\s*\n\s*/g, "");
+  if (!/\.hlab\{[^}]*font-size:8px/.test(css)) errs.push(".hlab has lost its type size");
+  if (!/\.hbtn\{[^}]*width:48px/.test(css)) errs.push(".hbtn is no longer 48px wide");
+  return errs;
+}, (html) => html.replace('<span class="hlab">FX</span>', ""));
+
+/* ---------- 14. the transport prints its longest line whole ---------- */
+/* Found by looking, 2026-08-16: the subtitle read "pick a gro..." at 390px. The
+   fix is only real if it holds for the LONGEST string the slot can ever show,
+   not the one that happens to be there at boot. */
+check("the beat name slot fits its longest string at phone width", (html) => {
+  const js = stripComments(scriptOf(html));
+  const errs = [];
+  // every string that can land in nbSub, from the markup and from every writer
+  const strings = [];
+  const dflt = html.match(/<div class="nb-sub" id="nbSub">([^<]*)<\/div>/);
+  if (dflt) strings.push(dflt[1]);
+  for (const line of js.split("\n")) {
+    if (!line.includes('getElementById("nbSub").textContent')) continue;
+    for (const m of line.matchAll(/"([^"]*)"/g)) if (m[1] !== "nbSub") strings.push(m[1]);
+    // tempo and bpm interpolate as up to three digits
+    if (/tempo\+|\.bpm\+/.test(line)) strings[strings.length - 1] = "142" + strings[strings.length - 1];
+    if (/padStart/.test(line)) strings.push("* REC 10:05");
+  }
+  if (strings.length < 4) errs.push(`only found ${strings.length} nbSub strings; the scan has drifted from the code`);
+
+  /* Space Mono is a monospace at 0.6em advance, plus the .5px tracking the rule
+     asks for. The slot is what the transport row has left at 390px after the
+     furniture, using the narrow-width sizes from the media query. */
+  const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>")).replace(/\s*\n\s*/g, "");
+  const narrow = css.slice(css.indexOf("@media (max-width:430px){ .meter"));
+  const meterW = +(narrow.match(/\.meter\{width:(\d+)px/) || [, 46])[1];
+  const tempoIn = +(narrow.match(/\.tempo-box input\{width:(\d+)px/) || [, 74])[1];
+  const tempoPad = +(narrow.match(/\.tempo-box\{[^}]*padding:5px (\d+)px/) || [, 10])[1];
+  const slot = 390 - 26 /* transport padding */ - 36 /* four gaps */ - 104 /* play + rec */
+             - meterW - (tempoIn + tempoPad * 2 + 2 /* borders */);
+  const longest = strings.reduce((a, b) => (b.length > a.length ? b : a), "");
+  const px = longest.length * (10 * 0.6 + 0.5);
+  if (px > slot) errs.push(`"${longest}" needs about ${Math.round(px)}px and the slot is ${slot}px at 390 wide, so it truncates`);
+  return errs;
+}, (html) => html.replace('.textContent=tempo+" BPM · jam on";',
+  '.textContent=tempo+" BPM · tap keys or pads to jam";'));
+
+/* ---------- 15. the plate keeps time, at every tempo ---------- */
 /* The checks above read the source. This one RUNS it: the real schedulerTick,
    the real marbleTick and the real mbPeriod16 are lifted out of index.html and
    driven in a vm against a fake AudioContext clock, so the hit times are the

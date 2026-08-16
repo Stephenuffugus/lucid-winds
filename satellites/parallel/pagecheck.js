@@ -253,9 +253,14 @@ var ribbonShown = D.getElementById('ribbon').style._m['display'] !== 'none' &&
                   D.getElementById('ribbon').style.display !== 'none';
 ok('the phone column is put to work, ribbon ' + (ribbonShown ? 'on' : 'off') + ', pad ' + padPx + 'px',
    W < 700 ? (ribbonShown || padPx >= 100) : true);
-var leftover = (H - 20) - 48 - 40 - padPx - 30 - bb.h - (ribbonShown ? V.LAYOUT.RIBBON_H : 0);
+var cardEl = D.getElementById('lvcard');
+var cardShown = (cardEl.style._m['display'] || cardEl.style.display) !== 'none';
+var leftover = (H - 20) - 48 - 40 - padPx - 30 - bb.h -
+               (ribbonShown ? V.LAYOUT.RIBBON_H : 0) - (cardShown ? V.LAYOUT.CARD_H : 0);
 ok('leftover slack under the board is small, ' + Math.round(leftover) + 'px', leftover <= 90,
    'leftover ' + leftover);
+ok('the level card is filled in when it is shown', !cardShown || (D.getElementById('lvcTitle').textContent || '').length > 0,
+   D.getElementById('lvcTitle').textContent + ' / ' + D.getElementById('lvcMech').textContent);
 
 /* play level 1 with its own embedded solution */
 var lv1 = P.decodeLevel(P.LEVELS[0]);
@@ -278,7 +283,7 @@ ok('the drift readout is a number', /^\d+$/.test(String(D.getElementById('hDrift
    D.getElementById('hDrift').textContent);
 
 /* every wired control fires without throwing */
-var controls = ['kLeft','kRight','kUp','kWait','btnRestart','btnLevels','selClose','btnOpts',
+var controls = ['kLeft','kRight','kUp','kWait','btnRestart','btnLevels','selClose','btnOpts','lvcWatch',
                 'optClose','selDaily','selStats','statsClose','winRetry','winNext',
                 'oSound','oHap','oMotion','oGhost'];
 var threw = [];
@@ -346,6 +351,9 @@ for (i = 0; i < results.length; i++){
   else { failed++; console.log('FAIL  ' + results[i].name + '   ' + results[i].detail); }
 }
 console.log('');
+console.log('layout   board ' + Math.round(bb.w) + 'x' + Math.round(bb.h) + '   pad ' + padPx +
+            '   ribbon ' + (ribbonShown ? 'on' : 'off') + '   card ' + (cardShown ? 'on' : 'off') +
+            '   leftover ' + Math.round(leftover) + 'px');
 console.log('PAGE ' + W + 'x' + H + '   PASSED ' + passed + ' / FAILED ' + failed +
             '   (' + results.length + ' checks)');
 process.exitCode = failed ? 1 : 0;

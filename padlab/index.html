@@ -55,10 +55,16 @@
   header{display:flex;align-items:center;gap:5px;padding:11px 10px 7px;flex:none;}
   header .brand{font-weight:700;letter-spacing:3px;font-size:19px;}
   header .brand b{color:var(--amber);}
-  .hbtn{width:48px;height:48px;border-radius:12px;background:var(--raise);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:17px;transition:.12s;flex:none;}
+  /* Every header control carries its name. Five unlabelled glyphs in a row is
+     five things you can only learn by pressing them, which is a fair deal for
+     an adult and no deal at all for the child this app is for. The label lives
+     inside the button, so the touch target is still 48 by 48 at its smallest. */
+  .hbtn{width:48px;height:52px;border-radius:12px;background:var(--raise);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:17px;transition:.12s;flex:none;}
   .hbtn:active{transform:scale(.94);}
   .hbtn.dice{background:linear-gradient(180deg,#2a2f38,#1a1d23);}
-  .midi-pill{display:flex;align-items:center;gap:7px;padding:0 11px;height:48px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--dim);min-width:0;flex:0 1 auto;}
+  .hlab{font-family:var(--mono);font-size:8px;line-height:1;letter-spacing:.4px;color:var(--dim2);text-transform:uppercase;pointer-events:none;}
+  .midi-pill{display:flex;align-items:center;gap:7px;padding:0 11px;height:52px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--dim);min-width:0;flex:0 1 auto;}
+  .midi-pill .hlab{display:none;}
   #midiName{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .led{width:9px;height:9px;border-radius:50%;background:var(--dim2);transition:.3s;flex:none;}
   .led.ok{background:var(--teal);box-shadow:0 0 9px var(--teal);}
@@ -160,13 +166,18 @@
   .chip .ic{font-size:14px;}
   /* drawn icons — emoji tofu off-device, studio rule */
   .svgic{width:19px;height:19px;display:block;flex:none;}
-  .hbtn .svgic{width:22px;height:22px;}
+  .hbtn .svgic{width:20px;height:20px;}
   .rec-big .svgic{width:20px;height:20px;}
   .tab .svgic{width:18px;height:18px;}
   .ic{display:inline-flex;align-items:center;}
   .mbig .svgic{display:inline-block;vertical-align:-4px;margin-right:7px;}
   .rec-btn .svgic{width:21px;height:21px;display:inline-block;vertical-align:-5px;margin-right:8px;}
-  @media (max-width:390px){ #midiName{display:none;} .midi-pill{padding:0;width:48px;justify-content:center;flex:none;} }
+  @media (max-width:430px){ #midiName{display:none;} .midi-pill .hlab{display:block;}
+    .midi-pill{padding:0;width:48px;flex:none;flex-direction:column;gap:3px;justify-content:center;align-items:center;} }
+  /* At phone width the transport is 244px of fixed furniture and the beat name
+     gets the crumbs, so it truncated. Give the meter and the tempo slider less
+     and the name enough to print its longest line whole. */
+  @media (max-width:430px){ .meter{width:34px;} .tempo-box{min-width:58px;padding:5px 7px;} .tempo-box input{width:56px;} }
 
   .setup-bar{display:none;align-items:center;gap:8px;margin:0 13px 8px;padding:8px 10px;border:1px solid rgba(245,166,35,.5);border-radius:11px;background:rgba(245,166,35,.08);font-family:var(--mono);font-size:11px;color:var(--amber-hot);}
   .setup-bar.on{display:flex;}
@@ -357,11 +368,11 @@
   <header>
     <div class="brand">PAD<b>LAB</b></div>
     <div class="grow"></div>
-    <button class="hbtn dice" id="diceBtn" title="Surprise me"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg></button>
-    <div class="midi-pill" id="midiPill" title="MIDI status. Tap for settings"><span class="led" id="midiLed"></span><span id="midiName">none</span></div>
-    <button class="hbtn" id="fxBtn" title="Effects"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="14" r="2.4" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="16" r="2.4" fill="currentColor" stroke="none"/></svg></button>
-    <button class="hbtn" id="installBtn" title="Add to Home Screen"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
-    <button class="hbtn" id="settingsBtn" title="Settings"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button>
+    <button class="hbtn dice" id="diceBtn" title="Surprise me" aria-label="Surprise me with a new idea"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg><span class="hlab">Dice</span></button>
+    <div class="midi-pill" id="midiPill" title="MIDI status. Tap for your MPK map" aria-label="MIDI status. Tap for your MPK map"><span class="led" id="midiLed"></span><span id="midiName">none</span><span class="hlab">MIDI</span></div>
+    <button class="hbtn" id="fxBtn" title="Effects" aria-label="Effects"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="14" r="2.4" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="16" r="2.4" fill="currentColor" stroke="none"/></svg><span class="hlab">FX</span></button>
+    <button class="hbtn" id="installBtn" title="Add to Home Screen" aria-label="Add PadLab to your home screen"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span class="hlab">Add</span></button>
+    <button class="hbtn" id="settingsBtn" title="Settings" aria-label="Settings"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg><span class="hlab">Setup</span></button>
   </header>
 
   <div class="transport">
@@ -369,7 +380,7 @@
     <button class="rec-big" id="recBtn" title="Record your jam"><svg class="svgic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg></button>
     <div class="now-beat">
       <div class="nb-name" id="nbName">No beat</div>
-      <div class="nb-sub" id="nbSub">pick a groove to jam over</div>
+      <div class="nb-sub" id="nbSub">pick a beat</div>
     </div>
     <canvas class="meter" id="meter" width="46" height="26"></canvas>
     <div class="tempo-box">
@@ -1149,7 +1160,7 @@ const GROOVES=[
 ];
 function loadGroove(i){ tourAdvance("groove"); const g=GROOVES[i]; const p=pat(); for(let r=0;r<8;r++) for(let s=0;s<16;s++) p.tracks[r][s]=g.grid[r][s];
   currentGroove=i; tempo=g.bpm; document.getElementById("tempo").value=tempo; document.getElementById("tempoVal").textContent=tempo; updateDelayTime();
-  document.getElementById("nbName").textContent=g.name; document.getElementById("nbSub").textContent=tempo+" BPM · tap keys or pads to jam";
+  document.getElementById("nbName").textContent=g.name; document.getElementById("nbSub").textContent=tempo+" BPM · jam on";
   document.querySelectorAll(".groove").forEach((el,idx)=>el.classList.toggle("playing",idx===i));
   renderSeq(); saveSoon(); if(!isPlaying) startBeat();
 }
@@ -1417,7 +1428,7 @@ function startRecord(){ ensureAudio(); jamChunks=[]; const mime=MediaRecorder.is
   jamRec.start(); recording=true; recStart=Date.now(); const b=document.getElementById("recBtn"); b.classList.add("on");
   if(!isPlaying && currentGroove<0){} recTimer=setInterval(()=>{ const s=Math.floor((Date.now()-recStart)/1000); document.getElementById("nbSub").textContent="● REC "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); },500); }
 function stopRecord(){ if(jamRec && jamRec.state!=="inactive") jamRec.stop(); recording=false; clearInterval(recTimer); const b=document.getElementById("recBtn"); b.classList.remove("on");
-  document.getElementById("nbSub").textContent=currentGroove>=0?GROOVES[currentGroove].bpm+" BPM · jam on":"pick a groove to jam over"; }
+  document.getElementById("nbSub").textContent=currentGroove>=0?GROOVES[currentGroove].bpm+" BPM · jam on":"pick a beat"; }
 function renderRecordings(){ const list=document.getElementById("recList"); const empty=document.getElementById("recEmpty"); list.innerHTML="";
   if(recordings.length===0){ empty.style.display="block"; return; } empty.style.display="none";
   recordings.forEach((r,i)=>{ const el=document.createElement("div"); el.className="rec-item";
@@ -1702,7 +1713,7 @@ function refreshAllUI(){
   document.getElementById("rollChip").classList.toggle("on",rollOn); document.getElementById("rollRate").value=rollRate;
   renderGrooves(); renderPads(); renderInstruments(); renderKeyboard(); renderSeq(); renderPacks();
   document.getElementById("songChip").classList.toggle("on",songMode); document.getElementById("songBar").style.display=songMode?"flex":"none"; lastSlotRendered=curSlot; renderSong();
-  if(currentGroove>=0){ const gc=document.querySelectorAll(".groove")[currentGroove]; if(gc) gc.classList.add("playing"); document.getElementById("nbName").textContent=GROOVES[currentGroove].name; document.getElementById("nbSub").textContent=tempo+" BPM · tap keys or pads to jam"; }
+  if(currentGroove>=0){ const gc=document.querySelectorAll(".groove")[currentGroove]; if(gc) gc.classList.add("playing"); document.getElementById("nbName").textContent=GROOVES[currentGroove].name; document.getElementById("nbSub").textContent=tempo+" BPM · jam on"; }
   applyRestoredFx();
 }
 /* ===================== MARBLE =====================

@@ -113,6 +113,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #ribbon .chip.cur{color:var(--ink);border-color:var(--accent);background:#1b1d2e}
 #ribbon .chip.lock{opacity:.4}
 
+/* ---------- level card ---------- */
+#lvcard{flex:0 0 auto;display:none;align-items:center;gap:10px;margin-top:6px;padding:6px 10px;
+  min-height:56px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+#lvcard .lvc{display:flex;flex-direction:column;gap:2px;min-width:0}
+#lvcard .lvc.right{margin-left:auto;text-align:right}
+#lvcard b{font-size:12px;letter-spacing:.09em;font-weight:800;color:var(--ink)}
+#lvcard span{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lvcWatch{min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:12px;
+  background:#1a1e2b;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--dim);
+  display:none;align-items:center;justify-content:center}
+
 /* ---------- controls ---------- */
 #pad{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding-top:6px}
 #pad button{min-height:var(--padh,clamp(62px,13vh,118px));min-width:62px;border-radius:14px;border:1px solid var(--line);
@@ -227,6 +238,18 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   </div>
 
   <div id="ribbon"></div>
+
+  <div id="lvcard">
+    <div class="lvc">
+      <b id="lvcTitle">TIER 1</b>
+      <span id="lvcMech">walls only</span>
+    </div>
+    <div class="lvc right">
+      <span>your best</span>
+      <b id="lvcBest">not yet</b>
+    </div>
+    <button id="lvcWatch">WATCH</button>
+  </div>
 
   <div id="pad">
     <button id="kLeft" aria-label="Left"><span class="lab">◀<small>A LEFT</small></span></button>
@@ -1913,7 +1936,7 @@ function reduced(){
   try { return self.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e){ return false; }
 }
 
-var LAYOUT = { PAD_MIN:62, PAD_MAX:138, RIBBON_H:62, GAPS:30, CELL_MAX:76 };
+var LAYOUT = { PAD_MIN:62, PAD_MAX:150, RIBBON_H:62, CARD_H:56, GAPS:30, CELL_MAX:76 };
 function fitBoard(){
   if (!G.lv) return;
   /* Measure the real slack rather than letting the stage swallow it, and use
@@ -1937,12 +1960,16 @@ function fitBoard(){
   var slack = budget - c * G.lv.h;
   var showRibbon = slack >= (LAYOUT.RIBBON_H + 34);
   if (showRibbon) slack -= LAYOUT.RIBBON_H;
+  var showCard = slack >= (LAYOUT.CARD_H + 34);
+  if (showCard) slack -= LAYOUT.CARD_H;
   var padH = Math.max(LAYOUT.PAD_MIN, Math.min(LAYOUT.PAD_MAX,
-                      LAYOUT.PAD_MIN + Math.floor(Math.max(0, slack) * 0.66)));
+                      LAYOUT.PAD_MIN + Math.floor(Math.max(0, slack) * 0.72)));
   try { document.documentElement.style.setProperty('--padh', padH + 'px'); } catch (e){}
   $('ribbon').style.display = showRibbon ? 'flex' : 'none';
+  $('lvcard').style.display = showCard ? 'flex' : 'none';
   G.slack = Math.max(0, slack - (padH - LAYOUT.PAD_MIN));
   G.padH = padH;
+  if (showCard) drawLvCard();
 
   G.cell = c;
   elBoard.style.width = (c * G.lv.w) + 'px';
@@ -1967,6 +1994,30 @@ function setDriftMeter(d){
   var axis = (G.st.ax + G.st.bx) / 2 + 0.5;
   elSeam2.style.left = (axis * G.cell) + 'px';
   elSeam2.style.opacity = d ? String(Math.min(0.95, 0.42 + d * 0.16)) : '0';
+}
+
+/* The level card: what this board is made of, what the solver says is possible
+   and what you have managed. It only appears when there is room for it. */
+var MECH_NAMES = [[T.SPIKE,'spikes'],[T.KEY0,'keys'],[T.KEY1,'keys'],[T.KEY2,'keys'],
+                  [T.CRUMB,'thin floor'],[T.ICE,'ice'],[T.OWL,'one way'],[T.OWR,'one way'],
+                  [T.OWD,'one way'],[T.OWU,'one way']];
+function drawLvCard(){
+  var lv = G.lv, seen = {}, list = [], i, k;
+  for (i = 0; i < lv.tiles.length; i++){
+    for (k = 0; k < MECH_NAMES.length; k++){
+      if (lv.tiles[i] === MECH_NAMES[k][0] && !seen[MECH_NAMES[k][1]]){
+        seen[MECH_NAMES[k][1]] = 1; list.push(MECH_NAMES[k][1]);
+      }
+    }
+  }
+  var b = SAVE.best[levelKey()];
+  var title = G.mode === 'daily' ? ('DAY ' + G.dailyId)
+            : G.mode === 'seed' ? ('SEED ' + G.seedNum)
+            : ('TIER ' + lv.tier + '   ' + TIER_NAMES[lv.tier]);
+  $('lvcTitle').textContent = title;
+  $('lvcMech').textContent = list.length ? list.join(', ') : 'walls only';
+  $('lvcBest').textContent = b ? (b.moves + (b.moves <= b.par ? ' ★' : '')) : 'not yet';
+  $('lvcWatch').style.display = (b && b.log) ? 'flex' : 'none';
 }
 
 /* The ribbon: this level and its neighbours, with their stars, tappable.
@@ -2400,6 +2451,10 @@ elBoard.addEventListener('touchend', function(e){
 wire('btnLevels', function(){ buildSky(); openSheet('shSel'); });
 wire('selClose', function(){ closeSheet('shSel'); });
 wire('selStats', function(){ buildStats(); openSheet('shStats'); });
+wire('lvcWatch', function(){
+  var b = SAVE.best[levelKey()];
+  playReplay(b ? b.log : '');
+});
 wire('statsClose', function(){ closeSheet('shStats'); });
 wire('nudge', function(){
   if (!installEvt) return;

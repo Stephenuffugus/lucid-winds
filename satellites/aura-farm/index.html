@@ -655,6 +655,53 @@ function tributePrice(){
   return lean==='reap' ? 90 : lean==='lum' ? 150 : 120;
 }
 
+/* ---------------- THE STANDING ----------------
+   Reputation used to be three surfaces, two of them cosmetic: a line on the
+   title screen, a greeting in the day 2 letter, and a tribute price behind a
+   45% daily roll from day 5. A returning Luminary could play a whole second
+   run and never once meet the only number their history controlled.
+
+   The Standing gives it teeth using systems that already exist, rather than
+   inventing a new one:
+     - Mara prices you. A Reaper is a colleague and she takes less; a Luminary
+       is a mark and she takes more. This is the number you feel every day.
+     - The Broker fronts a known harvester seed money, so a second run opens
+       with a real decision at the shop instead of an empty wallet.
+     - The contract board leans the way you do.
+   Depth is capped at five remembered runs so a veteran is respected, not
+   ushered past the game. */
+function repStanding(){
+  const r = repLean();
+  const depth = Math.min(5, r.n);
+  const lean = r.lean;
+  return {
+    lean: lean, runs: r.n, failed: r.failed, depth: depth,
+    name: lean ? REP_NAMES[lean] : (r.failed ? 'Unproven' : 'Unknown'),
+    maraRate: lean==='reap' ? 0.8 : lean==='lum' ? 1.25 : 1,
+    seed: depth ? Math.min(300, 60*depth) : 0,
+  };
+}
+function repStandingLine(){
+  const s = repStanding();
+  if (!s.runs) return s.failed
+    ? 'Unproven. The Broker has your withered seasons on file and nothing else.'
+    : 'Unknown. Finish a season and the trade will start keeping score.';
+  const bits = [];
+  bits.push(s.lean==='reap' ? 'Mara treats you as a colleague and siphons 20% slower'
+    : s.lean==='lum' ? 'Mara reads you as a soft mark and siphons 25% faster'
+    : 'Mara cannot price you, so she takes the standard cut');
+  bits.push('the Broker fronted you ✦'+s.seed+' this season');
+  bits.push(s.lean==='reap' ? 'your contracts run dark'
+    : s.lean==='lum' ? 'your contracts run bright' : 'your contract board stays mixed');
+  return s.name+' after '+s.runs+' season'+(s.runs===1?'':'s')+'. '+bits.join(', ')+'.';
+}
+/* Mara's effective siphon rate, standing included. */
+function maraRate(){
+  const T = MARA_TIERS[maraTier()];
+  return 0.055 * T.rate * repStanding().maraRate
+    * (relic('mirror')?0.6:1) * (run.maraDeal==='joint'?1.6:1);
+}
+
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md).
    Credits only when served same-origin on lucidwinds.com (the vendored
    satellite copy); everywhere else it quietly does nothing. */
@@ -768,13 +815,25 @@ function genContracts(r){
   r = r || run;
   const d = r.day;
   const mk = (o)=>Object.assign({ prog:0, done:false }, o);
+  /* The board leans the way you do. A Luminary is offered bright work, a
+     Reaper dark work, and the Gray Broker keeps the whole pool; same
+     generator, weighted by who you have been. */
+  const lean = repStanding().lean;
+  const bright = lean==='lum', dark = lean==='reap';
   const easyPool = [
     ()=>{ const n = 3+Math.floor(d/4); return mk({ k:'rad', n, icon:'☀️', label:'Make '+n+' Radiance harvests', reward:50+12*d }); },
     ()=>{ const n = 4+Math.floor(d/3); return mk({ k:'distinct', n, icon:'👥', label:'Harvest '+n+' different souls', reward:50+12*d }); },
-    ()=>{ const n = 2+Math.floor(d/4); return mk({ k:'peak', n, icon:'⚡', label:'Make '+n+' peak-window harvests', reward:55+13*d }); },
+    ()=>{ const n = 2+Math.floor(d/4); return mk({ k:'peak', n, icon:'⚡', label:'Make '+n+' peak window harvests', reward:55+13*d }); },
   ];
+  const drainEasy = ()=>{ const n = 1+Math.floor(d/5);
+    return mk({ k:'bli', n, icon:'🥀', label:'Make '+n+' Blight drain'+(1+Math.floor(d/5)===1?'':'s'), reward:55+13*d }); };
+  if (dark) { easyPool.push(drainEasy); easyPool.push(drainEasy); }
+  if (bright) easyPool.push(easyPool[0]);
+  const essPool = dark ? ['sorrow','rage','sorrow','rage','joy']
+    : bright ? ['joy','hope','joy','hope','sorrow']
+    : ['joy','hope','sorrow','rage'];
   const medPool = [
-    ()=>{ const emo = pick(['joy','hope','sorrow','rage']); const amt = 50+16*d;
+    ()=>{ const emo = pick(essPool); const amt = 50+16*d;
       return mk({ k:'ess', emo, amt, icon:EMOTIONS[emo].icon, label:'Deliver '+amt+'✦ of '+EMOTIONS[emo].n, reward:110+22*d }); },
     ()=>mk({ k:'combo', n:3, icon:'🔗', label:'Reach a ×3 peak combo', reward:110+22*d }),
     ()=>mk({ k:'tier', minI:0.75, n:1, icon:'🌟', label:'Capture a Brilliant harvest (≥75% charge)', reward:110+22*d }),
@@ -783,10 +842,12 @@ function genContracts(r){
     ()=>mk({ k:'tier', minI:0.92, n:1, icon:'💎', label:'Capture a Transcendent harvest (≥92% charge)', reward:220+45*d, hard:true }),
     ()=>{ const n = d>=6?5:4; return mk({ k:'combo', n, icon:'⛓️', label:'Reach a ×'+n+' peak combo', reward:220+45*d, hard:true }); },
   ];
-  if (d>=3) hardPool.push(()=>{ const emo = pick(['awe','dread']); const amt = 30+9*d;
+  const rareEss = dark ? ['dread','dread','awe'] : bright ? ['awe','awe','dread'] : ['awe','dread'];
+  if (d>=3) hardPool.push(()=>{ const emo = pick(rareEss); const amt = 30+9*d;
     return mk({ k:'ess', emo, amt, icon:EMOTIONS[emo].icon, label:'Deliver '+amt+'✦ of pure '+EMOTIONS[emo].n, reward:200+40*d, hard:true }); });
-  if (d>=4) hardPool.push(()=>{ const n = 2+Math.floor(d/4);
-    return mk({ k:'bli', n, icon:'🥀', label:'Make '+n+' Blight drains', reward:200+40*d, hard:true }); });
+  const drainHard = ()=>{ const n = 2+Math.floor(d/4);
+    return mk({ k:'bli', n, icon:'🥀', label:'Make '+n+' Blight drains', reward:200+40*d, hard:true }); };
+  if (d>=4 || dark) { hardPool.push(drainHard); if (dark) hardPool.push(drainHard); }
   const hard = pick(hardPool)();
   if (nextRelic()) hard.givesRelic = true;
   r.contracts = [ pick(easyPool)(), pick(medPool)(), hard ];
@@ -955,7 +1016,12 @@ function startGame(fresh){
   $('hud').style.display = 'flex'; $('menuBtns').style.display = 'flex';
   $('sndBtn').textContent = meta.muted?'🔇':'🔊';
   placeNPCs(); startAmbient(run.venue); renderArts();
-  if (fresh) { rollDay(); banner('DAY 1', '<span class="sub2">QUOTA ✦'+quotaFor(1)+' BEFORE DUSK</span>');
+  if (fresh) {
+    /* A harvester the trade already knows does not start broke. */
+    const st = repStanding();
+    if (st.seed) { run.essence += st.seed; }
+    rollDay(); banner('DAY 1', '<span class="sub2">QUOTA ✦'+quotaFor(1)+' BEFORE DUSK</span>');
+    if (st.seed) toast('🖋️ The Broker fronts a known name: ✦'+st.seed+' to open the season.');
     toast('Tap someone to read their aura.');
     setTimeout(()=>{ if(mode==='play') toast('Fill their CHARGE into the striped peak zone, then harvest.'); }, 4000); }
   renderContractPills();
@@ -1266,8 +1332,7 @@ function updateMara(dt){
       sfx.sting(); sfx.heartbeat();
     } else {
       m.siphonT += dt;
-      const rate = 0.055 * T.rate * (relic('mirror')?0.6:1) * (run.maraDeal==='joint'?1.6:1);
-      const take = Math.min(Math.max(0, n.i-0.08), rate*dt);
+      const take = Math.min(Math.max(0, n.i-0.08), maraRate()*dt);
       if (take > 0) {
         n.i -= take;
         run.stolen += take*100; run.dayStolen += take*100;
@@ -1633,7 +1698,7 @@ function gameOver(){
        the letters and Mara's prices have something to read. Without this the
        whole reputation system stays invisible to anyone still learning. */
     const tot = run.rad + run.bli;
-    if (tot > 0 && run.day >= 3) {
+    if (tot > 0) {
       const pr = run.rad / tot;
       let domEmo = null, domV = 0;
       for (const k of EMO_KEYS) if (run.essBy[k] > domV) { domV = run.essBy[k]; domEmo = k; }
@@ -1816,22 +1881,39 @@ function renderPanel(soft){
   refreshHarvestBtn(hb, n);
   box.appendChild(hb);
 }
+/* The number on this button is what the player plans around, so it has to be
+   the number harvest() will actually pay. It used to omit the combo
+   multiplier and the Deep Well trait, which meant it read up to 40% low
+   exactly when a chain was running and the player was deciding whether to
+   hold it. Kept in step with the amt calculation in harvest(). */
+function harvestEstimate(n, def, sign){
+  const emo = EMOTIONS[emotionOf(n.v, n.i)];
+  const emoMult = emo.rare ? 1.35 : 1;
+  const nextCombo = n.peak > 0 ? ((run.combo>0 && run.lastSign!==sign) ? 1 : run.combo+1) : 0;
+  const comboMult = 1 + Math.min(0.4, Math.max(0, nextCombo-1)*0.08);
+  let amt = Math.round(n.i * 100 * (sign<0 ? 1.6 : 1) * yieldMult(sign, def.venue) * comboMult * emoMult);
+  if (hasTrait(def.id,'deepwell')) amt = Math.round(amt*1.2);
+  return amt;
+}
 function refreshHarvestBtn(hb, n){
   const sign = n.v>=0?1:-1;
   const ready = n.state==='idle' && Math.abs(n.v)>=0.25 && run.focus>=10;
   hb.className = 'act '+(sign>0?'harv':'harvB')+(ready && n.peak>0 ? ' ready':'');
   const t = tierOf(n.i);
   const emo = EMOTIONS[emotionOf(n.v, n.i)];
-  const emoMult = emo.rare ? 1.35 : 1;
+  const def = npcDef(selected);
   hb.innerHTML = (sign>0?'Harvest ✦ ':'Drain ✦ ')+emo.n+' '+emo.icon
-    +'<span class="cost">'+t.icon+' '+t.name+' · ~'+Math.round(n.i*100*(sign<0?1.6:1)*yieldMult(sign, npcDef(selected).venue)*emoMult)+'✦ · '+(sign>0?'they recover':'PERMANENT')+'</span>';
+    +'<span class="cost">'+t.icon+' '+t.name+' · ~'+harvestEstimate(n, def, sign)+'✦ · '+(sign>0?'they recover':'PERMANENT')+'</span>';
   hb.disabled = !ready;
 }
 
+/* The rail holds five. It used to hold three, and announceDay can post five in
+   one tick, so on any day with weather plus a venue event the quota line and
+   the weather line were destroyed before a single frame was drawn. */
 function toast(msg){
   const t = document.createElement('div'); t.className='toast'; t.textContent = msg;
   $('toasts').appendChild(t);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
+  while ($('toasts').children.length > 5) $('toasts').firstChild.remove();
   setTimeout(()=>{ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(()=>t.remove(), 420); }, 3400);
 }
 function banner(main, subHtml, color){
@@ -1963,6 +2045,8 @@ function useArt(id){
 function openSettings(){
   if (mode!=='play') return; sfx.tap();
   showModal(`<h2>Paused</h2>
+    <h3>Your standing with the trade</h3>
+    <div class="sub">${repStandingLine()}</div>
     <button class="big" onclick="closeModal()">Resume</button>
     <button class="big ghost" onclick="howTo()">How to Farm</button>
     <button class="big ghost" onclick="openRecords()">Records &amp; Relics</button>

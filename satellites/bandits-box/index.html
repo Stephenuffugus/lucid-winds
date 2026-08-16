@@ -3794,7 +3794,7 @@ if(blnSvg){
 var shakeSvg=$('#shakeSvg'), shakeGrp=$('#shakeGrp'), shakeGrains=$('#shakeGrains'),
     shakePins=$('#shakePins'), shakeHint=$('#shakeHint');
 var SH_N=90, SH_TOP=42, SH_BOT=258;     // the run the grains have, in viewBox units
-var shGrains=[], shAng=0, shDown=false, shLast=null, shVoice=null, shLanded=0;
+var shGrains=[], shAng=0, shDown=false, shLast=null, shVoice=null, shLanded=0, shRattleT=0;
 (function(){
   var i,s='';
   for(i=0;i<SH_N;i++){
@@ -3886,8 +3886,12 @@ if(shakeSvg){
     shVoice.set(clamp(flow*4.5,0,1), clamp(0.15+moving/40,0.15,1), Math.sin(shAng)*0.6);
     if(moving===0&&!shDown){ shVoice.stop(); shVoice=null; }
   }
+  /* Ninety grains land over a few seconds, and one feel() per landing would be
+     a ripple and a buzz several times a second for the whole pour. Batched, and
+     no closer together than 140 ms: the patter stays, the massage does not. */
   shLanded+=hits;
-  if(shLanded>=3){
+  if(shLanded>=4&&performance.now()-shRattleT>140){
+    shRattleT=performance.now();
     var box=shakeSvg.getBoundingClientRect();
     feel('rattle',box.left+box.width/2,box.top+box.height*(Math.cos(shAng)>0?0.78:0.22),
          0,Math.min(shLanded,12));

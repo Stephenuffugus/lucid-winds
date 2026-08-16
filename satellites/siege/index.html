@@ -289,6 +289,7 @@ var CONFIG = {
   BREACH_MARKS: [8, 5, 3],  /* alarm rings when the front rank crosses these */
   MAX_WAVE_TICKS: 4000,     /* safety valve for headless runs */
   ENGAGE_CELLS: 8,          /* past this the lane reads as empty from where you stand */
+  MAX_DEPART_GAP: 30,       /* no hole in the departure clock wider than this */
   TRAVEL_CELLS: 14,         /* cells a body crosses before it is your problem */
   REINFORCE_MAX: 3,         /* a trap can be built up twice past the one you paid for */
   REPAIR_COST: 0.5,         /* a maxed trap still takes scrap to patch back up */
@@ -513,6 +514,21 @@ function schedule(wave, mode, seed) {
   }
   for (i = 0; i < out.length; i++) out[i].tick -= min;
   out.sort(function (a, b) { return a.tick - b.tick || a.at - b.at; });
+  /* THE NO LULL RULE. Solving for departures can still leave a hole: wave 9
+     ends on one lone healer 62 ticks after the rank in front of it, and a lane
+     that clears fast stands silent for six seconds waiting. So no two
+     DEPARTURES sit further apart than MAX_DEPART_GAP. Everything after a hole
+     is pulled forward by exactly the excess, which closes the silence without
+     touching a single count, cadence or composition. */
+  var slip = 0, hole;
+  for (i = 1; i < out.length; i++) {
+    out[i].tick -= slip;
+    hole = out[i].tick - out[i - 1].tick;
+    if (hole > CONFIG.MAX_DEPART_GAP) {
+      slip += hole - CONFIG.MAX_DEPART_GAP;
+      out[i].tick = out[i - 1].tick + CONFIG.MAX_DEPART_GAP;
+    }
+  }
   return out;
 }
 

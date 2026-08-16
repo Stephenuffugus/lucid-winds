@@ -246,6 +246,111 @@ function cmdSweep(runs) {
 }
 
 /* ------------------------------------------------------------------ */
+/* --bands   the two missed balance bands, tested instead of inherited  */
+/* ------------------------------------------------------------------ */
+/* Rebuild the game from source with a CONFIG value patched, so a tunable can be
+   swept without editing the shipped file. Object.freeze makes runtime patching
+   impossible on purpose, and that is the right call for the game. */
+function variant(patches) {
+  let sim = block('SIM');
+  Object.keys(patches).forEach(k => {
+    const re = new RegExp('(' + k + ':\\s*)([0-9.]+)');
+    if (!re.test(sim)) { console.error('FATAL: no CONFIG key ' + k); process.exit(2); }
+    sim = sim.replace(re, '$1' + patches[k]);
+  });
+  return new Function(sim + '\nreturn {' + EXPORTS.filter(e =>
+    !/^(loadSave|writeSave|defaultSave|migrateSave|updateSave|recordRun|recordDaily|encodeLog|decodeLog|TEST|runAllTests|playAgent|invariants)$/.test(e)
+  ).join(',') + '};')();
+}
+
+function medianOf(a) {
+  const b = a.slice().sort((x, y) => x - y);
+  return b[b.length >> 1];
+}
+
+function sweepWith(g, agent, runs, cap) {
+  const ticks = [], scores = [];
+  for (let i = 0; i < runs; i++) {
+    const seed = (1 + i * 2654435761) >>> 0;
+    const st = g.newGame(seed);
+    const rng = g.makeRNG((seed ^ 0x9e3779b9) >>> 0);
+    let n = 0;
+    while (st.alive && n < cap) { g.step(st, agent(g, st, rng)); n++; }
+    ticks.push(st.tick); scores.push(st.score);
+  }
+  return { ticks: medianOf(ticks), score: medianOf(scores) };
+}
+
+/* A walk on a bare 20x20 with no game attached at all. If this medians the same
+   as the random agent inside the real game, the 60 to 200 band is a fact about
+   the geometry of the board and not about anything in CONFIG. */
+function nullWalk(grid, runs, seedBase) {
+  const out = [];
+  for (let i = 0; i < runs; i++) {
+    const rng = G.makeRNG((seedBase + i * 2654435761) >>> 0);
+    let x = grid >> 1, y = grid >> 1, h = 1, n = 0;
+    const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+    for (; ;) {
+      const t = Math.floor(rng() * 3) - 1;
+      h = (h + t + 4) & 3;
+      x += DX[h]; y += DY[h];
+      if (x < 0 || y < 0 || x >= grid || y >= grid) break;
+      n++;
+    }
+    out.push(n);
+  }
+  return medianOf(out);
+}
+
+function cmdBands() {
+  const runs = parseInt(args.runs || '4000', 10);
+  const cap = parseInt(args.cap || '8000', 10);
+  console.log('WIREWORM band diagnostics   runs=' + runs + ' per cell');
+  console.log('');
+
+  console.log('EXPERIMENT 1  is the random band geometry or a tunable');
+  console.log('  A plain random walk with the entire game removed, on grids of several sizes.');
+  console.log('  grid   median ticks to the wall');
+  [16, 20, 24, 28, 32, 40].forEach(g => {
+    console.log('  ' + pad(g, 5) + pad(nullWalk(g, runs, 7), 8, true) + (g === 20 ? '   <- the spec grid' : ''));
+  });
+  const inGame = sweepWith(G, (g, st, rng) => g.agentRandom(st, rng), runs, cap).ticks;
+  console.log('  the same walk INSIDE the running game on the spec grid: ' + inGame);
+  console.log('  reading: if those two numbers agree, no CONFIG value can move this band.');
+  console.log('');
+
+  console.log('EXPERIMENT 2  is DISCHARGE_INTERVAL a dead lever for the greedy band');
+  console.log('  interval   greedy median ticks   median score');
+  [140, 90, 60, 40, 25, 12].forEach(v => {
+    const g = variant({ DISCHARGE_INTERVAL: v });
+    const r = sweepWith(g, (gg, st, rng) => gg.agentGreedy(st, rng), runs, cap);
+    console.log('  ' + pad(v, 8) + pad(r.ticks, 20, true) + pad(r.score, 15, true));
+  });
+  console.log('');
+
+  console.log('EXPERIMENT 3  the levers nobody swept');
+  console.log('  a longer creep interval means less ambient pressure, a shorter one means more');
+  console.log('  creep     greedy median ticks   median score   filler median ticks   filler score');
+  [9999, 90, 45, 30, 20].forEach(v => {
+    const g = variant({ CREEP_INTERVAL: v });
+    const a = sweepWith(g, (gg, st, rng) => gg.agentGreedy(st, rng), runs, cap);
+    const b = sweepWith(g, (gg, st, rng) => gg.agentFiller(st, rng), Math.max(200, runs >> 2), cap);
+    console.log('  ' + pad(v === 9999 ? 'off' : v, 8) + pad(a.ticks, 20, true) + pad(a.score, 15, true) +
+      pad(b.ticks, 21, true) + pad(b.score, 15, true));
+  });
+  console.log('');
+  console.log('  PAIRS on the board at once (spec says 2)');
+  console.log('  pairs     greedy median ticks   median score');
+  [2, 3, 4].forEach(v => {
+    const g = variant({ PAIRS: v });
+    const r = sweepWith(g, (gg, st, rng) => gg.agentGreedy(st, rng), runs, cap);
+    console.log('  ' + pad(v, 8) + pad(r.ticks, 20, true) + pad(r.score, 15, true));
+  });
+  console.log('');
+  console.log('  the target band for greedy is 300 to 900 ticks.');
+}
+
+/* ------------------------------------------------------------------ */
 /* --watch=SEED  ASCII frames                                          */
 /* ------------------------------------------------------------------ */
 function cmdWatch(seed) {
@@ -292,6 +397,7 @@ function cmdWatch(seed) {
 
 /* ------------------------------------------------------------------ */
 if (args.test) cmdTest();
+else if (args.bands) cmdBands();
 else if (args.watch !== undefined) cmdWatch(parseInt(args.watch, 10) || 1);
 else if (args.runs !== undefined) cmdSweep(parseInt(args.runs, 10) || 20000);
 else {
