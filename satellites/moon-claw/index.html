@@ -170,6 +170,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
     <div class="helprow"><div class="hi">&#9757;</div><div><b class="hl">Hold anywhere</b> and the claw glides across the cabinet. <b class="hl">Let go</b> and it drops where it hangs. That is the whole control.</div></div>
     <div class="helprow"><div class="hi">&#9878;</div><div>The claw is <b class="hl">honest</b>. It grips with the same strength every single time. Whether a prize comes up is physics, not a payout table.</div></div>
     <div class="helprow"><div class="hi">&#9678;</div><div>Centre it over a plump <b class="hl">body</b> for a solid grip. Clip a limb and the prize hangs crooked, swings on the carry, and can slip at the worst moment.</div></div>
+    <div class="helprow"><div class="hi">&#9673;</div><div>While you hold, the claw <b class="hl">rings the prize it would take</b>. <b class="hl2">Green</b> is a body hit, <b class="hl">gold</b> is an edge, grey means the jaws glance off, and orange means something is sitting on top of it.</div></div>
     <div class="helprow"><div class="hi">&#9776;</div><div>Buried prizes need <b class="hl">digging</b>. Every grab and every nudge moves the pile, so take the top ones first and open a path.</div></div>
     <div class="helprow"><div class="hi">&#9679;</div><div><b class="hl">Five tokens</b> a cabinet. One drop is one token, hit or miss.</div></div>
     <div class="helprow"><div class="hi">&#10022;</div><div>Some cabinets hold a <b class="hl">golden koi</b> at the very bottom of the pile. If you see a glint down there, it is real, and it is worth the dig.</div></div>
@@ -257,14 +258,25 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 (function(){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=SWS_EMBED;
+  /* framed is measured, not declared. The portal navigates relative
+     /satellites/ urls TOP LEVEL, so window.parent===window here and the exit
+     falls through to the referrer branch. But the day this card moves to a
+     /play/ or github.io url it WILL be framed without ?embed=1, and a page
+     that never announces itself is closed by the portal's black screen
+     recovery timer. So ready is posted off real framing, at parse time and
+     again on load, per incoming/PORTAL-CONTRACT.md. */
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(framed){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
     /* fleet pattern (hues): back into the portal when it framed us as a page,
        replace otherwise so the game never stacks a history entry */
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}
     else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(framed){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} });
+  }
 })();
 </script>
 
@@ -283,21 +295,102 @@ function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return v||d; }catch(e){ return d; } }
 function jSet(k,v){ lsSet(k, JSON.stringify(v)); }
 
+/* A try/catch around JSON.parse is NOT validation: anything that merely parses
+   comes back truthy and is handed to code that assumes a shape. mc_shelf='{}'
+   used to freeze the cabinet forever, because SHELF.unshift threw inside
+   landPrize, inside stepPile, inside frame, and the rAF chain died mid drop
+   with the prize scored and the summary never shown. Verified in a browser
+   2026-08-16. So: every saved value is checked for the type it must be, and a
+   value that fails is replaced AND rewritten, so a bad save cannot survive a
+   second boot either. */
+function isObj(v){ return !!v && typeof v==='object' && !isArray(v); }
+function isArray(v){ return Object.prototype.toString.call(v)==='[object Array]'; }
+function num(v,d){ v=+v; return (isFinite(v)&&v>=0)?Math.floor(v):d; }
+function str(v){ return typeof v==='string'?v:''; }
+/* read k, run it through fix(), and write the repaired value straight back */
+function jSafe(k, fix, def){
+  var raw=jGet(k,null), out;
+  try{ out=fix(raw); }catch(e){ out=null; }
+  if(out===null||out===undefined) out=fix(null);
+  if(out===null||out===undefined) out=def;
+  jSet(k,out);
+  return out;
+}
+
 var K_BEST='mc_best', K_DAILYBEST='mc_daily_best', K_DAILY='mc_daily',
     K_STATS='mc_stats', K_SHELF='mc_shelf', K_MOM='mc_moments', K_SET='mc_set';
 
-var SET = jGet(K_SET, null);
-if(!SET){
-  var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  SET = { sound:1, motion: prefersReduced?0:1 };
-}
+var prefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var SET = jSafe(K_SET, function(v){
+  if(!isObj(v)) return { sound:1, motion: prefersReduced?0:1 };
+  return { sound: v.sound?1:0, motion: v.motion?1:0 };
+});
 function saveSet(){ jSet(K_SET, SET); }
 
-var STATS = jGet(K_STATS, { rounds:0, drops:0, grabs:0, sheds:0, koi:0 });
-var MOM   = jGet(K_MOM,   { win_date:'', rare_date:'', clear_date:'' });
-var SHELF = jGet(K_SHELF, []);          /* [{t,d,m}] newest first */
-var BEST  = parseInt(lsGet(K_BEST,'0'),10)||0;
-var DAILYBEST = parseInt(lsGet(K_DAILYBEST,'0'),10)||0;
+var STAT_KEYS=['rounds','drops','grabs','sheds','koi'];
+function fixStats(v){
+  var out={}, i;
+  for(i=0;i<STAT_KEYS.length;i++) out[STAT_KEYS[i]] = isObj(v)? num(v[STAT_KEYS[i]],0) : 0;
+  return out;
+}
+var STATS = jSafe(K_STATS, fixStats);
+var MOM   = jSafe(K_MOM, function(v){
+  if(!isObj(v)) v={};
+  return { win_date:str(v.win_date), rare_date:str(v.rare_date), clear_date:str(v.clear_date) };
+});
+/* [{t,d,m,i}] newest first. Rows whose type is not a real prize are dropped
+   rather than shown, because a TYPES lookup falls back to a Dust Moth and a
+   shelf full of phantom moths is a lie about what the player won. `i` is a
+   per-row id so two tabs can union instead of clobber. */
+function fixShelfRow(r){
+  if(!isObj(r)||!TYPES[r.t]) return null;
+  return { t:r.t, d:str(r.d), m:(r.m==='daily'?'daily':'free'), i:str(r.i)||(str(r.d)+':'+r.t) };
+}
+function fixShelf(v){
+  var out=[], i, row;
+  if(isArray(v)) for(i=0;i<v.length&&out.length<250;i++){ row=fixShelfRow(v[i]); if(row) out.push(row); }
+  return out;
+}
+var SHELF = [];   /* filled once TYPES exists, see the boot block */
+var BEST  = num(lsGet(K_BEST,'0'),0);
+var DAILYBEST = num(lsGet(K_DAILYBEST,'0'),0);
+
+/* ------------------------------------------------- cross tab safe writes */
+/* Two tabs on one phone used to clobber: every counter was written from the
+   boot snapshot, so whichever tab saved last erased the other. Counters ADD
+   against what is in storage at write time, bests MAX, the shelf unions. */
+function bumpStats(field, by){
+  var live=fixStats(jGet(K_STATS,null));
+  var i;
+  for(i=0;i<STAT_KEYS.length;i++){
+    /* our own session total is the floor: never go backwards if a tab wrote less */
+    if(live[STAT_KEYS[i]]<STATS[STAT_KEYS[i]]) live[STAT_KEYS[i]]=STATS[STAT_KEYS[i]];
+  }
+  if(field) live[field]=live[field]+(by||1);
+  STATS=live; jSet(K_STATS,STATS);
+}
+function saveBest(k, val){
+  var live=num(lsGet(k,'0'),0);
+  var out=Math.max(live, num(val,0));
+  lsSet(k, String(out));
+  return out;
+}
+var _shelfSeq=0;
+function shelfAdd(row){
+  row.i = dayKey()+':'+(Date.now()%1e7).toString(36)+':'+(_shelfSeq++);
+  var live=fixShelf(jGet(K_SHELF,null));
+  var merged=[row], seen={}, i, r;
+  seen[row.i]=1;
+  /* newest first: our own session, then whatever another tab wrote, deduped
+     on the row id so a prize won in either tab survives and none is doubled */
+  var all=(isArray(SHELF)?SHELF:[]).concat(live);
+  for(i=0;i<all.length&&merged.length<250;i++){
+    r=all[i];
+    if(!r||seen[r.i]) continue;
+    seen[r.i]=1; merged.push(r);
+  }
+  SHELF=merged; jSet(K_SHELF,SHELF);
+}
 
 function dayKey(){ var d=new Date();
   return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
@@ -429,6 +522,8 @@ var TYPES={
   koi:   {name:'The Golden Koi',   tier:3, r:30}
 };
 var TIER_POOL=[['moth','toad','snail'],['sprite','owl','beetle'],['hedge','moon']];
+/* the shelf can only be validated once TYPES exists, so it loads here */
+SHELF = jSafe(K_SHELF, fixShelf, []);
 
 /* ------------------------------------------------------------ pile physics */
 /* Circle bodies, gravity, positional overlap resolution, wall and floor
@@ -586,17 +681,13 @@ function setMsg(m,col,big){ G.msg=m; G.msgCol=col||'#8a9178'; G.msgT=now(); G.ms
 function newRound(mode){
   G.mode=mode;
   var seed=(mode==='daily') ? daySeed() : (Math.random()*4294967295)>>>0;
-  if(mode==='daily'){
-    /* the cabinet is spent the moment the lights come on: reloading mid round
-       must not hand tonight's pile back for a rehearsal (verify pass, 2026-08-07) */
-    jSet(K_DAILY,{date:dayKey(), haul:0, prizes:0, started:true}); }
   genCabinet(seed);
   G.phase='aim'; G.phT=0;
   G.credits=5; G.haul=0; G.prizes=0; G.dropN=0; G.drops=[];
-  G.tx=AIM.min; G.dir=1; G.holding=false;
+  G.tx=AIM.min; G.dir=1; G.holding=false; G.carryV=0;
   G.L=AIMY-RAILY; G.jaw=1; G.a=0; G.w=0;
   G.target=null; G.koiWon=false; G.burst.length=0; G.flash=0; G.shake=0;
-  STATS.rounds++; jSet(K_STATS,STATS);
+  bumpStats('rounds',1);
   setMsg('','#8a9178');
 }
 
@@ -614,6 +705,13 @@ function endHold(){
   startDrop();
 }
 function startDrop(){
+  /* tonight's cabinet is spent by the FIRST TOKEN, not by opening the lid.
+     Marking it started in newRound meant a player who read the rules and
+     backed out lost the day, and the menu then said "you hauled 0" with no
+     explanation of what had happened. */
+  if(G.mode==='daily' && G.dropN===0){
+    jSet(K_DAILY,{date:dayKey(), haul:0, prizes:0, started:true});
+  }
   G.credits--; G.dropN++;
   sfx('token');
   G.phase='drop'; G.phT=0; G.jaw=1; G.a=0; G.w=0;
@@ -689,7 +787,7 @@ function shedPrize(){
   b.zone = (b.x<DIV.x) ? 'bin' : 'pile';
   b.still=0;
   G.target=null;
-  STATS.sheds++; jSet(K_STATS,STATS);
+  bumpStats('sheds',1);
   if(b.zone==='bin'){ setMsg('IT SLIPPED... INTO THE CHUTE','#ffd77a'); }
   else { setMsg('IT SLIPPED AWAY','#e08a4a'); G.shake=SET.motion?7:0; }
   sfx('shed');
@@ -711,11 +809,8 @@ function landPrize(b){
   var t=TYPES[b.type], tier=TIERS[b.tier];
   G.haul+=tier.pts; G.prizes++;
   G.drops.push({n:G.dropN, type:b.type, pts:tier.pts});
-  STATS.grabs++; if(b.type==='koi'){ STATS.koi++; G.koiWon=true; }
-  jSet(K_STATS,STATS);
-  SHELF.unshift({t:b.type, d:dayKey(), m:G.mode});
-  if(SHELF.length>250) SHELF.length=250;
-  jSet(K_SHELF,SHELF);
+  bumpStats('grabs',1); if(b.type==='koi'){ bumpStats('koi',1); G.koiWon=true; }
+  shelfAdd({t:b.type, d:dayKey(), m:(G.mode==='daily'?'daily':'free')});
   window._sbCapEarn && window._sbCapEarn(tier.sb,'moon-claw:prize');
   fireFirstWin(b.type);
   if(b.tier>=2) fireRarePrize(b.type);
@@ -748,10 +843,12 @@ function endRound(){
   var total=G.haul, isNew=false;
   if(G.mode==='daily'){
     jSet(K_DAILY,{date:dayKey(), haul:total, prizes:G.prizes});
-    if(total>DAILYBEST){ DAILYBEST=total; lsSet(K_DAILYBEST,String(total)); isNew=total>0; }
+    if(total>DAILYBEST){ isNew=total>0; }
+    DAILYBEST=saveBest(K_DAILYBEST,Math.max(DAILYBEST,total));
     if(G.credits<=0 && G.prizes>0) fireDailyCleared(total,G.prizes);
   } else {
-    if(total>BEST){ BEST=total; lsSet(K_BEST,String(total)); isNew=true; }
+    if(total>BEST){ isNew=true; }
+    BEST=saveBest(K_BEST,Math.max(BEST,total));
   }
   $('sum-h').textContent = G.koiWon ? 'You pulled the koi' :
     (isNew ? 'Your best haul yet' : ((G.mode==='daily')?"Tonight's cabinet":'Cabinet closed'));
@@ -889,7 +986,7 @@ tap('set-reset', function(){
   /* scores only: the prize shelf is a COLLECTION, not a score, and a reset
      that ate a player's golden koi would never be forgiven */
   lsDel(K_BEST); lsDel(K_DAILYBEST); lsDel(K_DAILY); lsDel(K_STATS);
-  BEST=0; DAILYBEST=0; STATS={rounds:0,drops:0,grabs:0,sheds:0,koi:0};
+  BEST=0; DAILYBEST=0; STATS=fixStats(null); jSet(K_STATS,STATS);
   refreshMenu();
 });
 function bindToggle(id,key){
@@ -987,8 +1084,7 @@ var motes=[]; (function(){ for(var i=0;i<22;i++) motes.push({
   x:Math.random()*VW, y:Math.random()*VH, r:0.7+Math.random()*1.5,
   s:4+Math.random()*10, p:Math.random()*TAU }); })();
 
-function frame(){
-  var t=now(), dt=Math.min(0.05, t-lastT); lastT=t;
+function step(t,dt){
   var onPlay=(cur==='s-play');
 
   if(G.phase!=='paused'){
@@ -1004,8 +1100,32 @@ function frame(){
     b.age+=dt; if(b.age>=b.life){ G.burst.splice(bi,1); continue; }
     b.x+=b.vx*dt; b.y+=b.vy*dt; b.vy+=420*dt; b.vx*=(1-dt*1.5);
   }
-
-  draw(t);
+}
+/* The rAF chain is rescheduled in a finally, never after the body. A throw
+   anywhere in a step or a draw used to kill the chain outright and freeze the
+   cabinet mid drop with the token spent (that is what a bad mc_shelf did). A
+   claw machine that stops moving is the worst failure this game has, so the
+   loop now survives one and tells the player instead of dying silently. */
+var _loopFails=0;
+function frame(){
+  var t=now(), dt=Math.min(0.05, t-lastT); lastT=t;
+  try{
+    step(t,dt);
+    draw(t);
+    _loopFails=0;          /* a good frame clears the count: only a RUN of failures bails out */
+  }catch(e){
+    _loopFails++;
+    if(_loopFails===1){
+      try{ if(window.console&&console.error) console.error('moon-claw loop error',e); }catch(_){}
+      setMsg('SOMETHING JAMMED. THE CABINET IS RESETTING','#e08a4a');
+    }
+    if(_loopFails>=3){
+      /* three in a row is not a blip: bail the round out cleanly rather than
+         leave the player holding a token that can never be spent */
+      _loopFails=0;
+      try{ quitRound(); }catch(_){}
+    }
+  }
   requestAnimationFrame(frame);
 }
 
@@ -1125,7 +1245,7 @@ function tickClaw(t,dt,onPlay){
     if(Math.abs(G.tx-AIM.min)<3 && Math.abs(G.L-(AIMY-RAILY))<3){
       G.tx=AIM.min; G.L=AIMY-RAILY; G.a=0;
       G.phase='aim'; G.phT=0;
-      STATS.drops++; jSet(K_STATS,STATS);
+      bumpStats('drops',1);
       setMsg('','#8a9178');
     }
     return;
@@ -1144,7 +1264,7 @@ function recordEmpty(){
     G.drops.push({n:G.dropN, type:null, pts:0,
       shed: G.msg.indexOf('SLIPPED')>=0});
   }
-  if(G.credits<=0){ G.phase='done'; STATS.drops++; jSet(K_STATS,STATS); setTimeout(endRound,600); return false; }
+  if(G.credits<=0){ G.phase='done'; bumpStats('drops',1); setTimeout(endRound,600); return false; }
   return true;
 }
 
@@ -1274,13 +1394,50 @@ function drawCabinet(t,onPlay){
     ctx.globalAlpha=1;
   }
 
-  /* aim guide: a faint plumb line while the player is gliding */
+  /* AIM READ (added 2026-08-16 audit).
+     The rules ask the player to "read the pile", and from straight above,
+     a plump body and a limb sticking out of one look identical, so the read
+     was impossible and every drop was a guess. This shows exactly what the
+     claw was already going to do and nothing it was not: which body the jaws
+     meet first, whether the trolley is over its body or its edge, and whether
+     something is sitting on top of it. The verdict thresholds below are the
+     SAME numbers resolveGrip() uses, read from one place, so the preview can
+     never drift from the outcome. It stays honest because the trolley never
+     stops moving: knowing the grip does not hand you the timing. */
   if(onPlay&&G.phase==='aim'&&G.holding){
     var s2=pileSurfaceAt(G.tx);
-    ctx.strokeStyle='rgba(255,215,122,.30)'; ctx.lineWidth=1.5;
+    var pb2=s2.body, dxn2=pb2?Math.abs(G.tx-pb2.x)/pb2.r:9, wedged=false;
+    var readCol='rgba(138,145,120,.55)';                 /* nothing under the jaws */
+    if(pb2){
+      for(i=0;i<PILE.length;i++){ var o2=PILE[i];
+        if(o2===pb2||o2.zone!=='pile') continue;
+        var ox2=o2.x-pb2.x, oy2=o2.y-pb2.y;
+        if(oy2<-6 && ox2*ox2+oy2*oy2<(o2.r+pb2.r+4)*(o2.r+pb2.r+4)){ wedged=true; break; }
+      }
+      readCol = dxn2<=0.45 ? 'rgba(164,212,126,.85)'     /* solid */
+              : dxn2<=0.88 ? 'rgba(255,215,122,.80)'     /* loose */
+              :              'rgba(138,145,120,.55)';    /* it will glance off */
+      if(wedged) readCol='rgba(224,138,74,.85)';
+    }
+    ctx.strokeStyle=readCol; ctx.lineWidth=1.5;
     ctx.setLineDash([4,7]);
     ctx.beginPath(); ctx.moveTo(G.tx,AIMY+34); ctx.lineTo(G.tx,s2.y-4); ctx.stroke();
     ctx.setLineDash([]);
+    if(pb2){
+      /* a ring around the body that is actually in play, plus a tick at its
+         centre so "how far off centre am I" is a distance you can see */
+      ctx.strokeStyle=readCol; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(pb2.x, pb2.y, pb2.r+4, 0, TAU); ctx.stroke();
+      ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(pb2.x, pb2.y-pb2.r-11); ctx.lineTo(pb2.x, pb2.y-pb2.r-3); ctx.stroke();
+      if(wedged){
+        /* the neighbour that is pinning it, so "wedged" is a thing you can see
+           rather than a word that appears after the token is gone */
+        ctx.setLineDash([3,4]);
+        ctx.beginPath(); ctx.arc(o2.x, o2.y, o2.r+3, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
   }
   ctx.restore();   /* end glass clip */
 
@@ -1669,5 +1826,10 @@ window._sbCapEarn=function(n,tag){
   if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
 };
 </script>
+<!-- fleet feedback fab. Bottom right of the viewport is the plinth under the
+     cabinet on this stage (x 411..523, y 710..822 in stage coordinates at
+     375x667), so it covers nothing: the pause button is top right and the only
+     bottom furniture is the drawn token row at y 888. -->
+<script>addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'moon-claw',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>

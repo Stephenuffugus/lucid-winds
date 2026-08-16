@@ -143,7 +143,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div id="soft">
     <div class="st">Nothing is YOU</div>
     <div class="ss">No rule makes you anything. Take the last move back.</div>
-    <button class="btn sm primary" id="soft-undo">Undo</button>
+    <div class="row" style="max-width:280px;margin:0 auto">
+      <button class="btn sm primary" id="soft-undo">Undo</button>
+      <button class="btn sm" id="soft-retry">Start over</button>
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -167,6 +170,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <button class="btn sm ghost" id="b-how">❓ How</button>
         <button class="btn sm ghost" id="b-set">⚙</button>
       </div>
+      <button class="btn sm ghost" id="b-exit">&#9664; All Sky Wolf games</button>
     </div>
     <div class="foot" id="buildstamp">Rule Root</div>
   </div></div>
@@ -576,11 +580,63 @@ var cv=$('game'), ctx=cv.getContext('2d');
 
 function loadJSON(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
-var PROG=loadJSON('ruleroot_save',null)||{ solved:{}, seeds:{}, best:{},
-  daily:{d:0,streak:0,done:0}, grove:[], life:{solves:0,seeds:0},
-  eq:{tile:'parchment',walker:'sprout',bg:'soil'}, owned:{} };
-var SET=loadJSON('ruleroot_set',null)||{sound:true,fx:true};
-function saveAll(){ saveJSON('ruleroot_save',PROG); saveJSON('ruleroot_set',SET); }
+
+/* 2026-08-16 audit. A try/catch around JSON.parse is NOT validation: {}, 5, []
+   and "x" all parse and are all truthy, so `loadJSON(...)||default` handed a
+   shapeless PROG straight into the game. refreshTitle() then threw at boot on
+   PROG.solved[i], and tapping Journey threw the same way INSIDE the click
+   handler, so the button simply did nothing and said nothing. Every field is
+   now shape checked and repaired. */
+function isObj(v){ return !!v && typeof v==='object' && !(v instanceof Array); }
+function numOr(v,d){ return (typeof v==='number'&&isFinite(v))?v:d; }
+function mapOf(v){ var o={},k; if(!isObj(v))return o;
+  for(k in v){ if(v.hasOwnProperty(k)&&v[k])o[k]=1; } return o; }
+function numMapOf(v){ var o={},k,n; if(!isObj(v))return o;
+  for(k in v){ if(!v.hasOwnProperty(k))continue; n=numOr(v[k],0); if(n>0)o[k]=n; } return o; }
+function normProg(p){
+  p=isObj(p)?p:{};
+  var d=isObj(p.daily)?p.daily:{}, l=isObj(p.life)?p.life:{}, e=isObj(p.eq)?p.eq:{};
+  var gr=[], i;
+  if(p.grove instanceof Array) for(i=0;i<p.grove.length;i++){ var g=p.grove[i];
+    if(isObj(g)&&typeof g.ch!=='undefined') gr.push({ch:numOr(g.ch,0),seed:numOr(g.seed,0),d:numOr(g.d,0)}); }
+  return {
+    solved:mapOf(p.solved), seeds:mapOf(p.seeds), best:numMapOf(p.best),
+    daily:{ d:numOr(d.d,0), streak:numOr(d.streak,0), done:numOr(d.done,0) },
+    grove:gr,
+    life:{ solves:numOr(l.solves,0), seeds:numOr(l.seeds,0) },
+    eq:{ tile:(typeof e.tile==='string'?e.tile:'parchment'),
+         walker:(typeof e.walker==='string'?e.walker:'sprout'),
+         bg:(typeof e.bg==='string'?e.bg:'soil') },
+    owned:mapOf(p.owned)
+  };
+}
+var PROG=normProg(loadJSON('ruleroot_save',null));
+var _rawSet=loadJSON('ruleroot_set',null);
+var SET={ sound: isObj(_rawSet)?!!_rawSet.sound:true, fx: isObj(_rawSet)?!!_rawSet.fx:true };
+
+/* saveAll used to write PROG wholesale from a boot snapshot, so two tabs erased
+   each other's gardens, seeds, streak and keepsakes. Nothing in this profile is
+   last-writer-wins: sets union, counters and streak take the max, per level
+   bests take the FEWEST moves. */
+function mergeProg(disk){
+  var i,k;
+  for(k in disk.solved) if(disk.solved.hasOwnProperty(k)) PROG.solved[k]=1;
+  for(k in disk.seeds)  if(disk.seeds.hasOwnProperty(k))  PROG.seeds[k]=1;
+  for(k in disk.best)   if(disk.best.hasOwnProperty(k)){
+    if(!PROG.best[k]||disk.best[k]<PROG.best[k]) PROG.best[k]=disk.best[k]; }
+  PROG.life.solves=Math.max(PROG.life.solves,disk.life.solves);
+  PROG.life.seeds =Math.max(PROG.life.seeds, disk.life.seeds);
+  if(disk.daily.done>PROG.daily.done){ PROG.daily.done=disk.daily.done; PROG.daily.d=disk.daily.d; }
+  PROG.daily.streak=Math.max(PROG.daily.streak,disk.daily.streak);
+  for(i=0;i<disk.grove.length;i++){ var has=false,j;
+    for(j=0;j<PROG.grove.length;j++) if(PROG.grove[j].ch===disk.grove[i].ch) has=true;
+    if(!has) PROG.grove.push(disk.grove[i]); }
+  for(k in disk.owned) if(disk.owned.hasOwnProperty(k)) PROG.owned[k]=1;
+}
+function saveAll(){
+  mergeProg(normProg(loadJSON('ruleroot_save',null)));
+  saveJSON('ruleroot_save',PROG); saveJSON('ruleroot_set',SET);
+}
 var reduceMotion=false;
 try{ reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
 
@@ -678,7 +734,9 @@ function doMove(dir){
 }
 function checkSoft(){
   if(!G||G.won){$('soft').className='';return;}
-  $('soft').className=(youCount(G.st)===0&&!G.st.won)?'on':'';
+  var on=(youCount(G.st)===0&&!G.st.won);
+  $('soft').className=on?'on':'';
+  if(on){ var u=$('soft-undo'); if(u) u.disabled=!G.undo.length; }
 }
 function doUndo(){
   if(!G||!G.undo.length||G.won||G.st.won)return;
@@ -1118,6 +1176,13 @@ tap('b-ward',function(){ buildWard(); show('s-ward'); });
 tap('b-grove',function(){ buildGrove(); show('s-grove'); });
 tap('b-how',function(){ show('s-how'); });
 tap('b-set',function(){ show('s-set'); });
+/* Rule Root used to have NO exit of its own and leaned entirely on
+   /arcade-exit.js injecting one. That script is correct, but a 404 or a stale
+   cache left the player with no way back at all, and an installed PWA has no
+   back gesture to save them. Canonical block from incoming/PORTAL-CONTRACT.md:
+   the referrer fallback is what actually runs, because the portal navigates
+   relative /satellites/ urls TOP LEVEL and window.parent===window. */
+tap('b-exit',function(){ window.SWS_EXIT(); });
 tap('lvl-back',function(){ show('s-title'); refreshTitle(); });
 tap('how-back',function(){
   markHowSeen();
@@ -1132,6 +1197,9 @@ tap('h-undo',doUndo);
 tap('h-retry',doRestart);
 tap('h-hint',doHint);
 tap('soft-undo',doUndo);
+/* the prompt used to offer Undo alone, and on the first move of a fresh restart
+   the undo stack is empty, so it was pointing at a dead button */
+tap('soft-retry',doRestart);
 tap('win-retry',function(){ startLevel(G.mode,G.idx); });
 tap('win-home',function(){ show('s-title'); refreshTitle(); });
 tap('win-next',function(){
@@ -1161,13 +1229,22 @@ cv.addEventListener('pointerup',function(e){
   if(Math.abs(dx)>Math.abs(dy))doMove(dx>0?'R':'L'); else doMove(dy>0?'D':'U');
 });
 
-/* fit stage */
+/* fit stage — ⛔ measure visualViewport, NEVER innerHeight (studio sweep
+   2026-07-25): on iOS innerHeight includes the strip behind the URL bar, so the
+   bottom of the stage, which is exactly where the d-pad lives, was cut off. */
+function _vvW(){ var vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||540; }
+function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||960; }
 function fit(){
-  var w=window.innerWidth,h=window.innerHeight;
-  var s=Math.min(w/540,h/960);
+  var s=Math.min(_vvW()/540,_vvH()/960);
   $('stage').style.transform='scale('+s+')';
 }
-window.addEventListener('resize',fit); fit();
+window.addEventListener('resize',fit);
+window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',fit);
+  window.visualViewport.addEventListener('scroll',fit);
+}
+fit();
 
 /* shimmer loop (light) */
 function frame(){

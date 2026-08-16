@@ -152,8 +152,14 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 #hbPause{ pointer-events:auto; margin-left:auto; background:rgba(20,24,18,.82); border:1px solid #3a4230;
   color:var(--cream); width:48px; height:48px; border-radius:12px; font-size:17px; cursor:pointer; }
 
+/* ⛔ The fleet feedback fab is fixed at bottom-right (right:12px, ~78x48,
+   z-index 2147482000 — nothing in a game can out-stack it). Measured at
+   375x667 the speed toggle sat DEAD CENTRE under it and the wave button ran
+   into it too. Nothing important goes in that gutter, so the bar reserves it.
+   The row stays centred inside what is left, which reads as a slight left
+   offset on very wide screens and is the right trade. */
 #hud-bot{ position:fixed; z-index:20; left:0; right:0; bottom:calc(10px + var(--safe-b)); display:none;
-  align-items:center; justify-content:center; gap:10px; padding:0 12px; }
+  align-items:center; justify-content:center; gap:10px; padding:0 96px 0 12px; }
 #hud-bot.show{ display:flex; }
 #btnWave{ flex:1 1 auto; max-width:280px; min-height:56px; border:none; border-radius:16px; cursor:pointer;
   font-weight:900; font-size:17px; letter-spacing:.4px; background:linear-gradient(#e0c366,#b8912f);
@@ -301,7 +307,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <div class="screen show" id="scr-menu">
   <div class="title"><span class="l1">GARDEN</span><span class="l2">GUARD</span></div>
   <div class="tagline">Plant a garden that fights back. Cozy tower defense.</div>
-  <div class="menu-stats"><span class="chip sap"><span class="ico">🍯</span><span id="menuSap">0</span> Sap</span><span class="chip"><span class="ico">🌟</span><span id="menuStars">0</span> Leaves</span></div>
+  <div class="menu-stats"><span class="chip sap"><span class="ico">🍯</span><span id="menuSap">0</span> Sap</span><span class="chip"><span class="ico">🌟</span><span id="menuStars">0</span> Stars</span></div>
   <button class="btn wide gold" id="btnPlay">PLAY</button>
   <button class="btn wide ghost" id="btnShop">🍯 Potting Shed</button>
   <button class="btn wide ghost" id="btnHow">How to Play</button>
@@ -415,13 +421,24 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
    Sky Wolf Studios embed protocol (copy-verbatim; do not modify)
    ===================================================================== */
 (function(){
-  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  /* FRAMED is not the same as ?embed=1. The portal navigates relative
+     /satellites/ urls TOP LEVEL (verified 2026-08-16, PORTAL-CONTRACT.md), and a
+     card that frames us without the query param would have fallen through to
+     location.replace INSIDE the frame — the blank-frame bug. Param OR real parent. */
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search), framed=false;
+  try{ framed=(window.parent!==window); }catch(e){ framed=true; }
+  framed = framed || SWS_EMBED;
   window.SWS_EMBED=SWS_EMBED;
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(framed){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  /* ready at parse AND on load: the portal arms a black-screen recovery timer per
+     load and auto-closes a frame that never announces itself. */
+  if(framed){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} });
+  }
 })();
 </script>
 
@@ -856,27 +873,90 @@ function defaultSave(){
     brambleUnlocked:false, tut:{ done:false } };
 }
 var save=defaultSave();
+/* ⛔ A try/catch around JSON.parse is not validation. Anything that merely parses
+   is truthy, so a wrong-shaped value lands in the game and crashes later, often
+   silently inside a click handler. Two holes were real here:
+     - `levels` was taken wholesale, so a record could be a string or a number;
+     - `settings` values were taken by KEY with no type check, so a corrupt
+       textScale went straight into document.documentElement.style.fontSize.
+   Everything below is coerced or dropped, field by field. */
+function _n(x,d){ if(typeof x==='string')x=parseFloat(x);
+  return (typeof x==='number'&&isFinite(x))?x:d; }
+function _cleanLevels(src){
+  var out={}, k, r;
+  if(!src || typeof src!=='object' || Array.isArray(src)) return out;
+  for(k in src){ if(!src.hasOwnProperty(k))continue; if(k.length>32)continue;
+    r=src[k]; if(!r||typeof r!=='object'||Array.isArray(r))continue;
+    out[k]={ stars:clamp(Math.round(_n(r.stars,0)),0,3), cleared:!!r.cleared }; }
+  return out;
+}
+function _cleanSettings(src, d){
+  if(!src||typeof src!=='object') return d;
+  var SCALES=[0.85,1,1.25,1.5];
+  d.reducedMotion=('reducedMotion' in src)?!!src.reducedMotion:d.reducedMotion;
+  d.colorblindGlyphs=('colorblindGlyphs' in src)?!!src.colorblindGlyphs:d.colorblindGlyphs;
+  var ts=_n(src.textScale,d.textScale); d.textScale=(SCALES.indexOf(ts)>=0)?ts:1;
+  d.sfx=clamp(_n(src.sfx,d.sfx),0,1);
+  d.music=clamp(_n(src.music,d.music),0,1);
+  d.speedDefault=clamp(Math.round(_n(src.speedDefault,d.speedDefault)),1,3);
+  return d;
+}
+function _cleanOwned(src){
+  var out=[], i;
+  if(Array.isArray(src)) for(i=0;i<src.length&&out.length<64;i++){
+    if(typeof src[i]==='string' && src[i].length<=32 && out.indexOf(src[i])<0) out.push(src[i]); }
+  ['greenhouse','midnight','none','ladybug'].forEach(function(id){ if(out.indexOf(id)<0)out.push(id); });
+  return out;
+}
 function loadSave(){
   var d=defaultSave(), raw=null;
   try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
-  if(raw){ try{ var p=JSON.parse(raw); if(p&&typeof p==='object'){
-    if(typeof p.sap==='number') d.sap=Math.max(0,Math.floor(p.sap));
-    if(p.levels&&typeof p.levels==='object') d.levels=p.levels;
+  if(raw){ try{ var p=JSON.parse(raw); if(p&&typeof p==='object'&&!Array.isArray(p)){
+    d.sap=Math.max(0,Math.floor(_n(p.sap,0)));
+    d.levels=_cleanLevels(p.levels);
     if(Array.isArray(p.towers)) d.towers=p.towers.filter(function(id){ return TOWER_IDS.indexOf(id)>=0 && TOWER_START.indexOf(id)<0; });
-    if(p.endless){ d.endless.bestWave=Math.max(0,p.endless.bestWave|0); d.endless.bestSap=Math.max(0,p.endless.bestSap|0); }
-    if(p.cosmetics){ for(var k in d.cosmetics){ if(k in p.cosmetics) d.cosmetics[k]=p.cosmetics[k]; }
-      if(!Array.isArray(d.cosmetics.owned)) d.cosmetics.owned=defaultSave().cosmetics.owned;
-      // guarantee free defaults owned
-      ['greenhouse','midnight','none','ladybug'].forEach(function(id){ if(d.cosmetics.owned.indexOf(id)<0)d.cosmetics.owned.push(id); });
+    if(p.endless){ d.endless.bestWave=Math.max(0,Math.round(_n(p.endless.bestWave,0))); d.endless.bestSap=Math.max(0,Math.round(_n(p.endless.bestSap,0))); }
+    if(p.cosmetics&&typeof p.cosmetics==='object'){
+      ['skin','map','mascot'].forEach(function(k){ if(typeof p.cosmetics[k]==='string'&&p.cosmetics[k].length<=32) d.cosmetics[k]=p.cosmetics[k]; });
+      d.cosmetics.owned=_cleanOwned(p.cosmetics.owned);
     }
-    if(p.settings){ for(var s in d.settings){ if(s in p.settings) d.settings[s]=p.settings[s]; } }
-    if(typeof p.brambleUnlocked==='boolean') d.brambleUnlocked=p.brambleUnlocked;
-    if(p.tut&&typeof p.tut.done==='boolean') d.tut.done=p.tut.done;
+    d.settings=_cleanSettings(p.settings, d.settings);
+    d.brambleUnlocked=!!p.brambleUnlocked;
+    if(p.tut&&typeof p.tut==='object') d.tut.done=!!p.tut.done;
   } }catch(e){} }
-  save=d; return d;
+  save=d; _saveBase.sap=d.sap; return d;
 }
 var _saveT=null;
-function saveGame(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+/* ⛔ Two tabs clobber. A wholesale write from a boot snapshot erases whatever the
+   other tab earned. Sap applies THIS tab's delta on top of disk, per-level stars
+   take the MAX and `cleared` is sticky, unlocked sets union, bests take the MAX.
+   Cosmetic choices and settings are last-write-wins: they are preferences. */
+var _saveBase={sap:0};
+function saveGame(){
+  try{
+    var raw=null, disk=null;
+    try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
+    if(raw){ try{ var q=JSON.parse(raw); if(q&&typeof q==='object'&&!Array.isArray(q)) disk=q; }catch(e){} }
+    if(disk){
+      save.sap=Math.max(0, Math.round(_n(disk.sap,0) + (save.sap-_saveBase.sap)));
+      var dl=_cleanLevels(disk.levels), k;
+      for(k in dl){ if(!dl.hasOwnProperty(k))continue;
+        var mine=save.levels[k]||{stars:0,cleared:false};
+        save.levels[k]={ stars:Math.max(mine.stars||0, dl[k].stars), cleared:!!(mine.cleared||dl[k].cleared) }; }
+      if(Array.isArray(disk.towers)) disk.towers.forEach(function(id){
+        if(TOWER_IDS.indexOf(id)>=0 && TOWER_START.indexOf(id)<0 && save.towers.indexOf(id)<0) save.towers.push(id); });
+      if(disk.endless){
+        save.endless.bestWave=Math.max(save.endless.bestWave, Math.round(_n(disk.endless.bestWave,0)));
+        save.endless.bestSap =Math.max(save.endless.bestSap , Math.round(_n(disk.endless.bestSap ,0))); }
+      if(disk.cosmetics&&Array.isArray(disk.cosmetics.owned)) disk.cosmetics.owned.forEach(function(id){
+        if(typeof id==='string' && save.cosmetics.owned.indexOf(id)<0) save.cosmetics.owned.push(id); });
+      if(disk.brambleUnlocked) save.brambleUnlocked=true;
+      if(disk.tut&&disk.tut.done) save.tut.done=true;
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    _saveBase.sap=save.sap;
+  }catch(e){}
+}
 function saveSoon(){ if(_saveT)clearTimeout(_saveT); _saveT=setTimeout(saveGame,300); }
 
 /* =====================================================================
@@ -2316,7 +2396,11 @@ function fieldTap(vx,vy){
   closeBuy(); closeManage();
 }
 canvas.addEventListener('pointerdown',function(e){ audioInit(); audioResume();
-  if(el('tip').classList.contains('show')){ return; }
+  /* The tip says "tap to continue" and used to mean "tap the tip". A tap on the
+     board was swallowed and nothing happened — in the level 1 tutorial, which is
+     the first thirty seconds of the game. Any tap now dismisses it, and that tap
+     is consumed rather than also planting something. */
+  if(el('tip').classList.contains('show')){ hideTip(); return; }
   if(UIState!=='GAME')return;
   var vx=toVX(e.clientX), vy=toVY(e.clientY);
   fieldTap(vx,vy);

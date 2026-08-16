@@ -63,7 +63,7 @@ h1,h2,h3,p{margin:0}
 .hud-mid{flex:1;display:flex;align-items:center;justify-content:center}
 .rally-tag{font-family:var(--fmono);font-size:11px;letter-spacing:.28em;color:var(--dim);text-transform:uppercase}
 .hud-btns{pointer-events:auto;display:flex;gap:8px}
-.icob{width:44px;height:44px;border-radius:12px;background:rgba(10,13,28,.5);border:1px solid var(--line);
+.icob{width:48px;height:48px;border-radius:12px;background:rgba(10,13,28,.5);border:1px solid var(--line);
   display:flex;align-items:center;justify-content:center;font-size:17px;backdrop-filter:blur(8px)}
 .icob:active{transform:scale(.92)}
 #countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:7;pointer-events:none}
@@ -111,7 +111,7 @@ h1,h2,h3,p{margin:0}
 /* shop */
 .shop-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
 .shop-tabs::-webkit-scrollbar{display:none}
-.stab{white-space:nowrap;padding:9px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--muted);min-height:40px}
+.stab{white-space:nowrap;padding:9px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--muted);min-height:48px}
 .stab.on{background:var(--accent);color:#fff;border-color:transparent}
 .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
 .skin{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
@@ -119,7 +119,7 @@ h1,h2,h3,p{margin:0}
 .skin .nm{font-size:11.5px;font-weight:700;line-height:1.15;min-height:26px}
 .skin .rar{position:absolute;top:7px;left:7px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.5)}
 .skin .price{font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px}
-.skin .buy{border-radius:8px;padding:10px 7px;font-size:11.5px;font-weight:800;background:var(--panel2);border:1px solid var(--line2);min-height:44px}
+.skin .buy{border-radius:8px;padding:10px 7px;font-size:11.5px;font-weight:800;background:var(--panel2);border:1px solid var(--line2);min-height:48px}
 .skin.owned .buy{background:transparent;color:var(--muted)}
 .skin.equipped{border-color:var(--good)} .skin.equipped .buy{background:rgba(91,224,160,.14);color:var(--good);border-color:transparent}
 .skin.cant .price{color:var(--bad)}
@@ -130,6 +130,10 @@ h1,h2,h3,p{margin:0}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
 .settings-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 15px;font-size:14px;font-weight:600}
 .switch{width:52px;height:30px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);position:relative;transition:background .15s}
+/* the switch is the click target, not the row: 9px of invisible hit-slop takes it
+   to a 48px tap box while the pill stays slim (rows are 20px apart, so it stops
+   short of the neighbour) */
+.switch::before{content:'';position:absolute;inset:-9px;border-radius:999px}
 .switch.on{background:var(--good)} .switch b{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s}
 .switch.on b{left:24px}
 .slider{display:flex;flex-direction:column;gap:6px}
@@ -172,7 +176,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
       <div class="hud-mid"><div class="rally-tag" id="rallyTag"></div></div>
     </div>
     <div id="countdown" class="hidden"><b>3</b></div>
-    <div id="serveHint" class="hidden">Drag to move your paddle. Drag to serve.</div>
+    <div id="serveHint" class="hidden">Drag anywhere to move your paddle · flick as you strike to curve the ball</div>
   </div>
 </div>
 
@@ -255,7 +259,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:30px}
       <p><b>Win the match</b> by reaching the target score first. Pick the target and difficulty in Free Play. Career levels set their own.</p>
       <p><b>Curve the ball:</b> flick your paddle sideways at the moment you strike. Spin bends the flight.</p>
       <p><b>Power-ups:</b> in Gauntlet arenas, steer the ball through a capsule. Whoever touched the ball last gets the boost.</p>
-      <p><b>Rewards:</b> matches pay ⚡ Rally and 💎 Gems for the Skins shop. Everything is earned by playing.</p>
+      <p><b>Rewards:</b> matches pay ⚡ Rally and 💎 Gems, long rallies pay ✦ Sparks, and Career levels pay 🏆 Trophies. Every skin has a price in one of the four, and all four come from playing.</p>
     </div>
     <div class="sec-title">The Arenas</div>
     <div class="how-card">
@@ -324,15 +328,62 @@ const DEF_SAVE={
   cur:{rally:120, gem:0, spark:0, trophy:0},
   owned:{}, equip:{}, camp:0, campBest:0,
   opt:{sound:true, shake:true, trail:true, hand:'auto'},
-  stats:{played:0, wins:0, bestRally:0, pointsFor:0},
-  daily:{d:0,n:0}
+  stats:{played:0, wins:0, bestRally:0, pointsFor:0, survivalBest:0}
 };
+// Corrupt-save law: a blob that merely PARSES is not a save. Every branch has to
+// be the same KIND of thing the default is, numbers have to be finite, and any
+// branch that fails falls back to the default for that branch alone (so one bad
+// field never costs the player the rest of their progress). Before this, a save
+// of {"cur":1,"opt":5} threw at load under "use strict" — assigning a property to
+// a primitive — which killed the whole IIFE and left a permanently blank page.
+const _plain=v=>v&&typeof v==='object'&&!Array.isArray(v);
+function _num(v,d){ return (typeof v==='number'&&isFinite(v))?v:d; }
+function _bool(v,d){ return typeof v==='boolean'?v:d; }
+function _str(v,allow,d){ return (typeof v==='string'&&allow.indexOf(v)>=0)?v:d; }
+function _flagMap(v){ const o={}; if(_plain(v)) for(const k in v){ if(v[k]) o[k]=1; } return o; }
+function _strMap(v){ const o={}; if(_plain(v)) for(const k in v){ if(typeof v[k]==='string') o[k]=v[k]; } return o; }
+function validate(r){
+  const d=JSON.parse(JSON.stringify(DEF_SAVE));
+  if(!_plain(r)) return d;
+  if(_plain(r.cur)) for(const k in d.cur) d.cur[k]=Math.max(0,Math.floor(_num(r.cur[k],d.cur[k])));
+  d.owned=_flagMap(r.owned);
+  d.equip=_strMap(r.equip);
+  d.camp=clamp(Math.floor(_num(r.camp,0)),0,64);
+  d.campBest=clamp(Math.floor(_num(r.campBest,0)),0,64);
+  if(_plain(r.opt)){ d.opt.sound=_bool(r.opt.sound,true); d.opt.shake=_bool(r.opt.shake,true);
+    d.opt.trail=_bool(r.opt.trail,true); d.opt.hand=_str(r.opt.hand,['auto','left','right'],'auto'); }
+  if(_plain(r.stats)) for(const k in r.stats){ const n=_num(r.stats[k],null); if(n!==null) d.stats[k]=Math.max(0,Math.floor(n)); }
+  d._diff=_str(r._diff,['easy','normal','hard','expert'],'normal');
+  d._target=[3,5,7,11].indexOf(_num(r._target,7))>=0?r._target:7;
+  return d;
+}
 let S=load();
-function load(){ try{ const r=JSON.parse(localStorage.getItem(SAVE_KEY)); if(r&&r.cur) return deepDefault(r,DEF_SAVE);}catch(e){} return JSON.parse(JSON.stringify(DEF_SAVE)); }
-function deepDefault(o,d){ for(const k in d){ if(o[k]===undefined) o[k]=JSON.parse(JSON.stringify(d[k])); else if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])) deepDefault(o[k],d[k]); } return o; }
+function load(){ let raw=null; try{ raw=JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){} return validate(raw); }
 let _saveT=0;
-function save(){ if(_saveT)return; _saveT=setTimeout(()=>{_saveT=0; try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}},250); }
-function saveNow(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
+function save(){ if(_saveT)return; _saveT=setTimeout(()=>{_saveT=0; saveNow();},250); }
+// Two-tabs law: never write a boot snapshot over whatever is on disk NOW.
+// Counters ADD their delta, bests MAX, owned unions, last equip wins.
+let _base=JSON.parse(JSON.stringify(S));
+function saveNow(){
+  try{
+    let disk=null; try{ disk=validate(JSON.parse(localStorage.getItem(SAVE_KEY))); }catch(e){}
+    if(disk){
+      for(const k in S.cur) S.cur[k]=Math.max(0,(disk.cur[k]||0)+((S.cur[k]||0)-(_base.cur[k]||0)));
+      for(const k in disk.owned) S.owned[k]=1;
+      S.camp=Math.max(S.camp,disk.camp); S.campBest=Math.max(S.campBest,disk.campBest);
+      S.stats.played=(disk.stats.played||0)+((S.stats.played||0)-(_base.stats.played||0));
+      S.stats.wins=(disk.stats.wins||0)+((S.stats.wins||0)-(_base.stats.wins||0));
+      S.stats.pointsFor=(disk.stats.pointsFor||0)+((S.stats.pointsFor||0)-(_base.stats.pointsFor||0));
+      S.stats.bestRally=Math.max(S.stats.bestRally||0,disk.stats.bestRally||0);
+      S.stats.survivalBest=Math.max(S.stats.survivalBest||0,disk.stats.survivalBest||0);
+    }
+    localStorage.setItem(SAVE_KEY,JSON.stringify(S));
+    _base=JSON.parse(JSON.stringify(S));
+  }catch(e){}
+}
+// deliberate wholesale write — the ONLY caller is "reset all progress", where
+// merging deltas back in would defeat the reset
+function saveReplace(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(S)); _base=JSON.parse(JSON.stringify(S)); }catch(e){} }
 
 /* ─────────────────────────── audio ─────────────────────────── */
 const Audio2=(function(){
@@ -506,8 +557,9 @@ class Match{
     this.particles=[];
     this.powerups=[]; this.puTimer=rand(4,7); this.effects={p:{},ai:{}}; this.ballSlow=0; this.clock=0; this.movers=[]; this.bumpers=[]; this.trauma=0;
     this.result=null;
+    this.served=0;             // first serve of the MATCH gets the full 3-2-1
     cfg.build(this);           // mode builder fills walls/paddles/scoreFn
-    this.count=3; this.countT=0;
+    this.count=3; this.countT=0; this.countStep=0.7;
     this.serveBall();
     this.state='count'; this.stateT=0;
   }
@@ -525,7 +577,12 @@ class Match{
     this.cfg.serve(this,b,this.server);      // aim the first ball
     for(let k=1;k<n;k++){ const nb=new Ball(this.W/2,this.H/2,this.cfg.ballR); nb.speed=this.baseSpeed;
       const a=Math.atan2(b.vy,b.vx)+ (k%2?1:-1)*0.4*Math.ceil(k/2); nb.setDir(a,this.baseSpeed); this.balls.push(nb); }
-    this.state='count'; this.count=3; this.countT=0;
+    // Dead-air fix. The full 3-2-1 belongs at the top of a MATCH. Doing it again
+    // after every point cost 3.0s per point — over 40 seconds of a first-to-7
+    // with no ball on the table, which is the one way this is worse than the
+    // Pong everybody already has in their head. Re-serves get a single GO beat.
+    const first=(this.served===0); this.served++;
+    this.state='count'; this.count=first?3:1; this.countStep=first?0.7:0.45; this.countT=0;
   }
   playerPaddle(){ return this.paddles.find(p=>p.owner==='p'); }
   aiPaddle(){ return this.paddles.find(p=>p.owner==='ai'); }
@@ -541,10 +598,10 @@ class Match{
       p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=.92; p.vy*=.92; p.life-=dt; if(p.life<=0)this.particles.splice(i,1); }
 
     if(this.state==='count'){
-      this.countT+=dt; if(this.countT>=0.7){ this.countT=0; this.count--; if(this.count<=0){ this.state='play'; } }
+      this.countT+=dt; if(this.countT>=(this.countStep||0.7)){ this.countT=0; this.count--; if(this.count<=0){ this.state='play'; } }
       this.stepPaddles(dt); return;
     }
-    if(this.state==='scored'){ this.stepPaddles(dt); if(this.stateT>0.9){ if(this.scores.p>=this.target||this.scores.ai>=this.target){ this.finish(); } else { this.serveBall(); } } return; }
+    if(this.state==='scored'){ this.stepPaddles(dt); if(this.stateT>0.55){ if(this.scores.p>=this.target||this.scores.ai>=this.target){ this.finish(); } else { this.serveBall(); } } return; }
     if(this.state==='over') return;
 
     // AI + player paddles
@@ -649,7 +706,13 @@ class Match{
   substep(b,dt){
     if(b.dead) return;                 // already scored this frame — don't double-count
     if(b.stuck){ // caught by magnet paddle
-      const c=b.stuck.center(); b.x=c.x+b.stuck.normal.x*(b.r+2); b.y=c.y+b.stuck.normal.y*(b.r+2); return;
+      const c=b.stuck.center(); b.x=c.x+b.stuck.normal.x*(b.r+2); b.y=c.y+b.stuck.normal.y*(b.r+2);
+      // Auto-fire. A held ball is invisible to the trap-breaker (substep returns
+      // before it can be sped up), so without this the magnet is a permanent
+      // softlock for anyone who is mid-drag or simply stops touching the screen.
+      b.hold=(b.hold||0)+dt;
+      if(b.hold>1.1) this.releaseStuck(b);
+      return;
     }
     // ENGLISH (Stephen 2026-07-16): spin picked up from a moving paddle bends
     // the flight — Magnus force perpendicular to velocity, decaying each tick.
@@ -678,6 +741,10 @@ class Match{
     const who=this.cfg.score(this,b);
     if(who){ this.doScore(who,b); }
   }
+  releaseStuck(b){ if(!b.stuck)return; const n=b.stuck.normal;
+    b.setDir(Math.atan2(n.y,n.x)+rand(-.3,.3), Math.max(this.baseSpeed,Math.hypot(b.vx,b.vy)||this.baseSpeed));
+    b.stuck=null; b.hold=0; if(this.effects&&this.effects.p)this.effects.p.magnet=false;
+    this.lastPaddleT=this.clock; Audio2.pickup(); }
   onWallHit(b,hit){
     if(hit.seg.shield){ const e=this.effects[hit.seg.owner]; if(e){ e.shieldHp=(e.shieldHp||0)-1;
         this.burst(hit.px,hit.py, hit.seg.owner==='p'?'var(--p1)':'var(--p2)',8); if(e.shieldHp<=0)this.rebuildShield(); }
@@ -784,12 +851,6 @@ class Mover{
     const c=[[cx-hw,cy-hh],[cx+hw,cy-hh],[cx+hw,cy+hh],[cx-hw,cy+hh]];
     this.rect={x:cx-hw,y:cy-hh,w:this.w,h:this.h};
     this.segs=[]; for(let i=0;i<4;i++){ const a=c[i],b=c[(i+1)%4]; this.segs.push({ax:a[0],ay:a[1],bx:b[0],by:b[1],rest:1}); } }
-}
-
-// helper: predictive linear AI target (reflect off perpendicular walls)
-function predictLinear(m,b, coord){
-  // coord: 'y' for classic (paddles vary y at fixed x), 'x' for vertical
-  return coord==='y'? b.y : b.x;
 }
 
 /* ── CLASSIC — vertical paddles, drag up/down ── */
@@ -1009,7 +1070,13 @@ const Skins=(function(){
   const RARITY=['common','rare','epic','legend','mythic'];
   const RAR_LABEL={common:'Common',rare:'Rare',epic:'Epic',legend:'Legendary',mythic:'Mythic'};
   // price + currency by rarity
-  const PRICE={ common:[80,'rally'], rare:[240,'rally'], epic:[70,'gem'], legend:[180,'gem'], mythic:[8,'trophy'] };
+  // One sink per currency. Sparks come from long rallies, so Rare (the tier you
+  // reach by actually playing well rather than often) is priced in sparks; before
+  // this pass sparks were earnable and unspendable, which made the menu's "only
+  // spends here" line false. Epic/Legend gem prices cut roughly in half against a
+  // gem income that went 2->5 per win, so the epic tier is a session away instead
+  // of about forty match wins.
+  const PRICE={ common:[80,'rally'], rare:[120,'spark'], epic:[45,'gem'], legend:[110,'gem'], mythic:[8,'trophy'] };
   function rarOf(i,seed){ const r=((i*2654435761)>>> (seed||0))%1000/1000; return r<0.5?'common':r<0.78?'rare':r<0.93?'epic':r<0.985?'legend':'mythic'; }
   function priceFor(rar,i){ const [base,cur]=PRICE[rar]; const mul=1+((i%5)*0.12); return {cost:Math.round(base*mul/(cur==='trophy'?1:5))*(cur==='trophy'?1:5), cur}; }
 
@@ -1314,7 +1381,35 @@ function cssColor(c){ if(c&&c.indexOf('var(')===0){ return getV(c.slice(4,-1)); 
 /* ═══════════════════════════ LOOP ═══════════════════════════ */
 let game=null, running=false, lastT=0, acc=0;
 const FIXED=1/120;
-function rebuildArena(){ if(!game)return; game.W=VW;game.H=VH; game.walls.length=0; game.obstacles.length=0; game.paddles.length=0; game.cfg.build(game); }
+// Rotate-the-phone law. The menu tells the player to rotate, so this path is
+// hot. It used to clear walls/obstacles/paddles but NOT bumpers or movers, so
+// every rotation in Gauntlet stacked two more bumpers and another moving block
+// on top of the old ones. It also left the ball wherever it was, which in a
+// portrait-to-landscape flip is OUTSIDE the new field: classic only scores on x,
+// so a ball below the new bottom wall fell away forever and the match hung.
+function rebuildArena(){ if(!game)return;
+  const m=game, oldW=m.W||VW, oldH=m.H||VH;
+  m.W=VW; m.H=VH;
+  m.walls.length=0; m.obstacles.length=0; m.paddles.length=0;
+  m.bumpers.length=0; m.movers.length=0; m.powerups.length=0;
+  m.effects={p:{},ai:{}}; m.ballSlow=0;
+  m.cfg.W=VW; m.cfg.H=VH;
+  m.cfg.build(m);
+  // carry every live ball into the new field proportionally, then hard-clamp it
+  const inset=Math.max(4,m.cfg.ballR*1.5);
+  for(const b of m.balls){
+    if(b.stuck){ b.stuck=null; }
+    b.x=clamp(b.x*(VW/(oldW||VW)),inset,VW-inset);
+    b.y=clamp(b.y*(VH/(oldH||VH)),inset,VH-inset);
+    b.trail.length=0;
+    const sp=Math.hypot(b.vx,b.vy)||m.baseSpeed;
+    if(!isFinite(b.x)||!isFinite(b.y)){ b.x=VW/2; b.y=VH/2; }
+    if(!isFinite(sp)||sp<1) b.setDir(rand(TAU),m.baseSpeed);
+    // radial's field is a disc, not the rect — pull a stranded ball back inside
+    if(m.cfg.id==='radial'&&m.R){ const dx=b.x-m.cx,dy=b.y-m.cy,d=Math.hypot(dx,dy);
+      if(d>m.R-b.r*2){ const k=(m.R-b.r*3)/(d||1); b.x=m.cx+dx*k; b.y=m.cy+dy*k; } }
+  }
+}
 function startMatch(modeId,opts={}){
   const mode=MODES[modeId];
   const diffKey=opts.diff||S._diff||'normal'; const D=DIFF[diffKey];
@@ -1348,8 +1443,8 @@ requestAnimationFrame(frame);
 let dragging=false;
 function pt(e){ const r=cv.getBoundingClientRect(); const src=e.touches?e.touches[0]:e; return {x:src.clientX-r.left, y:src.clientY-r.top}; }
 function onDown(e){ if(!game||game.state==='over')return; dragging=true; const p=pt(e); game.input(p.x,p.y);
-  // radial/serve release for magnet
-  for(const b of game.balls){ if(b.stuck){ b._released=true; b.setDir(Math.atan2(b.stuck.normal.y,b.stuck.normal.x)+rand(-.3,.3),Math.max(game.baseSpeed,Math.hypot(b.vx,b.vy))); b.stuck=null; if(game.effects&&game.effects.p)game.effects.p.magnet=false; } }
+  // tap fires a magnet-held ball early (it fires itself after 1.1s regardless)
+  for(const b of game.balls){ if(b.stuck) game.releaseStuck(b); }
   Audio2.resume(); e.preventDefault(); }
 function onMove(e){ if(!dragging||!game)return; const p=pt(e); game.input(p.x,p.y); e.preventDefault(); }
 function onUp(){ dragging=false; }
@@ -1391,7 +1486,13 @@ S._diff=S._diff||'normal'; S._target=S._target||7;
 const UI=(function(){
   const scr={menu:$('#scrMenu'),modes:$('#scrModes'),campaign:$('#scrCamp'),shop:$('#scrShop'),settings:$('#scrSettings'),how:$('#scrHow'),pause:$('#scrPause'),result:$('#scrResult')};
   let cur='menu';
-  function playerSide(){ if(S.opt.hand==='left')return 'left'; if(S.opt.hand==='right')return 'right'; return 'left'; }
+  // "Auto" was a silent synonym for "Left" and the label pretended otherwise.
+  // A browser gives us no honest handedness signal, so rather than invent one the
+  // label now says what actually happens. Left is also the side that keeps the
+  // player's paddle clear of the fleet feedback button in the bottom-right gutter.
+  function autoSide(){ return 'left'; }
+  function playerSide(){ if(S.opt.hand==='left')return 'left'; if(S.opt.hand==='right')return 'right'; return autoSide(); }
+  function handLabel(){ return S.opt.hand==='left'?'Left':S.opt.hand==='right'?'Right':'Auto (left)'; }
   function show(name){
     Object.values(scr).forEach(s=>s.classList.add('hidden'));
     $('#hud').classList.add('hidden');
@@ -1409,7 +1510,9 @@ const UI=(function(){
     const cd=$('#countdown'); if(m.state==='count'){ cd.classList.remove('hidden'); cd.querySelector('b').textContent=m.count>0?m.count:'GO'; }
     else cd.classList.add('hidden');
     const sh=$('#serveHint'); if(m.state==='count'||m.state==='serve') sh.classList.remove('hidden'); else sh.classList.add('hidden');
-    const rt=$('#rallyTag'); rt.textContent = m.state==='play'&&m.rally>3? ('RALLY '+m.rally) : '';
+    const rt=$('#rallyTag');
+    const held=m.balls&&m.balls.some(b=>b.stuck);
+    rt.textContent = held? 'MAGNET · TAP TO FIRE' : (m.state==='play'&&m.rally>3? ('RALLY '+m.rally) : '');
   }
   function renderWallet(){ const html=walletHTML(); $('#walletMenu').innerHTML=html; $('#campSub').textContent = campSubtitle(); }
   function walletHTML(){ return [['rally','⚡','rally'],['gem','💎','gem'],['spark','✦','spark'],['trophy','🏆','trophy']].map(([k,ic,cls])=>`<div class="cur ${cls}"><span class="ic">${ic}</span><b>${fmt(S.cur[k]||0)}</b></div>`).join(''); }
@@ -1442,9 +1545,8 @@ const UI=(function(){
     $('#swSound').classList.toggle('on',S.opt.sound);
     $('#swShake').classList.toggle('on',S.opt.shake);
     $('#swTrail').classList.toggle('on',S.opt.trail);
-    $('#handLabel').textContent=({auto:'Auto',left:'Left',right:'Right'})[S.opt.hand];
+    $('#handLabel').textContent=handLabel();
   }
-  let pausedFrom=null;
   function togglePause(){ if(!game)return; if(game.state==='paused'){ game.state=game._pre||'play'; show(null); $('#hud').classList.remove('hidden'); } else { game._pre=game.state; game.state='paused'; show('pause'); } }
   function showResult(m){
     const r=m.result; show('result');
@@ -1464,20 +1566,23 @@ const UI=(function(){
     $('#resVerdict').textContent=r.win?'VICTORY':'DEFEAT'; $('#resVerdict').className='verdict '+(r.win?'win':'lose');
     $('#resScore').textContent=`${r.p} : ${r.ai}   ·   best rally ${r.rally}`;
     // rewards
-    let rew={rally: r.win? 20:6, gem: r.win?2:0};
-    if(r.win&&m.scores.ai===0){ rew.gem+=3; rew.rally+=10; }
+    let rew={rally: r.win? 20:6, gem: r.win?5:0};
+    if(r.win&&m.scores.ai===0){ rew.gem+=4; rew.rally+=10; }
     for(const k in rew){ if(rew[k]>0)Economy.earn(k,rew[k],k==='rally'&&r.win?'winmatch':'result'); }
     for(const k in rew){ if(rew[k]>0){ const d=document.createElement('div'); d.className='reward'; d.innerHTML=`${icons[k]} +${rew[k]}`; rr.appendChild(d);} }
     // campaign advance
     if(m.campaign!=null){
       if(r.win){ if(m.campaign>=S.camp){ S.camp=m.campaign+1; if(S.camp>S.campBest)S.campBest=S.camp; Economy.earn('trophy',1,'camp'); const d=document.createElement('div');d.className='reward';d.innerHTML='🏆 +1';rr.appendChild(d); }
-        $('#resExtra').textContent=(S.camp>=CAMPAIGN.length)?'You cleared The Gauntlet! Endless mode continues.':'Level cleared.';
-        nextBtn.textContent='Next level'; nextBtn.onclick=()=>{ const nx=Math.min(S.camp,CAMPAIGN.length-1); const lv=CAMPAIGN[nx]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:nx,powerups:lv.powerups,obstacles:lv.obstacles}); };
+        // there is no endless mode, so the ladder-complete line no longer claims one
+        const cleared=(S.camp>=CAMPAIGN.length);
+        $('#resExtra').textContent=cleared?'You cleared The Gauntlet, all twelve. Free Play and Survival are still open.':'Level cleared.';
+        nextBtn.textContent=cleared?'Play it again':'Next level';
+        nextBtn.onclick=()=>{ const nx=Math.min(S.camp,CAMPAIGN.length-1); const lv=CAMPAIGN[nx]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:nx,powerups:lv.powerups,obstacles:lv.obstacles}); };
       } else { $('#resExtra').textContent='Try again. The machine is patient.'; nextBtn.textContent='Retry'; nextBtn.onclick=()=>{ const lv=CAMPAIGN[m.campaign]; startMatch(lv.mode,{diff:lv.diff,target:lv.target,campaign:m.campaign,powerups:lv.powerups,obstacles:lv.obstacles}); }; }
     } else { $('#resExtra').textContent=''; nextBtn.textContent='Play again'; nextBtn.onclick=()=>{ startMatch(m.modeId,{diff:S._diff,target:S._target}); }; }
     saveNow();
   }
-  return {show,enterGame,updateScores,tickHud,playerSide,togglePause,showResult,flashWallet,renderWallet,renderModes,walletHTML};
+  return {show,enterGame,updateScores,tickHud,playerSide,handLabel,togglePause,showResult,flashWallet,renderWallet,renderModes,walletHTML};
 })();
 
 /* ═══════════════════════════ SHOP ═══════════════════════════ */
@@ -1547,8 +1652,8 @@ $('#btnRematch').addEventListener('click',()=>{ if(game)startMatch(game.modeId, 
 $('#swSound').addEventListener('click',function(){S.opt.sound=!S.opt.sound;this.classList.toggle('on',S.opt.sound);save();});
 $('#swShake').addEventListener('click',function(){S.opt.shake=!S.opt.shake;this.classList.toggle('on',S.opt.shake);save();});
 $('#swTrail').addEventListener('click',function(){S.opt.trail=!S.opt.trail;this.classList.toggle('on',S.opt.trail);save();});
-$$('[data-hand]').forEach(b=>b.addEventListener('click',()=>{S.opt.hand=b.getAttribute('data-hand');save();$('#handLabel').textContent=({auto:'Auto',left:'Left',right:'Right'})[S.opt.hand];}));
-$('#btnReset').addEventListener('click',()=>{ if(confirm('Reset ALL progress, currency and skins?')){ S=JSON.parse(JSON.stringify(DEF_SAVE)); saveNow(); UI.show('menu'); toast('Progress reset'); } });
+$$('[data-hand]').forEach(b=>b.addEventListener('click',()=>{S.opt.hand=b.getAttribute('data-hand');save();$('#handLabel').textContent=UI.handLabel();}));
+$('#btnReset').addEventListener('click',()=>{ if(confirm('Reset ALL progress, currency and skins?')){ S=validate(null); saveReplace(); Skins.applyTheme(); UI.show('menu'); toast('Progress reset'); } });
 
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),1600); }
 window.__toast=toast;
@@ -1558,7 +1663,7 @@ function boot(){ resize(); UI.show('menu'); }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
 
 /* test hook for headless verification */
-window.__PONG={ get game(){return game;}, MODES, DIFF, start:startMatch, S:()=>S, step:(n=1)=>{for(let i=0;i<n;i++)if(game)game.update(FIXED);}, Match, LinearPaddle, ArcPaddle, collideCircleSeg };
+window.__PONG={ get game(){return game;}, MODES, DIFF, CAMPAIGN, start:startMatch, S:()=>S, step:(n=1)=>{for(let i=0;i<n;i++)if(game)game.update(FIXED);}, Match, LinearPaddle, ArcPaddle, collideCircleSeg, Skins, Economy, saveNow, validate };
 })();
 </script>
 
@@ -1570,13 +1675,17 @@ window.__PONG={ get game(){return game;}, MODES, DIFF, start:startMatch, S:()=>S
      ══════════════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
-  var EMBED=/[?&]embed=1(&|$)/.test(location.search);
-  window.SWS_EMBED=EMBED;
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EMBED=framed;
   window.SWS_EXIT=function(){
-    if(EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
-    location.href='/portal/';
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
   };
-  if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
   /* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md). */
   window._sbCapEarn=function(n,tag){
     try{ var k='sw_sb_pong';

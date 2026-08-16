@@ -3244,7 +3244,22 @@ try{ window.BB_DEBUG = {
   },
   snap:function(){ if(!G) return {playing:_playing}; return { playing:_playing, state:G.state, n:G.level.n,
     pestsAlive:G.pestsAlive, pestsTotal:G.pestsTotal, score:G.score, ammoIdx:G.ammoIdx, ammoLen:G.ammo.length,
-    blocksDestroyed:G.blocksDestroyed }; }
+    blocksDestroyed:G.blocksDestroyed }; },
+  /* ---- added 2026-08-16 for the repair verifier (satellites/burr-blast/check.mjs) ---- */
+  save:function(){ return SAVE; },
+  persist:function(){ persist(); },
+  reloadSave:function(){ loadSave(); },
+  totalStars:function(){ return totalStars(); },
+  unlocked:function(n){ return isLevelUnlocked(n); },
+  nutrients:function(){ return { used:nutrientsUsed(), left:nutrientsLeft(), cap:nutCap() }; },
+  ammoQueue:function(){ return G?G.ammo.slice():null; },
+  /* pull the pouch to an explicit offset and read the guide back: how many dots it
+     plots and where (if anywhere) it says the shot stops */
+  guide:function(dx,dy){ if(!G)return null;
+    G.pouch=v(SLING_X+(dx==null?-140:dx), SLING_Y+(dy==null?-30:dy));
+    var g=predictPath();
+    return { n:g.pts.length, last:g.pts.length?{x:Math.round(g.pts[g.pts.length-1].x),y:Math.round(g.pts[g.pts.length-1].y)}:null,
+             hit:g.hit?{x:Math.round(g.hit.x),y:Math.round(g.hit.y)}:null }; }
 }; }catch(e){}
 
 /*__G_APPEND__*/

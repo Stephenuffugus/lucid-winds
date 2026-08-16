@@ -592,26 +592,105 @@
   };
 
   // ---------- persistence ----------
+  /* ── SAVE VALIDATION (2026-08-16 audit, defect classes 3 and 5) ────────────
+     A try/catch around JSON.parse is not validation. With {"owned":3} stored,
+     `d.owned||['classic']` kept the 3, and the very next line —
+     OUTSIDE the catch — ran state.owned.includes('classic') and threw. load()
+     is async, so the rejection killed the boot IIFE before
+     showBtn('Start Game', startGame) ever ran. The Start button ships in the
+     HTML with that exact label, so the page looked perfect and the button did
+     nothing, forever, with no error the player could see. Same shape for
+     ownedCups, and {"daily":"x"} poisoned Object.assign. Everything is now
+     type-checked and id-checked on the way in. */
+  const SAVE_KEY='shellshuffle:v1';
+  const num=(v,d)=>{ const n=(typeof v==='string')?parseFloat(v):v;
+    return (typeof n==='number'&&isFinite(n))?n:d; };
+  const int=(v,d)=>{ const n=num(v,NaN); return isFinite(n)?Math.round(n):d; };
+  const hex=(v,d)=>(typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:d;
+  const idList=(v,catalogue,defaults)=>{
+    const out=defaults.slice();
+    if(Array.isArray(v)) for(const id of v)
+      if(typeof id==='string'&&catalogue.some(x=>x.id===id)&&!out.includes(id)) out.push(id);
+    return out;
+  };
+  function validate(d){
+    const out={
+      coins:0, owned:['classic'], selected:'classic', selectedCup:'sunset',
+      ownedCups:['sunset','moonlit','forest'],
+      custom:{color:'#ff5a5f', color2:'#ffe14d', pattern:'solid'},
+      level:1, streak:0, bestLevel:1, phase:'idle',
+      daily:{last:null,streak:0,best:0,week:null,weekDays:0,weekStreak:0,nextReminderAt:null,reminderOptIn:false}
+    };
+    if(!d||typeof d!=='object'||Array.isArray(d)) return out;
+    out.coins=Math.max(0,int(d.coins,0));
+    out.bestLevel=Math.max(1,int(d.bestLevel,1));
+    out.owned=idList(d.owned,BALLS,['classic']);
+    out.ownedCups=idList(d.ownedCups,CUPS,['sunset','moonlit','forest']);
+    if(d.custom&&typeof d.custom==='object'&&!Array.isArray(d.custom)){
+      out.custom.color=hex(d.custom.color,'#ff5a5f');
+      out.custom.color2=hex(d.custom.color2,'#ffe14d');
+      if(['solid','stripes','dots','halves'].indexOf(d.custom.pattern)>=0) out.custom.pattern=d.custom.pattern;
+    }
+    if(typeof d.selected==='string'&&(d.selected==='custom'||out.owned.includes(d.selected))) out.selected=d.selected;
+    if(typeof d.selectedCup==='string'&&out.ownedCups.includes(d.selectedCup)) out.selectedCup=d.selectedCup;
+    const dy=d.daily;
+    if(dy&&typeof dy==='object'&&!Array.isArray(dy)){
+      out.daily.last=(typeof dy.last==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(dy.last))?dy.last:null;
+      out.daily.week=(typeof dy.week==='string')?dy.week:null;
+      out.daily.streak=Math.max(0,int(dy.streak,0));
+      out.daily.best=Math.max(0,int(dy.best,0));
+      out.daily.weekDays=Math.min(7,Math.max(0,int(dy.weekDays,0)));
+      out.daily.weekStreak=Math.max(0,int(dy.weekStreak,0));
+      out.daily.nextReminderAt=isFinite(num(dy.nextReminderAt,NaN))?int(dy.nextReminderAt,null):null;
+      out.daily.reminderOptIn=(dy.reminderOptIn===true);
+    }
+    return out;
+  }
+  async function readDisk(){
+    let raw=null; try{ raw=await Store.get(SAVE_KEY); }catch(e){}
+    let parsed=null; try{ parsed=raw?JSON.parse(raw):null; }catch(e){ parsed=null; }
+    return validate(parsed);
+  }
+  let saveBase={coins:0};
   async function load(){
-    try{
-      const raw = await Store.get('shellshuffle:v1');
-      if(raw){ const d=JSON.parse(raw); Object.assign(state, {
-        coins:d.coins||0, owned:d.owned||['classic'], selected:d.selected||'classic',
-        custom:d.custom||state.custom, bestLevel:d.bestLevel||1,
-        selectedCup:d.selectedCup||'sunset',
-        ownedCups:d.ownedCups||['sunset','moonlit','forest'],
-        daily:Object.assign({last:null,streak:0,best:0,week:null,weekDays:0,weekStreak:0,nextReminderAt:null,reminderOptIn:false}, d.daily||{})
-      }); }
-    }catch(e){}
-    if(!state.owned.includes('classic')) state.owned.push('classic');
+    const v=await readDisk();
+    Object.assign(state, {coins:v.coins, owned:v.owned, selected:v.selected,
+      selectedCup:v.selectedCup, ownedCups:v.ownedCups, custom:v.custom,
+      bestLevel:v.bestLevel, daily:v.daily});
     CUPS.forEach(c=>{ if(cupPrice(c.id)===0 && !state.ownedCups.includes(c.id)) state.ownedCups.push(c.id); });
     if(!state.ownedCups.includes(state.selectedCup)) state.selectedCup = state.ownedCups[0] || 'sunset';
+    saveBase={coins:state.coins};
   }
+  /* ── TWO-TAB MERGE (defect class 4) ────────────────────────────────────────
+     save() used to write the whole in-memory object, so whichever tab wrote last
+     erased the other's coins, best level, purchases and daily streak. That is
+     the NORMAL case here, because the game used to auto-open the Daily sheet on
+     boot and write on open. Counters ADD, bests MAX, sets union. */
   async function save(){
-    const d={coins:state.coins, owned:state.owned, selected:state.selected,
-             selectedCup:state.selectedCup, ownedCups:state.ownedCups, custom:state.custom, bestLevel:state.bestLevel,
-             daily:state.daily};
-    await Store.set('shellshuffle:v1', JSON.stringify(d));
+    const disk = await readDisk();
+    const laterDate=(a,b)=>{ if(!a) return b; if(!b) return a; return (a>b)?a:b; };
+    const d={
+      coins:Math.max(0, disk.coins + (state.coins - saveBase.coins)),
+      owned:state.owned.slice(), ownedCups:state.ownedCups.slice(),
+      selected:state.selected, selectedCup:state.selectedCup,
+      custom:state.custom, bestLevel:Math.max(disk.bestLevel, state.bestLevel),
+      daily:{
+        last:laterDate(disk.daily.last, state.daily.last),
+        week:state.daily.week||disk.daily.week,
+        streak:Math.max(disk.daily.streak, state.daily.streak),
+        best:Math.max(disk.daily.best, state.daily.best),
+        weekDays:Math.max(disk.daily.weekDays, state.daily.weekDays),
+        weekStreak:Math.max(disk.daily.weekStreak, state.daily.weekStreak),
+        nextReminderAt:state.daily.nextReminderAt||disk.daily.nextReminderAt,
+        reminderOptIn:state.daily.reminderOptIn||disk.daily.reminderOptIn
+      }
+    };
+    for(const id of disk.owned) if(!d.owned.includes(id)) d.owned.push(id);
+    for(const id of disk.ownedCups) if(!d.ownedCups.includes(id)) d.ownedCups.push(id);
+    await Store.set(SAVE_KEY, JSON.stringify(d));
+    state.coins=d.coins; state.owned=d.owned; state.ownedCups=d.ownedCups;
+    state.bestLevel=d.bestLevel; state.daily=d.daily;
+    saveBase={coins:state.coins};
   }
 
   // ---------- HUD ----------
@@ -622,6 +701,7 @@
     $('dstreak').textContent=state.daily.streak;
     $('dbadge').style.display = dailyAvailable() ? 'inline-block' : 'none';
     $('streakEl').textContent = state.streak>1 ? ('🔥 '+state.streak+' in a row!') : '';
+    const ht=$('hint'); if(ht) ht.textContent=hintText();
   }
   function setStatus(t,cls){ const s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:''); }
   function showBtn(label, fn){ const b=$('actBtn'); b.textContent=label; b.classList.remove('hidden'); b.onclick=fn; }
@@ -633,9 +713,27 @@
   const wraps={}, bodies={}; let ballEl=null, guessResolver=null;
 
   function cupCount(){ return Math.min(state.level+1, MAX_CUPS); }
-  function shuffleCount(){ return cupCount()*3 + Math.min(state.level,9); }
+  /* 2026-08-16 audit: every knob used to stop turning. Cups capped at 6 (lv 5),
+     swap count at 27 (lv 9), swap duration floored at 115ms (lv 10.4) — so from
+     level 11 on, EVERY round was byte-identical forever while the reward kept
+     climbing, and the on-screen hint kept promising "adds a cup, shuffles
+     faster, and pays more". The ramp now continues, and past level 10 it
+     continues with a NEW thing to track rather than the same thing faster. */
+  function shuffleCount(){
+    var n = cupCount()*3 + Math.min(state.level,9);
+    if(state.level>9) n += Math.floor((state.level-9)/2);
+    return Math.min(n, 44);                       // a round must still end
+  }
   function swapDur(){ return Math.max(115, 470 - state.level*34); }
+  /* From level 11, a growing share of the beats move TWO independent pairs at
+     once. Capped at 45% so the ball's own pair is still followable. */
+  function doubleChance(){ return state.level<11 ? 0 : Math.min(0.45, (state.level-10)*0.06); }
   function reward(){ return cupCount()*5 + state.streak*3 + (state.level>5?8:0); }
+  function hintText(){
+    if(state.level<5)  return 'Each round adds a cup, shuffles faster, and pays more coins.';
+    if(state.level<10) return 'Six cups now. Every round shuffles faster and pays more coins.';
+    return 'Double swaps: two pairs move at once. Keep your eye on the ball.';
+  }
 
   function layout(count){
     const W = pf.clientWidth || 360;
@@ -682,10 +780,21 @@
     pf.appendChild(ballEl);
     applySizes(); instant(applyTransforms);
   }
-  function doSwap(){
-    let a=Math.floor(Math.random()*order.length), b=Math.floor(Math.random()*order.length);
-    while(b===a) b=Math.floor(Math.random()*order.length);
+  function swapOnce(exclude){
+    const n=order.length;
+    let a=Math.floor(Math.random()*n), b=Math.floor(Math.random()*n), guard=0;
+    while((b===a || (exclude&&(exclude.has(a)||exclude.has(b)))) && guard++<40){
+      a=Math.floor(Math.random()*n); b=Math.floor(Math.random()*n);
+    }
+    if(a===b) return null;
     const t=order[a]; order[a]=order[b]; order[b]=t;
+    return [a,b];
+  }
+  function doSwap(){
+    const first=swapOnce(null);
+    if(first && order.length>=4 && Math.random()<doubleChance()){
+      swapOnce(new Set(first));   // a second, independent pair in the same beat
+    }
     applyTransforms();
   }
   function clearGlow(){ for(const id in wraps){ wraps[id].classList.remove('good','bad'); bodies[id].classList.remove('lifted'); } }
@@ -986,14 +1095,33 @@
   $('exitPortal').onclick=()=>SWS_EXIT();
   $('pausedExit').onclick=()=>SWS_EXIT();
 
+  /* Test rig for audit_check.mjs. Everything above lives inside this IIFE and a
+     top-level `const` in a classic script is NOT a window property, so the
+     difficulty curve is unobservable from outside without this. Gated on a
+     query flag so it never ships to a player. */
+  if(/[?&]sstest=1(&|$)/.test(location.search)){
+    window.__ss={
+      at(lv){ const keep=state.level; state.level=lv;
+        const out={ level:lv, cups:cupCount(), shuffles:shuffleCount(), dur:swapDur(),
+                    dbl:doubleChance(), reward:reward(), hint:hintText() };
+        state.level=keep; return out; },
+      setLevel(lv){ state.level=lv; hud(); return hintText(); },
+      state(){ return state; }
+    };
+  }
+
   // ---------- init ----------
   (async function(){
-    await load();
-    refreshWeek();
-    if(checkUnlocks().length) save();
-    hud();
+    /* Belt to the validator's braces. The one thing this boot MUST reach is
+       showBtn('Start Game', startGame): the button ships in the HTML already
+       reading "Start Game", so if the boot dies first the page looks perfect
+       and the button is dead forever with nothing on screen to say so. */
+    try{ await load(); }catch(e){ /* keep defaults and carry on */ }
+    try{ refreshWeek(); if(checkUnlocks().length) save(); hud(); }catch(e){}
     showBtn('Start Game', startGame);
-    if(dailyAvailable()) setTimeout(openDaily, 450);
+    /* The Daily sheet used to open itself 450ms after boot, over the Start
+       button the player was already reaching for. The 🎁 badge on the daily
+       pill pulses when a reward is waiting; that is the invitation. */
     // Reminders: if a previous reminder came due while the app was closed, fire it now;
     // then re-arm the next one. (Web best-effort; native does true background delivery.)
     if(notifyOK()){
@@ -1006,13 +1134,26 @@
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
-  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
-    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+  /* 2026-08-16 audit, two defects in six lines:
+     1. the bucket key was built from location.pathname, so served as
+        .../shell-shuffle/index.html it became 'sw_sb_index.html' — a bucket
+        shared with every other fleet game that does the same thing. Literal now.
+     2. the write was wrapped in catch(e){} and Sunbeam.earn fired anyway, so if
+        setItem threw the day bucket never advanced and the earn went out
+        UNCAPPED every round. A swallowed write is not a success. */
+  var granted=0;
+  try{ var k='sw_sb_shell-shuffle';
+    var s=null; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    if(!s||typeof s!=='object'||Array.isArray(s)) s={};
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
-    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
-    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
-  }catch(e){}
-  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+    var want=Math.min(n, Math.max(0, 30-(s.n||0))); if(want<=0)return 0;
+    s.n=(s.n||0)+want; localStorage.setItem(k,JSON.stringify(s));
+    var back=JSON.parse(localStorage.getItem(k)||'null');
+    if(!back||back.n!==s.n) return 0;         // write did not land: do not pay
+    granted=want;
+  }catch(e){ return 0; }
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
 };
 </script>
 <script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'shell-shuffle',surface:'satellite'});};document.head.appendChild(s);});</script>

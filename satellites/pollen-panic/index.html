@@ -114,7 +114,7 @@
         <p><b>MUNCH</b> every seed to clear the garden and move up a level.</p>
         <p><b>DODGE</b> the pests. One touch costs a life, and the run ends when all three are gone. Petal Rush is timed instead.</p>
         <p><b>BLOOMS</b> in the corners wilt the pests. Munch wilted pests back to back for big chains.</p>
-        <p><b>GUST</b> blows nearby pests home. You earn more gusts as your score climbs.</p>
+        <p><b>GUST</b> sends every loose pest home at once. You earn more gusts as your score climbs.</p>
         <p><b>PETALS</b> drop as you play. Spend them on new modes and skins in the Nursery.</p>
       </div>
       <button id="btnHowBack">GOT IT</button>
@@ -236,15 +236,99 @@ const store={
     (store._m=store._m||{})[k]=v;
   }
 };
-async function loadSave(){
-  try{const v=await store.get("pollen-save");
-    if(v){const s=JSON.parse(v);
-      if(s.best&&!s.bests)s.bests={classic:s.best,meadow:0,superb:0,rush:0}; // v2 migration
-      save={...save,...s,bests:{...save.bests,...(s.bests||{})}};
-      for(const d of["ladybug","day","dot","none","classic"])if(!save.owned.includes(d))save.owned.push(d);
-    }}catch(e){}
+/* ── SAVE VALIDATION (2026-08-16 audit, defect classes 3 and 5) ──────────────
+   A try/catch around JSON.parse is not validation. The old loadSave merged the
+   parsed blob straight into `save`, and the boot chain
+   (buildGrid/mkPests/sizeCanvas/buildMenu/updateHUD/rAF) has no guard, so ONE
+   wrong type anywhere killed the page and left a title card with an empty mode
+   list and nothing that responds:
+     {"owned":"x"}  -> save.owned.includes() throws in buildMenu
+     {"skin":"nope"}-> skin().body throws in updateHUD
+     {"theme":"x"}  -> theme().bg throws inside the render frame (menu shows,
+                       canvas stays black forever)
+     {"bests":3} / {"top":3} / {"missions":3} -> three more, three places.
+   Every field is now type-checked and range-checked on the way in. */
+const DEFAULT_OWNED=["ladybug","day","dot","none","classic"];
+function _pnum(v,d){const n=(typeof v==="string")?parseFloat(v):v;
+  return (typeof n==="number"&&isFinite(n))?n:d;}
+function _pint(v,d){const n=_pnum(v,NaN);return isFinite(n)?Math.round(n):d;}
+function _known(id){return (id in SKINS)||(id in THEMES)||(id in SEEDSTYLES)||(id in TRAILS)||(id in MODES);}
+function _pick(v,tbl,d){return (typeof v==="string"&&(v in tbl))?v:d;}
+function _validateSave(s){
+  const out={petals:0,top:{},missions:null,bests:{classic:0,meadow:0,superb:0,rush:0},
+    owned:DEFAULT_OWNED.slice(),skin:"ladybug",theme:"day",seedStyle:"dot",trail:"none",muted:false};
+  if(!s||typeof s!=="object"||Array.isArray(s))return out;
+  out.petals=Math.max(0,_pint(s.petals,0));
+  out.muted=(s.muted===true);
+  if(s.best&&!s.bests)s.bests={classic:_pint(s.best,0)};        // v2 migration
+  if(s.bests&&typeof s.bests==="object"&&!Array.isArray(s.bests))
+    for(const k in out.bests) out.bests[k]=Math.max(0,_pint(s.bests[k],0));
+  if(Array.isArray(s.owned))
+    for(const id of s.owned) if(typeof id==="string"&&_known(id)&&!out.owned.includes(id)) out.owned.push(id);
+  out.skin=_pick(s.skin,SKINS,"ladybug"); out.theme=_pick(s.theme,THEMES,"day");
+  out.seedStyle=_pick(s.seedStyle,SEEDSTYLES,"dot"); out.trail=_pick(s.trail,TRAILS,"none");
+  if(!out.owned.includes(out.skin))out.skin="ladybug";
+  if(!out.owned.includes(out.theme))out.theme="day";
+  if(!out.owned.includes(out.seedStyle))out.seedStyle="dot";
+  if(!out.owned.includes(out.trail))out.trail="none";
+  if(s.top&&typeof s.top==="object"&&!Array.isArray(s.top))
+    for(const k in MODES){ const list=s.top[k];
+      if(!Array.isArray(list))continue;
+      const rows=[];
+      for(const r of list) if(r&&typeof r==="object"&&isFinite(_pnum(r.s,NaN)))
+        rows.push({s:Math.max(0,_pint(r.s,0)),d:(typeof r.d==="string")?r.d:""});
+      rows.sort((a,b)=>b.s-a.s); out.top[k]=rows.slice(0,5); }
+  const m=s.missions;
+  if(m&&typeof m==="object"&&typeof m.date==="string"&&Array.isArray(m.list)){
+    const list=[];
+    for(const e of m.list) if(e&&typeof e==="object"&&missionDef(e.id))
+      list.push({id:e.id,prog:Math.max(0,_pint(e.prog,0)),claimed:e.claimed===true});
+    if(list.length) out.missions={date:m.date,list:list};
+  }
+  return out;
 }
-async function persist(){try{await store.set("pollen-save",JSON.stringify(save));}catch(e){}}
+async function loadSave(){
+  let raw=null; try{raw=await store.get("pollen-save");}catch(e){}
+  let parsed=null; try{parsed=raw?JSON.parse(raw):null;}catch(e){parsed=null;}
+  save=_validateSave(parsed);
+  _persistBase={petals:save.petals};
+}
+/* ── TWO-TAB MERGE (defect class 4) ──────────────────────────────────────────
+   persist() used to write the whole in-memory object, so whichever tab finished
+   a run last erased the other's petals, bests, purchases, top-5 board and
+   mission progress. Counters ADD, bests MAX, sets union, the board merges. */
+let _persistBase={petals:0};
+async function persist(){
+  let diskRaw=null; try{diskRaw=await store.get("pollen-save");}catch(e){}
+  let disk=null; try{disk=diskRaw?_validateSave(JSON.parse(diskRaw)):null;}catch(e){disk=null;}
+  const out={
+    petals:Math.max(0, (disk?disk.petals:0) + (save.petals-_persistBase.petals)),
+    muted:save.muted, skin:save.skin, theme:save.theme, seedStyle:save.seedStyle, trail:save.trail,
+    bests:{}, owned:save.owned.slice(), top:{}, missions:save.missions
+  };
+  for(const k in save.bests) out.bests[k]=Math.max(save.bests[k], disk?(disk.bests[k]||0):0);
+  if(disk) for(const id of disk.owned) if(!out.owned.includes(id)) out.owned.push(id);
+  for(const k in MODES){
+    const merged=(save.top[k]||[]).concat(disk?(disk.top[k]||[]):[]);
+    const seen=new Set(), rows=[];
+    merged.sort((a,b)=>b.s-a.s);
+    for(const r of merged){ const key=r.s+"|"+r.d; if(seen.has(key))continue; seen.add(key); rows.push(r); }
+    if(rows.length) out.top[k]=rows.slice(0,5);
+  }
+  if(disk&&disk.missions&&out.missions&&disk.missions.date===out.missions.date){
+    for(const m of out.missions.list){
+      const o=disk.missions.list.find(x=>x.id===m.id);
+      if(o){ m.prog=Math.max(m.prog,o.prog); m.claimed=m.claimed||o.claimed; }
+    }
+  }
+  const body=JSON.stringify(out);
+  try{await store.set("pollen-save",body);}catch(e){}
+  /* A swallowed write must not look like a success (defect class 5). */
+  let back=null; try{back=await store.get("pollen-save");}catch(e){}
+  if(back!==body){ try{toast("Could not save progress on this device");}catch(e){} return; }
+  save.petals=out.petals; save.bests=out.bests; save.owned=out.owned; save.top=out.top;
+  _persistBase={petals:save.petals};
+}
 
 /* ============ AUDIO ============ */
 let AC=null;
@@ -1001,10 +1085,38 @@ document.getElementById("btnMute").onclick=async()=>{save.muted=!save.muted;awai
 document.getElementById("btnPause").onclick=()=>{if(mode==="play"||mode==="paused")togglePause();};
 document.getElementById("btnGust").onclick=()=>useGust();
 
+/* Test rig for audit_check.mjs. `level`, `gameMode` and the rest are top-level
+   `let` bindings in a classic script, which are NOT window properties, so none
+   of the difficulty curve is observable from outside without this. Gated on a
+   query flag so it never ships to a player. */
+if(/[?&]pptest=1(&|$)/.test(location.search)){
+  window.__pp={
+    curve(){ const kl=level, km=gameMode, out={};
+      gameMode="classic";
+      for(const lv of [1,2,5,10,20]){ level=lv;
+        out[lv]={ speed:speedScale(), ease:pestEase(),
+                  drones:(lv>=3?Math.min(4,1+Math.floor(lv/2)):lv===2?1:0),
+                  maze:MAZES.indexOf(mazeForLevel()) }; }
+      level=kl; gameMode=km; return out; },
+    save(){ return save; },
+    setSave(o){ save=o; }
+  };
+}
+
 /* ============ BOOT ============ */
 (async()=>{
-  await loadSave();
-  buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD();
+  /* The boot chain used to be unguarded, so one bad stored value anywhere left a
+     title card with an empty mode list and nothing that responds. Validation
+     above should make that impossible; this is the belt to its braces. A player
+     losing cosmetics is recoverable, a player losing the game is not. */
+  try{ await loadSave(); }
+  catch(e){ save=_validateSave(null); _persistBase={petals:0}; }
+  try{ buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD(); }
+  catch(e){
+    save=_validateSave(null); _persistBase={petals:0};
+    try{ buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD();
+      toast("Saved progress could not be read, so the garden started fresh"); }catch(e2){}
+  }
   requestAnimationFrame(frame);
 })();
 </script>
@@ -1019,13 +1131,23 @@ document.getElementById("btnGust").onclick=()=>useGust();
 (function(){
   "use strict";
   // 1. Sky Wolf embed protocol (same-origin loads top-level → SWS_EXIT navigates).
-  var EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  /* Canonical block, incoming/PORTAL-CONTRACT.md. The old version read EMBED
+     from ?embed=1 ONLY, so a genuinely framed load never posted {sws:'ready'}
+     and the portal's black-screen watchdog would have closed it; and the
+     unframed branch hard-navigated instead of going back, losing the player's
+     place in the arcade. */
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  var EMBED=framed||/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=EMBED;
   window.SWS_EXIT=function(){
-    if(EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
-    location.href='/portal/';
+    if(framed){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}
+    else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(framed){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){try{parent.postMessage({sws:'ready'},'*');}catch(e){}});
+  }
 
   // 2. Sunbeam earn — award by run petals (a proxy for how well the run went),
   //    Sky Wolf earn standard (set 2026-07-03): 30/day/game, run cap 12, floor 1.

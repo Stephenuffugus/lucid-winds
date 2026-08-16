@@ -203,32 +203,59 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
 (function(){
 "use strict";
 /* =============================== shell =============================== */
-var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+/* Canonical block, incoming/PORTAL-CONTRACT.md. SWS_EMBED used to be read from
+   ?embed=1 only, so a genuinely framed load never posted {sws:'ready'} and the
+   portal's black-screen watchdog would have closed it. */
+var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
+var SWS_EMBED=SWS_FRAMED||/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
-/* studio-standard 30/day/game sunbeam cap helper */
+window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
+/* studio-standard 30/day/game sunbeam cap helper.
+   2026-08-16: the bucket WRITE is the cap, so it has to be verified. If setItem
+   throws, the bucket never advances and every later call re-grants the same
+   room; read it back and pay nothing unless it landed. */
 window._sbCapEarn=function(n,tag){
   var granted=0;
   try{ var k='sw_sb_bubblenaut';
-    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var s=null; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    if(!s||typeof s!=='object'||Object.prototype.toString.call(s)==='[object Array]') s={};
     var day=new Date().toISOString().slice(0,10);
     if(s.day!==day){ s={day:day,earned:0}; }
-    var room=30-(s.earned||0);
-    granted=Math.max(0,Math.min(n,room));
-    if(granted>0){ s.earned=(s.earned||0)+granted; localStorage.setItem(k,JSON.stringify(s));
-      if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag||'bubblenaut'); }
-  }catch(e){}
+    if(typeof s.earned!=='number'||!isFinite(s.earned)) s.earned=0;
+    var room=30-s.earned;
+    var want=Math.max(0,Math.min(n,room));
+    if(want<=0) return 0;
+    s.earned=s.earned+want; localStorage.setItem(k,JSON.stringify(s));
+    var back=JSON.parse(localStorage.getItem(k)||'null');
+    if(!back||back.earned!==s.earned) return 0;   // write did not land: do not pay
+    granted=want;
+    if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag||'bubblenaut');
+  }catch(e){ return 0; }
   return granted;
 };
 
 function $(id){ return document.getElementById(id); }
 var curScreen='s-title';
+/* 2026-08-16 audit — the worst dead end in this file.
+   FURTHEST persists the highest room reached, and the boot code correctly
+   revealed "Continue at room N". But show('s-title') then re-decided the
+   button's visibility from (G && G.paused) ALONE, so the first time the player
+   visited How To Play, Settings or Collection and came back, the Continue
+   button vanished and its label was never restored. Only a full reload brought
+   it back. A player who reached room 14 and glanced at their Collection was
+   silently sent back to room 1. One function owns the button now. */
+function syncResume(){
+  var rb=$('b-resume'); if(!rb) return;
+  if(G&&G.paused){ rb.style.display='flex'; rb.textContent='Continue the voyage'; return; }
+  if(FURTHEST>0){ rb.style.display='flex'; rb.textContent='Continue at room '+(FURTHEST+1); return; }
+  rb.style.display='none';
+}
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');
   if(id) $(id).classList.add('on'); curScreen=id;
   $('ctl').style.display=(id===null && TOUCH)?'flex':'none';
-  if(id==='s-title'){ var rb=$('b-resume'); rb.style.display=(G&&G.paused)?'flex':'none';
-    $('b-2p').style.display=TOUCH?'none':'flex'; } }
+  if(id==='s-title'){ syncResume(); $('b-2p').style.display=TOUCH?'none':'flex'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 var BUILD='v1.1';
@@ -243,10 +270,42 @@ var K={ set:'bn_set', best:'bn_best', seen:'bn_seen', col:'bn_collection', far:'
 var SET={ sound:true };
 (function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
-var BEST=parseInt(LS.get(K.best)||'0',10)||0;
-var COLLECT=(function(){ try{ var c=JSON.parse(LS.get(K.col)||'null'); if(c&&c.length===5) return c; }catch(e){} return [0,0,0,0,0]; })();
-function saveCol(){ LS.set(K.col, JSON.stringify(COLLECT)); }
-var FURTHEST=parseInt(LS.get(K.far)||'0',10)||0;   // highest level index reached (0-24)
+/* ── SAVE VALIDATION + TWO-TAB MERGE (2026-08-16 audit, classes 3 and 4) ─────
+   `if(c && c.length===5) return c` accepted a FIVE-CHARACTER STRING. With
+   bn_collection set to "hello", COLLECT became a string, and this file is
+   "use strict", so COLLECT[i]++ inside collectTreasure() threw TypeError inside
+   the game loop: the run froze mid-room the first time a treasure was caught.
+   An array of non-numbers was accepted too and rendered NaN on the Collection
+   screen. Separately, all three records were written wholesale from memory, so
+   two tabs erased each other's best, voyage and tallies. */
+function _bnNum(v,d){ var n=(typeof v==='string')?parseFloat(v):v;
+  return (typeof n==='number'&&isFinite(n))?n:d; }
+function _bnCol(raw){
+  var c=null; try{ c=JSON.parse(raw||'null'); }catch(e){ c=null; }
+  if(Object.prototype.toString.call(c)!=='[object Array]'||c.length!==5) return [0,0,0,0,0];
+  var out=[]; for(var i=0;i<5;i++) out.push(Math.max(0,Math.round(_bnNum(c[i],0))));
+  return out;
+}
+function _bnInt(raw,lo,hi){ var n=parseInt(raw||'0',10); if(!isFinite(n)) n=lo;
+  return Math.max(lo,Math.min(hi,n)); }
+var BEST=_bnInt(LS.get(K.best),0,1e9);
+var COLLECT=_bnCol(LS.get(K.col));
+/* Counters here only ever go up inside a session, so MAX against disk is the
+   correct union and cannot double-count a reload. */
+function saveCol(){
+  var disk=_bnCol(LS.get(K.col));
+  for(var i=0;i<5;i++) COLLECT[i]=Math.max(COLLECT[i], disk[i]);
+  LS.set(K.col, JSON.stringify(COLLECT));
+}
+function saveBest(){
+  BEST=Math.max(BEST, _bnInt(LS.get(K.best),0,1e9));
+  LS.set(K.best, ''+BEST);
+}
+function saveFurthest(){
+  FURTHEST=Math.max(FURTHEST, _bnInt(LS.get(K.far),0,24));
+  LS.set(K.far, ''+FURTHEST);
+}
+var FURTHEST=_bnInt(LS.get(K.far),0,24);   // highest level index reached (0-24)
 
 /* =============================== audio =============================== */
 var AC=null;
@@ -405,7 +464,7 @@ function playRequest(mode){
 }
 var PENDING_MODE='1P';
 function newGame(mode){
-  G={ mode:mode||'1P', level:FURTHEST>0?0:0, score:0, treasures:0, clearedMax:0, paused:false,
+  G={ mode:mode||'1P', level:0, score:0, treasures:0, clearedMax:0, paused:false,
     clearT:0, phase:'play', wLevel:0, flash:0, lostLifeThisLevel:false, lastSun:0 };
   startLevel(0);
   show(null); running=true; lastTs=0; acc=0; requestAnimationFrame(loop);
@@ -441,7 +500,7 @@ function startLevel(idx){
     if(old[p]){ pl.lives=old[p].lives; }
     players.push(pl); }
   seedStars(w);
-  if(idx>FURTHEST){ FURTHEST=idx; LS.set(K.far,''+FURTHEST); }
+  if(idx>FURTHEST){ FURTHEST=Math.min(24,idx); saveFurthest(); }
 }
 function seedStars(w){ stars=[]; var seed=w*997+13;
   function rnd(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
@@ -456,7 +515,7 @@ function levelClear(){
 }
 function gameOver(){
   G.phase='dead'; running=false; sfx('over');
-  if(G.score>BEST){ BEST=G.score; LS.set(K.best,''+BEST); }
+  if(G.score>BEST){ BEST=G.score; } saveBest();
   $('over-level').textContent=''+(G.clearedMax+((G.phase==='clear')?1:0));
   $('over-treas').textContent=''+G.treasures;
   $('over-score').textContent=''+G.score;
@@ -904,7 +963,7 @@ function loop(ts){
 }
 function voyageComplete(){
   running=false;
-  if(G.score>BEST){ BEST=G.score; LS.set(K.best,''+BEST); }
+  if(G.score>BEST){ BEST=G.score; } saveBest();
   var granted=window._sbCapEarn(8,'bubblenaut:voyage')||0;
   $('over-emoji').textContent='🏆';
   $('over-title').textContent='Voyage complete! All 25 rooms cleared';
@@ -988,7 +1047,7 @@ G=null; render=render; // initial paint below
   ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH); G=keep; }
   requestAnimationFrame(idle); })();
 $('buildstamp').textContent='Bubblenaut '+BUILD+' · best '+BEST;
-if(FURTHEST>0){ $('b-resume').style.display='flex'; $('b-resume').textContent='Continue at room '+(FURTHEST+1); }
+syncResume();
 $('b-2p').style.display=TOUCH?'none':'flex';
 
 /* test rig (headless suite + console) */

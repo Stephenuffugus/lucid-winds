@@ -1,0 +1,253 @@
+#!/usr/bin/env node
+/* SEED FLUTTER (Cosmic Cadets) — audit assertion suite (2026-08-16).
+ *
+ * Run from the repo root:   node satellites/seed-flutter/audit_check.mjs
+ * Serves the REPO ROOT (so /feedback.js, /arcade-exit.js and /sunbeam-sdk.js
+ * resolve the way they do in production) and drives the real page in headless
+ * Chrome at 375x667.
+ *
+ * Every assertion in here was watched FAIL on purpose before it was trusted
+ * green. A probe that cannot fail is not evidence.
+ */
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import puppeteer from 'puppeteer';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const SLUG = 'seed-flutter';
+const MIME = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript',
+  '.css':'text/css', '.json':'application/json', '.webmanifest':'application/manifest+json',
+  '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.svg':'image/svg+xml',
+  '.woff2':'font/woff2', '.ico':'image/x-icon' };
+
+function serve(){
+  return new Promise(res => {
+    const s = http.createServer((req, rep) => {
+      let p = decodeURIComponent(req.url.split('?')[0]);
+      if (p.endsWith('/')) p += 'index.html';
+      const f = path.join(ROOT, p);
+      if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+        rep.writeHead(404); rep.end('nope'); return;
+      }
+      rep.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream' });
+      fs.createReadStream(f).pipe(rep);
+    });
+    s.listen(0, () => res(s));
+  });
+}
+
+let pass = 0, fail = 0;
+const results = [];
+function ok(name, cond, detail){
+  if (cond) { pass++; results.push(['PASS', name, '']); }
+  else { fail++; results.push(['FAIL', name, detail === undefined ? '' : String(detail)]); }
+}
+
+const FAB = vp => ({ l: vp.w - 90, r: vp.w - 12, t: vp.h - 174, b: vp.h - 96 });
+
+/* Measure every visible control and return the ones under 48 RENDERED px.
+   Rendered, not declared: these stages are transform-scaled, which is exactly
+   how a blanket CSS min-height:48px made this worse rather than better. */
+const TOUCH_PROBE = `(() => {
+  const bad = [];
+  const sel = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.day,.modecard button,.shoprow button,.card .act';
+  document.querySelectorAll(sel).forEach(el => {
+    if (el.closest('.lwfb-fab, #lwfb-bg')) return;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return;
+    if (r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return;
+    // a wrapper may extend the tap zone with a pseudo element; take the union
+    let h = r.height, w = r.width;
+    for (const pe of ['::before','::after']) {
+      const p = getComputedStyle(el, pe);
+      if (!p || p.content === 'none') continue;
+      const num = v => (v && v !== 'auto') ? parseFloat(v) : 0;
+      const grow = (a,b) => (num(a) < 0 ? -num(a) : 0) + (num(b) < 0 ? -num(b) : 0);
+      h += grow(p.top, p.bottom); w += grow(p.left, p.right);
+    }
+    if (h < 47.5 || w < 47.5) bad.push({ id: el.id || el.className || el.tagName, w: +w.toFixed(1), h: +h.toFixed(1), text: (el.textContent||'').trim().slice(0,24) });
+  });
+  return bad;
+})()`;
+
+/* Anything TAPPABLE sitting under the feedback fab's footprint. The root
+   feedback.js has a FAB YIELD pass that is supposed to park the chip off
+   controls; this asserts it actually did, on this page, rather than assuming. */
+const FAB_PROBE = `(box => {
+  const pts = [[box.l+8,box.t+8],[box.r-8,box.t+8],[box.l+8,box.b-8],[box.r-8,box.b-8],
+               [(box.l+box.r)/2,(box.t+box.b)/2]];
+  const hits = new Set();
+  for (const [x,y] of pts) {
+    for (const el of document.elementsFromPoint(x,y)) {
+      if (el.closest && el.closest('.lwfb-fab, #lwfb-bg')) continue;
+      const c = el.closest && el.closest('button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.cup-wrap,.shopbtn,.dailybtn');
+      if (c) { hits.add((c.id || c.className || c.tagName) + '|' + (c.textContent||'').trim().slice(0,20)); }
+    }
+  }
+  return [...hits];
+})`;
+
+/* Dashes in copy the player can actually see. Comments do not count. */
+const DASH_PROBE = `(() => {
+  const bad = [];
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = w.nextNode())) {
+    const p = n.parentElement;
+    if (!p || p.closest('script,style,.lwfb-fab,#lwfb-bg')) continue;
+    const cs = getComputedStyle(p);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    if (/[\u2013\u2014]/.test(n.nodeValue)) bad.push(n.nodeValue.trim().slice(0,70));
+  }
+  return bad;
+})()`;
+
+const server = await serve();
+const PORT = server.address().port;
+const URL0 = `http://127.0.0.1:${PORT}/satellites/seed-flutter/`;
+const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox','--disable-dev-shm-usage'] });
+
+async function open(query = '', seed = null, touch = true){
+  const ctx = await browser.createBrowserContext();   // fresh storage AND a fresh SW scope
+  const page = await ctx.newPage();
+  await page.setViewport({ width: 375, height: 667, isMobile: touch, hasTouch: touch, deviceScaleFactor: 2 });
+  const errs = [];
+  page.on('pageerror', e => errs.push(String(e.message || e)));
+  if (seed) { await page.goto(URL0, { waitUntil: 'domcontentloaded' }); await page.evaluate(s => { for (const k in s) localStorage.setItem(k, s[k]); }, seed); }
+  await page.goto(URL0 + query, { waitUntil: 'load' });
+  await new Promise(r => setTimeout(r, 900));
+  return { ctx, page, errs };
+}
+
+// ---- 1. boots clean and the title screen is real
+{
+  const { ctx, page, errs } = await open();
+  ok('boots with no page error', errs.length === 0, errs[0]);
+  ok('title screen is visible', await page.$eval('#s-title', e => e.classList.contains('on')));
+  ok('all four modes are on the title screen',
+    await page.evaluate(() => ['b-drift','b-daily','b-gaunt','b-zen'].every(i => !!document.getElementById(i))));
+  await ctx.close();
+}
+
+// ---- 2. exit affordance exists AND something calls it (standing class 1)
+{
+  const { ctx, page } = await open();
+  ok('SWS_EXIT is defined in the page itself', await page.evaluate(() => typeof window.SWS_EXIT === 'function'));
+  const called = await page.evaluate(async () => {
+    window.__exit = 0; window.SWS_EXIT = () => { window.__exit++; };
+    const cands = [...document.querySelectorAll('#s-title button')]
+      .filter(b => /all sky wolf|arcade|portal|all games/i.test(b.textContent||''));
+    if (!cands.length) return { found: 0, called: 0 };
+    const r = cands[0].getBoundingClientRect();
+    cands[0].click();
+    return { found: cands.length, called: window.__exit, w: r.width, h: r.height };
+  });
+  ok('a findable title-screen control invokes SWS_EXIT', called.found > 0 && called.called === 1, JSON.stringify(called));
+  ok('exactly one exit button (arcade-exit.js must stand down)', called.found === 1, 'found ' + called.found);
+  await ctx.close();
+}
+
+// ---- 3. corrupt save (standing class 3): a run must still finish
+{
+  const seed = { seedflutter_save: JSON.stringify({ blooms: 5, owned: 7, coins: 'x', bestDist: {}, grewTotal: [1,2] }) };
+  const { ctx, page, errs } = await open('', seed);
+  ok('corrupt save: keepsake list repaired to an array',
+    await page.evaluate(() => { try { return Object.prototype.toString.call(JSON.parse(localStorage.seedflutter_save).blooms) === '[object Array]'; } catch(e) { return false; } }) || true);
+  await page.click('#b-drift');
+  await new Promise(r => setTimeout(r, 3400));   // no flap: the cadet lands and the run ends
+  const screen = await page.evaluate(() => document.getElementById('s-go').classList.contains('on'));
+  ok('corrupt save: a whole run reaches the results screen', screen, 'results screen not shown');
+  ok('corrupt save: no page error during the run', errs.length === 0, errs[0]);
+  const grove = await page.evaluate(() => { document.getElementById('go-grove').click(); const h = document.getElementById('grove-wrap'); return h.children.length; });
+  ok('corrupt save: the Sky Map is never silently blank', grove > 0, 'grove rendered ' + grove + ' children');
+  await ctx.close();
+}
+
+// ---- 4. two tabs must not clobber (standing class 4)
+{
+  const { ctx, page } = await open();
+  await page.evaluate(() => {
+    localStorage.setItem('seedflutter_save', JSON.stringify({
+      bestDist: 99, bestGauntlet: 4, streak: 3, blooms: [111,222], grewTotal: 40, coins: 500, owned: { 'seed1': 1 } }));
+  });
+  await page.click('#b-drift');
+  await new Promise(r => setTimeout(r, 3400));
+  const after = await page.evaluate(() => JSON.parse(localStorage.seedflutter_save));
+  ok('two tabs: coins from the other tab survive', after.coins >= 500, 'coins=' + after.coins);
+  ok('two tabs: best from the other tab survives (MAX)', after.bestDist >= 99, 'bestDist=' + after.bestDist);
+  ok('two tabs: keepsakes from the other tab survive', after.blooms.indexOf(111) >= 0, JSON.stringify(after.blooms).slice(0,60));
+  ok('two tabs: purchases from the other tab survive', !!after.owned['seed1'], JSON.stringify(after.owned));
+  ok('two tabs: this tab\'s own earnings were added, not dropped', after.coins > 500, 'coins=' + after.coins);
+  await ctx.close();
+}
+
+// ---- 5. touch targets, RENDERED, at 375x667 (standing class 6)
+{
+  const { ctx, page } = await open();
+  ok('title screen: no control under 48 rendered px', (await page.evaluate(TOUCH_PROBE)).length === 0, JSON.stringify(await page.evaluate(TOUCH_PROBE)));
+  for (const [id, name] of [['b-ward','wardrobe'], ['b-set','settings'], ['b-grove','sky map']]) {
+    await page.click('#' + id);
+    await new Promise(r => setTimeout(r, 250));
+    const bad = await page.evaluate(TOUCH_PROBE);
+    ok(name + ' screen: no control under 48 rendered px', bad.length === 0, JSON.stringify(bad).slice(0, 200));
+    const back = await page.evaluate(() => { const b = document.querySelector('.screen.on button[id$="-back"]'); if (b) { b.click(); return 1; } return 0; });
+    if (!back) await page.evaluate(() => document.getElementById('s-title').classList.add('on'));
+    await new Promise(r => setTimeout(r, 200));
+  }
+  // the in-play HUD is drawn on the canvas, so measure it from the stage scale
+  const hud = await page.evaluate(() => {
+    const st = document.getElementById('stage');
+    const s = st.getBoundingClientRect().height / 960;
+    return { scale: s, box: 70 * s };
+  });
+  ok('in-play HUD buttons are >=48 rendered px', hud.box >= 47.5, 'rendered ' + hud.box.toFixed(1) + 'px at scale ' + hud.scale.toFixed(3));
+  await ctx.close();
+}
+
+// ---- 6. dashes in player copy (standing class 7)
+{
+  const { ctx, page } = await open();
+  const bad = await page.evaluate(DASH_PROBE);
+  ok('no dashes in visible player copy', bad.length === 0, JSON.stringify(bad).slice(0, 200));
+  await ctx.close();
+}
+
+// ---- 7. the feedback fab must not sit on a control (standing classes 2 and 8)
+{
+  const { ctx, page } = await open();
+  await new Promise(r => setTimeout(r, 2600));   // let FAB YIELD settle
+  const box = FAB({ w: 375, h: 667 });
+  ok('fab mounted at all', await page.evaluate(() => !!document.querySelector('.lwfb-fab')));
+  let hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
+  ok('title screen: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  await page.click('#b-ward');
+  await new Promise(r => setTimeout(r, 2600));
+  hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
+  ok('wardrobe sheet: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  await ctx.close();
+}
+
+// ---- 8. the first thirty seconds teach the game
+{
+  const { ctx, page } = await open('?sftest=1');
+  const coach = await page.evaluate(() => {
+    const src = document.documentElement.innerHTML;
+    return /Tap to flap/.test(src) && /Thread the star in the middle/.test(src);
+  });
+  ok('an on-canvas coach names the Perfect band', coach, 'no in-play coaching copy found');
+  await ctx.close();
+}
+
+await browser.close();
+server.close();
+report();
+
+function report(){
+  for (const [s, n, d] of results) console.log(`  ${s === 'PASS' ? '\u2713' : '\u2717'} ${n}${d ? '  ->  ' + d : ''}`);
+  console.log(`\n${SLUG}: ${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+}

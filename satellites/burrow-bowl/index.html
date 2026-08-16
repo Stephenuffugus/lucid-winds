@@ -214,7 +214,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
   <!-- ============ SETTINGS ============ -->
   <div class="screen solid" id="s-set"><div class="pad">
     <h2 class="sc-h">Settings</h2>
-    <div class="sub" style="margin-bottom:16px">Nothing here changes how the lane rolls.</div>
+    <div class="sub" style="margin-bottom:38px">Nothing here changes how the lane rolls.</div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Extra motion</span><div class="toggle on" id="tg-motion"><b></b></div></div>
     <div class="settingline"><span>High contrast rings</span><div class="toggle" id="tg-contrast"><b></b></div></div>
@@ -1455,5 +1455,18 @@ window._sbCapEarn=function(n,tag){
   return pay;
 };
 </script>
+<script>/* fleet feedback fab (2026-08-16 audit: this game had no report channel at all).
+   ⛔ Measured, not assumed: this game's menus are a centred 271px button column,
+   so the fab's default bottom right footprint lands on the RIGHT EDGE of
+   "Take the lane", "Settings" and "All Sky Wolf games" — a tap there opened the
+   bug form instead of the button underneath (standing defect class 8). The fab's
+   own watcher does not catch it, because its probe points fall a couple of pixels
+   clear of the overlap. Top left is empty on every screen of this game, so that
+   is where it parks. The player can still drag it, and a spot they chose wins. */
+addEventListener('load',function(){
+try{ if(!sessionStorage.getItem('lwfb_pos')) sessionStorage.setItem('lwfb_pos',JSON.stringify({l:12,t:12})); }catch(e){}
+var s=document.createElement('script');s.src='/feedback.js?v=6';
+s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'burrow-bowl',surface:'satellite'});};
+document.head.appendChild(s);});</script>
 </body>
 </html>
