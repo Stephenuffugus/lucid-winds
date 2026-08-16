@@ -3671,12 +3671,13 @@ function beats(box, T) {
     "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + ".",
     "With the " + WEAPONS[T.w].n + "."
   ];
+  var typed = APP.save.settings.typewriter && !APP.save.settings.reduceMotion;
   lines.forEach(function (line, i) {
     var n = el("div", "beat tw");
     box.appendChild(n);
-    if (i === 0) typeBeat(n, line);
-    else setTimeout(function () { typeBeat(n, line); }, 260 * i);
-    n.textContent = APP.save.settings.typewriter ? "" : line;
+    if (!typed || i === 0) { typeBeat(n, line); return; }
+    n.textContent = "";
+    setTimeout(function () { typeBeat(n, line); }, 260 * i);
   });
 }
 

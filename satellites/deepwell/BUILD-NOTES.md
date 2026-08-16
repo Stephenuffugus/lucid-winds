@@ -13,7 +13,8 @@
 node sim.js --test     PASSED 229 / FAILED 0   (total 229 assertions)
 ```
 
-Exits 1 on any failure, exits 3 if the assertion total ever drops under the floor of 80.
+Exits 1 on any failure, exits 3 if the assertion total ever drops under the floor, which
+this pass raised from 80 to 229 (the count it inherited), so the suite can only ever grow.
 `node sim.js --grid=N` runs the tuning grid and `--over=KEY=VAL,...` runs any sweep against
 an overridden CONFIG without editing the game (source level substitution, throws on a key it
 cannot find, so a typo can never quietly measure the shipped numbers and call them tuned).
@@ -67,7 +68,7 @@ A probe that cannot fail is not evidence. These were all watched red, then resto
    transmuting an empty pack, an ascent with almost no air, heartstone weight). Each was
    pasted in as a failing assertion **before** the fix.
 
-## 3. The sweep table (20,000 runs per policy, seed0=1) — DEEPENING PASS
+## 3. The sweep table (20,000 runs per policy, seed0=1), DEEPENING PASS
 
 ```
 POLICY      LOSTCARGO  COLLAPSE  BANK p10     p50     p90    MEAN  DEPTH p50    p90  MIN p50   200m

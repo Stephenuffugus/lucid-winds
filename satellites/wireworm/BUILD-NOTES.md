@@ -470,16 +470,40 @@ changed for the better underneath that unchanged number:
 - **The safety filtered walker came down** from a median 1231 from 1424, and its
   cap rate from 5.2% to 2.8%. Ambient pressure exists now.
 
-The lever sweeps are printed by `--bands` experiments 2 and 3 and are reproduced
-in section 17. The short version has not changed and is now measured twice:
-`DISCHARGE_INTERVAL` moves the greedy median by less than the run to run noise
-across a 12x range, because greedy dies to LOCAL entrapment at around 35 percent
-coverage while the pickup clears the OLDEST circuit, which is usually somewhere
-else on the board. **Buying the 300 floor by setting a spec value to a number
-that changes nothing about the game is a green light bought with a lie**, and it
-is still declined. 280 versus a floor of 300 is a 7 percent miss on a band whose
-sibling gate has just been shown to describe a different board size; the spec's
-real intent (over 2000 means too safe) is met by a factor of seven.
+**`DISCHARGE_INTERVAL` is not dead. It was under swept.** The first pass tested
+90 down to 40 and correctly concluded that range does nothing. Widen it:
+
+```
+interval   greedy median ticks   median score
+   140              280              528
+    90 (shipped)    282              540
+    60              287              535
+    40              304              541
+    25              317              556
+    12              334              574
+```
+
+An 11x change moves the median 54 ticks, so the lever is real but weak, and
+**the band IS reachable: interval 25 or lower puts greedy inside 300 to 900.**
+The reason it is still declined is no longer "it does nothing", it is a design
+reason with a measurement behind it. Greedy dies to LOCAL entrapment at around
+35 percent coverage while the pickup clears the OLDEST circuit, usually
+elsewhere on the board, so the interval only helps by carpet bombing: a relief
+valve arriving every 12 to 25 ticks is not a valve, it is a janitor. And it
+would land directly on top of the thing section 12 just proved is real. The
+board filler's entire strategy is wire that PERSISTS long enough to reach 220
+cells; a pickup every 25 ticks deletes the oldest circuit faster than the filler
+can build the next one, so buying the greedy band would cost the second win
+condition. **The spec fixes the discharge at "every ~90 ticks" and 90 is where
+it stays.**
+
+280 against a floor of 300 is a 7 percent miss, on a band whose sibling gate has
+just been proved to describe a 22 to 40 cell board rather than the spec's 20.
+The spec's actual stated intent, that a greedy median over 2000 means the game
+is too safe, is met by a factor of seven.
+
+`--bands` experiment 3 additionally sweeps `CREEP_INTERVAL` and `PAIRS`, which
+nobody had swept at all.
 
 ---
 
@@ -586,6 +610,47 @@ difference. Break 5 removed the clock and six gates went red.
 
 ---
 
+## 17. Balance sweep after the deepening
+
+`node sim.js --runs=3000` (3000 rather than 20000 because eight agents were
+sharing two cores; the 20000 run numbers in section 3 are the first pass's and
+the medians here are stable to a few ticks across run counts).
+
+```
+grid 20x20  overload at 220 cells  discharge every 90  creep every 45
+combo windows 40/40/32/26/20
+
+                     ticks MEDIAN    score MEDIAN   circuits   peak load   breaker rate
+RANDOM                       54              0          0           0          0.0%
+RANDOMSAFE                 1231            109          2          75          0.5%
+GREEDY                      280            522         13         142          2.2%
+FILLER                      995           1616          6         207         51.0%
+```
+
+(The filler row is the 500 run measurement from the FILL_TARGET sweep in section
+12; the 3000 run pass was still grinding when this was written and the medians
+from the 1200 and 1500 run passes agreed with it to within noise.)
+
+### What moved, and why
+
+| number | first pass | now | cause |
+|---|---|---|---|
+| random median ticks | 55 | 54 | noise. It is 54 with the game deleted too (section 13). |
+| randomsafe median ticks | 1424 | 1231 | the creep. Dawdling costs something now. |
+| randomsafe tick cap rate | 5.2% | 2.8% | the creep. |
+| greedy median ticks | 281 | 280 | unchanged. |
+| greedy median score | 676 | 522 | the tightening combo window. **This is the change working**: the ladder now drops instead of pinning at x4. |
+| greedy tick cap rate | 0.66% | **0.00%** | the creep. Known gap 2 closed. |
+| overloads at the median | 0 for every agent | 1 for the filler | the agent that was missing. |
+
+The one number that got "worse" is greedy's median score, and it got worse on
+purpose: a 23 percent score cut is what it costs to make x4 something you hold
+rather than something you arrive at. The tick medians confirm the ladder change
+is not a difficulty change: greedy lives exactly as long, it just earns less for
+sloppy timing.
+
+---
+
 ## 18. Gates watched FAIL in this pass
 
 Same discipline as section 2. Every new gate was broken on purpose in a scratch
@@ -621,3 +686,53 @@ change that silently moves every balance number in the file. Before any new
 measurement was taken, the pre refactor agent was rebuilt from the exported
 primitives and compared run for run: identical final tick, score and state hash
 over 600 seeds.
+
+---
+
+## 19. What I SAW this pass
+
+Read filler runs on seeds 7 and 3100 frame by frame before trusting any sweep
+number, per the first pass's own rule.
+
+1. **The board filler plays a recognisably different game.** Its event log on
+   seed 7 reads `circuit Blue len 111` ... `circuit Green len 111` ...
+   `OVERLOAD cleared 225 cells for 1125`, then it does the whole thing again and
+   trips a second breaker at t741. Greedy's log on the same board is a stream of
+   len 2 to len 20 circuits and no breaker at all. Two playstyles, one rule set.
+2. **The filler holds x1 combo for its entire run**, every circuit, every run.
+   Not a bug, and the cleanest evidence the two strategies really are exclusive.
+3. **The creep is visible in the log exactly where it should be**: silent while
+   circuits are landing, then `t492 t537 t582 t627 t672 t717` in a run of six
+   during a long detour, each one pushing the load meter up a cell. The moment a
+   circuit closes it goes quiet again.
+4. **A filler board is a slab.** By t290 on seed 7 the right third of the board
+   is a solid rectangle of live wire, six cells wide and twenty tall. That reads
+   fine in ASCII. **It is the readability risk I would shoot first on a phone**:
+   energized wire carries a glow, a marching dash and a repeated glyph, and 120
+   contiguous cells of it could bloom into one lime mass with the corridors
+   washed out. I ran no browser (eight agents, two cores), so this is a thing to
+   LOOK at, not a thing I have seen.
+5. **The board after a breaker is genuinely bare** and the four terminals are
+   easy to find in the empty frame. The overload reward reads.
+
+## 20. Known gaps after this pass, and the next thing
+
+1. **The 20x20 slab, above.** Unshot. First thing to look at in a browser.
+2. **Greedy still medians 280 against a 300 floor**, declined rather than bought.
+   Section 13 has the numbers and the reasoning; `DISCHARGE_INTERVAL` 40 would
+   buy the gate for 24 ticks and change nothing a player could feel.
+3. **The random band should be corrected in HANDOFF §9 to 54 ticks** on a 20x20
+   board. It is a document fix, not a game fix, and section 13 proves it.
+4. **`CREEP_INTERVAL` 45 is a first number, not a swept one.** `--bands`
+   experiment 3 sweeps it (off, 90, 45, 30, 20) against both agents; the run was
+   still grinding under an eight agent load when this was written. If the filler
+   column turns over at 30 the way FILL_TARGET turned over at 110, the interval
+   wants moving.
+5. **The daily clock of 600 ticks is a first number too.** It was chosen so a
+   competent greedy run (median 280) fits about twice and a filler run does not
+   fit at all, which is what makes the mode a real fork. Worth a look once
+   somebody has played twenty dailies.
+6. **The filler's 13 percent tick cap rate** at FILL_TARGET 90 was measured
+   BEFORE the creep landed and should come down now that stalling costs load.
+   Unconfirmed.
+7. Still no browser run from this side. Unchanged from the first pass.

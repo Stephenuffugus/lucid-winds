@@ -73,8 +73,8 @@ function runTests() {
   }
   console.log('');
   console.log('PASSED ' + rep.passed + ' / FAILED ' + rep.failed + '   (total ' + rep.total + ')');
-  if (rep.total < 80) {
-    console.log('ASSERTION FLOOR MISSED: ' + rep.total + ' assertions, the floor is 80.');
+  if (rep.total < 229) {
+    console.log('ASSERTION FLOOR MISSED: ' + rep.total + ' assertions, the floor is 229, the count this pass inherited.');
     process.exit(3);
   }
   process.exit(rep.failed ? 1 : 0);

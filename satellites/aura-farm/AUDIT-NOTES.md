@@ -156,8 +156,36 @@ Worst first. Every change verified by `node test/logic.mjs`.
    were found. The test fails on any dash character inside a player facing
    string.
 
-7. **S1** toast cap raised to five and `announceDay` staggered so the quota
-   line survives. **S2** the harvest estimate now includes combo and Deep Well.
+7. **S1** the toast rail now holds five, so a day with weather plus a venue
+   event no longer destroys its own quota line before a frame is drawn.
+   **S2** the harvest estimate moved into `harvestEstimate()`, shared with
+   `harvest()`, so the button now includes the combo multiplier and Deep Well
+   and cannot drift from the payout again.
+
+---
+
+## HOW TO VERIFY
+
+```
+node test/logic.mjs        # 89 assertions, source rules + game logic
+node test/playthrough.mjs  # a bot plays a whole fourteen day season
+```
+
+`test/harness.mjs` boots the **real** game script inside a node vm behind a
+hand rolled DOM and canvas shim, so what is under test is the shipped logic and
+not a copy of it. The game's top level `const`/`let` are script scoped exactly
+as in a browser; the harness reaches them by appending an accessor epilogue to
+the same script, which keeps every test hook out of `index.html`.
+
+Both suites were watched RED first. The 34 real failures on the pre-fix source
+are the finding list above, one assertion each. The playthrough bot was
+additionally checked against two deliberate sabotages: an impossible quota
+(bot correctly withers) and peak windows disabled (bot correctly starves and
+the run collapses). A probe that cannot fail is not evidence.
+
+Current state: **89 + 7 assertions green**, both script blocks parse clean,
+zero `Math.random` left in logic, zero dashes in player copy, no service
+worker in this game so the cache purge rule does not apply.
 
 ---
 
@@ -191,10 +219,22 @@ run:
   player who has never survived fourteen days still has a history the letters
   and prices can read.
 
-**Seedable RNG.** `rnd` and `pick` now route through a small xorshift seeded
-from `Date.now()` at boot, so gameplay variety is unchanged, but the test suite
-can seed it and assert on `rollDay`, contract generation and letter selection
-deterministically. No `Math.random` remains in logic the tests cover.
+Concretely, `repStanding()` is the one place that turns history into numbers:
+
+| Standing | Mara's siphon | Seed money | Contract board |
+|---|---|---|---|
+| Reaper | 0.80x, a colleague | 60 per season, to 300 | runs dark |
+| Gray Broker | 1.00x, unreadable | 60 per season, to 300 | stays mixed |
+| Luminary | 1.25x, a soft mark | 60 per season, to 300 | runs bright |
+
+Depth is capped at five remembered seasons so a veteran is respected rather
+than ushered past the game, and the pause screen now states in plain words what
+your standing is currently doing to you, so none of it is invisible.
+
+**Seedable RNG.** `rnd`, `pick` and a new `chance(p)` route through one xorshift32
+seeded from `Date.now()` at boot, so gameplay variety is unchanged, but the
+suite can seed it and assert on `rollDay`, contract generation and letter
+selection deterministically. All sixteen `Math.random()` calls are gone.
 
 ---
 

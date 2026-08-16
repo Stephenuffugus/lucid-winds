@@ -2234,7 +2234,7 @@ function onWin(){
   var rec = { moves:G.st.moves, deaths:G.deaths, par:G.lv.par, log:G.log };
   if (!best || rec.moves < best.moves) SAVE.best[k] = rec;
   SAVE.stats.clears++;
-  if(0)pushRun(SAVE, { id:k, moves:G.st.moves, deaths:G.deaths, par:G.lv.par,
+  pushRun(SAVE, { id:k, moves:G.st.moves, deaths:G.deaths, par:G.lv.par,
                   star:par ? 1 : 0, t:Date.now() });
   if (G.mode === 'daily'){
     var today = todayISO();
@@ -2454,7 +2454,7 @@ elBoard.addEventListener('touchend', function(e){
 wire('btnLevels', function(){ buildSky(); openSheet('shSel'); });
 wire('selClose', function(){ closeSheet('shSel'); });
 wire('selStats', function(){ buildStats(); openSheet('shStats'); });
-wire('lvcWatch', function(){
+var _unused = (function(){
   var b = SAVE.best[levelKey()];
   playReplay(b ? b.log : '');
 });

@@ -205,11 +205,14 @@ Worst first. Every fix keeps the kid safety posture (nothing is ever deleted
 silently, the critter is never sad, nothing leaves the device).
 
 1. **S1/S3/S4, honest failure instead of a frozen hatch screen.** Added
-   `loadDrawing(url, onReady, whatFailed)`: one loader used by every path that
-   turns a stored PNG back into a critter (nursery open, friends, parade,
-   playdate, rebuild, room, coloring page). It wires `onerror`, it treats a
-   null silhouette as a failure, and on any failure it shows a real message and
-   returns the player to a screen with buttons on it. `initStage` is now
+   `loadDrawing(url, onReady, failMsg, backTo)`: one loader for every path that
+   turns a stored PNG back into a critter (nursery open, meadow friends,
+   parade, playdate, rebuild after stitching or marking a face). It wires
+   `onerror`, it treats a null silhouette as the failure it is, and it shows a
+   real message and lands the player on a screen with buttons on it. The two
+   loads that are not critters (the room wall and the coloring page) keep their
+   own pipelines and got explicit `onerror` handlers with the same honesty: an
+   unreadable room takes the critter back outside and says so. `initStage` is now
    guarded: a missing `THREE` or a refused WebGL context shows
    "This device cannot show the 3D meadow…" instead of freezing. No path can
    leave the player on the hatch screen any more.

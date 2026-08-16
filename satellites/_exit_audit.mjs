@@ -54,10 +54,13 @@ function cardedSatellites() {
   let m;
   while ((m = re.exec(src))) {
     const id = m[2];
-    const nameMatch = /\bnm\s*:\s*["']([^"']+)["']/.exec(m[0]);
+    // match the CLOSING quote to the opening one, or "Bandit's Box" truncates to
+    // "Bandit" and the report names a game that does not exist
+    const nameMatch = /\bnm\s*:\s*(["'])((?:(?!\1).)*)\1/.exec(m[0]);
     const nm = nameMatch ? nameMatch[1] : id;
+    const nm2 = nameMatch ? nameMatch[2] : id;
     if (!out.has(id)) out.set(id, []);
-    if (!out.get(id).includes(nm)) out.get(id).push(nm);
+    if (!out.get(id).includes(nm2)) out.get(id).push(nm2);
   }
   return out;
 }
@@ -91,14 +94,56 @@ const RE_ASSIGN = /(?:window|self|globalThis)\s*(?:\.\s*SWS_EXIT|\[\s*["']SWS_EX
 
 // Is there a referrer-driven fallback for the top level (unframed) case, and a
 // hard destination when history has nowhere to go?
+//
+// ⛔ FALSE POSITIVE FIXED 2026-08-16. This used to read a 1200 char window that
+// STARTED at the assignment, so it only saw a referrer test written INLINE.
+// Bandit's Box hoists the test into the enclosing IIFE:
+//     var fromPortal = document.referrer.indexOf('/portal')>=0;
+//     window.SWS_EXIT=function(){ ... if(fromPortal&&history.length>1){...} }
+// which is correct code, and the audit called it broken. A checker that cries
+// wolf gets ignored, so the referrer test now also resolves ONE level of
+// indirection: if the body uses an identifier that was assigned from
+// document.referrer nearby, that counts. It deliberately does NOT fall back to
+// "document.referrer appears anywhere in the file", which would pass any game
+// that merely logs the referrer for analytics.
 function hasReferrerFallback(src) {
   const at = src.search(RE_ASSIGN);
-  if (at < 0) return false;
+  if (at < 0) return { ok: false, why: 'no assignment to anchor on' };
   const body = src.slice(at, at + 1200);       // the exit function is short
-  const referrer = /document\s*\.\s*referrer/.test(body);
+  const near = src.slice(Math.max(0, at - 1500), at + 1500);
+
   const back = /history\s*\.\s*back\s*\(/.test(body);
   const hard = /location\s*\.\s*(replace|assign|href)/.test(body);
-  return referrer && back && hard;
+
+  let referrer = /document\s*\.\s*referrer/.test(body);
+  let via = null;
+  if (!referrer) {
+    // one level of indirection: var X = ...document.referrer..., then X used in the body
+    const decl = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*document\s*\.\s*referrer/g;
+    let d;
+    while ((d = decl.exec(near))) {
+      const name = d[1];
+      if (new RegExp(`\\b${name}\\b`).test(body)) { referrer = true; via = name; break; }
+    }
+  }
+
+  const missing = [];
+  if (!referrer) missing.push('document.referrer');
+  if (!back) missing.push('history.back()');
+  if (!hard) missing.push('a hard location fallback');
+  return { ok: referrer && back && hard, missing, via };
+}
+
+// Does this game pull in the shared runtime injector (/arcade-exit.js)? That
+// script grafts an exit onto games that have none — it defines SWS_EXIT with a
+// referrer fallback and appends a button to #s-title (or a bare corner chip when
+// there is no usable title screen). A game that loads it is NOT stranded, so
+// calling it "broken" would be crying wolf. It is still weaker than an exit the
+// game owns: the graft is generic, it bails if #s-title is missing AND the
+// corner chip is an unlabelled arrow, and it can only ever be as good as its
+// guess about where the layout has room.
+function loadsSharedInjector(src) {
+  return /arcade-exit\.js/.test(src);
 }
 
 // Somebody has to call it. Ignore the assignment itself and bare feature tests.
@@ -126,16 +171,21 @@ function hasReady(src) {
 
 function auditOne(id, names) {
   const parts = readSatellite(id);
-  if (!parts) return { id, names, missing: true, pass: false, fails: ['no source found on disk'] };
+  if (!parts) return { id, names, state: 'FAIL', fails: ['no source found on disk'], calls: [] };
 
   const all = parts.map(p => p.src).join('\n/*__FILE_BREAK__*/\n');
   const fails = [];
-  if (!RE_ASSIGN.test(all)) fails.push('window.SWS_EXIT is never assigned');
-  if (!hasReferrerFallback(all)) fails.push('no referrer based fallback (needs document.referrer + history.back + a hard location)');
+  const assigned = RE_ASSIGN.test(all);
+  if (!assigned) fails.push('window.SWS_EXIT is never assigned (a top level const is NOT a window property)');
+  const ref = hasReferrerFallback(all);
+  if (assigned && !ref.ok) fails.push('exit has no referrer based fallback, missing: ' + ref.missing.join(', '));
   const calls = callSites(all);
   if (!calls.length) fails.push('nothing calls SWS_EXIT (no button, no handler, no hit test)');
 
-  return { id, names, pass: fails.length === 0, fails, calls, ready: hasReady(all) };
+  const injector = loadsSharedInjector(all);
+  const state = fails.length === 0 ? 'PASS' : (injector ? 'GRAFT' : 'FAIL');
+
+  return { id, names, state, fails, calls, ready: hasReady(all), injector, via: ref.via };
 }
 
 /* ---------- 4. self test: prove the checks can go red ---------------------- */
