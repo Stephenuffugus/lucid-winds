@@ -322,13 +322,50 @@ assertions did not. Root causes:
    ring's arc crossing the text, not a template bug. Fixed with explicit CSS
    sizing (52x52 display, 104 backing store for dpr) plus `overflow:hidden`.
 2. **Board stranded in dead space**, roughly 250px above and 300px below on a
-   390x844 phone. A square board on a tall phone is width bound, so the board
-   cannot grow into that space. Fixed by giving the leftover column to two large
-   visible turn pads instead of black, which also makes the input model obvious.
-3. **Dead trail too dim** against the board. Brightened from `#38452b` to
-   `#55693e` and thickened from 0.20 to 0.26 of a cell. Energized wire keeps its
-   separate identity through brightness, thickness, glow, marching glyph and
-   pattern, so the colourblind rule is unaffected.
+   390x844 phone. My first fix gave the leftover column to two turn pads, and
+   **that over corrected badly**: the pads took over half the viewport, the board
+   fell to about **9 CSS px per cell**, and the game ended up smaller than its own
+   controls. That is precisely the readability risk the plan named as this game's
+   core risk, and the fix made it worse than the bug.
+
+   The mechanical cause was a circular measurement: `#stage` was `flex:0 0 auto`
+   so it sized itself to the canvas, while `layout()` sized the canvas from
+   `stage.clientHeight`. The stage collapsed to whatever the canvas already was.
+
+   **Fixed with the right priority: board first, pads second.** `#stage` is now
+   `flex:1 1 0` (basis zero, so the stage is purely the leftover column and the
+   loop cannot form), the pads are thumb sized rather than proportional, and the
+   board takes every pixel left after header, pads and footer. Cell size is kept
+   **fractional**, because flooring 19.4 to 19 throws away real size for nothing.
+
+   | viewport | pad height | board side | px per cell | board:pad area |
+   |---|---|---|---|---|
+   | 390x844 | 122 | 388 | **19.40** | 3.16x |
+   | 375x667 | 120 | 373 | **18.65** | 3.09x |
+   | 320x568 | 120 | 318 | **15.90** | 2.63x |
+   | 414x896 | 131 | 412 | **20.60** | 3.13x |
+   | 1280x800 | 120 | 550 | **27.50** | 1.97x |
+
+   19.4px per cell at 390 wide is the **geometric ceiling**: 20 cells across a
+   390px viewport cannot exceed 19.5px each. If that is still too small at arm's
+   length, the only remaining levers are the grid size (spec fixes it at 20) or a
+   scrolling/zoomed board. Worth knowing before anyone asks for more.
+
+   **Gated.** `layoutModel(availW, availH)` lives in the tested layer and VIEW
+   applies exactly it, so the policy is proven rather than eyeballed: 20
+   assertions across seven viewports asserting cells stay readable, the board
+   always outweighs the pads, pads stay thumb sized, and the board is bounded by
+   height on desktop. Three deliberate breaks watched go red (pads reclaim the
+   column, which reproduces the 8px cell and 9 failures; cell size floored again;
+   pad share guard removed).
+3. **Dead trail too dim** against the board, then in the second pass **too close
+   to the board's own grid lines**. Two rounds: brightened `#38452b` to `#55693e`
+   to `#6b8450`, thickened 0.20 to 0.28 of a cell, and the substrate grid darkened
+   to `#10160b` so it reads as texture rather than as wire. Dead wire also keeps a
+   **bead at every node** (radius 0.72 of the stroke) which a grid line never has,
+   so the two differ in structure and not only in brightness. Energized wire keeps
+   its separate identity through brightness, thickness, glow, marching glyph and
+   pattern, so the colourblind rule is untouched.
 4. **The toast covered the buttons.** "Seed link copied." rendered directly on
    top of WATCH BEST and PLAY AGAIN: tap SHARE, get your confirmation, lose the
    two controls you most likely want next. The cause was a guessed constant,
@@ -359,6 +396,13 @@ assertions did not. Root causes:
    safeguard no probe can reach, and pinned the degenerate case (a viewport too
    short for header and toast together) with an explicit assertion. Every
    remaining line of `toastTop` now has a break that turns it red.
+
+   The same discipline caught a second unreachable branch in the layout work: the
+   "pads never take more than 45 percent" guard could not be triggered by any of
+   my test viewports, so it was untested code masquerading as a safeguard. Rather
+   than delete this one (it is genuinely reachable on a short landscape window) I
+   added the viewports that exercise it, and confirmed removing it now turns four
+   assertions red.
 
 ## 11. Known gaps and the next thing
 
