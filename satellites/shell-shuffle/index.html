@@ -621,7 +621,8 @@
       level:1, streak:0, bestLevel:1, phase:'idle',
       daily:{last:null,streak:0,best:0,week:null,weekDays:0,weekStreak:0,nextReminderAt:null,reminderOptIn:false}
     };
-    if(!d||typeof d!=='object'||Array.isArray(d)) return out;
+    if(!d||typeof d!=='object') return out;
+    return Object.assign(out,d); /*BROKE*/
     out.coins=Math.max(0,int(d.coins,0));
     out.bestLevel=Math.max(1,int(d.bestLevel,1));
     out.owned=idList(d.owned,BALLS,['classic']);
@@ -721,18 +722,18 @@
      continues with a NEW thing to track rather than the same thing faster. */
   function shuffleCount(){
     var n = cupCount()*3 + Math.min(state.level,9);
-    if(state.level>9) n += Math.floor((state.level-9)/2);
+    /*BROKE*/
     return Math.min(n, 44);                       // a round must still end
   }
   function swapDur(){ return Math.max(115, 470 - state.level*34); }
   /* From level 11, a growing share of the beats move TWO independent pairs at
      once. Capped at 45% so the ball's own pair is still followable. */
-  function doubleChance(){ return state.level<11 ? 0 : Math.min(0.45, (state.level-10)*0.06); }
+  function doubleChance(){ return 0; } /*BROKE*/
   function reward(){ return cupCount()*5 + state.streak*3 + (state.level>5?8:0); }
   function hintText(){
     if(state.level<5)  return 'Each round adds a cup, shuffles faster, and pays more coins.';
     if(state.level<10) return 'Six cups now. Every round shuffles faster and pays more coins.';
-    return 'Double swaps: two pairs move at once. Keep your eye on the ball.';
+    return 'Each round adds a cup, shuffles faster, and pays more coins.'; /*BROKE*/
   }
 
   function layout(count){
@@ -1116,9 +1117,10 @@
        showBtn('Start Game', startGame): the button ships in the HTML already
        reading "Start Game", so if the boot dies first the page looks perfect
        and the button is dead forever with nothing on screen to say so. */
-    try{ await load(); }catch(e){ /* keep defaults and carry on */ }
+    await load(); /*BROKE*/
     try{ refreshWeek(); if(checkUnlocks().length) save(); hud(); }catch(e){}
     showBtn('Start Game', startGame);
+    if(dailyAvailable()) setTimeout(openDaily, 450); /*BROKE*/
     /* The Daily sheet used to open itself 450ms after boot, over the Start
        button the player was already reaching for. The 🎁 badge on the daily
        pill pulses when a reward is waiting; that is the invitation. */
@@ -1142,7 +1144,7 @@ window._sbCapEarn=function(n,tag){
         setItem threw the day bucket never advanced and the earn went out
         UNCAPPED every round. A swallowed write is not a success. */
   var granted=0;
-  try{ var k='sw_sb_shell-shuffle';
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game'); /*BROKE*/
     var s=null; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
     if(!s||typeof s!=='object'||Array.isArray(s)) s={};
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};

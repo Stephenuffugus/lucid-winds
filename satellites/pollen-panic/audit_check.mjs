@@ -205,6 +205,8 @@ for (const [name, poison] of Object.entries(POISONS)) {
   ok('two tabs: best from the other tab survives (MAX)', after.bests.classic >= 4242, 'best=' + after.bests.classic);
   ok('two tabs: purchases from the other tab survive', after.owned.indexOf('bee') >= 0, JSON.stringify(after.owned));
   ok('two tabs: the top-5 board merges both tabs', (after.top.classic || []).some(r => r.s === 5555), JSON.stringify(after.top.classic));
+  ok('two tabs: the merge actually ran (this run was written too)',
+    (after.top.classic || []).length >= 2, 'top.classic=' + JSON.stringify(after.top.classic));
   await ctx.close();
 }
 

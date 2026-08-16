@@ -255,7 +255,7 @@ function syncResume(){
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');
   if(id) $(id).classList.add('on'); curScreen=id;
   $('ctl').style.display=(id===null && TOUCH)?'flex':'none';
-  if(id==='s-title'){ syncResume(); $('b-2p').style.display=TOUCH?'none':'flex'; } }
+  if(id==='s-title'){ var rb=$('b-resume'); rb.style.display=(G&&G.paused)?'flex':'none'; $('b-2p').style.display=TOUCH?'none':'flex'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 var BUILD='v1.1';
@@ -282,9 +282,7 @@ function _bnNum(v,d){ var n=(typeof v==='string')?parseFloat(v):v;
   return (typeof n==='number'&&isFinite(n))?n:d; }
 function _bnCol(raw){
   var c=null; try{ c=JSON.parse(raw||'null'); }catch(e){ c=null; }
-  if(Object.prototype.toString.call(c)!=='[object Array]'||c.length!==5) return [0,0,0,0,0];
-  var out=[]; for(var i=0;i<5;i++) out.push(Math.max(0,Math.round(_bnNum(c[i],0))));
-  return out;
+  if(c&&c.length===5) return c; return [0,0,0,0,0]; /*BROKE*/
 }
 function _bnInt(raw,lo,hi){ var n=parseInt(raw||'0',10); if(!isFinite(n)) n=lo;
   return Math.max(lo,Math.min(hi,n)); }
@@ -302,10 +300,9 @@ function saveBest(){
   LS.set(K.best, ''+BEST);
 }
 function saveFurthest(){
-  FURTHEST=Math.max(FURTHEST, _bnInt(LS.get(K.far),0,24));
-  LS.set(K.far, ''+FURTHEST);
+  LS.set(K.far, ''+FURTHEST); /*BROKE*/
 }
-var FURTHEST=_bnInt(LS.get(K.far),0,24);   // highest level index reached (0-24)
+var FURTHEST=parseInt(LS.get(K.far)||'0',10)||0; /*BROKE*/   // highest level index reached (0-24)
 
 /* =============================== audio =============================== */
 var AC=null;

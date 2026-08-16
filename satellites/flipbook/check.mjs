@@ -292,6 +292,23 @@ console.log('\nphase B — behaviour (375x667)');
     if (h.length) fabHits.push(tab + ':' + h.join('/'));
   }
   ok('the feedback fab covers no control in any tool menu (class 8)', fabHits.length === 0, fabHits.join(', '));
+
+  /* ⛔ A fab that has faded itself out would make the collision test above pass
+     for the wrong reason, so state the whole invariant: either it is visible and
+     clear of every control, or it is invisible AND untappable. feedback.js sets
+     pointer-events:none while it is yielding, and its own 20s ceiling brings it
+     back, so both halves are legitimate. A hidden fab that still took taps would
+     be the worst of both. */
+  {
+    const v = await page.evaluate(() => {
+      const f = document.querySelector('.lwfb-fab'); if (!f) return null;
+      const cs = getComputedStyle(f);
+      return { op: parseFloat(cs.opacity), pe: cs.pointerEvents };
+    });
+    ok('the fab is visible-and-clear or invisible-and-untappable',
+      !!v && (v.op > 0.05 ? true : v.pe === 'none'), JSON.stringify(v));
+  }
+
   /* and it must not squat in the middle of the paper */
   const paper = await page.evaluate(() => {
     const f = document.querySelector('.lwfb-fab').getBoundingClientRect();

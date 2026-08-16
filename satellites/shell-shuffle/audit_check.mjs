@@ -198,7 +198,7 @@ for (const [name, poison] of Object.entries(POISONS)) {
   await startsARound(page);
   await page.evaluate(() => {
     localStorage.setItem('shellshuffle:v1', JSON.stringify({
-      coins: 900, bestLevel: 42, owned: ['classic','gold'], ownedCups: ['sunset','moonlit','forest'],
+      coins: 900, bestLevel: 42, owned: ['classic','gold'], ownedCups: ['sunset'],
       daily: { last: '2099-01-01', streak: 12, best: 30, week: 'x', weekDays: 6, weekStreak: 4 } }));
   });
   // a correct guess triggers save(); find the cup the ball is under by trying all of them
@@ -211,6 +211,8 @@ for (const [name, poison] of Object.entries(POISONS)) {
   ok('two tabs: best level from the other tab survives (MAX)', after.bestLevel >= 42, 'bestLevel=' + after.bestLevel);
   ok('two tabs: purchases from the other tab survive', after.owned.indexOf('gold') >= 0, JSON.stringify(after.owned));
   ok('two tabs: the daily streak from the other tab survives (MAX)', after.daily.streak >= 12, JSON.stringify(after.daily));
+  ok('two tabs: the merge actually ran (this tab\'s cups were written too)',
+    after.ownedCups.length > 1 && after.ownedCups.indexOf('sunset') >= 0, JSON.stringify(after.ownedCups));
   await ctx.close();
 }
 

@@ -217,6 +217,8 @@ const resume = p => p.evaluate(() => {
   await page.evaluate(async () => { window.__bn.t.clearCritters(); await new Promise(x => setTimeout(x, 3200)); });
   const far = await page.evaluate(() => localStorage.getItem('bn_furthest'));
   ok('two tabs: the furthest room from the other tab survives (MAX)', +far >= 20, 'bn_furthest=' + far);
+  const advanced = await page.evaluate(() => window.__bn.state.level);
+  ok('two tabs: this tab really did advance a room (the write was not a no-op)', advanced >= 1, 'level=' + advanced);
   await ctx.close();
 }
 

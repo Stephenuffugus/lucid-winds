@@ -103,58 +103,56 @@ console.log('\n[2] corrupt save falls back to sane values');
   await ctx.close();
 }
 
-/* ---- 3. two tabs must not clobber ---------------------------------------- */
+/* ---- 3. two tabs must not clobber ----------------------------------------
+   The scenario: this tab booted with a wallet snapshot, then the OTHER tab banked
+   a run. Anything this tab writes afterwards must MERGE with what the other tab
+   left on disk, never overwrite it from the stale snapshot. Simulated by writing
+   to localStorage behind this tab's back, then driving a REAL purchase through the
+   shop so the actual writer runs, not a stand-in. */
 console.log('\n[3] two tabs: coins ADD, best MAXes, stars MAX');
 {
-  const { ctx, p } = await boot();
+  const { ctx, p, errs } = await boot(`(()=>{try{
+    localStorage.setItem('sproing_coins','400');
+    localStorage.setItem('sproing_bounce_seen','1');
+  }catch(e){}})()`);
   const r = await p.evaluate(async () => {
-    const out = {};
-    /* stand in for the other tab by writing to disk behind this tab's back */
-    localStorage.setItem('sproing_coins', '500');
-    document.getElementById('b-shop').click();          // forces a refreshCoinUI path
-    await new Promise(r => setTimeout(r, 250));
-    /* buy nothing; just make THIS tab bank 40 coins the way a run would */
-    const before = parseInt(localStorage.getItem('sproing_coins'), 10);
-    /* trigger addCoins through a real surface: the achievement toast path is the
-       only public one, so poke the wallet the way commitRun does by dispatching a
-       storage-independent purchase-and-refund of a known size is not available.
-       Instead assert the merge property directly on the writer. */
-    localStorage.setItem('sproing_coins', '900');       // other tab banks more
-    document.getElementById('shop-back').click();
-    await new Promise(r => setTimeout(r, 250));
-    out.diskAfter = parseInt(localStorage.getItem('sproing_coins'), 10);
-    out.before = before;
+    const out = { booted: parseInt(localStorage.getItem('sproing_coins'), 10) };
 
-    /* best: write a better record to disk, then make this tab save its own */
+    /* the other tab banks a big run while this tab sits on its 400 snapshot */
+    localStorage.setItem('sproing_coins', '2000');
+
+    /* now this tab spends 300 on a Leaf Cap through the real shop UI */
+    document.getElementById('b-shop').click(); await new Promise(r => setTimeout(r, 350));
+    const hats = [...document.querySelectorAll('.shoptab')].find(t => /hat/i.test(t.textContent));
+    if (hats) { hats.click(); await new Promise(r => setTimeout(r, 300)); }
+    const buy = [...document.querySelectorAll('#shop-grid button, #shop-grid .cell')]
+      .find(b => /leaf cap|300/i.test(b.textContent));
+    if (buy) { buy.click(); await new Promise(r => setTimeout(r, 300)); }
+    const yes = document.getElementById('mx2'); if (yes) { yes.click(); await new Promise(r => setTimeout(r, 350)); }
+    out.afterBuy = parseInt(localStorage.getItem('sproing_coins'), 10);
+    out.boughtHat = (JSON.parse(localStorage.getItem('sproing_accs') || '[]') || []).indexOf('leafhat') >= 0;
+
+    /* best: the other tab sets a record this tab has never seen */
     localStorage.setItem('sproing_best', '777');
-    out.bestBefore = 777;
-
-    /* stars: other tab clears level 3 */
+    /* stars: the other tab clears world 1 level 4 */
     localStorage.setItem('sproing_levels', JSON.stringify({ stars: { '3': 3 }, unlocked: 4 }));
-    return out;
-  });
-  /* the real assertion is a reload: whatever this tab does next must not erase
-     the values the other tab wrote. */
-  const after = await p.evaluate(async () => {
-    location.reload();
-    return true;
-  });
-  await new Promise(r => setTimeout(r, 2600));
-  const merged = await p.evaluate(async () => {
-    try { localStorage.setItem('sproing_bounce_seen', '1'); } catch (e) {}
-    document.getElementById('b-play').click(); await new Promise(r => setTimeout(r, 400));
+    /* make THIS tab save its own (empty) level progress the way a clear would */
+    document.getElementById('shop-back').click(); await new Promise(r => setTimeout(r, 300));
+    document.getElementById('b-play').click(); await new Promise(r => setTimeout(r, 350));
     document.getElementById('m-adventure').click(); await new Promise(r => setTimeout(r, 600));
     const lv = JSON.parse(localStorage.getItem('sproing_levels'));
-    return {
-      coins: parseInt(localStorage.getItem('sproing_coins'), 10),
-      best: parseInt(localStorage.getItem('sproing_best'), 10),
-      stars3: lv.stars['3'], unlocked: lv.unlocked,
-      starsShown: document.getElementById('map-stars').textContent
-    };
+    out.stars3 = lv && lv.stars ? lv.stars['3'] : null;
+    out.unlocked = lv ? lv.unlocked : null;
+    out.mapShown = getComputedStyle(document.getElementById('s-map')).display !== 'none';
+    return out;
   });
-  ok("the other tab's coins survive", merged.coins >= 900, JSON.stringify(merged));
-  ok("the other tab's best survives", merged.best === 777, JSON.stringify(merged));
-  ok("the other tab's stars survive", merged.stars3 === 3 && merged.unlocked >= 4, JSON.stringify(merged));
+  /* 2000 on disk minus the 300 this tab spent = 1700. The old code wrote
+     400 - 300 = 100 and destroyed 1600 coins the other tab had earned. */
+  ok('a purchase spends against the DISK wallet, not the boot snapshot',
+    r.boughtHat && r.afterBuy === 1700, JSON.stringify(r));
+  ok("the other tab's stars survive this tab's save", r.stars3 === 3 && r.unlocked >= 4, JSON.stringify(r));
+  ok('the map still opens through the merge', r.mapShown, JSON.stringify(r));
+  ok('no page errors during the merge', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
 

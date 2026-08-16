@@ -63,6 +63,22 @@ centred 271px button column that reaches into that corner on every screen. The f
 collision watcher does not catch it, since its probe points fall a couple of pixels clear of the
 overlap. Found by measuring at 375x667, not by looking at the CSS.
 
+### The shared feedback fab hides itself for the first 20 seconds. (fleet level)
+Measured, not read: on a fresh load the fab mounts at its home spot and then fades to
+`opacity:0` with `pointer-events:none` within a few seconds, and only comes back at about 26
+seconds when `feedback.js` hits its own 20 second ceiling and forces itself home. The cause is
+in the shared file, not in this game: every screen here is a full bleed div containing buttons,
+which trips the watcher's "this is a cover with real content under it" rule, so it goes looking
+for an empty spot to park in, finds none on a full screen layout, and yields.
+
+Two things follow. It is not a tap stealer while it is hidden, because the same rule that hides
+it also sets `pointer-events:none`, so this is a visibility problem and not a correctness one.
+And it makes the parking work above matter MORE, not less: the place it returns to after the
+ceiling is its home, which is exactly the footprint that had to be cleared of controls. The
+gate asserts the whole invariant now, so a fab that quietly faded can never make the collision
+test pass for the wrong reason. Fixing the fade itself belongs in `/feedback.js`, which is
+outside this audit's sandbox.
+
 ## CHECKED AND CLEAN
 
 - **Exit (standing class 1).** `SWS_EXIT` already uses the `document.referrer` fallback, not

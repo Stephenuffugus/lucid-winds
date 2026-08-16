@@ -73,23 +73,33 @@ for (const [k, v] of POISON) {
   await ctx.close();
 }
 
-/* ---- 2. the core loop actually finishes ----------------------------------- */
-console.log('\n[2] every mode reaches its end panel and banks progress');
-{
+/* ---- 2. the core loop actually finishes -----------------------------------
+   ⛔ Each mode gets its OWN page. Running all five in one document works right up
+      until it doesn't: under swiftshader the accumulated GL pressure made the
+      second run take longer than a 600s protocol timeout, which reads exactly like
+      a hung game and is not one. A fresh context per mode also means no assertion
+      can pass because a previous one warmed something up.
+   ⛔ The in-page loop is TIMEBOXED by wall clock. A probe that can spin forever is
+      a probe that reports "still running" for a game that has crashed. */
+async function runMode(kind, arg) {
   const { ctx, p, errs } = await boot();
-  const run = (kind, arg) => p.evaluate((kind, arg) => {
+  const r = await p.evaluate((kind, arg) => {
     const S = window._S3;
     if (kind === 'journey') S.newGame(arg); else if (kind === 'ff') S.newFF(arg);
     else if (kind === 'climb') S.newClimb(arg); else S.newEndless();
     const go = document.getElementById('s-go');
-    for (let i = 0; i < 8000; i++) {
+    const t0 = Date.now();
+    let i = 0, timeboxed = false;
+    for (; i < 8000; i++) {
       const g = S.state(); if (!g) break;
       if (!g.done && g.grounded && kind !== 'ff' && kind !== 'endless') S.tap(1);
       S.stepN(1, 16);
       if (go.classList.contains('on')) break;
+      if (Date.now() - t0 > 90000) { timeboxed = true; break; }
     }
     const g = S.state();
     return {
+      timeboxed, frames: i, ms: Date.now() - t0,
       ended: go.classList.contains('on'),
       title: document.getElementById('go-title').textContent,
       detail: document.getElementById('go-detail').textContent,
@@ -97,26 +107,34 @@ console.log('\n[2] every mode reaches its end panel and banks progress');
       score: g ? g.score : -1, prog: JSON.parse(JSON.stringify(S.prog()))
     };
   }, kind, arg);
+  await ctx.close();
+  return { ...r, errs };
+}
 
-  const j = await run('journey', 1);
-  ok('Journey L1 reaches the end panel', j.ended, JSON.stringify(j).slice(0, 160));
+console.log('\n[2] every mode reaches its end panel and banks progress');
+{
+  const j = await runMode('journey', 1);
+  ok('Journey L1 reaches the end panel', j.ended && !j.timeboxed, JSON.stringify({ t: j.timeboxed, f: j.frames, ms: j.ms }));
   ok('Journey L1 banks a score', j.score > 0, 'score=' + j.score);
   ok('Journey L1 advances PROG.level', j.prog.level >= 2, 'level=' + j.prog.level);
   ok('Journey L1 pays slivers', /slivers/.test(j.sun), j.sun);
+  ok('Journey L1 raises no page error', j.errs.length === 0, j.errs.join(' | '));
 
-  const f = await run('ff', 1);
-  ok('Freefall L1 reaches the end panel', f.ended, f.title);
+  const f = await runMode('ff', 1);
+  ok('Freefall L1 reaches the end panel', f.ended && !f.timeboxed, f.title + ' ' + JSON.stringify({ t: f.timeboxed, f: f.frames }));
   /* the fail path used to save NOTHING, so every slab cut on a failed dive was
      discarded and the Groundskeeper trophy was near unreachable */
   ok('a failed dive still reports its combo', /best combo/.test(f.detail), f.detail);
+  ok('Freefall raises no page error', f.errs.length === 0, f.errs.join(' | '));
 
-  const c = await run('climb', 1);
-  ok('Wall Climb L1 reaches the end panel', c.ended, c.title);
-  const e = await run('endless', 0);
-  ok('Endless reaches the end panel', e.ended, e.title);
+  const c = await runMode('climb', 1);
+  ok('Wall Climb L1 reaches the end panel', c.ended && !c.timeboxed, c.title);
+  ok('Wall Climb raises no page error', c.errs.length === 0, c.errs.join(' | '));
+
+  const e = await runMode('endless', 0);
+  ok('Endless reaches the end panel', e.ended && !e.timeboxed, e.title);
   ok('Endless records a best depth', e.prog.endlessBest > 0, 'endlessBest=' + e.prog.endlessBest);
-  ok('no page errors across all five modes', errs.length === 0, errs.join(' | '));
-  await ctx.close();
+  ok('Endless raises no page error', e.errs.length === 0, e.errs.join(' | '));
 }
 
 /* ---- 3. a failed run banks its trophy progress ---------------------------- */
@@ -128,7 +146,8 @@ console.log('\n[3] a failed run does not silently discard progress');
     S.prog().slabsCut = 0;
     S.newFF(1);
     const go = document.getElementById('s-go');
-    for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; S.stepN(1, 16); if (go.classList.contains('on')) break; }
+    const t0 = Date.now();
+    for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; S.stepN(1, 16); if (go.classList.contains('on')) break; if (Date.now() - t0 > 90000) break; }
     const cut = S.prog().slabsCut || 0;
     let disk = null; try { disk = JSON.parse(localStorage.getItem('s3d_prog')); } catch (e) {}
     return { failed: /STUCK/.test(document.getElementById('go-title').textContent), cut, onDisk: disk ? (disk.slabsCut || 0) : -1, hasBestCombo: disk && disk.bestCombo !== undefined };
@@ -154,7 +173,8 @@ console.log('\n[4] two tabs: counters ADD, bests MAX, owned knives UNION');
     S.prog().level = 3; localStorage.setItem('s3d_prog', JSON.stringify({ level: 9, best: { l7: 42 }, ffLevel: 1, climbLevel: 1 }));
     S.prog().best.l1 = 10;
     S.newGame(1); const go = document.getElementById('s-go');
-    for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; if (!g.done && g.grounded) S.tap(1); S.stepN(1, 16); if (go.classList.contains('on')) break; }
+    const t0 = Date.now();
+    for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; if (!g.done && g.grounded) S.tap(1); S.stepN(1, 16); if (go.classList.contains('on')) break; if (Date.now() - t0 > 90000) break; }
     const disk = JSON.parse(localStorage.getItem('s3d_prog'));
 
     const own = S.skins(); own.owned = ['classic', 'cleaver'];
