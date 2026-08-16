@@ -14,7 +14,7 @@ for(const g of games){
     if(r.n){console.log(g.padEnd(16)+"no fab mounted");}
     else{ r.vis?shown++:hidden++; console.log(g.padEnd(16)+(r.vis?"VISIBLE":"hidden ")+"  opacity="+r.op+" pe="+r.pe); }
   }catch(e){console.log(g.padEnd(16)+"ERR "+e.message.slice(0,40));}
-  await ctx.close();
+  try{ await ctx.close(); }catch(e){}
 }
 console.log("\n"+shown+" visible, "+hidden+" hidden of "+games.length);
 await br.close();
