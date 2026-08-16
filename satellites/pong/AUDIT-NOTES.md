@@ -222,3 +222,85 @@ thirty seconds is a countdown.
 - Radial (Orbit) is the weakest arena. The goal arcs are wide, the paddle covers
   most of its own arc, and points come from the ball squeezing an edge rather
   than from a read. It is the one mode I would cut or rebuild.
+
+---
+
+# CONTINUATION PASS — 2026-08-16, second agent
+
+The first pass was cut off mid sentence. Everything above is its own account;
+this section is what a second agent could and could not confirm, and what it
+finished. Rule applied throughout: a check nobody has watched go RED is not
+evidence.
+
+## THE CLAIMED FIXES, RE-VERIFIED IN CODE
+
+| Claim | Verdict |
+|---|---|
+| A1 rotate no longer strands the ball | CONFIRMED. `rebuildArena` clears bumpers/movers/powerups and clamps live balls. Check green over repeated runs. |
+| A2 corrupt save no longer blanks the page | CONFIRMED. 4 of 7 poisons still kill a verbatim copy of the old loader, all 7 survive the new one. |
+| A3 magnet cannot hold the ball | CONFIRMED. Released at 1.10s, moving. |
+| A4 every currency has a sink | CONFIRMED. Sparks now buy 156 items. |
+| A5 the ending is no longer a lie | CONFIRMED, and better than claimed: the copy now points at Free Play and **Survival**, and Survival is really in `FREEPLAY_MODES`, so the new sentence is true too. Class 9 closed. |
+| A6 serve hint | CONFIRMED, describes drag and flick, both of which exist. |
+| A7 dead air | CONFIRMED. First serve 3 counts, later serves 1. |
+| A8 two tabs merge | CONFIRMED. |
+| A9 touch targets | CONFIRMED at 375x667 rendered. |
+
+## WHAT THE FIRST PASS LEFT BROKEN
+
+**The suite did not exit 0.** On the first run here it was 13/15, on the second
+13/15 again but with a DIFFERENT pair failing. Both failures were the checks
+themselves, not the game.
+
+1. **`no permanent stall` was a coin toss.** One match per mode, unseeded, and it
+   hung roughly one run in three. Now seeded (`Math.random` replaced with
+   mulberry32 inside the page) and running four matches per mode: **120 points
+   across 5 modes, zero stalls, slowest point 27.3s in Radial.** That 27.3s is
+   worth knowing on its own — Radial is three seconds from tripping the 30s
+   stall limit, which is more evidence for the first pass's note that Radial is
+   the weakest arena.
+2. **`AI difficulty is monotonic` measured noise.** Points per match yields five
+   to twenty samples, so the ladder reordered itself every run (`hard` above
+   `expert` once, `normal` above `hard` the next). Rebuilt on two instruments:
+   CPU **return rate** per ball approach (roughly 430 samples a rung, settles the
+   ORDER) and **share of points** (60 to 100 samples, too noisy to order but it
+   is what a player feels, so it carries the SPREAD).
+
+## A REAL DEFECT THE REBUILT CHECK FOUND
+
+**Legend was not a rung.** Measured over ~430 ball approaches per difficulty with
+a seeded RNG, Ace returned 95.8% and Legend 95.6%: the same number inside the
+noise, and Legend's share of points was no better either. The menu offers four
+rungs and the top two played identically. That is standing class 9 wearing a
+difficulty label.
+
+Fixed by sharpening the levers that do not make a paddle outrun the ball:
+`errPx` 10 to 6, `reactMs` 0.070 to 0.052, `padFrac` 0.93 to 0.955, `pred` 0.95
+to 0.98. Still under 1.0 coverage, and Career 12 (classic / Legend / first to 11)
+still clears in the suite.
+
+## SELFTEST HARNESS
+
+Every check now runs in **its own browser context**. In `--selftest` mode a
+break that wrote localStorage was surviving into the next check's real run and
+failing it, which is how `saveProg merges` showed red in a selftest run and
+green in a normal one.
+
+## LOOKING
+
+Shot at 375x667 and at 1280x800, and read.
+
+- The menu subtitle says **"rotate your phone for the full length court"** on the
+  DESKTOP build too, where there is no phone. Same line also promises a flick to
+  curve, which is a touch gesture. Minor class 9, left for the Director because
+  it is a copy call not a bug.
+- The card icons render as tofu boxes in headless Chrome (no emoji font). The
+  Settings gear is a real glyph and renders. Not treated as a defect: the fleet
+  feedback fab tofus in the same shot, so this is the test rig, not the page.
+
+## WHAT STILL WORRIES ME (in addition to the first pass's list)
+
+- Radial's 27.3s point. It is inside the limit but it is the one arena where a
+  point can take half a minute.
+- `Survival` is not covered by the tunnelling, stall or AI checks, which iterate
+  a hard coded list of five modes. It is a sixth mode with its own paddle setup.
