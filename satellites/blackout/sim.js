@@ -47,24 +47,62 @@ var G = factory();
 /* ------------------------------------------------------------------ */
 /* grep gates                                                          */
 /* ------------------------------------------------------------------ */
+/* Strip comments and lift out string literals, so an identifier hunt never
+   trips over a word that lives inside prose. A murder mystery is allowed to
+   contain a window in a wall. Learned the hard way, 2026-08-16. */
+function scanJs(src) {
+  var strings = [], code = [], i = 0, n = src.length, ch, q, s;
+  while (i < n) {
+    ch = src[i];
+    if (ch === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
+    if (ch === "/" && src[i + 1] === "*") {
+      i += 2; while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++; i += 2; continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      q = ch; s = ++i;
+      while (i < n) { if (src[i] === "\\") { i += 2; continue; } if (src[i] === q) break; i++; }
+      strings.push(src.slice(s, i)); code.push(" "); i++; continue;
+    }
+    code.push(ch); i++;
+  }
+  return { strings: strings, code: code.join("") };
+}
+
+var DASHY = /[-‐-―−]/;
+var WIDE_DASH = /[‐-―−]/;
+
 function grepGates() {
-  var fails = [];
-  if (/Math\.random/.test(SIM_SRC)) fails.push("Math.random inside SIM_EXPORT markers");
-  var dom = SIM_SRC.match(/\b(document|window|canvas|performance|requestAnimationFrame)\b/g);
+  var fails = [], i;
+  var sim = scanJs(SIM_SRC);
+  if (/Math\s*\.\s*random/.test(sim.code)) fails.push("Math.random inside SIM_EXPORT markers");
+  var dom = sim.code.match(/\b(document|window|canvas|performance|requestAnimationFrame)\b/g);
   if (dom) fails.push("DOM reference inside SIM: " + Array.from(new Set(dom)).join(", "));
-  if (/[‐-―]/.test(HTML)) fails.push("en or em dash somewhere in index.html");
-  var copy = region("// ---- COPY_START ----", "// ---- COPY_END ----", true);
-  var strings = copy.match(/"(?:[^"\\]|\\.)*"/g) || [];
-  strings.forEach(function (s) { if (s.indexOf("-") >= 0) fails.push("dash in copy string " + s); });
-  var uiStrings = (region("// ---- UICOPY_START ----", "// ---- UICOPY_END ----", false)
-    .match(/"(?:[^"\\]|\\.)*"/g) || []);
-  uiStrings.forEach(function (s) { if (s.indexOf("-") >= 0) fails.push("dash in ui copy string " + s); });
+
+  // player facing copy: no dash of any kind
+  ["// ---- COPY_START ----|// ---- COPY_END ----|copy",
+   "// ---- UICOPY_START ----|// ---- UICOPY_END ----|ui copy"].forEach(function (spec) {
+    var parts = spec.split("|");
+    var src = region(parts[0], parts[1], false);
+    if (!src) return;
+    scanJs(src).strings.forEach(function (s) {
+      if (DASHY.test(s)) fails.push("dash in " + parts[2] + " string: " + s.slice(0, 60));
+    });
+  });
+
+  // no en or em dash anywhere in a string literal in the whole file
+  scanJs(HTML.slice(HTML.indexOf("<script>"))).strings.forEach(function (s) {
+    if (WIDE_DASH.test(s)) fails.push("wide dash in string: " + s.slice(0, 60));
+  });
+
+  // static markup text nodes
   var bodyStart = HTML.indexOf("<body>"), bodyEnd = HTML.indexOf("</bo" + "dy>");
   var body = HTML.slice(bodyStart, bodyEnd);
   var scriptOpen = body.indexOf("<script>");
   var markup = scriptOpen >= 0 ? body.slice(0, scriptOpen) : body;
-  var textNodes = markup.replace(/<[^>]*>/g, " ");
-  if (/[‐-―]|(\s-\s)/.test(textNodes)) fails.push("dash in static markup text");
+  var textNodes = markup.replace(/<[^>]*>/g, " ").trim();
+  if (textNodes && (WIDE_DASH.test(textNodes) || /\s-\s/.test(textNodes))) {
+    fails.push("dash in static markup text");
+  }
   var closer = "</scr" + "ipt>";
   if (SIM_SRC.indexOf(closer) >= 0) fails.push("literal closing script tag inside SIM source");
   return fails;

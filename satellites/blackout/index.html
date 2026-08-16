@@ -53,9 +53,13 @@ var CONFIG = Object.freeze({
   STAR2: 4,
   MIN_SET_LO: 8,
   MIN_SET_HI: 14,
+  /* Tuned by node sim.js --cases=10000, not by feel. Alibi and sighting are
+     the two WEAK clue types (they cut 30 and 18 tuples of 1296); loading the
+     pool with those raises the uniqueness rate and the minimal set size at
+     the same time, which is exactly what the 4.8 gates ask for. */
   POOL: Object.freeze({
-    alibi: 9, own: 5, access: 2, sight: 6, trace: 3, timeline: 4,
-    wtrace: 3, motive: 3, pair: 2, negative: 5, sequence: 2, object: 4
+    alibi: 15, own: 6, access: 2, sight: 11, trace: 3, timeline: 4,
+    wtrace: 4, motive: 3, pair: 3, negative: 6, sequence: 2, object: 5
   })
 });
 
@@ -1208,7 +1212,7 @@ function clueSubjects(cl) {
     case 2: return [WEAPONS[p.w].n, SUSPECTS[p.s].n, ROOMS[p.r].n];
     case 3: return [ROOMS[p.r].n];
     case 4: return [ROOMS[p.r].n, TIMES[p.t], DESCS[p.a][p.v ? 1 : 0]];
-    case 5: return [ROOMS[p.r].n, ROOMS[p.r].sub];
+    case 5: return [ROOMS[p.r].n];
     case 6: return [TIMES[p.t]];
     case 7: return [CLASSWORD[p.cls]];
     case 8: return p.k === "none" ? [SUSPECTS[p.s].n] : [SUSPECTS[p.set[0]].n];

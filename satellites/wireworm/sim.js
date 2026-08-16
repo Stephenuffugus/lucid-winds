@@ -35,7 +35,7 @@ const EXPORTS = [
   'cx', 'cy', 'manhattan', 'reachMask', 'pendingMask', 'spawnCandidates',
   'maxDistPair', 'spawnPair', 'spawnPickup', 'newGame', 'step', 'hashState',
   'loadPct', 'makeQueue', 'safeTurns', 'agentRandom', 'agentGreedy', 'bfsTurn',
-  'boardAscii', 'completeCircuit', 'touchPickup', 'touchTerminal', 'fireOverload',
+  'boardAscii', 'agentRandomSafe', 'turnSurvives', 'rescueCheck', 'dischargeOldest', 'completeCircuit', 'touchPickup', 'touchTerminal', 'fireOverload',
   'loadSave', 'writeSave', 'defaultSave', 'migrateSave', 'updateSave',
   'recordRun', 'recordDaily', 'encodeLog', 'decodeLog',
   'TEST', 'runAllTests', 'playAgent', 'invariants'
@@ -72,7 +72,8 @@ function cmdTest() {
   console.log('');
   console.log('PASSED ' + rep.passed + ' / FAILED ' + rep.failed + '   (' + rep.total + ' assertions, ' +
     ((Date.now() - t0) / 1000).toFixed(1) + 's)');
-  process.exit(rep.failed ? 1 : 0);
+  console.log(rep.failed ? 'RESULT: FAIL' : 'RESULT: PASS');
+  process.exitCode = rep.failed ? 1 : 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,7 +131,7 @@ function cmdSweep(runs) {
     G.CONFIG.TICK_START_MS + 'ms minus ' + G.CONFIG.TICK_STEP_MS + 'ms per circuit, floor ' + G.CONFIG.TICK_FLOOR_MS + 'ms');
   console.log('');
 
-  const agents = [['random', G.agentRandom], ['greedy', G.agentGreedy]];
+  const agents = [['random', G.agentRandom], ['randomsafe', G.agentRandomSafe], ['greedy', G.agentGreedy]];
   const out = {};
   for (const [name, fn] of agents) {
     const t0 = Date.now();
@@ -148,21 +149,23 @@ function cmdSweep(runs) {
   }
 
   /* gates from HANDOFF-11 section 6.6 */
-  const rm = out.random.ticks.med, gm = out.greedy.ticks.med;
+  const rm = out.random.ticks.med, sm = out.randomsafe.ticks.med, gm = out.greedy.ticks.med;
   const gates = [
     ['random median run length 60 to 200 ticks', rm >= 60 && rm <= 200, rm],
     ['greedy median run length 300 to 900 ticks', gm >= 300 && gm <= 900, gm],
     ['greedy is not too safe (median under 2000)', gm < 2000, gm],
     ['greedy outlives random', gm > rm, gm + ' vs ' + rm],
-    ['energized never exceeded the grid', Math.max(out.random.peakLoad, out.greedy.peakLoad) <= G.CONFIG.CELLS, Math.max(out.random.peakLoad, out.greedy.peakLoad)],
-    ['no run hit the tick cap', out.random.causes.cap === 0 && out.greedy.causes.cap === 0, out.random.causes.cap + '/' + out.greedy.causes.cap]
+    ['safety filtered random walk reported (no gate, see BUILD-NOTES)', true, sm],
+    ['energized never exceeded the grid', Math.max(out.random.peakLoad, out.randomsafe.peakLoad, out.greedy.peakLoad) <= G.CONFIG.CELLS, Math.max(out.random.peakLoad, out.randomsafe.peakLoad, out.greedy.peakLoad)],
+    ['no run hit the tick cap', out.random.causes.cap === 0 && out.randomsafe.causes.cap === 0 && out.greedy.causes.cap === 0, out.random.causes.cap + '/' + out.randomsafe.causes.cap + '/' + out.greedy.causes.cap]
   ];
   let bad = 0;
   console.log('GATES');
   gates.forEach(g => { if (!g[1]) bad++; console.log('  ' + (g[1] ? 'PASS  ' : 'FAIL  ') + g[0] + '   [' + g[2] + ']'); });
   console.log('');
   console.log(bad ? (bad + ' GATE(S) FAILED') : 'ALL GATES PASSED');
-  process.exit(bad ? 1 : 0);
+  console.log(bad ? 'RESULT: FAIL' : 'RESULT: PASS');
+  process.exitCode = bad ? 1 : 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -171,7 +174,7 @@ function cmdSweep(runs) {
 function cmdWatch(seed) {
   const every = parseInt(args.every || '40', 10);
   const agentName = String(args.agent || 'greedy');
-  const agent = agentName === 'random' ? G.agentRandom : G.agentGreedy;
+  const agent = agentName === 'random' ? G.agentRandom : (agentName === 'randomsafe' ? G.agentRandomSafe : G.agentGreedy);
   const cap = parseInt(args.cap || '4000', 10);
   const st = G.newGame(seed >>> 0);
   const rng = G.makeRNG((seed ^ 0x9e3779b9) >>> 0);

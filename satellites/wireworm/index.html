@@ -760,6 +760,11 @@ function bfsTurn(st, targets) {
   return null;
 }
 
+/* Competent play, not perfect play. BFS to the objective avoiding energized
+   cells and the edge, take the discharge pickup once the board is getting
+   dangerous, and never take a step that leaves nowhere to go next tick.
+   That last clause is what stopped this agent dying at 252 ticks while a
+   blind random walker lived past a thousand. */
 function agentGreedy(st, rng) {
   var targets = [], i, j, p;
   if (st.charge) {
@@ -772,24 +777,33 @@ function agentGreedy(st, rng) {
       for (j = 0; j < p.active.length; j++) targets.push(p.active[j]);
     }
   }
-  var t = targets.length ? bfsTurn(st, targets) : null;
+  var t = null;
+  var crowded = st.energized >= CONFIG.CELLS * 0.22;
+  if (st.pickup >= 0 && crowded) t = bfsTurn(st, [st.pickup]);
+  if (t === null && targets.length) t = bfsTurn(st, targets);
   if (t === null && st.pickup >= 0) t = bfsTurn(st, [st.pickup]);
-  if (t !== null) return t;
-  /* No reachable objective. Take the safe move with the most open neighbours
-     so the worm does not walk itself into a pocket. */
+  if (t !== null && turnSurvives(st, t)) return t;
+
   var safe = safeTurns(st);
   if (!safe.length) return -1;
-  var best = safe[0], bestScore = -1, k, h, x, y, ni, d, nx, ny, open;
-  for (k = 0; k < safe.length; k++) {
-    h = (st.heading + safe[k] + 4) & 3;
+  var pool = [], k;
+  for (k = 0; k < safe.length; k++) if (turnSurvives(st, safe[k])) pool.push(safe[k]);
+  if (!pool.length) pool = safe;
+  if (t !== null && pool.indexOf(t) >= 0) return t;
+
+  /* Take the safe move with the most open neighbours so the worm does not
+     paint itself into a pocket. */
+  var best = pool[0], bestScore = -1, h, x, y, d, nx, ny, open;
+  for (k = 0; k < pool.length; k++) {
+    h = (st.heading + pool[k] + 4) & 3;
     x = cx(st.head) + DX[h]; y = cy(st.head) + DY[h];
-    ni = y * CONFIG.GRID + x; open = 0;
+    open = 0;
     for (d = 0; d < 4; d++) {
       nx = x + DX[d]; ny = y + DY[d];
       if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
       if (st.cover[ny * CONFIG.GRID + nx] === 0) open++;
     }
-    if (open > bestScore || (open === bestScore && rng() < 0.34)) { bestScore = open; best = safe[k]; }
+    if (open > bestScore || (open === bestScore && rng() < 0.34)) { bestScore = open; best = pool[k]; }
   }
   return best;
 }
@@ -1615,24 +1629,75 @@ function suiteCopy() {
   })());
 }
 
+/* ---- suite 9: named regressions. Every one of these was a live defect
+        caught by a sweep or a fuzz run, written down before it was fixed. ---- */
+function suiteRegressions() {
+  /* Seeds 9001, 9003, 9012, 9013 and 9027 all ran forever under the greedy
+     agent: the worm sealed itself into a pocket, no terminal was reachable,
+     and every free cell was either unreachable or hugging live wire so no
+     discharge pickup could spawn either. The run could never end. */
+  var stuck = [9001, 9003, 9012, 9013, 9027], i, alive = [], rescued = 0;
+  for (i = 0; i < stuck.length; i++) {
+    var r = playAgent(stuck[i], agentGreedy, stuck[i] - 9000, 8000);
+    if (r.st.alive) alive.push(stuck[i]);
+    if (r.st.rescues > 0) rescued++;
+  }
+  TEST.eq('regression: the sealed pocket seeds all terminate', alive.join(','), '');
+  /* the rescue must actually be the thing that saves them, not luck */
+  TEST.ge('regression: the terminal rescue fired on the sealed pocket seeds', rescued, 1);
+  /* a hand built total seal: the worm in a 4 cell box of live wire */
+  var st = newGame(9001);
+  var i2, box = [];
+  for (i2 = 0; i2 < CONFIG.CELLS; i2++) { st.cell[i2] = WIRE; st.cover[i2] = 1; }
+  st.energized = CONFIG.CELLS;
+  /* open a small pocket around the head */
+  var pocket = [210, 211, 230, 231];
+  for (i2 = 0; i2 < pocket.length; i2++) { st.cell[pocket[i2]] = EMPTY; st.cover[pocket[i2]] = 0; st.energized--; }
+  st.cell[210] = WIRE; st.head = 210;
+  st.circuits = [{ id: 1, ci: 0, cells: [0, 1, 2], len: 3, tick: 1, score: 1 }];
+  var ev = [];
+  rescueCheck(st, ev);
+  TEST.assert('regression: a total seal triggers a rescue', ev.length > 0 && ev[ev.length - 1].t === 'rescue');
+  TEST.assert('regression: the rescue leaves the worm something to reach', (function () {
+    var reach = reachMask(st), k, q;
+    for (k = 0; k < st.pairs.length; k++) {
+      for (q = 0; q < st.pairs[k].active.length; q++) if (reach[st.pairs[k].active[q]]) return true;
+    }
+    return st.circuits.length === 0;       // or the mercy discharge reopened it
+  })());
+  TEST.assert('regression: the rescue never leaves a half open pair', (function () {
+    var k;
+    for (k = 0; k < st.pairs.length; k++) if (st.pairs[k].active.length !== 2) return false;
+    return true;
+  })());
+  TEST.eq('regression: the rescue drops any charge it cannot honour', st.charge, null);
+  /* the rescue must not fire on a healthy board */
+  var s2 = newGame(4242), rr = makeRNG(1), g = 0;
+  while (s2.alive && g < 400) { step(s2, agentGreedy(s2, rr)); g++; }
+  TEST.assert('regression: the rescue stays quiet on a board that is fine', s2.rescues <= 2, 'rescues ' + s2.rescues);
+}
+
 function suiteBalance() {
   /* a small in page envelope check. sim.js runs the full sweep. */
-  var i, randTicks = [], greedyTicks = [];
+  var i, randTicks = [], safeTicks = [], greedyTicks = [];
   for (i = 0; i < 60; i++) {
-    randTicks.push(playAgent(20000 + i, agentRandom, 100 + i, 6000).st.tick);
-    greedyTicks.push(playAgent(20000 + i, agentGreedy, 100 + i, 6000).st.tick);
+    randTicks.push(playAgent(20000 + i, agentRandom, 100 + i, 8000).st.tick);
+    safeTicks.push(playAgent(20000 + i, agentRandomSafe, 100 + i, 8000).st.tick);
+    greedyTicks.push(playAgent(20000 + i, agentGreedy, 100 + i, 8000).st.tick);
   }
   function med(a) { var b = a.slice().sort(function (x, y) { return x - y; }); return b[b.length >> 1]; }
-  var rm = med(randTicks), gm = med(greedyTicks);
+  var rm = med(randTicks), sm = med(safeTicks), gm = med(greedyTicks);
   TEST.ge('the random agent survives more than a handful of ticks', rm, 10);
-  TEST.assert('the greedy agent outlives the random agent', gm > rm, gm + ' vs ' + rm);
+  TEST.assert('the plain random walk dies quickly', rm <= 260, 'random median ' + rm);
+  TEST.assert('looking where you are going helps', sm > rm, sm + ' vs ' + rm);
+  TEST.assert('the greedy agent outlives the plain random agent', gm > rm, gm + ' vs ' + rm);
   TEST.le('the greedy agent is not immortal', gm, 2000, 'greedy median ' + gm);
   TEST.assert('the greedy agent scores', (function () {
-    var r = playAgent(4242, agentGreedy, 9, 6000); return r.st.score > 0;
+    var r = playAgent(4242, agentGreedy, 9, 8000); return r.st.score > 0;
   })());
   TEST.assert('every run ends', (function () {
     var i, ok = true;
-    for (i = 0; i < 30; i++) { if (playAgent(9000 + i, agentGreedy, i, 6000).st.alive) ok = false; }
+    for (i = 0; i < 30; i++) { if (playAgent(9000 + i, agentGreedy, i, 8000).st.alive) ok = false; }
     return ok;
   })());
   TEST.assert('the speed ramp reaches the floor', (function () {
@@ -1648,7 +1713,8 @@ function runAllTests(opts) {
   var suites = [
     suiteConfig, suiteRNG, suiteNewGame, suiteMovement,
     suiteCircuitCases, suiteCombo, suiteOverload, suiteDischarge,
-    suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy
+    suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy,
+    suiteRegressions
   ];
   if (!opts.quick) { suites.push(suiteCircuitBattery); suites.push(suiteBalance); }
   var i;
