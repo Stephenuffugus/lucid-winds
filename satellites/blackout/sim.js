@@ -8,6 +8,7 @@
      node sim.js --watch=12345     print one case in full for a human to read
      node sim.js --grep            the grep gates (Math.random, DOM, dashes)
      node sim.js --layout          touch targets and title fit, read out of the css
+     node sim.js --dom             boot the page against a dom stub and play it
      node sim.js --tier=long --liar   sweep one rung of the ladder
      node sim.js --all             sweep all six modes and gate each one
 */
@@ -401,6 +402,18 @@ if (arg("watch", null) !== null && arg("watch", null) !== undefined && args.some
   process.exit(0);
 }
 
+function domGates() {
+  try { return require("./domsmoke.js").run(); }
+  catch (e) { return ["dom smoke could not run: " + e.message]; }
+}
+
+if (args.some(function (a) { return a === "--dom"; })) {
+  var df = domGates();
+  df.forEach(function (f) { console.log("DOM FAIL  " + f); });
+  console.log(df.length ? "dom smoke FAILED" : "dom smoke PASSED");
+  process.exit(df.length ? 1 : 0);
+}
+
 if (args.some(function (a) { return a === "--layout"; })) {
   var lf = layoutGates();
   lf.forEach(function (f) { console.log("LAYOUT FAIL  " + f); });
@@ -416,7 +429,7 @@ if (args.some(function (a) { return a === "--grep"; })) {
 }
 
 if (args.some(function (a) { return a === "--test"; })) {
-  var gfails = grepGates().concat(layoutGates());
+  var gfails = grepGates().concat(layoutGates()).concat(domGates());
   gfails.forEach(function (f) { console.log("GATE FAIL  " + f); });
   var rep = runTests();
   process.exit((rep.failed || gfails.length) ? 1 : 0);

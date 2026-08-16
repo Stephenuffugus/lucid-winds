@@ -91,46 +91,94 @@ function readSatellite(id) {
 // An assignment that really lands on window (not `var SWS_EXIT = ...`).
 const RE_ASSIGN = /(?:window|self|globalThis)\s*(?:\.\s*SWS_EXIT|\[\s*["']SWS_EXIT["']\s*\])\s*=/;
 
-// Is there a referrer-driven fallback for the top level (unframed) case, and a
-// hard destination when history has nowhere to go?
-//
-// ⛔ FALSE POSITIVE FIXED 2026-08-16. This used to read a 1200 char window that
-// STARTED at the assignment, so it only saw a referrer test written INLINE.
-// Bandit's Box hoists the test into the enclosing IIFE:
-//     var fromPortal = document.referrer.indexOf('/portal')>=0;
-//     window.SWS_EXIT=function(){ ... if(fromPortal&&history.length>1){...} }
-// which is correct code, and the audit called it broken. A checker that cries
-// wolf gets ignored, so the referrer test now also resolves ONE level of
-// indirection: if the body uses an identifier that was assigned from
-// document.referrer nearby, that counts. It deliberately does NOT fall back to
-// "document.referrer appears anywhere in the file", which would pass any game
-// that merely logs the referrer for analytics.
-function hasReferrerFallback(src) {
-  const at = src.search(RE_ASSIGN);
-  if (at < 0) return { ok: false, why: 'no assignment to anchor on' };
-  const body = src.slice(at, at + 1200);       // the exit function is short
-  const near = src.slice(Math.max(0, at - 1500), at + 1500);
+/* ⛔⛔ THREE FALSE POSITIVES FIXED 2026-08-16 — read this before "simplifying".
+   The first version of this file anchored every check at the offset of
+   `window.SWS_EXIT =` and read forward 1200 chars. That is wrong three ways,
+   and it reported 62 of 100 games broken, most of them fine:
 
-  const back = /history\s*\.\s*back\s*\(/.test(body);
-  const hard = /location\s*\.\s*(replace|assign|href)/.test(body);
+     1. Bandit's Box HOISTS the referrer test into the enclosing IIFE:
+          var fromPortal = document.referrer.indexOf('/portal')>=0;
+          window.SWS_EXIT=function(){ ... if(fromPortal&&history.length>1) ... }
+        Reading forward from the assignment never sees `document.referrer`.
 
-  let referrer = /document\s*\.\s*referrer/.test(body);
-  let via = null;
-  if (!referrer) {
-    // one level of indirection: var X = ...document.referrer..., then X used in the body
-    const decl = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*document\s*\.\s*referrer/g;
-    let d;
-    while ((d = decl.exec(near))) {
-      const name = d[1];
-      if (new RegExp(`\\b${name}\\b`).test(body)) { referrer = true; via = name; break; }
+     2. Parallel DECLARES the function first and exports it after:
+          function SWS_EXIT(){ ...the whole correct body... }
+          self.SWS_EXIT = SWS_EXIT;
+        The assignment is the LAST line, so reading forward sees nothing at all.
+
+     3. Aura Farm names its working exit `swsExit` and never binds SWS_EXIT.
+        That breaks the contract, but the player is NOT stranded, and saying
+        so would be crying wolf.
+
+   So: anchor on the EXIT BODY, not the assignment. An exit body is identifiable
+   by what it does — it posts {sws:'close'} and/or navigates to the portal — and
+   the checks run in a window around THAT. Naming is then a separate, softer
+   finding. A checker that cries wolf on most of the fleet gets ignored, which
+   is worse than having no checker. */
+
+// Every place in the source that looks like the body of an exit.
+function exitBodies(src) {
+  const out = [];
+  const anchors = [
+    /sws\s*:\s*["']close["']/g,                       // the framed branch
+    /location\s*\.\s*(?:replace|assign|href)\s*=?\s*\(?\s*["'][^"']*\/portal/g,  // the unframed branch
+  ];
+  for (const re of anchors) {
+    let m;
+    while ((m = re.exec(src))) {
+      out.push({ at: m.index, win: src.slice(Math.max(0, m.index - 900), m.index + 900) });
     }
   }
+  return out;
+}
 
-  const missing = [];
-  if (!referrer) missing.push('document.referrer');
-  if (!back) missing.push('history.back()');
-  if (!hard) missing.push('a hard location fallback');
-  return { ok: referrer && back && hard, missing, via };
+// Name of the function that body lives in, so we can tell whether anything calls
+// it even when it is not called SWS_EXIT.
+function ownerName(win) {
+  const pats = [
+    /function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{[^]*$/,
+    /(?:window|self|globalThis)\s*\.\s*([A-Za-z_$][\w$]*)\s*=\s*function/,
+    /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:function|\([^)]*\)\s*=>)/,
+  ];
+  const head = win.slice(0, Math.floor(win.length / 2) + 120);
+  const names = [];
+  for (const p of pats) {
+    const all = new RegExp(p.source, 'g');
+    let m;
+    while ((m = all.exec(head))) names.push(m[1]);
+  }
+  return names.length ? names[names.length - 1] : null;   // innermost / closest
+}
+
+// Does ANY exit body carry the full unframed fallback?
+function hasReferrerFallback(src) {
+  const bodies = exitBodies(src);
+  if (!bodies.length) return { ok: false, missing: ['any recognisable exit body'], via: null, owner: null };
+
+  let best = { ok: false, missing: ['document.referrer', 'history.back()', 'a hard location fallback'], via: null, owner: null };
+  for (const b of bodies) {
+    const win = b.win;
+    const back = /history\s*\.\s*back\s*\(/.test(win);
+    const hard = /location\s*\.\s*(replace|assign|href)/.test(win);
+    let referrer = /document\s*\.\s*referrer/.test(win);
+    let via = null;
+    if (!referrer) {
+      // one level of indirection: var X = ...document.referrer..., X used nearby
+      const decl = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*document\s*\.\s*referrer/g;
+      let d;
+      while ((d = decl.exec(win))) {
+        if (new RegExp(`\\b${d[1]}\\b`).test(win.slice(d.index + d[0].length))) { referrer = true; via = d[1]; break; }
+      }
+    }
+    const missing = [];
+    if (!referrer) missing.push('document.referrer');
+    if (!back) missing.push('history.back()');
+    if (!hard) missing.push('a hard location fallback');
+    const cand = { ok: referrer && back && hard, missing, via, owner: ownerName(win) };
+    if (cand.ok) return cand;
+    if (cand.missing.length < best.missing.length) best = cand;
+  }
+  return best;
 }
 
 // Does this game pull in the shared runtime injector (/arcade-exit.js)? That
@@ -146,16 +194,17 @@ function loadsSharedInjector(src) {
 }
 
 // Somebody has to call it. Ignore the assignment itself and bare feature tests.
-function callSites(src) {
+function callSites(src, name = 'SWS_EXIT') {
   const hits = [];
-  const re = /SWS_EXIT/g;
+  const re = new RegExp(`\\b${name}\\b`, 'g');
+  const L = name.length;
   let m;
   while ((m = re.exec(src))) {
-    const before = src.slice(Math.max(0, m.index - 40), m.index);
-    const after = src.slice(m.index + 8, m.index + 40);
-    if (/^\s*=[^=]/.test(after)) continue;                 // this is the assignment
-    if (!/^\s*\(/.test(after)) continue;                   // not a call
-    if (/\b(if|typeof|&&|\|\|)\s*[^)]*$/.test(before) && /^\s*\)\s*$/.test(after)) continue;
+    const after0 = src.slice(m.index + L, m.index + L + 40);
+    const before0 = src.slice(Math.max(0, m.index - 40), m.index);
+    if (/^\s*=[^=]/.test(after0)) continue;
+    if (!/^\s*\(/.test(after0)) continue;
+    if (/function\s+$/.test(before0)) continue;          // the declaration, not a call
     const line = src.slice(0, m.index).split('\n').length;
     hits.push({ line, snippet: src.slice(Math.max(0, m.index - 90), m.index + 40).replace(/\s+/g, ' ').trim() });
   }
@@ -174,17 +223,40 @@ function auditOne(id, names) {
 
   const all = parts.map(p => p.src).join('\n/*__FILE_BREAK__*/\n');
   const fails = [];
+  const notes = [];
+
   const assigned = RE_ASSIGN.test(all);
-  if (!assigned) fails.push('window.SWS_EXIT is never assigned (a top level const is NOT a window property)');
   const ref = hasReferrerFallback(all);
-  if (assigned && !ref.ok) fails.push('exit has no referrer based fallback, missing: ' + ref.missing.join(', '));
-  const calls = callSites(all);
-  if (!calls.length) fails.push('nothing calls SWS_EXIT (no button, no handler, no hit test)');
+
+  // Something must CALL the exit. Prefer the canonical name; if the game named
+  // its exit something else, accept calls to that name and flag the naming.
+  let calls = callSites(all);
+  let calledAs = 'SWS_EXIT';
+  if (!calls.length && ref.owner && ref.owner !== 'SWS_EXIT') {
+    const alt = callSites(all, ref.owner);
+    if (alt.length) { calls = alt; calledAs = ref.owner; }
+  }
+
+  if (!ref.ok) {
+    fails.push(ref.missing[0] === 'any recognisable exit body'
+      ? 'no exit anywhere in the source (nothing posts sws:close, nothing navigates to /portal)'
+      : 'the exit has no working unframed path, missing: ' + ref.missing.join(', '));
+  }
+  if (!calls.length) fails.push('nothing calls the exit (no button, no handler, no hit test)');
+  if (!assigned) {
+    const msg = 'window.SWS_EXIT is never assigned (a top level function or const is NOT a window property)';
+    if (ref.ok && calls.length) notes.push(msg + ' — exit works, but off contract');
+    else fails.push(msg);
+  }
 
   const injector = loadsSharedInjector(all);
-  const state = fails.length === 0 ? 'PASS' : (injector ? 'GRAFT' : 'FAIL');
+  let state;
+  if (fails.length === 0 && notes.length === 0) state = 'PASS';
+  else if (fails.length === 0) state = 'NAMING';
+  else if (injector) state = 'GRAFT';
+  else state = 'FAIL';
 
-  return { id, names, state, fails, calls, ready: hasReady(all), injector, via: ref.via };
+  return { id, names, state, fails, notes, calls, calledAs, ready: hasReady(all), injector, via: ref.via };
 }
 
 /* ---------- 4. self test: prove the checks can go red ---------------------- */
@@ -266,28 +338,33 @@ console.log('FLEET EXIT AUDIT — satellites the portal cards with a RELATIVE /s
 console.log('These load TOP LEVEL, never framed, so a framed-only exit is invisible.\n');
 
 const results = ids.map(id => auditOne(id, carded.get(id) || ['(not carded)']));
-const passed = results.filter(r => r.state === 'PASS');
-const grafted = results.filter(r => r.state === 'GRAFT');
-const failed = results.filter(r => r.state === 'FAIL');
+const by = s => results.filter(r => r.state === s);
+const passed = by('PASS'), naming = by('NAMING'), grafted = by('GRAFT'), failed = by('FAIL');
 
-console.log('PASS  = the game owns its exit.');
-console.log('GRAFT = the game has no exit of its own but loads /arcade-exit.js,');
-console.log('        which injects one at runtime. Not stranded, but generic.');
-console.log('FAIL  = no exit in the source and no injector. The player is stuck');
-console.log('        on the browser back button, and an installed PWA has none.\n');
+console.log('PASS   = the game owns a working exit on window.SWS_EXIT.');
+console.log('NAMING = a working exit, but not bound to window.SWS_EXIT. The player');
+console.log('         gets home; the portal contract is not met.');
+console.log('GRAFT  = no exit of its own, but it loads /arcade-exit.js, which injects');
+console.log('         one at runtime. Not stranded, but generic and placed by guess.');
+console.log('FAIL   = no exit in the source and no injector. The browser back button');
+console.log('         is the only way out, and an installed PWA has no back button.\n');
 
 for (const r of results) {
-  console.log(`${r.state.padEnd(5)} ${r.id}${r.names[0] === r.id ? '' : `  (${r.names.join(', ')})`}`);
-  for (const f of r.fails || []) console.log(`        ${f}`);
-  if (r.state === 'GRAFT') console.log('        mitigated by /arcade-exit.js at runtime');
-  if (verbose && r.state === 'PASS') {
-    if (r.via) console.log(`        referrer test reached through the var "${r.via}"`);
-    for (const c of r.calls.slice(0, 3)) console.log(`        line ${c.line}: ${c.snippet}`);
-    if (!r.ready) console.log('        note: no {sws:"ready"} post (harmless today, wrong the day this card moves to a framed url)');
+  console.log(`${r.state.padEnd(6)} ${r.id}${r.names[0] === r.id ? '' : `  (${r.names.join(', ')})`}`);
+  for (const f of r.fails || []) console.log(`         ${f}`);
+  for (const n of r.notes || []) console.log(`         ${n}`);
+  if (r.state === 'GRAFT') console.log('         mitigated by /arcade-exit.js at runtime');
+  if (verbose && (r.state === 'PASS' || r.state === 'NAMING')) {
+    if (r.via) console.log(`         referrer test reached through the var "${r.via}"`);
+    if (r.calledAs !== 'SWS_EXIT') console.log(`         called as "${r.calledAs}"`);
+    for (const c of r.calls.slice(0, 2)) console.log(`         line ${c.line}: ${c.snippet}`);
+    if (!r.ready) console.log('         note: no {sws:"ready"} post (harmless today, wrong the day this card moves to a framed url)');
   }
 }
 
-console.log(`\n${passed.length} own an exit, ${grafted.length} rely on the injector, ${failed.length} have NO way home. ${results.length} audited.`);
-if (failed.length) console.log(`\nSTRANDED (no exit, no injector):\n  ${failed.map(r => r.id).join(', ')}`);
-if (grafted.length) console.log(`\nINJECTOR ONLY:\n  ${grafted.map(r => r.id).join(', ')}`);
+console.log(`\n${results.length} audited: ${passed.length} PASS, ${naming.length} NAMING, ${grafted.length} GRAFT, ${failed.length} FAIL.`);
+console.log(`Players can get home from ${passed.length + naming.length + grafted.length} of ${results.length}.`);
+if (failed.length) console.log(`\nSTRANDED (no exit, no injector) — ${failed.length}:\n  ${failed.map(r => r.id).join(', ')}`);
+if (naming.length) console.log(`\nOFF CONTRACT (works, wrong name) — ${naming.length}:\n  ${naming.map(r => r.id).join(', ')}`);
+if (grafted.length) console.log(`\nINJECTOR ONLY — ${grafted.length}:\n  ${grafted.map(r => r.id).join(', ')}`);
 process.exit(failed.length ? 1 : 0);

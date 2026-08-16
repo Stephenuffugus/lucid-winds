@@ -572,6 +572,20 @@ the ring, not the sound.
 - never a terminal and never the discharge pickup
 - reverted on the spot if that cell just cut the worm off from every terminal
 
+**It costs active play almost nothing, which is the design.** `--bands`
+experiment 3 with the creep switched off entirely, against the shipped interval
+of 45:
+
+| | greedy ticks | greedy score | filler ticks | filler score |
+|---|---|---|---|---|
+| creep off | 284 | 532 | 998 | 1587 |
+| creep 45 (shipped) | 280 | 522 | 995 | 1616 |
+
+Four ticks and ten points off a competent agent: invisible. The whole effect
+lands on the players who were not playing. The safety filtered walker lost 14
+percent of its lifetime and greedy's tick cap rate went from 0.66 percent to
+zero out of 3000.
+
 It can trip the breaker, and that is the point: sitting still near the threshold
 becomes a way to CASH the overload, not only a way to be punished. Watch seed 7
 with the filler and you can see it: `t492 creep`, `t537 creep`, ... `t722 circuit

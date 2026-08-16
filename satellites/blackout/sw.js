@@ -12,8 +12,8 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "blackout-shell-v1";
-const ASSET_CACHE   = "blackout-assets-v1";
+const SHELL_VERSION = "blackout-shell-v2";
+const ASSET_CACHE   = "blackout-assets-v2";
 const NAV_TIMEOUT_MS = 8000;
 
 const SHELL_ASSETS = [

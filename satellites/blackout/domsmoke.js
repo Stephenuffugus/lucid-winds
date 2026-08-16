@@ -153,7 +153,9 @@ function run() {
   var open = byText(ovRoot, "Open the file");
   if (!click(open, "open the file")) fails.push("could not start a picked case");
   var t2 = textOf(d.app);
-  if (t2.indexOf("LIAR") < 0 && t2.indexOf("lying") < 0) fails.push("a liar case does not say so anywhere on the case screen");
+  // both surfaces: the header names the mode, the brief states the rule
+  if (t2.indexOf("LIAR") < 0) fails.push("the header does not name the liar mode");
+  if (t2.indexOf("false thing") < 0) fails.push("the brief never states the liar rule");
   // accuse, wrong on purpose, and read the reveal
   click(byText(d.app, "Accuse"), "accuse");
   var picks = findAll(d.body, function (n) { return n.tag === "button" && n.parentNode && n.parentNode.className === "pick"; });

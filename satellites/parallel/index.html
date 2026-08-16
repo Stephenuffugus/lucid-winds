@@ -2047,7 +2047,7 @@ function drawRibbon(){
     var b = SAVE.best[String(n)];
     var open = n === 1 || !!SAVE.best[String(n - 1)];
     var cls = 'chip' + (n === G.num ? ' cur' : (b ? ' done' : (open ? '' : ' lock')));
-    if(0)html.push('<button class="' + cls + '" data-goto="' + n + '">' + n +
+    html.push('<button class="' + cls + '" data-goto="' + n + '">' + n +
       (b ? '<small>' + (b.moves <= b.par ? '★ ' + b.moves : b.moves) + '</small>' : '') + '</button>');
   }
   el.innerHTML = html.join('');
@@ -2635,7 +2635,7 @@ document.addEventListener('mousedown', function once2(){ audioReady(); document.
 try {
   if ('serviceWorker' in navigator){
     self.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw.js?v=1').catch(function(){});
+      navigator.serviceWorker.register('./sw.js?v=2').catch(function(){});
     });
   }
 } catch (e){}

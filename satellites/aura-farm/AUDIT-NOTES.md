@@ -150,6 +150,14 @@ Worst first. Every change verified by `node test/logic.mjs`.
    the label centred, `.buyBtn` to 48, `.big` to a 48px min height. Asserted in
    the test by computing rendered height from the declared CSS.
 
+   That fix caused a regression, which the test then caught: taller contract
+   pills grow `#hudRow3` from 21px to 48px, pushing the HUD to 124px while
+   `playTop()` was still a hardcoded 120, so souls would have rendered behind
+   the pills. `playTop()` is now 150, restoring the ~26px of clearance the old
+   layout had, and three assertions pin the relationship (HUD height derived
+   from the CSS, a usable play band at 375x667, and every soul placed inside
+   it) so the next person to touch either number is told immediately.
+
 6. **B6 dashes.** All 55 player facing em dashes rewritten. Sentences were
    recast rather than having the character swapped for a comma; several wanted
    to be two sentences and are now two sentences. No filler exclamation marks
@@ -167,8 +175,8 @@ Worst first. Every change verified by `node test/logic.mjs`.
 ## HOW TO VERIFY
 
 ```
-node test/logic.mjs        # 89 assertions, source rules + game logic
-node test/playthrough.mjs  # a bot plays a whole fourteen day season
+node test/logic.mjs        # 92 assertions, source rules + game logic
+node test/playthrough.mjs  # 7 assertions, a bot plays a whole season
 ```
 
 `test/harness.mjs` boots the **real** game script inside a node vm behind a
@@ -183,7 +191,7 @@ additionally checked against two deliberate sabotages: an impossible quota
 (bot correctly withers) and peak windows disabled (bot correctly starves and
 the run collapses). A probe that cannot fail is not evidence.
 
-Current state: **89 + 7 assertions green**, both script blocks parse clean,
+Current state: **92 + 7 assertions green**, both script blocks parse clean,
 zero `Math.random` left in logic, zero dashes in player copy, no service
 worker in this game so the cache purge rule does not apply.
 

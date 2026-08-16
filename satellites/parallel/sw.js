@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "parallel-shell-v1";
+const SHELL_VERSION = "parallel-shell-v2";
 const SFX_CACHE     = "parallel-sfx-v1";
 const NAV_TIMEOUT_MS = 8000;
 
