@@ -78,6 +78,11 @@ const controls = await page.evaluate(() => {
 });
 ok(controls.count <= 15, "simple mode shows at most 15 controls",
   controls.count + ": " + JSON.stringify(controls.labels));
+/* and no control appears twice: two identical Full screen buttons were both
+   showing here, which reads as a mistake and spends one of the twelve */
+const dupes = controls.labels.filter(l => l && l.length > 1)
+  .filter((l, i, a) => a.indexOf(l) !== i);
+ok(dupes.length === 0, "no control is offered twice", JSON.stringify(dupes));
 
 /* ---------- touch targets at 2am, one thumb ---------- */
 console.log("[touch targets]");
