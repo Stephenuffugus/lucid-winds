@@ -411,11 +411,15 @@ async function main() {
       // checks that reload inside run() need the mutation re-applied on EVERY
       // navigation, or the reload silently undoes it and the selftest reports a
       // false "not red"
-      if (c.reloads) await p.evaluateOnNewDocument(`addEventListener('load',function(){setTimeout(function(){try{${c.break}}catch(e){}},80);});`);
+      // Re-apply on EVERY navigation and at several moments, because a check that
+      // reloads inside run() otherwise throws the mutation away and the selftest
+      // reports a false "not red". Fires at DOMContentLoaded, at load, and again
+      // 80ms later so a break can also survive the game re-rendering the thing.
+      if (c.reloads) await p.evaluateOnNewDocument(`(function(){var f=function(){try{${c.break}}catch(e){}};document.addEventListener('DOMContentLoaded',f);addEventListener('load',function(){f();setTimeout(f,60);setTimeout(f,200);});})();`);
       await p.goto(base + URLPATH, { waitUntil: 'domcontentloaded' });
       await p.evaluate(() => new Promise(r => setTimeout(r, 150)).catch(()=>{}) );
       let broke = { ok: true, detail: 'break did not run' };
-      try { if (!c.reloads) await p.evaluate(c.break); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
+      try { await p.evaluate(c.break).catch(() => {}); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
       await p.close(); await sctx.close();
       if (broke.ok) { selfFailures++; console.log(`  SELFTEST NOT RED  ${c.name}  (${broke.detail})`); }
       else console.log(`  selftest red ok   ${c.name}`);

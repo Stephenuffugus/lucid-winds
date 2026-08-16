@@ -105,6 +105,15 @@ These are the ones worth testing hardest, because they shipped and nobody knew.
 - **Pong**: the campaign's own ending was a lie.
 - **Shell Shuffle**: promised each round "adds a cup, shuffles faster, pays more" while
   difficulty went **completely flat at level 11** and stayed flat forever.
+- **Sproing, Zen mode**: the HUD counted coins up and the pause panel printed a total, while
+  Zen banks nothing at all. The game stated an earning your wallet never received. Both
+  readouts now say *practice*, and mode select says so before you choose.
+- **Slice 3D, the Forge**: "each one is pure style and never changes how you play." Blade
+  length feeds the reach that every wall contact tests, measured across the catalogue at
+  **3.03 to 3.66, a 20.9% spread, with a premium knife at the long end.** The copy is fixed.
+  The mechanic deliberately is not, see ⚖ below.
+- **Slice 3D, how to play**: promised "no ceiling, the bands keep going" while the ladder is
+  34 authored bands topping out at x900, which the end panel then prints back at you.
 
 ## Things that lost your stuff
 - **Aura Farm**: the ending could be replayed **indefinitely**, re-paying 8 Sunbeams each time.
@@ -168,7 +177,12 @@ None of these were changed. They are taste or economy calls.
 9. **Vinewinder's Start Here slot.** It is a good snake, but it is snake. Worth keeping while
    there are only four candidates; the moment a fifth exists with a verb of its own, rotate it
    to the A to Z wall.
-10. **The storefront**, in `incoming/STUDIO-SHELF-AUDIT.md`. The New shelf holds 29 of 118 games
+10. **Slice 3D's premium knives are measurably longer.** A 20.9% reach spread, with the longest
+    blade being a premium item. A longer blade reaches the climb wall sooner and hits Freefall
+    side walls sooner, so whether it is an advantage or a penalty is genuinely open. It was not
+    normalised because forcing one length would re-break the August 1 fix for a blade sticking
+    while inches away. Your call: leave it, normalise it, or price it as a trade off out loud.
+11. **The storefront**, in `incoming/STUDIO-SHELF-AUDIT.md`. The New shelf holds 29 of 118 games
     and 13 of those are dev gated, so a visitor who taps New lands on a row half of which they
     cannot open. Ends with five questions only you can answer.
 
