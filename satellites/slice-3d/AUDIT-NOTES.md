@@ -218,7 +218,12 @@ classes, and the drawn-versus-tested scale.
   nothing but your throw limits you", and then the end panel prints "stuck it at x1 of
   x900". A stated ceiling contradicts the copy's promise of no ceiling. Left for the
   Director since it is a wording-versus-design question, not a bug.
-- **The feedback fab is invisible on the menu** (defect 6). Real, but the fix is not in
+- **The feedback fab is invisible on the menu** (defect 7). Real, but the fix is not in
   this file.
+- **Freefall is hard enough that a bot never scores.** Both automated dives ended stuck in
+  a wall having sliced zero slabs. That is a bot with no steering rather than evidence about
+  the mode, but it does mean nothing here proves a Freefall level is *clearable* — only that
+  it ends cleanly. The same gap as Sproing's, and worth a targeted probe that actually
+  steers.
 - The service worker is `sw.js?v=63`. Any deploy must bump that in step or players keep the
   old bundle, and none of the above ships.

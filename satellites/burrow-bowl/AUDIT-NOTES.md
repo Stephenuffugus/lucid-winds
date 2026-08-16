@@ -115,7 +115,9 @@ outside this audit's sandbox.
 
 ## VERIFICATION
 
-`node satellites/burrow-bowl/check.mjs` — 30 assertions, all green. It exits 1 on failure, and
+`node satellites/burrow-bowl/check.mjs` — 31 assertions, all green. ⛔ Run it ALONE: the game
+loop is rAF driven and pauses itself when the tab is hidden, so a second headless browser on a
+two core box starves it and the round waits time out for the wrong reason. It exits 1 on failure, and
 it was watched go red before each fix went in (the fab collision above was found BY this gate,
 not by reading). Phase A compiles all six inline blocks; phase B drives a real headless browser
 at 375x667 through a full nine ball round, a corrupt save, a second tab, a daily interrupted by
