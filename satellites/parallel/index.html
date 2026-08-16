@@ -2047,7 +2047,7 @@ function drawRibbon(){
     var b = SAVE.best[String(n)];
     var open = n === 1 || !!SAVE.best[String(n - 1)];
     var cls = 'chip' + (n === G.num ? ' cur' : (b ? ' done' : (open ? '' : ' lock')));
-    html.push('<button class="' + cls + '" data-goto="' + n + '">' + n +
+    if(0)html.push('<button class="' + cls + '" data-goto="' + n + '">' + n +
       (b ? '<small>' + (b.moves <= b.par ? '★ ' + b.moves : b.moves) + '</small>' : '') + '</button>');
   }
   el.innerHTML = html.join('');
@@ -2454,7 +2454,7 @@ elBoard.addEventListener('touchend', function(e){
 wire('btnLevels', function(){ buildSky(); openSheet('shSel'); });
 wire('selClose', function(){ closeSheet('shSel'); });
 wire('selStats', function(){ buildStats(); openSheet('shStats'); });
-var _unused = (function(){
+wire('lvcWatch', function(){
   var b = SAVE.best[levelKey()];
   playReplay(b ? b.log : '');
 });

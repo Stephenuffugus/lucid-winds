@@ -57,7 +57,6 @@ function cardedSatellites() {
     // match the CLOSING quote to the opening one, or "Bandit's Box" truncates to
     // "Bandit" and the report names a game that does not exist
     const nameMatch = /\bnm\s*:\s*(["'])((?:(?!\1).)*)\1/.exec(m[0]);
-    const nm = nameMatch ? nameMatch[1] : id;
     const nm2 = nameMatch ? nameMatch[2] : id;
     if (!out.has(id)) out.set(id, []);
     if (!out.get(id).includes(nm2)) out.get(id).push(nm2);
@@ -201,15 +200,38 @@ function selfTest() {
       };
     })();
     document.getElementById('x').addEventListener('click',function(){ window.SWS_EXIT(); });`;
+  // the shape that USED to be reported broken: the referrer test is hoisted into
+  // the enclosing IIFE instead of written inline. This is Bandit's Box, verbatim
+  // in shape, and it is correct code. Regression case, do not delete.
+  const hoisted = `
+    (function(){
+      var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+      var fromPortal = document.referrer.indexOf('/portal')>=0;
+      window.SWS_EXIT=function(){
+        if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+        if(fromPortal&&history.length>1){ history.back(); }
+        else{ location.replace('https://lucidwinds.com/portal/'); }
+      };
+      var b=document.getElementById('swsBack');
+      if(b){ b.addEventListener('click',function(){ window.SWS_EXIT(); }); }
+    })();`;
+  // ...but an unrelated mention of the referrer must NOT rescue a broken exit
+  const decoy = `
+    var ref = document.referrer; track(ref);
+    window.SWS_EXIT=function(){ parent.postMessage({sws:'close'},'*'); };
+    btn.onclick=function(){ SWS_EXIT(); };`;
+
   const cases = [
     ['canonical block passes', good, true],
+    ['hoisted referrer var passes (the Bandit’s Box false positive)', hoisted, true],
+    ['unrelated referrer mention does NOT rescue a framed only exit', decoy, false],
     ['local const does not count', good.replace('window.SWS_EXIT=', 'const SWS_EXIT='), false],
     ['framed only exit fails', good.replace(/if\(document[\s\S]*?\}\n/, ''), false],
     ['uncalled exit fails', good.replace("document.getElementById('x').addEventListener('click',function(){ window.SWS_EXIT(); });", ''), false],
   ];
   let bad = 0;
   for (const [label, src, want] of cases) {
-    const got = RE_ASSIGN.test(src) && hasReferrerFallback(src) && callSites(src).length > 0;
+    const got = RE_ASSIGN.test(src) && hasReferrerFallback(src).ok && callSites(src).length > 0;
     const ok = got === want;
     if (!ok) bad++;
     console.log(`  ${ok ? 'ok  ' : 'FAIL'}  ${label} (expected ${want ? 'pass' : 'fail'}, got ${got ? 'pass' : 'fail'})`);
@@ -244,19 +266,28 @@ console.log('FLEET EXIT AUDIT — satellites the portal cards with a RELATIVE /s
 console.log('These load TOP LEVEL, never framed, so a framed-only exit is invisible.\n');
 
 const results = ids.map(id => auditOne(id, carded.get(id) || ['(not carded)']));
-const failed = results.filter(r => !r.pass);
-const passed = results.filter(r => r.pass);
+const passed = results.filter(r => r.state === 'PASS');
+const grafted = results.filter(r => r.state === 'GRAFT');
+const failed = results.filter(r => r.state === 'FAIL');
+
+console.log('PASS  = the game owns its exit.');
+console.log('GRAFT = the game has no exit of its own but loads /arcade-exit.js,');
+console.log('        which injects one at runtime. Not stranded, but generic.');
+console.log('FAIL  = no exit in the source and no injector. The player is stuck');
+console.log('        on the browser back button, and an installed PWA has none.\n');
 
 for (const r of results) {
-  const tag = r.pass ? 'PASS' : 'FAIL';
-  console.log(`${tag}  ${r.id}${r.names[0] === r.id ? '' : `  (${r.names.join(', ')})`}`);
+  console.log(`${r.state.padEnd(5)} ${r.id}${r.names[0] === r.id ? '' : `  (${r.names.join(', ')})`}`);
   for (const f of r.fails || []) console.log(`        ${f}`);
-  if (verbose && r.pass) {
+  if (r.state === 'GRAFT') console.log('        mitigated by /arcade-exit.js at runtime');
+  if (verbose && r.state === 'PASS') {
+    if (r.via) console.log(`        referrer test reached through the var "${r.via}"`);
     for (const c of r.calls.slice(0, 3)) console.log(`        line ${c.line}: ${c.snippet}`);
     if (!r.ready) console.log('        note: no {sws:"ready"} post (harmless today, wrong the day this card moves to a framed url)');
   }
 }
 
-console.log(`\n${passed.length} pass, ${failed.length} fail, ${results.length} audited.`);
-if (failed.length) console.log(`STILL BROKEN: ${failed.map(r => r.id).join(', ')}`);
+console.log(`\n${passed.length} own an exit, ${grafted.length} rely on the injector, ${failed.length} have NO way home. ${results.length} audited.`);
+if (failed.length) console.log(`\nSTRANDED (no exit, no injector):\n  ${failed.map(r => r.id).join(', ')}`);
+if (grafted.length) console.log(`\nINJECTOR ONLY:\n  ${grafted.map(r => r.id).join(', ')}`);
 process.exit(failed.length ? 1 : 0);

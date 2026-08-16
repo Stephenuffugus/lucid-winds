@@ -3657,11 +3657,16 @@ function typeBeat(node, text) {
   var i = 0, step = Math.max(1, Math.round(text.length / 40));
   node.setAttribute("aria-label", text);
   node.textContent = "";
+  var done = false;
   var iv = setInterval(function () {
     i += step;
     node.textContent = text.slice(0, i);
-    if (i >= text.length) { node.textContent = text; clearInterval(iv); }
+    if (i >= text.length) { node.textContent = text; done = true; clearInterval(iv); }
   }, 28);
+  /* Backstop. A reveal that only exists inside a running timer is a reveal that
+     can end up blank, and the one screen that must never be blank is the one
+     that tells you who did it. */
+  setTimeout(function () { if (!done) { clearInterval(iv); node.textContent = text; } }, 1500);
 }
 
 /* the payoff of a liar case: who it was, and exactly what they said */

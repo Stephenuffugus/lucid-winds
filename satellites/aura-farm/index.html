@@ -999,7 +999,13 @@ function resize(){
   }
 }
 window.addEventListener('resize', resize); resize();
-const playTop = ()=>120, playBot = ()=>H-190;
+/* The play area must start BELOW the HUD or souls render behind the contract
+   pills. Budget at 375x667 with a zero safe-area inset:
+     8 top padding + 28 row1 (the orb is the tallest thing in it) + 6 gap
+     + 20 row2 (the quota bar) + 6 gap + 48 row3 (contract pills, now a legal
+     48px touch target) + 8 bottom padding = 124px.
+   150 keeps the same ~26px of clearance the old 21px pills used to give. */
+const playTop = ()=>150, playBot = ()=>H-190;
 
 /* ---------------- game flow ---------------- */
 let mode = 'title';        // title | play | over | ending

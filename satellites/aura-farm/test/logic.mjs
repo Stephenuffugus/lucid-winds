@@ -122,6 +122,36 @@ for (const [sel, lines] of TARGETS) {
     gte(h, 48, sel + ' rendered height');
   });
 }
+check('the play area starts below the HUD, so nobody renders behind it', () => {
+  /* HUD height from the declared CSS at a zero safe-area inset. */
+  const padT = px(prop(cssBlock('#hud'), 'padding')) || 8; // calc(... + 8px)
+  const gap = px(prop(cssBlock('#hud'), 'gap')) || 6;
+  const row1 = Math.max(px(prop(cssBlock('#orb'), 'height')) || 28, renderedHeight('.chip', 1));
+  const row2 = px(prop(cssBlock('.bar'), 'height')) || 20;
+  const row3 = renderedHeight('.cpill', 1);
+  const hudH = 8 + row1 + gap + row2 + gap + row3 + (padT || 8);
+  const b = boot();
+  const top = b.T._run('playTop()');
+  gte(top, hudH, 'playTop ' + top + ' sits inside the ' + hudH + 'px HUD');
+});
+
+check('the play area is still a usable band at 375x667', () => {
+  const b = boot({ W: 375, H: 667 });
+  const top = b.T._run('playTop()'), bot = b.T._run('playBot()');
+  gte(bot - top, 260, 'the play band collapsed to ' + (bot - top) + 'px');
+});
+
+check('every soul is placed inside the play band', () => {
+  const b = boot({ W: 375, H: 667 });
+  b.T._run('startGame(true)');
+  const top = b.T._run('playTop()'), bot = b.T._run('playBot()');
+  for (const d of b.T.ROSTER) {
+    const n = b.T.run.npcs[d.id];
+    gte(n.y, top, d.id + ' placed above the play area');
+    lte(n.y, bot, d.id + ' placed below the play area');
+  }
+});
+
 check('.mbtn and .abtn are at least 48px wide', () => {
   gte(px(prop(cssBlock('.mbtn'), 'width')), 48, '.mbtn width');
   gte(px(prop(cssBlock('.abtn'), 'width')), 48, '.abtn width');

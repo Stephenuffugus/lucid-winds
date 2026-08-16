@@ -51,9 +51,10 @@ function makeDom() {
     document: doc, console: console, Math: Math, JSON: JSON, Date: Date, isFinite: isFinite,
     parseInt: parseInt, parseFloat: parseFloat, String: String, Number: Number, Object: Object,
     Array: Array, Uint32Array: Uint32Array, Uint8Array: Uint8Array, RegExp: RegExp, Error: Error,
-    setTimeout: function (f, ms) { timers.push(f); return timers.length; },
-    clearTimeout: function () {}, setInterval: function (f) { timers.push(f); return 1; },
-    clearInterval: function () {},
+    setTimeout: function (f) { timers.push({ f: f, every: false, dead: false }); return timers.length; },
+    clearTimeout: function (h) { if (timers[h - 1]) timers[h - 1].dead = true; },
+    setInterval: function (f) { timers.push({ f: f, every: true, dead: false }); return timers.length; },
+    clearInterval: function (h) { if (timers[h - 1]) timers[h - 1].dead = true; },
     localStorage: {
       getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
       setItem: function (k, v) { store[k] = String(v); },
@@ -71,7 +72,20 @@ function makeDom() {
   ctx.self = ctx;
   ctx.parent = ctx;
   ctx.globalThis = ctx;
-  return { ctx: ctx, doc: doc, body: body, app: app, timers: timers };
+  /* Run what the page scheduled. A stub that silently drops every timer is a
+     stub that tests a game nobody is playing. */
+  function flush(rounds) {
+    var r, i, t;
+    for (r = 0; r < (rounds || 80); r++) {
+      for (i = 0; i < timers.length; i++) {
+        t = timers[i];
+        if (t.dead) continue;
+        if (!t.every) t.dead = true;
+        try { t.f(); } catch (e) { throw new Error("a scheduled callback threw: " + e.message); }
+      }
+    }
+  }
+  return { ctx: ctx, doc: doc, body: body, app: app, timers: timers, flush: flush };
 }
 function walk(n, fn) { if (!n) return; fn(n); (n.children || []).forEach(function (c) { walk(c, fn); }); }
 function textOf(n) {
@@ -148,6 +162,7 @@ function run() {
   var name = byText(d.body, "Name them");
   if (!name.length) fails.push("no confirm button on the accusation");
   else try { name[0].onclick(); } catch (e) { fails.push("accusing threw: " + e.message); }
+  try { d.flush(); } catch (e) { fails.push(e.message); }
   var reveal = textOf(d.body);
   if (reveal.indexOf("did it") < 0) fails.push("the reveal never names the culprit");
   // options
