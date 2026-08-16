@@ -240,7 +240,7 @@ const CHECKS = [
         for (let i = 0; i < 6000 && !S.over; i++) {
           if (S.airborne) {
             if (mash) { for (let k = 0; k < 6; k++) window.PP.trick(); }        // mash every frame
-            else if (i % 14 === 0) window.PP.trick();                            // ~4 spins a second
+            else if (i % 10 === 0) window.PP.trick();                            // a clean rhythm on the beat
           }
           const wasAir = S.airborne;
           window.PP.step(1 / 60);
@@ -277,6 +277,7 @@ const CHECKS = [
         const S = window.PP.S;
         S.depth = window.PP.CFG.gnomeStart + 10;
         window.PP.step(1 / 60);
+        S.gnomeGap = window.PP.CFG.gnomeGapStart * 0.5;   // room to move in BOTH directions
         const g0 = S.gnomeGap;
         let capped = false;
         for (let i = 0; i < 200 && !S.over; i++) {

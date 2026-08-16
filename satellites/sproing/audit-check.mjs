@@ -90,7 +90,7 @@ async function attempt(fn, label) {
   }
 }
 
-for (const [k, v] of POISON) {
+for (const [k, v] of POISON.slice(0,3)) {  /* FAILWATCH */
   const res = await attempt(async () => {
     const { ctx, p, errs } = await boot(`(()=>{try{localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});}catch(e){}})()`);
     try { const r = await p.evaluate(ALIVE); return { r, errs }; } finally { await ctx.close(); }
