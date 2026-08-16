@@ -40,6 +40,15 @@
   }
   function pick(r, arr) { return arr[r(arr.length)]; }
 
+  /* ⛔ THE CONTENT KEY. Every class grammar seeds off THIS, not off the raw
+     hash, because the raw hash contains byte 2, which is the grade. Seeding
+     the name off the grade byte means the title and the condition move
+     together: change nothing but the condition and the record changes its
+     name. That is a decodable tell in a game whose one dramatic beat is not
+     knowing the condition yet. Byte 2 is blanked here and nowhere else, so
+     grade() still reads the real byte. */
+  function contentKey(h) { return h.slice(0, 4) + '00' + h.slice(6); }
+
   /* The hand written "classic" titles are the best jokes in the file and
      they are also the shallowest bank in it. When they were one of nine
      equal patterns they took an eighth of every class's output, and a nine
@@ -152,7 +161,7 @@
     return 'THE ' + pick(r, R_ADJ) + ' ' + pick(r, R_NOUNS) + ' BAND';
   }
   function record(h) {
-    var r = stream(h, 'record');
+    var r = stream(contentKey(h), 'record');
     var sub = '"' + recordAlbum(r) + '" · ' + pick(r, R_LABEL_A) + ' ' + pick(r, R_LABEL_B) + ' Records';
     if (r(256) < 0x66) sub += ' · ' + pick(r, R_PRESS);
     var sticker = r(256) < 0x4D ? 'hype sticker: ' + pick(r, R_STICKERS) : null;
@@ -189,7 +198,7 @@
     return 'THE ' + pick(r, V_ADJ) + ' ' + pick(r, V_ROLE);
   }
   function vhs(h) {
-    var r = stream(h, 'vhs');
+    var r = stream(contentKey(h), 'vhs');
     var t = vhsName(r);
     if (r(256) < 0x59) t += pick(r, V_SUB);
     return {
@@ -228,7 +237,7 @@
     return pick(r, T_ADJ) + ' ' + pick(r, T_NOUN) + ' ' + pick(r, T_NAME);
   }
   function toy(h) {
-    var r = stream(h, 'toy');
+    var r = stream(contentKey(h), 'toy');
     var gim = r(256) < 0xB0 ? pick(r, T_GIMMICK_A)
       : pick(r, T_GIMMICK_B).replace('{n}', String(3 + r(6))).replace('{m}', String(9 + r(20)));
     /* ⛔ nothing here reads grade(). The MINT ON CARD flourish and the wear
@@ -263,7 +272,7 @@
     return pick(r, G_NOUN) + ' AND ' + pick(r, G_NOUN);
   }
   function game(h) {
-    var r = stream(h, 'game');
+    var r = stream(contentKey(h), 'game');
     var lo = 2 + r(3), hi = lo + 2 + r(3);
     return {
       cls: 'GAME', name: gameName(r),
@@ -297,7 +306,7 @@
     return pick(r, C_ADJ) + ' ' + pick(r, C_BASE) + ' ' + pick(r, C_GRAIN);
   }
   function cereal(h) {
-    var r = stream(h, 'cereal');
+    var r = stream(contentKey(h), 'cereal');
     return {
       cls: 'CEREAL', name: cerealName(r), sub: pick(r, C_CLAIMS),
       sticker: r(256) < 0x40 ? 'box only, flattened neatly' : null

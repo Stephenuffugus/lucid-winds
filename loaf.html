@@ -3883,6 +3883,7 @@ const Room = (() => {
   let tool = 'yarn';
   let cat, toys = [], poops = [], crumbs = [], fx = [];
   let drag = null, note = '', noteT = 0, boost = 0, sprint = 0;
+  let awayMins = 0;
 
   function init(){
     cv = $('room'); if (!cv) return;
@@ -3897,6 +3898,9 @@ const Room = (() => {
     if (!card){ stop(); return; }
     migrateStats(card);
     card.dna = migrateDNA(card.dna) || defaultDNA();
+    /* how long she has had the place to herself. Read BEFORE settleNeeds,
+       which is what moves the clock forward. */
+    awayMins = Math.max(0, (Date.now() - ((card.pet && card.pet.lastTick) || Date.now())) / 60000);
     pet = settleNeeds(card);
     coat = (card.dna && card.dna.base) || (card.meter && card.meter.coat) || '#7A6A55';
     W = cv.width; H = cv.height; floorY = H * 0.74;
@@ -4459,12 +4463,60 @@ const Room = (() => {
       pet.ritual = { day, greet:0, tend:0, mood:0, shape:0, play:0, done:0 };
     return pet.ritual;
   }
+  /* ── THE HOMECOMING ────────────────────────────────────────────────────────
+     The one beat every single session passes through. It used to be a single
+     fixed sentence, once a day: "She noticed you arrive." Time away was
+     otherwise reported only by a pile of poops, which makes coming back a
+     chore list. Now she tells you what she has been up to, keyed to how long
+     you were out and to the axis her owner filed highest. Nothing to manage,
+     nothing to miss, different most days, and it points the owner back at the
+     real cat, which is the whole thesis. */
+  const HOME = {
+    short: ['She is exactly where you left her, give or take one paw.',
+            'The sunbeam moved. She moved with it.',
+            'Still warm. She has not been up long.',
+            'One ear tracked you the whole way in.',
+            'She was watching the door before you opened it.'],
+    day:   ['She spent the afternoon supervising the window.',
+            'The blanket is a different shape now. No comment was offered.',
+            'She has been asleep in four places since you left.',
+            'Something under the couch was investigated thoroughly.',
+            'She heard the door and arrived at a dignified speed.'],
+    long:  ['She has kept the whole place warm on her own.',
+            'The cushion has a permanent dent in it now.',
+            'She has been holding your spot. It took some doing.',
+            'A great deal of napping has been achieved in your absence.',
+            'She looks up as though you had popped out for the post.']
+  };
+  const HOME_AXIS = {
+    bold:    ['She met you in the middle of the room, as usual.',
+              'Nothing in here frightened her while you were gone.'],
+    curious: ['A drawer was opened. Not by you.',
+              'Everything new in this room has already been sniffed.'],
+    sass:    ['She would like it on the record that you were gone.',
+              'The pen that was on the table is on the floor now.'],
+    chaos:   ['There is glitter on her whiskers and no glitter in this house.',
+              'The rug is at a new angle. She is not discussing it.'],
+    velcro:  ['She was waiting by the door and is not embarrassed about it.',
+              'She has come to sit on whatever you were about to use.']
+  };
+  function homecoming(mins){
+    const bucket = mins < 45 ? 'short' : (mins < 20 * 60 ? 'day' : 'long');
+    const pool = HOME[bucket].slice();
+    const p = card && card.persona;
+    if (p){
+      let lead = null, best = -1;
+      for (const k in HOME_AXIS) if (p[k] != null && p[k] > best){ best = p[k]; lead = k; }
+      if (lead && best >= 0.6) pool.push.apply(pool, HOME_AXIS[lead]);
+    }
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
   function ritualTick(){
     if (!card || !pet) return;
     const r = ritualOf();
     const fresh = !r.greet;
     ritualStep('greet');
-    if (fresh) setNote('She noticed you arrive.');
+    if (fresh || awayMins >= 25) setNote(homecoming(awayMins));
     applyMood();
     drawRitual();
   }

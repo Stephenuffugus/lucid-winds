@@ -13,7 +13,13 @@
    design target, desktop 1280x800 is where the layout falls apart.
 
    Console errors are captured and printed, because a screenshot of a broken
-   page still looks like a screenshot. */
+   page still looks like a screenshot.
+
+   ⚠️ READ THIS BEFORE FILING A BUG FROM ONE OF THESE IMAGES: headless Chrome in
+   this container has NO EMOJI FONT. Every emoji renders as an empty box. That
+   tofu is an artifact of the screenshot environment and is NOT a defect in the
+   page. I nearly filed eleven of them against Silt. If a missing glyph is the
+   finding, confirm it is not an emoji before reporting it. */
 import puppeteer from "puppeteer";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 

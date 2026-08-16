@@ -115,6 +115,10 @@ function makeSandbox(html, { search = '', storage = {} } = {}) {
     requestAnimationFrame: () => 0, cancelAnimationFrame() {},
     setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     Event: function () {}, alert() {}, console,
+    /* the game preloads art; a stub Image that never fires onload is the right
+       shape here (headless has no network and the game must not need one) */
+    Image: function () { this.onload = null; this.onerror = null; this.src = ''; this.width = 8; this.height = 8; },
+    AudioContext: undefined, webkitAudioContext: undefined, CustomEvent: function () {},
     performance: { now: () => 0 }
   };
   win.window = win; win.self = win; win.top = win; win.parent = win;
@@ -141,3 +145,18 @@ function boot(source, opts) {
   return ctx;
 }
 
+
+const c = boot(html, { search: '?ndtest=1' });
+const DEV = c.window.ND_DEV;
+for (let i = 0; i < 60; i++) {
+  const lvl = i % DEV.levels.length;
+  DEV.start(lvl);
+  const r = DEV.fireAt(((i * 0.37) % 2) - 1);
+  if (!r || r.phase === 'fire') {
+    // keep stepping to find out how long it really takes
+    const st = c.window.ND_DEV.state();
+    let n = 0;
+    while (st.phase === 'fire' && n < 200000) { n++; c.window.ND_DEV.state(); break; }
+    console.log('HUNG i='+i+' level='+lvl+' phase='+r.phase+' balls='+r.balls+' redsLeft='+r.redsLeft+' minX='+r.minX+' maxX='+r.maxX);
+  }
+}
