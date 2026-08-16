@@ -7,6 +7,9 @@
      node sim.js --cases=10000     the section 4.8 verification sweep
      node sim.js --watch=12345     print one case in full for a human to read
      node sim.js --grep            the grep gates (Math.random, DOM, dashes)
+     node sim.js --layout          touch targets and title fit, read out of the css
+     node sim.js --tier=long --liar   sweep one rung of the ladder
+     node sim.js --all             sweep all six modes and gate each one
 */
 
 var fs = require("fs");
@@ -108,6 +111,71 @@ function grepGates() {
   }
   var closer = "</scr" + "ipt>";
   if (SIM_SRC.indexOf(closer) >= 0) fails.push("literal closing script tag inside SIM source");
+  return fails;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* layout gates: touch targets read out of the stylesheet             */
+/* ------------------------------------------------------------------ */
+/* Not a browser. This is box model arithmetic, the same arithmetic the old
+   build notes did by hand, except now it is executable and it fails when
+   somebody shrinks a cell. The board cell used to render 48.2px wide, which is
+   a fifth of a pixel of headroom over the repo law, so the rule here is 50. */
+var CSS = HTML.slice(HTML.indexOf("<style>"), HTML.indexOf("</sty" + "le>"));
+function cssRule(sel) {
+  var i = CSS.indexOf(sel + "{");
+  if (i < 0) return null;
+  return CSS.slice(i + sel.length + 1, CSS.indexOf("}", i));
+}
+function cssPx(sel, prop) {
+  var r = cssRule(sel);
+  if (!r) return null;
+  var m = r.match(new RegExp("(?:^|;)\\s*" + prop + "\\s*:\\s*([0-9.]+)px"));
+  return m ? parseFloat(m[1]) : null;
+}
+var FLOOR = 48, HEADROOM = 50;
+function layoutGates() {
+  var fails = [], widths = [320, 360, 375, 390];
+  var pad = (CSS.match(/--pad:\s*([0-9.]+)px/) || [])[1];
+  pad = pad ? parseFloat(pad) : 10;
+  var grid = cssRule(".grid") || "";
+  var gm = grid.match(/grid-template-columns:\s*([0-9.]+)px\s+repeat\(6,\s*minmax\(([0-9.]+)px/);
+  if (!gm) { fails.push("could not read the board grid template"); return fails; }
+  var rowHead = parseFloat(gm[1]), cellMin = parseFloat(gm[2]);
+  var cellH = cssPx(".cell", "height"), cellW = cssPx(".cell", "min-width");
+  var fullBleed = /margin-left:\s*calc\(var\(--pad\)\s*\*\s*-1\)/.test(cssRule(".gridwrap") || "");
+  if (cellH === null || cellW === null) fails.push("could not read the board cell box");
+  if (cellH !== null && cellH < HEADROOM) fails.push("board cell height " + cellH + "px, wants " + HEADROOM);
+  if (cellW !== null && cellW < HEADROOM) fails.push("board cell min width " + cellW + "px, wants " + HEADROOM);
+  if (cellMin < HEADROOM) fails.push("board grid floor " + cellMin + "px, wants " + HEADROOM);
+  widths.forEach(function (w) {
+    var avail = w - 2 - (fullBleed ? 0 : 2 * pad);       // 1px border each side
+    var rendered = Math.max(cellMin, (avail - rowHead) / 6);
+    if (rendered < HEADROOM) {
+      fails.push("board cell renders " + rendered.toFixed(1) + "px at " + w + "px wide");
+    }
+  });
+  // every control that takes a tap
+  [[".ghost", "min-height"], [".act", "min-height"], [".act", "min-width"],
+   [".danger", "min-height"], [".bn button", "min-height"], [".tabs button", "min-height"],
+   [".pick button", "min-height"], [".sw", "min-height"], [".sw", "min-width"],
+   [".clue", "min-height"], [".wide", "min-height"], [".grid .rh", "height"]].forEach(function (spec) {
+    var v = cssPx(spec[0], spec[1]);
+    if (v === null) fails.push("no " + spec[1] + " on " + spec[0]);
+    else if (v < FLOOR) fails.push(spec[0] + " " + spec[1] + " is " + v + "px, floor is " + FLOOR);
+  });
+  // the title must be allowed to wrap instead of truncating
+  var ttl = cssRule(".hd .ttl") || "";
+  if (/white-space:\s*nowrap/.test(ttl)) fails.push("the case title is still set to nowrap");
+  if (/text-overflow:\s*ellipsis/.test(ttl)) fails.push("the case title still truncates with an ellipsis");
+  // and the fit maths has to agree with the sizes the stylesheet actually ships
+  G.TITLE_TIERS.forEach(function (t) {
+    var sel = t.cls ? ".hd .ttl." + t.cls : ".hd .ttl";
+    var size = cssPx(sel, "font-size");
+    if (size === null) fails.push("no font size for title tier " + (t.cls || "base"));
+    else if (Math.abs(size - t.size) > 0.01) fails.push("title tier " + (t.cls || "base") + " is " + size + "px in css and " + t.size + "px in sim");
+  });
   return fails;
 }
 
@@ -333,6 +401,13 @@ if (arg("watch", null) !== null && arg("watch", null) !== undefined && args.some
   process.exit(0);
 }
 
+if (args.some(function (a) { return a === "--layout"; })) {
+  var lf = layoutGates();
+  lf.forEach(function (f) { console.log("LAYOUT FAIL  " + f); });
+  console.log(lf.length ? "layout gates FAILED" : "layout gates PASSED");
+  process.exit(lf.length ? 1 : 0);
+}
+
 if (args.some(function (a) { return a === "--grep"; })) {
   var gf = grepGates();
   gf.forEach(function (f) { console.log("GREP FAIL  " + f); });
@@ -341,8 +416,8 @@ if (args.some(function (a) { return a === "--grep"; })) {
 }
 
 if (args.some(function (a) { return a === "--test"; })) {
-  var gfails = grepGates();
-  gfails.forEach(function (f) { console.log("GREP FAIL  " + f); });
+  var gfails = grepGates().concat(layoutGates());
+  gfails.forEach(function (f) { console.log("GATE FAIL  " + f); });
   var rep = runTests();
   process.exit((rep.failed || gfails.length) ? 1 : 0);
 }

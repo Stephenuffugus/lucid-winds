@@ -1160,7 +1160,7 @@ const GROOVES=[
 ];
 function loadGroove(i){ tourAdvance("groove"); const g=GROOVES[i]; const p=pat(); for(let r=0;r<8;r++) for(let s=0;s<16;s++) p.tracks[r][s]=g.grid[r][s];
   currentGroove=i; tempo=g.bpm; document.getElementById("tempo").value=tempo; document.getElementById("tempoVal").textContent=tempo; updateDelayTime();
-  document.getElementById("nbName").textContent=g.name; document.getElementById("nbSub").textContent=tempo+" BPM · jam on";
+  document.getElementById("nbName").textContent=g.name; document.getElementById("nbSub").textContent=tempo+" BPM";
   document.querySelectorAll(".groove").forEach((el,idx)=>el.classList.toggle("playing",idx===i));
   renderSeq(); saveSoon(); if(!isPlaying) startBeat();
 }
@@ -1428,7 +1428,7 @@ function startRecord(){ ensureAudio(); jamChunks=[]; const mime=MediaRecorder.is
   jamRec.start(); recording=true; recStart=Date.now(); const b=document.getElementById("recBtn"); b.classList.add("on");
   if(!isPlaying && currentGroove<0){} recTimer=setInterval(()=>{ const s=Math.floor((Date.now()-recStart)/1000); document.getElementById("nbSub").textContent="● REC "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); },500); }
 function stopRecord(){ if(jamRec && jamRec.state!=="inactive") jamRec.stop(); recording=false; clearInterval(recTimer); const b=document.getElementById("recBtn"); b.classList.remove("on");
-  document.getElementById("nbSub").textContent=currentGroove>=0?GROOVES[currentGroove].bpm+" BPM · jam on":"pick a beat"; }
+  document.getElementById("nbSub").textContent=currentGroove>=0?GROOVES[currentGroove].bpm+" BPM":"pick a beat"; }
 function renderRecordings(){ const list=document.getElementById("recList"); const empty=document.getElementById("recEmpty"); list.innerHTML="";
   if(recordings.length===0){ empty.style.display="block"; return; } empty.style.display="none";
   recordings.forEach((r,i)=>{ const el=document.createElement("div"); el.className="rec-item";
@@ -1713,7 +1713,7 @@ function refreshAllUI(){
   document.getElementById("rollChip").classList.toggle("on",rollOn); document.getElementById("rollRate").value=rollRate;
   renderGrooves(); renderPads(); renderInstruments(); renderKeyboard(); renderSeq(); renderPacks();
   document.getElementById("songChip").classList.toggle("on",songMode); document.getElementById("songBar").style.display=songMode?"flex":"none"; lastSlotRendered=curSlot; renderSong();
-  if(currentGroove>=0){ const gc=document.querySelectorAll(".groove")[currentGroove]; if(gc) gc.classList.add("playing"); document.getElementById("nbName").textContent=GROOVES[currentGroove].name; document.getElementById("nbSub").textContent=tempo+" BPM · jam on"; }
+  if(currentGroove>=0){ const gc=document.querySelectorAll(".groove")[currentGroove]; if(gc) gc.classList.add("playing"); document.getElementById("nbName").textContent=GROOVES[currentGroove].name; document.getElementById("nbSub").textContent=tempo+" BPM"; }
   applyRestoredFx();
 }
 /* ===================== MARBLE =====================

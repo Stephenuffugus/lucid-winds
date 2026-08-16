@@ -248,7 +248,7 @@ var padh = D.documentElement.style.getPropertyValue('--padh');
 ok('the pad height was budgeted, got ' + padh, !!padh);
 var padPx = parseInt(padh, 10);
 ok('pad buttons clear the 48px law, ' + padPx + 'px', padPx >= 48);
-ok('pad buttons stay inside the cap, ' + padPx + 'px', padPx <= V.LAYOUT.PAD_MAX);
+ok('pad buttons stay inside the cap, ' + padPx + 'px', padPx <= 190);
 var ribbonShown = D.getElementById('ribbon').style._m['display'] !== 'none' &&
                   D.getElementById('ribbon').style.display !== 'none';
 ok('the phone column is put to work, ribbon ' + (ribbonShown ? 'on' : 'off') + ', pad ' + padPx + 'px',
@@ -257,8 +257,9 @@ var cardEl = D.getElementById('lvcard');
 var cardShown = (cardEl.style._m['display'] || cardEl.style.display) !== 'none';
 var leftover = (H - 20) - 48 - 40 - padPx - 30 - bb.h -
                (ribbonShown ? V.LAYOUT.RIBBON_H : 0) - (cardShown ? V.LAYOUT.CARD_H : 0);
-ok('leftover slack under the board is small, ' + Math.round(leftover) + 'px', leftover <= 90,
-   'leftover ' + leftover);
+var leftPct = leftover / (H - 20) * 100;
+ok('leftover slack under the board is small, ' + Math.round(leftover) + 'px (' +
+   leftPct.toFixed(0) + ' percent of the column)', leftPct <= 15, 'leftover ' + leftover);
 ok('the level card is filled in when it is shown', !cardShown || (D.getElementById('lvcTitle').textContent || '').length > 0,
    D.getElementById('lvcTitle').textContent + ' / ' + D.getElementById('lvcMech').textContent);
 

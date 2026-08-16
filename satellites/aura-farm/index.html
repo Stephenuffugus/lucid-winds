@@ -306,7 +306,7 @@ function emotionOf(v,i){
 const VENUES = [
   { id:'park',   name:'Dawnlight Park',    desc:'Calm, sunny, forgiving. Emotions drift gently upward.',      ambient: 0.06, volMult:0.85, bloomAt:500,  sky:['#2a5b9e','#7ab8d8'], ground:'#1d4227', outdoor:true },
   { id:'club',   name:'The Neon Cellar',   desc:'Loud and volatile. Feelings spike fast in every direction.', ambient: 0.00, volMult:1.55, bloomAt:900,  sky:['#180a2e','#3d0f4f'], ground:'#1a0f2e' },
-  { id:'office', name:'Grindstone Offices',desc:'Fluorescent stress. Moods lean sour — rich soil for Blight.',ambient:-0.08, volMult:1.10, bloomAt:1300, sky:['#101622','#232c3d'], ground:'#1c2230' },
+  { id:'office', name:'Grindstone Offices',desc:'Fluorescent stress. Moods lean sour, which makes rich soil for Blight.',ambient:-0.08, volMult:1.10, bloomAt:1300, sky:['#101622','#232c3d'], ground:'#1c2230' },
   { id:'market', name:'The Night Market',  desc:'Lanterns and haggling. The mood swings like a pendulum all day.', ambient:0, volMult:1.25, bloomAt:1700, sky:['#0d0d26','#2e1240'], ground:'#241536', outdoor:true, night:true },
   { id:'chapel', name:'The Velvet Chapel', desc:'Weddings at noon, funerals at dusk. Awe and Sorrow run deep here.', ambient:0, volMult:1.15, bloomAt:2200, sky:['#141033','#2b1b4e'], ground:'#221a38' },
   { id:'rooftop',name:'Skyline Rooftop',   desc:'The city glitters below. Big feelings, thin air.',            ambient:0.02, volMult:1.7, bloomAt:2800, sky:['#070b1e','#1c1440'], ground:'#191b2e', outdoor:true, night:true },
@@ -399,14 +399,14 @@ const ANCHORS = [[0.28,0.34],[0.72,0.30],[0.30,0.66],[0.72,0.66],[0.50,0.48]];
 /* ---------------- traits: learnable emotional patterns ---------------- */
 const TRAITS = {
   sunny:    { n:'Sunny',      d:'lifts hit 50% harder' },
-  spirally: { n:'Spirally',   d:'put-downs hit 50% harder' },
+  spirally: { n:'Spirally',   d:'put downs hit 50% harder' },
   guarded:  { n:'Guarded',    d:'all pushes 30% weaker' },
   volatile: { n:'Volatile',   d:'life events strike twice as often' },
   steady:   { n:'Steady',     d:'charge decays half as fast' },
   bottled:  { n:'Bottled Up', d:'shorter peaks, higher ceiling' },
   openbook: { n:'Open Book',  d:'charge always visible' },
-  empath:   { n:'Empath',     d:'catches the group’s mood twice as fast' },
-  loner:    { n:'Loner',      d:'immune to the group’s mood' },
+  empath:   { n:'Empath',     d:'catches the mood of their group twice as fast' },
+  loner:    { n:'Loner',      d:'immune to the mood of their group' },
   resilient:{ n:'Resilient',  d:'recovers twice as fast' },
   deepwell: { n:'Deep Well',  d:'harvests yield +20%' },
   fragile:  { n:'Fragile',    d:'if husked, their gloom spreads twice as far' },
@@ -438,7 +438,7 @@ const WEATHERS = [
   { id:'clear',    n:'Clear Skies',    d:'A plain, honest day.' },
   { id:'golden',   n:'Golden Morning', d:'Everyone drifts a little brighter.', drift: 0.1 },
   { id:'drizzle',  n:'Grey Drizzle',   d:'Everyone drifts a little gloomier.', drift:-0.1 },
-  { id:'static',   n:'Static Air',     d:'Emotional charge lingers — decay is halved.', decay:0.5 },
+  { id:'static',   n:'Static Air',     d:'Emotional charge lingers; decay is halved.', decay:0.5 },
   { id:'restless', n:'Restless Winds', d:'Life events strike twice as often.', events:2 },
 ];
 const WX = ()=>WEATHERS.find(w=>w.id===(run&&run.weather))||WEATHERS[0];
@@ -450,7 +450,7 @@ const VENUE_EVENTS = [
   { venue:'office', group:'The Sales Pod',    n:'Quarter Close',   d:'The Sales Pod is deep in crunch.', v:-0.55, i:0.40 },
   { venue:'office', group:'The Managers',     n:'Bonus Rumors',    d:'The Managers smell money.', v: 0.45, i:0.30 },
   { venue:'market', group:'The Buskers',      n:'Full Moon Crowd', d:'The Buskers are feeding off the crowd.', v: 0.50, i:0.40 },
-  { venue:'market', group:'The Collectors',   n:'Rare Find',       d:'A legendary piece surfaced — The Collectors are frantic.', v: 0.40, i:0.50 },
+  { venue:'market', group:'The Collectors',   n:'Rare Find',       d:'A legendary piece surfaced. The Collectors are frantic.', v: 0.40, i:0.50 },
   { venue:'chapel', group:'The Choir',        n:'Evensong',        d:'The Choir is soaring tonight.', v: 0.55, i:0.40 },
   { venue:'chapel', group:'The Mourners',     n:'The Wake',        d:'The Mourners carry a heavy grief.', v:-0.55, i:0.45 },
   { venue:'chapel', group:'The Wedding Party',n:'The Vows',        d:'The Wedding Party is walking on air.', v: 0.65, i:0.50 },
@@ -477,14 +477,14 @@ const SHOP = [
   { id:'insult', kind:'action', price:150, name:'Cutting Insult', desc:'Blight. A strong shove downward.' },
   { id:'rally',  kind:'action', price:300, name:'Rally',          desc:'Radiance. Lifts an entire social group at once.' },
   { id:'rumor',  kind:'action', price:300, name:'Spread Rumor',   desc:'Blight. Sours an entire social group at once.' },
-  { id:'tend',   kind:'action', price:200, name:'Gentle Tend',    desc:'Halves a recovering NPC’s remaining recovery time.' },
-  { id:'fester', kind:'action', price:200, name:'Fester',         desc:'Target’s mood stops drifting back for 20s.' },
+  { id:'tend',   kind:'action', price:200, name:'Gentle Tend',    desc:'Halves the remaining recovery time of a soul who is resting.' },
+  { id:'fester', kind:'action', price:200, name:'Fester',         desc:'Their mood stops drifting back for 20s.' },
   { id:'sight',  kind:'upg',    price:120, name:'Aura Sight',     desc:'See exact charge % above every head.' },
   { id:'patient',kind:'upg',    price:250, name:'Patient Eye',    desc:'Peak windows last 50% longer.' },
   { id:'reson',  kind:'upg',    price:400, name:'Deep Resonance', desc:'All harvests yield +15%.' },
   { id:'reserves',kind:'upg',   price:350, name:'Deep Reserves',  desc:'Maximum focus raised to 130.' },
   { id:'chorus', kind:'art',    price:500, name:'Art: Radiant Chorus', desc:'Active. Lift every idle soul in the venue at once. 45s cooldown.' },
-  { id:'veil',   kind:'art',    price:500, name:'Art: Umbral Veil',    desc:'Active. For 12s your reputation is hidden — no push penalty, husks stop glooming. 60s cooldown.' },
+  { id:'veil',   kind:'art',    price:500, name:'Art: Umbral Veil',    desc:'Active. For 12s your reputation is hidden, so there is no push penalty and husks stop glooming. 60s cooldown.' },
 ];
 
 /* ---------------- relics: permanent rewards from hard contracts ---------------- */
@@ -518,7 +518,7 @@ function mile(id){
   if (meta.mile[id]) return;
   meta.mile[id] = 1; saveMeta();
   const m = MILESTONES.find(x=>x.id===id);
-  if (m) { toast('🏆 '+m.n+' — '+m.d); sfx.buy(); }
+  if (m) { toast('🏆 '+m.n+': '+m.d); sfx.buy(); }
 }
 
 /* ---------------- persistent meta ----------------
@@ -879,7 +879,7 @@ function completeContract(c){
   run.essence += pay; run.contractsDone++; run.dayContractsDone++;
   sfx.buy();
   window._sbCapEarn && window._sbCapEarn(1,'aura-farm:contract');
-  toast('📜 Contract fulfilled: '+c.label+' — +'+pay+'✦');
+  toast('📜 Contract fulfilled: '+c.label+'. +'+pay+'✦');
   if (c.givesRelic) awardRelic();
   updateHud();
 }
@@ -909,11 +909,11 @@ function rollDay(){
 }
 function announceDay(){
   const w = WX();
-  toast('☀️ Day '+run.day+' — quota ✦'+quotaFor(run.day));
+  toast('☀️ Day '+run.day+', quota ✦'+quotaFor(run.day));
   if (w.id!=='clear') toast(w.n+': '+w.d);
-  if (run.event) toast('📣 '+run.event.n+' at '+venueById(run.event.venue).name+' — '+run.event.d);
+  if (run.event) toast('📣 '+run.event.n+' at '+venueById(run.event.venue).name+'. '+run.event.d);
   toast('📜 3 fresh contracts from the Broker.');
-  if (run.day===3) toast('🩶 The Broker has sent Mara the Gray to work your venues. She siphons what you leave ripening — tap her to flare her off.');
+  if (run.day===3) toast('🩶 The Broker has sent Mara the Gray to work your venues. She siphons what you leave ripening. Tap her to flare her off.');
 }
 
 /* ---------------- audio ---------------- */
@@ -1080,11 +1080,11 @@ function trackSeen(id, amt){
 function traitLine(id){
   const ts = NPC_TRAITS[id]||[];
   if (!ts.length) return '';
-  return known(id) ? ts.map(t=>TRAITS[t].n+' — '+TRAITS[t].d).join(' · ') : '❔ unread (interact to learn them)';
+  return known(id) ? ts.map(t=>TRAITS[t].n+': '+TRAITS[t].d).join(' · ') : '❔ unread (interact to learn them)';
 }
 function moodText(n){
   if (n.state==='husk') return 'Hollow. Nothing left to feel.';
-  if (n.state==='recover') return 'Glowing softly, spent — recovering ('+Math.ceil(n.recoverT)+'s).';
+  if (n.state==='recover') return 'Glowing softly, spent. Recovering ('+Math.ceil(n.recoverT)+'s).';
   const v = n.v, i = n.i;
   let m;
   if (v > 0.5)      m = i>0.7?'Euphoric':i>0.4?'Delighted':'Content';
@@ -1092,7 +1092,7 @@ function moodText(n){
   else if (v > -0.15)m = i>0.6?'Restless':'Neutral';
   else if (v > -0.5) m = i>0.7?'Seething':i>0.4?'Gloomy':'Irritable';
   else               m = i>0.7?'Despairing':i>0.4?'Miserable':'Down';
-  if (n.peak<=0 && i>0.6) m += ' — aura swelling…';
+  if (n.peak<=0 && i>0.6) m += ', aura swelling…';
   return m;
 }
 function updateMeters(n){
@@ -1198,7 +1198,7 @@ function harvest(){
     const kept = Object.keys(meta.case).length;
     if (kept >= 30) mile('case30');
     if (kept >= ROSTER.length) mile('caseall');
-    if (setsDone() > setsBefore) { banner('SET COMPLETE','<span class="sub2">'+def.group.toUpperCase()+' — +5% ALL YIELDS, FOREVER</span>','#8effc1'); sfx.buy(); }
+    if (setsDone() > setsBefore) { banner('SET COMPLETE','<span class="sub2">'+def.group.toUpperCase()+' · +5% ALL YIELDS, FOREVER</span>','#8effc1'); sfx.buy(); }
   }
 
   cprog({ type:'harvest', emo, amt, sign, onPeak, i:n.i });
@@ -1236,7 +1236,7 @@ function glean(){
   burst(n.x, n.y, '#8a8494', 14);
   floatText(n.x, n.y-30, '+'+amt+' ⚱️', '#b8b2c4');
   sfx.harvB();
-  toast(def.name+'’s husk crumbles to dust. The gloom lifts — the ash is yours.');
+  toast(def.name+'’s husk crumbles to dust. The gloom lifts. The ash is yours.');
   selected = null;
   checkBloom(def.venue);
   renderPanel(); updateHud();
@@ -1298,7 +1298,7 @@ function updateMara(dt){
       n.state='husk'; n.i = 0; n.peak = 0;
       run.maraDeepUsed = true; m.target = null; m.cd = 10;
       shakeFx(); sfx.harvB();
-      banner('MARA TAKES '+d.name.toUpperCase(), '<span class="sub2">HUSKED — HER HARVEST, NOT YOURS</span>', '#c9a0b8');
+      banner('MARA TAKES '+d.name.toUpperCase(), '<span class="sub2">HUSKED · HER HARVEST, NOT YOURS</span>', '#c9a0b8');
       toast('🩶 Mara drains '+d.name+' to a husk. She bows, mockingly.');
       if (selected===d.id) renderPanel();
     }
@@ -1328,7 +1328,7 @@ function updateMara(dt){
     else if (maraTier()>=2 && !run.maraDeepUsed && n.i >= 0.6) {
       // she coils for a deep drain — 8 seconds to stop her
       m.deep = 8;
-      banner('MARA DEEP-DRAINS '+npcDef(m.target).name.toUpperCase(), '<span class="sub2">⚠ TAP HER WITHIN 8s OR THEY HUSK</span>', '#ff8da8');
+      banner('MARA DEEP DRAINS '+npcDef(m.target).name.toUpperCase(), '<span class="sub2">⚠ TAP HER WITHIN 8s OR THEY HUSK</span>', '#ff8da8');
       sfx.sting(); sfx.heartbeat();
     } else {
       m.siphonT += dt;
@@ -1367,7 +1367,7 @@ function shooMara(){
   run.dayShoos++;
   if (meta.maraShoos >= 5) mile('shoo5');
   sfx.shoo(); burst(m.x, m.y, '#cfd2ff', 14);
-  toast(wasDeep ? '⚡ You break Mara’s deep drain. She shrieks and backs off.' : 'You flare your aura. Mara hisses and backs off — '+T.stun+'s.');
+  toast(wasDeep ? '⚡ You break Mara’s deep drain. She shrieks and backs off.' : 'You flare your aura. Mara hisses and backs off for '+T.stun+'s.');
 }
 
 /* ---------------- simulation ---------------- */
@@ -1562,7 +1562,7 @@ function composeLetter(prev){
   const d = run.day;
   const purity = run.rad + run.bli > 0 ? run.rad/(run.rad+run.bli) : 0.5;
   const huskCount = ROSTER.filter(x=>run.npcs[x.id].state==='husk').length;
-  let from = 'The Broker', body = '', sig = '— B.';
+  let from = 'The Broker', body = '', sig = 'B.';
   if (d===2) {
     const rep = repLean();
     if (rep.n===0 && rep.failed>0) {
@@ -1574,38 +1574,38 @@ function composeLetter(prev){
     } else if (rep.last==='gray') {
       body = 'You are becoming a fixture: never quite radiant, never quite ruinous. There is money in being unreadable. There is more in being decisive. The quota rises either way.';
     } else {
-      body = 'A promising first dusk. Remember the terms: the quota is not a suggestion, and the contracts are where the real money sleeps. Fulfill the hard ones and I will part with things I should not part with — relic things, old things. Do not disappoint me.';
+      body = 'A promising first dusk. Remember the terms: the quota is not a suggestion, and the contracts are where the real money sleeps. Fulfill the hard ones and I will part with things I should not part with; relic things, old things. Do not disappoint me.';
     }
   } else if (d===3) {
-    body = 'A courtesy, before you hear it from the crowds: I employ another harvester. Mara works the same fields you do, and she does not knock. What ripens unpicked, she drinks. Consider her a lesson in punctuality — or flare your aura at her and see how she takes it.';
+    body = 'A courtesy, before you hear it from the crowds: I employ another harvester. Mara works the same fields you do, and she does not knock. What ripens unpicked, she drinks. Consider her a lesson in punctuality, or flare your aura at her and see how she takes it.';
   } else if (d===LAST_DAY) {
-    body = 'The last dusk comes tonight. Fourteen days of feelings pass through my ledgers because of you. Whatever you are by now — luminary, reaper, or something conveniently gray — finish loudly. The trade remembers endings, nothing else.';
+    body = 'The last dusk comes tonight. Fourteen days of feelings pass through my ledgers because of you. Whatever you are by now, luminary or reaper or something conveniently gray, finish loudly. The trade remembers endings, nothing else.';
   } else if (prev.husked.length && chance(0.55)) {
     const name = prev.husked[0];
     const g = ROSTER.find(x=>x.name===name);
     from = g ? g.group : 'Unsigned';
-    body = 'We know what you did to '+name+'. They stand where you left them and the wind goes through them like an empty doorway. We see you coming now, harvester. We talk. Whatever you tell yourself you are — we bury what you leave.';
-    sig = '— no signature, pressed hard into the paper';
+    body = 'We know what you did to '+name+'. They stand where you left them and the wind goes through them like an empty doorway. We see you coming now, harvester. We talk. Whatever you tell yourself you are, we bury what you leave.';
+    sig = 'no signature, pressed hard into the paper';
   } else if (prev.contractsDone>=3) {
     body = 'All three contracts, fulfilled before dusk. I showed your ledger to people whose names would frighten you, and even they raised an eyebrow. Enclosed: a token of professional respect. Spend it on something sharp.';
-    sig = '— B. (enclosed: ✦60)';
+    sig = 'B. (enclosed: ✦60)';
     run.essence += 60;
   } else if (prev.shoos>=2) {
     from = 'Mara';
     body = 'Twice yesterday you flared that little light of yours at me. Cute. The Broker pays me by the drop, same as you, and there are only so many drops in a day. Keep your fields picked, and I will have no reason to visit them. Leave them ripening, and I will keep my thermos full.';
-    sig = '— M.';
+    sig = 'M.';
   } else if (prev.bli===0 && prev.rad>300 && chance(0.5)) {
     const recovered = ROSTER.filter(x=>{ const s = run.npcs[x.id].state; return s!=='husk' && s!=='taken'; });
     from = recovered.length ? pick(recovered).name : 'A stranger';
-    body = 'I do not know what you did to me yesterday, exactly. I only know I went home lighter than I have in years, and slept without dreaming, and woke up wanting to be somewhere. Whoever you are — thank you. Come back any time.';
-    sig = '— '+from;
+    body = 'I do not know what you did to me yesterday, exactly. I only know I went home lighter than I have in years, and slept without dreaming, and woke up wanting to be somewhere. Whoever you are, thank you. Come back any time.';
+    sig = from;
   } else if (d>=4 && (()=>{ const un = ROSTER.filter(x=>run.unlocked[x.venue]).length;
       return un>0 && huskCount/un >= 0.4; })()) {
-    body = 'A word from your accountant, which is me: '+huskCount+' husks now stand where suppliers used to. You are eating your seed corn, harvester. Husks can be gleaned once for their ash — a reaper’s pension, not an income. Leave enough souls singing to feed tomorrow, or tomorrow will not feed you.';
+    body = 'A word from your accountant, which is me: '+huskCount+' husks now stand where suppliers used to. You are eating your seed corn, harvester. Husks can be gleaned once for their ash, a reaper’s pension and not an income. Leave enough souls singing to feed tomorrow, or tomorrow will not feed you.';
   } else if (purity>=0.8 && d>=5) {
-    body = 'Your ledgers confuse my accountants. All this light, all this patience — and the essence still flows. I built this trade on the assumption that kindness does not scale. You are making me look bad, and making me money. Continue, I suppose.';
+    body = 'Your ledgers confuse my accountants. All this light, all this patience, and the essence still flows. I built this trade on the assumption that kindness does not scale. You are making me look bad, and making me money. Continue, I suppose.';
   } else if (purity<=0.2 && d>=5) {
-    body = 'The husks are stacking up nicely — '+huskCount+' at last count. My buyers adore the dark vintages; they say despair keeps longer than joy. But a professional note: empty fields feed no one. Even a reaper leaves seed corn. Pace yourself.';
+    body = 'The husks are stacking up nicely, '+huskCount+' at last count. My buyers adore the dark vintages; they say despair keeps longer than joy. But a professional note: empty fields feed no one. Even a reaper leaves seed corn. Pace yourself.';
   } else {
     const domK = EMO_KEYS.reduce((a,b)=>prev.ess[a]>=prev.ess[b]?a:b);
     if (prev.ess[domK] >= 150) {
@@ -1615,7 +1615,7 @@ function composeLetter(prev){
         hope:'Hope, mostly, in yesterday’s crates. Hope sells slowly but it never spoils. The patient buyers found you.',
         awe:'Awe. Actual Awe, bottled. I have collectors who have waited years for a vintage like yesterday’s. Bring me more and name your price.',
         sorrow:'Sorrow moved well yesterday. The theaters buy it by the cask, you know. They water it down for the matinees.',
-        rage:'Yesterday ran hot — Rage in every crate. I sell it to the foundries. Handle it with gloves; it eats through cheap vessels.',
+        rage:'Yesterday ran hot, Rage in every crate. I sell it to the foundries. Handle it with gloves; it eats through cheap vessels.',
         dread:'Pure Dread, and plenty of it. I do not ask what my midnight clients do with it, and I advise you to keep the same policy.',
       };
       body = lines[domK] + ' The '+e.n+' market watches you now.';
@@ -1633,20 +1633,20 @@ function composeLetter(prev){
     const tp = tributePrice();
     const ttxt = tp===90 ? 'Pay ✦90 and Mara rests today. A professional courtesy, one harvester of the dark to another.'
                : tp===150 ? 'Pay ✦150 and Mara rests today. The price is higher for you. She knows what the light pays.'
-               : 'Pay ✦120 and Mara rests today — your fields, untouched, until dusk.';
+               : 'Pay ✦120 and Mara rests today. Your fields stay untouched until dusk.';
     const options = [
       { id:'tribute', bt:'THE TRIBUTE', txt:ttxt, ok:'Pay ✦'+tp },
-      { id:'joint',   bt:'THE JOINT HUNT', txt:'Let Mara feed freely today — she siphons 60% faster, but half of every drop she takes flows back to you as essence.', ok:'Shake on it' },
+      { id:'joint',   bt:'THE JOINT HUNT', txt:'Let Mara feed freely today. She siphons 60% faster, but half of every drop she takes flows back to you as essence.', ok:'Shake on it' },
     ];
     const husks2 = ROSTER.filter(x=>run.npcs[x.id].state==='husk').length;
-    if (husks2>=2) options.push({ id:'husks', bt:'THE HUSK TRADE', txt:'She will haul away your '+husks2+' husks — ✦90 each, and their gloom goes with them. But trafficking in the emptied stains your ledger as Blight.', ok:'Sell them (✦'+(husks2*90)+')' });
+    if (husks2>=2) options.push({ id:'husks', bt:'THE HUSK TRADE', txt:'She will haul away your '+husks2+' husks at ✦90 each, and their gloom goes with them. But trafficking in the emptied stains your ledger as Blight.', ok:'Sell them (✦'+(husks2*90)+')' });
     bargain = pick(options);
   }
   return { from, body, sig, bargain };
 }
 function showLetter(L){
   pendingBargain = L.bargain || null;
-  const bhtml = L.bargain ? `<div class="bargainBox"><div class="bt">🕸️ MARA’S BARGAIN — ${L.bargain.bt}</div>${L.bargain.txt}</div>` : '';
+  const bhtml = L.bargain ? `<div class="bargainBox"><div class="bt">🕸️ MARA’S BARGAIN · ${L.bargain.bt}</div>${L.bargain.txt}</div>` : '';
   showModal(`
     <h2>A letter, slipped under the door</h2>
     <div class="letterCard"><div class="lfrom">From: ${L.from}</div><div class="lbody">${L.body}</div><div class="lsig">${L.sig}</div>${bhtml}</div>
@@ -1671,7 +1671,7 @@ function acceptBargain(){
       if (n.state==='husk') { n.state = 'taken'; count++; } }
     const pay = count*90;
     run.essence += pay; run.bli += pay; // the trade stains the ledger
-    toast('🩶 Mara hauls away '+count+' husks. +✦'+pay+' — and the stain is yours.');
+    toast('🩶 Mara hauls away '+count+' husks. +✦'+pay+', and the stain is yours.');
     if (selected && run.npcs[selected] && run.npcs[selected].state==='taken') { selected = null; renderPanel(); }
   }
   sfx.buy(); saveRun(); updateHud();
@@ -1736,11 +1736,11 @@ function ending(){
   const pct = Math.round(p*100);
   let title, line;
   if (p >= 0.85) { title = '🌞 The Luminary'; line = 'You farmed light and left every field brighter than you found it. The auras will feed you forever.'; }
-  else if (p <= 0.15) { title = '🥀 The Reaper of Vibes'; line = 'You drank deep and left husks in your wake. A magnificent, terrible harvest — and a silent farm.'; }
+  else if (p <= 0.15) { title = '🥀 The Reaper of Vibes'; line = 'You drank deep and left husks in your wake. A magnificent, terrible harvest, and a silent farm.'; }
   else { title = '⚖️ The Gray Broker'; line = 'Light when it paid, blight when it didn’t. The farm neither blooms nor dies. It waits.'; }
   let domEmo = null, domV = 0;
   for (const k of EMO_KEYS) if (run.essBy[k] > domV) { domV = run.essBy[k]; domEmo = k; }
-  const emoLine = domEmo ? `<div class="sub">Dominant essence: <b style="color:${EMOTIONS[domEmo].c}">${EMOTIONS[domEmo].icon} ${EMOTIONS[domEmo].n}</b> — the trade knows you as <b>${EMO_EPITHETS[domEmo]}</b>.</div>` : '';
+  const emoLine = domEmo ? `<div class="sub">Dominant essence: <b style="color:${EMOTIONS[domEmo].c}">${EMOTIONS[domEmo].icon} ${EMOTIONS[domEmo].n}</b>. The trade knows you as <b>${EMO_EPITHETS[domEmo]}</b>.</div>` : '';
   const specs = Object.values(meta.case);
   const avgI = specs.length ? specs.reduce((s,x)=>s+x.i,0)/specs.length : 0;
   const frac = specs.length/ROSTER.length;
@@ -1769,7 +1769,7 @@ function ending(){
     <h3>Run essences</h3>${essBars(run.essBy)}
     <h3>How each day was farmed</h3>${bars}
     <button class="big" onclick="enterEndless()">🌒 Endless Dusk ➜</button>
-    <div class="sub" style="text-align:center;margin:4px 0 0">The run needn’t end. Quotas rise 8% each dusk — how deep can you go?${meta.bestEndless?' Best: Day '+meta.bestEndless+'.':''}</div>
+    <div class="sub" style="text-align:center;margin:4px 0 0">The run needn’t end. Quotas rise 8% each dusk. How deep can you go?${meta.bestEndless?' Best: Day '+meta.bestEndless+'.':''}</div>
     <button class="big ghost" onclick="restart()">Farm Again</button>
     <button class="big ghost" onclick="toTitle()">Title</button>
   `, true);
@@ -1805,7 +1805,7 @@ function updateHud(){
   const pace = (1 - run.dayT/run.dayLen) * q; // where you "should" be by now
   qf.className = met ? 'done' : (run.dayEarned < pace*0.75 && run.dayT < run.dayLen*0.7 ? 'behind' : '');
   $('quotaTxt').textContent = 'QUOTA '+run.dayEarned+' / '+q;
-  if (met && !run.qMet) { run.qMet = true; banner('QUOTA MET','<span class="sub2">THE FARM ENDURES — KEEP HARVESTING</span>','#8effc1'); sfx.day(); }
+  if (met && !run.qMet) { run.qMet = true; banner('QUOTA MET','<span class="sub2">THE FARM ENDURES · KEEP HARVESTING</span>','#8effc1'); sfx.day(); }
   $('focusFill').style.width = clamp(100*run.focus/focusCap(),0,100)+'%';
   const k = (karma()+1)/2; // 0 blight .. 1 radiance
   const col = run.veilT>0 ? '#cfd2ff' : blend('#a86bff','#ffd75e',k);
@@ -1973,7 +1973,7 @@ function openContracts(){
     </div>`;
   }
   showModal(`<h2>The Broker’s Contracts</h2>
-    <div class="sub">Three orders each morning. Fulfill them before dusk — payouts land instantly${relic('quill')?' <b style="color:#ffd75e">(doubled by the Broker’s Quill)</b>':''}. The hardest order pays in <b style="color:#9ef3ff">relics</b>: permanent powers, kept forever.</div>
+    <div class="sub">Three orders each morning. Fulfill them before dusk; payouts land instantly${relic('quill')?' <b style="color:#ffd75e">(doubled by the Broker’s Quill)</b>':''}. The hardest order pays in <b style="color:#9ef3ff">relics</b>: permanent powers, kept forever.</div>
     ${rows}
     <h3>Relics earned (${Object.keys(meta.relics).length}/${RELICS.length})</h3>
     ${RELICS.map(r=>`<div class="relicCard ${meta.relics[r.id]?'':'lock'}"><span class="ri">${r.icon}</span><div><div class="rn">${r.n}</div><div class="rd">${meta.relics[r.id]?r.d:'Fulfill hard contracts to earn this.'}</div></div></div>`).join('')}
@@ -1990,7 +1990,7 @@ function openShop(){
                : `<button class="buyBtn" ${run.essence<it.price?'disabled':''} onclick="buyItem('${it.id}')">✦ ${it.price}</button>`)
       + '</div>';
   }
-  showModal(`<h2>Techniques</h2><div class="sub">Balance: <b style="color:#ffd75e">✦ ${run.essence}</b> — spending doesn’t affect quota progress.</div>${rows}<button class="big ghost" onclick="closeModal()">Close</button>`);
+  showModal(`<h2>Techniques</h2><div class="sub">Balance: <b style="color:#ffd75e">✦ ${run.essence}</b>. Spending does not affect quota progress.</div>${rows}<button class="big ghost" onclick="closeModal()">Close</button>`);
 }
 function buyItem(id){
   const it = SHOP.find(s=>s.id===id);
@@ -2037,7 +2037,7 @@ function useArt(id){
       puff(n.x, n.y-16, '#ffe9a8', 4); }
     sfx.harvR(); toast('🌟 Radiant Chorus lifts the whole room.');
   } else {
-    run.veilT = 12; sfx.act(-1); toast('🌑 Umbral Veil — your aura is unreadable for 12s.');
+    run.veilT = 12; sfx.act(-1); toast('🌑 Umbral Veil. Your aura is unreadable for 12s.');
   }
   updateArtBtns(); renderPanel();
 }
@@ -2057,8 +2057,8 @@ function abandonRun(){ run = null; saveRun(); stopAmbient(); closeModal(); title
 
 function openRecords(back){
   sfx.tap();
-  const relicRows = RELICS.map(r=>`<div class="relicCard ${meta.relics[r.id]?'':'lock'}"><span class="ri">${r.icon}</span><div><div class="rn">${r.n}</div><div class="rd">${meta.relics[r.id]?r.d:'Not yet earned — fulfill hard contracts.'}</div></div></div>`).join('');
-  const mileRows = MILESTONES.map(m=>`<div class="mileRow ${meta.mile[m.id]?'':'lock'}"><span class="mi">${meta.mile[m.id]?'🏆':'·'}</span><div><b>${m.n}</b> — ${m.d}</div></div>`).join('');
+  const relicRows = RELICS.map(r=>`<div class="relicCard ${meta.relics[r.id]?'':'lock'}"><span class="ri">${r.icon}</span><div><div class="rn">${r.n}</div><div class="rd">${meta.relics[r.id]?r.d:'Not yet earned. Fulfill hard contracts.'}</div></div></div>`).join('');
+  const mileRows = MILESTONES.map(m=>`<div class="mileRow ${meta.mile[m.id]?'':'lock'}"><span class="mi">${meta.mile[m.id]?'🏆':'·'}</span><div><b>${m.n}</b>: ${m.d}</div></div>`).join('');
   const ends = meta.endings.length ? meta.endings.join(' · ') : 'None witnessed yet.';
   showModal(`<h2>Records &amp; Relics</h2>
     <h3>Relics (${Object.keys(meta.relics).length}/${RELICS.length})</h3>${relicRows}
@@ -2086,7 +2086,7 @@ function openCase(){
       html += '</div></div>';
     }
   }
-  showModal(`<h2>Specimen Case</h2><div class="sub">${Object.keys(meta.case).length}/${ROSTER.length} peak auras · re-capture at higher charge to upgrade. Kept forever.</div>${html}<button class="big ghost" onclick="closeModal()">Close</button>`);
+  showModal(`<h2>Specimen Case</h2><div class="sub">${Object.keys(meta.case).length}/${ROSTER.length} peak auras · recapture at higher charge to upgrade. Kept forever.</div>${html}<button class="big ghost" onclick="closeModal()">Close</button>`);
 }
 
 function openMap(){
@@ -2098,7 +2098,7 @@ function openMap(){
     html += `<div class="venueCard ${run.venue===v.id?'cur':''} ${un?'':'lock'}" ${un?`onclick="goVenue('${v.id}')"`:''}>
       <div class="nm">${v.name} ${tag}</div><div class="ds">${un ? v.desc + (z.bloomed?'':' · bloom at ✦'+v.bloomAt+' ('+z.total+')') : '🔒 Push a previous venue to its bloom threshold to unlock.'}</div></div>`;
   }
-  showModal(`<h2>Venues</h2><div class="sub">Each venue keeps its own emotional weather — and remembers how you farmed it.</div>${html}<button class="big ghost" onclick="closeModal()">Close</button>`);
+  showModal(`<h2>Venues</h2><div class="sub">Each venue keeps its own emotional weather, and remembers how you farmed it.</div>${html}<button class="big ghost" onclick="closeModal()">Close</button>`);
 }
 function goVenue(id){
   if (!run.unlocked[id]) return;
@@ -2111,16 +2111,16 @@ function goVenue(id){
 
 function howTo(back){
   showModal(`<h2>How to Farm</h2><div class="howto">
-  <p>People give off <b>aura</b> — emotional energy. You harvest it. Meet the daily quota by dusk or the farm withers.</p>
-  <p><span class="gold">Radiance</span>: lift someone up, harvest their joy. Slower — but they <b>recover</b> and can be farmed again.</p>
-  <p><span class="viol">Blight</span>: grind someone down, drain their misery. Pays 1.6× and spikes higher — but it’s <b>permanent</b>. They become a husk, and husks spread gloom to everyone nearby.</p>
-  <p><b>Six essences.</b> What you capture depends on where you steered the feeling: mild lifts give <b style="color:#8effc1">Hope 🌿</b>, strong ones <b style="color:#ffd75e">Joy ☀️</b>; a gentle sour gives <b style="color:#6fa8ff">Sorrow 💧</b>, a hot one <b style="color:#ff6b52">Rage 🔥</b>. Push someone euphoric to the very peak for rare <b style="color:#9ef3ff">Awe ✨</b>, or to the very bottom for rare <b style="color:#b06bff">Dread 🕸️</b> — both pay 1.35×.</p>
-  <p><b>Timing is the skill.</b> An aura ring pulses faster as feeling builds. At high charge a <b>⚡ peak window</b> opens — harvest inside it for the best specimens. Too early: a weak specimen forever. Too late: the feeling vents to nothing.</p>
-  <p><b>📜 The Broker posts 3 contracts each morning</b> — deliver specific essences, land clean captures, chain combos. Payouts are instant; the hardest contracts pay in <b style="color:#9ef3ff">relics</b>, permanent powers kept across every run.</p>
-  <p><b>🩶 Mara the Gray</b> arrives on day 3 — the Broker’s other harvester. She siphons whatever you leave ripening; tap her to flare your aura and drive her off. She grows <b>bolder</b> as the run goes on: from day 6 she snipes peak windows, and from day 10 she’ll try a <b style="color:#ff8da8">deep drain</b> — stop her within 8 seconds or she husks someone outright.</p>
-  <p><b>✉️ Letters arrive each morning</b> — the Broker reacts to how you farm, the husked leave notes, and from day 5 Mara slips <b>bargains</b> under the door: tributes, joint hunts, husk trades. Every deal has a price.</p>
-  <p><b>Husks can be gleaned</b> — one last ⚱️ handful of ash and they crumble to dust, gloom and all. It always counts as Blight. When a reaper’s wells run dry, the bones are what’s left.</p>
-  <p><b>The Specimen Case</b> keeps one peak aura per person — across every run. Complete a whole social group for a permanent +5% set bonus. People have learnable <b>traits</b>, days have <b>weather</b> and <b>venue events</b>, and six venues unlock as you push each one to its bloom threshold. Survive all 14 days and the <b>🌒 Endless Dusk</b> opens — quotas rise 8% each day until you fall.</p>
+  <p>People give off <b>aura</b>, which is emotional energy. You harvest it. Meet the daily quota by dusk or the farm withers.</p>
+  <p><span class="gold">Radiance</span>: lift someone up, harvest their joy. It is slower, but they <b>recover</b> and can be farmed again.</p>
+  <p><span class="viol">Blight</span>: grind someone down, drain their misery. It pays 1.6× and spikes higher, but it is <b>permanent</b>. They become a husk, and husks spread gloom to everyone nearby.</p>
+  <p><b>Six essences.</b> What you capture depends on where you steered the feeling: mild lifts give <b style="color:#8effc1">Hope 🌿</b>, strong ones <b style="color:#ffd75e">Joy ☀️</b>; a gentle sour gives <b style="color:#6fa8ff">Sorrow 💧</b>, a hot one <b style="color:#ff6b52">Rage 🔥</b>. Push someone euphoric to the very peak for rare <b style="color:#9ef3ff">Awe ✨</b>, or to the very bottom for rare <b style="color:#b06bff">Dread 🕸️</b>, and both pay 1.35×.</p>
+  <p><b>Timing is the skill.</b> An aura ring pulses faster as feeling builds. At high charge a <b>⚡ peak window</b> opens. Harvest inside it for the best specimens. Too early: a weak specimen forever. Too late: the feeling vents to nothing.</p>
+  <p><b>📜 The Broker posts 3 contracts each morning</b>: deliver specific essences, land clean captures, chain combos. Payouts are instant; the hardest contracts pay in <b style="color:#9ef3ff">relics</b>, permanent powers kept across every run.</p>
+  <p><b>🩶 Mara the Gray</b> arrives on day 3 as the Broker’s other harvester. She siphons whatever you leave ripening; tap her to flare your aura and drive her off. She grows <b>bolder</b> as the run goes on: from day 6 she snipes peak windows, and from day 10 she’ll try a <b style="color:#ff8da8">deep drain</b>, so stop her within 8 seconds or she husks someone outright.</p>
+  <p><b>✉️ Letters arrive each morning</b>. The Broker reacts to how you farm, the husked leave notes, and from day 5 Mara slips <b>bargains</b> under the door: tributes, joint hunts, husk trades. Every deal has a price.</p>
+  <p><b>Husks can be gleaned</b> for one last ⚱️ handful of ash and they crumble to dust, gloom and all. It always counts as Blight. When a reaper’s wells run dry, the bones are what’s left.</p>
+  <p><b>The Specimen Case</b> keeps one peak aura per person, across every run. Complete a whole social group for a permanent +5% set bonus. People have learnable <b>traits</b>, days have <b>weather</b> and <b>venue events</b>, and six venues unlock as you push each one to its bloom threshold. Survive all 14 days and the <b>🌒 Endless Dusk</b> opens, and quotas rise 8% each day until you fall.</p>
   </div><button class="big" onclick="${back==='title'?'titleScreen()':'closeModal()'}">Got it</button>`, true);
   meta.seenHow = true; saveMeta();
 }
@@ -2152,7 +2152,7 @@ function confirmNew(){
 function howToThenStart(){
   showModal(`<h2>How to Farm</h2><div class="howto">
   <p>Tap a person. <span class="gold">Hype them up</span> or <span class="viol">put them down</span> to build their emotional charge, then <b>harvest</b> it as essence. Meet the quota before the day ends.</p>
-  <p><span class="gold">Radiance</span> is renewable. <span class="viol">Blight</span> pays more but husks the person permanently. Watch the ring: harvest inside the <b>⚡ peak window</b> for the finest specimens — and check the Broker’s 📜 contracts for bonus orders.</p>
+  <p><span class="gold">Radiance</span> is renewable. <span class="viol">Blight</span> pays more but husks the person permanently. Watch the ring: harvest inside the <b>⚡ peak window</b> for the finest specimens, and check the Broker’s 📜 contracts for bonus orders.</p>
   </div><button class="big" onclick="startGame(true)">Start Farming</button>`, true);
   meta.seenHow = true; saveMeta();
 }

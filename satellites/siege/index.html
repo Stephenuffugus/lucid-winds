@@ -432,7 +432,7 @@ var WAVES = [
   [['brute', 5, 14], ['healer', 2, 13], ['sapper', 2, 13], ['swarm', 2, 16]],
   [['flyer', 5, 11], ['shielded', 4, 12], ['brute', 4, 15], ['healer', 2, 13]],
   [['swarm', 3, 15], ['runner', 8, 9], ['sapper', 2, 13], ['flyer', 3, 11], ['brute', 4, 15], ['healer', 1, 13]],
-  [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 2, 20]]
+  [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 1, 20]]
 ];
 
 var DATA = {
@@ -624,6 +624,14 @@ function damageShare(dmg) {
   return out;
 }
 
+/* What a reinforced trap is worth. Deliberately WORSE than spending the same
+   scrap on a fresh trap in a fresh cell (level 3 costs three trap prices and
+   returns 2.2 traps), because the twenty eight cells have to stay the scarce
+   resource. REINFORCE is the overflow valve for a purse that has run out of
+   board, not the optimal opening. */
+function lvlMult(lvl) { return 1 + 0.6 * (lvl - 1); }
+function wallHits(lvl) { return Math.round(TRAPS.wall.hits * lvlMult(lvl)); }
+
 function makeTrap(type) {
   var def = TRAPS[type];
   var t = { type: type, cell: -1, lvl: 1, paid: def.cost };
@@ -734,7 +742,7 @@ function trapNeedsRepair(s, cell) {
   var t = s.traps[cell];
   if (!t) return false;
   if (t.type === 'spike') return t.charges < TRAPS.spike.charges;
-  if (t.type === 'wall') return t.hits < TRAPS.wall.hits * t.lvl;
+  if (t.type === 'wall') return t.hits < wallHits(t.lvl);
   if (t.type === 'snare') return !!t.used;
   return false;
 }
@@ -762,7 +770,7 @@ function reinforceTrap(s, cell) {
   s.waveStats.scrapSpent += paid;
   if (t.lvl < CONFIG.REINFORCE_MAX) t.lvl++;
   if (t.type === 'spike') t.charges = def.charges;
-  if (t.type === 'wall') t.hits = def.hits * t.lvl;
+  if (t.type === 'wall') t.hits = wallHits(t.lvl);
   if (t.type === 'snare') t.used = false;
   s.run.reinforced++;
   emit(s, 'reinforce', t.type, cell);
@@ -906,7 +914,7 @@ function enterCell(s, e, cell) {
   }
   if (e.flying && TRAPS[t.type].ground) return;
   if (t.type === 'pit') {
-    dealDamage(s, e, TRAPS.pit.dmg * t.lvl, 'pit');
+    dealDamage(s, e, Math.round(TRAPS.pit.dmg * lvlMult(t.lvl)), 'pit');
     emit(s, 'pit', cell);
   } else if (t.type === 'brazier') {
     /* the burn carries the brazier's level with it, so a reinforced brazier
@@ -921,7 +929,7 @@ function enterCell(s, e, cell) {
     emit(s, 'brazier', cell);
   } else if (t.type === 'snare' && !t.used && !e.unsnareable) {
     t.used = true;
-    e.holdT = TRAPS.snare.hold * t.lvl;
+    e.holdT = Math.round(TRAPS.snare.hold * lvlMult(t.lvl));
     s.traps[cell] = null;
     emit(s, 'snare', cell);
   }
@@ -1028,7 +1036,7 @@ function trapTick(s) {
     e = s.enemies[i];
     if (e.dead || !e.burns.length) continue;
     for (j = e.burns.length - 1; j >= 0; j--) {
-      dealDamage(s, e, TRAPS.brazier.dmg * e.burns[j].lvl, 'brazier');
+      dealDamage(s, e, Math.round(TRAPS.brazier.dmg * lvlMult(e.burns[j].lvl)), 'brazier');
       e.burns[j].t--;
       if (e.burns[j].t <= 0) e.burns.splice(j, 1);
       if (e.dead) break;
@@ -1041,7 +1049,7 @@ function trapTick(s) {
     for (i = 0; i < s.enemies.length && t.charges > 0; i++) {
       e = s.enemies[i];
       if (e.dead || e.flying || e.cell !== k) continue;
-      dealDamage(s, e, TRAPS.spike.dmg * t.lvl, 'spike');
+      dealDamage(s, e, Math.round(TRAPS.spike.dmg * lvlMult(t.lvl)), 'spike');
       t.charges--;
       emit(s, 'spike', k);
     }
@@ -1054,7 +1062,7 @@ function trapTick(s) {
     if (t.cd > 0) { t.cd--; continue; }
     best = ballistaTarget(s, k);
     if (!best) continue;
-    dealDamage(s, best, TRAPS.ballista.dmg * t.lvl, 'ballista');
+    dealDamage(s, best, Math.round(TRAPS.ballista.dmg * lvlMult(t.lvl)), 'ballista');
     t.cd = TRAPS.ballista.cd - 1;
     emit(s, 'bolt', k, best.cell);
   }
@@ -1070,6 +1078,10 @@ function ballistaSight(s, cell) {
 
 function ballistaTarget(s, cell) {
   var far = ballistaSight(s, cell), best = null, i, e;
+  /* nothing is shot standing in the mouth. A reinforced ballista line could
+     otherwise delete a body on the tick it appeared, which reads as an empty
+     lane rather than as a kill and gives the wave nothing to look at. */
+  if (far >= CONFIG.SPAWN_CELL) far = CONFIG.SPAWN_CELL - 1;
   for (i = 0; i < s.enemies.length; i++) {
     e = s.enemies[i];
     if (e.dead) continue;

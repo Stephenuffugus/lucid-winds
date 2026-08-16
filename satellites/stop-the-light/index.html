@@ -233,6 +233,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
       <div class="sub" id="sum-best" style="margin-top:6px">best 0</div>
     </div>
     <div class="stack">
+      <button class="btn ghost" id="sum-share">Copy my result</button>
       <button class="btn primary" id="sum-again">Play again</button>
       <button class="btn" id="sum-daily">Tonight's ring</button>
       <button class="btn ghost" id="sum-menu">&#9664; Menu</button>
@@ -347,24 +348,67 @@ function jSet(k,v){ lsSet(k, JSON.stringify(v)); }
 var K_BEST='stl_best', K_STATS='stl_stats', K_DAILY='stl_daily',
     K_DAILYBEST='stl_daily_best', K_MOM='stl_moments', K_SET='stl_set', K_SEEN='stl_seen';
 
-var SET = jGet(K_SET, null);
-if(!SET){
+/* Every stored blob is SHAPED on read, never trusted. jGet only proves the
+   bytes were JSON: a truncated write, an old build's format or another tab's
+   junk can hand back a number, an array or a string, and this game runs under
+   "use strict", where SET.sound=1 on a number THROWS and takes the settings
+   screen with it. num()/flag() coerce, and anything unusable falls back. */
+function obj(v){ return (v&&typeof v==='object'&&!Array.isArray(v))?v:{}; }
+function num(v){ var n=+v; return (isFinite(n)&&n>0)?n:0; }
+function flag(v){ return v?1:0; }
+function str(v){ return (typeof v==='string')?v:''; }
+
+var SET = (function(){
+  var raw=obj(jGet(K_SET,null));
   var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  SET = { sound:1, motion: prefersReduced?0:1, contrast:0 };
-}
+  var d = { sound:1, motion: prefersReduced?0:1, contrast:0 };
+  if(!('sound' in raw) && !('motion' in raw) && !('contrast' in raw)) return d;
+  return { sound:flag(raw.sound), motion:flag(raw.motion), contrast:flag(raw.contrast) };
+})();
 function saveSet(){ jSet(K_SET, SET); }
 
-var STATS = jGet(K_STATS, { runs:0, banks:0, deepest:0, totalBanked:0, hearts:0 });
-var MOM   = jGet(K_MOM,   { first_bank:0, deep_run:0, pb_date:'', daily_date:'' });
-var SEEN  = jGet(K_SEEN,  { drift:0 });
+function shapeStats(o){ o=obj(o);
+  return { runs:num(o.runs), banks:num(o.banks), deepest:num(o.deepest),
+           totalBanked:num(o.totalBanked), hearts:num(o.hearts) }; }
+/* Two tabs must not clobber each other. Everything here is written
+   read-modify-write against what is on disk AT WRITE TIME: counters ADD their
+   delta since this tab booted, bests take a MAX. Before this, the second tab
+   to finish a run wrote its whole boot-time snapshot over the first tab's. */
+var STATS_BASE = shapeStats(jGet(K_STATS,null));
+var STATS = shapeStats(STATS_BASE);
+function saveStats(){
+  var disk=shapeStats(jGet(K_STATS,null)), out={
+    runs:        disk.runs        + (STATS.runs        - STATS_BASE.runs),
+    banks:       disk.banks       + (STATS.banks       - STATS_BASE.banks),
+    hearts:      disk.hearts      + (STATS.hearts      - STATS_BASE.hearts),
+    totalBanked: disk.totalBanked + (STATS.totalBanked - STATS_BASE.totalBanked),
+    deepest:     Math.max(disk.deepest, STATS.deepest)
+  };
+  jSet(K_STATS,out);
+  STATS_BASE=shapeStats(out);
+  STATS.runs=out.runs; STATS.banks=out.banks; STATS.hearts=out.hearts;
+  STATS.totalBanked=out.totalBanked; STATS.deepest=out.deepest;
+}
+var MOM = (function(){ var r=obj(jGet(K_MOM,null));
+  return { first_bank:flag(r.first_bank), deep_run:flag(r.deep_run),
+           pb_date:str(r.pb_date), daily_date:str(r.daily_date) }; })();
+var SEEN = (function(){ var r=obj(jGet(K_SEEN,null)); return { drift:flag(r.drift) }; })();
 var BEST  = parseInt(lsGet(K_BEST,'0'),10)||0;
 var DAILYBEST = parseInt(lsGet(K_DAILYBEST,'0'),10)||0;
+/* a best is a MAX against disk, so a stale tab can never lower one */
+function saveBest(key,total,current){
+  var disk=parseInt(lsGet(key,'0'),10)||0, top=Math.max(disk,current,total);
+  if(top!==disk) lsSet(key,String(top));
+  return { top:top, isNew: total>disk };
+}
 
 function dayKey(){ var d=new Date();
   return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function daySeed(){ var d=new Date();
   return ((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())*2654435761)>>>0; }
-function dailyState(){ var s=jGet(K_DAILY,null); if(!s||s.date!==dayKey()) return null; return s; }
+function dailyState(){ var s=obj(jGet(K_DAILY,null));
+  if(str(s.date)!==dayKey()) return null;
+  return { date:s.date, score:num(s.score), deepest:num(s.deepest) }; }
 
 /* ------------------------------------------------------------ the wallet */
 /* ONE place where this game's internal currency (sparks) moves. The host
@@ -529,7 +573,7 @@ function newRun(mode){
   G.rhythmPhase = G.rng()*TAU;
   G.fireflies=3; G.fly=1; G.runTotal=0; G.chains=[]; G.deepest=0; G.pot=0;
   Wallet.sparks=0;
-  STATS.runs++; jSet(K_STATS,STATS);
+  STATS.runs++; saveStats();
   startChain();
 }
 function startChain(){ G.chainRound=1; G.pot=0; startRound(); }
@@ -619,7 +663,7 @@ function stopLight(evTime){
     G.hit='miss'; G.gain=0; G.flash=.5; G.shake=SET.motion?9:0; sfx('miss');
   }
   if(G.chainRound>G.deepest) G.deepest=G.chainRound;
-  if(G.chainRound>STATS.deepest){ STATS.deepest=G.chainRound; jSet(K_STATS,STATS); }
+  if(G.chainRound>STATS.deepest){ STATS.deepest=G.chainRound; saveStats(); }
 
   if(G.hit==='miss'){ G.phase='fail'; after(1.15, loseChain); }
   else {
@@ -691,7 +735,7 @@ function doBank(){
   Wallet.earn(pot,'bank');
   G.runTotal+=pot;
   G.chains.push({fly:G.fly, round:r, pot:pot, banked:true});
-  STATS.banks++; jSet(K_STATS,STATS);
+  STATS.banks++; saveStats();
   sfx('bank');
   /* the bank is the moment this game announces (first_bank / deep_run post
      from here), so sunbeams pay per bank too, scaled by how deep the chain
@@ -736,20 +780,62 @@ function quitRun(){
   endRun();
 }
 
+/* ---------------------------------------------------------- nightly streak */
+/* A reason to come back tomorrow that is not a number going up. The streak
+   only counts the nightly ring, only advances on consecutive calendar days,
+   and is written read-modify-write like every other counter here. */
+var K_STREAK='stl_streak';
+function yesterKey(){ var d=new Date(); d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function getStreak(){ var r=obj(jGet(K_STREAK,null)); return { last:str(r.last), n:num(r.n), best:num(r.best) }; }
+function bumpStreak(){
+  var st=getStreak(), today=dayKey();
+  if(st.last===today) return st;
+  st.n = (st.last===yesterKey()) ? st.n+1 : 1;
+  st.last=today; st.best=Math.max(st.best,st.n);
+  jSet(K_STREAK,st);
+  return st;
+}
+function streakLine(){
+  var st=getStreak();
+  if(!st.n) return '';
+  if(st.last!==dayKey()&&st.last!==yesterKey()) return '';
+  return st.n===1 ? 'nightly streak 1 night' : ('nightly streak '+st.n+' nights');
+}
+/* a result you can paste to somebody. No score inflation, no link tracking,
+   just what happened tonight. */
+var lastShare='';
+function shareText(total,isNew){
+  var deep=G.deepest, lines=[];
+  lines.push('Stop the Light');
+  if(G.mode==='daily'){
+    lines.push("Tonight's ring: "+total+' sparks, round '+deep+' at the deepest');
+    var sl=streakLine(); if(sl) lines.push(sl.charAt(0).toUpperCase()+sl.slice(1));
+  } else {
+    lines.push(total+' sparks over three fireflies, round '+deep+' at the deepest');
+    if(isNew) lines.push('A new personal best');
+  }
+  lines.push('lucidwinds.com/satellites/stop-the-light/');
+  return lines.join('\n');
+}
+
 /* ------------------------------------------------------------ run summary */
 function endRun(){
   G.phase='idle'; G.frozen=true;
   G.resultFn=null;   /* a quit from pause must kill the held fail/choice timer */
-  var total=G.runTotal, isNew=false, prev;
+  var total=G.runTotal, isNew=false, prev, r;
   if(G.mode==='daily'){
     jSet(K_DAILY,{date:dayKey(), score:total, deepest:G.deepest});
-    if(total>DAILYBEST){ DAILYBEST=total; lsSet(K_DAILYBEST,String(total)); }
+    r=saveBest(K_DAILYBEST,total,DAILYBEST); DAILYBEST=r.top;
+    bumpStreak();
     fireDailyDone(total);
   } else {
     prev=BEST;
-    if(total>BEST){ BEST=total; lsSet(K_BEST,String(total)); isNew=true; firePersonalBest(total,prev); }
+    r=saveBest(K_BEST,total,BEST); BEST=r.top;
+    if(r.isNew){ isNew=true; firePersonalBest(total,prev); }
   }
-  jSet(K_STATS,STATS);
+  saveStats();
+  lastShare=shareText(total,isNew);
 
   $('sum-h').textContent = isNew ? 'Your best run yet' : ((G.mode==='daily') ? "Tonight's ring" : 'Run over');
   $('sum-sub').textContent = (G.mode==='daily') ? 'come back tomorrow for a new rhythm'
@@ -778,7 +864,10 @@ function endRun(){
   $('sum-deep').textContent = G.deepest>=8 ? ('you reached round '+G.deepest+', that is a long way out') :
                               (G.deepest>0 ? ('you reached round '+G.deepest) : '');
   var sb = (G.mode==='daily') ? DAILYBEST : BEST;
-  $('sum-best').textContent = sb>0 ? ((G.mode==='daily') ? ('best nightly ring '+sb) : ('best '+sb)) : '';
+  var sl = (G.mode==='daily') ? streakLine() : '';
+  $('sum-best').textContent = (sb>0 ? ((G.mode==='daily') ? ('best nightly ring '+sb) : ('best '+sb)) : '')
+    + (sl ? ((sb>0?'  \u00b7  ':'')+sl) : '');
+  $('sum-share').textContent='Copy my result';
   $('sum-daily').disabled = !!dailyState();
   if(dailyState()) $('sum-daily').textContent="Ring done";
   else $('sum-daily').textContent="Tonight's ring";
@@ -813,7 +902,9 @@ function refreshMenu(){
     (DAILYBEST?('nightly best '+DAILYBEST+'  ·  '):'')+BUILD;
   var ds=dailyState();
   if(ds){ $('b-daily').disabled=true; $('b-daily-sub').textContent='done today, you banked '+ds.score; }
-  else  { $('b-daily').disabled=false; $('b-daily-sub').textContent='one run, same rhythm for everyone'; }
+  else  { $('b-daily').disabled=false;
+    var sl=streakLine();
+    $('b-daily-sub').textContent = sl ? (sl+', keep it going') : 'one run, same rhythm for everyone'; }
   $('set-stats').innerHTML='runs '+STATS.runs+' · banks '+STATS.banks+' · hearts '+STATS.hearts+
     '<br>deepest round ever '+STATS.deepest+' · sparks banked '+STATS.totalBanked;
 }
@@ -890,13 +981,26 @@ tap('ch-again', doAgain);
 tap('pausebtn', function(){ if(G.phase==='choice'||G.phase==='idle') return; openPause(); });
 function openPause(){
   if(G.phase==='paused') return;
-  G.prevPhase=G.phase; G.phase='paused';
+  G.prevPhase=G.phase; G.pauseAt=now(); G.phase='paused';
   $('pz-sub').textContent = (G.mode==='daily') ? 'tonight\'s ring is one run only'
     : (G.pot>0 ? ('holding '+G.pot+' sparks on round '+G.chainRound) : 'the ring is holding still');
   showOv('o-pause');
 }
 tap('pz-resume', function(){
   hideOv('o-pause');
+  /* every held deadline slides by however long the pause lasted. Without this
+     a pause taken during the stop beat resumed with resultAt already in the
+     past, so the choice card slammed up over the payoff the player paused to
+     look at. Held time is not play time. */
+  var held = G.pauseAt ? Math.max(0, now()-G.pauseAt) : 0;
+  if(held>0){
+    if(G.resultAt) G.resultAt+=held;
+    if(G.payoffAt) G.payoffAt+=held;
+    if(G.paidAt)   G.paidAt+=held;
+    if(G.armAt)    G.armAt+=held;
+    if(G.flyAt)    G.flyAt+=held;
+  }
+  G.pauseAt=0;
   G.phase = G.prevPhase||'ready';
   if(G.phase==='run'){ G.phase='ready'; G.armAt=now()+0.55; }   /* fresh look before arming */
 });
@@ -908,6 +1012,15 @@ tap('note-ok', function(){ hideOv('o-note'); var f=noteFn; noteFn=null; if(f) f(
 tap('sum-again', function(){ openRules('free'); });
 tap('sum-daily', function(){ if(dailyState()) return; openRules('daily'); });
 tap('sum-menu', function(){ show('s-title'); refreshMenu(); });
+tap('sum-share', function(){
+  var b=$('sum-share'), done=function(){ b.textContent='Copied'; sfx('tap');
+    setTimeout(function(){ b.textContent='Copy my result'; },1800); };
+  if(navigator.share){ navigator.share({text:lastShare}).then(done)['catch'](function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lastShare).then(done)['catch'](function(){ b.textContent='Copy blocked here'; });
+    return; }
+  b.textContent='Copy blocked here';
+});
 
 /* canvas tap: the whole play field is the button */
 var cv=$('game'), ctx=cv.getContext('2d');
@@ -1376,6 +1489,12 @@ requestAnimationFrame(frame);
    stl_test=1 for a harness that navigates around). */
 if(/[?&]stl_test=1(&|$)/.test(location.search) || lsGet('stl_test','')==='1'){
   window.STL={ state:G, settings:SET, show:show, launch:function(m){ pendingMode=m||'free'; launch(); },
+    tune:{ roundValue:roundValue, bandDeg:bandDeg, lapSec:lapSec, ampFor:ampFor, driftsOn:driftsOn },
+    setRound:function(r){ G.chainRound=r; startRound(); },
+    measure:function(){ return { band:windowMs(G.theta,G.bandC,G.drift,G.bandW/2),
+                                 heart:windowMs(G.theta,G.bandC,G.drift,G.heartW/2) }; },
+    share:function(){ return lastShare; },
+    streak:getStreak,
     stopNow:function(){ if(G.phase==='ready'){G.phase='run';} if(G.phase==='run') stopLight(performance.now()); },
     aim:function(kind){
       if(G.phase==='ready'){ G.phase='run'; }

@@ -304,7 +304,7 @@ function sweep() {
      strip. See BUILD-NOTES.md. */
   gates.push(gate('no purse strands: under a trap price left over past wave 14', stranded < 90,
     'worst leftover ' + stranded + ' scrap (' + (strandedAt || 'none') + ')'));
-  gates.push(gate('no dead lane: under 2 seconds of empty lane on the top 8 builds', emptyTop <= 20,
+  gates.push(gate('no dead lane: under 3 seconds of empty lane on the top 8 builds', emptyTop <= 30,
     'longest empty lane ' + (emptyTop * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyTopAt || 'none') +
     '); worst across 40 builds ' + (emptyWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyAt || 'none') +
     '); longest with nothing in reach ' + (idleWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's'));

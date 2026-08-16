@@ -525,17 +525,17 @@
 </div>
 
 <script src="https://lucidwinds.com/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"create-a-critter"}).catch(function(){});</script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"create-a-critter"}).catch(function(){ /*ok: no sunbeam SDK means no credit, never a broken app */ });</script>
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
   try{ var k='sw_sb_'+((location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}).pop())||'game');
-    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){ /*ok: a damaged daily counter just starts today over */ }
     var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
     n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
     s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
-  }catch(e){}
-  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+  }catch(e){ /*ok: no storage means the daily cap cannot be tracked; play is unaffected */ }
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){ /*ok: earning is best effort and must never interrupt play */ });
 };
 </script>
 <script>
@@ -545,12 +545,12 @@ window._sbCapEarn=function(n,tag){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search)||framed;
   window.SWS_EMBED=SWS_EMBED; window.SWS_FRAMED=framed;
   window.SWS_EXIT=function(){
-    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){ /*ok: the host frame is gone or blocked; nothing the player can act on */ } return; }
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
     else{ location.replace('https://lucidwinds.com/portal/'); }
   };
-  if(framed){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
-    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  if(framed){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){ /*ok: same, the app runs standalone regardless */ }
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){ /*ok: same */ } });
   }
 })();
 </script>
@@ -652,8 +652,8 @@ function ac(){
   if(!AC){ try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
     masterG=AC.createGain(); masterG.gain.value=SET.sound?1:0; masterG.connect(AC.destination);
-  }catch(e){} }
-  if(AC&&AC.state==='suspended'){ try{AC.resume();}catch(e){} }
+  }catch(e){ /*ok: no WebAudio on this device means a silent app, not a broken one */ } }
+  if(AC&&AC.state==='suspended'){ try{AC.resume();}catch(e){ /*ok: audio stays suspended until the next tap */ } }
   return AC;
 }
 function beep(freq,dur,type,vol,when){
@@ -1141,7 +1141,7 @@ function zoomAt(cx,cy,f){
 }
 function clearToolSel(){
   ['toolErase','toolFill','toolRainbow'].forEach(function(id){ $(id).classList.remove('sel'); });
-  document.querySelectorAll('[data-group],[data-tex]').forEach(function(b){ b.classList.remove('sel'); });
+  document.querySelectorAll('[data-group]').forEach(function(b){ b.classList.remove('sel'); });
   closeFly();
 }
 var flyOpenGroup=null;
@@ -1402,16 +1402,16 @@ function clearPaper(){ pctx.fillStyle='#ffffff'; pctx.fillRect(0,0,PAPER,PAPER);
 function snap(){ return { img:pctx.getImageData(0,0,PAPER,PAPER), feats:FEATS.slice() }; }
 function pushUndo(){
   try{ undoStack.push(snap()); if(undoStack.length>14) undoStack.shift();
-    redoStack.length=0; }catch(e){}
+    redoStack.length=0; }catch(e){ /*ok: a snapshot that cannot be taken costs one undo step, nothing else */ }
 }
 function doUndo(){
   var u=undoStack.pop();
-  if(u){ try{ redoStack.push(snap()); }catch(e){}
+  if(u){ try{ redoStack.push(snap()); }catch(e){ /*ok: one fewer redo step */ }
     pctx.putImageData(u.img,0,0); FEATS=u.feats; SFX.tap(); } else SFX.oops();
 }
 function doRedo(){
   var u=redoStack.pop();
-  if(u){ try{ undoStack.push(snap()); }catch(e){}
+  if(u){ try{ undoStack.push(snap()); }catch(e){ /*ok: one fewer undo step */ }
     pctx.putImageData(u.img,0,0); FEATS=u.feats; SFX.tap(); } else SFX.oops();
 }
 clearPaper();
@@ -1667,7 +1667,7 @@ function vpPoint(e){ var r=vp.getBoundingClientRect(); return {x:e.clientX-r.lef
 vp.addEventListener('pointerdown',function(e){
   e.preventDefault(); ac();
   ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
-  try{ vp.setPointerCapture(e.pointerId); }catch(err){}
+  try{ vp.setPointerCapture(e.pointerId); }catch(err){ /*ok: pointer capture is an optimisation; the control still works without it */ }
   if(ptrCount()===2){
     if(stroking){ doUndoSilent(); stroking=false; last=null; }
     var ks=Object.keys(ptrs), a=ptrs[ks[0]], b2=ptrs[ks[1]];
@@ -1833,9 +1833,9 @@ function initStageInner(){
   stage.addEventListener('pointerdown',function(e){
     if(toss.on){ flick={x:e.clientX,y:e.clientY,t:performance.now()}; return; }
     if(parade.on) return;
-    if(berry.on){ berryAim(e); try{ stage.setPointerCapture(e.pointerId); }catch(err){} return; }
+    if(berry.on){ berryAim(e); try{ stage.setPointerCapture(e.pointerId); }catch(err){ /*ok: pointer capture is an optimisation; the control still works without it */ } return; }
     orbit.dragging=true; orbit.lx=e.clientX; orbit.ly=e.clientY; orbit.moved=0;
-    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){ /*ok: pointer capture is an optimisation; the control still works without it */ }
   });
   stage.addEventListener('pointermove',function(e){
     if(toss.on||parade.on) return;
@@ -3106,7 +3106,7 @@ function bringToLife(){
   },60);
 }
 function momentMsg(name){
-  if(window.SWS_FRAMED){ try{ parent.postMessage({sws:'earn',moment:name,detail:{}},'*'); }catch(e){} }
+  if(window.SWS_FRAMED){ try{ parent.postMessage({sws:'earn',moment:name,detail:{}},'*'); }catch(e){ /*ok: the moment is a portal nicety, not part of the game */ } }
 }
 function wiggle(el){
   el.style.transition='transform .09s'; var n=0;
@@ -3667,7 +3667,7 @@ function drawStitchLines(){
     if(pendingLimb||stitchLimbs.length>=6) return;
     e.preventDefault();
     var p2=pt(e); stitchDrag={ax:p2.x,ay:p2.y,tx:p2.x,ty:p2.y};
-    try{ img.setPointerCapture(e.pointerId); }catch(err){}
+    try{ img.setPointerCapture(e.pointerId); }catch(err){ /*ok: pointer capture is an optimisation; the control still works without it */ }
   });
   img.addEventListener('pointermove',function(e){
     if(!stitchDrag) return;

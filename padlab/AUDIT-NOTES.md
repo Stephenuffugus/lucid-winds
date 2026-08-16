@@ -1,12 +1,12 @@
 # PadLab audit, 2026-08-16
 
 Audit and deepening pass over the whole app, with the weight on the Marble tab
-that landed the same night. No browser was available in this lane, so nothing
-here is a LOOKING report: every visual claim below is reasoned from source and
-is marked as such. Someone still has to open the tab on a phone.
+that landed the same night. No browser was available in this lane, so sections 1
+to 3 are reasoned from source. **Section 6 is the LOOKING pass** the coordinator
+then ran on the real app at 390x844 and 1280x800, and what it found.
 
-`node padlab/check.mjs` is the gate. Thirteen checks, each one watched failing
-on purpose before it was kept.
+`node padlab/check.mjs` is the gate. Fifteen checks, each one watched failing on
+purpose before it was kept.
 
 ---
 
@@ -178,12 +178,12 @@ caught.
 
 ## 5. What still worries me
 
-**Nobody has looked at this.** Thirteen green checks and not one of them opens
-its eyes. The stage height fix, the Fit button, the ghost heights, the new
-Wood and Bell marbles on the plate and the label spacing are all reasoned from
-source. The last time twelve gates went green on this fleet the floor was see
-through. Open the tab at 375 by 667, then again at desktop width, before
-believing any of it.
+**The Marble tab still has not been looked at.** The LOOKING pass in section 6
+covered boot, the header and the transport at both widths. The stage height fix,
+the Fit button, the ghost heights, the Wood and Bell marbles on the plate and
+the shelf label spacing are all still reasoned from source and unseen. The last
+time twelve gates went green on this fleet the floor was see through. Open the
+Marble tab at 375 by 667, then at desktop width, before believing any of it.
 
 **Bell has a 1.5 second tail on the instrument bus.** Eight bells on the 1/16
 shelf with the reverb up will smear. The per tick guard stops the audio thread
@@ -212,3 +212,73 @@ short of letting the zoom go further out.
 
 **Pad bank B is still promised in the MPK sheet copy** ("next on the build
 list") and is still not built.
+
+---
+
+## 6. The LOOKING pass, and what it found
+
+Run by the coordinator on the real app at 390x844 and 1280x800. Boot was clean
+at both widths. The start screen, the four tabs, the genre grid with its BPMs,
+the pattern slots and swing all read well. Two findings, both in the chrome
+above the tabs, both now fixed.
+
+### 6.1 The beat subtitle truncated to "pick a gro..."
+
+The transport is 244px of fixed furniture at 390px wide (two 52px buttons, a
+46px meter, a 94px tempo box, gaps and padding) and the beat name got the 84px
+left over. The subtitle is `white-space:nowrap` with an ellipsis, so it cut.
+
+The important part is the coordinator's note: **size the slot to the longest
+string it can ever hold, not the one that happens to be there at boot.** Five
+strings land in `#nbSub`, and the placeholder was not the worst of them:
+
+| string | chars |
+|---|---|
+| `142 BPM · tap keys or pads to jam` | 33 |
+| `pick a groove to jam over` | 25 |
+| `142 BPM · jam on` | 16 |
+| `● REC 10:05` | 11 |
+| `paused` | 6 |
+
+Fixed from both ends. The furniture gives ground below 430px: the meter drops
+34px, the tempo slider to 56px in a tighter box, which returns 34px to the name.
+And every writer was shortened so the longest line is now 11 characters: the
+subtitle's job is the tempo, and the nudge to go and play is the tour's job.
+`142 BPM · jam on` was tried first and cleared 390px by only 14px, which would
+have truncated again on a 360px Galaxy, so it went too.
+
+Measured headroom, at the narrow-width sizes: 360px leaves 17px spare, 375px
+32px, 390px 47px. The ellipsis stays as a safety net rather than a design.
+
+### 6.2 Five unlabelled glyphs in the header
+
+Dice, a glowing dot, sliders, a download arrow and a gear that reads as a sun at
+that size. All five had a `title`, which does nothing on a touch screen, and
+none had an `aria-label`. The only way to learn any of them was to press it.
+
+Every one now carries a word under the icon in 8px mono: DICE, MIDI, FX, ADD,
+SETUP, plus a real `aria-label` on each. The label lives inside the button and
+the icon shrank from 22 to 20px, so the button grew to 48 by 52 and the touch
+target is still at least 48 in both directions. The MIDI pill takes the same
+shape as the buttons once its device name is dropped at narrow width, so it
+reads MIDI instead of being a bare dot; the breakpoint that hides the name moved
+from 390 to 430 so more phones get the label rather than the dot.
+
+It was tempting to give the pill `role="button"` while renaming it. That would
+have been a lie in two directions: no keyboard handler behind the role, and a
+focusable div swallows the Space bar that the document handler uses for play and
+stop. It keeps its `aria-label` and stays tap only, which is what it actually is.
+
+### 6.3 Two new gate checks, so neither can come back quietly
+
+- **every header control carries a visible label and an aria-label**, which also
+  fails if the pill ever claims a role it cannot honour.
+- **the beat name slot fits its longest string on a 360px phone**: it scrapes
+  every string any writer puts into `#nbSub`, reconstructs the transport's width
+  budget from the narrow-width CSS rather than from a number typed here, and
+  fails if the longest one does not fit. It is set at 360 rather than the 390
+  that was shot, so the check is harder than the photograph.
+
+Both were watched failing first, and the second one caught a bug in its own scan
+along the way: it was prefixing the interpolated tempo onto the wrong half of a
+ternary. The scan was fixed rather than the threshold loosened.

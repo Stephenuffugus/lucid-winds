@@ -161,9 +161,9 @@ if (H) {
   if (STL) {
     const G = STL.state;
     /* --- tuning tables --- */
-    const rv = vm.runInContext('[1,2,3,4,5,6,7,8,9,10,11,12].map(roundValue)', H.ctx);
+    const rv = [1,2,3,4,5,6,7,8,9,10,11,12].map(STL.tune.roundValue);
     ok('round values climb every round', rv.every((v, i) => i === 0 || v > rv[i - 1]), rv.join(','));
-    const bd = vm.runInContext('[1,2,3,4,5,6,7,8,9,10,15,20].map(bandDeg)', H.ctx);
+    const bd = [1,2,3,4,5,6,7,8,9,10,15,20].map(STL.tune.bandDeg);
     ok('the band narrows overall', bd[9] < bd[0] && bd[11] < bd[9], bd.join(','));
     ok('round 6 is a real breather (wider band than round 5)', bd[5] > bd[4], bd[4] + ' -> ' + bd[5]);
     ok('the band never shrinks below the floor', Math.min.apply(null, bd) >= 13, bd.join(','));
@@ -173,10 +173,8 @@ if (H) {
     for (let r = 1; r <= 21; r++) {
       STL.launch('free');
       H.pump(0.1);
-      G.chainRound = r;
-      vm.runInContext('startRound()', H.ctx);
-      const b = vm.runInContext('windowMs(G.theta, G.bandC, G.drift, G.bandW/2)', H.ctx);
-      const h = vm.runInContext('windowMs(G.theta, G.bandC, G.drift, G.heartW/2)', H.ctx);
+      STL.setRound(r);
+      const m = STL.measure(), b = m.band, h = m.heart;
       if (b < worstB) { worstB = b; worstR = r; }
       if (h < worstH) worstH = h;
     }
@@ -188,14 +186,14 @@ if (H) {
     STL.launch('free'); H.pump(0.8);
     ok('a launched run is on the play screen and running', G.phase === 'run' || G.phase === 'ready', 'phase=' + G.phase);
     STL.aim('heart');
-    ok('a heart pays triple the round value', G.pot === vm.runInContext('roundValue(1)', H.ctx) * 3, 'pot=' + G.pot);
+    ok('a heart pays triple the round value', G.pot === STL.tune.roundValue(1) * 3, 'pot=' + G.pot);
     H.pump(2.0);
     ok('the choice opens after the stop beat', G.phase === 'choice', 'phase=' + G.phase);
     const potWas = G.pot;
     H.click('ch-again'); H.pump(0.8);
     ok('go again starts the next round with the pot intact', G.chainRound === 2 && G.pot === potWas, 'round=' + G.chainRound + ' pot=' + G.pot);
     STL.aim('band'); H.pump(2.0);
-    ok('a band hit pays the round value', G.pot === potWas + vm.runInContext('roundValue(2)', H.ctx), 'pot=' + G.pot);
+    ok('a band hit pays the round value', G.pot === potWas + STL.tune.roundValue(2), 'pot=' + G.pot);
     const banked = G.pot;
     H.click('ch-bank'); H.pump(0.2);
     ok('banking moves the pot into the run total', G.runTotal === banked, 'runTotal=' + G.runTotal);
@@ -267,6 +265,34 @@ if (H) {
     ok('a round still plays after a corrupt save', !played, played);
     ok('the corrupt stats blob is replaced by a sane one', (JSON.parse(store.stl_stats || 'null') || {}).banks >= 1, store.stl_stats);
   }
+
+  /* the nightly ring: streak and share text */
+  group('nightly ring');
+  const D = makeCtx({ storage: { stl_test: '1' } });
+  delete store.stl_streak; delete store.stl_daily; delete store.stl_moments;
+  D.ctx.STL.launch('daily'); D.pump(0.8);
+  D.ctx.STL.aim('band'); D.pump(2.0); D.click('ch-bank'); D.pump(0.2);
+  D.ctx.STL.state.fireflies = 1; D.pump(0.8); D.ctx.STL.aim('miss'); D.pump(2.0);
+  ok('the nightly ring locks after one run', !!store.stl_daily, store.stl_daily);
+  ok('a first nightly ring starts a streak of one', D.ctx.STL.streak().n === 1, JSON.stringify(D.ctx.STL.streak()));
+  const sh = D.ctx.STL.share();
+  ok('the run produces a shareable result', /Stop the Light/.test(sh) && /sparks/.test(sh), JSON.stringify(sh));
+  ok('the shareable result carries no dash characters', !DASHES.test(sh), JSON.stringify(sh));
+  ok('the nightly earn moment fires once per day', (JSON.parse(store.stl_moments || '{}').daily_date || '') !== '');
+  /* yesterday's streak continues, an older one restarts */
+  const yk = (function () { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
+  delete store.stl_daily;
+  store.stl_streak = JSON.stringify({ last: yk, n: 4, best: 4 });
+  const D2 = makeCtx({ storage: { stl_test: '1' } });
+  D2.ctx.STL.launch('daily'); D2.pump(0.8); D2.ctx.STL.aim('miss'); D2.pump(2.0);
+  D2.ctx.STL.state.fireflies = 1; D2.pump(0.8); D2.ctx.STL.aim('miss'); D2.pump(2.0);
+  ok('a ring played the next night extends the streak', D2.ctx.STL.streak().n === 5, JSON.stringify(D2.ctx.STL.streak()));
+  delete store.stl_daily;
+  store.stl_streak = JSON.stringify({ last: '2020-01-01', n: 9, best: 9 });
+  const D3 = makeCtx({ storage: { stl_test: '1' } });
+  D3.ctx.STL.launch('daily'); D3.pump(0.8); D3.ctx.STL.aim('miss'); D3.pump(2.0);
+  D3.ctx.STL.state.fireflies = 1; D3.pump(0.8); D3.ctx.STL.aim('miss'); D3.pump(2.0);
+  ok('a broken streak restarts at one but keeps its best', D3.ctx.STL.streak().n === 1 && D3.ctx.STL.streak().best === 9, JSON.stringify(D3.ctx.STL.streak()));
 
   /* the pause must not eat the payoff beat */
   group('pause');

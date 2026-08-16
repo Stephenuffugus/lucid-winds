@@ -137,7 +137,7 @@ function pad(s, n, right) {
 
 function sweepAgent(agent, runs, baseSeed, cap, opts) {
   opts = opts || {};
-  const ticks = [], scores = [], circuits = [], overloads = [], loads = [];
+  const ticks = [], scores = [], circuits = [], overloads = [], loads = [], creeps = [];
   const causes = { wall: 0, live: 0, clock: 0, cap: 0 };
   let peakLoad = 0, anyOverload = 0, bonusTotal = 0, scoreTotal = 0;
   for (let i = 0; i < runs; i++) {
@@ -156,6 +156,7 @@ function sweepAgent(agent, runs, baseSeed, cap, opts) {
     scores.push(st.score);
     circuits.push(st.circuitsCompleted);
     overloads.push(st.overloads);
+    creeps.push(st.creeps);
     if (st.overloads > 0) anyOverload++;
     bonusTotal += st.overloadBonus || 0;
     scoreTotal += st.score;
@@ -163,7 +164,7 @@ function sweepAgent(agent, runs, baseSeed, cap, opts) {
   }
   return {
     ticks: stats(ticks), scores: stats(scores), circuits: stats(circuits),
-    overloads: stats(overloads), loads: stats(loads), causes, peakLoad,
+    overloads: stats(overloads), loads: stats(loads), creeps: stats(creeps), causes, peakLoad,
     anyOverload, runs, bonusShare: scoreTotal ? bonusTotal / scoreTotal : 0
   };
 }
@@ -203,6 +204,7 @@ function cmdSweep(runs) {
     printRow('circuits', r.circuits);
     printRow('overloads', r.overloads);
     printRow('peak load', r.loads);
+    printRow('creeps', r.creeps);
     console.log('  deaths: wall ' + r.causes.wall + '   live wire ' + r.causes.live + '   clock ' + r.causes.clock +
       '   hit tick cap ' + r.causes.cap + '   peak energized ' + r.peakLoad + '/' + G.CONFIG.CELLS);
     console.log('  runs that tripped the breaker: ' + r.anyOverload + '/' + r.runs +
@@ -356,9 +358,11 @@ function cmdBands() {
 function cmdWatch(seed) {
   const every = parseInt(args.every || '40', 10);
   const agentName = String(args.agent || 'greedy');
-  const agent = agentName === 'random' ? G.agentRandom : (agentName === 'randomsafe' ? G.agentRandomSafe : G.agentGreedy);
+  const agent = agentName === 'random' ? G.agentRandom :
+    (agentName === 'randomsafe' ? G.agentRandomSafe :
+      (agentName === 'filler' ? G.agentFiller : G.agentGreedy));
   const cap = parseInt(args.cap || '4000', 10);
-  const st = G.newGame(seed >>> 0);
+  const st = G.newGame(seed >>> 0, args.mode ? { mode: String(args.mode) } : undefined);
   const rng = G.makeRNG((seed ^ 0x9e3779b9) >>> 0);
   const notes = [];
   console.log('WIREWORM watch   seed=' + seed + '  agent=' + agentName + '  frame every ' + every + ' ticks');
@@ -381,6 +385,8 @@ function cmdWatch(seed) {
       if (e.t === 'completed') notes.push('t' + st.tick + '  circuit ' + G.COLORS[e.ci].name + ' len ' + e.len + ' combo x' + e.combo + ' for ' + e.score);
       if (e.t === 'overload') notes.push('t' + st.tick + '  OVERLOAD cleared ' + e.cells + ' cells for ' + e.bonus);
       if (e.t === 'discharged') notes.push('t' + st.tick + '  discharge removed ' + e.cells + ' cells');
+      if (e.t === 'creep') notes.push('t' + st.tick + '  creep lit cell ' + e.cell + ' (load ' + st.energized + ')');
+      if (e.t === 'combodrop') notes.push('t' + st.tick + '  combo dropped');
       if (e.t === 'died') notes.push('t' + st.tick + '  died: ' + e.cause);
     });
     n++;
@@ -404,5 +410,6 @@ else {
   console.log('WIREWORM sim runner');
   console.log('  node sim.js --test');
   console.log('  node sim.js --runs=20000 [--cap=8000] [--seed=1]');
-  console.log('  node sim.js --watch=1234 [--every=40] [--agent=greedy|random]');
+  console.log('  node sim.js --watch=1234 [--every=40] [--agent=greedy|randomsafe|random|filler] [--mode=daily]');
+  console.log('  node sim.js --bands [--runs=1500]');
 }

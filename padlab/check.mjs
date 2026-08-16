@@ -300,7 +300,7 @@ check("every header control carries a visible label and an aria-label", (html) =
 /* Found by looking, 2026-08-16: the subtitle read "pick a gro..." at 390px. The
    fix is only real if it holds for the LONGEST string the slot can ever show,
    not the one that happens to be there at boot. */
-check("the beat name slot fits its longest string at phone width", (html) => {
+check("the beat name slot fits its longest string on a 360px phone", (html) => {
   const js = stripComments(scriptOf(html));
   const errs = [];
   // every string that can land in nbSub, from the markup and from every writer
@@ -309,9 +309,12 @@ check("the beat name slot fits its longest string at phone width", (html) => {
   if (dflt) strings.push(dflt[1]);
   for (const line of js.split("\n")) {
     if (!line.includes('getElementById("nbSub").textContent')) continue;
-    for (const m of line.matchAll(/"([^"]*)"/g)) if (m[1] !== "nbSub") strings.push(m[1]);
-    // tempo and bpm interpolate as up to three digits
-    if (/tempo\+|\.bpm\+/.test(line)) strings[strings.length - 1] = "142" + strings[strings.length - 1];
+    for (const m of line.matchAll(/"([^"]*)"/g)) {
+      if (m[1] === "nbSub") continue;
+      /* a literal that opens with a space is the tail of a concatenation, so it
+         arrives with a number in front of it; tempo and bpm reach three digits */
+      strings.push(/^ /.test(m[1]) ? "142" + m[1] : m[1]);
+    }
     if (/padStart/.test(line)) strings.push("* REC 10:05");
   }
   if (strings.length < 4) errs.push(`only found ${strings.length} nbSub strings; the scan has drifted from the code`);
@@ -324,13 +327,14 @@ check("the beat name slot fits its longest string at phone width", (html) => {
   const meterW = +(narrow.match(/\.meter\{width:(\d+)px/) || [, 46])[1];
   const tempoIn = +(narrow.match(/\.tempo-box input\{width:(\d+)px/) || [, 74])[1];
   const tempoPad = +(narrow.match(/\.tempo-box\{[^}]*padding:5px (\d+)px/) || [, 10])[1];
-  const slot = 390 - 26 /* transport padding */ - 36 /* four gaps */ - 104 /* play + rec */
+  const W = 360;   // Galaxy S8 and friends, narrower than the 390 this was shot at
+  const slot = W - 26 /* transport padding */ - 36 /* four gaps */ - 104 /* play + rec */
              - meterW - (tempoIn + tempoPad * 2 + 2 /* borders */);
   const longest = strings.reduce((a, b) => (b.length > a.length ? b : a), "");
   const px = longest.length * (10 * 0.6 + 0.5);
-  if (px > slot) errs.push(`"${longest}" needs about ${Math.round(px)}px and the slot is ${slot}px at 390 wide, so it truncates`);
+  if (px > slot) errs.push(`"${longest}" needs about ${Math.round(px)}px and the slot is ${slot}px at ${W} wide, so it truncates`);
   return errs;
-}, (html) => html.replace('.textContent=tempo+" BPM · jam on";',
+}, (html) => html.replace('.textContent=tempo+" BPM";',
   '.textContent=tempo+" BPM · tap keys or pads to jam";'));
 
 /* ---------- 15. the plate keeps time, at every tempo ---------- */
