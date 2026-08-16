@@ -329,8 +329,13 @@
   #gsearch::placeholder{color:rgba(160,175,160,0.55)}
   .tabs.searching{opacity:0.35;pointer-events:none}
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 4px}
+  /* ⛔ 2026-08-16: every one of these measured 29px tall at 375x667, so the
+     arcade's PRIMARY NAVIGATION had been under the studio's own 48px touch
+     minimum since it shipped. The pill still looks the same size; the target
+     around it is now thumb sized. */
   .tabs button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
-               border-radius:20px;padding:6px 14px;font-size:13px}
+               border-radius:20px;padding:6px 14px;font-size:13px;
+               min-height:48px;display:inline-flex;align-items:center;font-family:inherit}
   .tabs button.on{background:var(--leaf);color:#08130c;border-color:var(--leaf);font-weight:600}
   /* Favorites heart — 48px touch target, state carried by SHAPE (outline vs
      filled), not color alone. Sits opposite the badge in the .shot corner. */
@@ -701,8 +706,12 @@
   </section>
 
   <!-- FREE APPS (2026-08-08, Stephen): the studio makes more than games —
-       a shelf so players can find the helpful free apps too. -->
-  <section class="reveal" style="margin-top:26px;">
+       a shelf so players can find the helpful free apps too.
+       ⛔ 2026-08-16 (Stephen): "there's a couple mentioned at the very bottom"
+       — it was unreachable. Nothing in the navigation pointed at it, so the
+       only way to find the studio's apps was to scroll past 180 game cards.
+       There is an Apps tab in the category bar now that jumps straight here. -->
+  <section class="reveal" id="free-apps" style="margin-top:26px;scroll-margin-top:16px">
     <h2 class="arcade-h">Free Apps <span>more from the studio</span></h2>
     <div class="apps-row">
       <a class="app-card" href="/padlab/">
@@ -1090,10 +1099,15 @@ var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",petalmatch:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
+/* ⛔ 2026-08-16 (Stephen): "we're missing an actual connection to the SWS apps,
+   there's a couple mentioned at the very bottom". The Free Apps shelf existed
+   and nothing in the navigation pointed at it, so finding the studio's own apps
+   meant scrolling past every game card. "apps" is not a game category: the tab
+   handler treats it as a jump to that shelf. */
 var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],
   ["action","Action"],["puzzle","Puzzle"],["card","Card & Board"],
   ["creative","Creative"],["word","Word"],["math","Numbers"],
-  ["party","Party"],["indev","In Development"]];
+  ["party","Party"],["apps","🧰 Apps"],["indev","In Development"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
 // 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
@@ -1743,8 +1757,17 @@ document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
 }).join('');
 document.getElementById('tabs').addEventListener('click',function(e){
   if(e.target.tagName!=='BUTTON')return;
+  var c = e.target.getAttribute('data-c');
+  /* Apps is a destination, not a filter. Jump to the Free Apps shelf and leave
+     the grid's own tab selected, so the player does not come back to an empty
+     grid wondering where the games went. */
+  if(c === 'apps'){
+    var sec = document.getElementById('free-apps');
+    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
   [].forEach.call(this.children,function(b){b.classList.remove('on');});
-  e.target.classList.add('on'); renderGarden(e.target.getAttribute('data-c'));
+  e.target.classList.add('on'); renderGarden(c);
 });
 renderShelves(); renderGarden("all");
 
