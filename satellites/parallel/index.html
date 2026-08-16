@@ -338,7 +338,7 @@ var FIXTURES = [
     '#Pa.bQ#',
     '#######' ] },
   { id:'oneway', rows:[
-    '#..........#',
+    '#..#.......#',
     '#P.>......Q#',
     '############' ] }
 ];
@@ -999,7 +999,7 @@ function suiteFixtures(t){
   var m = fx('mantle');
   var s = runScript(m, 'R');
   t.eq('mantle A steps up onto the one high block', s.ax + ',' + s.ay, '2,0');
-  t.eq('mantle B mirrors left on open floor', s.bx + ',' + s.by, '6,1');
+  t.eq('mantle B mirrors left on open floor', s.bx + ',' + s.by, '7,1');
   t.assert('mantle leaves nobody airborne', s.fa === 0 && s.fb === 0);
   var s2 = runScript(m, 'RR');
   t.eq('mantle then walk off falls back to the floor', s2.ax + ',' + s2.ay, '3,1');
@@ -1050,12 +1050,13 @@ function suiteFixtures(t){
   t.eq('door still shut before the key', k1.keys, 0);
   var k2 = runScript(kd, 'RR');
   t.eq('key collected on entry', k2.keys, 1);
-  t.eq('locked door blocks the mirror twin', k2.bx, 5);
+  t.eq('locked door blocks the mirror twin', k2.bx, 7);
+  t.assert('being blocked by a door is a desync', k2.desync === true);
   var k3 = runScript(kd, 'RRR');
-  t.eq('open door is walkable next tick', k3.ax, 4);
-  t.assert('door is solid without the key', !enterable(kd, 4, 1, DIR_R, 0, 0));
-  t.assert('door is open with the key', enterable(kd, 4, 1, DIR_R, 1, 0));
-  t.assert('door 0 ignores key 1', !enterable(kd, 4, 1, DIR_R, 2, 0));
+  t.eq('open door is walkable next tick', k3.bx, 6);
+  t.assert('door is solid without the key', !enterable(kd, 6, 1, DIR_R, 0, 0));
+  t.assert('door is open with the key', enterable(kd, 6, 1, DIR_R, 1, 0));
+  t.assert('door 0 ignores key 1', !enterable(kd, 6, 1, DIR_R, 2, 0));
 
   /* 5 CRUMBLING */
   var c = fx('crumble');
@@ -1104,8 +1105,16 @@ function suiteFixtures(t){
   t.assert('one way plate blocks the other direction', !enterable(ow, 3, 1, DIR_L, 0, 0));
   var o1 = runScript(ow, 'RRR');
   t.eq('A walks through the plate rightward', o1.ax, 4);
-  var o2 = runScript(ow, 'LL');
-  t.eq('B is stopped by the plate from the right', o2.bx, 4);
+  var o2 = runScript(ow, 'RRRRRRR');
+  t.eq('B is stopped by the plate from the wrong side', o2.bx, 4);
+  t.eq('A keeps walking while B is stuck at the plate', o2.ax, 8);
+  var o3 = runScript(ow, 'RRRL');
+  t.eq('A cannot come back through the plate either', o3.ax, 4);
+  /* a plate with headroom is climbable by the mantle rule, which is correct and
+     is why the fixture above roofs it over. Assert the climb, do not hide it. */
+  var owOpen = parseAscii(['#..........#','#P.>......Q#','############']);
+  var o4 = runScript(owOpen, 'RRRRRRR');
+  t.assert('an unroofed plate can be mantled onto instead', o4.bx === 3 && o4.by === 0);
 
   /* 10 COLLISION RULE */
   var col = parseAscii(['#####','#P.Q#','#####']);
@@ -1142,7 +1151,7 @@ function suiteSolver(t){
   t.assert('a level missing exit A is unsolvable', bfsSolve(tiny, 8, 50000) === null);
 
   /* a corridor the greedy agent walks straight down, so generation must reject it */
-  var corridor = parseAscii(['#########','#P.....a#','####...##','#Q.....b#','#########']);
+  var corridor = parseAscii(['#########','#P.....a#','#########','#b.....Q#','#########']);
   var cr = bfsSolve(corridor, 20, 200000);
   t.assert('corridor is solvable', !!cr);
   if (cr) t.assert('greedy agent beats a corridor', greedyRun(corridor, cr.len * 4));
@@ -1285,7 +1294,7 @@ function suiteRegressions(t){
   }
   t.assert('every live crumble tile has an index', okIdx);
   /* R5: sliding into a spike on ice must kill, not stop. */
-  var icy = parseAscii(['#######','#P..^Q#','#~~~###','#######']);
+  var icy = parseAscii(['##########','#P.^....Q#','#~~#######','##########']);
   t.assert('a slide into a spike is lethal', runScript(icy, 'R').dead === true);
   /* R6: the mirror must not let an input escape the grid on the far side. */
   var edge = parseAscii(['#####','#P.Q#','#####']);

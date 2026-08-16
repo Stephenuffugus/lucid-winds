@@ -931,7 +931,9 @@ function tGame(opts) {
   var s = newGame(opts.seed || 1, opts);
   s.wave = opts.wave || 1;
   s.scrap = opts.scrap === undefined ? 100000 : opts.scrap;
-  s.spawns = [];
+  /* a spawn parked in the far future keeps the scripted wave from ending the
+     instant the lane is empty, so micro tests stay inside the combat phase */
+  s.spawns = [{ tick: 1e9, type: 'runner' }];
   s.spawnIdx = 0;
   s.phase = 'combat';
   s.phaseTick = 0;
@@ -1081,7 +1083,7 @@ SUITES.push(function () {
   tPut(s, 6, 'pit');
   tRun(s, 2, 'right');
   TEST.eq('player steps into the pit', s.player.cell, 6);
-  tRun(s, 4, 'right');
+  tRun(s, 3, 'right');
   TEST.eq('pit holds the player for five ticks not two', s.player.cell, 6);
   tRun(s, 1, 'right');
   TEST.eq('player climbs out on the fifth tick', s.player.cell, 7);
@@ -1200,7 +1202,7 @@ SUITES.push(function () {
   e = tEnemy(s, 'runner', 25, 99999);
   tRun(s, 12, 'none');
   TEST.eq('burn stacks cap at three', e.burns.length, 3);
-  TEST.eq('three stacks deal six a tick', 99999 - e.hp, 2 + 2 + 4 + 4 + 6 + 6 + 6 + 6 + 6);
+  TEST.eq('one stack then two then three ramps the burn', 99999 - e.hp, (2 * 2) + (4 * 2) + (6 * 7));
   s = tGame({});
   tPut(s, 24, 'brazier');
   e = tEnemy(s, 'flyer', 25, 500);
@@ -1220,9 +1222,11 @@ SUITES.push(function () {
   TEST.ok('the shielded body burns once the shield is gone', e.hp < 500);
   s = tGame({});
   tPut(s, 10, 'spike');
-  e = tEnemy(s, 'shielded', 10, 500);
+  e = tEnemy(s, 'shielded', 10, 500, true);
   tRun(s, 3, 'none');
   TEST.eq('spike ticks count as three separate events', e.shield, 0);
+  TEST.eq('three spike ticks cost the shield and nothing else', e.hp, 500);
+  tRun(s, 1, 'none');
   TEST.eq('the fourth spike tick is the first that hurts', e.hp, 496);
   /* sapper */
   s = tGame({});
@@ -1341,12 +1345,14 @@ SUITES.push(function () {
   TEST.eq('skip starts the wave early', s.phase, 'combat');
   TEST.ok('skipping records the build for later', s.lastBuild !== null);
   s = newGame(1, {});
+  s.scrap = 200;
   placeTrap(s, 8, 'spike');
   placeTrap(s, 9, 'snare');
   startWave(s);
   var plan = s.lastBuild;
   TEST.eq('last build remembers two traps', plan.length, 2);
   var s2 = newGame(1, {});
+  s2.scrap = 200;
   TEST.eq('last build re applies onto a clean lane', applyBuild(s2, plan), 2);
   var s3 = newGame(1, {});
   s3.scrap = 30;

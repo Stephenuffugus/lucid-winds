@@ -43,11 +43,21 @@ function stripComments(s) {
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1");   // the [^:] keeps http:// intact
 }
 
+/* Blank out string CONTENTS before hunting for identifiers. Blackout's clue
+   bank contains "Through the {r} window at {t}" — a window in a house, in a
+   murder mystery — and both this checker and the game's own copy of it read
+   that as a DOM reference inside the sim layer. A gate that cannot tell a noun
+   from an identifier pressures whoever is building to rewrite good prose to
+   appease it, which is worse than having no gate at all. */
+function stripStringContents(s) {
+  return s.replace(/(['"`])((?:\\.|(?!\1)[^\\\n])*?)\1/g, (m, q) => q + q);
+}
+
 function simSlice(src) {
   const a = src.indexOf(START);
   const b = src.indexOf(END);
   if (a < 0 || b < 0 || b <= a) return null;
-  return stripComments(src.slice(a + START.length, b));
+  return stripStringContents(stripComments(src.slice(a + START.length, b)));
 }
 
 /* Pull string literals that look like sentences a player would read: quoted

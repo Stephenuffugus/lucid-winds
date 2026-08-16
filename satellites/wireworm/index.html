@@ -184,6 +184,7 @@ var CONFIG = Object.freeze({
   OVERLOAD_BONUS_PER_CELL: 5,
   WARN_PCT: 0.35,           // load readout appears past here
   DISCHARGE_INTERVAL: 90,   // ticks between pickup spawns
+  STALL_CHECK: 24,          // ticks between "can the worm still reach anything" sweeps
   PAIRS: 2,                 // terminal pairs live on the board
   GREEN_MAX_DIST: 6,        // green pairs spawn within this manhattan distance
   RED_MIN_DIST: 20,         // red pairs must land at least this far apart
@@ -476,6 +477,7 @@ function newGame(seed) {
     longest: 0,
     overloads: 0,
     discharges: 0,
+    rescues: 0,
     alive: true,
     cause: null
   };
@@ -566,10 +568,7 @@ function touchTerminal(st, idx, ev) {
   topUpPairs(st);
 }
 
-function touchPickup(st, ev) {
-  st.pickup = -1;
-  st.ticksSincePickup = 0;
-  st.discharges++;
+function dischargeOldest(st, ev) {
   if (!st.circuits.length) { ev.push({ t: 'discharged', cells: 0, removed: [] }); return; }
   var c = st.circuits.shift(), removed = [], i, idx;
   for (i = 0; i < c.cells.length; i++) {
@@ -583,6 +582,40 @@ function touchPickup(st, ev) {
     }
   }
   ev.push({ t: 'discharged', cells: removed.length, removed: removed, circuit: c.id });
+}
+
+function touchPickup(st, ev) {
+  st.pickup = -1;
+  st.ticksSincePickup = 0;
+  st.discharges++;
+  dischargeOldest(st, ev);
+}
+
+/* Terminal rescue. A worm can seal itself into a pocket: no terminal reachable,
+   and every free cell either unreachable or adjacent to live wire so no pickup
+   can spawn either. Found by seed 9001, where the run simply never ended.
+   Sweep reachability on a slow cadence and move the objectives to where the
+   player actually is. If there is nowhere legal at all, trip the oldest
+   circuit as a mercy so the pocket reopens. */
+function rescueCheck(st, ev) {
+  var reach = reachMask(st), any = false, i, j;
+  for (i = 0; i < st.pairs.length && !any; i++) {
+    for (j = 0; j < st.pairs[i].active.length; j++) {
+      if (reach[st.pairs[i].active[j]]) { any = true; break; }
+    }
+  }
+  if (any) return;
+  for (i = 0; i < st.pairs.length; i++) removePairCells(st, st.pairs[i]);
+  st.pairs.length = 0;
+  st.charge = null;
+  topUpPairs(st);
+  if (st.pairs.length === 0 && st.circuits.length) {
+    st.discharges++;
+    dischargeOldest(st, ev);
+    topUpPairs(st);
+  }
+  st.rescues++;
+  ev.push({ t: 'rescue', pairs: st.pairs.length });
 }
 
 function step(st, turn) {
@@ -619,6 +652,7 @@ function step(st, turn) {
     var p = spawnPickup(st);
     if (p >= 0) ev.push({ t: 'pickup', cell: p });
   }
+  if (st.tick % CONFIG.STALL_CHECK === 0) rescueCheck(st, ev);
   return { state: st, events: ev };
 }
 
@@ -663,7 +697,33 @@ function safeTurns(st) {
   return out;
 }
 
-function agentRandom(st, rng) {
+/* Does the cell this turn lands on still have a way out next tick? One ply is
+   enough to stop an agent from stepping into a one cell dead end. */
+function turnSurvives(st, t) {
+  var h = (st.heading + t + 4) & 3;
+  var x = cx(st.head) + DX[h], y = cy(st.head) + DY[h];
+  if (x < 0 || y < 0 || x >= CONFIG.GRID || y >= CONFIG.GRID) return false;
+  var ni = y * CONFIG.GRID + x;
+  if (st.cover[ni] > 0) return false;
+  var t2, h2, x2, y2;
+  for (t2 = -1; t2 <= 1; t2++) {
+    h2 = (h + t2 + 4) & 3;
+    x2 = x + DX[h2]; y2 = y + DY[h2];
+    if (x2 < 0 || y2 < 0 || x2 >= CONFIG.GRID || y2 >= CONFIG.GRID) continue;
+    if (st.cover[y2 * CONFIG.GRID + x2] === 0) return true;
+  }
+  return false;
+}
+
+/* HANDOFF section 6.6 agent: a plain random walk. It does not look where it is
+   going, so the edge of the board kills it, which is what the 60 to 200 tick
+   envelope was written against. */
+function agentRandom(st, rng) { return Math.floor(rng() * 3) - 1; }
+
+/* The same walk with one eye open: uniform over the moves that are not
+   instantly fatal. Reported separately because it changes the envelope
+   completely (see BUILD-NOTES). */
+function agentRandomSafe(st, rng) {
   var safe = safeTurns(st);
   if (!safe.length) return -1;             // boxed in, any move dies
   return safe[Math.floor(rng() * safe.length)];
