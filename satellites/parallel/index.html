@@ -49,6 +49,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #seam{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;z-index:2;pointer-events:none;
   background:linear-gradient(180deg,rgba(139,124,246,.85),rgba(243,181,98,.7),rgba(139,124,246,.85));
   box-shadow:0 0 10px rgba(139,124,246,.55),0 0 22px rgba(139,124,246,.25);opacity:.85}
+/* The pair mirrors about the axis halfway between them, which is not always the
+   middle of the board. #seam is that true axis. #seam2 is where the pair's
+   own midpoint has drifted to, so the gap between the two lines IS the drift,
+   drawn. It hides itself when the twins are in mirror. */
+#seam2{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(243,181,98,.9) 0 6px,transparent 6px 12px);
+  opacity:0;transition:opacity .14s ease-out,left .14s ease-out}
 .cellwrap{position:absolute;inset:0}
 .tile{position:absolute}
 /* One material for the whole outer ring: no per tile radius, one consistent
@@ -90,9 +97,25 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #hud .sp{flex:1}
 #msg{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:13px;color:var(--dim);pointer-events:none}
 
+/* ---------- level ribbon ----------
+   A square board on a tall phone is width bound, so a column of slack is left
+   under it. This strip is what that slack does now: the levels either side of
+   this one, tappable, with their star state on them. */
+#ribbon{flex:0 0 auto;display:none;gap:6px;overflow-x:auto;padding:6px 2px 2px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#ribbon::-webkit-scrollbar{display:none}
+#ribbon .chip{flex:0 0 auto;min-width:48px;min-height:48px;padding:0 8px;border-radius:12px;
+  border:1px solid var(--line);background:var(--panel);color:var(--dim);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  font-size:14px;font-weight:700;line-height:1}
+#ribbon .chip small{font-size:9px;letter-spacing:.06em;font-weight:700;color:var(--warm)}
+#ribbon .chip.done{color:var(--ink);border-color:#39406090}
+#ribbon .chip.cur{color:var(--ink);border-color:var(--accent);background:#1b1d2e}
+#ribbon .chip.lock{opacity:.4}
+
 /* ---------- controls ---------- */
 #pad{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding-top:6px}
-#pad button{min-height:clamp(62px,13vh,118px);min-width:62px;border-radius:14px;border:1px solid var(--line);
+#pad button{min-height:var(--padh,clamp(62px,13vh,118px));min-width:62px;border-radius:14px;border:1px solid var(--line);
   background:var(--panel);font-size:22px;display:flex;align-items:center;justify-content:center}
 #pad button:active{background:#232840;border-color:var(--accent)}
 #pad button small{display:block;font-size:10px;color:var(--dim);letter-spacing:.08em}
@@ -117,10 +140,27 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
 
 /* level select constellation */
-#sky{width:100%;max-width:520px;margin:0 auto;display:block}
+#sky{width:100%;max-width:560px;margin:0 auto;display:block}
 .starhit{cursor:pointer}
 #selwrap{flex:1;min-height:0;overflow:auto}
 #selfoot{flex:0 0 auto;padding-top:8px;color:var(--dim);font-size:12px;text-align:center}
+#selbtns{flex:0 0 auto;display:flex;gap:8px}
+#selbtns .big{margin-top:8px}
+
+/* run log */
+.grid6{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0 14px}
+.stat{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:8px 6px;text-align:center}
+.stat b{display:block;font-size:19px;font-weight:800;color:var(--ink)}
+.stat span{font-size:10px;letter-spacing:.09em;color:var(--dim)}
+.tierbar{display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;color:var(--dim)}
+.tierbar .track{flex:1;height:8px;border-radius:6px;background:#1c2030;overflow:hidden}
+.tierbar .fill{height:100%;background:var(--accent)}
+.tierbar .fill.star{background:var(--warm)}
+.runrow{display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line);
+  font-size:13px;color:var(--dim);width:100%;text-align:left}
+.runrow b{color:var(--ink);font-weight:700;min-width:74px}
+.runrow .sp{flex:1}
+#nudge{margin-top:10px;font-size:12px;color:var(--dim)}
 
 /* win card */
 #wincard{position:absolute;left:8px;right:8px;bottom:10px;background:var(--panel);border:1px solid var(--line);
@@ -163,7 +203,7 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   </div>
 
   <div id="stage">
-    <div id="board"><div id="seam"></div><div class="cellwrap" id="layers"></div></div>
+    <div id="board"><div id="seam"></div><div id="seam2"></div><div class="cellwrap" id="layers"></div></div>
     <div id="msg"></div>
     <div id="wincard">
       <h3 id="winTitle">BOTH DOORS</h3>
@@ -173,16 +213,20 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
         <button id="winReplay">WATCH</button>
         <button class="go" id="winNext">NEXT</button>
       </div>
+      <button id="nudge" style="display:none;width:100%;text-align:left;min-height:48px">Add PARALLEL to your home screen</button>
     </div>
   </div>
 
   <div id="hud">
     <span>moves <b class="tnum" id="hMoves">0</b></span>
     <span>deaths <b class="tnum" id="hDeaths">0</b></span>
+    <span>off mirror <b class="tnum" id="hDrift">0</b></span>
     <span class="sp"></span>
     <span>par <b class="tnum" id="hPar">0</b></span>
     <button class="btn" id="btnRestart" style="min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:16px" aria-label="Restart">↺</button>
   </div>
+
+  <div id="ribbon"></div>
 
   <div id="pad">
     <button id="kLeft" aria-label="Left"><span class="lab">◀<small>A LEFT</small></span></button>
@@ -198,7 +242,22 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
   <p id="selBlurb">Sixty levels in five clusters. A filled star means cleared. A bright star means you matched the best possible answer.</p>
   <div id="selwrap"><svg id="sky" viewBox="0 0 320 900" aria-label="Level map"></svg></div>
   <div id="selfoot"></div>
-  <button class="big ghostb" id="selDaily">TODAY</button>
+  <div id="selbtns">
+    <button class="big ghostb" id="selDaily">TODAY</button>
+    <button class="big ghostb" id="selStats">RUN LOG</button>
+  </div>
+</div>
+
+<div class="sheet" id="shStats">
+  <button class="close" id="statsClose" aria-label="Close">✕</button>
+  <h2>RUN LOG</h2>
+  <p id="statsBlurb">Everything you have done here, and the last dozen runs in the order you played them.</p>
+  <div class="grid6" id="statsGrid"></div>
+  <h2 style="font-size:13px;letter-spacing:.12em;color:var(--dim)">THE CLIMB</h2>
+  <div id="statsTiers"></div>
+  <h2 style="font-size:13px;letter-spacing:.12em;color:var(--dim);margin-top:12px">RECENT RUNS</h2>
+  <div id="statsRuns"></div>
+  <p id="statsFoot" style="margin-top:12px"></p>
 </div>
 
 <div class="sheet" id="shOpts">
@@ -476,7 +535,47 @@ var LEVELS = [
   "cc186a5z|#0.6d0.0b0#2.3^0.2#2a0c0#0~0#0.4#2.0#0.4~0#2v0.0^0v0.2^0#3.0~0.4#0.0#2.2#0.0#0.3#1.2#0.0#0.1#0.0#1.1#0.0#0.0^0#0.0~0#2.6^0.0#110~0.7#c|URRUURRUUUURURUULLULULLUUULULULULUL",
   "cc86a75u|#0.0b0.2>0.2^0#1.0#0.5#0.0#1.1^0.6#1~0.0>0.3#0.1#1.3~1#1.1#110.3^0.3#1.1~0.0#0.4#1.0c0.1#2~0.1#1.1^0.1^0.2#2d0.3#0.3#1.3#0a0.1#0.0#c|UUURUURRRLURUULURUUURULUUWULUL",
   "cc243a5v|#0.0b0.5^0.0#1.0#1.0^0#1.2#1^0.5a0.1#1.0c0#3.2#2.3#0.010.2#2.2#0d0#1~0.0#1.9#1.0#0.0#0.4#3.0c0#2.0#0.1#1^0.0#0.1#0c0.1#2.3~0.1#f|RUULUUWLLLLLULLUURRUURRRUUURRUU",
-  "cc4a355y|#0.2>0.2d0.1#1v0.6~0a0#1.0~0.3#5.7#020#1.2#0.2#4.0^0.4#0.1#1.0#0c0.4^0.0#1.2~0^0.3e0#1.0#0.010.0#1c0#3.2#1.0^0.1^0#1.4c0.0b0.1#c|UULUULRULUULUULLUUWUURUUUUUURRUURR"
+  "cc4a355y|#0.2>0.2d0.1#1v0.6~0a0#1.0~0.3#5.7#020#1.2#0.2#4.0^0.4#0.1#1.0#0c0.4^0.0#1.2~0^0.3e0#1.0#0.010.0#1c0#3.2#1.0^0.1^0#1.4c0.0b0.1#c|UULUULRULUULUULLUUWUURUUUUUURRUURR",
+  "cc85656C|#0^0.3a0.2v0#1.4#0c0#4~0.1v0.2#0.0#2.420.0#4.0c0.0#2.0#4.1#0v0.1c0.2#1e0.1~0.0#0.0~0.1#1.1#0.1#1.2#1.1d0.0~0#1^0.1#1.0b0#0.0#1.010.1#1.0#1~0#3.1#c|RLRRRUUUURUULLLLLLRRRRRUUULUULUULLUUUR",
+  "cc7a386G|#0a0.8#2~0^0~0.2<0.1#1.0#1^0.1#0.2#4.1b0.2^0#1^0.3#1d0.1#1.3~0#0.3#1.2#2.3#1.4#0.0v0.1#1.310.0^0#0.1#1.1~0#0.0#0.1c0.0#1.0#1.0#0.1~0^0.0#c|LLRURUULLLLLLURURUUURURULUUUUULLULUURULULL",
+  "cc7a686N|#0.3e0b0.210#1^0.3#0~0#4.2#0.5#1.4#0a0.0#0v0#2~0.1#2.0#0.0#1.7#0.0#1.1#0.0#0.2#0.0#1.0>0.3#0.2#1.0#1.0#0.1^0.1#1v0.1#2c0#0.1#1.020.2d0.2~0#c|LRULLURRUULLUULUURULLLRURUULLULLRRRRURUULUURURUUL",
+  "cc127a6O|#0.2>0.5#1^0.0e0c0v0.4#1.020.0#1.0~0.0#5.1^0.0#0.2#1b0.2#0.0v0.0#0.0#5.0#2^0.0#1.0#2c0#2.1#1.5#0.1~0#2.0^0a0.5#1.1#2.2c0.0#1d0.3#0.0^010.0#c|RRLLULULUULUURRUUUURRURRUUURURRRLULLLLLULLURRUUURR",
+  "cc91576M|#0^0.0d0.0v0.4#1.2c0.0b0.2~0#1~0.2#1v0c0#3.5~0#0.1#1.4#0.2c0#1.8#2e0#5.1#2.2^0.5#1.1a010#0.0#0.1#2.1#1.0#1.1<0#3.3#120.0#c|LLLLRUUUURRRRRRRLLLRRRUUULULLUUUUULLRLUUUULLLLRR",
+  "cc33716F|#0.2^010.1^0.1#1.3#1.1c0.0#4.1^0~0#0.1#1.9#1.1#2c0#0.1#2.0#0.5#0.0#4.1#0~0.0d0#2.0#0.0c0~0#1.0#0.0#1.0#0b0#0.3^0.0#1.0#1.2^0.2#2.3^0v0a0~0.0#c|RULLRRLRRUUULULUURRUULULRULLLURRRRRLUUURR",
+  "cc226a6D|#0.1b0.4v0^0#1.1#0.1#1.2#2.0#1<0#0.0~0.1#1.0c0#2.2#0.0#1.0#0.0#1^0.3#1~0#3.1^0.0~0#1.0#0.2#0.0d0.1#3.6#210.2#2.0~0^0#3a0e0.0^0.1#0.0#2.0#120.0#1.0c0#c|RRUULLLLUULUULULUURRRRRRRRRLLUULLULULUL",
+  "cc7a3a6O|#0^0.8#1.510.1a0#1.1c0#0~1.0^0.0#2.2#0.0#2.1#1.0c0#1~0.2<0~0#1.4#0.1#0.0#1.2^0d0.2#0.0#1.2#1b0.0^0.0~0#1.0#0>0.1#0.0#1.0#1.0#0.1#0.4#1.2#0^0#0.3#c|RRRUUUUUUULUULLLRRRLUULLUUULLULLLUUUUUURRRURRUUURW",
+  "cc323a6A|#0.5b0.0d0.0#1>0.220.0#0.2#1.0#0.5~0.0#1.1c0.1c0#2.0#1.0~0#0.2<010.1#1.1#0.1e0.3#1.2^0#0.0#0^0.0~0#1.3#2.2#1.2#2.0~0.1#1c0#0~0#0^0.1a0.1#1.4#0.0#0.0#d|LRLUUUUURURRUUURUURURULWULLURULUULUL",
+  "cc713a6y|#0.0v0b0.6#1.1#0.3~0.1#2.1~0#1~0.0~0c0#1.1#0.3#0>0.0#1.410.3#1.1#0c0.0#0.0^0.1#1.2^0.0#0<0.0~0.0#1.2#0.1#0.0#4d0.3a0.0#0.0#3.0#5.0#1.0#0.3#0^0#e|RRLRUULUULLLLUURUULLULUUULRRUURRRR",
+  "cc9a216J|#0.9#1.2#0.1c0#0.0^0#1.0#0.0^0.0#6.1#3.0^0.0^0#1.0#0.1^0.4#1.2~0.1c0#0.0~0#1>0~0.3#0.1#2.320.1#0d0.0#1.1#0.0#0.0^0.2#1.0~0#3.0c0#3a0.0b0e0.0#0.010.1#c|RLLLLRUULULLLRLURUURURRRRRRRRLUUUULLLLLLLLURR",
+  "cc174a6H|#0^0.8#1.1^0.5#2.1#0.0#2.2#1.0~0#0.1#0.3#1.1#0b0^0.0v0^0.020#1>0.1#0e0.110.0#2.1#1.0d0.0#1.0#1.0^0.0#1.4#2.8#2~0.0#0.0#0~0.0~0.0#2.2#0a0.0c0.1#c|URUULLLLULUURURRUUURUULLUUURURRURRUULLURULL",
+  "cc1a506y|#0.9#1.2#0~0.4#1.0#1.1^0<0.2#1.4#0.0v0#0>0#1.1#020e0.2#0c0#1b0~0#2.0^0.2#4.0#1.2^0#1.0#3.1#1.0#1.1d0.6#1.0#1.1^010^0.1#1.2c0#2a0.0#d|RRRRLLLLLULLRUUULUURRRRURRURRUUUWL",
+  "cc68a16D|#0.1<0^0.0^0.1a0.0#1.0~1.0#0.4#1.4#0.1#3.0#0.7#1~0#0c0.0#0.3#210.4#1e0.0#2.0~0c0#1.0#0.1#2.020#1.0<0.1#3.0#0.0#0.1d0.1#1.1#0.0#2.2#1.0#0.1#0.0#0b0~0c0#c|RRRRRRLRURRLUULRURUURUULULULULULLURUUUR",
+  "cc9a826K|#0.0^0.7#1.0^0.3#0.0a0.0#1.1<0.1#1.0#3.1#0c0.0#0.0#0.1#1.0b0#0.0#3~1#1.0#0.1#3.1#110.7#3.1d0<0#0.0^0.1#1.1#4.2#1~0#0.0#0.0#3.0#1.5#0.1c0#c|UURRRRLRLLLULLLRUURRRRRUULUULLLLLUULULRUURURRR",
+  "cc7a576y|#0.2^0b0.220.0#1.3#0.1#1.0#1.1#0.1d0#0^0#0c0#1.4#0.0#0.1#1.0>0.0e0.2#0.1#1.0a0^0.2~0#1^0#4c0.1#0.2#210.0#0.2#0.1#1.0#0.1#0.0^0.1~0#1.0#0.3#0.2#3.1#0.1#0.0c0#c|LRRRLURUUURULUULUULLUUUUUURUULUURW",
+  "cc704a6B|#0.6b0.0^0#1a0.2v0.0#1~0.0#2~0.1#0.0#0.2#1.0#0.4^0.1#1.1d0v0^0~0.1#0^0#1.9#1.0~0.0#1.4#1.3#0.4#2c1#1.0<0.2#1.5#0^0.1#2.4^0.010.0#c|LULUUWURURRRULUULULULULULLUUUULUUUUUL",
+  "cca0576z|#0.2a0^0.2e0.0#1.2#0.4#2.1#0.2b0.2#1c0.2#0.0#0d0.1#1.3<110.2#1.2#0.1#0.2#1.0#0.2~0.3#1.0^0.2^1~0.1#1.1c0#1.0#0.0#0.0#1.4v0#220#3.0#0^0#0.0^0.0#d|RRUUULUULLLLLLLUULULLLLULULUUURURUR",
+  "cc99946y|#0.9#1.4#1.2#1.2#0~0#1^0#0.0#1v0a0.4d0.1#1.0#1.2#0.1^0#1.4v0.0#1^0#1.2#2c0^0.1#1.0#0.0#0.0#0.2#2.2#0.1~0.0#0.0#2.0#0.5b0#110.4#0.0c0#d|ULUURURRRRRRLRRLLLLLLLLUURUUURUULL",
+  "cc6a486E|#0.6d0.1#1v0.6#0.0#1.0#2.1^0.2#1.8a0#2.0#0.0#0b0#5.2#4.1#1.1~0.3#0^0c0#1.2#1~0#0.2#3.4#1.0#2.010#1c0#5.1#0.3^0.0^0#c|LLRRRUULRULUUULLLUULUUURURRURRURRURRUULW",
+  "cc22377G|#0.2d0.5#1.1#0e0>0.4#1.5#0b0.1#1~0#0^0#0~0.1#1.0#2.2#0.0#1.1#2.2#0.0#0.1#2.0c1.0#0.1c0.1#1.0^0.1#0~1.2#1.0#1~0.0#0.1~0a0#1.7#3.0^010.020.2#0.0#c|LUURRLURRULLLLLLLUUULURURRULUUURRUUULUULRR",
+  "cc516a7E|#0.0b0d0.0^0.4#1.0#0.7#1>0.2~0.1#0.0^0#1.0#1^0.1^0.0c0.0#1.3#2.2#1.510a0.1#2.0#0.0~0c0#1.1#1.1^0#1.4#1.2#1.0#0e0.1#1^0.0#020.1#5.0~0.0#0.1#0.1#d|RULURURRURLUUULLLLRUUUUUUURURRRUULUURURR",
+  "cc769a7F|#0.1f0.6#1.13010b0.1#0.1#1c1#2.2#0.0#1.3#0^0e0.0#0.0#1.0>0.020.5#1.2#0^0~0.2~0#1^0.3<0.2#2.2#0.1~0.0#0.0#1.6~0.0#2.8#2d0~0.1~0.0#0.1a0#c|URUUULULLLLLRLRRRRRRUUUUUUURUULLUULUUUULR",
+  "cc8a257J|#0.3^0e0.3#1.0^0d0.010.0#2.0#1.2~0#0~0#0.2#1c1.3a0^0.1#1.0#0.3#130.0#1.3#0c0#2.0#1.0c0.3f0.1#2.1~0.2#0.1#2.0^0#1~0#0.1~0<0#1~0#1b0.0#0.1#3^0.0>0#0.120.0#0.0#c|LUUUURRUULLLLLLLLLRULUUURRRRRRUUULULLLUURURRR",
+  "ccaa957G|#0.5<0.2#1.1#010.0#0~0#0.1#2.0#3.3#1.1#0.0#0.2#0.0#1.0#1c0#0.4#1.3#0.1a0.1#1.0^0b0.0#0c1#0~0e0#1.1#0.2#0.1d0#1.4#0^0.0#0.0#3~0.3#1.0#2.1#0.0#0.020^0.0#c|RUUULUURRRRRRRUUULLULRULULLULLRRRURUUURURL",
+  "cc28757E|#0.4e0a0.2#1~0.010#0.1#0d0.1#1.1#2.4#1.3^0.0#0.2#1^0.2^0.3~0#2.1#0.0#0.3#1.0c0.0#3.2#1.1c0#1.0#0^0.1#1.1#0.1~0>0.2#1.0~0.6^0#1.020c0.3#0.0b0#c|ULLRRRRRRLLLLLLRURRURRURRRUUUUUUUUULULWL",
+  "cc901a7I|#0.1^0.3b0.1#1e0^0.2#0.0#1.0#1>0#1c0#1~0#0^0.0#1~0.0#1.5#1.0#0.1~0.4#1v0.0^0.0#0.0^0.2#1.0#0.3a0.1#2.0#1c0#0.0#0.0#0.0#1.120.0#0.1~0#0.0#1c0~0#0.010#2.0c0#1.0#1d0#0.0#2.0#c|RLLLLUULLLRLLRRRUULLRUUUULLRUULLLLUUUURURUUR",
+  "cc6aa37G|#0.9#1.1a0.1#0.110.0#1.1#0.4#0~0#1.0c0#2.0<0.2#2.1d0.0^0.0#4.2#0.1c0.2#1~1#1.4~0#1.0#0.7#2^0.3#0.0~0#2>0.020.1e0.3#1b0.0#0>0.1#0.0#0~0#c|RRUULRURUURRRLURRURUUUUULLULULRUURURRUUUUR",
+  "cc9a147H|#0.2a0.0d0.0e0.1#1.2#0.1~0.0~0.0#1.4^0#0.2#1.120.3v0.1#1.1#0.1~0.0#6.1#0.010#4.0^0.0^0.1#0.0#0.0#1.3c1.2^0#1.4#0.0#0.1#1.0^0.0~0.0^0.3#1.0b0#0.6#c|LULULLLLLRUWURLUUUURUULLUURURRUUURWURUUUUUL",
+  "cc1a5a7I|#010.7b0#2.4^0.1#4~0#1~0.0d0.1#1.4#0.3#1.1#0e0.0#0.0#0.0#2>0.420#0.1#1~0.0#0c0~0.2~0#2.1#0^0.2^0.1#1.3#0.2#3c0^0.3#0.2#1.0#0.3#0.0a0.0#c|RRUURRULUULLLUULUUUUULLLUURRRRRUULRRRRUUUUUL",
+  "cc9a237E|#0.5f0a0.1#1.1~0c120#1.1#1.0#0.1#3~0.0#1d0.4<0.1^0#2~0#0.2~0>0c0#2.230#0.0#0.2#2.1#1e0.0v0.0#2^0.0~0.010.3#2.0~0.1#0.1#0.1#1.0^0.0^0.2#0.1#1b0.4#1.1#c|UUULLRLUUULRRUULULLLRRRUUUUUULULLURURRRR",
+  "cc3a6a7P|#0b0.3f0.3#2.0~0a0.0#0.3#1.0c0#1.0^0<0~0#0.0#1.2#0.5#1.010.6#2.0#0>0.0^0.1c0.0#3.1v0.1^0.1#2.4#0.020#0.0#1.1#0.0c0#0c0#1~0#1.0d0.1#8.2e0.030.1#d|RUUURRURURRLRRRRRULULLURULULUULLUULUUURUURURRUUUURL",
+  "cc2a177I|#0.1b0.6#1.1#0.1a0.3#1~0.1#2~0#0c0~0#1.2#0.2#1>0#1<0#0e0.0#0^0#1.0#2.0#0.110.4#1.1~0.0#0.1#0~0.0#1.2c0.2#0.1#1c0.1^0.1d020.1#6~0.0#0.0>0#1.9#c|RRRRRRRUULRUURRUUULLULULLLULULUURURURURRRULL",
+  "cc2a567G|#0.5a0.1b0#2.0~0c0~0.0#0.0f0#3.2<0.4#2.320.1#0.0#1.4#0.1#3.5#1.1#1.1c0.4>0.0#1c0^0.0^0#0.210d0#1.1~0#0.0c0.0#1.0#1.1#1.0#0.0#0.030#1.3~0#0.1e0#d|URRURRULLULULUULUURULULUUURRUULWURUUURULUL",
+  "cc69a37H|#0.4v0.3#1.020.0d0.0^0.3#1.0#0.0#0.0^0>0#0.0#2.1#0.2~0.2#1.2#0.0#0.2#2~0.0<0#0.3#0.0#1.0f010#0.1#0.0a0e0#1.2#2.0c0#3.0#0.1b0.0#0.2#1.3#0.0#0~0c0.0#130c0.1#4^0#c|LLLLLRRUUUULURUULUURRRUUUUURRRRLLLRUULLUULR",
+  "cc7a377I|#0.0^0.7#130#1.0b0~0.3#3.0#2.3#1.0#0^0.3#0.1#1c0#0.3#0.010.0#1.0#1~0.0f0.1#0.0#120.1#0.1#1.0e0#1d0.4#0.0~0a0#1.0~1.2#5c0#0.0#0~0#3.0#1.0<0.5#0.0#c|LULUUULLLLUURRRRRRLUUULURURURULULURURRURUULR",
+  "cc636a7M|#0.8a0#1.0#0.1#0.3#210.2#0.2^0#3.0#0.2#0.2#1.2#1~0#0.0b0e0#2.1#1.2#0.0#1.3#0.0~1^0d0#2c020.1#2.0#2.1#1c0.0#0v0.0#3~0#1.2#0.1#4.2#1.0>0#c|LLLLRRRLLUULUUURURURURUURURUULLLLLLLLLURUULUURUR",
+  "cc64887S|#0.3^0.0>0.0b0.0#1.2c020.0^0.0#3.0e0.1#0.0#1.0#2.3#0c0.1d0.0#1.3^0.1#4.1#5.1#1.0#0.0#0.0^0.3#110.4~0.0a0.0#2c0#0.0~0c0.1#0.0#2.0^0.6#1.1#1~0#1.0~0^0#c|RRRUURRRRUULLUUUULRULUULLUUUULLLLLRULUURRRRURURUULLURL",
+  "cc76aa7F|#0.810#1b0^0c0.020.0c0^0~0#4.1#0~0#6d0#0a0.2#030.0#1.0#2e0.0^0#1.0#1.6^0.0#2^0.2#0^0.3#1.0>0.2#0.2v0#1.2~0#2.0#0~0#1~0.1v0.1f0.1#2.0#0.1c0.0#1c0.0#c|RRLURULUULUULLRULURUURURURULLULLRUUUUUURR",
+  "cc2a427K|#0.4e0.1^0.0#1c0.1^0f0.0^0.1#3.2#0.4#1.2~0^0.0c0.0^0.0#1.1#1.1#1.1#1~0.1#0<0d0.0b0c0.0#1^0v0.0#0~0.1#0.0a0#1.0~0c030.0#1.0#4.1#0.2#0.1#1.720.0#110.2#1.0#1.0#c|RRLRUUUURULULLUUULUULLULLUUUULURURRRRRURRUULRR"
 ];
 // ---- LEVELS_END ----
 
@@ -1012,8 +1111,32 @@ function dayNumber(iso){
 function freshSave(){
   return { v:CONFIG.SAVE_V, gameId:CONFIG.GAME_ID,
            stats:{ plays:0, clears:0, deaths:0, moves:0 },
-           unlocks:[], best:{}, daily:{ last:'', streak:0, best:0 },
+           unlocks:[], best:{}, history:[], daily:{ last:'', streak:0, best:0 },
            settings:{ sound:1, vol:70, haptics:1, motion:0, ghost:1 } };
+}
+/* Run history: newest first, capped. The caller supplies the clock reading, so
+   this stays pure and the harness can order runs without a real clock. */
+var HIST_CAP = 12;
+function runKeyOf(r){ return r.id + ':' + r.t; }
+function pushRun(sv, rec, cap){
+  var h = (sv.history && sv.history.length) ? sv.history.slice() : [], i;
+  for (i = 0; i < h.length; i++){ if (runKeyOf(h[i]) === runKeyOf(rec)){ h.splice(i, 1); break; } }
+  h.unshift(rec);
+  while (h.length > (cap || HIST_CAP)) h.pop();
+  sv.history = h;
+  return sv;
+}
+function mergeHistory(a, b, cap){
+  var out = [], seen = {}, all = (a || []).concat(b || []), i;
+  all.sort(function(p, q){ return (q.t || 0) - (p.t || 0); });
+  for (i = 0; i < all.length; i++){
+    var k = runKeyOf(all[i]);
+    if (seen[k]) continue;
+    seen[k] = 1;
+    out.push(all[i]);
+    if (out.length >= (cap || HIST_CAP)) break;
+  }
+  return out;
 }
 function migrateSave(s){
   var f = freshSave(), k;
@@ -1022,6 +1145,7 @@ function migrateSave(s){
   for (k in f){ if (!(k in s)) s[k] = f[k]; }
   if (!s.stats || typeof s.stats !== 'object') s.stats = f.stats;
   if (!s.best || typeof s.best !== 'object') s.best = f.best;
+  if (Object.prototype.toString.call(s.history) !== '[object Array]') s.history = [];
   if (!s.daily || typeof s.daily !== 'object') s.daily = f.daily;
   if (!s.settings || typeof s.settings !== 'object') s.settings = f.settings;
   for (k in f.settings){ if (typeof s.settings[k] === 'undefined') s.settings[k] = f.settings[k]; }
@@ -1055,6 +1179,7 @@ function mergeSave(disk, mem){
   }
   if ((mem.daily.streak || 0) > (out.daily.streak || 0)) out.daily.streak = mem.daily.streak;
   if (mem.daily.last > (out.daily.last || '')) out.daily.last = mem.daily.last;
+  out.history = mergeHistory(mem.history, out.history, HIST_CAP);
   out.settings = mem.settings;
   return out;
 }
@@ -1064,8 +1189,24 @@ function starCount(sv){
   for (k in sv.best){ if (sv.best[k].moves <= sv.best[k].par) c++; }
   return c;
 }
+/* Campaign only: the daily and seed links live under other keys and must not
+   inflate the sky's own count. */
+function campaignCleared(sv, count){
+  var n, c = 0;
+  for (n = 1; n <= count; n++) if (sv.best[String(n)]) c++;
+  return c;
+}
+function campaignStars(sv, count){
+  var n, c = 0;
+  for (n = 1; n <= count; n++){
+    var b = sv.best[String(n)];
+    if (b && b.moves <= b.par) c++;
+  }
+  return c;
+}
 function shareLine(kind, id, moves, deaths){
   if (kind === 'daily') return 'PARALLEL day ' + id + ' solved in ' + moves + ' moves, ' + deaths + ' deaths';
+  if (kind === 'seed') return 'PARALLEL seed ' + id + ' solved in ' + moves + ' moves, ' + deaths + ' deaths';
   return 'PARALLEL level ' + id + ' solved in ' + moves + ' moves, ' + deaths + ' deaths';
 }
 // ---- SIM_EXPORT_END ----
@@ -1092,6 +1233,10 @@ var TEST = {
     suiteSolver(this);
     suiteLevels(this);
     suiteSave(this);
+    suiteHistory(this);
+    suiteLayout(this);
+    suiteMirror(this);
+    suiteSeeded(this);
     suiteFuzz(this);
     suiteRegressions(this);
     return this.report();
@@ -1362,6 +1507,29 @@ function suiteLevels(t){
   t.assert('solution length rises across tiers, slope ' + slope.toFixed(2), slope > 0);
   var first = decodeLevel(LEVELS[0]);
   t.assert('level 1 is small enough to read', first.w <= 8 && first.h <= 8);
+  /* Par is one base62 character. A tier band that asks for more than 61 moves
+     would encode as an empty character and corrupt the level string silently,
+     so the bands are gated here rather than discovered in the field. */
+  var bandOkMax = true, tierSeen = {}, ti;
+  for (ti = 0; ti < TIERS.length; ti++){
+    if (TIERS[ti].max > PAR_MAX) bandOkMax = false;
+    if (TIERS[ti].min >= TIERS[ti].max) bandOkMax = false;
+  }
+  t.assert('no tier band can outrun the one character par field', bandOkMax);
+  var parFits = true;
+  for (i = 0; i < LEVELS.length; i++){
+    var lp = decodeLevel(LEVELS[i]);
+    if (lp.par > PAR_MAX || lp.par < 1) parFits = false;
+    tierSeen[lp.tier] = (tierSeen[lp.tier] || 0) + 1;
+  }
+  t.assert('every embedded par fits the codec', parFits);
+  t.eq('all seven tiers are represented', Object.keys(tierSeen).length, TIERS.length);
+  var lastSpec = TIERS[TIERS.length - 1];
+  t.eq('the campaign runs to the end of the last tier', LEVELS.length, lastSpec.hi);
+  t.assert('the deep tiers exist and are the long ones',
+    tierSeen[6] > 0 && tierSeen[7] > 0);
+  var t7 = decodeLevel(LEVELS[LEVELS.length - 1]);
+  t.assert('the last level is a full size board', t7.w === 12 && t7.h === 12);
 }
 
 function suiteSave(t){
@@ -1401,11 +1569,158 @@ function suiteSave(t){
   t.assert('share line names the game', shareLine('level', 3, 9, 0).indexOf('PARALLEL') === 0);
 }
 
+/* The level select is where the first sixty shipped a real defect: 54px hit
+   circles standing 33 to 40px apart, so a tap in the overlap went to the wrong
+   level. These assertions are the fix's guard rail. They run in node, where no
+   screenshot can flatter them. */
+function suiteLayout(t){
+  var widths = [300, 320, 347, 360, 390, 412, 430, 520, 560], i, worst = Infinity, worstW = 0;
+  var okBox = true, okOrder = true, okCount = true;
+  for (i = 0; i < widths.length; i++){
+    var L = skyLayout(CONFIG.LEVEL_COUNT, widths[i], CONFIG.MASTER_SEED);
+    var sep = skyMinSep(L);
+    if (sep < worst){ worst = sep; worstW = widths[i]; }
+    if (L.pts.length !== CONFIG.LEVEL_COUNT) okCount = false;
+    var k;
+    for (k = 0; k < L.pts.length; k++){
+      var p = L.pts[k];
+      if (p.x - 4 < 0 || p.x + 4 > L.w || p.y - 4 < 0 || p.y + 4 > L.h) okBox = false;
+      if (k > 0 && L.pts[k].n !== L.pts[k-1].n + 1) okOrder = false;
+    }
+  }
+  t.assert('no two stars sit closer than the touch law, worst ' + worst.toFixed(1) +
+           'px at ' + worstW + 'px wide', worst >= SKY.minSep);
+  t.assert('the hit circle itself is at least 48px across', SKY.hitR * 2 >= 48);
+  t.assert('every star is inside the drawn box', okBox);
+  t.assert('every level gets exactly one star', okCount);
+  t.assert('stars run in level order', okOrder);
+  var A = skyLayout(CONFIG.LEVEL_COUNT, 390, CONFIG.MASTER_SEED);
+  var B = skyLayout(CONFIG.LEVEL_COUNT, 390, CONFIG.MASTER_SEED);
+  t.eq('the sky is deterministic', JSON.stringify(A.pts), JSON.stringify(B.pts));
+  t.assert('the sky is taller than one screen so it can scroll', A.h > 700);
+  t.assert('one tier label per tier', A.labels.length === TIERS.length);
+  var small = skyLayout(10, 320, 7);
+  t.eq('a short campaign lays out too', small.pts.length, 10);
+  t.assert('a short campaign still respects the touch law', skyMinSep(small) >= SKY.minSep);
+  var big = skyLayout(200, 390, 9);
+  t.assert('twice the campaign still respects the touch law', skyMinSep(big) >= SKY.minSep);
+  t.assert('a wide desktop sky is capped, not stretched', skyLayout(60, 1200, 3).w <= 560);
+}
+
+function suiteMirror(t){
+  var g = fx('gap'), s0 = initState(g);
+  t.eq('drift starts at zero', mirrorDrift(g, s0), 0);
+  var open = parseAscii(['#..........#','#P........Q#','############']);
+  var o0 = initState(open);
+  t.eq('a mirrored step keeps the pair in mirror', mirrorDrift(open, stepWorld(o0, IN_RIGHT, open)), 0);
+  t.eq('a shared jump keeps the pair in mirror', mirrorDrift(open, stepWorld(o0, IN_UP, open)), 0);
+  t.eq('waiting keeps the pair in mirror', mirrorDrift(open, stepWorld(o0, IN_WAIT, open)), 0);
+  var d = fx('desync'), d0 = initState(d);
+  var d1 = stepWorld(d0, IN_RIGHT, d);
+  t.eq('one blocked twin is one cell of drift', mirrorDrift(d, d1), 1);
+  t.assert('the drift and the desync flag agree on the split', d1.desync === true && mirrorDrift(d, d1) > 0);
+  var d2 = stepWorld(d1, IN_LEFT, d);
+  t.eq('walking the split back closes the drift', mirrorDrift(d, d2), 0);
+  var m = fx('mantle'), m1 = runScript(m, 'R');
+  t.assert('a lone climb registers as drift', mirrorDrift(m, m1) > 0);
+  var walk = parseAscii(['#..........#','#P........Q#','############']);
+  var w4 = runScript(walk, 'RRRR');
+  t.eq('four mirrored steps and still no drift', mirrorDrift(walk, w4), 0);
+  /* drift never runs away: it is bounded by the board */
+  var lv = decodeLevel(LEVELS[0]), st = initState(lv), rng = makeRNG(0xD1F7), i, maxd = 0;
+  for (i = 0; i < 400; i++){
+    st = stepWorld(st, rng.int(4), lv);
+    if (st.dead || st.won) st = initState(lv);
+    var dd = mirrorDrift(lv, st);
+    if (dd > maxd) maxd = dd;
+  }
+  t.assert('drift stays inside the board, peak ' + maxd, maxd <= lv.w + lv.h);
+}
+
+function suiteSeeded(t){
+  t.eq('day number matches the calendar', dayNumber('1970-01-01'), 0);
+  t.eq('day number counts a leap year', dayNumber('2024-03-01'), 19783);
+  t.eq('day number agrees with the platform clock maths', dayNumber('2026-08-16'),
+       Math.floor(Date.parse('2026-08-16T00:00:00Z') / 86400000));
+  t.assert('day numbers rise with the date', dayNumber('2026-08-17') === dayNumber('2026-08-16') + 1);
+  t.eq('a bad date does not crash the share line', dayNumber('nonsense'), 0);
+  var seed = seedFromString(dailyKey('2026-08-16'));
+  var a = genSeeded(seed, 1), b = genSeeded(seed, 1);
+  t.assert('a seeded level is produced at all', !!a);
+  if (a && b){
+    t.eq('the same seed makes the same level', encodeLevel(a), encodeLevel(b));
+    t.eq('a seeded level is solved before it is handed over', replay(a, a.sol).end.won, true);
+    t.eq('a seeded level carries a desync moment', replay(a, a.sol).desync, true);
+    t.assert('a seeded level beats the greedy agent', !greedyRun(a, a.par * CONFIG.GREEDY_MULT));
+    t.assert('a seeded level records its seed', a.seed === (seed >>> 0));
+  }
+  var c = genSeeded(seedFromString(dailyKey('2026-08-17')), 1);
+  t.assert('a different day is a different level', c && encodeLevel(c) !== encodeLevel(a));
+  var daily = genDaily(seedFromString(dailyKey('2026-08-16')));
+  t.assert('the daily builds', !!daily);
+  if (daily){
+    t.eq('the daily is the daily tier', daily.tier, CONFIG.DAILY_TIER);
+    t.eq('the daily is verified before it is shown', replay(daily, daily.sol).end.won, true);
+    t.assert('the daily sits in its own tier band',
+      daily.par >= TIERS[CONFIG.DAILY_TIER-1].min && daily.par <= TIERS[CONFIG.DAILY_TIER-1].max);
+  }
+  t.assert('a seed share line names the seed', shareLine('seed', 1234, 20, 1).indexOf('seed 1234') > 0);
+  t.assert('no share line carries a dash',
+    shareLine('seed', 1, 2, 3).indexOf('-') < 0 && shareLine('daily', 1, 2, 3).indexOf('-') < 0);
+}
+
+function suiteHistory(t){
+  var sv = freshSave(), i;
+  t.eq('a fresh save has an empty history', sv.history.length, 0);
+  for (i = 1; i <= 20; i++) pushRun(sv, { id:String(i), moves:10+i, deaths:i, par:10, star:0, t:i });
+  t.eq('history is capped', sv.history.length, HIST_CAP);
+  t.eq('history is newest first', sv.history[0].id, '20');
+  t.eq('history drops the oldest run', sv.history[sv.history.length-1].id, String(20 - HIST_CAP + 1));
+  var again = freshSave();
+  pushRun(again, { id:'4', moves:9, deaths:0, par:9, star:1, t:100 });
+  pushRun(again, { id:'4', moves:9, deaths:0, par:9, star:1, t:100 });
+  t.eq('the same run is not recorded twice', again.history.length, 1);
+  pushRun(again, { id:'4', moves:8, deaths:0, par:9, star:1, t:101 });
+  t.eq('a later run on the same level is its own row', again.history.length, 2);
+  var round = parseSave(JSON.stringify(again));
+  t.eq('history survives a save round trip', round.history.length, 2);
+  t.eq('history keeps its numbers', round.history[0].moves, 8);
+  var legacy = parseSave('{"gameId":"parallel","v":1,"best":{}}');
+  t.eq('a save from before history still boots', legacy.history.length, 0);
+  var junk = migrateSave({ gameId:'parallel', v:1, history:'not an array' });
+  t.eq('a corrupt history is thrown away', junk.history.length, 0);
+  var disk = freshSave(), mem = freshSave();
+  pushRun(disk, { id:'1', moves:9, deaths:0, par:8, star:0, t:10 });
+  pushRun(disk, { id:'2', moves:9, deaths:0, par:8, star:0, t:20 });
+  pushRun(mem,  { id:'3', moves:9, deaths:0, par:8, star:0, t:30 });
+  var merged = mergeSave(disk, mem);
+  t.eq('two tabs both keep their runs', merged.history.length, 3);
+  t.eq('the merged history is newest first', merged.history[0].id, '3');
+  /* Every save flush merges disk into memory, so the same run passes through
+     this function again and again. Without the dedupe the history would fill
+     up with copies of one run inside a single session. The first version of
+     this suite could not tell the difference, which is why this pair exists. */
+  var twice = mergeSave(merged, merged);
+  t.eq('merging a save with itself does not duplicate a run', twice.history.length, 3);
+  var thrice = mergeSave(mergeSave(twice, twice), twice);
+  t.eq('repeated flushes leave the history alone', thrice.history.length, 3);
+  t.eq('and the rows are still in order', thrice.history[0].id + thrice.history[2].id, '31');
+  t.assert('the merged history never exceeds the cap',
+    mergeHistory(disk.history, mem.history, 2).length === 2);
+  var sv2 = freshSave();
+  sv2.best['1'] = { moves:8, deaths:0, par:8 };
+  sv2.best['d777'] = { moves:30, deaths:0, par:30 };
+  sv2.best['s55'] = { moves:20, deaths:0, par:20 };
+  t.eq('the sky counts campaign clears only', campaignCleared(sv2, CONFIG.LEVEL_COUNT), 1);
+  t.eq('the sky counts campaign stars only', campaignStars(sv2, CONFIG.LEVEL_COUNT), 1);
+  t.eq('every kind of run still counts toward the lifetime total', clearedCount(sv2), 3);
+}
+
 function suiteFuzz(t){
   var pool = [], i;
   for (i = 0; i < FIXTURES.length; i++) pool.push(parseAscii(FIXTURES[i].rows));
   if (LEVELS.length){
-    var picks = [0, 6, 13, 21, 27, 34, 39, 45, 51, 58], j;
+    var picks = [0, 9, 17, 26, 34, 44, 55, 68, 82, 97], j;
     pool = [];
     for (j = 0; j < picks.length; j++) if (picks[j] < LEVELS.length) pool.push(decodeLevel(LEVELS[picks[j]]));
   }
@@ -1527,10 +1842,17 @@ function applyVolume(){
   var v = SAVE.settings.sound ? (SAVE.settings.vol / 100) * 0.5 : 0;
   try { AU.master.gain.setTargetAtTime(v, AU.ctx.now || AU.ctx.currentTime, 0.02); } catch (e){}
 }
-function voices(desync){
+/* The two voices ARE the sync state. Depth of the bend is the mirror drift the
+   SIM computes, so the amber voice sits a half step flat for one cell of
+   drift, a whole step for two, up to a tritone, and lands back on the clean
+   fifth the moment the twins are back in mirror. A split that happened and was
+   walked back sounds resolved; a split you are still carrying keeps souring
+   under you. Every move played, not just the ones the flag fires on. */
+function voices(desync, drift){
   if (!AU.ctx || !SAVE.settings.sound) return;
   var t = AU.ctx.currentTime;
-  AU.bend = desync ? 1 : 0;
+  var d = Math.max(0, Math.min(6, drift || 0));
+  AU.bend = d;
   try {
     AU.ga.gain.cancelScheduledValues(t);
     AU.ga.gain.setValueAtTime(AU.ga.gain.value, t);
@@ -1538,10 +1860,20 @@ function voices(desync){
     AU.ga.gain.exponentialRampToValueAtTime(0.0008, t + 0.28);
     AU.gb.gain.cancelScheduledValues(t);
     AU.gb.gain.setValueAtTime(AU.gb.gain.value, t);
-    AU.gb.gain.linearRampToValueAtTime(0.16, t + 0.012);
+    AU.gb.gain.linearRampToValueAtTime(0.16, t + (desync ? 0.02 : 0.012));
     AU.gb.gain.exponentialRampToValueAtTime(0.0008, t + 0.28);
-    /* the bend: the amber voice drops a half step while the pair is split */
-    AU.vb.frequency.setTargetAtTime(desync ? noteHz(4) * Math.pow(2, -1/12) : noteHz(4), t, 0.02);
+    AU.vb.frequency.setTargetAtTime(noteHz(4) * Math.pow(2, -d / 12), t, desync ? 0.045 : 0.02);
+    /* the violet voice tightens a hair while the pair is split, so the beating
+       between them is audible even on a phone speaker */
+    AU.va.frequency.setTargetAtTime(noteHz(0) * Math.pow(2, (d ? 0.06 : 0) / 12), t, 0.05);
+  } catch (e){}
+}
+function voicesUnison(){
+  if (!AU.ctx || !SAVE.settings.sound) return;
+  var t = AU.ctx.currentTime;
+  try {
+    AU.vb.frequency.setTargetAtTime(noteHz(4), t, 0.05);
+    AU.va.frequency.setTargetAtTime(noteHz(0), t, 0.05);
   } catch (e){}
 }
 function tone(freq, dur, type, vol){
@@ -1569,7 +1901,7 @@ function haptic(ms){
 
 /* ================= VIEW ================= */
 var $ = function(id){ return document.getElementById(id); };
-var elBoard = $('board'), elLayers = $('layers'), elSeam = $('seam');
+var elBoard = $('board'), elLayers = $('layers'), elSeam = $('seam'), elSeam2 = $('seam2');
 var G = {
   lv:null, st:null, num:1, mode:'level', cell:32,
   deaths:0, log:'', anim:null, reduce:false, daily:null, dailyId:0,
@@ -1581,26 +1913,81 @@ function reduced(){
   try { return self.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e){ return false; }
 }
 
+var LAYOUT = { PAD_MIN:62, PAD_MAX:138, RIBBON_H:62, GAPS:30, CELL_MAX:76 };
 function fitBoard(){
   if (!G.lv) return;
   /* Measure the real slack rather than letting the stage swallow it, and use
-     visualViewport so a phone browser's collapsing chrome does not lie. */
+     visualViewport so a phone browser's collapsing chrome does not lie.
+     The pad is BUDGETED, never measured: measuring an element we are about to
+     resize makes each fit feed the next one and the layout walks. */
   var app = $('app');
   var vh = 0;
   try { vh = self.visualViewport ? self.visualViewport.height : 0; } catch (e){}
   var appH = Math.max(app.clientHeight, 0);
   if (vh) appH = Math.min(appH, vh - 10);
-  var used = $('bar').offsetHeight + $('hud').offsetHeight + $('pad').offsetHeight + 30;
-  var availH = Math.max(120, appH - used);
+  var budget = Math.max(140, appH - $('bar').offsetHeight - $('hud').offsetHeight -
+                        LAYOUT.PAD_MIN - LAYOUT.GAPS);
   var availW = Math.max(120, app.clientWidth - 14);
-  var c = Math.floor(Math.min(availW / G.lv.w, availH / G.lv.h));
-  c = Math.max(14, Math.min(76, c));
+  var c = Math.floor(Math.min(availW / G.lv.w, budget / G.lv.h));
+  c = Math.max(14, Math.min(LAYOUT.CELL_MAX, c));
+
+  /* A square board on a tall phone is WIDTH bound, so a column of slack sits
+     under it that the board can never use. Spend it, in this order: a fatter
+     thumb pad first, then the level ribbon, and only then give up. */
+  var slack = budget - c * G.lv.h;
+  var showRibbon = slack >= (LAYOUT.RIBBON_H + 34);
+  if (showRibbon) slack -= LAYOUT.RIBBON_H;
+  var padH = Math.max(LAYOUT.PAD_MIN, Math.min(LAYOUT.PAD_MAX,
+                      LAYOUT.PAD_MIN + Math.floor(Math.max(0, slack) * 0.66)));
+  try { document.documentElement.style.setProperty('--padh', padH + 'px'); } catch (e){}
+  $('ribbon').style.display = showRibbon ? 'flex' : 'none';
+  G.slack = Math.max(0, slack - (padH - LAYOUT.PAD_MIN));
+  G.padH = padH;
+
   G.cell = c;
   elBoard.style.width = (c * G.lv.w) + 'px';
   elBoard.style.height = (c * G.lv.h) + 'px';
-  elSeam.style.left = (c * G.lv.w / 2) + 'px';
+  mirrorDrift(G.lv, G.st);                 /* fills in the level's mirror axis */
+  elSeam.style.left = ((G.lv._mx / 2 + 0.5) * c) + 'px';
+  if (showRibbon) drawRibbon();
   drawStatic();
   drawDynamic();
+  setDriftMeter(mirrorDrift(G.lv, G.st));
+}
+
+/* The drift, said three ways: a number in the hud, the second seam line, and
+   the bend in the pair of voices. Sound off and colorblind both still read it. */
+function setDriftMeter(d){
+  var el = $('hDrift');
+  if (el){
+    el.textContent = d;
+    el.style.color = d ? 'var(--warm)' : 'var(--ink)';
+  }
+  if (!elSeam2 || !G.lv || !G.st) return;
+  var axis = (G.st.ax + G.st.bx) / 2 + 0.5;
+  elSeam2.style.left = (axis * G.cell) + 'px';
+  elSeam2.style.opacity = d ? String(Math.min(0.95, 0.42 + d * 0.16)) : '0';
+}
+
+/* The ribbon: this level and its neighbours, with their stars, tappable.
+   Locked levels are dim and say so when tapped, same rule as the sky. */
+function drawRibbon(){
+  var el = $('ribbon');
+  if (G.mode !== 'level'){
+    el.innerHTML = '<div class="chip cur">' + (G.mode === 'daily' ? 'TODAY' : 'SEED') +
+      '</div><div class="chip" data-goto="1">BACK TO THE HUNDRED</div>';
+    return;
+  }
+  var html = [], n, from = Math.max(1, G.num - 3), to = Math.min(LEVELS.length, from + 9);
+  from = Math.max(1, Math.min(from, to - 9));
+  for (n = from; n <= to; n++){
+    var b = SAVE.best[String(n)];
+    var open = n === 1 || !!SAVE.best[String(n - 1)];
+    var cls = 'chip' + (n === G.num ? ' cur' : (b ? ' done' : (open ? '' : ' lock')));
+    html.push('<button class="' + cls + '" data-goto="' + n + '">' + n +
+      (b ? '<small>' + (b.moves <= b.par ? '★ ' + b.moves : b.moves) + '</small>' : '') + '</button>');
+  }
+  el.innerHTML = html.join('');
 }
 
 function box(el, x, y){
@@ -1699,24 +2086,34 @@ function toast(txt){
 }
 
 /* ================= GAME LOOP ================= */
-function levelKey(){ return G.mode === 'daily' ? 'd' + G.dailyId : String(G.num); }
+function levelKey(){
+  if (G.mode === 'daily') return 'd' + G.dailyId;
+  if (G.mode === 'seed') return 's' + G.seedNum;
+  return String(G.num);
+}
 
 function startLevel(num, mode){
   G.mode = mode || 'level';
   if (G.mode === 'daily'){
     if (!G.daily){ toast('Today is not ready yet.'); return; }
     G.lv = G.daily;
-    $('subtitle').textContent = 'today  ' + G.dailyId;
+    $('subtitle').textContent = 'day ' + G.dailyId;
+  } else if (G.mode === 'seed'){
+    if (!G.seedLv){ toast('That seed is not ready yet.'); return; }
+    G.lv = G.seedLv;
+    $('subtitle').textContent = 'seed ' + G.seedNum;
   } else {
     G.num = Math.max(1, Math.min(LEVELS.length, num));
     G.lv = decodeLevel(LEVELS[G.num - 1]);
-    $('subtitle').textContent = 'level ' + G.num + '  tier ' + G.lv.tier;
+    $('subtitle').textContent = 'level ' + G.num + '  tier ' + G.lv.tier +
+      '  ' + TIER_NAMES[G.lv.tier].toLowerCase();
   }
   G.deaths = 0; G.log = ''; G.ghostA = []; G.ghostB = []; G.replaying = false;
   var b = SAVE.best[levelKey()];
   G.st = initState(G.lv);
   G.lastA = [[G.st.ax, G.st.ay]]; G.lastB = [[G.st.bx, G.st.by]];
   $('wincard').className = '';
+  $('nudge').style.display = 'none';
   setMsg(b ? ('your best ' + b.moves + '   par ' + G.lv.par) : 'both of you, both doors');
   SAVE.stats.plays++;
   fitBoard();
@@ -1746,9 +2143,11 @@ function doInput(inp){
   G.log += IN_CHARS.charAt(inp);
   G.lastA.push([ns.ax, ns.ay]); G.lastB.push([ns.bx, ns.by]);
   SAVE.stats.moves++;
-  voices(ns.desync);
+  var drift = mirrorDrift(G.lv, ns);
+  voices(ns.desync, drift);
   haptic(ns.desync ? 14 : 8);
   drawDynamic();
+  setDriftMeter(drift);
   if (ns.dead) onDeath();
   else if (ns.won) onWin();
 }
@@ -1766,28 +2165,47 @@ function onDeath(){
 
 function onWin(){
   sfxWin(); haptic(25);
+  voicesUnison();
   var k = levelKey(), best = SAVE.best[k];
+  var par = G.st.moves <= G.lv.par;
   var rec = { moves:G.st.moves, deaths:G.deaths, par:G.lv.par, log:G.log };
   if (!best || rec.moves < best.moves) SAVE.best[k] = rec;
   SAVE.stats.clears++;
+  pushRun(SAVE, { id:k, moves:G.st.moves, deaths:G.deaths, par:G.lv.par,
+                  star:par ? 1 : 0, t:Date.now() });
   if (G.mode === 'daily'){
-    var today = new Date().toISOString().slice(0, 10);
-    if (SAVE.daily.last !== today){
+    var today = todayISO();
+    if (SAVE.daily.last !== today && G.dailyISO === today){
       SAVE.daily.streak = (SAVE.daily.streak || 0) + 1;
       SAVE.daily.last = today;
     }
   }
   flushSave();
-  var par = G.st.moves <= G.lv.par;
   var exA = $('exA'), exB = $('exB');
   if (exA && !reduced()) exA.className = 'exit a lit';
   if (exB && !reduced()) exB.className = 'exit b lit';
   $('winTitle').textContent = par ? 'PERFECT' : 'BOTH DOORS';
   $('winStats').textContent = 'you ' + G.st.moves + ', best possible ' + G.lv.par +
     (par ? '   ★' : '') + '   deaths ' + G.deaths;
-  $('winNext').textContent = (G.mode === 'daily' || G.num >= LEVELS.length) ? 'SKY' : 'NEXT';
+  $('winNext').textContent = (G.mode !== 'level' || G.num >= LEVELS.length) ? 'SKY' : 'NEXT';
   $('wincard').className = 'on';
   setMsg('');
+  if (G.mode === 'level') drawRibbon();
+  offerInstall();
+}
+
+/* CRAFT E: ask once, quietly, and only after somebody has actually finished a
+   board. Never on arrival. */
+var installEvt = null, installAsked = false;
+self.addEventListener('beforeinstallprompt', function(e){
+  try { e.preventDefault(); } catch (err){}
+  installEvt = e;
+});
+function offerInstall(){
+  if (!installEvt || installAsked || SAVE.stats.clears < 1) return;
+  var el = $('nudge');
+  el.style.display = 'block';
+  el.textContent = 'Keep PARALLEL on your home screen';
 }
 
 /* Best run replay, fed back through the SAME step function. */
@@ -1811,26 +2229,31 @@ function playReplay(log){
   }, 190);
 }
 
-/* ================= LEVEL SELECT (constellation) ================= */
+/* ================= LEVEL SELECT (constellation) =================
+   Geometry comes from skyLayout in the SIM, in CSS pixels, so the 48px law is
+   asserted in node instead of eyeballed. One unit here is one rendered pixel:
+   the SVG is sized in px to match its own viewBox, and the sheet scrolls. */
+var TIER_NAMES = ['', 'FIRST LIGHT', 'THE SPIKES', 'LOCK AND KEY', 'THIN FLOOR',
+                  'BLACK ICE', 'THE DEEP END', 'THE LONG WAY'];
 function buildSky(){
-  var svg = $('sky'), parts = [], n, i;
-  var W = 320, cx = W / 2;
-  var tierY = [0, 82, 250, 415, 580, 752];
-  var rng = makeRNG(0xC0FFEE);
-  var pts = [];
-  for (n = 1; n <= LEVELS.length; n++){
-    var spec = tierOf(n);
-    var idx = n - spec.lo, count = spec.hi - spec.lo + 1;
-    var ang = (idx / count) * Math.PI * 2 + spec.t * 0.7;
-    var rad = 60 + (spec.t * 3) + rng() * 14;
-    pts.push({ n:n, t:spec.t, x:cx + Math.cos(ang) * rad, y:tierY[spec.t] + Math.sin(ang) * (rad * 0.62) });
-  }
+  var svg = $('sky'), wrap = $('selwrap'), parts = [], i;
+  var L = skyLayout(LEVELS.length, wrap.clientWidth || 360, CONFIG.MASTER_SEED);
+  svg.setAttribute('viewBox', '0 0 ' + L.w + ' ' + L.h);
+  svg.style.width = L.w + 'px';
+  svg.style.height = L.h + 'px';
+  var pts = L.pts, here = 0;
+
   for (i = 0; i < pts.length - 1; i++){
     var a = pts[i], b = pts[i+1];
     if (SAVE.best[String(a.n)] && SAVE.best[String(b.n)]){
       parts.push('<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) +
-        '" y2="' + b.y.toFixed(1) + '" stroke="#8b7cf6" stroke-opacity=".38" stroke-width="1"/>');
+        '" y2="' + b.y.toFixed(1) + '" stroke="#8b7cf6" stroke-opacity=".34" stroke-width="1"/>');
     }
+  }
+  for (i = 0; i < L.labels.length; i++){
+    var lb = L.labels[i];
+    parts.push('<text x="' + lb.x.toFixed(1) + '" y="' + lb.y.toFixed(1) + '" font-size="10" ' +
+      'letter-spacing="1.4" fill="#6f7590">TIER ' + lb.t + '   ' + TIER_NAMES[lb.t] + '</text>');
   }
   for (i = 0; i < pts.length; i++){
     var p = pts[i], best = SAVE.best[String(p.n)];
@@ -1838,20 +2261,87 @@ function buildSky(){
     var open = p.n === 1 || SAVE.best[String(p.n - 1)];
     var fill = star ? '#f3b562' : (best ? '#8b7cf6' : (open ? '#3b4058' : '#222634'));
     var r = star ? 5.6 : (best ? 4.4 : 3.2);
-    parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
-      '" r="' + r + '" fill="' + fill + '"/>');
-    parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
-      '" r="24" fill="transparent"/>');
-    parts.push('<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 15).toFixed(1) + '" text-anchor="middle" ' +
-      'font-size="8" fill="#6f7590">' + p.n + '</text>');
-  }
-  for (i = 1; i <= 5; i++){
-    parts.push('<text x="10" y="' + (tierY[i] + 4) + '" font-size="10" fill="#6f7590">TIER ' + i + '</text>');
+    var cx = p.x.toFixed(1), cy = p.y.toFixed(1);
+    if (p.n === G.num && G.mode === 'level'){
+      here = p.y;
+      parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="11" fill="none" stroke="#8b7cf6" ' +
+        'stroke-opacity=".75" stroke-width="1.2"/>');
+    }
+    if (star){
+      parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="#f3b562" fill-opacity=".16"/>');
+    }
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + fill + '"/>');
+    parts.push('<text x="' + cx + '" y="' + (p.y + 17).toFixed(1) + '" text-anchor="middle" ' +
+      'font-size="9" fill="' + (best ? '#8f96b4' : '#5d6379') + '">' + p.n + '</text>');
+    /* the tap target, last so it sits on top, exactly the radius the harness
+       measured: 48px across, and never overlapping its neighbour */
+    parts.push('<circle class="starhit" data-n="' + p.n + '" cx="' + cx + '" cy="' + cy +
+      '" r="' + L.r + '" fill="transparent"/>');
   }
   svg.innerHTML = parts.join('');
-  $('selfoot').textContent = clearedCount(SAVE) + ' of ' + LEVELS.length + ' cleared, ' +
-    starCount(SAVE) + ' matched the best possible' +
+  var done = campaignCleared(SAVE, LEVELS.length), stars = campaignStars(SAVE, LEVELS.length);
+  $('selfoot').textContent = done + ' of ' + LEVELS.length + ' cleared, ' +
+    stars + ' matched the best possible' +
     (SAVE.daily.streak ? ', daily streak ' + SAVE.daily.streak : '');
+  $('selDaily').textContent = dailyDone() ? 'TODAY DONE' : 'TODAY';
+  try { wrap.scrollTop = Math.max(0, here - wrap.clientHeight / 2); } catch (e){}
+}
+
+function dailyDone(){
+  var iso = todayISO();
+  return SAVE.daily.last === iso;
+}
+function todayISO(){ return new Date().toISOString().slice(0, 10); }
+
+/* ================= RUN LOG ================= */
+function buildStats(){
+  var s = SAVE.stats, i, n;
+  var done = campaignCleared(SAVE, LEVELS.length), stars = campaignStars(SAVE, LEVELS.length);
+  var cells = [
+    [done + '/' + LEVELS.length, 'CLEARED'],
+    [stars, 'PAR MATCHED'],
+    [s.deaths || 0, 'DEATHS'],
+    [s.moves || 0, 'MOVES'],
+    [s.plays || 0, 'ATTEMPTS'],
+    [SAVE.daily.streak || 0, 'DAY STREAK']
+  ];
+  var html = [];
+  for (i = 0; i < cells.length; i++){
+    html.push('<div class="stat"><b class="tnum">' + cells[i][0] + '</b><span>' + cells[i][1] + '</span></div>');
+  }
+  $('statsGrid').innerHTML = html.join('');
+
+  var tiers = [], ti;
+  for (ti = 0; ti < TIERS.length; ti++){
+    var spec = TIERS[ti], cnt = 0, st = 0, tot = 0;
+    for (n = spec.lo; n <= Math.min(spec.hi, LEVELS.length); n++){
+      tot++;
+      var b = SAVE.best[String(n)];
+      if (b){ cnt++; if (b.moves <= b.par) st++; }
+    }
+    if (!tot) continue;
+    tiers.push('<div class="tierbar"><span style="min-width:44px">TIER ' + spec.t + '</span>' +
+      '<span class="track"><span class="fill" style="width:' + Math.round(cnt/tot*100) + '%"></span></span>' +
+      '<span class="tnum" style="min-width:56px;text-align:right">' + cnt + '/' + tot +
+      (st ? '  ★' + st : '') + '</span></div>');
+  }
+  $('statsTiers').innerHTML = tiers.join('');
+
+  var runs = SAVE.history || [], rows = [];
+  for (i = 0; i < runs.length; i++){
+    var r = runs[i];
+    var label = r.id.charAt(0) === 'd' ? ('day ' + r.id.slice(1))
+              : (r.id.charAt(0) === 's' ? ('seed ' + r.id.slice(1)) : ('level ' + r.id));
+    rows.push('<button class="runrow" data-run="' + r.id + '"><b>' + label + '</b>' +
+      '<span>' + r.moves + ' moves, best possible ' + r.par + '</span><span class="sp"></span>' +
+      '<span>' + (r.star ? '★ ' : '') + r.deaths + ' deaths</span></button>');
+  }
+  $('statsRuns').innerHTML = rows.length ? rows.join('')
+    : '<p style="color:var(--dim)">Nothing yet. Clear a level and it lands here.</p>';
+  $('statsFoot').textContent = done
+    ? ('Your best solved boards are kept as input logs, so the WATCH button on any cleared level ' +
+       'replays exactly what you did.')
+    : 'Clear a level and your best run is kept as a replay.';
 }
 
 function openSheet(id){ $(id).className = 'sheet on'; }
@@ -1964,15 +2454,27 @@ wire('oShare', function(){
   else toast(link);
 });
 
-/* ================= DAILY ================= */
-function buildDaily(){
-  var iso = new Date().toISOString().slice(0, 10);
-  G.dailyId = Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
+/* ================= DAILY AND SEED LINKS =================
+   A daily is a real generated level: solved by the same BFS, checked for a
+   desync moment and checked against the greedy agent before anyone sees it.
+   The share carries the DAY, not the word today, so the link still opens the
+   same board next week. A seed link does the same for any number. */
+function buildDaily(iso){
+  iso = iso || todayISO();
+  if (!/^\d\d\d\d-\d\d-\d\d$/.test(iso)) iso = todayISO();
+  G.dailyISO = iso;
+  G.dailyId = dayNumber(iso);
   var lv = genDaily(seedFromString(dailyKey(iso)));
-  /* genDaily runs the same BFS before it hands anything back, so a level the
-     solver has not solved is never shown. If it cannot make one, say so. */
   G.daily = lv;
-  if (!lv) toast('Today could not be built. The sixty are still here.');
+  if (!lv) toast('That day could not be built. The hundred are still here.');
+  return lv;
+}
+function buildSeed(seed){
+  G.seedNum = seed >>> 0;
+  var lv = genSeeded(G.seedNum, 5);
+  G.seedLv = lv;
+  if (!lv) toast('That seed could not be built. The hundred are still here.');
+  return lv;
 }
 
 /* ================= BOOT ================= */

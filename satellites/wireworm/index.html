@@ -186,20 +186,29 @@ var CONFIG = Object.freeze({
   TICK_START_MS: 220,       // driver only. SIM never sees milliseconds.
   TICK_STEP_MS: 4,          // faster per completed circuit
   TICK_FLOOR_MS: 90,
-  COMBO_WINDOW: 40,         // ticks
+  COMBO_WINDOW: 40,         // ticks. the window off a cold start and at the first rung
+  /* The window TIGHTENS as the ladder climbs. Spec says 40 ticks; at 20x20 a
+     competent player completes every 5 to 25 ticks, so a flat 40 pinned the
+     combo at x4 inside about 50 ticks and the ladder stopped being a decision.
+     Holding x4 now costs 20 ticks, which is inside the range a long red circuit
+     takes, so the top of the ladder is a real choice between paying for length
+     and holding the multiplier. Director default, recorded in BUILD-NOTES. */
+  COMBO_WINDOWS: Object.freeze([40, 40, 32, 26, 20]),
   COMBO_LADDER: Object.freeze([1, 1.5, 2, 3, 4]),
   OVERLOAD_PCT: 0.55,
   OVERLOAD_CELLS: 220,      // floor(400 * 0.55). Fires at >= this many.
   OVERLOAD_BONUS_PER_CELL: 5,
   WARN_PCT: 0.35,           // load readout appears past here
   DISCHARGE_INTERVAL: 90,   // ticks between pickup spawns
+  CREEP_INTERVAL: 45,       // ticks with no completion before live wire creeps one cell
+  DAILY_TICKS: 600,         // the daily is a fixed shift, not a survival run
   STALL_CHECK: 24,          // ticks between "can the worm still reach anything" sweeps
   STALL_LIMIT: 300,         // ticks of zero progress before the board comes to you
   PAIRS: 2,                 // terminal pairs live on the board
   GREEN_MAX_DIST: 6,        // green pairs spawn within this manhattan distance
   RED_MIN_DIST: 20,         // red pairs must land at least this far apart
   QUEUE_CAP: 2,             // input queue slots
-  FILL_TARGET: 40           // sweep agent only: cells the board filler grows a slice to
+  FILL_TARGET: 90           // sweep agent only: cells the board filler grows a slice to
 });
 
 /* cell codes */
@@ -460,10 +469,17 @@ function spawnPickup(st) {
    5. SIM — pure state machine. No DOM, no clock, no Math.random.
         step(state, turn) with turn in {-1, 0, +1}. One cell per call.
    =================================================================== */
-function newGame(seed) {
+function newGame(seed, opts) {
+  var m = (opts && opts.mode) || 'free';
   var st = {
     seed: seed >>> 0,
     rngState: seed >>> 0,
+    mode: m,
+    /* ENDLESS runs until the board kills you. DAILY runs a fixed shift: same
+       seed, same clock, so the only variable left is how you played it. A clock
+       instead of a wall changes the whole calculus, because you cannot bank
+       longevity and the breaker becomes the only way to score big in time. */
+    tickLimit: m === 'daily' ? CONFIG.DAILY_TICKS : 0,
     cell: new Uint8Array(CONFIG.CELLS),
     cover: new Uint16Array(CONFIG.CELLS),   // living circuits covering the cell
     ccol: new Uint8Array(CONFIG.CELLS),     // colour id + 1 of the newest circuit
@@ -490,6 +506,8 @@ function newGame(seed) {
     overloadBonus: 0,
     discharges: 0,
     rescues: 0,
+    creeps: 0,
+    creepTicks: 0,
     stallTicks: 0,
     alive: true,
     cause: null
@@ -500,6 +518,13 @@ function newGame(seed) {
 }
 
 function comboMult(st) { return CONFIG.COMBO_LADDER[st.comboIdx < 0 ? 0 : st.comboIdx]; }
+
+/* The window you have to beat from the rung you are standing on. */
+function comboWindow(st) {
+  var i = st.comboIdx;
+  if (i < 0) return CONFIG.COMBO_WINDOW;
+  return CONFIG.COMBO_WINDOWS[i < CONFIG.COMBO_WINDOWS.length ? i : CONFIG.COMBO_WINDOWS.length - 1];
+}
 
 function energizeSlice(st, s, e) {
   var mark = new Uint8Array(CONFIG.CELLS), cells = [], i, c;
@@ -527,6 +552,7 @@ function fireOverload(st, ev) {
      next completion would resurrect wire the breaker just cleared. */
   if (st.charge) st.charge.sliceStart = st.trail.length - 1;
   st.stallTicks = 0;
+  st.creepTicks = 0;
   ev.push({ t: 'overload', bonus: bonus, cells: n });
 }
 
@@ -554,6 +580,7 @@ function completeCircuit(st, pair, ev) {
   removePairCells(st, pair);
   dropPair(st, pair.id);
   st.stallTicks = 0;
+  st.creepTicks = 0;
   ev.push({ t: 'completed', cells: cells, len: len, score: gained, combo: cm, ci: pair.ci, s: s, e: e });
   if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, ev);
   topUpPairs(st);
@@ -640,6 +667,61 @@ function rescueCheck(st, ev) {
   ev.push({ t: 'rescue', pairs: st.pairs.length });
 }
 
+/* CREEP. The one hazard the game did not have.
+   Before this, nothing on the board moved unless the player moved it, so a
+   player who simply refused to close circuits was safe forever: the safety
+   filtered random walker medians 1424 ticks against a greedy 287 precisely
+   because it almost never completes a circuit and therefore never builds
+   anything lethal. That is a game with no ambient pressure.
+
+   Now current that has nowhere to go spreads. Every CREEP_INTERVAL ticks
+   WITHOUT a completion, one empty cell touching live wire lights up and joins
+   the newest circuit, so a discharge still clears it. Fairness rules, all
+   asserted: it never lights a cell next to the worm's head, never lights a cell
+   inside the circuit the player is currently drawing, never takes a terminal or
+   the pickup, and it is reverted on the spot if it would cut the worm off from
+   every terminal. It can trip the breaker, which is the point: sitting still
+   near the threshold is a way to cash the overload, not only a punishment. */
+function creepStep(st, ev) {
+  if (!st.circuits.length) return;
+  var pend = pendingMask(st), g = CONFIG.GRID, cand = [], i, x, y, d, nx, ny, touch;
+  var hx = cx(st.head), hy = cy(st.head);
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cover[i] > 0 || st.cell[i] === TERM || st.cell[i] === PICK) continue;
+    if (i === st.head || pend[i]) continue;
+    x = cx(i); y = cy(i);
+    if (Math.abs(x - hx) + Math.abs(y - hy) <= 1) continue;   // never under your nose
+    touch = false;
+    for (d = 0; d < 4; d++) {
+      nx = x + DX[d]; ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= g || ny >= g) continue;
+      if (st.cover[ny * g + nx] > 0) { touch = true; break; }
+    }
+    if (touch) cand.push(i);
+  }
+  if (!cand.length) return;
+  var c = cand[rngInt(st, cand.length)];
+  var circ = st.circuits[st.circuits.length - 1];
+  var wasCode = st.cell[c], wasCol = st.ccol[c];
+  st.cell[c] = WIRE; st.cover[c] = 1; st.ccol[c] = circ.ci + 1; st.energized++;
+
+  /* a hazard is allowed to be cruel, not unfair: if that cell just sealed every
+     objective away from the worm, it never happened */
+  var reach = reachMask(st), ok = false, p, q;
+  for (p = 0; p < st.pairs.length && !ok; p++) {
+    for (q = 0; q < st.pairs[p].active.length; q++) if (reach[st.pairs[p].active[q]]) { ok = true; break; }
+  }
+  if (!ok) {
+    st.cell[c] = wasCode; st.cover[c] = 0; st.ccol[c] = wasCol; st.energized--;
+    return;
+  }
+  circ.cells.push(c);
+  circ.len++;
+  st.creeps++;
+  ev.push({ t: 'creep', cell: c, ci: circ.ci });
+  if (st.energized >= CONFIG.OVERLOAD_CELLS) fireOverload(st, ev);
+}
+
 function step(st, turn) {
   var ev = [];
   if (!st.alive) return { state: st, events: ev };
@@ -667,15 +749,24 @@ function step(st, turn) {
   if (code === TERM) touchTerminal(st, ni, ev);
   else if (code === PICK) touchPickup(st, ev);
 
-  if (st.comboIdx >= 0 && (st.tick - st.lastCompleteTick) > CONFIG.COMBO_WINDOW) st.comboIdx = -1;
+  if (st.comboIdx >= 0 && (st.tick - st.lastCompleteTick) > comboWindow(st)) {
+    st.comboIdx = -1;
+    ev.push({ t: 'combodrop' });
+  }
 
   st.ticksSincePickup++;
   if (st.pickup < 0 && st.circuits.length > 0 && st.ticksSincePickup >= CONFIG.DISCHARGE_INTERVAL) {
     var p = spawnPickup(st);
     if (p >= 0) ev.push({ t: 'pickup', cell: p });
   }
+  st.creepTicks++;
+  if (st.creepTicks >= CONFIG.CREEP_INTERVAL) { st.creepTicks = 0; creepStep(st, ev); }
   st.stallTicks++;
   if (st.tick % CONFIG.STALL_CHECK === 0) rescueCheck(st, ev);
+  if (st.tickLimit && st.tick >= st.tickLimit) {
+    st.alive = false; st.cause = 'clock';
+    ev.push({ t: 'died', cause: 'clock' });
+  }
   return { state: st, events: ev };
 }
 
@@ -1084,8 +1175,8 @@ function runScript(seed, turns, cap) {
   }
   return { st: st, events: evs };
 }
-function playAgent(seed, agent, agentSeed, maxTicks, onTick) {
-  var st = newGame(seed), rng = makeRNG(agentSeed >>> 0), log = [], t, n = 0;
+function playAgent(seed, agent, agentSeed, maxTicks, onTick, opts) {
+  var st = newGame(seed, opts), rng = makeRNG(agentSeed >>> 0), log = [], t, n = 0;
   var lim = maxTicks || 20000;
   while (st.alive && n < lim) {
     t = agent(st, rng);
@@ -1377,18 +1468,41 @@ function suiteCombo() {
   TEST.eq('the second rung is one and a half', CONFIG.COMBO_LADDER[1], 1.5);
   TEST.eq('the third rung is two', CONFIG.COMBO_LADDER[2], 2);
   TEST.eq('the fourth rung is three', CONFIG.COMBO_LADDER[3], 3);
-  /* the window closes after 40 quiet ticks */
-  var s2 = newGame(2);
-  s2.comboIdx = 3; s2.lastCompleteTick = 0; s2.tick = 0;
-  for (i = 0; i < CONFIG.COMBO_WINDOW; i++) step(s2, safeTurns(s2).indexOf(0) >= 0 ? 0 : (safeTurns(s2)[0] || 0));
-  TEST.assert('combo survives to the edge of the window', s2.comboIdx >= 0 || !s2.alive);
-  var s3 = newGame(3);
-  s3.comboIdx = 3; s3.lastCompleteTick = 0; s3.tick = 0;
-  for (i = 0; i < CONFIG.COMBO_WINDOW + 3 && s3.alive; i++) {
-    var sf = safeTurns(s3);
-    step(s3, sf.indexOf(0) >= 0 ? 0 : (sf.length ? sf[0] : 0));
+  /* the window is per rung now: it tightens as the ladder climbs, so the top of
+     the ladder is something you HOLD rather than something you reach. */
+  TEST.eq('there is a window for every rung of the ladder', CONFIG.COMBO_WINDOWS.length, CONFIG.COMBO_LADDER.length);
+  TEST.eq('the first rung keeps the spec window of 40 ticks', CONFIG.COMBO_WINDOWS[0], CONFIG.COMBO_WINDOW);
+  TEST.assert('the window never widens as the ladder climbs', (function () {
+    var k;
+    for (k = 1; k < CONFIG.COMBO_WINDOWS.length; k++) if (CONFIG.COMBO_WINDOWS[k] > CONFIG.COMBO_WINDOWS[k - 1]) return false;
+    return true;
+  })());
+  TEST.assert('holding the top rung costs at least a third less time than the bottom',
+    CONFIG.COMBO_WINDOWS[CONFIG.COMBO_WINDOWS.length - 1] <= CONFIG.COMBO_WINDOW * 0.67,
+    'top window ' + CONFIG.COMBO_WINDOWS[CONFIG.COMBO_WINDOWS.length - 1]);
+  var w;
+  for (idx = 0; idx < CONFIG.COMBO_LADDER.length; idx++) {
+    w = CONFIG.COMBO_WINDOWS[idx];
+    var s2 = newGame(2 + idx);
+    s2.comboIdx = idx; s2.lastCompleteTick = 0; s2.tick = 0;
+    for (i = 0; i < w && s2.alive; i++) { var sa = safeTurns(s2); step(s2, sa.indexOf(0) >= 0 ? 0 : (sa.length ? sa[0] : 0)); }
+    TEST.assert('combo rung ' + idx + ' survives to the edge of its own window', s2.comboIdx >= 0 || !s2.alive, 'idx ' + s2.comboIdx);
+    var s3 = newGame(300 + idx);
+    s3.comboIdx = idx; s3.lastCompleteTick = 0; s3.tick = 0;
+    for (i = 0; i < w + 3 && s3.alive; i++) {
+      var sf = safeTurns(s3);
+      step(s3, sf.indexOf(0) >= 0 ? 0 : (sf.length ? sf[0] : 0));
+    }
+    TEST.assert('combo rung ' + idx + ' drops once its window passes', s3.comboIdx === -1 || !s3.alive, 'idx ' + s3.comboIdx);
   }
-  TEST.eq('combo drops once the window passes', s3.comboIdx, -1);
+  /* the ladder must not pin: a run that pauses one tick past the top window
+     falls all the way back to x1, not down one rung */
+  var s4 = newGame(77);
+  s4.comboIdx = 4; s4.lastCompleteTick = 0; s4.tick = 0;
+  for (i = 0; i < CONFIG.COMBO_WINDOWS[4] + 2 && s4.alive; i++) {
+    var sg = safeTurns(s4); step(s4, sg.indexOf(0) >= 0 ? 0 : (sg.length ? sg[0] : 0));
+  }
+  TEST.assert('a dropped combo falls to the bottom of the ladder', comboMult(s4) === 1 || !s4.alive, 'mult ' + comboMult(s4));
 }
 
 /* ---- suite 4: overload and discharge ---- */
@@ -1789,6 +1903,210 @@ function suiteRegressions() {
   TEST.assert('regression: the rescue stays quiet on a board that is fine', s2.rescues <= 2, 'rescues ' + s2.rescues);
 }
 
+/* ---- suite 10: the creep hazard ---- */
+function suiteCreep() {
+  TEST.assert('the creep interval is a real number of ticks', CONFIG.CREEP_INTERVAL > 0 && CONFIG.CREEP_INTERVAL < 400);
+  /* nothing creeps before the player has built anything */
+  var st = newGame(11), i, sf;
+  for (i = 0; i < CONFIG.CREEP_INTERVAL * 3 && st.alive; i++) { sf = safeTurns(st); step(st, sf.length ? sf[0] : 0); }
+  TEST.eq('an empty board never creeps', st.creeps, 0);
+
+  /* a board with one live circuit and a lazy worm does creep */
+  function seeded(seed) {
+    var s = newGame(seed), k;
+    /* hand build a live circuit far from the head so the fairness rules do not
+       starve the candidate list */
+    var cells = [];
+    for (k = 0; k < 40 && cells.length < 12; k++) {
+      if (s.cell[k] === EMPTY && k !== s.head && manhattan(k, s.head) > 1) cells.push(k);
+    }
+    for (k = 0; k < cells.length; k++) { s.cell[cells[k]] = WIRE; s.cover[cells[k]] = 1; s.ccol[cells[k]] = 1; s.energized++; }
+    s.circuits.push({ id: 1, ci: 0, cells: cells, len: cells.length, tick: 0, score: 0 });
+    return s;
+  }
+  var s2 = seeded(12), ticks = 0;
+  while (s2.alive && ticks < CONFIG.CREEP_INTERVAL * 2 && s2.creeps === 0) {
+    var sf2 = safeTurns(s2); step(s2, sf2.length ? sf2[0] : 0); ticks++;
+  }
+  TEST.ge('live wire with nowhere to go creeps when the player stalls', s2.creeps, 1);
+  TEST.assert('a creep raises the load meter', s2.energized > 12, 'energized ' + s2.energized);
+  TEST.eq('the counter and the board agree after a creep', invariants(s2).join(' | '), '');
+
+  /* fairness: never adjacent to the head */
+  var bad = 0, near = 0, r, e, m;
+  for (i = 0; i < 40; i++) {
+    var s3 = seeded(500 + i), n = 0;
+    while (s3.alive && n < 400) {
+      var sf3 = safeTurns(s3);
+      r = step(s3, sf3.length ? sf3[0] : 0);
+      for (e = 0; e < r.events.length; e++) {
+        if (r.events[e].t !== 'creep') continue;
+        m = manhattan(r.events[e].cell, s3.head);
+        if (m <= 1) near++;
+        if (s3.cover[r.events[e].cell] === 0) bad++;
+      }
+      n++;
+    }
+  }
+  TEST.eq('the creep never lights a cell next to the worm head', near, 0);
+  TEST.eq('every creep event actually energized its cell', bad, 0);
+
+  /* the statistical version above almost never sees a head adjacent candidate,
+     so build the board where they are the ONLY candidates: a live ring at
+     chebyshev distance two leaves exactly the four cells around the head
+     touching live wire and nothing else on the board does. A creep here would
+     light a cell the player cannot react to, so the correct behaviour is to
+     decline to creep at all. */
+  var sN = newGame(64), g2 = CONFIG.GRID, hx2 = cx(sN.head), hy2 = cy(sN.head), rx, ry, ci2, ring = [];
+  for (i = 0; i < CONFIG.CELLS; i++) if (sN.cell[i] === TERM) { sN.cell[i] = EMPTY; sN.tcol[i] = 0; }
+  sN.pairs.length = 0;
+  for (rx = -2; rx <= 2; rx++) {
+    for (ry = -2; ry <= 2; ry++) {
+      if (Math.max(Math.abs(rx), Math.abs(ry)) !== 2) continue;
+      ci2 = (hy2 + ry) * g2 + (hx2 + rx);
+      if (hx2 + rx < 0 || hy2 + ry < 0 || hx2 + rx >= g2 || hy2 + ry >= g2) continue;
+      ring.push(ci2);
+      sN.cell[ci2] = WIRE; sN.cover[ci2] = 1; sN.ccol[ci2] = 1; sN.energized++;
+    }
+  }
+  sN.circuits.push({ id: 1, ci: 0, cells: ring.slice(), len: ring.length, tick: 0, score: 0 });
+  var evN = [];
+  for (i = 0; i < 20; i++) creepStep(sN, evN);
+  TEST.eq('the creep declines to fire when its only options are next to the head', sN.creeps, 0);
+
+  /* fairness: never inside the circuit the player is drawing */
+  var s4 = seeded(999);
+  s4.charge = { pairId: 99, ci: 0, mult: 1, sliceStart: 0 };
+  var pend = pendingMask(s4), ev4 = [], hit = 0;
+  for (i = 0; i < 30; i++) { creepStep(s4, ev4); }
+  for (i = 0; i < ev4.length; i++) if (ev4[i].t === 'creep' && pend[ev4[i].cell]) hit++;
+  TEST.eq('the creep never takes a cell of the circuit you are drawing', hit, 0);
+
+  /* it never takes a terminal or the pickup */
+  var s5 = seeded(4321), ev5 = [], stolen = 0;
+  for (i = 0; i < 60; i++) {
+    var before = [];
+    for (var q = 0; q < s5.pairs.length; q++) before = before.concat(s5.pairs[q].active);
+    creepStep(s5, ev5);
+    for (q = 0; q < before.length; q++) if (s5.cover[before[q]] > 0) stolen++;
+  }
+  TEST.eq('the creep never energizes a terminal', stolen, 0);
+
+  /* it can trip the breaker rather than only punish */
+  var s6 = newGame(31), cellsBig = [];
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (cellsBig.length >= CONFIG.OVERLOAD_CELLS - 1) break;
+    if (i === s6.head || manhattan(i, s6.head) <= 1) continue;
+    if (s6.cell[i] === TERM) continue;
+    cellsBig.push(i);
+  }
+  for (i = 0; i < cellsBig.length; i++) { s6.cell[cellsBig[i]] = WIRE; s6.cover[cellsBig[i]] = 1; s6.energized++; }
+  s6.circuits.push({ id: 1, ci: 0, cells: cellsBig.slice(), len: cellsBig.length, tick: 0, score: 0 });
+  var ev6 = [], fired = false;
+  for (i = 0; i < 12 && !fired; i++) {
+    ev6.length = 0;
+    creepStep(s6, ev6);
+    for (var z = 0; z < ev6.length; z++) if (ev6[z].t === 'overload') fired = true;
+  }
+  TEST.assert('a creep at the threshold trips the breaker', fired, 'energized ' + s6.energized);
+
+  /* the creep clock resets on a completion, so active play is never punished */
+  var s7 = newGame(55);
+  s7.creepTicks = CONFIG.CREEP_INTERVAL - 1;
+  var p7 = s7.pairs[0];
+  s7.charge = { pairId: p7.id, ci: p7.ci, mult: p7.mult, sliceStart: 0 };
+  completeCircuit(s7, p7, []);
+  TEST.eq('closing a circuit resets the creep clock', s7.creepTicks, 0);
+}
+
+/* ---- suite 11: endless against daily ---- */
+function suiteDaily() {
+  var endless = newGame(7);
+  TEST.eq('an endless run has no clock', endless.tickLimit, 0);
+  TEST.eq('an endless run is tagged free', endless.mode, 'free');
+  var daily = newGame(7, { mode: 'daily' });
+  TEST.eq('a daily run carries the shift clock', daily.tickLimit, CONFIG.DAILY_TICKS);
+  TEST.eq('a daily run is tagged daily', daily.mode, 'daily');
+  var sf, i, n = 0;
+  while (daily.alive && n < CONFIG.DAILY_TICKS * 2) {
+    sf = safeTurns(daily);
+    step(daily, sf.length ? sf[Math.min(1, sf.length - 1)] : 0);
+    n++;
+  }
+  TEST.assert('the daily always ends', !daily.alive);
+  TEST.le('the daily never runs past its clock', daily.tick, CONFIG.DAILY_TICKS);
+  /* a careful daily player runs out of clock rather than board */
+  var clocked = 0;
+  for (i = 0; i < 20; i++) {
+    var r = playAgent(6000 + i, agentGreedy, i, CONFIG.DAILY_TICKS * 3, null, { mode: 'daily' });
+    if (r.st.cause === 'clock') clocked++;
+    if (r.st.tick > CONFIG.DAILY_TICKS) { TEST.assert('daily run ' + i + ' respected the clock', false, r.st.tick); }
+  }
+  TEST.ge('some daily runs end on the clock rather than on the board', clocked, 1);
+  TEST.assert('the same daily seed plays the same board', hashState(newGame(9, { mode: 'daily' })) === hashState(newGame(9, { mode: 'daily' })));
+  TEST.assert('endless and daily share the board, not the clock',
+    hashState(newGame(9)) === hashState(newGame(9, { mode: 'daily' })));
+}
+
+/* ---- suite 12: the board filler, the second playstyle ---- */
+function suiteFiller() {
+  var i, r, overloads = 0, scored = 0, peak = 0;
+  for (i = 0; i < 24; i++) {
+    r = playAgent(3100 + i, agentFiller, i + 1, 4000);
+    overloads += r.st.overloads;
+    if (r.st.score > 0) scored++;
+    if (r.st.energized > peak) peak = r.st.energized;
+    if (invariants(r.st).length) TEST.assert('filler run ' + i + ' kept the invariants', false, invariants(r.st).join(' | '));
+  }
+  TEST.ge('the board filler trips the breaker', overloads, 1);
+  TEST.eq('every board filler run scores', scored, 24);
+  TEST.assert('the board filler builds longer circuits than the combo chaser', (function () {
+    var a = 0, b = 0, k, x;
+    for (k = 0; k < 10; k++) {
+      x = playAgent(3200 + k, agentFiller, k, 3000); a += x.st.longest;
+      x = playAgent(3200 + k, agentGreedy, k, 3000); b += x.st.longest;
+    }
+    return a > b;
+  })());
+  /* the avoid argument is what lets the filler refuse the relief valve. Build a
+     one cell corridor whose only route to the target runs over the avoided
+     cell: with it avoided there is no route at all. */
+  TEST.assert('a bfs told to avoid a cell will not route through it', (function () {
+    var s = newGame(21), k, gg = CONFIG.GRID, wall;
+    for (k = 0; k < CONFIG.CELLS; k++) { s.cell[k] = EMPTY; s.tcol[k] = 0; s.cover[k] = 0; }
+    s.pairs.length = 0; s.energized = 0;
+    /* seal row 9 except one gate at x = 10 */
+    for (k = 0; k < gg; k++) {
+      wall = 9 * gg + k;
+      if (k === 10) continue;
+      s.cell[wall] = WIRE; s.cover[wall] = 1; s.energized++;
+    }
+    s.head = 12 * gg + 10; s.heading = 0;         // below the wall, facing up
+    var gate = 9 * gg + 10, target = 3 * gg + 10;
+    var open = bfsTurn(s, [target]);
+    var closed = bfsTurn(s, [target], gate);
+    return open !== null && closed === null;
+  })());
+  TEST.assert('the board filler does not chase the discharge pickup', (function () {
+    /* it may still be forced onto one by the survival fallback; what is asserted
+       is that it never goes out of its way for one the way greedy does */
+    var f = 0, g = 0, k, x;
+    for (k = 0; k < 16; k++) {
+      x = playAgent(3300 + k, agentFiller, k, 3000); f += x.st.discharges;
+      x = playAgent(3300 + k, agentGreedy, k, 3000); g += x.st.discharges;
+    }
+    return f <= g * 1.5 + 2;
+  })());
+  TEST.eq('pendingLen is zero with no charge', pendingLen(newGame(5)), 0);
+  TEST.eq('pendingNew is zero with no charge', pendingNew(newGame(5)), 0);
+  TEST.assert('pendingNew never exceeds pendingLen', (function () {
+    var s = newGame(88), n = 0, k, sf;
+    s.charge = { pairId: 1, ci: 0, mult: 1, sliceStart: 0 };
+    while (s.alive && n < 120) { sf = safeTurns(s); step(s, sf.length ? sf[0] : 0); n++; if (pendingNew(s) > pendingLen(s)) return false; }
+    return pendingLen(s) > 1;
+  })());
+}
+
 function suiteBalance() {
   /* a small in page envelope check. sim.js runs the full sweep. */
   var i, randTicks = [], safeTicks = [], greedyTicks = [];
@@ -1826,7 +2144,7 @@ function runAllTests(opts) {
     suiteConfig, suiteRNG, suiteNewGame, suiteMovement,
     suiteCircuitCases, suiteCombo, suiteOverload, suiteDischarge,
     suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy,
-    suiteRegressions
+    suiteRegressions, suiteCreep, suiteDaily, suiteFiller
   ];
   if (!opts.quick) { suites.push(suiteCircuitBattery); suites.push(suiteBalance); }
   var i;

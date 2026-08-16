@@ -272,7 +272,16 @@ its own that the studio already had.
   serialised, and never sound: the sequencer is already playing those notes.
 
 Gate: `node scripts/padlab_marble.mjs` (serve the repo root, not just
-`padlab/`, or `/dev-gate.js` 404s and the error assertion trips).
+`padlab/`, or `/dev-gate.js` 404s and the error assertion trips), plus
+`node padlab/check.mjs`, which needs no browser and includes a timing run that
+drives the real `schedulerTick` and `marbleTick` in a vm at six tempos and two
+swing settings. See `padlab/AUDIT-NOTES.md` for the 2026-08-16 audit.
+
+Added on the audit pass: six marble voices rather than four (Wood is
+percussive, Bell is pitched, and `MB_INSTR` is the single table that adding
+another one touches), a Fit control that refits the camera over every plate, one
+step of undo covering Clear / Remove / Demo, a cap of 80 marbles with a per tick
+voice guard, and WAV export of a recorded take from the Recordings sheet.
 
 ## 9. Roadmap
 

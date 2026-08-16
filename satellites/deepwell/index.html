@@ -46,6 +46,45 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
   display:flex;align-items:center;justify-content:flex-end}
 #recLine span{font-size:11px;letter-spacing:.14em;color:var(--amber);background:rgba(10,11,15,.85);
   padding:2px 6px;border-radius:3px;transform:translateY(-9px)}
+
+/* ---------- the column: nodes drawn as objects in the rock ---------- */
+/* the bore itself, walls left and right, so depth reads as a place */
+#shaftScroll .bore{position:absolute;left:14%;right:14%;
+  background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.15) 22%,rgba(0,0,0,.15) 78%,rgba(0,0,0,.55));
+  border-left:1px solid rgba(232,220,200,.10);border-right:1px solid rgba(232,220,200,.10)}
+.strataSeam{position:absolute;left:0;right:0;height:0;border-top:1px solid rgba(232,220,200,.22)}
+.strataSeam b{position:absolute;left:6px;top:3px;font-size:9px;font-weight:700;letter-spacing:.20em;
+  color:rgba(232,220,200,.34)}
+.tick{position:absolute;left:0;height:0;border-top:1px solid rgba(232,220,200,.09);width:9%}
+.tick i{position:absolute;left:2px;top:-8px;font-style:normal;font-size:9px;
+  color:rgba(232,220,200,.30);font-variant-numeric:tabular-nums}
+/* a node marker: a shape pinned at its own depth on the wall of the bore */
+.nmark{position:absolute;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;
+  gap:3px;padding:3px 7px;border-radius:11px;font-size:11px;line-height:1;white-space:nowrap;
+  border:1px solid rgba(232,220,200,.18);background:rgba(10,11,15,.72);color:var(--cream)}
+.nmark.k-vein{border-color:rgba(240,167,66,.45)}
+.nmark.k-pocket{border-color:rgba(122,179,86,.45)}
+.nmark.k-cache{border-color:rgba(200,168,75,.45)}
+.nmark.k-shrine{border-color:rgba(184,140,240,.50)}
+.nmark.k-hazard{border-color:rgba(224,92,78,.55)}
+.nmark.k-empty{border-color:rgba(232,220,200,.10);opacity:.45}
+.nmark.k-hidden{border-style:dashed;opacity:.5;color:var(--muted)}
+.nmark.spent{opacity:.32;filter:saturate(.25)}
+.nmark.heart{border-color:rgba(255,122,106,.9);box-shadow:0 0 12px rgba(255,122,106,.4)}
+.nmark .od{width:6px;height:6px;border-radius:50%;display:inline-block}
+.nmark .lbl{font-size:9px;letter-spacing:.10em;color:var(--muted)}
+/* the tie line from the marker back to the wall, so it reads as embedded rock */
+.nmark:before{content:'';position:absolute;left:-44px;right:-44px;top:50%;height:1px;
+  background:rgba(232,220,200,.10);z-index:-1}
+/* the lamp. its reach is the lamp meter, so a dying lamp visibly closes in. */
+#lampGlow{position:absolute;left:0;right:0;pointer-events:none;z-index:1;
+  transition:opacity 300ms linear}
+/* you, at the working face */
+#youMark{position:absolute;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;
+  border-radius:50%;border:2px solid var(--amber);background:rgba(240,167,66,.22);
+  box-shadow:0 0 14px rgba(240,167,66,.55);z-index:2}
+#youMark:after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
+  border-radius:50%;background:var(--amber)}
 #bandStamp{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:800;
   letter-spacing:.22em;color:rgba(232,220,200,.0);pointer-events:none;z-index:2}
 #bandStamp.on{animation:stamp 2400ms ease-out forwards}
@@ -397,7 +436,17 @@ var CONFIG = Object.freeze({
 
   AIR_PER_DEPTH: 1,
   LAMP_PER_DEPTH: 1.5,
-  ASCENT_WEIGHT_DIV: 20,
+  /* HANDOFF 3.3 writes the ascent drain as `1 + weight/20`. That divisor is the
+     one number in the game that decides how much greed costs, and at 20 it made
+     a careful digger and a perfect digger play the same shaft: 3.8's "cautious
+     banks 35 to 50 percent of optimal" sat at 61 percent and NOTHING else moved
+     it (the tuning grid in BUILD-NOTES.md section 3 walked pack, air, lamp, node
+     spacing, cache income and seam richness and every one of them made it
+     worse). 3.8 says in its own words to move CONFIG and never the bounds, and
+     3.8 outranks 3.3 on exactly this question, so the divisor is 12: a full pack
+     now costs 4.3 air a meter on the way up instead of 3.0, and the last forty
+     percent of your air is worth carrying ore through. */
+  ASCENT_WEIGHT_DIV: 12,
   URANITE_LAMP_PER_DEPTH: 3,
 
   GAP_MIN: 3, GAP_MAX: 6,
@@ -426,7 +475,10 @@ var CONFIG = Object.freeze({
   TUNE: Object.freeze({
     pocketAirBase: 30, pocketAirPerDepth: 0.22,
     pocketLampBase: 34, pocketLampPerDepth: 0.30,
-    cacheBase: 26, cachePerDepth: 1.35,
+    /* a cache pays almost nothing near the surface and a lot at depth. Flat
+       cache income rewarded the digger who never left the topsoil; the slope
+       is what makes the safe play still want to walk down. */
+    cacheBase: 8, cachePerDepth: 4.0,
     heartChance: 0.34
   }),
 
@@ -450,7 +502,7 @@ var CONFIG = Object.freeze({
      is the spec's own stated total, so the exponent is the number that was
      wrong. Swept further down to land the 3.7 runs to full clear target, see
      BUILD-NOTES.md section 3. */
-  COST_EXP: 1.62,
+  COST_EXP: 1.5,
 
   SHOP: Object.freeze({
     tank:  { name: 'TANK',  base: 60,  levels: 5, blurb: 'AIR PLUS 16' },
@@ -563,6 +615,41 @@ function pickTier(r, band, depth) {
   return t;
 }
 
+/* BELOW. HANDOFF 3.4 makes the last band unbounded, says the record is the
+   score, and then gives the deepest rock in the game nothing at all in it.
+   These are the things that are down there. Each fires ONCE per run, the first
+   time you arrive at or past its depth, and each is a number rather than a
+   mood. They are the reason to keep going when the ore table has run out of
+   tiers to give you. */
+var DEEPS = Object.freeze([
+  { depth: 200, key: 'sill',  name: 'THE SILL',
+    line: 'A ledge of cut stone. Somebody meant to stop here.',
+    gain: 'THE TIMBERS ARE STILL GOOD. ONE BRACE BACK.' },
+  { depth: 230, key: 'river', name: 'THE DRY RIVER',
+    line: 'A round tunnel worn smooth, running off into the dark both ways.',
+    gain: 'COLD CLEAN AIR. 60 AIR.' },
+  { depth: 265, key: 'lamps', name: 'THE LAMP ROOM',
+    line: 'Forty lamps on forty hooks. Someone hung them up and did not come back.',
+    gain: 'ONE OF THEM STILL BURNS. LAMP FULL.' },
+  { depth: 300, key: 'sea',   name: 'THE OLD SEA FLOOR',
+    line: 'Shells in the rock, pressed flat, a long way from any water.',
+    gain: 'THE ROCK REMEMBERS SOMETHING WARM. ANOTHER HEARTSTONE CAN FORM.' },
+  { depth: 350, key: 'quiet', name: 'THE QUIET',
+    line: 'The rock stops talking. No drips, no settling, nothing.',
+    gain: 'HAZARDS DROP 8 PERCENT FOR THE REST OF THE RUN.' },
+  { depth: 420, key: 'door',  name: 'THE DOOR',
+    line: 'A frame in the rock with nothing on the other side of it.',
+    gain: '500 CASH, BANKED WHERE YOU STAND.' }
+]);
+var DEEP_BY_KEY = (function () { var m = {}, i; for (i = 0; i < DEEPS.length; i++) m[DEEPS[i].key] = DEEPS[i]; return m; })();
+function deepsAt(depth, seen) {
+  var out = [], i;
+  for (i = 0; i < DEEPS.length; i++) {
+    if (depth >= DEEPS[i].depth && seen.indexOf(DEEPS[i].key) < 0) out.push(DEEPS[i]);
+  }
+  return out;
+}
+
 var HAZARDS = Object.freeze([
   { key: 'gas',      name: 'GAS POCKET',  line: 'Something sour bleeds out of the wall.' },
   { key: 'collapse', name: 'COLLAPSE',    line: 'The roof lets go behind you.' },
@@ -583,7 +670,16 @@ var SHRINES = Object.freeze([
   { id: 9,  title: 'THE COUGH',       risky: false, airCost: 0 },
   { id: 10, title: 'THE TRANSMUTE',   risky: false, airCost: 0 },
   { id: 11, title: 'THE ADVANCE',     risky: false, airCost: 0 },
-  { id: 12, title: 'THE BRIGHT DEAL', risky: true,  airCost: 0 }
+  { id: 12, title: 'THE BRIGHT DEAL', risky: true,  airCost: 0 },
+  /* six added in the deepening pass, same voice, same rule: the card shows the
+     exact number before you agree, and every one of them is a trade with a
+     side that hurts. Ids never change, they are written into replay logs. */
+  { id: 13, title: 'THE BALLAST',     risky: false, airCost: 0 },
+  { id: 14, title: 'THE TITHE',       risky: false, airCost: 0 },
+  { id: 15, title: 'THE STRAIGHT DROP', risky: true, airCost: 0 },
+  { id: 16, title: 'THE COUNTERWEIGHT', risky: true, airCost: 0 },
+  { id: 17, title: 'THE DOWSER',      risky: false, airCost: 0 },
+  { id: 18, title: 'THE LAST BREATH', risky: true,  airCost: 0 }
 ]);
 var SHRINE_BY_ID = (function () { var m = {}, i; for (i = 0; i < SHRINES.length; i++) m[SHRINES[i].id] = SHRINES[i]; return m; })();
 
@@ -683,7 +779,8 @@ function newRun(rng, upg, opts) {
     phase: 'run', pending: 0,
     steps: 0, travel: 0, mined: 0, hazardsHit: 0,
     flags: { hazBonus: 0, nullifyHazard: false, doubleVein: false, oreWeightBonus: 0,
-             emptyVeins: 0, revealUntil: -1 },
+             emptyVeins: 0, revealUntil: -1, freeDescents: 0, veinSense: false },
+    deeps: [],
     log: [], inputs: [], over: null
   };
   ensureNodes(st.col, 3);
@@ -709,6 +806,9 @@ function descendCost(st) {
   var nd = nextNode(st);
   if (!nd) return null;
   var gap = nd.depth - st.depth;
+  /* the straight drop is already paid for. The button must say so, or the
+     player is being asked to decide against a number that is not true. */
+  if (st.flags && st.flags.freeDescents > 0) return { air: 0, lamp: 0, depth: nd.depth, gap: gap, free: true };
   var air = airCum(nd.depth) - airCum(st.depth);
   var lamp = (lampCum(nd.depth) - lampCum(st.depth)) +
              CONFIG.URANITE_LAMP_PER_DEPTH * uraniteCount(st) * gap;
@@ -745,7 +845,8 @@ function veinHaul(st, node) {
   var out = [], i, o, w, v;
   for (i = 0; i < node.ore.length; i++) {
     o = ORE_BY_KEY[node.ore[i]];
-    w = o.w + (st.flags.oreWeightBonus || 0);
+    /* the tithe can push this negative. No lump of rock weighs nothing. */
+    w = Math.max(1, o.w + (st.flags.oreWeightBonus || 0));
     v = o.v;
     if (st.flags.doubleVein) { v = o.v * 2; w = Math.round(w * 1.5); }
     out.push({ key: o.key, name: o.name, tier: o.tier, w: w, v: v });
@@ -816,6 +917,22 @@ function hurt(st, dmg, ev) {
   return st.integrity <= 0;
 }
 
+function resolveDeeps(st, ev) {
+  var due = deepsAt(st.depth, st.deeps), i, d;
+  for (i = 0; i < due.length; i++) {
+    d = due[i];
+    st.deeps.push(d.key);
+    if (d.key === 'sill') st.integrity = Math.min(st.caps.integrity, st.integrity + 1);
+    else if (d.key === 'river') st.air = Math.min(st.caps.air, st.air + 60);
+    else if (d.key === 'lamps') st.lamp = st.caps.lamp;
+    else if (d.key === 'sea') st.col.heartPlaced = false;
+    else if (d.key === 'quiet') st.flags.hazBonus -= 0.08;
+    else if (d.key === 'door') st.cash += 500;
+    ev.push({ t: 'deep', key: d.key, name: d.name, line: d.line, gain: d.gain, depth: d.depth });
+    st.log.push({ d: st.depth, s: 'stood in ' + d.name.toLowerCase() + ' at ' + d.depth + 'm' });
+  }
+}
+
 function resolveArrival(st, ev) {
   var n = currentNode(st);
   if (!n) return;
@@ -874,7 +991,17 @@ function shrineAcceptable(st) {
   if (id === 6 && st.cargo.length === 0) return 'NOTHING IN THE PACK';
   if (id === 9 && st.depth <= 1) return 'ALREADY AT THE TOP';
   if (id === 10 && tierOneCount(st) === 0) return 'NO TIER ONE ORE';
+  if (id === 13 && st.cargo.length === 0) return 'NOTHING IN THE PACK';
+  if (id === 14 && st.cash < 120) return 'NEEDS 120 CASH';
+  if (id === 16 && st.caps.pack - 10 < 10) return 'THE PACK IS ALREADY TOO SMALL';
+  if (id === 17 && st.lamp <= 35) return 'NOT ENOUGH LAMP';
+  if (id === 18 && st.air <= ascentCost(st).air + 5) return 'YOU ARE ALREADY THAT CLOSE';
   return null;
+}
+function heaviestIndex(cargo) {
+  var i, best = -1, bw = -1;
+  for (i = 0; i < cargo.length; i++) if (cargo[i].w > bw) { bw = cargo[i].w; best = i; }
+  return best;
 }
 function tierOneCount(st) { var i, n = 0; for (i = 0; i < st.cargo.length; i++) if (st.cargo[i].tier === 1) n++; return n; }
 function spillSet(st) {
@@ -945,6 +1072,28 @@ function applyShrine(st, id, r, ev) {
   } else if (id === 12) {
     st.lamp = st.caps.lamp;
     st.flags.hazBonus += 0.10;
+  } else if (id === 13) {
+    var hi = heaviestIndex(st.cargo);
+    var gone = st.cargo.splice(hi, 1)[0];
+    st.weight = cargoWeight(st.cargo);
+    before = st.air; st.air = Math.min(st.caps.air, st.air + 25);
+    ev.push({ t: 'bargain', id: id, lostOre: gone, air: st.air - before });
+  } else if (id === 14) {
+    st.cash -= 120;
+    st.flags.oreWeightBonus -= 2;
+  } else if (id === 15) {
+    st.flags.freeDescents += 2;
+  } else if (id === 16) {
+    st.integrity += 2;
+    st.caps.pack -= 10;
+    ev.push({ t: 'bargain', id: id, pack: st.caps.pack });
+  } else if (id === 17) {
+    st.flags.veinSense = true;
+    st.lamp -= 35; if (st.lamp < 0) st.lamp = 0;
+  } else if (id === 18) {
+    st.cash += 200;
+    st.air = ascentCost(st).air + 5;
+    ev.push({ t: 'bargain', id: id, cash: 200, air: st.air });
   }
   if (st.air <= 0 && !st.over) { st.air = 0; endRun(st, 'air', ev); }
 }
@@ -988,13 +1137,16 @@ function step(st, action, rngIn) {
   if (action === 'descend') {
     var dc = descendCost(st);
     var n = nextNode(st);
+    var free = st.flags.freeDescents > 0;
+    if (free) st.flags.freeDescents--;
     st.at++;
     st.depth = n.depth;
     st.travel += dc.gap;
     if (st.depth > st.maxDepth) st.maxDepth = st.depth;
-    spendLamp(st, dc.lamp);
-    ev.push({ t: 'descend', gap: dc.gap, depth: st.depth, air: dc.air, lamp: dc.lamp });
-    if (spendAir(st, dc.air, ev)) { endRun(st, 'air', ev); return { state: st, events: ev }; }
+    if (!free) spendLamp(st, dc.lamp);
+    ev.push({ t: 'descend', gap: dc.gap, depth: st.depth, air: free ? 0 : dc.air, lamp: free ? 0 : dc.lamp, free: free });
+    if (!free && spendAir(st, dc.air, ev)) { endRun(st, 'air', ev); return { state: st, events: ev }; }
+    resolveDeeps(st, ev);
     resolveArrival(st, ev);
     ensureNodes(st.col, st.at + 4);
   } else if (action === 'ascend') {
@@ -1408,9 +1560,18 @@ function suiteAscent(T) {
   T.eq('ascent from the surface is free', ascentCost(st).air, 0);
   st.depth = 50; st.weight = 0;
   T.near('fifty meters empty handed costs fifty air', ascentCost(st).air, 50, 1e-9);
-  st.weight = 20;
-  T.near('twenty kilos doubles the per meter cost', ascentCost(st).perDepth, 2, 1e-9);
-  T.near('fifty meters with twenty kilos costs one hundred air', ascentCost(st).air, 100, 1e-9);
+  st.weight = CONFIG.ASCENT_WEIGHT_DIV;
+  T.near('a pack of exactly one divisor doubles the per meter cost', ascentCost(st).perDepth, 2, 1e-9);
+  T.near('and doubles the whole climb', ascentCost(st).air, 100, 1e-9);
+  st.weight = 60;
+  T.near('a full sixty kilo pack costs 6 air a meter', ascentCost(st).perDepth, 1 + 60 / CONFIG.ASCENT_WEIGHT_DIV, 1e-9);
+  /* the balance claim the divisor exists to make: a loaded climb has to cost
+     more than a light one by enough that the last of your air is a decision.
+     If this ever drops back toward 3 the cautious to optimal ratio walks back
+     up past 60 percent, which is the bug this number was moved to fix. */
+  T.assert('a full pack costs at least four air a meter on the way out',
+    ascentCost(st).perDepth >= 4, 'perDepth ' + ascentCost(st).perDepth);
+  st.weight = 0;
   st.depth = 140; st.weight = 0;
   T.near('the wet shelf is priced into the way out', ascentCost(st).air, 140 + 0.4 * 50, 1e-9);
   /* brute force invariant over a real run */
@@ -1937,7 +2098,8 @@ function shrineText(id, st) {
 
 /* ========================= 6. VIEW ========================= */
 var $ = function (id) { return document.getElementById(id); };
-var G = { save: null, run: null, replay: null, replayTimer: 0, lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false };
+var G = { save: null, run: null, replay: null, replayTimer: 0, replayT2: 0, replaying: false,
+          lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false };
 var REDUCED = false;
 try { REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -2062,18 +2224,103 @@ function toast(msg) {
 function oreDot(col) { return '<span class="oredot" style="background:' + col + '"></span>'; }
 function oreColor(key) { return ORE_BY_KEY[key] ? ORE_BY_KEY[key].col : '#888'; }
 
+/* How much of a node the player is allowed to see, for any node in the column,
+   not just the six ahead. Above and at the player, everything is known because
+   they walked past it. Below, the lamp, Assay and bargain 5 decide.
+   This is the VIEW asking the SIM, never the VIEW inventing a rule. */
+function revealOf(st, idx) {
+  if (idx <= st.at) return 'full';
+  var n = st.col.nodes[idx];
+  if (!n) return 'hidden';
+  if (st.flags.revealUntil >= n.depth) return 'full';
+  if (st.lamp <= 0) return 'hidden';
+  var ahead = idx - st.at;
+  if (ahead <= CONFIG.ASSAY_NODES_PER_LEVEL * (st.upg.assay || 0)) return 'full';
+  if (ahead === 1) return 'type';
+  return 'hidden';
+}
+var NODE_FACE = {
+  vein:   { g: '◆', n: 'VEIN' },
+  pocket: { g: '○', n: 'POCKET' },
+  cache:  { g: '▣', n: 'CACHE' },
+  shrine: { g: '✠', n: 'SHRINE' },
+  hazard: { g: '⚠', n: 'HAZARD' },
+  empty:  { g: '·', n: '' }
+};
+/* Draw the shaft as a place: the bore, the strata it cuts through, a depth
+   ruler etched on the wall, every node as an object sitting at its own depth,
+   the lamp as a real reach that closes in as it burns, and the deepest you
+   have ever been as a line you can watch yourself pass. */
 function renderShaft() {
   var st = G.run, band = bandAt(st.depth), sc = $('shaftScroll');
   $('shaftBand').style.background = 'linear-gradient(180deg,' + band.col + ' 0%, #08090d 90%)';
   var h = sc.parentNode.clientHeight || 600, pxPerM = 6, i, html = '';
-  var top = st.depth - h / (2 * pxPerM);
-  for (i = Math.max(0, Math.floor(top / 5) * 5); i < top + h / pxPerM; i += 5) {
-    html += '<div class="rockrow" style="top:' + ((i - top) * pxPerM) + 'px"></div>';
+  var top = st.depth - h / (2 * pxPerM), bot = top + h / pxPerM;
+  var y = function (d) { return (d - top) * pxPerM; };
+
+  /* the strata as actual bands of rock, each in its own color, so crossing a
+     seam is something you watch happen rather than a word that flashes */
+  for (i = 0; i < STRATA.length; i++) {
+    var sb = STRATA[i];
+    var t0 = Math.max(sb.from, top), t1 = Math.min(isFinite(sb.to) ? sb.to : bot, bot);
+    if (t1 <= t0) continue;
+    html += '<div style="position:absolute;left:0;right:0;top:' + y(t0) + 'px;height:' +
+            ((t1 - t0) * pxPerM) + 'px;background:' + sb.col + ';opacity:.55"></div>';
   }
+  html += '<div class="bore" style="top:' + Math.max(0, y(0)) + 'px;bottom:0"></div>';
+
+  /* rock lines and a depth ruler every ten meters */
+  for (i = Math.max(0, Math.floor(top / 5) * 5); i < bot; i += 5) {
+    html += '<div class="rockrow" style="top:' + y(i) + 'px"></div>';
+    if (i % 10 === 0) html += '<div class="tick" style="top:' + y(i) + 'px"><i>' + i + '</i></div>';
+  }
+  /* the strata seams themselves, named where they start */
+  for (i = 0; i < STRATA.length; i++) {
+    var b = STRATA[i];
+    if (b.from > top && b.from < bot && b.from > 0) {
+      html += '<div class="strataSeam" style="top:' + y(b.from) + 'px"><b>' + b.name + '</b></div>';
+    }
+  }
+  /* every node in view, drawn as the thing it is */
+  ensureNodes(st.col, st.at + 9);
+  for (i = 0; i < st.col.nodes.length; i++) {
+    var n = st.col.nodes[i];
+    if (n.depth < top - 2 || n.depth > bot + 2) continue;
+    var lvl = revealOf(st, i), kind = nodeType(st, n), cls = '', body = '';
+    if (lvl === 'hidden') {
+      cls = 'k-hidden'; body = '<span class="lbl">' + n.depth + 'm</span>?';
+    } else if (lvl === 'type' && kind === 'vein') {
+      cls = 'k-vein'; body = '<span class="lbl">' + n.depth + 'm</span>' + NODE_FACE.vein.g + ' VEIN';
+    } else {
+      var face = NODE_FACE[kind] || NODE_FACE.empty;
+      cls = 'k-' + kind;
+      body = '<span class="lbl">' + n.depth + 'm</span>';
+      if (kind === 'vein' && lvl === 'full' && n.ore.length && !n.mined) {
+        /* the ore itself, in its own color, one dot per lump. This is the
+           single most useful thing the column can tell you from a distance. */
+        var k;
+        for (k = 0; k < n.ore.length; k++) body += '<span class="od" style="background:' + oreColor(n.ore[k]) + '"></span>';
+        body += n.heart ? ' HEARTSTONE' : '';
+      } else {
+        body += face.g + (face.n ? ' ' + face.n : '');
+      }
+    }
+    if (n.used || n.mined) cls += ' spent';
+    if (n.heart && lvl === 'full') cls += ' heart';
+    html += '<div class="nmark ' + cls + '" style="top:' + y(n.depth) + 'px">' + body + '</div>';
+  }
+  /* the record line, drawn last of the rock so it sits over the seams */
   var rec = G.save.best.depth;
-  if (rec > 0 && rec >= top && rec <= top + h / pxPerM) {
-    html += '<div id="recLine" style="top:' + ((rec - top) * pxPerM) + 'px"><span>DEEPEST EVER ' + rec + 'm</span></div>';
+  if (rec > 0 && rec >= top && rec <= bot) {
+    html += '<div id="recLine" style="top:' + y(rec) + 'px"><span>DEEPEST EVER ' + rec + 'm</span></div>';
   }
+  /* the lamp: a pool of light around you whose radius IS the lamp meter */
+  var lampFrac = st.caps.lamp ? Math.max(0, Math.min(1, st.lamp / st.caps.lamp)) : 0;
+  var reach = 26 + 150 * lampFrac;
+  html += '<div id="lampGlow" style="top:' + (y(st.depth) - reach) + 'px;height:' + (reach * 2) + 'px;' +
+          'opacity:' + (0.20 + 0.55 * lampFrac).toFixed(2) + ';' +
+          'background:radial-gradient(ellipse at 50% 50%, rgba(240,167,66,.30) 0%, rgba(240,167,66,.10) 45%, rgba(240,167,66,0) 72%)"></div>';
+  html += '<div id="youMark" style="top:' + y(st.depth) + 'px"></div>';
   sc.innerHTML = html;
 }
 function stampBand(name) {
@@ -2270,6 +2517,9 @@ function renderLog() {
 function firstGesture() { audioOn(); if (AU.ctx && AU.ctx.state === 'suspended') { try { AU.ctx.resume(); } catch (e) {} } }
 function doAction(a) {
   if (!G.run || G.run.over) return;
+  /* a replay owns the run while it is running. A live tap here would both
+     corrupt the playback and write the replay's state over the real save. */
+  if (G.replaying) return;
   var before = G.run.depth;
   var res = step(G.run, a);
   var ev = res.events, i;
@@ -2376,7 +2626,9 @@ function finishRun() {
   openResult();
 }
 function toSurface() {
+  stopReplay();
   $('resOvl').classList.add('hide');
+  $('shrineOvl').classList.add('hide');
   $('runScreen').classList.add('hide');
   $('shopScreen').classList.remove('hide');
   renderShop();
@@ -2405,18 +2657,39 @@ function playReplay() {
   $('shopScreen').classList.add('hide');
   $('runScreen').classList.remove('hide');
   var i = 0;
+  G.replaying = true;
   toast('WATCHING YOUR BEST RUN');
   clearInterval(G.replayTimer);
-  G.replayTimer = setInterval(function () {
+  clearTimeout(G.replayT2);
+  /* The log holds the answer you actually gave a shrine, so replay GIVES it.
+     The old build force declined every bargain here, which meant a replay of a
+     run that took the devil's air was a different run wearing its name. The
+     card is held on screen a beat longer so the answer is watchable, and its
+     two buttons are inert while the replay owns the run. */
+  function tick() {
     if (i >= r.inputs.length || G.run.over) {
-      clearInterval(G.replayTimer);
-      setTimeout(function () { G.run = null; toSurface(); }, 1400);
+      G.replaying = false;
+      $('shrineOvl').classList.add('hide');
+      G.replayT2 = setTimeout(function () { G.run = null; toSurface(); }, 1400);
       return;
     }
-    step(G.run, r.inputs[i++]);
+    var action = r.inputs[i++];
+    var wasShrine = G.run.phase === 'shrine';
+    step(G.run, action);
     render();
-    if (G.run.phase === 'shrine') { step(G.run, 'shrine:decline'); }
-  }, 550);
+    if (G.run.phase === 'shrine') openShrine();
+    if (wasShrine) {
+      $('shrineOvl').classList.add('hide');
+      toast(action === 'shrine:accept' ? 'TOOK THE BARGAIN' : 'WALKED AWAY');
+    }
+    /* a bargain landed: hold the card so it can be read before the answer */
+    G.replayT2 = setTimeout(tick, G.run.phase === 'shrine' ? 1500 : 550);
+  }
+  G.replayT2 = setTimeout(tick, 550);
+}
+function stopReplay() {
+  G.replaying = false;
+  clearInterval(G.replayTimer); clearTimeout(G.replayT2);
 }
 
 /* ========================= 10. BOOT ========================= */
@@ -2453,8 +2726,9 @@ function wire() {
       renderCargo();
     }
   });
-  byId('shrineYes', function () { $('shrineOvl').classList.add('hide'); doAction('shrine:accept'); });
-  byId('shrineNo', function () { $('shrineOvl').classList.add('hide'); doAction('shrine:decline'); });
+  /* inert while a replay owns the run: the recorded answer is the only answer */
+  byId('shrineYes', function () { if (G.replaying) return; $('shrineOvl').classList.add('hide'); doAction('shrine:accept'); });
+  byId('shrineNo', function () { if (G.replaying) return; $('shrineOvl').classList.add('hide'); doAction('shrine:decline'); });
   byId('resAgain', toSurface);
   byId('resShare', doShare);
   byId('btnShare', doShare);

@@ -277,18 +277,19 @@ var CONFIG = {
   SCRAP_FLAT: 40,           /* scrap = 40 + 12 x wave, fixed by the spec */
   SCRAP_PER_WAVE: 12,
   PLAYER_START_CELL: 5,
-  STARTER_CELL: 16,         /* the spike strip the last watch left in the ground */
+  STARTER_CELL: 21,         /* the spike strip the last watch left in the ground */
   PLAYER_MOVE_TICKS: 2,
   PLAYER_ATK_CD: 8,
   PLAYER_DMG: 20,
   PLAYER_DMG_GROWTH: 1.18,  /* the blade keeps pace with the curve */
   PLAYER_RANGE: 1,
   WALL_HIT_TICKS: 8,        /* one hit landed on a blocking wall per 8 ticks */
-  GROUP_PAUSE: 12,          /* extra ticks between authored spawn groups */
+  GROUP_PAUSE: 24,          /* extra ticks between authored spawn groups */
   HEAL_GROWTH: 1.18,
   BREACH_MARKS: [8, 5, 3],  /* alarm rings when the front rank crosses these */
   MAX_WAVE_TICKS: 4000,     /* safety valve for headless runs */
   ENGAGE_CELLS: 8,          /* past this the lane reads as empty from where you stand */
+  TRAVEL_CELLS: 14,         /* cells a body crosses before it is your problem */
   REINFORCE_MAX: 3,         /* a trap can be built up twice past the one you paid for */
   REPAIR_COST: 0.5,         /* a maxed trap still takes scrap to patch back up */
   ENDLESS_MUT_EVERY: 8,     /* one more modifier every this many endless waves */
@@ -430,7 +431,7 @@ var WAVES = [
   [['brute', 5, 14], ['healer', 2, 13], ['sapper', 2, 13], ['swarm', 2, 16]],
   [['flyer', 5, 11], ['shielded', 4, 12], ['brute', 4, 15], ['healer', 2, 13]],
   [['swarm', 3, 15], ['runner', 8, 9], ['sapper', 2, 13], ['flyer', 3, 11], ['brute', 4, 15], ['healer', 1, 13]],
-  [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 1, 20]]
+  [['shielded', 5, 12], ['flyer', 5, 11], ['swarm', 3, 15], ['brute', 6, 15], ['healer', 2, 13], ['warden', 2, 20]]
 ];
 
 var DATA = {
@@ -483,26 +484,35 @@ function schedule(wave, mode, seed) {
     var rng = makeRNG((seed >>> 0) + wave * 7919);
     groups = rng.shuffle(groups);
   }
-  /* A boss walks at a third of a runner's pace. Scheduled last, it spends the
-     back half of the wave crossing an empty lane while you stand and watch:
-     that is dead air, not drama. Boss groups always spawn FIRST, so the trash
-     overtakes the boss on the way in and the fight is continuous. The daily
-     shuffle cannot move them either. */
-  var bosses = [], rest = [], gi;
-  for (gi = 0; gi < groups.length; gi++) {
-    if (ENEMIES[groups[gi][0]] && ENEMIES[groups[gi][0]].boss) bosses.push(groups[gi]);
-    else rest.push(groups[gi]);
-  }
-  groups = bosses.concat(rest);
+  /* THE ARRIVAL RULE.
+     A body scheduled last still has to cross thirty cells before it is
+     anybody's problem, and a Warden crosses them at a third of a runner's
+     pace. Block scheduling by DEPARTURE therefore buys a lull every time a
+     slow group sits at the tail of the table: wave 10 had five seconds of
+     empty lane in front of the Warden and waves 4 and 6 had eight in front of
+     one lone brute. That is a pacing bug wearing drama's coat.
+     So the authored table is read as ARRIVALS, not departures, and the
+     scheduler solves backwards for when each body has to leave the mouth to
+     turn up on its slot. Heavy things depart first because they are slow. The
+     composition, the counts and the authored cadence are all untouched, which
+     is what keeps the difficulty bands and the daily shuffle honest. */
   var cad = 1;
   if (hasMutKey(wave, seed, 'tide')) cad = 0.67;   /* endless: they come in tighter */
-  var out = [], t = 0, i, g, gap;
+  var arrivals = [], t = 0, gi, i, g, gap;
   for (gi = 0; gi < groups.length; gi++) {
     g = groups[gi];
     gap = Math.max(6, Math.round(g[2] * cad));
-    for (i = 0; i < g[1]; i++) { out.push({ tick: t, type: g[0] }); t += gap; }
+    for (i = 0; i < g[1]; i++) { arrivals.push({ at: t, type: g[0] }); t += gap; }
     t += Math.max(4, Math.round(CONFIG.GROUP_PAUSE * cad));
   }
+  var out = [], min = 1e9, tick;
+  for (i = 0; i < arrivals.length; i++) {
+    tick = arrivals[i].at - ENEMIES[arrivals[i].type].spd * CONFIG.TRAVEL_CELLS;
+    if (tick < min) min = tick;
+    out.push({ tick: tick, type: arrivals[i].type, at: arrivals[i].at });
+  }
+  for (i = 0; i < out.length; i++) out[i].tick -= min;
+  out.sort(function (a, b) { return a.tick - b.tick || a.at - b.at; });
   return out;
 }
 
@@ -516,18 +526,18 @@ function verifySchedule(wave, mode, seed) {
   for (i = 0; i < sc.length; i++) counts[sc[i].type] = (counts[sc[i].type] || 0) + 1;
   for (var k in want) if (counts[k] !== want[k]) return false;
   for (k in counts) if (!want[k]) return false;
+  /* the authored cadence band is checked on ARRIVALS, which is where the table
+     writes it. Departures fall out of the arrival solve and legitimately bunch
+     up whenever a slow group and a fast group are due at the same moment. */
   var minGap = hasMutKey(wave, seed, 'tide') ? 6 : 9;
-  for (i = 1; i < sc.length; i++) {
-    gap = sc[i].tick - sc[i - 1].tick;
+  var arr = sc.slice().sort(function (a, b) { return a.at - b.at; });
+  for (i = 1; i < arr.length; i++) {
+    gap = arr[i].at - arr[i - 1].at;
     if (gap < minGap || gap > 20 + CONFIG.GROUP_PAUSE) return false;
   }
-  /* a boss never brings up the rear */
-  var lastBoss = -1, firstMob = 1e9;
-  for (i = 0; i < sc.length; i++) {
-    if (ENEMIES[sc[i].type].boss) lastBoss = Math.max(lastBoss, i);
-    else firstMob = Math.min(firstMob, i);
-  }
-  if (lastBoss >= 0 && firstMob < 1e9 && lastBoss > firstMob) return false;
+  /* departures are sorted and the first one leaves on tick zero */
+  if (sc[0].tick !== 0) return false;
+  for (i = 1; i < sc.length; i++) if (sc[i].tick < sc[i - 1].tick) return false;
   return sc.length > 0;
 }
 
@@ -577,7 +587,7 @@ function blankWaveStats(wave) {
   return {
     wave: wave, dmg: blankDamage(), held: { wall: 0, snare: 0, pit: 0 },
     kills: 0, deepest: CONFIG.LANE, ticks: 0, overkill: 0, scrapSpent: 0, trapsLost: 0,
-    idle: 0, idleRun: 0, idleMax: 0, muts: []
+    idle: 0, idleRun: 0, idleMax: 0, contact: 0, muts: []
   };
 }
 
@@ -769,6 +779,14 @@ function startWave(s) {
   s.muts = mutatorsFor(s.wave, s.seed);
   s.waveStats = blankWaveStats(s.wave);
   s.waveStats.muts = s.muts.slice();
+  /* what the purse could not spend once the build phase closed, and how deep
+     the standing lane is. Defect one is exactly this first number refusing to
+     come down. */
+  s.waveStats.scrapLeft = s.scrap;
+  var lv = 0, cnt = 0, ci;
+  for (ci = 0; ci < CONFIG.LANE; ci++) if (s.traps[ci]) { lv += s.traps[ci].lvl; cnt++; }
+  s.waveStats.lvlSum = lv;
+  s.waveStats.trapCount = cnt;
   s.player.atkCd = 0;
   s.player.moveT = 0;
   emit(s, 'wavestart', s.wave);
@@ -1147,13 +1165,25 @@ function step(s, intent) {
    ENGAGE_CELLS of you. The longest unbroken stretch is what the gate reads:
    a boss crossing an empty field is the pacing bug this catches. */
 function idleTick(s) {
-  var i, e, busy = false;
+  var i, e, near = false, alive = false;
   for (i = 0; i < s.enemies.length; i++) {
     e = s.enemies[i];
     if (e.dead) continue;
-    if (Math.abs(e.cell - s.player.cell) <= CONFIG.ENGAGE_CELLS) { busy = true; break; }
+    alive = true;
+    if (Math.abs(e.cell - s.player.cell) <= CONFIG.ENGAGE_CELLS) { near = true; break; }
   }
-  if (busy) { s.waveStats.idleRun = 0; return; }
+  /* HARD dead air: the lane is literally empty and the wave is not finished.
+     Nothing to run at, nothing to watch. This is the wave 10 bug. */
+  if (alive || s.spawnIdx >= s.spawns.length) { s.waveStats.emptyRun = 0; }
+  else {
+    s.waveStats.empty++;
+    s.waveStats.emptyRun++;
+    if (s.waveStats.emptyRun > s.waveStats.emptyMax) s.waveStats.emptyMax = s.waveStats.emptyRun;
+  }
+  /* SOFT dead air: bodies exist but none are in reach. Includes the run out to
+     meet them, so it is reported and loosely bounded rather than gated tight. */
+  if (near) { s.waveStats.idleRun = 0; s.waveStats.contact = 1; return; }
+  if (!s.waveStats.contact) return;
   s.waveStats.idle++;
   s.run.idleTicks++;
   s.waveStats.idleRun++;
@@ -2421,29 +2451,29 @@ SUITES.push(function () {
   startWave(s);
   TEST.eq('skip starts the wave early', s.phase, 'combat');
   TEST.ok('skipping records the build for later', s.lastBuild !== null);
-  s = newGame(1, {});
+  s = newGame(1, { bare: true });
   s.scrap = 200;
   placeTrap(s, 8, 'spike');
   placeTrap(s, 9, 'snare');
   startWave(s);
   var plan = s.lastBuild;
   TEST.eq('last build remembers two traps', plan.length, 2);
-  var s2 = newGame(1, {});
+  var s2 = newGame(1, { bare: true });
   s2.scrap = 200;
   TEST.eq('last build re applies onto a clean lane', applyBuild(s2, plan), 2);
-  var s3 = newGame(1, {});
+  var s3 = newGame(1, { bare: true });
   s3.scrap = 30;
   TEST.eq('last build only buys what you can afford', applyBuild(s3, plan), 1);
   /* a wave that is walked over ends and pays the next purse */
-  s = newGame(1, {});
+  s = newGame(1, { bare: true });
   startWave(s);
   var guard = 0;
-  while (s.phase === 'combat' && guard++ < 2000) step(s, 'attack');
+  while (s.phase === 'combat' && guard++ < 2000) step(s, 'none');
   TEST.ok('an unopposed wave one breaches the gate', s.phase === 'lost');
   TEST.eq('the loss names the wave', s.lossInfo.wave, 1);
   TEST.ok('the loss names the body that got through', !!s.lossInfo.enemy);
   /* the alarm rings at 8, 5 and 3 */
-  s = newGame(1, {});
+  s = newGame(1, { bare: true });
   startWave(s);
   guard = 0;
   var alarms = [];

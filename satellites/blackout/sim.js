@@ -26,7 +26,10 @@ function region(start, end, required) {
 var SIM_SRC = region("// ---- SIM_EXPORT_START ----", "// ---- SIM_EXPORT_END ----", true);
 var TEST_SRC = region("// ---- TEST_EXPORT_START ----", "// ---- TEST_EXPORT_END ----", false);
 
-var EXPORTS = ["CONFIG", "makeRNG", "seedFromString", "dailySeed", "SUSPECTS", "WEAPONS",
+var EXPORTS = ["CONFIG", "TIERS", "TIER_KEYS", "tierOf", "makeRNG", "seedFromString", "dailySeed", "SUSPECTS", "WEAPONS",
+  "liarMask", "liarProved", "falseClueIds", "makeLie", "trueClueCandidates", "eliminatorFor", "eliminatorsFor", "clueKey",
+  "liarReinforce", "targetedCandidates", "minimizeLiar", "chooseProof", "stateMask", "clueSource", "modeOf", "modeLabelOf",
+  "GLYPH_W", "textWidth", "wrapText", "titleTier", "titleFits", "headerTitleBox", "allTitles", "TITLE_TIERS",
   "ROOMS", "TIMES", "TIME_HEAD", "ATTRS", "DESCS", "CLASSWORD", "EVENTS", "TPL",
   "TITLE_NOUNS", "TITLE_TIMEWORDS", "BRIEF", "TYPE_NAMES",
   "tupleIndex", "tupleFromIndex", "bitsFull", "bitsAnd", "bitsGet", "bitsCount",

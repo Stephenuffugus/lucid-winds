@@ -79,7 +79,7 @@ for (n = 1; n <= M.CONFIG.LEVEL_COUNT; n++){
 
 process.stderr.write('\nTIER  MADE  ATTEMPTS  PER ACCEPT   SECONDS   PAR MIN  PAR MAX  PAR MEAN\n');
 var tk;
-for (tk = 1; tk <= 5; tk++){
+for (tk = 1; tk <= M.TIERS.length; tk++){
   var s = stats[tk];
   if (!s || !s.levels) continue;
   var mean = s.pars.reduce(function(p,c){ return p+c; }, 0) / s.pars.length;

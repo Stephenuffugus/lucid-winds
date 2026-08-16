@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#05070b">
-<script src="/dev-gate.js?v=2"></script>
-<title>FLOCK THE WORLD · Global Coverage Simulator</title>
+<title>FLOCK THE WORLD — Global Coverage Simulator</title>
 <style>
 :root{
   --void:#05070b; --deep:#0a1018; --panel:#101822; --panel2:#16212e; --line:#22303f;
@@ -74,15 +73,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 .slab{font-size:8.5px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
 .sval{font-size:15px;font-weight:700}
 .sval.money{color:var(--grn)}.sval.inf{color:var(--sodium)}
-/* the control row: leave button + speeds. Split out of the stat row so every
-   control clears 48px rendered at 375 wide instead of the old 30px squares. */
-#ctlrow{display:flex;gap:6px;align-items:center;margin-top:8px}
-#speeds{display:flex;gap:6px;flex:1}
-.sp{flex:1;min-width:48px;height:48px;border:1px solid var(--line);border-radius:10px;font-size:13px;
+#speeds{display:flex;gap:4px}
+.sp{width:30px;height:30px;border:1px solid var(--line);border-radius:7px;font-size:11px;
   display:flex;align-items:center;justify-content:center;color:var(--dim);background:var(--panel)}
-.hudbtn{width:48px;height:48px;flex:none;border:1px solid var(--line);border-radius:10px;
-  background:var(--panel);color:var(--ice);font-size:17px;
-  display:flex;align-items:center;justify-content:center}
 .sp.on{border-color:var(--sodium);color:var(--sodium);background:#1a1408}
 .bars{display:flex;gap:8px;margin-top:8px}
 .bwrap{flex:1}
@@ -106,12 +99,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 .rec{width:6px;height:6px;border-radius:50%;background:var(--blood);animation:blink 1.4s infinite}
 @keyframes blink{50%{opacity:.15}}
 .zoomui{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:5px}
-/* 48px floor, measured as rendered px at 375x667: this page is not scaled,
-   so the CSS px IS the rendered px. The old 32px squares failed the floor. */
-.zb{width:48px;height:48px;border:1px solid var(--line);border-radius:10px;background:#0a1018cc;
-  color:var(--ice);font-size:11px;letter-spacing:.08em;font-weight:700;
-  display:flex;align-items:center;justify-content:center}
-#breaking{position:absolute;left:8px;right:64px;top:44px;padding:8px 11px;border-radius:10px;
+.zb{width:32px;height:32px;border:1px solid var(--line);border-radius:8px;background:#0a1018cc;
+  color:var(--ice);font-size:15px;display:flex;align-items:center;justify-content:center}
+#breaking{position:absolute;left:8px;right:48px;top:44px;padding:8px 11px;border-radius:10px;
   background:#170b0eee;border:1px solid var(--blood);font-size:11px;line-height:1.4;color:#ffd9d5;
   transform:translateY(-8px);opacity:0;pointer-events:none;transition:.3s}
 #breaking.on{transform:none;opacity:1}
@@ -139,8 +129,8 @@ h1 em{font-style:normal;color:var(--sodium)}
 /* ---------- nav ---------- */
 #nav{display:flex;gap:5px;padding:8px 6px calc(env(safe-area-inset-bottom) + 8px);
   background:#080d14;border-top:1px solid var(--line)}
-.nb{flex:1;min-height:52px;padding:8px 1px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
+.nb{flex:1;padding:8px 1px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+  display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
 .nb svg{width:16px;height:16px;stroke:var(--ice);fill:none;stroke-width:1.7}
 .nb span{font-size:8px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
 .nb.hot{border-color:var(--sodium)}.nb.hot svg{stroke:var(--sodium)}.nb.hot span{color:var(--sodium)}
@@ -157,7 +147,7 @@ h1 em{font-style:normal;color:var(--sodium)}
 .shead{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .shead h2{margin:0;font-size:15px;letter-spacing:.04em;flex:1}
 .shead .cur{font-size:12px;color:var(--sodium);font-weight:700}
-.x{width:48px;height:48px;flex:none;border-radius:10px;border:1px solid var(--line);color:var(--dim);font-size:17px}
+.x{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);color:var(--dim);font-size:15px}
 .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px calc(env(safe-area-inset-bottom) + 20px)}
 .treedesc{font-size:11px;color:var(--dim);line-height:1.5;margin:0 2px 12px}
 
@@ -258,8 +248,8 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div class="lens"></div>
   <div class="tag">Sky Wolf Studios presents</div>
   <h1>FLOCK<br>THE <em>WORLD</em></h1>
-  <p class="sub">You play the parasite: the vendor class that farms ordinary people for data, fines and fear.
-  It buys the media, arms the police, and writes its own oversight. The civilians in this game are innocent.
+  <p class="sub">You play the parasite: the vendor class that farms ordinary people for data, fines and fear —
+  buying the media, arming the police, writing its own oversight. The civilians in this game are innocent.
   They fight back, and they learn. See how the machine works from the inside. That's the point.</p>
   <button class="howbtn" id="howBtn">How to play</button>
   <div class="seclab">Operation type</div>
@@ -278,11 +268,11 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div class="hdr">
     <div class="tag" style="text-align:left">Deployment briefing</div>
     <h2>Choose your launch country</h2>
-    <p style="margin:0;font-size:12px;color:var(--dim);line-height:1.5">Tap any country. Your first cameras go up there,
+    <p style="margin:0;font-size:12px;color:var(--dim);line-height:1.5">Tap any country — your first cameras go up there,
       then spread outward across its region and the world. Pinch or drag to look around.</p>
   </div>
   <div id="pickWrap"><canvas id="pickMap"></canvas><canvas id="pickFx"></canvas><div class="crt"></div>
-    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
+    <div class="zoomui"><button class="zb" data-z="in">+</button><button class="zb" data-z="out">−</button><button class="zb" data-z="fit">⌂</button></div>
   </div>
   <div id="pickFoot">
     <div id="pickInfo">No region selected.</div>
@@ -294,12 +284,9 @@ h1 em{font-style:normal;color:var(--sodium)}
 <section class="screen" id="game">
   <div id="hud">
     <div class="hudrow">
-      <div class="stat"><div class="slab">Date</div><div class="sval mono" id="vDate"></div></div>
-      <div class="stat"><div class="slab">Capital</div><div class="sval money mono" id="vCash"></div></div>
-      <div class="stat"><div class="slab">Influence</div><div class="sval inf mono" id="vInf"></div></div>
-    </div>
-    <div id="ctlrow">
-      <button class="hudbtn" id="leaveBtn" aria-label="Pause and leave">&#9776;</button>
+      <div class="stat"><div class="slab">Date</div><div class="sval mono" id="vDate">—</div></div>
+      <div class="stat"><div class="slab">Capital</div><div class="sval money mono" id="vCash">—</div></div>
+      <div class="stat"><div class="slab">Influence</div><div class="sval inf mono" id="vInf">—</div></div>
       <div id="speeds"></div>
     </div>
     <div class="bars">
@@ -312,7 +299,7 @@ h1 em{font-style:normal;color:var(--sodium)}
   <div id="mapWrap">
     <canvas id="map"></canvas><canvas id="fx"></canvas><div class="crt"></div>
     <div id="pill"><span class="rec"></span><span class="mono" id="pillTxt">LIVE</span></div>
-    <div class="zoomui"><button class="zb" data-z="in">IN</button><button class="zb" data-z="out">OUT</button><button class="zb" data-z="fit">FIT</button></div>
+    <div class="zoomui"><button class="zb" data-z="in">+</button><button class="zb" data-z="out">−</button><button class="zb" data-z="fit">⌂</button></div>
     <div id="breaking"><b>BREAKING</b><span id="breakTxt"></span></div>
     <div id="guide"><span id="guideTxt"></span><div class="gskip" id="guideSkip">Skip briefing</div></div>
     <div id="ctip"><div class="cn" id="ctipTxt"></div><button id="ctipBtn">Region</button></div>
@@ -327,7 +314,7 @@ h1 em{font-style:normal;color:var(--sodium)}
     <button class="nb" data-tab="log"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>Feed</span></button>
   </nav>
   <div id="sheet"><div class="sheetbody">
-    <div class="shead"><h2 id="shTitle"></h2><span class="cur mono" id="shCur"></span>
+    <div class="shead"><h2 id="shTitle">—</h2><span class="cur mono" id="shCur"></span>
       <button class="x" id="shClose">✕</button></div>
     <div class="scroll" id="shBody"></div>
   </div></div>
@@ -336,13 +323,11 @@ h1 em{font-style:normal;color:var(--sodium)}
 
 <!-- END -->
 <section class="screen" id="end">
-  <div class="verd" id="endKick"></div>
-  <h2 id="endTitle"></h2>
-  <p id="endText"></p>
+  <div class="verd" id="endKick">—</div>
+  <h2 id="endTitle">—</h2>
+  <p id="endText">—</p>
   <div class="statgrid" id="endStats"></div>
-  <div id="endRecs" class="fine" style="margin:0 auto 10px"></div>
   <button class="cta" id="againBtn" style="max-width:360px">Run it back</button>
-  <button class="howbtn" id="shareBtn" style="margin-top:12px">Copy this result</button>
 </section>
 
 </div>
@@ -388,10 +373,10 @@ const MODES = {
     d:'Start with one camera and a free-trial business model. Spread by contract, capability and fear until nothing moves unrecorded.',
     mod:{}},
   DEEPSTATE:{n:'The Deep Partnership',tag:'Head start, hard ceiling',cash:110,inf:14,
-    d:'Two authoritarian ministries pre-installed your kit. Closed societies are yours early, but free ones have read the leaks and resist twice as hard.',
+    d:'Two authoritarian ministries pre-installed your kit. Closed societies are yours early — but free ones have read the leaks and resist twice as hard.',
     mod:{preseed:2, freeResist:1.3, over:0.85}},
   CRISIS:{n:'The Crisis Engine',tag:'Warmonger',cash:170,inf:12,
-    d:'Manufacture the emergency, sell the response. Crisis tree unlocked and discounted from day one, but the world coalition forms fast when it smells smoke.',
+    d:'Manufacture the emergency, sell the response. Crisis tree unlocked and discounted from day one — but the world coalition forms fast when it smells smoke.',
     mod:{warDiscount:0.7, warOpen:true, over:1.22, unrest:1.15, ovrName:'Coalition'}}
 };
 
@@ -509,7 +494,7 @@ const COMBOS=[
   d:'Your fake grassroots write the questions your anchor asks. The loop closes.',
   fx:{cmp:.10}, f:s=>{bumpSus(s,-6);}},
  {id:'panopt', need:['door','hoa'], n:'NEIGHBORHOOD PANOPTICON',
-  d:'The HOA reviews doorbell footage nightly. Residents surveil each other for free, and stop noticing you.',
+  d:'The HOA reviews doorbell footage nightly. Residents surveil each other for free — and stop noticing you.',
   fx:{dep:.6,vis:-.08}},
  {id:'memhole', need:['blackout','arch'], n:'THE MEMORY HOLE',
   d:'What the archive keeps, the news never mentions. Oversight keeps citing articles that no longer exist.',
@@ -531,8 +516,8 @@ function checkCombos(s){
       s.combos.add(c.id);
       if(c.f)c.f(s);
       recompute(s);
-      pushNews(s,`SYNERGY UNLOCKED \u00b7 ${c.n}. ${c.d}`,'good');
-      goldBanner(`${c.n}. ${c.d}`);
+      pushNews(s,`SYNERGY \u2014 ${c.n}: ${c.d}`,'good');
+      goldBanner(`${c.n} \u2014 ${c.d}`);
       if(s.hq)s.pings.push({x:s.hq[0],y:s.hq[1],t:0,kind:'syn'});
     }
   }
@@ -546,7 +531,7 @@ const TREES={
 
 /* ============================ NEWS ============================ */
 const AMBIENT=[
- 'City council approves camera expansion 6 to 1. The one dissenter receives a primary challenger.',
+ 'City council approves camera expansion 6–1. The 1 receives a primary challenger.',
  'Poll: 61% feel safer. Same poll: 58% cannot say what the cameras record.',
  'Vendor conference keynote titled "Consent At Scale" receives standing ovation.',
  'Sec. Brill tours new checkpoint in fourth tactical vest this quarter.',
@@ -554,7 +539,7 @@ const AMBIENT=[
  'Sandoval-Klein Holdings acquires a weather app. It was never about weather.',
  'Gen. Prather (ret.) tells committee the threat environment is "the worst I have monetized."',
  'The Anchor asks whether privacy advocates "have something to hide." Panel nods.',
- 'School board adds camera curriculum: "The Lens Is Your Friend," grades K to 5.',
+ 'School board adds camera curriculum: "The Lens Is Your Friend," grades K–5.',
  'Study finds plate readers reduce crime 0.4%. Press release omits decimal.',
  'Neighbourhood app adds "Report Unfamiliar Person" button. Usage immediate.',
  'Retired judge warns of precedent. Segment runs at 3:40 a.m.',
@@ -595,7 +580,7 @@ const H={
    player actually built, and they do not forget crackdowns. */
 const CM=[
  {id:'atlas', need:null, th:18,
-  t:r=>`Volunteers in ${r} walk every block logging camera positions into a public atlas. Your coverage has a map now. Theirs.`,
+  t:r=>`Volunteers in ${r} walk every block logging camera positions into a public atlas. Your coverage has a map now — theirs.`,
   fx:{grow:0.95}},
  {id:'masks', need:'face', th:26,
   t:r=>`Masks, hoods and dazzle makeup become street fashion in ${r}. Face-match hit rates crater.`,
@@ -961,7 +946,7 @@ function worldMilestones(s){
   fire(45,()=>{pushNews(s,'General strike against the surveillance economy. Ports idle, deliveries stop, your invoices go unpaid.','res');
     s.cash=Math.max(0,s.cash*0.85);s.oversight+=4;});
   fire(60,()=>{const hasW=s.has('whis');
-    pushNews(s,hasW?'An insider tries to leak the full archive. Your suppression team catches most of it. Most of it.'
+    pushNews(s,hasW?'An insider tries to leak the full archive. Your suppression team catches most of it — most.'
       :'An insider leaks the full archive: every search, every score, every civilian file. The world reads its own dossier.','res');
     s.oversight+=hasW?4:9;bumpSus(s,hasW?4:9);});
   fire(75,()=>{pushNews(s,'The Great Unplugging: households, schools and whole districts physically remove the lenses in a single coordinated week.','res');
@@ -981,7 +966,7 @@ function finish(won,why){
   if(won){
     $('endKick').textContent='Contract fulfilled';
     $('endTitle').innerHTML='TOTAL <span style="color:var(--sodium)">COVERAGE</span>';
-    $('endText').textContent='Every innocent person on Earth now lives inside your frame. Billions of ordinary people who were never asked, farmed for fines and fear by a handful of vendors, lobbyists and landlords of the lens. There was never a vote. Only procurement. Your guidance is revised upward. Sit with what you just built.';
+    $('endText').textContent='Every innocent person on Earth now lives inside your frame — billions of ordinary people who were never asked, farmed for fines and fear by a handful of vendors, lobbyists and landlords of the lens. There was never a vote. Only procurement. Your guidance is revised upward. Sit with what you just built.';
   }else if(why==='refusal'){
     $('endKick').textContent='The great refusal';
     $('endTitle').innerHTML='TORN <span style="color:var(--scan)">DOWN</span>';
@@ -989,7 +974,7 @@ function finish(won,why){
   }else{
     $('endKick').textContent='Platform dismantled';
     $('endTitle').innerHTML='SHUT <span style="color:var(--scan)">DOWN</span>';
-    $('endText').textContent='The civilians you farmed learned faster than you deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork. The one weapon you never saw coming.';
+    $('endText').textContent='The civilians you farmed learned faster than you deployed: they mapped the lenses, encrypted the graph, filmed the crackdowns, leaked the archive, and dragged the whole parasite class into a hearing room with the receipts. Contracts voided. Archive deleted. Three executives cooperating. Paperwork — the one weapon you never saw coming.';
   }
   show('end');
 }
@@ -1411,7 +1396,7 @@ function worldHTML(){
     <div class="ws"><div class="k">Militarized</div><div class="v mono">${(s.avgMil*100).toFixed(0)}%</div></div>
     <div class="ws"><div class="k">Suspicion</div><div class="v mono">${s.avgSus.toFixed(0)}</div></div>
     <div class="ws"><div class="k">Organized</div><div class="v mono" style="color:#c792ff">${s.avgRes.toFixed(0)}</div></div>
-    <div class="ws"><div class="k">Doctrine</div><div class="v" style="font-size:11px">${s.doctrine==='glove'?'Velvet Glove':s.doctrine==='fist'?'Iron Fist':'not chosen'}</div></div>
+    <div class="ws"><div class="k">Doctrine</div><div class="v" style="font-size:11px">${s.doctrine==='glove'?'Velvet Glove':s.doctrine==='fist'?'Iron Fist':'—'}</div></div>
     <div class="ws"><div class="k">Lost</div><div class="v mono">${s.lostCount}/${CFG.lostLimit}</div></div>
   </div>`;
   h+=REGIONS.map(r=>{
@@ -1448,7 +1433,7 @@ function worldHTML(){
         return `<span class="cchip">${NM[id]||id}</span>`;}).join('')+'</div>':''}
       ${acts}
       ${x.active?'':`<button class="buy" data-enter="${r.id}" ${s.cash<cost?'disabled':''}>
-        ${x.lost?'Re-enter':'Enter'} market · $${cost.toLocaleString()}</button>`}
+        ${x.lost?'Re-enter':'Enter'} market — $${cost.toLocaleString()}</button>`}
     </div>`;
   }).join('');
   return h;
@@ -1468,7 +1453,7 @@ function doAction(act,rid){
     if(r.resist>40&&Math.random()<(r.resist-35)/130){
       s.oversight+=4;r.resist=clamp(r.resist+8,0,100);r.grudge+=10;
       r.compliance=clamp(r.compliance-0.05,.02,.98);
-      pushNews(s,`Streamers in ${r.name} unmask your provocateurs mid march. Faces, pay stubs, the invoice itself. The march grows.`,'res');
+      pushNews(s,`Streamers in ${r.name} unmask your provocateurs mid-march — faces, pay stubs, the invoice itself. The march grows.`,'res');
     }else{
       r.unrest=clamp(r.unrest+16,0,100);
       if(r.pstate==='peaceful'){r.pstate='violent';r.unrest=Math.max(r.unrest,70);
@@ -1516,7 +1501,7 @@ function showEvent(ev){
   const prev=S.speed;setSpeed(0);
   const c=$('modalCard'),who=ev.who?CAST[ev.who]:null;
   c.innerHTML=`<div class="kicker">${ev.kick}</div>
-    ${who?`<div class="who">${who.n} · ${who.t}</div>`:''}
+    ${who?`<div class="who">${who.n} — ${who.t}</div>`:''}
     <h3>${ev.t}</h3><p>${ev.b}</p>`
     +ev.o.map((o,i)=>{
       const ok=!o.c||o.c(S);
@@ -1550,12 +1535,12 @@ function doctrineModal(){
 /* ============================ TUTORIAL ============================ */
 const TUT=[
  {t:'Welcome to the frame',b:'The goal: bring 97% of humanity under meaningful control before the OVERSIGHT bar reaches 100 and the world shuts you down. It is a race, and both bars only move one way if you do nothing about them.'},
- {t:'The map is money',b:'Amber regions are yours; the brighter, the deeper. Tap $ , \u25C8 and ! bubbles when they appear: cash, influence, and leaks you can intercept. Drag to pan, pinch to zoom, or use the IN and OUT buttons.'},
- {t:'Four trees, four shapes',b:'DEPLOY grows coverage. WATCH deepens control, and visibility with it, so take care. STORY keeps the public compliant and the regulators toothless: you cannot win without it. CRISIS is the loud path: agitators, crackdowns, and wars.'},
+ {t:'The map is money',b:'Amber regions are yours; the brighter, the deeper. Tap $ , \u25C8 and ! bubbles when they appear — cash, influence, and leaks you can intercept. Drag to pan, pinch or use +/− to zoom.'},
+ {t:'Four trees, four shapes',b:'DEPLOY grows coverage. WATCH deepens control (and visibility — careful). STORY keeps the public compliant and the regulators toothless: you cannot win without it. CRISIS is the loud path: agitators, crackdowns, and wars.'},
  {t:'Protests are a pipeline',b:'Suspicion + low compliance breeds unrest: murmurs → marches → riots → uprising. Marches slow you and attract oversight. You can wait them out, concede… or send Paid Agitators to turn a march violent and "restore order" with a Crackdown. On camera.'},
- {t:'The people fight back, and they learn',b:'These are innocent civilians, and they are not passive. They map your cameras, wear masks, swap plates, encrypt everything, cop-watch your crackdowns and unmask your agitators. Violence radicalizes them permanently. The ORGANIZED bar remembers. Real tactics, all of them.'},
- {t:'The World tab is your cockpit',b:'Every region\u2019s coverage, unrest and militarization, plus per-region actions and new market entries. Watch the state chips. UPRISING can cost you a region permanently. Lose four and it is over.'},
- {t:'Read the wire',b:'The ticker and the Feed react to everything you do. When it says BREAKING, something is on fire, possibly because you paid for the matches. Good luck. Smile for the cameras.'}
+ {t:'The people fight back — and learn',b:'These are innocent civilians, and they are not passive. They map your cameras, wear masks, swap plates, encrypt everything, cop-watch your crackdowns and unmask your agitators. Violence radicalizes them permanently — the ORGANIZED bar remembers. Real tactics, all of them.'},
+ {t:'The World tab is your cockpit',b:'Every region\u2019s coverage, unrest and militarization, plus per-region actions and new market entries. Watch the state chips — UPRISING can cost you a region permanently. Lose four and it is over.'},
+ {t:'Read the wire',b:'The ticker and the Feed react to everything you do. When it says BREAKING, something is on fire — possibly because you paid for the matches. Good luck. Smile for the cameras.'}
 ];
 function showTutorial(done){
   let i=0;const prev=S?S.speed:0;if(S)setSpeed(0);
@@ -1616,9 +1601,9 @@ function showCtip(c){
   const r=S.regions[c.r];
   const rank=(r.cOrder&&r.cOrder[c.idx]!==undefined)?r.cOrder[c.idx]:0;
   const prog=r.active?Math.max(0,Math.min(1,r.coverage*r.cN-rank)):0;
-  const stt=r.lost?'EXPELLED':!r.active?'unsigned':prog>=1?'fully covered':prog>0?`installing ${(prog*100)|0}%`:'awaiting rollout';
+  const stt=r.lost?'EXPELLED':!r.active?'unsigned':prog>=1?'fully covered':prog>0?`installing \u2014 ${(prog*100)|0}%`:'awaiting rollout';
   const hq=(S.hqName===c.n)?' \u00b7 HQ':'';
-  $('ctipTxt').innerHTML=`<b>${c.n}</b>${hq} \u00b7 ${R[c.r].name}<br>`
+  $('ctipTxt').innerHTML=`<b>${c.n}</b>${hq} \u2014 ${R[c.r].name}<br>`
     +`<span style="color:var(--dim)">${stt}${r.active?` \u00b7 region coverage ${(r.coverage*100).toFixed(0)}% \u00b7 unrest ${r.unrest|0}`:''}</span>`;
   const t=$('ctip');t.classList.add('on');
   $('ctipBtn').onclick=()=>{hideCtip();openSheet('reg');};
@@ -1628,15 +1613,15 @@ function hideCtip(){$('ctip').classList.remove('on');}
 
 /* ============================ GUIDE (first-run interactive) ============================ */
 const GUIDE=[
- {txt:s=>`Cameras are live in <b>${s.hqName}</b>. First, the paperwork: open <b>STORY</b> below and activate <b>Nuisance Ordinances</b>. Make a law against something everyone does.`,
+ {txt:s=>`Cameras are live in <b>${s.hqName}</b>. First, the paperwork: open <b>STORY</b> below and activate <b>Nuisance Ordinances</b> \u2014 make a law against something everyone does.`,
   tab:'inf',node:'ord',done:s=>s.has('ord')},
  {txt:()=>`Now the hardware to enforce it: open <b>DEPLOY</b> and activate the <b>Free Pilot Program</b>. Nobody removes a camera they never paid for.`,
   tab:'dep',node:'pilot',done:s=>s.has('pilot')},
  {txt:()=>`Watch the meter run. Fines and contracts compound while coverage spreads country by country. Tap the <b>$</b>, <b>\u25C8</b> and <b>!</b> bubbles on the map when they appear.`,
   wait:{days:22},done:(s,g)=>s.day>=g.day0+22},
- {txt:()=>`A warning: the civilians you\u2019re farming will <b>organize</b>. Watch the violet ORGANIZED bar in the World tab. They map cameras, encrypt, cop-watch, and they never forget a crackdown.`,
+ {txt:()=>`A warning: the civilians you\u2019re farming will <b>organize</b>. Watch the violet ORGANIZED bar in the World tab \u2014 they map cameras, encrypt, cop-watch, and they never forget a crackdown.`,
   wait:{days:1},done:(s,g)=>s.day>=g.day0+14},
- {txt:()=>`One more thing: certain skills <b>combine</b>. Ordinances plus <b>Plate Recognition</b> (WATCH tree) would fine people automatically\u2026 There are more hidden synergies. Find them. Good luck. Smile for the cameras.`,
+ {txt:()=>`One more thing: certain skills <b>combine</b>. Ordinances plus <b>Plate Recognition</b> (WATCH tree) would fine people automatically\u2026 There are more hidden synergies. Find them. Good luck \u2014 smile for the cameras.`,
   done:()=>false,final:true}
 ];
 const G={on:false,step:0,day0:0};
@@ -1693,7 +1678,7 @@ function initPick(){
       const c=countryAtPoint(wx,wy);
       if(!c)return;
       pickedCountry=c.idx;pickedRegion=c.r;const r=R[c.r];
-      $('pickInfo').innerHTML=`<b style="color:var(--sodium)">${c.n}</b> · ${r.name} · region ${r.pop}M · `
+      $('pickInfo').innerHTML=`<b style="color:var(--sodium)">${c.n}</b> — ${r.name} · region ${r.pop}M · `
         +`wealth ${r.wealth.toFixed(2)} · liberty ${(r.liberty*100)|0}% · press ${(r.media*100)|0}%<br>`
         +(r.liberty>.65?'Deep pockets, strong press, organized citizens. Money now, marches later.'
           :r.liberty<.3?'Cameras go up without a hearing. Margins are thin; loyalty is thick.'

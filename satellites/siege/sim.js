@@ -124,11 +124,9 @@ function enumerateLoadouts(maxTypes) {
   return out;
 }
 
-function shareOf(dmg) {
-  var tot = 0, k;
-  for (k in dmg) tot += dmg[k];
-  return { total: tot, player: tot ? dmg.player / tot : 0 };
-}
+/* The sweep and the wave scorecard the player reads call the SAME function, so
+   the percentages on screen are by construction the percentages gated here. */
+function shareOf(dmg) { return SIM.damageShare(dmg); }
 
 function runLoadout(lo, bot, seed, maxWave) {
   return SIM.runCampaign({ seed: seed || 1, bot: bot, loadout: lo.list, maxWave: maxWave || CONFIG.WAVES });
@@ -247,6 +245,29 @@ function sweep() {
   });
   var avgShare = shareN ? shareSum / shareN : 0;
 
+  /* ---- the three defect measurements, over the top 40 builds ---- */
+  var stranded = 0, strandedAt = '', idleWorst = 0, idleAt = '';
+  var earlySum = 0, earlyN = 0;
+  activeRows.slice(0, 40).forEach(function (row) {
+    row.rows.forEach(function (wr) {
+      if (!wr) return;
+      var sh = SIM.damageShare(wr.dmg);
+      /* DEFECT 1: scrap with nowhere to go once the lane saturates. Only the
+         back half of the campaign counts; an early purse that cannot yet
+         afford a ballista is saving up, not stranded. */
+      if (wr.wave >= 14 && wr.scrapLeft > stranded) {
+        stranded = wr.scrapLeft; strandedAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
+      }
+      /* DEFECT 3: dead lane after first contact */
+      if (wr.idleMax > idleWorst) {
+        idleWorst = wr.idleMax; idleAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
+      }
+      /* DEFECT 2: the build phase has to earn its twenty seconds */
+      if (wr.wave <= 5 && sh.total > 0) { earlySum += sh.traps; earlyN++; }
+    });
+  });
+  var earlyTrapShare = earlyN ? earlySum / earlyN : 0;
+
   console.log('GATES');
   var gates = [];
   gates.push(gate('no loadout clears 20 waves with the IDLE bot', idleWins === 0,
@@ -264,6 +285,16 @@ function sweep() {
     lossWaves[Math.floor(n * 0.25)] + '/' + lossWaves[Math.floor(n * 0.75)]));
   gates.push(gate('the defender is not decorative: player share at least 20 percent', avgShare >= 0.20,
     'mean player damage share on cleared waves ' + pct(avgShare)));
+  /* the three defect gates. Each was watched red before it was trusted green:
+     stranded scrap read 612 with no REINFORCE, dead air read 53 ticks with the
+     old departure schedule, and early trap share read 12.9% with no starter
+     strip. See BUILD-NOTES.md. */
+  gates.push(gate('no purse strands: under a trap price left over past wave 14', stranded < 90,
+    'worst leftover ' + stranded + ' scrap (' + (strandedAt || 'none') + ')'));
+  gates.push(gate('no dead lane: under 3 seconds of empty lane after first contact', idleWorst <= 30,
+    'longest lull ' + (idleWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (idleAt || 'none') + ')'));
+  gates.push(gate('the build phase earns its 20 seconds: traps do 25 percent by wave 5', earlyTrapShare >= 0.25,
+    'mean trap damage share over waves 1 to 5 ' + pct(earlyTrapShare) + ' across ' + earlyN + ' waves'));
 
   var failed = gates.filter(function (g) { return !g.ok; });
   console.log('');
@@ -369,7 +400,38 @@ function totalHP(s) {
 
 /* ------------------------------------------------------------------ */
 
-if (args.test) runTests();
+/* ------------------------------------------------------------------ */
+/* --diag : the three defect numbers, per wave, on demand               */
+/* ------------------------------------------------------------------ */
+
+var DIAG_BUILDS = [
+  { key: 'ballista+brazier+wall', list: [{ type: 'ballista', zone: 3 }, { type: 'brazier', zone: 3 }, { type: 'wall', zone: 0 }] },
+  { key: 'spike+brazier+ballista', list: [{ type: 'spike', zone: 4 }, { type: 'brazier', zone: 2 }, { type: 'ballista', zone: 0 }] },
+  { key: 'spike+pit+brazier', list: [{ type: 'spike', zone: 4 }, { type: 'pit', zone: 2 }, { type: 'brazier', zone: 1 }] }
+];
+
+function diag() {
+  var maxW = args.wave ? parseInt(args.wave, 10) : CONFIG.WAVES;
+  DIAG_BUILDS.forEach(function (b) {
+    var r = SIM.runCampaign({ seed: 1, bot: SIM.BOTS.active, loadout: b.list, maxWave: maxW, endless: maxW > CONFIG.WAVES });
+    console.log('');
+    console.log('BUILD ' + b.key + '   reached ' + (r.won ? 'WON' : 'w' + r.reached));
+    console.log(pad('wave', 6) + pad('YOU', 8) + pad('traps', 8) + pad('idleMax', 9) + pad('secs', 7) + pad('scrapLeft', 11) + pad('lvls', 8) + pad('muts', 20, true));
+    r.rows.forEach(function (row, i) {
+      if (!row) return;
+      var sh = SIM.damageShare(row.dmg);
+      console.log(pad(row.wave, 6) + pad(pct(sh.player), 8) + pad(pct(sh.traps), 8) +
+        pad((row.idleMax * CONFIG.TICK_MS / 1000).toFixed(1) + 's', 9) +
+        pad((row.ticks * CONFIG.TICK_MS / 1000).toFixed(1), 7) +
+        pad(row.scrapLeft === undefined ? '' : row.scrapLeft, 11) +
+        pad(row.lvlSum === undefined ? '' : row.lvlSum, 8) +
+        '  ' + (row.muts || []).join(','));
+    });
+  });
+}
+
+if (args.diag) diag();
+else if (args.test) runTests();
 else if (args.sweep) sweep();
 else if (args.watch !== undefined) watch(parseInt(args.watch, 10) || 1, args.wave ? parseInt(args.wave, 10) : 0);
 else if (args.margin) {

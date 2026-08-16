@@ -725,7 +725,77 @@ const S = {
   vol: 18, cap: true, preset: null, program: null, vizMode: "aurora", blinded: true, mode: "simple", lastUsed: null,
   voice: "off", vlvl: 42, vdens: 45, vbpm: 50, vscale: "hirajoshi"
 };
-const saved = Store.get("state");
+const DEFAULTS = Object.assign({}, S);
+
+/* Everything arriving from storage is guilty until proven innocent.
+   The share link has a careful whitelist. The save path, which runs on every
+   single launch, had nothing at all: a saved vol of 999 squares to 99.8, times
+   the 0.34 nursery cap is 33.9, clamps to 1.0, and the app plays at FULL
+   OUTPUT with the cap switch still drawing itself as on. A cap of 0 or "no" is
+   falsy and lifts the cap outright. This origin carries forty plus apps and a
+   documented history of two tabs clobbering each other's saves, so a junk
+   value here is not hypothetical.
+
+   Ranges below are the control ranges, so a save can never carry a value the
+   slider itself could not produce. Keys the tables define later (noise, voice,
+   scale, preset and so on) are checked against the real tables in
+   sanitiseEnums(), once those tables exist. */
+const SAVE_RANGES = {
+  tilt:[-100,100], freq:[20,16000], amt:[0,100], q:[0,100],
+  mix:[0,100], rate:[0,100], depth:[0,100], fb:[0,92],
+  prate:[0,100], pamt:[0,100], swrate:[40,120], swblock:[0,100], swlvl:[0,100],
+  carrier:[0,100], beat:[0,100], tlvl:[0,100],
+  timer:[0,720], fade:[0,100], cal:[70,130], sens:[0,100], lift:[0,100],
+  vol:[0,100], vlvl:[0,100], vdens:[0,100], vbpm:[0,100]
+};
+function sanitiseSaved(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  Object.keys(DEFAULTS).forEach(k => {
+    if (!(k in raw)) return;
+    const v = raw[k], d = DEFAULTS[k];
+    if (typeof d === "boolean") { if (typeof v === "boolean") out[k] = v; return; }
+    if (typeof d === "number") {
+      const n = Number(v), r = SAVE_RANGES[k];
+      if (typeof v !== "number" || !isFinite(n)) return;
+      out[k] = r ? Math.min(r[1], Math.max(r[0], n)) : n;
+      return;
+    }
+    if (typeof d === "string") { if (typeof v === "string" && v.length < 40) out[k] = v; return; }
+    // null-defaulted keys: preset, program, lastUsed. A string id or an object.
+    if (v === null) { out[k] = null; return; }
+    if (typeof v === "string" && v.length < 40) { out[k] = v; return; }
+    if (k === "lastUsed" && v && typeof v === "object" && typeof v.id === "string" &&
+        typeof v.at === "number" && isFinite(v.at)) {
+      out[k] = { id: v.id.slice(0,40), at: v.at, count: (typeof v.count === "number" && isFinite(v.count)) ? Math.max(1, Math.min(9999, Math.round(v.count))) : 1 };
+    }
+  });
+  return out;
+}
+/* Second pass, run at the end of boot: anything whose legal values live in a
+   table further down the file. An unknown id falls back to the default rather
+   than reaching a lookup that would return undefined. */
+function sanitiseEnums() {
+  const sets = {
+    noise: NOISES.map(x => x.id),
+    tuneMode: TUNE_MODES.map(x => x.id),
+    pulse: PULSES.map(x => x.id),
+    beatBand: BEATS.map(x => x.id),
+    vscale: Object.keys(SCALES),
+    voice: ["off"].concat(VOICE_PRESETS.map(v => v.voice)),
+    vizMode: VIZ_MODES.map(x => x.id),
+    mode: ["simple","full"],
+    preset: PRESETS.map(p => p.id).concat(VOICE_PRESETS.map(p => p.id)),
+    program: PROGRAMS.map(p => p.id)
+  };
+  Object.keys(sets).forEach(k => {
+    if (S[k] === null && DEFAULTS[k] === null) return;
+    if (sets[k].indexOf(S[k]) < 0) S[k] = DEFAULTS[k];
+  });
+  if (S.lastUsed && sets.preset.indexOf(S.lastUsed.id) < 0) S.lastUsed = null;
+}
+
+const saved = sanitiseSaved(Store.get("state"));
 if (saved) Object.assign(S, saved, { timer: 0, micOn: false, adapt: false, program: null });
 const save = () => Store.set("state", S);
 
@@ -789,7 +859,7 @@ let ctx = null, nodes = null, playing = false, buffers = {};
 
 function build() {
   const n = {};
-  n.src = ctx.createBufferSource(); n.src.loop = true;
+  n.src = ctx.createBufferSource(); n.src.loop = true; n.srcGain = null;
   n.shapeA = ctx.createBiquadFilter(); n.shapeB = ctx.createBiquadFilter();
   n.lo = ctx.createBiquadFilter(); n.lo.type = "lowshelf";  n.lo.frequency.value = 320;
   n.hi = ctx.createBiquadFilter(); n.hi.type = "highshelf"; n.hi.frequency.value = 2400;
@@ -848,14 +918,37 @@ function build() {
   return n;
 }
 
+/* Equal-power crossfade curves, built once. Same shape as the one baked into
+   the loop seam: two uncorrelated noise streams meeting at full amplitude is a
+   step discontinuity, and a step discontinuity is a tick. The seam INSIDE a
+   buffer got sixty milliseconds of careful sqrt crossfade and the seam BETWEEN
+   two buffers used to get nothing at all, so changing sound while it played
+   clicked. */
+const XF_SECS = 0.12;
+const XF_UP = new Float32Array(48), XF_DOWN = new Float32Array(48);
+for (let i = 0; i < 48; i++) { const t = i / 47; XF_UP[i] = Math.sqrt(t); XF_DOWN[i] = Math.sqrt(1 - t); }
+
 function loadNoise(type) {
   if (!buffers[type]) buffers[type] = makeBuffer(type);
-  try { nodes.src.stop(); } catch {}
-  try { nodes.src.disconnect(); } catch {}
-  const s = ctx.createBufferSource();
-  s.buffer = buffers[type]; s.loop = true; s.connect(nodes.shapeA);
-  s.start(ctx.currentTime, Math.random() * 8);
-  nodes.src = s;
+  const now = ctx.currentTime;
+  const old = nodes.src, oldG = nodes.srcGain;
+  const s = ctx.createBufferSource(), g = ctx.createGain();
+  s.buffer = buffers[type]; s.loop = true;
+  s.connect(g); g.connect(nodes.shapeA);
+  if (old && oldG) {
+    try {
+      g.gain.setValueCurveAtTime(XF_UP, now, XF_SECS);
+      oldG.gain.cancelScheduledValues(now);
+      oldG.gain.setValueCurveAtTime(XF_DOWN, now, XF_SECS);
+    } catch { g.gain.value = 1; try { oldG.gain.value = 0; } catch {} }
+    try { old.stop(now + XF_SECS + 0.03); } catch {}
+    setTimeout(() => { try { old.disconnect(); } catch {} try { oldG.disconnect(); } catch {} }, 600);
+  } else {
+    g.gain.value = 1;
+    if (old) { try { old.stop(); } catch {} try { old.disconnect(); } catch {} }
+  }
+  s.start(now, Math.random() * 8);
+  nodes.src = s; nodes.srcGain = g;
   const sh = SHAPE[type] || [];
   [nodes.shapeA, nodes.shapeB].forEach((f, i) => {
     const c = sh[i];
@@ -937,10 +1030,13 @@ function apply() {
 let progGain = 1;      // set by the running program's phase envelope
 let adaptGain = 1;     // set by adaptive masking
 function setVolume() {
-  if (!ctx) return;
-  const capMax = S.cap ? 0.34 : 1.0;
-  const g = playing ? Math.pow(S.vol/100, 2) * capMax * progGain * adaptGain : 0;
-  P(nodes.master.gain, clamp(g, 0, 1), .18);
+  if (!ctx || !nodes) return;
+  /* While a sleep timer's fade is scheduled on the audio clock, that schedule
+     owns the master gain. Anything that would change the level (the ring, the
+     cap, adaptive masking) re-arms the fade instead of writing over it with a
+     setTargetAtTime, because mixing the two leaves the ramp undefined. */
+  if (fadeTo && playing) { armFade(); return; }
+  P(nodes.master.gain, targetGain(), .18);
 }
 
 /* ---------------- heartbeat ---------------- */
@@ -957,7 +1053,10 @@ function makeThumps() {
 function heartTick() {
   if (!ctx || !playing || S.pulse !== "heart") return;
   const period = 60 / heartBpm;
-  while (nextBeat < ctx.currentTime + 0.4) {
+  // 1.6 s of look ahead: a hidden tab throttles the 200 ms tick to about 1 Hz,
+  // and anything shorter than that queues beats in the past, which arrive in a
+  // clump. The heart is meant to be the steadiest thing in the room.
+  while (nextBeat < ctx.currentTime + 1.6) {
     thump(nextBeat, 1.0); thump(nextBeat + period*0.31, 0.62);
     nextBeat += period;
   }
@@ -994,7 +1093,12 @@ function swTick() {
   const period = 1 / swRateHz();
   const block = swBlockSec();
   if (swNext < ctx.currentTime) { swNext = ctx.currentTime + 0.2; swPhaseEnd = swNext + block; swPhaseOn = true; }
-  while (swNext < ctx.currentTime + 0.6) {
+  /* Look ahead has to be longer than the slowest the 200 ms tick can be
+     throttled to, which is about one second in a hidden tab. At 0.6 s the
+     queue ran dry every tick with the screen off, the resync above fired, and
+     the 10 s on / 10 s off block structure restarted from scratch. Those
+     blocks ARE the Schade 2020 citation, so this is not a smoothness nicety. */
+  while (swNext < ctx.currentTime + 1.6) {
     if (swPhaseOn) {
       const s = ctx.createBufferSource();
       s.buffer = burstBufs[(Math.random()*4)|0];
@@ -1097,8 +1201,14 @@ const fmtLeft = ms => {
 };
 
 /* ---------------- transport ---------------- */
+function makeCtx() {
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  nodes = build(); loadNoise(S.noise);
+  // "interrupted" is WebKit's state after a call or an alarm. Nothing used to watch for it.
+  ctx.onstatechange = () => { if (playing && ctx.state !== "running") resumeAudio(); };
+}
 async function start() {
-  if (!ctx) { ctx = new (window.AudioContext||window.webkitAudioContext)(); nodes = build(); loadNoise(S.noise); }
+  if (!ctx) makeCtx();
   if (ctx.state === "suspended") await ctx.resume();
   playing = true;
   nextBeat = ctx.currentTime + 0.15;
@@ -1114,6 +1224,7 @@ async function start() {
   heartTimer = setInterval(() => { heartTick(); swTick(); progTick(); adaptTick(); voiceTick(); }, 200);
   mediaSession();
   if (S.wake) requestWake();
+  if (timerEnd) armFade();   // a timer set before playback started still gets its fade
 }
 function stop() {
   playing = false;
@@ -1131,23 +1242,84 @@ function stop() {
 }
 $("core").addEventListener("click", () => playing ? stop() : start());
 
-/* ---------------- sleep timer ---------------- */
-let timerEnd = 0, timerRAF = null;
+/* ---------------- sleep timer ----------------
+   The fade out used to be computed on a 250 ms setInterval. A hidden tab is
+   throttled to about 1 Hz and a sleeping device can skip the whole window, in
+   which case the interval next fired with the time already up and the sound
+   ended on setVolume's 0.18 s time constant. That is a cut, not a fade, and
+   "every program reaches zero" is the entire product thesis.
+
+   So the fade now lives on the AudioContext clock, which runs in the audio
+   thread and does not care whether the page is hidden, throttled or frozen.
+   The interval is demoted to painting a countdown. The wall clock stays the
+   authority for when the timer is OVER, because a suspended context freezes
+   ctx.currentTime and must not be allowed to leave a sound running past its
+   bedtime. If that ever happens the finish is a 1.2 s ramp, never a snap. */
+let timerEnd = 0, timerRAF = null, fadeFrom = 0, fadeTo = 0;
+function targetGain() {
+  const capMax = S.cap ? 0.34 : 1.0;
+  return clamp(playing ? Math.pow(S.vol/100, 2) * capMax * progGain * adaptGain : 0, 0, 1);
+}
+function armFade() {
+  if (!ctx || !nodes || !playing || !timerEnd) return;
+  const leftMs = timerEnd - Date.now();
+  if (leftMs <= 0) return;
+  const now = ctx.currentTime, g = targetGain();
+  fadeFrom = now + Math.max(0, leftMs - fadeSeconds()*1000) / 1000;
+  fadeTo   = now + leftMs / 1000;
+  try {
+    const p = nodes.master.gain;
+    p.cancelScheduledValues(now);
+    p.setValueAtTime(p.value, now);
+    const hold = Math.max(now + 0.02, fadeFrom);
+    p.linearRampToValueAtTime(g, hold);              // hold the level until the fade begins
+    p.linearRampToValueAtTime(0, Math.max(hold + 0.05, fadeTo));   // then all the way to silence
+  } catch { fadeFrom = 0; fadeTo = 0; }
+}
 function startTimer(min) {
   clearTimer(); S.timer = min; save();
   if (!min) { paintTimer(); return; }
   if (prog) stopProgram();
   timerEnd = Date.now() + min*60000;
-  if (!playing) start();
+  if (!playing) start(); else armFade();
   timerRAF = setInterval(() => {
-    const left = timerEnd - Date.now(), fadeMs = fadeSeconds()*1000;
-    if (left <= 0) { S.timer = 0; stop(); clearTimer(); return; }
-    progGain = left <= fadeMs ? left/fadeMs : 1;
-    setVolume(); paintTimer(left);
+    const left = timerEnd - Date.now();
+    if (left <= 0) { S.timer = 0; endTimerNow(); return; }
+    paintTimer(left);
   }, 250);
   paintTimer(timerEnd - Date.now());
 }
-function clearTimer() { if (timerRAF) clearInterval(timerRAF); timerRAF = null; timerEnd = 0; progGain = 1; paintTimer(); }
+function endTimerNow() {
+  // the ramp is normally already at zero by now and this is a formality
+  if (ctx && nodes && playing && fadeTo && ctx.currentTime < fadeTo - 0.05) {
+    try {
+      const p = nodes.master.gain, now = ctx.currentTime;
+      p.cancelScheduledValues(now); p.setValueAtTime(p.value, now);
+      p.linearRampToValueAtTime(0, now + 1.2);
+    } catch {}
+    fadeFrom = 0; fadeTo = 0; timerEnd = 0;
+    if (timerRAF) { clearInterval(timerRAF); timerRAF = null; }
+    paintTimer();
+    setTimeout(() => { if (playing) stop(); }, 1300);
+    return;
+  }
+  stop(); clearTimer();
+}
+function clearTimer() {
+  if (timerRAF) clearInterval(timerRAF);
+  timerRAF = null; timerEnd = 0; progGain = 1;
+  const wasArmed = !!fadeTo;
+  fadeFrom = 0; fadeTo = 0;
+  if (wasArmed && ctx && nodes) {
+    try {
+      const p = nodes.master.gain, now = ctx.currentTime;
+      p.cancelScheduledValues(now); p.setValueAtTime(p.value, now);
+    } catch {}
+  }
+  // cancelScheduledValues would otherwise strand the gain wherever it was
+  if (ctx && nodes) setVolume();
+  paintTimer();
+}
 const fadeSeconds = () => Math.round(5 + Math.pow(S.fade/100,2)*295);
 function paintTimer(left) {
   const el = $("cd");
@@ -1168,7 +1340,7 @@ let micStream = null, micAn = null, micBuf = null, fastDb = -60, slowDb = -60, p
 async function enableMic(silent) {
   if (micInit) return true;
   try {
-    if (!ctx) { ctx = new (window.AudioContext||window.webkitAudioContext)(); nodes = build(); loadNoise(S.noise); }
+    if (!ctx) makeCtx();
     if (ctx.state === "suspended") await ctx.resume();
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false }
@@ -1241,12 +1413,32 @@ function adaptTick() {
 let wakeLock = null;
 async function requestWake() { try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch {} }
 function releaseWake() { try { wakeLock && wakeLock.release(); } catch {} wakeLock = null; }
+/* Getting the sound back after something took it away.
+
+   The only resume path used to be visibilitychange, and it only handled
+   state "suspended". WebKit has a third state, "interrupted", which is where
+   an AudioContext lands after a phone call, an alarm, or another app taking
+   audio focus. If the page never went hidden, and taking a call on the same
+   phone with Hush in front of you often does not hide it, nothing ever
+   resumed: the button still said Stop, the ring was still lit, and there was
+   no sound. So: resume on any state change, on becoming visible, on coming
+   back from the bfcache, and on the next touch, all idempotent, all no-ops
+   when nothing is playing. */
+function resumeAudio() {
+  if (!ctx || !playing) return;
+  if (ctx.state === "running") return;
+  try { const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } catch {}
+  if (timerEnd) setTimeout(armFade, 120);   // the ramp froze with the clock, re-aim it
+}
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     if (S.wake && playing) requestWake();
-    if (ctx && playing && ctx.state === "suspended") ctx.resume();
+    resumeAudio();
   }
 });
+window.addEventListener("pageshow", () => resumeAudio());
+["pointerdown","keydown"].forEach(ev =>
+  document.addEventListener(ev, () => resumeAudio(), { passive: true, capture: true }));
 function mediaSession() {
   if (!("mediaSession" in navigator)) return;
   try {
@@ -1287,8 +1479,18 @@ const SOUND_DEFAULTS = { noise:"brown", tilt:0, freq:440, tuneMode:"off", amt:0,
 
 function applyPreset(id, quiet) {
   const p = PRESETS.find(x => x.id === id); if (!p) return;
+  /* Every preset carries its own vol, from 16 to 26, and this used to assign
+     it. So changing sound changed the loudness: Sensory calm to Box fan is a
+     2.6x jump in linear gain that nobody asked for, in a dark room, next to a
+     sleeping child. The volume ring is deliberately relative so that a stray
+     tap cannot jump the output, and a preset doing it instead is the same bug
+     in nicer clothes. The suggested level still applies from silence, where it
+     is genuinely useful. Once sound is playing, the person is in the room and
+     has already set the level, so it stands. */
+  const heldVol = playing ? S.vol : null;
   Object.assign(S, SOUND_DEFAULTS, p.d, { preset: quiet ? S.preset : id });
-  if (!quiet) { S.program = null; prog = null; progGain = 1; $("phaseTxt").textContent = ""; }
+  if (heldVol !== null) S.vol = heldVol;
+  if (!quiet) { sharedPick = null; S.program = null; prog = null; progGain = 1; $("phaseTxt").textContent = ""; }
   syncUI();
   if (ctx) { loadNoise(S.noise); apply(); }
   save();
@@ -2134,6 +2336,8 @@ const VOICE_PRESETS = [
   { id:"rin",         name:"Singing bowl", voice:"rin",         bed:"sensory",  vlvl:44, vdens:30 }
 ];
 function playAnything(id) {
+  // choosing something on purpose retires the link that arrived
+  sharedPick = null;
   const vp = VOICE_PRESETS.find(p => p.id === id);
   if (vp) {
     applyPreset(vp.bed, true);
@@ -2838,6 +3042,13 @@ function nameOfSound(id) {
   return (PRESETS.find(p => p.id === id) || {}).name ||
          (VOICE_PRESETS.find(p => p.id === id) || {}).name || id;
 }
+/* A link someone was sent owns the front door until they choose otherwise.
+   Without this the decoded sound sat in S while the card still advertised last
+   night's, and the one big button called applyPreset and wiped every value the
+   link had just delivered. The recipient heard the wrong sound and had no way
+   to know. The override lives in renderTonight rather than in here, so that
+   pickTonight stays a pure answer to "what should tonight be". */
+let sharedPick = null;
 function pickTonight() {
   // 1. what you used last, if it was recent enough to still be a habit
   if (S.lastUsed && S.lastUsed.id && (Date.now() - S.lastUsed.at) < 21*86400000) {
@@ -2856,13 +3067,13 @@ function pickTonight() {
 }
 let tonightPick = null;
 function renderTonight() {
-  tonightPick = pickTonight();
+  tonightPick = sharedPick || pickTonight();
   $("tonightEyebrow").textContent = tonightPick.eyebrow;
-  $("tonightName").textContent = nameOfSound(tonightPick.id);
+  $("tonightName").textContent = tonightPick.name || nameOfSound(tonightPick.id);
   /* Someone with a history already gets told that staying with one sound is
      the thing that works. Someone opening this for the first time was the one
      person who never heard it, and they are the one it matters most to. */
-  const fresh = !(S.lastUsed && S.lastUsed.id);
+  const fresh = !tonightPick.shared && !(S.lastUsed && S.lastUsed.id);
   $("tonightWhy").textContent = tonightPick.why +
     (fresh ? " Whatever you pick, stay with it for a couple of weeks. That does more than trying a different sound every night." : "");
 }
@@ -2895,14 +3106,36 @@ function setMode(m) {
 }
 $("modeBtn").addEventListener("click", () => setMode(S.mode === "simple" ? "full" : "simple"));
 $("toFull").addEventListener("click", () => setMode("full"));
+/* This said Safety and evidence and opened only the evidence panel. The volume
+   cap, which is the single most important control in the app, lives in p-safe
+   further down and stayed shut. Both open now, and the scroll lands on the
+   cap, because that is the one somebody came looking for. */
 $("toSafety").addEventListener("click", () => {
   setMode("full");
   setTimeout(() => {
-    const p = $("p-eq"); p.classList.add("open"); p.querySelector("button").setAttribute("aria-expanded","true");
-    p.scrollIntoView({ behavior:"smooth", block:"start" });
+    ["p-eq","p-safe"].forEach(id => {
+      const p = $(id); if (!p) return;
+      p.classList.add("open");
+      const b = p.querySelector("button"); if (b) b.setAttribute("aria-expanded","true");
+    });
+    const t = $("p-safe") || $("p-eq");
+    if (t) t.scrollIntoView({ behavior:"smooth", block:"start" });
   }, 120);
 });
-$("tonightGo").addEventListener("click", () => { if (tonightPick) playAnything(tonightPick.id); });
+$("tonightGo").addEventListener("click", () => {
+  if (!tonightPick) return;
+  /* A shared sound is already sitting in S, exact. Running it back through
+     applyPreset would Object.assign SOUND_DEFAULTS over the top and throw away
+     everything the link carried, so this one plays what is loaded. */
+  if (tonightPick.shared) {
+    if (ctx) { loadNoise(S.noise); apply(); }
+    if (!playing) start();
+    if (tonightPick.id) { rememberUsed(tonightPick.id); renderInfoCard(tonightPick.id); }
+    mediaSession();
+    return;
+  }
+  playAnything(tonightPick.id);
+});
 $("elseBtn").addEventListener("click", () => $("elseList").classList.toggle("on"));
 $("vizBtn2").addEventListener("click", openViz);
 {
@@ -2952,7 +3185,7 @@ function calBegin() {
   }
   /* the mic path has already made the context by this point; this is the same
      guard the rest of the app uses, in case that ever stops being true */
-  if (!ctx) { ctx = new (window.AudioContext||window.webkitAudioContext)(); nodes = build(); loadNoise(S.noise); }
+  if (!ctx) makeCtx();
   if (ctx.state === "suspended") ctx.resume();
   $("calStart").style.display = "none";
   $("calRun").style.display = "";
@@ -3059,17 +3292,19 @@ function shareEncode() {
 function shareLink() {
   return location.origin + location.pathname + "#p=" + shareEncode();
 }
-/* Range comes from the control itself where there is one, so a shared value
-   can never land outside what the slider would allow. */
+/* Ranges come from SAVE_RANGES, not from the DOM control, because the two are
+   not always in the same units. #freq is min="0" max="1000" in slider POSITION
+   and maps through s2f to 20 Hz .. 16 kHz, while S.freq is Hz. Reading the
+   control clamped every shared frequency to 1000 Hz, so a shared tinnitus
+   notch at 6000 Hz arrived at 1000 Hz: the wrong notch, silently, on the most
+   personal setting in the app. One table, correct units, and it works with no
+   DOM at all, which is what makes it testable. */
 function clampToControl(key, v) {
-  const el = document.getElementById(key);
-  if (el && el.type === "range") {
-    const lo = Number(el.min), hi = Number(el.max);
-    const n = Number(v);
-    if (!isFinite(n)) return null;
-    return Math.min(hi, Math.max(lo, n));
-  }
-  return v;
+  const r = SAVE_RANGES[key];
+  const n = Number(v);
+  if (!isFinite(n)) return null;
+  if (!r) return n;
+  return Math.min(r[1], Math.max(r[0], n));
 }
 function applyShared(obj) {
   let used = 0;
@@ -3100,9 +3335,10 @@ function readSharedLink() {
   if (!used) return;
   // belt and braces: nothing outside the whitelist can have moved
   S.vol = before.vol; S.cap = before.cap; S.mode = before.mode; S.micOn = before.micOn;
-  save(); syncUI(); if (window.ctx) { loadNoise(S.noise); apply(); }
+  save(); syncUI(); if (ctx) { loadNoise(S.noise); apply(); }
   const id = S.preset;
-  const tier = id && INFO[id] ? TIERS[INFO[id].tier] : null;
+  const inf = id ? INFO[id] : null;
+  const tier = inf ? TIERS[inf.tier] : null;
   const note = $("sharedNote");
   if (note) {
     note.textContent = id
@@ -3110,6 +3346,19 @@ function readSharedLink() {
       : "Shared sound loaded.";
     note.style.display = "";
   }
+  /* Take over the front door, so the one big button in the mode almost
+     everybody is in plays the sound that was actually sent. The evidence tier
+     travels with it: honesty goes where the link goes. */
+  sharedPick = {
+    shared: true,
+    id: id || null,
+    name: id ? nameOfSound(id) : "A sound someone sent you",
+    eyebrow: "Sent to you",
+    why: (inf && inf.what ? inf.what + " " : "") +
+         (tier ? "How much to believe it: " + tier.label.toLowerCase() + ". " : "") +
+         "Stay with one sound for a couple of weeks. That does more than trying a different one every night."
+  };
+  if (typeof renderTonight === "function") renderTonight();
   try { history.replaceState(null, "", location.pathname); } catch {}
 }
 async function shareThisSound() {
@@ -3128,6 +3377,8 @@ async function shareThisSound() {
 if ($("shareBtn")) $("shareBtn").addEventListener("click", shareThisSound);
 
 /* ---------------- boot ---------------- */
+sanitiseEnums();   // the tables all exist by now, so ids from storage can be checked against them
+setMode(S.mode);
 [...vb.children].forEach(c => c.setAttribute("aria-pressed", String(c.dataset.v === S.vizMode)));
 syncUI(); sizeCanvas(cv); paintTimer(); paintVizLeft(null);
 readSharedLink();

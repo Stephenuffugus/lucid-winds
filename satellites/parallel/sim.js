@@ -32,7 +32,9 @@ function loadSim(opts){
     'initState','stepWorld','packState','bfsSolve','replay','hasDesync','greedyRun','genLevel',
     'buildCandidate','minimizeWalls','genDaily','freshSave','migrateSave','parseSave','mergeSave',
     'clearedCount','starCount','shareLine','IN_CHARS','DIR_L','DIR_R','DIR_U','DIR_D',
-    'IN_LEFT','IN_RIGHT','IN_UP','IN_WAIT'
+    'IN_LEFT','IN_RIGHT','IN_UP','IN_WAIT',
+    'skyLayout','skyMinSep','SKY','mirrorDrift','genSeeded','dayNumber',
+    'pushRun','mergeHistory','HIST_CAP','campaignCleared','campaignStars','PAR_MAX'
   ].join(',') + (opts && opts.noTest ? '' : ',TEST') + '};';
   /* eslint no-new-func: 0 */
   var mod = new Function(body)();
@@ -130,7 +132,7 @@ function cmdVerify(){
   console.log('');
   console.log('TIER  LEVELS  BAND      MIN  MAX  MEAN');
   var tk;
-  for (tk = 1; tk <= 5; tk++){
+  for (tk = 1; tk <= M.TIERS.length; tk++){
     if (!byTier[tk]) continue;
     var a = byTier[tk], mn = Math.min.apply(null, a), mx = Math.max.apply(null, a);
     var mean = a.reduce(function(p,c){ return p+c; }, 0) / a.length;

@@ -156,12 +156,65 @@ function sweep(runs, seed0, S) {
   out.push('median session, optimal: ' + (rows.optimal.sec50 / 60).toFixed(1) + ' minutes   (bound 4 to 8)');
 
   /* economy: how many runs does a median player need to clear the shop */
-  var econ = economy(seed0, 600, S);
+  var econ = economy(seed0, 900, S);
   out.push('');
   out.push('ECONOMY   full clear costs ' + S.fullClearCost() + ' cash');
   out.push('runs to full clear, cautious player: ' + econ.cautious + '   (target about 25)');
   out.push('runs to full clear, optimal player: ' + econ.optimal);
-  return { text: out.join('\n'), rows: rows, fullReach: pct(fullReach, diveN), bareReach: pct(bareReach, diveN), econ: econ, cWins: pct(wins, runs) };
+
+  /* THE PROOF that the 25 run target in HANDOFF 3.7 is not a tuning problem.
+     Every number below is measured, not asserted. */
+  var proof = economyProof(seed0, 3000, S);
+  out.push('');
+  out.push('ECONOMY PROOF   why 25 runs cannot be reached at the specced numbers');
+  out.push('  a full clear buys ' + proof.levels + ' upgrade levels across the six specced tracks');
+  out.push('  cheapest full clear that any exponent can produce (a FLAT ladder, exponent 1.0): ' + proof.flat + ' cash');
+  out.push('    a flat ladder is not a ladder: level five would cost what level one costs');
+  out.push('  cheapest full clear that keeps a real ladder (this build, exponent ' + S.CONFIG.COST_EXP + '): ' + proof.shipped + ' cash');
+  out.push('  so 25 runs demands ' + Math.round(proof.flat / 25) + ' banked EVERY run at the flat floor, ' +
+           Math.round(proof.shipped / 25) + ' at the shipped ladder');
+  out.push('  what a run one digger with no upgrades actually banks, mean: cautious ' +
+           proof.bareC.toFixed(0) + ', optimal ' + proof.bareO.toFixed(0));
+  out.push('  what a FULLY upgraded digger banks, mean: cautious ' + proof.fullC.toFixed(0) +
+           ', optimal ' + proof.fullO.toFixed(0) + '   (p99 optimal ' + proof.fullP99 + ')');
+  out.push('  the ceiling: a ' + proof.packCap + ' kilo pack of pure beryl at 18.75 a kilo is ' + proof.beryl +
+           ' cash, and no real run mines a pure beryl pack');
+  out.push('  a full kit earns a CAUTIOUS digger ' + (100 * proof.fullC / proof.bareC - 100).toFixed(0) +
+           ' percent more than no kit at all, and an OPTIMAL digger ' +
+           (100 * proof.fullO / proof.bareO - 100).toFixed(0) + ' percent more');
+  out.push('    that is the real finding: the 60 percent of air rule spends a fixed FRACTION of the tank,');
+  out.push('    and the caution gate prices a FULL pack, so a bigger tank and a bigger pack cancel out.');
+  out.push('    A cautious digger cannot convert upgrades into income at all, so "runs to full clear');
+  out.push('    for a median player" has no tuning that fixes it while the median player is Cautious.');
+  out.push('  VERDICT: at the shipped ladder the target needs ' + (proof.shipped / 25 / proof.bareC).toFixed(1) +
+           'x what the ore table pays a cautious beginner, and ' + (proof.flat / 25 / proof.bareC).toFixed(1) +
+           'x with the ladder DELETED.');
+  out.push('  25 runs is not reachable by tuning. It needs the ore table repriced, which reprices');
+  out.push('  every number in HANDOFF 3.5. Director call. This build ships ' + econ.cautious + ' runs cautious, ' +
+           econ.optimal + ' optimal, down from 216 and 123.');
+  return { text: out.join('\n'), rows: rows, fullReach: pct(fullReach, diveN), bareReach: pct(bareReach, diveN), econ: econ, cWins: pct(wins, runs), proof: proof };
+}
+
+/* Measured, not argued. The flat ladder number is the arithmetic floor of a
+   full clear at the specced base costs: it is what the shop costs when the
+   escalating cost curve is deleted entirely, so nothing cheaper is reachable
+   without repricing the bases themselves. */
+function economyProof(seed0, n, S) {
+  var levels = 0, flat = 0, k, i;
+  for (k in S.CONFIG.SHOP) { levels += S.CONFIG.SHOP[k].levels; flat += S.CONFIG.SHOP[k].base * S.CONFIG.SHOP[k].levels; }
+  var bareC = 0, bareO = 0, fullC = 0, fullO = 0, fullBanks = [];
+  for (i = 0; i < n; i++) {
+    bareC += S.playRun(seed0 + i, S.emptyUpg(), 'cautious').over.banked;
+    bareO += S.playRun(seed0 + i, S.emptyUpg(), 'optimal').over.banked;
+    fullC += S.playRun(seed0 + i, FULL, 'cautious').over.banked;
+    var f = S.playRun(seed0 + i, FULL, 'optimal').over.banked;
+    fullO += f; fullBanks.push(f);
+  }
+  var packCap = S.capsFor(FULL).pack;
+  return { levels: levels, flat: flat, shipped: S.fullClearCost(),
+           bareC: bareC / n, bareO: bareO / n, fullC: fullC / n, fullO: fullO / n,
+           fullP99: percentile(fullBanks, 99), packCap: packCap,
+           beryl: Math.floor(packCap / 4) * 75 };
 }
 
 function economy(seed0, cap, S) {

@@ -204,8 +204,9 @@ var CONFIG = Object.freeze({
 var TIERS = {
   short: Object.freeze({
     key: "short", name: "Quick case", brief: "A short one. Fewer steps, fewer hours.",
-    actions: 13, lo: 5, hi: 9, target: 7, noiseLo: 4, noiseHi: 8, reach: 10,
-    press: 1, exact: true, liarActions: 4,
+    actions: 14, lo: 6, hi: 10, target: 8, noiseLo: 4, noiseHi: 8, reach: 12,
+    press: 1, exact: true, roomSlots: 2,
+    liar: Object.freeze({ actions: 19, lo: 9, hi: 14, target: 12, reach: 14, roomSlots: 3, noiseLo: 3, noiseHi: 7 }),
     pool: Object.freeze({
       alibi: 6, own: 5, access: 2, sight: 3, trace: 2, timeline: 3,
       wtrace: 3, motive: 2, pair: 1, negative: 3, sequence: 1, object: 6
@@ -214,7 +215,8 @@ var TIERS = {
   standard: Object.freeze({
     key: "standard", name: "Standard case", brief: "The usual evening.",
     actions: 20, lo: 8, hi: 14, target: 11, noiseLo: 6, noiseHi: 12, reach: 16,
-    press: 2, exact: false, liarActions: 4,
+    press: 2, exact: false, roomSlots: 2,
+    liar: Object.freeze({ actions: 24, lo: 12, hi: 19, target: 16, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
       alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
       wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
@@ -222,8 +224,9 @@ var TIERS = {
   }),
   long: Object.freeze({
     key: "long", name: "Long case", brief: "A long night. More people, more talk.",
-    actions: 26, lo: 13, hi: 19, target: 16, noiseLo: 6, noiseHi: 12, reach: 20,
-    press: 2, exact: false, liarActions: 4,
+    actions: 25, lo: 12, hi: 18, target: 15, noiseLo: 6, noiseHi: 12, reach: 16,
+    press: 2, exact: false, roomSlots: 3,
+    liar: Object.freeze({ actions: 28, lo: 14, hi: 21, target: 17, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
       alibi: 18, own: 6, access: 2, sight: 14, trace: 2, timeline: 3,
       wtrace: 2, motive: 4, pair: 4, negative: 3, sequence: 1, object: 2
@@ -232,6 +235,24 @@ var TIERS = {
 };
 var TIER_KEYS = ["short", "standard", "long"];
 function tierOf(key) { return TIERS[key] || TIERS.standard; }
+/* tier plus liar resolved into one object, so nothing downstream has to ask
+   twice what kind of case it is building */
+function modeOf(tierKey, liar) {
+  var t = tierOf(tierKey), L = t.liar;
+  var M = {
+    key: t.key, name: t.name, liar: !!liar, pool: t.pool, exact: t.exact, press: t.press,
+    actions: t.actions, lo: t.lo, hi: t.hi, target: t.target, reach: t.reach,
+    roomSlots: t.roomSlots, noiseLo: t.noiseLo, noiseHi: t.noiseHi
+  };
+  if (liar) {
+    M.actions = L.actions; M.lo = L.lo; M.hi = L.hi; M.target = L.target;
+    M.reach = L.reach; M.roomSlots = L.roomSlots; M.noiseLo = L.noiseLo; M.noiseHi = L.noiseHi;
+  }
+  return M;
+}
+function modeLabelOf(tierKey, liar) {
+  return tierOf(tierKey).name + (liar ? " with a liar" : "");
+}
 
 /* ============================ 2. RNG ============================ */
 
@@ -724,8 +745,9 @@ function genWorld(rng) {
 }
 
 /* ---- clue pool ---- */
+function clueKey(ty, p) { return ty + "|" + JSON.stringify(p); }
 function addClue(list, seen, ty, p, ref, rng) {
-  var key = ty + "|" + JSON.stringify(p);
+  var key = clueKey(ty, p);
   if (seen[key]) return null;
   seen[key] = 1;
   var cl = { id: list.length, ty: ty, p: p, ref: ref || [], ph: rng.int(6) };
@@ -733,10 +755,10 @@ function addClue(list, seen, ty, p, ref, rng) {
   return cl;
 }
 
-function genCluePool(W, rng, seenOut, tier) {
+function genCluePool(W, rng, seenOut, M) {
   var T = W.truth, list = [], seen = seenOut || {}, i, k, s, tt, rr;
-  tier = tier || TIERS.standard;
-  var P = tier.pool || CONFIG.POOL;
+  M = M || modeOf("standard", false);
+  var P = M.pool || CONFIG.POOL;
 
   // 1 alibi. The police always ask every person about the murder hour, so those
   // six always exist. They pin the culprit to room relation at t without pinning
@@ -795,7 +817,7 @@ function genCluePool(W, rng, seenOut, tier) {
     // "exact" hands over the whole time axis in one clue, which collapses
     // minimal set size. That is exactly wrong for a standard case and exactly
     // right for a short one, so the tier decides.
-    var m = tier.exact
+    var m = M.exact
       ? rng.weighted([["not", 30], ["before", 20], ["after", 20], ["exact", 30]])
       : rng.weighted([["not", 45], ["before", 27], ["after", 28]]);
     if (m === "before" && T.t >= 5) m = "not";
@@ -1157,28 +1179,80 @@ function trueClueCandidates(W, rng, n) {
   return keep;
 }
 
-/* a guaranteed eliminator for one surviving tuple, so the loop always terminates */
-function eliminatorFor(W, U) {
-  var T = W.truth, i, a;
-  if (U.r !== T.r) return { ty: 12, p: { k: "room", r: U.r }, ref: [] };
-  if (U.w !== T.w) return { ty: 12, p: { k: "weapon", w: U.w }, ref: [] };
-  if (U.t !== T.t) return { ty: 6, p: { t: U.t, m: "not" }, ref: [] };
-  for (i = 0; i < 3; i++) {
-    a = ATTRS[i];
-    if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) return { ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] };
+/* Every clue shape that kills one surviving tuple, in preference order. It has
+   to be a LIST and not a single answer: the one obvious eliminator is often
+   already in the pool, and "the fix is already here" was the whole reason the
+   first reinforcement loop stalled and threw a third of its worlds away. */
+function eliminatorsFor(W, U) {
+  var T = W.truth, out = [], i, a;
+  if (U.r !== T.r) out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] });
+  if (U.w !== T.w) out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] });
+  if (U.t !== T.t) out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] });
+  if (U.c !== T.c) {
+    for (i = 0; i < 3; i++) {
+      a = ATTRS[i];
+      if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) out.push({ ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] });
+    }
+    if (W.motive[U.c] === 0) out.push({ ty: 8, p: { k: "none", s: U.c }, ref: [U.c] });
+    out.push({ ty: 1, p: { s: U.c, t: T.t, r: W.loc[U.c][T.t] }, ref: [U.c] });
   }
-  return null;
+  if (U.r !== T.r && ROOMS[T.r].adj.indexOf(U.r) < 0) out.push({ ty: 5, p: { r: T.r, near: true }, ref: [] });
+  if (U.t !== T.t) out.push({ ty: 10, p: { r: U.r, t: U.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
+  var keep = [], m;
+  for (i = 0; i < out.length; i++) {
+    if (!clueTrueOf(out[i], T)) continue;
+    m = clueMask(out[i]);
+    if (bitsGet(m, tupleIndex(U))) continue;   // it must actually kill U
+    out[i].mask = m;
+    keep.push(out[i]);
+  }
+  return keep;
+}
+function eliminatorFor(W, U) {
+  var e = eliminatorsFor(W, U);
+  return e.length ? e[0] : null;
+}
+
+/* Aimed candidates: one eliminator per value that survivors are still using.
+   Random draws from the twelve factories converge slowly when the survivors
+   are scattered, and slow convergence is what a retry rate is made of. */
+function targetedCandidates(W, surv, truthIdx) {
+  var T = W.truth, out = [], seenR = {}, seenW = {}, seenT = {}, seenC = {}, i, j, a, U;
+  for (i = 0; i < surv.length; i++) {
+    if (surv[i] === truthIdx) continue;
+    U = tupleFromIndex(surv[i]);
+    if (U.r !== T.r && !seenR[U.r]) { seenR[U.r] = 1; out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] }); }
+    if (U.w !== T.w && !seenW[U.w]) { seenW[U.w] = 1; out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] }); }
+    if (U.t !== T.t && !seenT[U.t]) { seenT[U.t] = 1; out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] }); }
+    if (U.c !== T.c && !seenC[U.c]) {
+      seenC[U.c] = 1;
+      for (j = 0; j < 3; j++) {
+        a = ATTRS[j];
+        if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) {
+          out.push({ ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] });
+          break;
+        }
+      }
+      if (W.motive[U.c] === 0) out.push({ ty: 8, p: { k: "none", s: U.c }, ref: [U.c] });
+      out.push({ ty: 1, p: { s: U.c, t: T.t, r: W.loc[U.c][T.t] }, ref: [U.c] });
+    }
+  }
+  var keep = [];
+  for (i = 0; i < out.length; i++) if (clueTrueOf(out[i], T)) keep.push(out[i]);
+  return keep;
 }
 
 function liarReinforce(W, list, seen, masks, rng, cap) {
   var truthIdx = tupleIndex(W.truth), guard = 0, i, j;
-  while (guard++ < 48 && list.length < cap) {
+  while (guard++ < 64 && list.length < cap) {
     var lm = liarMask(list, masks);
     if (bitsCount(lm) === 1 && bitsFirst(lm) === truthIdx) return true;
-    var surv = bitsList(lm), cands = trueClueCandidates(W, rng, 12);
+    var surv = bitsList(lm);
+    var cands = trueClueCandidates(W, rng, 12).concat(targetedCandidates(W, surv, truthIdx));
     var best = null, bestMask = null, bestYield = 0;
     for (i = 0; i < cands.length; i++) {
-      var m = clueMask(cands[i]), y = 0;
+      if (seen[clueKey(cands[i].ty, cands[i].p)]) continue;   // already said
+      var m = cands[i].mask || clueMask(cands[i]), y = 0;
       for (j = 0; j < surv.length; j++) {
         if (surv[j] === truthIdx) continue;
         if (!bitsGet(m, surv[j])) y++;
@@ -1186,25 +1260,19 @@ function liarReinforce(W, list, seen, masks, rng, cap) {
       if (y > bestYield) { bestYield = y; best = cands[i]; bestMask = m; }
     }
     if (!best) {
+      // nothing generic bites, so aim at one survivor with every shape there is
       for (j = 0; j < surv.length && !best; j++) {
         if (surv[j] === truthIdx) continue;
-        best = eliminatorFor(W, tupleFromIndex(surv[j]));
-        if (best) bestMask = clueMask(best);
+        var es = eliminatorsFor(W, tupleFromIndex(surv[j]));
+        for (i = 0; i < es.length; i++) {
+          if (seen[clueKey(es[i].ty, es[i].p)]) continue;
+          best = es[i]; bestMask = es[i].mask; break;
+        }
       }
     }
     if (!best) return false;
     var cl = addClue(list, seen, best.ty, best.p, best.ref, rng);
-    if (!cl) {
-      // that exact clue is already in the pool, so it cannot be the fix
-      var U = null;
-      for (j = 0; j < surv.length && !U; j++) if (surv[j] !== truthIdx) U = tupleFromIndex(surv[j]);
-      if (!U) return false;
-      var e = eliminatorFor(W, U);
-      if (!e) return false;
-      cl = addClue(list, seen, e.ty, e.p, e.ref, rng);
-      if (!cl) return false;
-      bestMask = clueMask(cl);
-    }
+    if (!cl) return false;
     masks[cl.id] = bestMask;
   }
   return bitsCount(liarMask(list, masks)) === 1 && bitsFirst(liarMask(list, masks)) === truthIdx;
@@ -1230,13 +1298,13 @@ function minimizeLiar(pool, masks, rng, truthIdx) {
 var PHYSICAL_TYPES = [3, 5, 6, 7, 10, 12];
 function isPhysical(cl) { return PHYSICAL_TYPES.indexOf(cl.ty) >= 0; }
 
-function placeClues(W, pool, minimal, rng, tier, lie) {
+function placeClues(W, pool, minimal, rng, M, lie) {
   var rooms = [[], [], [], [], [], []];
   var ints = [null, null, null, null, null, null];
   var press = [null, null, null, null, null, null];
   var used = {}, i, s;
   var minIds = {};
-  tier = tier || TIERS.standard;
+  M = M || modeOf("standard", false);
   for (i = 0; i < minimal.length; i++) minIds[minimal[i].id] = 1;
   /* the lie is a thing a person said, so it goes in that person's mouth and
      nowhere else. A lie found under a floorboard would break the only rule the
@@ -1245,7 +1313,7 @@ function placeClues(W, pool, minimal, rng, tier, lie) {
 
   function freeRoom() {
     var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
-    for (j = 0; j < 6; j++) if (rooms[order[j]].length < CONFIG.ROOM_SLOTS) return order[j];
+    for (j = 0; j < 6; j++) if (rooms[order[j]].length < M.roomSlots) return order[j];
     return -1;
   }
   function freeInt() {
@@ -1266,7 +1334,8 @@ function placeClues(W, pool, minimal, rng, tier, lie) {
   var rest = [];
   for (i = 0; i < shuffled.length; i++) {
     var cl = shuffled[i];
-    var canPress = cl.ref.length > 0 && pressPicks.length < CONFIG.MAX_PRESS_MINIMAL && rng() < 0.24;
+    if (used[cl.id]) continue;
+    var canPress = cl.ref.length > 0 && pressPicks.length < M.press && rng() < 0.24;
     if (canPress) {
       var cand = rng.shuffle(cl.ref.slice()), placedP = false, j;
       for (j = 0; j < cand.length; j++) {
@@ -1312,7 +1381,7 @@ function placeClues(W, pool, minimal, rng, tier, lie) {
   var spare = [];
   for (i = 0; i < pool.length; i++) if (!used[pool[i].id]) spare.push(pool[i]);
   spare = rng.shuffle(spare);
-  var noiseTarget = rng.range(CONFIG.NOISE_MIN, CONFIG.NOISE_MAX), placedNoise = 0, si = 0;
+  var noiseTarget = rng.range(M.noiseLo, M.noiseHi), placedNoise = 0, si = 0;
   for (s = 0; s < 6; s++) {
     if (press[s] !== null) continue;
     while (si < spare.length && used[spare[si].id]) si++;
@@ -1440,40 +1509,70 @@ function allTitles() {
   return out;
 }
 
-function generateCase(seed) {
+/* An irredundant clue set is not unique: different removal orders give
+   different valid minimal sets, all of which still prove the same single
+   solution. So try a few orders and keep one inside the tier's band. This
+   chooses AMONG proofs, it never weakens one. */
+function chooseProof(makeOne, M) {
+  var best = null, bestGap = 1e9, pass, cand, gap;
+  for (pass = 0; pass < 5; pass++) {
+    cand = makeOne();
+    if (cand.length >= M.lo && cand.length <= M.hi) return cand;
+    gap = Math.abs(cand.length - M.target);
+    if (gap < bestGap) { bestGap = gap; best = cand; }
+  }
+  return best;
+}
+function hasId(list, id) {
+  var i;
+  for (i = 0; i < list.length; i++) if (list[i].id === id) return true;
+  return false;
+}
+
+function generateCase(seed, opts) {
+  var liar = !!(opts && opts.liar);
+  var M = modeOf(opts && opts.tier, liar);
+  /* optional rejection ledger. A retry rate you cannot explain is a number you
+     do not own, so the generator can be asked WHY it threw a world away. */
+  var why = (opts && opts.why) || null;
+  function no(reason) { if (why) why[reason] = (why[reason] || 0) + 1; }
   var rng = makeRNG(seed >>> 0);
   var retries = 0, baseMiss = 0, attempt, W, pool, masks, i, acc, seenKeys;
   for (attempt = 0; attempt < CONFIG.MAX_ATTEMPTS; attempt++) {
     W = genWorld(rng);
     seenKeys = {};
-    pool = genCluePool(W, rng, seenKeys);
+    pool = genCluePool(W, rng, seenKeys, M);
     masks = [];
     var allTrue = true;
     for (i = 0; i < pool.length; i++) {
       if (!clueTrueOf(pool[i], W.truth)) { allTrue = false; break; }
       masks[pool[i].id] = clueMask(pool[i]);
     }
-    if (!allTrue) { retries++; continue; }
+    if (!allTrue) { no("falseClue"); retries++; continue; }
     acc = solveMask(pool, masks);
     var baseUnique = (bitsCount(acc) === 1 && bitsFirst(acc) === tupleIndex(W.truth));
     if (!baseUnique) { baseMiss++; reinforce(W, pool, seenKeys, masks, rng); acc = solveMask(pool, masks); }
-    if (bitsCount(acc) !== 1 || bitsFirst(acc) !== tupleIndex(W.truth)) { retries++; continue; }
-    /* An irredundant set is not unique: different removal orders give
-       different valid minimal sets, all of which still prove the same single
-       solution. So try a few orders and keep one inside the target band. This
-       chooses AMONG proofs, it never weakens one. */
-    var minimal = null, bestGap = 1e9, pass;
-    for (pass = 0; pass < 5; pass++) {
-      var cand2 = minimize(pool, masks, rng);
-      if (cand2.length >= CONFIG.MIN_SET_LO && cand2.length <= CONFIG.MIN_SET_HI) { minimal = cand2; break; }
-      var gap = Math.abs(cand2.length - 11);
-      if (gap < bestGap) { bestGap = gap; minimal = cand2; }
+    if (bitsCount(acc) !== 1 || bitsFirst(acc) !== tupleIndex(W.truth)) { no("notUnique"); retries++; continue; }
+    var truthIdx = tupleIndex(W.truth), lieInfo = null, minimal = null;
+    if (liar) {
+      var lie = makeLie(W, rng);
+      if (!lie || clueTrueOf(lie, W.truth)) { no("noLie"); retries++; continue; }
+      var lcl = addClue(pool, seenKeys, lie.ty, lie.p, lie.ref, rng);
+      if (!lcl) { no("dupLie"); retries++; continue; }
+      masks[lcl.id] = clueMask(lcl);
+      lieInfo = { id: lcl.id, speaker: lie.speaker, ty: lie.ty };
+      if (!liarReinforce(W, pool, seenKeys, masks, rng, 200)) { no("reinforce"); retries++; continue; }
+      if (!liarProved(pool, masks, truthIdx)) { no("notProved"); retries++; continue; }
+      minimal = chooseProof(function () { return minimizeLiar(pool, masks, rng, truthIdx); }, M);
+      if (!minimal || !hasId(minimal, lieInfo.id)) { no("lieDropped"); retries++; continue; }
+    } else {
+      minimal = chooseProof(function () { return minimize(pool, masks, rng); }, M);
     }
-    if (isMotiveOnly(minimal)) { retries++; continue; }
-    var pl = placeClues(W, pool, minimal, rng);
-    if (!pl) { retries++; continue; }
+    if (isMotiveOnly(minimal)) { no("motiveOnly"); retries++; continue; }
+    var pl = placeClues(W, pool, minimal, rng, M, lieInfo);
+    if (!pl) { no("placement"); retries++; continue; }
     var ma = minActions(pl, pool);
-    if (ma > CONFIG.REACH_BOUND) { retries++; continue; }
+    if (ma > M.reach) { no("reach"); retries++; continue; }
     return {
       seed: seed >>> 0,
       title: caseTitle(rng, W.truth),
@@ -1485,7 +1584,12 @@ function generateCase(seed) {
       place: pl,
       retries: retries,
       baseMiss: baseMiss,
-      minActions: ma
+      minActions: ma,
+      tier: M.key,
+      liar: liar,
+      lie: lieInfo,
+      mode: M,
+      actions: M.actions
     };
   }
   return null;
@@ -1496,7 +1600,10 @@ function generateCase(seed) {
 function newGame(cs) {
   return {
     seed: cs.seed,
-    actionsLeft: CONFIG.ACTIONS,
+    tier: cs.tier || "standard",
+    liar: !!cs.liar,
+    total: cs.actions || CONFIG.ACTIONS,
+    actionsLeft: cs.actions || CONFIG.ACTIONS,
     searched: [], interviewed: [], pressed: [],
     found: [],
     marks: {},
@@ -1572,10 +1679,21 @@ function foundMask(cs, st, skipId) {
   return acc;
 }
 
+/* What the player can still believe, given what they hold. In a liar case that
+   is the at most one violation set, so a lie in the journal never crosses the
+   truth off the board. */
+function stateMask(cs, st, skipId) {
+  if (!cs.liar) return foundMask(cs, st, skipId);
+  var cl = [], i;
+  for (i = 0; i < st.found.length; i++) if (st.found[i] !== skipId) cl.push(cs.pool[st.found[i]]);
+  return liarMask(cl, cs.masks);
+}
+
 /* marginal halo: what THIS clue adds on top of what the player already holds */
 function clueHalo(cs, st, id) {
-  var without = excludedCells(foundMask(cs, st, id));
-  var withIt = excludedCells(bitsAnd(foundMask(cs, st, id), cs.masks[id]));
+  var base = stateMask(cs, st, id);
+  var without = excludedCells(base);
+  var withIt = excludedCells(cs.liar ? stateMask(cs, st, -1) : bitsAnd(base, cs.masks[id]));
   var out = { w: [], r: [], t: [] }, tabs = ["w", "r", "t"], i, k;
   for (k = 0; k < 3; k++) {
     var had = {}, tb = tabs[k];
@@ -1589,27 +1707,48 @@ function clueHalo(cs, st, id) {
   return out;
 }
 
-function starsFor(actionsLeft) {
-  if (actionsLeft >= CONFIG.STAR3) return 3;
-  if (actionsLeft >= CONFIG.STAR2) return 2;
+/* stars scale with the budget, so three stars means the same thing in a short
+   case and a long one: you spent under sixty percent of the evening. */
+function starsFor(actionsLeft, total) {
+  total = total || CONFIG.ACTIONS;
+  if (actionsLeft >= Math.round(total * CONFIG.STAR3 / CONFIG.ACTIONS)) return 3;
+  if (actionsLeft >= Math.round(total * CONFIG.STAR2 / CONFIG.ACTIONS)) return 2;
   return 1;
 }
 
+/* The note that would have caught them. In a liar case the lie contradicts the
+   truth as well, so teaching with it would teach the wrong lesson: skip it and
+   find a note that is actually true. */
 function findContradiction(cs, st, guess) {
-  var i, id;
+  var i, id, skip = (cs.liar && cs.lie) ? cs.lie.id : -1;
   for (i = 0; i < st.found.length; i++) {
     id = st.found[i];
+    if (id === skip) continue;
     if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
   }
   var placedIds = placedClueIds(cs);
   for (i = 0; i < placedIds.length; i++) {
     id = placedIds[i];
+    if (id === skip) continue;
     if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
   }
   for (i = 0; i < cs.pool.length; i++) {
+    if (i === skip) continue;
     if (!cluePasses(cs.pool[i], guess.c, guess.w, guess.r, guess.t)) return i;
   }
   return -1;
+}
+
+/* who or what produced a clue, so the journal can say "Marek says" instead of
+   presenting a statement and a floorboard as the same kind of fact */
+function clueSource(cs, id) {
+  var i, k, pl = cs.place;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.rooms[i][k] === id) return { kind: "room", i: i };
+    if (pl.ints[i] === id) return { kind: "said", i: i };
+    if (pl.press[i] === id) return { kind: "said", i: i };
+  }
+  return null;
 }
 
 function placedClueIds(cs) {
@@ -1671,7 +1810,7 @@ function step(st, cs, act) {
       ev.push({ e: "mark" });
       break;
     case "automark":
-      var cells = excludedCells(foundMask(cs, st, -1)), tabs = ["w", "r", "t"], k;
+      var cells = excludedCells(stateMask(cs, st, -1)), tabs = ["w", "r", "t"], k;
       for (k = 0; k < 3; k++) for (i = 0; i < cells[tabs[k]].length; i++) {
         var cell = cells[tabs[k]][i];
         st.marks[markKey(tabs[k], Math.floor(cell / 6), cell % 6)] = "n";
@@ -1685,7 +1824,7 @@ function step(st, cs, act) {
       st.acc = { c: act.c, w: act.w, r: act.r, t: act.t };
       if (act.c === cs.truth.c && act.w === cs.truth.w && act.r === cs.truth.r && act.t === cs.truth.t) {
         st.status = "won";
-        st.stars = starsFor(st.actionsLeft);
+        st.stars = starsFor(st.actionsLeft, st.total);
         ev.push({ e: "won", stars: st.stars });
       } else {
         st.status = "lost";
@@ -1701,14 +1840,21 @@ function step(st, cs, act) {
   return { state: st, events: ev };
 }
 
-function actionsUsed(st) { return CONFIG.ACTIONS - st.actionsLeft; }
+function actionsUsed(st) { return (st.total || CONFIG.ACTIONS) - st.actionsLeft; }
 
 /* ================== agents (verification only) ================== */
 
 function greedyAgent(cs, rng) {
   var st = newGame(cs);
   var cand = bitsFull(), i, j;
+  /* The stopping rule is sound in both modes. In a liar case the truth always
+     sits inside the at most one violation set, so if that set ever holds a
+     single tuple, that tuple IS the truth. */
   function absorb(ev) {
+    var got = false;
+    for (i = 0; i < ev.length; i++) if (ev[i].e === "clue") got = true;
+    if (!got) return;
+    if (cs.liar) { cand = stateMask(cs, st, -1); return; }
     for (i = 0; i < ev.length; i++) if (ev[i].e === "clue") {
       var m = cs.masks[ev[i].id];
       for (j = 0; j < WORDS; j++) cand[j] &= m[j];
@@ -1772,7 +1918,7 @@ function perfectAgent(cs) {
   for (i in needRoom) step(st, cs, { k: "search", r: +i });
   for (i in needInt) step(st, cs, { k: "interview", s: +i });
   for (i = 0; i < needPress.length; i++) step(st, cs, { k: "press", s: needPress[i] });
-  var cand = foundMask(cs, st, -1);
+  var cand = stateMask(cs, st, -1);
   var list = bitsList(cand);
   var guess = tupleFromIndex(list.length ? list[0] : 0);
   step(st, cs, { k: "accuse", c: guess.c, w: guess.w, r: guess.r, t: guess.t });
@@ -1815,7 +1961,7 @@ function clueSubjects(cl) {
 /* serialisation for save and resume: a case is only its seed */
 function serializeState(st) {
   return {
-    seed: st.seed, actionsLeft: st.actionsLeft,
+    seed: st.seed, tier: st.tier || "standard", liar: !!st.liar, actionsLeft: st.actionsLeft,
     searched: st.searched.slice(), interviewed: st.interviewed.slice(), pressed: st.pressed.slice(),
     found: st.found.slice(), marks: JSON.parse(JSON.stringify(st.marks)),
     status: st.status, acc: st.acc ? { c: st.acc.c, w: st.acc.w, r: st.acc.r, t: st.acc.t } : null,
@@ -1832,7 +1978,7 @@ function deserializeState(o, cs) {
     for (i = 0; i < v.length; i++) if (typeof v[i] === "number" && v[i] >= 0) out.push(v[i]);
     return out;
   };
-  st.actionsLeft = Math.max(0, Math.min(CONFIG.ACTIONS, n(o.actionsLeft, CONFIG.ACTIONS)));
+  st.actionsLeft = Math.max(0, Math.min(st.total, n(o.actionsLeft, st.total)));
   st.searched = arr(o.searched); st.interviewed = arr(o.interviewed); st.pressed = arr(o.pressed);
   st.found = arr(o.found).filter(function (id) { return id < cs.pool.length; });
   st.marks = {};

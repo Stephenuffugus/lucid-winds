@@ -435,6 +435,26 @@
   </div>
 </div>
 
+<!-- ═══════════════ SAVE TROUBLE (honest, never silent) ═══════════════ -->
+<div class="overlay" id="saveFail">
+  <div class="card">
+    <h2>🪺 This device is out of room</h2>
+    <div class="gline" style="text-align:center">Your <span id="saveFailWhat">critter</span> is here on the screen, but it could not be kept for next time. Drawings take up space and this browser has run out.</div>
+    <div class="gline" style="text-align:center">Send a critter off on a balloon adventure to free up room, then try again.</div>
+    <button class="bigbtn" id="saveFailGo" style="margin-top:12px">🪺 Go to the Nursery</button>
+    <button class="bigbtn ghost" id="saveFailOk" style="margin-top:8px">Keep playing for now</button>
+  </div>
+</div>
+
+<!-- ═══════════════ TROUBLE (honest failure, any cause) ═══════════════ -->
+<div class="overlay" id="oopsDlg">
+  <div class="card">
+    <h2>🙈 That did not work</h2>
+    <div class="gline" id="oopsText" style="text-align:center"></div>
+    <button class="bigbtn" id="oopsOk" style="margin-top:12px">Okay</button>
+  </div>
+</div>
+
 <!-- ═══════════════ GAME MENU ═══════════════ -->
 <div class="overlay" id="gameMenu">
   <div class="card">
@@ -545,26 +565,71 @@ var $=function(id){ return document.getElementById(id); };
    redeploy day leaves players one version behind. The page checks its own
    source for a newer BUILD and refreshes itself (silently on the home
    screen, with a tap-pill if the player is mid-anything). */
-var BUILD='m1';
+var BUILD='n1';
 setTimeout(function(){
   try{
-    fetch(location.pathname+'?probe='+Date.now(),{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(txt){
+    fetch(location.pathname+'?probe='+Date.now(),{cache:'no-store'}).then(function(r){
+      /* fetch does not reject on 404/500: a served error page would otherwise
+         be scanned as if it were the app */
+      if(!r.ok) throw new Error('freshness probe HTTP '+r.status);
+      return r.text();
+    }).then(function(txt){
       var m=txt.match(/var BUILD='([^']+)'/);
       if(!m||m[1]===BUILD) return;
-      var fresh=location.pathname+'?v=b'+m[1];
+      /* keep every existing query param (embed=1 and friends) and add a
+         version the host has never served, so the stale-while-revalidate
+         window cannot answer it */
+      var q=location.search.replace(/[?&]v=b[^&]*/,'').replace(/^&/,'?');
+      var fresh=location.pathname+(q?q+'&':'?')+'v=b'+m[1];
       if($('home').classList.contains('on')&&!drawnAnything){ location.replace(fresh); return; }
       var pill=document.createElement('button');
-      pill.textContent='✨ A new version is ready — tap to update';
-      pill.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483000;background:#69b45a;color:#fff;font:800 13px ui-rounded,sans-serif;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3);';
+      pill.textContent='✨ A new version is ready. Tap to update.';
+      pill.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483000;background:#69b45a;color:#fff;font:800 14px ui-rounded,sans-serif;border-radius:999px;padding:15px 20px;min-height:48px;box-shadow:0 4px 14px rgba(0,0,0,.3);';
       pill.addEventListener('click',function(){ location.replace(fresh); });
       document.body.appendChild(pill);
-    }).catch(function(){});
-  }catch(e){}
+    }).catch(function(err){ /*ok: a failed freshness check must never interrupt play; the player keeps the build they have */ });
+  }catch(e){ /*ok: same, the check is best effort */ }
 },2500);
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } }
-function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+/* lsSet REPORTS. A save that quietly fails is how a kid loses a critter and
+   never finds out, so every caller that matters checks the answer. */
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return (v===null||v===undefined)?d:v; }catch(e){ return d; } }
-function jSet(k,v){ lsSet(k,JSON.stringify(v)); }
+function jSet(k,v){ return lsSet(k,JSON.stringify(v)); }
+/* bests: MAX against what is stored right now, never against a snapshot taken
+   at page load (another tab may have beaten it since) */
+function lsMax(k,v){
+  var cur=parseInt(lsGet(k,'0'),10)||0;
+  var best=Math.max(cur,v||0);
+  lsSet(k,String(best));
+  return best;
+}
+/* the honest face of a failed save */
+var saveTroubleShown=false;
+function saveTrouble(what){
+  var ov=$('saveFail'); if(!ov) return;
+  $('saveFailWhat').textContent=what;
+  ov.classList.add('on');
+  saveTroubleShown=true;
+  try{ SFX.oops(); }catch(e){ /*ok: audio is a nicety, the message is the point */ }
+}
+/* ONE honest failure surface. Anything that can really fail says so here and
+   leaves the player on a screen that has buttons on it. Nothing in this app
+   is allowed to fail into a frozen screen or a plausible looking nothing. */
+function oops(msg,backTo){
+  $('oopsText').textContent=msg;
+  $('oopsDlg').classList.add('on');
+  oops._back=backTo||null;
+  try{ SFX.oops(); }catch(e){ /*ok: the message is the point, not the sound */ }
+}
+$('oopsOk').addEventListener('click',function(){
+  $('oopsDlg').classList.remove('on');
+  if(oops._back){ var b=oops._back; oops._back=null; switchScreen(b); }
+});
+$('saveFailOk').addEventListener('click',function(){ $('saveFail').classList.remove('on'); });
+$('saveFailGo').addEventListener('click',function(){
+  $('saveFail').classList.remove('on'); renderNursery(); switchScreen('nursery');
+});
 
 var K_NEST='cac_nursery', K_SET='cac_settings', K_MOM='cac_moments';
 var SET = jGet(K_SET,{sound:1,seenHow:0});
@@ -1681,8 +1746,18 @@ if(window.visualViewport) visualViewport.addEventListener('resize',sizePaper);
 var renderer=null, scene=null, camera=null, critter=null, groundMat=null, shadowBlob=null;
 var hemiLight=null, sunLight=null;
 var orbit={ yaw:0.5, pitch:0.42, dist:5.0, dragging:false, lx:0, ly:0, pinch:0 };
+var stageDead=false;
 function initStage(){
-  if(renderer) return;
+  if(renderer) return true;
+  if(stageDead) return false;
+  /* three.min.js is vendored beside this file and WebGL is not guaranteed on
+     every device. Both used to throw INSIDE the hatch screen's timeout, which
+     left the player watching "puffing up…" forever with no button to press. */
+  if(typeof THREE==='undefined'){ stageDead=true; return false; }
+  try{ return initStageInner(); }
+  catch(e){ stageDead=true; renderer=null; return false; }
+}
+function initStageInner(){
   var stage=$('stage');
   /* alpha canvas: the CSS sky gradient behind the stage IS the sky, so the
      scene can never show a black void at any drag angle */
@@ -2010,6 +2085,55 @@ function tick(){
    ════════════════════════════════════════════════════════════════════ */
 var CUR=null;      /* {id,name,profile,drawing(dataURL),care,sil} */
 var NEST=jGet(K_NEST,[]);
+if(!(NEST instanceof Array)) NEST=[];
+
+/* read modify write. Two tabs of this app (easy on a tablet) used to clobber
+   each other: the whole array was written from a boot time snapshot, so the
+   last tab to save erased the other tab's critters. Now the stored list is
+   re-read at write time and merged by id: our edits win for OUR records,
+   another tab's new critters survive, and a removal has to be asked for. */
+function saveNest(removedIds){
+  var stored=[];
+  try{ stored=JSON.parse(localStorage.getItem(K_NEST)||'[]')||[]; }catch(e){ stored=[]; }
+  if(!(stored instanceof Array)) stored=[];
+  removedIds=removedIds||[];
+  var merged=[], seen={}, i;
+  function mine(id){ for(var k=0;k<NEST.length;k++) if(NEST[k]&&NEST[k].id===id) return NEST[k]; return null; }
+  for(i=0;i<stored.length;i++){
+    var r=stored[i];
+    if(!r||!r.id||seen[r.id]) continue;
+    if(removedIds.indexOf(r.id)>=0) continue;
+    merged.push(mine(r.id)||r); seen[r.id]=1;
+  }
+  for(i=0;i<NEST.length;i++){
+    var n=NEST[i];
+    if(!n||!n.id||seen[n.id]) continue;
+    if(removedIds.indexOf(n.id)>=0) continue;
+    merged.push(n); seen[n.id]=1;
+  }
+  NEST=merged;
+  return jSet(K_NEST,NEST);
+}
+
+/* Every path that turns a stored drawing back into a critter goes through
+   here. It wires onerror (a decode failure used to leave the player stranded
+   on the hatch screen with no button), and it treats an unreadable silhouette
+   as the failure it is instead of returning quietly. */
+function loadDrawing(url,onReady,failMsg,backTo){
+  if(!url){ if(failMsg) oops(failMsg,backTo); return; }
+  var img=new Image();
+  img.onload=function(){
+    var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
+    var cx=cv.getContext('2d');
+    cx.fillStyle='#fff'; cx.fillRect(0,0,PAPER,PAPER);
+    cx.drawImage(img,0,0,PAPER,PAPER);
+    var sil=readSilhouette(cv);
+    if(!sil){ if(failMsg) oops(failMsg,backTo); return; }
+    onReady(cv,sil);
+  };
+  img.onerror=function(){ if(failMsg) oops(failMsg,backTo); };
+  img.src=url;
+}
 
 /* ------------------------------------------------- meadow friends -------
    Other nursery critters wander out to keep the current buddy company, so
@@ -2025,15 +2149,10 @@ function spawnFriends(){
   clearFriends();
   var others=NEST.filter(function(r){ return r.id!==CUR.id; }).slice(-2);
   others.forEach(function(rec,ix){
-    var img=new Image();
-    img.onload=function(){
+    /* a friend that cannot be built just does not come out to the meadow;
+       this is the one load in the app with no consequence worth a message */
+    loadDrawing(rec.drawing,function(cv,sil){
       if(!CUR||friends.length>=2) return;
-      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
-      var cx=cv.getContext('2d');
-      cx.fillStyle='#fff'; cx.fillRect(0,0,PAPER,PAPER);
-      cx.drawImage(img,0,0,PAPER,PAPER);
-      var sil=readSilhouette(cv);
-      if(!sil) return;
       var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
       var spot=FRIEND_SPOTS[friends.length];
       g.scale.set(0.62,0.62,0.62);
@@ -2044,8 +2163,7 @@ function spawnFriends(){
       sh.rotation.x=-Math.PI/2; sh.position.set(spot.x,0.011,spot.z);
       scene.add(g); scene.add(sh);
       friends.push({ g:g, sh:sh, ph:ix*2.1+1.3 });
-    };
-    img.src=rec.drawing;
+    });
   });
 }
 
@@ -2489,15 +2607,8 @@ function startParade(){
   orbit.yaw=0; orbit.pitch=0.4; orbit.dist=6.6;
   startDanceMusic();
   recs.forEach(function(rec,ix){
-    var img=new Image();
-    img.onload=function(){
+    loadDrawing(rec.drawing,function(cv,sil){
       if(!parade.on||parade.members.length>=6) return;
-      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
-      var c2=cv.getContext('2d');
-      c2.fillStyle='#fff'; c2.fillRect(0,0,PAPER,PAPER);
-      c2.drawImage(img,0,0,PAPER,PAPER);
-      var sil=readSilhouette(cv);
-      if(!sil) return;
       var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
       var walker=ix%2===0;
       var sc=walker?0.55:0.5;
@@ -2506,8 +2617,7 @@ function startParade(){
       else { g.position.set(-0.9+ix*0.65, 0, -1.7); }
       scene.add(g);
       parade.members.push({ g:g, mode:walker?'walk':'dance', speed:0.75+(ix%3)*0.18, ph:ix*1.4 });
-    };
-    img.src=rec.drawing;
+    },rec.name+' could not join the parade. Its drawing did not come back from this device.');
   });
   confetti($('stageWrap'),24);
 }
@@ -2558,22 +2668,14 @@ function startPlaydate(recA,recB){
   if(shadowBlob) shadowBlob.visible=false;
   orbit.yaw=0; orbit.pitch=0.38; orbit.dist=6.2;
   [recA,recB].forEach(function(rec,ix){
-    var img=new Image();
-    img.onload=function(){
+    loadDrawing(rec.drawing,function(cv,sil){
       if(!playdate.on) return;
-      var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
-      var c2=cv.getContext('2d');
-      c2.fillStyle='#fff'; c2.fillRect(0,0,PAPER,PAPER);
-      c2.drawImage(img,0,0,PAPER,PAPER);
-      var sil=readSilhouette(cv);
-      if(!sil) return;
       var g=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]);
       g.scale.set(0.62,0.62,0.62);
       g.position.set(ix===0?-2.2:2.2, 0, -0.5);
       scene.add(g);
       playdate.members.push({ g:g, side:ix===0?-1:1, ph:ix*1.6 });
-    };
-    img.src=rec.drawing;
+    },rec.name+' could not come to the playdate. Its drawing did not come back from this device.','nursery');
   });
 }
 function stopPlaydate(){
@@ -2974,15 +3076,10 @@ function openFromNursery(rec){
   switchScreen('hatch');
   $('hatchEgg').textContent='🪺';
   $('hatchMsg').textContent=rec.name+' is waking up…';
-  var img=new Image();
-  img.onload=function(){
-    var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
-    var cx=cv.getContext('2d');
-    cx.fillStyle='#fff'; cx.fillRect(0,0,PAPER,PAPER);
-    cx.drawImage(img,0,0,PAPER,PAPER);
-    var sil=readSilhouette(cv);
-    if(!sil){ switchScreen('nursery'); return; }
-    initStage();
+  /* the hatch screen has no buttons on it, so every way out of here has to
+     land somewhere the player can act: honest message, back to the nursery */
+  loadDrawing(rec.drawing,function(cv,sil){
+    if(!initStage()) { oops('This device cannot show the 3D meadow right now. Your critters are safe in the nursery.','nursery'); return; }
     if(critter){ scene.remove(critter); critter=null; }
     critter=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]); orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
@@ -2994,8 +3091,7 @@ function openFromNursery(rec){
     persistCur();
     SFX.chirp();
     setTimeout(showResult,500);
-  };
-  img.src=rec.drawing;
+  },rec.name+' could not wake up. Its drawing did not come back from this device, so it stays in the nursery for now.','nursery');
 }
 
 /* ------------------------------------------------ daily wild visitor ---
@@ -3180,6 +3276,13 @@ function applyScene(){
       var r=0,g=0,b2=0,n=0;
       for(var i=0;i<d.length;i+=48){ r+=d[i]; g+=d[i+1]; b2+=d[i+2]; n++; }
       groundMat.color.setRGB(r/n/255*0.82,g/n/255*0.82,b2/n/255*0.82);
+    };
+    img.onerror=function(){
+      /* an unreadable room is not a blank white wall the player has to guess
+         at: say so and take them back outside, where everything works */
+      ROOM.mode='meadow'; lsSet('cac_roomMode','meadow');
+      applyScene();
+      oops('The room drawing could not be opened, so your critter is playing outside. You can draw the room again any time.');
     };
     img.src=ROOM.url;
     $('stars').style.display='none';
@@ -3534,14 +3637,7 @@ $('markDone').addEventListener('click',function(){
 function rebuildCurrent(msg){
   if(!CUR) return;
   var keepAcc=CUR.acc;
-  var img=new Image();
-  img.onload=function(){
-    var cv=document.createElement('canvas'); cv.width=cv.height=PAPER;
-    var c2=cv.getContext('2d');
-    c2.fillStyle='#fff'; c2.fillRect(0,0,PAPER,PAPER);
-    c2.drawImage(img,0,0,PAPER,PAPER);
-    var sil=readSilhouette(cv);
-    if(!sil) return;
+  loadDrawing(CUR.drawing,function(cv,sil){
     if(critter){ scene.remove(critter); critter=null; }
     critter=buildCritterMesh(cv,sil,CUR.feats||[],CUR.limbs||[]);
     orbit.baseRotY=0; scene.add(critter);
@@ -3550,8 +3646,7 @@ function rebuildCurrent(msg){
     persistCur();
     setState('happy');
     say(msg||'I can see you now!');
-  };
-  img.src=CUR.drawing;
+  },'That change could not be put back on your critter. Its drawing did not come back from this device.');
 }
 $('actFace').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openMark(); anim.lastTouch=Date.now(); });
 
@@ -3842,6 +3937,7 @@ $('pmColor').addEventListener('click',function(){
       setTimeout(function(){ document.body.classList.remove('print-color'); },500);
     },150);
   };
+  img.onerror=function(){ oops('The coloring page could not be made from this drawing.'); };
   img.src=CUR.drawing;
   SFX.tap();
 });

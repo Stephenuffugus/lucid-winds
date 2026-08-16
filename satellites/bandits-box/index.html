@@ -215,6 +215,10 @@ body.squint .lid{transform:scaleY(.62);}
 #tComb{background:repeating-linear-gradient(90deg,#3E4C5A 0 4px,#D9DEE4 4px 13px);}
 #tFur{background:repeating-linear-gradient(72deg,#8B7A63 0 3px,#6E6050 3px 7px),#7A6B57;}
 #tPaper{background:linear-gradient(140deg,#EFE7D8,#D6CCBA);}
+#tRubber{background:radial-gradient(circle at 22% 22%,#4E4A52,#2E2B34 70%),
+   repeating-radial-gradient(circle at 8px 8px,rgba(255,255,255,.05) 0 3px,transparent 3px 9px);}
+/* the nap is drawn as well as heard: it runs one way */
+#tVelvet{background:repeating-linear-gradient(97deg,#5B2F4A 0 5px,#6B3A57 5px 11px),#5B2F4A;}
 
 /* ================= LATCHES ================= */
 #latchWrap{position:absolute;inset:0;display:flex;flex-direction:column;
@@ -243,7 +247,9 @@ body.squint .lid{transform:scaleY(.62);}
 #beadWire{position:relative;height:56px;touch-action:none;}
 #beadWire .wire{position:absolute;left:6px;right:6px;top:27px;height:3px;border-radius:2px;
         background:#5A5368;}
-.bead{position:absolute;top:12px;width:34px;height:34px;border-radius:50%;cursor:grab;
+/* 40 drawn plus 4 of transparent reach each side clears the 48px floor, and
+   the wire's spacing in JS moved with it so they still touch when they meet */
+.bead{position:absolute;top:8px;width:40px;height:40px;border-radius:50%;cursor:grab;
         box-shadow:0 3px 6px rgba(0,0,0,.4);}
 #snaps{display:flex;gap:12px;justify-content:space-around;}
 .snap{width:54px;height:54px;border-radius:50%;border:none;padding:0;cursor:pointer;
@@ -327,6 +333,43 @@ body.squint .lid{transform:scaleY(.62);}
 /* ================= SPRING ================= */
 #springSvg{width:100%;height:100%;display:block;touch-action:none;}
 
+/* ================= RAIN STICK ================= */
+#shakeSvg{width:100%;height:100%;display:block;touch-action:none;cursor:grab;}
+
+/* ================= COIN ================= */
+#coinSvg{width:100%;height:100%;display:block;touch-action:none;}
+
+/* ==========================================================
+   REACH — the 48px floor, in one place
+   Measured rendered on a 375x667 screen, not eyeballed. Before this block:
+   the toy bars (big/medium/tiny, light/medium/heavy, thick/runny/stiff,
+   finger/rake, milk/dark/white) rendered about 30px tall, the "fresh bar" and
+   "smooth it over" minis about 24px, the settings toggles 29px, the sequin
+   swatches 34px, the tray chips 38px, the tissue balls 34px, the beads 34px,
+   and the two full screen corner buttons 40px. Every one of those is something
+   a thumb has to find.
+
+   Two techniques, picked per control:
+   - things in a row under the toy grow to 48px tall. The stage gives up the
+     pixels; the type stays exactly as designed.
+   - things whose DRAWN size is the design (a round swatch, a bead on a wire,
+     a crumpled ball) keep their size and gain transparent reach through a
+     ::before. Same trick as the topbar icons.
+   ========================================================== */
+.sizes button,.weights button,.slimebar button,.sandbar button,.flavbar button,
+.mini{min-height:48px;display:inline-flex;align-items:center;justify-content:center;}
+.swatch{width:48px;height:48px;}
+.chip{position:relative;}
+.chip::before{content:"";position:absolute;left:-5px;right:-5px;top:-5px;bottom:-5px;}
+.chip svg{width:100%;height:100%;display:block;}
+.ball{position:relative;}
+.ball::before{content:"";position:absolute;left:-7px;right:-7px;top:-7px;bottom:-7px;}
+.bead::before{content:"";position:absolute;left:-4px;right:-4px;top:-4px;bottom:-4px;}
+.sw::before{content:"";position:absolute;left:0;right:0;top:-10px;bottom:-10px;}
+.tgl{width:48px;}
+#exitBig,#bigHome{width:48px;height:48px;}
+#bigHome{right:68px;}
+
 /* ---------- home grid ---------- */
 #home{position:fixed;inset:0;z-index:62;display:none;background:var(--ink);
   padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
@@ -374,6 +417,10 @@ input[type=range]{width:126px;accent-color:var(--soap);}
 .testbtn[aria-pressed="true"]{background:var(--slate);border-color:var(--furlite);
    color:var(--milk);box-shadow:inset 0 0 0 1px var(--furlite);}
 .testbtn[aria-pressed="true"]::after{content:" \2713";opacity:.85;}
+/* The deal, said out loud where the settings are. The whole category gates its
+   toys behind rewarded video; not saying so is leaving the best thing about
+   this app unsaid. */
+.fineprint{font-size:11px;line-height:1.6;color:var(--dim);margin:12px 2px 0;}
 .done{width:100%;margin-top:12px;padding:14px;border-radius:18px;border:1px solid var(--edge);
    background:var(--raise);color:var(--milk);font-size:14px;letter-spacing:.1em;
    text-transform:lowercase;cursor:pointer;}
@@ -599,8 +646,10 @@ body.calm .card:active{transform:none;}
         <div class="tex" id="tComb" data-tex="comb"><span class="nm">comb</span></div>
         <div class="tex" id="tFur"  data-tex="fur"><span class="nm">fur</span></div>
         <div class="tex" id="tPaper" data-tex="paper"><span class="nm">paper</span></div>
+        <div class="tex" id="tRubber" data-tex="rubber"><span class="nm">rubber</span></div>
+        <div class="tex" id="tVelvet" data-tex="velvet"><span class="nm">velvet</span></div>
       </div></div>
-      <div class="hint">press harder and move faster &mdash; it all changes the sound</div>
+      <div class="hint">press harder and move faster &middot; it all changes the sound</div>
     </section>
 
     <section class="toy" id="toy-latch" role="group" aria-label="Latches. A zipper, velcro, beads and snaps.">
@@ -868,6 +917,45 @@ body.calm .card:active{transform:none;}
       <div class="hint">stretch it down and let go</div>
     </section>
 
+    <section class="toy" id="toy-shake" role="group"
+             aria-label="Rain stick. Turn it over and let the grains run through.">
+      <div class="fill">
+        <svg id="shakeSvg" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g id="shakeGrp">
+            <rect x="72" y="26" width="56" height="248" rx="28" fill="#4A3B2C"/>
+            <rect x="77" y="31" width="46" height="238" rx="23" fill="#C9B392"/>
+            <rect x="77" y="31" width="46" height="238" rx="23" fill="url(#stickG)"/>
+            <g id="shakePins" stroke="#9A8461" stroke-width="2" stroke-linecap="round"></g>
+            <path id="shakeGrains" fill="#5E4B33"/>
+            <rect x="70" y="22" width="60" height="18" rx="9" fill="#3C3024"/>
+            <rect x="70" y="260" width="60" height="18" rx="9" fill="#3C3024"/>
+          </g>
+          <circle id="shakeHit" cx="100" cy="150" r="150" fill="transparent"/>
+          <defs><linearGradient id="stickG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#fff" stop-opacity=".26"/>
+            <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#000" stop-opacity=".26"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="hint" id="shakeHint">turn it over and let it run</div>
+    </section>
+
+    <section class="toy" id="toy-coin" role="group"
+             aria-label="Spinning coin. Flick it and listen to it settle.">
+      <div class="fill">
+        <svg id="coinSvg" viewBox="0 0 200 220" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <ellipse cx="100" cy="176" rx="52" ry="13" fill="#000" opacity=".22"/>
+          <g id="coinGrp">
+            <ellipse id="coinEdge" cx="100" cy="120" rx="46" ry="46" fill="#8A7A4E"/>
+            <ellipse id="coinFace" cx="100" cy="120" rx="46" ry="46" fill="#D8C075"/>
+            <g id="coinMark"></g>
+          </g>
+          <circle id="coinHit" cx="100" cy="120" r="110" fill="transparent"/>
+        </svg>
+      </div>
+      <div class="hint" id="coinHint">flick it and let it settle</div>
+    </section>
+
   </div>
   <div class="strip" id="strip" role="tablist"></div>
 </div>
@@ -913,6 +1001,11 @@ body.calm .card:active{transform:none;}
       style="width:110px;padding:8px 10px;border-radius:12px;border:1px solid var(--edge);
              background:var(--ink);color:var(--milk);font-family:var(--round);font-size:13px;"></div>
   <div class="row"><label>Sound bank<span class="sub" id="bankSub">Built-in synth sounds.</span></label></div>
+  <div class="row"><label>Start fresh<span class="sub" id="wipeSub">Forget the settings and the pinned toys.</span></label>
+    <button class="testbtn" id="wipeBtn">reset</button></div>
+  <p class="fineprint">No ads. Nothing to unlock. No toy is ever locked, no day is
+     ever missed, and nothing is counted unless you switch the tally on yourself.
+     Your settings sit on this phone and go nowhere.</p>
   <button class="done" id="closeSheet">done</button>
 </div></div>
 
@@ -1256,6 +1349,21 @@ var V = {
   unbean:function(pan,semi){ var f=420*Math.pow(2,(semi||0)/12);
     tone({f0:f,f1:f*.48,bend:.06,dur:.1,gain:.16,pan:pan});
     noiseHit({dur:.07,type:'lowpass',freq:700,gain:.13,pan:pan}); },
+  /* A handful of grains arriving at the end cap of the rain stick. n is how
+     many landed at once, so a gentle tilt patters and a full turn pours. */
+  rattle:function(pan,semi,n){ n=clamp(n||4,1,14);
+    for(var i=0;i<n;i++)(function(i){ setTimeout(function(){
+      noiseHit({dur:.008+Math.random()*.012,type:'bandpass',
+        freq:2200+Math.random()*3400,Q:3,gain:.03+Math.random()*.05,pan:pan});
+    },Math.random()*70); })(i); },
+  /* The coin's edge touching down. Metallic and short; the toy fires these
+     faster and faster as the wobble collapses, which is the whole sound. */
+  ring:function(pan,semi){ var f=1500*Math.pow(2,(semi||0)/12);
+    tone({f0:f,dur:.05,gain:.05,wave:'triangle',pan:pan});
+    noiseHit({dur:.012,type:'bandpass',freq:f*1.7,Q:9,gain:.06,pan:pan}); },
+  /* and the moment it gives up and lies flat */
+  land:function(pan){ tone({f0:190,f1:96,dur:.14,gain:.16,wave:'triangle',pan:pan});
+    noiseHit({dur:.06,type:'lowpass',freq:520,gain:.12,pan:pan}); },
   /* release of a stretched thing: the snap-back */
   boing:function(pan,tension){ var t=clamp(tension||.5,0,1);
     tone({f0:120+t*260,f1:60+t*90,bend:.16,dur:.26,gain:.1+t*.2,wave:'triangle',pan:pan});
@@ -1294,6 +1402,11 @@ var SFX_MANIFEST={
   // click:['click-01.wav','click-02.wav','click-03.wav','click-04.wav','click-05.wav'],
   // clack:['clack-01.wav','clack-02.wav','clack-03.wav','clack-04.wav','clack-05.wav'],
   // tap:['tap-01.wav','tap-02.wav','tap-03.wav','tap-04.wav','tap-05.wav','tap-06.wav'],
+  /* crack is the chocolate bar and burst is bubble wrap. They are NOT snap and
+     pop: snap is press studs, pop is the pop-it dome. Four different bubbles
+     and four different banks, or a recording lands on the wrong toy. */
+  // crack:['crack-01.wav','crack-02.wav','crack-03.wav','crack-04.wav','crack-05.wav'],
+  // burst:['burst-01.wav','burst-02.wav','burst-03.wav','burst-04.wav','burst-05.wav'],
   /* --- tier 2: big wins, easy takes --- */
   // peel:['peel-01.wav','peel-02.wav','peel-03.wav'],
   // plink:['plink-01.wav','plink-02.wav','plink-03.wav','plink-04.wav'],
@@ -1303,6 +1416,11 @@ var SFX_MANIFEST={
   // bell:['bell-01.wav','bell-02.wav','bell-03.wav'],
   // zip:['zip-01.wav','zip-02.wav','zip-03.wav'],
   // hinge:['hinge-01.wav','hinge-02.wav','hinge-03.wav'],
+  // bean:['bean-01.wav','bean-02.wav','bean-03.wav'],
+  // unbean:['unbean-01.wav','unbean-02.wav','unbean-03.wav'],
+  // rattle:['rattle-01.wav','rattle-02.wav','rattle-03.wav','rattle-04.wav'],
+  // ring:['ring-01.wav','ring-02.wav','ring-03.wav'],
+  // land:['land-01.wav','land-02.wav','land-03.wav'],
   /* --- tier 3: the synth already does these well --- */
   // grain:['grain-01.wav','grain-02.wav'],
   // rib:['rib-01.wav','rib-02.wav'],
@@ -1438,13 +1556,20 @@ var BUZZ_MS={pop:9,tap:7,thunk:26,squish:16,squeak:12,bell:8,latch:14,snap:13,ri
   crack:18,burst:8,bean:11,unbean:9,rattle:6,ring:5,land:14};
 var CAN_BUZZ=(typeof navigator.vibrate==='function');
 
+/* The sound half of feel(), on its own. Some voices fire dozens of times a
+   second — gear teeth, the sequin rustle, the coin's last rattle — and they
+   still deserve a recording when one exists, but a ripple and a buzz per tick
+   would be a strobe and a massage. Those call voice(); everything a finger
+   does once calls feel(), which is voice() plus the mark and the buzz. */
+function voice(name,pan,rest){
+  wake();
+  if(SAMPLES[name]&&playSample(name,pan,rest[0])) return;
+  if(V[name]){ try{ V[name].apply(null,[pan].concat(rest)); }catch(e){} }
+}
 function feel(name,x,y){
   var rest=Array.prototype.slice.call(arguments,3);
-  wake();
   var pan=(x/Math.max(1,window.innerWidth))*2-1;
-  if(!(SAMPLES[name]&&playSample(name,pan,rest[0]))){
-    if(V[name]){ try{ V[name].apply(null,[pan].concat(rest)); }catch(e){} }
-  }
+  voice(name,pan,rest);
   ripple(x,y,RIPCOLOR[name]||'#EDE6DB');
   if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(BUZZ_MS[name]||6); }catch(e){} }
 }
@@ -1961,6 +2086,7 @@ tissue.addEventListener('pointerdown',safe(function(e){
   tLast={x:e.clientX,y:e.clientY}; tSpeed=Speedo(); tSpeed.push(e.clientX,e.clientY,performance.now());
   if(tVoice) tVoice.stop();
   tVoice=Friction({lo:1600,hi:6800,Q:0.7,gain:0.20,body:600,bodyMix:0.3});
+  ripple(e.clientX,e.clientY,'#EDE6DB');
 }));
 tissue.addEventListener('pointermove',safe(function(e){
   if(!tLast) return;
@@ -2021,7 +2147,15 @@ var TEX={
   felt :{fric:{lo:260,hi:1300,Q:0.7,gain:0.17,type:'lowpass',body:220,bodyMix:0.7}},
   foam :{fric:{lo:180,hi:900, Q:0.7,gain:0.20,type:'lowpass',body:170,bodyMix:0.8}},
   fur  :{fric:{lo:500,hi:2600,Q:0.9,gain:0.19,body:320,bodyMix:0.55}},
-  paper:{fric:{lo:2000,hi:8000,Q:0.6,gain:0.19,body:700,bodyMix:0.2}}
+  paper:{fric:{lo:2000,hi:8000,Q:0.6,gain:0.19,body:700,bodyMix:0.2}},
+  /* Rubber grips instead of sliding: a dull drag that catches and squeals when
+     you push it fast. */
+  rubber:{squeak:true,fric:{lo:170,hi:1500,Q:1.5,gain:0.21,type:'lowpass',
+                            body:160,bodyMix:0.8}},
+  /* Velvet has a NAP: with the pile it whispers, against it, it rasps. The only
+     surface in here that cares which way you are going, which is the point of
+     putting it in. */
+  velvet:{nap:true,fric:{lo:300,hi:3400,Q:0.8,gain:0.20,body:280,bodyMix:0.55}}
 };
 /* One friction voice PER FINGER, up to three. Rubbing two
    textures at once, or two fingers on one, now sounds like two
@@ -2045,13 +2179,21 @@ $$('.tex').forEach(function(tile){
     st.speed.push(e.clientX,e.clientY,performance.now());
     texTouch[e.pointerId]=st;
     setGlow(true,e.clientX,e.clientY,0.15);
+    ripple(e.clientX,e.clientY,'#C3B0E0');
   }));
   tile.addEventListener('pointermove',safe(function(e){
     var st=texTouch[e.pointerId]; if(!st||st.tile!==tile) return;
     var x=e.clientX, y=e.clientY;
     var sp=st.speed.push(x,y,performance.now());
     st.press=st.press*0.7+pressureOf(e)*0.3;
-    st.x=x; st.y=y;
+    if(st.cfg.nap){
+      // smoothed, because a finger wobbles and the nap should not flicker
+      var dx=x-(st.lx==null?x:st.lx);
+      st.nap=(st.nap||0)*0.72+(dx>0?1:(dx<0?-1:0))*0.28;
+      sp=clamp(sp*(st.nap<0?1.4:0.58),0,1);   // against the pile is louder and brighter
+    }
+    if(st.cfg.squeak&&sp>0.55&&Math.random()<0.035) V.squeak((x/Math.max(1,window.innerWidth))*2-1);
+    st.lx=x; st.x=x; st.y=y;
     var pan=(x/Math.max(1,window.innerWidth))*2-1;
     if(st.voice) st.voice.set(sp,st.press,pan);
     setGlow(true,x,y,sp*st.press+0.12);
@@ -2183,6 +2325,7 @@ velcro.addEventListener('pointercancel',safe(velUp));
 /* beads on a wire — they shove each other along and click on contact */
 var beadWire=$('#beadWire');
 var BEAD_COLORS=['#9FD6C0','#F2B79E','#C3B0E0','#EFD9A0','#EDA9B4'];
+var BEAD_W=40;                 // matches .bead in the CSS; they shove at BEAD_W
 var beads=[], beadDrag=null;
 function buildBeads(){
   var w=beadWire.clientWidth||300;
@@ -2192,7 +2335,7 @@ function buildBeads(){
     var el=document.createElement('div');
     el.className='bead'; el.style.background=
       'radial-gradient(circle at 34% 30%, #fff8, '+BEAD_COLORS[i]+' 60%, #0004)';
-    var x=10+i*40;
+    var x=8+i*BEAD_W;
     el.style.left=x+'px';
     beadWire.appendChild(el);
     beads.push({el:el,x:x});
@@ -2208,15 +2351,15 @@ beadWire.addEventListener('pointerdown',safe(function(e){
 }));
 beadWire.addEventListener('pointermove',safe(function(e){
   if(!beadDrag) return;
-  var r=beadWire.getBoundingClientRect(), W=r.width-40;
+  var r=beadWire.getBoundingClientRect(), W=r.width-BEAD_W-4;
   var i=beadDrag.i, target=clamp((e.clientX-r.left)-beadDrag.off,4,W);
   var moved=target-beads[i].x;
   beads[i].x=target;
   var j,pan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
   if(moved>0){ for(j=i+1;j<beads.length;j++){
-    if(beads[j].x<beads[j-1].x+38){ beads[j].x=clamp(beads[j-1].x+38,4,W); V.rib(pan,1500+j*130,0.1); } } }
+    if(beads[j].x<beads[j-1].x+BEAD_W){ beads[j].x=clamp(beads[j-1].x+BEAD_W,4,W); V.rib(pan,1500+j*130,0.1); } } }
   else if(moved<0){ for(j=i-1;j>=0;j--){
-    if(beads[j].x>beads[j+1].x-38){ beads[j].x=clamp(beads[j+1].x-38,4,W); V.rib(pan,1500+j*130,0.1); } } }
+    if(beads[j].x>beads[j+1].x-BEAD_W){ beads[j].x=clamp(beads[j+1].x-BEAD_W,4,W); V.rib(pan,1500+j*130,0.1); } } }
   layoutBeads();
 }));
 function beadUp(){ beadDrag=null; }
@@ -2265,6 +2408,7 @@ spinSvg.addEventListener('pointerdown', safe(function(e){
   spinLastT=performance.now();
   // grabbing a spinning one stops it dead, same as in real life
   if(Math.abs(spinOmega)>0.004){ feel('thunk',e.clientX,e.clientY); spinOmega=0; }
+  else ripple(e.clientX,e.clientY,'#B6AEC4');   // rule 3: every touch leaves a mark
   if(!spinVoice) spinVoice=Friction({lo:WEIGHTS[spinW].whirLo,hi:WEIGHTS[spinW].whirHi,
     Q:5.5,gain:0.15,body:220,bodyMix:0.5,keep:true});
 }));
@@ -2456,12 +2600,10 @@ function popWrap(el,x,y,press){
   if(!el||el.classList.contains('gone')) return;
   el.classList.add('gone');
   var row=+el.getAttribute('data-row');
-  // drier and snappier than the pop-it: more click, less boing
-  var f=430-row*9;
-  tone({f0:f,f1:f*3.1,bend:0.028,dur:0.045,gain:0.26,pan:(x/window.innerWidth)*2-1});
-  V.rib((x/window.innerWidth)*2-1, 2600+Math.random()*900, 0.13+0.1*clamp(press||0.5,0,1));
-  ripple(x,y,'#A8C8E8');
-  if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(8); }catch(e){} }
+  // Through feel() like everything else. It used to fire the synth straight and
+  // keep its own copy of the ripple and the buzz, which meant the sheet could
+  // never take a recording of real wrap. Rows still detune down the sheet.
+  feel('burst',x,y,-row*0.62,press);
   countPop(x,y);
 }
 wrapSheet.addEventListener('pointerdown',safe(function(e){
@@ -2505,6 +2647,7 @@ function dialCenter(){ var r=dialSvg.getBoundingClientRect();
 dialSvg.addEventListener('pointerdown',safe(function(e){
   dialDown=true; try{ dialSvg.setPointerCapture(e.pointerId); }catch(err){}
   var c=dialCenter(); dialLast=Math.atan2(e.clientY-c.y,e.clientX-c.x);
+  ripple(e.clientX,e.clientY,'#EFD9A0');
 }));
 dialSvg.addEventListener('pointermove',safe(function(e){
   if(!dialDown||dialLast===null) return;
@@ -2657,7 +2800,9 @@ slimeSvg.addEventListener('pointerdown',safe(function(e){
   var cfg=SLIME_KINDS[slimeKind];
   if(slimeVoice) slimeVoice.stop();
   slimeVoice=Stretch({f0:cfg.f0,rise:1.3,gain:cfg.gain});
-  V.squish((e.clientX/window.innerWidth)*2-1);
+  // house rule 3: this one made a sound and left no mark, so with the sound off
+  // putting your finger on the slime did nothing at all
+  feel('squish',e.clientX,e.clientY);
 }));
 slimeSvg.addEventListener('pointermove',safe(function(e){
   if(!slimeDown) return;
@@ -2772,6 +2917,7 @@ gearSvg.addEventListener('pointerdown',safe(function(e){
   gearLast=Math.atan2(p.y-GEARS[best].cy,p.x-GEARS[best].cx);
   if(gearVoice) gearVoice.stop();
   gearVoice=Friction({lo:180,hi:900,Q:2.4,gain:0.10,body:200,bodyMix:0.7});
+  ripple(e.clientX,e.clientY,GEARS[best].col);
 }));
 gearSvg.addEventListener('pointermove',safe(function(e){
   if(!gearDown) return;
@@ -2845,6 +2991,7 @@ sandSvg.addEventListener('pointerdown',safe(function(e){
   sandTouch[e.pointerId]={lines:lines,speed:Speedo(),press:pr,
     voice:Friction({lo:700,hi:5000,Q:0.5,gain:0.24,body:500,bodyMix:0.4})};
   sandTouch[e.pointerId].speed.push(e.clientX,e.clientY,performance.now());
+  ripple(e.clientX,e.clientY,'#EFD9A0');
 }));
 sandSvg.addEventListener('pointermove',safe(function(e){
   var st=sandTouch[e.pointerId]; if(!st) return;
@@ -2924,6 +3071,7 @@ cradleSvg.addEventListener('pointerdown',safe(function(e){
   var p=cradleXY(e);
   if(p.x<110){ crDrag='L'; crVL=0; } else { crDrag='R'; crVR=0; }
   try{ cradleSvg.setPointerCapture(e.pointerId); }catch(err){}
+  ripple(e.clientX,e.clientY,'#B6AEC4');
 }));
 cradleSvg.addEventListener('pointermove',safe(function(e){
   if(!crDrag) return;
@@ -3003,6 +3151,7 @@ springSvg.addEventListener('pointerdown',safe(function(e){
   spStartLen=spLen;
   if(spVoice) spVoice.stop();
   spVoice=Stretch({f0:150,rise:1.1,gain:0.13});
+  ripple(e.clientX,e.clientY,'#B6AEC4');
 }));
 springSvg.addEventListener('pointermove',safe(function(e){
   if(!spDown) return;
@@ -3183,22 +3332,16 @@ edaSvg.addEventListener('pointerdown',safe(function(e){
   var t=e.target.closest?e.target.closest('.hit'):null; if(!t) return;
   if(edaHint) edaHint.style.opacity='0';
   var i=+t.getAttribute('data-b');
-  var pan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
   if(!edaOut[i]){
     // a fresh face every single time it pops out — that is the toy
     edaFace[i]=Math.floor(Math.random()*EDA_FACES.length);
     edaOut[i]=true;
-    V.squish(pan);
-    tone({f0:300+i*40,f1:640,bend:.05,dur:.09,gain:.24,pan:pan});
-    ripple(e.clientX,e.clientY,'#B6CE7E');
+    feel('bean',e.clientX,e.clientY,i*2);      // each pod position its own pitch
     countPop(e.clientX,e.clientY);
   }else{
     edaOut[i]=false;
-    tone({f0:420,f1:200,bend:.06,dur:.1,gain:.16,pan:pan});
-    noiseHit({dur:.07,type:'lowpass',freq:700,gain:.13,pan:pan});
-    ripple(e.clientX,e.clientY,'#7FA85C');
+    feel('unbean',e.clientX,e.clientY,i*2);
   }
-  if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(11); }catch(err){} }
   drawEda();
 }));
 drawEda();
@@ -3295,12 +3438,14 @@ drawPeri();
    which is actually true of real chocolate.
    ========================================================== */
 var chocSvg=$('#chocSvg');
+/* semi pitches a RECORDED crack per flavour, crackF/crackG shape the synth one:
+   dark is thinner and brighter, white is dull and soft, which is true of the
+   real thing. */
 var CHOC={
-  milk :{top:'#8A5A34',face:'#A9743F',edge:'#6B4426',crackF:2100,crackG:0.26},
-  dark :{top:'#4E3123',face:'#63402C',edge:'#372118',crackF:3000,crackG:0.30},
-  white:{top:'#DCC9A4',face:'#EEDCBB',edge:'#BFA madeup',crackG:0.20}
+  milk :{top:'#8A5A34',face:'#A9743F',edge:'#6B4426',crackF:2100,crackG:0.26,semi:0},
+  dark :{top:'#4E3123',face:'#63402C',edge:'#372118',crackF:3000,crackG:0.30,semi:3},
+  white:{top:'#DCC9A4',face:'#EEDCBB',edge:'#BFA983',crackF:1500,crackG:0.20,semi:-4}
 };
-CHOC.white.edge='#BFA983'; CHOC.white.crackF=1500; CHOC.white.crackG=0.20;
 var chocFlav='milk', chocCols=6, chocLock=false;
 function drawChoc(){
   var c=CHOC[chocFlav];
@@ -3321,21 +3466,15 @@ function drawChoc(){
     s+='<rect class="groove" data-g="0" x="'+(x0-6)+'" y="52" width="'+(w+12)+'" height="104" fill="transparent"/>';
   chocSvg.innerHTML=s;
 }
-function chocPan(x){ return (x/Math.max(1,window.innerWidth))*2-1; }
 chocSvg.addEventListener('pointerdown',safe(function(e){
   if(chocLock) return;
   var g=e.target.closest?e.target.closest('.groove'):null; if(!g) return;
-  var c=CHOC[chocFlav], pan=chocPan(e.clientX);
+  var c=CHOC[chocFlav];
   chocLock=true;
-  // the crack: a hard snap on top of a dry woody body
-  noiseHit({dur:.03,type:'bandpass',freq:c.crackF,Q:9,gain:c.crackG,pan:pan});
-  tone({f0:420,f1:150,bend:.05,dur:.09,gain:.18,wave:'square',pan:pan});
-  setTimeout(function(){ noiseHit({dur:.08,type:'lowpass',freq:600,gain:.13,pan:pan}); },40);
-  var k; for(k=0;k<5;k++)(function(k){ setTimeout(function(){
-    V.grain(pan,900+Math.random()*1600,0.035); },60+k*35); })(k);
+  // the crack: a hard snap on top of a dry woody body, through feel() so a
+  // recording of a real bar can take it over
+  feel('crack',e.clientX,e.clientY,c.semi,c.crackF,c.crackG);
   bits(e.clientX,e.clientY,c.face,6);
-  ripple(e.clientX,e.clientY,'#EFD9A0');
-  if(S.buzz&&CAN_BUZZ){ try{ navigator.vibrate(18); }catch(err){} }
   countPop(e.clientX,e.clientY);
   var at=+g.getAttribute('data-g');
   setTimeout(function(){
@@ -3445,8 +3584,8 @@ ballSvg.addEventListener('pointerdown',safe(function(e){
   if(ballTouch[e.pointerId]) return;
   try{ ballSvg.setPointerCapture(e.pointerId); }catch(err){}
   ballTouch[e.pointerId]={p:ballXY(e),press:pressureOf(e)};
-  V.squish((e.clientX/Math.max(1,window.innerWidth))*2-1);
-  ripple(e.clientX,e.clientY,'#F2B79E');
+  feel('squish',e.clientX,e.clientY);
+  if(ballVoice&&ballVoice.dead) ballVoice=null;
   if(!ballVoice) ballVoice=Stretch({f0:110,rise:0.9,gain:0.12});
   setGlow(true,e.clientX,e.clientY,0.4);
 }));
@@ -3463,7 +3602,7 @@ function ballUp(e){
   if(!Object.keys(ballTouch).length){
     if(ballVoice){ ballVoice.stop(); ballVoice=null; }
     setGlow(false);
-    V.airout((x/Math.max(1,window.innerWidth))*2-1);
+    feel('airout',x,y);          // the ball breathing back out, with a ripple
     ballPts.forEach(function(p){ p.vx-=p.dx*0.28; p.vy-=p.dy*0.28; });
   }
 }
@@ -3637,6 +3776,263 @@ if(blnSvg){
   });
 }
 
+/* ==========================================================
+   TOY 23 — RAIN STICK
+   The box had nothing you turn OVER. Everything else answers a
+   press, a drag or a pull, and answers it the instant you move.
+   This one answers slowly: you tip it, and then the sound is out
+   of your hands for a while.
+
+   Six hundred grains would be honest and unaffordable, so there
+   are ninety, each with a position along the tube and a speed,
+   falling under whatever component of gravity the tube's angle
+   gives them. They stack at the low end instead of piling onto a
+   single point, they scatter off the pins, and the friction bed
+   is driven by how many are actually moving and how fast — so a
+   slow tip trickles, a full turn pours, and level is silence.
+   ========================================================== */
+var shakeSvg=$('#shakeSvg'), shakeGrp=$('#shakeGrp'), shakeGrains=$('#shakeGrains'),
+    shakePins=$('#shakePins'), shakeHint=$('#shakeHint');
+var SH_N=90, SH_TOP=42, SH_BOT=258;     // the run the grains have, in viewBox units
+var shGrains=[], shAng=0, shDown=false, shLast=null, shVoice=null, shLanded=0;
+(function(){
+  var i,s='';
+  for(i=0;i<SH_N;i++){
+    shGrains.push({
+      p:0.55+Math.random()*0.4, v:0,
+      x:(Math.random()*2-1)*17,           // across the tube, fixed per grain
+      rest:Math.random()*0.34,            // where in the pile this one settles
+      sz:1.6+Math.random()*1.5
+    });
+  }
+  for(i=0;i<11;i++){                       // the pins they clatter down
+    var y=56+i*19, dir=(i%2)?1:-1;
+    s+='<line x1="'+(100-dir*17)+'" y1="'+y+'" x2="'+(100+dir*6)+'" y2="'+(y+9)+'"/>';
+  }
+  if(shakePins) shakePins.innerHTML=s;
+})();
+function shakeDraw(){
+  if(!shakeGrp) return;
+  shakeGrp.setAttribute('transform','rotate('+(shAng*180/Math.PI).toFixed(2)+' 100 150)');
+  var d='',i,g,y;
+  for(i=0;i<SH_N;i++){
+    g=shGrains[i];
+    y=SH_TOP+g.p*(SH_BOT-SH_TOP);
+    // a square per grain, all in one path: ninety attribute writes a frame is
+    // how you make a phone hot
+    d+='M'+(100+g.x).toFixed(1)+','+y.toFixed(1)+'h'+g.sz.toFixed(1)+
+       'v'+g.sz.toFixed(1)+'h-'+g.sz.toFixed(1)+'z';
+  }
+  shakeGrains.setAttribute('d',d);
+}
+function shakeAngle(e){
+  var r=shakeSvg.getBoundingClientRect();
+  if(!r.width) return shAng;
+  return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2));
+}
+if(shakeSvg){
+  shakeSvg.addEventListener('pointerdown',safe(function(e){
+    shDown=true;
+    try{ shakeSvg.setPointerCapture(e.pointerId); }catch(err){}
+    if(shakeHint) shakeHint.style.opacity='0';
+    shLast=shakeAngle(e);
+    ripple(e.clientX,e.clientY,'#D8C39A');
+    if(shVoice&&shVoice.dead) shVoice=null;
+    if(!shVoice) shVoice=Friction({lo:1100,hi:6200,Q:0.6,gain:0.24,body:760,bodyMix:0.28,keep:true});
+  }));
+  shakeSvg.addEventListener('pointermove',safe(function(e){
+    if(!shDown||shLast===null) return;
+    var a=shakeAngle(e), d=a-shLast;
+    while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
+    shAng+=d; shLast=a;
+    setGlow(true,e.clientX,e.clientY,0.3);
+  }));
+  ['pointerup','pointercancel'].forEach(function(ev){
+    shakeSvg.addEventListener(ev,safe(function(){ shDown=false; shLast=null; setGlow(false); }));
+  });
+}
+(function shakeTick(){
+  requestAnimationFrame(shakeTick);
+  var here=(curToy==='shake');
+  var i,g,moving=0,flow=0,hits=0;
+  var grav=Math.cos(shAng)*0.00042;      // upright means straight down the tube
+  for(i=0;i<SH_N;i++){
+    g=shGrains[i];
+    g.v=(g.v+grav)*0.986;
+    if(Math.abs(g.v)>0.00004) g.v+=(Math.random()-0.5)*0.00022;   // pins scatter them
+    g.p+=g.v;
+    var lo=g.rest*0.5, hi=1-g.rest*0.5;
+    if(g.p>hi){ g.p=hi; if(g.v>0.0016) hits++; g.v=-g.v*0.22; }
+    if(g.p<lo){ g.p=lo; if(g.v<-0.0016) hits++; g.v=-g.v*0.22; }
+    if(Math.abs(g.v)>0.0004){ moving++; flow+=Math.abs(g.v); }
+  }
+  if(!here){
+    // the grains keep settling while you are away, in silence
+    if(shVoice){ shVoice.stop(); shVoice=null; }
+    shLanded=0;
+    if(moving) shakeDraw();
+    return;
+  }
+  if(shVoice&&shVoice.dead) shVoice=null;
+  if(!shVoice&&moving>2&&audioOK)
+    shVoice=Friction({lo:1100,hi:6200,Q:0.6,gain:0.24,body:760,bodyMix:0.28,keep:true});
+  if(shVoice){
+    shVoice.set(clamp(flow*90,0,1), clamp(0.15+moving/28,0.15,1), Math.sin(shAng)*0.6);
+    if(moving===0&&!shDown){ shVoice.stop(); shVoice=null; }
+  }
+  shLanded+=hits;
+  if(shLanded>=3){
+    var box=shakeSvg.getBoundingClientRect();
+    feel('rattle',box.left+box.width/2,box.top+box.height*(Math.cos(shAng)>0?0.78:0.22),
+         0,Math.min(shLanded,12));
+    shLanded=0;
+  }
+  shakeDraw();
+})();
+shakeDraw();
+
+/* ==========================================================
+   TOY 24 — COIN
+   One flick and then it is nothing to do with you. It spins on
+   its edge, runs out of spin, and falls into the wobble every
+   dropped coin does: the contact point races round faster and
+   faster while the coin lies down flatter and flatter, until it
+   stops all at once. That accelerating rattle is the whole toy,
+   and it is the only sound in this box you cannot steer.
+
+   It lands on a face because it stopped there. Nothing counts
+   it, nothing calls it, and there is nothing to get right.
+   ========================================================== */
+var coinSvg=$('#coinSvg'), coinGrp=$('#coinGrp'), coinFace=$('#coinFace'),
+    coinEdge=$('#coinEdge'), coinMark=$('#coinMark'), coinHint=$('#coinHint');
+var COIN_R=46;
+var cnSpin=0, cnOmega=0, cnTilt=0, cnWob=0, cnState='rest', cnFace=0,
+    cnDown=false, cnSpeed=Speedo(), cnVoice=null, cnLastTick=0, cnPan=0;
+function coinDraw(){
+  if(!coinFace) return;
+  var up=cnTilt;                                  // 1 on edge, 0 lying flat
+  var spinW=Math.abs(Math.cos(cnSpin));           // how much face you can see
+  var rx=COIN_R*(up>0.5?Math.max(0.06,spinW):1);
+  var ry=COIN_R*(0.30+0.70*up);
+  var cy=120+(1-up)*34;                           // it comes down as it lies over
+  coinFace.setAttribute('rx',rx.toFixed(1)); coinFace.setAttribute('ry',ry.toFixed(1));
+  coinFace.setAttribute('cy',cy.toFixed(1));
+  coinEdge.setAttribute('rx',(rx+2.5).toFixed(1)); coinEdge.setAttribute('ry',ry.toFixed(1));
+  coinEdge.setAttribute('cy',(cy+3.5).toFixed(1));
+  // the rock: strongest as it collapses, gone by the time it is flat
+  var rock=Math.sin(cnWob)*up*(1-up)*46;
+  coinGrp.setAttribute('transform','rotate('+rock.toFixed(2)+' 100 '+cy.toFixed(1)+')');
+  var showFace=(1-up);
+  if(coinMark){
+    coinMark.setAttribute('opacity',(showFace*showFace).toFixed(2));
+    coinMark.setAttribute('transform','translate(100,'+cy.toFixed(1)+') scale('+
+      (rx/COIN_R).toFixed(3)+',1)');
+  }
+}
+function coinMarkFor(f){
+  if(!coinMark) return;
+  coinMark.innerHTML = f
+    // heads: the bandit's mask, sized to the coin
+    ? '<circle cx="0" cy="-2" r="17" fill="#B49A50"/>'+
+      '<ellipse cx="-7" cy="-4" rx="6" ry="5" fill="#8A7A4E"/>'+
+      '<ellipse cx="7" cy="-4" rx="6" ry="5" fill="#8A7A4E"/>'+
+      '<ellipse cx="0" cy="7" rx="7" ry="5" fill="#EFE2B4"/>'
+    // tails: a leaf, because a raccoon coin needs a back
+    : '<path d="M0,-17 C13,-9 13,7 0,16 C-13,7 -13,-9 0,-17 Z" fill="#B49A50"/>'+
+      '<path d="M0,-14 L0,13" stroke="#8A7A4E" stroke-width="2"/>';
+}
+coinMarkFor(0);
+function coinFlick(vx){
+  cnOmega=clamp(vx,-0.055,0.055);
+  if(Math.abs(cnOmega)<0.006) cnOmega=(cnOmega<0?-1:1)*0.006;
+  cnState='spin'; cnTilt=1; cnWob=0;
+  if(cnVoice&&cnVoice.dead) cnVoice=null;
+  if(!cnVoice&&audioOK)
+    cnVoice=Friction({lo:800,hi:4200,Q:6,gain:0.11,body:300,bodyMix:0.4,keep:true});
+}
+if(coinSvg){
+  coinSvg.addEventListener('pointerdown',safe(function(e){
+    cnDown=true;
+    try{ coinSvg.setPointerCapture(e.pointerId); }catch(err){}
+    if(coinHint) coinHint.style.opacity='0';
+    cnSpeed=Speedo(); cnSpeed.push(e.clientX,e.clientY,performance.now());
+    cnPan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
+    // catching a spinning coin stops it dead, the same as catching the spinner
+    if(cnState!=='rest'){ feel('land',e.clientX,e.clientY);
+      cnState='rest'; cnOmega=0; cnTilt=0; cnWob=0;
+      if(cnVoice){ cnVoice.stop(); cnVoice=null; }
+      coinDraw(); return; }
+    ripple(e.clientX,e.clientY,'#EFD9A0');
+  }));
+  coinSvg.addEventListener('pointermove',safe(function(e){
+    if(!cnDown) return;
+    cnSpeed.push(e.clientX,e.clientY,performance.now());
+    cnPan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
+    setGlow(true,e.clientX,e.clientY,cnSpeed.v);
+  }));
+  ['pointerup','pointercancel'].forEach(function(ev){
+    coinSvg.addEventListener(ev,safe(function(e){
+      if(!cnDown) return;
+      cnDown=false; setGlow(false);
+      if(cnState!=='rest') return;
+      var sp=cnSpeed.v;
+      // a tap is a gentle spin, a swipe is a hard one. Either way it goes.
+      coinFlick((0.012+sp*0.045)*(cnPan>0?-1:1));
+      feel('tap',(e&&e.clientX)||window.innerWidth/2,(e&&e.clientY)||vpH()/2);
+    }));
+  });
+}
+(function coinTick(now){
+  requestAnimationFrame(coinTick);
+  if(cnState==='rest'&&curToy!=='coin') return;
+  now=now||performance.now();
+  var here=(curToy==='coin');
+  var dt=16;
+  if(cnState==='spin'){
+    cnSpin+=cnOmega*dt;
+    cnOmega*=0.9955;
+    cnWob+=0.05;
+    if(Math.abs(cnOmega)<0.0075){ cnState='fall'; cnWob=0; cnLastTick=0; }
+  }else if(cnState==='fall'){
+    /* Euler's disk: as the tilt collapses the contact point circles faster.
+       The rate blows up as tilt approaches zero, which is exactly why a
+       dropped coin ends in that rush of clicks. */
+    var rate=0.055+0.20/(cnTilt+0.10);
+    cnWob+=rate;
+    cnSpin+=cnOmega*dt;
+    cnOmega*=0.988;
+    cnTilt-=0.0042+0.010*(1-cnTilt);
+    var tick=Math.floor(cnWob/(Math.PI*2));
+    if(tick!==cnLastTick){
+      cnLastTick=tick;
+      if(here&&cnTilt>0.02){
+        var box=coinSvg.getBoundingClientRect();
+        // higher and quieter as it flattens out
+        voice('ring',cnPan*0.5,[10*(1-cnTilt)]);
+        if(cnTilt<0.35) ripple(box.left+box.width*(0.5+Math.sin(cnWob)*0.12),
+                               box.top+box.height*0.62,'#EFD9A0');
+      }
+    }
+    if(cnTilt<=0.02){
+      cnTilt=0; cnState='rest';
+      cnFace=(Math.floor(Math.abs(cnSpin)/Math.PI))%2;
+      coinMarkFor(cnFace);
+      if(cnVoice){ cnVoice.stop(); cnVoice=null; }
+      if(here){
+        var b2=coinSvg.getBoundingClientRect();
+        feel('land',b2.left+b2.width/2,b2.top+b2.height*0.62);
+      }
+    }
+  }
+  if(cnVoice&&cnVoice.dead) cnVoice=null;
+  if(cnVoice){
+    cnVoice.set(here?clamp(Math.abs(cnOmega)/0.04,0,1)*cnTilt:0,0.6,cnPan*0.4);
+    if(!here){ cnVoice.stop(); cnVoice=null; }
+  }
+  coinDraw();
+})();
+coinDraw();
+
 var TOYS=[
  {id:'coon',  label:'bandit',   g:'<circle cx="12" cy="11" r="6" fill="#6E677C"/><circle cx="28" cy="11" r="6" fill="#6E677C"/><circle cx="20" cy="22" r="15" fill="#7A7389"/><ellipse cx="14" cy="20" rx="5" ry="4" fill="#2A2434"/><ellipse cx="26" cy="20" rx="5" ry="4" fill="#2A2434"/><ellipse cx="20" cy="30" rx="7" ry="5" fill="#DED7CB"/>'},
  {id:'pup',   label:'puppet',   g:'<path d="M34 20 L6 15 Q2 20 6 25 Z" fill="#8E3A4A"/><path d="M34 18 L8 16 Q3 12 9 7 L30 6 Q35 8 35 14 Z" fill="#9B7BAB"/><path d="M34 22 L8 24 Q3 28 9 33 L30 34 Q35 32 35 26 Z" fill="#9B7BAB"/><circle cx="18" cy="10" r="4" fill="#F4EFE6"/><circle cx="18" cy="11" r="2" fill="#1E1926"/>'},
@@ -3653,6 +4049,8 @@ var TOYS=[
  {id:'wall',  label:'switches',  g:'<rect x="4" y="4" width="14" height="15" rx="3" fill="#221D2E"/><rect x="7" y="6" width="8" height="6" rx="2" fill="#E4DED2"/><rect x="22" y="4" width="14" height="15" rx="3" fill="#221D2E"/><rect x="25" y="11" width="8" height="6" rx="2" fill="#9FD6C0"/><rect x="4" y="22" width="14" height="15" rx="3" fill="#221D2E"/><rect x="7" y="29" width="8" height="6" rx="2" fill="#9FD6C0"/><rect x="22" y="22" width="14" height="15" rx="3" fill="#221D2E"/><rect x="25" y="24" width="8" height="6" rx="2" fill="#E4DED2"/>'},
  {id:'ball',  label:'squeeze',   g:'<path d="M20 4 C31 4 36 12 36 20 C36 29 30 36 20 36 C10 36 4 29 4 20 C4 12 9 4 20 4 Z" fill="#F2B79E"/><path d="M12 12 q6 -6 13 -2 q-5 7 -13 2 Z" fill="#fff" opacity=".35"/><path d="M36 20 q-7 2 -7 6" stroke="#CE9B7C" stroke-width="3" fill="none"/>'},
  {id:'bln',   label:'balloon',  g:'<ellipse cx="20" cy="16" rx="11" ry="13" fill="#EDA9B4"/><path d="M17 29 Q20 33 23 29 Z" fill="#D98F9C"/><path d="M20 31 Q24 34 21 38" stroke="#8A8296" stroke-width="1.4" fill="none"/><ellipse cx="16" cy="11" rx="3" ry="4" fill="#fff" opacity=".34"/>'},
+ {id:'shake', label:'rain stick',g:'<rect x="14" y="3" width="12" height="34" rx="6" fill="#4A3B2C"/><rect x="16" y="5" width="8" height="30" rx="4" fill="#C9B392"/><circle cx="20" cy="26" r="1.6" fill="#5E4B33"/><circle cx="18" cy="30" r="1.6" fill="#5E4B33"/><circle cx="22" cy="31" r="1.6" fill="#5E4B33"/><circle cx="19" cy="34" r="1.6" fill="#5E4B33"/><circle cx="22" cy="22" r="1.6" fill="#5E4B33"/><path d="M16 12 L23 15 M24 18 L17 21" stroke="#9A8461" stroke-width="1.4"/>'},
+ {id:'coin',  label:'coin',     g:'<ellipse cx="20" cy="22" rx="14" ry="14" fill="#8A7A4E"/><ellipse cx="20" cy="20" rx="14" ry="14" fill="#D8C075"/><circle cx="20" cy="19" r="6" fill="#B49A50"/><ellipse cx="17" cy="18" rx="2.2" ry="1.8" fill="#8A7A4E"/><ellipse cx="23" cy="18" rx="2.2" ry="1.8" fill="#8A7A4E"/><ellipse cx="20" cy="23" rx="2.6" ry="1.8" fill="#EFE2B4"/>'},
  {id:'sand',  label:'sand',     g:'<rect x="4" y="6" width="32" height="28" rx="5" fill="#C8B394"/><path d="M8 14 Q20 8 32 16" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 22 Q20 16 32 24" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 30 Q20 24 32 32" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/>'},
  {id:'cradle',label:'cradle',   g:'<rect x="4" y="6" width="32" height="3" rx="1" fill="#4A4258"/><line x1="9" y1="8" x2="6" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="16" y1="8" x2="16" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="23" y1="8" x2="23" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="30" y1="8" x2="34" y2="24" stroke="#6E677C" stroke-width="1.5"/><circle cx="6" cy="28" r="5" fill="#B6AEC4"/><circle cx="16" cy="28" r="5" fill="#B6AEC4"/><circle cx="23" cy="28" r="5" fill="#B6AEC4"/><circle cx="34" cy="28" r="5" fill="#B6AEC4"/>'},
  {id:'spring',label:'spring',   g:'<rect x="12" y="4" width="16" height="4" rx="2" fill="#4A4258"/><path d="M20 8 C32 11 32 14 20 17 C8 20 8 23 20 26 C32 29 32 32 20 35" stroke="#B6AEC4" stroke-width="3.5" fill="none" stroke-linecap="round"/><rect x="12" y="34" width="16" height="5" rx="2.5" fill="#9FD6C0"/>'},
@@ -3871,6 +4269,33 @@ if(!CAN_BUZZ){
   swBuzz.disabled=true; swBuzz.setAttribute('aria-checked','false');
   $('#buzzSub').textContent='This phone or browser can\u2019t buzz. Sound and ripples still work.';
 }
+/* Taking your settings back. Two taps rather than a dialog: a modal asking you
+   to confirm is one more thing to read, and the button saying "sure?" for four
+   seconds says the same in place. Nothing else is stored, so this really is
+   everything the app knows about you. */
+var wipeBtn=$('#wipeBtn'), wipeArmed=0;
+wipeBtn.addEventListener('click',safe(function(e){
+  var now=Date.now();
+  if(now-wipeArmed>4000){
+    wipeArmed=now; wipeBtn.textContent='sure?';
+    $('#wipeSub').textContent='Tap again to forget everything.';
+    setTimeout(function(){
+      if(Date.now()-wipeArmed>=4000&&wipeBtn.textContent==='sure?'){
+        wipeBtn.textContent='reset';
+        $('#wipeSub').textContent='Forget the settings and the pinned toys.';
+      }
+    },4100);
+    return;
+  }
+  wipeArmed=0;
+  try{ localStorage.removeItem('bandit-set'); }catch(err){}
+  S.vol=0.65; S.quiet=false; S.calm=false; S.buzz=true; S.soft=false; S.grip=0.5;
+  S.theme='night'; S.fun=true; S.tally=false; S.word='pop'; S.total=0; S.favs=[];
+  applyS(); orderStrip(); updateTally(); updateBankLabel();
+  wipeBtn.textContent='reset';
+  $('#wipeSub').textContent='Forgotten. The box is as it came.';
+  feel('bell',e.clientX||window.innerWidth/2,e.clientY||vpH()*0.4);
+}));
 $('#testBtn').addEventListener('click',safe(function(e){
   if(!audioOK) startAudio();
   feel('pop',e.clientX||window.innerWidth/2,e.clientY||window.innerHeight/2);

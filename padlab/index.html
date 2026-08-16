@@ -286,6 +286,8 @@
   .rec-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
   .rec-item audio{height:34px;flex:1;min-width:0;}
   .rec-item a{font-size:12px;color:var(--amber);text-decoration:none;border:1px solid var(--amber);border-radius:8px;padding:6px 9px;}
+  .rec-item .wavbtn{font-family:var(--mono);font-size:11px;color:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:6px 8px;background:none;min-width:44px;}
+  .rec-item .wavbtn:disabled{opacity:.5;}
   .rec-item .del{width:30px;height:30px;border-radius:8px;background:var(--raise);border:1px solid var(--line);font-size:13px;}
   .fx-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
   .fx-row .fx-name{width:78px;font-weight:600;font-size:13px;}
@@ -302,12 +304,17 @@
      colours inside the canvas, since that iso look is the toy; the
      chrome around it uses the studio's variables so the tab does not
      read as a different app bolted on. */
-  #mb-stage{position:relative;flex:1 1 auto;min-height:300px;
+  /* The stage takes whatever the dock leaves. It used to be pinned at its
+     300px floor, because the section was auto-height and a flex:1 child of an
+     auto-height box has nothing to grow into: on a tall phone the plate sat in
+     a letterbox with dead space under the dock. */
+  #mb-stage{position:relative;flex:1 1 auto;min-height:260px;
     border:1px solid var(--line);border-radius:14px;overflow:hidden;
     background:#0d1017;margin-bottom:10px}
   #mb-cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
   #mb-zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
   #mb-zoom .mb-btn{width:48px;height:48px;padding:0;font-size:19px;line-height:1}
+  #mb-fit{font-size:13px;font-weight:700}
   #mb-remove{position:absolute;right:8px;bottom:8px;display:none}
   #mb-selinfo{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--text);
     background:rgba(14,15,18,.82);border:1px solid var(--line2);padding:6px 10px;
@@ -330,7 +337,7 @@
   .mb-dot{width:13px;height:13px;border-radius:50%;flex:0 0 auto}
   #mb-hint{font-size:11px;color:var(--dim2);text-align:center;line-height:1.5}
   #view-marble{display:none}
-  #view-marble.on{display:flex;flex-direction:column}
+  #view-marble.on{display:flex;flex-direction:column;min-height:100%}
 </style>
 </head>
 <body>
@@ -351,7 +358,7 @@
     <div class="brand">PAD<b>LAB</b></div>
     <div class="grow"></div>
     <button class="hbtn dice" id="diceBtn" title="Surprise me"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg></button>
-    <div class="midi-pill" id="midiPill" title="MIDI status — tap for settings"><span class="led" id="midiLed"></span><span id="midiName">—</span></div>
+    <div class="midi-pill" id="midiPill" title="MIDI status. Tap for settings"><span class="led" id="midiLed"></span><span id="midiName">none</span></div>
     <button class="hbtn" id="fxBtn" title="Effects"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="14" r="2.4" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="16" r="2.4" fill="currentColor" stroke="none"/></svg></button>
     <button class="hbtn" id="installBtn" title="Add to Home Screen"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
     <button class="hbtn" id="settingsBtn" title="Settings"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button>
@@ -372,7 +379,7 @@
   </div>
 
   <div class="setup-bar" id="padSetupBar">
-    <span id="padSetupTxt">New MPK connected — 10-second setup so pads hit drums</span>
+    <span id="padSetupTxt">New MPK connected. A 10 second setup so pads hit drums</span>
     <button class="chip small on" id="padSetupGo">Match pads</button>
     <button class="chip small" id="padSetupSkip">Later</button>
   </div>
@@ -392,7 +399,7 @@
   <main>
     <!-- BEATS -->
     <section class="view on" id="view-beats">
-      <div class="section-title"><span class="label">Fat beats — tap to play, tap again to stop</span><span class="line"></span></div>
+      <div class="section-title"><span class="label">Fat beats. Tap to play, tap again to stop</span><span class="line"></span></div>
       <div class="grooves" id="grooves"></div>
 
       <div class="section-title"><span class="label">Pattern</span><span class="line"></span><span class="mini">slots + swing</span></div>
@@ -416,7 +423,7 @@
         <div class="seq-body" id="seq"></div>
       </div>
 
-      <div class="section-title"><span class="label">Free drum kits — tap to load onto pads</span><span class="line"></span><span class="mini">"keep" = offline</span></div>
+      <div class="section-title"><span class="label">Free drum kits. Tap to load onto pads</span><span class="line"></span><span class="mini">"keep" = offline</span></div>
       <div class="inst-scroll" id="packScroll"></div>
 
       <div class="section-title"><span class="label">Drum pads</span><span class="line"></span></div>
@@ -429,7 +436,7 @@
         <span class="label">hold a pad to repeat</span>
       </div>
 
-      <div class="section-title"><span class="label">Effects — the 8 knobs on your MPK</span><span class="line"></span><span class="mini">drag a dial, or twist K1–K8</span></div>
+      <div class="section-title"><span class="label">Effects. The 8 knobs on your MPK</span><span class="line"></span><span class="mini">drag a dial, or twist K1 to K8</span></div>
       <div class="fx-rack" id="fxRack"></div>
     </section>
 
@@ -439,7 +446,7 @@
       <div class="inst-filter" id="instFilter"></div>
       <div class="inst-scroll" id="instScroll"></div>
 
-      <div class="section-title"><span class="label">Key &amp; scale — so it always sounds good</span><span class="line"></span></div>
+      <div class="section-title"><span class="label">Key &amp; scale, so it always sounds good</span><span class="line"></span></div>
       <div class="scale-bar">
         <select class="selectlike" id="keyRoot"></select>
         <select class="selectlike" id="scaleSel"></select>
@@ -500,7 +507,7 @@
         </div>
       </div>
       <div class="section-title"><span class="label">Tip</span><span class="line"></span></div>
-      <div class="steps" style="padding:0 2px;">Load a beat, trim to your favorite part, then <b>Chop into pads</b> — each slice lands on a pad so you can replay the chops live and even sequence them. Or <b>Play across keys</b> to turn any sound into a pitched instrument.</div>
+      <div class="steps" style="padding:0 2px;">Load a beat, trim to your favorite part, then <b>Chop into pads</b>. Each slice lands on a pad so you can replay the chops live and even sequence them. Or <b>Play across keys</b> to turn any sound into a pitched instrument.</div>
     </section>
 
     <!-- MARBLE -->
@@ -511,6 +518,7 @@
         <div id="mb-zoom">
           <button class="mb-btn" id="mb-zin" aria-label="Zoom in">+</button>
           <button class="mb-btn" id="mb-zout" aria-label="Zoom out">&minus;</button>
+          <button class="mb-btn" id="mb-fit" aria-label="Fit the whole plate on screen">Fit</button>
         </div>
         <div id="mb-selinfo"></div>
         <button class="mb-btn mb-danger" id="mb-remove">Remove</button>
@@ -520,12 +528,13 @@
           <button class="mb-btn" id="mb-plate">+ Plate</button>
           <button class="mb-btn" id="mb-demo">Demo</button>
           <button class="mb-btn" id="mb-clear">Clear</button>
+          <button class="mb-btn" id="mb-undo" style="display:none">Undo</button>
           <button class="mb-btn" id="mb-showbeat" aria-pressed="false">Show my beat</button>
         </div>
         <div class="mb-row" id="mb-instrow"></div>
         <div class="mb-row" id="mb-noterow"></div>
         <div class="mb-row" id="mb-pitchrow" style="display:none"></div>
-        <div id="mb-hint">Tap to drop or pick up &middot; drag a marble sideways to shift its beat &middot; drag to pan &middot; two fingers to orbit and zoom</div>
+        <div id="mb-hint">Tap to drop or pick up &middot; drag a marble sideways to shift its beat &middot; drag to pan &middot; two fingers to orbit and zoom &middot; Fit puts the whole plate back on screen</div>
       </div>
     </section>
   </main>
@@ -608,9 +617,9 @@
     </div>
     <div class="mk-keys" id="mkKeys"><div id="mkKeysGlow"></div></div>
   </div>
-  <div class="mk-cap" id="mkMon" style="margin-top:8px;text-align:left;">MIDI in: — (play something and watch this line)</div>
+  <div class="mk-cap" id="mkMon" style="margin-top:8px;text-align:left;">MIDI in: nothing yet. Play something and watch this line</div>
   <div id="mkAssign" style="display:none;"></div>
-  <p class="steps" style="margin-top:10px;">The MPK's own <b>ARP</b> and <b>TAP</b> buttons work already — they play through whatever sound is chosen. <b>Bank B</b> (8 more pads) is next on the build list. If a knob does nothing, tap it here, choose <b>Twist to re-bind</b>, then turn that hardware knob once.</p>
+  <p class="steps" style="margin-top:10px;">The MPK's own <b>ARP</b> and <b>TAP</b> buttons work already. They play through whatever sound is chosen. <b>Bank B</b> (8 more pads) is next on the build list. If a knob does nothing, tap it here, choose <b>Twist to re-bind</b>, then turn that hardware knob once.</p>
 </div></div>
 
 <!-- RECORDINGS -->
@@ -753,8 +762,8 @@ let knobSetupDone=false;     // knob half of the same setup (chained after pads,
 let tourDone=false, tourStep=-1;
 const TOUR=[
   {txt:"Welcome to PadLab! Tap one of the beat cards above to start a groove.",check:"groove"},
-  {txt:"That's your beat. Now smack a drum pad (scroll down — or hit your MPK).",check:"pad"},
-  {txt:"Open the KEYS tab and play — with Scale lock on, every note fits the song.",check:"note"},
+  {txt:"That's your beat. Now smack a drum pad (scroll down, or hit your MPK).",check:"pad"},
+  {txt:"Open the KEYS tab and play. With Scale lock on, every note fits the song.",check:"note"},
   {txt:"Last thing: the SAMPLE tab records ANY sound and chops it onto pads. Go make noise."}
 ];
 function tourShow(i){ tourStep=i; const b=document.getElementById("tourBar"); if(!b) return; b.classList.add("on");
@@ -815,9 +824,9 @@ function onCC(cc,val){
   if(cc===64){ sustainOn=val>=64; const ch=document.getElementById("sustainChip"); if(ch) ch.classList.toggle("on",sustainOn); if(!sustainOn) releaseSustain(); return; }
   if(knobMatch){ if(!knobMatch.bound.has(cc)){ knobCCs[knobMatch.idx]=cc; knobMatch.bound.add(cc); knobMatch.idx++;
     const tx=document.getElementById("padSetupTxt");
-    if(knobMatch.idx>=8){ knobMatch=null; knobSetupDone=true; hideSetupBar(); toast("All 8 knobs matched — turn them!"); knobsChanged(); saveSoon(); }
-    else { toast("K"+knobMatch.idx+" ✓ — now turn K"+(knobMatch.idx+1));
-      if(tx && document.getElementById("padSetupBar").classList.contains("on")) tx.textContent="Knob K"+knobMatch.idx+" ✓ — now turn K"+(knobMatch.idx+1)+" of 8"; } } return; }
+    if(knobMatch.idx>=8){ knobMatch=null; knobSetupDone=true; hideSetupBar(); toast("All 8 knobs matched. Turn them!"); knobsChanged(); saveSoon(); }
+    else { toast("K"+knobMatch.idx+" done. Now turn K"+(knobMatch.idx+1));
+      if(tx && document.getElementById("padSetupBar").classList.contains("on")) tx.textContent="Knob K"+knobMatch.idx+" done. Now turn K"+(knobMatch.idx+1)+" of 8"; } } return; }
   if(knobLearn>=0){ knobCCs[knobLearn]=cc; toast("K"+(knobLearn+1)+" bound to that knob"); knobLearn=-1; knobsChanged(); saveSoon(); return; }
   const ki=knobCCs.indexOf(cc); if(ki>=0) applyKnob(ki,val/127);
 }
@@ -921,7 +930,7 @@ async function selectInstrument(id){
   ensureAudio(); const inst=ALL_INST.find(x=>x.id===id); if(!inst) return false;
   const card=document.querySelector('.inst[data-id="'+id+'"]');
   if(inst.kind!=="synth"){ document.querySelectorAll(".inst").forEach(c=>c.classList.remove("loading")); if(card) card.classList.add("loading");
-    try{ await loadSampler(inst); }catch(e){ toast("Couldn't load "+inst.name+" — check connection"); if(card) card.classList.remove("loading"); return false; }
+    try{ await loadSampler(inst); }catch(e){ toast("Couldn't load "+inst.name+". Check the connection"); if(card) card.classList.remove("loading"); return false; }
     if(card) card.classList.remove("loading"); }
   currentInstId=id; userSampleInst=null; renderInstruments(); saveSoon(); return true;
 }
@@ -1090,7 +1099,7 @@ async function loadPack(pack){
     }catch(e){}
   }));
   if(card) card.classList.remove("loading");
-  if(loaded===0){ toast("Couldn't load "+pack.name+" — check connection"); return; }
+  if(loaded===0){ toast("Couldn't load "+pack.name+". Check the connection"); return; }
   currentPack=pack.id; renderPads(); renderSeq(); renderPacks(); saveSoon();
   toast(pack.name+" loaded onto the pads");
   const t=ct()+.05; triggerPadAt(0,t,1); triggerPadAt(1,t+.28,1);
@@ -1171,7 +1180,7 @@ function highlightStep(s){ document.querySelectorAll(".cell.play").forEach(c=>c.
 function songSlotUI(){ document.querySelectorAll(".slot").forEach(x=>x.classList.toggle("active",+x.dataset.slot===curSlot));
   if(curSlot!==lastSlotRendered){ lastSlotRendered=curSlot; renderSeq(); } renderSong(); }
 function renderSong(){ const bar=document.getElementById("songBar"); if(!bar) return;
-  const disp=songChain.length?songChain.map((i,idx)=>'<span'+(songMode&&isPlaying&&idx===songPos?' style="color:var(--amber)"':'')+'>'+"ABCD"[i]+'</span>').join(" "):"—";
+  const disp=songChain.length?songChain.map((i,idx)=>'<span'+(songMode&&isPlaying&&idx===songPos?' style="color:var(--amber)"':'')+'>'+"ABCD"[i]+'</span>').join(" "):"empty";
   bar.innerHTML='<span class="label">Chain:</span><span class="mono" id="songChainDisp" style="font-size:14px;letter-spacing:2px;">'+disp+'</span>'+
     '<button class="chip small" data-add="0">+A</button><button class="chip small" data-add="1">+B</button><button class="chip small" data-add="2">+C</button><button class="chip small" data-add="3">+D</button>'+
     '<button class="chip small" id="songUndo">⌫</button><button class="chip small" id="songClear">Clear</button>';
@@ -1222,7 +1231,11 @@ function arpTick(g,t,six){ const rate={"1/16":1,"1/8":2,"1/4":4}[arpRate]; if(g%
 }
 function playArpNote(m,t,dur){ voiceFor(m,.85,t,Math.max(.05,dur*0.9)); uiQ.push({t,fn:()=>{ lightKeyByMidi(m,true); setTimeout(()=>lightKeyByMidi(m,false),Math.min(220,dur*900)); }}); }
 
-function startBeat(){ if(isPlaying) return; isPlaying=true; if(songMode) songPos=-1; if(countIn){ countinLeft=1; } else countinLeft=0; ensureClock();
+/* The clock may already be running for the arpeggiator or a held roll, in which
+   case startClock does nothing and the bar would start at whatever sixteenth
+   the arp had reached: the beat comes in on the wrong foot and every marble
+   inherits the same offset. Start the bar at step one either way. */
+function startBeat(){ if(isPlaying) return; isPlaying=true; if(songMode) songPos=-1; if(clockRunning) grid=0; if(countIn){ countinLeft=1; } else countinLeft=0; ensureClock();
   const b=document.getElementById("playBtn"); b.textContent="■"; b.classList.add("on"); }
 function stopBeat(){ isPlaying=false; countinLeft=0; ensureClock(); const b=document.getElementById("playBtn"); b.textContent="▶"; b.classList.remove("on"); }
 
@@ -1265,7 +1278,7 @@ function dragHandle(which){ const wrap=document.getElementById("waveWrap"); retu
   window.addEventListener("pointermove",move); window.addEventListener("pointerup",end); }; }
 function chopToPads(){ if(!sampleBuffer) return; const n=Math.min(8,sliceCount); const dur=trim[1]-trim[0]; const slice=dur/n;
   for(let i=0;i<n;i++){ const st=trim[0]+i*slice; pads[i]={name:"Chop "+(i+1),kind:"sample",buffer:sampleBuffer,trim:[st,st+slice]}; persistPadSample(i,{buffer:sampleBuffer,trim:[st,st+slice],name:"Chop "+(i+1)}); }
-  renderPads(); renderSeq(); saveSoon(); document.querySelector('.tab[data-view="beats"]').click(); toast("Chopped onto "+n+" pads — play or sequence them"); }
+  renderPads(); renderSeq(); saveSoon(); document.querySelector('.tab[data-view="beats"]').click(); toast("Chopped onto "+n+" pads. Play or sequence them"); }
 
 /* -------------------- inspire -------------------- */
 function inspire(){ ensureAudio(); const gi=Math.floor(Math.random()*GROOVES.length); loadGroove(gi);
@@ -1287,7 +1300,7 @@ function renderMPK(){
     d.onclick=()=>openKnobAssign(i); kw.appendChild(d); mpkKnobUI(i,knobVals[i]); }
   const pw=document.getElementById("mkPads"); pw.innerHTML="";
   [4,5,6,7,0,1,2,3].forEach(i=>{ const d=document.createElement("div"); d.className="mk-pad"; d.id="mkPad"+i;
-    d.innerHTML='<span class="n">PAD '+(i+1)+'</span><span class="nm">'+(pads[i]?pads[i].name:"—")+'</span>';
+    d.innerHTML='<span class="n">PAD '+(i+1)+'</span><span class="nm">'+(pads[i]?pads[i].name:"empty")+'</span>';
     d.onclick=()=>openPadSettings(i); pw.appendChild(d); });
   document.getElementById("mkKeys").onclick=()=>{ closeSheets(); document.querySelector('.tab[data-view="keys"]').click(); };
 }
@@ -1313,12 +1326,12 @@ function refreshMIDI(){ const sel=document.getElementById("midiSelect"); const i
   if(ins.length===0){ sel.innerHTML="<option>none found</option>"; setMidi("warn","no device"); return; }
   ins.forEach(i=>{ const o=document.createElement("option"); o.value=i.id; o.textContent=i.name; sel.appendChild(o); });
   const pick=ins.find(i=>/mpk|mini|akai/i.test(i.name))||ins[0]; sel.value=pick.id; connectMIDI(pick.id); }
-function connectMIDI(id){ if(currentInput) currentInput.onmidimessage=null; currentInput=[...midiAccess.inputs.values()].find(i=>i.id===id); if(!currentInput){ setMidi("warn","—"); return; } currentInput.onmidimessage=onMIDI; setMidi("ok",currentInput.name.replace(/\s*\d+$/,""));
+function connectMIDI(id){ if(currentInput) currentInput.onmidimessage=null; currentInput=[...midiAccess.inputs.values()].find(i=>i.id===id); if(!currentInput){ setMidi("warn","none"); return; } currentInput.onmidimessage=onMIDI; setMidi("ok",currentInput.name.replace(/\s*\d+$/,""));
   if(!padMapConfirmed){ const b=document.getElementById("padSetupBar"); if(b) b.classList.add("on"); }
   // hardware players expect real chromatic keys — lift the scale lock once per session
   if(!connectMIDI._chromDone && scaleLock){ connectMIDI._chromDone=true; scaleLock=false;
     try{ rebuildScale(); syncScaleUI(); renderKeyboard(); }catch(e){}
-    toast("MPK detected — full chromatic keys (Scale lock off)"); saveSoon(); } }
+    toast("MPK detected. Full chromatic keys, Scale lock off"); saveSoon(); } }
 function startPadMatch(){ ensureAudio(); learnPadIndex=0;
   const b=document.getElementById("padSetupBar"), tx=document.getElementById("padSetupTxt");
   if(b) b.classList.add("on"); if(tx) tx.textContent="Hit pad 1 of 8 on your MPK…";
@@ -1332,11 +1345,11 @@ function padMatchDone(){ padMapConfirmed=true; saveSoon();
   if(!knobSetupDone){ // chain straight into the knob half of the setup
     const tx=document.getElementById("padSetupTxt"), go=document.getElementById("padSetupGo"), sk=document.getElementById("padSetupSkip");
     const b=document.getElementById("padSetupBar"); if(b) b.classList.add("on");
-    if(tx) tx.textContent="Pads done ✓ — now the knobs. Turn K1 of 8 on your MPK…";
+    if(tx) tx.textContent="Pads done. Now the knobs: turn K1 of 8 on your MPK…";
     if(go) go.style.display="none"; if(sk) sk.textContent="Skip";
     knobMatch={idx:0,bound:new Set()};
   } else hideSetupBar(); }
-function setMidi(state,name){ document.getElementById("midiLed").className="led "+(state==="ok"?"ok":"warn"); document.getElementById("midiName").textContent=name||"—"; }
+function setMidi(state,name){ document.getElementById("midiLed").className="led "+(state==="ok"?"ok":"warn"); document.getElementById("midiName").textContent=name||"none"; }
 /* Pads are routed by CHANNEL first: MPK factory pads transmit on ch 10
    (0-indexed 9) with notes 36-43 bank A / 44-51 bank B. Note-table lookup
    alone mis-routed any pad whose note wasn't in padNotes into the melodic
@@ -1357,7 +1370,7 @@ function onMIDI(msg){ const [st,d1,d2]=msg.data; const cmd=st&0xf0, mch=st&0x0f;
   mpkMon(st,d1,d2);
   if(cmd===0x90&&d2>0){ ensureAudio();
     if(learnPadIndex>=0){ padNotes[learnPadIndex]=d1; learnPadIndex++;
-      if(learnPadIndex>=8){ learnPadIndex=-1; toast("Pads mapped — hit them!"); renderPads(); document.getElementById("learnPadsBtn").textContent="Start"; padMatchDone(); }
+      if(learnPadIndex>=8){ learnPadIndex=-1; toast("Pads mapped. Hit them!"); renderPads(); document.getElementById("learnPadsBtn").textContent="Start"; padMatchDone(); }
       else { toast("Now hit pad "+(learnPadIndex+1)); padMatchProgress(); } return; }
     const pi=midiPadIndex(d1,mch); if(pi>=0) padDown(pi,d2/127); else noteOn(d1,d2/127); }
   else if(cmd===0x80||(cmd===0x90&&d2===0)){ const pi=midiPadIndex(d1,mch); if(pi<0) noteOff(d1); else padUp(pi); }
@@ -1381,7 +1394,7 @@ async function setupPWA(){ const i192=makeIcon(192), i512=makeIcon(512);
     const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"}); const ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml); }
   // Versioned registration, bumped in lockstep with SHELL_VERSION in sw.js —
   // this host edge-pins bare sw.js URLs for 7 days, so a bare URL never updates.
-  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=10"); }catch(e){} }
+  if(hosted && "serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("./sw.js?v=11"); }catch(e){} }
 }
 let deferredPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; });
@@ -1408,8 +1421,29 @@ function stopRecord(){ if(jamRec && jamRec.state!=="inactive") jamRec.stop(); re
 function renderRecordings(){ const list=document.getElementById("recList"); const empty=document.getElementById("recEmpty"); list.innerHTML="";
   if(recordings.length===0){ empty.style.display="block"; return; } empty.style.display="none";
   recordings.forEach((r,i)=>{ const el=document.createElement("div"); el.className="rec-item";
-    el.innerHTML='<audio controls src="'+r.url+'"></audio><a href="'+r.url+'" download="'+r.name+'">Save</a><button class="del" data-i="'+i+'"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>'; list.appendChild(el); });
-  list.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.i; const r=recordings[i]; recordings.splice(i,1); try{URL.revokeObjectURL(r.url);}catch(e){} idbDel("rec:"+r.name).catch(()=>{}); renderRecordings(); })); }
+    el.innerHTML='<audio controls src="'+r.url+'"></audio><a href="'+r.url+'" download="'+r.name+'">Save</a><button class="wavbtn" data-w="'+i+'">WAV</button><button class="del" data-i="'+i+'"><svg class="svgic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>'; list.appendChild(el); });
+  list.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.i; const r=recordings[i]; recordings.splice(i,1); try{URL.revokeObjectURL(r.url);}catch(e){} idbDel("rec:"+r.name).catch(()=>{}); renderRecordings(); }));
+  list.querySelectorAll(".wavbtn").forEach(b=>b.addEventListener("click",()=>takeToWav(recordings[+b.dataset.w],b))); }
+/* Takes are recorded as WebM/Opus, which phones and messaging apps are happy
+   with and music software mostly is not. The browser can already decode its own
+   recording, and encodeWAV is already here for pad samples, so the take goes
+   out as a real 16 bit WAV without an OfflineAudioContext render. Decoding is
+   the slow part on a long take, hence the button going quiet while it works. */
+async function takeToWav(r,btn){
+  if(!r||!r.blob) return;
+  if(btn){ btn.disabled=true; btn.textContent="..."; }
+  try{
+    ensureAudio();
+    const buf=await AC.decodeAudioData(await r.blob.arrayBuffer());
+    const url=URL.createObjectURL(encodeWAV(buf));
+    const a=document.createElement("a"); a.href=url;
+    a.download=r.name.replace(/\.[^.]+$/,"")+".wav";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>{ try{URL.revokeObjectURL(url);}catch(e){} },5000);
+    toast("WAV saved. Drop it straight into your music software");
+  }catch(e){ toast("Could not turn that take into a WAV"); }
+  if(btn){ btn.disabled=false; btn.textContent="WAV"; }
+}
 
 /* -------------------- IndexedDB persistence -------------------- */
 let _db=null, idbOK=true;
@@ -1434,7 +1468,8 @@ let saveTimer=null;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveProject,600); }
 function collectState(){ return { v:4, tempo,swing,keyRoot,scaleName,scaleLock,currentInstId,curSlot,octaveShift,pianoView,
     marble:{ marbles:mbMarbles.map(m=>({gx:m.gx,gy:m.gy,type:m.type,shelf:m.shelf,deg:m.deg,phase:m.phase})),
-             plates:mbPlates.map(p=>({x0:p.x0,y0:p.y0,w:p.w,h:p.h})), showBeat:mbShowBeat },
+             plates:mbPlates.map(p=>({x0:p.x0,y0:p.y0,w:p.w,h:p.h})), showBeat:mbShowBeat,
+             sel:{type:mbSel.type,shelf:mbSel.shelf,deg:mbSel.deg} },
     chordMode,arpOn,arpMode,arpRate,arpLatch,sustainOn,metroOn,countIn,
     fx:{reverb:reverbSend?reverbSend.gain.value:.18,delay:delaySend?delaySend.gain.value:.1,delayMult,tone:toneFilter?toneFilter.frequency.value:20000,flanger:flangerWet?flangerWet.gain.value/.9:0},
     padNotes, offlinePacks:[...offlinePacks], songMode, songChain, drumKit,
@@ -1467,11 +1502,15 @@ function applyStateVars(s){
     mbMarbles=s.marble.marbles.filter(m=>m&&MB_INSTR[m.type]&&m.shelf>=0&&m.shelf<MB_NOTES.length)
       .map(m=>({gx:m.gx|0,gy:m.gy|0,type:m.type,shelf:m.shelf|0,
                 deg:m.deg|0,phase:Math.max(0,Math.min(0.9999,+m.phase||0)),lastHit:-9}));
+    if(mbMarbles.length>MB_MAX_MARBLES) mbMarbles.length=MB_MAX_MARBLES;
     if(Array.isArray(s.marble.plates)&&s.marble.plates.length)
       mbPlates=s.marble.plates.slice(0,MB_MAX_PLATES).map(p=>({x0:p.x0|0,y0:p.y0|0,
         w:Math.max(1,p.w|0),h:Math.max(1,p.h|0)}));
     mbShowBeat=!!s.marble.showBeat;
+    if(s.marble.sel&&MB_INSTR[s.marble.sel.type]) mbSel={type:s.marble.sel.type,
+      shelf:Math.max(0,Math.min(MB_NOTES.length-1,s.marble.sel.shelf|0)),deg:s.marble.sel.deg|0};
   } else { mbMarbles=[]; mbPlates=[{x0:0,y0:0,w:MB_PLATE_W,h:MB_PLATE_H}]; mbShowBeat=false; }
+  mbUndoSnap=null; mbPlatesChanged();
   if(s.fx){ delayMult=s.fx.delayMult||0.5; window._restoreFx=s.fx; }
 }
 async function saveProject(){ if(!idbOK) return; try{ await idbSet("project",collectState()); }catch(e){} }
@@ -1548,8 +1587,11 @@ function wire(){
   document.getElementById("rollRate").onchange=e=>{ rollRate=e.target.value; saveSoon(); };
   document.getElementById("padLoadFile").onchange=async e=>{ if(!e.target.files[0]||padTargetForFile<0) return; ensureAudio(); try{ const buf=await AC.decodeAudioData(await e.target.files[0].arrayBuffer()); const nm=e.target.files[0].name.replace(/\.[^.]+$/,"").slice(0,10); pads[padTargetForFile]={name:nm,kind:"sample",buffer:buf,trim:null}; persistPadSample(padTargetForFile,{buffer:buf,trim:null,name:nm}); renderPads(); renderSeq(); saveSoon(); toast("Sound loaded to pad "+(padTargetForFile+1)); }catch(err){ toast("Couldn't load that file"); } e.target.value=""; };
   // keys
-  document.getElementById("keyRoot").onchange=e=>{ keyRoot=parseInt(e.target.value); rebuildScale(); renderKeyboard(); saveSoon(); };
-  document.getElementById("scaleSel").onchange=e=>{ scaleName=e.target.value; rebuildScale(); renderKeyboard(); saveSoon(); };
+  /* a marble stores a scale degree, so re-keying the studio re-keys the plate
+     under it: the note names on the pitch chips and in the read-out have to be
+     rebuilt or they claim the marble is still playing the old note */
+  document.getElementById("keyRoot").onchange=e=>{ keyRoot=parseInt(e.target.value); rebuildScale(); renderKeyboard(); mbBuildChips(); mbSelInfo(); saveSoon(); };
+  document.getElementById("scaleSel").onchange=e=>{ scaleName=e.target.value; rebuildScale(); renderKeyboard(); mbBuildChips(); mbSelInfo(); saveSoon(); };
   document.getElementById("scaleLockChip").onclick=function(){ scaleLock=!scaleLock; this.classList.toggle("on",scaleLock); if(scaleLock&&pianoView){ pianoView=false; document.getElementById("pianoToggle").classList.remove("on"); } renderKeyboard(); saveSoon(); };
   document.getElementById("pianoToggle").onclick=function(){ pianoView=!pianoView; this.classList.toggle("on",pianoView); if(pianoView&&scaleLock){ scaleLock=false; document.getElementById("scaleLockChip").classList.remove("on"); } renderKeyboard(); saveSoon(); };
   document.getElementById("chordChip").onclick=function(){ chordMode=!chordMode; this.classList.toggle("on",chordMode); saveSoon(); };
@@ -1601,7 +1643,7 @@ function openPadSettings(i){ const p=pads[i]; const isSample=p.kind==="sample";
     '<div class="row-btns"><button class="chip'+(p.rev?" on":"")+'" id="pdRev"'+(isSample?"":" disabled")+'><span class="ic"><svg class="svgic" viewBox="0 0 24 24"><path d="M11 12 20 6v12zM2 12l9-6v12z" fill="currentColor"/></svg></span>Reverse</button>'+
     '<button class="chip" id="pdPrev"><span class="ic">▶</span>Preview</button></div>'+
     (isSample?"":'<p class="steps" style="margin-top:10px;">Tune &amp; reverse work on sampled pads. Load a sound or chop one in first.</p>');
-  document.getElementById("padSetTitle").firstChild.textContent="Pad "+(i+1)+" — "+p.name;
+  document.getElementById("padSetTitle").firstChild.textContent="Pad "+(i+1)+": "+p.name;
   body.querySelector("#pdVol").oninput=e=>{ p.vol=+e.target.value/100; body.querySelector("#pdVolV").textContent=e.target.value; saveSoon(); };
   const tn=body.querySelector("#pdTune"); if(tn) tn.oninput=e=>{ p.tune=+e.target.value; body.querySelector("#pdTuneV").textContent=e.target.value; saveSoon(); };
   const rv=body.querySelector("#pdRev"); if(rv) rv.onclick=function(){ if(!isSample) return; p.rev=!p.rev; this.classList.toggle("on",p.rev);
@@ -1620,7 +1662,13 @@ document.addEventListener("keydown",e=>{ if(e.repeat||["INPUT","SELECT","TEXTARE
   const pi=PAD_KEYS.indexOf(k); if(pi>=0){ padDown(pi,.95); return; }
   if(k in CHAR_NOTE && !heldChars.has(k)){ heldChars.add(k); ensureAudio(); noteOn(CHAR_NOTE[k],.9); } });
 document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase(); const pi=PAD_KEYS.indexOf(k); if(pi>=0){ padUp(pi); return; } if(k in CHAR_NOTE){ heldChars.delete(k); noteOff(CHAR_NOTE[k]); } });
-window.addEventListener("resize",()=>{ if(sampleBuffer && document.getElementById("waveWrap").classList.contains("on")){ drawWave(); positionHandles(); drawSlices(); } });
+window.addEventListener("resize",()=>{ if(sampleBuffer && document.getElementById("waveWrap").classList.contains("on")){ drawWave(); positionHandles(); drawSlices(); }
+  /* The marble canvas is sized in pixels, and mbUnproj works back from that
+     size, so a phone turned sideways used to leave the plate stretched AND
+     every tap landing on the wrong cell. Only resize while the tab is up: the
+     view is display:none otherwise and would measure 0 by 0. */
+  const mv=document.getElementById("view-marble");
+  if(mv && mv.classList.contains("on")) mbResize(); });
 document.addEventListener("visibilitychange",()=>{ if(document.hidden && recording) { /* keep recording */ } });
 
 /* -------------------- boot -------------------- */
@@ -1633,6 +1681,9 @@ function refreshAllUI(){
     mbBuildChips(); mbRebuildGhosts(); mbCamDirty=true;
     const sb=document.getElementById("mb-showbeat");
     if(sb) sb.setAttribute("aria-pressed",String(mbShowBeat));
+    // a loaded project has nothing to undo back to
+    const ub=document.getElementById("mb-undo");
+    if(ub) ub.style.display=mbUndoSnap?"inline-flex":"none";
   }
   document.getElementById("tempo").value=tempo; document.getElementById("tempoVal").textContent=tempo; updateDelayTime();
   document.getElementById("swing").value=swing; document.getElementById("swingVal").textContent=swing+"%";
@@ -2028,7 +2079,9 @@ function mbStopRaf(){ if(mbRaf){ cancelAnimationFrame(mbRaf); mbRaf=null; } }
    Read only, not saved, and silent: the sequencer is already playing these,
    so they only bounce. It is the same beat you programmed, seen from the
    side, which is the whole reason the tab exists. */
-const MB_TRACK_TYPE=["bass","snare","hat","hat","melody","melody","melody","melody"];
+/* kick, snare, clap, hat, open hat, tom, rim, cowbell: the ghost takes the
+   marble voice nearest its pad, so the picture sounds like the beat looks */
+const MB_TRACK_TYPE=["bass","snare","wood","hat","hat","bass","wood","bell"];
 function mbRebuildGhosts(){
   mbGhosts=[];
   if(!mbShowBeat) return;
@@ -2067,7 +2120,7 @@ function mbSelect(m,silent){
   if(m){
     if(!silent) mbAudition(m);
     mbSel.type=m.type; mbSel.shelf=m.shelf;
-    if(m.type==="melody") mbSel.deg=m.deg;
+    if(mbPitched(m.type)) mbSel.deg=m.deg;
     mbBuildChips();
     mbSelInfo();
   }
@@ -2080,7 +2133,7 @@ function mbOffsetLabel(m){
 }
 function mbSelInfo(){
   if(!mbSelected) return;
-  const p=mbSelected.type==="melody"?" · "+mbNoteName(mbSelected):"";
+  const p=mbPitched(mbSelected.type)?" · "+mbNoteName(mbSelected):"";
   document.getElementById("mb-selinfo").textContent=
     MB_INSTR[mbSelected.type].label+" · "+MB_NOTES[mbSelected.shelf].label+p+mbOffsetLabel(mbSelected);
 }
@@ -2090,6 +2143,8 @@ function mbWire(){
   mbCtx=mbCv.getContext("2d");
   mbCache=document.createElement("canvas");
   mbCctx=mbCache.getContext("2d");
+  // read the body font once: this used to be a getComputedStyle per frame
+  try{ mbFont="10px "+getComputedStyle(document.body).fontFamily; }catch(e){}
   const ptrs=new Map(); let gest=null;
 
   mbCv.addEventListener("contextmenu",e=>e.preventDefault());
@@ -2277,7 +2332,7 @@ function mbBuildChips(){
       html:'<span class="mb-dot" style="background:hsl('+mbHue(fake)+' 85% 60%)"></span>'+mbNoteName(fake)};
   }),()=>mbSel.deg,v=>{
     mbSel.deg=v;
-    if(mbSelected&&mbSelected.type==="melody"){
+    if(mbSelected&&mbPitched(mbSelected.type)){
       mbSelected.deg=v; mbSelInfo(); mbAudition(mbSelected); saveSoon();
     }
   });
@@ -2295,7 +2350,7 @@ document.getElementById("startBtn").addEventListener("click",async()=>{
   document.getElementById("splash").style.display="none"; document.getElementById("app").classList.add("on");
   initAudio(); mbWire(); await boot(); await initMIDI();
   const ok=await selectInstrument(currentInstId).catch(()=>false); if(ok===false){ await selectInstrument("lead").catch(()=>{}); renderKeyboard(); }
-  toast("Ready — tap a beat and play");
+  toast("Ready. Tap a beat and play");
   if(!tourDone) tourShow(0);
 });
 // hidden pad-load input
