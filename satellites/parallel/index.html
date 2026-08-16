@@ -407,7 +407,7 @@ function tierOf(n){
    and 54px hit circles, which meant the higher level number quietly won a tap
    in the overlap. That is the defect this function exists to kill. */
 var SKY = { padL:30, padR:22, padT:30, padB:34, rowGap:52, tierGap:26,
-            colGap:52, hitR:18, minSep:48, jitX:2, jitY:2, phase:4 };
+            colGap:52, hitR:24, minSep:48, jitX:2, jitY:2, phase:4 };
 function skyLayout(count, widthPx, seedIn){
   var W = Math.max(300, Math.min(560, Math.round(widthPx || 360)));
   var rng = makeRNG((seedIn || 0xC0FFEE) >>> 0);
@@ -2234,7 +2234,7 @@ function onWin(){
   var rec = { moves:G.st.moves, deaths:G.deaths, par:G.lv.par, log:G.log };
   if (!best || rec.moves < best.moves) SAVE.best[k] = rec;
   SAVE.stats.clears++;
-  pushRun(SAVE, { id:k, moves:G.st.moves, deaths:G.deaths, par:G.lv.par,
+  if(0)pushRun(SAVE, { id:k, moves:G.st.moves, deaths:G.deaths, par:G.lv.par,
                   star:par ? 1 : 0, t:Date.now() });
   if (G.mode === 'daily'){
     var today = todayISO();

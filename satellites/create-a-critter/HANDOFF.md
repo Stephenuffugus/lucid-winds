@@ -71,7 +71,7 @@ animation clips.
   their faces too. Undo snapshots include the feature list.
 
 ## Aug 15 sticker book round (v=20260815e)
-- **STICKER BOOK**: 36 hand-drawn canvas stickers in 4 flyout groups (Face:
+- **STICKER BOOK**: 36 code drawn canvas stickers in 4 flyout groups (Face:
   4 eye styles / smile / lips / grin / fangs / shark teeth / noses / 3 ear
   kinds / antenna / freckles / wrinkles · Extras: top hat, cap, glasses,
   monocle, flower, ascot, pocket square · Parts: wing, tail, unicorn horn,
@@ -218,6 +218,29 @@ seams the aesthetic.
   Friends/visitor/seasons stay outdoors; the bug buddy comes inside.
   Room edit saves/restores the easel and never creates living-face
   records.
+
+## Aug 16 audit round (v=20260816a, BUILD n1) — read AUDIT-NOTES.md
+Full audit of the shipped browser edition, then fixes worst first. Headlines:
+- **No path can strand the player any more.** Every stored drawing goes
+  through one `loadDrawing()` with an `onerror` and an honest message; a
+  missing `THREE` or a refused WebGL context is caught instead of freezing
+  the hatch screen; `readSilhouette` returning null is a message, not a
+  shrug.
+- **A save that fails says so.** `lsSet`/`jSet` report, and a full quota
+  raises an overlay instead of quietly losing a kid's critter.
+- **`saveNest()` merges** (two tabs no longer clobber each other), bests go
+  through `lsMax`, days together only counts up.
+- Leaving the room easel by the back arrow used to hide the bring to life
+  button forever AND save the next critter drawing as wallpaper. Fixed.
+- Picking a color left a sticker armed with nothing looking selected. Fixed.
+- 🎲 **Surprise me** rolls a whole creature onto the easel (the visitor
+  generator, now with body families, patterns, horns, wings and 16 colors).
+- 🖌️ **Redraw** reopens a critter's own drawing for changes and rebuilds it.
+- Palette is 2 sets of 12 with a visible swap button; 48px touch targets;
+  no dashes in player copy.
+- ⛔ Verify with `node check.js --selftest` and `node boot-test.js --selftest`
+  (nine static checks plus a stub DOM boot; both watched failing first).
+- ⛔ BUILD is `n1`. Bump the portal card `?v=` to match on deploy.
 
 ## Studio wiring
 

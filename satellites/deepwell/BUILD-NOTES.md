@@ -278,27 +278,175 @@ recorded audio branch removed (every sound here is synthesised), navigations ref
 
 ## 7. Known gaps
 
-- I never ran a browser (five agents on a two core box makes gates lie), so **nothing here
-  has been LOOKED at by me**. The main loop owns the screenshots. Two findings already came
-  back from its LOOKING pass and are fixed: the AIR TO SURFACE bar now grows with the cost
-  instead of reading full when you are safe, and the dead space under the node card is gone
-  (the card grows into it).
-- The install nudge after a first completed run (CRAFT section E) is not wired. The manifest
-  and iOS metas are.
-- Replay plays back the input log at a fixed 550ms a step and auto declines shrines rather
-  than replaying the recorded answer. The recorded log does contain the answers, so this is
-  a ten minute fix.
+- **Still true:** nothing here has been LOOKED at by any builder. The main loop owns the
+  screenshots. Two findings from its earlier LOOKING pass are already fixed (the AIR TO SURFACE
+  bar grows with the cost, the dead space under the node card is gone).
+- ~~The install nudge is not wired.~~ **FIXED**, section 10.
+- ~~Replay auto declines shrines.~~ **FIXED**, section 10, with a regression that proves the
+  old behaviour was a different run: on the seed the test finds, the force declined playback
+  banked 99 where the real run banked 30.
+- ~~The shaft never draws the nodes as objects.~~ **FIXED**, section 9.
 - No Sunbeam earn wiring, per the README deviation.
-- The shaft visual is honest but plain: rock lines, band color, the record line. It never
-  draws the nodes themselves as objects in the shaft, which is where the next hour of art
-  time should go.
+- The greedy loss rate sits at 66.5 with a bound ceiling of 70. `ASCENT_WEIGHT_DIV` 13 pushes
+  it to 70.4 and out. There is about one point of headroom on that lever and no more.
 
 ## 8. The single next thing I would do
 
-Sweep the pack cap. The two missed bounds share one root cause, and it is measurable in
-about fifteen minutes: the pack fills before the air ever gets frightening, so a careful
-player and a perfect player play nearly the same game. Drop `PACK_BASE` from 40 to about 28
-and re run the sweep. If the Cautious to Optimal ratio falls toward 50 percent and Optimal's
-banked mean rises (because trading up rather than filling up becomes the only way to profit),
-then the game's central decision moves from "is my bag full" to "can I afford to carry this
-out", which is the game section 3.1 says it wants to be.
+Take the economy question to Stephen as a decision, not a tuning task, because section 5 item 1
+proves it is one. The one line version: **a cautious digger earns 2 percent more with a full kit
+than with nothing**, so the shop is invisible to the policy the spec calls the median player.
+Either the ore table gets repriced or the median player gets redefined. Everything else in the
+3.8 envelope is now landed and held by assertions.
+
+Second, cheapest real win: the seam richness gradient (section 9) exists but the player is never
+told about it. `richnessAt(depth)` is already exported and already drives generation. One line
+in the node card, "this seam is near the floor of the shale", would make the last few meters
+before a band boundary a decision instead of a coincidence.
+
+---
+
+## 9. Deepening pass, 2026-08-16: what was added and why
+
+Chosen for depth per minute of play. The ranking used: how many runs does it touch, and does it
+put a decision where there was none.
+
+### 9.1 The shaft is drawn as a place (the biggest feel gap, fixed)
+
+`renderShaft` previously drew three things: horizontal rock lines every five meters, one flat
+band colour, and the record line. The player descended past an abstraction. It now draws:
+
+- **The bore itself**, walls left and right, so the column has edges.
+- **The strata as bands of rock**, each in its own colour with the seam drawn and named where it
+  starts, so crossing into the Dark Seam is something you watch arrive rather than a word that
+  flashes once.
+- **A depth ruler** etched on the left wall every ten meters.
+- **Every node as the object it is**, pinned at its own depth, tied back to the wall: a vein
+  shows **one coloured dot per lump of ore in it, in the ore's own colour**, which is the single
+  most useful thing the column can say from a distance. Pockets, caches, shrines and hazards get
+  their own glyph and border colour. Worked and spent nodes dim and desaturate. A heartstone
+  glows.
+- **Reveal is asked of the rules, never invented by the view.** `revealOf(state, i)` mirrors the
+  SIM: bargain 5's window, the Dowser, the lamp, Assay, and one node of free look ahead.
+- **The lamp as a real pool of light** whose radius IS the lamp meter, so a dying lamp visibly
+  closes in around you before it goes out.
+- **You**, at the working face, as a marked point the column scrolls past.
+- The record line stays, drawn over the seams.
+
+### 9.2 Six more shrine bargains, 12 to 18
+
+Same voice, same rule: the card shows the exact numbers before you agree, and every one is a
+trade with a side that hurts. Each has its own numeric assertions in `suiteDeepening`.
+
+| id | title | the deal |
+|---|---|---|
+| 13 | THE BALLAST | plus 25 air, the HEAVIEST ore in the pack stays on the floor |
+| 14 | THE TITHE | costs 120 cash now, every ore from here weighs 2 less, floor of 1 kilo |
+| 15 | THE STRAIGHT DROP | the next 2 descents cost no air and no lamp, and you cannot look first |
+| 16 | THE COUNTERWEIGHT | plus 2 braces, the pack loses 10 kilos of room for the rest of the run |
+| 17 | THE DOWSER | every vein below you shows itself for the rest of the run, whatever the lamp is doing, costs 35 lamp |
+| 18 | THE LAST BREATH | 200 cash now, your air drops to exactly the climb out plus 5 |
+
+14 is the deliberate mirror of bargain 4 (the oil), 16 the mirror of the pack upgrade, and 18 is
+the game's thesis as a single card: you are handed money in exchange for every breath of slack
+you had. It is refused when you are already that close, so it can never be free money.
+
+### 9.3 The Below has things in it now
+
+HANDOFF 3.4 makes the last band unbounded, says the record is the score, and then puts nothing
+in the deepest rock in the game. Six named landmarks, each firing once per run the first time
+you arrive at or past its depth, each a number rather than a mood. Reach rates measured over
+20,000 full kit depth runs and held by assertions so they cannot silently drift out of reach:
+
+| depth | name | what it gives | reached by a full kit |
+|---|---|---|---|
+| 200 | THE SILL | one brace back | 64.9% |
+| 230 | THE DRY RIVER | 60 air | 46% |
+| 265 | THE LAMP ROOM | lamp full | 33.6% |
+| 300 | THE OLD SEA FLOOR | 15 kilos more room in the pack | 18.6% |
+| 350 | THE QUIET | hazard rate down 8 percent for the rest of the run | 11% |
+| 420 | THE DOOR | 500 cash, banked where you stand | 1% |
+
+Each stamps its name across the shaft the way a strata crossing does, sounds a low D1 and D3
+pair, and says what it gave in numbers. **A landmark can never change what the shaft generates**
+(the first draft of THE OLD SEA FLOOR reset heartstone eligibility, which would have made node
+contents depend on player history and broken the law in section 6; it gives pack room instead,
+and there is an assertion that the shaft generates identically either way).
+
+### 9.4 Seam richness
+
+`TIER_DEPTH_BIAS: 0.92`. HANDOFF 3.4 gives each band a tier RANGE and the first build rolled it
+flat, so a meter of extra descent inside a band bought nothing. Every policy in the sweep turns
+around inside SHALE, which meant a careful digger and a perfect digger mined identical rock. The
+roll is now biased toward the rich end of a band by how deep into the band the seam sits: the
+roof of the shale is nearly all tier 1, the floor of it nearly all tier 2. **Band ranges, the ore
+table and every other specced number are untouched.** On its own it moved the ratio only 62.2 to
+61.3, so it is not the balance fix, but it is the thing that makes the last few meters before a
+band boundary worth something.
+
+### 9.5 The logbook is worth reading
+
+Each of the last ten runs now records the depth, the reason, the value left below, **the single
+best thing you left down there by name**, how many loads you threw away on purpose, how many
+bargains you shook on, and which landmarks you stood in. Deepest and richest of the ten are
+marked. Entries written by the previous build print the short line they were saved with.
+
+---
+
+## 10. The two shipped defects fixed, and the gates that hold them
+
+### 10.1 Replay lied about bargains
+
+The replay stepped the recorded input, then force declined any shrine that had just opened,
+which stole the recorded answer's turn and made the real answer an illegal action. A replay of a
+run that took a bargain was a different run wearing its name. The log already held the answer.
+Now it plays it, holds the card 1500ms instead of 550 so it is watchable, says TOOK THE BARGAIN
+or WALKED AWAY, makes both shrine buttons inert while a replay owns the run, and blocks
+`doAction` so a live tap can neither corrupt the playback nor write the replay's state over the
+real save. The regression has teeth: it finds a seed where the optimal policy accepts a bargain,
+replays it, and asserts that **force declining produces a different run** (banked 99 against the
+real 30). Watched red by inverting it.
+
+### 10.2 The install nudge
+
+CRAFT section E: `beforeinstallprompt` is captured and held, and the browser's prompt is never
+shown until the player has finished at least one run. It surfaces as one quiet line above GO
+DOWN with a 48px dismiss, and once dismissed it never asks again. `appinstalled` clears it.
+
+### 10.3 Every gate in this pass was watched red first
+
+| gate | how it was broken | what went red |
+|---|---|---|
+| free descents | `descendCost` stopped honouring the bargain | 2 assertions |
+| the tithe weight floor | removed `Math.max(1, ...)` | 2 assertions |
+| seam richness | `--over=TIER_DEPTH_BIAS=0` | 2 assertions |
+| the counterweight | its pack cost set to 0 | 1 assertion |
+| landmarks fire once | removed the seen list push | 3 assertions |
+| landmark reach | moved THE DOOR to 900m | 2 assertions |
+| replay answers | inverted the regression | 1 assertion |
+| run migration | removed the migrate call | 5 assertions |
+| the CONFIG override tool | a key that does not exist | throws, does not silently pass |
+
+**Two of them were vacuous on the first try and were fixed rather than accepted.** The free
+descent test passed while the charge was broken, because `descendCost` already returned zero and
+the guard beside it was dead code; it now also asserts that the same fall without the bargain
+costs real air and real lamp. The tithe floor test passed with one tithe because no ore weighs
+under 3 kilos; it now buys two tithes, which is what actually drives slag to minus one.
+
+A crash the deep fuzzer would have found was pre empted instead: a run saved by the shipped
+build has no `deeps` list, so the first landmark below 200m would have read a field that is not
+there. `migrateRun` fills the new fields on resume and throws away anything unrecognisable,
+with five assertions including two garbage shapes.
+
+### 10.4 Gates still green
+
+- no `Math.random` between the SIM markers
+- no `document`, `window`, `canvas`, `performance`, `requestAnimationFrame`, `localStorage`
+  inside the SIM layer
+- SIM_EXPORT and TEST_EXPORT markers intact
+- no dash characters in any rendered markup text, any toast, or any of the 18 bargain cards and
+  6 landmark lines (suiteCopy now walks head, sub AND body of every card)
+- no literal closing script tag in a string
+- the whole script block parses clean under `vm.Script`
+- `sw.js` cache prefix is still `deepwell-` and it still only ever deletes its own keys
+- `SHELL_VERSION` and the registration `?v=` bumped together to `deepwell-shell-v2` /
+  `20260816b`

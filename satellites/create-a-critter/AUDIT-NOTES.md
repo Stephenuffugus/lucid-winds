@@ -281,21 +281,47 @@ silently, the critter is never sad, nothing leaves the device).
 
 # Verification
 
-`node check.js` in this folder. Nine checks, each watched failing on purpose
-against a deliberately broken copy of the file before being accepted (the
-`--selftest` flag mutates the source in memory and asserts each check goes
-red). No browser was used, so this proves what the source can prove:
+    node check.js --selftest
+    node boot-test.js --selftest
 
-1. every script block parses (real `vm` parse, not brace counting)
+Both are in this folder, both run in node with no browser, and every check was
+watched failing on purpose first: `--selftest` mutates the source in memory
+(one mutation per check) and asserts that the matching check goes red. A check
+nobody has seen fail is decoration.
+
+`check.js`, nine static checks:
+
+1. every script block parses (a real `vm` parse, not brace counting)
 2. every `$('id')` resolves, no duplicate ids
-3. every `data-*` selector matches a real attribute in the HTML
-4. no empty `catch` block without an explicit `/*ok: reason*/` annotation
+3. every `data-*` selector matches a real attribute in the HTML (this is how
+   the dead texture wiring and the impossible `[data-stamp]` lookup were both
+   confirmed rather than guessed at)
+4. no empty `catch` block without an explicit `/*ok: reason*/` annotation, so
+   every swallowed error in this file is now a deliberate, stated decision
 5. no dash characters in player facing copy
-6. no literal `</script>` inside a JS string
-7. no service worker, or if one is ever added it deletes only `cac_` prefixed
-   caches and its `SHELL_VERSION` matches the registration `?v=`
-8. no raw whole array write to `cac_nursery`, and bests only through `lsMax`
-9. interactive controls are 48px or more at 375x667
+6. no literal closing script tag inside a JS string, which is what makes the
+   regex block splitter above trustworthy at all
+7. no service worker, and if one is ever added it must delete only `cac_`
+   prefixed caches and carry `SHELL_VERSION` in its registration URL
+8. no whole array write to `cac_nursery` outside `saveNest()`, and best scores
+   only through `lsMax`
+9. interactive controls are 48px or more at 375x667, including the two built
+   in JS
+
+`boot-test.js` runs the app's main script in a stub DOM:
+
+- the boot pass completes and all 74 named controls get a listener (a throw
+  part way through this pass silently loses every listener after it, which has
+  already cost this project a feature; the selftest breaks one id and watches
+  the check go red)
+- `saveNest()` really does merge: another tab's critter survives this tab's
+  edit, and a freed critter is still removed
+- `lsMax` never lowers a best and always accepts a higher one
+- 300 generator seeds: none throw, all produce a face, none exceeds the six
+  limbs the rig can keep, every limb type is one the gait driver knows and
+  every attachment lands on the paper
+
+What neither of them proves: anything visual. NOT VERIFIED IN A BROWSER.
 
 # What still worries me
 

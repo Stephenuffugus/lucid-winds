@@ -24,12 +24,17 @@ the game to drift.
 
 ---
 
-## 1. Assertion count: 205
+## 1. Assertion count: 252 (was 205)
 
-189 game assertions + 16 source level gates, all inside the one `--test` run.
+236 game assertions + 16 source level gates, all inside the one `--test` run.
 Suites: config, rng, new game, movement, circuit cases, combo, overload,
 discharge, spawns, determinism, input queue, fuzz, save, copy, **regressions**,
-circuit battery (1000 shapes), balance envelope.
+**creep**, **daily**, **board filler**, circuit battery (1000 shapes), balance
+envelope.
+
+The 47 added by the second pass: 8 on the combo window ladder, 17 on the creep
+hazard and its four fairness rules, 9 on endless against daily, 8 on the board
+filler and the avoidance BFS, plus 5 folded into the existing suites.
 
 The 16 source gates run against the file itself, not the runtime: `Math.random`
 / `document` / `window` / `canvas` / `performance` / `requestAnimationFrame` /
@@ -255,6 +260,20 @@ weights, tick ramp 220/−4/90 are all as written. Two values were **added**:
 `STALL_CHECK` 24 and `STALL_LIMIT` 300, both for the soft lock fix in section 5.
 `RED_MIN_DIST` 20 and `GREEN_MAX_DIST` 6 make the "far apart" and "close"
 language of §6.4 testable.
+
+**Second pass amendment.** One spec number now has a documented deviation and
+three values were added:
+
+| key | value | status |
+|---|---|---|
+| `COMBO_WINDOWS` | `[40, 40, 32, 26, 20]` | **deviates from spec.** §6.2 says a flat 40. Director default, reasoning in section 14. The spec's 40 is preserved at the bottom of the ladder. |
+| `CREEP_INTERVAL` | 45 | new, section 15 |
+| `DAILY_TICKS` | 600 | new, section 16 |
+| `FILL_TARGET` | 90 | new, **sweep agent only, no effect on the game.** Swept, table in section 12. |
+
+Grid 20, overload 55 percent, bonus x5, discharge ~90, the x1 to x4 ladder, the
+colour multipliers and weights and the tick ramp are all still exactly as
+written in §6.
 
 ## 8. Touch targets, measured
 

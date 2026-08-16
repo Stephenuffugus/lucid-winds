@@ -106,6 +106,17 @@ h2:first-child{margin-top:2px}
 .clue.sel{border-color:var(--accent);background:#101a1f}
 .clue.sel .tag{color:var(--accent)}
 .empty{color:var(--dim);font-size:13px;padding:8px 2px}
+.brief.lying{border-left-color:var(--bad)}
+.brief .warn{margin-top:6px;color:#f0a79e;font-size:12.5px}
+.clue.said{border-left:2px solid var(--warm)}
+.clue.said .tag{color:var(--warm)}
+.stamp.lie{border-color:var(--warm);color:var(--warm)}
+.optrow.pickrow{width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);padding:6px 12px;margin-bottom:8px;min-height:56px}
+.optrow.pickrow.on{border-color:var(--accent);background:#101a1f}
+.optrow.pickrow .nm b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.optrow.pickrow .nm small{display:block;font-size:11.5px;color:var(--dim)}
+.tw{white-space:pre-wrap}
 .ov{position:fixed;inset:0;background:rgba(6,7,10,.94);z-index:40;display:flex;flex-direction:column;
   padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px)}
 .ovbox{margin:auto;width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);
@@ -3599,9 +3610,7 @@ function openReveal() {
     box.appendChild(el("h3", null, won ? UI.solved : UI.failed));
     if (won) {
       box.appendChild(el("div", "stars", new Array(st.stars + 1).join("★")));
-      box.appendChild(el("div", "beat", SUSPECTS[T.c].n + " did it."));
-      box.appendChild(el("div", "beat", "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + "."));
-      box.appendChild(el("div", "beat", "With the " + WEAPONS[T.w].n + "."));
+      beats(box, T);
       revealLie(box);
       box.appendChild(el("h2", null, UI.worked));
       var mins = APP.cs.minimal.filter(function (id) { return hasFound(st, id); });
@@ -3612,9 +3621,7 @@ function openReveal() {
         box.appendChild(b);
       });
     } else {
-      box.appendChild(el("div", "beat", SUSPECTS[T.c].n + " did it."));
-      box.appendChild(el("div", "beat", "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + "."));
-      box.appendChild(el("div", "beat", "With the " + WEAPONS[T.w].n + "."));
+      beats(box, T);
       revealLie(box);
       if (st.contraId >= 0) {
         box.appendChild(el("h2", null, UI.teach));
@@ -3637,7 +3644,42 @@ function openReveal() {
   });
 }
 
+/* The typewriter toggle used to be a switch wired to nothing. The reveal beats
+   now type themselves out unless the player turned it off or asked for less
+   motion, and the text is in the DOM from the first frame either way, so a
+   screen reader never waits for the animation. */
+function typeBeat(node, text) {
+  node.textContent = text;
+  if (!APP.save.settings.typewriter || APP.save.settings.reduceMotion) return;
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  if (reduce) return;
+  var i = 0, step = Math.max(1, Math.round(text.length / 40));
+  node.setAttribute("aria-label", text);
+  node.textContent = "";
+  var iv = setInterval(function () {
+    i += step;
+    node.textContent = text.slice(0, i);
+    if (i >= text.length) { node.textContent = text; clearInterval(iv); }
+  }, 28);
+}
+
 /* the payoff of a liar case: who it was, and exactly what they said */
+function beats(box, T) {
+  var lines = [
+    SUSPECTS[T.c].n + " did it.",
+    "In the " + ROOMS[T.r].n + ", at " + TIMES[T.t] + ".",
+    "With the " + WEAPONS[T.w].n + "."
+  ];
+  lines.forEach(function (line, i) {
+    var n = el("div", "beat tw");
+    box.appendChild(n);
+    if (i === 0) typeBeat(n, line);
+    else setTimeout(function () { typeBeat(n, line); }, 260 * i);
+    n.textContent = APP.save.settings.typewriter ? "" : line;
+  });
+}
+
 function revealLie(box) {
   if (!APP.cs.liar || !APP.cs.lie) return;
   box.appendChild(el("h2", null, UI.theLie));
