@@ -172,6 +172,66 @@ const tail = await page.evaluate(() => {
 ok(Math.abs(tail.sameP - 1) < 1e-9, "two identical arms give p = 1",
   JSON.stringify(tail.same));
 
+/* ---------- the front door tells a new user the useful thing ---------- */
+console.log("[front door]");
+const front = await page.evaluate(() => {
+  const before = S.lastUsed;
+  S.lastUsed = null; renderTonight();
+  const fresh = $("tonightWhy").textContent;
+  S.lastUsed = { id: "rain", at: Date.now(), count: 7 }; renderTonight();
+  const habit = $("tonightWhy").textContent;
+  S.lastUsed = before; renderTonight();
+  return { fresh, habit };
+});
+ok(/stay with it|couple of weeks/i.test(front.fresh),
+  "a first time visitor is told to stay with one sound", JSON.stringify(front.fresh));
+ok(/7 nights/.test(front.habit) && /Sticking with one sound/.test(front.habit),
+  "someone with a habit is told their streak is the point", JSON.stringify(front.habit));
+ok(!/[—–]/.test(front.fresh + front.habit), "no dashes in either line");
+
+/* ---------- earplugs, said out loud ---------- */
+const earplug = await page.evaluate(() =>
+  /earplugs/i.test(document.getElementById("p-eq").textContent));
+ok(earplug, "the evidence panel tells adults to try earplugs first");
+
+/* ---------- calibration does the arithmetic ---------- */
+/* The slider used to ask you to find something steady and eyeball it. The
+   flow plays the steady thing and subtracts. It still needs a real meter,
+   which it says, because a phone cannot invent an absolute level. */
+console.log("[calibration]");
+const cal = await page.evaluate(() => {
+  const out = {};
+  out.hasButton = !!document.getElementById("calStart");
+  out.needsMic = (() => {
+    S.micOn = false; calBegin();
+    const t = $("calStep").textContent; calEnd();
+    return /microphone on first/i.test(t);
+  })();
+  // pretend the mic measured a steady -34 dBFS and the real meter said 58
+  S.micOn = true;
+  calSamples = [-34, -34.2, -33.8, -34.1, -34, -33.9, -34.1, -34];
+  document.getElementById("calRef").value = "58";
+  const el = document.getElementById("cal");
+  out.lo = Number(el.min); out.hi = Number(el.max);
+  calApply();
+  out.cal = S.cal; out.slider = Number(el.value);
+  // and a nonsense reading changes nothing
+  const keep = S.cal;
+  document.getElementById("calRef").value = "9999";
+  calApply();
+  out.afterJunk = S.cal; out.junkMsg = $("calStep").textContent;
+  S.cal = keep; el.value = keep;
+  calEnd();
+  return out;
+});
+ok(cal.hasButton, "the calibration flow is there");
+ok(cal.needsMic, "it asks for the microphone before pretending to measure");
+ok(Math.abs(cal.cal - 92) <= 1, "it works out the offset from the two readings",
+  JSON.stringify(cal));   // 58 - (-34) = 92
+ok(cal.slider === cal.cal, "and moves the slider to match", JSON.stringify(cal));
+ok(cal.afterJunk === cal.cal && /does not look like/i.test(cal.junkMsg),
+  "a nonsense reading is refused", JSON.stringify(cal));
+
 /* ---------- share a sound ---------- */
 /* The link carries the sound. What matters most is everything it CANNOT
    carry: a link someone sends you must not turn your volume up, take the cap

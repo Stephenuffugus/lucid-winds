@@ -137,6 +137,18 @@ input[type=range].hot::-moz-range-thumb{background:var(--glow)}
 .mfill{height:100%;width:0%;background:var(--sage);transition:width .12s linear}
 .mtick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--cream);opacity:.55}
 .mlegend{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:5px}
+.calbox{margin:10px 0 4px}
+.calbox>button{width:100%;min-height:48px;padding:12px;border:1px solid var(--line2);
+  border-radius:13px;font-size:13px;color:var(--dim)}
+.calrow{display:flex;gap:8px;align-items:center;margin:8px 0 4px}
+.calrow label{font-size:12px;color:var(--faint);flex:0 0 auto}
+.calrow input{flex:1;min-height:48px;background:rgba(237,228,212,.04);color:var(--cream);
+  border:1px solid var(--line2);border-radius:11px;padding:0 12px;font-size:15px;
+  font-family:var(--mono)}
+.calrow button{min-height:48px;padding:0 16px;border:1px solid var(--line2);
+  border-radius:11px;color:var(--dim);font-size:13px}
+.callink{min-height:48px;padding:0 10px;color:var(--faint);font-size:12px;
+  text-decoration:underline;text-underline-offset:3px}
 .mverdict{font-size:13px;margin-top:10px;line-height:1.45}
 
 .timeinput{display:flex;gap:8px;align-items:center;margin-bottom:14px}
@@ -404,6 +416,18 @@ body.simple .actions{margin-bottom:14px}
 
       <div class="row"><div class="lab"><span>Calibration</span><span id="v-cal">+100 dB</span></div>
         <input type="range" id="cal" min="70" max="130" value="100" aria-label="Calibration"></div>
+      <div class="calbox" id="calBox">
+        <button id="calStart">Match it to a real meter</button>
+        <div id="calRun" style="display:none">
+          <p class="hint" id="calStep"></p>
+          <div class="calrow">
+            <label for="calRef">Their reading</label>
+            <input id="calRef" type="number" inputmode="decimal" min="20" max="110" step="1" placeholder="dB">
+            <button id="calSave">Set</button>
+          </div>
+          <button id="calCancel" class="callink">Cancel</button>
+        </div>
+      </div>
       <p class="hint">Phone microphones are not calibrated instruments and every model differs, so this is an estimate. If you have a sound-level meter or a calibrated app, play something steady and slide this until the numbers agree. Otherwise treat it as a relative reading, useful for comparing positions in the room but not for a legal measurement.</p>
 
       <div class="toggle">
@@ -592,6 +616,15 @@ body.simple .actions{margin-bottom:14px}
         <b>The broader picture was already uncertain.</b>
         A systematic review of 38 studies graded the evidence that continuous noise improves sleep as very low quality, which sits oddly next to how widely these machines are used.
         <cite>Riedy, Smith, Rocha & Basner, Sleep Medicine Reviews 2021;55:101385.</cite>
+      </div>
+      <div class="note">
+        <b>If you are an adult, try earplugs first.</b>
+        In that same 2026 study foam earplugs did protect sleep, and continuous
+        pink noise did not. A pair costs almost nothing and needs no app at
+        all. Use this instead when earplugs are not an option: when you need to
+        hear a child, when something in your ear is uncomfortable or unsafe, or
+        when what you want is a wind down rather than a block out. None of that
+        applies to babies, who should never be given earplugs.
       </div>
       <div class="note">
         <b>What this app does about it.</b>
@@ -2806,7 +2839,7 @@ function pickTonight() {
     const nights = S.lastUsed.count || 1;
     return { id: S.lastUsed.id, eyebrow: nights > 1 ? "Same as last night" : "You used this last",
       why: nights >= 5
-        ? "You've used this " + nights + " nights. Sticking with one sound is doing more for you than trying a new one — the association is most of the effect."
+        ? "You've used this " + nights + " nights. Sticking with one sound is doing more for you than trying a new one, because the association is most of the effect."
         : "Keeping to the same sound for a couple of weeks works better than switching around." };
   }
   // 2. otherwise, something sensible for the time of day
@@ -2821,7 +2854,12 @@ function renderTonight() {
   tonightPick = pickTonight();
   $("tonightEyebrow").textContent = tonightPick.eyebrow;
   $("tonightName").textContent = nameOfSound(tonightPick.id);
-  $("tonightWhy").textContent = tonightPick.why;
+  /* Someone with a history already gets told that staying with one sound is
+     the thing that works. Someone opening this for the first time was the one
+     person who never heard it, and they are the one it matters most to. */
+  const fresh = !(S.lastUsed && S.lastUsed.id);
+  $("tonightWhy").textContent = tonightPick.why +
+    (fresh ? " Whatever you pick, stay with it for a couple of weeks. That does more than trying a different sound every night." : "");
 }
 function renderElse() {
   const host = $("elseList");
@@ -2880,6 +2918,92 @@ $("vizBtn2").addEventListener("click", openViz);
 }
 renderElse();
 setMode(S.mode || "simple");
+
+/* ---------------- calibration ----------------
+   The slider on its own asked you to find "something steady" and eyeball it.
+   This plays the steady thing for you, holds it, watches what this phone's
+   microphone makes of it, and then does the arithmetic between that and
+   whatever a real meter says.
+
+   It still needs a reference, and it says so. A phone cannot bootstrap an
+   absolute level out of nothing, and pretending otherwise would be the kind
+   of claim this app exists not to make. What it can do is turn "slide this
+   until the numbers agree" into two numbers and one subtraction. */
+let calNoise = null, calTimer = null, calSamples = [];
+function calStop() {
+  if (calTimer) { clearInterval(calTimer); calTimer = null; }
+  if (calNoise) { try { calNoise.stop(); } catch {} try { calNoise.disconnect(); } catch {} calNoise = null; }
+}
+function calEnd() {
+  calStop();
+  $("calRun").style.display = "none";
+  $("calStart").style.display = "";
+}
+function calBegin() {
+  if (!S.micOn) {
+    $("calStep").textContent = "Turn the microphone on first, then come back to this.";
+    $("calRun").style.display = ""; $("calStart").style.display = "none";
+    return;
+  }
+  /* the mic path has already made the context by this point; this is the same
+     guard the rest of the app uses, in case that ever stops being true */
+  if (!ctx) { ctx = new (window.AudioContext||window.webkitAudioContext)(); nodes = build(); loadNoise(S.noise); }
+  if (ctx.state === "suspended") ctx.resume();
+  $("calStart").style.display = "none";
+  $("calRun").style.display = "";
+  calSamples = [];
+  /* a steady, unremarkable band of noise: easier for a cheap meter to settle
+     on than a pure tone, and it will not make anyone jump */
+  try {
+    const src = ctx.createBufferSource();
+    const len = Math.floor(ctx.sampleRate * 2);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 0.25;
+    buf.getChannelData(0).set(d);
+    src.buffer = buf; src.loop = true;
+    const g = ctx.createGain(); g.gain.value = 0.18;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass";
+    bp.frequency.value = 1000; bp.Q.value = 0.7;
+    src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+    src.start();
+    calNoise = src;
+  } catch { /* no tone: the reading still works off whatever is in the room */ }
+
+  let left = 12;
+  const tick = () => {
+    calSamples.push(fastDb);
+    left--;
+    $("calStep").textContent = left > 0
+      ? "Playing a steady sound. Hold your meter next to this phone. " + left + "s"
+      : "Now type what the other meter said and press Set.";
+    if (left <= 0) calStop();
+  };
+  tick();
+  calTimer = setInterval(tick, 1000);
+}
+function calApply() {
+  const ref = Number($("calRef").value);
+  if (!isFinite(ref) || ref < 20 || ref > 110) {
+    $("calStep").textContent = "That does not look like a decibel reading. Try again, or cancel.";
+    return;
+  }
+  const useable = calSamples.slice(-8).filter(v => isFinite(v));
+  if (!useable.length) { $("calStep").textContent = "No reading was taken. Start again."; return; }
+  const measured = useable.reduce((a, b) => a + b, 0) / useable.length;   // dBFS
+  const el = $("cal");
+  const lo = Number(el.min), hi = Number(el.max);
+  const next = clamp(Math.round(ref - measured), lo, hi);
+  S.cal = next; el.value = next; save(); syncLabels();
+  $("calStep").textContent = "Set. This phone now reads about " + Math.round(ref) +
+    " dB for that sound. It is still an estimate, and it only holds for this phone.";
+  setTimeout(calEnd, 2600);
+}
+if ($("calStart")) {
+  $("calStart").addEventListener("click", calBegin);
+  $("calSave").addEventListener("click", calApply);
+  $("calCancel").addEventListener("click", calEnd);
+}
 
 /* ---------------- share a sound ----------------
    A link carries the SOUND and nothing else.
