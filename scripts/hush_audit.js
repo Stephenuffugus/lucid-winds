@@ -28,13 +28,17 @@ function ok(cond, label, detail) {
 function extract(name) {
   const m = src.match(new RegExp("const\\s+" + name + "\\s*=\\s*"));
   if (!m) throw new Error("cannot find `const " + name + " =` in " + path);
-  let i = m.index + m[0].length, depth = 0, inStr = null, started = false;
+  let i = m.index + m[0].length, depth = 0, inStr = null, inCom = null;
   const open = "[{(", close = "]})";
   for (let j = i; j < src.length; j++) {
-    const c = src[j], p = src[j - 1];
+    const c = src[j], p = src[j - 1], n = src[j + 1];
+    if (inCom === "line") { if (c === "\n") inCom = null; continue; }
+    if (inCom === "block") { if (p === "*" && c === "/") inCom = null; continue; }
     if (inStr) { if (c === inStr && p !== "\\") inStr = null; continue; }
+    if (c === "/" && n === "/") { inCom = "line"; continue; }
+    if (c === "/" && n === "*") { inCom = "block"; continue; }
     if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
-    if (open.includes(c)) { depth++; started = true; }
+    if (open.includes(c)) depth++;
     else if (close.includes(c)) depth--;
     else if (c === ";" && depth === 0) return src.slice(i, j);
   }
@@ -46,10 +50,14 @@ function evalExpr(name) { return vm.runInNewContext("(" + extract(name) + ")", {
 function extractFn(header) {
   const m = src.match(header);
   if (!m) throw new Error("cannot find function " + header);
-  let i = src.indexOf("{", m.index), depth = 0, inStr = null;
+  let i = src.indexOf("{", m.index), depth = 0, inStr = null, inCom = null;
   for (let j = i; j < src.length; j++) {
-    const c = src[j], p = src[j - 1];
+    const c = src[j], p = src[j - 1], n = src[j + 1];
+    if (inCom === "line") { if (c === "\n") inCom = null; continue; }
+    if (inCom === "block") { if (p === "*" && c === "/") inCom = null; continue; }
     if (inStr) { if (c === inStr && p !== "\\") inStr = null; continue; }
+    if (c === "/" && n === "/") { inCom = "line"; continue; }
+    if (c === "/" && n === "*") { inCom = "block"; continue; }
     if (c === '"' || c === "'" || c === "`") inStr = c;
     else if (c === "{") depth++;
     else if (c === "}") { depth--; if (depth === 0) return src.slice(m.index, j + 1); }
@@ -171,6 +179,59 @@ try {
 console.log("[session reset]");
 ok(/Object\.assign\(S,\s*saved,\s*\{\s*timer:\s*0,\s*micOn:\s*false,\s*adapt:\s*false,\s*program:\s*null\s*\}\)/.test(src),
   "load path resets timer/mic/adapt/program");
+
+/* 10. Importers: the REAL parseCSV/mapColumns/importTable/importFitbitJSON,
+   extracted and run against synthetic per-vendor fixtures. The regression
+   this guards (handoff v3): unit inference is per-FILE median, never
+   per-value — Garmin's 1.4 h of deep sleep must not become 1 minute, and
+   junk must never throw. */
+console.log("[importers]");
+try {
+  const importerCode = [
+    "const pad2 = n => String(n).padStart(2,'0');",
+    "const today = " + extract("today") + ";",
+    extractFn(/function parseCSV\s*\(/),
+    "const COLS = " + extract("COLS") + ";",
+    extractFn(/function mapColumns\s*\(/),
+    extractFn(/function importTable\s*\(/),
+    extractFn(/function importFitbitJSON\s*\(/),
+  ].join("\n");
+  const box = {};
+  vm.createContext(box);
+  vm.runInContext(importerCode + "\nthis.parseCSV=parseCSV;this.importTable=importTable;this.importFitbitJSON=importFitbitJSON;", box);
+  const imp = t => box.importTable(box.parseCSV(t));
+
+  // one 7.5 h night expressed three ways; all must land at 450 minutes
+  const mk = (hdr, vals) => hdr + "\n" + vals.map((v, i) => "2026-08-0" + (i + 1) + "," + v).join("\n");
+  const secs = imp(mk("Summary Date,Total Sleep Duration", [27000, 25200, 28800]));
+  ok(secs.length === 3 && secs[0].total === 450, "Oura-style seconds -> minutes", JSON.stringify(secs[0]));
+  const hrs = imp(mk("Date,Sleep Duration", [7.5, 7.0, 8.0]));
+  ok(hrs.length === 3 && hrs[0].total === 450, "Garmin-style hours -> minutes", JSON.stringify(hrs[0]));
+  const mins = imp(mk("dateOfSleep,MinutesAsleep", [450, 420, 480]));
+  ok(mins.length === 3 && mins[0].total === 450, "Fitbit-style minutes stay minutes", JSON.stringify(mins[0]));
+  // the Garmin deep-sleep trap: hours file, deep column must scale by the SAME unit
+  const deep = imp("Date,Sleep Duration,Deep Sleep\n2026-08-01,7.5,1.4\n2026-08-02,7.0,1.2\n2026-08-03,8.0,1.6");
+  ok(deep.length === 3 && deep[0].deep === 84, "per-FILE unit: 1.4 h deep -> 84 min, not 1", "deep=" + (deep[0] && deep[0].deep));
+  // semicolon separators (Withings-style exports)
+  const semi = imp("date;total sleep time\n2026-08-01;27000\n2026-08-02;25200\n2026-08-03;28800");
+  ok(semi.length === 3 && semi[0].total === 450, "semicolon-separated files parse");
+  // junk never throws, returns empty
+  let threw = false, junkEmpty = true;
+  for (const junk of ["", " binary", "just one line no commas",
+    "a,b,c\n1,2", "Total Sleep Duration\n27000", '{"not":"sleep"}']) {
+    try { if (imp(junk).length) junkEmpty = false; } catch (e) { threw = true; }
+  }
+  try { if (box.importFitbitJSON("{broken json").length) junkEmpty = false; } catch (e) { threw = true; }
+  try { if (box.importFitbitJSON('{"sleep":[]}').length) junkEmpty = false; } catch (e) { threw = true; }
+  ok(!threw, "junk input never throws");
+  ok(junkEmpty, "junk input yields no nights");
+  // Fitbit JSON happy path
+  const fj = box.importFitbitJSON(JSON.stringify({ sleep: [{ dateOfSleep: "2026-08-01",
+    minutesAsleep: 432, minutesAwake: 38, minutesToFallAsleep: 12, efficiency: 93,
+    levels: { summary: { deep: { minutes: 66 }, rem: { minutes: 98 } } } }] }));
+  ok(fj.length === 1 && fj[0].total === 432 && fj[0].deep === 66 && fj[0].rem === 98,
+    "Fitbit JSON parses stages", JSON.stringify(fj[0]));
+} catch (e) { ok(false, "importer extraction", e.message); }
 
 console.log("\n" + pass + " ok, " + fail + " red");
 process.exit(fail ? 1 : 0);
