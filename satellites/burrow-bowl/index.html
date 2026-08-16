@@ -392,17 +392,17 @@ function moment(name, detail){
 }
 function fireDailyDone(score){
   if(MOM.daily_date===dayKey()) return;
-  MOM.daily_date=dayKey(); jSet(K_MOM,MOM); moment('daily_done',{score:score, date:dayKey()});
+  MOM.daily_date=dayKey(); commitMom(); moment('daily_done',{score:score, date:dayKey()});
   window._sbCapEarn && window._sbCapEarn(4,'burrow-bowl:daily');
 }
 function fireRound300(score){
   if(MOM.r300_date===dayKey()) return;
-  MOM.r300_date=dayKey(); jSet(K_MOM,MOM); moment('round_over_300',{score:score});
+  MOM.r300_date=dayKey(); commitMom(); moment('round_over_300',{score:score});
   window._sbCapEarn && window._sbCapEarn(3,'burrow-bowl:round300');
 }
 function fireFirstHundred(){
   if(MOM.first_hundred) return;
-  MOM.first_hundred=1; jSet(K_MOM,MOM); moment('first_hundred_burrow',{});
+  MOM.first_hundred=1; commitMom(); moment('first_hundred_burrow',{});
   window._sbCapEarn && window._sbCapEarn(2,'burrow-bowl:first_hundred');
 }
 
@@ -561,12 +561,19 @@ var PH={ h:1/240, acc:0 };
 
 function newRound(mode){
   G.mode=mode;
+  var res=null;
   if(mode==='daily'){ var c=dailyCond(); G.wind=c.wind; G.wax=c.wax; G.condLabel=c.label;
     /* the lane is spent the moment it is racked: reloading mid round must not
        hand the same daily back for a retry (verify pass, 2026-08-07) */
-    jSet(K_DAILY,{date:dayKey(), score:0, started:true}); }
-  else { G.wind=0; G.wax=1; G.condLabel=''; }
+    res=loadResume();
+    jSet(K_DAILY,{date:dayKey(), score:res?res.score:0, started:true}); }
+  else { G.wind=0; G.wax=1; G.condLabel=''; clearResume(); }
   G.ball=1; G.ballsLeft=9; G.score=0; G.shots=[]; G.hundreds=0;
+  /* an interrupted daily comes back with the balls it already spent, so the
+     lockout is gone and the reroll is still impossible */
+  if(res){ G.ball=res.ball; G.ballsLeft=res.ballsLeft; G.score=res.score;
+           G.shots=res.shots; G.hundreds=res.hundreds; }
+  RD={ rounds:0, hundreds:0, gutters:0, totalScore:0 };
   G.pops.length=0; G.burst.length=0; G.flash=0; G.shake=0; G.hintT=0;
   rack();
 }
@@ -656,7 +663,7 @@ function scoreBall(){
   G.shots.push(p); G.score+=p; G.ballsLeft--;
   var lx=G.land?G.land.x:laneX(G.worldX,G.by), ly=G.land?G.land.y:G.by;
   if(p===100){
-    G.hundreds++; STATS.hundreds++;
+    G.hundreds++; RD.hundreds++;
     G.flash=1; if(SET.motion) G.shake=9;
     addBurst(lx,ly,36,true);
     /* the big line lands on the LANE, never across the rings it is praising */
@@ -675,11 +682,12 @@ function scoreBall(){
   else if(p===20){ addPop(lx,ly-20,'+20',19,'#c8a84b',0.85); sfx('sink20'); G.beat=0.75; }
   else if(p===10){ addPop(lx,ly-16,'+10',17,'#8a9178',0.8); sfx('sink10'); G.beat=0.7; }
   else {
-    STATS.gutters++;
+    RD.gutters++;
     addPop(o.kind==='gutterLane'?laneX(G.out.side*168,G.out.gy):lx, o.kind==='gutterLane'?G.out.gy:ly,
       'gutter',18,'#e08a4a',1);
     G.beat=0.8;
   }
+  saveResume();
   G.phase='beat';
 }
 
@@ -688,8 +696,9 @@ function endRound(){
   G.phase='idle'; rumbleStop();
   var total=G.score, i;
   var tix=Math.floor(total/10)+G.hundreds*5;
-  var prevTix=TIX; TIX+=tix; lsSet(K_TIX,String(TIX));
-  STATS.rounds++; STATS.totalScore+=total; jSet(K_STATS,STATS);
+  var prevTix=commitTix(tix);
+  RD.rounds++; RD.totalScore+=total; commitStats();
+  clearResume();
 
   var perRound=Math.min(8,Math.floor(total/40));
   if(perRound>0){ window._sbCapEarn && window._sbCapEarn(perRound,'burrow-bowl:round'); }
@@ -697,11 +706,11 @@ function endRound(){
 
   var isNew=false;
   if(G.mode==='daily'){
-    jSet(K_DAILY,{date:dayKey(), score:total});
-    if(total>DAILYBEST){ DAILYBEST=total; lsSet(K_DAILYBEST,String(total)); }
+    jSet(K_DAILY,{date:dayKey(), score:total, started:true, done:true});
+    DAILYBEST=commitBest(K_DAILYBEST,total).v;
     fireDailyDone(total);
   } else {
-    if(total>BEST){ BEST=total; lsSet(K_BEST,String(total)); isNew=true; }
+    var b=commitBest(K_BEST,total); BEST=b.v; isNew=b.isNew;
   }
 
   $('sum-h').textContent = isNew ? 'Your best round yet' : (G.mode==='daily' ? "Tonight's lane" : 'Round over');
@@ -725,8 +734,9 @@ function endRound(){
     ? ('<b>+'+tix+' tickets</b>'+(G.hundreds>0?(' with '+(G.hundreds*5)+' from the hundreds'):'')+' · '+TIX+' on the shelf')
     : ('no tickets this round · '+TIX+' on the shelf');
   paintMeter();
-  $('sum-daily').disabled=!!dailyState();
-  $('sum-daily').textContent = dailyState() ? 'Lane rolled tonight' : "Tonight's lane";
+  var sdOpen=!dailyState()||!!loadResume();
+  $('sum-daily').disabled=!sdOpen;
+  $('sum-daily').textContent = sdOpen ? "Tonight's lane" : 'Lane rolled tonight';
   show('s-sum');
   if(tix>0) sfx('ticket');
 
@@ -810,8 +820,10 @@ function refreshMenu(){
   if(TIX>0) f.push('tickets '+TIX);
   f.push(BUILD);
   $('foot-best').textContent=f.join('  ·  ');
-  var ds=dailyState();
-  if(ds){ $('b-daily').disabled=true; $('b-daily-sub').textContent='rolled tonight, you scored '+ds.score; }
+  var ds=dailyState(), rs=loadResume();
+  if(rs){ $('b-daily').disabled=false;
+    $('b-daily-sub').textContent='unfinished, '+rs.ballsLeft+' ball'+(rs.ballsLeft===1?'':'s')+' still to roll'; }
+  else if(ds){ $('b-daily').disabled=true; $('b-daily-sub').textContent='rolled tonight, you scored '+ds.score; }
   else  { $('b-daily').disabled=false; $('b-daily-sub').textContent='one round, the same wind for everyone'; }
   $('set-stats').innerHTML='rounds '+STATS.rounds+' · hundreds sunk '+STATS.hundreds+
     '<br>tickets '+TIX+' · best round '+BEST;
@@ -842,7 +854,7 @@ var noteFn=null;
 
 /* ------------------------------------------------------------------ wiring */
 tap('b-play', function(){ openRules('free'); });
-tap('b-daily', function(){ if(dailyState()) return; openRules('daily'); });
+tap('b-daily', function(){ if(dailyState()&&!loadResume()) return; openRules('daily'); });
 tap('b-how', function(){ openRules(null); });
 tap('b-set', function(){ refreshMenu(); show('s-set'); });
 tap('b-exit', function(){ if(window.SWS_EXIT) window.SWS_EXIT(); });
@@ -864,7 +876,7 @@ tap('set-reset', function(){
   setTimeout(function(){ btn.textContent='Clear my scores'; }, 1600);
   /* tickets and trophies survive on purpose: they are the shelf, not a score.
      Moments survive too, so clearing can never refarm the one time earns. */
-  lsDel(K_BEST); lsDel(K_STATS); lsDel(K_DAILY); lsDel(K_DAILYBEST);
+  lsDel(K_BEST); lsDel(K_STATS); lsDel(K_DAILY); lsDel(K_DAILYBEST); lsDel(K_RESUME);
   BEST=0; DAILYBEST=0; STATS={rounds:0,hundreds:0,gutters:0,totalScore:0};
   refreshMenu();
 });
@@ -903,7 +915,7 @@ tap('pz-quit', function(){ closeAllOverlays(); quitRound(); });
 tap('note-ok', function(){ hideOv('o-note'); var f=noteFn; noteFn=null; if(f) f(); });
 
 tap('sum-again', function(){ openRules('free'); });
-tap('sum-daily', function(){ if(dailyState()) return; openRules('daily'); });
+tap('sum-daily', function(){ if(dailyState()&&!loadResume()) return; openRules('daily'); });
 tap('sum-menu', function(){ show('s-title'); refreshMenu(); });
 
 /* --------------------------------------------------------------- the flick */

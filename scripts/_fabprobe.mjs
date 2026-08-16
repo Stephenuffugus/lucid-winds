@@ -12,14 +12,20 @@ const r=await p.evaluate(()=>{
   const cs=getComputedStyle(fab);
   const pts=[[b.left+6,b.top+6],[b.right-6,b.top+6],[b.left+6,b.bottom-6],[b.right-6,b.bottom-6],[b.left+b.width/2,b.top+b.height/2]];
   const under=pts.map(([x,y])=>{
-    const els=document.elementsFromPoint(x,y).filter(e=>!e.className||!String(e.className).includes("lwfb"));
+    // walk ANCESTORS, the way feedback.js does. A className-only filter keeps the
+    // badge's classless inner span and over-reports what is under the chip.
+    const ours=e=>{for(let n=e;n;n=n.parentElement){const c=n.className;if(c&&String(c).indexOf("lwfb")>=0)return true;}return false;};
+    const els=document.elementsFromPoint(x,y).filter(e=>!ours(e));
     const e=els[0];
     if(!e) return "nothing";
     const r2=e.getBoundingClientRect();
     return (e.tagName.toLowerCase())+(e.id?"#"+e.id:"")+(e.className&&typeof e.className==="string"?"."+e.className.trim().split(/\s+/)[0]:"")
       +" ["+Math.round(r2.width)+"x"+Math.round(r2.height)+"] text="+JSON.stringify((e.textContent||"").trim().slice(0,28));
   });
-  return {rect:{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)},
+  // a FADED chip keeps its rect and its left/top, so position alone lies
+  const visible = cs.opacity!=="0" && cs.visibility!=="hidden" && cs.display!=="none" && cs.pointerEvents!=="none";
+  return {visible, opacity:cs.opacity, pointerEvents:cs.pointerEvents,
+    rect:{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)},
     pos:cs.position, left:cs.left, top:cs.top, right:cs.right, bottom:cs.bottom,
     vw:innerWidth, vh:innerHeight, under, same:new Set(under).size===1};
 });

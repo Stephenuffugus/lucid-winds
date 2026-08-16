@@ -134,7 +134,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   background:var(--coal2); border:1px solid #3a4230; border-radius:14px; padding:12px 16px; margin:6px 0; min-height:56px; }
 .setrow label{ font-weight:700; font-size:15px; }
 .toggle{ width:56px; height:32px; border-radius:999px; background:#2a2f22; position:relative; cursor:pointer; border:1px solid #3a4230; flex:0 0 auto; }
-.toggle::before{ content:''; position:absolute; inset:-7px; }   /* invisible hit-slop → 46px tap target (44px touch floor) */
+.toggle::before{ content:''; position:absolute; inset:-8px; }   /* invisible hit-slop → 48px tap target (measured rendered at 375x667) */
 .toggle .kn{ position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#6f775f; transition:.15s; }
 .toggle.on{ background:var(--sage2); } .toggle.on .kn{ left:27px; background:#eafbe0; }
 
@@ -209,7 +209,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 /* loadout screen */
 .load-body{ width:100%; max-width:420px; padding-bottom:10px; }
 .load-tabs{ display:flex; gap:6px; margin:6px 0 4px; }
-.load-tabs .lt{ flex:1; min-height:44px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
+.load-tabs .lt{ flex:1; min-height:48px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
 .load-tabs .lt.on{ background:var(--sage2); color:#0d1409; border-color:var(--sage); }
 .nut-row{ background:var(--coal2); border:1px solid #3a4230; border-radius:14px; padding:11px 13px; margin:8px 0; }
 .nut-row .nh{ display:flex; align-items:center; gap:8px; }
@@ -219,7 +219,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .nut-row .nc{ display:flex; align-items:center; gap:10px; }
 .nut-row .nbar{ flex:1; height:8px; background:#12140f; border-radius:99px; overflow:hidden; }
 .nut-row .nbar i{ display:block; height:100%; border-radius:99px; transition:width .12s; }
-.nstep{ width:44px; height:44px; min-height:44px; border-radius:12px; border:1px solid #3a4230; background:var(--coal); color:var(--cream); font-size:22px; font-weight:900; cursor:pointer; flex:0 0 auto; }
+.nstep{ width:48px; height:48px; min-height:48px; border-radius:12px; border:1px solid #3a4230; background:var(--coal); color:var(--cream); font-size:22px; font-weight:900; cursor:pointer; flex:0 0 auto; }
 .nstep:active{ transform:scale(.92); } .nstep:disabled{ opacity:.28; }
 .nut-n .nn,.nut-n .ni{ color:#e0703a; } .nut-n .nbar i{ background:#e0703a; }
 .nut-p .nn,.nut-p .ni{ color:#c98bff; } .nut-p .nbar i{ background:#c98bff; }
@@ -467,13 +467,25 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
      - Only the menu's exit control calls SWS_EXIT().
    ===================================================================== */
 (function(){
-  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  /* FRAMED must not be gated on ?embed=1 alone. The portal navigates relative
+     /satellites/ urls TOP LEVEL (verified 2026-08-16, PORTAL-CONTRACT.md), and
+     a github.io card that frames us WITHOUT the query param would have fallen
+     through to location.replace inside the frame — the blank-frame bug this
+     header warns about. Test the query param OR a real parent. */
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search), framed=false;
+  try{ framed = (window.parent!==window); }catch(e){ framed=true; }
+  framed = framed || SWS_EMBED;
   window.SWS_EMBED=SWS_EMBED;
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(framed){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  /* ready at parse AND on load: the portal arms a black-screen recovery timer
+     per load and closes a frame that never announces itself. */
+  if(framed){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} });
+  }
 })();
 
 /* =====================================================================
@@ -2221,22 +2233,48 @@ function movePouch(w){
   G.pouch=vadd(anchor,pull);
   if(d>6) SFX.stretch();
 }
-/* predicted arc (no collisions; mirrors world gravity + damping) */
+/* predicted arc. Mirrors world gravity + damping, and STOPS at the first solid
+   thing the seed would touch — the guide is the aiming interface on a
+   slingshot, so an arc that draws straight through the fort is the single most
+   expensive lie in the game. Potassium lengthens and tightens it (this is what
+   the loadout copy has always promised; it used to promise nothing real).
+   Returns { pts:[...], hit:{x,y}|null }. */
+function guideSteps(){
+  var lo=(G&&G.loadout)||DEFAULT_LOADOUT, nut=lo.nutrients||{};
+  var k=Math.max(0,_num(nut.k,0));
+  return { steps:Math.min(200, 90+k*10), every:(k>=6?3:4) };   // longer + finer read with Potassium
+}
+function _guideBlocked(x,y,r){
+  var bs=G.world.bodies, i, b;
+  for(i=0;i<bs.length;i++){
+    b=bs[i]; if(b.dead||!b.game) continue;
+    var kind=b.game.kind;
+    if(kind==='proj'||kind==='debris') continue;
+    if(kind==='ground'){ if(y>=GROUND_Y) return true; continue; }
+    if(b.shape==='circle'){ var dx=x-b.pos.x, dy=y-b.pos.y, rr=b.radius+r; if(dx*dx+dy*dy<=rr*rr) return true; continue; }
+    var a=b._aabb;   // AABB is enough for a guide: cheap, and never claims a gap that is not there
+    if(x>=a.minx-r && x<=a.maxx+r && y>=a.miny-r && y<=a.maxy+r) return true;
+  }
+  return false;
+}
 function predictPath(){
   var anchor=v(SLING_X,SLING_Y);
   var pull=vsub(anchor,G.pouch);
   var speed=Math.min(vlen(pull)*LAUNCH_POWER, MAX_LAUNCH);
-  if(speed<60) return [];
+  if(speed<60) return { pts:[], hit:null };
+  var gs=guideSteps();
   var dir=vnorm(pull);
   var pos=v(G.pouch.x,G.pouch.y), vel=vmul(dir,speed);
-  var pts=[], dt=1/60;
-  for(var i=0;i<90;i++){
+  var pts=[], hit=null, dt=1/60;
+  var pr=(AMMO[currentAmmoType()]||AMMO.burr).r*0.7;
+  for(var i=0;i<gs.steps;i++){
     vel.y+=GRAVITY*dt; vel.x/=(1+dt*0.15); vel.y/=(1+dt*0.15);
     pos.x+=vel.x*dt; pos.y+=vel.y*dt;
-    if(i%4===0) pts.push(v(pos.x,pos.y));
+    if(i%gs.every===0) pts.push(v(pos.x,pos.y));
     if(pos.y>GROUND_Y+8 || pos.x>G.levelWidth) break;
+    if(i>2 && _guideBlocked(pos.x,pos.y,pr)){ hit=v(pos.x,pos.y); break; }
   }
-  return pts;
+  return { pts:pts, hit:hit };
 }
 
 /* ================================================================
@@ -2525,10 +2563,16 @@ function drawSling(ctx){
 }
 
 function drawTrajectory(ctx){
-  var pts=predictPath(); if(!pts.length) return;
+  var g=predictPath(), pts=g.pts; if(!pts.length) return;
   ctx.fillStyle='rgba(232,220,200,0.7)';
   for(var i=0;i<pts.length;i++){ var a=1-i/pts.length; ctx.globalAlpha=0.25+a*0.6; ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y, 4-i*0.03, 0,6.28); ctx.fill(); }
   ctx.globalAlpha=1;
+  if(g.hit){   // where the arc actually ends: a small gold reticle on the first thing it meets
+    ctx.strokeStyle='rgba(200,168,75,0.9)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(g.hit.x,g.hit.y,9,0,6.28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(g.hit.x-13,g.hit.y); ctx.lineTo(g.hit.x-5,g.hit.y);
+    ctx.moveTo(g.hit.x+5,g.hit.y); ctx.lineTo(g.hit.x+13,g.hit.y); ctx.stroke();
+  }
 }
 function drawParticles(ctx){
   for(var i=0;i<G.particles.length;i++){ var p=G.particles[i]; ctx.globalAlpha=clamp(p.life/p.max,0,1); ctx.fillStyle=p.color;
@@ -2948,7 +2992,7 @@ function showResult(won, stars, coins){
   if(won){ for(var s=0;s<stars;s++){ (function(k){ setTimeout(function(){ starsEl[k].style.transform='scale(1.3)'; SFX.star(k); setTimeout(function(){ starsEl[k].style.transform='scale(1)'; },160); }, 260+k*220); })(s); } }
   $('resScore').textContent = fmt(G.score);
   $('resBest').textContent = _endless ? ('Best depth: '+SAVE.endlessBest) : ('Best: '+fmt(levelBest(G.level.n)));
-  $('resReward').textContent = won ? ('+ '+coins+' 🪙  ·  next patch at '+fmt(G.star2)+' / '+fmt(G.star3)) : 'Give it another go.';
+  $('resReward').textContent = won ? ('+ '+coins+' 🪙  ·  ★★ at '+fmt(G.star2)+'  ·  ★★★ at '+fmt(G.star3)) : 'Give it another go.';
   $('btnNext').style.display = won ? 'block':'none';
   $('btnNext').textContent = (won && G.level.boss) ? 'The End →' : 'Next patch →';
   if(_endless && won){ if(_endlessN>SAVE.endlessBest){ SAVE.endlessBest=_endlessN; persist(); try{ window._sbCapEarn(2,'burr-blast:endless'); }catch(e){} } }   // pay only for a NEW depth record, not every trivial win
@@ -3086,7 +3130,12 @@ function boot(){
   $('btnPauseLevels').onclick=function(){ SFX.click(); if(_expedition)abandonExpedition(); _playing=false; openLevels(); };
   $('btnPauseMenu').onclick=function(){ SFX.click(); if(_expedition)abandonExpedition(); _playing=false; goMenu(); };
   // expedition
-  $('btnExpQuit').onclick=function(){ SFX.click(); if(confirm('Abandon this expedition? Your run progress is lost.')){ abandonExpedition(); openLevels(); } };
+  /* never gate the ONLY exit from a run on confirm(): a context that suppresses
+     dialogs returns undefined and the player is trapped in the expedition. */
+  $('btnExpQuit').onclick=function(){ SFX.click();
+    var ok=true; try{ ok=confirm('Abandon this expedition? Your run progress is lost.'); }catch(e){ ok=true; }
+    if(ok===false) return;
+    abandonExpedition(); openLevels(); };
   $('btnExpAgain').onclick=function(){ SFX.click(); startExpedition(); };
   $('btnExpMenu').onclick=function(){ SFX.click(); goMenu(); };
   // results
