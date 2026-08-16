@@ -133,18 +133,32 @@ These are the ones worth testing hardest, because they shipped and nobody knew.
   the first two clears paid 159 XP while level 2 cost 170, so clearing two rungs did not level
   you once. Now every race clears all 12 rungs.
 
-## Two things I found by looking that are NOT fixed ⚖
-Left as findings rather than silently restyled, because both are art or layout calls.
-- **Petal Plunge shows a keyboard hint on a phone.** "left right carve · down tuck · space =
-  trick · P = pause" renders across the middle of the slope at 375x667, telling a touch player
-  to press four keys their device does not have.
-- **Petal Plunge's in game HUD bleeds through its title screen.** A pause button and two score
-  chips are visible, dimmed, along the top edge behind the menu. Same class as The Attic's
-  overlay: chrome from one screen showing through another.
-- **Blobworks (greenhouse-pinball) draws its shot rails outside the table.** The ramp and orbit paths
-  render as bright outlined ribbons over the painted art, crossing above the rollovers onto the
-  slate, and at the bottom running off the playfield across the cabinet and the corner screws.
-  This is not a debug overlay; it is what a player sees.
+## The three I had left as findings — now fixed
+
+I wrote these down and did not act on them, calling them art calls. That was the wrong
+call. All three are done.
+
+- **Petal Plunge's HUD bled through every menu.** ✅ Fixed, and the cause was worse than the
+  symptom. `.hidden` was only ever declared as `.scr.hidden`, which needs *both* classes, and
+  `#hud` and `#hint` carry `hidden` on its own. So the class never did anything to them and
+  the depth readout, petal counter and pause button sat over the title, tutorial, mode select,
+  shop, settings, pause and game over screens for the game's whole life. One bare CSS rule.
+  **Try this:** open it, and the slope should be clean until you actually start a run.
+- **Petal Plunge's keyboard hint on a phone** — ❌ **this one was my mistake, not the game's.**
+  It already checks `(pointer:coarse)` and shows "carve · hold middle to tuck · tap in the air
+  for tricks" on touch. My screenshot tool was not emulating a touch device, so the media query
+  came back false and I photographed the desktop string and reported it as a bug. Nothing to fix.
+- **Blobworks painted its shot rails across the whole table.** ✅ Fixed, and it was two things.
+  The ramps drew their entire path as a 20px ribbon every frame whether or not anything was on
+  them, so six of them made an X over the clay bench. Now an idle ramp draws only its mouth,
+  thinner and set back, and a ramp lights up end to end **when a bead is actually riding it** —
+  which also means the lit rail now tells you where your ball went. Separately, a teal rim-light
+  was tracing the *physics* wall geometry on top of painted walls that do not line up with it,
+  which is what ran those pale lines over the cabinet and the corner screws. Removed; the code's
+  own comment already said the bench bakes its own lip.
+  **Try this:** start a game and just look at the table. You should be able to see the eyeball
+  jars, the pipes and the SLIME letter blobs that were buried before. Then shoot a ramp and
+  watch that one rail light up.
 
 ## Things that lost your stuff
 - **Aura Farm**: the ending could be replayed **indefinitely**, re-paying 8 Sunbeams each time.
