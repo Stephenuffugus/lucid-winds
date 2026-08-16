@@ -2204,6 +2204,7 @@ function restart(soft){
   $('wincard').className = '';
   if (!soft) setMsg('');
   drawStatic(); drawDynamic();
+  setDriftMeter(mirrorDrift(G.lv, G.st));
 }
 
 function doInput(inp){
@@ -2265,6 +2266,7 @@ function onWin(){
   $('wincard').className = 'on';
   setMsg('');
   if (G.mode === 'level') drawRibbon();
+  if ($('lvcard').style.display !== 'none') drawLvCard();
   offerInstall();
 }
 
@@ -2289,6 +2291,7 @@ function playReplay(log){
   $('wincard').className = '';
   G.st = initState(G.lv);
   drawStatic(); drawDynamic();
+  setDriftMeter(mirrorDrift(G.lv, G.st));
   var i = 0;
   clearInterval(G.anim);
   G.anim = setInterval(function(){
@@ -2297,8 +2300,10 @@ function playReplay(log){
       setMsg('that was your best run'); return;
     }
     G.st = stepWorld(G.st, IN_CHARS.indexOf(log.charAt(i)), G.lv);
-    voices(G.st.desync);
+    var rd = mirrorDrift(G.lv, G.st);
+    voices(G.st.desync, rd);
     drawDynamic();
+    setDriftMeter(rd);
     i++;
   }, 190);
 }

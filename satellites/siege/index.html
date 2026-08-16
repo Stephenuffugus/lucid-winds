@@ -58,6 +58,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 .trap{position:absolute;bottom:0;transform:translateX(-50%);text-align:center;pointer-events:none}
 .trap .g{font-size:20px;line-height:1;display:block;filter:drop-shadow(0 0 5px rgba(0,0,0,.8))}
 .trap small{display:block;font-size:9px;color:var(--muted)}
+.trap .lv{display:block;font-size:9px;line-height:1;color:var(--accent);letter-spacing:1px}
 #sight{position:absolute;height:2px;background:linear-gradient(90deg,rgba(245,199,126,.7),rgba(245,199,126,0));pointer-events:none}
 .float{position:absolute;font-size:12px;font-weight:800;pointer-events:none;color:var(--warm);
   animation:rise 700ms ease-out forwards}
@@ -77,6 +78,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 .shopbtn .c{font-size:12px;font-weight:800;color:var(--warm)}
 .shopbtn.on{border-color:var(--accent);background:#2a1a13}
 .shopbtn.broke{opacity:.38}
+.shopbtn.deepen{border-color:#4a3a2a}
+.shopbtn.deepen .g{color:var(--accent)}
 #buildrow{display:flex;gap:6px;align-items:center;margin-top:4px}
 .tbtn{min-height:48px;flex:1;border:1px solid var(--line);border-radius:10px;background:var(--panel2);
   font-size:12px;font-weight:700;letter-spacing:1px;padding:0 8px}
@@ -1451,6 +1454,7 @@ var SIL = {
   healer:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M7 8 L13 8 L13 26 L7 26 Z" fill="C"/><path d="M10 0 L10 8 M6 4 L14 4" stroke="#7ab356" stroke-width="2.6" fill="none"/></svg>',
   swarm:    '<svg width="W" height="H" viewBox="0 0 20 26"><circle cx="6" cy="20" r="4" fill="C"/><circle cx="14" cy="22" r="3.4" fill="C"/><circle cx="10" cy="13" r="3.6" fill="C"/></svg>',
   warden:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M1 3 L4 8 L6 5 L14 5 L16 8 L19 3 L17 12 L18 26 L2 26 L3 12 Z" fill="C"/><path d="M6 10 L14 10 L12 15 L8 15 Z" fill="#0a0b0f"/></svg>',
+  marshal:  '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 0 L14 4 L13 9 L16 26 L11 26 L10 16 L9 26 L4 26 L7 9 L6 4 Z" fill="C"/><path d="M14 5 L19 1 L19 9 L15 12 Z" fill="C"/><path d="M1 2 L5 6 L3 8 Z" fill="C"/></svg>',
   player:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 1 L13 7 L12 26 L8 26 L7 7 Z" fill="C"/><path d="M13 6 L19 2 L19 4 L14 10 Z" fill="#f5c77e"/></svg>'
 };
 function sil(type, w, h, colour) {
@@ -1491,8 +1495,11 @@ function drawTraps() {
     node.style.bottom = '2px';
     var sub = '';
     if (t.type === 'spike') sub = t.charges;
-    if (t.type === 'wall') sub = '###'.slice(0, t.hits);
-    node.innerHTML = '<span class="g" style="color:' + (t.type === 'wall' ? '#8b93a5' : '#f5c77e') + '">' + TRAPS[t.type].glyph + '</span><small>' + sub + '</small>';
+    if (t.type === 'wall') sub = '#########'.slice(0, t.hits);
+    var lvl = t.lvl > 1 ? '<span class="lv">' + '••'.slice(0, t.lvl - 1) + '</span>' : '';
+    node.innerHTML = '<span class="g" style="color:' + (t.type === 'wall' ? '#8b93a5' : '#f5c77e') +
+      (t.lvl > 1 ? ';text-shadow:0 0 6px rgba(232,112,58,.9)' : '') + '">' + TRAPS[t.type].glyph + '</span>' +
+      lvl + '<small>' + sub + '</small>';
   }
 }
 
@@ -1553,6 +1560,19 @@ function drawSight(cell) {
   EL.sight.style.bottom = (m.h * 0.42) + 'px';
 }
 
+/* The seventh tool is not a trap. Twenty eight cells is a hard ceiling and the
+   purse keeps growing, so DEEPEN is where the late game money goes: pay a
+   trap's price again on a cell that already has one and it stands a level
+   deeper, patched back to full. */
+var DEEPEN = { key: 'deepen', glyph: '\u21D1', short: 'DEEPEN', cost: 'SAME',
+  blurb: 'Tap a trap you already own. It stands a level deeper and comes back to full.' };
+
+function anyReinforceable() {
+  var c;
+  for (c = CONFIG.BUILD_MIN_CELL; c <= CONFIG.BUILD_MAX_CELL; c++) if (SIM.canReinforce(G, c)) return true;
+  return false;
+}
+
 function drawShop() {
   var html = '', i, k, def;
   for (i = 0; i < TRAP_ORDER.length; i++) {
@@ -1560,6 +1580,9 @@ function drawShop() {
     html += '<button class="shopbtn' + (UI.sel === k ? ' on' : '') + (G.scrap < def.cost ? ' broke' : '') +
       '" data-trap="' + k + '"><span class="g">' + def.glyph + '</span><span class="n">' + def.short + '</span><span class="c">' + def.cost + '</span></button>';
   }
+  html += '<button class="shopbtn deepen' + (UI.sel === DEEPEN.key ? ' on' : '') + (anyReinforceable() ? '' : ' broke') +
+    '" data-trap="' + DEEPEN.key + '"><span class="g">' + DEEPEN.glyph + '</span><span class="n">' + DEEPEN.short +
+    '</span><span class="c">' + DEEPEN.cost + '</span></button>';
   EL.shop.innerHTML = html;
 }
 
@@ -1795,10 +1818,21 @@ function cellFromX(x) {
 function tapCell(cell) {
   if (G.phase !== 'build') return;
   if (G.traps[cell]) {
-    var t = G.traps[cell].type;
-    if (SIM.sellTrap(G, cell)) { UI.dirtyTraps = true; drawShop(); toast('Pulled the ' + TRAPS[t].name.toLowerCase() + ' back up.'); haptic(10); }
+    var t = G.traps[cell], name = TRAPS[t.type].name.toLowerCase();
+    if (UI.sel === DEEPEN.key) {
+      if (t.lvl >= CONFIG.REINFORCE_MAX && !SIM.trapNeedsRepair(G, cell)) { toast('That ' + name + ' is as deep as it goes.'); return; }
+      if (G.scrap < SIM.reinforceCost(G, cell)) { toast('Deepening that ' + name + ' costs ' + SIM.reinforceCost(G, cell) + ' scrap.'); return; }
+      var was = t.lvl;
+      if (SIM.reinforceTrap(G, cell)) {
+        UI.dirtyTraps = true; drawShop(); haptic(14); VOICE.wall();
+        toast(t.lvl > was ? 'The ' + name + ' stands at level ' + t.lvl + '.' : 'Patched the ' + name + ' back to full.');
+      }
+      return;
+    }
+    if (SIM.sellTrap(G, cell)) { UI.dirtyTraps = true; drawShop(); toast('Pulled the ' + name + ' back up.'); haptic(10); }
     return;
   }
+  if (UI.sel === DEEPEN.key) { toast('Nothing in that cell to deepen.'); return; }
   if (!UI.sel) { toast('Pick a trap first.'); return; }
   if (SIM.placeTrap(G, cell, UI.sel)) {
     UI.dirtyTraps = true; drawShop(); haptic(10); VOICE[UI.sel === 'ballista' ? 'ballista' : 'wall']();
@@ -1836,7 +1870,8 @@ function wireInput() {
     audioOn();
     UI.sel = (UI.sel === b.dataset.trap) ? null : b.dataset.trap;
     drawShop();
-    $('hint').textContent = UI.sel ? TRAPS[UI.sel].blurb : 'Tap a trap, then tap a cell in the lane.';
+    $('hint').textContent = UI.sel ? (UI.sel === DEEPEN.key ? DEEPEN.blurb : TRAPS[UI.sel].blurb)
+      : 'Tap a trap, then tap a cell in the lane. Tap a trap already in the lane to sell it back.';
   });
 
   $('skipbtn').addEventListener('click', function () { audioOn(); SIM.startWave(G); playEvents(); drawPips(); });

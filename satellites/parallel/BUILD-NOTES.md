@@ -166,7 +166,7 @@ exists somewhere in the file, and no static id may be declared twice.
 
 ## Gates I watched FAIL first (this pass)
 
-23 deliberate breaks, all confirmed red, harnesses in the scratchpad:
+24 deliberate breaks, all confirmed red, harnesses in the scratchpad:
 
 sky stars closer than the law · a shrunken hit radius · drift invariant swapped
 to a difference · history cap removed · history dedupe removed · day number off
@@ -176,9 +176,11 @@ by one · a tier band past the par field · a seeded level handed over unverifie
 a wired button with no element · a dash in new copy · an unwired button · a pad
 squashed under 48px · the win card never opening · the ribbon left empty · the
 history never recorded · a share that says today instead of the day · a layout
-that walks on every fit.
+that walks on every fit · a hit circle clipped by the edge of the sky.
 
-**Three breaks initially stayed GREEN and were fixed rather than accepted:**
+**Three breaks initially stayed GREEN and were fixed rather than accepted**
+(a fourth defect, the clipped hit circle, was found by reading an ASCII dump of
+the sky and had no assertion at all until then):
 
 - The history dedupe break passed because the merge suite only ever merged two
   saves with disjoint runs. Added: merging a save with itself, and three flushes
