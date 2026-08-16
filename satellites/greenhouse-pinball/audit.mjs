@@ -215,7 +215,12 @@ const CHECKS = [
     });
     return { ok: r.stuck.length === 0, detail: r.stuck.length ? `WEDGED: ${JSON.stringify(r.stuck[0])}` : `${r.trials} beads dropped across the whole field, none sat still` };
   },
-  break: `window.PIN_DEV.state().anti=0; (function(){ var g=window.PIN_DEV.state(); Object.defineProperty(g,'balls',{value:g.balls,writable:false}); })(); window.PIN_DEV.step=(function(o){return function(dt){ var g=window.PIN_DEV.state(); for(var i=0;i<g.balls.length;i++){g.balls[i].vx=0;g.balls[i].vy=0;} return o(dt); };})(window.PIN_DEV.step);` },
+  // The old break zeroed velocity, which the anti-stuck nudge then answered with
+  // a 240/300 kick every 0.6s, so the bead moved and the check stayed green while
+  // measuring nothing. Pin the POSITION instead: the nudge can set whatever
+  // velocity it likes and the bead still never goes anywhere, which is what a
+  // real dead pocket looks like.
+  break: `window.PIN_DEV.step=(function(o){ return function(dt){ var g=window.PIN_DEV.state(); var b=g.balls[0]; var x=b?b.x:0, y=b?b.y:0, held=b?(b.inLane||b.captured||b.onRail):true; var r=o(dt); b=g.balls[0]; if(b&&!held){ b.x=x; b.y=y; b.vx=0; b.vy=0; } return r; }; })(window.PIN_DEV.step);` },
 
 { name: 'the MEGA MASH counter counts MEGA MASH, not Bloom Rush',
   async run(page) {

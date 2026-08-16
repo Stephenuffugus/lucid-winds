@@ -281,3 +281,8 @@ Shot mid run at 375x667 and read.
   for perfect rhythm over slightly-off rhythm, which is a fair thing to pay, but
   the assertion is riding close to its own threshold and will need a look if the
   jump tuning ever moves.
+
+## FINAL STATE
+
+`node audit.mjs` → **14/14 passed**.
+`node audit.mjs --selftest` → **12/12 checks proved they go red** (was 9/12).

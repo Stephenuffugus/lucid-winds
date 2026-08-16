@@ -268,3 +268,14 @@ the title at 1280x800, then read the images.
   Director first. It is the difference between "sculpted in clay" and "a
   prototype with its collision shapes visible".
 - The scoring spread from the first pass is unchanged and still real.
+
+## FINAL STATE
+
+`node audit.mjs` → **14/14 passed**.
+`node audit.mjs --selftest` → **12/12 checks proved they go red** (was 9/12).
+
+A fourth dud surfaced once the first three started biting: **`no bead can be
+held in a dead pocket forever`** was breaking itself by zeroing velocity, and
+the game's own anti-stuck nudge answered that with a 240/300 kick every 0.6s, so
+the bead moved, the check went green and it was measuring nothing. It now pins
+the POSITION instead, which is what a real dead pocket looks like.

@@ -304,3 +304,11 @@ Shot at 375x667 and at 1280x800, and read.
   point can take half a minute.
 - `Survival` is not covered by the tunnelling, stall or AI checks, which iterate
   a hard coded list of five modes. It is a sixth mode with its own paddle setup.
+
+## FINAL STATE
+
+`node audit.mjs` → **15/15 passed**.
+`node audit.mjs --selftest` → **14/14 checks proved they go red.**
+One break was decoration: the touch-target check shrank `.icob`, the in-game
+PAUSE button, while the scan only walks the six MENU screens, so the mutated
+element was never measured. It now shrinks what the scan looks at.
