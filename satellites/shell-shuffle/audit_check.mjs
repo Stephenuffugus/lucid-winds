@@ -274,7 +274,15 @@ for (const [name, poison] of Object.entries(POISONS)) {
   const { ctx, page } = await open();
   const keys = await page.evaluate(() => { window._sbCapEarn(3, 'probe'); return Object.keys(localStorage).filter(k => k.indexOf('sw_sb_') === 0); });
   ok('sunbeam bucket is keyed to this game', keys.indexOf('sw_sb_shell-shuffle') >= 0, JSON.stringify(keys));
-  ok('sunbeam bucket does not fall back to sw_sb_index.html', keys.indexOf('sw_sb_index.html') < 0, JSON.stringify(keys));
+  // and again from the /index.html url, which is where the old pathname-derived
+  // key collapsed to the fleet-wide 'sw_sb_index.html' bucket
+  const p2 = await ctx.newPage();
+  await p2.setViewport({ width: 375, height: 667 });
+  await p2.goto(URL0 + 'index.html', { waitUntil: 'load' });
+  await new Promise(r => setTimeout(r, 500));
+  const keys2 = await p2.evaluate(() => { window._sbCapEarn(3, 'probe'); return Object.keys(localStorage).filter(k => k.indexOf('sw_sb_') === 0); });
+  ok('served as /index.html the bucket is still this game', keys2.indexOf('sw_sb_shell-shuffle') >= 0, JSON.stringify(keys2));
+  ok('the bucket never collapses to the fleet-wide sw_sb_index.html', keys2.indexOf('sw_sb_index.html') < 0, JSON.stringify(keys2));
   await ctx.close();
 }
 

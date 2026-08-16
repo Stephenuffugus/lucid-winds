@@ -114,7 +114,7 @@
         <p><b>MUNCH</b> every seed to clear the garden and move up a level.</p>
         <p><b>DODGE</b> the pests. One touch costs a life, and the run ends when all three are gone. Petal Rush is timed instead.</p>
         <p><b>BLOOMS</b> in the corners wilt the pests. Munch wilted pests back to back for big chains.</p>
-        <p><b>GUST</b> blows nearby pests home. You earn more gusts as your score climbs.</p>
+        <p><b>GUST</b> sends every loose pest home at once. You earn more gusts as your score climbs.</p>
         <p><b>PETALS</b> drop as you play. Spend them on new modes and skins in the Nursery.</p>
       </div>
       <button id="btnHowBack">GOT IT</button>
@@ -290,7 +290,7 @@ function _validateSave(s){
 async function loadSave(){
   let raw=null; try{raw=await store.get("pollen-save");}catch(e){}
   let parsed=null; try{parsed=raw?JSON.parse(raw):null;}catch(e){parsed=null;}
-  save={...save,...(parsed||{})}; /*BROKE*/
+  save=_validateSave(parsed);
   _persistBase={petals:save.petals};
 }
 /* ── TWO-TAB MERGE (defect class 4) ──────────────────────────────────────────
@@ -321,7 +321,7 @@ async function persist(){
       if(o){ m.prog=Math.max(m.prog,o.prog); m.claimed=m.claimed||o.claimed; }
     }
   }
-  const body=JSON.stringify(save); /*BROKE*/
+  const body=JSON.stringify(out);
   try{await store.set("pollen-save",body);}catch(e){}
   /* A swallowed write must not look like a success (defect class 5). */
   let back=null; try{back=await store.get("pollen-save");}catch(e){}
@@ -1111,8 +1111,8 @@ if(/[?&]pptest=1(&|$)/.test(location.search)){
      losing cosmetics is recoverable, a player losing the game is not. */
   try{ await loadSave(); }
   catch(e){ save=_validateSave(null); _persistBase={petals:0}; }
-  buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD(); /*BROKE*/
-  if(false){
+  try{ buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD(); }
+  catch(e){
     save=_validateSave(null); _persistBase={petals:0};
     try{ buildGrid();mkPests();sizeCanvas();buildMenu();updateHUD();
       toast("Saved progress could not be read, so the garden started fresh"); }catch(e2){}
@@ -1185,7 +1185,7 @@ if(/[?&]pptest=1(&|$)/.test(location.search)){
     var b=document.createElement('button');
     b.id='lwExit';b.className='alt';b.textContent='← ALL GAMES';
     b.style.marginTop='4px';
-    /*BROKE*/
+    b.addEventListener('click',function(){window.SWS_EXIT();});
     card.appendChild(b);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addExit);else addExit();

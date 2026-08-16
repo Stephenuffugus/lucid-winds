@@ -31,31 +31,33 @@ hues · dragon-philosophy
 
 bubblenaut · budburst · burr-blast · burrow-bowl · flipbook · moon-claw · petal-plunge · pollen-panic · pong · rule-root · seed-flutter · shell-shuffle · skyshot · slice-3d · sproing
 
-## NOT YET TOUCHED — largest first
+## NOT YET TOUCHED — 43 carded satellites, largest first
 
-These are the next waves. Line counts are a rough proxy for how much game is in there.
+Recomputed from the portal and the notes on disk, so this does not drift.
 
 ```
-burr-blast          3109      pollen-panic        1081
-garden-td           2580      shell-shuffle       1020
-slice-3d            2467      bubblenaut          1012
-sproing             2011      ...and 35 more under 1000 lines
-moon-claw           1673
-budburst            1672
-pong                1597
-petal-plunge        1596
-flatulence-fighter  1560
-skyshot             1463
-greenhouse-pinball  1458
-burrow-bowl         1360
-rule-root           1280
-flipbook            1277
-seed-flutter        1170
+blackout                3854
+siege                   3518
+deepwell                3308
+wireworm                3077
+parallel                2687
+garden-td               2672
+flatulence-fighter      1560
+greenhouse-pinball      1458
+petalvex                993
+hedgerow                923
+grubtrap                912
+mahjong                 875
+garden-estates          870
+blooming-words          860
+berry-vine              859
+hexa-hive               847
+rabbit-samurai          809
+dew-snip                797
+bloomzap                785
+rootbound               755
+...and 23 more
 ```
-
-Five of these (burr-blast, garden-td, budburst, shell-shuffle, pollen-panic) are on the feedback
-fab overlap list, so the root fix in `feedback.js` should clear that specific defect for them
-without a per game edit.
 
 ## Standing defect classes to check in every game from here
 

@@ -149,7 +149,9 @@ re-verified rather than assumed. Both halves now hold:
 - **Touch targets.** The 540x960 stage scales 0.6944 at 375x667. Declared 72px stage buttons
   render at 50px, over the 48px floor. Measured every visible control on title, how, forge
   and play screens: **zero under 48 rendered px**. The `72 is stage px` comment at line 75
-  is accurate and must not be "simplified" to 48.
+  is accurate and must not be "simplified" to 48 — at 48 declared these render at 33.
+  The injected exit button gets this right too: `arcade-exit.js` measures the stage's real
+  scale and raises its own `minHeight` in stage units, landing at 50 rendered.
 
 ### 8. NOT A DEFECT — the exit works, and something calls it
 
