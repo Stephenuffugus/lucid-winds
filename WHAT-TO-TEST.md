@@ -11,7 +11,8 @@ so you can tell whether the fix took. Anything marked ⚖ is a decision waiting 
 
 # PART 1 — THE FIVE NEW GAMES
 
-Built from scratch today, then deepened. 1,422 assertions between them, zero failing.
+Built from scratch today, then deepened. **1,443 assertions** between them, zero failing
+(deepwell 308, blackout 343, parallel 205, wireworm 285, siege 302), all re-run at the time of writing.
 All five: `lucidwinds.com/satellites/<name>/`
 
 ## DEEPWELL `⛏️` — push your luck mining
@@ -77,7 +78,8 @@ These are the ones worth testing hardest, because they shipped and nobody knew.
 ## Games you could not leave
 **Try this:** open any game from the arcade and look for the way back.
 - **21 of 100 satellites had no way out** except the browser back button, which an installed
-  PWA does not have. **All 100 can get home now.**
+  PWA does not have. **All 100 can get home now**: 73 pass outright, 24 via the runtime
+  injector, 3 partial, **0 stranded**.
 - Every one had the same cause: an exit that only renders when the game is in a frame, and the
   portal does not frame these. Several had a correct exit function that **nothing ever called**.
 

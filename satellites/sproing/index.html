@@ -400,7 +400,7 @@ var LS=(function(){
        when the stored value is not it. A half-written key is what a quota-exceeded
        setItem leaves behind, and this game writes on every landing. */
     getJSON:function(k,d){ var v=this.get(k); if(v==null) return d;
-      try{ v=JSON.parse(v); }catch(e){ return d; } if(1) return v;   /* FAILWATCH */
+      try{ v=JSON.parse(v); }catch(e){ return d; }
       var wantArr=Object.prototype.toString.call(d)==='[object Array]';
       var isArr=Object.prototype.toString.call(v)==='[object Array]';
       if(wantArr) return isArr?v:d;

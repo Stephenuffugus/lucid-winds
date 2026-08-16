@@ -228,6 +228,15 @@ only, so coins are not kept."
 
 Do NOT "fix" this by banking Zen coins — a mode you cannot die in would print money.
 
+### The nine standing classes, both games, re-checked
+
+All nine of `incoming/FLEET-AUDIT-COVERAGE.md` are covered here by assertion, not by opinion:
+1 exit/referrer, 2 fab footprint, 3 corrupt save (26 poisonings), 4 two tabs, 5 silent failure
+(the corrupt-save cases each prove a BUTTON still works, and `loadDoodleSprite` has a real
+`onerror` into `bakeSkinFallback` with a terminal `else` in `applyEquip`, so a doodle whose PNG
+fails to decode degrades to a visible climber rather than an invisible player), 6 touch targets
+as rendered px including the in-run HUD, 7 dashes, 8 overlays, 9 the Zen coin readout above.
+
 Class 9 was also swept across the rest of the game's copy and the rest holds up. Checked
 against the code, not assumed: all five shop upgrades are consumed (`luckyMult`, `passiveMag`,
 `springHops`, `charmF`, and the `sturdy` branch in the death handler), every achievement's
@@ -238,8 +247,15 @@ wrong until you find `chainMultVal()` — 35 hops IS x4), and the two locked ski
 ## SUITE
 
 `node satellites/sproing/audit-check.mjs` (repo root served on :8777) — **68 passed, 0 failed**,
-exit 0. Watched go red on purpose: the HUD assertion above reproduced red twice before it was
-diagnosed, and the suite exits 1 with a red assertion. Seven phases:
+exit 0.
+
+**Watched fail on purpose, twice, second pass.** (a) The HUD assertion reproduced red on its
+own before it was diagnosed — 29m in the handoff, 101m here. (b) The corrupt-save phase was
+proven to still catch the CRITICAL defect it was written for: `LS.getJSON`'s shape check was
+deliberately removed, and the suite came back **41 passed / 4 failed, exit 1**, printing the
+original crash verbatim — `Cannot use 'in' operator to search for 'steer' in 5`, title screen
+rendering perfectly with `afterPlay:"s-title"` and `mapCells:0`, which is exactly the "looks
+fine, every button dead" shape. Restored, green again. Seven phases:
 26 corrupt-save poisonings that each prove a *button still works* rather than that a page
 still renders, sane-value fallbacks, the two-tab merge driven through a real shop purchase,
 the core loop including onboarding escape, **the Zen class 9 pair (Zen says practice and banks

@@ -303,6 +303,7 @@ const CHECKS = [
     return { ok: r.topmost === 'b-pause' && r.w >= 47.5 && r.h >= 47.5 && !r.leftFlipper && !r.rightFlipper && r.tilt === 0,
       detail: JSON.stringify(r) };
   },
+  reloads: true,
   break: `document.getElementById('b-pause').style.pointerEvents='none';` },
 
 { name: 'touch targets are 48px rendered at 375x667 (standing class 6)',
@@ -341,7 +342,10 @@ const CHECKS = [
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     return { ok: r.length === 0, detail: r.length ? JSON.stringify(r.slice(0, 4)) : 'all >= 48px rendered' };
   },
-  break: `var st=document.createElement('style');st.textContent='.btn{min-height:40px!important}';document.head.appendChild(st);` },
+  reloads: true,
+  // must shrink something the scan actually measures: a `.btn` floor did not,
+  // so the old break left every measured box at its real size and never bit.
+  break: `var st=document.createElement('style');st.textContent='#b-pause,#sk-back,#how-back{width:40px!important;height:40px!important;min-height:40px!important;min-width:40px!important}';document.head.appendChild(st);` },
 
 { name: 'the Skins screen letterboxes with the rest of the table',
   async run(page) {
@@ -360,7 +364,10 @@ const CHECKS = [
     // it must fill the SCALED stage box exactly, like every other .screen does
     return { ok: r.inStage && Math.abs(r.skW - r.stageW) < 2 && Math.abs(r.skH - r.stageH) < 2, detail: JSON.stringify(r) };
   },
-  break: `document.body.appendChild(document.getElementById('s-skins'));` },
+  reloads: true,
+  // moving the node once is undone the moment openSkins re-parents it into the
+  // stage, so break the re-parent itself.
+  break: `(function(){var st=document.getElementById('stage'); st.appendChild=function(n){ return document.body.appendChild(n); }; var sk=document.getElementById('s-skins'); if(sk)document.body.appendChild(sk);})();` },
 
 { name: 'no dashes in player copy (standing class 7)',
   async run(page) {
@@ -397,7 +404,8 @@ async function main() {
   for (const c of CHECKS) {
     if (SELFTEST && c.break) {
       selfRun++;
-      const p = await browser.newPage();
+      const sctx = await browser.createBrowserContext();
+      const p = await sctx.newPage();
       await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
       p.on('pageerror', () => {});
       // checks that reload inside run() need the mutation re-applied on EVERY
@@ -408,12 +416,13 @@ async function main() {
       await p.evaluate(() => new Promise(r => setTimeout(r, 150)).catch(()=>{}) );
       let broke = { ok: true, detail: 'break did not run' };
       try { if (!c.reloads) await p.evaluate(c.break); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
-      await p.close();
+      await p.close(); await sctx.close();
       if (broke.ok) { selfFailures++; console.log(`  SELFTEST NOT RED  ${c.name}  (${broke.detail})`); }
       else console.log(`  selftest red ok   ${c.name}`);
     }
 
-    const page = await browser.newPage();
+    const ctx = await browser.createBrowserContext();   // fresh origin per check: a selftest break that writes localStorage was leaking into the next check
+    const page = await ctx.newPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     const errs = [];
     page.on('pageerror', (e) => errs.push(String(e).slice(0, 140)));
@@ -422,7 +431,7 @@ async function main() {
     let out;
     try { out = await c.run(page); } catch (e) { out = { ok: false, detail: 'threw: ' + e.message }; }
     if (errs.length) out = { ok: false, detail: (out.detail || '') + ' | pageerror: ' + errs[0] };
-    await page.close();
+    await page.close(); await ctx.close();
     if (!out.ok) failures++;
     console.log(`${out.ok ? 'PASS' : 'FAIL'}  ${c.name}\n      ${out.detail}`);
   }

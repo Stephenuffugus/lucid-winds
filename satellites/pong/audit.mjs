@@ -500,7 +500,8 @@ async function main() {
   for (const c of CHECKS) {
     // ── selftest: prove the check can go red ─────────────────────────────
     if (SELFTEST && c.break) {
-      const p = await browser.newPage();
+      const sctx = await browser.createBrowserContext();
+      const p = await sctx.newPage();
       await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
       p.on('pageerror', () => {});
       await p.goto(base + URLPATH, { waitUntil: 'domcontentloaded' });
@@ -510,13 +511,14 @@ async function main() {
         await p.evaluate(c.break);
         broke = await c.run(p);
       } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
-      await p.close();
+      await p.close(); await sctx.close();
       if (broke.ok) { selfFailures++; console.log(`  SELFTEST NOT RED  ${c.name}  (${broke.detail})`); }
       else console.log(`  selftest red ok   ${c.name}`);
     }
 
     // ── the real run ─────────────────────────────────────────────────────
-    const page = await browser.newPage();
+    const ctx = await browser.createBrowserContext();   // fresh origin per check: a selftest break that writes localStorage was leaking into the next check
+    const page = await ctx.newPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     const errs = [];
     page.on('pageerror', (e) => errs.push(String(e).slice(0, 120)));
@@ -525,7 +527,7 @@ async function main() {
     let out;
     try { out = await c.run(page); } catch (e) { out = { ok: false, detail: 'threw: ' + e.message }; }
     if (errs.length) out = { ok: false, detail: (out.detail || '') + ' | pageerror: ' + errs[0] };
-    await page.close();
+    await page.close(); await ctx.close();
     record(c.name, out.ok, out.detail);
     if (!out.ok) failures++;
     console.log(`${out.ok ? 'PASS' : 'FAIL'}  ${c.name}\n      ${out.detail}`);

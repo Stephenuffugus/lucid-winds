@@ -248,6 +248,10 @@ Both are guarded by new phase 7 assertions that check the copy against numbers r
 the running game (catalog reach spread, and `G.world.bands` for the ladder), so the guard
 fails from the direction this will actually regress: someone re-adding the claim.
 
+With phase 7 in place all **nine** standing classes in `incoming/FLEET-AUDIT-COVERAGE.md` are
+now covered here by assertion rather than by opinion — the notes above only ever claimed the
+first eight, because class 9 had not been swept.
+
 Class 9 was swept across the rest of the copy too, and the rest holds: "pink crystals end the
 run on contact" (Journey) and "crystals down here shove you rather than kill" (Freefall) are
 both exactly what `hitCrystal` does; "earn slivers every dive" holds on all four end paths

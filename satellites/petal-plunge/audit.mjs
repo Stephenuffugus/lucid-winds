@@ -189,10 +189,16 @@ const CHECKS = [
       const w = out.reduce((a, b) => (b.worst < a.worst ? b : a));
       return { runs: out.length, minClear: w.worst, where: w.worstAt, totalObs: out.reduce((a, b) => a + b.obstacles, 0) };
     });
-    return { ok: r.minClear > 0,
-      detail: r.minClear > 0
-        ? `${r.totalObs} obstacles over ${r.runs} slopes, tightest gap between the lane centre and a hitbox is ${r.minClear}px`
-        : `CORRIDOR IS NOT CLEAR: ${JSON.stringify(r.where)}` };
+    // The sentinel guard is the point: with a broken generator the loop measured
+    // NOTHING, `worst` stayed at its 1e9 seed and the check reported a clear
+    // corridor. A gap nobody measured is not a gap.
+    const measured = r.minClear < 1e8, dense = r.totalObs > 4000;
+    return { ok: r.minClear > 0 && measured && dense,
+      detail: !measured || !dense
+        ? `NOTHING WAS MEASURED: ${r.totalObs} obstacles over ${r.runs} slopes, minClear ${r.minClear}`
+        : (r.minClear > 0
+          ? `${r.totalObs} obstacles over ${r.runs} slopes, tightest gap between the lane centre and a hitbox is ${r.minClear}px`
+          : `CORRIDOR IS NOT CLEAR: ${JSON.stringify(r.where)}`) };
   },
   break: `window.PP.CFG.playerR=140;` },
 
@@ -394,7 +400,11 @@ const CHECKS = [
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     return { ok: r.length === 0, detail: r.length ? JSON.stringify(r.slice(0, 4)) : 'all >= 48px' };
   },
-  break: `var st=document.createElement('style');st.textContent='.btn.sm{min-height:36px!important}';document.head.appendChild(st);` },
+  reloads: true,
+  // run() reloads, so the mutation has to be re-applied on every navigation, and
+  // it has to shrink boxes the scan actually measures rather than one class that
+  // happened to be floored somewhere else.
+  break: `var st=document.createElement('style');st.textContent='button,.btn,.tab{min-height:30px!important;height:30px!important;min-width:30px!important;width:30px!important;padding:0!important}';document.head.appendChild(st);` },
 
 { name: 'nothing important is drawn in the feedback fab gutter (standing class 2/8)',
   async run(page) {
@@ -417,7 +427,8 @@ const CHECKS = [
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     return { ok: r.hits.length === 0, detail: r.hits.length ? `UNDER THE FAB: ${JSON.stringify(r.hits)}` : 'HUD clear of the bottom-right gutter' };
   },
-  break: `document.getElementById('hint').style.bottom='120px';document.getElementById('hint').classList.remove('hidden');` },
+  reloads: true,
+  break: `(function(){var h=document.getElementById('hint'); if(!h)return; h.classList.remove('hidden'); h.style.setProperty('position','fixed','important'); h.style.setProperty('right','20px','important'); h.style.setProperty('left','auto','important'); h.style.setProperty('bottom','120px','important'); h.style.setProperty('width','60px','important');})();` },
 ];
 
 async function main() {
@@ -429,7 +440,8 @@ async function main() {
   for (const c of CHECKS) {
     if (SELFTEST && c.break) {
       selfRun++;
-      const p = await browser.newPage();
+      const sctx = await browser.createBrowserContext();
+      const p = await sctx.newPage();
       await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
       p.on('pageerror', () => {});
       // checks that reload inside run() need the mutation re-applied on EVERY
@@ -440,12 +452,13 @@ async function main() {
       await p.evaluate(() => new Promise(r => setTimeout(r, 150)).catch(()=>{}) );
       let broke = { ok: true, detail: 'break did not run' };
       try { if (!c.reloads) await p.evaluate(c.break); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
-      await p.close();
+      await p.close(); await sctx.close();
       if (broke.ok) { selfFailures++; console.log(`  SELFTEST NOT RED  ${c.name}  (${broke.detail})`); }
       else console.log(`  selftest red ok   ${c.name}`);
     }
 
-    const page = await browser.newPage();
+    const ctx = await browser.createBrowserContext();   // fresh origin per check: a selftest break that writes localStorage was leaking into the next check
+    const page = await ctx.newPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     const errs = [];
     page.on('pageerror', (e) => errs.push(String(e).slice(0, 140)));
@@ -454,7 +467,7 @@ async function main() {
     let out;
     try { out = await c.run(page); } catch (e) { out = { ok: false, detail: 'threw: ' + e.message }; }
     if (errs.length) out = { ok: false, detail: (out.detail || '') + ' | pageerror: ' + errs[0] };
-    await page.close();
+    await page.close(); await ctx.close();
     if (!out.ok) failures++;
     console.log(`${out.ok ? 'PASS' : 'FAIL'}  ${c.name}\n      ${out.detail}`);
   }
