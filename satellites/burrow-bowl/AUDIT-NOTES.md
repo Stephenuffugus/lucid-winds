@@ -1,8 +1,8 @@
 # BURROW BOWL — audit notes
 
 Audited 2026-08-16. Read end to end (1360 lines) BEFORE any edit. Defect list written first,
-then fixed worst first. Verified with `node --check` on the extracted script blocks and with a
-headless assertion suite (`test/bb_audit.mjs`) that was watched fail on purpose before it passed.
+then fixed worst first. Left behind: `check.mjs` (node syntax gate + headless assertions at
+375x667). Every assertion was watched fail on purpose before it was allowed to pass.
 
 ## Core loop, walked start to finish
 
@@ -54,9 +54,14 @@ back to.
 The clamp lives inside the `try`. In a private window every `setItem` throws, control lands in
 the empty `catch`, and the original unclamped `n` is then handed to `Sunbeam.earn`.
 
-### 6. No feedback fab.
+### 6. No feedback fab, and the obvious place to put one is the worst place.
 Every other satellite in this wave mounts `/feedback.js`. Burrow Bowl had no report channel at
-all, so a player who hits something has nowhere to say so.
+all, so a player who hits something has nowhere to say so. Mounting it the standard way then
+measured badly: the fab's default bottom right footprint lands on the RIGHT EDGE of
+"Take the lane", "Settings", "All Sky Wolf games" and "Menu", because this game's menus are a
+centred 271px button column that reaches into that corner on every screen. The fab's own
+collision watcher does not catch it, since its probe points fall a couple of pixels clear of the
+overlap. Found by measuring at 375x667, not by looking at the CSS.
 
 ## CHECKED AND CLEAN
 
@@ -67,8 +72,8 @@ all, so a player who hits something has nowhere to say so.
   36 tall but the whole 74px row carries the handler.
 - **Dashes in copy (class 7).** None. Copy is clean and in the house voice.
 - **Overlay over a control (class 8).** Screens all route through `show()`, which closes every
-  overlay first, so nothing can be left painted over anything. `#pausebtn` is top right; the
-  feedback fab is bottom right and does not reach the flick lane or any button.
+  overlay first, so nothing can be left painted over anything. The one real collision was the
+  feedback fab, listed above as defect 6.
 - Physics is fixed-step (1/240) with an accumulator, so scoring does not vary with frame rate.
 - The judge is a pure function of the landing point, and the harness hook is gated behind
   `?bb_test=1`.
@@ -88,7 +93,17 @@ all, so a player who hits something has nowhere to say so.
    the resume restores the shots already thrown; only the lockout is gone.
 5. `_sbCapEarn` clamps before it pays, and a storage failure now blocks the earn instead of
    uncapping it.
-6. Feedback fab mounted, matching the rest of the fleet.
+6. Feedback fab mounted, matching the rest of the fleet, and parked TOP LEFT, which measures
+   clear of every control on all five screens. The settings rows were nudged down to clear it
+   there too. The player can still drag it, and a spot they choose wins.
+
+## VERIFICATION
+
+`node satellites/burrow-bowl/check.mjs` — 30 assertions, all green. It exits 1 on failure, and
+it was watched go red before each fix went in (the fab collision above was found BY this gate,
+not by reading). Phase A compiles all six inline blocks; phase B drives a real headless browser
+at 375x667 through a full nine ball round, a corrupt save, a second tab, a daily interrupted by
+a reload, every control's rendered size, the fab's footprint on every screen, and a dash scan.
 
 ## STILL WORRIES ME
 

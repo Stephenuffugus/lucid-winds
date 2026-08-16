@@ -170,7 +170,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <button class="btn sm ghost" id="b-how">❓ How</button>
         <button class="btn sm ghost" id="b-set">⚙</button>
       </div>
-      <button class="btn sm ghost" id="b-exit">&#9664; All Sky Wolf games</button>
+      <button class="btn sm ghost" id="b-exit" style="width:64%; margin:0 auto">&#9664; All Sky Wolf games</button>
     </div>
     <div class="foot" id="buildstamp">Rule Root</div>
   </div></div>
@@ -639,6 +639,24 @@ function saveAll(){
 }
 var reduceMotion=false;
 try{ reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+
+/* ---- the way out (canonical block, incoming/PORTAL-CONTRACT.md) ----
+   ⛔ The portal navigates relative /satellites/ urls TOP LEVEL, so an exit gated
+   on window.parent!==window never fires. The referrer fallback is what actually
+   runs. Owning this here also makes /arcade-exit.js stand down, which stops it
+   injecting a SECOND exit chip onto the title screen. */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EXIT=function(){
+    if(framed){ try{ window.parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(framed){
+    try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+})();
 
 /* ---- sunbeams ---- */
 window._sbCapEarn=function(n,tag){ var granted=0;

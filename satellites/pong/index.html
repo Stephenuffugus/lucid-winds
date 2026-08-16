@@ -890,7 +890,7 @@ reg({ id:'classic', name:'Classic', ic:'🏓', desc:'The original. Two paddles, 
 
 /* ── VERTICAL — top/bottom paddles, portrait-native ── */
 reg({ id:'vertical', name:'Sky Duel', ic:'🔼', desc:'Paddles top &amp; bottom. Slide left &amp; right.',
-  ballK:1.0, padK:0.78, aiK:0.58, aiErrK:1.5,
+  ballK:1.0, padK:0.78, aiK:0.46, aiErrK:1.5,
   build(m){ const W=m.W,H=m.H;
     // play in a squarish field (letterbox the tall screen). The AI paddle speed
     // (aiK) is held just below the coverage ratio so sharp shots score.
@@ -1522,7 +1522,7 @@ setInterval(()=>{ if(!game||game.state==='over'||dragging)return; const pp=game.
 const DIFF={
   easy:  {padFrac:0.76, ballScale:0.95, reactMs:0.320, errPx:44, place:0.0, pred:0.35, label:'Rookie'},
   normal:{padFrac:0.87, ballScale:1.00, reactMs:0.210, errPx:28, place:0.30,pred:0.58, label:'Pro'},
-  hard:  {padFrac:0.94, ballScale:1.03, reactMs:0.120, errPx:15, place:0.65,pred:0.82, label:'Ace'},
+  hard:  {padFrac:0.90, ballScale:1.03, reactMs:0.120, errPx:18, place:0.65,pred:0.82, label:'Ace'},
   // Legend was padFrac 1.18 / errPx 5 / pred 1.00 — a paddle that outruns the
   // ball by 18% with a perfect multi-bounce read basically cannot miss, and
   // Career level 12 is classic/Legend/first-to-11. Simulated with a PERFECT
@@ -1530,7 +1530,7 @@ const DIFF={
   // PER POINT, so the top rung of the ladder was a dead end nobody could clear.
   // Separation now comes from reaction, aim and placement, not from a paddle
   // that is faster than the thing it is chasing.
-  expert:{padFrac:0.99, ballScale:1.06, reactMs:0.070, errPx:16, place:1.0, pred:0.95, label:'Legend'}
+  expert:{padFrac:0.93, ballScale:1.06, reactMs:0.070, errPx:20, place:1.0, pred:0.95, label:'Legend'}
 };
 S._diff=S._diff||'normal'; S._target=S._target||7;
 

@@ -89,6 +89,13 @@ console.log('\nphase B — behaviour (375x667)');
     const b = document.getElementById('b-exit');
     return !!b && b.getBoundingClientRect().height > 10;
   }));
+  /* arcade-exit.js injects its own chip when a game has no SWS_EXIT. Now that
+     this game owns one, there must be exactly ONE way out on the title screen,
+     not two (Hush shipped with two identical buttons for exactly this reason). */
+  ok('there is exactly one exit affordance', await page.evaluate(() => {
+    const n = document.querySelectorAll('#b-exit, #sws-arcade-exit').length;
+    return n === 1;
+  }), 'found both the game button and the injected chip');
   ok('the exit button calls SWS_EXIT', await page.evaluate(() => {
     let called = false; const real = window.SWS_EXIT; window.SWS_EXIT = () => { called = true; };
     document.getElementById('b-exit').click(); window.SWS_EXIT = real; return called;

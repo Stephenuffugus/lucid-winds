@@ -329,7 +329,7 @@ const CHECKS = [
         const g = window.__PONG.game, pp = g.playerPaddle(); pp.maxSpeed = 1e6;
         const arc = pp.R != null, vert = (mode === 'vertical' || mode === 'survival');
         let n = 0;
-        while (g.state !== 'over' && n < 90000) {
+        while (g.state !== 'over' && n < 120000) {
           const b = g.balls.find(x => !x.dead);
           if (b) {
             if (arc) pp.setTargetFromPoint(b.x, b.y);
@@ -353,7 +353,7 @@ const CHECKS = [
       return out;
     });
     const lost = r.filter(x => !x.over || !x.win);
-    const slow = r.filter(x => x.perPt > 75);
+    const slow = r.filter(x => x.perPt > 70);
     return { ok: lost.length === 0 && slow.length === 0,
       detail: lost.length ? `UNWINNABLE: ${JSON.stringify(lost)}` : slow.length ? `SLOG: ${JSON.stringify(slow)}`
         : `12/12 cleared, secs/point ${r.map(x => x.perPt).join(' ')}` };

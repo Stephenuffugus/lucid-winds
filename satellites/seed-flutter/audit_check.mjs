@@ -179,10 +179,15 @@ async function open(query = '', seed = null, touch = true){
   // then drive the rest deterministically (headless rAF is throttled on this box,
   // so wall-clock waiting is not evidence of anything)
   const end = await page.evaluate(() => {
-    SF_DEV.flap();
-    for (let i = 0; i < 900; i++) { const s = SF_DEV.state(); if (!s || s.phase === 'dead') break; SF_DEV.step(1/60); }
-    return { phase: SF_DEV.snap() && SF_DEV.snap().phase, go: document.getElementById('s-go').classList.contains('on') };
+    // fly a real distance first, so the run actually earns keepsakes and endRun
+    // has to write into the (possibly corrupt) blooms list
+    SF_DEV.start('drift'); SF_DEV.autoplay(30);
+    const gaps = SF_DEV.snap().gaps, best = SF_DEV.snap().best;
+    for (let i = 0; i < 1200; i++) { const s = SF_DEV.state(); if (!s || s.phase === 'dead') break; SF_DEV.step(1/60); }
+    return { gaps, best, phase: SF_DEV.snap() && SF_DEV.snap().phase,
+             go: document.getElementById('s-go').classList.contains('on') };
   });
+  ok('corrupt save: the run actually threaded gaps before it ended', end.gaps > 3, JSON.stringify(end));
   ok('corrupt save: a whole run reaches the results screen', end.go === true, JSON.stringify(end));
   ok('corrupt save: no page error during the run', errs.length === 0, errs[0]);
   const stored = await page.evaluate(() => JSON.parse(localStorage.seedflutter_save));
@@ -228,12 +233,19 @@ async function open(query = '', seed = null, touch = true){
     await new Promise(r => setTimeout(r, 200));
   }
   // the in-play HUD is drawn on the canvas, so measure it from the stage scale
-  const hud = await page.evaluate(() => {
-    const st = document.getElementById('stage');
-    const s = st.getBoundingClientRect().height / 960;
-    return { scale: s, box: 70 * s };
-  });
-  ok('in-play HUD buttons are >=48 rendered px', hud.box >= 47.5, 'rendered ' + hud.box.toFixed(1) + 'px at scale ' + hud.scale.toFixed(3));
+  // The in-play HUD is drawn on the canvas, so its size lives in a constant
+  // inside the IIFE. Read the REAL declaration out of the served page and
+  // multiply by the measured stage scale — a hardcoded 70 here would be a probe
+  // that cannot fail.
+  const src = await (await fetch(URL0)).text();
+  const m = src.match(/var HB_MENU={x:s*-?d+,s*y:s*-?d+,s*w:s*(d+),s*h:s*(d+)}/);
+  const scale = await page.evaluate(() => document.getElementById('stage').getBoundingClientRect().height / 960);
+  ok('the in-play HUD button constants are readable', !!m, 'HB_MENU declaration not found');
+  if (m) {
+    const w = +m[1] * scale, h = +m[2] * scale;
+    ok('in-play HUD buttons are >=48 RENDERED px', w >= 47.5 && h >= 47.5,
+       'declared ' + m[1] + 'x' + m[2] + ' stage px -> ' + w.toFixed(1) + 'x' + h.toFixed(1) + ' rendered at scale ' + scale.toFixed(3));
+  }
   await ctx.close();
 }
 

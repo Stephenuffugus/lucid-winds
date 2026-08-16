@@ -37,6 +37,17 @@ Rule Root has no `SWS_EXIT` and no portal link of its own. It relies entirely on
 cache or a CSP hiccup leaves the player with no way out at all, and in an installed PWA there is
 no back gesture to save them. A game's own exit should not be somebody else's script.
 
+Found while fixing this, by measuring rather than trusting: adding a title screen button that
+called `SWS_EXIT` was not enough. `arcade-exit.js` stands down only when `SWS_EXIT` already
+exists, so until the game defined it the injected chip stayed and the title screen ended up with
+TWO ways out, one of them a stray chip at the bottom. Hush shipped with two identical buttons
+for the same reason a fortnight ago. The gate now asserts there is exactly one.
+
+### 2b. The feedback fab sits on the exit button. (standing classes 2 and 8)
+Measured at 375x667: the fab lands at x 315 to 363, and the full width title buttons run to
+x 334. The fab's own watcher does not move it, because its probe points fall clear of that
+narrow overlap.
+
 ### 3. Two tabs clobber the whole profile. (standing class 4)
 `saveAll()` writes `PROG` wholesale from a boot snapshot. Two tabs, solve a garden in each, and
 the tab that saves last erases the other's solved gardens, seeds, best move counts, grove
@@ -61,9 +72,10 @@ of the screen is telling them to press a dead button.
   `.dbtn` is 76x60 with a 6px vertical bleed (= 52x50 rendered), `.btn` is 72 min-height
   (= 50), the settings toggles are small but the whole 72px row is the target.
 - **Dashes in player copy (class 7).** None.
-- **Overlay over a control (class 8).** `show()` clears every screen before painting one, the
-  toast is `pointer-events:none`, and the feedback fab lands between the board and the d-pad
-  without touching either. Measured, not assumed.
+- **Overlay over a control (class 8) inside the game itself.** `show()` clears every screen
+  before painting one, and the toast is `pointer-events:none`, so no screen or prompt can be
+  left painted over a control. The one real collision was the feedback fab, listed above as
+  defect 2b.
 - **Silent failure (class 5).** The hint is honest: when the solver hits its 4 second wall it
   says so rather than pretending. Sunbeams are wired to a loaded SDK and capped per run and
   per day.
@@ -73,9 +85,11 @@ of the screen is telling them to press a dead button.
 
 1. `PROG` and `SET` are validated field by field on load, not just parsed. Anything of the wrong
    shape is replaced by a fresh default, so a corrupt save costs a profile rather than the game.
-2. Rule Root now owns its exit: `SWS_EXIT` with the canonical referrer fallback, plus a real
-   button on the title screen. `/arcade-exit.js` stands down on its own when `SWS_EXIT` already
-   exists, so nothing is doubled.
+2. Rule Root now owns its exit: the canonical block from `incoming/PORTAL-CONTRACT.md`, with the
+   referrer fallback and the ready handshake, plus a real button on the title screen.
+   `/arcade-exit.js` now stands down on its own, so there is exactly one way out and the gate
+   asserts it. The exit button is 64% width and centred, which keeps it clear of the feedback
+   fab's measured footprint.
 3. `saveAll()` merges against the freshest copy on disk before writing: solved and seeds union,
    life counters and streak take the max, per level bests take the fewest moves, grove keepsakes
    union by chapter. Two tabs can no longer erase each other.
@@ -83,6 +97,16 @@ of the screen is telling them to press a dead button.
    `orientationchange` catch up.
 5. The softlock prompt now offers Restart next to Undo, and Undo is disabled when there is
    nothing to undo.
+
+## VERIFICATION
+
+`node satellites/rule-root/check.mjs` — 45 assertions, all green. It exits 1 on failure and was
+watched go red before each fix (the duplicate exit chip and the fab collision were both found BY
+this gate). Phase A compiles all four inline blocks; phase B drives a real headless browser at
+375x667: a full solve of garden one through the game's own solver, five different corrupt
+profiles each tapping Journey for real, a second tab's profile surviving our save, the softlock
+prompt's two buttons, the visualViewport fit, every control's rendered size on six screens, the
+fab's footprint, and a dash scan.
 
 ## STILL WORRIES ME
 

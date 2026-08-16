@@ -77,4 +77,18 @@ Each of these was found on a live, shipped game during this pass, so assume noth
 7. **Dashes in player copy.** Hard studio rule; rewrite the sentence rather than swapping the
    character.
 8. **An overlay covering a control.** Found four times in one day. Anything that floats gets
-   checked against the controls underneath it, not just against the background.
+   checked against the controls underneath it, not just against the background. Also check
+   an overlay's ground is actually opaque: The Attic's was `#0d0b0af5`, an eight digit hex
+   whose `f5` is a 96% alpha, which reads as solid in a colour swatch and is not.
+9. **A STATED PROMISE THAT IS NOT TRUE.** Read the game's own copy, then go and check the
+   code does what it says. This has paid out three times in one day and each was invisible to
+   every other check, because nothing was broken: the code did exactly what it was written to
+   do, and the sentence describing it was a lie.
+   - The Attic: "every rummage turns up an object that has never existed before" — 19.42% were
+     exact duplicates.
+   - Jumping Jimothy: a comment promising rewards "can never be farmed", while `PROG.decRew`
+     was saved and never loaded, so they re-paid every browser session.
+   - Burr Blast: Potassium promises "a steadier aim guide" in two places; `predictPath()` does
+     not read the loadout at all.
+   The technique is cheap and mechanical. Grep the copy for claims, then grep the code for the
+   thing the claim depends on. Absence is the finding.

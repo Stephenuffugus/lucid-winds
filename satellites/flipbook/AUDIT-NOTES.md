@@ -90,11 +90,13 @@ should be a try/catch on `window.parent`, not a query string the portal does not
 ## FIXES APPLIED
 
 1. **Storage failure is now loud, honest and recoverable.** `save()` reports success. On a
-   quota failure a persistent red bar appears above the page and stays there: it says that
-   nothing new is being saved and offers **Export now** and **Free up space** (which drops the
-   oldest saved pages only when the player says so). The bar does not time out, and it clears
-   itself the moment a save succeeds again. The old sentence, which claimed older pages might
-   not save, is gone. There is also an early warning at 3.5MB, before anything has failed.
+   quota failure a red bar appears across the top of the page and stays there: it says that
+   nothing new is being kept and offers **Export now** and **Make room**. Make room never throws
+   away a drawing, it clears the recorded voice takes, which are base64 audio competing for the
+   same quota, and then retries the save and reports honestly if there is still no room. The bar
+   does not time out, and it clears itself the moment a save succeeds again. The old sentence,
+   which claimed older pages might not save, is gone. There is also an early warning at 3.5MB,
+   before anything has failed.
 2. **`load()` validates.** `pages` must be an array whose entries are null or a `data:` string,
    `cur` is clamped into range, `fpsIdx` and `onion` are type checked, and `RECENTS` must be an
    array of `#rrggbb` strings. A corrupt save now costs a book, not the app.
@@ -104,10 +106,27 @@ should be a try/catch on `window.parent`, not a query string the portal does not
 4. **Two tabs no longer clobber.** A `storage` listener notices another tab writing `fb_book`,
    stops this tab from auto-saving over it, and shows the bar with the choice: keep this one, or
    load theirs. Nothing is silently overwritten either way.
-5. **Swatches are 70 CSS px (48 rendered)**, recents 64, shade slider 56 wide.
-6. **The fab parks top left**, measured clear of the page and of every tool row on every menu
-   state. The player can still drag it, and a spot they choose wins.
+5. **Swatches and recents are 70 CSS px (48.6 rendered)** and the shade slider is 70 wide.
+6. **The fab parks top right**, which measures clear of every tool row in all three menus and
+   costs a 22px sliver of paper instead of the bottom corner where a hand rests. It does cover
+   the small page counter in the topbar, so the page number now also reads out in the big hint
+   line at the bottom. The player can still drag it, and a spot they choose wins.
 7. `{sws:'ready'}` now posts at parse and on `load`, with the canonical try/catch framed test.
+
+## VERIFICATION
+
+`node satellites/flipbook/check.mjs` — 37 assertions, all green, exits 1 on failure. Watched red
+first, and it earned its keep: the first green run of the export test returned a 110 byte file,
+which turned out to be a two page book at 8fps being a quarter of a second long. The test now
+records a realistic eight page book at 4fps and asserts real bytes, which is what a child would
+actually make.
+
+Phase A compiles all three inline blocks. Phase B drives a real headless browser at 375x667:
+draw three pages and reload and check the ink is still on the canvas, four corrupt saves, a real
+localStorage quota fill plus an injected quota throw to drive the failure path, a genuine second
+tab in the same browser context writing the same key, an export with bytes and the right label,
+every control's rendered size across all three tool menus with the palette open, the fab's
+footprint against every tool row and against the paper, and a dash scan.
 
 ## STILL WORRIES ME
 
