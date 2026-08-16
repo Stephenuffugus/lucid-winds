@@ -201,12 +201,72 @@ no combo, nothing to beat. It now shows the same "sliced / best combo" line the 
 show, so a failed run still ends on a number, which is the thing that makes you tap Try
 Again. Cheap, and it uses data the run already had.
 
+## SECOND PASS, 2026-08-16 (the first agent was cut off mid-audit)
+
+Every fix claimed above was **re-read in the file** rather than trusted, because the agent
+that wrote these notes never got to confirm its own work. All of it is genuinely applied:
+`okObj`/`okArr` plus the `PROG.best` / `SKN.owned` / `SKN.equip` shape guards (274-281, 605),
+`#b-music{flex:0 0 132px;padding:0 14px}` with the explicit basis and not `auto` (138),
+read-modify-write in `saveProg`/`saveSliv`/`saveSkins` (291-320, 609-620), `runTrophies()` on
+the fail path for every mode (2276), the mode-branched fail panel (2268-2277), and the
+Knife Forge dash. Nothing was half applied.
+
+### CLASS 9 — a stated promise that is not true. TWO FOUND, BOTH FIXED
+
+This class has now paid out five times in one day across the fleet. It paid twice more here,
+and both were invisible to all 44 existing assertions because nothing was broken.
+
+**1. The Knife Forge promised knives do not affect play.** The copy read "Each one is pure
+style and never changes how you play." `measureKnife()` reads the equipped recipe at paint
+time and hands `KLEN` to `kReachX()`, which is what every wall contact tests. Measured across
+the whole catalog with the same arithmetic the game uses:
+
+```
+3.03  Iron Cleaver (150)        <- shortest
+3.14  Classic Chef (starter), and most of the shelf
+3.33  Starforge Blade (PREMIUM)
+3.58  Midnight Katana (500)
+3.66  Wolf Fang (PREMIUM)       <- longest, 20.9% more reach than the Cleaver
+```
+
+A 20.9% spread in the number that decides when you touch a wall, with a **premium** knife at
+the top of the range, described to the player as "pure style". Fixed in the copy, deliberately
+not in the mechanics: `KLEN` is measured precisely so contact fires where the blade is DRAWN,
+which is the bug Stephen reported on 8/01 ("the blade sticks into the wall when it is still
+like inches away"). Forcing one length would re-break that. The line now says what is true —
+each blade is measured exactly as drawn, so a longer sword reaches a little further.
+
+**2. How to play promised the climb wall has no ceiling.** "one wall with no ceiling … The
+bands keep going, so nothing but your throw limits you." `buildClimb` authors exactly 34
+bands topping at x900, and the end panel then prints "stuck it at x1 **of x900**" straight
+back at the player. The previous pass spotted the contradiction and parked it as a wording
+question; it is a class 9 defect and the honest half is the sentence, so the sentence changed.
+The real, defensible claim was always the one underneath it: the wall used to be capped by
+your LEVEL, and now every run gets all 34 bands. The copy says that now, and names the ladder.
+
+Both are guarded by new phase 7 assertions that check the copy against numbers read out of
+the running game (catalog reach spread, and `G.world.bands` for the ladder), so the guard
+fails from the direction this will actually regress: someone re-adding the claim.
+
+Class 9 was swept across the rest of the copy too, and the rest holds: "pink crystals end the
+run on contact" (Journey) and "crystals down here shove you rather than kill" (Freefall) are
+both exactly what `hitCrystal` does; "earn slivers every dive" holds on all four end paths
+including the failed one; and all three trophy strings match their gates (`comboBest>=25`,
+`slabsCut>=100`, `endlessBest>=150`, with slabs existing only in the Freefall world).
+
 ## SUITE RESULT
 
-`node satellites/slice-3d/audit-check.mjs` (repo root served on :8777) — **44 passed,
+`node satellites/slice-3d/audit-check.mjs` (repo root served on :8777) — **50 passed,
 0 failed**, exit 0. Covers 14 corrupt-save poisonings, all four modes to their end panel,
 the failed-run save path, the four two-tab merge properties, the eight standing defect
-classes, and the drawn-versus-tested scale.
+classes, the drawn-versus-tested scale, and (phase 7, added on the second pass) the two
+class 9 copy claims measured against the running game.
+
+**Watched fail on purpose, 2026-08-16 second pass.** Phase 7 was not trusted until the old
+false copy was put back into `index.html` and the suite run against it: it went
+**46 passed / 4 failed, exit 1**, red on exactly the four assertions that name the lie and
+green on everything else, then green again once the true copy was restored. A probe you have
+not seen go red is decoration.
 
 ## WHAT STILL WORRIES ME
 
@@ -214,10 +274,14 @@ classes, and the drawn-versus-tested scale.
   finishes, regardless of the multiplier reached, so "Level" on an endless wall is a run
   counter wearing a progression label. Sticking at x1 promoted the player to Climb 2.
   Not touched: changing it is a design call about what the climb ladder means.
-- **The panel says "of x900".** The How screen promises the climb's bands "keep going, so
-  nothing but your throw limits you", and then the end panel prints "stuck it at x1 of
-  x900". A stated ceiling contradicts the copy's promise of no ceiling. Left for the
-  Director since it is a wording-versus-design question, not a bug.
+- ~~**The panel says "of x900".**~~ RESOLVED on the second pass — it was a class 9 defect,
+  not a wording question, and the copy now names the real ladder (34 bands, top x900). If
+  the Director wants the wall to genuinely never end, that is a `buildClimb` change and the
+  copy must move with it; phase 7 will go red the moment the two disagree again.
+- **Knife reach still varies 20.9% across the catalog**, premium knives included. The copy
+  is honest about it now, but nobody has decided whether a longer blade is an ADVANTAGE
+  (reaches the climb wall sooner) or a PENALTY (hits Freefall side walls sooner). That is a
+  balance question for the Director, and it is worth an answer before more knives ship.
 - **The feedback fab is invisible on the menu** (defect 7). Real, but the fix is not in
   this file.
 - **Freefall is hard enough that a bot never scores.** Both automated dives ended stuck in

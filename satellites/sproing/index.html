@@ -1682,7 +1682,13 @@ function loop(ts){
 }
 function refreshHUD(){
   var a=$('alt'); if(a){ if(game && game.targetM>0) a.innerHTML=game.meters+'<small>/'+game.targetM+'m</small>'; else a.innerHTML=(game?game.meters:0)+'<small>m</small>'; }
-  var c=$('coinrun'); if(c) c.textContent=game?game.coinsRun:0;
+  /* ⛔ CLASS 9 (a stated promise that is not true). Zen is deathless practice and
+     commitRun() deliberately banks NOTHING from it, but the HUD counted coins up all
+     the same and the pause panel printed the same total, so the game told the player
+     they had earned coins the wallet was never going to receive. The economy is
+     correct (a deathless mode must not pay); the READOUT was the lie. Say practice.
+     Fixed 2026-08-16 — do NOT "fix" this by banking Zen coins. */
+  var c=$('coinrun'); if(c) c.textContent=(game&&game.zen)?'practice':(game?game.coinsRun:0);
   var mb=$('mutebtn'); if(mb) mb.textContent=SET.muted?'🔇':'🔊';
 }
 function besttagUpdate(){ var e=$('besttag'); if(e) e.textContent=best+' m'; }
@@ -1699,7 +1705,7 @@ function launch(mode, levelIdx){
 function startRun(){ launch(curMode||'endless', curLevelIdx); }   // used by retry/restart
 
 /* ---------- mode select + level map UI ---------- */
-function openModes(){ $('modes-note').textContent='Adventure: '+LEVEL_COUNT+' levels · '+totalStars()+' stars earned'; show('s-modes'); }
+function openModes(){ $('modes-note').innerHTML='Adventure: '+LEVEL_COUNT+' levels · '+totalStars()+' stars earned<br>Zen: you cannot fall out. Practice only, so coins are not kept.'; show('s-modes'); }
 var mapWorld=0;
 function openMap(){ mapWorld=Math.min(WORLDS-1, Math.floor((levelProg.unlocked||0)/PER_WORLD)); renderMap(); show('s-map'); }
 function renderMap(){
@@ -1729,7 +1735,7 @@ function renderMap(){
 function toTitle(){ commitRun(); game=null; show('s-title'); besttagUpdate(); renderTitlePreview(); }
 function playPressed(){ if(!LS.get(K.bounce)){ onboarding=true; openStudio(null); } else openModes(); }
 
-function pauseRun(){ if(!game||!game.running||game.paused) return; game.paused=true; INP.dragX=null; INP.tiltAxis=0; INP.keyL=INP.keyR=false; $('pause-alt').textContent=game.meters+' m'; $('pause-coins').textContent=game.coinsRun; show('s-pause'); }
+function pauseRun(){ if(!game||!game.running||game.paused) return; game.paused=true; INP.dragX=null; INP.tiltAxis=0; INP.keyL=INP.keyR=false; $('pause-alt').textContent=game.meters+' m'; $('pause-coins').textContent=game.zen?'practice':game.coinsRun; show('s-pause'); }
 function resumeRun(){
   if(!game) return; ensureAudio(); if(!SET.muted && !musicOn) startMusic(); show(null);
   var el=document.createElement('div'); el.id='cd';

@@ -609,9 +609,13 @@ var S=null;         // active run state (null when in menus)
 var raf=0, lastT=0;
 function halfW(){ return VW/2 - 24; }
 
-function startRun(mode){
+function startRun(mode,seedOv){
   var mc=MODES[mode];
-  var seed = mc.seeded ? dailySeed() : (Math.floor(Math.random()*2147483647));
+  // seedOv exists so a harness can put two runs on the SAME slope. Comparing a
+  // mashed run against a clean run on two different random courses measures the
+  // courses, not the input.
+  var seed = (seedOv!=null && isFinite(seedOv)) ? (seedOv>>>0)
+           : (mc.seeded ? dailySeed() : (Math.floor(Math.random()*2147483647)));
   S={
     mode:mode, mc:mc, running:true, paused:false, over:false, finished:false,
     depth:0, x:0, head:0, headTarget:0, tuck:false, steer:0,
@@ -1658,7 +1662,7 @@ buildTitle();
 show("scrTitle");
 
 // expose a couple of hooks for headless verification / art loading
-window.PP={ startRun:startRun, get S(){return S;}, CFG:CFG, MODES:MODES, CATALOG:CATALOG, ART:ART, BIOMES:BIOMES, SEG:SEG,
+window.PP={ startRun:function(m,s){ return startRun(m,s); }, get S(){return S;}, CFG:CFG, MODES:MODES, CATALOG:CATALOG, ART:ART, BIOMES:BIOMES, SEG:SEG,
   profile:function(){return P;}, generateUntil:function(y){return generateUntil(y);},
   saveProfile:saveProfile, validateProfile:validateProfile, endRun:function(g){ endRun(!!g); },
   laneAt:function(y){ for(var i=0;i<S.laneHist.length;i++){ var L=S.laneHist[i]; if(y>=L.y0&&y<L.y1) return L; } return null; },

@@ -301,6 +301,64 @@ console.log('\n[6] drawn scale equals tested scale');
   await ctx.close();
 }
 
+/* ---- 7. CLASS 9: read the copy, then check the code does what it says ------
+   The cheapest defect class on this project and the one that pays out most: a
+   sentence that is simply not true, invisible to every other check because
+   nothing is broken. Grep the claim, then grep the thing the claim depends on.
+   Two live claims in this game were false on 2026-08-16:
+     - The Forge promised every knife "is pure style and never changes how you
+       play". measureKnife() feeds KLEN into kReachX, which is what every wall
+       contact tests, and the catalog spans 3.03 to 3.66 world units — 20.9%,
+       with a PREMIUM knife on the long end.
+     - How-to-play promised the climb wall had "no ceiling" and that "the bands
+       keep going", while buildClimb authors exactly 34 bands topping at x900 and
+       the end panel prints "of x900" back at the player.
+   Both were fixed in the COPY, not the mechanics. These assertions guard the
+   fix from the direction it will actually regress: someone re-adding the claim. */
+console.log('\n[7] class 9: the copy tells the truth about the code');
+{
+  const { ctx, p } = await boot();
+  const r = await p.evaluate(() => {
+    const S = window._S3, out = {};
+    /* measure every knife in the catalog the way measureKnife measures the
+       equipped one, so the claim is checked against numbers, not against faith */
+    const cat = S.catalog(), reach = {};
+    Object.keys(cat).forEach(k => {
+      let lo = 0, hi = 0;
+      cat[k].make().forEach(m => {
+        const g = (m.geometry && m.geometry.parameters) || {}, w = g.width || 0;
+        if (m.position.x - w / 2 < lo) lo = m.position.x - w / 2;
+        if (m.position.x + w / 2 > hi) hi = m.position.x + w / 2;
+      });
+      reach[k] = +(Math.max(4.0, Math.abs(lo), hi) * 0.55).toFixed(3);
+    });
+    const vals = Object.keys(reach).map(k => reach[k]);
+    out.minReach = Math.min.apply(null, vals);
+    out.maxReach = Math.max.apply(null, vals);
+    out.spreadPct = +((out.maxReach / out.minReach - 1) * 100).toFixed(1);
+    out.forgeCopy = (document.querySelector('.forge-sub').textContent || '');
+    out.howCopy = (document.getElementById('s-how').textContent || '');
+    /* the climb ladder as the code actually authors it */
+    S.newClimb(1);
+    const w = S.world();
+    out.bands = w && w.bands ? w.bands.length : 0;
+    out.topMult = w && w.bands ? w.bands[w.bands.length - 1][0] : 0;
+    return out;
+  });
+  ok('knife reach really does vary across the catalog', r.spreadPct > 1, JSON.stringify({ min: r.minReach, max: r.maxReach, spread: r.spreadPct }));
+  ok('the Forge does not claim knives never change how you play',
+    !/never changes how you play|pure style/i.test(r.forgeCopy), r.forgeCopy);
+  ok('the Forge says what is actually true about reach',
+    /measured/i.test(r.forgeCopy) && /reach/i.test(r.forgeCopy), r.forgeCopy);
+  ok('the climb wall has a real, finite ladder', r.bands > 0 && r.topMult > 0, JSON.stringify({ bands: r.bands, top: r.topMult }));
+  ok('How to play does not promise a ceiling the wall has',
+    !/no ceiling|bands keep going/i.test(r.howCopy), (r.howCopy.match(/no ceiling|bands keep going/i) || [''])[0]);
+  ok('How to play names the ladder the code actually builds',
+    r.howCopy.indexOf('x' + r.topMult) >= 0 && r.howCopy.indexOf(String(r.bands) + ' bands') >= 0,
+    JSON.stringify({ bands: r.bands, top: r.topMult }));
+  await ctx.close();
+}
+
 
 console.log('\n=== slice-3d: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);

@@ -230,10 +230,13 @@ const CHECKS = [
 { name: 'style is not a tap race: mashing beats a clean rhythm by <25%',
   async run(page) {
     const r = await page.evaluate(() => {
-      const run = (mash) => {
-        window.PP.startRun('freestyle');
+      // BOTH runs take the SAME seed. The first version of this check let each
+      // run roll its own course, so it compared two different slopes with
+      // different ramp counts and reported a 6x that was mostly the course.
+      const run = (mash, seed) => {
+        window.PP.startRun('freestyle', seed);
         const S = window.PP.S;
-        let style0 = 0, jumps = 0;
+        let jumps = 0;
         for (let i = 0; i < 6000 && !S.over; i++) {
           if (S.airborne) {
             if (mash) { for (let k = 0; k < 6; k++) window.PP.trick(); }        // mash every frame
@@ -243,13 +246,21 @@ const CHECKS = [
           window.PP.step(1 / 60);
           if (!wasAir && S.airborne) jumps++;
         }
-        return { style: S.style, jumps };
+        return { style: S.style, jumps, tricks: S.tricks };
       };
-      const clean = run(false), mashed = run(true);
-      return { clean: clean.style, mashed: mashed.style, jumps: clean.jumps,
-               ratio: +(mashed.style / Math.max(1, clean.style)).toFixed(2) };
+      const rows = [];
+      for (const seed of [11, 4242, 99001, 777]) {
+        const clean = run(false, seed), mashed = run(true, seed);
+        rows.push({ seed, clean: clean.style, mashed: mashed.style, jumps: clean.jumps,
+                    sameCourse: clean.jumps === mashed.jumps });
+      }
+      const cs = rows.reduce((a, x) => a + x.clean, 0), ms = rows.reduce((a, x) => a + x.mashed, 0);
+      return { rows, clean: cs, mashed: ms, jumps: rows.reduce((a, x) => a + x.jumps, 0),
+               sameCourse: rows.every(x => x.sameCourse), ratio: +(ms / Math.max(1, cs)).toFixed(2) };
     });
-    return { ok: r.ratio < 1.25 && r.clean > 0, detail: `clean ${r.clean}, mashed ${r.mashed} (${r.ratio}x) over ${r.jumps} jumps` };
+    return { ok: r.ratio < 1.25 && r.clean > 0 && r.jumps > 6 && r.sameCourse,
+      detail: `clean ${r.clean}, mashed ${r.mashed} (${r.ratio}x) over ${r.jumps} jumps on 4 shared seeds` +
+              (r.sameCourse ? '' : ' | SEEDS DID NOT MATCH: ' + JSON.stringify(r.rows))};
   },
   break: `window.PP.trick=(function(){ const S=()=>window.PP.S; return function(){ if(S().airborne){ S().trickCount++; S().spin+=1; } }; })();` },
 
@@ -258,23 +269,30 @@ const CHECKS = [
     // carving must LOSE ground and tucking must GAIN it, and a straight line
     // must survive. If the gap moved on a clock this would not separate.
     const r = await page.evaluate(() => {
+      // Measured over 3.3s, NOT 10s. The gap has a hard ceiling at gnomeGapMax,
+      // and over 10s both straight and tucking pin against it and report the
+      // identical number, which made the check read "tucking does nothing".
       const probe = (steer, tuck) => {
-        window.PP.startRun('free');
+        window.PP.startRun('free', 20260816);
         const S = window.PP.S;
         S.depth = window.PP.CFG.gnomeStart + 10;
         window.PP.step(1 / 60);
         const g0 = S.gnomeGap;
-        for (let i = 0; i < 600 && !S.over; i++) {
+        let capped = false;
+        for (let i = 0; i < 200 && !S.over; i++) {
           S.obs.length = 0;                      // measure the CHASE, not the crash tax
           window.PP.setInput(steer, tuck); window.PP.step(1 / 60);
+          if (S.gnomeGap >= window.PP.CFG.gnomeGapMax - 0.5) capped = true;
         }
-        return { d: +(S.gnomeGap - g0).toFixed(0), crashes: S.crashes };
+        return { d: +(S.gnomeGap - g0).toFixed(0), crashes: S.crashes, capped };
       };
       const c = probe(1, false), st = probe(0, false), tk = probe(0, true);
-      return { carve: c.d, straight: st.d, tuck: tk.d, crashes: c.crashes + st.crashes + tk.crashes };
+      return { carve: c.d, straight: st.d, tuck: tk.d, capped: c.capped || st.capped || tk.capped,
+               crashes: c.crashes + st.crashes + tk.crashes };
     });
-    return { ok: r.carve < 0 && r.tuck > 0 && r.straight > 0 && r.tuck > r.straight && r.straight > r.carve && r.crashes === 0,
-      detail: `gap change over 10s on a clear slope: carving ${r.carve}, straight ${r.straight}, tucking ${r.tuck}` };
+    return { ok: r.carve < 0 && r.tuck > 0 && r.straight > 0 && r.tuck > r.straight && r.straight > r.carve && r.crashes === 0 && !r.capped,
+      detail: `gap change over 3.3s on a clear slope: carving ${r.carve}, straight ${r.straight}, tucking ${r.tuck}` +
+              (r.capped ? ' | SATURATED at gnomeGapMax, the window is too long to measure anything' : '') };
   },
   break: `window.PP.CFG.gnomeBaseK=0;` },
 

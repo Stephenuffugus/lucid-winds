@@ -178,7 +178,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
     <div class="helprow"><div class="hi">&#9654;</div><div><b style="color:var(--gold)">SUPER SLICE 3D, the normal run.</b> You travel to the RIGHT along the ground. Brown wood is solid: hop walls, land on crates, bounce off mushroom caps. <b style="color:#ff8ac2">Pink crystals end the run on contact</b>, so treat them as walls, not bumps. The run finishes at the score wall: stick it HIGH and blade first for the multiplier.</div></div>
 
-    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall with no ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one endless wall and the height you stick at IS your score. The bands keep going, so nothing but your throw limits you. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
+    <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall and no level ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one enormous wall and the height you stick at IS your score. Every run gets the whole ladder, all 34 bands up to x900, so your level never caps you and only your throw decides where you stop. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
 
     <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
 
@@ -189,7 +189,15 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- KNIFE FORGE -->
   <div class="screen" id="s-forge"><div class="pad">
     <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet">&#9670; <span id="forge-bal">0</span></div></div>
-    <div class="forge-sub">Earn slivers every dive, then unlock knives and swords. Each one is pure style and never changes how you play.</div>
+    <!-- ⛔ CLASS 9 (a stated promise that is not true). This line used to read "Each one
+         is pure style and never changes how you play." It is not: measureKnife() reads
+         the equipped recipe at paint time and feeds KLEN into kReachX, which is what
+         every wall contact tests. Measured across the catalog 2026-08-16, reach runs
+         3.03 world units (Iron Cleaver) to 3.66 (Wolf Fang) — a 20.9% spread, with the
+         two longest being a premium knife and a 500 sliver katana. Do NOT "fix" this by
+         forcing one length: KLEN is measured precisely so contact fires where the blade
+         is DRAWN, which is the bug Stephen reported on 8/01. Say what is actually true. -->
+    <div class="forge-sub">Earn slivers every dive, then unlock knives and swords. Each blade is measured exactly as it is drawn, so a longer sword really does reach a little further and contact always fires where you see the edge.</div>
     <div id="forge-grid"></div>
     <div id="forge-toast"></div>
     <button class="btn primary" id="forge-back" style="max-width:400px;margin:10px auto 0">Done</button>

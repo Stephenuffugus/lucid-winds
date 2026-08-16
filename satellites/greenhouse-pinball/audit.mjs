@@ -136,30 +136,55 @@ const CHECKS = [
     // against an 11px radius, i.e. straight through a wall.
     const r = await page.evaluate(() => {
       const escapes = [];
-      const C = window.PIN_DEV.consts();
       window.PIN_DEV.start('zen');
       const g = window.PIN_DEV.state();
-      let trials = 0;
-      for (let t = 0; t < 240; t++) {
+      let trials = 0, flips = 0;
+      // The spawn box MUST be inside the playfield. The first version of this
+      // check seeded x up to 450 and y up to 820, which is outside the lower
+      // outlane guide (at y=820 the right guide is already at x=430), so it
+      // spawned beads in the gutter and then reported the gutter as tunnelling.
+      // Upper field only: the side walls are parallel at x=60 and x=470 for
+      // y in 150..700, so 85..445 is honest ground.
+      const seed = (n) => { let a = n >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+      const rnd = seed(20260816);                          // deterministic: this check reruns identically
+      for (let t = 0; t < 300; t++) {
         g.balls.length = 0;
-        // random position inside the field, random direction, absurd speed
-        const a = Math.random() * Math.PI * 2, sp = 3000 + Math.random() * 1200;
-        window.PIN_DEV.addBall({ x: 90 + Math.random() * 360, y: 180 + Math.random() * 640,
+        const a = rnd() * Math.PI * 2, sp = 3000 + rnd() * 1200;
+        window.PIN_DEV.addBall({ x: 85 + rnd() * 360, y: 150 + rnd() * 520,
                                  vx: Math.cos(a) * sp, vy: Math.sin(a) * sp });
         g.awaitLaunch = false; g.netTime = 0; g.tiltOut = 0;
         trials++;
         for (let i = 0; i < 60; i++) {
           window.PIN_DEV.step(0.05);                       // the worst frame the loop allows
           const b = g.balls[0];
-          if (!b) break;                                   // drained, fine
-          // OUTSIDE the table: the walls run x 60..470 and y 108..DRAINY
-          if (b.x < 40 || b.x > 490 || b.y < 80) { escapes.push({ x: Math.round(b.x), y: Math.round(b.y), i }); break; }
+          if (!b || b.inLane || b.captured || b.onRail) break;   // drained or held, fine
+          // OUTSIDE the table. Above y=852 the side walls/guides are the bound;
+          // below that the outlane mouths are open by design, so stop checking x.
+          if ((b.y < 852 && (b.x < 44 || b.x > 486)) || b.y < 80 || b.y > 1000) {
+            escapes.push({ x: Math.round(b.x), y: Math.round(b.y), i, why: 'freeball' }); break; }
         }
         if (escapes.length) break;
       }
-      return { escapes, trials };
+      // And the thing that actually produces 3500 px/s in play: a real tip flip.
+      for (let t = 0; t < 150 && !escapes.length; t++) {
+        g.balls.length = 0;
+        const F = { px: 170, py: 842, L: 82 }, ang = 0.50;
+        const tx = F.px + Math.cos(ang) * F.L * (0.85 + rnd() * 0.15), ty = F.py + Math.sin(ang) * F.L * 0.9;
+        window.PIN_DEV.addBall({ x: tx, y: ty - 18, vx: (rnd() * 2 - 1) * 60, vy: 120 + rnd() * 260 });
+        g.awaitLaunch = false; g.netTime = 0; g.tiltOut = 0;
+        window.PIN_DEV.flip('L', true); flips++;
+        for (let i = 0; i < 40; i++) {
+          window.PIN_DEV.step(0.05);
+          if (i === 2) window.PIN_DEV.flip('L', false);
+          const b = g.balls[0];
+          if (!b || b.inLane || b.captured || b.onRail) break;
+          if ((b.y < 852 && (b.x < 44 || b.x > 486)) || b.y < 80 || b.y > 1000) {
+            escapes.push({ x: Math.round(b.x), y: Math.round(b.y), i, why: 'tipflip' }); break; }
+        }
+      }
+      return { escapes, trials, flips };
     });
-    return { ok: r.escapes.length === 0, detail: r.escapes.length ? `LEFT THE TABLE: ${JSON.stringify(r.escapes[0])}` : `${r.trials} beads at 3000-4200 px/s on 50ms frames, none escaped` };
+    return { ok: r.escapes.length === 0, detail: r.escapes.length ? `LEFT THE TABLE: ${JSON.stringify(r.escapes[0])}` : `${r.trials} beads at 3000-4200 px/s plus ${r.flips} real tip flips, all on 50ms frames, none escaped` };
   },
   break: `window.PIN_DEV.step=(function(o){ return function(dt){ var g=window.PIN_DEV.state(); for(var i=0;i<g.balls.length;i++){var b=g.balls[i]; b.x+=b.vx*dt; b.y+=b.vy*dt;} return o(0.0001); }; })(window.PIN_DEV.step);` },
 

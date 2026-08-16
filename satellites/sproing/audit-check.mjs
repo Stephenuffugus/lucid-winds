@@ -30,14 +30,14 @@ const ok = (n, c, d) => { if (c) { pass++; console.log('  ok   ' + n); } else { 
    parse dies once, so sharing would let a later case pass for the wrong reason. */
 const LAUNCH = { headless: 'new', protocolTimeout: 300000, args: ['--no-sandbox', '--disable-dev-shm-usage'] };
 
-async function boot(poison) {
+async function boot(poison, query) {
   const browser = await puppeteer.launch(LAUNCH);
   const p = await browser.newPage();
   await p.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });
   const errs = [];
   p.on('pageerror', e => errs.push(e.message.split('\n')[0].slice(0, 130)));
   if (poison) await p.evaluateOnNewDocument(poison);
-  await p.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await p.goto(URL + (query || ''), { waitUntil: 'domcontentloaded', timeout: 60000 });
   await new Promise(r => setTimeout(r, 2600));
   return { ctx: { close: () => browser.close() }, p, errs };
 }
@@ -213,6 +213,14 @@ console.log('\n[4] core loop: onboarding is escapable and a run starts');
     const got = document.getElementById('mx1');
     if (got) { got.click(); await new Promise(r => setTimeout(r, 400)); }
     out.coachGone = !document.getElementById('modal').classList.contains('on');
+    /* ⛔ Sample the HUD HERE, while the run is provably alive. The old probe read it
+       only AFTER six seconds of blind arrow input, and a bot with no real steering
+       falls: it read hudOn=false on screen s-over at 29m and blamed the game for a
+       HUD that show('s-over') hides on purpose (show() toggles #hud.on only when the
+       screen id is null). Probe fault, not a defect — and an intermittent one, which
+       is worse, because it passes on the runs where the bot happens to survive. */
+    out.hudAtStart = document.getElementById('hud').classList.contains('on');
+    out.screenAtStart = [...document.querySelectorAll('.screen')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id).join(',') || '(game)';
     return out;
   });
   ok('a fresh install opens the studio', r.fresh === 's-studio', JSON.stringify(r));
@@ -234,9 +242,14 @@ console.log('\n[4] core loop: onboarding is escapable and a run starts');
     alt: document.getElementById('alt').textContent,
     screen: [...document.querySelectorAll('.screen')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id).join(',') || '(game)'
   }));
-  ok('the HUD is up during a run', live.hudOn, JSON.stringify(live));
+  ok('the HUD is up during a run', r.hudAtStart && r.screenAtStart === '(game)', JSON.stringify({ hudAtStart: r.hudAtStart, screenAtStart: r.screenAtStart }));
   ok('the run is still alive or ended cleanly on a real screen',
     live.screen === '(game)' || live.screen === 's-over' || live.screen === 's-pause', JSON.stringify(live));
+  /* the HUD must FOLLOW the run: up in the run, gone the moment a screen takes over.
+     A HUD left on top of the game-over panel is its own defect, so assert both ways
+     instead of asserting "up" at a moment the bot may already have died. */
+  ok('the HUD follows the run state (up in play, gone on a screen)',
+    live.screen === '(game)' ? live.hudOn : !live.hudOn, JSON.stringify(live));
 
   /* pause must be reachable and must let go again */
   const paused = await p.evaluate(async () => {
@@ -249,6 +262,57 @@ console.log('\n[4] core loop: onboarding is escapable and a run starts');
   });
   ok('pause opens and quit returns to the title', paused.skipped || (paused.paused === 's-pause' && paused.quit === 's-title'), JSON.stringify(paused));
   ok('no page errors across the whole loop', errs.length === 0, errs.join(' | '));
+  await ctx.close();
+}
+
+/* ---- 4b. CLASS 9: the game must not tally coins Zen never pays ------------
+   commitRun() returns early on game.zen, so a Zen run banks NOTHING — correct, a
+   deathless mode cannot be allowed to farm. But the HUD counted the run's coins up
+   in Zen exactly as it does in Endless, and the pause panel printed the same total,
+   so the game stated an earning the wallet was never going to receive. Grep the copy
+   for the claim, then check the code behind it: the readout was the lie, not the
+   economy. This phase asserts BOTH halves — Zen says practice and pays nothing, and
+   a paying mode still shows a real number. */
+console.log('\n[4b] class 9: Zen tells the truth about its coins');
+{
+  const { ctx, p, errs } = await boot(`(()=>{try{localStorage.setItem('sproing_bounce_seen','1');localStorage.setItem('sproing_coach_seen','1');}catch(e){}})()`, '?dev=1');
+  const r = await p.evaluate(async () => {
+    const vis = () => [...document.querySelectorAll('.screen')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id).join(',') || '(game)';
+    const out = { hook: typeof window._SP };
+    if (!window._SP) return out;
+    window._SP.launch('zen');
+    await new Promise(r => setTimeout(r, 700));
+    out.zenScreen = vis();
+    out.zenHud = document.getElementById('coinrun').textContent.trim();
+    /* bank a known pile INTO the run, then leave the run the way a player leaves it */
+    const g = window._SP.state();
+    out.walletBefore = window._SP.wallet().coins;      // after launch: Morning Dew is already granted
+    if (g) g.coinsRun = 500;
+    document.getElementById('pausebtn').click(); await new Promise(r => setTimeout(r, 350));
+    out.zenPause = document.getElementById('pause-coins').textContent.trim();
+    document.getElementById('p-quit').click(); await new Promise(r => setTimeout(r, 450));
+    out.walletAfter = window._SP.wallet().coins;
+    /* and the same pile in a PAYING mode must actually reach the wallet */
+    window._SP.launch('endless');
+    await new Promise(r => setTimeout(r, 700));
+    out.endlessHud = document.getElementById('coinrun').textContent.trim();
+    const g2 = window._SP.state(); if (g2) g2.coinsRun = 500;
+    document.getElementById('pausebtn').click(); await new Promise(r => setTimeout(r, 350));
+    document.getElementById('p-quit').click(); await new Promise(r => setTimeout(r, 450));
+    out.walletEndless = window._SP.wallet().coins;
+    document.getElementById('b-play').click(); await new Promise(r => setTimeout(r, 400));
+    out.modesNote = (document.getElementById('modes-note').textContent || '');
+    return out;
+  });
+  ok('the ?dev=1 hook is there to audit with', r.hook === 'object', r.hook);
+  ok('Zen actually starts a run', r.zenScreen === '(game)', JSON.stringify(r));
+  ok('the Zen HUD says practice instead of counting coins it will not pay', r.zenHud === 'practice', JSON.stringify(r));
+  ok('the Zen pause panel says practice too', r.zenPause === 'practice', JSON.stringify(r));
+  ok('a Zen run banks no coins', r.walletAfter === r.walletBefore, JSON.stringify(r));
+  ok('a paying mode still shows a real number', /^[0-9]+$/.test(r.endlessHud || ''), JSON.stringify(r));
+  ok('a paying mode really does bank its run', r.walletEndless >= r.walletBefore + 500, JSON.stringify(r));
+  ok('mode select warns that Zen keeps no coins', /Zen/.test(r.modesNote) && /coins are not kept/i.test(r.modesNote), r.modesNote);
+  ok('no page errors across the Zen path', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
 
@@ -350,9 +414,16 @@ console.log('\n[5b] in-run HUD controls');
     /* dismiss the first-run coach: it is a deliberate full-screen modal and measuring
        HUD hit areas through it reports the modal, not the buttons */
     const got = document.getElementById('mx1'); if (got) got.click();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
   });
-  await new Promise(r => setTimeout(r, 1200));
+  /* ⛔ Do NOT idle here. A bot that never steers falls, and a run that has ended shows
+     s-over, which hides #hud BY DESIGN — the measurement below would then be taken on
+     a display:none element and read as a game defect. Measure while the run is alive,
+     and if it died anyway, climb again and measure that one. */
+  const alive = async () => await p.evaluate(() => ([...document.querySelectorAll('.screen')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id).join(',') || '(game)') === '(game)');
+  for (let i = 0; i < 4 && !(await alive()); i++) {
+    await p.evaluate(async () => { const b = document.getElementById('o-retry'); if (b) b.click(); await new Promise(r => setTimeout(r, 600)); });
+  }
   const r = await p.evaluate(() => {
     const out = { hudOn: document.getElementById('hud').classList.contains('on'), ctrls: [], fail: [] };
     ['pausebtn', 'mutebtn'].forEach(id => {

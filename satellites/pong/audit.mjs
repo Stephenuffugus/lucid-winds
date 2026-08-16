@@ -222,24 +222,39 @@ const CHECKS = [
 
 { name: 'no permanent stall: every point resolves inside 30 simulated seconds',
   async run(page) {
+    // Seeded, and four matches per mode rather than one. The first version ran
+    // one match per mode and hit a stall roughly one run in three, so it was a
+    // coin toss that reported a different answer every time it was asked.
     const r = await page.evaluate(() => {
+      const seed = n => { let a = n >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+      Math.random = seed(20260816);
       const worst = [];
       for (const mode of ['classic', 'vertical', 'radial', 'gauntlet', 'multiball']) {
-        window.__PONG.start(mode, { diff: 'normal', target: 99 });
-        const g = window.__PONG.game;
-        for (let pt = 0; pt < 6; pt++) {
-          const s0 = g.scores.p + g.scores.ai;
-          let n = 0;
-          while (g.scores.p + g.scores.ai === s0 && n < 3600) { window.__PONG.step(1); n++; }
-          if (n >= 3600) { worst.push({ mode, pt, stalled: true }); break; }
-          worst.push({ mode, pt, secs: +(n / 120).toFixed(1) });
+        for (let m = 0; m < 4; m++) {
+          window.__PONG.start(mode, { diff: 'normal', target: 99 });
+          const g = window.__PONG.game;
+          for (let pt = 0; pt < 6; pt++) {
+            const s0 = g.scores.p + g.scores.ai;
+            let n = 0;
+            while (g.scores.p + g.scores.ai === s0 && n < 3600) { window.__PONG.step(1); n++; }
+            if (n >= 3600) {
+              const b = g.balls.find(x => !x.dead) || g.balls[0] || {};
+              worst.push({ mode, m, pt, stalled: true, state: g.state,
+                           ball: { x: Math.round(b.x), y: Math.round(b.y), vx: Math.round(b.vx), vy: Math.round(b.vy), stuck: !!b.stuck },
+                           field: { W: Math.round(g.W), H: Math.round(g.H) } });
+              break;
+            }
+            worst.push({ mode, pt, secs: +(n / 120).toFixed(1) });
+          }
+          if (worst.some(w => w.stalled)) break;
         }
+        if (worst.some(w => w.stalled)) break;
       }
-      return { worst, stalls: worst.filter(w => w.stalled).length, max: Math.max(...worst.map(w => w.secs || 99)) };
+      return { worst, stalls: worst.filter(w => w.stalled).length, pts: worst.filter(w => !w.stalled).length };
     });
     const worstPt = r.worst.filter(w => !w.stalled).sort((a, b) => b.secs - a.secs)[0];
-    return { ok: r.stalls === 0,
-      detail: r.stalls ? `HUNG: ${JSON.stringify(r.worst.filter(w => w.stalled))}` : `slowest point ${worstPt.secs}s (${worstPt.mode})` };
+    return { ok: r.stalls === 0 && r.pts >= 100,
+      detail: r.stalls ? `HUNG: ${JSON.stringify(r.worst.filter(w => w.stalled))}` : `${r.pts} points across 5 modes, slowest ${worstPt.secs}s (${worstPt.mode})` };
   },
   break: `window.__PONG.Match.prototype.doScore=function(){};` },
 
@@ -288,38 +303,56 @@ const CHECKS = [
     // how many points the machine takes off a mediocre opponent per minute.
     // A bot that reads the ball 9 frames late and misjudges it by 30px is about
     // as good as a distracted human.
+    // The metric is the CPU's RETURN RATE: of the ball approaches that reach
+    // its end, what fraction does it send back. Points-per-match was the old
+    // instrument and it was useless here — a whole match yields 5 to 20 samples,
+    // so the ladder reordered itself on every run and the check was noise. Every
+    // rally hit is a sample of the same thing, which is ~430 samples per rung.
+    // Math.random is seeded so this check reruns identically.
     const r = await page.evaluate(() => {
-      const out = {};
+      const seed = n => { let a = n >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+      Math.random = seed(20260816);
+      const out = {}, n = {}, share = {};
       for (const d of ['easy', 'normal', 'hard', 'expert']) {
-        let aiPts = 0, pPts = 0;
+        let ret = 0, miss = 0, aiPts = 0, pPts = 0;
         for (let trial = 0; trial < 6; trial++) {
           window.__PONG.start('classic', { diff: d, target: 999 });
           const g = window.__PONG.game, pp = g.playerPaddle();
-          const hist = [];
-          for (let n = 0; n < 18000; n++) {                 // 150 simulated seconds
+          const hist = []; let approaching = false, p0 = g.scores.p;
+          for (let i = 0; i < 18000; i++) {                 // 150 simulated seconds
             const b = g.balls.find(x => !x.dead);
-            if (b) hist.push(b.y); if (hist.length > 9) hist.shift();
-            const seen = hist[0];
-            if (seen != null) pp.setTargetFromPoint(0, seen + (Math.sin(n * 0.11) * 30));
+            if (b) { hist.push(b.y); if (hist.length > 9) hist.shift();
+              const seen = hist[0];
+              if (seen != null) pp.setTargetFromPoint(0, seen + (Math.sin(i * 0.11) * 30)); }
             window.__PONG.step(1);
+            const b2 = g.balls.find(x => !x.dead);
+            if (b2 && g.state === 'play') {
+              if (!approaching && b2.vx > 0) approaching = true;               // heading for the CPU
+              else if (approaching && b2.vx < 0) { ret++; approaching = false; } // it sent it back
+            }
+            if (g.scores.p > p0) { if (approaching) { miss++; approaching = false; } p0 = g.scores.p; }
           }
           aiPts += g.scores.ai; pPts += g.scores.p;
         }
-        // SHARE of points, not points per minute: a stronger CPU also makes
-        // rallies longer, so a rate metric conflates "wins more" with "lasts
-        // longer" and reads the ladder backwards.
-        out[d] = +(aiPts / Math.max(1, aiPts + pPts)).toFixed(3);
+        out[d] = +(ret / Math.max(1, ret + miss)).toFixed(3); n[d] = ret + miss;
+        share[d] = +(aiPts / Math.max(1, aiPts + pPts)).toFixed(3);
       }
-      return out;
+      return { out, n, share };
     });
-    const seq = [r.easy, r.normal, r.hard, r.expert];
-    // tolerance of 0.04 between neighbours: this is a sampled win RATE, so
-    // demanding a strict ordering on adjacent rungs measures noise, not design.
-    // The spread across the whole ladder is the claim that matters.
-    const mono = seq.every((v, i) => i === 0 || v >= seq[i - 1] - 0.04);
-    const spread = seq[3] - seq[0];
-    return { ok: mono && spread > 0.25,
-      detail: `CPU share of points off a handicapped player: ${JSON.stringify(r)} (spread ${spread.toFixed(2)})` };
+    // TWO instruments, because neither alone is enough. Return rate has hundreds
+    // of samples per rung so it settles the ORDER; it also saturates near 1 on a
+    // tall phone court, so it cannot carry the size of the gap. Share of points
+    // has only ~60 to 100 samples so it is too noisy to order, but it is what a
+    // player feels, so it carries the SPREAD.
+    const seq = [r.out.easy, r.out.normal, r.out.hard, r.out.expert];
+    const shr = [r.share.easy, r.share.normal, r.share.hard, r.share.expert];
+    const samples = Math.min(...Object.values(r.n));
+    // 0.015 is roughly one standard error at this sample size, so this asks for
+    // an ordering that is real rather than one that is inside the noise.
+    const mono = seq.every((v, i) => i === 0 || v >= seq[i - 1] - 0.015);
+    const spread = shr[3] - shr[0];
+    return { ok: mono && spread > 0.30 && samples >= 250 && shr[3] > shr[1],
+      detail: `CPU return rate ${JSON.stringify(r.out)} · share of points ${JSON.stringify(r.share)} (spread ${spread.toFixed(2)}, ${samples} approaches on the thinnest rung)` };
   },
   break: `['easy','normal','hard','expert'].forEach(function(k){ Object.assign(window.__PONG.DIFF[k], window.__PONG.DIFF.normal); });` },
 

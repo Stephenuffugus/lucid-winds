@@ -186,12 +186,65 @@ Beyond those two this pass is deliberately conservative. The spring is locked, t
 complete, the economy ladders sensibly, and the failure modes worth spending minutes on
 were all in persistence rather than in play.
 
+## SECOND PASS, 2026-08-16 (the first agent was cut off mid-audit)
+
+Everything the section above claims was **re-verified in the file**, not taken on trust,
+because the agent that wrote it never got to run its own suite to green. All four fixes are
+genuinely applied: `LS.getJSON` takes the shape from the default it was handed (line 402),
+`getInt` guards the numeric keys (413), `levelProg.stars` is shape-checked as a nested map
+(1205), `writeCoins`/`saveBest`/`saveLevelProg` are read-modify-write (442-447, 1209), the
+ready handshake is gated on being framed and fires at parse AND load (2019), and the
+`?dev=1` `window._SP` hook is present (1993). Nothing was half applied.
+
+### The one red assertion was the PROBE, not the game
+
+`FAIL the HUD is up during a run -> {"hudOn":false,"alt":"29m","screen":"s-over"}`.
+
+Reproduced first, then traced. `show(id)` toggles `#hud.on` with `id===null`, so the moment
+`onGameOver()` calls `show('s-over')` the HUD comes down **on purpose** — a HUD left floating
+over the game-over panel would be the actual defect. The probe steered blindly for six
+seconds and then asserted the HUD, and a bot with no real steering falls: my reproduction died
+at 101m, the reported one at 29m. Intermittent, which is worse than always-red, because it
+passes on the runs where the bot happens to survive and looks like flake.
+
+Fixed in the probe, two ways:
+- The HUD is now sampled the instant the coach is dismissed, when the run is provably alive
+  (`hudAtStart` + `screenAtStart`), and that is what "the HUD is up during a run" asserts.
+- A new assertion says the HUD must **follow** the run state: up while the screen is `(game)`,
+  down the moment any screen takes over. That covers the real defect in both directions
+  instead of asserting "up" at a moment the run may already have ended.
+- Phase 5b had the same latent flake (it idled 1.7s before measuring the in-run HUD hit
+  areas, and a dead run would have measured a `display:none` element). It now checks the run
+  is alive and climbs again if it is not.
+
+### CLASS 9 — a stated promise that is not true. FOUND AND FIXED
+
+Zen. `commitRun()` returns early on `game.zen` and banks nothing, which is correct: a
+deathless mode must not be farmable. But the HUD coin bar counted the run's coins up in Zen
+exactly as it does in Endless, `pauseRun()` printed the same total, and the wallet then
+received none of it. The economy was right and **the readout was the lie**. Both readouts now
+say `practice`, and mode select states it before you pick: "Zen: you cannot fall out. Practice
+only, so coins are not kept."
+
+Do NOT "fix" this by banking Zen coins — a mode you cannot die in would print money.
+
+Class 9 was also swept across the rest of the game's copy and the rest holds up. Checked
+against the code, not assumed: all five shop upgrades are consumed (`luckyMult`, `passiveMag`,
+`springHops`, `charmF`, and the `sturdy` branch in the death handler), every achievement's
+test matches its sentence (including "Hit a x4 chain", which reads `maxChain>=35` and looks
+wrong until you find `chainMultVal()` — 35 hops IS x4), and the two locked skins' "🔒 3000m" /
+"🔒 7-day streak" labels are the conditions `isUnlocked` actually reads.
+
 ## SUITE
 
-`node satellites/sproing/audit-check.mjs` (repo root served on :8777). Six phases:
+`node satellites/sproing/audit-check.mjs` (repo root served on :8777) — **68 passed, 0 failed**,
+exit 0. Watched go red on purpose: the HUD assertion above reproduced red twice before it was
+diagnosed, and the suite exits 1 with a red assertion. Seven phases:
 26 corrupt-save poisonings that each prove a *button still works* rather than that a page
 still renders, sane-value fallbacks, the two-tab merge driven through a real shop purchase,
-the core loop including onboarding escape, the standing defect classes, the in-run HUD
+the core loop including onboarding escape, **the Zen class 9 pair (Zen says practice and banks
+nothing, a paying mode shows a number and banks it — the second half is what stops the
+`practice` label leaking into a mode that pays)**, the standing defect classes, the in-run HUD
 touch targets, and the portal ready handshake in a real iframe with no `?embed=1`.
 
 ## THE FIRST THIRTY SECONDS — looked at, one reservation
@@ -212,6 +265,11 @@ is locked, and re-flowing that column is exactly the kind of edit that broke two
 targets in Slice 3D during this same session. Flagging it beats churning it.
 
 ## WHAT STILL WORRIES ME
+
+(second pass) The completability debt below is **still open and still unpaid**. The `?dev=1`
+hook now has a customer — phase 4b drives Zen and Endless through it — so the tooling excuse
+is gone, but no assertion covers a 1200m clear, the three star thresholds or the Dandelion
+Save. That is the single biggest hole left in this game's coverage.
 
 - **`sproing_acc`, `sproing_theme` and `sproing_trail` are raw strings**, not shape
   checked. They are safe today only because `accDef`/`themeDef`/`trailDef` all fall back
