@@ -108,7 +108,10 @@
     border-bottom:none;background:transparent;color:var(--hud);font-family:inherit;cursor:pointer}
   .tabbar button.on{background:var(--honey);color:#222;font-weight:bold}
   /* LW bridge: exit-to-portal button on the menu screens */
-  .lw-exit{width:min(300px,80vw);padding:11px;border-radius:10px;border:2px solid var(--honey);
+  /* min-height is the touch floor: padding 11 + 13px text + 2px borders came to
+     about 43 rendered px, under the 48 the fleet requires. No stage transform on
+     this game, so CSS px are rendered px. */
+  .lw-exit{width:min(300px,80vw);min-height:48px;padding:11px;border-radius:10px;border:2px solid var(--honey);
     background:rgba(120,70,10,.35);color:#ffe9b0;font-family:inherit;font-size:13px;letter-spacing:1px;
     cursor:pointer;margin-top:4px}
   .lw-exit:active{transform:translateY(2px)}

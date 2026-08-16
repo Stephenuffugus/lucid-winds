@@ -410,11 +410,11 @@ function tierOf(n){
    row are at least COL_GAP apart, so each star can wander by half the slack
    over the 48px law in each axis and the guarantee still holds: rowGap 60 with
    5px of wander is 50px apart at worst, colGap 60 with 6px is 50px at worst.
-   Drawn at 2px of wander it looked like a spreadsheet with tier headings. */
+   Drawn at 2px of wander it looked like a spreadsheet with tier headings.
    The side padding has to clear the HIT RADIUS plus the wander, not just the
    drawn star, or the outermost circle in a row hangs off the edge of the SVG
    and loses part of its 48px. */
-var SKY = { padL:38, padR:32, padT:34, padB:26, rowGap:60, tierGap:30,
+var SKY = { padL:40, padR:40, padT:34, padB:26, rowGap:60, tierGap:30,
             colGap:60, hitR:24, minSep:48, jitX:6, jitY:5, phase:7 };
 function skyLayout(count, widthPx, seedIn){
   var W = Math.max(300, Math.min(560, Math.round(widthPx || 360)));
@@ -1616,14 +1616,16 @@ function suiteLayout(t){
     var k;
     for (k = 0; k < L.pts.length; k++){
       var p = L.pts[k];
-      if (p.x - 4 < 0 || p.x + 4 > L.w || p.y - 4 < 0 || p.y + 4 > L.h) okBox = false;
+      /* the whole hit circle must be inside the drawn box, not just the star:
+         a clipped circle is a smaller target than the law asks for */
+      if (p.x - L.r < 0 || p.x + L.r > L.w || p.y - L.r < 0 || p.y + L.r > L.h) okBox = false;
       if (k > 0 && L.pts[k].n !== L.pts[k-1].n + 1) okOrder = false;
     }
   }
   t.assert('no two stars sit closer than the touch law, worst ' + worst.toFixed(1) +
            'px at ' + worstW + 'px wide', worst >= SKY.minSep);
   t.assert('the hit circle itself is at least 48px across', SKY.hitR * 2 >= 48);
-  t.assert('every star is inside the drawn box', okBox);
+  t.assert('every hit circle sits fully inside the drawn box', okBox);
   t.assert('every level gets exactly one star', okCount);
   t.assert('stars run in level order', okOrder);
   var A = skyLayout(CONFIG.LEVEL_COUNT, 390, CONFIG.MASTER_SEED);

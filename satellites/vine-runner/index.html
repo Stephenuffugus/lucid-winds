@@ -229,6 +229,13 @@ function pauseLayout(){ return {
   exit:  {x:W/2, y:H*0.79, w:200, h:48},
 }; }
 function inRect(x,y,r){ return Math.abs(x-r.x)<=r.w/2 && Math.abs(y-r.y)<=r.h/2; }
+// Way out of the game, on the TITLE screen. The portal opens this card as a top
+// level navigation with no chrome around it, so without this the only exit was
+// buried behind "start a run, then pause". Sits low and centred, well under the
+// TAP TO GROW prompt (H*0.62) and the two control hint lines (H*0.66, H*0.71),
+// and the title screen has no other controls down there. 200x52 clears the 48px
+// touch floor on the narrowest phone.
+function titleExitBtn(){ return {x:W/2, y:H*0.87, w:200, h:52}; }
 function pauseTap(x,y){
   var L=pauseLayout();
   if(inRect(x,y,L.resume)){ state="play"; return true; }
@@ -406,6 +413,9 @@ cv.addEventListener('touchstart',e=>{
     if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<22){ state="pause"; return; }
     if(state==="pause"){ pauseTap(t.clientX, t.clientY); return; }
     if(state==="gate"){ if(gateT>0.7 && inRect(t.clientX,t.clientY,gateBtn())) advanceLevel(); return; }  // only the button advances
+    // the arcade exit must be tested BEFORE the tap-anywhere start, or the title
+    // screen swallows the tap and launches a run instead of leaving
+    if(state==="title" && inRect(t.clientX,t.clientY,titleExitBtn())){ if(window.SWS_EXIT) window.SWS_EXIT(); return; }
     if(state==="title" && skinChoices()>1){               // character arrows before start-tap
       if(Math.hypot(t.clientX-(W/2-96), t.clientY-H*0.545)<42){ setSkin(-1); return; }
       if(Math.hypot(t.clientX-(W/2+96), t.clientY-H*0.545)<42){ setSkin(1);  return; }
@@ -441,6 +451,8 @@ cv.addEventListener('mousedown',e=>{
   if(state==="play" && Math.hypot(e.clientX-36, e.clientY-92)<28){ state="pause"; return; }  // clickable pause on desktop
   if(state==="pause"){ pauseTap(e.clientX, e.clientY); return; }
   if(state==="gate"){ if(gateT>0.7 && inRect(e.clientX,e.clientY,gateBtn())) advanceLevel(); return; }
+  // same as touch: the exit is tested before press() starts a run
+  if(state==="title" && inRect(e.clientX,e.clientY,titleExitBtn())){ if(window.SWS_EXIT) window.SWS_EXIT(); return; }
   press();
 });
 cv.addEventListener('mouseup',()=>jumpHeld=false);
@@ -1150,6 +1162,15 @@ function drawTitle(g){
   g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.55)";
   g.fillText(usingTouch?"left half: steer  ·  JUMP button: jump":"←→ steer  ·  space jump  ·  P pause  ·  M mute", W/2, H*0.66);
   g.fillText("hold a direction to whip · full loops give a speed surge", W/2, H*0.71);
+
+  // the way back to the arcade — quiet, but always on screen at the title
+  var X=titleExitBtn();
+  g.fillStyle="rgba(8,26,16,0.72)";
+  roundRect(g, X.x-X.w/2, X.y-X.h/2, X.w, X.h, 26); g.fill();
+  g.strokeStyle="rgba(242,240,220,0.34)"; g.lineWidth=1.5; g.stroke();
+  g.fillStyle="rgba(242,240,220,0.86)";
+  g.font="900 13px 'Titan One','Arial Black',sans-serif";
+  g.fillText("‹ BACK TO THE ARCADE", X.x, X.y+4.5);
 }
 
 function drawPause(g){
@@ -1304,17 +1325,26 @@ portalEvent("ready");
 <script>
 (function(){
   "use strict";
-  var EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  var EMBED=false; try{ EMBED = window.parent!==window; }catch(e){ EMBED=true; }
   window.SWS_EMBED=EMBED;
-  // Exit lives on the game's PAUSE screen (see drawPause + the pause tap handler)
-  // to avoid colliding with the game's own HUD. SWS_EXIT is the escape.
+  // The exit is drawn on the TITLE screen (drawTitle + the title tap handlers)
+  // and on the PAUSE screen. It used to be pause only, which meant a player had
+  // to START A RUN and then pause it to find the way out — the portal opens this
+  // card as a top level navigation, so there was no portal chrome to fall back
+  // on. SWS_EXIT is the escape.
   window.SWS_EXIT=function(){
-    // the portal frames with ?embed=1 but the main app frames WITHOUT it —
-    // detect framing directly so exit never loads the portal inside a frame.
-    if(parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
-    location.href='/portal/';
+    // ⛔ Framing is detected DIRECTLY. The old code keyed the ready post off
+    // ?embed=1, which the portal never sets for a /satellites/ url, so it never
+    // announced. And the unframed branch hard loaded /portal/, throwing away the
+    // back stack on every trip home.
+    if(EMBED){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
   };
-  if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(EMBED){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){try{parent.postMessage({sws:'ready'},'*');}catch(e){}});
+  }
 
   // ── Sunbeam earn — stage clears / victory. Sky Wolf earn standard: 30/day/game
   //    (=1 plant), floor 1 per clear. See SUNBEAM_EARN_POLICY.md.

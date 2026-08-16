@@ -32,7 +32,18 @@ for byte and every save from the shipped build still points at the same boards.
    overlap. The SVG is sized in px to match its own viewBox, so one unit is one
    rendered pixel on the device. `suiteLayout` measures the true minimum
    pairwise distance at nine widths from 300 to 560 and at 10, 100 and 200
-   levels. Worst case measured: **52.0px at 300px wide** against a 48px law.
+   levels. Worst case measured: **48.7px** against a 48px law, and every hit
+   circle sits fully inside the drawn box rather than being clipped by an edge.
+
+   **Found by looking at it.** I cannot open a browser here, so I printed the
+   layout as an ASCII star map and read it. Two things were wrong that no green
+   assertion had complained about: at 2px of wander the sky was a spreadsheet
+   with tier headings, and the outermost hit circle in every row hung off the
+   edge of the SVG because the side padding cleared the drawn star (6px) rather
+   than the hit radius (24px). Fixed the jitter budget (rows 60px apart with 5px
+   of wander, columns 60px apart with 6px) and the padding, then tightened the
+   assertion from "the star is inside the box" to "the whole hit circle is",
+   which went red on the old numbers before it went green on the new ones.
 2. **Phone dead space.** Was ~214px of slack under the board at 390x844. Now
    **71px**, and 18px at 375x667. The column is budgeted rather than measured
    (measuring the pad we are about to resize is what makes a layout walk), and

@@ -810,10 +810,23 @@ if(/[?&]sdtest=1/.test(location.search)){
 <!-- ============================ LUCID WINDS BRIDGE ============================ -->
 <script>
 (function(){
-  var FRAMED = (window.parent && window.parent!==window);
+  /* ⛔ The portal frames only /play/*.html and github.io urls, so this card always
+     arrives as a TOP LEVEL navigation and FRAMED is false in production. The
+     unframed branch is therefore the one that actually runs: walk the referrer
+     back to the arcade rather than hard loading /portal/, which piled a fresh
+     entry onto the history stack on every trip. */
+  var FRAMED = false;
+  try{ FRAMED = window.parent !== window; }catch(e){ FRAMED = true; }
   window.SWS_EMBED = FRAMED;
-  window.SWS_EXIT=function(){ if(FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} } else { location.href='/portal/'; } };
-  if(FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+  window.SWS_EXIT=function(){
+    if(FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(FRAMED){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
   /* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md) */
   window._sbCapEarn=function(n,tag){ try{ var k='sw_sb_sproutdice', s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
     var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return;
