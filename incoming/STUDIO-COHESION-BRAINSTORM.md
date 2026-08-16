@@ -236,3 +236,48 @@ Worth saying out loud before anyone builds:
 4. Is there a game you want to be the front door when someone arrives knowing nothing?
 5. Do the apps (PadLab, Hush, Grow Your Name, Times Table Quest) sit inside the same doors, or
    is "the studio makes tools too" its own room?
+
+---
+
+# 7. STEP 1 ATTEMPTED — what the machine could and could not tag
+
+Built `scripts/tag_catalog.mjs` and ran it over all 183 games. Result, stated honestly
+because a wrong tag is worse than a missing one:
+
+```
+AXIS       firm on    verdict
+reading    183/183    USABLE   none 146 · a little 22 · a lot 15
+brain      182/183    USABLE   think 91 · reflex 49 · chance 22 · make 21
+company     10/183    needs a human   (the 10 firm ones are right; "alone" is a safe default)
+length      58/183    needs a human   162 of 183 landed on "2 to 10", so it does not discriminate
+restart     27/183    needs a human
+hands        1/183    needs a human
+```
+
+**Two of six axes came out usable, and the one that matters most did not.**
+
+`length` is the axis the "I have two minutes" door is built on, and it is exactly the one a
+machine cannot read. A game does not say how long it takes; you find out by playing it. The
+detector only fires when a game declares a clock in its own text, which 19 do.
+
+Two things worth knowing before deciding what to do about that:
+
+- **`reading` is the surprise.** It is fully automatic, completely reliable, and it is a real
+  axis: 15 games hand a first time visitor a block of 45 words or more before they play.
+  Silt's is an eleven item list. A "no reading required" shelf could ship tomorrow with no
+  human input at all.
+- **`brain` is honest but shallow.** It is the existing category restated in the player's
+  words, which is worth something (a person understands "I want to think" and does not
+  understand "pattern") but it adds no new information.
+
+**What I would ask for.** A human pass on `length` only, for the games that would go in the
+doors. Not all 183: the top 40 or so. It is one word per game from somebody who has played it,
+and it is the difference between a shelf people trust and a shelf that lies to them once and
+is never believed again.
+
+Two honest corrections I had to make to my own tagger while building it, both the same
+mistake in different clothes: it first called 115 of 183 games "make" because it matched words
+like *build* and *design* anywhere on the page, and "build a course of clay traps" is not a
+creative tool. And it was reading no source at all for 80 games, because the native `/play/`
+titles live in a different place and I had passed them a null path. Both were found by looking
+at the distribution and asking whether it could possibly be true.
