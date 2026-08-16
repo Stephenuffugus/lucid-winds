@@ -1,7 +1,7 @@
 # SKY WOLF STUDIOS — VR / META HORIZON PLAN
 
 Supersedes `HANDOFFSKYWALKVR.md`, which was written from a mishearing and from a
-stale picture of the catalog. Written 2026-08-16 after triaging all 183 titles and
+stale picture of the catalog. Written 2026-08-16 after triaging all 186 titles and
 re-verifying Meta's live docs.
 
 **Owner:** Stephen / SWS Strategic Media LLC — **Sky Wolf Studios**
@@ -36,11 +36,11 @@ VR version of a game that no longer exists and a game that never did.
 game unplayable with a controller pointer. Output is `QUEST-COMPAT.md`.
 
 ```
-183 titles
-  160  read clean
+186 titles
+  162  read clean
     7  worth an eye on the device
     0  blocked
-   16  source lives in external repos, not readable from here
+   17  source lives in external repos, not readable from here
 ```
 
 **Nothing in the catalog is blocked from running in the Quest browser today.** That is
@@ -67,7 +67,7 @@ standing lesson holds: **a checker gets verified before the code it accuses.**
 Nothing here has been run on a headset. A game marked clean can still be wrong in VR for
 reasons no static read can see: text unreadable at panel distance, a play area that wants
 a wrist flick, motion that makes somebody queasy. This is a shortlist so nobody has to
-open 183 games by hand. **Every call in it should be checked against the Quest 2.**
+open 186 games by hand. **Every call in it should be checked against the Quest 2.**
 
 ---
 
@@ -82,7 +82,7 @@ PWAs**, and IARC content ratings are free and instant. Everything below is $0.
 The arcade is already a PWA with a manifest, HTTPS, and a service worker. It is already
 playable in the Quest browser. Packaging it with `@meta-quest/bubblewrap-cli` in 2D mode
 puts the arcade on a store where the entire catalog is a rounding error next to Google
-Play. **161 games a visitor can open** today, with 22 more behind the tester gate.
+Play. **162 games a visitor can open** today, with 24 more behind the tester gate or marked soon.
 
 This is the exposure play, and it is nearly free. It requires no game changes, no WebXR,
 and no new art beyond store assets. It also answers the thing you actually said: *we built
@@ -90,7 +90,7 @@ so much stuff that nobody uses.* A storefront listing does more for that in a we
 single VR title does in a month.
 
 - [ ] Meta developer account under SWS Strategic Media LLC (developers.meta.com/horizon)
-- [x] ~~Verify the arcade manifest satisfies Bubblewrap~~ — it already does. `portal/manifest.webmanifest` has `name`, `short_name`, `start_url`, `id`, `display: standalone`, and 192 plus 512 icons in both `any` and `maskable`. `scope` is `/`, which correctly keeps every game inside the app window. Its description said 140+ games and now says 160+, which is what a visitor can open (183 are carded, 22 are dev gated). That description becomes the store listing, so it is worth being exactly right: `scripts/advertised_count_check.mjs` now fails on a claim that is stale **or** larger than the openable count.
+- [x] ~~Verify the arcade manifest satisfies Bubblewrap~~ — it already does. `portal/manifest.webmanifest` has `name`, `short_name`, `start_url`, `id`, `display: standalone`, and 192 plus 512 icons in both `any` and `maskable`. `scope` is `/`, which correctly keeps every game inside the app window. Its description said 140+ games and now says 160+, which is what a visitor can open (186 are carded, 24 are gated or soon). That description becomes the store listing, so it is worth being exactly right: `scripts/advertised_count_check.mjs` now fails on a claim that is stale **or** larger than the openable count.
 - [ ] **Deal with the 13 off-origin games first.** See below.
 - [ ] Package 2D, landscape, unique Android package id, signed
 - [ ] Store assets: icon set, hero, 3+ screenshots, 30-60s capture recorded on the Quest itself

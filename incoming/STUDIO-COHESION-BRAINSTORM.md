@@ -1,10 +1,10 @@
-# MAKING 187 GAMES FEEL LIKE ONE STUDIO — options, not a build
+# MAKING 186 GAMES FEEL LIKE ONE STUDIO — options, not a build
 
 Written 2026-08-16 for Stephen and Jessie. **Nothing here is built.** It is the thinking that
 should happen before anything is, because the wrong version of this makes the arcade worse.
 
 Jessie's note, as relayed: *it is just a giant long list, it is kind of crap, and she wants
-multiple pages you go through.* Stephen's: *187 games and they play none of them, because there
+multiple pages you go through.* Stephen's: *186 games and they play none of them, because there
 are too many. Ask people what they like and recommend.*
 
 Both are describing the same failure from different ends. This is an attempt to name it
@@ -17,7 +17,8 @@ precisely, then lay out real options with what each one costs.
 ### The catalog, measured today
 
 ```
-187 browsable things      119 satellite cards + 68 native /play/ games
+186 carded entries       119 satellite cards + 67 native /play/ games
+162 a visitor can open   22 dev gated + 2 marked "soon" are not openable
 114 of 119 have real art  5 satellite cards show only an emoji
 22 dev gated              a visitor cannot open these at all
 29 marked "new"           a sixth of the catalog claims to be new
@@ -29,7 +30,7 @@ categories, native:       puzzle 17 · card 12 · board 11 · creative 10 · pat
 
 ### The actual problem is not the number
 
-187 is an asset. Every one of them is free, opens instantly, and needs no account. That is a
+186 is an asset. Every one of them is free, opens instantly, and needs no account. That is a
 genuinely rare thing and most studios would kill for it.
 
 The problem is that **the storefront makes the visitor do all the work.** A person arriving
@@ -172,7 +173,7 @@ some hand set:
   restart       instant · a run · saves progress
 ```
 
-Six axes, most of them a single word, and a person could tag 187 games in an afternoon.
+Six axes, most of them a single word, and a person could tag 186 games in an afternoon.
 **This is the unglamorous piece and it is the one that unlocks everything else.** Without it,
 every recommendation is guesswork, and "if you liked X" is impossible.
 
@@ -222,7 +223,7 @@ Worth saying out loud before anyone builds:
 - **The four doors have to be honest.** If "two minutes" contains a game that takes ten, the
   whole device stops being trusted, and this is the same class of defect as the eight games
   found today whose own copy was not true.
-- **187 is the studio's best fact.** Whatever gets built should still say it somewhere. The goal
+- **186 is the studio's best fact.** Whatever gets built should still say it somewhere. The goal
   is not to hide the catalog, it is to stop making a stranger carry it.
 
 ---
@@ -241,17 +242,17 @@ Worth saying out loud before anyone builds:
 
 # 7. STEP 1 ATTEMPTED — what the machine could and could not tag
 
-Built `scripts/tag_catalog.mjs` and ran it over all 183 games. Result, stated honestly
+Built `scripts/tag_catalog.mjs` and ran it over all 186 games. Result, stated honestly
 because a wrong tag is worse than a missing one:
 
 ```
 AXIS       firm on    verdict
-reading    183/183    USABLE   none 146 · a little 22 · a lot 15
-brain      182/183    USABLE   think 91 · reflex 49 · chance 22 · make 21
-company     10/183    needs a human   (the 10 firm ones are right; "alone" is a safe default)
-length      58/183    needs a human   162 of 183 landed on "2 to 10", so it does not discriminate
-restart     27/183    needs a human
-hands        1/183    needs a human
+reading    186/186    USABLE   none 149 · a little 22 · a lot 15
+brain      185/186    USABLE   think 91 · reflex 49 · make 24 · chance 22
+company     10/186    needs a human   (the 10 firm ones are right; "alone" is a safe default)
+length      59/186    needs a human   164 of 186 landed on "2 to 10", so it does not discriminate
+restart     27/186    needs a human
+hands        1/186    needs a human
 ```
 
 **Two of six axes came out usable, and the one that matters most did not.**
@@ -271,12 +272,12 @@ Two things worth knowing before deciding what to do about that:
   understand "pattern") but it adds no new information.
 
 **What I would ask for.** A human pass on `length` only, for the games that would go in the
-doors. Not all 183: the top 40 or so. It is one word per game from somebody who has played it,
+doors. Not all 186: the top 40 or so. It is one word per game from somebody who has played it,
 and it is the difference between a shelf people trust and a shelf that lies to them once and
 is never believed again.
 
 Two honest corrections I had to make to my own tagger while building it, both the same
-mistake in different clothes: it first called 115 of 183 games "make" because it matched words
+mistake in different clothes: it first called 115 of 186 games "make" because it matched words
 like *build* and *design* anywhere on the page, and "build a course of clay traps" is not a
 creative tool. And it was reading no source at all for 80 games, because the native `/play/`
 titles live in a different place and I had passed them a null path. Both were found by looking

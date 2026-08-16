@@ -23,20 +23,18 @@
      the claim is not STALE     it has not fallen behind the openable count
      the claim is not INFLATED  it never promises more than a visitor can play
 */
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, unlinkSync } from "fs";
 
 const PORTAL = "portal/index.html";
 
-/* ---------- what a visitor can actually open ------------------------------ */
-export function openable(src) {
-  const sats = [...src.matchAll(/\{nm:"([^"]+)",(.*?)\},?\n/g)];
-  const natives = [...src.matchAll(/^\s*\["([a-z0-9-]+)","([^"]+)","([a-z]+)","([^"]*)"\]/gm)];
-  /* beta:true is the dev gate. Those cards render but a stranger cannot open
-     them, so they are catalog, not inventory. */
-  const gated = sats.filter(m => /beta:true/.test(m[2])).length;
-  return { total: sats.length + natives.length, gated,
-           open: sats.length + natives.length - gated };
-}
+/* ⛔⛔ This used to count with its own regex over the portal, and that regex was
+   WRONG: the GAMES rows carry 4, 5 or 7 fields and it hardcoded 4, so longer
+   rows silently vanished. It reported 161 openable when the true figure is 162,
+   and 183 carded when the true figure is 186. A regex that misses rows does not
+   error, it just returns a smaller number that looks correct.
+   Counting now lives in exactly one place, scripts/catalog.mjs, which parses the
+   arrays instead of matching them. Never reintroduce a local count here. */
+import { catalog } from "./catalog.mjs";
 
 /* Every place a number is promised to a person. Add to this list, never prune it. */
 const CLAIM = /\b(\d{2,4})\s*\+\s*(?:free\s+)?(?:browser\s+)?games?\b/gi;
@@ -59,12 +57,27 @@ if (process.argv.includes("--selftest")) {
   let bad = 0;
   const say = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) bad++; };
 
-  const fake = `{nm:"A",url:"/satellites/a/",cat:"action"},\n` +
-               `{nm:"B",url:"/satellites/b/",cat:"action",beta:true},\n` +
-               `    ["c","C","puzzle","d"]\n`;
-  const c = openable(fake);
-  say(c.total === 3 && c.gated === 1 && c.open === 2,
-      "counts total 3, gated 1, openable 2 (got " + c.total + "/" + c.gated + "/" + c.open + ")");
+  /* ⛔ The counting is exercised against a real fixture file, because the whole
+     class of bug being guarded against is a row shape the reader does not expect.
+     Note the 5 and 7 field rows: those are exactly what the old regex dropped. */
+  const fx = "/tmp/lw_catalog_fixture.html";
+  writeFileSync(fx, [
+    'var FEATURED = [',
+    '  {nm:"A",url:"/satellites/a/",cat:"action"},',
+    '  {nm:"B",url:"/satellites/b/",cat:"action",beta:true}',
+    '];',
+    'var GAMES = [',
+    '  ["c","C","puzzle","a four field row"],',
+    '  ["d","D","puzzle","a five field row","soon"],',
+    '  ["e","E","puzzle","a seven field row","","x","y"]',
+    '];'
+  ].join("\n"));
+  const c = catalog(fx);
+  say(c.total === 5, "counts all 5 entries including the 5 and 7 field rows (got " + c.total + ")");
+  say(c.gated === 2, "counts both a beta satellite and a soon game as gated (got " + c.gated + ")");
+  say(c.open === 3, "openable is 3 (got " + c.open + ")");
+  say(c.nat.length === 3, "does not drop the long native rows (got " + c.nat.length + " of 3)");
+  unlinkSync(fx);
 
   const found = claims([]).length;
   say(found === 0, "no files means no claims");
@@ -84,7 +97,7 @@ if (process.argv.includes("--selftest")) {
 }
 
 /* ---------- run ----------------------------------------------------------- */
-const c = openable(readFileSync(PORTAL, "utf8"));
+const c = catalog(PORTAL);
 const found = claims([PORTAL, "support.html", "portal/manifest.webmanifest"]);
 
 console.log("catalog: " + c.total + " carded, " + c.gated + " dev gated, " +

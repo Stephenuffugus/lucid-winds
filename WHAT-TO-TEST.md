@@ -305,10 +305,10 @@ can actually open. The tab title is the line Google prints in search results and
 becomes the Meta store listing, so those were the two worst places to be out of date.
 
 **I got this wrong first and want to be straight about it,** because the wrong version was
-briefly pushed. There are **183 games carded, but 22 are dev gated behind your tester
-passcode, so a stranger can open 161.** I saw 183, decided the hero's "160+ free games" was
+briefly pushed. There are **186 games carded, but 24 are dev gated or marked "soon", so a
+stranger can open 162.** I saw the catalog was bigger than the copy, decided the hero's "160+ free games" was
 stale, and changed it to 180+. The hero had been right all along: it was written back when the
-catalog was exactly 161, and it has quietly stayed true ever since. Advertising 183 would have
+catalog was exactly that size, and it has quietly stayed true ever since. Advertising the carded total would have
 been the same defect as every "its own copy is not true" bug in Part 2, just pointing the
 other way, and on the one page where a stranger decides whether to trust the place.
 
@@ -330,7 +330,7 @@ edge as the shelves. **The phone layout is unchanged** and I verified that at 39
 
 ## VR: everything already runs in a Quest browser ⚖
 
-I triaged all 183 titles for the things that stop a controller pointer working. **160 read
+I triaged all 186 titles for the things that stop a controller pointer working. **162 read
 clean, 7 want an eye on the device, none are blocked.** Full table in `QUEST-COMPAT.md`, plan
 in `incoming/VR-PLAN.md`.
 

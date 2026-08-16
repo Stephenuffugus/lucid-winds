@@ -27,26 +27,22 @@
                 thumb. Small targets that pass on a phone can miss in VR.
 */
 import { readFileSync, writeFileSync, existsSync } from "fs";
+import { catalog as cat } from "./catalog.mjs";
 
 const PORTAL = "portal/index.html";
 const OUT = "QUEST-COMPAT.md";
 
+/* ⛔⛔ This had its own regex over the portal and it was WRONG. The GAMES rows
+   carry 4, 5 or 7 fields; the regex hardcoded 4, so longer rows silently
+   vanished and it reported 183 titles when the true figure is 186. Counting now
+   comes from scripts/catalog.mjs, which parses the arrays. */
 function catalog() {
-  const s = readFileSync(PORTAL, "utf8");
-  const out = [];
-  for (const m of s.matchAll(/\{nm:"([^"]+)",(.*?)\},?\n/g)) {
-    const b = m[2];
-    const url = (b.match(/url:"([^"]*)"/) || [])[1] || "";
-    const local = url.match(/^\/satellites\/([a-z0-9-]+)\//);
-    out.push({ name: m[1], url, cat: (b.match(/cat:"([^"]*)"/) || [])[1] || "",
-      beta: /beta:true/.test(b), kind: "satellite",
-      files: local ? ["satellites/" + local[1] + "/index.html"] : [] });
-  }
-  for (const m of s.matchAll(/^\s*\["([a-z0-9-]+)","([^"]+)","([a-z]+)","([^"]*)"\]/gm)) {
-    out.push({ name: m[2], url: "/play/" + m[1] + ".html", cat: m[3], beta: false,
-      kind: "native", files: ["play/" + m[1] + ".html", "games/" + m[1] + ".js"] });
-  }
-  return out;
+  return cat(PORTAL).all.map(g => ({
+    name: g.name, url: g.url, cat: g.cat, beta: g.gated, kind: g.kind,
+    files: g.kind === "satellite"
+      ? (g.dir ? ["satellites/" + g.dir + "/index.html"] : [])
+      : ["play/" + g.id + ".html", "games/" + g.id + ".js"]
+  }));
 }
 
 /* ---------- detectors. Each returns null or {level, why}. ----------------- */

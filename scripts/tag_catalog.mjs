@@ -25,33 +25,22 @@
      restart  if I die, is it instant
 */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { catalog as cat } from "./catalog.mjs";
 
 const PORTAL = "portal/index.html";
 const OUT = "portal/catalog-tags.json";
 
 /* ---------- read the catalog out of the portal, the one source of truth ---- */
+/* ⛔⛔ This had its own regex and it was WRONG: GAMES rows carry 4, 5 or 7
+   fields and it hardcoded 4, so it saw 183 games when there are 186. Counting
+   now comes from scripts/catalog.mjs, which parses rather than matches. */
 function catalog() {
-  const s = readFileSync(PORTAL, "utf8");
-  const out = [];
-  for (const m of s.matchAll(/\{nm:"([^"]+)",(.*?)\},?\n/g)) {
-    const body = m[2];
-    const url = (body.match(/url:"([^"]*)"/) || [])[1] || "";
-    const cat = (body.match(/cat:"([^"]*)"/) || [])[1] || "";
-    const ds = (body.match(/ds:"([^"]*)"/) || [])[1] || "";
-    const local = url.match(/^\/satellites\/([a-z0-9-]+)\//);
-    out.push({ name: m[1], cat, ds, url,
-      dir: local ? "satellites/" + local[1] : null,
-      beta: /beta:true/.test(body), kind: "satellite" });
-  }
-  for (const m of s.matchAll(/^\s*\["([a-z0-9-]+)","([^"]+)","([a-z]+)","([^"]*)"\]/gm)) {
-    /* ⛔ These were passed dir:null, so 80 of 183 games were tagged with no
-       source at all and every source-derived axis defaulted. The native games
-       DO have a file, at play/<id>.html, and many have a module in games/. */
-    out.push({ name: m[2], cat: m[3], ds: m[4], url: "/play/" + m[1] + ".html",
-      dir: null, file: "play/" + m[1] + ".html", mod: "games/" + m[1] + ".js",
-      beta: false, kind: "native" });
-  }
-  return out;
+  return cat(PORTAL).all.map(g => ({
+    name: g.name, cat: g.cat, ds: "", url: g.url, beta: g.gated, kind: g.kind,
+    dir: g.kind === "satellite" && g.dir ? "satellites/" + g.dir : null,
+    file: g.kind === "native" ? "play/" + g.id + ".html" : null,
+    mod:  g.kind === "native" ? "games/" + g.id + ".js" : null
+  }));
 }
 
 /* ---------- the detectors ------------------------------------------------- */
