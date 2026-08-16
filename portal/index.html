@@ -1375,6 +1375,22 @@ function byName(names){
   });
   return out;
 }
+/* One game per series on a shelf. Five Super Slice entries and two Abduct a
+   Chameleons are a fair catalogue, but three tiles of the same artwork in a
+   row reads as a rendering fault rather than a series. The full list still
+   shows every one of them; it is only the curated rows that pick a
+   representative. */
+function familyOf(name){ return name.split(" ").slice(0,2).join(" ").toLowerCase(); }
+function oneEach(items){
+  var seen = {}, out = [];
+  items.forEach(function(it){
+    var n = it.feat ? it.g.nm : it.g[1];
+    var f = familyOf(n);
+    if (seen[f]) return;
+    seen[f] = 1; out.push(it);
+  });
+  return out;
+}
 function inCat(group, limit){
   var sats = FEATURED.filter(function(g){ return !g.hub && inGroup(g.cat, group); })
     .map(function(g){ return {g:g, feat:true}; });
@@ -1391,6 +1407,7 @@ function inCat(group, limit){
       for(var i=0;i<n.length;i++) v=(v*33+n.charCodeAt(i))>>>0; return v; }
     return h(a)-h(b);
   });
+  all = oneEach(all);
   return limit ? all.slice(0, limit) : all;
 }
 function shelf(title, sub, items, opts){
@@ -1416,8 +1433,8 @@ function renderShelves(){
      badges is a worse first impression than no shelf: it reads as a studio
      that keeps starting things. Unfinished work is still findable, it has
      its own tab and it still appears in All. */
-  var fresh = FEATURED.filter(function(g){ return !g.hub && g.fresh && !g.beta; })
-    .map(function(g){ return {g:g, feat:true}; });
+  var fresh = oneEach(FEATURED.filter(function(g){ return !g.hub && g.fresh && !g.beta; })
+    .map(function(g){ return {g:g, feat:true}; }));
   var html = "";
   html += shelf("Start here", "six good minutes", byName(START_HERE), {lead:true});
   html += shelf("New", "just shipped", fresh);

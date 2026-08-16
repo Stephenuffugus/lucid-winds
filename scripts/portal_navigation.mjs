@@ -110,6 +110,26 @@ ok(catShelf && catShelf.chips === 0,
   "a category shelf does not repeat its own name on every tile", JSON.stringify(catShelf));
 ok(shelves[0].chips > 0, "a mixed shelf does still label its tiles", JSON.stringify(shelves[0]));
 
+/* a shelf shows one game per series: five Super Slice tiles in a row read as
+   a rendering fault rather than a catalogue */
+const dupes = await page.evaluate(() => {
+  const bad = [];
+  document.querySelectorAll(".shelf").forEach(s => {
+    const fams = {};
+    [...s.querySelectorAll(".nm")].forEach(n => {
+      const f = n.textContent.split(" ").slice(0, 2).join(" ").toLowerCase();
+      fams[f] = (fams[f] || 0) + 1;
+    });
+    Object.keys(fams).forEach(f => { if (fams[f] > 1)
+      bad.push(s.querySelector(".shelf-h").firstChild.textContent.trim() + ": " + f + " x" + fams[f]); });
+  });
+  return bad;
+});
+ok(dupes.length === 0, "no shelf shows the same series twice", JSON.stringify(dupes));
+const wallHasAll = await page.evaluate(() =>
+  [...document.querySelectorAll("#garden .nm")].filter(n => /^Super Slice/.test(n.textContent)).length);
+ok(wallHasAll === 5, "but the full list still has every one of them", String(wallHasAll));
+
 /* every control on a card has to stay reachable: the chip landed on top of the
    info button the first time and made it unclickable */
 const corners = await page.evaluate(() => {
