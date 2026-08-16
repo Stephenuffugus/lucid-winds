@@ -170,6 +170,38 @@ readout.** A faded chip keeps its rect and its `left`/`top`, so the probe will
 report a position and `same FALSE` for a chip that is not on screen at all. That
 is the expected state on a dense panel now.
 
+## Fourth pass — the footprint has to stay on screen
+
+Measured on Flipbook: chip at **y = 4**, so its badge sat at **y ≈ -22**, off the
+top of the viewport. The control that dismisses the chip could not be reached,
+and on a real phone y=4 is inside the status bar and notch anyway.
+
+**y=4 is a fingerprint.** It is `Math.max(4, ...)` from the *drag* clamp, not
+from the parking code. So the bad position came from a drag — or, more likely,
+from a dragged position restored out of `sessionStorage` on a later page, since
+that key survives navigation and the sweep visits many games in one context.
+**Three code paths could place this chip — drag, restore, park — and only one of
+them clamped anything, using the chip's own box and a flat 4px.**
+
+All three now go through one `fyClamp`, which knows about:
+
+- **the badge**, measured live (`fyOverhang`), so the clamp bounds the whole
+  footprint rather than the chip's box, and
+- **the safe area**. `env(safe-area-inset-*)` is CSS-only, so it is *measured* —
+  a throwaway element with the insets as padding, read once, cached, and
+  re-measured on resize/orientation because the notch moves when the phone turns.
+
+A rotation also re-legalises a dragged home position, which was another way to
+strand the badge off-screen.
+
+Checked on all four edges as asked: **S18** (no candidate spot lands under the
+notch or the home indicator, with a real margin rather than 4px), **S19** (drag
+hard into the top-left), **S20** (drag hard into the bottom-right, where the
+inset actually bites on an iPhone), and **S21** — the Flipbook case itself,
+seeding `sessionStorage` with the exact reported `{l:289, t:4}` and asserting the
+restored position is clamped into the safe box while staying near where the
+player put it.
+
 ## Costs
 
 No `MutationObserver` (a game mutating its HUD every frame would storm it). No
@@ -226,6 +258,13 @@ a modal).
 And four self-test mutants stayed green on broken builds and had to be rewritten,
 including one whose patch string had silently drifted so it was "testing" the
 healthy file. The self-test now refuses any patch that changes nothing.
+
+## Not a regression
+
+A twelve-game sweep found the chip visible on ten, hidden on exactly one
+(Bramblewick, correct for its dense centred panel) and unmounted on one (Attic).
+Two agents reported the fade rule as having made feedback unreachable fleet-wide;
+they observed it mid-edit. It had not.
 
 ## What I could not verify without eyes
 

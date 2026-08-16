@@ -416,13 +416,17 @@
            cy <= vh * FY.EDGE_BAND || cy >= vh * (1 - FY.EDGE_BAND);
   }
   function fyCandidates(vw, vh, w, h) {
-    var out = [], seen = {}, keep = [], i;
+    var out = [], seen = {}, keep = [], i, ins = fyInsets();
     // ONE ring, the viewport's rim. An inner ring was tried and removed the same
     // day: it offered spots that scored just as well as the gutters and were
     // NEARER to home, so the chip parked dead centre on a settings label. A spot
     // that satisfies the rule and sits in the middle of the screen is worse than
     // no spot at all.
-    fyRing(out, seen, FY.MARGIN, FY.TOP_MARGIN, vw - w - FY.MARGIN, vh - h - FY.MARGIN);
+    fyRing(out, seen,
+           ins.left + FY.MARGIN,
+           Math.max(FY.TOP_MARGIN, ins.top + FY.MARGIN),
+           vw - w - FY.MARGIN - ins.right,
+           vh - h - FY.MARGIN - ins.bottom);
     for (i = 0; i < out.length; i++) {
       if (fyInEdgeBand(out[i].x + w / 2, out[i].y + h / 2, vw, vh)) keep.push(out[i]);
     }
@@ -499,6 +503,77 @@
   }
 
   var watch = null;   // one fab per page, so one watcher
+
+  /* ⛔ 2026-08-16, FOURTH PASS — THE FOOTPRINT HAS TO STAY ON SCREEN.
+     Measured on Flipbook: chip at y=4, so its badge sat at y≈-22, entirely off
+     the top of the viewport. A player who wants the chip gone cannot reach the
+     control that removes it, and on a real phone y=4 is inside the status bar
+     and notch region anyway.
+
+     y=4 is a fingerprint: it is `Math.max(4, ...)` from the DRAG clamp, not
+     from parking. So the bad position came from a drag, or from the dragged
+     position restored out of sessionStorage on a later page — and neither path
+     knew the badge existed or that a notch does. Three code paths could place
+     this chip (drag, restore, park) and only one of them clamped anything.
+     They all go through fyClamp now, and it knows about both.
+
+     env(safe-area-inset-*) is CSS-only, so measure it rather than guess: a
+     throwaway element with the insets as padding, read once and cached, redone
+     on resize/orientation. */
+  var _insCache = null;
+  function fyInsets() {
+    if (_insCache) return _insCache;
+    var out = { top: 0, right: 0, bottom: 0, left: 0 };
+    try {
+      var d = document.createElement('div');
+      d.className = 'lwfb-sap';
+      d.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;' +
+        'padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);' +
+        'padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);';
+      document.body.appendChild(d);
+      var cs = window.getComputedStyle(d);
+      out.top = parseFloat(cs.paddingTop) || 0;
+      out.right = parseFloat(cs.paddingRight) || 0;
+      out.bottom = parseFloat(cs.paddingBottom) || 0;
+      out.left = parseFloat(cs.paddingLeft) || 0;
+      if (d.parentNode) d.parentNode.removeChild(d);
+    } catch (e) {}
+    _insCache = out;
+    return out;
+  }
+  // How far the badge sticks out past the chip's own box, per side. Zero while
+  // parked, because the badge is hidden then.
+  function fyOverhang(fab) {
+    var o = { left: 0, top: 0, right: 0, bottom: 0 };
+    try {
+      var kids = fab.children, badge = null, i;
+      for (i = 0; kids && i < kids.length; i++) {
+        if ((' ' + fyCls(kids[i]) + ' ').indexOf(' lwfb-fab-x ') > -1) { badge = kids[i]; break; }
+      }
+      if (!badge) return o;
+      var fr = fab.getBoundingClientRect(), br = badge.getBoundingClientRect();
+      if (!br || !br.width) return o;   // hidden while parked
+      o.left = Math.max(0, fr.left - br.left);
+      o.top = Math.max(0, fr.top - br.top);
+      o.right = Math.max(0, br.right - fr.right);
+      o.bottom = Math.max(0, br.bottom - fr.bottom);
+    } catch (e) {}
+    return o;
+  }
+  // The one place a position is made legal: whole footprint on screen, badge
+  // included, clear of the notch and the home indicator.
+  function fyClamp(x, y, fab, vw, vh) {
+    var ins = fyInsets(), o = fyOverhang(fab), fr = fyRect(fab);
+    var w = (fr && fr.width) || 48, h = (fr && fr.height) || 48;
+    var minX = ins.left + FY.MARGIN + o.left;
+    var maxX = vw - ins.right - FY.MARGIN - w - o.right;
+    var minY = ins.top + FY.MARGIN + o.top;
+    var maxY = vh - ins.bottom - FY.MARGIN - h - o.bottom;
+    if (maxX < minX) maxX = minX;      // viewport smaller than the chip: stay legal
+    if (maxY < minY) maxY = minY;
+    return { x: Math.round(Math.max(minX, Math.min(maxX, x))),
+             y: Math.round(Math.max(minY, Math.min(maxY, y))) };
+  }
 
   function fyCS(el) {
     try { return window.getComputedStyle(el) || {}; } catch (e) { return {}; }
@@ -930,7 +1005,20 @@
     // measured in the old viewport. Come home first, re-measure on the next
     // scan, yield again if it is still blocked.
     if (ev && (ev.type === 'resize' || ev.type === 'orientationchange')) {
-      try { if (w.state !== 'home') { fyGoHome(w); w.homeRect = null; w.clearRun = 0; } } catch (e) {}
+      _insCache = null;   // the notch moves when the phone turns
+      try {
+        if (w.state !== 'home') { fyGoHome(w); w.homeRect = null; w.clearRun = 0; }
+        // A dragged home was legal on the old viewport; it may be off-screen on
+        // the new one. Rotating a phone must not strand the dismiss badge.
+        var hm = w.home || {};
+        if (hm.left && hm.left !== 'auto') {
+          var cp = fyClamp(parseFloat(hm.left), parseFloat(hm.top), w.el,
+                           window.innerWidth, window.innerHeight);
+          w.home = { left: cp.x + 'px', top: cp.y + 'px', right: 'auto', bottom: 'auto' };
+          w.el.style.left = cp.x + 'px'; w.el.style.top = cp.y + 'px';
+          w.homeRect = null;
+        }
+      } catch (e) {}
     }
     var now = Date.now();
     w.activeUntil = now + FY.ACTIVE_FOR;
@@ -990,7 +1078,17 @@
     var drag = null;
     try {
       var saved = sessionStorage.getItem('lwfb_pos');
-      if (saved) { var sp = JSON.parse(saved); b.style.left = sp.l + 'px'; b.style.top = sp.t + 'px'; b.style.right = 'auto'; b.style.bottom = 'auto'; }
+      if (saved) {
+        var sp = JSON.parse(saved);
+        // Clamp on the way IN. sessionStorage survives navigation, so a position
+        // dragged on one page (or one screen size) is restored on every later
+        // one — which is the likeliest way the chip reached y=4 on Flipbook
+        // without anybody dragging it there.
+        b.style.left = sp.l + 'px'; b.style.top = sp.t + 'px';
+        b.style.right = 'auto'; b.style.bottom = 'auto';
+        var rp = fyClamp(sp.l, sp.t, b, window.innerWidth, window.innerHeight);
+        b.style.left = rp.x + 'px'; b.style.top = rp.y + 'px';
+      }
     } catch (e) {}
     b.addEventListener('pointerdown', function (ev) {
       drag = { sx: ev.clientX, sy: ev.clientY, moved: false,
@@ -1003,9 +1101,12 @@
       var dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
       if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 10) return;
       drag.moved = true;
-      var nl = Math.max(4, Math.min(window.innerWidth - b.offsetWidth - 4, drag.bx + dx));
-      var nt = Math.max(4, Math.min(window.innerHeight - b.offsetHeight - 4, drag.by + dy));
-      b.style.left = nl + 'px'; b.style.top = nt + 'px';
+      // Clamped so the WHOLE footprint stays on screen — badge included, notch
+      // and home indicator excluded. The old clamp was Math.max(4, ...) on the
+      // chip's own box, which let the badge hang off the top of the viewport
+      // where nobody can reach it. Measured on Flipbook at y=4.
+      var np = fyClamp(drag.bx + dx, drag.by + dy, b, window.innerWidth, window.innerHeight);
+      b.style.left = np.x + 'px'; b.style.top = np.y + 'px';
       b.style.right = 'auto'; b.style.bottom = 'auto';
       ev.preventDefault();
     });

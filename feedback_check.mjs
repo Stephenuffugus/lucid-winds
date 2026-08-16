@@ -177,6 +177,9 @@ function sourceChecks(R, src) {
 
 function makePage(g, opts = {}) {
   const vw = opts.vw || 390, vh = opts.vh || 844;
+  // env(safe-area-inset-*) as the device would report it. feedback.js measures
+  // these with a throwaway element, so the stub answers for that element.
+  const insets = Object.assign({ top: 0, right: 0, bottom: 0, left: 0 }, opts.insets || {});
   let hitCount = 0;
 
   // A style object that REMEMBERS ITS WRITES. Needed because the difference
@@ -184,7 +187,7 @@ function makePage(g, opts = {}) {
   // start value was pinned in px first, and after the fact both look identical.
   // The order of writes is the only evidence.
   const mkStyle = (log) => {
-    const back = { left: '', top: '', right: '', bottom: '', display: '', visibility: '', opacity: '', pointerEvents: '', zIndex: '', transition: '' };
+    const back = { left: '', top: '', right: '', bottom: '', display: '', visibility: '', opacity: '', pointerEvents: '', zIndex: '', transition: '', cssText: '' };
     const o = {};
     for (const k of Object.keys(back)) {
       Object.defineProperty(o, k, {
@@ -320,14 +323,21 @@ function makePage(g, opts = {}) {
   html.appendChild(head); html.appendChild(body);
   doc.documentElement = html; doc.head = head; doc.body = body;
 
-  const cs = (el) => Object.assign(
-    { display: 'block', visibility: 'visible', opacity: '1', pointerEvents: 'auto', cursor: 'auto' },
-    el._cs || {},
-    Object.fromEntries(Object.entries(el.style || {}).filter(([, v]) => v !== ''))
-  );
+  const cs = (el) => {
+    if (hasClass(el, 'lwfb-sap')) {
+      return { display: 'block', visibility: 'hidden', opacity: '1', pointerEvents: 'none', cursor: 'auto',
+        paddingTop: insets.top + 'px', paddingRight: insets.right + 'px',
+        paddingBottom: insets.bottom + 'px', paddingLeft: insets.left + 'px' };
+    }
+    return Object.assign(
+      { display: 'block', visibility: 'visible', opacity: '1', pointerEvents: 'auto', cursor: 'auto' },
+      el._cs || {},
+      Object.fromEntries(Object.entries(el.style || {}).filter(([k, v]) => v !== '' && k !== 'cssText'))
+    );
+  };
 
   return {
-    vw, vh, doc, body, El, hasClass, rectOf,
+    vw, vh, insets, doc, body, El, hasClass, rectOf,
     getComputedStyle: cs,
     hits: () => hitCount,
     resetHits: () => { hitCount = 0; },
@@ -340,15 +350,15 @@ function boot(page, src = SRC, extra = {}) {
   let tid = 0;
   const clock = { t: 1700000000000 };
   const winLis = Object.create(null);
-  const store = () => {
-    const m = new Map();
+  const store = (seed) => {
+    const m = new Map(Object.entries(seed || {}));
     return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) };
   };
   const sandbox = {
     document: page.doc,
     innerWidth: page.vw, innerHeight: page.vh,
     getComputedStyle: page.getComputedStyle,
-    localStorage: store(), sessionStorage: store(),
+    localStorage: store(extra.__seedLocal), sessionStorage: store(extra.__seedSession),
     setTimeout: (fn, ms) => { const id = ++tid; timers.set(id, { fn, ms }); return id; },
     clearTimeout: (id) => { timers.delete(id); },
     addEventListener: (t, fn) => { (winLis[t] = winLis[t] || []).push(fn); },
@@ -972,6 +982,75 @@ function scenarioChecks(R, g, src = SRC) {
       `state ${s.state()} — a parked chip must not sit under content that arrives later`);
   }
 
+  /* ── S18-S21: the whole footprint stays on screen, on every edge ──────────
+     Measured on Flipbook: chip at y=4, badge at y≈-22 — entirely off the top of
+     the viewport, so the control that dismisses it could not be reached. y=4 is
+     the drag clamp's Math.max(4, ...), which knew nothing about the badge and
+     nothing about a notch. An iPhone-shaped safe area throughout. */
+  const NOTCH = { top: 47, bottom: 34, left: 0, right: 0 };
+  const inSafeBox = (u, p, ins) =>
+    u.left >= ins.left && u.top >= ins.top &&
+    u.right <= p.vw - ins.right && u.bottom <= p.vh - ins.bottom;
+
+  /* S18 — no candidate spot can put the chip under system chrome. */
+  {
+    const p = makePage(g, { insets: NOTCH });
+    const s = boot(p, src);
+    const cands = s.api.candidates(p.vw, p.vh, 48, 50);
+    R.ok('S18.someCandidates', cands.length >= 8, `${cands.length} spots`);
+    const bad = cands.filter(c => c.x < NOTCH.left || c.y < NOTCH.top ||
+      c.x + 48 > p.vw - NOTCH.right || c.y + 50 > p.vh - NOTCH.bottom);
+    R.eq('S18.everySpotClearsTheSafeArea', bad.length, 0,
+      `spots inside the notch or home indicator: ${JSON.stringify(bad.slice(0, 3))}`);
+    const topmost = Math.min.apply(null, cands.map(c => c.y));
+    R.ok('S18.realMarginNotFourPixels', topmost >= NOTCH.top + 8,
+      `highest spot y=${topmost}, must clear the ${NOTCH.top}px inset with room`);
+  }
+
+  /* S19 — dragging into the top-left corner must not push the badge off. */
+  {
+    const p = makePage(g, { insets: NOTCH });
+    const s = boot(p, src);
+    s.fireEl(s.fab, 'pointerdown', { clientX: 350, clientY: 780 });
+    s.fire('pointermove', { clientX: -400, clientY: -400, preventDefault() {} });
+    s.fire('pointerup', {});
+    const u = s.union();
+    R.ok('S19.dragKeptBadgeOnScreen', inSafeBox(u, p, NOTCH),
+      `dragged hard into the corner, footprint ${JSON.stringify(u)} must stay inside ` +
+      `the safe box (${NOTCH.left},${NOTCH.top})-(${p.vw - NOTCH.right},${p.vh - NOTCH.bottom})`);
+    R.ok('S19.badgeReachable', u.top >= NOTCH.top,
+      `badge top ${u.top} — the dismiss control has to be tappable`);
+  }
+
+  /* S20 — bottom-right, where the home indicator actually bites. */
+  {
+    const p = makePage(g, { insets: NOTCH });
+    const s = boot(p, src);
+    s.fireEl(s.fab, 'pointerdown', { clientX: 350, clientY: 780 });
+    s.fire('pointermove', { clientX: 9999, clientY: 9999, preventDefault() {} });
+    s.fire('pointerup', {});
+    const u = s.union();
+    R.ok('S20.dragClearedBottomRight', inSafeBox(u, p, NOTCH),
+      `footprint ${JSON.stringify(u)} vs safe bottom ${p.vh - NOTCH.bottom} / right ${p.vw - NOTCH.right}`);
+  }
+
+  /* S21 — THE FLIPBOOK CASE ITSELF. sessionStorage survives navigation, so a
+     position dragged on one page is restored on every later one; that is the
+     likeliest way the chip reached y=4 with nobody dragging it there. The exact
+     numbers from the report. */
+  {
+    const p = makePage(g, { insets: NOTCH });
+    const s = boot(p, src, { __seedSession: { lwfb_pos: JSON.stringify({ l: 289, t: 4 }) } });
+    const u = s.union(), fr = p.rectOf(s.fab);
+    R.ok('S21.restoredPositionClamped', inSafeBox(u, p, NOTCH),
+      `restored {l:289,t:4} -> chip at ${Math.round(fr.left)},${Math.round(fr.top)}, ` +
+      `footprint ${JSON.stringify(u)} — badge was landing at y=-22`);
+    R.ok('S21.badgeNotOffTheTop', u.top >= NOTCH.top,
+      `footprint top ${u.top}, must clear the ${NOTCH.top}px notch`);
+    R.ok('S21.stillNearWhereItWasPut', Math.abs(fr.left - 289) < 60,
+      `and it should stay roughly where the player left it (x ${Math.round(fr.left)} vs 289)`);
+  }
+
   /* S13 — the kill switch. */
   {
     const p = pageSheet(g);
@@ -983,6 +1062,13 @@ function scenarioChecks(R, g, src = SRC) {
 }
 
 /* ══ self-test — break it on purpose, prove the checks go red ══════════════ */
+// A chained patch where ONE of its replaces silently misses leaves a build that
+// is only half broken, and the mutant then "passes" for the wrong reason — the
+// whole-patch no-op guard below cannot see it. rep() throws instead.
+function rep(src, from, to) {
+  if (src.indexOf(from) < 0) throw new Error('patch string not found: ' + from.slice(0, 70));
+  return src.replace(from, to);
+}
 const MUTANTS = [
   {
     name: 'yield disabled (fab never moves)',
@@ -1082,11 +1168,11 @@ const MUTANTS = [
   },
   {
     name: 'centre of the screen allowed as a parking spot',
-    patch: s => s
-      .replace('var out = [], seen = {}, keep = [], i;',
-        'var out = [], seen = {}, keep = [], i; out.push({ x: Math.round(vw / 2 - w / 2), y: Math.round(vh / 2 - h / 2) });')
-      .replace('if (fyInEdgeBand(out[i].x + w / 2, out[i].y + h / 2, vw, vh)) keep.push(out[i]);',
-        'keep.push(out[i]);'),
+    patch: s => rep(
+      rep(s, 'var out = [], seen = {}, keep = [], i, ins = fyInsets();',
+        'var out = [], seen = {}, keep = [], i, ins = fyInsets(); out.push({ x: Math.round(vw / 2 - w / 2), y: Math.round(vh / 2 - h / 2) });'),
+      'if (fyInEdgeBand(out[i].x + w / 2, out[i].y + h / 2, vw, vh)) keep.push(out[i]);',
+      'keep.push(out[i]);'),
     mustFail: ['S16.noneInTheMiddleBand']
   },
   {
@@ -1105,6 +1191,25 @@ const MUTANTS = [
     name: 'no snooze after the ceiling (fades again the instant it reappears)',
     patch: s => s.replace("if (w.snoozeUntil && Date.now() < w.snoozeUntil) return { skip: 'snoozed' };", ''),
     mustFail: ['S6.staysVisibleThroughSnooze']
+  },
+  {
+    name: 'drag clamp back to Math.max(4, ...) with no badge and no notch',
+    patch: s => s.replace(
+      "var np = fyClamp(drag.bx + dx, drag.by + dy, b, window.innerWidth, window.innerHeight);\n      b.style.left = np.x + 'px'; b.style.top = np.y + 'px';",
+      "var nl = Math.max(4, Math.min(window.innerWidth - b.offsetWidth - 4, drag.bx + dx));\n      var nt = Math.max(4, Math.min(window.innerHeight - b.offsetHeight - 4, drag.by + dy));\n      b.style.left = nl + 'px'; b.style.top = nt + 'px';"),
+    mustFail: ['S19.dragKeptBadgeOnScreen', 'S19.badgeReachable', 'S20.dragClearedBottomRight']
+  },
+  {
+    // the Flipbook case: a position carried across a navigation, unchecked
+    name: 'restored sessionStorage position not clamped',
+    patch: s => s.replace("        var rp = fyClamp(sp.l, sp.t, b, window.innerWidth, window.innerHeight);\n        b.style.left = rp.x + 'px'; b.style.top = rp.y + 'px';", ''),
+    mustFail: ['S21.restoredPositionClamped', 'S21.badgeNotOffTheTop']
+  },
+  {
+    name: 'safe-area insets ignored (parks under the notch)',
+    patch: s => s.replace('if (_insCache) return _insCache;',
+      'if (1) return { top: 0, right: 0, bottom: 0, left: 0 };'),
+    mustFail: ['S18.everySpotClearsTheSafeArea', 'S18.realMarginNotFourPixels', 'S21.badgeNotOffTheTop']
   },
   {
     name: 'scan never stands down for our own form',
