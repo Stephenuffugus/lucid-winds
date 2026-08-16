@@ -378,6 +378,12 @@ touch but can no longer overlap, so the mis tap is gone.
    reads wrong. **The LOOKING pass at 390x844 and 1280x800 is still owed**, and
    should include the run log sheet, the sky scrolled to the deep tiers, and the
    two seam lines while the pair is 3 or more cells out of mirror.
+   One thing to judge with eyes rather than numbers: **the main seam is no
+   longer down the middle of the board.** It sits on the pair's true mirror
+   axis, which is only the centre when the twins happen to start symmetric
+   about it. That is correct, and on some boards it will look off centre. If it
+   reads as a mistake rather than as information, the fix is to keep the centre
+   line as decoration and draw the true axis as the second line instead.
 2. The daily and seed levels are generated on the main thread (about 0.2 to 2s
    for tier 4). It has always been that way and it is behind a 400ms timeout at
    boot, but on a slow phone it is a visible hitch. A worker would fix it.

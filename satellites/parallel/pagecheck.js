@@ -22,7 +22,9 @@ function argOf(name, dflt){
   var i, a = process.argv.slice(2);
   for (i = 0; i < a.length; i++){
     if (a[i] === '--' + name) return true;
-    if (a[i].indexOf('--' + name + '=') === 0) return a[i].split('=')[1];
+    /* everything after the FIRST equals, or a query string loses its own
+       parameters and the link routes never get exercised */
+    if (a[i].indexOf('--' + name + '=') === 0) return a[i].slice(name.length + 3);
   }
   return dflt;
 }
@@ -235,6 +237,14 @@ var V = win.__VIEW__, P = win.__PARALLEL__, D = win.document;
 ok('the view layer is reachable', !!V);
 ok('a level is loaded', !!P.G.lv);
 eq('the campaign is a hundred levels', P.LEVELS.length, 100);
+if (QUERY.indexOf('seed=') > 0){
+  ok('a seed link boots straight into that seeded board', P.G.mode === 'seed', 'mode ' + P.G.mode);
+  ok('the seeded board is solved before it is drawn', !!(P.G.lv && P.G.lv.sol && P.G.lv.sol.length === P.G.lv.par));
+}
+if (QUERY.indexOf('day=') > 0){
+  ok('a day link boots straight into that day', P.G.mode === 'daily', 'mode ' + P.G.mode);
+  ok('the day board is solved before it is drawn', !!(P.G.lv && P.G.lv.sol && P.G.lv.sol.length === P.G.lv.par));
+}
 
 /* board fits the column at this size */
 function boardBox(w2){

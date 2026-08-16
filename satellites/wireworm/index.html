@@ -92,7 +92,7 @@ input[type=range]{flex:1 1 auto;height:48px;accent-color:var(--lime)}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
 .stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
 .stat span{font-size:13px;color:var(--muted)}
-#toast{position:absolute;left:50%;bottom:calc(72px + var(--safe-b));transform:translateX(-50%);
+#toast{position:fixed;left:50%;top:0;transform:translateX(-50%);
   background:#1b2113;border:1px solid var(--lime-dim);color:var(--text);padding:10px 16px;border-radius:12px;
   font-size:14px;z-index:40;opacity:0;pointer-events:none;transition:opacity 160ms ease-out;max-width:86%}
 #toast.on{opacity:1}
@@ -2210,6 +2210,9 @@ try { reducedSys = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 function reduced() { return settings.motion === 'on' ? true : (settings.motion === 'off' ? false : reducedSys); }
 
 var st = null, queue = makeQueue(CONFIG.QUEUE_CAP);
+/* ?bot=1 hands the worm to the sweep's own greedy agent, so a screenshot can
+   show a board with real circuits on it instead of a 9 tick scripted death. */
+var bot = false, botRng = null;
 var running = false, acc = 0, lastT = 0, phase = 0;
 var spark = null, shake = 0, flash = 0, inputLog = [], replay = null, creepFx = [];
 var cell = 18, boardPx = 360, dpr = 1;
@@ -2599,7 +2602,8 @@ function frame(t) {
 
 function doTick() {
   var turn;
-  if (replay) { turn = replay.log[replay.i] === undefined ? 0 : replay.log[replay.i]; replay.i++; }
+  if (bot) { turn = agentGreedy(st, botRng); inputLog.push(turn); }
+  else if (replay) { turn = replay.log[replay.i] === undefined ? 0 : replay.log[replay.i]; replay.i++; }
   else { turn = queue.shift(); inputLog.push(turn); }
   var r = step(st, turn);
   var i, e;
@@ -2668,6 +2672,7 @@ function startRun(seed, m) {
   mode = m || 'free';
   curSeed = seed >>> 0;
   st = newGame(curSeed, { mode: mode });
+  botRng = makeRNG((curSeed ^ 0x9e3779b9) >>> 0);
   queue.clear();
   inputLog = [];
   replay = null;
@@ -2751,9 +2756,43 @@ function shareText() {
   return COPY.title + (mode === 'daily' ? ' daily' : '') + ' ' + st.score.toLocaleString() +
     ' in ' + st.tick + ' ticks. ' + location.origin + location.pathname + '?seed=' + curSeed;
 }
+/* A floating element has to be checked against the CONTROLS underneath it, not
+   just against the background. "Seed link copied." used to land exactly on top of
+   WATCH BEST and PLAY AGAIN: the player got their confirmation and lost the two
+   buttons they wanted next. So the toast now measures every visible control below
+   the HUD and parks itself above the highest one, rather than trusting a guessed
+   offset. Same bug class has bitten three games this month, so this is a rule in
+   code, not a nudge. */
+function placeToast(t) {
+  var vh = window.innerHeight;
+  try { if (window.visualViewport) vh = window.visualViewport.height; } catch (e) {}
+  var hudBottom = $('hud').getBoundingClientRect().bottom;
+  var tr = t.getBoundingClientRect();
+  var ceiling = vh - 12;                       // nothing in the way: sit near the bottom
+  var all = document.querySelectorAll('button,input,a');
+  var i, el, r;
+  for (i = 0; i < all.length; i++) {
+    el = all[i];
+    if (el.id === 'toast') continue;
+    if (!el.offsetParent && el.offsetWidth === 0 && el.offsetHeight === 0) continue;
+    r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    if (r.bottom <= hudBottom) continue;       // the HUD gear sits above the toast
+    if (r.top < ceiling) ceiling = r.top;      // highest control we have to clear
+  }
+  var top = ceiling - tr.height - 10;
+  if (top < hudBottom + 6) top = hudBottom + 6;
+  if (top + tr.height > vh - 6) top = Math.max(hudBottom + 6, vh - 6 - tr.height);
+  t.style.top = Math.round(top) + 'px';
+}
+var toastTimer = null;
 function toast(msg) {
-  var t = $('toast'); t.textContent = msg; t.className = 'on';
-  setTimeout(function () { t.className = ''; }, 2000);
+  var t = $('toast');
+  t.textContent = msg;
+  t.className = 'on';
+  placeToast(t);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = ''; }, 2000);
 }
 
 /* ---------- buttons ---------- */
@@ -2856,6 +2895,7 @@ if (params.get('test') === '1') {
 }
 window.__TEST__ = { run: function () { return runAllTests({}); }, TEST: TEST };
 
+bot = params.get('bot') === '1';
 var seedParam = params.get('seed');
 if (params.get('daily') === '1') {
   todayStr = new Date().toISOString().slice(0, 10);

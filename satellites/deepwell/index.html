@@ -24,7 +24,16 @@
   --muted:#8a9178; --danger:#e2574c; --ink:#05060a;
   --safe:env(safe-area-inset-bottom,0px);
   --safeT:env(safe-area-inset-top,0px);
+  /* THE SHAFT GUTTER. The column owns this strip of the screen and no card is
+     ever allowed into it. That is enforced by layout, not by z-index: every UI
+     block is inset by --gut on the left, so a card CANNOT cross the shaft even
+     if somebody later reshuffles the stacking order. Before this, the shaft was
+     inset:0 behind z-index 3 cards and what reached the player was fragments
+     leaking around the edges plus band names landing on the MINE button. */
+  --gut:64px;
+  --gutpad:calc(var(--gut) + 10px);
 }
+@media (min-width:700px){ :root{ --gut:96px; } }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--cream);
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -38,30 +47,35 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 /* ---------- shaft background ---------- */
 #shaft{position:absolute;inset:0;overflow:hidden;z-index:0;
   background:linear-gradient(180deg,#0a0b0f 0%,#0d0f14 40%,#08090d 100%)}
-#shaftBand{position:absolute;inset:0;opacity:.35;transition:background 600ms linear}
-#shaftWall{position:absolute;inset:0;opacity:.5}
-#shaftScroll{position:absolute;left:0;right:0;top:0;height:100%;will-change:transform}
+/* the full bleed strata wash is now atmosphere only: pure colour, no text, no
+   objects, and pushed far enough back that it cannot read as an artifact */
+#shaftBand{position:absolute;inset:0;opacity:.13;transition:background 600ms linear}
+/* the column itself lives in the gutter and is clipped to it */
+#shaftScroll{position:absolute;left:0;top:0;width:var(--gut);height:100%;overflow:hidden;
+  will-change:transform;background:linear-gradient(90deg,#07080c,#0c0e13 60%,#101319);
+  border-right:1px solid var(--line)}
 .rockrow{position:absolute;left:0;right:0;height:2px;background:rgba(255,255,255,.045)}
-#recLine{position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(240,167,66,.75);
-  display:flex;align-items:center;justify-content:flex-end}
-#recLine span{font-size:11px;letter-spacing:.14em;color:var(--amber);background:rgba(10,11,15,.85);
-  padding:2px 6px;border-radius:3px;transform:translateY(-9px)}
+/* the record line carries no label: the HUD already says DEEPEST EVER */
+#recLine{position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(240,167,66,.85)}
 
 /* ---------- the column: nodes drawn as objects in the rock ---------- */
-/* the bore itself, walls left and right, so depth reads as a place */
-#shaftScroll .bore{position:absolute;left:14%;right:14%;
-  background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.15) 22%,rgba(0,0,0,.15) 78%,rgba(0,0,0,.55));
-  border-left:1px solid rgba(232,220,200,.10);border-right:1px solid rgba(232,220,200,.10)}
-.strataSeam{position:absolute;left:0;right:0;height:0;border-top:1px solid rgba(232,220,200,.22)}
-.strataSeam b{position:absolute;left:6px;top:3px;font-size:9px;font-weight:700;letter-spacing:.20em;
-  color:rgba(232,220,200,.34)}
-.tick{position:absolute;left:0;height:0;border-top:1px solid rgba(232,220,200,.09);width:9%}
-.tick i{position:absolute;left:2px;top:-8px;font-style:normal;font-size:9px;
-  color:rgba(232,220,200,.30);font-variant-numeric:tabular-nums}
-/* a node marker: a shape pinned at its own depth on the wall of the bore */
+/* the bore, drawn inside the gutter so the strip reads as a cut through rock */
+#shaftScroll .bore{position:absolute;left:12px;right:12px;
+  background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.10) 30%,rgba(0,0,0,.10) 70%,rgba(0,0,0,.55));
+  border-left:1px solid rgba(232,220,200,.12);border-right:1px solid rgba(232,220,200,.12)}
+/* seams are LINES only. The band's NAME lives in the HUD where it can be read
+   without landing on a button. */
+.strataSeam{position:absolute;left:0;right:0;height:0;border-top:1px solid rgba(232,220,200,.30)}
+.tick{position:absolute;left:0;height:0;border-top:1px solid rgba(232,220,200,.10);width:9px}
+.tick i{position:absolute;left:11px;top:-7px;font-style:normal;font-size:9px;
+  color:rgba(232,220,200,.42);font-variant-numeric:tabular-nums}
+/* a node marker: a shape pinned at its own depth. No prose, it does not fit and
+   it is not needed: the node card names where you stand and the DESCEND button
+   names what is next. The column's job is the shape and the ore colour. */
 .nmark{position:absolute;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;
-  gap:3px;padding:3px 7px;border-radius:11px;font-size:11px;line-height:1;white-space:nowrap;
-  border:1px solid rgba(232,220,200,.18);background:rgba(10,11,15,.72);color:var(--cream)}
+  justify-content:center;gap:2px;min-width:26px;height:18px;padding:0 4px;border-radius:9px;
+  font-size:10px;line-height:1;white-space:nowrap;
+  border:1px solid rgba(232,220,200,.20);background:rgba(8,9,13,.92);color:var(--cream)}
 .nmark.k-vein{border-color:rgba(240,167,66,.45)}
 .nmark.k-pocket{border-color:rgba(122,179,86,.45)}
 .nmark.k-cache{border-color:rgba(200,168,75,.45)}
@@ -72,10 +86,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 .nmark.spent{opacity:.32;filter:saturate(.25)}
 .nmark.heart{border-color:rgba(255,122,106,.9);box-shadow:0 0 12px rgba(255,122,106,.4)}
 .nmark .od{width:6px;height:6px;border-radius:50%;display:inline-block}
-.nmark .lbl{font-size:9px;letter-spacing:.10em;color:var(--muted)}
-/* the tie line from the marker back to the wall, so it reads as embedded rock */
-.nmark:before{content:'';position:absolute;left:-44px;right:-44px;top:50%;height:1px;
-  background:rgba(232,220,200,.10);z-index:-1}
+/* the tie line from the marker back to the gutter walls */
+.nmark:before{content:'';position:absolute;left:-20px;right:-20px;top:50%;height:1px;
+  background:rgba(232,220,200,.12);z-index:-1}
 /* the lamp. its reach is the lamp meter, so a dying lamp visibly closes in. */
 #lampGlow{position:absolute;left:0;right:0;pointer-events:none;z-index:1;
   transition:opacity 300ms linear}
@@ -85,14 +98,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
   box-shadow:0 0 14px rgba(240,167,66,.55);z-index:2}
 #youMark:after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
   border-radius:50%;background:var(--amber)}
-#bandStamp{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:800;
-  letter-spacing:.22em;color:rgba(232,220,200,.0);pointer-events:none;z-index:2}
-#bandStamp.on{animation:stamp 2400ms ease-out forwards}
-@keyframes stamp{0%{color:rgba(232,220,200,0);transform:scale(1.18)}
-  18%{color:rgba(232,220,200,.85)}100%{color:rgba(232,220,200,0);transform:scale(1)}}
+/* Crossing a seam used to stamp 34px of text across the middle of the screen,
+   which landed straight on the MINE button and its label. It now flares the
+   strata name already sitting in the HUD, which is where a band name belongs
+   and where nothing else is drawn. */
+#strataName.stamped{animation:stamp 2400ms ease-out}
+@keyframes stamp{
+  0%{color:var(--warm);letter-spacing:.42em;transform:scale(1.16);text-shadow:0 0 18px rgba(255,217,160,.6)}
+  22%{color:var(--warm);letter-spacing:.34em;transform:scale(1.08)}
+  100%{color:var(--muted);letter-spacing:.24em;transform:scale(1);text-shadow:none}}
 
 /* ---------- hud / odometer ---------- */
-#hud{position:relative;z-index:3;padding:calc(var(--safeT) + 8px) 14px 4px;text-align:center}
+#hud{position:relative;z-index:3;padding:calc(var(--safeT) + 8px) 14px 4px var(--gutpad);text-align:center}
 #topRow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
 .iconbtn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
   font-size:19px;border-radius:12px;color:var(--muted)}
@@ -108,8 +125,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #recordRow b{color:var(--amber);font-weight:700}
 
 /* ---------- air to surface ---------- */
-#margin{position:relative;z-index:3;margin:8px 12px 0;padding:9px 12px 10px;
-  background:rgba(20,22,29,.86);border:1px solid var(--line);border-radius:14px}
+#margin{position:relative;z-index:3;margin:8px 12px 0 var(--gutpad);padding:9px 12px 10px;
+  background:#171a22;border:1px solid var(--line);border-radius:14px}
 #marginLabel{font-size:11px;letter-spacing:.22em;color:var(--muted)}
 #marginVal{font-size:26px;font-weight:800;margin-top:1px}
 #ascNum{color:var(--warm)} #airNum{color:var(--cream)}
@@ -121,8 +138,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #marginNote.warn{color:var(--warm)} #marginNote.bad{color:var(--danger)}
 
 /* ---------- meters ---------- */
-#meters{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 12px 0}
-.meter{background:rgba(20,22,29,.8);border:1px solid var(--line);border-radius:12px;padding:7px 9px}
+#meters{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 12px 0 var(--gutpad)}
+.meter{background:#171a22;border:1px solid var(--line);border-radius:12px;padding:7px 9px}
 .meter .lab{font-size:11px;letter-spacing:.16em;color:var(--muted);display:flex;justify-content:space-between}
 .meter .lab b{color:var(--cream);font-size:13px}
 .bar{height:7px;border-radius:5px;background:#0e1016;overflow:hidden;margin-top:5px}
@@ -136,8 +153,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 .pip.off{background:transparent;border-color:#3a3f4d}
 
 /* ---------- node card ---------- */
-#nodecard{position:relative;z-index:3;margin:10px 12px 0;padding:12px 13px;min-height:96px;
-  background:linear-gradient(180deg,rgba(27,30,39,.95),rgba(17,19,26,.95));
+#nodecard{position:relative;z-index:3;margin:10px 12px 0 var(--gutpad);padding:12px 13px;min-height:96px;
+  background:linear-gradient(180deg,#1b1e27,#11131a);
   border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:14px}
 #nodeKind{font-size:12px;letter-spacing:.2em;color:var(--amber);font-weight:700}
 #nodeTitle{font-size:20px;font-weight:800;margin-top:3px}
@@ -150,21 +167,29 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #spacer{flex:0 0 4px}
 #nodecard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
 .odo{min-height:.95em}
-#actions{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0}
+#actions{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0 var(--gutpad)}
 .big{min-height:60px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   transition:transform 120ms ease-out,background 120ms ease-out}
+/* A disabled button used to drop to opacity .4, which let the shaft show
+   straight through it and turned the reason it prints into mush. It now stays
+   fully opaque and goes visibly OFF instead: darker plate, dimmer rule, and a
+   reason line that is still legible because that reason is the whole point. */
 .big:active{transform:translateY(1px);background:#232733}
 .big b{font-size:17px;letter-spacing:.14em;font-weight:800}
 .big small{font-size:11.5px;color:var(--muted);letter-spacing:.04em}
-.big[disabled]{opacity:.4}
+.big[disabled]{background:#101219;border-color:#242833;box-shadow:inset 0 1px 0 rgba(0,0,0,.4)}
+.big[disabled] b{color:#5c6270 !important}
+.big[disabled] small{color:#7d8493}
+.big[disabled]:active{transform:none;background:#101219}
 #btnDescend{grid-column:1 / span 2;background:linear-gradient(180deg,#1f2430,#171a23);border-color:#39404f}
 #btnDescend b{color:var(--warm)}
 #btnAscend b{color:var(--sage)}
 #btnMine b{color:var(--amber)}
-#btnCargo{position:relative;z-index:3;margin:8px 12px calc(10px + var(--safe));min-height:52px;
-  border-radius:14px;border:1px solid var(--line);background:rgba(20,22,29,.8);
-  display:flex;align-items:center;gap:10px;padding:0 14px;width:calc(100% - 24px)}
+#btnCargo{position:relative;z-index:3;margin:8px 12px calc(10px + var(--safe)) var(--gutpad);min-height:52px;
+  border-radius:14px;border:1px solid var(--line);background:#171a22;
+  display:flex;align-items:center;gap:10px;padding:0 14px;
+  width:calc(100% - var(--gutpad) - 12px)}
 #btnCargo .cw{font-size:15px;font-weight:800}
 #btnCargo .cv{margin-left:auto;color:var(--amber);font-weight:800;font-size:16px}
 #btnCargo .cl{font-size:11px;letter-spacing:.18em;color:var(--muted)}
@@ -279,7 +304,6 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
     <div id="shaft">
       <div id="shaftBand"></div>
       <div id="shaftScroll"></div>
-      <div id="bandStamp"></div>
     </div>
 
     <header id="hud">
@@ -2368,7 +2392,7 @@ function shrineText(id, st) {
 /* ========================= 6. VIEW ========================= */
 var $ = function (id) { return document.getElementById(id); };
 var G = { save: null, run: null, replay: null, replayTimer: 0, replayT2: 0, replaying: false,
-          lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false };
+          lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false, stampUntil: 0 };
 var REDUCED = false;
 try { REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -2525,7 +2549,8 @@ var NODE_FACE = {
 function renderShaft() {
   var st = G.run, band = bandAt(st.depth), sc = $('shaftScroll');
   $('shaftBand').style.background = 'linear-gradient(180deg,' + band.col + ' 0%, #08090d 90%)';
-  var h = sc.parentNode.clientHeight || 600, pxPerM = 6, i, html = '';
+  /* the column is measured against its OWN strip now, not the whole screen */
+  var h = sc.clientHeight || sc.parentNode.clientHeight || 600, pxPerM = 6, i, html = '';
   var top = st.depth - h / (2 * pxPerM), bot = top + h / pxPerM;
   var y = function (d) { return (d - top) * pxPerM; };
 
@@ -2536,7 +2561,7 @@ function renderShaft() {
     var t0 = Math.max(sb.from, top), t1 = Math.min(isFinite(sb.to) ? sb.to : bot, bot);
     if (t1 <= t0) continue;
     html += '<div style="position:absolute;left:0;right:0;top:' + y(t0) + 'px;height:' +
-            ((t1 - t0) * pxPerM) + 'px;background:' + sb.col + ';opacity:.55"></div>';
+            ((t1 - t0) * pxPerM) + 'px;background:' + sb.col + ';opacity:.9"></div>';
   }
   html += '<div class="bore" style="top:' + Math.max(0, y(0)) + 'px;bottom:0"></div>';
 
@@ -2546,10 +2571,12 @@ function renderShaft() {
     if (i % 10 === 0) html += '<div class="tick" style="top:' + y(i) + 'px"><i>' + i + '</i></div>';
   }
   /* the strata seams themselves, named where they start */
+  /* a line only. The band's name is flared in the HUD by stampBand, because a
+     name drawn here would sit under the UI and read as a leak. */
   for (i = 0; i < STRATA.length; i++) {
     var b = STRATA[i];
     if (b.from > top && b.from < bot && b.from > 0) {
-      html += '<div class="strataSeam" style="top:' + y(b.from) + 'px"><b>' + b.name + '</b></div>';
+      html += '<div class="strataSeam" style="top:' + y(b.from) + 'px"></div>';
     }
   }
   /* every node in view, drawn as the thing it is */
@@ -2559,21 +2586,20 @@ function renderShaft() {
     if (n.depth < top - 2 || n.depth > bot + 2) continue;
     var lvl = revealOf(st, i), kind = nodeType(st, n), cls = '', body = '';
     if (lvl === 'hidden') {
-      cls = 'k-hidden'; body = '<span class="lbl">' + n.depth + 'm</span>?';
+      cls = 'k-hidden'; body = '?';
     } else if (lvl === 'type' && kind === 'vein') {
-      cls = 'k-vein'; body = '<span class="lbl">' + n.depth + 'm</span>' + NODE_FACE.vein.g + ' VEIN';
+      cls = 'k-vein'; body = NODE_FACE.vein.g;
     } else {
       var face = NODE_FACE[kind] || NODE_FACE.empty;
       cls = 'k-' + kind;
-      body = '<span class="lbl">' + n.depth + 'm</span>';
       if (kind === 'vein' && lvl === 'full' && n.ore.length && !n.mined) {
-        /* the ore itself, in its own color, one dot per lump. This is the
-           single most useful thing the column can tell you from a distance. */
+        /* the ore itself, in its own colour, one dot per lump. In sixty four
+           pixels this is all that fits and it is the only part that matters:
+           you can see gold coming from four nodes away. */
         var k;
         for (k = 0; k < n.ore.length; k++) body += '<span class="od" style="background:' + oreColor(n.ore[k]) + '"></span>';
-        body += n.heart ? ' HEARTSTONE' : '';
       } else {
-        body += face.g + (face.n ? ' ' + face.n : '');
+        body = face.g;
       }
     }
     if (n.used || n.mined) cls += ' spent';
@@ -2583,21 +2609,29 @@ function renderShaft() {
   /* the record line, drawn last of the rock so it sits over the seams */
   var rec = G.save.best.depth;
   if (rec > 0 && rec >= top && rec <= bot) {
-    html += '<div id="recLine" style="top:' + y(rec) + 'px"><span>DEEPEST EVER ' + rec + 'm</span></div>';
+    html += '<div id="recLine" style="top:' + y(rec) + 'px"></div>';
   }
   /* the lamp: a pool of light around you whose radius IS the lamp meter */
   var lampFrac = st.caps.lamp ? Math.max(0, Math.min(1, st.lamp / st.caps.lamp)) : 0;
-  var reach = 26 + 150 * lampFrac;
+  var reach = 22 + 120 * lampFrac;
   html += '<div id="lampGlow" style="top:' + (y(st.depth) - reach) + 'px;height:' + (reach * 2) + 'px;' +
           'opacity:' + (0.20 + 0.55 * lampFrac).toFixed(2) + ';' +
           'background:radial-gradient(ellipse at 50% 50%, rgba(240,167,66,.30) 0%, rgba(240,167,66,.10) 45%, rgba(240,167,66,0) 72%)"></div>';
   html += '<div id="youMark" style="top:' + y(st.depth) + 'px"></div>';
   sc.innerHTML = html;
 }
+/* Say the band's name where the player already looks for it. render() is told
+   to leave the label alone until the flare is done, or it would overwrite a
+   landmark's name on the very next frame. */
 function stampBand(name) {
+  var el = $('strataName');
+  if (!el) return;
+  el.textContent = name;
+  G.stampUntil = Date.now() + 2400;
   if (motionOff()) return;
-  var el = $('bandStamp'); el.textContent = name; el.classList.remove('on');
-  void el.offsetWidth; el.classList.add('on');
+  el.classList.remove('stamped');
+  void el.offsetWidth;
+  el.classList.add('stamped');
 }
 
 function nodeCardHTML() {
@@ -2627,7 +2661,8 @@ function render() {
   if (!st) return;
   var band = bandAt(st.depth), cost = ascentCost(st), dc = descendCost(st);
   setOdo($('odo'), st.depth, 1);
-  $('strataName').textContent = band.name;
+  /* a seam crossing or a landmark owns this line for 2.4 seconds */
+  if (!(G.stampUntil && Date.now() < G.stampUntil)) $('strataName').textContent = band.name;
   $('recDepth').textContent = s.best.depth;
   $('ascNum').textContent = Math.ceil(cost.air);
   $('airNum').textContent = Math.floor(st.air);
