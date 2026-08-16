@@ -702,7 +702,7 @@ const MUTANTS = [
   {
     name: 'inert-screen gate removed (opacity:0 / pointer-events:none)',
     patch: s => s.replace("if (cs.pointerEvents === 'none') return false;", ''),
-    mustFail: ['S4b.inertScreenIgnored']
+    mustFail: ['S4d.untappableLayerIgnored']
   },
   {
     name: 'layering test removed (every canvas game reads as a modal)',
