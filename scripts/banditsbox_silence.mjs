@@ -171,7 +171,7 @@ for (const id of toys) {
 }
 await sleep(1200);
 const endState = await page.evaluate(() => ({ live: window.LIVE.length }));
-ok(endState.live === 0, "after touching all 21 toys nothing is still looping",
+ok(endState.live === 0, "after touching every toy nothing is still looping",
   JSON.stringify(endState));
 
 await browser.close();

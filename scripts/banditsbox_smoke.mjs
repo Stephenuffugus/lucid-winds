@@ -80,7 +80,7 @@ const introGone = await page.evaluate(() =>
 ok(introGone, "splash dismissed by a real tap");
 
 const stripCount = await page.evaluate(() => document.querySelectorAll("#strip .tab").length);
-ok(stripCount === 21, "21 toy tabs in the picker strip", "got " + stripCount);
+ok(stripCount === 22, "22 toy tabs in the picker strip", "got " + stripCount);
 
 /* ---------------- every toy renders real content ---------------- */
 console.log("[toys]");
@@ -203,6 +203,166 @@ const themeState = await page.evaluate(() => {
 ok(themeState.count === 1, "exactly one theme is marked selected", JSON.stringify(themeState));
 ok(themeState.distinct, "the selected theme looks different from the others",
   JSON.stringify(themeState));
+
+/* ---------------- the balloon ---------------- */
+/* The one toy where waiting is the point, so what matters is that holding
+   grows it, letting go early just sputters, and going past the limit is a
+   joke rather than a failure the player could have avoided. */
+console.log("[balloon]");
+await page.evaluate(() => { S.calm = false; showToy("bln"); });
+await sleep(600);
+
+async function blnPress(ms) {
+  const box = await page.evaluate(() => {
+    const el = document.getElementById("blnBody");
+    const r = el.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+             hit: !!(top && (top === el || el.contains(top) || top.id === "blnSvg")) };
+  });
+  if (!box.hit) return box;
+  await page.mouse.move(box.x, box.y);
+  await page.mouse.down();
+  await sleep(ms);
+  const mid = await page.evaluate(() => ({ r: window.blnR, live: window.LIVE.length }));
+  await page.mouse.up();
+  return Object.assign(box, { mid });
+}
+
+const startR = await page.evaluate(() => window.blnR);
+const shortHold = await blnPress(700);
+ok(shortHold.hit, "the balloon is reachable", JSON.stringify(shortHold));
+ok(shortHold.mid.r > startR, "holding blows the balloon up",
+  JSON.stringify({ from: startR, to: shortHold.mid.r }));
+ok(shortHold.mid.live > 0, "the rising note is a real continuous voice",
+  JSON.stringify(shortHold.mid));
+await sleep(1400);
+const afterShort = await page.evaluate(() => ({ r: window.blnR, fly: !!window.blnFly, live: window.LIVE.length }));
+ok(!afterShort.fly, "letting go early does not send it flying", JSON.stringify(afterShort));
+ok(Math.abs(afterShort.r - startR) < 1.5, "it sputters back down to where it started",
+  JSON.stringify(afterShort));
+ok(afterShort.live === 0, "and the note stops", JSON.stringify(afterShort));
+
+// hold past the limit: it should leave, then a fresh balloon comes back
+const longHold = await blnPress(3200);
+ok(longHold.mid.r >= 70, "a long hold reaches the point where it lets go",
+  JSON.stringify(longHold.mid));
+await sleep(300);
+const flying = await page.evaluate(() => ({ fly: !!window.blnFly }));
+ok(flying.fly, "past the limit it flies off instead of bursting on you",
+  JSON.stringify(flying));
+await sleep(4000);
+const recovered = await page.evaluate(() => ({
+  fly: !!window.blnFly, r: window.blnR, live: window.LIVE.length,
+  visible: +document.getElementById("blnBody").getAttribute("opacity")
+}));
+ok(!recovered.fly, "the flight ends on its own", JSON.stringify(recovered));
+ok(recovered.live === 0, "nothing is left looping after the flight", JSON.stringify(recovered));
+ok(recovered.visible > 0.4, "a fresh balloon comes back", JSON.stringify(recovered));
+
+// calm motion clips the flight
+await page.evaluate(() => { S.calm = true; });
+await blnPress(3200);
+await sleep(500);
+const calm = await page.evaluate(() => ({ fly: !!window.blnFly }));
+ok(!calm.fly, "calm motion skips the flight", JSON.stringify(calm));
+await page.evaluate(() => { S.calm = false; });
+await sleep(600);
+
+/* ---------------- favourites ---------------- */
+console.log("[favourites]");
+await page.evaluate(() => { S.favs = []; saveS(); orderStrip(); showToy("coon"); });
+await sleep(300);
+const firstBefore = await page.evaluate(() =>
+  document.querySelector("#strip .tab").getAttribute("data-id"));
+
+/* hold a tab that is NOT first and NOT the open toy, so a stray tap would be
+   visible as a toy change */
+async function holdTab(id, ms) {
+  const b = await page.evaluate(i => {
+    const el = document.querySelector('#strip .tab[data-id="' + i + '"]');
+    el.scrollIntoView({ block: "nearest", inline: "center" });
+    return null;
+  }, id);
+  await sleep(250);
+  const box = await page.evaluate(i => {
+    const el = document.querySelector('#strip .tab[data-id="' + i + '"]');
+    const r = el.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+             hit: !!(top && (top === el || el.contains(top))) };
+  }, id);
+  if (!box.hit) return box;
+  await page.mouse.move(box.x, box.y);
+  await page.mouse.down();
+  await sleep(ms);
+  await page.mouse.up();
+  await sleep(350);
+  return box;
+}
+
+const openBefore = await page.evaluate(() => curToy);
+const held = await holdTab("sand", 800);
+ok(held.hit, "the tab being held is reachable", JSON.stringify(held));
+const afterHold = await page.evaluate(() => ({
+  favs: S.favs.slice(), first: document.querySelector("#strip .tab").getAttribute("data-id"),
+  open: curToy, starred: document.querySelector('#strip .tab[data-id="sand"]').classList.contains("fav")
+}));
+ok(afterHold.favs.includes("sand"), "holding a tab pins it", JSON.stringify(afterHold));
+ok(afterHold.first === "sand", "a pinned toy moves to the front of the strip",
+  JSON.stringify(afterHold));
+ok(afterHold.starred, "the pinned tab is marked", JSON.stringify(afterHold));
+ok(afterHold.open === openBefore,
+  "holding to pin does NOT also switch to that toy", JSON.stringify({ was: openBefore, now: afterHold.open }));
+
+// a short tap still just opens the toy — this is the one that catches a
+// swallow flag left set by the hold
+await page.evaluate(() => showToy("coon"));
+await sleep(300);
+const tapBox = await holdTab("sand", 60);   // a 60ms press is a tap, not a hold
+ok(tapBox.hit, "the tab is reachable for a normal tap", JSON.stringify(tapBox));
+const tapped = await page.evaluate(() => ({ open: curToy, favs: S.favs.slice() }));
+ok(tapped.open === "sand", "a normal tap still opens the toy", JSON.stringify(tapped));
+ok(tapped.favs.includes("sand"), "and a tap does not unpin it", JSON.stringify(tapped));
+
+// cap at three, oldest drops
+await page.evaluate(() => { S.favs = ["pop", "slime", "wrap"]; saveS(); orderStrip(); });
+await holdTab("gear", 800);
+const capped = await page.evaluate(() => S.favs.slice());
+ok(capped.length === 3 && capped.includes("gear") && !capped.includes("pop"),
+  "pinning a fourth drops the oldest", JSON.stringify(capped));
+
+// unpin
+await holdTab("gear", 800);
+const unpinned = await page.evaluate(() => S.favs.slice());
+ok(!unpinned.includes("gear"), "holding a pinned tab unpins it", JSON.stringify(unpinned));
+
+// the rest of the strip keeps the catalogue order
+const orderOK = await page.evaluate(() => {
+  const ids = Array.from(document.querySelectorAll("#strip .tab")).map(t => t.dataset.id);
+  const favCount = S.favs.length;
+  const rest = ids.slice(favCount);
+  const canon = TOYS.map(t => t.id).filter(i => S.favs.indexOf(i) < 0);
+  return { same: JSON.stringify(rest) === JSON.stringify(canon), rest: rest.slice(0, 4) };
+});
+ok(orderOK.same, "unpinned toys keep the order they have always had",
+  JSON.stringify(orderOK));
+
+// and pins come back after a reload
+await page.evaluate(() => { S.favs = ["sand", "slime"]; saveS(); });
+await sleep(300);
+const pageF = await newPage();
+await pageF.goto(BASE, { waitUntil: "networkidle2" });
+await realClick(pageF, "#intro");
+await sleep(700);
+const afterReload = await pageF.evaluate(() => ({
+  favs: S.favs.slice(),
+  order: Array.from(document.querySelectorAll("#strip .tab")).slice(0, 2).map(t => t.dataset.id)
+}));
+ok(JSON.stringify(afterReload.order) === JSON.stringify(["sand", "slime"]),
+  "pinned toys are still at the front after a reload", JSON.stringify(afterReload));
+await pageF.close();
+await page.evaluate(() => { S.favs = []; saveS(); orderStrip(); });
 
 /* ---------------- settings persist (the window.storage landmine) --------- */
 console.log("[persistence]");
@@ -328,6 +488,20 @@ const shots = [
   ["theme-mono", async () => { await page.evaluate(() => { S.theme = "mono"; applyS(); }); await sleep(300); }],
   ["theme-contrast", async () => { await page.evaluate(() => { S.theme = "contrast"; applyS(); }); await sleep(300); }],
   ["theme-night", async () => { await page.evaluate(() => { S.theme = "night"; applyS(); }); await sleep(300); }],
+  ["toy-bln", async () => { await page.evaluate(() => showToy("bln")); await sleep(600); }],
+  ["toy-bln-full", async () => {
+      const b = await page.evaluate(() => {
+        const r = document.getElementById("blnBody").getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      await page.mouse.move(b.x, b.y); await page.mouse.down(); await sleep(2400);
+    }],
+  ["toy-bln-after", async () => { await page.mouse.up(); await sleep(700); }],
+  ["favourites", async () => {
+      await page.evaluate(() => { S.favs = ["sand", "slime", "pop"]; saveS(); orderStrip();
+        document.getElementById("strip").scrollLeft = 0; showToy("coon"); });
+      await sleep(500);
+    }],
   ["settings", async () => { await realClick(page, "#gearBtn"); await sleep(450); }],
   ["big-mode", async () => { await page.evaluate(() => { document.getElementById("sheet").classList.remove("on"); });
                              await sleep(200); await page.evaluate(() => document.body.classList.add("big")); await sleep(400); }]

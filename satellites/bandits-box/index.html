@@ -80,6 +80,10 @@ button{font-family:var(--round);}
      letter-spacing:.08em;text-transform:lowercase;cursor:pointer;
      transition:background .2s,color .2s,border-color .2s;}
 .tab[aria-selected="true"]{background:var(--raise);color:var(--milk);border-color:var(--furlite);}
+/* A pinned toy carries a small mark, not a colour change: the four themes
+   include a faded one, and colour alone would say nothing there. */
+.tab.fav::before{content:"\2605";margin-right:6px;font-size:10px;opacity:.75;
+     vertical-align:1px;}
 
 /* ---------- FULL SCREEN MODE ---------- */
 body.big .topbar,body.big .strip,body.big .hint{display:none;}
@@ -810,6 +814,19 @@ body.calm .card:active{transform:none;}
       <div class="hint">press harder &middot; use more than one finger</div>
     </section>
 
+    <section class="toy" id="toy-bln" role="group"
+             aria-label="Balloon. Hold to blow it up, let go whenever you like.">
+      <div class="fill">
+        <svg id="blnSvg" viewBox="0 0 200 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <path id="blnString" d="" stroke="#8A8296" stroke-width="1.2" fill="none"/>
+          <ellipse id="blnBody" cx="100" cy="110" rx="26" ry="30" fill="#EDA9B4"/>
+          <path id="blnKnot" d="" fill="#D98F9C"/>
+          <ellipse id="blnShine" cx="88" cy="96" rx="8" ry="11" fill="#ffffff" opacity=".34"/>
+        </svg>
+      </div>
+      <div class="hint">hold to blow it up &middot; let go whenever you like</div>
+    </section>
+
     <section class="toy" id="toy-sand" role="group" aria-label="Sand tray. Draw grooves in the sand.">
       <div class="fill"><div id="sandWrap">
         <svg id="sandSvg" viewBox="0 0 300 400" preserveAspectRatio="none" aria-hidden="true">
@@ -927,7 +944,8 @@ function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 function vpH(){ return (window.visualViewport&&window.visualViewport.height)||window.innerHeight; }
 
 var S = { vol:0.65, quiet:false, calm:false, buzz:true, soft:false, grip:0.5, big:false,
-          last:'coon', theme:'night', fun:true, tally:false, word:'pop', total:0 };
+          last:'coon', theme:'night', fun:true, tally:false, word:'pop', total:0,
+          favs:[] };
 /* Settings live in localStorage. The original drop used window.storage, which
    is the claude.ai artifact sandbox API and simply does not exist in a
    browser — every setting silently failed to persist on the real site.
@@ -3436,6 +3454,129 @@ drawBall();
    NAVIGATION, FULL SCREEN, SETTINGS
    ========================================================== */
 /* glyph: a tiny drawing for the picker card, in a 40x40 box */
+/* ==========================================================
+   TOY 22 — BALLOON
+   The only toy here where the good part is the waiting. You hold,
+   it fills, the note climbs, and the whole time you are deciding
+   whether to push it one second further.
+
+   It cannot go wrong, because nothing in this box is allowed to
+   go wrong. Let go early and the air sputters out. Hold past the
+   point where a balloon would burst and it does not burst at you:
+   it squirts out of your fingers and flies round the room the way
+   a let go balloon actually does, and then a fresh one drifts in.
+   No score, no burst you could have avoided, no reason not to
+   just do it again. Calm motion clips its wings.
+   ========================================================== */
+var blnSvg=$('#blnSvg'), blnBody=$('#blnBody'), blnKnot=$('#blnKnot'),
+    blnShine=$('#blnShine'), blnString=$('#blnString');
+var BLN_MIN=26, BLN_MAX=78, BLN_LOOSE=70;   // radius units in the 200x260 box
+var blnR=BLN_MIN, blnHold=false, blnVoice=null, blnFly=null, blnPan=0,
+    blnHue=0, blnFade=0;
+var BLN_COLORS=['#EDA9B4','#9FD6C0','#C3B0E0','#EFD9A0','#A8C8E8','#F2B79E'];
+/* the knot is the same rubber, pinched: a shade down from the body. Without
+   its own list it stayed pink while the balloon changed colour. */
+var BLN_KNOTS =['#D98F9C','#83BCA6','#A797C6','#D4BE86','#8FAECE','#D89C82'];
+
+function blnDraw(){
+  if(!blnBody) return;
+  var x=100, y=110, r=blnR;
+  if(blnFly){ x=blnFly.x; y=blnFly.y; }
+  // a balloon is taller than it is wide, and it rounds out as it fills
+  var rx=r*0.86, ry=r*(1.12-0.1*((r-BLN_MIN)/(BLN_MAX-BLN_MIN)));
+  blnBody.setAttribute('cx',x); blnBody.setAttribute('cy',y);
+  blnBody.setAttribute('rx',rx); blnBody.setAttribute('ry',ry);
+  blnBody.setAttribute('fill',BLN_COLORS[blnHue]);
+  blnBody.setAttribute('opacity',blnFade);
+  var ky=y+ry;
+  blnKnot.setAttribute('d','M'+(x-5)+' '+ky+' Q'+x+' '+(ky+9)+' '+(x+5)+' '+ky+' Z');
+  blnKnot.setAttribute('fill',BLN_KNOTS[blnHue]);
+  blnKnot.setAttribute('opacity',blnFade);
+  blnShine.setAttribute('cx',x-rx*0.42); blnShine.setAttribute('cy',y-ry*0.44);
+  blnShine.setAttribute('rx',Math.max(3,rx*0.22)); blnShine.setAttribute('ry',Math.max(4,ry*0.26));
+  blnShine.setAttribute('opacity',0.34*blnFade);
+  // the string trails behind when it is flying, hangs straight when it is not
+  var sx=blnFly?(x-blnFly.vx*3):x, sy=ky+40;
+  blnString.setAttribute('d','M'+x+' '+ky+' Q'+((x+sx)/2+6)+' '+(ky+22)+' '+sx+' '+sy);
+  blnString.setAttribute('opacity',0.5*blnFade);
+}
+function blnReset(soft){
+  blnR=BLN_MIN; blnFly=null; blnHold=false;
+  blnHue=(blnHue+1)%BLN_COLORS.length;
+  blnFade=soft?0:1;
+  blnDraw();
+}
+function blnLetGo(x,y){
+  // Past the loose point it leaves under its own power. This is the payoff,
+  // and it is a joke rather than a failure: you get the raspberry, the flight,
+  // and another balloon.
+  var far=blnR>=BLN_LOOSE;
+  if(blnVoice){ blnVoice.stop(); blnVoice=null; }
+  blnHold=false;
+  if(far){
+    feel('squeak',x,y);
+    if(S.calm){ feel('airout',x,y); blnReset(true); blnFade=0; return; }
+    blnFly={x:100,y:110,vx:(Math.random()*2-1)*5.5,vy:-3.4,life:0};
+    feel('zip',x,y);
+  }else{
+    feel('airout',x,y);
+  }
+}
+function blnTick(){
+  requestAnimationFrame(blnTick);
+  if(curToy!=='bln'){ if(blnFade&&!blnHold){ blnFade=0; } return; }
+  if(blnFade<1&&!blnFly) blnFade=Math.min(1,blnFade+0.06);
+  if(blnHold){
+    blnR=Math.min(BLN_MAX,blnR+(S.calm?0.55:0.85));
+    if(blnVoice) blnVoice.set((blnR-BLN_MIN)/(BLN_MAX-BLN_MIN),blnPan);
+  }else if(blnFly){
+    var f=blnFly;
+    f.life++;
+    f.x+=f.vx; f.y+=f.vy;
+    f.vy+=0.16;                       // it sinks as it empties
+    f.vx*=0.995;
+    if(f.x<24||f.x>176){ f.vx=-f.vx; f.x=clamp(f.x,24,176); }
+    if(f.y<24){ f.vy=Math.abs(f.vy); f.y=24; }
+    blnR=Math.max(BLN_MIN*0.5,blnR-1.5);
+    if(f.life%5===0&&blnR>BLN_MIN*0.7){
+      // ripples along the flight path, so the trip reads with the sound off
+      var box=blnSvg.getBoundingClientRect();
+      ripple(box.left+box.width*(f.x/200),box.top+box.height*(f.y/260),'#EDA9B4');
+    }
+    if(blnR<=BLN_MIN*0.52||f.y>250||f.life>150){
+      blnFly=null; blnFade=0; blnReset(true);
+    }
+  }else if(blnR>BLN_MIN){
+    blnR=Math.max(BLN_MIN,blnR-1.1);   // the sputter after an early let go
+  }
+  blnDraw();
+}
+blnDraw(); blnTick();
+
+if(blnSvg){
+  blnSvg.addEventListener('pointerdown',safe(function(e){
+    if(blnFly) return;                 // let the flight finish on its own
+    try{ blnSvg.setPointerCapture(e.pointerId); }catch(err){}
+    POINTERS[e.pointerId]=true;
+    blnHold=true; blnFade=1;
+    blnPan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
+    wake();
+    if(!blnVoice&&audioOK) blnVoice=Stretch({f0:74,rise:2.4,gain:0.16});
+    feel('tap',e.clientX,e.clientY);
+  }));
+  blnSvg.addEventListener('pointermove',safe(function(e){
+    if(!blnHold) return;
+    blnPan=(e.clientX/Math.max(1,window.innerWidth))*2-1;
+  }));
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+    blnSvg.addEventListener(ev,safe(function(e){
+      if(e&&e.pointerId!=null) delete POINTERS[e.pointerId];
+      if(!blnHold) return;
+      blnLetGo((e&&e.clientX)||window.innerWidth/2,(e&&e.clientY)||vpH()/2);
+    }));
+  });
+}
+
 var TOYS=[
  {id:'coon',  label:'bandit',   g:'<circle cx="12" cy="11" r="6" fill="#6E677C"/><circle cx="28" cy="11" r="6" fill="#6E677C"/><circle cx="20" cy="22" r="15" fill="#7A7389"/><ellipse cx="14" cy="20" rx="5" ry="4" fill="#2A2434"/><ellipse cx="26" cy="20" rx="5" ry="4" fill="#2A2434"/><ellipse cx="20" cy="30" rx="7" ry="5" fill="#DED7CB"/>'},
  {id:'pup',   label:'puppet',   g:'<path d="M34 20 L6 15 Q2 20 6 25 Z" fill="#8E3A4A"/><path d="M34 18 L8 16 Q3 12 9 7 L30 6 Q35 8 35 14 Z" fill="#9B7BAB"/><path d="M34 22 L8 24 Q3 28 9 33 L30 34 Q35 32 35 26 Z" fill="#9B7BAB"/><circle cx="18" cy="10" r="4" fill="#F4EFE6"/><circle cx="18" cy="11" r="2" fill="#1E1926"/>'},
@@ -3451,6 +3592,7 @@ var TOYS=[
  {id:'choc',  label:'chocolate', g:'<rect x="4" y="10" width="32" height="21" rx="3" fill="#6B4426"/><rect x="6" y="12" width="8" height="8" rx="1.5" fill="#A9743F"/><rect x="16" y="12" width="8" height="8" rx="1.5" fill="#A9743F"/><rect x="26" y="12" width="8" height="8" rx="1.5" fill="#A9743F"/><rect x="6" y="21" width="8" height="8" rx="1.5" fill="#A9743F"/><rect x="16" y="21" width="8" height="8" rx="1.5" fill="#A9743F"/><rect x="26" y="21" width="8" height="8" rx="1.5" fill="#A9743F"/>'},
  {id:'wall',  label:'switches',  g:'<rect x="4" y="4" width="14" height="15" rx="3" fill="#221D2E"/><rect x="7" y="6" width="8" height="6" rx="2" fill="#E4DED2"/><rect x="22" y="4" width="14" height="15" rx="3" fill="#221D2E"/><rect x="25" y="11" width="8" height="6" rx="2" fill="#9FD6C0"/><rect x="4" y="22" width="14" height="15" rx="3" fill="#221D2E"/><rect x="7" y="29" width="8" height="6" rx="2" fill="#9FD6C0"/><rect x="22" y="22" width="14" height="15" rx="3" fill="#221D2E"/><rect x="25" y="24" width="8" height="6" rx="2" fill="#E4DED2"/>'},
  {id:'ball',  label:'squeeze',   g:'<path d="M20 4 C31 4 36 12 36 20 C36 29 30 36 20 36 C10 36 4 29 4 20 C4 12 9 4 20 4 Z" fill="#F2B79E"/><path d="M12 12 q6 -6 13 -2 q-5 7 -13 2 Z" fill="#fff" opacity=".35"/><path d="M36 20 q-7 2 -7 6" stroke="#CE9B7C" stroke-width="3" fill="none"/>'},
+ {id:'bln',   label:'balloon',  g:'<ellipse cx="20" cy="16" rx="11" ry="13" fill="#EDA9B4"/><path d="M17 29 Q20 33 23 29 Z" fill="#D98F9C"/><path d="M20 31 Q24 34 21 38" stroke="#8A8296" stroke-width="1.4" fill="none"/><ellipse cx="16" cy="11" rx="3" ry="4" fill="#fff" opacity=".34"/>'},
  {id:'sand',  label:'sand',     g:'<rect x="4" y="6" width="32" height="28" rx="5" fill="#C8B394"/><path d="M8 14 Q20 8 32 16" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 22 Q20 16 32 24" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 30 Q20 24 32 32" stroke="#7A6448" stroke-width="3" fill="none" stroke-linecap="round"/>'},
  {id:'cradle',label:'cradle',   g:'<rect x="4" y="6" width="32" height="3" rx="1" fill="#4A4258"/><line x1="9" y1="8" x2="6" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="16" y1="8" x2="16" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="23" y1="8" x2="23" y2="24" stroke="#6E677C" stroke-width="1.5"/><line x1="30" y1="8" x2="34" y2="24" stroke="#6E677C" stroke-width="1.5"/><circle cx="6" cy="28" r="5" fill="#B6AEC4"/><circle cx="16" cy="28" r="5" fill="#B6AEC4"/><circle cx="23" cy="28" r="5" fill="#B6AEC4"/><circle cx="34" cy="28" r="5" fill="#B6AEC4"/>'},
  {id:'spring',label:'spring',   g:'<rect x="12" y="4" width="16" height="4" rx="2" fill="#4A4258"/><path d="M20 8 C32 11 32 14 20 17 C8 20 8 23 20 26 C32 29 32 32 20 35" stroke="#B6AEC4" stroke-width="3.5" fill="none" stroke-linecap="round"/><rect x="12" y="34" width="16" height="5" rx="2.5" fill="#9FD6C0"/>'},
@@ -3459,14 +3601,94 @@ var TOYS=[
  {id:'tex',   label:'textures', g:'<rect x="4" y="4" width="14" height="14" rx="3" fill="#B79A7E"/><rect x="22" y="4" width="14" height="14" rx="3" fill="#8FA3B5"/><rect x="4" y="22" width="14" height="14" rx="3" fill="#B08FBE"/><rect x="22" y="22" width="14" height="14" rx="3" fill="#F0C6A8"/>'},
  {id:'latch', label:'latches',  g:'<rect x="4" y="15" width="32" height="10" rx="5" fill="#221D2E"/><rect x="8" y="11" width="3" height="6" rx="1" fill="#EFD9A0"/><rect x="14" y="11" width="3" height="6" rx="1" fill="#EFD9A0"/><rect x="8" y="23" width="3" height="6" rx="1" fill="#EFD9A0"/><rect x="14" y="23" width="3" height="6" rx="1" fill="#EFD9A0"/><rect x="21" y="13" width="9" height="14" rx="3" fill="#E4DED2"/>'}
 ];
+/* ----------------------------------------------------------
+   FAVOURITES
+   Twenty one toys is enough that the two or three you actually
+   use should be first. Hold a tab to pin it.
+
+   The order is yours and it does not move on its own. Nothing
+   here watches what you play or reshuffles behind your back:
+   pinned toys sit at the front in the order you pinned them,
+   everything else stays in the order it has always been in.
+   Predictability is worth more than cleverness for anyone who
+   came here to settle down, and a picker that rearranges itself
+   is the opposite of settling.
+   ---------------------------------------------------------- */
+var FAV_MAX=3, FAV_HOLD_MS=550;
+function favs(){ return (S.favs&&S.favs.slice)?S.favs.slice(0,FAV_MAX):[]; }
+function isFav(id){ return favs().indexOf(id)>=0; }
+function toggleFav(id){
+  var list=favs(), i=list.indexOf(id);
+  if(i>=0) list.splice(i,1);
+  else{ list.push(id); if(list.length>FAV_MAX) list.shift(); }
+  S.favs=list; saveS(); orderStrip();
+}
+/* Lay the whole strip out every time, rather than only moving pinned tabs to
+   the front: unpinning has to put a tab back where it belongs, and a tab that
+   just shuffles forward and never returns is worse than no pinning at all.
+   appendChild MOVES an existing node, so listeners and state survive. */
+function orderStrip(){
+  if(!strip) return;
+  var list=favs();
+  var order=list.concat(TOYS.map(function(t){ return t.id; })
+                            .filter(function(id){ return list.indexOf(id)<0; }));
+  order.forEach(function(id){
+    var tab=strip.querySelector('[data-id="'+id+'"]');
+    if(tab) strip.appendChild(tab);
+  });
+  TOYS.forEach(function(t){
+    var tab=strip.querySelector('[data-id="'+t.id+'"]');
+    if(!tab) return;
+    var on=isFav(t.id);
+    tab.classList.toggle('fav',on);
+    tab.setAttribute('aria-label',t.label+(on?', pinned':'')+'. Hold to '+(on?'unpin':'pin')+'.');
+  });
+}
+/* A hold that does not also fire the tap. Moving your finger cancels it, so
+   scrolling the strip never pins anything by accident. */
+function wireFavHold(btn,toy){
+  var timer=null, startX=0, startY=0;
+  function cancel(){ if(timer){ clearTimeout(timer); timer=null; } }
+  btn.addEventListener('pointerdown',safe(function(e){
+    startX=e.clientX; startY=e.clientY;
+    // Clear the swallow flag HERE, not in the click handler. Pinning moves the
+    // tab in the DOM, and a node that moves between press and release does not
+    // always get a click at all — leaving the flag set would eat the player's
+    // next real tap on that tab.
+    btn.__heldOpen=false;
+    cancel();
+    timer=setTimeout(function(){
+      timer=null;
+      btn.__heldOpen=true;                       // swallow the click, if one comes
+      toggleFav(toy.id);
+      feel(isFav(toy.id)?'plink':'tap',e.clientX,e.clientY);
+    },FAV_HOLD_MS);
+  }));
+  btn.addEventListener('pointermove',safe(function(e){
+    if(!timer) return;
+    if(Math.abs(e.clientX-startX)>8||Math.abs(e.clientY-startY)>8) cancel();
+  }));
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+    btn.addEventListener(ev,safe(cancel));
+  });
+}
+
 strip=$('#strip');
 TOYS.forEach(function(t,i){
   var b=document.createElement('button');
   b.className='tab'; b.textContent=t.label; b.setAttribute('role','tab');
   b.setAttribute('aria-selected',i===0?'true':'false');
-  b.addEventListener('click',safe(function(){ showToy(t.id); }));
+  // the id, not the position: favourites reorder these and an index would
+  // then point at the wrong toy
+  b.setAttribute('data-id',t.id);
+  b.addEventListener('click',safe(function(){
+    if(b.__heldOpen) return;          // the long press already acted; pointerdown resets this
+    showToy(t.id);
+  }));
+  wireFavHold(b,t);
   strip.appendChild(b);
 });
+orderStrip();
 var homeEl=$('#home'), homeGrid=$('#homeGrid');
 TOYS.forEach(function(t){
   var c=document.createElement('button');
@@ -3497,7 +3719,8 @@ function showToy(id){
   TOYS.forEach(function(t,i){
     var on=(t.id===id), sec=document.getElementById('toy-'+t.id);
     if(sec){ if(on) sec.classList.add('on'); else sec.classList.remove('on'); }
-    var tab=strip.children[i];
+    var tab=strip.querySelector('[data-id="'+t.id+'"]');
+    if(!tab) return;
     tab.setAttribute('aria-selected',on?'true':'false');
     // Keep the selected tab where it can be seen. Without this, coming back to
     // a toy from the far end of the strip leaves the strip parked at the start
@@ -3734,6 +3957,7 @@ drawCradle(); drawSpring(); buildSeq(); buildWall();
 })();
 
 loadS().then(function(){ applyS();
+  orderStrip();   // pinned toys come back to the front of the strip
   if(S.last&&S.last!==curToy&&TOYS.some(function(t){return t.id===S.last;})) showToy(S.last);
   relayout(); });
 </script>

@@ -95,7 +95,7 @@ if (card) {
     "card navigates to Bandit's Box", JSON.stringify(landed));
   ok(/\?v=/.test(landed.url), "the versioned url is what the card opened",
     landed.url);
-  ok(landed.toys === 21, "the app booted with all 21 toys", JSON.stringify(landed));
+  ok(landed.toys === 22, "the app booted with all 22 toys", JSON.stringify(landed));
   ok(landed.back === true, "back arrow shows because we came from the portal",
     JSON.stringify(landed));
 
