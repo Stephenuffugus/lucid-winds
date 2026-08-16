@@ -68,7 +68,11 @@ async function fresh(seed) {
   const errs = [];
   page.on('pageerror', e => errs.push(String(e.message)));
   await page.goto(URL_, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(s => { localStorage.clear(); if (s) for (const k in s) localStorage.setItem(k, s[k]); }, seed || null);
+  /* the directions overlay is a full screen modal on a brand new device, which is
+     correct behaviour and would swallow every scripted click, so it is marked seen
+     here and tested on its own in B0 */
+  await page.evaluate(s => { localStorage.clear(); localStorage.setItem('fb_helpseen', '1');
+    if (s) for (const k in s) localStorage.setItem(k, s[k]); }, seed || null);
   errs.length = 0;
   await page.goto(URL_, { waitUntil: 'load' });
   await page.waitForFunction('!!window.FB_DEV', { timeout: 8000 });
@@ -80,6 +84,23 @@ const drawPage = (page, y) => page.evaluate(yy => {
 }, y || 200);
 
 console.log('\nphase B — behaviour (375x667)');
+
+/* B0 a brand new device gets the directions, and can get out of them */
+{
+  const ctx = await browser.createBrowserContext();
+  const page = await ctx.newPage();
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await page.bringToFront();
+  await page.goto(URL_, { waitUntil: 'load' });
+  await page.waitForFunction('!!window.FB_DEV', { timeout: 8000 });
+  ok('a new device is shown the directions',
+    await page.$eval('#helppanel', e => e.classList.contains('on')));
+  await page.click('#hp-close');
+  await new Promise(r => setTimeout(r, 150));
+  ok('the directions close and stay closed',
+    await page.$eval('#helppanel', e => !e.classList.contains('on')));
+  await ctx.close();
+}
 
 /* B1 make something, and it is still there after a reload */
 {
@@ -137,7 +158,10 @@ console.log('\nphase B — behaviour (375x667)');
 {
   const { ctx, page } = await fresh();
   await drawPage(page, 200);
-  /* fill the quota with something that is not ours, the way a big book would */
+  /* Fill the real quota first, so this is not a pure mock: with the store full a
+     BIG new write throws. (Overwriting an existing key of similar size can still
+     succeed, which is why the app path below is driven by an injected throw of
+     exactly the kind a full quota raises.) */
   const filled = await page.evaluate(() => {
     const chunk = 'x'.repeat(512 * 1024);
     let n = 0;
@@ -145,7 +169,19 @@ console.log('\nphase B — behaviour (375x667)');
     return n;
   });
   ok('the quota can actually be filled in this browser', filled > 0 && filled < 40, 'chunks ' + filled);
-  const res = await page.evaluate(() => { const okc = FB_DEV.save(); return { okc, st: FB_DEV.saveState() }; });
+  ok('a full store really does throw on a big write', await page.evaluate(() => {
+    try { localStorage.setItem('fb_probe', 'x'.repeat(1024 * 1024)); localStorage.removeItem('fb_probe'); return false; }
+    catch (e) { return true; }
+  }));
+  const res = await page.evaluate(() => {
+    const real = localStorage.setItem.bind(localStorage);
+    window.__unbreak = () => { localStorage.setItem = real; };
+    localStorage.setItem = function (k, v) {
+      if (k === 'fb_book') { const e = new Error('quota'); e.name = 'QuotaExceededError'; throw e; }
+      return real(k, v);
+    };
+    const okc = FB_DEV.save(); return { okc, st: FB_DEV.saveState() };
+  });
   ok('a failed write reports failure', res.okc === false);
   ok('a failed write raises the bar', res.st.barOn === true);
   ok('the bar does not claim it partly saved', !/older pages/i.test(res.st.msg), res.st.msg);
@@ -158,7 +194,7 @@ console.log('\nphase B — behaviour (375x667)');
     return a.offsetWidth > 0 && /export/i.test(a.textContent) && b.offsetWidth > 0;
   }));
   /* and it clears itself the moment saving works again */
-  await page.evaluate(() => { for (let i = 0; i < 40; i++) localStorage.removeItem('fb_ballast' + i); });
+  await page.evaluate(() => { window.__unbreak(); for (let i = 0; i < 40; i++) localStorage.removeItem('fb_ballast' + i); });
   const back = await page.evaluate(() => { const okc = FB_DEV.save(); return { okc, st: FB_DEV.saveState() }; });
   ok('saving recovers when there is room again', back.okc === true && back.st.barOn === false);
   await ctx.close();
@@ -195,9 +231,9 @@ console.log('\nphase B — behaviour (375x667)');
 /* B5 can you get your work out */
 {
   const { ctx, page } = await fresh();
-  await drawPage(page, 200);
-  await page.evaluate(() => FB_DEV.go(1));
-  await drawPage(page, 300);
+  /* a realistic little flipbook: eight pages at 4fps is two seconds of video */
+  for (let i = 0; i < 8; i++) { await drawPage(page, 150 + i * 30); if (i < 7) await page.evaluate(n => FB_DEV.go(n), i + 1); }
+  await page.evaluate(() => { while (FB_DEV.state().fps !== 4) document.getElementById('b-fps').click(); });
   ok('export is available in this browser', await page.evaluate(() => FB_DEV.state().canExport === true));
   const out = await page.evaluate(() => FB_DEV.exportTest());
   ok('export produces a file with bytes in it', !!out && out.size > 1000, JSON.stringify(out));

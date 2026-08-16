@@ -102,6 +102,31 @@ capped at 400 and validated hash by hash.
 hides itself; grails keyed by a stable id; junk hashes fold into a stable real
 object instead of printing `undefined`; both undersized buttons raised to 48px.
 
+**Found by LOOKING, not by any assertion (390x844 and 1280x800).** The how to
+play sheet's ground was `#0d0b0af5`. That is an **eight digit hex, so the `f5`
+is an alpha**: 96%, which reads as solid in a colour swatch and is not. The
+title, the BACK TO THE ARCADE chip, the ticket count and the RUMMAGE button all
+ghosted up through the paragraphs, cream text over a cream tinted bleed, two
+layers of text in the same pixels on the first screen a new player ever sees.
+
+It was taking the bleed twice, because `.howcard` was **the only overlay content
+in the file with no background of its own** — the want list (`.sheetcard`) and
+the dust panel (`.dustcard`) both sit their text on an opaque card, and this one
+sat directly on the scrim. Fixed both ends: the ground is fully opaque with a
+`backdrop-filter: blur(8px)` behind it as belt and braces, and the card now has
+the same panel treatment as its two siblings. The gate now encodes the rule for
+all three overlays: **a full screen overlay either has a fully opaque ground, or
+its content sits on a card that declares its own background. Never text straight
+onto a translucent scrim.** 62 assertions now, up from 55.
+
+Worth noting for whoever reads this next: this class of defect is invisible to
+every static check, and the specific trap is that `#0d0b0af5` *looks* opaque.
+Nothing but opening the page catches it. A separate question has been logged in
+`incoming/STUDIO-SHELF-AUDIT.md` about whether this sheet should auto open on a
+cold load at all, since several games across the fleet greet a new player with a
+wall of text; that is Stephen's call, not mine. Either way it has to be readable
+while it is doing that job, and now it is.
+
 **One improvement beyond the bug list:** the out of tickets message used to say
 "scrap something off the shelf, or come back tomorrow" even when the shelf was
 empty and the dust panel still had tickets in it. It now names only the doors
@@ -111,11 +136,13 @@ that are actually open right now, and when none is, it says when one opens.
 
 ## STILL WORRIES ME
 
-- **Nobody has looked at it.** I did not open a browser (ten agents, two cores,
-  the main loop owns browser work). The grime overlay, the UNWIPED plate, the
-  reveal swap and the dusty shelf thumbnails are all **wired and asserted, not
-  seen**. Per the project rule, wiring art is not seeing art. Somebody has to
-  shoot this at 375x667 and at desktop width before it counts as done.
+- **I still have not looked at it myself.** The coordinator shot it at 390x844
+  and 1280x800 and found the how to play legibility defect above, which is
+  exactly the point of the rule. But the grime overlay, the UNWIPED plate, the
+  reveal swap and the dusty shelf thumbnails were **not** among what was
+  reported on, so those remain wired and asserted rather than seen. The reveal
+  swap in particular is the game's one dramatic beat and nobody has watched it
+  happen. Shoot a rummage through to the wipe before calling this done.
 - **Old shelves will re-derive differently.** Finds persist as hashes and the
   generator changed, so a returning player's shelf shows different titles for
   the same finds. Grades, eras and years are untouched. Acceptable for a beta

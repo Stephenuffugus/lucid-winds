@@ -890,7 +890,7 @@ reg({ id:'classic', name:'Classic', ic:'🏓', desc:'The original. Two paddles, 
 
 /* ── VERTICAL — top/bottom paddles, portrait-native ── */
 reg({ id:'vertical', name:'Sky Duel', ic:'🔼', desc:'Paddles top &amp; bottom. Slide left &amp; right.',
-  ballK:1.0, padK:0.78, aiK:0.86, aiErrK:1.5,
+  ballK:1.0, padK:0.78, aiK:0.58, aiErrK:1.5,
   build(m){ const W=m.W,H=m.H;
     // play in a squarish field (letterbox the tall screen). The AI paddle speed
     // (aiK) is held just below the coverage ratio so sharp shots score.
@@ -998,7 +998,9 @@ function angDist(a,b){ let d=Math.abs(a-b)%TAU; if(d>Math.PI)d=TAU-d; return d; 
 // in every orientation.
 function coverNeed(m,p,kind){
   const travel=Math.max(1,p.range*2);                    // how far the blade may have to go
-  const cross =Math.max(1,kind==='classic'? m.W : m.H);  // how far the ball goes meanwhile
+  // Sky Duel letterboxes a tall screen, so the ball crosses the FIELD, not the
+  // viewport. Using m.H there quietly under-rated the AI's job by ~40%.
+  const cross =Math.max(1,kind==='classic'? m.W : ((m.vBot!=null&&m.vTop!=null)? (m.vBot-m.vTop) : m.H));
   return travel/cross;
 }
 function aiLinear(m,p,dt,kind){

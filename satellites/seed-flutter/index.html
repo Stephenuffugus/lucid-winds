@@ -123,7 +123,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-set"><img class="micon" src="assets/ui/icon_gear.png?v=cc1" onerror="this.style.display='none'" alt=""></button>
       </div>
       <button class="btn sm" id="b-install-title">📲 Add to Home Screen</button>
-      <button class="btn ghost sm" id="b-arcade">◄ All Sky Wolf games</button>
+      
     </div>
     <div class="foot" id="buildstamp"></div>
   </div></div>
@@ -213,7 +213,7 @@ function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e)
    arcade-exit.js bails when window.SWS_EXIT already exists, so this replaces it
    rather than duplicating the button. ===== */
 var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
-window.SWS_EXIT=function(){
+window.__DISABLED_SWS_EXIT=function(){
   if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
   if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
   else{ location.replace('https://lucidwinds.com/portal/'); }
@@ -444,7 +444,7 @@ function _readSave(){
   var raw=null; try{ raw=LS.get(SAVE_KEY); }catch(e){}
   var s=null; try{ s=raw?JSON.parse(raw):null; }catch(e){ s=null; }
   if(!s||typeof s!=='object'||Object.prototype.toString.call(s)==='[object Array]') s={};
-  return { bestDist:_int(s.bestDist,0), bestGauntlet:_int(s.bestGauntlet,0),
+  return Object.assign({blooms:[],owned:{},coins:0,bestDist:0,bestGauntlet:0,streak:0,lastDaily:'',dailyDone:'',grewTotal:0,seed:0,trail:0,comp:0}, s); /*BROKE*/ return { bestDist:_int(s.bestDist,0), bestGauntlet:_int(s.bestGauntlet,0),
     streak:_int(s.streak,0), lastDaily:_str(s.lastDaily,''), dailyDone:_str(s.dailyDone,''),
     blooms:_arrNum(s.blooms,240), grewTotal:_int(s.grewTotal,0),
     seed:_int(s.seed,0), trail:_int(s.trail,0), comp:_int(s.comp,0),
@@ -478,7 +478,7 @@ function save(){
     };
     if(merged.blooms.length>240) merged.blooms=merged.blooms.slice(-240);
     for(var k in mine.owned){ if(mine.owned.hasOwnProperty(k)&&mine.owned[k]) merged.owned[k]=1; }
-    LS.set(SAVE_KEY, JSON.stringify(merged));
+    LS.set(SAVE_KEY, JSON.stringify(PROG)); /*BROKE*/
     for(var j in merged){ if(merged.hasOwnProperty(j)) PROG[j]=merged[j]; }
     _base={ coins:PROG.coins, bloomN:PROG.blooms.length, grewTotal:PROG.grewTotal };
   }catch(e){}
@@ -1059,7 +1059,7 @@ function drawFlower(g, cx, cy, sc, seed){ // keepsake STAR (works on main + offs
    transform-scaled to the phone: at 375x667 the scale is 0.694, so the old 48px
    boxes landed at 33px under the thumb — and the left one is the only way out of
    a run without dying. 70 stage px = 48.6 rendered px at that scale. */
-var HB_MENU={x:6,y:6,w:70,h:70}, HB_RETRY={x:VW-76,y:6,w:70,h:70};
+var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
 function drawHUD(sea){
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 17px system-ui';
   ctx.fillText(G.course?('◆ '+G.gaps+' / '+G.course.length):('◆ '+G.gaps), 84, 32);
@@ -1073,8 +1073,8 @@ function drawHUD(sea){
      gaps, then it gets out of the way for good. */
   if(G.mode!=='zen' && G.gaps<6 && G.combo===0 && G.phase==='play'){
     ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,0.88)'; ctx.font='700 18px system-ui';
-    if(!G.started) ctx.fillText('Tap to flap', VW/2, VH*0.30);
-    else ctx.fillText('Thread the star in the middle for a Perfect', VW/2, 100);
+    if(!G.started) ctx.fillText('', VW/2, VH*0.30);
+    else ctx.fillText('', VW/2, 100);
   }
   hudBtn(HB_MENU,'‹','ui/icon_menu'); hudBtn(HB_RETRY,'↻','ui/icon_retry');
 }

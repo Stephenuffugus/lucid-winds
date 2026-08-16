@@ -409,14 +409,17 @@ if (SELFTEST) {
     const p = await fresh();
     const r = await p.evaluate(() => {
       const D = window.BB_DEBUG; D.enter(4);
-      const real = D.guide();
-      // re-run the pre-repair maths: gravity + drag, 90 steps, no collision test
-      const G = { x: 150 - 140, y: 548 - 30 };
-      let vx = 140 * 9.8, vy = 30 * 9.8, x = G.x, y = G.y, dt = 1 / 60, n = 0;
-      const sp = Math.min(Math.sqrt(vx * vx + vy * vy), 1620), L = Math.sqrt(vx * vx + vy * vy);
-      vx = vx / L * sp; vy = -Math.abs(vy / L * sp);
+      let real = null, dyHit = 0;
+      for (let dy = 0; dy <= 150 && !real; dy += 10) { const g = D.guide(-160, dy); if (g.hit) { real = g; dyHit = dy; } }
+      if (!real) return { realHit: false, realN: 0, oldN: 0 };
+      // re-run the pre-repair maths for the SAME pull: gravity + drag, 90 steps, no collision test
+      let px = 150 - 160, py = 548 + dyHit;
+      let vx = 160, vy = -dyHit, L = Math.sqrt(vx * vx + vy * vy) || 1;
+      const sp = Math.min(L * 9.8, 1620);
+      vx = vx / L * sp; vy = vy / L * sp;
+      let x = px, y = py, dt = 1 / 60, n = 0;
       for (let i = 0; i < 90; i++) { vy += 1950 * dt; vx /= (1 + dt * 0.15); vy /= (1 + dt * 0.15); x += vx * dt; y += vy * dt; if (i % 4 === 0) n++; if (y > 770 || x > 1400) break; }
-      return { realHit: !!real.hit, realN: real.n, oldN: n };
+      return { realHit: !!real.hit, realN: real.n, oldN: n, dyHit };
     });
     caught('the collision-free arc overshoots the arc that stops at the fort', r.realHit && r.oldN > r.realN, r);
     await done(p);
@@ -437,14 +440,21 @@ if (SELFTEST) {
       const st = document.createElement('style');
       st.textContent = '.nstep{width:33px!important;height:33px!important;min-height:33px!important;}';
       document.head.appendChild(st);
-      window.BB_DEBUG.enter(1);
-      document.querySelectorAll('.screen').forEach(x => x.classList.remove('show'));
-      document.getElementById('scr-loadout').classList.add('show');
+      // drive the REAL route that renders the loadout (menu → patch grid → a cell)
+      document.getElementById('btnComicSkip') && document.getElementById('btnComicSkip').click();
+      document.getElementById('btnPlay').click();
+      document.querySelector('#lsBody .ls-cell').click();
+      const rows = document.querySelectorAll('#scr-loadout .nstep');
       const bad = [];
-      document.querySelectorAll('#scr-loadout .nstep').forEach(el => { const q = el.getBoundingClientRect(); if (q.width < 47.5) bad.push(+q.width.toFixed(1)); });
-      return bad;
+      rows.forEach(el => {
+        const q = el.getBoundingClientRect(); if (q.width >= 47.5 && q.height >= 47.5) return;
+        const cx = (q.left + q.right) / 2, cy = (q.top + q.bottom) / 2, D = 23.5;
+        const owns = (x, y) => { const h = document.elementFromPoint(x, y); return !!h && (h === el || el.contains(h) || h.contains(el)); };
+        if (!(owns(cx, cy - D) && owns(cx, cy + D) && owns(cx - D, cy) && owns(cx + D, cy))) bad.push(+q.width.toFixed(1));
+      });
+      return { rows: rows.length, bad };
     });
-    caught('the 48px probe sees a 33px control', r.length > 0, r);
+    caught('the 48px probe sees a 33px control', r.rows > 0 && r.bad.length > 0, r);
     await done(p);
   }
   {  // fort-settle probe must notice a fort that cannot stand
