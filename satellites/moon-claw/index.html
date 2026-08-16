@@ -74,7 +74,12 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 .btn .sm2{display:block; font-size:12px; font-weight:600; letter-spacing:.6px; opacity:.82; margin-top:4px; line-height:1.3}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
-.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
+/* 356, not 400. The stage is 540 wide and scales to the viewport, so the
+   fleet feedback fab (bottom right, 48px at 375x667 = 69 stage px, hard right
+   at stage x 453..523) used to clip the right edge of the Prize shelf button.
+   Measured, not guessed: satellites/moon-claw/test/play.mjs walks every screen
+   and fails if any control intersects the fab. Nothing goes bottom right. */
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:356px; margin:0 auto}
 .foot{margin-top:auto; padding-top:18px; text-align:center; color:#4b5568; font-size:11px; letter-spacing:1px}
 
 /* rules rows */
@@ -84,7 +89,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
   background:#0a0f18; font-size:13.5px; line-height:1.5; color:#c9c0ad}
 
 /* settings */
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:356px;
   margin:0 auto 12px; padding:14px 16px; min-height:74px; border:1px solid var(--line); border-radius:14px; background:#0a0f17;
   cursor:pointer; -webkit-tap-highlight-color:transparent}
 .settingline:active{filter:brightness(1.25)}

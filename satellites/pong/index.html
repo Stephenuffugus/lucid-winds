@@ -1003,12 +1003,24 @@ function coverNeed(m,p,kind){
   const cross =Math.max(1,kind==='classic'? m.W : ((m.vBot!=null&&m.vTop!=null)? (m.vBot-m.vTop) : m.H));
   return travel/cross;
 }
+// Sudden death only works if it is sudden for SOMEBODY. The AI's paddle speed
+// tracks the current ball speed, so when a long rally lifted the speed cap the
+// AI simply sped up with it and the deadlock held — measured at 82 seconds per
+// point on the two Career boss levels. Past rally 8 the machine stops keeping
+// pace with the accelerating ball, which is what the sudden-death comment
+// claimed it did all along. The player's cap keeps scaling; a human's finger is
+// the real limit there anyway.
+function aiRefSpeed(m,bsp){
+  const base=Math.max(m.baseSpeed,bsp);
+  if(m.rally<=8) return base;
+  return Math.min(base, m.baseSpeed*(1.6 - Math.min(0.5,(m.rally-8)*0.03)));
+}
 function aiLinear(m,p,dt,kind){
   const D=m.cfg.diff, st=p.ai||(p.ai={aim:0,predT:0});
   st.predT-=dt;
   const b=nearestThreat(m,p,kind);
-  const bsp=b?Math.hypot(b.vx,b.vy):m.baseSpeed;   // scale paddle speed with the
-  p.maxSpeed=Math.max(m.baseSpeed,bsp)*coverNeed(m,p,kind)*D.padFrac*(m.cfg.aiK||1); // CURRENT ball speed so long/sudden-death rallies stay a skill test
+  const bsp=b?Math.hypot(b.vx,b.vy):m.baseSpeed;
+  p.maxSpeed=aiRefSpeed(m,bsp)*coverNeed(m,p,kind)*D.padFrac*(m.cfg.aiK||1);
   const toward = b && (kind==='classic' ? (p.normal.x>0? b.vx<0 : b.vx>0) : (p.normal.y>0? b.vy<0 : b.vy>0));
   if(!b||!toward){ // drift to centre — an exploitable reset, as intended
     const mid=kind==='classic'?m.H/2:m.W/2, base=kind==='classic'?p.base.y:p.base.x;
@@ -1053,7 +1065,7 @@ function aiArc(m,p,dt){
   // arc coverage: the blade must sweep (a1-a0) radians while the ball crosses a
   // diameter. Same "fraction of worst-case coverage" meaning as the linear AI.
   const needW=Math.max(0.05,(p.a1-p.a0))/(2*m.R);
-  p.maxSpeed=Math.max(m.baseSpeed,bsp)*needW*D.padFrac*(m.cfg.aiK||1);   // rad/s
+  p.maxSpeed=aiRefSpeed(m,bsp)*needW*D.padFrac*(m.cfg.aiK||1);   // rad/s
   if(st.predT<=0){
     const bearing=Math.atan2(b.y-m.cy,b.x-m.cx);
     const ring=predictRing(m,b,p.R);               // where the ball reaches the paddle's ring

@@ -115,24 +115,15 @@ for (const [name, js] of Object.entries(POISONS)) {
   await ctx.close();
 }
 
-console.log('the way out, and nothing sitting on it');
+console.log('the way out, and nothing sitting on it, on every screen');
 {
   const { ctx, page, errs } = await open();
-  await new Promise(r => setTimeout(r, 1600));       /* the fab loads on window load */
+  await new Promise(r => setTimeout(r, 2200));       /* the fab loads on window load and then self relocates */
   const r = await page.evaluate(() => {
     const b = document.getElementById('b-exit').getBoundingClientRect();
-    const f = document.querySelector('.lwfb-fab');
-    const fr = f ? f.getBoundingClientRect() : null;
-    const covered = [];
-    if (fr) document.querySelectorAll('button, .settingline').forEach(el => {
-      const q = el.getBoundingClientRect();
-      if (q.width && q.right > fr.left && q.left < fr.right && q.bottom > fr.top && q.top < fr.bottom)
-        covered.push(el.id || el.className);
-    });
-    /* the exit must be reachable by a tap at its own centre, not just present */
     const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
-    return { exitH: b.height, exitW: b.width, exitVisible: b.width > 0 && b.height > 0,
-             exitHit: hit ? hit.id : null, hasFab: !!f, fab: fr, covered,
+    return { exitH: b.height, exitVisible: b.width > 0 && b.height > 0,
+             exitHit: hit ? hit.id : null, hasFab: !!document.querySelector('.lwfb-fab'),
              swsExit: typeof window.SWS_EXIT };
   });
   ok('SWS_EXIT is defined', r.swsExit === 'function', r.swsExit);
@@ -140,7 +131,37 @@ console.log('the way out, and nothing sitting on it');
   ok('the exit is at least 48 rendered px tall', r.exitH >= 48, r.exitH);
   ok('a tap at the exit centre reaches the exit', r.exitHit === 'b-exit', r.exitHit);
   ok('the feedback fab mounted', r.hasFab === true);
-  ok('the fab covers no control', r.covered.length === 0, r.covered);
+
+  /* every screen, not just the one that happens to be up. Four of these were
+     found in one day across the fleet, so the sweep is the assertion. */
+  for (const id of ['s-title', 's-how', 's-sum', 's-set', 's-shelf']) {
+    const cov = await page.evaluate(screen => {
+      window.MC.show(screen);
+      const f = document.querySelector('.lwfb-fab');
+      if (!f) return ['no fab'];
+      const fr = f.getBoundingClientRect(), out = [];
+      document.querySelectorAll('button, .settingline, .toggle').forEach(el => {
+        if (el.closest('.lwfb-fab')) return;
+        const q = el.getBoundingClientRect();
+        if (!q.width || !q.height) return;                   /* hidden screens have zero rects */
+        if (q.right > fr.left && q.left < fr.right && q.bottom > fr.top && q.top < fr.bottom)
+          out.push(el.id || el.className);
+      });
+      return out;
+    }, id);
+    ok('fab covers no control on ' + id, cov.length === 0, cov);
+  }
+  /* the play screen HUD too: its pause button is the only tap target there */
+  const playCov = await page.evaluate(() => {
+    window.MC.launch('free');
+    const f = document.querySelector('.lwfb-fab');
+    const fr = f.getBoundingClientRect();
+    const q = document.getElementById('pausebtn').getBoundingClientRect();
+    return { overlap: q.right > fr.left && q.left < fr.right && q.bottom > fr.top && q.top < fr.bottom,
+             pauseH: q.height, pauseW: q.width };
+  });
+  ok('fab does not cover the pause button', playCov.overlap === false, playCov);
+  ok('the pause button is 48 rendered px or more', Math.min(playCov.pauseH, playCov.pauseW) >= 48, playCov);
   ok('no page errors', errs.length === 0, errs);
   await ctx.close();
 }

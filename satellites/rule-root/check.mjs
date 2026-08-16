@@ -234,8 +234,13 @@ for (const bad of ['{}', '5', '"x"', '[]', '{"solved":7,"life":3,"eq":"nope"}'])
   await page.waitForFunction("!!document.querySelector('.lwfb-fab')", { timeout: 6000 });
   await new Promise(r => setTimeout(r, 1200));
   const hits = [];
-  for (const where of ['title', 'play']) {
-    if (where === 'play') { await page.evaluate(() => RR_DEV.load(0)); await new Promise(r => setTimeout(r, 250)); }
+  for (const where of ['title', 'levels', 'how', 'set', 'ward', 'grove', 'play']) {
+    await page.evaluate(w => {
+      const go = { levels: 'b-journey', how: 'b-how', set: 'b-set', ward: 'b-ward', grove: 'b-grove' }[w];
+      if (go) document.getElementById(go).click();
+    }, where);
+    if (where === 'play') { await page.evaluate(() => RR_DEV.load(0)); }
+    await new Promise(r => setTimeout(r, 250));
     const h = await page.evaluate(() => {
       const fab = document.querySelector('.lwfb-fab');
       const f = fab.getBoundingClientRect(), out = [];
@@ -248,8 +253,14 @@ for (const bad of ['{}', '5', '"x"', '[]', '{"solved":7,"life":3,"eq":"nope"}'])
       return out;
     });
     if (h.length) hits.push(where + ':' + h.join('/'));
+    await page.evaluate(() => {
+      ['lvl-back', 'set-back', 'ward-back', 'grove-back', 'how-back'].forEach(id => {
+        const e = document.getElementById(id); if (e && e.offsetParent) e.click();
+      });
+    });
+    await new Promise(r => setTimeout(r, 150));
   }
-  ok('the feedback fab covers no control (class 8)', hits.length === 0, hits.join(', '));
+  ok('the feedback fab covers no control on any screen (class 8)', hits.length === 0, hits.join(', '));
   await ctx.close();
 }
 

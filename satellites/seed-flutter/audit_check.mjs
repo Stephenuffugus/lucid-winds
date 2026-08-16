@@ -238,13 +238,17 @@ async function open(query = '', seed = null, touch = true){
   // multiply by the measured stage scale — a hardcoded 70 here would be a probe
   // that cannot fail.
   const src = await (await fetch(URL0)).text();
-  const m = src.match(/var HB_MENU={x:s*-?d+,s*y:s*-?d+,s*w:s*(d+),s*h:s*(d+)}/);
+  const digits = str => { const out = []; let cur = '';
+    for (const ch of str) { if (ch >= '0' && ch <= '9') cur += ch; else { if (cur) out.push(+cur); cur = ''; } }
+    if (cur) out.push(+cur); return out; };
+  const at = src.indexOf('var HB_MENU=');
+  const nums = at >= 0 ? digits(src.slice(at, at + 44)) : [];   // x, y, w, h
   const scale = await page.evaluate(() => document.getElementById('stage').getBoundingClientRect().height / 960);
-  ok('the in-play HUD button constants are readable', !!m, 'HB_MENU declaration not found');
-  if (m) {
-    const w = +m[1] * scale, h = +m[2] * scale;
+  ok('the in-play HUD button constants are readable', nums.length >= 4, 'HB_MENU declaration not found');
+  if (nums.length >= 4) {
+    const w = nums[2] * scale, h = nums[3] * scale;
     ok('in-play HUD buttons are >=48 RENDERED px', w >= 47.5 && h >= 47.5,
-       'declared ' + m[1] + 'x' + m[2] + ' stage px -> ' + w.toFixed(1) + 'x' + h.toFixed(1) + ' rendered at scale ' + scale.toFixed(3));
+       'declared ' + nums[2] + 'x' + nums[3] + ' stage px -> ' + w.toFixed(1) + 'x' + h.toFixed(1) + ' rendered at scale ' + scale.toFixed(3));
   }
   await ctx.close();
 }
