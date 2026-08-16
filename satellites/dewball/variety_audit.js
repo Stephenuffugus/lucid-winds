@@ -156,7 +156,7 @@ if (st.length){
   process.exit(2);
 }
 if (process.argv.indexOf('--selftest') > 1){
-  console.log('variety_audit self-test OK (' + 6 + ' collision fixtures, 3 negatives, ladder solver)');
+  console.log('variety_audit self-test OK (6 collision fixtures, 5 negatives, ladder solver)');
   process.exit(0);
 }
 

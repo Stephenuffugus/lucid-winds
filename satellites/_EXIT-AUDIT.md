@@ -395,3 +395,145 @@ title stack is how you ship two exit buttons. It audits PASS on their work.
 ```
 
 Fleet after both batches: **100 audited, 68 PASS, 6 PARTIAL, 26 GRAFT, 0 STRANDED.**
+
+---
+
+# Batch B — the eleven alphabetical-first stranded games (2026-08-16)
+
+`bramble-court, bramblewick, bridgevine, fence-off, frost-watch, lamplighter,
+line-loom, loop-warden, mini-crossword, mosaic-draft, nova-bloom`
+
+All eleven: **STRANDED → PASS**, and verified by driving a real browser, not
+only by the checker.
+
+## What was actually wrong — all eleven had the same defect
+
+Every one of these games **already shipped a correct `window.SWS_EXIT`** with the
+full referrer path. The checker's baseline said so precisely: *"an exit is
+defined but NOTHING calls it"* on all eleven. Two things were missing:
+
+1. **Nothing called it.** No button, no handler, no hit test. Bramble Court even
+   documented the wrong assumption in a comment: *"title has no exit needed
+   (portal frame handles)"*. There is no portal frame.
+2. **The framed branch was gated on `?embed=1`**, a flag the portal never sets
+   for a relative `/satellites/` url. So `{sws:'ready'}` never posted once in
+   production, and the close branch was dead code. Framing is now detected
+   directly (`window.parent!==window`), and ready posts at parse **and** on
+   `load`. `window.SWS_EMBED` is left defined because Bramblewick's earn path
+   reads it.
+
+## ⛔⛔ The lesson worth keeping: a CSS comment that closes early eats the next rule
+
+The first version of this work shipped a **broken control on nine of eleven
+games**, and no text-level check could see it. The CSS I inserted was built from
+a shared explanatory comment plus a per-game paragraph, and the shared half
+already ended in `*/`. That left the per-game paragraph sitting in the
+stylesheet as bare text ending in a second `*/`:
+
+```css
+   ...clear of the 48px touch floor. */
+   In flow above the FENCE OFF wordmark, which is centred and ... */
+#lw-home{ ...the entire rule... }
+```
+
+A CSS parser reads a selector until the first `{`. The "selector" here is that
+whole paragraph **plus `#lw-home`**, so the parser drops the rule that follows
+it. The button rendered at its browser default: about **52x13 px, centred**,
+instead of 96x50 and left aligned.
+
+That, not any geometry mistake, is what produced the reported Mini Crossword
+defect (heading rendering as "...NI CROSSWORD"). In that first version the same
+error deleted the `#s-title{padding-top}` rule and let the `position:absolute`
+rule survive, which is exactly the combination that drops a floating chip on a
+centred heading.
+
+Three things follow:
+
+- **`node --check` cannot see this, and neither can the exit audit.** Both are
+  happy: the HTML is well formed and `SWS_EXIT` is bound and called. Only a
+  browser measuring the element catches it. Add a comment-balance check per
+  `<style>` block if you generate CSS from templates again.
+- **Generated CSS needs its comments balanced per block, not per string.** All
+  eleven files now balance: bramble-court 9, bramblewick 4, bridgevine 2,
+  fence-off 2, frost-watch 3, lamplighter 2, line-loom 3, loop-warden 2,
+  mini-crossword 4, mosaic-draft 5, nova-bloom 7.
+- **This is the "looking is part of the job" rule paying for itself.** The exit
+  audit went green on all eleven while nine of them had an unusable control.
+
+## ⛔ IN FLOW, NEVER FLOATED
+
+The control is now a **flex sibling above the heading**, not an absolutely
+positioned corner chip. A centred heading grows toward *both* corners as the
+stage narrows, so a gap measured at one width closes at another and a floated
+control has no layout engine to stop it. In flow, the heading moves down
+instead — at every width, with no arithmetic to get wrong.
+
+The header-band paddings (`#s-title{padding-top:104px}` etc.) that the floated
+version needed are all gone. Nothing replaced them; being in flow is the fix.
+
+## ⛔ These games BOOT INTO THEIR HOW TO PLAY SCREEN, not the title
+
+Measured straight after `load`, `#s-title` is `display:none` and every control
+on it reports **0x0**. On a first run these games open `#s-how` (Bramblewick
+opens `#coach`). Any probe that measures a title screen on these games has to
+walk the first run out of the way first, the way a player does, or it will
+report a perfectly good control as invisible. The player still reaches the exit
+in one tap from the how sheet's own Back.
+
+## Where each control went, and why there
+
+Ten of the eleven share a **scaled 540x960 stage** (`transform:scale(w/540)`),
+so stage px are not rendered px: at 375 wide the scale is x0.694 and the house
+rule of 72 stage px lands at **50 rendered px**. Bramblewick is the exception —
+full-viewport canvas with HTML panels in real CSS px, so 48 there is 48.
+
+| Game | Placement | Why there |
+|---|---|---|
+| bramble-court, bridgevine, line-loom | first child of `#s-title`, above the `.pad` | `.pad` is `flex:1`, so the pad simply shrinks; the centred stack re-centres in what is left. Line Loom is the tight one (~780 of 960 stage px) and still fits with no scroll. |
+| fence-off, frost-watch, lamplighter, loop-warden, mini-crossword, mosaic-draft | first child of `#s-title`, `align-self:flex-start` | These screens are `justify-content:flex-start` columns; the control takes the top-left slot and pushes the wordmark down. Frost Watch is the tallest (~845 stage px: emblem, four modes, a stats row) and still fits at 375x667 without scrolling. |
+| nova-bloom | first child of `#s-title` | `.screen` is `justify-content:center` with a 14px gap, so it joins the top of the centred stack. Restyled to a 6px radius with a sage glow after looking at it: every other button there wears a notched neon frame and a plain rounded chip read as foreign. |
+| bramblewick | first child of the menu `.panel` | A chip pinned to the viewport corner would sit on the panel's rounded corner and the left edge of the logo image, because the panel is `width:min(88vw,420px)` and **centred**. The panel scrolls from the top, so first child = always on screen, no hunting. |
+
+Copy is `← Arcade` / `← Arcade` in caps to match each game's own casing, with
+`aria-label="Back to the arcade"`. `←` (U+2190) is an arrow, not a dash. No dash
+characters in any player-facing string.
+
+**Bottom right avoided everywhere**, per the fab hazard. Worth recording: the
+fab now **actively dodges**, and it was caught relocating to the **top right**
+on Frost Watch and to the **middle right** on Bramblewick, where it sat on the
+stage selector. That is another agent's live work in `/feedback.js` and was not
+touched here. It does mean "the fab is bottom right" is no longer a safe
+assumption for anyone reasoning about placement by arithmetic alone.
+
+## How this was verified
+
+A browser **was** available (`puppeteer` resolves from the repo root; serve the
+**repo root**, not the satellite folder, or `/feedback.js` and `/sunbeam-sdk.js`
+404). Three passes, each watched failing first:
+
+1. **`_exit_audit.mjs`** — watched red on all eleven at baseline, green after.
+   Self test clean. The tool itself was not modified.
+2. **Measure and shoot at 375x667 and 390x844.** Reports the control's rect,
+   whether `elementFromPoint` at its centre returns the control itself, and any
+   overlapping element. This is the pass that caught the CSS comment bug and the
+   boot-into-how-to-play behaviour. Final: every control **96x50 at 375** and
+   **100x52 at 390**, both axes over the 48px floor, `hitIsMe` true everywhere.
+3. **Tap it and see where you land**, on two journeys: arrived from the portal
+   (must `history.back()` to `/portal`) and arrived cold with no referrer (must
+   hard load `https://lucidwinds.com/portal/`, intercepted to observe). Driven
+   by `page.mouse.click()` at the control's centre — **never `el.click()`**,
+   which skips hit testing and passes even when something is sitting on top.
+   Result: **all 11 get home on both journeys.** Negative control: the same
+   script run against still-stranded games reports "no control" and exits 1.
+
+Screens read, not just measured. Three defects were found by opening the images
+rather than by any gate: the CSS comment bug, the boot screen, and the Nova
+Bloom chip speaking the wrong visual language.
+
+## Still open on these eleven
+
+- `mosaic-draft` ships `.btn.sm{min-height:48px}` on a **scaled** stage, i.e.
+  33 rendered px at 375 wide. Pre-existing, out of scope here, but it is a
+  genuine touch-target miss on that game's Wardrobe / How / sound row.
+- Nothing here was screenshotted at desktop width. The Aug 16 build night found
+  two defects that only appeared at desktop while every phone test stayed green.

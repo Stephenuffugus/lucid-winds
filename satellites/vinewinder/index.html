@@ -202,6 +202,7 @@
     <button class="ghostbtn" id="howBtn" style="margin-top:0">How to play</button>
     <div id="goExtra"></div>
     <button class="daily-card" id="dailyCard" style="display:none"></button>
+    <button class="primary" id="quickPlay">Play</button>
     <div class="modes" id="modeRow">
       <button class="mode heirloom" data-mode="heirloom">
         <span class="tag">Classic</span>
@@ -566,8 +567,16 @@
 
   /* ---------- sizing ---------- */
   let cell, W, H, dpr;
+  /* ⛔ MEASURE visualViewport, NEVER innerHeight (studio-wide sweep 2026-07-25).
+     innerHeight includes the strip behind the collapsing URL bar, so a board
+     sized off it is taller than the area the player can actually see and the
+     bottom of the page walks off screen. body is overflow:hidden here, so what
+     walks off is simply unreachable. Headless browsers have no URL bar, so this
+     CANNOT reproduce in automated testing. Do not simplify it back. */
+  function _vvW(){ const vv=window.visualViewport; return (vv&&vv.width)||window.innerWidth||360; }
+  function _vvH(){ const vv=window.visualViewport; return (vv&&vv.height)||window.innerHeight||640; }
   function resize(){
-    const avail = Math.min(window.innerWidth-28, window.innerHeight-260, CONFIG.maxBoardPx);
+    const avail = Math.min(_vvW()-28, _vvH()-260, CONFIG.maxBoardPx);
     cell = Math.max(14, Math.floor(avail/COLS));
     W = cell*COLS; H = cell*ROWS;
     dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -577,6 +586,11 @@
   }
   resize();
   addEventListener('resize', resize);
+  /* the URL bar sliding away fires visualViewport events, NOT window resize */
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', resize);
+    window.visualViewport.addEventListener('scroll', resize);
+  }
 
   /* ---------- state ---------- */
   let modeKey='heirloom', M=MODES.heirloom;
@@ -702,10 +716,16 @@
   }
   function showMenu(){
     ovTitle.textContent='Vinewinder';
-    ovText.textContent='Steer the vine. Eat seeds to grow. Don\'t crash. Pick a garden:';
+    /* ⛔ The menu used to open on a wall of four garden cards plus a shop, a
+       missions button, a daily card and a how-to, with no plain way to just
+       start. A stranger with ninety seconds does not want a menu, they want the
+       snake. Play starts Classic immediately; the gardens are still right
+       underneath for anyone who reads that far. */
+    ovText.textContent='Steer the vine. Eat seeds to grow. Don\'t crash.';
     goExtra.innerHTML='';
     refreshPBs(); updateHeader(); ensureMissions(); renderDaily();
     vwbar.style.display='flex';
+    quickPlay.style.display='inline-block';
     modeRow.style.display='flex';
     metaBtns.style.display='flex';
     $('howBtn').style.display='inline-flex';
@@ -724,6 +744,10 @@
   }
   function startRun(){ activeLayoutKey = (modeKey==='grove') ? LAYOUT_KEYS[(Math.random()*LAYOUT_KEYS.length)|0] : null; beginRun(); }
 
+  const quickPlay=$('quickPlay');
+  quickPlay.addEventListener('click', ()=>{
+    activeDaily=null; modeKey='heirloom'; M=MODES.heirloom; ac(); startRun();
+  });
   modeRow.addEventListener('click', e=>{
     const btn=e.target.closest('.mode');
     if (!btn) return;
@@ -928,6 +952,7 @@
 
     updateHeader();
     dailyCard.style.display='none';
+    quickPlay.style.display='none';
     modeRow.style.display='none';
     metaBtns.style.display='none';
     $('howBtn').style.display='none';
@@ -1289,18 +1314,32 @@
   "use strict";
   var EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=EMBED;
+  /* ⛔ The unframed branch used to be a bare location.href='/portal/'. The
+     portal navigates /satellites/ urls TOP LEVEL, so that IS the branch that
+     runs for every real player, and it threw away the arcade's scroll position
+     and history every time. Canonical pattern (incoming/PORTAL-CONTRACT.md):
+     go back if we came from the portal, otherwise navigate. */
   window.SWS_EXIT=function(){
     if(EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
-    location.href='/portal/';
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.href='https://lucidwinds.com/portal/'; }
   };
   if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  /* ⛔ THE EXIT USED TO DISAPPEAR ON GAME OVER. It was appended to #metaBtns,
+     and gameOver() sets metaBtns.style.display='none' to clear the menu for the
+     result panel. So the one way back to the arcade vanished at exactly the
+     moment a player is most likely to want it, and only came back if they
+     happened to press "Main menu" first. It lives in its own row now, which
+     nothing hides. */
   function addExit(){
-    var mb=document.getElementById('metaBtns');
-    if(!mb||document.getElementById('lwExit'))return;
+    var host=document.getElementById('overlay');
+    if(!host||document.getElementById('lwExitRow'))return;
+    var row=document.createElement('div');
+    row.id='lwExitRow'; row.className='meta-btns'; row.style.marginTop='2px';
     var b=document.createElement('button');
-    b.id='lwExit';b.className='metabtn';b.textContent='← All Games';
+    b.id='lwExit';b.className='metabtn';b.textContent='← Sky Wolf Studios Arcade';
     b.addEventListener('click',function(){window.SWS_EXIT();});
-    mb.appendChild(b);
+    row.appendChild(b); host.appendChild(row);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addExit);else addExit();
   var s=document.createElement('script');
