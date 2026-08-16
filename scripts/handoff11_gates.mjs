@@ -32,11 +32,22 @@ const END = "---- SIM_EXPORT_END ----";
    "one-tap" and "value-per-weight" read as words, not as dashes. */
 const HARD_DASH = /[–—―]|(?<=\s)-(?=\s)/;
 
+/* Strip comments before analysing anything. A file whose header explains
+   "Math.random is banned in this layer" is the most careful file in the build,
+   and the first version of this checker called it a violation for saying so.
+   The fleet service worker audit learned the same lesson in August: read the
+   code, not the prose about the code. */
+function stripComments(s) {
+  return s
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");   // the [^:] keeps http:// intact
+}
+
 function simSlice(src) {
   const a = src.indexOf(START);
   const b = src.indexOf(END);
   if (a < 0 || b < 0 || b <= a) return null;
-  return src.slice(a + START.length, b);
+  return stripComments(src.slice(a + START.length, b));
 }
 
 /* Pull string literals that look like sentences a player would read: quoted
@@ -99,7 +110,9 @@ function checkGame(id, opts = {}) {
     if (stray > 0) fails.push("literal </script> inside a string, split it as '</scr'+'ipt>'");
   }
 
-  for (const s of playerStrings(src)) {
+  /* comments stripped here too: a comment that quotes a loss screen line is
+     not player-facing copy, and flagging it trains people to ignore the gate */
+  for (const s of playerStrings(stripComments(src))) {
     if (HARD_DASH.test(s.text)) {
       fails.push("dash in player copy at line " + lineOf(src, s.index) + ": " + s.text.slice(0, 60));
     } else if (/[a-z]-[a-z]/i.test(s.text)) {
