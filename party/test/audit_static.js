@@ -51,6 +51,16 @@ CAT.forEach(c => {
     fail('FILES', `${c.slug} has a nonsense player count or length`);
 });
 
+/* ⛔ STOP HERE IF A FILE IS MISSING. Every check below reads these files, so
+   carrying on turns a clean "bearing has no player.js" into a node stack trace,
+   and a checker that crashes instead of reporting is not a checker. Found by
+   deliberately renaming a module and watching this script die rather than fail. */
+if (fails.length) {
+  console.log('STATIC: ' + fails.length + ' problems');
+  fails.forEach(f => console.log('  ' + f));
+  process.exit(1);
+}
+
 /* ---------- 2. the bank global a host reads is the one content.js sets ---------- */
 CAT.forEach(c => {
   const host = R(`games/${c.slug}/host.js`);

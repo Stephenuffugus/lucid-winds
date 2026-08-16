@@ -422,6 +422,46 @@ if (live){
   ok('no code path lowers a trick score',
      !/\.s\s*=\s*Math\.max\(0,\s*[^)]*\.s\s*-/.test(SRC) && !/tk\.s\s*--/.test(SRC));
 
+  /* ── the homecoming line ─────────────────────────────────────────────── */
+  const noteEl = live.els.get('roomNote');
+  const seen = new Set();
+  for (let i = 0; i < 60; i++){
+    card.pet.ritual = null;                        // a fresh day, every time
+    card.pet.lastTick = Date.now() - 1000 * 60 * 60 * 6;
+    noteEl.textContent = '';
+    Room.open(card);
+    if (noteEl.textContent) seen.add(noteEl.textContent);
+  }
+  ok('coming back says something', seen.size > 0);
+  ok('the homecoming line is not the same sentence every time', seen.size >= 3, seen.size + ' distinct');
+  ok('no homecoming line carries a dash', ![...seen].some(t => /[–—]|\s-\s/.test(t)), [...seen].join(' | ').slice(0, 120));
+  ok('no homecoming line blames the owner',
+     ![...seen].some(t => /(sorry|neglect|forgot|should have|missed you|abandon|alone|lonely|hungry|starv)/i.test(t)),
+     [...seen].find(t => /(sorry|neglect|forgot|should have|abandon|lonely)/i.test(t)) || '');
+  /* long away and short away must not read the same */
+  card.pet.ritual = null; card.pet.lastTick = Date.now() - 1000 * 60 * 3;
+  noteEl.textContent = ''; Room.open(card);
+  const shortLine = noteEl.textContent;
+  ok('a short trip out still gets a line', !!shortLine, shortLine);
+
+  /* ── serials never repeat, even after a removal ──────────────────────── */
+  if (T.mint){
+    store.set('loaf.v1', '[]');
+    const g = { rarity: 'HOUSE', coat: 'Black', title: 'Household Operative',
+                flavor: 'Refused to comment.',
+                stats: { chonk: 50, mischief: 50, zoomies: 50, floof: 50, charm: 50, void: 50 } };
+    let minted = true;
+    try { T.mint(g, '', null, LOAF.defaultDNA()); T.mint(g, '', null, LOAF.defaultDNA()); }
+    catch (e){ minted = false; ok('mint runs in the shim', false, e.message); }
+    if (minted){
+      const l = Store.read();
+      Store.update(list => list.filter(c => c.serial !== 1));    // owner removes one
+      T.mint(g, '', null, LOAF.defaultDNA());
+      const serials = Store.read().map(c => c.serial);
+      ok('two cats never share a serial', new Set(serials).size === serials.length, serials.join(','));
+    }
+  }
+
   /* ── the shape index counts up only ──────────────────────────────────── */
   ok('shape tallies only increment', !/shapeTally\[[^\]]+\]\s*=\s*[^;]*-\s*1/.test(SRC));
 }

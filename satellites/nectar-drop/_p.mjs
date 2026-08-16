@@ -148,15 +148,16 @@ function boot(source, opts) {
 
 const c = boot(html, { search: '?ndtest=1' });
 const DEV = c.window.ND_DEV;
-for (let i = 0; i < 60; i++) {
-  const lvl = i % DEV.levels.length;
+for (const lvl of [1,15,49]) {
   DEV.start(lvl);
-  const r = DEV.fireAt(((i * 0.37) % 2) - 1);
-  if (!r || r.phase === 'fire') {
-    // keep stepping to find out how long it really takes
-    const st = c.window.ND_DEV.state();
-    let n = 0;
-    while (st.phase === 'fire' && n < 200000) { n++; c.window.ND_DEV.state(); break; }
-    console.log('HUNG i='+i+' level='+lvl+' phase='+r.phase+' balls='+r.balls+' redsLeft='+r.redsLeft+' minX='+r.minX+' maxX='+r.maxX);
-  }
+  const r = DEV.fireAt(((lvl * 0.37) % 2) - 1);
+  const G = DEV.state();
+  // fireAt already burned 4000 physics ticks. keep going manually via ND_DEV.
+  let extra = 0;
+  const phys = () => { const s0 = DEV.state(); return s0.phase; };
+  // there is no exposed single-step, so use fireAt's guard by inspecting ball ages
+  const b = G.balls[0];
+  console.log('L'+lvl, 'phase='+G.phase, 'balls='+G.balls.length,
+    b ? ('age='+b.age+' dist='+Math.round(b.dist)+' wall='+b.wall+' y='+Math.round(b.y)+' vy='+b.vy.toFixed(2)+' vx='+b.vx.toFixed(2)) : '');
+  void extra; void phys;
 }

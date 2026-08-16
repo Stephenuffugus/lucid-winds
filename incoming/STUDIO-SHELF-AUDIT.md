@@ -74,9 +74,16 @@ says **"every game opens straight into play or a one-tap start, no tutorials as 
 through the first 30 seconds of play"**, and for the one person that rule exists to protect,
 the first time visitor, these games do the opposite.
 
-I only looked at two. The question worth answering before the Start Here shelf is decided is
-how many of the shelf candidates open this way, because a stranger deciding whether this studio
-is worth their time is exactly who is reading that wall.
+The most extreme case found so far is **Silt**, which auto-opens "How Silt works" on a cold
+open: an eleven item instruction list that fills the entire screen and ends in a Back button.
+It is genuinely good writing about a genuinely deep toy, and it is also the first and only
+thing a stranger sees. An exit-gap audit separately found that **six of nine games in one batch
+auto-open their how-to sheet on load**, which means the way back to the arcade is two taps away
+before you have played anything.
+
+The question worth answering before the Start Here shelf is decided is how many of the shelf
+candidates open this way, because a stranger deciding whether this studio is worth their time is
+exactly who is reading that wall.
 
 Not a thing to fix blind. Some of these games genuinely need a sentence of setup, and a good
 how to screen beats a confusing first thirty seconds. But it should be a decision per game
