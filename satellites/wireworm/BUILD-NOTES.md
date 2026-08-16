@@ -312,7 +312,7 @@ confirm, 25ms scoring beat, `[30,40,80]` run ending.
 
 ## 10. Defects found by LOOKING, not by gates
 
-The main loop shot the running page and found three things twelve green
+The main loop shot the running page across two passes and found four things the
 assertions did not. Root causes:
 
 1. **HUD mangled.** The combo canvas carries an intrinsic 104x104 and sat inside
@@ -329,6 +329,36 @@ assertions did not. Root causes:
    `#55693e` and thickened from 0.20 to 0.26 of a cell. Energized wire keeps its
    separate identity through brightness, thickness, glow, marching glyph and
    pattern, so the colourblind rule is unaffected.
+4. **The toast covered the buttons.** "Seed link copied." rendered directly on
+   top of WATCH BEST and PLAY AGAIN: tap SHARE, get your confirmation, lose the
+   two controls you most likely want next. The cause was a guessed constant,
+   `bottom: calc(72px + safe-inset)`, which happened to land on the second button
+   row of the death sheet.
+
+   **Fixed structurally, not by nudging the offset.** This is the third game this
+   month to ship something floating over its own controls (a chip over the info
+   button during the storefront work, Deepwell's sticky bar over the daily shaft
+   card, now this), so the rule is in code: `placeToast` measures every visible
+   `button`, `input` and `a` below the header and parks the notice above the
+   highest one, using the toast's real measured height so a two line string moves
+   further up.
+
+   **And it is gated.** The arithmetic lives in `toastTop(vh, hudBottom, toastH,
+   rects)` in the tested layer, not in VIEW, so the harness proves the overlap
+   rule instead of me asserting it: 12 assertions covering the exact death sheet
+   geometry at 390x844, the in play layout with turn pads and footer, a bare
+   screen, a cramped viewport, and a two line toast. One of them asserts that the
+   **old** fixed offset *did* cover a control, so the probe is anchored to the
+   real defect. Four deliberate breaks were watched go red (fixed offset
+   restored, overlap test weakened to compare top edges only, header clamp
+   removed, the 10px gap removed).
+
+   **A fifth break exposed dead code.** "Allow the toast to run off the bottom of
+   the viewport" did **not** fail: `ceiling` can never exceed `vh - 12`, so the
+   viewport clamp I had written was unreachable. I deleted it rather than ship a
+   safeguard no probe can reach, and pinned the degenerate case (a viewport too
+   short for header and toast together) with an explicit assertion. Every
+   remaining line of `toastTop` now has a break that turns it red.
 
 ## 11. Known gaps and the next thing
 

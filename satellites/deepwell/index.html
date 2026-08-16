@@ -60,19 +60,23 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 
 /* ---------- the column: nodes drawn as objects in the rock ---------- */
 /* the bore, drawn inside the gutter so the strip reads as a cut through rock */
-#shaftScroll .bore{position:absolute;left:12px;right:12px;
+/* THE GUTTER HAS TWO LANES and they never share a pixel: the ruler reads down
+   the left in RULER_LANE px, the bore and its markers own everything right of
+   it. Both lane widths are computed in renderShaft from the measured gutter, so
+   the 700px breakpoint that widens --gut cannot desynchronise them. */
+#shaftScroll .bore{position:absolute;
   background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.10) 30%,rgba(0,0,0,.10) 70%,rgba(0,0,0,.55));
   border-left:1px solid rgba(232,220,200,.12);border-right:1px solid rgba(232,220,200,.12)}
 /* seams are LINES only. The band's NAME lives in the HUD where it can be read
    without landing on a button. */
 .strataSeam{position:absolute;left:0;right:0;height:0;border-top:1px solid rgba(232,220,200,.30)}
-.tick{position:absolute;left:0;height:0;border-top:1px solid rgba(232,220,200,.10);width:9px}
-.tick i{position:absolute;left:11px;top:-7px;font-style:normal;font-size:9px;
-  color:rgba(232,220,200,.42);font-variant-numeric:tabular-nums}
+.tick{position:absolute;left:0;height:0;border-top:1px solid rgba(232,220,200,.10);width:5px}
+.tick i{position:absolute;left:0;top:-7px;font-style:normal;font-size:9px;line-height:1;
+  color:rgba(232,220,200,.45);font-variant-numeric:tabular-nums}
 /* a node marker: a shape pinned at its own depth. No prose, it does not fit and
    it is not needed: the node card names where you stand and the DESCEND button
    names what is next. The column's job is the shape and the ore colour. */
-.nmark{position:absolute;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;
+.nmark{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;
   justify-content:center;gap:2px;min-width:26px;height:18px;padding:0 4px;border-radius:9px;
   font-size:10px;line-height:1;white-space:nowrap;
   border:1px solid rgba(232,220,200,.20);background:rgba(8,9,13,.92);color:var(--cream)}
@@ -90,10 +94,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 .nmark:before{content:'';position:absolute;left:-20px;right:-20px;top:50%;height:1px;
   background:rgba(232,220,200,.12);z-index:-1}
 /* the lamp. its reach is the lamp meter, so a dying lamp visibly closes in. */
-#lampGlow{position:absolute;left:0;right:0;pointer-events:none;z-index:1;
-  transition:opacity 300ms linear}
+#lampGlow{position:absolute;pointer-events:none;z-index:1;transition:opacity 300ms linear}
 /* you, at the working face */
-#youMark{position:absolute;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;
+#youMark{position:absolute;transform:translate(-50%,-50%);width:16px;height:16px;
   border-radius:50%;border:2px solid var(--amber);background:rgba(240,167,66,.22);
   box-shadow:0 0 14px rgba(240,167,66,.55);z-index:2}
 #youMark:after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
@@ -2563,6 +2566,11 @@ function renderShaft() {
   var h = sc.clientHeight || sc.parentNode.clientHeight || 600, pxPerM = 6, i, html = '';
   var top = st.depth - h / (2 * pxPerM), bot = top + h / pxPerM;
   var y = function (d) { return (d - top) * pxPerM; };
+  /* two lanes, measured, never overlapping. RULER is wide enough for a four
+     figure depth at 9px; the bore takes the rest and its markers centre on it. */
+  var gw = sc.clientWidth || 64, RULER = 24;
+  var boreL = RULER, boreR = 4, boreW = Math.max(18, gw - boreL - boreR);
+  var boreMid = boreL + boreW / 2;
 
   /* the strata as actual bands of rock, each in its own color, so crossing a
      seam is something you watch happen rather than a word that flashes */
@@ -2573,7 +2581,7 @@ function renderShaft() {
     html += '<div style="position:absolute;left:0;right:0;top:' + y(t0) + 'px;height:' +
             ((t1 - t0) * pxPerM) + 'px;background:' + sb.col + ';opacity:.9"></div>';
   }
-  html += '<div class="bore" style="top:' + Math.max(0, y(0)) + 'px;bottom:0"></div>';
+  html += '<div class="bore" style="left:' + boreL + 'px;width:' + boreW + 'px;top:' + Math.max(0, y(0)) + 'px;bottom:0"></div>';
 
   /* rock lines and a depth ruler every ten meters */
   for (i = Math.max(0, Math.floor(top / 5) * 5); i < bot; i += 5) {
@@ -2614,7 +2622,7 @@ function renderShaft() {
     }
     if (n.used || n.mined) cls += ' spent';
     if (n.heart && lvl === 'full') cls += ' heart';
-    html += '<div class="nmark ' + cls + '" style="top:' + y(n.depth) + 'px">' + body + '</div>';
+    html += '<div class="nmark ' + cls + '" style="left:' + boreMid + 'px;top:' + y(n.depth) + 'px">' + body + '</div>';
   }
   /* the record line, drawn last of the rock so it sits over the seams */
   var rec = G.save.best.depth;
@@ -2624,10 +2632,10 @@ function renderShaft() {
   /* the lamp: a pool of light around you whose radius IS the lamp meter */
   var lampFrac = st.caps.lamp ? Math.max(0, Math.min(1, st.lamp / st.caps.lamp)) : 0;
   var reach = 22 + 120 * lampFrac;
-  html += '<div id="lampGlow" style="top:' + (y(st.depth) - reach) + 'px;height:' + (reach * 2) + 'px;' +
+  html += '<div id="lampGlow" style="left:' + boreL + 'px;width:' + boreW + 'px;top:' + (y(st.depth) - reach) + 'px;height:' + (reach * 2) + 'px;' +
           'opacity:' + (0.20 + 0.55 * lampFrac).toFixed(2) + ';' +
           'background:radial-gradient(ellipse at 50% 50%, rgba(240,167,66,.30) 0%, rgba(240,167,66,.10) 45%, rgba(240,167,66,0) 72%)"></div>';
-  html += '<div id="youMark" style="top:' + y(st.depth) + 'px"></div>';
+  html += '<div id="youMark" style="left:' + boreMid + 'px;top:' + y(st.depth) + 'px"></div>';
   sc.innerHTML = html;
 }
 /* Say the band's name where the player already looks for it. render() is told

@@ -183,18 +183,15 @@ var CONFIG = Object.freeze({
   COST_SEARCH: 1,
   COST_INTERVIEW: 1,
   COST_PRESS: 2,
-  ROOM_SLOTS: 2,
-  MAX_PRESS_MINIMAL: 2,
-  REACH_BOUND: 16,
-  NOISE_MIN: 6,
-  NOISE_MAX: 12,
   MAX_ATTEMPTS: 60,
   PRESS_BIAS: 0.06,
   PRESS_FLOOR: 12,
   STAR3: 8,
   STAR2: 4,
-  MIN_SET_LO: 8,
-  MIN_SET_HI: 14,
+  /* Room slots, press bound, reach bound, noise range and the minimal set band
+     all moved into TIERS below, because they are what a case LENGTH is made of
+     and there are three lengths now. Leaving dead copies here would be an
+     invitation to tune a knob that is not connected to anything. */
   /* Tuned by node sim.js --cases=10000, not by feel. Alibi and sighting are
      the two WEAK clue types (they cut 30 and 18 tuples of 1296); loading the
      pool with those raises the uniqueness rate and the minimal set size at
@@ -2430,6 +2427,7 @@ function suiteCells(T, S) {
 
 function suiteGen(T, S, N) {
   N = N || 200;
+  var STD = S.modeOf("standard", false);
   var rng = S.makeRNG(20260816), i, cs;
   var uniq = 0, retries = 0, sizes = [], motiveOnly = 0, reachBad = 0, textBad = 0;
   var trueOfTruth = 0, poolBad = 0, placeBad = 0, capBad = 0, pressBad = 0, minimalProves = 0;
@@ -2444,14 +2442,14 @@ function suiteGen(T, S, N) {
     if (S.bitsCount(am) === 1 && S.bitsFirst(am) === S.tupleIndex(cs.truth)) minimalProves++;
     sizes.push(cs.minimal.length);
     if (S.isMotiveOnly(mn)) motiveOnly++;
-    if (cs.minActions > S.CONFIG.REACH_BOUND) reachBad++;
+    if (cs.minActions > STD.reach) reachBad++;
     if (S.textSanity(cs).length) textBad++;
     var allTrue = true, j;
     for (j = 0; j < cs.pool.length; j++) if (!S.clueTrueOf(cs.pool[j], cs.truth)) allTrue = false;
     if (allTrue) trueOfTruth++;
     if (cs.pool.length < 30 || cs.pool.length > 60) poolBad++;
-    for (j = 0; j < 6; j++) if (cs.place.rooms[j].length > S.CONFIG.ROOM_SLOTS) capBad++;
-    if (cs.place.pressMinimal.length > S.CONFIG.MAX_PRESS_MINIMAL) pressBad++;
+    for (j = 0; j < 6; j++) if (cs.place.rooms[j].length > STD.roomSlots) capBad++;
+    if (cs.place.pressMinimal.length > STD.press) pressBad++;
     // every minimal clue must actually be placed somewhere findable
     var placed = {}, ids = S.placedClueIds(cs);
     for (j = 0; j < ids.length; j++) placed[ids[j]] = 1;
