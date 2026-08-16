@@ -123,6 +123,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
         <button class="btn sm" id="b-set"><img class="micon" src="assets/ui/icon_gear.png?v=cc1" onerror="this.style.display='none'" alt=""></button>
       </div>
       <button class="btn sm" id="b-install-title">📲 Add to Home Screen</button>
+      <button class="btn ghost sm" id="b-arcade">◄ All Sky Wolf games</button>
     </div>
     <div class="foot" id="buildstamp"></div>
   </div></div>
@@ -204,8 +205,25 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 "use strict";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+/* ===== Sky Wolf Studios embed protocol (canonical, incoming/PORTAL-CONTRACT.md)
+   The portal navigates relative /satellites/ urls TOP LEVEL, so an exit gated on
+   window.parent!==window never renders. This game had no SWS_EXIT of its own at
+   all and leaned entirely on the shared /arcade-exit.js; if that script 404s or
+   is blocked, an installed PWA player has no back gesture and is stranded.
+   arcade-exit.js bails when window.SWS_EXIT already exists, so this replaces it
+   rather than duplicating the button. ===== */
+var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
+window.SWS_EXIT=function(){
+  if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+  if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+  else{ location.replace('https://lucidwinds.com/portal/'); }
+};
+if(SWS_FRAMED){
+  try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+  window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+}
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.5';
+var BUILD='v1.6';
 var TESTMODE=/[?&]sftest=1/.test(location.search);
 
 /* physics constants */
@@ -383,9 +401,18 @@ function saveSet(){ LS.set('sf_set', JSON.stringify(SET)); }
 
 /* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
-  try{ var k='sw_sb_seedflutter'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
-    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
-    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  /* 2026-08-16: the bucket WRITE is the cap. If setItem throws (private mode,
+     quota) the old code swallowed it and the day bucket silently never advanced,
+     so the 30/day cap reset on every single run. Skip the earn instead of
+     granting it uncapped — a swallowed write must not look like a success. */
+  try{ var k='sw_sb_seedflutter'; var s=null; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    if(!s||typeof s!=='object'||(typeof s.n!=='undefined'&&typeof s.n!=='number')) s={};
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    var want=Math.min(n,Math.max(0,30-(s.n||0))); if(want<=0)return 0;
+    s.n=(s.n||0)+want; localStorage.setItem(k,JSON.stringify(s));
+    var back=JSON.parse(localStorage.getItem(k)||'null');
+    if(!back||back.n!==s.n) return 0;   // write did not land: do not pay
+    granted=want; }catch(e){ return 0; }
   if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
 
 /* ---------- save / economy ---------- */
@@ -394,8 +421,68 @@ var PROG={ bestDist:0, bestGauntlet:0, streak:0, lastDaily:'', dailyDone:'', blo
 // Stardust coins — the local cosmetic currency (uncapped; earned every run).
 function addCoins(n){ if(n<=0)return; PROG.coins=(PROG.coins||0)+Math.round(n); }
 function runCoins(){ return Math.max(1, Math.round(G.gaps*0.35) + Math.round((G.perfects||0)*0.5)); }   // 7/17 Stephen: was ~4x too generous (a skin per run) — now a cheap skin ≈ 4-5 good runs, premium ≈ 12-15
-(function(){ try{ var s=JSON.parse(LS.get('seedflutter_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.blooms)PROG.blooms=[]; if(!PROG.owned)PROG.owned={}; })();
-function save(){ try{ LS.set('seedflutter_save', JSON.stringify(PROG)); }catch(e){} }
+/* ── SAVE VALIDATION (2026-08-16 audit, defect class 3) ─────────────────────
+   A try/catch around JSON.parse is NOT validation: `{"blooms":5}` parses fine,
+   5 is truthy so the old `if(!PROG.blooms)` guard passed, and then
+   PROG.blooms.push() threw INSIDE endRun() — the run froze on the death
+   animation and never reached results. `{"owned":7}` threw on a primitive
+   because this file is "use strict". `{"blooms":{}}` rendered a blank Sky Map
+   with no message at all. Every field is now type-checked on the way in. */
+var SAVE_KEY='seedflutter_save';
+function _num(v,d){ v=(typeof v==='string')?parseFloat(v):v;
+  return (typeof v==='number'&&isFinite(v))?v:d; }
+function _int(v,d){ var n=_num(v,NaN); return isFinite(n)?Math.round(n):d; }
+function _str(v,d){ return (typeof v==='string')?v:d; }
+function _arrNum(v,cap){ if(Object.prototype.toString.call(v)!=='[object Array]') return [];
+  var out=[]; for(var i=0;i<v.length;i++){ var n=_num(v[i],NaN); if(isFinite(n)) out.push(n>>>0); }
+  return cap&&out.length>cap ? out.slice(-cap) : out; }
+function _ownedMap(v){ var out={};
+  if(!v||typeof v!=='object'||Object.prototype.toString.call(v)==='[object Array]') return out;
+  for(var k in v){ if(v.hasOwnProperty(k)&&v[k]) out[k]=1; }
+  return out; }
+function _readSave(){
+  var raw=null; try{ raw=LS.get(SAVE_KEY); }catch(e){}
+  var s=null; try{ s=raw?JSON.parse(raw):null; }catch(e){ s=null; }
+  if(!s||typeof s!=='object'||Object.prototype.toString.call(s)==='[object Array]') s={};
+  return { bestDist:_int(s.bestDist,0), bestGauntlet:_int(s.bestGauntlet,0),
+    streak:_int(s.streak,0), lastDaily:_str(s.lastDaily,''), dailyDone:_str(s.dailyDone,''),
+    blooms:_arrNum(s.blooms,240), grewTotal:_int(s.grewTotal,0),
+    seed:_int(s.seed,0), trail:_int(s.trail,0), comp:_int(s.comp,0),
+    owned:_ownedMap(s.owned), coins:Math.max(0,_int(s.coins,0)) };
+}
+(function(){ var v=_readSave(); for(var k in v){ if(v.hasOwnProperty(k)) PROG[k]=v[k]; } })();
+/* ── TWO-TAB MERGE (defect class 4) ────────────────────────────────────────
+   save() used to stringify a boot snapshot wholesale, so whichever tab wrote
+   last erased the other's coins, keepsakes and purchases. Counters ADD, bests
+   MAX, the keepsake list and the owned set UNION. Equipped cosmetic ids stay
+   last-write, because a preference is not a counter. */
+var _base=null;
+(function(){ _base={ coins:PROG.coins, bloomN:PROG.blooms.length, grewTotal:PROG.grewTotal }; })();
+function save(){
+  try{
+    var disk=_readSave();
+    var mine=PROG;
+    var merged={
+      bestDist:Math.max(disk.bestDist, _int(mine.bestDist,0)),
+      bestGauntlet:Math.max(disk.bestGauntlet, _int(mine.bestGauntlet,0)),
+      /* streak is NOT a best — a broken streak must be allowed to fall back to 1.
+         Whichever record cleared a daily most recently owns the streak value. */
+      streak:((mine.lastDaily||'')>=(disk.lastDaily||''))?_int(mine.streak,0):disk.streak,
+      lastDaily:((mine.lastDaily||'')>=(disk.lastDaily||''))?(mine.lastDaily||''):disk.lastDaily,
+      dailyDone:mine.dailyDone||disk.dailyDone,
+      grewTotal:disk.grewTotal + Math.max(0, _int(mine.grewTotal,0)-_base.grewTotal),
+      coins:Math.max(0, disk.coins + (Math.max(0,_int(mine.coins,0)) - _base.coins)),
+      seed:_int(mine.seed,0), trail:_int(mine.trail,0), comp:_int(mine.comp,0),
+      blooms:disk.blooms.concat(mine.blooms.slice(_base.bloomN)),
+      owned:disk.owned
+    };
+    if(merged.blooms.length>240) merged.blooms=merged.blooms.slice(-240);
+    for(var k in mine.owned){ if(mine.owned.hasOwnProperty(k)&&mine.owned[k]) merged.owned[k]=1; }
+    LS.set(SAVE_KEY, JSON.stringify(merged));
+    for(var j in merged){ if(merged.hasOwnProperty(j)) PROG[j]=merged[j]; }
+    _base={ coins:PROG.coins, bloomN:PROG.blooms.length, grewTotal:PROG.grewTotal };
+  }catch(e){}
+}
 
 /* cosmetics (no lootbox, KNOWN thresholds) */
 var SEEDS=[
@@ -968,13 +1055,27 @@ function drawFlower(g, cx, cy, sc, seed){ // keepsake STAR (works on main + offs
   g.fillStyle='#ffe9a8'; g.beginPath(); g.arc(0,0,5,0,6.2832); g.fill();
   g.restore();
 }
-var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
+/* 48px is a RENDERED-pixel rule (studio rule 11). This stage is 540x960 and is
+   transform-scaled to the phone: at 375x667 the scale is 0.694, so the old 48px
+   boxes landed at 33px under the thumb — and the left one is the only way out of
+   a run without dying. 70 stage px = 48.6 rendered px at that scale. */
+var HB_MENU={x:6,y:6,w:70,h:70}, HB_RETRY={x:VW-76,y:6,w:70,h:70};
 function drawHUD(sea){
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 17px system-ui';
-  ctx.fillText(G.course?('◆ '+G.gaps+' / '+G.course.length):('◆ '+G.gaps), 64, 30);
+  ctx.fillText(G.course?('◆ '+G.gaps+' / '+G.course.length):('◆ '+G.gaps), 84, 32);
   ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='700 13px system-ui';
-  ctx.fillText(G.course?('DAILY #'+dayNum()+' · '+sea.nm):(sea.nm+(G.mode==='gauntlet'?(' · leg '+(G.leg+1)):'')), VW-64, 24);
-  if(G.combo>0){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 20px system-ui'; ctx.fillText('Bloomstreak '+G.combo, VW/2, 56); }
+  ctx.fillText(G.course?('DAILY #'+dayNum()+' · '+sea.nm):(sea.nm+(G.mode==='gauntlet'?(' · leg '+(G.leg+1)):'')), VW-84, 26);
+  if(G.combo>0){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 20px system-ui'; ctx.fillText('Bloomstreak '+G.combo, VW/2, 100); }
+  /* First-run coach (2026-08-16). The Perfect band IS the scoring system — the
+     cosmetic economy, the keepsake stars and the star rating all hang off
+     bestCombo — and nothing on the play surface ever said so. The title ribbon
+     and the How screen do not count: the player is looking at the canvas. Six
+     gaps, then it gets out of the way for good. */
+  if(G.mode!=='zen' && G.gaps<6 && G.combo===0 && G.phase==='play'){
+    ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,0.88)'; ctx.font='700 18px system-ui';
+    if(!G.started) ctx.fillText('Tap to flap', VW/2, VH*0.30);
+    else ctx.fillText('Thread the star in the middle for a Perfect', VW/2, 100);
+  }
   hudBtn(HB_MENU,'‹','ui/icon_menu'); hudBtn(HB_RETRY,'↻','ui/icon_retry');
 }
 function hudBtn(b,glyph,sp){ var im=sp?_spr(sp):null;
@@ -1085,6 +1186,7 @@ tap('go-retry',function(){ sfx('ui'); startGame(G?G.mode:'drift'); });
 tap('go-grove',function(){ sfx('ui'); renderGrove(); show('s-grove'); });
 tap('go-home',function(){ sfx('ui'); show('s-title'); });
 tap('go-share',function(){ sfx('ui'); shareIt(); });
+tap('b-arcade',function(){ sfx('ui'); if(window.SWS_EXIT) window.SWS_EXIT(); });
 function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-haze','haze');

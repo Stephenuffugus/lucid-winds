@@ -1223,36 +1223,132 @@ var SAVE = { coins:0, prog:{}, skins:{seed_burr:1, sling_oak:1}, equip:{seed:'se
   set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0, seenStory:0,
   fert:0, nutrientCap:8, seeds:{}, grafts:{}, compOwned:{}, bonds:{},
   loadout:{ nutrients:{n:0,p:0,k:0}, companions:[], satchel:[] } };
-function loadSave(){
-  try{ var s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){
-    SAVE.coins=s.coins||0; SAVE.prog=s.prog||{}; SAVE.skins=s.skins||{seed_burr:1,sling_oak:1};
-    SAVE.equip=s.equip||{seed:'seed_burr',sling:'sling_oak'};
-    SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0; SAVE.seenStory=s.seenStory||0;
-    SAVE.fert=s.fert||0; SAVE.nutrientCap=s.nutrientCap||8; SAVE.seeds=s.seeds||{}; SAVE.grafts=s.grafts||{};
-    SAVE.compOwned=s.compOwned||{}; SAVE.bonds=s.bonds||{}; SAVE.expBest=s.expBest||0;
-    if(s.loadout){ SAVE.loadout=s.loadout;
-      if(!SAVE.loadout.nutrients) SAVE.loadout.nutrients={n:0,p:0,k:0};
-      if(!SAVE.loadout.companions) SAVE.loadout.companions=[];
-      if(!SAVE.loadout.satchel) SAVE.loadout.satchel=[]; }
-    if(!SAVE.skins.seed_burr) SAVE.skins.seed_burr=1;
-    if(!SAVE.skins.sling_oak) SAVE.skins.sling_oak=1;
-    if(!SAVE.equip.seed) SAVE.equip.seed='seed_burr';
-    if(!SAVE.equip.sling) SAVE.equip.sling='sling_oak';
-  } else {
-    // first-ever run: default reduced-motion from the OS accessibility preference
-    try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) SAVE.set.reduce=1; }catch(e){}
-  }}catch(e){}
+/* ---- shape guards ------------------------------------------------------
+   A try/catch around JSON.parse is NOT validation: anything that merely
+   parses is truthy, and the crash then lands later inside a click handler.
+   A wrong-shaped save used to lock EVERY patch (levelStars returned
+   undefined, so isLevelUnlocked was false everywhere) and poison totalStars
+   into NaN, which silently killed the loadout steppers. Every field now
+   degrades to its default on its own, so one bad key cannot take the
+   campaign down. ------------------------------------------------------- */
+function _num(x,d){ if(typeof x==='string')x=parseFloat(x);
+  return (typeof x==='number'&&isFinite(x))?x:(d||0); }
+function _obj(x){ return (x&&typeof x==='object'&&Object.prototype.toString.call(x)!=='[object Array]')?x:null; }
+function _isArr(x){ return Object.prototype.toString.call(x)==='[object Array]'; }
+/* {levelKey: {stars 0-3, score >=0}} */
+function _cleanProg(src){
+  var out={}, o=_obj(src), k, r; if(!o) return out;
+  for(k in o){ if(!o.hasOwnProperty(k))continue; r=_obj(o[k]); if(!r)continue;
+    out[k]={ stars:clamp(Math.round(_num(r.stars,0)),0,3), score:Math.max(0,Math.round(_num(r.score,0))) }; }
+  return out;
 }
-function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }
-function levelStars(n){ var p=SAVE.prog[n]; return p?p.stars:0; }
-function levelBest(n){ var p=SAVE.prog[n]; return p?p.score:0; }
+/* {id: number} with a value ceiling; ids must be strings we could have written */
+function _cleanMap(src, maxv){
+  var out={}, o=_obj(src), k, val; if(!o) return out;
+  for(k in o){ if(!o.hasOwnProperty(k))continue; if(k.length>40)continue;
+    val=Math.max(0, Math.round(_num(o[k],0))); if(maxv!=null)val=Math.min(val,maxv);
+    if(val>0) out[k]=val; }
+  return out;
+}
+/* array of known ids only (an unknown id renders as undefined and crashes a card) */
+function _cleanIds(src, known, cap){
+  var out=[], i; if(!_isArr(src)) return out;
+  for(i=0;i<src.length && out.length<(cap||12);i++){
+    if(typeof src[i]==='string' && known(src[i]) && out.indexOf(src[i])<0) out.push(src[i]); }
+  return out;
+}
+function _knownSeed(id){ return !!seedCat(id); }
+function _knownComp(id){ return !!compCat(id); }
+
+function loadSave(){
+  var s=null;
+  try{ s=_obj(JSON.parse(localStorage.getItem(SAVE_KEY)||'null')); }catch(e){ s=null; }
+  if(!s){
+    // first-ever run (or unreadable save): default reduced-motion from the OS preference
+    try{ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) SAVE.set.reduce=1; }catch(e){}
+    _base.coins=0; _base.fert=0;
+    return;
+  }
+  SAVE.coins=Math.max(0,Math.round(_num(s.coins,0)));
+  SAVE.fert =Math.max(0,Math.round(_num(s.fert,0)));
+  SAVE.prog =_cleanProg(s.prog);
+  SAVE.skins=_cleanMap(s.skins,1); SAVE.skins.seed_burr=1; SAVE.skins.sling_oak=1;
+  SAVE.seeds=_cleanMap(s.seeds,1);
+  SAVE.grafts=_cleanMap(s.grafts,9);
+  SAVE.compOwned=_cleanMap(s.compOwned,1);
+  SAVE.bonds=_cleanMap(s.bonds,9999);
+  SAVE.lossPaid=_cleanMap(s.lossPaid,1);
+  SAVE.endlessBest=Math.max(0,Math.round(_num(s.endlessBest,0)));
+  SAVE.expBest=Math.max(0,Math.round(_num(s.expBest,0)));
+  SAVE.seenStory=_num(s.seenStory,0)?1:0;
+  SAVE.sawPan=_num(s.sawPan,0)?1:0;
+  var eq=_obj(s.equip)||{};
+  SAVE.equip={ seed:(typeof eq.seed==='string'&&eq.seed)||'seed_burr',
+               sling:(typeof eq.sling==='string'&&eq.sling)||'sling_oak' };
+  var st=_obj(s.set)||{};
+  SAVE.set={ sound:_num(st.sound,1)?1:0, shake:_num(st.shake,1)?1:0,
+             guide:_num(st.guide,1)?1:0, reduce:_num(st.reduce,0)?1:0 };
+  var lo=_obj(s.loadout)||{}, nut=_obj(lo.nutrients)||{};
+  SAVE.loadout={
+    nutrients:{ n:Math.max(0,Math.round(_num(nut.n,0))), p:Math.max(0,Math.round(_num(nut.p,0))), k:Math.max(0,Math.round(_num(nut.k,0))) },
+    companions:_cleanIds(lo.companions,_knownComp,3),
+    satchel:_cleanIds(lo.satchel,_knownSeed,12) };
+  _base.coins=SAVE.coins; _base.fert=SAVE.fert;
+}
+
+/* ---- persist: MERGE, never clobber -------------------------------------
+   A wholesale write from a boot snapshot means two tabs erase each other.
+   Counters apply THIS tab's delta on top of whatever is on disk, bests take
+   the MAX, owned sets union, preferences are last-write-wins (they are
+   preferences, not progress). ------------------------------------------ */
+var _base={coins:0,fert:0};
+function _mergeMax(mine, disk, maxv){
+  var d=_cleanMap(disk,maxv), k;
+  for(k in d){ if(d.hasOwnProperty(k) && (!mine[k] || d[k]>mine[k])) mine[k]=d[k]; }
+  return mine;
+}
+function persist(){
+  try{
+    var raw=null, disk=null;
+    try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
+    if(raw){ try{ disk=_obj(JSON.parse(raw)); }catch(e){ disk=null; } }
+    if(disk){
+      // counters: disk value + what this tab earned/spent since its own last write
+      SAVE.coins=Math.max(0, Math.round(_num(disk.coins,0) + (SAVE.coins-_base.coins)));
+      SAVE.fert =Math.max(0, Math.round(_num(disk.fert ,0) + (SAVE.fert -_base.fert )));
+      // bests
+      SAVE.endlessBest=Math.max(SAVE.endlessBest, Math.round(_num(disk.endlessBest,0)));
+      SAVE.expBest    =Math.max(SAVE.expBest    , Math.round(_num(disk.expBest,0)));
+      if(_num(disk.seenStory,0)) SAVE.seenStory=1;
+      if(_num(disk.sawPan,0)) SAVE.sawPan=1;
+      // per-level: stars and score both take the MAX
+      var dp=_cleanProg(disk.prog), k;
+      for(k in dp){ if(!dp.hasOwnProperty(k))continue;
+        var mine=SAVE.prog[k]||{stars:0,score:0};
+        SAVE.prog[k]={ stars:Math.max(mine.stars,dp[k].stars), score:Math.max(mine.score,dp[k].score) }; }
+      // owned sets union / bond counters take the max
+      _mergeMax(SAVE.skins, disk.skins, 1);
+      _mergeMax(SAVE.seeds, disk.seeds, 1);
+      _mergeMax(SAVE.grafts, disk.grafts, 9);
+      _mergeMax(SAVE.compOwned, disk.compOwned, 1);
+      _mergeMax(SAVE.bonds, disk.bonds, 9999);
+      SAVE.lossPaid=SAVE.lossPaid||{}; _mergeMax(SAVE.lossPaid, disk.lossPaid, 1);
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE));
+    _base.coins=SAVE.coins; _base.fert=SAVE.fert;
+  }catch(e){}
+}
+function levelStars(n){ var p=_obj(SAVE.prog[n]); return p?Math.max(0,_num(p.stars,0)):0; }
+function levelBest(n){ var p=_obj(SAVE.prog[n]); return p?Math.max(0,_num(p.score,0)):0; }
 function recordLevel(n,stars,score){
   var p=SAVE.prog[n]||{stars:0,score:0}; var gained=0;
   if(stars>p.stars){ gained=stars-p.stars; p.stars=stars; }
   if(score>p.score) p.score=score;
   SAVE.prog[n]=p; persist(); return gained; /* new stars earned this clear */
 }
-function totalStars(){ var t=0; for(var k in SAVE.prog) if(SAVE.prog.hasOwnProperty(k)) t+=SAVE.prog[k].stars; return t; }
+function totalStars(){ var t=0, p=_obj(SAVE.prog); if(!p) return 0;
+  for(var k in p) if(p.hasOwnProperty(k)) t+=levelStars(k);
+  return isFinite(t)?t:0; }   /* never NaN: nutCap/compSlots/bringSlots all divide by this */
 
 /* ================================================================
    SUNBEAM EARN  (30/day cap; credits the shared-origin vault)
@@ -2487,6 +2583,11 @@ function updateRotateHint(){ var el=document.getElementById('rotate'); if(!el) r
 function enterLevel(n){ var lv=levelByN(n); if(!lv) return; _endless=false; _curLevelN=n; openLoadout(n); }
 function beginFort(n){
   var lv=levelByN(n); if(!lv) return;
+  /* the ONE door into a campaign fort. An expedition that survived any other
+     route out of a run would hand this fort the run loadout, and winLevel()
+     would route the clear into expWinFort() — a cleared patch paying no stars
+     and dumping the player into a draft. Close it here, once, for every path. */
+  if(_expedition) abandonExpedition();
   _endless=false; _curLevelN=n;
   startLevel(lv);
   _playing=true; _paused=false;

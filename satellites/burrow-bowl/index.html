@@ -20,6 +20,12 @@
 <meta name="twitter:title" content="Burrow Bowl">
 <meta name="twitter:description" content="Night garden skee ball. Flick the dewball up the wooden lane and drop it home in the burrow rings. The corner hundreds are waiting.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/burrow-bowl/thumb.png">
+
+<!-- 2026-08-16 audit: this was MISSING. Without it window.Sunbeam is undefined, so every
+     _sbCapEarn() call burned the local 30/day bucket for this game and paid out nothing,
+     silently, forever. The earn calls themselves were already correct. -->
+<script src="/sunbeam-sdk.js?v=7"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"burrow-bowl"}).catch(function(){});</script>
 <style>
 :root{
   --bg:#05070a; --night:#0b1018; --panel:#0c1119; --line:#26314a;
@@ -283,30 +289,97 @@ function tap(id,fn){ var el=$(id); if(!el) return;
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
-function jGet(k,d){ try{ var v=JSON.parse(lsGet(k,'null')); return v||d; }catch(e){ return d; } }
+/* 2026-08-16 audit. jGet used to be `JSON.parse(...) || d`, which is not validation:
+   5, "x", [] and {} all parse and are all truthy. Under "use strict" a number in
+   bb_stats made STATS.rounds++ THROW inside endRound(), after phase was already
+   'idle' — a dead board with no button on it and no way out but a reload. Every
+   load site now shape checks, so a corrupt save boots clean. */
+function isObj(v){ return !!v && typeof v==='object' && !(v instanceof Array); }
+function num(v,d){ return (typeof v==='number' && isFinite(v)) ? v : d; }
+function jGet(k,d,ok){ try{ var v=JSON.parse(lsGet(k,'null'));
+  if(v===null||typeof v==='undefined') return d;
+  if(ok && !ok(v)) return d;
+  return v; }catch(e){ return d; } }
 function jSet(k,v){ lsSet(k, JSON.stringify(v)); }
+function numLoad(k){ var v=parseInt(lsGet(k,'0'),10); return (isFinite(v)&&v>0)?v:0; }
 
 var K_BEST='bb_best', K_STATS='bb_stats', K_DAILY='bb_daily',
-    K_DAILYBEST='bb_daily_best', K_MOM='bb_moments', K_SET='bb_set', K_TIX='bb_tickets';
+    K_DAILYBEST='bb_daily_best', K_MOM='bb_moments', K_SET='bb_set', K_TIX='bb_tickets',
+    K_RESUME='bb_resume';
 
-var SET = jGet(K_SET, null);
-if(!SET){
-  var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  SET = { sound:1, motion: prefersReduced?0:1, contrast:0 };
-}
+var _rawSet = jGet(K_SET, null, isObj);
+var _prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var SET = {
+  sound:   _rawSet ? (_rawSet.sound?1:0)   : 1,
+  motion:  _rawSet ? (_rawSet.motion?1:0)  : (_prefersReduced?0:1),
+  contrast:_rawSet ? (_rawSet.contrast?1:0): 0
+};
 function saveSet(){ jSet(K_SET, SET); }
 
-var STATS = jGet(K_STATS, { rounds:0, hundreds:0, gutters:0, totalScore:0 });
-var MOM   = jGet(K_MOM,   { first_hundred:0, r300_date:'', daily_date:'' });
-var BEST  = parseInt(lsGet(K_BEST,'0'),10)||0;
-var DAILYBEST = parseInt(lsGet(K_DAILYBEST,'0'),10)||0;
-var TIX   = parseInt(lsGet(K_TIX,'0'),10)||0;
+function normStats(s){ s=isObj(s)?s:{};
+  return { rounds:num(s.rounds,0), hundreds:num(s.hundreds,0),
+           gutters:num(s.gutters,0), totalScore:num(s.totalScore,0) }; }
+function normMom(m){ m=isObj(m)?m:{};
+  return { first_hundred:m.first_hundred?1:0,
+           r300_date:(typeof m.r300_date==='string')?m.r300_date:'',
+           daily_date:(typeof m.daily_date==='string')?m.daily_date:'' }; }
+var STATS = normStats(jGet(K_STATS, null, isObj));
+var MOM   = normMom(jGet(K_MOM, null, isObj));
+var BEST  = numLoad(K_BEST);
+var DAILYBEST = numLoad(K_DAILYBEST);
+var TIX   = numLoad(K_TIX);
+
+/* Two tabs used to clobber each other: everything above is read once at boot and
+   was written back wholesale, so the tab that finished last erased the other tab's
+   rounds AND its tickets, which are the trophy currency. Counters now ADD their own
+   round's delta onto the freshest copy on disk, and bests MAX. */
+var RD = { rounds:0, hundreds:0, gutters:0, totalScore:0 };   /* this round only */
+function commitStats(){
+  var disk=normStats(jGet(K_STATS,null,isObj));
+  disk.rounds+=RD.rounds; disk.hundreds+=RD.hundreds;
+  disk.gutters+=RD.gutters; disk.totalScore+=RD.totalScore;
+  STATS=disk; jSet(K_STATS,STATS);
+  RD={ rounds:0, hundreds:0, gutters:0, totalScore:0 };
+}
+function commitTix(add){ var disk=numLoad(K_TIX); TIX=disk+add; lsSet(K_TIX,String(TIX)); return disk; }
+function commitBest(k,score){ var disk=numLoad(k);
+  if(score>disk){ lsSet(k,String(score)); return {v:score, isNew:true}; }
+  return {v:disk, isNew:false}; }
+/* the moments are three one time flags; a stale wholesale write could un-fire one,
+   so they union: the flag ORs and the dates take the later of the two */
+function commitMom(){
+  var disk=normMom(jGet(K_MOM,null,isObj));
+  MOM.first_hundred = (MOM.first_hundred||disk.first_hundred) ? 1 : 0;
+  if(disk.r300_date>MOM.r300_date)   MOM.r300_date=disk.r300_date;
+  if(disk.daily_date>MOM.daily_date) MOM.daily_date=disk.daily_date;
+  jSet(K_MOM,MOM);
+}
 
 function dayKey(){ var d=new Date();
   return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function daySeed(){ var d=new Date();
   return ((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())*2654435761)>>>0; }
-function dailyState(){ var s=jGet(K_DAILY,null); if(!s||s.date!==dayKey()) return null; return s; }
+function dailyState(){ var s=jGet(K_DAILY,null,isObj); if(!s||s.date!==dayKey()) return null;
+  return { date:s.date, score:num(s.score,0), started:!!s.started, done:!!s.done }; }
+/* A reload used to burn the day's lane for nothing: newRound() marks the daily
+   spent the instant it is racked (correct, it stops a bad first ball being
+   rerolled) but the round itself was never persisted, so coming back showed
+   "rolled tonight, you scored 0" and the day's content was simply gone.
+   The live round is now saved after every ball and resumed exactly where it
+   stopped, which closes the lockout without opening the reroll. */
+function saveResume(){
+  if(G.mode!=='daily'||G.phase==='idle') return;
+  jSet(K_RESUME,{ date:dayKey(), ball:G.ball, ballsLeft:G.ballsLeft, score:G.score,
+                  shots:G.shots.slice(0), hundreds:G.hundreds });
+}
+function loadResume(){
+  var r=jGet(K_RESUME,null,isObj);
+  if(!r||r.date!==dayKey()||!(r.shots instanceof Array)) return null;
+  if(num(r.ballsLeft,0)<=0) return null;
+  return { ball:num(r.ball,1), ballsLeft:num(r.ballsLeft,9), score:num(r.score,0),
+           shots:r.shots.slice(0,9), hundreds:num(r.hundreds,0) };
+}
+function clearResume(){ lsDel(K_RESUME); }
 
 /* ------------------------------------------------------------ earn moments */
 /* Host hears them only when embedded; sunbeams ride _sbCapEarn (30/day cap,
@@ -1345,15 +1418,29 @@ if(/[?&]bb_test=1(&|$)/.test(location.search) || lsGet('bb_test','')==='1'){
 })();
 </script>
 <script>
-/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md).
+   2026-08-16 audit: the clamp used to live inside the try, so when localStorage
+   throws (private window) the catch swallowed it and the ORIGINAL unclamped n was
+   handed to Sunbeam.earn. The cap now decides outside the try, and a storage
+   failure blocks the earn instead of uncapping it. */
 window._sbCapEarn=function(n,tag){
+  var stored=false, pay=0;
   try{ var k='sw_sb_'+((location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}).pop())||'game');
-    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
-    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
-    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
-    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
-  }catch(e){}
-  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+    var s=null; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    if(!s||typeof s!=='object'||s instanceof Array) s={};
+    var d=Math.floor(Date.now()/864e5);
+    if(s.d!==d||typeof s.n!=='number'||!isFinite(s.n)) s={d:d,n:0};
+    pay=Math.min(n, Math.max(0, 30-s.n));
+    if(pay<=0) return 0;
+    s.n=s.n+pay; localStorage.setItem(k,JSON.stringify(s)); stored=true;
+  }catch(e){ stored=false; }
+  if(!stored) return 0;
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(pay,tag).catch(function(){});
+  else if(!window._sbWarned){ window._sbWarned=1;
+    /* never let a missing SDK be silent again — this exact gap paid out zero for
+       the whole life of this game before the 2026-08-16 audit */
+    try{ console.warn('[burrow-bowl] sunbeam-sdk missing, '+pay+' sunbeams could not be sent'); }catch(e2){} }
+  return pay;
 };
 </script>
 </body>
