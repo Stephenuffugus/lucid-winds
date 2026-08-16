@@ -282,40 +282,41 @@ const CHECKS = [
 
 { name: 'AI difficulty is real and monotonic (Rookie < Pro < Ace < Legend)',
   async run(page) {
-    // a scripted PERFECT player mirrors the ball exactly. Measure how many clean
-    // returns the AI makes before it concedes. If the ladder were decoration the
-    // four numbers would not separate.
+    // Measured against a HANDICAPPED bot, not an oracle. Rally length stopped
+    // being a useful instrument once sudden death started truncating long
+    // rallies on purpose, so the metric is now what a player actually feels:
+    // how many points the machine takes off a mediocre opponent per minute.
+    // A bot that reads the ball 9 frames late and misjudges it by 30px is about
+    // as good as a distracted human.
     const r = await page.evaluate(() => {
       const out = {};
       for (const d of ['easy', 'normal', 'hard', 'expert']) {
-        let total = 0, pts = 0;
-        for (let trial = 0; trial < 4; trial++) {
-          window.__PONG.start('classic', { diff: d, target: 99 });
-          const g = window.__PONG.game;
-          const pp = g.playerPaddle();
-          pp.maxSpeed = 1e6;                      // perfect player: never the bottleneck
-          const before = g.scores.p;
-          let rally = 0, n = 0;
-          while (g.scores.p === before && n < 6000) {
+        let aiPts = 0, pPts = 0;
+        for (let trial = 0; trial < 3; trial++) {
+          window.__PONG.start('classic', { diff: d, target: 999 });
+          const g = window.__PONG.game, pp = g.playerPaddle();
+          const hist = [];
+          for (let n = 0; n < 12000; n++) {                 // 100 simulated seconds
             const b = g.balls.find(x => !x.dead);
-            if (b) { pp.setTargetFromPoint(b.x, b.y); pp.off = pp.target; }
-            const r0 = g.rally; window.__PONG.step(1); n++;
-            if (g.rally > r0) rally = g.rally;
+            if (b) hist.push(b.y); if (hist.length > 9) hist.shift();
+            const seen = hist[0];
+            if (seen != null) pp.setTargetFromPoint(0, seen + (Math.sin(n * 0.11) * 30));
+            window.__PONG.step(1);
           }
-          total += rally; pts++;
+          aiPts += g.scores.ai; pPts += g.scores.p;
         }
-        out[d] = +(total / pts).toFixed(1);
+        // SHARE of points, not points per minute: a stronger CPU also makes
+        // rallies longer, so a rate metric conflates "wins more" with "lasts
+        // longer" and reads the ladder backwards.
+        out[d] = +(aiPts / Math.max(1, aiPts + pPts)).toFixed(3);
       }
       return out;
     });
     const seq = [r.easy, r.normal, r.hard, r.expert];
     const mono = seq[0] < seq[1] && seq[1] < seq[2] && seq[2] < seq[3];
-    return { ok: mono, detail: `returns before conceding: ${JSON.stringify(r)}` };
+    return { ok: mono, detail: `CPU points per minute off a handicapped player: ${JSON.stringify(r)}` };
   },
-  break: `window.__PONG.DIFF.easy.padFrac=window.__PONG.DIFF.normal.padFrac=window.__PONG.DIFF.hard.padFrac=window.__PONG.DIFF.expert.padFrac=0.92;
-          window.__PONG.DIFF.easy.errPx=window.__PONG.DIFF.normal.errPx=window.__PONG.DIFF.hard.errPx=window.__PONG.DIFF.expert.errPx=28;
-          window.__PONG.DIFF.easy.pred=window.__PONG.DIFF.normal.pred=window.__PONG.DIFF.hard.pred=window.__PONG.DIFF.expert.pred=0.58;
-          window.__PONG.DIFF.easy.reactMs=window.__PONG.DIFF.normal.reactMs=window.__PONG.DIFF.hard.reactMs=window.__PONG.DIFF.expert.reactMs=0.21;` },
+  break: `['easy','normal','hard','expert'].forEach(function(k){ Object.assign(window.__PONG.DIFF[k], window.__PONG.DIFF.normal); });` },
 
 { name: 'every Career level is winnable, and the ladder is a slope not a cliff',
   async run(page) {
