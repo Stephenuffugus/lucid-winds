@@ -2067,6 +2067,7 @@ function tEnemy(s, type, cell, hpOverride, still) {
     shield: def.shield || 0, saps: !!def.saps, sapped: false,
     heal: def.heal || 0, healRange: def.healRange || 0,
     wallSmash: !!def.wallSmash, boss: !!def.boss,
+    rally: def.rally || 0, unsnareable: !!def.unsnareable,
     burns: [], holdT: 0, dead: false
   };
   s.enemies.push(e);
@@ -2694,7 +2695,12 @@ SUITES.push(function () {
   for (ci = CONFIG.BUILD_MIN_CELL; ci <= CONFIG.BUILD_MAX_CELL; ci++) { full.traps[ci] = null; placeTrap(full, ci, 'spike'); }
   TEST.eq('twenty eight cells is the whole board', (function () { var n = 0, i2; for (i2 = 0; i2 < CONFIG.LANE; i2++) if (full.traps[i2]) n++; return n; })(), 28);
   botReinforce(full, [{ type: 'spike', zone: 0 }]);
-  TEST.ok('a saturated lane still drinks the purse dry', full.scrap < TRAPS.spike.cost);
+  TEST.eq('a saturated lane takes the purse into depth instead', (function () { var n = 0, i2; for (i2 = 0; i2 < CONFIG.LANE; i2++) if (full.traps[i2] && full.traps[i2].lvl === CONFIG.REINFORCE_MAX) n++; return n; })(), 28);
+  /* honest bound: a board of 28 cheap traps CAN be maxed out inside a campaign
+     purse, and past that only repairs take money. 28 x 3 x 30 is 2520 of the
+     3320 a campaign pays, so the residue is small and the sweep measures the
+     real worst case at 56 scrap. */
+  TEST.ok('reinforcing a full board costs three boards', 3000 - full.scrap >= 28 * 2 * TRAPS.spike.cost);
   TEST.eq('nothing can be placed on a full board', canPlace(full, 14, 'spike'), false);
 });
 
@@ -2867,7 +2873,11 @@ SUITES.push(function () {
   var r = runCampaign({ seed: 2, bot: botActive, loadout: [{ type: 'ballista', zone: 1 }, { type: 'spike', zone: 3 }] });
   var sum = 0;
   r.rows.forEach(function (row) { if (row) sum += row.dmg.player; });
-  TEST.eq('the per wave cards add up to the run total', sum, r.state.run.dmg.player);
+  /* rows hold the waves that were HELD. The wave the gate fell on never gets a
+     card, so the cards plus the wave in progress are the run. */
+  TEST.eq('the per wave cards plus the wave that fell are the run total',
+    sum + r.state.waveStats.dmg.player, r.state.run.dmg.player);
+  TEST.ok('a card never claims more than the run did', sum <= r.state.run.dmg.player);
   var last = r.rows[r.rows.length - 1];
   TEST.near('a per wave card share matches a fresh computation', damageShare(last.dmg).player,
     last.dmg.player / (function () { var t = 0, k; for (k in last.dmg) t += last.dmg[k]; return t; })(), 0.00001);

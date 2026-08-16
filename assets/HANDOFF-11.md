@@ -582,16 +582,36 @@ portal `FEATURED` array as `beta:true`. LAST CALL was parked by Stephen before t
 and was never started. Deploy commit `e8dfd0cd`, verified live by grepping production HTML for a
 content marker rather than trusting a 200.
 
+A second DEEPENING pass ran the same evening (see `incoming/STUDIO-SHELF-AUDIT.md` and each game's
+BUILD-NOTES). Assertion counts below show first ship, then after deepening.
+
 | Game | Status | Assertions | Balance verdict |
 |---|---|---|---|
-| DEEPWELL | SHIPPED | 229 / 0 failed | 5 of 7 bounds hit, 2 missed and reported |
+| DEEPWELL | SHIPPED | 229 → **308** / 0 failed | 5 of 7 bounds → **6 of 7**, last one proved unreachable |
 | BLACKOUT | SHIPPED | 253 / 0 failed | 10,000 cases, 100% unique, 0.01% retry |
 | PARALLEL | SHIPPED | 140 / 0 failed | 60 of 60 levels BFS verified, tier slope +6.54 |
-| WIREWORM | SHIPPED | 205 / 0 failed | 2 bands missed low, reported not tuned |
+| WIREWORM | SHIPPED | 205 → **252** / 0 failed | overload playstyle measured for the first time and proved real |
 | SIEGE OF ONE | SHIPPED | 193 / 0 failed | all 7 sweep gates green |
 | LAST CALL | NOT STARTED | n/a | parked by the Director |
 
-**1,020 assertions, zero failing.** Every suite runs headless: `node satellites/<id>/sim.js --test`.
+**Every suite runs headless:** `node satellites/<id>/sim.js --test`.
+
+### The deepening pass overturned two of this document's own conclusions
+
+1. **DEEPWELL's own first report named the wrong fix.** It said the missed cautious-versus-optimal
+   bound came from the pack filling before the air gets frightening, and to sweep `PACK_BASE` from
+   40 down to about 28. A 105 point CONFIG override grid shows the opposite: shrinking the pack
+   moves the ratio the WRONG way (61.5% at 40, 70.8% at 24), because optimal's air gate binds first
+   so its mean bank does not move by a single cash across the whole range, while a smaller pack
+   makes *cautious* richer. `ASCENT_WEIGHT_DIV` 20 → 12 is what actually moved it. **Bound now hit
+   at 40.8%.**
+2. **§3.7's ~25 runs to full clear is arithmetically impossible, and the sweep prints the proof.**
+   28 upgrade levels at the cheapest ladder any exponent can produce is 2,400 cash, so 25 runs
+   requires banking 96 every run from the first, against a measured beginner mean of 36. The
+   deeper finding underneath it: **a full kit earns a cautious digger only 2% more than no kit at
+   all** (an optimal digger gets 87%), because §3.8's own "turn at 60% air" rule spends a fixed
+   fraction of the tank while the caution gate prices a full pack, and the two cancel exactly. No
+   repricing fixes that meter while the median player plays Cautious. Director call.
 
 ### Spec numbers that turned out wrong under simulation
 

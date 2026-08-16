@@ -238,14 +238,17 @@ minimize pass removes walls that keep the solution at the same length.
 | 3 | 13 | 163 | 12.5 | 1.4 | 14 | 25 | 18.7 |
 | 4 | 13 | 137 | 10.5 | 6.7 | 20 | 34 | 24.9 |
 | 5 | 12 | 767 | **63.9** | 10.4 | 30 | 49 | 34.8 |
+| 6 | 20 | 1838 | **91.9** | 32.9 | 34 | 50 | 40.7 |
+| 7 | 20 | 6744 | **337.2** | 191.2 | 40 | 54 | 43.8 |
 
-Total 18.9s for all 60. **Yield was the named schedule risk and it did not
-materialise**: tier 5 needed 63.9 attempts per accept against a 2000 budget, so
-the wall density ranges were never loosened and no acceptance gate was touched.
+Total 245s for all 100. **Yield was the named schedule risk and it did not
+materialise**: the worst tier needed 337 attempts per accept against a 2000
+budget, so the wall density ranges were never loosened and no acceptance gate
+was touched.
 
-Tier vs solution length line fit slope **+6.54** (must be > 0).
+Tier vs solution length line fit slope **+6.35** (must be > 0).
 
-## Verification table (all 60, from `--verify`)
+## Verification table (all 100, from `--verify`)
 
 Every level: BFS solves it, fresh BFS length equals the embedded par, greedy
 agent fails, a desync moment exists, codec round trips, band respected.
@@ -257,8 +260,10 @@ agent fails, a desync moment exists, codec round trips, band respected.
 | 3 | 13 | [14,26] | 14 | 25 | 18.7 |
 | 4 | 13 | [20,36] | 20 | 34 | 24.9 |
 | 5 | 12 | [30,55] | 30 | 49 | 34.8 |
+| 6 | 20 | [34,58] | 34 | 50 | 40.7 |
+| 7 | 20 | [40,61] | 40 | 54 | 43.8 |
 
-BFS states explored per level range from ~200 (tier 1) to ~73k (tier 4/5).
+BFS states explored per level range from ~200 (tier 1) to ~250k (tier 7).
 `node sim.js --watch=N` dumps ASCII frames of any level solving itself.
 
 ## Gates I watched FAIL first
@@ -337,33 +342,40 @@ Reported by the main loop after reading screenshots at 390x844 and 1280x800:
 ## Touch targets (rendered px at 375x667)
 
 Grid cells are never touch targets. Controls: the four pad buttons are
-`clamp(62px,13vh,118px)` tall and one quarter of the app width each
-(~86px at 375), so **86 x 86 minimum**. Header, restart, sheet close and toggle
-buttons are all `min-width:48px; min-height:48px`. Win card buttons `min-height:48px`.
-Level select stars carry a transparent hit circle of **54px rendered** diameter
-on a 390 wide sheet (r=24 in a 320x900 viewBox), over the visible 6 to 11px
-star. The constellation was spread over a taller scrolling sky to make room.
-Neighbour spacing inside a cluster is 33 to 40px, so adjacent hit circles
-overlap and the later star in DOM order (the higher level number) wins a tap in
-the overlap. Target size law is met; mis tap risk between neighbours remains.
+`var(--padh)` tall, budgeted at run time between 62 and 190px and measured by
+`pagecheck.js` at 98 to 170px across five viewports, one quarter of the app
+width each (~86px at 375), so **86 x 98 minimum**. Header, restart, sheet close
+and toggle buttons are all `min-width:48px; min-height:48px`. Win card buttons,
+ribbon chips, run log rows, the level card WATCH button and the install nudge
+are all `min-height:48px`.
+
+**Level select stars: fixed.** Each star carries a transparent hit circle of
+r=24 in a viewBox sized in CSS pixels, so it is **48px across on every device**,
+and the layout guarantees at least 48px between any two star centres. The
+harness measures the true minimum pairwise distance at nine widths and three
+campaign sizes; worst case is **52.0px at 300px wide**. Adjacent hit circles can
+touch but can no longer overlap, so the mis tap is gone.
 
 ## Known gaps
 
-1. **No browser has run this.** I was instructed not to run puppeteer (five
-   agents on a 2 core box). Everything above is node verified plus a desk check
-   of the layout maths. The `?test=1` panel, the audio graph, touch handling and
-   the constellation SVG have not been seen in a real browser by me.
-2. **Level select stars now hit 54px but overlap their neighbours** (33 to 40px
-   apart). A numbered grid fallback beside the constellation would remove the
-   mis tap risk entirely.
-3. Phone vertical slack ~214px below the board, inherent to a square board in
-   portrait at 390px. Would need a landscape layout or a non square board to fix.
-4. No install nudge after first clear (CRAFT E) and no last 10 runs history
-   screen (CRAFT C). Stats are collected, just not surfaced.
-5. Icons are referenced but not created here (main loop owns all five).
-6. No Sunbeam earn wiring, per the handoff11 deviation list.
+1. **No browser has run this.** I was instructed not to run puppeteer (eight
+   agents on a 2 core box). `pagecheck.js` boots the real script against a DOM
+   stub and drives the whole view, which catches dead wiring, exceptions and
+   layout maths, but it cannot see colour, contrast, overlap or a seam that
+   reads wrong. **The LOOKING pass at 390x844 and 1280x800 is still owed**, and
+   should include the run log sheet, the sky scrolled to the deep tiers, and the
+   two seam lines while the pair is 3 or more cells out of mirror.
+2. The daily and seed levels are generated on the main thread (about 0.2 to 2s
+   for tier 4). It has always been that way and it is behind a 400ms timeout at
+   boot, but on a slow phone it is a visible hitch. A worker would fix it.
+3. Undo was considered and left out. It is the obvious quality of life feature
+   for a puzzle game, but it interacts with par stars and the whole star economy,
+   so it is a Director call rather than a deepening pass call.
+4. Icons are referenced but not created here (main loop owns all five).
+5. No Sunbeam earn wiring, per the handoff11 deviation list.
 
 ## Next thing
 
-Run it in a real browser at 390x844 and 1280x800, confirm the seam and the board
-fill read as intended, then fix the level select star hit area to 48px.
+Open it on a phone. Everything below the board changed and only a person can
+say whether the level card, the ribbon and a 157px pad read as generous or as
+padding. Then look at the sky at tier 7, where 100 stars now live.

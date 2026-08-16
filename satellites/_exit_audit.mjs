@@ -245,25 +245,37 @@ function auditOne(id, names) {
     const alt = callSites(all, ref.owner);
     if (alt.length) { calls = alt; calledAs = ref.owner; }
   }
-
-  if (!ref.ok) {
-    fails.push(ref.missing[0] === 'any recognisable exit body'
-      ? 'no exit anywhere in the source (nothing posts sws:close, nothing navigates to /portal)'
-      : 'the exit has no working unframed path, missing: ' + ref.missing.join(', '));
+  // ...or the exit is not a named function at all, it IS the handler:
+  //     $('b-back1').onclick = function(){ location.href='/portal/'; };
+  // Fox & Basket does exactly this. It is a real, tappable way home, so calling
+  // that player "stranded" would be the same crying wolf in a new costume.
+  // (5th false positive class found while validating this file.)
+  let inlineHandler = false;
+  if (!calls.length) {
+    inlineHandler = exitBodies(all).some(b =>
+      /onclick|addEventListener|\.on[a-z]+\s*=|\bwire\s*\(|\btap\s*\(|\bbind\s*\(/i
+        .test(b.win.slice(0, b.off + 120)));
   }
-  if (!calls.length) fails.push('nothing calls the exit (no button, no handler, no hit test)');
-  if (!assigned) {
-    const msg = 'window.SWS_EXIT is never assigned (a top level function or const is NOT a window property)';
-    if (ref.ok && calls.length) notes.push(msg + ' — exit works, but off contract');
-    else fails.push(msg);
-  }
+  const reachable = calls.length > 0 || inlineHandler;
 
+  const noExitAtAll = ref.missing[0] === 'any recognisable exit body';
   const injector = loadsSharedInjector(all);
+
+  // STRANDED is the only thing that actually hurts a player: no reachable way
+  // home in the source AND no runtime injector.
+  if (noExitAtAll) fails.push('no exit anywhere in the source (nothing posts sws:close, nothing navigates to /portal)');
+  else if (!reachable) fails.push('an exit is defined but NOTHING calls it (no button, no handler, no hit test)');
+
+  // Everything below is a contract gap, not a stranding.
+  if (!noExitAtAll && reachable) {
+    if (!ref.ok) notes.push('exit reaches the portal but skips the referrer path, missing: ' + ref.missing.join(', '));
+    if (!assigned) notes.push('not bound to window.SWS_EXIT' + (calledAs !== 'SWS_EXIT' ? ` (it is "${calledAs}")` : ''));
+  }
+
   let state;
-  if (fails.length === 0 && notes.length === 0) state = 'PASS';
-  else if (fails.length === 0) state = 'NAMING';
-  else if (injector) state = 'GRAFT';
-  else state = 'FAIL';
+  if (fails.length) state = injector ? 'GRAFT' : 'FAIL';
+  else if (notes.length) state = 'PARTIAL';
+  else state = 'PASS';
 
   return { id, names, state, fails, notes, calls, calledAs, ready: hasReady(all), injector, via: ref.via };
 }
@@ -348,15 +360,15 @@ console.log('These load TOP LEVEL, never framed, so a framed-only exit is invisi
 
 const results = ids.map(id => auditOne(id, carded.get(id) || ['(not carded)']));
 const by = s => results.filter(r => r.state === s);
-const passed = by('PASS'), naming = by('NAMING'), grafted = by('GRAFT'), failed = by('FAIL');
+const passed = by('PASS'), partial = by('PARTIAL'), grafted = by('GRAFT'), failed = by('FAIL');
 
-console.log('PASS   = the game owns a working exit on window.SWS_EXIT.');
-console.log('NAMING = a working exit, but not bound to window.SWS_EXIT. The player');
-console.log('         gets home; the portal contract is not met.');
-console.log('GRAFT  = no exit of its own, but it loads /arcade-exit.js, which injects');
-console.log('         one at runtime. Not stranded, but generic and placed by guess.');
-console.log('FAIL   = no exit in the source and no injector. The browser back button');
-console.log('         is the only way out, and an installed PWA has no back button.\n');
+console.log('PASS    = a reachable exit on window.SWS_EXIT with the full referrer path.');
+console.log('PARTIAL = a reachable way home, but off contract (wrong name, or it skips');
+console.log('          the referrer path and so throws away the back stack).');
+console.log('GRAFT   = nothing of its own, but it loads /arcade-exit.js, which injects');
+console.log('          an exit at runtime. Not stranded; generic and placed by guess.');
+console.log('FAIL    = STRANDED. No reachable exit and no injector. The browser back');
+console.log('          button is the only way out, and an installed PWA has none.\n');
 
 for (const r of results) {
   console.log(`${r.state.padEnd(6)} ${r.id}${r.names[0] === r.id ? '' : `  (${r.names.join(', ')})`}`);
