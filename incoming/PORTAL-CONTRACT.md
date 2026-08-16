@@ -4,9 +4,31 @@ Every fact below was read from `portal/index.html` and
 `satellites/flock-the-world/index.html` on 2026-08-16, not from any brief.
 (The old NEW_SATELLITE_BRIEF.md is STALE — never build to it.)
 
+> **CORRECTION 2026-08-16 (build session, verified by driving the real
+> portal).** The section below said every arcade card is framed. It is not.
+> The portal's delegated click handler frames only two url shapes:
+> `/play/<id>.html` (srcdoc shell) and `https://stephenuffugus.github.io/...`
+> (iframe src). **Anything else — including a relative `/satellites/<id>/`
+> url — falls through the handler and NAVIGATES TOP LEVEL.** There is no
+> iframe and therefore no black-screen recovery timer for those.
+>
+> Consequences, all confirmed against a running portal:
+> - `/satellites/flock-the-world/` and `/satellites/bandits-box/` are
+>   top-level navigations, not frames. The `{sws:'ready'}` handshake is not
+>   required for them (it is still worth shipping: it costs nothing and is
+>   correct the day a card moves to a github.io url).
+> - An exit affordance must therefore work off `document.referrer`, not just
+>   `window.parent`. The canonical block below already does both.
+> - `beta:true` renders `data-indev="1"`, which puts the card behind the
+>   tester dev gate (`localStorage.sws_dev_ok='1'`). Automated checks must
+>   unlock it or the click never reaches the card.
+>
+> The framed contract below still applies verbatim to github.io satellites
+> and `/play/` games. Read the two sections with that split in mind.
+
 ## Two different shelves, two different contracts
 
-### 1. Game cards (the arcade grid) — FRAMED
+### 1. Game cards (the arcade grid) — FRAMED ONLY FOR /play/ AND github.io
 
 - Arrays: `FEATURED` (portal/index.html ~651) and `GAMES` (~945).
 - Schema: `{nm:"Name", ds:"One sentence.", url:"/satellites/<id>/?v=YYYYMMDDx",
@@ -67,9 +89,15 @@ Contract details that matter:
 
 | Project | Shelf | Frame? | Bridge? |
 |---|---|---|---|
-| Bandit's Box | GAMES card, beta:true (it's a toy you play) | yes | full embed protocol |
+| Bandit's Box | FEATURED card, beta:true (it's a toy you play) | **no — top level**, see correction | protocol shipped anyway; the referrer-based exit is what actually runs |
 | Hush | Free Apps app-card at `/hush/` (it's a utility) | no | none |
 | Marblebeat | inside PadLab — no new portal entry; PadLab's existing Free Apps card copy gains a word about beats-as-marbles | no | n/a |
+
+Shelf choice still follows the rule (interactive toy → arcade grid, utility →
+Free Apps); it is only the framing that differs from the original note.
+**Both shelves currently navigate top level for in-repo paths** — the
+practical difference is which grid the thing appears in, plus the dev gate
+that comes with `beta:true` on an arcade card.
 
 Clean rule for the future: interactive toy → arcade grid (framed, protocol);
 utility app → Free Apps (direct, no protocol).
