@@ -148,13 +148,24 @@
 
   /* ---- 2. Sky Wolf embed protocol (same-origin loads top-level, so SWS_EXIT
              navigates to the portal; if ever framed it posts close instead) ---- */
-  var SWS_EMBED = /[?&]embed=1(&|$)/.test(location.search);
+  /* ⛔ Framing is detected DIRECTLY, not from ?embed=1. The portal only frames
+     /play/*.html and github.io urls, so this card always arrives as a top level
+     navigation and the embed flag is never set — gating the handshake on it
+     meant the ready post never fired in any real configuration. And the exit
+     now walks the referrer instead of hard loading /portal/, so coming back
+     from a game does not pile a new entry onto the history stack every time. */
+  var SWS_EMBED = false;
+  try{ SWS_EMBED = window.parent !== window; }catch(e){ SWS_EMBED = true; }
   window.SWS_EMBED = SWS_EMBED;
   window.SWS_EXIT = function(){
-    if(SWS_EMBED && parent !== window){ try{ parent.postMessage({sws:"close"}, "*"); }catch(e){} return; }
-    location.href = "/portal/";
+    if(SWS_EMBED){ try{ parent.postMessage({sws:"close"}, "*"); }catch(e){} return; }
+    if(document.referrer.indexOf("/portal") >= 0 && history.length > 1){ history.back(); }
+    else{ location.replace("https://lucidwinds.com/portal/"); }
   };
-  if(SWS_EMBED && parent !== window){ try{ parent.postMessage({sws:"ready"}, "*"); }catch(e){} }
+  if(SWS_EMBED){
+    try{ parent.postMessage({sws:"ready"}, "*"); }catch(e){}
+    window.addEventListener("load", function(){ try{ parent.postMessage({sws:"ready"}, "*"); }catch(e){} });
+  }
 
   /* ---- 3. Sunbeam earn bridge ----------------------------------------------
      Sky Wolf earn standard (set 2026-07-03): 30/day/game (=1 plant), run cap 12,

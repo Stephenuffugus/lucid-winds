@@ -406,8 +406,16 @@ function tierOf(n){
    HIT_R can ever overlap. The first sixty shipped with stars 33 to 40px apart
    and 54px hit circles, which meant the higher level number quietly won a tap
    in the overlap. That is the defect this function exists to kill. */
-var SKY = { padL:30, padR:22, padT:30, padB:34, rowGap:52, tierGap:26,
-            colGap:52, hitR:24, minSep:48, jitX:2, jitY:2, phase:4 };
+/* The jitter budget is the whole trick. Rows are ROW_GAP apart and stars in a
+   row are at least COL_GAP apart, so each star can wander by half the slack
+   over the 48px law in each axis and the guarantee still holds: rowGap 60 with
+   5px of wander is 50px apart at worst, colGap 60 with 6px is 50px at worst.
+   Drawn at 2px of wander it looked like a spreadsheet with tier headings. */
+   The side padding has to clear the HIT RADIUS plus the wander, not just the
+   drawn star, or the outermost circle in a row hangs off the edge of the SVG
+   and loses part of its 48px. */
+var SKY = { padL:38, padR:32, padT:34, padB:26, rowGap:60, tierGap:30,
+            colGap:60, hitR:24, minSep:48, jitX:6, jitY:5, phase:7 };
 function skyLayout(count, widthPx, seedIn){
   var W = Math.max(300, Math.min(560, Math.round(widthPx || 360)));
   var rng = makeRNG((seedIn || 0xC0FFEE) >>> 0);
@@ -433,9 +441,10 @@ function skyLayout(count, widthPx, seedIn){
       }
       y += SKY.rowGap;
     }
-    y += SKY.tierGap;
+    if (hi < count) y += SKY.tierGap;      /* no trailing gap after the last tier */
   }
-  return { w:W, h:Math.round(y + SKY.padB), perRow:perRow, r:SKY.hitR, pts:pts, labels:labels };
+  return { w:W, h:Math.round(y - SKY.rowGap + SKY.hitR + SKY.padB),
+           perRow:perRow, r:SKY.hitR, pts:pts, labels:labels };
 }
 function skyMinSep(layout){
   var i, j, best = Infinity, p = layout.pts;

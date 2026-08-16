@@ -77,6 +77,15 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
   border:1px solid var(--line); background:rgba(16,16,26,0.7); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
+/* the way home, on the TITLE screen only. The portal opens this card as a top
+   level navigation, so nothing outside the page offers a way back. Top left of
+   the title is empty; the play chrome (#b-home and the canvas) lives on #s-play
+   and can never collide with it. */
+.swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
+  min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
+  background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
+  letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
+.swsback:active{filter:brightness(1.35)}
 .go-score{font-size:58px; font-weight:800; color:var(--hot); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#1c1c2c; border:1px solid var(--line); color:var(--hot); font-weight:800; font-size:13px; margin-top:8px}
@@ -89,7 +98,9 @@ h2.sc-h{font-size:24px; color:var(--hot); font-weight:800; margin-bottom:4px}
   <canvas id="game" width="540" height="960"></canvas>
 
   <!-- TITLE -->
-  <div class="screen center on" id="s-title"><div class="pad center">
+  <div class="screen center on" id="s-title">
+    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade">&#8249; Back to the arcade</button>
+    <div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word">MERGE &amp; BLAST</div>
     <div class="title-sub">Sky Wolf Studios</div>
@@ -543,10 +554,25 @@ $('buildstamp').textContent='Merge & Blast '+BUILD+' · level '+(PROG.level+1)+'
   });
 })();
 
-/* embedded-in-portal back handshake */
+/* ---------- Sky Wolf Studios embed protocol ----------
+   ⛔ The portal FRAMES only /play/*.html and github.io urls. This game is carded
+   as a relative /satellites/ url, so it opens as a TOP LEVEL navigation with no
+   portal chrome around it. An exit gated on window.parent would never render,
+   leaving the browser back button as the only road home (and an installed PWA
+   has no back button at all). */
 (function(){
-  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
-  if(SWS_EMBED&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EXIT=function(){
+    if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(framed){
+    try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
+  var b=document.getElementById('sws-back');
+  if(b) b.addEventListener('click',function(){ window.SWS_EXIT(); });
 })();
 
 fit(); paintTitle();

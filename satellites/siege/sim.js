@@ -248,8 +248,8 @@ function sweep() {
   /* ---- the three defect measurements, over the top 40 builds ---- */
   var stranded = 0, strandedAt = '', idleWorst = 0, idleAt = '', emptyWorst = 0, emptyAt = '';
   var emptyTop = 0, emptyTopAt = '';
-  var earlySum = 0, earlyN = 0;
-  activeRows.slice(0, 40).forEach(function (row, ri) {
+  var earlySum = 0, earlyN = 0, early5Sum = 0, early5N = 0;
+  activeRows.forEach(function (row, ri) {
     row.rows.forEach(function (wr) {
       if (!wr) return;
       var sh = SIM.damageShare(wr.dmg);
@@ -275,11 +275,16 @@ function sweep() {
       if (wr.idleMax > idleWorst) {
         idleWorst = wr.idleMax; idleAt = row.lo.key + ' zones ' + row.lo.zoneKey + ' wave ' + wr.wave;
       }
-      /* DEFECT 2: the build phase has to earn its twenty seconds */
-      if (wr.wave <= 5 && sh.total > 0) { earlySum += sh.traps; earlyN++; }
+      /* DEFECT 2: the build phase has to earn its twenty seconds. Waves 1 and
+         2 are the whole question: that is where the purse is thinnest and
+         where the predecessor measured the player doing everything. Waves 3
+         onward are reported, not gated. */
+      if (wr.wave <= 2 && sh.total > 0) { earlySum += sh.traps; earlyN++; }
+      if (wr.wave <= 5 && sh.total > 0) { early5Sum += sh.traps; early5N++; }
     });
   });
   var earlyTrapShare = earlyN ? earlySum / earlyN : 0;
+  var early5TrapShare = early5N ? early5Sum / early5N : 0;
 
   console.log('GATES');
   var gates = [];
@@ -308,8 +313,9 @@ function sweep() {
     'longest empty lane ' + (emptyTop * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyTopAt || 'none') +
     '); worst across 40 builds ' + (emptyWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's (' + (emptyAt || 'none') +
     '); longest with nothing in reach ' + (idleWorst * CONFIG.TICK_MS / 1000).toFixed(1) + 's'));
-  gates.push(gate('the build phase earns its 20 seconds: traps do 25 percent by wave 5', earlyTrapShare >= 0.25,
-    'mean trap damage share over waves 1 to 5 ' + pct(earlyTrapShare) + ' across ' + earlyN + ' waves'));
+  gates.push(gate('the build phase earns its 20 seconds: traps do 28 percent on waves 1 and 2', earlyTrapShare >= 0.28,
+    'mean trap damage share on waves 1 and 2 ' + pct(earlyTrapShare) + ' across ' + earlyN + ' waves; ' +
+    'waves 1 to 5 ' + pct(early5TrapShare)));
 
   var failed = gates.filter(function (g) { return !g.ok; });
   console.log('');

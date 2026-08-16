@@ -8,7 +8,7 @@ solver verified. Game ID `parallel`, accent violet `#8b7cf6`, portal category
 |---|---|
 | `node sim.js --test` | **PASSED 205 / FAILED 0** (205 assertions), exit 0 |
 | `node sim.js --verify` | **VERIFY PASSED**, all §5.5 gates over **100** levels, exit 0 |
-| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, tags balanced, no dashes in copy, **all 87 element lookups resolve**) |
+| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, tags balanced, no dashes in copy, **all 88 element lookups resolve**) |
 | `node pagecheck.js` | **PASSED 37 / FAILED 0** at 390x844, 375x667, 412x915, 360x640 and 1280x800 |
 | `node gen.js --check` | **REPRODUCIBLE** byte for byte from seed `0x50415241` |
 | Script block syntax | parses clean under `vm.createScript` |

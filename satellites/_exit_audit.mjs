@@ -252,9 +252,14 @@ function auditOne(id, names) {
   // (5th false positive class found while validating this file.)
   let inlineHandler = false;
   if (!calls.length) {
+    // TIGHT window on purpose. At 900 chars this matched any unrelated
+    // addEventListener that happened to sit near the exit, and it waved
+    // Tempo Grove through — a game whose SWS_EXIT is defined and never called.
+    // A false negative is as bad as a false positive; 200 chars is about the
+    // span of one handler.
     inlineHandler = exitBodies(all).some(b =>
       /onclick|addEventListener|\.on[a-z]+\s*=|\bwire\s*\(|\btap\s*\(|\bbind\s*\(/i
-        .test(b.win.slice(0, b.off + 120)));
+        .test(b.win.slice(Math.max(0, b.off - 200), b.off + 120)));
   }
   const reachable = calls.length > 0 || inlineHandler;
 
@@ -375,7 +380,7 @@ for (const r of results) {
   for (const f of r.fails || []) console.log(`         ${f}`);
   for (const n of r.notes || []) console.log(`         ${n}`);
   if (r.state === 'GRAFT') console.log('         mitigated by /arcade-exit.js at runtime');
-  if (verbose && (r.state === 'PASS' || r.state === 'NAMING')) {
+  if (verbose && (r.state === 'PASS' || r.state === 'PARTIAL')) {
     if (r.via) console.log(`         referrer test reached through the var "${r.via}"`);
     if (r.calledAs !== 'SWS_EXIT') console.log(`         called as "${r.calledAs}"`);
     for (const c of r.calls.slice(0, 2)) console.log(`         line ${c.line}: ${c.snippet}`);
@@ -383,9 +388,9 @@ for (const r of results) {
   }
 }
 
-console.log(`\n${results.length} audited: ${passed.length} PASS, ${naming.length} NAMING, ${grafted.length} GRAFT, ${failed.length} FAIL.`);
-console.log(`Players can get home from ${passed.length + naming.length + grafted.length} of ${results.length}.`);
-if (failed.length) console.log(`\nSTRANDED (no exit, no injector) — ${failed.length}:\n  ${failed.map(r => r.id).join(', ')}`);
-if (naming.length) console.log(`\nOFF CONTRACT (works, wrong name) — ${naming.length}:\n  ${naming.map(r => r.id).join(', ')}`);
+console.log(`\n${results.length} audited: ${passed.length} PASS, ${partial.length} PARTIAL, ${grafted.length} GRAFT, ${failed.length} STRANDED.`);
+console.log(`Players can get home from ${results.length - failed.length} of ${results.length}.`);
+if (failed.length) console.log(`\nSTRANDED (no reachable exit, no injector) — ${failed.length}:\n  ${failed.map(r => r.id).join(', ')}`);
+if (partial.length) console.log(`\nOFF CONTRACT (works, but not to spec) — ${partial.length}:\n  ${partial.map(r => r.id).join(', ')}`);
 if (grafted.length) console.log(`\nINJECTOR ONLY — ${grafted.length}:\n  ${grafted.map(r => r.id).join(', ')}`);
 process.exit(failed.length ? 1 : 0);
