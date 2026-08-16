@@ -659,7 +659,7 @@
 /* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
 var FEATURED = [
   {nm:"Lucid Winds", ds:"The flagship garden where 66 mini games grow living, one of a kind plant art.", url:"https://lucidwinds.com/?from=portal", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
-  {nm:"Tomato Man", ds:"Dash from shadow to shadow gathering aloe before the deadly sun burns you up.", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
+  {nm:"Tomato Man", ds:"Dash from shadow to shadow gathering aloe before the deadly sun burns you up.", cat:"action", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   // Abduct a Chameleon: backend-free standalone (localStorage only, no Firestore).
   // Own WebSocket relay for multiplayer (separate Node host; game finds it via
   // same-origin /ws or ?mp=wss://…). Hosted on GitHub Pages; iframes like the
@@ -667,7 +667,7 @@ var FEATURED = [
   // final copy to be confirmed against the live site (was still deploying when
   // wired 2026-07-20). No _G/earn hooks by design — a postMessage earn bridge
   // is available later if the director wants portal rewards wired in.
-  {nm:"Abduct a Chameleon", ds:"Paint yourself to match the ground and hold still until the alien hunters give up.", url:"https://stephenuffugus.github.io/abduct_a_chameleon/?v=20260801a", ic:"🦎", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
+  {nm:"Abduct a Chameleon", ds:"Paint yourself to match the ground and hold still until the alien hunters give up.", cat:"party", url:"https://stephenuffugus.github.io/abduct_a_chameleon/?v=20260801a", ic:"🦎", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png"},
   // Abductee 3D — the 3D multiplayer sibling (Playroom-based lobby).
   // ⛔ 2026-07-29: UN-FORKED. This card spent a day pointing at a vendored copy at
   // /satellites/chameleon-3d/ because the fixes could not be pushed upstream from
@@ -676,48 +676,48 @@ var FEATURED = [
   // missing prop colormap, the hider head start, the colour pass), and the live
   // github.io build is now byte-identical to what we were serving. The vendored
   // folder is deleted — one copy again, no drift.
-  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", url:"https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html?v=20260808a", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png", beta:true},
-  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
+  {nm:"Abduct a Chameleon 3D", ds:"The 3D multiplayer chameleon hunt, live with friends and still in development.", cat:"party", url:"https://stephenuffugus.github.io/abduct_a_chameleon/abduct-3d.html?v=20260808a", ic:"🛸", thumb:"/portal-assets/thumbs/abduct-a-chameleon.png", beta:true},
+  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", cat:"puzzle", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   // Hashblock flagships on the workbench (2026-07-30). Both stay beta:true
   // behind the tester wall until Stephen opens them. "The Attic" is the
   // working title on purpose; never "Retro Attic" (that is the store's name).
-  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", url:"https://stephenuffugus.github.io/Litter_Bug/", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true},
-  {nm:"The Attic", ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.", url:"/satellites/attic/?v=20260731a", ic:"📼", thumb:"/portal-assets/thumbs/the-attic.png", beta:true},
+  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", cat:"action", url:"https://stephenuffugus.github.io/Litter_Bug/", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true},
+  {nm:"The Attic", ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.", cat:"creative", url:"/satellites/attic/?v=20260731a", ic:"📼", thumb:"/portal-assets/thumbs/the-attic.png", beta:true},
   // LOAF: the cat app. Scan a real cat, mint the card, meet her in 3D.
   // loaf.html carries its own dev-gate (wolfden) on top of the portal's
   // tester wall while testing; added 2026-08-04 because it was reachable
   // only by typing the URL, which is how it went unfound for two days.
-  {nm:"LOAF", ds:"Scan your real cat into a one of one card, then meet her in 3D and play.", url:"/loaf.html", ic:"🐈", thumb:"/portal-assets/thumbs/loaf.png", beta:true},
+  {nm:"LOAF", ds:"Scan your real cat into a one of one card, then meet her in 3D and play.", cat:"creative", url:"/loaf.html", ic:"🐈", thumb:"/portal-assets/thumbs/loaf.png", beta:true, fresh:true},
   // Workbench pair (2026-08-07). Working titles until the Director plays and names them;
   // both carry /dev-gate.js so a direct URL is gated too.
-  {nm:"Stop the Light", ds:"Stop the firefly in the gold band, then bank your sparks or risk them all again.", url:"/satellites/stop-the-light/?v=20260807a", ic:"✨", thumb:"/portal-assets/thumbs/stop-the-light.jpg", beta:true},
-  {nm:"Skyshot", ds:"Pull the sling back and arc seeds up into moving moonbuds high above the meadow.", url:"/satellites/skyshot/?v=20260807a", ic:"🌠", thumb:"/portal-assets/thumbs/skyshot.png", beta:true},
-  {nm:"Twin Lanterns", ds:"You each see half the garden. Gift one stone, light the path together, keep the pair streak alive.", url:"/satellites/twin-lanterns/?v=20260807a", ic:"🏮", beta:true},
-  {nm:"Moon Claw", ds:"An honest claw machine. Read the pile, pick your moment, win the plush for keeps.", url:"/satellites/moon-claw/?v=20260807b", ic:"🧸", thumb:"/portal-assets/thumbs/moon-claw.jpg", beta:true},
-  {nm:"Burrow Bowl", ds:"Flick the dewball up the lane and sink the burrows. The corner hundreds are earned, never lucky.", url:"/satellites/burrow-bowl/?v=20260807b", ic:"🎳", thumb:"/portal-assets/thumbs/burrow-bowl.jpg", beta:true},
+  {nm:"Stop the Light", ds:"Stop the firefly in the gold band, then bank your sparks or risk them all again.", cat:"action", url:"/satellites/stop-the-light/?v=20260807a", ic:"✨", thumb:"/portal-assets/thumbs/stop-the-light.jpg", beta:true, fresh:true},
+  {nm:"Skyshot", ds:"Pull the sling back and arc seeds up into moving moonbuds high above the meadow.", cat:"action", url:"/satellites/skyshot/?v=20260807a", ic:"🌠", thumb:"/portal-assets/thumbs/skyshot.png", beta:true, fresh:true},
+  {nm:"Twin Lanterns", ds:"You each see half the garden. Gift one stone, light the path together, keep the pair streak alive.", cat:"party", url:"/satellites/twin-lanterns/?v=20260807a", ic:"🏮", beta:true, fresh:true},
+  {nm:"Moon Claw", ds:"An honest claw machine. Read the pile, pick your moment, win the plush for keeps.", cat:"action", url:"/satellites/moon-claw/?v=20260807b", ic:"🧸", thumb:"/portal-assets/thumbs/moon-claw.jpg", beta:true, fresh:true},
+  {nm:"Burrow Bowl", ds:"Flick the dewball up the lane and sink the burrows. The corner hundreds are earned, never lucky.", cat:"action", url:"/satellites/burrow-bowl/?v=20260807b", ic:"🎳", thumb:"/portal-assets/thumbs/burrow-bowl.jpg", beta:true, fresh:true},
   // Whack Box: the party stack. Host screen on a laptop or TV; phones join at
   // /party/play.html with the room code. Practice transport (same browser)
   // until the PARTY_CLOUD_SETUP.md console switch-on.
-  {nm:"Whack Box", ds:"Party night. One big screen, everyone joins on their phone, and six games to pick from on the couch.", url:"/party/host.html?v=20260808b", ic:"🎪", beta:true},
-  {nm:"Sweet Spot", ds:"Time your swing and nail the tiny gold sweet spot for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
-  {nm:"Tarot Run", ds:"A fast combo card run through a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
-  {nm:"Sixfold", ds:"Read your foe in a six stance duel and break the bind in under a minute.", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png", ownMusic:true},
-  {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", url:"https://stephenuffugus.github.io/letter_launch/", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
-  {nm:"Skitterlings", ds:"Hop your one button critter through 100 worlds collecting skitterlings.", url:"https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com", ic:"🐾", thumb:"/portal-assets/thumbs/skitterlings.png"},
+  {nm:"Whack Box", ds:"Party night. One big screen, everyone joins on their phone, and six games to pick from on the couch.", cat:"party", url:"/party/host.html?v=20260808b", ic:"🎪", beta:true, fresh:true},
+  {nm:"Sweet Spot", ds:"Time your swing and nail the tiny gold sweet spot for an ACE.", cat:"action", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
+  {nm:"Tarot Run", ds:"A fast combo card run through a reading of blades.", cat:"card", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
+  {nm:"Sixfold", ds:"Read your foe in a six stance duel and break the bind in under a minute.", cat:"card", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png", ownMusic:true},
+  {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", cat:"word", url:"https://stephenuffugus.github.io/letter_launch/", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
+  {nm:"Skitterlings", ds:"Hop your one button critter through 100 worlds collecting skitterlings.", cat:"action", url:"https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com", ic:"🐾", thumb:"/portal-assets/thumbs/skitterlings.png"},
   // Aura Farm (Aug 15): Stephen's codespace build, adopted into the studio.
   // Emotional-harvest sim: lift a crowd for renewable joy or husk them for
   // more, 14-day runs, Broker contracts + cross-run reputation, Mara rival.
   // Vendored SAME-ORIGIN (later that day) so _sbCapEarn credits: +2 dusk,
   // +1 contract, +8 run end, +4 endless best, 30/day cap. Source of truth:
   // Stephenuffugus/aura-farm — edit there, re-vendor byte-identical, bump ?v=.
-  {nm:"Aura Farm", ds:"Farm feelings from a living crowd. Lift them into joy or drain them dry, and choose what you become.", url:"/satellites/aura-farm/?v=20260815a", ic:"🔮", thumb:"/portal-assets/thumbs/aura-farm.png"},
+  {nm:"Aura Farm", ds:"Farm feelings from a living crowd. Lift them into joy or drain them dry, and choose what you become.", cat:"creative", url:"/satellites/aura-farm/?v=20260815a", ic:"🔮", thumb:"/portal-assets/thumbs/aura-farm.png", fresh:true},
   // Create A Critter (Aug 15): browser edition of Stephen's full-stack kids
   // app, born from his daughter's idea. The whole Inflatinator (drawing →
   // pillow mesh) runs client-side; critters + care live in localStorage
   // only, nothing uploaded anywhere, no API costs. Same-origin satellite,
   // earns via _sbCapEarn. The FastAPI+Blender repo stays the deluxe/kiosk
   // build (real rigged clips) for arcade events.
-  {nm:"Create A Critter", ds:"Draw any creature and watch it puff up into a living 3D buddy you can feed, cuddle, and keep.", url:"/satellites/create-a-critter/?v=20260815m", ic:"🪺", thumb:"/portal-assets/thumbs/create-a-critter.png"},
+  {nm:"Create A Critter", ds:"Draw any creature and watch it puff up into a living 3D buddy you can feed, cuddle, and keep.", cat:"creative", url:"/satellites/create-a-critter/?v=20260815m", ic:"🪺", thumb:"/portal-assets/thumbs/create-a-critter.png", fresh:true},
   // Flock the World (Aug 15): Stephen's satire strategy sim, adopted from
   // his codespace zip (raw drop kept at assets/FTW-*.zip). Plague-Inc-shaped:
   // you play the surveillance vendor, civilians are innocent and adaptive,
@@ -725,14 +725,14 @@ var FEATURED = [
   // (his call whether that distance from Sky Wolf is intentional). Mature
   // satire, no gore: beta while he decides shelf placement. Source of truth:
   // satellites/flock-the-world (HANDOFF.md inside; sim.js balance harness).
-  {nm:"Flock the World", ds:"A satire sim where you play the surveillance vendor and the whole world learns to fight back.", url:"/satellites/flock-the-world/?v=20260815b", ic:"🛰️", thumb:"/portal-assets/thumbs/flock-the-world.png", beta:true},
+  {nm:"Flock the World", ds:"A satire sim where you play the surveillance vendor and the whole world learns to fight back.", cat:"puzzle", url:"/satellites/flock-the-world/?v=20260815b", ic:"🛰️", thumb:"/portal-assets/thumbs/flock-the-world.png", beta:true, fresh:true},
   // Bandit's Box (Aug 16): a quiet fidget box, 21 toys on a continuous friction
   // engine. Deliberately has no earns, no unlocks and no tally by default — the
   // sensory research this was built from names coercive gamification as harmful,
   // and every competitor in the category gates its toys behind rewarded video.
   // Source of truth: satellites/bandits-box (BUILD-PLAN + SFX-SHOT-LIST in
   // incoming/bandits-box). Framed, so it speaks the embed protocol.
-  {nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.", url:"/satellites/bandits-box/?v=20260816a", ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true},
+  {nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.", cat:"creative", url:"/satellites/bandits-box/?v=20260816a", ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true, fresh:true},
   // ⛔ 2026-07-28: this card said "Brawl · Multiplayer mayhem · 🍺" and was a dead
   // COMING SOON button. The URL it points at is live and is now a DIFFERENT game —
   // it titles itself WILD WARDENS (tame the wild, tend your grove, walk the real
@@ -740,12 +740,12 @@ var FEATURED = [
   // section). Card corrected to the destination's OWN title rather than a new name,
   // and flipped to IN DEVELOPMENT so it is playable instead of a dead button.
   // ⚠️ STEPHEN: confirm the name, and whether thumbs/brawl.png is still its art.
-  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png"},
+  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", cat:"creative", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png"},
   // HUNCH: the studio's premium flagship drawing-and-guessing game with
   // a Claude vision model + judge call per round (real per-play API cost).
   // Lowered sunbeam yield to respect compute; positioned as PREMIUM to
   // signal that this one's structurally different from the free nodes.
-  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", url:"https://hunch-mauve.vercel.app", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
+  {nm:"HUNCH", ds:"A drawing duel against Claude, the studio's premium flagship.", cat:"creative", url:"https://hunch-mauve.vercel.app", ic:"🎨", premium:true, thumb:"/portal-assets/thumbs/hunch.png"},
   // Shell Shuffle: cozy cup-shuffle timing game, PWA-ready. Daily streak
   // retention, 70 cup + 21 ball cosmetics, all client-side. Earn rate
   // calibrated: 3/win + 5/daily yields ~23-41 per casual session.
@@ -756,14 +756,14 @@ var FEATURED = [
   // but are no longer linked. Canonical sources stay in their repos
   // (Stephenuffugus/Hues, Stephenuffugus/shell_shuffle); re-vendor on
   // satellite updates.
-  {nm:"Shell Shuffle", ds:"Watch the cups, find the ball, build a daily streak.", url:"/satellites/shell-shuffle/", ic:"🐚", thumb:"/portal-assets/thumbs/shell-shuffle.png"},
-  {nm:"Hues", ds:"Match a target color by feel before the clock runs out.", url:"/satellites/hues/", ic:"🌈", thumb:"/portal-assets/thumbs/hues.png"},
-  {nm:"Merge & Blast", ds:"Tap matching numbers to blast them into the next number up and climb into the thousands.", url:"/satellites/merge-blast/", ic:"💥", thumb:"/portal-assets/thumbs/merge-blast.jpg"},
-  {nm:"Flipbook", ds:"A pocket spiral notebook for drawing little animations page by page.", url:"/satellites/flipbook/", ic:"📓", thumb:"/portal-assets/thumbs/flipbook.jpg"},
+  {nm:"Shell Shuffle", ds:"Watch the cups, find the ball, build a daily streak.", cat:"pattern", url:"/satellites/shell-shuffle/", ic:"🐚", thumb:"/portal-assets/thumbs/shell-shuffle.png"},
+  {nm:"Hues", ds:"Match a target color by feel before the clock runs out.", cat:"puzzle", url:"/satellites/hues/", ic:"🌈", thumb:"/portal-assets/thumbs/hues.png"},
+  {nm:"Merge & Blast", ds:"Tap matching numbers to blast them into the next number up and climb into the thousands.", cat:"math", url:"/satellites/merge-blast/", ic:"💥", thumb:"/portal-assets/thumbs/merge-blast.jpg"},
+  {nm:"Flipbook", ds:"A pocket spiral notebook for drawing little animations page by page.", cat:"creative", url:"/satellites/flipbook/", ic:"📓", thumb:"/portal-assets/thumbs/flipbook.jpg"},
   // Fox & Basket: Stephen's 7/21 hangman ask, our own take. One sentence, per his ruling.
-  {nm:"Fox & Basket", ds:"Guess the word one letter at a time before the fox reaches the picnic basket.", url:"/satellites/fox-basket/", ic:"🦊", thumb:"/portal-assets/thumbs/fox-basket.jpg"},
-  {nm:"Super Slice 3D", ds:"Flip the knife through a 3D forest slicing fruit and stick the score wall high.", url:"/satellites/slice-3d/?v=v57", ic:"🗡️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
-  {nm:"Super Slice Wall Climb", ds:"Flip your knife up one giant score wall and stick the blade as high as you dare.", url:"/satellites/slice-3d/?mode=climb&v=v57", ic:"🧗", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Fox & Basket", ds:"Guess the word one letter at a time before the fox reaches the picnic basket.", cat:"word", url:"/satellites/fox-basket/", ic:"🦊", thumb:"/portal-assets/thumbs/fox-basket.jpg"},
+  {nm:"Super Slice 3D", ds:"Flip the knife through a 3D forest slicing fruit and stick the score wall high.", cat:"action", url:"/satellites/slice-3d/?v=v57", ic:"🗡️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Super Slice Wall Climb", ds:"Flip your knife up one giant score wall and stick the blade as high as you dare.", cat:"action", url:"/satellites/slice-3d/?mode=climb&v=v57", ic:"🧗", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
   // Stephen 7/28: "The free fall game may need to be its own game too, call super
   // slice 3D free fall." Same pattern as the Wall Climb card — one shared build,
   // its own front door via ?mode=ff (add &endless=1 for the endless drop).
@@ -772,44 +772,44 @@ var FEATURED = [
   // ?mode=ff&endless=1 drops straight into the endless dive.
   // ⚠️ STEPHEN: "Super Slice Endless Fall" is a descriptive name, not a ruling —
   // rename it whenever you want.
-  {nm:"Super Slice 3D Free Fall", ds:"Flip your knife down a shaft of shelves and slabs, one authored level at a time.", url:"/satellites/slice-3d/?mode=ff&v=v57", ic:"🪂", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
-  {nm:"Super Slice Endless Fall", ds:"One shaft with no bottom, and the only score that counts is how far you fall without sticking to the side.", url:"/satellites/slice-3d/?mode=ff&endless=1&v=v57", ic:"🕳️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
-  {nm:"Super Slice", ds:"Tap to flip the knife down the counter, slicing veggies and sticking the score wall for big multipliers.", url:"/satellites/slice-master/", ic:"🔪", thumb:"/portal-assets/thumbs/slice-master.jpg"},
-  {nm:"Sunforge", ds:"Stick falling pieces to the golden sun and finish rings to crush them inward.", url:"/satellites/ring-stacker/", ic:"☀️", thumb:"/portal-assets/thumbs/ring-stacker.png"},
-  {nm:"Pop N Lock", ds:"A neon 80s puzzle battle where you bury rival b-boy pests in worthless grey Chaff.", url:"/satellites/chaff-wars/?v=pnl2", ic:"🕺", thumb:"/portal-assets/thumbs/pop-n-lock.jpg"},
-  {nm:"Snakes & Ladders", ds:"Roll the die, climb the ladders, dodge the snakes, and land exactly on 100 to win.", url:"/satellites/snakes-ladders/", ic:"🪜", thumb:"/portal-assets/thumbs/garden-climb.jpg"},
-  {nm:"Times Table Quest", ds:"A big colorful multiplication chart you play on, from counting by 10s to filling in missing products.", url:"/satellites/multiplication-chart/", ic:"🔢", thumb:"/portal-assets/thumbs/times-table.jpg"},
-  {nm:"Doodle Pad", ds:"A free drawing pad stuffed with pens, brushes, stamps, and every color you can mix.", url:"/satellites/doodle-pad/", ic:"🎨", thumb:"/portal-assets/thumbs/doodle-pad.jpg"},
-  {nm:"Mouse Trap", ds:"Plant one hedge a turn to box the little garden mouse in before it scurries off the edge.", url:"/satellites/mouse-trap/", ic:"🐭", thumb:"/portal-assets/thumbs/mouse-trap.jpg"},
-  {nm:"Stop Motion", ds:"Snap photos of your toys frame by frame and turn them into stop motion movies.", url:"/satellites/stop-motion/", ic:"🎬", thumb:"/portal-assets/thumbs/stop-motion.jpg"},
-  {nm:"Rabbit Samurai", ds:"A little bunny warrior hops crate yards and burrow tunnels to grab the diamond at the end.", url:"/satellites/rabbit-samurai/", ic:"🐰", thumb:"/portal-assets/thumbs/rabbit-samurai.jpg"},
-  {nm:"Garden Path", ds:"A sweet color card race down the rainbow path to the Garden Throne.", url:"/satellites/garden-path/", ic:"🍭", thumb:"/portal-assets/thumbs/garden-path.jpg"},
-  {nm:"Garden Estates", ds:"A garden spin on the property board game where the last gardener standing wins.", url:"/satellites/garden-estates/", ic:"🏡", thumb:"/portal-assets/thumbs/garden-estates.jpg"},
+  {nm:"Super Slice 3D Free Fall", ds:"Flip your knife down a shaft of shelves and slabs, one authored level at a time.", cat:"action", url:"/satellites/slice-3d/?mode=ff&v=v57", ic:"🪂", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Super Slice Endless Fall", ds:"One shaft with no bottom, and the only score that counts is how far you fall without sticking to the side.", cat:"action", url:"/satellites/slice-3d/?mode=ff&endless=1&v=v57", ic:"🕳️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Super Slice", ds:"Tap to flip the knife down the counter, slicing veggies and sticking the score wall for big multipliers.", cat:"action", url:"/satellites/slice-master/", ic:"🔪", thumb:"/portal-assets/thumbs/slice-master.jpg"},
+  {nm:"Sunforge", ds:"Stick falling pieces to the golden sun and finish rings to crush them inward.", cat:"puzzle", url:"/satellites/ring-stacker/", ic:"☀️", thumb:"/portal-assets/thumbs/ring-stacker.png"},
+  {nm:"Pop N Lock", ds:"A neon 80s puzzle battle where you bury rival b-boy pests in worthless grey Chaff.", cat:"puzzle", url:"/satellites/chaff-wars/?v=pnl2", ic:"🕺", thumb:"/portal-assets/thumbs/pop-n-lock.jpg"},
+  {nm:"Snakes & Ladders", ds:"Roll the die, climb the ladders, dodge the snakes, and land exactly on 100 to win.", cat:"board", url:"/satellites/snakes-ladders/", ic:"🪜", thumb:"/portal-assets/thumbs/garden-climb.jpg"},
+  {nm:"Times Table Quest", ds:"A big colorful multiplication chart you play on, from counting by 10s to filling in missing products.", cat:"math", url:"/satellites/multiplication-chart/", ic:"🔢", thumb:"/portal-assets/thumbs/times-table.jpg"},
+  {nm:"Doodle Pad", ds:"A free drawing pad stuffed with pens, brushes, stamps, and every color you can mix.", cat:"creative", url:"/satellites/doodle-pad/", ic:"🎨", thumb:"/portal-assets/thumbs/doodle-pad.jpg"},
+  {nm:"Mouse Trap", ds:"Plant one hedge a turn to box the little garden mouse in before it scurries off the edge.", cat:"puzzle", url:"/satellites/mouse-trap/", ic:"🐭", thumb:"/portal-assets/thumbs/mouse-trap.jpg"},
+  {nm:"Stop Motion", ds:"Snap photos of your toys frame by frame and turn them into stop motion movies.", cat:"creative", url:"/satellites/stop-motion/", ic:"🎬", thumb:"/portal-assets/thumbs/stop-motion.jpg"},
+  {nm:"Rabbit Samurai", ds:"A little bunny warrior hops crate yards and burrow tunnels to grab the diamond at the end.", cat:"action", url:"/satellites/rabbit-samurai/", ic:"🐰", thumb:"/portal-assets/thumbs/rabbit-samurai.jpg"},
+  {nm:"Garden Path", ds:"A sweet color card race down the rainbow path to the Garden Throne.", cat:"board", url:"/satellites/garden-path/", ic:"🍭", thumb:"/portal-assets/thumbs/garden-path.jpg"},
+  {nm:"Garden Estates", ds:"A garden spin on the property board game where the last gardener standing wins.", cat:"board", url:"/satellites/garden-estates/", ic:"🏡", thumb:"/portal-assets/thumbs/garden-estates.jpg"},
   // Blooming Words: vendored same-origin (Jul 02) like the two above so its
   // sunbeam earns (1 per first-ever word, 40/day cap) reach the vault.
   // Canonical source: Stephenuffugus/Blooming_Words — re-vendor on updates.
-  {nm:"Blooming Words", ds:"Trace letters, grow a crossword garden, press wildflowers for pollen.", url:"/satellites/blooming-words/", ic:"🌸", thumb:"/portal-assets/thumbs/blooming-words.png"},
-  {nm:"Tally", ds:"Combine the numbers and hit the target, with a pocketful of pals cheering you on.", url:"https://stephenuffugus.github.io/Tally/", ic:"🧮", thumb:"/portal-assets/thumbs/tally.png"},
+  {nm:"Blooming Words", ds:"Trace letters, grow a crossword garden, press wildflowers for pollen.", cat:"word", url:"/satellites/blooming-words/", ic:"🌸", thumb:"/portal-assets/thumbs/blooming-words.png"},
+  {nm:"Tally", ds:"Combine the numbers and hit the target, with a pocketful of pals cheering you on.", cat:"math", url:"https://stephenuffugus.github.io/Tally/", ic:"🧮", thumb:"/portal-assets/thumbs/tally.png"},
   // Picnic Panic: Galaga remake, vendored same-origin (Jul 02) so its sunbeam
   // earns (run_end -> capped daily) reach the vault. Its own 🍯 nectar economy
   // stays game-local via PicnicPanicStorage (localStorage). No own music (SFX).
-  {nm:"Picnic Panic", ds:"Garden Galaga where your snapdragon defends the picnic from diving swarms.", url:"/satellites/picnic-panic/", ic:"🌼", thumb:"/portal-assets/thumbs/picnic-panic.png"},
+  {nm:"Picnic Panic", ds:"Garden Galaga where your snapdragon defends the picnic from diving swarms.", cat:"action", url:"/satellites/picnic-panic/", ic:"🌼", thumb:"/portal-assets/thumbs/picnic-panic.png"},
   // Pollen Panic: maze-chase (Pac-Man genre), vendored same-origin (Jul 02) so its
   // sunbeam earns (gameOver -> capped daily) reach the vault. Own 🌸 petal economy
   // stays game-local (localStorage). SFX only, no music.
-  {nm:"Pollen Panic", ds:"A botanical maze chase where you munch every seed, bloom the pests, and chase sunberries.", url:"/satellites/pollen-panic/", ic:"🌸", thumb:"/portal-assets/thumbs/pollen-panic.png"},
+  {nm:"Pollen Panic", ds:"A botanical maze chase where you munch every seed, bloom the pests, and chase sunberries.", cat:"action", url:"/satellites/pollen-panic/", ic:"🌸", thumb:"/portal-assets/thumbs/pollen-panic.png"},
   // Vinewinder: botanical Snake, vendored same-origin (Jul 03). Full meta-game —
   // Petal economy + cosmetics shop + daily/missions/streak; sunbeam earn in gameOver.
-  {nm:"Vinewinder", ds:"Botanical Snake, fully grown, with combos, skins, and daily challenges.", url:"/satellites/vinewinder/", ic:"🐍", thumb:"/portal-assets/thumbs/vinewinder.png"},
+  {nm:"Vinewinder", ds:"Botanical Snake, fully grown, with combos, skins, and daily challenges.", cat:"action", url:"/satellites/vinewinder/", ic:"🐍", thumb:"/portal-assets/thumbs/vinewinder.png"},
   // Vine Runner: Sonic-2-halfpipe-style tube runner, vendored same-origin (Jul 03).
   // Posts its own portal events; bridge awards sunbeams on stage clears.
-  {nm:"Vine Runner", ds:"A pseudo 3D halfpipe dash up a 100 level tower of loops and seeds.", url:"/satellites/vine-runner/", ic:"🌿", thumb:"/portal-assets/thumbs/vine-runner.png"},
+  {nm:"Vine Runner", ds:"A pseudo 3D halfpipe dash up a 100 level tower of loops and seeds.", cat:"action", url:"/satellites/vine-runner/", ic:"🌿", thumb:"/portal-assets/thumbs/vine-runner.png"},
   // Pit Bike Rally: top-down arena racer + garage economy, vendored same-origin
   // (Jul 04) so its Sunbeam SDK earns (win 4 / podium 2, 30/day local cap) reach
   // the vault. Own ⚙ Sprocket economy stays game-local (skywolf.pitbikerally.save.v1).
   // Canonical source: Stephenuffugus/skywolf-pitbike-rally — re-vendor on updates.
   // Landscape-only: portrait shows its rotate prompt.
-  {nm:"Pit Bike Rally", ds:"Race four pit bikes around a dirt arena and spend your winnings building the ultimate ride.", url:"/satellites/pitbike-rally/", ic:"🏍️", thumb:"/portal-assets/thumbs/pitbike-rally.png"},
+  {nm:"Pit Bike Rally", ds:"Race four pit bikes around a dirt arena and spend your winnings building the ultimate ride.", cat:"action", url:"/satellites/pitbike-rally/", ic:"🏍️", thumb:"/portal-assets/thumbs/pitbike-rally.png"},
   // Power Scalers (Lucid Winds — OC Arena): single-file OC-creator + PoE-style
   // passive-web auto-battler. FULL self-contained game (186KB) — vendored to
   // /satellites/power-scalers/ so the portal navigates to it top-level like the
@@ -819,20 +819,20 @@ var FEATURED = [
   // ("won't open"). Fixed Jul 05: moved to /satellites/. Source lives in /arena;
   // re-vendor with `cp arena/lucid-winds-arena.html satellites/power-scalers/index.html`.
   // Self-contained Aether/Glory/XP economy — no Sunbeam bridge yet (Stephen's call).
-  {nm:"Power Scalers", ds:"Forge original characters, grow them on a vast skill web, then send them to battle in the arena.", url:"/satellites/power-scalers/", ic:"⚔️", thumb:"/portal-assets/thumbs/power-scalers.jpg"},
+  {nm:"Power Scalers", ds:"Forge original characters, grow them on a vast skill web, then send them to battle in the arena.", cat:"creative", url:"/satellites/power-scalers/", ic:"⚔️", thumb:"/portal-assets/thumbs/power-scalers.jpg"},
   // Dragon Philosophy (Skywolf Studios): React/Vite shared-market deckbuilder,
   // vendored same-origin (Jul 05). Self-contained — own save + settings +
   // stats in localStorage, no Sunbeam bridge (premium standalone, like Pit
   // Bike Rally). Source lives in its own repo /workspaces/dragon-philosophy;
   // `npm run build` (base:'./') then re-vendor dist/ into satellites/ on updates.
-  {nm:"Dragon Philosophy", ds:"Swear to a dragon patron and shape an ideology instead of building a deck.", url:"/satellites/dragon-philosophy/", ic:"🐉", thumb:"/portal-assets/thumbs/dragon-philosophy.png", beta:true},
+  {nm:"Dragon Philosophy", ds:"Swear to a dragon patron and shape an ideology instead of building a deck.", cat:"card", url:"/satellites/dragon-philosophy/", ic:"🐉", thumb:"/portal-assets/thumbs/dragon-philosophy.png", beta:true},
   // Bloom Breaker (Sky Wolf Studios): single-file, zero-asset botanical
   // brick-breaker, vendored same-origin (Jul 05). Self-contained — its Coin
   // currency + 32-skin shop stay game-local in localStorage (lw_brickbreaker_v1),
   // no Sunbeam bridge yet (coins stay in-game by design, like Dragon Philosophy /
   // Power Scalers). Source of truth: /bloom-breaker.html at repo root; re-vendor
   // into satellites/ on updates. All art canvas-drawn, all sound WebAudio-synth.
-  {nm:"Bloom Breaker", ds:"A botanical brick breaker with 60 hand built levels, 24 powerups, and a boss.", url:"/satellites/bloom-breaker/", ic:"🧱", thumb:"/portal-assets/thumbs/bloom-breaker.jpg"},
+  {nm:"Bloom Breaker", ds:"A botanical brick breaker with 60 hand built levels, 24 powerups, and a boss.", cat:"action", url:"/satellites/bloom-breaker/", ic:"🧱", thumb:"/portal-assets/thumbs/bloom-breaker.jpg"},
   // Pong Arena (Sky Wolf Studios): single-file, zero-asset "every pong that ever
   // was" — one swept-circle physics core drives 6 arenas (classic, vertical,
   // radial, gauntlet+obstacles, multiball, survival). 12-stage Career, 555 skins
@@ -840,7 +840,7 @@ var FEATURED = [
   // 🏆 Trophies). Self-contained economy; Sunbeam bridge mirrors real play (30/day
   // cap) via the LW bridge block appended after the game (like the other sats).
   // Source of truth: satellites/pong/index.html (authored in place, no re-vendor).
-  {nm:"Pong Arena", ds:"Every pong that ever was on one physics core, from classic to radial to survival.", url:"/satellites/pong/", ic:"🏓", thumb:"/portal-assets/thumbs/pong-arena.jpg"},
+  {nm:"Pong Arena", ds:"Every pong that ever was on one physics core, from classic to radial to survival.", cat:"action", url:"/satellites/pong/", ic:"🏓", thumb:"/portal-assets/thumbs/pong-arena.jpg"},
   // Sky Wolf Studios batch 2 (Jul 05) — same-origin satellites with the Sunbeam
   // bridge. Thumbnails: budburst DONE; burr-blast DONE (Jul 05, in-game frame);
   // garden-guard still TODO (drop the 480px art into
@@ -852,23 +852,23 @@ var FEATURED = [
   // Sunbeam bridge via _sbCapEarn (30/day cap, 12/run): +3-5 per level clear,
   // +4 daily, floor 1. Source of truth: satellites/budburst/index.html (authored
   // in place, no re-vendor). Colorblind glyphs on every bud (fleet standard).
-  {nm:"Budburst", ds:"A botanical bubble shooter with 144 levels of bursting buds into bloom.", url:"/satellites/budburst/", ic:"🌷", thumb:"/portal-assets/thumbs/budburst.png"},
-  {nm:"Burr Blast", ds:"A physics slingshot where you arc trick seeds into rickety pest forts and chain the collapse.", url:"/satellites/burr-blast/", ic:"🌰", thumb:"/portal-assets/thumbs/burr-blast.jpg"},
-  {nm:"Garden Guard", ds:"Plant a garden that fights back with nine botanical towers against the pest parade.", url:"/satellites/garden-td/", ic:"🛡️", thumb:"/portal-assets/thumbs/garden-td.jpg"},
+  {nm:"Budburst", ds:"A botanical bubble shooter with 144 levels of bursting buds into bloom.", cat:"action", url:"/satellites/budburst/", ic:"🌷", thumb:"/portal-assets/thumbs/budburst.png"},
+  {nm:"Burr Blast", ds:"A physics slingshot where you arc trick seeds into rickety pest forts and chain the collapse.", cat:"action", url:"/satellites/burr-blast/", ic:"🌰", thumb:"/portal-assets/thumbs/burr-blast.jpg"},
+  {nm:"Garden Guard", ds:"Plant a garden that fights back with nine botanical towers against the pest parade.", cat:"puzzle", url:"/satellites/garden-td/", ic:"🛡️", thumb:"/portal-assets/thumbs/garden-td.jpg"},
   // Sproing (Sky Wolf Studios, Jul 05): single-file, zero-asset botanical VERTICAL
   // JUMPER (Doodle-Jump-style) with a DRAW-YOUR-OWN-CLIMBER freehand paint studio.
   // All art canvas-drawn, all sound WebAudio-synth. Vendored same-origin so it earns
   // via _sbCapEarn (30/day cap, 12/run, floor 1): run_end = clamp(floor(m/250),1,12),
   // under 60m earns 0. Coins are game-local (sproing_* keys), never Sunbeams. Source of
   // truth: /sproing.html at repo root; re-vendor `cp sproing.html satellites/sproing/index.html`.
-  {nm:"Sproing", ds:"Draw your own critter, then bounce it up an endless beanstalk chasing your best altitude.", url:"/satellites/sproing/", ic:"🌱", thumb:"/portal-assets/thumbs/sproing.jpg"},
+  {nm:"Sproing", ds:"Draw your own critter, then bounce it up an endless beanstalk chasing your best altitude.", cat:"action", url:"/satellites/sproing/", ic:"🌱", thumb:"/portal-assets/thumbs/sproing.jpg"},
   // Sprout Dice (Sky Wolf Studios, Jul 05): single-file, zero-asset botanical DICE
   // ROGUELIKE (Slice-&-Dice-style). Deterministic engine (seeded mulberry32),
   // balance-simmed to ~53% win for near-optimal play. Same-origin so it earns via
   // _sbCapEarn (30/day, 1/floor·2/elite·4/boss). Coins are game-local (sd_meta),
   // never Sunbeams. Source of truth: /sprout-dice.html at repo root; re-vendor
   // `cp sprout-dice.html satellites/sprout-dice/index.html`. Glyph until art lands.
-  {nm:"Sprout Dice", ds:"A botanical dice roguelike where every roll plants thorns, heals, and bark across 12 floors.", url:"/satellites/sprout-dice/?v=20260707a", ic:"🎲"},
+  {nm:"Sprout Dice", ds:"A botanical dice roguelike where every roll plants thorns, heals, and bark across 12 floors.", cat:"dice", url:"/satellites/sprout-dice/?v=20260707a", ic:"🎲"},
   // Petal Plunge (Sky Wolf Studios, Jul 06): single-file, zero-asset botanical
   // SkiFree — ride a leaf-sled down an endless wild-garden slope, thread dewdrop
   // gates, launch ramps for tricks, and outrun the feral Gnome that wakes at depth
@@ -878,70 +878,70 @@ var FEATURED = [
   // Same-origin so it earns via _sbCapEarn (30/day, 1-12/run). Petals are
   // game-local (pp_profile_v1), never Sunbeams. Source of truth:
   // satellites/petal-plunge/index.html (authored in place). Glyph until art lands.
-  {nm:"Petal Plunge", ds:"Ride a leaf sled down an endless slope with a feral garden Gnome forever on your tail.", url:"/satellites/petal-plunge/", ic:"🛷", thumb:"/portal-assets/thumbs/petal-plunge.jpg"},
+  {nm:"Petal Plunge", ds:"Ride a leaf sled down an endless slope with a feral garden Gnome forever on your tail.", cat:"action", url:"/satellites/petal-plunge/", ic:"🛷", thumb:"/portal-assets/thumbs/petal-plunge.jpg"},
   // Bramblewick (Sky Wolf Studios, Jul 05): single-file botanical SURVIVOR-LIKE
   // (Vampire-Survivors-style). Status/reaction engine (7 statuses → 21 pairwise
   // reactions), 10 weapons + 12 passives, companion familiars, Verdancy mastery
   // ladder + cross-run Codex. Same-origin: earns via _sbCapEarn, SWS_EXIT, no own
   // SW. Source of truth: /bramblewick.html at repo root; re-vendor
   // `cp bramblewick.html satellites/bramblewick/index.html`. Glyph until art lands.
-  {nm:"Bramblewick", ds:"A botanical survivors run where one small sprout holds the night against the swarm.", url:"/satellites/bramblewick/?v=20260707c", ic:"🌿", thumb:"/portal-assets/thumbs/bramblewick.jpg"},
+  {nm:"Bramblewick", ds:"A botanical survivors run where one small sprout holds the night against the swarm.", cat:"action", url:"/satellites/bramblewick/?v=20260707c", ic:"🌿", thumb:"/portal-assets/thumbs/bramblewick.jpg"},
   // Three revamped 1991 classics (Jul 07). Self-contained, same-origin, sunbeam
   // earns via _sbCapEarn (30/day). Glyph cards until thumbnails land.
-  {nm:"Word Lightning", ds:"Spell as many words as you can from eight crackling letters before the storm clock runs out.", url:"/satellites/bloomzap/", ic:"⚡", thumb:"/portal-assets/thumbs/word-lightning.jpg"},
-  {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", url:"/satellites/rootbound/", ic:"🪴"},
-  {nm:"OriVex", ds:"Slot folded paper tiles so every touching edge shares a number in this quiet origami puzzle.", url:"/satellites/petalvex/?v=ov5", ic:"🍃", thumb:"/portal-assets/thumbs/petalvex.jpg?r=20260727"},
-  {nm:"Hedgerow", ds:"Grow hedge walls to fence the garden pests into a corner and win back the bed.", url:"/satellites/hedgerow/?v=hg14", ic:"🌳", thumb:"/portal-assets/thumbs/hedgerow.jpg"},
-  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", url:"/satellites/bubblenaut/?v=2", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut.png"},
-  {nm:"Inkbound", ds:"You are a field mouse who shoves rows of stone planters to trap every garden grub in a corner.", url:"/satellites/grubtrap/", ic:"🐭", thumb:"/portal-assets/thumbs/inkbound.jpg"},
-  {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg"},
-  {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg"},
-  {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", url:"/satellites/mahjong/", ic:"🀄"},
-  {nm:"Nectar Drop", ds:"A botanical peg bouncer where you ricochet a pollen ball through 120 flower meadows.", url:"/satellites/nectar-drop/", ic:"🌼", thumb:"/portal-assets/thumbs/nectar-drop.jpg"},
-  {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", url:"/satellites/stream-hop/?v=v79", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2"},
-  {nm:"Petal Slice", ds:"Swipe to slice tossed seed pods and blossoms in one stroke for big combos.", url:"/satellites/petal-slice/", ic:"🌸", thumb:"/portal-assets/thumbs/petal-slice.jpg"},
-  {nm:"Seed Pot", ds:"Drop seeds into the pot and merge matching pairs up the ladder from seed to bloom.", url:"/satellites/seed-pot/", ic:"🪴", thumb:"/portal-assets/thumbs/seed-pot.jpg"},
-  {nm:"Blobworks", ds:"A whole pinball table sculpted in clay, flipping an eyeball around a monster lab.", url:"/satellites/greenhouse-pinball/?v=a4", ic:"👁️", thumb:"/portal-assets/thumbs/blobworks.jpg"},
-  {nm:"Dewball", ds:"Roll a sticky bead of dew through six little worlds where everything smaller than you sticks.", url:"/satellites/dewball/", ic:"🫧", thumb:"/portal-assets/thumbs/dewball.jpg"},
-  {nm:"Dew Snip", ds:"Snip the moonlit vines so the dewdrop swings through the nectar and lands in the sprout.", url:"/satellites/dew-snip/", ic:"💧", thumb:"/portal-assets/thumbs/dew-snip.jpg"},
-  {nm:"Berry Vine", ds:"Fire from the seedpod and match three berries to burst the vine before it curls home.", url:"/satellites/berry-vine/", ic:"🫐", thumb:"/portal-assets/thumbs/berry-vine.jpg"},
-  {nm:"Cosmic Cadets", ds:"Lift a little Comet Cadet on the night wind and thread the star spires for Perfects.", url:"/satellites/seed-flutter/", ic:"☄️", thumb:"/portal-assets/thumbs/seed-flutter.jpg?v=cc2"},
-  {nm:"Tetroku", ds:"Drag leaf sprigs onto the midnight trellis and fill rows to clear them in showers of pollen.", url:"/satellites/leaf-fit/", ic:"🧩", thumb:"/portal-assets/thumbs/leaf-fit.jpg"},
-  {nm:"Seed Reel", ds:"A garden slot roguelike where you slide one tile before each harvest so a spin is never just luck.", url:"/satellites/seed-reel/", ic:"🎰", thumb:"/portal-assets/thumbs/seed-reel.jpg"},
-  {nm:"Season Sway", ds:"Swipe visitor cards left or right to keep Sun, Rain, Soil, and Wildlife in balance.", url:"/satellites/season-sway/", ic:"🃏", thumb:"/portal-assets/thumbs/season-sway.jpg"},
-  {nm:"Meadow Weave", ds:"Turn and lay hex tiles so meadow meets meadow and pond meets pond until the map comes alive.", url:"/satellites/meadow-weave/", ic:"🌾", thumb:"/portal-assets/thumbs/meadow-weave.jpg"},
-  {nm:"Petal Alchemy", ds:"Mix Seed, Water, Sun, Soil, and Air to discover a whole garden of plants, weather, and creatures.", url:"/satellites/petal-alchemy/", ic:"⚗️", thumb:"/portal-assets/thumbs/petal-alchemy.jpg"},
-  {nm:"Cipher Bloom", ds:"Crack the swapped letter cipher hiding a short garden verse, with no clock and no way to lose.", url:"/satellites/cipher-bloom/", ic:"🗝️", thumb:"/portal-assets/thumbs/cipher-bloom.jpg"},
-  {nm:"Root Groups", ds:"Find the four secret groups of four hiding in sixteen tiles, with endless fair boards.", url:"/satellites/root-groups/", ic:"🧺", thumb:"/portal-assets/thumbs/root-groups.jpg"},
-  {nm:"First Sprout", ds:"An idle garden that keeps growing from one dark handful of soil even while you sleep.", url:"/satellites/first-sprout/", ic:"🕯️", thumb:"/portal-assets/thumbs/first-sprout.jpg"},
-  {nm:"Plot Bloom", ds:"A relaxed placement puzzle where you lay garden pieces beside good neighbors, with no timers and no way to lose.", url:"/satellites/plot-bloom/", ic:"🏡", thumb:"/portal-assets/thumbs/plot-bloom.jpg"},
-  {nm:"Think Fast", ds:"A blink fast garden of tiny games where one word flashes and you have a heartbeat to do it.", url:"/satellites/micro-meadow/", ic:"🎪", thumb:"/portal-assets/thumbs/micro-meadow.jpg"},
-  {nm:"Impossible Garden", ds:"Turn the vine arms until impossible angles line up and the wanderer can stroll across the seam.", url:"/satellites/impossible-garden/", ic:"🏯", beta:true, thumb:"/portal-assets/thumbs/impossible-garden.jpg"},
-  {nm:"Star Field", ds:"Plant one star flower in every row, column, and constellation without letting two touch.", url:"/satellites/star-field/", ic:"⭐", thumb:"/portal-assets/thumbs/star-field.jpg"},
-  {nm:"Flatulence Fighter", ds:"A silent film game of pure composure where you hold it in until a passing bus gives you cover.", url:"/satellites/flatulence-fighter/", ic:"💨", thumb:"/portal-assets/thumbs/flatulence-fighter.jpg"},
-  {nm:"Line Loom", ds:"A calm transit puzzle where you weave colored threads between stations and little shuttles do the carrying.", url:"/satellites/line-loom/", ic:"🧵", thumb:"/portal-assets/thumbs/line-loom.jpg"},
-  {nm:"Rule Root", ds:"Push the word tiles to rewrite the rules of the garden, spelling new truths like STONE IS YOU.", url:"/satellites/rule-root/", ic:"📜", thumb:"/portal-assets/thumbs/rule-root.jpg"},
-  {nm:"Silt", ds:"Paint silt, water, fire, and seed onto a pocket of living earth and let real physics take over.", url:"/satellites/silt/", ic:"⏳", thumb:"/portal-assets/thumbs/silt.jpg"},
-  {nm:"Pollinator Paths", ds:"Draw glowing flight paths that guide every bee, butterfly, and hummingbird home without a collision.", url:"/satellites/pollinator-paths/", ic:"🐝", thumb:"/portal-assets/thumbs/pollinator-paths.jpg"},
-  {nm:"Tempo Grove", ds:"Stack falling blocks to the beat while a golden sweepline clears what you grow on the bar.", url:"/satellites/tempo-grove/", ic:"🎶", thumb:"/portal-assets/thumbs/tempo-grove.jpg"},
-  {nm:"Root Weave", ds:"Drag the glowing bulbs until no two roots cross and feel the knot loosen into living green vine.", url:"/satellites/root-weave/", ic:"🪢", thumb:"/portal-assets/thumbs/root-weave.jpg"},
-  {nm:"Sled Vine", ds:"Draw a hillside with glowing ink and ride your seed sled down it through rings to the goal flower.", url:"/satellites/sled-vine/", ic:"🛷", thumb:"/portal-assets/thumbs/sled-vine.jpg"},
-  {nm:"Spore Drift", ds:"Tap to breathe out a little of yourself and drift the still water, drinking every mote smaller than you.", url:"/satellites/spore-drift/", ic:"🫧", thumb:"/portal-assets/thumbs/spore-drift.jpg"},
-  {nm:"Bridgevine", ds:"Grow a living vine bridge that sags and swings under honest weight, and crystallize struts with dew.", url:"/satellites/bridgevine/", ic:"🌉", thumb:"/portal-assets/thumbs/bridgevine.jpg"},
-  {nm:"Bramble Court", ds:"A three by three card duel in the old Triple Triad tradition where the soil itself takes sides.", url:"/satellites/bramble-court/", ic:"🃏", thumb:"/portal-assets/thumbs/bramble-court.jpg"},
-  {nm:"Nova Bloom", ds:"A twin stick starfield where every enemy you clear plants a flower that charges your Bloom Bomb.", url:"/satellites/nova-bloom/", ic:"💥", thumb:"/portal-assets/thumbs/nova-bloom.jpg"},
-  {nm:"Orb Orchard", ds:"Run a tiny world that curls beneath your feet, ringing patches of dew to burst them into sunbeads.", url:"/satellites/orb-orchard/", ic:"🔮", thumb:"/portal-assets/thumbs/orb-orchard.jpg"},
+  {nm:"Word Lightning", ds:"Spell as many words as you can from eight crackling letters before the storm clock runs out.", cat:"word", url:"/satellites/bloomzap/", ic:"⚡", thumb:"/portal-assets/thumbs/word-lightning.jpg"},
+  {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", cat:"puzzle", url:"/satellites/rootbound/", ic:"🪴"},
+  {nm:"OriVex", ds:"Slot folded paper tiles so every touching edge shares a number in this quiet origami puzzle.", cat:"puzzle", url:"/satellites/petalvex/?v=ov5", ic:"🍃", thumb:"/portal-assets/thumbs/petalvex.jpg?r=20260727"},
+  {nm:"Hedgerow", ds:"Grow hedge walls to fence the garden pests into a corner and win back the bed.", cat:"puzzle", url:"/satellites/hedgerow/?v=hg14", ic:"🌳", thumb:"/portal-assets/thumbs/hedgerow.jpg"},
+  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=2", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut.png"},
+  {nm:"Inkbound", ds:"You are a field mouse who shoves rows of stone planters to trap every garden grub in a corner.", cat:"puzzle", url:"/satellites/grubtrap/", ic:"🐭", thumb:"/portal-assets/thumbs/inkbound.jpg"},
+  {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", cat:"puzzle", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg"},
+  {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg"},
+  {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", cat:"board", url:"/satellites/mahjong/", ic:"🀄"},
+  {nm:"Nectar Drop", ds:"A botanical peg bouncer where you ricochet a pollen ball through 120 flower meadows.", cat:"action", url:"/satellites/nectar-drop/", ic:"🌼", thumb:"/portal-assets/thumbs/nectar-drop.jpg"},
+  {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", cat:"action", url:"/satellites/stream-hop/?v=v79", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2", fresh:true},
+  {nm:"Petal Slice", ds:"Swipe to slice tossed seed pods and blossoms in one stroke for big combos.", cat:"action", url:"/satellites/petal-slice/", ic:"🌸", thumb:"/portal-assets/thumbs/petal-slice.jpg"},
+  {nm:"Seed Pot", ds:"Drop seeds into the pot and merge matching pairs up the ladder from seed to bloom.", cat:"puzzle", url:"/satellites/seed-pot/", ic:"🪴", thumb:"/portal-assets/thumbs/seed-pot.jpg"},
+  {nm:"Blobworks", ds:"A whole pinball table sculpted in clay, flipping an eyeball around a monster lab.", cat:"action", url:"/satellites/greenhouse-pinball/?v=a4", ic:"👁️", thumb:"/portal-assets/thumbs/blobworks.jpg"},
+  {nm:"Dewball", ds:"Roll a sticky bead of dew through six little worlds where everything smaller than you sticks.", cat:"action", url:"/satellites/dewball/", ic:"🫧", thumb:"/portal-assets/thumbs/dewball.jpg"},
+  {nm:"Dew Snip", ds:"Snip the moonlit vines so the dewdrop swings through the nectar and lands in the sprout.", cat:"puzzle", url:"/satellites/dew-snip/", ic:"💧", thumb:"/portal-assets/thumbs/dew-snip.jpg"},
+  {nm:"Berry Vine", ds:"Fire from the seedpod and match three berries to burst the vine before it curls home.", cat:"action", url:"/satellites/berry-vine/", ic:"🫐", thumb:"/portal-assets/thumbs/berry-vine.jpg"},
+  {nm:"Cosmic Cadets", ds:"Lift a little Comet Cadet on the night wind and thread the star spires for Perfects.", cat:"action", url:"/satellites/seed-flutter/", ic:"☄️", thumb:"/portal-assets/thumbs/seed-flutter.jpg?v=cc2"},
+  {nm:"Tetroku", ds:"Drag leaf sprigs onto the midnight trellis and fill rows to clear them in showers of pollen.", cat:"puzzle", url:"/satellites/leaf-fit/", ic:"🧩", thumb:"/portal-assets/thumbs/leaf-fit.jpg"},
+  {nm:"Seed Reel", ds:"A garden slot roguelike where you slide one tile before each harvest so a spin is never just luck.", cat:"dice", url:"/satellites/seed-reel/", ic:"🎰", thumb:"/portal-assets/thumbs/seed-reel.jpg"},
+  {nm:"Season Sway", ds:"Swipe visitor cards left or right to keep Sun, Rain, Soil, and Wildlife in balance.", cat:"card", url:"/satellites/season-sway/", ic:"🃏", thumb:"/portal-assets/thumbs/season-sway.jpg"},
+  {nm:"Meadow Weave", ds:"Turn and lay hex tiles so meadow meets meadow and pond meets pond until the map comes alive.", cat:"puzzle", url:"/satellites/meadow-weave/", ic:"🌾", thumb:"/portal-assets/thumbs/meadow-weave.jpg"},
+  {nm:"Petal Alchemy", ds:"Mix Seed, Water, Sun, Soil, and Air to discover a whole garden of plants, weather, and creatures.", cat:"creative", url:"/satellites/petal-alchemy/", ic:"⚗️", thumb:"/portal-assets/thumbs/petal-alchemy.jpg"},
+  {nm:"Cipher Bloom", ds:"Crack the swapped letter cipher hiding a short garden verse, with no clock and no way to lose.", cat:"word", url:"/satellites/cipher-bloom/", ic:"🗝️", thumb:"/portal-assets/thumbs/cipher-bloom.jpg"},
+  {nm:"Root Groups", ds:"Find the four secret groups of four hiding in sixteen tiles, with endless fair boards.", cat:"word", url:"/satellites/root-groups/", ic:"🧺", thumb:"/portal-assets/thumbs/root-groups.jpg"},
+  {nm:"First Sprout", ds:"An idle garden that keeps growing from one dark handful of soil even while you sleep.", cat:"creative", url:"/satellites/first-sprout/", ic:"🕯️", thumb:"/portal-assets/thumbs/first-sprout.jpg"},
+  {nm:"Plot Bloom", ds:"A relaxed placement puzzle where you lay garden pieces beside good neighbors, with no timers and no way to lose.", cat:"puzzle", url:"/satellites/plot-bloom/", ic:"🏡", thumb:"/portal-assets/thumbs/plot-bloom.jpg"},
+  {nm:"Think Fast", ds:"A blink fast garden of tiny games where one word flashes and you have a heartbeat to do it.", cat:"action", url:"/satellites/micro-meadow/", ic:"🎪", thumb:"/portal-assets/thumbs/micro-meadow.jpg"},
+  {nm:"Impossible Garden", ds:"Turn the vine arms until impossible angles line up and the wanderer can stroll across the seam.", cat:"puzzle", url:"/satellites/impossible-garden/", ic:"🏯", beta:true, thumb:"/portal-assets/thumbs/impossible-garden.jpg"},
+  {nm:"Star Field", ds:"Plant one star flower in every row, column, and constellation without letting two touch.", cat:"puzzle", url:"/satellites/star-field/", ic:"⭐", thumb:"/portal-assets/thumbs/star-field.jpg"},
+  {nm:"Flatulence Fighter", ds:"A silent film game of pure composure where you hold it in until a passing bus gives you cover.", cat:"action", url:"/satellites/flatulence-fighter/", ic:"💨", thumb:"/portal-assets/thumbs/flatulence-fighter.jpg"},
+  {nm:"Line Loom", ds:"A calm transit puzzle where you weave colored threads between stations and little shuttles do the carrying.", cat:"puzzle", url:"/satellites/line-loom/", ic:"🧵", thumb:"/portal-assets/thumbs/line-loom.jpg"},
+  {nm:"Rule Root", ds:"Push the word tiles to rewrite the rules of the garden, spelling new truths like STONE IS YOU.", cat:"puzzle", url:"/satellites/rule-root/", ic:"📜", thumb:"/portal-assets/thumbs/rule-root.jpg"},
+  {nm:"Silt", ds:"Paint silt, water, fire, and seed onto a pocket of living earth and let real physics take over.", cat:"creative", url:"/satellites/silt/", ic:"⏳", thumb:"/portal-assets/thumbs/silt.jpg"},
+  {nm:"Pollinator Paths", ds:"Draw glowing flight paths that guide every bee, butterfly, and hummingbird home without a collision.", cat:"puzzle", url:"/satellites/pollinator-paths/", ic:"🐝", thumb:"/portal-assets/thumbs/pollinator-paths.jpg"},
+  {nm:"Tempo Grove", ds:"Stack falling blocks to the beat while a golden sweepline clears what you grow on the bar.", cat:"action", url:"/satellites/tempo-grove/", ic:"🎶", thumb:"/portal-assets/thumbs/tempo-grove.jpg"},
+  {nm:"Root Weave", ds:"Drag the glowing bulbs until no two roots cross and feel the knot loosen into living green vine.", cat:"puzzle", url:"/satellites/root-weave/", ic:"🪢", thumb:"/portal-assets/thumbs/root-weave.jpg"},
+  {nm:"Sled Vine", ds:"Draw a hillside with glowing ink and ride your seed sled down it through rings to the goal flower.", cat:"action", url:"/satellites/sled-vine/", ic:"🛷", thumb:"/portal-assets/thumbs/sled-vine.jpg"},
+  {nm:"Spore Drift", ds:"Tap to breathe out a little of yourself and drift the still water, drinking every mote smaller than you.", cat:"action", url:"/satellites/spore-drift/", ic:"🫧", thumb:"/portal-assets/thumbs/spore-drift.jpg"},
+  {nm:"Bridgevine", ds:"Grow a living vine bridge that sags and swings under honest weight, and crystallize struts with dew.", cat:"puzzle", url:"/satellites/bridgevine/", ic:"🌉", thumb:"/portal-assets/thumbs/bridgevine.jpg"},
+  {nm:"Bramble Court", ds:"A three by three card duel in the old Triple Triad tradition where the soil itself takes sides.", cat:"card", url:"/satellites/bramble-court/", ic:"🃏", thumb:"/portal-assets/thumbs/bramble-court.jpg"},
+  {nm:"Nova Bloom", ds:"A twin stick starfield where every enemy you clear plants a flower that charges your Bloom Bomb.", cat:"action", url:"/satellites/nova-bloom/", ic:"💥", thumb:"/portal-assets/thumbs/nova-bloom.jpg"},
+  {nm:"Orb Orchard", ds:"Run a tiny world that curls beneath your feet, ringing patches of dew to burst them into sunbeads.", cat:"action", url:"/satellites/orb-orchard/", ic:"🔮", thumb:"/portal-assets/thumbs/orb-orchard.jpg"},
   // Second-wave bench (Jul 11) — eight classics rebuilt, all probe-verified
   // (clean load + _sbCapEarn) before wiring. Missing thumbs fall back to the
   // emoji glyph via _lwPh. Alphabetical for tidiness; render re-sorts anyway.
-  {nm:"Fence Off", ds:"Race your pawn to the far side while fencing your rival into the long way around.", url:"/satellites/fence-off/", ic:"🚧", thumb:"/portal-assets/thumbs/fence-off.jpg"},
-  {nm:"Frost Watch", ds:"Bloom bursts of warmth from three braziers to melt the falling frost before it reaches the rooftops.", url:"/satellites/frost-watch/", ic:"❄️", thumb:"/portal-assets/thumbs/frost-watch.jpg"},
-  {nm:"Lamplighter", ds:"Place lamps at dusk until every square is lit, never letting one lamp shine into another.", url:"/satellites/lamplighter/", ic:"💡", thumb:"/portal-assets/thumbs/lamplighter.jpg"},
-  {nm:"Loop Warden", ds:"Your hero walks the loop on their own, so your real game is the world you deal onto the road.", url:"/satellites/loop-warden/", ic:"🔁", thumb:"/portal-assets/thumbs/loop-warden.jpg"},
-  {nm:"Mini Crossword", ds:"A five by five crossword you can finish with your morning tea.", url:"/satellites/mini-crossword/", ic:"📰", thumb:"/portal-assets/thumbs/mini-crossword.jpg"},
-  {nm:"Mosaic Draft", ds:"Draft glazed tiles from the kilns and lay them into a bright scoring wall against a thinking rival.", url:"/satellites/mosaic-draft/", ic:"🔷", thumb:"/portal-assets/thumbs/mosaic-draft.jpg"},
-  {nm:"Tinker Loft", ds:"Build a happy little chain reaction from planks, balloons, and dominoes to carry a marble home.", url:"/satellites/tinker-loft/", ic:"⚙️", thumb:"/portal-assets/thumbs/tinker-loft.jpg"},
-  {nm:"Acorn Drop", ds:"Spin tumbling acorn pairs to line up four of a kind and crack the pests out of the hollow.", url:"/satellites/tonic-drop/", ic:"🌰", thumb:"/portal-assets/thumbs/tonic-drop.jpg"}
+  {nm:"Fence Off", ds:"Race your pawn to the far side while fencing your rival into the long way around.", cat:"board", url:"/satellites/fence-off/", ic:"🚧", thumb:"/portal-assets/thumbs/fence-off.jpg"},
+  {nm:"Frost Watch", ds:"Bloom bursts of warmth from three braziers to melt the falling frost before it reaches the rooftops.", cat:"action", url:"/satellites/frost-watch/", ic:"❄️", thumb:"/portal-assets/thumbs/frost-watch.jpg"},
+  {nm:"Lamplighter", ds:"Place lamps at dusk until every square is lit, never letting one lamp shine into another.", cat:"puzzle", url:"/satellites/lamplighter/", ic:"💡", thumb:"/portal-assets/thumbs/lamplighter.jpg"},
+  {nm:"Loop Warden", ds:"Your hero walks the loop on their own, so your real game is the world you deal onto the road.", cat:"card", url:"/satellites/loop-warden/", ic:"🔁", thumb:"/portal-assets/thumbs/loop-warden.jpg"},
+  {nm:"Mini Crossword", ds:"A five by five crossword you can finish with your morning tea.", cat:"word", url:"/satellites/mini-crossword/", ic:"📰", thumb:"/portal-assets/thumbs/mini-crossword.jpg"},
+  {nm:"Mosaic Draft", ds:"Draft glazed tiles from the kilns and lay them into a bright scoring wall against a thinking rival.", cat:"board", url:"/satellites/mosaic-draft/", ic:"🔷", thumb:"/portal-assets/thumbs/mosaic-draft.jpg"},
+  {nm:"Tinker Loft", ds:"Build a happy little chain reaction from planks, balloons, and dominoes to carry a marble home.", cat:"puzzle", url:"/satellites/tinker-loft/", ic:"⚙️", thumb:"/portal-assets/thumbs/tinker-loft.jpg"},
+  {nm:"Acorn Drop", ds:"Spin tumbling acorn pairs to line up four of a kind and crack the pests out of the hollow.", cat:"puzzle", url:"/satellites/tonic-drop/", ic:"🌰", thumb:"/portal-assets/thumbs/tonic-drop.jpg"}
 ];
 
 /* ---- The 65 Lucid Winds games (from GAMES_MANIFEST.md) ---- */
@@ -952,7 +952,10 @@ var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",petalmatch:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
-var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["word","Word"],["math","Math"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"],["indev","In Development"]];
+var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],
+  ["action","Action"],["puzzle","Puzzle"],["card","Card & Board"],
+  ["creative","Creative"],["word","Word"],["math","Numbers"],
+  ["party","Party"],["indev","In Development"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
 // 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
@@ -1230,6 +1233,29 @@ function _lwLazyBoot(){
   _lwLazyBoot();
 })();
 
+/* Seven shelves, ten underlying keys. Grouping lives here rather than in the
+   data so the tab row can be reshaped without re-tagging 180 games, and so the
+   in-repo games keep the keys they have always had. */
+var CAT_GROUP = {
+  action:  ["action"],
+  puzzle:  ["puzzle","pattern"],
+  card:    ["card","board","dice"],
+  creative:["creative"],
+  word:    ["word"],
+  math:    ["math"],
+  party:   ["party"]
+};
+function inGroup(key, group){
+  if(!key) return false;
+  if(key===group) return true;
+  var g = CAT_GROUP[group];
+  return !!g && g.indexOf(key) >= 0;
+}
+function catGroupOf(key){
+  for(var g in CAT_GROUP) if(CAT_GROUP[g].indexOf(key)>=0) return g;
+  return null;
+}
+
 function renderGarden(cat){
   window._swsCat = cat;
   // Studio satellites (non-hub FEATURED) are the "newest" games. They show
@@ -1244,14 +1270,26 @@ function renderGarden(cat){
   // ♥ Favorites tab = everything the player hearted (satellites incl in-dev +
   // garden games), same merged A-Z list.
   var FM = (cat==="fav") ? favMap() : null;
+  /* ⛔ 2026-08-16: this line used to end `: []`, which meant that on ANY real
+     category tab every satellite disappeared. The tabs only ever filtered the
+     67 in-repo games, so 113 games — Jimothy, Dewball, Aura Farm, Litter Bug,
+     The Attic, Abduct a Chameleon, Flock the World — could be reached only by
+     scrolling the whole A-Z or already knowing the name to search. Someone
+     described the studio as a gumbo and this was most of why: the best work
+     was in the part the navigation could not see. Satellites now carry a cat:
+     field and flow through the same grouping as everything else. */
   var sats = (cat==="indev")
     ? FEATURED.filter(function(g){return !g.hub && g.beta;})
     : (cat==="fav")
     ? FEATURED.filter(function(g){return !g.hub && FM[favKey(g,true)];})
-    : ((cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub;}) : []);
+    : (cat==="new")
+       ? FEATURED.filter(function(g){return !g.hub && g.fresh;})
+    : (cat==="all")
+       ? FEATURED.filter(function(g){return !g.hub;})
+       : FEATURED.filter(function(g){return !g.hub && inGroup(g.cat, cat);});
   var list = (cat==="new"||cat==="indev") ? []
     : (cat==="fav") ? GAMES.filter(function(g){return FM[favKey(g,false)];})
-    : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+    : GAMES.filter(function(g){return cat==="all"||inGroup(g[2],cat);});
   // Alphabetical by display name (Stephen 2026-07-09) — satellites + native games
   // merged into ONE A-Z list per tab so every game is easy to find.
   var items = sats.map(function(g){return {g:g,feat:true,nm:(g.nm||"")};})
