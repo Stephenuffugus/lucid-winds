@@ -19,7 +19,7 @@ function mkNode(id){
     classList:{add:function(c){n._cls[c]=1;},remove:function(c){delete n._cls[c];},
       toggle:function(c,v){if(v===undefined)v=!n._cls[c];if(v)n._cls[c]=1;else delete n._cls[c];},
       contains:function(c){return !!n._cls[c];}},
-    innerHTML:'', textContent:'', value:0, clientWidth:390, clientHeight:220,
+    innerHTML:'', textContent:'', value:0, clientWidth:390, clientHeight:220, scrollHeight:0,
     _phoneH:220,
     appendChild:function(c){n.children.push(c);return c;},
     remove:function(){}, addEventListener:function(){}, removeEventListener:function(){},
@@ -38,7 +38,7 @@ var FIELD_H=PHONE.H-PHONE.TOPBAR-PHONE.CONTROLS;
 var LANE_H=Math.max(112,Math.min(190,Math.round(PHONE.H*0.17)));
 nodes.lanebox.clientWidth=PHONE.W; nodes.lanebox.clientHeight=LANE_H;
 nodes.field.clientWidth=PHONE.W;  nodes.field.clientHeight=FIELD_H;
-nodes.board.clientWidth=PHONE.W;  nodes.board.clientHeight=FIELD_H-LANE_H;
+nodes.board.clientWidth=PHONE.W;  nodes.board.clientHeight=FIELD_H-LANE_H; nodes.board.scrollHeight=0;
 var thrown=[];
 global.window={ AudioContext:null, webkitAudioContext:null,
   addEventListener:function(){}, matchMedia:function(){return {matches:false};},
@@ -77,6 +77,14 @@ try {
       cardText=nodes.scwave.textContent+' | '+nodes.schead.textContent+' | you '+nodes.scyou.textContent+' traps '+nodes.sctraps.textContent+' | bars '+(nodes.scbars.innerHTML.match(/barrow/g)||[]).length;
     }
     if(nodes.scoresheet.classList.contains('hidden')===false) nodes.scoresheet.classList.add('hidden');
+    /* exercise the overflow branch both ways: the board is told it overflows,
+       then told it does not, and we read back what it did about it. */
+    if(t===900){ nodes.board.scrollHeight=1400; }
+    if(t===940){ global.__over={tight:nodes.board.classList.contains('tight'),
+                                fade:!nodes.boardfade.classList.contains('hidden')}; }
+    if(t===980){ nodes.board.scrollHeight=300; }
+    if(t===1020){ global.__fits={tight:nodes.board.classList.contains('tight'),
+                                 fade:!nodes.boardfade.classList.contains('hidden')}; }
     if(t===5){
       global.__w1={
         title:nodes.btitle.textContent+'  |  '+nodes.bhp.textContent,
@@ -89,6 +97,7 @@ try {
         notesShown:!nodes.pnotes.classList.contains('hidden'),
         notesTitle:nodes.ntitle.textContent+(nodes.nsub.textContent?' ['+nodes.nsub.textContent+']':''),
         notes:(nodes.notes.innerHTML.match(/class="note"/g)||[]).length,
+        teaching:nodes.board.classList.contains('teaching'),
         notesText:nodes.notes.innerHTML.replace(/<svg[\s\S]*?<\/svg>/g,'[sil] ').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()
       };
     }
@@ -122,7 +131,15 @@ console.log('  roster      :', w1.roster, '| silhouette', w1.rostersvg);
 console.log('  your lane   :', w1.kit);
 console.log('  share       :', w1.share);
 console.log('  briefing    :', w1.notesShown? (w1.notesTitle+' -> '+w1.notes+' lines') : 'HIDDEN');
+console.log('  panel order :', w1.teaching? 'briefing LEADS the column (order:-1)' : 'briefing last');
 if(w1.notesText) console.log('    "'+w1.notesText+'"');
+console.log('');
+console.log('--- OVERFLOW BEHAVIOUR (board told it overflows, then told it fits) ---');
+var ov=global.__over||{}, ft=global.__fits||{};
+console.log('  content taller than box :', 'align-content start ='+ov.tight+',  fade shown ='+ov.fade,
+            (ov.tight&&ov.fade)?'  OK':'  <-- WRONG');
+console.log('  content fits the box    :', 'align-content start ='+ft.tight+',  fade shown ='+ft.fade,
+            (ft.tight===false&&ft.fade===false)?'  OK':'  <-- WRONG');
 console.log('');
 console.log('--- GEOMETRY at 390x844 (arithmetic + a stated height model, NOT a look) ---');
 var LANE=Math.max(140,Math.min(260,Math.round(PHONE.H*0.22)));
@@ -147,7 +164,15 @@ console.log('');
 console.log('  NO VOID RULE      : #board is flex:1 1 auto with align-content:space-between,');
 console.log('                      so leftover height is distributed across the gaps BETWEEN');
 console.log('                      panels instead of collecting in one hole. #lanebox is');
-console.log('                      flex:0 0 auto at clamp(140px,22vh,260px), so it cannot');
-console.log('                      grow into a second void either.');
+console.log('                      flex:0 0 auto at var(--laneh), so it cannot grow into a');
+console.log('                      second void either.');
+console.log('  NO CLIP RULE      : space-between distributes NEGATIVE free space too, which');
+console.log('                      is what clipped the briefing instead of scrolling it. The');
+console.log('                      board now measures its own scrollHeight and drops to');
+console.log('                      align-content:start the moment it overflows, so overflow');
+console.log('                      scrolls, and a fade reading MORE BELOW says so. On waves');
+console.log('                      1 to 3 the briefing takes order:-1 and leads the column,');
+console.log('                      so anything past the fold is a one chip panel and never');
+console.log('                      half a sentence of the tutorial.');
 console.log('');
 console.log('wave label:', nodes.scwave.textContent, '| over title:', nodes.ovtitle.textContent);
