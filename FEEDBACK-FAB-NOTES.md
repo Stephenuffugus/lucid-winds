@@ -43,12 +43,11 @@ It yields when either:
   painted beneath it), **and has no controls we can identify**. This is the blunt
   fallback for sheets whose buttons we cannot see at all.
 
-**2. It parks, it does not vanish.** It walks five anchors and takes the first
-with nothing tappable under it — top-left first, because close ✕ lives top-right
-and primary buttons live bottom-centre. Only if every anchor is blocked does it
-fade, and even then a hard 20-second ceiling brings it back. Two consecutive
-clear scans return it to exactly where it was, **including a spot the player
-dragged it to**.
+**2. It parks, it does not vanish.** It searches a ring of candidate spots and
+takes the first that is **empty**. Only if nothing on the ring is even
+control-free does it fade, and even then a hard 20-second ceiling brings it back.
+Two consecutive clear scans return it to exactly where it was, **including a spot
+the player dragged it to**. Every move is a 180ms transition, never a teleport.
 
 **3. The chip is honest now.** Tap zone stays 48px (project rule), but the offset
 is pulled in from `-30/-34` to `-26` so it overlaps the fab's own corner instead
@@ -63,6 +62,60 @@ the browser → detection switches itself off. `window.LW_FB_NO_YIELD = true` ki
 it outright. Yielding never writes `display:none` — it sets a data attribute the
 stylesheet acts on, so if the stylesheet never landed the fab simply stays
 visible.
+
+## Second pass — after the fix was shot on Bramblewick
+
+The mechanism worked and the toggle was clear, but **the parked position read as
+a glitch**: the chip landed mid-left straddling the edge of the centred menu
+panel, half on the panel and half on the page behind it, across a line of body
+text. Independently, a park was seen on Frost Watch's top-right and on
+Bramblewick's **stage selector** — so at least one park had landed on a control.
+
+That last one is the important one. **Parking on "no control I can RECOGNISE" is
+not the same as parking on nothing.** `fyIsControl` cannot see a plain div with a
+click handler bound in JS and no role, no class and no pointer cursor — and a
+stage selector is exactly that. So the parking test changed question:
+
+> **EMPTY** = every probe point resolves to the *same* topmost element, and that
+> element is a big flat surface (≥50% of the viewport in **both** axes), or there
+> is nothing there at all.
+
+One test, three jobs. No content under the chip. **No straddling** — if one
+corner is on the panel and another is on the page behind it, the topmost elements
+differ and the spot is rejected, so the half-on-half-off look is impossible by
+definition rather than by a list of anchors. And **no unknown controls**, because
+anything we cannot identify is still content, and content is enough to reject a
+spot.
+
+Both axes matter: a centred menu panel is tall and counts as a surface to sit on;
+a paragraph is wide but short and does not.
+
+Four other things came out of that pass:
+
+- **Two rings, not five anchors.** Outer ring in the viewport's edge band, inner
+  ring one step in. The inner ring is needed because a centred panel's gutters
+  are often *narrower than the chip* — Bramblewick's are ~60px against a 74px
+  footprint — so "wholly outside the panel" is not always available. Wholly
+  *inside* it, up in an empty corner, still reads as deliberate.
+- **Nearest first.** The shortest move that works is the one a player can follow.
+- **Sift, then verify.** One probe per candidate across the whole ring, then the
+  full five-probe test on the best twelve. A nearest-first five-probe search
+  capped at N spots could stop before it ever reached a clean one and settle for
+  a merely-control-free spot — which is how it clipped the stage selector.
+- **8px of clearance** when testing a spot. Probes sit 6px inside the box, so
+  without padding a candidate could clip the last two pixels of a button and sail
+  straight past it.
+
+**Cost, measured:** 55 hit tests for an entire search, 8 per scan once parked.
+
+### Making the move visible
+
+A transition from `right`/`bottom` to `left`/`top` **does not animate** — the
+start value is `auto`, so the chip teleports. It now pins its current position in
+px, flushes that, and only then writes the target, so the 180ms ease actually
+plays. The return home is animated the same way and hands the position back to
+the stylesheet 260ms later (same pixels, nothing to see) so `env(safe-area-inset)`
+and rotation keep working. A finger drag turns the easing off so it does not lag.
 
 ## Costs
 
@@ -97,7 +150,7 @@ hidden tab costs zero · dragged fab yields and returns *to the dragged spot* ·
 layered modal with no controls · nested full-bleed wrappers (must **not** read as
 a modal).
 
-### Two bugs the checker caught in my own fix
+### Bugs the checker caught in my own fix
 
 1. **The cover rule misfired on menus.** Bramblewick's settings list is a
    full-bleed sibling over the game wrapper, so "layered cover" stayed true the
@@ -109,12 +162,27 @@ a modal).
    phone's width — so the row was thrown out as "a background" and the scenario
    only went green via the cover rule. Guard is on both axes now (a row is 7% of
    the viewport's height), and the check asserts *why* it yielded.
+3. **Duplicate candidates starved the search.** The four edges of a ring share
+   their corners; enough duplicates ate the verify budget before any second-rank
+   spot was reached and the fab faded instead of parking.
+4. **The ES5 check called a comment an arrow function.** `6 stops per edge => 24
+   candidates` is prose. Comments are stripped before that grep now — the same
+   lesson the service-worker audit learned when workers that *explained* a bug in
+   their header were reported as having it.
+
+And four self-test mutants stayed green on broken builds and had to be rewritten,
+including one whose patch string had silently drifted so it was "testing" the
+healthy file. The self-test now refuses any patch that changes nothing.
 
 ## What I could not verify without eyes
 
-- **Whether it looks right.** Whether a chip that teleports to the top-left reads
-  as deliberate or as a second bug; whether the 180ms fade is the right length.
-  Someone should open a how-to-play sheet on a phone and watch it move.
+- **Whether it looks right.** The first version of this fix passed every check
+  and still looked broken on a phone — that is the whole reason for the second
+  pass above, and it took a screenshot to find. The new rule makes straddling
+  impossible and the move visible, but nobody has watched *this* version move.
+- **Narrow-gutter pages.** When a panel's gutters are thinner than the 74px
+  footprint, the chip parks *inside* the panel instead of beside it. That is the
+  intended fallback and it should read fine, but it is unseen.
 - **Canvas-painted controls.** A button drawn into a canvas has no DOM node and
   cannot be hit-tested. The cover rule catches those only when they sit under a
   layered DOM sheet with no other controls in it. Dewball's `#introCard` and any

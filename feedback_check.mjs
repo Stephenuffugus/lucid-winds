@@ -163,8 +163,13 @@ function sourceChecks(R, src) {
     new vm.Script(src, { filename: 'feedback.js' });
     R.ok('src.parses', true, 'vm.Script parses the file');
   } catch (e) { R.ok('src.parses', false, e.message); }
-  R.ok('src.es5', !/\b(const|let)\s+[A-Za-z_$]/.test(src) && !/=>/.test(src),
-    'ES5 only (CLAUDE.md rule 14)');
+  // Strip comments first. A block comment reading "6 stops per edge => 24
+  // candidates" is not an arrow function, and a checker that says it is gets
+  // ignored — the same lesson the service-worker audit learned when workers
+  // that EXPLAINED a bug in their header were reported as having it.
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  R.ok('src.es5', !/\b(const|let)\s+[A-Za-z_$]/.test(code) && !/=>/.test(code),
+    'ES5 only (CLAUDE.md rule 14), comments stripped before looking');
   return g;
 }
 
@@ -174,13 +179,28 @@ function makePage(g, opts = {}) {
   const vw = opts.vw || 390, vh = opts.vh || 844;
   let hitCount = 0;
 
-  const mkStyle = () => ({ left: '', top: '', right: '', bottom: '', display: '', visibility: '', opacity: '', pointerEvents: '', zIndex: '' });
+  // A style object that REMEMBERS ITS WRITES. Needed because the difference
+  // between a move and a teleport is not the final value — it is whether the
+  // start value was pinned in px first, and after the fact both look identical.
+  // The order of writes is the only evidence.
+  const mkStyle = (log) => {
+    const back = { left: '', top: '', right: '', bottom: '', display: '', visibility: '', opacity: '', pointerEvents: '', zIndex: '', transition: '' };
+    const o = {};
+    for (const k of Object.keys(back)) {
+      Object.defineProperty(o, k, {
+        enumerable: true,
+        get() { return back[k]; },
+        set(v) { back[k] = v; log.push({ prop: k, value: v }); }
+      });
+    }
+    return o;
+  };
 
   function El(tag, spec = {}) {
     const e = {
       tagName: String(tag).toUpperCase(),
       children: [], parentNode: null, ownerDocument: null,
-      style: mkStyle(), _attrs: Object.create(null), _cs: spec.cs || {},
+      _writes: [], _attrs: Object.create(null), _cs: spec.cs || {},
       _rect: spec.rect || null, _lis: Object.create(null),
       id: spec.id || '', className: spec.className || '',
       textContent: '', onclick: spec.onclick || null,
@@ -205,6 +225,7 @@ function makePage(g, opts = {}) {
         toggle(c) { hasClass(e, c) ? e.classList.remove(c) : e.classList.add(c); }
       }
     };
+    e.style = mkStyle(e._writes);
     return e;
   }
   const hasClass = (e, c) => (' ' + (e.className || '') + ' ').indexOf(' ' + c + ' ') > -1;
@@ -453,6 +474,24 @@ function scenarioChecks(R, g, src = SRC) {
       'a tester can still report a bug: it parked, it did not vanish');
   }
 
+  /* S2b — the search is bounded. It sifts a whole ring with one probe each and
+     then spends the 5-probe test on the best few, so it must stay in the low
+     hundreds of hit tests for ONE yield, and drop back to 5 per scan once it
+     has settled. A search that costs more the busier the page gets would be a
+     frame-rate bug hiding inside a cosmetic fix. */
+  {
+    const p = pageSheet(g);
+    const s = boot(p, src);
+    p.resetHits();
+    s.scan();
+    const yieldCost = p.hits();
+    R.ok('S2b.searchBounded', yieldCost <= 250, `${yieldCost} hit tests for the whole search`);
+    p.resetHits();
+    s.scan();
+    R.ok('S2b.settledIsCheap', p.hits() <= 10,
+      `${p.hits()} hit tests on the next scan once parked (no re-search while nothing changes)`);
+  }
+
   /* S3 — the sheet closes. Everything must come back exactly as it was. */
   {
     const p = pageSheet(g);
@@ -571,8 +610,35 @@ function scenarioChecks(R, g, src = SRC) {
       `parked ${JSON.stringify(u)} vs panel ${JSON.stringify(pr)} — must be wholly in or wholly out`);
     R.ok('S4e.notOnBodyText', !overlaps(u, p.rectOf(copy)), 'and not across the body copy');
     R.ok('S4e.notOnToggle', !overlaps(u, p.rectOf(toggle)), 'and off the control it fled');
-    R.ok('S4e.inTheGutter', u.right <= pr.left || u.left >= pr.right,
-      'it found the dark gutter beside the panel');
+    // Unit-level, so the surface rule is tested directly rather than through
+    // whichever spot the search happened to pick: a box wholly inside a
+    // paragraph is CLEAR (nothing tappable) but must never be EMPTY.
+    const cr = p.rectOf(copy);
+    const inText = { left: cr.left + 10, top: cr.top + 10, right: cr.left + 84, bottom: cr.top + 84, width: 74, height: 74 };
+    R.eq('S4e.textIsNotEmptySpace', s.api.spotClass(inText, s.fab, p.vw, p.vh), 'clear',
+      'a paragraph is somewhere you can sit without breaking anything, not empty space');
+  }
+
+  /* S4e2 — the same shape with WIDE gutters, which is the page as described:
+     "a clear centred panel with dark space either side". When the dark space is
+     actually wider than the chip, that is where it should end up. */
+  {
+    const p = makePage(g);
+    const page = p.add(p.body, 'div', { id: 'page', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    const panel = p.add(page, 'div', {
+      id: 'panel', cs: { zIndex: '10' },
+      rect: { left: 95, top: 40, width: p.vw - 190, height: p.vh - 80 }
+    });
+    // a full-width row, like the settings list, sitting under the fab's corner
+    p.add(page, 'div', {
+      className: 'row', cs: { cursor: 'pointer', zIndex: '11' },
+      rect: { left: 12, top: p.vh - 190, width: p.vw - 24, height: 56 }
+    });
+    const s = boot(p, src);
+    s.scan();
+    const u = s.union(), pr = p.rectOf(panel);
+    R.ok('S4e2.inTheGutter', s.state() === 'parked' && (u.right <= pr.left || u.left >= pr.right),
+      `parked ${JSON.stringify(u)} — must be in the dark space beside the panel ${JSON.stringify(pr)}`);
   }
 
   /* S4f — a control fyIsControl CANNOT SEE: a plain div with its click handler
@@ -602,10 +668,20 @@ function scenarioChecks(R, g, src = SRC) {
   {
     const p = pageSheet(g);
     const s = boot(p, src);
+    const homeLeft = p.rectOf(s.fab).left;
     R.ok('S4g.startsUnpinned', s.fab.style.left === '', 'home is anchored by the stylesheet');
+    s.fab._writes.length = 0;
     s.scan();
-    R.ok('S4g.pinnedInPx', /px$/.test(s.fab.style.left) && /px$/.test(s.fab.style.top),
-      `left=${s.fab.style.left} top=${s.fab.style.top} — px on both ends or the transition is a teleport`);
+    R.ok('S4g.endsInPx', /px$/.test(s.fab.style.left) && /px$/.test(s.fab.style.top),
+      `left=${s.fab.style.left} top=${s.fab.style.top}`);
+    // The proof that this is a MOVE and not a teleport: `left` was written
+    // twice — once to pin the current position in px, once to the target. A
+    // transition out of `auto` does not animate, so without the first write the
+    // chip just appears somewhere else.
+    const lefts = s.fab._writes.filter(w => w.prop === 'left').map(w => w.value);
+    R.ok('S4g.pinnedBeforeMove', lefts.length >= 2 && lefts[0] === Math.round(homeLeft) + 'px' &&
+      lefts[lefts.length - 1] !== lefts[0],
+      `left writes: ${JSON.stringify(lefts)} — first must pin home (${Math.round(homeLeft)}px), last must differ`);
     R.ok('S4g.transitionDeclared', /\.lwfb-fab\{transition:[^}]*left \.18s/.test(src),
       'and the stylesheet actually animates left/top at 180ms');
     R.ok('S4g.dragKillsTransition', /b\.style\.transition = 'none'/.test(src),
@@ -768,7 +844,7 @@ const MUTANTS = [
   },
   {
     name: 'come-home disabled (fab parks forever)',
-    patch: s => s.replace('function fyGoHome(w) {', 'function fyGoHome(w) { if (1) return;'),
+    patch: s => s.replace('function fyGoHome(w, animate) {', 'function fyGoHome(w, animate) { if (1) return;'),
     mustFail: ['S3.cameHome', 'S3.exactPosition', 'S6.ceilingFired', 'S10.returnsToDragged']
   },
   {
@@ -823,6 +899,32 @@ const MUTANTS = [
     name: 'cover rule no longer defers to visible controls (parks forever on a menu)',
     patch: s => s.replace('if (cover && fyHasControls(cover, vw, vh)) cover = null;', ''),
     mustFail: ['S5.returns']
+  },
+  {
+    // the coordinator's screenshot, as a permanent regression
+    name: 'straddle test removed (park half on, half off a panel edge)',
+    patch: s => s.replace('else if (sig !== top) empty = false;', 'else if (sig !== top) empty = empty;'),
+    mustFail: ['S4e.noStraddle']
+  },
+  {
+    name: 'surface test relaxed (a paragraph counts as empty space)',
+    patch: s => s.replace('if (!(tr.width >= vw * FY.SURF_W && tr.height >= vh * FY.SURF_H)) empty = false;', ''),
+    mustFail: ['S4e.textIsNotEmptySpace']
+  },
+  {
+    name: 'clearance padding removed (park clipping a control)',
+    patch: s => s.replace('CLEAR_PAD:     8,', 'CLEAR_PAD:     0,'),
+    mustFail: ['S5.offTheToggle']
+  },
+  {
+    name: 'the move is a teleport again (no px pin before the transition)',
+    patch: s => s.replace('function fyPin(el) {', 'function fyPin(el) { if (1) return;'),
+    mustFail: ['S4g.pinnedBeforeMove']
+  },
+  {
+    name: 'verify budget too small to reach a clean spot (fab fades instead)',
+    patch: s => s.replace('MAX_VERIFY:   12,', 'MAX_VERIFY:    3,'),
+    mustFail: ['S5.offTheToggle', 'S5.visible']
   },
   {
     name: 'scan never stands down for our own form',

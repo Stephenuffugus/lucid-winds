@@ -354,8 +354,14 @@
     COVER_A:    0.55,    //   >=55% of the viewport's area
     UNDER_A:    0.25,    // "there is real content beneath it": >=25% of area
     STACK_MAX:    14,    // how far down a hit-test stack we bother to look
-    RING_STEPS:    5,    // 6 stops per edge => 24 candidate parking spots
-    MAX_TRIES:    16,    // cap the search: 16 spots x 5 probes, once per yield
+    RING_STEPS:    5,    // 6 stops per edge, on two rings: 48 candidate spots
+    MAX_VERIFY:   12,    // spots given the full 5-probe test (after a 1-probe sift)
+    CLEAR_PAD:     8,    // breathing room tested around a candidate spot
+    SURF_W:     0.50,    // "a big flat surface to sit on": >=50% of the viewport
+    SURF_H:     0.50,    //   in BOTH axes — a tall panel qualifies, a paragraph
+                         //   does not, which is the distinction that matters
+    INSET_X:    0.16,    // the inner ring, as a fraction of the viewport
+    INSET_Y:    0.10,
     SETTLE_MS:   260     // > the 180ms move, then the stylesheet takes over
   };
 
@@ -379,20 +385,37 @@
      A ring of candidates around the viewport's edge band, sorted NEAREST FIRST
      to where the chip already is, because the shortest move that works is the
      one a player can follow. */
-  function fyCandidates(vw, vh, w, h) {
-    var out = [], i, n = FY.RING_STEPS;
-    var x0 = FY.MARGIN, x1 = vw - w - FY.MARGIN;
-    var y0 = FY.TOP_MARGIN, y1 = vh - h - FY.MARGIN;
-    if (x1 < x0) x1 = x0;
-    if (y1 < y0) y1 = y0;
+  function fyRing(out, seen, x0, y0, x1, y1) {
+    var i, n = FY.RING_STEPS;
+    if (x1 < x0 || y1 < y0) return out;
+    function put(x, y) {
+      // The four edges share their corners, and a duplicate spot costs a real
+      // probe AND a slot in the verify budget — enough of them starved the
+      // search of every candidate on the second rank and it faded instead of
+      // parking. Dedupe at the source.
+      var k = x + ',' + y;
+      if (seen[k]) return;
+      seen[k] = 1;
+      out.push({ x: x, y: y });
+    }
     for (i = 0; i <= n; i++) {
       var t = n ? i / n : 0;
       var yy = Math.round(y0 + (y1 - y0) * t), xx = Math.round(x0 + (x1 - x0) * t);
-      out.push({ x: x0, y: yy });   // left gutter
-      out.push({ x: x1, y: yy });   // right gutter
-      out.push({ x: xx, y: y0 });   // top band
-      out.push({ x: xx, y: y1 });   // bottom band
+      put(x0, yy); put(x1, yy); put(xx, y0); put(xx, y1);
     }
+    return out;
+  }
+  function fyCandidates(vw, vh, w, h) {
+    var out = [], seen = {};
+    // Outer ring: the viewport's edge band, where a floating chip belongs.
+    fyRing(out, seen, FY.MARGIN, FY.TOP_MARGIN, vw - w - FY.MARGIN, vh - h - FY.MARGIN);
+    // Inner ring: one step in. Needed because a centred panel's gutters are
+    // often NARROWER than the chip — Bramblewick's are ~60px against a 74px
+    // footprint — so "wholly outside the panel" is not always available. Wholly
+    // INSIDE it, up in its empty top corner, still reads as deliberate; half on
+    // and half off never does.
+    fyRing(out, seen, FY.MARGIN + Math.round(vw * FY.INSET_X), FY.TOP_MARGIN + Math.round(vh * FY.INSET_Y),
+           vw - w - FY.MARGIN - Math.round(vw * FY.INSET_X), vh - h - FY.MARGIN - Math.round(vh * FY.INSET_Y));
     return out;
   }
 
@@ -428,8 +451,10 @@
       if (top !== null) {
         var tr = fyRect(top);
         // the thing we would be sitting on has to be a big flat surface, not a
-        // paragraph, a card, an icon or a stage selector
-        if (!(tr.width >= vw * FY.COVER_W && tr.height >= vh * FY.COVER_H)) empty = false;
+        // paragraph, a card, an icon or a stage selector. Both axes: a centred
+        // menu panel is tall and qualifies, a block of body copy is wide but
+        // short and does not.
+        if (!(tr.width >= vw * FY.SURF_W && tr.height >= vh * FY.SURF_H)) empty = false;
       }
       if (!haveSig) { sig = top; haveSig = true; }
       else if (sig !== top) empty = false;
@@ -685,30 +710,72 @@
     if (w.state !== 'hidden') w.hiddenAt = Date.now();
     w.state = 'hidden'; w.tier = null;
   }
+  // The topmost thing at one point: an element, null for bare page, 'control',
+  // or 'unavailable'. Used as a cheap one-probe sift before the real test.
+  function fyTopAt(x, y, fab, vw, vh) {
+    var stack = fyStackAt(x, y, fab), j;
+    if (stack === null) return 'unavailable';
+    for (j = 0; j < stack.length; j++) {
+      var el = stack[j], tag = (el.tagName || '').toUpperCase();
+      if (tag === 'BODY' || tag === 'HTML') continue;
+      var r = fyRect(el);
+      if (!r || !fyVisible(el, r)) continue;
+      if (fyIsControl(el, vw, vh)) return 'control';
+      return el;
+    }
+    return null;
+  }
+
   function fyYield(w, vw, vh) {
     var size = w.size;
     if (!size || !size.width) { fyFade(w); return; }
     var cands = fyCandidates(vw, vh, size.width, size.height), i;
     var hx = w.homeRect ? (w.homeRect.left + w.homeRect.right) / 2 : vw;
     var hy = w.homeRect ? (w.homeRect.top + w.homeRect.bottom) / 2 : vh;
+
+    /* PHASE 1 — one probe per candidate, across the whole ring. Cheap, and it
+       has to be the whole ring: capping a nearest-first 5-probe search at N
+       spots meant the search could stop before it ever reached a clean one and
+       settle for a merely-control-free spot instead. That is how it parked
+       clipping the corner of a stage selector. Sift everything, then spend the
+       expensive test on the best few. */
+    var pool = [];
     for (i = 0; i < cands.length; i++) {
-      var dx = cands[i].x + size.width / 2 - hx, dy = cands[i].y + size.height / 2 - hy;
-      cands[i].d = dx * dx + dy * dy;
-    }
-    cands.sort(function (a, b) { return a.d - b.d; });   // nearest first: short moves read as moves
-    var fallback = null, tried = 0;
-    for (i = 0; i < cands.length && tried < FY.MAX_TRIES; i++) {
       var c = cands[i];
       // Don't "move" to where we already are — that spot is why we are yielding.
       if (w.homeRect && Math.abs(c.x - w.homeRect.left) < 10 &&
           Math.abs(c.y - w.homeRect.top) < 10) continue;
+      var top = fyTopAt(Math.round(c.x + size.width / 2), Math.round(c.y + size.height / 2),
+                        w.el, vw, vh);
+      if (top === 'unavailable') { fyFade(w); return; }
+      if (top === 'control') continue;
+      var rank = 1;
+      if (top === null) rank = 0;
+      else {
+        var tr = fyRect(top);
+        if (tr && tr.width >= vw * FY.SURF_W && tr.height >= vh * FY.SURF_H) rank = 0;
+      }
+      var dx = c.x + size.width / 2 - hx, dy = c.y + size.height / 2 - hy;
+      c.rank = rank; c.d = dx * dx + dy * dy;
+      pool.push(c);
+    }
+    // big flat surfaces first, then nearest — a short move to a clean spot
+    pool.sort(function (a, b) { return (a.rank - b.rank) || (a.d - b.d); });
+
+    /* PHASE 2 — the real 5-probe test on the best few, with CLEAR_PAD of
+       breathing room. Probes sit 6px inside the box, so without the padding a
+       candidate could clip the last two pixels of a button and sail past it. */
+    var fallback = null, tried = 0;
+    for (i = 0; i < pool.length && tried < FY.MAX_VERIFY; i++) {
+      var c2 = pool[i], pad = FY.CLEAR_PAD;
       tried++;
-      var cls = fySpotClass({ left: c.x, top: c.y, right: c.x + size.width,
-                              bottom: c.y + size.height, width: size.width, height: size.height },
+      var cls = fySpotClass({ left: c2.x - pad, top: c2.y - pad,
+                              right: c2.x + size.width + pad, bottom: c2.y + size.height + pad,
+                              width: size.width + pad * 2, height: size.height + pad * 2 },
                             w.el, vw, vh);
       if (cls === 'unavailable') { fyFade(w); return; }
-      if (cls === 'empty') { fyMoveTo(w, c.x, c.y, size, 'empty'); return; }
-      if (cls === 'clear' && !fallback) fallback = c;
+      if (cls === 'empty') { fyMoveTo(w, c2.x, c2.y, size, 'empty'); return; }
+      if (cls === 'clear' && !fallback) fallback = c2;
     }
     // Nothing empty anywhere on the ring. Take the best merely-clear spot rather
     // than disappearing — a chip over a paragraph is worse-looking than a chip
