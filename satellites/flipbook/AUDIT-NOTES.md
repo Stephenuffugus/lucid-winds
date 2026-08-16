@@ -154,3 +154,7 @@ footprint against every tool row and against the paper, and a dash scan.
   the chip up. It is honest, but it is slow, and there is no cancel.
 - Voice takes are stored as base64 data URLs in localStorage, which competes with the book for
   the same quota.
+- The two tab rule is "the second tab stops saving and says so". That protects the book that was
+  already on disk, which is the right call, but it does mean the second tab's newer strokes are
+  only in memory until the player answers the bar. The bar cannot be dismissed in that state, so
+  it cannot be missed, but the truly correct fix is a per book id rather than one shared key.

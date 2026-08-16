@@ -1984,6 +1984,26 @@ function boot(){
   on('mutebtn','click',function(e){ e.preventDefault(); SET.muted=!SET.muted; saveSet(); applyVolumes(); if(SET.muted) stopMusic(); else if(game) startMusic(); refreshHUD(); });
   applyLefthand(); besttagUpdate(); applyEquip();
   $('buildstamp').textContent='Sproing '+BUILD;
+  /* Headless test hook, ?dev=1 ONLY — never present in a normal player session.
+     This game had no way in, so the 2026-08-16 audit had to drive every check
+     through real clicks and real wall-clock time, which made deep assertions (a
+     full 1200m clear, the Dandelion Save path, the star thresholds) impractical to
+     verify at all. Read-only accessors plus the launchers, so a probe can reach the
+     run without reaching into the physics. Nothing here changes how the game plays. */
+  if(/[?&]dev=1(&|$)/.test(location.search)){
+    window._SP={
+      screen:function(){ return curScreen; },
+      state:function(){ return game; },
+      prog:function(){ return levelProg; },
+      wallet:function(){ return {coins:coins, best:best}; },
+      stats:function(){ return stats; },
+      settings:function(){ return SET; },
+      launch:launch, pause:pauseRun, resume:resumeRun,
+      /* step the fixed-timestep sim by hand so a probe never races a rAF clock */
+      step:function(n){ if(!game) return 0; var i=0; for(;i<(n||1)&&game.running;i++){ game.t+=DT; updateGame(DT); } return i; },
+      input:function(dir){ INP.keyL=(dir<0); INP.keyR=(dir>0); }
+    };
+  }
   requestAnimationFrame(loop);
 }
 

@@ -148,6 +148,23 @@ Beyond that this pass is deliberately conservative. The spring is locked, the lo
 complete, the economy ladders sensibly, and the failure modes worth spending minutes on
 were all in persistence rather than in play.
 
+## THE FIRST THIRTY SECONDS — looked at, one reservation
+
+Screenshotted the onboarding studio at 375x667 rather than reasoning about it. A brand new
+player presses PLAY and lands on a blank cream canvas headed "Draw your climber", with the
+brush, colour and tool rows below it and **"✓ Save & Equip" sitting right on the bottom
+edge**. The two buttons underneath it, "🗂 Sketchbook" and **"✨ Example"**, are below the
+fold inside `.studio-wrap`'s scroll area.
+
+"✨ Example" is the escape hatch for a player who does not want to draw, and it is the one
+control they cannot see. The flow does self-correct — pressing Save with too few strokes
+raises a modal that offers "Use example" as a button — so nobody is stuck, and this is
+recoverable rather than broken.
+
+Left unchanged on purpose. It is an onboarding layout call rather than a defect, the spring
+is locked, and re-flowing that column is exactly the kind of edit that broke two touch
+targets in Slice 3D during this same session. Flagging it beats churning it.
+
 ## WHAT STILL WORRIES ME
 
 - **`sproing_acc`, `sproing_theme` and `sproing_trail` are raw strings**, not shape

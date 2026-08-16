@@ -396,8 +396,9 @@ function save(){
 }
 var WARN_BYTES=3500000, _lastWrite=0;
 function setSaveState(k){
-  var bar=$('savebar'), msg=$('savemsg'), act=$('saveact'), alt=$('savealt');
+  var bar=$('savebar'), msg=$('savemsg'), act=$('saveact'), alt=$('savealt'), hide=$('savehide');
   if(!bar) return;
+  if(hide) hide.style.display=(k==='heavy')?'':'none';
   if(k==='ok'){ _saveBroken=false; if(!_tabConflict){ bar.className=''; } return; }
   if(k==='heavy'){ _saveBroken=false; if(_tabConflict) return;
     bar.className='on warn';
