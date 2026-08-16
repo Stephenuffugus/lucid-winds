@@ -217,11 +217,22 @@ console.log('\n[5] standing defect classes');
       if (c.display === 'none' || c.visibility === 'hidden' || b.width < 1) return;
       if (b.width < 48 || b.height < 48) out.small.push((el.id || el.className) + ' ' + b.width.toFixed(0) + 'x' + b.height.toFixed(0));
     });
-    /* the music label must fit its button: it is installed by /music-player.js and
-       used to be sliced mid letter by the button's own border */
+    /* The music label is installed by /music-player.js ("\u266b Music") and used to be
+       sliced mid letter by the button's own rounded border.
+       ⛔ scrollWidth <= clientWidth is NOT the check. On the broken build those were
+       EQUAL (94 == 94) because the flex item had grown to its min-content width —
+       nothing "overflowed", the glyphs simply ran edge to edge against the border
+       with the global reset's padding:0. That assertion could never go red, which
+       makes it decoration. Measure the real clearance between the rendered TEXT and
+       the button's border box instead, and demand breathing room. */
     const bm = document.getElementById('b-music');
-    out.musicFits = bm ? bm.scrollWidth <= bm.clientWidth + 1 : true;
     out.musicText = bm ? bm.textContent.trim() : '';
+    out.musicClear = null;
+    if (bm && bm.firstChild) {
+      const rng = document.createRange(); rng.selectNodeContents(bm);
+      const t = rng.getBoundingClientRect(), b = bm.getBoundingClientRect();
+      out.musicClear = { left: +(t.left - b.left).toFixed(1), right: +(b.right - t.right).toFixed(1), btnW: +b.width.toFixed(1), txtW: +t.width.toFixed(1) };
+    }
     /* dashes in player copy */
     const copy = [...document.querySelectorAll('.ribbon,.forge-sub,.helprow,.go-lab,.title-sub,.foot')].map(n => n.textContent).join(' ');
     out.dashes = (copy.match(/[A-Za-z,)][ ]+[-–—][ ]+[A-Za-z0-9]/g) || []);
@@ -237,7 +248,9 @@ console.log('\n[5] standing defect classes');
   ok('an exit button renders on the title screen', !!r.exitBtn && r.exitBtn.shown, JSON.stringify(r.exitBtn));
   ok('the exit button clears 48 rendered px', !!r.exitBtn && r.exitBtn.h >= 48, JSON.stringify(r.exitBtn));
   ok('no control under 48 rendered px at 375x667', r.small.length === 0, r.small.join(', '));
-  ok('the music label fits its button', r.musicFits, r.musicText + ' scroll>client');
+  ok('the music label has real clearance inside its button',
+    !!r.musicClear && r.musicClear.left >= 5 && r.musicClear.right >= 5,
+    '"' + r.musicText + '" ' + JSON.stringify(r.musicClear));
   ok('no dashes in player copy', r.dashes.length === 0, r.dashes.join(' | '));
   ok('nothing covers a title screen control', r.covered.length === 0, r.covered.join(', '));
   await ctx.close();

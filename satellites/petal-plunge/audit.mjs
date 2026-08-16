@@ -171,9 +171,12 @@ const CHECKS = [
           const dt = 1 / 60;
           let guard = 0;
           while (S.depth < 8000 && !S.over && guard++ < 40000) {
-            const L = window.PP.laneAt(S.depth + 90) || window.PP.laneAt(S.depth);
+            // aim at where the lane will be by the time we get there
+            const lead = Math.max(60, S.vy * 0.55);
+            const L = window.PP.laneAt(S.depth + lead) || window.PP.laneAt(S.depth + 40) || window.PP.laneAt(S.depth);
             const want = L ? L.c : 0, dx = want - S.x;
-            window.PP.setInput(Math.abs(dx) < 14 ? 0 : (dx < 0 ? -1 : 1), Math.abs(dx) < 14);
+            const dead = 6;
+            window.PP.setInput(Math.abs(dx) < dead ? 0 : (dx < 0 ? -1 : 1), false);
             window.PP.step(dt);
           }
           out.push({ mode, seed, depth: Math.floor(S.depth), crashes: S.crashes, finished: !!S.finished });
@@ -225,13 +228,17 @@ const CHECKS = [
         S.depth = window.PP.CFG.gnomeStart + 10;
         window.PP.step(1 / 60);
         const g0 = S.gnomeGap;
-        for (let i = 0; i < 600 && !S.over; i++) { window.PP.setInput(steer, tuck); window.PP.step(1 / 60); }
-        return +(S.gnomeGap - g0).toFixed(0);
+        for (let i = 0; i < 600 && !S.over; i++) {
+          S.obs.length = 0;                      // measure the CHASE, not the crash tax
+          window.PP.setInput(steer, tuck); window.PP.step(1 / 60);
+        }
+        return { d: +(S.gnomeGap - g0).toFixed(0), crashes: S.crashes };
       };
-      return { carve: probe(1, false), straight: probe(0, false), tuck: probe(0, true), active: true };
+      const c = probe(1, false), st = probe(0, false), tk = probe(0, true);
+      return { carve: c.d, straight: st.d, tuck: tk.d, crashes: c.crashes + st.crashes + tk.crashes };
     });
-    return { ok: r.carve < 0 && r.tuck > 0 && r.tuck > r.straight && r.straight >= r.carve,
-      detail: `gap change over 10s: carving ${r.carve}, straight ${r.straight}, tucking ${r.tuck}` };
+    return { ok: r.carve < 0 && r.tuck > 0 && r.straight > 0 && r.tuck > r.straight && r.straight > r.carve && r.crashes === 0,
+      detail: `gap change over 10s on a clear slope: carving ${r.carve}, straight ${r.straight}, tucking ${r.tuck}` };
   },
   break: `window.PP.CFG.gnomeBaseK=0;` },
 
