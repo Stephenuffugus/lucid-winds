@@ -236,8 +236,17 @@ function makePage(g, opts = {}) {
   function rectOf(e) {
     let r;
     if (hasClass(e, 'lwfb-fab-x') && e.parentNode) {
+      // parked => the stylesheet hides the badge, so it has no footprint
+      if (e.parentNode.getAttribute('data-lwfb-parked') === '1') return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
       const p = rectOf(e.parentNode);
       r = { left: p.left + g.badgeLeft, top: p.top + g.badgeTop, width: g.badgeW, height: g.badgeH };
+    } else if (e.tagName === 'SPAN' && e.parentNode && hasClass(e.parentNode, 'lwfb-fab-x')) {
+      // The visible dot. A bare <span> with NO CLASS — which is exactly why a
+      // self-exclusion filter that tests the returned node's className misses
+      // it. It must be in the hit test for S14 to mean anything.
+      const b = rectOf(e.parentNode);
+      if (!b.width) return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
+      r = { left: b.left + (g.badgeW - g.dotW) / 2, top: b.top + (g.badgeH - g.dotW) / 2, width: g.dotW, height: g.dotW };
     } else if (hasClass(e, 'lwfb-fab')) {
       const w = g.miniW, h = g.miniW;
       const num = v => (v === '' || v == null || v === 'auto') ? null : parseFloat(v);
@@ -374,7 +383,7 @@ function boot(page, src = SRC, extra = {}) {
     union() {
       const f = page.rectOf(fab);
       const b = fab.children.find(c => page.hasClass(c, 'lwfb-fab-x'));
-      const br = b ? page.rectOf(b) : f;
+      const br = (b && page.rectOf(b).width > 0) ? page.rectOf(b) : f;
       return {
         left: Math.min(f.left, br.left), top: Math.min(f.top, br.top),
         right: Math.max(f.right, br.right), bottom: Math.max(f.bottom, br.bottom)
@@ -603,20 +612,26 @@ function scenarioChecks(R, g, src = SRC) {
     const s = boot(p, src);
     R.ok('S4e.setupIsReal', overlaps(s.union(), p.rectOf(toggle)), 'fab starts on the toggle');
     s.scan();
-    R.ok('S4e.yielded', s.state() === 'parked', `state ${s.state()}`);
+    R.ok('S4e.yielded', s.state() !== 'home', `state ${s.state()}`);
+    // THE VERDICT THAT CHANGED. This layout has nowhere good: the gutters are
+    // narrower than the chip and everything inside the panel is a word. Round 3
+    // parked dead centre on a label because a "best available" fallback took the
+    // least-bad spot. There is no fallback now — fading is the honest answer,
+    // and the 20s ceiling means it is never gone for long.
+    R.eq('S4e.fadedNotCamped', s.state(), 'hidden',
+      'nowhere good on the rim -> get out of the way rather than sit on a sentence');
     const u = s.union(), pr = p.rectOf(panel);
     const straddles = overlaps(u, pr) && !(u.left >= pr.left && u.right <= pr.right && u.top >= pr.top && u.bottom <= pr.bottom);
-    R.ok('S4e.noStraddle', !straddles,
-      `parked ${JSON.stringify(u)} vs panel ${JSON.stringify(pr)} — must be wholly in or wholly out`);
-    R.ok('S4e.notOnBodyText', !overlaps(u, p.rectOf(copy)), 'and not across the body copy');
-    R.ok('S4e.notOnToggle', !overlaps(u, p.rectOf(toggle)), 'and off the control it fled');
+    R.ok('S4e.noStraddle', s.state() === 'hidden' || !straddles,
+      `${JSON.stringify(u)} vs panel ${JSON.stringify(pr)} — wholly in, wholly out, or gone`);
+    R.ok('S4e.notOnBodyText', s.state() === 'hidden' || !overlaps(u, p.rectOf(copy)), 'never across the body copy');
     // Unit-level, so the surface rule is tested directly rather than through
     // whichever spot the search happened to pick: a box wholly inside a
     // paragraph is CLEAR (nothing tappable) but must never be EMPTY.
     const cr = p.rectOf(copy);
     const inText = { left: cr.left + 10, top: cr.top + 10, right: cr.left + 84, bottom: cr.top + 84, width: 74, height: 74 };
-    R.eq('S4e.textIsNotEmptySpace', s.api.spotClass(inText, s.fab, p.vw, p.vh), 'clear',
-      'a paragraph is somewhere you can sit without breaking anything, not empty space');
+    R.eq('S4e.textIsNotEmptySpace', s.api.spotClass(inText, s.fab, p.vw, p.vh), 'busy',
+      'a paragraph is BUSY, never empty space');
   }
 
   /* S4e2 — the same shape with WIDE gutters, which is the page as described:
@@ -679,9 +694,11 @@ function scenarioChecks(R, g, src = SRC) {
     // transition out of `auto` does not animate, so without the first write the
     // chip just appears somewhere else.
     const lefts = s.fab._writes.filter(w => w.prop === 'left').map(w => w.value);
-    R.ok('S4g.pinnedBeforeMove', lefts.length >= 2 && lefts[0] === Math.round(homeLeft) + 'px' &&
-      lefts[lefts.length - 1] !== lefts[0],
-      `left writes: ${JSON.stringify(lefts)} — first must pin home (${Math.round(homeLeft)}px), last must differ`);
+    const tops = s.fab._writes.filter(w => w.prop === 'top').map(w => w.value);
+    const moved = lefts[lefts.length - 1] !== lefts[0] || tops[tops.length - 1] !== tops[0];
+    R.ok('S4g.pinnedBeforeMove', lefts.length >= 2 && lefts[0] === Math.round(homeLeft) + 'px' && moved,
+      `left writes ${JSON.stringify(lefts)}, top writes ${JSON.stringify(tops)} — ` +
+      `first left must pin home (${Math.round(homeLeft)}px) and the chip must end up somewhere else`);
     R.ok('S4g.transitionDeclared', /\.lwfb-fab\{transition:[^}]*left \.18s/.test(src),
       'and the stylesheet actually animates left/top at 180ms');
     R.ok('S4g.dragKillsTransition', /b\.style\.transition = 'none'/.test(src),
@@ -700,8 +717,10 @@ function scenarioChecks(R, g, src = SRC) {
     // on the settings list while the width-only size guard threw the row out.
     // The row is the point of the whole scenario, so name the reason.
     R.eq('S5.becauseControl', r5 && r5.why, 'control', 'a full-width settings row IS a control');
-    R.ok('S5.offTheToggle', !overlaps(s.union(), p.rectOf(p.toggle)), 'off the Reduced motion row');
-    R.ok('S5.visible', s.visible(), 'still reachable');
+    R.ok('S5.offTheToggle', s.state() === 'hidden' || !overlaps(s.union(), p.rectOf(p.toggle)),
+      'off the Reduced motion row, or gone from it');
+    R.ok('S5.notCamped', s.state() !== 'parked' || s.api.watcher().tier === 'empty',
+      'if it parked at all, it parked on genuinely empty space');
     // and it comes back when the list scrolls on
     p.toggle._rect.top = 200;
     s.scan(); s.scan();
@@ -722,10 +741,16 @@ function scenarioChecks(R, g, src = SRC) {
     s.clock.t += 5000; s.scan();
     R.eq('S6.stillHiddenBeforeCeiling', s.state(), 'hidden', 'ceiling has not fired yet');
     s.clock.t += 16000; s.scan();
-    R.eq('S6.ceilingFired', s.state(), 'off:home', 'back after 20s, watcher retired');
+    R.eq('S6.ceilingFired', s.state(), 'home', 'back after 20s');
     R.ok('S6.visibleAfterCeiling', s.visible(), 'a fab in the way still reports bugs; a fab that is gone reports nothing');
+    // It SNOOZES rather than retiring: fading is common now, so retiring on the
+    // first long fade would strand the chip on a control for the whole session.
     s.scan(); s.scan();
-    R.ok('S6.staysVisible', s.visible() && s.state() === 'off:home', 'and it does not start hiding again');
+    R.ok('S6.staysVisibleThroughSnooze', s.visible() && s.state() === 'home',
+      'it does not start hiding again the moment it reappears');
+    s.clock.t += 61000; s.scan();
+    R.ok('S6.behavesAgainAfterSnooze', s.state() === 'hidden' || s.state() === 'parked',
+      `after the snooze it yields again (state ${s.state()}) rather than being retired for the session`);
   }
 
   /* S7 — detection throws. The fab must behave exactly as it did yesterday. */
@@ -825,6 +850,128 @@ function scenarioChecks(R, g, src = SRC) {
     R.eq('S12.notAModal', s.state(), 'home', 'only ancestors beneath it -> it is the page, not a sheet');
   }
 
+  /* S14 — OUR OWN CHROME MUST NOT MAKE A SPOT LOOK EMPTY.
+     The badge's visible dot is a bare <span> with NO class. A self-exclusion
+     filter that tests the returned node's className (the obvious way to write
+     it, and what the coordinator's probe does) keeps that span, reads it as the
+     topmost thing at the point, and an occupied spot looks like a clean one.
+     fyIsOurs walks ancestors instead. This proves it: a control hiding under the
+     BADGE's corner — not under the chip's body — must still block. */
+  {
+    const p = pagePlain(g);
+    const s = boot(p, src);
+    const badge = s.fab.children.find(c => p.hasClass(c, 'lwfb-fab-x'));
+    const br = p.rectOf(badge);
+    R.ok('S14.dotIsInTheHitTest', p.doc.elementsFromPoint(br.left + 24, br.top + 24)
+      .some(e => e.tagName === 'SPAN' && !e.className),
+      'the classless dot really is returned by the hit test (or this proves nothing)');
+    // a control occupying only the badge's area, nowhere near the chip's body
+    const sneaky = p.add(p.body, 'button', {
+      id: 'underbadge', cs: { zIndex: '9' },
+      rect: { left: br.left - 4, top: br.top - 4, width: 30, height: 30 }
+    });
+    const r = s.scan();
+    R.eq('S14.ourOwnDotDoesNotMask', r && r.why, 'control',
+      `a control under the badge must still register (got ${JSON.stringify(r)})`);
+  }
+
+  /* S15 — THE COORDINATOR'S PROBE, folded in (scripts/_fabprobe.mjs).
+     It prints the topmost element under the chip's five corners and centre, and
+     whether they are all the same. On the shot that started this pass the answer
+     was four different elements, two of them .toggle rows. Whatever the chip
+     ends up doing on a dense panel, this must never be the state it settles in:
+     if it is visible at all, `same` has to be TRUE. */
+  {
+    const p = makePage(g);
+    const page = p.add(p.body, 'div', { id: 'page', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    const panel = p.add(page, 'div', { id: 'panel', cs: { zIndex: '10' }, rect: { left: 45, top: 30, width: p.vw - 90, height: p.vh - 60 } });
+    const labels = ['Reduced motion', 'Manual aim (advanced routing)', 'High contrast', 'Haptics', 'Show timer', 'Auto save'];
+    labels.forEach((t, i) => {
+      const row = p.add(panel, 'div', {
+        className: 'toggle', cs: { cursor: 'pointer' },
+        rect: { left: 45, top: 90 + i * 120, width: 301, height: 51 }
+      });
+      p.add(row, 'span', { rect: { left: 60, top: 105 + i * 120, width: 226, height: 16 } });
+    });
+    const s = boot(p, src);
+    s.scan(); s.scan();
+    const fr = p.rectOf(s.fab);
+    const pts = [[fr.left + 6, fr.top + 6], [fr.right - 6, fr.top + 6], [fr.left + 6, fr.bottom - 6],
+                 [fr.right - 6, fr.bottom - 6], [fr.left + fr.width / 2, fr.top + fr.height / 2]];
+    const under = pts.map(([x, y]) => {
+      // the coordinator's filter, verbatim — className-based, so it KEEPS our
+      // classless dot. That is the point: even read through a filter as naive
+      // as the one that produced the field report, the answer must be sane.
+      const els = p.doc.elementsFromPoint(x, y).filter(e => !e.className || !String(e.className).includes('lwfb'));
+      const e = els[0];
+      if (!e) return 'nothing';
+      const r2 = p.rectOf(e);
+      return e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') +
+        (e.className ? '.' + e.className.trim().split(/\s+/)[0] : '') + ` [${Math.round(r2.width)}x${Math.round(r2.height)}]`;
+    });
+    const same = new Set(under).size === 1;
+    if (VERBOSE) {
+      console.log('  -- fabprobe --');
+      console.log(`     rect  x ${Math.round(fr.left)}, y ${Math.round(fr.top)}, ${Math.round(fr.width)} x ${Math.round(fr.height)}`);
+      under.forEach((u, i) => console.log(`     under[${i}]  ${u}`));
+      console.log(`     same  ${String(same).toUpperCase()}   state ${s.state()}`);
+    }
+    R.eq('S15.denseSettingsPanel', s.state(), 'hidden',
+      'six toggle rows and no gutter wide enough: the chip gets out of the way');
+    R.ok('S15.neverSettlesOnMixedGround', s.state() === 'hidden' || same,
+      `if it is visible it must sit on ONE thing. under = ${JSON.stringify(under)}`);
+  }
+
+  /* S16 — the centre of the screen is content, not chrome. Unit-level on the
+     candidate generator, because a park in the middle band is the single
+     complaint that came back three rounds running. */
+  {
+    const p = makePage(g);
+    const s = boot(p, src);
+    const cands = s.api.candidates(p.vw, p.vh, 48, 48);
+    R.ok('S16.someCandidates', cands.length >= 8, `${cands.length} candidate spots`);
+    const strays = cands.filter(c => {
+      const cx = c.x + 24, cy = c.y + 24;
+      return cx > p.vw * 0.25 && cx < p.vw * 0.75 && cy > p.vh * 0.25 && cy < p.vh * 0.75;
+    });
+    R.eq('S16.noneInTheMiddleBand', strays.length, 0,
+      `every spot must be on the rim; strays: ${JSON.stringify(strays)}`);
+  }
+
+  /* S17 — a page where parking IS the right answer, with two traps between the
+     chip and the good spot. Needed because the dense-panel scenarios now end in
+     a fade, and a fade cannot show whether the straddle test, the clearance
+     padding or the verify budget still work. Here the chip must walk PAST:
+       trap 1, nearer: a spot straddling the panel's right edge (354px)
+       trap 2, next:   a spot whose last 2px clip a button
+     and land on clean panel surface further along the rim. */
+  {
+    const p = makePage(g);
+    p.add(p.body, 'div', { id: 'page', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    p.add(p.body, 'div', { id: 'panel', cs: { zIndex: '5' }, rect: { left: 0, top: 0, width: 354, height: p.vh } });
+    // the control under home that starts the whole thing
+    p.add(p.body, 'button', { id: 'homeblock', cs: { zIndex: '9' }, rect: { left: 330, top: 700, width: 48, height: 48 } });
+    // trap 2: only its top 2px fall inside the (330,784) / (266,784) boxes
+    const clip = p.add(p.body, 'button', { id: 'clip', cs: { zIndex: '9' }, rect: { left: 250, top: 830, width: 130, height: 40 } });
+    const s = boot(p, src);
+    s.scan();
+    R.ok('S17.parkedSomewhere', s.state() === 'parked', `state ${s.state()} — this page has clean rim`);
+    const u = s.union();
+    R.ok('S17.noStraddleOfPanelEdge', u.right <= 354 || u.left >= 354,
+      `parked ${JSON.stringify(u)} must not cross the panel edge at x=354`);
+    R.ok('S17.clearedTheClippedButton', !overlaps(u, p.rectOf(clip)),
+      `parked ${JSON.stringify(u)} vs a button it would clip by 2px ${JSON.stringify(p.rectOf(clip))}`);
+    // and once parked, content drifting underneath must move it on — the old
+    // check only reacted to controls, so the chip sat on whatever arrived
+    const drift = p.add(p.body, 'div', {
+      id: 'drift', cs: { zIndex: '20' },
+      rect: { left: u.left - 5, top: u.top - 5, width: 90, height: 40 }
+    });
+    s.scan();
+    R.ok('S17.movesWhenContentDriftsUnder', s.state() !== 'parked' || !overlaps(s.union(), p.rectOf(drift)),
+      `state ${s.state()} — a parked chip must not sit under content that arrives later`);
+  }
+
   /* S13 — the kill switch. */
   {
     const p = pageSheet(g);
@@ -904,7 +1051,7 @@ const MUTANTS = [
     // the coordinator's screenshot, as a permanent regression
     name: 'straddle test removed (park half on, half off a panel edge)',
     patch: s => s.replace('else if (sig !== top) empty = false;', 'else if (sig !== top) empty = empty;'),
-    mustFail: ['S4e.noStraddle']
+    mustFail: ['S17.noStraddleOfPanelEdge']
   },
   {
     name: 'surface test relaxed (a paragraph counts as empty space)',
@@ -914,7 +1061,7 @@ const MUTANTS = [
   {
     name: 'clearance padding removed (park clipping a control)',
     patch: s => s.replace('CLEAR_PAD:     8,', 'CLEAR_PAD:     0,'),
-    mustFail: ['S5.offTheToggle']
+    mustFail: ['S17.clearedTheClippedButton']
   },
   {
     name: 'the move is a teleport again (no px pin before the transition)',
@@ -923,8 +1070,41 @@ const MUTANTS = [
   },
   {
     name: 'verify budget too small to reach a clean spot (fab fades instead)',
-    patch: s => s.replace('MAX_VERIFY:   12,', 'MAX_VERIFY:    3,'),
-    mustFail: ['S5.offTheToggle', 'S5.visible']
+    patch: s => s.replace('MAX_VERIFY:   12,', 'MAX_VERIFY:    2,'),
+    mustFail: ['S17.parkedSomewhere']
+  },
+  {
+    // round 3's actual bug, kept forever
+    name: 'best-available fallback restored (parks on a settings label)',
+    patch: s => s.replace("if (cls === 'empty') { fyMoveTo(w, c2.x, c2.y, size, 'empty'); return; }",
+      "if (cls === 'empty' || cls === 'busy') { fyMoveTo(w, c2.x, c2.y, size, cls); return; }"),
+    mustFail: ['S4e.fadedNotCamped', 'S15.denseSettingsPanel']
+  },
+  {
+    name: 'centre of the screen allowed as a parking spot',
+    patch: s => s
+      .replace('var out = [], seen = {}, keep = [], i;',
+        'var out = [], seen = {}, keep = [], i; out.push({ x: Math.round(vw / 2 - w / 2), y: Math.round(vh / 2 - h / 2) });')
+      .replace('if (fyInEdgeBand(out[i].x + w / 2, out[i].y + h / 2, vw, vh)) keep.push(out[i]);',
+        'keep.push(out[i]);'),
+    mustFail: ['S16.noneInTheMiddleBand']
+  },
+  {
+    name: 'parked spot only re-checked for controls, not for staying empty',
+    patch: s => s.replace("if (fySpotClass(cur, w.el, vw, vh) !== 'empty') fyYield(w, vw, vh);",
+      "if (fySpotClass(cur, w.el, vw, vh) === 'blocked') fyYield(w, vw, vh);"),
+    mustFail: ['S17.movesWhenContentDriftsUnder']
+  },
+  {
+    name: 'ceiling retires the watcher for the whole session (strands the chip)',
+    patch: s => s.replace('fyGoHome(w); w.snoozeUntil = Date.now() + FY.SNOOZE_MS; w.forced = true;',
+      'fyGoHome(w); w.off = true; w.forced = true;'),
+    mustFail: ['S6.behavesAgainAfterSnooze']
+  },
+  {
+    name: 'no snooze after the ceiling (fades again the instant it reappears)',
+    patch: s => s.replace("if (w.snoozeUntil && Date.now() < w.snoozeUntil) return { skip: 'snoozed' };", ''),
+    mustFail: ['S6.staysVisibleThroughSnooze']
   },
   {
     name: 'scan never stands down for our own form',

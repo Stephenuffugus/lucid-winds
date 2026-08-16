@@ -111,7 +111,12 @@
       /* yielding: a soft fade rather than a pop, so a player who is watching
          the corner sees it step aside instead of blinking out */
       '.lwfb-fab{transition:opacity .18s ease,left .18s ease,top .18s ease;}' +
-      '.lwfb-fab[data-lwfb-yield="1"]{opacity:0;pointer-events:none;}';
+      '.lwfb-fab[data-lwfb-yield="1"]{opacity:0;pointer-events:none;}' +
+      /* parked: the chip is out of the way temporarily, so the dismiss badge
+         stands down. That is 74px of footprint back to 48px, which is the
+         difference between fitting the gutter beside a centred panel and not.
+         It returns the moment the chip is home. */
+      '.lwfb-fab[data-lwfb-parked="1"] .lwfb-fab-x{opacity:0;pointer-events:none;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -360,7 +365,8 @@
     SURF_W:     0.50,    // "a big flat surface to sit on": >=50% of the viewport
     SURF_H:     0.50,    //   in BOTH axes — a panel qualifies, a paragraph does not
     EDGE_BAND:  0.25,    // a park must sit within this fraction of some edge
-    SETTLE_MS:   260     // > the 180ms move, then the stylesheet takes over
+    SETTLE_MS:   260,    // > the 180ms move, then the stylesheet takes over
+    SNOOZE_MS: 60000     // after the ceiling fires: sit still, then try again
   };
 
   /* ⛔⛔ 2026-08-16, SAME DAY, SECOND PASS — FIVE FIXED ANCHORS WAS TOO COARSE.
@@ -445,7 +451,6 @@
      nothing on the rim is genuinely empty, the honest answer is to FADE until
      the next clear scan — and the 20s ceiling still guarantees the chip comes
      back. A chip that briefly gets out of the way beats a chip on a sentence.
-  */
 
      EMPTY means every probe point resolves to the SAME topmost element, and
      that element is a big flat surface (or there is nothing there at all).
@@ -679,6 +684,7 @@
     }
     u.width = u.right - u.left; u.height = u.bottom - u.top;
     u.offX = fr.left - u.left; u.offY = fr.top - u.top;   // badge overhang
+    u.fabW = fr.right - fr.left; u.fabH = fr.bottom - fr.top;
     return u;
   }
   function fySnapshot(el) {
@@ -701,7 +707,7 @@
   function fyGoHome(w, animate) {
     if (!w || !w.el) return;
     var el = w.el, s = w.home || {};
-    if (el.removeAttribute) el.removeAttribute('data-lwfb-yield');
+    if (el.removeAttribute) { el.removeAttribute('data-lwfb-yield'); el.removeAttribute('data-lwfb-parked'); }
     if (animate && w.homeRect && w.state === 'parked') {
       fyPin(el);
       el.style.left = Math.round(w.homeRect.left + w.homeRect.offX) + 'px';
@@ -727,6 +733,7 @@
   }
   function fyMoveTo(w, x, y, size, tier) {
     var el = w.el;
+    if (el.setAttribute) el.setAttribute('data-lwfb-parked', '1');   // hides the badge
     fyPin(el);
     el.style.left = Math.round(x + size.offX) + 'px';
     el.style.top = Math.round(y + size.offY) + 'px';
@@ -758,7 +765,12 @@
   }
 
   function fyYield(w, vw, vh) {
-    var size = w.size;
+    // Park on the FAB'S OWN BOX, not the union with the dismiss badge. The badge
+    // is hidden while parked (fyMoveTo sets data-lwfb-parked), which takes the
+    // footprint from 74px back to 48px — the difference between fitting the
+    // gutter beside a centred panel and not fitting it. The badge comes back the
+    // moment the chip is home, which is where anyone reaches for it anyway.
+    var size = w.parkSize || w.size;
     if (!size || !size.width) { fyFade(w); return; }
     var cands = fyCandidates(vw, vh, size.width, size.height), i;
     var hx = w.homeRect ? (w.homeRect.left + w.homeRect.right) / 2 : vw;
@@ -796,7 +808,7 @@
     /* PHASE 2 — the real 5-probe test on the best few, with CLEAR_PAD of
        breathing room. Probes sit 6px inside the box, so without the padding a
        candidate could clip the last two pixels of a button and sail past it. */
-    var fallback = null, tried = 0;
+    var tried = 0;
     for (i = 0; i < pool.length && tried < FY.MAX_VERIFY; i++) {
       var c2 = pool[i], pad = FY.CLEAR_PAD;
       tried++;
@@ -806,13 +818,12 @@
                             w.el, vw, vh);
       if (cls === 'unavailable') { fyFade(w); return; }
       if (cls === 'empty') { fyMoveTo(w, c2.x, c2.y, size, 'empty'); return; }
-      if (cls === 'clear' && !fallback) fallback = c2;
     }
-    // Nothing empty anywhere on the ring. Take the best merely-clear spot rather
-    // than disappearing — a chip over a paragraph is worse-looking than a chip
-    // in a gutter, and far better than a chip nobody can find.
-    if (fallback) { fyMoveTo(w, fallback.x, fallback.y, size, 'clear'); return; }
-    fyFade(w);   // every candidate is over a control — go quiet, but see the ceiling
+    /* Nothing on the rim is genuinely empty. NO FALLBACK — there used to be one
+       and it is what put the chip on a settings label. Fade, and let the next
+       clear scan bring it back. The ceiling in fyScan means this can never last
+       more than 20 seconds. */
+    fyFade(w);
   }
 
   function fyScan() {
@@ -824,10 +835,16 @@
     var vw = window.innerWidth || 0, vh = window.innerHeight || 0;
     if (!vw || !vh) return { skip: 'no-viewport' };
 
+    // Snoozing: the ceiling just fired, so leave the chip alone for a minute
+    // rather than fading it again the instant it becomes visible.
+    if (w.snoozeUntil && Date.now() < w.snoozeUntil) return { skip: 'snoozed' };
     if (w.state === 'home') {
       var m = fyMeasure(w);
       if (!m || !m.width) return { skip: 'unmeasurable' };
       w.size = m; w.homeRect = m;
+      // the parked footprint: the chip alone, badge hidden. offX/offY are 0
+      // because with the badge gone there is no overhang to compensate for.
+      w.parkSize = { width: m.fabW, height: m.fabH, offX: 0, offY: 0 };
     }
     if (!w.homeRect) return { skip: 'unmeasurable' };
 
@@ -851,20 +868,30 @@
       // drifting past a parked chip is cosmetic; chasing it would make the chip
       // hop on every scroll, which is its own kind of broken.
       var here = fyRect(w.el);
-      if (here) {
-        var cur = { left: here.left - w.size.offX, top: here.top - w.size.offY,
-                    right: here.left - w.size.offX + w.size.width,
-                    bottom: here.top - w.size.offY + w.size.height,
-                    width: w.size.width, height: w.size.height };
-        if (fySpotClass(cur, w.el, vw, vh) === 'blocked') fyYield(w, vw, vh);
+      var ps = w.parkSize || w.size;
+      if (here && ps) {
+        var cur = { left: here.left, top: here.top,
+                    right: here.left + ps.width, bottom: here.top + ps.height,
+                    width: ps.width, height: ps.height };
+        // Parked spots are only ever EMPTY ones. If this one stops being empty
+        // — the list scrolled, a row moved in — go and find another or fade.
+        // The old check only re-acted to controls, so the chip sat on whatever
+        // text drifted underneath it.
+        if (fySpotClass(cur, w.el, vw, vh) !== 'empty') fyYield(w, vw, vh);
       }
     } else if (w.state === 'hidden') {
       // ⛔ THE CEILING. Nothing in this file may leave the fab invisible longer
-      // than this. If a page really is wall-to-wall controls we hand the player
+      // than this. If a page really is wall-to-wall content we hand the player
       // back yesterday's behaviour — a fab sitting on something — because a fab
       // in the way still reports bugs and a fab that is gone reports nothing.
+      //
+      // It SNOOZES rather than retiring. Fading is common now that there is no
+      // "best available" fallback, so retiring the watcher on the first long
+      // fade would strand the chip on a control for the rest of the session —
+      // round 1 again, permanently. A snooze sits still for a minute and then
+      // starts behaving again once the page has moved on.
       if (w.hiddenAt && (Date.now() - w.hiddenAt) >= FY.HIDDEN_MAX_MS) {
-        fyGoHome(w); w.off = true; w.forced = true;
+        fyGoHome(w); w.snoozeUntil = Date.now() + FY.SNOOZE_MS; w.forced = true;
       } else {
         fyYield(w, vw, vh);   // an anchor may have freed up
       }
@@ -917,7 +944,8 @@
     watch = { el: el, badge: badge, state: 'home', home: fySnapshot(el),
               size: null, homeRect: null, clearRun: 0, hiddenAt: 0, errRun: 0,
               off: false, timer: null, activeUntil: Date.now() + FY.ACTIVE_FOR,
-              lastBump: 0, dragging: false, tier: null, settle: null, forced: false, last: null };
+              lastBump: 0, dragging: false, tier: null, settle: null, forced: false,
+              snoozeUntil: 0, last: null };
     // 'scroll' matters as much as 'pointerdown'. Bramblewick (2026-08-16, shot
     // on screen) has no overlay at all — an ordinary "Reduced motion" toggle in
     // a long settings list scrolls INTO the bottom-right corner and lands under

@@ -43,9 +43,11 @@ It yields when either:
   painted beneath it), **and has no controls we can identify**. This is the blunt
   fallback for sheets whose buttons we cannot see at all.
 
-**2. It parks, it does not vanish.** It searches a ring of candidate spots and
-takes the first that is **empty**. Only if nothing on the ring is even
-control-free does it fade, and even then a hard 20-second ceiling brings it back.
+**2. It parks only on genuine emptiness.** It searches one ring of spots on the
+viewport's rim and takes the first where all five probes resolve to the *same*
+big flat surface. Anything else — a label, a card, a row, a sentence — is a
+reason to **fade**, not a place to sit. A hard 20-second ceiling then brings it
+back, and it snoozes for a minute rather than retiring.
 Two consecutive clear scans return it to exactly where it was, **including a spot
 the player dragged it to**. Every move is a 180ms transition, never a teleport.
 
@@ -116,6 +118,57 @@ px, flushes that, and only then writes the target, so the 180ms ease actually
 plays. The return home is animated the same way and hands the position back to
 the stylesheet 260ms later (same pixels, nothing to see) so `env(safe-area-inset)`
 and rotation keep working. A finger drag turns the easing off so it does not lag.
+
+## Third pass — instrumented, and the placement policy rewritten
+
+The coordinator stopped sending screenshots and instrumented it. The progression
+on one page is the whole story:
+
+    round 1, no fix:   bottom right, ON the Reduced motion toggle (a control)
+    round 2, my fix:   middle LEFT, half on / half off the panel edge, on text
+    round 3:           middle CENTRE, on "Manual aim (advanced routing)"
+
+**Each round satisfied my rule better than the last and looked worse than the
+last.** Two causes, both now removed:
+
+1. **An inner ring of candidates.** Added in pass two for narrow-gutter layouts,
+   it offered spots that scored as well as the gutters and were *nearer to home*,
+   so nearest-first walked the chip into the middle of the screen. Gone. Parks
+   are confined to the viewport's rim, with an explicit edge-band guard so it
+   cannot come back by accident: **corners and edges read as chrome, the centre
+   reads as content, always.**
+2. **A "best available" fallback.** When nothing was genuinely empty it took the
+   least-bad merely-control-free spot. On a dense settings panel *everything that
+   is not a control is a word*, so that fallback could only ever land on a
+   sentence. Gone, with no replacement.
+
+A page is not controls and gaps. It is controls, readable content, and actual
+empty space, and only the third is somewhere to stand. **If nothing on the rim is
+empty, it fades** — and the ceiling guarantees it comes back.
+
+Two supporting changes:
+
+- **The dismiss badge stands down while parked.** Footprint 74px → 48px for the
+  duration, which is the difference between fitting the gutter beside a centred
+  panel and not. It returns the moment the chip is home, which is where anyone
+  reaches for it anyway.
+- **The ceiling snoozes instead of retiring.** Fading is common now, so retiring
+  the watcher on the first long fade would strand the chip on a control for the
+  rest of the session — round 1, permanently. It now sits still for 60s and then
+  behaves again.
+
+### The self-exclusion trap, worth writing down
+
+`under[0]` in the field report was **our own dismiss dot**: a bare `<span>` with
+no class. Any self-exclusion filter that tests the returned node's `className`
+keeps it, reads it as the topmost thing at that point, and an occupied spot looks
+clean. `fyIsOurs` walks **ancestors**, so the dot is caught by its parent
+`.lwfb-fab-x`. S14 proves it with a control hidden under the badge's corner.
+
+**If you re-run `scripts/_fabprobe.mjs`, add `opacity` and `pointerEvents` to the
+readout.** A faded chip keeps its rect and its `left`/`top`, so the probe will
+report a position and `same FALSE` for a chip that is not on screen at all. That
+is the expected state on a dense panel now.
 
 ## Costs
 
