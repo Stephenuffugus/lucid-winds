@@ -1,10 +1,29 @@
 # BLACKOUT — build notes
 
-**Status: SHIPPABLE.** Generator proven, 253 assertions green, playable loop end to end.
+**Status: SHIPPABLE, deepened.** Generator proven, **342 assertions** green, six case
+modes each swept and gated separately, playable loop end to end.
 Game id `blackout`, accent cold cyan `#5ad1e6`, portal category `puzzle`, icon 🕯️.
 
-Files: `index.html` (whole game), `sim.js` (node runner), `sw.js`, `manifest.webmanifest`,
-this file. Icons are referenced but not created here (main loop renders all five).
+Files: `index.html` (whole game), `sim.js` (node runner), `domsmoke.js` (dom stub
+smoke test), `sw.js`, `manifest.webmanifest`, this file.
+
+**Second pass, 2026-08-16 (deepening).** What changed, in the order it was done:
+
+1. **The case title no longer truncates.** It rendered "THE EVENING BUSINE..." on a
+   390px phone. It now wraps to two lines and steps down a size when it has to, and
+   the fit is *computed*, so node proves that all 130 titles the generator can
+   produce fit at 320, 360, 375 and 390 css px. See section 10.
+2. **Board cells have real headroom.** 48.2 x 48 became 52 x 52 on a full bleed grid,
+   and `sim.js --layout` now reads the touch targets straight out of the stylesheet
+   instead of a human doing the box model arithmetic in a table. Watched it fail
+   against the OLD geometry before trusting it.
+3. **Unreliable narrators (HANDOFF 4.7) are built and verified.** 10,000 cases.
+4. **A difficulty ladder**: quick / standard / long, each with its own clue mix,
+   budget, band and gates. Six modes in total with the liar flag.
+5. **Phrasing banks doubled**: 6 lines per bank to 12, 252 lines total, and every one
+   of them is gated (the old draw could only ever reach the first six).
+6. **A dom smoke test** that boots the real page against a stub document and plays a
+   whole case. It found a real defect on its first run (section 11).
 
 ---
 

@@ -6,6 +6,7 @@
      node sim.js --test              full assertion harness, exits nonzero on a failure
      node sim.js --runs=20000        three policy balance sweep plus the economy sweep
      node sim.js --watch=1234        ascii frame dump of one run so a human can see it
+     node sim.js --layout            static gate on the run screen layout invariants
      node sim.js --grid=6000         the tuning grid: PACK_BASE x COST_EXP x cache scale
      node sim.js --runs=6000 --over=PACK_BASE=30,COST_EXP=1.7
                                      any sweep run against an overridden CONFIG,
@@ -344,6 +345,83 @@ function quick(G, runs, seed0) {
            cMean: cSum / runs, oMean: oSum / runs, cWin: pct(cWin, runs) };
 }
 
+/* ------------------------------------------------------------------ layout */
+/* A static gate for the three layout defects the LOOKING pass found. It cannot
+   replace looking at the thing, and it does not try to: it holds the specific
+   invariants the fixes established, so they cannot be undone by accident by
+   whoever touches this next. Every check here was watched fail against the
+   build that had the defect. */
+function layoutGate() {
+  var html = HTML, css = html.slice(html.indexOf('<style'), html.indexOf('</style>'));
+  var out = [], fails = 0;
+  function chk(name, ok, detail) {
+    out.push((ok ? 'PASS  ' : 'FAIL  ') + name + (detail && !ok ? '   [' + detail + ']' : ''));
+    if (!ok) fails++;
+  }
+  function rule(sel) {
+    var i = css.indexOf(sel + '{');
+    if (i < 0) i = css.indexOf(sel + ' {');
+    if (i < 0) return null;
+    return css.slice(i, css.indexOf('}', i));
+  }
+
+  /* 1. THE SHAFT MAY NOT CROSS THE CARDS, AND IT IS LAYOUT THAT SAYS SO */
+  var scroll = rule('#shaftScroll');
+  chk('the column is clipped to the gutter', !!scroll && /width:\s*var\(--gut\)/.test(scroll) && /overflow:\s*hidden/.test(scroll),
+      scroll || 'no #shaftScroll rule');
+  /* every run screen block must be inset past the gutter on its left */
+  var blocks = ['#hud', '#margin', '#meters', '#nodecard', '#actions', '#btnCargo'];
+  blocks.forEach(function (b) {
+    var r = rule(b);
+    chk('the ' + b + ' block is inset past the gutter', !!r && r.indexOf('var(--gutpad)') >= 0, r || 'missing');
+  });
+  /* and no prose may be drawn in the art layer at all */
+  var prose = ['.strataSeam b', '#recLine span', '.nmark .lbl', '#bandStamp'];
+  prose.forEach(function (sel) {
+    chk('no text rule left in the art layer for ' + sel, css.indexOf(sel) < 0);
+  });
+  chk('no bandStamp element or call survives', html.indexOf('bandStamp') < 0);
+  chk('the band name is flared in the HUD instead', css.indexOf('#strataName.stamped') >= 0);
+  /* the shaft wash is pushed back far enough to read as atmosphere */
+  var bandR = rule('#shaftBand'), op = bandR && /opacity:\s*([0-9.]+)/.exec(bandR);
+  chk('the full bleed wash is pushed back under 0.2 opacity', !!op && parseFloat(op[1]) <= 0.2, bandR || '');
+  /* the marker builder must not emit words any more */
+  var rs = html.slice(html.indexOf('function renderShaft'), html.indexOf('function stampBand'));
+  chk('the column emits no node words', !/'\s*VEIN|HEARTSTONE|DEEPEST EVER/.test(rs));
+  chk('the column emits no per marker depth text', rs.indexOf('class="lbl"') < 0);
+
+  /* 2. A CONTROL MAY NOT COVER ANOTHER CONTROL */
+  var pane = rule('.scrollpane'), bar = rule('.stickybar'), head = rule('.ovlhead');
+  chk('the scroll pane may shrink', !!pane && /min-height:\s*0/.test(pane) && /flex:\s*1 1 auto/.test(pane), pane || 'missing');
+  chk('the surface bar may NOT shrink', !!bar && /flex:\s*none/.test(bar), bar || 'missing');
+  chk('the surface head may NOT shrink', !!head && /flex:\s*none/.test(head), head || 'missing');
+  chk('the bar is opaque so nothing reads through it', !!bar && /background:\s*var\(--bg\)/.test(bar), bar || '');
+  chk('the surface uses the scroll pane class', html.indexOf('class="scrollpane"') >= 0);
+  chk('the surface uses the bar class', html.indexOf('class="stickybar"') >= 0);
+  chk('no hand rolled scroll flex is left in the markup', !/overflow-y:auto;flex:1/.test(html));
+
+  /* 3. A DISABLED BUTTON MUST STAY OPAQUE OVER ART */
+  var dis = rule('.big[disabled]');
+  chk('a disabled action button does not go translucent', !!dis && dis.indexOf('opacity') < 0, dis || 'missing');
+  chk('a disabled action button gets its own plate', !!dis && /background:\s*#/.test(dis), dis || '');
+  chk('its reason line stays legible', css.indexOf('.big[disabled] small') >= 0);
+
+  /* touch targets are still declared at 48 or more */
+  var small = [];
+  css.split('}').forEach(function (r) {
+    var sel = r.split('{')[0] || '', dec = r.split('{')[1] || '';
+    if (!/btn|button|Install/i.test(sel)) return;
+    var m = dec.match(/min-height:\s*(\d+)px/);
+    if (m && parseInt(m[1], 10) < 48) small.push(sel.trim() + ' ' + m[0]);
+  });
+  chk('every interactive control still declares 48px or more', small.length === 0, small.join(', '));
+
+  console.log(out.join('\n'));
+  console.log('');
+  console.log(fails ? 'LAYOUT GATE FAILED: ' + fails : 'LAYOUT GATE GREEN: ' + out.length + ' checks');
+  process.exit(fails ? 1 : 0);
+}
+
 /* ------------------------------------------------------------------- main */
 var args = process.argv.slice(2);
 var opt = {};
@@ -353,11 +431,12 @@ args.forEach(function (a) {
 });
 var OVER = parseOver(opt.over);
 if (OVER) { S = build(OVER); console.log('CONFIG OVERRIDE: ' + JSON.stringify(OVER)); }
-if (opt.test) runTests();
+if (opt.layout) layoutGate();
+else if (opt.test) runTests();
 else if (opt.watch) watch(parseInt(opt.watch, 10) || 1, opt.policy, S);
 else if (opt.grid) console.log(grid(parseInt(opt.grid, 10) || 2000, parseInt(opt.seed, 10) || 1));
 else if (opt.runs) console.log(sweep(parseInt(opt.runs, 10) || 1000, parseInt(opt.seed, 10) || 1, S).text);
 else {
-  console.log('usage: node sim.js --test | --runs=N [--seed=S] | --watch=SEED [--policy=greedy]');
+  console.log('usage: node sim.js --test | --layout | --runs=N [--seed=S] | --watch=SEED [--policy=greedy] | --grid=N');
   process.exit(2);
 }

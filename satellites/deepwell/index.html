@@ -212,8 +212,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
   display:flex;flex-direction:column;padding:calc(var(--safeT) + 14px) 14px calc(14px + var(--safe));
   overflow-y:auto;-webkit-overflow-scrolling:touch}
 .ovl h2{font-size:15px;letter-spacing:.24em;color:var(--muted);margin:0 0 10px;font-weight:700}
-.ovlhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ovlhead{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex:none}
 .ovlhead h2{flex:1;margin:0}
+/* THE SURFACE is a three part column: head, scrolling middle, bar at the foot.
+   The bar used to be a plain flex child, so its flex-shrink was 1 and a tall
+   shop squashed the bar's BOX while its buttons kept their min-height and
+   rendered straight out of it, over the daily card. A control covering another
+   control is worse than either being absent, so both ends are now flex:none
+   and only the middle is allowed to give. */
+.scrollpane{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 14px 8px}
+.stickybar{flex:none;padding:10px 14px calc(14px + var(--safe));background:var(--bg);
+  border-top:1px solid var(--line);box-shadow:0 -10px 18px -12px rgba(0,0,0,.9)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
 .row{display:flex;align-items:center;gap:10px}
 .row .grow{flex:1}
@@ -350,13 +360,13 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
   </section>
 
   <section id="shopScreen" class="screen hide">
-    <div class="ovlhead" style="padding:calc(var(--safeT) + 14px) 14px 0">
+    <div class="ovlhead" style="padding:calc(var(--safeT) + 14px) 14px 0;flex:none">
       <button class="iconbtn" id="btnShopExit" aria-label="Leave">&#10005;</button>
       <h2>THE SURFACE</h2>
       <button class="iconbtn" id="btnLog" aria-label="Logbook">&#9776;</button>
       <button class="iconbtn" id="btnOpts2" aria-label="Options">&#9881;</button>
     </div>
-    <div style="padding:0 14px;overflow-y:auto;flex:1">
+    <div class="scrollpane">
       <div class="card" style="text-align:center">
         <div class="tiny" style="letter-spacing:.2em">CASH ON HAND</div>
         <div id="cashBig">0</div>
@@ -364,9 +374,9 @@ input[type=range]{width:100%;height:48px;accent-color:#f0a742;background:transpa
       </div>
       <div id="shopTracks"></div>
       <div class="card" id="dailyCard"></div>
-      <div style="height:12px"></div>
+      <div style="height:8px"></div>
     </div>
-    <div style="padding:0 14px calc(14px + var(--safe))">
+    <div class="stickybar">
       <div id="installRow" class="hide">
         <button id="btnInstall">Keep DEEPWELL on your home screen</button>
         <button id="btnInstallNo" aria-label="Not now">&#10005;</button>

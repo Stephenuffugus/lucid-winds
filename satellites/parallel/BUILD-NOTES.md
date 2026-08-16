@@ -8,8 +8,8 @@ solver verified. Game ID `parallel`, accent violet `#8b7cf6`, portal category
 |---|---|
 | `node sim.js --test` | **PASSED 205 / FAILED 0** (205 assertions), exit 0 |
 | `node sim.js --verify` | **VERIFY PASSED**, all §5.5 gates over **100** levels, exit 0 |
-| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, tags balanced, no dashes in copy, **all 88 element lookups resolve**) |
-| `node pagecheck.js` | **PASSED 37 / FAILED 0** at 390x844, 375x667, 412x915, 360x640 and 1280x800 |
+| `node sim.js --grep` | PASSED (no `Math.random` or page objects in SIM, tags balanced, no dashes in copy, **all 89 element lookups resolve**) |
+| `node pagecheck.js` | **PASSED 37 / FAILED 0** at 390x844, 375x667, 412x915, 360x640 and 1280x800; **39 / 0** on the `?seed=` and `?day=` routes |
 | `node gen.js --check` | **REPRODUCIBLE** byte for byte from seed `0x50415241` |
 | Script block syntax | parses clean under `vm.createScript` |
 | Service worker | `parallel-` prefixed, `node --check` clean, shell bumped to `parallel-shell-v2` with `?v=2` in lockstep |
@@ -18,7 +18,8 @@ solver verified. Game ID `parallel`, accent violet `#8b7cf6`, portal category
 
 # DEEPENING PASS (second session)
 
-Levels 60 → **100**. Assertions 140 → **205**, plus a new 37 check page harness.
+Levels 60 → **100**. Assertions 140 → **205**, plus a new page harness (37 checks,
+39 on a link route).
 Nothing in `stepWorld` was touched, so the first sixty levels regenerate byte
 for byte and every save from the shipped build still points at the same boards.
 
@@ -151,7 +152,14 @@ boots the real script out of `index.html` against a small DOM stub and drives
 the view: it plays level 1 with its own embedded answer and asserts the win
 card, taps every control, builds the sky and counts the hit targets and their
 radii, opens the run log, fills the ribbon, builds a daily and a seed level,
-shares, and fits the board at five viewports.
+shares, and fits the board at five viewports. `--query=?seed=4242` and
+`--query=?day=2026-08-16` boot the link routes and assert the game lands in the
+right mode on a board whose own answer matches its par.
+
+Its own arg parser had the classic bug on the way in: it split on the first
+equals, so `--query=?seed=4242` arrived as `?seed` and the link route was never
+actually exercised while the harness reported green. Watching the check count
+stay at 37 when it should have risen to 39 is what caught it.
 
 **This is not a LOOKING pass and does not pretend to be.** It cannot see
 colour, contrast, overlap or a seam that reads wrong. What it can prove is that

@@ -34,7 +34,7 @@ const EXPORTS = [
   'makeRNG', 'rngNext', 'rngInt', 'seedFromString', 'dailySeed',
   'cx', 'cy', 'manhattan', 'reachMask', 'pendingMask', 'spawnCandidates',
   'maxDistPair', 'spawnPair', 'spawnPickup', 'newGame', 'step', 'hashState',
-  'loadPct', 'makeQueue', 'safeTurns', 'agentRandom', 'agentGreedy', 'bfsTurn',
+  'loadPct', 'makeQueue', 'toastTop', 'safeTurns', 'agentRandom', 'agentGreedy', 'bfsTurn',
   'boardAscii', 'agentRandomSafe', 'turnSurvives', 'rescueCheck', 'dischargeOldest', 'completeCircuit', 'touchPickup', 'touchTerminal', 'fireOverload',
   'agentFiller', 'pendingLen', 'pendingNew', 'fillWaypoint', 'survivalTurn', 'creepStep', 'creepCandidates', 'comboWindow', 'comboMult',
   'loadSave', 'writeSave', 'defaultSave', 'migrateSave', 'updateSave',

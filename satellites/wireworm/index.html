@@ -798,6 +798,23 @@ function loadPct(st) { return st.energized / CONFIG.CELLS; }
 /* Input queue. Capacity two, so a fast double tap still turns twice instead of
    being swallowed. push returns false when it refuses, which is what lets the
    test prove nothing is silently dropped. */
+/* Where a floating notice may sit so it covers no control. Pure arithmetic on
+   rects, kept here rather than in VIEW so the harness can prove the toast never
+   lands on a button. rects are viewport space {top,bottom}; hudBottom marks the
+   band above us that belongs to the header. */
+function toastTop(vh, hudBottom, toastH, rects) {
+  var ceiling = vh - 12, i, r;
+  for (i = 0; i < rects.length; i++) {
+    r = rects[i];
+    if (r.bottom <= hudBottom) continue;      // header controls are above us
+    if (r.top < ceiling) ceiling = r.top;     // highest control we must clear
+  }
+  var top = ceiling - toastH - 10;
+  if (top < hudBottom + 6) top = hudBottom + 6;
+  if (top + toastH > vh - 6) top = Math.max(hudBottom + 6, vh - 6 - toastH);
+  return top;
+}
+
 function makeQueue(cap) {
   var q = [];
   return {
@@ -2173,6 +2190,54 @@ function suiteBalance() {
   TEST.eq('the ramp starts at the stated tick', Math.max(CONFIG.TICK_FLOOR_MS, CONFIG.TICK_START_MS - 0), CONFIG.TICK_START_MS);
 }
 
+/* ---- suite: a floating notice must never cover a control ---- */
+function suiteToastPlacement() {
+  function overlaps(top, h, rects, hudBottom) {
+    var i, r, bad = 0;
+    for (i = 0; i < rects.length; i++) {
+      r = rects[i];
+      if (r.bottom <= hudBottom) continue;     // header band, allowed behind us
+      if (top < r.bottom && (top + h) > r.top) bad++;
+    }
+    return bad;
+  }
+  /* the real geometry that broke: the death sheet at 390x844, SAVE CARD/SHARE
+     over WATCH BEST/PLAY AGAIN, with the old toast pinned 72px off the bottom */
+  var vh = 844, hudBottom = 58, th = 40;
+  var sheet = [
+    { top: 700, bottom: 748 },                 // SAVE CARD / SHARE row
+    { top: 756, bottom: 804 },                 // WATCH BEST / PLAY AGAIN row
+    { top: 10, bottom: 58 }                    // the HUD gear
+  ];
+  var oldTop = vh - 72 - th;                   // what the old CSS produced
+  TEST.ge('the old fixed offset toast did cover a control', overlaps(oldTop, th, sheet, hudBottom), 1);
+  var top = toastTop(vh, hudBottom, th, sheet);
+  TEST.eq('the placed toast covers no control on the death sheet', overlaps(top, th, sheet, hudBottom), 0);
+  TEST.assert('the placed toast clears the highest control', top + th <= 700, 'bottom ' + (top + th));
+  TEST.ge('the placed toast stays below the header', top, hudBottom + 6);
+  /* in play: turn pads plus the footer row */
+  var play = [
+    { top: 10, bottom: 58 },                   // gear
+    { top: 660, bottom: 760 },                 // turn pads
+    { top: 770, bottom: 818 }                  // EXIT / DAILY / START
+  ];
+  var t2 = toastTop(vh, hudBottom, th, play);
+  TEST.eq('the placed toast covers no control during play', overlaps(t2, th, play, hudBottom), 0);
+  TEST.assert('the placed toast clears the turn pads', t2 + th <= 660, 'bottom ' + (t2 + th));
+  /* a bare screen: it may sit low, but never off the bottom */
+  var t3 = toastTop(vh, hudBottom, th, [{ top: 10, bottom: 58 }]);
+  TEST.le('with nothing in the way the toast stays on screen', t3 + th, vh - 6);
+  TEST.ge('with nothing in the way the toast still clears the header', t3, hudBottom + 6);
+  /* a short viewport where the controls crowd the header */
+  var t4 = toastTop(500, 58, th, [{ top: 70, bottom: 118 }, { top: 130, bottom: 178 }]);
+  TEST.ge('on a cramped screen the toast never rides over the header', t4, 58 + 6);
+  TEST.le('on a cramped screen the toast never leaves the viewport', t4 + th, 500 - 6);
+  /* a two line toast must be measured, not assumed */
+  var tall = toastTop(vh, hudBottom, 78, sheet);
+  TEST.eq('a taller toast is placed by its real height', overlaps(tall, 78, sheet, hudBottom), 0);
+  TEST.assert('a taller toast moves further up', tall < top, tall + ' vs ' + top);
+}
+
 function runAllTests(opts) {
   opts = opts || {};
   TEST.reset();
@@ -2180,6 +2245,7 @@ function runAllTests(opts) {
     suiteConfig, suiteRNG, suiteNewGame, suiteMovement,
     suiteCircuitCases, suiteCombo, suiteOverload, suiteDischarge,
     suiteSpawns, suiteDeterminism, suiteQueue, suiteFuzz, suiteSave, suiteCopy,
+    suiteToastPlacement,
     suiteRegressions, suiteCreep, suiteDaily, suiteFiller
   ];
   if (!opts.quick) { suites.push(suiteCircuitBattery); suites.push(suiteBalance); }
@@ -2768,22 +2834,16 @@ function placeToast(t) {
   try { if (window.visualViewport) vh = window.visualViewport.height; } catch (e) {}
   var hudBottom = $('hud').getBoundingClientRect().bottom;
   var tr = t.getBoundingClientRect();
-  var ceiling = vh - 12;                       // nothing in the way: sit near the bottom
-  var all = document.querySelectorAll('button,input,a');
-  var i, el, r;
+  var rects = [], all = document.querySelectorAll('button,input,a'), i, el, r;
   for (i = 0; i < all.length; i++) {
     el = all[i];
     if (el.id === 'toast') continue;
     if (!el.offsetParent && el.offsetWidth === 0 && el.offsetHeight === 0) continue;
     r = el.getBoundingClientRect();
     if (r.width <= 0 || r.height <= 0) continue;
-    if (r.bottom <= hudBottom) continue;       // the HUD gear sits above the toast
-    if (r.top < ceiling) ceiling = r.top;      // highest control we have to clear
+    rects.push({ top: r.top, bottom: r.bottom });
   }
-  var top = ceiling - tr.height - 10;
-  if (top < hudBottom + 6) top = hudBottom + 6;
-  if (top + tr.height > vh - 6) top = Math.max(hudBottom + 6, vh - 6 - tr.height);
-  t.style.top = Math.round(top) + 'px';
+  t.style.top = Math.round(toastTop(vh, hudBottom, tr.height, rects)) + 'px';
 }
 var toastTimer = null;
 function toast(msg) {

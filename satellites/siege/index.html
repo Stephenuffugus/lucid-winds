@@ -466,7 +466,7 @@ function mutCount(wave) {
   return Math.min(CONFIG.ENDLESS_MUT_MAX, n);
 }
 
-/* Deterministic from (seed, wave). No Math.random anywhere in this layer. */
+/* Deterministic from (seed, wave). No unseeded randomness in this layer. */
 function mutatorsFor(wave, seed) {
   var n = mutCount(wave);
   if (!n) return [];
@@ -3042,7 +3042,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
   try {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js?v=20260816a').catch(function () {});
+        navigator.serviceWorker.register('sw.js?v=20260816b').catch(function () {});
       });
     }
   } catch (e) {}
