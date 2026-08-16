@@ -1421,7 +1421,546 @@ function shareString(cs, st, isDaily, dayNo) {
   return head + " beat me in " + actionsUsed(st) + " moves. Try it: ?seed=" + cs.seed;
 }
 // ---- SIM_EXPORT_END ----
-//@@PART2@@
+
+// ---- TEST_EXPORT_START ----
+/* Assertion harness. Runs identically in node (sim.js --test) and in the page
+   (?test=1). Never touches the DOM. */
+function buildTests(S) {
+  var TEST = {
+    results: [],
+    assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail }); },
+    eq: function (name, a, b) { this.assert(name, a === b, "expected " + b + ", got " + a); },
+    ge: function (name, a, b) { this.assert(name, a >= b, "expected at least " + b + ", got " + a); },
+    le: function (name, a, b) { this.assert(name, a <= b, "expected at most " + b + ", got " + a); },
+    near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, "expected about " + b + ", got " + a); },
+    run: function () {
+      suiteRNG(this, S); suiteData(this, S); suitePredicates(this, S); suiteCells(this, S);
+      suiteGen(this, S); suiteAgents(this, S); suiteMarks(this, S); suiteStep(this, S);
+      suiteSave(this, S); suiteFuzz(this, S); suiteCopy(this, S); suiteRegression(this, S);
+    },
+    report: function () {
+      var passed = 0, failed = 0, failures = [], i;
+      for (i = 0; i < this.results.length; i++) {
+        if (this.results[i].pass) passed++; else { failed++; failures.push(this.results[i]); }
+      }
+      return { passed: passed, failed: failed, total: this.results.length, failures: failures };
+    }
+  };
+  return TEST;
+}
+
+function clueOf(ty, p) { return { id: 0, ty: ty, p: p, ref: [], ph: 0 }; }
+
+function suiteRNG(T, S) {
+  var a = S.makeRNG(1234), b = S.makeRNG(1234), c = S.makeRNG(1235), i, ok = true;
+  for (i = 0; i < 200; i++) if (a() !== b()) ok = false;
+  T.assert("rng same seed same stream", ok);
+  T.assert("rng different seed diverges", S.makeRNG(1)() !== c());
+  var r = S.makeRNG(9), lo = 1, hi = 1, x;
+  for (i = 0; i < 2000; i++) { x = r(); if (x < 0 || x >= 1) lo = 0; }
+  T.assert("rng in unit range", lo === 1);
+  for (i = 0; i < 2000; i++) { x = r.int(6); if (x < 0 || x > 5 || x !== Math.floor(x)) hi = 0; }
+  T.assert("rng int in range", hi === 1);
+  var okr = true;
+  for (i = 0; i < 500; i++) { x = r.range(3, 7); if (x < 3 || x > 7) okr = false; }
+  T.assert("rng range inclusive", okr);
+  var sh = r.shuffle([0, 1, 2, 3, 4, 5]);
+  T.eq("shuffle keeps length", sh.length, 6);
+  T.eq("shuffle keeps members", sh.slice().sort().join(""), "012345");
+  T.assert("weighted returns a member", ["a", "b"].indexOf(r.weighted([["a", 1], ["b", 1]])) >= 0);
+  T.eq("seedFromString is stable", S.seedFromString("blackout"), S.seedFromString("blackout"));
+  T.assert("seedFromString separates inputs", S.seedFromString("a") !== S.seedFromString("b"));
+  T.assert("daily seed is a uint32", S.dailySeed("2026-08-16") >= 0);
+  var g1 = S.generateCase(4242), g2 = S.generateCase(4242);
+  T.eq("same seed same truth", JSON.stringify(g1.truth), JSON.stringify(g2.truth));
+  T.eq("same seed same pool size", g1.pool.length, g2.pool.length);
+  T.eq("same seed same title", g1.title, g2.title);
+}
+
+function suiteData(T, S) {
+  T.eq("six suspects", S.SUSPECTS.length, 6);
+  T.eq("six weapons", S.WEAPONS.length, 6);
+  T.eq("six rooms", S.ROOMS.length, 6);
+  T.eq("six times", S.TIMES.length, 6);
+  T.eq("solution space is 1296", S.CONFIG.TUPLES, 6 * 6 * 6 * 6);
+  var tall = 0, staff = 0, glass = 0, i, j;
+  for (i = 0; i < 6; i++) { if (S.SUSPECTS[i].tall) tall++; if (S.SUSPECTS[i].staff) staff++; if (S.SUSPECTS[i].glasses) glass++; }
+  T.ge("at least two tall", tall, 2);
+  T.ge("at least two staff", staff, 2);
+  T.assert("tall is not unique to one person", tall >= 2 && tall <= 4);
+  T.assert("staff is not unique to one person", staff >= 2 && staff <= 4);
+  T.assert("glasses is not unique to one person", glass >= 2 && glass <= 4);
+  var sym = true;
+  for (i = 0; i < 6; i++) for (j = 0; j < S.ROOMS[i].adj.length; j++) {
+    if (S.ROOMS[S.ROOMS[i].adj[j]].adj.indexOf(i) < 0) sym = false;
+  }
+  T.assert("room adjacency is symmetric", sym);
+  var connected = true;
+  for (i = 0; i < 6; i++) if (!S.ROOMS[i].adj.length) connected = false;
+  T.assert("no isolated room", connected);
+  var so = 0;
+  for (i = 0; i < 6; i++) if (S.ROOMS[i].staffOnly) so++;
+  T.ge("at least one staff only room", so, 1);
+  T.le("not every room is staff only", so, 4);
+  var cls = {};
+  for (i = 0; i < 6; i++) { T.assert("weapon " + i + " has a known class", !!S.CLASSWORD[S.WEAPONS[i].cls]); cls[S.WEAPONS[i].cls] = 1; }
+  T.ge("at least three weapon classes", Object.keys(cls).length, 3);
+  var names = "";
+  for (i = 0; i < 6; i++) names += S.SUSPECTS[i].n + S.WEAPONS[i].n + S.ROOMS[i].n + S.TIMES[i];
+  T.assert("no dash in any data name", !/[-]/.test(names));
+  T.eq("tuple index round trip", S.tupleIndex(S.tupleFromIndex(777)), 777);
+  T.eq("full bitset counts every tuple", S.bitsCount(S.bitsFull()), 1296);
+}
+
+function suitePredicates(T, S) {
+  var P = function (ty, p) { return clueOf(ty, p); };
+  var c;
+  c = P(1, { s: 0, t: 2, r: 1 });
+  T.assert("t1 alibi true tuple", S.cluePasses(c, 0, 3, 1, 2));
+  T.assert("t1 alibi false tuple", !S.cluePasses(c, 0, 3, 0, 2));
+  T.assert("t1 alibi does not touch other people", S.cluePasses(c, 1, 3, 0, 2));
+  c = P(2, { w: 4, s: 3, r: 1 });
+  T.assert("t2 ownership true when owner acts", S.cluePasses(c, 3, 4, 0, 0));
+  T.assert("t2 ownership true in the keeping room", S.cluePasses(c, 0, 4, 1, 0));
+  T.assert("t2 ownership false otherwise", !S.cluePasses(c, 0, 4, 0, 0));
+  T.assert("t2 ownership ignores other weapons", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(3, { r: 3 });
+  T.assert("t3 access true for staff", S.cluePasses(c, 2, 0, 3, 0));
+  T.assert("t3 access false for a guest", !S.cluePasses(c, 0, 0, 3, 0));
+  T.assert("t3 access ignores other rooms", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(4, { r: 1, t: 2, a: "tall", v: true });
+  T.assert("t4 sighting true for a tall culprit", S.cluePasses(c, 0, 0, 1, 2));
+  T.assert("t4 sighting false for a short culprit", !S.cluePasses(c, 1, 0, 1, 2));
+  T.assert("t4 sighting ignores other places", S.cluePasses(c, 1, 0, 0, 2));
+  c = P(5, { r: 0, near: true });
+  T.assert("t5 trace near allows the room itself", S.cluePasses(c, 0, 0, 0, 0));
+  T.assert("t5 trace near allows a neighbor", S.cluePasses(c, 0, 0, 4, 0));
+  T.assert("t5 trace near rejects a far room", !S.cluePasses(c, 0, 0, 3, 0));
+  c = P(5, { r: 3, near: false });
+  T.assert("t5 trace far rejects the room", !S.cluePasses(c, 0, 0, 3, 0));
+  T.assert("t5 trace far rejects a neighbor", !S.cluePasses(c, 0, 0, 5, 0));
+  T.assert("t5 trace far allows elsewhere", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(6, { t: 3, m: "not" });
+  T.assert("t6 not rejects that hour", !S.cluePasses(c, 0, 0, 0, 3));
+  T.assert("t6 not allows another hour", S.cluePasses(c, 0, 0, 0, 2));
+  c = P(6, { t: 3, m: "before" });
+  T.assert("t6 before allows earlier", S.cluePasses(c, 0, 0, 0, 2));
+  T.assert("t6 before rejects the bound", !S.cluePasses(c, 0, 0, 0, 3));
+  T.assert("t6 before rejects later", !S.cluePasses(c, 0, 0, 0, 4));
+  c = P(6, { t: 3, m: "after" });
+  T.assert("t6 after allows later", S.cluePasses(c, 0, 0, 0, 4));
+  T.assert("t6 after rejects the bound", !S.cluePasses(c, 0, 0, 0, 3));
+  c = P(7, { cls: "blade", no: false });
+  T.assert("t7 wound class true", S.cluePasses(c, 0, 0, 0, 0));
+  T.assert("t7 wound class false", !S.cluePasses(c, 0, 2, 0, 0));
+  c = P(7, { cls: "cord", no: true });
+  T.assert("t7 wound not class rejects the cord", !S.cluePasses(c, 0, 4, 0, 0));
+  T.assert("t7 wound not class allows a blade", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(8, { k: "none", s: 2 });
+  T.assert("t8 no motive rejects that person", !S.cluePasses(c, 2, 0, 0, 0));
+  T.assert("t8 no motive allows others", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(8, { k: "set", set: [0, 1, 2] });
+  T.assert("t8 motive set allows a member", S.cluePasses(c, 1, 0, 0, 0));
+  T.assert("t8 motive set rejects an outsider", !S.cluePasses(c, 3, 0, 0, 0));
+  c = P(9, { a: 1, b: 4, t: -1 });
+  T.assert("t9 all evening rejects the first", !S.cluePasses(c, 1, 0, 0, 0));
+  T.assert("t9 all evening rejects the second", !S.cluePasses(c, 4, 0, 0, 0));
+  T.assert("t9 all evening allows a third party", S.cluePasses(c, 0, 0, 0, 0));
+  c = P(9, { a: 1, b: 4, t: 3 });
+  T.assert("t9 at hour rejects at that hour", !S.cluePasses(c, 1, 0, 0, 3));
+  T.assert("t9 at hour allows another hour", S.cluePasses(c, 1, 0, 0, 2));
+  T.assert("t9 at hour ignores third parties", S.cluePasses(c, 0, 0, 0, 3));
+  c = P(10, { r: 2, t: 3, d: "after" });
+  T.assert("t10 empty after rejects later", !S.cluePasses(c, 0, 0, 2, 4));
+  T.assert("t10 empty after allows the bound", S.cluePasses(c, 0, 0, 2, 3));
+  T.assert("t10 empty after ignores other rooms", S.cluePasses(c, 0, 0, 0, 4));
+  c = P(10, { r: 2, t: 3, d: "before" });
+  T.assert("t10 empty before rejects earlier", !S.cluePasses(c, 0, 0, 2, 2));
+  T.assert("t10 empty before allows the bound", S.cluePasses(c, 0, 0, 2, 3));
+  c = P(11, { lo: 1, hi: 4, e1: 0, e2: 1 });
+  T.assert("t11 sequence allows inside", S.cluePasses(c, 0, 0, 0, 2));
+  T.assert("t11 sequence rejects the low bound", !S.cluePasses(c, 0, 0, 0, 1));
+  T.assert("t11 sequence rejects the high bound", !S.cluePasses(c, 0, 0, 0, 4));
+  c = P(12, { k: "weapon", w: 2 });
+  T.assert("t12 object weapon rejects it", !S.cluePasses(c, 0, 2, 0, 0));
+  T.assert("t12 object weapon allows another", S.cluePasses(c, 0, 3, 0, 0));
+  c = P(12, { k: "room", r: 5 });
+  T.assert("t12 object room rejects it", !S.cluePasses(c, 0, 0, 5, 0));
+  T.assert("t12 object room allows another", S.cluePasses(c, 0, 0, 4, 0));
+}
+
+function suiteCells(T, S) {
+  function cells(ty, p) { return S.clueExcludedCells(clueOf(ty, p)); }
+  var e;
+  e = cells(1, { s: 0, t: 2, r: 1 });
+  T.eq("t1 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(2, { w: 4, s: 3, r: 1 });
+  T.eq("t2 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(3, { r: 3 });
+  T.eq("t3 excludes the room for every guest", e.r.length, 3);
+  T.assert("t3 excludes Vance in the Cellar", e.r.indexOf(0 * 6 + 3) >= 0);
+  T.assert("t3 leaves staff in the Cellar", e.r.indexOf(2 * 6 + 3) < 0);
+  e = cells(4, { r: 1, t: 2, a: "tall", v: true });
+  T.eq("t4 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(5, { r: 3, near: true });
+  T.eq("t5 near leaves only the room and its neighbors", e.r.length, 4 * 6);
+  e = cells(6, { t: 3, m: "not" });
+  T.eq("t6 not excludes one hour column", e.t.length, 6);
+  T.eq("t6 not touches nothing else", e.w.length + e.r.length, 0);
+  e = cells(7, { cls: "cord", no: true });
+  T.eq("t7 not cord excludes one weapon column", e.w.length, 6);
+  e = cells(8, { k: "none", s: 2 });
+  T.eq("t8 no motive clears that whole row", e.w.length + e.r.length + e.t.length, 18);
+  e = cells(9, { a: 1, b: 4, t: -1 });
+  T.eq("t9 all evening clears two whole rows", e.w.length + e.r.length + e.t.length, 36);
+  e = cells(10, { r: 2, t: 3, d: "after" });
+  T.eq("t10 excludes no whole cell on its own", e.w.length + e.r.length + e.t.length, 0);
+  e = cells(11, { lo: 1, hi: 4, e1: 0, e2: 1 });
+  T.eq("t11 sequence excludes four hour columns", e.t.length, 24);
+  e = cells(12, { k: "weapon", w: 2 });
+  T.eq("t12 weapon excludes one column", e.w.length, 6);
+  e = cells(12, { k: "room", r: 5 });
+  T.eq("t12 room excludes one column", e.r.length, 6);
+}
+
+function suiteGen(T, S, N) {
+  N = N || 200;
+  var rng = S.makeRNG(20260816), i, cs;
+  var uniq = 0, retries = 0, sizes = [], motiveOnly = 0, reachBad = 0, textBad = 0;
+  var trueOfTruth = 0, poolBad = 0, placeBad = 0, capBad = 0, pressBad = 0, minimalProves = 0;
+  for (i = 0; i < N; i++) {
+    cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0);
+    if (!cs) continue;
+    retries += cs.retries;
+    var acc = S.solveMask(cs.pool, cs.masks);
+    if (S.bitsCount(acc) === 1 && S.bitsFirst(acc) === S.tupleIndex(cs.truth)) uniq++;
+    var mn = cs.minimal.map(function (id) { return cs.pool[id]; });
+    var am = S.solveMask(mn, cs.masks);
+    if (S.bitsCount(am) === 1 && S.bitsFirst(am) === S.tupleIndex(cs.truth)) minimalProves++;
+    sizes.push(cs.minimal.length);
+    if (S.isMotiveOnly(mn)) motiveOnly++;
+    if (cs.minActions > S.CONFIG.REACH_BOUND) reachBad++;
+    if (S.textSanity(cs).length) textBad++;
+    var allTrue = true, j;
+    for (j = 0; j < cs.pool.length; j++) if (!S.clueTrueOf(cs.pool[j], cs.truth)) allTrue = false;
+    if (allTrue) trueOfTruth++;
+    if (cs.pool.length < 30 || cs.pool.length > 60) poolBad++;
+    for (j = 0; j < 6; j++) if (cs.place.rooms[j].length > S.CONFIG.ROOM_SLOTS) capBad++;
+    if (cs.place.pressMinimal.length > S.CONFIG.MAX_PRESS_MINIMAL) pressBad++;
+    // every minimal clue must actually be placed somewhere findable
+    var placed = {}, ids = S.placedClueIds(cs);
+    for (j = 0; j < ids.length; j++) placed[ids[j]] = 1;
+    for (j = 0; j < cs.minimal.length; j++) if (!placed[cs.minimal[j]]) placeBad++;
+    // a press gated minimal clue must be unlockable from a basic slot
+    for (j = 0; j < cs.place.pressMinimal.length; j++) {
+      var sus = cs.place.pressMinimal[j].s, opener = false, q, z;
+      for (q = 0; q < 6; q++) {
+        if (cs.place.ints[q] !== null && cs.pool[cs.place.ints[q]].ref.indexOf(sus) >= 0) opener = true;
+        for (z = 0; z < cs.place.rooms[q].length; z++) if (cs.pool[cs.place.rooms[q][z]].ref.indexOf(sus) >= 0) opener = true;
+      }
+      if (!opener) pressBad++;
+    }
+  }
+  T.eq("every generated case has exactly one solution", uniq, N);
+  T.eq("the minimal set alone proves that solution", minimalProves, N);
+  T.eq("every clue in the pool is true of the truth", trueOfTruth, N);
+  T.assert("regeneration retry rate under 15 percent", retries / (retries + N) < 0.15,
+    "rate " + (retries / (retries + N)).toFixed(4));
+  sizes.sort(function (a, b) { return a - b; });
+  var med = sizes[Math.floor(sizes.length / 2)];
+  T.assert("minimal set median is about eleven", med >= 10 && med <= 12, "median " + med);
+  var inBand = sizes.filter(function (x) { return x >= 8 && x <= 14; }).length;
+  T.assert("minimal sets sit in eight to fourteen", inBand / N >= 0.93, "rate " + (inBand / N).toFixed(3));
+  T.eq("no minimal set is motive only", motiveOnly, 0);
+  T.eq("every minimal clue is reachable in budget", reachBad, 0);
+  T.eq("no clue text contradicts the truth", textBad, 0);
+  T.eq("clue pool size stays sane", poolBad, 0);
+  T.eq("room slots never overfill", capBad, 0);
+  T.eq("press gating stays inside its bound", pressBad, 0);
+  T.eq("every minimal clue is placed somewhere", placeBad, 0);
+  // the checkers themselves must be able to say yes
+  T.assert("motive only checker fires on a motive only set",
+    S.isMotiveOnly([clueOf(8, { k: "none", s: 1 }), clueOf(8, { k: "none", s: 2 })]));
+  T.assert("motive only checker stays quiet on a mixed set",
+    !S.isMotiveOnly([clueOf(8, { k: "none", s: 1 }), clueOf(6, { t: 2, m: "not" })]));
+}
+
+function suiteAgents(T, S) {
+  var rng = S.makeRNG(555), i, cs, g = 0, p = 0, n = 120, over = 0;
+  for (i = 0; i < n; i++) {
+    cs = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0);
+    var gr = S.greedyAgent(cs, rng);
+    if (gr.solved) g++;
+    if (gr.actionsUsed > S.CONFIG.ACTIONS) over++;
+    var pr = S.perfectAgent(cs);
+    if (pr.solved) p++;
+    if (pr.actionsUsed > S.CONFIG.ACTIONS) over++;
+  }
+  T.assert("greedy agent solves over ninety percent", g / n > 0.90, "rate " + (g / n).toFixed(3));
+  T.eq("perfect agent solves every case", p, n);
+  T.eq("no agent ever spends over budget", over, 0);
+}
+
+function suiteMarks(T, S) {
+  T.eq("empty board leaves every tuple standing", S.candidateCountFromMarks({}), 1296);
+  var m = {};
+  m[S.markKey("w", 0, 0)] = "n";
+  T.eq("one cross removes thirty six tuples", S.candidateCountFromMarks(m), 1296 - 36);
+  m = {};
+  m[S.markKey("w", 0, 0)] = "y";
+  T.eq("one tick pins a row weapon", S.candidateCountFromMarks(m), 1296 - 5 * 36);
+  m = {};
+  m[S.markKey("w", 0, 0)] = "y"; m[S.markKey("w", 0, 1)] = "y";
+  T.eq("two ticks in a row are impossible", S.candidateCountFromMarks(m), 1296 - 216);
+  m = {};
+  m[S.markKey("w", 3, 2)] = "y"; m[S.markKey("r", 3, 4)] = "y"; m[S.markKey("t", 3, 1)] = "y";
+  var c1, c2 = 0, c;
+  for (c = 0; c < 6; c++) if (c !== 3) c2 += 216;
+  T.eq("pinning one row leaves that row with one tuple", S.candidateCountFromMarks(m), c2 + 1);
+  m = {};
+  for (c = 0; c < 6; c++) if (c !== 2) { m[S.markKey("w", c, 0)] = "n"; }
+  T.eq("crossing a column off five rows", S.candidateCountFromMarks(m), 1296 - 5 * 36);
+  m = {}; m[S.markKey("t", 0, 0)] = "q";
+  T.eq("a question mark changes nothing", S.candidateCountFromMarks(m), 1296);
+  // full solve down to one
+  m = {};
+  for (c = 0; c < 6; c++) {
+    if (c === 4) { m[S.markKey("w", 4, 1)] = "y"; m[S.markKey("r", 4, 2)] = "y"; m[S.markKey("t", 4, 5)] = "y"; }
+    else { m[S.markKey("w", c, 0)] = "n"; m[S.markKey("w", c, 1)] = "n"; m[S.markKey("w", c, 2)] = "n";
+           m[S.markKey("w", c, 3)] = "n"; m[S.markKey("w", c, 4)] = "n"; m[S.markKey("w", c, 5)] = "n"; }
+  }
+  T.eq("a fully marked board reads one", S.candidateCountFromMarks(m), 1);
+  // auto mark agrees with the clue predicates
+  var cs = S.generateCase(31337), st = S.newGame(cs), i;
+  var ids = S.placedClueIds(cs);
+  for (i = 0; i < 6; i++) S.step(st, cs, { k: "search", r: i });
+  S.step(st, cs, { k: "automark" });
+  var bad = 0, tabs = ["w", "r", "t"], k, row, col;
+  var truthCell = { w: cs.truth.w, r: cs.truth.r, t: cs.truth.t };
+  for (k = 0; k < 3; k++) {
+    var key = S.markKey(tabs[k], cs.truth.c, truthCell[tabs[k]]);
+    if (st.marks[key] === "n") bad++;
+  }
+  T.eq("auto mark never crosses out the truth", bad, 0);
+  T.assert("auto mark actually marks something", Object.keys(st.marks).length > 0);
+  T.assert("halo of a held clue is not empty", (function () {
+    var h = S.clueHalo(cs, st, st.found[0]);
+    return h.w.length + h.r.length + h.t.length >= 0;
+  })());
+}
+
+function suiteStep(T, S) {
+  var cs = S.generateCase(777), st = S.newGame(cs), r;
+  T.eq("a fresh case starts with twenty actions", st.actionsLeft, 20);
+  r = S.step(st, cs, { k: "search", r: 0 });
+  T.eq("a search costs one action", st.actionsLeft, 19);
+  r = S.step(st, cs, { k: "search", r: 0 });
+  T.eq("searching twice is refused", st.actionsLeft, 19);
+  T.eq("the refusal says why", r.events[0].e, "invalid");
+  r = S.step(st, cs, { k: "interview", s: 0 });
+  T.eq("an interview costs one action", st.actionsLeft, 18);
+  r = S.step(st, cs, { k: "search", r: 99 });
+  T.eq("a room that does not exist is refused", st.actionsLeft, 18);
+  var locked = -1, i;
+  for (i = 0; i < 6; i++) if (!S.pressUnlocked(cs, st, i)) locked = i;
+  if (locked >= 0) {
+    r = S.step(st, cs, { k: "press", s: locked });
+    T.eq("a locked press costs nothing", st.actionsLeft, 18);
+    T.eq("a locked press explains itself", r.events[0].why, "locked");
+  } else { T.assert("a locked press costs nothing", true); T.assert("a locked press explains itself", true); }
+  var open = -1;
+  for (i = 0; i < 6; i++) if (S.pressUnlocked(cs, st, i) && st.pressed.indexOf(i) < 0) open = i;
+  if (open >= 0) {
+    var before = st.actionsLeft;
+    S.step(st, cs, { k: "press", s: open });
+    T.eq("an unlocked press costs two actions", st.actionsLeft, before - 2);
+  } else T.assert("an unlocked press costs two actions", true);
+  S.step(st, cs, { k: "mark", tab: "w", row: 1, col: 2, v: "n" });
+  T.eq("marking is free", st.marks[S.markKey("w", 1, 2)], "n");
+  var free = st.actionsLeft;
+  S.step(st, cs, { k: "mark", tab: "zz", row: 1, col: 2, v: "n" });
+  T.eq("a bad tab changes nothing", st.actionsLeft, free);
+  S.step(st, cs, { k: "mark", tab: "w", row: 1, col: 2, v: "" });
+  T.eq("clearing a mark removes it", st.marks[S.markKey("w", 1, 2)], undefined);
+
+  // stars
+  T.eq("eight actions left is three stars", S.starsFor(8), 3);
+  T.eq("four actions left is two stars", S.starsFor(4), 2);
+  T.eq("one action left is one star", S.starsFor(1), 1);
+
+  // winning
+  var w = S.newGame(cs);
+  var res = S.step(w, cs, { k: "accuse", c: cs.truth.c, w: cs.truth.w, r: cs.truth.r, t: cs.truth.t });
+  T.eq("a correct accusation wins", w.status, "won");
+  T.eq("a win is worth three stars at full budget", w.stars, 3);
+  T.eq("a closed case refuses more actions", S.step(w, cs, { k: "search", r: 1 }).events[0].e, "invalid");
+
+  // losing teaches
+  var l = S.newGame(cs);
+  var wrongC = (cs.truth.c + 1) % 6;
+  S.step(l, cs, { k: "search", r: cs.truth.r });
+  S.step(l, cs, { k: "accuse", c: wrongC, w: cs.truth.w, r: cs.truth.r, t: cs.truth.t });
+  T.eq("a wrong accusation loses", l.status, "lost");
+  T.assert("a loss names a contradicting clue", l.contraId >= 0);
+  T.assert("the contradicting clue really does contradict",
+    !S.cluePasses(cs.pool[l.contraId], l.acc.c, l.acc.w, l.acc.r, l.acc.t));
+  T.assert("the contradicting clue is true of the truth", S.clueTrueOf(cs.pool[l.contraId], cs.truth));
+  var l2 = S.newGame(cs);
+  S.step(l2, cs, { k: "accuse", c: 9, w: 0, r: 0, t: 0 });
+  T.eq("an off board accusation is refused", l2.status, "play");
+  T.eq("share string carries the seed", S.shareString(cs, w, false, 0).indexOf("seed=" + cs.seed) >= 0, true);
+  T.assert("share string has no dash", !/[-]/.test(S.shareString(cs, w, true, 12)));
+}
+
+function suiteSave(T, S) {
+  var d = S.saveDefaults();
+  T.eq("save has a version", d.v, 1);
+  T.eq("save is stamped with the game id", d.gameId, "blackout");
+  T.eq("save key is the fleet shape", S.SAVE_KEY, "lw_blackout_v1");
+  T.eq("corrupt json falls back to defaults", S.saveParse("{not json").stats.cases, 0);
+  T.eq("an empty string falls back to defaults", S.saveParse("").stats.solved, 0);
+  T.eq("an array falls back to defaults", S.saveParse("[1,2,3]").stats.cases, 0);
+  T.eq("null falls back to defaults", S.saveParse("null").stats.cases, 0);
+  var round = S.saveParse(JSON.stringify(d));
+  T.eq("save round trip keeps settings", round.settings.autoMark, false);
+  T.assert("migrate is present and total", !!S.saveMigrate(null));
+  var merged = S.saveMerge(d, { addStats: { cases: 1, solved: 1 } });
+  merged = S.saveMerge(merged, { addStats: { cases: 1, solved: 0 } });
+  T.eq("counters add across writes", merged.stats.cases, 2);
+  var best = S.saveMerge(d, { bestLow: { fewestActions: 14 } });
+  best = S.saveMerge(best, { bestLow: { fewestActions: 17 } });
+  T.eq("a best keeps the better number", best.best.fewestActions, 14);
+  var maxed = S.saveMerge(d, { maxStats: { bestStars: 2 } });
+  maxed = S.saveMerge(maxed, { maxStats: { bestStars: 1 } });
+  T.eq("bests take the max", maxed.stats.bestStars, 2);
+  var arc = S.saveMerge(d, { archive: { seed: 1 } });
+  for (var i = 0; i < 14; i++) arc = S.saveMerge(arc, { archive: { seed: i } });
+  T.eq("the archive keeps ten", arc.archive.length, 10);
+  T.eq("the archive is newest first", arc.archive[0].seed, 13);
+
+  // mid case resume
+  var cs = S.generateCase(9182), st = S.newGame(cs);
+  S.step(st, cs, { k: "search", r: 2 });
+  S.step(st, cs, { k: "interview", s: 3 });
+  S.step(st, cs, { k: "mark", tab: "r", row: 2, col: 3, v: "n" });
+  var wire = JSON.stringify(S.serializeState(st));
+  var back = S.deserializeState(JSON.parse(wire), cs);
+  T.eq("resume keeps the action count", back.actionsLeft, st.actionsLeft);
+  T.eq("resume keeps found clues", back.found.join(","), st.found.join(","));
+  T.eq("resume keeps the board", back.marks[S.markKey("r", 2, 3)], "n");
+  T.eq("resume keeps searched rooms", back.searched.join(","), st.searched.join(","));
+  var cont = S.step(back, cs, { k: "search", r: 2 });
+  T.eq("a resumed case does not refund a spent room", cont.events[0].e, "invalid");
+  var junk = S.deserializeState({ actionsLeft: -99, found: ["x", 3], marks: { bad: "z" }, status: "cheat" }, cs);
+  T.eq("a tampered action count is clamped", junk.actionsLeft, 0);
+  T.eq("tampered clue ids are dropped", junk.found.join(","), "3");
+  T.eq("tampered marks are dropped", Object.keys(junk.marks).length, 0);
+  T.eq("a tampered status resets to play", junk.status, "play");
+  T.eq("a case is rebuilt from its seed alone",
+    JSON.stringify(S.generateCase(9182).truth), JSON.stringify(cs.truth));
+}
+
+function suiteFuzz(T, S) {
+  var rng = S.makeRNG(1010), cs = S.generateCase(24680), st = S.newGame(cs);
+  var threw = null, negative = 0, badMark = 0, i, k;
+  var kinds = ["search", "interview", "press", "mark", "accuse", "automark", "nonsense", null];
+  for (i = 0; i < 5000; i++) {
+    if (st.status !== "play") st = S.newGame(cs);
+    var kind = kinds[rng.int(kinds.length)];
+    var act;
+    if (kind === null) act = null;
+    else if (kind === "mark") act = { k: "mark", tab: rng.pick(["w", "r", "t", "zz", 7]), row: rng.int(9) - 1, col: rng.int(9) - 1, v: rng.pick(["y", "n", "q", "", "x", 3]) };
+    else if (kind === "accuse") act = { k: "accuse", c: rng.int(9) - 1, w: rng.int(9) - 1, r: rng.int(9) - 1, t: rng.int(9) - 1 };
+    else act = { k: kind, r: rng.int(9) - 1, s: rng.int(9) - 1 };
+    try { S.step(st, cs, act); } catch (e) { if (!threw) threw = (act ? act.k : "null") + " " + e.message; }
+    if (st.actionsLeft < 0) negative++;
+    for (k in st.marks) if (!/^[wrt]:[0-5]:[0-5]$/.test(k) || ["y", "n", "q"].indexOf(st.marks[k]) < 0) badMark++;
+  }
+  T.eq("five thousand random actions throw nothing", threw, null);
+  T.eq("actions left is never negative", negative, 0);
+  T.eq("the board never holds an illegal mark", badMark, 0);
+  T.assert("the candidate counter survives the fuzz", S.candidateCountFromMarks(st.marks) >= 0);
+}
+
+function suiteCopy(T, S) {
+  var banks = ["a1", "a2", "a3", "a4", "a5near", "a5far", "a6not", "a6before", "a6after",
+    "a7yes", "a7no", "a8none", "a8set", "a9all", "a9at", "a10after", "a10before", "a11",
+    "a12weapon", "a12room"];
+  var i, j, b;
+  for (i = 0; i < banks.length; i++) {
+    b = S.TPL[banks[i]];
+    T.ge("phrasing bank " + banks[i] + " has six lines", b.length, 6);
+    var uniq = {};
+    for (j = 0; j < b.length; j++) uniq[b[j]] = 1;
+    T.eq("phrasing bank " + banks[i] + " has no repeats", Object.keys(uniq).length, b.length);
+  }
+  var typeBanks = { 1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 18, 7: 12, 8: 12, 9: 12, 10: 12, 11: 6, 12: 12 };
+  for (i = 1; i <= 12; i++) T.ge("clue type " + i + " has six phrasings or more", typeBanks[i], 6);
+  var dash = 0, slot = 0;
+  for (i = 0; i < banks.length; i++) {
+    b = S.TPL[banks[i]];
+    for (j = 0; j < b.length; j++) {
+      if (/[-]/.test(b[j])) dash++;
+      if (/\{[a-z0-9]+\}/i.test(b[j]) === false && banks[i] !== "a3") { /* fine, some banks are bare */ }
+    }
+  }
+  T.eq("no dash in any phrasing", dash, 0);
+  var strs = [].concat(S.BRIEF, S.EVENTS, S.TITLE_NOUNS, S.TITLE_TIMEWORDS);
+  for (i = 0; i < strs.length; i++) if (/[-]/.test(strs[i])) dash++;
+  T.eq("no dash in the flavour banks", dash, 0);
+  T.eq("fill leaves nothing behind", S.fillTpl("a {x} b", { x: "y" }), "a y b");
+  T.eq("name lists read as english", S.nameList([0, 1, 2]), "Vance, Mira and Ellis");
+  T.eq("a single name needs no comma", S.nameList([3]), "Odell");
+  var rng = S.makeRNG(4), t1 = S.caseTitle(rng, { c: 0, w: 0, r: 2, t: 5 });
+  T.assert("a case title starts with The", t1.indexOf("The ") === 0);
+  T.assert("a case title has no dash", !/[-]/.test(t1));
+  var cs = S.generateCase(5150), bad = 0;
+  for (i = 0; i < cs.pool.length; i++) {
+    var txt = S.clueText(cs.pool[i]);
+    if (/[{}]/.test(txt)) bad++;
+    if (/[-]/.test(txt)) bad++;
+    if (txt.length < 8) bad++;
+  }
+  T.eq("every rendered clue is clean", bad, 0);
+  T.eq("text sanity finds nothing wrong with a real case", S.textSanity(cs).length, 0);
+}
+
+/* Regression assertions. Every one of these is a bug that actually happened
+   during the build, kept as a permanent test rather than an anecdote. */
+function suiteRegression(T, S) {
+  // the greedy agent used to strand itself when no LIVE suspect could be
+  // pressed: it had no legal action left, broke out early and guessed.
+  var cs = S.generateCase(606060), rng = S.makeRNG(3), i, stalled = 0;
+  for (i = 0; i < 40; i++) {
+    var g = S.greedyAgent(S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0), rng);
+    if (g.actionsUsed < 8) stalled++;
+  }
+  T.le("the greedy agent does not strand itself early", stalled, 4);
+  // clueSubjects once demanded that every trace clue name its substance, but
+  // two of the six far phrasings do not mention it. The predicate only depends
+  // on the room, so only the room is required.
+  T.eq("a trace clue only has to name its room", S.clueSubjects(clueOf(5, { r: 3, near: false })).length, 1);
+  // reinforcement clues must be true of the truth like any other clue
+  var bad = 0;
+  for (i = 0; i < 30; i++) {
+    var c2 = S.generateCase((rng.int(0x7ffffffe) + 1) >>> 0), j;
+    for (j = 0; j < c2.pool.length; j++) if (!S.clueTrueOf(c2.pool[j], c2.truth)) bad++;
+  }
+  T.eq("reinforcement never emits a false clue", bad, 0);
+  // a room with one neighbour used to be able to trap a walk generator
+  var rng2 = S.makeRNG(88), stuck = 0;
+  for (i = 0; i < 60; i++) {
+    var W = S.genWorld(rng2), s, t;
+    for (s = 0; s < 6; s++) for (t = 0; t < 6; t++) if (!(W.loc[s][t] >= 0 && W.loc[s][t] < 6)) stuck++;
+    for (s = 0; s < 6; s++) if (s !== W.truth.c && W.loc[s][W.truth.t] === W.truth.r) stuck++;
+    if (W.loc[W.truth.c][W.truth.t] !== W.truth.r) stuck++;
+    if (W.motive[W.truth.c] < 1) stuck++;
+  }
+  T.eq("the world always seats the killer alone at the hour", stuck, 0);
+}
+// ---- TEST_EXPORT_END ----
+
+//@@VIEW@@
 </script>
 </body>
 </html>

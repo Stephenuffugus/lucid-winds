@@ -2350,7 +2350,64 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
 
 // ---- TEST_EXPORT_END ----
 
-/*BOOT_PLACEHOLDER*/
+/* ============================ 10. BOOT ============================ */
+(function () {
+  ['field', 'lane', 'gate', 'gateglow', 'sight', 'pips', 'shop', 'buildbar', 'pad', 'toast',
+   'shakewrap', 'wavev', 'scrapv', 'bladev', 'timernum', 'timerarc', 'cdbar',
+   'titlesheet', 'scoresheet', 'oversheet', 'optsheet', 'logsheet'].forEach(function (k) { EL[k] = $(k); });
+
+  loadSave();
+  AUD.vol = SAVE.settings.vol; AUD.mute = SAVE.settings.mute;
+  var prefersReduce = false;
+  try { prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  if (prefersReduce && !SAVE.settings.reduce) writeSave({ settings: { reduce: true } });
+  UI.reduce = SAVE.settings.reduce;
+  $('optvol').value = Math.round(AUD.vol * 100);
+  $('optmute').classList.toggle('on', !SAVE.settings.mute);
+  $('optmute').textContent = SAVE.settings.mute ? 'OFF' : 'ON';
+  $('opthap').classList.toggle('on', SAVE.settings.haptics);
+  $('opthap').textContent = SAVE.settings.haptics ? 'ON' : 'OFF';
+  $('optred').classList.toggle('on', SAVE.settings.reduce);
+  $('optred').textContent = SAVE.settings.reduce ? 'ON' : 'OFF';
+  $('optskip').classList.toggle('on', SAVE.settings.autoSkip);
+  $('optskip').textContent = SAVE.settings.autoSkip ? 'ON' : 'OFF';
+  $('tbest').textContent = SAVE.best.wave;
+  $('tendless').textContent = SAVE.best.endless;
+
+  var qs = {};
+  location.search.replace(/^\?/, '').split('&').forEach(function (kv) {
+    var p = kv.split('='); if (p[0]) qs[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+  });
+  if (qs.seed) UI.seedOverride = parseInt(qs.seed, 10) >>> 0;
+
+  wireInput();
+  newRun(qs.daily ? 'daily' : 'campaign');
+  EL.titlesheet.classList.remove('hidden');
+  requestAnimationFrame(loop);
+
+  window.__TEST__ = TEST;
+  window.__SIM__ = SIM;
+  if (qs.test === '1') {
+    var rep = TEST.run();
+    var panel = document.createElement('div');
+    panel.id = 'tests';
+    var lines = 'SIEGE OF ONE test harness\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + '\nassertions: ' + rep.total + '\n\n';
+    rep.failures.forEach(function (f) { lines += 'FAIL  ' + f.name + '  [' + f.detail + ']\n'; });
+    if (!rep.failed) lines += 'all green.\n';
+    panel.textContent = lines;
+    panel.addEventListener('click', function () { panel.remove(); });
+    document.body.appendChild(panel);
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js?v=20260816a').catch(function () {});
+      });
+    }
+  } catch (e) {}
+})();
+
 </script>
 </body>
 </html>

@@ -76,7 +76,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 #ascNum{color:var(--warm)} #airNum{color:var(--cream)}
 #marginVal span{font-size:15px;color:var(--muted);font-weight:600}
 #marginBar{height:8px;border-radius:6px;background:#0e1016;overflow:hidden;margin-top:7px;border:1px solid var(--line)}
-#marginFill{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--sage),var(--amber));
+#marginFill{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--sage),var(--amber));
   transition:width 180ms ease-out,background 300ms linear}
 #marginNote{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px}
 #marginNote.warn{color:var(--warm)} #marginNote.bad{color:var(--danger)}
@@ -108,7 +108,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;font-v
 .oreratio{margin-left:auto;color:var(--muted);font-size:12px}
 
 /* ---------- actions ---------- */
-#spacer{flex:1 1 auto;min-height:6px}
+#spacer{flex:0 0 4px}
+#nodecard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
+.odo{min-height:.95em}
 #actions{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 12px 0}
 .big{min-height:60px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
@@ -1987,6 +1989,10 @@ function motionOff() { return REDUCED || G.save.settings.motion === 'on'; }
 
 /* ---- odometer ---- */
 function setOdo(el, value, minDigits) {
+  try { setOdoRoll(el, value, minDigits); }
+  catch (e) { el.textContent = String(Math.max(0, Math.round(value))); }
+}
+function setOdoRoll(el, value, minDigits) {
   var s = String(Math.max(0, Math.round(value)));
   while (s.length < (minDigits || 1)) s = '0' + s;
   if (el.childNodes.length !== s.length) {
@@ -2063,14 +2069,18 @@ function render() {
   $('ascNum').textContent = Math.ceil(cost.air);
   $('airNum').textContent = Math.floor(st.air);
   var margin = st.air > 0 ? (st.air - cost.air) / st.air : -1;
+  /* the bar is the COST, not the comfort: empty at the surface, full when the
+     climb eats every breath you have left. It grows toward you. */
+  var used = st.air > 0 ? Math.min(1.2, cost.air / st.air) : 1.2;
   var fill = $('marginFill');
-  fill.style.width = Math.max(0, Math.min(100, margin * 100)) + '%';
-  fill.style.background = margin < 0.12 ? 'var(--danger)' : (margin < 0.3 ? 'linear-gradient(90deg,var(--amber),var(--warm))' : 'linear-gradient(90deg,var(--sage),var(--amber))');
+  fill.style.width = Math.max(0, Math.min(100, used * 100)) + '%';
+  fill.style.background = margin < 0 ? 'var(--danger)' : (margin < 0.3 ? 'linear-gradient(90deg,var(--amber),var(--warm))' : 'linear-gradient(90deg,var(--sage),var(--amber))');
   var note = $('marginNote');
   note.className = '';
-  if (margin < 0) { note.textContent = 'YOU CANNOT AFFORD THE WAY OUT'; note.className = 'bad'; }
+  if (st.depth === 0) { note.textContent = 'Nothing to climb yet. The way out is free.'; }
+  else if (margin < 0) { note.textContent = 'YOU CANNOT AFFORD THE WAY OUT'; note.className = 'bad'; }
   else if (margin < 0.15) { note.textContent = 'CUTTING IT FINE'; note.className = 'warn'; }
-  else note.textContent = 'Every kilo costs ' + (cost.perDepth).toFixed(2) + ' air a meter';
+  else note.textContent = 'The climb costs ' + (cost.perDepth).toFixed(2) + ' air a meter at this weight';
   $('mAir').textContent = Math.floor(st.air) + ' of ' + st.caps.air;
   $('fAir').style.width = (100 * st.air / st.caps.air) + '%';
   $('mLamp').textContent = Math.floor(st.lamp) + ' of ' + st.caps.lamp;

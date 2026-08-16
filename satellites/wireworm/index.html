@@ -2079,9 +2079,19 @@ function chordOverload() {
     setTimeout(function () { pluck(deg2freq(d), 1.1, 'sawtooth', 0.13); }, i * 30);
   });
 }
+/* Haptics only after the player has actually touched the frame. The game
+   auto starts, so the worm charges its first terminal before any tap and
+   Chrome blocks (and logs) a vibrate call made before a real gesture.
+   10ms routine confirm, 25ms scoring beat, [30,40,80] run ending. */
+var gestured = false;
+function markGesture() { gestured = true; }
+window.addEventListener('pointerdown', markGesture, true);
+window.addEventListener('keydown', markGesture, true);
+window.addEventListener('touchstart', markGesture, true);
 function haptic(p) {
-  if (!settings.haptics) return;
-  try { navigator.vibrate && navigator.vibrate(p); } catch (e) {}
+  if (!gestured || !settings.haptics) return;
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+  try { navigator.vibrate(p); } catch (e) {}
 }
 
 /* ===================================================================
@@ -2127,7 +2137,7 @@ function doTick() {
       haptic(25);
       shake = Math.min(1, 0.3 + e.len / 90);
     }
-    else if (e.t === 'overload') { chordOverload(); flash = 1; shake = 1; haptic([30, 40, 80]); }
+    else if (e.t === 'overload') { chordOverload(); flash = 1; shake = 1; haptic(25); }
     else if (e.t === 'discharged' && e.cells > 0) { pluck(deg2freq(1), 0.3, 'sine', 0.14); haptic(10); }
     else if (e.t === 'died') { onDeath(e.cause); }
   }

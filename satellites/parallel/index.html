@@ -92,7 +92,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ---------- controls ---------- */
 #pad{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding-top:6px}
-#pad button{min-height:clamp(62px,10vh,104px);min-width:62px;border-radius:14px;border:1px solid var(--line);
+#pad button{min-height:clamp(62px,13vh,118px);min-width:62px;border-radius:14px;border:1px solid var(--line);
   background:var(--panel);font-size:22px;display:flex;align-items:center;justify-content:center}
 #pad button:active{background:#232840;border-color:var(--accent)}
 #pad button small{display:block;font-size:10px;color:var(--dim);letter-spacing:.08em}
@@ -1904,6 +1904,8 @@ if (params.seed) startAt = ((parseInt(params.seed, 10) || 1) % LEVELS.length) + 
 if (params.level === 'daily'){ buildDaily(); startLevel(0, 'daily'); }
 else startLevel(startAt, 'level');
 setTimeout(buildDaily, 400);
+setTimeout(fitBoard, 60);
+setTimeout(fitBoard, 350);
 
 self.addEventListener('resize', fitBoard);
 self.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 120); });
