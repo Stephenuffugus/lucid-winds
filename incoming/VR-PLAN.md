@@ -81,8 +81,8 @@ PWAs**, and IARC content ratings are free and instant. Everything below is $0.
 
 The arcade is already a PWA with a manifest, HTTPS, and a service worker. It is already
 playable in the Quest browser. Packaging it with `@meta-quest/bubblewrap-cli` in 2D mode
-puts **183 free games** on a store where the entire catalog is a rounding error next to
-Google Play.
+puts the arcade on a store where the entire catalog is a rounding error next to Google
+Play. **161 games a visitor can open** today, with 22 more behind the tester gate.
 
 This is the exposure play, and it is nearly free. It requires no game changes, no WebXR,
 and no new art beyond store assets. It also answers the thing you actually said: *we built
@@ -132,14 +132,18 @@ worth the weeks.
 Only after Phase 1 is submitted and measured. The handoff's selection criteria are good;
 applied to the real catalog they point somewhere else entirely.
 
-**Dewball is the pick.** By the handoff's own four criteria: it is already Three.js, its
-core loop is rolling a ball through a physical world which is the most native thing VR
-does, its clock is a few minutes, and it has almost no text. It is also already a
-flagship, so a VR version reinforces something rather than starting cold.
+⛔ **Superseded by `incoming/VR-CANDIDATES.md`**, written after reading the candidates'
+camera code rather than their descriptions. Two corrections it makes to this section:
 
-Runner up is **Super Slice 3D**, also Three.js, also spatial, also short. **Create A
-Critter** is the interesting outlier: it is a maker toy rather than a game, and maker toys
-demo extremely well in VR, but it has the most UI to rebuild for a ray pointer.
+- **Create A Critter is the pick, not Dewball.** Its camera already orbits a fixed origin
+  (`camera.lookAt(0, 0.72, 0)`), so it is comfort safe with no redesign at all, and it
+  already has skinned bones with walk, dance, idle, blink, wag and hop plus feed and cuddle,
+  and a drawing that inflates into a body. Dewball is still strong, but its chase camera is
+  artificial locomotion and needs rethinking into a tabletop diorama first.
+- **"Super Slice 3D" is four different games and I named it too loosely here.** The base
+  forest game is a good VR fit. Wall Climb, Free Fall and Endless Fall are sustained vertical
+  camera translation, which is close to the worst comfort profile in VR. Never ship those.
+- **Two titles, not five.** The reasoning is in that document.
 
 **Sweet Spot** keeps its place from the handoff and is still the highest reinvention
 effort of the group, since motion-controller swing timing is a different game from thumb
