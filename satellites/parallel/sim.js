@@ -283,4 +283,6 @@ else {
   console.log('  node sim.js --solve=12    fresh BFS of one level');
   console.log('  node sim.js --grep        source gates');
 }
-process.exit(code);
+/* exitCode rather than exit() so stdout is fully flushed before we die, and so
+   a red suite ALWAYS leaves a nonzero status for whatever gate runs above us. */
+process.exitCode = code ? 1 : 0;
