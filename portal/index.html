@@ -818,6 +818,20 @@ var FEATURED = [
   // Source of truth: satellites/bandits-box (BUILD-PLAN + SFX-SHOT-LIST in
   // incoming/bandits-box). Framed, so it speaks the embed protocol.
   {nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.", cat:"creative", url:"/satellites/bandits-box/?v=20260816a", ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true, fresh:true},
+  // HANDOFF-11 games (Aug 16): four single file PWAs built in one block, each one
+  // a pure state machine with a skin. Every one ships a headless assertion suite
+  // (node satellites/<id>/sim.js --test) and resolves its own balance by
+  // simulation rather than by feel: 1020 assertions across the four, zero failing
+  // at deploy. Parallel's sixty levels are each BFS solved before they ship and
+  // the par score on screen is the solver's own optimum. Plans and per game
+  // build notes: incoming/handoff11/ and satellites/<id>/BUILD-NOTES.md.
+  // Shipped beta:true because verification is not playtesting; no human has
+  // played these yet.
+  {nm:"Deepwell", ds:"Dig deeper for richer ore, then decide when to turn back before the air runs out.", cat:"action", url:"/satellites/deepwell/?v=20260816a", ic:"⛏️", thumb:"/portal-assets/thumbs/deepwell.png", beta:true, fresh:true},
+  {nm:"Blackout", ds:"Every case is generated with exactly one answer and the evidence to prove it.", cat:"puzzle", url:"/satellites/blackout/?v=20260816a", ic:"🕯️", thumb:"/portal-assets/thumbs/blackout.png", beta:true, fresh:true},
+  {nm:"Parallel", ds:"Two of you share one set of controls and both have to reach the door at once.", cat:"puzzle", url:"/satellites/parallel/?v=20260816a", ic:"🪞", thumb:"/portal-assets/thumbs/parallel.png", beta:true, fresh:true},
+  {nm:"Wireworm", ds:"Snake where your trail is live wire and every circuit you finish becomes the maze that kills you.", cat:"action", url:"/satellites/wireworm/?v=20260816a", ic:"🐛", thumb:"/portal-assets/thumbs/wireworm.png", beta:true, fresh:true},
+  {nm:"Siege of One", ds:"Set your traps between waves, then get in the lane and fight beside them.", cat:"action", url:"/satellites/siege/?v=20260816a", ic:"🏰", thumb:"/portal-assets/thumbs/siege.png", beta:true, fresh:true},
   // ⛔ 2026-07-28: this card said "Brawl · Multiplayer mayhem · 🍺" and was a dead
   // COMING SOON button. The URL it points at is live and is now a DIFFERENT game —
   // it titles itself WILD WARDENS (tame the wild, tend your grove, walk the real
@@ -1541,6 +1555,11 @@ var ALIASES={
      the alias was still keyed on "leaf fit" after the game became Tetroku. Each old
      name is folded into the keyword list so the previous title still finds it.
      RENAME CHECKLIST: change the key here in the same commit as the card. */
+  'blackout':'murder mystery deduction detective clue cluedo whodunit logic grid case suspects solver',
+  'deepwell':'mining dig depth push your luck roguelite ore shaft greed spelunky motherload miner',
+  'parallel':'mirror twin puzzle platformer two characters sync desync grid levels solver par',
+  'wireworm':'snake circuit wire electric trail arcade energized terminals',
+  'siege of one':'tower defense inverted lane traps waves defender action td',
   'bubblenaut':'bubble bobble taito trap pop bubbles platformer alien critters arcade classic co-op two player collect worlds',
   'merge & blast':'merge and blast 2048 number blocks pop group collapse',
   'super slice':'slice master knife flip cut fruit stacks poki',

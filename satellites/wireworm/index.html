@@ -32,8 +32,8 @@ body{overflow:hidden}
 
 /* ---- HUD ---- */
 #hud{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px 4px;min-height:58px}
-#comboWrap{position:relative;width:52px;height:52px;flex:0 0 auto}
-#comboRing{position:absolute;inset:0}
+#comboWrap{position:relative;width:52px;height:52px;flex:0 0 auto;overflow:hidden}
+#comboRing{position:absolute;top:0;left:0;width:52px;height:52px;display:block}
 #comboTxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--lime)}
 #scoreBox{flex:1 1 auto;min-width:0}
@@ -50,7 +50,7 @@ body{overflow:hidden}
 .iconbtn:active{background:#1b1f28}
 
 /* ---- board ---- */
-#stage{flex:1 1 auto;position:relative;display:flex;align-items:center;justify-content:center;min-height:0}
+#stage{flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:2px 0}
 #board{display:block;border-radius:14px;background:#0c0f0b;touch-action:none}
 #zoneL,#zoneR{position:absolute;top:0;bottom:0;width:50%;z-index:5}
 #zoneL{left:0}#zoneR{right:0}
@@ -60,6 +60,11 @@ body{overflow:hidden}
 #zoneHint div{flex:1;display:flex;align-items:center;justify-content:center;font-size:34px;color:#ffffff22}
 
 /* ---- footer ---- */
+#pad{flex:1 1 auto;display:flex;gap:10px;padding:8px 12px 4px;min-height:64px}
+.padbtn{flex:1 1 0;border:1px solid var(--line);border-radius:14px;background:#10140c;color:#6d7a5f;
+  font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background 120ms ease-out,color 120ms ease-out;user-select:none;touch-action:none}
+.padbtn:active{background:#1d2612;color:var(--lime)}
 #foot{flex:0 0 auto;display:flex;gap:8px;padding:6px 12px 10px;align-items:center}
 .fbtn{flex:1 1 0;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
   color:var(--text);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.4px}
@@ -111,6 +116,10 @@ input[type=range]{flex:1 1 auto;height:48px;accent-color:var(--lime)}
     <div id="zoneL" aria-label="Turn left"></div>
     <div id="zoneR" aria-label="Turn right"></div>
     <div id="zoneHint"><div>&#8630;</div><div>&#8631;</div></div>
+  </div>
+  <div id="pad">
+    <button class="padbtn" id="padL" aria-label="Turn left">&#8630;</button>
+    <button class="padbtn" id="padR" aria-label="Turn right">&#8631;</button>
   </div>
   <div id="foot">
     <button class="fbtn" id="btnExit">EXIT</button>
@@ -1769,7 +1778,7 @@ var mode = 'free', curSeed = 1, todayStr = '';
 /* ---------- geometry ---------- */
 function layout() {
   var w = stage.clientWidth, h = stage.clientHeight;
-  var side = Math.max(180, Math.min(w, h) - 8);
+  var side = Math.max(180, Math.min(w, h) - 4);
   cell = Math.max(8, Math.floor(side / CONFIG.GRID));
   boardPx = cell * CONFIG.GRID;
   dpr = Math.min(2.5, window.devicePixelRatio || 1);
@@ -1814,11 +1823,11 @@ function drawWireCell(i, live, alphaOverride) {
   var x = (i % CONFIG.GRID) * cell, y = ((i / CONFIG.GRID) | 0) * cell;
   var cxp = x + cell / 2, cyp = y + cell / 2;
   var links = neighbourWire(i, live), d;
-  var w = live ? Math.max(3, cell * 0.42) : Math.max(2, cell * 0.20);
+  var w = live ? Math.max(3, cell * 0.42) : Math.max(2.5, cell * 0.26);
   bx.globalAlpha = alphaOverride === undefined ? 1 : alphaOverride;
   bx.lineCap = 'round';
   bx.lineWidth = w;
-  bx.strokeStyle = live ? '#a3e635' : '#38452b';
+  bx.strokeStyle = live ? '#a3e635' : '#55693e';
   for (d = 0; d < links.length; d++) {
     bx.beginPath();
     bx.moveTo(cxp, cyp);
@@ -1827,7 +1836,7 @@ function drawWireCell(i, live, alphaOverride) {
   }
   bx.beginPath();
   bx.arc(cxp, cyp, w * 0.5, 0, 6.2832);
-  bx.fillStyle = live ? '#c6f04f' : '#38452b';
+  bx.fillStyle = live ? '#c6f04f' : '#5f7546';
   bx.fill();
   bx.globalAlpha = 1;
 }
@@ -2157,6 +2166,8 @@ function zone(el, t) {
 }
 zone($('zoneL'), -1);
 zone($('zoneR'), 1);
+zone($('padL'), -1);
+zone($('padR'), 1);
 var swX = null, swY = null;
 stage.addEventListener('touchstart', function (e) { if (e.touches.length) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; } }, { passive: true });
 stage.addEventListener('touchend', function (e) {
