@@ -1,0 +1,166 @@
+# SUPER SLICE 3D — audit notes
+
+Audited 2026-08-16. Full pass: read end to end, defect list written BEFORE any edit,
+fixed worst first, headless assertion suite left behind (`audit-check.mjs`).
+
+Build at audit time: `v5.7`, 2467 lines, three.min.js vendored, sw v63.
+
+## How this was verified
+
+- Real headless Chrome at 375x667 with the swiftshader GL flags (`--use-gl=swiftshader
+  --enable-unsafe-swiftshader`). **Never wait on `networkidle`** for this page: it streams
+  a 600KB three.js and keeps a rAF loop alive forever, so a networkidle wait calls a
+  healthy page dead. Wait on `domcontentloaded` plus a fixed settle.
+- All five entry points driven to their end panel through the `?dev=1` hook
+  (`window._S3.stepN`), not by eyeballing: Journey L1, Journey L2, Freefall L1,
+  Wall Climb L1, Endless.
+- Every check in `audit-check.mjs` was watched FAIL on purpose before it was trusted.
+  The first version of the play probe broke its loop the instant `G.done` flipped, which
+  is 2.4 seconds before `finishLevel()` actually fires, and confidently reported "the end
+  screen never shows". That was the probe, not the game. Fixed, then re-run.
+
+## The core loop, start to finish — WORKS
+
+All five modes reach their end panel, bank score, and persist. Measured:
+
+| Mode | Result | Panel | Persisted |
+|---|---|---|---|
+| Journey L1 | cleared, 2835 pts, 16 sliced | `LEVEL 1 CLEAR` ★☆☆ | `level:2`, `best.l1:2835`, ☀+2, ◆+93 |
+| Freefall L1 | stuck the wall at 46m | `STUCK IN THE WALL` ✕ | ◆+6 |
+| Wall Climb L1 | stuck at x1 | `WALL CLIMB 1 · x1` | `climbLevel:2`, `best.c1:200` |
+| Endless | 149m | `DEPTH 149m` ★ | `endlessBest:149` |
+
+Zero page errors across all of it. No stubs, no dead menu buttons, no unreachable screen.
+The `?mode=climb` and `?mode=ff` front doors both boot correctly.
+
+Difficulty is real, not flat: `buildLevel` widens the segment bag and raises crystal density
+with level, and the Freefall shaft narrows. Endless raises terminal velocity with depth
+(`FF_TERM + depth*0.012`, capped 30).
+
+## DEFECT LIST (written before any edit)
+
+### 1. CRITICAL — a corrupt save bricks the game to a black screen. FIXED
+
+`PROG` and `SKN` were built with `JSON.parse(...) || {default}`. A try/catch around
+`JSON.parse` is not validation: any value that merely *parses* is truthy and comes straight
+through. The next line then does `PROG.level = 1` on it, and under `"use strict"` assigning
+a property to a primitive **throws**, which kills the entire main IIFE — all 2240 lines, the
+whole game — at parse position line 255. The player gets a black stage with no way out.
+
+Verified in a real browser, one poisoned key per boot:
+
+```
+s3d_prog=5      -> main IIFE dead: "Cannot create property 'level' on number '5'"
+s3d_prog="hi"   -> main IIFE dead
+s3d_prog=true   -> main IIFE dead
+s3d_skins=5     -> main IIFE dead: "Cannot create property 'owned' on number '5'"
+```
+
+Not hypothetical: a quota-exceeded or interrupted `setItem` is the normal way a key ends up
+holding a scalar, and this game writes on every level end.
+
+**Fix:** a real `okObj()` / `okArr()` shape check at load. Anything that is not a plain
+object (or, for `SKN.owned`, a genuine array) is discarded for the default. Also hardened
+`PROG.best` and `SKN.equip` against a valid-JSON-but-wrong-shape payload
+(`{"best":7}`, `{"owned":"classic"}`, `{"equip":"nope"}` — all of which previously got
+through and broke later, inside a click handler, where nobody would connect it to the save).
+
+### 2. HIGH — the Music button label is clipped mid letter. FIXED
+
+Looked at it at 375x667 rather than trusting the layout. `/music-player.js` replaces the
+`♫` glyph with the string `♫ Music`, and `.btn` inherits `padding:0` from the global `*`
+reset, so the label runs edge to edge and the final `c` is sliced by the button's own
+rounded border. It reads as "♫ Musi(". Screenshot in the audit scratch.
+
+**Fix:** `#b-music` gets side padding and its flex basis widened to fit the label the music
+player actually installs, and the label is allowed to shrink instead of overflowing.
+
+### 3. HIGH — two tabs clobber each other. FIXED
+
+`SLIV` (the currency), `PROG` and `SKN` are read ONCE at boot and written back wholesale.
+Two tabs open, play a level in each, and the second write erases the first tab's slivers,
+level and unlocked knives. Slivers are earned currency, so this is lost player value.
+
+**Fix:** read-modify-write at save time. Slivers ADD their delta against whatever is on disk
+now, level/best/climbLevel/endlessBest/slabsCut/cleanDives MAX or ADD as appropriate, and
+owned knives UNION. A knife bought in one tab can no longer be un-bought by the other.
+
+### 4. MEDIUM — a failed Journey or Freefall run silently discards progress. FIXED
+
+`failLevel()` calls `saveProg()` only on the endless branch. The level and freefall branch
+never saves and never calls `runTrophies()`. But `sliceSlab()` increments
+`PROG.slabsCut` — the lifetime tally that feeds the Groundskeeper trophy at 100 — during
+the run. A failed dive is the *normal* way a Freefall dive ends, so nearly every slab a
+player cuts is thrown away, and the trophy is close to unreachable. Nothing tells them.
+This is the "silent failure" class: the run looks like it counted.
+
+**Fix:** the fail path now runs `runTrophies()` (which saves) on every mode, so slabs,
+best combo and the trophies bank whether you stick it or not.
+
+### 5. MEDIUM — dash in player copy. FIXED
+
+Knife Forge, line 180: "Unlock knives and swords - each is pure style". Rewritten as two
+sentences rather than swapping the character, per the house rule.
+
+### 6. LOW — the feedback fab has to hide on the title screen. NOT FIXED, deliberate
+
+The fab lands at x 315..363, y 521..571 at 375x667. The How / Forge / Music row occupies
+x 42..333, y 522..572, so they overlap, and `feedback.js` correctly fades itself out
+(`[data-lwfb-yield="1"]{opacity:0;pointer-events:none}`). The shared component is doing the
+right thing, but the net effect is that feedback is unreachable from this game's menu.
+
+Left alone on purpose: the fix belongs in the row's geometry or in `feedback.js`, and
+`feedback.js` is outside this audit's sandbox. Narrowing the button row to clear the corner
+would shrink three 48px-plus targets to buy back one, which is the wrong trade.
+
+### 7. NOT A DEFECT — the drawn-scale/tested-scale mismatch is genuinely fixed
+
+Project memory flags this game for "drawn scale did not match tested scale", so it was
+re-verified rather than assumed. Both halves now hold:
+
+- **Knife reach.** `measureKnife()` multiplies the measured recipe extent by `KSCALE` (0.55)
+  on the way out, and `buildKnife()` draws the group at that same `KSCALE`. Contact fires
+  where the knife is drawn. Live reading at boot: `KLEN 3.14, KHH 0.72, reach at angle 0
+  = 3.14` against a Classic Chef recipe that spans 5.70. Correct.
+- **Touch targets.** The 540x960 stage scales 0.6944 at 375x667. Declared 72px stage buttons
+  render at 50px, over the 48px floor. Measured every visible control on title, how, forge
+  and play screens: **zero under 48 rendered px**. The `72 is stage px` comment at line 75
+  is accurate and must not be "simplified" to 48.
+
+### 8. NOT A DEFECT — the exit works, and something calls it
+
+`/arcade-exit.js` finds `#s-title`, injects "◄ All Sky Wolf games", and defines
+`window.SWS_EXIT`. Measured live: the button renders at 277.8 x 50 px, visible, on the title
+screen, and its handler is bound. Its `leave()` falls back to `document.referrer` and then
+to `/portal/`, so it does not depend on being framed — which matters, because the portal
+navigates `/satellites/` urls TOP LEVEL. This is the one class the game already passes.
+
+## IMPROVEMENTS MADE (and why they buy the most per minute played)
+
+### A. Journey and Freefall failures now bank their trophy progress (see defect 4)
+
+Best value per minute of anything here. Freefall is the mode a player replays, failure is
+its normal ending, and until now every one of those dives contributed nothing to the two
+long-horizon unlocks. One line of placement, and the whole Freefall grind starts counting.
+
+### B. The end panel now tells you what a Journey fail cost you
+
+A failed Journey run said only "STUCK IN THE WALL" and how far you fell — no slice count,
+no combo, nothing to beat. It now shows the same "sliced / best combo" line the other modes
+show, so a failed run still ends on a number, which is the thing that makes you tap Try
+Again. Cheap, and it uses data the run already had.
+
+## WHAT STILL WORRIES ME
+
+- **Wall Climb advances on any stick.** `PROG.climbLevel` increments whenever a climb
+  finishes, regardless of the multiplier reached, so "Level" on an endless wall is a run
+  counter wearing a progression label. Sticking at x1 promoted the player to Climb 2.
+  Not touched: changing it is a design call about what the climb ladder means.
+- **The panel says "of x900".** The How screen promises the climb's bands "keep going, so
+  nothing but your throw limits you", and then the end panel prints "stuck it at x1 of
+  x900". A stated ceiling contradicts the copy's promise of no ceiling. Left for the
+  Director since it is a wording-versus-design question, not a bug.
+- **The feedback fab is invisible on the menu** (defect 6). Real, but the fix is not in
+  this file.
+- The service worker is `sw.js?v=63`. Any deploy must bump that in step or players keep the
+  old bundle, and none of the above ships.

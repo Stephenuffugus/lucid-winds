@@ -94,7 +94,7 @@ h1,h2,h3,p{margin:0}
 .mbtn .d{font-size:11.5px;color:var(--muted);line-height:1.35}
 .mbtn .lock{font-size:10px;color:var(--warn);letter-spacing:.1em;text-transform:uppercase;font-weight:700}
 .row{display:flex;gap:9px;flex-wrap:wrap} .row.center{justify-content:center}
-.btn{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:700;font-size:14px;letter-spacing:.02em;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,border-color .12s}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:700;font-size:14px;letter-spacing:.02em;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,border-color .12s}
 .btn:active{transform:scale(.96)} .btn.primary{background:linear-gradient(120deg,var(--p1),var(--accent));color:#05060e;border:0}
 .btn.ghost{background:transparent} .btn.wide{width:100%}
 .sec-title{font-family:var(--fmono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin:14px 2px 2px;display:flex;justify-content:space-between;align-items:center}
@@ -621,7 +621,20 @@ class Match{
       if(this.effects.p.shieldHp||this.effects.ai.shieldHp){ this.effects.p.shieldHp=0; this.effects.ai.shieldHp=0; this.rebuildShield(); }
       this.maxSpeed=Math.min(this.cfg.maxSpeed*6, this.maxSpeed*(1+dt*0.8));
       for(const b of this.balls){ if(b.dead)continue; const sp=Math.hypot(b.vx,b.vy); if(sp>1){ const ns=Math.min(this.maxSpeed,sp*(1+dt*0.7)), k=ns/sp; b.vx*=k; b.vy*=k; } }
-    }
+      // ESCAPE HATCH. Speed does not free a ball that is geometrically WEDGED —
+      // it just rattles faster. If escalation has run for 4s and the ball is
+      // still not travelling, cut it loose to the centre with a fresh serve
+      // vector so no point can ever hang. (Found by simulation, not by feel: a
+      // Gauntlet ball pinched between the bumper and the moving block sat there
+      // for 30+ seconds at the 6x ceiling.)
+      this.escT=(this.escT||0)+dt;
+      if(this.escT>4){
+        this.escT=0; this.maxSpeed=this.cfg.maxSpeed; this.lastPaddleT=this.clock; this.pointClock=0;
+        for(const b of this.balls){ if(b.dead)continue;
+          b.stuck=null; b.hold=0; b.trail.length=0; b.x=this.W/2; b.y=this.H/2;
+          this.cfg.serve(this,b,this.server); this.burst(b.x,b.y,'var(--warn)',14); }
+      }
+    } else this.escT=0;
     // physics substeps (ballSlow scales ball advance only, not its stored speed)
     const slowF=this.ballSlow>this.clock?0.60:1;
     for(const b of this.balls){ if(b.dead) continue;
@@ -641,8 +654,12 @@ class Match{
     const b=this.balls.find(x=>!x.dead); const bsp=b?Math.hypot(b.vx,b.vy):this.baseSpeed;
     for(const p of this.paddles){
       if(p.owner==='ai') this.cfg.ai(this,p,dt);
-      else { // player paddle keeps pace with the ball (fair in sudden death)
-        const want=(p instanceof ArcPaddle)?(bsp*1.5)/p.R:bsp*1.5; p.maxSpeed=Math.max(p._baseMax||0, want);
+      else { // player paddle keeps pace with the ball (fair in sudden death) —
+        // normalised against the court like the AI's, so a tall portrait screen
+        // does not quietly make YOU the bottleneck
+        const kind=(this.cfg.id==='vertical'||this.cfg.id==='survival')?'vertical':'classic';
+        const want=(p instanceof ArcPaddle)?(bsp*1.5)/p.R:bsp*Math.max(1.5,coverNeed(this,p,kind)*1.7);
+        p.maxSpeed=Math.max(p._baseMax||0, want);
       }
       const e=this.effects[p.owner]; if(e&&e.freeze>this.clock) p.maxSpeed*=0.32;  // freeze debuff
       p.step(dt);
@@ -929,9 +946,16 @@ reg({ id:'gauntlet', name:'Gauntlet', ic:'⚡', desc:'Power-ups, bumpers &amp; a
     m.paddles.push(new LinearPaddle({owner:'p',bx:px,by:H/2,ax:0,ay:1,nx:side==='left'?1:-1,ny:0,range:H/2-pl/2,len:pl,thick:th,maxSpeed:m.baseSpeed*1.7,shape:Skins.paddleShape('p')}));
     m.paddles.push(new LinearPaddle({owner:'ai',bx:ax,by:H/2,ax:0,ay:1,nx:side==='left'?-1:1,ny:0,range:H/2-pl/2,len:pl,thick:th,maxSpeed:m.baseSpeed,shape:Skins.paddleShape('ai')}));
     m._side=side;
-    m.addBumper(W*0.5,H*0.26,Math.max(16,W*0.055));
-    m.addBumper(W*0.5,H*0.74,Math.max(16,W*0.055));
-    m.movers.push(new Mover({cx:W*0.5,cy:H*0.5,ax:0,ay:1,amp:H*0.15,w:Math.max(14,W*0.04),h:Math.max(40,H*0.09),speed:1.1}));
+    // The bumpers used to sit on the moving block's own centre line, so the block
+    // swung to within a ball-width of them and PINCHED the ball in a vice. Speed
+    // escalation cannot free a wedged ball, so Gauntlet points could hang forever
+    // (measured: 30+ simulated seconds at the 6x speed ceiling, still stuck).
+    // Off-centre bumpers make it a diagonal, which is also the better shape.
+    const br=Math.max(16,W*0.055);
+    m.addBumper(W*0.34,H*0.26,br);
+    m.addBumper(W*0.66,H*0.74,br);
+    const amp=H*0.15, mh=Math.max(40,H*0.09);
+    m.movers.push(new Mover({cx:W*0.5,cy:H*0.5,ax:0,ay:1,amp,w:Math.max(14,W*0.04),h:mh,speed:1.1}));
   },
   serve(m,b,server){ return MODES.classic.serve(m,b,server); },
   score(m,b){ return MODES.classic.score(m,b); },
@@ -961,12 +985,27 @@ reg({ id:'multiball', name:'Multiball', ic:'⁘', desc:'Three balls at once. Cla
 function angDist(a,b){ let d=Math.abs(a-b)%TAU; if(d>Math.PI)d=TAU-d; return d; }
 
 /* ═══════════════════════════ AI ═══════════════════════════ */
+// padFrac is "what fraction of the WORST-CASE coverage the AI can manage".
+// It used to be a flat multiple of ball speed, which quietly made difficulty a
+// function of the SCREEN SHAPE: on a wide landscape court the paddle only has to
+// cross H while the ball crosses W, so even a slow paddle always arrives and Ace
+// and Legend became geometrically unbeatable (measured: a perfect defensive
+// player could not close out a first-to-9 in 750 simulated seconds at 800x600,
+// but won in 20s/point at 390x844 on the same settings). The menu tells players
+// to rotate their phone, so this was live. Now the AI's speed is normalised
+// against the court it is actually playing on, and padFrac means the same thing
+// in every orientation.
+function coverNeed(m,p,kind){
+  const travel=Math.max(1,p.range*2);                    // how far the blade may have to go
+  const cross =Math.max(1,kind==='classic'? m.W : m.H);  // how far the ball goes meanwhile
+  return travel/cross;
+}
 function aiLinear(m,p,dt,kind){
   const D=m.cfg.diff, st=p.ai||(p.ai={aim:0,predT:0});
   st.predT-=dt;
   const b=nearestThreat(m,p,kind);
   const bsp=b?Math.hypot(b.vx,b.vy):m.baseSpeed;   // scale paddle speed with the
-  p.maxSpeed=Math.max(m.baseSpeed,bsp)*D.padFrac*(m.cfg.aiK||1); // CURRENT ball speed so long/sudden-death rallies stay a skill test
+  p.maxSpeed=Math.max(m.baseSpeed,bsp)*coverNeed(m,p,kind)*D.padFrac*(m.cfg.aiK||1); // CURRENT ball speed so long/sudden-death rallies stay a skill test
   const toward = b && (kind==='classic' ? (p.normal.x>0? b.vx<0 : b.vx>0) : (p.normal.y>0? b.vy<0 : b.vy>0));
   if(!b||!toward){ // drift to centre — an exploitable reset, as intended
     const mid=kind==='classic'?m.H/2:m.W/2, base=kind==='classic'?p.base.y:p.base.x;
@@ -1008,7 +1047,10 @@ function aiArc(m,p,dt){
   st.predT-=dt;
   const b=m.balls.find(x=>!x.dead); if(!b){ p.maxSpeed=(m.baseSpeed*D.padFrac)/p.R; return; }
   const bsp=Math.hypot(b.vx,b.vy);
-  p.maxSpeed=(Math.max(m.baseSpeed,bsp)*D.padFrac*(m.cfg.aiK||1)*1.5)/p.R; // rad/s scales with current ball speed
+  // arc coverage: the blade must sweep (a1-a0) radians while the ball crosses a
+  // diameter. Same "fraction of worst-case coverage" meaning as the linear AI.
+  const needW=Math.max(0.05,(p.a1-p.a0))/(2*m.R);
+  p.maxSpeed=Math.max(m.baseSpeed,bsp)*needW*D.padFrac*(m.cfg.aiK||1);   // rad/s
   if(st.predT<=0){
     const bearing=Math.atan2(b.y-m.cy,b.x-m.cx);
     const ring=predictRing(m,b,p.R);               // where the ball reaches the paddle's ring
@@ -1475,10 +1517,17 @@ setInterval(()=>{ if(!game||game.state==='over'||dragging)return; const pp=game.
 // speed, corner placement). Ball speed is held ~flat — a faster ball just adds
 // chaos, which reads as random not "harder".
 const DIFF={
-  easy:  {padFrac:0.78, ballScale:0.95, reactMs:0.320, errPx:44, place:0.0, pred:0.35, label:'Rookie'},
-  normal:{padFrac:0.92, ballScale:1.00, reactMs:0.210, errPx:28, place:0.30,pred:0.58, label:'Pro'},
-  hard:  {padFrac:1.05, ballScale:1.03, reactMs:0.120, errPx:15, place:0.65,pred:0.82, label:'Ace'},
-  expert:{padFrac:1.18, ballScale:1.06, reactMs:0.060, errPx:5,  place:1.0, pred:1.00, label:'Legend'}
+  easy:  {padFrac:0.76, ballScale:0.95, reactMs:0.320, errPx:44, place:0.0, pred:0.35, label:'Rookie'},
+  normal:{padFrac:0.87, ballScale:1.00, reactMs:0.210, errPx:28, place:0.30,pred:0.58, label:'Pro'},
+  hard:  {padFrac:0.94, ballScale:1.03, reactMs:0.120, errPx:15, place:0.65,pred:0.82, label:'Ace'},
+  // Legend was padFrac 1.18 / errPx 5 / pred 1.00 — a paddle that outruns the
+  // ball by 18% with a perfect multi-bounce read basically cannot miss, and
+  // Career level 12 is classic/Legend/first-to-11. Simulated with a PERFECT
+  // player (paddle pinned to the ball every frame) that match took ~9 minutes
+  // PER POINT, so the top rung of the ladder was a dead end nobody could clear.
+  // Separation now comes from reaction, aim and placement, not from a paddle
+  // that is faster than the thing it is chasing.
+  expert:{padFrac:0.99, ballScale:1.06, reactMs:0.070, errPx:16, place:1.0, pred:0.95, label:'Legend'}
 };
 S._diff=S._diff||'normal'; S._target=S._target||7;
 
@@ -1634,7 +1683,7 @@ const CAMPAIGN=[
   {mode:'radial',   diff:'hard',  target:7, label:'Orbit Ace'},
   {mode:'multiball',diff:'hard',  target:9, label:'Triple Threat'},
   {mode:'gauntlet', diff:'hard',  target:9, label:'The Gauntlet', boss:true},
-  {mode:'classic',  diff:'expert',target:11,label:'The Legend', boss:true}
+  {mode:'classic',  diff:'expert',target:9, label:'The Legend', boss:true}
 ];
 
 /* ═══════════════════════════ WIRING ═══════════════════════════ */

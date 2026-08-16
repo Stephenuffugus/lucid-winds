@@ -63,20 +63,27 @@ const CHECKS = [
 
 { name: 'exit does NOT gate on being framed (standing class 1)',
   async run(page) {
-    // top level, no ?embed=1: SWS_EXIT must take the referrer/portal branch,
-    // never the postMessage branch. We spy on location.replace + history.back.
-    const r = await page.evaluate(() => {
-      let hit = null;
-      const rp = location.replace, hb = history.back;
-      location.replace = (u) => { hit = 'replace:' + u; };
-      history.back = () => { hit = 'back'; };
-      try { window.SWS_EXIT(); } catch (e) { hit = 'threw:' + e.message; }
-      location.replace = rp; history.back = hb;
-      return { hit, framed: window.SWS_EMBED };
-    });
-    return { ok: r.framed === false && /^(replace:.*portal|back)/.test(r.hit || ''), detail: JSON.stringify(r) };
+    // The portal navigates relative /satellites/ urls TOP LEVEL, so the exit has
+    // to work unframed. `location.replace` is not writable in Chrome, so spying
+    // on it silently lets the page navigate for real; catch it at the network
+    // layer instead and abort the request.
+    const framedFlag = await page.evaluate(() => window.SWS_EMBED);
+    let target = null;
+    await page.setRequestInterception(true);
+    const onReq = (rq) => {
+      if (rq.isNavigationRequest() && rq.frame() === page.mainFrame() && rq.url().indexOf('/satellites/pong') < 0) {
+        target = rq.url(); rq.abort().catch(() => {});
+      } else rq.continue().catch(() => {});
+    };
+    page.on('request', onReq);
+    await page.evaluate(() => { try { window.SWS_EXIT(); } catch (e) {} });
+    await new Promise(r => setTimeout(r, 400));
+    page.off('request', onReq);
+    await page.setRequestInterception(false);
+    const ok = framedFlag === false && !!target && /\/portal\/?$/.test(target);
+    return { ok, detail: `SWS_EMBED=${framedFlag} unframed exit went to ${target}` };
   },
-  break: `window.SWS_EXIT=function(){ try{parent.postMessage({sws:'close'},'*');}catch(e){} };` },
+  break: `window.SWS_EXIT=function(){ if(!/[?&]embed=1/.test(location.search)) return; };` },
 
 { name: 'corrupt save that PARSES does not blank the page (standing class 3)',
   // No `break` mutation: this check carries its own proof. It first runs every
@@ -118,14 +125,18 @@ const CHECKS = [
           const g = window.__PONG.game;
           const cur = window.__PONG.S().cur;
           const finite = Object.keys(cur).every(k => typeof cur[k] === 'number' && isFinite(cur[k]));
-          return { boot: true, played: !!g, score: g ? g.scores.p + g.scores.ai : -1, finite };
+          // "playable" = the currency path actually RAN. Both a scored point and a
+          // 4+ rally call Economy.earn, which is exactly where a poisoned save
+          // used to throw. Requiring a SCORE would just be measuring the AI.
+          return { boot: true, played: !!g && (g.scores.p + g.scores.ai > 0 || g.maxRally > 4),
+                   score: g ? g.scores.p + g.scores.ai : -1, rally: g ? g.maxRally : -1, finite };
         } catch (e) { return { boot: true, played: false, err: e.message }; }
       });
       out.push({ p, ...r });
     }
     await page.evaluate(() => localStorage.removeItem('pongarena.save.v1'));
     await page.reload({ waitUntil: 'domcontentloaded' });
-    const bad = out.filter(o => !o.boot || !o.played || o.score <= 0 || !o.finite);
+    const bad = out.filter(o => !o.boot || !o.played || !o.finite);
     return { ok: bad.length === 0, detail: bad.length ? JSON.stringify(bad[0]) : `${lethal.length} of ${poisons.length} poisons kill the OLD loader, all ${out.length} survive the new one` };
   } },
 
@@ -226,7 +237,9 @@ const CHECKS = [
       }
       return { worst, stalls: worst.filter(w => w.stalled).length, max: Math.max(...worst.map(w => w.secs || 99)) };
     });
-    return { ok: r.stalls === 0, detail: `no stalls, slowest point ${r.max}s` };
+    const worstPt = r.worst.filter(w => !w.stalled).sort((a, b) => b.secs - a.secs)[0];
+    return { ok: r.stalls === 0,
+      detail: r.stalls ? `HUNG: ${JSON.stringify(r.worst.filter(w => w.stalled))}` : `slowest point ${worstPt.secs}s (${worstPt.mode})` };
   },
   break: `window.__PONG.Match.prototype.doScore=function(){};` },
 
@@ -235,6 +248,7 @@ const CHECKS = [
     const r = await page.evaluate(() => {
       window.__PONG.start('gauntlet', { diff: 'normal', target: 99 });
       const g = window.__PONG.game;
+      while (g.state !== 'play') window.__PONG.step(1);      // clear the opening 3-2-1
       const pad = g.playerPaddle();
       g.effects.p.magnet = true;
       const b = g.balls[0];
@@ -310,14 +324,17 @@ const CHECKS = [
       const g = window.__PONG.game;
       const pp = g.playerPaddle(); pp.maxSpeed = 1e6;
       let n = 0;
-      while (g.state !== 'over' && n < 200000) {
+      while (g.state !== 'over' && n < 90000) {          // 750 simulated seconds
         const b = g.balls.find(x => !x.dead);
         if (b) { pp.setTargetFromPoint(b.x, b.y); pp.off = pp.target; }
         window.__PONG.step(1); n++;
       }
-      return { over: g.state === 'over', win: g.result && g.result.win, p: g.scores.p, ai: g.scores.ai, secs: +(n / 120).toFixed(0) };
+      return { over: g.state === 'over', win: g.result && g.result.win, p: g.scores.p, ai: g.scores.ai,
+               secs: +(n / 120).toFixed(0), secsPerPoint: +(n / 120 / Math.max(1, g.scores.p)).toFixed(0) };
     });
-    return { ok: r.over && r.win, detail: JSON.stringify(r) };
+    // "completable" is not enough: a point that takes minutes is a dead end with
+    // extra steps. A perfect player has to average under 40s per point.
+    return { ok: r.over && r.win && r.secsPerPoint < 40, detail: JSON.stringify(r) };
   },
   break: `window.__PONG.DIFF.expert.padFrac=99; window.__PONG.DIFF.expert.errPx=0;` },
 

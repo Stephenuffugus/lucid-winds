@@ -2616,11 +2616,21 @@ function resize(){
   updateRotateHint();
 }
 var _rotateDismissed=false;
+/* ⛔⛔ MUST be on window. #rotate's dismiss button is an INLINE onclick, and every
+   function in this file lives inside a strict-mode IIFE — so `dismissRotate()`
+   from markup was a ReferenceError and the button did nothing. On a portrait
+   phone with rotation locked that made the whole game unplayable AND unescapable:
+   #rotate is inset:0 at z-index 66, so it covered the pause button, and the exit
+   link is only shown on the menu. Found by hit-testing, not by reading the CSS. */
 function dismissRotate(){ _rotateDismissed=true; updateRotateHint(); }
+try{ window.dismissRotate=dismissRotate; }catch(e){}
 function updateRotateHint(){ var el=document.getElementById('rotate'); if(!el) return;
   // Burr Blast is a landscape game (Angry-Birds framing): nudge to rotate, only while actually playing.
+  // ⛔ AND NOT WHILE PAUSED. #rotate is inset:0 at z-index 66; every .screen is z-index 30, so a
+  // portrait pause used to bury Resume / Restart / Choose a patch / Main menu under the nudge.
+  // Found by hit-testing the pause screen, not by looking at the CSS.
   var portrait = window.innerHeight > window.innerWidth + 40;   // hysteresis so near-square doesn't flip
-  el.classList.toggle('on', !!(_playing && portrait && !_rotateDismissed));
+  el.classList.toggle('on', !!(_playing && !_paused && portrait && !_rotateDismissed));
 }
 
 /* ---- level flow ---- */
@@ -3097,6 +3107,10 @@ function boot(){
   bindInput();
   // build stamp
   var bs='Burr Blast · '+BUILD; $('bstampMenu').textContent=bs; $('bstampSet').textContent=bs;
+  // belt and braces on the landscape nudge: bind the button properly (not via inline
+  // markup) and let a tap anywhere on the sheet dismiss it, so it can never trap anyone.
+  var _rot=$('rotate'); if(_rot){ _rot.onclick=function(){ dismissRotate(); };
+    var _rd=_rot.querySelector('.rot-dismiss'); if(_rd) _rd.onclick=function(e){ if(e&&e.stopPropagation)e.stopPropagation(); dismissRotate(); }; }
   refreshMenu();
   // menu buttons
   $('btnPlay').onclick=function(){ SFX.unlock(); SFX.click(); openLevels(); };

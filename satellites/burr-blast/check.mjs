@@ -70,7 +70,7 @@ console.log('\n[1] boot and core loop');
   }));
   ok('page throws nothing on boot', p._errs.length === 0, p._errs);
   ok('debug + physics hooks present', r.hooks);
-  ok('31 authored levels build', r.levels === 31, r.levels);
+  ok('32 authored levels build (31 patches + the boss)', r.levels === 32, r.levels);
   ok('SWS_EXIT is defined', r.exit);
   // the exit affordance must be VISIBLE and WIRED, not merely defined
   const ex = await p.evaluate(() => {
@@ -230,7 +230,8 @@ console.log('\n[7] touch targets (rendered px, 375x667)');
     const sel = 'button,[role=button],.toggle,.ls-cell,.tab,.kbtn,.exp-node,.draft-card,.load-seed,.nstep,.lt,.card .act,.rot-dismiss';
     // render every screen once and measure what is on it
     document.getElementById('btnComicSkip') && document.getElementById('btnComicSkip').click();
-    window.BB_DEBUG.enter(1);
+    window.BB_DEBUG.enter(1);                 // builds the loadout / in-play DOM
+    try { window.dismissRotate(); } catch (e) {}   // a portrait player must dismiss the landscape nudge to play at all
     try { document.getElementById('btnPlay').click(); } catch (e) {}
     list.forEach(id => {
       const s = document.getElementById(id); if (!s) return;
@@ -256,6 +257,53 @@ console.log('\n[7] touch targets (rendered px, 375x667)');
     return out;
   }, screens);
   ok('every visible control is at least 48 rendered px', bad.length === 0, bad.slice(0, 8));
+  await done(p);
+}
+
+/* ── 7b. no overlay may bury the pause menu ────────────────────────────── */
+console.log('\n[7b] overlays vs controls');
+{
+  const p = await fresh();
+  const r = await p.evaluate(() => {
+    const D = window.BB_DEBUG;
+    D.enter(1);                                   // portrait 375x667 → the rotate nudge is up
+    const nudgeWhilePlaying = document.getElementById('rotate').classList.contains('on');
+    document.getElementById('btnPause').click();  // pause WITHOUT dismissing it first
+    const nudgeWhilePaused = document.getElementById('rotate').classList.contains('on');
+    const b = document.getElementById('btnResume'), q = b.getBoundingClientRect();
+    const hit = document.elementFromPoint((q.left + q.right) / 2, (q.top + q.bottom) / 2);
+    return { nudgeWhilePlaying, nudgeWhilePaused, resumeReachable: hit === b || b.contains(hit) };
+  });
+  ok('the landscape nudge does show while playing in portrait', r.nudgeWhilePlaying === true, r);
+  ok('the landscape nudge steps aside when paused', r.nudgeWhilePaused === false, r);
+  ok('Resume is actually tappable on the pause screen', r.resumeReachable === true, r);
+  await done(p);
+}
+{ /* the nudge's own dismiss button must WORK. It is an inline onclick into a
+     strict-mode IIFE, which is a ReferenceError unless the function is on window —
+     and while it is up, #rotate (inset:0, z-index 66) buries the pause button, so a
+     portrait phone with rotation locked had no way out of the game at all. */
+  const p = await fresh();
+  const r = await p.evaluate(() => {
+    const errs = [];
+    addEventListener('error', e => errs.push(String(e.message)));
+    window.BB_DEBUG.enter(1);
+    const rot = document.getElementById('rotate');
+    const before = rot.classList.contains('on');
+    const btn = rot.querySelector('.rot-dismiss'), q = btn.getBoundingClientRect();
+    const reachable = (() => { const h = document.elementFromPoint((q.left + q.right) / 2, (q.top + q.bottom) / 2); return h === btn || btn.contains(h); })();
+    btn.click();
+    // and the pause button underneath must now be reachable
+    const pb = document.getElementById('btnPause'), pr = pb.getBoundingClientRect();
+    const pauseHit = document.elementFromPoint((pr.left + pr.right) / 2, (pr.top + pr.bottom) / 2);
+    return { before, reachable, after: rot.classList.contains('on'), pauseReachable: pauseHit === pb || pb.contains(pauseHit), errs, onWindow: typeof window.dismissRotate === 'function' };
+  });
+  ok('the nudge is up in portrait play', r.before === true, r);
+  ok('its dismiss button is on top and tappable', r.reachable === true, r);
+  ok('dismissRotate is reachable from inline markup (on window)', r.onWindow === true, r);
+  ok('tapping it actually dismisses the nudge', r.after === false, r);
+  ok('the pause button underneath is reachable again', r.pauseReachable === true, r);
+  ok('no ReferenceError from the inline handler', r.errs.length === 0, r.errs);
   await done(p);
 }
 

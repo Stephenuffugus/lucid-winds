@@ -123,6 +123,7 @@ h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
 .go-plot{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:8px}
 .go-lab{font-size:13px; letter-spacing:2px; text-transform:uppercase; color:#a8b096}
 .go-score{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+.go-score.note{font-size:14px; font-weight:600; color:var(--cream); opacity:.92; line-height:1.45}
 
 /* pointer-events:none is load bearing: the strip spans the whole width and the
    hint says "press anywhere", so a solid HUD ate every drag started in the top
@@ -287,11 +288,19 @@ h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
 (function(){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=SWS_EMBED;
+  /* framed is measured, not declared: ?embed=1 is not how the portal opens a
+     relative /satellites/ url (it navigates top level), and a framed page that
+     never posts ready is closed by the portal's black screen recovery timer.
+     See incoming/PORTAL-CONTRACT.md. */
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(framed){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  if(framed){
+    try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+    window.addEventListener('load',function(){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} });
+  }
 })();
 </script>
 
@@ -346,14 +355,49 @@ var SET={ sound:true, shake:true, guide:true };
   if(typeof s.guide==='boolean')SET.guide=s.guide; }catch(e){} })();
 function saveSet(){ LS.set('skyshot_set', JSON.stringify(SET)); }
 
-var PROG={ stars:{}, pollen:0, moments:{}, daily:{}, plays:0 };
-(function(){ try{ var p=JSON.parse(LS.get('skyshot_prog')||'{}');
-  if(p.stars)PROG.stars=p.stars;
-  if(typeof p.pollen==='number')PROG.pollen=p.pollen;
-  if(p.moments)PROG.moments=p.moments;
-  if(p.daily)PROG.daily=p.daily;
-  if(typeof p.plays==='number')PROG.plays=p.plays; }catch(e){} })();
-function saveProg(){ LS.set('skyshot_prog', JSON.stringify(PROG)); }
+/* SAVE VALIDATION.
+   A try/catch around JSON.parse is not validation. `if(p.stars)` passed a
+   string, and because this file is "use strict", the first level clear then ran
+   PROG.stars[idx]=3 on a primitive and threw TypeError inside finish(), which
+   the rAF loop calls AFTER setting looping=false. Result: the level won, the
+   result screen never appeared, and nothing rescheduled the loop. Reproduced in
+   a headless browser 2026-08-16 ("Cannot create property 'level_clear:0' on
+   number"). So every field is checked for the shape the code assumes, and a bad
+   save is repaired in storage on load so it cannot bite twice. */
+function _plain(v){ return (v&&typeof v==='object'&&Object.prototype.toString.call(v)!=='[object Array]')?v:null; }
+function _numMap(v,max){                 /* {key: small non-negative number} */
+  var src=_plain(v), out={}, k, n;
+  if(src) for(k in src){ if(!Object.prototype.hasOwnProperty.call(src,k)) continue;
+    n=+src[k]; if(isFinite(n)&&n>0) out[k]=Math.min(max||1e9, Math.floor(n)); }
+  return out;
+}
+function _num(v,d){ v=+v; return isFinite(v)&&v>=0 ? Math.floor(v) : d; }
+var PROG={ stars:{}, best:{}, pollen:0, moments:{}, daily:{}, plays:0 };
+function readProg(){
+  var p=null; try{ p=JSON.parse(LS.get('skyshot_prog')||'{}'); }catch(e){ p=null; }
+  p=_plain(p)||{};
+  return { stars:_numMap(p.stars,3), best:_numMap(p.best), pollen:_num(p.pollen,0),
+           moments:_numMap(p.moments,1), daily:_numMap(p.daily,3), plays:_num(p.plays,0) };
+}
+(function(){
+  PROG=readProg();
+  LS.set('skyshot_prog', JSON.stringify(PROG));   /* repair a bad save in place */
+})();
+/* CROSS TAB SAFE WRITE.
+   The old saveProg serialised the boot snapshot wholesale, so a second tab
+   erased every plot the first tab had cleared. Merge instead: stars and daily
+   MAX per key, moments union, pollen and plays take the larger running total. */
+function saveProg(){
+  var live=readProg(), k;
+  for(k in PROG.stars){ if(!(live.stars[k]>PROG.stars[k])) live.stars[k]=PROG.stars[k]; }
+  for(k in PROG.best){ if(!(live.best[k]>PROG.best[k])) live.best[k]=PROG.best[k]; }
+  for(k in PROG.daily){ if(!(live.daily[k]>PROG.daily[k])) live.daily[k]=PROG.daily[k]; }
+  for(k in PROG.moments){ live.moments[k]=1; }
+  live.pollen=Math.max(live.pollen, PROG.pollen);
+  live.plays=Math.max(live.plays, PROG.plays);
+  PROG=live;
+  LS.set('skyshot_prog', JSON.stringify(PROG));
+}
 
 var RM=false;
 try{ RM=!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
@@ -362,7 +406,10 @@ try{ RM=!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: redu
        moments only, and a moment can never carry an amount. ---- */
 var Wallet={
   total:PROG.pollen||0,
-  earn:function(n,reason){ if(!(n>0)) return 0; Wallet.total+=n; PROG.pollen=Wallet.total; saveProg(); return n; },
+  earn:function(n,reason){ if(!(n>0)) return 0;
+    Wallet.total+=n; PROG.pollen=Wallet.total; saveProg();
+    Wallet.total=PROG.pollen;      /* another tab may hold a larger total */
+    return n; },
   spend:function(n,reason){ if(Wallet.total<n) return false; Wallet.total-=n; PROG.pollen=Wallet.total; saveProg(); return true; }
 };
 var SENT=[];
@@ -1167,7 +1214,13 @@ function finish(){
     G.stars=st;
     var bonus=G.ammo*90+st*140;
     G.score+=bonus;
-    Wallet.earn(G.score,'level_clear');
+    /* Pollen is a lifetime record of how well the garden was worked, so a plot
+       pays only what it improves on. Re-clearing a plot used to re-pay the lot,
+       which made the running total a measure of patience rather than skill. */
+    var pkey=(G.mode==='daily')?('d'+todayKey()):('p'+G.idx);
+    var pbest=PROG.best[pkey]||0;
+    if(G.score>pbest){ PROG.best[pkey]=G.score; Wallet.earn(G.score-pbest,'level_clear'); }
+    else saveProg();
     /* sunbeams ride the same first-time moments the host is told about:
        announce() returns true exactly once per key, so replays earn nothing.
        Rates: clear 4, three-star 3, world 6, daily 5. A solid first session
@@ -1194,7 +1247,8 @@ function finish(){
     $('go-stars').textContent=stars(st);
     $('go-stars').className='go-stars'+(st===3?' three':'');
     $('go-lab').textContent=G.shots+' seed'+(G.shots===1?'':'s')+' used · par '+G.def.par;
-    $('go-score').textContent='+'+G.score+' pollen';
+    $('go-score').textContent=(G.score>pbest)?('+'+(G.score-pbest)+' pollen'):('best on this plot stands at '+pbest+' pollen');
+    $('go-score').className='go-score';
     $('go-next').style.display=(G.mode==='daily'||G.idx>=LEVELS.length-1)?'none':'flex';
   } else {
     G.stars=0;
@@ -1205,10 +1259,63 @@ function finish(){
     var l2=0,j;
     for(j=0;j<G.pods.length;j++) if(!G.pods[j].dead) l2++;
     $('go-lab').textContent=l2+' bud'+(l2===1?'':'s')+' still up there';
-    $('go-score').textContent='';
+    $('go-score').textContent=missNote(G);
+    $('go-score').className='go-score note';
     $('go-next').style.display='none';
   }
   show('s-go');
+}
+/* THE LOSS SCREEN THAT TEACHES (added 2026-08-16 audit).
+   Losing was the only moment a player is guaranteed to be reading the screen,
+   and all it said was "out of seeds". Every plot in this game is one timing
+   idea, and a player who does not spot it just repeats the same shot. Name the
+   thing that is actually in the way, using the plot's OWN data so it can never
+   describe a level that is not on screen. */
+function missNote(S){
+  var i, pods=S.pods, obs=S.obs, live=[], o;
+  for(i=0;i<pods.length;i++) if(!pods[i].dead) live.push(pods[i]);
+  /* the obstacle first: it is what stops the shot, not the bud */
+  for(i=0;i<obs.length;i++){
+    o=obs[i];
+    if(o.t==='shutter') return 'the gate breathes shut and open. Fire on the beat it is widest, not as it closes.';
+    if(o.t==='bar'&&o.sp) return 'the bramble turns steadily. It is open twice a turn, and only briefly.';
+  }
+  for(i=0;i<obs.length;i++){
+    o=obs[i];
+    if(o.t==='rock'&&o.m) return 'the stone sweeps the lane. Shoot behind it, not at it.';
+    if(o.t==='bar') return 'the branch does not move. Lean the shot around one end.';
+    if(o.t==='wall') return 'the hedge has one gap. Thread it rather than arcing over.';
+  }
+  /* no obstacle: the remaining bud's own motion is the puzzle */
+  if(live.length){
+    var m=live[0].m;
+    if(m==='patrol') return 'it walks at a steady pace. Aim where it is going, not where it is.';
+    if(m==='orbit') return 'it circles. Pick the point on the ring, then wait for it to come round.';
+    if(m==='swing') return 'it slows at the top of each swing. That pause is your shot.';
+    return 'a still bud only needs the right power. Pull further for height.';
+  }
+  return 'pull further for height, and lean for the sideways reach.';
+}
+/* finish() is called from the rAF loop AFTER the loop has stopped rescheduling
+   itself, so anything that throws in there leaves the player frozen on a won
+   level with no result screen and no running loop. Belt and braces: the result
+   screen goes up whatever happens, and the loop is restarted if it does not. */
+function safeFinish(){
+  try{ finish(); }
+  catch(e){
+    try{ if(window.console&&console.error) console.error('skyshot finish error',e); }catch(_){}
+    try{
+      $('go-plot').textContent=(G&&G.mode==='daily')?'daily volley':('plot '+((G?G.idx:0)+1));
+      $('go-title').textContent=(G&&G.phase==='won')?'Cleared':'Out of seeds';
+      $('go-title').className='go-big'+((G&&G.phase==='won')?'':' miss');
+      $('go-stars').textContent=(G&&G.phase==='won')?'★★★':'☆☆☆';
+      $('go-stars').className='go-stars';
+      $('go-lab').textContent=''; $('go-score').textContent=''; $('go-score').className='go-score';
+      $('go-next').style.display='none';
+      show('s-go');
+    }catch(_2){ show('s-title'); }
+  }
+  if(curScreen!=='s-go'&&curScreen!=='s-title') show('s-go');
 }
 
 /* ---- input ---- */
@@ -1293,7 +1400,7 @@ function loop(ts){
   if(n>=80) acc=0;
   if(S!==ATT) updHud();
   render();
-  if(S===G&&curScreen==='s-play'&&(G.phase==='won'||G.phase==='lost')&&G.endT>0.75&&!G.ball){ looping=false; finish(); return; }
+  if(S===G&&curScreen==='s-play'&&(G.phase==='won'||G.phase==='lost')&&G.endT>0.75&&!G.ball){ looping=false; safeFinish(); return; }
   requestAnimationFrame(loop);
 }
 
@@ -1308,7 +1415,7 @@ function renderLevels(){
   var dc=document.createElement('div');
   dc.className='lvlcard wide'+(PROG.daily[dk]?' done':'');
   dc.innerHTML='<div class="ln" style="font-size:18px">daily volley</div><div class="ls">'+(PROG.daily[dk]?stars(PROG.daily[dk]):'&nbsp;')+'</div>'+
-    '<div class="lnm">'+(PROG.daily[dk]?'played today':'a fresh plot, once a day')+'</div>';
+    '<div class="lnm">'+(PROG.daily[dk]?'played today, play it again':'a fresh plot every day')+'</div>';
   dc.addEventListener('click',function(){ sfx('ui'); startLevel('daily',0); });
   dg.appendChild(dc); host.appendChild(dg);
   for(w=0;w<4;w++){
@@ -1411,8 +1518,12 @@ function boot(){
     }
     wipeArm=0; el.textContent='Clear saved progress'; el.classList.remove('warn');
     LS.del('skyshot_prog');
-    PROG={ stars:{}, pollen:0, moments:{}, daily:{}, plays:0 };
-    Wallet.total=0; saveProg(); stamp(); show('s-title');
+    PROG={ stars:{}, best:{}, pollen:0, moments:{}, daily:{}, plays:0 };
+    Wallet.total=0;
+    /* NOT saveProg(): that merges with storage on purpose, and a wipe that
+       merges is not a wipe. Write the empty record straight through. */
+    LS.set('skyshot_prog', JSON.stringify(PROG));
+    stamp(); show('s-title');
   });
   tap('h-pause', pauseGame);
   tap('h-retry', function(){ if(G) startLevel(G.mode,G.idx); });
@@ -1459,5 +1570,9 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 else boot();
 })();
 </script>
+<!-- fleet feedback fab. Bottom right of the stage at 375x667 lands on the far
+     hill band, clear of the sling (x 270), the seed row (x 26 upward) and both
+     HUD buttons (top of the screen). -->
+<script>addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'skyshot',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>

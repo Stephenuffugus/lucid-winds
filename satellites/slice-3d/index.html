@@ -123,7 +123,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #cfwrap{position:fixed; left:0; top:0; right:0; bottom:0; z-index:999; pointer-events:none; overflow:hidden}
 .cf{position:absolute; top:-14px; width:9px; height:13px; pointer-events:none; animation:cfFall linear forwards}
 @keyframes cfFall{ 0%{top:-14px} 100%{top:105vh} }
-#b-music{flex:0 0 72px; font-size:20px}
+/* /music-player.js swaps the bare ♫ glyph for the string "♫ Music" once it loads. The
+   global * reset zeroes padding, so at 72px the label ran edge to edge and the final
+   "c" was sliced off by the button's own rounded border — it read "♫ Musi(". Seen at
+   375x667, not inferred. Give it real side padding and room for the label the music
+   player actually installs, and let it shrink rather than overflow. */
+#b-music{flex:0 1 auto; min-width:72px; padding:0 14px; font-size:18px; white-space:nowrap; overflow:hidden}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 </head>
@@ -177,7 +182,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- KNIFE FORGE -->
   <div class="screen" id="s-forge"><div class="pad">
     <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet">&#9670; <span id="forge-bal">0</span></div></div>
-    <div class="forge-sub">Earn slivers every dive. Unlock knives and swords - each is pure style, never changes how you play.</div>
+    <div class="forge-sub">Earn slivers every dive, then unlock knives and swords. Each one is pure style and never changes how you play.</div>
     <div id="forge-grid"></div>
     <div id="forge-toast"></div>
     <button class="btn primary" id="forge-back" style="max-width:400px;margin:10px auto 0">Done</button>
@@ -251,14 +256,45 @@ window.addEventListener('resize', fit); fit();
 
 /* ---------- persistence ---------- */
 var LS={ g:function(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, s:function(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
-var PROG=(function(){ try{ return JSON.parse(LS.g('s3d_prog'))||{level:1,best:{}}; }catch(e){ return {level:1,best:{}}; } })();
-if(!PROG.level)PROG.level=1;
-if(!PROG.ffLevel)PROG.ffLevel=1;
-if(!PROG.climbBest)PROG.climbBest=0;
-if(!PROG.clControl)PROG.clControl='tap';   // climb scheme: 'tap' | 'blade' (Be the Blade)
-if(!PROG.climbLevel)PROG.climbLevel=1;
-if(!PROG.best)PROG.best={};
-function saveProg(){ LS.s('s3d_prog', JSON.stringify(PROG)); }
+/* ⛔ A try/catch around JSON.parse is NOT validation. Anything that merely PARSES
+   comes back truthy — `5`, `"hi"`, `true`, `[]` — and the very next line then does
+   PROG.level=1 on it. Under "use strict" assigning a property to a primitive THROWS,
+   which killed this entire IIFE (all ~2240 lines, the whole game) at boot and left a
+   black stage with no way out. Verified in a real browser 2026-08-16 with s3d_prog
+   holding 5 / "hi" / true and s3d_skins holding 5. A half-written key is exactly what
+   a quota-exceeded setItem leaves behind, and this game writes on every level end.
+   So: check the SHAPE, and throw away anything that is not the shape we expect. */
+function okObj(v){ return !!v && typeof v==='object' && Object.prototype.toString.call(v)!=='[object Array]'; }
+function okArr(v){ return Object.prototype.toString.call(v)==='[object Array]'; }
+function readObj(key){ var v=null; try{ v=JSON.parse(LS.g(key)); }catch(e){ v=null; } return okObj(v)?v:null; }
+function readInt(key){ var n=parseInt(LS.g(key),10); return (isFinite(n)&&n>=0)?n:0; }
+var PROG=readObj('s3d_prog')||{level:1,best:{}};
+if(!okObj(PROG.best))PROG.best={};          // {"best":7} parsed fine and broke later, inside a click handler
+if(!(PROG.level>0))PROG.level=1;            // covers NaN, "x", null, negative
+if(!(PROG.ffLevel>0))PROG.ffLevel=1;
+if(!(PROG.climbBest>=0))PROG.climbBest=0;
+if(PROG.clControl!=='blade')PROG.clControl='tap';   // climb scheme: 'tap' | 'blade' (Be the Blade)
+if(!(PROG.climbLevel>0))PROG.climbLevel=1;
+if(!(PROG.endlessBest>=0))PROG.endlessBest=0;
+/* ⛔ Two tabs clobber a save written wholesale from a boot snapshot: whichever tab
+   saves last erases the other's level, bests and unlocks. Counters ADD, bests MAX.
+   Re-read what is on disk NOW and merge into it rather than overwriting it. */
+var _PROG_MAX=['level','ffLevel','climbLevel','climbBest','endlessBest','bestCombo'];
+var _PROG_ADD=['slabsCut','cleanDives'];
+function saveProg(){
+  var disk=readObj('s3d_prog');
+  if(disk){
+    var i,k;
+    for(i=0;i<_PROG_MAX.length;i++){ k=_PROG_MAX[i]; if(disk[k]>PROG[k]||!(PROG[k]>=0)) PROG[k]=disk[k]; }
+    /* counters: add the delta this tab produced, not this tab's absolute total */
+    for(i=0;i<_PROG_ADD.length;i++){ k=_PROG_ADD[i];
+      var mine=PROG[k]||0, base=PROG['_b'+k]||0, theirs=disk[k]||0;
+      PROG[k]=theirs+Math.max(0,mine-base); PROG['_b'+k]=PROG[k]; }
+    if(okObj(disk.best)){ for(k in disk.best){ if(!(PROG.best[k]>disk.best[k])) PROG.best[k]=disk.best[k]; } }
+  }
+  LS.s('s3d_prog', JSON.stringify(PROG));
+}
+PROG._bslabsCut=PROG.slabsCut||0; PROG._bcleanDives=PROG.cleanDives||0;
 
 /* ---------- audio (the sfx Stephen loves, embellished) ---------- */
 var AC=null;
@@ -548,11 +584,29 @@ function grantTrophy(key){
   return SKINS[key].name.toUpperCase();
 }
 // currency + ownership
-var SLIV=(function(){ try{ return parseInt(LS.g('s3d_slivers'),10)||0; }catch(e){ return 0; } })();
-var SKN=(function(){ try{ return JSON.parse(LS.g('s3d_skins'))||{owned:['classic'],equip:'classic'}; }catch(e){ return {owned:['classic'],equip:'classic'}; } })();
-if(!SKN.owned)SKN.owned=['classic']; if(SKN.owned.indexOf('classic')<0)SKN.owned.push('classic'); if(!SKN.equip)SKN.equip='classic';
-function saveSliv(){ LS.s('s3d_slivers',String(SLIV)); }
-function saveSkins(){ LS.s('s3d_skins',JSON.stringify(SKN)); }
+var SLIV=readInt('s3d_slivers');
+var _slivBase=SLIV;   // what was on disk when this tab booted; the delta is what we own
+var SKN=readObj('s3d_skins')||{owned:['classic'],equip:'classic'};
+/* {"owned":"classic"} used to slip through because a STRING also has .indexOf, so it
+   read as "owned" and then blew up the first time anything pushed to it. Demand a
+   real array, and an equip key that names a knife that actually exists. */
+if(!okArr(SKN.owned))SKN.owned=['classic'];
+if(SKN.owned.indexOf('classic')<0)SKN.owned.push('classic');
+/* an equip naming a knife that does not exist left paintKnife with no recipe */
+if(!SKN.equip||!SKINS[SKN.equip]||SKN.owned.indexOf(SKN.equip)<0)SKN.equip='classic';
+function saveSliv(){
+  /* slivers are earned currency: ADD this tab's delta to whatever is on disk now, so a
+     second tab cannot spend or erase what this one banked */
+  var disk=readInt('s3d_slivers');
+  SLIV=disk+(SLIV-_slivBase); if(SLIV<0)SLIV=0; _slivBase=SLIV;
+  LS.s('s3d_slivers',String(SLIV));
+}
+function saveSkins(){
+  /* owned knives are a SET: union with disk so a purchase in one tab survives the other */
+  var disk=readObj('s3d_skins');
+  if(disk&&okArr(disk.owned)){ for(var i=0;i<disk.owned.length;i++){ if(SKN.owned.indexOf(disk.owned[i])<0) SKN.owned.push(disk.owned[i]); } }
+  LS.s('s3d_skins',JSON.stringify(SKN));
+}
 function ownsSkin(k){ return SKN.owned.indexOf(k)>=0; }
 function paintKnife(key){
   if(!knife)return;
@@ -2193,8 +2247,13 @@ function failLevel(){
     $('go-lab').textContent=(PROG.endlessBest===depthM?'\u2605 deepest yet \u00b7 ':'')+'the blade caught the wall';
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 best '+(PROG.endlessBest||0)+'m'+runTrophies();
   } else {
+    /* \u26d4 This branch used to save NOTHING. sliceSlab() bumps PROG.slabsCut during the
+       run (the lifetime tally behind the Groundskeeper trophy at 100), and a stuck
+       blade is the NORMAL way a Freefall dive ends \u2014 so nearly every slab a player
+       ever cut was thrown away, silently, and the trophy was close to unreachable.
+       runTrophies() banks the tally and calls saveProg(). Fixed 2026-08-16. */
     $('go-lab').textContent='the blade caught the wall';
-    $('go-detail').textContent=G.slices+' sliced \u00b7 fell '+depthM+' before you stuck';
+    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 fell '+depthM+' before you stuck'+runTrophies();
   }
   var svf=awardSlivers();
   $('go-sun').textContent='\u25c6 +'+svf+' slivers';

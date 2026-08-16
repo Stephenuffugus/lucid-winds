@@ -68,6 +68,9 @@ async function fresh(seed) {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  /* the game pauses itself on visibilitychange and the loop is rAF driven, so a
+     backgrounded tab stalls the round and the wait times out for the wrong reason */
+  await page.bringToFront();
   const errs = [];
   page.on('pageerror', e => errs.push(String(e.message)));
   await page.goto(URL_, { waitUntil: 'domcontentloaded' });
@@ -87,9 +90,9 @@ async function playRound(page, mode) {
     const left = await page.evaluate(() => window.BB.state.ballsLeft);
     if (left <= 0) break;
     await page.evaluate(() => window.BB.flick(1080, 0));
-    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'", { timeout: 8000 });
+    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'", { timeout: 20000 });
   }
-  await page.waitForFunction("document.getElementById('s-sum').classList.contains('on')", { timeout: 8000 });
+  await page.waitForFunction("document.getElementById('s-sum').classList.contains('on')", { timeout: 20000 });
 }
 
 console.log('\nphase B — behaviour (375x667)');
@@ -179,7 +182,7 @@ console.log('\nphase B — behaviour (375x667)');
   await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 4000 });
   for (let i = 0; i < 3; i++) {
     await page.evaluate(() => window.BB.flick(1080, 0));
-    await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 8000 });
+    await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 20000 });
   }
   const before = await page.evaluate(() => ({ score: window.BB.state.score, left: window.BB.state.ballsLeft }));
   await page.reload({ waitUntil: 'load' });
@@ -219,16 +222,16 @@ console.log('\nphase B — behaviour (375x667)');
   }
   ok('every visible control is 48px rendered (class 6)', small.length === 0, small.join(', '));
 
-  /* the feedback fab must not sit on a control (class 2 + class 8) */
-  await page.evaluate(() => window.BB.show('s-title'));
+  /* the feedback fab must not sit on a control (class 2 + class 8).
+     Measured on EVERY screen: this game's menus are a centred button column and
+     the fab's default bottom-right footprint covered the right edge of
+     "Take the lane", "Settings", "All Sky Wolf games" and "Menu". */
   await page.waitForFunction("!!document.querySelector('.lwfb-fab')", { timeout: 5000 });
-  /* feedback.js parks the fab bottom right and then a watcher scans and moves it
-     off anything it is covering, so give the watcher its cadence before judging */
   const measureClash = () => page.evaluate(() => {
     const fab = document.querySelector('.lwfb-fab');
     const f = fab.getBoundingClientRect();
     const hits = [];
-    document.querySelectorAll('button').forEach(b => {
+    document.querySelectorAll('button,.settingline').forEach(b => {
       if (fab === b || fab.contains(b)) return;      // the fab is not covering itself
       const r = b.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
@@ -236,12 +239,19 @@ console.log('\nphase B — behaviour (375x667)');
     });
     return hits;
   });
-  const clashAtOnce = await measureClash();
-  await new Promise(r => setTimeout(r, 3500));
-  const clash = await measureClash();
-  ok('the feedback fab covers no control once the watcher settles', clash.length === 0, clash.join(', '));
-  ok('the feedback fab does not land on a control in the first place',
-    clashAtOnce.length === 0, 'on mount it covered: ' + clashAtOnce.join(', '));
+  let fabHits = [];
+  for (const sc of ['s-title', 's-how', 's-set', 's-sum', 's-play']) {
+    await page.evaluate(id => window.BB.show(id), sc);
+    await new Promise(r => setTimeout(r, 150));
+    const h = await measureClash();
+    if (h.length) fabHits.push(sc + ':' + h.join('/'));
+  }
+  ok('the feedback fab covers no control on any screen', fabHits.length === 0, fabHits.join(', '));
+  ok('the fab is on screen and tappable', await page.evaluate(() => {
+    const r = document.querySelector('.lwfb-fab').getBoundingClientRect();
+    return r.width >= 40 && r.height >= 40 && r.left >= 0 && r.top >= 0 &&
+           r.right <= innerWidth && r.bottom <= innerHeight;
+  }));
   await ctx.close();
 }
 

@@ -52,7 +52,7 @@ const FAB = vp => ({ l: vp.w - 90, r: vp.w - 12, t: vp.h - 174, b: vp.h - 96 });
    how a blanket CSS min-height:48px made this worse rather than better. */
 const TOUCH_PROBE = `(() => {
   const bad = [];
-  const sel = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.day,.modecard button,.shoprow button,.card .act';
+  const sel = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.shopbtn,.dailybtn,.modecard button,.shoprow button,.card .act,.usecustom';
   document.querySelectorAll(sel).forEach(el => {
     if (el.closest('.lwfb-fab, #lwfb-bg')) return;
     const cs = getComputedStyle(el);
@@ -78,17 +78,31 @@ const TOUCH_PROBE = `(() => {
    feedback.js has a FAB YIELD pass that is supposed to park the chip off
    controls; this asserts it actually did, on this page, rather than assuming. */
 const FAB_PROBE = `(box => {
-  const pts = [[box.l+8,box.t+8],[box.r-8,box.t+8],[box.l+8,box.b-8],[box.r-8,box.b-8],
-               [(box.l+box.r)/2,(box.t+box.b)/2]];
-  const hits = new Set();
-  for (const [x,y] of pts) {
-    for (const el of document.elementsFromPoint(x,y)) {
+  const SEL = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.cup-wrap,.shopbtn,.dailybtn,.modecard,.card .act';
+  const f = document.querySelector('.lwfb-fab');
+  if (!f) return { mounted: false };
+  const cs = getComputedStyle(f);
+  const r = f.getBoundingClientRect();
+  // The fab yields by fading to opacity:0 / pointer-events:none. That is a PASS:
+  // it is not eating anything. The defect is an INTERACTIVE fab painted on top
+  // of a control, so test that, not the raw geometry.
+  const inert = (+cs.opacity === 0) || cs.pointerEvents === 'none' ||
+                cs.display === 'none' || cs.visibility === 'hidden';
+  const pts = [[r.x+6, r.y+6], [r.right-6, r.y+6], [r.x+6, r.bottom-6],
+               [r.right-6, r.bottom-6], [r.x+r.width/2, r.y+r.height/2]];
+  const under = new Set(); let ownsAPoint = false;
+  for (const [x, y] of pts) {
+    const stack = document.elementsFromPoint(x, y);
+    if (stack.length && stack[0].closest && stack[0].closest('.lwfb-fab')) ownsAPoint = true;
+    for (const el of stack) {
       if (el.closest && el.closest('.lwfb-fab, #lwfb-bg')) continue;
-      const c = el.closest && el.closest('button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.cup-wrap,.shopbtn,.dailybtn');
-      if (c) { hits.add((c.id || c.className || c.tagName) + '|' + (c.textContent||'').trim().slice(0,20)); }
+      const c = el.closest && el.closest(SEL);
+      if (c) { under.add((c.id || c.className || c.tagName) + '|' + (c.textContent||'').trim().slice(0,18)); break; }
     }
   }
-  return [...hits];
+  return { mounted: true, inert: inert, eats: (!inert && ownsAPoint && under.size > 0),
+           under: [...under], rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+           opacity: cs.opacity };
 })`;
 
 /* Dashes in copy the player can actually see. Comments do not count. */
@@ -284,15 +298,15 @@ for (const [name, poison] of Object.entries(POISONS)) {
   await new Promise(r => setTimeout(r, 2600));
   ok('fab mounted at all', await page.evaluate(() => !!document.querySelector('.lwfb-fab')));
   let hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
-  ok('main screen: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  ok('main screen: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
   await page.click('#openShop');
   await new Promise(r => setTimeout(r, 2600));
   hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
-  ok('shop sheet: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  ok('shop sheet: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
   await page.evaluate(() => { document.getElementById('closeShop').click(); document.getElementById('openDaily').click(); });
   await new Promise(r => setTimeout(r, 2600));
   hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
-  ok('daily sheet: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  ok('daily sheet: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
   await ctx.close();
 }
 

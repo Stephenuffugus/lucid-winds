@@ -82,17 +82,20 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 .acc-body.open{display:flex}
 .acc-tab{flex:1; padding:0 4px}
 .acc-tab.on{border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.3); color:var(--gold)}
-.swatch{width:48px; height:48px; border-radius:50%; border:3px solid rgba(255,255,255,0.18); cursor:pointer}
+/* ⛔ Same scale trap as the buttons above, and the swatches were missed: at the
+   iPhone SE scale of 0.694 a 48px swatch measures 33 RENDERED px and a recent
+   measures 30. These are the controls a small child uses most. 70 CSS = 48.6. */
+.swatch{width:70px; height:70px; border-radius:50%; border:3px solid rgba(255,255,255,0.18); cursor:pointer}
 .swatch.on{border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
-.swatch.cur{width:56px; height:56px; border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
-.swatch.recent{width:44px; height:44px}
+.swatch.cur{width:70px; height:70px; border-color:#fff; box-shadow:0 0 0 3px rgba(200,168,75,0.55)}
+.swatch.recent{width:70px; height:70px}
 #palette{display:none; flex-direction:column; gap:8px; background:rgba(14,17,13,0.92);
   border:1px solid rgba(255,255,255,0.14); border-radius:14px; padding:10px}
 #palette.open{display:flex}
 #wheel{width:180px; height:180px; border-radius:50%; touch-action:none;
   border:3px solid rgba(255,255,255,0.18); cursor:crosshair}
 #shade{-webkit-appearance:slider-vertical; writing-mode:vertical-lr; direction:rtl;
-  width:44px; height:150px; accent-color:#c8a84b}
+  width:70px; height:180px; accent-color:#c8a84b}
 #b-eyedrop.on{border-color:#fff; box-shadow:0 0 0 2px rgba(200,168,75,0.55)}
 .wdot{width:70px; height:70px; border-radius:14px; border:1px solid var(--line); background:rgba(20,18,16,0.8);
   display:flex; align-items:center; justify-content:center; cursor:pointer}
@@ -147,6 +150,13 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
 @keyframes recpulse{50%{box-shadow:0 0 0 4px rgba(200,90,90,0.35)}}
 .vstat{margin-left:auto; color:var(--muted); font-size:11px}
 #vp-close{width:100%; margin-top:10px}
+/* the save bar: a failed write is not a toast. It stays until it is fixed. */
+#savebar{position:absolute; left:10px; right:10px; top:90px; z-index:65; display:none;
+  border-radius:14px; padding:12px 12px 10px; border:1px solid var(--gold); background:rgba(30,22,10,0.97)}
+#savebar.on{display:block}
+#savebar.bad{border-color:#e07a6a; background:rgba(46,16,12,0.97)}
+#savemsg{font-size:15px; line-height:1.4; color:var(--ink); margin-bottom:8px}
+#savebar .trow{justify-content:flex-start}
 #busychip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:60; display:none;
   background:rgba(20,18,16,0.95); border:1px solid var(--gold); color:var(--gold); font-weight:800;
   padding:14px 26px; border-radius:16px; font-size:15px; letter-spacing:1px}
@@ -168,6 +178,14 @@ canvas.page{position:absolute; inset:0; width:100%; height:100%; touch-action:no
     <canvas class="page" id="onion" width="512" height="716"></canvas>
     <canvas class="page" id="page" width="512" height="716"></canvas>
     <div id="playglass"><div id="playchip">PLAYING · tap to stop</div></div>
+  </div>
+  <div id="savebar">
+    <div id="savemsg"></div>
+    <div class="trow">
+      <button class="tbtn gold" id="saveact">Export now</button>
+      <button class="tbtn" id="savealt">Make room</button>
+      <button class="tbtn" id="savehide" aria-label="Hide this message">✕</button>
+    </div>
   </div>
   <div id="cinemachip">tap anywhere to leave the cinema</div>
   <div id="busychip">EXPORTING…</div>
@@ -351,12 +369,51 @@ var INKS=['#2a2438','#7a4a26','#3f6b34','#2f5fa8','#a83a5a','#c8a84b'];
    write is debounced + coalesced. Drawing stays buttery; nothing is lost
    because saveNow() runs on nav / play / export / pagehide.) ---------- */
 var _dirty=false, _commitTimer=null, _saveTimer=null;
+/* 2026-08-16 audit. The old catch here toasted "older pages may not save" for
+   3.2 seconds and carried on. All three parts of that were wrong: setItem is all
+   or nothing so NOTHING was saved, a 16px hint that clears itself is not a
+   warning, and no recovery was ever offered. The kid kept drawing, the tab
+   closed, the work was gone. Losing a creation is the worst thing this tool can
+   do, so a failed write is now loud, permanent until it is fixed, and it hands
+   over an export. */
+var _saveBroken=false, _tabConflict=false, _saveHold=false;
+function bookJSON(){ return JSON.stringify({ cur:cur, fpsIdx:fpsIdx, onion:onionOn, pages:pages }); }
 function save(){
+  if(_saveHold) return false;                 // another tab owns the book, see below
+  var body;
+  try{ body=bookJSON(); }catch(e){ setSaveState('broken'); return false; }
   try{
-    localStorage.setItem('fb_book', JSON.stringify({ cur:cur, fpsIdx:fpsIdx, onion:onionOn, pages:pages }));
+    localStorage.setItem('fb_book', body);
+    _lastWrite=body.length;
+    if(_saveBroken) setSaveState('ok');
+    else if(body.length>WARN_BYTES) setSaveState('heavy');
+    else setSaveState('ok');
+    return true;
   }catch(e){
-    toastHint('The notebook is getting heavy, older pages may not save.');
+    setSaveState('broken');
+    return false;
   }
+}
+var WARN_BYTES=3500000, _lastWrite=0;
+function setSaveState(k){
+  var bar=$('savebar'), msg=$('savemsg'), act=$('saveact'), alt=$('savealt');
+  if(!bar) return;
+  if(k==='ok'){ _saveBroken=false; if(!_tabConflict){ bar.className=''; } return; }
+  if(k==='heavy'){ _saveBroken=false; if(_tabConflict) return;
+    bar.className='on warn';
+    msg.textContent='This flipbook is getting big. Save a copy while it is still saving.';
+    act.textContent='Export now'; act.style.display='';
+    alt.style.display='none'; return; }
+  if(k==='broken'){ _saveBroken=true;
+    bar.className='on bad';
+    msg.textContent='There is no room left to save. Nothing you draw from now on is being kept. Export it to keep it.';
+    act.textContent='Export now'; act.style.display='';
+    alt.textContent='Make room'; alt.style.display=''; return; }
+  if(k==='conflict'){ _tabConflict=true; _saveHold=true;
+    bar.className='on bad';
+    msg.textContent='Flipbook is open in another tab and that one just saved. This tab has stopped saving so it cannot wipe the other one.';
+    act.textContent='Keep this one'; act.style.display='';
+    alt.textContent='Load theirs'; alt.style.display=''; return; }
 }
 function scheduleSave(){
   if(_saveTimer)clearTimeout(_saveTimer);
@@ -376,14 +433,28 @@ function markDirty(){
 // synchronous, complete flush — for leaving the page / closing the app
 function saveNow(){ flushBitmap(); if(_saveTimer){ clearTimeout(_saveTimer); _saveTimer=null; } save(); }
 window.addEventListener('pagehide', saveNow);
+/* Two tabs used to destroy a book in silence: fb_book is written wholesale, so
+   whoever saved last erased the other. Now the second tab notices and stops. */
+window.addEventListener('storage', function(ev){
+  if(!ev || ev.key!=='fb_book' || _tabConflict) return;
+  setSaveState('conflict');
+});
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden')saveNow(); });
+/* A try/catch around JSON.parse is not validation. {"pages":"hello"} passed every
+   old test and made `pages` the string "hel", after which tapping the next arrow
+   threw inside the click handler and the button just stopped working, silently. */
+function validPage(v){ return v===null || (typeof v==='string' && v.slice(0,5)==='data:'); }
 function load(){
-  try{
-    var b=JSON.parse(localStorage.getItem('fb_book')||'null');
-    if(b&&b.pages&&b.pages.length){ pages=b.pages.slice(0,MAXPAGES); cur=Math.min(b.cur||0,pages.length-1);
-      if(typeof b.fpsIdx==='number')fpsIdx=Math.max(0,Math.min(fpsOptions.length-1,b.fpsIdx));
-      if(typeof b.onion==='boolean')onionOn=b.onion; }
-  }catch(e){}
+  var b=null;
+  try{ b=JSON.parse(localStorage.getItem('fb_book')||'null'); }catch(e){ b=null; }
+  if(!b || typeof b!=='object' || !(b.pages instanceof Array) || !b.pages.length) return;
+  var clean=[], i;
+  for(i=0;i<b.pages.length && clean.length<MAXPAGES;i++) if(validPage(b.pages[i])) clean.push(b.pages[i]);
+  if(!clean.length) return;
+  pages=clean;
+  cur=Math.max(0, Math.min(typeof b.cur==='number'&&isFinite(b.cur)?Math.floor(b.cur):0, pages.length-1));
+  if(typeof b.fpsIdx==='number'&&isFinite(b.fpsIdx))fpsIdx=Math.max(0,Math.min(fpsOptions.length-1,Math.floor(b.fpsIdx)));
+  if(typeof b.onion==='boolean')onionOn=b.onion;
 }
 
 /* ---------- page rendering ---------- */
@@ -411,6 +482,7 @@ function showPage(){
   else blankPage(firstX);
   firstC.style.display=(firstOn&&cur>0&&!playing)?'':'none';
   $('pageno').textContent=(cur+1)+' / '+pages.length;
+  if(!hintT){ var _h=$('hint'); if(_h)_h.textContent=baseHint(); }
   $('b-onion').classList.toggle('on', onionOn);
   $('b-first').classList.toggle('on', firstOn);
   $('b-fps').textContent=fpsOptions[fpsIdx]+'fps';
@@ -961,14 +1033,31 @@ function exportVideo(cb){
     catch(e){ try{ rec=new MediaRecorder(stream); }catch(e2){ $('busychip').style.display='none'; toastHint('Export is not available here.'); if(cb)cb(null); return; } }
     var chunks=[];
     rec.ondataavailable=function(ev){ if(ev.data&&ev.data.size)chunks.push(ev.data); };
+    /* Safari and iPadOS refuse video/webm and take the fallback recorder, which
+       records mp4. The blob used to be hard labelled webm and downloaded as
+       .webm, so the tablet this tool is built for got a file it cannot open.
+       Take the recorder's word for what it made. */
+    var stopped=false, watchdog=null;
     rec.onstop=function(){
+      if(stopped) return; stopped=true;
+      if(watchdog){ clearTimeout(watchdog); watchdog=null; }
       if(acx){ try{acx.close();}catch(e){} }
-      var blob=new Blob(chunks,{type:'video/webm'});
+      var mt=(rec.mimeType||'video/webm').split(';')[0];
+      var blob=new Blob(chunks,{type:mt});
       if(lastExport&&lastExport.url){ try{URL.revokeObjectURL(lastExport.url);}catch(e){} }
-      lastExport={ blob:blob, url:URL.createObjectURL(blob) };
+      lastExport={ blob:blob, url:URL.createObjectURL(blob), ext:(mt.indexOf('mp4')>=0?'mp4':'webm'), type:mt };
       $('busychip').style.display='none';
       if(cb)cb(lastExport);
     };
+    /* a recorder that never stops used to leave EXPORTING on the screen forever */
+    watchdog=setTimeout(function(){
+      if(stopped) return; stopped=true;
+      try{ rec.stop(); }catch(e){}
+      if(acx){ try{acx.close();}catch(e){} }
+      $('busychip').style.display='none';
+      toastHint('The video did not finish. Try a shorter flipbook or a slower speed.');
+      if(cb)cb(null);
+    }, 20000+ (pages.length*1000/Math.max(1,fpsOptions[fpsIdx])) * 2);
     var vsecs=Math.max(voices[0]?voices[0].s:0, voices[1]?voices[1].s:0);
     var loops=Math.max(1, Math.ceil(vsecs/(pages.length/fps)));
     var totalFrames=pages.length*loops;
@@ -995,11 +1084,31 @@ function exportVideo(cb){
 $('b-export').addEventListener('click',function(){
   exportVideo(function(out){
     if(!out)return;
-    var a=document.createElement('a'); a.href=out.url; a.download='flipbook.webm';
+    var name='flipbook.'+(out.ext||'webm');
+    var a=document.createElement('a'); a.href=out.url; a.download=name;
     document.body.appendChild(a); a.click(); a.remove();
-    toastHint('Saved! Check your downloads for flipbook.webm.');
+    toastHint('Saved! Check your downloads for '+name+'.');
   });
 });
+
+/* ---------- the save bar's two ways out ---------- */
+$('saveact').addEventListener('click',function(){
+  if(_tabConflict){ _tabConflict=false; _saveHold=false; $('savebar').className='';
+    if(save()) toastHint('Kept. This tab is saving again.'); return; }
+  $('b-export').click();
+});
+$('savealt').addEventListener('click',function(){
+  if(_tabConflict){ location.reload(); return; }
+  /* "Make room" never throws away a drawing. Voice takes are base64 audio in the
+     same quota and they are the biggest thing here that is not the book. */
+  var freed=false, i;
+  for(i=0;i<2;i++){ if(voices[i]){ voices[i]=null; freed=true; try{ localStorage.removeItem('fb_voice'+i); }catch(e){} } }
+  try{ localStorage.removeItem('fb_recents'); }catch(e){}
+  if(typeof voiceStat==='function')voiceStat();
+  if(save()) toastHint(freed?'Room made. Your voice takes were cleared and the flipbook is saved.':'Saved.');
+  else $('savemsg').textContent='Still no room, even after clearing the voice takes. Export this flipbook now, then start a new one.';
+});
+$('savehide').addEventListener('click',function(){ $('savebar').className=''; });
 
 /* ---------- share ---------- */
 var SHARE_TXT='I made a flipbook! 📓 Made with Flipbook by Sky Wolf Studios';
@@ -1013,7 +1122,7 @@ $('b-share').addEventListener('click',function(){
     exportVideo(function(out){
       if(!out){ plainShare(); return; }
       try{
-        var file=new File([out.blob],'flipbook.webm',{type:'video/webm'});
+        var file=new File([out.blob],'flipbook.'+(out.ext||'webm'),{type:out.type||'video/webm'});
         if(navigator.canShare({files:[file]})){
           navigator.share({files:[file],text:SHARE_TXT+' '+SHARE_URL})['catch'](function(){});
           return;
@@ -1042,9 +1151,10 @@ $('b-share').addEventListener('click',function(){
 
 /* ---------- hints ---------- */
 var hintT=null;
+function baseHint(){ return 'Page '+(cur+1)+' of '+pages.length+'. Draw, flip to the next page, and your last page shows through faint so you can animate.'; }
 function toastHint(m){ var h=$('hint'); h.textContent=m;
   if(hintT)clearTimeout(hintT);
-  hintT=setTimeout(function(){ h.textContent='Draw, flip to the next page, and your last page shows through faint so you can animate. Then press play.'; },3200); }
+  hintT=setTimeout(function(){ hintT=null; h.textContent=baseHint(); },3200); }
 
 /* ---------- tools ui: colours ----------
    Stephen 2026-07-27: the colour selection buried half the screen. The full
@@ -1053,7 +1163,14 @@ function toastHint(m){ var h=$('hint'); h.textContent=m;
    the drawing, and the colours you have used in THIS book sit in a recents
    row (cleared when a new book starts). */
 var eyedrop=false, RECENTS=[];
-try{ RECENTS=JSON.parse(localStorage.getItem('fb_recents')||'[]'); }catch(e){ RECENTS=[]; }
+/* anything that parsed used to become RECENTS, and RECENTS.indexOf then threw
+   inside the colour wheel's pointerup, killing colour picking with no message */
+(function(){ var raw=null, out=[], i;
+  try{ raw=JSON.parse(localStorage.getItem('fb_recents')||'[]'); }catch(e){ raw=null; }
+  if(raw instanceof Array) for(i=0;i<raw.length&&out.length<10;i++)
+    if(typeof raw[i]==='string'&&/^#[0-9a-f]{6}$/i.test(raw[i])) out.push(raw[i]);
+  RECENTS=out;
+})();
 function hexOf(r,g,b){ function h(v){ v=Math.max(0,Math.min(255,Math.round(v))); var s=v.toString(16); return s.length<2?'0'+s:s; } return '#'+h(r)+h(g)+h(b); }
 function rgbOfHex(c){ var m=/^#?([0-9a-f]{6})$/i.exec(c||''); if(!m)return null; var n=parseInt(m[1],16); return [n>>16&255,n>>8&255,n&255]; }
 function hsv2rgb(h,s,v){ var c=v*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=v-c, r=0,g=0,b=0;
@@ -1234,10 +1351,21 @@ sunTimer=setInterval(function(){
 },30000);
 
 /* ---------- portal exit (smart back) + embed handshake ---------- */
-window.SWS_EXIT=function(){ if(/[?&]embed=1(&|$)/.test(location.search)&&window.parent!==window){ try{ window.parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
-  if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+/* canonical block, incoming/PORTAL-CONTRACT.md: the framed test is a try/catch on
+   window.parent, not a query string the portal never adds, and ready posts at
+   parse AND on load or the portal's recovery timer treats a quiet page as a
+   black screen and closes it. */
 (function(){
-  if(/[?&]embed=1(&|$)/.test(location.search)&&window.parent!==window){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  window.SWS_EXIT=function(){
+    if(framed){ try{ window.parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
+    if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
+    else{ location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if(framed){
+    try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){}
+    window.addEventListener('load',function(){ try{ window.parent.postMessage({sws:'ready'},'*'); }catch(e){} });
+  }
 })();
 
 /* ---------- boot ---------- */
@@ -1267,11 +1395,27 @@ if(/[?&]fbtest=1/.test(location.search)){
     daily:function(key){ return makeDaily(typeof key==='number'?key:dateKey()); },
     dailyName:function(key){ return SUBJECTS[dailyPick(typeof key==='number'?key:dateKey()).idx].name; },
     dateKey:dateKey,
+    save:save, saveState:function(){ return { broken:_saveBroken, conflict:_tabConflict, held:_saveHold,
+      barOn:$('savebar').className.indexOf('on')>=0, msg:$('savemsg').textContent }; },
+    pages:function(){ return pages.length; },
+    raw:function(){ try{ return localStorage.getItem('fb_book'); }catch(e){ return null; } },
     subjects:function(){ var i,a=[]; for(i=0;i<SUBJECTS.length;i++)a.push(SUBJECTS[i].name); return a; }
   };
 }
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'flipbook',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27; parked 2026-08-16 audit).
+   ⛔ In a drawing app the CANVAS is the control, and the fab's collision watcher
+   only counts buttons, links and pointer-cursor elements. Measured at 375x667,
+   the default bottom-right footprint sits on the bottom corner of the paper —
+   where a right hand rests — and on the right hand end of the open tool rows.
+   Top right costs a 22px sliver of paper and the small page counter, and the
+   counter now also reads out in the hint line at the bottom. The player can
+   still drag it, and a spot they choose wins. */
+addEventListener('load',function(){
+try{ if(!sessionStorage.getItem('lwfb_pos')) sessionStorage.setItem('lwfb_pos',JSON.stringify({l:289,t:4})); }catch(e){}
+var s=document.createElement('script');s.src='/feedback.js?v=6';
+s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'flipbook',surface:'satellite'});};
+document.head.appendChild(s);});</script>
 </body>
 </html>

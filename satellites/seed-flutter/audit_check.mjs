@@ -52,7 +52,7 @@ const FAB = vp => ({ l: vp.w - 90, r: vp.w - 12, t: vp.h - 174, b: vp.h - 96 });
    how a blanket CSS min-height:48px made this worse rather than better. */
 const TOUCH_PROBE = `(() => {
   const bad = [];
-  const sel = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.day,.modecard button,.shoprow button,.card .act';
+  const sel = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.shopbtn,.dailybtn,.modecard button,.shoprow button,.card .act,.usecustom';
   document.querySelectorAll(sel).forEach(el => {
     if (el.closest('.lwfb-fab, #lwfb-bg')) return;
     const cs = getComputedStyle(el);
@@ -78,17 +78,31 @@ const TOUCH_PROBE = `(() => {
    feedback.js has a FAB YIELD pass that is supposed to park the chip off
    controls; this asserts it actually did, on this page, rather than assuming. */
 const FAB_PROBE = `(box => {
-  const pts = [[box.l+8,box.t+8],[box.r-8,box.t+8],[box.l+8,box.b-8],[box.r-8,box.b-8],
-               [(box.l+box.r)/2,(box.t+box.b)/2]];
-  const hits = new Set();
-  for (const [x,y] of pts) {
-    for (const el of document.elementsFromPoint(x,y)) {
+  const SEL = 'button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.cup-wrap,.shopbtn,.dailybtn,.modecard,.card .act';
+  const f = document.querySelector('.lwfb-fab');
+  if (!f) return { mounted: false };
+  const cs = getComputedStyle(f);
+  const r = f.getBoundingClientRect();
+  // The fab yields by fading to opacity:0 / pointer-events:none. That is a PASS:
+  // it is not eating anything. The defect is an INTERACTIVE fab painted on top
+  // of a control, so test that, not the raw geometry.
+  const inert = (+cs.opacity === 0) || cs.pointerEvents === 'none' ||
+                cs.display === 'none' || cs.visibility === 'hidden';
+  const pts = [[r.x+6, r.y+6], [r.right-6, r.y+6], [r.x+6, r.bottom-6],
+               [r.right-6, r.bottom-6], [r.x+r.width/2, r.y+r.height/2]];
+  const under = new Set(); let ownsAPoint = false;
+  for (const [x, y] of pts) {
+    const stack = document.elementsFromPoint(x, y);
+    if (stack.length && stack[0].closest && stack[0].closest('.lwfb-fab')) ownsAPoint = true;
+    for (const el of stack) {
       if (el.closest && el.closest('.lwfb-fab, #lwfb-bg')) continue;
-      const c = el.closest && el.closest('button,a[href],input,select,[role="button"],.toggle,.wardcard,.pat,.cup-wrap,.shopbtn,.dailybtn');
-      if (c) { hits.add((c.id || c.className || c.tagName) + '|' + (c.textContent||'').trim().slice(0,20)); }
+      const c = el.closest && el.closest(SEL);
+      if (c) { under.add((c.id || c.className || c.tagName) + '|' + (c.textContent||'').trim().slice(0,18)); break; }
     }
   }
-  return [...hits];
+  return { mounted: true, inert: inert, eats: (!inert && ownsAPoint && under.size > 0),
+           under: [...under], rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+           opacity: cs.opacity };
 })`;
 
 /* Dashes in copy the player can actually see. Comments do not count. */
@@ -158,7 +172,9 @@ async function open(query = '', seed = null, touch = true){
   ok('corrupt save: keepsake list repaired to an array',
     await page.evaluate(() => { try { return Object.prototype.toString.call(JSON.parse(localStorage.seedflutter_save).blooms) === '[object Array]'; } catch(e) { return false; } }) || true);
   await page.click('#b-drift');
-  await new Promise(r => setTimeout(r, 3400));   // no flap: the cadet lands and the run ends
+  await new Promise(r => setTimeout(r, 400));
+  await page.mouse.click(187, 300);              // one flap starts the run
+  await new Promise(r => setTimeout(r, 3400));   // then no input: the cadet lands and the run ends
   const screen = await page.evaluate(() => document.getElementById('s-go').classList.contains('on'));
   ok('corrupt save: a whole run reaches the results screen', screen, 'results screen not shown');
   ok('corrupt save: no page error during the run', errs.length === 0, errs[0]);
@@ -175,6 +191,8 @@ async function open(query = '', seed = null, touch = true){
       bestDist: 99, bestGauntlet: 4, streak: 3, blooms: [111,222], grewTotal: 40, coins: 500, owned: { 'seed1': 1 } }));
   });
   await page.click('#b-drift');
+  await new Promise(r => setTimeout(r, 400));
+  await page.mouse.click(187, 300);              // one flap starts the run
   await new Promise(r => setTimeout(r, 3400));
   const after = await page.evaluate(() => JSON.parse(localStorage.seedflutter_save));
   ok('two tabs: coins from the other tab survive', after.coins >= 500, 'coins=' + after.coins);
@@ -223,11 +241,11 @@ async function open(query = '', seed = null, touch = true){
   const box = FAB({ w: 375, h: 667 });
   ok('fab mounted at all', await page.evaluate(() => !!document.querySelector('.lwfb-fab')));
   let hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
-  ok('title screen: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  ok('title screen: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
   await page.click('#b-ward');
   await new Promise(r => setTimeout(r, 2600));
   hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
-  ok('wardrobe sheet: nothing tappable under the feedback fab', hits.length === 0, JSON.stringify(hits).slice(0, 200));
+  ok('wardrobe sheet: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
   await ctx.close();
 }
 

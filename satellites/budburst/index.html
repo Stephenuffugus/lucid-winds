@@ -292,7 +292,7 @@
     <div class="wordmark"><span class="l1">BUD</span><span class="l2">burst</span></div>
     <div class="tag">aim · match · bloom</div>
     <div class="bud-row" id="menuBuds"></div>
-    <button class="mode-btn primary big" data-mode="adventure"><span>Adventure<small id="advSub">144 levels · 12 gardens · bosses</small></span><span class="meta" id="advMeta">—</span></button>
+    <button class="mode-btn primary big" data-mode="adventure"><span>Adventure<small id="advSub">144 levels · 12 gardens · bosses</small></span><span class="meta" id="advMeta"></span></button>
     <div class="mode-grid">
       <button class="mode-card" data-mode="arcade"><span class="mc-ic">✦</span><span class="mc-nm">Arcade</span><small>powers &amp; waves</small><span class="mc-meta" id="arcMeta"></span></button>
       <button class="mode-card" data-mode="blitz"><span class="mc-ic">⏱️</span><span class="mc-nm">Blitz</span><small>90-second rush</small><span class="mc-meta" id="blitzMeta"></span></button>
@@ -342,7 +342,7 @@
   <section class="screen" id="game">
     <div class="g-hud">
       <button class="icbtn back" id="gameBack" style="font-size:24px;border:none">‹</button>
-      <div class="obj"><span class="oLabel" id="objLabel">CLEAR</span><span class="oText" id="objText">—</span></div>
+      <div class="obj"><span class="oLabel" id="objLabel">CLEAR</span><span class="oText" id="objText">Loading</span></div>
       <div class="stat" id="timerPill" style="display:none"><span class="sv" id="timerVal">90s</span><span class="sl">time</span></div>
       <div class="stat"><span class="sv" id="shotsVal">∞</span><span class="sl">shots</span></div>
       <div class="stat"><span class="sv" id="scoreVal">0</span><span class="sl">score</span></div>
@@ -433,8 +433,31 @@ const CONFIG = {
 
 /* ---- persistence -------------------------------------------------------- */
 const Store=(()=>{let mem={},ok=false;try{localStorage.setItem("__bb","1");localStorage.removeItem("__bb");ok=true;}catch(e){}
-  return{g(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
+  return{ok,
+         g(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
          s(k,v){try{ok?localStorage.setItem(k,String(v)):(mem[k]=String(v));}catch(e){mem[k]=String(v);}}};})();
+/* SHAPE VALIDATION (2026-08-16 audit).
+   A try/catch around JSON.parse is not validation: anything that merely parses
+   comes back truthy. A `bb.miss` of {"date":"<today>"} with no `items` passed
+   the date check, and getMissions returned it; renderMissions then threw inside
+   refreshMenu, which is the LAST call in the boot block, so the throw took the
+   rAF loop, window.SWS_EXIT and the exit link with it. Reproduced in a headless
+   browser: exitWired false, swsExit undefined, blank arena, permanent, surviving
+   every reload. Every JSON read below is now checked for the shape the code
+   assumes, and repaired in storage on read so a bad value cannot bite twice. */
+const isPlain=v=>!!v&&typeof v==="object"&&!Array.isArray(v);
+/* {key: non-negative number}, anything else dropped */
+function numMap(v,cap){const src=isPlain(v)?v:{},out={};
+  for(const k in src){if(!Object.prototype.hasOwnProperty.call(src,k))continue;
+    const n=+src[k]; if(Number.isFinite(n)&&n>0) out[k]=cap?Math.min(cap,Math.floor(n)):Math.floor(n);}
+  return out;}
+/* read k, run fix(), write the repaired value straight back */
+function readJSON(k,fix){
+  let raw=null; try{raw=JSON.parse(Store.g(k)||"null");}catch(e){raw=null;}
+  let out; try{out=fix(raw);}catch(e){out=fix(null);}
+  const enc=JSON.stringify(out);
+  if(enc!==Store.g(k))Store.s(k,enc);
+  return out;}
 const K={coins:"bb.coins",nectar:"bb.nectar",owned:"bb.owned",skin:"bb.skin",
          lowned:"bb.lowned",launcher:"bb.launcher",bgowned:"bb.bgowned",bg:"bb.bg",
          prog:"bb.prog",pzProg:"bb.pz.prog",endBest:"bb.endless.best",blitzBest:"bb.blitz.best",arcadeBest:"bb.arcade.best",zenTotal:"bb.zen.total",
@@ -558,7 +581,10 @@ const ABILITIES=[
   {key:"shield",  name:"Bulwark",     ic:"🛡️", need:8,  price:200, up:3, kind:"state",  desc:"Block the next canopy descent."}
 ];
 const abById=k=>ABILITIES.find(a=>a.key===k);
-function abilData(){try{return JSON.parse(Store.g(K.abil)||"{}");}catch(e){return{};}}
+function abilData(){return readJSON(K.abil,v=>{const src=isPlain(v)?v:{},out={};
+  for(const a of ABILITIES){const e=src[a.key];if(!isPlain(e))continue;
+    const lv=+e.lv; out[a.key]={un:!!e.un, lv:(Number.isFinite(lv)&&lv>0)?Math.min(9,Math.floor(lv)):0};}
+  return out;});}
 function abilUnlocked(k){if(abById(k).price===0)return true;const d=abilData();return!!(d[k]&&d[k].un);}
 function abilLevel(k){const d=abilData();return(d[k]&&d[k].lv)||0;}
 function abilNeed(k){return Math.max(3,Math.round(abById(k).need*(1-0.12*abilLevel(k))));}
@@ -572,7 +598,9 @@ const BOOSTERS=[
   {key:"rainbow",name:"Rainbow Bud", ic:"🌈", price:55,  desc:"Turn your current bud into a wildcard."}
 ];
 const boostById=k=>BOOSTERS.find(b=>b.key===k);
-function boostData(){try{return JSON.parse(Store.g(K.boost)||"{}");}catch(e){return{};}}
+function boostData(){return readJSON(K.boost,v=>{const src=isPlain(v)?v:{},out={};
+  for(const b of BOOSTERS){const n=+src[b.key];if(Number.isFinite(n)&&n>0)out[b.key]=Math.min(999,Math.floor(n));}
+  return out;});}
 function boostCount(k){return boostData()[k]||0;}
 function addBoost(k,n){const d=boostData();d[k]=(d[k]||0)+n;Store.s(K.boost,JSON.stringify(d));}
 
@@ -586,12 +614,12 @@ const PUZZLES=Array.from({length:40},(_,i)=>{
   const shots=Math.ceil(par*3.6)+8;             // generous enough to be winnable; par gates 3★
   return {seed:((i*2654435761)^0x9e3779b9)>>>0, colors, rows, fill, specials:[], par, shots};
 });
-function pzProg(){try{return JSON.parse(Store.g(K.pzProg)||"{}");}catch(e){return{};}}
+function pzProg(){return readJSON(K.pzProg,v=>numMap(v,3));}
 function pzStars(i){return pzProg()[i]||0;}
 function pzSetStars(i,s){const p=pzProg();if((p[i]||0)<s){p[i]=s;Store.s(K.pzProg,JSON.stringify(p));}}
 function pzUnlocked(i){return i===0||pzStars(i-1)>0;}
 function pzTotalStars(){let t=0;for(let i=0;i<PUZZLES.length;i++)t+=pzStars(i);return t;}
-function getProg(){try{return JSON.parse(Store.g(K.prog)||"{}");}catch(e){return{};}}
+function getProg(){return readJSON(K.prog,v=>numMap(v,3));}
 function setProg(p){Store.s(K.prog,JSON.stringify(p));}
 const lvlKey=(g,l)=>g+"-"+l;
 function starsOf(g,l){const p=getProg();return p[lvlKey(g,l)]||0;}
@@ -1327,7 +1355,16 @@ function render(){
 /* ============================================================================
    INPUT (aim / fire / swap)
    ========================================================================== */
-function nextRect(){const{sx,sy}=shooterOrigin();return{x:sx+R*3-R,y:sy-R,w:R*2,h:R*2};}
+/* The DRAWN next bud is R*2 across, which at 375 wide is 44.4 rendered px:
+   under the 48px floor, on a control the How to play sheet names by hand
+   ("tap the small NEXT bud"). Missing it does not do nothing, it fires the
+   wrong bud and spends a shot. So the HIT rect is decoupled from the art and
+   floored at 48, grown downward and outward into the empty band beside the
+   launcher where nothing else is tappable. */
+const NEXT_HIT=48;
+function nextRect(){const{sx,sy}=shooterOrigin();
+  const w=Math.max(NEXT_HIT,R*2), h=Math.max(NEXT_HIT,R*2.6);   /* extra height covers the NEXT caption below the bud */
+  return{x:sx+R*3-w/2, y:sy-h/2+R*0.3, w, h};}
 function pointerPos(e){const rect=cv.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
 function setAimFromPoint(px,py){const{sx,sy}=shooterOrigin();
   let dx=px-sx,dy=py-sy;
@@ -1374,7 +1411,7 @@ function objProgressText(){
   if(o==="survive")return"Depth "+G.depth+" · hold the line";
   if(o==="arcade")return"Wave "+G.wave+" · survive";
   if(o==="blitz")return"Pop for score!";
-  if(o==="zen")return"No fail. Just bloom";
+  if(o==="zen")return"No fail \u00b7 tap \u2039 to bank "+G.score.toLocaleString();
   return G.objText;
 }
 function syncModeHud(){
@@ -1408,8 +1445,19 @@ const MAXTRACK=new Set(["depth","dropRun","combo7"]);
 function pickMissions(){const rng=mulberry32((dailySeed()^0x7c31)>>>0),pool=MISSION_POOL.slice();
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=pool[i];pool[i]=pool[j];pool[j]=t;}
   return pool.slice(0,3).map(m=>({id:m.id,prog:0,target:m.target,reward:m.reward,done:false}));}
-function getMissions(){let m=null;try{const r=Store.g(K.miss);m=r?JSON.parse(r):null;}catch(e){m=null;}
-  if(!m||m.date!==todayStr()){m={date:todayStr(),items:pickMissions()};Store.s(K.miss,JSON.stringify(m));}return m;}
+function getMissions(){
+  let m=null;try{const r=Store.g(K.miss);m=r?JSON.parse(r):null;}catch(e){m=null;}
+  /* a date alone is not a mission record. items must be a real array of rows
+     whose ids still exist in the pool, or today's goals are rebuilt. */
+  const ok = isPlain(m) && m.date===todayStr() && Array.isArray(m.items) && m.items.length &&
+             m.items.every(it=>isPlain(it) && MISSION_POOL.some(p=>p.id===it.id));
+  if(!ok){m={date:todayStr(),items:pickMissions()};Store.s(K.miss,JSON.stringify(m));return m;}
+  /* repair the mutable fields without discarding real progress */
+  m.items=m.items.map(it=>{const def=MISSION_POOL.find(p=>p.id===it.id);
+    const prog=+it.prog, rew=+it.reward;
+    return {id:it.id, target:def.target, reward:(Number.isFinite(rew)&&rew>0)?rew:def.reward,
+            prog:(Number.isFinite(prog)&&prog>0)?prog:0, done:!!it.done};});
+  return m;}
 function missionEvent(track,val){const m=getMissions();let ch=false;
   m.items.forEach(it=>{if(it.done)return;const def=MISSION_POOL.find(p=>p.id===it.id);if(!def||def.track!==track)return;
     if(MAXTRACK.has(track))it.prog=Math.max(it.prog,val);else it.prog+=val;
@@ -1631,8 +1679,26 @@ function backToMenu(){refreshMenu();show("menu");}
 if(!Store.g(K.owned))Store.s(K.owned,"meadow");if(!Store.g(K.skin))Store.s(K.skin,"meadow");
 if(!Store.g(K.lowned))Store.s(K.lowned,"clay");if(!Store.g(K.launcher))Store.s(K.launcher,"clay");
 if(!Store.g(K.bgowned))Store.s(K.bgowned,"night");if(!Store.g(K.bg))Store.s(K.bg,"night");
-refreshMenu();
+
+/* BOOT ORDER IS LOAD BEARING.
+   The game loop and the way out come FIRST, and painting the menu is allowed to
+   fail. It used to be the other way round: refreshMenu() was the last statement
+   before requestAnimationFrame, so one bad saved value took the loop, SWS_EXIT
+   and the exit link with it and stranded the player on a dead screen. Nothing
+   below is permitted to depend on the menu having rendered. */
 requestAnimationFrame(frame);
+try{ refreshMenu(); }
+catch(e){
+  try{ if(window.console&&console.error) console.error("budburst menu render failed",e); }catch(_){}
+  toast("Some saved data was unreadable. Your progress has been reset to a clean slate.");
+  /* clear only the JSON-backed records, never the player's purchases */
+  [K.miss,K.prog,K.pzProg,K.abil,K.boost].forEach(k=>{try{Store.s(k,"{}");}catch(_){}}); 
+  try{ refreshMenu(); }catch(_){}
+}
+/* localStorage blocked (private mode, third party cookie walls) means every
+   coin and star this session evaporates on reload. Say so once rather than let
+   the player build a garden that is not there tomorrow. */
+if(!Store.ok){ setTimeout(()=>toast("Storage is blocked here, so this run will not be saved."),1200); }
 
 /* ===== Sky Wolf Studios embed protocol =====
    The portal (lucidwinds.com/portal/) frames games with ?embed=1 and listens

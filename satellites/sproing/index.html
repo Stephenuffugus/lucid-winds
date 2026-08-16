@@ -389,8 +389,28 @@ var LS=(function(){
   return {
     get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null); }catch(e){ return k in mem?mem[k]:null; } },
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } },
-    getJSON:function(k,d){ var v=this.get(k); if(v==null) return d; try{ return JSON.parse(v); }catch(e){ return d; } },
-    setJSON:function(k,o){ this.set(k,JSON.stringify(o)); }
+    /* ⛔ A try/catch around JSON.parse is NOT validation. `5`, `"x"`, `true` and `[]`
+       all PARSE, so they came straight back and the caller then treated a number as a
+       settings object. Verified in a real browser 2026-08-16:
+         sproing_settings=5 -> "Cannot use 'in' operator to search for 'steer' in 5"
+                               kills the whole IIFE. The title screen is static HTML so
+                               it still LOOKS fine, and every single button is dead.
+         sproing_levels=5   -> the level map throws and Adventure is unreachable.
+       getJSON now checks the SHAPE the caller asked for and falls back to the default
+       when the stored value is not it. A half-written key is what a quota-exceeded
+       setItem leaves behind, and this game writes on every landing. */
+    getJSON:function(k,d){ var v=this.get(k); if(v==null) return d;
+      try{ v=JSON.parse(v); }catch(e){ return d; }
+      var wantArr=Object.prototype.toString.call(d)==='[object Array]';
+      var isArr=Object.prototype.toString.call(v)==='[object Array]';
+      if(wantArr) return isArr?v:d;
+      if(d!==null&&typeof d==='object') return (v&&typeof v==='object'&&!isArr)?v:d;
+      return (typeof v===typeof d)?v:d;
+    },
+    setJSON:function(k,o){ this.set(k,JSON.stringify(o)); },
+    /* a plain non-negative integer, or the fallback. parseInt("abc") is NaN, and NaN
+       silently poisons every arithmetic it touches downstream. */
+    getInt:function(k,d){ var n=parseInt(this.get(k),10); return (isFinite(n)&&n>=0)?n:(d||0); }
   };
 })();
 var K={ coins:'sproing_coins', best:'sproing_best', book:'sproing_sketchbook',
@@ -414,15 +434,24 @@ try{ mqReduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:redu
 function reduceMotion(){ return SET.reduceMotion==='on' || (SET.reduceMotion==='auto' && mqReduce); }
 
 /* ---------- persistent economy / progress ---------- */
-var coins=parseInt(LS.get(K.coins)||'0',10)||0;
-var best=parseInt(LS.get(K.best)||'0',10)||0;
-function addCoins(n){ coins+=n; if(n>0){ stats.coinsTotal=(stats.coinsTotal||0)+n; saveStats(); } LS.set(K.coins,String(coins)); refreshCoinUI(); }
+var coins=LS.getInt(K.coins,0);
+var best=LS.getInt(K.best,0);
+/* ⛔ Two tabs clobber. coins and best were read ONCE at boot and written back whole, so
+   a run in tab B erased every coin tab A had banked. Coins are earned currency: apply
+   the DELTA to whatever is on disk right now. best is a record: MAX, never overwrite. */
+function writeCoins(delta){
+  var disk=LS.getInt(K.coins,0);
+  coins=Math.max(0, disk+delta);
+  LS.set(K.coins,String(coins)); refreshCoinUI();
+}
+function saveBest(){ var disk=LS.getInt(K.best,0); if(disk>best) best=disk; LS.set(K.best,String(best)); }
+function addCoins(n){ if(n>0){ stats.coinsTotal=(stats.coinsTotal||0)+n; saveStats(); } writeCoins(n); }
 // bank a run's uncommitted coins into the wallet exactly once (idempotent via coinsCommitted).
 // Called on game-over AND on any early exit (quit/restart) so run earnings are never lost.
 function commitRun(){ if(!game) return;
   if(game.zen){ game.coinsCommitted=game.coinsRun; return; }   // Zen is deathless practice — never banks coins (shown live for flavor only)
   var g=game.coinsRun-(game.coinsCommitted||0); if(g>0){ addCoins(g); stats.coinsEarned=(stats.coinsEarned||0)+g; } game.coinsCommitted=game.coinsRun; saveStats(); }
-function spendCoins(n){ if(coins<n) return false; coins-=n; LS.set(K.coins,String(coins)); refreshCoinUI(); return true; }
+function spendCoins(n){ if(coins<n) return false; writeCoins(-n); return true; }
 function refreshCoinUI(){ var e=$('shop-coins'); if(e) e.textContent=coins; }
 
 /* ---------- DOM helpers ---------- */
@@ -1170,7 +1199,21 @@ function levelDef(idx){
   return {idx:idx, world:world, lw:lw, targetM:targetM, starCoins:Math.round(targetM*0.16), mod:mod, seed:seed};
 }
 var levelProg=LS.getJSON(K.levels,{stars:{}, unlocked:0});   // unlocked = highest playable idx
-function saveLevelProg(){ LS.setJSON(K.levels,levelProg); }
+/* {"stars":7} passes the object check but is not a MAP, and this file is strict mode,
+   so levelProg.stars[idx]=n on a number throws inside the clear handler. Insist on the
+   inner shape too — the outer type check is not enough on a nested structure. */
+if(!levelProg.stars||typeof levelProg.stars!=='object'||Object.prototype.toString.call(levelProg.stars)==='[object Array]') levelProg.stars={};
+if(!(levelProg.unlocked>=0)) levelProg.unlocked=0;
+/* ⛔ Two tabs clobber: this was written wholesale from a boot snapshot, so the tab that
+   saved last erased the other's stars and unlocks. Stars MAX per level, unlocked MAX. */
+function saveLevelProg(){
+  var disk=LS.getJSON(K.levels,null);
+  if(disk&&disk.stars&&typeof disk.stars==='object'){
+    for(var k in disk.stars){ if(!(levelProg.stars[k]>disk.stars[k])) levelProg.stars[k]=disk.stars[k]; }
+    if(disk.unlocked>levelProg.unlocked) levelProg.unlocked=disk.unlocked;
+  }
+  LS.setJSON(K.levels,levelProg);
+}
 function levelStars(idx){ return levelProg.stars[idx]||0; }
 function levelUnlocked(idx){ return idx<=(levelProg.unlocked||0); }
 function totalStars(){ var t=0; for(var k in levelProg.stars) t+=levelProg.stars[k]; return t; }
@@ -1749,7 +1792,7 @@ function onGameOver(){
   var m=game.meters;
   commitRun();                             // bank run coins (once, via coinsCommitted) + coinsEarned + saveStats
   updateStreak();
-  var isBest=m>best; if(isBest){ best=m; LS.set(K.best,String(best)); }
+  var isBest=m>best; if(isBest){ best=m; } saveBest();   // MAX against disk, so a second tab's better run is never overwritten
   var sun=earnSunbeams(m);
   if(!game.runCounted){ stats.runs=(stats.runs||0)+1; game.runCounted=true; } // once per PHYSICAL run (survives Dandelion Save)
   if(m>(stats.maxAlt||0)) stats.maxAlt=m; saveStats();
@@ -1948,7 +1991,17 @@ function boot(){
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
 window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
-if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* The portal arms a black-screen recovery timer PER LOAD and closes any frame that does
+   not announce itself, so {sws:'ready'} must go out at parse time AND on the load event,
+   and it must not be gated on the ?embed=1 query flag — a card whose url moves to a
+   github.io host is framed WITHOUT that flag and would be auto-closed as a black screen.
+   Gate on actually being framed instead. (PORTAL-CONTRACT.md) */
+(function(){
+  var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
+  if(!framed) return;
+  function ready(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+  ready(); window.addEventListener('load',ready);
+})();
 /* studio-standard 30/day/game sunbeam cap helper (see SUNBEAM_EARN_POLICY.md) */
 window._sbCapEarn=function(n,tag){
   var granted=0;
