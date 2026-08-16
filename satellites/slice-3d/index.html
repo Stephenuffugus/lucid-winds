@@ -128,7 +128,14 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    "c" was sliced off by the button's own rounded border — it read "♫ Musi(". Seen at
    375x667, not inferred. Give it real side padding and room for the label the music
    player actually installs, and let it shrink rather than overflow. */
-#b-music{flex:0 1 auto; min-width:72px; padding:0 14px; font-size:18px; white-space:nowrap; overflow:hidden}
+/* ⛔ Do NOT use flex-basis:auto here. `.btn` sets width:100%, so `auto` resolves the
+   basis to 420px (the whole row), the row overflows, and the two flex:1 siblings —
+   which have basis 0 and nothing to grow into — collapse to 28px and 36px RENDERED.
+   Caught by audit-check.mjs phase 5 after an earlier attempt at this same fix did
+   exactly that. Give it an explicit basis sized to the label instead. 132 stage px
+   leaves ~7px of clearance around "♫ Music" at 18px and still hands How and Forge
+   132 stage px each (92 rendered), comfortably over the 48 floor. */
+#b-music{flex:0 0 132px; padding:0 14px; font-size:18px; white-space:nowrap}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 </head>

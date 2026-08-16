@@ -116,7 +116,7 @@ outside this audit's sandbox.
 
 ## VERIFICATION
 
-`node satellites/rule-root/check.mjs` — 45 assertions, all green. It exits 1 on failure and was
+`node satellites/rule-root/check.mjs` — 46 assertions, all green. It exits 1 on failure and was
 watched go red before each fix (the duplicate exit chip and the fab collision were both found BY
 this gate). Phase A compiles all four inline blocks; phase B drives a real headless browser at
 375x667: a full solve of garden one through the game's own solver, five different corrupt

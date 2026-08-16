@@ -1,7 +1,8 @@
 # BURR BLAST — audit + repair, 2026-08-16
 
 Read end to end (3109 lines) BEFORE any edit. Defect list written first, then fixed worst first.
-Verifier: `node scripts/burrblast_check.mjs` in this folder (`satellites/burr-blast/check.mjs`).
+Verifier: `node satellites/burr-blast/check.mjs` (add `--selftest` for the FAILWATCH pass).
+79 assertions green; 6 more re-break each guard on purpose and prove the check goes red.
 
 Prior known-and-correct: **damage is CLOSING SPEED, not raw velocity** (`handleContact` →
 `damageBody`, `speed` is the manifold closing speed). Deliberate. Not touched.
@@ -14,6 +15,8 @@ Prior known-and-correct: **damage is CLOSING SPEED, not raw velocity** (`handleC
 
 | # | Sev | Defect |
 |---|-----|--------|
+| A0 | **CRITICAL** | **A portrait phone with rotation locked cannot play OR leave.** `#rotate` is the landscape nudge: `inset:0`, `z-index:66`, shown whenever `_playing && portrait`. Its only dismiss control is `<button onclick="dismissRotate()">`, and **every function in this file lives inside a strict-mode IIFE** — `dismissRotate` was never put on `window`, so the inline handler was a `ReferenceError` and the button did nothing. The overlay outranks every `.screen` (z 30) and the HUD (z 20), so the pause button was underneath it, and the exit link is only shown on the menu. Rotate the device and you are fine; lock rotation and the game is a wall you cannot dismiss, pause or exit. This is CLAUDE.md pitfall 1 and the "inline onclick MUST be on window" rule, live. Found by hit-testing the overlay, not by reading the markup. |
+| A0b | MED | **The landscape nudge also buried the pause menu.** `pauseGame()` leaves `_playing` true, and `updateRotateHint` only tested `_playing && portrait`, so pausing in portrait re-raised the full-screen nudge over Resume / Restart / Choose a patch / Main menu. |
 | A1 | HIGH | **Corrupt save locks the whole campaign.** `loadSave` wraps `JSON.parse` in try/catch and then trusts the shape. `SAVE.prog=s.prog||{}` accepts a string, a number, an array. `levelStars(n)` then returns `undefined`, `isLevelUnlocked` returns false for every level, and **every patch shows a padlock with no way back except Settings → Reset all progress**. `totalStars()` returns `NaN` on a string `prog`, which poisons `nutCap()`, `nutrientsLeft()`, `compSlots()` and `bringSlots()` — the loadout screen's + buttons all go dead and never say why. Worse: `SAVE.loadout=s.loadout` accepts a string, and the very next line assigns a property to that primitive, which **throws inside the try in strict mode** and silently abandons the rest of the load. This is standing class 3 exactly. |
 | A2 | HIGH | **Two tabs clobber.** `persist()` writes `SAVE` wholesale from the boot snapshot. Two tabs open → the second to write erases everything the first earned: coins, stars, Fertilizer, unlocked seeds, grafts, companions, endless/expedition bests. Standing class 4. |
 | A3 | MED | **Expedition state can leak into the campaign.** `_expedition`/`EXP` are cleared by the two pause buttons and by `abandonExpedition`, but not by any other route out of a run. `btnExpQuit` is gated on `confirm()`, which returns `undefined` in contexts where dialogs are suppressed — the run then cannot be quit at all from its own screen. If `_expedition` survives into a campaign fort, `getActiveLoadout()` returns the run loadout, `winLevel()` returns early into `expWinFort()`, and clearing a normal patch dumps the player into an expedition draft with no stars and no coins. |
@@ -47,9 +50,10 @@ Prior known-and-correct: **damage is CLOSING SPEED, not raw velocity** (`handleC
    Fixed to 48.
 7. **Dashes in player copy** — CLEAR. Every em/en dash in the file is inside a comment;
    scanned string literals and HTML text nodes separately and found none.
-8. **An overlay covering a control** — the ability hint, the toast and the world card are all
-   `pointer-events:none`. The rotate nudge is a real full-screen cover but it has its own
-   dismiss button and only appears while playing in portrait. No instance.
+8. **An overlay covering a control** — FOUND, twice, and both are A0/A0b above. The ability
+   hint, the toast and the world card are all `pointer-events:none` and are fine. The rotate
+   nudge is a genuine full-screen cover whose dismiss button did not work and which also sat
+   over the pause menu. Fixed and asserted.
 
 ### C. Loop, teaching, curve — read, judged, not defects
 
@@ -70,6 +74,12 @@ Prior known-and-correct: **damage is CLOSING SPEED, not raw velocity** (`handleC
 
 ## WHAT I FIXED (worst first)
 
+0. **A0 — the landscape nudge can no longer trap anyone.** `dismissRotate` is now on `window`
+   (the inline handler works), the button is ALSO bound properly in `boot()` rather than through
+   markup, and a tap anywhere on the sheet dismisses it. **A0b:** `updateRotateHint` now also
+   requires `!_paused`, so pausing in portrait shows the pause menu rather than the nudge.
+   Six assertions cover it, including "no ReferenceError from the inline handler" and "the pause
+   button underneath is reachable again".
 1. **A1 — save validation.** `loadSave` now runs every field through a shape check:
    `prog` entries must be objects with finite `stars` 0..3 and finite `score`; `skins`,
    `seeds`, `grafts`, `compOwned`, `bonds`, `lossPaid` must be plain objects with sane values;
@@ -114,6 +124,31 @@ capped at the same 90 steps, so it costs nothing per frame.
 That is more play value per minute than any of the alternatives I considered (more levels, more
 seeds, more expedition nodes) because it improves *every shot in every mode*, including the ones
 already shipped.
+
+**Two more guide defects came out of LOOKING at it, not out of testing it.** I shot the aim
+frame in landscape at 812x375 and read the image:
+
+- the dots were cream at ~2 rendered px over a sunlit photographic meadow and all but vanished.
+  Each dot now gets a dark halo drawn under it, so the arc reads over grass, soil and stone.
+- most shots end on the SOIL, and the loop broke on `y > GROUND_Y + 8` before the collision test
+  could fire, so the commonest landing in the game got no mark at all. The ground crossing is
+  now interpolated and gets the reticle, and the dot for the contact step is dropped so the arc
+  never draws one step INTO the thing it stops at.
+
+Re-shot afterwards: the arc reads clearly and the reticle sits on the left face of the tower
+block the burr would strike.
+
+### What I saw in those frames that is NOT mine and is still wrong
+- The score readout is gold text centred under the HUD, and on the Sprout Meadow background it
+  lands in the sun's blowout. Gold on gold, unreadable at a glance.
+- Everything in the HUD is emoji with no text fallback: the ammo queue, the chips, the nutrient
+  icons, the loadout tabs. In headless Chrome (no emoji font) they are empty boxes and the ammo
+  queue carries no information at all. Probably fine on a real phone; it is still a single point
+  of failure with no belt.
+- On the loadout screen the fleet feedback chip parked clear of the + stepper (which was the
+  measured requirement) but landed ON the Potassium sentence, half over "and a steadier aim
+  guide". Content, not a control, so it satisfies the rule and still looks like a fault. That is
+  `/feedback.js`, not this game.
 
 ## WHAT STILL WORRIES ME
 

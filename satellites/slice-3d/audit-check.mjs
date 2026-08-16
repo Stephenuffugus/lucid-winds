@@ -150,17 +150,33 @@ console.log('\n[3] a failed run does not silently discard progress');
   const { ctx, p } = await boot();
   const r = await p.evaluate(() => {
     const S = window._S3;
-    S.prog().slabsCut = 0;
+    /* ⛔ The first version of this check asserted `onDisk >= cut` on a dive that cut
+       ZERO slabs, so it read 0 >= 0 and passed no matter what the game did. A check
+       that cannot go red is not evidence. Inject a KNOWN tally and a KNOWN best
+       combo first, wipe the save file, then demand that the fail path put them on
+       disk. Now the only way to pass is for failLevel() to actually save. */
+    localStorage.removeItem('s3d_prog');
+    S.prog().slabsCut = 7;          // pretend this dive cut 7 slabs
+    S.prog().bestCombo = 0;
     S.newFF(1);
+    const g0 = S.state(); if (g0) g0.comboBest = 9;   // and reached a combo of 9
     const go = document.getElementById('s-go');
     const t0 = Date.now();
     for (let i = 0; i < 8000; i++) { const g = S.state(); if (!g) break; S.stepN(1, 16); if (go.classList.contains('on')) break; if (Date.now() - t0 > 90000) break; }
-    const cut = S.prog().slabsCut || 0;
-    let disk = null; try { disk = JSON.parse(localStorage.getItem('s3d_prog')); } catch (e) {}
-    return { failed: /STUCK/.test(document.getElementById('go-title').textContent), cut, onDisk: disk ? (disk.slabsCut || 0) : -1, hasBestCombo: disk && disk.bestCombo !== undefined };
+    const raw = localStorage.getItem('s3d_prog');
+    let disk = null; try { disk = JSON.parse(raw); } catch (e) {}
+    return {
+      failed: /STUCK/.test(document.getElementById('go-title').textContent),
+      wroteAnything: raw != null,
+      onDisk: disk ? (disk.slabsCut === undefined ? -1 : disk.slabsCut) : -1,
+      bestCombo: disk ? (disk.bestCombo === undefined ? -1 : disk.bestCombo) : -1,
+      detail: document.getElementById('go-detail').textContent
+    };
   });
-  ok('a failed dive writes PROG to disk', r.onDisk >= 0 && r.hasBestCombo, JSON.stringify(r));
-  ok('slabs cut on a failed dive survive the run', r.onDisk >= r.cut, JSON.stringify(r));
+  ok('the dive really did fail (precondition)', r.failed, JSON.stringify(r));
+  ok('a failed dive writes PROG to disk at all', r.wroteAnything, JSON.stringify(r));
+  ok('slabs cut on a failed dive reach disk', r.onDisk === 7, JSON.stringify(r));
+  ok('best combo on a failed dive reaches disk', r.bestCombo === 9, JSON.stringify(r));
   await ctx.close();
 }
 

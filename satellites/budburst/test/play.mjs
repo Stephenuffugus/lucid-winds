@@ -161,17 +161,21 @@ console.log('nothing sits on a control, on every screen');
   await new Promise(r => setTimeout(r, 2200));
   for (const id of ['menu', 'map', 'loadout', 'puzzles', 'shop', 'result']) {
     const cov = await page.evaluate(screen => {
+      /* budburst's screens are opacity + pointer-events, never display:none, so
+         EVERY screen has a live rect at all times. Scope to the one that is on,
+         or this test reports the loadout's button on the shop. */
       for (const k of ['menu', 'map', 'loadout', 'puzzles', 'game', 'result', 'shop'])
         document.getElementById(k).classList.toggle('on', k === screen);
       const f = document.querySelector('.lwfb-fab');
       if (!f) return ['no fab'];
-      const fr = f.getBoundingClientRect(), out = [];
-      document.querySelectorAll('button, .lvl, .gtab, .shop-tab, .load-slot, .load-ab, .tile').forEach(el => {
-        if (el.closest('.lwfb-fab')) return;
+      const out = [];
+      document.querySelectorAll('#' + screen + ' button, #' + screen + ' .lvl, #' + screen + ' .gtab, #' + screen + ' .shop-tab, #' + screen + ' .load-slot, #' + screen + ' .load-ab').forEach(el => {
         const q = el.getBoundingClientRect();
         if (!q.width || !q.height) return;
-        if (q.right > fr.left && q.left < fr.right && q.bottom > fr.top && q.top < fr.bottom)
-          out.push(el.id || el.className);
+        /* the real question is not overlap, it is reachability: what does a tap
+           at the control's own centre actually hit? (never el.click()) */
+        const hit = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+        if (hit && hit.closest && hit.closest('.lwfb-fab')) out.push(el.id || el.className);
       });
       return out;
     }, id);

@@ -131,7 +131,7 @@ outside this audit's sandbox.
 
 ## VERIFICATION
 
-`node satellites/flipbook/check.mjs` — 37 assertions, all green, exits 1 on failure. Watched red
+`node satellites/flipbook/check.mjs` — 38 assertions, all green, exits 1 on failure. Watched red
 first, and it earned its keep: the first green run of the export test returned a 110 byte file,
 which turned out to be a two page book at 8fps being a quarter of a second long. The test now
 records a realistic eight page book at 4fps and asserts real bytes, which is what a child would

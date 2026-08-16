@@ -72,8 +72,18 @@ Looked at it at 375x667 rather than trusting the layout. `/music-player.js` repl
 reset, so the label runs edge to edge and the final `c` is sliced by the button's own
 rounded border. It reads as "♫ Musi(". Screenshot in the audit scratch.
 
-**Fix:** `#b-music` gets side padding and its flex basis widened to fit the label the music
-player actually installs, and the label is allowed to shrink instead of overflowing.
+**Fix:** `#b-music` gets side padding and an explicit flex basis of 132 stage px, sized to
+the label the music player actually installs.
+
+**⛔ Read this before touching that rule.** The first attempt at this fix used
+`flex:0 1 auto`, which looked obviously right and was wrong. `.btn` sets `width:100%`, so
+a basis of `auto` resolves to **420px — the whole row**. The row overflowed, and the two
+`flex:1` siblings (basis 0, nothing to grow into) collapsed to **28 and 36 RENDERED px**,
+turning one cosmetic defect into two broken touch targets.
+
+Nothing about that was visible in the diff. It was caught by phase 5 of `audit-check.mjs`
+measuring rendered widths, which is the entire argument for having the suite. Use an
+explicit basis on any button in that row, never `auto`.
 
 ### 3. HIGH — two tabs clobber each other. FIXED
 
