@@ -1574,6 +1574,7 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 /* headless test hook */
 if(/[?&]ndtest=1/.test(location.search)){
   window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS, worlds:WORLDS, gardeners:GARDENERS, share:shareNectar, prog:function(){return PROG;},
+    dailyLevel:dailyLevel, firstUncleared:firstUncleared,
     fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.56,Math.min(1.56,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ simFrame(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
     setAimRaw:function(x,y){ setAim({x:x,y:y}); return aim.angle; },
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<400){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) simFrame(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },

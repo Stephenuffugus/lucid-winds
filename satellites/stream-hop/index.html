@@ -1086,32 +1086,48 @@ var PROG={ best:{endless:0,daily:0,zen:0,rush:0,adventure:0}, flowers:0, skin:'t
   ach:{}, maxCombo:0, pows:{}, dodges:0, hopped:0, wxBoth:0, fogWalked:0, seasons:{}, bestStreak:0, lastBonusDay:0,
   musicUn:{}, musicSel:'moonwalk', playlist:{moonwalk:1},
   fins:{}, fin:'', finsRefunded:0, shopDay:0, v:0, rewardDay:0, rewardStreak:0, taughtPower:0, taughtEgg:0, tokens:0, codes:{}, roads:0,
+  /* ⛔ decRew is the once ever ledger for the decade capstones, the level 50
+     bin pull and the level 100 feast. It MUST be declared here and loaded
+     below: it was saved but never read back until 2026-08-16, so every one of
+     those payouts fired again on each fresh browser session. */
+  decRew:{},
   /* THE DAILY. day = the dayIndex whose result is recorded here, so `day===today`
      means today is already spoken for. score is how far that one run got,
      code is the road you crossed, streak counts days shown up in a row. */
   daily:{ day:0, no:0, score:0, cause:'', code:'', streak:0, bestStreak:0, hist:[] } };
-(function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(p.adv)PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
-  if(typeof p.caps==='number')PROG.caps=p.caps; if(p.chars)PROG.chars=p.chars; if(p.char)PROG.char=p.char;
+/* ⛔ A SAVE IS UNTRUSTED INPUT. This loader is 25 statements under ONE catch,
+   in strict mode, so one wrong TYPE (an `unlocked` that came back a string,
+   say) throws on the following line and silently abandons every field after
+   it: caps, chars, adv, eggs, ach, daily, the lot. The game then boots looking
+   brand new and the first saveProg() overwrites the good save with the stump.
+   _o() returns a real plain object or null, so an object field can never be
+   assigned something that throws when a key is written to it. */
+function _o(v){ return (v && typeof v==='object' && !(v instanceof Array)) ? v : null; }
+(function(){ try{ var p=JSON.parse(LS.get('sh_prog')||'{}'); if(!_o(p)) p={}; if(_o(p.best))for(var k in p.best){ if(typeof p.best[k]==='number')PROG.best[k]=p.best[k]; } if(typeof p.flowers==='number')PROG.flowers=p.flowers; if(p.skin)PROG.skin=p.skin; if(_o(p.unlocked))PROG.unlocked=p.unlocked; if(!PROG.unlocked.toadling)PROG.unlocked.toadling=1; if(_o(p.adv))PROG.adv=p.adv; if(!PROG.adv||!PROG.adv.stars)PROG.adv={maxLevel:1,stars:{}};
+  if(typeof p.caps==='number')PROG.caps=p.caps; if(_o(p.chars))PROG.chars=p.chars; if(p.char)PROG.char=p.char;
   if(typeof p.pulls==='number')PROG.pulls=p.pulls; if(typeof p.v==='number')PROG.v=p.v;
   if(typeof p.capsEver==='number')PROG.capsEver=p.capsEver; if(typeof p.advPaid==='number')PROG.advPaid=p.advPaid;
-  if(p.eggs)PROG.eggs=p.eggs; if(p.ach)PROG.ach=p.ach; if(p.pows)PROG.pows=p.pows;
+  if(_o(p.eggs))PROG.eggs=p.eggs; if(_o(p.ach))PROG.ach=p.ach; if(_o(p.pows))PROG.pows=p.pows;
+  if(_o(p.decRew))PROG.decRew=p.decRew;
   if(typeof p.maxCombo==='number')PROG.maxCombo=p.maxCombo; if(typeof p.dodges==='number')PROG.dodges=p.dodges;
   if(p.hopped)PROG.hopped=p.hopped; if(p.wxBoth)PROG.wxBoth=p.wxBoth; if(p.fogWalked)PROG.fogWalked=p.fogWalked;
-  if(p.seasons)PROG.seasons=p.seasons; if(p.musicUn)PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
+  if(_o(p.seasons))PROG.seasons=p.seasons; if(_o(p.musicUn))PROG.musicUn=p.musicUn; if(p.musicSel)PROG.musicSel=p.musicSel;
   if(typeof p.bestStreak==='number')PROG.bestStreak=p.bestStreak;
   if(typeof p.lastBonusDay==='number')PROG.lastBonusDay=p.lastBonusDay;
   /* merged field by field rather than assigned, so a save from before the Daily existed
      still comes back with every key present and nothing reads undefined */
-  if(p.daily){ var pd=p.daily, dk;
+  if(_o(p.daily)){ var pd=p.daily, dk;
     for(dk in PROG.daily){ if(typeof pd[dk]!=='undefined' && pd[dk]!==null) PROG.daily[dk]=pd[dk]; }
     if(!PROG.daily.hist || !PROG.daily.hist.length) PROG.daily.hist=[]; }
-  if(p.playlist)PROG.playlist=p.playlist; if(!PROG.playlist||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1};
-  if(p.fins)PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
+  if(_o(p.playlist))PROG.playlist=p.playlist; if(!_o(PROG.playlist)||!Object.keys(PROG.playlist).length)PROG.playlist={moonwalk:1};
+  if(!_o(PROG.chars))PROG.chars={jimothy:1}; if(!_o(PROG.decRew))PROG.decRew={};
+  if(!_o(PROG.eggs))PROG.eggs={}; if(!_o(PROG.ach))PROG.ach={}; if(!_o(PROG.unlocked))PROG.unlocked={toadling:1};
+  if(_o(p.fins))PROG.fins=p.fins; if(typeof p.fin==='string')PROG.fin=p.fin;
   if(typeof p.shopDay==='number')PROG.shopDay=p.shopDay;
   if(typeof p.rewardDay==='number')PROG.rewardDay=p.rewardDay;
   if(typeof p.rewardStreak==='number')PROG.rewardStreak=p.rewardStreak;
   if(typeof p.tokens==='number')PROG.tokens=p.tokens;
-  if(p.codes)PROG.codes=p.codes;
+  if(_o(p.codes))PROG.codes=p.codes;
   if(typeof p.roads==='number')PROG.roads=p.roads;
   if(p.taughtPower)PROG.taughtPower=p.taughtPower; if(p.taughtEgg)PROG.taughtEgg=p.taughtEgg;
   if(p.finsRefunded)PROG.finsRefunded=1; }catch(e){} })();
@@ -3136,8 +3152,15 @@ function canAffordRevive(){ return reviveTokens()>0 || (PROG.caps||0)>=REVIVE_CO
 function reviveRun(){ if(!canRevive() || !canAffordRevive())return;
   var btn=$('go-continue'); var ads=window.LW_ADS||{};
   if(typeof ads.rewarded!=='function'){ doRevive(); return; }
+  /* ⛔ NEVER HAND THE ONLY KEY TO SOMEONE ELSE'S CODE. The re-enable used to
+     live solely inside the ad SDK's callback, so an SDK that threw or simply
+     never called back left Continue dead for the rest of the run. */
   if(btn){ btn.disabled=true; }
-  ads.rewarded(function(ok){ if(btn) btn.disabled=false; if(ok) doRevive(); });
+  var _done=false;
+  var _rescue=setTimeout(function(){ if(_done)return; _done=true; if(btn) btn.disabled=false; }, 20000);
+  function _back(ok){ if(_done)return; _done=true; clearTimeout(_rescue);
+    if(btn) btn.disabled=false; if(ok) doRevive(); }
+  try{ ads.rewarded(_back); }catch(e){ _back(false); }
 }
 function doRevive(){ if(!G || !canAffordRevive())return;
   if(reviveTokens()>0) PROG.tokens=reviveTokens()-1;   // the free one first, always
@@ -3279,22 +3302,33 @@ function openDailyReward(){
     +'<div style="display:flex;gap:5px;margin-bottom:16px">'+rewardPills(cyc)+'</div>'
     +goal
     +'<div style="color:#e8dcc8;font:700 18px Nunito,system-ui;margin-bottom:16px">Today: '+line+'</div>'
-    +'<button id="reward-claim" class="btn primary" style="width:100%">Claim</button></div>';
+    +'<button id="reward-claim" class="btn primary" style="width:100%">Claim</button>'
+    +'<button id="reward-later" class="btn" style="width:100%;margin-top:8px;min-height:48px">Later</button></div>';
   if(tgt){ var gcv=_rewardEl.querySelector('#reward-goal-cv');
     drawSkinPreview(gcv, tgt, 0.85, '');            // the prize in its own art, not as you happen to be dressed
     if(tgt.art && tgt.sheet){ var gim=spr(tgt.sheet+'/idle');
       if(!imgReady(gim)) gim.addEventListener('load', function(){ drawSkinPreview(gcv, tgt, 0.85, ''); }); } }
   _rewardEl.querySelector('#reward-claim').onclick=function(){ claimReward(streak, caps, skin, token); };
+  /* ⛔ A ROOM NEEDS A DOOR. This overlay sits at z-index 300 over everything
+     and its only way out used to be Claim, which is also the one path that can
+     throw. Backdrop, Later and system back all close it now; the reward is not
+     lost by closing, because rewardReady() still returns true tomorrow. */
+  _rewardEl.querySelector('#reward-later').onclick=function(){ closeDailyReward(); };
+  _rewardEl.onclick=function(e){ if(e.target===_rewardEl) closeDailyReward(); };
   _rewardEl.style.display='flex';
 }
+function rewardOpen(){ return !!(_rewardEl && _rewardEl.style.display==='flex'); }
+function closeDailyReward(){ if(_rewardEl){ _rewardEl.style.display='none'; } }
 function claimReward(streak, caps, skinId, token){
   if(!rewardReady()){ if(_rewardEl)_rewardEl.style.display='none'; return; }
   PROG.caps=(PROG.caps||0)+caps; PROG.rewardDay=dayIndex(); PROG.rewardStreak=streak;
   if(token) PROG.tokens=(PROG.tokens||0)+1;
   var granted=null;
   if(skinId && !charOwned(skinId)){ PROG.chars[skinId]=1; granted=charById(skinId); }
-  saveProg(); sfx('unlock'); try{ achCheck(); }catch(e){}
-  if(_rewardEl)_rewardEl.style.display='none';
+  /* hide FIRST. Everything after this point can throw (achCheck, revealChar,
+     paintDaily) and a throw used to leave the overlay pinned over the game. */
+  closeDailyReward();
+  saveProg(); try{ sfx('unlock'); }catch(e){} try{ achCheck(); }catch(e){}
   if(granted){ revealChar(granted); }
   else if(token){ revealToken(); }
   try{ paintDaily(); }catch(e){}
@@ -4892,6 +4926,7 @@ function boot(){
   window.addEventListener('popstate', function(){
     var rv=$('bin-reveal');
     if(rv && rv.classList.contains('on')){ revealNext(); armBack(); return; }   // a card closes first
+    if(rewardOpen()){ closeDailyReward(); armBack(); return; }                  // and so does the daily reward
     var id=curScreen;
     if(id==='s-play'){ pauseRun(); armBack(); return; }
     if(id==='s-pause'){ resumeRun(); armBack(); return; }
@@ -4931,7 +4966,10 @@ function boot(){
      bumps while the registered URL never changed. Survivable only because the
      no-cache header rule covers every ?v= URL (verified BYPASS at the edge); do
      not rely on that twice. */
-  var SWV='73';
+  /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
+     numbers are the same number now; test/jimothy-check.js fails the build if
+     they ever separate again. */
+  var SWV='77';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5338,7 +5376,7 @@ var SUP=(function(){
 
    ⛔ Nothing is ever pushed before a pull has happened, or a fresh install would
    overwrite a full collection with nothing. ===== */
-var CLOUD_KEYS_SET=['chars','fins','musicUn','ach','eggs','pows','seasons','playlist','codes'];
+var CLOUD_KEYS_SET=['chars','fins','musicUn','ach','eggs','pows','seasons','playlist','codes','decRew'];
 var CLOUD_KEYS_MAX=['caps','capsEver','pulls','flowers','hopped','dodges','maxCombo','bestStreak',
                     'roads','tokens','advPaid','fogWalked','wxBoth','shopDay','rewardDay','rewardStreak',
                     'taughtPower','taughtEgg','lastBonusDay','finsRefunded'];

@@ -222,6 +222,7 @@ function staticChecks(src) {
 function liveChecks() {
   const c = boot(html, { search: '?ndtest=1' });
   const DEV = c.window.ND_DEV;
+
   ok('boot: the game script runs to completion', !!DEV);
   if (!DEV) return;
 
@@ -271,14 +272,32 @@ function liveChecks() {
   DEV.start(0); DEV.winLevel();
   ok('loop: winning writes progress', !!DEV.prog().cleared, JSON.stringify(DEV.prog().cleared).slice(0, 60));
 
-  /* Determinism of the board build. Counting types is NOT enough: nReds /
-     nGreen / nPurple are fixed per level, so a completely different shuffle
-     yields identical counts. Fingerprint WHICH peg got which colour. */
+  /* Determinism of the DAILY board. This is the only board the game promises is
+     identical for everybody (index.html:769). Counting peg types is NOT enough:
+     nReds / nGreen / nPurple are fixed per level, so a completely different
+     shuffle produces identical counts. Fingerprint WHICH peg got which colour.
+     Campaign meadows deliberately reshuffle their colours on every attempt
+     (assignColours falls back to Math.random when no seeded rng is passed), so
+     they are asserted to be VARIED, not fixed. */
   const fingerprint = () => DEV.state().pegs.map(p => p.type[0] + Math.round(p.x) + ',' + Math.round(p.y)).join('|');
-  DEV.start(1); const d1 = fingerprint();
-  DEV.start(1); const d2 = fingerprint();
-  ok('determinism: the same meadow builds identically twice', d1 === d2,
-    d1 === d2 ? '' : 'board differs between two builds of the same level');
+  DEV.start(DEV.dailyLevel()); const d1 = fingerprint();
+  DEV.start(DEV.dailyLevel()); const d2 = fingerprint();
+  ok('determinism: the Daily Bloom builds the same board twice', d1 === d2,
+    d1 === d2 ? '' : 'two builds of the same daily differ');
+
+  DEV.start(1); const r1 = fingerprint();
+  DEV.start(1); const r2 = fingerprint();
+  ok('variety: a campaign meadow reshuffles its blooms on a replay', r1 !== r2);
+
+  /* PLAY MEANS PLAY, proven through the live code: a fresh player resumes at
+     meadow 0, and a player with meadow 0 cleared resumes at meadow 1. */
+  const virgin = boot(html, { search: '?ndtest=1' });
+  ok('front door: a fresh player resumes at the first meadow',
+    virgin.window.ND_DEV.firstUncleared() === 0,
+    'resumed at ' + virgin.window.ND_DEV.firstUncleared());
+  const resumed = boot(html, { search: '?ndtest=1', storage: { nd_prog: JSON.stringify({ cleared: { L0: 1, L1: 1 } }) } });
+  ok('front door: a returning player resumes past what they cleared',
+    resumed.window.ND_DEV.firstUncleared() === 2, 'resumed at ' + resumed.window.ND_DEV.firstUncleared());
 
   /* Earn cap. Fresh sandbox: winLevel() above already banked some sunbeams and
      a cap test that starts from a used-up ledger proves nothing. */

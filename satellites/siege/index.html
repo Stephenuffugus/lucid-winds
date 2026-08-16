@@ -41,13 +41,15 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 /* ---------- field: watch board on top, lane strip on the floor ---------- */
 #field{flex:1 1 auto;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 
-/* The board takes only the height its content needs and the LANE takes every
-   pixel that is left. That inverts the way the coordinator asked for: a sparse
-   wave means a big lane, a busy wave means a big board, and neither ever leaves
-   a hole between them. The briefing panel below supplies real content on
-   exactly the waves where the board would otherwise be thin. */
-#board{flex:0 0 auto;max-height:70%;overflow-y:auto;padding:6px 8px 2px;
-  display:grid;gap:6px;align-content:start;
+/* Slack collected in ONE place is a void. Slack distributed as spacing is a
+   layout. So the board fills the column and `align-content:space-between`
+   spreads whatever is left over across the gaps between panels, which means a
+   thin wave breathes instead of leaving a hole. Stretching the panels
+   themselves was the other option and it only puts the same emptiness inside a
+   box. The briefing panel supplies real content on exactly the early waves
+   where the board would otherwise be thin. */
+#board{flex:1 1 auto;min-height:0;overflow-y:auto;padding:8px 8px 4px;
+  display:grid;gap:6px;align-content:space-between;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 #board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
 #board .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
@@ -89,7 +91,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #pnotes .note svg{vertical-align:-9px;margin-right:5px}
 
 /* ---------- lane ---------- */
-#lanebox{flex:1 1 auto;position:relative;overflow:hidden;min-height:120px;
+#lanebox{flex:0 0 auto;position:relative;overflow:hidden;height:clamp(140px,22vh,260px);
   border-top:1px solid var(--line);
   background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
 /* a crenellated lip along the top edge so the air over the lane reads as the
@@ -1596,8 +1598,7 @@ var ENEMY_NOTE = {
 
 /* one line of teaching per early wave, in the order a player meets the idea */
 var WAVE_NOTE = {
-  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>' +
-     '{BLADE}</b> a swing and grows every wave, so it never stops mattering.',
+  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>{BLADE}</b> a swing and grows every wave.',
   2: 'Scrap arrives every wave whether you spend it or not. Scrap in your hand is scrap doing nothing.',
   3: 'Tap a trap in the lane during the build phase to sell it back for every coin you put in.',
   11: 'A ballista cannot see past a wall, including your own. The sight line is drawn while you place one.'
@@ -1852,8 +1853,8 @@ function drawNotes(order, trapCount) {
     lines.push('<div class="note">' + WAVE_NOTE[G.wave].replace('{BLADE}', SIM.playerDamage(G.wave)) + '</div>');
   }
   if (G.wave === 1 && G.traps[CONFIG.STARTER_CELL]) {
-    lines.push('<div class="note">The watch before you left a <b>spike strip</b> in the ground at cell ' +
-      CONFIG.STARTER_CELL + '. It bites every body on the ground that stands on it. Your first purse buys one more thing.</div>');
+    lines.push('<div class="note">The watch left a <b>spike strip</b> at cell ' + CONFIG.STARTER_CELL +
+      '. It bites anything on the ground standing on it. Your purse buys one more.</div>');
   }
   /* the moment the board runs out and DEEPEN starts to matter */
   var free = 0;

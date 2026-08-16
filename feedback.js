@@ -410,7 +410,7 @@
     r = r || fyRect(el);
     return !!(r && r.width > 0 && r.height > 0);
   }
-  function fyIsControl(el, vw) {
+  function fyIsControl(el, vw, vh) {
     var tag = (el.tagName || '').toUpperCase();
     if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' ||
         tag === 'TEXTAREA' || tag === 'LABEL' || tag === 'SUMMARY') return true;
@@ -421,23 +421,27 @@
     try { oc = (el.getAttribute && el.getAttribute('onclick')) || el.onclick; } catch (e) {}
     if (oc) return true;
     if (/(^|[\s_-])(btn|button|cta|tap|key|pad|chip|tile)([\s_-]|$)/i.test(fyCls(el))) return true;
-    // A div with cursor:pointer is a button in every game on this fleet. Size
-    // guard: a full-width container with a pointer cursor is a background, and
-    // treating it as a control would hide the fab on the whole page.
+    // A div with cursor:pointer is a button in every game on this fleet.
+    // Guard: a FULL-BLEED surface with a pointer cursor is a tap-anywhere
+    // background, and treating that as a control would hide the fab on the
+    // whole page. Guard on both axes, not just width — Bramblewick's settings
+    // rows are 94% of a phone's width and 7% of its height, and a width-only
+    // guard threw them out. They are the exact control this whole change is
+    // about, so they have to survive this test.
     if (fyCS(el).cursor === 'pointer') {
       var r = fyRect(el);
-      if (r && r.width <= vw * 0.9) return true;
+      if (r && !(r.width >= vw * 0.9 && r.height >= vh * 0.4)) return true;
     }
     return false;
   }
   // Does this subtree contain anything we can identify as a control? Bounded
   // walk, no selector engine, same predicate as the point test so the two can
   // never disagree. Only ever called when a cover has already been found.
-  function fyHasControls(root, vw) {
+  function fyHasControls(root, vw, vh) {
     var stack = [root], budget = 300, n, i;
     while (stack.length && budget-- > 0) {
       n = stack.pop();
-      if (n !== root && fyIsControl(n, vw) && fyVisible(n)) return true;
+      if (n !== root && fyIsControl(n, vw, vh) && fyVisible(n)) return true;
       var kids = n.children;
       if (kids) for (i = 0; i < kids.length && stack.length < 300; i++) stack.push(kids[i]);
     }
@@ -496,7 +500,7 @@
         var r = fyRect(el);
         if (!r) continue;
         if (!fyVisible(el, r)) continue;
-        if (fyIsControl(el, vw)) { res.blocked = true; res.why = 'control'; return res; }
+        if (fyIsControl(el, vw, vh)) { res.blocked = true; res.why = 'control'; return res; }
         if (mode === 'control') continue;
         if (cover) continue;
         if (tag === 'CANVAS' || tag === 'VIDEO' || tag === 'IMG' || tag === 'SVG') continue;
@@ -517,7 +521,7 @@
       // the fallback for sheets whose buttons we cannot see at all (drawn on a
       // canvas, or exotic enough that fyIsControl misses them), which is
       // exactly the case where being blunt is the only option left.
-      if (cover && fyHasControls(cover, vw)) cover = null;
+      if (cover && fyHasControls(cover, vw, vh)) cover = null;
       if (cover) {
         for (j = coverIdx + 1; j < stack.length; j++) {
           var u = stack[j], utag = (u.tagName || '').toUpperCase();

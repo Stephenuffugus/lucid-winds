@@ -191,6 +191,8 @@ function makePage(g, opts = {}) {
       removeEventListener(t, fn) { const a = e._lis[t] || []; const i = a.indexOf(fn); if (i >= 0) a.splice(i, 1); },
       contains(o) { let n = o; while (n) { if (n === e) return true; n = n.parentNode; } return false; },
       getBoundingClientRect() { return rectOf(e); },
+      get offsetWidth() { return rectOf(e).width; },
+      get offsetHeight() { return rectOf(e).height; },
       classList: {
         add(c) { if (!hasClass(e, c)) e.className = (e.className + ' ' + c).trim(); },
         remove(c) { e.className = e.className.split(/\s+/).filter(x => x && x !== c).join(' '); },
@@ -245,6 +247,14 @@ function makePage(g, opts = {}) {
         const zz = zIndexOf(n, z);
         const r = rectOf(n);
         if (r.width > 0 && r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hits.push({ n, depth, z: zz });
+        // Generous, but not dishonest: a hidden element is still handed to the
+        // detector with its full rect (harsher than any browser, so the
+        // detector's own visibility gate has to do the work) — but we do NOT
+        // descend into a hidden subtree and invent a visible button inside it,
+        // because no browser has ever done that and no code should have to
+        // defend against it.
+        const st = cs(n);
+        if (st.display === 'none' || st.visibility === 'hidden') return;
         for (const c of n.children) walk(c, depth + 1, zz);
       })(html, 0, 0);
       hits.sort((a, b) => (b.z - a.z) || (b.depth - a.depth));
@@ -473,9 +483,13 @@ function scenarioChecks(R, g, src = SRC) {
     const p = pageScrolledControl(g);
     const s = boot(p, src);
     R.ok('S5.setupIsReal', overlaps(s.union(), p.rectOf(p.toggle)), 'fab really is on the toggle');
-    s.scan();
+    const r5 = s.scan();
     R.ok('S5.yielded', s.state() !== 'home', `state ${s.state()} (no overlay to detect — this ` +
       'is the case that overlay-only detection would have missed)');
+    // Caught this passing for the WRONG reason once: the cover rule was firing
+    // on the settings list while the width-only size guard threw the row out.
+    // The row is the point of the whole scenario, so name the reason.
+    R.eq('S5.becauseControl', r5 && r5.why, 'control', 'a full-width settings row IS a control');
     R.ok('S5.offTheToggle', !overlaps(s.union(), p.rectOf(p.toggle)), 'off the Reduced motion row');
     R.ok('S5.visible', s.visible(), 'still reachable');
     // and it comes back when the list scrolls on
@@ -488,12 +502,9 @@ function scenarioChecks(R, g, src = SRC) {
      ceiling, and when the ceiling fires it must be visible and stay visible. */
   {
     const p = makePage(g);
-    const wall = p.add(p.body, 'div', { id: 'wall', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
-    // a button under every single anchor, plus home
-    for (const [x, y] of [[0, 0], [0, p.vh / 2 - 40], [p.vw - 90, p.vh / 2 - 40], [p.vw - 90, 0],
-                          [0, p.vh - 90], [p.vw - 90, p.vh - 90]]) {
-      p.add(wall, 'button', { rect: { left: x, top: y, width: 120, height: 120 } });
-    }
+    // A page that is one giant button — home and all five anchors blocked.
+    p.add(p.body, 'div', { id: 'wall', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    p.add(p.body, 'button', { id: 'everything', cs: { zIndex: '5' }, rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
     const s = boot(p, src);
     s.scan();
     R.eq('S6.faded', s.state(), 'hidden', 'nowhere to park');

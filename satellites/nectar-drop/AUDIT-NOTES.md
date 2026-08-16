@@ -42,6 +42,24 @@ Same architecture as Super Slice: a 540x960 stage scaled `min(vw/540, vh/960)`
 rendered 9.7. `.title-sub` 14px rendered 9.7. Win and lose sublines 15px
 rendered 10.4.
 
+### P1 — the game's own headless test hook stepped the world wrongly
+`ND_DEV.fireAt` advanced the simulation with a bare `while(...) physics()` loop
+of its own. That is not a frame. `loop()` also does `G.t++` every frame, and hit
+blooms dissolve on a `G.t` deadline (`(G.t - pg.hitT) > ND_SOLID`). Under the
+hook `G.t` never moved, so **every bloom the ball touched stayed solid forever**
+and the ball ping-ponged in a field that should have been clearing.
+
+The first run of `check.mjs` duly reported "3 shots in 60 never resolve, the ball
+is trapped forever" — a P0-shaped finding that is **not true of the real game**.
+It took a look at the ball state (age 20,000, velocity near zero, wedged) to see
+the checker was being lied to by the hook.
+
+Fixed at the source rather than papered over in the checker: one frame of
+simulation now lives in a single `simFrame()` that both `loop()` and the dev
+hooks call. `fireAt` and `autoPlay` both go through it. With a real frame, all
+60 shots resolve. A probe that steps the world differently from the game is a
+probe that lies, and it lies in whichever direction happens to be convenient.
+
 ### P2 — the Daily Bloom is not as deterministic as its comment claims
 index.html:769 says "daily passes a seeded rng so every player gets the SAME
 board", and `assignColours` honours that. But `pegSwap()` (a gardener power,
@@ -109,10 +127,12 @@ No en or em dashes outside comments.
 4. **Raised the first-impression copy above the 11.2px rendered floor**
    (`.ribbon`, `.title-sub`, `.helprow`, `.btn.sm`, `h2.sc-h`, win/lose sublines,
    tutorial body).
+5. **Unified the frame step** into `simFrame()` so the headless hooks and the
+   render loop advance the world identically.
 
 ## IMPROVED
 
-5. **The Play button tells the truth about progress.** It reads `🌼 Play` cold
+6. **The Play button tells the truth about progress.** It reads `🌼 Play` cold
    and `🌼 Continue · meadow N` once anything is cleared, repainted every time
    the title screen comes back rather than only at boot.
 

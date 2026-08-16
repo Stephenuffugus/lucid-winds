@@ -148,6 +148,20 @@ option and be told "Locked in" while the host correctly ignores it.
 **N. Cosmetic:** `play.html` appends another copy of the same stylesheet every
 time a module loads.
 
+**O. Found while fixing, and it is a looking bug: eight of the nine podiums have
+no button hierarchy at all.** Every podium uses `.ps-btn.ghost` for "Another
+game" and "End night", and `.ps-btn.ghost` was only ever defined in
+`games/firefly/game.css`. On the other eight titles all three podium buttons
+render as identical gold slabs, so the button that ends the night looks exactly
+like the button you press every round. Nothing automated could see this and I
+only found it by grepping for the class after touching it.
+
+**P. Play again carries the dead into the next game.** `PartyShell.players()` is
+consumed by exactly one thing, every module's Play again handler, and it returned
+the raw roster. Everybody who had already left came back as a permanent row on
+the television with a frozen score and a seat in every "n of N" count for the
+whole next game.
+
 ### Checked and NOT a problem
 
 - Every module reaches `gameComplete` from every path: `phasePodium` /
@@ -167,7 +181,7 @@ time a module loads.
 
 ## WHAT I CHANGED
 
-Fixed, worst first: **A, B, C, D, E, F, G, H, I, J, K, L, M, N.**
+Fixed, worst first: **A through P, all of them.**
 
 Shell:
 - `host.js`: lobby now carries a "Pick another game" control (A). Players away
@@ -196,13 +210,31 @@ Games:
   who voted (I).
 - `mothlight`: podium gained Another game and End night (J), and a `names` guard (K).
 - `bearing`: the target goes only to the Lantern, resent on rejoin (L).
-- `liftingfog`: the host re-tells a rejoining phone that it is already locked (M).
+- `liftingfog` and `firstfrost`: the host re-tells a rejoining phone that it is
+  already locked, instead of ignoring a second tap in silence (M).
+- `shell.css` now owns `.ps-btn.ghost` and `firefly/game.css` no longer
+  redefines it, so all nine podiums finally have the same hierarchy (O).
+- `PartyShell.players()` returns the people who are actually here, and
+  `allPlayers()` keeps the full register for anything that wants it (P).
 
 ## VERIFICATION
 
-`node test/audit_static.js` from `party/`. It proves what source can prove and
-every assertion in it was watched fail on purpose first (see the header of that
-file for what each one caught when deliberately broken):
+`node test/audit_static.js` from `party/`, and it is wired into `test/all.sh`
+ahead of the browser gates so a broken wire is caught in a second instead of
+after four hundred seconds of driving. It proves what source can prove, and
+**every one of its eleven assertions was watched fail on purpose** by mutating
+the real tree and restoring it (see the header of that file for what each one
+caught). Two of them were wrong on the first attempt and the watching is the only
+reason I know:
+  - the missing-file check crashed with a node stack trace instead of reporting,
+    because everything below it reads the file that is not there. A checker that
+    dies instead of failing is not a checker.
+  - the identity check passed a mutation that moved the tab marker read to
+    localStorage, because it only looked for the string anywhere in the file. It
+    now asserts the read, the write and the keying separately, and all three
+    mutations go red.
+
+What it proves:
 
 1. every catalogue slug has host.js, player.js, game.css, content.js
 2. every host module's bank global is the one its content.js actually sets
@@ -215,7 +247,16 @@ file for what each one caught when deliberately broken):
 8. the identity is per tab, not per browser (the bug that capped practice
    rooms at one player cannot silently come back)
 9. the early end in every title measures presence, not the start roster
-10. every podium offers a way out of the room
+10. no secret rides on a broadcast phase payload (Bearing's hidden target)
+11. every podium and the lobby offer a way out of the room, and closing the room
+    says goodbye rather than looking like a dead host
+
+**Not covered by any gate, and it should be:** the two scoring changes (the
+Understudy tie rule and the First Frost survivor bonus) are arithmetic inside an
+IIFE that needs a DOM to load, so nothing in node can reach them. `test/drive.js`
+exercises the code path but asserts nothing about the numbers. Somebody should
+watch a three player Understudy round where all three vote differently and check
+it reads "You all said somebody different" and pays 20, not 180.
 
 ## STILL WORRIES ME
 

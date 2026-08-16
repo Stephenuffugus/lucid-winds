@@ -1,29 +1,24 @@
-// Dewball headless smoke test. Run: NODE_PATH=/workspaces/lucid-winds/node_modules node smoke.js
-var puppeteer = require('puppeteer');
-var path = require('path');
-var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
+// Dewball headless smoke test. Run: node smoke.js
+//
+// 2026-08-16: DRIVER SWAPPED FROM CHROMIUM TO node_harness.js. Nothing in this
+// test renders — it is a physics/ladder/flood-fill gate — so the browser bought
+// nothing but a 1.5-core tax on a box that is usually busy. ~15 seconds now.
+// ⚖️ Same engine, not a model of it: absorbAll ceilings match the browser figures
+//    recorded in LANDMARKS.md to the decimal.
+// ⛔ WHAT THIS NO LONGER WATCHES: console errors and resource loads. There is no
+//    console and no network here, so a broken <script src>, a 404 asset or a CSS
+//    failure will NOT be caught by this gate any more. Those are page-load
+//    concerns and they belong to the fleet's page_health check, which drives a
+//    real browser. Uncaught exceptions during the run are still caught (below).
+var H = require('./node_harness.js');
 
 (function(){
-  puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbox'] })
-  .then(function(browser){
-    var errors = [];
-    browser.newPage().then(function(page){
-      page.on('pageerror', function(e){ errors.push(String(e)); });
-      page.on('console', function(m){
-        if(m.type()!=='error') return;
-        // file:// runs can't load /sunbeam-sdk.js or the optional ground-art override — expected
-        if(/ERR_FILE_NOT_FOUND|Failed to load resource/.test(m.text())) return;
-        // ...and a web app manifest is only fetchable over http(s), so file:// CORS-blocks it.
-        // Narrow on purpose: any OTHER cross-origin failure must still fail the run.
-        if(/Access to manifest at .*manifest\.webmanifest/.test(m.text())) return;
-        errors.push('console: '+m.text());
-      });
-
-      page.goto(url, { waitUntil:'networkidle0' })
-      .then(function(){ return page.waitForFunction('window.DB_DEV && typeof window.DB_DEV.start==="function"', {timeout:5000}); })
-      .then(function(){
-        return page.evaluate(function(){
-          var D = window.DB_DEV;
+  var errors = [];
+  (function(){
+    (function(){
+      var res;
+      try { res = (function(){
+          var D = H.boot({ seed: 12345 });
           D.start('level', 1);
           var startSize = D.size();
           var minSize = startSize, maxSize = startSize;
@@ -129,9 +124,10 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
             beforeAll: beforeAll, afterAll: afterAll,
             objectsLeft: stAfter.objects.length
           };
-        });
-      })
-      .then(function(res){
+        })(); }
+      catch(e){ errors.push(String(e && e.stack || e)); res = null; }
+      (function(res){
+        if (!res){ console.log('ERROR: ' + errors.join(' | ')); process.exit(1); }
         res.errors = errors;
         var ladderOK = true;
         for (var li = 0; li < res.ladder.length; li++){ if (!res.ladder[li].ok) ladderOK = false; }
@@ -142,14 +138,8 @@ var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1';
                    (res.movedFrames > 100) && (res.afterAll >= res.beforeAll) && ladderOK && courtsOK;
         console.log(JSON.stringify(res, null, 2));
         console.log(pass ? 'SMOKE_PASS' : 'SMOKE_FAIL');
-        browser.close();
         process.exit(pass?0:1);
-      })
-      .catch(function(err){
-        console.log('ERROR: '+err+' | pageerrors: '+JSON.stringify(errors));
-        browser.close(); process.exit(1);
-      });
-    });
-  })
-  .catch(function(e){ console.log('LAUNCH_FAIL: '+e); process.exit(1); });
+      })(res);
+    })();
+  })();
 })();

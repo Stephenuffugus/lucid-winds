@@ -77,6 +77,21 @@ try {
       cardText=nodes.scwave.textContent+' | '+nodes.schead.textContent+' | you '+nodes.scyou.textContent+' traps '+nodes.sctraps.textContent+' | bars '+(nodes.scbars.innerHTML.match(/barrow/g)||[]).length;
     }
     if(nodes.scoresheet.classList.contains('hidden')===false) nodes.scoresheet.classList.add('hidden');
+    if(t===5){
+      global.__w1={
+        title:nodes.btitle.textContent+'  |  '+nodes.bhp.textContent,
+        roster:(nodes.pips.innerHTML.match(/class="pip/g)||[]).length+' chips ('+
+               (nodes.pips.classList.contains('roomy')?'roomy':'compact')+'), '+nodes.rcount.textContent,
+        rostersvg:(/width="(\d+)" height="(\d+)"/.exec(nodes.pips.innerHTML)||[0,'?','?']).slice(1).join('x'),
+        kit:(nodes.kit.innerHTML.match(/kitchip/g)||[]).length+' chips ('+
+            (nodes.kit.classList.contains('roomy')?'roomy':'compact')+'), '+nodes.kcount.textContent,
+        share:(nodes.livebars.innerHTML.match(/barrow/g)||[]).length+' rows',
+        notesShown:!nodes.pnotes.classList.contains('hidden'),
+        notesTitle:nodes.ntitle.textContent+(nodes.nsub.textContent?' ['+nodes.nsub.textContent+']':''),
+        notes:(nodes.notes.innerHTML.match(/class="note"/g)||[]).length,
+        notesText:nodes.notes.innerHTML.replace(/<svg[\s\S]*?<\/svg>/g,'[sil] ').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()
+      };
+    }
     if(!global.__boss && !nodes.bbosswrap.classList.contains('hidden'))
       global.__boss='width '+nodes.bbossbar.style.width+'  |  '+nodes.bbossname.textContent;
   }
@@ -100,6 +115,15 @@ console.log('  live share  :', (nodes.livebars.innerHTML.match(/barrow/g)||[]).l
 console.log('  your lane   :', (nodes.kit.innerHTML.match(/kitchip/g)||[]).length, 'chips,', nodes.kcount.textContent);
 console.log('  boss bar    :', global.__boss || (nodes.bbosswrap.classList.contains('hidden')? 'never seen (no boss in this run)' : nodes.bbossname.textContent));
 console.log('');
+console.log('--- WAVE 1 BOARD, the wave every new player sees (build phase, frame 5) ---');
+var w1=global.__w1||{};
+console.log('  WAVE        :', w1.title);
+console.log('  roster      :', w1.roster, '| silhouette', w1.rostersvg);
+console.log('  your lane   :', w1.kit);
+console.log('  share       :', w1.share);
+console.log('  briefing    :', w1.notesShown? (w1.notesTitle+' -> '+w1.notes+' lines') : 'HIDDEN');
+if(w1.notesText) console.log('    "'+w1.notesText+'"');
+console.log('');
 console.log('--- GEOMETRY at 390x844 (arithmetic from the CSS, NOT a look) ---');
 console.log('  field height      :', FIELD_H+'px');
 console.log('  lane strip        :', LANE_H+'px  ('+Math.round(LANE_H/FIELD_H*100)+'% of field)');
@@ -107,5 +131,10 @@ console.log('  watch board       :', (FIELD_H-LANE_H)+'px ('+Math.round((FIELD_H
 console.log('  cell width        :', (PHONE.W/30).toFixed(1)+'px');
 console.log('  body drawn        :', Math.round(Math.max(26,Math.min(52,PHONE.W/30*2.6)))+'px wide x '+
   Math.round(Math.max(26,Math.min(52,PHONE.W/30*2.6))*1.35)+'px tall  (was 20x26)');
-console.log('  roster body       : 22px wide x 30px tall, static, on a 38px chip');
+console.log('  roster body       : 32x44 when the roster is sparse, 22x30 when it is busy');
+console.log('');
+console.log('  NO GAP GUARANTEE  : #board is flex:0 0 auto (natural height, max 70%),');
+console.log('                      #lanebox is flex:1 1 auto (min 120px). Leftover space');
+console.log('                      cannot sit BETWEEN them, it can only go into the lane.');
+console.log('                      Lane height therefore = field - board, always.');
 console.log('wave label:', nodes.scwave.textContent, '| over title:', nodes.ovtitle.textContent);
