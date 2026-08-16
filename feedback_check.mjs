@@ -340,6 +340,13 @@ function boot(page, src = SRC, extra = {}) {
     api: sandbox.LW_Feedback._fab,
     fire(type, ev) { for (const fn of (winLis[type] || [])) fn(Object.assign({ type }, ev)); },
     fireEl(el, type, ev) { for (const fn of (el._lis[type] || [])) fn(Object.assign({ type }, ev)); },
+    // Run pending timers shorter than `maxMs` — the settle hand-back (260ms)
+    // without also firing the scan reschedule (600ms+).
+    flush(maxMs) {
+      for (const [id, t] of [...timers]) {
+        if (t.ms <= maxMs) { timers.delete(id); t.fn(); }
+      }
+    },
     scan() { return sandbox.LW_Feedback._fab.scan(); },
     tick() { return sandbox.LW_Feedback._fab.tick(); },
     state() { return sandbox.LW_Feedback._fab.state(); },
@@ -461,8 +468,17 @@ function scenarioChecks(R, g, src = SRC) {
     const back = p.rectOf(s.fab);
     R.ok('S3.exactPosition', back.left === homeRect.left && back.top === homeRect.top,
       `${back.left},${back.top} vs ${homeRect.left},${homeRect.top}`);
+    // The return is animated too, so it lands on px coords first and hands the
+    // position back to the stylesheet once the move has played. Same pixels
+    // either way — but if that hand-back never ran, safe-area insets and
+    // rotation would stop working, so it is worth proving it happens.
+    R.ok('S3.animatedReturn', /px$/.test(s.fab.style.left), 'returns in px so the move can be seen');
+    s.flush(400);
     R.ok('S3.noInlineResidue', s.fab.style.left === '' && s.fab.style.top === '' &&
-      s.fab.style.right === '' && s.fab.style.bottom === '', 'inline anchors cleared');
+      s.fab.style.right === '' && s.fab.style.bottom === '', 'then the stylesheet takes back over');
+    const settled = p.rectOf(s.fab);
+    R.ok('S3.settleIsInvisible', settled.left === homeRect.left && settled.top === homeRect.top,
+      'and the hand-back does not move it by a pixel');
     R.ok('S3.visibleAgain', s.visible(), 'not left faded');
   }
 
@@ -523,6 +539,77 @@ function scenarioChecks(R, g, src = SRC) {
     const s = boot(p, src);
     s.scan(); s.scan();
     R.eq('S4d.untappableLayerIgnored', s.state(), 'home', 'pointer-events:none cannot take a tap from us');
+  }
+
+  /* S4e — THE SHOT THE COORDINATOR TOOK. Bramblewick's real shape: a narrow
+     centred panel with dark page either side of it, and body text inside it.
+     The first version of this fix parked mid-left and STRADDLED the panel's
+     left edge — half the circle on the panel, half on the page behind, across a
+     line of body text. Not on a control, so it obeyed the rule, and it looked
+     like a rendering fault. The parked chip must now end up wholly inside the
+     panel or wholly outside it, and never on the text. */
+  {
+    const p = makePage(g);
+    const page = p.add(p.body, 'div', { id: 'page', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    const panel = p.add(page, 'div', {
+      id: 'panel', cs: { zIndex: '10' },
+      rect: { left: 60, top: 40, width: p.vw - 120, height: p.vh - 80 }
+    });
+    // body copy filling most of the panel, and the control that started it all
+    const copy = p.add(panel, 'p', { id: 'copy', rect: { left: 76, top: 300, width: p.vw - 152, height: 220 } });
+    const toggle = p.add(panel, 'div', {
+      className: 'row', cs: { cursor: 'pointer' },
+      rect: { left: 76, top: p.vh - 190, width: p.vw - 152, height: 56 }
+    });
+    const s = boot(p, src);
+    R.ok('S4e.setupIsReal', overlaps(s.union(), p.rectOf(toggle)), 'fab starts on the toggle');
+    s.scan();
+    R.ok('S4e.yielded', s.state() === 'parked', `state ${s.state()}`);
+    const u = s.union(), pr = p.rectOf(panel);
+    const straddles = overlaps(u, pr) && !(u.left >= pr.left && u.right <= pr.right && u.top >= pr.top && u.bottom <= pr.bottom);
+    R.ok('S4e.noStraddle', !straddles,
+      `parked ${JSON.stringify(u)} vs panel ${JSON.stringify(pr)} — must be wholly in or wholly out`);
+    R.ok('S4e.notOnBodyText', !overlaps(u, p.rectOf(copy)), 'and not across the body copy');
+    R.ok('S4e.notOnToggle', !overlaps(u, p.rectOf(toggle)), 'and off the control it fled');
+    R.ok('S4e.inTheGutter', u.right <= pr.left || u.left >= pr.right,
+      'it found the dark gutter beside the panel');
+  }
+
+  /* S4f — a control fyIsControl CANNOT SEE: a plain div with its click handler
+     bound in JS. No role, no class, no pointer cursor. A stage selector is
+     exactly this, and a park landed on one. The parking test must reject it for
+     being CONTENT, not for being tappable — which is the whole reason the test
+     changed from "nothing tappable here" to "nothing here at all". */
+  {
+    const p = makePage(g);
+    const page = p.add(p.body, 'div', { id: 'page', rect: { left: 0, top: 0, width: p.vw, height: p.vh } });
+    const blocker = p.add(p.body, 'button', { id: 'why', rect: { left: 0, top: p.vh - 200, width: p.vw, height: 200 } });
+    // invisible-to-us "control" occupying the whole right gutter
+    const stage = p.add(page, 'div', {
+      id: 'stagesel', rect: { left: p.vw - 90, top: 120, width: 84, height: p.vh - 400 }
+    });
+    const s = boot(p, src);
+    s.scan();
+    R.ok('S4f.yielded', s.state() === 'parked', `state ${s.state()}`);
+    R.ok('S4f.avoidedUnknownControl', !overlaps(s.union(), p.rectOf(stage)),
+      `parked ${JSON.stringify(s.union())} vs an element we cannot identify as a control ` +
+      `${JSON.stringify(p.rectOf(stage))}`);
+  }
+
+  /* S4g — the move is a MOVE. A chip that is bottom-right one frame and
+     mid-left the next tells the player nothing. Transitioning left/top only
+     animates if the start value is in px, and at home it is `auto`. */
+  {
+    const p = pageSheet(g);
+    const s = boot(p, src);
+    R.ok('S4g.startsUnpinned', s.fab.style.left === '', 'home is anchored by the stylesheet');
+    s.scan();
+    R.ok('S4g.pinnedInPx', /px$/.test(s.fab.style.left) && /px$/.test(s.fab.style.top),
+      `left=${s.fab.style.left} top=${s.fab.style.top} — px on both ends or the transition is a teleport`);
+    R.ok('S4g.transitionDeclared', /\.lwfb-fab\{transition:[^}]*left \.18s/.test(src),
+      'and the stylesheet actually animates left/top at 180ms');
+    R.ok('S4g.dragKillsTransition', /b\.style\.transition = 'none'/.test(src),
+      'a finger drag turns the easing off so it does not lag the finger');
   }
 
   /* S5 — Bramblewick. No overlay at all; a settings toggle scrolled under it. */

@@ -312,12 +312,15 @@
              full-screen game wrapper or canvas from reading as a modal; without
              it the fab would hide itself on every canvas game forever.
 
-     WHAT IT DOES: parks, it does not vanish. It walks a list of anchors and
-     takes the first one with no control under it (top-left first — close ✕ is
-     usually top-right and primary buttons bottom-centre). Only if EVERY anchor
-     is blocked does it fade out, and even then a hard 20s ceiling brings it
-     back. Two consecutive clear scans return it to exactly where it was,
-     including a position the player dragged it to.
+     WHAT IT DOES: parks, it does not vanish. It searches a ring of candidate
+     spots around the viewport's edge band, NEAREST FIRST, and takes the first
+     that is EMPTY — every probe point resolving to the same big flat surface,
+     so the chip is neither on content nor straddling the edge of any. Only if
+     nothing on the ring is even control-free does it fade out, and even then a
+     hard 20s ceiling brings it back. Two consecutive clear scans return it to
+     exactly where it was, including a position the player dragged it to. Every
+     move is a 180ms transition, never a teleport — see fyPin for why that
+     needed doing on purpose.
 
      WHAT IT COSTS: one self-rescheduling timeout — 600ms after input, 2s idle,
      nothing at all while the tab is hidden or the form is open — doing at most
@@ -816,7 +819,7 @@
     watch = { el: el, badge: badge, state: 'home', home: fySnapshot(el),
               size: null, homeRect: null, clearRun: 0, hiddenAt: 0, errRun: 0,
               off: false, timer: null, activeUntil: Date.now() + FY.ACTIVE_FOR,
-              lastBump: 0, dragging: false, anchor: null, forced: false, last: null };
+              lastBump: 0, dragging: false, tier: null, settle: null, forced: false, last: null };
     // 'scroll' matters as much as 'pointerdown'. Bramblewick (2026-08-16, shot
     // on screen) has no overlay at all — an ordinary "Reduced motion" toggle in
     // a long settings list scrolls INTO the bottom-right corner and lands under
@@ -867,6 +870,7 @@
       drag = { sx: ev.clientX, sy: ev.clientY, moved: false,
                bx: b.getBoundingClientRect().left, by: b.getBoundingClientRect().top };
       if (watch) watch.dragging = true;   // the scanner keeps its hands off mid-drag
+      b.style.transition = 'none';        // a 180ms ease on a finger drag is lag
     });
     window.addEventListener('pointermove', function (ev) {
       if (!drag) return;
@@ -891,6 +895,7 @@
         if (watch) { watch.home = fySnapshot(b); watch.state = 'home'; watch.homeRect = null; watch.clearRun = 0; }
       }
       if (watch) watch.dragging = false;
+      b.style.transition = '';
       drag = null;
     });
     document.body.appendChild(b);
