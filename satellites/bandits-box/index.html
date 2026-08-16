@@ -919,6 +919,12 @@ function safe(fn){ return function(){ try{ return fn.apply(this,arguments); }cat
 var $ = function(s){ return document.querySelector(s); };
 var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+/* How tall the part of the page you can actually see is. innerHeight lies on
+   phones — it counts space behind the browser's own chrome, so a gesture
+   measured against it reaches further than the screen does. Anything sizing a
+   MOVEMENT should use this; the innerWidth uses elsewhere are stereo panning,
+   which wants the full width and is fine as it is. */
+function vpH(){ return (window.visualViewport&&window.visualViewport.height)||window.innerHeight; }
 
 var S = { vol:0.65, quiet:false, calm:false, buzz:true, soft:false, grip:0.5, big:false,
           last:'coon', theme:'night', fun:true, tally:false, word:'pop', total:0 };
@@ -1869,7 +1875,7 @@ tissue.addEventListener('pointermove',safe(function(e){
   setGlow(true,x,y,sp);
   if(dist<3) return;
   tLast={x:x,y:y};
-  var maxPull=Math.max(120,window.innerHeight*0.22);
+  var maxPull=Math.max(120,vpH()*0.22);
   if(tState==='ready'){
     if(dy<0){
       pullYv=Math.min(maxPull,pullYv-dy);
