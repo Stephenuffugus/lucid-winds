@@ -18,6 +18,7 @@ function mkNode(id){
       toggle:function(c,v){if(v===undefined)v=!n._cls[c];if(v)n._cls[c]=1;else delete n._cls[c];},
       contains:function(c){return !!n._cls[c];}},
     innerHTML:'', textContent:'', value:0, clientWidth:390, clientHeight:220,
+    _phoneH:220,
     appendChild:function(c){n.children.push(c);return c;},
     remove:function(){}, addEventListener:function(){}, removeEventListener:function(){},
     setAttribute:function(){}, getAttribute:function(){return null;},
@@ -28,6 +29,14 @@ function mkNode(id){
   return n;
 }
 ids.forEach(function(i){nodes[i]=mkNode(i);(startCls[i]||[]).forEach(function(c){if(c)nodes[i]._cls[c]=1;});});
+/* 390x844 phone: 48 topbar + 100 controls leaves ~660 for #field.
+   #lanebox is clamp(112px,17vh,190px) -> 17vh of 844 = 143px. */
+var PHONE={W:390,H:844,TOPBAR:48,CONTROLS:100};
+var FIELD_H=PHONE.H-PHONE.TOPBAR-PHONE.CONTROLS;
+var LANE_H=Math.max(112,Math.min(190,Math.round(PHONE.H*0.17)));
+nodes.lanebox.clientWidth=PHONE.W; nodes.lanebox.clientHeight=LANE_H;
+nodes.field.clientWidth=PHONE.W;  nodes.field.clientHeight=FIELD_H;
+nodes.board.clientWidth=PHONE.W;  nodes.board.clientHeight=FIELD_H-LANE_H;
 var thrown=[];
 global.window={ AudioContext:null, webkitAudioContext:null,
   addEventListener:function(){}, matchMedia:function(){return {matches:false};},
@@ -77,4 +86,22 @@ console.log('spawn pips rendered:', (nodes.pips.innerHTML.match(/class="pip"/g)|
 console.log('scorecard headline:', JSON.stringify(nodes.schead.textContent));
 console.log('scorecard you/traps:', nodes.scyou.textContent, '/', nodes.sctraps.textContent);
 console.log('scorecard bars:', (nodes.scbars.innerHTML.match(/barrow/g)||[]).length);
+console.log('');
+console.log('--- WATCH BOARD, read mid combat ---');
+console.log('  wave title  :', JSON.stringify(nodes.btitle.textContent), nodes.bhp.textContent);
+console.log('  wave hp bar :', nodes.bhpbar.style.width);
+console.log('  roster      :', (nodes.pips.innerHTML.match(/class="pip/g)||[]).length, 'chips,', nodes.rcount.textContent);
+console.log('  roster svg  :', (nodes.pips.innerHTML.match(/<svg/g)||[]).length, 'silhouettes at', /width="(\d+)" height="(\d+)"/.exec(nodes.pips.innerHTML||'')? RegExp.$1+'x'+RegExp.$2 : 'n/a');
+console.log('  live share  :', (nodes.livebars.innerHTML.match(/barrow/g)||[]).length, 'bars, YOU', nodes.syou.textContent, '|', nodes.stitle.textContent);
+console.log('  your lane   :', (nodes.kit.innerHTML.match(/kitchip/g)||[]).length, 'chips,', nodes.kcount.textContent);
+console.log('  boss bar    :', nodes.bbosswrap.classList.contains('hidden')? 'hidden (no boss alive)' : nodes.bbossname.textContent);
+console.log('');
+console.log('--- GEOMETRY at 390x844 (arithmetic from the CSS, NOT a look) ---');
+console.log('  field height      :', FIELD_H+'px');
+console.log('  lane strip        :', LANE_H+'px  ('+Math.round(LANE_H/FIELD_H*100)+'% of field)');
+console.log('  watch board       :', (FIELD_H-LANE_H)+'px ('+Math.round((FIELD_H-LANE_H)/FIELD_H*100)+'% of field)');
+console.log('  cell width        :', (PHONE.W/30).toFixed(1)+'px');
+console.log('  body drawn        :', Math.round(Math.max(26,Math.min(52,PHONE.W/30*2.6)))+'px wide x '+
+  Math.round(Math.max(26,Math.min(52,PHONE.W/30*2.6))*1.35)+'px tall  (was 20x26)');
+console.log('  roster body       : 22px wide x 30px tall, static, on a 38px chip');
 console.log('wave label:', nodes.scwave.textContent, '| over title:', nodes.ovtitle.textContent);

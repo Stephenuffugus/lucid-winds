@@ -70,7 +70,13 @@ function handle(m){
        page serves the whole catalogue (it used to hardcode mothlight) */
     /* the phone is told its own colour so a player can find themselves on the
        big screen, which is the entire point of having one */
-    T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG,color:assignColor(m.from)});
+    /* ⛔ A LATE ARRIVAL IS IN THE ROOM BUT NOT IN THE ROUND. Every module drops
+       messages from an id it does not know, so without this the newcomer gets
+       the real question with real buttons and every tap does nothing. Told the
+       truth, they wait thirty seconds and join the next one. */
+    var seat=(started&&!PARTICIPANTS[m.from])?'next':'in';
+    T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG,
+      color:assignColor(m.from),seat:seat});
     /* rejoin lands in the live phase: re-send current phase to that phone */
     if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG});
     pushPlayers();
@@ -88,7 +94,10 @@ function renderLobby(){
       '<span class="ps-dot" style="background:'+r[i].color+'"></span>'+
       esc(r[i].name)+(r[i].connected?'':' (away)')+'</div>';
   $('ps-roster').innerHTML=rows||'<div class="ps-prow dim">nobody yet</div>';
-  var n=r.length, btn=$('ps-start');
+  /* ⛔ COUNT PHONES THAT ARE ACTUALLY ANSWERING. Counting the roster let a room
+     of two start a four player title on the strength of two people who had
+     already closed their tab. */
+  var n=present().length, btn=$('ps-start');
   btn.disabled=n<MIN_PLAYERS;
   btn.textContent=n<MIN_PLAYERS?('Start ('+n+' of '+MIN_PLAYERS+' needed)'):'Start with '+n+' players';
 }
@@ -128,13 +137,31 @@ window.PartyShell={
       setInterval(function(){ try{ T.send({t:'hb',to:'*'}); }catch(e){} },2000);
       T.send({t:'hb',to:'*'});
       $('ps-start').addEventListener('click',function(){
-        if(roster().length<MIN_PLAYERS) return;
+        var here=present();
+        if(here.length<MIN_PLAYERS) return;
         started=true; completedCount=0; lastResults=null;
+        seatEverybody(here);
         $('ps-lobby').classList.remove('on');
-        document.dispatchEvent(new CustomEvent('party-started',{detail:{players:roster()}}));
+        /* only phones that are here get a row on the television and a score */
+        var line=roster().filter(function(p){ return p.connected; });
+        document.dispatchEvent(new CustomEvent('party-started',{detail:{players:line}}));
       });
+      /* ⛔ A LOBBY WITH ONE DISABLED BUTTON IS A TRAP. First Frost needs four
+         players. If the fourth never gets their phone on, the television has no
+         back, no other game and no start anyway, and the only way out is
+         somebody walking over to reload the tab and losing the room code. This
+         keeps the code and goes back to the menu. */
+      var back=$('ps-lobby-back');
+      if(back) back.addEventListener('click',function(){ window.PartyShell.backToPicker(); });
       res({code:CODE});
     });
+  },
+  /* who is in the round AND in the room. Modules count against this, never
+     against the roster they captured when the game started. */
+  presentPlayers:function(){
+    var out=[],k;
+    for(k in PLAYERS) if(PLAYERS[k].alive>0&&PARTICIPANTS[k]) out.push(k);
+    return out;
   },
   onPlayers:function(cb){ playerCb=cb; },
   onPlayerMessage:function(cb){ msgCb=cb; },

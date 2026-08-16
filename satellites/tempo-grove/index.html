@@ -87,6 +87,19 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+/* Way back to the arcade. SWS_EXIT was already defined here and correct, and not
+   one control in the game ever called it, so it had never run once in production.
+   This row is the caller it was missing.
+   TOP of the title pad, LEFT aligned with the stack. Read off this screen: the
+   title already carries THREE rows of buttons and the last of them (How / Wardrobe
+   / Grove / ⚙) lands inside the fleet feedback fab's band — the fab (/feedback.js)
+   holds roughly x=W-90..W-12, y=H-174..H-96 at z-index 2147482000 and no game can
+   outstack it, and this 540x960 stage fills a phone viewport. Top left is clear.
+   .pad.center is justify-content:center, so a first child rides up with the block
+   rather than being pushed off the bottom of a busy screen.
+   Reuses .btn.ghost so it is this game's own button, only sized to its label. */
+.xrow{display:flex; justify-content:flex-start; width:100%; max-width:420px; margin:0 auto 16px}
+.xrow .btn{width:auto; min-width:152px; padding:0 26px; font-size:17px}
 h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .hl{color:var(--gold); font-weight:800}
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
@@ -153,6 +166,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <div class="screen on" id="s-title">
     <div class="pad center">
+      <div class="xrow"><button class="btn ghost" id="b-arcade">◀ Arcade</button></div>
       <div class="title-word">TEMPO GROVE</div>
       <div class="title-sub">blocks that bloom on the beat</div>
       <div class="ribbon">Stack sun and moon quads while a sweepline crosses on the beat of the soundtrack, clearing every square you have grown.</div>
