@@ -361,11 +361,11 @@ you arrive at or past its depth, each a number rather than a mood. Reach rates m
 | depth | name | what it gives | reached by a full kit |
 |---|---|---|---|
 | 200 | THE SILL | one brace back | 64.9% |
-| 230 | THE DRY RIVER | 60 air | 46% |
+| 230 | THE DRY RIVER | 60 air | 45.6% |
 | 265 | THE LAMP ROOM | lamp full | 33.6% |
 | 300 | THE OLD SEA FLOOR | 15 kilos more room in the pack | 18.6% |
-| 350 | THE QUIET | hazard rate down 8 percent for the rest of the run | 11% |
-| 420 | THE DOOR | 500 cash, banked where you stand | 1% |
+| 350 | THE QUIET | hazard rate down 8 percent for the rest of the run | 5.9% |
+| 420 | THE DOOR | 500 cash, banked where you stand | 1.0% |
 
 Each stamps its name across the shaft the way a strata crossing does, sounds a low D1 and D3
 pair, and says what it gave in numbers. **A landmark can never change what the shaft generates**

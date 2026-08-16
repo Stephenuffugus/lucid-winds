@@ -604,9 +604,15 @@ content marker rather than trusting a 200.
   average 13.4 integrity of damage against a maximum of 6 braces. Resolved using §3.6's own
   "unless prevented by gear" clause (`BRACE_SHRUG_PER_LEVEL 0.25`); no specced hazard rate or
   damage value moved.
-- **§6.6's random-agent band of 60 to 200 ticks is grid geometry, not a tunable.** A uniform walk
-  hits the edge of a 20x20 in a median 55 ticks, and 19,392 of 20,000 runs die at a wall without
-  ever completing a circuit. WIREWORM reports the miss rather than inventing a fix.
+- **§6.6's random-agent band of 60 to 200 ticks contradicts §6.2's own 20x20 grid, and this is
+  now PROVEN rather than argued.** A plain random walk with the entire game deleted medians 54
+  ticks, and the random agent inside the fully running game also medians 54. The band is the
+  envelope of a 22 to 40 cell board. **Corrected value: 54 ticks.** Separately, DISCHARGE_INTERVAL
+  turned out to be under swept rather than a dead lever (the greedy band is reachable at 25 or
+  lower); it was still declined, because a valve that frequent deletes the oldest circuit faster
+  than a board filler can build the next one, which would buy the gate by destroying the overload
+  win condition. That win condition is also now measured for the first time: a filling agent
+  medians 1616 against the chaser's 681 and trips the breaker in 51% of runs against 2%.
 - **§3.5 mining "2 depth-ticks" contradicts the 5 level Drill upgrade** (it would dead end at
   level 2). Cost now scales with ore tier, per the plan's ruling.
 - **§1.1's Blob URL service worker does not work.** Chrome rejects blob: registrations, so that
