@@ -1650,7 +1650,7 @@ var SIM = {
 var $ = function (id) { return document.getElementById(id); };
 var EL = {};
 var G = null;                 /* the live SIM state */
-var UI = { sel: null, dirtyTraps: true, nodes: {}, trapNodes: {}, scWave: null, mode: 'campaign', seed: 1, reduce: false, paused: false };
+var UI = { sel: null, dirtyTraps: true, nodes: {}, trapNodes: {}, scWave: null, mode: 'campaign', seed: 1, reduce: false, paused: false, boardDirty: true, boardOver: null };
 
 /* --- silhouettes. Shape carries the meaning, colour only doubles it. --- */
 var SIL = {
@@ -1888,54 +1888,47 @@ function drawBoard() {
   drawNotes(order, tn);
 }
 
-/* The briefing. Everything in here is generated from the same tables the SIM
-   runs on, so it cannot drift away from what the wave actually does. */
+/* The briefing. Every line comes from GEN.briefingFor, which is pure and lives
+   in the SIM layer, so the harness measures exactly the text the player reads. */
 function drawNotes(order, trapCount) {
-  var lines = [], i, k, seen = {}, newOnes = [];
-  for (i = 0; i < order.length; i++) {
-    k = order[i];
-    if (seen[k]) continue;
-    seen[k] = 1;
-    /* a type is NEW if this is the first authored wave it appears in, or if it
-       is a boss variant that only exists past the twenty */
-    if (firstWaveFor(k) === G.wave || (G.wave > CONFIG.WAVES && ENEMIES[k].boss)) newOnes.push(k);
-  }
-  for (i = 0; i < newOnes.length; i++) {
-    k = newOnes[i];
-    lines.push('<div class="note">' + sil(k, 18, 25, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
-      '<b>' + ENEMIES[k].name + '.</b> ' + ENEMY_NOTE[k] +
-      ' <b>' + SIM.enemyHP(k, G.wave) + ' HP</b> at this wave.</div>');
-  }
-  if (WAVE_NOTE[G.wave]) {
-    lines.push('<div class="note">' + WAVE_NOTE[G.wave].replace('{BLADE}', SIM.playerDamage(G.wave)) + '</div>');
-  }
-  if (G.wave === 1 && G.traps[CONFIG.STARTER_CELL]) {
-    lines.push('<div class="note">The watch left a <b>spike strip</b> at cell ' + CONFIG.STARTER_CELL +
-      '. It bites anything on the ground standing on it. Your purse buys one more.</div>');
-  }
-  /* the moment the board runs out and DEEPEN starts to matter */
-  var free = 0;
+  var free = 0, i;
   for (i = CONFIG.BUILD_MIN_CELL; i <= CONFIG.BUILD_MAX_CELL; i++) if (!G.traps[i]) free++;
-  if (G.phase === 'build' && free <= 2 && trapCount > 0) {
-    lines.push('<div class="note">The lane is full. <b>DEEPEN</b> pays a trap price again on a cell you already own: ' +
-      'it stands a level deeper and comes back to full. That is where scrap goes from here.</div>');
-  }
-  /* endless modifiers explain themselves */
-  if (G.muts.length) {
-    for (i = 0; i < G.muts.length; i++) {
-      var m = mutByKey(G.muts[i]);
-      if (m) lines.push('<div class="note"><b>' + m.name + '.</b> ' + m.blurb + '</div>');
+  var lines = GEN.briefingFor(G.wave, G.seed, { laneFull: (G.phase === 'build' && free <= 2 && trapCount > 0) });
+  var html = '', newOnes = [];
+  for (i = 0; i < lines.length; i++) {
+    var L = lines[i], lead = '';
+    if (L.kind === 'enemy') {
+      newOnes.push(ENEMIES[L.type].name);
+      lead = sil(L.type, 18, 25, ENEMIES[L.type].boss ? '#d2a0a0' : '#9aa6bd');
     }
+    /* bold the first clause, which is the name of the thing */
+    html += '<div class="note">' + lead + L.text.replace(/^([^.]+\.)/, '<b>$1</b>') + '</div>';
   }
-  var html = lines.join('');
   EL.pnotes.classList.toggle('hidden', !html);
   EL.ntitle.textContent = (G.wave === 1) ? 'THE BRIEFING' : (newOnes.length ? 'NEW IN THIS WAVE' : 'FIELD NOTES');
-  EL.nsub.textContent = newOnes.length ? newOnes.map(function (x) { return ENEMIES[x].name; }).join(', ') : '';
+  EL.nsub.textContent = newOnes.join(', ');
+  /* while the briefing is the point of the screen it leads the column, so
+     anything that falls past the fold is a one chip panel and never half a
+     sentence of the tutorial */
+  EL.board.classList.toggle('teaching', !!html && G.wave <= 3);
   sigSet('notes', html, EL.notes, html);
 }
 
-/* the roster lives on the board in both phases now. This only handles the
-   endless modifier chips and the build phase hint. */
+/* Measured, not modelled. The board asks itself whether it overflows and says
+   so out loud. This is the only honest answer to "the same overflow will come
+   back on the wave with the longest description", because it does not care how
+   long the description is, what the font does, or how narrow the phone is. */
+function fitBoard() {
+  var b = EL.board;
+  if (!b) return;
+  var over = b.scrollHeight > b.clientHeight + 2;
+  if (over !== UI.boardOver) {
+    UI.boardOver = over;
+    b.classList.toggle('tight', over);
+    EL.boardfade.classList.toggle('hidden', !over);
+  }
+}
+
 function drawPips() {
   SIG.roster = null;
   drawBoard();
@@ -2020,7 +2013,7 @@ function render() {
   drawEntities();
   drawHUD();
   /* the board is fed at the SIM's 10Hz, not at 60fps */
-  if (UI.boardDirty) { UI.boardDirty = false; drawBoard(); }
+  if (UI.boardDirty) { UI.boardDirty = false; drawBoard(); fitBoard(); }
 }
 
 /* --- the wave scorecard: the sweep's own metric, handed to the player --- */
@@ -2375,7 +2368,7 @@ function wireInput() {
     if (e.key === 'ArrowRight' || e.key === 'd') held.right = false;
   });
   document.addEventListener('visibilitychange', function () { UI.paused = document.hidden; });
-  window.addEventListener('resize', function () { buildLane(); UI.dirtyTraps = true; });
+  window.addEventListener('resize', function () { buildLane(); UI.dirtyTraps = true; UI.boardOver = null; UI.boardDirty = true; });
 }
 
 function showLog() {
@@ -3380,7 +3373,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
    'shakewrap', 'wavev', 'scrapv', 'bladev', 'timernum', 'timerarc', 'cdbar', 'muts',
    'board', 'lanebox', 'btitle', 'bhp', 'bhpbar', 'bbosswrap', 'bbossbar', 'bbossname',
    'rtitle', 'rcount', 'stitle', 'syou', 'livebars', 'kit', 'kcount',
-   'pnotes', 'ntitle', 'nsub', 'notes',
+   'pnotes', 'ntitle', 'nsub', 'notes', 'boardfade',
    'titlesheet', 'scoresheet', 'oversheet', 'optsheet', 'logsheet'].forEach(function (k) { EL[k] = $(k); });
 
   loadSave();
