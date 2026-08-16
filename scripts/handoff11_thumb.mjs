@@ -20,7 +20,8 @@ if (!id) { console.log("usage: node scripts/handoff11_thumb.mjs <gameid> [--step
 
 const BASE = process.env.LW_URL || "http://127.0.0.1:8951";
 const OUTDIR = "portal-assets/thumbs";
-const OUT = OUTDIR + "/" + id + ".png";
+const outArg = (process.argv.find(a => a.startsWith("--out=")) || "").split("=")[1] || "";
+const OUT = outArg || (OUTDIR + "/" + id + ".png");   // --out keeps smoke tests off real assets
 const LIMIT = 150 * 1024;
 const stepArg = (process.argv.find(a => a.startsWith("--steps=")) || "").split("=")[1] || "";
 const hideArg = (process.argv.find(a => a.startsWith("--hide=")) || "").split("=")[1] || "";
