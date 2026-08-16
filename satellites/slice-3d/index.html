@@ -292,7 +292,12 @@ function saveProg(){
       PROG[k]=theirs+Math.max(0,mine-base); PROG['_b'+k]=PROG[k]; }
     if(okObj(disk.best)){ for(k in disk.best){ if(!(PROG.best[k]>disk.best[k])) PROG.best[k]=disk.best[k]; } }
   }
+  /* the _b* merge baselines are this tab's bookkeeping, not save data — keep them
+     out of the file so a future reader never mistakes one for progress */
+  var bs=PROG._bslabsCut, bc=PROG._bcleanDives;
+  delete PROG._bslabsCut; delete PROG._bcleanDives;
   LS.s('s3d_prog', JSON.stringify(PROG));
+  PROG._bslabsCut=bs; PROG._bcleanDives=bc;
 }
 PROG._bslabsCut=PROG.slabsCut||0; PROG._bcleanDives=PROG.cleanDives||0;
 

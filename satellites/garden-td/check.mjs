@@ -229,18 +229,26 @@ console.log('\n[7] difficulty curve');
   const p = await fresh();
   const r = await p.evaluate(() => {
     const D = window.__GTD, E = D.ENEMIES;
-    const load = L => {
+    /* buildWaves picks its threat groups at random, so ONE sample is noise, not a
+       curve. Take the median of 60 rolls per level and compare those. */
+    const one = L => {
       const w = D.buildWaves(L, false);
       let n = 0, hp = 0;
       w.forEach(g => g.forEach(x => { n += x.n; hp += x.n * ((E[x.t] && E[x.t].hp) || 200); }));
-      return { L, waves: w.length, n, hp: Math.round(hp * (1 + 0.10 * (L - 1))) };
+      return { waves: w.length, n, hp: hp * (1 + 0.10 * (L - 1)) };
+    };
+    const load = L => {
+      const s = []; let waves = 0, n = 0;
+      for (let i = 0; i < 60; i++) { const o = one(L); s.push(o.hp); waves = o.waves; n = o.n; }
+      s.sort((a, b) => a - b);
+      return { L, waves, n, hp: Math.round(s[30]) };
     };
     return [1, 2, 4, 6, 8, 10, 12].map(load);
   });
   const hps = r.map(x => x.hp);
   let rising = true;
   for (let i = 1; i < hps.length; i++) if (hps[i] <= hps[i - 1]) rising = false;
-  ok('total wave HP rises every step from L1 to L12', rising, r);
+  ok('median wave HP rises at every step from L1 to L12', rising, r);
   ok('L12 is at least 4x L1', hps[hps.length - 1] >= hps[0] * 4, { l1: hps[0], l12: hps[hps.length - 1] });
   ok('every level has at least 10 waves', r.every(x => x.waves >= 10), r);
   await done(p);
