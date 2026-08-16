@@ -1184,25 +1184,51 @@ function trueClueCandidates(W, rng, n) {
    already in the pool, and "the fix is already here" was the whole reason the
    first reinforcement loop stalled and threw a third of its worlds away. */
 function eliminatorsFor(W, U) {
-  var T = W.truth, out = [], i, a;
-  if (U.r !== T.r) out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] });
-  if (U.w !== T.w) out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] });
-  if (U.t !== T.t) out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] });
+  var T = W.truth, out = [], i, j, a;
+  // room
+  if (U.r !== T.r) {
+    out.push({ ty: 12, p: { k: "room", r: U.r }, ref: [] });
+    out.push({ ty: 5, p: { r: T.r, near: true }, ref: [] });
+    for (i = 0; i < 6; i++) out.push({ ty: 5, p: { r: i, near: false }, ref: [] });
+    if (ROOMS[U.r].staffOnly) out.push({ ty: 3, p: { r: U.r }, ref: [] });
+    out.push({ ty: 10, p: { r: U.r, t: T.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
+  }
+  // weapon
+  if (U.w !== T.w) {
+    out.push({ ty: 12, p: { k: "weapon", w: U.w }, ref: [] });
+    out.push({ ty: 7, p: { cls: WEAPONS[U.w].cls, no: true }, ref: [] });
+    out.push({ ty: 7, p: { cls: WEAPONS[T.w].cls, no: false }, ref: [] });
+    out.push({ ty: 2, p: { w: U.w, s: W.owner[U.w], r: W.start[U.w] }, ref: [W.owner[U.w]] });
+  }
+  // hour: several shapes, because "not that hour" is often already on the table
+  if (U.t !== T.t) {
+    out.push({ ty: 6, p: { t: U.t, m: "not" }, ref: [] });
+    for (i = 0; i < 6; i++) {
+      out.push({ ty: 6, p: { t: i, m: "before" }, ref: [] });
+      out.push({ ty: 6, p: { t: i, m: "after" }, ref: [] });
+      for (j = i + 2; j < 6; j++) out.push({ ty: 11, p: { lo: i, hi: j, e1: (i + U.t) % EVENTS.length, e2: (j + U.r) % EVENTS.length }, ref: [] });
+    }
+    out.push({ ty: 10, p: { r: U.r, t: T.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
+  }
+  // culprit
   if (U.c !== T.c) {
     for (i = 0; i < 3; i++) {
       a = ATTRS[i];
       if (SUSPECTS[T.c][a] !== SUSPECTS[U.c][a]) out.push({ ty: 4, p: { r: T.r, t: T.t, a: a, v: SUSPECTS[T.c][a] }, ref: [] });
     }
     if (W.motive[U.c] === 0) out.push({ ty: 8, p: { k: "none", s: U.c }, ref: [U.c] });
-    out.push({ ty: 1, p: { s: U.c, t: T.t, r: W.loc[U.c][T.t] }, ref: [U.c] });
+    for (i = 0; i < 6; i++) out.push({ ty: 1, p: { s: U.c, t: i, r: W.loc[U.c][i] }, ref: [U.c] });
+    if (ROOMS[U.r].staffOnly && !SUSPECTS[U.c].staff) out.push({ ty: 3, p: { r: U.r }, ref: [] });
+    for (i = 0; i < 6; i++) if (i !== U.c) out.push({ ty: 9, p: { a: U.c, b: i, t: U.t }, ref: [U.c, i] });
   }
-  if (U.r !== T.r && ROOMS[T.r].adj.indexOf(U.r) < 0) out.push({ ty: 5, p: { r: T.r, near: true }, ref: [] });
-  if (U.t !== T.t) out.push({ ty: 10, p: { r: U.r, t: U.t, d: U.t > T.t ? "after" : "before" }, ref: [] });
-  var keep = [], m;
+  /* Everything above is a PROPOSAL. Two filters decide: it has to be true of
+     the truth, and it has to actually kill the tuple it was proposed for. A
+     shape that fails either is dropped, never patched. */
+  var keep = [], m, ui = tupleIndex(U);
   for (i = 0; i < out.length; i++) {
     if (!clueTrueOf(out[i], T)) continue;
     m = clueMask(out[i]);
-    if (bitsGet(m, tupleIndex(U))) continue;   // it must actually kill U
+    if (bitsGet(m, ui)) continue;
     out[i].mask = m;
     keep.push(out[i]);
   }

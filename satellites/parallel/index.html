@@ -239,7 +239,7 @@ input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
 <div class="sheet" id="shSel">
   <button class="close" id="selClose" aria-label="Close">✕</button>
   <h2>THE SKY</h2>
-  <p id="selBlurb">Sixty levels in five clusters. A filled star means cleared. A bright star means you matched the best possible answer.</p>
+  <p id="selBlurb">A hundred levels in seven clusters. A filled star means cleared. A bright amber star means you matched the best possible answer, which the solver worked out before the level ever shipped.</p>
   <div id="selwrap"><svg id="sky" viewBox="0 0 320 900" aria-label="Level map"></svg></div>
   <div id="selfoot"></div>
   <div id="selbtns">
@@ -2390,6 +2390,38 @@ elBoard.addEventListener('touchend', function(e){
 
 wire('btnLevels', function(){ buildSky(); openSheet('shSel'); });
 wire('selClose', function(){ closeSheet('shSel'); });
+wire('selStats', function(){ buildStats(); openSheet('shStats'); });
+wire('statsClose', function(){ closeSheet('shStats'); });
+wire('nudge', function(){
+  if (!installEvt) return;
+  installAsked = true;
+  $('nudge').style.display = 'none';
+  try { installEvt.prompt(); } catch (e){}
+  installEvt = null;
+});
+
+$('ribbon').addEventListener('click', function(e){
+  var el = e.target;
+  while (el && el !== this && !el.getAttribute('data-goto')) el = el.parentNode;
+  if (!el || el === this) return;
+  var n = parseInt(el.getAttribute('data-goto'), 10);
+  if (!n) return;
+  var open = n === 1 || SAVE.best[String(n - 1)];
+  if (!open){ toast('Clear level ' + (n - 1) + ' first.'); return; }
+  startLevel(n, 'level');
+});
+
+$('statsRuns').addEventListener('click', function(e){
+  var el = e.target;
+  while (el && el !== this && !el.getAttribute('data-run')) el = el.parentNode;
+  if (!el || el === this) return;
+  var id = el.getAttribute('data-run');
+  if (id.charAt(0) === 'd' || id.charAt(0) === 's'){ toast('That one was a daily or a seed.'); return; }
+  var n = parseInt(id, 10);
+  if (!n) return;
+  closeSheet('shStats'); closeSheet('shSel');
+  startLevel(n, 'level');
+});
 wire('btnOpts', function(){ syncOpts(); openSheet('shOpts'); });
 wire('optClose', function(){ closeSheet('shOpts'); });
 wire('oExit', function(){ SWS_EXIT(); });
@@ -2405,7 +2437,7 @@ $('sky').addEventListener('click', function(e){
 });
 wire('selDaily', function(){
   closeSheet('shSel');
-  if (!G.daily){ buildDaily(); }
+  if (!G.daily || G.dailyISO !== todayISO()) buildDaily();
   startLevel(0, 'daily');
 });
 
@@ -2443,16 +2475,22 @@ wire('oWipe', function(){
   startLevel(1, 'level');
   closeSheet('shOpts');
 });
-wire('oShare', function(){
-  var link = location.origin + location.pathname + '?level=' + (G.mode === 'daily' ? 'daily' : G.num);
+/* Share carries the board itself, not the word today: a day link opens the same
+   generated level next week, a seed link opens the same level for anybody. */
+function shareCurrent(){
+  var base = location.origin + location.pathname, link, kind, id;
+  if (G.mode === 'daily'){ link = base + '?day=' + G.dailyISO; kind = 'daily'; id = G.dailyId; }
+  else if (G.mode === 'seed'){ link = base + '?seed=' + G.seedNum; kind = 'seed'; id = G.seedNum; }
+  else { link = base + '?level=' + G.num; kind = 'level'; id = G.num; }
   var b = SAVE.best[levelKey()];
-  var txt = (b ? shareLine(G.mode === 'daily' ? 'daily' : 'level',
-                           G.mode === 'daily' ? G.dailyId : G.num, b.moves, b.deaths)
-              : 'PARALLEL level ' + G.num) + '\n' + link;
+  var head = b ? shareLine(kind, id, b.moves, b.deaths)
+               : ('PARALLEL ' + (kind === 'level' ? 'level ' : kind === 'daily' ? 'day ' : 'seed ') + id);
+  var txt = head + '\n' + link;
   if (navigator.share){ navigator.share({ text:txt }).catch(function(){}); }
   else if (navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ toast('Copied.'); }, function(){}); }
   else toast(link);
-});
+}
+wire('oShare', shareCurrent);
 
 /* ================= DAILY AND SEED LINKS =================
    A daily is a real generated level: solved by the same BFS, checked for a
@@ -2501,11 +2539,22 @@ try {
   startAt = highest;
 } catch (e){}
 if (params.level && params.level !== 'daily') startAt = parseInt(params.level, 10) || 1;
-if (params.seed) startAt = ((parseInt(params.seed, 10) || 1) % LEVELS.length) + 1;
 
-if (params.level === 'daily'){ buildDaily(); startLevel(0, 'daily'); }
-else startLevel(startAt, 'level');
-setTimeout(buildDaily, 400);
+/* Link routing. A seed or a day link generates its board and verifies it with
+   the same BFS before anything is drawn, so a stranger's link can never hand
+   you an unsolvable level. If generation fails, the campaign opens instead. */
+var booted = false;
+if (params.seed){
+  var sd = parseInt(params.seed, 10);
+  if (!isNaN(sd) && buildSeed(sd >>> 0)){ startLevel(0, 'seed'); booted = true; }
+}
+if (!booted && (params.day || params.level === 'daily')){
+  if (buildDaily(params.day ? decodeURIComponent(params.day) : null)){
+    startLevel(0, 'daily'); booted = true;
+  }
+}
+if (!booted) startLevel(startAt, 'level');
+setTimeout(function(){ if (!G.daily) buildDaily(); }, 400);
 setTimeout(fitBoard, 60);
 setTimeout(fitBoard, 350);
 

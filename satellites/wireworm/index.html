@@ -682,8 +682,11 @@ function rescueCheck(st, ev) {
    the pickup, and it is reverted on the spot if it would cut the worm off from
    every terminal. It can trip the breaker, which is the point: sitting still
    near the threshold is a way to cash the overload, not only a punishment. */
-function creepStep(st, ev) {
-  if (!st.circuits.length) return;
+/* Every cell the current may legally spread into. Split out of creepStep so the
+   fairness rules are unit testable: a statistical sweep almost never SEES a
+   head adjacent candidate, so a sweep alone would have passed with the guard
+   deleted, which is a gate that cannot fail. */
+function creepCandidates(st) {
   var pend = pendingMask(st), g = CONFIG.GRID, cand = [], i, x, y, d, nx, ny, touch;
   var hx = cx(st.head), hy = cy(st.head);
   for (i = 0; i < CONFIG.CELLS; i++) {
@@ -699,6 +702,12 @@ function creepStep(st, ev) {
     }
     if (touch) cand.push(i);
   }
+  return cand;
+}
+
+function creepStep(st, ev) {
+  if (!st.circuits.length) return;
+  var cand = creepCandidates(st);
   if (!cand.length) return;
   var c = cand[rngInt(st, cand.length)];
   var circ = st.circuits[st.circuits.length - 1];
@@ -1951,28 +1960,52 @@ function suiteCreep() {
   TEST.eq('the creep never lights a cell next to the worm head', near, 0);
   TEST.eq('every creep event actually energized its cell', bad, 0);
 
-  /* the statistical version above almost never sees a head adjacent candidate,
-     so build the board where they are the ONLY candidates: a live ring at
-     chebyshev distance two leaves exactly the four cells around the head
-     touching live wire and nothing else on the board does. A creep here would
-     light a cell the player cannot react to, so the correct behaviour is to
-     decline to creep at all. */
-  var sN = newGame(64), g2 = CONFIG.GRID, hx2 = cx(sN.head), hy2 = cy(sN.head), rx, ry, ci2, ring = [];
-  for (i = 0; i < CONFIG.CELLS; i++) if (sN.cell[i] === TERM) { sN.cell[i] = EMPTY; sN.tcol[i] = 0; }
-  sN.pairs.length = 0;
-  for (rx = -2; rx <= 2; rx++) {
-    for (ry = -2; ry <= 2; ry++) {
-      if (Math.max(Math.abs(rx), Math.abs(ry)) !== 2) continue;
-      ci2 = (hy2 + ry) * g2 + (hx2 + rx);
-      if (hx2 + rx < 0 || hy2 + ry < 0 || hx2 + rx >= g2 || hy2 + ry >= g2) continue;
-      ring.push(ci2);
-      sN.cell[ci2] = WIRE; sN.cover[ci2] = 1; sN.ccol[ci2] = 1; sN.energized++;
-    }
+  /* The statistical sweep above almost never SEES a head adjacent candidate, so
+     on its own it is a gate that cannot fail. Test the filter directly on a
+     board built so the banned cells would otherwise qualify. */
+  var g2 = CONFIG.GRID;
+  function bare(seed) {
+    var s = newGame(seed), k;
+    for (k = 0; k < CONFIG.CELLS; k++) { s.cell[k] = EMPTY; s.tcol[k] = 0; s.cover[k] = 0; s.ccol[k] = 0; }
+    s.pairs.length = 0; s.energized = 0;
+    s.cell[s.head] = WIRE;
+    return s;
   }
-  sN.circuits.push({ id: 1, ci: 0, cells: ring.slice(), len: ring.length, tick: 0, score: 0 });
-  var evN = [];
-  for (i = 0; i < 20; i++) creepStep(sN, evN);
-  TEST.eq('the creep declines to fire when its only options are next to the head', sN.creeps, 0);
+  function light(s, k) { s.cell[k] = WIRE; s.cover[k] = 1; s.ccol[k] = 1; s.energized++; return k; }
+
+  var sA = bare(64), hA = sA.head;
+  light(sA, hA + 2);                              // two cells right of the head
+  var candA = creepCandidates(sA);
+  TEST.assert('the cell beside the head would otherwise qualify', (function () {
+    /* the guard is the only thing keeping hA + 1 out: it is empty and touches
+       live wire, so if this board stopped being interesting the gate below
+       would go quiet without anyone noticing */
+    return sA.cell[hA + 1] === EMPTY && sA.cover[hA + 2] > 0;
+  })());
+  TEST.assert('no creep candidate is next to the worm head', (function () {
+    var k;
+    for (k = 0; k < candA.length; k++) if (manhattan(candA[k], sA.head) <= 1) return false;
+    return true;
+  })(), candA.join(','));
+  TEST.ge('the same board still offers the creep somewhere else to go', candA.length, 1);
+
+  var sB = bare(65), hB = sB.head;
+  light(sB, hB + 2 * g2);                         // two rows below
+  sB.trail = [hB, hB + 2 * g2 + 1, hB + 2 * g2 - 1];
+  sB.charge = { pairId: 1, ci: 0, mult: 1, sliceStart: 1 };
+  var candB = creepCandidates(sB), inPend = 0;
+  var pendB = pendingMask(sB);
+  for (i = 0; i < candB.length; i++) if (pendB[candB[i]]) inPend++;
+  TEST.assert('the pending cells would otherwise qualify', pendB[hB + 2 * g2 + 1] === 1 && sB.cell[hB + 2 * g2 + 1] === EMPTY);
+  TEST.eq('no creep candidate sits inside the circuit you are drawing', inPend, 0);
+
+  var sC = bare(66), hC = sC.head;
+  light(sC, hC + 2);
+  sC.cell[hC + 3] = TERM; sC.tcol[hC + 3] = 1;
+  sC.cell[hC + 2 - g2] = PICK; sC.pickup = hC + 2 - g2;
+  var candC = creepCandidates(sC), stole = 0;
+  for (i = 0; i < candC.length; i++) if (sC.cell[candC[i]] === TERM || sC.cell[candC[i]] === PICK) stole++;
+  TEST.eq('no creep candidate is a terminal or the relief valve', stole, 0);
 
   /* fairness: never inside the circuit the player is drawing */
   var s4 = seeded(999);

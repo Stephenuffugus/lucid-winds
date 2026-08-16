@@ -36,7 +36,7 @@ const EXPORTS = [
   'maxDistPair', 'spawnPair', 'spawnPickup', 'newGame', 'step', 'hashState',
   'loadPct', 'makeQueue', 'safeTurns', 'agentRandom', 'agentGreedy', 'bfsTurn',
   'boardAscii', 'agentRandomSafe', 'turnSurvives', 'rescueCheck', 'dischargeOldest', 'completeCircuit', 'touchPickup', 'touchTerminal', 'fireOverload',
-  'agentFiller', 'pendingLen', 'pendingNew', 'fillWaypoint', 'survivalTurn', 'creepStep', 'comboWindow', 'comboMult',
+  'agentFiller', 'pendingLen', 'pendingNew', 'fillWaypoint', 'survivalTurn', 'creepStep', 'creepCandidates', 'comboWindow', 'comboMult',
   'loadSave', 'writeSave', 'defaultSave', 'migrateSave', 'updateSave',
   'recordRun', 'recordDaily', 'encodeLog', 'decodeLog',
   'TEST', 'runAllTests', 'playAgent', 'invariants'

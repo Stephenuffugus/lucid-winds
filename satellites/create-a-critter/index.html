@@ -1828,6 +1828,7 @@ function initStageInner(){
   sizeStage();
   applySky();
   requestAnimationFrame(tick);
+  return true;
 }
 function sizeStage(){
   if(!renderer) return;
@@ -2422,7 +2423,8 @@ function endBerry(){
   berry.items=[];
   $('berryHud').style.display='none';
   var newBest = berry.score>berry.best;
-  if(newBest){ berry.best=berry.score; lsSet('cac_berry_best',String(berry.best)); }
+  berry.best=lsMax('cac_berry_best',Math.max(berry.best,berry.score));
+  newBest = newBest && berry.best===berry.score;
   $('berryEndTitle').textContent='🎉 Berry Picnic!';
   $('berryFinal').textContent='🍓 '+berry.score+' berries!';
   $('berryBestLine').textContent = newBest?'A new best! Amazing!':'Your best picnic so far: '+berry.best;
@@ -2589,8 +2591,8 @@ function tossTick(dt,t){
 function startParade(){
   if(parade.on) return;
   var recs=NEST.slice(-6);
-  if(!recs.length) return;
-  initStage();
+  if(!recs.length){ toastHatch('Make a critter first, then the parade can begin!'); SFX.oops(); return; }
+  if(!initStage()){ oops('This device cannot show the 3D meadow, so there is no room for a parade.','nursery'); return; }
   parade.on=true; parade.members=[];
   if(critter){ scene.remove(critter); }
   clearFriends(); hideVisitor();
@@ -2650,7 +2652,7 @@ function cancelDateSelect(){
 }
 function startPlaydate(recA,recB){
   playdate.selecting=false; playdate.picked=[];
-  initStage();
+  if(!initStage()){ oops('This device cannot show the 3D meadow, so the playdate cannot happen here.','nursery'); return; }
   playdate.on=true; playdate.members=[]; playdate.phase=0; playdate.phaseT=0;
   if(critter){ scene.remove(critter); }
   clearFriends(); hideVisitor();
@@ -2959,7 +2961,9 @@ function persistCur(){
             habitDays:CUR.habitDays||[], habitDance:!!CUR.habitDance,
             bugSeed:CUR.bugSeed||null };
   if(ix>=0) NEST[ix]=rec; else NEST.push(rec);
-  jSet(K_NEST,NEST);
+  /* if this write fails the critter exists only on screen. Say so, once,
+     instead of letting the kid find out tomorrow that it never existed. */
+  if(!saveNest()&&!saveTroubleShown) saveTrouble(CUR.profile.name);
 }
 
 function showResult(){
@@ -3019,7 +3023,10 @@ function bringToLife(){
   $('hatchMsg').textContent='Your creature is puffing up…';
   /* let the hatch screen paint before the heavy lifting */
   setTimeout(function(){
-    initStage();
+    if(!initStage()){
+      oops('This device cannot show the 3D meadow, so your creature cannot hatch here. Your drawing is safe on the easel.','draw');
+      return;
+    }
     if(critter){ scene.remove(critter); critter=null; }
     var featsNow=FEATS.slice();
     var limbsNow=guide.on?guide.limbs.slice():[];
@@ -3234,7 +3241,13 @@ $('visAdopt').addEventListener('click',function(){
     drawing:thumb.toDataURL('image/png'),
     care:{f:80,h:92,t:Date.now()}, created:Date.now(),
     feats:visitorGen.feats, limbs:visitorGen.limbs, acc:null });
-  jSet(K_NEST,NEST);
+  if(!saveNest()){
+    /* the adoption did not stick, so do not pretend it did: put the count
+       back and tell them why. The visitor stays in the meadow. */
+    NEST=NEST.filter(function(r){ return r.id!=='v'+VIS.seed; });
+    saveTrouble(prof.name);
+    return;
+  }
   $('visitorDlg').classList.remove('on');
   hideVisitor();
   VIS={seed:(Math.floor(Math.random()*4294967296))>>>0, fed:[]};
@@ -3773,7 +3786,7 @@ $('freeGo').addEventListener('click',function(){
   SFX.happy(); SFX.spin();
   setTimeout(function(){
     NEST=NEST.filter(function(r){ return r.id!==rec.id; });
-    jSet(K_NEST,NEST);
+    saveNest([rec.id]);
     if(CUR&&CUR.id===rec.id){ CUR=null; if(critter){ scene.remove(critter); critter=null; } }
     renderNursery();
   },2100);
