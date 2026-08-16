@@ -256,7 +256,7 @@
 <div class="sheet" id="wantSheet">
   <div class="sheetcard">
     <h2>THE WANT LIST</h2>
-    <div class="sheetsub">Eight things you are hunting. They are yours alone, and they do not change. Cross one off and the shop pays you three tickets.</div>
+    <div class="sheetsub">Eight things you are hunting. They are yours alone, and they do not change. Cross one off and the attic pays you three tickets.</div>
     <div id="wantRows"></div>
     <button class="closebtn" id="wantClose">CLOSE</button>
   </div>
@@ -277,7 +277,7 @@
   <h3>The goal</h3>
   <p>Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed. Everything you keep goes on the shelf, and eight grails on your Want List are yours alone.</p>
   <h3>How it plays</h3>
-  <p>A rummage costs one ticket, so a dig is a decision rather than a button you hold down. Five tickets arrive every day. A find in FINE or better pays one back, anything on your Want List pays three, and you can always scrap something off the shelf for one more. When the tickets run dry, DUST OFF the old boxes and find some stubs.</p>
+  <p>A rummage costs one ticket, so a dig is a decision rather than a button you hold down. Five tickets arrive every day. A find in FINE or better pays one back, anything on your Want List pays three, and two things scrapped off the shelf make one more. When the tickets run dry, DUST OFF the old boxes and find some stubs.</p>
   <h3>The controls</h3>
   <ul>
     <li>RUMMAGE digs, and the condition is revealed last</li>
@@ -290,47 +290,55 @@
 <div id="toast"></div>
 
 <script src="attic-engine.js"></script>
+<script src="attic-econ.js"></script>
 <script src="sleeve-render.js"></script>
 <script src="object-render.js"></script>
 <script>
 (function () {
   'use strict';
+  var E = window.ATTIC_ECON;
   var card = document.getElementById('card');
   var shelf = document.getElementById('shelf');
   var shelfWrap = document.getElementById('shelfWrap');
-  /* THE SHELF is a real collection now: hashes persist in localStorage and
-     every item re-derives from its hash, so the whole shelf costs 64 bytes
-     a find. Newest first, no cap in storage, newest 24 drawn. */
-  var SHELF_KEY = 'attic_shelf_v1';
-  var pulls = [];
-  (function () {
-    try {
-      var raw = JSON.parse(localStorage.getItem(SHELF_KEY) || '[]'), i;
-      for (i = 0; i < raw.length; i++) {
-        if (/^[0-9a-f]{64}$/.test(raw[i])) pulls.push({ h: raw[i], it: ATTIC.hashToItem(raw[i]) });
-      }
-    } catch (e) {}
-  })();
-  function saveShelf() {
-    try {
-      var hs = [], i;
-      for (i = 0; i < pulls.length; i++) hs.push(pulls[i].h);
-      localStorage.setItem(SHELF_KEY, JSON.stringify(hs));
-    } catch (e) {}
+
+  var SHELF_KEY = 'attic_shelf_v1', W_KEY = 'attic_wallet_v1', R_KEY = 'attic_revealed_v1';
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function dayIndex() { return Math.floor(Date.now() / 864e5); }
+
+  /* ── SAVE ────────────────────────────────────────────────────────────
+     ⛔ Every write is a READ MODIFY WRITE against what is actually on disk.
+     Two tabs of the same game share one wallet, and the old code held the
+     whole wallet in memory and wrote it back whole, so the second tab to
+     save refunded everything the first tab had spent. Tickets ADD, bests
+     MAX, want list ticks union. attic-econ.js owns the merge; this file
+     only decides when to call it. */
+  var WAL = E.readWallet(lsGet(W_KEY), dayIndex());
+  function saveWallet() { lsSet(W_KEY, E.mergeToDisk(lsGet(W_KEY), WAL)); }
+
+  /* THE SHELF is a real collection: hashes persist and every item re-derives
+     from its hash, so the whole shelf costs 64 bytes a find. Newest first,
+     capped by attic-econ so a long player cannot fill the storage quota. */
+  var pulls = E.readShelf(lsGet(SHELF_KEY));
+  function saveShelf() { lsSet(SHELF_KEY, JSON.stringify(E.mergeShelfToDisk(lsGet(SHELF_KEY), pulls))); }
+  function itemAt(i) { return ATTIC.hashToItem(pulls[i]); }
+
+  /* which finds have had their dust wiped, so re-opening one off the shelf
+     never pays a second time. Pruned to the shelf on every write, or it
+     grows by 72 bytes a dig forever. */
+  var revealed = (function () { try { return JSON.parse(lsGet(R_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+  if (!revealed || typeof revealed !== 'object' || revealed instanceof Array) revealed = {};
+  function saveRevealed() {
+    var keep = {}, i;
+    for (i = 0; i < pulls.length; i++) if (revealed[pulls[i]]) keep[pulls[i]] = 1;
+    revealed = keep;
+    lsSet(R_KEY, JSON.stringify(revealed));
   }
-  /* which finds have already had their dust wiped, so re-opening one off the
-     shelf never pays a second time */
-  var R_KEY = 'attic_revealed_v1';
-  var revealed = (function () { try { return JSON.parse(localStorage.getItem(R_KEY) || '{}') || {}; } catch (e) { return {}; } })();
-  function saveRevealed() { try { localStorage.setItem(R_KEY, JSON.stringify(revealed)); } catch (e) {} }
 
   var GRADE_LOOK = {
-    'TRASHED':        ['#8a8378', '#2a2620'],
-    'PLAYED':         ['#b8a888', '#2a2620'],
-    'GOOD':           ['#c4d2a8', '#242a1c'],
-    'FINE':           ['#9ec4d8', '#1c242a'],
-    'NEAR MINT':      ['#c9a8e0', '#241c2a'],
-    'MINT':           ['#f0d878', '#2a2414']
+    'TRASHED':   ['#8a8378', '#2a2620'], 'PLAYED': ['#b8a888', '#2a2620'],
+    'GOOD':      ['#c4d2a8', '#242a1c'], 'FINE':   ['#9ec4d8', '#1c242a'],
+    'NEAR MINT': ['#c9a8e0', '#241c2a'], 'MINT':   ['#f0d878', '#2a2414']
   };
 
   function randHash() {
@@ -340,25 +348,6 @@
     return s;
   }
 
-  function hb(h, n) { return parseInt(h.substr(n * 2, 2), 16); }
-
-  /* ── THE ECONOMY ────────────────────────────────────────────────────────
-     A rummage costs a ticket, so a dig is a decision instead of a button you
-     hold down. Five tickets land every day, a find in FINE or better pays one
-     back, and anything on your Want List pays three. Out of tickets with a
-     shelf full of junk? Scrap something. The maths is deliberately lossy
-     (about a third of finds pay), so tickets are the pace of the game. */
-  var W_KEY = 'attic_wallet_v1', DAILY = 5, GRAIL_PAY = 3, PAY_AT = 'FINE';
-  function dayIndex() { return Math.floor(Date.now() / 864e5); }
-  var WAL = (function () {
-    var w = { tix: 0, day: -1, wants: {} };
-    try { var raw = JSON.parse(localStorage.getItem(W_KEY) || 'null');
-      if (raw) { w.tix = raw.tix | 0; w.day = (raw.day == null ? -1 : raw.day); w.wants = raw.wants || {}; }
-    } catch (e) {}
-    return w;
-  })();
-  function saveWallet() { try { localStorage.setItem(W_KEY, JSON.stringify(WAL)); } catch (e) {} }
-
   var toastT = null;
   function toast(msg, ms) {
     var el = document.getElementById('toast'); if (!el) return;
@@ -366,13 +355,16 @@
     if (toastT) clearTimeout(toastT);
     toastT = setTimeout(function () { el.style.opacity = '0'; }, ms || 2800);
   }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-  /* ── THE WANT LIST ──────────────────────────────────────────────────────
+  /* ── THE WANT LIST ──────────────────────────────────────────────────
      Eight grails, drawn once per device and never re-rolled, so a player has
-     their own standing hunt: the reason to open the attic tomorrow. Every
-     grail is checked against the REAL item, at the moment the dust comes off. */
-  var GRADE_ORDER = ['TRASHED', 'PLAYED', 'GOOD', 'FINE', 'NEAR MINT', 'MINT', 'FACTORY SEALED'];
-  function gIdx(g) { var i = GRADE_ORDER.indexOf(g); return i < 0 ? 2 : i; }
+     their own standing hunt. ⛔ Ticks are keyed by the grail's own ID, not by
+     its position in the list: keying by index meant that editing the pool
+     later would silently move somebody's crossed off grails onto different
+     hunts. */
+  var GRADE_ORDER = E.GRADE_ORDER;
+  function gIdx(g) { return E.gIdx(g); }
   var CLS_LIST = ['RECORD', 'VHS', 'TOY', 'GAME', 'CEREAL'];
   var CLS_WORD = { RECORD: 'record', VHS: 'tape', TOY: 'toy', GAME: 'board game', CEREAL: 'cereal box' };
   var ERA_LIST = ['1950s', '1960s', '1970s', '1980s', '1990s'];
@@ -390,6 +382,7 @@
     P.push({ t: 'grade', g: 'MINT', txt: 'anything MINT or better' });
     P.push({ t: 'errorCls', c: 'CEREAL', txt: 'a cereal box with a factory error' });
     P.push({ t: 'errorCls', c: 'RECORD', txt: 'a record with a factory error' });
+    for (i = 0; i < P.length; i++) P[i].id = P[i].t + ':' + (P[i].c || '') + ':' + (P[i].g || '') + ':' + (P[i].e || '');
     return P;
   }
   function grailMet(gr, it) {
@@ -404,26 +397,24 @@
     return false;
   }
   function deviceId() {
-    var k = 'attic_device_v1', v = null;
-    try { v = localStorage.getItem(k); } catch (e) {}
+    var k = 'attic_device_v1', v = lsGet(k);
     if (!v) {
       v = ''; var b = new Uint8Array(8), i;
       (window.crypto || window.msCrypto).getRandomValues(b);
       for (i = 0; i < 8; i++) v += ('0' + b[i].toString(16)).slice(-2);
-      try { localStorage.setItem(k, v); } catch (e) {}
+      lsSet(k, v);
     }
     return v;
   }
   function seededRng(s) {
     var h = 2166136261 >>> 0, i;
     for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
-    return function () { h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
+    return function () { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
   }
   var GRAILS = (function () {
     var P = grailPool(), rng = seededRng(deviceId() + ':wants'), i, j, t;
     for (i = P.length - 1; i > 0; i--) { j = Math.floor(rng() * (i + 1)); t = P[i]; P[i] = P[j]; P[j] = t; }
-    /* keep the eight varied: at most two of any one shape, so nobody gets a
-       list of five near-identical hunts */
+    /* keep the eight varied: at most two of any one shape */
     var out = [], seen = {};
     for (i = 0; i < P.length && out.length < 8; i++) {
       var k = P[i].t + (P[i].c || '');
@@ -432,25 +423,26 @@
     }
     return out;
   })();
-  function wantsGot() { var n = 0, i; for (i = 0; i < GRAILS.length; i++) if (WAL.wants[i]) n++; return n; }
+  function wantsGot() { var n = 0, i; for (i = 0; i < GRAILS.length; i++) if (WAL.wants[GRAILS[i].id]) n++; return n; }
   function checkGrails(it) {
     var i, hit = [];
     for (i = 0; i < GRAILS.length; i++) {
-      if (WAL.wants[i]) continue;
-      if (grailMet(GRAILS[i], it)) { WAL.wants[i] = 1; hit.push(GRAILS[i].txt); }
+      if (WAL.wants[GRAILS[i].id]) continue;
+      if (grailMet(GRAILS[i], it)) { WAL.wants[GRAILS[i].id] = 1; hit.push(GRAILS[i].txt); }
     }
     if (hit.length) {
-      WAL.tix += GRAIL_PAY * hit.length; saveWallet(); paintWallet(); paintWants();
-      toast('WANT LIST: ' + hit[0] + '. Crossed off, plus ' + (GRAIL_PAY * hit.length) + ' tickets.', 4200);
+      var paid = E.payGrails(WAL, hit.length);
+      saveWallet(); paintWallet(); paintWants();
+      toast('WANT LIST: ' + hit[0] + '. Crossed off, plus ' + paid + ' tickets.', 4200);
     }
     return hit.length;
   }
   function paintWants() {
     var box = document.getElementById('wantRows'), html = '', i;
     for (i = 0; i < GRAILS.length; i++) {
-      var got = !!WAL.wants[i];
+      var got = !!WAL.wants[GRAILS[i].id];
       html += '<div class="want' + (got ? ' got' : '') + '"><span class="mark">' + (got ? '✓' : '·') +
-        '</span><span class="txt">' + GRAILS[i].txt + '</span></div>';
+        '</span><span class="txt">' + esc(GRAILS[i].txt) + '</span></div>';
     }
     box.innerHTML = html;
   }
@@ -458,39 +450,51 @@
     document.getElementById('tixN').textContent = WAL.tix;
     document.getElementById('wantN').textContent = wantsGot() + '/' + GRAILS.length;
     var go = document.getElementById('go'), bn = document.getElementById('brokenote');
-    if (WAL.tix < 1) {
+    var dust = E.dustLeft(WAL, dayIndex());
+    if (WAL.tix < E.RUMMAGE_COST) {
       go.setAttribute('disabled', 'disabled');
-      bn.textContent = pulls.length
-        ? 'Out of tickets. Scrap something off the shelf for one, or come back tomorrow for ' + DAILY + '.'
-        : 'Out of tickets. Come back tomorrow for ' + DAILY + '.';
+      /* ⛔ never leave the player in a room with no door. Name every way out
+         that is actually open right now, and if none is, say when one opens. */
+      var outs = [];
+      if (pulls.length >= E.SCRAP_PER) outs.push('scrap ' + E.SCRAP_PER + ' things off the shelf for one');
+      if (dust > 0) outs.push('DUST OFF the old boxes for up to ' + dust);
+      bn.textContent = outs.length
+        ? 'Out of tickets. You can ' + outs.join(', or ') + '.'
+        : 'Out of tickets, and the attic is wiped clean for today. ' + E.DAILY + ' more arrive tomorrow.';
     } else { go.removeAttribute('disabled'); bn.textContent = ''; }
   }
 
-  // every class renders its object now (object-render.js dispatch)
-  function artFor(h, it, size) {
-    return ATTIC_OBJECT.renderItem(h, size || 240).svg;
-  }
-
+  /* ── THE CARD ────────────────────────────────────────────────────────
+     ⛔ CONDITION IS REVEALED LAST. That is the rules screen's promise and the
+     only dramatic beat the game has. Before the wipe the art renders DUSTY
+     (grade withheld entirely) and the two grade derived text flourishes
+     stay hidden. The old build painted the real wear immediately, printed
+     MINT ON CARD in the toy's own name, and put the condition flaw in the
+     sticker line, so the button revealed something the player had already
+     been shown. test/attic-check.js section C holds this. */
   function show(h) {
     var it = ATTIC.hashToItem(h);
-    var html = '<div class="art">' + artFor(h, it, 240) + '</div>'
-      + '<div class="cls">' + it.cls + ' &middot; ' + it.era + '</div>'
-      + '<div class="nm">' + it.name + '</div>'
-      + (it.sub ? '<div class="sub">' + it.sub + '</div>' : '')
-      + (it.sticker ? '<div class="sub">' + it.sticker + '</div>' : '')
-      + '<div class="prov">' + it.provenance + '</div>'
-      + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + it.error + '</div>' : '')
-      + '<div class="gradeSlot" id="gs">'
+    h = it.hash;
+    var isRevealed = !!revealed[h];
+    var html = '<div class="art" id="artSlot">' + ATTIC_OBJECT.renderItem(h, 240, { dusty: !isRevealed }).svg + '</div>'
+      + '<div class="cls">' + esc(it.cls) + ' &middot; ' + esc(it.era) + '</div>'
+      + '<div class="nm" id="nmSlot">' + esc(it.name) + (isRevealed && it.revealSuffix ? esc(it.revealSuffix) : '') + '</div>'
+      + (it.sub ? '<div class="sub">' + esc(it.sub) + '</div>' : '')
+      + (it.sticker ? '<div class="sub">' + esc(it.sticker) + '</div>' : '')
+      + '<div class="sub" id="noteSlot">' + (isRevealed && it.revealNote ? esc(it.revealNote) : '') + '</div>'
+      + '<div class="prov">' + esc(it.provenance) + '</div>'
+      + (it.error ? '<div class="err"><b>FACTORY ERROR</b><br>' + esc(it.error) + '</div>' : '')
+      + '<div class="gradeSlot' + (isRevealed ? ' graded' : '') + '" id="gs">'
       +   '<button class="gradeBtn" id="gb">WIPE OFF THE DUST &middot; CHECK CONDITION</button>'
       +   '<div class="gradePlate" id="gp"></div>'
       + '</div>'
       + '<div class="meta">' + h.slice(0, 16) + '&hellip; &middot; ' + it.year + '</div>'
-      + '<button class="scrapbtn" id="scrap">SCRAP THIS FOR A TICKET</button>';
+      + '<button class="scrapbtn" id="scrap">SCRAP THIS</button>';
     card.innerHTML = html;
     card.className = 'card on';
 
     var gs = document.getElementById('gs'), gp = document.getElementById('gp');
-    document.getElementById('gb').onclick = function () {
+    function paintPlate() {
       if (it.grade === 'FACTORY SEALED') {
         gp.className = 'gradePlate g-sealed';
         gp.textContent = '★ FACTORY SEALED ★';
@@ -500,60 +504,65 @@
         gp.style.color = lk[0]; gp.style.borderColor = lk[0]; gp.style.background = lk[1];
         gp.textContent = it.grade;
       }
+    }
+    if (isRevealed) paintPlate();
+    document.getElementById('gb').onclick = function () {
+      paintPlate();
       gs.className = 'gradeSlot graded';
-      /* the moment of truth pays: a keeper hands a ticket back, and the Want
-         List is settled here because condition is half of what a grail asks */
-      if (!revealed[h]) {
-        revealed[h] = 1; saveRevealed();
-        var earned = gIdx(it.grade) >= gIdx(PAY_AT) ? 1 : 0;
-        if (earned) { WAL.tix += earned; saveWallet(); }
-        var got = checkGrails(it);
-        paintWallet();
-        if (!got && earned) toast('A keeper. One ticket back.');
-      }
+      document.getElementById('artSlot').innerHTML = ATTIC_OBJECT.renderItem(h, 240).svg;
+      if (it.revealSuffix) document.getElementById('nmSlot').textContent = it.name + it.revealSuffix;
+      if (it.revealNote) document.getElementById('noteSlot').textContent = it.revealNote;
+      if (revealed[h]) return;
+      revealed[h] = 1; saveRevealed();
+      var earned = E.payReveal(WAL, it);
+      if (earned) saveWallet();
+      var got = checkGrails(it);
+      saveWallet(); paintWallet();
+      if (!got && earned) toast('A keeper. One ticket back.');
     };
+    /* ⛔ SCRAPPING PAYS LESS THAN A DIG COSTS. It used to pay the full ticket
+       straight back, which made a rummage free and the whole ticket economy
+       decoration: dig, scrap, repeat, forever. */
     document.getElementById('scrap').onclick = function () {
       var i;
-      for (i = 0; i < pulls.length; i++) if (pulls[i].h === h) { pulls.splice(i, 1); break; }
-      saveShelf(); renderShelf();
-      WAL.tix += 1; saveWallet(); paintWallet();
+      for (i = 0; i < pulls.length; i++) if (pulls[i] === h) { pulls.splice(i, 1); break; }
+      saveShelf(); saveRevealed(); renderShelf();
+      var paid = E.payScrap(WAL); saveWallet(); paintWallet();
       card.className = 'card';
-      toast('Back in the pile. One ticket.');
+      toast(paid ? 'Back in the pile. That is one ticket.'
+                 : 'Back in the pile. One more scrap makes a ticket.');
     };
 
-    var known = false, k;
-    for (k = 0; k < pulls.length; k++) { if (pulls[k].h === h) { known = true; break; } }
-    if (!known) { pulls.unshift({ h: h, it: it }); saveShelf(); }
+    if (pulls.indexOf(h) < 0) { pulls.unshift(h); saveShelf(); }
     renderShelf();
   }
 
   function renderShelf() {
-    if (!pulls.length) return;
+    if (!pulls.length) { shelfWrap.style.display = 'none'; shelf.innerHTML = ''; return; }
     shelfWrap.style.display = 'block';
     var head = shelfWrap.querySelector('h2');
     if (head) head.textContent = 'THE SHELF · ' + pulls.length + ' FIND' + (pulls.length === 1 ? '' : 'S') + (pulls.length > 24 ? ' · NEWEST 24' : '');
     var html = '', i, n = Math.min(pulls.length, 24);
     for (i = 0; i < n; i++) {
-      var p = pulls[i];
-      var inner = ATTIC_OBJECT.renderItem(p.h, 90).svg;
-      html += '<button class="slot" data-i="' + i + '" title="' + p.it.name + '">' + inner + '</button>';
+      var h = pulls[i], it = ATTIC.hashToItem(h);
+      /* an unwiped find shows as unwiped on the shelf too, so the shelf is a
+         to do list and not a spoiler sheet */
+      var inner = ATTIC_OBJECT.renderItem(h, 90, { dusty: !revealed[h] }).svg;
+      html += '<button class="slot" data-i="' + i + '" title="' + esc(it.name) + '">' + inner + '</button>';
     }
     shelf.innerHTML = html;
     var slots = shelf.querySelectorAll('.slot'), j;
     for (j = 0; j < slots.length; j++) {
-      slots[j].onclick = function () { reshow(parseInt(this.getAttribute('data-i'), 10)); };
+      slots[j].onclick = function () {
+        var p = pulls[parseInt(this.getAttribute('data-i'), 10)];
+        if (p) show(p);
+      };
     }
   }
 
-  /* revisiting a find just shows it again; the shelf never reorders */
-  function reshow(i) {
-    var p = pulls[i];
-    if (p) show(p.h);
-  }
-
   document.getElementById('go').onclick = function () {
-    if (WAL.tix < 1) { toast('No tickets left.'); return; }
-    WAL.tix -= 1; saveWallet(); paintWallet();
+    if (!E.spend(WAL, E.RUMMAGE_COST)) { toast('No tickets left.'); return; }
+    saveWallet(); paintWallet();
     show(randHash());
   };
   document.getElementById('wantOpen').onclick = function () { paintWants(); document.getElementById('wantSheet').className = 'sheet on'; };
@@ -562,46 +571,34 @@
 
   /* the day's allowance, granted once per day per device */
   (function grantDaily() {
-    var d = dayIndex();
-    if (WAL.day === d) return;
     var first = WAL.day < 0;
-    WAL.day = d; WAL.tix += DAILY; saveWallet();
+    var gave = E.grantDaily(WAL, dayIndex());
+    if (!gave) return;
+    saveWallet();
     setTimeout(function () {
-      toast(first ? ('The attic is open. ' + DAILY + ' tickets to get you started.')
-                  : (DAILY + ' fresh tickets for today.'));
+      toast(first ? ('The attic is open. ' + gave + ' tickets to get you started.')
+                  : (gave + ' fresh tickets for today.'));
     }, 500);
   })();
 
-
-  /* ── DUST OFF ────────────────────────────────────────────────────────────
-     The second ticket source (plan section B2). Ninety seconds of wiping grime
-     off a panel of old boxes; ticket stubs are buried in it. Deliberately low
-     skill and low stress, because it exists to keep a dry wallet from ending
-     the session, not to be the game. Capped per day like every other earn in
-     the studio, so it can never replace the daily five. */
-  var DUST_KEY = 'attic_dust_v1', DUST_CAP = 6, DUST_SECS = 90, DUST_PER = 2;
-  function dustState() {
-    var st = { d: -1, n: 0 };
-    try { var r = JSON.parse(localStorage.getItem(DUST_KEY) || 'null'); if (r) st = r; } catch (e) {}
-    if (st.d !== dayIndex()) st = { d: dayIndex(), n: 0 };
-    return st;
-  }
-  function dustLeft() { return Math.max(0, DUST_CAP - (dustState().n || 0)); }
-  function dustBank(n) {
-    var st = dustState(), give = Math.min(n, Math.max(0, DUST_CAP - (st.n || 0)));
-    if (give <= 0) return 0;
-    st.n = (st.n || 0) + give;
-    try { localStorage.setItem(DUST_KEY, JSON.stringify(st)); } catch (e) {}
-    WAL.tix += give; saveWallet(); paintWallet();
-    return give;
-  }
-
+  /* ── DUST OFF ────────────────────────────────────────────────────────
+     The second ticket source. Ninety seconds of wiping grime off a panel of
+     old boxes; ticket stubs are buried in it. Deliberately low skill and low
+     stress, because it exists to keep a dry wallet from ending the session,
+     not to be the game. Capped per day, so it can never replace the daily. */
+  var DUST_SECS = 90;
   var DUST = null;
   function dustOpen() {
-    if (dustLeft() <= 0) { toast('You have dusted off everything worth dusting today.'); return; }
+    if (DUST) return;
+    if (E.dustLeft(WAL, dayIndex()) <= 0) { toast('You have dusted off everything worth dusting today.'); return; }
     var cells = 48, hidden = 10, i;
-    var marks = {};
-    while (Object.keys(marks).length < hidden) marks[Math.floor(Math.random() * cells)] = 1;
+    /* placement is cosmetic and not asserted anywhere, so crypto is not
+       needed, but the count must be exact or the loop below can spin */
+    var marks = {}, placed = 0, guard = 4000;
+    while (placed < hidden && guard-- > 0) {
+      var k = Math.floor(Math.random() * cells);
+      if (!marks[k]) { marks[k] = 1; placed++; }
+    }
     DUST = { t: DUST_SECS, found: 0, over: false, marks: marks, wiped: {} };
     var g = document.getElementById('dustGrid'); g.innerHTML = '';
     for (i = 0; i < cells; i++) {
@@ -612,7 +609,7 @@
     document.getElementById('dustT').textContent = DUST_SECS;
     document.getElementById('dustFound').textContent = '0';
     document.getElementById('dustMsg').textContent =
-      'Drag across the grime. ' + dustLeft() + ' more tickets are worth finding today.';
+      'Drag across the grime. ' + E.dustLeft(WAL, dayIndex()) + ' more tickets are worth finding today.';
     document.getElementById('dustSheet').className = 'on';
     DUST.timer = setInterval(function () {
       if (!DUST || DUST.over) return;
@@ -633,11 +630,13 @@
   function dustEnd() {
     if (!DUST || DUST.over) return;
     DUST.over = true; if (DUST.timer) clearInterval(DUST.timer);
-    var earned = dustBank(Math.floor(DUST.found / DUST_PER));
+    var found = DUST.found;
+    var earned = E.bankDust(WAL, found, dayIndex());
+    saveWallet(); paintWallet();
     document.getElementById('dustSheet').className = '';
     toast(earned > 0
-      ? ('Dusted off ' + DUST.found + ' stubs. That is ' + earned + ' ticket' + (earned === 1 ? '' : 's') + '.')
-      : ('Dusted off ' + DUST.found + ' stubs, which is not quite a ticket. ' + DUST_PER + ' stubs make one.'), 3600);
+      ? ('Dusted off ' + found + ' stubs. That is ' + earned + ' ticket' + (earned === 1 ? '' : 's') + '.')
+      : ('Dusted off ' + found + ' stubs, which is not quite a ticket. ' + E.DUST_PER + ' stubs make one.'), 3600);
     DUST = null;
   }
   (function wireDust() {
@@ -648,26 +647,31 @@
     addEventListener('pointerup', function () { down = false; });
     document.getElementById('dustBtn').onclick = dustOpen;
     document.getElementById('dustDone').onclick = dustEnd;
+    /* the panel is a full screen overlay, so system back has to close it
+       rather than navigate the page out from under it */
+    addEventListener('keydown', function (e) { if (e.key === 'Escape' && DUST) dustEnd(); });
   })();
 
-  /* ── the rules, once per device, before the first dig ─────────────────── */
+  /* ── the rules, once per device, before the first dig ─────────────── */
   (function firstRun() {
     var K = 'attic_how_v1';
-    try { if (localStorage.getItem(K) === '1') return; } catch (e) {}
-    document.getElementById('howSheet').className = 'on';
-    document.getElementById('howGo').onclick = function () {
-      try { localStorage.setItem(K, '1'); } catch (e) {}
-      document.getElementById('howSheet').className = '';
-    };
+    var sheetEl = document.getElementById('howSheet');
+    function close() { try { lsSet(K, '1'); } catch (e) {} sheetEl.className = ''; }
+    document.getElementById('howGo').onclick = close;
+    if (lsGet(K) === '1') return;
+    sheetEl.className = 'on';
   })();
 
   /* headless hook */
   if (/[?&]attictest=1/.test(location.search)) {
     window.ATTIC_DEV = {
-      wallet: function () { return WAL; }, dustLeft: dustLeft, dustBank: dustBank,
+      wallet: function () { return WAL; },
+      dustLeft: function () { return E.dustLeft(WAL, dayIndex()); },
       dustOpen: dustOpen, dustEnd: dustEnd, dustState: function () { return DUST; },
-      grade: function (h) { return ATTIC._grade ? ATTIC._grade(h) : null; },
+      shelf: function () { return pulls.slice(0); },
+      revealed: function () { return revealed; },
       item: function (h) { return ATTIC.hashToItem(h); },
+      show: show,
       setTix: function (n) { WAL.tix = n; saveWallet(); paintWallet(); return WAL.tix; },
       grails: function () { return GRAILS; }, dayIndex: dayIndex
     };

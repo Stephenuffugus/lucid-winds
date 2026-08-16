@@ -338,5 +338,51 @@ sec('G  COPY LAW');
   ok('every tappable class declares 48px or more', small.length === 0, small.join(', '));
 })();
 
+/* ═══ H. PAGE INTEGRITY ════════════════════════════════════════════ */
+sec('H  PAGE INTEGRITY (the page itself, checked without a browser)');
+(function () {
+  var fs = require('fs'), vm = require('vm');
+  var page = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+
+  /* a syntax error in any inline block kills every function in it and the
+     page still serves a 200, so this has to be checked, not assumed.
+     ⛔ compile with vm, never with a brace counter: the page is full of
+     inline SVG data URIs whose braces and parens defeat naive counting. */
+  var blocks = page.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g) || [];
+  var bad = [], b;
+  for (b = 0; b < blocks.length; b++) {
+    var body = blocks[b].replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '');
+    try { new vm.Script(body, { filename: 'inline-' + b }); }
+    catch (e) { bad.push('block ' + b + ': ' + e.message); }
+  }
+  ok('every inline script block compiles', bad.length === 0, bad.join(' | '));
+  ok('the page actually has inline script to check', blocks.length >= 2, blocks.length + ' blocks');
+
+  /* every module the page loads must exist on disk, or the game boots into
+     a half wired state that still renders a title */
+  var srcs = [], m, re = /<script[^>]*\bsrc="([^"]+)"/g;
+  while ((m = re.exec(page))) srcs.push(m[1]);
+  var missing = srcs.filter(function (s) { return !fs.existsSync(path.join(ROOT, s)); });
+  ok('every script src resolves to a file', missing.length === 0, missing.join(', '));
+  ok('the page loads the economy module', srcs.indexOf('attic-econ.js') >= 0, srcs.join(' '));
+
+  /* the two regressions this audit fixed, guarded at the page level so they
+     cannot creep back in through the markup */
+  var body2 = page.slice(page.indexOf('<body'));
+  ok('the card renders dusty before the wipe', /renderItem\([^)]*\{\s*dusty:\s*!/.test(body2),
+    'no dusty render call found in show()');
+  ok('the wallet is written through the merge, never wholesale',
+    /mergeToDisk/.test(body2) && !/localStorage\.setItem\(\s*W_KEY/.test(body2),
+    'a direct wallet write is still present');
+
+  /* the manifest has to parse and point at this game */
+  var man = null, manErr = '';
+  try { man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8')); }
+  catch (e) { manErr = e.message; }
+  ok('the web manifest parses', !!man, manErr);
+  ok('the manifest names the game and has an icon',
+    !!(man && man.name && man.icons && man.icons.length), man ? man.name : '');
+})();
+
 console.log('\n' + (fails ? 'FAILED' : 'OK') + '  ' + passes + ' passed, ' + fails + ' failed\n');
 process.exit(fails ? 1 : 0);

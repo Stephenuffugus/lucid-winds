@@ -478,6 +478,31 @@
       var raw=localStorage.getItem(SAVE_KEY);
       if(!raw) return defaultSave();
       var s=JSON.parse(raw), d=defaultSave(), k, isV1=!s.v;   // flag BEFORE the default-fill stamps s.v
+      /* ⛔⛔ A PARSEABLE SAVE IS NOT A VALID SAVE, and the difference bricked the
+         game permanently. The old fill only replaced keys that were `undefined`,
+         so `{"v":2,"worlds":"nope"}` sailed through — and then endRun's
+         `save.worlds[W.id]={}` threw "Cannot create property on string" under
+         "use strict", killing the run AND every run after it, because the bad
+         bytes are still in localStorage. Same for `grove` (a `.push` on a
+         string) and `seen`. JSON.parse only proves it is JSON; the SHAPE has to
+         be checked too. Found 2026-08-16 by save_audit.js, which had never
+         existed — nothing in this folder had ever tested the save at all.
+         ⚖️ Repair, never wipe: a player whose `grove` list is corrupt keeps
+         their stars. Only the wrong-typed field is reset. */
+      if(!s||typeof s!=="object"||s.constructor===Array){ s={}; isV1=false; }
+      if(!s.worlds||typeof s.worlds!=="object"||s.worlds.constructor===Array) s.worlds={};
+      if(!s.seen  ||typeof s.seen  !=="object"||s.seen.constructor===Array)   s.seen={};
+      if(!s.grove ||s.grove.constructor!==Array)                              s.grove=[];
+      if(!s.unlockedSkins||s.unlockedSkins.constructor!==Array)               s.unlockedSkins=["dew"];
+      if(typeof s.lifetimeAbsorbs!=="number"||!isFinite(s.lifetimeAbsorbs))   s.lifetimeAbsorbs=0;
+      if(typeof s.bestZen!=="number"||!isFinite(s.bestZen))                   s.bestZen=0;
+      for(k in s.worlds) if(s.worlds.hasOwnProperty(k)){
+        var wr=s.worlds[k];
+        if(!wr||typeof wr!=="object"||wr.constructor===Array){ delete s.worlds[k]; continue; }
+        if(typeof wr.stars!=="number"||!isFinite(wr.stars)) wr.stars=0;
+        if(typeof wr.bestD!=="number"||!isFinite(wr.bestD)) wr.bestD=0;
+        if(!wr.keeps||wr.keeps.constructor!==Array) wr.keeps=[];
+      }
       for(k in d) if(d.hasOwnProperty(k) && s[k]===undefined) s[k]=d[k];
       if(!s.unlockedSkins || !s.unlockedSkins.length) s.unlockedSkins=["dew"];
       // v1 -> v2: levelsCleared roughly maps to world stars
@@ -489,7 +514,64 @@
       return s;
     }catch(e){ return defaultSave(); }
   }
-  function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+  /* ⛔⛔ TWO TABS CLOBBER A READ-ONCE, WRITE-WHOLESALE SAVE. This one was read at
+     parse time and written back entire, so a second tab (or the PWA open beside
+     the browser, which is the common way it happens on a phone) overwrote
+     whatever the first tab had earned since ITS boot. Measured: tab 1 three-starred
+     Crumb Country, tab 2 finished Toybox Peaks, and Crumb Country's stars were
+     gone. House rule feedback_localstorage_two_tabs_clobber: read, modify, write —
+     counters ADD, bests MAX. Fixed 2026-08-16.
+     ⚖️ The merge is against the BYTES ON DISK, not against a cached copy, and it
+     is done on every write, so the two tabs converge instead of racing. Settings
+     (mute / camAssist / skin) stay last-writer-wins on purpose — they are a
+     preference, not progress, and a player toggling sound in one tab means it. */
+  function persist(){
+    try{
+      var raw=null; try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
+      if(raw){
+        var d=null; try{ d=JSON.parse(raw); }catch(e){ d=null; }
+        if(d&&typeof d==="object"&&d.constructor!==Array){
+          /* counters ADD only what THIS tab added since it last wrote */
+          var mine=save.lifetimeAbsorbs||0, base=persist._base;
+          if(typeof base!=="number") base=mine;
+          var theirs=(typeof d.lifetimeAbsorbs==="number"&&isFinite(d.lifetimeAbsorbs))?d.lifetimeAbsorbs:0;
+          save.lifetimeAbsorbs=Math.max(mine, theirs+(mine-base));
+          /* bests MAX, per world, and stars/crowns are never lost */
+          if(d.worlds&&typeof d.worlds==="object"&&d.worlds.constructor!==Array){
+            for(var wk in d.worlds) if(d.worlds.hasOwnProperty(wk)){
+              var t=d.worlds[wk]; if(!t||typeof t!=="object") continue;
+              var m=save.worlds[wk];
+              if(!m){ save.worlds[wk]=t; continue; }
+              if((t.stars||0)>(m.stars||0)) m.stars=t.stars;
+              if((t.bestD||0)>(m.bestD||0)) m.bestD=t.bestD;
+              if(t.clean) m.clean=1;
+              /* time records are a MIN — lower is better */
+              if(t.bestGoalT&&(!m.bestGoalT||t.bestGoalT<m.bestGoalT)) m.bestGoalT=t.bestGoalT;
+              if(t.keeps&&t.keeps.constructor===Array){
+                if(!m.keeps||m.keeps.constructor!==Array) m.keeps=[];
+                for(var ki=0;ki<t.keeps.length;ki++)
+                  if(m.keeps.indexOf(t.keeps[ki])<0) m.keeps.push(t.keeps[ki]); }
+            } }
+          if(typeof d.bestZen==="number"&&d.bestZen>(save.bestZen||0)) save.bestZen=d.bestZen;
+          if(d.seen&&typeof d.seen==="object"&&d.seen.constructor!==Array)
+            for(var sk2 in d.seen) if(d.seen.hasOwnProperty(sk2)) save.seen[sk2]=1;
+          if(d.unlockedSkins&&d.unlockedSkins.constructor===Array)
+            for(var si2=0;si2<d.unlockedSkins.length;si2++)
+              if(save.unlockedSkins.indexOf(d.unlockedSkins[si2])<0) save.unlockedSkins.push(d.unlockedSkins[si2]);
+          /* the grove is a top-10 leaderboard: merge, de-duplicate by timestamp,
+             re-sort, re-trim — so neither tab's best rolls vanish */
+          if(d.grove&&d.grove.constructor===Array){
+            var haveT={}, gi2;
+            for(gi2=0;gi2<save.grove.length;gi2++) haveT[save.grove[gi2].t]=1;
+            for(gi2=0;gi2<d.grove.length;gi2++) if(!haveT[d.grove[gi2].t]) save.grove.push(d.grove[gi2]);
+            save.grove.sort(function(a,b){ return b.d-a.d; });
+            save.grove=save.grove.slice(0,10); }
+        }
+      }
+      persist._base=save.lifetimeAbsorbs||0;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    }catch(e){}
+  }
   function worldsCleared(){ var n=0; for(var i=0;i<WORLDS.length;i++){ var w=save.worlds[WORLDS[i].id]; if(w&&w.stars>0) n++; } return n; }
 
   // ---------- skins ----------

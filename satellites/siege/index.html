@@ -41,7 +41,12 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 /* ---------- field: watch board on top, lane strip on the floor ---------- */
 #field{flex:1 1 auto;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 
-#board{flex:1 1 auto;min-height:0;overflow-y:auto;padding:6px 8px 2px;
+/* The board takes only the height its content needs and the LANE takes every
+   pixel that is left. That inverts the way the coordinator asked for: a sparse
+   wave means a big lane, a busy wave means a big board, and neither ever leaves
+   a hole between them. The briefing panel below supplies real content on
+   exactly the waves where the board would otherwise be thin. */
+#board{flex:0 0 auto;max-height:70%;overflow-y:auto;padding:6px 8px 2px;
   display:grid;gap:6px;align-content:start;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 #board .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
@@ -60,6 +65,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 .pip{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--cream);
   background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 7px 3px 4px;min-height:38px}
 .pip svg{width:22px;height:30px;flex:0 0 auto}
+#pips.roomy .pip{font-size:16px;padding:5px 11px 5px 6px;min-height:52px;gap:7px}
+#pips.roomy .pip svg{width:32px;height:44px}
+#pips.roomy .pip s{font-size:11px}
+#kit.roomy .kitchip{font-size:16px;min-height:44px;padding:7px 11px}
+#kit.roomy .kitchip u{font-size:22px}
 .pip.gone{opacity:.28}
 .pip.boss{border-color:#5a3a3a;background:#241a1c}
 .pip s{font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.5px}
@@ -72,12 +82,22 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;fon
 #livebars .barrow{margin-bottom:4px;font-size:11px}
 #livebars .barrow .lbl{width:64px}
 #livebars .barrow .track{height:8px}
+#livebars{min-height:46px}
+#pnotes .note{font-size:12px;line-height:1.42;color:var(--cream);padding:5px 0;border-top:1px solid var(--line)}
+#pnotes .note:first-child{border-top:0}
+#pnotes .note b{color:var(--warm)}
+#pnotes .note svg{vertical-align:-9px;margin-right:5px}
 
 /* ---------- lane ---------- */
-#lanebox{flex:0 0 auto;position:relative;overflow:hidden;
-  height:clamp(112px,17vh,190px);
+#lanebox{flex:1 1 auto;position:relative;overflow:hidden;min-height:120px;
   border-top:1px solid var(--line);
   background:linear-gradient(180deg,#0d0f15 0%,#14171f 62%,#191c25 100%)}
+/* a crenellated lip along the top edge so the air over the lane reads as the
+   inside of a wall rather than as leftover screen. Pure CSS, no asset. */
+#lanebox:before{content:'';position:absolute;left:0;right:0;top:0;height:9px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,#1b1f28 0 13px,transparent 13px 26px);opacity:.85}
+#lanebox:after{content:'';position:absolute;left:0;right:0;top:9px;height:44%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,0))}
 #lane{position:absolute;left:0;right:0;top:0;bottom:0}
 .cell{position:absolute;top:34%;bottom:0;border-right:1px solid rgba(255,255,255,.05)}
 .cell.build{cursor:pointer}
@@ -225,6 +245,14 @@ input[type=range]{width:130px;height:48px;accent-color:var(--accent)}
       <div class="panel" id="pkit">
         <div class="ph"><span>YOUR LANE</span><b id="kcount"></b></div>
         <div id="kit"></div>
+      </div>
+
+      <!-- The briefing. It has something to say on exactly the waves where the
+           board is thin, because those are the waves that introduce something,
+           and it retires itself once the lane is doing the talking. -->
+      <div class="panel hidden" id="pnotes">
+        <div class="ph"><span id="ntitle">FIELD NOTES</span><b id="nsub"></b></div>
+        <div id="notes"></div>
       </div>
     </div>
 
@@ -1545,6 +1573,45 @@ function sil(type, w, h, colour) {
   return SIL[type].replace(/W/, w).replace(/H/, h).replace(/C2/g, '#20242e').replace(/C/g, c);
 }
 
+/* ------------------------------------------------------------------
+   FIELD NOTES. The first wave a new player sees has one enemy type and one
+   trap, so the board has almost nothing to hold and the screen reads as empty
+   with headings on it. The honest fix is not to pad the panels, it is to have
+   something worth saying: every wave up to 10 introduces a body, and that is
+   exactly the run of waves where the board is thin. The panel retires itself
+   when there is nothing new, which is when the lane is busy enough to carry
+   the screen on its own.
+   ------------------------------------------------------------------ */
+var ENEMY_NOTE = {
+  runner:   'Quick and thin. It dies to almost anything, and there are always more of them.',
+  brute:    'Slow and heavy. It walks at a fifth of a runner pace, so a wall or a pit buys you a long time.',
+  swarm:    'Five bodies at once. Your blade swings at one of them, which is what a spike strip is for.',
+  shielded: 'It shrugs off the first three things that touch it, whatever they are. Burn stacks strip that in a tick.',
+  flyer:    'It goes over spikes, pits, braziers and snares. Only a ballista and your own blade can reach it.',
+  sapper:   'It eats the first trap it walks into and then behaves like a runner. Keep the ballista off the front.',
+  healer:   'It pours health into anything within two cells. Kill it first or nothing else in the wave will die.',
+  warden:   'It breaks a wall in one hit and it takes a long time to bring down. You will hear it arrive.',
+  marshal:  'Fast, and a snare will not hold it. Everything within three cells of it moves at double time.'
+};
+
+/* one line of teaching per early wave, in the order a player meets the idea */
+var WAVE_NOTE = {
+  1: 'The gate is cell 0, hard left. One body reaching it ends the siege. Your blade does <b>' +
+     '{BLADE}</b> a swing and grows every wave, so it never stops mattering.',
+  2: 'Scrap arrives every wave whether you spend it or not. Scrap in your hand is scrap doing nothing.',
+  3: 'Tap a trap in the lane during the build phase to sell it back for every coin you put in.',
+  11: 'A ballista cannot see past a wall, including your own. The sight line is drawn while you place one.'
+};
+
+function firstWaveFor(type) {
+  var w, tbl, i;
+  for (w = 1; w <= CONFIG.WAVES; w++) {
+    tbl = GEN.waveTable(w);
+    for (i = 0; i < tbl.length; i++) if (tbl[i][0] === type) return w;
+  }
+  return -1;
+}
+
 function laneMetrics() {
   var f = EL.lanebox;
   var w = f.clientWidth || 390, h = f.clientHeight || 130;
@@ -1552,9 +1619,11 @@ function laneMetrics() {
   /* A body is drawn far wider than its cell on purpose. Thirty cells across a
      390px phone is 13px a cell, so at one body per cell every silhouette is a
      smudge. Overlapping ranks read as a crowd, which is what a siege looks
-     like, and the roster panel above carries the readable version. */
-  var us = Math.max(26, Math.min(52, cw * 2.6));
-  return { w: w, h: h, cw: cw, us: us, uh: us * 1.35 };
+     like, and the roster panel above carries the readable version.
+     Height follows the strip: a thin wave leaves the lane tall, and the bodies
+     grow into it instead of standing in a bigger empty room. */
+  var uh = Math.max(40, Math.min(84, Math.min(h * 0.34, cw * 4.4)));
+  return { w: w, h: h, cw: cw, us: uh / 1.35, uh: uh };
 }
 
 function buildLane() {
@@ -1672,14 +1741,22 @@ function drawBoard() {
   EL.bhp.textContent = Math.round(leftHP) + (build ? ' HP INCOMING' : ' HP LEFT');
   EL.bhpbar.style.width = Math.max(0, Math.min(100, leftHP / Math.max(1, totalHP) * 100)) + '%';
 
-  /* --- boss bar, because a Warden is the wave --- */
-  var boss = null;
+  /* --- boss row. Reserved for the WHOLE wave if the wave has a boss in it,
+     not just while one is alive, so the lane does not jump a centimetre the
+     moment a Warden spawns. Before it arrives the row reads INBOUND. --- */
+  var boss = null, bossType = null;
+  for (i = 0; i < tbl.length; i++) if (ENEMIES[tbl[i][0]].boss) bossType = tbl[i][0];
   for (i = 0; i < G.enemies.length; i++) if (G.enemies[i].boss && !G.enemies[i].dead) { boss = G.enemies[i]; break; }
-  EL.bbosswrap.classList.toggle('hidden', !boss);
+  EL.bbosswrap.classList.toggle('hidden', !bossType);
   if (boss) {
     EL.bbossbar.style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
     EL.bbossname.textContent = ENEMIES[boss.type].name.toUpperCase() + '  ' + Math.round(boss.hp) +
       ' / ' + boss.maxHp + '  ·  CELL ' + boss.cell;
+  } else if (bossType) {
+    EL.bbossbar.style.width = '100%';
+    EL.bbossname.textContent = ENEMIES[bossType].name.toUpperCase() + '  ' +
+      (build ? 'IN THIS WAVE' : (G.spawnIdx < G.spawns.length ? 'INBOUND' : 'DOWN'));
+    if (!build && G.spawnIdx >= G.spawns.length) EL.bbossbar.style.width = '0%';
   } else EL.bbossname.textContent = '';
 
   /* --- the roster: what is still coming, by type --- */
@@ -1703,10 +1780,13 @@ function drawBoard() {
   for (i = 0; i < order.length; i++) {
     k = order[i]; n = alive[k] || 0; left += n; total += want[k];
     rhtml += '<span class="pip' + (n ? '' : ' gone') + (ENEMIES[k].boss ? ' boss' : '') + '">' +
-      sil(k, 22, 30, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
+      sil(k, order.length <= 3 ? 32 : 22, order.length <= 3 ? 44 : 30, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
       n + '<s>/' + want[k] + '</s></span>';
   }
-  sigSet('roster', G.wave + ':' + build + ':' + rhtml.length + ':' + left, EL.pips, rhtml);
+  /* one lonely chip in a wide panel reads as a placeholder. Below four chips
+     the roster and the kit both draw large. */
+  EL.pips.classList.toggle('roomy', order.length <= 3);
+  sigSet('roster', G.wave + ':' + build + ':' + rhtml.length + ':' + left + ':' + order.length, EL.pips, rhtml);
   EL.rtitle.textContent = build ? 'WHAT IS COMING' : 'STILL COMING';
   EL.rcount.textContent = left + ' of ' + total;
 
@@ -1743,8 +1823,57 @@ function drawBoard() {
       (lv[k] > counts[k] ? '<s>lv' + (lv[k] / counts[k]).toFixed(1) + '</s>' : '') + '</span>';
   }
   if (!khtml) khtml = '<span class="kitchip none">Nothing in the ground yet.</span>';
+  EL.kit.classList.toggle('roomy', tn <= 3);
   sigSet('kit', khtml, EL.kit, khtml);
   EL.kcount.textContent = tn + ' traps  ·  ' + ls + ' levels';
+
+  drawNotes(order, tn);
+}
+
+/* The briefing. Everything in here is generated from the same tables the SIM
+   runs on, so it cannot drift away from what the wave actually does. */
+function drawNotes(order, trapCount) {
+  var lines = [], i, k, seen = {}, newOnes = [];
+  for (i = 0; i < order.length; i++) {
+    k = order[i];
+    if (seen[k]) continue;
+    seen[k] = 1;
+    /* a type is NEW if this is the first authored wave it appears in, or if it
+       is a boss variant that only exists past the twenty */
+    if (firstWaveFor(k) === G.wave || (G.wave > CONFIG.WAVES && ENEMIES[k].boss)) newOnes.push(k);
+  }
+  for (i = 0; i < newOnes.length; i++) {
+    k = newOnes[i];
+    lines.push('<div class="note">' + sil(k, 18, 25, ENEMIES[k].boss ? '#d2a0a0' : '#9aa6bd') +
+      '<b>' + ENEMIES[k].name + '.</b> ' + ENEMY_NOTE[k] +
+      ' <b>' + SIM.enemyHP(k, G.wave) + ' HP</b> at this wave.</div>');
+  }
+  if (WAVE_NOTE[G.wave]) {
+    lines.push('<div class="note">' + WAVE_NOTE[G.wave].replace('{BLADE}', SIM.playerDamage(G.wave)) + '</div>');
+  }
+  if (G.wave === 1 && G.traps[CONFIG.STARTER_CELL]) {
+    lines.push('<div class="note">The watch before you left a <b>spike strip</b> in the ground at cell ' +
+      CONFIG.STARTER_CELL + '. It bites every body on the ground that stands on it. Your first purse buys one more thing.</div>');
+  }
+  /* the moment the board runs out and DEEPEN starts to matter */
+  var free = 0;
+  for (i = CONFIG.BUILD_MIN_CELL; i <= CONFIG.BUILD_MAX_CELL; i++) if (!G.traps[i]) free++;
+  if (G.phase === 'build' && free <= 2 && trapCount > 0) {
+    lines.push('<div class="note">The lane is full. <b>DEEPEN</b> pays a trap price again on a cell you already own: ' +
+      'it stands a level deeper and comes back to full. That is where scrap goes from here.</div>');
+  }
+  /* endless modifiers explain themselves */
+  if (G.muts.length) {
+    for (i = 0; i < G.muts.length; i++) {
+      var m = mutByKey(G.muts[i]);
+      if (m) lines.push('<div class="note"><b>' + m.name + '.</b> ' + m.blurb + '</div>');
+    }
+  }
+  var html = lines.join('');
+  EL.pnotes.classList.toggle('hidden', !html);
+  EL.ntitle.textContent = (G.wave === 1) ? 'THE BRIEFING' : (newOnes.length ? 'NEW IN THIS WAVE' : 'FIELD NOTES');
+  EL.nsub.textContent = newOnes.length ? newOnes.map(function (x) { return ENEMIES[x].name; }).join(', ') : '';
+  sigSet('notes', html, EL.notes, html);
 }
 
 /* the roster lives on the board in both phases now. This only handles the
@@ -3193,6 +3322,7 @@ var SIM_TEST = { TEST: TEST, SUITES: SUITES, tGame: tGame, tPut: tPut, tEnemy: t
    'shakewrap', 'wavev', 'scrapv', 'bladev', 'timernum', 'timerarc', 'cdbar', 'muts',
    'board', 'lanebox', 'btitle', 'bhp', 'bhpbar', 'bbosswrap', 'bbossbar', 'bbossname',
    'rtitle', 'rcount', 'stitle', 'syou', 'livebars', 'kit', 'kcount',
+   'pnotes', 'ntitle', 'nsub', 'notes',
    'titlesheet', 'scoresheet', 'oversheet', 'optsheet', 'logsheet'].forEach(function (k) { EL[k] = $(k); });
 
   loadSave();

@@ -271,17 +271,23 @@ function liveChecks() {
   DEV.start(0); DEV.winLevel();
   ok('loop: winning writes progress', !!DEV.prog().cleared, JSON.stringify(DEV.prog().cleared).slice(0, 60));
 
-  /* The daily must build the same board for everybody on a given day. */
-  const d1 = (() => { DEV.start(1); return DEV.pegCounts(); })();
-  const d2 = (() => { DEV.start(1); return DEV.pegCounts(); })();
-  ok('determinism: the same meadow builds identically twice',
-    JSON.stringify(d1) === JSON.stringify(d2), JSON.stringify(d1) + ' vs ' + JSON.stringify(d2));
+  /* Determinism of the board build. Counting types is NOT enough: nReds /
+     nGreen / nPurple are fixed per level, so a completely different shuffle
+     yields identical counts. Fingerprint WHICH peg got which colour. */
+  const fingerprint = () => DEV.state().pegs.map(p => p.type[0] + Math.round(p.x) + ',' + Math.round(p.y)).join('|');
+  DEV.start(1); const d1 = fingerprint();
+  DEV.start(1); const d2 = fingerprint();
+  ok('determinism: the same meadow builds identically twice', d1 === d2,
+    d1 === d2 ? '' : 'board differs between two builds of the same level');
 
-  /* Earn cap. */
-  const cap = c.window._sbCapEarn;
+  /* Earn cap. Fresh sandbox: winLevel() above already banked some sunbeams and
+     a cap test that starts from a used-up ledger proves nothing. */
+  const fresh = boot(html, { search: '?ndtest=1' });
+  const cap = fresh.window._sbCapEarn;
   let total = 0, g = 0;
   while (g++ < 60) { const x = cap(1, 'test'); total += x; if (!x) break; }
   ok('earn: capped at 30 a day', total === 30, 'granted ' + total);
+  ok('earn: never pays a negative', cap(5, 'test') === 0);
 }
 
 /* ==================================================== SAVE / CORRUPT SAVE */
@@ -341,8 +347,9 @@ function selftest() {
         DEV.start(0); const e0 = DEV.state().redsLeft;
         DEV.start(Math.min(30, DEV.levels.length - 1)); const e1 = DEV.state().redsLeft;
         ok('difficulty: later meadows ask for more', e1 > e0);
-        DEV.start(1); const a = DEV.pegCounts(); DEV.start(1); const b = DEV.pegCounts();
-        ok('determinism: the same meadow builds identically twice', JSON.stringify(a) === JSON.stringify(b));
+        const fp2 = () => DEV.state().pegs.map(p => p.type[0] + Math.round(p.x) + ',' + Math.round(p.y)).join('|');
+        DEV.start(1); const a = fp2(); DEV.start(1); const b = fp2();
+        ok('determinism: the same meadow builds identically twice', a === b);
         const cap = c.window._sbCapEarn; let t = 0, g = 0;
         while (g++ < 80) { const x = cap(1, 't'); t += x; if (!x) break; }
         ok('earn: capped at 30 a day', t === 30);

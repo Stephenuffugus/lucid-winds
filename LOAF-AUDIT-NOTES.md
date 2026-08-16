@@ -156,6 +156,40 @@ Improvement (depth = more to notice, not more to manage):
 
 ---
 
+## HOW IT WAS VERIFIED
+
+`node loaf_check.mjs` (beside `loaf.html`, no dependencies, no browser).
+**56 checks, 56 passing.** Two halves:
+
+- **Static:** both script blocks parse (`node --check`, after proving the tag
+  split cannot be fooled by a `</script>` inside a string, which is the trap
+  that has produced false syntax errors on this fleet before); every element id
+  the code asks for exists in the markup; no duplicate ids; no dash in player
+  facing copy; no interactive CSS rule under 48px; no service worker; no breed
+  field anywhere.
+- **Live:** the REAL classic script block is executed inside a hand written DOM
+  shim, so these are the shipped functions, not a re-implementation. It mints
+  cards through `mint()`, drives the actual Room bridge object the 3D cat is
+  handed, and asserts: save round trip, two tabs not clobbering, corrupt save
+  rescue and salvage, the card cap not eating a cat, a failed write not
+  reporting success, need floors after a year away and after an hour away,
+  every play path raising PLAYED, feed and scoop still wired, the ritual paying
+  once and never expiring, bond never going down, tricks never un-learning,
+  serials never repeating, and the homecoming line varying and never blaming
+  the owner.
+
+**Every check was watched fail first.** Against the pre-fix file 20 of them were
+red. Three mutants were then run against the fixed file (silent card drop
+restored, `playedNeed` neutered, serial counter and homecoming line reverted)
+and each one turned exactly the right checks red. `--fail-demo` also proves the
+harness notices a renamed core function.
+
+**⚖ One change is a design call, not a bug fix**, and Stephen should see it:
+the need floor moved 8 → 45 and the drift moved from a per-minute to a per-day
+scale. It is inside the plan's own rule ("a reason to do something, never a
+punishment for being away") but it changes what the bars look like, so it is
+his to keep or reject. Everything else is correctness.
+
 ## WHAT STILL WORRIES ME
 
 - **Nothing here has been LOOKED at.** No browser in this session by

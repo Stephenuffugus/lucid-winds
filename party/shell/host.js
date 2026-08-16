@@ -225,7 +225,19 @@ window.PartyShell={
     var t=T;
     setTimeout(function(){ try{ if(t.destroy) t.destroy(); t.close(); }catch(e){} },500);
   },
-  players:roster,
+  /* ⛔ PLAY AGAIN IS A NEW GAME, SO IT TAKES A NEW REGISTER. Its only consumer
+     is every module's Play again button, and handing it the raw roster carried
+     everybody who had already left into the next game as a permanent row on the
+     television with a frozen score and a seat in every "n of N" count. Anybody
+     who wandered back in during the podium is picked up here as well, which is
+     the same rule read from the other end. */
+  players:function(){
+    var out=roster().filter(function(p){ return p.connected; });
+    /* if the whole room happens to be mid reconnect, replaying with nobody is
+       worse than replaying with the last known register */
+    return out.length?out:roster();
+  },
+  allPlayers:roster,
   colorFor:function(id){ return colorOf[id]||'#e8dcc8'; },
   code:function(){ return CODE; }
 };

@@ -430,6 +430,19 @@
     }
     return false;
   }
+  // Does this subtree contain anything we can identify as a control? Bounded
+  // walk, no selector engine, same predicate as the point test so the two can
+  // never disagree. Only ever called when a cover has already been found.
+  function fyHasControls(root, vw) {
+    var stack = [root], budget = 300, n, i;
+    while (stack.length && budget-- > 0) {
+      n = stack.pop();
+      if (n !== root && fyIsControl(n, vw) && fyVisible(n)) return true;
+      var kids = n.children;
+      if (kids) for (i = 0; i < kids.length && stack.length < 300; i++) stack.push(kids[i]);
+    }
+    return false;
+  }
   // The elements under a point, topmost first, minus our own. null = the
   // browser gives us no hit testing, so detection is not available at all.
   function fyStackAt(x, y, fab) {
@@ -493,6 +506,18 @@
       // A cover only counts as an overlay if it is LAYERED over other content.
       // Without this a full-bleed game wrapper reads as a modal and the fab
       // hides itself for the whole session.
+      //
+      // ⛔ AND ONLY IF WE CANNOT SEE ITS CONTROLS. This gate was added after the
+      // checker caught the rule misfiring: Bramblewick's settings list is a
+      // full-bleed sibling sitting over the game wrapper, so "layered cover"
+      // was true for the whole time the menu was open and the fab would have
+      // camped in the corner it fled to, long after the toggle scrolled away.
+      // When a sheet has DOM controls, the point test above is the authority —
+      // move only when something is genuinely underneath us. The blunt rule is
+      // the fallback for sheets whose buttons we cannot see at all (drawn on a
+      // canvas, or exotic enough that fyIsControl misses them), which is
+      // exactly the case where being blunt is the only option left.
+      if (cover && fyHasControls(cover, vw)) cover = null;
       if (cover) {
         for (j = coverIdx + 1; j < stack.length; j++) {
           var u = stack[j], utag = (u.tagName || '').toUpperCase();

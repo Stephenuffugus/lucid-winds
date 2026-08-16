@@ -176,10 +176,17 @@ CAT.forEach(c => {
    quietly regress into either half. */
 {
   const t = R('shell/transport.js');
-  if (!/sessionStorage\.(getItem|setItem)\('party_tab'/.test(t))
-    fail('IDENTITY', 'transport.js no longer keys the player id off a per tab sessionStorage marker');
-  if (!/localStorage\.getItem\(key\)/.test(t))
-    fail('IDENTITY', 'transport.js no longer persists the id, so a reload cannot rejoin as the same player');
+  /* the tab marker must be READ from sessionStorage: a first pass of this check
+     only looked for the string anywhere, and changing the read to localStorage
+     while leaving the write alone sailed straight through it */
+  if (!/var\s+tab\s*=\s*sessionStorage\.getItem\('party_tab'\)/.test(t))
+    fail('IDENTITY', 'the tab marker is not read from sessionStorage, so every tab is one player again');
+  if (!/sessionStorage\.setItem\('party_tab'/.test(t))
+    fail('IDENTITY', 'the tab marker is never written, so a reload gets a new identity');
+  /* and the id itself must be keyed BY that marker, or it collapses back to one
+     id per browser however the marker is stored */
+  if (!/localStorage\.getItem\(key\)/.test(t) || !/key\s*=\s*'party_selfid_'\s*\+\s*tab/.test(t))
+    fail('IDENTITY', 'the persisted id is not keyed by the tab marker, which is the practice-room-of-one bug');
 }
 
 /* ---------- 9. the early end waits for the ROOM, never for the start roster ----------
@@ -202,7 +209,22 @@ CAT.forEach(c => {
     fail('PRESENCE', `${c.slug} ends rounds early but never asks the shell who is present`);
 });
 
-/* ---------- 10. a podium always offers a way out of the room ---------- */
+/* ---------- 10. a secret is never in a broadcast payload ----------
+   setPhase goes to EVERY phone. Bearing's whole game is one hidden number that
+   only the Lantern may see, and it used to ride along in the clue phase because
+   the Lantern's phone was the only one that chose to draw it. A phase payload is
+   not a private channel; sendToPlayer is. */
+{
+  const br = R('games/bearing/host.js');
+  const clue = br.match(/setPhase\('clue',\{[\s\S]*?\}\);/);
+  if (!clue) fail('SECRETS', 'bearing no longer sets a clue phase, so this check is measuring nothing');
+  else if (/target/.test(clue[0]))
+    fail('SECRETS', 'bearing broadcasts the hidden target in the clue phase, where every phone can read it');
+  if (!/sendToPlayer\(lantern/.test(br))
+    fail('SECRETS', 'bearing never hands the target to the Lantern privately');
+}
+
+/* ---------- 11. a podium always offers a way out of the room ---------- */
 CAT.forEach(c => {
   const host = R(`games/${c.slug}/host.js`);
   if (!/backToPicker\(\)/.test(host))

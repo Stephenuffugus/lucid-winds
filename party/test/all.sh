@@ -20,6 +20,13 @@ else
   echo "  picker           FAIL  ($LOG/picker.log)"; FAIL=1
 fi
 
+echo "== static =="
+if node test/audit_static.js > "$LOG/static.log" 2>&1; then
+  echo "  static gate      PASS"
+else
+  echo "  static gate      FAIL  ($LOG/static.log)"; FAIL=1
+fi
+
 echo "== content =="
 if node test/bank_audit.js > "$LOG/banks.log" 2>&1; then
   echo "  bank audit       PASS  ($(grep TOTAL "$LOG/banks.log" | tr -s ' '))"

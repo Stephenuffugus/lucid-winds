@@ -94,9 +94,14 @@ both dead ends.
    Glory follows the same shape. Nothing about the enemies changed; the ladder
    is the same fight, the character arriving at it is now the right size.
 2. **Health pools raised (P2)** from `180 + dur*3.5 + sta*3.0` to
-   `300 + dur*6 + sta*5`, measured not guessed: median fight length went from
-   4 rounds to 9, and the relative win rates across the whole ladder moved by
-   under 4 points, so the retune lengthens fights without re-deciding who wins.
+   `300 + dur*6 + sta*5`, measured not guessed. Fight length roughly doubled
+   (rung 1: 4.0 rounds to 6.9, rung 3: 5.7 to 9.5). Honest caveat: it did not
+   leave the odds untouched. Longer fights mean fewer coin flips, so the
+   underdog's lucky wins fell — a fresh level-1 character's chance against rung 4
+   went from 6% to 2%, and rung 5 from 7.5% to 1.5%. That is the correct
+   direction: a two-round fight decided by one crit is not a result, and the
+   progression fix below is what a stuck player is now supposed to reach for
+   instead of re-rolling the dice.
 3. **Per-character save repair (P3).** Roster entries are migrated one at a
    time inside a try/catch; a character that cannot be repaired is dropped and
    the rest of the roster lives. `migrateOC` now hard-guards `baseStats`,
@@ -136,6 +141,19 @@ both dead ends.
 
 Run all three from `test/`: `node probe_state.mjs && node probe_ui.mjs &&
 node probe_balance.mjs`.
+
+## Measured after the fixes
+
+An auto-player — a deliberately naive one that allocates tree nodes at random,
+never buys a gem, never masters a power, never trains a stat and never picks an
+ascendancy — now clears all twelve rungs **8 runs out of 8 for every race
+tested**, in 141 to 289 fights. Before the retune the same auto-player cleared
+the ladder in 1 to 7 runs out of 8 and needed roughly 3000 fights when it managed
+it at all. A player who actually spends their Glory will be well inside that.
+
+The fresh level-1 difficulty table is deliberately unchanged in shape: 100%,
+99%, 38%, then down. The wall at rung 3 is the game telling you to go build
+something, and now going and building something is a thing you can afford to do.
 
 ## Still open (deliberately not touched)
 

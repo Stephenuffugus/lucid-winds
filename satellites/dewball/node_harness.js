@@ -172,7 +172,9 @@ function boot(opts){
                  language:'en', platform:'linux', serviceWorker:{ register:function(){ return Promise.resolve(); } } },
     location: { href:'file:///dewball/index.html?dbtest=1&dbseed='+seed, search:'?dbtest=1&dbseed='+seed,
                 hash:'', pathname:'/dewball/index.html', origin:'file://', protocol:'file:', reload:function(){} },
-    localStorage: (function(){ var m={}; return {
+    localStorage: (function(){ var m={}, pf=opts.prefill||{}, q;
+      for (q in pf) if (pf.hasOwnProperty(q) && pf[q] !== undefined) m[q]=String(pf[q]);
+      return {
         getItem:function(k){ return (k in m)?m[k]:null; },
         setItem:function(k,v){ m[k]=String(v); },
         removeItem:function(k){ delete m[k]; },

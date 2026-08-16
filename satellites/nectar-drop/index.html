@@ -1153,10 +1153,22 @@ function shareNectar(){
 }
 
 /* ===== render ===== */
-function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
-  if(G) G.t++;
-  if(G && (WORLDS[G.w].gim.indexOf('moving')>=0)){ for(var mp=0;mp<G.pegs.length;mp++){ var pg=G.pegs[mp]; if(pg.mv){ pg.x=pg.bx+Math.sin(G.t*0.03+pg.ph)*pg.amp; } } }
-  if(G&&G.phase==='fire'){
+/* ⛔ ONE FRAME OF SIMULATION LIVES HERE, AND ONLY HERE.
+   Extracted 2026-08-16. The ND_DEV.fireAt test hook used to advance the world
+   with a bare `while(...) physics()` loop of its own. That is NOT a frame: it
+   never incremented G.t, and hit blooms dissolve on a G.t deadline
+   (`(G.t-pg.hitT)>ND_SOLID`), so under the hook every bloom the ball touched
+   stayed SOLID forever. Result: 3 shots in 60 ping-ponged past 20,000 physics
+   steps and the checker reported "the ball never dies" for a game that is
+   completely fine when a real frame runs. A probe that steps the world
+   differently from the game is a probe that lies, in whichever direction.
+   Both the render loop and the headless hook go through simFrame() now.
+   If you add per-frame world state, add it HERE, not in loop(). */
+function simFrame(){
+  if(!G)return;
+  G.t++;
+  if(WORLDS[G.w].gim.indexOf('moving')>=0){ for(var mp=0;mp<G.pegs.length;mp++){ var pg=G.pegs[mp]; if(pg.mv){ pg.x=pg.bx+Math.sin(G.t*0.03+pg.ph)*pg.amp; } } }
+  if(G.phase==='fire'){
     checkFinale();
     if(G.freeze>0){ G.freeze--; }
     else {
@@ -1165,12 +1177,15 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
       while(G._acc >= 1 && guard++ < 8){ physics(); G._acc -= 1; if(!G||G.phase!=='fire')break; }
     }
   }
-  else if(G) {
+  else {
     if(!G.magnet){ G.bucketX+=G.bucketDir*2.2; if(G.bucketX>VW-BUCKET_W/2){G.bucketX=VW-BUCKET_W/2;G.bucketDir=-1;} if(G.bucketX<BUCKET_W/2){G.bucketX=BUCKET_W/2;G.bucketDir=1;} }
     for(var i=G.sparks.length-1;i>=0;i--){ var s=G.sparks[i]; s.x+=s.vx; s.y+=s.vy; s.vy+=0.18; s.life-=0.03; if(s.life<=0)G.sparks.splice(i,1); }
     for(i=G.floaters.length-1;i>=0;i--){ G.floaters[i].y-=0.7; G.floaters[i].life-=0.02; if(G.floaters[i].life<=0)G.floaters.splice(i,1); }
   }
   if(G) stepFx();
+}
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
+  simFrame();
   render();
   requestAnimationFrame(loop);
 }
@@ -1559,9 +1574,9 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 /* headless test hook */
 if(/[?&]ndtest=1/.test(location.search)){
   window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS, worlds:WORLDS, gardeners:GARDENERS, share:shareNectar, prog:function(){return PROG;},
-    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.56,Math.min(1.56,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ physics(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
+    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.56,Math.min(1.56,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ simFrame(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
     setAimRaw:function(x,y){ setAim({x:x,y:y}); return aim.angle; },
-    autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<400){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
+    autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<400){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) simFrame(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
     pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0,armored:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
     fx:function(){ return {flash:G.flash, freeze:G.freeze, shakeMag:G.shake?G.shake.mag:0, rings:G.rings?G.rings.length:0, finaleActive:G.finale?G.finale.active:false, camz:G.cam?G.cam.z:0}; },
     render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); },

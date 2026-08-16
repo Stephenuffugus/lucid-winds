@@ -88,13 +88,22 @@ input.name{width:132px; min-height:48px; background:#0a0f17; border:1px solid va
 <script>
 /* ===== Sky Wolf Studios embed protocol ===== */
 (function(){
-  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
-  window.SWS_EMBED=SWS_EMBED;
+  /* Framed detection must not hang on the ?embed=1 flag: the portal frames
+     /play/ and github.io urls without it, and a framed page that never says
+     {sws:'ready'} is read as a black screen and auto-closed. Ready goes out at
+     parse time AND on load, per PORTAL-CONTRACT.md. The exit falls back to
+     document.referrer because a relative /satellites/ url is a TOP LEVEL
+     navigation, where window.parent would never differ. */
+  var FRAMED=false; try{ FRAMED=(window.parent!==window); }catch(e){ FRAMED=true; }
+  window.SWS_FRAMED=FRAMED;
+  window.SWS_EMBED=FRAMED||/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EXIT=function(){
-    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    if(FRAMED){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
   };
-  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  function ready(){ if(!FRAMED) return; try{parent.postMessage({sws:'ready'},'*');}catch(e){} }
+  ready();
+  window.addEventListener('load',ready);
 })();
 </script>
 <script>
@@ -184,8 +193,37 @@ try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 /* ---------- state + storage ---------- */
 var KEY='tl_state';
 var ST={names:null, streak:0, best:0, lastDay:0, lastResult:null, earned:{}};
-try{var raw=localStorage.getItem(KEY); if(raw) ST=JSON.parse(raw);}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(ST));}catch(e){}}
+/* A save is untrusted input. Before this, a blob that parsed but was the wrong
+   shape (or an old shape) left streak undefined, and the first ST.streak++ wrote
+   NaN into the save, so the pair's streak line read "pair streak NaN" forever. */
+function sanitize(s){
+  var o={names:null,streak:0,best:0,lastDay:0,lastResult:null,earned:{}};
+  if(!s||typeof s!=='object') return o;
+  if(Array.isArray(s.names)&&s.names.length===2&&typeof s.names[0]==='string'&&typeof s.names[1]==='string')
+    o.names=[String(s.names[0]).slice(0,10),String(s.names[1]).slice(0,10)];
+  o.streak=Math.max(0,Math.floor(Number(s.streak))||0);
+  o.best=Math.max(o.streak,Math.max(0,Math.floor(Number(s.best))||0));
+  o.lastDay=Math.max(0,Math.floor(Number(s.lastDay))||0);
+  if(s.lastResult&&typeof s.lastResult==='object') o.lastResult=s.lastResult;
+  if(s.earned&&typeof s.earned==='object') o.earned=s.earned;
+  return o;
+}
+try{var raw=localStorage.getItem(KEY); if(raw) ST=sanitize(JSON.parse(raw));}catch(e){}
+/* Merge on write: two open tabs used to overwrite each other wholesale. A best
+   is a MAX and the newest night wins, so neither tab can walk a streak back. */
+function save(){
+  try{
+    var prev=null; try{ prev=sanitize(JSON.parse(localStorage.getItem(KEY)||'null')); }catch(e){}
+    var out={names:ST.names||(prev&&prev.names)||null,
+      streak:ST.streak, best:Math.max(ST.best||0,(prev&&prev.best)||0),
+      lastDay:Math.max(ST.lastDay||0,(prev&&prev.lastDay)||0),
+      lastResult:ST.lastResult||(prev&&prev.lastResult)||null,
+      earned:ST.earned||{}};
+    if(prev&&prev.lastDay>ST.lastDay&&prev.lastResult){ out.streak=prev.streak; out.lastResult=prev.lastResult; }
+    ST.best=out.best;
+    localStorage.setItem(KEY,JSON.stringify(out));
+  }catch(e){}
+}
 
 /* ---------- daily puzzle, two independent PRNG streams ---------- */
 function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
@@ -364,10 +402,20 @@ function finishRound(){
       if(sc.errors===0)window._sbCapEarn&&window._sbCapEarn(2,'twin-lanterns:perfect');
       if(window.SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'earn',moment:'daily_done',detail:{perfect:sc.errors===0}},'*');}catch(e){}}
     }else{ST.streak=0;}
-    ST.lastResult={day:day,errors:sc.errors,lit:lit};
+    /* keep the board, not just the number, so tonight can be reopened after a
+       reload instead of the Play button going dead */
+    ST.lastResult={day:day,errors:sc.errors,lit:lit,marks:R.marks,gifts:R.gifts};
     save();
   }
   renderResult(sc);
+}
+function replayTonight(){
+  var lr=ST.lastResult;
+  if(!lr||lr.day!==dayNum()){ show('s-title'); refreshTitle(); return; }
+  PZ=genPuzzle(dayNum());
+  R={phase:3, gifts:(lr.gifts&&lr.gifts.length===2)?lr.gifts:[null,null],
+     marks:(lr.marks&&lr.marks.length===2)?lr.marks:[{},{}], player:0};
+  renderResult({wrong:0,missed:0,errors:lr.errors||0});
 }
 
 /* ---------- share card ---------- */
@@ -411,13 +459,16 @@ $('pair-save').addEventListener('click',function(){
   ST.names=[a,b]; save(); show('s-title'); refreshTitle();
 });
 $('b-play').addEventListener('click',function(){
-  if(ST.lastDay===dayNum()&&ST.lastResult){ refreshTitle(); return; }
+  /* This used to silently do nothing once the night was played: the one button
+     on the screen became inert with no explanation. Now it reopens the night
+     you already lit, so the button always answers. */
+  if(ST.lastDay===dayNum()&&ST.lastResult){ replayTonight(); return; }
   if(!ST.names){show('s-pair');return;}
   show('s-how');
 });
 $('how-go').addEventListener('click',function(){
   if(!ST.names){show('s-pair');return;}
-  if(ST.lastDay===dayNum()){show('s-title');refreshTitle();return;}
+  if(ST.lastDay===dayNum()&&ST.lastResult){replayTonight();return;}
   newRound();
   handOff(0,'Only '+names()[0]+' looks at this half. Pick one stone to gift.');
 });
