@@ -291,8 +291,14 @@ const CHECKS = [
         for (const el of document.querySelectorAll('button, .toggle, .sk-tab, .sk-opt')) {
           const st = getComputedStyle(el);
           if (st.display === 'none' || st.visibility === 'hidden' || !el.offsetParent) continue;
-          const b = el.getBoundingClientRect();               // already includes the stage scale
+          let b = el.getBoundingClientRect();                 // already includes the stage scale
           if (!b.width || !b.height) continue;
+          // the real tap target is the nearest clickable box, which may be a row
+          let a = el.parentElement, hops = 0;
+          while (a && hops++ < 3 && (b.width < 47.5 || b.height < 47.5)) {
+            if (getComputedStyle(a).cursor === 'pointer') { const ab = a.getBoundingClientRect(); if (ab.width >= b.width && ab.height >= b.height) b = ab; }
+            a = a.parentElement;
+          }
           const key = (el.id || el.className) + '|' + Math.round(b.width) + 'x' + Math.round(b.height);
           if (seen.has(key)) continue; seen.add(key);
           if (b.width < 47.5 || b.height < 47.5) small.push({ where, el: el.id || el.className, w: Math.round(b.width), h: Math.round(b.height), txt: (el.textContent || '').trim().slice(0, 16) });
@@ -319,13 +325,15 @@ const CHECKS = [
     const r = await page.evaluate(async () => {
       document.getElementById('b-skins').click();
       await new Promise(r => setTimeout(r, 120));
-      const sk = document.getElementById('s-skins'), how = document.getElementById('s-how');
-      return { inStage: !!(sk && sk.parentElement && sk.parentElement.id === 'stage'),
-               skW: Math.round(sk.getBoundingClientRect().width),
-               howW: Math.round(how.getBoundingClientRect().width) };
+      const sk = document.getElementById('s-skins'), stage = document.getElementById('stage');
+      const sb = sk.getBoundingClientRect(), tb = stage.getBoundingClientRect();
+      return { inStage: !!(sk.parentElement && sk.parentElement.id === 'stage'),
+               skW: Math.round(sb.width), skH: Math.round(sb.height),
+               stageW: Math.round(tb.width), stageH: Math.round(tb.height) };
     });
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
-    return { ok: r.inStage && Math.abs(r.skW - r.howW) < 2, detail: JSON.stringify(r) };
+    // it must fill the SCALED stage box exactly, like every other .screen does
+    return { ok: r.inStage && Math.abs(r.skW - r.stageW) < 2 && Math.abs(r.skH - r.stageH) < 2, detail: JSON.stringify(r) };
   },
   break: `document.body.appendChild(document.getElementById('s-skins'));` },
 
