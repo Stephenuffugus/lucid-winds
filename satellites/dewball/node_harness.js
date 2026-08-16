@@ -146,6 +146,12 @@ function boot(opts){
   var s1 = html.indexOf('<\/script>', s0);
   if (s0 < 0 || s1 < 0) throw new Error('harness: main script block not found');
   var game = html.slice(s0, s1);
+  /* the portal handshake block sits BEFORE three.min.js and defines SWS_EMBED /
+     _sbCapEarn, which the game reads at boot */
+  var p0 = html.indexOf('portal-standard sunbeam cap');
+  if (p0 < 0) throw new Error('harness: portal handshake block not found');
+  p0 = html.lastIndexOf('<script>', p0); p0 = html.indexOf('>', p0) + 1;
+  var pre = html.slice(p0, html.indexOf('<\/script>', p0));
 
   var doc = makeDom();
   var rnd = mulberry32(seed);
@@ -219,6 +225,8 @@ function boot(opts){
 
   var errs = [];
   sandbox.__harnessErr = function(e){ errs.push(String(e)); };
+  sandbox.parent = sandbox;
+  vm.runInContext(pre, ctx, { filename:'dewball-portal.js' });
   vm.runInContext(game, ctx, { filename:'dewball-main.js' });
 
   if (!sandbox.DB_DEV) throw new Error('harness: DB_DEV missing — is ?dbtest=1 in location.search?');
