@@ -16,9 +16,8 @@ Build at audit time: `v5.7`, 2467 lines, three.min.js vendored, sw v63.
   which reads exactly like "the game stopped loading" and is nothing of the kind. Every
   in-page stepping loop is also timeboxed by wall clock, so the suite can report a hang
   rather than becoming one.
-- All five entry points driven to their end panel through the `?dev=1` hook
-  (`window._S3.stepN`), not by eyeballing: Journey L1, Journey L2, Freefall L1,
-  Wall Climb L1, Endless.
+- All four entry points driven to their end panel through the `?dev=1` hook
+  (`window._S3.stepN`), not by eyeballing: Journey, Freefall, Wall Climb, Endless.
 - Every check in `audit-check.mjs` was watched FAIL on purpose before it was trusted, and
   three of them had to be rewritten because they could not go red:
   - The first play probe broke its loop the instant `G.done` flipped, which is 2.4 seconds
@@ -37,7 +36,7 @@ Build at audit time: `v5.7`, 2467 lines, three.min.js vendored, sw v63.
 
 ## The core loop, start to finish — WORKS
 
-All five modes reach their end panel, bank score, and persist. Measured:
+All four modes reach their end panel, bank score, and persist. Measured:
 
 | Mode | Result | Panel | Persisted |
 |---|---|---|---|

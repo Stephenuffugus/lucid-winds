@@ -14,11 +14,19 @@ the chain tiers and the powerup pool. This audit is repair and hardening only.
 ## How this was verified
 
 - Real headless Chrome at 375x667. Boot, onboarding, studio, map, and a live run driven
-  through actual DOM clicks and real keyboard input — this game exposes no dev hook, so
-  everything below was reached the way a player reaches it.
-- Corrupt-save cases poisoned one key per boot in a fresh browser context, because an
-  IIFE that dies at parse dies once and a shared context would have hidden it.
+  through actual DOM clicks and real keyboard input — at audit time this game exposed no
+  dev hook, so everything below was reached the way a player reaches it. (One was added
+  afterwards; see improvement B.)
+- Corrupt-save cases poison one key per boot in a **fresh browser, launched and closed**.
+  An IIFE that dies at parse dies once per document, so a shared context would let a later
+  case pass for the wrong reason. Reusing one browser across ~30 boots also exhausts it on
+  a 2-core box and the run dies on a navigation timeout, which reads exactly like "the game
+  stopped loading" and is nothing of the kind.
 - Every assertion in `audit-check.mjs` was watched FAIL on purpose before it was trusted.
+- **The title screen is static HTML, so "it rendered" proves nothing.** Every corrupt-save
+  case therefore asserts that a *button does its job* — PLAY reaches mode select, Adventure
+  reaches a 25 cell map, the shop renders rows — because the exact failure being guarded
+  against is a dead game that looks perfectly healthy.
 
 ## The core loop, start to finish — WORKS
 

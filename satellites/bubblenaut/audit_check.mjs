@@ -136,6 +136,17 @@ async function open(seed = null, touch = true){
   await new Promise(r => setTimeout(r, 800));
   return { ctx, page, errs };
 }
+/* Headless rAF on this box runs at a fraction of 60fps under contention, so a
+   fixed wall-clock wait proves nothing. Poll the game's own state instead. */
+async function waitForLevel(page, want, budgetMs = 25000){
+  const t0 = Date.now();
+  while (Date.now() - t0 < budgetMs) {
+    const l = await page.evaluate(() => window.__bn.state.level);
+    if (l >= want) return l;
+    await new Promise(r => setTimeout(r, 400));
+  }
+  return page.evaluate(() => window.__bn.state.level);
+}
 const resume = p => p.evaluate(() => {
   const b = document.getElementById('b-resume');
   return { shown: getComputedStyle(b).display !== 'none', label: b.textContent.trim() };
@@ -214,7 +225,8 @@ const resume = p => p.evaluate(() => {
   const { ctx, page } = await open({ bn_seen: '1' });
   await page.evaluate(async () => { document.getElementById('b-play').click(); await new Promise(x => setTimeout(x, 400)); });
   await page.evaluate(() => { localStorage.setItem('bn_furthest', '20'); localStorage.setItem('bn_best', '99999'); });
-  await page.evaluate(async () => { window.__bn.t.clearCritters(); await new Promise(x => setTimeout(x, 3200)); });
+  await page.evaluate(() => window.__bn.t.clearCritters());
+  await waitForLevel(page, 1);
   const far = await page.evaluate(() => localStorage.getItem('bn_furthest'));
   ok('two tabs: the furthest room from the other tab survives (MAX)', +far >= 20, 'bn_furthest=' + far);
   const advanced = await page.evaluate(() => window.__bn.state.level);
@@ -241,7 +253,9 @@ const resume = p => p.evaluate(() => {
   const st = await page.evaluate(async () => { document.getElementById('b-play').click(); await new Promise(x => setTimeout(x, 500)); return window.__bn.state; });
   ok('a solo run spawns exactly one player', st.players.length === 1, JSON.stringify(st.players));
   ok('a solo run has critters to clear', st.critters > 0, 'critters=' + st.critters);
-  const adv = await page.evaluate(async () => { window.__bn.t.clearCritters(); await new Promise(x => setTimeout(x, 3200)); return window.__bn.state; });
+  await page.evaluate(() => window.__bn.t.clearCritters());
+  await waitForLevel(page, 1);
+  const adv = await page.evaluate(() => window.__bn.state);
   ok('a solo player can clear a room and advance', adv.level === 1, 'level=' + adv.level);
   ok('the second player is never spawned in 1P', adv.players.length === 1, JSON.stringify(adv.players));
   await ctx.close();
