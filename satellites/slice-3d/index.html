@@ -2238,7 +2238,13 @@ function failLevel(){
     $('go-stars').textContent=enb?'\u2605':'\u2715';
     $('go-stars').style.color=enb?'#f2a8d8':'#ff6a5a';
   } else {
-    $('go-title').textContent='STUCK IN THE WALL';
+    /* A Journey run does not end in a wall \u2014 it ends on a pink crystal, and the game
+       already shouted "SPIKED!" one second earlier. This panel said "STUCK IN THE
+       WALL" and "fell 3 before you stuck" for a run that never left the ground,
+       which contradicts both the burst the player just saw and the How screen's
+       "pink crystals end the run on contact". Name the death that actually
+       happened. Fixed 2026-08-16. */
+    $('go-title').textContent=(G.mode==='ff')?'STUCK IN THE WALL':'SPIKED';
     $('go-stars').textContent='\u2715';
     $('go-stars').style.color='#ff6a5a';
   }
@@ -2257,8 +2263,10 @@ function failLevel(){
        blade is the NORMAL way a Freefall dive ends \u2014 so nearly every slab a player
        ever cut was thrown away, silently, and the trophy was close to unreachable.
        runTrophies() banks the tally and calls saveProg(). Fixed 2026-08-16. */
-    $('go-lab').textContent='the blade caught the wall';
-    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 fell '+depthM+' before you stuck'+runTrophies();
+    var ffFail=(G.mode==='ff');
+    $('go-lab').textContent=ffFail?'the blade caught the wall':'a pink crystal caught you';
+    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+
+      (ffFail?(' \u00b7 fell '+depthM+' before you stuck'):(' \u00b7 '+G.taps+' flips'))+runTrophies();
   }
   var svf=awardSlivers();
   $('go-sun').textContent='\u25c6 +'+svf+' slivers';

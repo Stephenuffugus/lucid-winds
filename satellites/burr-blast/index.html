@@ -2268,12 +2268,25 @@ function predictPath(){
   var pts=[], hit=null, dt=1/60;
   var pr=(AMMO[currentAmmoType()]||AMMO.burr).r*0.7;
   for(var i=0;i<gs.steps;i++){
+    var px=pos.x, py=pos.y;
     vel.y+=GRAVITY*dt; vel.x/=(1+dt*0.15); vel.y/=(1+dt*0.15);
     pos.x+=vel.x*dt; pos.y+=vel.y*dt;
     if(i%gs.every===0) pts.push(v(pos.x,pos.y));
-    if(pos.y>GROUND_Y+8 || pos.x>G.levelWidth) break;
+    if(pos.y>=GROUND_Y){
+      // LOOKED at it: most shots end on the soil, and the arc used to just stop
+      // there with no mark. Interpolate the crossing so the reticle lands where
+      // the seed lands, which is the whole point of an aim guide.
+      var t=(GROUND_Y-py)/Math.max(1e-3,(pos.y-py));
+      hit=v(px+(pos.x-px)*t, GROUND_Y); break;
+    }
+    if(pos.x>G.levelWidth) break;
     if(i>2 && _guideBlocked(pos.x,pos.y,pr)){ hit=v(pos.x,pos.y); break; }
   }
+  // the dot for the contact step is plotted before the test, so it can sit past
+  // the reticle. Drop it: the arc must not draw one step INTO the thing it hits.
+  if(hit && pts.length>1){ var L=pts[pts.length-1];
+    if((L.x-hit.x)*(L.x-hit.x)+(L.y-hit.y)*(L.y-hit.y) < 1) pts.pop();
+    else if(L.x>hit.x+2) pts.pop(); }
   return { pts:pts, hit:hit };
 }
 
@@ -2563,15 +2576,26 @@ function drawSling(ctx){
 }
 
 function drawTrajectory(ctx){
-  var g=predictPath(), pts=g.pts; if(!pts.length) return;
-  ctx.fillStyle='rgba(232,220,200,0.7)';
-  for(var i=0;i<pts.length;i++){ var a=1-i/pts.length; ctx.globalAlpha=0.25+a*0.6; ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y, 4-i*0.03, 0,6.28); ctx.fill(); }
+  var g=predictPath(), pts=g.pts, i, r; if(!pts.length) return;
+  /* LOOKED at it in landscape: cream dots at ~2 rendered px vanished into the
+     photographic meadow. Each dot now gets a dark halo first, so the guide reads
+     over sunlit grass, dark soil and stone alike. */
+  ctx.lineWidth=2; ctx.strokeStyle='rgba(6,8,5,0.55)';
+  for(i=0;i<pts.length;i++){ r=Math.max(2.2, 4.4-i*0.03);
+    ctx.globalAlpha=0.25+(1-i/pts.length)*0.6;
+    ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y,r,0,6.28); ctx.stroke(); }
+  ctx.fillStyle='rgba(240,232,214,0.95)';
+  for(i=0;i<pts.length;i++){ r=Math.max(2.2, 4.4-i*0.03);
+    ctx.globalAlpha=0.3+(1-i/pts.length)*0.65;
+    ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y,r,0,6.28); ctx.fill(); }
   ctx.globalAlpha=1;
-  if(g.hit){   // where the arc actually ends: a small gold reticle on the first thing it meets
-    ctx.strokeStyle='rgba(200,168,75,0.9)'; ctx.lineWidth=2;
+  if(g.hit){   // where the arc actually ends: a gold reticle on the first thing it meets
+    ctx.lineWidth=3.5; ctx.strokeStyle='rgba(6,8,5,0.5)';
     ctx.beginPath(); ctx.arc(g.hit.x,g.hit.y,9,0,6.28); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(g.hit.x-13,g.hit.y); ctx.lineTo(g.hit.x-5,g.hit.y);
-    ctx.moveTo(g.hit.x+5,g.hit.y); ctx.lineTo(g.hit.x+13,g.hit.y); ctx.stroke();
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(200,168,75,0.95)';
+    ctx.beginPath(); ctx.arc(g.hit.x,g.hit.y,9,0,6.28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(g.hit.x-14,g.hit.y); ctx.lineTo(g.hit.x-5,g.hit.y);
+    ctx.moveTo(g.hit.x+5,g.hit.y); ctx.lineTo(g.hit.x+14,g.hit.y); ctx.stroke();
   }
 }
 function drawParticles(ctx){

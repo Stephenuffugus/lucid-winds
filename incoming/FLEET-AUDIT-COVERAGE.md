@@ -1,5 +1,7 @@
 # FLEET AUDIT COVERAGE — living tracker
 
+**29 satellites now carry an AUDIT-NOTES.md**, plus LOAF, Whack Box, Hush and PadLab at the repo root.
+
 Started 2026-08-16. 101 carded satellites plus the root apps. This exists so nobody audits the
 same game twice and nothing quietly gets skipped. Update it when a game is covered.
 
@@ -25,11 +27,9 @@ root-weave · silt · sled-vine · spore-drift · tempo-grove · tinker-loft · 
 
 hues · dragon-philosophy
 
-## WAVE 4 IN FLIGHT (round three's standing defect list is now the brief)
+## WAVE 4 (notes landed, verification in progress)
 
-burr-blast · garden-td · slice-3d · sproing · moon-claw · skyshot · budburst · pong ·
-petal-plunge · greenhouse-pinball · burrow-bowl · rule-root · flipbook · seed-flutter ·
-pollen-panic · shell-shuffle · bubblenaut
+bubblenaut · budburst · burr-blast · burrow-bowl · flipbook · moon-claw · petal-plunge · pollen-panic · pong · rule-root · seed-flutter · shell-shuffle · skyshot · slice-3d · sproing
 
 ## NOT YET TOUCHED — largest first
 

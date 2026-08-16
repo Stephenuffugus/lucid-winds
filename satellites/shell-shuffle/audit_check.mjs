@@ -136,15 +136,23 @@ async function open(query = '', seed = null){
   await new Promise(r => setTimeout(r, 700));
   return { ctx, page, errs };
 }
+/* A real mouse click, never el.click(): el.click() skips hit testing, so it
+   would happily "prove" a button works while a sheet sits on top of it. If the
+   click cannot land, that IS the finding, so report it instead of crashing. */
+async function tap(page, sel){
+  try { await page.click(sel); return true; }
+  catch (e) { return false; }
+}
 /* The one that matters: does tapping the button that says "Start Game"
    actually start a game. It looked live and did nothing for a corrupt save. */
 async function startsARound(page){
-  await page.click('#actBtn');
+  const landed = await tap(page, '#actBtn');
   await new Promise(r => setTimeout(r, 700));
-  return page.evaluate(() => ({
+  return page.evaluate(l => ({
+    landed: l,
     status: document.getElementById('status').textContent,
     cups: document.querySelectorAll('#playfield .cup-wrap').length
-  }));
+  }), landed);
 }
 
 // ---- 1. boots clean and a round starts
@@ -152,7 +160,7 @@ async function startsARound(page){
   const { ctx, page, errs } = await open();
   ok('boots with no page error', errs.length === 0, errs[0]);
   const r = await startsARound(page);
-  ok('Start Game actually starts a round', r.cups >= 2, JSON.stringify(r));
+  ok('Start Game actually starts a round', r.landed && r.cups >= 2, JSON.stringify(r));
   await ctx.close();
 }
 
@@ -171,7 +179,7 @@ const POISONS = {
 for (const [name, poison] of Object.entries(POISONS)) {
   const { ctx, page, errs } = await open('', { 'shellshuffle:v1': JSON.stringify(poison) });
   const r = await startsARound(page);
-  ok('corrupt save (' + name + '): Start Game still starts a round', r.cups >= 2, JSON.stringify(r));
+  ok('corrupt save (' + name + '): Start Game still starts a round', r.landed && r.cups >= 2, JSON.stringify(r));
   ok('corrupt save (' + name + '): no page error', errs.length === 0, errs[0]);
   await ctx.close();
 }
@@ -274,11 +282,11 @@ for (const [name, poison] of Object.entries(POISONS)) {
 {
   const { ctx, page } = await open();
   ok('main screen: no control under 48 rendered px', (await page.evaluate(TOUCH_PROBE)).length === 0, JSON.stringify(await page.evaluate(TOUCH_PROBE)).slice(0,200));
-  await page.click('#openShop');
+  await tap(page, '#openShop');
   await new Promise(r => setTimeout(r, 400));
   let bad = await page.evaluate(TOUCH_PROBE);
   ok('shop sheet: no control under 48 rendered px', bad.length === 0, JSON.stringify(bad).slice(0, 220));
-  await page.click('#closeShop'); await page.click('#openDaily');
+  await tap(page, '#closeShop'); await tap(page, '#openDaily');
   await new Promise(r => setTimeout(r, 400));
   bad = await page.evaluate(TOUCH_PROBE);
   ok('daily sheet: no control under 48 rendered px', bad.length === 0, JSON.stringify(bad).slice(0, 220));
@@ -301,7 +309,7 @@ for (const [name, poison] of Object.entries(POISONS)) {
   ok('fab mounted at all', await page.evaluate(() => !!document.querySelector('.lwfb-fab')));
   let hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
   ok('main screen: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
-  await page.click('#openShop');
+  await tap(page, '#openShop');
   await new Promise(r => setTimeout(r, 2600));
   hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
   ok('shop sheet: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));

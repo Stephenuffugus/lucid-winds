@@ -107,9 +107,26 @@ fleet shipped a correct `SWS_EXIT` that nothing ever called; this one does not.
 
 All measured rather than assumed:
 
-- **Touch targets.** The 540x960 stage scales 0.6944 at 375x667. Every visible control on
-  the title screen measures at or above 48 RENDERED px. The map cells and world tabs are
-  declared at 72-76 stage px, which lands at 50-53 rendered. Zero under 48.
+- **Touch targets — measured twice, because the first measurement was misleading.**
+  The 540x960 stage scales 0.6944 at 375x667. Map cells and world tabs are declared at
+  72-76 stage px, landing at 50-53 rendered: fine.
+
+  But `.icobtn` is declared **56 stage px, which is 38.9 RENDERED px** and would fail the
+  48 rule outright on its box. It passes only because of `.icobtn::after{inset:-8px}`,
+  which extends the real hit area to 72 stage px / 50 rendered. Two ways to get this
+  wrong, and this audit nearly took both: a box-only `getBoundingClientRect` check
+  condemns a control that is genuinely fine, and an `el.click()` check passes a control
+  that is genuinely unreachable because it skips hit testing entirely.
+
+  The suite now probes with `document.elementFromPoint` at the 48px extremes and asks who
+  actually receives the tap. It also reports which boxes are under 48 and surviving on
+  their expander, so nobody deletes that `::after` thinking it is decoration. **It is
+  load bearing.**
+
+  Worth flagging separately: `#pausebtn` and `#mutebtn` live in `#hud`, which is
+  `display:none` on every menu screen. A touch-target sweep taken on the title screen —
+  the obvious place to take one — never sees the two controls a player actually uses
+  during a run. Phase 5b of the suite starts a run first, on purpose.
 - **The feedback fab** sits at x 315..363, y 489..571 and overlaps nothing. Sproing's
   bottom-right corner is empty by construction — HUD controls are top-left
   (`#pausebtn`, `#mutebtn`) and top-right (`#coinbar`). Nothing to fix.

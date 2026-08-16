@@ -23,21 +23,23 @@ const URL = BASE + '/satellites/sproing/';
 let pass = 0, fail = 0;
 const ok = (n, c, d) => { if (c) { pass++; console.log('  ok   ' + n); } else { fail++; console.log('  FAIL ' + n + (d ? '  -> ' + d : '')); } };
 
-const browser = await puppeteer.launch({
-  headless: 'new', protocolTimeout: 300000,
-  args: ['--no-sandbox', '--disable-dev-shm-usage']
-});
+/* ⛔ ONE BROWSER PER CASE. Reusing a single browser across ~30 boots on a 2-core
+   box exhausts it and the run dies on a NAVIGATION timeout, which reads exactly
+   like "the game stopped loading" and is nothing of the kind. Launch, use, close.
+   ⛔ A corrupt-save case MUST get its own fresh document: an IIFE that dies at
+   parse dies once, so sharing would let a later case pass for the wrong reason. */
+const LAUNCH = { headless: 'new', protocolTimeout: 300000, args: ['--no-sandbox', '--disable-dev-shm-usage'] };
 
 async function boot(poison) {
-  const ctx = await browser.createBrowserContext();
-  const p = await ctx.newPage();
+  const browser = await puppeteer.launch(LAUNCH);
+  const p = await browser.newPage();
   await p.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });
   const errs = [];
   p.on('pageerror', e => errs.push(e.message.split('\n')[0].slice(0, 130)));
   if (poison) await p.evaluateOnNewDocument(poison);
-  await p.goto(URL, { waitUntil: 'domcontentloaded' });
+  await p.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await new Promise(r => setTimeout(r, 2600));
-  return { ctx, p, errs };
+  return { ctx: { close: () => browser.close() }, p, errs };
 }
 
 /* the title screen is STATIC HTML, so "it rendered" proves nothing about whether
@@ -225,13 +227,29 @@ console.log('\n[5] standing defect classes');
     out.exitSrc = window.SWS_EXIT.toString();
     out.usesReferrer = /document\.referrer/.test(out.exitSrc);
 
-    /* touch targets as RENDERED px at 375x667, not declared CSS. This stage is
-       540x960 scaled ~0.694, so a declared 48 renders at 33. */
+    /* Touch targets as RENDERED px at 375x667, never declared CSS. This stage is
+       540x960 scaled ~0.694, so a declared 48 renders at 33 and a declared 56
+       renders at 39.
+       ⛔ Measure the EFFECTIVE hit area, not the CSS box. .icobtn is 56 stage px
+       (38.9 rendered, which would fail) but carries an ::after{inset:-8px} hit
+       expander that takes it to 72 stage px / 50 rendered. A box-only check
+       condemns a control that is actually fine; a naive el.click() check passes a
+       control that is actually unreachable. Probe with elementFromPoint at the
+       48px extremes and ask who really receives the tap. */
     out.small = [];
+    out.boxOnly = [];
+    const hits = (el) => {
+      const q = el.getBoundingClientRect();
+      const cx = q.x + q.width / 2, cy = q.y + q.height / 2;
+      const pts = [[cx - 23, cy], [cx + 23, cy], [cx, cy - 23], [cx, cy + 23]];
+      return pts.every(([x, y]) => { const t = document.elementFromPoint(x, y); return t && (t === el || el.contains(t) || t.parentNode === el); });
+    };
     document.querySelectorAll('button,.btn,.icobtn,.cell,.shoptab,.tool,.sw').forEach(el => {
       const c = getComputedStyle(el), q = el.getBoundingClientRect();
       if (c.display === 'none' || c.visibility === 'hidden' || q.width < 1) return;
-      if (q.width < 48 || q.height < 48) out.small.push((el.id || el.className) + ' ' + q.width.toFixed(0) + 'x' + q.height.toFixed(0));
+      const boxSmall = q.width < 48 || q.height < 48;
+      if (boxSmall) out.boxOnly.push((el.id || el.className) + ' ' + q.width.toFixed(0) + 'x' + q.height.toFixed(0));
+      if (boxSmall && !hits(el)) out.small.push((el.id || el.className) + ' ' + q.width.toFixed(0) + 'x' + q.height.toFixed(0) + ' (no hit expander)');
     });
 
     /* nothing important in the bottom-right: that belongs to the feedback fab */
@@ -264,7 +282,8 @@ console.log('\n[5] standing defect classes');
   ok('the exit button renders on the title screen', r.exit.shown && r.exit.w > 10, JSON.stringify(r.exit));
   ok('the exit button clears 48 rendered px', r.exit.h >= 48, JSON.stringify(r.exit));
   ok('the exit does not depend on being framed', r.usesReferrer, 'no document.referrer fallback');
-  ok('no control under 48 rendered px at 375x667', r.small.length === 0, r.small.join(', '));
+  ok('every control offers 48 rendered px of EFFECTIVE hit area', r.small.length === 0, r.small.join(', '));
+  console.log('       (boxes under 48 that pass on their ::after hit expander: ' + (r.boxOnly.join(', ') || 'none') + ')');
   ok('the feedback fab covers no control', r.underFab.length === 0, r.underFab.join(', '));
   ok('the feedback fab is reachable, not yielded away', !r.fabHidden, JSON.stringify(r.fab));
   ok('nothing covers a title screen control', r.covered.length === 0, r.covered.join(', '));
@@ -272,11 +291,55 @@ console.log('\n[5] standing defect classes');
   await ctx.close();
 }
 
+/* ---- 5b. the IN-RUN HUD, which every menu-screen sweep misses -------------
+   #hud is display:none until a run starts, so a touch-target sweep taken on the
+   title screen never sees #pausebtn or #mutebtn at all. They are .icobtn: 56 stage
+   px, which is 38.9 RENDERED px and would fail the 48 rule on its box alone. They
+   pass only because of the ::after{inset:-8px} expander. Assert that, in the run,
+   where it matters. */
+console.log('\n[5b] in-run HUD controls');
+{
+  const { ctx, p, errs } = await boot(`(()=>{try{localStorage.setItem('sproing_bounce_seen','1');}catch(e){}})()`);
+  await p.evaluate(async () => {
+    document.getElementById('b-play').click(); await new Promise(r => setTimeout(r, 400));
+    document.getElementById('m-endless').click(); await new Promise(r => setTimeout(r, 900));
+  });
+  await new Promise(r => setTimeout(r, 1200));
+  const r = await p.evaluate(() => {
+    const out = { hudOn: document.getElementById('hud').classList.contains('on'), ctrls: [], fail: [] };
+    ['pausebtn', 'mutebtn'].forEach(id => {
+      const el = document.getElementById(id); if (!el) { out.fail.push(id + ' MISSING'); return; }
+      const q = el.getBoundingClientRect();
+      out.ctrls.push(id + ' box ' + q.width.toFixed(0) + 'x' + q.height.toFixed(0));
+      const cx = q.x + q.width / 2, cy = q.y + q.height / 2;
+      [[cx - 23, cy], [cx + 23, cy], [cx, cy - 23], [cx, cy + 23]].forEach(([x, y]) => {
+        const t = document.elementFromPoint(x, y);
+        if (!(t && (t === el || el.contains(t) || t.parentNode === el))) out.fail.push(id + ' misses at ' + Math.round(x) + ',' + Math.round(y) + ' -> ' + (t ? (t.id || t.tagName) : 'null'));
+      });
+    });
+    /* and the fab must not be sitting on either of them */
+    const fab = document.querySelector('.lwfb-fab');
+    if (fab) {
+      const f = fab.getBoundingClientRect();
+      ['pausebtn', 'mutebtn'].forEach(id => {
+        const q = document.getElementById(id).getBoundingClientRect();
+        if (q.right > f.left && q.left < f.right && q.bottom > f.top && q.top < f.bottom) out.fail.push('fab overlaps ' + id);
+      });
+    }
+    return out;
+  });
+  ok('the HUD is up during a run', r.hudOn, JSON.stringify(r));
+  ok('pause and mute offer 48 rendered px of effective hit area', r.fail.length === 0, r.fail.join(' | '));
+  console.log('       (' + r.ctrls.join('; ') + ')');
+  ok('no page errors reaching the HUD', errs.length === 0, errs.join(' | '));
+  await ctx.close();
+}
+
 /* ---- 6. the ready handshake follows the portal contract ------------------- */
 console.log('\n[6] portal handshake');
 {
-  const ctx = await browser.createBrowserContext();
-  const p = await ctx.newPage();
+  const browser = await puppeteer.launch(LAUNCH);
+  const p = await browser.newPage();
   await p.setViewport({ width: 375, height: 667 });
   /* frame the game the way the portal frames a github.io card: NO ?embed=1 flag.
      The old code gated the handshake on that flag, so a silent load would have
@@ -288,9 +351,7 @@ console.log('\n[6] portal handshake');
   const n = await p.evaluate(() => window.__ready);
   ok('{sws:ready} is posted when framed without ?embed=1', n >= 1, 'received ' + n);
   ok('{sws:ready} is posted twice (parse time AND load)', n >= 2, 'received ' + n + ', want >=2');
-  await ctx.close();
+  await browser.close();
 }
-
-await browser.close();
 console.log('\n=== sproing: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);

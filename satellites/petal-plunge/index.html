@@ -140,6 +140,9 @@
   #gnomebar{position:absolute; top:calc(env(safe-area-inset-top,0) + 40px); left:50%; transform:translateX(-50%);
     width:min(320px,70vw); height:0; opacity:0; transition:opacity .3s;}
   #gnomebar.show{height:auto; opacity:1;}
+  /* right inset clears the fleet feedback fab's bottom-right footprint so the
+     RIGHT carve affordance is never drawn underneath it (the fab still eats a
+     touch that lands on it; that part cannot be fixed from in here) */
   #ctlrow{position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom,0) + 10px);
     display:flex; gap:8px; padding:0 10px; pointer-events:none;}
   .ctl{flex:1; min-height:48px; display:flex; align-items:center; justify-content:center;
@@ -158,7 +161,7 @@
     font-size:34px; color:var(--gold); opacity:0; text-shadow:0 2px 8px #000; text-align:center; white-space:nowrap;}
 
   /* control hint */
-  #hint{position:absolute; bottom:calc(env(safe-area-inset-bottom,0) + 68px); left:0; right:0; text-align:center;
+  #hint{position:absolute; bottom:calc(env(safe-area-inset-bottom,0) + 182px); left:0; right:0; text-align:center;
     color:var(--ink-dim); font-size:12px; z-index:6; pointer-events:none; opacity:.9;}
   .fade{transition:opacity .5s;}
 
@@ -349,20 +352,76 @@ var DEF_PROFILE={
   seenTut:0
 };
 var P;
-function loadProfile(){
-  try{ var raw=localStorage.getItem(PKEY); if(raw){ P=merge(clone(DEF_PROFILE), JSON.parse(raw)); return; } }catch(e){}
-  P=clone(DEF_PROFILE);
-}
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function merge(base,ext){ // shallow-deep merge so new default keys survive old saves
   for(var k in ext){ if(ext[k]&&typeof ext[k]==="object"&&!Array.isArray(ext[k])&&base[k]&&typeof base[k]==="object"){ merge(base[k],ext[k]); } else { base[k]=ext[k]; } }
   return base;
 }
+/* Corrupt-save law. A blob that merely PARSES is not a save. merge() overwrote
+   wholesale whenever the incoming value was not a plain object, so a stored
+   {"records":null} set P.records=null and the very next line of boot,
+   buildTitle() reading P.records.free, threw inside the IIFE. Blank page, no
+   recovery, no message. Same shape for owned (Shop), ms (mid-run), equip (first
+   drawn frame) and stats (Play). Now every branch is validated by type and a bad
+   branch falls back on its own instead of taking the whole save with it. */
+function _isObj(v){ return !!v && typeof v==="object" && !Array.isArray(v); }
+function _n(v,d,lo,hi){ v=(typeof v==="number"&&isFinite(v))?v:d; if(lo!=null&&v<lo)v=lo; if(hi!=null&&v>hi)v=hi; return v; }
+function _flags(v){ var o={},k; if(_isObj(v)) for(k in v){ if(v[k]) o[k]=1; } return o; }
+function validateProfile(raw){
+  var d=clone(DEF_PROFILE), k, kk;
+  if(!_isObj(raw)) return d;
+  d.coins=Math.floor(_n(raw.coins,0,0,1e12));
+  if(_isObj(raw.owned)) for(k in d.owned){ if(_isObj(raw.owned[k])) d.owned[k]=merge(d.owned[k],_flags(raw.owned[k])); }
+  if(_isObj(raw.equip)) for(k in d.equip){ if(typeof raw.equip[k]==="string" && catItem(k,raw.equip[k]).id===raw.equip[k]) d.equip[k]=raw.equip[k]; }
+  if(_isObj(raw.records)) for(k in d.records) d.records[k]=Math.floor(_n(raw.records[k],0,0,1e12));
+  if(_isObj(raw.daily)){ d.daily.date=typeof raw.daily.date==="string"?raw.daily.date:"";
+    d.daily.lastStreakDate=typeof raw.daily.lastStreakDate==="string"?raw.daily.lastStreakDate:"";
+    d.daily.best=Math.floor(_n(raw.daily.best,0,0,1e12)); d.daily.streak=Math.floor(_n(raw.daily.streak,0,0,1e6)); }
+  if(_isObj(raw.stats)) for(k in d.stats) d.stats[k]=Math.floor(_n(raw.stats[k],0,0,1e12));
+  d.ms=_flags(raw.ms);
+  if(_isObj(raw.set)) for(k in d.set) d.set[k]=raw.set[k]?1:0;
+  d.seenTut=raw.seenTut?1:0;
+  return d;
+}
+function loadProfile(){
+  var raw=null; try{ raw=JSON.parse(localStorage.getItem(PKEY)); }catch(e){}
+  P=validateProfile(raw);
+  // honour the OS accessibility preference the first time we ever see this player,
+  // so somebody who has already said "reduce motion" does not have to say it twice
+  if(raw==null){ try{ if(matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches) P.set.reduced=1; }catch(e){} }
+}
+/* Two-tabs law: never write a boot snapshot over whatever is on disk NOW.
+   Coins and stat counters ADD their delta, records and the daily best MAX,
+   owned + milestones union, last equip and last setting win. */
+var _base=null;
+function _snapshot(){ _base=clone(P); }
+function writeProfile(){
+  try{
+    var disk=null; try{ disk=validateProfile(JSON.parse(localStorage.getItem(PKEY))); }catch(e){}
+    if(disk&&_base){
+      P.coins=Math.max(0, disk.coins + (P.coins - _base.coins));
+      var k,kk;
+      for(k in P.stats) P.stats[k]=Math.max(0,(disk.stats[k]||0) + ((P.stats[k]||0) - (_base.stats[k]||0)));
+      for(k in P.records) P.records[k]=(k==="slalomBest")
+        ? ((P.records[k]&&disk.records[k]) ? Math.min(P.records[k],disk.records[k]) : (P.records[k]||disk.records[k]||0))
+        : Math.max(P.records[k]||0, disk.records[k]||0);
+      for(k in disk.owned) for(kk in disk.owned[k]) { if(!P.owned[k])P.owned[k]={}; P.owned[k][kk]=1; }
+      for(k in disk.ms) P.ms[k]=1;
+      if(disk.daily.date===P.daily.date) P.daily.best=Math.max(P.daily.best,disk.daily.best);
+      P.daily.streak=Math.max(P.daily.streak,disk.daily.streak);
+    }
+    localStorage.setItem(PKEY,JSON.stringify(P));
+    _snapshot();
+  }catch(e){}
+}
 var _saveT=0;
 function saveProfile(now){
-  if(now){ try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){} return; }
-  if(_saveT) return; _saveT=setTimeout(function(){_saveT=0; try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}},350);
+  if(now){ if(_saveT){clearTimeout(_saveT);_saveT=0;} writeProfile(); return; }
+  if(_saveT) return; _saveT=setTimeout(function(){_saveT=0; writeProfile();},350);
 }
+// deliberate wholesale write; the ONLY caller is "reset progress", where merging
+// the deltas back in would defeat the reset
+function replaceProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify(P)); _snapshot(); }catch(e){} }
 function owns(kind,id){ var it=catItem(kind,id); if(it.cost===0&&!it.unlock) return true; if(it.unlock){ var mid=it.unlock.split(':')[1]; if(P.ms&&P.ms[mid]) return true; } return !!(P.owned[kind]&&P.owned[kind][id]); }
 function grant(kind,id){ if(!P.owned[kind])P.owned[kind]={}; P.owned[kind][id]=1; }
 function achieve(id){ if(P.ms[id])return false; P.ms[id]=1; saveProfile(); return true; }
@@ -531,13 +590,13 @@ function worldToScreenY(wy){ return (wy - cam.y); }
    MODES
    ════════════════════════════════════════════════════════════════════════ */
 var MODES={
-  free:      {name:"Free Plunge", icon:"⛷️", metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.010, seeded:false,
+  free:      {name:"Free Plunge", icon:"⛷️", metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.0100, seeded:false,
               desc:"Endless. Go as deep as you dare. The Gnome wakes at 3200."},
-  slalom:    {name:"Slalom",      icon:"🚩", metric:"time",  len:1600,     gnome:false, density:0.55,ramp:0.010, gate:0.055, seeded:false,
+  slalom:    {name:"Slalom",      icon:"🚩", metric:"time",  len:1600,     gnome:false, density:0.55,ramp:0.010, gate:0.0205, seeded:false,
               desc:"Thread every bamboo gate down a set course. Best time wins."},
-  freestyle: {name:"Freestyle",   icon:"✨", metric:"style", len:1400,     gnome:false, density:0.45,ramp:0.075, gate:0.006, seeded:false,
+  freestyle: {name:"Freestyle",   icon:"✨", metric:"style", len:1400,     gnome:false, density:0.45,ramp:0.075, gate:0.0060, seeded:false,
               desc:"A ramp park. Chain tricks for the biggest style score."},
-  daily:     {name:"Daily Descent",icon:"📅",metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.014, seeded:true,
+  daily:     {name:"Daily Descent",icon:"📅",metric:"depth", len:Infinity, gnome:true,  density:1.0, ramp:0.018, gate:0.0140, seeded:true,
               desc:"One seeded slope for everyone, every day. Chase the record."}
 };
 
@@ -645,7 +704,7 @@ function generateUntil(targetY){
       // gates — wander off the lane centre and NARROW with depth (Jessie:
       // "pretty much in the center… should be out more"; Stephen: "flags
       // narrow from time to time… skinny spots").
-      if(S.rng() < mc.gate*SEG){
+      if(S.rng() < Math.min(1, mc.gate*SEG)){
         var goff=(S.rng()*2-1)*laneHalf*0.55;
         var gh=Math.max(26, laneHalf*(0.9 - Math.min(0.3, midY/10000)));
         if(S.rng()<0.22) gh=Math.max(24, gh*0.68);   // occasional squeeze gate
@@ -708,7 +767,7 @@ function update(dt){
   var spd=cleanSpeed();
 
   if(S.stun>0){
-    S.stun-=dt; S.tumble+=dt*14;
+    S.stun-=dt; S.tumble+=reducedMotion()?0:dt*14;   // no spin-out tumble when motion is reduced
     S.head+=(0-S.head)*Math.min(1,dt*8); S.headTarget=0;
     S.vy=spd*CFG.crashSpeed; S.vx*=0.86;
   } else if(S.airborne){
@@ -782,8 +841,12 @@ function landing(){
   if(o && o.type==="solid"){ crash(o); }
   S.spin=0; S.trickCount=0;
 }
+var TRICK_GAP=0.16;                      // seconds of air a spin actually takes
 function doTrick(){
   if(!S.airborne) return;
+  if(S.airT - (S._lastTrickT==null?-9:S._lastTrickT) < TRICK_GAP) return;   // no mashing
+  if(S.trickCount >= Math.max(1,Math.floor(S.airDur/TRICK_GAP))) return;    // airtime is the cap
+  S._lastTrickT=S.airT;
   S.trickCount++; S.spin+=1; SFX.trick(); haptic(6);
 }
 function obstacleAt(x,y,pad){
@@ -823,16 +886,18 @@ function collide(){
   }
 }
 function launch(power){
-  S.airborne=true; S.airT=0; S.airDur=CFG.jumpBase + cleanSpeed()*CFG.jumpSpeedK + power*1.4;
+  S.airborne=true; S.airT=0; S._lastTrickT=null; S.airDur=CFG.jumpBase + cleanSpeed()*CFG.jumpSpeedK + power*1.4;
   S.launchVy=S.vy; S.trickCount=0; SFX.jump(); haptic(8);
 }
+function reducedMotion(){ return !!(P&&P.set&&P.set.reduced); }
 function crash(o){
   if(S.shield>0){ S.shield--; S.flashT=0.3; SFX.power(); floater("SHIELD!","#8fd08a",false); if(o)o.dead=true; return; }
   SFX.crash(); haptic(24);
   S.stun=CFG.crashStun; S.tumble=0; S.crashes++; P.stats.crashes++;
   S.combo=0; S.gateStreak=0;
   if(S.gnomeActive){ S.gnomeGap=Math.max(0,S.gnomeGap-CFG.gnomeCrashLoss); }
-  for(var i=0;i<10;i++){ S.part.push({x:S.x,y:S.depth,vx:(Math.random()*2-1)*120,vy:(Math.random()*2-1)*120-40,life:0.5,max:0.5,c:"#e8dcc8",r:3+Math.random()*3}); }
+  var burst=reducedMotion()?0:10;
+  for(var i=0;i<burst;i++){ S.part.push({x:S.x,y:S.depth,vx:(Math.random()*2-1)*120,vy:(Math.random()*2-1)*120-40,life:0.5,max:0.5,c:"#e8dcc8",r:3+Math.random()*3}); }
 }
 function collect(p){
   p.got=true;
@@ -871,13 +936,14 @@ function escapeGnome(){
   S.scoreMult=Math.min(4, +(S.scoreMult+0.5).toFixed(2));
   S.boostT=Math.max(S.boostT,2.4); S.flashT=0.4;
   SFX.escape(); haptic([12,30,12]);
-  floater("ESCAPED! ×"+S.scoreMult.toFixed(1),"#7ab356",true);
+  floater("ESCAPED! petals ×"+S.scoreMult.toFixed(1),"#7ab356",true);
   if(P.stats.escapes>=3) achieve("escape3");
 }
 function gobbled(){ endRun(true); }
 
 /* ---------- particles & floaters ---------- */
 function spawnTrail(spray){
+  if(reducedMotion()) return;                 // the biggest single source of motion on screen
   var tid=P.equip.trail;
   if(ART.get('trail_'+tid)){
     // painted swoosh ribbon: leave a fading world-space stamp every ~16px of descent; successive
@@ -899,7 +965,8 @@ function updateParticles(dt){
 }
 function floater(text,color,big){ floaterAt(S.x,S.depth-30,text,color,big); }
 function floaterAt(x,y,text,color,big){ S.floats.push({x:x,y:y,text:text,color:color,life:1.1,max:1.1,big:big}); }
-function updateFloats(dt){ for(var i=S.floats.length-1;i>=0;i--){ var f=S.floats[i]; f.life-=dt; f.y-=26*dt; if(f.life<=0)S.floats.splice(i,1); } }
+function updateFloats(dt){ var drift=reducedMotion()?8:26;
+  for(var i=S.floats.length-1;i>=0;i--){ var f=S.floats[i]; f.life-=dt; f.y-=drift*dt; if(f.life<=0)S.floats.splice(i,1); } }
 
 function pruneBehind(){
   var cut=cam.y-80;
@@ -1128,9 +1195,9 @@ function updateHud(){
   if(S.combo>1){ cb.textContent="COMBO ×"+S.combo; cb.style.opacity=Math.min(1,S.comboT/1.5); } else cb.style.opacity=0;
   // gnome bar
   var gb=$("gnomebar");
-  if(S.gnomeActive){ gb.classList.add("show"); var f=clamp(S.gnomeGap/CFG.gnomeGapStart,0,1);
+  if(S.gnomeActive){ gb.classList.add("show"); var f=clamp(S.gnomeGap/CFG.gnomeGapMax,0,1);
     $("gnomeFill").style.width=(f*100)+"%";
-    $("gnomeLb").textContent = f<0.3? "THE GNOME IS ON YOU!" : "THE GNOME";
+    $("gnomeLb").textContent = (S.gnomeGap<CFG.gnomeGapStart*0.3)? "THE GNOME IS ON YOU!" : "THE GNOME";
   } else gb.classList.remove("show");
 }
 
@@ -1340,7 +1407,7 @@ function buildTut(ref){
 }
 
 /* ---------- MODES ---------- */
-function fmtTime(ms){ if(!ms)return "—"; var s=ms/1000; return s.toFixed(2)+"s"; }
+function fmtTime(ms){ if(!ms)return "no time yet"; var s=ms/1000; return s.toFixed(2)+"s"; }
 function gotoModes(){ buildModes(); show("scrModes"); }
 function buildModes(){
   S=null;
@@ -1376,7 +1443,7 @@ function buildDaily(){
     '<div class="sub">One seeded slope for everyone. New slope at 00:00 UTC.</div>'+
     '<div class="card" style="margin-top:14px;text-align:center">'+
       '<div style="font-size:13px;color:var(--ink-dim)">'+dk+'</div>'+
-      '<div style="font-size:44px;font-weight:800;color:var(--gold);margin:6px 0">'+(playedToday?P.daily.best:"—")+'</div>'+
+      '<div style="font-size:44px;font-weight:800;color:var(--gold);margin:6px 0">'+(playedToday?P.daily.best:"not yet")+'</div>'+
       '<div style="font-size:12px;color:var(--ink-dim)">today\'s best depth</div>'+
       '<div style="margin-top:8px;font-family:JetBrains Mono;font-size:13px;color:var(--sage)">🔥 '+P.daily.streak+'-day streak</div>'+
     '</div>'+
@@ -1481,7 +1548,7 @@ function buildSettings(){
     '<div class="card" style="margin-top:14px">'+
       '<div class="settingrow"><span>Sound</span><span id="setSound">'+sw(P.set.sound)+'</span></div>'+
       '<div class="settingrow"><span>Haptics</span><span id="setHap">'+sw(P.set.haptics)+'</span></div>'+
-      '<div class="settingrow"><span>Reduced motion</span><span id="setRed">'+sw(P.set.reduced)+'</span></div>'+
+      '<div class="settingrow"><span>Reduced motion<div style="font-size:11px;color:var(--ink-faint);font-weight:400">Calms the trail, spray and spin</div></span><span id="setRed">'+sw(P.set.reduced)+'</span></div>'+
     '</div>'+
     '<div class="card" style="margin-top:12px"><div class="sub" style="text-align:left;line-height:1.6">'+
       'Deepest plunge: <b>'+P.records.free+'</b><br>Best slalom: <b>'+fmtTime(P.records.slalomBest)+'</b><br>Best freestyle: <b>'+P.records.freestyle+'</b><br>'+
@@ -1492,7 +1559,7 @@ function buildSettings(){
   $("setSound").onclick=function(){ P.set.sound=P.set.sound?0:1; saveProfile(true); buildSettings(); if(P.set.sound)SFX.ui(); };
   $("setHap").onclick=function(){ P.set.haptics=P.set.haptics?0:1; saveProfile(true); buildSettings(); haptic(12); };
   $("setRed").onclick=function(){ P.set.reduced=P.set.reduced?0:1; saveProfile(true); buildSettings(); };
-  $("setReset").onclick=function(){ if(confirm("Reset all Petal Plunge progress and cosmetics?")){ localStorage.removeItem(PKEY); loadProfile(); gotoTitle(); } };
+  $("setReset").onclick=function(){ if(confirm("Reset all Petal Plunge progress and cosmetics?")){ try{localStorage.removeItem(PKEY);}catch(e){} P=validateProfile(null); replaceProfile(); gotoTitle(); } };
 }
 
 /* ---------- PAUSE ---------- */
@@ -1564,25 +1631,35 @@ window._sbCapEarn=function(n,tag){
   if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
   return n;   // actual credited amount (post 30/day cap) so callers can show the truth
 };
-var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+/* Canonical embed block (incoming/PORTAL-CONTRACT.md). SWS_EMBED used to be
+   "?embed=1 is in the query string", which is not the same question as "am I in
+   a frame": framed WITHOUT the param, the exit would have loaded the portal
+   INSIDE the frame, and {sws:'ready'} was posted neither on load nor at all. */
+var SWS_EMBED=false; try{ SWS_EMBED = window.parent!==window; }catch(e){ SWS_EMBED=true; }
 window.SWS_EMBED=SWS_EMBED;
 window.SWS_EXIT=function(){
-  if(SWS_EMBED&&parent!==window){ try{parent.postMessage({sws:'close'},'*');}catch(e){} return; }
+  if(SWS_EMBED){ try{parent.postMessage({sws:'close'},'*');}catch(e){} return; }
   if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
 };
-if(SWS_EMBED&&parent!==window){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} }
+if(SWS_EMBED){
+  try{parent.postMessage({sws:'ready'},'*');}catch(e){}
+  window.addEventListener('load',function(){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} });
+}
 $("exitLink").onclick=function(){ SWS_EXIT(); };
 
 /* ══════════════════════════════════════════════════════════════════════════
    BOOT
    ════════════════════════════════════════════════════════════════════════ */
 loadProfile();
+_snapshot();
 buildTitle();
 show("scrTitle");
 
 // expose a couple of hooks for headless verification / art loading
 window.PP={ startRun:startRun, get S(){return S;}, CFG:CFG, MODES:MODES, CATALOG:CATALOG, ART:ART, BIOMES:BIOMES, SEG:SEG,
   profile:function(){return P;}, generateUntil:function(y){return generateUntil(y);},
+  saveProfile:saveProfile, validateProfile:validateProfile, endRun:function(g){ endRun(!!g); },
+  laneAt:function(y){ for(var i=0;i<S.laneHist.length;i++){ var L=S.laneHist[i]; if(y>=L.y0&&y<L.y1) return L; } return null; },
   step:function(dt){ if(S&&S.running&&!S.paused&&!S.over) update(dt); },
   setInput:function(steer,tuck){ if(S){ S.steer=steer; S.tuck=!!tuck; } },
   trick:function(){ doTrick(); },

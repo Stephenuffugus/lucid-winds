@@ -97,7 +97,31 @@ This is the "silent failure" class: the run looks like it counted.
 **Fix:** the fail path now runs `runTrophies()` (which saves) on every mode, so slabs,
 best combo and the trophies bank whether you stick it or not.
 
-### 5. MEDIUM — dash in player copy. FIXED
+### 5. MEDIUM — the Journey fail panel describes a Freefall death. FIXED
+
+A Journey run does not end in a wall. It ends when you touch a pink crystal, and the game
+correctly bursts "SPIKED!" across the screen at that moment. One second later the end
+panel then said:
+
+```
+STUCK IN THE WALL
+the blade caught the wall
+16 sliced · fell 3 before you stuck
+```
+
+None of which happened. You never left the ground, nothing caught your blade, and "fell 3"
+is `Math.max(0, 4 - G.y)` on a run whose `G.depth` is undefined — a Freefall number
+computed for a mode that has no depth. It contradicts the burst the player just saw AND
+the How screen, which correctly promises "pink crystals end the run on contact".
+
+This is the last thing a player reads before deciding whether to tap Try Again, so it is
+worth more than its size.
+
+**Fix:** the fail panel branches on mode. Journey now reads `SPIKED` / "a pink crystal
+caught you" / "N sliced · best combo xN · N flips". Freefall keeps its wall wording and
+its depth, which are both accurate there.
+
+### 6. MEDIUM — dash in player copy. FIXED
 
 Knife Forge, line 180: "Unlock knives and swords - each is pure style". Rewritten as two
 sentences rather than swapping the character, per the house rule.

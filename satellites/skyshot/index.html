@@ -71,14 +71,19 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn.warn{background:linear-gradient(180deg,#4a2418,#2a1610); border-color:#8a4a30; color:#f0c9b4}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
-.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+/* 356, not 420. The stage is 540 wide and scales to the viewport, so at
+   375x667 the fleet feedback fab (hard right, stage x 453..523) clipped the
+   right edge of Settings, All Sky Wolf games and Try again. Measured by
+   test/play.mjs, which walks every screen and fails if any control intersects
+   the fab. Nothing goes bottom right. */
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:356px; margin:0 auto}
 h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
 .sc-note{color:var(--muted); font-size:13px; margin-bottom:14px; line-height:1.5}
 .helprow{display:flex; gap:14px; align-items:flex-start; margin:13px 0; font-size:14.5px; line-height:1.5}
 .helprow .hi{width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center}
 .helprow .hi svg{width:30px; height:30px; display:block}
 .howdiag{display:block; width:100%; max-width:420px; margin:16px auto 0; height:auto}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px;
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:356px;
   margin:0 auto 12px; padding:14px 18px; min-height:82px; border:1px solid var(--line); border-radius:14px; background:#0a0f17}
 .settingline b{font-size:16px; font-weight:700}
 .settingline span{display:block; font-size:12px; color:var(--muted); margin-top:3px}
@@ -217,7 +222,7 @@ h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
       <path d="M286 48 l9 6 -9 6" fill="#8a9178"/>
       <text x="242" y="59" fill="#8a9178" font-size="14" font-family="system-ui,sans-serif" text-anchor="end">it moves</text>
     </svg>
-    <button class="btn primary" id="how-go" style="max-width:400px;margin:auto auto 6px">Play</button>
+    <button class="btn primary" id="how-go" style="max-width:356px;margin:auto auto 6px">Play</button>
   </div></div>
 
   <!-- LEVEL SELECT. The grid is taller than the stage, so the way out lives in a
@@ -231,7 +236,7 @@ h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
     <div class="pad" style="padding-top:6px">
       <div id="lvl-wrap"></div>
       <div style="height:16px"></div>
-      <button class="btn sm" id="lvl-back2" style="max-width:400px;margin:0 auto">Back to menu</button>
+      <button class="btn sm" id="lvl-back2" style="max-width:356px;margin:0 auto">Back to menu</button>
     </div>
   </div>
 
@@ -243,8 +248,8 @@ h2.sc-h{font-size:26px; color:#e8c063; font-weight:800; margin-bottom:6px}
     <div class="settingline" id="sl-shake"><div><b>Screen shake</b><span>a small kick on a pop</span></div><div class="toggle" id="tg-shake"><b></b></div></div>
     <div class="settingline" id="sl-guide"><div><b>Aim guide</b><span>dotted arc while you pull back</span></div><div class="toggle" id="tg-guide"><b></b></div></div>
     <div style="height:10px"></div>
-    <button class="btn sm" id="set-wipe" style="max-width:400px;margin:0 auto 12px">Clear saved progress</button>
-    <button class="btn sm" id="set-back" style="max-width:400px;margin:0 auto">Back to menu</button>
+    <button class="btn sm" id="set-wipe" style="max-width:356px;margin:0 auto 12px">Clear saved progress</button>
+    <button class="btn sm" id="set-back" style="max-width:356px;margin:0 auto">Back to menu</button>
   </div></div>
 
   <!-- PAUSE (overlay over the play field) -->

@@ -23,21 +23,28 @@ const URL = BASE + '/satellites/slice-3d/?dev=1';
 let pass = 0, fail = 0;
 const ok = (n, c, d) => { if (c) { pass++; console.log('  ok   ' + n); } else { fail++; console.log('  FAIL ' + n + (d ? '  -> ' + d : '')); } };
 
-const browser = await puppeteer.launch({
-  headless: 'new', protocolTimeout: 600000,
+/* ⛔ ONE BROWSER PER CASE, not one browser with twenty contexts.
+   This page builds a real WebGL context and pulls in 600KB of three.js on every
+   boot. Reusing a single browser across ~20 of those on a 2-core box exhausts it:
+   the run got through the whole corrupt-save phase and then died on a 30s
+   NAVIGATION timeout — which looks exactly like "the game stopped loading" and is
+   nothing of the kind. Launch, use, close. Slower, and it actually finishes.
+   Navigation timeout is raised to 60s for the same reason: a slow box is not a
+   broken page. */
+const LAUNCH = {
+  headless: 'new', protocolTimeout: 300000,
   args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage']
-});
-
+};
 async function boot(poison) {
-  const ctx = await browser.createBrowserContext();
-  const p = await ctx.newPage();
+  const browser = await puppeteer.launch(LAUNCH);
+  const p = await browser.newPage();
   await p.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });
   const errs = [];
   p.on('pageerror', e => errs.push(e.message.split('\n')[0].slice(0, 140)));
   if (poison) await p.evaluateOnNewDocument(poison);
-  await p.goto(URL, { waitUntil: 'domcontentloaded' });
+  await p.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await new Promise(r => setTimeout(r, 3500));
-  return { ctx, p, errs };
+  return { ctx: { close: () => browser.close() }, p, errs };
 }
 
 /* ---- 1. corrupt save must never brick the game ------------------------------
@@ -265,6 +272,6 @@ console.log('\n[6] drawn scale equals tested scale');
   await ctx.close();
 }
 
-await browser.close();
+
 console.log('\n=== slice-3d: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);
