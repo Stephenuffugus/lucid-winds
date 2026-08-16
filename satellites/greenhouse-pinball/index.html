@@ -75,12 +75,23 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-stat{display:flex; justify-content:space-between; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+ #b-pause{position:absolute; left:14px; top:14px; z-index:15; width:72px; height:72px;
+  border-radius:18px; border:1px solid var(--line); background:rgba(10,16,9,.72); color:var(--cream);
+  font-size:20px; font-weight:800; cursor:pointer; display:none; align-items:center; justify-content:center;
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px)}
+ #b-pause.on{display:flex}
+ #b-pause:active{transform:scale(.94)}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#221a0c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 </style>
 </head>
 <body>
 <div id="wrap"><div id="stage">
   <canvas id="game"></canvas>
+  <!-- The ONLY way out of a game used to be draining three balls. Zen never
+       drains out (maxBall 99, drains re-launch) so a Zen player was stuck until
+       they reloaded the page. Top-left keeps it off the right flipper half and
+       out of the bottom-right feedback-fab gutter. -->
+  <button id="b-pause" aria-label="Pause">❚❚</button>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
@@ -137,6 +148,20 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
+  <!-- PAUSE -->
+  <div class="screen center" id="s-pause"><div class="pad center">
+    <div style="flex:1"></div>
+    <h2 class="sc-h" style="font-size:34px">Paused</h2>
+    <div class="go-lab" id="pz-line">ball 1</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="pz-resume">Resume</button>
+      <button class="btn sm" id="pz-end">End game and bank the score</button>
+      <button class="btn ghost sm" id="pz-menu">◄ Menu</button>
+    </div>
+    <div style="flex:1"></div>
+  </div></div>
+
   <!-- GAME OVER -->
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
@@ -170,7 +195,8 @@ function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e)
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
 var BUILD='v1.7.0';
 var curScreen='s-title';
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); }
+  var pb=$('b-pause'); if(pb) pb.classList.toggle('on', id==='s-play'); }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 var SET={ sound:true, shake:true };
@@ -878,7 +904,7 @@ function step(dt){ if(!G)return; G.t+=dt;
   for(i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=700*dt; p.life-=dt*1.4; if(p.life<=0)G.parts.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ G.floats[i].y-=26*dt; G.floats[i].life-=dt*0.9; if(G.floats[i].life<=0)G.floats.splice(i,1); }
 }
-function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false;
+function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false; releaseAll();
   var best=PROG.best[G.mode]||0, isBest=G.score>best; if(isBest)PROG.best[G.mode]=G.score; PROG.blooms=(PROG.blooms||0)+G.blooms; saveProg();
   var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.blooms*3 + (isBest?2:0) + Math.floor(G.score/1200)); if(amt>0)granted=window._sbCapEarn(amt,'greenhousepinball:'+G.mode)||0; } }catch(e){}
   $('go-score').textContent=G.score;
@@ -891,6 +917,19 @@ function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false
   $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   sfx('over'); setTimeout(function(){ show('s-go'); }, 700);
 }
+
+/* ===== pause (C1: every mode needs a way out, Zen especially) ===== */
+function pauseGame(){
+  if(!G||G.phase!=='play'||curScreen!=='s-play')return;
+  releaseAll();                                  // never leave a blade stuck up
+  var pl=$('pz-line'); if(pl) pl.textContent=(G.mode==='zen'?'zen · ':'ball '+G.ball+' of '+G.maxBall+' · ')+G.score.toLocaleString()+' nectar';
+  show('s-pause');                               // show() sets running=false
+}
+function resumeGame(){ if(!G||G.phase!=='play')return; releaseAll(); show('s-play'); }
+// End game banks through the SAME endRun path as a natural Classic finish, so a
+// Zen score is finally recorded properly instead of only being written as a
+// side effect of triggerBloom().
+function endGameNow(){ if(!G)return; if(G.phase==='play'){ G.balls.length=0; endRun(); } else show('s-go'); }
 
 /* ===== render ===== */
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05; if(G)step(dt); render(); requestAnimationFrame(loop); }
@@ -1227,7 +1266,9 @@ var _ptr={};                                                     // pointerId ->
 function _ptrCount(){ var n=0,k; for(k in _ptr){ if(_ptr.hasOwnProperty(k))n++; } return n; }  // counted from the map, never tracked, so a swallowed pointerup cannot drift it
 function _sideHeld(s){ var k; for(k in _ptr){ if(_ptr.hasOwnProperty(k)&&_ptr[k]===s)return true; } return false; }
 function releaseAll(){ _ptr={}; LFLIP.up=false; RFLIP.up=false; }
-function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
+function onDown(e){ if(curScreen!=='s-play')return;
+  if(e.target && e.target.id==='b-pause') return;   // the pause control is not a flipper and never feeds tilt
+  e.preventDefault(); ac();
   var id=(e.pointerId==null?'k':e.pointerId); if(_ptr[id]!==undefined)return;   // duplicate down for a live id
   if(!G||G.phase!=='play'){ _ptr[id]='idle'; return; }
   if(G.awaitLaunch){ _ptr[id]='plunge'; G.plungeHold=true; return; }
@@ -1241,13 +1282,14 @@ function onUp(e,cancelled){ if(curScreen!=='s-play')return; e.preventDefault();
   // drop ONLY the blade this finger was holding, and only if no other finger is still on that side
   if(role==='L'&&!_sideHeld('L'))LFLIP.up=false;
   else if(role==='R'&&!_sideHeld('R'))RFLIP.up=false; }
-function onKey(e,down){ if(curScreen!=='s-play')return; var k=e.key;
+function onKey(e,down){ if(curScreen!=='s-play'||!G)return; var k=e.key;
   if(k==='ArrowLeft'||k==='z'||k==='Z'){ if(!G.awaitLaunch)LFLIP.up=down; e.preventDefault(); }
   else if(k==='ArrowRight'||k==='/'||k==='.'){ if(!G.awaitLaunch)RFLIP.up=down; e.preventDefault(); }
   else if(k===' '||k==='ArrowUp'){ if(G.awaitLaunch){ if(down)G.plungeHold=true; else if(G.plungeHold)launch(); } e.preventDefault(); }
   else if((k==='q'||k==='Q')&&down){ nudge('left'); e.preventDefault(); }
   else if((k==='e'||k==='E')&&down){ nudge('right'); e.preventDefault(); }
   else if((k==='w'||k==='W')&&down){ nudge('up'); e.preventDefault(); }
+  else if((k==='Escape'||k==='p'||k==='P')&&down){ pauseGame(); e.preventDefault(); }
 }
 
 function boot(){
@@ -1260,13 +1302,17 @@ function boot(){
   window.addEventListener('keydown',function(e){ onKey(e,true); }); window.addEventListener('keyup',function(e){ onKey(e,false); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden){running=false; releaseAll();} else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){ releaseAll(); if(curScreen==='s-play') pauseGame(); } });
   tap('b-classic', function(){ goFS(); newGame('classic'); });
   tap('b-daily', function(){ goFS(); newGame('daily'); });
   tap('b-zen', function(){ goFS(); newGame('zen'); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
+  tap('b-pause', function(){ sfx('ui'); pauseGame(); });
+  tap('pz-resume', function(){ sfx('ui'); resumeGame(); });
+  tap('pz-end', function(){ sfx('ui'); endGameNow(); });
+  tap('pz-menu', function(){ sfx('ui'); if(G&&G.phase==='play'){ G.balls.length=0; endRun(); } G=null; show('s-title'); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('go-retry', function(){ newGame(G?G.mode:'classic'); });
@@ -1496,7 +1542,16 @@ if(/[?&]gptest=1/.test(location.search)){
     // ---- kickback probes ----
     kickState:function(){ return G?{lit:!!G.kickLit,retL:!!G.kickRetL,retR:!!G.kickRetR,fires:G.kickFires||0}:null; },
     forceKick:function(v){ if(G)G.kickLit=!!v; return G?!!G.kickLit:null; },
-    forceBloom:function(){ triggerBloom(); return G.blooms; }, render:render, mode:function(){return G?G.mode:null;} };
+    forceBloom:function(){ triggerBloom(); return G.blooms; }, render:render, mode:function(){return G?G.mode:null;},
+    // audit hooks (2026-08-16): the way OUT of a game, and the score store
+    pause:function(){ pauseGame(); return curScreen; }, resume:function(){ resumeGame(); return curScreen; },
+    endNow:function(){ endGameNow(); return curScreen; }, screen:function(){ return curScreen; },
+    prog:function(){ return PROG; }, saveProg:saveProg, readProg:readProg,
+    flipState:function(){ return {l:LFLIP.up,r:RFLIP.up,tilt:G?G.tilt:null}; },
+    consts:function(){ return {BALLR:BALLR,DRAINY:DRAINY,VW:VW,VH:VH,W_UP:FLIP_W_UP,FLIP_L:LFLIP.L}; },
+    setBall:function(i,o){ var b=G.balls[i]; if(!b)return null; for(var k in o)b[k]=o[k]; return b; },
+    addBall:function(o){ var b={x:o.x,y:o.y,vx:o.vx||0,vy:o.vy||0,r:BALLR,inLane:false,trail:[]}; G.balls.push(b); return G.balls.length; },
+    megaCount:function(){ return G?(G.mega||0):null; } };
 }
 boot();
 })();

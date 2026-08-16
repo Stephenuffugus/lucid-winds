@@ -111,36 +111,82 @@ plausible while the real thing failed.
 
 ## Fixes applied
 
-* **B1** — every JSON-backed read (`getMissions`, `getProg`, `pzProg`,
-  `abilData`, `boostData`) now validates shape, not just parseability, repairs
-  the stored value in place, and the boot block is ordered so a failure in menu
-  rendering can never prevent the game loop, the exit protocol or the exit link
-  from being wired.
-* **B2** — the NEXT swap hit rect is now at least 48 CSS px in both axes,
-  independent of `R`, while the drawn bud keeps its size. A `Shift` key path
-  already existed for desktop and remains.
-* **B3** — measured in a real browser and handled: see verification.
-* **B4** — placeholders rewritten without dashes.
-* **B5** — the Zen HUD now says that leaving banks the run.
-* **B6** — the player is told once, plainly, when progress cannot be saved.
+* **B1** — a shared `readJSON(key, fix)` now sits between `JSON.parse` and use
+  for `getProg`, `pzProg`, `abilData` and `boostData`, repairing the stored
+  value in place; `getMissions` gained a real shape gate (date match AND an
+  array of rows whose ids still exist in the pool) and repairs the mutable
+  fields without discarding real progress. Separately, **the boot order was
+  inverted**: `requestAnimationFrame(frame)` and the exit protocol now run
+  BEFORE the menu is painted, and painting the menu is wrapped so a failure
+  there resets the JSON records, tells the player, and cannot take the loop or
+  the way out with it.
+* **B2** — `NEXT_HIT = 48`. The hit rect is decoupled from `R` and floored at
+  48 wide and 48 tall (it grows a little taller to cover the NEXT caption),
+  while the drawn bud keeps its size. Measured in a browser by sweeping
+  pointerdowns across the band and watching whether the shot counter moves.
+* **B3** — measured rather than assumed, and it is fine. With real navigation
+  `/feedback.js` yields out of the way on menu, map, loadout, puzzles, shop and
+  result. On the play screen it stays bottom right at x 315..363, y 521..571,
+  which is 1.1% of the aim surface and clears both the launcher and the swap
+  target by measurement. No control is unreachable on any screen.
+* **B4** — the two placeholder em dashes are gone.
+* **B5** — the Zen objective line now reads `No fail · tap ‹ to bank <score>`,
+  so the way to collect a Zen run is on screen while you play it.
+* **B6** — `Store.ok` is exposed and the player is told once, in plain words,
+  when storage is blocked and the run will not be saved.
 
-## Improvement (where a minute of work buys the most play)
+## Improvement (where a minute of work buys the most per minute of play)
 
 **B2, the swap control.** Budburst's whole skill ceiling is choosing between the
-loaded bud and the next one, and the game taught that verb in the How to play
-sheet while shipping the control 3.6px under the touch floor at the most common
-phone width. Every missed tap on it fires the wrong bud instead, which is not a
-neutral failure: it costs a shot from a finite budget and, in Blitz, seconds.
-Widening the hit rect is a handful of lines and it fixes the one input in the
-game that punishes you for missing it.
+loaded bud and the next one, and the game taught that verb by name in the How to
+play sheet while shipping the control 3.6px under the touch floor at the most
+common phone width. Missing that tap is not a neutral failure: it fires the
+wrong bud, which costs a shot from a finite budget and, in Blitz, seconds. It is
+a handful of lines and it fixes the one input in the game that punishes you for
+missing it.
+
+## Still worries me
+
+* The feedback fab sits directly on the dashed death line at the bottom right of
+  the play field. It covers no control and it clears the launcher, but that line
+  is the single most important thing to read on the screen and a floating button
+  is now drawn across it. `/feedback.js` is root owned, so this is a report for
+  the Director, not something to patch per game.
+* Zen still has no result screen at all: the run is banked by a toast on the way
+  out. The new HUD line makes that discoverable, but a mode with no ending is
+  still the odd one out among seven.
+* Three stars is `used <= ceil(par * 1.3)` against a budget of `ceil(par*3.4)+8`.
+  That is generous, and nobody has ever measured whether the par itself
+  (`budCount/3.2`) is achievable on the harder gardens. I did not measure it
+  either; it needs a solver Budburst does not have.
 
 ## Verification
 
-`test/check.mjs` (node, no browser) parses the script block with `vm` and asserts
-the shape validators against 18 malformed values.
-`test/play.mjs` (puppeteer, one browser) boots the real page, measures the NEXT
-hit rect and the feedback fab against the play surface at 375x667, plays Meadow
-level 1 to a result, and then reboots with each malformed save in turn asserting
-that the loop still runs and the exit link is still wired. Both were watched RED
-first: `check.mjs` against the unfixed validators, `play.mjs` against a
-deliberately poisoned `bb.miss`.
+```
+node satellites/budburst/test/check.mjs     # node only, 22 assertions
+node satellites/budburst/test/play.mjs      # one headless browser, 65 assertions
+```
+
+`check.mjs` parses every inline block with `vm`, extracts `isPlain` and `numMap`
+from `index.html` and runs them against 12 malformed values, and asserts the
+boot order directly (the loop must be scheduled before the menu render, and the
+render must be wrapped). It strips comments before analysing the boot block,
+because a comment that EXPLAINS the old order otherwise reads as the old order.
+It self tests every run and exits 2 if the assertions pass against do-nothing
+validators.
+
+`play.mjs` serves the repo itself and, in one headless browser: boots clean and
+plays Meadow 1 while sampling the canvas to prove the arena actually draws,
+repeats that under twelve different malformed saves while asserting the exit
+link and `SWS_EXIT` survive every one, measures the real swap target by sweeping
+pointer events and watching the shot counter, and walks every screen checking by
+`elementFromPoint` at each control's own centre that the fab is not what a tap
+would hit (never `el.click()`).
+
+Both were watched RED first. Against the pre-audit `index.html`, the poisoned
+`bb.miss` case reported `exitWired:false, swsExit:"undefined"` with
+`Cannot read properties of undefined (reading 'forEach')`, and the swap target
+measured 44.4px. The fab sweep also went red on its first run for the wrong
+reason (budburst's screens are opacity based, never `display:none`, so every
+screen has a live rect at all times) and was fixed rather than accepted, which
+is why it scopes to the active screen now.

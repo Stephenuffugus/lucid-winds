@@ -105,42 +105,78 @@ proof that needs a browser nobody runs.
 
 ## Fixes applied
 
-* **S1** — `PROG` is now shape validated on load: each field must be a plain
-  object (or a number for `pollen`/`plays`), and anything else is discarded and
-  the repaired value written straight back so a bad save cannot survive a boot.
-  A `safeFinish()` wrapper also guarantees the result screen appears even if
-  something downstream of it throws.
-* **S2** — `saveProg()` now merges against whatever is in storage at write time:
-  stars MAX per plot, daily MAX per date, moments union, pollen carried by delta,
-  plays MAX.
-* **S3** — pollen is now named for what it is (a running tally) and, more
-  usefully, it now buys something: a replay of a cleared plot no longer re-pays,
-  and the menu shows the total as a garden record rather than a wallet.
-* **S4** — the loss screen now names the miss: it reports how many buds were
-  left, which mover type they were, and the single line of coaching that fits
-  the obstacle in that plot.
-* **S5** — ready posted on real framing and on `load`.
+* **S1** — `readProg()` validates every field: each map must be a plain object
+  of small non-negative numbers, `pollen`/`plays` must be finite numbers, and a
+  bad save is repaired in storage on load so it cannot bite twice. `finish()` is
+  additionally called through `safeFinish()`, which guarantees the result screen
+  goes up even if something downstream of it throws, because the loop has
+  already stopped rescheduling itself by then.
+* **S2** — `saveProg()` merges against storage at write time: stars and daily
+  MAX per key, moments union, pollen and plays take the larger total. The
+  "Clear saved progress" button deliberately bypasses the merge, because a wipe
+  that merges is not a wipe.
+* **S3** — pollen now means something. A plot pays only what it improves on
+  (`PROG.best[plot]`), so re-clearing a cleared plot no longer re-pays the lot,
+  and the result screen says so plainly when it does not pay.
+* **S4** — see the improvement below.
+* **S5** — `framed` is measured, ready is posted at parse time and on `load`.
 * **S6** — `/feedback.js` fab mounted.
-* **S7** — copy corrected to "a fresh plot every day".
-* **S8** — `test/solve.mjs` runs the shipped solver over all 24 plots and 60
-  generated dailies in a real headless browser and fails the build if any plot
-  has an unreachable bud.
+* **S7** — the daily card now reads "a fresh plot every day".
+* **S8** — the solver is finally run. All 24 plots and 40 generated dailies come
+  back fully reachable, in a real browser, on every test run.
+* **NEW, found by the test, not by reading** — the fab covered the right edge of
+  Settings, All Sky Wolf games and Try again. The button stack was 420 stage px
+  in a 540 stage, reaching to x 480, and the fab sits hard right at x 453..523.
+  Stacks, setting rows and the hand-styled full width buttons narrowed to 356.
+  The browser suite walks all six screens and fails if any control intersects
+  the fab.
 
-## Improvement (where a minute of work buys the most play)
+## Improvement (where a minute of work buys the most per minute of play)
 
-**S4, the loss screen that teaches.** Skyshot's whole difficulty curve is timing
-against a moving gate, and the moment a player fails is the only moment they are
-guaranteed to be reading the screen. Turning "Out of seeds" into "two buds left,
-both on the turnstile: the bar is open for about a second twice per turn" is the
-cheapest possible retention work in the file. Everything else here is a bug fix;
-this is the one change that makes plot 9 stop being where people quit.
+**A loss screen that teaches.** Skyshot's entire difficulty curve is timing
+against a moving gate, and the moment a player runs out of seeds is the only
+moment they are guaranteed to be reading the screen. It said "Out of seeds" and
+nothing else, so a beginner on plot 9 just fired the same shot again. It now
+names the thing that is actually in the way, chosen from the plot's OWN data so
+it can never describe a level that is not on screen: the shutter beat, the
+bramble's two openings per turn, the sweeping stone, the walker's lead, the
+pendulum's pause at the top. Everything else in this pass is a bug fix; this is
+the change that stops plot 9 being where people quit.
+
+## Still worries me
+
+* Pollen still has no sink. It is now an honest lifetime record rather than a
+  fake wallet, but `Wallet.spend` remains dead code waiting for a shop.
+* The daily volley is replayable without limit. Stars MAX and the earn moment
+  fires once, so nothing is exploitable, but there is no reason a player would
+  guess that replaying is allowed.
+* The solver sweeps a fixed grid of 17 angles x 9 powers x 5 launch times. It
+  proves every bud is reachable by SOME shot; it does not prove par is
+  achievable. That is a stronger claim and nobody has made it yet.
 
 ## Verification
 
-`test/check.mjs` (node, no browser) parses the script block with `vm` and asserts
-the save validator against 16 malformed values plus the two-tab merge rules.
-`test/solve.mjs` (puppeteer, one browser) loads the real page with `?swtest=1`,
-runs `SKY.solveAll()` and `SKY.solveDailies(60)`, and asserts every plot is fully
-reachable; it then plays plot 1 to a win through `SKY.fire`/`SKY.settle` and
-asserts the result screen renders. Both were watched RED first: `check.mjs`
-against the unfixed loader, `solve.mjs` against a deliberately broken plot.
+```
+node satellites/skyshot/test/check.mjs      # node only, 26 assertions
+node satellites/skyshot/test/play.mjs       # one headless browser, 57 assertions
+```
+
+`check.mjs` parses every inline block with `vm`, lifts `_plain`, `_numMap` and
+`_num` out of `index.html` by name and runs the real `readProg` shape against 16
+malformed saves. It self tests every run against do-nothing validators and exits
+2 if those pass.
+
+`play.mjs` serves the repo itself and, in one headless browser: runs the shipped
+solver over all 24 plots and 40 generated dailies, proves the solver can say NO
+by handing it a deliberately unreachable bud, clears plot 1 end to end and
+checks the star was written, replays that clear under eight malformed saves,
+simulates a second tab writing over the top and checks nothing is lost, plays
+plot 9 to a loss and checks the coaching line names the bramble, then walks
+every screen measuring the fab against every control by `elementFromPoint` at
+the control's own centre (never `el.click()`).
+
+Both were watched RED first. `check.mjs` fails against the unfixed loader.
+`play.mjs` against the pre-audit `index.html` reported `screen s-play` after a
+win with `Cannot create property 'level_clear:0' on number '1'`, and its fab
+section found two real screens with covered controls on the first green run of
+everything else.

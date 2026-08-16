@@ -127,8 +127,14 @@ console.log('\n[3] two tabs: coins ADD, best MAXes, stars MAX');
     document.getElementById('b-shop').click(); await new Promise(r => setTimeout(r, 350));
     const hats = [...document.querySelectorAll('.shoptab')].find(t => /hat/i.test(t.textContent));
     if (hats) { hats.click(); await new Promise(r => setTimeout(r, 300)); }
-    const buy = [...document.querySelectorAll('#shop-grid button, #shop-grid .cell')]
-      .find(b => /leaf cap|300/i.test(b.textContent));
+    /* renderHats nests the buy button inside a .cell that carries the NAME. A
+       combined selector returns the cell first, and cells have no click handler, so
+       clicking it silently does nothing and the test fails for the wrong reason.
+       Find the cell by name, then click the button INSIDE it. */
+    const cell = [...document.querySelectorAll('#shop-grid .cell')].find(c => /leaf cap/i.test(c.textContent));
+    out.foundCell = !!cell;
+    const buy = cell ? cell.querySelector('.mini button, button') : null;
+    out.foundBuy = !!buy;
     if (buy) { buy.click(); await new Promise(r => setTimeout(r, 300)); }
     const yes = document.getElementById('mx2'); if (yes) { yes.click(); await new Promise(r => setTimeout(r, 350)); }
     out.afterBuy = parseInt(localStorage.getItem('sproing_coins'), 10);
@@ -150,6 +156,9 @@ console.log('\n[3] two tabs: coins ADD, best MAXes, stars MAX');
   });
   /* 2000 on disk minus the 300 this tab spent = 1700. The old code wrote
      400 - 300 = 100 and destroyed 1600 coins the other tab had earned. */
+  ok('the Leaf Cap buy button was actually reached (precondition)', r.foundCell && r.foundBuy, JSON.stringify(r));
+  /* 2000 on disk minus the 300 this tab spent = 1700. The old code wrote its stale
+     snapshot 400 - 300 = 100 and destroyed 1600 coins the other tab had earned. */
   ok('a purchase spends against the DISK wallet, not the boot snapshot',
     r.boughtHat && r.afterBuy === 1700, JSON.stringify(r));
   ok("the other tab's stars survive this tab's save", r.stars3 === 3 && r.unlocked >= 4, JSON.stringify(r));
