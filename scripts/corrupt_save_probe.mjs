@@ -20,6 +20,15 @@
      "[]"         parses to an array, so named fields are undefined
      '{"a":1}'    parses to an object with none of the expected keys
    A payload that fails to parse is NOT interesting: the try/catch handles it.
+
+   RESULT, 2026-08-16: 100 satellites swept, 20 genuinely broken and fixed.
+   Four came back as false alarms and are recorded here so nobody chases them
+   again. stream-hop boots to 0 buttons and 28 characters normally, so it was
+   flagged for matching its own baseline. Flipbook, Petalvex and Vine Runner all
+   changed size because a corrupt save also wipes the "you have seen the how to
+   play" flag, so the game correctly shows its instructions again — all three were
+   screenshotted and are perfectly healthy, with a working Got it or RUN button.
+   That is why a smaller screen is a LOOK and only an uncaught error is a defect.
 */
 import puppeteer from "puppeteer";
 import { readFileSync } from "fs";
