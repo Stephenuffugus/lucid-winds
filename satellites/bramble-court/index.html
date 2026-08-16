@@ -65,12 +65,17 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
    at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
    game can out-stack two billion. A bottom-left or top-left control cannot meet
    it at any viewport size.
-   Absolutely positioned so it adds no height to a title screen that already
-   scrolls on a short phone, and 72 STAGE px tall because this stage is scaled
-   (540x960 -> 375 wide = x0.694), so 72 stage px = 50 rendered px, over the
-   48px touch floor. The title stack is vertically centred and only ~515 stage
-   px tall, so the top-left corner is empty art. */
-#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+   ⛔ IN FLOW, NOT FLOATED — corrected 2026-08-16 after a shot at 390 wide.
+   The first version was position:absolute in the top left corner, with the
+   title screen given extra top padding to keep clear of it. On MINI CROSSWORD
+   that still covered the first two letters of the heading: a CENTRED heading
+   grows toward BOTH corners as the stage narrows, so the gap you measure at one
+   width closes at another, and a floated control has no layout engine to stop
+   it. As a flex sibling above the heading it pushes the heading down instead of
+   sitting on it, at every width, with no arithmetic to get wrong.
+   72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
+   so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
+#lw-home{align-self:flex-start; flex:none; margin:14px 0 2px 14px; display:flex; align-items:center;
   gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid var(--line);
   border-radius:14px; background:#0f150cdd; color:var(--muted); font-family:inherit;
   font-size:15px; font-weight:700; letter-spacing:.5px; cursor:pointer}

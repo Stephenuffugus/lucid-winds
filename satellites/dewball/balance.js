@@ -1,28 +1,36 @@
 // Dewball balance probe: per-world absorbAll ceiling + greedy-bot run + knockOff regression.
-// NODE_PATH=/workspaces/lucid-winds/node_modules node balance.js [botOn] [seed] [onlyWorldN]
+// Run: node balance.js [botOn] [seed] [onlyWorldN] [near] [trace]
 // Worlds/goals derive from DB_DEV.worlds() — never hand-mirror them here (tuning law).
 // Math.random is seeded in-page under ?dbtest=1, so a given seed is fully deterministic.
 // onlyWorldN (1-based, non-zen) runs a single world and skips the knock test — fast iteration.
-var puppeteer = require('puppeteer');
-var path = require('path');
+//
+// 2026-08-16: DRIVER SWAPPED FROM CHROMIUM TO node_harness.js. Nothing in this
+// probe renders — it is a physics bot — so a whole browser was buying nothing but
+// a 1.5-core tax that made the gate unrunnable whenever anything else was working.
+// The full seven-world near-bot suite now takes about a minute in plain node.
+// ⚖️ Same engine, not a model of it: absorbAll ceilings come back identical to the
+//    decimal to the browser figures recorded in LANDMARKS.md.
+// ⛔ THE BOT MUST DRAW FROM THE PAGE'S SEEDED STREAM, not node's Math.random. The
+//    search heading at "srchA" below is the bot's only random input and it shares
+//    one continuous stream with the game across the whole suite — that coupling is
+//    documented in LANDMARKS.md and is why a full-suite timing may never be compared
+//    against a single-world timing. rnd() below is that exact stream.
+var H = require('./node_harness.js');
 var botOn = process.argv[2] !== '0';
 var seed = +(process.argv[3] || 12345) || 12345;
 var onlyN = +(process.argv[4] || 0) || 0;
 var doTrace = process.argv.indexOf('trace') > 1;
 var nearSight = process.argv.indexOf('near') > 1;   // vision-limited bot: models a human
                                                     // who can only chase what they can SEE
-var url = 'file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1&dbseed=' + seed;
 
-puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader'] })
-.then(function(browser){
-  return browser.newPage().then(function(page){
-    var errors = [];
-    page.on('pageerror', function(e){ errors.push(String(e)); });
-    return page.goto(url, { waitUntil:'domcontentloaded' })
-    .then(function(){ return page.waitForFunction('window.DB_DEV', {timeout:8000}); })
-    .then(function(){
-      return page.evaluate(function(botOn, onlyN, doTrace, nearSight){
-        var D = window.DB_DEV, out = { worlds: [], knock: null };
+(function(){
+  var errors = [];
+  var DB;
+  try { DB = H.boot({ seed: seed }); }
+  catch(e){ console.log('FAIL: ' + e.message); process.exit(1); }
+  var rnd = DB._win.Math.random;
+  var out = (function(botOn, onlyN, doTrace, nearSight){
+        var D = DB, out = { worlds: [], knock: null };
         var WL = D.worlds().filter(function(w){ return !w.zen && (!onlyN || w.n === onlyN); });
         function pr(dd){ var t = Math.log(dd/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1; return 0.55+0.17*t; }
         // does the straight run from (bx,bz) to (tx,tz) cross a CLOSED gate ring?
@@ -176,7 +184,7 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
                 var rl = Math.sqrt(rx*rx+rz*rz)||1;
                 D.roll(rx/rl*thr, rz/rl*thr); }
               else if (fleeX||fleeZ) D.roll((flpX+fleeX*0.5)*thr, (flpZ+fleeZ*0.5)*thr);
-              else { if (it - (srchT||0) > 90){ srchT = it; srchA = Math.random()*6.283; }
+              else { if (it - (srchT||0) > 90){ srchT = it; srchA = rnd()*6.283; }
                 var sw = steer(bx,bz,bx+Math.cos(srchA)*dd*30,bz+Math.sin(srchA)*dd*30,dd,blks);
                 D.roll(sw[0]*thr, sw[1]*thr); }
               if (dashOK) D.dash();
@@ -248,22 +256,18 @@ puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbo
         }
         out.knock = ok;
         return out;
-      }, botOn, onlyN, doTrace, nearSight);
-    })
-    .then(function(out){
-      out.pageErrors = errors;
-      out.seed = seed;
-      console.log(JSON.stringify(out, null, 1));
-      // the slam half must actually RUN (wallFound) — crash:false is vacuous when
-      // no wall target was ever driven at
-      var pass = errors.length === 0 && !out.knock.crash &&
-                 (out.knock.skipped || (out.knock.moverEaten && out.knock.wallFound));
-      for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
-        if (w.s3ok === false) { pass = false; console.log('CEILING FAIL ' + w.w + ' (3-star bar unreachable)'); }
-        if (botOn && w.botX < 1.0) { pass = false; console.log('BOT FAIL ' + w.w + ' x' + w.botX); } }
-      console.log(pass ? 'BALANCE_PASS' : 'BALANCE_FAIL');
-      return browser.close().then(function(){ process.exit(pass?0:1); });
-    });
-  });
-})
-.catch(function(e){ console.log('FAIL: '+e); process.exit(1); });
+  })(botOn, onlyN, doTrace, nearSight);
+
+  out.pageErrors = errors;
+  out.seed = seed;
+  console.log(JSON.stringify(out, null, 1));
+  // the slam half must actually RUN (wallFound) — crash:false is vacuous when
+  // no wall target was ever driven at
+  var pass = errors.length === 0 && !out.knock.crash &&
+             (out.knock.skipped || (out.knock.moverEaten && out.knock.wallFound));
+  for (var i=0;i<out.worlds.length;i++){ var w = out.worlds[i];
+    if (w.s3ok === false) { pass = false; console.log('CEILING FAIL ' + w.w + ' (3-star bar unreachable)'); }
+    if (botOn && w.botX < 1.0) { pass = false; console.log('BOT FAIL ' + w.w + ' x' + w.botX); } }
+  console.log(pass ? 'BALANCE_PASS' : 'BALANCE_FAIL');
+  process.exit(pass?0:1);
+})();

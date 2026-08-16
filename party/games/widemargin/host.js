@@ -59,7 +59,7 @@ function show(id){ var s=root.querySelectorAll('.wm-screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
 var BANK=window.WIDEMARGIN_BANK||[], QS=[], ri=0, ROUNDS=10;
-var scores={}, names={}, order=[], guesses={};
+var scores={}, names={}, order=[], guesses={}, locks={};
 var FAST=/[?&]wm_fast=1(&|$)/.test(location.search);
 var T_RULES=FAST?3:20, T_Q=FAST?4:22, T_REV=FAST?3:9, T_STAND=FAST?2:8;
 
@@ -141,16 +141,34 @@ function layout(list){
   return sorted;
 }
 
+/* wait for the room, not for the roster taken at kick off */
+function here(){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined) out.push(p[i]);
+  return out;
+}
+function allLocked(){
+  var h=here(), got=0;
+  for(var i=0;i<h.length;i++) if(locks.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
+
 PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='guess'&&msg.r===ri+1&&$('wm-q').classList.contains('on')){
     var v=Math.max(0,Math.min(100,msg.v|0));
-    var isNew=!guesses.hasOwnProperty(pid);
     guesses[pid]=v;
-    var n=0,k; for(k in guesses) n++;
-    $('wm-qin').textContent=n+' of '+order.length+' have guessed';
-    if(isNew) snd('pip');
-    if(n>=order.length){ PartyShell.stopTimer(); phaseReveal(); }
+    /* ⛔ A DIAL IS NOT A BUTTON, AND THE FIRST TOUCH IS NOT AN ANSWER. The round
+       used to end the instant the last person's first value arrived, which is
+       one nudge, while their own phone was still saying "you can change it until
+       time is up" and the button underneath it said "Lock it in". The phone and
+       the host disagreed about the control that decides the score. Now the value
+       keeps flowing so nobody who runs out of time scores nothing, and only a
+       deliberate lock ends the round early. */
+    if(msg.lock&&!locks.hasOwnProperty(pid)){ locks[pid]=1; snd('pip'); }
+    var n=0,k; for(k in locks) n++;
+    $('wm-qin').textContent=n+' of '+here().length+' locked in';
+    if(allLocked()){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
 
@@ -169,12 +187,12 @@ function phaseRules(){
 
 function phaseQuestion(){
   var q=QS[ri]; if(!q||ri>=ROUNDS){ phasePodium(); return; }
-  guesses={};
+  guesses={}; locks={};
   show('wm-q'); strip('wm-strip1');
   $('wm-qn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('wm-qtext').textContent=q.q;
   $('wm-qline').innerHTML=lineHTML(null,null);
-  $('wm-qin').textContent='0 of '+order.length+' have guessed';
+  $('wm-qin').textContent='0 of '+here().length+' locked in';
   PartyShell.setPhase('question',{num:ri+1,total:ROUNDS,q:q.q});
   PartyShell.startTimer(T_Q,function(s){ var t=$('wm-qt'); t.textContent=s; t.classList.toggle('low',s<=5); },phaseReveal);
 }

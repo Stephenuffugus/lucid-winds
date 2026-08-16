@@ -27,15 +27,23 @@ function ok(name, cond, detail) {
   else { fails++; console.log('  FAIL  ' + name + (detail ? '   (' + detail + ')' : '')); }
 }
 
-/* deterministic hash stream for the suite itself: a counter run through
-   FNV + xorshift, so every run of this file tests the same population and a
-   regression cannot hide behind a lucky seed. No Math.random anywhere. */
+/* Deterministic hash stream for the suite itself, so every run tests the
+   same population and a regression cannot hide behind a lucky seed. No
+   Math.random anywhere.
+   ⛔ This uses a splitmix32 finaliser, NOT a raw xorshift. A raw xorshift's
+   top byte is its weakest, and byte 0 of the hash is the class selector, so
+   the first version of this file reported the ENGINE's class split as broken
+   when the bias was in the test. Byte 2 (grade) passed the whole time, which
+   is what gave it away. If you change this, check byte 0 is flat first. */
+function mix32(z) {
+  z = (z + 0x9e3779b9) >>> 0;
+  z = Math.imul(z ^ (z >>> 16), 0x21f0aaad) >>> 0;
+  z = Math.imul(z ^ (z >>> 15), 0x735a2d97) >>> 0;
+  return (z ^ (z >>> 15)) >>> 0;
+}
 function mkHash(i) {
-  var h = (2166136261 ^ i) >>> 0, s = '', k;
-  for (k = 0; k < 8; k++) {
-    h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0;
-    s += ('0000000' + h.toString(16)).slice(-8);
-  }
+  var s = '', k;
+  for (k = 0; k < 8; k++) s += ('0000000' + mix32(i * 8 + k).toString(16)).slice(-8);
   return s;
 }
 var N = 40000, HASHES = [], i;
@@ -114,63 +122,61 @@ sec('B  DISTRIBUTION (the declared odds are the real odds)');
 /* ═══ C. THE REVEAL ════════════════════════════════════════════════ */
 sec('C  THE REVEAL (condition is revealed last, says the rules screen)');
 (function () {
-  /* Everything shown BEFORE the player wipes the dust: the art, the name,
-     the sub line, the sticker line. None of it may betray the grade. */
-  var GRADE_WORDS = /\b(TRASHED|PLAYED|GOOD|FINE|NEAR MINT|MINT|FACTORY SEALED|MINT ON CARD)\b/;
-  var leakText = 0, leakEg = '', j;
-  for (j = 0; j < 6000; j++) {
-    var it = ATTIC.hashToItem(HASHES[j]);
-    var pre = [it.name, it.sub || '', it.sticker || ''].join(' | ');
-    if (GRADE_WORDS.test(pre)) { leakText++; if (!leakEg) leakEg = it.grade + ' -> "' + pre + '"'; }
+  /* The precise question is not "does the word MINT appear" (GOOD and FINE
+     are ordinary English and turn up in album titles by accident). It is:
+     does anything shown BEFORE the wipe CHANGE when only the grade changes?
+     So hold a hash still, sweep the grade byte hb(2) through all 256 values,
+     and demand the pre reveal surface never moves. */
+  function setByte(h, n, v) {
+    return h.slice(0, n * 2) + ('0' + v.toString(16)).slice(-2) + h.slice(n * 2 + 2);
   }
-  ok('the pre reveal text never names the condition', leakText === 0,
-    leakText + ' of 6000 leaked; e.g. ' + leakEg);
+  var textLeaks = 0, textEg = '', artLeaks = 0, artEg = '', j, v;
+  for (j = 0; j < 240; j++) {
+    var base = HASHES[j];
+    var ref = ATTIC.hashToItem(setByte(base, 2, 0));
+    var refPre = [ref.name, ref.sub || '', ref.sticker || ''].join(' | ');
+    var refArt = OBJ.renderItem(setByte(base, 2, 0), 240, { dusty: true }).svg;
+    var seenGrades = {};
+    for (v = 0; v < 256; v += 7) {
+      var hv = setByte(base, 2, v);
+      var it = ATTIC.hashToItem(hv);
+      seenGrades[it.grade] = 1;
+      var pre = [it.name, it.sub || '', it.sticker || ''].join(' | ');
+      if (pre !== refPre) { textLeaks++; if (!textEg) textEg = it.grade + ': "' + pre + '" vs "' + refPre + '"'; }
+      if (OBJ.renderItem(hv, 240, { dusty: true }).svg !== refArt) {
+        artLeaks++; if (!artEg) artEg = it.cls + ' changed its dusty art at grade ' + it.grade;
+      }
+    }
+    /* the sweep is worthless unless it actually crossed grades */
+    if (j === 0) ok('the grade sweep really covers several grades', Object.keys(seenGrades).length >= 4,
+      Object.keys(seenGrades).join(', '));
+  }
+  ok('the pre reveal text is independent of the grade', textLeaks === 0, textLeaks + ' leaks; e.g. ' + textEg);
+  ok('the dusty art is independent of the grade', artLeaks === 0, artLeaks + ' leaks; e.g. ' + artEg);
 
-  /* the art must be able to render WITHOUT the condition. If renderItem
-     cannot hide the wear, the sealed shrink gloss and the tape repair give
-     the answer away before the button is even pressed. */
-  var dustyDiffers = 0, dustySame = 0;
+  /* and the dusty state has to actually be a different picture, or there is
+     nothing to wipe */
+  var dustyDiffers = 0;
   for (j = 0; j < 400; j++) {
     var plain, dusty;
     try {
       plain = OBJ.renderItem(HASHES[j], 240).svg;
       dusty = OBJ.renderItem(HASHES[j], 240, { dusty: true }).svg;
     } catch (e) { dusty = null; }
-    if (dusty && dusty !== plain) dustyDiffers++; else dustySame++;
+    if (dusty && dusty !== plain) dustyDiffers++;
   }
   ok('renderItem supports an unrevealed (dusty) state', dustyDiffers > 380,
     dustyDiffers + '/400 rendered differently when dusty');
 
-  /* and two objects of different grade must be pixel identical while dusty,
-     otherwise the "unrevealed" art still carries the answer */
-  var pairsChecked = 0, pairsLeaked = 0;
-  var byGrade = {};
-  for (j = 0; j < 8000 && pairsChecked < 60; j++) {
-    var t = ATTIC.hashToItem(HASHES[j]);
-    var key = t.cls + '|' + t.era;
-    byGrade[key] = byGrade[key] || {};
-    if (!byGrade[key][t.grade]) byGrade[key][t.grade] = HASHES[j];
+  /* the revealed flourishes still have to EXIST, or the reveal pays nothing */
+  var sawSuffix = 0, sawNote = 0;
+  for (j = 0; j < N; j++) {
+    var t2 = ATTIC.hashToItem(HASHES[j]);
+    if (t2.revealSuffix) sawSuffix++;
+    if (t2.revealNote) sawNote++;
   }
-  Object.keys(byGrade).forEach(function (key) {
-    var gs = Object.keys(byGrade[key]);
-    if (gs.length < 2) return;
-    /* strip the parts that legitimately differ (the object itself) by
-       comparing only the wear/grime markers the renderer adds */
-    for (var a = 0; a < gs.length - 1 && pairsChecked < 60; a++) {
-      var h1 = byGrade[key][gs[a]], h2 = byGrade[key][gs[a + 1]];
-      var s1, s2;
-      try {
-        s1 = OBJ.renderItem(h1, 240, { dusty: true }).svg;
-        s2 = OBJ.renderItem(h2, 240, { dusty: true }).svg;
-      } catch (e) { return; }
-      pairsChecked++;
-      /* the shrinkwrap gloss and the tape repair are the tells */
-      var tell = function (s) { return /opacity="0\.16"|opacity="0\.3"|#d8cfa8/.test(s); };
-      if (tell(s1) !== tell(s2)) pairsLeaked++;
-    }
-  });
-  ok('dusty art carries no condition tell', pairsChecked > 0 && pairsLeaked === 0,
-    pairsLeaked + ' leaking pairs of ' + pairsChecked);
+  ok('a revealed flourish still exists to print after the wipe', sawSuffix > 0 && sawNote > 0,
+    sawSuffix + ' suffixes, ' + sawNote + ' notes in ' + N);
 })();
 
 /* ═══ D. GENERATOR DEPTH ═══════════════════════════════════════════ */

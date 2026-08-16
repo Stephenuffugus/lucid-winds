@@ -34,18 +34,23 @@ root.innerHTML=
 function show(id){ var s=root.querySelectorAll('.screen');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
 
-var val=50, curR=0, dragging=false;
+var val=50, curR=0, dragging=false, locked=false;
 
 function paint(){
   $('wmp-val').textContent=val;
   $('wmp-fill').style.width=val+'%';
   $('wmp-knob').style.left=val+'%';
 }
-function setVal(v,send){
+/* ⛔ LOCK IS THE ONLY THING THAT COMMITS. The host used to treat the first value
+   that arrived as an answer and end the round the moment the last person nudged
+   the dial once, while this screen was still promising they could change it. A
+   dial keeps reporting so nobody who never presses anything scores zero, and the
+   lock is the deliberate act that lets the room move on early. */
+function setVal(v,send,lock){
   v=Math.max(0,Math.min(100,Math.round(v)));
   if(v===val&&!send) return;
   val=v; paint();
-  if(send!==false) PartyShell.sendToHost({t:'guess',r:curR,v:val});
+  if(send!==false) PartyShell.sendToHost({t:'guess',r:curR,v:val,lock:!!lock||locked});
 }
 function fromEvent(ev){
   var tr=$('wmp-track').getBoundingClientRect();
@@ -67,8 +72,10 @@ window.addEventListener('touchend',up);
 $('wmp-down').addEventListener('click',function(){ setVal(val-1,true); });
 $('wmp-up').addEventListener('click',function(){ setVal(val+1,true); });
 $('wmp-lock').addEventListener('click',function(){
-  setVal(val,true);
-  $('wmp-note').textContent='In at '+val+'. You can still change it.';
+  locked=true;
+  setVal(val,true,true);
+  $('wmp-lock').textContent='Locked at '+val;
+  $('wmp-note').textContent='Locked in. Move it again if you change your mind.';
 });
 
 PartyShell.onTimer(function(s){
@@ -85,8 +92,9 @@ PartyShell.onPhase(function(name,data){
     show('wmp-wait');
   }
   else if(name==='question'){
-    if(data.num!==curR){ curR=data.num; val=50; paint();
-      $('wmp-note').textContent='Drag the bar, or nudge it. You can change it until time is up.'; }
+    if(data.num!==curR){ curR=data.num; val=50; locked=false; paint();
+      $('wmp-lock').textContent='Lock it in';
+      $('wmp-note').textContent='Drag the bar, or nudge it. Lock it in when you are happy.'; }
     $('wmp-n').textContent='ROUND '+data.num+' OF '+data.total;
     $('wmp-qt').textContent=data.q;
     show('wmp-q');

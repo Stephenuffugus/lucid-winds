@@ -59,37 +59,45 @@ function autoAlloc(oc) {
   }
 }
 
-function climb(race) {
+/* Drives the REAL runGauntlet, so the rewards under test are the shipping
+   rewards. (An earlier version of this probe re-implemented the reward maths and
+   therefore measured a formula that no longer existed — the exact mistake that
+   let the rarity simulator drift from live code twice on this project.) */
+function climb(race, spendGlory) {
   const oc = fresh(race, 1);
-  let cleared = -1, fights = 0, losses = 0, glory = 0;
-  while (cleared < T.ENEMIES.length - 1 && fights < 4000) {
-    const rung = Math.min(cleared + 1, T.ENEMIES.length - 1);
-    const e = T.ENEMIES[rung];
-    const res = T.simulate(oc, T.prepEnemy(e));
+  T.state.roster = [oc];
+  T.state.glory = 0;
+  T.state.gauntlet.cleared = -1;
+  T.state.gauntlet.champion = oc.id;
+  T.state.gauntletFight = null;
+  let fights = 0, losses = 0;
+  while (T.gauntletCleared() < T.ENEMIES.length - 1 && fights < 4000) {
+    const cleared = T.gauntletCleared();
+    T.runGauntlet(Math.min(cleared + 1, T.ENEMIES.length - 1));
     fights++;
-    const win = res.winnerIsA;
-    const newClear = win && rung > cleared;
-    glory += win ? Math.round((25 + e.level * 4) * (newClear ? 1.6 : 0.5)) : 6;
-    T.grantXP(oc, win ? Math.round((30 + e.level * 6) * (newClear ? 1.4 : 0.4)) : 12);
+    const won = T.state.gauntletFight && T.state.gauntletFight.win;
+    T.state.gauntletFight = null;
     autoAlloc(oc);
-    if (newClear) cleared = rung;
-    else losses++;
-    // grind lower rung after 3 straight losses
-    if (losses > 0 && losses % 3 === 0 && cleared >= 0) {
-      const g = T.ENEMIES[cleared];
-      const r2 = T.simulate(oc, T.prepEnemy(g));
+    if (!won) losses++; else losses = 0;
+    // stuck: grind the top cleared rung, and buy a level when affordable
+    if (losses >= 3 && cleared >= 0) {
+      T.runGauntlet(cleared);
+      T.state.gauntletFight = null;
       fights++;
-      T.grantXP(oc, r2.winnerIsA ? Math.round((30 + g.level * 6) * 0.4) : 12);
       autoAlloc(oc);
     }
+    if (spendGlory) {
+      const c = T.montageCostG(oc);
+      if (T.state.glory >= c) { T.state.glory -= c; T.grantXP(oc, Math.round(T.xpNeeded(oc.level + 1) * 0.7)); autoAlloc(oc); }
+    }
   }
-  return { fights, level: oc.level, cleared, glory };
+  return { fights, level: oc.level, cleared: T.gauntletCleared(), glory: T.state.glory };
 }
 
-console.log("\n== auto-player climbs the full ladder (no glory spending) ==");
+console.log("\n== auto-player climbs the full ladder (spends Glory on montages) ==");
 for (const race of ["human", "draconid", "esper", "revenant"]) {
   const runs = [];
-  for (let i = 0; i < 8; i++) runs.push(climb(race));
+  for (let i = 0; i < 8; i++) runs.push(climb(race, true));
   const done = runs.filter(r => r.cleared === T.ENEMIES.length - 1);
   const avgF = runs.reduce((a, r) => a + r.fights, 0) / runs.length;
   const avgL = runs.reduce((a, r) => a + r.level, 0) / runs.length;

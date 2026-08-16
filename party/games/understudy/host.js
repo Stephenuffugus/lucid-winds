@@ -125,7 +125,7 @@ function phaseVote(){
   show('us-vote'); strip('us-strip1');
   $('us-vn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
   $('us-vrole').textContent=r.text;
-  $('us-vin').textContent='0 of '+order.length+' have voted';
+  $('us-vin').textContent='0 of '+here().length+' have voted';
   var roster=[];
   for(var i=0;i<order.length;i++) roster.push({id:order[i],name:names[order[i]],color:pcol(order[i])});
   PartyShell.setPhase('vote',{num:ri+1,total:ROUNDS,role:r.text,roster:roster});
@@ -175,12 +175,13 @@ function phaseReveal(){
     if(w) wl+='<em>and</em>';
     wl+='<span style="color:'+pcol(winners[w])+'">'+esc(names[winners[w]])+'</span>';
   }
-  $('us-rwin').innerHTML=winners.length?wl:'<span class="us-nobody">Nobody, this time</span>';
+  $('us-rwin').innerHTML=winners.length?wl
+    :'<span class="us-nobody">'+(top===1?'You all said somebody different':'Nobody, this time')+'</span>';
   var th='';
   var ids=order.slice().sort(function(a,b){return (tally[b]||0)-(tally[a]||0);});
   for(var t=0;t<ids.length;t++){
     var c=tally[ids[t]]||0;
-    th+='<div class="us-trow'+(c===top&&top>0?' won':'')+'">'+
+    th+='<div class="us-trow'+(c===top&&agreed?' won':'')+'">'+
       '<i style="background:'+pcol(ids[t])+'"></i>'+esc(names[ids[t]])+
       '<b>'+c+'</b></div>';
   }

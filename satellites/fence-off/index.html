@@ -103,15 +103,21 @@ h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
    TOP LEFT on purpose. The fleet feedback fab (/feedback.js) parks bottom right
    at z-index 2147482000, occupying roughly x=W-90..W-12, y=H-174..H-96, and no
    game can out-stack two billion. A top-left control cannot meet it at any
-   viewport size, and it needs no layout height on a title screen that already
-   scrolls on a short phone.
+   viewport size.
+   ⛔ IN FLOW, NOT FLOATED — corrected 2026-08-16 after a shot at 390 wide.
+   The first version was position:absolute in the top left corner, with the
+   title screen given extra top padding to keep clear of it. On MINI CROSSWORD
+   that still covered the first two letters of the heading: a CENTRED heading
+   grows toward BOTH corners as the stage narrows, so the gap you measure at one
+   width closes at another, and a floated control has no layout engine to stop
+   it. As a flex sibling above the heading it pushes the heading down instead of
+   sitting on it, at every width, with no arithmetic to get wrong.
    72 STAGE px tall because this stage is SCALED (540x960 -> 375 wide = x0.694),
    so 72 stage px = 50 rendered px, clear of the 48px touch floor. */
-   #s-title gains a header band so the centred FENCE OFF wordmark cannot run
-   under the chip on a narrow stage. Title content is ~630 stage px, so +60 of
-   padding still leaves it well short of the 960 fold. */
-#s-title{padding-top:104px}
-#lw-home{position:absolute; top:14px; left:14px; z-index:40; display:flex; align-items:center;
+   In flow above the FENCE OFF wordmark, which is centred and therefore grows
+   toward this corner as the stage narrows. Title content is ~630 stage px, so
+   the ~54 this adds still leaves it well short of the 960 fold. */
+#lw-home{align-self:flex-start; flex:none; margin:14px 0 2px 14px; display:flex; align-items:center;
   gap:8px; min-height:72px; min-width:72px; padding:0 20px; border:1px solid #ffffff26;
   border-radius:14px; background:#101521e6; color:var(--muted); font-family:inherit;
   font-size:.95rem; font-weight:700; letter-spacing:.08em; cursor:pointer}

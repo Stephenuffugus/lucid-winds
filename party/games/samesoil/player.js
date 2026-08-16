@@ -84,6 +84,12 @@ PartyShell.onPhase(function(name,data){
   else if(name==='reveal'){
     var r=(data.results||{})[me]||{got:'none',pts:0};
     var el=$('ssp-rt'), sub=$('ssp-rs');
+    if(data.skipped){
+      el.textContent=(data.subject===me)?'That one waited for you':'Round let go';
+      el.className='ssp-result miss';
+      sub.textContent='Only '+data.subjectName+' can answer that, so nobody scored it.';
+      show('ssp-r'); return;
+    }
     if(r.got==='subject'){
       el.textContent=(r.knew?('They knew you, +'+r.pts):'Nobody had you that time');
       el.className='ssp-result subject';

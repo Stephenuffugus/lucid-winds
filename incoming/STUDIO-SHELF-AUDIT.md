@@ -63,6 +63,25 @@ sorted alphabetically with no sense of which are close to done.
 Worth considering: a "ready to test" versus "early" split inside the gate, so your own
 testing has an order to it.
 
+## Problem 5: several games greet a brand new visitor with a wall of text
+
+Added 2026-08-16 after shooting games in a fresh browser profile, which is what a stranger is.
+
+Frost Watch opens on "HOW TO KEEP WATCH", six paragraphs deep, before any play. Nova Bloom
+opens on "HOW TO FLY", five paragraphs. Both are well written and both are almost certainly
+first visit only, so this is not a bug. But it is worth seeing, because the studio's own rule
+says **"every game opens straight into play or a one-tap start, no tutorials as walls, teach
+through the first 30 seconds of play"**, and for the one person that rule exists to protect,
+the first time visitor, these games do the opposite.
+
+I only looked at two. The question worth answering before the Start Here shelf is decided is
+how many of the shelf candidates open this way, because a stranger deciding whether this studio
+is worth their time is exactly who is reading that wall.
+
+Not a thing to fix blind. Some of these games genuinely need a sentence of setup, and a good
+how to screen beats a confusing first thirty seconds. But it should be a decision per game
+rather than a default nobody chose.
+
 ## What I did NOT change
 
 Nothing. Every one of these is a taste call and you said you want to walk through it. The

@@ -93,6 +93,18 @@ function pairHTML(q,chosen,counts){
   return side('a',q.a)+'<div class="ss-or">or</div>'+side('b',q.b);
 }
 
+/* wait for the room, not for the roster taken at kick off */
+function here(excl){
+  var p=PartyShell.presentPlayers(), out=[];
+  for(var i=0;i<p.length;i++) if(names[p[i]]!==undefined&&p[i]!==excl) out.push(p[i]);
+  return out;
+}
+function allIn(store,excl){
+  var h=here(excl), got=0;
+  for(var i=0;i<h.length;i++) if(store.hasOwnProperty(h[i])) got++;
+  return h.length>0 && got>=h.length;
+}
+
 PartyShell.onPlayerMessage(function(pid,msg){
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='mine'&&msg.r===ri+1&&pid===subject&&$('ss-pick').classList.contains('on')){
@@ -105,8 +117,8 @@ PartyShell.onPlayerMessage(function(pid,msg){
   else if(msg.t==='guess'&&msg.r===ri+1&&pid!==subject&&$('ss-guess').classList.contains('on')){
     guesses[pid]=(msg.v==='a')?'a':'b';
     var n=0,k; for(k in guesses) n++;
-    $('ss-gin').textContent=n+' of '+(order.length-1)+' have guessed'; snd('pip');
-    if(n>=order.length-1){ PartyShell.stopTimer(); phaseReveal(); }
+    $('ss-gin').textContent=n+' of '+here(subject).length+' have guessed'; snd('pip');
+    if(allIn(guesses,subject)){ PartyShell.stopTimer(); phaseReveal(); }
   }
 });
 
@@ -136,7 +148,31 @@ function phasePick(){
   PartyShell.setPhase('pick',{num:ri+1,total:ROUNDS,a:q.a,b:q.b,
     subject:subject,subjectName:names[subject]});
   PartyShell.startTimer(T_PICK,function(s){ var t=$('ss-pt'); t.textContent=s; t.classList.toggle('low',s<=5); },
-    function(){ if(!subjectPick) subjectPick=(Math.random()<0.5)?'a':'b'; phaseGuess(); });
+    function(){
+      /* ⛔ NEVER INVENT SOMEBODY'S ANSWER ABOUT THEMSELVES. This used to flip a
+         coin when the subject's phone was quiet, and the room then guessed,
+         scored, and was told "Sam said butter" when Sam had said nothing. This
+         is the one title whose entire rule, printed twice in this file's own
+         header, is that the subject is the only authority on themselves. A
+         silent subject is a skipped round and the screen says so. */
+      if(!subjectPick){ phaseSkip(); return; }
+      phaseGuess();
+    });
+}
+
+function phaseSkip(){
+  show('ss-rev');
+  var q=QS[ri];
+  $('ss-vn').textContent='ROUND '+(ri+1)+' OF '+ROUNDS;
+  $('ss-vsaid').innerHTML='<b>'+esc(names[subject])+'</b> did not say';
+  $('ss-vpair').innerHTML=pairHTML(q,null,null);
+  $('ss-vknew').textContent='Only they can answer that one, so it goes back in the soil.';
+  strip('ss-strip3');
+  var res={},i;
+  for(i=0;i<order.length;i++) res[order[i]]={got:'skipped',pts:0};
+  PartyShell.setPhase('reveal',{num:ri+1,pick:null,a:q.a,b:q.b,skipped:true,
+    subject:subject,subjectName:names[subject],knew:0,of:order.length-1,results:res});
+  PartyShell.startTimer(T_REV,function(s){$('ss-vt').textContent=s;},function(){ ri++; phasePick(); });
 }
 
 function phaseGuess(){

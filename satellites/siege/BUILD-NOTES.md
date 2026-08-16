@@ -16,6 +16,95 @@ this box). Everything below was proved with `node`.
   `siege-shell-v2` and the registration is `sw.js?v=20260816b`** (bumped with
   this pass, or nobody would ever receive it).
 
+## THE COMPOSITION FIX (done last, after a LOOKING pass came back)
+
+The coordinator opened the combat screen at 390x844 and at desktop and reported
+that **about ninety percent of the play area was empty black**. He was right and
+it outranked everything else in these notes. Two consequences he named: the
+units were too small for the eight silhouettes to be doing any work, and the
+wave scorecard and spawn pips, the best things in the game, were not on screen
+while the fight was happening.
+
+### Why it was empty, in numbers
+
+The lane is 30 cells and a phone is 390px, so **a cell can never be more than
+13px**. That is a hard constraint of the spec, not a tuning mistake, and it caps
+how big a body can be drawn. Meanwhile `#field` was `flex:1` and `.cell` ran
+`top:0;bottom:0`, so 30 full height divider lines advertised ~660px of void with
+a 26px band of content on the floor.
+
+Zooming was the wrong answer: a camera that follows the player would make bodies
+big but would destroy the whole lane read, and the whole lane read is what the
+build phase is for. So the fix is the other one. **The lane became a strip and
+the space above it became a control room.**
+
+### What is on screen now
+
+`#field` is a flex column: `#board` on top, `#lanebox` on the floor at
+`clamp(112px, 17vh, 190px)`.
+
+| | before | after |
+|---|---|---|
+| lane strip | 100% of field (~660px), 4% of it used | **143px, 21% of field** |
+| watch board | did not exist | **553px, 79% of field** |
+| body in the lane | 20 x 26px | **34 x 46px** (1.7x linear, ~3x area) |
+| body in the roster | not shown in combat | **22 x 30px static chip** |
+| damage share during combat | invisible | **live, every tick** |
+
+Four panels, all fed from the same wave stats the scorecard prints and the sweep
+gates on. No new numbers were invented for the screen.
+
+1. **WAVE** — wave number, total HP left in the wave (alive plus not yet spawned)
+   as a meter, the endless modifier chips, and a **boss bar** with the Warden or
+   Marshal's name, HP and current cell when one is alive.
+2. **STILL COMING** — the roster as silhouette chips, `alive / total` per type,
+   dimming as a type is wiped out. This is where the eight silhouettes are
+   finally drawn at a size you can tell apart, and it is on screen in both
+   phases: "WHAT IS COMING" while you build, "STILL COMING" while you fight.
+3. **WHO IS DOING THE WORK** — the damage share bars, live, updating every tick
+   from `G.waveStats.dmg` through `SIM.damageShare`. The standout feature stops
+   being a card you see once a wave and becomes the screen you fight in front
+   of. During the build phase it holds the last wave's result.
+4. **YOUR LANE** — what is standing, by trap type, with counts and average level.
+
+The board rebuilds on the SIM's 10Hz tick, not at 60fps, and each panel only
+rewrites when its content signature changes.
+
+### Input consequence
+
+Trap placement moved from `#field` to `#lanebox`. The board scrolls on a phone
+and a flick across it must not drop a trap in the ground. Tap to swing during
+combat stays on the whole field, board included, so the attack gesture did not
+get smaller.
+
+### What I checked, and what I did not
+
+`node smoke.js` now boots the page, drives 6000 frames with a simulated thumb
+and **reads the board back out mid combat**:
+
+```
+  wave title  : "WAVE 2" 123 HP LEFT
+  wave hp bar : 55.4%
+  roster      : 2 chips, 4 of 6
+  roster svg  : 2 silhouettes at 22x30
+  live share  : 2 bars, YOU 22%
+  your lane   : 1 chips, 1 traps, 1 levels
+  boss bar    : WARDEN  496 / 496  ·  CELL 29     (exercised on a throwaway copy
+                                                   with a Warden added to wave 1)
+```
+
+The geometry table above is **arithmetic from the CSS, not a measurement**, and
+the boss bar needed a deliberately broken copy to reach. **Nobody has still seen
+a pixel of this.** It needs the same LOOKING pass that found the problem: 390x844
+and desktop, build phase and combat, plus the worst angles on purpose (320px
+wide where four panels and seven shop buttons have to fit, and an endless wave
+carrying three modifier chips and a boss bar at once).
+
+One thing the trace caught that is worth recording: `smoke.js` defaulted `DIR` to
+a hardcoded shipped path, so running a copy of it in a scratch folder silently
+tested the shipped file and my first boss bar test passed for the wrong reason.
+It defaults to `__dirname` now.
+
 ## THE DEEPENING PASS (second builder)
 
 The three defects the first builder found by reading his own lane frames are
@@ -146,7 +235,8 @@ seconds the wave took, and the longest quiet stretch when it is over 2s.
 | `node --check` on the extracted script block | clean |
 | `node --check sw.js` | clean |
 | element id audit | 72 ids, 0 `$()` calls or `EL.*` references without a matching id |
-| `node smoke.js` | boot ok, 0 missing ids, 6000 frames no throw, 30 lane cells, **7 shop buttons**, a wave held and its scorecard read back out ("WAVE 1 HELD, you 33% traps 67%, 2 bars"), the loss sheet reached |
+| `node smoke.js` | boot ok, 0 missing ids, 6000 frames no throw, 30 lane cells, **7 shop buttons**, a wave held and its scorecard read back out ("WAVE 1 HELD, you 33% traps 67%, 2 bars"), the loss sheet reached, **and the four watch board panels read back live mid combat** |
+| element id audit after the relayout | 15 new ids, all booted, 0 dangling `$()` or `EL.*` |
 
 ## Gates I watched FAIL before trusting them green
 
@@ -492,16 +582,22 @@ Nothing renders under 48px in either dimension. The options toggle started at
 
 ## Known gaps
 
-1. **No browser has opened this page.** Verified in node only, by instruction.
+1. **No browser has opened this page.** The one LOOKING pass that did happen
+   found the composition problem above, which is the strongest possible argument
+   that node gates do not see layout. The rebuilt combat screen has NOT been
+   looked at. Verified in node only, by instruction.
    `node smoke.js` boots the real page against a minimal DOM shim, drives 6000
    frames with a simulated thumb, renders 30 lane cells and 7 shop buttons, and
    reads a real wave scorecard back out ("you 33% traps 67%"). That rules out a
    blank page and dead wiring. **It is NOT a look. Nobody has seen a pixel.**
    The VIEW layer still needs the LOOKING pass at 390x844 AND at desktop width;
    two of the August 16 production defects only appeared at desktop width.
-   Specifically unlooked at: the DEEPEN button as the seventh item on a
-   scrolling shelf (does it fall off the edge at 375?), the trap level dots, the
-   new two tile scorecard split, and the endless modifier chips under the lane.
+   Specifically unlooked at: the whole watch board, the DEEPEN button as the
+   seventh item on a scrolling shelf (does it fall off the edge at 375?), the
+   trap level dots, the two tile scorecard split, whether 34px bodies overlapping
+   across 13px cells reads as a crowd or as mush, and whether the board's
+   `auto-fit minmax(260px,1fr)` grid lands as one column on a phone and four
+   across on desktop the way the arithmetic says it should.
 2. **Zone bucketed placement in the sweep versus free placement in play.** A human
    can find cell exact placements the sweep never tested, so the real ceiling is
    above the measured one. Accepted for v1, flagged by the plan.
@@ -526,11 +622,12 @@ Nothing renders under 48px in either dimension. The options toggle started at
 
 ## The single next thing
 
-Open it in a browser at 390x844 and at desktop width, play three waves, and read
-the screenshots. The sim is proven twice over now; the skin has never been seen.
-Shoot the build phase with the DEEPEN tool selected, shoot a wave 15 lane full of
-level 3 traps, and shoot the scorecard. Then shoot the worst angle on purpose:
-the shop shelf at 320px wide, and an endless wave carrying three modifier chips.
+Look at the rebuilt combat screen. The composition fix was made from arithmetic
+and a DOM shim, and the problem it is fixing was found by a human eye in about a
+minute. Shoot: the build phase with DEEPEN selected, wave 10 with the boss bar
+live, a wave 15 lane full of level 3 traps, and an endless wave with three
+modifier chips. Then the worst angles: 320px wide, and desktop where the board
+grid goes multi column and the lane strip is 190px of a very tall field.
 
 After that, the two design calls worth taking are cheaper starter traps (so the
 early game fix is a player decision instead of a gift) and a wave 21 that is not

@@ -871,24 +871,69 @@ function tri(x, y, r){
    overwriting from a stale in-memory copy.
    -------------------------------------------------------------------------- */
 const KEY = 'loaf.v1';
+const RESCUE = 'loaf.v1.rescue';
 const Store = {
   read(){
-    try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }
-    catch { return []; }
+    let raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return []; }
+    if (!raw) return [];
+    let v = null;
+    try { v = JSON.parse(raw); } catch (e) { v = null; }
+    if (Array.isArray(v)) return v.filter(c => c && typeof c === 'object' && c.id);
+    /* ⛔ A save that will not parse used to return [] and the next write
+       persisted that emptiness over it: one bad byte and every cat was gone,
+       with the UI reporting "No cats logged yet." Keep the damaged payload
+       where a person can still get at it, salvage whatever whole records are
+       in there, and say so out loud. Nothing leaves. */
+    try { if (!localStorage.getItem(RESCUE)) localStorage.setItem(RESCUE, raw); } catch (e) {}
+    const found = [];
+    let depth = 0, start = -1, inStr = false, esc = false;
+    for (let i = 0; i < raw.length; i++){
+      const ch = raw[i];
+      if (inStr){ if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"'){ inStr = true; continue; }
+      if (ch === '{'){ if (!depth) start = i; depth++; }
+      else if (ch === '}'){
+        depth--;
+        if (!depth && start >= 0){
+          try { const o = JSON.parse(raw.slice(start, i + 1)); if (o && o.id) found.push(o); } catch (e) {}
+          start = -1;
+        }
+      }
+    }
+    say(found.length
+      ? 'That save was damaged. ' + found.length + (found.length === 1 ? ' cat was' : ' cats were')
+        + ' recovered and the original is kept safe on this device.'
+      : 'That save was damaged. The original is kept safe on this device, so nothing is gone for good.',
+      found.length ? 'ok' : 'bad');
+    return found;
   },
   /* mutate(list) receives the CURRENT on-disk list and returns the new one. */
   update(mutate){
-    const next = mutate(Store.read()).slice(0, CONFIG.MAX_CARDS);
-    try { localStorage.setItem(KEY, JSON.stringify(next)); }
+    let next = mutate(Store.read());
+    /* ⛔ this used to end in .slice(0, MAX_CARDS), which DELETED the oldest
+       cat the moment the 41st was scanned, silently. A card is a cat and
+       nothing leaves. Over the cap we release the oldest PHOTOS instead,
+       which is the only large field, and the record itself stays. */
+    let released = 0;
+    for (let i = next.length - 1; i >= CONFIG.MAX_CARDS; i--)
+      if (next[i] && next[i].photo){ delete next[i].photo; released++; }
+    if (released) say('The shelf is full, so the oldest ' + (released === 1 ? 'photograph was' : released + ' photographs were')
+      + ' released. Every card is still here.', 'ok');
+    let saved = false;
+    try { localStorage.setItem(KEY, JSON.stringify(next)); saved = true; }
     catch (e) {
       /* Quota. Drop the oldest photo payloads rather than losing the record. */
       for (let i = next.length - 1; i >= 0 && i > 4; i--){
+        if (!next[i] || !next[i].photo) continue;
         delete next[i].photo;
-        try { localStorage.setItem(KEY, JSON.stringify(next)); return next; } catch {}
+        try { localStorage.setItem(KEY, JSON.stringify(next)); saved = true; break; } catch (e2) {}
       }
-      say('Storage is full. Older photos were dropped to keep the records.', 'bad');
+      if (!saved) say('This device is out of room, so that change could not be saved. Nothing already on the card was touched.', 'bad');
     }
-    return next;
+    /* Report what is ACTUALLY on disk. Returning the hoped-for list after a
+       failed write made every caller believe a save that never happened. */
+    return saved ? next : Store.read();
   }
 };
 window.addEventListener('storage', e => {
@@ -3707,10 +3752,18 @@ function powerOf(card){
    Chores are rewarding to do and free to skip.
    ========================================================================== */
 const DAY = 86400000;
+/* ⛔ These drifted at 0.9 / 1.4 / 0.7 points per MINUTE against a floor of 8,
+   so a full bar emptied in about an hour and every returning session opened on
+   three bars painted red. The floor meant nothing died; the colour still said
+   "you neglected her" every single time, which is the punishment the plan
+   bans, delivered by paint. Rates are now on a day scale and the floor is
+   somewhere comfortable: a day away lands her at the floor, and the floor
+   reads as "there is something you could do", never as failure. */
+const NEED_FLOOR = 45;
 const NEEDS = [
-  ['fed',    'Fed',     0.9],   /* points recovered per real minute away */
-  ['played', 'Played',  1.4],
-  ['clean',  'Litter',  0.7]
+  ['fed',    'Fed',     0.12],  /* points lost per real minute away */
+  ['played', 'Played',  0.18],
+  ['clean',  'Litter',  0.09]
 ];
 function petOf(card){
   if (!card.pet) card.pet = { level:1, xp:0, kibble:12, fed:70, played:60, clean:85,
@@ -3726,7 +3779,7 @@ function settleNeeds(card){
   NEEDS.forEach(([k, , rate]) => {
     /* Needs drift down while you are away, and stop at a floor. They gate
        rewards, never the animal. */
-    p[k] = Math.max(8, Math.min(100, (p[k] == null ? 70 : p[k]) - mins * rate));
+    p[k] = Math.max(NEED_FLOOR, Math.min(100, (p[k] == null ? 70 : p[k]) - mins * rate));
   });
   /* A cat that has been left a while has been busy. */
   const due = Math.floor(mins / 90);
@@ -3884,6 +3937,7 @@ const Room = (() => {
         played(){
           const up = grantXP(card, 5);
           if (up) setNote('Bond ' + pet.level + '.');
+          playedNeed(6);
           savePet(card); drawHud();
           ritualStep('play');
         },
@@ -3908,6 +3962,7 @@ const Room = (() => {
               (n === 1 ? 'First of its kind.' : 'Number ' + n + '.') + moodTag('pond'));
           }
           grantXP(card, moodXP('pond', 9));
+          playedNeed(12);
           savePet(card); drawHud();
           ritualStep('play');
           if (!$('fishbookBody').classList.contains('hidden')) FishBook.open(card);
@@ -3922,6 +3977,7 @@ const Room = (() => {
             s += ' She is feeling affectionate. +8 bond.';
           }
           setNote(s);
+          playedNeed(10);
           savePet(card); drawHud();
           ritualStep('play');
         },
@@ -3929,6 +3985,7 @@ const Room = (() => {
           pet.kibble += 3;
           grantXP(card, moodXP('yarn', 12));
           setNote('THE TANGLE IS COMPLETE. She regrets nothing.' + moodTag('yarn'));
+          playedNeed(24);
           savePet(card); drawNeeds(); drawHud();
           ritualStep('play');
         },
@@ -3939,6 +3996,7 @@ const Room = (() => {
             ? (q > 0.6 ? 'She had a GREAT time. +' + xp + ' bond.' + moodTag('laser')
                        : 'Good session. She caught it ' + catches + (catches > 1 ? ' times.' : ' time.') + moodTag('laser'))
             : 'The dot got away. She has opinions.');
+          playedNeed(10 + Math.round(q * 20));
           savePet(card); drawNeeds(); drawHud();
           ritualStep('play');
         },
@@ -3963,6 +4021,7 @@ const Room = (() => {
           }
           saveTricks();
           grantXP(card, xp);
+          playedNeed(14);
           savePet(card); drawHud();
           ritualStep('play');
           if (!$('tricksBody').classList.contains('hidden')) Tricks.open(card);
@@ -3977,12 +4036,14 @@ const Room = (() => {
             tk.perf = today();
             saveTricks();
             grantXP(card, 2);
+            playedNeed(5);
             savePet(card); drawHud();
           }
           setNote(lines[key] || 'Done. She accepts applause.');
         },
         boxSat(small){
           grantXP(card, 4);
+          playedNeed(6);
           setNote(small
             ? 'The box is too small. She has decided it is not. OVERFLOW LOAF.'
             : 'She is in the box. Everything is as it should be.');
@@ -3994,6 +4055,18 @@ const Room = (() => {
     cv.classList.remove('hidden');
     for (let i = 0; i < (pet.poops || 0); i++) addPoop();
     start();
+  }
+
+  /* ⛔ THE BAR THAT LIED. pet.played was raised in exactly ONE place: the 2D
+     fallback loop. Every play path in the 3D room - which is the path everyone
+     actually runs - granted bond and never touched it, so PLAYED sat pinned at
+     its floor forever no matter how long you played with her. A bar that can
+     only fall is an accusation, and this one was wrong as well as unkind.
+     Every play path now goes through here. */
+  function playedNeed(n){
+    if (!pet) return;
+    pet.played = Math.max(NEED_FLOOR, Math.min(100, (pet.played == null ? 70 : pet.played) + n));
+    drawNeeds();
   }
 
   function start(){ if (running) return; running = true; lastT = 0; raf = requestAnimationFrame(tick); }
@@ -4148,7 +4221,7 @@ const Room = (() => {
         if (Math.abs(cat.x - interest.t.x) < 34){
           /* caught it */
           const gain = Math.round(3 + interest.t.appeal * 3 + (boost > 0 ? 4 : 0));
-          pet.played = Math.min(100, pet.played + 7);
+          playedNeed(7);
           pet.kibble += 1;
           if (grantXP(card, gain)) setNote('Bond ' + pet.level + '.');
           burst(interest.t.x, interest.t.y, '#FFB23F');

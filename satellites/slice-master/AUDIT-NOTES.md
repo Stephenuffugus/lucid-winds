@@ -79,12 +79,33 @@ level 25 and level 250 are the same difficulty with different seeds. That is
 fine for the 90-second job and wrong for a returning player. Not fixed (it is a
 design call, not a defect).
 
+### P1 — the whole game's copy was under the studio font floor
+The stage is 540x960 and is scaled by `min(vw/540, vh/960)`, which is **0.694 at
+375x667**. Every CSS px in this file is therefore multiplied by 0.694 on the
+phone the shelf is judged on. The floor is 0.7rem (11.2px) rendered:
+
+| element | was (stage px) | rendered | verdict |
+|---|---|---|---|
+| `.ribbon` (the one sentence that teaches the game) | 14 | 9.7px | under |
+| `.helprow` (How to play) | 14 | 9.7px | under |
+| `.btn.sm` (Daily, Knives, How, Settings) | 15 | 10.4px | under |
+| `.title-sub` | 13 | 9.0px | under |
+| `.knifecard` name / price | 12.5 / 11.5 | 8.7 / 8.0px | under |
+| `.foot` | 11 | 7.6px | under |
+| in-game HUD subline | 12 | 8.3px | under |
+
+Someone had already written the correct warning about this for touch targets
+(index.html:52) and then sized all the type as if the stage were 1:1. Fixed: all
+of the above now sit at 17-18 stage px, which renders 11.8-12.5px. The
+"need X more" shop message was shortened to "X short" so it still fits a 140px
+card at the larger size.
+
 ### First thirty seconds — teaches itself
 Title ribbon names the verb, the thing to avoid, and the goal in one sentence.
 The HUD prints "tap to flip" under the money counter for the whole run. A
 progress bar shows how far the wall is. Good.
 
-### Touch targets — pass
+### Touch targets — pass (someone did this one right)
 Stage is 540x960 scaled by `min(vw/540, vh/960)`; at 375x667 that is 0.694.
 `.btn` 72px → 50 real px. `.tbtn` 72x72 → 50. `.knifecard` ~140x118 → 97x82.
 `.toggle` is 64x36 but carries an `::after` that inflates the hit box to 84x72
@@ -110,10 +131,12 @@ of proof. `dayNum()` seeds the daily.
    and reads as secondary to PLAY.
 2. **Added an exit from the result screen** (`◄ Arcade` beside Menu), so the
    daily's end card is not a one-way door into the title screen.
+3. **Re-baked the 30 completability proofs** against the live engine.
+4. **Raised all player copy above the 11.2px rendered floor.**
 
 ## IMPROVED
 
-3. **PLAY now says what it does.** The button read `🔪 Play · level 12` with the
+5. **PLAY now says what it does.** The button read `🔪 Play · level 12` with the
    level in a dimmer span; on a cold open at level 1 that read as noise. It now
    reads `🔪 Play` on level 1 and `🔪 Continue · level N` from level 2, so a
    returning player is told the run continues and a stranger is not shown a

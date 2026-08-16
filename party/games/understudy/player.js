@@ -19,7 +19,7 @@ root.innerHTML=
  '<div class="usp-num" id="usp-n"></div>'+
  '<div class="usp-role" id="usp-role"></div>'+
  '<div class="usp-list" id="usp-list"></div>'+
- '<div class="usp-note" id="usp-note">You can change your mind until time is up.</div></div>'+
+ '<div class="usp-note" id="usp-note">You can change your mind until everybody has voted.</div></div>'+
 
  '<div class="screen" id="usp-r"><div class="usp-result" id="usp-rt"></div>'+
  '<div class="usp-sub" id="usp-rs"></div></div>';
@@ -43,7 +43,7 @@ function renderList(roster){
     chosen=this.getAttribute('data-id');
     var all=$('usp-list').querySelectorAll('.usp-pick');
     for(var m=0;m<all.length;m++) all[m].classList.toggle('sel',all[m].getAttribute('data-id')===chosen);
-    $('usp-note').textContent='Vote in. You can change your mind until time is up.';
+    $('usp-note').textContent='Vote in. You can change your mind until everybody has voted.';
     PartyShell.sendToHost({t:'vote',r:curR,v:chosen});
   });
 }
@@ -63,7 +63,7 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='vote'){
     if(data.num!==curR){ curR=data.num; chosen=null;
-      $('usp-note').textContent='You can change your mind until time is up.'; }
+      $('usp-note').textContent='You can change your mind until everybody has voted.'; }
     $('usp-n').textContent='ROUND '+data.num+' OF '+data.total;
     $('usp-role').textContent=data.role;
     renderList(data.roster||[]);
@@ -76,10 +76,11 @@ PartyShell.onPhase(function(name,data){
     else if(r.got==='chosen'){ el.textContent='The room says that is you, +'+r.pts; el.className='usp-result chosen'; }
     else if(r.got==='withroom'){ el.textContent='You read the room, +'+r.pts; el.className='usp-result with'; }
     else if(r.got==='alone'){ el.textContent='You saw it differently'; el.className='usp-result alone'; }
+    else if(r.got==='split'){ el.textContent='Nobody agreed, +'+r.pts; el.className='usp-result alone'; }
     else { el.textContent='No vote'; el.className='usp-result alone'; }
     sub.textContent=(data.winners&&data.winners.length)
       ? (data.winners.join(' and ')+': '+data.role.toLowerCase())
-      : data.role;
+      : 'You all said somebody different.';
     show('usp-r');
   }
   else if(name==='podium'||name==='over'){

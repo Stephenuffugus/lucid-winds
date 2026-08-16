@@ -120,7 +120,7 @@ for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)){
      ".tool svg" sizes an icon inside a button, not the button. */
   const tail = sel.split(',')[0].trim().split(' ').pop();
   if (!/^(button|\.btn|\.ghost|\.tool|\.chip2|\.rit|\.sh|\.field|\.tunerHd|input\[type=color\])/.test(tail)) continue;
-  if (/^(svg|img|span|i|b|em)/.test(tail)) continue;
+  if (/^(svg|img|span|i|b|em)$/.test(tail)) continue;
   const mh = /(?:^|;|\s)min-height:\s*([\d.]+)px/.exec(body);
   const h = /(?:^|;|\s)height:\s*([\d.]+)px/.exec(body);
   const v = mh ? +mh[1] : (h ? +h[1] : null);
