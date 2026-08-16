@@ -75,7 +75,10 @@ coercive gamification, ever.
    your finger. No ads, nothing to unlock.", url:"/satellites/bandits-box/?v=<stamp>",
    ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true}`
    plus search keywords: `'bandit's box':'asmr fidget sensory calm quiet pop
-   bubble wrap slime stim toys raccoon'`. Thumb ≤150KB.
+   bubble wrap slime stim toys raccoon'`. Thumb ≤150KB — the fleet's thumbs
+   are a mix of screenshots and painted art; DEFAULT: a clean 375-wide
+   screenshot of the Bandit (raccoon) toy at rest on the night theme,
+   cropped square. Painted MJ thumb only if Stephen asks (012Assets lane).
 3. **No Sunbeam earns, no toasts, no daily anything.** Deviates from the
    fleet earn standard on purpose — coercive gamification is named harmful
    in the sensory research and no-ads/no-unlocks IS the product. Stephen can
@@ -122,7 +125,11 @@ coercive gamification, ever.
   law, cheap to check).
 - **B — Fleet standards.** 48px touch targets at 375×667 RENDERED (strip
   tabs are ~38px pills — likely need `min-height:48px` with padding, not
-  font changes; measure, don't eyeball). visualViewport for any height math.
+  font changes; measure, don't eyeball). visualViewport for any height math
+  (audited 2026-08-16: `#app` is fixed-inset so layout is safe; the only
+  real `innerHeight` uses are pointer-coordinate fallbacks plus `maxPull` at
+  ~1843 in tissues — switch that one to visualViewport.height). Note: iOS
+  screen-lock audio suspension does NOT matter here — foreground app.
   `node --check` on extracted JS (vm.createScript if SVG-in-CSS confuses).
   Gate: audit notes written, violations fixed, syntax clean.
 - **C — White-noise regression suite.** On a phone, headphones up: (1)
