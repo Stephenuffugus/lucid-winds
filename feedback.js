@@ -423,10 +423,34 @@
     return keep;
   }
 
-  /* What is under a candidate spot: 'blocked' | 'clear' | 'empty'.
+  /* What is under a candidate spot: 'blocked' | 'busy' | 'empty'.
+
+     ⛔⛔ 2026-08-16, THIRD PASS — READ THE PROGRESSION BEFORE CHANGING THIS.
+     Instrumented on Bramblewick, three rounds on the same page:
+       round 1, no fix:  bottom right, ON the Reduced motion toggle (a control)
+       round 2:          middle left, half on / half off the panel edge, on text
+       round 3:          middle centre, directly on "Manual aim (advanced routing)"
+     Each round satisfied the rule better than the last and LOOKED WORSE than
+     the last. Two causes, both removed:
+       - an inner ring of candidates offered spots that scored as well as the
+         gutters and were nearer to home, so the chip walked into the middle of
+         the screen. The ring is gone; parks are confined to the viewport's rim,
+         because corners and edges read as chrome and the centre reads as
+         content, always.
+       - a "best available" fallback parked on merely-control-free space. On a
+         dense settings panel EVERYTHING that is not a control is a word, so the
+         fallback could only ever land on a sentence. It is gone too.
+     A page is not controls and gaps. It is controls, readable content, and
+     actual empty space, and only the third one is somewhere to stand. If
+     nothing on the rim is genuinely empty, the honest answer is to FADE until
+     the next clear scan — and the 20s ceiling still guarantees the chip comes
+     back. A chip that briefly gets out of the way beats a chip on a sentence.
+  */
 
      EMPTY means every probe point resolves to the SAME topmost element, and
-     that element is a full-bleed surface (or there is nothing there at all).
+     that element is a big flat surface (or there is nothing there at all).
+     BUSY means something is there — a label, a card, a row, a sentence. It is
+     not somewhere to park; it is a reason to fade.
      One test, three jobs:
        - no content under the chip,
        - no STRADDLING a content edge — if one corner is on the panel and
@@ -435,8 +459,11 @@
          definition rather than by a list of anchors,
        - no unknown controls, because anything we cannot identify still counts
          as content.
-     CLEAR is the old, weaker rule (content, but nothing we can see is tappable)
-     and is only used when nothing empty exists anywhere on the ring. */
+     Self-exclusion matters here and is easy to get wrong: the badge's visible
+     dot is a bare <span> with NO class, so a filter that tests the returned
+     node's className misses it and reads our own chrome as harmless surface,
+     making an occupied spot look emptier than it is. fyIsOurs walks ANCESTORS,
+     so the dot is caught by its parent .lwfb-fab-x. Proven by S14 below. */
   function fySpotClass(rect, fab, vw, vh) {
     var pts = fyProbePoints(rect, vw, vh), i, j;
     var sig = null, haveSig = false, empty = true;
@@ -463,7 +490,7 @@
       if (!haveSig) { sig = top; haveSig = true; }
       else if (sig !== top) empty = false;
     }
-    return empty ? 'empty' : 'clear';
+    return empty ? 'empty' : 'busy';
   }
 
   var watch = null;   // one fab per page, so one watcher

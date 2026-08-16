@@ -25,7 +25,13 @@ root-weave · silt · sled-vine · spore-drift · tempo-grove · tinker-loft · 
 
 hues · dragon-philosophy
 
-## NOT YET TOUCHED — 53, largest first
+## WAVE 4 IN FLIGHT (round three's standing defect list is now the brief)
+
+burr-blast · garden-td · slice-3d · sproing · moon-claw · skyshot · budburst · pong ·
+petal-plunge · greenhouse-pinball · burrow-bowl · rule-root · flipbook · seed-flutter ·
+pollen-panic · shell-shuffle · bubblenaut
+
+## NOT YET TOUCHED — largest first
 
 These are the next waves. Line counts are a rough proxy for how much game is in there.
 
