@@ -82,11 +82,11 @@ fails or any grep gate trips. Both verified by watching them go red (section 4).
 `node sim.js --test`
 
 ```
-total assertions 253
-PASSED 253 / FAILED 0
+total assertions 342
+PASSED 342 / FAILED 0
 ```
 
-**253 assertions**, floor was 80. Same suite runs in the page at `?test=1` and is
+**342 assertions** (253 before this pass), floor was 80. Same suite runs in the page at `?test=1` and is
 exposed as `window.__TEST__`. It lives between `// ---- TEST_EXPORT_START ----`
 markers so there is exactly one copy of it.
 
@@ -106,6 +106,10 @@ Coverage by suite:
 | Fuzz | 5,000 random legal and illegal actions: nothing throws, actionsLeft never negative, the board never holds an illegal mark |
 | Copy | every phrasing bank has six or more lines with no repeats, no dash anywhere in copy, every rendered clue is clean |
 | Regression | four bugs that actually happened, kept as named tests (see section 5) |
+| Title fit | glyph maths, wrapping, all 130 possible titles at four screen widths, and that the generator cannot produce a title the gate has not seen |
+| Liar | the at most one violation set on a hand built pair, then 24 generated liar cases: both halves of the 4.7 requirement on pool and proof, exactly one false clue, it is a statement, it is in its speaker's mouth, it is load bearing, the truth is never crossed off the board by a lie, auto mark stays safe, lies come in four or more shapes, and a saved liar case resumes as one |
+| Tiers | the ladder is ordered by budget and by proof length, each rung generates unique reachable cases inside its own band and budget, stars mean the same thing on every rung, and a tiered case is deterministic |
+| Copy (extended) | every one of the 252 phrasings rendered and checked for slots, dashes, stubs and dropped subjects, plus proof that the draw reaches past the first six lines |
 
 ---
 
@@ -263,32 +267,281 @@ model and the main loop owns the tap probe and the LOOKING pass.
 
 ---
 
-## 8. Known gaps and the next thing I would do
+## 8. Unreliable narrators (HANDOFF 4.7) — built, 10,000 cases
 
-1. **Unreliable narrators (spec 4.7) are not built.** Deliberate, per the plan.
-   The solver would need "exactly one solution consistent with all but one clue and
-   none consistent with all", which is a different and much heavier search.
-2. **No browser has rendered this page.** Everything above is node. The LOOKING pass,
-   the tap probe and `page_health.mjs` are the main loop's.
-3. **2.6 percent of minimal sets fall outside 8 to 14** (49 below, 211 above of
-   10,000). Reported, not clamped.
-4. **The greedy agent is the weakest number at 94.25 percent** and it is sensitive to
-   its press policy. It is a model of a careless player, not a bound on the game.
-5. **No Sunbeam earn wiring**, consistent with the other August 16 builds.
-6. **Next thing I would do:** interleave the clue journal with the board tabs so a
-   note can be dragged onto the row it accuses, which is the one interaction the
-   deduction board is still missing. After that, unreliable narrators.
+Exactly one suspect says exactly one false thing. **Physical evidence never lies.**
+That is the fairness rule the whole mode rests on: a lie can only come out of a
+mouth, so the journal splits statements from evidence and the lie is always placed
+in its speaker's own interview slot. A lie found under a floorboard would leave the
+player with nothing to reason from.
+
+### The solver requirement actually implemented
+
+The spec asks for "exactly one solution consistent with all but one clue, and no
+solution consistent with all clues". Both halves are enforced, on the full pool AND
+on the minimal set alone:
+
+```
+liarProved(clues, masks, truth) =
+     |{ tuples violating at most one clue }| === 1
+  AND that tuple is the truth
+  AND |{ tuples violating no clue }| === 0
+```
+
+The second half is what keeps the lie load bearing. Without it the lie could be
+dropped from the proof and the case would quietly be a v1 case with a spare clue.
+
+**How it is computed.** Not by counting violations per tuple (1296 x 45 per
+evaluation, which makes minimisation unaffordable). For clue i the set that ignores
+only clue i is `prefix[i] AND suffix[i+1]`, so one forward pass and one backward
+pass over the clue list gives the whole "at most one violation" set in O(n) bitset
+operations. That is the difference between a 10,000 case liar sweep taking three
+minutes and taking an hour.
+
+### The five shapes a lie can take
+
+Every one is asserted false of the truth before it is used, and 200 lies from the
+factory are re-checked in the test suite:
+
+| Shape | Who says it | Why it is a lie |
+|---|---|---|
+| Alibi (type 1) | the culprit | the only alibi shape that CAN be false is the killer's own |
+| Motive denial (type 8) | anyone else | vouching for the person who did it |
+| Company (type 9) | the culprit's partner | a false "we were together" |
+| Ownership (type 2) | the claimed owner | the murder weapon put in the wrong hand and the wrong room |
+| Sighting (type 4) | any non culprit | a false description at the scene |
+
+### Reinforcement for liar cases
+
+Adding the lie makes every tuple that violated exactly one clue a rival answer, so
+the generator adds TRUE clues until every non truth tuple violates at least two.
+Candidates come from the same twelve factories plus aimed eliminators, ranked by how
+many rivals they actually kill.
+
+**The bug that cost the most here:** the first version stalled 33 to 50 percent of
+the time and I nearly wrote that off as "liar mode is just expensive". It was not.
+The one obvious eliminator for a survivor was usually *already in the pool*, and the
+fallback proposed exactly that clue, got refused as a duplicate and gave up. The fix
+was to make the eliminator a LIST of shapes per survivor (a survivor that differs
+only in the hour can be killed by "not that hour", by a "before", by an "after", by
+a sequence pair or by an empty room clue) and to filter candidates against the seen
+set before ranking them. Retry rate went **50 percent to 3.4 percent**.
+
+Everything proposed is filtered by two rules and never patched: it must be true of
+the truth, and it must actually kill the tuple it was proposed for.
+
+### Verified, 10,000 cases, `node sim.js --tier=standard --liar --cases=10000`
+
+```
+cases generated            10000   (unbuildable: 0)
+uniqueness pass rate       100.00%   gate 100%      (the liar property, both halves,
+                                                     pool AND minimal set alone)
+regeneration retry rate    3.44%   gate under 15%
+minimal set median         18   gate 17 to 19
+minimal set range          10 to 26
+minimal set inside 13 to 22  96.17%   gate 95% or better
+motive only minimal sets   0   gate 0
+clue text contradictions   0   gate 0
+worst reach cost           16 actions   gate 16 or less
+average reach cost         13.74 actions
+greedy agent solve rate    100.00%   gate above 90%
+lie placement faults       0   gate 0
+perfect agent solve rate   100.00%   gate 100%
+SWEEP GATES PASSED
+```
+
+`lie placement faults` is four checks per case: exactly one clue in the pool is false,
+it is the one the generator declared, it sits in its speaker's own slot, and it
+survived minimisation into the proof.
+
+**Honest reading of the greedy 100 percent:** a liar case gets 24 actions and its
+worst case gather is 16, so the mode is not budget tight. Its difficulty is the
+reasoning, not the clock. If the Director wants clock pressure too, `TIERS.standard
+.liar.actions` is one number; it would want a re-sweep because greedy solve rate is
+the figure it moves.
 
 ---
 
-## 9. Commands
+## 9. The difficulty ladder
+
+Three lengths, each with its own **clue mix**, not a multiplier on one case shape.
+
+- **Quick case** — 16 actions. The stopped clock (timeline `exact`) is allowed back
+  in, and the pool leans on direct exclusions, so the proof collapses to about nine
+  steps. `exact` was cut from v1 for exactly this reason: one clue that hands over
+  the whole time axis. Here that is the point.
+- **Standard case** — 20 actions. Unchanged from v1.
+- **Long case** — 25 actions, three clues per room instead of two, and the weakest
+  clue mix in the game (alibi 20, sighting 16), because weak clues make proofs long.
+
+The other lever is **choosing among proofs**, which v1 already used and this pass
+made explicit: minimisation is run 8 times per case with different removal orders and
+the tier picks by taste (short takes the shortest valid proof, long takes the
+longest, standard takes the one nearest its target). Every candidate is a complete
+valid proof of the same murder, so this chooses among proofs and never weakens one.
+
+### All six modes, 1,200 cases each, `node sim.js --all --cases=1200`
+
+| Mode | Actions | Retry | Median proof | In band | Worst reach | Greedy | Pool |
+|---|---|---|---|---|---|---|---|
+| quick | 16 | 1.96% | 9 | 97.2% (6 to 12) | 12 | 92.7% | 34.7 |
+| quick + liar | 20 | 3.92% | 17 | 96.4% (12 to 21) | 14 | 94.8% | 37.8 |
+| standard | 20 | 0.00% | 11 | 98.3% (8 to 14) | 15 | 94.8% | 44.1 |
+| standard + liar | 24 | 2.76% | 18 | 96.2% (13 to 22) | 16 | 100% | 47.4 |
+| long | 25 | 0.00% | 13 | 95.6% (10 to 17) | 16 | 100% | 49.1 |
+| long + liar | 28 | 4.38% | 20 | 95.5% (15 to 24) | 16 | 100% | 53.1 |
+
+Perfect agent 100 percent and uniqueness 100 percent in every row. Every rung gates
+independently and exits nonzero.
+
+**Two numbers I did not get to move, reported rather than dressed up:**
+
+1. **The long tier's proofs run 13, not the 15 I first wrote in the tier table.** I
+   set the band to 15 and watched it fail, weakened the clue mix twice, added the
+   proof length preference, and it still lands at 13. A 1296 tuple space only holds
+   so much proof: past about 13 independent steps the extra clues are redundant and
+   minimisation correctly throws them away. So the long tier's honest difference is
+   13 steps against 11, a bigger budget, denser rooms and more noise. Making proofs
+   meaningfully longer than that needs a bigger solution space, which is a v3
+   conversation, not a tuning knob.
+2. **With a liar in the house, proof length converges around 17 to 20 whatever the
+   tier**, because the "everything must be wrong twice" requirement dominates the
+   clue mix. The tier still shows up in the budget and the clue mix, but if you want
+   a genuinely short liar case, the lever is a smaller solution space, not the pool.
+
+---
+
+## 10. The two defects this pass was opened for
+
+### The case title was truncating
+
+`THE EVENING BUSINE...` on a 390px phone. The header had `white-space:nowrap` and
+`text-overflow:ellipsis` on the most identity carrying string in the game.
+
+Fixed by letting it wrap to two lines with three size tiers, and by measuring rather
+than eyeballing. `textWidth` uses a per glyph advance table for bold uppercase system
+sans, rounded up so the estimate never flatters the layout, and `wrapText` does the
+same greedy wrap a browser does. Then:
+
+- the longest title the generator can produce is `The Conservatory Arrangement`, and
+  the test asserts that by enumerating all 130 titles rather than trusting me;
+- all 130 fit in two lines at 320, 360, 375 and 390 css px;
+- the same 130 are asserted to be the complete set the generator can emit (150 fresh
+  cases, every title must be in that set), because a fit gate that does not cover
+  what the generator makes is decorative;
+- `sim.js --layout` cross checks the three tier font sizes in the stylesheet against
+  the three in SIM, so they cannot drift apart.
+
+The header buttons also shrank to 10px labels to give the title 228px instead of 210
+at 390. They are still 48px tall.
+
+### Touch targets had no headroom
+
+The board cell was 48.2 x 48, a fifth of a pixel over the repo law, computed by hand.
+Now: the grid is full bleed (negative margins cancel the page padding), the row
+header is 56px and cells are 52 x 52 with a 52px grid floor.
+
+| Width | Rendered cell (computed by `sim.js --layout`) |
+|---|---|
+| 320 | 52.0 (grid overflows into its own scroller, cell never shrinks) |
+| 360 | 52.0 |
+| 375 | 53.5 |
+| 390 | 56.0 |
+
+`sim.js --layout` parses `--pad`, the grid template, the cell box, the full bleed
+margins and every interactive rule out of the stylesheet, and fails under 50px
+(48 plus real headroom). I watched it fail against the old geometry: it reported
+`board cell renders 46.0px at 320px wide` and `49.0px at 360px`, which is the defect
+it was written to catch. It also fails if the title goes back to nowrap or ellipsis.
+
+**Still true: no browser has rendered this page.** This is box model arithmetic, and
+it is now executable arithmetic that fails loudly instead of a table in a document.
+The tap probe and the LOOKING pass remain the main loop's.
+
+---
+
+## 11. The dom smoke test
+
+`node domsmoke.js` (also folded into `--test`) boots the real page script against a
+stub document and plays a whole case: searches all six rooms, interviews everybody,
+presses, opens the board, marks eight cells, taps a clue for its halo, opens the
+file, opens the picker, selects each of the three tiers, flips the liar toggle,
+starts the picked case, accuses wrongly and reads the reveal, then opens options and
+flips every toggle. It asserts 36 cells, 24 accusation options, that the journal is
+not empty, that the dossier lists the household, and that a liar case says so on
+both surfaces (the header names the mode, the brief states the rule).
+
+**It found a real defect on its first run.** The reveal beats were empty. The
+typewriter effect blanked the node and refilled it from a `setInterval`, so the text
+that names the killer existed only inside a running timer. The stub does not run
+timers by default, which is exactly the situation of a throttled or backgrounded tab.
+Two fixes: the stub now runs what the page schedules (a stub that drops every timer
+tests a game nobody is playing), and `typeBeat` got a 1500ms backstop that force
+completes the line. The one screen that must never be blank is the one that says who
+did it.
+
+The typewriter toggle itself was a switch wired to nothing before this pass. It now
+does what it says, and respects both the setting and `prefers-reduced-motion`.
+
+---
+
+## 12. Gates watched fail in this pass
+
+Every new gate was seen red before it was believed. Restored after each.
+
+1. **Phrasing subject gate** — deleted `{r}` from one of the 12 access phrasings:
+   `every phrasing of a3 renders clean ... ph6 drops Cellar`, and independently
+   `no clue text contradicts the truth  expected 0, got 23`. Two gates, one defect.
+2. **Title fit gate** — stopped the smallest tier shrinking (11px to 14px):
+   `title tier t2 is 11px in css and 14px in sim`.
+3. **Lie factory gate** — made the alibi lie point at the real room:
+   `every lie a factory makes is actually false  expected 0, got 36`.
+4. **Layout gate** — restored the old 64px/46px grid template:
+   `board grid floor 46px, wants 50`, `board cell renders 46.0px at 320px wide`.
+5. **Tier band gate** — claimed the long tier targets 17 when it lands on 13:
+   `long tier: median proof is near its target  median 13`.
+6. **Dom smoke** — renamed the header mode helper: `boot threw: modeLabelMissing is
+   not defined`. And removing the liar line from the brief: `the brief never states
+   the liar rule`.
+
+---
+
+## 13. Known gaps and the next thing I would do
+
+1. **No browser has rendered this page.** Unchanged from v1 and it is the biggest
+   remaining risk. Everything here is node.
+2. **The daily case is always standard and honest.** Deliberate: the daily is the one
+   case everybody compares, so it cannot vary by mode. The ladder is for endless play
+   and for `?seed=&tier=&liar=1` links.
+3. **Liar mode is not budget tight** (section 8) and the long tier is 13 steps, not
+   the 15 I wanted (section 9). Both reported, neither clamped.
+4. **The standard histogram is spikier than v1's** (5,475 of 10,000 at exactly 11,
+   against a flatter spread before) because proof choice now runs 8 removal orders
+   and prefers the target. Tighter is arguably better for a "standard" case, but it
+   is a real change in the shape of the distribution and the Director may prefer the
+   old spread: it is the `passes` argument to `chooseProof`.
+5. **Phrasing draw changed the RNG stream**, so a given seed generates a different
+   case than it did before this pass. Archived seeds still open a valid case, just not
+   the same one. Unavoidable: the old draw was `rng.int(6)` and could never reach the
+   new lines.
+6. **No Sunbeam earn wiring**, consistent with the other August 16 builds.
+7. **Next thing I would do:** let the player mark a *statement* as suspected false on
+   the board (a fourth mark state, scoped to the journal), which is the one
+   interaction the liar mode is missing. After that, drag a note onto the row it
+   accuses.
+
+---
+
+## 14. Commands
 
 ```
-node sim.js --test            # 253 assertions, exit 1 on any failure
-node sim.js --cases=10000     # the 4.8 sweep, exit 1 on any gate failure
-node sim.js --watch=12345     # one case printed in full: truth, who was where,
-                              # weapon ownership, motives, the whole clue pool with
-                              # how many tuples each clue cuts, the minimal set
-                              # starred, the placement map, both agents
-node sim.js --grep            # Math.random, DOM in SIM, dashes in copy
+node sim.js --test                    342 assertions + grep + layout + dom, exit 1 on any failure
+node sim.js --cases=10000             the 4.8 sweep, standard honest
+node sim.js --tier=long --liar --cases=10000    one rung of the ladder
+node sim.js --all --cases=1200        all six modes, each gated separately
+node sim.js --watch=12345             one case printed in full for a human to read
+node sim.js --grep                    Math.random, DOM in SIM, dashes in copy
+node sim.js --layout                  touch targets and title fit, read out of the css
+node sim.js --dom                     boot the page against a dom stub and play it
+node domsmoke.js                      the same dom smoke on its own
 ```

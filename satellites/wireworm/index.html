@@ -810,8 +810,13 @@ function toastTop(vh, hudBottom, toastH, rects) {
     if (r.top < ceiling) ceiling = r.top;     // highest control we must clear
   }
   var top = ceiling - toastH - 10;
+  /* ceiling never exceeds vh - 12, so the toast is on screen by construction and
+     the header clamp is the only one that can bind. A third "keep it inside the
+     viewport" clamp was written here and deleted: no probe could reach it, and
+     untestable code is not a safeguard. On a viewport too short for the header
+     and the toast together the toast sits under the header and overflows, which
+     is pinned by assertion rather than papered over. */
   if (top < hudBottom + 6) top = hudBottom + 6;
-  if (top + toastH > vh - 6) top = Math.max(hudBottom + 6, vh - 6 - toastH);
   return top;
 }
 
@@ -2228,10 +2233,11 @@ function suiteToastPlacement() {
   var t3 = toastTop(vh, hudBottom, th, [{ top: 10, bottom: 58 }]);
   TEST.le('with nothing in the way the toast stays on screen', t3 + th, vh - 6);
   TEST.ge('with nothing in the way the toast still clears the header', t3, hudBottom + 6);
-  /* a short viewport where the controls crowd the header */
+  /* the header clamp is the only one that can bind */
   var t4 = toastTop(500, 58, th, [{ top: 70, bottom: 118 }, { top: 130, bottom: 178 }]);
-  TEST.ge('on a cramped screen the toast never rides over the header', t4, 58 + 6);
-  TEST.le('on a cramped screen the toast never leaves the viewport', t4 + th, 500 - 6);
+  TEST.eq('the header clamp binds when controls crowd it', t4, 58 + 6);
+  TEST.le('placement is on screen by construction', toastTop(vh, hudBottom, th, sheet) + th, vh - 12);
+  TEST.eq('a viewport too short for both puts the toast under the header', toastTop(200, 58, 140, []), 64);
   /* a two line toast must be measured, not assumed */
   var tall = toastTop(vh, hudBottom, 78, sheet);
   TEST.eq('a taller toast is placed by its real height', overlaps(tall, 78, sheet, hudBottom), 0);

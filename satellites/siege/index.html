@@ -1698,8 +1698,13 @@ function dispatch(s) {
   var li = s.lossInfo;
   if (s.won) return 'Twenty waves. The gate held and the lane is quiet.';
   if (!li) return 'The siege ended.';
-  var who = { runner: 'a runner', brute: 'a brute', shielded: 'a shielded one', flyer: 'a flyer', sapper: 'a sapper', healer: 'a healer', swarm: 'the swarm', warden: 'the Warden', stall: 'the long wait' }[li.enemy] || 'something';
+  var who = { runner: 'a runner', brute: 'a brute', shielded: 'a shielded one', flyer: 'a flyer', sapper: 'a sapper', healer: 'a healer', swarm: 'the swarm', warden: 'the Warden', marshal: 'the Marshal', stall: 'the long wait' }[li.enemy] || 'something';
   var line = 'Fell on wave ' + li.wave + '. ' + who.charAt(0).toUpperCase() + who.slice(1) + ' walked through the gate.';
+  if (s.wave > CONFIG.WAVES && s.waveStats && s.waveStats.muts && s.waveStats.muts.length) {
+    var names = [], mi, mm;
+    for (mi = 0; mi < s.waveStats.muts.length; mi++) { mm = mutByKey(s.waveStats.muts[mi]); if (mm) names.push(mm.name); }
+    if (names.length) line += ' It was ' + names.join(' and ') + ' out there.';
+  }
   var saps = s.log.filter(function (l) { return l.k === 'sap'; });
   if (saps.length) {
     var last = saps[saps.length - 1];
