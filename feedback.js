@@ -350,7 +350,10 @@
     COVER_H:    0.50,    //   >=50% tall,
     COVER_A:    0.55,    //   >=55% of the viewport's area
     UNDER_A:    0.25,    // "there is real content beneath it": >=25% of area
-    STACK_MAX:    14     // how far down a hit-test stack we bother to look
+    STACK_MAX:    14,    // how far down a hit-test stack we bother to look
+    RING_STEPS:    5,    // 6 stops per edge => 24 candidate parking spots
+    MAX_TRIES:    16,    // cap the search: 16 spots x 5 probes, once per yield
+    SETTLE_MS:   260     // > the 180ms move, then the stylesheet takes over
   };
 
   /* ⛔⛔ 2026-08-16, SAME DAY, SECOND PASS — FIVE FIXED ANCHORS WAS TOO COARSE.
@@ -622,22 +625,55 @@
   function fySnapshot(el) {
     return { left: el.style.left, top: el.style.top, right: el.style.right, bottom: el.style.bottom };
   }
-  function fyGoHome(w) {
-    if (!w || !w.el) return;
-    var s = w.home || {};
-    w.el.style.left = s.left || ''; w.el.style.top = s.top || '';
-    w.el.style.right = s.right || ''; w.el.style.bottom = s.bottom || '';
-    if (w.el.removeAttribute) w.el.removeAttribute('data-lwfb-yield');
-    w.state = 'home'; w.hiddenAt = 0; w.anchor = null;
+  /* A transition from `right/bottom` to `left/top` DOES NOT ANIMATE — the start
+     value is `auto`, so the chip teleports: bottom-right one frame, mid-left the
+     next, and the player has no way to read what happened. Pin the current
+     position in px, flush it, and only then write the target. */
+  function fyPin(el) {
+    if (el.style.left && el.style.left !== 'auto') return;   // already in px
+    var r = fyRect(el);
+    if (!r) return;
+    el.style.left = Math.round(r.left) + 'px';
+    el.style.top = Math.round(r.top) + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto';
+    var flush = el.offsetWidth;   // read forces the pin to land before the move
+    return flush;
   }
-  function fyPark(w, anchor, vw, vh, size) {
-    var x = anchor.x(vw, vh, size.width, size.height);
-    var y = anchor.y(vw, vh, size.width, size.height);
-    w.el.style.left = Math.round(x + size.offX) + 'px';
-    w.el.style.top = Math.round(y + size.offY) + 'px';
-    w.el.style.right = 'auto'; w.el.style.bottom = 'auto';
-    if (w.el.removeAttribute) w.el.removeAttribute('data-lwfb-yield');
-    w.state = 'parked'; w.anchor = anchor.id; w.hiddenAt = 0;
+  function fyGoHome(w, animate) {
+    if (!w || !w.el) return;
+    var el = w.el, s = w.home || {};
+    if (el.removeAttribute) el.removeAttribute('data-lwfb-yield');
+    if (animate && w.homeRect && w.state === 'parked') {
+      fyPin(el);
+      el.style.left = Math.round(w.homeRect.left + w.homeRect.offX) + 'px';
+      el.style.top = Math.round(w.homeRect.top + w.homeRect.offY) + 'px';
+      w.state = 'home'; w.hiddenAt = 0; w.tier = null;
+      // Once the move has played, hand the position back to the stylesheet, so
+      // env(safe-area-inset) and rotation keep working. Same pixels either way,
+      // so there is nothing to see at the swap.
+      if (w.settle) { try { clearTimeout(w.settle); } catch (e) {} }
+      try {
+        w.settle = setTimeout(function () {
+          w.settle = null;
+          if (!w || w.state !== 'home') return;
+          el.style.left = s.left || ''; el.style.top = s.top || '';
+          el.style.right = s.right || ''; el.style.bottom = s.bottom || '';
+        }, FY.SETTLE_MS);
+      } catch (e) {}
+      return;
+    }
+    el.style.left = s.left || ''; el.style.top = s.top || '';
+    el.style.right = s.right || ''; el.style.bottom = s.bottom || '';
+    w.state = 'home'; w.hiddenAt = 0; w.tier = null;
+  }
+  function fyMoveTo(w, x, y, size, tier) {
+    var el = w.el;
+    fyPin(el);
+    el.style.left = Math.round(x + size.offX) + 'px';
+    el.style.top = Math.round(y + size.offY) + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto';
+    if (el.removeAttribute) el.removeAttribute('data-lwfb-yield');
+    w.state = 'parked'; w.tier = tier; w.hiddenAt = 0;
   }
   function fyFade(w) {
     // Not display:none — the box has to stay measurable so the next scan can
@@ -649,19 +685,33 @@
   function fyYield(w, vw, vh) {
     var size = w.size;
     if (!size || !size.width) { fyFade(w); return; }
-    for (var i = 0; i < FY_ANCHORS.length; i++) {
-      var a = FY_ANCHORS[i];
-      var x = a.x(vw, vh, size.width, size.height), y = a.y(vw, vh, size.width, size.height);
-      var cand = { left: x, top: y, right: x + size.width, bottom: y + size.height,
-                   width: size.width, height: size.height };
-      // Don't "move" to where we already are — that spot is why we are yielding.
-      if (w.homeRect && Math.abs(cand.left - w.homeRect.left) < 8 &&
-          Math.abs(cand.top - w.homeRect.top) < 8) continue;
-      var b = fyBlockedAt(cand, w.el, vw, vh, 'control');
-      if (b.unavailable) { fyFade(w); return; }
-      if (!b.blocked) { fyPark(w, a, vw, vh, size); return; }
+    var cands = fyCandidates(vw, vh, size.width, size.height), i;
+    var hx = w.homeRect ? (w.homeRect.left + w.homeRect.right) / 2 : vw;
+    var hy = w.homeRect ? (w.homeRect.top + w.homeRect.bottom) / 2 : vh;
+    for (i = 0; i < cands.length; i++) {
+      var dx = cands[i].x + size.width / 2 - hx, dy = cands[i].y + size.height / 2 - hy;
+      cands[i].d = dx * dx + dy * dy;
     }
-    fyFade(w);   // every anchor is over a control — go quiet, but see the ceiling
+    cands.sort(function (a, b) { return a.d - b.d; });   // nearest first: short moves read as moves
+    var fallback = null, tried = 0;
+    for (i = 0; i < cands.length && tried < FY.MAX_TRIES; i++) {
+      var c = cands[i];
+      // Don't "move" to where we already are — that spot is why we are yielding.
+      if (w.homeRect && Math.abs(c.x - w.homeRect.left) < 10 &&
+          Math.abs(c.y - w.homeRect.top) < 10) continue;
+      tried++;
+      var cls = fySpotClass({ left: c.x, top: c.y, right: c.x + size.width,
+                              bottom: c.y + size.height, width: size.width, height: size.height },
+                            w.el, vw, vh);
+      if (cls === 'unavailable') { fyFade(w); return; }
+      if (cls === 'empty') { fyMoveTo(w, c.x, c.y, size, 'empty'); return; }
+      if (cls === 'clear' && !fallback) fallback = c;
+    }
+    // Nothing empty anywhere on the ring. Take the best merely-clear spot rather
+    // than disappearing — a chip over a paragraph is worse-looking than a chip
+    // in a gutter, and far better than a chip nobody can find.
+    if (fallback) { fyMoveTo(w, fallback.x, fallback.y, size, 'clear'); return; }
+    fyFade(w);   // every candidate is over a control — go quiet, but see the ceiling
   }
 
   function fyScan() {
