@@ -375,10 +375,14 @@ async function main() {
       const p = await browser.newPage();
       await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
       p.on('pageerror', () => {});
+      // checks that reload inside run() need the mutation re-applied on EVERY
+      // navigation, or the reload silently undoes it and the selftest reports a
+      // false "not red"
+      if (c.reloads) await p.evaluateOnNewDocument(`addEventListener('load',function(){setTimeout(function(){try{${c.break}}catch(e){}},80);});`);
       await p.goto(base + URLPATH, { waitUntil: 'domcontentloaded' });
-      await p.evaluate(() => new Promise(r => setTimeout(r, 150)));
+      await p.evaluate(() => new Promise(r => setTimeout(r, 150)).catch(()=>{}) );
       let broke = { ok: true, detail: 'break did not run' };
-      try { await p.evaluate(c.break); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
+      try { if (!c.reloads) await p.evaluate(c.break); broke = await c.run(p); } catch (e) { broke = { ok: false, detail: 'threw: ' + e.message }; }
       await p.close();
       if (broke.ok) { selfFailures++; console.log(`  SELFTEST NOT RED  ${c.name}  (${broke.detail})`); }
       else console.log(`  selftest red ok   ${c.name}`);

@@ -73,12 +73,31 @@ const POISON = [
   ['sproing_ach', '[]'], ['sproing_sketchbook', '{}'], ['sproing_streak', '"x"'],
   ['sproing_coins', 'abc'], ['sproing_coins', '-50'], ['sproing_best', 'NaN']
 ];
+/* ⛔ Retry ONLY on a transport death ("Target closed", "detached Frame", protocol
+   timeouts). Those mean Chrome was killed under memory pressure on a shared 2-core
+   box — infrastructure noise that must never be reported as a game defect, and must
+   never silently swallow a genuine assertion failure either. A real red assertion is
+   returned normally and is not retried. */
+const isInfra = e => /Target closed|detached Frame|Protocol error|ProtocolError|timed out|Navigation timeout|Connection closed/i.test(String(e && e.message || e));
+async function attempt(fn, label) {
+  for (let t = 0; t < 3; t++) {
+    try { return await fn(); }
+    catch (e) {
+      if (!isInfra(e) || t === 2) throw e;
+      console.log('       (browser died on ' + label + ', retry ' + (t + 1) + ': ' + String(e.message).split('\n')[0].slice(0, 60) + ')');
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+}
+
 for (const [k, v] of POISON) {
-  const { ctx, p, errs } = await boot(`(()=>{try{localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});}catch(e){}})()`);
-  const r = await p.evaluate(ALIVE);
+  const res = await attempt(async () => {
+    const { ctx, p, errs } = await boot(`(()=>{try{localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});}catch(e){}})()`);
+    try { const r = await p.evaluate(ALIVE); return { r, errs }; } finally { await ctx.close(); }
+  }, `${k}=${v}`);
+  const { r, errs } = res;
   const good = r.boot === 's-title' && r.afterPlay === 's-modes' && r.afterAdventure === 's-map' && r.mapCells === 25 && r.shopRows > 0 && errs.length === 0;
   ok(`${k}=${v}`, good, JSON.stringify(r) + (errs.length ? ' err:' + errs[0] : ''));
-  await ctx.close();
 }
 
 /* ---- 2. corrupt save leaves SANE values, not just a live page ------------- */

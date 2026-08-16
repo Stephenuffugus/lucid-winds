@@ -1354,7 +1354,12 @@ function render(m){
     // bumpers (filled glowing discs)
     for(const bm of m.bumpers){ ctx.save(); ctx.fillStyle='rgba(139,108,240,.14)'; ctx.strokeStyle=getV('--accent'); ctx.lineWidth=3; ctx.shadowColor=getV('--accent'); ctx.shadowBlur=14; ctx.beginPath(); ctx.arc(bm.cx,bm.cy,bm.r,0,TAU); ctx.fill(); ctx.stroke(); ctx.restore(); }
     // moving blocks
-    for(const mv of m.movers){ if(!mv.rect)continue; const r=mv.rect; ctx.save(); ctx.fillStyle='rgba(150,170,255,.16)'; ctx.strokeStyle=getV('--line2'); ctx.lineWidth=2; ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    // the block is SOLID, so it has to read as solid. At 16% alpha over a dark
+    // court it was almost invisible and the ball appeared to bounce off nothing.
+    for(const mv of m.movers){ if(!mv.rect)continue; const r=mv.rect; ctx.save();
+      ctx.fillStyle='rgba(150,170,255,.42)'; ctx.strokeStyle=getV('--ink'); ctx.lineWidth=2.5;
+      ctx.shadowColor=getV('--accent'); ctx.shadowBlur=12;
+      ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.fill(); ctx.stroke(); ctx.restore(); }
     // shields (temporary goal walls from the shield power-up)
     for(const s of m.obstacles){ if(s.shield) drawSeg(s, s.owner==='p'?getV('--p1'):getV('--p2'), 5); }
     // paddles

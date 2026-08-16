@@ -75,12 +75,16 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-stat{display:flex; justify-content:space-between; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
 .go-stat b{color:var(--sage)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
- #b-pause{position:absolute; left:14px; top:14px; z-index:15; width:72px; height:72px;
+ /* top CENTRE, not top-left: the score is drawn on the canvas at (16,40) and a
+    top-left button covered it. Centre is clear because the table's top arc does
+    not start until y=108, and it is nowhere near either flipper half or the
+    bottom-right feedback-fab gutter. */
+ #b-pause{position:absolute; left:50%; transform:translateX(-50%); top:14px; z-index:15; width:72px; height:72px;
   border-radius:18px; border:1px solid var(--line); background:rgba(10,16,9,.72); color:var(--cream);
   font-size:20px; font-weight:800; cursor:pointer; display:none; align-items:center; justify-content:center;
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px)}
  #b-pause.on{display:flex}
- #b-pause:active{transform:scale(.94)}
+ #b-pause:active{transform:translateX(-50%) scale(.94)}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#221a0c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 </style>
 </head>
@@ -156,7 +160,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="pz-resume">Resume</button>
-      <button class="btn sm" id="pz-end">End game and bank the score</button>
+      <button class="btn sm" id="pz-end">End game and bank it</button>
       <button class="btn ghost sm" id="pz-menu">◄ Menu</button>
     </div>
     <div style="flex:1"></div>
