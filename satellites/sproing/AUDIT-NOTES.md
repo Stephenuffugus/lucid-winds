@@ -23,6 +23,20 @@ the chain tiers and the powerup pool. This audit is repair and hardening only.
   a 2-core box and the run dies on a navigation timeout, which reads exactly like "the game
   stopped loading" and is nothing of the kind.
 - Every assertion in `audit-check.mjs` was watched FAIL on purpose before it was trusted.
+  Its first full run produced **three red assertions that were all the probe's fault, not
+  the game's** — worth writing down, because each is a trap the next audit will hit:
+  - **The first-run coach modal.** `launch()` shows "How to climb" and sets
+    `game.paused = true`. A probe that ignores it is measuring a paused game behind a
+    full-screen overlay, so `pauseRun()` correctly no-ops (it refuses to pause an already
+    paused game) and `elementFromPoint` correctly returns the modal. Two of the three
+    failures were this. The suite now dismisses the coach — and asserts it appeared and
+    could be dismissed, because a first-run tutorial that never shows is its own bug.
+  - **The fab overlapping itself.** The feedback fab *is* a `<button class="lwfb-fab">`,
+    so an unfiltered "does the fab cover a button" scan finds it covering itself and
+    reports a defect that does not exist. The scan now excludes the fab and its badge.
+  - Also worth knowing: `p-quit` "worked" in that failing run only because `.click()` on a
+    hidden element still fires its handler. That is the `el.click()` trap — it proves a
+    handler is bound, never that a player can reach the control.
 - **The title screen is static HTML, so "it rendered" proves nothing.** Every corrupt-save
   case therefore asserts that a *button does its job* — PLAY reaches mode select, Adventure
   reaches a 25 cell map, the shop renders rows — because the exact failure being guarded
