@@ -119,7 +119,13 @@ code style; no prettier pass.
   ported with `mb-` prefixes, tab hook + resize, rAF lifecycle. Gate:
   marble view renders; place/select/phase-drag works silently; other three
   tabs pixel-identical; `node --check` (via the python extract from
-  padlab/HANDOFF §8) passes; sw.js untouched so far.
+  padlab/HANDOFF §8) passes; sw.js untouched so far. **Test vehicle:
+  `scripts/padlab_smoke.mjs` already exists** (puppeteer, sweeps every
+  view, screenshots for the LOOKING pass, asserts zero console errors) —
+  extend its view sweep with the Marble tab from phase A on, and in phase B
+  add: tap to place a marble → assert no console errors and the canvas is
+  non-blank (readback a pixel row; a probe that cannot fail is not
+  evidence — assert on content, not on "no crash").
 - **B — One clock, one graph.** `marbleTick` + `mbPlayHit` per specs 2-3.
   Gate: with a groove playing, bass/snare/hat/melody marbles lock to the
   beat INCLUDING swing (set swing 40% and listen on odd steps); pause stops

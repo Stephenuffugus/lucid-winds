@@ -45,6 +45,23 @@ Each folder: the original drop (spec/handoff/research + prototype) plus
 for the rest and its decisions are locked defaults — Stephen can veto, the
 build session does not re-litigate.
 
+## Resources that already EXIST (do not rebuild these)
+
+- `PORTAL-CONTRACT.md` — verified portal integration contract (this folder).
+- `scripts/hush_audit.js` — Hush invariant gate, BUILT AND GREEN: 155
+  assertions against the real file (programs, tiers, guide routes,
+  shortlist, safety defaults, Schade constants, vbpm clamp, 24-hour
+  fallback, session reset, importer fixtures incl. the unit-inference
+  trap). Watched red in three deliberate breaks. Run:
+  `node scripts/hush_audit.js` (point it at `hush/index.html` post-port).
+- `scripts/padlab_smoke.mjs` — existing puppeteer smoke for PadLab; the
+  Marblebeat build EXTENDS it (marble view sweep + canvas-content probe).
+- `bandits-box/SFX-SHOT-LIST.md` — Stephen's foley recording guide, mapped
+  1:1 to the engine's 20 voice names.
+- Research verdicts baked into the plans: iOS suspends Web Audio at screen
+  lock with no reliable web workaround (Hush plan has the two-stage
+  mitigation ladder); PadLab's sw.js is already origin-safe; Hush's is NOT.
+
 ## Shared laws that apply to all three (from CLAUDE.md + memory)
 
 - Host caching: version everything, bump SW shell versions with the deploy,
