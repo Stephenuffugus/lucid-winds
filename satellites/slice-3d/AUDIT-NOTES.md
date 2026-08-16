@@ -11,13 +11,29 @@ Build at audit time: `v5.7`, 2467 lines, three.min.js vendored, sw v63.
   --enable-unsafe-swiftshader`). **Never wait on `networkidle`** for this page: it streams
   a 600KB three.js and keeps a rAF loop alive forever, so a networkidle wait calls a
   healthy page dead. Wait on `domcontentloaded` plus a fixed settle.
+- **One browser per case, launched and closed.** Reusing a single browser across ~20 WebGL
+  boots on a 2-core box exhausts it and the run dies on a 30 second NAVIGATION timeout,
+  which reads exactly like "the game stopped loading" and is nothing of the kind. Every
+  in-page stepping loop is also timeboxed by wall clock, so the suite can report a hang
+  rather than becoming one.
 - All five entry points driven to their end panel through the `?dev=1` hook
   (`window._S3.stepN`), not by eyeballing: Journey L1, Journey L2, Freefall L1,
   Wall Climb L1, Endless.
-- Every check in `audit-check.mjs` was watched FAIL on purpose before it was trusted.
-  The first version of the play probe broke its loop the instant `G.done` flipped, which
-  is 2.4 seconds before `finishLevel()` actually fires, and confidently reported "the end
-  screen never shows". That was the probe, not the game. Fixed, then re-run.
+- Every check in `audit-check.mjs` was watched FAIL on purpose before it was trusted, and
+  three of them had to be rewritten because they could not go red:
+  - The first play probe broke its loop the instant `G.done` flipped, which is 2.4 seconds
+    before `finishLevel()` fires, and confidently reported "the end screen never shows".
+    That was the probe, not the game.
+  - The first "slabs survive a failed dive" check compared `onDisk >= cut` on a dive that
+    cut zero slabs. It read `0 >= 0` and passed regardless of what the game did. It now
+    injects a known tally and a known combo, wipes the save, and demands both reach disk.
+  - The first "music label fits" check compared `scrollWidth <= clientWidth`. On the
+    BROKEN build those were equal (94 == 94) — nothing overflowed, the glyphs simply ran
+    edge to edge against the border. It now measures real clearance between the rendered
+    text and the button's border box with a `Range`.
+
+  The suite then earned its keep immediately: it caught a regression **I** introduced while
+  fixing the music button (see defect 2).
 
 ## The core loop, start to finish — WORKS
 

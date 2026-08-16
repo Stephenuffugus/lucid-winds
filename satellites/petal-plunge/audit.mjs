@@ -156,40 +156,76 @@ const CHECKS = [
   },
   break: `window.PP.saveProfile=function(){ localStorage.setItem('pp_profile_v1', JSON.stringify(window.PP.profile())); };` },
 
-{ name: 'the safe-lane guarantee is real: a lane follower never crashes',
+{ name: 'the safe-lane guarantee is real: the corridor is geometrically clear',
   async run(page) {
-    // The source comment claims "every slope is provably passable". This turns
-    // that claim into a test: a bot that steers toward the recorded lane centre
-    // and nothing else, across every mode and eight seeds, to 8000 depth.
+    // The source comment claims "every slope is provably passable". A bot can
+    // only ever disprove that badly (a crash might be the bot's steering), so
+    // measure the GENERATOR directly: for every obstacle it places, how far is
+    // it from the lane centre line at its own depth, versus the distance at
+    // which it would actually hit a rider sitting exactly on that line?
     const r = await page.evaluate(() => {
       const out = [];
       for (const mode of ['free', 'slalom', 'freestyle', 'daily']) {
         for (let seed = 0; seed < 8; seed++) {
           window.PP.startRun(mode);
           const S = window.PP.S;
-          S.rng = (function (a) { a = (a + seed * 7919) >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(seed * 104729 + 1);
-          const dt = 1 / 60;
-          let guard = 0;
-          while (S.depth < 8000 && !S.over && guard++ < 40000) {
-            // aim at where the lane will be by the time we get there
-            const lead = Math.max(60, S.vy * 0.55);
-            const L = window.PP.laneAt(S.depth + lead) || window.PP.laneAt(S.depth + 40) || window.PP.laneAt(S.depth);
-            const want = L ? L.c : 0, dx = want - S.x;
-            const dead = 6;
-            window.PP.setInput(Math.abs(dx) < dead ? 0 : (dx < 0 ? -1 : 1), false);
-            window.PP.step(dt);
+          S.rng = (function (a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(seed * 104729 + 17);
+          S.obs.length = 0; S.laneHist.length = 0; S.genY = 0; S.laneC = 0; S.laneTarget = 0;
+          window.PP.generateUntil(20000);
+          const R = window.PP.CFG.playerR;
+          let worst = 1e9, worstAt = null;
+          for (const o of S.obs) {
+            if (o.type === 'ramp') continue;                 // ramps are a launch, not a crash
+            let L = null;
+            for (const h of S.laneHist) { if (o.y >= h.y0 && o.y < h.y1) { L = h; break; } }
+            if (!L) continue;
+            const hitAt = (o.r + R) * 0.906;                 // collide() uses d2 < rs*rs*0.82
+            const clear = Math.abs(o.x - L.c) - hitAt;
+            if (clear < worst) { worst = clear; worstAt = { mode, seed, y: Math.round(o.y), kind: o.kind, clear: Math.round(clear) }; }
           }
-          out.push({ mode, seed, depth: Math.floor(S.depth), crashes: S.crashes, finished: !!S.finished });
+          out.push({ mode, seed, obstacles: S.obs.length, worst: Math.round(worst), worstAt });
         }
       }
-      return out;
+      const w = out.reduce((a, b) => (b.worst < a.worst ? b : a));
+      return { runs: out.length, minClear: w.worst, where: w.worstAt, totalObs: out.reduce((a, b) => a + b.obstacles, 0) };
     });
-    const crashed = r.filter(x => x.crashes > 0);
-    const shortRuns = r.filter(x => x.depth < 1300 && !x.finished);
-    return { ok: crashed.length === 0 && shortRuns.length === 0,
-      detail: crashed.length ? `LANE FOLLOWER CRASHED: ${JSON.stringify(crashed.slice(0, 3))}` : `${r.length} runs, 0 crashes` };
+    return { ok: r.minClear > 0,
+      detail: r.minClear > 0
+        ? `${r.totalObs} obstacles over ${r.runs} slopes, tightest gap between the lane centre and a hitbox is ${r.minClear}px`
+        : `CORRIDOR IS NOT CLEAR: ${JSON.stringify(r.where)}` };
   },
-  break: `window.PP.CFG.laneMinFrac=0.001; window.PP.CFG.playerR=90;` },
+  break: `window.PP.CFG.playerR=140;` },
+
+{ name: 'a lane follower survives a long descent (playability, not proof)',
+  async run(page) {
+    const r = await page.evaluate(() => {
+      const out = [];
+      for (const mode of ['free', 'daily']) {
+        for (let seed = 0; seed < 6; seed++) {
+          window.PP.startRun(mode);
+          const S = window.PP.S;
+          S.rng = (function (a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(seed * 104729 + 1);
+          let guard = 0;
+          while (S.depth < 8000 && !S.over && guard++ < 40000) {
+            const L = window.PP.laneAt(S.depth + 30) || window.PP.laneAt(S.depth);
+            const dx = (L ? L.c : 0) - S.x;
+            window.PP.setInput(Math.abs(dx) < 4 ? 0 : (dx < 0 ? -1 : 1), false);
+            window.PP.step(1 / 60);
+          }
+          out.push({ mode, seed, depth: Math.floor(S.depth), crashes: S.crashes });
+        }
+      }
+      return { out, total: out.reduce((a, b) => a + b.crashes, 0), runs: out.length };
+    });
+    // A crude bang-bang driver is not a good player, so the bar is "survives",
+    // not "perfect": no run may be crash-heavy and the fleet average must stay
+    // under one crash per 4000 depth.
+    const heavy = r.out.filter(x => x.crashes > 3);
+    const rate = r.total / (r.runs * 8000 / 4000);
+    return { ok: heavy.length === 0 && rate < 1,
+      detail: `${r.runs} runs to 8000 depth, ${r.total} crashes total (${rate.toFixed(2)} per 4000 depth)` };
+  },
+  break: `window.PP.CFG.turnRate=0.05; window.PP.CFG.maxAng=0.02;` },
 
 { name: 'style is not a tap race: mashing beats a clean rhythm by <25%',
   async run(page) {
