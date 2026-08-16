@@ -52,3 +52,15 @@ greedyAgent(caseObj, rng) -> {solved, actionsUsed}   // for the >90% gate
 - Uniqueness retry rate is the schedule risk: if regeneration exceeds 15%, the fix is stronger clue factories (more narrowing types per case, especially timeline + alibi), not looser assertions.
 - The minimize step must shuffle removal order per-case (deterministic from the case seed) or minimal sets will bias toward late clue types and the 8–14 distribution gate will fail for structural reasons.
 - Surface-text templating is where silent contradictions live — the string-level sanity pass in phase 3 is not optional.
+
+## Signature craft
+
+- **Key: A minor, sparse.** Room-tone bed per location (filtered noise + very slow LFO, barely audible, changes as you move between rooms — the cheapest atmosphere money can't buy). Clue discovery = one low piano-ish pluck. Spending an action = a pocket-watch tick. The accusation is the only loud moment in the game: lights drop, a held pad, then verdict.
+- **Every case gets a generated title**: template `The <Room> <Noun>` / `The <TimeWord> Affair` from small curated banks, deterministic from the seed ("The Conservatory Affair", "The Midnight Business"). The title sells procedural cases as authored ones — it's the whole first impression and costs twenty lines.
+- **The action budget is a pocket watch**, not a number: a dial that visibly spends. Press costing 2 turns the hand twice. When 4 actions remain the tick sound gains a slight edge. Time pressure as object, not UI.
+- **Suspect silhouettes:** deterministic procedural SVG silhouettes from the attribute set (tall/short, glasses, staff collar) — classy, cheap, zero uncanny faces, and they quietly teach that attributes matter (the sighting clue "a tall figure" suddenly has referents you can SEE).
+- **Clue-touch highlighting (the standout):** tapping any discovered clue in the journal softly halos the board cells its predicate CONSTRAINS — without marking anything. Auto-mark stays off by default (§4.6 law); this is the middle path: the game shows you where to think, never what to conclude. TEST-assert the halo set equals the predicate's affected-cell set for all 12 types.
+- **The reveal must teach like a good GM:** on a wrong accusation, the truth plays out as three beats (who, where and when, with what), then the contradicting clue slides in and stamps CONTRADICTED over the player's tuple. On a win, show which of their held clues did the real work (the minimal-set members they found) — players learn what good evidence looks like, which makes the next case better, which is the retention loop.
+- **Case archive:** last 10 cases with title, result, stars, moves, and a REPLAY CASE seed link — a lost case can be re-attempted fresh by a friend via the share link ("Can you solve The Cellar Question? I couldn't."). Spoiler-free share law applies.
+- Options extras: auto-mark contradictions (default off), typewriter text (default on, off under reduced motion).
+- Cut-last order: case titles > clue-touch halos > pocket watch > silhouettes > room tone > archive replay links.
