@@ -114,6 +114,12 @@
   @media (max-width:560px){#music-fab{gap:13px;padding:14px 16px}
              #music-fab .mf-thumb{width:52px;height:52px}#music-fab .mf-label{font-size:17px}
              #music-fab .mf-sub{font-size:12px}}
+  /* The 520px cap is right on a phone and orphans the button on anything wider:
+     it sits half width under a full bleed flagship card with 544px of dead space
+     beside it, the only element on the page that does that. Found by shooting at
+     1280x720, which is roughly a Quest browser window. Let it reach the shelves
+     at desktop width, which is also the shape its own comment asks for. */
+  @media (min-width:900px){#music-fab{max-width:none}}
   @keyframes sws-eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
   /* Game jukebox — a clicked game loads in this full-screen iframe instead of
      navigating away, so the portal (and its audio) never unloads → gapless. */
@@ -621,7 +627,7 @@
       <div>
         <div class="st">Sky Wolf Studios</div>
         <div class="aw">The Arcade</div>
-        <p class="sub">160+ free games. No install, no account. Tap a game and it opens right here while the music keeps playing.</p>
+        <p class="sub">180+ free games. No install, no account. Tap a game and it opens right here while the music keeps playing.</p>
       </div>
     </div>
   </div>
