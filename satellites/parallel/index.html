@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>PARALLEL</title>
+<meta name="description" content="Two of you share one set of controls and both have to reach the door at the same moment.">
+<meta name="theme-color" content="#8b7cf6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PARALLEL">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#0a0b0f; --panel:#14161d; --line:#242836;
+  --ink:#e9e8f2; --dim:#9a9ab4;
+  --accent:#8b7cf6; --warm:#f3b562;
+  --bad:#e0607a; --good:#67d6a5;
+  --cell:32px;
+  --sbt:env(safe-area-inset-top,0px);
+  --sbb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:16px;overscroll-behavior:none;touch-action:manipulation}
+body{display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.tnum{font-variant-numeric:tabular-nums}
+#app{flex:1;display:flex;flex-direction:column;min-height:0;
+  padding:calc(var(--sbt) + 6px) 10px calc(var(--sbb) + 8px)}
+
+/* ---------- top bar ---------- */
+#bar{display:flex;align-items:center;gap:8px;min-height:48px;flex:0 0 auto}
+#bar .btn{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:18px;line-height:1}
+#bar .btn:active{background:#1d2130}
+#title{flex:1;text-align:center;font-weight:800;letter-spacing:.14em;font-size:15px}
+#title small{display:block;font-weight:600;letter-spacing:.02em;font-size:12px;color:var(--dim)}
+
+/* ---------- stage ---------- */
+#stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;position:relative}
+#board{position:relative;background:#0d0f16;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#seam{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;
+  background:linear-gradient(180deg,rgba(139,124,246,0),rgba(139,124,246,.55),rgba(243,181,98,.35),rgba(139,124,246,0));
+  opacity:.6;pointer-events:none}
+.cellwrap{position:absolute;inset:0}
+.tile{position:absolute;border-radius:3px}
+.t-wall{background:#2b3048;box-shadow:inset 0 1px 0 #3a4166}
+.t-ice{background:#4b7fa8;box-shadow:inset 0 2px 0 #9fd4ee}
+.t-crumb{background:#4a3b2c;box-shadow:inset 0 1px 0 #7a6248;
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.28) 0 3px,transparent 3px 6px)}
+.t-crumb.gone{background:none;box-shadow:none;background-image:none;border:1px dashed #4a3b2c;opacity:.5}
+.t-door{background:#7a5a2e;box-shadow:inset 0 1px 0 #b18a4a}
+.t-door.open{background:none;box-shadow:none;border:1px dashed #7a5a2e;opacity:.55}
+.t-ow{background:#33405e;box-shadow:inset 0 1px 0 #4d5f88;display:flex;align-items:center;justify-content:center;
+  color:#a9bde8;font-size:11px;font-weight:800}
+.spike{position:absolute;color:var(--bad)}
+.spike i{position:absolute;left:10%;right:10%;bottom:0;top:22%;background:var(--bad);
+  clip-path:polygon(0% 100%,16.6% 0%,33.3% 100%,50% 0%,66.6% 100%,83.3% 0%,100% 100%);display:block}
+.exit{position:absolute;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;letter-spacing:.02em}
+.exit.a{border:2px solid var(--accent);color:var(--accent);background:rgba(139,124,246,.10)}
+.exit.b{border:2px dashed var(--warm);color:var(--warm);background:rgba(243,181,98,.10)}
+.exit.lit{animation:pulse .5s ease-out}
+@keyframes pulse{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+.keyt{position:absolute;display:flex;align-items:center;justify-content:center;font-size:13px}
+.keyt.got{opacity:.18}
+.av{position:absolute;transition:transform .13s ease-out;will-change:transform;z-index:3}
+.av .body{position:absolute;inset:12%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:#0a0b0f}
+.av.a .body{background:var(--accent);border-radius:50%}
+.av.b .body{background:var(--warm);border-radius:4px;transform:rotate(45deg)}
+.av.b .body span{transform:rotate(-45deg)}
+.av.dead{opacity:.25;filter:grayscale(1)}
+.ghost{position:absolute;border-radius:50%;pointer-events:none;z-index:1;opacity:.5}
+.ghost.a{background:rgba(139,124,246,.5)}
+.ghost.b{background:rgba(243,181,98,.5)}
+
+/* ---------- hud ---------- */
+#hud{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 2px 6px;font-size:13px;color:var(--dim)}
+#hud b{color:var(--ink);font-weight:700}
+#hud .sp{flex:1}
+#msg{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:13px;color:var(--dim);pointer-events:none}
+
+/* ---------- controls ---------- */
+#pad{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding-top:6px}
+#pad button{min-height:62px;min-width:62px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);font-size:22px;display:flex;align-items:center;justify-content:center}
+#pad button:active{background:#232840;border-color:var(--accent)}
+#pad button small{display:block;font-size:10px;color:var(--dim);letter-spacing:.08em}
+#pad .lab{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1}
+
+/* ---------- overlays ---------- */
+.sheet{position:fixed;inset:0;background:rgba(6,7,11,.94);z-index:50;display:none;
+  flex-direction:column;padding:calc(var(--sbt) + 14px) 14px calc(var(--sbb) + 14px);overflow:auto}
+.sheet.on{display:flex}
+.sheet h2{margin:0 0 4px;font-size:17px;letter-spacing:.1em}
+.sheet p{margin:4px 0 12px;color:var(--dim);font-size:13px;line-height:1.5}
+.sheet .row{display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line)}
+.sheet .row .sp{flex:1}
+.sheet .close{position:absolute;top:calc(var(--sbt) + 10px);right:12px;min-width:48px;min-height:48px;
+  border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:18px}
+.big{width:100%;min-height:52px;border-radius:14px;background:var(--accent);color:#12101d;
+  font-weight:800;letter-spacing:.06em;margin-top:10px}
+.big.ghostb{background:none;border:1px solid var(--line);color:var(--ink)}
+.tog{min-width:70px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  font-size:13px;font-weight:700}
+.tog.on{border-color:var(--accent);color:var(--accent)}
+input[type=range]{flex:1;min-height:48px;accent-color:var(--accent)}
+
+/* level select constellation */
+#sky{width:100%;max-width:520px;margin:0 auto;display:block}
+.starhit{cursor:pointer}
+#selwrap{flex:1;min-height:0;overflow:auto}
+#selfoot{flex:0 0 auto;padding-top:8px;color:var(--dim);font-size:12px;text-align:center}
+
+/* win card */
+#wincard{position:absolute;left:8px;right:8px;bottom:10px;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:12px 14px;z-index:6;display:none}
+#wincard.on{display:block}
+#wincard h3{margin:0 0 2px;font-size:15px;letter-spacing:.08em}
+#wincard .stats{color:var(--dim);font-size:13px;margin-bottom:8px}
+#wincard .btns{display:flex;gap:8px}
+#wincard .btns button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:#1a1e2b;font-weight:700;font-size:13px}
+#wincard .btns button.go{background:var(--accent);color:#12101d;border-color:var(--accent)}
+.star{color:var(--warm)}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--sbb) + 90px);transform:translateX(-50%);
+  background:#1a1e2b;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;
+  z-index:80;opacity:0;transition:opacity .18s ease-out;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1}
+
+#testpanel{position:fixed;inset:0;background:#06070b;color:#cfe;z-index:99;overflow:auto;padding:12px;
+  font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;display:none;white-space:pre-wrap}
+#testpanel.on{display:block}
+
+@media (prefers-reduced-motion: reduce){
+  .av{transition:none}
+  .exit.lit{animation:none}
+}
+@media (min-width:760px){
+  #app{max-width:560px;margin:0 auto;width:100%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <button class="btn" id="btnLevels" aria-label="Levels">☰</button>
+    <div id="title">PARALLEL<small id="subtitle">level 1</small></div>
+    <button class="btn" id="btnOpts" aria-label="Options">⚙</button>
+  </div>
+
+  <div id="stage">
+    <div id="board"><div id="seam"></div><div class="cellwrap" id="layers"></div></div>
+    <div id="msg"></div>
+    <div id="wincard">
+      <h3 id="winTitle">BOTH DOORS</h3>
+      <div class="stats" id="winStats"></div>
+      <div class="btns">
+        <button id="winRetry">RETRY</button>
+        <button id="winReplay">WATCH</button>
+        <button class="go" id="winNext">NEXT</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <span>moves <b class="tnum" id="hMoves">0</b></span>
+    <span>deaths <b class="tnum" id="hDeaths">0</b></span>
+    <span class="sp"></span>
+    <span>par <b class="tnum" id="hPar">0</b></span>
+    <button class="btn" id="btnRestart" style="min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:16px" aria-label="Restart">↺</button>
+  </div>
+
+  <div id="pad">
+    <button id="kLeft" aria-label="Left"><span class="lab">◀<small>A LEFT</small></span></button>
+    <button id="kUp" aria-label="Jump"><span class="lab">▲<small>JUMP</small></span></button>
+    <button id="kWait" aria-label="Wait"><span class="lab">■<small>WAIT</small></span></button>
+    <button id="kRight" aria-label="Right"><span class="lab">▶<small>A RIGHT</small></span></button>
+  </div>
+</div>
+
+<div class="sheet" id="shSel">
+  <button class="close" id="selClose" aria-label="Close">✕</button>
+  <h2>THE SKY</h2>
+  <p id="selBlurb">Sixty levels in five clusters. A filled star means cleared. A bright star means you matched the best possible answer.</p>
+  <div id="selwrap"><svg id="sky" viewBox="0 0 320 470" aria-label="Level map"></svg></div>
+  <div id="selfoot"></div>
+  <button class="big ghostb" id="selDaily">TODAY</button>
+</div>
+
+<div class="sheet" id="shOpts">
+  <button class="close" id="optClose" aria-label="Close">✕</button>
+  <h2>OPTIONS</h2>
+  <div class="row"><span class="sp">Sound</span><button class="tog" id="oSound">ON</button></div>
+  <div class="row"><span class="sp">Volume</span><input type="range" id="oVol" min="0" max="100" step="5"></div>
+  <div class="row"><span class="sp">Haptics</span><button class="tog" id="oHap">ON</button></div>
+  <div class="row"><span class="sp">Reduced motion</span><button class="tog" id="oMotion">OFF</button></div>
+  <div class="row"><span class="sp">Ghost path</span><button class="tog" id="oGhost">ON</button></div>
+  <p style="margin-top:14px">Player A is the violet circle. Player B is the amber diamond. Press left and A goes left while B goes right. A wall stops one of you and not the other, and that is the whole game.</p>
+  <button class="big ghostb" id="oShare">SHARE THIS LEVEL</button>
+  <button class="big ghostb" id="oWipe">ERASE PROGRESS</button>
+  <button class="big ghostb" id="oExit">BACK TO ARCADE</button>
+</div>
+
+<div id="toast"></div>
+<div id="testpanel"></div>
+
+<script>
+(function(){
+"use strict";
+
+// ---- SIM_EXPORT_START ----
+/* PARALLEL — pure layers. CONFIG + RNG + DATA + GEN + SIM.
+   Nothing in this block may reference the page. Time is a parameter.
+   sim.js and gen.js read this block out of the file by these markers and run
+   it in node, so the solver and the playable game share ONE step function. */
+
+var CONFIG = {
+  GAME_ID: 'parallel',
+  SAVE_KEY: 'lw_parallel_v1',
+  SAVE_V: 1,
+  MASTER_SEED: 0x50415241,
+  LEVEL_COUNT: 60,
+  MAX_KEYS: 3,
+  MAX_CRUMB: 5,
+  BFS_GEN_CAP: 260000,
+  BFS_VERIFY_CAP: 2000000,
+  GREEDY_MULT: 4,
+  SLIDE_CAP: 24,
+  FALL_CAP: 24,
+  DAILY_TIER: 4,
+  DAILY_TRIES: 300
+};
+
+/* ---- RNG (mulberry32, HANDOFF 1.3) ---- */
+function makeRNG(seed){
+  var a = seed >>> 0;
+  var r = function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function(n){ return Math.floor(r() * n); };
+  r.range = function(lo,hi){ return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function(arr){ return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function(arr){
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--){ j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp; }
+    return a2;
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(str){
+  var hsh = 0x811c9dc5, i;
+  for (i = 0; i < str.length; i++){
+    hsh ^= str.charCodeAt(i);
+    hsh = Math.imul(hsh, 0x01000193);
+  }
+  return hsh >>> 0;
+}
+function dailyKey(iso){ return iso + CONFIG.GAME_ID; }
+
+/* ---- DATA ---- */
+var T = { EMPTY:0, WALL:1, SPIKE:2, EXA:3, EXB:4,
+          KEY0:5, KEY1:6, KEY2:7, DOOR0:8, DOOR1:9, DOOR2:10,
+          CRUMB:11, ICE:12, OWL:13, OWR:14, OWD:15, OWU:16 };
+var TILE_CHARS = '.#^ab123defc~<>vu';
+var DIR_L = 0, DIR_R = 1, DIR_U = 2, DIR_D = 3;
+var IN_LEFT = 0, IN_RIGHT = 1, IN_UP = 2, IN_WAIT = 3;
+var IN_CHARS = 'LRUW';
+var B62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+var TIERS = [
+  { t:1, lo:1,  hi:10, w:8,  h:8,  min:4,  max:10, dens:[0.14,0.28], platMax:4,
+    spikes:[0,0], keys:[0,0], crumb:[0,0], oneway:[0,0], ice:[0,0], minTries:26 },
+  { t:2, lo:11, hi:22, w:10, h:10, min:8,  max:18, dens:[0.16,0.30], platMax:5,
+    spikes:[2,6], keys:[0,0], crumb:[0,0], oneway:[0,0], ice:[0,0], minTries:22 },
+  { t:3, lo:23, hi:35, w:10, h:10, min:14, max:26, dens:[0.18,0.32], platMax:5,
+    spikes:[1,5], keys:[1,2], crumb:[0,0], oneway:[0,0], ice:[0,0], minTries:16 },
+  { t:4, lo:36, hi:48, w:12, h:12, min:20, max:36, dens:[0.20,0.36], platMax:6,
+    spikes:[2,6], keys:[0,2], crumb:[1,3], oneway:[1,3], ice:[0,0], minTries:10 },
+  { t:5, lo:49, hi:60, w:12, h:12, min:30, max:55, dens:[0.22,0.38], platMax:6,
+    spikes:[2,6], keys:[0,2], crumb:[0,3], oneway:[0,2], ice:[2,5], minTries:6 }
+];
+function tierOf(n){
+  var i;
+  for (i = 0; i < TIERS.length; i++){ if (n >= TIERS[i].lo && n <= TIERS[i].hi) return TIERS[i]; }
+  return TIERS[TIERS.length - 1];
+}
+
+/* Hand authored fixture levels. These ARE the movement semantics contract:
+   scripted input, exact expected outcome. Written before the solver existed. */
+var FIXTURES = [
+  { id:'mantle', rows:[
+    '........',
+    '.P#....Q',
+    '########' ] },
+  { id:'twohigh', rows:[
+    '........',
+    '..#.....',
+    '.P#....Q',
+    '########' ] },
+  { id:'gap', rows:[
+    '........',
+    '.P.....Q',
+    '##.#####',
+    '########' ] },
+  { id:'desync', rows:[
+    '#..#.#',
+    '#P#.Q#',
+    '######' ] },
+  { id:'keydoor', rows:[
+    '########',
+    '#P.1d.Q#',
+    '########' ] },
+  { id:'crumble', rows:[
+    '#.......#',
+    '#P......Q',
+    '##c######' ] },
+  { id:'ice', rows:[
+    '#..........#',
+    '#P........Q#',
+    '#~~~~~~~####',
+    '############' ] },
+  { id:'spike', rows:[
+    '#.....#',
+    '#P.^.Q#',
+    '#######' ] },
+  { id:'win', rows:[
+    '#.....#',
+    '#Pa.bQ#',
+    '#######' ] },
+  { id:'oneway', rows:[
+    '#......#',
+    '#P.>..Q#',
+    '########' ] }
+];
+
+// ---- LEVELS_START ----
+var LEVELS = [];
+// ---- LEVELS_END ----
+
+/* ---- level codec ---- */
+function e62(n){ return B62.charAt(n); }
+function d62(c){ return B62.indexOf(c); }
+
+function finishLevel(lv){
+  var i, n = lv.w * lv.h, ci = 0;
+  lv.crumbIdx = new Int8Array(n);
+  for (i = 0; i < n; i++) lv.crumbIdx[i] = -1;
+  lv.exA = -1; lv.exB = -1; lv.keyCount = 0;
+  for (i = 0; i < n; i++){
+    var t = lv.tiles[i];
+    if (t === T.CRUMB){ if (ci < CONFIG.MAX_CRUMB){ lv.crumbIdx[i] = ci; ci++; } else lv.tiles[i] = T.WALL; }
+    else if (t === T.EXA) lv.exA = i;
+    else if (t === T.EXB) lv.exB = i;
+    else if (t === T.KEY0 || t === T.KEY1 || t === T.KEY2) lv.keyCount++;
+  }
+  lv.crumbCount = ci;
+  lv.exAx = lv.exA >= 0 ? (lv.exA % lv.w) : 0;
+  lv.exAy = lv.exA >= 0 ? Math.floor(lv.exA / lv.w) : 0;
+  lv.exBx = lv.exB >= 0 ? (lv.exB % lv.w) : 0;
+  lv.exBy = lv.exB >= 0 ? Math.floor(lv.exB / lv.w) : 0;
+  return lv;
+}
+
+function encodeLevel(lv){
+  var head = e62(lv.w) + e62(lv.h) + e62(lv.ax) + e62(lv.ay) + e62(lv.bx) + e62(lv.by)
+           + e62(lv.tier) + e62(lv.par);
+  var n = lv.w * lv.h, i = 0, rle = '';
+  while (i < n){
+    var t = lv.tiles[i], j = i + 1;
+    while (j < n && lv.tiles[j] === t && (j - i) < 62) j++;
+    rle += TILE_CHARS.charAt(t) + e62(j - i - 1);
+    i = j;
+  }
+  return head + '|' + rle + '|' + (lv.sol || '');
+}
+
+function decodeLevel(str){
+  var parts = str.split('|');
+  var head = parts[0], rle = parts[1], sol = parts[2] || '';
+  var lv = { w:d62(head.charAt(0)), h:d62(head.charAt(1)),
+             ax:d62(head.charAt(2)), ay:d62(head.charAt(3)),
+             bx:d62(head.charAt(4)), by:d62(head.charAt(5)),
+             tier:d62(head.charAt(6)), par:d62(head.charAt(7)), sol:sol };
+  var n = lv.w * lv.h;
+  lv.tiles = new Int8Array(n);
+  var i = 0, p = 0;
+  while (p < rle.length && i < n){
+    var t = TILE_CHARS.indexOf(rle.charAt(p));
+    var run = d62(rle.charAt(p + 1)) + 1;
+    var k;
+    for (k = 0; k < run && i < n; k++){ lv.tiles[i] = t; i++; }
+    p += 2;
+  }
+  return finishLevel(lv);
+}
+
+function parseAscii(rows, extra){
+  var h = rows.length, w = rows[0].length, i, x, y;
+  var lv = { w:w, h:h, tiles:new Int8Array(w*h), ax:0, ay:0, bx:0, by:0,
+             tier:(extra && extra.tier) || 0, par:(extra && extra.par) || 0, sol:(extra && extra.sol) || '' };
+  for (y = 0; y < h; y++){
+    for (x = 0; x < w; x++){
+      var c = rows[y].charAt(x), t = T.EMPTY;
+      if (c === 'P'){ lv.ax = x; lv.ay = y; }
+      else if (c === 'Q'){ lv.bx = x; lv.by = y; }
+      else { t = TILE_CHARS.indexOf(c); if (t < 0) t = T.EMPTY; }
+      lv.tiles[y*w + x] = t;
+    }
+  }
+  return finishLevel(lv);
+}
+
+function levelToAscii(lv, st){
+  var out = [], x, y;
+  for (y = 0; y < lv.h; y++){
+    var row = '';
+    for (x = 0; x < lv.w; x++){
+      var i = y * lv.w + x, c = TILE_CHARS.charAt(lv.tiles[i]);
+      if (lv.tiles[i] === T.CRUMB && st && ((st.broken >> lv.crumbIdx[i]) & 1)) c = ',';
+      if (st){
+        if (x === st.ax && y === st.ay) c = (x === st.bx && y === st.by) ? '8' : 'A';
+        else if (x === st.bx && y === st.by) c = 'B';
+      } else {
+        if (x === lv.ax && y === lv.ay) c = 'P';
+        else if (x === lv.bx && y === lv.by) c = 'Q';
+      }
+      row += c;
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/* ---- SIM: one transition function, shared by game, BFS, greedy and fuzzer ---- */
+
+function enterable(lv, x, y, dir, keys, broken){
+  if (x < 0 || y < 0 || x >= lv.w || y >= lv.h) return false;
+  var t = lv.tiles[y * lv.w + x];
+  if (t === T.WALL || t === T.ICE) return false;
+  if (t === T.CRUMB) return ((broken >> lv.crumbIdx[y * lv.w + x]) & 1) === 1;
+  if (t === T.DOOR0) return (keys & 1) === 1;
+  if (t === T.DOOR1) return (keys & 2) === 2;
+  if (t === T.DOOR2) return (keys & 4) === 4;
+  if (t === T.OWL) return dir === DIR_L;
+  if (t === T.OWR) return dir === DIR_R;
+  if (t === T.OWD) return dir === DIR_D;
+  if (t === T.OWU) return dir === DIR_U;
+  return true;
+}
+function supported(lv, x, y, keys, broken){
+  return !enterable(lv, x, y + 1, DIR_D, keys, broken);
+}
+function iceUnder(lv, x, y){
+  var yy = y + 1;
+  if (yy >= lv.h) return false;
+  return lv.tiles[yy * lv.w + x] === T.ICE;
+}
+function crumbUnderIdx(lv, x, y, broken){
+  var yy = y + 1;
+  if (yy >= lv.h) return -1;
+  var i = yy * lv.w + x;
+  if (lv.tiles[i] !== T.CRUMB) return -1;
+  if ((broken >> lv.crumbIdx[i]) & 1) return -1;
+  return lv.crumbIdx[i];
+}
+
+/* Horizontal / jump phase for ONE avatar, resolved from the pre tick state. */
+function resolveMove(lv, x, y, dx, input, wasAir, keys, broken){
+  var path = [], rose = false, guard = 0, dir;
+  if (input === IN_UP){
+    if (enterable(lv, x, y - 1, DIR_U, keys, broken)){
+      y = y - 1; rose = true; path.push(y * lv.w + x);
+    }
+  } else if (dx !== 0){
+    dir = dx < 0 ? DIR_L : DIR_R;
+    if (enterable(lv, x + dx, y, dir, keys, broken)){
+      x += dx; path.push(y * lv.w + x);
+    } else if (!wasAir && supported(lv, x, y, keys, broken)
+               && enterable(lv, x + dx, y - 1, dir, keys, broken)
+               && enterable(lv, x, y - 1, DIR_U, keys, broken)){
+      /* MANTLE: the blocked cell is one high and both cells above are free, so
+         step up onto it. Requires standing on solid ground, which is exactly
+         what keeps two high walls unclimbable (a hovering avatar cannot mantle). */
+      path.push((y - 1) * lv.w + x);
+      x += dx; y -= 1;
+      path.push(y * lv.w + x);
+    }
+    if (path.length){
+      /* ICE: an avatar standing on ice keeps going until the tile it stands on
+         is not ice or the way ahead is shut. Resolves inside this tick. */
+      while (guard++ < CONFIG.SLIDE_CAP){
+        if (!iceUnder(lv, x, y)) break;
+        if (!enterable(lv, x + dx, y, dir, keys, broken)) break;
+        x += dx; path.push(y * lv.w + x);
+      }
+    }
+  }
+  return { x:x, y:y, rose:rose, path:path };
+}
+
+function fall(lv, p, skip, keys, broken){
+  if (skip) return;
+  var guard = 0;
+  while (guard++ < CONFIG.FALL_CAP){
+    if (supported(lv, p.x, p.y, keys, broken)) break;
+    p.y += 1;
+    p.path.push(p.y * lv.w + p.x);
+  }
+}
+
+function applyTriggers(lv, path, keys, ns){
+  var i;
+  for (i = 0; i < path.length; i++){
+    var t = lv.tiles[path[i]];
+    if (t === T.SPIKE) ns.dead = true;
+    else if (t === T.KEY0) keys |= 1;
+    else if (t === T.KEY1) keys |= 2;
+    else if (t === T.KEY2) keys |= 4;
+  }
+  return keys;
+}
+
+function initState(lv){
+  var s = { ax:lv.ax, ay:lv.ay, bx:lv.bx, by:lv.by, fa:0, fb:0, keys:0, broken:0,
+            dead:false, won:false, desync:false, moves:0 };
+  var pa = { x:lv.ax, y:lv.ay, path:[lv.ay * lv.w + lv.ax] };
+  var pb = { x:lv.bx, y:lv.by, path:[lv.by * lv.w + lv.bx] };
+  fall(lv, pa, false, 0, 0);
+  fall(lv, pb, false, 0, 0);
+  s.ax = pa.x; s.ay = pa.y; s.bx = pb.x; s.by = pb.y;
+  var k = 0;
+  k = applyTriggers(lv, pa.path, k, s);
+  k = applyTriggers(lv, pb.path, k, s);
+  s.keys = k;
+  if (!s.dead && lv.tiles[s.ay*lv.w+s.ax] === T.EXA && lv.tiles[s.by*lv.w+s.bx] === T.EXB) s.won = true;
+  return s;
+}
+
+/* THE transition. Order: moves resolve simultaneously from the pre tick state,
+   then ice, then gravity, then tile triggers, then the win check. */
+function stepWorld(s, input, lv){
+  var ns = { ax:s.ax, ay:s.ay, bx:s.bx, by:s.by, fa:s.fa, fb:s.fb,
+             keys:s.keys, broken:s.broken, dead:s.dead, won:s.won,
+             desync:false, moves:s.moves };
+  if (s.dead || s.won) return ns;
+  ns.moves = s.moves + 1;
+
+  var supA = crumbUnderIdx(lv, s.ax, s.ay, s.broken);
+  var supB = crumbUnderIdx(lv, s.bx, s.by, s.broken);
+
+  var dxA = (input === IN_LEFT) ? -1 : (input === IN_RIGHT ? 1 : 0);
+  var dxB = -dxA;
+
+  var pa = resolveMove(lv, s.ax, s.ay, dxA, input, s.fa, s.keys, s.broken);
+  var pb = resolveMove(lv, s.bx, s.by, dxB, input, s.fb, s.keys, s.broken);
+
+  /* COLLISION RULE: they resolve at the same instant, so if both would end the
+     move phase in the same cell then neither of them moves at all. */
+  if (pa.x === pb.x && pa.y === pb.y){
+    pa = { x:s.ax, y:s.ay, rose:false, path:[] };
+    pb = { x:s.bx, y:s.by, rose:false, path:[] };
+  }
+
+  /* AIRBORNE: a jump skips gravity on the jump tick AND on the one input after
+     it, which is what lets UP then LEFT then LEFT cross a one wide gap. */
+  var skipA = (s.fa === 1) || pa.rose;
+  var skipB = (s.fb === 1) || pb.rose;
+  ns.fa = pa.rose ? 1 : 0;
+  ns.fb = pb.rose ? 1 : 0;
+
+  fall(lv, pa, skipA, s.keys, s.broken);
+  fall(lv, pb, skipB, s.keys, s.broken);
+
+  ns.ax = pa.x; ns.ay = pa.y; ns.bx = pb.x; ns.by = pb.y;
+
+  /* Keys read the PRE tick mask all tick long, so a door opened this tick is
+     usable from the next tick. Deterministic and identical for the solver. */
+  var kk = s.keys;
+  kk = applyTriggers(lv, pa.path, kk, ns);
+  kk = applyTriggers(lv, pb.path, kk, ns);
+  ns.keys = kk;
+
+  var br = s.broken;
+  if (supA >= 0 && crumbUnderIdx(lv, ns.ax, ns.ay, s.broken) !== supA) br |= (1 << supA);
+  if (supB >= 0 && crumbUnderIdx(lv, ns.bx, ns.by, s.broken) !== supB) br |= (1 << supB);
+  ns.broken = br;
+
+  var movedA = (ns.ax !== s.ax || ns.ay !== s.ay);
+  var movedB = (ns.bx !== s.bx || ns.by !== s.by);
+  ns.desync = (movedA !== movedB);
+
+  if (!ns.dead && lv.tiles[ns.ay*lv.w+ns.ax] === T.EXA && lv.tiles[ns.by*lv.w+ns.bx] === T.EXB) ns.won = true;
+  return ns;
+}
+
+function packState(s){
+  return (s.ax | (s.ay << 4) | (s.bx << 8) | (s.by << 12)
+        | (s.fa << 16) | (s.fb << 17) | (s.keys << 18) | (s.broken << 21)) >>> 0;
+}
+
+function pathOf(node){
+  var out = [];
+  var n = node;
+  while (n && n._i >= 0){ out.push(IN_CHARS.charAt(n._i)); n = n._p; }
+  out.reverse();
+  return out.join('');
+}
+
+function bfsSolve(lv, maxLen, cap){
+  var s0 = initState(lv);
+  if (s0.dead) return null;
+  if (s0.won) return { len:0, sol:'', states:1 };
+  s0._p = null; s0._i = -1;
+  var seen = new Set();
+  seen.add(packState(s0));
+  var frontier = [s0], depth = 0, visited = 1, f, inp;
+  while (frontier.length && depth < maxLen){
+    var nxt = [];
+    for (f = 0; f < frontier.length; f++){
+      var st = frontier[f];
+      for (inp = 0; inp < 4; inp++){
+        var ns = stepWorld(st, inp, lv);
+        if (ns.dead) continue;
+        var k = packState(ns);
+        if (seen.has(k)) continue;
+        seen.add(k); visited++;
+        ns._p = st; ns._i = inp;
+        if (ns.won) return { len:depth + 1, sol:pathOf(ns), states:visited };
+        if (visited > cap) return { len:-1, capped:true, states:visited };
+        nxt.push(ns);
+      }
+    }
+    frontier = nxt; depth++;
+  }
+  return null;
+}
+
+function replay(lv, sol){
+  var s = initState(lv), i, any = false;
+  var frames = [s];
+  for (i = 0; i < sol.length; i++){
+    s = stepWorld(s, IN_CHARS.indexOf(sol.charAt(i)), lv);
+    if (s.desync) any = true;
+    frames.push(s);
+  }
+  return { end:s, desync:any, frames:frames };
+}
+function hasDesync(lv, sol){ return replay(lv, sol).desync; }
+
+function manhattan(x, y, tx, ty){ return Math.abs(x - tx) + Math.abs(y - ty); }
+
+/* Greedy agent: always reduce A's distance to exit A, ties LEFT RIGHT UP WAIT.
+   A level it can solve is a corridor, not a puzzle, so generation rejects it. */
+function greedyRun(lv, maxSteps){
+  var s = initState(lv), i, inp;
+  for (i = 0; i < maxSteps; i++){
+    if (s.won) return true;
+    if (s.dead) return false;
+    var best = -1, bd = Infinity;
+    for (inp = 0; inp < 4; inp++){
+      var ns = stepWorld(s, inp, lv);
+      var d = ns.dead ? Infinity : manhattan(ns.ax, ns.ay, lv.exAx, lv.exAy);
+      if (ns.won) d = -1;
+      if (d < bd){ bd = d; best = inp; }
+    }
+    if (best < 0) best = IN_WAIT;
+    s = stepWorld(s, best, lv);
+  }
+  return s.won;
+}
+
+/* ---- GEN ---- */
+function standables(lv){
+  var out = [], x, y;
+  for (y = 0; y < lv.h; y++){
+    for (x = 0; x < lv.w; x++){
+      if (lv.tiles[y*lv.w+x] !== T.EMPTY) continue;
+      if (!supported(lv, x, y, 0, 0)) continue;
+      out.push(y * lv.w + x);
+    }
+  }
+  return out;
+}
+
+function buildCandidate(rng, spec){
+  var w = spec.w, h = spec.h, n = w * h, i, x, y, k;
+  var tiles = new Int8Array(n);
+  for (x = 0; x < w; x++) tiles[(h-1)*w + x] = T.WALL;
+  for (y = 0; y < h; y++){ tiles[y*w] = T.WALL; tiles[y*w + w - 1] = T.WALL; }
+  var dens = spec.dens[0] + rng() * (spec.dens[1] - spec.dens[0]);
+  for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++) if (rng() < dens) tiles[y*w + x] = T.WALL;
+  var runs = 2 + rng.int(spec.platMax);
+  for (k = 0; k < runs; k++){
+    var yy = 2 + rng.int(h - 3), x0 = 1 + rng.int(w - 3), len = 2 + rng.int(4), j;
+    for (j = 0; j < len && x0 + j < w - 1; j++) tiles[yy*w + x0 + j] = T.WALL;
+  }
+  var lv = finishLevel({ w:w, h:h, tiles:tiles, ax:0, ay:0, bx:0, by:0, tier:spec.t, par:0, sol:'' });
+
+  var st = rng.shuffle(standables(lv));
+  if (st.length < 6) return null;
+  var minSep = Math.max(3, Math.floor((w + h) / 4));
+  var sa = st[0], sb = -1, ea = -1, eb = -1;
+  function px(i){ return i % w; } function py(i){ return Math.floor(i / w); }
+  for (i = 1; i < st.length; i++){ if (manhattan(px(st[i]),py(st[i]),px(sa),py(sa)) >= 2){ sb = st[i]; break; } }
+  if (sb < 0) return null;
+  for (i = 1; i < st.length; i++){
+    if (st[i] === sb) continue;
+    if (manhattan(px(st[i]),py(st[i]),px(sa),py(sa)) >= minSep){ ea = st[i]; break; }
+  }
+  if (ea < 0) return null;
+  for (i = 1; i < st.length; i++){
+    if (st[i] === sb || st[i] === ea) continue;
+    if (manhattan(px(st[i]),py(st[i]),px(sb),py(sb)) >= minSep){ eb = st[i]; break; }
+  }
+  if (eb < 0 || eb === ea) return null;
+
+  lv.ax = px(sa); lv.ay = py(sa); lv.bx = px(sb); lv.by = py(sb);
+  lv.tiles[ea] = T.EXA; lv.tiles[eb] = T.EXB;
+
+  var used = {}; used[sa] = 1; used[sb] = 1; used[ea] = 1; used[eb] = 1;
+  var free = [];
+  for (i = 0; i < n; i++) if (lv.tiles[i] === T.EMPTY && !used[i]) free.push(i);
+  free = rng.shuffle(free);
+  var fp = 0;
+  function takeFree(){ return fp < free.length ? free[fp++] : -1; }
+
+  var nSpike = spec.spikes[0] + rng.int(spec.spikes[1] - spec.spikes[0] + 1);
+  for (k = 0; k < nSpike; k++){ var si = takeFree(); if (si < 0) break; lv.tiles[si] = T.SPIKE; }
+
+  var nKeys = spec.keys[0] + rng.int(spec.keys[1] - spec.keys[0] + 1);
+  for (k = 0; k < nKeys && k < CONFIG.MAX_KEYS; k++){
+    var ki = -1, di = -1, tries;
+    for (tries = 0; tries < 40; tries++){
+      var c = takeFree(); if (c < 0) break;
+      if (supported(lv, c % w, Math.floor(c / w), 0, 0)){ ki = c; break; }
+    }
+    for (tries = 0; tries < 60; tries++){
+      var c2 = takeFree(); if (c2 < 0) break;
+      var cy = Math.floor(c2 / w), cx = c2 % w;
+      if (cy > 0 && lv.tiles[(cy-1)*w+cx] === T.WALL && !supported(lv, cx, cy, 0, 0)) continue;
+      di = c2; break;
+    }
+    if (ki < 0 || di < 0) break;
+    lv.tiles[ki] = T.KEY0 + k;
+    lv.tiles[di] = T.DOOR0 + k;
+  }
+
+  var wallList = [];
+  for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++){
+    if (lv.tiles[y*w+x] !== T.WALL) continue;
+    if (y > 0 && lv.tiles[(y-1)*w+x] === T.EMPTY) wallList.push(y*w+x);
+  }
+  wallList = rng.shuffle(wallList);
+  var wp = 0;
+  function takeWall(){ return wp < wallList.length ? wallList[wp++] : -1; }
+
+  var nCrumb = spec.crumb[0] + rng.int(spec.crumb[1] - spec.crumb[0] + 1);
+  for (k = 0; k < nCrumb && k < CONFIG.MAX_CRUMB; k++){ var ci = takeWall(); if (ci < 0) break; lv.tiles[ci] = T.CRUMB; }
+  var nIce = spec.ice[0] + rng.int(spec.ice[1] - spec.ice[0] + 1);
+  for (k = 0; k < nIce; k++){ var ii = takeWall(); if (ii < 0) break; lv.tiles[ii] = T.ICE; }
+
+  var nOw = spec.oneway[0] + rng.int(spec.oneway[1] - spec.oneway[0] + 1);
+  for (k = 0; k < nOw; k++){
+    var oi = takeFree(); if (oi < 0) break;
+    lv.tiles[oi] = rng.pick([T.OWL, T.OWR, T.OWD]);
+  }
+
+  return finishLevel(lv);
+}
+
+function genLevel(rng, spec, budget, log){
+  var attempts = 0;
+  while (attempts < budget){
+    attempts++;
+    var lv = buildCandidate(rng, spec);
+    if (!lv){ continue; }
+    if (lv.exA < 0 || lv.exB < 0) continue;
+    var s0 = initState(lv);
+    if (s0.dead || s0.won) continue;
+    var res = bfsSolve(lv, spec.max, CONFIG.BFS_GEN_CAP);
+    if (!res || res.len < 0) continue;
+    if (res.len < spec.min) continue;
+    if (!hasDesync(lv, res.sol)) continue;
+    if (greedyRun(lv, res.len * CONFIG.GREEDY_MULT)) continue;
+    lv.par = res.len; lv.sol = res.sol;
+    minimizeWalls(lv, spec, rng);
+    if (log) log.attempts = attempts;
+    return lv;
+  }
+  if (log) log.attempts = attempts;
+  return null;
+}
+
+function minimizeWalls(lv, spec, rng){
+  var cand = [], x, y, i;
+  for (y = 1; y < lv.h - 1; y++) for (x = 1; x < lv.w - 1; x++){
+    if (lv.tiles[y*lv.w+x] === T.WALL) cand.push(y*lv.w+x);
+  }
+  cand = rng.shuffle(cand);
+  var tries = Math.min(cand.length, spec.minTries);
+  for (i = 0; i < tries; i++){
+    var at = cand[i], old = lv.tiles[at];
+    lv.tiles[at] = T.EMPTY;
+    finishLevel(lv);
+    var ok = false, sol = lv.sol;
+    var s0 = initState(lv);
+    if (!s0.dead && !s0.won){
+      var r = bfsSolve(lv, lv.par, CONFIG.BFS_GEN_CAP);
+      if (r && r.len === lv.par && hasDesync(lv, r.sol) && !greedyRun(lv, lv.par * CONFIG.GREEDY_MULT)){
+        ok = true; sol = r.sol;
+      }
+    }
+    if (ok) lv.sol = sol;
+    else { lv.tiles[at] = old; finishLevel(lv); }
+  }
+  return lv;
+}
+
+/* Runtime generation is used for the daily level ONLY, and only after the same
+   BFS has verified it. The sixty campaign levels are always the embedded ones. */
+function genDaily(seed){
+  var spec = TIERS[CONFIG.DAILY_TIER - 1], salt = 0;
+  while (salt < 8){
+    var rng = makeRNG((seed + salt * 0x9e3779b1) >>> 0);
+    var lv = genLevel(rng, spec, Math.ceil(CONFIG.DAILY_TRIES / 4), null);
+    if (lv) return lv;
+    salt++;
+  }
+  return null;
+}
+
+/* ---- SAVE CODEC (pure, so the harness can test it in node) ---- */
+function freshSave(){
+  return { v:CONFIG.SAVE_V, gameId:CONFIG.GAME_ID,
+           stats:{ plays:0, clears:0, deaths:0, moves:0 },
+           unlocks:[], best:{}, daily:{ last:'', streak:0, best:0 },
+           settings:{ sound:1, vol:70, haptics:1, motion:0, ghost:1 } };
+}
+function migrateSave(s){
+  var f = freshSave(), k;
+  if (!s || typeof s !== 'object') return f;
+  if (s.v !== CONFIG.SAVE_V) { s.v = CONFIG.SAVE_V; }
+  for (k in f){ if (!(k in s)) s[k] = f[k]; }
+  if (!s.stats || typeof s.stats !== 'object') s.stats = f.stats;
+  if (!s.best || typeof s.best !== 'object') s.best = f.best;
+  if (!s.daily || typeof s.daily !== 'object') s.daily = f.daily;
+  if (!s.settings || typeof s.settings !== 'object') s.settings = f.settings;
+  for (k in f.settings){ if (typeof s.settings[k] === 'undefined') s.settings[k] = f.settings[k]; }
+  for (k in f.stats){ if (typeof s.stats[k] !== 'number') s.stats[k] = f.stats[k]; }
+  return s;
+}
+function parseSave(raw){
+  if (!raw) return freshSave();
+  var o = null;
+  try { o = JSON.parse(raw); } catch (e) { return freshSave(); }
+  if (!o || typeof o !== 'object' || o.gameId !== CONFIG.GAME_ID) return freshSave();
+  return migrateSave(o);
+}
+/* Two tabs clobber a wholesale write, so every merge ADDS counters and MAXes
+   bests. Fewer moves is better here, so a level best takes the MIN. */
+function mergeSave(disk, mem){
+  var out = migrateSave(JSON.parse(JSON.stringify(disk || freshSave()))), k;
+  for (k in mem.stats) out.stats[k] = Math.max(out.stats[k] || 0, mem.stats[k] || 0);
+  for (k in mem.best){
+    var d = out.best[k], m = mem.best[k];
+    if (!d) out.best[k] = m;
+    else {
+      out.best[k] = {
+        moves: Math.min(d.moves, m.moves),
+        deaths: Math.min(typeof d.deaths === 'number' ? d.deaths : 9999,
+                         typeof m.deaths === 'number' ? m.deaths : 9999),
+        par: m.par || d.par,
+        log: (m.moves <= d.moves ? m.log : d.log) || ''
+      };
+    }
+  }
+  if ((mem.daily.streak || 0) > (out.daily.streak || 0)) out.daily.streak = mem.daily.streak;
+  if (mem.daily.last > (out.daily.last || '')) out.daily.last = mem.daily.last;
+  out.settings = mem.settings;
+  return out;
+}
+function clearedCount(sv){ var k, c = 0; for (k in sv.best) c++; return c; }
+function starCount(sv){
+  var k, c = 0;
+  for (k in sv.best){ if (sv.best[k].moves <= sv.best[k].par) c++; }
+  return c;
+}
+function shareLine(kind, id, moves, deaths){
+  if (kind === 'daily') return 'PARALLEL day ' + id + ' solved in ' + moves + ' moves, ' + deaths + ' deaths';
+  return 'PARALLEL level ' + id + ' solved in ' + moves + ' moves, ' + deaths + ' deaths';
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* TEST — assertion harness. Runs headless from sim.js and in page at ?test=1. */
+var TEST = {
+  results: [],
+  assert: function(name, cond, detail){ this.results.push({ name:name, pass:!!cond, detail:detail || '' }); },
+  eq: function(name, a, b){ this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function(name, a, b, tol){ this.assert(name, Math.abs(a - b) <= tol, 'expected ~' + b + ', got ' + a); },
+  report: function(){
+    var p = 0, f = [], i;
+    for (i = 0; i < this.results.length; i++){
+      if (this.results[i].pass) p++; else f.push(this.results[i]);
+    }
+    return { passed:p, failed:f.length, total:this.results.length, failures:f };
+  },
+  run: function(){
+    this.results = [];
+    suiteRng(this);
+    suiteCodec(this);
+    suiteFixtures(this);
+    suiteSolver(this);
+    suiteLevels(this);
+    suiteSave(this);
+    suiteFuzz(this);
+    suiteRegressions(this);
+    return this.report();
+  }
+};
+
+function fx(id){
+  var i;
+  for (i = 0; i < FIXTURES.length; i++) if (FIXTURES[i].id === id) return parseAscii(FIXTURES[i].rows);
+  return null;
+}
+function runScript(lv, script){
+  var s = initState(lv), i;
+  for (i = 0; i < script.length; i++) s = stepWorld(s, IN_CHARS.indexOf(script.charAt(i)), lv);
+  return s;
+}
+
+function suiteRng(t){
+  var a = makeRNG(1234), b = makeRNG(1234), i, same = true;
+  for (i = 0; i < 500; i++){ if (a() !== b()) same = false; }
+  t.assert('rng same seed same stream', same);
+  var c = makeRNG(1235), d1 = makeRNG(1234), diff = false;
+  for (i = 0; i < 50; i++){ if (c() !== d1()) diff = true; }
+  t.assert('rng different seed different stream', diff);
+  var r = makeRNG(7), inRange = true;
+  for (i = 0; i < 2000; i++){ var v = r(); if (v < 0 || v >= 1) inRange = false; }
+  t.assert('rng stays in unit interval', inRange);
+  var r2 = makeRNG(9), okInt = true;
+  for (i = 0; i < 2000; i++){ var n = r2.int(7); if (n < 0 || n > 6 || n !== Math.floor(n)) okInt = false; }
+  t.assert('rng int bounded', okInt);
+  var r3 = makeRNG(11), okRange = true;
+  for (i = 0; i < 2000; i++){ var n2 = r3.range(3, 8); if (n2 < 3 || n2 > 8) okRange = false; }
+  t.assert('rng range inclusive', okRange);
+  var arr = [1,2,3,4,5,6,7,8];
+  var s1 = makeRNG(42).shuffle(arr), s2 = makeRNG(42).shuffle(arr);
+  t.eq('rng shuffle deterministic', s1.join(','), s2.join(','));
+  t.eq('rng shuffle preserves members', s1.slice().sort().join(','), arr.slice().sort().join(','));
+  t.eq('seedFromString deterministic', seedFromString('abc'), seedFromString('abc'));
+  t.assert('seedFromString differs', seedFromString('abc') !== seedFromString('abd'));
+  t.assert('daily key includes game id', dailyKey('2026-08-16').indexOf('parallel') > 0);
+}
+
+function suiteCodec(t){
+  var i, allOk = true, tileOk = true;
+  for (i = 0; i < FIXTURES.length; i++){
+    var lv = parseAscii(FIXTURES[i].rows);
+    lv.tier = 3; lv.par = 12; lv.sol = 'LRUW';
+    var s = encodeLevel(lv);
+    var back = decodeLevel(s);
+    if (back.w !== lv.w || back.h !== lv.h) allOk = false;
+    if (back.ax !== lv.ax || back.ay !== lv.ay || back.bx !== lv.bx || back.by !== lv.by) allOk = false;
+    if (back.par !== 12 || back.sol !== 'LRUW' || back.tier !== 3) allOk = false;
+    var k;
+    for (k = 0; k < lv.tiles.length; k++) if (lv.tiles[k] !== back.tiles[k]) tileOk = false;
+    if (encodeLevel(back) !== s) allOk = false;
+  }
+  t.assert('codec round trip header and metadata', allOk);
+  t.assert('codec round trip every tile', tileOk);
+  t.eq('tile char table length', TILE_CHARS.length, 17);
+  t.eq('tile chars unique', new Set(TILE_CHARS.split('')).size, 17);
+  t.eq('b62 alphabet length', B62.length, 62);
+  var lvw = fx('win');
+  t.eq('parseAscii finds start A', lvw.ax + ',' + lvw.ay, '1,1');
+  t.eq('parseAscii finds start B', lvw.bx + ',' + lvw.by, '5,1');
+  t.eq('parseAscii finds exit A', lvw.exAx + ',' + lvw.exAy, '2,1');
+  t.eq('parseAscii finds exit B', lvw.exBx + ',' + lvw.exBy, '4,1');
+  var asc = levelToAscii(lvw);
+  t.eq('levelToAscii row count', asc.length, 3);
+  t.eq('levelToAscii marks starts', asc[1].charAt(1), 'P');
+}
+
+function suiteFixtures(t){
+  /* 1 MANTLE */
+  var m = fx('mantle');
+  var s = runScript(m, 'R');
+  t.eq('mantle A steps up onto the one high block', s.ax + ',' + s.ay, '2,0');
+  t.eq('mantle B mirrors left on open floor', s.bx + ',' + s.by, '6,1');
+  t.assert('mantle leaves nobody airborne', s.fa === 0 && s.fb === 0);
+  var s2 = runScript(m, 'RR');
+  t.eq('mantle then walk off falls back to the floor', s2.ax + ',' + s2.ay, '3,1');
+  var s3 = runScript(m, 'L');
+  t.eq('mantle only applies toward the block', s3.ax + ',' + s3.ay, '1,1');
+
+  /* 1b TWO HIGH WALLS ARE UNCLIMBABLE */
+  var th = fx('twohigh');
+  t.eq('two high wall blocks a walk', runScript(th, 'R').ax, 1);
+  var u1 = runScript(th, 'U');
+  t.eq('jump rises exactly one cell', u1.ay, 1);
+  t.eq('jump sets airborne', u1.fa, 1);
+  var u2 = runScript(th, 'UR');
+  t.eq('no mantle while hovering', u2.ax + ',' + u2.ay, '1,1');
+  var u3 = runScript(th, 'URR');
+  t.eq('no mantle while unsupported either', u3.ax + ',' + u3.ay, '1,2');
+  t.assert('two high wall is never climbed', u3.ax === 1);
+
+  /* 2 JUMP GAP */
+  var g = fx('gap');
+  t.eq('walking into a gap falls in', runScript(g, 'R').ay, 2);
+  var g1 = runScript(g, 'U');
+  t.eq('gap jump rises', g1.ay, 0);
+  var g2 = runScript(g, 'UR');
+  t.eq('airborne hover holds height for one more input', g2.ax + ',' + g2.ay, '2,0');
+  var g3 = runScript(g, 'URR');
+  t.eq('up right right clears the one wide gap', g3.ax + ',' + g3.ay, '3,1');
+  var g4 = runScript(g, 'URW');
+  t.eq('hovering over the gap then waiting drops in', g4.ax + ',' + g4.ay, '2,2');
+  var g5 = runScript(g, 'URRR');
+  t.eq('landing then walking keeps going', g5.ax + ',' + g5.ay, '4,1');
+
+  /* 3 MIRROR DESYNC */
+  var d = fx('desync');
+  var d1 = stepWorld(initState(d), IN_RIGHT, d);
+  t.eq('desync A is blocked', d1.ax + ',' + d1.ay, '1,1');
+  t.eq('desync B mirrors and moves', d1.bx + ',' + d1.by, '3,1');
+  t.assert('desync flag fires when exactly one moves', d1.desync === true);
+  var d2 = stepWorld(initState(d), IN_UP, d);
+  t.assert('shared jump is not a desync', d2.desync === false);
+  var d3 = stepWorld(initState(d), IN_WAIT, d);
+  t.assert('wait moves nobody', d3.ax === 1 && d3.bx === 4 && d3.desync === false);
+  t.assert('mirror inverts horizontal input', d1.bx < 4);
+
+  /* 4 KEY AND DOOR */
+  var kd = fx('keydoor');
+  var k1 = runScript(kd, 'R');
+  t.eq('door still shut before the key', k1.keys, 0);
+  var k2 = runScript(kd, 'RR');
+  t.eq('key collected on entry', k2.keys, 1);
+  t.eq('locked door blocks the mirror twin', k2.bx, 5);
+  var k3 = runScript(kd, 'RRR');
+  t.eq('open door is walkable next tick', k3.ax, 4);
+  t.assert('door is solid without the key', !enterable(kd, 4, 1, DIR_R, 0, 0));
+  t.assert('door is open with the key', enterable(kd, 4, 1, DIR_R, 1, 0));
+  t.assert('door 0 ignores key 1', !enterable(kd, 4, 1, DIR_R, 2, 0));
+
+  /* 5 CRUMBLING */
+  var c = fx('crumble');
+  var c1 = runScript(c, 'R');
+  t.eq('standing on crumble does not break it', c1.broken, 0);
+  t.eq('crumble carries the avatar', c1.ax + ',' + c1.ay, '2,1');
+  var c2 = runScript(c, 'RR');
+  t.eq('crumble breaks once you leave it', c2.broken, 1);
+  var c3 = runScript(c, 'RRL');
+  t.eq('broken crumble is a hole now', c3.ax + ',' + c3.ay, '2,2');
+  t.assert('unbroken crumble blocks entry', !enterable(c, 2, 2, DIR_D, 0, 0));
+  t.assert('broken crumble allows entry', enterable(c, 2, 2, DIR_D, 0, 1));
+
+  /* 6 ICE */
+  var ic = fx('ice');
+  var i1 = runScript(ic, 'R');
+  t.eq('ice slides until the ice runs out', i1.ax + ',' + i1.ay, '8,1');
+  t.eq('mirror twin on plain floor takes one step', i1.bx + ',' + i1.by, '9,1');
+  var i2 = runScript(ic, 'L');
+  t.eq('sliding left stops at the wall', i2.ax + ',' + i2.ay, '1,1');
+  t.assert('ice is solid to walk into', !enterable(ic, 3, 2, DIR_R, 0, 0));
+  var i3 = runScript(ic, 'RL');
+  t.eq('a slide can be reversed', i3.ax, 1);
+
+  /* 7 SPIKES */
+  var sp = fx('spike');
+  var p1 = runScript(sp, 'R');
+  t.assert('one step short of the spike is safe', p1.dead === false);
+  var p2 = runScript(sp, 'RR');
+  t.assert('walking into a spike kills', p2.dead === true);
+  var p3 = runScript(sp, 'RRR');
+  t.assert('death is terminal', p3.dead === true && p3.moves === 2);
+
+  /* 8 WIN */
+  var wn = fx('win');
+  var w1 = runScript(wn, 'R');
+  t.assert('both on their own exits wins', w1.won === true);
+  t.eq('win takes one move here', w1.moves, 1);
+  var w2 = runScript(wn, 'L');
+  t.assert('wrong direction does not win', w2.won === false);
+  t.assert('win is terminal', runScript(wn, 'RL').ax === 2);
+
+  /* 9 ONE WAY PLATE */
+  var ow = fx('oneway');
+  t.assert('one way plate passes its own direction', enterable(ow, 3, 1, DIR_R, 0, 0));
+  t.assert('one way plate blocks the other direction', !enterable(ow, 3, 1, DIR_L, 0, 0));
+  var o1 = runScript(ow, 'RRR');
+  t.eq('A walks through the plate rightward', o1.ax, 4);
+  var o2 = runScript(ow, 'LL');
+  t.eq('B is stopped by the plate from the right', o2.bx, 4);
+
+  /* 10 COLLISION RULE */
+  var col = parseAscii(['#####','#P.Q#','#####']);
+  var cl = stepWorld(initState(col), IN_RIGHT, col);
+  t.assert('both entering one cell means neither moves', cl.ax === 1 && cl.bx === 3);
+  t.assert('a blocked pair is not a desync', cl.desync === false);
+  var cl2 = stepWorld(initState(col), IN_LEFT, col);
+  t.assert('the pair can still separate', cl2.ax === 1 && cl2.bx === 3);
+
+  /* 11 BOUNDS */
+  t.assert('out of bounds is never enterable', !enterable(col, -1, 1, DIR_L, 0, 0));
+  t.assert('below the grid counts as ground', supported(col, 1, 1, 0, 0));
+  var packed = packState({ ax:11, ay:11, bx:9, by:7, fa:1, fb:1, keys:7, broken:31 });
+  t.assert('state packs inside 26 bits', packed < (1 << 26) && packed >= 0);
+  t.assert('distinct states pack distinctly',
+    packState({ax:1,ay:2,bx:3,by:4,fa:0,fb:0,keys:0,broken:0}) !==
+    packState({ax:1,ay:2,bx:3,by:4,fa:0,fb:0,keys:1,broken:0}));
+}
+
+function suiteSolver(t){
+  var wn = fx('win');
+  var r = bfsSolve(wn, 12, 100000);
+  t.assert('bfs solves the one move fixture', !!r);
+  t.eq('bfs finds the shortest answer', r.len, 1);
+  t.eq('bfs returns a replayable input string', replay(wn, r.sol).end.won, true);
+  var kd = fx('keydoor');
+  var r2 = bfsSolve(kd, 30, 200000);
+  t.assert('bfs handles a level with no exits at all', r2 === null);
+  var g = fx('gap');
+  t.assert('bfs respects the depth cap', bfsSolve(g, 3, 200000) === null);
+  var col = parseAscii(['#####','#PaQ#','#####']);
+  t.assert('a level missing exit B is unsolvable', bfsSolve(col, 8, 50000) === null);
+  var tiny = parseAscii(['#####','#PbQ#','#####']);
+  t.assert('a level missing exit A is unsolvable', bfsSolve(tiny, 8, 50000) === null);
+
+  /* a corridor the greedy agent walks straight down, so generation must reject it */
+  var corridor = parseAscii(['#########','#P.....a#','####...##','#Q.....b#','#########']);
+  var cr = bfsSolve(corridor, 20, 200000);
+  t.assert('corridor is solvable', !!cr);
+  if (cr) t.assert('greedy agent beats a corridor', greedyRun(corridor, cr.len * 4));
+  t.assert('greedy agent fails an unsolvable board', !greedyRun(fx('desync'), 40));
+  t.assert('desync detector sees a desync', hasDesync(fx('desync'), 'R') === true);
+  t.assert('desync detector does not cry wolf', hasDesync(fx('win'), 'U') === false);
+}
+
+function suiteLevels(t){
+  t.eq('sixty levels are embedded', LEVELS.length, CONFIG.LEVEL_COUNT);
+  if (!LEVELS.length) return;
+  var i, bandOk = true, parOk = true, rtOk = true, desyncOk = true, distinctOk = true, seenSet = {};
+  var sums = [];
+  for (i = 0; i < LEVELS.length; i++){
+    var lv = decodeLevel(LEVELS[i]);
+    var spec = tierOf(i + 1);
+    if (lv.tier !== spec.t) bandOk = false;
+    if (lv.w !== spec.w || lv.h !== spec.h) bandOk = false;
+    if (lv.par < spec.min || lv.par > spec.max) bandOk = false;
+    if (encodeLevel(lv) !== LEVELS[i]) rtOk = false;
+    var rp = replay(lv, lv.sol);
+    if (!rp.end.won) parOk = false;
+    if (lv.sol.length !== lv.par) parOk = false;
+    if (!rp.desync) desyncOk = false;
+    if (seenSet[LEVELS[i]]) distinctOk = false;
+    seenSet[LEVELS[i]] = 1;
+    sums.push({ tier:lv.tier, par:lv.par });
+  }
+  t.assert('every level sits in its tier band', bandOk);
+  t.assert('every embedded solution actually wins at par length', parOk);
+  t.assert('every embedded level round trips through the codec', rtOk);
+  t.assert('every embedded solution contains a desync moment', desyncOk);
+  t.assert('no two embedded levels are identical', distinctOk);
+  var n = sums.length, sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (i = 0; i < n; i++){ sx += sums[i].tier; sy += sums[i].par; sxy += sums[i].tier * sums[i].par; sxx += sums[i].tier * sums[i].tier; }
+  var slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+  t.assert('solution length rises across tiers, slope ' + slope.toFixed(2), slope > 0);
+  var first = decodeLevel(LEVELS[0]);
+  t.assert('level 1 is small enough to read', first.w <= 8 && first.h <= 8);
+}
+
+function suiteSave(t){
+  var s = freshSave();
+  t.eq('fresh save has a version', s.v, CONFIG.SAVE_V);
+  t.eq('fresh save has the game id', s.gameId, CONFIG.GAME_ID);
+  s.best['3'] = { moves:12, deaths:1, par:10, log:'LLRU' };
+  s.stats.clears = 4;
+  var round = parseSave(JSON.stringify(s));
+  t.eq('save round trip keeps a best', round.best['3'].moves, 12);
+  t.eq('save round trip keeps the input log', round.best['3'].log, 'LLRU');
+  t.eq('save round trip keeps stats', round.stats.clears, 4);
+  t.eq('garbage save falls back to fresh', parseSave('{{{not json').stats.clears, 0);
+  t.eq('empty save falls back to fresh', parseSave('').stats.clears, 0);
+  t.eq('null save falls back to fresh', parseSave(null).v, CONFIG.SAVE_V);
+  t.eq('a save from another game is rejected', parseSave('{"gameId":"deepwell","v":1}').gameId, CONFIG.GAME_ID);
+  t.eq('a truncated save still boots', parseSave('{"gameId":"parallel","v":1}').stats.moves, 0);
+  var partial = parseSave('{"gameId":"parallel","v":1,"settings":{"vol":10}}');
+  t.eq('missing settings are filled in', partial.settings.sound, 1);
+  t.eq('present settings are kept', partial.settings.vol, 10);
+  var older = migrateSave({ gameId:'parallel', v:0, best:{} });
+  t.eq('migrate stamps the current version', older.v, CONFIG.SAVE_V);
+  var disk = freshSave(); disk.best['1'] = { moves:9, deaths:2, par:8, log:'RR' }; disk.stats.clears = 3;
+  var mem = freshSave(); mem.best['1'] = { moves:8, deaths:5, par:8, log:'RU' }; mem.stats.clears = 1;
+  var merged = mergeSave(disk, mem);
+  t.eq('merge keeps the better move count', merged.best['1'].moves, 8);
+  t.eq('merge keeps the better death count', merged.best['1'].deaths, 2);
+  t.eq('merge keeps the log of the better run', merged.best['1'].log, 'RU');
+  t.eq('merge never loses a counter to another tab', merged.stats.clears, 3);
+  var mem2 = freshSave(); mem2.best['5'] = { moves:20, deaths:0, par:20, log:'' };
+  t.eq('merge adds a level the other tab cleared', mergeSave(merged, mem2).best['1'].moves, 8);
+  t.eq('merge carries the new level too', mergeSave(merged, mem2).best['5'].moves, 20);
+  var sv = freshSave(); sv.best['1'] = { moves:8, deaths:0, par:8 }; sv.best['2'] = { moves:14, deaths:0, par:12 };
+  t.eq('cleared count', clearedCount(sv), 2);
+  t.eq('star count only counts par runs', starCount(sv), 1);
+  t.assert('share line has no dash', shareLine('daily', 142, 23, 4).indexOf('-') < 0);
+  t.assert('share line names the game', shareLine('level', 3, 9, 0).indexOf('PARALLEL') === 0);
+}
+
+function suiteFuzz(t){
+  var pool = [], i;
+  for (i = 0; i < FIXTURES.length; i++) pool.push(parseAscii(FIXTURES[i].rows));
+  if (LEVELS.length){
+    var picks = [0, 6, 13, 21, 27, 34, 39, 45, 51, 58], j;
+    pool = [];
+    for (j = 0; j < picks.length; j++) if (picks[j] < LEVELS.length) pool.push(decodeLevel(LEVELS[picks[j]]));
+  }
+  var crashes = 0, corrupt = 0, packBad = 0, runs = 0;
+  var rng = makeRNG(0xBEEF);
+  for (i = 0; i < pool.length; i++){
+    var lv = pool[i], seq;
+    for (seq = 0; seq < 5000; seq++){
+      var s = initState(lv), k;
+      runs++;
+      try {
+        for (k = 0; k < 16; k++){
+          s = stepWorld(s, rng.int(4), lv);
+          if (s.ax < 0 || s.ay < 0 || s.ax >= lv.w || s.ay >= lv.h) corrupt++;
+          if (s.bx < 0 || s.by < 0 || s.bx >= lv.w || s.by >= lv.h) corrupt++;
+          if (s.keys < 0 || s.keys > 7 || s.broken < 0 || s.broken > 31) corrupt++;
+          if (s.fa !== 0 && s.fa !== 1) corrupt++;
+          if (s.fb !== 0 && s.fb !== 1) corrupt++;
+          var pk = packState(s);
+          if (pk < 0 || pk > 0x3FFFFFF) packBad++;
+        }
+      } catch (e){ crashes++; }
+    }
+  }
+  t.eq('fuzz ran five thousand sequences per sample level', runs, pool.length * 5000);
+  t.eq('fuzz threw nothing', crashes, 0);
+  t.eq('fuzz never pushed an avatar off the grid', corrupt, 0);
+  t.eq('fuzz never overflowed the packed state', packBad, 0);
+  t.assert('fuzz covered ten levels', pool.length === 10 || LEVELS.length === 0);
+}
+
+/* Regressions found by the fuzzer and by scripted play. Each one was written
+   as a failing assertion first and only then fixed. */
+function suiteRegressions(t){
+  /* R1: a fall of more than FALL_CAP cells used to loop forever. */
+  var deep = ['#####'], i;
+  for (i = 0; i < 30; i++) deep.push('#P.Q#'.replace(/[PQ]/g, i === 0 ? '$&' : '.'));
+  var rows = ['#####','#P.Q#'];
+  for (i = 0; i < 22; i++) rows.push('#...#');
+  rows.push('#####');
+  var tall = parseAscii(rows);
+  var st = initState(tall);
+  t.assert('a long fall terminates', st.ay <= tall.h - 1);
+  /* R2: an avatar standing on the bottom row must not fall out of the grid. */
+  var flat = parseAscii(['#####','#P.Q#','#####']);
+  var f2 = runScript(flat, 'WWWW');
+  t.eq('standing still never leaves the grid', f2.ay, 1);
+  /* R3: stepping a terminal state must not increment the move counter. */
+  var wn = fx('win');
+  t.eq('moves freeze after the win', runScript(wn, 'RRRR').moves, 1);
+  /* R4: a crumble tile above the cap must degrade to wall, not to index minus one. */
+  var many = parseAscii(['##########','#P......Q#','#cccccccc#','##########']);
+  t.assert('crumble tiles beyond the cap become walls', many.crumbCount <= CONFIG.MAX_CRUMB);
+  var okIdx = true;
+  for (i = 0; i < many.tiles.length; i++){
+    if (many.tiles[i] === T.CRUMB && many.crumbIdx[i] < 0) okIdx = false;
+  }
+  t.assert('every live crumble tile has an index', okIdx);
+  /* R5: sliding into a spike on ice must kill, not stop. */
+  var icy = parseAscii(['#######','#P..^Q#','#~~~###','#######']);
+  t.assert('a slide into a spike is lethal', runScript(icy, 'R').dead === true);
+  /* R6: the mirror must not let an input escape the grid on the far side. */
+  var edge = parseAscii(['#####','#P.Q#','#####']);
+  var e1 = runScript(edge, 'LLLL');
+  t.assert('nobody walks through the outer wall', e1.ax === 1 && e1.bx === 3);
+}
+// ---- TEST_EXPORT_END ----
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+var framed = false;
+try { framed = self.parent !== self; } catch (e){ framed = true; }
+function SWS_EXIT(){
+  if (framed){ try { parent.postMessage({ sws:'close' }, '*'); } catch (e){} return; }
+  if (document.referrer.indexOf('/portal') >= 0 && history.length > 1){ history.back(); }
+  else { location.replace('https://lucidwinds.com/portal/'); }
+}
+self.SWS_EXIT = SWS_EXIT;
+if (framed){
+  try { parent.postMessage({ sws:'ready' }, '*'); } catch (e){}
+  self.addEventListener('load', function(){ try { parent.postMessage({ sws:'ready' }, '*'); } catch (e){} });
+}
+self.__TEST__ = TEST;
+self.__PARALLEL__ = { CONFIG:CONFIG, LEVELS:LEVELS, decodeLevel:decodeLevel, stepWorld:stepWorld,
+                      initState:initState, bfsSolve:bfsSolve, makeRNG:makeRNG };
+
+})();
+</script>
+</body>
+</html>

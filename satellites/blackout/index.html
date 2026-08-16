@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>BLACKOUT</title>
+<meta name="description" content="A procedural murder with a proven single answer.">
+<meta name="theme-color" content="#5ad1e6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLACKOUT">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<style>/*@@CSS@@*/</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* BLACKOUT
+   game id      : blackout
+   seed policy  : ?seed=<int> boots that exact case. No seed boots the daily case,
+                  seedFromString(YYYY-MM-DD + "blackout"). NEW CASE draws a fresh
+                  seed from the session RNG.
+   moat         : every case is proven to have exactly one solution before the
+                  player sees it. See GEN.generateCase and sim.js --cases=10000.
+   tuning notes : CONFIG.POOL controls clue counts per type. Minimal set size is
+                  measured, never clamped, so the histogram gate can actually fail.
+   known gaps   : unreliable narrators (HANDOFF 4.7) are not built.
+*/
+// ---- SIM_EXPORT_START ----
+"use strict";
+
+/* ============================ 1. CONFIG ============================ */
+
+var CONFIG = Object.freeze({
+  GAME_ID: "blackout",
+  VERSION: 1,
+  N: 6,
+  TUPLES: 1296,
+  ACTIONS: 20,
+  COST_SEARCH: 1,
+  COST_INTERVIEW: 1,
+  COST_PRESS: 2,
+  ROOM_SLOTS: 2,
+  MAX_PRESS_MINIMAL: 2,
+  REACH_BOUND: 16,
+  NOISE_MIN: 6,
+  NOISE_MAX: 12,
+  MAX_ATTEMPTS: 60,
+  PRESS_BIAS: 0.20,
+  STAR3: 8,
+  STAR2: 4,
+  MIN_SET_LO: 8,
+  MIN_SET_HI: 14,
+  POOL: Object.freeze({
+    alibi: 9, own: 5, access: 2, sight: 6, trace: 3, timeline: 4,
+    wtrace: 3, motive: 3, pair: 2, negative: 5, sequence: 2, object: 4
+  })
+});
+
+/* ============================ 2. RNG ============================ */
+
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) {
+      j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp;
+    }
+    return a2;
+  };
+  r.weighted = function (pairs) {
+    var total = 0, i, x;
+    for (i = 0; i < pairs.length; i++) total += pairs[i][1];
+    x = r() * total;
+    for (i = 0; i < pairs.length; i++) { x -= pairs[i][1]; if (x <= 0) return pairs[i][0]; }
+    return pairs[pairs.length - 1][0];
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+
+function seedFromString(str) {
+  var h = 0x811c9dc5, i;
+  for (i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function dailySeed(isoDate) { return seedFromString(isoDate + CONFIG.GAME_ID); }
+
+/* ============================ 3. DATA ============================ */
+
+var SUSPECTS = [
+  { n: "Vance", tall: true,  staff: false, glasses: true  },
+  { n: "Mira",  tall: false, staff: false, glasses: true  },
+  { n: "Ellis", tall: true,  staff: true,  glasses: false },
+  { n: "Odell", tall: false, staff: true,  glasses: false },
+  { n: "Renna", tall: true,  staff: false, glasses: false },
+  { n: "Marek", tall: false, staff: true,  glasses: true  }
+];
+
+var WEAPONS = [
+  { n: "Letter Opener",     cls: "blade"  },
+  { n: "Carving Knife",     cls: "blade"  },
+  { n: "Iron Poker",        cls: "blunt"  },
+  { n: "Brass Candlestick", cls: "blunt"  },
+  { n: "Silk Cord",         cls: "cord"   },
+  { n: "Bitter Tonic",      cls: "poison" }
+];
+
+var ROOMS = [
+  { n: "Study",        staffOnly: false, adj: [4, 1],       sub: "ink"          },
+  { n: "Library",      staffOnly: false, adj: [4, 0, 2],    sub: "paper dust"   },
+  { n: "Conservatory", staffOnly: false, adj: [4, 1],       sub: "potting soil" },
+  { n: "Cellar",       staffOnly: true,  adj: [5],          sub: "coal dust"    },
+  { n: "Hall",         staffOnly: false, adj: [0, 1, 2, 5], sub: "floor wax"    },
+  { n: "Kitchen",      staffOnly: true,  adj: [4, 3],       sub: "flour"        }
+];
+
+var TIMES = ["7pm", "8pm", "9pm", "10pm", "11pm", "midnight"];
+var TIME_HEAD = ["7", "8", "9", "10", "11", "12"];
+var ATTRS = ["tall", "staff", "glasses"];
+
+// ---- COPY_START ----
+var CLASSWORD = {
+  blade: "a blade", blunt: "a blunt weight", cord: "a cord", poison: "poison"
+};
+
+var DESCS = {
+  tall:    ["a small figure", "a tall figure"],
+  glasses: ["a figure wearing no spectacles", "a figure in spectacles"],
+  staff:   ["a figure in evening dress", "a figure in a service collar"]
+};
+
+var EVENTS = [
+  "the dinner bell", "the second course", "the car in the drive",
+  "the storm breaking", "the dog barking", "the last train",
+  "the lamps going out", "the piano stopping"
+];
+
+var TITLE_NOUNS = ["Affair", "Question", "Business", "Matter", "Silence",
+  "Hour", "Incident", "Problem", "Arrangement", "Debt"];
+var TITLE_TIMEWORDS = ["Midnight", "Evening", "Late", "Quiet", "Long", "Last", "Cold"];
+
+var BRIEF = [
+  "One room. One hour. One hand.",
+  "The killer used a weapon they own, or one kept in that room.",
+  "The killer had a reason. Nothing was taken.",
+  "Locked rooms need a staff key."
+];
+
+var TPL = {
+  a1: [
+    "{s} was in the {r} at {t}.",
+    "The staff put {s} in the {r} at {t}.",
+    "{s} says the {r} at {t}, and two people say the same.",
+    "At {t} nobody disputes that {s} stood in the {r}.",
+    "{s} took a telephone call in the {r} at {t}.",
+    "The visitors book in the {r} has {s} signed in at {t}."
+  ],
+  a2: [
+    "The {w} belongs to {s} and lives in the {r}.",
+    "{s} owns the {w}. It is kept in the {r}.",
+    "The {w} is registered to {s} and stored in the {r}.",
+    "Household inventory: one {w}, owner {s}, kept in the {r}.",
+    "{s} keeps the {w} in the {r} and nobody else has cause to move it.",
+    "The {w} came from the {r}. It belongs to {s}."
+  ],
+  a3: [
+    "The {r} stays locked. Only staff carry that key.",
+    "Nobody gets into the {r} without a staff key.",
+    "The {r} door was locked. Staff keys only.",
+    "Only the staff can open the {r}.",
+    "The {r} is off limits to guests. The key hangs in the pantry.",
+    "House rule: the {r} is staff only, and always locked."
+  ],
+  a4: [
+    "Someone glimpsed {d} in the {r} at {t}.",
+    "A maid saw {d} leaving the {r} at {t}.",
+    "At {t} the {r} held {d} and nothing else worth noting.",
+    "Through the {r} window at {t}: {d}.",
+    "The gardener remembers {d} in the {r} around {t}.",
+    "{d} passed the {r} door at {t}. That much is certain."
+  ],
+  a5near: [
+    "{sub} from the {r} lay where it happened. So it is the {r}, or a room beside it.",
+    "Whoever did it stood in {sub}. That reaches the {r} and its neighbors, no further.",
+    "The scene held {sub} off the {r} floor. The {r} then, or next door to it.",
+    "There was {sub} underfoot. It travels no further than the {r} and the rooms it touches.",
+    "Traces of {sub} put the room at the {r} or one step from it.",
+    "The {r} sheds {sub} on everything. It was at the scene, so the two rooms are neighbors at most."
+  ],
+  a5far: [
+    "No {sub} anywhere at the scene. Not the {r}, and not the rooms beside it.",
+    "The {r} sheds {sub} on everyone who crosses it. None at the scene. Rule out the {r} and its neighbors.",
+    "Nothing of the {r} reached that room. Not the {r}, not its neighbors.",
+    "Clean floor, no {sub}. The {r} and the rooms it touches are out.",
+    "Whoever did it never came near the {r}. Not that room, not the ones beside it.",
+    "The {sub} trail stops well short. The {r} and its neighbors are clear."
+  ],
+  a6exact: [
+    "The clock stopped at {t}.",
+    "It happened at {t}. The doctor is certain.",
+    "{t}. That is when.",
+    "The watch on the floor read {t} and had stopped.",
+    "Both clocks agree: {t}.",
+    "Time of death, {t}, no argument."
+  ],
+  a6not: [
+    "Whatever happened, it did not happen at {t}.",
+    "{t} is ruled out. The hall was full of people.",
+    "Not at {t}. Everyone was accounted for.",
+    "The doctor will swear it was not {t}.",
+    "Cross {t} off. The house was awake and loud.",
+    "{t} is clean. Some other hour, then."
+  ],
+  a6before: [
+    "It was over before {t}.",
+    "By {t} it had already happened.",
+    "The body was cold by {t}. Earlier, then.",
+    "Nothing after {t}. Whatever it was, it came first.",
+    "Before {t}. The lamps were still lit.",
+    "Draw your line at {t} and look earlier."
+  ],
+  a6after: [
+    "Nothing had happened yet at {t}.",
+    "It came after {t}.",
+    "At {t} the victim was alive and complaining.",
+    "Later than {t}. That much is fixed.",
+    "The last living sighting was {t}. After that, then.",
+    "Everything before {t} is clean. Look later."
+  ],
+  a7yes: [
+    "The doctor says {cls} did this.",
+    "The wound tells one story: {cls}.",
+    "Whatever killed him was {cls}.",
+    "The marks fit {cls} and nothing else.",
+    "It was {cls}. The rest is detail.",
+    "The body says {cls}."
+  ],
+  a7no: [
+    "It was not {cls}. The doctor is sure.",
+    "Rule out {cls}.",
+    "Nothing about this says {cls}.",
+    "The wound is wrong for {cls}.",
+    "Whatever it was, it was not {cls}.",
+    "You can cross off {cls} entirely."
+  ],
+  a8none: [
+    "{s} gained nothing by this death.",
+    "{s} had no quarrel with the victim and no claim on the estate.",
+    "Whatever this was about, it was not about {s}.",
+    "{s} loses money by this. That is not a motive.",
+    "There is no thread running from the victim to {s}.",
+    "{s} barely knew him."
+  ],
+  a8set: [
+    "Only {list} stood to gain.",
+    "The estate goes to {list}. Nobody else profits.",
+    "{list}. Those are the ones with a reason.",
+    "Follow the money and it ends at {list}.",
+    "Reason enough to kill: {list}, and nobody else in this house.",
+    "{list} had cause. The rest had none."
+  ],
+  a9all: [
+    "{a} and {b} were together the whole evening. Neither was ever alone.",
+    "Nobody saw {a} without {b} all night.",
+    "{a} and {b} played cards from dinner until the police came.",
+    "The two of them, {a} and {b}, never separated.",
+    "{a} kept {b} company all evening and can prove it.",
+    "Whatever happened, {a} and {b} were watching each other when it did."
+  ],
+  a9at: [
+    "At {t}, {a} and {b} were in the same room, arguing.",
+    "{a} and {b} were together at {t}. Neither was alone then.",
+    "The {t} bell caught {a} and {b} in company.",
+    "At {t} those two, {a} and {b}, were within arm's reach.",
+    "{a} and {b} share the same story for {t}, and it holds.",
+    "Nobody was alone at {t} if they were {a} or {b}."
+  ],
+  a10after: [
+    "Nobody entered the {r} after {t}.",
+    "The {r} was shut and dark after {t}.",
+    "After {t} the {r} stood empty. The dog would have barked.",
+    "The {r} door was bolted from {t} onward.",
+    "Nobody went near the {r} once {t} had passed.",
+    "After {t}, nothing moved in the {r}."
+  ],
+  a10before: [
+    "The {r} was locked until {t}.",
+    "Nobody could get into the {r} before {t}.",
+    "The {r} stayed sealed until {t}.",
+    "Before {t} the {r} was full of servants. No chance.",
+    "The {r} opened at {t}. Not before.",
+    "Until {t}, the {r} was out of reach."
+  ],
+  a11: [
+    "It happened after {e1} at {lo} and before {e2} at {hi}.",
+    "{e1} came first at {lo}. Then it happened. Then {e2} at {hi}.",
+    "Between {e1} and {e2}. That is {lo} and {hi}.",
+    "The scream fell between {e1} at {lo} and {e2} at {hi}.",
+    "After {lo}, before {hi}. {e1}, then it, then {e2}.",
+    "{e1} at {lo}, {e2} at {hi}, and the killing sat between them."
+  ],
+  a12weapon: [
+    "The {w} was locked in its case all evening. Untouched.",
+    "The {w} still has a year of dust on it. Not that.",
+    "The {w} never left its drawer.",
+    "Whatever was used, it was not the {w}.",
+    "The {w} was at the menders until Tuesday. Rule it out.",
+    "The {w} is accounted for. It was not the weapon."
+  ],
+  a12room: [
+    "The {r} window was bolted inside and the door key snapped in the lock. Nobody was in there.",
+    "The {r} was under a dust sheet. It did not happen there.",
+    "The {r} floor is new plaster. Nobody has crossed it in a week.",
+    "It did not happen in the {r}.",
+    "The {r} has been sealed since the funeral. Not there.",
+    "Rule out the {r}. That door has not opened in months."
+  ]
+};
+// ---- COPY_END ----
+
+/* tuple index helpers: i = ((c*6 + w)*6 + r)*6 + t */
+var IDX_C = [], IDX_W = [], IDX_R = [], IDX_T = [];
+(function () {
+  var c, w, r, t, i = 0;
+  for (c = 0; c < 6; c++) for (w = 0; w < 6; w++) for (r = 0; r < 6; r++) for (t = 0; t < 6; t++) {
+    IDX_C[i] = c; IDX_W[i] = w; IDX_R[i] = r; IDX_T[i] = t; i++;
+  }
+})();
+
+function tupleIndex(T) { return ((T.c * 6 + T.w) * 6 + T.r) * 6 + T.t; }
+function tupleFromIndex(i) { return { c: IDX_C[i], w: IDX_W[i], r: IDX_R[i], t: IDX_T[i] }; }
+
+var WORDS = 41; // 41 * 32 = 1312 >= 1296
+
+function bitsFull() {
+  var a = new Uint32Array(WORDS), i;
+  for (i = 0; i < CONFIG.TUPLES; i++) a[i >> 5] |= (1 << (i & 31));
+  return a;
+}
+function bitsGet(a, i) { return (a[i >> 5] & (1 << (i & 31))) !== 0; }
+function bitsAnd(a, b) {
+  var o = new Uint32Array(WORDS), i;
+  for (i = 0; i < WORDS; i++) o[i] = a[i] & b[i];
+  return o;
+}
+function bitsCount(a) {
+  var n = 0, i, x;
+  for (i = 0; i < WORDS; i++) {
+    x = a[i];
+    x = x - ((x >>> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+    x = (x + (x >>> 4)) & 0x0f0f0f0f;
+    n += (Math.imul(x, 0x01010101) >>> 24);
+  }
+  return n;
+}
+function bitsFirst(a) {
+  var i, j;
+  for (i = 0; i < WORDS; i++) {
+    if (a[i] === 0) continue;
+    for (j = 0; j < 32; j++) if (a[i] & (1 << j)) return i * 32 + j;
+  }
+  return -1;
+}
+function bitsList(a) {
+  var out = [], i;
+  for (i = 0; i < CONFIG.TUPLES; i++) if (bitsGet(a, i)) out.push(i);
+  return out;
+}
+
+/* ================== 4. GEN: predicates, world, clues ================== */
+
+/* The single dispatcher. Depends only on clue params and static DATA, never on
+   hidden world state. That is the fairness law: anything the solver uses, the
+   player can read off the clue itself. */
+function cluePasses(cl, c, w, r, t) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1:  return !(c === p.s && t === p.t && r !== p.r);
+    case 2:  return !(w === p.w && c !== p.s && r !== p.r);
+    case 3:  return !(r === p.r && !SUSPECTS[c].staff);
+    case 4:  return !(r === p.r && t === p.t && SUSPECTS[c][p.a] !== p.v);
+    case 5:  return p.near
+      ? (r === p.r || ROOMS[p.r].adj.indexOf(r) >= 0)
+      : (r !== p.r && ROOMS[p.r].adj.indexOf(r) < 0);
+    case 6:
+      if (p.m === "exact")  return t === p.t;
+      if (p.m === "not")    return t !== p.t;
+      if (p.m === "before") return t < p.t;
+      return t > p.t;
+    case 7:  return p.no ? (WEAPONS[w].cls !== p.cls) : (WEAPONS[w].cls === p.cls);
+    case 8:  return p.k === "none" ? (c !== p.s) : (p.set.indexOf(c) >= 0);
+    case 9:
+      if (p.t < 0) return c !== p.a && c !== p.b;
+      return !(t === p.t && (c === p.a || c === p.b));
+    case 10: return !(r === p.r && (p.d === "after" ? t > p.t : t < p.t));
+    case 11: return t > p.lo && t < p.hi;
+    case 12: return p.k === "weapon" ? (w !== p.w) : (r !== p.r);
+  }
+  return true;
+}
+
+function clueMask(cl) {
+  var m = new Uint32Array(WORDS), i;
+  for (i = 0; i < CONFIG.TUPLES; i++) {
+    if (cluePasses(cl, IDX_C[i], IDX_W[i], IDX_R[i], IDX_T[i])) m[i >> 5] |= (1 << (i & 31));
+  }
+  return m;
+}
+
+function clueTrueOf(cl, T) { return cluePasses(cl, T.c, T.w, T.r, T.t); }
+
+/* ---- surface text ---- */
+function fillTpl(s, d) {
+  return s.replace(/\{(\w+)\}/g, function (m, k) {
+    return (d[k] === undefined) ? m : d[k];
+  });
+}
+function nameList(ids) {
+  var ns = ids.map(function (i) { return SUSPECTS[i].n; });
+  if (ns.length === 1) return ns[0];
+  return ns.slice(0, -1).join(", ") + " and " + ns[ns.length - 1];
+}
+function tplBank(cl) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1: return TPL.a1;
+    case 2: return TPL.a2;
+    case 3: return TPL.a3;
+    case 4: return TPL.a4;
+    case 5: return p.near ? TPL.a5near : TPL.a5far;
+    case 6: return TPL["a6" + p.m];
+    case 7: return p.no ? TPL.a7no : TPL.a7yes;
+    case 8: return p.k === "none" ? TPL.a8none : TPL.a8set;
+    case 9: return p.t < 0 ? TPL.a9all : TPL.a9at;
+    case 10: return p.d === "after" ? TPL.a10after : TPL.a10before;
+    case 11: return TPL.a11;
+    case 12: return p.k === "weapon" ? TPL.a12weapon : TPL.a12room;
+  }
+  return [""];
+}
+function clueText(cl) {
+  var p = cl.p, bank = tplBank(cl), s = bank[cl.ph % bank.length], d = {};
+  switch (cl.ty) {
+    case 1: d = { s: SUSPECTS[p.s].n, r: ROOMS[p.r].n, t: TIMES[p.t] }; break;
+    case 2: d = { w: WEAPONS[p.w].n, s: SUSPECTS[p.s].n, r: ROOMS[p.r].n }; break;
+    case 3: d = { r: ROOMS[p.r].n }; break;
+    case 4: d = { r: ROOMS[p.r].n, t: TIMES[p.t], d: DESCS[p.a][p.v ? 1 : 0] }; break;
+    case 5: d = { r: ROOMS[p.r].n, sub: ROOMS[p.r].sub }; break;
+    case 6: d = { t: TIMES[p.t] }; break;
+    case 7: d = { cls: CLASSWORD[p.cls] }; break;
+    case 8: d = p.k === "none" ? { s: SUSPECTS[p.s].n } : { list: nameList(p.set) }; break;
+    case 9: d = { a: SUSPECTS[p.a].n, b: SUSPECTS[p.b].n, t: p.t >= 0 ? TIMES[p.t] : "" }; break;
+    case 10: d = { r: ROOMS[p.r].n, t: TIMES[p.t] }; break;
+    case 11: d = { lo: TIMES[p.lo], hi: TIMES[p.hi], e1: EVENTS[p.e1], e2: EVENTS[p.e2] }; break;
+    case 12: d = p.k === "weapon" ? { w: WEAPONS[p.w].n } : { r: ROOMS[p.r].n }; break;
+  }
+  return fillTpl(s, d);
+}
+var TYPE_NAMES = ["", "Alibi", "Ownership", "Access", "Sighting", "Trace", "Timeline",
+  "Wound", "Motive", "Company", "Empty room", "Sequence", "Object"];
+
+/* ---- world ---- */
+function stepFrom(rng, cur, avoid) {
+  var opts = [cur].concat(ROOMS[cur].adj), f = [], i;
+  if (avoid >= 0) {
+    for (i = 0; i < opts.length; i++) if (opts[i] !== avoid) f.push(opts[i]);
+    opts = f.length ? f : [cur];
+  }
+  return opts[rng.int(opts.length)];
+}
+function walkThrough(rng, room, time) {
+  var a = new Array(6), i;
+  a[time] = room;
+  for (i = time + 1; i < 6; i++) a[i] = stepFrom(rng, a[i - 1], -1);
+  for (i = time - 1; i >= 0; i--) a[i] = stepFrom(rng, a[i + 1], -1);
+  return a;
+}
+function walkAvoid(rng, avoidTime, avoidRoom) {
+  var a = new Array(6), i, start;
+  do { start = rng.int(6); } while (avoidTime === 0 && start === avoidRoom);
+  a[0] = start;
+  for (i = 1; i < 6; i++) a[i] = stepFrom(rng, a[i - 1], i === avoidTime ? avoidRoom : -1);
+  return a;
+}
+
+function genWorld(rng) {
+  var r = rng.int(6);
+  var pool = ROOMS[r].staffOnly ? [2, 3, 5] : [0, 1, 2, 3, 4, 5];
+  var c = pool[rng.int(pool.length)];
+  var truth = { c: c, w: rng.int(6), r: r, t: rng.int(6) };
+  var i, s;
+
+  var loc = [];
+  for (s = 0; s < 6; s++) loc.push(null);
+  loc[truth.c] = walkThrough(rng, truth.r, truth.t);
+  for (s = 0; s < 6; s++) if (s !== truth.c) loc[s] = walkAvoid(rng, truth.t, truth.r);
+
+  // an inseparable pair (non culprits) some of the time, for clue type 9
+  var pairAB = null;
+  if (rng() < 0.42) {
+    var others = [];
+    for (s = 0; s < 6; s++) if (s !== truth.c) others.push(s);
+    others = rng.shuffle(others);
+    pairAB = [others[0], others[1]];
+    loc[others[1]] = loc[others[0]].slice();
+  }
+
+  // weapons: owner is a permutation of suspects
+  var owner = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  if (rng() < 0.40 && owner[truth.w] !== truth.c) {
+    var other = owner.indexOf(truth.c);
+    owner[other] = owner[truth.w];
+    owner[truth.w] = truth.c;
+  }
+  var start = [];
+  for (i = 0; i < 6; i++) start.push(rng.int(6));
+  if (owner[truth.w] !== truth.c) start[truth.w] = truth.r;
+
+  // motives: culprit always has one, one to three suspects have none
+  var motive = [];
+  for (s = 0; s < 6; s++) motive.push(s === truth.c ? rng.range(1, 3)
+    : rng.weighted([[0, 3], [1, 3], [2, 3], [3, 2]]));
+  var zeros = [];
+  for (s = 0; s < 6; s++) if (motive[s] === 0) zeros.push(s);
+  if (zeros.length === 0) {
+    var pick = rng.int(6);
+    while (pick === truth.c) pick = rng.int(6);
+    motive[pick] = 0; zeros.push(pick);
+  }
+  while (zeros.length > 3) { motive[zeros.pop()] = 1; }
+
+  return { truth: truth, loc: loc, owner: owner, start: start, motive: motive, pairAB: pairAB };
+}
+
+/* ---- clue pool ---- */
+function addClue(list, seen, ty, p, ref, rng) {
+  var key = ty + "|" + JSON.stringify(p);
+  if (seen[key]) return null;
+  seen[key] = 1;
+  var cl = { id: list.length, ty: ty, p: p, ref: ref || [], ph: rng.int(6) };
+  list.push(cl);
+  return cl;
+}
+
+function genCluePool(W, rng) {
+  var T = W.truth, list = [], seen = {}, i, k, s, tt, rr;
+  var P = CONFIG.POOL;
+
+  // 1 alibi
+  for (k = 0; k < P.alibi; k++) {
+    s = rng.int(6);
+    tt = rng() < 0.5 ? T.t : rng.int(6);
+    addClue(list, seen, 1, { s: s, t: tt, r: W.loc[s][tt] }, [s], rng);
+  }
+  // 2 weapon ownership
+  var ws = rng.shuffle([0, 1, 2, 3, 4, 5]);
+  for (k = 0; k < P.own && k < 6; k++) {
+    var wi = ws[k];
+    addClue(list, seen, 2, { w: wi, s: W.owner[wi], r: W.start[wi] }, [W.owner[wi]], rng);
+  }
+  // 3 room access
+  for (rr = 0; rr < 6; rr++) {
+    if (!ROOMS[rr].staffOnly) continue;
+    if (rr === T.r && !SUSPECTS[T.c].staff) continue;
+    if (rng() < 0.75) addClue(list, seen, 3, { r: rr }, [], rng);
+  }
+  // 4 witness sighting
+  for (k = 0; k < P.sight; k++) {
+    if (rng() < 0.4) { rr = T.r; tt = T.t; }
+    else { rr = rng.int(6); tt = rng.int(6); }
+    var occ = [];
+    for (s = 0; s < 6; s++) if (W.loc[s][tt] === rr) occ.push(s);
+    if (!occ.length) continue;
+    var who = occ[rng.int(occ.length)];
+    var a = ATTRS[rng.int(3)];
+    addClue(list, seen, 4, { r: rr, t: tt, a: a, v: SUSPECTS[who][a] }, [], rng);
+  }
+  // 5 physical trace
+  var nearSet = [T.r].concat(ROOMS[T.r].adj);
+  var farSet = [];
+  for (rr = 0; rr < 6; rr++) {
+    if (rr === T.r) continue;
+    if (ROOMS[rr].adj.indexOf(T.r) >= 0) continue;
+    farSet.push(rr);
+  }
+  for (k = 0; k < P.trace; k++) {
+    if (rng() < 0.5 || !farSet.length) {
+      addClue(list, seen, 5, { r: nearSet[rng.int(nearSet.length)], near: true }, [], rng);
+    } else {
+      addClue(list, seen, 5, { r: farSet[rng.int(farSet.length)], near: false }, [], rng);
+    }
+  }
+  // 6 timeline
+  for (k = 0; k < P.timeline; k++) {
+    var m = rng.weighted([["not", 35], ["before", 25], ["after", 25], ["exact", 15]]);
+    if (m === "before" && T.t >= 5) m = "not";
+    if (m === "after" && T.t <= 0) m = "not";
+    if (m === "not") {
+      tt = rng.int(6); if (tt === T.t) tt = (tt + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 6, { t: tt, m: "not" }, [], rng);
+    } else if (m === "before") {
+      addClue(list, seen, 6, { t: rng.range(T.t + 1, 5), m: "before" }, [], rng);
+    } else if (m === "after") {
+      addClue(list, seen, 6, { t: rng.range(0, T.t - 1), m: "after" }, [], rng);
+    } else {
+      addClue(list, seen, 6, { t: T.t, m: "exact" }, [], rng);
+    }
+  }
+  // 7 weapon trace
+  var trueCls = WEAPONS[T.w].cls;
+  var clsSize = 0;
+  for (i = 0; i < 6; i++) if (WEAPONS[i].cls === trueCls) clsSize++;
+  var otherCls = [];
+  for (var key2 in CLASSWORD) if (key2 !== trueCls) otherCls.push(key2);
+  for (k = 0; k < P.wtrace; k++) {
+    if (clsSize >= 2 && rng() < 0.35) addClue(list, seen, 7, { cls: trueCls, no: false }, [], rng);
+    else addClue(list, seen, 7, { cls: otherCls[rng.int(otherCls.length)], no: true }, [], rng);
+  }
+  // 8 motive
+  var zeroList = [];
+  for (s = 0; s < 6; s++) if (W.motive[s] === 0) zeroList.push(s);
+  zeroList = rng.shuffle(zeroList);
+  for (k = 0; k < zeroList.length && k < P.motive; k++) {
+    addClue(list, seen, 8, { k: "none", s: zeroList[k] }, [zeroList[k]], rng);
+  }
+  if (rng() < 0.5) {
+    var lvl = W.motive[T.c] >= 2 ? 2 : 1;
+    var setL = [];
+    for (s = 0; s < 6; s++) if (W.motive[s] >= lvl) setL.push(s);
+    if (setL.length >= 3 && setL.length <= 5) {
+      addClue(list, seen, 8, { k: "set", set: setL }, setL.slice(), rng);
+    }
+  }
+  // 9 company
+  if (W.pairAB && rng() < 0.65) {
+    addClue(list, seen, 9, { a: W.pairAB[0], b: W.pairAB[1], t: -1 }, W.pairAB.slice(), rng);
+  }
+  for (k = 0; k < P.pair; k++) {
+    tt = rng.int(6);
+    var byRoom = {};
+    for (s = 0; s < 6; s++) {
+      var rk = W.loc[s][tt];
+      if (!byRoom[rk]) byRoom[rk] = [];
+      byRoom[rk].push(s);
+    }
+    var groups = [];
+    for (var g in byRoom) if (byRoom[g].length >= 2) groups.push(byRoom[g]);
+    if (!groups.length) continue;
+    var grp = rng.shuffle(groups[rng.int(groups.length)]);
+    addClue(list, seen, 9, { a: grp[0], b: grp[1], t: tt }, [grp[0], grp[1]], rng);
+  }
+  // 10 negative space
+  for (k = 0; k < P.negative; k++) {
+    if (rng() < 0.5) {
+      rr = T.r;
+      if (rng() < 0.5) {
+        if (T.t >= 5) continue;
+        addClue(list, seen, 10, { r: rr, t: rng.range(T.t, 5), d: "after" }, [], rng);
+      } else {
+        if (T.t <= 0) continue;
+        addClue(list, seen, 10, { r: rr, t: rng.range(0, T.t), d: "before" }, [], rng);
+      }
+    } else {
+      rr = rng.int(6); if (rr === T.r) rr = (rr + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 10, { r: rr, t: rng.int(6), d: rng() < 0.5 ? "after" : "before" }, [], rng);
+    }
+  }
+  // 11 sequence
+  if (T.t > 0 && T.t < 5) {
+    for (k = 0; k < P.sequence; k++) {
+      var lo = rng.range(0, T.t - 1), hi = rng.range(T.t + 1, 5);
+      var e1 = rng.int(EVENTS.length), e2 = rng.int(EVENTS.length);
+      if (e2 === e1) e2 = (e2 + 1) % EVENTS.length;
+      addClue(list, seen, 11, { lo: lo, hi: hi, e1: e1, e2: e2 }, [], rng);
+    }
+  }
+  // 12 object state
+  for (k = 0; k < P.object; k++) {
+    if (rng() < 0.55) {
+      var wx = rng.int(6); if (wx === T.w) wx = (wx + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 12, { k: "weapon", w: wx }, [], rng);
+    } else {
+      var rx = rng.int(6); if (rx === T.r) rx = (rx + 1 + rng.int(5)) % 6;
+      addClue(list, seen, 12, { k: "room", r: rx }, [], rng);
+    }
+  }
+  return list;
+}
+
+/* ---- solve / minimize ---- */
+function solveMask(clues, masks) {
+  var acc = bitsFull(), i;
+  for (i = 0; i < clues.length; i++) acc = bitsAnd(acc, masks[clues[i].id]);
+  return acc;
+}
+function solve(clues, masks) {
+  return bitsList(solveMask(clues, masks)).map(tupleFromIndex);
+}
+function countKept(pool, masks, keep) {
+  var acc = bitsFull(), i, j, x, n = 0;
+  for (i = 0; i < pool.length; i++) {
+    if (!keep[i]) continue;
+    var m = masks[pool[i].id];
+    for (j = 0; j < WORDS; j++) acc[j] &= m[j];
+  }
+  return bitsCount(acc);
+}
+function minimize(pool, masks, rng) {
+  var keep = [], order = [], i;
+  for (i = 0; i < pool.length; i++) { keep.push(true); order.push(i); }
+  order = rng.shuffle(order);
+  for (i = 0; i < order.length; i++) {
+    var idx = order[i];
+    keep[idx] = false;
+    if (countKept(pool, masks, keep) !== 1) keep[idx] = true;
+  }
+  var out = [];
+  for (i = 0; i < pool.length; i++) if (keep[i]) out.push(pool[i]);
+  return out;
+}
+function isMotiveOnly(clues) {
+  var i;
+  if (!clues.length) return false;
+  for (i = 0; i < clues.length; i++) if (clues[i].ty !== 8) return false;
+  return true;
+}
+
+/* ---- placement ---- */
+var PHYSICAL_TYPES = [3, 5, 6, 7, 10, 12];
+function isPhysical(cl) { return PHYSICAL_TYPES.indexOf(cl.ty) >= 0; }
+
+function placeClues(W, pool, minimal, rng) {
+  var rooms = [[], [], [], [], [], []];
+  var ints = [null, null, null, null, null, null];
+  var press = [null, null, null, null, null, null];
+  var used = {}, i, s;
+  var minIds = {};
+  for (i = 0; i < minimal.length; i++) minIds[minimal[i].id] = 1;
+
+  function freeRoom() {
+    var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
+    for (j = 0; j < 6; j++) if (rooms[order[j]].length < CONFIG.ROOM_SLOTS) return order[j];
+    return -1;
+  }
+  function freeInt() {
+    var order = rng.shuffle([0, 1, 2, 3, 4, 5]), j;
+    for (j = 0; j < 6; j++) if (ints[order[j]] === null) return order[j];
+    return -1;
+  }
+  function putBasic(cl) {
+    var a = isPhysical(cl) ? freeRoom() : freeInt();
+    if (a >= 0) { if (isPhysical(cl)) rooms[a].push(cl.id); else ints[a] = cl.id; used[cl.id] = 1; return true; }
+    var b = isPhysical(cl) ? freeInt() : freeRoom();
+    if (b >= 0) { if (isPhysical(cl)) ints[b] = cl.id; else rooms[b].push(cl.id); used[cl.id] = 1; return true; }
+    return false;
+  }
+
+  var shuffled = rng.shuffle(minimal.slice());
+  var pressPicks = [];
+  var rest = [];
+  for (i = 0; i < shuffled.length; i++) {
+    var cl = shuffled[i];
+    var canPress = cl.ref.length > 0 && pressPicks.length < CONFIG.MAX_PRESS_MINIMAL && rng() < 0.5;
+    if (canPress) {
+      var cand = rng.shuffle(cl.ref.slice()), placedP = false, j;
+      for (j = 0; j < cand.length; j++) {
+        if (press[cand[j]] === null) {
+          press[cand[j]] = cl.id; used[cl.id] = 1;
+          pressPicks.push({ s: cand[j], id: cl.id });
+          placedP = true; break;
+        }
+      }
+      if (placedP) continue;
+    }
+    rest.push(cl);
+  }
+  for (i = 0; i < rest.length; i++) if (!putBasic(rest[i])) return null;
+
+  // every press gated suspect must be reachable: a basic slot must mention them
+  function basicMentions(sus) {
+    var j, k;
+    for (j = 0; j < 6; j++) {
+      if (ints[j] !== null && pool[ints[j]].ref.indexOf(sus) >= 0) return true;
+      for (k = 0; k < rooms[j].length; k++) if (pool[rooms[j][k]].ref.indexOf(sus) >= 0) return true;
+    }
+    return false;
+  }
+  for (i = 0; i < pressPicks.length; i++) {
+    s = pressPicks[i].s;
+    if (basicMentions(s)) continue;
+    var opener = null, j2;
+    for (j2 = 0; j2 < pool.length; j2++) {
+      if (used[pool[j2].id]) continue;
+      if (pool[j2].ref.indexOf(s) >= 0) { opener = pool[j2]; break; }
+    }
+    if (opener && putBasic(opener)) continue;
+    // no opener available: demote the press clue into a basic slot
+    var demoted = pool[pressPicks[i].id];
+    press[s] = null;
+    used[demoted.id] = 0;
+    if (!putBasic(demoted)) return null;
+    pressPicks.splice(i, 1); i--;
+  }
+
+  // noise: fill remaining slots with consistent but unnecessary clues
+  var spare = [];
+  for (i = 0; i < pool.length; i++) if (!used[pool[i].id]) spare.push(pool[i]);
+  spare = rng.shuffle(spare);
+  var noiseTarget = rng.range(CONFIG.NOISE_MIN, CONFIG.NOISE_MAX), placedNoise = 0, si = 0;
+  for (s = 0; s < 6; s++) {
+    if (press[s] !== null) continue;
+    while (si < spare.length && used[spare[si].id]) si++;
+    if (si >= spare.length) break;
+    press[s] = spare[si].id; used[spare[si].id] = 1; si++; placedNoise++;
+  }
+  while (placedNoise < noiseTarget && si < spare.length) {
+    var cl2 = spare[si]; si++;
+    if (used[cl2.id]) continue;
+    if (!putBasic(cl2)) break;
+    placedNoise++;
+  }
+
+  return { rooms: rooms, ints: ints, press: press, pressMinimal: pressPicks, minIds: minIds };
+}
+
+function minActions(pl, pool) {
+  var needRoom = {}, needInt = {}, i, j, k, n = 0;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.minIds[pl.rooms[i][k]]) needRoom[i] = 1;
+    if (pl.ints[i] !== null && pl.minIds[pl.ints[i]]) needInt[i] = 1;
+  }
+  for (i in needRoom) n += CONFIG.COST_SEARCH;
+  for (i in needInt) n += CONFIG.COST_INTERVIEW;
+  for (i = 0; i < pl.pressMinimal.length; i++) {
+    var s = pl.pressMinimal[i].s;
+    n += CONFIG.COST_PRESS;
+    // unlocking clue must be visited too, if it is not already on the list
+    var covered = false;
+    for (j = 0; j < 6 && !covered; j++) {
+      if (needInt[j] && pl.ints[j] !== null && pool[pl.ints[j]].ref.indexOf(s) >= 0) covered = true;
+      if (needRoom[j]) for (k = 0; k < pl.rooms[j].length; k++)
+        if (pool[pl.rooms[j][k]].ref.indexOf(s) >= 0) covered = true;
+    }
+    if (covered) continue;
+    var extra = false;
+    for (j = 0; j < 6 && !extra; j++) {
+      if (pl.ints[j] !== null && pool[pl.ints[j]].ref.indexOf(s) >= 0) { needInt[j] = 1; extra = true; }
+    }
+    if (!extra) for (j = 0; j < 6 && !extra; j++) {
+      for (k = 0; k < pl.rooms[j].length; k++)
+        if (pool[pl.rooms[j][k]].ref.indexOf(s) >= 0) { needRoom[j] = 1; extra = true; break; }
+    }
+    if (extra) n += 1;
+  }
+  return n;
+}
+
+function caseTitle(rng, T) {
+  var noun = TITLE_NOUNS[rng.int(TITLE_NOUNS.length)];
+  if (rng() < 0.5) return "The " + ROOMS[T.r].n + " " + noun;
+  return "The " + TITLE_TIMEWORDS[rng.int(TITLE_TIMEWORDS.length)] + " " + noun;
+}
+
+function generateCase(seed) {
+  var rng = makeRNG(seed >>> 0);
+  var retries = 0, attempt, W, pool, masks, i, acc;
+  for (attempt = 0; attempt < CONFIG.MAX_ATTEMPTS; attempt++) {
+    W = genWorld(rng);
+    pool = genCluePool(W, rng);
+    masks = [];
+    var allTrue = true;
+    for (i = 0; i < pool.length; i++) {
+      if (!clueTrueOf(pool[i], W.truth)) { allTrue = false; break; }
+      masks[pool[i].id] = clueMask(pool[i]);
+    }
+    if (!allTrue) { retries++; continue; }
+    acc = solveMask(pool, masks);
+    if (bitsCount(acc) !== 1 || bitsFirst(acc) !== tupleIndex(W.truth)) { retries++; continue; }
+    var minimal = minimize(pool, masks, rng);
+    if (isMotiveOnly(minimal)) { retries++; continue; }
+    var pl = placeClues(W, pool, minimal, rng);
+    if (!pl) { retries++; continue; }
+    var ma = minActions(pl, pool);
+    if (ma > CONFIG.REACH_BOUND) { retries++; continue; }
+    return {
+      seed: seed >>> 0,
+      title: caseTitle(rng, W.truth),
+      truth: W.truth,
+      world: W,
+      pool: pool,
+      masks: masks,
+      minimal: minimal.map(function (c) { return c.id; }),
+      place: pl,
+      retries: retries,
+      minActions: ma
+    };
+  }
+  return null;
+}
+
+/* ================== 5. SIM: pure state machine ================== */
+
+function newGame(cs) {
+  return {
+    seed: cs.seed,
+    actionsLeft: CONFIG.ACTIONS,
+    searched: [], interviewed: [], pressed: [],
+    found: [],
+    marks: {},
+    status: "play",
+    acc: null,
+    contraId: -1,
+    stars: 0
+  };
+}
+
+function hasFound(st, id) { return st.found.indexOf(id) >= 0; }
+
+function pressUnlocked(cs, st, s) {
+  var i;
+  for (i = 0; i < st.found.length; i++) {
+    if (cs.pool[st.found[i]].ref.indexOf(s) >= 0) return true;
+  }
+  return false;
+}
+
+function markKey(tab, row, col) { return tab + ":" + row + ":" + col; }
+
+function candidateCountFromMarks(marks) {
+  var tabs = ["w", "r", "t"], total = 0, c, ti, x;
+  for (c = 0; c < 6; c++) {
+    var prod = 1;
+    for (ti = 0; ti < 3; ti++) {
+      var allowed = [], yes = [];
+      for (x = 0; x < 6; x++) {
+        var v = marks[markKey(tabs[ti], c, x)];
+        if (v === "n") continue;
+        if (v === "y") yes.push(x);
+        allowed.push(x);
+      }
+      var n = yes.length ? (yes.length === 1 ? 1 : 0) : allowed.length;
+      prod *= n;
+    }
+    total += prod;
+  }
+  return total;
+}
+
+function excludedCells(mask) {
+  var out = { w: [], r: [], t: [] }, c, x, i, any;
+  for (c = 0; c < 6; c++) {
+    for (x = 0; x < 6; x++) {
+      any = false;
+      for (i = ((c * 6 + x) * 36); i < ((c * 6 + x) * 36) + 36 && !any; i++) if (bitsGet(mask, i)) any = true;
+      if (!any) out.w.push(c * 6 + x);
+      any = false;
+      for (var w2 = 0; w2 < 6 && !any; w2++) for (var t2 = 0; t2 < 6 && !any; t2++) {
+        if (bitsGet(mask, ((c * 6 + w2) * 6 + x) * 6 + t2)) any = true;
+      }
+      if (!any) out.r.push(c * 6 + x);
+      any = false;
+      for (var w3 = 0; w3 < 6 && !any; w3++) for (var r3 = 0; r3 < 6 && !any; r3++) {
+        if (bitsGet(mask, ((c * 6 + w3) * 6 + r3) * 6 + x)) any = true;
+      }
+      if (!any) out.t.push(c * 6 + x);
+    }
+  }
+  return out;
+}
+function clueExcludedCells(cl) { return excludedCells(clueMask(cl)); }
+
+function foundMask(cs, st, skipId) {
+  var acc = bitsFull(), i, j, m;
+  for (i = 0; i < st.found.length; i++) {
+    if (st.found[i] === skipId) continue;
+    m = cs.masks[st.found[i]];
+    for (j = 0; j < WORDS; j++) acc[j] &= m[j];
+  }
+  return acc;
+}
+
+/* marginal halo: what THIS clue adds on top of what the player already holds */
+function clueHalo(cs, st, id) {
+  var without = excludedCells(foundMask(cs, st, id));
+  var withIt = excludedCells(bitsAnd(foundMask(cs, st, id), cs.masks[id]));
+  var out = { w: [], r: [], t: [] }, tabs = ["w", "r", "t"], i, k;
+  for (k = 0; k < 3; k++) {
+    var had = {}, tb = tabs[k];
+    for (i = 0; i < without[tb].length; i++) had[without[tb][i]] = 1;
+    for (i = 0; i < withIt[tb].length; i++) if (!had[withIt[tb][i]]) out[tb].push(withIt[tb][i]);
+  }
+  if (!out.w.length && !out.r.length && !out.t.length) {
+    var solo = clueExcludedCells(cs.pool[id]);
+    out = solo;
+  }
+  return out;
+}
+
+function starsFor(actionsLeft) {
+  if (actionsLeft >= CONFIG.STAR3) return 3;
+  if (actionsLeft >= CONFIG.STAR2) return 2;
+  return 1;
+}
+
+function findContradiction(cs, st, guess) {
+  var i, id;
+  for (i = 0; i < st.found.length; i++) {
+    id = st.found[i];
+    if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
+  }
+  var placedIds = placedClueIds(cs);
+  for (i = 0; i < placedIds.length; i++) {
+    id = placedIds[i];
+    if (!cluePasses(cs.pool[id], guess.c, guess.w, guess.r, guess.t)) return id;
+  }
+  for (i = 0; i < cs.pool.length; i++) {
+    if (!cluePasses(cs.pool[i], guess.c, guess.w, guess.r, guess.t)) return i;
+  }
+  return -1;
+}
+
+function placedClueIds(cs) {
+  var out = [], i, k, pl = cs.place;
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) out.push(pl.rooms[i][k]);
+    if (pl.ints[i] !== null) out.push(pl.ints[i]);
+    if (pl.press[i] !== null) out.push(pl.press[i]);
+  }
+  return out;
+}
+
+/* the only mutator. illegal actions are no ops that report why. */
+function step(st, cs, act) {
+  var ev = [], i, ids = [];
+  if (!act || typeof act !== "object") return { state: st, events: [{ e: "invalid", why: "no action" }] };
+  if (st.status !== "play" && act.k !== "reset") {
+    return { state: st, events: [{ e: "invalid", why: "case closed" }] };
+  }
+  switch (act.k) {
+    case "search":
+      if (!(act.r >= 0 && act.r < 6)) { ev.push({ e: "invalid", why: "no such room" }); break; }
+      if (st.searched.indexOf(act.r) >= 0) { ev.push({ e: "invalid", why: "already searched" }); break; }
+      if (st.actionsLeft < CONFIG.COST_SEARCH) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_SEARCH;
+      st.searched.push(act.r);
+      ids = cs.place.rooms[act.r];
+      for (i = 0; i < ids.length; i++) if (!hasFound(st, ids[i])) { st.found.push(ids[i]); ev.push({ e: "clue", id: ids[i] }); }
+      if (!ids.length) ev.push({ e: "nothing", where: "room", r: act.r });
+      break;
+    case "interview":
+      if (!(act.s >= 0 && act.s < 6)) { ev.push({ e: "invalid", why: "no such person" }); break; }
+      if (st.interviewed.indexOf(act.s) >= 0) { ev.push({ e: "invalid", why: "already spoken to" }); break; }
+      if (st.actionsLeft < CONFIG.COST_INTERVIEW) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_INTERVIEW;
+      st.interviewed.push(act.s);
+      if (cs.place.ints[act.s] !== null) {
+        if (!hasFound(st, cs.place.ints[act.s])) { st.found.push(cs.place.ints[act.s]); ev.push({ e: "clue", id: cs.place.ints[act.s] }); }
+      } else ev.push({ e: "nothing", where: "suspect", s: act.s });
+      break;
+    case "press":
+      if (!(act.s >= 0 && act.s < 6)) { ev.push({ e: "invalid", why: "no such person" }); break; }
+      if (st.pressed.indexOf(act.s) >= 0) { ev.push({ e: "invalid", why: "already pressed" }); break; }
+      if (!pressUnlocked(cs, st, act.s)) { ev.push({ e: "invalid", why: "locked" }); break; }
+      if (st.actionsLeft < CONFIG.COST_PRESS) { ev.push({ e: "invalid", why: "no actions left" }); break; }
+      st.actionsLeft -= CONFIG.COST_PRESS;
+      st.pressed.push(act.s);
+      if (cs.place.press[act.s] !== null) {
+        if (!hasFound(st, cs.place.press[act.s])) { st.found.push(cs.place.press[act.s]); ev.push({ e: "clue", id: cs.place.press[act.s] }); }
+        else ev.push({ e: "nothing", where: "press", s: act.s });
+      } else ev.push({ e: "nothing", where: "press", s: act.s });
+      break;
+    case "mark":
+      if (["w", "r", "t"].indexOf(act.tab) < 0) { ev.push({ e: "invalid", why: "no such tab" }); break; }
+      if (!(act.row >= 0 && act.row < 6 && act.col >= 0 && act.col < 6)) { ev.push({ e: "invalid", why: "off board" }); break; }
+      if (["", "y", "n", "q"].indexOf(act.v) < 0) { ev.push({ e: "invalid", why: "no such mark" }); break; }
+      if (act.v === "") delete st.marks[markKey(act.tab, act.row, act.col)];
+      else st.marks[markKey(act.tab, act.row, act.col)] = act.v;
+      ev.push({ e: "mark" });
+      break;
+    case "automark":
+      var cells = excludedCells(foundMask(cs, st, -1)), tabs = ["w", "r", "t"], k;
+      for (k = 0; k < 3; k++) for (i = 0; i < cells[tabs[k]].length; i++) {
+        var cell = cells[tabs[k]][i];
+        st.marks[markKey(tabs[k], Math.floor(cell / 6), cell % 6)] = "n";
+      }
+      ev.push({ e: "mark" });
+      break;
+    case "accuse":
+      if (!(act.c >= 0 && act.c < 6 && act.w >= 0 && act.w < 6 && act.r >= 0 && act.r < 6 && act.t >= 0 && act.t < 6)) {
+        ev.push({ e: "invalid", why: "incomplete accusation" }); break;
+      }
+      st.acc = { c: act.c, w: act.w, r: act.r, t: act.t };
+      if (act.c === cs.truth.c && act.w === cs.truth.w && act.r === cs.truth.r && act.t === cs.truth.t) {
+        st.status = "won";
+        st.stars = starsFor(st.actionsLeft);
+        ev.push({ e: "won", stars: st.stars });
+      } else {
+        st.status = "lost";
+        st.stars = 0;
+        st.contraId = findContradiction(cs, st, st.acc);
+        ev.push({ e: "lost", contraId: st.contraId });
+      }
+      break;
+    default:
+      ev.push({ e: "invalid", why: "unknown action" });
+  }
+  if (st.actionsLeft < 0) st.actionsLeft = 0;
+  return { state: st, events: ev };
+}
+
+function actionsUsed(st) { return CONFIG.ACTIONS - st.actionsLeft; }
+
+/* ================== agents (verification only) ================== */
+
+function greedyAgent(cs, rng) {
+  var st = newGame(cs);
+  var cand = bitsFull(), i, j;
+  function absorb(ev) {
+    for (i = 0; i < ev.length; i++) if (ev[i].e === "clue") {
+      var m = cs.masks[ev[i].id];
+      for (j = 0; j < WORDS; j++) cand[j] &= m[j];
+    }
+  }
+  var guard = 0;
+  while (st.actionsLeft > 0 && guard++ < 200) {
+    if (bitsCount(cand) === 1) break;
+    var basics = [], presses = [], k;
+    for (k = 0; k < 6; k++) if (st.searched.indexOf(k) < 0) basics.push({ k: "search", r: k });
+    for (k = 0; k < 6; k++) if (st.interviewed.indexOf(k) < 0) basics.push({ k: "interview", s: k });
+    for (k = 0; k < 6; k++) if (st.pressed.indexOf(k) < 0 && pressUnlocked(cs, st, k)) presses.push({ k: "press", s: k });
+    var act = null;
+    if (presses.length && st.actionsLeft >= CONFIG.COST_PRESS && rng() < CONFIG.PRESS_BIAS) act = presses[rng.int(presses.length)];
+    else if (basics.length) act = basics[rng.int(basics.length)];
+    else if (presses.length && st.actionsLeft >= CONFIG.COST_PRESS) act = presses[rng.int(presses.length)];
+    if (!act) break;
+    absorb(step(st, cs, act).events);
+  }
+  var list = bitsList(cand);
+  var pickIdx = list.length ? list[rng.int(list.length)] : 0;
+  var guess = tupleFromIndex(pickIdx);
+  step(st, cs, { k: "accuse", c: guess.c, w: guess.w, r: guess.r, t: guess.t });
+  return { solved: st.status === "won", actionsUsed: actionsUsed(st), remaining: list.length };
+}
+
+function perfectAgent(cs) {
+  var st = newGame(cs), pl = cs.place, i, k, need = [];
+  var needRoom = {}, needInt = {}, needPress = [];
+  for (i = 0; i < 6; i++) {
+    for (k = 0; k < pl.rooms[i].length; k++) if (pl.minIds[pl.rooms[i][k]]) needRoom[i] = 1;
+    if (pl.ints[i] !== null && pl.minIds[pl.ints[i]]) needInt[i] = 1;
+    if (pl.press[i] !== null && pl.minIds[pl.press[i]]) needPress.push(i);
+  }
+  for (i = 0; i < needPress.length; i++) {
+    var s = needPress[i], found = false;
+    for (k = 0; k < 6 && !found; k++) {
+      if (needInt[k] && pl.ints[k] !== null && cs.pool[pl.ints[k]].ref.indexOf(s) >= 0) found = true;
+      if (needRoom[k]) { var q; for (q = 0; q < pl.rooms[k].length; q++) if (cs.pool[pl.rooms[k][q]].ref.indexOf(s) >= 0) found = true; }
+    }
+    if (found) continue;
+    for (k = 0; k < 6 && !found; k++) if (pl.ints[k] !== null && cs.pool[pl.ints[k]].ref.indexOf(s) >= 0) { needInt[k] = 1; found = true; }
+    for (k = 0; k < 6 && !found; k++) { var q2; for (q2 = 0; q2 < pl.rooms[k].length; q2++) if (cs.pool[pl.rooms[k][q2]].ref.indexOf(s) >= 0) { needRoom[k] = 1; found = true; break; } }
+  }
+  for (i in needRoom) step(st, cs, { k: "search", r: +i });
+  for (i in needInt) step(st, cs, { k: "interview", s: +i });
+  for (i = 0; i < needPress.length; i++) step(st, cs, { k: "press", s: needPress[i] });
+  var cand = foundMask(cs, st, -1);
+  var list = bitsList(cand);
+  var guess = tupleFromIndex(list.length ? list[0] : 0);
+  step(st, cs, { k: "accuse", c: guess.c, w: guess.w, r: guess.r, t: guess.t });
+  return { solved: st.status === "won", actionsUsed: actionsUsed(st), remaining: list.length };
+}
+
+/* string level sanity: text must render clean and never contradict the truth */
+function textSanity(cs) {
+  var i, problems = [];
+  for (i = 0; i < cs.pool.length; i++) {
+    var cl = cs.pool[i], s = clueText(cl);
+    if (!clueTrueOf(cl, cs.truth)) problems.push("clue " + i + " false of truth");
+    if (s.indexOf("{") >= 0 || s.indexOf("}") >= 0) problems.push("clue " + i + " unfilled slot");
+    if (/[-‐‑‒–—]/.test(s)) problems.push("clue " + i + " dash in copy");
+    if (s.length < 8) problems.push("clue " + i + " empty text");
+    var must = clueSubjects(cl);
+    for (var j = 0; j < must.length; j++) if (s.indexOf(must[j]) < 0) problems.push("clue " + i + " text drops " + must[j]);
+  }
+  return problems;
+}
+function clueSubjects(cl) {
+  var p = cl.p;
+  switch (cl.ty) {
+    case 1: return [SUSPECTS[p.s].n, ROOMS[p.r].n, TIMES[p.t]];
+    case 2: return [WEAPONS[p.w].n, SUSPECTS[p.s].n, ROOMS[p.r].n];
+    case 3: return [ROOMS[p.r].n];
+    case 4: return [ROOMS[p.r].n, TIMES[p.t], DESCS[p.a][p.v ? 1 : 0]];
+    case 5: return [ROOMS[p.r].n, ROOMS[p.r].sub];
+    case 6: return [TIMES[p.t]];
+    case 7: return [CLASSWORD[p.cls]];
+    case 8: return p.k === "none" ? [SUSPECTS[p.s].n] : [SUSPECTS[p.set[0]].n];
+    case 9: return p.t < 0 ? [SUSPECTS[p.a].n, SUSPECTS[p.b].n] : [SUSPECTS[p.a].n, SUSPECTS[p.b].n, TIMES[p.t]];
+    case 10: return [ROOMS[p.r].n, TIMES[p.t]];
+    case 11: return [TIMES[p.lo], TIMES[p.hi], EVENTS[p.e1], EVENTS[p.e2]];
+    case 12: return p.k === "weapon" ? [WEAPONS[p.w].n] : [ROOMS[p.r].n];
+  }
+  return [];
+}
+
+/* serialisation for save and resume: a case is only its seed */
+function serializeState(st) {
+  return {
+    seed: st.seed, actionsLeft: st.actionsLeft,
+    searched: st.searched.slice(), interviewed: st.interviewed.slice(), pressed: st.pressed.slice(),
+    found: st.found.slice(), marks: JSON.parse(JSON.stringify(st.marks)),
+    status: st.status, acc: st.acc ? { c: st.acc.c, w: st.acc.w, r: st.acc.r, t: st.acc.t } : null,
+    contraId: st.contraId, stars: st.stars
+  };
+}
+function deserializeState(o, cs) {
+  var st = newGame(cs);
+  if (!o || typeof o !== "object") return st;
+  var n = function (v, d) { return (typeof v === "number" && isFinite(v)) ? v : d; };
+  var arr = function (v) {
+    if (!v || typeof v.length !== "number") return [];
+    var out = [], i;
+    for (i = 0; i < v.length; i++) if (typeof v[i] === "number" && v[i] >= 0) out.push(v[i]);
+    return out;
+  };
+  st.actionsLeft = Math.max(0, Math.min(CONFIG.ACTIONS, n(o.actionsLeft, CONFIG.ACTIONS)));
+  st.searched = arr(o.searched); st.interviewed = arr(o.interviewed); st.pressed = arr(o.pressed);
+  st.found = arr(o.found).filter(function (id) { return id < cs.pool.length; });
+  st.marks = {};
+  if (o.marks && typeof o.marks === "object") {
+    for (var k in o.marks) if (/^[wrt]:[0-5]:[0-5]$/.test(k) && ["y", "n", "q"].indexOf(o.marks[k]) >= 0) st.marks[k] = o.marks[k];
+  }
+  st.status = ["play", "won", "lost"].indexOf(o.status) >= 0 ? o.status : "play";
+  st.acc = (o.acc && typeof o.acc === "object") ? { c: n(o.acc.c, 0), w: n(o.acc.w, 0), r: n(o.acc.r, 0), t: n(o.acc.t, 0) } : null;
+  st.contraId = n(o.contraId, -1);
+  st.stars = n(o.stars, 0);
+  return st;
+}
+// ---- SIM_EXPORT_END ----
+//@@PART2@@
+</script>
+</body>
+</html>
