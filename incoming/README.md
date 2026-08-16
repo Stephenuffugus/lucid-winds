@@ -1,8 +1,15 @@
 # INCOMING — three planned builds (handoff to the Opus build session)
 
-Planned 2026-08-16 by the Fable planning session with Stephen. Three project
-drops from Claude Chat, each audited against its source and given a
-BUILD-PLAN.md with locked decisions and gated phases.
+Planned 2026-08-16 by the Fable planning session with Stephen; deepened to
+implementation level the same night (plans are v2). Three project drops from
+Claude Chat, each audited against its source at line level and given a
+BUILD-PLAN.md with locked decisions, function-level specs, and gated phases.
+
+**Read `PORTAL-CONTRACT.md` (this folder) before wiring anything to the
+portal** — it is the integration contract verified against the LIVE portal
+code on 2026-08-16 (game cards are framed + need the sws:ready protocol;
+Free Apps shelf is direct links with no bridge). The old NEW_SATELLITE_BRIEF
+is stale; never build to it.
 
 ## The rule of the night: ONE PROJECT AT A TIME
 
@@ -15,14 +22,23 @@ the next. Never two projects mid-flight — the codespace can stop at any time.
 ## Build order (locked default)
 
 1. **`bandits-box/`** — ASMR quiet-fidget app, 21 toys, friction engine.
-   Stephen's priority. Landmines: `window.storage` is an artifact-sandbox
-   API (settings silently do not persist in real browsers).
-2. **`hush/`** — evidence-honest sleep-sound PWA, five versions deep.
-   Landmines: its sw.js deletes every cache on the origin (would black-screen
-   the fleet), PWA identity collision. Fix before ANY deploy.
+   Stephen's priority. Ships framed on the arcade grid (embed protocol
+   required). Landmines: `window.storage` is an artifact-sandbox API
+   (settings silently do not persist in real browsers); the switch wall
+   bypasses the `feel()` dispatch. `SFX-SHOT-LIST.md` in the folder is
+   Stephen's foley recording guide — the sample-first pipeline is already
+   wired, it just has no recordings.
+2. **`hush/`** — evidence-honest sleep-sound PWA, five versions deep. Ships
+   at `/hush/` on the Free Apps shelf (direct link, no bridge). Landmines:
+   its sw.js deletes every cache on the origin (would black-screen the
+   fleet), PWA identity collision — fix before ANY deploy. The audit tests
+   its handoff cites did NOT ship; phase B rebuilds them from the stated
+   invariants (all enumerated in the plan).
 3. **`marblebeat/`** — marble-drop polyrhythm sequencer, merges INTO PadLab
-   as a 4th tab (visualizer + instrument). All merge seams verified against
-   both sources; the timing math is grid-exact.
+   as a 4th "Marble" tab (instrument + "Show my beat" ghost visualizer).
+   Merge is specced at function level: `marbleTick` inside `schedulerTick`,
+   voices reparented to drumBus/instrBus, state v3→v4, `mb-` id prefixes
+   (`app`/`playBtn` collide), hidden-canvas resize on tab switch.
 
 Each folder: the original drop (spec/handoff/research + prototype) plus
 `BUILD-PLAN.md`. Read the BUILD-PLAN first; it tells you the reading order
