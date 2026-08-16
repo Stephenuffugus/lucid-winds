@@ -133,6 +133,9 @@ Left as findings rather than silently restyled, because both are art or layout c
 - **Petal Plunge shows a keyboard hint on a phone.** "left right carve · down tuck · space =
   trick · P = pause" renders across the middle of the slope at 375x667, telling a touch player
   to press four keys their device does not have.
+- **Petal Plunge's in game HUD bleeds through its title screen.** A pause button and two score
+  chips are visible, dimmed, along the top edge behind the menu. Same class as The Attic's
+  overlay: chrome from one screen showing through another.
 - **Blobworks (greenhouse-pinball) draws its shot rails outside the table.** The ramp and orbit paths
   render as bright outlined ribbons over the painted art, crossing above the rollovers onto the
   slate, and at the bottom running off the playfield across the cabinet and the corner screws.
