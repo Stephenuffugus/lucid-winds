@@ -776,6 +776,7 @@ group('9. Economy sanity');
 check('blight pays more per harvest than radiance at equal charge', () => {
   const b = boot();
   b.T._run('startGame(true)');
+  b.T.run.contracts = []; // contract payouts would pollute the measurement
   const mk = (v) => {
     b.T.run.essence = 0; b.T.run.focus = 100;
     b.T.run.npcs.p1.state = 'idle'; b.T.run.npcs.p1.v = v; b.T.run.npcs.p1.i = 0.8;
@@ -815,9 +816,10 @@ check('the harvest button estimate matches what harvest actually pays', () => {
   const n = b.T.run.npcs.p4;
   n.state = 'idle'; n.v = 0.8; n.i = 0.8; n.peak = 3;
   b.T.run.combo = 4; b.T.run.lastSign = 1; b.T.run.focus = 100;
-  const btn = b.doc.createElement('button');
-  b.T._run('refreshHarvestBtn(' + 'arguments[0]' + ', run.npcs.p4)', btn);
-  const shown = parseInt((btn.innerHTML.match(/~(\d+)✦/) || [])[1], 10);
+  b.T.run.contracts = [];
+  const shown = parseInt(b.T._run(
+    'var __b = document.createElement("button"); refreshHarvestBtn(__b, run.npcs.p4); __b.innerHTML'
+  ).match(/~(\d+)✦/)[1], 10);
   const e0 = b.T.run.essence;
   b.T._run('harvest()');
   const actual = b.T.run.essence - e0;
@@ -845,9 +847,11 @@ check('the toast rail can hold a whole day announcement', () => {
 check('every onclick in the markup resolves to a real function', () => {
   const b = boot({ framed: true });
   const handlers = new Set();
-  for (const m of HTML.matchAll(/onclick="([a-zA-Z_$][\w$]*)\(/g)) handlers.add(m[1]);
-  for (const m of SRC.matchAll(/onclick=\\?["']([a-zA-Z_$][\w$]*)\(/g)) handlers.add(m[1]);
-  for (const m of SRC.matchAll(/onclick="\$\{[^}]*\}?([a-zA-Z_$][\w$]*)\(/g)) handlers.add(m[1]);
+  /* Grab each onclick attribute value, then every call inside it. That covers
+     the `onclick="${cond?'a()':'b()'}"` shape the modals use. */
+  for (const m of HTML.matchAll(/onclick="([^"]*)"/g)) {
+    for (const c of m[1].matchAll(/([a-zA-Z_$][\w$]*)\s*\(/g)) handlers.add(c[1]);
+  }
   ok(handlers.size > 8, 'found suspiciously few handlers: ' + handlers.size);
   for (const h of handlers) {
     ok(b.T._has(h) || typeof b.ctx[h] === 'function', 'onclick="' + h + '()" is not defined');

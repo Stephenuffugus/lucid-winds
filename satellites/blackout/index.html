@@ -204,19 +204,19 @@ var CONFIG = Object.freeze({
 var TIERS = {
   short: Object.freeze({
     key: "short", name: "Quick case", brief: "A short one. Fewer steps, fewer hours.",
-    actions: 14, lo: 6, hi: 10, target: 8, noiseLo: 4, noiseHi: 8, reach: 12,
+    proof: "short", actions: 16, lo: 6, hi: 12, target: 9, noiseLo: 4, noiseHi: 8, reach: 12,
     press: 1, exact: true, roomSlots: 2,
-    liar: Object.freeze({ actions: 19, lo: 9, hi: 14, target: 12, reach: 14, roomSlots: 3, noiseLo: 3, noiseHi: 7 }),
+    liar: Object.freeze({ actions: 20, lo: 12, hi: 21, target: 16, reach: 14, roomSlots: 3, noiseLo: 3, noiseHi: 7 }),
     pool: Object.freeze({
-      alibi: 6, own: 5, access: 2, sight: 3, trace: 2, timeline: 3,
-      wtrace: 3, motive: 2, pair: 1, negative: 3, sequence: 1, object: 6
+      alibi: 4, own: 6, access: 2, sight: 2, trace: 2, timeline: 4,
+      wtrace: 4, motive: 2, pair: 0, negative: 4, sequence: 1, object: 8
     })
   }),
   standard: Object.freeze({
     key: "standard", name: "Standard case", brief: "The usual evening.",
-    actions: 20, lo: 8, hi: 14, target: 11, noiseLo: 6, noiseHi: 12, reach: 16,
+    proof: "mid", actions: 20, lo: 8, hi: 14, target: 11, noiseLo: 6, noiseHi: 12, reach: 16,
     press: 2, exact: false, roomSlots: 2,
-    liar: Object.freeze({ actions: 24, lo: 12, hi: 19, target: 16, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
+    liar: Object.freeze({ actions: 24, lo: 13, hi: 22, target: 18, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
       alibi: 12, own: 6, access: 2, sight: 8, trace: 2, timeline: 4,
       wtrace: 3, motive: 3, pair: 3, negative: 4, sequence: 1, object: 4
@@ -224,12 +224,12 @@ var TIERS = {
   }),
   long: Object.freeze({
     key: "long", name: "Long case", brief: "A long night. More people, more talk.",
-    actions: 25, lo: 12, hi: 18, target: 15, noiseLo: 6, noiseHi: 12, reach: 16,
+    proof: "long", actions: 25, lo: 10, hi: 17, target: 13, noiseLo: 6, noiseHi: 12, reach: 16,
     press: 2, exact: false, roomSlots: 3,
-    liar: Object.freeze({ actions: 28, lo: 14, hi: 21, target: 17, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
+    liar: Object.freeze({ actions: 28, lo: 15, hi: 24, target: 20, reach: 16, roomSlots: 3, noiseLo: 4, noiseHi: 9 }),
     pool: Object.freeze({
-      alibi: 18, own: 6, access: 2, sight: 14, trace: 2, timeline: 3,
-      wtrace: 2, motive: 4, pair: 4, negative: 3, sequence: 1, object: 2
+      alibi: 20, own: 6, access: 2, sight: 16, trace: 2, timeline: 2,
+      wtrace: 2, motive: 4, pair: 5, negative: 2, sequence: 1, object: 1
     })
   })
 };
@@ -240,7 +240,7 @@ function tierOf(key) { return TIERS[key] || TIERS.standard; }
 function modeOf(tierKey, liar) {
   var t = tierOf(tierKey), L = t.liar;
   var M = {
-    key: t.key, name: t.name, liar: !!liar, pool: t.pool, exact: t.exact, press: t.press,
+    key: t.key, name: t.name, liar: !!liar, pool: t.pool, exact: t.exact, press: t.press, proof: t.proof,
     actions: t.actions, lo: t.lo, hi: t.hi, target: t.target, reach: t.reach,
     roomSlots: t.roomSlots, noiseLo: t.noiseLo, noiseHi: t.noiseHi
   };
@@ -1539,16 +1539,21 @@ function allTitles() {
    different valid minimal sets, all of which still prove the same single
    solution. So try a few orders and keep one inside the tier's band. This
    chooses AMONG proofs, it never weakens one. */
-function chooseProof(makeOne, M) {
-  var best = null, bestGap = 1e9, pass, cand, gap;
-  for (pass = 0; pass < 5; pass++) {
-    cand = makeOne();
-    if (cand.length >= M.lo && cand.length <= M.hi) return cand;
-    gap = Math.abs(cand.length - M.target);
-    if (gap < bestGap) { bestGap = gap; best = cand; }
+function chooseProof(makeOne, M, passes) {
+  var cands = [], i, pick, out, n = passes || 5;
+  for (i = 0; i < n; i++) cands.push(makeOne());
+  var inb = [];
+  for (i = 0; i < cands.length; i++) if (cands[i].length >= M.lo && cands[i].length <= M.hi) inb.push(cands[i]);
+  pick = inb.length ? inb : cands;
+  out = pick[0];
+  for (i = 1; i < pick.length; i++) {
+    if (M.proof === "long") { if (pick[i].length > out.length) out = pick[i]; }
+    else if (M.proof === "short") { if (pick[i].length < out.length) out = pick[i]; }
+    else if (Math.abs(pick[i].length - M.target) < Math.abs(out.length - M.target)) out = pick[i];
   }
-  return best;
+  return out;
 }
+
 function hasId(list, id) {
   var i;
   for (i = 0; i < list.length; i++) if (list[i].id === id) return true;
@@ -1587,12 +1592,12 @@ function generateCase(seed, opts) {
       if (!lcl) { no("dupLie"); retries++; continue; }
       masks[lcl.id] = clueMask(lcl);
       lieInfo = { id: lcl.id, speaker: lie.speaker, ty: lie.ty };
-      if (!liarReinforce(W, pool, seenKeys, masks, rng, 200)) { no("reinforce"); retries++; continue; }
+      if (!liarReinforce(W, pool, seenKeys, masks, rng, 84)) { no("reinforce"); retries++; continue; }
       if (!liarProved(pool, masks, truthIdx)) { no("notProved"); retries++; continue; }
-      minimal = chooseProof(function () { return minimizeLiar(pool, masks, rng, truthIdx); }, M);
+      minimal = chooseProof(function () { return minimizeLiar(pool, masks, rng, truthIdx); }, M, 4);
       if (!minimal || !hasId(minimal, lieInfo.id)) { no("lieDropped"); retries++; continue; }
     } else {
-      minimal = chooseProof(function () { return minimize(pool, masks, rng); }, M);
+      minimal = chooseProof(function () { return minimize(pool, masks, rng); }, M, 8);
     }
     if (isMotiveOnly(minimal)) { no("motiveOnly"); retries++; continue; }
     var pl = placeClues(W, pool, minimal, rng, M, lieInfo);
@@ -1953,16 +1958,23 @@ function perfectAgent(cs) {
 
 /* string level sanity: text must render clean and never contradict the truth */
 function textSanity(cs) {
-  var i, problems = [];
+  var i, problems = [], lieId = (cs.liar && cs.lie) ? cs.lie.id : -1, falses = 0;
   for (i = 0; i < cs.pool.length; i++) {
     var cl = cs.pool[i], s = clueText(cl);
-    if (!clueTrueOf(cl, cs.truth)) problems.push("clue " + i + " false of truth");
+    /* Exactly one clue is allowed to be false, and only in a liar case, and
+       only the one the generator declared. Everything else is a defect. */
+    if (!clueTrueOf(cl, cs.truth)) {
+      falses++;
+      if (cl.id !== lieId) problems.push("clue " + i + " false of truth");
+    }
     if (s.indexOf("{") >= 0 || s.indexOf("}") >= 0) problems.push("clue " + i + " unfilled slot");
     if (/[-‐-―]/.test(s)) problems.push("clue " + i + " dash in copy");
     if (s.length < 8) problems.push("clue " + i + " empty text");
     var must = clueSubjects(cl);
     for (var j = 0; j < must.length; j++) if (s.indexOf(must[j]) < 0) problems.push("clue " + i + " text drops " + must[j]);
   }
+  if (lieId >= 0 && falses !== 1) problems.push("a liar case holds " + falses + " false clues, not one");
+  if (lieId < 0 && falses !== 0) problems.push("an honest case holds " + falses + " false clues");
   return problems;
 }
 function clueSubjects(cl) {

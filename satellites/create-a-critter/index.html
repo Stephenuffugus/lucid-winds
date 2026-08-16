@@ -91,7 +91,8 @@
   #row2{ display:flex; gap:6px; align-items:center; }
   #pinned{ display:flex; gap:6px; flex:none; }
   .chipbtn{ min-width:48px; min-height:48px; width:48px; height:48px; font-size:1.25rem; flex:none; }
-  .swatch{ width:42px; height:42px; min-width:42px; border-radius:50%; border:3px solid #fff;
+  /* 48px minimum touch target, measured rendered at 375x667 */
+  .swatch{ width:48px; height:48px; min-width:48px; border-radius:50%; border:3px solid #fff;
     box-shadow:0 0 0 2px var(--line); flex:none; }
   .swatch.sel{ box-shadow:0 0 0 3px var(--coral); transform:scale(1.1); }
   .sizedot{ border-radius:50%; background:var(--ink); display:inline-block; }
@@ -288,9 +289,9 @@
     <div id="seasonFx" style="position:absolute; inset:0; pointer-events:none; overflow:hidden"></div>
     <div id="bubble"></div>
     <div id="stageHint">Tap your buddy for a trick! Drag to spin around.</div>
-    <button id="visitorBadge" style="display:none; position:absolute; right:10px; bottom:44px; z-index:6; background:#fffdf8; border-radius:999px; padding:9px 14px; font:800 0.95rem ui-rounded,sans-serif; color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.2)">🐾 Visitor!</button>
+    <button id="visitorBadge" style="display:none; position:absolute; right:10px; bottom:44px; z-index:6; background:#fffdf8; border-radius:999px; padding:14px 18px; min-height:48px; font:800 0.95rem ui-rounded,sans-serif; color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.2)">🐾 Visitor!</button>
     <button id="paradeExit" class="bigbtn ghost" style="display:none; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:auto; padding:10px 26px; min-height:52px; z-index:9">🎪 End the parade</button>
-    <div id="berryHud"><span id="berryScore">🍓 0</span><span id="berryTime">⏱ 0:45</span><button id="berryQuit" style="pointer-events:auto; background:rgba(255,253,248,.92); border-radius:999px; width:40px; height:40px; font-weight:900; font-size:1.05rem; box-shadow:0 3px 10px rgba(0,0,0,.15); color:var(--ink)">✖</button></div>
+    <div id="berryHud"><span id="berryScore">🍓 0</span><span id="berryTime">⏱ 0:45</span><button id="berryQuit" style="pointer-events:auto; background:rgba(255,253,248,.92); border-radius:999px; width:48px; height:48px; font-weight:900; font-size:1.05rem; box-shadow:0 3px 10px rgba(0,0,0,.15); color:var(--ink)">✖</button></div>
     <div id="berryEnd"><div class="card">
       <h2 id="berryEndTitle">🎉 Berry Picnic!</h2>
       <div class="bigscore" id="berryFinal"></div>
@@ -315,6 +316,7 @@
       <button class="actbtn mini" id="actGuide">📖 Guide</button>
       <button class="actbtn mini" id="actDress">🎩 Dress Up</button>
       <button class="actbtn mini" id="actFace">👀 Face</button>
+      <button class="actbtn mini" id="actRedraw">🖌️ Redraw</button>
       <button class="actbtn mini" id="actStitch">🪡 Stitches</button>
       <button class="actbtn mini" id="actTuck" style="display:none">🌙 Tuck in</button>
       <button class="actbtn mini" id="actRoom">🛋️ Room</button>
@@ -1019,7 +1021,7 @@ function buildRigData(built){
 var N_START=['Blor','Flum','Grib','Snor','Wuz','Plim','Bloo','Zib','Mo','Twee','Squi','Pip','Dro','Hib','Yon','Fluff','Bum','Wig','Nib','Toz','Gla','Ple','Mun','Sni'];
 var N_MID=['ba','po','ni','ta','lo','mi','doo','ra','fu','zzle','ble','ki',''];
 var N_END=['loo','bit','puff','kin','noodle','bean','pip','zle','bop','wump','fin','doo','sy','muffin','pod','whirl'];
-var SOUNDS=['Blorp!','Wheee!','Squibble!','Toot-toot!','Mrrp!','Boing!','Piffle!','Womp!','Chirrup!','Snorfle!','Beep-bip!','Fwoosh!'];
+var SOUNDS=['Blorp!','Wheee!','Squibble!','Toot toot!','Mrrp!','Boing!','Piffle!','Womp!','Chirrup!','Snorfle!','Beep bip!','Fwoosh!','Zoink!','Bubbadoo!','Sprong!','Yipyip!'];
 var COLOR_WORDS={red:'cherry red',orange:'sunny orange',yellow:'buttery yellow',green:'leafy green',blue:'berry blue',purple:'plummy purple',pink:'petal pink',brown:'cocoa brown',dark:'inky'};
 var COLOR_PERS={red:'bold and bouncy',orange:'giggly and warm',yellow:'sunny and silly',green:'calm and kind',blue:'dreamy and gentle',purple:'curious and clever',pink:'sweet and snuggly',brown:'cozy and steady',dark:'brave and mysterious'};
 var HABITATS=[
@@ -1096,7 +1098,7 @@ var PAPER=1024;
 var paper=$('paper'); paper.width=PAPER; paper.height=PAPER;
 var pctx=paper.getContext('2d');
 var PALETTE=['#3d2f55','#e64a3c','#f2903a','#f7cf46','#69b45a','#2f8f68','#4a90d9','#7a5fd0','#e86fa8','#8a5a34','#9aa2ad','#ffffff'];
-var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null, tex:null };
+var brush={ color:PALETTE[0], size:14, tool:'pen', rainbow:false, stamp:null, stampGroup:null, tex:null };
 var rainbowHue=0;
 var undoStack=[], redoStack=[], drawnAnything=false;
 /* living-face features: stamped eyes/mouths remembered by position so the
@@ -1411,9 +1413,14 @@ function buildPalette(){
     b.addEventListener('click',function(){
       brush.color=c; brush.tool='pen'; brush.rainbow=false;
       document.querySelectorAll('.swatch').forEach(function(s){s.classList.remove('sel');});
-      var keepStamp=brush.stamp;              /* picking a color re-tints stamps */
+      /* picking a color re-tints an armed sticker, so the sticker STAYS
+         armed; its group button has to light back up or the kid taps
+         expecting a line and gets a stamp with nothing looking selected */
+      var keepStamp=brush.stamp, keepGroup=brush.stampGroup, keepTex=brush.tex;
       clearToolSel();
-      if(keepStamp){ var sb=document.querySelector('[data-stamp="'+keepStamp+'"]'); if(sb) sb.classList.add('sel'); }
+      brush.stamp=keepStamp; brush.stampGroup=keepGroup; brush.tex=keepTex;
+      var back=keepStamp?keepGroup:(keepTex?'texture':null);
+      if(back){ var gb3=document.querySelector('[data-group="'+back+'"]'); if(gb3) gb3.classList.add('sel'); }
       b.classList.add('sel');
       SFX.tap();
     });
@@ -1424,7 +1431,7 @@ buildPalette();
 
 var SIZES=[6,14,30], sizeIx=1;
 $('toolSize').addEventListener('click',function(){
-  if(brush.stamp||brush.tex){ clearToolSel(); brush.stamp=null; brush.tex=null; brush.tool='pen'; }
+  if(brush.stamp||brush.tex){ clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null; brush.tool='pen'; }
   sizeIx=(sizeIx+1)%SIZES.length;
   brush.size=SIZES[sizeIx];
   var d=$('toolSize').querySelector('.sizedot');
@@ -1432,15 +1439,10 @@ $('toolSize').addEventListener('click',function(){
   d.style.width=px+'px'; d.style.height=px+'px';
   SFX.tap();
 });
-document.querySelectorAll('[data-tex]').forEach(function(b){
-  b.addEventListener('click',function(){
-    var key=b.getAttribute('data-tex');
-    var on = brush.tex!==key;
-    clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tool='pen'; brush.tex=null;
-    if(on){ brush.tex=key; b.classList.add('sel'); }
-    SFX.tap();
-  });
-});
+/* (texture buttons live in the 🎨 flyout and are wired in openFly. There used
+   to be a [data-tex] wiring block here that matched nothing at all: no element
+   in this app has ever carried that attribute. Removed so the next reader does
+   not trust it.) */
 $('zoomIn').addEventListener('click',function(){ zoomAt(view.side/2,view.side/2,1.6); SFX.tap(); });
 $('zoomOut').addEventListener('click',function(){
   if(view.scale<=1.65){ view.scale=1; view.ox=0; view.oy=0; applyView(); }
@@ -1449,19 +1451,19 @@ $('zoomOut').addEventListener('click',function(){
 });
 $('toolErase').addEventListener('click',function(){
   var on = brush.tool!=='erase';
-  clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tex=null;
+  clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'erase':'pen';
   $('toolErase').classList.toggle('sel',on); SFX.tap();
 });
 $('toolFill').addEventListener('click',function(){
   var on = brush.tool!=='fill';
-  clearToolSel(); brush.stamp=null; brush.rainbow=false; brush.tex=null;
+  clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.rainbow=false; brush.tex=null;
   brush.tool = on?'fill':'pen';
   $('toolFill').classList.toggle('sel',on); SFX.tap();
 });
 $('toolRainbow').addEventListener('click',function(){
   var on = !brush.rainbow;
-  clearToolSel(); brush.stamp=null; brush.tex=null; brush.tool='pen';
+  clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tex=null; brush.tool='pen';
   brush.rainbow = on;
   $('toolRainbow').classList.toggle('sel',on); SFX.tap();
 });
@@ -1504,7 +1506,7 @@ function openFly(groupId){
       b2.className='flybtn'+(brush.tex===key?' sel':'');
       b2.appendChild(texPreview(key));
       b2.addEventListener('click',function(){
-        clearToolSel(); brush.rainbow=false; brush.stamp=null; brush.tool='pen';
+        clearToolSel(); brush.rainbow=false; brush.stamp=null; brush.stampGroup=null; brush.tool='pen';
         brush.tex=key;
         var gb2=document.querySelector('[data-group="texture"]');
         if(gb2) gb2.classList.add('sel');
@@ -1525,7 +1527,7 @@ function openFly(groupId){
     b.appendChild(stickerPreview(id));
     b.addEventListener('click',function(){
       clearToolSel(); brush.rainbow=false; brush.tex=null; brush.tool='pen';
-      brush.stamp=id;
+      brush.stamp=id; brush.stampGroup=groupId;
       var gb=document.querySelector('[data-group="'+groupId+'"]');
       if(gb) gb.classList.add('sel');
       SFX.tap();
@@ -1541,8 +1543,8 @@ document.querySelectorAll('[data-group]').forEach(function(b){
     var wasOpen = flyOpenGroup===gid;
     var hadSel = (brush.stamp||brush.tex) && b.classList.contains('sel');
     var keepStamp=brush.stamp, keepTex=brush.tex;
-    clearToolSel(); brush.rainbow=false; brush.tool='pen'; brush.stamp=null; brush.tex=null;
-    if(hadSel){ brush.stamp=keepStamp; brush.tex=keepTex; b.classList.add('sel'); }
+    clearToolSel(); brush.rainbow=false; brush.tool='pen'; brush.stamp=null; brush.stampGroup=null; brush.tex=null;
+    if(hadSel){ brush.stamp=keepStamp; brush.stampGroup=keepStamp?gid:null; brush.tex=keepTex; b.classList.add('sel'); }
     if(wasOpen){ SFX.tap(); return; }
     openFly(gid); SFX.tap();
   });
@@ -1582,6 +1584,7 @@ function startGuide(){
 $('wizNext').addEventListener('click',function(){
   SFX.tap();
   if(roomEdit){ finishRoomEdit(); return; }
+  if(editing){ finishEdit(); return; }
   if(guide.step===0){
     if(!drawnAnything){ SFX.oops(); wiggle($('vp')); return; }
     guide.step=1;
@@ -1592,7 +1595,7 @@ $('wizNext').addEventListener('click',function(){
     wizPaint();
   } else if(guide.step===1){
     guide.step=2;
-    clearToolSel(); brush.stamp=null; brush.tool='pen';
+    clearToolSel(); brush.stamp=null; brush.stampGroup=null; brush.tool='pen';
     wizPaint();
   } else {
     bringToLife();
@@ -2508,7 +2511,8 @@ function endToss(){
   toss.items=[];
   $('berryHud').style.display='none';
   var newBest=toss.score>toss.best;
-  if(newBest){ toss.best=toss.score; lsSet('cac_toss_best',String(toss.best)); }
+  toss.best=lsMax('cac_toss_best',Math.max(toss.best,toss.score));
+  newBest = newBest && toss.best===toss.score;
   $('berryEndTitle').textContent='🍯 Snack Toss!';
   $('berryFinal').textContent='🍯 '+toss.score+' points!';
   $('berryBestLine').textContent=newBest?'A new best! Amazing!':'Your best so far: '+toss.best;
@@ -3082,7 +3086,7 @@ function toastHatch(msg){ say._n=say._n||0; var b=$('bubble'); /* reuse result b
 function openFromNursery(rec){
   switchScreen('hatch');
   $('hatchEgg').textContent='🪺';
-  $('hatchMsg').textContent=rec.name+' is waking up…';
+  $('hatchMsg').textContent=(rec.name||'Your critter')+' is waking up…';
   /* the hatch screen has no buttons on it, so every way out of here has to
      land somewhere the player can act: honest message, back to the nursery */
   loadDrawing(rec.drawing,function(cv,sil){
@@ -3090,7 +3094,10 @@ function openFromNursery(rec){
     if(critter){ scene.remove(critter); critter=null; }
     critter=buildCritterMesh(cv,sil,rec.feats||[],rec.limbs||[]); orbit.baseRotY=0; scene.add(critter);
     orbit.yaw=0.5; orbit.pitch=0.42; orbit.dist=5.0;
-    CUR={ id:rec.id, profile:rec.profile, sil:sil, drawing:rec.drawing,
+    /* a record whose field guide got damaged is rebuilt from the drawing
+       itself rather than crashing on the way in; same drawing, same critter */
+    var prof=(rec.profile&&rec.profile.foods&&rec.profile.name)?rec.profile:makeProfile(sil,rec.name||null);
+    CUR={ id:rec.id, profile:prof, sil:sil, drawing:rec.drawing,
           created:rec.created, care:decayCare(rec.care||{}), acc:rec.acc||null,
           feats:rec.feats||[], limbs:rec.limbs||[],
           habitDays:rec.habitDays||[], habitDance:!!rec.habitDance,
@@ -3323,11 +3330,26 @@ function startRoomEdit(){
   $('goRow').style.display='none';
   switchScreen('draw');
 }
+/* Leaving the room easel by the back arrow used to leave roomEdit switched
+   ON: the bring to life button stayed hidden forever and the next drawing a
+   kid made was saved as WALLPAPER. Every exit now comes through here. */
+function cancelRoomEdit(){
+  if(!roomEdit) return false;
+  roomEdit=false;
+  if(savedPaper){ try{ pctx.putImageData(savedPaper,0,0); }catch(e){ clearPaper(); } savedPaper=null; }
+  else clearPaper();
+  FEATS=savedFeats||[]; savedFeats=null;
+  undoStack.length=0; redoStack.length=0;
+  $('goRow').style.display='';
+  $('wizBar').style.display='none';
+  $('wizNext').textContent='Next ➜';
+  return true;
+}
 function finishRoomEdit(){
   var cv=document.createElement('canvas'); cv.width=cv.height=768;
   cv.getContext('2d').drawImage(paper,0,0,768,768);
   ROOM.url=cv.toDataURL('image/png');
-  lsSet('cac_room',ROOM.url);
+  if(!lsSet('cac_room',ROOM.url)) saveTrouble('room');
   if(savedPaper){ pctx.putImageData(savedPaper,0,0); savedPaper=null; }
   else clearPaper();
   FEATS=savedFeats||[]; savedFeats=null;
@@ -3450,6 +3472,11 @@ function welcomeMoment(){
   var today=dayKey();
   var isNewDay = BOND.last!==today;
   if(isNewDay){
+    /* days together only ever count UP: re-read first so a second tab can
+       never walk the number backwards */
+    var storedBond=jGet('cac_bond',{n:0,last:''});
+    BOND.n=Math.max(BOND.n||0,storedBond.n||0);
+    if(storedBond.last===today){ BOND.last=today; jSet('cac_bond',BOND); bondPaint(); return; }
     BOND.n++; BOND.last=today; jSet('cac_bond',BOND);
     var h=new Date().getHours();
     setTimeout(function(){
@@ -3663,6 +3690,66 @@ function rebuildCurrent(msg){
 }
 $('actFace').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); openMark(); anim.lastTouch=Date.now(); });
 
+/* ------------------------------------------- keep and revisit the art ----
+   A critter's drawing used to be frozen the moment it hatched, so a wobbly
+   leg or a forgotten pair of wings was forever. Redraw puts the original
+   drawing back on the easel; everything else about the critter (its name,
+   its days with you, its limbs, its bug buddy) carries straight over. */
+var editing=false, editSavedPaper=null, editSavedFeats=null;
+function startEditDrawing(){
+  if(!CUR||inGame()) return;
+  editing=true;
+  guide.on=false;
+  try{ editSavedPaper=pctx.getImageData(0,0,PAPER,PAPER); }catch(e){ editSavedPaper=null; }
+  editSavedFeats=FEATS.slice();
+  clearPaper();
+  FEATS=(CUR.feats||[]).slice();
+  loadDrawing(CUR.drawing,function(cv){
+    if(!editing) return;
+    pctx.drawImage(cv,0,0,PAPER,PAPER);
+    drawnAnything=true;
+  },'That drawing could not be opened for changes.','result');
+  undoStack.length=0; redoStack.length=0;
+  drawnAnything=true;
+  $('wizBar').style.display='flex';
+  $('wizStep').textContent='🖌️ Changing '+CUR.profile.name;
+  $('wizHint').textContent='Add to it or fix it. Everything else about your critter stays the same.';
+  $('wizNext').textContent='✨ Save it!';
+  $('goRow').style.display='none';
+  switchScreen('draw');
+}
+function restoreEasel(){
+  if(editSavedPaper){ try{ pctx.putImageData(editSavedPaper,0,0); }catch(e){ clearPaper(); } editSavedPaper=null; }
+  else clearPaper();
+  FEATS=editSavedFeats||[]; editSavedFeats=null;
+  undoStack.length=0; redoStack.length=0;
+  drawnAnything=false;
+  $('goRow').style.display='';
+  $('wizBar').style.display='none';
+  $('wizNext').textContent='Next ➜';
+}
+function cancelEdit(){
+  if(!editing) return false;
+  editing=false; restoreEasel();
+  return true;
+}
+function finishEdit(){
+  if(!editing) return;
+  var thumb=document.createElement('canvas'); thumb.width=thumb.height=512;
+  thumb.getContext('2d').drawImage(paper,0,0,512,512);
+  var newUrl=thumb.toDataURL('image/png');
+  var newFeats=FEATS.slice();
+  editing=false; restoreEasel();
+  CUR.drawing=newUrl;
+  CUR.feats=newFeats;
+  persistCur();
+  switchScreen('result');
+  rebuildCurrent('Look at me now!');
+  confetti($('stageWrap'),18);
+}
+function startFresh(){ cancelEdit(); startGuide(); }
+$('actRedraw').addEventListener('click',function(){ if(inGame()) return; SFX.tap(); startEditDrawing(); });
+
 /* ---------------------------------------------------------------- rename */
 $('critName').addEventListener('click',function(){
   if(!CUR) return;
@@ -3724,14 +3811,20 @@ function renderNursery(){
     grid.appendChild(e); return;
   }
   NEST.slice().reverse().forEach(function(rec){
+    /* one damaged record used to throw inside this loop and leave the whole
+       nursery looking empty, which reads to a kid as "they are all gone" */
+    if(!rec||!rec.id) return;
     var c=document.createElement('button'); c.className='ncard';
     c.style.position='relative';
-    var im=document.createElement('img'); im.src=rec.drawing; im.alt=rec.name;
-    var nm=document.createElement('div'); nm.className='nm'; nm.textContent=rec.name;
-    var sp=document.createElement('div'); sp.className='sp'; sp.textContent=rec.profile.personality;
+    var im=document.createElement('img'); im.src=rec.drawing||''; im.alt=rec.name||'a critter';
+    var nm=document.createElement('div'); nm.className='nm'; nm.textContent=rec.name||'A critter';
+    var sp=document.createElement('div'); sp.className='sp';
+    sp.textContent=(rec.profile&&rec.profile.personality)||'a mystery';
     var fr2=document.createElement('span');
     fr2.textContent='🎈';
-    fr2.style.cssText='position:absolute;top:4px;right:6px;font-size:1.15rem;padding:6px;';
+    /* 48px: it opens a confirm, so it must be neither hard to hit nor easy
+       to hit by accident */
+    fr2.style.cssText='position:absolute;top:2px;right:2px;font-size:1.15rem;width:48px;height:48px;display:flex;align-items:center;justify-content:center;';
     fr2.setAttribute('role','button');
     fr2.setAttribute('aria-label','set '+rec.name+' free');
     fr2.addEventListener('click',function(ev){ ev.stopPropagation(); SFX.tap(); askFree(rec,c); });
@@ -3763,7 +3856,7 @@ function renderNursery(){
 var freeTarget=null;
 function askFree(rec,card){
   freeTarget={rec:rec,card:card};
-  $('freeName').textContent=rec.name;
+  $('freeName').textContent=rec.name||'this critter';
   $('freeOverlay').classList.add('on');
 }
 $('freeCancel').addEventListener('click',function(){ $('freeOverlay').classList.remove('on'); freeTarget=null; SFX.tap(); });
@@ -3808,7 +3901,7 @@ function switchScreen(id){
 $('btnDraw').addEventListener('click',function(){
   ac(); SFX.tap();
   if(!SET.seenHow){ $('howOverlay').classList.add('on'); return; }
-  startGuide();
+  cancelRoomEdit(); startFresh();
   switchScreen('draw');
 });
 /* the trash can doubles as "start over": re-enters step 1 */
@@ -3817,14 +3910,23 @@ $('drawClear').addEventListener('click',function(){
 });
 $('howOk').addEventListener('click',function(){
   $('howOverlay').classList.remove('on');
-  if(!SET.seenHow){ SET.seenHow=1; jSet(K_SET,SET); switchScreen('draw'); }
+  /* first timers came through here and used to land on the easel with no
+     wizard at all, which is the one place a kid most needs it */
+  if(!SET.seenHow){ SET.seenHow=1; jSet(K_SET,SET); cancelRoomEdit(); startFresh(); switchScreen('draw'); }
   SFX.tap();
 });
 $('btnHow').addEventListener('click',function(){ SET.seenHow=1; jSet(K_SET,SET); $('howOverlay').classList.add('on'); SFX.tap(); });
 $('btnNursery').addEventListener('click',function(){ SFX.tap(); renderNursery(); switchScreen('nursery'); });
 $('nBack').addEventListener('click',function(){ SFX.tap(); cancelDateSelect(); switchScreen('home'); });
-$('nDraw').addEventListener('click',function(){ SFX.tap(); startGuide(); switchScreen('draw'); });
-$('drawBack').addEventListener('click',function(){ SFX.tap(); switchScreen('home'); });
+$('nDraw').addEventListener('click',function(){ SFX.tap(); cancelRoomEdit(); startFresh(); switchScreen('draw'); });
+$('drawBack').addEventListener('click',function(){
+  SFX.tap();
+  /* back out of the room easel or the drawing easel cleanly, and land where
+     the player came from */
+  if(cancelRoomEdit()){ switchScreen(CUR?'result':'home'); return; }
+  if(editing){ cancelEdit(); switchScreen('result'); return; }
+  switchScreen('home');
+});
 $('btnLife').addEventListener('click',bringToLife);
 function abortBerry(){
   if(!berry.on) return;

@@ -291,6 +291,9 @@ var COPY = Object.freeze({
   howto: 'Tap the left half to turn left, the right half to turn right. Swipe works too, and so do the arrow keys. Touch a terminal to charge, touch its twin to close the circuit.',
   deadWall: 'You ran off the board.',
   deadLive: 'You touched your own live wire.',
+  deadClock: 'The shift ended. Nothing killed you but the clock.',
+  labLeft: 'left ',
+  dailyHint: 'The daily is a fixed shift. Six hundred ticks, one board, everyone the same.',
   overTitle: 'Look what you built',
   bestNew: 'New best score.',
   seedLine: 'Seed ',
@@ -2395,6 +2398,23 @@ function draw() {
     bx.lineTo(x + r * 0.35, y + r * 0.5); bx.stroke();
   }
 
+  /* the creep: a ring opening out of the cell the current just took, so the one
+     thing on this board that moves without the player reads as an event and not
+     as a rendering glitch. The cell itself is drawn as ordinary live wire, so
+     nothing new has to be learned at 19px. */
+  if (creepFx.length) {
+    for (i = creepFx.length - 1; i >= 0; i--) {
+      var age = (phase - creepFx[i].t0) / 26;
+      if (age >= 1) { creepFx.splice(i, 1); continue; }
+      if (reduced()) continue;
+      x = (creepFx[i].cell % g) * cell + cell / 2; y = ((creepFx[i].cell / g) | 0) * cell + cell / 2;
+      bx.globalAlpha = (1 - age) * 0.85;
+      bx.strokeStyle = '#ffcf70'; bx.lineWidth = 2;
+      bx.beginPath(); bx.arc(x, y, cell * (0.3 + age * 0.9), 0, 6.2832); bx.stroke();
+      bx.globalAlpha = 1;
+    }
+  }
+
   /* head */
   x = (st.head % g) * cell + cell / 2; y = ((st.head / g) | 0) * cell + cell / 2;
   bx.beginPath(); bx.arc(x, y, cell * 0.40, 0, 6.2832);
@@ -2423,11 +2443,14 @@ function drawRing() {
   rx.strokeStyle = '#1c2029';
   rx.beginPath(); rx.arc(w / 2, w / 2, 44, 0, 6.2832); rx.stroke();
   if (!st) return;
-  var left = st.comboIdx >= 0 ? Math.max(0, CONFIG.COMBO_WINDOW - (st.tick - st.lastCompleteTick)) : 0;
-  var frac = left / CONFIG.COMBO_WINDOW;
+  /* the window belongs to the rung you are standing on and gets shorter as you
+     climb, so the ring drains visibly faster at the top of the ladder */
+  var win = comboWindow(st);
+  var left = st.comboIdx >= 0 ? Math.max(0, win - (st.tick - st.lastCompleteTick)) : 0;
+  var frac = left / win;
   if (frac <= 0) return;
   var blink = frac < 0.25 && !reduced() && (Math.floor(phase * 0.5) % 2 === 0);
-  rx.strokeStyle = blink ? '#ffcf70' : '#a3e635';
+  rx.strokeStyle = blink ? '#ffcf70' : (st.comboIdx >= 3 ? '#ffd166' : '#a3e635');
   rx.beginPath();
   rx.arc(w / 2, w / 2, 44, -Math.PI / 2, -Math.PI / 2 + 6.2832 * frac);
   rx.stroke();
@@ -2441,7 +2464,14 @@ function hud() {
   var load = st.energized / CONFIG.CELLS;
   $('loadBox').className = load > CONFIG.WARN_PCT ? 'on' : '';
   $('loadPct').textContent = Math.round(load * 100) + '%';
-  $('sub').textContent = COPY.labBest + save.best.score.toLocaleString() + '   ' + st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits';
+  /* the daily runs a clock instead of a wall, so the clock is the headline */
+  if (st.tickLimit) {
+    var leftT = Math.max(0, st.tickLimit - st.tick);
+    $('sub').textContent = COPY.labLeft + leftT + ' ' + COPY.statTicks + '   ' +
+      COPY.labBest + save.daily.best.toLocaleString() + '   ' + st.circuitsCompleted + ' circuits';
+  } else {
+    $('sub').textContent = COPY.labBest + save.best.score.toLocaleString() + '   ' + st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits';
+  }
   drawRing();
 }
 
@@ -2627,7 +2657,7 @@ document.addEventListener('visibilitychange', function () { if (document.hidden)
 function startRun(seed, m) {
   mode = m || 'free';
   curSeed = seed >>> 0;
-  st = newGame(curSeed);
+  st = newGame(curSeed, { mode: mode });
   queue.clear();
   inputLog = [];
   replay = null;
@@ -2653,7 +2683,8 @@ function onDeath(cause) {
   if (mode === 'daily') save = recordDaily(todayStr, st.score);
   settings = save.settings;
   $('overTitle').textContent = COPY.overTitle;
-  $('overLine').textContent = (cause === 'wall' ? COPY.deadWall : COPY.deadLive) + (wasBest ? '  ' + COPY.bestNew : '');
+  var line = cause === 'wall' ? COPY.deadWall : (cause === 'clock' ? COPY.deadClock : COPY.deadLive);
+  $('overLine').textContent = line + (wasBest ? '  ' + COPY.bestNew : '');
   var cells = [
     [st.score.toLocaleString(), COPY.statScore],
     [st.tick, COPY.statTicks],

@@ -114,25 +114,42 @@ function grepGates() {
 /* ------------------------------------------------------------------ */
 /* the sweep                                                           */
 /* ------------------------------------------------------------------ */
-function sweep(n, baseSeed, quiet) {
+function sweep(n, baseSeed, quiet, opts) {
+  opts = opts || {};
+  var M = G.modeOf(opts.tier, opts.liar);
   var i, cs, rng = G.makeRNG(baseSeed >>> 0);
   var hist = {}, sizes = [], retries = 0, nulls = 0;
   var greedySolved = 0, perfectSolved = 0, greedyActions = 0;
   var reachMax = 0, reachSum = 0, motiveOnly = 0, textBad = 0, uniqueFail = 0;
-  var poolSizes = [], noiseSum = 0, pressMin = 0, greedyRuns = 0;
+  var poolSizes = [], noiseSum = 0, pressMin = 0, greedyRuns = 0, lieBad = 0;
   var t0 = Date.now();
   for (i = 0; i < n; i++) {
     var seed = (rng.int(0x7ffffffe) + 1) >>> 0;
-    cs = G.generateCase(seed);
+    cs = G.generateCase(seed, { tier: opts.tier, liar: opts.liar });
     if (!cs) { nulls++; continue; }
     retries += cs.retries;
 
-    // independent re verification: do not trust the generator's own claim
-    var acc = G.solveMask(cs.pool, cs.masks);
-    if (G.bitsCount(acc) !== 1 || G.bitsFirst(acc) !== G.tupleIndex(cs.truth)) uniqueFail++;
+    // independent re verification: do not trust the generator's own claim.
+    // v1 wants one tuple consistent with everything. A liar case wants one
+    // tuple consistent with all BUT ONE clue and none consistent with all,
+    // checked on the full pool and again on the minimal set alone.
+    var ti = G.tupleIndex(cs.truth);
     var mn = cs.minimal.map(function (id) { return cs.pool[id]; });
-    var accM = G.solveMask(mn, cs.masks);
-    if (G.bitsCount(accM) !== 1 || G.bitsFirst(accM) !== G.tupleIndex(cs.truth)) uniqueFail++;
+    if (opts.liar) {
+      if (!G.liarProved(cs.pool, cs.masks, ti)) uniqueFail++;
+      if (!G.liarProved(mn, cs.masks, ti)) uniqueFail++;
+      var fal = G.falseClueIds(cs.pool, cs.truth);
+      if (fal.length !== 1 || fal[0] !== cs.lie.id) lieBad++;
+      var src = G.clueSource(cs, cs.lie.id);
+      if (!src || src.kind !== "said" || src.i !== cs.lie.speaker) lieBad++;
+      if (cs.minimal.indexOf(cs.lie.id) < 0) lieBad++;
+      if (G.bitsCount(G.solveMask(cs.pool, cs.masks)) !== 0) lieBad++;
+    } else {
+      var acc = G.solveMask(cs.pool, cs.masks);
+      if (G.bitsCount(acc) !== 1 || G.bitsFirst(acc) !== ti) uniqueFail++;
+      var accM = G.solveMask(mn, cs.masks);
+      if (G.bitsCount(accM) !== 1 || G.bitsFirst(accM) !== ti) uniqueFail++;
+    }
 
     sizes.push(cs.minimal.length);
     hist[cs.minimal.length] = (hist[cs.minimal.length] || 0) + 1;
@@ -153,8 +170,9 @@ function sweep(n, baseSeed, quiet) {
   var ok = sizes.length;
   sizes.sort(function (a, b) { return a - b; });
   var median = ok ? sizes[Math.floor(ok / 2)] : 0;
-  var inBand = sizes.filter(function (s) { return s >= G.CONFIG.MIN_SET_LO && s <= G.CONFIG.MIN_SET_HI; }).length;
+  var inBand = sizes.filter(function (s) { return s >= M.lo && s <= M.hi; }).length;
   var res = {
+    mode: M, lieBad: lieBad,
     n: n, generated: ok, nulls: nulls, ms: Date.now() - t0,
     retryRate: ok ? retries / (retries + ok) : 1,
     retriesTotal: retries,
@@ -179,20 +197,22 @@ function pct(x) { return (x * 100).toFixed(2) + "%"; }
 
 function printSweep(r) {
   console.log("");
-  console.log("BLACKOUT verification sweep, " + r.n + " cases, " + r.ms + " ms");
+  console.log("BLACKOUT verification sweep, " + r.n + " cases, " + r.ms + " ms   [" +
+    r.mode.key + (r.mode.liar ? " with a liar" : "") + ", " + r.mode.actions + " actions]");
   console.log("=".repeat(58));
   console.log("cases generated            " + r.generated + "   (unbuildable: " + r.nulls + ")");
   console.log("uniqueness pass rate       " + pct(r.uniqueRate) + "   gate 100%");
   console.log("regeneration retry rate    " + pct(r.retryRate) + "   gate under 15%");
-  console.log("minimal set median         " + r.median + "   gate 10 to 12");
+  console.log("minimal set median         " + r.median + "   gate " + (r.mode.target - 1) + " to " + (r.mode.target + 1));
   console.log("minimal set range          " + r.sizeMin + " to " + r.sizeMax);
-  console.log("minimal set inside 8 to 14 " + pct(r.inBandRate) + "   gate 95% or better");
+  console.log("minimal set inside " + r.mode.lo + " to " + r.mode.hi + "  " + pct(r.inBandRate) + "   gate 95% or better");
   console.log("motive only minimal sets   " + r.motiveOnly + "   gate 0");
   console.log("clue text contradictions   " + r.textBad + "   gate 0");
-  console.log("worst reach cost           " + r.reachMax + " actions   gate " + G.CONFIG.REACH_BOUND + " or less");
+  console.log("worst reach cost           " + r.reachMax + " actions   gate " + r.mode.reach + " or less");
   console.log("average reach cost         " + r.reachAvg.toFixed(2) + " actions");
   console.log("greedy agent solve rate    " + pct(r.greedyRate) + "   gate above 90%");
-  console.log("greedy agent avg actions   " + r.greedyAvgActions.toFixed(2) + " of " + G.CONFIG.ACTIONS);
+  console.log("greedy agent avg actions   " + r.greedyAvgActions.toFixed(2) + " of " + r.mode.actions);
+  if (r.mode.liar) console.log("lie placement faults       " + r.lieBad + "   gate 0");
   console.log("perfect agent solve rate   " + pct(r.perfectRate) + "   gate 100%");
   console.log("avg clue pool / placed noise " + r.poolAvg.toFixed(1) + " / " + r.noiseAvg.toFixed(1));
   console.log("avg minimal clues behind press " + r.pressMinAvg.toFixed(2));
@@ -211,13 +231,14 @@ function printSweep(r) {
 function gateSweep(r) {
   var fails = [];
   if (r.uniqueRate !== 1) fails.push("uniqueness " + pct(r.uniqueRate));
+  if (r.lieBad !== 0) fails.push("lie placement faults " + r.lieBad);
   if (r.nulls !== 0) fails.push(r.nulls + " cases could not be built at all");
   if (r.retryRate >= 0.15) fails.push("retry rate " + pct(r.retryRate));
-  if (r.median < 10 || r.median > 12) fails.push("minimal median " + r.median);
+  if (r.median < r.mode.target - 1 || r.median > r.mode.target + 1) fails.push("minimal median " + r.median);
   if (r.inBandRate < 0.95) fails.push("minimal band " + pct(r.inBandRate));
   if (r.motiveOnly !== 0) fails.push("motive only minimal sets " + r.motiveOnly);
   if (r.textBad !== 0) fails.push("clue text contradictions " + r.textBad);
-  if (r.reachMax > G.CONFIG.REACH_BOUND) fails.push("reach " + r.reachMax);
+  if (r.reachMax > r.mode.reach) fails.push("reach " + r.reachMax);
   if (r.greedyRate <= 0.90) fails.push("greedy " + pct(r.greedyRate));
   if (r.perfectRate !== 1) fails.push("perfect " + pct(r.perfectRate));
   return fails;
@@ -328,7 +349,27 @@ if (args.some(function (a) { return a === "--test"; })) {
 
 var n = parseInt(arg("cases", arg("runs", "1000")), 10) || 1000;
 var seed = parseInt(arg("seed", "1"), 10) || 1;
-var r = sweep(n, seed, false);
+var tierArg = arg("tier", null);
+var liarArg = args.some(function (a) { return a === "--liar"; });
+
+if (args.some(function (a) { return a === "--all"; })) {
+  // every mode on the ladder, both honest and unreliable, gated the same way
+  var allFails = 0;
+  G.TIER_KEYS.forEach(function (t) {
+    [false, true].forEach(function (L) {
+      var rr = sweep(n, seed, false, { tier: t, liar: L });
+      var ff = gateSweep(rr);
+      ff.forEach(function (f) { console.log("GATE FAIL  " + f); });
+      console.log(ff.length ? "GATES FAILED (" + ff.length + ") for " + t + (L ? " with a liar" : "")
+        : "GATES PASSED for " + t + (L ? " with a liar" : ""));
+      allFails += ff.length;
+    });
+  });
+  console.log(allFails ? "LADDER SWEEP FAILED (" + allFails + ")" : "LADDER SWEEP PASSED");
+  process.exit(allFails ? 1 : 0);
+}
+
+var r = sweep(n, seed, false, { tier: tierArg, liar: liarArg });
 var fails = gateSweep(r);
 fails.forEach(function (f) { console.log("GATE FAIL  " + f); });
 console.log(fails.length ? "SWEEP GATES FAILED (" + fails.length + ")" : "SWEEP GATES PASSED");

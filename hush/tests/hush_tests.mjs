@@ -112,7 +112,7 @@ function grabConst(src, name) {
       if (rest) break;
     }
   }
-  return "const " + name + " = " + src.slice(at, i).trim().replace(/;$/, "") + ";";
+  return "var " + name + " = " + src.slice(at, i).trim().replace(/;$/, "") + ";";
 }
 function grabFn(src, name) {
   const re = new RegExp("(?:^|\\n)\\s*(?:async\\s+)?function\\s+" + name + "\\s*\\(");
@@ -149,7 +149,7 @@ function makeBox(src, extra) {
     grabFn(src, "pickTonight")
   ];
   // the S literal, verbatim, plus the DEFAULTS snapshot the app makes from it
-  const sLit = grabConst(src, "S").replace(/^const S =/, "var S =");
+  const sLit = grabConst(src, "S");
   const box = {
     btoa: s => Buffer.from(s, "binary").toString("base64"),
     atob: s => Buffer.from(s, "base64").toString("binary"),
@@ -395,7 +395,8 @@ function run(src, workerSrc) {
   /* ---------------- [audio] look ahead and the comb floor ---------------- */
   group("audio");
   const heart = grabFn(src, "heartTick"), sw = grabFn(src, "swTick");
-  const la = s => { const m = /currentTime \+ ([0-9.]+)/.exec(s); return m ? Number(m[1]) : 0; };
+  // the look ahead is the one in the scheduling WHILE, not the resync above it
+  const la = s => { const m = /while\s*\([^)]*currentTime \+ ([0-9.]+)/.exec(s); return m ? Number(m[1]) : 0; };
   ok(la(heart) >= 1.2, "heartbeat look ahead clears a throttled 1 Hz tick", String(la(heart)));
   ok(la(sw) >= 1.2, "slow wave look ahead clears a throttled 1 Hz tick", String(la(sw)));
 
@@ -444,13 +445,21 @@ function run(src, workerSrc) {
   ok(box.PRESETS.every(p => p.d.vol === undefined || (p.d.vol >= 0 && p.d.vol <= 100)),
     "no preset carries an out of range volume");
 
-  // no dashes in player facing prose
-  const prose = html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
-  const emDashes = (prose.match(/—/g) || []).length;
-  const placeholders = (prose.match(/>—[:—\s]*</g) || []).length + (prose.match(/—:—/g) || []).length;
-  ok(emDashes - placeholders <= 0,
-    "no em dashes in player facing markup beyond the empty value placeholders",
-    "found " + emDashes + ", placeholders " + placeholders);
+  /* No dashes in player facing copy. An em dash standing alone as an empty
+     value (the countdown at rest, the meter before the mic is on) is a
+     typographic blank rather than copy and is fine; one used as punctuation
+     inside a sentence is not. That is what this looks for, in the markup and
+     in the strings, with comments stripped so the engineering notes below do
+     not count as copy. */
+  const PROSE_DASH = /[A-Za-z0-9)]\s*—\s*[A-Za-z0-9(£]/;
+  const markup = html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+  const markupHits = markup.split("\n").filter(l => PROSE_DASH.test(l));
+  ok(markupHits.length === 0, "no em dash used as punctuation in the markup",
+    markupHits[0] ? markupHits[0].trim().slice(0, 70) : "");
+  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  const strHits = noComments.split("\n").filter(l => /["'`]/.test(l) && PROSE_DASH.test(l));
+  ok(strHits.length === 0, "no em dash used as punctuation in the copy strings",
+    strHits.length + (strHits[0] ? ": " + strHits[0].trim().slice(0, 70) : ""));
 
   // iOS: stage 1 only, and nothing claims otherwise
   group("ios");
@@ -462,9 +471,9 @@ function run(src, workerSrc) {
   ok(!/OfflineAudioContext/.test(src) && !/createMediaElementSource/.test(src),
     "stage 2 lock screen playback is genuinely not built, so nothing pretends it is");
   const claim = /(all night|through the night|screen off|screen locked|with the screen)/i;
-  const claimsInProse = (prose.match(claim) || []);
+  const claimsInProse = (markup.match(claim) || []);
   ok(!claimsInProse.some(t => /all night|screen off/i.test(t)) ||
-     /screen must stay on|screen has to stay on|stops when|goes quiet when/i.test(prose),
+     /screen must stay on|screen has to stay on|stops when|goes quiet when/i.test(markup),
      "nothing claims the sound survives a locked screen without saying the opposite too",
      claimsInProse.join(" | ").slice(0, 120));
   ok(/resumeAudio/.test(src) && /onstatechange/.test(src),
@@ -553,8 +562,13 @@ const MUTATIONS = [
   ["applyShared stops checking enums",
     s => s.replace("if (SHARE_ENUMS[k]) { if (SHARE_ENUMS[k].indexOf(v) < 0) return; }",
                    "if (SHARE_ENUMS[k]) { }")],
-  ["readSharedLink stops protecting vol",
-    s => s.replace("S.vol = before.vol; S.cap = before.cap;", "S.cap = before.cap;")],
+  /* The belt and braces restore in readSharedLink is a SECOND line of defence
+     behind the whitelist, so removing it alone changes nothing observable and
+     the mutation used to survive for a good reason. This breaks the whitelist
+     AND the restore together, which is what the second line exists for. */
+  ["both lines of defence on volume removed at once",
+    s => s.replace('const SHARE_KEYS = ["noise"', 'const SHARE_KEYS = ["vol","noise"')
+          .replace("S.vol = before.vol; S.cap = before.cap;", "S.cap = before.cap;")],
   ["shared link no longer takes the front door",
     s => s.replace("sharedPick = {\n    shared: true,", "sharedPick = null && {\n    shared: true,")],
   ["nursery cap raised",

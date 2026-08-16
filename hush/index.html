@@ -413,7 +413,7 @@ body.simple .actions{margin-bottom:14px}
 
       <div class="meter" id="meterWrap" style="opacity:.35;margin-top:16px">
         <div class="mrow"><div><span class="mnum" id="mNum">—</span> <span class="munit">dB, estimated</span></div>
-          <div class="munit" id="mPeak">peak —</div></div>
+          <div class="munit" id="mPeak">peak</div></div>
         <div class="mtrack"><div class="mfill" id="mFill"></div><div class="mtick" id="mTick" style="left:50%"></div></div>
         <div class="mlegend"><span>30</span><span>50 · nursery limit</span><span>85</span></div>
         <div class="mverdict" id="mVerdict">Turn the microphone on, put the phone where the baby's head is, and read the number.</div>
@@ -762,10 +762,10 @@ function sanitiseSaved(raw) {
       return;
     }
     if (typeof d === "string") { if (typeof v === "string" && v.length < 40) out[k] = v; return; }
-    // null-defaulted keys: preset, program, lastUsed. A string id or an object.
+    // null-defaulted keys: preset and program are string ids, lastUsed is a record
     if (v === null) { out[k] = null; return; }
-    if (typeof v === "string" && v.length < 40) { out[k] = v; return; }
-    if (k === "lastUsed" && v && typeof v === "object" && typeof v.id === "string" &&
+    if (k !== "lastUsed" && typeof v === "string" && v.length < 40) { out[k] = v; return; }
+    if (k === "lastUsed" && v && typeof v === "object" && !Array.isArray(v) && typeof v.id === "string" &&
         typeof v.at === "number" && isFinite(v.at)) {
       out[k] = { id: v.id.slice(0,40), at: v.at, count: (typeof v.count === "number" && isFinite(v.count)) ? Math.max(1, Math.min(9999, Math.round(v.count))) : 1 };
     }
@@ -2193,14 +2193,14 @@ const TIERS = {
 };
 const INFO = {
   night: { tier:1, from:"Built to the research specification",
-    what:"Slow generated music — one instrument, small intervals, no surprises, tempo between 60 and 80 beats a minute.",
+    what:"Slow generated music: one instrument, small intervals, no surprises, tempo between 60 and 80 beats a minute.",
     why:"This is the best-supported sound in the app. A Cochrane review of ten randomised trials found music improves sleep quality in adults with insomnia by around one standard deviation, on moderate-quality evidence. Trials that worked converged on the same recipe: slow, instrumental, soft, simple. Thirty to forty-five minutes before bed, at a comfortable volume." },
   suikinkutsu: { tier:3, from:"Japan · Edo period",
     what:"A drip of water falling into a buried, upturned pot, which rings like a koto string. Real ones are tuned by hand; this one is generated the same way, with the drop and the resonance separated.",
-    why:"Garden designers built these next to tea-house wash basins from the 1600s onward, hidden underground so the sound arrives without a visible source. No sleep trials exist. It earns its place because it is quiet, irregular and never quite repeats — which is the property that stops your ear learning it." },
+    why:"Garden designers built these next to tea-house wash basins from the 1600s onward, hidden underground so the sound arrives without a visible source. No sleep trials exist. It earns its place because it is quiet, irregular and never quite repeats, which is the property that stops your ear learning it." },
   furin: { tier:3, from:"Japan · from Buddhist wind bells",
     what:"Glass or iron wind chimes under the eaves, struck in gusts rather than evenly.",
-    why:"Descended from fūtaku, bronze wind bells hung at temple corners. In Japan the sound is tied to summer and to feeling cooler than you are. The clustering matters — evenly spaced chimes sound mechanical, wind does not." },
+    why:"Descended from fūtaku, bronze wind bells hung at temple corners. In Japan the sound is tied to summer and to feeling cooler than you are. The clustering matters, because evenly spaced chimes sound mechanical, wind does not." },
   shishi: { tier:3, from:"Japan · originally a farm tool",
     what:"A bamboo tube fills with water, tips, empties, and knocks against a stone. Once every half minute or so. Nothing in between.",
     why:"Built to startle deer away from crops, then kept in gardens because the knock marks time passing without demanding anything of you. If most sounds here are a blanket, this one is a clock you don't mind hearing." },
@@ -2209,7 +2209,7 @@ const INFO = {
     why:"Used to open and close meditation across several traditions. Sound-bath studies exist but are small and hard to blind. Worth trying if silence feels too empty but continuous sound feels like too much." },
   womb: { tier:2, from:"The obvious first sound",
     what:"Low brown noise with a maternal heartbeat at a resting rate.",
-    why:"The environment a newborn spent nine months in was loud, low and rhythmic. Continuous low-frequency sound reliably calms newborns in the short term — that part is well observed. Whether it should run all night is a different question, and the evidence panel answers it." },
+    why:"The environment a newborn spent nine months in was loud, low and rhythmic. Continuous low-frequency sound reliably calms newborns in the short term, and that part is well observed. Whether it should run all night is a different question, and the evidence panel answers it." },
   shush: { tier:2, from:"Every caregiver, everywhere",
     what:"Band-limited hiss pulsed at roughly the rate people shush instinctively.",
     why:"Caregivers across unrelated cultures produce almost the same sound at almost the same rate without being taught it. It sits in the frequency range that masks a baby's own crying." },
@@ -2220,11 +2220,11 @@ const INFO = {
     what:"Pink noise with a swell near the pace of breathing at rest.",
     why:"The swell is doing the work, not the water. It moves at roughly the rate of relaxed breathing, and people tend to drift toward the rhythm they can hear." },
   brown: { tier:2, from:"The internet's favourite",
-    what:"Energy falling six decibels an octave — deep, no hiss.",
+    what:"Energy falling six decibels an octave. Deep, no hiss.",
     why:"Brown noise became the default recommendation online without a trial behind it. What is true: it puts its energy low, which masks traffic and voices well while being less fatiguing than white noise. What is not established: that it is better for sleep than anything else." },
   breathe: { tier:1, from:"Paced breathing",
     what:"A swell at five and a half cycles a minute, to breathe along with.",
-    why:"Slow paced breathing at around six breaths a minute has the most consistent short-term physiological effect of anything in this app — it shifts heart-rate variability within minutes. It is what the £60 light-projecting bedside gadgets are selling. Here it is a swell you can hear, or a circle you can watch in full screen." },
+    why:"Slow paced breathing at around six breaths a minute has the most consistent short-term physiological effect of anything in this app. It shifts heart-rate variability within minutes. It is what the £60 light-projecting bedside gadgets are selling. Here it is a swell you can hear, or a circle you can watch in full screen." },
   tinnitus: { tier:2, from:"Notched sound therapy",
     what:"Broadband sound with a notch cut where your tinnitus sits.",
     why:"Masking gives short-term relief for many people and is widely recommended by audiologists. Notched approaches, which remove rather than add energy at the tinnitus frequency, have promising but mixed trial results. Set the frequency by ear using the Tune panel." },
@@ -2239,7 +2239,7 @@ const INFO = {
     why:"Parents drive children around at 2 a.m. because it works, and it works for at least three reasons at once: low continuous sound, gentle vibration, and steady motion. A phone only gives you the first of those, so expect part of the effect, not all of it." },
   fan: { tier:2, from:"The original sound machine",
     what:"Brown noise with the narrow resonance a box fan puts into a room.",
-    why:"Before anyone sold sound machines, people slept with a fan on — and a lot of them were not doing it for the air. The narrow resonant peak is what makes this read as a fan rather than as generic noise. Worth choosing if you grew up with one: familiarity is doing real work here." },
+    why:"Before anyone sold sound machines, people slept with a fan on, and a lot of them were not doing it for the air. The narrow resonant peak is what makes this read as a fan rather than as generic noise. Worth choosing if you grew up with one: familiarity is doing real work here." },
   newborn: { tier:2, from:"The default for the first months",
     what:"Brown noise, darkened, with a slow swell underneath.",
     why:"A safe starting point rather than a clever one: low, steady, unremarkable. If you do not know where to begin with a baby, begin here, keep it quiet, and let the timer end it." },
@@ -2623,12 +2623,12 @@ function renderVerdict(a, b, nameOf) {
     ' · 95% CI on the difference ' + ci[0].toFixed(1) + " to " + ci[1].toFixed(1) + m.unit + '</cite></div>';
   if (!complete) {
     html += '<div class="note"><b>Still running, so read this loosely.</b> Checking the result every night is ' +
-      'itself a way to find a difference that is not there — in simulation it lifts the false-alarm rate from ' +
+      'itself a way to find a difference that is not there. In simulation it lifts the false-alarm rate from ' +
       'about 6% to about 8%. The number to trust is the one at the end.</div>';
   }
   if (!sig && a.length+b.length >= need*2) {
     html += '<div class="note"><b>You finished the trial and found nothing.</b> That is a real result, not a failure. ' +
-      'It usually means both sounds are about equally good for you — so use whichever you prefer, and spend the effort somewhere else.</div>';
+      'It usually means both sounds are about equally good for you, so use whichever you prefer, and spend the effort somewhere else.</div>';
   }
   el.innerHTML = html;
 }
@@ -2858,7 +2858,7 @@ async function handleFile(file) {
     const name = file.name.toLowerCase();
     if (name.endsWith(".xml")) nights = await importAppleHealth(file, status);
     else if (name.endsWith(".json")) nights = importFitbitJSON(await file.text());
-    else if (name.endsWith(".zip")) { status("That's the zip — unzip it first and pick export.xml from inside."); return; }
+    else if (name.endsWith(".zip")) { status("That's the zip. Unzip it first and pick export.xml from inside."); return; }
     else nights = importTable(parseCSV(await file.text()));
   } catch (e) {
     status("Could not read that file. " + (e.message || ""));

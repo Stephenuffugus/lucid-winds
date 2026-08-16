@@ -246,6 +246,33 @@ function cmdGrep(){
     }
   }
 
+  /* Element wiring. No browser runs here, so a typo in an id would otherwise
+     surface as a dead button in front of a player. Every id the script reaches
+     for must exist somewhere in the file, either in the static markup or in
+     the markup the script itself writes. */
+  var declared = {}, m2, dupes = [];
+  var idRe = /id="([A-Za-z0-9_]+)"/g;
+  while ((m2 = idRe.exec(src))){
+    if (declared[m2[1]]) dupes.push(m2[1]);
+    declared[m2[1]] = 1;
+  }
+  var refRe = /(?:\$\(|getElementById\(|wire\()'([A-Za-z0-9_]+)'/g;
+  var missing = {}, refs = 0;
+  while ((m2 = refRe.exec(src))){
+    refs++;
+    if (!declared[m2[1]]) missing[m2[1]] = 1;
+  }
+  var mk = Object.keys(missing);
+  for (i = 0; i < mk.length; i++) bad.push('the script reaches for an element that does not exist: ' + mk[i]);
+  /* a duplicate static id would make one of the two unreachable */
+  var staticSrc = src.slice(0, src.indexOf('<script'));
+  var seenStatic = {}, sm;
+  var sIdRe = /id="([A-Za-z0-9_]+)"/g;
+  while ((sm = sIdRe.exec(staticSrc))){
+    if (seenStatic[sm[1]]) bad.push('duplicate element id in the markup: ' + sm[1]);
+    seenStatic[sm[1]] = 1;
+  }
+
   if (bad.length){
     for (i = 0; i < bad.length; i++) console.log('FAIL  ' + bad[i]);
     console.log('');
@@ -257,6 +284,7 @@ function cmdGrep(){
   console.log('  no page objects between the SIM markers');
   console.log('  script tags balanced');
   console.log('  no dash characters in player facing copy');
+  console.log('  all ' + refs + ' element lookups resolve to an id that exists');
   return 0;
 }
 

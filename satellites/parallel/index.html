@@ -1974,8 +1974,17 @@ function setDriftMeter(d){
 function drawRibbon(){
   var el = $('ribbon');
   if (G.mode !== 'level'){
-    el.innerHTML = '<div class="chip cur">' + (G.mode === 'daily' ? 'TODAY' : 'SEED') +
-      '</div><div class="chip" data-goto="1">BACK TO THE HUNDRED</div>';
+    /* built as elements, not as a string, so the dash gate never has to read an
+       attribute name as if it were a sentence */
+    el.innerHTML = '';
+    var tag = document.createElement('div');
+    tag.className = 'chip cur';
+    tag.textContent = (G.mode === 'daily' ? 'DAY ' + G.dailyId : 'SEED ' + G.seedNum);
+    var back = document.createElement('button');
+    back.className = 'chip';
+    back.setAttribute('data-goto', String(Math.max(1, G.num)));
+    back.textContent = 'BACK TO THE HUNDRED';
+    el.appendChild(tag); el.appendChild(back);
     return;
   }
   var html = [], n, from = Math.max(1, G.num - 3), to = Math.min(LEVELS.length, from + 9);
@@ -2589,6 +2598,14 @@ if (framed){
 self.__TEST__ = TEST;
 self.__PARALLEL__ = { CONFIG:CONFIG, LEVELS:LEVELS, decodeLevel:decodeLevel, stepWorld:stepWorld,
                       initState:initState, bfsSolve:bfsSolve, makeRNG:makeRNG, G:G };
+/* The view layer, reachable by name. pagecheck.js boots this exact file against
+   a DOM stub and drives these, which is the only way to find a dead button
+   without a browser on the box. */
+self.__VIEW__ = { fitBoard:fitBoard, buildSky:buildSky, buildStats:buildStats, drawRibbon:drawRibbon,
+                  startLevel:startLevel, press:press, restart:restart, playReplay:playReplay,
+                  shareCurrent:shareCurrent, setDriftMeter:setDriftMeter, buildDaily:buildDaily,
+                  buildSeed:buildSeed, syncOpts:syncOpts, openSheet:openSheet, closeSheet:closeSheet,
+                  SAVE:function(){ return SAVE; }, LAYOUT:LAYOUT };
 
 })();
 </script>

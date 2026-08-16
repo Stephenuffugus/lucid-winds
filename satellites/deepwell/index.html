@@ -1401,7 +1401,7 @@ var TEST = {
     suiteRNG(this); suiteGeometry(this); suiteColumn(this); suiteHeartstone(this);
     suiteStrata(this); suiteAscent(this); suiteWeight(this); suiteMining(this);
     suiteShrines(this); suiteDeath(this); suiteSave(this); suiteDeterminism(this);
-    suiteRegressions(this); suiteBalance(this); suiteFuzz(this); suiteCopy(this);
+    suiteRegressions(this); suiteDeepening(this); suiteBalance(this); suiteFuzz(this); suiteCopy(this);
     return this.report();
   }
 };
@@ -1987,6 +1987,163 @@ function suiteRegressions(T) {
   step(st5, 'mine');
   T.eq('regression: the heartstone is worth three hundred', st5.cargo[0].v, 300);
   T.eq('regression: the heartstone weighs twelve', st5.weight, 12);
+}
+/* everything the deepening pass added, with the numbers on the cards checked
+   against the numbers the rules actually apply */
+function suiteDeepening(T) {
+  function synth(mut) {
+    var st = newRun(makeRNG(777), { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 }, null);
+    ensureNodes(st.col, 24);
+    /* stand on a REAL node near 40m. Setting depth by hand without moving the
+       node pointer makes descendCost run backwards and every cost assertion
+       below it measure nonsense. */
+    st.at = 0;
+    while (st.col.nodes[st.at + 1] && st.col.nodes[st.at + 1].depth <= 40) st.at++;
+    st.depth = st.col.nodes[st.at].depth; st.phase = 'shrine';
+    if (mut) mut(st);
+    return st;
+  }
+  function put(st, key, n) {
+    var o = ORE_BY_KEY[key], i;
+    for (i = 0; i < (n || 1); i++) st.cargo.push({ key: o.key, name: o.name, tier: o.tier, w: o.w, v: o.v });
+    st.weight = cargoWeight(st.cargo);
+  }
+  /* 13 THE BALLAST */
+  var a = synth(function (st) { put(st, 'slag', 1); put(st, 'gold', 1); put(st, 'beryl', 1); st.pending = 13; st.air = 50; });
+  T.eq('the ballast takes the HEAVIEST ore, not the first', heaviestIndex(a.cargo), 1);
+  var wBefore = a.weight;
+  step(a, 'shrine:accept');
+  T.eq('the ballast leaves the gold behind', a.cargo.length, 2);
+  T.eq('the ballast drops exactly nine kilos of gold', a.weight, wBefore - 9);
+  T.eq('the ballast pays exactly 25 air', Math.round(a.air), 75);
+  var a0 = synth(function (st) { st.pending = 13; });
+  T.assert('the ballast is refused with an empty pack', shrineAcceptable(a0) !== null);
+  /* 14 THE TITHE */
+  var b = synth(function (st) { st.pending = 14; st.cash = 500; });
+  step(b, 'shrine:accept');
+  T.eq('the tithe costs exactly 120 cash', b.cash, 380);
+  var vein = { i: 9, depth: 40, gap: 4, kind: 'vein', hazRoll: 0.99, ore: ['gold', 'slag'], shrineId: 0,
+               pocketKind: 'air', cash: 0, heart: false, hazKind: 'gas', mined: false, used: false };
+  var haul = veinHaul(b, vein);
+  T.eq('after the tithe gold weighs 7 not 9', haul[0].w, 7);
+  T.eq('after one tithe slag weighs 1', haul[1].w, 1);
+  /* two tithes would drive slag to minus one kilo. Nothing weighs nothing. */
+  b.cash = 500; b.phase = 'shrine'; b.pending = 14; step(b, 'shrine:accept');
+  T.eq('a second tithe really is bought', b.flags.oreWeightBonus, -4);
+  var haul2 = veinHaul(b, vein);
+  T.eq('two tithes still leave slag at one kilo, never zero and never negative', haul2[1].w, 1);
+  T.assert('two tithes never make a haul weightless', haul2[0].w >= 1 && haul2[1].w >= 1);
+  var b0 = synth(function (st) { st.pending = 14; st.cash = 119; });
+  T.assert('the tithe is refused at 119 cash', shrineAcceptable(b0) !== null);
+  /* 15 THE STRAIGHT DROP */
+  var c = synth(function (st) { st.pending = 15; });
+  step(c, 'shrine:accept');
+  T.eq('the straight drop buys exactly two free falls', c.flags.freeDescents, 2);
+  T.eq('a free fall is priced at zero on the button', descendCost(c).air, 0);
+  T.eq('and at zero lamp too', descendCost(c).lamp, 0);
+  /* the same node, same depth, without the bargain, is NOT free. Without this
+     the two assertions above pass on a state where nothing costs anything. */
+  var cPaid = cloneState(c); cPaid.flags.freeDescents = 0;
+  T.assert('the same fall without the bargain costs real air', descendCost(cPaid).air > 0, 'air ' + descendCost(cPaid).air);
+  T.assert('the same fall without the bargain costs real lamp', descendCost(cPaid).lamp > 0, 'lamp ' + descendCost(cPaid).lamp);
+  var airBefore = c.air, lampBefore = c.lamp;
+  step(c, 'descend');
+  T.eq('the first free fall costs no air', c.air, airBefore);
+  T.eq('the first free fall costs no lamp', c.lamp, lampBefore);
+  T.eq('one free fall is spent', c.flags.freeDescents, 1);
+  step(c, 'descend');
+  step(c, 'descend');
+  T.assert('the third descent costs again', c.air < airBefore, 'air ' + c.air);
+  /* 16 THE COUNTERWEIGHT */
+  var d = synth(function (st) { st.pending = 16; });
+  var packBefore = d.caps.pack, intBefore = d.integrity;
+  step(d, 'shrine:accept');
+  T.eq('the counterweight adds exactly two braces', d.integrity, intBefore + 2);
+  T.eq('the counterweight costs exactly ten kilos of room', d.caps.pack, packBefore - 10);
+  /* 17 THE DOWSER */
+  var e = synth(function (st) { st.pending = 17; st.lamp = 100; });
+  step(e, 'shrine:accept');
+  T.assert('the dowser turns vein sense on', e.flags.veinSense === true);
+  T.eq('the dowser costs exactly 35 lamp', e.lamp, 65);
+  var e0 = synth(function (st) { st.pending = 17; st.lamp = 30; });
+  T.assert('the dowser is refused on a dying lamp', shrineAcceptable(e0) !== null);
+  /* 18 THE LAST BREATH */
+  var f = synth(function (st) { st.pending = 18; st.air = 120; put(st, 'silver', 2); });
+  var climb = ascentCost(f).air;
+  step(f, 'shrine:accept');
+  T.eq('the last breath pays exactly 200 cash', f.cash, 200);
+  T.near('the last breath leaves exactly the climb plus five', f.air, climb + 5, 1e-9);
+  T.assert('the last breath leaves you alive', !f.over);
+  var f0 = synth(function (st) { st.pending = 18; st.air = 5; });
+  T.assert('the last breath is refused when it would be free money', shrineAcceptable(f0) !== null);
+
+  /* THE DEEP: six landmarks, each once, each a number */
+  var g = newRun(makeRNG(31337), { tank: 5, lamp: 5, pack: 5, brace: 3, drill: 5, assay: 5 }, null);
+  T.eq('a new run has stood in no landmark', g.deeps.length, 0);
+  T.eq('nothing is due at the surface', deepsAt(0, []).length, 0);
+  T.eq('the sill is the first thing down there', deepsAt(200, [])[0].key, 'sill');
+  T.eq('everything above 420 is due at once to a run that skipped it all', deepsAt(9999, []).length, DEEPS.length);
+  T.eq('a landmark already stood in is not due again', deepsAt(9999, ['sill']).length, DEEPS.length - 1);
+  var ev = [];
+  g.depth = 205; g.integrity = 1; resolveDeeps(g, ev);
+  T.eq('the sill gives back exactly one brace', g.integrity, 2);
+  T.eq('the sill fires once', g.deeps.length, 1);
+  ev = []; g.integrity = 1; resolveDeeps(g, ev);
+  T.eq('the sill never fires twice in one run', g.integrity, 1);
+  ev = []; g.depth = 235; g.air = 10; resolveDeeps(g, ev);
+  T.eq('the dry river gives exactly 60 air', Math.round(g.air), 70);
+  ev = []; g.depth = 270; g.lamp = 3; resolveDeeps(g, ev);
+  T.eq('the lamp room fills the lamp', g.lamp, g.caps.lamp);
+  ev = []; g.depth = 305; var packWas = g.caps.pack; resolveDeeps(g, ev);
+  T.eq('the old sea floor buys exactly fifteen kilos of room', g.caps.pack, packWas + 15);
+  ev = []; g.depth = 355; resolveDeeps(g, ev);
+  T.near('the quiet takes exactly eight percent off the hazard rate', g.flags.hazBonus, -0.08, 1e-9);
+  T.near('and that reaches hazardRateAt', hazardRateAt(355, g.flags.hazBonus), hazardRateAt(355, 0) - 0.08, 1e-9);
+  ev = []; g.depth = 425; var cashWas = g.cash; resolveDeeps(g, ev);
+  T.eq('the door pays exactly 500', g.cash, cashWas + 500);
+  T.eq('all six landmarks stood in', g.deeps.length, 6);
+  /* a landmark must never be able to change what is in the rock */
+  var colA = genColumn(5150, 90), colB = genColumn(5150, 90);
+  T.assert('landmarks never touch the shaft that generates', JSON.stringify(colA.nodes) === JSON.stringify(colB.nodes));
+
+  /* SEAM RICHNESS */
+  T.eq('richness is zero at the roof of a band', richnessAt(21), 0);
+  T.near('richness is one at the floor of a band', richnessAt(50), 1, 1e-9);
+  T.assert('richness climbs inside a band', richnessAt(40) > richnessAt(25));
+  T.assert('a deep shale seam is likelier to be tier two than a shallow one',
+    tierChanceAt(48) > tierChanceAt(22), tierChanceAt(48).toFixed(3) + ' vs ' + tierChanceAt(22).toFixed(3));
+  T.assert('the topsoil has one tier so richness cannot change it', bandAt(10).tiers[0] === bandAt(10).tiers[1]);
+  var rich = 0, poor = 0, i, j;
+  for (i = 0; i < 4000; i++) {
+    rich += pickTier(makeRNG(i * 7 + 1), bandAt(48), 48);
+    poor += pickTier(makeRNG(i * 7 + 1), bandAt(22), 22);
+  }
+  T.assert('measured over four thousand rolls, deep shale really is richer', rich > poor * 1.2, rich + ' vs ' + poor);
+
+  /* REPLAY must give a shrine the answer the player gave (defect fixed here) */
+  var seed = 0, took = null, k;
+  for (k = 0; k < 3000 && !took; k++) {
+    var run = playRun(60000 + k, { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 }, 'optimal');
+    for (j = 0; j < run.inputs.length; j++) if (run.inputs[j] === 'shrine:accept') { took = run; seed = 60000 + k; break; }
+  }
+  T.assert('a policy run that accepts a bargain exists to replay', !!took);
+  if (took) {
+    var up = { tank: 2, lamp: 2, pack: 2, brace: 1, drill: 1, assay: 1 };
+    var re = newRun(makeRNG(seed), up, null);
+    for (j = 0; j < took.inputs.length; j++) step(re, took.inputs[j]);
+    T.eq('replaying the log reproduces the run that took the bargain',
+      JSON.stringify({ d: re.maxDepth, c: re.cash, o: re.over }), JSON.stringify({ d: took.maxDepth, c: took.cash, o: took.over }));
+    /* the teeth: the OLD replay force declined every bargain. Prove that a
+       forced decline is a DIFFERENT run, so nobody can quietly put it back. */
+    var forced = newRun(makeRNG(seed), up, null);
+    for (j = 0; j < took.inputs.length; j++) {
+      step(forced, took.inputs[j]);
+      if (forced.phase === 'shrine') step(forced, 'shrine:decline');
+    }
+    T.assert('regression: force declining shrines on playback is a different run',
+      JSON.stringify(forced.over) !== JSON.stringify(took.over) || forced.maxDepth !== took.maxDepth,
+      'forced ' + JSON.stringify(forced.over && forced.over.banked) + ' vs real ' + JSON.stringify(took.over.banked));
+  }
 }
 function suiteBalance(T) {
   var N = 400, i, g = 0, c = 0, o = 0, gLost = 0, cLost = 0, oBank = 0, cBank = 0, gBank = 0;

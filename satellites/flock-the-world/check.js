@@ -12,7 +12,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const FILE = path.join(__dirname, 'index.html');
+const FILE = process.env.FTW_FILE ? path.resolve(process.env.FTW_FILE) : path.join(__dirname, 'index.html');
 const SRC = fs.readFileSync(FILE, 'utf8');
 
 let pass = 0, fail = 0;
@@ -81,7 +81,7 @@ const DASHES_G = /[‐‑‒–—―−]|\\u201[0-5]|\\u2212/g;
 
 /* scan: html outside <script>/<style>, plus every inline script with comments gone */
 let htmlOnly = stripHtmlComments(SRC);
-BLOCKS.forEach(b => { htmlOnly = htmlOnly.split(b.body).join(' '); });
+BLOCKS.forEach(b => { if (b.body.length) htmlOnly = htmlOnly.split(b.body).join(' '); });
 htmlOnly = htmlOnly.replace(/<style[\s\S]*?<\/style>/gi, m => stripCssComments(m));
 const scanned = [];
 htmlOnly.split('\n').forEach((l, i) => { if (DASHES.test(l)) scanned.push('html line ~' + (i + 1) + ': ' + l.trim().slice(0, 110)); });
@@ -148,7 +148,7 @@ function makeCtx() {
     console, Math, Date, JSON, performance, Set, Map, Array, Object, String, Number, Boolean, isFinite, parseInt, parseFloat, Promise, Error,
     setInterval: () => 0, clearInterval: () => {}, setTimeout: () => 0, clearTimeout: () => {},
     requestAnimationFrame: () => 0, cancelAnimationFrame: () => {},
-    devicePixelRatio: 1,
+    devicePixelRatio: 1, addEventListener() {}, removeEventListener() {}, navigator: { share: null, clipboard: null },
     localStorage: {
       getItem: k => (k in store ? store[k] : null),
       setItem: (k, v) => { store[k] = String(v); },
@@ -171,7 +171,8 @@ try { C = makeCtx(); } catch (e) { console.log('  FAIL game script threw on load
 if (C) {
   const get = expr => vm.runInContext(expr, C);
   const call = (fn, ...args) => { C.__a = args; return vm.runInContext(fn + '(...__a)', C); };
-  C.showEvent = ev => { for (const o of ev.o) { if (!o.c || o.c(C.S)) { if (o.cost) { if (o.cost.cash) C.S.cash -= o.cost.cash; if (o.cost.inf) C.S.inf -= o.cost.inf; } o.f(C.S); return; } } ev.o[ev.o.length - 1].f(C.S); };
+  const live = () => vm.runInContext('S', C);
+  C.showEvent = ev => { const st = live(); for (const o of ev.o) { if (!o.c || o.c(st)) { if (o.cost) { if (o.cost.cash) st.cash -= o.cost.cash; if (o.cost.inf) st.inf -= o.cost.inf; } o.f(st); return; } } ev.o[ev.o.length - 1].f(st); };
   C.doctrineModal = () => {};
 
   const REGIONS = get('REGIONS'), NODES = get('NODES'), COMBOS = get('COMBOS');
@@ -211,9 +212,11 @@ if (C) {
   /* full runs: a balanced bot wins, a do-nothing run loses */
   function botRun(mode, diff, start, strat, maxDays) {
     const c = makeCtx();
-    c.showEvent = ev => { for (const o of ev.o) { if (!o.c || o.c(c.S)) { if (o.cost) { if (o.cost.cash) c.S.cash -= o.cost.cash; if (o.cost.inf) c.S.inf -= o.cost.inf; } o.f(c.S); return; } } ev.o[ev.o.length - 1].f(c.S); };
     c.doctrineModal = () => {};
     const s = vm.runInContext(`S=newState('${mode}','${diff}','${start}');S`, c);
+    /* top level `let S` never attaches to the vm context, so the auto resolver
+       has to close over the returned state object, not read c.S */
+    c.showEvent = ev => { for (const o of ev.o) { if (!o.c || o.c(s)) { if (o.cost) { if (o.cost.cash) s.cash -= o.cost.cash; if (o.cost.inf) s.inf -= o.cost.inf; } o.f(s); return; } } ev.o[ev.o.length - 1].f(s); };
     const cl = (fn, ...a) => { c.__a = a; return vm.runInContext(fn + '(...__a)', c); };
     const NODES2 = vm.runInContext('NODES', c);
     for (let d = 0; d < maxDays; d++) {
@@ -255,22 +258,27 @@ if (C) {
     const c2 = makeCtx();
     vm.runInContext("S=newState('CONTRACTOR','Vendor','NA')", c2);
     for (let i = 0; i < 60; i++) vm.runInContext('tick()', c2);
-    const day = c2.S.day, cash = c2.S.cash, owned = c2.S.owned.size;
+    const S2 = vm.runInContext('S', c2); const day = S2.day, cash = S2.cash, owned = S2.owned.size;
     vm.runInContext('saveRun()', c2);
     ok('saveRun writes a resume blob', !!store['ftw_run']);
     const c3 = makeCtx();
     const back = vm.runInContext('loadRun()', c3);
-    ok('loadRun restores the day', back && c3.S && c3.S.day === day, back ? 'day=' + c3.S.day + ' want ' + day : 'loadRun returned falsy');
-    ok('loadRun restores cash', back && Math.abs(c3.S.cash - cash) < 0.001);
-    ok('loadRun restores owned nodes as a Set', back && c3.S.owned instanceof c3.Set && c3.S.owned.size === owned);
-    ok('a restored run keeps ticking', (function () { try { vm.runInContext('tick()', c3); return c3.S.day === day + 1; } catch (e) { return false; } })());
+    const S3 = back ? vm.runInContext('S', c3) : null;
+    ok('loadRun restores the day', !!S3 && S3.day === day, S3 ? 'day=' + S3.day + ' want ' + day : 'loadRun returned falsy');
+    ok('loadRun restores cash', !!S3 && Math.abs(S3.cash - cash) < 0.001);
+    ok('loadRun restores owned nodes as a Set', !!S3 && S3.owned instanceof Set && S3.owned.size === owned);
+    ok('a restored run keeps ticking', (function () { try { vm.runInContext('tick()', c3); return vm.runInContext('S', c3).day === day + 1; } catch (e) { return false; } })());
     /* corrupt saves must never break the boot */
     store['ftw_run'] = '{not json';
     const c4 = makeCtx();
     let threw = null; let r4 = null;
     try { r4 = vm.runInContext('loadRun()', c4); } catch (e) { threw = e.message; }
     ok('a corrupt resume blob is refused, not thrown', !threw && !r4, threw || 'loadRun returned ' + r4);
-    store['ftw_run'] = JSON.stringify({ day: 5 });          /* structurally valid, semantically junk */
+    /* the realistic corruption: a well formed header whose region map got
+       truncated by a quota error. It must be refused, not booted into. */
+    store['ftw_run'] = JSON.stringify({ v: 1, modeKey: 'CONTRACTOR', diffKey: 'Vendor', startId: 'NA',
+      day: 120, cash: 500, inf: 20, oversight: 10, owned: ['ord'], combos: [], milestones: [], wmiles: [],
+      hqName: 'Canada', log: [], regions: { NA: { active: true, coverage: 0.4 } } });
     const c5 = makeCtx();
     let threw5 = null, r5 = null;
     try { r5 = vm.runInContext('loadRun()', c5); } catch (e) { threw5 = e.message; }

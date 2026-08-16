@@ -51,12 +51,14 @@
   #focusLbl { font-size:9.5px; font-weight:800; letter-spacing:1px; opacity:.65; }
   #orb { width:28px; height:28px; border-radius:50%; flex:none; background:radial-gradient(circle at 35% 35%, #fff8, transparent 60%), var(--gold); animation:pulseGlow 2.2s infinite; }
   #hudRow3 { display:flex; align-items:center; gap:5px; flex-wrap:wrap; pointer-events:auto; }
-  .cpill { padding:3px 9px; border-radius:9px; background:var(--glass); border:1px solid var(--line); font-size:10.5px; font-weight:800; letter-spacing:.3px; cursor:pointer; backdrop-filter:blur(5px); font-variant-numeric:tabular-nums; }
+  /* 48px minimum touch target, measured rendered at 375x667. The pill's ink
+     stays small; the tappable box around it does not. */
+  .cpill { min-height:48px; display:inline-flex; align-items:center; padding:3px 11px; border-radius:9px; background:var(--glass); border:1px solid var(--line); font-size:10.5px; font-weight:800; letter-spacing:.3px; cursor:pointer; backdrop-filter:blur(5px); font-variant-numeric:tabular-nums; }
   .cpill.done { border-color:rgba(142,255,193,.65); color:var(--mint); text-shadow:0 0 8px rgba(142,255,193,.5); }
   .cpill.rare { border-color:rgba(158,243,255,.5); }
 
   #menuBtns { position:fixed; right:8px; top:calc(env(safe-area-inset-top,0px) + 92px); display:flex; flex-direction:column; gap:8px; z-index:6; }
-  .mbtn { width:44px; height:44px; border-radius:13px; border:1px solid var(--line); background:var(--glass); color:#fff; font-size:20px; cursor:pointer; backdrop-filter:blur(6px); box-shadow:0 3px 10px rgba(0,0,0,.35); position:relative; }
+  .mbtn { width:48px; height:48px; border-radius:14px; border:1px solid var(--line); background:var(--glass); color:#fff; font-size:20px; cursor:pointer; backdrop-filter:blur(6px); box-shadow:0 3px 10px rgba(0,0,0,.35); position:relative; }
   .mbtn:active { transform:scale(.92); }
   .mbtn .dot { position:absolute; top:-3px; right:-3px; width:12px; height:12px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); display:none; }
   #artBtns { position:fixed; left:8px; top:calc(env(safe-area-inset-top,0px) + 92px); display:flex; flex-direction:column; gap:8px; z-index:6; }
@@ -122,7 +124,7 @@
   h2 { font-size:20px; margin-bottom:4px; letter-spacing:.3px; }
   h3 { font-size:13px; margin:15px 0 7px; color:#bfb3e8; letter-spacing:1.2px; text-transform:uppercase; }
   .sub { font-size:13px; opacity:.72; margin-bottom:12px; line-height:1.45; }
-  .big { display:block; width:100%; padding:14px; margin-top:10px; border-radius:14px; border:none; background:linear-gradient(180deg,#8a67ff,#5d40d6); color:#fff; font-size:15px; font-weight:900; letter-spacing:.4px; cursor:pointer; box-shadow:0 4px 16px rgba(124,92,255,.35); position:relative; overflow:hidden; }
+  .big { display:block; width:100%; min-height:48px; padding:14px; margin-top:10px; border-radius:14px; border:none; background:linear-gradient(180deg,#8a67ff,#5d40d6); color:#fff; font-size:15px; font-weight:900; letter-spacing:.4px; cursor:pointer; box-shadow:0 4px 16px rgba(124,92,255,.35); position:relative; overflow:hidden; }
   .big::after { content:''; position:absolute; top:0; bottom:0; width:30%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent); animation:shineSweep 3s infinite; }
   .big.ghost { background:transparent; border:1px solid rgba(255,255,255,.28); box-shadow:none; }
   .big.ghost::after { display:none; }
@@ -131,7 +133,7 @@
   .shopItem .info { flex:1; }
   .shopItem .nm { font-weight:800; font-size:14px; }
   .shopItem .ds { font-size:12px; opacity:.7; line-height:1.35; }
-  .buyBtn { padding:9px 13px; border-radius:11px; border:none; font-weight:900; font-size:13px; background:linear-gradient(180deg,#ffe28e,var(--gold-deep)); color:#3a2c00; cursor:pointer; white-space:nowrap; box-shadow:0 3px 10px rgba(255,215,94,.3); }
+  .buyBtn { min-height:48px; padding:9px 15px; border-radius:12px; border:none; font-weight:900; font-size:13px; background:linear-gradient(180deg,#ffe28e,var(--gold-deep)); color:#3a2c00; cursor:pointer; white-space:nowrap; box-shadow:0 3px 10px rgba(255,215,94,.3); }
   .buyBtn:disabled { background:#443d5e; color:#999; box-shadow:none; }
   .owned { color:var(--mint); font-weight:800; font-size:13px; padding:8px 4px; }
   .caseGroup { margin-bottom:12px; }
@@ -251,8 +253,24 @@
 
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp = (a,b,t)=>a+(b-a)*t;
-const rnd = (a,b)=>a+Math.random()*(b-a);
-const pick = arr=>arr[Math.floor(Math.random()*arr.length)];
+
+/* All game randomness runs through one seedable xorshift32 rather than
+   Math.random, so the day roll, contract generation and letter selection can
+   be asserted deterministically in test/logic.mjs. Seeded from the clock at
+   boot, so what a player actually sees is exactly as varied as before. */
+let _rngState = (Date.now() ^ 0x9e3779b9) >>> 0;
+function _seedRng(n){ _rngState = (n >>> 0) || 1; }
+function _rng(){
+  let x = _rngState || 1;
+  x ^= x << 13; x >>>= 0;
+  x ^= x >> 17;
+  x ^= x << 5;  x >>>= 0;
+  _rngState = x;
+  return x / 4294967296;
+}
+const rnd = (a,b)=>a+_rng()*(b-a);
+const pick = arr=>arr[Math.floor(_rng()*arr.length)];
+const chance = p=>_rng() < p;
 const $ = id=>document.getElementById(id);
 
 /* ---------------- static data ---------------- */
@@ -503,14 +521,100 @@ function mile(id){
   if (m) { toast('🏆 '+m.n+' — '+m.d); sfx.buy(); }
 }
 
-/* ---------------- persistent meta ---------------- */
-let meta = { case:{}, known:{}, muted:false, seenHow:false, bestPurity:null, endings:[], relics:{}, mile:{}, maraShoos:0, bestEndless:0, rep:{ runs:[], failed:0 } };
-try { const m = localStorage.getItem('auraFarmMeta'); if (m) meta = Object.assign(meta, JSON.parse(m)); } catch(e) {}
-if (!meta.relics) meta.relics = {};
-if (!meta.mile) meta.mile = {};
-if (!meta.maraShoos) meta.maraShoos = 0;
-if (!meta.rep) meta.rep = { runs:[], failed:0 };
-function saveMeta(){ try { localStorage.setItem('auraFarmMeta', JSON.stringify(meta)); } catch(e) {} }
+/* ---------------- persistent meta ----------------
+   Two rules govern this block, both learned the hard way elsewhere in the
+   fleet:
+
+   1. A stored save is UNTRUSTED INPUT. A half-written record, an old schema or
+      a hand-edited value must never be able to strand a player. Everything is
+      coerced to the shape the game expects; anything unrecognisable is
+      dropped, never dereferenced.
+   2. localStorage is shared by every open tab, so a save is READ MODIFY WRITE.
+      Sets union, bests take MAX, counters ADD their session delta. Writing the
+      in-memory object wholesale means the second tab silently erases the
+      first tab's specimens, relics and records. */
+const metaDefaults = ()=>({ case:{}, known:{}, muted:false, seenHow:false, bestPurity:null,
+  endings:[], relics:{}, mile:{}, maraShoos:0, bestEndless:0, rep:{ runs:[], failed:0 } });
+
+const isObj = o => !!o && typeof o==='object' && !Array.isArray(o);
+function flagMap(v){ // {id:1} of truthy keys only
+  const out = {};
+  if (isObj(v)) for (const k in v) if (v[k]) out[k] = 1;
+  return out;
+}
+function sanitizeMeta(raw){
+  const m = metaDefaults();
+  if (!isObj(raw)) return m;
+  m.muted = !!raw.muted;
+  m.seenHow = !!raw.seenHow;
+  m.bestPurity = typeof raw.bestPurity==='number' && isFinite(raw.bestPurity) ? raw.bestPurity : null;
+  m.bestEndless = typeof raw.bestEndless==='number' && isFinite(raw.bestEndless) ? Math.max(0, raw.bestEndless) : 0;
+  m.maraShoos = typeof raw.maraShoos==='number' && isFinite(raw.maraShoos) ? Math.max(0, raw.maraShoos) : 0;
+  m.known = flagMap(raw.known);
+  m.mile = flagMap(raw.mile);
+  m.relics = flagMap(raw.relics);
+  m.endings = Array.isArray(raw.endings) ? raw.endings.filter(x=>typeof x==='string') : [];
+  if (isObj(raw.case)) for (const k in raw.case) {
+    const s = raw.case[k];
+    if (isObj(s) && typeof s.i==='number' && isFinite(s.i))
+      m.case[k] = { i:clamp(s.i,0,1), tier:String(s.tier||''), type:String(s.type||''), emo:s.emo||null };
+  }
+  if (isObj(raw.rep)) {
+    m.rep.failed = typeof raw.rep.failed==='number' && isFinite(raw.rep.failed) ? Math.max(0, raw.rep.failed) : 0;
+    if (Array.isArray(raw.rep.runs)) m.rep.runs = raw.rep.runs
+      .filter(r=>isObj(r) && (r.t==='lum'||r.t==='gray'||r.t==='reap'))
+      .map(r=>({ t:r.t, p:typeof r.p==='number'?r.p:0, emo:r.emo||null, k:r.k||(r.t+':'+(r.p||0)+':'+(r.emo||'')) }))
+      .slice(-20);
+  }
+  return m;
+}
+function readStoredMeta(){
+  try { const m = localStorage.getItem('auraFarmMeta'); return m ? sanitizeMeta(JSON.parse(m)) : metaDefaults(); }
+  catch(e) { return metaDefaults(); }
+}
+let meta = readStoredMeta();
+
+/* Counters we own since the last write. Merged by ADDING, never overwriting,
+   so a second tab's shoos and failures both survive. */
+let metaDelta = { maraShoos:0, repFailed:0 };
+
+function saveMeta(){
+  try {
+    const disk = readStoredMeta();               // whatever another tab wrote
+    const out = metaDefaults();
+    // unions
+    out.known = Object.assign({}, disk.known, meta.known);
+    out.mile = Object.assign({}, disk.mile, meta.mile);
+    out.relics = Object.assign({}, disk.relics, meta.relics);
+    out.endings = disk.endings.slice();
+    for (const e of meta.endings) if (out.endings.indexOf(e) < 0) out.endings.push(e);
+    // specimens: keep the finer capture of the two
+    out.case = Object.assign({}, disk.case);
+    for (const k in meta.case) {
+      const mine = meta.case[k], theirs = out.case[k];
+      if (!theirs || mine.i > theirs.i) out.case[k] = mine;
+    }
+    // bests MAX
+    out.bestEndless = Math.max(disk.bestEndless||0, meta.bestEndless||0);
+    out.bestPurity = meta.bestPurity !== null ? meta.bestPurity : disk.bestPurity;
+    // counters ADD our session delta onto whatever is on disk
+    out.maraShoos = (disk.maraShoos||0) + metaDelta.maraShoos;
+    out.rep.failed = (disk.rep.failed||0) + metaDelta.repFailed;
+    // finished runs: merge by stamp so neither tab loses one
+    const seen = {}, runs = [];
+    for (const r of disk.rep.runs.concat(meta.rep.runs)) {
+      if (seen[r.k]) continue;
+      seen[r.k] = 1; runs.push(r);
+    }
+    out.rep.runs = runs.slice(-20);
+    // local-only preferences stay local
+    out.muted = meta.muted; out.seenHow = meta.seenHow || disk.seenHow;
+
+    localStorage.setItem('auraFarmMeta', JSON.stringify(out));
+    meta = out;                                   // adopt the merged truth
+    metaDelta = { maraShoos:0, repFailed:0 };     // deltas are banked
+  } catch(e) {}
+}
 
 /* ---------------- Broker reputation (persists across runs) ----------------
    Every FINISHED run is remembered as lum / gray / reap; withered runs count
@@ -530,7 +634,9 @@ function repLean(){
   return { n:rs.length, c, lean, last: rs.length ? rs[rs.length-1].t : null, failed: meta.rep.failed||0 };
 }
 function repRecordRun(type, purity, emo){
-  meta.rep.runs.push({ t:type, p:purity, emo:emo||null });
+  /* The stamp lets two tabs merge their finished runs instead of clobbering. */
+  meta.rep.runs.push({ t:type, p:purity, emo:emo||null,
+    k:type+':'+purity+':'+(emo||'')+':'+Date.now()+':'+Math.floor(rnd(0,1e6)) });
   if (meta.rep.runs.length > 20) meta.rep.runs.shift();
   saveMeta();
 }
@@ -582,7 +688,7 @@ function newRun(){
     contracts:[], contractsDone:0, dayContractsDone:0,
     mara:null, stolen:0, dayStolen:0,
     maraOffDay:0, maraDeal:null, maraDeepUsed:false, dayShoos:0, dayHuskedNames:[], jointF:0,
-    endless:false,
+    endless:false, ended:false,
     zones, unlocked,
     owned:{ hype:true, snide:true }, upgrades:{} };
 }
@@ -592,12 +698,28 @@ function freshNpc(d){
     x:0, y:0, tx:0, ty:0, moveT:0, placed:false, bob:rnd(0,6.28), moving:false, face:1 };
 }
 function migrateRun(r){ // fill fields missing from older saves
+  if (!validRun(r)) return newRun();
   const fresh = { dayRad:0, dayBli:0, dayBest:null, combo:0, maxCombo:0, lastSign:0, history:[], qMet:false,
     weather:'clear', event:null, veilT:0, arts:{}, artCd:{},
     essBy:emoZero(), dayEss:emoZero(), dayDistinct:{}, dayPeakN:0,
     contracts:[], contractsDone:0, dayContractsDone:0, mara:null, stolen:0, dayStolen:0, dayLen:dayLenFor(),
-    maraOffDay:0, maraDeal:null, maraDeepUsed:false, dayShoos:0, dayHuskedNames:[], jointF:0, endless:false };
+    maraOffDay:0, maraDeal:null, maraDeepUsed:false, dayShoos:0, dayHuskedNames:[], jointF:0, endless:false,
+    ended:false, essence:0, focus:100, venue:'park', harvests:0, rad:0, bli:0, dayEarned:0,
+    owned:{ hype:true, snide:true }, upgrades:{} };
   for (const k in fresh) if (r[k]===undefined) r[k] = fresh[k];
+  if (!Array.isArray(r.history)) r.history = [];
+  if (!Array.isArray(r.contracts)) r.contracts = [];
+  if (!Array.isArray(r.dayHuskedNames)) r.dayHuskedNames = [];
+  if (!isObj(r.essBy)) r.essBy = emoZero();
+  if (!isObj(r.dayEss)) r.dayEss = emoZero();
+  if (!isObj(r.owned)) r.owned = { hype:true, snide:true };
+  if (!isObj(r.upgrades)) r.upgrades = {};
+  if (!isObj(r.arts)) r.arts = {};
+  if (!isObj(r.artCd)) r.artCd = {};
+  if (!VENUES.some(v=>v.id===r.venue)) r.venue = 'park';
+  /* The clock must never resume at or below zero: that fires endDay on the
+     first frame, before the player has seen anything. */
+  if (typeof r.dayT !== 'number' || !isFinite(r.dayT) || r.dayT <= 3) r.dayT = Math.max(3, r.dayLen||dayLenFor());
   for (const v of VENUES) {
     if (!r.zones[v.id]) r.zones[v.id] = { total:0, rad:0, bli:0, bloomed:null };
     if (r.unlocked[v.id]===undefined) r.unlocked[v.id] = false;
@@ -611,8 +733,35 @@ function migrateRun(r){ // fill fields missing from older saves
   if (!r.contracts.length) genContracts(r);
   return r;
 }
-function saveRun(){ try { if (run) localStorage.setItem('auraFarmRun', JSON.stringify(run)); else localStorage.removeItem('auraFarmRun'); } catch(e) {} }
-function loadRun(){ try { const r = localStorage.getItem('auraFarmRun'); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+/* A stored run must carry the containers migrateRun walks, or it is not a run.
+   Anything that merely parses (a string, a number, {}) used to reach
+   migrateRun and throw out of the Continue Run onclick, leaving the button
+   dead and the player with no way to start at all. */
+function validRun(r){
+  return isObj(r) && typeof r.day==='number' && isFinite(r.day) && r.day >= 1
+    && isObj(r.npcs) && isObj(r.zones) && isObj(r.unlocked);
+}
+function saveRun(){
+  try {
+    /* Never persist a run whose clock has already run out, or one that has
+       finished. Resuming such a save re-fires endDay on the first frame, which
+       on day 14 replays the whole ending: a duplicate reputation record, a
+       duplicate milestone and a duplicate Sunbeam award, repeatable forever. */
+    if (run && run.dayT > 0 && !run.ended && (mode==='play' || mode==='title'))
+      localStorage.setItem('auraFarmRun', JSON.stringify(run));
+    else if (!run || run.ended || run.dayT <= 0)
+      localStorage.removeItem('auraFarmRun');
+  } catch(e) {}
+}
+function loadRun(){
+  try {
+    const r = localStorage.getItem('auraFarmRun');
+    if (!r) return null;
+    const p = JSON.parse(r);
+    if (!validRun(p)) { localStorage.removeItem('auraFarmRun'); return null; }
+    return p;
+  } catch(e) { try { localStorage.removeItem('auraFarmRun'); } catch(e2){} return null; }
+}
 
 /* ---------------- Broker contracts ---------------- */
 function genContracts(r){
@@ -1149,7 +1298,7 @@ function shooMara(){
   const wasDeep = m.deep > 0;
   if (wasDeep) run.maraDeepUsed = true; // interrupted, she won't try again today
   m.stunT = T.stun; m.target = null; m.siphonT = 0; m.deep = 0;
-  meta.maraShoos = (meta.maraShoos||0)+1; saveMeta();
+  meta.maraShoos = (meta.maraShoos||0)+1; metaDelta.maraShoos++; saveMeta();
   run.dayShoos++;
   if (meta.maraShoos >= 5) mile('shoo5');
   sfx.shoo(); burst(m.x, m.y, '#cfd2ff', 14);
@@ -1469,13 +1618,28 @@ function foldLetter(){
   announceDay();
 }
 function gameOver(){
+  if (run.ended) return;   // one result per run, however we got here
+  run.ended = true;
   mode = 'over';
   const p = Math.round(100 * run.rad / Math.max(1, run.rad+run.bli));
   const endlessDepth = run.endless ? run.day : 0;
   if (endlessDepth) {
     if (endlessDepth > (meta.bestEndless||0)) window._sbCapEarn && window._sbCapEarn(4,'aura-farm:endless_best');
     meta.bestEndless = Math.max(meta.bestEndless||0, endlessDepth); saveMeta();
-  } else { meta.rep.failed = (meta.rep.failed||0)+1; saveMeta(); }
+  } else {
+    meta.rep.failed = (meta.rep.failed||0)+1; metaDelta.repFailed++;
+    /* A withered run is still a run you were seen to farm. Recording it means
+       a player who has never survived fourteen days still HAS a standing, so
+       the letters and Mara's prices have something to read. Without this the
+       whole reputation system stays invisible to anyone still learning. */
+    const tot = run.rad + run.bli;
+    if (tot > 0 && run.day >= 3) {
+      const pr = run.rad / tot;
+      let domEmo = null, domV = 0;
+      for (const k of EMO_KEYS) if (run.essBy[k] > domV) { domV = run.essBy[k]; domEmo = k; }
+      repRecordRun(pr>=0.85?'lum':pr<=0.15?'reap':'gray', Math.round(pr*100), domEmo);
+    } else saveMeta();
+  }
   showModal(`
     <h2>${endlessDepth ? 'The Endless Dusk Claims You' : 'The Farm Withers'}</h2>
     <div class="sub">Day ${run.day} ended at ✦${run.dayEarned} of the ✦${quotaFor(run.day)} quota. The aura wells run dry.</div>
@@ -1498,6 +1662,8 @@ const EMO_EPITHETS = {
   sorrow:'The Rain Collector', rage:'The Storm-Tongue', dread:'The Night Shepherd',
 };
 function ending(){
+  if (run.ended) return;   // never record the same run twice
+  run.ended = true;
   mode = 'ending';
   mile('finish');
   const total = run.rad + run.bli;
@@ -1546,7 +1712,9 @@ function ending(){
 }
 function enterEndless(){
   if (!run) return;
-  run.endless = true; mode = 'play';
+  /* The fourteen day result is already banked; the run continues from here and
+     may be saved and resumed again, so it is no longer "ended". */
+  run.endless = true; run.ended = false; mode = 'play';
   startAmbient(run.venue);
   closeModal();
   nextDay();
@@ -1887,7 +2055,7 @@ function titleScreen(){
     <button class="big ${hasSave?'ghost':''}" onclick="confirmNew()">New Run</button>
     <button class="big ghost" onclick="howTo('title')">How to Farm</button>
     <button class="big ghost" onclick="openRecords('title')">Records &amp; Relics</button>
-    ${SWS_FRAMED?'<button class="big ghost" onclick="swsExit()">&larr; Back to Sky Wolf</button>':''}`, true);
+    <button class="big ghost" onclick="swsExit()">&larr; Back to Sky Wolf</button>`, true);
 }
 function confirmNew(){
   if (loadRun()) {
@@ -2578,13 +2746,28 @@ requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', ()=>{ if (document.hidden) { saveRun(); saveMeta(); } });
 window.addEventListener('pagehide', ()=>{ saveRun(); saveMeta(); });
 
-/* Sky Wolf Studios portal bridge. The portal's black-screen watchdog needs
-   {sws:'ready'} on EVERY load (silence after a load = it yanks the player
-   back to the arcade), and the title screen grows a framed-only exit that
-   posts {sws:'close'} so the portal's shell handles the return trip. */
+/* Sky Wolf Studios portal bridge.
+
+   TWO transports, and this game ships on the one that is NOT framed. The
+   portal's click router (portal/index.html ~2226) reads
+   `if(!playM && !isSat) return;` — it only frames /play/<id>.html and
+   github.io urls. Aura Farm ships as /satellites/aura-farm/, so the portal
+   NAVIGATES TOP LEVEL and window.parent === window. The old code gated the
+   exit button on the framed check alone, so in production it never rendered
+   once and the only way back to the arcade was the browser back button.
+
+   So: the ready handshake stays (it costs nothing and is correct the day this
+   card moves to a github.io url), and the exit works both ways — postMessage
+   when framed, referrer/history when not. */
 const SWS_FRAMED = (()=>{ try { return window.parent !== window; } catch(e){ return true; } })();
 function swsPostReady(){ try { if (SWS_FRAMED) parent.postMessage({sws:'ready'}, '*'); } catch(e){} }
-function swsExit(){ try { parent.postMessage({sws:'close'}, '*'); } catch(e){} }
+function swsExit(){
+  if (SWS_FRAMED) { try { parent.postMessage({sws:'close'}, '*'); } catch(e){} return; }
+  try {
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); return; }
+  } catch(e){}
+  location.replace('https://lucidwinds.com/portal/');
+}
 swsPostReady(); window.addEventListener('load', swsPostReady);
 
 titleScreen();

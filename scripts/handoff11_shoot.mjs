@@ -57,7 +57,13 @@ for (const v of VIEWS) {
   });
   await page.evaluateOnNewDocument(() => { try { localStorage.setItem("sws_dev_ok", "1"); } catch (e) {} });
 
-  const url = BASE + "/satellites/" + id + "/?probe=" + Math.floor(Math.random() * 1e9) + (testMode ? "&test=1" : "");
+  /* Hush and PadLab live at the site root. The first version of this script
+     hardcoded /satellites/ and happily shot a 404 page, reporting "no console
+     errors" about it, which is exactly the kind of green that teaches you
+     nothing. Accept a path or a bare id. */
+  const SDIR = id.indexOf("/") >= 0 ? id.replace(/^\/+|\/+$/g, "")
+    : (existsSync("satellites/" + id) ? "satellites/" + id : id);
+  const url = BASE + "/" + SDIR + "/?probe=" + Math.floor(Math.random() * 1e9) + (testMode ? "&test=1" : "");
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
   await sleep(1400);   // never networkidle2: a game that keeps drawing never idles
 
