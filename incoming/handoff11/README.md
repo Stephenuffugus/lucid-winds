@@ -1,7 +1,16 @@
 # HANDOFF-11 BUILD PLANS — MASTER FILE (for Opus 5 execution)
 
 **Planned by:** Fable 5, 2026-08-16. **Spec source:** `/workspaces/lucid-winds/assets/HANDOFF-11.md` — read it in full before starting; each plan references its section numbers instead of duplicating every table.
-**Executor:** Opus 5, building until the usage reset. Solo build — no agent swarms, no workflows. One game at a time, shipped and verified before the next begins.
+**Executor:** Opus 5, building until the usage reset (~3 hours — Stephen authorized burning resources on 2026-08-16).
+
+## Execution mode: PARALLEL BUILDERS, SERIALIZED VERIFICATION (Stephen's call, overrides the earlier solo rule)
+
+- **Spawn one builder agent per game, all five at once.** Each agent reads HANDOFF-11 §1–§3 conventions + its own game section, its own PLAN file, and CRAFT.md — nothing else. This is exactly the parallel split HANDOFF-11 §8 was written for: no shared state, no coordination, standalone outputs.
+- **Each builder writes ONLY inside `satellites/<gameid>/`.** Never portal/index.html, never HANDOFF-11.md, never another game's folder, never git. Builders run their own tests at small N (`?test=1` logic in node, sweeps at ~2k runs) to iterate.
+- **The main loop (you, Opus) owns everything shared, serially:** frequent commits+pushes of whatever exists (constant-save law — commit half-built work, the branch is not live until pushed to main), full-N sim sweeps ONE AT A TIME (50k-run sweeps and puppeteer in parallel starve this box and make gates disagree — proven on the chameleon sessions), page_health + sw_purge_audit, portal card integration, LOOKING passes, deploys, and the HANDOFF-11 §9 report.
+- **Integrate in priority order** (DEEPWELL → BLACKOUT → PARALLEL → WIREWORM → SIEGE) as builders land. If the reset looms, a shipped-and-verified subset beats five near-done games: stop integrating new ones and finish verifying what's furthest along.
+- While builders run, the main loop prepares the shared kit: `tools/shoot.mjs`, the icon/thumb generation script, portal card stubs, and the tap-probe script — so integration is assembly, not invention.
+- If a builder returns broken or incomplete work, fix it in the main loop or respawn with the specific defect named; don't silently accept its self-reported green — re-run its gates yourself before integrating.
 
 ## Scope ruling (Stephen, 2026-08-16)
 
