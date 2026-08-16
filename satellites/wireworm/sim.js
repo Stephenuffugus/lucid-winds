@@ -65,9 +65,53 @@ process.argv.slice(2).forEach(a => {
 /* ------------------------------------------------------------------ */
 /* --test                                                              */
 /* ------------------------------------------------------------------ */
+/* Source level gates. Comments are stripped first: a worker that EXPLAINS in
+   prose that Math.random is banned must not be failed for saying so. */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+}
+function sourceGates() {
+  const out = [];
+  const sim = stripComments(block('SIM'));
+  const add = (name, cond, detail) => out.push({ name, pass: !!cond, detail: cond ? '' : String(detail) });
+  const banned = ['Math\\.random', '\\bdocument\\b', '\\bwindow\\b', '\\bcanvas\\b', '\\bperformance\\b', '\\brequestAnimationFrame\\b', '\\bsetTimeout\\b', '\\blocalStorage\\b', '\\bDate\\b'];
+  banned.forEach(b => {
+    const m = sim.match(new RegExp(b, 'g'));
+    add('SIM is free of ' + b.replace(/\\b|\\/g, ''), !m, (m ? m.length : 0) + ' hit(s)');
+  });
+  /* no dash characters in any player facing string */
+  const copy = /var COPY = Object\.freeze\(([\s\S]*?)\);/.exec(HTML);
+  add('the COPY table was found', !!copy, 'missing');
+  if (copy) {
+    const bad = [];
+    copy[1].split('\n').forEach(line => {
+      const i = line.indexOf(':');
+      if (i < 0) return;
+      const v = line.slice(i + 1);
+      if (/[-\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/.test(v.replace(/\/\*.*/, ''))) bad.push(line.trim().slice(0, 44));
+    });
+    add('no dash characters in player facing copy', bad.length === 0, bad.join(' | '));
+  }
+  /* a literal close-script tag inside a JS string truncates the block */
+  add('no literal close script tag inside a string', !/['"`]<\/script>/.test(HTML), 'split it as close-scr plus ipt');
+  /* the markers the whole toolchain depends on */
+  ['SIM', 'SAVE', 'TEST'].forEach(n => {
+    add('the ' + n + ' export markers are present', HTML.indexOf('// ---- ' + n + '_EXPORT_START ----') >= 0, 'missing');
+  });
+  add('the service worker only deletes its own caches', (() => {
+    try {
+      const sw = require('fs').readFileSync(require('path').join(__dirname, 'sw.js'), 'utf8');
+      return /indexOf\("wireworm-"\) === 0/.test(sw) && !/banditsbox/.test(sw);
+    } catch (e) { return false; }
+  })(), 'sw.js cache prefix is not wireworm-');
+  return out;
+}
+
 function cmdTest() {
   const t0 = Date.now();
   const rep = G.runAllTests({});
+  const gates = sourceGates();
+  gates.forEach(g => { rep.total++; if (g.pass) rep.passed++; else { rep.failed++; rep.failures.push(g); } });
   rep.failures.forEach(f => console.log('FAIL  ' + f.name + (f.detail ? '   [' + f.detail + ']' : '')));
   console.log('');
   console.log('PASSED ' + rep.passed + ' / FAILED ' + rep.failed + '   (' + rep.total + ' assertions, ' +

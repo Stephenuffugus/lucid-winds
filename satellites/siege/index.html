@@ -1145,7 +1145,576 @@ var SIM = {
 
 // ---- SIM_EXPORT_END ----
 
-/*VIEW_PLACEHOLDER*/
+/* ============================ 6. VIEW ============================ */
+/* Reads SIM state. Never mutates it. All copy on this layer is dash free. */
+
+var $ = function (id) { return document.getElementById(id); };
+var EL = {};
+var G = null;                 /* the live SIM state */
+var UI = { sel: null, dirtyTraps: true, nodes: {}, trapNodes: {}, scWave: null, mode: 'campaign', seed: 1, reduce: false, paused: false };
+
+/* --- silhouettes. Shape carries the meaning, colour only doubles it. --- */
+var SIL = {
+  runner:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 1 L14 9 L11 9 L15 25 L9 17 L5 25 L8 9 L6 9 Z" fill="C"/></svg>',
+  brute:    '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M3 26 L3 12 L1 9 L6 6 L6 2 L14 2 L14 6 L19 9 L17 12 L17 26 Z" fill="C"/></svg>',
+  shielded: '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M8 2 L15 2 L15 26 L8 26 Z" fill="C"/><path d="M2 6 L8 3 L8 21 L2 18 Z" fill="C2" stroke="C" stroke-width="1.5"/></svg>',
+  flyer:    '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 6 L19 1 L15 11 L19 15 L10 13 L1 15 L5 11 L1 1 Z" fill="C"/><circle cx="10" cy="9" r="3" fill="C"/></svg>',
+  sapper:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M9 2 L13 2 L13 26 L9 26 Z" fill="C"/><rect x="1" y="12" width="8" height="8" rx="1.5" fill="C2" stroke="C" stroke-width="1.5"/></svg>',
+  healer:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M7 8 L13 8 L13 26 L7 26 Z" fill="C"/><path d="M10 0 L10 8 M6 4 L14 4" stroke="#7ab356" stroke-width="2.6" fill="none"/></svg>',
+  swarm:    '<svg width="W" height="H" viewBox="0 0 20 26"><circle cx="6" cy="20" r="4" fill="C"/><circle cx="14" cy="22" r="3.4" fill="C"/><circle cx="10" cy="13" r="3.6" fill="C"/></svg>',
+  warden:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M1 3 L4 8 L6 5 L14 5 L16 8 L19 3 L17 12 L18 26 L2 26 L3 12 Z" fill="C"/><path d="M6 10 L14 10 L12 15 L8 15 Z" fill="#0a0b0f"/></svg>',
+  player:   '<svg width="W" height="H" viewBox="0 0 20 26"><path d="M10 1 L13 7 L12 26 L8 26 L7 7 Z" fill="C"/><path d="M13 6 L19 2 L19 4 L14 10 Z" fill="#f5c77e"/></svg>'
+};
+function sil(type, w, h, colour) {
+  var c = colour || '#9aa6bd';
+  return SIL[type].replace(/W/, w).replace(/H/, h).replace(/C2/g, '#20242e').replace(/C/g, c);
+}
+
+function laneMetrics() {
+  var f = EL.field;
+  return { w: f.clientWidth, h: f.clientHeight, cw: f.clientWidth / CONFIG.LANE };
+}
+
+function buildLane() {
+  var m = laneMetrics(), html = '', i;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    var cls = 'cell' + (CONFIG.BREACH_MARKS.indexOf(i) >= 0 ? ' mark' : '');
+    html += '<div class="' + cls + '" data-cell="' + i + '" style="left:' + (i * m.cw) + 'px;width:' + m.cw + 'px"></div>';
+  }
+  EL.lane.innerHTML = html;
+  EL.gate.style.width = m.cw + 'px';
+  UI.dirtyTraps = true;
+  UI.nodes = {};
+}
+
+function drawTraps() {
+  var m = laneMetrics(), i, t, node, wrap = EL.lane;
+  for (i = 0; i < CONFIG.LANE; i++) {
+    node = UI.trapNodes[i];
+    t = G.traps[i];
+    if (!t) { if (node) { node.remove(); UI.trapNodes[i] = null; } continue; }
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'trap';
+      wrap.appendChild(node);
+      UI.trapNodes[i] = node;
+    }
+    node.style.left = ((i + 0.5) * m.cw) + 'px';
+    node.style.bottom = '2px';
+    var sub = '';
+    if (t.type === 'spike') sub = t.charges;
+    if (t.type === 'wall') sub = '###'.slice(0, t.hits);
+    node.innerHTML = '<span class="g" style="color:' + (t.type === 'wall' ? '#8b93a5' : '#f5c77e') + '">' + TRAPS[t.type].glyph + '</span><small>' + sub + '</small>';
+  }
+}
+
+function drawEntities() {
+  var m = laneMetrics(), seen = {}, i, e, node, size = Math.max(18, Math.min(30, m.cw * 1.5));
+  for (i = 0; i < G.enemies.length; i++) {
+    e = G.enemies[i];
+    seen[e.id] = 1;
+    node = UI.nodes[e.id];
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'ent';
+      node.innerHTML = sil(e.type, size, size * 1.3, e.boss ? '#d2a0a0' : '#9aa6bd') +
+        '<span class="hpbar"><i></i></span>';
+      EL.lane.appendChild(node);
+      UI.nodes[e.id] = node;
+    }
+    node.style.transform = 'translate(' + ((e.cell + 0.5) * m.cw) + 'px,' + (m.h - 4) + 'px) translate(-50%,-100%)';
+    var bar = node.querySelector('.hpbar');
+    bar.style.bottom = (size * 1.3 + 2) + 'px';
+    bar.firstChild.style.width = Math.max(0, Math.round(e.hp / e.maxHp * 100)) + '%';
+    if (e.shield > 0) bar.firstChild.style.background = '#7fb3d5';
+    else if (e.burns.length) bar.firstChild.style.background = '#e8703a';
+    else bar.firstChild.style.background = '#c8563a';
+  }
+  for (var k in UI.nodes) {
+    if (!seen[k] && k !== 'P') { UI.nodes[k].remove(); delete UI.nodes[k]; }
+  }
+  node = UI.nodes.P;
+  if (!node) {
+    node = document.createElement('div');
+    node.className = 'ent';
+    node.style.zIndex = '5';
+    node.innerHTML = sil('player', size, size * 1.35, '#e8703a');
+    EL.lane.appendChild(node);
+    UI.nodes.P = node;
+  }
+  node.style.transform = 'translate(' + ((G.player.cell + 0.5) * m.cw) + 'px,' + (m.h - 4) + 'px) translate(-50%,-100%)' +
+    (G.player.hitFlash > 0 ? ' scale(1.14)' : '');
+}
+
+function drawPips() {
+  if (G.phase !== 'build') { EL.pips.innerHTML = ''; return; }
+  var tbl = GEN.waveTable(G.wave), html = '', i, def;
+  for (i = 0; i < tbl.length; i++) {
+    def = ENEMIES[tbl[i][0]];
+    html += '<span class="pip">' + sil(tbl[i][0], 14, 18, '#9aa6bd') + (tbl[i][1] * (def.group || 1)) + '</span>';
+  }
+  EL.pips.innerHTML = html;
+}
+
+function drawSight(cell) {
+  if (cell < 0 || UI.sel !== 'ballista') { EL.sight.classList.add('hidden'); return; }
+  var m = laneMetrics(), far = SIM.ballistaSight(G, cell);
+  EL.sight.classList.remove('hidden');
+  EL.sight.style.left = ((cell + 0.5) * m.cw) + 'px';
+  EL.sight.style.width = Math.max(0, (far - cell) * m.cw) + 'px';
+  EL.sight.style.bottom = (m.h * 0.42) + 'px';
+}
+
+function drawShop() {
+  var html = '', i, k, def;
+  for (i = 0; i < TRAP_ORDER.length; i++) {
+    k = TRAP_ORDER[i]; def = TRAPS[k];
+    html += '<button class="shopbtn' + (UI.sel === k ? ' on' : '') + (G.scrap < def.cost ? ' broke' : '') +
+      '" data-trap="' + k + '"><span class="g">' + def.glyph + '</span><span class="n">' + def.short + '</span><span class="c">' + def.cost + '</span></button>';
+  }
+  EL.shop.innerHTML = html;
+}
+
+var odo = { scrap: 0 };
+function drawHUD() {
+  EL.wavev.textContent = G.wave;
+  odo.scrap += (G.scrap - odo.scrap) * 0.3;
+  if (Math.abs(odo.scrap - G.scrap) < 1) odo.scrap = G.scrap;
+  EL.scrapv.textContent = Math.round(odo.scrap);
+  EL.bladev.textContent = SIM.playerDamage(G.wave);
+  var build = (G.phase === 'build');
+  EL.buildbar.classList.toggle('hidden', !build);
+  EL.pad.classList.toggle('hidden', build);
+  if (build) {
+    var left = Math.max(0, CONFIG.BUILD_TICKS - G.phaseTick);
+    EL.timernum.textContent = Math.ceil(left / 10);
+    var frac = left / CONFIG.BUILD_TICKS, circ = 2 * Math.PI * 20;
+    EL.timerarc.setAttribute('stroke-dasharray', circ);
+    EL.timerarc.setAttribute('stroke-dashoffset', circ * (1 - frac));
+  } else {
+    EL.cdbar.style.width = (100 - G.player.atkCd / CONFIG.PLAYER_ATK_CD * 100) + '%';
+  }
+  var deep = G.enemies.length ? Math.min.apply(null, G.enemies.map(function (e) { return e.cell; })) : 30;
+  EL.gateglow.style.opacity = deep <= 8 ? Math.min(0.9, (9 - deep) / 8) : 0;
+}
+
+function render() {
+  if (UI.dirtyTraps) { drawTraps(); UI.dirtyTraps = false; }
+  drawEntities();
+  drawHUD();
+}
+
+/* --- the wave scorecard: the sweep's own metric, handed to the player --- */
+var SRC_LABEL = { player: 'YOU', spike: 'SPIKE', pit: 'PIT', ballista: 'BALLISTA', brazier: 'BRAZIER', wall: 'WALL', snare: 'SNARE' };
+var SRC_COLOUR = { player: '#e8703a', spike: '#8b93a5', pit: '#7fb3d5', ballista: '#f5c77e', brazier: '#d2704a', wall: '#6b7385', snare: '#9a86c4' };
+
+function showScorecard(ws) {
+  if (!ws) return;
+  var tot = 0, k, rows = [];
+  for (k in ws.dmg) tot += ws.dmg[k];
+  for (k in ws.dmg) if (ws.dmg[k] > 0) rows.push([k, ws.dmg[k]]);
+  rows.sort(function (a, b) { return b[1] - a[1]; });
+  var html = '';
+  if (!rows.length) html = '<div class="barrow"><span class="lbl">NOBODY</span><span class="track"></span><span class="val">0%</span></div>';
+  rows.forEach(function (r) {
+    var p = tot ? r[1] / tot : 0;
+    html += '<div class="barrow' + (r[0] === 'player' ? ' you' : '') + '"><span class="lbl">' + SRC_LABEL[r[0]] +
+      '</span><span class="track"><i style="width:' + (p * 100).toFixed(0) + '%;background:' + SRC_COLOUR[r[0]] + '"></i></span>' +
+      '<span class="val">' + Math.round(p * 100) + '%</span></div>';
+  });
+  if (ws.held.wall + ws.held.snare + ws.held.pit > 0) {
+    html += '<div class="kv"><span>Time your traps bought</span><b>' +
+      (((ws.held.wall + ws.held.snare + ws.held.pit) * CONFIG.TICK_MS / 1000).toFixed(1)) + 's</b></div>';
+  }
+  $('scwave').textContent = 'WAVE ' + ws.wave + ' HELD';
+  $('scbars').innerHTML = html;
+  $('scscrap').textContent = G.scrap;
+  $('scdeep').textContent = 'cell ' + ws.deepest;
+  $('sckills').textContent = ws.kills;
+  EL.scoresheet.classList.remove('hidden');
+}
+
+/* --- war log dispatches, generated from run events. No dashes. --- */
+function dispatch(s) {
+  var li = s.lossInfo;
+  if (s.won) return 'Twenty waves. The gate held and the lane is quiet.';
+  if (!li) return 'The siege ended.';
+  var who = { runner: 'a runner', brute: 'a brute', shielded: 'a shielded one', flyer: 'a flyer', sapper: 'a sapper', healer: 'a healer', swarm: 'the swarm', warden: 'the Warden', stall: 'the long wait' }[li.enemy] || 'something';
+  var line = 'Fell on wave ' + li.wave + '. ' + who.charAt(0).toUpperCase() + who.slice(1) + ' walked through the gate.';
+  var saps = s.log.filter(function (l) { return l.k === 'sap'; });
+  if (saps.length) {
+    var last = saps[saps.length - 1];
+    line += ' A sapper ate the ' + TRAPS[last.type].name.toLowerCase() + ' at cell ' + last.cell + '.';
+  }
+  return line;
+}
+
+/* ============================ 7. AUDIO ============================ */
+/* G minor, martial. Every pitched sound is quantised to the scale so the
+   whole siege stays in one key. */
+var AC = null, MASTER = null, AUD = { vol: 0.7, mute: false, ready: false };
+var GMINOR = [196.00, 220.00, 233.08, 261.63, 293.66, 311.13, 349.23];
+function quant(f) {
+  var best = GMINOR[0], i, o, c;
+  for (o = -2; o <= 3; o++) for (i = 0; i < GMINOR.length; i++) {
+    c = GMINOR[i] * Math.pow(2, o);
+    if (Math.abs(Math.log(c / f)) < Math.abs(Math.log(best / f))) best = c;
+  }
+  return best;
+}
+function audioOn() {
+  if (AC) return;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MASTER = AC.createGain(); MASTER.gain.value = AUD.mute ? 0 : AUD.vol;
+    var comp = AC.createDynamicsCompressor();
+    MASTER.connect(comp); comp.connect(AC.destination);
+    AUD.ready = true;
+  } catch (e) { AC = null; }
+}
+function noiseBuf(dur) {
+  var n = Math.floor(AC.sampleRate * dur), b = AC.createBuffer(1, Math.max(1, n), AC.sampleRate), d = b.getChannelData(0), i;
+  for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+function noiseBurst(dur, hz, gain, type) {
+  if (!AC) return;
+  var src = AC.createBufferSource(); src.buffer = noiseBuf(dur);
+  var f = AC.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.value = hz; f.Q.value = 1.2;
+  var g = AC.createGain(); g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  src.connect(f); f.connect(g); g.connect(MASTER); src.start();
+}
+function pluck(freq, dur, gain, wave) {
+  if (!AC) return;
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = wave || 'triangle'; o.frequency.value = quant(freq);
+  g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  o.connect(g); g.connect(MASTER); o.start(); o.stop(AC.currentTime + dur + 0.02);
+}
+function horn() {
+  if (!AC) return;
+  var t = AC.currentTime, notes = [98, 146.83];
+  notes.forEach(function (f, i) {
+    var o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain(), bp = AC.createBiquadFilter();
+    o.type = 'sawtooth'; o2.type = 'sawtooth';
+    o.frequency.value = f; o2.frequency.value = f * 1.007;
+    bp.type = 'bandpass'; bp.frequency.value = f * 3; bp.Q.value = 2.2;
+    g.gain.setValueAtTime(0.0001, t + i * 0.22);
+    g.gain.exponentialRampToValueAtTime(0.35, t + i * 0.22 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.22 + 0.5);
+    o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(MASTER);
+    o.start(t + i * 0.22); o2.start(t + i * 0.22); o.stop(t + i * 0.22 + 0.55); o2.stop(t + i * 0.22 + 0.55);
+  });
+}
+var VOICE = {
+  spike: function () { noiseBurst(0.045, 3200, 0.22, 'highpass'); },
+  pit: function () { pluck(69.3, 0.26, 0.4, 'sine'); },
+  ballista: function () { noiseBurst(0.09, 1800, 0.2); pluck(587, 0.06, 0.12, 'square'); },
+  brazier: function () { noiseBurst(0.12, 900, 0.1); },
+  wall: function () { noiseBurst(0.07, 260, 0.34, 'lowpass'); },
+  snare: function () { pluck(392, 0.18, 0.26, 'triangle'); },
+  player: function () { noiseBurst(0.05, 1400, 0.26); pluck(293.66, 0.09, 0.2, 'square'); }
+};
+var wardenOsc = null;
+function wardenStart() {
+  if (!AC || wardenOsc) return;
+  var seq = [98, 116.54, 98, 87.31, 77.78], i = 0;
+  wardenOsc = setInterval(function () {
+    pluck(seq[i % seq.length], 0.38, 0.16, 'sawtooth');
+    i++;
+  }, 480);
+}
+function wardenStop() { if (wardenOsc) { clearInterval(wardenOsc); wardenOsc = null; } }
+function alarmPing(step) { pluck(392 * Math.pow(2, step / 12) * 2, 0.16, 0.3, 'square'); }
+
+function haptic(ms) {
+  if (!SAVE.settings.haptics) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+}
+
+/* --- events from the SIM become sound and light --- */
+var floatPool = [];
+function playEvents() {
+  var i, ev, m = laneMetrics();
+  for (i = 0; i < G.ev.length; i++) {
+    ev = G.ev[i];
+    if (ev.t === 'hit') { if (VOICE[ev.b]) VOICE[ev.b](); }
+    else if (ev.t === 'wallhit') { VOICE.wall(); UI.dirtyTraps = true; }
+    else if (ev.t === 'snare') { VOICE.snare(); UI.dirtyTraps = true; }
+    else if (ev.t === 'pit') VOICE.pit();
+    else if (ev.t === 'brazier') VOICE.brazier();
+    else if (ev.t === 'traplost') UI.dirtyTraps = true;
+    else if (ev.t === 'spike') UI.dirtyTraps = true;
+    else if (ev.t === 'alarm') { alarmPing(ev.b); haptic(10); }
+    else if (ev.t === 'swinghit') { haptic(10); }
+    else if (ev.t === 'spawn' && ev.a === 'warden') wardenStart();
+    else if (ev.t === 'kill' && ev.a === 'warden') wardenStop();
+    else if (ev.t === 'wavestart') { horn(); wardenStop(); }
+    else if (ev.t === 'breach') { haptic([30, 40, 80]); shake(); }
+    else if (ev.t === 'waveclear') { pluck(392, 0.3, 0.25, 'triangle'); pluck(587, 0.4, 0.2, 'triangle'); }
+  }
+}
+function shake() {
+  if (SAVE.settings.reduce || UI.reduce) return;
+  EL.shakewrap.classList.remove('shake');
+  void EL.shakewrap.offsetWidth;
+  EL.shakewrap.classList.add('shake');
+}
+
+/* ============================ 8. SAVE ============================ */
+
+var SAVE = SIM.defaultSave();
+function loadSave() {
+  var raw = null;
+  try { raw = localStorage.getItem(CONFIG.SAVE_KEY); } catch (e) {}
+  SAVE = SIM.decodeSave(raw);
+  return SAVE;
+}
+function writeSave(delta) {
+  var current;
+  try { current = SIM.decodeSave(localStorage.getItem(CONFIG.SAVE_KEY)); } catch (e) { current = SIM.defaultSave(); }
+  SAVE = SIM.mergeSave(current, delta);
+  try { localStorage.setItem(CONFIG.SAVE_KEY, SIM.encodeSave(SAVE)); } catch (e) {}
+  return SAVE;
+}
+
+/* ============================ 9. INPUT + LOOP ============================ */
+
+var held = { left: false, right: false, attack: false };
+var queued = null;
+function intentNow() {
+  if (queued) { var q = queued; queued = null; return q; }
+  if (held.attack) return 'attack';
+  if (held.left) return 'left';
+  if (held.right) return 'right';
+  return 'none';
+}
+
+function toast(msg) {
+  EL.toast.textContent = msg;
+  EL.toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { EL.toast.classList.remove('show'); }, 1600);
+}
+
+function cellFromX(x) {
+  var r = EL.field.getBoundingClientRect(), m = laneMetrics();
+  return Math.max(0, Math.min(CONFIG.LANE - 1, Math.floor((x - r.left) / m.cw)));
+}
+
+function tapCell(cell) {
+  if (G.phase !== 'build') return;
+  if (G.traps[cell]) {
+    var t = G.traps[cell].type;
+    if (SIM.sellTrap(G, cell)) { UI.dirtyTraps = true; drawShop(); toast('Pulled the ' + TRAPS[t].name.toLowerCase() + ' back up.'); haptic(10); }
+    return;
+  }
+  if (!UI.sel) { toast('Pick a trap first.'); return; }
+  if (SIM.placeTrap(G, cell, UI.sel)) {
+    UI.dirtyTraps = true; drawShop(); haptic(10); VOICE[UI.sel === 'ballista' ? 'ballista' : 'wall']();
+  } else if (G.scrap < TRAPS[UI.sel].cost) toast('Not enough scrap for a ' + TRAPS[UI.sel].name.toLowerCase() + '.');
+  else toast('The gate and the mouth stay clear.');
+}
+
+function wireInput() {
+  var pressHold = function (el, key) {
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); audioOn(); held[key] = true; el.classList.add('held'); if (key === 'attack') queued = 'attack'; });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      el.addEventListener(ev, function () { held[key] = false; el.classList.remove('held'); });
+    });
+  };
+  pressHold($('left'), 'left'); pressHold($('right'), 'right'); pressHold($('atk'), 'attack');
+
+  EL.field.addEventListener('pointerdown', function (e) {
+    audioOn();
+    if (G.phase === 'build') { var c = cellFromX(e.clientX); drawSight(c); }
+    else {
+      /* tap on the lane during combat swings toward it */
+      queued = 'attack';
+    }
+  });
+  EL.field.addEventListener('pointermove', function (e) {
+    if (G.phase === 'build' && UI.sel === 'ballista' && e.pressure !== 0) drawSight(cellFromX(e.clientX));
+  });
+  EL.field.addEventListener('pointerup', function (e) {
+    if (G.phase === 'build') { tapCell(cellFromX(e.clientX)); drawSight(-1); }
+  });
+
+  EL.shop.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.shopbtn') : null;
+    if (!b) return;
+    audioOn();
+    UI.sel = (UI.sel === b.dataset.trap) ? null : b.dataset.trap;
+    drawShop();
+    $('hint').textContent = UI.sel ? TRAPS[UI.sel].blurb : 'Tap a trap, then tap a cell in the lane.';
+  });
+
+  $('skipbtn').addEventListener('click', function () { audioOn(); SIM.startWave(G); playEvents(); drawPips(); });
+  $('lastbuild').addEventListener('click', function () {
+    audioOn();
+    var n = SIM.applyBuild(G, SAVE.lastPlan || G.lastBuild);
+    UI.dirtyTraps = true; drawShop();
+    toast(n ? 'Set ' + n + ' back down.' : 'Nothing left to re apply.');
+  });
+  $('optbtn').addEventListener('click', function () { EL.optsheet.classList.remove('hidden'); });
+  $('optclose').addEventListener('click', function () { EL.optsheet.classList.add('hidden'); });
+  $('exitbtn').addEventListener('click', function () { window.SWS_EXIT(); });
+  $('titleexit').addEventListener('click', function () { window.SWS_EXIT(); });
+  $('scnext').addEventListener('click', function () { EL.scoresheet.classList.add('hidden'); });
+  $('startbtn').addEventListener('click', function () { audioOn(); newRun('campaign'); });
+  $('dailybtn').addEventListener('click', function () { audioOn(); newRun('daily'); });
+  $('ovagain').addEventListener('click', function () { newRun(UI.mode); });
+  $('ovmenu').addEventListener('click', function () { EL.oversheet.classList.add('hidden'); EL.titlesheet.classList.remove('hidden'); });
+  $('ovendless').addEventListener('click', function () { newRun('endless'); });
+  $('ovshare2').addEventListener('click', shareRun);
+  $('logbtn').addEventListener('click', showLog);
+  $('optlog').addEventListener('click', showLog);
+  $('logclose').addEventListener('click', function () { EL.logsheet.classList.add('hidden'); });
+
+  $('optvol').addEventListener('input', function (e) {
+    AUD.vol = e.target.value / 100; writeSave({ settings: { vol: AUD.vol } });
+    if (MASTER) MASTER.gain.value = AUD.mute ? 0 : AUD.vol;
+  });
+  var sw = function (id, key, apply) {
+    $(id).addEventListener('click', function () {
+      var v = !SAVE.settings[key];
+      writeSave({ settings: (function () { var o = {}; o[key] = v; return o; })() });
+      $(id).classList.toggle('on', key === 'mute' ? !v : v);
+      $(id).textContent = (key === 'mute' ? !v : v) ? 'ON' : 'OFF';
+      if (apply) apply(v);
+    });
+  };
+  sw('optmute', 'mute', function (v) { AUD.mute = v; if (MASTER) MASTER.gain.value = v ? 0 : AUD.vol; });
+  sw('opthap', 'haptics');
+  sw('optred', 'reduce', function (v) { UI.reduce = v; document.body.style.setProperty('--motion', v ? '0' : '1'); });
+  sw('optskip', 'autoSkip');
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') held.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') held.right = true;
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') { queued = 'attack'; e.preventDefault(); }
+    if (e.key === 'Enter' && G.phase === 'build') SIM.startWave(G);
+    audioOn();
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') held.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') held.right = false;
+  });
+  document.addEventListener('visibilitychange', function () { UI.paused = document.hidden; });
+  window.addEventListener('resize', function () { buildLane(); UI.dirtyTraps = true; });
+}
+
+function showLog() {
+  var html = '', i;
+  if (!SAVE.history.length) html = '<p class="dispatch">No sieges on the books yet.</p>';
+  for (i = 0; i < SAVE.history.length; i++) {
+    html += '<p class="dispatch"><b>' + (SAVE.history[i].mode || 'siege') + '</b> ' + SAVE.history[i].line + '</p>';
+  }
+  $('logbody').innerHTML = html;
+  EL.logsheet.classList.remove('hidden');
+}
+
+function shareRun() {
+  var txt = (UI.mode === 'daily' ? 'SIEGE day ' + dayNumber() + ': ' : 'SIEGE OF ONE: ') +
+    (G.won ? 'held all twenty waves' : 'fell on wave ' + G.wave) + '. ' +
+    location.origin + location.pathname + '?seed=' + UI.seed;
+  try {
+    if (navigator.share) { navigator.share({ text: txt }); return; }
+  } catch (e) {}
+  try { navigator.clipboard.writeText(txt); toast('Copied to the clipboard.'); } catch (e2) { toast(txt); }
+}
+
+function dayNumber() {
+  return Math.floor(Date.now() / 86400000) - 20000;
+}
+
+/* --- run lifecycle --- */
+function newRun(mode) {
+  UI.mode = mode;
+  var seed = UI.seedOverride;
+  if (mode === 'daily') seed = SIM.seedFromString(new Date().toISOString().slice(0, 10) + CONFIG.GAME_ID);
+  if (seed === undefined || seed === null) seed = 1;
+  UI.seed = seed >>> 0;
+  G = SIM.newGame(UI.seed, { mode: mode === 'endless' ? 'endless' : (mode === 'daily' ? 'daily' : 'campaign'), endless: mode === 'endless' });
+  UI.sel = null; UI.dirtyTraps = true; UI.scWave = null;
+  odo.scrap = G.scrap;
+  Object.keys(UI.nodes).forEach(function (k) { UI.nodes[k].remove(); });
+  UI.nodes = {};
+  for (var i = 0; i < CONFIG.LANE; i++) if (UI.trapNodes[i]) { UI.trapNodes[i].remove(); UI.trapNodes[i] = null; }
+  EL.titlesheet.classList.add('hidden');
+  EL.oversheet.classList.add('hidden');
+  EL.scoresheet.classList.add('hidden');
+  buildLane(); drawShop(); drawPips(); render();
+  writeSave({ stats: { runs: 1 } });
+}
+
+function endRun() {
+  wardenStop();
+  var tot = 0, k;
+  for (k in G.run.dmg) tot += G.run.dmg[k];
+  var share = tot ? Math.round(G.run.dmg.player / tot * 100) : 0;
+  var line = dispatch(G);
+  $('ovtitle').textContent = G.won ? 'THE GATE HELD' : 'THE GATE FELL';
+  $('ovsub').textContent = (UI.mode === 'daily' ? "TODAY'S SIEGE  ·  " : '') + 'WAVE ' + G.wave;
+  $('ovdispatch').textContent = line;
+  $('ovwaves').textContent = G.run.wavesCleared;
+  $('ovkills').textContent = G.run.kills;
+  $('ovshare').textContent = share + '%';
+  var delta = {
+    stats: { kills: G.run.kills, wavesCleared: G.run.wavesCleared, trapsBuilt: G.run.trapsBuilt, wins: G.won ? 1 : 0 },
+    best: {},
+    history: [{ mode: UI.mode, line: line, wave: G.wave }]
+  };
+  if (UI.mode === 'endless') delta.best.endless = G.run.wavesCleared;
+  else delta.best.wave = G.run.wavesCleared;
+  writeSave(delta);
+  $('ovbest').textContent = UI.mode === 'endless' ? SAVE.best.endless : SAVE.best.wave;
+  EL.oversheet.classList.remove('hidden');
+}
+
+var acc = 0, lastT = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!lastT) lastT = now;
+  var dt = Math.min(250, now - lastT);
+  lastT = now;
+  if (UI.paused || !G) { render(); return; }
+  var sheetOpen = !EL.scoresheet.classList.contains('hidden') || !EL.oversheet.classList.contains('hidden') ||
+    !EL.titlesheet.classList.contains('hidden') || !EL.optsheet.classList.contains('hidden') || !EL.logsheet.classList.contains('hidden');
+  if (!sheetOpen) {
+    acc += dt;
+    var guard = 0;
+    while (acc >= CONFIG.TICK_MS && guard++ < 6) {
+      acc -= CONFIG.TICK_MS;
+      var wasWave = G.wave, wasPhase = G.phase;
+      if (G.phase === 'build' && SAVE.settings.autoSkip) SIM.startWave(G);
+      SIM.step(G, G.phase === 'combat' ? intentNow() : 'none');
+      playEvents();
+      if (wasPhase === 'combat' && G.phase === 'build') { showScorecard(G.lastWaveStats); drawShop(); drawPips(); UI.dirtyTraps = true; }
+      if (wasPhase === 'build' && G.phase === 'combat') { drawPips(); EL.sight.classList.add('hidden'); }
+      if (G.over) { endRun(); break; }
+      if (wasWave !== G.wave) UI.dirtyTraps = true;
+    }
+  }
+  render();
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); }
+    else { location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
 
 // ---- TEST_EXPORT_START ----
 

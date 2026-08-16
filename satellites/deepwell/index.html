@@ -1887,3 +1887,620 @@ function shrineText(id, st) {
   return { head: '', sub: '', body: '' };
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 6. VIEW ========================= */
+var $ = function (id) { return document.getElementById(id); };
+var G = { save: null, run: null, replay: null, replayTimer: 0, lastDepthShown: 0, toastT: 0, seedOverride: null, daily: false };
+var REDUCED = false;
+try { REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+/* ---- audio: one context, one key, everything synthesised ---- */
+var AU = { ctx: null, master: null, tone: null, toneGain: null, osc1: null, osc2: null, started: false };
+var DMIN = [146.83, 164.81, 174.61, 196.00, 220.00, 233.08, 261.63]; /* D E F G A Bb C */
+function quantD(hz) {
+  var best = DMIN[0], bd = 1e9, i, o, f;
+  for (o = -1; o <= 3; o++) for (i = 0; i < DMIN.length; i++) {
+    f = DMIN[i] * Math.pow(2, o);
+    if (Math.abs(f - hz) < bd) { bd = Math.abs(f - hz); best = f; }
+  }
+  return best;
+}
+function audioOn() {
+  if (AU.ctx || !G.save || !G.save.settings.sound) return;
+  try {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    AU.ctx = new C();
+    AU.master = AU.ctx.createGain();
+    AU.master.gain.value = G.save.settings.vol;
+    var comp = AU.ctx.createDynamicsCompressor();
+    AU.master.connect(comp); comp.connect(AU.ctx.destination);
+    AU.toneGain = AU.ctx.createGain(); AU.toneGain.gain.value = 0;
+    AU.toneGain.connect(AU.master);
+    AU.osc1 = AU.ctx.createOscillator(); AU.osc2 = AU.ctx.createOscillator();
+    AU.osc1.type = 'sine'; AU.osc2.type = 'sine';
+    AU.osc1.frequency.value = DMIN[0]; AU.osc2.frequency.value = DMIN[0];
+    AU.osc1.connect(AU.toneGain); AU.osc2.connect(AU.toneGain);
+    AU.osc1.start(); AU.osc2.start();
+    AU.started = true;
+  } catch (e) { AU.ctx = null; }
+}
+function noiseBurst(dur, hz, gain) {
+  if (!AU.ctx) return;
+  var n = Math.floor(AU.ctx.sampleRate * dur), buf = AU.ctx.createBuffer(1, n, AU.ctx.sampleRate), d = buf.getChannelData(0), i;
+  for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  var src = AU.ctx.createBufferSource(); src.buffer = buf;
+  var f = AU.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = hz;
+  var g = AU.ctx.createGain(); g.gain.value = gain === undefined ? 0.5 : gain;
+  src.connect(f); f.connect(g); g.connect(AU.master); src.start();
+}
+function pluck(hz, dur, type) {
+  if (!AU.ctx) return;
+  var o = AU.ctx.createOscillator(), g = AU.ctx.createGain(), t = AU.ctx.currentTime;
+  o.type = type || 'triangle'; o.frequency.value = quantD(hz);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.35, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.35));
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + (dur || 0.35) + 0.05);
+}
+function pad(freqs, attack, release) {
+  if (!AU.ctx) return;
+  var t = AU.ctx.currentTime, g = AU.ctx.createGain(), f = AU.ctx.createBiquadFilter(), i;
+  f.type = 'lowpass'; f.frequency.value = 900;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.22, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
+  f.connect(g); g.connect(AU.master);
+  for (i = 0; i < freqs.length; i++) {
+    var o = AU.ctx.createOscillator();
+    o.type = 'sawtooth'; o.frequency.value = quantD(freqs[i]);
+    o.detune.value = (i - 1) * 7;
+    o.connect(f); o.start(t); o.stop(t + attack + release + 0.05);
+  }
+}
+function blip(hz) {
+  if (!AU.ctx) return;
+  var o = AU.ctx.createOscillator(), g = AU.ctx.createGain(), t = AU.ctx.currentTime;
+  o.type = 'square'; o.frequency.value = quantD(hz);
+  g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.06);
+}
+/* the sound of the game: two sines a hair apart, the beat widening as the way
+   out gets expensive. Silent while you are comfortable. */
+function updateTone() {
+  if (!AU.ctx || !AU.toneGain) return;
+  var on = G.save.settings.sound && G.save.settings.tone && G.run && !G.run.over && G.run.depth > 0;
+  var t = AU.ctx.currentTime;
+  if (!on) { AU.toneGain.gain.setTargetAtTime(0, t, 0.2); return; }
+  var c = ascentCost(G.run).air, margin = G.run.air > 0 ? (G.run.air - c) / G.run.air : -1;
+  if (margin > 0.30) { AU.toneGain.gain.setTargetAtTime(0, t, 0.35); return; }
+  var tight = Math.max(0, Math.min(1, (0.30 - margin) / 0.60));
+  AU.toneGain.gain.setTargetAtTime(0.045 + 0.075 * tight, t, 0.25);
+  AU.osc1.frequency.setTargetAtTime(DMIN[0], t, 0.3);
+  AU.osc2.frequency.setTargetAtTime(DMIN[0] * Math.pow(2, (tight * 62) / 1200), t, 0.3);
+}
+function haptic(pattern) {
+  if (!G.save || !G.save.settings.haptics) return;
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+function motionOff() { return REDUCED || G.save.settings.motion === 'on'; }
+
+/* ---- odometer ---- */
+function setOdo(el, value, minDigits) {
+  var s = String(Math.max(0, Math.round(value)));
+  while (s.length < (minDigits || 1)) s = '0' + s;
+  if (el.childNodes.length !== s.length) {
+    el.innerHTML = '';
+    for (var k = 0; k < s.length; k++) {
+      var d = document.createElement('span'); d.className = 'digit';
+      var i = document.createElement('i');
+      for (var n = 0; n <= 10; n++) { var b = document.createElement('b'); b.textContent = String(n % 10); i.appendChild(b); }
+      d.appendChild(i); el.appendChild(d);
+    }
+  }
+  for (var j = 0; j < s.length; j++) {
+    var inner = el.childNodes[j].firstChild;
+    inner.style.transform = 'translateY(' + (-(parseInt(s.charAt(j), 10)) * (100 / 11)) + '%)';
+  }
+}
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(G.toastT);
+  G.toastT = setTimeout(function () { t.classList.remove('on'); }, 2200);
+}
+function oreDot(col) { return '<span class="oredot" style="background:' + col + '"></span>'; }
+function oreColor(key) { return ORE_BY_KEY[key] ? ORE_BY_KEY[key].col : '#888'; }
+
+function renderShaft() {
+  var st = G.run, band = bandAt(st.depth), sc = $('shaftScroll');
+  $('shaftBand').style.background = 'linear-gradient(180deg,' + band.col + ' 0%, #08090d 90%)';
+  var h = sc.parentNode.clientHeight || 600, pxPerM = 6, i, html = '';
+  var top = st.depth - h / (2 * pxPerM);
+  for (i = Math.max(0, Math.floor(top / 5) * 5); i < top + h / pxPerM; i += 5) {
+    html += '<div class="rockrow" style="top:' + ((i - top) * pxPerM) + 'px"></div>';
+  }
+  var rec = G.save.best.depth;
+  if (rec > 0 && rec >= top && rec <= top + h / pxPerM) {
+    html += '<div id="recLine" style="top:' + ((rec - top) * pxPerM) + 'px"><span>DEEPEST EVER ' + rec + 'm</span></div>';
+  }
+  sc.innerHTML = html;
+}
+function stampBand(name) {
+  if (motionOff()) return;
+  var el = $('bandStamp'); el.textContent = name; el.classList.remove('on');
+  void el.offsetWidth; el.classList.add('on');
+}
+
+function nodeCardHTML() {
+  var st = G.run, n = currentNode(st), kind = nodeType(st, n), i;
+  if (!n) return { k: 'THE SHAFT MOUTH', t: 'Open air', b: 'Everything above you is sky. Everything below you is worth more.' };
+  if (currentReveal(st) === 'hidden') return { k: 'DARK', t: 'You cannot see your hands', b: 'The lamp is out. Whatever is in this rock, you will find out by touching it.' };
+  if (kind === 'vein' && !n.mined && n.ore.length) {
+    var haul = veinHaul(st, n), rows = '', w = 0, v = 0;
+    for (i = 0; i < haul.length; i++) {
+      w += haul[i].w; v += haul[i].v;
+      rows += '<div class="orerow">' + oreDot(oreColor(haul[i].key)) + '<b>' + haul[i].name + '</b>' +
+              '<span class="tiny">' + haul[i].v + ' cash, ' + haul[i].w + ' kilo</span>' +
+              '<span class="oreratio">' + (haul[i].v / haul[i].w).toFixed(1) + ' a kilo</span></div>';
+    }
+    return { k: n.heart ? 'A HEARTSTONE' : 'A VEIN', t: n.heart ? 'It is warm' : (haul.length + (haul.length === 1 ? ' ore' : ' ore') + ' in the rock'), b: rows + '<div class="tiny" style="margin-top:6px">' + v + ' cash for ' + w + ' kilo</div>' };
+  }
+  if (kind === 'vein') return { k: 'A WORKED SEAM', t: 'Dead rock', b: 'Nothing left in this wall.' };
+  if (kind === 'hazard') return { k: 'HAZARD', t: 'It already happened', b: 'The rock here has had its say.' };
+  if (kind === 'pocket') return { k: 'A POCKET', t: n.pocketKind === 'air' ? 'Clean air' : 'Old oil', b: 'You breathe out and keep going.' };
+  if (kind === 'cache') return { k: 'A CACHE', t: 'Somebody left it', b: 'A tin box, no weight worth counting.' };
+  if (kind === 'shrine') return { k: 'A SHRINE', t: 'Somebody carved this', b: 'A bargain waits here.' };
+  return { k: 'EMPTY ROCK', t: 'Nothing here', b: 'Just the cost of getting here.' };
+}
+
+function render() {
+  var st = G.run, s = G.save;
+  if (!st) return;
+  var band = bandAt(st.depth), cost = ascentCost(st), dc = descendCost(st);
+  setOdo($('odo'), st.depth, 1);
+  $('strataName').textContent = band.name;
+  $('recDepth').textContent = s.best.depth;
+  $('ascNum').textContent = Math.ceil(cost.air);
+  $('airNum').textContent = Math.floor(st.air);
+  var margin = st.air > 0 ? (st.air - cost.air) / st.air : -1;
+  var fill = $('marginFill');
+  fill.style.width = Math.max(0, Math.min(100, margin * 100)) + '%';
+  fill.style.background = margin < 0.12 ? 'var(--danger)' : (margin < 0.3 ? 'linear-gradient(90deg,var(--amber),var(--warm))' : 'linear-gradient(90deg,var(--sage),var(--amber))');
+  var note = $('marginNote');
+  note.className = '';
+  if (margin < 0) { note.textContent = 'YOU CANNOT AFFORD THE WAY OUT'; note.className = 'bad'; }
+  else if (margin < 0.15) { note.textContent = 'CUTTING IT FINE'; note.className = 'warn'; }
+  else note.textContent = 'Every kilo costs ' + (cost.perDepth).toFixed(2) + ' air a meter';
+  $('mAir').textContent = Math.floor(st.air) + ' of ' + st.caps.air;
+  $('fAir').style.width = (100 * st.air / st.caps.air) + '%';
+  $('mLamp').textContent = Math.floor(st.lamp) + ' of ' + st.caps.lamp;
+  $('fLamp').style.width = (100 * st.lamp / st.caps.lamp) + '%';
+  $('mPack').textContent = Math.round(st.weight) + ' of ' + st.caps.pack;
+  $('fPack').style.width = (100 * st.weight / st.caps.pack) + '%';
+  $('mInt').textContent = st.integrity;
+  var pips = '', i;
+  for (i = 0; i < Math.max(st.integrity, st.caps.integrity); i++) pips += '<span class="pip ' + (i < st.integrity ? 'on' : 'off') + '"></span>';
+  $('pips').innerHTML = pips;
+  var card = nodeCardHTML();
+  $('nodeKind').textContent = card.k;
+  $('nodeTitle').textContent = card.t;
+  $('nodeBody').innerHTML = card.b;
+  /* action buttons carry their own price so nobody has to do arithmetic */
+  var bd = $('btnDescend'), bm = $('btnMine'), ba = $('btnAscend');
+  if (dc) {
+    var nextVis = visibleNodes(st)[0];
+    var label = nextVis ? (nextVis.level === 'hidden' ? 'unknown ground' : (nextVis.level === 'full' ? nextVis.type : 'something')) : '';
+    bd.querySelector('small').textContent = Math.ceil(dc.air) + ' air, ' + Math.ceil(dc.lamp) + ' lamp, ' + dc.gap + 'm to ' + label;
+  }
+  bd.disabled = !!st.over;
+  var mr = mineBlockedReason(st);
+  bm.disabled = mr !== null;
+  if (mr === null) {
+    var n2 = currentNode(st), tk = veinTicks(st, n2), tc = tickCost(st);
+    bm.querySelector('small').textContent = tk + (tk === 1 ? ' tick, ' : ' ticks, ') + Math.ceil(tc.air * tk) + ' air';
+  } else bm.querySelector('small').textContent = mr === 'nothing to work' ? 'nothing to work' : mr.toLowerCase();
+  ba.querySelector('small').textContent = st.depth === 0 ? 'you are at the top' : Math.ceil(cost.air) + ' air to the top';
+  ba.disabled = st.depth === 0;
+  $('cargoW').textContent = st.cargo.length + (st.cargo.length === 1 ? ' ore' : ' ore');
+  $('cargoV').textContent = cargoValue(st.cargo) + (st.cash ? ' plus ' + st.cash + ' cash' : '');
+  renderShaft();
+  updateTone();
+}
+
+/* ---- cargo drawer, sorted by value for weight ---- */
+function renderCargo() {
+  var st = G.run, list = $('cargoList'), rows = [], i;
+  for (i = 0; i < st.cargo.length; i++) rows.push({ i: i, c: st.cargo[i], r: st.cargo[i].v / st.cargo[i].w });
+  rows.sort(function (a, b) { return b.r - a.r; });
+  var html = '';
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].c;
+    html += '<div class="item">' + oreDot(oreColor(c.key)) +
+      '<div><div class="nm">' + c.name + '</div><div class="sub">' + c.w + ' kilo, ' + rows[i].r.toFixed(1) + ' a kilo</div></div>' +
+      '<div class="val"><b>' + c.v + '</b></div>' +
+      '<button class="drop" data-drop="' + rows[i].i + '">DROP</button></div>';
+  }
+  if (!rows.length) html = '<div class="card tiny">The pack is empty. Everything you carry out costs air to carry.</div>';
+  list.innerHTML = html;
+  $('cargoFoot').textContent = 'Carrying ' + Math.round(st.weight) + ' of ' + st.caps.pack + ' kilo, worth ' + cargoValue(st.cargo) +
+    '. The way out costs ' + Math.ceil(ascentCost(st).air) + ' air.';
+}
+function openCargo() { renderCargo(); $('cargoOvl').classList.remove('hide'); }
+
+/* ---- shrine card ---- */
+function openShrine() {
+  var st = G.run, id = st.pending, t = shrineText(id, st), s = SHRINE_BY_ID[id];
+  $('shrineTitle').textContent = s.title;
+  $('shrineNums').innerHTML = '<b>' + t.head + '</b><br>' + t.sub + '<div class="tiny" style="margin-top:10px;line-height:1.5">' + t.body + '</div>';
+  var block = shrineAcceptable(st);
+  $('shrineWarn').textContent = block ? block : '';
+  $('shrineYes').disabled = !!block;
+  $('shrineOvl').classList.remove('hide');
+  pad([146.83, 220, 261.63], 0.6, 1.4);
+}
+
+/* ---- result screen, the knife ---- */
+function openResult() {
+  var st = G.run, o = st.over, s = G.save;
+  var lost = o.lostCargo, i, man = {}, manW = {};
+  for (i = 0; i < lost.length; i++) { man[lost[i].name] = (man[lost[i].name] || 0) + lost[i].v; manW[lost[i].name] = (manW[lost[i].name] || 0) + 1; }
+  var html = '', k;
+  if (o.reason === 'surfaced') {
+    var kept = {}, keptN = {};
+    for (i = 0; i < st.cargo.length; i++) { kept[st.cargo[i].name] = (kept[st.cargo[i].name] || 0) + st.cargo[i].v; keptN[st.cargo[i].name] = (keptN[st.cargo[i].name] || 0) + 1; }
+    for (k in kept) html += '<div class="mline kept"><span>' + keptN[k] + ' ' + k + '</span><span class="v">' + kept[k] + '</span></div>';
+    if (st.cash) html += '<div class="mline kept"><span>cash found below</span><span class="v">' + st.cash + '</span></div>';
+    if (!html) html = '<div class="tiny">You came back with nothing but your lamp.</div>';
+    $('resTitle').textContent = 'SURFACED';
+    $('resSub').textContent = 'Deepest this run ' + o.maxDepth + 'm';
+    $('resKnife').textContent = '';
+  } else {
+    for (k in man) html += '<div class="mline lost"><span>' + manW[k] + ' ' + k + '</span><span class="v">' + man[k] + '</span></div>';
+    if (st.cash) html += '<div class="mline kept"><span>cash found below, kept</span><span class="v">' + st.cash + '</span></div>';
+    if (!Object.keys(man).length) html = '<div class="tiny">You were carrying nothing. Small mercy.</div>';
+    $('resTitle').textContent = o.reason === 'collapse' ? 'THE ROOF CAME DOWN' : 'THE AIR RAN OUT';
+    $('resSub').textContent = o.reason === 'collapse' ? 'No braces left at ' + o.depth + 'm' : 'You stopped climbing at ' + (o.diedAt || 0) + 'm';
+    var worst = null;
+    for (i = 0; i < lost.length; i++) if (!worst || lost[i].v > worst.v) worst = lost[i];
+    $('resKnife').textContent = worst ? ('The ' + worst.name.toLowerCase() + ' is still down there. ' + o.depth + 'm.') : '';
+  }
+  $('manifest').innerHTML = html;
+  setOdo($('resBig'), 0, 1);
+  $('resBig').textContent = o.banked;
+  var logHtml = '';
+  for (i = 0; i < st.log.length; i++) logHtml += st.log[i].s + '<br>';
+  $('resLog').innerHTML = logHtml;
+  $('resOvl').classList.remove('hide');
+  if (o.reason === 'surfaced') { pad([146.83, 174.61, 220], 0.05, 1.2); haptic(25); }
+  else { noiseBurst(0.7, 320, 0.6); pluck(73.4, 1.2, 'sine'); haptic([30, 40, 80]); }
+}
+
+/* ---- shop ---- */
+function renderShop() {
+  var s = G.save, html = '', i, k;
+  $('cashBig').textContent = s.cash;
+  $('bestLine').textContent = s.stats.runs ? (s.stats.runs + ' runs, deepest ' + s.best.depth + 'm, best haul ' + s.best.banked) : 'no runs yet';
+  for (i = 0; i < CONFIG.SHOP_ORDER.length; i++) {
+    k = CONFIG.SHOP_ORDER[i];
+    var t = CONFIG.SHOP[k], lv = s.upg[k] || 0, cost = upgradeCost(k, lv), pipsH = '', j;
+    for (j = 0; j < t.levels; j++) pipsH += '<i class="' + (j < lv ? 'on' : '') + '"></i>';
+    html += '<div class="track"><div class="grow"><div class="tn">' + t.name + '</div><div class="td">' + t.blurb + '</div><div class="lv">' + pipsH + '</div></div>' +
+      '<button class="buy ' + (isFinite(cost) && s.cash >= cost ? 'can' : '') + '" data-buy="' + k + '"' + (isFinite(cost) && s.cash >= cost ? '' : ' disabled') + '>' +
+      (isFinite(cost) ? cost : 'MAXED') + '<small>' + (isFinite(cost) ? 'CASH' : 'DONE') + '</small></button></div>';
+  }
+  $('shopTracks').innerHTML = html;
+  var d = new Date(), ds = d.toISOString().slice(0, 10);
+  var done = s.daily && s.daily.last === ds;
+  $('dailyCard').innerHTML = '<div class="row"><div class="grow"><b>THE DAILY SHAFT</b><div class="tiny">Same well for everybody, fixed kit. ' +
+    (done ? 'Today you banked ' + s.daily.best + '.' : 'Not dug today.') + (s.daily && s.daily.streak > 1 ? ' Streak ' + s.daily.streak + '.' : '') +
+    '</div></div><button class="btn" id="btnDaily" style="min-width:110px">' + (done ? 'AGAIN' : 'DIG IT') + '</button></div>';
+  $('btnDaily').onclick = function () { startRun(dailySeedFor(ds), CONFIG.DAILY_LOADOUT, true); };
+}
+function renderLog() {
+  var s = G.save, html = '', i;
+  $('logStats').innerHTML = '<div class="row"><div class="grow"><div class="tiny">RUNS</div><b>' + s.stats.runs + '</b></div>' +
+    '<div class="grow"><div class="tiny">CARGO LOST</div><b>' + s.stats.lostCargo + '</b></div>' +
+    '<div class="grow"><div class="tiny">BANKED</div><b>' + s.stats.banked + '</b></div>' +
+    '<div class="grow"><div class="tiny">LEFT BELOW</div><b>' + s.stats.lostValue + '</b></div></div>';
+  for (i = s.history.length - 1; i >= 0; i--) {
+    var h = s.history[i];
+    html += '<div class="logline"><span class="d">' + h.date + '</span><span>' + h.note + '</span><span class="b" style="color:' +
+      (h.banked > 0 ? 'var(--amber)' : 'var(--muted)') + '">' + h.banked + '</span></div>';
+  }
+  $('logList').innerHTML = html || '<div class="tiny">The book is empty. Go dig.</div>';
+  $('btnReplay').style.display = s.replay ? 'flex' : 'none';
+}
+
+/* ========================= 7. INPUT ========================= */
+function firstGesture() { audioOn(); if (AU.ctx && AU.ctx.state === 'suspended') { try { AU.ctx.resume(); } catch (e) {} } }
+function doAction(a) {
+  if (!G.run || G.run.over) return;
+  var before = G.run.depth;
+  var res = step(G.run, a);
+  var ev = res.events, i;
+  for (i = 0; i < ev.length; i++) handleEvent(ev[i], before);
+  persistRun();
+  render();
+  if (G.run.phase === 'shrine') openShrine();
+  if (G.run.over) finishRun();
+}
+function handleEvent(e, beforeDepth) {
+  if (e.t === 'descend') {
+    blip(196); haptic(10);
+    var b1 = bandAt(beforeDepth), b2 = bandAt(G.run.depth);
+    if (b1.key !== b2.key) { stampBand(b2.name); pluck(110, 0.8, 'sine'); }
+    if (G.save.best.depth > 0 && beforeDepth <= G.save.best.depth && G.run.depth > G.save.best.depth) {
+      pluck(587.33, 0.9, 'sine'); haptic(25); toast('DEEPER THAN YOU HAVE EVER BEEN');
+    }
+  } else if (e.t === 'mine') {
+    var tier = e.haul.length ? e.haul[0].tier : 1;
+    noiseBurst(0.12, 500 + tier * 700, 0.5);
+    pluck(146.83 * Math.pow(2, (tier - 1) / 6), 0.25);
+    haptic(10);
+    if (e.heart) { pluck(73.4, 1.6, 'sine'); haptic([30, 40, 80]); toast('A HEARTSTONE. 300 CASH AND 12 KILO.'); }
+  } else if (e.t === 'hazard') {
+    noiseBurst(0.5, 260, 0.7); haptic([30, 40, 80]);
+    toast(HAZARDS_BY_KEY(e.kind).name + '. ' + e.dmg + (e.dmg === 1 ? ' BRACE GONE' : ' BRACES GONE'));
+    shake();
+  } else if (e.t === 'hazardShrug') { noiseBurst(0.2, 200, 0.4); toast('THE BRACES HELD'); }
+  else if (e.t === 'hazardNull') { pluck(261.63, 0.4); toast('THE CHARM ATE IT'); }
+  else if (e.t === 'pocket') { pluck(220, 0.5); toast('POCKET. ' + e.amount + (e.kind === 'air' ? ' AIR' : ' LAMP')); }
+  else if (e.t === 'cache') { pluck(261.63, 0.3); pluck(329.63, 0.4); toast('A CACHE. ' + e.amount + ' CASH.'); }
+  else if (e.t === 'drop') { blip(146.83); haptic(10); glint(); }
+  else if (e.t === 'veinEmpty') { toast('DEAD ROCK. YOU WERE PAID FOR THIS.'); }
+  else if (e.t === 'ascend' && e.ok) { pluck(293.66, 0.6, 'sine'); }
+}
+function HAZARDS_BY_KEY(k) { var i; for (i = 0; i < HAZARDS.length; i++) if (HAZARDS[i].key === k) return HAZARDS[i]; return HAZARDS[0]; }
+function shake() {
+  if (motionOff()) return;
+  var el = $('app'), t0 = Date.now();
+  var iv = setInterval(function () {
+    var f = 1 - (Date.now() - t0) / 120;
+    if (f <= 0) { clearInterval(iv); el.style.transform = ''; return; }
+    el.style.transform = 'translate(' + ((Math.random() - 0.5) * 8 * f).toFixed(1) + 'px,' + ((Math.random() - 0.5) * 8 * f).toFixed(1) + 'px)';
+  }, 16);
+}
+function glint() {
+  if (motionOff()) return;
+  var g = document.createElement('div');
+  g.className = 'glint';
+  g.style.left = (window.innerWidth * 0.5) + 'px'; g.style.top = (window.innerHeight * 0.5) + 'px';
+  document.body.appendChild(g);
+  setTimeout(function () { if (g.parentNode) g.parentNode.removeChild(g); }, 700);
+}
+
+/* ========================= 8. SAVE ========================= */
+function store() { try { return window.localStorage; } catch (e) { return memStorage(); } }
+function persistRun() {
+  commitSave(store(), function (sv) { sv.run = G.run && !G.run.over ? G.run : null; });
+}
+function startRun(seed, upg, daily) {
+  firstGesture();
+  G.run = newRun(makeRNG(seed >>> 0), upg || G.save.upg, { daily: !!daily });
+  G.daily = !!daily;
+  G.save = commitSave(store(), function (sv) { sv.run = G.run; });
+  $('shopScreen').classList.add('hide');
+  $('runScreen').classList.remove('hide');
+  $('resOvl').classList.add('hide');
+  render();
+  stampBand(bandAt(0).name);
+}
+function finishRun() {
+  var st = G.run, o = st.over;
+  var ds = new Date().toISOString().slice(0, 10);
+  var note = o.reason === 'surfaced' ? ('surfaced from ' + o.maxDepth + 'm') :
+    (o.reason === 'collapse' ? ('roof came down at ' + o.depth + 'm') : ('air ran out at ' + o.depth + 'm'));
+  var inputs = st.inputs.slice(), seed = st.seed, upg = st.upg;
+  G.save = commitSave(store(), function (sv) {
+    sv.cash += o.banked;
+    sv.stats.runs += 1;
+    sv.stats.banked += o.banked;
+    sv.stats.mined += st.mined;
+    if (o.reason === 'surfaced') sv.stats.surfaced += 1; else sv.stats.lostCargo += 1;
+    if (o.reason === 'collapse') sv.stats.collapses += 1;
+    sv.stats.lostValue += o.lostValue;
+    sv.stats.deepest = Math.max(sv.stats.deepest, o.maxDepth);
+    sv.best.depth = Math.max(sv.best.depth, o.maxDepth);
+    if (o.banked > (sv.best.banked || 0)) {
+      sv.best.banked = o.banked;
+      sv.replay = { seed: seed, upg: upg, inputs: inputs, banked: o.banked, depth: o.maxDepth };
+    }
+    sv.history.push({ date: ds, note: note, banked: o.banked });
+    while (sv.history.length > 10) sv.history.shift();
+    if (G.daily) {
+      var prev = sv.daily.last;
+      if (prev !== ds) {
+        var y = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        sv.daily.streak = (prev === y) ? (sv.daily.streak + 1) : 1;
+        sv.daily.last = ds;
+      }
+      sv.daily.best = Math.max(sv.daily.best || 0, o.banked);
+    }
+    sv.run = null;
+  });
+  openResult();
+}
+function toSurface() {
+  $('resOvl').classList.add('hide');
+  $('runScreen').classList.add('hide');
+  $('shopScreen').classList.remove('hide');
+  renderShop();
+}
+function shareString() {
+  var s = G.save, st = G.run, o = st && st.over;
+  var seed = st ? st.seed : (G.seedOverride || 0);
+  var body = o ? ('DEEPWELL ' + (o.reason === 'surfaced' ? 'banked ' + o.banked + ' from ' + o.maxDepth + 'm' :
+    'lost ' + o.lostValue + ' at ' + o.depth + 'm') ) : ('DEEPWELL deepest ' + s.best.depth + 'm, best haul ' + s.best.banked);
+  return body + '. Dig the same shaft: ' + location.origin + location.pathname + '?seed=' + seed;
+}
+function doShare() {
+  var txt = shareString();
+  try {
+    if (navigator.share) { navigator.share({ text: txt }).catch(function () {}); return; }
+  } catch (e) {}
+  try { navigator.clipboard.writeText(txt); toast('COPIED'); } catch (e2) { toast(txt); }
+}
+
+/* ---- replay of the record run ---- */
+function playReplay() {
+  var r = G.save.replay;
+  if (!r) return;
+  $('logOvl').classList.add('hide');
+  G.run = newRun(makeRNG(r.seed), r.upg, null);
+  $('shopScreen').classList.add('hide');
+  $('runScreen').classList.remove('hide');
+  var i = 0;
+  toast('WATCHING YOUR BEST RUN');
+  clearInterval(G.replayTimer);
+  G.replayTimer = setInterval(function () {
+    if (i >= r.inputs.length || G.run.over) {
+      clearInterval(G.replayTimer);
+      setTimeout(function () { G.run = null; toSurface(); }, 1400);
+      return;
+    }
+    step(G.run, r.inputs[i++]);
+    render();
+    if (G.run.phase === 'shrine') { step(G.run, 'shrine:decline'); }
+  }, 550);
+}
+
+/* ========================= 10. BOOT ========================= */
+/* ===== Sky Wolf Studios embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); }
+    else { location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+
+function wire() {
+  var byId = function (id, fn) { var el = $(id); if (el) el.addEventListener('click', function (e) { firstGesture(); fn(e); }); };
+  byId('btnDescend', function () { doAction('descend'); });
+  byId('btnMine', function () { doAction('mine'); });
+  byId('btnAscend', function () {
+    if (G.save.settings.confirm && G.run && G.run.air < ascentCost(G.run).air) {
+      if (!confirm('You cannot afford the climb. Go anyway?')) return;
+    }
+    doAction('ascend');
+  });
+  byId('btnCargo', openCargo);
+  byId('cargoClose', function () { $('cargoOvl').classList.add('hide'); });
+  $('cargoList').addEventListener('click', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-drop') !== null) {
+      doAction('drop:' + t.getAttribute('data-drop'));
+      renderCargo();
+    }
+  });
+  byId('shrineYes', function () { $('shrineOvl').classList.add('hide'); doAction('shrine:accept'); });
+  byId('shrineNo', function () { $('shrineOvl').classList.add('hide'); doAction('shrine:decline'); });
+  byId('resAgain', toSurface);
+  byId('resShare', doShare);
+  byId('btnShare', doShare);
+  byId('btnDescendStart', function () { startRun(G.seedOverride !== null ? G.seedOverride : (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0, G.save.upg, false); });
+  byId('btnLogbook', function () { renderLog(); $('logOvl').classList.remove('hide'); });
+  byId('btnLog', function () { renderLog(); $('logOvl').classList.remove('hide'); });
+  byId('logClose', function () { $('logOvl').classList.add('hide'); });
+  byId('btnReplay', playReplay);
+  byId('btnOpts', openOpts); byId('btnOpts2', openOpts);
+  byId('optClose', function () { $('optOvl').classList.add('hide'); saveSettings(); });
+  byId('btnExit', function () { window.SWS_EXIT(); });
+  byId('btnShopExit', function () { window.SWS_EXIT(); });
+  byId('optExit', function () { window.SWS_EXIT(); });
+  $('shopTracks').addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-buy]') : null;
+    if (!t) return;
+    firstGesture();
+    var track = t.getAttribute('data-buy');
+    G.save = commitSave(store(), function (sv) { shopBuy(sv, track); });
+    pluck(329.63, 0.3); haptic(10);
+    renderShop();
+  });
+  byId('optSound', function () { G.save.settings.sound = !G.save.settings.sound; syncOpts(); saveSettings(); });
+  byId('optHap', function () { G.save.settings.haptics = !G.save.settings.haptics; syncOpts(); saveSettings(); });
+  byId('optTone', function () { G.save.settings.tone = !G.save.settings.tone; syncOpts(); saveSettings(); updateTone(); });
+  byId('optConfirm', function () { G.save.settings.confirm = !G.save.settings.confirm; syncOpts(); saveSettings(); });
+  byId('optMotion', function () { G.save.settings.motion = G.save.settings.motion === 'on' ? 'auto' : 'on'; syncOpts(); saveSettings(); });
+  byId('optCopySeed', function () {
+    var seed = G.run ? G.run.seed : (G.seedOverride || 0);
+    var url = location.origin + location.pathname + '?seed=' + seed;
+    try { navigator.clipboard.writeText(url); toast('LINK COPIED'); } catch (e) { toast(url); }
+  });
+  $('optVol').addEventListener('input', function () {
+    G.save.settings.vol = parseInt($('optVol').value, 10) / 100;
+    if (AU.master) AU.master.gain.value = G.save.settings.vol;
+  });
+  $('optVol').addEventListener('change', saveSettings);
+  document.addEventListener('keydown', function (e) {
+    if ($('runScreen').classList.contains('hide')) return;
+    if (e.key === 'ArrowDown' || e.key === 's') { doAction('descend'); }
+    else if (e.key === 'ArrowUp' || e.key === 'w') { doAction('ascend'); }
+    else if (e.key === 'm') { doAction('mine'); }
+    else if (e.key === 'c') { openCargo(); }
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && AU.toneGain && AU.ctx) AU.toneGain.gain.setTargetAtTime(0, AU.ctx.currentTime, 0.05);
+    else updateTone();
+  });
+  window.addEventListener('resize', function () { if (G.run) renderShaft(); });
+}
+function openOpts() { syncOpts(); $('optOvl').classList.remove('hide'); }
+function syncOpts() {
+  var s = G.save.settings;
+  function sw(id, on) { var e = $(id); e.className = 'switch ' + (on ? 'on' : 'off'); e.textContent = on ? 'ON' : 'OFF'; }
+  sw('optSound', s.sound); sw('optHap', s.haptics); sw('optTone', s.tone); sw('optConfirm', s.confirm);
+  sw('optMotion', s.motion === 'on' || REDUCED);
+  $('optVol').value = Math.round(s.vol * 100);
+  $('optSeed').textContent = 'SEED ' + (G.run ? G.run.seed : (G.seedOverride || 'random each run'));
+  $('optVer').textContent = 'DEEPWELL build 20260816a';
+}
+function saveSettings() {
+  var st = G.save.settings;
+  G.save = commitSave(store(), function (sv) { var k; for (k in st) sv.settings[k] = st[k]; });
+}
+function boot() {
+  G.save = loadSave(store());
+  wire();
+  var q = location.search || '';
+  var m = /[?&]seed=(\d+)/.exec(q);
+  if (m) G.seedOverride = parseInt(m[1], 10) >>> 0;
+  if (/[?&]test=1/.test(q)) { runTestPanel(); return; }
+  if (G.save.run && G.save.run.depth > 0 && !G.save.run.over) {
+    G.run = G.save.run;
+    $('shopScreen').classList.add('hide');
+    $('runScreen').classList.remove('hide');
+    render();
+    toast('YOU WERE STILL DOWN AT ' + G.run.depth + 'm');
+  } else if (G.seedOverride !== null && !G.save.stats.runs) {
+    startRun(G.seedOverride, G.save.upg, false);
+  } else {
+    toSurface();
+  }
+  try {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260816a').catch(function () {});
+  } catch (e) {}
+  document.addEventListener('pointerdown', firstGesture, { once: true });
+}
+function runTestPanel() {
+  var rep = TEST.run(), i, html = 'DEEPWELL TEST HARNESS\n\n';
+  for (i = 0; i < TEST.results.length; i++) {
+    var r = TEST.results[i];
+    html += (r.pass ? 'pass  ' : '<span class="f">FAIL  ') + r.name + (r.pass ? '' : (r.detail ? '   [' + r.detail + ']' : '') + '</span>') + '\n';
+  }
+  html += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + '   (total ' + rep.total + ')\n';
+  var p = document.createElement('div');
+  p.id = 'testPanel'; p.innerHTML = html;
+  document.body.appendChild(p);
+}
+window.__TEST__ = TEST;
+window.DEEPWELL = { G: G, step: step, actions: actions, startRun: startRun, CONFIG: CONFIG };
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+</script>
+</body>
+</html>

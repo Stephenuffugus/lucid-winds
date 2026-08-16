@@ -1743,7 +1743,647 @@ function runAllTests(opts) {
 // ---- TEST_EXPORT_END ----
 </script>
 <script>
-/* BOOT placeholder replaced by the VIEW/INPUT/BOOT build step. */
+/* ===================================================================
+   6. VIEW — reads SIM state, never mutates it.
+   =================================================================== */
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+var boardC = $('board'), bx = boardC.getContext('2d');
+var ringC = $('comboRing'), rx = ringC.getContext('2d');
+var stage = $('stage');
+
+var save = loadSave();
+var settings = save.settings;
+var reducedSys = false;
+try { reducedSys = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+function reduced() { return settings.motion === 'on' ? true : (settings.motion === 'off' ? false : reducedSys); }
+
+var st = null, queue = makeQueue(CONFIG.QUEUE_CAP);
+var running = false, acc = 0, lastT = 0, phase = 0;
+var spark = null, shake = 0, flash = 0, inputLog = [], replay = null;
+var cell = 18, boardPx = 360, dpr = 1;
+var scoreShown = 0;
+var mode = 'free', curSeed = 1, todayStr = '';
+
+/* ---------- geometry ---------- */
+function layout() {
+  var w = stage.clientWidth, h = stage.clientHeight;
+  var side = Math.max(180, Math.min(w, h) - 8);
+  cell = Math.max(8, Math.floor(side / CONFIG.GRID));
+  boardPx = cell * CONFIG.GRID;
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  boardC.style.width = boardPx + 'px';
+  boardC.style.height = boardPx + 'px';
+  boardC.width = Math.round(boardPx * dpr);
+  boardC.height = Math.round(boardPx * dpr);
+  bx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', layout);
+try { window.visualViewport && window.visualViewport.addEventListener('resize', layout); } catch (e) {}
+
+/* ---------- glyphs: shape doubles colour so the board reads in greyscale ---------- */
+function glyph(g, px, py, r) {
+  bx.beginPath();
+  if (g === 0) { bx.moveTo(px, py - r); bx.lineTo(px + r, py + r * 0.8); bx.lineTo(px - r, py + r * 0.8); bx.closePath(); }
+  else if (g === 1) { bx.rect(px - r * 0.85, py - r * 0.85, r * 1.7, r * 1.7); }
+  else if (g === 2) { bx.moveTo(px, py - r); bx.lineTo(px + r, py); bx.lineTo(px, py + r); bx.lineTo(px - r, py); bx.closePath(); }
+  else { bx.moveTo(px - r, py - r); bx.lineTo(px + r, py + r); bx.moveTo(px + r, py - r); bx.lineTo(px - r, py + r); }
+}
+function fillGlyph(g, px, py, r, col) {
+  glyph(g, px, py, r);
+  if (g === 3) { bx.strokeStyle = col; bx.lineWidth = Math.max(1.5, r * 0.55); bx.lineCap = 'round'; bx.stroke(); }
+  else { bx.fillStyle = col; bx.fill(); }
+}
+
+function neighbourWire(i, live) {
+  var x = i % CONFIG.GRID, y = (i / CONFIG.GRID) | 0, out = [], d;
+  for (d = 0; d < 4; d++) {
+    var nx = x + DX[d], ny = y + DY[d];
+    if (nx < 0 || ny < 0 || nx >= CONFIG.GRID || ny >= CONFIG.GRID) continue;
+    var ni = ny * CONFIG.GRID + nx;
+    if (st.cell[ni] !== WIRE) continue;
+    if ((st.cover[ni] > 0) !== live) continue;
+    out.push(d);
+  }
+  return out;
+}
+
+function drawWireCell(i, live, alphaOverride) {
+  var x = (i % CONFIG.GRID) * cell, y = ((i / CONFIG.GRID) | 0) * cell;
+  var cxp = x + cell / 2, cyp = y + cell / 2;
+  var links = neighbourWire(i, live), d;
+  var w = live ? Math.max(3, cell * 0.42) : Math.max(2, cell * 0.20);
+  bx.globalAlpha = alphaOverride === undefined ? 1 : alphaOverride;
+  bx.lineCap = 'round';
+  bx.lineWidth = w;
+  bx.strokeStyle = live ? '#a3e635' : '#38452b';
+  for (d = 0; d < links.length; d++) {
+    bx.beginPath();
+    bx.moveTo(cxp, cyp);
+    bx.lineTo(cxp + DX[links[d]] * cell * 0.55, cyp + DY[links[d]] * cell * 0.55);
+    bx.stroke();
+  }
+  bx.beginPath();
+  bx.arc(cxp, cyp, w * 0.5, 0, 6.2832);
+  bx.fillStyle = live ? '#c6f04f' : '#38452b';
+  bx.fill();
+  bx.globalAlpha = 1;
+}
+
+function draw() {
+  if (!st) { bx.clearRect(0, 0, boardPx, boardPx); return; }
+  var i, x, y, g = CONFIG.GRID;
+  bx.clearRect(0, 0, boardPx, boardPx);
+
+  /* substrate */
+  bx.fillStyle = '#0c1209';
+  bx.fillRect(0, 0, boardPx, boardPx);
+  bx.strokeStyle = '#141b10';
+  bx.lineWidth = 1;
+  for (i = 1; i < g; i++) {
+    bx.beginPath(); bx.moveTo(i * cell + 0.5, 0); bx.lineTo(i * cell + 0.5, boardPx); bx.stroke();
+    bx.beginPath(); bx.moveTo(0, i * cell + 0.5); bx.lineTo(boardPx, i * cell + 0.5); bx.stroke();
+  }
+
+  /* overload warning: the edge warms as the breaker gets close */
+  var load = st.energized / CONFIG.CELLS;
+  if (load > CONFIG.WARN_PCT) {
+    var k = Math.min(1, (load - CONFIG.WARN_PCT) / (CONFIG.OVERLOAD_PCT - CONFIG.WARN_PCT));
+    bx.strokeStyle = 'rgba(255,180,70,' + (0.20 + 0.55 * k).toFixed(3) + ')';
+    bx.lineWidth = 2 + 5 * k;
+    bx.strokeRect(bx.lineWidth / 2, bx.lineWidth / 2, boardPx - bx.lineWidth, boardPx - bx.lineWidth);
+  }
+
+  /* dead wire first, live wire over it */
+  for (i = 0; i < CONFIG.CELLS; i++) if (st.cell[i] === WIRE && st.cover[i] === 0) drawWireCell(i, false);
+
+  /* the open circuit: the shape you are about to commit to */
+  if (st.charge) {
+    var seenP = {}, k2;
+    var col = COLORS[st.charge.ci];
+    for (k2 = st.charge.sliceStart; k2 < st.trail.length; k2++) {
+      var c = st.trail[k2];
+      if (seenP[c]) continue;
+      seenP[c] = 1;
+      x = (c % g) * cell; y = ((c / g) | 0) * cell;
+      bx.fillStyle = col.hex;
+      bx.globalAlpha = 0.16;
+      bx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      bx.globalAlpha = 1;
+    }
+  }
+
+  var sparkFront = -1;
+  if (spark) {
+    var el = (performance.now() - spark.t0) / spark.dur;
+    sparkFront = Math.floor(el * spark.cells.length);
+    if (el >= 1) { spark = null; sparkFront = -1; }
+  }
+  var sparkSet = null;
+  if (spark) {
+    sparkSet = {};
+    for (i = sparkFront; i < spark.cells.length; i++) sparkSet[spark.cells[i]] = 1;
+  }
+
+  if (!reduced() && load > 0) { bx.shadowColor = 'rgba(163,230,53,0.55)'; bx.shadowBlur = Math.max(3, cell * 0.35); }
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE || st.cover[i] === 0) continue;
+    if (sparkSet && sparkSet[i]) continue;               // not lit yet, the spark has not reached it
+    drawWireCell(i, true);
+  }
+  bx.shadowBlur = 0;
+
+  /* the repeating glyph along energized runs: pattern doubles colour */
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE || st.cover[i] === 0) continue;
+    if (sparkSet && sparkSet[i]) continue;
+    x = i % g; y = (i / g) | 0;
+    if (((x + y + (phase | 0)) % 3) !== 0) continue;
+    var ci = st.ccol[i] - 1;
+    if (ci < 0) ci = 0;
+    fillGlyph(COLORS[ci].glyph, x * cell + cell / 2, y * cell + cell / 2, Math.max(2, cell * 0.17), '#0d1408');
+  }
+
+  /* the spark itself */
+  if (spark && sparkFront >= 0 && sparkFront < spark.cells.length) {
+    var sc = spark.cells[Math.max(0, sparkFront - 1)];
+    x = (sc % g) * cell + cell / 2; y = ((sc / g) | 0) * cell + cell / 2;
+    bx.fillStyle = '#ffffff';
+    bx.beginPath(); bx.arc(x, y, cell * 0.42, 0, 6.2832); bx.fill();
+  }
+
+  /* terminals */
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== TERM) continue;
+    var tci = st.tcol[i] - 1; if (tci < 0) tci = 0;
+    var tc = COLORS[tci];
+    x = (i % g) * cell + cell / 2; y = ((i / g) | 0) * cell + cell / 2;
+    var open = st.charge && (function () {
+      var q; for (q = 0; q < st.pairs.length; q++) if (st.pairs[q].id === st.charge.pairId && st.pairs[q].active.indexOf(i) >= 0) return true;
+      return false;
+    })();
+    bx.beginPath(); bx.arc(x, y, cell * 0.42, 0, 6.2832);
+    bx.fillStyle = 'rgba(10,14,8,0.9)'; bx.fill();
+    bx.strokeStyle = tc.hex; bx.lineWidth = Math.max(2, cell * 0.16); bx.stroke();
+    fillGlyph(tc.glyph, x, y, Math.max(2.5, cell * 0.2), tc.hex);
+    if (open) {
+      var pulse = reduced() ? 0.55 : (0.35 + 0.35 * Math.sin(phase * 0.22));
+      bx.globalAlpha = pulse;
+      bx.beginPath(); bx.arc(x, y, cell * 0.62, 0, 6.2832);
+      bx.strokeStyle = tc.hex; bx.lineWidth = 2; bx.stroke();
+      bx.globalAlpha = 1;
+    }
+  }
+
+  /* discharge pickup */
+  if (st.pickup >= 0) {
+    x = (st.pickup % g) * cell + cell / 2; y = ((st.pickup / g) | 0) * cell + cell / 2;
+    var r = cell * (reduced() ? 0.34 : (0.30 + 0.05 * Math.sin(phase * 0.3)));
+    bx.beginPath(); bx.arc(x, y, r, 0, 6.2832);
+    bx.fillStyle = '#e8dcc8'; bx.fill();
+    bx.strokeStyle = '#0c1209'; bx.lineWidth = 2;
+    bx.beginPath(); bx.moveTo(x - r * 0.35, y - r * 0.5); bx.lineTo(x + r * 0.1, y); bx.lineTo(x - r * 0.1, y);
+    bx.lineTo(x + r * 0.35, y + r * 0.5); bx.stroke();
+  }
+
+  /* head */
+  x = (st.head % g) * cell + cell / 2; y = ((st.head / g) | 0) * cell + cell / 2;
+  bx.beginPath(); bx.arc(x, y, cell * 0.40, 0, 6.2832);
+  bx.fillStyle = st.alive ? '#eaffd0' : '#8c2b2b'; bx.fill();
+  var hx = DX[st.heading], hy = DY[st.heading];
+  bx.fillStyle = '#0c1209';
+  bx.beginPath(); bx.arc(x + hx * cell * 0.15 - hy * cell * 0.13, y + hy * cell * 0.15 + hx * cell * 0.13, Math.max(1, cell * 0.07), 0, 6.2832); bx.fill();
+  bx.beginPath(); bx.arc(x + hx * cell * 0.15 + hy * cell * 0.13, y + hy * cell * 0.15 - hx * cell * 0.13, Math.max(1, cell * 0.07), 0, 6.2832); bx.fill();
+  if (st.charge) {
+    var cc = COLORS[st.charge.ci];
+    bx.beginPath(); bx.arc(x, y - cell * 0.55, cell * 0.2, 0, 6.2832);
+    bx.fillStyle = cc.hex; bx.fill();
+  }
+
+  if (flash > 0 && !reduced()) {
+    bx.fillStyle = 'rgba(255,255,255,' + (flash * 0.5).toFixed(3) + ')';
+    bx.fillRect(0, 0, boardPx, boardPx);
+  }
+}
+
+/* ---------- HUD ---------- */
+function drawRing() {
+  var w = 104;
+  rx.clearRect(0, 0, w, w);
+  rx.lineWidth = 8;
+  rx.strokeStyle = '#1c2029';
+  rx.beginPath(); rx.arc(w / 2, w / 2, 44, 0, 6.2832); rx.stroke();
+  if (!st) return;
+  var left = st.comboIdx >= 0 ? Math.max(0, CONFIG.COMBO_WINDOW - (st.tick - st.lastCompleteTick)) : 0;
+  var frac = left / CONFIG.COMBO_WINDOW;
+  if (frac <= 0) return;
+  var blink = frac < 0.25 && !reduced() && (Math.floor(phase * 0.5) % 2 === 0);
+  rx.strokeStyle = blink ? '#ffcf70' : '#a3e635';
+  rx.beginPath();
+  rx.arc(w / 2, w / 2, 44, -Math.PI / 2, -Math.PI / 2 + 6.2832 * frac);
+  rx.stroke();
+}
+function hud() {
+  if (!st) return;
+  scoreShown += (st.score - scoreShown) * 0.28;
+  if (Math.abs(st.score - scoreShown) < 0.7) scoreShown = st.score;
+  $('score').textContent = Math.round(scoreShown).toLocaleString();
+  $('comboTxt').textContent = 'x' + comboMult(st);
+  var load = st.energized / CONFIG.CELLS;
+  $('loadBox').className = load > CONFIG.WARN_PCT ? 'on' : '';
+  $('loadPct').textContent = Math.round(load * 100) + '%';
+  $('sub').textContent = COPY.labBest + save.best.score.toLocaleString() + '   ' + st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits';
+  drawRing();
+}
+
+/* ===================================================================
+   7. AUDIO — C minor pentatonic. Every pitched sound is quantised to it,
+      so a good run sounds like a performance instead of noise.
+   =================================================================== */
+var AC = null, master = null;
+var PENT = [0, 3, 5, 7, 10];                 // C Eb F G Bb
+function deg2freq(d) {
+  var oct = Math.floor(d / PENT.length), semi = PENT[((d % PENT.length) + PENT.length) % PENT.length];
+  return 130.813 * Math.pow(2, (semi + 12 * oct) / 12);
+}
+function audio() {
+  if (AC) return AC;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    var comp = AC.createDynamicsCompressor();
+    master.connect(comp); comp.connect(AC.destination);
+    master.gain.value = settings.mute ? 0 : settings.vol;
+  } catch (e) { AC = null; }
+  return AC;
+}
+function vol() { return settings.mute ? 0 : settings.vol; }
+function pluck(freq, dur, type, gain) {
+  if (!audio() || vol() <= 0) return;
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'triangle';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001, (gain || 0.22)), AC.currentTime + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  o.connect(g); g.connect(master);
+  o.start(); o.stop(AC.currentTime + dur + 0.02);
+}
+function noiseBurst(dur, hz) {
+  if (!audio() || vol() <= 0) return;
+  var n = Math.floor(AC.sampleRate * dur), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0), i;
+  for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  var s = AC.createBufferSource(); s.buffer = buf;
+  var f = AC.createBiquadFilter(); f.type = 'lowpass';
+  f.frequency.setValueAtTime(hz, AC.currentTime);
+  f.frequency.exponentialRampToValueAtTime(120, AC.currentTime + dur);
+  var g = AC.createGain(); g.gain.value = 0.3;
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start();
+}
+var hum = null, humGain = null;
+function setHum(ci) {
+  if (!audio() || vol() <= 0) { return; }
+  if (ci === null) {
+    if (hum) { try { humGain.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.12); hum.stop(AC.currentTime + 0.2); } catch (e) {} hum = null; }
+    return;
+  }
+  var f = deg2freq(ci * 2) / 2;
+  if (!hum) {
+    hum = AC.createOscillator(); humGain = AC.createGain();
+    hum.type = 'sawtooth';
+    humGain.gain.value = 0.0001;
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+    hum.connect(lp); lp.connect(humGain); humGain.connect(master);
+    hum.start();
+  }
+  hum.frequency.setTargetAtTime(f, AC.currentTime, 0.05);
+  humGain.gain.setTargetAtTime(0.05, AC.currentTime, 0.08);
+}
+/* note count scales with circuit length, starting degree climbs with combo */
+function arp(len, comboIdx, ci) {
+  var notes = Math.max(3, Math.min(12, 3 + Math.floor(len / 6)));
+  var start = 3 + Math.max(0, comboIdx) * 2 + ci;
+  var i;
+  for (i = 0; i < notes; i++) {
+    (function (k) {
+      setTimeout(function () { pluck(deg2freq(start + k), 0.22, 'triangle', 0.18); }, k * 42);
+    })(i);
+  }
+}
+function chordOverload() {
+  noiseBurst(0.45, 2600);
+  [0, 2, 4, 7].forEach(function (d, i) {
+    setTimeout(function () { pluck(deg2freq(d), 1.1, 'sawtooth', 0.13); }, i * 30);
+  });
+}
+function haptic(p) {
+  if (!settings.haptics) return;
+  try { navigator.vibrate && navigator.vibrate(p); } catch (e) {}
+}
+
+/* ===================================================================
+   LOOP
+   =================================================================== */
+function tickMs() { return Math.max(CONFIG.TICK_FLOOR_MS, CONFIG.TICK_START_MS - CONFIG.TICK_STEP_MS * st.circuitsCompleted); }
+
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (!lastT) lastT = t;
+  var dt = Math.min(250, t - lastT);
+  lastT = t;
+  phase += dt * 0.012;
+  if (flash > 0) flash = Math.max(0, flash - dt / 260);
+  if (shake > 0) shake = Math.max(0, shake - dt / 120);
+  if (running && st && st.alive) {
+    acc += dt;
+    var ms = tickMs();
+    while (acc >= ms && st.alive) { acc -= ms; doTick(); ms = tickMs(); }
+  }
+  if (shake > 0 && !reduced()) {
+    var a = shake * 4;
+    boardC.style.transform = 'translate(' + ((Math.random() - 0.5) * a).toFixed(2) + 'px,' + ((Math.random() - 0.5) * a).toFixed(2) + 'px)';
+  } else if (boardC.style.transform) boardC.style.transform = '';
+  draw();
+  hud();
+}
+
+function doTick() {
+  var turn;
+  if (replay) { turn = replay.log[replay.i] === undefined ? 0 : replay.log[replay.i]; replay.i++; }
+  else { turn = queue.shift(); inputLog.push(turn); }
+  var r = step(st, turn);
+  var i, e;
+  for (i = 0; i < r.events.length; i++) {
+    e = r.events[i];
+    if (e.t === 'charged') { setHum(e.ci); pluck(deg2freq(4 + e.ci), 0.12, 'square', 0.15); haptic(10); }
+    else if (e.t === 'abandoned') { setHum(null); }
+    else if (e.t === 'completed') {
+      setHum(null);
+      spark = { cells: e.cells.slice(), t0: performance.now(), dur: 150 };
+      arp(e.len, st.comboIdx, e.ci);
+      haptic(25);
+      shake = Math.min(1, 0.3 + e.len / 90);
+    }
+    else if (e.t === 'overload') { chordOverload(); flash = 1; shake = 1; haptic([30, 40, 80]); }
+    else if (e.t === 'discharged' && e.cells > 0) { pluck(deg2freq(1), 0.3, 'sine', 0.14); haptic(10); }
+    else if (e.t === 'died') { onDeath(e.cause); }
+  }
+}
+
+/* ===================================================================
+   8. INPUT — one small queue, applied at the next SIM tick.
+   =================================================================== */
+function turn(t) {
+  if (!running || !st || !st.alive || replay) return;
+  audio();
+  queue.push(t);
+}
+function zone(el, t) {
+  var fire = function (ev) { ev.preventDefault(); turn(t); };
+  el.addEventListener('pointerdown', fire);
+}
+zone($('zoneL'), -1);
+zone($('zoneR'), 1);
+var swX = null, swY = null;
+stage.addEventListener('touchstart', function (e) { if (e.touches.length) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; } }, { passive: true });
+stage.addEventListener('touchend', function (e) {
+  if (swX === null || !e.changedTouches.length) return;
+  var dx = e.changedTouches[0].clientX - swX, dy = e.changedTouches[0].clientY - swY;
+  swX = null;
+  if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)) { turn(dx > 0 ? 1 : -1); }
+}, { passive: true });
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'ArrowLeft' || e.key === 'a') { turn(-1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight' || e.key === 'd') { turn(1); e.preventDefault(); }
+  else if (e.key === ' ') { if (!running) startRun(curSeed, mode); e.preventDefault(); }
+});
+document.addEventListener('visibilitychange', function () { if (document.hidden) { running = false; setHum(null); } });
+
+/* ===================================================================
+   RUN LIFECYCLE
+   =================================================================== */
+function startRun(seed, m) {
+  mode = m || 'free';
+  curSeed = seed >>> 0;
+  st = newGame(curSeed);
+  queue.clear();
+  inputLog = [];
+  replay = null;
+  spark = null; flash = 0; shake = 0; scoreShown = 0;
+  acc = 0; running = true;
+  $('sheetOver').className = 'sheet';
+  $('sheetOpt').className = 'sheet';
+  $('btnStart').textContent = COPY.again;
+  $('zoneHint').className = settings.zones ? 'on' : '';
+  if (settings.zones) setTimeout(function () { $('zoneHint').className = ''; }, 2200);
+  layout();
+}
+
+function onDeath(cause) {
+  running = false;
+  setHum(null);
+  haptic([30, 40, 80]);
+  shake = 1;
+  pluck(deg2freq(0), 0.9, 'sawtooth', 0.16);
+  setTimeout(function () { pluck(deg2freq(-2), 1.2, 'sine', 0.12); }, 140);
+  var wasBest = st.score > save.best.score;
+  save = recordRun(st, encodeLog(inputLog));
+  if (mode === 'daily') save = recordDaily(todayStr, st.score);
+  settings = save.settings;
+  $('overTitle').textContent = COPY.overTitle;
+  $('overLine').textContent = (cause === 'wall' ? COPY.deadWall : COPY.deadLive) + (wasBest ? '  ' + COPY.bestNew : '');
+  var cells = [
+    [st.score.toLocaleString(), COPY.statScore],
+    [st.tick, COPY.statTicks],
+    [st.circuitsCompleted, COPY.statCircuits],
+    ['x' + st.comboPeak, COPY.statCombo],
+    [st.longest, COPY.statLongest],
+    [st.overloads, COPY.statOverloads]
+  ];
+  $('statGrid').innerHTML = cells.map(function (c) {
+    return '<div class="stat"><b>' + c[0] + '</b><span>' + c[1] + '</span></div>';
+  }).join('');
+  $('cardImg').src = buildCard();
+  $('installLine').style.display = deferredPrompt ? 'block' : 'none';
+  $('installLine').textContent = COPY.installLine;
+  setTimeout(function () { $('sheetOver').className = 'sheet on'; }, 520);
+}
+
+/* the death card: 640x960, the board you built, ready to share */
+function buildCard() {
+  var W = 640, H = 960, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  var g2 = c.getContext('2d');
+  g2.fillStyle = '#0a0b0f'; g2.fillRect(0, 0, W, H);
+  var pad = 40, side = W - pad * 2, cs = side / CONFIG.GRID;
+  var oy = 190;
+  g2.fillStyle = '#0c1209'; g2.fillRect(pad, oy, side, side);
+  g2.strokeStyle = '#1c2029'; g2.lineWidth = 2; g2.strokeRect(pad, oy, side, side);
+  var i, x, y;
+  for (i = 0; i < CONFIG.CELLS; i++) {
+    if (st.cell[i] !== WIRE) continue;
+    x = pad + (i % CONFIG.GRID) * cs; y = oy + (((i / CONFIG.GRID) | 0)) * cs;
+    var live = st.cover[i] > 0;
+    g2.fillStyle = live ? '#a3e635' : '#33401f';
+    var m = live ? cs * 0.10 : cs * 0.28;
+    g2.fillRect(x + m, y + m, cs - m * 2, cs - m * 2);
+  }
+  g2.fillStyle = '#e7ecdd';
+  g2.font = '800 46px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(COPY.title, pad, 84);
+  g2.fillStyle = '#a3e635';
+  g2.font = '800 74px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(st.score.toLocaleString(), pad, 156);
+  g2.fillStyle = '#8e9a86';
+  g2.font = '500 26px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(st.tick + ' ticks   ' + st.circuitsCompleted + ' circuits   peak x' + st.comboPeak, pad, oy + side + 46);
+  g2.fillText(COPY.seedLine + curSeed, pad, oy + side + 84);
+  g2.fillStyle = '#4d5647';
+  g2.font = '700 22px ui-sans-serif,system-ui,sans-serif';
+  g2.fillText(COPY.studio, pad, H - 42);
+  try { return c.toDataURL('image/png'); } catch (e) { return ''; }
+}
+
+function shareText() {
+  return COPY.title + (mode === 'daily' ? ' daily' : '') + ' ' + st.score.toLocaleString() +
+    ' in ' + st.tick + ' ticks. ' + location.origin + location.pathname + '?seed=' + curSeed;
+}
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.className = 'on';
+  setTimeout(function () { t.className = ''; }, 2000);
+}
+
+/* ---------- buttons ---------- */
+$('btnStart').addEventListener('click', function () { startRun((Date.now() ^ (Math.random() * 1e9)) >>> 0, 'free'); });
+$('btnAgain').addEventListener('click', function () { startRun((Date.now() ^ (Math.random() * 1e9)) >>> 0, 'free'); });
+$('btnDaily').addEventListener('click', function () {
+  todayStr = new Date().toISOString().slice(0, 10);
+  startRun(dailySeed(todayStr), 'daily');
+});
+$('btnDownload').addEventListener('click', function () {
+  var a = document.createElement('a');
+  a.href = $('cardImg').src;
+  a.download = 'wireworm-' + curSeed + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('btnShare').addEventListener('click', function () {
+  var txt = shareText();
+  if (navigator.share) { navigator.share({ text: txt }).catch(function () {}); return; }
+  try { navigator.clipboard.writeText(txt); toast(COPY.copied); }
+  catch (e) { toast(COPY.shareFail); }
+});
+$('btnReplay').addEventListener('click', function () {
+  if (!save.bestRun || !save.bestRun.log) { toast(COPY.noReplay); return; }
+  startRun(save.bestRun.seed, 'free');
+  replay = { log: decodeLog(save.bestRun.log), i: 0 };
+  toast(COPY.replaying);
+});
+$('btnOpt').addEventListener('click', function () { openOpts(); });
+$('btnOptClose').addEventListener('click', function () { $('sheetOpt').className = 'sheet'; });
+$('btnCopySeed').addEventListener('click', function () {
+  var link = location.origin + location.pathname + '?seed=' + curSeed;
+  try { navigator.clipboard.writeText(link); toast(COPY.copied); } catch (e) { toast(COPY.shareFail); }
+});
+
+function tglText(on) { return on ? COPY.on : COPY.off; }
+function syncOpts() {
+  $('rngVol').value = Math.round(settings.vol * 100);
+  $('volVal').textContent = Math.round(settings.vol * 100);
+  $('tglMute').textContent = tglText(!settings.mute);
+  $('tglMute').className = 'tgl' + (!settings.mute ? ' on' : '');
+  $('tglHap').textContent = tglText(settings.haptics);
+  $('tglHap').className = 'tgl' + (settings.haptics ? ' on' : '');
+  $('tglMotion').textContent = settings.motion === 'auto' ? 'AUTO' : tglText(settings.motion === 'on');
+  $('tglMotion').className = 'tgl' + (reduced() ? ' on' : '');
+  $('tglZones').textContent = tglText(settings.zones);
+  $('tglZones').className = 'tgl' + (settings.zones ? ' on' : '');
+  if (master) master.gain.value = vol();
+  $('optStats').innerHTML = '<div class="row"><label>' + COPY.labRuns + '</label><span class="val">' + save.stats.runs +
+    '</span></div><div class="row"><label>best score</label><span class="val">' + save.best.score.toLocaleString() +
+    '</span></div><div class="row"><label>best combo</label><span class="val">x' + save.best.combo +
+    '</span></div><div class="row"><label>daily streak</label><span class="val">' + save.daily.streak + '</span></div>';
+  $('optSeed').textContent = COPY.seedLine + curSeed;
+}
+function persist() { save = updateSave(function (s) { s.settings = settings; }); }
+function openOpts() { $('optTitle').textContent = COPY.options; $('howto').textContent = COPY.howto; syncOpts(); $('sheetOpt').className = 'sheet on'; }
+$('rngVol').addEventListener('input', function () { settings.vol = (+this.value) / 100; settings.mute = false; persist(); syncOpts(); });
+$('tglMute').addEventListener('click', function () { settings.mute = !settings.mute; persist(); syncOpts(); pluck(deg2freq(5), 0.1); });
+$('tglHap').addEventListener('click', function () { settings.haptics = !settings.haptics; persist(); syncOpts(); haptic(10); });
+$('tglMotion').addEventListener('click', function () {
+  settings.motion = settings.motion === 'auto' ? 'on' : (settings.motion === 'on' ? 'off' : 'auto');
+  persist(); syncOpts();
+});
+$('tglZones').addEventListener('click', function () { settings.zones = !settings.zones; persist(); syncOpts(); });
+
+/* ---------- install nudge, only after a finished run ---------- */
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; });
+$('installLine').addEventListener('click', function () { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } });
+
+/* ===================================================================
+   Sky Wolf Studios embed protocol
+   =================================================================== */
+(function () {
+  var framed = false;
+  try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) { history.back(); }
+    else { location.replace('https://lucidwinds.com/portal/'); }
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+$('btnExit').addEventListener('click', function () { window.SWS_EXIT(); });
+
+/* ===================================================================
+   10. BOOT
+   =================================================================== */
+var params = new URLSearchParams(location.search);
+if (params.get('test') === '1') {
+  var rep = runAllTests({});
+  var p = $('testPanel');
+  p.className = 'on';
+  p.innerHTML = '<b>' + (rep.failed ? 'FAILED' : 'PASSED') + '</b>  ' + rep.passed + ' passed, ' + rep.failed +
+    ' failed, ' + rep.total + ' assertions\n\n' +
+    rep.failures.map(function (f) { return '<span class="fail">FAIL  ' + f.name + '  ' + f.detail + '</span>'; }).join('\n');
+}
+window.__TEST__ = { run: function () { return runAllTests({}); }, TEST: TEST };
+
+var seedParam = params.get('seed');
+if (params.get('daily') === '1') {
+  todayStr = new Date().toISOString().slice(0, 10);
+  curSeed = dailySeed(todayStr); mode = 'daily';
+} else if (seedParam && /^\d+$/.test(seedParam)) { curSeed = parseInt(seedParam, 10) >>> 0; }
+else { curSeed = (Date.now() ^ 0x5f3759df) >>> 0; }
+
+$('optTitle').textContent = COPY.options;
+$('howto').textContent = COPY.howto;
+$('btnStart').textContent = COPY.start;
+$('btnDaily').textContent = COPY.daily;
+$('btnExit').textContent = COPY.exit;
+$('btnDownload').textContent = COPY.download;
+$('btnShare').textContent = COPY.share;
+$('btnReplay').textContent = COPY.watchBest;
+$('btnAgain').textContent = COPY.again;
+$('btnOptClose').textContent = COPY.done;
+$('btnCopySeed').textContent = COPY.copySeed;
+
+startRun(curSeed, mode);
+requestAnimationFrame(frame);
+
+/* service worker last: the game is playable before it registers */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    try { navigator.serviceWorker.register('./sw.js?v=20260816a'); } catch (e) {}
+  });
+}
+})();
 </script>
 </body>
 </html>
