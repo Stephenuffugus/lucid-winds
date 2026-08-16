@@ -240,8 +240,11 @@
 
   /* the category chip, so a tile says what KIND of thing it is at a
      glance, which is most of what a storefront grid is for */
+  /* bottom RIGHT: the badge owns top left, the heart owns top right, and the
+     info button owns bottom left. Putting the chip on top of the info button
+     made it unclickable, which a screenshot showed and a hit test confirmed. */
   .shot .kind{
-    position:absolute;left:6px;bottom:6px;z-index:3;
+    position:absolute;right:6px;bottom:6px;z-index:3;
     font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
     color:rgba(237,228,212,.82);background:rgba(8,10,9,.5);
     border:1px solid rgba(237,228,212,.14);
@@ -249,6 +252,35 @@
     backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
   }
   /* the in-development badge already lives top left; keep it above the scrim */
+  /* ===== SHELVES =================================================
+     Rows that scroll sideways, the way every storefront solves this.
+     The page height stops being a function of the catalogue size, and
+     a visitor sees "here are some kinds of thing" instead of "here are
+     one hundred and eighty things".                                  */
+  .shelf{margin:0 0 22px}
+  .shelf-h{display:flex;align-items:baseline;gap:10px;margin:0 0 9px;
+    font-size:15px;font-weight:800;letter-spacing:.2px;color:var(--ink-hi,#EDE4D4)}
+  .shelf-h span{font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+  .shelf-h .more{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--leaf);
+    background:none;border:0;cursor:pointer;padding:6px 2px;min-height:44px}
+  .shelf-row{display:grid;grid-auto-flow:column;grid-auto-columns:132px;gap:10px;
+    overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+    padding:2px 2px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .shelf-row::-webkit-scrollbar{display:none}
+  .shelf-row > *{scroll-snap-align:start}
+  .shelf-row .card{max-width:none;margin:0}
+  /* the first row is the invitation, so its tiles are bigger */
+  .shelf.lead .shelf-row{grid-auto-columns:168px}
+  @media (min-width:720px){
+    .shelf-row{grid-auto-columns:158px}
+    .shelf.lead .shelf-row{grid-auto-columns:208px}
+    .shelf-h{font-size:17px}
+  }
+  /* a hint that the row keeps going, without a scrollbar */
+  .shelf-wrap{position:relative}
+  .shelf-wrap::after{content:"";position:absolute;top:0;right:0;bottom:8px;width:34px;
+    pointer-events:none;background:linear-gradient(to right,rgba(10,13,11,0),rgba(10,13,11,.85))}
+
   .badge{z-index:3}
   .fav-btn,.info-btn{z-index:3}
   .badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);color:var(--leaf);
@@ -597,7 +629,13 @@
   <h2 style="display:none">Featured</h2>
   <div class="grid hub-grid" id="hub-card" style="display:none"></div>
 
-  <h2 class="arcade-h">The Arcade <span>every game in the studio</span></h2>
+  <!-- SHELVES — a storefront instead of a wall. 180 games in one A-Z list is
+       a catalogue, not a shop: it tells a visitor nothing about where to
+       start. Rows are curated first, then by kind, and the full list stays
+       underneath for anyone who wants it. -->
+  <div id="shelves"></div>
+
+  <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
   <input id="gsearch" type="search" autocomplete="off" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="garden"></div>
@@ -728,8 +766,8 @@ var FEATURED = [
   // Hashblock flagships on the workbench (2026-07-30). Both stay beta:true
   // behind the tester wall until Stephen opens them. "The Attic" is the
   // working title on purpose; never "Retro Attic" (that is the store's name).
-  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", cat:"action", url:"https://stephenuffugus.github.io/Litter_Bug/", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true},
-  {nm:"The Attic", ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.", cat:"creative", url:"/satellites/attic/?v=20260731a", ic:"📼", thumb:"/portal-assets/thumbs/the-attic.png", beta:true},
+  {nm:"Litter Bug", ds:"Play a trial and mint a one of one bug made of trash, then battle for the dumpster.", cat:"action", url:"https://stephenuffugus.github.io/Litter_Bug/", ic:"🪲", thumb:"/portal-assets/thumbs/litter-bug.png", beta:true, fresh:true},
+  {nm:"The Attic", ds:"Rummage up one of one fake vintage records, tapes, and toys, and pray for factory sealed.", cat:"creative", url:"/satellites/attic/?v=20260731a", ic:"📼", thumb:"/portal-assets/thumbs/the-attic.png", beta:true, fresh:true},
   // LOAF: the cat app. Scan a real cat, mint the card, meet her in 3D.
   // loaf.html carries its own dev-gate (wolfden) on top of the portal's
   // tester wall while testing; added 2026-08-04 because it was reachable
@@ -787,7 +825,7 @@ var FEATURED = [
   // section). Card corrected to the destination's OWN title rather than a new name,
   // and flipped to IN DEVELOPMENT so it is playable instead of a dead button.
   // ⚠️ STEPHEN: confirm the name, and whether thumbs/brawl.png is still its art.
-  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", cat:"creative", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png"},
+  {nm:"Wild Wardens", ds:"Tame the wild, tend your grove, and walk the real world for territory.", cat:"creative", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🐾", beta:true, thumb:"/portal-assets/thumbs/brawl.png", fresh:true},
   // HUNCH: the studio's premium flagship drawing-and-guessing game with
   // a Claude vision model + judge call per round (real per-play API cost).
   // Lowered sunbeam yield to respect compute; positioned as PREMIUM to
@@ -808,9 +846,9 @@ var FEATURED = [
   {nm:"Merge & Blast", ds:"Tap matching numbers to blast them into the next number up and climb into the thousands.", cat:"math", url:"/satellites/merge-blast/", ic:"💥", thumb:"/portal-assets/thumbs/merge-blast.jpg"},
   {nm:"Flipbook", ds:"A pocket spiral notebook for drawing little animations page by page.", cat:"creative", url:"/satellites/flipbook/", ic:"📓", thumb:"/portal-assets/thumbs/flipbook.jpg"},
   // Fox & Basket: Stephen's 7/21 hangman ask, our own take. One sentence, per his ruling.
-  {nm:"Fox & Basket", ds:"Guess the word one letter at a time before the fox reaches the picnic basket.", cat:"word", url:"/satellites/fox-basket/", ic:"🦊", thumb:"/portal-assets/thumbs/fox-basket.jpg"},
+  {nm:"Fox & Basket", ds:"Guess the word one letter at a time before the fox reaches the picnic basket.", cat:"word", url:"/satellites/fox-basket/", ic:"🦊", thumb:"/portal-assets/thumbs/fox-basket.jpg", fresh:true},
   {nm:"Super Slice 3D", ds:"Flip the knife through a 3D forest slicing fruit and stick the score wall high.", cat:"action", url:"/satellites/slice-3d/?v=v57", ic:"🗡️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
-  {nm:"Super Slice Wall Climb", ds:"Flip your knife up one giant score wall and stick the blade as high as you dare.", cat:"action", url:"/satellites/slice-3d/?mode=climb&v=v57", ic:"🧗", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Super Slice Wall Climb", ds:"Flip your knife up one giant score wall and stick the blade as high as you dare.", cat:"action", url:"/satellites/slice-3d/?mode=climb&v=v57", ic:"🧗", thumb:"/portal-assets/thumbs/slice-3d.jpg", fresh:true},
   // Stephen 7/28: "The free fall game may need to be its own game too, call super
   // slice 3D free fall." Same pattern as the Wall Climb card — one shared build,
   // its own front door via ?mode=ff (add &endless=1 for the endless drop).
@@ -819,8 +857,8 @@ var FEATURED = [
   // ?mode=ff&endless=1 drops straight into the endless dive.
   // ⚠️ STEPHEN: "Super Slice Endless Fall" is a descriptive name, not a ruling —
   // rename it whenever you want.
-  {nm:"Super Slice 3D Free Fall", ds:"Flip your knife down a shaft of shelves and slabs, one authored level at a time.", cat:"action", url:"/satellites/slice-3d/?mode=ff&v=v57", ic:"🪂", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
-  {nm:"Super Slice Endless Fall", ds:"One shaft with no bottom, and the only score that counts is how far you fall without sticking to the side.", cat:"action", url:"/satellites/slice-3d/?mode=ff&endless=1&v=v57", ic:"🕳️", thumb:"/portal-assets/thumbs/slice-3d.jpg"},
+  {nm:"Super Slice 3D Free Fall", ds:"Flip your knife down a shaft of shelves and slabs, one authored level at a time.", cat:"action", url:"/satellites/slice-3d/?mode=ff&v=v57", ic:"🪂", thumb:"/portal-assets/thumbs/slice-3d.jpg", fresh:true},
+  {nm:"Super Slice Endless Fall", ds:"One shaft with no bottom, and the only score that counts is how far you fall without sticking to the side.", cat:"action", url:"/satellites/slice-3d/?mode=ff&endless=1&v=v57", ic:"🕳️", thumb:"/portal-assets/thumbs/slice-3d.jpg", fresh:true},
   {nm:"Super Slice", ds:"Tap to flip the knife down the counter, slicing veggies and sticking the score wall for big multipliers.", cat:"action", url:"/satellites/slice-master/", ic:"🔪", thumb:"/portal-assets/thumbs/slice-master.jpg"},
   {nm:"Sunforge", ds:"Stick falling pieces to the golden sun and finish rings to crush them inward.", cat:"puzzle", url:"/satellites/ring-stacker/", ic:"☀️", thumb:"/portal-assets/thumbs/ring-stacker.png"},
   {nm:"Pop N Lock", ds:"A neon 80s puzzle battle where you bury rival b-boy pests in worthless grey Chaff.", cat:"puzzle", url:"/satellites/chaff-wars/?v=pnl2", ic:"🕺", thumb:"/portal-assets/thumbs/pop-n-lock.jpg"},
@@ -939,10 +977,10 @@ var FEATURED = [
   {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", cat:"puzzle", url:"/satellites/rootbound/", ic:"🪴"},
   {nm:"OriVex", ds:"Slot folded paper tiles so every touching edge shares a number in this quiet origami puzzle.", cat:"puzzle", url:"/satellites/petalvex/?v=ov5", ic:"🍃", thumb:"/portal-assets/thumbs/petalvex.jpg?r=20260727"},
   {nm:"Hedgerow", ds:"Grow hedge walls to fence the garden pests into a corner and win back the bed.", cat:"puzzle", url:"/satellites/hedgerow/?v=hg14", ic:"🌳", thumb:"/portal-assets/thumbs/hedgerow.jpg"},
-  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=2", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut.png"},
+  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=2", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut.png", fresh:true},
   {nm:"Inkbound", ds:"You are a field mouse who shoves rows of stone planters to trap every garden grub in a corner.", cat:"puzzle", url:"/satellites/grubtrap/", ic:"🐭", thumb:"/portal-assets/thumbs/inkbound.jpg"},
-  {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", cat:"puzzle", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg"},
-  {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg"},
+  {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", cat:"puzzle", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg", fresh:true},
+  {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg", fresh:true},
   {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", cat:"board", url:"/satellites/mahjong/", ic:"🀄"},
   {nm:"Nectar Drop", ds:"A botanical peg bouncer where you ricochet a pollen ball through 120 flower meadows.", cat:"action", url:"/satellites/nectar-drop/", ic:"🌼", thumb:"/portal-assets/thumbs/nectar-drop.jpg"},
   {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", cat:"action", url:"/satellites/stream-hop/?v=v79", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2", fresh:true},
@@ -953,7 +991,7 @@ var FEATURED = [
   {nm:"Dew Snip", ds:"Snip the moonlit vines so the dewdrop swings through the nectar and lands in the sprout.", cat:"puzzle", url:"/satellites/dew-snip/", ic:"💧", thumb:"/portal-assets/thumbs/dew-snip.jpg"},
   {nm:"Berry Vine", ds:"Fire from the seedpod and match three berries to burst the vine before it curls home.", cat:"action", url:"/satellites/berry-vine/", ic:"🫐", thumb:"/portal-assets/thumbs/berry-vine.jpg"},
   {nm:"Cosmic Cadets", ds:"Lift a little Comet Cadet on the night wind and thread the star spires for Perfects.", cat:"action", url:"/satellites/seed-flutter/", ic:"☄️", thumb:"/portal-assets/thumbs/seed-flutter.jpg?v=cc2"},
-  {nm:"Tetroku", ds:"Drag leaf sprigs onto the midnight trellis and fill rows to clear them in showers of pollen.", cat:"puzzle", url:"/satellites/leaf-fit/", ic:"🧩", thumb:"/portal-assets/thumbs/leaf-fit.jpg"},
+  {nm:"Tetroku", ds:"Drag leaf sprigs onto the midnight trellis and fill rows to clear them in showers of pollen.", cat:"puzzle", url:"/satellites/leaf-fit/", ic:"🧩", thumb:"/portal-assets/thumbs/leaf-fit.jpg", fresh:true},
   {nm:"Seed Reel", ds:"A garden slot roguelike where you slide one tile before each harvest so a spin is never just luck.", cat:"dice", url:"/satellites/seed-reel/", ic:"🎰", thumb:"/portal-assets/thumbs/seed-reel.jpg"},
   {nm:"Season Sway", ds:"Swipe visitor cards left or right to keep Sun, Rain, Soil, and Wildlife in balance.", cat:"card", url:"/satellites/season-sway/", ic:"🃏", thumb:"/portal-assets/thumbs/season-sway.jpg"},
   {nm:"Meadow Weave", ds:"Turn and lay hex tiles so meadow meets meadow and pond meets pond until the map comes alive.", cat:"puzzle", url:"/satellites/meadow-weave/", ic:"🌾", thumb:"/portal-assets/thumbs/meadow-weave.jpg"},
@@ -962,7 +1000,7 @@ var FEATURED = [
   {nm:"Root Groups", ds:"Find the four secret groups of four hiding in sixteen tiles, with endless fair boards.", cat:"word", url:"/satellites/root-groups/", ic:"🧺", thumb:"/portal-assets/thumbs/root-groups.jpg"},
   {nm:"First Sprout", ds:"An idle garden that keeps growing from one dark handful of soil even while you sleep.", cat:"creative", url:"/satellites/first-sprout/", ic:"🕯️", thumb:"/portal-assets/thumbs/first-sprout.jpg"},
   {nm:"Plot Bloom", ds:"A relaxed placement puzzle where you lay garden pieces beside good neighbors, with no timers and no way to lose.", cat:"puzzle", url:"/satellites/plot-bloom/", ic:"🏡", thumb:"/portal-assets/thumbs/plot-bloom.jpg"},
-  {nm:"Think Fast", ds:"A blink fast garden of tiny games where one word flashes and you have a heartbeat to do it.", cat:"action", url:"/satellites/micro-meadow/", ic:"🎪", thumb:"/portal-assets/thumbs/micro-meadow.jpg"},
+  {nm:"Think Fast", ds:"A blink fast garden of tiny games where one word flashes and you have a heartbeat to do it.", cat:"action", url:"/satellites/micro-meadow/", ic:"🎪", thumb:"/portal-assets/thumbs/micro-meadow.jpg", fresh:true},
   {nm:"Impossible Garden", ds:"Turn the vine arms until impossible angles line up and the wanderer can stroll across the seam.", cat:"puzzle", url:"/satellites/impossible-garden/", ic:"🏯", beta:true, thumb:"/portal-assets/thumbs/impossible-garden.jpg"},
   {nm:"Star Field", ds:"Plant one star flower in every row, column, and constellation without letting two touch.", cat:"puzzle", url:"/satellites/star-field/", ic:"⭐", thumb:"/portal-assets/thumbs/star-field.jpg"},
   {nm:"Flatulence Fighter", ds:"A silent film game of pure composure where you hold it in until a passing bus gives you cover.", cat:"action", url:"/satellites/flatulence-fighter/", ic:"💨", thumb:"/portal-assets/thumbs/flatulence-fighter.jpg"},
@@ -1170,7 +1208,9 @@ function card(g, isFeat){
      question, and a small chip does it faster than reading a description. */
   var kindKey = isFeat ? g.cat : g[2];
   var kindName = kindKey ? (CAT_LABEL[catGroupOf(kindKey)] || '') : '';
-  var kindChip = (kindName && !soon) ? '<span class="kind">'+kindName+'</span>' : '';
+  var kindChip = (kindName && !soon &&
+                  catGroupOf(kindKey) !== window._swsHideKind)
+    ? '<span class="kind">'+kindName+'</span>' : '';
   var inner = '<div class="shot">'+badge+favBtn+infoBtn+shot+kindChip+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds" onclick="return swsDescTap(event,this)">'+ds+'</div>'+
     (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
@@ -1314,6 +1354,89 @@ function inGroup(key, group){
 function catGroupOf(key){
   for(var g in CAT_GROUP) if(CAT_GROUP[g].indexOf(key)>=0) return g;
   return null;
+}
+
+/* ===== SHELVES =====================================================
+   Curated first, then by kind. Start here is hand picked and is meant to
+   be the best six minutes a stranger can have; edit the list, it is not
+   computed. Everything below it is derived, so shipping a game puts it on
+   the right shelf without anyone remembering to do anything. */
+var START_HERE = ["Jumping Jimothy","Nectar Drop","Dewball","Bloom Breaker",
+                  "Vinewinder","Super Slice"];
+var FLAGSHIPS  = ["Lucid Winds","Aura Farm","Create A Critter","LOAF","Litter Bug",
+                  "The Attic","Abduct a Chameleon 3D","Flock the World","Whack Box",
+                  "Power Scalers","Bandit's Box","HUNCH"];
+
+function byName(names){
+  var out = [];
+  names.forEach(function(n){
+    var g = FEATURED.find(function(x){ return x.nm === n; });
+    if (g) out.push({g:g, feat:true});
+  });
+  return out;
+}
+function inCat(group, limit){
+  var sats = FEATURED.filter(function(g){ return !g.hub && inGroup(g.cat, group); })
+    .map(function(g){ return {g:g, feat:true}; });
+  var nat = GAMES.filter(function(g){ return inGroup(g[2], group); })
+    .map(function(g){ return {g:g, feat:false}; });
+  var all = sats.concat(nat);
+  /* a stable shuffle so a shelf is not always the same first six, but is the
+     same for a whole day: a storefront that reorders on every reload feels
+     broken rather than fresh */
+  var seed = 0, key = group + new Date().toISOString().slice(0,10);
+  for (var i=0;i<key.length;i++) seed = (seed*31 + key.charCodeAt(i)) >>> 0;
+  all.sort(function(a,b){
+    function h(x){ var n=(x.feat?x.g.nm:x.g[1])+seed, v=0;
+      for(var i=0;i<n.length;i++) v=(v*33+n.charCodeAt(i))>>>0; return v; }
+    return h(a)-h(b);
+  });
+  return limit ? all.slice(0, limit) : all;
+}
+function shelf(title, sub, items, opts){
+  if (!items.length) return "";
+  opts = opts || {};
+  /* Under a heading that already says ACTION, a chip on every tile saying
+     ACTION is just repeating itself. */
+  window._swsHideKind = opts.cat || null;
+  var body = items.map(function(it){ return card(it.g, it.feat); }).join("");
+  window._swsHideKind = null;
+  return '<section class="shelf'+(opts.lead?' lead':'')+'">'+
+    '<h2 class="shelf-h">'+title+(sub?' <span>'+sub+'</span>':'')+
+      (opts.cat?'<button class="more" data-jump="'+opts.cat+'">See all '+opts.count+' &rsaquo;</button>':'')+
+    '</h2>'+
+    '<div class="shelf-wrap"><div class="shelf-row">'+
+      body+
+    '</div></div></section>';
+}
+function renderShelves(){
+  var host = document.getElementById("shelves");
+  if (!host) return;
+  /* shipped, not in progress. A shelf called New full of IN DEVELOPMENT
+     badges is a worse first impression than no shelf: it reads as a studio
+     that keeps starting things. Unfinished work is still findable, it has
+     its own tab and it still appears in All. */
+  var fresh = FEATURED.filter(function(g){ return !g.hub && g.fresh && !g.beta; })
+    .map(function(g){ return {g:g, feat:true}; });
+  var html = "";
+  html += shelf("Start here", "six good minutes", byName(START_HERE), {lead:true});
+  html += shelf("New", "just shipped", fresh);
+  html += shelf("Made by the studio", "the big ones", byName(FLAGSHIPS));
+  ["action","puzzle","card","creative","word","math","party"].forEach(function(c){
+    var all = inCat(c);
+    html += shelf(CAT_LABEL[c], "", all.slice(0,12), {cat:c, count:all.length});
+  });
+  host.innerHTML = html;
+  /* See all jumps to the wall with that tab already chosen */
+  host.addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("[data-jump]") : null;
+    if (!b) return;
+    var c = b.getAttribute("data-jump");
+    var tab = document.querySelector('#tabs button[data-c="'+c+'"]');
+    if (tab) tab.click();
+    var h = document.getElementById("everything-h");
+    if (h) h.scrollIntoView({behavior:"smooth", block:"start"});
+  });
 }
 
 function renderGarden(cat){
@@ -1548,7 +1671,7 @@ document.getElementById('tabs').addEventListener('click',function(e){
   [].forEach.call(this.children,function(b){b.classList.remove('on');});
   e.target.classList.add('on'); renderGarden(e.target.getAttribute('data-c'));
 });
-renderGarden("all");
+renderShelves(); renderGarden("all");
 
 // Analytics: which games actually get opened from the portal (Stephen Jul 10
 // note #10 — favorites + opens = where to focus energy). Delegated so it

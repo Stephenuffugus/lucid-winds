@@ -87,6 +87,56 @@ const missingFlags = FLAG.filter(f => all.names.includes(f) && !seen.has(f));
 ok(missingFlags.length === 0, "the flagships are all reachable by category",
   JSON.stringify(missingFlags));
 
+/* ---------- the shelves ---------- */
+/* A storefront rather than a wall: curated rows first, the full A-Z last. */
+console.log("[shelves]");
+const shelves = await page.evaluate(() => {
+  const out = [...document.querySelectorAll(".shelf")].map(s => ({
+    title: s.querySelector(".shelf-h").firstChild.textContent.trim(),
+    cards: s.querySelectorAll(".card").length,
+    inDev: !!s.querySelector(".badge.beta"),
+    chips: s.querySelectorAll(".kind").length
+  }));
+  return out;
+});
+ok(shelves.length >= 8, "the page opens on shelves, not a wall", shelves.length + " shelves");
+ok(shelves[0].title.toLowerCase().includes("start"), "the first shelf tells you where to start",
+  shelves[0].title);
+const nw = shelves.find(s => /^new$/i.test(s.title));
+ok(nw && !nw.inDev, "New holds shipped games, not works in progress",
+  JSON.stringify(nw));
+const catShelf = shelves.find(s => /action/i.test(s.title));
+ok(catShelf && catShelf.chips === 0,
+  "a category shelf does not repeat its own name on every tile", JSON.stringify(catShelf));
+ok(shelves[0].chips > 0, "a mixed shelf does still label its tiles", JSON.stringify(shelves[0]));
+
+/* every control on a card has to stay reachable: the chip landed on top of the
+   info button the first time and made it unclickable */
+const corners = await page.evaluate(() => {
+  const c = document.querySelector(".shelf .card");
+  c.scrollIntoView({ block: "center" });
+  const hit = el => { if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!(t && (t === el || el.contains(t))); };
+  return { info: hit(c.querySelector(".info-btn")), fav: hit(c.querySelector(".fav-btn")),
+           kind: hit(c.querySelector(".kind")) };
+});
+ok(corners.info !== false && corners.fav !== false && corners.kind !== false,
+  "nothing on a card is covering anything else", JSON.stringify(corners));
+
+/* See all jumps to the wall with the tab chosen */
+const jumped = await page.evaluate(async () => {
+  const b = document.querySelector('.shelf [data-jump="puzzle"]');
+  if (!b) return null;
+  b.click();
+  await new Promise(r => setTimeout(r, 700));
+  const on = document.querySelector("#tabs button.on");
+  return { tab: on && on.dataset.c, shown: document.querySelectorAll("#garden .card").length };
+});
+ok(jumped && jumped.tab === "puzzle", "See all switches the wall to that category",
+  JSON.stringify(jumped));
+
 /* ---------- search still works ---------- */
 console.log("[search]");
 const searched = await page.evaluate(async () => {
