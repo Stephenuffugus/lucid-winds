@@ -66,6 +66,38 @@ rootbound               755
 ...and 23 more
 ```
 
+## MACHINE SWEEP — all 100 satellites, 2026-08-16
+
+`scripts/defect_sweep.mjs` (self-testing, `--selftest`). Runs the mechanically checkable
+half of the classes below over every satellite. **A sweep is not an audit** — it cannot see
+whether a game is good, whether its difficulty works, or whether its copy is true about
+anything other than earning. It narrows where to look.
+
+```
+  0/100  exit-gated-on-frame        clean   no game gates its exit on being framed
+  0/100  img-without-onerror        clean
+  0/100  fetch-without-ok-check     clean   nothing treats a 404 as success
+  0/100  dashes-in-copy             clean   after fixing 2 in hexa-hive
+  0/100  EARN-PROMISE-BROKEN        clean   every game promising Sunbeams can pay them
+ 46/100  parse-without-validation   house style, not a defect
+ 99/100  empty-catch                house style, not a defect
+```
+
+The first five being clean is the first hard evidence that the earlier exit and
+silent-failure work actually held rather than being believed.
+
+⛔ Two rules learned building it, both the hard way:
+- **A class that fires on 99 of 100 games is measuring the house style.** Printing it beside
+  a real finding buries the real finding. Rates are printed and anything over 30% is labelled.
+- **It exits on what is ACTIONABLE, not the raw total.** A gate that can never go green
+  teaches people to ignore it.
+
+⛔ Four of its own detectors were wrong before they were right, and all four were caught by
+opening a hit rather than acting on it: a guard that looked for a word inside a string
+`strip()` had already blanked; a dash check that scanned JavaScript, where `a > b` looks like
+a tag, giving 38 code hits out of 40; and class 9 calling garden-td and pong broken when both
+inject the SDK with `createElement` instead of a literal `<script src>` tag.
+
 ## Standing defect classes to check in every game from here
 
 Each of these was found on a live, shipped game during this pass, so assume nothing.
