@@ -252,6 +252,46 @@ None of these were changed. They are taste or economy calls.
 - Whack Box's cloud transport, iOS wake lock stage 2, and LOAF's synthesized voice have all
   never been exercised for real.
 
+# PART 6 — TWENTY GAMES DIED ON A CORRUPT SAVE
+
+**Try this:** you cannot easily, and that is the point. This one was invisible to every
+check we had, including playing the games normally.
+
+Twenty games crash **during boot** if their saved data holds `null` or a bare number:
+
+```
+bramble-court · bridgevine · create-a-critter · fence-off · frost-watch · lamplighter
+loop-warden · mini-crossword · mosaic-draft · nova-bloom · orb-orchard · pollinator-paths
+root-weave · silt · sled-vine · spore-drift · tempo-grove · tinker-loft · tonic-drop · vinewinder
+```
+
+**Why it was invisible.** Every one of them wraps the save in a `try/catch`, which looks
+like protection and is not. A `try/catch` only catches text that fails to *parse*, and both
+`null` and `5` are perfectly valid JSON. They parse fine, and then the very next line asks
+for a property on them and throws. Because the loader runs as the file loads, that throw
+takes **the whole script block** with it, and the game comes up as a broken half screen with
+buttons that do nothing.
+
+You have seen this exact failure before: it is what killed Shell Shuffle's boot, where the
+Start Game button shipped in the HTML, looked perfect, and did nothing forever.
+
+**How a save gets corrupted in real life:** a version change, a half-written record when a
+phone is closed mid-save, two tabs writing at once, or a browser extension. Rare, and
+permanent when it happens, because the game breaks the same way on every future visit.
+
+All twenty are fixed and each one is verified booting identically to a clean boot.
+
+**Four games were flagged and are fine**, checked with screenshots rather than assumed:
+Stream Hop, Flipbook, Petalvex and Vine Runner. A corrupt save also wipes the "you have seen
+the how to play" flag, so they correctly show their instructions again.
+
+**One thing I noticed while looking, and did not change** ⚖: Petalvex's "How to play"
+heading is dark green on a light beige photograph and is genuinely hard to read, unlike the
+body text below it which sits on a dark panel. That is a colour call on your art, so it is
+yours to make.
+
+---
+
 # PART 5 — ADDED AFTER THE VR HANDOFF
 
 ## The arcade was undercounting itself in five places
