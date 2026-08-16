@@ -16,6 +16,99 @@ this box). Everything below was proved with `node`.
   `siege-shell-v2` and the registration is `sw.js?v=20260816b`** (bumped with
   this pass, or nobody would ever receive it).
 
+## THE COMPOSITION FIX, ROUND THREE (the briefing was clipped mid sentence)
+
+Round two closed the void and the briefing landed. It also clipped: the third
+line of the wave 1 briefing ended in the middle of a sentence against the top of
+the lane strip, **with no ellipsis, no fade and no scroll affordance**. A new
+player reads a half sentence and has no way to know there is more.
+
+### It was not the model being 20px out. It was a real CSS bug.
+
+I had `#board` on `overflow-y:auto`, so my first assumption was that it should
+already have scrolled. It did not, and the reason is the rule I introduced in
+round two:
+
+> **`align-content:space-between` distributes NEGATIVE free space as well as
+> positive.** The instant the content is taller than the box, the browser pushes
+> rows past the scroll origin instead of leaving them below it, so they are
+> clipped and unreachable rather than scrollable.
+
+That is the whole defect, and it explains every symptom he reported: clipped,
+no fade, no scroll affordance. My spacing rule from round two was right about
+slack and quietly wrong about overflow.
+
+### The fix, which is measured rather than modelled
+
+1. **The board measures itself.** `fitBoard()` compares `scrollHeight` against
+   `clientHeight` every SIM tick. The moment it overflows, the board drops to
+   `align-content:start`, where overflow scrolls the way overflow is supposed
+   to. When it fits, `space-between` comes back and the slack spreads again.
+   This does not care how long the description is, what the font does or how
+   narrow the phone is, which is the only honest answer to "the same overflow
+   will come back on the wave with the longest new type description".
+2. **A fade with words on it.** `#boardfade` sits over the bottom edge of the
+   board, reading **MORE BELOW**, and only appears when the board is actually
+   scrollable.
+3. **The briefing leads the column while it is the point of the screen.** On
+   waves 1 to 3 the board takes a `teaching` class and `#pnotes` gets
+   `order:-1`. So if anything falls past the fold it is a one chip YOUR LANE
+   panel, never half a sentence of the tutorial. Information hierarchy, not a
+   pixel budget.
+
+### And the gate that should have existed two rounds ago
+
+His note landed the point exactly: three rounds of this screen, three real
+defects, **all three found by an eye and none by a gate**. So the briefing is no
+longer VIEW code. `ENEMY_NOTE`, `WAVE_NOTE`, `firstWaveFor`, `briefingFor` and
+`briefingChars` moved into the SIM layer as pure data and pure functions, which
+means the harness measures the exact text the player reads.
+
+Twenty one new assertions (**281 to 302**). A node harness cannot measure pixels
+and this one does not pretend to. It bounds the two things that actually caused
+the defect:
+
+- **Content budget.** No briefing past 6 paragraphs or 640 characters, and the
+  wave 1 briefing under 3 paragraphs and 360 characters. That stops the tutorial
+  quietly outgrowing its own box.
+- **Order.** Enemy notes, then modifiers, then DEEPEN, then the wave line, then
+  the starter line, asserted across waves 1 to 60. Whatever ends up past the
+  fold is the least important line by construction.
+
+Plus: every enemy type has a note, no note uses a dash, no wave introduces a
+body that has already been seen, a quiet wave says nothing at all, and each of
+the first eight waves has something to say.
+
+The measurement that made the budget worth having, and that proves he was right
+about the overflow coming back:
+
+```
+wave  1 campaign          3 lines, 336 chars     <- the one that clipped
+wave  1 with lane full    4 lines, 496 chars
+wave 40 endless           6 lines, 589 chars
+wave 50 endless           6 lines, 600 chars     <- worst, nearly 2x wave 1
+```
+
+### Both new gates watched red first
+
+| Break | What went red |
+|---|---|
+| A well meaning edit lengthens the runner note by one sentence | `no briefing ever runs past 640 characters` (666) and `the wave 1 briefing fits its own panel budget` (506 against 360) |
+| The wave line is pushed ahead of the enemy line in `briefingFor` | `the briefing is always ordered most important first` and `wave 1 leads with the body you are about to meet` |
+
+### And the runtime branch is exercised, not assumed
+
+`smoke.js` now tells the board it overflows and then tells it it does not, and
+reads back what it did:
+
+```
+content taller than box : align-content start =true,   fade shown =true    OK
+content fits the box    : align-content start =false,  fade shown =false   OK
+wave 1 panel order      : briefing LEADS the column (order:-1)
+```
+
+Shell bumped to `siege-shell-v5` / `?v=20260816e`.
+
 ## THE COMPOSITION FIX, ROUND TWO (the void moved, so it got closed properly)
 
 The first fix built the control room and the coordinator confirmed it works. It
@@ -333,7 +426,7 @@ seconds the wave took, and the longest quiet stretch when it is over 2s.
 
 | Gate | Result |
 |---|---|
-| `node sim.js --test` | **PASSED 281 / FAILED 0**, 281 assertions (was 193; floor is 80) |
+| `node sim.js --test` | **PASSED 302 / FAILED 0**, 302 assertions (was 193; floor is 80) |
 | exit code on a red suite | **1** (verified by the first builder, unchanged) |
 | `node sim.js --sweep` | **all 10 gates green**, exit 0 (was 7 gates) |
 | SIM purity grep | 0 hits for `Math.random`, `document`, `window.`, `canvas`, `performance`, `requestAnimationFrame` between the SIM markers |
@@ -698,7 +791,8 @@ Nothing renders under 48px in either dimension. The options toggle started at
    blank page and dead wiring. **It is NOT a look. Nobody has seen a pixel.**
    The VIEW layer still needs the LOOKING pass at 390x844 AND at desktop width;
    two of the August 16 production defects only appeared at desktop width.
-   Specifically unlooked at: the briefing panel and the space-between spacing at
+   Specifically unlooked at: the MORE BELOW fade and whether the board scrolls
+   cleanly on a real touch device, the briefing panel and the space-between spacing at
    wave 1 and at wave 15, the roomy chips, the crenellated lane lip, the DEEPEN button as the
    seventh item on a scrolling shelf (does it fall off the edge at 375?), the
    trap level dots, the two tile scorecard split, whether 34px bodies overlapping

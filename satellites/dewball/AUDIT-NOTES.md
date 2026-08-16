@@ -15,13 +15,14 @@ re-learning, and so was the way every instrument in this folder was driven.
 ### First: the audit itself could not fail
 
 `variety_audit.js` compared each world's kinds against a **hand written `FAMILY`
-table**. That table listed `lmCakeStand`, `lmTeapotHill`, `lmDollHouse`,
-`lmSundial`, `lmDovecote` and `lmRocketStand` as the landmark half of six
-silhouette families — and four of those six landmarks were **deleted from the
-game in the same commit that fixed the collisions the table had found**. So the
-table's landmark side referenced kinds no world places any more, every family
-resolved to a single member, the collision loop `return`ed on `if (!lm.length)`,
-and the audit printed a confident **"none"** every time it ran.
+table** of eight landmark-and-base pairs. Five of the eight landmarks in it
+(`lmCakeStand`, `lmTeapotHill`, `lmDollHouse`, `lmSundial`, `lmRocketStand`) were
+**replaced or moved by the very commit that fixed the collisions the table had
+found**, and the other three (`lmBookTower`, `lmClockTower`, `lmDovecote`) no
+longer share a world with the base kind they were paired against. So every family
+resolved to fewer than two members in any world, the collision loop `return`ed on
+`if (g.length < 2)` or `if (!lm.length)`, and the audit printed a confident
+**"none"** every time it ran.
 
 ⚖️ **A hand-maintained list of the defects you already fixed cannot find the next
 one.** Families are derived now, from the kind ids and display names of whatever
@@ -162,6 +163,21 @@ write. Counters ADD what this tab added since it last wrote, stars/bests MAX,
 re-sorts. Settings stay last-writer-wins on purpose — toggling sound in one tab is
 an intent, not progress.
 
+**⛔ Dream Meadow's clean sweep was mathematically impossible.** One `sailboat`
+rolled to 971.5cm and needs a 1349.3cm ball; zen's reachable ceiling is 1317.3cm.
+It was permanently un-eatable, so the crown, the +2 sunbeams and the Royal skin
+route through zen could never fire. **Nothing caught it because `smoke.js`'s ladder
+assertion filters the zen world out entirely** — it has no star bars to test
+against, so it was exempt from every check in the suite.
+✅ Fixed two ways. Scatter entries now take an optional `sc:` per-world scale that
+**multiplies the size jitter rather than replacing it**, so the same rng draws
+happen in the same order and the seeded stream stays bit-identical — NUDGE, NEVER
+RE-ROLL, applied to size. Proof: all six timed worlds' ceilings are unchanged to
+the decimal. Zen's boat is `sc:0.8` and Dream Meadow now sweeps to zero.
+And `smoke.js` now tests the zen world against the thing that actually matters
+there: after `absorbAll`, nothing may be left standing. I reverted the `sc` and
+watched it print `SMOKE_FAIL` before trusting it.
+
 ✅ `sw.js` `dewball-v11` → `dewball-v12` **and** the registration `sw.js?v=11` →
 `?v=12`, bumped together, because index.html changed.
 
@@ -232,9 +248,6 @@ That is the same shape of problem as the Night Garden complaint Stephen made on
   `lmCarousel`, `lmGazeboPond`, `lmDovecote`, `lmClockTower`, `lmBookTower` — other
   worlds' landmarks. Defensible ("everything, endlessly") but it is not eight
   unique things.
-- **Zen leaves one object after `absorbAll`.** Every other world reaches zero, so
-  the zen clean sweep is unreachable. Not diagnosed; it may be an intentional
-  unreachable prop, it may be a ladder edge.
 - **The Topiary Stag's proportions** are still open from LANDMARKS.md and still
   Stephen's call: model the body properly, or accept it and rename it.
 - **Nothing here has been looked at.** This audit is arithmetic. Every real defect

@@ -353,22 +353,83 @@
     STACK_MAX:    14     // how far down a hit-test stack we bother to look
   };
 
-  // Parking spots, in preference order. Close buttons live top-right and
-  // primary buttons live bottom-centre, so the top-left corner is the least
-  // contested real estate on a sheet. Each returns the union footprint's
-  // top-left in viewport px.
-  var FY_ANCHORS = [
-    { id: 'top-left',     x: function (vw, vh, w, h) { return FY.MARGIN; },
-                          y: function (vw, vh, w, h) { return FY.TOP_MARGIN; } },
-    { id: 'mid-left',     x: function (vw, vh, w, h) { return FY.MARGIN; },
-                          y: function (vw, vh, w, h) { return Math.round((vh - h) / 2); } },
-    { id: 'mid-right',    x: function (vw, vh, w, h) { return vw - w - FY.MARGIN; },
-                          y: function (vw, vh, w, h) { return Math.round((vh - h) / 2); } },
-    { id: 'top-right',    x: function (vw, vh, w, h) { return vw - w - FY.MARGIN; },
-                          y: function (vw, vh, w, h) { return FY.TOP_MARGIN; } },
-    { id: 'bottom-left',  x: function (vw, vh, w, h) { return FY.MARGIN; },
-                          y: function (vw, vh, w, h) { return vh - h - FY.MARGIN; } }
-  ];
+  /* ⛔⛔ 2026-08-16, SAME DAY, SECOND PASS — FIVE FIXED ANCHORS WAS TOO COARSE.
+     Shot on Bramblewick: the chip left the Reduced motion toggle correctly and
+     landed mid-left, STRADDLING the left edge of the game's centred menu panel
+     — half the circle on the panel, half on the dark page behind it, sitting
+     across a line of body text. Not covering a control, so it obeyed the rule,
+     and it still looked like a rendering fault. Independently: a park landed on
+     Frost Watch's top-right and on Bramblewick's stage selector.
+
+     That last one is the real lesson. Parking on "no control I can RECOGNISE"
+     is not the same as parking on nothing. fyIsControl cannot see a plain div
+     with a click handler bound in JS and no role, no class and no pointer
+     cursor — and a stage selector is exactly that. So the parking test stopped
+     asking "is anything tappable here" and started asking "is anything here at
+     all". Anything we cannot identify is content, and content is enough to
+     reject a spot. That one change fixes the straddle, the ugly text overlap
+     and the unknown control together.
+
+     A ring of candidates around the viewport's edge band, sorted NEAREST FIRST
+     to where the chip already is, because the shortest move that works is the
+     one a player can follow. */
+  function fyCandidates(vw, vh, w, h) {
+    var out = [], i, n = FY.RING_STEPS;
+    var x0 = FY.MARGIN, x1 = vw - w - FY.MARGIN;
+    var y0 = FY.TOP_MARGIN, y1 = vh - h - FY.MARGIN;
+    if (x1 < x0) x1 = x0;
+    if (y1 < y0) y1 = y0;
+    for (i = 0; i <= n; i++) {
+      var t = n ? i / n : 0;
+      var yy = Math.round(y0 + (y1 - y0) * t), xx = Math.round(x0 + (x1 - x0) * t);
+      out.push({ x: x0, y: yy });   // left gutter
+      out.push({ x: x1, y: yy });   // right gutter
+      out.push({ x: xx, y: y0 });   // top band
+      out.push({ x: xx, y: y1 });   // bottom band
+    }
+    return out;
+  }
+
+  /* What is under a candidate spot: 'blocked' | 'clear' | 'empty'.
+
+     EMPTY means every probe point resolves to the SAME topmost element, and
+     that element is a full-bleed surface (or there is nothing there at all).
+     One test, three jobs:
+       - no content under the chip,
+       - no STRADDLING a content edge — if one corner is on the panel and
+         another is on the page behind it, the topmost elements differ and the
+         spot is rejected. That is the half-on-half-off look, killed by
+         definition rather than by a list of anchors,
+       - no unknown controls, because anything we cannot identify still counts
+         as content.
+     CLEAR is the old, weaker rule (content, but nothing we can see is tappable)
+     and is only used when nothing empty exists anywhere on the ring. */
+  function fySpotClass(rect, fab, vw, vh) {
+    var pts = fyProbePoints(rect, vw, vh), i, j;
+    var sig = null, haveSig = false, empty = true;
+    for (i = 0; i < pts.length; i++) {
+      var stack = fyStackAt(pts[i][0], pts[i][1], fab);
+      if (stack === null) return 'unavailable';
+      var top = null;
+      for (j = 0; j < stack.length; j++) {
+        var el = stack[j], tag = (el.tagName || '').toUpperCase();
+        if (tag === 'BODY' || tag === 'HTML') continue;
+        var r = fyRect(el);
+        if (!r || !fyVisible(el, r)) continue;
+        if (fyIsControl(el, vw, vh)) return 'blocked';
+        if (top === null) top = el;
+      }
+      if (top !== null) {
+        var tr = fyRect(top);
+        // the thing we would be sitting on has to be a big flat surface, not a
+        // paragraph, a card, an icon or a stage selector
+        if (!(tr.width >= vw * FY.COVER_W && tr.height >= vh * FY.COVER_H)) empty = false;
+      }
+      if (!haveSig) { sig = top; haveSig = true; }
+      else if (sig !== top) empty = false;
+    }
+    return empty ? 'empty' : 'clear';
+  }
 
   var watch = null;   // one fab per page, so one watcher
 
