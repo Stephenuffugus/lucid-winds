@@ -233,18 +233,30 @@ None of these were changed. They are taste or economy calls.
 
 # PART 5 — ADDED AFTER THE VR HANDOFF
 
-## The arcade was undercounting itself in seven places
+## The arcade was undercounting itself in five places
 
-**Try this:** open the arcade and read the sentence under "The Arcade". Then open
-`/support.html` and read the first paragraph.
+**Try this:** look at the browser tab title on the arcade, and share the link somewhere to see
+the preview card.
 
-**Was:** the hero said **160+ free games**, the support page said **160+ games free**, and the
-browser tab title, the Google search description, the Facebook card, the Twitter card and the
-PWA manifest all said **140+**. The real number is **183**. All seven now say 180+.
+**Was:** the tab title, the Google search description, the Facebook card, the Twitter card and
+the PWA manifest all said **140+ games**. They now say **160+**, which is the number a visitor
+can actually open. The tab title is the line Google prints in search results and the manifest
+becomes the Meta store listing, so those were the two worst places to be out of date.
 
-Two of those matter more than the rest. The title tag is the line Google shows in search
-results, and the support page is where somebody decides whether to send money. Both were
-selling the studio short by forty games.
+**I got this wrong first and want to be straight about it,** because the wrong version was
+briefly pushed. There are **183 games carded, but 22 are dev gated behind your tester
+passcode, so a stranger can open 161.** I saw 183, decided the hero's "160+ free games" was
+stale, and changed it to 180+. The hero had been right all along: it was written back when the
+catalog was exactly 161, and it has quietly stayed true ever since. Advertising 183 would have
+been the same defect as every "its own copy is not true" bug in Part 2, just pointing the
+other way, and on the one page where a stranger decides whether to trust the place.
+
+Both the hero and the support page are back to 160+.
+
+There is now a check, `scripts/advertised_count_check.mjs`, that reads the catalog, subtracts
+the dev gated ones, and fails if any advertised number is either stale or larger than what a
+visitor can open. I watched it go red on both mistakes before trusting it. **The number in
+player-facing copy is what somebody can open, never the carded total.**
 
 ## The soundtrack bar orphaned itself on a big screen
 
