@@ -320,6 +320,12 @@ function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Ma
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("silt_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. The loader runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.trials=s.trials||{}; s.blooms=s.blooms||0; s.gardens=s.gardens||0; s.grove=s.grove||[];
   s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.pal=s.pal||"earthen"; s.brushSkin=s.brushSkin||"ring";
   s.frame=s.frame||"slate"; s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }

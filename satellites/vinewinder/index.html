@@ -348,7 +348,11 @@
   const save = (()=>{
     let s=null; try{ s=JSON.parse(store.get(SAVE_KEY)); }catch(e){}
     const d=freshSave();
-    if(!s){ s=d; try{ const ob=JSON.parse(store.get(CONFIG.storageKey)); if(ob&&typeof ob==='object') s.best=ob; }catch(e){} return s; }
+    /* ⛔ `!s` catches null, which is why a null save survived, but a bare number
+       is TRUTHY and fell straight through to `s.best=Object.assign(...)` below,
+       throwing "Cannot create property 'best' on number" during boot. A save has
+       to be a plain object before any of it is trusted, not merely non-empty. */
+    if(!s || typeof s!=='object' || Array.isArray(s)){ s=d; try{ const ob=JSON.parse(store.get(CONFIG.storageKey)); if(ob&&typeof ob==='object') s.best=ob; }catch(e){} return s; }
     s.best=Object.assign({},d.best,s.best||{});
     s.owned=Object.assign({},d.owned,s.owned||{}); s.equip=Object.assign({},d.equip,s.equip||{});
     for(const c of ['vine','seed','garden']){ if(!Array.isArray(s.owned[c]))s.owned[c]=d.owned[c].slice(); if(!s.equip[c])s.equip[c]=d.equip[c]; }

@@ -276,6 +276,12 @@ function dailySeed(){ var h=utcCode()^0x9e3779b9; h=Math.imul(h^(h>>>16),2246822
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("mosaicdraft_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. The loader runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.wins=s.wins||[0,0,0]; s.lifeWins=s.lifeWins||0; s.bestScore=s.bestScore||0; s.bestDaily=s.bestDaily||0;
   s.bestRush=s.bestRush||0; s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.dailyPlays=s.dailyPlays||0;
   s.doubles=s.doubles||0; s.cracks=s.cracks||0; s.seen=s.seen||{};

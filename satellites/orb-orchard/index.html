@@ -232,6 +232,12 @@ function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("orborchard_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. The loader runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.stages=s.stages||{}; s.perfects=s.perfects||{}; s.keeps=s.keeps||[]; s.streak=s.streak||0; s.lastDaily=s.lastDaily||"";
   s.dailyWins=s.dailyWins||0; s.bestBlitz=s.bestBlitz||{}; s.runner=s.runner||"seedling"; s.pal=s.pal||"meadow";
   s.sky=s.sky||"dawn"; s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }

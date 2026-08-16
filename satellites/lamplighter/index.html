@@ -257,6 +257,12 @@ function dayCodeUTC(){ var d=new Date(); return d.getUTCFullYear()*10000+(d.getU
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("lamplighter_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. The loader runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.walk=s.walk||{}; s.hintless=s.hintless||{}; s.lanterns=s.lanterns||[]; s.streak=s.streak||0; s.lastDaily=s.lastDaily||"";
   s.dailyWins=s.dailyWins||0; s.deepWins=s.deepWins||0; s.zenN=s.zenN||0;
   s.lamp=s.lamp||"brass"; s.dusk=s.dusk||"plum"; s.fly=s.fly||"gold"; s.sound=(s.sound!==false); return s; }

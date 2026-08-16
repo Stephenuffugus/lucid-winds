@@ -242,6 +242,12 @@ function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()
 
 /* ---------- save ---------- */
 function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("pollinatorpaths_save")||"{}"); }catch(e){}
+  /* ⛔ The try/catch only covers text that FAILS to parse. A save holding
+     `null` or a bare number parses fine, and the next line then threw during
+     boot. The loader runs at module scope, so that took the whole script
+     block down and the game came up as a broken half screen. Anything that
+     merely parses is truthy, so check the SHAPE, not the parse. */
+  if(!s || typeof s!=="object" || Array.isArray(s)) s={};
   s.landings=s.landings||0; s.cross=s.cross||0; s.blooms=s.blooms||0; s.grove=s.grove||[];
   s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.best=s.best||{meadow:0,daily:0,rush:0};
   s.ink=s.ink||"moonlight"; s.backdrop=s.backdrop||"midnight"; s.livery=s.livery||"classic";

@@ -99,13 +99,22 @@ for (const slug of slugs) {
        Game button ships in the HTML, looks perfect, and does nothing forever.
        An UNCAUGHT ERROR DURING BOOT IS THE FINDING. The UI collapsing is only the
        loud version of it. */
-    const brick = crashed || errs.length > 0
-               || after.buttons === 0 || after.buttons < Math.ceil(baseline.buttons * 0.5)
-               || after.text < Math.ceil(baseline.text * 0.4);
-    if (brick) bad++;
-    console.log("  " + (brick ? "BROKEN  " : "survives") + "  save = " + label.padEnd(16) +
-      after.buttons + " buttons, " + after.text + " chars" +
-      (errs.length ? "   UNCAUGHT: " + errs[0] : ""));
+    /* ⛔ THE THIRD WAY THIS PROBE WAS WRONG. `after.buttons === 0` fired even when
+       the CLEAN boot also had zero buttons — stream-hop boots to 0 buttons and 28
+       characters, so it was reported broken for matching its own baseline exactly.
+       Everything is measured RELATIVE to the clean boot now, never absolutely.
+
+       And the two signals are not equal. An uncaught error is a defect, full stop.
+       A smaller screen might just be the empty state a corrupt save should produce
+       (a drawing app with no book legitimately shows less), so that is reported
+       separately as something to LOOK at rather than counted as a defect. */
+    const errored = crashed || errs.length > 0;
+    const shrank = (baseline.buttons > 0 && after.buttons < Math.ceil(baseline.buttons * 0.5))
+                || (baseline.text > 60 && after.text < Math.ceil(baseline.text * 0.4));
+    if (errored) bad++;
+    console.log("  " + (errored ? "BROKEN  " : shrank ? "LOOK    " : "survives") + "  save = " + label.padEnd(16) +
+      after.buttons + "/" + baseline.buttons + " buttons, " + after.text + "/" + baseline.text + " chars" +
+      (errs.length ? "   UNCAUGHT: " + errs[0] : shrank ? "   smaller than a clean boot, may just be the empty state" : ""));
     await c2.close();
   }
 }
