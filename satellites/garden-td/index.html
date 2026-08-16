@@ -2618,7 +2618,15 @@ window.__GTD={
   startWave:startWave, step:function(sec){ var dt=1/60,t=0; while(t<sec&&G&&G.state!=='DONE'){ applyBuffs(); stepSim(dt); t+=dt; } },
   buildWaves:buildWaves, sunbeamsForRun:sunbeamsForRun, geom:function(){return G?G.geom:null;},
   addSeeds:function(n){ if(G){G.seeds+=n;updateHUD();} }, addPollen:function(n){ if(G){G.pollen=Math.min(G.pollenMax,(G.pollen||0)+n);} },
-  state:function(){ return G?{state:G.state,leaves:G.leaves,seeds:G.seeds,enemies:G.enemies.length,towers:G.towers.length,wave:G.waveIdx,pests:G.pestsShooed,reacts:G._reacts||0,pollen:G.pollen||0,keeperLv:G.keeper?G.keeper.level:0}:null; }
+  state:function(){ return G?{state:G.state,leaves:G.leaves,seeds:G.seeds,enemies:G.enemies.length,towers:G.towers.length,wave:G.waveIdx,pests:G.pestsShooed,reacts:G._reacts||0,pollen:G.pollen||0,keeperLv:G.keeper?G.keeper.level:0,waveTotal:G.waveTotal,running:G.running,endlessWave:G.endlessWave}:null; },
+  /* ---- added 2026-08-16 for the repair verifier (satellites/garden-td/check.mjs) ---- */
+  saveGame:saveGame, loadSave:loadSave, totalStars:totalStars,
+  highestUnlocked:highestUnlocked, gotoMenu:gotoMenu, openLevels:openLevels,
+  canHit:function(towerId,fly){ return canHit({id:towerId,tier:3,st:TOWERS[towerId].tiers[2]}, {fly:!!fly}); },
+  spawn:function(id,boss){ return spawnEnemy(id,boss); },
+  enemies:function(){ return G?G.enemies:[]; },
+  sellRefund:function(i){ var t=G.towers[i], before=G.seeds; sellTower(t); return { invested:t.invested, refund:G.seeds-before }; },
+  plots:function(){ return G?G.geom.plots.length:0; }
 };
 
 /* =====================================================================
