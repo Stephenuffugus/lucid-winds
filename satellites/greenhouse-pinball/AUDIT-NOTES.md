@@ -184,3 +184,87 @@ The opening is genuinely strong. The exit is the problem, not the entrance.
   enough lit-insert vocabulary to teach itself one mechanic at a time.
 - **The right flipper half versus the fab** (C7) is unfixable from in here and
   will cost real flips on a phone.
+
+---
+
+# CONTINUATION PASS — 2026-08-16, second agent
+
+## THE CLAIMED FIXES, RE-VERIFIED
+
+| Claim | Verdict |
+|---|---|
+| C1 every mode has a way out, Zen included | CONFIRMED for classic, daily and zen: pause visible, pauses, ends, returns home. |
+| C2 a Zen score is really banked | CONFIRMED. 424242 on disk after a Zen run with zero Bloom Rushes. |
+| C3 no tunnelling | CONFIRMED, and proved properly for the first time, see below. |
+| C4 the MEGA MASH counter | CONFIRMED. `blooms` and `mega` are separate and the labels match. |
+| C5 Skins letterboxes | CONFIRMED, inside `#stage`. |
+| C6 `gp_prog` validated and merged | CONFIRMED. |
+
+## WHAT THE FIRST PASS LEFT BROKEN
+
+**The tunnelling check was reporting a false positive, and the fix underneath it
+was fine.** The check seeded beads anywhere in `x 90..450, y 180..820` and then
+declared an escape at `x > 490`. But the table is only parallel-walled down to
+`y = 700`; below that the outlane guides converge, and at `y = 820` the right
+guide is already at `x = 430`. So the check was spawning beads in the drain
+gutter, OUTSIDE the playfield, and then reporting the gutter as a tunnel.
+
+Re-proved with an in-bounds probe: **400 beads at 3000 to 4200 px/s on 50ms
+frames from the upper field, plus 200 real left-blade tip flips, zero escapes.**
+The substep fix from the first pass is genuinely holding.
+
+The check now spawns `x 85..445, y 150..670`, is seeded so it reruns
+identically, adds 150 real tip flips, stops testing x below `y = 852` where the
+outlane mouths are open by design, and ignores beads that are held (`inLane`,
+`captured`, `onRail`) rather than counting them.
+
+Also verified from the first pass and still true: **no bead can be held in a dead
+pocket**, 200 beads dropped across the field, none sat still.
+
+## SELFTESTS THAT DID NOT BITE
+
+Three of twelve. All the same root cause: their `run()` begins with
+`page.reload()`, which discards the injected break. The harness already had a
+`reloads: true` flag; these checks did not carry it.
+
+- **`the pause control is not a flipper`** — break survived the reload once
+  flagged.
+- **`touch targets`** — the break floored `.btn` at 40px, which the measured
+  boxes (`#b-pause` is a fixed 72px button) never inherited. Now shrinks the
+  specific buttons the scan walks.
+- **`the Skins screen letterboxes`** — the break moved `#s-skins` to `body`, and
+  then `run()` clicked the Skins button and `openSkins` re-parented it straight
+  back into the stage. The break now patches `stage.appendChild` itself, so the
+  re-parent cannot undo it.
+
+Every check now runs in its own browser context. Without that, a selftest break
+that wrote `gp_prog` leaked into the NEXT check's real run and failed it, which
+is why `saveProg merges` showed red under `--selftest` and green without it.
+
+## LOOKING
+
+Shot the play surface, the pause overlay and the Skins screen at 375x667, and
+the title at 1280x800, then read the images.
+
+1. **The shot rails are drawn outside the table.** The ramp and orbit paths
+   render as bright pale blue and brown outlined ribbons ON TOP of the painted
+   art, and at the top they cross above the Z/A/P rollovers onto the black slate,
+   while at the bottom two thin light guide lines run off the playfield entirely
+   and across the cabinet, the tool jar and the corner screws. On a table this
+   carefully painted it reads as leftover debug geometry rather than habitrails.
+   Checked before writing it down: `?gptest=1` gates only the `PIN_DEV` export
+   (index.html:1427), there is no debug draw, so this is what a player sees.
+2. **The Skins screen leaves the bottom half of the phone empty.** It is inside
+   the stage now and letterboxes correctly, but the content is top aligned, so
+   Back lands in the middle of the screen with roughly 300 CSS px of black under
+   it. Every other screen fills its stage.
+3. The pause control is at top CENTRE, not top left as the fixes list above
+   says. It is still clear of both flipper halves and it does not feed tilt, both
+   measured, so the control is right and the note was wrong.
+
+## WHAT STILL WORRIES ME
+
+- The rails over the art (LOOKING 1) is the thing I would put in front of the
+  Director first. It is the difference between "sculpted in clay" and "a
+  prototype with its collision shapes visible".
+- The scoring spread from the first pass is unchanged and still real.

@@ -293,5 +293,11 @@ not seen go red is decoration.
   the mode, but it does mean nothing here proves a Freefall level is *clearable* — only that
   it ends cleanly. The same gap as Sproing's, and worth a targeted probe that actually
   steers.
-- The service worker is `sw.js?v=63`. Any deploy must bump that in step or players keep the
-  old bundle, and none of the above ships.
+- The service worker is registered as `sw.js?v=63` while `sw.js` itself is on
+  `CACHE="slice3d-v65"` — the two have drifted apart. **Corrected on the second pass:** this
+  worker is NETWORK-FIRST by design ("so a deploy goes live the moment it lands; the cache is
+  only the fallback"), so the copy fixes above DO reach players on the next load without a
+  bump. The `?v=` string only decides whether the browser re-fetches the WORKER script, so it
+  matters when sw.js itself changes, not when index.html does. Worth realigning the two
+  numbers anyway, since a stale registration string is how a worker fix silently fails to
+  ship — but do not treat it as a blocker on these changes.

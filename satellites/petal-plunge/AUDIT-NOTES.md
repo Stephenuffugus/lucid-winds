@@ -204,3 +204,80 @@ radius test against a pruned list and the player cannot leave the slope
   least forgiving mode by a distance.
 - All four modes share one slope generator with different constants. Freestyle in
   particular reads as "Free Plunge with more ramps" rather than a park.
+
+---
+
+# CONTINUATION PASS — 2026-08-16, second agent
+
+## THE CLAIMED FIXES, RE-VERIFIED
+
+| Claim | Verdict |
+|---|---|
+| B1 corrupt save | CONFIRMED. 6 of 10 poisons kill the old loader, all 10 survive the new one, and the Shop renders with a null `owned`. |
+| B2 trick cooldown | CONFIRMED IN CODE (`TRICK_GAP` 0.16s plus an airtime cap) but the CHECK was wrong, see below. |
+| B3 reduced motion | CONFIRMED. Peak particles 0 reduced vs 18 normal. |
+| B4 two tabs merge | CONFIRMED. |
+| B5 Gnome bar scaled to the ceiling | CONFIRMED at index.html:1204 (`gnomeGapMax`). The one remaining `gnomeGapStart` reference at :1141 is the Gnome's angry face and the red vignette, which is a different thing and correct. |
+| B6 right affordance out of the fab gutter | CONFIRMED by measurement and by eye. |
+| B7 word placeholders | CONFIRMED. |
+| B8 gate probability | CONFIRMED. |
+| B9 escape callout | CONFIRMED. |
+
+## WHAT THE FIRST PASS LEFT BROKEN — two checks measuring the wrong thing
+
+1. **`style is not a tap race` was comparing two different slopes.** Each run
+   called `startRun` fresh, so the clean run and the mashed run got different
+   random courses with different numbers of ramps. It reported "mashed beats
+   clean 6.06x" over two jumps, which was mostly course, not input.
+   FIX: `startRun(mode, seed)` now takes an optional seed (game side, one small
+   addition, no player-visible change) and the check runs four SHARED seeds and
+   asserts both runs saw the same course. Result: **1.24x over 13 jumps** with a
+   clean rhythm on the beat, which is the cooldown working.
+2. **`the Gnome is a real chase` was measuring a clamp.** It watched the gap for
+   10 seconds, and the gap has a hard ceiling at `gnomeGapMax`, so straight and
+   tucking both pinned at exactly +300 and the check concluded tucking does
+   nothing. FIX: start the probe at half the wake gap, measure 3.3s, and FAIL the
+   check outright if the gap ever touches the ceiling during the window. Result:
+   **carving -200, straight +76, tucking +300.** The chase is real.
+
+## SELFTESTS THAT DID NOT BITE
+
+Three of twelve breaks were decoration, all for the same reason: their `run()`
+starts with `page.reload()`, which throws the injected mutation away. The
+harness already had a `reloads: true` flag for exactly this and the checks did
+not carry it.
+
+- **`the safe-lane guarantee is real`** was the bad one. Broken, the generator
+  produced 457 obstacles instead of 11754 and the loop measured NOTHING, so the
+  `worst` accumulator kept its 1e9 seed value and the check reported a
+  comfortably clear corridor. It now fails unless it actually measured something
+  (`minClear < 1e8`) and unless the slope is dense (`totalObs > 4000`). **A gap
+  nobody measured is not a gap.**
+- **`touch targets`** — the break floored `.btn.sm` at 36px, which no measured
+  box inherited. Now shrinks every button, tab and `.btn` in both axes.
+- **`nothing important is in the fab gutter`** — the break moved `#hint` but the
+  game re-laid it out. Now forced with `setProperty(..., 'important')`.
+
+Every check also runs in its own browser context now, so a break that writes
+localStorage cannot leak into the next check.
+
+## LOOKING
+
+Shot mid run at 375x667 and read.
+
+- **The keyboard hint line is shown on a phone.** "left right carve · down tuck ·
+  space = trick · P = pause" renders across the middle of the slope on a 375px
+  touch viewport, over the course art, telling a phone player to press four keys
+  the device does not have. It is also the one HUD element sitting in the middle
+  third where the obstacles are. This is standing class 9 on a control hint and
+  it is the clearest visual defect in the game. Left as a finding rather than
+  fixed, because the right answer is a copy call: either gate the line on a
+  pointer-coarse media query, or write one line that covers both.
+- The LEFT / TUCK / RIGHT bar reads well and is genuinely clear of the fab.
+
+## WHAT STILL WORRIES ME
+
+- The trick ratio landed at 1.24x against a 1.25x gate. That gap is the reward
+  for perfect rhythm over slightly-off rhythm, which is a fair thing to pay, but
+  the assertion is riding close to its own threshold and will need a look if the
+  jump tuning ever moves.

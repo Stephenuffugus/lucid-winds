@@ -486,7 +486,10 @@ const CHECKS = [
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
     return { ok: r.length === 0, detail: r.length ? JSON.stringify(r.slice(0, 4)) : 'all >= 48px' };
   },
-  break: `document.querySelector('.icob').style.height='40px';document.querySelector('.icob').style.width='40px';` },
+  // The old break shrank `.icob`, the in-game PAUSE button. The scan only walks
+  // the six MENU screens, so `.icob` is never visible when it is measured and the
+  // break never bit. Shrink what the scan actually looks at.
+  break: `var st=document.createElement('style');st.textContent='button,.stab,.switch,.camp-node,.mode,.skin .buy,[data-hand]{min-height:30px!important;height:30px!important;min-width:30px!important;width:30px!important;padding:0!important}';document.head.appendChild(st);` },
 ];
 
 async function main() {
