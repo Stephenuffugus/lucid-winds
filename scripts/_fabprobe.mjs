@@ -3,7 +3,9 @@ const br=await puppeteer.launch({headless:"new",args:["--no-sandbox"]});
 const p=await br.newPage();
 await p.setViewport({width:390,height:844,deviceScaleFactor:1});
 await p.evaluateOnNewDocument(()=>{try{localStorage.setItem("sws_dev_ok","1");}catch(e){}});
-await p.goto("http://127.0.0.1:8951/satellites/bramblewick/?probe="+Math.random(),{waitUntil:"domcontentloaded"});
+const target=process.argv[2]||"satellites/bramblewick";
+const isFile=/\.html?$/i.test(target);
+await p.goto("http://127.0.0.1:8951/"+target.replace(/^\/+/,"")+(isFile?"":"/")+"?probe="+Math.random(),{waitUntil:"domcontentloaded"});
 await new Promise(r=>setTimeout(r,5000));
 const r=await p.evaluate(()=>{
   const fab=document.querySelector(".lwfb-fab");

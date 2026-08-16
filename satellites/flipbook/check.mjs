@@ -129,7 +129,7 @@ console.log('\nphase B — behaviour (375x667)');
   await new Promise(r => setTimeout(r, 120));
   await page.evaluate(() => { document.querySelectorAll('#colors .swatch')[2].click(); });
   ok('corrupt recents: colour picking still works',
-    await page.evaluate(() => FB_DEV.state() && errs => true) && errs.length === 0, errs[0]);
+    (await page.evaluate(() => FB_DEV.state().cur >= 0)) && errs.length === 0, errs[0]);
   await ctx.close();
 }
 

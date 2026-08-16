@@ -186,10 +186,25 @@
 .dustbtn.go{ background:#e0c68a; color:#241d12; border-color:#f0dcae }
 #dustBtn{ margin-left:8px }
 
-/* ── rules, shown once per device before the first dig ───────────────────── */
-#howSheet{ position:fixed; inset:0; z-index:70; display:none; background:#0d0b0af5; overflow-y:auto; padding:22px 16px }
+/* ── rules, shown once per device before the first dig ─────────────────────
+   ⛔ OPAQUE, NOT NEARLY OPAQUE. This ground was #0d0b0af5. Eight digit hex, so
+   the f5 is an ALPHA: 96%, which reads as solid in a colour swatch and is not.
+   The gold title, the BACK TO THE ARCADE chip, the ticket count and the
+   RUMMAGE button all ghosted up through the paragraphs, and because this is
+   cream text over a cream tinted bleed it put two layers of text in the same
+   pixels on the first screen a new player ever sees.
+   It was getting the bleed twice, too: .howcard was the only overlay content
+   in this file with NO background of its own, so its text sat directly on the
+   scrim. The want list (.sheetcard) and the dust panel (.dustcard) both put
+   their text on an opaque card. This one now does the same, and the ground
+   under it is fully opaque with a blur behind that as belt and braces.
+   Everything this sheet says is the teaching, so it has to be the easiest
+   thing on screen to read. */
+#howSheet{ position:fixed; inset:0; z-index:70; display:none; background:#0d0b0a;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); overflow-y:auto; padding:22px 16px }
 #howSheet.on{ display:block }
-.howcard{ max-width:470px; margin:0 auto }
+.howcard{ max-width:470px; margin:0 auto; background:#191513; border:1px solid #3a322c;
+  border-radius:14px; padding:20px 18px; box-shadow:0 20px 60px rgba(0,0,0,0.55) }
 .howcard h2{ color:#e0c68a; font-size:1.3rem; margin:0 0 2px }
 .howcard .kick{ color:#8d7f6d; font-size:.7rem; letter-spacing:.22em; font-weight:800 }
 .howcard h3{ color:#a8946f; font-size:.72rem; letter-spacing:.16em; margin:18px 0 6px; text-transform:uppercase }

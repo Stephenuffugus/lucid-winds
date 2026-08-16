@@ -328,9 +328,43 @@ sec('G  COPY LAW');
   ok('no em dash or en dash in the page copy', !/[—–]/.test(visible),
     (visible.match(/[—–][^\s]{0,20}/g) || []).slice(0, 3).join(' | '));
 
+  var css = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));
+  /* ── LEGIBILITY OF THE FULL SCREEN OVERLAYS ──────────────────────────
+     Found by LOOKING at the running game at 390x844, not by any assertion
+     here: the how to play sheet's ground was #0d0b0af5, an eight digit hex
+     whose f5 is a 96% alpha. It reads as solid in a swatch and is not, so
+     the title, the ticket count and the RUMMAGE button ghosted up through
+     the instructions. Two layers of text in the same pixels, on the first
+     screen a new player sees.
+     The rule this encodes: an overlay that covers the screen either has a
+     fully opaque ground, or its content sits on a card that declares its
+     own background. Never text straight onto a translucent scrim. */
+  var OVERLAYS = [
+    { sel: '#howSheet', card: '.howcard', mustBeOpaque: true },
+    { sel: '#dustSheet', card: '.dustcard', mustBeOpaque: false },
+    { sel: '.sheet', card: '.sheetcard', mustBeOpaque: false }
+  ];
+  OVERLAYS.forEach(function (o) {
+    var esc2 = o.sel.replace(/[.#]/g, '\\$&');
+    var rule = css.match(new RegExp(esc2 + '\\s*\\{[^}]*\\}'));
+    var card = css.match(new RegExp(o.card.replace(/[.#]/g, '\\$&') + '\\s*\\{[^}]*\\}'));
+    ok(o.sel + ' and its card both exist', !!rule && !!card,
+      (rule ? '' : 'no ' + o.sel + ' rule ') + (card ? '' : 'no ' + o.card + ' rule'));
+    if (!rule || !card) return;
+    /* the card must carry its own ground, or its text renders on the scrim */
+    ok(o.card + ' declares its own background', /background\s*:/.test(card[0]),
+      'text would sit directly on a translucent overlay');
+    if (o.mustBeOpaque) {
+      var translucent = /background\s*:\s*#[0-9a-fA-F]{4}(?![0-9a-fA-F])/.test(rule[0])
+        || /background\s*:\s*#[0-9a-fA-F]{8}(?![0-9a-fA-F])/.test(rule[0])
+        || /background\s*:[^;}]*rgba\([^)]*,\s*0?\.\d+\s*\)/.test(rule[0]);
+      ok(o.sel + ' has a fully opaque ground', !translucent,
+        (rule[0].match(/background\s*:[^;}]*/) || [''])[0].trim());
+    }
+  });
+
   /* 48px rendered touch targets. Every button in the sheet must declare at
      least 48px of min-height, measured from the stylesheet. */
-  var css = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));
   var small = [], re = /\.([A-Za-z][\w-]*)\s*\{[^}]*min-height:\s*(\d+)px/g, m;
   while ((m = re.exec(css))) {
     if (/btn|chip|rummage|slot|closebtn|scrapbtn|wantbtn/i.test(m[1]) && parseInt(m[2], 10) < 48) small.push(m[1] + '=' + m[2] + 'px');

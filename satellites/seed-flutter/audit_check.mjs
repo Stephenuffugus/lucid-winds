@@ -168,33 +168,44 @@ async function open(query = '', seed = null, touch = true){
 // ---- 3. corrupt save (standing class 3): a run must still finish
 {
   const seed = { seedflutter_save: JSON.stringify({ blooms: 5, owned: 7, coins: 'x', bestDist: {}, grewTotal: [1,2] }) };
-  const { ctx, page, errs } = await open('', seed);
-  ok('corrupt save: keepsake list repaired to an array',
-    await page.evaluate(() => { try { return Object.prototype.toString.call(JSON.parse(localStorage.seedflutter_save).blooms) === '[object Array]'; } catch(e) { return false; } }) || true);
+  const { ctx, page, errs } = await open('?sftest=1', seed);
+  // the real input path first: a tap on the canvas must actually fly the cadet
   await page.click('#b-drift');
-  await new Promise(r => setTimeout(r, 400));
-  await page.mouse.click(187, 300);              // one flap starts the run
-  await new Promise(r => setTimeout(r, 3400));   // then no input: the cadet lands and the run ends
-  const screen = await page.evaluate(() => document.getElementById('s-go').classList.contains('on'));
-  ok('corrupt save: a whole run reaches the results screen', screen, 'results screen not shown');
+  await new Promise(r => setTimeout(r, 300));
+  await page.mouse.click(187, 300);
+  await new Promise(r => setTimeout(r, 300));
+  const flew = await page.evaluate(() => SF_DEV.snap());
+  ok('corrupt save: a tap on the canvas actually flies the cadet', flew && flew.phase === 'play' && flew.vy !== 0, JSON.stringify(flew));
+  // then drive the rest deterministically (headless rAF is throttled on this box,
+  // so wall-clock waiting is not evidence of anything)
+  const end = await page.evaluate(() => {
+    SF_DEV.flap();
+    for (let i = 0; i < 900; i++) { const s = SF_DEV.state(); if (!s || s.phase === 'dead') break; SF_DEV.step(1/60); }
+    return { phase: SF_DEV.snap() && SF_DEV.snap().phase, go: document.getElementById('s-go').classList.contains('on') };
+  });
+  ok('corrupt save: a whole run reaches the results screen', end.go === true, JSON.stringify(end));
   ok('corrupt save: no page error during the run', errs.length === 0, errs[0]);
-  const grove = await page.evaluate(() => { document.getElementById('go-grove').click(); const h = document.getElementById('grove-wrap'); return h.children.length; });
-  ok('corrupt save: the Sky Map is never silently blank', grove > 0, 'grove rendered ' + grove + ' children');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.seedflutter_save));
+  ok('corrupt save: the keepsake list is repaired to a real array',
+    Object.prototype.toString.call(stored.blooms) === '[object Array]', JSON.stringify(stored.blooms).slice(0,40));
+  ok('corrupt save: the owned map is repaired to an object', stored.owned && typeof stored.owned === 'object', JSON.stringify(stored.owned).slice(0,40));
+  ok('corrupt save: coins are repaired to a number', typeof stored.coins === 'number' && isFinite(stored.coins), 'coins=' + stored.coins);
+  const grove = await page.evaluate(() => { document.getElementById('go-grove').click(); const h = document.getElementById('grove-wrap'); return { n: h.children.length, txt: h.textContent.trim().slice(0,20) }; });
+  ok('corrupt save: the Sky Map is never silently blank', grove.n > 0, JSON.stringify(grove));
   await ctx.close();
 }
 
 // ---- 4. two tabs must not clobber (standing class 4)
 {
-  const { ctx, page } = await open();
-  await page.evaluate(() => {
+  const { ctx, page } = await open('?sftest=1');
+  const after = await page.evaluate(() => {
+    // pretend a second tab wrote while this one was mid-session
     localStorage.setItem('seedflutter_save', JSON.stringify({
       bestDist: 99, bestGauntlet: 4, streak: 3, blooms: [111,222], grewTotal: 40, coins: 500, owned: { 'seed1': 1 } }));
+    SF_DEV.start('drift'); SF_DEV.flap();
+    for (let i = 0; i < 900; i++) { const s = SF_DEV.state(); if (!s || s.phase === 'dead') break; SF_DEV.step(1/60); }
+    return JSON.parse(localStorage.seedflutter_save);
   });
-  await page.click('#b-drift');
-  await new Promise(r => setTimeout(r, 400));
-  await page.mouse.click(187, 300);              // one flap starts the run
-  await new Promise(r => setTimeout(r, 3400));
-  const after = await page.evaluate(() => JSON.parse(localStorage.seedflutter_save));
   ok('two tabs: coins from the other tab survive', after.coins >= 500, 'coins=' + after.coins);
   ok('two tabs: best from the other tab survives (MAX)', after.bestDist >= 99, 'bestDist=' + after.bestDist);
   ok('two tabs: keepsakes from the other tab survive', after.blooms.indexOf(111) >= 0, JSON.stringify(after.blooms).slice(0,60));
