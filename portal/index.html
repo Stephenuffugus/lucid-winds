@@ -204,6 +204,53 @@
         color:#3f5547;font-size:24px;position:relative}
   .shot .ph{opacity:.5}
   .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+  /* ===== THE HOUSE FRAME ==========================================
+     One treatment over every tile, so 107 thumbnails made in six
+     different ways read as one shelf.
+
+     Deliberately CSS and never baked into an image file. Stephen may
+     remake a lot of this art, or all of it, and when he drops new
+     pieces in they should inherit the frame for free rather than
+     needing the old treatment undone first.
+
+     Three things are doing the work:
+       a scrim, so a title is legible over a bright tile and a dark one
+       a vignette, which is what actually makes mismatched art agree
+       a floor under very dark art, so a near black tile reads as a
+       quiet card instead of a hole in the grid                      */
+  .shot{
+    background:
+      radial-gradient(120% 100% at 50% 0%, #1d2620 0%, #141a16 60%, #10150f 100%);
+  }
+  .shot::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+    /* the vignette and the scrim in one layer */
+    background:
+      linear-gradient(to top, rgba(8,10,9,.55) 0%, rgba(8,10,9,.16) 26%, rgba(8,10,9,0) 52%),
+      radial-gradient(118% 118% at 50% 42%, rgba(0,0,0,0) 52%, rgba(0,0,0,.34) 100%);
+    /* the hairline that makes it a frame rather than a crop */
+    box-shadow:inset 0 0 0 1px rgba(237,228,212,.07);
+    border-radius:inherit;
+  }
+  /* the art itself sits under the treatment */
+  .shot img{z-index:1}
+  /* a placeholder should look intentional, not like a failed load */
+  .shot .ph{z-index:1;opacity:.42}
+
+  /* the category chip, so a tile says what KIND of thing it is at a
+     glance, which is most of what a storefront grid is for */
+  .shot .kind{
+    position:absolute;left:6px;bottom:6px;z-index:3;
+    font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:rgba(237,228,212,.82);background:rgba(8,10,9,.5);
+    border:1px solid rgba(237,228,212,.14);
+    padding:2px 7px;border-radius:20px;line-height:1.5;
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  }
+  /* the in-development badge already lives top left; keep it above the scrim */
+  .badge{z-index:3}
+  .fav-btn,.info-btn{z-index:3}
   .badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);color:var(--leaf);
           font-size:11px;padding:2px 7px;border-radius:20px;letter-spacing:.4px}
   .badge.wip{color:var(--sun)}
@@ -1087,11 +1134,17 @@ function card(g, isFeat){
   var soon = isFeat ? !!g.soon : g[4]==="soon";
   var beta = isFeat ? !!g.beta : g[4]==="beta";
   var hub = isFeat && g.hub;
+  /* ⛔ 2026-08-16: PLAY NOW was on almost every card, which meant it said
+     nothing except that this is a game, on a page made entirely of games. Two
+     chips per tile and only one of them carrying information is noise, and
+     noise was most of what "looks like a gumbo" meant. A badge now appears
+     only when it has something to tell you: in development, coming soon,
+     premium, or the hub. The category chip does the rest. */
   var badge = hub ? '<span class="badge">HUB · 66 games</span>'
             : (soon ? '<span class="badge soon">COMING SOON</span>'
             : (beta ? '<span class="badge beta">IN DEVELOPMENT</span>'
-            : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '<span class="badge">PLAY NOW</span>')
-                      : (extUrl ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : '')))));
+            : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '')
+                      : (extUrl ? '' : (wip ? '<span class="badge wip">WIP</span>' : '')))));
   var shot;
   // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
   // bump this when the image files change (2026-07-19: Acorn Drop card art).
@@ -1113,7 +1166,12 @@ function card(g, isFeat){
   // an info chip unclamps it in place without launching the game.
   var infoBtn = soon ? '' :
     '<span class="info-btn" role="button" tabindex="0" aria-label="About this game" onclick="return swsDescToggle(event,this)">i</span>';
-  var inner = '<div class="shot">'+badge+favBtn+infoBtn+shot+'</div>'+
+  /* what KIND of thing is this? A grid of 180 tiles is mostly answering that
+     question, and a small chip does it faster than reading a description. */
+  var kindKey = isFeat ? g.cat : g[2];
+  var kindName = kindKey ? (CAT_LABEL[catGroupOf(kindKey)] || '') : '';
+  var kindChip = (kindName && !soon) ? '<span class="kind">'+kindName+'</span>' : '';
+  var inner = '<div class="shot">'+badge+favBtn+infoBtn+shot+kindChip+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds" onclick="return swsDescTap(event,this)">'+ds+'</div>'+
     (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
   if (soon) {
@@ -1245,6 +1303,8 @@ var CAT_GROUP = {
   math:    ["math"],
   party:   ["party"]
 };
+var CAT_LABEL = { action:"Action", puzzle:"Puzzle", card:"Card & Board",
+  creative:"Creative", word:"Word", math:"Numbers", party:"Party" };
 function inGroup(key, group){
   if(!key) return false;
   if(key===group) return true;
