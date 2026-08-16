@@ -1248,7 +1248,7 @@ function card(g, isFeat){
 function swsComingSoon(name){
   var t = document.getElementById('sws-soon-toast');
   if(!t){ t = document.createElement('div'); t.id='sws-soon-toast'; document.body.appendChild(t); }
-  t.innerHTML = '🌱 <b>'+name+'</b> is still in the workshop — we’re building it now. Check back soon!';
+  t.innerHTML = '🌱 <b>'+name+'</b> is still in the workshop. We are building it now, so check back soon.';
   t.style.opacity='1';
   clearTimeout(t._hideT);
   t._hideT = setTimeout(function(){ t.style.opacity='0'; }, 3200);
@@ -1287,7 +1287,7 @@ function swsDevGate(card){
     if(djb2(v)===3604640980){
       try{ localStorage.setItem('sws_dev_ok','1'); }catch(e){}
       shut();
-      swsComingSoon('Workbench unlocked — every in-development game');
+      swsComingSoon('Workbench unlocked. Every in development game is yours now.');
       if(card && card.click) setTimeout(function(){ card.click(); }, 250);
     } else {
       inp.style.borderColor='#c46a5a';
@@ -1690,7 +1690,7 @@ function searchGames(qraw){
   }
   if (out.length) _lwPaintCards(document.getElementById('garden'), out);
   else document.getElementById('garden').innerHTML =
-    '<div class="fav-empty">Nothing matches that.<br>Try a classic name — Scrabble, Peggle, Wordle, Mahjong…</div>';
+    '<div class="fav-empty">Nothing matches that.<br>Try a classic name like Scrabble, Peggle, Wordle, Mahjong…</div>';
 }
 (function(){
   var si=document.getElementById('gsearch'), t=0;
@@ -1781,12 +1781,12 @@ document.addEventListener('click', function(e){
     if(code==='auth/missing-password')    return 'Enter a password.';
     if(code==='auth/wrong-password' || code==='auth/invalid-credential' || code==='auth/invalid-login-credentials')
                                           return 'Wrong email or password.';
-    if(code==='auth/user-not-found')      return 'No account with that email — try Create account.';
-    if(code==='auth/email-already-in-use')return 'That email is already registered — try Sign in.';
+    if(code==='auth/user-not-found')      return 'No account with that email. Try Create account.';
+    if(code==='auth/email-already-in-use')return 'That email is already registered. Try Sign in.';
     if(code==='auth/weak-password')       return 'Password must be at least 6 characters.';
     if(code==='auth/popup-closed-by-user')return '';   // user cancelled, no error
-    if(code==='auth/operation-not-allowed')return 'Email sign-in isn’t enabled — try Google.';
-    if(code==='auth/network-request-failed')return 'Network issue — try again.';
+    if(code==='auth/operation-not-allowed')return 'Email sign in is not enabled. Try Google.';
+    if(code==='auth/network-request-failed')return 'Network issue. Try again.';
     return (e && e.message) ? e.message : 'Something went wrong. Try again.';
   }
   function validate(){
@@ -1826,7 +1826,7 @@ document.addEventListener('click', function(e){
 
   siBtn.addEventListener('click', function(){
     var v = validate(); if(!v) return;
-    if(!S.signInWithEmail){ setErr('Email sign-in not available — try Google.'); return; }
+    if(!S.signInWithEmail){ setErr('Email sign in is not available. Try Google.'); return; }
     setBusy(true);
     Promise.resolve(S.signInWithEmail(v.email, v.password))
       .then(function(){ /* onChange will close the modal */ })
@@ -1835,7 +1835,7 @@ document.addEventListener('click', function(e){
   });
   suBtn.addEventListener('click', function(){
     var v = validate(); if(!v) return;
-    if(!S.createAccount){ setErr('Account creation not available — try Google.'); return; }
+    if(!S.createAccount){ setErr('Account creation is not available. Try Google.'); return; }
     setBusy(true);
     Promise.resolve(S.createAccount(v.email, v.password))
       .then(function(){ /* onChange will close the modal */ })
@@ -2048,7 +2048,7 @@ document.addEventListener('click', function(e){
     return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
       +'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
       +'<base href="/">'
-      +'<title>'+esc(name)+' — Sky Wolf Studios</title>'
+      +'<title>'+esc(name)+' · Sky Wolf Studios</title>'
       +'<link rel="stylesheet" href="/shared.css?v=20260718">'
       /* ⛔ 2026-07-28: this srcdoc was pinned at shell.css?v=6 / shell.js?v=16 while
          the static /play/ shells used v=9 / v=24 and the service worker precached
@@ -2176,7 +2176,7 @@ document.addEventListener('click', function(e){
     };
     ov.classList.add('on'); ov.setAttribute('aria-hidden','false');
     document.body.style.overflow = 'hidden';
-    if(opts.title) document.title = opts.title + ' — Sky Wolf Studios';
+    if(opts.title) document.title = opts.title + ' · Sky Wolf Studios';
     if(!isOpen){ try{ history.pushState({swsGame:1}, '', '#play'); }catch(e){} }
     isOpen = true;
     // Watchdog ONLY for cross-origin satellites, whose framing CAN be blocked
@@ -2196,7 +2196,7 @@ document.addEventListener('click', function(e){
     fr.removeAttribute('srcdoc');
     fr.src = 'about:blank';                 // stop the game; portal audio plays on
     document.body.style.overflow = '';
-    document.title = 'Sky Wolf Studios — Play';
+    document.title = 'Sky Wolf Studios Play';
     // If we paused the studio jukebox to make room for a game's own music,
     // bring it back on the way out — silence on the portal would feel broken.
     if(studioPausedByUs && studioWasPlaying) musResume();
