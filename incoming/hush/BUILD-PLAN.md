@@ -26,10 +26,41 @@ beats feature count in every decision.
   drop** (zero matches for assert/test in the file). They lived in the
   artifact environment. Phase B rebuilds them — the invariants are all
   stated precisely enough to re-derive.
-- `vbpm: 50` default vs the handoff's "tempo clamped 60-80" — probably a
-  0-100 slider position mapped into 60-80, but VERIFY the mapping before
-  trusting the clamp claim; if the clamp is missing, add it (the research
-  copy cites it).
+- `vbpm: 50` default vs the handoff's "tempo clamped 60-80" — RESOLVED:
+  the slider is a 0-100 position mapped `60+(v/100)*20` → 60-80 bpm real
+  (verified at lines 1872/2732; asserted by the audit).
+
+## 🚨 Product landmine: iOS kills the sound when the screen locks
+
+Researched + verified against source 2026-08-16. iOS Safari suspends Web
+Audio (and WebRTC) the moment the screen locks or Safari backgrounds; the
+MediaStream→`<audio srcObject>` trick is NOT reliable for lock-screen
+playback, and installed PWAs add their own lock-screen audio bugs. Hush is
+pure Web Audio: it has MediaSession metadata and a visibilitychange resume
+(both verified in source, ~1178-1196) but **no media-element sink — on an
+iPhone it goes silent at screen lock.** A sleep machine that stops when the
+phone locks fails its core job, so this is a product decision, not a bug:
+
+- **Android/desktop are fine** (Chrome keeps Web Audio running in the
+  background) — the majority path needs nothing.
+- **Stage 1 (ships with phase A):** honest handling. While playing, request
+  the screen wake lock (already implemented for ok-to-wake — extend it to
+  plain playback on iOS only) and say it plainly in the Safety panel: "On
+  iPhone the screen must stay on for sound. Turn brightness down or use the
+  Void screen." Void mode (4 fps, near-black) is the designed companion.
+  This is also the honest-labelling brand: say the limitation out loud.
+- **Stage 2 (phase F, after v6):** true lock-screen playback via a REAL
+  `<audio>` element playing pre-rendered media — render the chosen sound
+  offline (OfflineAudioContext) into a seamless loop (the engine already
+  knows the equal-power seam trick) and loop it through the element with
+  MediaSession controls. Scope v1 of this to the six shortlist sounds +
+  fixed timer lengths with the fade BAKED INTO the render (iOS ignores
+  `element.volume`, so fades cannot be applied live). Programs/adaptive/mic
+  features stay screen-on features — the mic is suspended under lock anyway.
+  Encoding strategy (WAV memory cost vs WebCodecs/MediaRecorder) is the
+  build session's call — measure on a real iPhone before choosing.
+- Never claim "runs all night with the screen off" anywhere until stage 2
+  is verified on a physical iPhone.
 
 ## 🚨 Fleet landmines (fix BEFORE first deploy)
 
@@ -105,12 +136,29 @@ beats feature count in every decision.
    angles ranked in RESEARCH-1 §6 are the outreach lane (warm, dad angle,
    zero dashes).
 
-## Phase B — the audit harness (`scripts/hush_audit.js`), rebuilt
+## Phase B — the audit harness (`scripts/hush_audit.js`)
 
-The tests did not ship; rebuild them from the stated invariants. Node +
-headless Chrome against the REAL file (rarity_sim_live lesson: never
-hand-mirror engine logic into a test). Assertions, each with a
-deliberate-failure check the first time it runs:
+**STATUS: BUILT AND GREEN (2026-08-16, planning session).** 155 assertions,
+run with `node scripts/hush_audit.js [path]` (defaults to the drop; point it
+at `hush/index.html` after the port). It extracts the REAL structures and
+functions from the HTML by name (comment/string-aware bracket matching) and
+was watched fail in three directions: program-end nonzero, evidence-cap
+overflow, and unit-inference regression. Covered: programs (bounded gains,
+gentle steps, all end at zero), evidence tiers (≤3 good-evidence, all cards
+have copy), guide (all 20 routes → exactly two documented+playable sounds;
+voice beds exist), shortlist (six, ≥3 tiers, documented+playable), safety
+defaults (cap/simple/blinded), Schade constants (50 ms/5 ms/0.8 Hz/10 s
+from the live code), the 60-80 bpm vbpm mapping (VERIFIED — slider 0-100 →
+`60+(v/100)*20`; the v1 plan's open question is resolved), the 24-hour
+tonight fallback, the session-key reset on load, and the importer chain run
+against synthetic Oura/Garmin/Fitbit/semicolon fixtures including the
+1.4 h-deep-sleep trap and junk-never-throws.
+
+**Still headless-only (build session adds these to the same script or a
+sibling):** comb-floor k/f check inside `apply()`, simple-mode visible
+control count ≤15, share-preset round trip (after v6a), stats determinism
+(seeded permutation p stable; t-CDF spot values). Original assertion list
+for reference:
 
 1. **Programs**: simulate every entry in `PROGRAMS` through the real ramp
    logic at 30 s resolution — gain stays in [0,1], no step > 0.35, final
