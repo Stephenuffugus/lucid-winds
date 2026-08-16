@@ -1,124 +1,162 @@
-# BUILD PLAN — BANDIT'S BOX (project 2 of 3)
+# BUILD PLAN — BANDIT'S BOX (project 2 of 3) — v2, implementation level
 
-**For the Opus build session. Read this file, then `RESEARCH-NOTES.md`, then
-the HOUSE RULES comment at the top of `bandits-box.html` before touching
-code.** Planned 2026-08-16; decisions are LOCKED defaults (Stephen can veto).
+**For the Opus build session. Reading order: this file → `RESEARCH-NOTES.md`
+→ the HOUSE RULES comment atop `bandits-box.html` → `../PORTAL-CONTRACT.md`
+→ `SFX-SHOT-LIST.md`.** Planned 2026-08-16 (deepened same night); decisions
+are LOCKED defaults (Stephen can veto, the build does not re-litigate).
 
 ## What this is
 
-An ASMR / quiet-fidget app. 21 toys, all working, driven by a continuous
-friction sound engine (a living noise bed whose gain/filter follow finger
-speed + pressure — NOT per-pixel click spam). Bandai ∞-line surprise mechanic
-(every ~100th pop is a gag, wobbling interval). Four themes + full sensory
-controls, grounded in autism/sensory research (see RESEARCH-NOTES.md — the
-"explicitly rejected" list is LAW: no ads, no unlocks, no scores, no streaks,
-no coercive gamification, ever).
+An ASMR / quiet-fidget app. 21 working toys driven by a continuous friction
+engine (a living noise bed whose gain/filter follow finger speed + pressure).
+Bandai ∞-line surprise mechanic (every ~100th pop is a gag, wobbling
+interval). 2 themes wired via `body[data-theme]` (night default, paper; the
+research doc names four — faded/bold may be unbuilt: verify, and if absent
+they are OPTIONAL phase-E work, not a port blocker). Sensory-first design
+grounded in autism research. The "explicitly rejected" list in
+RESEARCH-NOTES.md is LAW: no ads, no unlocks, no scores, no streaks, no
+coercive gamification, ever.
 
-The market opening, verbatim from the research: every category leader gates
-stress-relief toys behind rewarded video. We don't. That IS the product.
+## Audited facts (all verified against source 2026-08-16)
 
-## State of the prototype (audited 2026-08-16)
+- 3645 lines, ES5-style, one file. 21 toys, clean per-toy sections.
+- Sound: one-shots via `V` registry (20 voices: pop unpop tap crinkle grain
+  peel rip rib plink squeak squish screech bell thunk snap latch hinge boing
+  zip airout) + `Friction()` continuous voices. LIVE registry guarantees
+  nothing looping survives a toy switch. Voice cap `slot()` = 34.
+- **`feel(name,x,y,…)` (line ~1309) is the single dispatch seam**: tries
+  `SAMPLES[name]` (recorded foley) → falls back to `V[name]` synth → ripple
+  (`RIPCOLOR`) → haptic (`BUZZ_MS`). Foley ships by dropping wavs in `sfx/`
+  and listing them in `SFX_MANIFEST` — zero engine work.
+- **Inconsistency found:** the SWITCH WALL (toy 20, ~3210) calls
+  `noiseHit`/`tone` directly, bypassing `feel()` — so it can never take
+  foley and skips the ripple/haptic path. Fix in phase D (below).
+- Settings `S` (~899): `{vol,quiet,calm,buzz,soft,grip,big,last,theme,fun,
+  tally,word,total}`, saved debounced (900 ms) via `saveSoon()`.
+- Surprise engine ~1219 (8 gags, interval wobbles 90-120). Tally opt-in.
+- PWA: runtime blob manifest only (file tail); no sw.js in the drop.
 
-- `bandits-box.html`, 3645 lines, ES5-style vanilla, one file. Clean section
-  markers per toy (BANDIT/coon, SOAP, POP sheet, TISSUES, TEXTURES, LATCHES,
-  SPINNER, PUPPET, BUBBLE WRAP, KNOBS, SLIME, GEARS, SAND, CRADLE, SPRING,
-  SEQUINS, EDAMAME, PERI, CHOC, WALL/switches, BALL/stress ball = 21).
-- Sound engine (~line 911): one-shots + `Friction()` continuous voices; LIVE
-  registry so nothing looping survives a toy switch (the "white noise bug"
-  writeup at ~986 is load-bearing history — preserve those comments).
-- Surprise engine ~1219. Sample bank ~1178: `SFX_MANIFEST` + `loadSamples()`
-  + `playSample()` fully wired, manifest EMPTY — recordings replace synth
-  voices automatically when files exist, synth remains the fallback.
-- Optional tally (off by default, renameable word) — wooden-fish research.
-- Runtime blob manifest fallback at file tail; no sw.js, no real manifest.
-
-## 🚨 Two porting landmines (fix first, they are silent failures)
+## 🚨 Landmines (fix first — silent failures)
 
 1. **`window.storage` does not exist in browsers** (lines 901-908 — it is
-   the claude.ai artifact sandbox API). Settings currently CANNOT persist on
-   the real site. Replace `saveS`/`loadS` internals with `localStorage`
-   (`bandit-set` key, try/catch kept, same debounced `saveSoon`). Settings
-   are tiny + low-stakes; plain JSON overwrite is fine (two-tab clobber law
-   applies to counters, not toggles).
-2. **Audio-off-first-gesture:** house rule 1 says the screen never waits on
-   audio. Verify after porting: block AudioContext in devtools and confirm
-   every toy still moves and ripples.
+   the claude.ai artifact sandbox API). Settings currently cannot persist on
+   the real site. Exact fix, keeping the async shape so `loadS().then(...)`
+   at boot still works:
+   ```js
+   function saveS(){ try{ localStorage.setItem('bandit-set',JSON.stringify(S)); }catch(e){} }
+   function loadS(){
+     try{ var v=localStorage.getItem('bandit-set');
+          if(v){ try{ Object.assign(S,JSON.parse(v)); }catch(e){} }
+     }catch(e){}
+     return Promise.resolve();
+   }
+   ```
+   Settings are toggles, not counters — plain overwrite is fine under the
+   two-tab law.
+2. **Audio-off-first-gesture:** house rule 1 — the screen never waits on
+   audio. After porting, block AudioContext in devtools and confirm every
+   toy still moves and ripples.
 
 ## Locked decisions
 
-1. **Ships as a satellite**: `satellites/bandits-box/` (index.html + sw.js +
-   manifest.webmanifest + real icons rendered from the inline raccoon SVG).
-   Keep the runtime-blob-manifest fallback code as a safety net. Standard
-   caching law: version everything, `Cache-Control: no-cache` on the HTML,
-   SW shell version bumped every ship, verify live with `?probe=RANDOM`.
-2. **Portal card, beta:true** — copy leads with the differentiator: quiet,
-   no ads, no unlocks, works offline. Thumb ≤150KB. Display name:
-   **Bandit's Box** (apostrophe, no dash — and no dashes anywhere in copy).
-3. **sws bridge: framing only.** `sws:ready` on load + framed-only "Back to
-   Sky Wolf" exit, per portal standard. **NO Sunbeam earn wiring, no earn
-   toasts, no daily anything inside this app.** The research names coercive
-   gamification as harmful to exactly this audience, and the app's identity
-   is that nothing is asked of you. This intentionally deviates from the
-   30/day earn standard — recorded here as the default; Stephen can veto.
-4. **No new toys before the sound pass.** Quality over roster size. The
-   category leaders have 50 mediocre toys; we have 21 good ones. New toys
-   (Balloon first, then kinetic-sand slicing, coin flip, sand pendulum,
-   keyboard clicks) come only after phases A-C are live.
-5. **The special sauce is REAL FOLEY.** Stephen is a music producer with
-   recording gear. The single biggest quality jump (research doc, last
-   section) is real recordings in `sfx/`. Build task: write
-   `satellites/bandits-box/SFX-SHOT-LIST.md` for Stephen — per sound name:
-   what to record, mic distance, ~10 takes each, plus slow/light and
-   fast/hard PAIRS for the friction texture beds. Wire `SFX_MANIFEST`
-   entries commented-and-ready so dropping files in `sfx/` + uncommenting
-   ships them. Suggested first bank (biggest audible wins): pop, tap, snap,
-   rip, click/switch, latch, tissue, bubble-wrap, chocolate-crack, bean-pop.
-   The surprise gags (door chime, dog, duck…) also want real recordings —
-   a real dog bark beats a sawtooth ramp forever.
-6. **Per-toy favourites** (research backlog #4): long-press a picker tab to
-   pin up to 3 toys to the front. No usage tracking, no auto-reorder —
-   PREDICTABILITY rule: the order never changes unless the player changes it.
-7. **"designed by Penny"** (CSS comment, line 14): not player-visible; leave
-   the file as it is and ask Stephen who Penny is before ever surfacing the
-   credit in UI (if it's his daughter, credit her properly on the about
-   sheet; if it's an invented persona, it never surfaces — solo-voice law).
+1. **Ships as a satellite at `satellites/bandits-box/`** (index.html + sw.js
+   + manifest.webmanifest + icons rendered from the inline raccoon SVG).
+   Real manifest per PadLab pattern (unique `id`/`start_url`/`scope` =
+   `/satellites/bandits-box/` — PWA identity-collision law); keep the blob
+   fallback. sw.js: PadLab-style shell cache, cache keys prefixed
+   `banditsbox-`, activate filter `k.startsWith('banditsbox-')` ONLY
+   (origin-wide purge law).
+2. **Portal: GAMES card, framed** (it is a toy you play — see
+   PORTAL-CONTRACT.md for the locked shelf rule). Therefore the **embed
+   protocol is REQUIRED**: paste the FTW block (contract doc has it
+   verbatim) as the last script; `sws:ready` at parse + load; exit button on
+   the picker strip end calling `SWS_EXIT()`. Card:
+   `{nm:"Bandit's Box", ds:"A quiet box of fidget toys that feel real under
+   your finger. No ads, nothing to unlock.", url:"/satellites/bandits-box/?v=<stamp>",
+   ic:"🦝", thumb:"/portal-assets/thumbs/bandits-box.png", beta:true}`
+   plus search keywords: `'bandit's box':'asmr fidget sensory calm quiet pop
+   bubble wrap slime stim toys raccoon'`. Thumb ≤150KB.
+3. **No Sunbeam earns, no toasts, no daily anything.** Deviates from the
+   fleet earn standard on purpose — coercive gamification is named harmful
+   in the sensory research and no-ads/no-unlocks IS the product. Stephen can
+   veto. The embed protocol (decision 2) is framing only.
+4. **No new toys before the foley + consistency pass.** 21 good toys beat 50
+   mediocre ones. Order after phases A-D: Balloon → favourites → kinetic
+   sand slicing → coin flip → sand pendulum → keyboard panel.
+5. **Foley is the special sauce.** `SFX-SHOT-LIST.md` (this folder) is
+   Stephen's recording guide, mapped 1:1 to the `V` voice names. Opus stages
+   the `SFX_MANIFEST` entries commented-and-ready and verifies the pipeline
+   end to end with 2-3 scratch wavs.
+6. **Favourites spec** (research backlog #4, predictability rule intact):
+   - `S.favs = []` (max 3 toy ids). Long-press (550 ms) a strip tab toggles
+     it; a small ⭐ dot on favourited tabs; favourites render as the FIRST
+     tabs in the strip, in the order the player pinned them; everything else
+     keeps the fixed catalog order. No usage tracking, no auto-reorder.
+   - Long-press must not fire the tab's click (guard with a moved/held
+     flag, same pattern the toys use to split tap from drag).
+7. **Balloon toy spec** (first new toy, research "next up" #1):
+   - Hold to inflate: radius eases up, a soft tone rises in pitch with size
+     (the anticipation IS the toy). Release below the threshold: air
+     sputters out (`airout` + shrink). Past the threshold: it does not
+     explode into a fail — it slips from your finger and zips around the
+     screen deflating (`zip`/`squeak`, ripples along the path), then a
+     fresh balloon fades in. A perfect-hold pop is allowed only via the
+     surprise engine (counts as a pop for the gag counter).
+   - No fail state, no streaks. Calm-motion setting damps the flight.
+   - New tab id `bln`, glyph in TOYS array style; all sounds through
+     `feel()`; flight animation respects `S.calm`.
+8. **"designed by Penny"** (CSS comment): not player-visible; leave it.
+   Ask Stephen before surfacing any credit in UI.
 
 ## Build phases (gate each; commit AND push at every gate)
 
-- **A — Port + landmines.** Satellite folder, storage swap, PWA shell, sws
-  bridge, portal card. Gate: deployed URL live with `?probe=RANDOM`; settings
-  survive reload on the REAL site; airplane-mode revisit works (SW); install
-  works on Android; audio-blocked run still fully playable.
-- **B — Fleet standards audit.** 48px touch targets measured RENDERED at
-  375×667 (picker tabs are 11px font in ~38px pills — likely need height);
-  visualViewport for any height math; feedback-form typing guard N/A (no
-  forms) — verify no global key handlers eat typing if a form is ever added.
-  Gate: audit notes written, violations fixed.
-- **C — The white-noise regression suite.** Manual, on a phone: mid-gesture
-  toy switch, mid-gesture tab hide, mid-gesture BIG-mode toggle, app
-  background/foreground, 10 minutes idle — then headphones up: SILENCE.
-  Any hiss = a LIVE-registry escapee. Gate: silent on all five.
-- **D — Foley pipeline.** SFX-SHOT-LIST.md written; manifest entries staged;
-  `loadSamples` verified with 2-3 scratch recordings (any wav) end to end,
-  including the "Using N recorded sounds" label. Gate: scratch samples
-  audibly replace synth pops with jitter variation intact.
-- **E — Favourites + Balloon.** Favourites per decision 6. Balloon toy per
-  research (inflate on held press, tension rises as a note, pop; the one toy
-  where anticipation is the point — still no fail state: an over-inflated
-  balloon just squeaks away, it never "loses"). Gate: LOOKING pass below.
+- **A — Port + landmines.** Satellite folder, storage swap, PWA shell
+  (manifest + sw.js + icons), embed protocol, portal card + keywords +
+  thumb. Gate: live at the versioned URL with `?probe=RANDOM`; opens framed
+  from the portal WITHOUT the recovery timer closing it (proof the ready
+  handshake works); back/exit returns to portal cleanly framed AND
+  standalone; settings survive reload on the real site; airplane-mode
+  revisit works; install carries its own identity (check it did not adopt
+  PadLab's); audio-blocked run fully playable. **Also verify PadLab's caches
+  are intact after visiting** (list `caches.keys()` before/after — fleet
+  law, cheap to check).
+- **B — Fleet standards.** 48px touch targets at 375×667 RENDERED (strip
+  tabs are ~38px pills — likely need `min-height:48px` with padding, not
+  font changes; measure, don't eyeball). visualViewport for any height math.
+  `node --check` on extracted JS (vm.createScript if SVG-in-CSS confuses).
+  Gate: audit notes written, violations fixed, syntax clean.
+- **C — White-noise regression suite.** On a phone, headphones up: (1)
+  mid-gesture toy switch, (2) mid-gesture tab hide, (3) mid-gesture BIG
+  toggle, (4) background/foreground the app, (5) 10 min idle. Gate: SILENCE
+  in all five. Any hiss = a LIVE-registry escapee.
+- **D — Sound consistency + foley pipeline.** Rewire the switch wall
+  through a new `V.click` voice + `feel('click',…)` (row pitch via the
+  existing semi arg → playbackRate on samples); add `click` to RIPCOLOR +
+  BUZZ_MS + the manifest. Stage all SFX_MANIFEST entries (commented).
+  Verify with scratch wavs: recorded sound replaces synth, jitter varies
+  repeats, "Using N recorded sounds" label updates, missing files stay
+  silent-but-playable. Gate: all of the above observed.
+- **E — Favourites + Balloon** per specs 6-7. Gate: LOOKING pass (below) +
+  favourites survive reload + balloon respects calm mode.
+- **F (only if the night has room) — FrictionSampled.** Paired slow/fast
+  texture loops crossfaded by speed/pressure, per texture bed, falling back
+  to synthesized `Friction()` when loops are missing. Needs Stephen's
+  recordings first — build the engine only if the pairs exist.
 
 ## LOOKING gate (project law)
 
-Phone-size screenshots of: picker strip, 3 toys at rest, 2 toys mid-gesture,
-BIG mode, each of the 4 themes. Name three things wrong before Stephen does.
-Check the worst case on purpose: smallest theme-contrast pair at max
-brightness dimming, sequins mid-sweep at 60fps, slime stretched to the corner.
+Phone-size screenshots: picker strip, 3 toys at rest, 2 toys mid-gesture,
+BIG mode, both themes (all four if faded/bold exist). Name three things
+wrong before Stephen does. Worst case on purpose: sequins mid-sweep
+(fps meter on), slime dragged to a corner, paper theme in a dark room.
 
 ## Traps
 
-- Nothing that loops may exist outside LIVE (engine law, comment ~998).
-- Every fade lands on hard zero — `setTargetAtTime` asymptote was bug #1.
-- `slot()` caps voices at 34 — keep; new toys must route through it.
+- Nothing that loops may exist outside LIVE (engine law ~998); every fade
+  lands on a hard zero (`setTargetAtTime` asymptote was bug #1).
+- All new sounds route through `feel()` and `slot()` — no direct
+  `noiseHit`/`tone` from toys (that is how the wall bug happened).
 - Ripples on EVERY touch (redundant-representation accessibility rule).
-- No `alert()`; failures stay silent-but-playable (synth fallback pattern).
-- Do not "clean up" the essay comments in the file — they are the docs.
+- No `alert()`; failures stay silent-but-playable.
+- Do not reformat or "clean up" the essay comments — they are the docs.
+- `?v=` stamp on the portal card URL changes EVERY deploy (caching law).
