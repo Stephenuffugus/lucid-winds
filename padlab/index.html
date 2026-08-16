@@ -1816,8 +1816,15 @@ function mbResize(){
 let mbFitted=false;
 function mbFitOnce(){ if(mbFitted||mbW<2) return; mbFitted=true; mbFit(); }
 function mbFit(){
-  const p=mbPlates[0];
-  mbZoom=Math.max(MB_ZMIN,Math.min(1,(mbW*0.92)/((p.w+p.h)*MB_TILE/2)));
+  const p=mbPlates[0], span=(p.w+p.h)*MB_TILE/2;
+  /* Fit BOTH ways. Fitting to width alone is right on a phone and wrong on a
+     desktop: there the width test clamps the zoom at 1 and the plate is then
+     taller than the box it sits in, so its near and far corners hang out of
+     the frame. Height gets the smaller share because marbles stand well above
+     the plate and need somewhere to be. */
+  const zx=(mbW*0.92)/span;
+  const zy=(mbH*0.66)/(span*mbTilt);
+  mbZoom=Math.max(MB_ZMIN,Math.min(1,zx,zy));
   mbPanX=0; mbPanY=0; mbCamDirty=true;
 }
 function mbTw(){ return MB_TILE*mbZoom; }

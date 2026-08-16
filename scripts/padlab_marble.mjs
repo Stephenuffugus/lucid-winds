@@ -106,6 +106,30 @@ ok(framed.minX >= -2 && framed.maxX <= framed.w + 2,
 ok(framed.minY >= -2 && framed.maxY <= framed.h + 2,
   "and down", JSON.stringify(framed));
 
+/* And at a desktop width, which is where the first version of the fit fell
+   over: it only ever fitted to width, so on a wide screen the zoom clamped at
+   1 and the plate grew taller than the box it lives in. A phone sized test
+   passed the whole time. */
+await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
+await sleep(500);
+await page.evaluate(() => { mbFitted = false; mbResize(); mbFitOnce(); });
+await sleep(400);
+const wide = await page.evaluate(() => {
+  const p = mbPlates[0];
+  const c = [[p.x0, p.y0], [p.x0 + p.w, p.y0], [p.x0 + p.w, p.y0 + p.h], [p.x0, p.y0 + p.h]]
+    .map(q => mbIso(q[0], q[1], 0));
+  const xs = c.map(q => q[0]), ys = c.map(q => q[1]);
+  return { minX: Math.round(Math.min(...xs)), maxX: Math.round(Math.max(...xs)),
+           minY: Math.round(Math.min(...ys)), maxY: Math.round(Math.max(...ys)),
+           w: Math.round(mbW), h: Math.round(mbH), zoom: +mbZoom.toFixed(3) };
+});
+ok(wide.minX >= -2 && wide.maxX <= wide.w + 2 && wide.minY >= -2 && wide.maxY <= wide.h + 2,
+  "the plate fits the frame at desktop width too", JSON.stringify(wide));
+await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 2 });
+await sleep(400);
+await page.evaluate(() => { mbFitted = false; mbResize(); mbFitOnce(); });
+await sleep(300);
+
 /* ---------- placing a marble ---------- */
 console.log("[placing]");
 const place = await page.evaluate(() => {
