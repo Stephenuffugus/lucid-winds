@@ -133,10 +133,17 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[PartyShell.playerId];
-    $('frp-wait-t').textContent=data.winner?(data.winner+' outlasted the frost.'):'The night is over.';
+    var sv=data.survivors||[];
+    $('frp-wait-t').textContent=data.winner?(data.winner+' outlasted the frost.')
+      :(sv.length>1?'The questions ran out first.':'The frost took everyone.');
     $('frp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
     show('frp-wait');
   }
+});
+/* the host answers a second tap from a rejoined phone with this, so the player
+   is told they already answered instead of pressing a button that does nothing */
+PartyShell.onMessage(function(msg){
+  if(msg&&msg.t==='locked'){ locked=true; $('frp-note').textContent='Locked in. Watch the big screen.'; }
 });
 show('frp-wait');
 })();

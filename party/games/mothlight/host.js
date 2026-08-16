@@ -20,7 +20,14 @@ root.innerHTML=
  '<div class="ml-strip" id="ml-strip"></div></div>'+
  '<div class="ml-screen" id="ml-stand"><div class="ml-qnum">Standings</div><div id="ml-standrows" style="margin-top:20px"></div></div>'+
  '<div class="ml-screen ml-podium" id="ml-pod"><div class="ml-qnum">The night is over</div><div id="ml-podrows" style="margin-top:20px"></div>'+
- '<button class="ps-btn" id="ml-again" style="margin-top:30px">Play again</button></div>';
+ /* ⛔ THE FIRST TITLE IN THE CATALOGUE WAS THE ONE YOU COULD NOT LEAVE. Every
+    other podium in the pack offers all three; this one offered Play again and
+    nothing else, so switching games or ending the night meant walking over and
+    reloading the television, which loses the room code. */
+ '<div class="ml-btnrow">'+
+ '<button class="ps-btn" id="ml-again">Play again</button>'+
+ '<button class="ps-btn ghost" id="ml-other">Another game</button>'+
+ '<button class="ps-btn ghost" id="ml-end">End night</button></div></div>';
 
 function show(id){ var s=document.querySelectorAll('.ml-screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); $(id).classList.add('on'); }
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
@@ -70,6 +77,11 @@ function renderMoths(){
 }
 
 PartyShell.onPlayerMessage(function(pid,msg){
+  /* ⛔ ONLY PLAYERS WHO ARE IN THIS GAME. This was the one host module with no
+     guard, so somebody who walked in mid round got a moth on the television
+     under the name "?" and then vanished from the reveal, the strip and the
+     standings. */
+  if(!msg||names[pid]===undefined) return;
   if(msg.t==='answer'&&msg.q===qi+1&&$('ml-q').classList.contains('on')){
     answers[qi]=answers[qi]||{}; answers[qi][pid]=!!msg.v; renderMoths();
     snd('pip');  /* a moth just landed, and the room hears the count rise */
@@ -143,6 +155,8 @@ function phasePodium(){
   PartyShell.setPhase('podium',{scores:scores,names:names});
   PartyShell.gameComplete(results);
   $('ml-again').onclick=function(){ startGame(PartyShell.players()); };
+  $('ml-other').onclick=function(){ PartyShell.backToPicker(); };
+  $('ml-end').onclick=function(){ PartyShell.closeRoom(); };
 }
 document.addEventListener('party-started',function(ev){ startGame(ev.detail.players); });
 })();

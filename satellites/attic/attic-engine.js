@@ -40,6 +40,13 @@
   }
   function pick(r, arr) { return arr[r(arr.length)]; }
 
+  /* The hand written "classic" titles are the best jokes in the file and
+     they are also the shallowest bank in it. When they were one of nine
+     equal patterns they took an eighth of every class's output, and a nine
+     entry list drawn an eighth of the time is what made 82% of forty dig
+     sessions repeat a title. They are a rare treat now, roughly 1 in 40. */
+  var CLASSIC_ODDS = 40;
+
   /* junk in must not put NaN on a card. Anything that is not 64 hex is
      folded into a stable 64 hex string, so a bad paste still shows a real
      object and still shows the SAME object every time. */
@@ -170,15 +177,15 @@
   var V_TAG_B = ['This one melts.', 'Fear the sequel.', 'Again.', 'Until tonight.', 'And it is not leaving.', 'Bring a coat.', 'Rated somewhere between PG and a dare.', 'You cannot unplug what you cannot find.', 'Ask the night manager.', 'Somebody has to close.'];
   var V_NOTES = ['rental sticker: BE KIND REWIND', 'price sticker: $2.99 over $19.99', 'label handwritten over an older label', 'clamshell case, cracked proudly', 'tracking never quite settles', 'previews for movies that never came out', 'rental sticker from a store that closed in 1994', 'somebody taped over the first four minutes'];
   function vhsName(r) {
-    var p = r(9);
-    if (p === 0) return pick(r, V_FLAT);
-    if (p === 1) return pick(r, V_ADJ) + ' ' + pick(r, V_NOUN);
-    if (p === 2) return 'THE ' + pick(r, V_ROLE) + ' OF ' + pick(r, V_PLACE);
-    if (p === 3) return pick(r, V_CREATURE) + ' ' + pick(r, V_ROLE);
-    if (p === 4) return 'NIGHT OF THE ' + pick(r, V_CREATURE);
-    if (p === 5) return 'MY DAD THE ' + pick(r, V_NOUN);
-    if (p === 6) return 'THE ' + pick(r, V_NOUN) + ' THAT ' + pick(r, V_VERBED);
-    if (p === 7) return pick(r, V_NOUN) + ' ' + pick(r, V_ROLE);
+    if (r(CLASSIC_ODDS) === 0) return pick(r, V_FLAT);
+    var p = r(8);
+    if (p === 0) return pick(r, V_ADJ) + ' ' + pick(r, V_NOUN);
+    if (p === 1) return 'THE ' + pick(r, V_ROLE) + ' OF ' + pick(r, V_PLACE);
+    if (p === 2) return pick(r, V_CREATURE) + ' ' + pick(r, V_ROLE);
+    if (p === 3) return 'NIGHT OF THE ' + pick(r, V_CREATURE);
+    if (p === 4) return 'MY DAD THE ' + pick(r, V_NOUN);
+    if (p === 5) return 'THE ' + pick(r, V_NOUN) + ' THAT ' + pick(r, V_VERBED);
+    if (p === 6) return pick(r, V_NOUN) + ' ' + pick(r, V_ROLE);
     return 'THE ' + pick(r, V_ADJ) + ' ' + pick(r, V_ROLE);
   }
   function vhs(h) {
@@ -194,28 +201,31 @@
 
   // ── TOYS ─────────────────────────────────────────────────────────
   var T_FLAT = ['MUSCLE GUY', 'BABY WHISPERS', 'TIN ROCKET', 'THE OUCH A LOT', 'GLOWFRIEND', 'MR. CONSEQUENCES', 'THE APOLOGIZER', 'BEND A BEAST', 'SHERIFF OWL AND DEPUTY OWL'];
-  var T_RANK = ['CAPTAIN', 'SERGEANT', 'DOCTOR', 'PROFESSOR', 'DEPUTY', 'ADMIRAL', 'PRINCESS', 'BARON', 'CHIEF', 'SISTER', 'COMMANDER', 'MAYOR'];
-  var T_NOUN = ['GRAVEL', 'THUNDER', 'FORKLIFT', 'TENTACLES', 'BISCUIT', 'CRUMB', 'HAMMER', 'PUDDLE', 'SPARK', 'MOSS', 'BRICK', 'WRENCH', 'CINDER', 'FANG', 'BUCKLE', 'GRUDGE', 'MITTEN', 'SPROCKET'];
-  var T_ALIEN = ['ZARNOK', 'VOLTRIX', 'GRUMLOK', 'KEENA', 'THRAX', 'OBLONG', 'YEVVA', 'MORDANT', 'PIP', 'SKREEN'];
-  var T_FACTION = ['THE LAZER WIZARDS', 'THE MOON UNION', 'THE DEEP SHELF', 'THE QUIET ARMY', 'THE NINTH ROW', 'THE GLASS COUNTY', 'THE SLEEP BRIGADE', 'THE OTHER SIDE OF THE YARD'];
-  var T_JOB = ['ATTORNEY', 'SURGEON', 'ACCOUNTANT', 'REFEREE', 'LIFEGUARD', 'INSPECTOR', 'NOTARY', 'DENTIST', 'ARBORIST', 'MEDIATOR'];
-  var T_VERB = ['STOMP', 'CHOMP', 'WHACK', 'HUG', 'ZAP', 'SCOLD', 'YEET', 'FLING'];
-  var T_NAME = ['SAM', 'DALE', 'GRETA', 'OTIS', 'BEV', 'RANDY', 'JUNE', 'HOYT', 'PEARL', 'CHUCK'];
-  var T_ANIMAL = ['PONY', 'OWL', 'BADGER', 'CRAB', 'GOOSE', 'MOOSE', 'NEWT', 'FERRET', 'HERON', 'TOAD'];
+  var T_RANK = ['CAPTAIN', 'SERGEANT', 'DOCTOR', 'PROFESSOR', 'DEPUTY', 'ADMIRAL', 'PRINCESS', 'BARON', 'CHIEF', 'SISTER', 'COMMANDER', 'MAYOR', 'MARSHAL', 'DUCHESS', 'FOREMAN', 'WARDEN', 'CORPORAL', 'JUDGE'];
+  var T_NOUN = ['GRAVEL', 'THUNDER', 'FORKLIFT', 'TENTACLES', 'BISCUIT', 'CRUMB', 'HAMMER', 'PUDDLE', 'SPARK', 'MOSS', 'BRICK', 'WRENCH', 'CINDER', 'FANG', 'BUCKLE', 'GRUDGE', 'MITTEN', 'SPROCKET', 'GIRDER', 'KETTLE', 'STATIC', 'TROWEL', 'LANTERN', 'BOLT', 'CLOVER', 'SHOVEL', 'PLUNGER', 'ANVIL'];
+  var T_ALIEN = ['ZARNOK', 'VOLTRIX', 'GRUMLOK', 'KEENA', 'THRAX', 'OBLONG', 'YEVVA', 'MORDANT', 'PIP', 'SKREEN', 'VANTHA', 'QUORB', 'ELDRIN', 'NOSK', 'BRAAL', 'TIVVIT'];
+  var T_FACTION = ['THE LAZER WIZARDS', 'THE MOON UNION', 'THE DEEP SHELF', 'THE QUIET ARMY', 'THE NINTH ROW', 'THE GLASS COUNTY', 'THE SLEEP BRIGADE', 'THE OTHER SIDE OF THE YARD', 'THE LOW COUNCIL', 'THE FIFTH BASEMENT', 'THE WET SEASON', 'THE LONG COMMUTE', 'THE SALT GUILD', 'THE NIGHT SHIFT'];
+  var T_JOB = ['ATTORNEY', 'SURGEON', 'ACCOUNTANT', 'REFEREE', 'LIFEGUARD', 'INSPECTOR', 'NOTARY', 'DENTIST', 'ARBORIST', 'MEDIATOR', 'ARCHIVIST', 'LOCKSMITH', 'APPRAISER', 'PLUMBER', 'CARTOGRAPHER', 'AUDITOR'];
+  var T_VERB = ['STOMP', 'CHOMP', 'WHACK', 'HUG', 'ZAP', 'SCOLD', 'YEET', 'FLING', 'BONK', 'NUDGE', 'SHUSH', 'WALLOP'];
+  var T_NAME = ['SAM', 'DALE', 'GRETA', 'OTIS', 'BEV', 'RANDY', 'JUNE', 'HOYT', 'PEARL', 'CHUCK', 'MERLE', 'ODESSA', 'WENDELL', 'FAY'];
+  var T_ANIMAL = ['PONY', 'OWL', 'BADGER', 'CRAB', 'GOOSE', 'MOOSE', 'NEWT', 'FERRET', 'HERON', 'TOAD', 'RACCOON', 'OTTER', 'MAGPIE', 'BISON', 'LEMUR', 'SKUNK'];
+  var T_ADJ = ['MIGHTY', 'TINY', 'DELUXE', 'FEARLESS', 'RELUCTANT', 'HONORARY', 'ELECTRIC', 'SOGGY', 'CHROME', 'POLITE', 'FERAL', 'RETIRED'];
   var T_GIMMICK_A = ['FIVE POINTS OF ARTICULATION!', 'GLOWS IN THE DARKNESS OF SPACE', 'REAL WHISPER ACTION', 'wind up action, key included (wrong key)', 'KUNG FU ADJACENT GRIP', 'TALKS WHEN IT WANTS TO', 'EYES FOLLOW YOU (feature)', 'SPRING LOADED REGRET', 'FLOATS, MOSTLY', 'MAGNET IN THE HAND (magnet loose)', 'SOFT VINYL, FIRM OPINIONS', 'ONE SOUND, PLAYED OFTEN'];
   var T_GIMMICK_B = ['card back: COLLECT ALL {n} OF {m}', 'now with HAT (hat sold separately)', 'try me button (try me window torn)', 'includes a cape it was never sold with', 'batteries not included, never were', 'accessory sprue still attached'];
   var T_FLAWS = ['cape missing', 'one accessory chewed', 'smells faintly of campfire', 'battery door lost to time', 'repainted by a confident child', 'sticker sheet applied with courage', 'one arm swapped in from a bigger toy', 'name written on the foot in ballpoint'];
   function toyName(r) {
-    var p = r(9);
-    if (p === 0) return pick(r, T_FLAT);
-    if (p === 1) return pick(r, T_RANK) + ' ' + pick(r, T_NOUN);
-    if (p === 2) return pick(r, T_ALIEN) + ' OF ' + pick(r, T_FACTION);
-    if (p === 3) return 'DR. ' + pick(r, T_NOUN) + ', ' + pick(r, T_JOB);
-    if (p === 4) return pick(r, T_VERB) + ' EM ' + pick(r, T_NAME);
-    if (p === 5) return 'POCKET ' + pick(r, T_ANIMAL) + ' ' + pick(r, T_JOB);
-    if (p === 6) return pick(r, T_RANK) + ' ' + pick(r, T_ANIMAL);
-    if (p === 7) return 'THE ' + pick(r, T_NOUN) + ' ' + pick(r, T_ANIMAL);
-    return pick(r, T_ALIEN) + ' THE ' + pick(r, T_JOB);
+    if (r(CLASSIC_ODDS) === 0) return pick(r, T_FLAT);
+    var p = r(10);
+    if (p === 0) return pick(r, T_RANK) + ' ' + pick(r, T_NOUN);
+    if (p === 1) return pick(r, T_ALIEN) + ' OF ' + pick(r, T_FACTION);
+    if (p === 2) return 'DR. ' + pick(r, T_NOUN) + ', ' + pick(r, T_JOB);
+    if (p === 3) return pick(r, T_VERB) + ' EM ' + pick(r, T_NAME);
+    if (p === 4) return 'POCKET ' + pick(r, T_ANIMAL) + ' ' + pick(r, T_JOB);
+    if (p === 5) return pick(r, T_RANK) + ' ' + pick(r, T_ANIMAL);
+    if (p === 6) return 'THE ' + pick(r, T_NOUN) + ' ' + pick(r, T_ANIMAL);
+    if (p === 7) return pick(r, T_ALIEN) + ' THE ' + pick(r, T_JOB);
+    if (p === 8) return pick(r, T_ADJ) + ' ' + pick(r, T_ANIMAL) + ' ' + pick(r, T_JOB);
+    return pick(r, T_ADJ) + ' ' + pick(r, T_NOUN) + ' ' + pick(r, T_NAME);
   }
   function toy(h) {
     var r = stream(h, 'toy');
@@ -231,24 +241,26 @@
 
   // ── BOARD GAMES ──────────────────────────────────────────────────
   var G_FLAT = ['MORTGAGE PANIC!', 'CANAL BARONS OF OHIO', 'DON’T WAKE UNCLE TED', 'THE ALLOWANCE GAME', 'FERRY TYCOON', 'ESCAPE FROM THE POTLUCK', 'PARALLEL PARKING CHAMPIONSHIP', 'WHO TOOK THE HAM?', 'ZONING BOARD'];
-  var G_NOUN = ['MORTGAGE', 'ALLOWANCE', 'CASSEROLE', 'FERRY', 'CANAL', 'GARAGE', 'PAPERWORK', 'CARPOOL', 'RECYCLING', 'INHERITANCE', 'FREEZER', 'HARDWARE', 'BAKE SALE', 'SNOWPLOW', 'YARD SALE', 'PANCAKE', 'DRIVEWAY', 'LAUNDROMAT'];
-  var G_PLACE = ['OHIO', 'THE LAKE', 'THE VALLEY', 'ROUTE 8', 'THE FLATS', 'THE COUNTY LINE', 'THE NORTH SIDE', 'THE FAIRGROUND'];
-  var G_REL = ['UNCLE', 'AUNT', 'GRANDPA', 'GRANDMA', 'COUSIN', 'STEPDAD'];
-  var G_NAME = ['TED', 'MARGE', 'DUANE', 'BEV', 'HOYT', 'LORETTA', 'CHUCK', 'PEARL'];
-  var G_ADJ = ['COMPETITIVE', 'EXTREME', 'POLITE', 'DELUXE', 'JUNIOR', 'ADVANCED', 'REGIONAL', 'CHAMPIONSHIP'];
-  var G_STORM = ['STORM', 'THAW', 'RECKONING', 'PAPERWORK', 'POTLUCK', 'SEASON', 'AUDIT'];
+  var G_NOUN = ['MORTGAGE', 'ALLOWANCE', 'CASSEROLE', 'FERRY', 'CANAL', 'GARAGE', 'PAPERWORK', 'CARPOOL', 'RECYCLING', 'INHERITANCE', 'FREEZER', 'HARDWARE', 'BAKE SALE', 'SNOWPLOW', 'YARD SALE', 'PANCAKE', 'DRIVEWAY', 'LAUNDROMAT', 'CASSETTE', 'POTLUCK', 'CARWASH', 'BOWLING', 'PARKING', 'GUTTER', 'REUNION', 'THERMOSTAT', 'TAILGATE', 'ZONING', 'FIRE HALL', 'CRAWL SPACE', 'PAPER ROUTE', 'CHURCH VAN'];
+  var G_PLACE = ['OHIO', 'THE LAKE', 'THE VALLEY', 'ROUTE 8', 'THE FLATS', 'THE COUNTY LINE', 'THE NORTH SIDE', 'THE FAIRGROUND', 'THE TOWPATH', 'LOWER SANDUSKY', 'THE WEST ANNEX', 'THE OLD PLANT', 'THE SPILLWAY', 'THE BACK ACRE'];
+  var G_REL = ['UNCLE', 'AUNT', 'GRANDPA', 'GRANDMA', 'COUSIN', 'STEPDAD', 'GODMOTHER', 'BIG BROTHER'];
+  var G_NAME = ['TED', 'MARGE', 'DUANE', 'BEV', 'HOYT', 'LORETTA', 'CHUCK', 'PEARL', 'VERNON', 'DOTTIE', 'EARL', 'RHONDA', 'MERLE', 'ODESSA'];
+  var G_ADJ = ['COMPETITIVE', 'EXTREME', 'POLITE', 'DELUXE', 'JUNIOR', 'ADVANCED', 'REGIONAL', 'CHAMPIONSHIP', 'ELECTRONIC', 'TRAVEL SIZE', 'FAMILY', 'SUDDEN'];
+  var G_STORM = ['STORM', 'THAW', 'RECKONING', 'PAPERWORK', 'POTLUCK', 'SEASON', 'AUDIT', 'INVENTORY', 'SHIFT', 'VERDICT', 'HARVEST', 'INSPECTION'];
   var G_PREMISE = ['the game of adjustable rates', 'spring loaded recliner action', 'first to the good casserole wins', 'a family laugh riot, allegedly', 'bid, bribe, and portage', 'one die is loaded and the rules know it', 'the long game of long weekends', 'contains real paperwork', 'somebody always flips the board', 'the rules are four pages and two of them are apologies', 'ends when a parent says it ends', 'includes a timer nobody trusts'];
   function gameName(r) {
-    var p = r(9);
-    if (p === 0) return pick(r, G_FLAT);
-    if (p === 1) return pick(r, G_NOUN) + ' PANIC!';
-    if (p === 2) return pick(r, G_NOUN) + ' BARONS OF ' + pick(r, G_PLACE);
-    if (p === 3) return 'DON’T WAKE ' + pick(r, G_REL) + ' ' + pick(r, G_NAME);
-    if (p === 4) return 'THE ' + pick(r, G_NOUN) + ' GAME';
-    if (p === 5) return pick(r, G_NOUN) + ' TYCOON';
-    if (p === 6) return 'ESCAPE FROM THE ' + pick(r, G_NOUN);
-    if (p === 7) return 'WHO TOOK THE ' + pick(r, G_NOUN) + '?';
-    return pick(r, G_NOUN) + ': THE GATHERING ' + pick(r, G_STORM);
+    if (r(CLASSIC_ODDS) === 0) return pick(r, G_FLAT);
+    var p = r(10);
+    if (p === 0) return pick(r, G_NOUN) + ' PANIC!';
+    if (p === 1) return pick(r, G_NOUN) + ' BARONS OF ' + pick(r, G_PLACE);
+    if (p === 2) return 'DON’T WAKE ' + pick(r, G_REL) + ' ' + pick(r, G_NAME);
+    if (p === 3) return 'THE ' + pick(r, G_ADJ) + ' ' + pick(r, G_NOUN) + ' GAME';
+    if (p === 4) return pick(r, G_NOUN) + ' TYCOON';
+    if (p === 5) return 'ESCAPE FROM THE ' + pick(r, G_NOUN);
+    if (p === 6) return 'WHO TOOK THE ' + pick(r, G_NOUN) + '?';
+    if (p === 7) return pick(r, G_NOUN) + ': THE GATHERING ' + pick(r, G_STORM);
+    if (p === 8) return pick(r, G_ADJ) + ' ' + pick(r, G_NOUN) + ' CHAMPIONSHIP';
+    return pick(r, G_NOUN) + ' AND ' + pick(r, G_NOUN);
   }
   function game(h) {
     var r = stream(h, 'game');
@@ -273,15 +285,16 @@
   var C_SITUATION = ['MORNING SITUATION', 'BREAKFAST PROGRAM', 'DAILY REQUIREMENT', 'FIBRE PLAN', 'GOOD START'];
   var C_CLAIMS = ['NOW WITH MORE HAT', 'the cereal of the space program’s contractors', 'he counts the marshmallows so you don’t have to', 'part of this complete situation', 'FREE PRIZE INSIDE (prize is a coupon for the prize)', 'stays crunchy through most of it', 'shapes may have settled into one shape', 'fortified with things the box does not name', 'the spoon is on the back, cut it out', 'now 4% larger box, same cereal', 'as seen during the weather'];
   function cerealName(r) {
+    if (r(CLASSIC_ODDS) === 0) return pick(r, C_FLAT);
     var p = r(8);
-    if (p === 0) return pick(r, C_FLAT);
-    if (p === 1) return pick(r, C_ADJ) + ' ' + pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
-    if (p === 2) return pick(r, C_ADJ) + ' ' + pick(r, C_VESSEL);
-    if (p === 3) return pick(r, C_BASE) + ' ' + pick(r, C_RANK);
-    if (p === 4) return 'BREAKFAST ' + pick(r, C_CREATURE) + 'S';
-    if (p === 5) return pick(r, C_HONORIFIC) + ' ' + pick(r, C_SURNAME) + '’S ' + pick(r, C_SITUATION);
-    if (p === 6) return pick(r, C_ADJ) + ' ' + pick(r, C_GRAIN);
-    return pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
+    if (p === 0) return pick(r, C_ADJ) + ' ' + pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
+    if (p === 1) return pick(r, C_ADJ) + ' ' + pick(r, C_VESSEL);
+    if (p === 2) return pick(r, C_BASE) + ' ' + pick(r, C_RANK);
+    if (p === 3) return 'BREAKFAST ' + pick(r, C_CREATURE) + 'S';
+    if (p === 4) return pick(r, C_HONORIFIC) + ' ' + pick(r, C_SURNAME) + '’S ' + pick(r, C_SITUATION);
+    if (p === 5) return pick(r, C_ADJ) + ' ' + pick(r, C_GRAIN);
+    if (p === 6) return pick(r, C_CREATURE) + ' ' + pick(r, C_GRAIN);
+    return pick(r, C_ADJ) + ' ' + pick(r, C_BASE) + ' ' + pick(r, C_GRAIN);
   }
   function cereal(h) {
     var r = stream(h, 'cereal');

@@ -210,7 +210,7 @@ function phaseQuestion(){
   var oh='';
   for(var i=0;i<shuffled[qi].length;i++) oh+='<div class="fr-opt">'+esc(shuffled[qi][i])+'</div>';
   $('fr-qopts').innerHTML=oh;
-  $('fr-qin').textContent='0 of '+living().length+' answered';
+  $('fr-qin').textContent='0 of '+livingHere().length+' answered';
 
   PartyShell.setPhase('question',{num:qi+1,total:MAX_Q,q:veiled?null:q.q,
     options:shuffled[qi],power:power,powerName:def?def.name:null,frozen:frozen,veiled:veiled});
@@ -310,14 +310,21 @@ function phasePodium(){
      deserves the screen as much as the survivor does */
   var gh=ghosts(), coldest=null;
   for(var g=0;g<gh.length;g++) if(coldest===null||(scores[gh[g]]||0)>(scores[coldest]||0)) coldest=gh[g];
-  var wl='';
-  if(winner) wl+='<div class="fr-survivor">'+esc(names[winner])+' outlasted the frost.</div>';
-  else wl+='<div class="fr-survivor">The frost took everyone.</div>';
+  var wl='', survivorLine;
+  if(winner) survivorLine=esc(names[winner])+' outlasted the frost.';
+  else if(live.length>1){
+    var nm=[]; for(var v=0;v<live.length;v++) nm.push(esc(names[live[v]]));
+    survivorLine='The questions ran out first. '+
+      nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1]+' are still standing.';
+  }
+  else survivorLine='The frost took everyone.';
+  wl+='<div class="fr-survivor">'+survivorLine+'</div>';
   if(coldest) wl+='<div class="fr-coldest">Coldest of the Frost: '+esc(names[coldest])+'</div>';
   $('fr-winline').innerHTML=wl;
 
   PartyShell.setPhase('podium',{scores:scores,names:names,frozen:frozen,
-    winner:winner?names[winner]:null});
+    winner:winner?names[winner]:null,
+    survivors:live.map(function(x){return names[x];})});
   PartyShell.gameComplete(results);
   $('fr-again').onclick=function(){ startGame(PartyShell.players()); };
   $('fr-other').onclick=function(){ PartyShell.backToPicker(); };

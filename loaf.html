@@ -1819,7 +1819,9 @@ function mint(g, url, meter, dna){
   /* her poem, fixed at mint so the card never changes under her owner */
   card.poem = poemFor(card);
   const all = Store.update(list => {
-    card.serial = list.length + 1;
+    /* a high water mark, not a count: removing a card used to hand the next
+       scan a serial that another cat already wears */
+    card.serial = list.reduce((m, c) => Math.max(m, +c.serial || 0), 0) + 1;
     return [card].concat(list);
   });
   Hooks.onCardMinted(card);
@@ -4097,7 +4099,12 @@ const Room = (() => {
     if (!drag || !card) return;
     const d = drag; drag = null;
     const t = TOYS.find(x => x.k === tool) || TOYS[0];
-    if (t.laser || t.pond || t.beans) return;  /* those live in the 3D room */
+    if (t.laser || t.pond || t.beans){
+      /* ⛔ these three used to return in silence, so the button looked broken.
+         Say what is actually true. */
+      setNote('The laser, the pond and the beans need her 3D body, and it has not arrived on this device yet.');
+      return;
+    }
     if (t.cost > pet.kibble) return;
     if (t.cost){ pet.kibble -= t.cost; }
     const vx = (d.x - d.x0) * 0.16, vy = (d.y - d.y0) * 0.16;
@@ -5478,6 +5485,17 @@ function setTab(next){
 }
 $('tabScan').onclick = () => setTab('scan');
 $('tabRoom').onclick = () => setTab('room');
+/* She finished loading after the player already walked into the room. Move
+   her in, rather than leaving them with the flat drawing until they think to
+   switch tabs twice. */
+window.addEventListener('loaf:3dready', () => {
+  const c = (Room && Room.card) || current || Store.read()[0];
+  $('faceflip').classList.toggle('hidden', !(window.LoafCat3D && LoafCat3D.snapshot));
+  if (!c) return;
+  if (tab === 'room' && Room.card){ Room.stop(); Room.open(Room.card); }
+  if (!$('tunerBody').classList.contains('hidden')) Tuner.open(c);
+  if (!$('tricksBody').classList.contains('hidden')) Tricks.open(c);
+});
 /* A backgrounded tab should not run a physics loop. */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) Room.stop();
@@ -5793,7 +5811,13 @@ if (stage) (async () => {
   const coatCanvas = document.createElement('canvas');
   let coatTex = null;
   function paintCoat(d, size){
-    if (!MAPS.pos || !coatMat || !window.LOAF || !window.LOAF.OK) return;
+    if (!coatMat || !window.LOAF || !window.LOAF.OK) return;
+    if (!MAPS.pos){
+      /* no position bake, so no body-space painting is possible. She still
+         gets her own base colour rather than the material's grey. */
+      if (d && d.base){ coatMat.map = null; coatMat.color.set(d.base); coatMat.needsUpdate = true; }
+      return;
+    }
     const M = MAPS.size, step = M / size;
     coatCanvas.width = coatCanvas.height = size;
     const ctx = coatCanvas.getContext('2d');
@@ -6130,7 +6154,11 @@ if (stage) (async () => {
     clearTimeout(paintT);
     paintT = setTimeout(() => { try { paintCoat(liveDNA, 512); } catch (e) {} }, 260);
   }
-  try { bakeMaps(); } catch (e) {}
+  /* ⛔ this used to be catch (e) {} and nothing else. A failed bake means the
+     coat painter returns early FOREVER and she renders in the bare material:
+     a plausible grey cat that is not the owner's cat, with nothing logged
+     anywhere. Record it, and wear her own colour instead. */
+  try { bakeMaps(); } catch (e) { MAPS.fail = String((e && e.message) || e); }
 
   const mixer = new THREE.AnimationMixer(gltf.scene);
   const clips = {};
@@ -7752,6 +7780,15 @@ if (stage) (async () => {
   if (flat) flat.classList.add('hidden');
   size();
   play('Idle');
+
+  /* ⛔ THE COLD START RACE. LoafCat3D is only assigned after three.js and a
+     715KB GLB have landed, and Room.open picks the 2D fallback if it is not
+     there yet. Tap "The room" first and the player used to keep the flat
+     drawing for the whole session, with tricks, laser, pond and beans all
+     missing and a panel telling them their device could not do it. Say out
+     loud that she has arrived so the room can put her in it. */
+  try { window.dispatchEvent(new CustomEvent('loaf:3dready')); }
+  catch (e) { const ev = document.createEvent('Event'); ev.initEvent('loaf:3dready', false, false); window.dispatchEvent(ev); }
 
   const _eu = new THREE.Euler(), _q = new THREE.Quaternion(), _qUndo = new THREE.Quaternion(),
         _v3 = new THREE.Vector3();
