@@ -680,7 +680,7 @@
     // still ask "is home clear yet" without guessing at geometry.
     if (w.el.setAttribute) w.el.setAttribute('data-lwfb-yield', '1');
     if (w.state !== 'hidden') w.hiddenAt = Date.now();
-    w.state = 'hidden'; w.anchor = null;
+    w.state = 'hidden'; w.tier = null;
   }
   function fyYield(w, vw, vh) {
     var size = w.size;
@@ -738,7 +738,7 @@
 
     if (!home.blocked) {
       w.clearRun++;
-      if (w.state !== 'home' && w.clearRun >= FY.CLEAR_STREAK) fyGoHome(w);
+      if (w.state !== 'home' && w.clearRun >= FY.CLEAR_STREAK) fyGoHome(w, true);
       return { blocked: false, state: w.state, probes: home.probes };
     }
 
@@ -746,14 +746,16 @@
     if (w.state === 'home') {
       fyYield(w, vw, vh);
     } else if (w.state === 'parked') {
+      // Re-park only if something TAPPABLE has arrived under us. Content
+      // drifting past a parked chip is cosmetic; chasing it would make the chip
+      // hop on every scroll, which is its own kind of broken.
       var here = fyRect(w.el);
       if (here) {
         var cur = { left: here.left - w.size.offX, top: here.top - w.size.offY,
                     right: here.left - w.size.offX + w.size.width,
                     bottom: here.top - w.size.offY + w.size.height,
                     width: w.size.width, height: w.size.height };
-        var b2 = fyBlockedAt(cur, w.el, vw, vh, 'control');
-        if (b2.blocked && !b2.unavailable) fyYield(w, vw, vh);
+        if (fySpotClass(cur, w.el, vw, vh) === 'blocked') fyYield(w, vw, vh);
       }
     } else if (w.state === 'hidden') {
       // ⛔ THE CEILING. Nothing in this file may leave the fab invisible longer
@@ -766,7 +768,7 @@
         fyYield(w, vw, vh);   // an anchor may have freed up
       }
     }
-    return { blocked: true, why: home.why, state: w.state, anchor: w.anchor, probes: home.probes };
+    return { blocked: true, why: home.why, state: w.state, tier: w.tier, probes: home.probes };
   }
 
   function fyOnError(e) {
@@ -907,7 +909,8 @@
       scan: fyScan, tick: fyTick, bump: fyBump, watcher: function () { return watch; },
       state: function () { return watch ? (watch.off ? 'off:' + watch.state : watch.state) : 'unmounted'; },
       blockedAt: fyBlockedAt, isControl: fyIsControl, visible: fyVisible,
-      measure: fyMeasure, goHome: fyGoHome, FY: FY, ANCHORS: FY_ANCHORS
+      measure: fyMeasure, goHome: fyGoHome, FY: FY,
+      candidates: fyCandidates, spotClass: fySpotClass
     }
   };
 })();
