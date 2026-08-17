@@ -46,7 +46,7 @@ while ((s = secRe.exec(hub))) {
     }
     APPS[slug] = { name, line, shared: !!shared,
       url: `${ORIGIN}/${slug}/`,
-      art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=2' };
+      art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=3' };
     slugs.push(slug);
   }
   CATS.push({ title, slugs });
@@ -57,7 +57,7 @@ if (swsCount < 24) { console.error(`only ${swsCount} apps parsed from the hub �
 /* Hush is the one Arcade-side tool that lives here — Stephen: "can't sleep,
    we've got stuff for that". PadLab / Grow Your Name / Times Table Quest
    belong in the Arcade (his call, round two). */
-const HUSH = { name: 'Hush', line: 'A sleep sound machine that is honest about the science — settles the room, then lets it go quiet. Free, offline, no ads.', url: '/hush/', art: '/hush/icon-192.png' };
+const HUSH = { name: 'Hush', line: 'A sleep sound machine that is honest about the science — settles the room, then lets it go quiet. Free, offline, no ads.', url: '/hush/', art: '/portal-assets/sws-thumbs/hush.png' };
 if (!existsSync(join(REPO, HUSH.art))) { console.error('MISSING: hush icon'); process.exit(1); }
 const total = swsCount + 1;
 
