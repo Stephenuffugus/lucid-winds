@@ -896,7 +896,11 @@ function build() {
   n.pulseGain = ctx.createGain();
   n.pulseLfo = ctx.createOscillator(); n.pulseDepth = ctx.createGain();
 
-  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 110; n.heartLp.Q.value = .8;
+  /* 320, not 110: the knock component of the thump lives at 230-340 Hz, and
+     it is the only part of a heartbeat a phone speaker can say at all.
+     Measured through a 250 Hz speaker model: 7 dB more beat than the old
+     low-passed-noise thump, before the bed duck adds its masking release. */
+  n.heartLp = ctx.createBiquadFilter(); n.heartLp.type = "lowpass"; n.heartLp.frequency.value = 320; n.heartLp.Q.value = .8;
   n.heartGain = ctx.createGain(); n.heartGain.gain.value = 0;
 
   n.swGain = ctx.createGain(); n.swGain.gain.value = 0;   // slow-wave burst bus
@@ -1029,7 +1033,7 @@ function apply() {
   else { P(n.pulseDepth.gain, 0); P(n.pulseGain.gain, 1); }
   heartBpm = 40 + (S.prate/100)*100;
   heartAmt = pamt;
-  P(n.heartGain.gain, S.pulse === "heart" ? 0.9 : 0, .1);
+  P(n.heartGain.gain, S.pulse === "heart" ? 1.15 : 0, .1);
 
   // character layer: rebuild when the character changes, retune when it hasn't
   if (chrNodes ? chrNodes._chr !== S.chr : S.chr !== "off") chrBuild();
@@ -1069,22 +1073,50 @@ function setVolume() {
 /* ---------------- heartbeat ---------------- */
 let heartBpm = 72, heartAmt = .5, heartTimer = null, nextBeat = 0, thumpBufs = null;
 function makeThumps() {
-  const sr = ctx.sampleRate, len = Math.floor(sr*0.16);
-  thumpBufs = [0,1,2].map(() => {
+  /* Two components per thump, because a heartbeat heard through a belly has
+     two jobs: a BODY (a falling 90 to 46 Hz sine you feel on anything with a
+     woofer) and a KNOCK (a damped ~200 Hz tap that survives a phone speaker,
+     which reproduces almost nothing below 180 Hz). The old thump was
+     low-passed noise: plausible on monitors, SILENT on the phone lying next
+     to the crib, which is exactly where Stephen heard nothing. */
+  const sr = ctx.sampleRate, len = Math.floor(sr*0.24);
+  thumpBufs = [0,1,2].map(v => {
     const b = ctx.createBuffer(1,len,sr), d = b.getChannelData(0);
-    let last = 0;
-    for (let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.06*w)/1.06; d[i]=last*6*Math.pow(1-i/len,3.2); }
+    const f0 = 88+v*5, f1 = 46, knock = 235+v*12;
+    let ph = 0;
+    for (let i=0;i<len;i++){
+      const t = i/sr, u = i/len;
+      const f = f1 + (f0-f1)*Math.exp(-t*22);
+      ph += 2*Math.PI*f/sr;
+      const body = Math.sin(ph) * Math.exp(-t*13);
+      const kn = Math.sin(2*Math.PI*knock*t) * Math.exp(-t*34) * .75
+               + Math.sin(2*Math.PI*340*t) * Math.exp(-t*60) * .30;
+      d[i] = (body + kn) * (1-u) * .65;
+    }
     return b;
   });
+}
+function duckBed(t) {
+  /* The bed steps aside for each beat: a short dip in the very band the womb
+     bed is loudest in, so the thump reads through instead of drowning. This
+     is the trick every serious generated womb track uses. */
+  const g = nodes.pulseGain.gain, dip = 1 - heartAmt*.28;
+  try {
+    g.setTargetAtTime(dip, t, .015);
+    g.setTargetAtTime(1, t + .1, .09);
+  } catch {}
 }
 function heartTick() {
   if (!ctx || !playing || S.pulse !== "heart") return;
   const period = 60 / heartBpm;
+  // a stale cursor (stop/start, suspended tab) must snap forward, not replay
+  if (nextBeat < ctx.currentTime) nextBeat = ctx.currentTime + .05;
   // 1.6 s of look ahead: a hidden tab throttles the 200 ms tick to about 1 Hz,
   // and anything shorter than that queues beats in the past, which arrive in a
   // clump. The heart is meant to be the steadiest thing in the room.
   while (nextBeat < ctx.currentTime + 1.6) {
     thump(nextBeat, 1.0); thump(nextBeat + period*0.31, 0.62);
+    duckBed(nextBeat);
     nextBeat += period;
   }
 }
@@ -1636,13 +1668,17 @@ function mediaSession() {
 
 /* ---------------- sound presets ---------------- */
 const PRESETS = [
-  { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:22, rate:8, depth:60, fb:20, pulse:"heart", prate:32, pamt:75, chr:"womb", clvl:55, vol:22 } },
-  { id:"newborn", name:"Newborn sleep", d:{ noise:"brown", tilt:-35, mix:14, rate:6, depth:50, fb:14, pulse:"waves", prate:12, pamt:35, vol:20 } },
+  /* The comb (mix/depth/fb) used to do the heavy lifting on these, and a comb
+     sweep on noise is the definition of a flanger — Stephen heard it in one
+     listen. The beds are now mostly still; the character layers carry the
+     identity, with just enough comb left to keep each bed from being static. */
+  { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:10, rate:6, depth:35, fb:10, pulse:"heart", prate:32, pamt:85, chr:"womb", clvl:60, vol:22 } },
+  { id:"newborn", name:"Newborn sleep", d:{ noise:"brown", tilt:-35, mix:8, rate:6, depth:30, fb:8, pulse:"waves", prate:12, pamt:35, vol:20 } },
   { id:"shush", name:"Shush", d:{ noise:"pink", tilt:18, tuneMode:"boost", freq:1100, amt:30, q:22, pulse:"shush", prate:34, pamt:70, vol:22 } },
-  { id:"carride", name:"Car ride", d:{ noise:"brown", tilt:-42, tuneMode:"boost", freq:90, amt:26, q:18, mix:30, rate:4, depth:70, fb:28, chr:"car", clvl:50, vol:24 } },
-  { id:"rain", name:"Rain", d:{ noise:"pink", tilt:34, mix:26, rate:22, depth:38, fb:22, chr:"rain", clvl:55, vol:24 } },
-  { id:"ocean", name:"Ocean", d:{ noise:"pink", tilt:6, mix:40, rate:6, depth:80, fb:34, chr:"surf", clvl:60, vol:24 } },
-  { id:"fan", name:"Box fan", d:{ noise:"brown", tilt:-14, tuneMode:"boost", freq:220, amt:22, q:34, mix:18, rate:30, depth:26, fb:40, chr:"fan", clvl:45, vol:26 } },
+  { id:"carride", name:"Car ride", d:{ noise:"brown", tilt:-42, tuneMode:"boost", freq:90, amt:26, q:18, mix:12, rate:4, depth:40, fb:14, chr:"car", clvl:50, vol:24 } },
+  { id:"rain", name:"Rain", d:{ noise:"pink", tilt:24, mix:10, rate:22, depth:38, fb:10, chr:"rain", clvl:55, vol:24 } },
+  { id:"ocean", name:"Ocean", d:{ noise:"pink", tilt:6, mix:14, rate:6, depth:30, fb:12, chr:"surf", clvl:60, vol:24 } },
+  { id:"fan", name:"Box fan", d:{ noise:"brown", tilt:-14, tuneMode:"boost", freq:220, amt:22, q:34, mix:14, rate:30, depth:26, fb:30, chr:"fan", clvl:45, vol:26 } },
   { id:"brown", name:"Brown noise", d:{ noise:"brown", tilt:-18, vol:22 } },
   { id:"nursery", name:"Nursery hum", d:{ noise:"grey", tilt:-20, mix:10, rate:5, depth:40, fb:12, vol:18 } },
   { id:"deepbed", name:"Deep bed", d:{ noise:"pink", tilt:-30, mix:12, rate:4, depth:44, fb:14, pulse:"waves", prate:5, pamt:28, vol:20 } },
@@ -2189,7 +2225,7 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=2").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3").catch(()=>{}));
   }
 })();
 
