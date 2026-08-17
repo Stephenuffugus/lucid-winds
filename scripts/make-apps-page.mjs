@@ -46,7 +46,7 @@ while ((s = secRe.exec(hub))) {
     }
     APPS[slug] = { name, line, shared: !!shared,
       url: `${ORIGIN}/${slug}/`,
-      art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=3' };
+      art: (existsSync(png) ? `/portal-assets/sws-thumbs/${slug}.png` : `/portal-assets/sws-thumbs/${slug}.svg`) + '?v=4' };
     slugs.push(slug);
   }
   CATS.push({ title, slugs });
