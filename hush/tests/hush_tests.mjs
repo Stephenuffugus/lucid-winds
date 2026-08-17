@@ -136,6 +136,7 @@ function makeBox(src, extra) {
     "const PHI = 1.6180339887;",
     grabConst(src, "s2f"), grabConst(src, "f2s"),
     grabConst(src, "NOISES"), grabConst(src, "TUNE_MODES"), grabConst(src, "PULSES"),
+    grabConst(src, "CHRS"),
     grabConst(src, "BEATS"), grabConst(src, "VIZ_MODES"), grabConst(src, "SCALES"),
     grabConst(src, "PRESETS"), grabConst(src, "VOICE_PRESETS"), grabConst(src, "PROGRAMS"),
     grabConst(src, "SOUND_DEFAULTS"), grabConst(src, "SAVE_RANGES"),
@@ -492,8 +493,11 @@ function run(src, workerSrc) {
 
   // and now actually run it: fire activate against a fleet's worth of caches
   const deleted = [];
+  // The "current" entry tracks the worker's real SHELL_VERSION, so bumping
+  // the version does not quietly turn this into a test of the previous one.
+  const curShell = (w.match(/SHELL_VERSION = "([^"]+)"/) || [, "hush-shell-v1"])[1];
   const fleet = ["padlab-shell-v10", "sws-portal-v4", "bandits-box-v2", "sw_sb_index.html",
-                 "hush-shell-v0", "hush-shell-v1", "workbox-precache"];
+                 "hush-shell-v0", curShell, "workbox-precache"];
   const listeners = {};
   const wbox = {
     console,

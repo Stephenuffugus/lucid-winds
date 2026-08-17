@@ -372,6 +372,10 @@ body.simple .actions{margin-bottom:14px}
       <div class="row"><div class="lab"><span>Amount</span><span id="v-pamt">50%</span></div>
         <input type="range" id="pamt" min="0" max="100" value="50" aria-label="Pulse amount"></div>
       <p class="hint"><b>Heartbeat</b> is a filtered low thump at a resting maternal rate. <b>Shush</b> is the rhythmic hiss caregivers make instinctively. <b>Waves</b> is a slow swell. <b>Breathe</b> swells at 5.5 cycles a minute, so you can pace your own breathing to it.</p>
+      <div class="grid" id="chrGrid" style="margin-top:14px"></div>
+      <div class="row"><div class="lab"><span>Texture level</span><span id="v-clvl">50%</span></div>
+        <input type="range" id="clvl" min="0" max="100" value="50" aria-label="Texture level"></div>
+      <p class="hint">Texture is what makes a sound <i>itself</i> instead of another shade of noise: the womb's blood-flow swoosh pumping at the heartbeat's own rate, an engine under the road with cars that occasionally pass, raindrops that actually patter, waves that build and break, the flutter of fan blades. Generated live like everything here. No recordings.</p>
     </div>
   </section>
 
@@ -724,7 +728,7 @@ const S = {
   noise: "brown", tilt: 0,
   freq: 440, tuneMode: "off", amt: 0, q: 30, phiStack: false,
   mix: 0, rate: 18, depth: 45, fb: 30, combLock: false, phiDrift: false,
-  pulse: "off", prate: 30, pamt: 50,
+  pulse: "off", prate: 30, pamt: 50, chr: "off", clvl: 50,
   swOn: false, swrate: 80, swblock: 20, swlvl: 35,
   beatBand: "theta", carrier: 35, beat: 20, tlvl: 0, iso: false,
   timer: 0, fade: 30, wake: false,
@@ -758,7 +762,7 @@ let sharedPick = null;
 const SAVE_RANGES = {
   tilt:[-100,100], freq:[20,16000], amt:[0,100], q:[0,100],
   mix:[0,100], rate:[0,100], depth:[0,100], fb:[0,92],
-  prate:[0,100], pamt:[0,100], swrate:[40,120], swblock:[0,100], swlvl:[0,100],
+  prate:[0,100], pamt:[0,100], clvl:[0,100], swrate:[40,120], swblock:[0,100], swlvl:[0,100],
   carrier:[0,100], beat:[0,100], tlvl:[0,100],
   timer:[0,720], fade:[0,100], cal:[70,130], sens:[0,100], lift:[0,100],
   vol:[0,100], vlvl:[0,100], vdens:[0,100], vbpm:[0,100]
@@ -795,6 +799,7 @@ function sanitiseEnums() {
     noise: NOISES.map(x => x.id),
     tuneMode: TUNE_MODES.map(x => x.id),
     pulse: PULSES.map(x => x.id),
+    chr: CHRS.map(x => x.id),
     beatBand: BEATS.map(x => x.id),
     vscale: Object.keys(SCALES),
     voice: ["off"].concat(VOICE_PRESETS.map(v => v.voice)),
@@ -1026,6 +1031,13 @@ function apply() {
   heartAmt = pamt;
   P(n.heartGain.gain, S.pulse === "heart" ? 0.9 : 0, .1);
 
+  // character layer: rebuild when the character changes, retune when it hasn't
+  if (chrNodes ? chrNodes._chr !== S.chr : S.chr !== "off") chrBuild();
+  else if (chrNodes) {
+    P(chrNodes.out.gain, chrGainFor(S.chr), .2);
+    if (S.chr === "womb" && chrNodes.lfo) P(chrNodes.lfo.frequency, heartBpm/60, .1);
+  }
+
   P(n.swGain.gain, S.swOn ? Math.pow(S.swlvl/100, 2) * 0.55 : 0, .1);
 
   const carrier = 40 * Math.pow(25, S.carrier/100);
@@ -1082,6 +1094,160 @@ function thump(t, amp) {
   const g = ctx.createGain(); g.gain.value = heartAmt * amp;
   s.connect(g); g.connect(nodes.heartLp); s.start(t);
   flashQueue.push({ t, amp });
+}
+
+/* ---------------- character layers ----------------
+   Stephen (2026-08-17): "so many of the sounds sound exactly the same…
+   the womb and car ride… we need uniqueness and depth and quality."
+   He was right: every preset was the same noise bed in different EQ.
+   The bed gives a sound its weather; a character gives it its NAME —
+   a small procedural layer of continuous texture and scheduled events,
+   through one bus into the master chain so the timer fade, programs,
+   the nursery cap and adaptive masking all still govern it. Everything
+   is synthesised live; there are still no recordings in this app. */
+let chrNodes = null, chrEvNext = 0, chrEv2Next = 0, dropNext = 0, plopNext = 0, dropBufs = null;
+
+function chrLevel() { return Math.pow((S.clvl == null ? 50 : S.clvl) / 100, 1.6); }
+function chrGainFor(chr) {
+  const l = chrLevel();
+  return chr === "womb" ? l*1.1 : chr === "car" ? l*.9 : chr === "fan" ? l*.7 : l;
+}
+function chrTeardown() {
+  if (!chrNodes) return;
+  const dead = chrNodes; chrNodes = null;
+  try { dead.out.gain.setTargetAtTime(0, ctx.currentTime, .08); } catch {}
+  setTimeout(() => { Object.keys(dead).forEach(k => {
+    const nd = dead[k]; if (!nd || k === "_chr") return;
+    try { nd.stop && nd.stop(); } catch {} try { nd.disconnect && nd.disconnect(); } catch {}
+  }); }, 500);
+}
+function chrBuild() {
+  chrTeardown();
+  if (!ctx || !nodes || S.chr === "off") return;
+  const c = { _chr: S.chr, out: ctx.createGain() };
+  c.out.gain.value = 0;
+  c.out.connect(nodes.master);
+  if (S.chr === "womb") {
+    /* The placental swoosh: a band of the bed noise, pumped at the same
+       rate as the heartbeat. This rhythm-lock is what reads as "womb"
+       rather than "dark noise" — real recordings whoosh at the pulse. */
+    c.bp = ctx.createBiquadFilter(); c.bp.type = "bandpass"; c.bp.frequency.value = 260; c.bp.Q.value = 1.1;
+    c.am = ctx.createGain(); c.am.gain.value = .3;
+    c.lfo = ctx.createOscillator(); c.lfo.frequency.value = heartBpm/60;
+    c.lfoDepth = ctx.createGain(); c.lfoDepth.gain.value = .55;
+    nodes.phi2.connect(c.bp); c.bp.connect(c.am); c.am.connect(c.out);
+    c.lfo.connect(c.lfoDepth); c.lfoDepth.connect(c.am.gain); c.lfo.start();
+  } else if (S.chr === "car") {
+    // the engine under the road: two soft partials with a slow rev wobble
+    c.o1 = ctx.createOscillator(); c.o1.type = "sawtooth"; c.o1.frequency.value = 52;
+    c.o2 = ctx.createOscillator(); c.o2.type = "sine"; c.o2.frequency.value = 104;
+    c.g1 = ctx.createGain(); c.g1.gain.value = .05; c.g2 = ctx.createGain(); c.g2.gain.value = .03;
+    c.lp = ctx.createBiquadFilter(); c.lp.type = "lowpass"; c.lp.frequency.value = 140; c.lp.Q.value = .6;
+    c.wob = ctx.createOscillator(); c.wob.frequency.value = .07;
+    c.wobD = ctx.createGain(); c.wobD.gain.value = 1.4;
+    c.thLp = ctx.createBiquadFilter(); c.thLp.type = "lowpass"; c.thLp.frequency.value = 95; // seam thumps
+    c.o1.connect(c.g1); c.o2.connect(c.g2); c.g1.connect(c.lp); c.g2.connect(c.lp); c.lp.connect(c.out);
+    c.thLp.connect(c.out);
+    c.wob.connect(c.wobD); c.wobD.connect(c.o1.frequency);
+    c.o1.start(); c.o2.start(); c.wob.start();
+  } else if (S.chr === "fan") {
+    // blade flutter on a slice of the bed, over a faint motor hum
+    c.bp = ctx.createBiquadFilter(); c.bp.type = "bandpass"; c.bp.frequency.value = 310; c.bp.Q.value = .9;
+    c.am = ctx.createGain(); c.am.gain.value = .5;
+    c.lfo = ctx.createOscillator(); c.lfo.frequency.value = 19.4;
+    c.lfoDepth = ctx.createGain(); c.lfoDepth.gain.value = .16;
+    c.h1 = ctx.createOscillator(); c.h1.frequency.value = 120; c.h1g = ctx.createGain(); c.h1g.gain.value = .016;
+    c.h2 = ctx.createOscillator(); c.h2.frequency.value = 240; c.h2g = ctx.createGain(); c.h2g.gain.value = .008;
+    nodes.phi2.connect(c.bp); c.bp.connect(c.am); c.am.connect(c.out);
+    c.lfo.connect(c.lfoDepth); c.lfoDepth.connect(c.am.gain);
+    c.h1.connect(c.h1g); c.h2.connect(c.h2g); c.h1g.connect(c.out); c.h2g.connect(c.out);
+    c.lfo.start(); c.h1.start(); c.h2.start();
+  }
+  // rain and surf are pure event characters; the bus is all they need
+  chrNodes = c;
+  P(c.out.gain, chrGainFor(S.chr), .3);
+  const t = ctx.currentTime;
+  chrEvNext = t + 1.5; chrEv2Next = t + 4; dropNext = t + .2; plopNext = t + 2;
+}
+function makeDrops() {
+  const sr = ctx.sampleRate;
+  dropBufs = [0,1,2,3].map(k => {
+    const f = 2200 + k*850 + Math.random()*300, len = Math.floor(sr*.04);
+    const b = ctx.createBuffer(1,len,sr), d = b.getChannelData(0);
+    for (let i=0;i<len;i++){ const e = Math.pow(1-i/len, 5); d[i] = (Math.sin(2*Math.PI*f*i/sr)*.7 + (Math.random()*2-1)*.3) * e * .8; }
+    return b;
+  });
+}
+function chrDrop(t) {
+  const s = ctx.createBufferSource(); s.buffer = dropBufs[(Math.random()*dropBufs.length)|0];
+  s.playbackRate.value = .75 + Math.random()*1.1;
+  const g = ctx.createGain(); g.gain.value = .04 + Math.random()*.22;
+  s.connect(g);
+  let tail = g;
+  if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.random()*1.6-.8; g.connect(p); tail = p; }
+  tail.connect(chrNodes.out); s.start(t);
+}
+function chrPlop(t) { // the fat drop into the puddle
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.setValueAtTime(720 + Math.random()*260, t);
+  o.frequency.exponentialRampToValueAtTime(230, t + .09);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.10 + Math.random()*.07, t + .006);
+  g.gain.exponentialRampToValueAtTime(.0001, t + .13);
+  o.connect(g); g.connect(chrNodes.out); o.start(t); o.stop(t + .15);
+}
+function chrSurf(t) { // a wave: slow build, bright break, hissing wash out
+  const bed = buffers[S.noise] || (buffers[S.noise] = makeBuffer(S.noise));
+  const s = ctx.createBufferSource(); s.buffer = bed; s.loop = true;
+  const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = .5;
+  const g = ctx.createGain(); g.gain.value = 0;
+  s.connect(f); f.connect(g); g.connect(chrNodes.out);
+  const build = 2.6 + Math.random()*1.2, wash = 3.4 + Math.random()*1.4, peak = .5 + Math.random()*.18;
+  f.frequency.setValueAtTime(420, t);
+  f.frequency.linearRampToValueAtTime(2400 + Math.random()*900, t + build);
+  f.frequency.exponentialRampToValueAtTime(480, t + build + wash);
+  g.gain.linearRampToValueAtTime(peak, t + build);
+  g.gain.exponentialRampToValueAtTime(.0001, t + build + wash);
+  s.start(t, Math.random()*8); s.stop(t + build + wash + .1);
+}
+function chrPass(t) { // another car goes by, pitch falling away
+  const bed = buffers[S.noise] || (buffers[S.noise] = makeBuffer(S.noise));
+  const s = ctx.createBufferSource(); s.buffer = bed; s.loop = true;
+  const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = .8;
+  const g = ctx.createGain(); g.gain.value = 0;
+  s.connect(f); f.connect(g); g.connect(chrNodes.out);
+  const up = 2.4, down = 3.2;
+  f.frequency.setValueAtTime(900, t);
+  f.frequency.linearRampToValueAtTime(520, t + up + down);
+  g.gain.linearRampToValueAtTime(.16, t + up);
+  g.gain.exponentialRampToValueAtTime(.0001, t + up + down);
+  s.start(t, Math.random()*8); s.stop(t + up + down + .1);
+}
+function chrSeam(t) { // expansion joints: da-dun
+  if (!thumpBufs) makeThumps();
+  [0, .14].forEach((dt, i) => {
+    const s = ctx.createBufferSource(); s.buffer = thumpBufs[(Math.random()*3)|0];
+    const g = ctx.createGain(); g.gain.value = i ? .10 : .16;
+    s.connect(g); g.connect(chrNodes.thLp); s.start(t + dt);
+  });
+}
+function chrTick() {
+  if (!ctx || !playing || !chrNodes || S.chr === "off") return;
+  const t = ctx.currentTime, horizon = t + 1.6;
+  // a suspended tab leaves the cursors in the past; snap forward, never clump
+  if (dropNext < t) dropNext = t + .1;
+  if (plopNext < t) plopNext = t + .5;
+  if (chrEvNext < t) chrEvNext = t + 1;
+  if (chrEv2Next < t) chrEv2Next = t + 2;
+  if (S.chr === "rain") {
+    if (!dropBufs) makeDrops();
+    while (dropNext < horizon) { chrDrop(dropNext); dropNext += 0.03 + Math.random()*0.14; }
+    while (plopNext < horizon) { chrPlop(plopNext); plopNext += 2.5 + Math.random()*4.5; }
+  } else if (S.chr === "surf") {
+    while (chrEvNext < horizon) { chrSurf(chrEvNext); chrEvNext += 9 + Math.random()*6; }
+  } else if (S.chr === "car") {
+    while (chrEvNext < horizon) { chrPass(chrEvNext); chrEvNext += 18 + Math.random()*24; }
+    while (chrEv2Next < horizon) { chrSeam(chrEv2Next); chrEv2Next += 6 + Math.random()*6; }
+  }
 }
 
 /* ---------------- slow-wave bursts ----------------
@@ -1236,7 +1402,7 @@ async function start() {
   }
   apply(); draw();
   if (heartTimer) clearInterval(heartTimer);
-  heartTimer = setInterval(() => { heartTick(); swTick(); progTick(); adaptTick(); voiceTick(); }, 200);
+  heartTimer = setInterval(() => { heartTick(); swTick(); chrTick(); progTick(); adaptTick(); voiceTick(); }, 200);
   mediaSession();
   if (S.wake) requestWake();
   if (timerEnd) armFade();   // a timer set before playback started still gets its fade
@@ -1470,13 +1636,13 @@ function mediaSession() {
 
 /* ---------------- sound presets ---------------- */
 const PRESETS = [
-  { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:22, rate:8, depth:60, fb:20, pulse:"heart", prate:32, pamt:55, vol:22 } },
+  { id:"womb", name:"Womb", d:{ noise:"brown", tilt:-55, mix:22, rate:8, depth:60, fb:20, pulse:"heart", prate:32, pamt:75, chr:"womb", clvl:55, vol:22 } },
   { id:"newborn", name:"Newborn sleep", d:{ noise:"brown", tilt:-35, mix:14, rate:6, depth:50, fb:14, pulse:"waves", prate:12, pamt:35, vol:20 } },
   { id:"shush", name:"Shush", d:{ noise:"pink", tilt:18, tuneMode:"boost", freq:1100, amt:30, q:22, pulse:"shush", prate:34, pamt:70, vol:22 } },
-  { id:"carride", name:"Car ride", d:{ noise:"brown", tilt:-42, tuneMode:"boost", freq:90, amt:26, q:18, mix:30, rate:4, depth:70, fb:28, vol:24 } },
-  { id:"rain", name:"Rain", d:{ noise:"pink", tilt:34, mix:26, rate:22, depth:38, fb:22, pulse:"waves", prate:38, pamt:22, vol:24 } },
-  { id:"ocean", name:"Ocean", d:{ noise:"pink", tilt:6, mix:40, rate:6, depth:80, fb:34, pulse:"waves", prate:8, pamt:62, vol:24 } },
-  { id:"fan", name:"Box fan", d:{ noise:"brown", tilt:-14, tuneMode:"boost", freq:220, amt:22, q:34, mix:18, rate:30, depth:26, fb:40, vol:26 } },
+  { id:"carride", name:"Car ride", d:{ noise:"brown", tilt:-42, tuneMode:"boost", freq:90, amt:26, q:18, mix:30, rate:4, depth:70, fb:28, chr:"car", clvl:50, vol:24 } },
+  { id:"rain", name:"Rain", d:{ noise:"pink", tilt:34, mix:26, rate:22, depth:38, fb:22, chr:"rain", clvl:55, vol:24 } },
+  { id:"ocean", name:"Ocean", d:{ noise:"pink", tilt:6, mix:40, rate:6, depth:80, fb:34, chr:"surf", clvl:60, vol:24 } },
+  { id:"fan", name:"Box fan", d:{ noise:"brown", tilt:-14, tuneMode:"boost", freq:220, amt:22, q:34, mix:18, rate:30, depth:26, fb:40, chr:"fan", clvl:45, vol:26 } },
   { id:"brown", name:"Brown noise", d:{ noise:"brown", tilt:-18, vol:22 } },
   { id:"nursery", name:"Nursery hum", d:{ noise:"grey", tilt:-20, mix:10, rate:5, depth:40, fb:12, vol:18 } },
   { id:"deepbed", name:"Deep bed", d:{ noise:"pink", tilt:-30, mix:12, rate:4, depth:44, fb:14, pulse:"waves", prate:5, pamt:28, vol:20 } },
@@ -1490,7 +1656,7 @@ const PRESETS = [
 ];
 const SOUND_DEFAULTS = { noise:"brown", tilt:0, freq:440, tuneMode:"off", amt:0, q:30, phiStack:false,
   mix:0, rate:18, depth:45, fb:30, combLock:false, phiDrift:false, pulse:"off", prate:30, pamt:50,
-  beatBand:"theta", carrier:35, beat:20, tlvl:0, iso:false };
+  chr:"off", clvl:50, beatBand:"theta", carrier:35, beat:20, tlvl:0, iso:false };
 
 function applyPreset(id, quiet) {
   const p = PRESETS.find(x => x.id === id); if (!p) return;
@@ -1525,6 +1691,9 @@ const TUNE_MODES = [{id:"off",n:"Off",s:"flat"},{id:"boost",n:"Boost",s:"find a 
 const PULSES = [{id:"off",n:"Off",s:"steady"},{id:"heart",n:"Heartbeat",s:"womb thump"},
   {id:"shush",n:"Shush",s:"rhythmic hiss"},{id:"waves",n:"Waves",s:"slow swell"},
   {id:"breathe",n:"Breathe",s:"5.5 / min"}];
+const CHRS = [{id:"off",n:"Off",s:"clean bed"},{id:"womb",n:"Womb swoosh",s:"blood flow"},
+  {id:"car",n:"Engine",s:"drone + passing"},{id:"rain",n:"Raindrops",s:"real patter"},
+  {id:"surf",n:"Breaking waves",s:"build and wash"},{id:"fan",n:"Fan blades",s:"flutter + hum"}];
 const BEATS = [{id:"delta",n:"Delta",s:"0.5–4 Hz"},{id:"theta",n:"Theta",s:"4–8 Hz"},
   {id:"alpha",n:"Alpha",s:"8–13 Hz"},{id:"beta",n:"Beta",s:"13–30 Hz"}];
 const TIMES = [0,10,15,20,30,45,60,90];
@@ -1550,6 +1719,7 @@ function optGrid(el, items, key, onPick) {
 optGrid($("noiseGrid"), NOISES, "noise", id => { if (ctx) loadNoise(id); apply(); mediaSession(); });
 optGrid($("modeGrid"), TUNE_MODES, "tuneMode", () => apply());
 optGrid($("pulseGrid"), PULSES, "pulse", () => { nextBeat = ctx ? ctx.currentTime+.1 : 0; apply(); });
+optGrid($("chrGrid"), CHRS, "chr", () => apply());
 optGrid($("beatGrid"), BEATS, "beatBand", () => apply());
 
 const progRail = $("progRail");
@@ -1618,6 +1788,7 @@ slider("prate","prate", v => S.pulse==="heart" ? Math.round(40+(v/100)*100)+" bp
   : S.pulse==="shush" ? (0.6+(v/100)*2.2).toFixed(2)+" Hz"
   : S.pulse==="breathe" ? "5.5 / min" : (0.04+(v/100)*0.16).toFixed(3)+" Hz");
 slider("pamt","pamt", v => v+"%");
+slider("clvl","clvl", v => v+"%");
 slider("swrate","swrate", v => (v/100).toFixed(2)+" Hz");
 slider("swblock","swblock", () => { const b = swBlockSec(); return b+" s on / "+b+" s off"; });
 slider("swlvl","swlvl", v => v+"%");
@@ -2018,7 +2189,7 @@ window.addEventListener("keydown", e => {
      so a bare registration would never see an update. Bump in lockstep with
      SHELL_VERSION in sw.js. */
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=1").catch(()=>{}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=2").catch(()=>{}));
   }
 })();
 
@@ -3272,13 +3443,14 @@ if ($("calStart")) {
    The evidence tier travels with the sound in the confirmation line: if we
    are honest about that everywhere else, we are honest about it here too. */
 const SHARE_KEYS = ["noise","tilt","freq","tuneMode","amt","q","phiStack","mix","rate",
-  "depth","fb","combLock","phiDrift","pulse","prate","pamt","swOn","swrate","swblock",
+  "depth","fb","combLock","phiDrift","pulse","prate","pamt","chr","clvl","swOn","swrate","swblock",
   "swlvl","beatBand","carrier","beat","tlvl","iso","voice","vlvl","vdens","vbpm",
   "vscale","preset"];
 const SHARE_ENUMS = {
   noise: NOISES.map(x => x.id),
   tuneMode: TUNE_MODES.map(x => x.id),
   pulse: PULSES.map(x => x.id),
+  chr: CHRS.map(x => x.id),
   beatBand: BEATS.map(x => x.id),
   vscale: Object.keys(SCALES),
   voice: ["off"].concat(VOICE_PRESETS.map(v => v.voice)),
