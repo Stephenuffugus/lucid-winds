@@ -85,9 +85,48 @@ const card = (a, i) => `        <a class="app" style="--i:${i}" href="${a.url}"$
           <small>${a.line}</small>${a.shared ? '\n          <span class="tag">Shared online</span>' : ''}
         </a>`;
 
-/* thin-lined gold filigree, drawn once, repeated down both rails */
+/* Thin-lined gold ornament, eclectic on purpose (Stephen: "a little more
+   eclectic and unique") — one long strip mixing motifs so it reads
+   collected, not tiled: stem, leaf, lozenge, starburst, fern curl,
+   crescent, dot run, diamond chain, mirrored stem. Vertical for the side
+   rails, horizontal for the top and bottom bands, a lozenge for corners. */
 const VINE = "data:image/svg+xml," + encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='26' height='200' viewBox='0 0 26 200' fill='none' stroke='#e4bd5f' stroke-width='1' stroke-linecap='round'><path d='M13 0 C 5 34, 21 66, 13 100 C 5 134, 21 166, 13 200'/><path d='M12 36 C 7 34, 4 30, 4 24 C 10 26, 12 30, 12 36 Z'/><path d='M14 104 C 19 102, 22 98, 22 92 C 16 94, 14 98, 14 104 Z'/><path d='M12 170 C 7 168, 4 164, 4 158 C 10 160, 12 164, 12 170 Z'/><circle cx='13' cy='68' r='1.5'/><circle cx='13' cy='137' r='1.5'/></svg>`);
+  `<svg xmlns='http://www.w3.org/2000/svg' width='26' height='340' viewBox='0 0 26 340' fill='none' stroke='#e4bd5f' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'>` +
+  `<path d='M13 0 C 5 24, 21 46, 13 70'/>` +
+  `<path d='M12 38 C 7 36, 4 31, 4 25 C 10 27, 12 32, 12 38 Z'/>` +
+  `<path d='M13 70 L17 76 L13 82 L9 76 Z'/><circle cx='13' cy='76' r='1.1'/>` +
+  `<path d='M13 82 C 16 90, 10 94, 13 100'/>` +
+  `<path d='M13 102 V106 M13 112 V116 M6 109 H10 M16 109 H20 M8.5 104.5 L11 107 M15 111 L17.5 113.5 M17.5 104.5 L15 107 M11 111 L8.5 113.5'/><circle cx='13' cy='109' r='1.3'/>` +
+  `<path d='M13 118 C 17 126, 9 132, 13 140'/>` +
+  `<path d='M13 140 C 6 154, 20 168, 13 182'/>` +
+  `<path d='M15 158 C 20 156, 23 151, 21 147 C 19 145, 16 148, 18 152'/>` +
+  `<path d='M8 190 Q13 197 18 190'/><path d='M10 192.5 Q13 196.5 16 192.5'/>` +
+  `<circle cx='13' cy='204' r='1.5'/><circle cx='13' cy='210' r='1.1'/><circle cx='13' cy='215' r='0.8'/>` +
+  `<path d='M13 222 L16.5 227.5 L13 233 L9.5 227.5 Z'/><path d='M13 233 L15.5 237.5 L13 242 L10.5 237.5 Z'/>` +
+  `<path d='M13 248 C 21 270, 5 296, 13 318'/>` +
+  `<path d='M14 276 C 19 274, 22 269, 22 263 C 16 265, 14 270, 14 276 Z'/>` +
+  `<circle cx='13' cy='300' r='1.4'/>` +
+  `<path d='M13 318 C 11 326, 15 333, 13 340'/>` +
+  `</svg>`);
+const BAND = "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='340' height='18' viewBox='0 0 340 18' fill='none' stroke='#e4bd5f' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'>` +
+  `<path d='M0 9 C 24 3, 46 15, 70 9'/>` +
+  `<path d='M38 8 C 36 3, 31 1, 25 1 C 27 6, 32 8, 38 8 Z'/>` +
+  `<path d='M70 9 L76 5 L82 9 L76 13 Z'/><circle cx='76' cy='9' r='1.1'/>` +
+  `<path d='M82 9 C 90 12, 94 6, 100 9'/>` +
+  `<path d='M102 9 H106 M112 9 H116 M109 2 V6 M109 12 V16 M104.5 4.5 L107 7 M111 11 L113.5 13.5 M104.5 13.5 L107 11 M111 7 L113.5 4.5'/><circle cx='109' cy='9' r='1.3'/>` +
+  `<path d='M118 9 C 126 5, 132 13, 140 9'/>` +
+  `<path d='M140 9 C 154 2, 168 16, 182 9'/>` +
+  `<path d='M158 7 C 156 2, 151 -1, 147 1 C 145 3, 148 6, 152 4'/>` +
+  `<path d='M190 6 Q197 13 204 6'/><path d='M192.5 8.5 Q197 12.5 201.5 8.5'/>` +
+  `<circle cx='214' cy='9' r='1.5'/><circle cx='220' cy='9' r='1.1'/><circle cx='225' cy='9' r='0.8'/>` +
+  `<path d='M232 9 L237.5 5.5 L243 9 L237.5 12.5 Z'/><path d='M243 9 L247.5 6.5 L252 9 L247.5 11.5 Z'/>` +
+  `<path d='M258 9 C 280 1, 296 17, 318 9'/>` +
+  `<path d='M286 10 C 284 15, 279 17, 273 17 C 275 12, 280 10, 286 10 Z'/>` +
+  `<path d='M318 9 C 326 7, 333 11, 340 9'/>` +
+  `</svg>`);
+const CORNER = "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='#e4bd5f' stroke-width='1' stroke-linejoin='round'><path d='M7 1 L13 7 L7 13 L1 7 Z'/><circle cx='7' cy='7' r='1.4'/></svg>`);
 
 const FLOURISH = `<div class="flourish" aria-hidden="true"><svg width="120" height="16" viewBox="0 0 120 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M60 2 L67 8 L60 14 L53 8 Z"/><path d="M47 8 C 40 3, 32 3, 26 8 C 32 13, 40 13, 47 8 Z"/><path d="M73 8 C 80 3, 88 3, 94 8 C 88 13, 80 13, 73 8 Z"/><circle cx="60" cy="8" r="1.6"/><path d="M0 8 H 20"/><path d="M100 8 H 120"/></svg></div>`;
 
@@ -135,25 +174,39 @@ const html = `<!doctype html>
   --disp:'Fredoka',ui-rounded,'Segoe UI',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.5 'Nunito',system-ui,sans-serif;
   padding-bottom:calc(48px + env(safe-area-inset-bottom));overflow-x:hidden}
 .wrap{max-width:1060px;margin:0 auto;padding:0 16px;position:relative;z-index:1}
 
-/* ── the ornate rails: thin gold filigree flowing down both margins,
-      drifting gently with the scroll ── */
-.rail{position:fixed;top:0;bottom:0;width:26px;pointer-events:none;opacity:.34;z-index:0;
-  background-image:url("${VINE}");background-repeat:repeat-y;background-position:center 0}
-.rail.l{left:12px}
-.rail.r{right:12px;transform:scaleX(-1)}
-/* On narrow screens the rails slim down and hug the edge instead of
-   disappearing — Stephen wants the filigree on the phone too. The wrap's
-   16px gutter keeps them clear of the cards. */
+/* ── the ornate frame: eclectic gold filigree on all four edges,
+      flowing with the scroll. One fixed inset:0 container with four
+      absolute bars — this sizes to the real viewport (Pixel 9 included),
+      where separate right-anchored fixed divs proved unreliable. ── */
+.frame{position:fixed;inset:0;pointer-events:none;z-index:0}
+.fr{position:absolute;opacity:.34}
+.fr.l,.fr.r{top:20px;bottom:20px;width:26px;background:url("${VINE}") repeat-y center 0/26px auto}
+.fr.l{left:10px}
+.fr.r{right:10px;transform:scaleX(-1)}
+.fr.t,.fr.b{left:20px;right:20px;height:18px;background:url("${BAND}") repeat-x 0 center/auto 18px}
+.fr.t{top:6px}
+.fr.b{bottom:6px;transform:scaleY(-1)}
+.fr.c{width:14px;height:14px;background:url("${CORNER}") no-repeat center/contain}
+.fr.c.tl{top:8px;left:8px}.fr.c.tr{top:8px;right:8px}
+.fr.c.bl{bottom:8px;left:8px}.fr.c.br{bottom:8px;right:8px}
+/* Slimmer on the phone, but every edge still framed. */
 @media (max-width:1180px){
-  .rail{width:14px;background-size:14px auto;opacity:.24}
-  .rail.l{left:2px}
-  .rail.r{right:2px}
+  .fr{opacity:.26}
+  .fr.l,.fr.r{width:13px;background-size:13px auto;top:16px;bottom:16px}
+  .fr.l{left:max(2px,env(safe-area-inset-left))}
+  .fr.r{right:max(2px,env(safe-area-inset-right))}
+  .fr.t,.fr.b{height:12px;background-size:auto 12px;left:16px;right:16px}
+  .fr.t{top:max(3px,env(safe-area-inset-top))}
+  .fr.b{bottom:max(3px,env(safe-area-inset-bottom))}
+  .fr.c{width:11px;height:11px}
+  .fr.c.tl,.fr.c.tr{top:4px}.fr.c.bl,.fr.c.br{bottom:4px}
+  .fr.c.tl,.fr.c.bl{left:3px}.fr.c.tr,.fr.c.br{right:3px}
 }
 
 /* ── section flourishes: the same line, horizontal ── */
@@ -161,7 +214,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 
 /* ── hero ── */
 .hero{text-align:center;padding:44px 0 8px;position:relative}
-.hero::before{content:"";position:absolute;left:50%;top:-30%;width:120vw;height:150%;
+.hero::before{content:"";position:absolute;left:50%;top:-30%;width:100vw;height:150%;
   transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(46% 55% at 50% 32%,rgba(228,189,95,.12),transparent 70%)}
 .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border:1px solid var(--line);
@@ -248,8 +301,10 @@ footer a{color:var(--leaf)}
 </style>
 </head>
 <body>
-<div class="rail l" aria-hidden="true"></div>
-<div class="rail r" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true">
+  <i class="fr t"></i><i class="fr b"></i><i class="fr l"></i><i class="fr r"></i>
+  <i class="fr c tl"></i><i class="fr c tr"></i><i class="fr c bl"></i><i class="fr c br"></i>
+</div>
 <div class="wrap">
 
   <div class="hero">
@@ -314,16 +369,20 @@ ${card(HUSH, 0)}
     } else showAll();
   }catch(e){showAll()}
 
-  /* the rails flow with the scroll — a gentle counter-drift */
-  var rails=document.querySelectorAll('.rail');
+  /* the whole frame flows with the scroll — sides drift up, the top band
+     slides one way and the bottom band the other */
+  var sides=document.querySelectorAll('.fr.l,.fr.r');
+  var top=document.querySelector('.fr.t'), bot=document.querySelector('.fr.b');
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(rails.length && !reduce){
+  if(sides.length && !reduce){
     var ticking=false;
     addEventListener('scroll',function(){
       if(ticking) return; ticking=true;
       requestAnimationFrame(function(){
-        var y=Math.round(-scrollY*0.25)+'px';
-        for(var i=0;i<rails.length;i++) rails[i].style.backgroundPositionY=y;
+        var d=Math.round(-scrollY*0.25);
+        for(var i=0;i<sides.length;i++) sides[i].style.backgroundPositionY=d+'px';
+        if(top) top.style.backgroundPositionX=d+'px';
+        if(bot) bot.style.backgroundPositionX=(-d)+'px';
         ticking=false;
       });
     },{passive:true});

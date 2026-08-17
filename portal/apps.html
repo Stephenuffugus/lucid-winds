@@ -23,25 +23,39 @@
   --disp:'Fredoka',ui-rounded,'Segoe UI',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.5 'Nunito',system-ui,sans-serif;
   padding-bottom:calc(48px + env(safe-area-inset-bottom));overflow-x:hidden}
 .wrap{max-width:1060px;margin:0 auto;padding:0 16px;position:relative;z-index:1}
 
-/* ── the ornate rails: thin gold filigree flowing down both margins,
-      drifting gently with the scroll ── */
-.rail{position:fixed;top:0;bottom:0;width:26px;pointer-events:none;opacity:.34;z-index:0;
-  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'26'%20height%3D'200'%20viewBox%3D'0%200%2026%20200'%20fill%3D'none'%20stroke%3D'%23e4bd5f'%20stroke-width%3D'1'%20stroke-linecap%3D'round'%3E%3Cpath%20d%3D'M13%200%20C%205%2034%2C%2021%2066%2C%2013%20100%20C%205%20134%2C%2021%20166%2C%2013%20200'%2F%3E%3Cpath%20d%3D'M12%2036%20C%207%2034%2C%204%2030%2C%204%2024%20C%2010%2026%2C%2012%2030%2C%2012%2036%20Z'%2F%3E%3Cpath%20d%3D'M14%20104%20C%2019%20102%2C%2022%2098%2C%2022%2092%20C%2016%2094%2C%2014%2098%2C%2014%20104%20Z'%2F%3E%3Cpath%20d%3D'M12%20170%20C%207%20168%2C%204%20164%2C%204%20158%20C%2010%20160%2C%2012%20164%2C%2012%20170%20Z'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'68'%20r%3D'1.5'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'137'%20r%3D'1.5'%2F%3E%3C%2Fsvg%3E");background-repeat:repeat-y;background-position:center 0}
-.rail.l{left:12px}
-.rail.r{right:12px;transform:scaleX(-1)}
-/* On narrow screens the rails slim down and hug the edge instead of
-   disappearing — Stephen wants the filigree on the phone too. The wrap's
-   16px gutter keeps them clear of the cards. */
+/* ── the ornate frame: eclectic gold filigree on all four edges,
+      flowing with the scroll. One fixed inset:0 container with four
+      absolute bars — this sizes to the real viewport (Pixel 9 included),
+      where separate right-anchored fixed divs proved unreliable. ── */
+.frame{position:fixed;inset:0;pointer-events:none;z-index:0}
+.fr{position:absolute;opacity:.34}
+.fr.l,.fr.r{top:20px;bottom:20px;width:26px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'26'%20height%3D'340'%20viewBox%3D'0%200%2026%20340'%20fill%3D'none'%20stroke%3D'%23e4bd5f'%20stroke-width%3D'1'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M13%200%20C%205%2024%2C%2021%2046%2C%2013%2070'%2F%3E%3Cpath%20d%3D'M12%2038%20C%207%2036%2C%204%2031%2C%204%2025%20C%2010%2027%2C%2012%2032%2C%2012%2038%20Z'%2F%3E%3Cpath%20d%3D'M13%2070%20L17%2076%20L13%2082%20L9%2076%20Z'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'76'%20r%3D'1.1'%2F%3E%3Cpath%20d%3D'M13%2082%20C%2016%2090%2C%2010%2094%2C%2013%20100'%2F%3E%3Cpath%20d%3D'M13%20102%20V106%20M13%20112%20V116%20M6%20109%20H10%20M16%20109%20H20%20M8.5%20104.5%20L11%20107%20M15%20111%20L17.5%20113.5%20M17.5%20104.5%20L15%20107%20M11%20111%20L8.5%20113.5'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'109'%20r%3D'1.3'%2F%3E%3Cpath%20d%3D'M13%20118%20C%2017%20126%2C%209%20132%2C%2013%20140'%2F%3E%3Cpath%20d%3D'M13%20140%20C%206%20154%2C%2020%20168%2C%2013%20182'%2F%3E%3Cpath%20d%3D'M15%20158%20C%2020%20156%2C%2023%20151%2C%2021%20147%20C%2019%20145%2C%2016%20148%2C%2018%20152'%2F%3E%3Cpath%20d%3D'M8%20190%20Q13%20197%2018%20190'%2F%3E%3Cpath%20d%3D'M10%20192.5%20Q13%20196.5%2016%20192.5'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'204'%20r%3D'1.5'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'210'%20r%3D'1.1'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'215'%20r%3D'0.8'%2F%3E%3Cpath%20d%3D'M13%20222%20L16.5%20227.5%20L13%20233%20L9.5%20227.5%20Z'%2F%3E%3Cpath%20d%3D'M13%20233%20L15.5%20237.5%20L13%20242%20L10.5%20237.5%20Z'%2F%3E%3Cpath%20d%3D'M13%20248%20C%2021%20270%2C%205%20296%2C%2013%20318'%2F%3E%3Cpath%20d%3D'M14%20276%20C%2019%20274%2C%2022%20269%2C%2022%20263%20C%2016%20265%2C%2014%20270%2C%2014%20276%20Z'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'300'%20r%3D'1.4'%2F%3E%3Cpath%20d%3D'M13%20318%20C%2011%20326%2C%2015%20333%2C%2013%20340'%2F%3E%3C%2Fsvg%3E") repeat-y center 0/26px auto}
+.fr.l{left:10px}
+.fr.r{right:10px;transform:scaleX(-1)}
+.fr.t,.fr.b{left:20px;right:20px;height:18px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'340'%20height%3D'18'%20viewBox%3D'0%200%20340%2018'%20fill%3D'none'%20stroke%3D'%23e4bd5f'%20stroke-width%3D'1'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M0%209%20C%2024%203%2C%2046%2015%2C%2070%209'%2F%3E%3Cpath%20d%3D'M38%208%20C%2036%203%2C%2031%201%2C%2025%201%20C%2027%206%2C%2032%208%2C%2038%208%20Z'%2F%3E%3Cpath%20d%3D'M70%209%20L76%205%20L82%209%20L76%2013%20Z'%2F%3E%3Ccircle%20cx%3D'76'%20cy%3D'9'%20r%3D'1.1'%2F%3E%3Cpath%20d%3D'M82%209%20C%2090%2012%2C%2094%206%2C%20100%209'%2F%3E%3Cpath%20d%3D'M102%209%20H106%20M112%209%20H116%20M109%202%20V6%20M109%2012%20V16%20M104.5%204.5%20L107%207%20M111%2011%20L113.5%2013.5%20M104.5%2013.5%20L107%2011%20M111%207%20L113.5%204.5'%2F%3E%3Ccircle%20cx%3D'109'%20cy%3D'9'%20r%3D'1.3'%2F%3E%3Cpath%20d%3D'M118%209%20C%20126%205%2C%20132%2013%2C%20140%209'%2F%3E%3Cpath%20d%3D'M140%209%20C%20154%202%2C%20168%2016%2C%20182%209'%2F%3E%3Cpath%20d%3D'M158%207%20C%20156%202%2C%20151%20-1%2C%20147%201%20C%20145%203%2C%20148%206%2C%20152%204'%2F%3E%3Cpath%20d%3D'M190%206%20Q197%2013%20204%206'%2F%3E%3Cpath%20d%3D'M192.5%208.5%20Q197%2012.5%20201.5%208.5'%2F%3E%3Ccircle%20cx%3D'214'%20cy%3D'9'%20r%3D'1.5'%2F%3E%3Ccircle%20cx%3D'220'%20cy%3D'9'%20r%3D'1.1'%2F%3E%3Ccircle%20cx%3D'225'%20cy%3D'9'%20r%3D'0.8'%2F%3E%3Cpath%20d%3D'M232%209%20L237.5%205.5%20L243%209%20L237.5%2012.5%20Z'%2F%3E%3Cpath%20d%3D'M243%209%20L247.5%206.5%20L252%209%20L247.5%2011.5%20Z'%2F%3E%3Cpath%20d%3D'M258%209%20C%20280%201%2C%20296%2017%2C%20318%209'%2F%3E%3Cpath%20d%3D'M286%2010%20C%20284%2015%2C%20279%2017%2C%20273%2017%20C%20275%2012%2C%20280%2010%2C%20286%2010%20Z'%2F%3E%3Cpath%20d%3D'M318%209%20C%20326%207%2C%20333%2011%2C%20340%209'%2F%3E%3C%2Fsvg%3E") repeat-x 0 center/auto 18px}
+.fr.t{top:6px}
+.fr.b{bottom:6px;transform:scaleY(-1)}
+.fr.c{width:14px;height:14px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'14'%20height%3D'14'%20viewBox%3D'0%200%2014%2014'%20fill%3D'none'%20stroke%3D'%23e4bd5f'%20stroke-width%3D'1'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M7%201%20L13%207%20L7%2013%20L1%207%20Z'%2F%3E%3Ccircle%20cx%3D'7'%20cy%3D'7'%20r%3D'1.4'%2F%3E%3C%2Fsvg%3E") no-repeat center/contain}
+.fr.c.tl{top:8px;left:8px}.fr.c.tr{top:8px;right:8px}
+.fr.c.bl{bottom:8px;left:8px}.fr.c.br{bottom:8px;right:8px}
+/* Slimmer on the phone, but every edge still framed. */
 @media (max-width:1180px){
-  .rail{width:14px;background-size:14px auto;opacity:.24}
-  .rail.l{left:2px}
-  .rail.r{right:2px}
+  .fr{opacity:.26}
+  .fr.l,.fr.r{width:13px;background-size:13px auto;top:16px;bottom:16px}
+  .fr.l{left:max(2px,env(safe-area-inset-left))}
+  .fr.r{right:max(2px,env(safe-area-inset-right))}
+  .fr.t,.fr.b{height:12px;background-size:auto 12px;left:16px;right:16px}
+  .fr.t{top:max(3px,env(safe-area-inset-top))}
+  .fr.b{bottom:max(3px,env(safe-area-inset-bottom))}
+  .fr.c{width:11px;height:11px}
+  .fr.c.tl,.fr.c.tr{top:4px}.fr.c.bl,.fr.c.br{bottom:4px}
+  .fr.c.tl,.fr.c.bl{left:3px}.fr.c.tr,.fr.c.br{right:3px}
 }
 
 /* ── section flourishes: the same line, horizontal ── */
@@ -49,7 +63,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 
 /* ── hero ── */
 .hero{text-align:center;padding:44px 0 8px;position:relative}
-.hero::before{content:"";position:absolute;left:50%;top:-30%;width:120vw;height:150%;
+.hero::before{content:"";position:absolute;left:50%;top:-30%;width:100vw;height:150%;
   transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(46% 55% at 50% 32%,rgba(228,189,95,.12),transparent 70%)}
 .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border:1px solid var(--line);
@@ -136,8 +150,10 @@ footer a{color:var(--leaf)}
 </style>
 </head>
 <body>
-<div class="rail l" aria-hidden="true"></div>
-<div class="rail r" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true">
+  <i class="fr t"></i><i class="fr b"></i><i class="fr l"></i><i class="fr r"></i>
+  <i class="fr c tl"></i><i class="fr c tr"></i><i class="fr c bl"></i><i class="fr c br"></i>
+</div>
 <div class="wrap">
 
   <div class="hero">
@@ -382,16 +398,20 @@ footer a{color:var(--leaf)}
     } else showAll();
   }catch(e){showAll()}
 
-  /* the rails flow with the scroll — a gentle counter-drift */
-  var rails=document.querySelectorAll('.rail');
+  /* the whole frame flows with the scroll — sides drift up, the top band
+     slides one way and the bottom band the other */
+  var sides=document.querySelectorAll('.fr.l,.fr.r');
+  var top=document.querySelector('.fr.t'), bot=document.querySelector('.fr.b');
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(rails.length && !reduce){
+  if(sides.length && !reduce){
     var ticking=false;
     addEventListener('scroll',function(){
       if(ticking) return; ticking=true;
       requestAnimationFrame(function(){
-        var y=Math.round(-scrollY*0.25)+'px';
-        for(var i=0;i<rails.length;i++) rails[i].style.backgroundPositionY=y;
+        var d=Math.round(-scrollY*0.25);
+        for(var i=0;i<sides.length;i++) sides[i].style.backgroundPositionY=d+'px';
+        if(top) top.style.backgroundPositionX=d+'px';
+        if(bot) bot.style.backgroundPositionX=(-d)+'px';
         ticking=false;
       });
     },{passive:true});
